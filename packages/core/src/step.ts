@@ -1,3 +1,4 @@
+import './commands/handlers' // registers the command handlers
 import type { Command } from './commands/types'
 import type { GameEvent } from './events/types'
 import { applyCommands } from './phases/applyCommands'

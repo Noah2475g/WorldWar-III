@@ -97,6 +97,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       resources: { ...rules.startResources },
       capitalProvinceId: start.capital,
       capitalLostUntil: null,
+      capitalMovedAtTick: null,
       alive: true,
       score: 0,
       reputation: 1000,

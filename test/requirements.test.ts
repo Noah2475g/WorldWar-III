@@ -1,4 +1,6 @@
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
 
@@ -79,5 +81,19 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
   it('erkennt mehrere Testdateien fuer dieselbe ID', () => {
     const { covered } = parseTests([GOOD_TEST, { ...GOOD_TEST, path: 'demo/second.test.ts' }])
     expect(covered.get('R-DEMO-01')).toHaveLength(2)
+  })
+
+  it('laeuft als Skript und meldet offene Anforderungen mit Exit-Code', () => {
+    // Regression guard: the script once exported everything correctly and still did
+    // nothing at all, because its "am I the entry point?" check compared a hand-built
+    // file:// string that never matches on Windows. Unit tests of the pure functions
+    // could not see that — only running it as a script can.
+    const script = fileURLToPath(new URL('../scripts/requirements-coverage.mjs', import.meta.url))
+    const result = spawnSync(process.execPath, [script], { encoding: 'utf8' })
+
+    expect(result.stdout).toMatch(/Anforderungen gesamt:\s+\d+/)
+    expect(result.stdout).toMatch(/mit belegtem Test:\s+\d+/)
+    // Red while requirements are still open — that is the point of the gate.
+    expect(result.status).toBe(1)
   })
 })

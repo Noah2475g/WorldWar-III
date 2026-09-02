@@ -128,7 +128,7 @@ tasks:
   - id: T-M1-04
     milestone: M1
     title: Zustandstypen und Anfangszustand
-    status: todo
+    status: done
     deps: [T-M1-02, T-M1-03]
     requirements: [R-ARCH-01, R-GAME-01]
     design: [D-04, D-13]
@@ -139,7 +139,7 @@ tasks:
   - id: T-M1-05
     milestone: M1
     title: Tick-Pipeline als Geruest
-    status: todo
+    status: done
     deps: [T-M1-04]
     requirements: [R-ARCH-01, R-TIME-01]
     files: [packages/core/src/step.ts, packages/core/src/phases/]
@@ -149,7 +149,7 @@ tasks:
   - id: T-M1-06
     milestone: M1
     title: Determinismus-Nachweis
-    status: todo
+    status: done
     deps: [T-M1-05]
     requirements: [R-ARCH-01, R-ARCH-03]
     files: [packages/core/test/golden/]

@@ -13,7 +13,7 @@
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parse as parseYaml } from 'yaml'
 
 const ID_PATTERN = /^- \*\*(R-[A-Z]+-\d{2})/gm
@@ -117,6 +117,9 @@ function main() {
   console.log(`\n[ok] Jede V1-Anforderung ist durch mindestens einen Test belegt.`)
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`) {
+// pathToFileURL, not string surgery: on Windows a path becomes file:///C:/... with
+// three slashes, and a hand-built comparison silently never matches — the script then
+// exits 0 without doing anything, which is worse than failing.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   main()
 }

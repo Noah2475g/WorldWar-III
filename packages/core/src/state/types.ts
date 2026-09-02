@@ -191,6 +191,8 @@ export interface Player {
   capitalProvinceId: ProvinceId | null
   /** While set, the penalties for losing the capital apply (D6.8). */
   capitalLostUntil: Tick | null
+  /** Last time the capital was moved; null means never. Drives the cooldown (D6.8). */
+  capitalMovedAtTick: Tick | null
   alive: boolean
   score: number
   reputation: Fixed
