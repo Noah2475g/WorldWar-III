@@ -1,0 +1,13 @@
+# Hauptstadtverlegung als Kommando im laufenden Tick, inklusive Ereignis.
+name: Hauptstadt verlegen
+seed: 3
+run: 5
+provinces:
+  n2: { kind: city }
+commands:
+  - at: 2
+    command: { type: SET_CAPITAL, playerId: p1, provinceId: n2 }
+expect:
+  - { path: players.p1.capitalProvinceId, op: '==', value: n2 }
+  - { path: players.p1.capitalMovedAtTick, op: '==', value: 2 }
+  - { path: events, op: includes, value: CAPITAL_MOVED }

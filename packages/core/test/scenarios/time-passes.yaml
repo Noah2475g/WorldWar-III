@@ -1,0 +1,10 @@
+# Der einfachste denkbare Nachweis, dass die Simulation laeuft:
+# 48 Spielstunden vergehen, ohne dass sich am Besitz etwas aendert.
+name: Zwei Tage vergehen ohne Krieg
+seed: 7
+run: 48
+expect:
+  - { path: tick, op: '==', value: 48 }
+  - { path: provinces.n1.owner, op: '==', value: p1 }
+  - { path: provinces.o1.owner, op: '==', value: p2 }
+  - { path: events, op: excludes, value: PROVINCE_CAPTURED }

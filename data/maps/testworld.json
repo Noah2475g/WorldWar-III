@@ -1,0 +1,649 @@
+{
+  "id": "testworld",
+  "name": "Kleine Welt",
+  "width": 520,
+  "height": 400,
+  "provinces": [
+    {
+      "id": "n1",
+      "name": "Hafen",
+      "kind": "city",
+      "terrain": "urban",
+      "coastal": true,
+      "center": {
+        "x": 60,
+        "y": 120
+      },
+      "polygon": [
+        [
+          30,
+          120
+        ],
+        [
+          60,
+          92
+        ],
+        [
+          90,
+          120
+        ],
+        [
+          60,
+          148
+        ]
+      ],
+      "population": 900000,
+      "deposits": {
+        "food": 2000,
+        "iron": 1500
+      }
+    },
+    {
+      "id": "n2",
+      "name": "Waldland",
+      "kind": "rural",
+      "terrain": "forest",
+      "coastal": false,
+      "center": {
+        "x": 140,
+        "y": 100
+      },
+      "polygon": [
+        [
+          110,
+          100
+        ],
+        [
+          140,
+          72
+        ],
+        [
+          170,
+          100
+        ],
+        [
+          140,
+          128
+        ]
+      ],
+      "population": 250000,
+      "deposits": {
+        "wood": 2500
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Bergland",
+      "kind": "rural",
+      "terrain": "mountain",
+      "coastal": false,
+      "center": {
+        "x": 140,
+        "y": 190
+      },
+      "polygon": [
+        [
+          110,
+          190
+        ],
+        [
+          140,
+          162
+        ],
+        [
+          170,
+          190
+        ],
+        [
+          140,
+          218
+        ]
+      ],
+      "population": 180000,
+      "deposits": {
+        "coal": 2000,
+        "iron": 800
+      }
+    },
+    {
+      "id": "m1",
+      "name": "Mittstadt",
+      "kind": "city",
+      "terrain": "plains",
+      "coastal": false,
+      "center": {
+        "x": 250,
+        "y": 140
+      },
+      "polygon": [
+        [
+          220,
+          140
+        ],
+        [
+          250,
+          112
+        ],
+        [
+          280,
+          140
+        ],
+        [
+          250,
+          168
+        ]
+      ],
+      "population": 700000,
+      "deposits": {
+        "food": 2500,
+        "money": 1200
+      }
+    },
+    {
+      "id": "m2",
+      "name": "Auenland",
+      "kind": "rural",
+      "terrain": "forest",
+      "coastal": false,
+      "center": {
+        "x": 250,
+        "y": 220
+      },
+      "polygon": [
+        [
+          220,
+          220
+        ],
+        [
+          250,
+          192
+        ],
+        [
+          280,
+          220
+        ],
+        [
+          250,
+          248
+        ]
+      ],
+      "population": 220000,
+      "deposits": {
+        "wood": 1800,
+        "food": 900
+      }
+    },
+    {
+      "id": "o1",
+      "name": "Ostburg",
+      "kind": "city",
+      "terrain": "urban",
+      "coastal": true,
+      "center": {
+        "x": 380,
+        "y": 120
+      },
+      "polygon": [
+        [
+          350,
+          120
+        ],
+        [
+          380,
+          92
+        ],
+        [
+          410,
+          120
+        ],
+        [
+          380,
+          148
+        ]
+      ],
+      "population": 850000,
+      "deposits": {
+        "iron": 2000,
+        "money": 1000
+      }
+    },
+    {
+      "id": "o2",
+      "name": "Sandmark",
+      "kind": "rural",
+      "terrain": "desert",
+      "coastal": false,
+      "center": {
+        "x": 430,
+        "y": 200
+      },
+      "polygon": [
+        [
+          400,
+          200
+        ],
+        [
+          430,
+          172
+        ],
+        [
+          460,
+          200
+        ],
+        [
+          430,
+          228
+        ]
+      ],
+      "population": 120000,
+      "deposits": {
+        "oil": 2600
+      }
+    },
+    {
+      "id": "o3",
+      "name": "Ostfeld",
+      "kind": "rural",
+      "terrain": "plains",
+      "coastal": false,
+      "center": {
+        "x": 360,
+        "y": 210
+      },
+      "polygon": [
+        [
+          330,
+          210
+        ],
+        [
+          360,
+          182
+        ],
+        [
+          390,
+          210
+        ],
+        [
+          360,
+          238
+        ]
+      ],
+      "population": 300000,
+      "deposits": {
+        "food": 2200
+      }
+    },
+    {
+      "id": "s1",
+      "name": "Suedhafen",
+      "kind": "city",
+      "terrain": "plains",
+      "coastal": true,
+      "center": {
+        "x": 200,
+        "y": 320
+      },
+      "polygon": [
+        [
+          170,
+          320
+        ],
+        [
+          200,
+          292
+        ],
+        [
+          230,
+          320
+        ],
+        [
+          200,
+          348
+        ]
+      ],
+      "population": 600000,
+      "deposits": {
+        "food": 1800,
+        "money": 800
+      }
+    },
+    {
+      "id": "s2",
+      "name": "Suedberg",
+      "kind": "rural",
+      "terrain": "mountain",
+      "coastal": false,
+      "center": {
+        "x": 300,
+        "y": 330
+      },
+      "polygon": [
+        [
+          270,
+          330
+        ],
+        [
+          300,
+          302
+        ],
+        [
+          330,
+          330
+        ],
+        [
+          300,
+          358
+        ]
+      ],
+      "population": 160000,
+      "deposits": {
+        "rare": 900,
+        "coal": 1200
+      }
+    },
+    {
+      "id": "i1",
+      "name": "Nordinsel",
+      "kind": "rural",
+      "terrain": "plains",
+      "coastal": true,
+      "center": {
+        "x": 80,
+        "y": 300
+      },
+      "polygon": [
+        [
+          50,
+          300
+        ],
+        [
+          80,
+          272
+        ],
+        [
+          110,
+          300
+        ],
+        [
+          80,
+          328
+        ]
+      ],
+      "population": 90000,
+      "deposits": {
+        "food": 1200,
+        "rare": 600
+      }
+    },
+    {
+      "id": "i2",
+      "name": "Ostinsel",
+      "kind": "rural",
+      "terrain": "forest",
+      "coastal": true,
+      "center": {
+        "x": 450,
+        "y": 320
+      },
+      "polygon": [
+        [
+          420,
+          320
+        ],
+        [
+          450,
+          292
+        ],
+        [
+          480,
+          320
+        ],
+        [
+          450,
+          348
+        ]
+      ],
+      "population": 70000,
+      "deposits": {
+        "wood": 1400,
+        "oil": 700
+      }
+    }
+  ],
+  "edges": [
+    {
+      "a": "n1",
+      "b": "n2",
+      "kind": "land",
+      "distanceKm": 90000,
+      "crossing": "none"
+    },
+    {
+      "a": "n1",
+      "b": "n3",
+      "kind": "land",
+      "distanceKm": 140000,
+      "crossing": "river"
+    },
+    {
+      "a": "n2",
+      "b": "n3",
+      "kind": "land",
+      "distanceKm": 80000,
+      "crossing": "none"
+    },
+    {
+      "a": "n2",
+      "b": "m1",
+      "kind": "land",
+      "distanceKm": 160000,
+      "crossing": "river"
+    },
+    {
+      "a": "n3",
+      "b": "m2",
+      "kind": "land",
+      "distanceKm": 190000,
+      "crossing": "none"
+    },
+    {
+      "a": "m1",
+      "b": "m2",
+      "kind": "land",
+      "distanceKm": 85000,
+      "crossing": "none"
+    },
+    {
+      "a": "m1",
+      "b": "o1",
+      "kind": "land",
+      "distanceKm": 170000,
+      "crossing": "none"
+    },
+    {
+      "a": "m1",
+      "b": "o3",
+      "kind": "land",
+      "distanceKm": 150000,
+      "crossing": "river"
+    },
+    {
+      "a": "m2",
+      "b": "s2",
+      "kind": "land",
+      "distanceKm": 130000,
+      "crossing": "none"
+    },
+    {
+      "a": "m2",
+      "b": "s1",
+      "kind": "land",
+      "distanceKm": 120000,
+      "crossing": "none"
+    },
+    {
+      "a": "o1",
+      "b": "o2",
+      "kind": "land",
+      "distanceKm": 110000,
+      "crossing": "none"
+    },
+    {
+      "a": "o1",
+      "b": "o3",
+      "kind": "land",
+      "distanceKm": 95000,
+      "crossing": "none"
+    },
+    {
+      "a": "o2",
+      "b": "o3",
+      "kind": "land",
+      "distanceKm": 100000,
+      "crossing": "none"
+    },
+    {
+      "a": "o2",
+      "b": "s2",
+      "kind": "land",
+      "distanceKm": 210000,
+      "crossing": "none"
+    },
+    {
+      "a": "s1",
+      "b": "s2",
+      "kind": "land",
+      "distanceKm": 115000,
+      "crossing": "none"
+    },
+    {
+      "a": "n1",
+      "b": "i1",
+      "kind": "sea",
+      "distanceKm": 260000,
+      "crossing": "none"
+    },
+    {
+      "a": "s1",
+      "b": "i1",
+      "kind": "sea",
+      "distanceKm": 180000,
+      "crossing": "none"
+    },
+    {
+      "a": "o1",
+      "b": "i2",
+      "kind": "sea",
+      "distanceKm": 240000,
+      "crossing": "none"
+    },
+    {
+      "a": "s2",
+      "b": "i2",
+      "kind": "sea",
+      "distanceKm": 300000,
+      "crossing": "none"
+    },
+    {
+      "a": "n1",
+      "b": "s1",
+      "kind": "sea",
+      "distanceKm": 340000,
+      "crossing": "strait"
+    }
+  ],
+  "edgesByProvince": {
+    "n1": [
+      0,
+      1,
+      15,
+      19
+    ],
+    "n2": [
+      0,
+      2,
+      3
+    ],
+    "n3": [
+      1,
+      2,
+      4
+    ],
+    "m1": [
+      3,
+      5,
+      6,
+      7
+    ],
+    "m2": [
+      4,
+      5,
+      8,
+      9
+    ],
+    "o1": [
+      6,
+      10,
+      11,
+      17
+    ],
+    "o2": [
+      10,
+      12,
+      13
+    ],
+    "o3": [
+      7,
+      11,
+      12
+    ],
+    "s1": [
+      9,
+      14,
+      16,
+      19
+    ],
+    "s2": [
+      8,
+      13,
+      14,
+      18
+    ],
+    "i1": [
+      15,
+      16
+    ],
+    "i2": [
+      17,
+      18
+    ]
+  },
+  "startPositions": [
+    {
+      "nation": "Nordland",
+      "capital": "n1",
+      "provinces": [
+        "n1",
+        "n2",
+        "n3"
+      ]
+    },
+    {
+      "nation": "Ostmark",
+      "capital": "o1",
+      "provinces": [
+        "o1",
+        "o2",
+        "o3"
+      ]
+    },
+    {
+      "nation": "Sueden",
+      "capital": "s1",
+      "provinces": [
+        "s1",
+        "s2"
+      ]
+    }
+  ]
+}

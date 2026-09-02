@@ -1,4 +1,5 @@
-import type { MapData } from '@worldwar/core'
+import { parseMap, type MapData } from '@worldwar/core'
+import testworld from '../../../data/maps/testworld.json' with { type: 'json' }
 
 /**
  * Three provinces, two nations, one sea link. Small enough to reason about by hand,
@@ -69,4 +70,15 @@ export function tinyMap(): MapData {
       { nation: 'Sued', capital: 'gamma', provinces: ['gamma'] },
     ],
   }
+}
+
+/**
+ * "Kleine Welt" — the map the rules are developed against (T-M2-02).
+ *
+ * Twelve provinces, three nations, two islands reachable only by sea, every terrain
+ * type, one river crossing and one strait. It lives in `data/maps/testworld.json`
+ * because maps are data, not code (R-MAP-02) — this loader only parses and validates.
+ */
+export function smallWorld(): MapData {
+  return parseMap(structuredClone(testworld))
 }

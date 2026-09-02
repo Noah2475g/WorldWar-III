@@ -159,7 +159,7 @@ tasks:
   - id: T-M1-07
     milestone: M1
     title: Kommandogeruest und Validierung
-    status: todo
+    status: done
     deps: [T-M1-08]
     requirements: [R-ARCH-02]
     files: [packages/core/src/commands/]
@@ -169,7 +169,7 @@ tasks:
   - id: T-M1-08
     milestone: M1
     title: Ereignistypen und Ereigniserzeugung
-    status: todo
+    status: done
     deps: [T-M1-05]
     requirements: [R-GAME-06]
     design: [D-07]
@@ -180,7 +180,7 @@ tasks:
   - id: T-M1-09
     milestone: M1
     title: Kern-Uhr runTicks und fastForward
-    status: todo
+    status: done
     deps: [T-M1-08]
     requirements: [R-TIME-01, R-TIME-03, R-TIME-05]
     files: [packages/core/src/clock.ts]
