@@ -1,0 +1,35 @@
+{
+  "config": {
+    "seed": 42,
+    "mapId": "tiny",
+    "rulesId": "test",
+    "players": [
+      {
+        "name": "Noah",
+        "kind": "human",
+        "nation": "Nordland",
+        "color": "#0f62bc"
+      },
+      {
+        "name": "Gegner",
+        "kind": "ai",
+        "nation": "Sued",
+        "color": "#b03a2e",
+        "difficulty": "normal"
+      }
+    ],
+    "victory": {
+      "condition": "points",
+      "pointsShareToWin": 600,
+      "dayLimit": null
+    }
+  },
+  "map": "tiny",
+  "ticks": 500,
+  "checkpoints": {
+    "tick1": "5cbb43a712d784e9",
+    "tick24": "bc857730ec0e586a",
+    "tick100": "e2415c6f9a2bc741",
+    "tick500": "4319bda37d0e2e05"
+  }
+}

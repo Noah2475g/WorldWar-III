@@ -97,7 +97,7 @@ tasks:
   - id: T-M1-01
     milestone: M1
     title: Festkomma-Arithmetik
-    status: todo
+    status: done
     deps: [T-M0-01]
     requirements: [R-ARCH-01]
     design: [D-02]
@@ -108,7 +108,7 @@ tasks:
   - id: T-M1-02
     milestone: M1
     title: Geseedeter Zufallsgenerator
-    status: todo
+    status: done
     deps: [T-M1-01]
     requirements: [R-ARCH-01]
     files: [packages/shared/src/rng.ts]
@@ -118,7 +118,7 @@ tasks:
   - id: T-M1-03
     milestone: M1
     title: Zustands-Hash ueber kanonische Projektion
-    status: todo
+    status: done
     deps: [T-M1-01]
     requirements: [R-ARCH-01, R-GAME-03]
     files: [packages/shared/src/hash.ts]
