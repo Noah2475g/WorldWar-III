@@ -1,0 +1,46 @@
+{
+  "_comment": "Gewichte der KI-Nutzenfunktion. Jeder Term liefert 0..1000, die Gewichte je Stufe summieren sich auf 1000 (Design D8). resourceBonus 1000 = kein Bonus; jeder andere Wert wird im Spiel offen ausgewiesen (R-AI-02).",
+  "difficulties": {
+    "easy": {
+      "economy": 300,
+      "position": 150,
+      "defence": 250,
+      "distance": 200,
+      "weakness": 100,
+      "planningDepth": 1,
+      "maxFronts": 1,
+      "resourceBonus": 1000
+    },
+    "normal": {
+      "economy": 280,
+      "position": 200,
+      "defence": 220,
+      "distance": 180,
+      "weakness": 120,
+      "planningDepth": 2,
+      "maxFronts": 2,
+      "resourceBonus": 1000
+    },
+    "hard": {
+      "economy": 260,
+      "position": 240,
+      "defence": 200,
+      "distance": 140,
+      "weakness": 160,
+      "planningDepth": 3,
+      "maxFronts": 3,
+      "resourceBonus": 1000
+    }
+  },
+  "resourceWeights": {
+    "food": 1000,
+    "wood": 900,
+    "iron": 1200,
+    "coal": 1000,
+    "oil": 1400,
+    "rare": 1600,
+    "money": 800
+  },
+  "buildShareDefault": 600,
+  "threatRange": 2
+}

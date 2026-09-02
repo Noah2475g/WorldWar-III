@@ -27,9 +27,9 @@
   "map": "tiny",
   "ticks": 500,
   "checkpoints": {
-    "tick1": "e3194a1feaa6b319",
-    "tick24": "3f1033b84301431a",
-    "tick100": "62fa62a7322a18b1",
-    "tick500": "6fa6009b263d8b75"
+    "tick1": "6c381a600574136a",
+    "tick24": "c5886bfc980631a6",
+    "tick100": "71d124b8a2044eb2",
+    "tick500": "dd6d0b33b8862541"
   }
 }

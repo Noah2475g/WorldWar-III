@@ -59,11 +59,19 @@ describe('R-ARCH-01 Tick-Pipeline', () => {
     expect(hashValue(before, { omitKeys: HASH_OMIT_KEYS })).toBe(hashBefore)
   })
 
-  it('aendert ohne Kommandos nichts ausser der Zeit', () => {
+  it('aendert ohne Kommandos weder Besitz noch Streitkraefte', () => {
+    // The economy does run on its own — that is the point of a tick. What must not
+    // move without an order is the map: ownership, armies, diplomacy.
     const before = fresh()
     const { state } = step(before, [], ctx)
-    const strip = (s: typeof state) => ({ ...s, tick: 0, eventLog: [], rng: null })
-    expect(hashValue(strip(state))).toBe(hashValue(strip(before)))
+
+    const shape = (s: typeof state) => ({
+      owners: s.provinceOrder.map((id) => s.provinces[id]!.owner),
+      armies: s.armyOrder,
+      diplomacy: s.diplomacy,
+      victory: s.victory,
+    })
+    expect(hashValue(shape(state))).toBe(hashValue(shape(before)))
   })
 
   it('liefert die Ereignisse dieses Ticks getrennt zurueck', () => {

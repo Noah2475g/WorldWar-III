@@ -1,0 +1,12 @@
+{
+  "_comment": "Sieben Ressourcen wie im Original. Startvorraete und Lagergrenzen in Festkomma.",
+  "resources": {
+    "food":  { "name": "Nahrung",    "startAmount": 20000000, "storageLimit": 200000000, "basePrice": 1000 },
+    "wood":  { "name": "Material",   "startAmount": 20000000, "storageLimit": 200000000, "basePrice": 1000 },
+    "iron":  { "name": "Eisen",      "startAmount": 10000000, "storageLimit": 200000000, "basePrice": 1400 },
+    "coal":  { "name": "Kohle",      "startAmount": 10000000, "storageLimit": 200000000, "basePrice": 1200 },
+    "oil":   { "name": "Oel",        "startAmount":  5000000, "storageLimit": 200000000, "basePrice": 1800 },
+    "rare":  { "name": "Seltene Rohstoffe", "startAmount": 2000000, "storageLimit": 100000000, "basePrice": 2600 },
+    "money": { "name": "Geld",       "startAmount": 50000000, "storageLimit": null,      "basePrice": 1000 }
+  }
+}

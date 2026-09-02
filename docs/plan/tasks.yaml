@@ -190,7 +190,7 @@ tasks:
   - id: T-M2-01
     milestone: M2
     title: Kartenschema und Validator
-    status: todo
+    status: done
     deps: [T-M1-04]
     requirements: [R-MAP-02, R-MAP-03]
     files: [packages/core/src/map/schema.ts, packages/core/src/map/validate.ts]
@@ -200,7 +200,7 @@ tasks:
   - id: T-M2-02
     milestone: M2
     title: Testkarte Kleine Welt
-    status: todo
+    status: done
     deps: [T-M2-01]
     requirements: [R-MAP-01, R-MAP-03]
     files: [data/maps/testworld.json, packages/testkit/src/maps.ts]
@@ -210,7 +210,7 @@ tasks:
   - id: T-M2-03
     milestone: M2
     title: Wegfindung
-    status: todo
+    status: done
     deps: [T-M2-02]
     requirements: [R-UNIT-04, R-MAP-01]
     files: [packages/core/src/map/pathfinding.ts]
@@ -220,7 +220,7 @@ tasks:
   - id: T-M2-04
     milestone: M2
     title: Szenario-Lader im testkit
-    status: todo
+    status: done
     deps: [T-M2-02]
     requirements: [R-ARCH-01]
     constraints: [C-08]

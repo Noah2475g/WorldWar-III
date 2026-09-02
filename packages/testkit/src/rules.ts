@@ -1,39 +1,38 @@
-import type { Rules } from '@worldwar/core/rules/types'
+import { parseRules, type Rules } from '@worldwar/core'
+import aiRaw from '../../../data/rules/default/ai.json' with { type: 'json' }
+import buildingsRaw from '../../../data/rules/default/buildings.json' with { type: 'json' }
+import constantsRaw from '../../../data/rules/default/constants.json' with { type: 'json' }
+import resourcesRaw from '../../../data/rules/default/resources.json' with { type: 'json' }
+import unitsRaw from '../../../data/rules/default/units.json' with { type: 'json' }
 
 /**
- * Balancing values for tests.
+ * The real balancing data, parsed through the real loader.
  *
- * Real balancing lives in `data/rules/**` (design D-08) — this set exists so core
- * tests do not have to load files, and it uses the documented values from the
- * mechanics reference wherever they are known.
+ * Tests deliberately run against the shipped rules rather than a hand-made fixture:
+ * if a balancing file breaks, the tests should notice — that is half the point of
+ * keeping balance in data (design D-08).
  */
-export const TEST_RULES: Rules = {
-  id: 'test',
-  startResources: {
-    food: 20_000_000,
-    wood: 20_000_000,
-    iron: 10_000_000,
-    coal: 10_000_000,
-    oil: 5_000_000,
-    rare: 2_000_000,
-    money: 50_000_000,
-  },
-  storageLimits: {
-    food: 200_000_000,
-    wood: 200_000_000,
-    iron: 200_000_000,
-    coal: 200_000_000,
-    oil: 200_000_000,
-    rare: 200_000_000,
-    // Money is deliberately uncapped (D6.8).
-    money: Number.MAX_SAFE_INTEGER,
-  },
-  constants: {
-    ticksPerDay: 24,
-    startMorale: 70_000, // belegt: 70
-    capturedMorale: 25_000, // belegt: 25
-    baseTargetMorale: 102_000, // belegt: 102
-    moraleDriftDivisor: 7, // belegt: one seventh of the gap per day
-    productionMoraleFloor: 200, // belegt: 0.20 + 0.80 * morale
-  },
+export function defaultRules(): Rules {
+  return parseRules(
+    {
+      constants: constantsRaw,
+      resources: resourcesRaw,
+      buildings: buildingsRaw,
+      units: unitsRaw,
+      ai: aiRaw,
+    },
+    'default',
+  )
+}
+
+/** Convenience for tests that just need a rule set. */
+export const TEST_RULES: Rules = defaultRules()
+
+/** The raw files, for tests that check the loader's own error handling. */
+export const RAW_DEFAULT_RULES = {
+  constants: constantsRaw,
+  resources: resourcesRaw,
+  buildings: buildingsRaw,
+  units: unitsRaw,
+  ai: aiRaw,
 }

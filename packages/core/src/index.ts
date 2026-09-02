@@ -1,6 +1,7 @@
 export * from './state/types'
 export * from './state/create'
 export * from './rules/types'
+export * from './rules/load'
 export * from './events/types'
 export * from './events/emit'
 export * from './commands/types'

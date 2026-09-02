@@ -1,0 +1,71 @@
+{
+  "_comment": "Grundkonstanten. 'belegt' = aus docs/research/SUPREMACY-MECHANICS.md, sonst geschaetzt. Alle Mengen in Festkomma (1000 = 1,0).",
+
+  "ticksPerDay": 24,
+
+  "startMorale": 70000,
+  "capturedMorale": 25000,
+  "baseTargetMorale": 102000,
+  "moraleDriftDivisor": 7,
+  "productionMoraleFloor": 200,
+
+  "revoltThreshold": 33000,
+  "revoltChancePerPointPermille": 30,
+
+  "capitalProximityBonus": 20000,
+  "capitalProximityRange": 8,
+  "ownNeighborBonus": 2000,
+  "ownNeighborBonusMax": 10000,
+  "enemyNeighborPenalty": 3000,
+  "enemyNeighborPenaltyMax": 15000,
+  "foodSurplusBonus": 10000,
+  "foodShortagePenalty": 20000,
+  "occupationPenalty": 25000,
+  "occupationPenaltyDays": 14,
+  "capitalLossDays": 14,
+  "capitalLossProductionFactor": 750,
+  "capitalLossMoralePenalty": 10000,
+
+  "battleRate": 80,
+  "minDamage": 100,
+  "defenceCap": 4000,
+  "battleMoraleLoss": 1000,
+  "combatSpreadPermille": 100,
+  "stackFullContribution": 20,
+  "stackZeroContribution": 50,
+  "healthDamageFloor": 500,
+  "deployDelayTicks": 2,
+  "deployDelayFactor": 500,
+
+  "retreatLossPermille": 100,
+  "retreatCooldownTicks": 24,
+  "bombardFactor": 500,
+
+  "regenPermillePerTick": 5,
+  "regenShortageFactor": 500,
+
+  "foreignTerritoryFactor": 700,
+  "hostileTerritoryFactor": 350,
+  "railwayFactor": 2500,
+  "embarkTicks": 3,
+  "disembarkTicks": 2,
+  "hostileCoastFactor": 1500,
+
+  "maxBuildSlotsCity": 2,
+  "maxBuildSlotsRural": 1,
+  "capitalMoveCooldownDays": 30,
+
+  "warDeclarationDelayTicks": 12,
+  "surpriseAttackReputationLoss": 200,
+  "truceDurationDays": 5,
+
+  "marketElasticity": 50,
+  "marketReversionPermille": 50,
+  "marketMinPrice": 200,
+  "marketMaxPrice": 5000,
+
+  "scoreProvince": 10,
+  "scorePopulationPer1000": 1,
+  "scoreBuildingLevel": 2,
+  "scoreUnit": 1
+}
