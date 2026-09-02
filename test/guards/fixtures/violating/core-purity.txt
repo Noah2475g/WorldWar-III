@@ -1,0 +1,5 @@
+export function rollDamage(base: number): number {
+  const jitter = Math.random()
+  const stamp = Date.now()
+  return base + jitter + stamp
+}

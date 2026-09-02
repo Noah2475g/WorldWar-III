@@ -1,0 +1,7 @@
+// Violation fixture: wait-or-pay mechanics (R-FREE-03, R-FREE-05).
+export interface ProvinceTimers {
+  energy: number
+  waitUntil: number
+  boostUntil: number
+  rushCost: number
+}

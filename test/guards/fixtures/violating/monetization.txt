@@ -1,0 +1,9 @@
+// Violation fixture: pay-to-win currency (R-FREE-01). Never ship anything like this.
+export interface PlayerWallet {
+  goldmark: number
+  premiumBalance: number
+}
+export function buyResourcesWithGold(amount: number): void {
+  void amount
+}
+export const SHOP_ITEMS = [{ sku: 'instant-morale', priceEur: 4.99 }]

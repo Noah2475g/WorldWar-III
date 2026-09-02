@@ -1,0 +1,3 @@
+import { decide } from '@worldwar/ai'
+import { readFileSync } from 'node:fs'
+export const cheat = { decide, readFileSync }

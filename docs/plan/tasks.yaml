@@ -1,0 +1,898 @@
+# WorldWar — maschinenlesbarer Aufgabenplan (Fassung 2, nach Architektur- und Plan-Review)
+# Zwilling zu 03-TASKS.md (gleiche IDs). Ausführungsregeln: AGENT-EXECUTION.md
+# Die Konsistenz beider Dateien prüft T-M0-05 automatisch.
+#
+# status:       todo | in_progress | done | blocked
+# gate: true => Haltepunkt, benötigt Freigabe durch Noah
+# requirements: nur R-IDs | constraints: nur C-IDs | design: nur D-IDs | acceptance: Abnahmekriterien
+
+meta:
+  project: WorldWar
+  version: V1
+  plan_version: 2
+  requirements: docs/plan/01-REQUIREMENTS.md
+  design: docs/plan/02-DESIGN.md
+  tasks_human: docs/plan/03-TASKS.md
+  protocol: docs/plan/AGENT-EXECUTION.md
+  research: docs/research/SUPREMACY-MECHANICS.md
+  verify_command: pnpm verify
+  slow_command: pnpm test:slow
+  language: { docs: de, code: en }
+
+milestones:
+  - { id: M0,  title: Fundament }
+  - { id: M1,  title: Simulationskern und Determinismus }
+  - { id: M2,  title: Karte, Graph, Wege }
+  - { id: M3,  title: Wirtschaft, Bau, Rekrutierung }
+  - { id: M4,  title: Bewegung, Kampf, Durchstich }
+  - { id: M5,  title: Moral, Eroberung, Sieg }
+  - { id: M6,  title: Diplomatie und Sichtbarkeit }
+  - { id: M7,  title: Computergegner }
+  - { id: M8,  title: Persistenz, Headless-Runner, Langlauf }
+  - { id: M9,  title: Weltkarte }
+  - { id: M10, title: Oberflaeche }
+  - { id: M11, title: Look, Ton, Verpackung }
+  - { id: M12, title: Balancing und Abnahme }
+
+tasks:
+  - id: T-M0-01
+    milestone: M0
+    title: Repository und Werkzeugkette aufsetzen
+    status: done
+    deps: []
+    constraints: [C-01, C-08]
+    files: [package.json, pnpm-workspace.yaml, tsconfig.base.json, .eslintrc.cjs, vitest.workspace.ts, .gitignore, docs/plan/BALANCING.md]
+    tests: [test/smoke.test.ts]
+    dod: "pnpm install && pnpm test gruen; pnpm typecheck fehlerfrei; Journaldateien PROGRESS/DECISIONS/PROBLEME/BALANCING vorhanden"
+
+  - id: T-M0-02
+    milestone: M0
+    title: Skripte und Pruefkette
+    status: done
+    deps: [T-M0-01]
+    requirements: [R-ARCH-05]
+    design: [D-01]
+    files: [package.json, scripts/verify.mjs]
+    tests: [test/scripts.test.ts]
+    dod: "verify = lint + typecheck + test(ohne @slow) + guards; Abdeckungsschwellen nur fuer Pakete mit Quellcode; coverage:requirements NICHT Teil von verify"
+
+  - id: T-M0-03
+    milestone: M0
+    title: Guard-Tests inkl. Festkomma-, Zeit- und Monetarisierungsschutz
+    status: done
+    deps: [T-M0-01]
+    requirements: [R-ARCH-01, R-FREE-01, R-FREE-03, R-FREE-04, R-FREE-05, R-TIME-05]
+    design: [D-01, D-02]
+    files: []
+    tests:
+      - test/guards/no-monetization.test.ts
+      - test/guards/no-network.test.ts
+      - test/guards/core-purity.test.ts
+      - test/guards/import-boundaries.test.ts
+      - test/guards/no-time-pressure.test.ts
+      - test/guards/no-realtime.test.ts
+      - test/guards/fixed-arithmetic.test.ts
+    dod: "jeder Guard hat eine dauerhafte Verstoss-Fixture unter test/guards/fixtures/violating/ und prueft beide Richtungen"
+
+  - id: T-M0-04
+    milestone: M0
+    title: Anforderungs-Abgleich
+    status: done
+    deps: [T-M0-02]
+    requirements: [R-ARCH-05]
+    files: [scripts/requirements-coverage.mjs]
+    tests: [test/requirements.test.ts]
+    dod: "liest scope-Block aus 01-REQUIREMENTS 2.14; prueft Test je V1-ID inkl. mindestens einer Zusicherung; eigenes Tor, erst in T-M12-03 verpflichtend gruen"
+
+  - id: T-M0-05
+    milestone: M0
+    title: Plan-Konsistenz-Test
+    status: done
+    deps: [T-M0-01]
+    requirements: [R-ARCH-05]
+    files: []
+    tests: [test/plan-consistency.test.ts]
+    dod: "03-TASKS.md und tasks.yaml stimmen in IDs, deps, files und requirements ueberein; keine Zyklen; keine unbekannten deps"
+
+  - id: T-M1-01
+    milestone: M1
+    title: Festkomma-Arithmetik
+    status: todo
+    deps: [T-M0-01]
+    requirements: [R-ARCH-01]
+    design: [D-02]
+    files: [packages/shared/src/fixed.ts]
+    tests: [packages/shared/src/fixed.test.ts]
+    dod: "Rundung halb vom Nullpunkt weg; Ueberlauf und Division durch 0 werfen; mulFixed nicht assoziativ dokumentiert; 100% Zweigabdeckung"
+
+  - id: T-M1-02
+    milestone: M1
+    title: Geseedeter Zufallsgenerator
+    status: todo
+    deps: [T-M1-01]
+    requirements: [R-ARCH-01]
+    files: [packages/shared/src/rng.ts]
+    tests: [packages/shared/src/rng.test.ts]
+    dod: "gleiche Seeds gleiche Folge; Golden-Vektor fuer Seed 42"
+
+  - id: T-M1-03
+    milestone: M1
+    title: Zustands-Hash ueber kanonische Projektion
+    status: todo
+    deps: [T-M1-01]
+    requirements: [R-ARCH-01, R-GAME-03]
+    files: [packages/shared/src/hash.ts]
+    tests: [packages/shared/src/hash.test.ts]
+    dod: "eventLog geht NICHT in den Hash ein; Schluesselreihenfolge irrelevant; geaendertes Feld aendert den Hash"
+
+  - id: T-M1-04
+    milestone: M1
+    title: Zustandstypen und Anfangszustand
+    status: todo
+    deps: [T-M1-02, T-M1-03]
+    requirements: [R-ARCH-01, R-GAME-01]
+    design: [D-04, D-13]
+    files: [packages/core/src/state/types.ts, packages/core/src/state/create.ts]
+    tests: [packages/core/src/state/create.test.ts]
+    dod: "UnitStack mit hpTotal statt count; state.ai, Player.intel, Province.productionRemainder von Anfang an vorhanden; JSON-faehig"
+
+  - id: T-M1-05
+    milestone: M1
+    title: Tick-Pipeline als Geruest
+    status: todo
+    deps: [T-M1-04]
+    requirements: [R-ARCH-01, R-TIME-01]
+    files: [packages/core/src/step.ts, packages/core/src/phases/]
+    tests: [packages/core/test/pipeline.test.ts]
+    dod: "12 echte Phasen in der Reihenfolge aus D3; dailyTick nur bei tick%24==0; step(state, commands, ctx)"
+
+  - id: T-M1-06
+    milestone: M1
+    title: Determinismus-Nachweis
+    status: todo
+    deps: [T-M1-05]
+    requirements: [R-ARCH-01, R-ARCH-03]
+    files: [packages/core/test/golden/]
+    tests: [packages/core/test/determinism.test.ts]
+    dod: "identische Hash-Folge ueber 500 Ticks; Golden-Master schlaegt bei Regelaenderung an"
+
+  - id: T-M1-07
+    milestone: M1
+    title: Kommandogeruest und Validierung
+    status: todo
+    deps: [T-M1-08]
+    requirements: [R-ARCH-02]
+    files: [packages/core/src/commands/]
+    tests: [packages/core/src/commands/validate.test.ts]
+    dod: "ungueltiges Kommando aendert Zustand nicht; canApply und applyCommand teilen die Prueflogik"
+
+  - id: T-M1-08
+    milestone: M1
+    title: Ereignistypen und Ereigniserzeugung
+    status: todo
+    deps: [T-M1-05]
+    requirements: [R-GAME-06]
+    design: [D-07]
+    files: [packages/core/src/events/types.ts, packages/core/src/events/emit.ts]
+    tests: [packages/core/src/events/types.test.ts]
+    dod: "Union erschoepfend; jedes Ereignis JSON-faehig mit tick, type und betroffenen IDs"
+
+  - id: T-M1-09
+    milestone: M1
+    title: Kern-Uhr runTicks und fastForward
+    status: todo
+    deps: [T-M1-08]
+    requirements: [R-TIME-01, R-TIME-03, R-TIME-05]
+    files: [packages/core/src/clock.ts]
+    tests: [packages/core/src/clock.test.ts]
+    dod: "runTicks unabhaengig von der Wanduhr; fastForward haelt bei Waechterereignis mit Grund; kein Date/performance im Kern"
+
+  - id: T-M2-01
+    milestone: M2
+    title: Kartenschema und Validator
+    status: todo
+    deps: [T-M1-04]
+    requirements: [R-MAP-02, R-MAP-03]
+    files: [packages/core/src/map/schema.ts, packages/core/src/map/validate.ts]
+    tests: [packages/core/src/map/validate.test.ts]
+    dod: "fuenf Fehlerklassen inkl. EDGE_ASYMMETRY; Kantenmodell mit distanceKm, kind, crossing"
+
+  - id: T-M2-02
+    milestone: M2
+    title: Testkarte Kleine Welt
+    status: todo
+    deps: [T-M2-01]
+    requirements: [R-MAP-01, R-MAP-03]
+    files: [data/maps/testworld.json, packages/testkit/src/maps.ts]
+    tests: [packages/testkit/src/maps.test.ts]
+    dod: "besteht Validator; jeder Gelaendetyp und eine Insel per Seeweg vorhanden"
+
+  - id: T-M2-03
+    milestone: M2
+    title: Wegfindung
+    status: todo
+    deps: [T-M2-02]
+    requirements: [R-UNIT-04, R-MAP-01]
+    files: [packages/core/src/map/pathfinding.ts]
+    tests: [packages/core/src/map/pathfinding.test.ts]
+    dod: "kuerzeste Wege korrekt; NO_PATH bei Unerreichbarkeit; stabile Sortierung bei Gleichstand"
+
+  - id: T-M2-04
+    milestone: M2
+    title: Szenario-Lader im testkit
+    status: todo
+    deps: [T-M2-02]
+    requirements: [R-ARCH-01]
+    constraints: [C-08]
+    files: [packages/testkit/src/scenario.ts, packages/core/test/scenarios/]
+    tests: [packages/testkit/src/scenario.test.ts]
+    dod: "Szenario als YAML: gegebene Lage, N Ticks, Erwartungen; unbekannte Felder werden abgelehnt"
+
+  - id: T-M3-01
+    milestone: M3
+    title: Regelwerk-Dateien und Lader
+    status: todo
+    deps: [T-M1-04]
+    requirements: [R-ECON-01, R-UNIT-01, R-PROV-02]
+    constraints: [C-09, C-10]
+    design: [D-08]
+    files: [data/rules/default/, packages/core/src/rules/load.ts]
+    tests: [packages/core/src/rules/load.test.ts]
+    dod: "Schemapruefung; jeder Einheitentyp hat Werte gegen alle Klassen; belegte Zahlen aus der Mechanik-Referenz uebernommen"
+
+  - id: T-M3-02
+    milestone: M3
+    title: Produktion
+    status: todo
+    deps: [T-M3-01, T-M2-02]
+    requirements: [R-ECON-02, R-PROV-04]
+    files: [packages/core/src/phases/production.ts]
+    tests: [packages/core/src/phases/production.test.ts]
+    dod: "Moralfaktor 0,20+0,80*Moral; Restwertuebertrag verhindert Rundungsverlust ueber lange Laeufe"
+
+  - id: T-M3-03
+    milestone: M3
+    title: Verbrauch Lagergrenzen Mangel
+    status: todo
+    deps: [T-M3-02]
+    requirements: [R-ECON-03, R-ECON-04]
+    files: [packages/core/src/phases/upkeep.ts]
+    tests: [packages/core/src/phases/upkeep.test.ts, packages/core/test/properties/nonnegative.test.ts]
+    dod: "Bestaende nie negativ; Ueberschuss verfaellt mit Ereignis; Geld ohne Lagergrenze"
+
+  - id: T-M3-04
+    milestone: M3
+    title: Gebaeude bauen
+    status: todo
+    deps: [T-M3-03]
+    requirements: [R-PROV-01, R-PROV-02]
+    files: [packages/core/src/phases/construction.ts, packages/core/src/commands/build.ts]
+    tests: [packages/core/src/phases/construction.test.ts]
+    dod: "Kosten sofort abgezogen; Bauplatzgrenze liefert QUEUE_FULL; Eigentuemerwechsel verwirft Auftrag"
+
+  - id: T-M3-05
+    milestone: M3
+    title: Einheiten rekrutieren
+    status: todo
+    deps: [T-M3-04]
+    requirements: [R-UNIT-02, R-PROV-04]
+    files: [packages/core/src/phases/recruitment.ts, packages/core/src/commands/recruit.ts]
+    tests: [packages/core/src/phases/recruitment.test.ts]
+    dod: "ohne passendes Gebaeude keine Rekrutierung; Moral verlaengert die Dauer nach Formel D6.8"
+
+  - id: T-M3-06
+    milestone: M3
+    title: Einfacher Markt
+    status: todo
+    deps: [T-M3-03]
+    requirements: [R-ECON-05, R-FREE-02]
+    files: [packages/core/src/commands/trade.ts, packages/core/src/rules/market.ts]
+    tests: [packages/core/src/rules/market.test.ts]
+    dod: "Preis zu Tickbeginn eingefroren, daher fuer alle Spieler eines Ticks identisch; Preis steigt bei Nachfrage"
+
+  - id: T-M4-01
+    milestone: M4
+    title: Armeen bilden teilen zusammenlegen
+    status: todo
+    deps: [T-M3-05]
+    requirements: [R-UNIT-03]
+    files: [packages/core/src/commands/army.ts]
+    tests: [packages/core/src/commands/army.test.ts, packages/core/test/properties/units-conserved.test.ts]
+    dod: "Trefferpunkte bleiben beim Teilen und Zusammenlegen exakt erhalten"
+
+  - id: T-M4-02
+    milestone: M4
+    title: Bewegung
+    status: todo
+    deps: [T-M4-01, T-M2-03]
+    requirements: [R-UNIT-04, R-UNIT-05]
+    files: [packages/core/src/phases/movement.ts]
+    tests: [packages/core/src/phases/movement.test.ts]
+    dod: "angezeigte Ankunft gleich tatsaechlicher Ankunft; kein Durchmarsch durch feindlich besetzte Provinzen; Bahn- und Gelaendefaktoren belegt"
+
+  - id: T-M4-03
+    milestone: M4
+    title: Kampfaufloesung
+    status: todo
+    deps: [T-M4-02]
+    requirements: [R-BAT-01, R-BAT-02, R-BAT-03, R-BAT-07]
+    files: [packages/core/src/phases/combat.ts]
+    tests: [packages/core/src/phases/combat.test.ts, packages/core/test/properties/combat-conservation.test.ts]
+    dod: "Stapel-Deckel 20-50 wirkt; kein Verpuffen gegen fehlende Klassen; Mindestschaden verhindert Endlosschlachten; Seitentausch spiegelt Ergebnis; Kampf mit drei Parteien loest sich auf"
+
+  - id: T-M4-04
+    milestone: M4
+    title: Bombardement und Rueckzug
+    status: todo
+    deps: [T-M4-03]
+    requirements: [R-BAT-05, R-BAT-06]
+    files: [packages/core/src/commands/bombard.ts, packages/core/src/phases/retreat.ts]
+    tests: [packages/core/src/commands/bombard.test.ts]
+    dod: "Bombardement ohne Gegenschaden, Reichweite bei Aufloesung erneut geprueft; Rueckzug mit Verlust, doppelter Aufmarschverzoegerung und Sperrfrist"
+
+  - id: T-M4-05
+    milestone: M4
+    title: Einheitenzustand und Regeneration
+    status: todo
+    deps: [T-M4-04]
+    requirements: [R-UNIT-07]
+    files: [packages/core/src/phases/regeneration.ts]
+    tests: [packages/core/src/phases/regeneration.test.ts]
+    dod: "Auffrischung nur in eigenem Gebiet und nicht im Kampf; bei Materialmangel halbiert"
+
+  - id: T-M4-05b
+    milestone: M4
+    title: Seetransport
+    status: todo
+    deps: [T-M4-05]
+    requirements: [R-UNIT-06]
+    files: [packages/core/src/phases/transport.ts]
+    tests: [packages/core/src/phases/transport.test.ts]
+    dod: "Kapazitaet, Ein-/Ausschiffungszeiten (belegt), Verwundbarkeit auf See, Landungsmalus; anderer Kontinent nur per Transport erreichbar"
+
+  - id: T-M4-05c
+    milestone: M4
+    title: Luftstreitkraefte als Fernwaffe
+    status: todo
+    deps: [T-M4-05b]
+    requirements: [R-UNIT-08, R-BAT-06]
+    files: [packages/core/src/phases/air.ts]
+    tests: [packages/core/src/phases/air.test.ts]
+    dod: "Wirkung nur im Umkreis des Flugplatzes; keine Eroberung; Bodenzeit nach Einsatz"
+
+  - id: T-M4-06
+    milestone: M4
+    title: Durchstich kopflose Minimalpartie
+    status: todo
+    deps: [T-M4-05c]
+    requirements: [R-ARCH-03]
+    acceptance: [AK-1]
+    files: [apps/headless/src/run.ts]
+    tests: [apps/headless/test/walkthrough.test.ts]
+    dod: "500 Ticks mit Bauen, Rekrutieren, Marschieren, Kampf und Eroberung; Endzustands-Hash als Golden-Master; alle fuenf Kernereignisse im Protokoll"
+
+  - id: T-M5-01
+    milestone: M5
+    title: Moral
+    status: todo
+    deps: [T-M4-06]
+    requirements: [R-PROV-03, R-PROV-04]
+    files: [packages/core/src/phases/morale.ts]
+    tests: [packages/core/src/phases/morale.test.ts]
+    dod: "Ziel-/Istwert mit Drift ein Siebtel je Tag (nicht je Tick); jeder Term einzeln geprueft"
+
+  - id: T-M5-02
+    milestone: M5
+    title: Eroberung und Aufstaende
+    status: todo
+    deps: [T-M5-01]
+    requirements: [R-BAT-04, R-PROV-03]
+    files: [packages/core/src/phases/occupation.ts]
+    tests: [packages/core/src/phases/occupation.test.ts]
+    dod: "Eigentuemerwechsel nur ohne Verteidiger; Aufstandsrisiko (33-Moral)*3 % je Tag; Garnison unterdrueckt"
+
+  - id: T-M5-03
+    milestone: M5
+    title: Hauptstadt Punkte Sieg Ausscheiden
+    status: todo
+    deps: [T-M5-02]
+    requirements: [R-PROV-05, R-GAME-02, R-GAME-01]
+    files: [packages/core/src/phases/scoring.ts, packages/core/src/rules/victory.ts]
+    tests: [packages/core/src/rules/victory.test.ts]
+    dod: "Punkte und Siegpruefung nur im Tageswechsel; Hauptstadtverlust mit Folgen aus D6.8; SET_CAPITAL mit Kosten und Sperrfrist"
+
+  - id: T-M5-04
+    milestone: M5
+    title: Ereignisprotokoll und Verdichtung
+    status: todo
+    deps: [T-M5-03]
+    requirements: [R-GAME-06]
+    files: [packages/core/src/events/log.ts]
+    tests: [packages/core/src/events/log.test.ts]
+    dod: "Ringpuffer verwirft aelteste; Filterung nach Art und Spieler; ab hohem Tempo werden Nicht-Alarmereignisse zu Tagesbuendeln verdichtet"
+
+  - id: T-M5-05
+    milestone: M5
+    title: Hot-Seat-Partie mit zwei menschlichen Spielern
+    status: todo
+    deps: [T-M5-03]
+    requirements: [R-ARCH-04]
+    files: []
+    tests: [packages/core/test/hotseat.test.ts]
+    dod: "200 Ticks mit zwei menschlichen Spielern ohne Sonderpfad im Kern; Hash reproduzierbar"
+
+  - id: T-M5-06
+    milestone: M5
+    title: Kennzahlenbericht nach Kernregeln
+    status: todo
+    deps: [T-M5-05, T-M4-06]
+    requirements: [R-ECON-03]
+    design: [D-08]
+    files: [docs/reports/m5-balance.md]
+    tests: [packages/core/test/balance/m5.test.ts]
+    dod: "200 Spieltage gemessen; Test schlaegt fehl, wenn eine Ressource unbegrenzt waechst"
+
+  - id: T-M6-01
+    milestone: M6
+    title: Diplomatische Zustaende
+    status: todo
+    deps: [T-M5-03]
+    requirements: [R-DIP-01, R-DIP-02]
+    files: [packages/core/src/phases/diplomacy.ts, packages/core/src/commands/diplomacy.ts]
+    tests: [packages/core/src/phases/diplomacy.test.ts]
+    dod: "Kriegserklaerung erst nach Vorlaufzeit; Ansehensverlust bei Ueberfall; Waffenstillstand laeuft ab"
+
+  - id: T-M6-02
+    milestone: M6
+    title: Oeffentliche Sicht Nebel des Krieges
+    status: todo
+    deps: [T-M6-01]
+    requirements: [R-DIP-04, R-AI-01]
+    files: [packages/core/src/view/publicView.ts]
+    tests: [packages/core/src/view/publicView.test.ts]
+    dod: "keine unerlaubten Felder in der Sicht; Rueckgabetyp ist nicht GameState"
+
+  - id: T-M6-03
+    milestone: M6
+    title: Aufklaerungswissen
+    status: todo
+    deps: [T-M6-02]
+    requirements: [R-DIP-04]
+    files: [packages/core/src/view/intel.ts]
+    tests: [packages/core/src/view/intel.test.ts]
+    dod: "letzter bekannter Stand mit Zeitstempel bleibt erhalten und ueberlebt Speichern und Laden"
+
+  - id: T-M7-00
+    milestone: M7
+    title: KI-Gedaechtnis im Spielzustand
+    status: todo
+    deps: [T-M6-03]
+    requirements: [R-AI-07, R-GAME-03]
+    design: [D-13]
+    files: [packages/ai/src/memory.ts]
+    tests: [packages/ai/src/memory.test.ts]
+    dod: "decide gibt neues Gedaechtnis zurueck; nach Speichern/Laden identische Entscheidungen ueber 50 Ticks"
+
+  - id: T-M7-01
+    milestone: M7
+    title: KI-Grundgeruest und Erklaerbarkeit
+    status: todo
+    deps: [T-M7-00]
+    requirements: [R-AI-01, R-AI-05]
+    design: [D-10]
+    files: [packages/ai/src/decide.ts, packages/ai/src/explain.ts]
+    tests: [packages/ai/src/decide.test.ts]
+    dod: "jeder KI-Befehl besteht canApply; Debug-Ausgabe nennt Ziel, Nutzen und Alternative"
+
+  - id: T-M7-02
+    milestone: M7
+    title: Wirtschafts- und Bau-KI
+    status: todo
+    deps: [T-M7-01]
+    requirements: [R-AI-03]
+    files: [packages/ai/src/economy.ts]
+    tests: [packages/ai/src/economy.test.ts]
+    dod: "reagiert auf Mangel; verschuldet sich nie; priorisiert Nahrung bei drohendem Mangel"
+
+  - id: T-M7-02b
+    milestone: M7
+    title: Bedrohungskarte und Kraeftevergleich
+    status: todo
+    deps: [T-M7-02]
+    requirements: [R-AI-03]
+    files: [packages/ai/src/threat.ts, packages/ai/src/strength.ts]
+    tests: [packages/ai/src/threat.test.ts]
+    dod: "jeder Nutzenterm liefert 0..1000; Kraeftevergleich erkennt aussichtslose Lage"
+
+  - id: T-M7-03
+    milestone: M7
+    title: Militaer-KI
+    status: todo
+    deps: [T-M7-02b]
+    requirements: [R-AI-03]
+    files: [packages/ai/src/military.ts, packages/ai/src/targeting.ts]
+    tests: [packages/ai/src/military.test.ts]
+    dod: "verteidigt bei Bedrohung; waehlt schwaches wertvolles Ziel; bricht aussichtslosen Angriff ab"
+
+  - id: T-M7-04
+    milestone: M7
+    title: Diplomatie-KI
+    status: todo
+    deps: [T-M7-03]
+    requirements: [R-DIP-03]
+    files: [packages/ai/src/diplomacy.ts]
+    tests: [packages/ai/src/diplomacy.test.ts]
+    dod: "nimmt vorteilhaften Frieden an; kein Zweifrontenkrieg auf Stufe leicht"
+
+  - id: T-M7-05
+    milestone: M7
+    title: Schwierigkeitsgrade und Rechenbudget
+    status: todo
+    deps: [T-M7-04]
+    requirements: [R-AI-02, R-AI-04, R-AI-06]
+    files: [packages/ai/src/difficulty.ts, docs/reports/ai-tournament.md, docs/reports/ai-bench.json]
+    tests: [packages/core/test/perf/ai.bench.ts, packages/core/test/perf/ai.budget.test.ts, packages/ai/test/tournament.test.ts]
+    dod: "KI-Anteil <= 30 % der Tickzeit als Budget-Test; Turnier @slow ueber 50 Partien zeigt schwer schlaegt leicht in >= 70 %"
+
+  - id: T-M8-00
+    milestone: M8
+    title: Speicher-Schnittstelle Tauri Node Speicher
+    status: todo
+    deps: [T-M5-04]
+    requirements: [R-GAME-03, R-GAME-04]
+    constraints: [C-02]
+    files: [packages/core/src/persistence/StoragePort.ts, apps/desktop/src/storage/TauriStorage.ts, apps/headless/src/storage/NodeStorage.ts, packages/testkit/src/MemoryStorage.ts]
+    tests: [packages/core/src/persistence/StoragePort.test.ts]
+    dod: "dieselbe Vertragstestreihe laeuft gegen alle drei Umsetzungen"
+
+  - id: T-M8-01
+    milestone: M8
+    title: Speichern und Laden
+    status: todo
+    deps: [T-M8-00]
+    requirements: [R-GAME-03, R-GAME-05]
+    files: [packages/core/src/persistence/save.ts, packages/core/src/persistence/load.ts, packages/core/src/persistence/migrations/]
+    tests: [packages/core/src/persistence/save.test.ts]
+    dod: "Hash-Gleichheit nach Speichern/Laden; unbekannte Version abgelehnt; Kommandolog in eigener .replay-Datei"
+
+  - id: T-M8-02
+    milestone: M8
+    title: Headless-Runner ausbauen
+    status: todo
+    deps: [T-M8-01, T-M7-05]
+    requirements: [R-ARCH-03, R-AI-06]
+    files: [apps/headless/src/tournament.ts, apps/headless/src/replay.ts, apps/headless/src/bench.ts]
+    tests: [apps/headless/test/replay.test.ts]
+    dod: "Replay aus Seed und Kommandolog reproduziert den Endzustand; Turnier reproduzierbar"
+
+  - id: T-M8-03
+    milestone: M8
+    title: Langlauf und Performancebudget
+    status: todo
+    deps: [T-M8-02]
+    requirements: [R-ARCH-06]
+    acceptance: [AK-6]
+    files: [docs/reports/performance.md, docs/reports/tick-bench.json]
+    tests: [packages/core/test/perf/tick.bench.ts, packages/core/test/perf/tick.budget.test.ts]
+    dod: "Tick-Median < 0,5 ms und p99 < 2 ms; 1000 Spieltage @slow ohne Fehler und ohne unbegrenztes Speicherwachstum"
+
+  - id: T-M9-01
+    milestone: M9
+    title: Geodaten beschaffen und aufbereiten
+    status: todo
+    gate: true
+    gate_reason: "Externer Download von Geodaten - Freigabe durch Noah einholen"
+    deps: [T-M2-01]
+    requirements: [R-MAP-04, R-ASSET-02]
+    files: [packages/mapgen/src/, docs/ASSETS.md]
+    tests: [packages/mapgen/src/project.test.ts]
+    dod: "Lizenzeintrag vorhanden; geodaetische Entfernungen getrennt von der Bilddarstellung"
+
+  - id: T-M9-00
+    milestone: M9
+    title: Provinzliste kuratieren
+    status: todo
+    deps: [T-M9-01]
+    requirements: [R-MAP-01, R-MAP-03]
+    constraints: [C-03]
+    files: [data/maps/world-provinces.csv, data/maps/world-sealinks.csv]
+    tests: [packages/mapgen/src/curation.test.ts]
+    dod: "150-250 kuratierte Provinzen; jede Verwaltungseinheit zugeordnet oder ausgeschlossen; Seerouten verbinden Kuestenprovinzen. Aufwand 1-2 Tage Handarbeit"
+
+  - id: T-M9-02a
+    milestone: M9
+    title: Provinzauswahl und Zusammenfassung
+    status: todo
+    deps: [T-M9-00]
+    requirements: [R-MAP-01, R-MAP-03]
+    files: [packages/mapgen/src/provinces.ts, data/mapgen/merge-rules.json]
+    tests: [packages/mapgen/src/provinces.test.ts]
+    dod: "Zusammenfuehrung ueber die Topologie; Vereinfachung erst nach dem Verschmelzen"
+
+  - id: T-M9-02b
+    milestone: M9
+    title: Nachbarschaft und Kanten
+    status: todo
+    deps: [T-M9-02a]
+    requirements: [R-MAP-01, R-MAP-02]
+    files: [packages/mapgen/src/adjacency.ts]
+    tests: [packages/mapgen/src/adjacency.test.ts]
+    dod: "Nachbarschaft aus geteilten Boegen; symmetrisch; distanceKm geodaetisch; Enklaven erkannt"
+
+  - id: T-M9-02c
+    milestone: M9
+    title: Seewege und Datumsgrenze
+    status: todo
+    deps: [T-M9-02b]
+    requirements: [R-MAP-01, R-UNIT-06]
+    files: [packages/mapgen/src/sealinks.ts, data/maps/world.json]
+    tests: [packages/mapgen/src/sealinks.test.ts]
+    dod: "keine Seewege ueber Land; Datumsgrenze korrekt; Meerengen markiert; Land-und-See-Graph zusammenhaengend"
+
+  - id: T-M9-03
+    milestone: M9
+    title: Anreicherung und Startaufstellung
+    status: todo
+    deps: [T-M9-02c]
+    requirements: [R-MAP-03, R-GAME-01]
+    files: [packages/mapgen/src/enrich.ts, docs/reports/map.md]
+    tests: [packages/mapgen/src/enrich.test.ts]
+    dod: "Verteilungen im Zielkorridor; Startwert je Nation weicht < 15 % vom Median ab"
+
+  - id: T-M9-04
+    milestone: M9
+    title: Kernregeln auf der Weltkarte
+    status: todo
+    deps: [T-M9-03, T-M8-03]
+    requirements: [R-ARCH-06]
+    files: []
+    tests: [packages/core/test/perf/worldmap.bench.ts, packages/core/test/perf/worldmap.budget.test.ts]
+    dod: "Langlauf @slow auf der echten Weltkarte haelt das Budget und laeuft 1000 Spieltage fehlerfrei"
+
+  - id: T-M10-01
+    milestone: M10
+    title: Design-Gate Mockup vorlegen
+    status: todo
+    gate: true
+    gate_reason: "UI-Mockup muss von Noah freigegeben werden, bevor die Oberflaeche gebaut wird (R-UI-01)"
+    deps: [T-M8-03]
+    requirements: [R-UI-01, R-UI-04]
+    files: [docs/design/ui-mockup.html, docs/design/tokens.md]
+    tests: []
+    dod: "Noah hat freigegeben"
+
+  - id: T-M10-01b
+    milestone: M10
+    title: Design-Tokens und Kontrastpruefung
+    status: todo
+    deps: [T-M10-01]
+    requirements: [R-UI-02]
+    files: [apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "WCAG-Kontrast >= 4,5:1 fuer jedes Farbpaar; keine Farbliterale in Komponenten"
+
+  - id: T-M10-02
+    milestone: M10
+    title: Simulations-Host im Worker
+    status: todo
+    deps: [T-M8-01]
+    requirements: [R-TIME-02, R-TIME-03, R-DIP-04]
+    design: [D-03, D-12]
+    files: [apps/desktop/src/sim/SimHost.ts, apps/desktop/src/sim/worker.ts]
+    tests: [apps/desktop/src/sim/SimHost.test.ts]
+    dod: "Pause fuehrt keinen Tick aus; Rate im Toleranzband bis 100; Rueckstand auf 2 Ticks gedeckelt; Worker sendet nur publicView; Vorspulen erreicht >= 500 h/s"
+
+  - id: T-M10-03a
+    milestone: M10
+    title: Kartenansicht Zeichnen und Auswahl
+    status: todo
+    deps: [T-M10-01b, T-M10-02]
+    requirements: [R-MAP-05, R-UI-03]
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts]
+    tests: [apps/desktop/src/map/picking.test.ts]
+    dod: "Trefferpruefung korrekt; Ebenenreihenfolge wie D11; Provinzflaechen zwischengespeichert"
+
+  - id: T-M10-03b
+    milestone: M10
+    title: Kartenmodi und Bildratenbudget
+    status: todo
+    deps: [T-M10-03a]
+    requirements: [R-MAP-06, R-ARCH-06]
+    files: [apps/desktop/src/map/modes.ts]
+    tests: [apps/desktop/e2e/map-perf.spec.ts]
+    dod: "vier Kartenmodi; 95. Perzentil der Bildzeit <= 16,7 ms bei 200 Provinzen"
+
+  - id: T-M10-04
+    milestone: M10
+    title: Kopfleiste Ressourcen Zeit Geschwindigkeit
+    status: todo
+    deps: [T-M10-03b]
+    requirements: [R-TIME-02, R-TIME-04, R-ECON-06, R-UI-06]
+    files: [apps/desktop/src/ui/TopBar.tsx, apps/desktop/src/ui/SpeedControl.tsx]
+    tests: [apps/desktop/src/ui/SpeedControl.test.tsx]
+    dod: "Regler und Tastaturkuerzel wirken; Vorspulen-Menue vollstaendig; Bilanzanzeige stimmt mit der Simulation ueberein"
+
+  - id: T-M10-05
+    milestone: M10
+    title: Provinz- und Armeepanel
+    status: todo
+    deps: [T-M10-04]
+    requirements: [R-UI-03, R-UI-05, R-PROV-01, R-UNIT-02, R-UNIT-03, R-UNIT-04]
+    files: [apps/desktop/src/ui/ProvincePanel.tsx, apps/desktop/src/ui/ArmyPanel.tsx]
+    tests: [apps/desktop/src/ui/ProvincePanel.test.tsx]
+    dod: "nicht bezahlbare Aktionen ausgegraut mit Grund; Tooltip nennt Kosten und Dauer; Marschbefehl zeigt Ankunftszeit vorab"
+
+  - id: T-M10-06
+    milestone: M10
+    title: Ereignisleiste Kampfberichte Diplomatieuebersicht
+    status: todo
+    deps: [T-M10-05]
+    requirements: [R-GAME-06, R-BAT-07, R-DIP-01]
+    files: [apps/desktop/src/ui/EventLog.tsx, apps/desktop/src/ui/BattleReport.tsx, apps/desktop/src/ui/DiplomacyPanel.tsx]
+    tests: [apps/desktop/src/ui/EventLog.test.tsx]
+    dod: "Klick auf Ereignis springt zur Provinz; Kampfbericht zeigt beide Seiten"
+
+  - id: T-M10-07a
+    milestone: M10
+    title: Partie erstellen
+    status: todo
+    deps: [T-M10-06]
+    requirements: [R-GAME-01, R-GAME-02, R-AI-02]
+    files: [apps/desktop/src/ui/NewGame.tsx]
+    tests: [apps/desktop/src/ui/NewGame.test.tsx]
+    dod: "alle Parameter landen im Anfangszustand; KI-Bonus offen ausgewiesen; gleicher Seed gleiche Startaufstellung"
+
+  - id: T-M10-07b
+    milestone: M10
+    title: Speichern Laden Autospeichern
+    status: todo
+    deps: [T-M10-07a, T-M8-00]
+    requirements: [R-GAME-03, R-GAME-04]
+    files: [apps/desktop/src/ui/SaveLoad.tsx]
+    tests: [apps/desktop/e2e/game-flow.spec.ts]
+    dod: "Hash bleibt erhalten; Rotation ueber fuenf Staende mit Mindestabstand in Realzeit; beschaedigter Stand wird verstaendlich abgelehnt"
+
+  - id: T-M10-08
+    milestone: M10
+    title: Fehlermeldungen und Rueckmeldung
+    status: todo
+    deps: [T-M10-05]
+    requirements: [R-ARCH-02, R-GAME-05, R-UI-07]
+    files: [apps/desktop/src/ui/errors.ts, apps/desktop/src/i18n/de.json]
+    tests: [apps/desktop/src/ui/errors.test.ts]
+    dod: "jeder CommandError hat einen deutschen Text; abgelehnte Aktion nennt den Grund"
+
+  - id: T-M10-09
+    milestone: M10
+    title: Einstellungen
+    status: todo
+    deps: [T-M10-07b]
+    requirements: [R-GAME-04, R-UI-06, R-FREE-05]
+    files: [apps/desktop/src/ui/Settings.tsx]
+    tests: [apps/desktop/src/ui/Settings.test.tsx]
+    dod: "Autospeicher-Intervall, Ton, Tempogrenze und Debug schaltbar; Einstellungen ueberleben Neustart"
+
+  - id: T-M10-10
+    milestone: M10
+    title: Debug- und KI-Erklaerungsansicht
+    status: todo
+    deps: [T-M10-09]
+    requirements: [R-AI-05, R-AI-02]
+    files: [apps/desktop/src/ui/DebugPanel.tsx]
+    tests: [apps/desktop/src/ui/DebugPanel.test.tsx]
+    dod: "zeigt Ziel, Nutzen, Alternativen, Kommandolog und Hash je Tick; im Normalmodus unsichtbar"
+
+  - id: T-M10-11
+    milestone: M10
+    title: Kartenauswahl
+    status: todo
+    deps: [T-M10-07a]
+    requirements: [R-GAME-01, R-MAP-02]
+    constraints: [C-03]
+    files: [apps/desktop/src/ui/MapSelect.tsx, packages/core/src/map/registry.ts]
+    tests: [apps/desktop/src/ui/MapSelect.test.tsx]
+    dod: "Register listet alle Karten; ungueltige Karte wird abgelehnt statt Absturz"
+
+  - id: T-M10-12
+    milestone: M10
+    title: Bedienbarkeit ohne Maus und Zugaenglichkeit
+    status: todo
+    deps: [T-M10-10, T-M10-11]
+    requirements: [R-UI-02, R-UI-05, R-UI-06]
+    files: [apps/desktop/src/ui/focus.ts]
+    tests: [apps/desktop/e2e/a11y.spec.ts]
+    dod: "jede Aktion per Tastatur erreichbar; sichtbarer Fokusring; Schriftgroesse einstellbar; Zugaenglichkeitspruefung ohne kritische Verstoesse"
+
+  - id: T-M11-01
+    milestone: M11
+    title: Icons und Kartengrafik
+    status: todo
+    deps: [T-M10-12]
+    requirements: [R-UI-04, R-ASSET-01, R-ASSET-02]
+    files: [apps/desktop/src/assets/, docs/ASSETS.md]
+    tests: [test/guards/assets-licensed.test.ts]
+    dod: "jedes Asset mit Lizenzeintrag; Icon-Satz vollstaendig"
+
+  - id: T-M11-02
+    milestone: M11
+    title: Animationen und Ton
+    status: todo
+    deps: [T-M11-01]
+    requirements: [R-UI-04]
+    files: [apps/desktop/src/fx/, apps/desktop/src/audio/]
+    tests: [apps/desktop/src/fx/timelapse.test.ts]
+    dod: "Ton abschaltbar; Animationen laufen im Zeitraffer nicht auf"
+
+  - id: T-M11-03
+    milestone: M11
+    title: Tauri-Verpackung
+    status: todo
+    deps: [T-M11-02]
+    requirements: [R-FREE-04]
+    constraints: [C-02]
+    files: [apps/desktop/src-tauri/]
+    tests: [test/guards/tauri-permissions.test.ts]
+    dod: "pnpm tauri:build erzeugt startfaehiges Programm; kein Netzwerkzugriff moeglich"
+
+  - id: T-M11-04
+    milestone: M11
+    title: Lokalisierung
+    status: todo
+    deps: [T-M11-02]
+    requirements: [R-UI-07]
+    files: [apps/desktop/src/i18n/de.json]
+    tests: [apps/desktop/src/i18n/i18n.test.ts]
+    dod: "keine fest verdrahteten Anzeigetexte; jeder Schluessel belegt"
+
+  - id: T-M12-00
+    milestone: M12
+    title: Balancing-Werkzeug Parameterlauf
+    status: todo
+    deps: [T-M9-04, T-M7-05]
+    requirements: [R-AI-06]
+    files: [apps/headless/src/sweep.ts, docs/reports/balance-sweep.md]
+    tests: [apps/headless/test/sweep.test.ts]
+    dod: "variiert Konstanten um +-25 % und meldet, welche den Partieausgang kippen"
+
+  - id: T-M12-01
+    milestone: M12
+    title: Balancing festschreiben
+    status: todo
+    deps: [T-M12-00]
+    requirements: [R-ECON-01, R-UNIT-01]
+    constraints: [C-10]
+    files: [docs/plan/BALANCING.md, data/rules/default/]
+    tests: [packages/core/test/balance/sanity.test.ts]
+    dod: "jede Zahl als belegt, abgeleitet oder geschaetzt markiert; keine ausartende Wirtschaft und keine unbesiegbare Strategie im Langlauf"
+
+  - id: T-M12-02
+    milestone: M12
+    title: Spielanleitung und Playtest-Vorlage
+    status: todo
+    deps: [T-M11-03]
+    acceptance: [AK-7]
+    files: [docs/PLAYTEST.md, docs/ANLEITUNG.md]
+    tests: [test/playtest-coverage.test.ts]
+    dod: "je Anforderungsbereich mindestens eine Prueffrage mit ID; Anleitung erklaert Bedienung und Geschwindigkeitsregelung"
+
+  - id: T-M12-02b
+    milestone: M12
+    title: Einstiegshilfe fuer die erste Partie
+    status: todo
+    deps: [T-M12-02]
+    requirements: [R-UI-05]
+    files: [apps/desktop/src/ui/Onboarding.tsx]
+    tests: [apps/desktop/src/ui/Onboarding.test.tsx]
+    dod: "fuenf gefuehrte Schritte, nur in der ersten Partie, abschaltbar, blockieren keine Eingabe"
+
+  - id: T-M12-03
+    milestone: M12
+    title: Abnahmelauf
+    status: todo
+    gate: true
+    gate_reason: "Playtest und Abnahme durch Noah"
+    deps: [T-M12-01, T-M12-02b]
+    acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
+    files: []
+    tests: []
+    dod: "pnpm verify, pnpm test:slow und pnpm coverage:requirements alle gruen; alle sieben Abnahmekriterien erfuellt; Noah hat abgenommen"

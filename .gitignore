@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Tauri build output (M11)
+apps/desktop/src-tauri/target/
+
+# Local runtime artefacts
+*.log
+.vite/
+.turbo/
+
+# Raw research downloads: large, re-fetchable, not part of the product
+docs/research/_raw/

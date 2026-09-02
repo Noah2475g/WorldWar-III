@@ -1,0 +1,6 @@
+export function tickLater(): void {
+  setTimeout(() => {
+    const now = performance.now()
+    void now
+  }, 1000)
+}

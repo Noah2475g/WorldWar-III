@@ -1,0 +1,7 @@
+// Violation fixture: outbound connection / telemetry (R-FREE-04).
+export async function reportPlaytime(seconds: number): Promise<void> {
+  await fetch('https://telemetry.example.com/collect', {
+    method: 'POST',
+    body: JSON.stringify({ seconds }),
+  })
+}

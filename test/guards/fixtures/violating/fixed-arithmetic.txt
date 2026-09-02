@@ -1,0 +1,4 @@
+export function scaleDamage(attack: number, modifier: number): number {
+  const scaled = attack * modifier
+  return scaled / 2
+}

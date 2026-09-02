@@ -1,0 +1,40 @@
+{
+  "name": "worldwar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Singleplayer strategy game - Supremacy-style clone. No monetization, adjustable game speed.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:slow": "vitest run --config vitest.slow.config.ts",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "coverage:requirements": "node scripts/requirements-coverage.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "verify": "node scripts/verify.mjs",
+    "build": "tsc --noEmit && echo build-ok",
+    "map:build": "node scripts/not-yet.mjs map:build T-M9-02a",
+    "sim:long": "node scripts/not-yet.mjs sim:long T-M8-02",
+    "sim:tournament": "node scripts/not-yet.mjs sim:tournament T-M8-02",
+    "bench": "node scripts/not-yet.mjs bench T-M8-03",
+    "balance:sweep": "node scripts/not-yet.mjs balance:sweep T-M12-00",
+    "dev": "node scripts/not-yet.mjs dev T-M10-03a",
+    "tauri:dev": "node scripts/not-yet.mjs tauri:dev T-M11-03",
+    "tauri:build": "node scripts/not-yet.mjs tauri:build T-M11-03"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.39.0",
+    "fast-check": "^4.4.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.1"
+  }
+}
