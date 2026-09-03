@@ -786,3 +786,113 @@ Die größte offene Lücke sind die **Kampfwerte der einzelnen Einheiten**: sie 
 geschätzt und über den Parameterlauf (`pnpm balance:sweep`, T-M12-00) abgestimmt — genau dafür
 existiert dieses Werkzeug. Die weiteren offenen Punkte stehen in Kapitel 14 der
 Mechanik-Referenz.
+
+## D18. Ausbau der Oberfläche (V1.1, R-UI-08 … R-UI-14, R-MAP-07)
+
+Die freigegebene Gestaltungsrichtung bleibt unverändert: „Lagekarte“, Direction A, freigegeben
+am 2026-09-03. **Es entsteht kein neues Design-Gate** (R-UI-01), weil keine Farbe, keine
+Schriftgröße und kein Raster geändert wird — es kommen ausschließlich Bauteile *aus* diesem
+Vokabular hinzu. Neue Farbwerte sind ausdrücklich verboten; wo eine Anzeige eine Farbe braucht,
+nimmt sie eine der elf Mächtefarben oder eines der bestehenden Kennfarbtokens.
+
+### D18.1 Das Grundmuster: eine Anzeige ist ein Datum, kein Bild
+
+Jede neue Anzeige folgt derselben Bauart, damit die Oberfläche nicht in Einzelstücke zerfällt:
+
+| Bauteil | Was es zeigt | Wo es herkommt |
+|---|---|---|
+| **Balken** (`Meter`) | ein Anteil 0…1 mit Beschriftung und Zahl | `ui/Meter.tsx` |
+| **Symbolzeile** (`IconRow`) | eine Menge gleichartiger Dinge mit Anzahl | `ui/icons.tsx` + `ui/IconRow.tsx` |
+| **Kennfarbe** | Zustand aus einer festen kleinen Menge | `TOKENS.good/warn/accent` |
+| **Erklärung** (`Explain`) | ein bis zwei Sätze zu einem Ding | `i18n/de.ts`, Schlüssel `explain.*` |
+
+Der Balken ist bewusst *kein* Diagramm: keine Achse, keine Skala, keine Legende. Er ist eine
+Zahl, die man ohne Lesen vergleichen kann. Die Zahl selbst bleibt daneben stehen — wer genau
+wissen will, wie viel, soll nicht auf Pixel zielen müssen.
+
+**Barrierefreiheit ist Teil des Bauteils, nicht ein Nachtrag:** jeder Balken trägt
+`role="meter"` mit `aria-valuenow/min/max` und einer Textfassung, jede Symbolzeile eine
+Textfassung („3 Infanterie“). Ein Symbol ohne Wort ist für einen Screenreader ein leeres Feld;
+ein Wort ohne Symbol ist genau das, was hier abgeschafft wird. Es braucht beides.
+
+### D18.2 Was die Oberfläche vom Kern zusätzlich braucht
+
+Vier Größen fehlen der Sicht (`publicView`), und jede wird dort ergänzt statt in der
+Oberfläche nachgerechnet — eine Regel, die das Projekt von Anfang an trägt (D11: keine
+Spiellogik in der UI):
+
+| Feld | Zweck | Nebelregel (R-DIP-04) |
+|---|---|---|
+| `VisibleProvince.buildQueue` | Bauvorhaben mit Fertigstellungs-Tick, für den Fortschrittsbalken | nur eigene Provinzen |
+| `VisibleProvince.recruitQueue` | dasselbe für Aushebungen | nur eigene Provinzen |
+| `VisibleProvince.moraleTarget` | wohin die Moral läuft, für den Trendpfeil | nur eigene Provinzen |
+| `PublicView.battles` | laufende Kämpfe als Provinzliste, für Kampfsymbol und Alarm | nur sichtbare Provinzen |
+
+**Nicht** in den Kern kommt die Truppenstärke je Provinz für den Kartenmodus: `view.armies`
+ist bereits nach Sichtbarkeit gefiltert, eine Summe darüber ist Darstellung und keine
+Spiellogik. Sie entsteht als reine Funktion in `map/modes.ts` — eine Kernänderung weniger,
+dasselbe Bild.
+
+Alle vier sind **optional und werden nur berechnet, wenn die Sicht mit Regeln angefordert
+wird** — genau wie `economy` es schon hält. Die KI fragt die Sicht ohne Regeln ab und zahlt
+damit nichts für Anzeigen, die sie nicht liest. Das Tickbudget der Weltkarte (2,8 ms) bleibt
+Maßstab; ein Budgettest hält es fest.
+
+### D18.3 Die Karte
+
+- **Beschriftung** ab Zoomstufe `scale ≤ 1.2` (näher als „ganze Welt“): Provinzname in
+  `--font-map`, 11 px, Farbe `onPlayer`, mit heller Aura für die Lesbarkeit auf jeder Füllung.
+  Gezeichnet wird nur, was ins Polygon passt — sonst gar nicht.
+- **Legende** unten links auf der Karte, drei bis vier Einträge aus `legendFor(mode)`,
+  das es bereits gibt und bisher niemand aufruft.
+- **Symbole:** Hauptstadt (Stern), laufender Kampf (gekreuzte Säbel, pulsierend),
+  Gebäudepunkte wie bisher, Armeekasten mit dem Symbol seiner stärksten Gattung statt
+  immer dem Infanteriekreuz.
+- **Marschweg** der ausgewählten Armee als gestrichelte Linie mit Zielpunkt — die Ebene
+  `path` gibt es in `MapCanvas` schon, sie wurde nie befüllt.
+- **Kartenmodus „Truppenstärke“** ersetzt „Bedrohung“ (R-MAP-07): Bedrohung wurde nie
+  berechnet, der Modus färbte deshalb die ganze Welt gleich grau.
+
+**Zeichenbudget:** Beschriftung und Symbole gehören zur teuren, zwischengespeicherten Ebene
+(Namen) beziehungsweise zur billigen Überlagerung (Symbole, Weg). Damit bleibt die
+Aufteilung aus D11 gültig; der Renderbenchmark bekommt einen zweiten Fall „mit Beschriftung“.
+
+### D18.4 Bewegung, sparsam
+
+Animiert wird genau dreierlei, jeweils über eine gemeinsame Uhr in der Überlagerungsebene:
+der Kampfring pulsiert, eine neue Alarmmeldung blendet einmal auf, ein fertiggestellter Bau
+lässt seinen Balken einmal aufleuchten. Nichts davon läuft dauerhaft, nichts bewegt sich
+ohne Anlass, und alles hört bei `prefers-reduced-motion: reduce` auf — die Regel dafür steht
+bereits im Stylesheet.
+
+### D18.5 Erklärungen
+
+Die Texte liegen unter `explain.*` in der Sprachdatei, ein Satz je Ding, höchstens zwei.
+Ein Test zählt sie ab: für jeden Gebäude-, Einheiten- und Rohstoffschlüssel der Regeln, für
+jeden Kartenmodus, jede Geländeart und jeden Beziehungszustand muss ein Eintrag existieren —
+fehlt einer, ist der Test rot, nicht der Spieler ratlos.
+
+Getragen werden sie von einem `<Explain>`-Bauteil: ein kleines Fragezeichen hinter dem Namen,
+das Beschreibung *und* Kennzahlen aus den Regeln zeigt (Kosten, Bauzeit, Wirkung), erreichbar
+mit Zeiger, Tastatur und Screenreader. Kein Text, der immer sichtbar ist — Noahs Vorgabe
+lautet weniger Text, nicht mehr.
+
+### D18.6 Der Stand der Partie
+
+Eine Lageübersicht (Taste `L`) als Seitenpanel: alle bekannten Mächte mit Punktebalken,
+Beziehungsfarbe und Truppenstärke, die eigene Macht hervorgehoben, darüber der Anteil am
+Siegziel als Balken. Ist die Partie entschieden, tritt ein Abschlussfenster davor, das den
+Ausgang nennt und den Verlauf in drei Zahlen zusammenfasst.
+
+### D18.7 Reihenfolge und Risiko
+
+Zuerst die Verdrahtung dessen, was schon existiert (Symbole, Ton, Einstiegshilfe,
+Autosave) — dort ist der Gewinn je Aufwand am größten und das Risiko am kleinsten. Dann die
+Sichterweiterung im Kern, weil alle Anzeigen darauf stehen. Dann Karte, Anzeigen,
+Erklärungen, Lageübersicht. Zuletzt der Feinschliff im laufenden Bild.
+
+**Das größte Risiko ist nicht die Technik, sondern die Menge:** eine Seitenleiste, in der
+jetzt Balken, Symbole und Fragezeichen zusätzlich zum Text stehen, ist nicht aufgeräumter,
+sondern voller. Deshalb ersetzt jede neue Anzeige den Text, den sie ablöst, statt neben ihm
+zu stehen — und der Prüfstein am Ende ist ein Bildvergleich vorher/nachher, nicht die
+Testzahl.

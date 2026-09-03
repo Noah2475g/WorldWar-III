@@ -148,6 +148,10 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 - **R-MAP-05 — Kartendarstellung.** Provinzen nach Eigentümer eingefärbt, Grenzen sichtbar,
   zoom- und verschiebbar; Einheiten, Gebäude und Kampfsymbole darauf angezeigt.
 - **R-MAP-06 — Kartenmodi.** Umschaltbar: politisch, Ressourcen, Moral, Truppenstärke.
+- **R-MAP-07 — Kein Modus ohne Daten.** Jeder angebotene Kartenmodus färbt aus einer Größe,
+  die das Spiel wirklich führt. Ein Modus, für den keine Daten anfallen, wird nicht angeboten.
+  - AK1: WENN ein Kartenmodus in der Auswahl steht, DANN SOLL für mindestens eine Provinz
+    einer laufenden Partie eine andere Füllung als „unbekannt“ herauskommen.
 
 ### 2.5 Wirtschaft (`R-ECON`)
 
@@ -284,6 +288,52 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   erreichbar, mit Tooltip, der Kosten und Dauer nennt.
 - **R-UI-06 — Tastaturkürzel** für Pause, Geschwindigkeit, Vorspulen, Speichern.
 - **R-UI-07 — Deutschsprachige UI**, Texte zentral in einer Sprachdatei.
+
+#### Ausbau der Oberfläche (V1.1, aufgenommen 2026-09-03)
+
+Die Oberfläche der V1 sagt die Wahrheit, aber sie sagt sie fast ausschließlich in Wörtern und
+Zahlen: Moral als „70 %“, Vorkommen als „5 Nahrung, 2 Kohle, 1 Eisen“, drei gleichlautende
+Absagesätze unter drei Knöpfen. Zugleich sind Symbolsatz, Ton und Einstiegshilfe gebaut,
+getestet — und in keiner Zeile der Anwendung eingebunden. Die folgenden Anforderungen schließen
+beides: die tote Bausubstanz und die Textlastigkeit.
+
+- **R-UI-08 — Nichts Gebautes bleibt unverdrahtet.** Jedes Modul unterhalb von
+  `apps/desktop/src` ist vom Einstiegspunkt der Anwendung aus erreichbar. Nicht mehr Benötigtes
+  wird gelöscht, nicht liegen gelassen.
+  - AK1: WENN ein Modul unter `apps/desktop/src` liegt und kein Testmodul ist, DANN SOLL es
+    über die Importkette ab `main.tsx` erreichbar sein.
+  - *Begründung: Symbolsatz (`ui/icons.tsx`), Ton (`ui/sound.ts`) und Einstiegshilfe
+    (`game/tutorial.ts`) galten über ihre Modultests als belegt, während der Spieler nichts
+    davon je zu sehen bekam. Ein Test, der nur den Baustein prüft, belegt nicht das Spiel.*
+- **R-UI-09 — Begrenzte Größen erscheinen als Anzeige, nicht als bloße Zahl.** Jede Größe mit
+  natürlicher Ober- oder Untergrenze — Moral, Kampfstärke, Bau- und Aushebefortschritt,
+  Marschfortschritt, Vorratsreichweite, Anteil am Siegziel — wird grafisch dargestellt
+  (Balken oder Ring), mit dem Zahlenwert daneben.
+  - AK1: WENN eine solche Größe angezeigt wird, DANN SOLL die Anzeige ihren Anteil am
+    Maximum als Länge tragen und den Wert zusätzlich als Text nennen.
+- **R-UI-10 — Wiederkehrende Dinge tragen ihr Symbol.** Einheitengattung, Gebäudeart,
+  Rohstoff, Beziehungszustand und Warnung erscheinen überall mit demselben Symbol aus dem
+  eigenen Satz — in Panels, Kopfleiste und auf der Karte.
+  - AK1: WENN ein Gebäude oder eine Einheit in der Oberfläche vorkommt, DANN SOLL das
+    zugehörige Symbol daneben stehen.
+- **R-UI-11 — Jedes Ding erklärt sich dort, wo es steht.** Gebäude, Einheit, Rohstoff,
+  Kartenmodus, Geländeart und Beziehungszustand tragen eine Beschreibung von höchstens zwei
+  Sätzen, erreichbar mit Zeiger und Tastatur an der Stelle, an der das Ding vorkommt.
+  Ein Nachschlagewerk als eigene Seite ist ausdrücklich nicht gemeint.
+  - AK1: WENN eines dieser Dinge in der Oberfläche vorkommt, DANN SOLL eine Beschreibung
+    dazu abrufbar sein, ohne die Ansicht zu verlassen.
+  - AK2: WENN eine Beschreibung fehlt, DANN SOLL das ein Test melden, nicht der Spieler.
+- **R-UI-12 — Die Karte trägt die Lage.** Provinznamen ab einer festgelegten Zoomstufe,
+  Legende zum jeweiligen Kartenmodus, Hauptstadt und laufende Kämpfe als Symbol, Marschweg
+  und Ziel der ausgewählten Armee als Linie.
+- **R-UI-13 — Der Stand der Partie ist ablesbar.** Punktestand aller bekannten Mächte, der
+  Anteil am Siegziel und der Ausgang der Partie sind ohne Umweg sichtbar; eine entschiedene
+  Partie sagt das von sich aus.
+- **R-UI-14 — Was Aufmerksamkeit braucht, meldet sich.** Angriff auf eigenes Gebiet,
+  Rohstoffmangel, Aufstandsgefahr und Fertigstellungen erscheinen als Meldung mit Symbol,
+  anspringbar; das Ereignisprotokoll bleibt daneben bestehen und wird filterbar (R-GAME-06).
+  - AK1: WENN eine Meldung ein Gebiet betrifft, DANN SOLL ein Klick darauf die Karte
+    dorthin führen.
 
 ### 2.13 Assets & Recht (`R-ASSET`)
 

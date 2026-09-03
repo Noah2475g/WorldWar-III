@@ -883,6 +883,247 @@ Jeder Bench schreibt sein Ergebnis nach `docs/reports/<name>.json`; ein begleite
 
 ---
 
+---
+
+## Meilenstein M13 — Eine Oberfläche, die man ansieht
+
+> **Warum es diesen Meilenstein gibt.** Die V1 zeigt alles, was sie weiß — als Wort und als
+> Zahl. Moral steht als „70 %“ da, Vorkommen als „5 Nahrung, 2 Kohle, 1 Eisen“, und unter drei
+> gesperrten Knöpfen steht dreimal derselbe Absagesatz. Gleichzeitig liegen Symbolsatz, Ton und
+> Einstiegshilfe fertig und getestet im Verzeichnis, ohne dass eine einzige Zeile der Anwendung
+> sie einbindet. M13 räumt beides auf: erst die tote Bausubstanz verdrahten, dann Text durch
+> Anzeigen ersetzen. Design: **D18**.
+>
+> **Zwei Regeln gelten in jeder Aufgabe dieses Meilensteins.** Erstens: Eine neue Anzeige
+> **ersetzt** den Text, den sie ablöst — sie tritt nicht daneben. Zweitens: Jedes Symbol und
+> jeder Balken trägt seine Textfassung für Screenreader; grafisch heißt nicht wortlos.
+
+### T-M13-01 · Symbole erreichen die Oberfläche
+- **Ziel:** Der vorhandene Symbolsatz erscheint überall dort, wo Einheiten, Gebäude, Rohstoffe
+  und Warnungen vorkommen — Kopfleiste, Provinzpanel, Armeepanel, Bau- und Aushebeknöpfe.
+- **Anforderungen:** R-UI-10, R-UI-04
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/ui/IconRow.tsx`, `apps/desktop/src/ui/icons.tsx`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Header.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/IconRow.test.tsx` — eine Symbolzeile zeigt je Eintrag
+  Symbol **und** Textfassung, fasst gleiche Einträge mit Anzahl zusammen und deckelt die
+  Zeilenlänge. `Panels.test.tsx` — jeder Bauknopf trägt das Symbol seines Gebäudes, jeder
+  Aushebeknopf das seiner Gattung; für jeden Schlüssel aus den Regeln existiert eine Zuordnung
+  (kein Gebäude ohne Symbol).
+- **Fertig wenn:** grün; im laufenden Spiel steht neben jedem Gebäude-, Einheiten- und
+  Rohstoffnamen sein Symbol.
+
+### T-M13-02 · Ton und Einstiegshilfe werden eingeschaltet
+- **Ziel:** `ui/sound.ts` hängt an den Kernereignissen (Kampf, Eroberung, Fertigstellung,
+  Kriegserklärung, Mangel) und gehorcht der Toneinstellung; die fünf Schritte aus
+  `game/tutorial.ts` erscheinen in der ersten Partie neben dem Spiel.
+- **Anforderungen:** R-UI-04, R-UI-05
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Tutorial.tsx`,
+  `apps/desktop/src/ui/sound.ts`, `apps/desktop/src/game/tutorial.ts`
+- **Tests zuerst:** `App.test.tsx` — ein Kampfereignis im Protokoll löst genau einen Ton aus;
+  bei abgeschalteter Toneinstellung keinen; dasselbe Ereignis zweimal gelesen löst nicht zwei
+  Töne aus. `Tutorial.test.tsx` — Schritt eins steht in der ersten Partie, die geforderte
+  Handlung schließt ihn ab, „nicht mehr zeigen“ hält, und kein Schritt fängt eine Eingabe ab.
+- **Fertig wenn:** grün; die Einstellung „Ton“ im Menü hat eine hörbare Wirkung.
+
+### T-M13-03 · Automatisches Speichern tut, was die Einstellung verspricht
+- **Ziel:** Das Intervall aus den Einstellungen speichert wirklich, mit Rotation über mehrere
+  Stände; die Anwendung sagt kurz, dass sie gespeichert hat.
+- **Anforderungen:** R-GAME-04
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/game/saves.ts`
+- **Tests zuerst:** `App.test.tsx` — nach Ablauf des eingestellten Intervalls liegt ein
+  Automatikstand vor; nach dem vierten liegen weiterhin höchstens drei; ein pausiertes Spiel
+  schreibt keinen neuen Stand.
+- **Fertig wenn:** grün; die Einstellung ist nicht länger wirkungslos.
+
+### T-M13-04 · Der Guard, der tote Bausubstanz verhindert
+- **Ziel:** Ein Test hält fest, dass jedes Modul der Anwendung vom Einstiegspunkt aus
+  erreichbar ist — die Wiederholung des Musters wird maschinell unmöglich.
+- **Anforderungen:** R-UI-08
+- **Abhängigkeiten:** T-M13-01, T-M13-02, T-M13-03
+- **Dateien:** `test/guards/ui-reachability.test.ts`,
+  `test/guards/fixtures/violating/orphan-module.ts`
+- **Tests zuerst:** Der Guard verfolgt die Importkette ab `apps/desktop/src/main.tsx` und
+  meldet jedes nicht erreichte Nicht-Testmodul. Beide Richtungen werden geprüft: die
+  verdrahtete Anwendung ist grün, die Verstoß-Fixture ist rot. Ausnahmen sind erlaubt, aber
+  jede trägt im Guard eine Begründung in einem Satz (derzeit allein `sim/worker.ts`, für den
+  Wechsel in den Hintergrundprozess vorgehalten).
+- **Fertig wenn:** grün; `pnpm verify` führt den Guard mit.
+
+### T-M13-05 · Die Sicht liefert, was Anzeigen brauchen
+- **Ziel:** `publicView` ergänzt Bauschlange, Aushebeschlange, Moralziel und laufende Kämpfe —
+  jeweils nur so weit, wie der Spieler es sehen darf, und nur wenn die Sicht mit Regeln
+  angefordert wird. Die Truppenstärke je Provinz bleibt bewusst draußen: `view.armies` ist
+  bereits nach Sichtbarkeit gefiltert, eine Summe darüber ist Darstellung (D18.2).
+- **Anforderungen:** R-DIP-04, R-UI-09
+- **Abhängigkeiten:** —
+- **Dateien:** `packages/core/src/view/publicView.ts`, `packages/core/src/view/publicView.test.ts`
+- **Tests zuerst:** Für eine fremde Provinz bleiben Bauschlange, Aushebeschlange und Moralziel
+  leer, auch wenn sie sichtbar ist; Kämpfe erscheinen nur für sichtbare Provinzen; ohne Regeln
+  fehlen alle vier Felder vollständig.
+- **Fertig wenn:** grün; der Tickbudget-Test der Weltkarte hält weiterhin sein Budget.
+
+### T-M13-06 · Der Balken als Bauteil, und Moral als erster Fall
+- **Ziel:** Ein `Meter`-Bauteil nach D18.1; Moral erscheint als Balken mit Trendpfeil statt als
+  Prozentzahl.
+- **Anforderungen:** R-UI-09, R-UI-02
+- **Abhängigkeiten:** T-M13-05
+- **Dateien:** `apps/desktop/src/ui/Meter.tsx`, `apps/desktop/src/ui/Meter.test.tsx`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Der Balken trägt `role="meter"` mit `aria-valuenow/min/max`, nennt den Wert
+  auch als Text, verträgt 0, das Maximum und Werte darüber hinaus ohne Überlauf und benutzt
+  ausschließlich Farbtoken. Moral: ein steigendes Moralziel ergibt einen aufwärts weisenden
+  Trend, ein fallendes einen abwärts weisenden, Gleichstand keinen.
+- **Fertig wenn:** grün; die Kontrastprüfung bleibt grün.
+
+### T-M13-07 · Fortschritt sichtbar: Bau, Aushebung, Marsch, Siegziel
+- **Ziel:** Jede laufende Sache zeigt, wie weit sie ist — Bauvorhaben und Aushebungen im
+  Provinzpanel, der Marsch im Armeepanel, der Anteil am Siegziel in der Kopfleiste.
+- **Anforderungen:** R-UI-09, R-UI-13
+- **Abhängigkeiten:** T-M13-06
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Header.tsx`,
+  `apps/desktop/src/ui/format.ts`
+- **Tests zuerst:** Ein Bauvorhaben mit halber Restzeit ergibt einen halb gefüllten Balken und
+  nennt die Restzeit in Spielzeit; ein fertiggestelltes verschwindet; eine Armee ohne Marsch
+  zeigt keinen Fortschrittsbalken; der Siegzielbalken steht auf dem Punkteanteil aus der Sicht.
+- **Fertig wenn:** grün; keine Restzeit wird in der Oberfläche nachgerechnet — sie kommt aus
+  der Sicht.
+
+### T-M13-08 · Die Karte beschriftet sich und erklärt ihre Farben
+- **Ziel:** Provinznamen ab der festgelegten Zoomstufe, Legende zum aktiven Kartenmodus.
+- **Anforderungen:** R-UI-12, R-MAP-05
+- **Abhängigkeiten:** —
+- **Dateien:** `apps/desktop/src/map/labels.ts`, `apps/desktop/src/map/labels.test.ts`,
+  `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/ui/Legend.tsx`
+- **Tests zuerst:** `labels.ts` ist eine reine Funktion und bekommt die Textbreite als
+  Parameter — jsdom hat kein Canvas und kann keine Schrift messen, also darf die
+  Entscheidung nicht im Zeichenaufruf stecken. Oberhalb der Zoomschwelle entsteht keine
+  Beschriftung, unterhalb eine je sichtbarer Provinz; ein Name, der breiter ist als seine
+  Provinz, entfällt statt überzulaufen; zwei Namen überlappen einander nicht. Die Legende
+  zeigt für jeden Modus die Einträge aus `legendFor` und ändert sich mit dem Modus.
+- **Fertig wenn:** grün; der Renderbenchmark hält sein Budget auch mit Beschriftung.
+
+### T-M13-09 · Was auf der Karte steht: Hauptstadt, Kampf, Gattung, Marschweg
+- **Ziel:** Hauptstadt als Stern, laufender Kampf als Symbol, Armeekasten mit dem Zeichen
+  seiner stärksten Gattung, Marschweg und Ziel der gewählten Armee als Linie.
+- **Anforderungen:** R-UI-12, R-MAP-05
+- **Abhängigkeiten:** T-M13-05
+- **Dateien:** `apps/desktop/src/map/markers.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/App.tsx`
+- **Tests zuerst:** Eine Armee aus überwiegend Panzern bekommt das Panzerzeichen; ein Kampf in
+  einer sichtbaren Provinz erzeugt genau ein Kampfsymbol, einer in einer unsichtbaren keines;
+  die Reihenfolge bleibt Gebäude, Armee, Kampf; der Marschweg der ausgewählten Armee wird
+  gezeichnet, der einer nicht ausgewählten nicht.
+- **Fertig wenn:** grün; im laufenden Spiel ist die eigene Hauptstadt auf einen Blick zu finden.
+
+### T-M13-10 · Kartenmodus „Truppenstärke“ statt eines Modus ohne Daten
+- **Ziel:** Der vierte Modus färbt nach sichtbarer Truppenstärke, gerechnet als reine Funktion
+  über `view.armies`; „Bedrohung“ entfällt.
+- **Anforderungen:** R-MAP-06, R-MAP-07
+- **Abhängigkeiten:** T-M13-05
+- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/src/map/modes.test.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Jeder angebotene Modus liefert für eine Beispielpartie mindestens eine
+  Provinz mit einer anderen Füllung als „unbekannt“; unsichtbare Provinzen bleiben in jedem
+  Modus „unbekannt“; eine starke Provinz ist kräftiger gefärbt als eine schwache.
+- **Fertig wenn:** grün; kein Modus in der Auswahl färbt die Welt einfarbig.
+
+### T-M13-11 · Jedes Ding erklärt sich, wo es steht
+- **Ziel:** Ein `Explain`-Bauteil zeigt Beschreibung und Kennzahlen zu Gebäude, Einheit,
+  Rohstoff, Kartenmodus, Gelände und Beziehungszustand — abrufbar mit Zeiger und Tastatur.
+- **Anforderungen:** R-UI-11
+- **Abhängigkeiten:** T-M13-01
+- **Dateien:** `apps/desktop/src/ui/Explain.tsx`, `apps/desktop/src/ui/Explain.test.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/i18n/text.test.ts`
+- **Tests zuerst:** Für jeden Gebäude-, Einheiten- und Rohstoffschlüssel der Regeln, jeden
+  Kartenmodus, jede Geländeart und jeden Beziehungszustand existiert ein Erklärungstext von
+  höchstens zwei Sätzen; das Bauteil öffnet mit Tastatur, schließt mit Escape und ist über
+  `aria-describedby` mit seinem Ding verbunden; Kosten und Dauer stammen aus den Regeln, nicht
+  aus dem Text.
+- **Fertig wenn:** grün; kein Ding in der Oberfläche ist ohne Erklärung.
+
+### T-M13-12 · Die Lage der Partie auf einen Blick
+- **Ziel:** Eine Lageübersicht (Taste `L`) mit Punktebalken je Macht, Beziehungsfarbe und
+  Truppenstärke; ein Abschlussfenster, wenn die Partie entschieden ist.
+- **Anforderungen:** R-UI-13, R-GAME-02
+- **Abhängigkeiten:** T-M13-05, T-M13-06
+- **Dateien:** `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/Standings.test.tsx`,
+  `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/keyboard.ts`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** Die Übersicht listet die eigene Macht hervorgehoben und sortiert nach
+  Punkten; sie nennt keine Macht, von der der Spieler nichts weiß; ein entschiedenes Spiel
+  zeigt genau einmal das Abschlussfenster mit dem richtigen Ausgang und setzt die Uhr auf
+  Pause. Das Fenster lässt sich schließen — wer die Karte danach noch ansehen will, darf das;
+  ein Spiel, das sich nach dem letzten Zug nicht mehr bedienen lässt, ist kein Abschluss,
+  sondern ein Absturz mit Text.
+- **Fertig wenn:** grün; Sieg und Niederlage sind im Spiel sichtbar, nicht nur im Zustand.
+
+### T-M13-13 · Meldungen, die sich melden — und ein filterbares Protokoll
+- **Ziel:** Angriff, Mangel, Aufstandsgefahr und Fertigstellung erscheinen als Meldung mit
+  Symbol und Sprungziel; das Ereignisprotokoll bekommt seine Filter.
+- **Anforderungen:** R-UI-14, R-GAME-06
+- **Abhängigkeiten:** T-M13-01, T-M13-05
+- **Dateien:** `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/ui/Alerts.test.tsx`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/events.ts`
+- **Tests zuerst:** Ein Angriff auf eigenes Gebiet erzeugt eine Meldung, ein Angriff anderswo
+  nicht; dieselbe Lage erzeugt nicht in jedem Tick eine neue Meldung; ein Klick führt die Karte
+  zum Ort; der Filter blendet eine Art vollständig aus und lässt die übrigen unberührt.
+- **Fertig wenn:** grün; das Protokoll ist filterbar, wie R-GAME-06 es seit M5 verlangt.
+
+### T-M13-14 · Die Kopfleiste zeigt Vorräte, nicht nur Zahlen
+- **Ziel:** Je Rohstoff Symbol, Bestand, Tagesbilanz und — bei negativer Bilanz — die
+  Reichweite in Tagen; ein Mangel ist ohne Lesen erkennbar.
+- **Anforderungen:** R-UI-09, R-UI-10
+- **Abhängigkeiten:** T-M13-01, T-M13-06
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/Header.test.tsx`,
+  `apps/desktop/src/ui/format.ts`
+- **Tests zuerst:** Bei negativer Bilanz erscheint die Reichweite in Tagen, bei positiver
+  nicht; eine Reichweite unter drei Tagen wird als Mangel gekennzeichnet; eine Bilanz von null
+  ergibt keine Division durch null.
+- **Fertig wenn:** grün; die Kopfleiste beantwortet „reicht das noch?“ ohne Rechnen.
+
+### T-M13-15 · Das Provinzpanel wird aufgeräumt
+- **Ziel:** Vorkommen, Gebäude und Absagegründe erscheinen als Symbole und Anzeigen; der Text,
+  den sie ablösen, verschwindet. Die Seitenleiste wird kürzer, nicht länger.
+- **Anforderungen:** R-UI-09, R-UI-10, R-UI-11
+- **Abhängigkeiten:** T-M13-06, T-M13-11
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Der Ausgangswert wird **vor** dem Umbau gemessen und im Test als Zahl mit
+  Datum festgehalten — ein „weniger als vorher“ ohne Vorher-Zahl ist keine Messung, sondern
+  eine Behauptung. Danach: Für dieselbe Provinz enthält das Panel weniger sichtbare
+  Textzeichen als dieser Ausgangswert; Vorkommen stehen als Symbolzeile mit Anzahl;
+  gleichlautende Absagegründe stehen einmal, nicht je Knopf; jede Anzeige behält ihre
+  Textfassung für Screenreader.
+- **Fertig wenn:** grün; das Panel kommt bei normaler Schriftgröße ohne Rollen aus.
+
+### T-M13-16 · Bewegung, sparsam
+- **Ziel:** Kampfring pulsiert, neue Meldung blendet einmal auf, fertiger Bau leuchtet einmal
+  auf — und alles hört auf, wenn das System weniger Bewegung verlangt.
+- **Anforderungen:** R-UI-04
+- **Abhängigkeiten:** T-M13-09, T-M13-13
+- **Dateien:** `apps/desktop/src/ui/motion.ts`, `apps/desktop/src/ui/motion.test.ts`,
+  `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Der Puls ist eine reine Funktion der Zeit und wiederholt sich in festem
+  Takt; bei `prefers-reduced-motion: reduce` liefert er einen konstanten Wert; keine Animation
+  läuft ohne Anlass weiter.
+- **Fertig wenn:** grün; im Spiel bewegt sich nichts, was nichts zu sagen hat.
+
+### T-M13-17 · Sichtprüfung im laufenden Spiel und Nachführung der Dokumente
+- **Ziel:** Der Ausbau wird im laufenden Programm angesehen und in Kennzahlen vorher/nachher
+  festgehalten (Symbole, Anzeigen, Textmenge je Panel — ein Bildschirmfoto belegt nichts,
+  was man später nachrechnen könnte); Anleitung, Playtest-Vorlage und Fortschrittsakten
+  werden nachgezogen.
+- **Anforderungen:** R-UI-02, R-UI-03
+- **Abhängigkeiten:** T-M13-04, T-M13-07, T-M13-08, T-M13-10, T-M13-12, T-M13-14, T-M13-15, T-M13-16
+- **Dateien:** `docs/ANLEITUNG.md`, `docs/PLAYTEST.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/PROBLEME.md`, `docs/reports/ui-expansion.md`
+- **Tests zuerst:** Die Playtest-Vorlage stellt zu jeder neuen Anforderung mindestens eine
+  Frage mit ihrer ID; die Anleitung erklärt Lageübersicht, Erklärungen und Kartenmodi.
+- **Fertig wenn:** `pnpm verify` und `pnpm coverage:requirements` sind grün; die Kennzahlen
+  stehen im Bericht; jede neue Anforderung ist durch einen Test belegt.
+
 ## Übersicht: Haltepunkte, an denen Noah gebraucht wird
 
 | Aufgabe | Warum |

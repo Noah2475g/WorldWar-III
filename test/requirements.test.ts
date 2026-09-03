@@ -97,7 +97,10 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
     // eine Anforderung offen ist, gruen, wenn keine mehr offen ist. Auf "immer 1"
     // festgenagelt war der Test bis T-M12-03 richtig — und danach einer, der das
     // Erreichen des Ziels als Fehler gemeldet haette.
-    const open = /Offen ((d+))/.exec(result.stdout)
+    // Der Regex hatte seine Maskierung verloren ("(d+)" statt "\d+") und traf deshalb
+    // nie — solange keine Anforderung offen war, fiel das nicht auf. Beim ersten
+    // offenen Punkt verlangte er Exit 0, wo das Skript richtigerweise 1 meldet.
+    const open = /Offen \((\d+)\)/.exec(result.stdout)
     expect(result.status, result.stdout).toBe(open ? 1 : 0)
     if (!open) expect(result.stdout).toMatch(/Jede V1-Anforderung ist durch mindestens einen Test belegt/)
   })
