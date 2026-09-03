@@ -382,6 +382,15 @@ export const de = {
     title: 'Einstieg',
     dismiss: 'Nicht mehr zeigen',
   },
+
+  meter: {
+    progress: '{{percent}} %',
+    remaining: 'noch {{time}}',
+    building: 'Bau',
+    recruiting: 'Aushebung',
+    march: 'Marsch',
+    victoryGoal: 'Siegziel',
+  },
 } as const
 
 export type Catalog = typeof de

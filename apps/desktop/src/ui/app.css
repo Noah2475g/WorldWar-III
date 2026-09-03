@@ -645,3 +645,70 @@ body {
   margin: 0 0 var(--sp-md);
   font-size: 12px;
 }
+
+/* ---------------------------------------------------------------- anzeigen */
+
+/* Ein Balken ist eine Zahl, die man vergleichen kann, ohne sie zu lesen (R-UI-09).
+   Die Zahl selbst bleibt daneben stehen — wer genau wissen will, wie viel, soll nicht
+   auf Pixel zielen muessen. */
+.meter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-md);
+  align-items: center;
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+.meter__label {
+  color: var(--ink-soft);
+}
+
+.meter__track {
+  height: 7px;
+  min-width: 60px;
+  background: var(--paper-sunk);
+  /* Ohne Umriss ist die leere Spur vom Panel kaum zu unterscheiden (1,27:1) — ein
+     Balken bei null waere dann unsichtbar statt leer. */
+  border: 1px solid var(--line);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.meter__fill {
+  display: block;
+  height: 100%;
+  background: var(--ink-soft);
+}
+
+.meter__fill--good {
+  background: var(--good);
+}
+
+.meter__fill--warn {
+  background: var(--warn);
+}
+
+.meter__fill--alert {
+  background: var(--accent);
+}
+
+.meter__value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.meter__trend {
+  font-size: 9px;
+  margin-left: 3px;
+}
+
+.meter__trend--up {
+  color: var(--good);
+}
+
+.meter__trend--down {
+  color: var(--warn);
+}

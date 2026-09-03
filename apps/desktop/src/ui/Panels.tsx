@@ -4,6 +4,10 @@ import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, percent, population, rate, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
+import { Meter, toneForShare, trendOf } from './Meter.tsx'
+
+/** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
+const MORALE_SCALE = 100_000
 
 /**
  * The side panels (T-M10-05, T-M10-06, R-UI-05).
@@ -209,13 +213,6 @@ export function ProvincePanel(props: ProvincePanelProps) {
         <dt>{t('province.owner')}</dt>
         <dd>{props.ownerName ?? t('province.neutral')}</dd>
 
-        {province.morale !== undefined && (
-          <>
-            <dt>{t('province.morale')}</dt>
-            <dd>{percent(unfix(province.morale))}</dd>
-          </>
-        )}
-
         {province.population !== undefined && (
           <>
             <dt>{t('province.population')}</dt>
@@ -223,6 +220,20 @@ export function ProvincePanel(props: ProvincePanelProps) {
           </>
         )}
       </dl>
+
+      {/* Moral als Balken statt als Prozentzahl, mit dem Pfeil dorthin, wo sie hinlaeuft
+          (R-UI-09). Der Wert allein sagt nicht, ob eine Provinz sich beruhigt oder
+          auseinanderfaellt — und genau das ist die Frage. */}
+      {province.morale !== undefined && (
+        <Meter
+          label={t('province.morale')}
+          value={province.morale}
+          max={MORALE_SCALE}
+          text={percent(unfix(province.morale))}
+          tone={toneForShare(province.morale / MORALE_SCALE)}
+          trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+        />
+      )}
 
       {province.deposits && Object.keys(province.deposits).length > 0 && (
         <>

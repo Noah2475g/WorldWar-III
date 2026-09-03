@@ -99,3 +99,29 @@ describe('R-UI-02 Kontrast', () => {
     expect(() => relativeLuminance('#12345')).toThrow()
   })
 })
+
+/**
+ * Nicht-Text: die Anzeigen aus M13 (R-UI-02, WCAG 1.4.11).
+ *
+ * Ein Balken traegt keine Schrift, aber er traegt Bedeutung — und die Schwelle dafuer
+ * ist 3:1 gegen das, wovon er sich abheben muss. Die Fuellung gegen ihre Spur, damit
+ * man den Anteil sieht, und die Spur gegen das Panel, damit man den leeren Balken
+ * ueberhaupt findet: bei 1,27:1 waere ein Balken bei null schlicht unsichtbar, und
+ * genau deshalb bekommt die Spur ihren Umriss aus `line`.
+ */
+describe('R-UI-02 Anzeigen ohne Schrift', () => {
+  const NON_TEXT = 3
+
+  it('hebt jede Balkenfuellung von ihrer Spur ab', () => {
+    for (const tone of ['good', 'warn', 'accent', 'inkSoft'] as const) {
+      expect(contrastRatio(TOKENS[tone], TOKENS.paperSunk), `${tone} auf der Balkenspur`).toBeGreaterThanOrEqual(
+        NON_TEXT,
+      )
+    }
+  })
+
+  it('macht die leere Spur auf dem Panel auffindbar', () => {
+    // Die Flaeche allein reicht nicht (1,27:1) — der Umriss traegt den Unterschied.
+    expect(contrastRatio(TOKENS.line, TOKENS.paper)).toBeGreaterThanOrEqual(NON_TEXT)
+  })
+})

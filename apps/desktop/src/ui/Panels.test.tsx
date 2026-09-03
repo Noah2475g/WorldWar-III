@@ -100,3 +100,41 @@ describe('R-UI-10 Befehlsknoepfe tragen ihr Symbol', () => {
     expect(screen.getByRole('button', { name: 'Hauptstadt verlegen' })).toBeTruthy()
   })
 })
+
+describe('R-UI-09 Moral als Balken mit Trend', () => {
+  const withMorale = (morale: number, moraleTarget?: number): VisibleProvince => ({
+    ...province,
+    morale,
+    ...(moraleTarget === undefined ? {} : { moraleTarget }),
+  })
+
+  it('zeigt die Moral als Anzeige mit ihrem Wert', () => {
+    render(<ProvincePanel province={withMorale(70_000)} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    const meter = screen.getByRole('meter', { name: 'Moral' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('70000')
+    expect(meter.textContent).toContain('70 %')
+  })
+
+  it('zeigt aufwaerts, wenn die Moral steigt, und abwaerts, wenn sie faellt', () => {
+    const { unmount } = render(
+      <ProvincePanel province={withMorale(60_000, 80_000)} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+    expect(screen.getByRole('meter', { name: 'Moral' }).textContent).toContain('steigend')
+    unmount()
+
+    render(
+      <ProvincePanel province={withMorale(80_000, 60_000)} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+    expect(screen.getByRole('meter', { name: 'Moral' }).textContent).toContain('fallend')
+  })
+
+  it('zeigt keinen Pfeil, wenn die Sicht kein Ziel kennt', () => {
+    // A foreign province: visible, but its morale target is none of the player's business.
+    render(<ProvincePanel province={withMorale(70_000)} ownerName="Ostmark" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    const meter = screen.getByRole('meter', { name: 'Moral' })
+    expect(meter.textContent).not.toContain('steigend')
+    expect(meter.textContent).not.toContain('fallend')
+  })
+})
