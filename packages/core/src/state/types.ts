@@ -108,6 +108,8 @@ export interface BuildOrder {
   level: number
   startedTick: Tick
   completesAtTick: Tick
+  /** Who placed the order. A change of owner cancels it without refund (R-PROV-01/AK2). */
+  ownerAtStart: PlayerId
 }
 
 export interface RecruitOrder {
@@ -116,6 +118,8 @@ export interface RecruitOrder {
   count: number
   startedTick: Tick
   completesAtTick: Tick
+  /** Who ordered it. A province that changed hands does not deliver to its former owner. */
+  ownerAtStart: PlayerId
 }
 
 export interface Province {
@@ -193,6 +197,8 @@ export interface Player {
   capitalLostUntil: Tick | null
   /** Last time the capital was moved; null means never. Drives the cooldown (D6.8). */
   capitalMovedAtTick: Tick | null
+  /** Resources that ran out this tick. Movement, combat and morale read this (D6.2). */
+  shortages: ResourceKey[]
   alive: boolean
   score: number
   reputation: Fixed
@@ -212,6 +218,13 @@ export interface Relation {
 export interface DiplomacyState {
   /** Key is `${a}|${b}` with a < b, so each pair is stored exactly once. */
   relations: Record<string, Relation>
+}
+
+export interface MarketState {
+  /** One price per resource, identical for every player (R-FREE-02). */
+  prices: Record<ResourceKey, Fixed>
+  /** Net demand of the current tick; priced in during bookkeeping. */
+  tickDemand: Record<ResourceKey, Fixed>
 }
 
 export interface Battle {
@@ -260,6 +273,7 @@ export interface GameState {
   armyOrder: ArmyId[]
 
   diplomacy: DiplomacyState
+  market: MarketState
   ai: Record<PlayerId, AiMemory>
   battles: Battle[]
   /** Output, not simulation input: excluded from the hash on purpose. */

@@ -63,8 +63,8 @@ describe('R-ARCH-02 Allgemeine Kommandopruefung', () => {
   })
 
   it('weist Kommandos ohne zustaendigen Baustein zurueck', () => {
-    // BUILD arrives with T-M3-04. Until then it is rejected, never silently ignored.
-    const command: Command = { type: 'BUILD', playerId: 'p1', provinceId: 'alpha', building: 'barracks' }
+    // MOVE_ARMY arrives with T-M4-02. Until then it is rejected, never silently ignored.
+    const command: Command = { type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'beta' }
     expect(canApply(state, command, ctx)).toMatchObject({ ok: false, code: 'UNKNOWN_COMMAND' })
   })
 
@@ -75,7 +75,7 @@ describe('R-ARCH-02 Allgemeine Kommandopruefung', () => {
       { type: 'SET_STANCE', playerId: 'p2', armyId: 'a1', stance: 'defensive' },
       { type: 'SET_STANCE', playerId: 'p1', armyId: 'unbekannt', stance: 'defensive' },
       { type: 'SET_CAPITAL', playerId: 'p1', provinceId: 'nirgendwo' },
-      { type: 'BUILD', playerId: 'p1', provinceId: 'alpha', building: 'barracks' },
+      { type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'beta' },
     ]
     for (const command of rejected) {
       expect(applyCommand(state, command, ctx).ok).toBe(false)

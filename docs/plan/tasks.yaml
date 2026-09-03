@@ -231,7 +231,7 @@ tasks:
   - id: T-M3-01
     milestone: M3
     title: Regelwerk-Dateien und Lader
-    status: todo
+    status: done
     deps: [T-M1-04]
     requirements: [R-ECON-01, R-UNIT-01, R-PROV-02]
     constraints: [C-09, C-10]
@@ -243,7 +243,7 @@ tasks:
   - id: T-M3-02
     milestone: M3
     title: Produktion
-    status: todo
+    status: done
     deps: [T-M3-01, T-M2-02]
     requirements: [R-ECON-02, R-PROV-04]
     files: [packages/core/src/phases/production.ts]

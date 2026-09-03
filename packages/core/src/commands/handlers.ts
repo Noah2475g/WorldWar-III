@@ -1,3 +1,6 @@
+import './build' // registers BUILD and CANCEL_BUILD
+import './recruit' // registers RECRUIT
+import './trade' // registers TRADE
 import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'
 import type { GameState } from '../state/types'

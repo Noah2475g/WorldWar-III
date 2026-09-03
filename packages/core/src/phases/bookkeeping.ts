@@ -1,3 +1,4 @@
+import { settleMarket } from '../rules/market'
 import type { Phase } from './index'
 
 /**
@@ -10,6 +11,9 @@ import type { Phase } from './index'
 export const EVENT_LOG_LIMIT = 500
 
 export const bookkeeping: Phase = (draft, ctx) => {
+  // Prices move once per tick, after every trade has been settled at the frozen rate.
+  settleMarket(draft.market, ctx.rules, draft.tick % ctx.rules.constants.ticksPerDay === 0)
+
   draft.tick += 1
 
   if (ctx.events.length > 0) {

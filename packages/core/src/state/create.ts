@@ -1,4 +1,5 @@
 import { createRng } from '@worldwar/shared'
+import { createMarket } from '../rules/market'
 import type { Rules } from '../rules/types'
 import {
   SCHEMA_VERSION,
@@ -98,6 +99,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       capitalProvinceId: start.capital,
       capitalLostUntil: null,
       capitalMovedAtTick: null,
+      shortages: [],
       alive: true,
       score: 0,
       reputation: 1000,
@@ -182,6 +184,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     armies: {},
     armyOrder: [],
     diplomacy: { relations },
+    market: createMarket(rules),
     ai,
     battles: [],
     eventLog: [
