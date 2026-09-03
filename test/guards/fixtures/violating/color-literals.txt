@@ -1,0 +1,6 @@
+// A component that decides its own colours. Every value here belongs in tokens.ts.
+export function ProvincePanel() {
+  const border = '#8C8676'
+  const style = { background: '#F2EEE3', color: '#1F2420' }
+  return { border, style, alarm: '#B3341E' }
+}

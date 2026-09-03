@@ -30,6 +30,22 @@ export default tseslint.config(
     },
   },
   {
+    // R-UI-02: the contrast test guarantees the palette in tokens.ts. A component that
+    // writes its own hex value sits outside that guarantee — which is precisely how a
+    // readable interface drifts into an unreadable one.
+    files: ["apps/desktop/src/**/*.ts", "apps/desktop/src/**/*.tsx"],
+    ignores: ["apps/desktop/src/ui/tokens.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+          message: "Farbliteral: Farben gehören nach apps/desktop/src/ui/tokens.ts (R-UI-02).",
+        },
+      ],
+    },
+  },
+  {
     files: ['packages/core/src/**/*.ts'],
     rules: {
       'no-restricted-properties': [

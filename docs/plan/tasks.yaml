@@ -664,7 +664,7 @@ tasks:
   - id: T-M10-01b
     milestone: M10
     title: Design-Tokens und Kontrastpruefung
-    status: todo
+    status: done
     deps: [T-M10-01]
     requirements: [R-UI-02]
     files: [apps/desktop/src/ui/tokens.ts]

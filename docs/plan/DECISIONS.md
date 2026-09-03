@@ -135,3 +135,21 @@ ohnehin eine einmalige Entwickler-Aufgabe (D-09), kein Teil der Anwendung.
 
 **Auswirkung:** `node scripts/fetch-geodata.mjs` lädt nach `data/geo/` (per `.gitignore`
 ausgenommen) und schreibt Prüfsummen. Eingecheckt wird nur das Pipeline-Ergebnis.
+
+---
+
+## 2026-09-03 · T-M10-01b · Spielerfarben werden nach Farbabstand geprüft, nicht nach Kontrast
+
+**Entscheidung:** Ob zwei Nationen auf der Karte unterscheidbar sind, prüft `deltaE`
+(CIE76 in Lab) mit Schwelle 10 — nicht das WCAG-Kontrastverhältnis.
+
+**Begründung:** Der Kontrastwert kennt nur Helligkeit. Ein Blaugrau und ein Rotbraun
+gleicher Helligkeit kommen dort als „identisch" heraus, während ein Mensch zwei klar
+verschiedene Länder sieht. Umgekehrt hat der Farbabstand einen echten Fehler gefunden,
+den der Kontrastwert durchgewinkt hätte: `slate #AFB6BC` und `petrol #9FB2BE` lagen nur
+5,7 auseinander. `slate` ist durch `mint #9CC8B4` ersetzt.
+
+**Auswirkung:** Schwelle 10 statt der Wahrnehmungsschwelle 2,3 — zwei Provinzen müssen
+sich quer über die Karte hinweg auf einen Blick unterscheiden, nicht erst im direkten
+Vergleich. Farbenblindheit ist damit noch nicht abgedeckt; das gehört zu T-M10-12
+(Zugänglichkeit) und braucht zusätzlich Musterung oder Beschriftung.

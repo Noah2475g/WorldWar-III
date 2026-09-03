@@ -153,3 +153,4 @@ wartet auf Noahs Freigabe. Bis dahin bleiben T-M10-01b bis T-M11-04 gesperrt.
 |---|---|---|---|
 | T-M10-01 | 2026-09-03 | **Freigabe erteilt:** Richtung A „Lagekarte" — drei Richtungen vorgelegt, Noah hat gewählt | — |
 | T-M9-01 | 2026-09-03 | Geodaten von Natural Earth (1:50 Mio, gemeinfrei) geladen; umkehrbare Projektion, geodätische Entfernung getrennt von der Bilddarstellung, Vereinfachung auf Winkelgraden; Herkunft und Lizenz in `docs/ASSETS.md`, gegen das Quellenregister im Code geprüft | grün |
+| T-M10-01b | 2026-09-03 | Freigegebene Optik als `tokens.ts` mit Kontrasttest (12 benannte Paare plus vollständige Kreuzprüfung Text × Grund); Lint-Regel verbietet Farbliterale außerhalb der Tokendatei, mit Verstoß-Fixture | grün |
