@@ -632,7 +632,7 @@ tasks:
   - id: T-M9-03
     milestone: M9
     title: Anreicherung und Startaufstellung
-    status: todo
+    status: done
     deps: [T-M9-02c]
     requirements: [R-MAP-03, R-GAME-01]
     files: [packages/mapgen/src/enrich.ts, docs/reports/map.md]

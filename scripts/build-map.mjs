@@ -9,6 +9,7 @@ import { buildAdjacency, findEnclaves } from '../packages/mapgen/src/adjacency.t
 import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
 import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
 import { readCsv } from '../packages/mapgen/src/csv.ts'
+import { balanceStartingValues, enrich, startingValue } from '../packages/mapgen/src/enrich.ts'
 import { project } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
@@ -322,6 +323,33 @@ const toY = (lat) => Math.round(((project({ lon: 0, lat }).y - TOP) / (BOTTOM - 
 const FIXED = 1000
 const toFixed = (value) => Math.round(value * FIXED)
 
+/**
+ * Population, ground and deposits (T-M9-03). The first two follow the real world as
+ * far as the data allows; the third is invented, because Natural Earth knows nothing
+ * about coal — but invented deterministically, so the same map is built every time.
+ */
+const rulesAi = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8'))
+const populationByCountry = Object.fromEntries(raw.countries.map((c) => [c.iso, c.population]))
+
+const nationProvinces = Object.entries(rules.startNations.nations).map(([, nation]) => ({
+  nation: nation.name,
+  provinces: provinces.filter((p) => nation.countries.includes(p.country)).map((p) => p.id),
+}))
+
+const enrichedRaw = enrich(
+  provinces.map((p) => ({
+    id: p.id,
+    country: p.country,
+    areaKm2: p.areaKm2,
+    centre: p.centre,
+    coastal: p.coastal,
+  })),
+  { populationByCountry, resourceWeights: rulesAi.resourceWeights },
+)
+const enriched = new Map(
+  balanceStartingValues(enrichedRaw, nationProvinces, rulesAi.resourceWeights).map((e) => [e.id, e]),
+)
+
 const gameProvinces = provinces.map((p) => {
   const outer =
     p.geometry.type === 'MultiPolygon'
@@ -331,13 +359,15 @@ const gameProvinces = provinces.map((p) => {
   return {
     id: p.id,
     name: p.name,
-    kind: p.areaKm2 > 0 && p.population > 0 ? 'city' : 'rural',
-    terrain: 'plains',
+    kind: enriched.get(p.id).kind,
+    terrain: enriched.get(p.id).terrain,
     coastal: p.coastal,
     center: { x: toX(p.centre.lon), y: toY(p.centre.lat) },
     polygon: outer.map(([lon, lat]) => [toX(lon), toY(lat)]),
-    population: 0,
-    deposits: {},
+    population: toFixed(enriched.get(p.id).population),
+    deposits: Object.fromEntries(
+      Object.entries(enriched.get(p.id).deposits).map(([key, value]) => [key, toFixed(value)]),
+    ),
   }
 })
 
@@ -389,3 +419,66 @@ console.log(
   `data/maps/world.json geschrieben: ${gameProvinces.length} Provinzen, ${gameEdges.length} Kanten, ` +
     `${startPositions.length} Startnationen (${(JSON.stringify(world).length / 1024 / 1024).toFixed(2)} MB).`,
 )
+
+// ---------------------------------------------------------------- Bericht
+
+/**
+ * The balance figure the design asks for: no power may start a third weaker than the
+ * median. That is not a difficulty setting — it is a lost game the player has not been
+ * told about.
+ */
+const values = nationProvinces.map((nation) => {
+  const own = nation.provinces.map((id) => enriched.get(id)).filter(Boolean)
+  return { nation: nation.nation, provinces: own.length, value: startingValue(own, rulesAi.resourceWeights) }
+})
+values.sort((a, b) => b.value - a.value)
+const sorted = [...values].map((v) => v.value).sort((a, b) => a - b)
+const median = sorted[Math.floor(sorted.length / 2)]
+const deviation = (value) => Math.round(((value - median) / median) * 100)
+const worst = Math.max(...values.map((v) => Math.abs(deviation(v.value))))
+
+const terrainCount = {}
+for (const p of gameProvinces) terrainCount[p.terrain] = (terrainCount[p.terrain] ?? 0) + 1
+const totalPopulation = gameProvinces.reduce((sum, p) => sum + p.population / 1000, 0)
+
+const report = [
+  '# Kartenbericht',
+  '',
+  `Erzeugt von \`scripts/build-map.mjs\` aus Natural Earth 1:10 Mio. Nicht von Hand ändern.`,
+  '',
+  '## Umfang',
+  '',
+  `| Provinzen | ${gameProvinces.length} |`,
+  '|---|---|',
+  `| Landgrenzen | ${adjacency.edges.length} |`,
+  `| Seewege | ${seaLanes.length} (${curated.length} kuratiert, ${derived.length} abgeleitet) |`,
+  `| Küstenprovinzen | ${provinces.filter((p) => p.coastal).length} |`,
+  `| Enklaven | ${enclaves.length}${enclaves.length ? ' (' + enclaves.join(', ') + ')' : ''} |`,
+  `| Inseln ohne Landnachbarn | ${adjacency.islands.length} |`,
+  `| Startnationen | ${startPositions.length} |`,
+  `| Gesamtfläche | ${(provinces.reduce((s, p) => s + p.areaKm2, 0) / 1e6).toFixed(1)} Mio km² |`,
+  `| Gesamtbevölkerung | ${(totalPopulation / 1e9).toFixed(2)} Mrd |`,
+  '',
+  '## Gelände',
+  '',
+  '| Art | Provinzen |',
+  '|---|---|',
+  ...Object.entries(terrainCount)
+    .sort((a, b) => b[1] - a[1])
+    .map(([terrain, count]) => `| ${terrain} | ${count} |`),
+  '',
+  '## Startwerte der Nationen',
+  '',
+  `Formel: 10 × Provinzen + 2 × gewichtete Vorkommen + Bevölkerung/1000. Median ${median}, ` +
+    `größte Abweichung ${worst} % (Grenze 15 %).`,
+  '',
+  '| Nation | Provinzen | Startwert | Abweichung |',
+  '|---|---|---|---|',
+  ...values.map(
+    (v) => `| ${v.nation} | ${v.provinces} | ${v.value.toLocaleString('de-DE')} | ${deviation(v.value) > 0 ? '+' : ''}${deviation(v.value)} % |`,
+  ),
+  '',
+]
+writeFileSync(join(ROOT, 'docs/reports/map.md'), report.join('\n'))
+console.log(`Startwerte: Median ${median}, groesste Abweichung ${worst} % (Grenze 15 %).`)
+console.log('docs/reports/map.md geschrieben.')

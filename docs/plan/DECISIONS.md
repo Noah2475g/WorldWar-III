@@ -401,3 +401,44 @@ mehr als eine halbe Welt breit ist, ist schlicht zu weit weg.
 
 **Auswirkung:** Seewege über die Datumsgrenze werden kurz gemessen (Kamtschatka–Alaska),
 und kein Seeweg entsteht durch eine irrtümlich getroffene Landmasse.
+
+---
+
+## 2026-09-03 · T-M9-03 · Provinzbevölkerung ist eine Spielgröße, keine Volkszählung
+
+**Entscheidung:** Die reale Bevölkerung wird mit dem Exponenten 0,3 gestaucht, verankert
+bei einer Million (eine Provinz mit einer Million Einwohnern bleibt eine Provinz mit einer
+Million). Ergebnis: 0,18 bis 6,5 Mio je Provinz statt 0,05 bis 230 Mio.
+
+**Begründung:** Die Anforderung verlangt, dass keine Startnation mehr als 15 % vom Median
+abweicht — und die Startwertformel zählt die Bevölkerung direkt. China hat 37-mal so viele
+Einwohner wie Polen; mit echten Zahlen lag die größte Abweichung bei **1108 %**, und keine
+Menge Erz auf polnischem Boden hätte das geschlossen. Das wäre keine Schwierigkeitsstufe
+gewesen, sondern eine vor dem ersten Zug entschiedene Partie.
+
+Der Exponent ist gemessen, nicht geraten: 0,5 ergab 300 %, 0,4 noch 238 %, 0,3 dann 14 %.
+Genommen wurde der mildeste Wert, der die Grenze erreicht — er behält so viel vom echten
+Unterschied wie das Gleichgewicht zulässt. Die Reihenfolge bleibt in jedem Fall erhalten:
+China ist auch danach die bevölkerungsreichste Macht.
+
+**Auswirkung:** Die Zahlen auf dem Bildschirm lesen sich weiter als Bevölkerungen. Die
+Schwellen für Stadt (2,4 Mio) und städtisches Gelände (3,4 Mio) sind auf dieser Skala
+gesetzt. 92 der 237 Provinzen sind Städte.
+
+---
+
+## 2026-09-03 · T-M9-03 · Der Rest des Ausgleichs läuft über die Vorkommen
+
+**Entscheidung:** Nach der Stauchung skaliert ein iteratives Verfahren die Vorkommen der
+spielbaren Provinzen, bis jede Nation innerhalb von 14 % um den Median liegt. Neutrale
+Provinzen bleiben unangetastet.
+
+**Begründung:** Auch gestaucht bleiben Unterschiede — drei gegen sechs Provinzen, dichte
+gegen dünne Besiedlung. Sie im Boden auszugleichen ist das Mittel, mit dem
+Strategiespiele Startpositionen seit jeher angleichen: Wer klein ist, sitzt auf reicherem
+Grund. Neutrale Provinzen davon auszunehmen ist wichtig, weil es dort nichts auszugleichen
+gibt und eine Skalierung die Karte nur einebnen würde.
+
+**Auswirkung:** Größte Abweichung 14 % bei 24 Nationen. Der Kartenbericht
+(`docs/reports/map.md`) führt jede Nation mit ihrem Startwert auf, damit die Zahl
+nachprüfbar bleibt statt behauptet.

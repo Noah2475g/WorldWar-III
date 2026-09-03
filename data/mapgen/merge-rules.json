@@ -824,5 +824,39 @@
         ]
       }
     }
+  },
+  "targets": {
+    "note": "Zielkorridore fuer die Anreicherung (T-M9-03). Gemessen am gebauten Ergebnis; ein Test schlaegt an, wenn eine Verteilung herauslaeuft - dann ist entweder die Anreicherung kaputt oder die Karte hat sich absichtlich geaendert und der Korridor gehoert nachgezogen.",
+    "terrainShare": {
+      "plains": [
+        0.3,
+        0.55
+      ],
+      "forest": [
+        0.12,
+        0.32
+      ],
+      "desert": [
+        0.05,
+        0.2
+      ],
+      "mountain": [
+        0.05,
+        0.2
+      ],
+      "urban": [
+        0.05,
+        0.2
+      ]
+    },
+    "cityShare": [
+      0.25,
+      0.55
+    ],
+    "populationPerProvinceMio": [
+      0.1,
+      9
+    ],
+    "startValueDeviation": 0.15
   }
 }
