@@ -43,6 +43,21 @@ export interface VisibleProvince {
   deposits?: Partial<Record<ResourceKey, Fixed>>
   buildings?: Partial<Record<BuildingKey, number>>
   buildQueueLength?: number
+  /**
+   * What is being built here and when it is finished (R-UI-09).
+   *
+   * Only for own provinces, and only when the view was asked for with the rules: a
+   * progress bar is a fine thing right until it tells the player what an opponent is
+   * building. Ids and start ticks stay behind — a display needs the end, not the paperwork.
+   */
+  buildQueue?: { building: BuildingKey; completesAtTick: Tick }[]
+  /** The same for levies being raised. */
+  recruitQueue?: { unitKey: string; count: number; completesAtTick: Tick }[]
+  /**
+   * Where morale is heading. The current figure alone cannot say whether a province is
+   * settling down or coming apart, which is the one thing the player wants to know.
+   */
+  moraleTarget?: Fixed
   /** True when this is remembered rather than currently observed. */
   stale: boolean
   /** Tick the information dates from. */
@@ -85,6 +100,12 @@ export interface PublicView {
   relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean }>
   provinces: VisibleProvince[]
   armies: VisibleArmy[]
+  /**
+   * Fighting the player can see, for the combat symbol on the map and the alerts
+   * (R-UI-12, R-UI-14). Only in provinces they observe, and only with the rules — a
+   * battle in a province behind the fog is not their news.
+   */
+  battles?: { provinceId: ProvinceId; startedTick: Tick }[]
   marketPrices: Record<ResourceKey, Fixed>
   victory: { condition: string; winner: PlayerId | null }
 }
@@ -151,6 +172,22 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
               deposits: { ...province.deposits },
               buildings: { ...province.buildings },
               buildQueueLength: province.buildQueue.length,
+              // Only with the rules: the AI asks for this view every tick and reads
+              // none of it, so it should not pay for it either (D18.2).
+              ...(rules
+                ? {
+                    buildQueue: province.buildQueue.map((order) => ({
+                      building: order.building,
+                      completesAtTick: order.completesAtTick,
+                    })),
+                    recruitQueue: province.recruitQueue.map((order) => ({
+                      unitKey: order.unitKey,
+                      count: order.count,
+                      completesAtTick: order.completesAtTick,
+                    })),
+                    moraleTarget: province.targetMorale,
+                  }
+                : {}),
             }
           : {}),
       })
@@ -232,6 +269,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     relations,
     provinces,
     armies,
+    ...(rules
+      ? {
+          battles: state.battles
+            .filter((battle) => visible.has(battle.provinceId))
+            .map((battle) => ({ provinceId: battle.provinceId, startedTick: battle.startedTick })),
+        }
+      : {}),
     marketPrices: { ...state.market.prices },
     victory: { condition: state.victory.condition, winner: state.victory.winner },
   }
