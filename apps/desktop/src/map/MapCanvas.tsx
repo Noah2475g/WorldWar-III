@@ -6,6 +6,7 @@ import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type Vi
 import { markersFor, type ArmyMarker } from './markers.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
+import { motionAllowed, ringRadius } from '../ui/motion.ts'
 import type { MapMode } from './modes.ts'
 
 /**
@@ -60,6 +61,8 @@ export interface MapCanvasProps {
   capitalProvinceId?: string | null
   /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
   battleProvinces?: readonly string[]
+  /** Spielstunden je Sekunde — darueber hoert jede Bewegung auf (T-M13-16). */
+  speed?: number
   onSelect: (provinceId: string | null) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
@@ -70,6 +73,9 @@ export function MapCanvas(props: MapCanvasProps) {
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 960, height: 600 })
+  // Die Uhr fuer die eine Bewegung, die es gibt. Sie laeuft nur, solange irgendwo
+  // gekaempft wird — eine Animationsschleife ohne Anlass ist ein Ventilator.
+  const [clock, setClock] = useState(0)
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
 
   const withBounds = useMemo(
@@ -149,6 +155,22 @@ export function MapCanvas(props: MapCanvasProps) {
     }
   }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
 
+  useEffect(() => {
+    const fighting = (props.battleProvinces ?? []).length > 0
+    if (!fighting || !motionAllowed(props.speed ?? 0)) return
+
+    let running = true
+    const step = (time: number): void => {
+      if (!running) return
+      setClock(time)
+      requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+    return () => {
+      running = false
+    }
+  }, [props.battleProvinces, props.speed])
+
   // The cheap layer: armies, selection, labels.
   useEffect(() => {
     const canvas = overlayRef.current
@@ -223,11 +245,12 @@ export function MapCanvas(props: MapCanvasProps) {
         continue
       }
 
-      // A battle: the ring says where, the sabres say what.
+      // A battle: the ring says where, the sabres say what — and it breathes, so a
+      // fight is findable on a map of 237 provinces (T-M13-16).
       context.strokeStyle = MAP_COLORS.battle
       context.lineWidth = 2
       context.beginPath()
-      context.arc(marker.x, marker.y, 14, 0, Math.PI * 2)
+      context.arc(marker.x, marker.y, ringRadius(clock, 14, { speed: props.speed ?? 0 }), 0, Math.PI * 2)
       context.stroke()
       context.lineWidth = 1.6
       drawIcon(context, 'battle', marker.x, marker.y, 14)
@@ -239,6 +262,8 @@ export function MapCanvas(props: MapCanvasProps) {
     props.path,
     props.capitalProvinceId,
     props.battleProvinces,
+    props.speed,
+    clock,
     props.view,
     props.centres,
     withBounds,

@@ -864,3 +864,34 @@ body {
   font-size: 10px;
   color: var(--warn);
 }
+
+/* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer
+   prefers-reduced-motion oben im Stylesheet schaltet auch das ab (R-UI-04). */
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.alert {
+  animation: alert-in 220ms ease-out;
+}
+
+/* Ein fertiger Bau leuchtet einmal auf — derselbe Gedanke, dieselbe Kuerze. */
+@keyframes meter-done {
+  from {
+    background: var(--good);
+  }
+  to {
+    background: var(--paper-sunk);
+  }
+}
+
+.meter__track--done {
+  animation: meter-done 600ms ease-out;
+}

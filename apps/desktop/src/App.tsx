@@ -678,6 +678,7 @@ export function App(props: AppProps) {
             selectedProvince={ui.selectedProvince}
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
+            speed={speed}
             {...(selectedPath ? { path: selectedPath } : {})}
             onSelect={selectOnMap}
             onViewChange={(next) => dispatch({ type: 'setView', view: next })}
