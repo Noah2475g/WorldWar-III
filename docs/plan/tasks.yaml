@@ -642,7 +642,7 @@ tasks:
   - id: T-M9-04
     milestone: M9
     title: Kernregeln auf der Weltkarte
-    status: todo
+    status: done
     deps: [T-M9-03, T-M8-03]
     requirements: [R-ARCH-06]
     files: []

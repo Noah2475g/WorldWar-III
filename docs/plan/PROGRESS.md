@@ -159,3 +159,9 @@ wartet auf Noahs Freigabe. Bis dahin bleiben T-M10-01b bis T-M11-04 gesperrt.
 | T-M9-02b | 2026-09-03 | Nachbarschaft aus geteilten Bögen: 445 Landgrenzen, symmetrisch, mit geodätischer Entfernung; Lesotho als einzige Enklave erkannt, 21 Inseln ohne Landnachbarn. Vereinfachung auf topologie-erhaltend umgestellt — die vorherige Ring-für-Ring-Variante hatte Nachbargrenzen auseinandergezogen | grün |
 | T-M9-02c | 2026-09-03 | Seewege und `world.json`: 184 Küstenprovinzen bestimmt (nachdem 21 Landlöcher geschlossen wurden), 210 Seewege — 91 kuratiert für die Engstellen, 119 abgeleitet, keine über Land, keine Küstenprovinz ohne Anbindung. Datumsgrenze in Punkt-in-Fläche und Interpolation behandelt. **Die Weltkarte besteht den Kartenvalidator des Kerns fehlerfrei** | grün |
 | T-M9-03 | 2026-09-03 | Anreicherung: Gelände aus der Lage, Bevölkerung aus Landeszahlen mit Dichtefaktoren, Vorkommen deterministisch aus der Provinzkennung. **Startwerte aller 24 Nationen innerhalb 14 % vom Median** (Grenze 15 %). Kartenbericht in `docs/reports/map.md` | grün |
+| T-M9-04 | 2026-09-03 | Kernregeln auf der echten Weltkarte: **Tick-Median 2,76 ms, p99 5,1 ms** bei 237 Provinzen, 658 Kanten und 12 KI-Spielern (Budget 8 / 40 ms); 1000 Spieltage fehlerfrei, Ereignisprotokoll bleibt beschränkt. Messwerte in `docs/reports/worldmap-bench.json` | grün |
+
+**Stand 2026-09-03:** M0 bis M9 abgeschlossen (62 von 83 Aufgaben), M10 begonnen.
+691 Tests grün (plus 3 im Langlauf), Kern-Abdeckung 95,9 %, `pnpm verify` vollständig grün.
+Die Weltkarte ist fertig: 237 Provinzen, 448 Landgrenzen, 210 Seewege, 24 spielbare
+Nationen, Startwerte innerhalb 14 % vom Median.
