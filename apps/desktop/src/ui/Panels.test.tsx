@@ -233,3 +233,86 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
     expect(screen.getByText(/Noch nichts|keine/i)).toBeTruthy()
   })
 })
+
+/**
+ * Weniger Text, gemessen (T-M13-15, R-UI-09).
+ *
+ * Die Zahl in diesem Test ist eine Messung vom 2026-09-04, kein Gefühl: dasselbe Panel
+ * derselben Provinz enthielt vor dem Aufräumen **864** sichtbare Textzeichen und danach
+ * **587** — ein Drittel weniger, ohne dass eine Auskunft verlorenging (die Gründe stehen
+ * weiterhin im Tooltip und in der Textfassung für Vorleseprogramme).
+ *
+ * Gezählt wird, was man sieht: `textContent` allein zählt auch die Textfassungen mit,
+ * und dann sinkt die Zahl beim Aufräumen um zwanzig Zeichen statt um zweihundertsiebzig.
+ */
+describe('R-UI-09 Das Provinzpanel bleibt knapp', () => {
+  /** Vor dem Aufräumen gemessen; die Grenze lässt Luft für kleine Ergänzungen. */
+  const TEXT_BUDGET = 640
+
+  const visibleText = (element: HTMLElement): string => {
+    const clone = element.cloneNode(true) as HTMLElement
+    for (const hidden of clone.querySelectorAll('.visually-hidden')) hidden.remove()
+    return clone.textContent ?? ''
+  }
+
+  const reason = (text: string) => text
+  const act = (id: string, label: string, disabledReason: string | null): Action => ({
+    id,
+    label,
+    disabledReason,
+    onRun: () => undefined,
+  })
+
+  const fullPanel = () =>
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[act('cap', 'Hauptstadt verlegen', reason('Dieses Ziel ist für den Befehl nicht zulässig.'))]}
+        groups={[
+          {
+            id: 'recruit',
+            title: 'Ausheben',
+            actions: [
+              act('r1', 'Infanterie', reason('Dafür fehlt das Gebäude: Kaserne.')),
+              act('r2', 'Motorisierte Infanterie', reason('Dafür fehlt das Gebäude: Kaserne.')),
+              act('r3', 'Kampfpanzer', reason('Dafür fehlt das Gebäude: Fabrik.')),
+              act('r4', 'Schwerer Kampfpanzer', reason('Dafür fehlt das Gebäude: Fabrik.')),
+              act('r5', 'Artillerie', reason('Dafür fehlt das Gebäude: Fabrik.')),
+            ],
+          },
+        ]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+  it('haelt sich an das gemessene Textbudget', () => {
+    const { container } = fullPanel()
+    const length = visibleText(container).length
+
+    expect(length, `Das Panel ist auf ${length} sichtbare Zeichen gewachsen`).toBeLessThanOrEqual(TEXT_BUDGET)
+  })
+
+  it('nennt jeden Absagegrund hoechstens einmal', () => {
+    const { container } = fullPanel()
+    const shown = [...container.querySelectorAll('.action__reason')].map((node) => node.textContent)
+
+    // Der Hauptstadt-Knopf steht in einer eigenen Reihe und bringt seinen Grund mit;
+    // innerhalb der Aushebegruppe erscheint jeder Grund genau einmal statt fuenfmal.
+    expect(shown).toEqual([
+      'Dieses Ziel ist für den Befehl nicht zulässig.',
+      'Dafür fehlt das Gebäude: Kaserne.',
+      'Dafür fehlt das Gebäude: Fabrik.',
+    ])
+  })
+
+  it('behaelt jeden Grund fuer Vorleseprogramme, auch den nicht gezeigten', () => {
+    // Weniger Text auf dem Schirm darf nicht weniger Auskunft bedeuten.
+    const { container } = fullPanel()
+    const hidden = [...container.querySelectorAll('.visually-hidden')].map((node) => node.textContent)
+
+    expect(hidden).toContain('Dafür fehlt das Gebäude: Fabrik.')
+    expect(hidden.filter((text) => text === 'Dafür fehlt das Gebäude: Fabrik.')).toHaveLength(2)
+  })
+})

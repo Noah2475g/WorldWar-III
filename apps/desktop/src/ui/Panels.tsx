@@ -117,13 +117,29 @@ export function ActionGroup({ group }: { group: ActionGroupSpec }) {
   const shared =
     group.actions.length > 0 && reasons.size === 1 && !reasons.has(null) ? group.actions[0]!.disabledReason : null
 
+  /*
+   * Jeder Grund erscheint höchstens einmal (T-M13-15, R-UI-09).
+   *
+   * Zehn Aushebeknöpfe mit vier verschiedenen Gründen ergaben zehn Absagesätze — und
+   * "Dafür fehlt das Gebäude: Fabrik." viermal untereinander ist keine Auskunft, sondern
+   * eine Wand. Die Knöpfe ohne sichtbaren Grund behalten ihn im Tooltip und in der
+   * Textfassung für Vorleseprogramme, verlieren also nichts.
+   */
+  const alreadyShown = new Set<string>()
+  const showsReason = (action: Action): boolean => {
+    if (shared !== null || action.disabledReason === null) return false
+    if (alreadyShown.has(action.disabledReason)) return false
+    alreadyShown.add(action.disabledReason)
+    return true
+  }
+
   return (
     <section className="group" aria-label={group.title}>
       <h3 className="group__title">{group.title}</h3>
       {shared && <p className="group__reason">{shared}</p>}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={shared === null} />
+          <ActionButton key={action.id} action={action} showReason={showsReason(action)} />
         ))}
       </div>
     </section>
@@ -247,14 +263,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </>
       )}
 
-      {province.buildings !== undefined && (
+      {/* Nur wenn etwas steht: eine Überschrift über einem "Keine Gebäude" sagt zweimal
+          dasselbe Nichts, und die Bauknöpfe darunter sagen es ein drittes Mal. */}
+      {built.length > 0 && (
         <>
           <h3>{t('province.buildings')}</h3>
-          {built.length === 0 ? (
-            <p className="facts__inline">{t('province.noBuildings')}</p>
-          ) : (
-            <IconRow items={buildingItems(province.buildings)} />
-          )}
+          <IconRow items={buildingItems(province.buildings ?? {})} />
         </>
       )}
 
