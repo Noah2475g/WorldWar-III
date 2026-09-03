@@ -40,7 +40,7 @@
     "excludeTypesNote": "Nur Typen, die in den Rohdaten wirklich vorkommen - ein Test verlangt das. Inseln im offenen Ozean werden nicht pauschal gestrichen: Mauritius ist ein Staat mit 1,27 Mio Einwohnern und gehoert auf die Karte, Heard und McDonald nicht."
   },
   "admin1": {
-    "note": "Die neun Länder, die Natural Earth untergliedert. 'region' nutzt das mitgelieferte Regionsfeld, 'explicit' eine Zuordnung von Hand - nötig, wo das Feld leer ist oder die Verwaltungsgliederung nicht der Geografie folgt.",
+    "note": "Länder, die in mehrere Provinzen zerfallen. \"region\" nutzt das Regionsfeld der Rohdaten, \"explicit\" eine Zuordnung von Hand, \"geographic\" schneidet nach Lage in gleich große Streifen. Bei \"geographic\" nennt der Provinzname die Lage und nicht eine historische Landschaft: die Zellen decken sich nicht mit ihr - der bayerische Quadrant enthält auch Baden-Württemberg und Sachsen.",
     "countries": {
       "USA": {
         "strategy": "region",
@@ -139,6 +139,9 @@
             "id": "CHN-NW",
             "name": "Nordwestchina"
           }
+        },
+        "excludeUnits": {
+          "PFA+00?": "Paracel-Inseln - umstrittene Riffe ohne Bevölkerung, keine eigene Provinz"
         }
       },
       "IND": {
@@ -171,127 +174,6 @@
           "South": {
             "id": "IND-SOUTH",
             "name": "Südindien"
-          }
-        }
-      },
-      "AUS": {
-        "strategy": "explicit",
-        "groups": {
-          "AUS-EAST": {
-            "name": "Ostaustralien",
-            "units": [
-              "Queensland",
-              "New South Wales",
-              "Australian Capital Territory",
-              "Jervis Bay Territory"
-            ]
-          },
-          "AUS-SE": {
-            "name": "Südostaustralien",
-            "units": [
-              "Victoria",
-              "Tasmania"
-            ]
-          },
-          "AUS-SOUTH": {
-            "name": "Südaustralien",
-            "units": [
-              "South Australia"
-            ]
-          },
-          "AUS-WEST": {
-            "name": "Westaustralien",
-            "units": [
-              "Western Australia",
-              "Northern Territory"
-            ]
-          }
-        }
-      },
-      "ZAF": {
-        "strategy": "explicit",
-        "groups": {
-          "ZAF-CAPE": {
-            "name": "Kapregion",
-            "units": [
-              "Western Cape",
-              "Northern Cape",
-              "Eastern Cape"
-            ]
-          },
-          "ZAF-HIGHVELD": {
-            "name": "Hochveld",
-            "units": [
-              "Gauteng",
-              "North West",
-              "Free State"
-            ]
-          },
-          "ZAF-NE": {
-            "name": "Nordost-Südafrika",
-            "units": [
-              "Limpopo",
-              "Mpumalanga",
-              "KwaZulu-Natal"
-            ]
-          }
-        }
-      },
-      "BRA": {
-        "strategy": "explicit",
-        "note": "Die fünf amtlichen Großregionen Brasiliens.",
-        "groups": {
-          "BRA-NORTH": {
-            "name": "Nordbrasilien",
-            "units": [
-              "Acre",
-              "Rondônia",
-              "Roraima",
-              "Amazonas",
-              "Pará",
-              "Amapá",
-              "Tocantins"
-            ]
-          },
-          "BRA-NE": {
-            "name": "Nordostbrasilien",
-            "units": [
-              "Maranhão",
-              "Piauí",
-              "Ceará",
-              "Rio Grande do Norte",
-              "Paraíba",
-              "Pernambuco",
-              "Alagoas",
-              "Sergipe",
-              "Bahia"
-            ]
-          },
-          "BRA-CENTRAL": {
-            "name": "Zentralbrasilien",
-            "units": [
-              "Mato Grosso",
-              "Mato Grosso do Sul",
-              "Goiás",
-              "Distrito Federal"
-            ]
-          },
-          "BRA-SE": {
-            "name": "Südostbrasilien",
-            "units": [
-              "Minas Gerais",
-              "Espírito Santo",
-              "Rio de Janeiro",
-              "São Paulo"
-            ]
-          },
-          "BRA-SOUTH": {
-            "name": "Südbrasilien",
-            "units": [
-              "Paraná",
-              "Santa Catarina",
-              "Rio Grande do Sul"
-            ]
           }
         }
       },
@@ -358,11 +240,437 @@
             ]
           }
         }
+      },
+      "BRA": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "BRA-SW",
+            "name": "Südwestbrasilien"
+          },
+          {
+            "id": "BRA-SE",
+            "name": "Südostbrasilien"
+          },
+          {
+            "id": "BRA-NW",
+            "name": "Nordwestbrasilien"
+          },
+          {
+            "id": "BRA-NE",
+            "name": "Nordostbrasilien"
+          }
+        ]
+      },
+      "AUS": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "AUS-SW",
+            "name": "Südwestaustralien"
+          },
+          {
+            "id": "AUS-SE",
+            "name": "Südostaustralien"
+          },
+          {
+            "id": "AUS-NW",
+            "name": "Nordwestaustralien"
+          },
+          {
+            "id": "AUS-NE",
+            "name": "Nordostaustralien"
+          }
+        ]
+      },
+      "ZAF": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 1,
+          "lon": 3
+        },
+        "cells": [
+          {
+            "id": "ZAF-WEST",
+            "name": "Westliches Südafrika"
+          },
+          {
+            "id": "ZAF-CENTRAL",
+            "name": "Zentral-Südafrika"
+          },
+          {
+            "id": "ZAF-EAST",
+            "name": "Östliches Südafrika"
+          }
+        ]
+      },
+      "DEU": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "DEU-SW",
+            "name": "Südwestdeutschland"
+          },
+          {
+            "id": "DEU-SE",
+            "name": "Südostdeutschland"
+          },
+          {
+            "id": "DEU-NW",
+            "name": "Nordwestdeutschland"
+          },
+          {
+            "id": "DEU-NE",
+            "name": "Nordostdeutschland"
+          }
+        ]
+      },
+      "FRA": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "FRA-SW",
+            "name": "Südwestfrankreich"
+          },
+          {
+            "id": "FRA-SE",
+            "name": "Südostfrankreich"
+          },
+          {
+            "id": "FRA-NW",
+            "name": "Nordwestfrankreich"
+          },
+          {
+            "id": "FRA-NE",
+            "name": "Nordostfrankreich"
+          }
+        ],
+        "note": "Die 101 Départements kämen mit 18 Regionen — beides zu fein für eine Weltkarte."
+      },
+      "GBR": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "GBR-SW",
+            "name": "Südwestengland und Wales"
+          },
+          {
+            "id": "GBR-SE",
+            "name": "Südostengland"
+          },
+          {
+            "id": "GBR-NW",
+            "name": "Nordwesten und Nordirland"
+          },
+          {
+            "id": "GBR-NE",
+            "name": "Nordostbritannien und Schottland"
+          }
+        ],
+        "note": "232 Verwaltungseinheiten in den Rohdaten - hier zählt nur die grobe Lage."
+      },
+      "ITA": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 3,
+          "lon": 1
+        },
+        "cells": [
+          {
+            "id": "ITA-SOUTH",
+            "name": "Süditalien und Sizilien"
+          },
+          {
+            "id": "ITA-CENTRAL",
+            "name": "Mittelitalien"
+          },
+          {
+            "id": "ITA-NORTH",
+            "name": "Norditalien"
+          }
+        ],
+        "note": "Langgestreckt - Nord-Süd-Streifen statt Quadranten."
+      },
+      "ESP": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "ESP-SW",
+            "name": "Südwestspanien"
+          },
+          {
+            "id": "ESP-SE",
+            "name": "Südostspanien"
+          },
+          {
+            "id": "ESP-NW",
+            "name": "Nordwestspanien"
+          },
+          {
+            "id": "ESP-NE",
+            "name": "Nordostspanien"
+          }
+        ]
+      },
+      "POL": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "POL-SW",
+            "name": "Südwestpolen"
+          },
+          {
+            "id": "POL-SE",
+            "name": "Südostpolen"
+          },
+          {
+            "id": "POL-NW",
+            "name": "Nordwestpolen"
+          },
+          {
+            "id": "POL-NE",
+            "name": "Nordostpolen"
+          }
+        ]
+      },
+      "UKR": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "UKR-SW",
+            "name": "Südwestukraine"
+          },
+          {
+            "id": "UKR-SE",
+            "name": "Südostukraine"
+          },
+          {
+            "id": "UKR-NW",
+            "name": "Nordwestukraine"
+          },
+          {
+            "id": "UKR-NE",
+            "name": "Nordostukraine"
+          }
+        ]
+      },
+      "TUR": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 1,
+          "lon": 3
+        },
+        "cells": [
+          {
+            "id": "TUR-WEST",
+            "name": "Westtürkei"
+          },
+          {
+            "id": "TUR-CENTRAL",
+            "name": "Zentralanatolien"
+          },
+          {
+            "id": "TUR-EAST",
+            "name": "Osttürkei"
+          }
+        ]
+      },
+      "IRN": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "IRN-SW",
+            "name": "Südwestiran"
+          },
+          {
+            "id": "IRN-SE",
+            "name": "Südostiran"
+          },
+          {
+            "id": "IRN-NW",
+            "name": "Nordwestiran"
+          },
+          {
+            "id": "IRN-NE",
+            "name": "Nordostiran"
+          }
+        ]
+      },
+      "PAK": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 3,
+          "lon": 1
+        },
+        "cells": [
+          {
+            "id": "PAK-SOUTH",
+            "name": "Südpakistan"
+          },
+          {
+            "id": "PAK-CENTRAL",
+            "name": "Zentralpakistan"
+          },
+          {
+            "id": "PAK-NORTH",
+            "name": "Nordpakistan"
+          }
+        ]
+      },
+      "JPN": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 3,
+          "lon": 1
+        },
+        "cells": [
+          {
+            "id": "JPN-SOUTH",
+            "name": "Südjapan"
+          },
+          {
+            "id": "JPN-CENTRAL",
+            "name": "Mitteljapan"
+          },
+          {
+            "id": "JPN-NORTH",
+            "name": "Nordjapan"
+          }
+        ]
+      },
+      "EGY": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 3,
+          "lon": 1
+        },
+        "cells": [
+          {
+            "id": "EGY-SOUTH",
+            "name": "Oberägypten"
+          },
+          {
+            "id": "EGY-CENTRAL",
+            "name": "Mittelägypten"
+          },
+          {
+            "id": "EGY-NORTH",
+            "name": "Nildelta"
+          }
+        ],
+        "note": "Entlang des Nils - drei Streifen von Süd nach Nord statt Quadranten."
+      },
+      "NGA": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "NGA-SW",
+            "name": "Südwestnigeria"
+          },
+          {
+            "id": "NGA-SE",
+            "name": "Südostnigeria"
+          },
+          {
+            "id": "NGA-NW",
+            "name": "Nordwestnigeria"
+          },
+          {
+            "id": "NGA-NE",
+            "name": "Nordostnigeria"
+          }
+        ]
+      },
+      "MEX": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 2,
+          "lon": 2
+        },
+        "cells": [
+          {
+            "id": "MEX-SW",
+            "name": "Südwestmexiko"
+          },
+          {
+            "id": "MEX-SE",
+            "name": "Südostmexiko"
+          },
+          {
+            "id": "MEX-NW",
+            "name": "Nordwestmexiko"
+          },
+          {
+            "id": "MEX-NE",
+            "name": "Nordostmexiko"
+          }
+        ]
+      },
+      "ARG": {
+        "strategy": "geographic",
+        "grid": {
+          "lat": 3,
+          "lon": 1
+        },
+        "cells": [
+          {
+            "id": "ARG-SOUTH",
+            "name": "Südargentinien"
+          },
+          {
+            "id": "ARG-CENTRAL",
+            "name": "Zentralargentinien"
+          },
+          {
+            "id": "ARG-NORTH",
+            "name": "Nordargentinien"
+          }
+        ]
       }
     }
   },
   "startNations": {
-    "note": "Spielbare Mächte. Modernes Setting, also teils einzelne Staaten und teils Bündnisse - und genau deshalb hat jede mindestens drei Provinzen, obwohl Natural Earth bei 1:50 Mio nur neun Länder untergliedert. Wem welche Provinz zu Beginn gehört, entscheidet T-M9-03; hier steht nur, aus welchen Ländern eine Macht besteht.",
+    "note": "Spielbare Mächte, jede ein eigener Staat und jede in mindestens drei Provinzen unterteilt. Das ist der Grund für die feineren Rohdaten (1:10 Mio): bei 1:50 Mio wäre Deutschland eine einzige Provinz gewesen und Europa hätte nur als Block gespielt werden können.",
     "nations": {
       "USA": {
         "name": "Vereinigte Staaten",
@@ -388,22 +696,70 @@
           "IND"
         ]
       },
-      "BRA": {
-        "name": "Brasilien",
+      "DEU": {
+        "name": "Deutschland",
         "countries": [
-          "BRA"
+          "DEU"
         ]
       },
-      "CAN": {
-        "name": "Kanada",
+      "FRA": {
+        "name": "Frankreich",
         "countries": [
-          "CAN"
+          "FRA"
         ]
       },
-      "ZAF": {
-        "name": "Südafrika",
+      "GBR": {
+        "name": "Vereinigtes Königreich",
         "countries": [
-          "ZAF"
+          "GBR"
+        ]
+      },
+      "ITA": {
+        "name": "Italien",
+        "countries": [
+          "ITA"
+        ]
+      },
+      "ESP": {
+        "name": "Spanien",
+        "countries": [
+          "ESP"
+        ]
+      },
+      "POL": {
+        "name": "Polen",
+        "countries": [
+          "POL"
+        ]
+      },
+      "UKR": {
+        "name": "Ukraine",
+        "countries": [
+          "UKR"
+        ]
+      },
+      "TUR": {
+        "name": "Türkei",
+        "countries": [
+          "TUR"
+        ]
+      },
+      "IRN": {
+        "name": "Iran",
+        "countries": [
+          "IRN"
+        ]
+      },
+      "PAK": {
+        "name": "Pakistan",
+        "countries": [
+          "PAK"
+        ]
+      },
+      "JPN": {
+        "name": "Japan",
+        "countries": [
+          "JPN"
         ]
       },
       "IDN": {
@@ -412,100 +768,52 @@
           "IDN"
         ]
       },
-      "AUS": {
-        "name": "Australien",
+      "EGY": {
+        "name": "Ägypten",
         "countries": [
-          "AUS",
-          "NZL",
-          "PNG"
-        ]
-      },
-      "EUR": {
-        "name": "Europäische Union",
-        "countries": [
-          "DEU",
-          "FRA",
-          "ITA",
-          "POL",
-          "ESP",
-          "NLD",
-          "BEL",
-          "AUT",
-          "CZE",
-          "SWE"
-        ]
-      },
-      "GBR": {
-        "name": "Vereinigtes Königreich",
-        "countries": [
-          "GBR",
-          "IRL",
-          "ISL",
-          "NOR"
-        ]
-      },
-      "TUR": {
-        "name": "Türkei",
-        "countries": [
-          "TUR",
-          "AZE",
-          "GEO",
-          "SYR"
-        ]
-      },
-      "IRN": {
-        "name": "Iran",
-        "countries": [
-          "IRN",
-          "IRQ",
-          "AFG",
-          "TKM"
-        ]
-      },
-      "JPN": {
-        "name": "Japan",
-        "countries": [
-          "JPN",
-          "KOR",
-          "PHL",
-          "TWN"
+          "EGY"
         ]
       },
       "NGA": {
         "name": "Nigeria",
         "countries": [
-          "NGA",
-          "NER",
-          "CMR",
-          "BEN",
-          "TCD"
+          "NGA"
+        ]
+      },
+      "ZAF": {
+        "name": "Südafrika",
+        "countries": [
+          "ZAF"
+        ]
+      },
+      "BRA": {
+        "name": "Brasilien",
+        "countries": [
+          "BRA"
         ]
       },
       "ARG": {
         "name": "Argentinien",
         "countries": [
-          "ARG",
-          "CHL",
-          "URY",
-          "PRY"
-        ]
-      },
-      "EGY": {
-        "name": "Ägypten",
-        "countries": [
-          "EGY",
-          "SDN",
-          "LBY",
-          "SAU"
+          "ARG"
         ]
       },
       "MEX": {
         "name": "Mexiko",
         "countries": [
-          "MEX",
-          "GTM",
-          "CUB",
-          "COL"
+          "MEX"
+        ]
+      },
+      "CAN": {
+        "name": "Kanada",
+        "countries": [
+          "CAN"
+        ]
+      },
+      "AUS": {
+        "name": "Australien",
+        "countries": [
+          "AUS"
         ]
       }
     }

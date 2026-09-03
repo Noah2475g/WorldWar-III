@@ -206,3 +206,47 @@ die deutschen Fehlermeldungen und Testnamen aus 56 erledigten Aufgaben umgestell
 
 **Auswirkung:** Keine. Die Provinznamen auf der Karte sind deutsch, die Namen der
 zusammengefassten Regionen ebenfalls („Nordostchina", „Russischer Ferner Osten").
+
+---
+
+## 2026-09-03 · T-M9-00 · Weltkarte auf 1:10 Mio, damit Europa spielbar wird
+
+**Entscheidung:** Alle drei Geodatensätze kommen jetzt in der feinsten Natural-Earth-Stufe
+(1:10 Mio, zusammen rund 23 MB statt 2 MB). Ergebnis: **237 Provinzen** und **24
+Startnationen, jede ein eigener Staat** mit mindestens drei Provinzen.
+
+**Begründung:** Noahs Entscheidung. Bei 1:50 Mio untergliedert Natural Earth nur neun
+Länder; Deutschland, Frankreich und Großbritannien wären je eine einzige Provinz gewesen,
+und Europa hätte nur als Block „Europäische Union" gespielt werden können. Das war eine
+Notlösung, keine Designentscheidung. Beide Stufen gemischt zu verwenden schied aus: Admin-0
+und Admin-1 müssen aus derselben Stufe stammen, sonst passen die Grenzen nicht aufeinander
+und die Nachbarschaftsberechnung (T-M9-02b) findet Lücken, die es in Wirklichkeit nicht gibt.
+
+**Auswirkung:** Die Blöcke sind aufgelöst — Deutschland, Frankreich, Italien, Polen und die
+Ukraine sind eigene Mächte. Der Download ist zehnmal so groß, bleibt aber einmalig und
+uneingecheckt. `raw-units.json` wächst von 86 kB auf 0,86 MB und bleibt eingecheckt, damit
+die Kurationstests ohne Download laufen.
+
+---
+
+## 2026-09-03 · T-M9-00 · Dritte Zuschnitt-Strategie: Aufteilung nach Lage
+
+**Entscheidung:** Neben `region` (Regionsfeld der Rohdaten) und `explicit` (Liste von Hand)
+gibt es `geographic`: Die Einheiten eines Landes werden nach ihrer Lage in ein Raster
+sortiert — 2×2 für Deutschland, drei Nord-Süd-Streifen für Italien und Ägypten. Die Streifen
+enthalten **gleich viele Einheiten**, nicht gleich viele Grade.
+
+**Begründung:** Bei 1:10 Mio ist fast jedes Land untergliedert, die meisten ohne brauchbares
+Regionsfeld: Deutschland kommt als 16 Länder ohne Regionen, die Türkei als 81 Provinzen,
+Großbritannien als 232 Verwaltungseinheiten. Für zwei Dutzend Länder Listen von Hand zu
+schreiben wäre ein Tag Tipparbeit — und eine dauerhafte Last: eine umbenannte Einheit in der
+nächsten Natural-Earth-Fassung fiele still aus ihrer Provinz. Gleich viele Einheiten je
+Streifen statt gleich viele Grade, weil sonst ein einzelnes weit südliches Gebiet eine ganze
+Provinz für sich bekäme.
+
+**Auswirkung:** Drei Angaben je Land genügen: Raster, Zellennamen, fertig.
+**Und die Namen nennen die Lage, nicht die Landschaft.** Der erste Entwurf hatte historische
+Namen vergeben; eine Stichprobe zeigte, dass sie falsch waren — im „bayerischen" Quadranten
+lagen auch Baden-Württemberg und Sachsen, die „Provence" war in Wahrheit Zentralfrankreich,
+und „Andalusien" enthielt die Kanarischen Inseln. Wer nach Lage schneidet, muss nach Lage
+benennen.

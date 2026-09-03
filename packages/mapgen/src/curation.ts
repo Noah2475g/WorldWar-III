@@ -1,5 +1,7 @@
+import { splitGeographically, type Grid } from './geosplit.ts'
+
 /**
- * Turning 242 states and 294 administrative units into a playable map (T-M9-00).
+ * Turning 258 states and 4596 administrative units into a playable map (T-M9-00).
  *
  * The decisions live in `data/mapgen/merge-rules.json`, not here — this is only the
  * accounting that carries them out. What the function guarantees is the property the
@@ -27,10 +29,20 @@ export interface Admin1Record {
   /** Natural Earth's own grouping. Empty for a good number of units. */
   region: string
   areaKm2?: number
+  /** Centre of the unit, used when a country is split by position. */
+  lat?: number
+  lon?: number
 }
 
 export interface Admin1Rule {
-  strategy: 'region' | 'explicit'
+  strategy: 'region' | 'explicit' | 'geographic'
+  /**
+   * For `geographic`: how many bands south-to-north and west-to-east. The provinces
+   * are then named in that order, south-west first, by `cells`.
+   */
+  grid?: Grid
+  /** For `geographic`: id and name per grid cell, south-west first. */
+  cells?: { id: string; name: string }[]
   /** Region name per unit code, for units the raw data leaves ungrouped. */
   overrides?: Record<string, string>
   /**
@@ -40,6 +52,12 @@ export interface Admin1Rule {
    * ships a release in a different order.
    */
   regions?: Record<string, { id: string; name: string }>
+  /**
+   * Units of this country that get no province at all, with the reason. Needed
+   * because a subdivided country can carry entries a map has no use for — China's
+   * list includes the Paracel Islands, a handful of disputed reefs.
+   */
+  excludeUnits?: Record<string, string>
   /** Province per id, for countries whose region field is unusable. */
   groups?: Record<string, { name: string; units: string[] }>
   note?: string
@@ -113,11 +131,17 @@ export function curate(
   }
 
   for (const [iso, rule] of Object.entries(rules.admin1.countries)) {
-    const own = units.filter((unit) => unit.countryIso === iso)
-    if (own.length === 0) continue
+    const all = units.filter((unit) => unit.countryIso === iso)
+    if (all.length === 0) continue
 
-    const grouped =
-      rule.strategy === 'region' ? groupByRegion(own, rule) : groupExplicitly(own, rule)
+    const own: Admin1Record[] = []
+    for (const unit of all) {
+      const reason = rule.excludeUnits?.[unit.code]
+      if (reason === undefined) own.push(unit)
+      else excluded.push({ id: unit.code, name: unit.nameDe || unit.name, reason })
+    }
+
+    const grouped = groupUnits(own, rule)
 
     unassigned.push(...grouped.unassigned)
     for (const [id, group] of grouped.groups) {
@@ -131,6 +155,37 @@ export function curate(
   }
 
   return { provinces, excluded, unassigned }
+}
+
+function groupUnits(units: readonly Admin1Record[], rule: Admin1Rule): Grouping {
+  if (rule.strategy === 'region') return groupByRegion(units, rule)
+  if (rule.strategy === 'explicit') return groupExplicitly(units, rule)
+  return groupByPosition(units, rule)
+}
+
+/**
+ * Groups by where the units lie. At 1:10m most countries carry no usable grouping of
+ * their own — Germany arrives as sixteen states with no regions, Turkey as eighty-one
+ * provinces — and writing those lists out by hand for two dozen countries would be a
+ * standing liability: a renamed unit in the next Natural Earth release would silently
+ * drop out of its province.
+ */
+function groupByPosition(units: readonly Admin1Record[], rule: Admin1Rule): Grouping {
+  const groups = new Map<string, Group>()
+  const cells = rule.cells ?? []
+  const unassigned: Admin1Record[] = []
+
+  for (const cell of splitGeographically(units, rule.grid ?? { lat: 1, lon: 1 })) {
+    const named = cells[cell.index]
+    if (!named) {
+      // Fewer names than cells: the country would lose provinces without a word.
+      unassigned.push(...cell.units)
+      continue
+    }
+    for (const unit of cell.units) add(groups, named.id, named.name, unit)
+  }
+
+  return { groups, unassigned }
 }
 
 /** Does this country become a province of its own? */

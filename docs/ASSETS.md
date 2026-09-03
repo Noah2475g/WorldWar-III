@@ -19,12 +19,14 @@ Netzzugriff (R-FREE-04).
 
 | Datei | Zweck | Adresse |
 |---|---|---|
-| `ne_50m_admin_1_states_provinces` | Verwaltungseinheiten erster Ordnung, Rohmasse für die Provinzkuration | https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_1_states_provinces.zip |
-| `ne_50m_admin_0_countries` | Staatsgrenzen und Landeskennungen | https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip |
-| `ne_50m_ocean` | Meeresflächen, Küstenerkennung, Seewege | https://naciscdn.org/naturalearth/50m/physical/ne_50m_ocean.zip |
+| `ne_10m_admin_1_states_provinces` | Verwaltungseinheiten erster Ordnung, Rohmasse für die Provinzkuration | https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_1_states_provinces.zip |
+| `ne_10m_admin_0_countries` | Staatsgrenzen und Landeskennungen | https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip |
+| `ne_10m_ocean` | Meeresflächen, Küstenerkennung, Seewege | https://naciscdn.org/naturalearth/10m/physical/ne_10m_ocean.zip |
 
-Maßstab 1:50 Mio — die mittlere der drei Natural-Earth-Stufen. 1:10 Mio wäre für 150–250
-Provinzen unnötig fein (und zehnmal so groß), 1:110 Mio zu grob für Inseln und Meerengen.
+Maßstab **1:10 Mio** — die feinste der drei Natural-Earth-Stufen, rund 23 MB. Die
+mittlere Stufe 1:50 Mio wäre zehnmal kleiner, untergliedert aber nur neun Länder:
+Deutschland, Frankreich und Großbritannien wären dort je eine einzige Provinz gewesen,
+und keine europäische Macht hätte die geforderten drei Provinzen erreicht (R-MAP-03).
 
 ## Schrift — IBM Plex
 

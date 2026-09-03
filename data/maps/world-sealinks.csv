@@ -1,29 +1,29 @@
 from,to,kind,name,note
-ESP,MAR,strait,Straße von Gibraltar,Einzige Verbindung zwischen Atlantik und Mittelmeer
-GBR,FRA,strait,Ärmelkanal,Kürzeste Überfahrt nach Kontinentaleuropa
-GBR,IRL,sea,Irische See,
-GBR,NLD,sea,Nordsee,
-GBR,NOR,sea,Nordsee Nord,
-ISL,GBR,sea,Nordatlantische Route,
+ESP-SW,MAR,strait,Straße von Gibraltar,Einzige Verbindung zwischen Atlantik und Mittelmeer
+GBR-SE,FRA-NW,strait,Ärmelkanal,Kürzeste Überfahrt nach Kontinentaleuropa
+GBR-NW,IRL,sea,Irische See,
+GBR-SE,NLD,sea,Nordsee,
+GBR-NE,NOR,sea,Nordsee Nord,
+ISL,GBR-NE,sea,Nordatlantische Route,
 ISL,GRL,strait,Dänemarkstraße,Nordatlantisches Nadelöhr
 GRL,CAN-NORTH,sea,Davisstraße,
 DNK,SWE,strait,Öresund,Zugang zur Ostsee
-DNK,DEU,sea,Kleiner Belt,
+DNK,DEU-NW,sea,Kleiner Belt,
 SWE,FIN,sea,Bottnischer Meerbusen,
-SWE,POL,sea,Ostsee,
+SWE,POL-NW,sea,Ostsee,
 EST,FIN,strait,Finnischer Meerbusen,
-ITA,TUN,strait,Straße von Sizilien,Teilt das Mittelmeer in West und Ost
-ITA,MLT,sea,Malta-Kanal,
-ITA,HRV,sea,Adria,
-GRC,TUR,sea,Ägäis,
-TUR,UKR,strait,Bosporus,Einziger Zugang zum Schwarzen Meer
-TUR,ROU,sea,Westliches Schwarzes Meer,
-TUR,CYP,sea,Levantisches Becken,
+ITA-SOUTH,TUN,strait,Straße von Sizilien,Teilt das Mittelmeer in West und Ost
+ITA-SOUTH,MLT,sea,Malta-Kanal,
+ITA-NORTH,HRV,sea,Adria,
+GRC,TUR-WEST,sea,Ägäis,
+TUR-WEST,UKR-SE,strait,Bosporus,Einziger Zugang zum Schwarzen Meer
+TUR-WEST,ROU,sea,Westliches Schwarzes Meer,
+TUR-CENTRAL,CYP,sea,Levantisches Becken,
 CYP,SYR,sea,Östliches Mittelmeer,
-EGY,SAU,strait,Golf von Suez,Sueskanal - Verbindung Mittelmeer zum Roten Meer
+EGY-NORTH,SAU,strait,Golf von Suez,Sueskanal - Verbindung Mittelmeer zum Roten Meer
 DJI,YEM,strait,Bab al-Mandab,Ausgang des Roten Meeres
-OMN,IRN,strait,Straße von Hormus,Ausfuhrweg des Persischen Golfs
-ARE,IRN,sea,Persischer Golf,
+OMN,IRN-SE,strait,Straße von Hormus,Ausfuhrweg des Persischen Golfs
+ARE,IRN-SW,sea,Persischer Golf,
 BHR,SAU,sea,Golf von Bahrain,
 IND-WEST,OMN,sea,Arabisches Meer,
 IND-SOUTH,LKA,strait,Palkstraße,
@@ -42,32 +42,51 @@ IDN-SUL,PHL,sea,Celebessee,
 PHL,TWN,strait,Luzonstraße,
 TWN,CHN-EAST,strait,Taiwanstraße,
 CHN-EAST,KOR,sea,Gelbes Meer,
-KOR,JPN,strait,Koreastraße,
-JPN,RUS-FAREAST,strait,La-Pérouse-Straße,
+KOR,JPN-SOUTH,strait,Koreastraße,
+JPN-NORTH,RUS-FAREAST,strait,La-Pérouse-Straße,
 RUS-FAREAST,USA-WEST,strait,Beringstraße,Landbrücke der Kontinente - kürzeste Verbindung Asien-Amerika
 CHN-SOUTH,VNM,sea,Golf von Tonkin,
 VNM,PHL,sea,Südchinesisches Meer,
-AUS-EAST,NZL,sea,Tasmansee,
-AUS-EAST,PNG,strait,Torresstraße,
-AUS-SE,AUS-EAST,sea,Bassstraße,
-AUS-WEST,IDN-EAST,sea,Timorsee Süd,
+AUS-SE,NZL,sea,Tasmansee,
+AUS-NE,PNG,strait,Torresstraße,
+AUS-SE,AUS-NE,sea,Bassstraße,
+AUS-NW,IDN-EAST,sea,Timorsee Süd,
 NZL,FJI,sea,Südpazifik,
 USA-SOUTH,CUB,strait,Floridastraße,
-CUB,MEX,strait,Yucatánkanal,
+CUB,MEX-SE,strait,Yucatánkanal,
 PAN,COL,sea,Karibik Süd,Panamakanal - Verbindung Atlantik zum Pazifik
-MEX,USA-WEST,sea,Golf von Kalifornien,
+MEX-NW,USA-WEST,sea,Golf von Kalifornien,
 BRA-NE,AGO,sea,Südatlantische Route,
-ARG,FLK,sea,Südatlantik,
-ARG,CHL,strait,Magellanstraße,Umfahrung Südamerikas ohne Kanal
-ZAF-CAPE,MDG,sea,Kap-Route,Umfahrung Afrikas
+ARG-SOUTH,FLK,sea,Südatlantik,
+ARG-SOUTH,CHL,strait,Magellanstraße,Umfahrung Südamerikas ohne Kanal
+ZAF-EAST,MDG,sea,Kap-Route,Umfahrung Afrikas
 MDG,MOZ,strait,Straße von Mosambik,
-ZAF-CAPE,BRA-SE,sea,Südatlantik Ost,
-NGA,CMR,sea,Golf von Guinea,
-NGA,GHA,sea,Bucht von Benin,
+ZAF-WEST,BRA-SE,sea,Südatlantik Ost,
+NGA-SE,CMR,sea,Golf von Guinea,
+NGA-SW,GHA,sea,Bucht von Benin,
 SEN,MAR,sea,Westafrikanische Küstenroute,
 GHA,CIV,sea,Elfenbeinküste,
 SEN,BRA-NE,sea,Mittelatlantische Route,
-USA-NE,GBR,sea,Nordatlantik,
-CAN-EAST,GBR,sea,Nordatlantik Nord,
-USA-WEST,JPN,sea,Nordpazifik,
+USA-NE,GBR-SW,sea,Nordatlantik,
+CAN-EAST,GBR-NW,sea,Nordatlantik Nord,
+USA-WEST,JPN-NORTH,sea,Nordpazifik,
 USA-WEST,CAN-WEST,sea,Golf von Alaska,
+DEU-NE,SWE,sea,Westliche Ostsee,
+POL-NE,LTU,sea,Östliche Ostsee,
+FRA-SE,ITA-NORTH,sea,Ligurisches Meer,
+FRA-SW,ESP-NW,sea,Biskaya,
+ESP-NE,FRA-SE,sea,Golfe du Lion,
+ESP-SE,DZA,sea,Alboránsee,
+ITA-CENTRAL,GRC,sea,Ionisches Meer,
+UKR-SW,ROU,sea,Nordwestliches Schwarzes Meer,
+EGY-NORTH,LBY,sea,Libysche See,
+EGY-SOUTH,SDN,sea,Rotes Meer Süd,
+IRN-SW,IRQ,sea,Schatt al-Arab,
+PAK-SOUTH,IRN-SE,sea,Golf von Oman,
+PAK-SOUTH,IND-WEST,sea,Arabisches Meer Nord,
+JPN-CENTRAL,CHN-EAST,sea,Ostchinesisches Meer,
+MEX-SW,GTM,sea,Pazifikküste Mittelamerikas,
+MEX-NE,USA-SOUTH,sea,Golf von Mexiko,
+ARG-NORTH,URY,sea,Río de la Plata,
+ARG-CENTRAL,BRA-SE,sea,Südwestatlantik,
+GBR-SW,ESP-NW,sea,Golf von Biskaya West,

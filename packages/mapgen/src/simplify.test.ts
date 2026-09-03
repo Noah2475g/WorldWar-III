@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { simplify, simplifyRing } from './simplify'
-import type { LonLat } from './project'
+import { simplify, simplifyRing } from './simplify.ts'
+import type { LonLat } from './project.ts'
 
 /**
  * Natural Earth draws coastlines at a detail no strategy map needs — a single country

@@ -1,77 +1,94 @@
 id,name,reason
-ABW,Aruba,Unter beiden Schwellen: 106.314 Einwohner und 155 km².
-AIA,Anguilla,Unter beiden Schwellen: 14.731 Einwohner und 83 km².
-ALD,Åland,Unter beiden Schwellen: 29.884 Einwohner und 760 km².
-AND,Andorra,Unter beiden Schwellen: 77.142 Einwohner und 442 km².
-ASM,Amerikanisch-Samoa,Unter beiden Schwellen: 55.312 Einwohner und 120 km².
+ABW,Aruba,Unter beiden Schwellen: 106.314 Einwohner und 170 km².
+AIA,Anguilla,Unter beiden Schwellen: 14.731 Einwohner und 88 km².
+ALD,Åland,Unter beiden Schwellen: 29.884 Einwohner und 937 km².
+AND,Andorra,Unter beiden Schwellen: 77.142 Einwohner und 451 km².
+ASM,Amerikanisch-Samoa,Unter beiden Schwellen: 55.312 Einwohner und 181 km².
 ATA,Antarktika,Antarktis - kein Spielgebiet
 ATC,Ashmore- und Cartierinseln,Unter beiden Schwellen: 0 Einwohner und 3 km².
 ATF,Französische Süd- und Antarktisgebiete,Französische Süd- und Antarktisgebiete - unbewohnt
-ATG,Antigua und Barbuda,Unter beiden Schwellen: 97.118 Einwohner und 433 km².
-BHS,Bahamas,Unter beiden Schwellen: 389.482 Einwohner und 12.668 km².
+ATG,Antigua und Barbuda,Unter beiden Schwellen: 97.118 Einwohner und 453 km².
+BHS,Bahamas,Unter beiden Schwellen: 389.482 Einwohner und 12.632 km².
+BJN,Bajo-Nuevo-Bank,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
 BLM,Saint-Barthélemy,Unter beiden Schwellen: 9.961 Einwohner und 25 km².
-BLZ,Belize,Unter beiden Schwellen: 390.353 Einwohner und 22.781 km².
-BMU,Bermuda,Unter beiden Schwellen: 63.918 Einwohner und 66 km².
-BRB,Barbados,Unter beiden Schwellen: 287.025 Einwohner und 389 km².
-BRN,Brunei,Unter beiden Schwellen: 433.285 Einwohner und 5.672 km².
-BTN,Bhutan,Unter beiden Schwellen: 763.092 Einwohner und 39.877 km².
-COK,Cookinseln,Unter beiden Schwellen: 17.459 Einwohner und 61 km².
-COM,Komoren,Unter beiden Schwellen: 850.886 Einwohner und 1.586 km².
-CPV,Kap Verde,Unter beiden Schwellen: 549.935 Einwohner und 3.585 km².
-CUW,Curaçao,Unter beiden Schwellen: 157.538 Einwohner und 430 km².
-CYM,Cayman Islands,Unter beiden Schwellen: 64.948 Einwohner und 301 km².
+BLZ,Belize,Unter beiden Schwellen: 390.353 Einwohner und 22.373 km².
+BMU,Bermuda,Unter beiden Schwellen: 63.918 Einwohner und 62 km².
+BRB,Barbados,Unter beiden Schwellen: 287.025 Einwohner und 446 km².
+BRI,Isla Brasilera,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+BRN,Brunei,Unter beiden Schwellen: 433.285 Einwohner und 5.742 km².
+BRT,Bir Tawil,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+BTN,Bhutan,Unter beiden Schwellen: 763.092 Einwohner und 40.488 km².
+CLP,Clipperton-Insel,Unter beiden Schwellen: 0 Einwohner und 5 km².
+CNM,UN-Pufferzone in Zypern,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+COK,Cookinseln,Unter beiden Schwellen: 17.459 Einwohner und 192 km².
+COM,Komoren,Unter beiden Schwellen: 850.886 Einwohner und 1.679 km².
+CPV,Kap Verde,Unter beiden Schwellen: 549.935 Einwohner und 3.940 km².
+CSI,Korallenmeerinseln,Unter beiden Schwellen: 4 Einwohner und 0 km².
+CUW,Curaçao,Unter beiden Schwellen: 157.538 Einwohner und 465 km².
+CYM,Cayman Islands,Unter beiden Schwellen: 64.948 Einwohner und 310 km².
 CYN,Türkische Republik Nordzypern,Nordzypern - Teil der Provinz Zypern
-DMA,Dominica,Unter beiden Schwellen: 71.808 Einwohner und 698 km².
-FRO,Färöer,Unter beiden Schwellen: 48.678 Einwohner und 1.036 km².
-FSM,Föderierte Staaten von Mikronesien,Unter beiden Schwellen: 113.815 Einwohner und 524 km².
-GGY,Guernsey,Unter beiden Schwellen: 62.792 Einwohner und 48 km².
-GRD,Grenada,Unter beiden Schwellen: 112.003 Einwohner und 286 km².
-GUM,Guam,Unter beiden Schwellen: 167.294 Einwohner und 482 km².
+DMA,Dominica,Unter beiden Schwellen: 71.808 Einwohner und 733 km².
+ESB,Dekelia,Unter beiden Schwellen: 7.850 Einwohner und 127 km².
+FRO,Färöer,Unter beiden Schwellen: 48.678 Einwohner und 1.321 km².
+FSM,Föderierte Staaten von Mikronesien,Unter beiden Schwellen: 113.815 Einwohner und 637 km².
+GGY,Guernsey,Unter beiden Schwellen: 62.792 Einwohner und 74 km².
+GIB,Gibraltar,Unter beiden Schwellen: 33.701 Einwohner und 4 km².
+GRD,Grenada,Unter beiden Schwellen: 112.003 Einwohner und 349 km².
+GUM,Guam,Unter beiden Schwellen: 167.294 Einwohner und 566 km².
 HMD,Heard und McDonaldinseln,Heard und McDonaldinseln - unbewohnt
-IMN,Isle of Man,Unter beiden Schwellen: 84.584 Einwohner und 557 km².
-IOA,Australische Territorien im Indischen Ozean,Unter beiden Schwellen: 2.387 Einwohner und 144 km².
+IMN,Isle of Man,Unter beiden Schwellen: 84.584 Einwohner und 572 km².
+IOA,Australische Territorien im Indischen Ozean,Unter beiden Schwellen: 2.387 Einwohner und 112 km².
 IOT,Britisches Territorium im Indischen Ozean,Britisches Territorium im Indischen Ozean - Militärbasis ohne Zivilbevölkerung
-JEY,Jersey,Unter beiden Schwellen: 107.800 Einwohner und 126 km².
+JEY,Jersey,Unter beiden Schwellen: 107.800 Einwohner und 119 km².
+KAB,Baikonur,Unter beiden Schwellen: 36.175 Einwohner und 6.486 km².
 KAS,Siachen-Gletscher,Siachen-Gletscher - umstrittenes Gebiet ohne eigene Provinz
-KIR,Kiribati,Unter beiden Schwellen: 117.606 Einwohner und 938 km².
-KNA,St. Kitts und Nevis,Unter beiden Schwellen: 52.834 Einwohner und 233 km².
-LCA,St. Lucia,Unter beiden Schwellen: 182.790 Einwohner und 551 km².
-LIE,Liechtenstein,Unter beiden Schwellen: 38.019 Einwohner und 138 km².
-LUX,Luxemburg,Unter beiden Schwellen: 619.896 Einwohner und 2.612 km².
-MAC,Macau,Unter beiden Schwellen: 640.445 Einwohner und 23 km².
-MAF,Saint-Martin,Unter beiden Schwellen: 38.002 Einwohner und 49 km².
-MCO,Monaco,Unter beiden Schwellen: 38.964 Einwohner und 12 km².
-MDV,Malediven,Unter beiden Schwellen: 530.953 Einwohner und 66 km².
-MHL,Marshallinseln,Unter beiden Schwellen: 58.791 Einwohner und 237 km².
-MNE,Montenegro,Unter beiden Schwellen: 622.137 Einwohner und 13.667 km².
-MNP,Nördliche Marianen,Unter beiden Schwellen: 57.216 Einwohner und 394 km².
-MSR,Montserrat,Unter beiden Schwellen: 4.649 Einwohner und 80 km².
-NCL,Neukaledonien,Unter beiden Schwellen: 287.800 Einwohner und 18.667 km².
+KIR,Kiribati,Unter beiden Schwellen: 117.606 Einwohner und 954 km².
+KNA,St. Kitts und Nevis,Unter beiden Schwellen: 52.834 Einwohner und 265 km².
+LCA,St. Lucia,Unter beiden Schwellen: 182.790 Einwohner und 607 km².
+LIE,Liechtenstein,Unter beiden Schwellen: 38.019 Einwohner und 137 km².
+LUX,Luxemburg,Unter beiden Schwellen: 619.896 Einwohner und 2.600 km².
+MAC,Macau,Unter beiden Schwellen: 640.445 Einwohner und 30 km².
+MAF,Saint-Martin,Unter beiden Schwellen: 38.002 Einwohner und 68 km².
+MCO,Monaco,Unter beiden Schwellen: 38.964 Einwohner und 19 km².
+MDV,Malediven,Unter beiden Schwellen: 530.953 Einwohner und 109 km².
+MHL,Marshallinseln,Unter beiden Schwellen: 58.791 Einwohner und 166 km².
+MNE,Montenegro,Unter beiden Schwellen: 622.137 Einwohner und 13.704 km².
+MNP,Nördliche Marianen,Unter beiden Schwellen: 57.216 Einwohner und 581 km².
+MSR,Montserrat,Unter beiden Schwellen: 4.649 Einwohner und 100 km².
+NCL,Neukaledonien,Unter beiden Schwellen: 287.800 Einwohner und 18.892 km².
 NFK,Norfolkinsel,Unter beiden Schwellen: 2.169 Einwohner und 41 km².
-NIU,Niue,Unter beiden Schwellen: 1.620 Einwohner und 197 km².
-NRU,Nauru,Unter beiden Schwellen: 12.581 Einwohner und 28 km².
-PCN,Pitcairninseln,Unter beiden Schwellen: 54 Einwohner und 39 km².
-PLW,Palau,Unter beiden Schwellen: 18.008 Einwohner und 341 km².
+NIU,Niue,Unter beiden Schwellen: 1.620 Einwohner und 221 km².
+NRU,Nauru,Unter beiden Schwellen: 12.581 Einwohner und 29 km².
+PCN,Pitcairninseln,Unter beiden Schwellen: 54 Einwohner und 43 km².
+PFA+00?,Paracel-Inseln,"Paracel-Inseln - umstrittene Riffe ohne Bevölkerung, keine eigene Provinz"
+PGA,Wake,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+PLW,Palau,Unter beiden Schwellen: 18.008 Einwohner und 494 km².
 PSX,Palästina,Palästina - Teil der Provinz Israel
-PYF,Französisch-Polynesien,Unter beiden Schwellen: 279.287 Einwohner und 2.615 km².
+PYF,Französisch-Polynesien,Unter beiden Schwellen: 279.287 Einwohner und 3.348 km².
 SAH,Westsahara,Westsahara - Teil der Provinz Marokko
+SCR,Scarborough-Riff,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+SER,Serranilla Bank,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
 SGS,Südgeorgien und die Südlichen Sandwichinseln,Südgeorgien - unbewohnt
-SHN,St. Helena,Unter beiden Schwellen: 4.534 Einwohner und 186 km².
-SLB,Salomonen,Unter beiden Schwellen: 669.823 Einwohner und 25.740 km².
-SMR,San Marino,Unter beiden Schwellen: 33.860 Einwohner und 68 km².
+SHN,St. Helena,Unter beiden Schwellen: 4.534 Einwohner und 367 km².
+SLB,Salomonen,Unter beiden Schwellen: 669.823 Einwohner und 27.312 km².
+SMR,San Marino,Unter beiden Schwellen: 33.860 Einwohner und 60 km².
 SOL,Somaliland,Somaliland - Teil der Provinz Somalia
-SPM,Saint-Pierre und Miquelon,Unter beiden Schwellen: 5.997 Einwohner und 205 km².
-STP,São Tomé und Príncipe,Unter beiden Schwellen: 215.056 Einwohner und 986 km².
-SWZ,Eswatini,Unter beiden Schwellen: 1.148.130 Einwohner und 16.992 km².
-SXM,Sint Maarten,Unter beiden Schwellen: 40.733 Einwohner und 42 km².
-SYC,Seychellen,Unter beiden Schwellen: 97.625 Einwohner und 174 km².
-TCA,Turks- und Caicosinseln,Unter beiden Schwellen: 38.191 Einwohner und 330 km².
-TON,Tonga,Unter beiden Schwellen: 104.494 Einwohner und 432 km².
-TUV,Tuvalu,Unter beiden Schwellen: 11.646 Einwohner und 10 km².
+SPI,Südpatagonisches Eisfeld,"Gebietstyp ""Indeterminate"" ist kein eigenes Spielgebiet."
+SPM,Saint-Pierre und Miquelon,Unter beiden Schwellen: 5.997 Einwohner und 242 km².
+STP,São Tomé und Príncipe,Unter beiden Schwellen: 215.056 Einwohner und 1.042 km².
+SWZ,Eswatini,Unter beiden Schwellen: 1.148.130 Einwohner und 17.143 km².
+SXM,Sint Maarten,Unter beiden Schwellen: 40.733 Einwohner und 23 km².
+SYC,Seychellen,Unter beiden Schwellen: 97.625 Einwohner und 438 km².
+TCA,Turks- und Caicosinseln,Unter beiden Schwellen: 38.191 Einwohner und 446 km².
+TON,Tonga,Unter beiden Schwellen: 104.494 Einwohner und 605 km².
+TUV,Tuvalu,Unter beiden Schwellen: 11.646 Einwohner und 23 km².
+UMI,United States Minor Outlying Islands,Unter beiden Schwellen: 300 Einwohner und 28 km².
+USG,Guantanamo Bay Naval Base,Unter beiden Schwellen: 6.000 Einwohner und 66 km².
 VAT,Vatikanstadt,Vatikanstadt - zu klein für eine Provinz
-VCT,St. Vincent und die Grenadinen,Unter beiden Schwellen: 110.589 Einwohner und 311 km².
-VGB,Britische Jungferninseln,Unter beiden Schwellen: 30.030 Einwohner und 135 km².
-VIR,Amerikanische Jungferninseln,Unter beiden Schwellen: 106.631 Einwohner und 316 km².
-VUT,Vanuatu,Unter beiden Schwellen: 299.882 Einwohner und 11.292 km².
-WLF,Wallis und Futuna,Unter beiden Schwellen: 11.558 Einwohner und 132 km².
-WSM,Samoa,Unter beiden Schwellen: 197.097 Einwohner und 2.702 km².
+VCT,St. Vincent und die Grenadinen,Unter beiden Schwellen: 110.589 Einwohner und 369 km².
+VGB,Britische Jungferninseln,Unter beiden Schwellen: 30.030 Einwohner und 145 km².
+VIR,Amerikanische Jungferninseln,Unter beiden Schwellen: 106.631 Einwohner und 356 km².
+VUT,Vanuatu,Unter beiden Schwellen: 299.882 Einwohner und 12.339 km².
+WLF,Wallis und Futuna,Unter beiden Schwellen: 11.558 Einwohner und 140 km².
+WSB,Akrotiri,Unter beiden Schwellen: 7.850 Einwohner und 99 km².
+WSM,Samoa,Unter beiden Schwellen: 197.097 Einwohner und 2.791 km².

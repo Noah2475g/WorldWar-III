@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { readCsv } from './csv'
+import { readCsv } from './csv.ts'
 
 /**
  * The curated sea lanes (T-M9-00, R-MAP-01/R-UNIT-06).

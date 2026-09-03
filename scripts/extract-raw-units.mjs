@@ -26,9 +26,48 @@ async function readAll(shp, dbf) {
   const source = await open(shp, dbf, { encoding: 'utf8' })
   const rows = []
   for (let result = await source.read(); !result.done; result = await source.read()) {
-    rows.push({ properties: result.value.properties, areaKm2: areaOf(result.value.geometry) })
+    rows.push({
+      properties: result.value.properties,
+      areaKm2: areaOf(result.value.geometry),
+      centre: centreOf(result.value.geometry),
+    })
   }
   return rows
+}
+
+/**
+ * Where a shape sits, as one point. Taken from the largest ring rather than from all
+ * of them: France's centre must land in France, not in the Atlantic between it and
+ * French Guiana.
+ */
+function centreOf(geometry) {
+  if (!geometry) return { lat: 0, lon: 0 }
+  const polygons =
+    geometry.type === 'MultiPolygon' ? geometry.coordinates : geometry.type === 'Polygon' ? [geometry.coordinates] : []
+
+  let best = null
+  let bestArea = -1
+  for (const polygon of polygons) {
+    const ring = polygon[0]
+    if (!ring) continue
+    const area = ringAreaKm2(ring)
+    if (area > bestArea) {
+      bestArea = area
+      best = ring
+    }
+  }
+  if (!best) return { lat: 0, lon: 0 }
+
+  let lon = 0
+  let lat = 0
+  for (const [x, y] of best) {
+    lon += x
+    lat += y
+  }
+  return {
+    lon: Math.round((lon / best.length) * 1000) / 1000,
+    lat: Math.round((lat / best.length) * 1000) / 1000,
+  }
 }
 
 const EARTH_RADIUS_KM = 6371.0088
@@ -70,12 +109,12 @@ function ringAreaKm2(ring) {
 
 async function main() {
   const admin0 = await readAll(
-    join(GEO, 'admin0', 'ne_50m_admin_0_countries.shp'),
-    join(GEO, 'admin0', 'ne_50m_admin_0_countries.dbf'),
+    join(GEO, 'admin0', 'ne_10m_admin_0_countries.shp'),
+    join(GEO, 'admin0', 'ne_10m_admin_0_countries.dbf'),
   )
   const admin1 = await readAll(
-    join(GEO, 'admin1', 'ne_50m_admin_1_states_provinces.shp'),
-    join(GEO, 'admin1', 'ne_50m_admin_1_states_provinces.dbf'),
+    join(GEO, 'admin1', 'ne_10m_admin_1_states_provinces.shp'),
+    join(GEO, 'admin1', 'ne_10m_admin_1_states_provinces.dbf'),
   )
 
   const countries = admin0.map(({ properties: p, areaKm2 }) => ({
@@ -88,13 +127,15 @@ async function main() {
     type: clean(p.TYPE),
   }))
 
-  const units = admin1.map(({ properties: p, areaKm2 }) => ({
+  const units = admin1.map(({ properties: p, areaKm2, centre }) => ({
     code: clean(p.adm1_code),
     countryIso: clean(p.adm0_a3),
     name: clean(p.name),
     nameDe: clean(p.name_de) || clean(p.name),
     region: clean(p.region) || '',
     areaKm2,
+    lat: centre.lat,
+    lon: centre.lon,
   }))
 
   await mkdir(join(ROOT, 'data', 'maps'), { recursive: true })

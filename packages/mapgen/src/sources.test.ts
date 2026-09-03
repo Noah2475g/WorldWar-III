@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { GEO_SOURCES, NATURAL_EARTH_LICENCE, geoSource } from './sources'
+import { GEO_SOURCES, NATURAL_EARTH_LICENCE, geoSource } from './sources.ts'
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
 const assets = readFileSync(`${ROOT}/docs/ASSETS.md`, 'utf8')
@@ -39,6 +39,6 @@ describe('R-ASSET-02 Herkunft und Lizenz jeder Datenquelle', () => {
 
   it('nennt unbekannte Quellen beim Namen, statt undefined zurueckzugeben', () => {
     expect(() => geoSource('gibtsnicht')).toThrow(/admin1/)
-    expect(geoSource('admin1').name).toBe('ne_50m_admin_1_states_provinces')
+    expect(geoSource('admin1').name).toBe('ne_10m_admin_1_states_provinces')
   })
 })

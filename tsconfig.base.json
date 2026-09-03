@@ -22,6 +22,11 @@
     "isolatedModules": true,
     "noEmit": true,
 
+    // packages/mapgen is also run directly by node (the offline map pipeline, D-09),
+    // and node insists on the extension a bundler would infer. Only that package
+    // writes them; everywhere else the imports stay extension-less.
+    "allowImportingTsExtensions": true,
+
     "baseUrl": ".",
     "paths": {
       "@worldwar/shared": ["packages/shared/src/index.ts"],

@@ -22,9 +22,9 @@ const TARGET = join(ROOT, 'data', 'geo')
 // this list is kept short deliberately — adding a source means adding it in both places
 // and saying where it came from.
 const SOURCES = [
-  ['admin1', 'https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_1_states_provinces.zip'],
-  ['admin0', 'https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip'],
-  ['ocean', 'https://naciscdn.org/naturalearth/50m/physical/ne_50m_ocean.zip'],
+  ['admin1', 'https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_1_states_provinces.zip'],
+  ['admin0', 'https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip'],
+  ['ocean', 'https://naciscdn.org/naturalearth/10m/physical/ne_10m_ocean.zip'],
 ]
 
 const force = process.argv.includes('--force')

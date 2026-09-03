@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { curate, type Admin0Record, type Admin1Record, type MergeRules } from './curation'
+import { curate, type Admin0Record, type Admin1Record, type MergeRules } from './curation.ts'
 
 /**
  * The cut of the world map (T-M9-00, R-MAP-01/R-MAP-03).
@@ -162,16 +162,45 @@ describe('R-MAP-03 Der Zuschnitt taugt fuer eine Partie', () => {
   })
 
   it('verbucht jede Verwaltungseinheit genau einmal', () => {
+    // At 1:10m there are 4596 units, and most belong to countries that enter the map
+    // whole. So the guarantee is not "every unit is in a province's source list" but
+    // the one that actually matters: for every unit there is exactly one answer to
+    // "where did this go?" — its own province, its country's province, or a refusal.
     expect(result.unassigned).toEqual([])
 
-    const seen = new Set<string>()
+    const inProvince = new Set<string>()
     for (const province of result.provinces) {
       for (const source of province.sourceUnits) {
-        expect(seen.has(source), `${source} steckt in zwei Provinzen`).toBe(false)
-        seen.add(source)
+        expect(inProvince.has(source), `${source} steckt in zwei Provinzen`).toBe(false)
+        inProvince.add(source)
       }
     }
-    expect(seen.size).toBe(raw.units.length)
+
+    const wholeCountries = new Set(
+      result.provinces.filter((p) => p.sourceUnits.length === 0).map((p) => p.countryIso),
+    )
+    const refusedCountries = new Set(result.excluded.map((e) => e.id))
+
+    for (const unit of raw.units) {
+      const accounted =
+        inProvince.has(unit.code) ||
+        wholeCountries.has(unit.countryIso) ||
+        refusedCountries.has(unit.countryIso) ||
+        refusedCountries.has(unit.code)
+      expect(accounted, `${unit.code} (${unit.name}, ${unit.countryIso}) ist nirgends verbucht`).toBe(
+        true,
+      )
+    }
+  })
+
+  it('teilt nur Laender auf, fuer die eine Regel besteht', () => {
+    // The counterpart to the assertion above: a unit must not sneak into a province of
+    // a country that was never meant to be subdivided.
+    const ruled = new Set(Object.keys(RULES.admin1.countries))
+    for (const province of result.provinces) {
+      if (province.sourceUnits.length === 0) continue
+      expect(ruled.has(province.countryIso), `${province.id} ohne Regel`).toBe(true)
+    }
   })
 
   it('vergibt jede Kennung nur einmal', () => {

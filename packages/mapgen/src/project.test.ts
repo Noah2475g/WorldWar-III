@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LAT_LIMIT, distanceKm, project, unproject } from './project'
+import { LAT_LIMIT, distanceKm, project, unproject } from './project.ts'
 
 /**
  * The point of these tests is one distinction: the picture and the world are not the
