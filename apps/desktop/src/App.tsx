@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import {
   canApply,
+  eventsFor,
   publicView,
-  runTicks,
   type Command,
   type GameState,
   type MapData,
   type Rules,
   type StoragePort,
 } from '@worldwar/core'
-import { runAi, storeMemories } from '@worldwar/ai'
+import { advance } from './game/advance.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
@@ -112,24 +112,10 @@ export function App(props: AppProps) {
     [view],
   )
 
-  const events: EventEntry[] = useMemo(() => {
-    if (!state) return []
-    return state.eventLog
-      .slice(-40)
-      .reverse()
-      .map((event, index) => describeEvent(event, index, props.map))
-  }, [state, props.map])
-
   /** One game hour, AI included. */
   const step = useCallback(
     (ticks: number) => {
-      setState((current) => {
-        if (!current) return current
-        const { commands, memories } = runAi(current, { map: props.map, rules: props.rules })
-        const next = runTicks(current, ticks, { map: props.map, rules: props.rules }, () => commands).state
-        storeMemories(next, memories)
-        return next
-      })
+      setState((current) => (current ? advance(current, ticks, { map: props.map, rules: props.rules }) : current))
     },
     [props.map, props.rules],
   )
@@ -174,10 +160,9 @@ export function App(props: AppProps) {
         dispatch({ type: 'notice', text: t(`errors.${result.code}`, result.detail ?? {}) })
         return
       }
-      setState((current) => {
-        if (!current) return current
-        return runTicks(current, 1, { map: props.map, rules: props.rules }, () => [command]).state
-      })
+      setState((current) =>
+        current ? advance(current, 1, { map: props.map, rules: props.rules }, [command]) : current,
+      )
     },
     [state, props.map, props.rules],
   )
@@ -235,6 +220,8 @@ export function App(props: AppProps) {
           setDialog('keys')
           break
         case 'close':
+          // Before the first game there is nothing behind the dialogue to return to.
+          if (dialog === 'new' && !state) break
           if (dialog) setDialog(null)
           else dispatch({ type: 'closePanel' })
           break
@@ -280,6 +267,24 @@ export function App(props: AppProps) {
     },
     [state],
   )
+
+  /**
+   * The log as this player may read it: their own doings and the public ones. The
+   * other powers' orders, builds and refusals stay theirs (R-DIP-04) — and every id
+   * in a line is swapped for the name it stands for (R-UI-07).
+   */
+  const events: EventEntry[] = useMemo(() => {
+    if (!state) return []
+    const naming = {
+      player: nameOf,
+      army: (id: string) => state.armies[id]?.name ?? id,
+      ticksPerDay,
+    }
+    return eventsFor(state.eventLog, 'p1')
+      .slice(-40)
+      .reverse()
+      .map((event, index) => describeEvent(event, index, props.map, naming))
+  }, [state, props.map, nameOf, ticksPerDay])
 
   const provinceActions: Action[] = useMemo(() => {
     if (!state || !selected) return []
@@ -341,7 +346,9 @@ export function App(props: AppProps) {
               }
               setDialog(null)
             }}
-            onClose={() => setDialog(null)}
+            // Closing without a game would leave a blank screen with no way back —
+            // found in the first smoke test, one Escape before the first click.
+            onClose={() => undefined}
           />
         )}
       </div>

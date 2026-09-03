@@ -226,3 +226,24 @@ plus die langsame Suite, Kern-Abdeckung 95,9 %, Gesamtabdeckung 90,9 %, **alle 7
 V1-Anforderungen durch einen Test belegt**. Offen ist allein T-M12-03 als Tor: der
 Playtest durch Noah nach `docs/PLAYTEST.md` — ob das Spiel Spaß macht, findet kein
 Skript heraus.
+
+## Vor T-M12-03 — Rauchtest der Oberfläche (2026-09-03, Abend)
+
+Bevor Noah die 45 Minuten investiert, einmal selbst durch die Playtest-Liste, soweit
+eine Maschine das kann (Startdialog, Karte, Modi, Vorspulen, Speichern, Tastatur).
+Sieben Befunde, sechs behoben — Einzelheiten in `PROBLEME.md`:
+
+| Befund | Anforderung | Status |
+|---|---|---|
+| KI-Befehle wurden je Tick eines Vorspulens wiederholt angewandt: 1 × „Bau begonnen", 23 × „Befehl abgelehnt" | R-AI-01 | behoben (`advance.ts`, dieselbe Schleife wie der kopflose Läufer) |
+| Protokoll zeigte Bauten und Ablehnungen fremder Mächte | R-DIP-04 | behoben (`eventsFor`) |
+| Rohtexte im Protokoll: `{{reason}}`, `barracks`, `p2`, Marsch „nach" dem Startort, Handel und Kriegserklärung mit falschen Platzhaltern | R-UI-07 | behoben, Katalog um Gebäude, Einheiten und Ablehnungsgründe ergänzt, Vollständigkeit getestet |
+| Wirtschaftsübersicht: zwei von fünf Spalten hinter einem Rollbalken | R-ECON-06 | behoben (Seitenleiste 380px) |
+| „1 Tage" im Kosten-Tooltip | R-UI-05 | behoben |
+| Escape im Startdialog ließ einen leeren Bildschirm ohne Rückweg | R-UI-03 | behoben |
+| **Die Weltkarte ist wirtschaftlich vom Regelwerk abgekoppelt** — Vorkommen und Bevölkerung um Faktor 600–1000 über der Skala, auf der die Regeln abgestimmt wurden; eine Kaserne kostet vier Spielminuten Einkommen, Italien hat kein Material | R-ECON-01, R-MAP-04 | **offen — Entscheidung Noah**, blockiert die Aussagekraft des Playtests |
+
+**Stand 2026-09-03 (Abend):** 82 von 83 Aufgaben. 915 Tests grün, Kern-Abdeckung
+95,9 %, Gesamtabdeckung 90,9 %, `pnpm verify` vollständig grün. Der Playtest sollte
+erst nach der Entscheidung zur Wirtschaftsskala stattfinden — vorher misst er die
+Wirtschaft nicht.

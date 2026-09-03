@@ -75,3 +75,122 @@ describe('R-UI-07 Ereignisse werden zu Saetzen', () => {
     expect(entry.text.startsWith('[')).toBe(false)
   })
 })
+
+describe('R-UI-07 Keine Kennung erreicht das Protokoll', () => {
+  // Found in the first smoke test: "Bau von barracks begonnen", "Befehl abgelehnt:
+  // {{reason}}", and a march that named its origin as its destination.
+  const nations: Record<string, string> = { p1: 'Deutschland', p2: 'Russland' }
+  const naming = {
+    player: (id: string) => nations[id] ?? id,
+    army: (id: string) => `Armee ${id.slice(1)}`,
+    ticksPerDay: 24,
+  }
+
+  it('uebersetzt Gebaeude und Einheiten', () => {
+    const built = describeEvent(event({ type: 'BUILD_STARTED', provinceId, building: 'barracks' }), 0, map)
+    expect(built.text).toContain('Kaserne')
+    expect(built.text).not.toContain('barracks')
+
+    const recruited = describeEvent(
+      event({ type: 'UNIT_RECRUITED', provinceId, unitKey: 'infantry', count: 3, armyId: 'a1' }),
+      0,
+      map,
+    )
+    expect(recruited.text).toContain('3 Infanterie')
+    expect(recruited.text).not.toContain('infantry')
+  })
+
+  it('nennt bei einer Ablehnung den Grund in Worten', () => {
+    const entry = describeEvent(
+      event({ type: 'COMMAND_REJECTED', playerId: 'p1', command: 'BUILD', code: 'QUEUE_FULL' }),
+      0,
+      map,
+    )
+
+    expect(entry.text).not.toContain('{{')
+    expect(entry.text).toContain('Bauplätze')
+  })
+
+  it('nennt Spieler bei ihrer Nation', () => {
+    const captured = describeEvent(
+      event({ type: 'PROVINCE_CAPTURED', provinceId, previousOwner: 'p1', newOwner: 'p2' }),
+      0,
+      map,
+      naming,
+    )
+    expect(captured.text).toContain('Russland')
+    expect(captured.text).not.toMatch(/\bp\d\b/)
+
+    const war = describeEvent(
+      event({
+        type: 'WAR_DECLARED',
+        playerId: 'p2',
+        targetPlayerId: 'p1',
+        effectiveAtTick: 48,
+        withoutDeclaration: false,
+      }),
+      0,
+      map,
+      naming,
+    )
+    expect(war.text).toContain('Russland erklärt Deutschland')
+    expect(war.text).toContain('Tag 3')
+  })
+
+  it('nennt eine Armee bei ihrem Namen und ein Gefecht bei seinem Sieger', () => {
+    const arrived = describeEvent(
+      event({ type: 'ARMY_ARRIVED', playerId: 'p1', armyId: 'a7', provinceId }),
+      0,
+      map,
+      naming,
+    )
+    expect(arrived.text).toContain('Armee 7')
+
+    const resolved = describeEvent(
+      event({ type: 'BATTLE_RESOLVED', battleId: 'b1', provinceId, losses: {}, victor: null }),
+      0,
+      map,
+      naming,
+    )
+    expect(resolved.text).toContain('niemand')
+    expect(resolved.text).not.toContain('{{')
+  })
+
+  it('springt beim Marsch zum Ziel, nicht zum Start', () => {
+    const from = map.provinces[0]!
+    const to = map.provinces[1]!
+    const entry = describeEvent(
+      event({
+        type: 'ARMY_DEPARTED',
+        playerId: 'p1',
+        armyId: 'a1',
+        fromProvinceId: from.id,
+        toProvinceId: to.id,
+        arrivalTick: 130,
+      }),
+      0,
+      map,
+      naming,
+    )
+
+    expect(entry.provinceId).toBe(to.id)
+    expect(entry.text).toContain(`nach ${to.name}`)
+  })
+
+  it('beschreibt einen Handel mit beiden Seiten', () => {
+    const entry = describeEvent(
+      event({
+        type: 'TRADE_EXECUTED',
+        playerId: 'p1',
+        give: 'wood',
+        giveAmount: 400000,
+        want: 'iron',
+        wantAmount: 250000,
+      }),
+      0,
+      map,
+    )
+
+    expect(entry.text).toBe('400 Material gegen 250 Eisen getauscht.')
+  })
+})

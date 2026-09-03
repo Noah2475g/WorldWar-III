@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { RESOURCE_KEYS } from '@worldwar/core'
 import { de } from './de.ts'
@@ -112,5 +113,34 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
     expect(t('errors.INSUFFICIENT_RESOURCES', { missing: '400 Eisen' })).toContain('400 Eisen')
     expect(t('errors.AT_WAR_REQUIRED')).toContain('Erklären Sie')
     expect(t('errors.QUEUE_FULL')).toContain('Bauplätze')
+  })
+})
+
+describe('R-UI-07 Auch Regeldaten und Ablehnungen haben deutsche Namen', () => {
+  const load = (path: string) => JSON.parse(readFileSync(`${process.cwd()}/${path}`, 'utf8')) as Record<string, unknown>
+
+  it('benennt jedes Gebaeude und jede Einheit der Regeln', () => {
+    const buildings = load('data/rules/default/buildings.json')
+    const units = load('data/rules/default/units.json')
+
+    for (const key of Object.keys(buildings.buildings as object)) {
+      expect(hasKey(`buildings.${key}`), `buildings.${key} fehlt`).toBe(true)
+    }
+    for (const key of Object.keys(units.units as object)) {
+      expect(hasKey(`units.${key}`), `units.${key} fehlt`).toBe(true)
+    }
+  })
+
+  it('hat fuer jede Ablehnung einen kurzen Grund ohne Luecke fuer das Protokoll', () => {
+    // The event that records a refusal carries only its code, so the short form must
+    // stand on its own — no placeholder, no sentence-ending period after a colon.
+    for (const code of Object.keys(de.errors)) {
+      expect(hasKey(`rejections.${code}`), `rejections.${code} fehlt`).toBe(true)
+      expect(placeholdersOf(`rejections.${code}`)).toEqual([])
+      expect(t(`rejections.${code}`).endsWith('.')).toBe(false)
+    }
+    for (const code of Object.keys(de.rejections)) {
+      expect(hasKey(`errors.${code}`), `rejections.${code} gehoert zu keinem Fehler`).toBe(true)
+    }
   })
 })

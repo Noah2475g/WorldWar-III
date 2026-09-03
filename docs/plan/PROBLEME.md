@@ -61,3 +61,77 @@ einen Test dafür; die noch zu schreibenden Schritte müssen es ebenso tun.
 der Geometrie dürfen dort ebenfalls nicht linear rechnen.
 
 **Status:** halb erledigt, Rest vorgemerkt für T-M9-02c.
+
+---
+
+## 2026-09-03 · vor T-M12-03 · Die Weltkarte ist wirtschaftlich vom Regelwerk abgekoppelt
+
+**Befund:** Ein Rauchtest der Oberfläche vor dem Playtest (Deutschland, Startzahl 1914)
+zeigte in der Kopfleiste eine Tagesproduktion von **+203.093 Nahrung** bei einem
+Startbestand von 1.000. Nachgemessen mit `economyOverview` auf beiden Karten, mit
+denselben Regeln:
+
+| Karte / Macht | Provinzen | Material je Tag | Geld je Tag | Kaserne (333 Material) kostet |
+|---|---|---|---|---|
+| Kleine Welt / Nordland | 3 | 38 | 61 | **8,8 Tage** Materialeinkommen |
+| Welt / Deutschland | 4 | 132.805 | 542.407 | **4 Minuten** Spielzeit |
+| Welt / China | 6 | 43.366 | 1.643.294 | 12 Minuten |
+| Welt / Italien | 3 | **0** | 402.209 | — nie aus eigener Produktion |
+
+Die Regeln (Kosten, Startbestände, Unterhalt, Marktgrundpreise, `BALANCING.md`) wurden
+in M3 auf der Kleinen Welt abgestimmt: dort liegt ein Vorkommen bei 1,5–2,5 Einheiten
+je Tick. Auf der Weltkarte liegt es bei **1.000–3.000 Einheiten je Tick** — Faktor
+600 bis 1000. Die Bevölkerung ist um denselben Faktor größer (Deutschland 9,9 Mio
+gegen Nordland 1.330), und die Steuer rechnet `Bevölkerung / 1000 × Satz`, also
+tausendfach mehr Geld.
+
+**Ursache:** `packages/mapgen/src/enrich.ts` erzeugt Vorkommen als ganze Einheiten
+(`amount(1200)` ≈ 700–3.600), `scripts/build-map.mjs` wandelt sie mit `toFixed`
+(× 1000) in Festkomma um — die Kleine Welt trägt dieselben Größenordnungen aber bereits
+*als* Festkomma (2000 = 2,0). Zwei Karten, zwei Einheiten, ein Regelwerk. Der
+Startwert-Abgleich in T-M9-03 (±15 % vom Median) prüft die Nationen gegeneinander,
+nicht gegen die Regeln; T-M9-04 prüft Tickbudget und Fehlerfreiheit, nicht die
+Spielbarkeit der Zahlen.
+
+**Kleinster reproduzierbarer Fall:** `createInitialState` auf `world.json` mit
+Deutschland, dann `economyOverview(state, 'p1', rules).wood.production / ONE` → 132.805,
+gegen `rules.buildings.barracks.cost.wood / ONE` → 333.
+
+**Folgen, solange das so bleibt:**
+- Geld und Material sind ab der ersten Spielstunde bedeutungslos; jeder Bauknopf ist
+  immer bezahlbar, die Wirtschaftsfragen des Playtests (13–16b) messen nichts.
+- Die KI-Logik „reagiert auf Mangel, verschuldet sich nie" kommt nie zum Zug.
+- Der Parameterlauf (`balance-sweep.md`: „nur Moral und Ausdehnung sind tragend") ist
+  vermutlich ein Artefakt einer gesättigten Wirtschaft, kein Befund über das Spiel.
+- Italien (und womöglich weitere Mächte) startet ohne Material-Vorkommen und kann aus
+  eigener Produktion nie eine Kaserne bauen.
+- Die Rohstoff-Kartenfärbung („zehntausend ist reich", `modes.ts`) ist auf der
+  Weltkarte überall voll ausgesteuert.
+
+**Vorschlag (Entscheidung Noah):** Die Anreicherung auf die Skala der Regeln bringen —
+Vorkommen so setzen, dass eine Startnation mit 3–4 Provinzen etwa das Tageseinkommen
+Nordlands erreicht (Grundwerte in `depositsFor` durch ~1000 teilen, Bevölkerung im
+Kern als Festkomma-Personen behandeln oder die Steuerformel anpassen), jeder
+Startnation ein Mindestvorkommen an Nahrung, Material und Geld sichern, `world.json`
+und `docs/reports/map.md` neu erzeugen, Golden-Master und Parameterlauf wiederholen.
+Erst danach ist der Playtest aussagekräftig.
+
+**Status:** offen, blockiert die Aussagekraft von T-M12-03. Kein Code geändert.
+
+## 2026-09-03 · vor T-M12-03 · Rauchtest der Oberfläche — behoben
+
+Gefunden beim selben Rauchtest, alle mit Test behoben:
+
+- **KI-Befehle je Stunde neu:** Die Oberfläche fragte die KI einmal und wandte dieselben
+  Befehle auf jeden Tick eines Vorspulens an — ein „Bau begonnen", dann 23 × „Befehl
+  abgelehnt". Jetzt läuft dieselbe Schleife wie im kopflosen Läufer (`advance.ts`).
+- **Protokoll zeigte fremde Ereignisse:** Bauten und Ablehnungen der KI-Mächte standen
+  im Protokoll des Spielers (R-DIP-04). Jetzt gefiltert über `eventsFor`.
+- **Rohtexte im Protokoll:** `{{reason}}`, `barracks`, `p2`, Armeekennungen, ein Marsch
+  „nach" seinem Startort, Handel und Kriegserklärung mit falschen Platzhaltern
+  (R-UI-07). Gebäude, Einheiten und Ablehnungsgründe haben jetzt deutsche Namen im
+  Katalog; Nationen und Armeen kommen aus dem Spielzustand.
+- **Wirtschaftsübersicht abgeschnitten:** Seitenleiste 260px, fünf Spalten — zwei
+  fielen hinter einen Rollbalken. Jetzt 380px.
+- **„1 Tage"** im Kosten-Tooltip.
+- **Escape im Startdialog** ließ einen leeren Bildschirm ohne Rückweg zurück.

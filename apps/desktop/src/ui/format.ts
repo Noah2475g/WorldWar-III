@@ -73,6 +73,8 @@ export function duration(hours: number, ticksPerDay = 24): string {
   if (hours < ticksPerDay) return t('actions.hours', { count: Math.max(0, Math.round(hours)) })
   const days = hours / ticksPerDay
   const rounded = days >= 10 ? Math.round(days) : Math.round(days * 10) / 10
+  // One day is singular; "1 Tage" is the kind of slip a player notices before anything else.
+  if (rounded === 1) return t('actions.day', { count: 1 })
   return t('actions.days', { count: rounded.toLocaleString('de-DE') })
 }
 

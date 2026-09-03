@@ -76,6 +76,12 @@ describe('R-UI-05 Dauern und Ankunft', () => {
     expect(duration(24 * 12)).toBe('12 Tage')
   })
 
+  it('beugt den einen Tag richtig', () => {
+    expect(duration(24)).toBe('1 Tag')
+    expect(duration(25)).toBe('1 Tag')
+    expect(duration(30)).toBe('1,3 Tage')
+  })
+
   it('nennt eine nahe Ankunft in Stunden', () => {
     expect(arrival(100, 108, 24)).toBe('Ankunft in 8 h')
   })

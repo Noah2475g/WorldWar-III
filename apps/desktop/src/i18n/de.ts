@@ -59,6 +59,54 @@ export const de = {
     urban: 'Stadtland',
   },
 
+  /** The rules name their buildings and units in data; the interface says them in German. */
+  buildings: {
+    barracks: 'Kaserne',
+    fortress: 'Festung',
+    factory: 'Fabrik',
+    harbour: 'Hafen',
+    shipyard: 'Werft',
+    airfield: 'Flugplatz',
+    railway: 'Eisenbahn',
+  },
+
+  units: {
+    infantry: 'Infanterie',
+    motorized: 'Motorisierte Infanterie',
+    tank: 'Kampfpanzer',
+    heavy_tank: 'Schwerer Kampfpanzer',
+    artillery: 'Artillerie',
+    rocket_artillery: 'Raketenartillerie',
+    fighter: 'Jagdflugzeug',
+    bomber: 'Bomber',
+    destroyer: 'Zerstörer',
+    transport: 'Transportschiff',
+  },
+
+  /**
+   * The same refusals as `errors`, in three words for the log. A log line has no room
+   * for "es fehlen 400 Eisen" — and no number to put there, because the event that
+   * records a refusal carries only its code.
+   */
+  rejections: {
+    UNKNOWN_PLAYER: 'unbekannter Spieler',
+    PLAYER_ELIMINATED: 'diese Macht ist ausgeschieden',
+    UNKNOWN_COMMAND: 'unbekannter Befehl',
+    NOT_OWNER: 'die Provinz gehört Ihnen nicht',
+    INSUFFICIENT_RESOURCES: 'zu wenig Rohstoffe',
+    MISSING_BUILDING: 'das nötige Gebäude fehlt',
+    BUILDING_MAX_LEVEL: 'das Gebäude ist voll ausgebaut',
+    NO_PATH: 'dorthin führt kein Weg',
+    ARMY_BUSY: 'die Armee ist noch gebunden',
+    ARMY_NOT_FOUND: 'diese Armee gibt es nicht mehr',
+    PROVINCE_NOT_FOUND: 'diese Provinz gibt es nicht',
+    AT_WAR_REQUIRED: 'das geht nur im Krieg',
+    OUT_OF_RANGE: 'außer Reichweite',
+    QUEUE_FULL: 'alle Bauplätze sind belegt',
+    INVALID_TARGET: 'unzulässiges Ziel',
+    ON_COOLDOWN: 'noch gesperrt',
+  } as const,
+
   province: {
     kindCity: 'Großstadt',
     kindRural: 'Landprovinz',
@@ -106,6 +154,7 @@ export const de = {
     cost: 'Kosten',
     duration: 'Dauer',
     hours: '{{count}} h',
+    day: '{{count}} Tag',
     days: '{{count}} Tage',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
   },
@@ -137,7 +186,7 @@ export const de = {
   /** What happened, in the log and in the ticker. */
   events: {
     GAME_STARTED: 'Die Partie beginnt.',
-    COMMAND_REJECTED: 'Befehl abgelehnt: {{reason}}',
+    COMMAND_REJECTED: 'Befehl abgelehnt: {{reason}}.',
     BUILD_STARTED: '{{province}}: Bau von {{building}} begonnen.',
     BUILD_COMPLETED: '{{province}}: {{building}} fertiggestellt.',
     BUILD_CANCELLED: '{{province}}: Bau abgebrochen, halbe Kosten erstattet.',
@@ -153,7 +202,7 @@ export const de = {
     PROVINCE_REVOLTED: '{{province}} hat sich erhoben.',
     RESOURCE_SHORTAGE: 'Mangel an {{resource}}. Der Nachschub reicht nicht.',
     STORAGE_OVERFLOW: 'Die Lager für {{resource}} sind voll — der Überschuss verfällt.',
-    TRADE_EXECUTED: '{{resource}} gehandelt: {{amount}} zu {{price}}.',
+    TRADE_EXECUTED: '{{giveAmount}} {{give}} gegen {{wantAmount}} {{want}} getauscht.',
     WAR_DECLARED: '{{player}} erklärt {{target}} den Krieg. Wirksam ab Tag {{day}}.',
     DIPLOMACY_CHANGED: 'Verhältnis zu {{player}}: {{state}}.',
     CAPITAL_LOST: 'Die Hauptstadt {{province}} ist verloren.',
@@ -252,6 +301,7 @@ export const de = {
     defender: 'Verteidiger',
     losses: 'Verluste',
     outcome: 'Ausgang',
+    nobody: 'niemand',
   },
 
   a11y: {

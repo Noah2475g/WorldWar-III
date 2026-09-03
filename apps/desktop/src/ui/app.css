@@ -185,7 +185,10 @@ body {
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  /* Breit genug fuer die fuenf Spalten der Wirtschaftsuebersicht (R-ECON-06): die
+     Spaltenkoepfe allein brauchen rund 300px. Bei 260px lief die Tabelle in einen
+     waagerechten Rollbalken und verlor zwei Spalten. */
+  grid-template-columns: 1fr 380px;
   min-height: 0;
 }
 
@@ -446,7 +449,7 @@ body {
 .table th,
 .table td {
   text-align: left;
-  padding: 3px 6px;
+  padding: 3px 5px;
   border-bottom: 1px solid var(--paper-sunk);
 }
 

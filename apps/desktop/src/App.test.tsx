@@ -225,3 +225,26 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
     expect(resources.textContent).toMatch(/[+−±]\d/)
   })
 })
+
+describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', () => {
+  it('zeigt nach einem Tag keine Kennung, keinen Platzhalter und keinen fremden Befehl', () => {
+    // The first smoke test read "Bau von barracks begonnen" for another power's
+    // province and "Befehl abgelehnt: {{reason}}" twenty-three times in a row.
+    startGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const log = screen.getByRole('region', { name: 'Ereignisse' })
+    expect(log.textContent).not.toMatch(/\{\{|abgelehnt|barracks|\bp\d\b/)
+  })
+})
+
+describe('R-UI-03 Vor der ersten Partie gibt es keine Sackgasse', () => {
+  it('laesst den Startdialog bei Escape stehen, solange keine Partie laeuft', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+
+    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+  })
+})
