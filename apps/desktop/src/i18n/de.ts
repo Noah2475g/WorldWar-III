@@ -374,6 +374,7 @@ export const de = {
     mapMode: 'M — Kartenmodus wechseln',
     diplomacy: 'D — Diplomatie',
     market: 'H — Markt (Handel)',
+    standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
     help: 'F1 — diese Übersicht',
   },
@@ -443,6 +444,20 @@ export const de = {
       rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung.',
       sharedMap: 'Beide sehen, was der andere sieht.',
     },
+  },
+
+  standings: {
+    title: 'Lage',
+    points: 'Punkte',
+    relation: 'Verhältnis',
+    seenStrength: 'Gesehene Stärke',
+    you: 'Sie',
+    open: 'Lage',
+    victoryTitle: 'Die Partie ist entschieden',
+    won: 'Sie haben gewonnen.',
+    lost: '{{nation}} hat gewonnen.',
+    summary: 'Tag {{day}} · {{points}} Punkte · {{provinces}} Provinzen',
+    close: 'Karte ansehen',
   },
 
   explainUi: {

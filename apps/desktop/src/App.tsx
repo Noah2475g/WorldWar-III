@@ -55,6 +55,7 @@ import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
+import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import { cueForEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -144,6 +145,7 @@ export function App(props: AppProps) {
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [targeting, setTargeting] = useState<PendingTarget | null>(null)
+  const [victoryAcknowledged, setVictoryAcknowledged] = useState(false)
   const [tutorial, setTutorial] = useState<TutorialState>(() =>
     props.skipTutorial ? TUTORIAL_OFF : initialTutorial(readTutorialSeen()),
   )
@@ -189,6 +191,12 @@ export function App(props: AppProps) {
   const tutor = useCallback((action: TutorialStep['completesOn']) => {
     setTutorial((current) => advanceTutorial(current, action))
   }, [])
+
+  // Eine entschiedene Partie laeuft nicht weiter: die Uhr haelt an, sobald ein Sieger
+  // feststeht (R-UI-13). Das Fenster darf man schliessen, die Uhr bleibt stehen.
+  useEffect(() => {
+    if (view?.victory.winner) setSpeed(0)
+  }, [view?.victory.winner])
 
   // Once it has run its course it never comes back — the same promise as the button.
   useEffect(() => {
@@ -722,6 +730,7 @@ export function App(props: AppProps) {
               actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
             />
           )}
+          {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} />}
           {ui.panel === 'market' && (
             <MarketPanel
               resources={RESOURCE_KEYS}
@@ -790,6 +799,17 @@ export function App(props: AppProps) {
         />
       )}
       {dialog === 'keys' && <KeyboardHelp onClose={() => setDialog(null)} />}
+
+      {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
+          die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}
+      {view.victory.winner !== null && !victoryAcknowledged && (
+        <VictoryDialog
+          view={view}
+          nameOf={nameOf}
+          ticksPerDay={ticksPerDay}
+          onClose={() => setVictoryAcknowledged(true)}
+        />
+      )}
     </div>
   )
 }

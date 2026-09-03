@@ -25,8 +25,8 @@ export interface HeaderProps {
   onAbort: () => void
   onMode: (mode: MapMode) => void
   onMenu: () => void
-  /** Diplomacy and market live in the side panel; the header only opens them. */
-  onPanel: (panel: 'diplomacy' | 'market') => void
+  /** Diplomacy, market and standings live in the side panel; the header only opens them. */
+  onPanel: (panel: 'diplomacy' | 'market' | 'standings') => void
 }
 
 /**
@@ -138,6 +138,9 @@ export function Header(props: HeaderProps) {
         </button>
         <button type="button" className="button" onClick={() => props.onPanel('market')}>
           {t('header.market')}
+        </button>
+        <button type="button" className="button" onClick={() => props.onPanel('standings')}>
+          {t('standings.open')}
         </button>
         <button type="button" className="button" onClick={props.onMenu}>
           {t('header.menu')}

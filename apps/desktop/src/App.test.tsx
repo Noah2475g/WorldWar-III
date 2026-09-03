@@ -510,3 +510,33 @@ describe('R-GAME-04 Automatisches Speichern in der laufenden Partie', () => {
     expect(await autosaves(storage)).toHaveLength(0)
   })
 })
+
+/**
+ * Die Lage der Maechte, aus dem laufenden Spiel heraus (T-M13-12, R-UI-13).
+ */
+describe('R-UI-13 Die Lageuebersicht ist erreichbar', () => {
+  it('oeffnet sich mit der Taste L', () => {
+    startGame()
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    expect(screen.getByRole('region', { name: 'Lage' })).toBeTruthy()
+  })
+
+  it('oeffnet sich auch aus der Kopfleiste', () => {
+    startGame()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lage' }))
+
+    expect(screen.getByRole('region', { name: 'Lage' })).toBeTruthy()
+  })
+
+  it('nennt die eigene Macht und mindestens einen Gegner', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 'l' })
+    const panel = screen.getByRole('region', { name: 'Lage' })
+
+    expect(panel.textContent).toContain('Vereinigte Staaten')
+    expect(within(panel).getAllByRole('meter').length).toBeGreaterThan(1)
+  })
+})
