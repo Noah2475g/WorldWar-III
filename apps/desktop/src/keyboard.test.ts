@@ -97,3 +97,15 @@ describe('R-UI-06 Was Tastenkuerzel nicht duerfen', () => {
     expect(resolveKey({ key: 'c', ctrlKey: true }, context())).toBeNull()
   })
 })
+
+describe('R-UI-06 Diplomatie und Markt per Taste', () => {
+  it('oeffnet Diplomatie mit D und den Markt mit H', () => {
+    expect(resolveKey({ key: 'd' }, context())).toEqual({ type: 'openPanel', panel: 'diplomacy' })
+    expect(resolveKey({ key: 'H' }, context())).toEqual({ type: 'openPanel', panel: 'market' })
+  })
+
+  it('laesst die Buchstaben in einem Textfeld in Ruhe', () => {
+    expect(resolveKey({ key: 'd' }, context({ typing: true }))).toBeNull()
+    expect(resolveKey({ key: 'h' }, context({ dialogOpen: true }))).toBeNull()
+  })
+})

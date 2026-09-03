@@ -265,3 +265,17 @@ die Karte auf die Regelskala zu bringen, nicht die Regeln auf die Karte
 Gemessen: Deutschland Kaserne 2,4 Tage Material / 2,3 Tage Geld (vorher 4 Spielminuten),
 Italien 3,5 / 3,1 (vorher nie), Referenz Nordland 8,8 / 4,1. Der Parameterlauf ist auf
 der neuen Karte wiederholt — Ergebnis in `BALANCING.md` und `docs/reports/balance-sweep.md`.
+
+## Nachtrag zu T-M10-05/06 — Die Befehle erreichen die Oberfläche (2026-09-03, Nacht)
+
+Beim zweiten Gang durch die Playtest-Liste: Die Provinzleiste bot nur „Kaserne bauen",
+die Armeeleiste nichts. Alles andere war im Kern fertig und nirgends anklickbar
+(`PROBLEME.md`). Angebunden, mit Tests:
+
+| Schritt | Ergebnis | verify |
+|---|---|---|
+| `game/actions.ts` | Jeder Befehl als Daten: 7 Gebäude, 10 Einheiten, Hauptstadt, 7 Armeebefehle, 8 diplomatische Handlungen, Markt — Grund aus `canApply`, Kosten und Dauer im Tooltip | grün |
+| `game/rejections.ts` | Ablehnungen in Worten: Fehlbetrag gerechnet („Es fehlt an Rohstoffen: 333 Material."), Gebäude bei Namen, Sperren in Tagen | grün |
+| Zielwahl | Marsch/Beschuss: Klick auf die Karte oder Liste im Panel, Ankunftszeit vor der Bestätigung, Escape bricht ab | grün |
+| Diplomatie (D), Markt (H), Provinzliste | Aus Kopfleiste und Tastatur; Gegenwert vor dem Tausch; Provinzwahl ohne Maus | grün |
+| Ende-zu-Ende | Bauen → Ausheben → Armee wählen → Marsch mit Ankunft im Protokoll; Kriegserklärung mit Wirkungstag; Tausch; Abbruch | grün |

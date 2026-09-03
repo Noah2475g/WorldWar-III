@@ -34,9 +34,10 @@ oder über Wochen — die Regeln sind dieselben.
    sie bestimmt, wie viel eine Provinz produziert, ob sie sich erhebt, und wie stark
    frisch ausgehobene Truppen sind. Unter 33 wird es gefährlich.
 
-3. **Bauen Sie etwas.** Eine Kaserne, wenn Sie Truppen wollen; eine Werkstatt für
-   Material. Jeder Knopf nennt im Tooltip die Kosten und die Dauer. Was Sie sich nicht
-   leisten können, ist ausgegraut — mit dem Grund daneben.
+3. **Bauen Sie etwas.** Eine Kaserne, wenn Sie Truppen wollen; eine Fabrik für mehr
+   Produktion. Jeder Knopf nennt im Tooltip die Kosten und die Dauer. Was Sie sich nicht
+   leisten können, ist ausgegraut — mit dem Grund daneben. Ohne Maus: die Provinz oben
+   in der Seitenleiste aus der Liste wählen.
 
 4. **Lassen Sie die Zeit laufen.** Die Leertaste startet und stoppt. Die Zahlen in der
    Kopfleiste sind Spielstunden je Sekunde: bei 10 vergeht ein Spieltag in gut zwei
@@ -85,6 +86,33 @@ Praktisch heißt das:
 
 ---
 
+## Befehle geben
+
+Alles, was das Spiel kann, steht als Knopf in der Seitenleiste — auch das, was gerade
+nicht geht, ausgegraut und mit dem Grund darunter. Kein Befehl ist versteckt.
+
+**Provinz** (Klick auf die Karte oder Auswahl aus der Liste): unter **Bauen** jedes
+Gebäude mit Kosten und Dauer im Tooltip, unter **Ausheben** jede Einheit — mit der
+Dauer und der Anfangsstärke, die von der Provinzmoral abhängt. Dazu die Hauptstadt
+verlegen (nur in eine Großstadt, mit Sperrfrist). Stehen eigene Armeen in der Provinz,
+sind sie hier aufgeführt; **Auswählen** öffnet die Armee.
+
+**Armee:** **Marschieren** wartet auf ein Ziel — ein Klick auf die Karte oder die
+Zielliste im Panel. Bevor Sie bestätigen, steht dort, **wann die Armee ankommt**;
+die Zeit stammt aus derselben Rechnung, die die Simulation später ausführt. Außerdem:
+Anhalten, Haltung (Angriff/Verteidigung), Teilen (halbiert jede Einheitenart),
+Zusammenlegen (alle eigenen Armeen am Ort) und Beschießen (nur mit Artillerie oder
+Bombern, nur im Krieg). Escape bricht die Zielwahl ab.
+
+**Diplomatie** (D oder Knopf in der Kopfleiste): Verhältnis zu jeder Macht; eine Macht
+auswählen, dann Krieg erklären (wirkt nach Vorlaufzeit — das Protokoll nennt den Tag),
+Frieden anbieten oder annehmen, Bündnis, Durchmarsch, Kartenaustausch.
+
+**Markt** (H): Rohstoff abgeben, Menge, Rohstoff erhalten — der Gegenwert steht da,
+bevor Sie handeln. Der Kurs gilt für alle Mächte gleich und für den ganzen Tick.
+
+---
+
 ## Die Wirtschaftsübersicht
 
 Rechts unten steht für jeden Rohstoff, was Sie haben, was hereinkommt, was hinausgeht
@@ -113,8 +141,10 @@ Alles ist ohne Maus erreichbar.
 | F | Vorspulen |
 | M | Kartenmodus wechseln |
 | Pfeiltasten | Karte verschieben |
+| D | Diplomatie |
+| H | Markt (Handel) |
 | Strg+S / Strg+L | Speichern / Laden |
-| Escape | Dialog oder Panel schließen |
+| Escape | Dialog, Panel oder Zielwahl schließen |
 | F1 | diese Übersicht im Spiel |
 
 ---

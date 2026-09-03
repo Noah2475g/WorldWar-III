@@ -1,4 +1,5 @@
-import type { PublicView, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import { useState } from 'react'
+import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, percent, population, rate, unfix } from './format.ts'
 
@@ -21,28 +22,113 @@ export interface Action {
   onRun: () => void
 }
 
+export interface ActionGroupSpec {
+  id: string
+  title: string
+  actions: readonly Action[]
+}
+
+function ActionButton({ action, showReason }: { action: Action; showReason: boolean }) {
+  const reasonId = `${action.id}-reason`
+  return (
+    <div className="action">
+      <button
+        type="button"
+        className="button"
+        disabled={action.disabledReason !== null}
+        title={action.disabledReason ?? action.hint ?? undefined}
+        aria-describedby={action.disabledReason ? reasonId : undefined}
+        onClick={action.onRun}
+      >
+        {action.label}
+      </button>
+      {action.disabledReason &&
+        (showReason ? (
+          <p id={reasonId} className="action__reason">
+            {action.disabledReason}
+          </p>
+        ) : (
+          <span id={reasonId} className="visually-hidden">
+            {action.disabledReason}
+          </span>
+        ))}
+    </div>
+  )
+}
+
 export function ActionRow({ actions }: { actions: readonly Action[] }) {
+  if (actions.length === 0) return null
   return (
     <div className="actions">
       {actions.map((action) => (
-        <button
-          key={action.id}
-          type="button"
-          className="button"
-          disabled={action.disabledReason !== null}
-          title={action.disabledReason ?? action.hint ?? undefined}
-          aria-describedby={action.disabledReason ? `${action.id}-reason` : undefined}
-          onClick={action.onRun}
-        >
-          {action.label}
-          {action.disabledReason && (
-            <span id={`${action.id}-reason`} className="visually-hidden">
-              {action.disabledReason}
-            </span>
-          )}
-        </button>
+        <ActionButton key={action.id} action={action} showReason />
       ))}
     </div>
+  )
+}
+
+/**
+ * A titled set of orders. When every order in the group is refused for the same
+ * reason — ten units, one missing barracks — the reason is said once above the group
+ * rather than ten times below it.
+ */
+export function ActionGroup({ group }: { group: ActionGroupSpec }) {
+  const reasons = new Set(group.actions.map((action) => action.disabledReason))
+  const shared =
+    group.actions.length > 0 && reasons.size === 1 && !reasons.has(null) ? group.actions[0]!.disabledReason : null
+
+  return (
+    <section className="group" aria-label={group.title}>
+      <h3 className="group__title">{group.title}</h3>
+      {shared && <p className="group__reason">{shared}</p>}
+      <div className="actions">
+        {group.actions.map((action) => (
+          <ActionButton key={action.id} action={action} showReason={shared === null} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Choosing a province without the mouse (R-UI-06). The map is the natural way; this
+ * is the one that works from the keyboard, and it lists only what the player may
+ * know about — own provinces first, then the ones currently in view of their armies.
+ */
+export function ProvincePicker({
+  own,
+  others,
+  value,
+  onChange,
+}: {
+  own: readonly { id: string; name: string }[]
+  others: readonly { id: string; name: string }[]
+  value: string | null
+  onChange: (id: string | null) => void
+}) {
+  return (
+    <label className="picker">
+      <span>{t('province.pick')}</span>
+      <select value={value ?? ''} onChange={(event) => onChange(event.target.value || null)}>
+        <option value="">{t('province.pickNone')}</option>
+        <optgroup label={t('province.pickOwn')}>
+          {own.map((province) => (
+            <option key={province.id} value={province.id}>
+              {province.name}
+            </option>
+          ))}
+        </optgroup>
+        {others.length > 0 && (
+          <optgroup label={t('province.pickOthers')}>
+            {others.map((province) => (
+              <option key={province.id} value={province.id}>
+                {province.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+    </label>
   )
 }
 
@@ -50,6 +136,13 @@ export interface ProvincePanelProps {
   province: VisibleProvince | null
   ownerName: string | null
   actions: readonly Action[]
+  /** Build, recruit — the orders a province takes, grouped. */
+  groups?: readonly ActionGroupSpec[]
+  /** The player's own armies standing here. */
+  armies?: readonly { id: string; name: string; strength: number }[]
+  selectedArmy?: string | null
+  onSelectArmy?: (id: string) => void
+  isCapital?: boolean
   ticksPerDay: number
   currentTick: number
 }
@@ -58,10 +151,15 @@ export function ProvincePanel(props: ProvincePanelProps) {
   const province = props.province
   if (!province) return null
 
+  const built = Object.entries(province.buildings ?? {}).filter(([, level]) => (level ?? 0) > 0)
+
   return (
     <section className="panel" aria-label={province.name}>
       <header className="panel__head">
-        <h2>{province.name}</h2>
+        <h2>
+          {province.name}
+          {props.isCapital ? ` · ${t('province.capital')}` : ''}
+        </h2>
         <p className="panel__sub">
           {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
           {t(`terrain.${province.terrain}`)} ·{' '}
@@ -101,20 +199,67 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </>
       )}
 
+      {province.buildings !== undefined && (
+        <>
+          <h3>{t('province.buildings')}</h3>
+          <p className="facts__inline">
+            {built.length === 0
+              ? t('province.noBuildings')
+              : built.map(([key, level]) => `${t(`buildings.${key}`)} (${t('province.level', { level: level ?? 0 })})`).join(', ')}
+          </p>
+        </>
+      )}
+
       {province.buildQueueLength !== undefined && province.buildQueueLength > 0 && (
         <p className="facts__inline">
           {t('province.buildQueue')}: {province.buildQueueLength}
         </p>
       )}
 
+      {props.armies && props.armies.length > 0 && (
+        <>
+          <h3>{t('army.here')}</h3>
+          <ul className="army-list">
+            {props.armies.map((army) => (
+              <li key={army.id} className={army.id === props.selectedArmy ? 'is-selected' : undefined}>
+                <span>
+                  {army.name} · {t('army.strength')} {amount(army.strength)}
+                </span>
+                <button type="button" className="button" onClick={() => props.onSelectArmy?.(army.id)}>
+                  {t('army.select')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       <ActionRow actions={props.actions} />
+      {props.groups?.map((group) => (
+        <ActionGroup key={group.id} group={group} />
+      ))}
     </section>
   )
 }
 
+/** The panel's state while an order still needs a place on the map. */
+export interface Targeting {
+  kind: 'move' | 'bombard'
+  target: { id: string; name: string; arrivalText: string | null } | null
+  options: readonly { id: string; name: string }[]
+  /** The order for the chosen target, checked — null until a target is chosen. */
+  confirm: Action | null
+  onChoose: (id: string | null) => void
+  onCancel: () => void
+}
+
 export interface ArmyPanelProps {
   army: VisibleArmy | null
+  name?: string | undefined
+  /** "3 × Infanterie" per stack, for own armies. */
+  units?: readonly string[] | undefined
   actions: readonly Action[]
+  targeting?: Targeting | null | undefined
   ticksPerDay: number
   currentTick: number
 }
@@ -122,11 +267,12 @@ export interface ArmyPanelProps {
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
   if (!army) return null
+  const targeting = props.targeting ?? null
 
   return (
     <section className="panel" aria-label={t('army.title')}>
       <header className="panel__head">
-        <h2>{t('army.title')}</h2>
+        <h2>{props.name ?? t('army.title')}</h2>
         <p className="panel__sub">
           {t('army.strength')}: {amount(army.strength)}
         </p>
@@ -147,7 +293,48 @@ export function ArmyPanel(props: ArmyPanelProps) {
         </dd>
       </dl>
 
-      <ActionRow actions={props.actions} />
+      {props.units && props.units.length > 0 && (
+        <>
+          <h3>{t('army.units')}</h3>
+          <p className="facts__inline">{props.units.join(', ')}</p>
+        </>
+      )}
+
+      {targeting ? (
+        <section className="group" aria-label={t('army.targetLabel')}>
+          <p className="notice notice--info">{t('army.chooseTarget')}</p>
+          <label className="picker">
+            <span>{t('army.targetLabel')}</span>
+            <select
+              value={targeting.target?.id ?? ''}
+              onChange={(event) => targeting.onChoose(event.target.value || null)}
+            >
+              <option value="">{t('province.pickNone')}</option>
+              {targeting.options.map((province) => (
+                <option key={province.id} value={province.id}>
+                  {province.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {targeting.target && (
+            <p className="facts__inline">
+              {t('army.arrivalPreview', {
+                target: targeting.target.name,
+                arrival: targeting.target.arrivalText ?? t('army.noRoute'),
+              })}
+            </p>
+          )}
+          <div className="actions">
+            {targeting.confirm && <ActionButton action={targeting.confirm} showReason />}
+            <button type="button" className="button" onClick={targeting.onCancel}>
+              {t('army.cancel')}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <ActionRow actions={props.actions} />
+      )}
     </section>
   )
 }
@@ -205,7 +392,22 @@ export function EventLog({
   )
 }
 
-export function DiplomacyPanel({ view, nameOf }: { view: PublicView | null; nameOf: (id: string) => string }) {
+/**
+ * Relations with every other power, and the orders towards the one the player picks
+ * (R-DIP-01, T-M10-06). Eight orders per power is a wall; eight for one chosen power
+ * is a decision.
+ */
+export function DiplomacyPanel({
+  view,
+  nameOf,
+  actionsFor,
+}: {
+  view: PublicView | null
+  nameOf: (id: string) => string
+  actionsFor?: (playerId: string) => readonly Action[]
+}) {
+  const [chosen, setChosen] = useState<string | null>(null)
+
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
@@ -213,6 +415,8 @@ export function DiplomacyPanel({ view, nameOf }: { view: PublicView | null; name
       </section>
     )
   }
+
+  const chosenAlive = view.others.find((other) => other.id === chosen)
 
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
@@ -222,22 +426,94 @@ export function DiplomacyPanel({ view, nameOf }: { view: PublicView | null; name
           <tr>
             <th>{t('newGame.nation')}</th>
             <th>{t('diplomacy.title')}</th>
+            {actionsFor && <th>{t('diplomacy.choose')}</th>}
           </tr>
         </thead>
         <tbody>
           {view.others.map((other) => {
             const relation = view.relations[other.id]
             return (
-              <tr key={other.id}>
+              <tr key={other.id} className={other.id === chosen ? 'is-selected' : undefined}>
                 <td>{nameOf(other.id)}</td>
                 <td className={relation?.state === 'war' ? 'state state--war' : 'state'}>
                   {t(`diplomacy.${relation?.state ?? 'peace'}`)}
                 </td>
+                {actionsFor && (
+                  <td>
+                    <button type="button" className="button" onClick={() => setChosen(other.id)}>
+                      {t('army.select')}
+                    </button>
+                  </td>
+                )}
               </tr>
             )
           })}
         </tbody>
       </table>
+      {actionsFor && chosenAlive && (
+        <section className="group" aria-label={t('diplomacy.with', { nation: nameOf(chosenAlive.id) })}>
+          <h3 className="group__title">{t('diplomacy.with', { nation: nameOf(chosenAlive.id) })}</h3>
+          <ActionRow actions={actionsFor(chosenAlive.id)} />
+        </section>
+      )}
+    </section>
+  )
+}
+
+/**
+ * The exchange (R-ECON-05). One price for everyone, fixed for the tick; the panel
+ * shows what a trade returns before the button is pressed, because a market that
+ * only tells you afterwards is a lottery.
+ */
+export function MarketPanel({
+  resources,
+  stock,
+  preview,
+}: {
+  resources: readonly ResourceKey[]
+  stock: Partial<Record<ResourceKey, number>>
+  preview: (give: ResourceKey, giveAmount: number, want: ResourceKey) => { text: string; action: Action }
+}) {
+  const [give, setGive] = useState<ResourceKey>(resources[0] ?? 'wood')
+  const [want, setWant] = useState<ResourceKey>(resources[1] ?? 'iron')
+  const [units, setUnits] = useState(100)
+  // The interface counts whole units; the core counts thousandths.
+  const giveAmount = Math.max(0, Math.round(units)) * 1000
+  const result = preview(give, giveAmount, want)
+
+  return (
+    <section className="panel" aria-label={t('market.title')}>
+      <h2>{t('market.title')}</h2>
+      <div className="market">
+        <label htmlFor="market-give">{t('market.give')}</label>
+        <select id="market-give" value={give} onChange={(event) => setGive(event.target.value as ResourceKey)}>
+          {resources.map((key) => (
+            <option key={key} value={key}>
+              {t(`resources.${key}`)} ({amount(stock[key] ?? 0)})
+            </option>
+          ))}
+        </select>
+        <label htmlFor="market-amount">{t('market.amount')}</label>
+        <input
+          id="market-amount"
+          type="number"
+          min={1}
+          step={1}
+          value={units}
+          onChange={(event) => setUnits(Number(event.target.value))}
+        />
+        <label htmlFor="market-want">{t('market.want')}</label>
+        <select id="market-want" value={want} onChange={(event) => setWant(event.target.value as ResourceKey)}>
+          {resources.map((key) => (
+            <option key={key} value={key}>
+              {t(`resources.${key}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="facts__inline">{result.text}</p>
+      <ActionRow actions={[result.action]} />
+      <p className="panel__sub">{t('market.hint')}</p>
     </section>
   )
 }

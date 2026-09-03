@@ -28,6 +28,8 @@ export const de = {
     balance: 'Bilanz',
     perDay: 'je Tag',
     menu: 'Menü',
+    diplomacy: 'Diplomatie',
+    market: 'Markt',
   },
 
   economy: {
@@ -123,6 +125,12 @@ export const de = {
     noBuildings: 'Keine Gebäude',
     unknown: 'Nicht aufgeklärt',
     lastSeen: 'Stand von Tag {{day}}',
+    pick: 'Provinz',
+    pickNone: '— keine —',
+    pickOwn: 'Eigene Provinzen',
+    pickOthers: 'Aufgeklärte Provinzen',
+    level: 'Stufe {{level}}',
+    capital: 'Hauptstadt',
   },
 
   army: {
@@ -141,6 +149,23 @@ export const de = {
     move: 'Marschieren',
     stop: 'Anhalten',
     bombard: 'Beschießen',
+    here: 'Armeen hier',
+    select: 'Auswählen',
+    units: 'Einheiten',
+    unitCount: '{{count}} × {{unit}}',
+    chooseTarget: 'Ziel auf der Karte anklicken — oder hier wählen:',
+    targetLabel: 'Ziel',
+    arrivalPreview: '{{target}}: {{arrival}}',
+    confirmMove: 'Marsch befehlen',
+    confirmBombard: 'Beschuss befehlen',
+    cancel: 'Abbrechen',
+    notMoving: 'Die Armee steht bereits.',
+    alreadyStance: 'Die Armee hat diese Haltung schon.',
+    noPartner: 'Keine zweite eigene Armee an diesem Ort.',
+    tooSmall: 'Zu klein zum Teilen.',
+    noRanged: 'Keine Einheit mit Reichweite dabei.',
+    empty: 'Die Armee hat keine Einheiten.',
+    noRoute: 'Dorthin führt kein Weg.',
   },
 
   actions: {
@@ -157,6 +182,16 @@ export const de = {
     day: '{{count}} Tag',
     days: '{{count}} Tage',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
+    startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
+    buildGroup: 'Bauen',
+    recruitGroup: 'Ausheben',
+    acceptPeace: 'Frieden annehmen',
+    offerAlliance: 'Bündnis anbieten',
+    acceptAlliance: 'Bündnis annehmen',
+    breakAlliance: 'Bündnis aufkündigen',
+    grantRightOfWay: 'Durchmarsch gewähren',
+    shareMap: 'Karte teilen',
+    reasonDetail: '{{text}} ({{reason}})',
   },
 
   /**
@@ -222,6 +257,22 @@ export const de = {
     sharedMap: 'Kartenaustausch',
     reputation: 'Ansehen',
     noRelations: 'Noch keine Beziehungen.',
+    choose: 'Macht wählen',
+    with: 'Verhältnis zu {{nation}}',
+    truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
+    offerPending: 'Angebot liegt vor',
+  },
+
+  market: {
+    title: 'Markt',
+    give: 'Abgeben',
+    want: 'Erhalten',
+    amount: 'Menge',
+    price: 'Kurs',
+    preview: 'Ergibt etwa {{amount}} {{resource}}.',
+    previewNone: 'Dafür gibt es nichts.',
+    trade: 'Handeln',
+    hint: 'Der Kurs gilt für den ganzen Spielstunden-Tick und für alle Mächte gleich; Nachfrage bewegt ihn danach.',
   },
 
   mapModes: {
@@ -320,6 +371,9 @@ export const de = {
     save: 'Strg+S — speichern',
     load: 'Strg+L — laden',
     mapMode: 'M — Kartenmodus wechseln',
+    diplomacy: 'D — Diplomatie',
+    market: 'H — Markt (Handel)',
+    escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
     help: 'F1 — diese Übersicht',
   },
 } as const

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import {
+  RESOURCE_KEYS,
   canApply,
   eventsFor,
   publicView,
@@ -10,6 +11,21 @@ import {
   type StoragePort,
 } from '@worldwar/core'
 import { advance } from './game/advance.ts'
+import {
+  armyActions,
+  buildActions,
+  capitalAction,
+  diplomacyActions,
+  ownArmiesIn,
+  planArrival,
+  recruitActions,
+  targetAction,
+  tradePreview,
+  unitLines,
+  type ActionContext,
+  type ActionSpec,
+} from './game/actions.ts'
+import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
@@ -20,10 +36,13 @@ import {
   DiplomacyPanel,
   EconomyPanel,
   EventLog,
+  MarketPanel,
   ProvincePanel,
-  hintFor,
+  ProvincePicker,
   type Action,
+  type ActionGroupSpec,
   type EventEntry,
+  type Targeting,
 } from './ui/Panels.tsx'
 import { DebugPanel, KeyboardHelp, NewGameDialog, SavesDialog, SettingsDialog, fontScaleStyle } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
@@ -40,6 +59,12 @@ import { listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
  * build is a packaging question that belongs with T-M11-03, and the interactive
  * speeds hold comfortably either way — a tick on the world map costs 2.8 ms against a
  * 16 ms frame.
+ *
+ * Every order the player can give comes from `game/actions.ts` as data; this file only
+ * turns descriptions into buttons and buttons into commands. An order that needs a
+ * place on the map — a march, a bombardment — puts the panel into target mode: the
+ * next click on the map (or a pick from the list) names the target, the panel says
+ * when the army would arrive, and only then is the order given.
  */
 
 export interface AppProps {
@@ -49,6 +74,14 @@ export interface AppProps {
   /** Where saves go. Memory by default; the packaged app passes a file-system port. */
   storage?: StoragePort
 }
+
+interface PendingTarget {
+  armyId: string
+  kind: 'move' | 'bombard'
+  target: string | null
+}
+
+const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
 
 export function App(props: AppProps) {
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI)
@@ -61,6 +94,7 @@ export function App(props: AppProps) {
   const [dialog, setDialog] = useState<'new' | 'saves' | 'settings' | 'keys' | null>('new')
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
+  const [targeting, setTargeting] = useState<PendingTarget | null>(null)
   const ticksPerDay = props.rules.constants.ticksPerDay
   // In the browser this is memory; the packaged app swaps in the file-system port
   // (T-M8-00 built all three against the same contract).
@@ -68,6 +102,12 @@ export function App(props: AppProps) {
 
   // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
   const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
+
+  /** Everything the order descriptions need, in one place. */
+  const ctx: ActionContext | null = useMemo(
+    () => (state ? { state, map: props.map, rules: props.rules, playerId: 'p1', ticksPerDay } : null),
+    [state, props.map, props.rules, ticksPerDay],
+  )
 
   const provinces = useMemo(
     () =>
@@ -87,6 +127,11 @@ export function App(props: AppProps) {
 
   const centres = useMemo(
     () => Object.fromEntries(props.map.provinces.map((p) => [p.id, p.center])),
+    [props.map.provinces],
+  )
+
+  const nameOfProvince = useCallback(
+    (id: string): string => props.map.provinces.find((p) => p.id === id)?.name ?? id,
     [props.map.provinces],
   )
 
@@ -149,7 +194,7 @@ export function App(props: AppProps) {
 
   const send = useCallback(
     (command: Command) => {
-      if (!state) return
+      if (!state || !ctx) return
       const result = canApply(state, command, {
         map: props.map,
         rules: props.rules,
@@ -157,14 +202,34 @@ export function App(props: AppProps) {
         events: [],
       })
       if (!result.ok) {
-        dispatch({ type: 'notice', text: t(`errors.${result.code}`, result.detail ?? {}) })
+        dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
         return
       }
       setState((current) =>
         current ? advance(current, 1, { map: props.map, rules: props.rules }, [command]) : current,
       )
     },
-    [state, props.map, props.rules],
+    [state, ctx, props.map, props.rules],
+  )
+
+  /** A description becomes a button: orders are sent, target orders open target mode. */
+  const toAction = useCallback(
+    (spec: ActionSpec, armyId?: string): Action => ({
+      id: spec.id,
+      label: spec.label,
+      disabledReason: spec.disabledReason,
+      ...(spec.hint ? { hint: spec.hint } : {}),
+      onRun: () => {
+        if (spec.targetKind && armyId) {
+          // The army panel itself says "choose a target" — one notice, not two.
+          setTargeting({ armyId, kind: spec.targetKind, target: null })
+          dispatch({ type: 'clearNotice' })
+        } else if (spec.command) {
+          send(spec.command)
+        }
+      },
+    }),
+    [send],
   )
 
   const jumpTo = useCallback(
@@ -174,17 +239,23 @@ export function App(props: AppProps) {
       dispatch({ type: 'selectProvince', id: provinceId })
       dispatch({
         type: 'setView',
-        view: centreOn(centre, ui.view, {
-          width: props.map.width,
-          height: props.map.height,
-          viewportWidth: 960,
-          viewportHeight: 600,
-          minScale: 0.2,
-          maxScale: 8,
-        }),
+        view: centreOn(centre, ui.view, { width: props.map.width, height: props.map.height, ...VIEWPORT }),
       })
     },
     [centres, ui.view, props.map],
+  )
+
+  /** A click on the map: a target while an order waits for one, a selection otherwise. */
+  const selectOnMap = useCallback(
+    (id: string | null) => {
+      if (targeting && id) {
+        setTargeting({ ...targeting, target: id })
+        return
+      }
+      setTargeting(null)
+      dispatch({ type: 'selectProvince', id })
+    },
+    [targeting],
   )
 
   // Keyboard. One handler, one pure resolver, so every shortcut is testable.
@@ -216,6 +287,9 @@ export function App(props: AppProps) {
         case 'cycleMode':
           dispatch({ type: 'setMode', mode: shortcut.mode })
           break
+        case 'openPanel':
+          if (state) dispatch({ type: 'openPanel', panel: shortcut.panel })
+          break
         case 'help':
           setDialog('keys')
           break
@@ -223,7 +297,10 @@ export function App(props: AppProps) {
           // Before the first game there is nothing behind the dialogue to return to.
           if (dialog === 'new' && !state) break
           if (dialog) setDialog(null)
-          else dispatch({ type: 'closePanel' })
+          else if (targeting) {
+            setTargeting(null)
+            dispatch({ type: 'clearNotice' })
+          } else dispatch({ type: 'closePanel' })
           break
         case 'pan':
           dispatch({
@@ -234,14 +311,7 @@ export function App(props: AppProps) {
                 y: ui.view.y + shortcut.dy * PAN_STEP * ui.view.scale,
                 scale: ui.view.scale,
               },
-              {
-                width: props.map.width,
-                height: props.map.height,
-                viewportWidth: 960,
-                viewportHeight: 600,
-                minScale: 0.2,
-                maxScale: 8,
-              },
+              { width: props.map.width, height: props.map.height, ...VIEWPORT },
             ),
           })
           break
@@ -250,7 +320,7 @@ export function App(props: AppProps) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, props.map])
+  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, props.map, state, targeting])
 
   useEffect(() => {
     if (dialog !== 'saves') return
@@ -286,34 +356,73 @@ export function App(props: AppProps) {
       .map((event, index) => describeEvent(event, index, props.map, naming))
   }, [state, props.map, nameOf, ticksPerDay])
 
-  const provinceActions: Action[] = useMemo(() => {
-    if (!state || !selected) return []
-    const build: Command = {
-      type: 'BUILD',
-      playerId: 'p1',
-      provinceId: selected.id,
-      building: 'barracks',
-    }
-    const check = canApply(state, build, {
-      map: props.map,
-      rules: props.rules,
-      commands: [build],
-      events: [],
-    })
-    const barracks = props.rules.buildings.barracks
-
+  /** Build, recruit and capital — for an own province; nothing for anyone else's. */
+  const provinceGroups: ActionGroupSpec[] = useMemo(() => {
+    if (!ctx || !selected || selected.owner !== 'p1') return []
     return [
+      { id: 'build', title: t('actions.buildGroup'), actions: buildActions(ctx, selected.id).map((spec) => toAction(spec)) },
       {
-        id: 'build',
-        label: t('actions.build'),
-        disabledReason: check.ok ? null : t(`errors.${check.code}`, check.detail ?? {}),
-        ...(barracks ? { hint: hintFor(barracks.cost, barracks.buildTicks, ticksPerDay) } : {}),
-        onRun: () => send(build),
+        id: 'recruit',
+        title: t('actions.recruitGroup'),
+        actions: recruitActions(ctx, selected.id).map((spec) => toAction(spec)),
       },
     ]
-  }, [state, selected, props.map, props.rules, send, ticksPerDay])
+  }, [ctx, selected, toAction])
 
-  if (!state || !view) {
+  const provinceActions: Action[] = useMemo(() => {
+    if (!ctx || !selected || selected.owner !== 'p1') return []
+    return [toAction(capitalAction(ctx, selected.id))]
+  }, [ctx, selected, toAction])
+
+  const armiesHere = useMemo(() => (ctx && selected ? ownArmiesIn(ctx, selected.id) : []), [ctx, selected])
+
+  const selectedArmy = view?.armies.find((a) => a.id === ui.selectedArmy) ?? null
+  const armyActionList: Action[] = useMemo(
+    () => (ctx && ui.selectedArmy ? armyActions(ctx, ui.selectedArmy).map((spec) => toAction(spec, ui.selectedArmy!)) : []),
+    [ctx, ui.selectedArmy, toAction],
+  )
+
+  /** Target mode for the selected army: options, the chosen place, and its arrival. */
+  const armyTargeting: Targeting | null = useMemo(() => {
+    if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
+    const army = state.armies[targeting.armyId]
+    if (!army) return null
+    const options = props.map.provinces
+      .filter((p) => p.id !== army.locationProvinceId)
+      .map((p) => ({ id: p.id, name: p.name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    const target = targeting.target
+      ? {
+          id: targeting.target,
+          name: nameOfProvince(targeting.target),
+          arrivalText: targeting.kind === 'move' ? (planArrival(ctx, army.id, targeting.target)?.text ?? null) : null,
+        }
+      : null
+    const confirmSpec = targeting.target ? targetAction(ctx, army.id, targeting.kind, targeting.target) : null
+    const confirm: Action | null = confirmSpec
+      ? {
+          ...toAction(confirmSpec),
+          onRun: () => {
+            if (confirmSpec.command) send(confirmSpec.command)
+            setTargeting(null)
+            dispatch({ type: 'clearNotice' })
+          },
+        }
+      : null
+    return {
+      kind: targeting.kind,
+      target,
+      options,
+      confirm,
+      onChoose: (id) => setTargeting({ ...targeting, target: id }),
+      onCancel: () => {
+        setTargeting(null)
+        dispatch({ type: 'clearNotice' })
+      },
+    }
+  }, [ctx, targeting, state, ui.selectedArmy, props.map.provinces, nameOfProvince, toAction, send])
+
+  if (!state || !view || !ctx) {
     return (
       <div className="app app--empty" style={fontScaleStyle(ui.settings)}>
         <p>{t('app.loading')}</p>
@@ -334,14 +443,7 @@ export function App(props: AppProps) {
               if (centre) {
                 dispatch({
                   type: 'setView',
-                  view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, {
-                    width: props.map.width,
-                    height: props.map.height,
-                    viewportWidth: 960,
-                    viewportHeight: 600,
-                    minScale: 0.2,
-                    maxScale: 8,
-                  }),
+                  view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: props.map.width, height: props.map.height, ...VIEWPORT }),
                 })
               }
               setDialog(null)
@@ -354,6 +456,9 @@ export function App(props: AppProps) {
       </div>
     )
   }
+
+  const ownProvinces = view.provinces.filter((p) => p.owner === 'p1').map((p) => ({ id: p.id, name: p.name }))
+  const knownProvinces = view.provinces.filter((p) => p.owner !== 'p1').map((p) => ({ id: p.id, name: p.name }))
 
   return (
     <div className="app" style={fontScaleStyle(ui.settings)}>
@@ -368,6 +473,7 @@ export function App(props: AppProps) {
         onAbort={() => setSpeed(0)}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
         onMenu={() => setDialog('settings')}
+        onPanel={(panel) => dispatch({ type: 'openPanel', panel })}
       />
 
       <main className="main">
@@ -382,31 +488,67 @@ export function App(props: AppProps) {
           view={ui.view}
           ownershipVersion={ui.ownershipVersion}
           selectedProvince={ui.selectedProvince}
-          onSelect={(id) => dispatch({ type: 'selectProvince', id })}
+          onSelect={selectOnMap}
           onViewChange={(next) => dispatch({ type: 'setView', view: next })}
-          labelFor={(id) => props.map.provinces.find((p) => p.id === id)?.name ?? id}
+          labelFor={nameOfProvince}
         />
 
         <aside className="side">
-          {ui.notice && <p className="notice notice--error">{ui.notice.text}</p>}
+          <ProvincePicker
+            own={ownProvinces}
+            others={knownProvinces}
+            value={ui.selectedProvince}
+            onChange={(id) => {
+              setTargeting(null)
+              dispatch({ type: 'selectProvince', id })
+            }}
+          />
+          {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
             <ProvincePanel
               province={selected}
               ownerName={selected?.owner ? nameOf(selected.owner) : null}
               actions={provinceActions}
+              groups={provinceGroups}
+              armies={armiesHere}
+              selectedArmy={ui.selectedArmy}
+              onSelectArmy={(id) => {
+                setTargeting(null)
+                dispatch({ type: 'selectArmy', id })
+              }}
+              isCapital={selected?.id === view.self.capitalProvinceId}
               ticksPerDay={ticksPerDay}
               currentTick={state.tick}
             />
           )}
           {ui.panel === 'army' && (
             <ArmyPanel
-              army={view.armies.find((a) => a.id === ui.selectedArmy) ?? null}
-              actions={[]}
+              army={selectedArmy}
+              name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
+              units={ui.selectedArmy && state.armies[ui.selectedArmy] ? unitLines(state.armies[ui.selectedArmy]!, props.rules) : []}
+              actions={armyActionList}
+              targeting={armyTargeting}
               ticksPerDay={ticksPerDay}
               currentTick={state.tick}
             />
           )}
-          {ui.panel === 'diplomacy' && <DiplomacyPanel view={view} nameOf={nameOf} />}
+          {ui.panel === 'diplomacy' && (
+            <DiplomacyPanel
+              view={view}
+              nameOf={nameOf}
+              actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
+            />
+          )}
+          {ui.panel === 'market' && (
+            <MarketPanel
+              resources={RESOURCE_KEYS}
+              stock={view.self.resources}
+              preview={(give, giveAmount, want) => {
+                const result = tradePreview(ctx, give, giveAmount, want)
+                return { text: result.text, action: toAction(result.action) }
+              }}
+            />
+          )}
           <EconomyPanel view={view} />
           <DebugPanel
             enabled={ui.settings.debug}

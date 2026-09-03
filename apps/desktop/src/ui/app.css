@@ -487,3 +487,77 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------- orders */
+
+/* Ein Befehl ist Knopf plus Grund: was gerade nicht geht, steht sichtbar dabei
+   (R-UI-05). Teilen sich alle Knoepfe einer Gruppe denselben Grund, steht er einmal
+   ueber der Gruppe statt zehnmal darunter. */
+.group {
+  margin-top: var(--sp-md);
+}
+
+.group__title {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 var(--sp-sm);
+}
+
+.group__reason,
+.action__reason {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 0 0 var(--sp-sm);
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picker {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+  font-size: 12px;
+}
+
+.picker select,
+.market select,
+.market input {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  max-width: 100%;
+}
+
+.market {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-sm) var(--sp-md);
+  align-items: center;
+  font-size: 12px;
+}
+
+.army-list {
+  list-style: none;
+  margin: var(--sp-sm) 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.army-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 2px 0;
+}
+
+.army-list li.is-selected {
+  font-weight: 600;
+}

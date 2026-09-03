@@ -143,3 +143,29 @@ Gefunden beim selben Rauchtest, alle mit Test behoben:
   fielen hinter einen Rollbalken. Jetzt 380px.
 - **„1 Tage"** im Kosten-Tooltip.
 - **Escape im Startdialog** ließ einen leeren Bildschirm ohne Rückweg zurück.
+
+## 2026-09-03 · vor T-M12-03 · Die Oberfläche bot nur „Kaserne bauen"
+
+**Befund:** Beim zweiten Blick auf die Playtest-Liste (Fragen 13, 14, 21–25) zeigte
+sich, dass die Provinzleiste genau einen Knopf hatte — Kaserne bauen — und die
+Armeeleiste keinen. Rekrutieren, Marschieren, Anhalten, Teilen, Zusammenlegen,
+Beschießen, Kriegserklärung, Frieden, Bündnis, Markt und Hauptstadtverlegung waren im
+Kern gebaut, getestet und über `canApply` abgesichert, aber von keinem Element der
+Oberfläche erreichbar. T-M10-05 („Marschbefehl zeigt Ankunftszeit vorab") und
+T-M10-06 („Diplomatieübersicht") standen auf `done`, weil ihre Panels existierten —
+nur die Befehle darin fehlten. Eine Partie war damit nicht spielbar.
+
+**Kleinster reproduzierbarer Fall:** `App.tsx` vor `16420d0`: `provinceActions` enthält
+eine einzige Aktion (`BUILD barracks`), `<ArmyPanel actions={[]} />`.
+
+**Behoben am 2026-09-03:** `apps/desktop/src/game/actions.ts` erzeugt jeden Befehl als
+Daten — ein Knopf je Gebäude (7), je Einheit (10), Hauptstadt, sieben Armeebefehle,
+acht diplomatische Handlungen, Markt mit Vorschau des Gegenwerts. Jeder Knopf trägt
+Kosten und Dauer im Tooltip und, wenn er ausgegraut ist, den Grund in Worten
+(`rejections.ts` übersetzt die Codes des Kerns, rechnet den Fehlbetrag und nennt
+Gebäude bei ihrem Namen). Marsch und Beschuss laufen über eine Zielwahl (Klick auf die
+Karte oder Liste im Panel); vor der Bestätigung steht die Ankunftszeit aus derselben
+Routenrechnung, die die Simulation ausführt. Diplomatie (D) und Markt (H) sind aus der
+Kopfleiste und per Taste erreichbar; eine Provinzliste in der Seitenleiste macht die
+Auswahl ohne Maus möglich. Fünf Ende-zu-Ende-Tests fahren die Kette Bauen → Ausheben →
+Armee → Marsch, Kriegserklärung, Tausch und den Abbruch der Zielwahl.

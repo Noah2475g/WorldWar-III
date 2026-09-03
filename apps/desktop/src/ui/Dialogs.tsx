@@ -321,7 +321,7 @@ export function DebugPanel({ info, enabled }: { info: DebugInfo | null; enabled:
 }
 
 export function KeyboardHelp({ onClose }: { onClose: () => void }) {
-  const keys = ['pause', 'speedUp', 'speedDown', 'fastForward', 'save', 'load', 'mapMode', 'help'] as const
+  const keys = ['pause', 'speedUp', 'speedDown', 'fastForward', 'save', 'load', 'mapMode', 'diplomacy', 'market', 'escape', 'help'] as const
 
   return (
     <Dialog title={t('keys.title')} onClose={onClose}>

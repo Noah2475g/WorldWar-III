@@ -11,7 +11,7 @@ import type { View } from '../map/picking.ts'
  * function instead of a dozen event handlers.
  */
 
-export type Panel = 'province' | 'army' | 'diplomacy' | 'events' | 'settings' | 'debug' | null
+export type Panel = 'province' | 'army' | 'diplomacy' | 'market' | 'events' | 'settings' | 'debug' | null
 
 export interface Settings {
   /** Minutes between automatic saves. */

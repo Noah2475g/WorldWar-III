@@ -17,6 +17,7 @@ export type Shortcut =
   | { type: 'load' }
   | { type: 'cycleMode'; mode: MapMode }
   | { type: 'help' }
+  | { type: 'openPanel'; panel: 'diplomacy' | 'market' }
   | { type: 'close' }
   | { type: 'pan'; dx: number; dy: number }
 
@@ -71,6 +72,12 @@ export function resolveKey(
       const next = MAP_MODES[(MAP_MODES.indexOf(context.mode) + 1) % MAP_MODES.length]!
       return { type: 'cycleMode', mode: next }
     }
+    case 'd':
+    case 'D':
+      return { type: 'openPanel', panel: 'diplomacy' }
+    case 'h':
+    case 'H':
+      return { type: 'openPanel', panel: 'market' }
     case 'F1':
     case '?':
       return { type: 'help' }

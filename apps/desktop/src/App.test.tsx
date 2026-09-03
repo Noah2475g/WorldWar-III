@@ -248,3 +248,100 @@ describe('R-UI-03 Vor der ersten Partie gibt es keine Sackgasse', () => {
     expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
   })
 })
+
+/**
+ * The orders, end to end (T-M10-05, T-M10-06). The first smoke test found one button
+ * in the province panel and none in the army panel; everything below was unreachable
+ * from the screen although the core had it. Driven through the province picker, so
+ * the same path serves the keyboard (R-UI-06).
+ */
+describe('R-UI-05 Befehle aus der Oberflaeche', () => {
+  const capital = world.startPositions[0]!.capital
+  const pickCapital = () => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+  }
+  const fastForward = (days: number) => {
+    for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+  }
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  it('bietet in der eigenen Provinz jedes Gebaeude mit Preis und jede Einheit mit Grund', () => {
+    startGame()
+    pickCapital()
+
+    const barracks = screen.getByRole('button', { name: 'Kaserne' })
+    expect(barracks.hasAttribute('disabled')).toBe(false)
+    expect(barracks.getAttribute('title')).toContain('Material')
+
+    const recruit = screen.getByRole('region', { name: 'Ausheben' })
+    expect(within(recruit).getByRole('button', { name: 'Infanterie' }).hasAttribute('disabled')).toBe(true)
+    // One shared reason above the group, not ten below the buttons.
+    expect(recruit.textContent).toContain('Dafür fehlt das Gebäude: Kaserne.')
+  })
+
+  it('baut, hebt aus, waehlt die Armee und marschiert mit angesagter Ankunft', () => {
+    startGame()
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    expect(log()).toContain('Bau von Kaserne begonnen')
+
+    fastForward(2)
+    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' })
+    expect(infantry.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(infantry)
+    fastForward(2)
+    expect(log()).toContain('Infanterie ausgehoben')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    const panel = screen.getByRole('region', { name: 'Armee' })
+    expect(panel.textContent).toContain('Infanterie')
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
+
+    const target = within(panel).getByRole('combobox', { name: 'Ziel' })
+    const options = Array.from((target as HTMLSelectElement).options).map((o) => o.value)
+    const neighbour = world.startPositions[0]!.provinces.find((id) => id !== capital && options.includes(id))!
+    fireEvent.change(target, { target: { value: neighbour } })
+    expect(panel.textContent).toMatch(/Ankunft/)
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
+    expect(log()).toContain('marschiert nach')
+  })
+
+  it('erklaert den Krieg aus der Diplomatie und nennt den Wirkungstag', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+
+    expect(log()).toMatch(/erklärt .* den Krieg\. Wirksam ab Tag \d+/)
+    expect(log()).not.toMatch(/\bp\d\b/)
+  })
+
+  it('nennt am Markt den Gegenwert vor dem Tausch und fuehrt ihn aus', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 'h' })
+    const panel = screen.getByRole('region', { name: 'Markt' })
+    expect(panel.textContent).toMatch(/Ergibt etwa \d+/)
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Handeln' }))
+    expect(log()).toMatch(/gegen \d+ .* getauscht/)
+  })
+
+  it('bricht die Zielwahl mit Escape ab, ohne das Panel zu schliessen', () => {
+    startGame()
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fastForward(2)
+    fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' }))
+    fastForward(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    const panel = screen.getByRole('region', { name: 'Armee' })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
+    expect(within(panel).queryByRole('combobox', { name: 'Ziel' })).not.toBeNull()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
+    expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
+  })
+})
