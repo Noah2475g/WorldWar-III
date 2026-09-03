@@ -376,6 +376,11 @@ export const de = {
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
     help: 'F1 — diese Übersicht',
   },
+
+  tutorial: {
+    title: 'Einstieg',
+    dismiss: 'Nicht mehr zeigen',
+  },
 } as const
 
 export type Catalog = typeof de

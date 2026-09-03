@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import {
   RESOURCE_KEYS,
   canApply,
@@ -51,6 +51,17 @@ import { describeEvent } from './game/events.ts'
 import { MemoryStorage } from '@worldwar/core'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
+import { Tutorial } from './ui/Tutorial.tsx'
+import { cueForEvents, play } from './ui/sound.ts'
+import {
+  TUTORIAL_OFF,
+  TUTORIAL_STORAGE_KEY,
+  advance as advanceTutorial,
+  dismiss as dismissTutorial,
+  initialTutorial,
+  type TutorialState,
+  type TutorialStep,
+} from './game/tutorial.ts'
 import { listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
 
 /**
@@ -75,6 +86,13 @@ export interface AppProps {
   maps: readonly { id: string; name: string; provinces: number }[]
   /** Where saves go. Memory by default; the packaged app passes a file-system port. */
   storage?: StoragePort
+  /**
+   * Where sound comes from. The browser's own audio by default; a test passes a stand-in
+   * so that "the game makes a sound when a battle starts" is something a test can see.
+   */
+  audio?: () => AudioContext | null
+  /** Starts with the guided introduction off — for tests and for a returning player. */
+  skipTutorial?: boolean
 }
 
 interface PendingTarget {
@@ -84,6 +102,29 @@ interface PendingTarget {
 }
 
 const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
+
+/**
+ * Whether this player has seen the introduction before.
+ *
+ * Local storage is the easiest thing in the game to be missing — a private window, a
+ * packaged shell without it — and a game that refuses to start over a remembered
+ * preference would be absurd. Anything unreadable counts as "never seen".
+ */
+function readTutorialSeen(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(TUTORIAL_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function rememberTutorialSeen(): void {
+  try {
+    globalThis.localStorage?.setItem(TUTORIAL_STORAGE_KEY, 'true')
+  } catch {
+    // Nothing to do: the introduction simply appears again next time.
+  }
+}
 
 export function App(props: AppProps) {
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI)
@@ -97,6 +138,12 @@ export function App(props: AppProps) {
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [targeting, setTargeting] = useState<PendingTarget | null>(null)
+  const [tutorial, setTutorial] = useState<TutorialState>(() =>
+    props.skipTutorial ? TUTORIAL_OFF : initialTutorial(readTutorialSeen()),
+  )
+  // How far the event log had been read the last time a sound was played. Without it
+  // every render would replay the same battle.
+  const soundedUpTo = useRef(0)
   const ticksPerDay = props.rules.constants.ticksPerDay
   // In the browser this is memory; the packaged app swaps in the file-system port
   // (T-M8-00 built all three against the same contract).
@@ -104,6 +151,34 @@ export function App(props: AppProps) {
 
   // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
   const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
+
+  /**
+   * Sound for what happened since the last look (T-M13-02, R-UI-04).
+   *
+   * Only the player's own share of the log is read — the fog of war applies to the ears
+   * as well as to the eyes — and one tick produces at most one sound, the most urgent
+   * one. Above ten game hours a second `play` stays silent by itself.
+   */
+  useEffect(() => {
+    if (!state) return
+    const own = eventsFor(state.eventLog, 'p1')
+    const fresh = own.slice(soundedUpTo.current)
+    soundedUpTo.current = own.length
+    if (fresh.length === 0) return
+
+    const cue = cueForEvents(fresh)
+    if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
+  }, [state, ui.settings.sound, speed, props.audio])
+
+  /** A step of the guided start ends because the player did the thing it asked for. */
+  const tutor = useCallback((action: TutorialStep['completesOn']) => {
+    setTutorial((current) => advanceTutorial(current, action))
+  }, [])
+
+  // Once it has run its course it never comes back — the same promise as the button.
+  useEffect(() => {
+    if (tutorial.seen) rememberTutorialSeen()
+  }, [tutorial.seen])
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
@@ -223,6 +298,7 @@ export function App(props: AppProps) {
       ...(spec.icon ? { icon: spec.icon } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
       onRun: () => {
+        if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
           // The army panel itself says "choose a target" — one notice, not two.
           setTargeting({ armyId, kind: spec.targetKind, target: null })
@@ -232,20 +308,21 @@ export function App(props: AppProps) {
         }
       },
     }),
-    [send],
+    [send, tutor],
   )
 
   const jumpTo = useCallback(
     (provinceId: string) => {
       const centre = centres[provinceId]
       if (!centre) return
+      tutor('openEvents')
       dispatch({ type: 'selectProvince', id: provinceId })
       dispatch({
         type: 'setView',
         view: centreOn(centre, ui.view, { width: props.map.width, height: props.map.height, ...VIEWPORT }),
       })
     },
-    [centres, ui.view, props.map],
+    [centres, ui.view, props.map, tutor],
   )
 
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
@@ -256,9 +333,10 @@ export function App(props: AppProps) {
         return
       }
       setTargeting(null)
+      if (id) tutor('selectProvince')
       dispatch({ type: 'selectProvince', id })
     },
-    [targeting],
+    [targeting, tutor],
   )
 
   // Keyboard. One handler, one pure resolver, so every shortcut is testable.
@@ -278,9 +356,11 @@ export function App(props: AppProps) {
           setSpeed((current) => (current === 0 ? 10 : 0))
           break
         case 'speed':
+          if (shortcut.hoursPerSecond > 0) tutor('setSpeed')
           setSpeed(Math.min(shortcut.hoursPerSecond, ui.settings.maxSpeed))
           break
         case 'fastForward':
+          tutor('fastForward')
           step(ticksPerDay)
           break
         case 'save':
@@ -323,7 +403,7 @@ export function App(props: AppProps) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, props.map, state, targeting])
+  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, props.map, state, targeting, tutor])
 
   useEffect(() => {
     if (dialog !== 'saves') return
@@ -483,8 +563,14 @@ export function App(props: AppProps) {
         speed={speed}
         fastForwarding={false}
         mode={ui.mode}
-        onSpeed={(value) => setSpeed(Math.min(value, ui.settings.maxSpeed))}
-        onFastForward={() => step(ticksPerDay)}
+        onSpeed={(value) => {
+          if (value > 0) tutor('setSpeed')
+          setSpeed(Math.min(value, ui.settings.maxSpeed))
+        }}
+        onFastForward={() => {
+          tutor('fastForward')
+          step(ticksPerDay)
+        }}
         onAbort={() => setSpeed(0)}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
         onMenu={() => setDialog('settings')}
@@ -515,6 +601,7 @@ export function App(props: AppProps) {
             value={ui.selectedProvince}
             onChange={(id) => {
               setTargeting(null)
+              if (id) tutor('selectProvince')
               dispatch({ type: 'selectProvince', id })
             }}
           />
@@ -573,6 +660,14 @@ export function App(props: AppProps) {
       </main>
 
       <EventLog entries={events} ticksPerDay={ticksPerDay} onJump={jumpTo} />
+
+      <Tutorial
+        state={tutorial}
+        onDismiss={() => {
+          setTutorial(dismissTutorial())
+          rememberTutorialSeen()
+        }}
+      />
 
       {dialog === 'settings' && (
         <SettingsDialog

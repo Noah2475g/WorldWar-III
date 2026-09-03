@@ -609,3 +609,39 @@ body {
 .resource--short svg {
   color: var(--warn);
 }
+
+/* ---------------------------------------------------------------- einstieg */
+
+/* Ein Hinweis neben dem Spiel, keine Tuer davor (R-UI-05): unten links, schmal,
+   ohne Rolle "dialog" und ohne Fokusfang. Wer ihn ignoriert, spielt weiter. */
+.tutorial {
+  position: absolute;
+  left: var(--sp-lg);
+  bottom: 170px;
+  width: 260px;
+  padding: var(--sp-lg);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink);
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgb(31 36 32 / 18%);
+}
+
+.tutorial__progress {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.tutorial__title {
+  margin: 2px 0 var(--sp-sm);
+  font-family: var(--font-map);
+  font-size: 15px;
+}
+
+.tutorial__text {
+  margin: 0 0 var(--sp-md);
+  font-size: 12px;
+}

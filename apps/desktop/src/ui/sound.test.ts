@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CUE_SPEED_LIMIT, animationMs, cueFor, play, shouldPlay } from './sound.ts'
+import { CUE_SPEED_LIMIT, animationMs, cueFor, cueForEvents, play, shouldPlay } from './sound.ts'
 
 /**
  * Sound and motion (T-M11-02, R-UI-04).
@@ -75,5 +75,25 @@ describe('R-UI-04 Animationen', () => {
     // and died.
     expect(animationMs(400, CUE_SPEED_LIMIT + 1)).toBe(0)
     expect(animationMs(400, 100)).toBe(0)
+  })
+})
+
+describe('R-UI-04 Ein Tick, ein Ton', () => {
+  it('waehlt aus vielen Ereignissen das dringlichste', () => {
+    // A tick that declares war, takes a province and finishes a barracks is one sound,
+    // not three — and it is the war.
+    expect(
+      cueForEvents([{ type: 'BUILD_COMPLETED' }, { type: 'PROVINCE_CAPTURED' }, { type: 'WAR_DECLARED' }]),
+    ).toBe('war')
+  })
+
+  it('bleibt still, wenn nichts davon einen Ton verdient', () => {
+    expect(cueForEvents([{ type: 'DAY_REPORT' }, { type: 'TRADE_EXECUTED' }])).toBeNull()
+    expect(cueForEvents([])).toBeNull()
+  })
+
+  it('nimmt den Kampf vor dem Mangel und den Mangel vor der Fertigstellung', () => {
+    expect(cueForEvents([{ type: 'RESOURCE_SHORTAGE' }, { type: 'BATTLE_STARTED' }])).toBe('battle')
+    expect(cueForEvents([{ type: 'BUILD_COMPLETED' }, { type: 'RESOURCE_SHORTAGE' }])).toBe('shortage')
   })
 })

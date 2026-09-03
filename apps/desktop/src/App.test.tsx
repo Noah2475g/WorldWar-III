@@ -34,8 +34,14 @@ beforeAll(() => {
 
 afterEach(cleanup)
 
-const startGame = () => {
-  render(<App map={world} rules={TEST_RULES} maps={maps} />)
+/**
+ * A started game, with the guided introduction switched off.
+ *
+ * Every test below this line is about something else, and a hint box that talks about
+ * provinces and speeds would put its words into their text searches.
+ */
+const startGame = (extra: Partial<Parameters<typeof App>[0]> = {}) => {
+  render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial {...extra} />)
   fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
 }
 
@@ -343,5 +349,106 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
+  })
+})
+
+/**
+ * Sound and the guided start, wired to the running game (T-M13-02).
+ *
+ * Both were built in M11/M12, both had passing unit tests, and neither was reachable
+ * from the application. So what is checked here is exactly the missing half: that the
+ * game itself produces a tone, that the setting silences it, and that a first-time
+ * player is greeted.
+ */
+describe('R-UI-04 Der Ton haengt am Spiel', () => {
+  /** A stand-in for the browser's audio, counting what the game asks it to play. */
+  const fakeAudio = () => {
+    const started: number[] = []
+    const context = {
+      currentTime: 0,
+      destination: {},
+      createOscillator: () => ({
+        type: 'sine',
+        frequency: { value: 0 },
+        connect: () => undefined,
+        start: (at: number) => started.push(at),
+        stop: () => undefined,
+      }),
+      createGain: () => ({
+        gain: { value: 0, setValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined },
+        connect: () => undefined,
+      }),
+    }
+    return { started, factory: () => context as unknown as AudioContext }
+  }
+
+  /** Build something, then let it finish — a completion is the cheapest audible event. */
+  const buildAndFinish = (days: number) => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    for (let day = 0; day < days; day++) fireEvent.keyDown(window, { key: 'f' })
+  }
+
+  it('spielt einen Ton, wenn im Protokoll etwas Hoerbares steht', () => {
+    const audio = fakeAudio()
+    startGame({ audio: audio.factory })
+
+    buildAndFinish(3)
+
+    expect(audio.started.length, 'Das Spiel hat keinen einzigen Ton ausgeloest').toBeGreaterThan(0)
+  })
+
+  it('bleibt still, wenn der Ton abgeschaltet ist', () => {
+    const audio = fakeAudio()
+    startGame({ audio: audio.factory })
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Ton' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+
+    buildAndFinish(3)
+
+    expect(audio.started.length).toBe(0)
+  })
+
+  it('spielt dasselbe Ereignis nicht zweimal', () => {
+    const audio = fakeAudio()
+    startGame({ audio: audio.factory })
+    buildAndFinish(3)
+    const after = audio.started.length
+
+    // Ein Klick, der den Zustand nicht bewegt, darf das Protokoll nicht noch einmal vertonen.
+    fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
+
+    expect(audio.started.length).toBe(after)
+  })
+})
+
+describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
+  it('zeigt den ersten Schritt in der ersten Partie', () => {
+    globalThis.localStorage?.clear()
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    const hint = screen.getByRole('complementary', { name: 'Einstieg' })
+    expect(hint.textContent).toContain('Schritt 1 von 5')
+  })
+
+  it('geht weiter, sobald der Spieler die genannte Handlung ausfuehrt', () => {
+    globalThis.localStorage?.clear()
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+
+    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 5')
+  })
+
+  it('bleibt weg, wenn der Spieler sie abgeschaltet hat', () => {
+    globalThis.localStorage?.clear()
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nicht mehr zeigen' }))
+
+    expect(screen.queryByRole('complementary', { name: 'Einstieg' })).toBeNull()
+    expect(globalThis.localStorage?.getItem('worldwar.tutorial.seen')).toBe('true')
   })
 })

@@ -110,6 +110,25 @@ export function prefersReducedMotion(): boolean {
   return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
 }
 
+/**
+ * The order in which cues matter, most urgent first (T-M13-02).
+ *
+ * One tick can produce a declaration of war, two battles and three finished buildings.
+ * Playing all six is not atmosphere, it is noise — so a tick gets at most one sound,
+ * and it is the one the player most needs to look up for.
+ */
+const CUE_URGENCY: readonly Cue[] = ['war', 'captured', 'battle', 'shortage', 'complete', 'select']
+
+/** The single cue a batch of events deserves, or null when none of them is worth a sound. */
+export function cueForEvents(events: readonly { type: string }[]): Cue | null {
+  const cues = new Set<Cue>()
+  for (const event of events) {
+    const cue = cueFor(event.type)
+    if (cue) cues.add(cue)
+  }
+  return CUE_URGENCY.find((cue) => cues.has(cue)) ?? null
+}
+
 /** The cue an event deserves, or null for the ones that are merely bookkeeping. */
 export function cueFor(eventType: string): Cue | null {
   switch (eventType) {
