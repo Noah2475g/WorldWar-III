@@ -62,7 +62,8 @@ import {
   type TutorialState,
   type TutorialStep,
 } from './game/tutorial.ts'
-import { listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
+import { autosaveDue, listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
+import { writeAutosave, type AutosaveState } from '@worldwar/core'
 
 /**
  * The game, assembled (T-M10-03 … T-M10-12).
@@ -93,6 +94,8 @@ export interface AppProps {
   audio?: () => AudioContext | null
   /** Starts with the guided introduction off — for tests and for a returning player. */
   skipTutorial?: boolean
+  /** The wall clock, for the real-time half of the autosave rule. Injectable for tests. */
+  now?: () => number
 }
 
 interface PendingTarget {
@@ -144,6 +147,15 @@ export function App(props: AppProps) {
   // How far the event log had been read the last time a sound was played. Without it
   // every render would replay the same battle.
   const soundedUpTo = useRef(0)
+  const [autosave, setAutosave] = useState<AutosaveState>({
+    lastSavedTick: 0,
+    lastSavedRealTime: 0,
+    nextSlot: 0,
+  })
+  // A save is a promise; without this guard a second render would start a second one
+  // against the same slot before the first has finished.
+  const writingAutosave = useRef(false)
+  const now = props.now ?? Date.now
   const ticksPerDay = props.rules.constants.ticksPerDay
   // In the browser this is memory; the packaged app swaps in the file-system port
   // (T-M8-00 built all three against the same contract).
@@ -179,6 +191,31 @@ export function App(props: AppProps) {
   useEffect(() => {
     if (tutorial.seen) rememberTutorialSeen()
   }, [tutorial.seen])
+
+  /**
+   * Automatic saving (T-M13-03, R-GAME-04).
+   *
+   * The core has held the rotation and the two-clock rule since M8 and the settings
+   * dialogue has offered an interval since M10; nothing connected the two, so the
+   * setting was a decoration. Both clocks have to agree — a game day of play *and* the
+   * chosen minutes of real time — which is what keeps a fast-forwarded hour from
+   * filling all three slots with near-identical states.
+   */
+  useEffect(() => {
+    if (!state || writingAutosave.current) return
+    const at = now()
+    if (!autosaveDue(autosave, state, at, ui.settings.autosaveMinutes, ticksPerDay)) return
+
+    writingAutosave.current = true
+    void writeAutosave(storage, autosave, state, at)
+      .then((next) => {
+        setAutosave(next)
+        setSaveNotice(t('saves.autosaved'))
+      })
+      .finally(() => {
+        writingAutosave.current = false
+      })
+  }, [state, autosave, ui.settings.autosaveMinutes, ticksPerDay, storage, now])
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
@@ -531,6 +568,10 @@ export function App(props: AppProps) {
             onStart={() => {
               const fresh = startGame(options, props.map, props.rules)
               setState(fresh)
+              // The autosave clock starts now, not at the epoch — otherwise the
+              // real-time half of the rule is satisfied before the first day is played
+              // and the chosen interval never applies.
+              setAutosave({ lastSavedTick: fresh.tick, lastSavedRealTime: now(), nextSlot: 0 })
               // Open on the player's own country rather than on the top-left corner of
               // the world — the first thing they look for is where they are.
               const capital = fresh.players.p1?.capitalProvinceId
@@ -691,6 +732,7 @@ export function App(props: AppProps) {
             void loadFrom(storage, name).then(async (result) => {
               if (result.ok) {
                 setState(result.state)
+                setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
                 setSaveNotice(t('saves.loaded'))
                 setDialog(null)
               } else {

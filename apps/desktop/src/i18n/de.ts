@@ -310,6 +310,7 @@ export const de = {
     slot: 'Stand {{number}}',
     empty: 'leer',
     saved: 'Gespeichert.',
+    autosaved: 'Automatisch gespeichert.',
     loaded: 'Geladen.',
     corrupt: 'Dieser Spielstand ist beschädigt und wurde nicht geladen.',
     wrongVersion: 'Dieser Spielstand stammt aus einer anderen Fassung des Spiels.',

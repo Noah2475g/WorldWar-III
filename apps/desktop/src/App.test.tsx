@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import type { MapData } from '@worldwar/core'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryStorage, type MapData } from '@worldwar/core'
 import { TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { App } from './App.tsx'
@@ -450,5 +450,63 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Einstieg' })).toBeNull()
     expect(globalThis.localStorage?.getItem('worldwar.tutorial.seen')).toBe('true')
+  })
+})
+
+/**
+ * Automatic saving, wired to the running game (T-M13-03, R-GAME-04).
+ *
+ * The core has had the rotation and the two-clock rule since M8, the settings dialogue
+ * has offered an interval since M10 — and nothing connected them. The setting was a
+ * decoration. What is checked here is that it is not one any more.
+ */
+describe('R-GAME-04 Automatisches Speichern in der laufenden Partie', () => {
+  /** A clock the test moves by hand; the real one would make this untestable. */
+  const clock = (start = 1_000_000) => {
+    let now = start
+    return { now: () => now, pass: (minutes: number) => (now += minutes * 60_000) }
+  }
+
+  const autosaves = async (storage: MemoryStorage) =>
+    (await storage.list()).filter((name) => name.startsWith('auto'))
+
+  it('schreibt nach dem eingestellten Intervall einen Stand', async () => {
+    const storage = new MemoryStorage()
+    const time = clock()
+    startGame({ storage, now: time.now })
+
+    expect(await autosaves(storage)).toHaveLength(0)
+
+    // Beide Uhren muessen laufen: ein Spieltag und die eingestellten Minuten.
+    time.pass(6)
+    fireEvent.keyDown(window, { key: 'f' })
+
+    await waitFor(async () => expect((await autosaves(storage)).length).toBeGreaterThan(0))
+  })
+
+  it('haelt die Rotation ein, statt den Speicher vollzuschreiben', async () => {
+    const storage = new MemoryStorage()
+    const time = clock()
+    startGame({ storage, now: time.now })
+
+    for (let day = 0; day < 6; day++) {
+      time.pass(6)
+      fireEvent.keyDown(window, { key: 'f' })
+    }
+
+    await waitFor(async () => expect((await autosaves(storage)).length).toBeGreaterThan(1))
+    expect((await autosaves(storage)).length).toBeLessThanOrEqual(3)
+  })
+
+  it('schreibt nichts, solange die Partie steht', async () => {
+    const storage = new MemoryStorage()
+    const time = clock()
+    startGame({ storage, now: time.now })
+
+    // Zeit vergeht, Spielzeit nicht — ein Stand waere identisch mit dem letzten.
+    time.pass(60)
+    fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
+
+    expect(await autosaves(storage)).toHaveLength(0)
   })
 })
