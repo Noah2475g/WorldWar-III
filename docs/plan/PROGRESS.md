@@ -35,9 +35,29 @@ Eine Zeile je abgeschlossener Aufgabe: `T-ID · Datum · Kurzbeschreibung · Tes
 | T-M2-03 | 2026-09-02 | Wegfindung mit deterministischem Gleichstand; Kostenfunktion kommt vom Aufrufer | grün |
 | T-M2-04 | 2026-09-02 | Szenario-Lader: Spielsituationen als YAML statt als Testcode | grün |
 
-**Stand 2026-09-02:** M0, M1 und M2 abgeschlossen (18 von 83 Aufgaben).
-240 Tests grün, Kern-Abdeckung 95,6 %, `pnpm verify` vollständig grün.
-Anforderungs-Tor: 20 von 74 Anforderungen durch Tests belegt.
+## Meilenstein M3 — Wirtschaft, Bau, Rekrutierung ✅
+
+| Aufgabe | Datum | Ergebnis | verify |
+|---|---|---|---|
+| T-M3-01 | 2026-09-02 | Regelwerk als Datendateien: 7 Ressourcen, 7 Gebäude, 10 Einheiten, KI-Gewichte — mit strenger Prüfung beim Laden | grün |
+| T-M3-02 | 2026-09-02 | Produktion mit belegter Moralformel (0,20 + 0,80 × Moral) und verlustfreiem Restwertübertrag | grün |
+| T-M3-03 | 2026-09-03 | Unterhalt, Mangelzustände statt negativer Bestände, Lagergrenzen mit Tagesmeldung | grün |
+| T-M3-04 | 2026-09-03 | Bauaufträge mit Sofortzahlung, Bauplatzgrenze, Abbruch mit halber Erstattung, Verfall bei Eigentümerwechsel | grün |
+| T-M3-05 | 2026-09-03 | Rekrutierung mit Gebäudevoraussetzung; frische Einheiten starten mit moralabhängiger Stärke | grün |
+| T-M3-06 | 2026-09-03 | Markt mit tickfestem Preis für alle Spieler, Preisbewegung durch Nachfrage, tägliche Rückkehr zum Grundwert | grün |
+
+**Stand 2026-09-03:** M0 bis M3 abgeschlossen (24 von 83 Aufgaben).
+329 Tests grün, Kern-Abdeckung 93,8 %, `pnpm verify` vollständig grün.
+Anforderungs-Tor: 31 von 74 Anforderungen durch Tests belegt.
+
+**Bemerkenswert in M3:**
+- Der Fairness-Test des Marktes deckte auf, dass ein tickweise wanderender Preis den
+  ersten Spieler in der Zugreihenfolge strukturell bevorzugt hätte — genau der Vorteil,
+  den das Original für Geld verkauft. Der Preis ist jetzt für den ganzen Tick fixiert.
+- Die belegte Moralwirkung auf frische Rekruten trifft im Trefferpunkte-Pool-Modell eine
+  Designentscheidung, die schriftlich festgehalten ist (`DECISIONS.md`, 2026-09-03).
+- Mehrere Tests waren zunächst falsch, weil sie die Produktion desselben Ticks
+  mitgerechnet haben. Sie vergleichen jetzt gegen einen Leerlauf-Tick.
 
 **Bemerkenswert unterwegs:**
 - Der Festkomma-Linter hat dreimal angeschlagen — jedes Mal bei echter Ganzzahl-Rechnung,

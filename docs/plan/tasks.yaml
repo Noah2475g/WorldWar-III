@@ -253,7 +253,7 @@ tasks:
   - id: T-M3-03
     milestone: M3
     title: Verbrauch Lagergrenzen Mangel
-    status: todo
+    status: done
     deps: [T-M3-02]
     requirements: [R-ECON-03, R-ECON-04]
     files: [packages/core/src/phases/upkeep.ts]
@@ -263,7 +263,7 @@ tasks:
   - id: T-M3-04
     milestone: M3
     title: Gebaeude bauen
-    status: todo
+    status: done
     deps: [T-M3-03]
     requirements: [R-PROV-01, R-PROV-02]
     files: [packages/core/src/phases/construction.ts, packages/core/src/commands/build.ts]
@@ -273,7 +273,7 @@ tasks:
   - id: T-M3-05
     milestone: M3
     title: Einheiten rekrutieren
-    status: todo
+    status: done
     deps: [T-M3-04]
     requirements: [R-UNIT-02, R-PROV-04]
     files: [packages/core/src/phases/recruitment.ts, packages/core/src/commands/recruit.ts]
@@ -283,7 +283,7 @@ tasks:
   - id: T-M3-06
     milestone: M3
     title: Einfacher Markt
-    status: todo
+    status: done
     deps: [T-M3-03]
     requirements: [R-ECON-05, R-FREE-02]
     files: [packages/core/src/commands/trade.ts, packages/core/src/rules/market.ts]
