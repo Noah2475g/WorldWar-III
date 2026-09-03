@@ -847,7 +847,7 @@ tasks:
   - id: T-M12-00
     milestone: M12
     title: Balancing-Werkzeug Parameterlauf
-    status: todo
+    status: done
     deps: [T-M9-04, T-M7-05]
     requirements: [R-AI-06]
     files: [apps/headless/src/sweep.ts, docs/reports/balance-sweep.md]
@@ -857,7 +857,7 @@ tasks:
   - id: T-M12-01
     milestone: M12
     title: Balancing festschreiben
-    status: todo
+    status: done
     deps: [T-M12-00]
     requirements: [R-ECON-01, R-UNIT-01]
     constraints: [C-10]
@@ -868,7 +868,7 @@ tasks:
   - id: T-M12-02
     milestone: M12
     title: Spielanleitung und Playtest-Vorlage
-    status: todo
+    status: done
     deps: [T-M11-03]
     acceptance: [AK-7]
     files: [docs/PLAYTEST.md, docs/ANLEITUNG.md]
@@ -878,7 +878,7 @@ tasks:
   - id: T-M12-02b
     milestone: M12
     title: Einstiegshilfe fuer die erste Partie
-    status: todo
+    status: done
     deps: [T-M12-02]
     requirements: [R-UI-05]
     files: [apps/desktop/src/ui/Onboarding.tsx]

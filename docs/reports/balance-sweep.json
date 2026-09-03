@@ -1,0 +1,375 @@
+{
+  "players": 6,
+  "days": 120,
+  "seeds": [
+    1914,
+    2015
+  ],
+  "threshold": 0.15,
+  "effects": [
+    {
+      "constant": "baseTargetMorale",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5140485312899106,
+        "captures": 5,
+        "survivors": 5,
+        "economy": 335389746,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.7142857142857143,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 293666690,
+        "days": 71
+      },
+      "swing": 0.156,
+      "loadBearing": true
+    },
+    {
+      "constant": "moraleDriftDivisor",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.7142857142857143,
+        "captures": 2,
+        "survivors": 5,
+        "economy": 275760739,
+        "days": 71
+      },
+      "upper": {
+        "leaderShare": 0.7100840336134454,
+        "captures": 4,
+        "survivors": 5,
+        "economy": 279943520,
+        "days": 74
+      },
+      "swing": 0.156,
+      "loadBearing": true
+    },
+    {
+      "constant": "startMorale",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.7100840336134454,
+        "captures": 1,
+        "survivors": 5,
+        "economy": 281636998,
+        "days": 74
+      },
+      "upper": {
+        "leaderShare": 0.7100840336134454,
+        "captures": 2,
+        "survivors": 5,
+        "economy": 284758040,
+        "days": 73
+      },
+      "swing": 0.152,
+      "loadBearing": true
+    },
+    {
+      "constant": "expansionPenaltyPerProvince",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5124787294384572,
+        "captures": 2,
+        "survivors": 5,
+        "economy": 457378602,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.7100840336134454,
+        "captures": 4,
+        "survivors": 5,
+        "economy": 271098270,
+        "days": 71
+      },
+      "swing": 0.152,
+      "loadBearing": true
+    },
+    {
+      "constant": "revoltThreshold",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.4883720930232558,
+        "captures": 0,
+        "survivors": 5,
+        "economy": 459340976,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5294117647058824,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 409941762,
+        "days": 120
+      },
+      "swing": 0.07,
+      "loadBearing": false
+    },
+    {
+      "constant": "battleRate",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456379855,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5631606765327696,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456289182,
+        "days": 120
+      },
+      "swing": 0.005,
+      "loadBearing": false
+    },
+    {
+      "constant": "minDamage",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "defenceCap",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "productionMoraleFloor",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 451678298,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 461164965,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "deployDelayTicks",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "regenPermillePerTick",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456386216,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456376529,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "taxPerThousandPopulationPerTick",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 676199858,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "marketElasticity",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    },
+    {
+      "constant": "stackFullContribution",
+      "baseline": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380389,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380138,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.5579004329004329,
+        "captures": 3,
+        "survivors": 5,
+        "economy": 456380675,
+        "days": 120
+      },
+      "swing": 0,
+      "loadBearing": false
+    }
+  ]
+}
