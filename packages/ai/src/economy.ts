@@ -16,7 +16,6 @@ function canAfford(context: AiContext, cost: Partial<Record<ResourceKey, number>
   for (const [key, amount] of Object.entries(cost)) {
     if (!amount) continue
     const stock = context.view.self.resources[key as ResourceKey]
-    // eslint-disable-next-line no-restricted-syntax -- reserve share of the stock, plain integers
     const reserve = Math.trunc((stock * RESERVE_PERMILLE) / 1000)
     if (stock - reserve < amount) return false
   }
@@ -99,9 +98,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     for (const [key, amount] of Object.entries(unit.cost)) {
       if (!amount) continue
       const stock = context.view.self.resources[key as ResourceKey]
-      // eslint-disable-next-line no-restricted-syntax -- share of stock divided by unit cost, plain integers
       const budget = Math.trunc((stock * context.difficulty.recruitShare) / 1000)
-      // eslint-disable-next-line no-restricted-syntax -- budget divided by unit cost, plain integers
       affordable = Math.min(affordable, Math.trunc(budget / amount))
     }
     if (affordable < 1) continue
@@ -138,8 +135,6 @@ export function tradeCommands(context: AiContext, explanations: Explanation[]): 
       bestAmount = amount
     }
   }
-
-  // eslint-disable-next-line no-restricted-syntax -- a tenth of the stock, plain integers
   const give = Math.trunc(bestAmount / 10)
   if (!best || give < 1000) return []
 

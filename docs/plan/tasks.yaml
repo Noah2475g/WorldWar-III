@@ -537,7 +537,7 @@ tasks:
   - id: T-M8-00
     milestone: M8
     title: Speicher-Schnittstelle Tauri Node Speicher
-    status: todo
+    status: done
     deps: [T-M5-04]
     requirements: [R-GAME-03, R-GAME-04]
     constraints: [C-02]
@@ -548,7 +548,7 @@ tasks:
   - id: T-M8-01
     milestone: M8
     title: Speichern und Laden
-    status: todo
+    status: done
     deps: [T-M8-00]
     requirements: [R-GAME-03, R-GAME-05]
     files: [packages/core/src/persistence/save.ts, packages/core/src/persistence/load.ts, packages/core/src/persistence/migrations/]
@@ -558,7 +558,7 @@ tasks:
   - id: T-M8-02
     milestone: M8
     title: Headless-Runner ausbauen
-    status: todo
+    status: done
     deps: [T-M8-01, T-M7-05]
     requirements: [R-ARCH-03, R-AI-06]
     files: [apps/headless/src/tournament.ts, apps/headless/src/replay.ts, apps/headless/src/bench.ts]
@@ -568,7 +568,7 @@ tasks:
   - id: T-M8-03
     milestone: M8
     title: Langlauf und Performancebudget
-    status: todo
+    status: done
     deps: [T-M8-02]
     requirements: [R-ARCH-06]
     acceptance: [AK-6]

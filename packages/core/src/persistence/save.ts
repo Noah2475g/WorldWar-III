@@ -93,7 +93,9 @@ export function shouldAutosave(
   ticksPerDay: number,
   minRealSeconds = 60,
 ): boolean {
+  // eslint-disable-next-line no-restricted-syntax -- days x ticks-per-day, plain integers
   const dueByTicks = tick - autosave.lastSavedTick >= intervalDays * ticksPerDay
+  // eslint-disable-next-line no-restricted-syntax -- seconds to milliseconds, plain integers
   const dueByClock = realTimeMs - autosave.lastSavedRealTime >= minRealSeconds * 1000
   return dueByTicks && dueByClock
 }
