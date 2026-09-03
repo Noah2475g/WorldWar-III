@@ -442,3 +442,38 @@ gibt und eine Skalierung die Karte nur einebnen würde.
 **Auswirkung:** Größte Abweichung 14 % bei 24 Nationen. Der Kartenbericht
 (`docs/reports/map.md`) führt jede Nation mit ihrem Startwert auf, damit die Zahl
 nachprüfbar bleibt statt behauptet.
+
+---
+
+## 2026-09-03 · M10 · Die Simulation läuft vorerst im Hauptthread
+
+**Entscheidung:** Die Oberfläche ruft den Kern direkt auf, statt über den in T-M10-02
+gebauten Worker zu gehen. `SimHost`, die Worker-Schale und ihre Tests bleiben unverändert
+bestehen.
+
+**Begründung:** Ein Worker in einem Vite-Bündel ist eine Verpackungsfrage und gehört zu
+T-M11-03. Der Grund für den Worker war das Rechenbudget — und das ist gemessen: ein Tick
+auf der Weltkarte kostet 2,76 ms bei einem Bildschirmtakt von 16 ms. Die interaktiven
+Geschwindigkeiten halten also auch ohne ihn, und der Umzug ist später eine Änderung an
+einer Stelle statt an vielen.
+
+**Auswirkung:** Beim Vorspulen über viele Tage blockiert die Oberfläche kurz. Das ist der
+Preis, und er ist sichtbar; die Alternative wäre gewesen, den Worker zu verdrahten, bevor
+klar ist, wie das Programm verpackt wird.
+
+---
+
+## 2026-09-03 · T-M10-03b · Zeitmessungen gehören in die langsame Suite
+
+**Entscheidung:** Der Bildraten-Budgettest ist nach `render.bench.slow.test.ts` gewandert.
+In der schnellen Suite bleibt, was das Budget trägt: dass außerhalb des Ausschnitts nichts
+gezeichnet wird, dass Stützpunkte mit dem Zoom ausdünnen, dass der Zwischenspeicher genau
+so lange gilt wie er darf.
+
+**Begründung:** Der Test war in `pnpm verify` rot (18,6 ms) und allein grün bei einem
+Bruchteil des Budgets. Neben dreißig parallel laufenden Testdateien misst er die Last der
+Maschine, nicht die Kosten des Codes. Das Projekt hatte diese Lehre schon einmal gezogen
+(T-M8-03); sie gilt für die Oberfläche genauso.
+
+**Auswirkung:** `pnpm verify` bleibt verlässlich. Das Budget wird weiterhin gemessen, nur
+in `pnpm test:slow`, wo die Messung etwas bedeutet.

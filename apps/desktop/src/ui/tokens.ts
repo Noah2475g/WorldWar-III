@@ -40,18 +40,26 @@ export const TOKENS = {
 export type TokenName = keyof typeof TOKENS
 
 /**
- * Province fills. Chosen light enough that map labels stay readable on top of them,
- * and far enough apart that two nations are never mistaken for one another.
+ * Province fills — one per power in a game.
+ *
+ * Eleven, not six: with six, a game of eight nations gave two of them the same colour,
+ * and two nations that look alike on the map are worse than one that looks wrong. They
+ * are chosen greedily for maximum perceived distance, each light enough that dark map
+ * labels stay readable on it.
  */
 export const PLAYER_COLORS = {
   petrol: '#9FB2BE',
+  ochre: '#CDB77E',
+  rose: '#DCAFAF',
+  fern: '#A2C293',
+  lilac: '#C3B2D6',
+  sage: '#B0C4B1',
+  apricot: '#E2BC9B',
+  teal: '#8FC0BE',
+  straw: '#DBD3A6',
+  dove: '#C9C2BC',
   clay: '#C4A99C',
-  moss: '#B7BE9F',
-  heather: '#B5A6C0',
-  sand: '#D3C49B',
-  mint: '#9CC8B4',
 } as const
-
 export interface ContrastPair {
   foreground: TokenName
   background: TokenName

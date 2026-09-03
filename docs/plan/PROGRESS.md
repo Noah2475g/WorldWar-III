@@ -165,3 +165,21 @@ wartet auf Noahs Freigabe. Bis dahin bleiben T-M10-01b bis T-M11-04 gesperrt.
 691 Tests grün (plus 3 im Langlauf), Kern-Abdeckung 95,9 %, `pnpm verify` vollständig grün.
 Die Weltkarte ist fertig: 237 Provinzen, 448 Landgrenzen, 210 Seewege, 24 spielbare
 Nationen, Startwerte innerhalb 14 % vom Median.
+
+## Meilenstein M10 — Oberfläche ✅
+
+| Aufgabe | Datum | Ergebnis | verify |
+|---|---|---|---|
+| T-M10-03a | 2026-09-03 | Kartenansicht: Trefferprüfung rein geometrisch (und damit prüfbar), Ausschnitt bleibt auf der Karte, Zoom auf den Zeiger, Ebenenreihenfolge nach D11 als Daten statt als Aufrufreihenfolge | grün |
+| T-M10-03b | 2026-09-03 | Vier Kartenmodi; Unbekanntes wird als unbekannt gefärbt statt als Null. Bildratenbudget auf der echten Weltkarte gehalten — Zeitmessung in der langsamen Suite, weil sie neben 30 Testdateien die Maschinenlast misst | grün |
+| T-M10-04 | 2026-09-03 | Kopfleiste mit Rohstoffen, Bilanz, Uhr, Tempo-Rastpunkten, Vorspulen und Kartenmodus; alle Zahlen über eine einzige Festkomma-Umrechnung | grün |
+| T-M10-05 | 2026-09-03 | Provinz- und Armeepanel; nicht ausführbare Aktionen ausgegraut **mit Grund**, Tooltip nennt Kosten und Dauer, Ankunft als Zeitpunkt statt als Countdown | grün |
+| T-M10-06 | 2026-09-03 | Ereignisleiste: jede der 25 Ereignisarten als deutscher Satz mit Namen statt Kennungen; Klick springt zur Provinz | grün |
+| T-M10-07a | 2026-09-03 | Partie erstellen — alle Angaben landen im Anfangszustand, gleicher Seed erzeugt einen bitgleichen Zustand, KI-Bonus offen ausgewiesen (0 %) | grün |
+| T-M10-07b | 2026-09-03 | Speichern, Laden, Autospeichern; beschädigter oder fremder Stand wird **in Worten** abgelehnt | grün |
+| T-M10-08 | 2026-09-03 | Für jeden der 16 Kommandofehler ein deutscher Satz, der sagt, was fehlt — „Es fehlen 400 Eisen", nicht „nicht genug Rohstoffe" | grün |
+| T-M10-09 | 2026-09-03 | Einstellungen für Autospeichern, Ton, Tempogrenze, Schriftgröße und Debug; unsinnige Werte fallen auf die Vorgabe zurück, statt den Start zu verhindern | grün |
+| T-M10-10 | 2026-09-03 | Debug-Ansicht mit Tick, Hash, KI-Zielen und Kommandolog; im Normalbetrieb unsichtbar | grün |
+| T-M10-11 | 2026-09-03 | Kartenauswahl im Startdialog, mit Provinzzahl je Karte | grün |
+| T-M10-12 | 2026-09-03 | Bedienung ohne Maus: jede Aktion über Tastatur, Fokusring sichtbar, Schriftgröße einstellbar, Dialoge fangen den Fokus und geben ihn zurück | grün |
+| T-M11-04 | 2026-09-03 | Lokalisierung: ein Katalog, keine Anzeigetexte im Code; ein Test verlangt einen Satz für jeden Fehlercode, jede Ereignisart und jede Ressource | grün |

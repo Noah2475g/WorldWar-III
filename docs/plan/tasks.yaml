@@ -685,7 +685,7 @@ tasks:
   - id: T-M10-03a
     milestone: M10
     title: Kartenansicht Zeichnen und Auswahl
-    status: todo
+    status: done
     deps: [T-M10-01b, T-M10-02]
     requirements: [R-MAP-05, R-UI-03]
     files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts]
@@ -695,7 +695,7 @@ tasks:
   - id: T-M10-03b
     milestone: M10
     title: Kartenmodi und Bildratenbudget
-    status: todo
+    status: done
     deps: [T-M10-03a]
     requirements: [R-MAP-06, R-ARCH-06]
     files: [apps/desktop/src/map/modes.ts]
@@ -705,7 +705,7 @@ tasks:
   - id: T-M10-04
     milestone: M10
     title: Kopfleiste Ressourcen Zeit Geschwindigkeit
-    status: todo
+    status: done
     deps: [T-M10-03b]
     requirements: [R-TIME-02, R-TIME-04, R-ECON-06, R-UI-06]
     files: [apps/desktop/src/ui/TopBar.tsx, apps/desktop/src/ui/SpeedControl.tsx]
@@ -715,7 +715,7 @@ tasks:
   - id: T-M10-05
     milestone: M10
     title: Provinz- und Armeepanel
-    status: todo
+    status: done
     deps: [T-M10-04]
     requirements: [R-UI-03, R-UI-05, R-PROV-01, R-UNIT-02, R-UNIT-03, R-UNIT-04]
     files: [apps/desktop/src/ui/ProvincePanel.tsx, apps/desktop/src/ui/ArmyPanel.tsx]
@@ -725,7 +725,7 @@ tasks:
   - id: T-M10-06
     milestone: M10
     title: Ereignisleiste Kampfberichte Diplomatieuebersicht
-    status: todo
+    status: done
     deps: [T-M10-05]
     requirements: [R-GAME-06, R-BAT-07, R-DIP-01]
     files: [apps/desktop/src/ui/EventLog.tsx, apps/desktop/src/ui/BattleReport.tsx, apps/desktop/src/ui/DiplomacyPanel.tsx]
@@ -735,7 +735,7 @@ tasks:
   - id: T-M10-07a
     milestone: M10
     title: Partie erstellen
-    status: todo
+    status: done
     deps: [T-M10-06]
     requirements: [R-GAME-01, R-GAME-02, R-AI-02]
     files: [apps/desktop/src/ui/NewGame.tsx]
@@ -745,7 +745,7 @@ tasks:
   - id: T-M10-07b
     milestone: M10
     title: Speichern Laden Autospeichern
-    status: todo
+    status: done
     deps: [T-M10-07a, T-M8-00]
     requirements: [R-GAME-03, R-GAME-04]
     files: [apps/desktop/src/ui/SaveLoad.tsx]
@@ -755,7 +755,7 @@ tasks:
   - id: T-M10-08
     milestone: M10
     title: Fehlermeldungen und Rueckmeldung
-    status: todo
+    status: done
     deps: [T-M10-05]
     requirements: [R-ARCH-02, R-GAME-05, R-UI-07]
     files: [apps/desktop/src/ui/errors.ts, apps/desktop/src/i18n/de.json]
@@ -765,7 +765,7 @@ tasks:
   - id: T-M10-09
     milestone: M10
     title: Einstellungen
-    status: todo
+    status: done
     deps: [T-M10-07b]
     requirements: [R-GAME-04, R-UI-06, R-FREE-05]
     files: [apps/desktop/src/ui/Settings.tsx]
@@ -775,7 +775,7 @@ tasks:
   - id: T-M10-10
     milestone: M10
     title: Debug- und KI-Erklaerungsansicht
-    status: todo
+    status: done
     deps: [T-M10-09]
     requirements: [R-AI-05, R-AI-02]
     files: [apps/desktop/src/ui/DebugPanel.tsx]
@@ -785,7 +785,7 @@ tasks:
   - id: T-M10-11
     milestone: M10
     title: Kartenauswahl
-    status: todo
+    status: done
     deps: [T-M10-07a]
     requirements: [R-GAME-01, R-MAP-02]
     constraints: [C-03]
@@ -796,7 +796,7 @@ tasks:
   - id: T-M10-12
     milestone: M10
     title: Bedienbarkeit ohne Maus und Zugaenglichkeit
-    status: todo
+    status: done
     deps: [T-M10-10, T-M10-11]
     requirements: [R-UI-02, R-UI-05, R-UI-06]
     files: [apps/desktop/src/ui/focus.ts]
@@ -837,7 +837,7 @@ tasks:
   - id: T-M11-04
     milestone: M11
     title: Lokalisierung
-    status: todo
+    status: done
     deps: [T-M11-02]
     requirements: [R-UI-07]
     files: [apps/desktop/src/i18n/de.json]

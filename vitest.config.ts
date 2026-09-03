@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
@@ -11,6 +12,7 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
  * is deliberate — see docs/plan/03-TASKS.md, "Schnelle und langsame Pruefungen".
  */
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
       '@worldwar/shared': r('./packages/shared/src/index.ts'),
@@ -21,15 +23,15 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['{packages,apps,test}/**/*.test.ts'],
+    include: ['{packages,apps,test}/**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/*.slow.test.ts', '**/e2e/**'],
     environment: 'node',
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: './coverage',
-      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.ts'],
-      exclude: ['**/index.ts', '**/*.test.ts', '**/types.ts'],
+      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}'],
+      exclude: ['**/index.ts', '**/*.test.{ts,tsx}', '**/types.ts', '**/main.tsx'],
     },
   },
 })

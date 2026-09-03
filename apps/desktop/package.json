@@ -7,9 +7,16 @@
   "dependencies": {
     "@worldwar/shared": "workspace:*",
     "@worldwar/core": "workspace:*",
-    "@worldwar/ai": "workspace:*"
+    "@worldwar/ai": "workspace:*",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@worldwar/testkit": "workspace:*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }

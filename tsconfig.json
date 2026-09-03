@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["packages/**/*.ts", "apps/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs", "*.ts"],
+  "include": ["packages/**/*.ts", "apps/**/*.ts", "apps/**/*.tsx", "test/**/*.ts", "scripts/**/*.mjs", "*.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/src-tauri"],
   "compilerOptions": {
     "allowJs": true,
