@@ -2,6 +2,7 @@ import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { SPEED_STOPS } from '../sim/SimHost.ts'
 import { t } from '../i18n/text.ts'
 import { amount, formatTime, rate } from './format.ts'
+import { Icon, RESOURCE_ICONS } from './icons.tsx'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
@@ -37,9 +38,16 @@ export function Header(props: HeaderProps) {
         {RESOURCE_KEYS.map((key) => {
           const flow = props.view?.self.economy?.[key]
           return (
-            <li key={key} className={shortages.has(key) ? 'resource resource--short' : 'resource'}>
+            <li
+              key={key}
+              className={shortages.has(key) ? 'resource resource--short' : 'resource'}
+              title={t(`resources.${key}`)}
+            >
+              {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
+                  beides zugleich sichtbar waere derselbe Begriff zweimal. */}
+              <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
-              <span>{t(`resources.${key}`)}</span>
+              <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (
                 // Der sichtbare Wert ist die Bilanz; woraus sie sich ergibt, steht im
                 // Tooltip und vollstaendig in der Wirtschaftsuebersicht (R-ECON-06).

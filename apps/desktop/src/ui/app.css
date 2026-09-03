@@ -561,3 +561,51 @@ body {
 .army-list li.is-selected {
   font-weight: 600;
 }
+
+/* ---------------------------------------------------------------- symbols */
+
+/* Eine Reihe gleichartiger Dinge: Symbol und Anzahl statt eines Satzes (R-UI-10).
+   Die Textfassung steckt im Titel des Symbols, damit ein Vorleseprogramm "5 Nahrung"
+   hoert und nicht ein leeres Feld. */
+.icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-md);
+  align-items: center;
+  margin: var(--sp-sm) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.icon-row__item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ink-soft);
+}
+
+.icon-row__count {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.icon-row__more .icon-row__count {
+  color: var(--ink-soft);
+}
+
+/* Ein Knopf mit Symbol: das Zeichen sitzt vor dem Wort, nicht darueber. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.resource svg {
+  color: var(--ink-soft);
+}
+
+.resource--short svg {
+  color: var(--warn);
+}

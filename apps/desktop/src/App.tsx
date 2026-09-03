@@ -21,7 +21,7 @@ import {
   recruitActions,
   targetAction,
   tradePreview,
-  unitLines,
+  unitCounts,
   type ActionContext,
   type ActionSpec,
 } from './game/actions.ts'
@@ -49,6 +49,8 @@ import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { describeEvent } from './game/events.ts'
 import { MemoryStorage } from '@worldwar/core'
+import { UNIT_ICONS } from './ui/icons.tsx'
+import type { IconItem } from './ui/IconRow.tsx'
 import { listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
 
 /**
@@ -218,6 +220,7 @@ export function App(props: AppProps) {
       id: spec.id,
       label: spec.label,
       disabledReason: spec.disabledReason,
+      ...(spec.icon ? { icon: spec.icon } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
       onRun: () => {
         if (spec.targetKind && armyId) {
@@ -377,6 +380,18 @@ export function App(props: AppProps) {
   const armiesHere = useMemo(() => (ctx && selected ? ownArmiesIn(ctx, selected.id) : []), [ctx, selected])
 
   const selectedArmy = view?.armies.find((a) => a.id === ui.selectedArmy) ?? null
+
+  /** The chosen army's stacks as symbols with counts (R-UI-10). */
+  const armyUnitItems: IconItem[] = useMemo(() => {
+    const army = ui.selectedArmy ? state?.armies[ui.selectedArmy] : undefined
+    if (!army) return []
+    return unitCounts(army, props.rules).map((entry) => ({
+      icon: UNIT_ICONS[entry.unitKey] ?? 'warning',
+      label: t(`units.${entry.unitKey}`),
+      count: entry.count,
+    }))
+  }, [ui.selectedArmy, state, props.rules])
+
   const armyActionList: Action[] = useMemo(
     () => (ctx && ui.selectedArmy ? armyActions(ctx, ui.selectedArmy).map((spec) => toAction(spec, ui.selectedArmy!)) : []),
     [ctx, ui.selectedArmy, toAction],
@@ -525,7 +540,7 @@ export function App(props: AppProps) {
             <ArmyPanel
               army={selectedArmy}
               name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
-              units={ui.selectedArmy && state.armies[ui.selectedArmy] ? unitLines(state.armies[ui.selectedArmy]!, props.rules) : []}
+              units={armyUnitItems}
               actions={armyActionList}
               targeting={armyTargeting}
               ticksPerDay={ticksPerDay}

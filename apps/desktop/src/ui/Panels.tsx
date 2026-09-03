@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, percent, population, rate, unfix } from './format.ts'
+import { IconRow, type IconItem } from './IconRow.tsx'
+import { BUILDING_ICONS, Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
 
 /**
  * The side panels (T-M10-05, T-M10-06, R-UI-05).
@@ -15,11 +17,40 @@ import { amount, arrival, costs, duration, percent, population, rate, unfix } fr
 export interface Action {
   id: string
   label: string
+  /** The symbol of the thing being ordered, drawn on the button (R-UI-10). */
+  icon?: IconName
   /** Null when the action is available; otherwise the reason it is not. */
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
   onRun: () => void
+}
+
+/**
+ * Deposits and buildings as symbol rows (T-M13-01).
+ *
+ * Both used to be sentences — "5 Nahrung, 2 Kohle, 1 Eisen" and "Kaserne (Stufe 1),
+ * Fabrik (Stufe 1)". The amounts are fixed-point in the core and whole units on screen,
+ * which is the one conversion that happens here rather than in the row itself.
+ */
+export function depositItems(deposits: Partial<Record<string, number>>): IconItem[] {
+  return Object.entries(deposits)
+    .filter(([, value]) => (value ?? 0) > 0)
+    .map(([key, value]) => ({
+      icon: RESOURCE_ICONS[key] ?? 'warning',
+      label: t(`resources.${key}`),
+      count: Math.max(1, Math.round(unfix(value ?? 0))),
+    }))
+}
+
+export function buildingItems(buildings: Partial<Record<string, number>>): IconItem[] {
+  return Object.entries(buildings)
+    .filter(([, level]) => (level ?? 0) > 0)
+    .map(([key, level]) => ({
+      icon: BUILDING_ICONS[key] ?? 'warning',
+      label: t(`buildings.${key}`),
+      count: level ?? 1,
+    }))
 }
 
 export interface ActionGroupSpec {
@@ -40,6 +71,7 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         aria-describedby={action.disabledReason ? reasonId : undefined}
         onClick={action.onRun}
       >
+        {action.icon && <Icon name={action.icon} size={13} />}
         {action.label}
       </button>
       {action.disabledReason &&
@@ -195,18 +227,18 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {province.deposits && Object.keys(province.deposits).length > 0 && (
         <>
           <h3>{t('province.deposits')}</h3>
-          <p className="facts__inline">{costs(province.deposits)}</p>
+          <IconRow items={depositItems(province.deposits)} />
         </>
       )}
 
       {province.buildings !== undefined && (
         <>
           <h3>{t('province.buildings')}</h3>
-          <p className="facts__inline">
-            {built.length === 0
-              ? t('province.noBuildings')
-              : built.map(([key, level]) => `${t(`buildings.${key}`)} (${t('province.level', { level: level ?? 0 })})`).join(', ')}
-          </p>
+          {built.length === 0 ? (
+            <p className="facts__inline">{t('province.noBuildings')}</p>
+          ) : (
+            <IconRow items={buildingItems(province.buildings)} />
+          )}
         </>
       )}
 
@@ -256,8 +288,8 @@ export interface Targeting {
 export interface ArmyPanelProps {
   army: VisibleArmy | null
   name?: string | undefined
-  /** "3 × Infanterie" per stack, for own armies. */
-  units?: readonly string[] | undefined
+  /** The stacks of an own army, as symbols with counts (R-UI-10). */
+  units?: readonly IconItem[] | undefined
   actions: readonly Action[]
   targeting?: Targeting | null | undefined
   ticksPerDay: number
@@ -296,7 +328,7 @@ export function ArmyPanel(props: ArmyPanelProps) {
       {props.units && props.units.length > 0 && (
         <>
           <h3>{t('army.units')}</h3>
-          <p className="facts__inline">{props.units.join(', ')}</p>
+          <IconRow items={props.units} />
         </>
       )}
 

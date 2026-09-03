@@ -17,6 +17,7 @@ import {
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
+import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 
 /**
@@ -43,6 +44,8 @@ export interface ActionContext {
 export interface ActionSpec {
   id: string
   label: string
+  /** The symbol of the thing being ordered — a building, an arm of service (R-UI-10). */
+  icon?: IconName
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
   /** Null when the order can be given; otherwise why not. */
@@ -53,7 +56,14 @@ export interface ActionSpec {
   targetKind?: 'move' | 'bombard'
 }
 
-function checked(ctx: ActionContext, command: Command, id: string, label: string, hint?: string): ActionSpec {
+function checked(
+  ctx: ActionContext,
+  command: Command,
+  id: string,
+  label: string,
+  hint?: string,
+  icon?: IconName,
+): ActionSpec {
   const result = canApply(ctx.state, command, {
     map: ctx.map,
     rules: ctx.rules,
@@ -63,6 +73,7 @@ function checked(ctx: ActionContext, command: Command, id: string, label: string
   return {
     id,
     label,
+    ...(icon ? { icon } : {}),
     ...(hint ? { hint } : {}),
     disabledReason: result.ok ? null : describeRejection(result, command, ctx),
     command,
@@ -83,6 +94,7 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
       `build-${key}`,
       t(`buildings.${key}`),
       costHint(rule.cost, rule.buildTicks, ctx.ticksPerDay),
+      BUILDING_ICONS[key],
     ),
   )
 }
@@ -106,6 +118,7 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
       `recruit-${key}`,
       t(`units.${key}`),
       `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}`,
+      UNIT_ICONS[key],
     )
   })
 }
@@ -260,9 +273,24 @@ export function tradePreview(
 
 /** "3 × Infanterie" — the composition of an own army, in whole units. */
 export function unitLines(army: Army, rules: Rules): string[] {
+  return unitCounts(army, rules).map((entry) =>
+    t('army.unitCount', { count: entry.count, unit: t(`units.${entry.unitKey}`) }),
+  )
+}
+
+/**
+ * The same composition as data rather than as a sentence (T-M13-01).
+ *
+ * The panel draws it as a row of symbols, and the map asks it which arm of service is
+ * the strongest one in the stack. Both need the numbers, not the wording.
+ */
+export function unitCounts(army: Army, rules: Rules): { unitKey: string; count: number; hp: number }[] {
   return army.units.map((stack) => {
     const per = rules.units[stack.unitKey]?.hpPerUnit ?? ONE
-    const count = Math.max(1, Math.round(stack.hpTotal / per))
-    return t('army.unitCount', { count, unit: t(`units.${stack.unitKey}`) })
+    return {
+      unitKey: stack.unitKey,
+      count: Math.max(1, Math.round(stack.hpTotal / per)),
+      hp: stack.hpTotal,
+    }
   })
 }

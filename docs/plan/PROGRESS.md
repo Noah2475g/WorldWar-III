@@ -279,3 +279,9 @@ die Armeeleiste nichts. Alles andere war im Kern fertig und nirgends anklickbar
 | Zielwahl | Marsch/Beschuss: Klick auf die Karte oder Liste im Panel, Ankunftszeit vor der Bestätigung, Escape bricht ab | grün |
 | Diplomatie (D), Markt (H), Provinzliste | Aus Kopfleiste und Tastatur; Gegenwert vor dem Tausch; Provinzwahl ohne Maus | grün |
 | Ende-zu-Ende | Bauen → Ausheben → Armee wählen → Marsch mit Ankunft im Protokoll; Kriegserklärung mit Wirkungstag; Tausch; Abbruch | grün |
+
+## M13 — Eine Oberfläche, die man ansieht
+
+| Aufgabe | Datum | Was | Prüfung |
+|---|---|---|---|
+| T-M13-01 | 2026-09-04 | Symbole erreichen die Oberfläche: Satz auf die ausgelieferten Regeln gebracht (`shipyard`, `motorized`, `heavy_tank`, `rocket_artillery`, `destroyer`, `transport` hatten keines; `cavalry`, `submarine`, `mine` gab es gar nicht), sieben Rohstoffsymbole ergänzt, `IconRow` als Bauteil, Vorkommen und Gebäude als Symbolzeile statt als Satz, Symbol auf jedem Bau- und Aushebeknopf, Kopfleiste mit Rohstoffzeichen | 963 Tests grün, `pnpm verify` grün, im laufenden Spiel gegengeprüft |
