@@ -944,13 +944,15 @@ Jeder Bench schreibt sein Ergebnis nach `docs/reports/<name>.json`; ein begleite
   erreichbar ist — die Wiederholung des Musters wird maschinell unmöglich.
 - **Anforderungen:** R-UI-08
 - **Abhängigkeiten:** T-M13-01, T-M13-02, T-M13-03
-- **Dateien:** `test/guards/ui-reachability.test.ts`,
-  `test/guards/fixtures/violating/orphan-module.ts`
+- **Dateien:** `test/guards/reachability.ts`, `test/guards/ui-reachability.test.ts`
 - **Tests zuerst:** Der Guard verfolgt die Importkette ab `apps/desktop/src/main.tsx` und
   meldet jedes nicht erreichte Nicht-Testmodul. Beide Richtungen werden geprüft: die
-  verdrahtete Anwendung ist grün, die Verstoß-Fixture ist rot. Ausnahmen sind erlaubt, aber
-  jede trägt im Guard eine Begründung in einem Satz (derzeit allein `sim/worker.ts`, für den
-  Wechsel in den Hintergrundprozess vorgehalten).
+  verdrahtete Anwendung ist grün, eine Waise wird gefunden. Die Gegenprobe läuft über einen
+  **synthetischen Dateisatz** statt über eine Verstoß-Fixture im Produktbaum — eine echte
+  Waise unter `apps/desktop/src`, angelegt zum Beweis, dass der Wächter Waisen findet, wäre
+  genau das, was er verbieten soll. Ausnahmen sind erlaubt, aber jede trägt im Guard eine
+  Begründung in einem Satz (Paketeinstieg `index.ts`, und `sim/worker.ts` mit `SimEngine.ts`
+  für den Wechsel in den Hintergrundprozess).
 - **Fertig wenn:** grün; `pnpm verify` führt den Guard mit.
 
 ### T-M13-05 · Die Sicht liefert, was Anzeigen brauchen

@@ -934,9 +934,9 @@ tasks:
     status: todo
     deps: [T-M13-01, T-M13-02, T-M13-03]
     requirements: [R-UI-08]
-    files: [test/guards/ui-reachability.test.ts, test/guards/fixtures/violating/orphan-module.ts]
+    files: [test/guards/reachability.ts, test/guards/ui-reachability.test.ts]
     tests: [test/guards/ui-reachability.test.ts]
-    dod: "jedes Nicht-Testmodul unter apps/desktop/src ist ab main.tsx erreichbar; die Fixture ist rot; jede Ausnahme traegt eine Begruendung"
+    dod: "jedes Nicht-Testmodul unter apps/desktop/src ist ab main.tsx erreichbar; eine synthetische Waise wird gefunden; jede Ausnahme traegt eine Begruendung"
 
   - id: T-M13-05
     milestone: M13
