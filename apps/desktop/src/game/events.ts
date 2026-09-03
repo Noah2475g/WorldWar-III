@@ -1,7 +1,7 @@
 import type { GameEvent, MapData } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount } from '../ui/format.ts'
-import type { EventEntry } from '../ui/Panels.tsx'
+import { categoryOf, type EventEntry } from '../ui/Panels.tsx'
 
 /**
  * Turning an event into a sentence (T-M10-06, R-UI-07).
@@ -91,6 +91,7 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
   return {
     id: `${event.tick}-${event.type}-${index}`,
     tick: event.tick,
+    category: categoryOf(event.type),
     text: t(`events.${event.type}`, valuesFor(event, map, naming)),
     ...(province ? { provinceId: province } : {}),
     severity: event.severity === 'alert' ? 'alert' : 'info',

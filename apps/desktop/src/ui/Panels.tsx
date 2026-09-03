@@ -429,6 +429,26 @@ export interface EventEntry {
   text: string
   provinceId?: string
   severity: 'info' | 'alert'
+  /** Which drawer of the log this line belongs in (R-GAME-06). */
+  category?: EventCategory
+}
+
+export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
+
+export const EVENT_FILTERS: readonly (EventCategory | 'all')[] = ['all', 'combat', 'economy', 'diplomacy']
+
+/**
+ * Which drawer an event belongs in (T-M13-13, R-GAME-06).
+ *
+ * R-GAME-06 has asked for a filterable log since M5 and the log has never had one — at
+ * a hundred game hours a second the one line that mattered scrolled past between two
+ * blinks, and there was no way to ask for just the fighting.
+ */
+export function categoryOf(type: string): EventCategory {
+  if (/BATTLE|BOMBARD|ARMY|CAPTURED|REVOLTED|CAPITAL/.test(type)) return 'combat'
+  if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
+  if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
+  return 'other'
 }
 
 export function EventLog({
@@ -440,9 +460,29 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
-  if (entries.length === 0) {
+  const [filter, setFilter] = useState<EventCategory | 'all'>('all')
+  const shown = filter === 'all' ? entries : entries.filter((entry) => (entry.category ?? 'other') === filter)
+
+  const filterBar = (
+    <div className="log__filters" role="group" aria-label={t('alerts.filter')}>
+      {EVENT_FILTERS.map((value) => (
+        <button
+          key={value}
+          type="button"
+          className={filter === value ? 'speed speed--active' : 'speed'}
+          aria-pressed={filter === value}
+          onClick={() => setFilter(value)}
+        >
+          {t(`alerts.${value}`)}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (shown.length === 0) {
     return (
       <section className="log" aria-label={t('events_ui.title')}>
+        {filterBar}
         <p className="log__empty">{t('events_ui.empty')}</p>
       </section>
     )
@@ -450,8 +490,9 @@ export function EventLog({
 
   return (
     <section className="log" aria-label={t('events_ui.title')}>
+      {filterBar}
       <ul>
-        {entries.map((entry) => (
+        {shown.map((entry) => (
           <li key={entry.id} className={entry.severity === 'alert' ? 'log__row log__row--alert' : 'log__row'}>
             <time>
               {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}

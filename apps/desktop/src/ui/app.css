@@ -805,3 +805,55 @@ body {
   background: var(--paper-sunk);
   border-left: 2px solid var(--line);
 }
+
+/* ---------------------------------------------------------------- meldungen */
+
+/* Was gerade Aufmerksamkeit braucht — kurz, mit Symbol, anspringbar (R-UI-14).
+   Das Protokoll bleibt daneben: es sagt, was geschah, diese Liste sagt, was ist. */
+.alerts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  font-size: 12px;
+  padding: 2px var(--sp-sm);
+  border-left: 3px solid var(--line);
+  background: var(--paper-sunk);
+}
+
+.alert--battle,
+.alert--capital {
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+
+.alert--shortage,
+.alert--unrest {
+  border-left-color: var(--warn);
+  color: var(--warn);
+}
+
+.alert__jump {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.log__filters {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-sm);
+}

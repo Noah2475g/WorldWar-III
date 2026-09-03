@@ -446,6 +446,21 @@ export const de = {
     },
   },
 
+  alerts: {
+    title: 'Meldungen',
+    battle: 'Kampf in {{province}}',
+    capitalLost: 'Die Hauptstadt ist verloren',
+    shortage: '{{resource}} wird knapp',
+    unrest: '{{province}} steht vor dem Aufstand',
+    filter: 'Filter',
+    // Eigene Woerter, nicht die der Kopfleiste: zwei Knoepfe namens "Diplomatie" sind
+    // fuer eine Vorleseansage (und fuer einen Test) nicht auseinanderzuhalten.
+    all: 'alles',
+    combat: 'Kämpfe',
+    economy: 'Aufbau',
+    diplomacy: 'Verträge',
+  },
+
   standings: {
     title: 'Lage',
     points: 'Punkte',

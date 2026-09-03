@@ -56,6 +56,7 @@ import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
+import { Alerts, alertsFor } from './ui/Alerts.tsx'
 import { cueForEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -295,6 +296,9 @@ export function App(props: AppProps) {
       }),
     [view],
   )
+
+  /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
+  const alerts = useMemo(() => alertsFor(view), [view])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -694,6 +698,7 @@ export function App(props: AppProps) {
               dispatch({ type: 'selectProvince', id })
             }}
           />
+          <Alerts alerts={alerts} onJump={jumpTo} />
           {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
             <ProvincePanel

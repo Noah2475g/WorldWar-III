@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ProvincePanel, buildingItems, depositItems, type Action } from './Panels.tsx'
+import { EventLog, ProvincePanel, buildingItems, depositItems, type Action } from './Panels.tsx'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -188,5 +188,48 @@ describe('R-UI-09 Was gerade entsteht, zeigt seinen Fortschritt', () => {
     render(<ProvincePanel province={lean} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
 
     expect(screen.getByText(/Im Bau: 2/)).toBeTruthy()
+  })
+})
+
+describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
+  const entries = [
+    { id: '1', tick: 10, text: 'Gefecht bei Alpha.', severity: 'alert' as const, category: 'combat' as const },
+    { id: '2', tick: 11, text: 'Kaserne fertiggestellt.', severity: 'info' as const, category: 'economy' as const },
+    { id: '3', tick: 12, text: 'Krieg erklärt.', severity: 'alert' as const, category: 'diplomacy' as const },
+  ]
+
+  const renderLog = () => render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
+
+  it('zeigt zunaechst alles', () => {
+    renderLog()
+
+    expect(screen.getByText('Gefecht bei Alpha.')).toBeTruthy()
+    expect(screen.getByText('Kaserne fertiggestellt.')).toBeTruthy()
+  })
+
+  it('blendet eine Art vollstaendig aus und laesst die uebrigen unberuehrt', () => {
+    renderLog()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Kämpfe' }))
+
+    expect(screen.getByText('Gefecht bei Alpha.')).toBeTruthy()
+    expect(screen.queryByText('Kaserne fertiggestellt.')).toBeNull()
+    expect(screen.queryByText('Krieg erklärt.')).toBeNull()
+  })
+
+  it('findet zurueck zu allem', () => {
+    renderLog()
+    fireEvent.click(screen.getByRole('button', { name: 'Verträge' }))
+    fireEvent.click(screen.getByRole('button', { name: 'alles' }))
+
+    expect(screen.getByText('Kaserne fertiggestellt.')).toBeTruthy()
+  })
+
+  it('sagt es, wenn der Filter nichts uebrig laesst', () => {
+    render(<EventLog entries={[entries[0]!]} ticksPerDay={24} onJump={() => undefined} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aufbau' }))
+
+    expect(screen.getByText(/Noch nichts|keine/i)).toBeTruthy()
   })
 })
