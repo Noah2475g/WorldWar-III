@@ -72,6 +72,10 @@ export interface DifficultyRule {
   weakness: Fixed
   planningDepth: number
   maxFronts: number
+  /** Hours between tactical passes: a cautious AI reacts more slowly. */
+  tacticalInterval: number
+  /** Share of the treasury spent per recruitment order, in permille. */
+  recruitShare: Fixed
   /** 1000 = no bonus. Anything else is shown openly (R-AI-02). */
   resourceBonus: Fixed
 }

@@ -1,0 +1,106 @@
+import type { Command, ProvinceId } from '@worldwar/core'
+import { compareForces, threatMap, worthAttacking } from './threat'
+import { rateProvinces } from './targeting'
+import type { AiContext, Explanation } from './types'
+
+/**
+ * Military decisions (T-M7-03).
+ *
+ * Order of business: defend what is under pressure, break off what is hopeless, then
+ * attack what is worth taking. An army with an assignment keeps it until the situation
+ * changes — that is what the memory is for, and what stops the AI from marching its
+ * armies back and forth every hour.
+ */
+
+/** How much risk this difficulty accepts: 1 cautious, 3 bold. */
+function boldness(context: AiContext): number {
+  return Math.min(3, Math.max(1, context.difficulty.maxFronts))
+}
+
+export function militaryCommands(context: AiContext, explanations: Explanation[]): Command[] {
+  const { view, memory } = context
+  const commands: Command[] = []
+  const threat = threatMap(view, context.rules.ai.threatRange)
+
+  const ownArmies = view.armies.filter((army) => army.owner === view.playerId)
+  if (ownArmies.length === 0) return commands
+
+  // The province under the most pressure, if any is under real pressure at all.
+  const pressured = Object.entries(threat.byProvince)
+    .filter(([, value]) => value > 300)
+    .sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : a[0] < b[0] ? -1 : 1))[0]
+
+  for (const army of ownArmies) {
+    // An army already on its way keeps going unless its home is burning.
+    const busy = (army.path?.length ?? 0) > 0
+
+    const here = compareForces(view, army.provinceId, army.strength)
+    if (here.enemy > 0 && !worthAttacking(here, boldness(context))) {
+      // Losing this fight: pull out rather than feed it.
+      commands.push({ type: 'SET_STANCE', playerId: view.playerId, armyId: army.id, stance: 'retreat' })
+      explanations.push({
+        action: `Zieht ${army.id} aus ${army.provinceId} zurück`,
+        reason: `unterlegen (${here.verdict})`,
+        score: 800,
+        alternative: { action: 'stehen bleiben', score: 200 },
+      })
+      memory.assignments[army.id] = 'retreat'
+      continue
+    }
+
+    if (busy) continue
+
+    if (pressured && threat.byProvince[army.provinceId] === undefined) {
+      // Not at the front: move towards the province under pressure.
+      const [target] = pressured
+      if (target !== army.provinceId) {
+        commands.push({
+          type: 'MOVE_ARMY',
+          playerId: view.playerId,
+          armyId: army.id,
+          targetProvinceId: target as ProvinceId,
+        })
+        explanations.push({
+          action: `Verlegt ${army.id} nach ${target}`,
+          reason: 'Grenze unter Druck',
+          score: 750,
+        })
+        memory.assignments[army.id] = `defend:${target}`
+        continue
+      }
+    }
+
+    // Nothing to defend: look for something worth taking.
+    const targets = rateProvinces(context, army.provinceId)
+    const choice = targets.find((candidate) => {
+      const comparison = compareForces(view, candidate.id, army.strength)
+      return worthAttacking(comparison, boldness(context))
+    })
+
+    if (!choice) {
+      explanations.push({
+        action: `${army.id} bleibt in ${army.provinceId}`,
+        reason: 'kein lohnendes Ziel in Reichweite',
+        score: 100,
+      })
+      memory.assignments[army.id] = 'reserve'
+      continue
+    }
+
+    commands.push({
+      type: 'MOVE_ARMY',
+      playerId: view.playerId,
+      armyId: army.id,
+      targetProvinceId: choice.id,
+    })
+    explanations.push({
+      action: `Greift ${choice.id} mit ${army.id} an`,
+      reason: `Wert ${choice.total}, Verteidigung ${choice.defence}`,
+      score: choice.total,
+      ...(targets[1] ? { alternative: { action: `stattdessen ${targets[1].id}`, score: targets[1].total } } : {}),
+    })
+    memory.assignments[army.id] = `attack:${choice.id}`
+  }
+
+  return commands
+}

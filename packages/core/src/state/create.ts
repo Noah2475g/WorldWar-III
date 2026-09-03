@@ -183,7 +183,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     provinceOrder,
     armies: {},
     armyOrder: [],
-    diplomacy: { relations },
+    diplomacy: { relations, offers: [] },
     market: createMarket(rules),
     ai,
     battles: [],

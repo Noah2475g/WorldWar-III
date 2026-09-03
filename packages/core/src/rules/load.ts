@@ -242,6 +242,9 @@ export function parseRules(raw: RawRules, id: string): Rules {
       problems.push(`KI-Stufe "${level}" fehlt`)
       continue
     }
+    for (const field of ['tacticalInterval', 'recruitShare'] as const) {
+      if (typeof entry[field] !== 'number') problems.push(`KI-Stufe "${level}": "${field}" fehlt`)
+    }
     const weights = ['economy', 'position', 'defence', 'distance', 'weakness'] as const
     const sum = weights.reduce((total, key) => total + Number(entry[key] ?? 0), 0)
     if (sum !== 1000) {

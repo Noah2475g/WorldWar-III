@@ -215,9 +215,18 @@ export interface Relation {
   sharedMap: boolean
 }
 
+export interface DiplomaticOffer {
+  from: PlayerId
+  to: PlayerId
+  kind: 'peace' | 'alliance'
+  tick: Tick
+}
+
 export interface DiplomacyState {
   /** Key is `${a}|${b}` with a < b, so each pair is stored exactly once. */
   relations: Record<string, Relation>
+  /** Offers waiting for an answer; accepting is a deliberate second step. */
+  offers: DiplomaticOffer[]
 }
 
 export interface MarketState {
@@ -238,6 +247,7 @@ export interface Battle {
 export interface AiMemory {
   lastStrategicTick: Tick
   lastOperationalTick: Tick
+  lastTacticalTick?: Tick
   /** How much each opponent is worth attacking, 0..1000. */
   targetPriority: Record<PlayerId, Fixed>
   /** Army id -> assignment key ("defend:PROV", "attack:PROV", "reserve"). */

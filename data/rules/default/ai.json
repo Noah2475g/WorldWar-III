@@ -9,7 +9,9 @@
       "weakness": 100,
       "planningDepth": 1,
       "maxFronts": 1,
-      "resourceBonus": 1000
+      "resourceBonus": 1000,
+      "tacticalInterval": 6,
+      "recruitShare": 80
     },
     "normal": {
       "economy": 280,
@@ -19,7 +21,9 @@
       "weakness": 120,
       "planningDepth": 2,
       "maxFronts": 2,
-      "resourceBonus": 1000
+      "resourceBonus": 1000,
+      "tacticalInterval": 2,
+      "recruitShare": 200
     },
     "hard": {
       "economy": 260,
@@ -29,7 +33,9 @@
       "weakness": 160,
       "planningDepth": 3,
       "maxFronts": 3,
-      "resourceBonus": 1000
+      "resourceBonus": 1000,
+      "tacticalInterval": 1,
+      "recruitShare": 330
     }
   },
   "resourceWeights": {

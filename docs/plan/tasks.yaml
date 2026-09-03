@@ -404,7 +404,7 @@ tasks:
   - id: T-M5-04
     milestone: M5
     title: Ereignisprotokoll und Verdichtung
-    status: todo
+    status: done
     deps: [T-M5-03]
     requirements: [R-GAME-06]
     files: [packages/core/src/events/log.ts]
@@ -414,7 +414,7 @@ tasks:
   - id: T-M5-05
     milestone: M5
     title: Hot-Seat-Partie mit zwei menschlichen Spielern
-    status: todo
+    status: done
     deps: [T-M5-03]
     requirements: [R-ARCH-04]
     files: []
@@ -424,7 +424,7 @@ tasks:
   - id: T-M5-06
     milestone: M5
     title: Kennzahlenbericht nach Kernregeln
-    status: todo
+    status: done
     deps: [T-M5-05, T-M4-06]
     requirements: [R-ECON-03]
     design: [D-08]

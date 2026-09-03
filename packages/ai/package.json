@@ -5,5 +5,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "dependencies": { "@worldwar/shared": "workspace:*", "@worldwar/core": "workspace:*" }
+  "dependencies": {
+    "@worldwar/shared": "workspace:*",
+    "@worldwar/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@worldwar/testkit": "workspace:*"
+  }
 }

@@ -60,12 +60,23 @@ importers:
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
+      '@worldwar/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/core:
     dependencies:
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
+      '@worldwar/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@worldwar/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/mapgen:
     dependencies:
