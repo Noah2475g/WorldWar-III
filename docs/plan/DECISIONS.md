@@ -187,3 +187,22 @@ Straße von Malakka plötzlich auf Sibirien, und nichts schlägt an. Ein Test pr
 dass eine umgedrehte Eingabe dieselben Kennungen ergibt.
 
 **Auswirkung:** Die Regeldatei ist länger, dafür sind die Kennungen lesbar und stabil.
+
+---
+
+## 2026-09-03 · Sprache · Es bleibt bei Deutsch — weil die Daten es hergeben
+
+**Entscheidung:** Noah hat freigestellt, ob das Spiel deutsch oder englisch ist, solange
+es einheitlich bleibt. Es bleibt bei Deutsch für alles, was der Spieler sieht, und bei
+Englisch für Code, Kommentare und Commit-Nachrichten — also bei der bereits bestehenden
+Trennung. R-UI-07 bleibt damit unverändert gültig.
+
+**Begründung:** Der Anlass für die Freistellung war ein Befund, der sich als mein eigener
+Lesefehler herausstellte: die deutschen Ländernamen kamen als `Ã„thiopien` an, weil ich
+die DBF-Dateien ohne Kodierungsangabe gelesen habe. Mit `encoding: 'utf8'` sind sie
+vollständig und korrekt — **alle 242 Staaten** tragen einen deutschen Namen, ebenso alle
+294 Verwaltungseinheiten. Es gab also nie einen Grund zu wechseln, und ein Wechsel hätte
+die deutschen Fehlermeldungen und Testnamen aus 56 erledigten Aufgaben umgestellt.
+
+**Auswirkung:** Keine. Die Provinznamen auf der Karte sind deutsch, die Namen der
+zusammengefassten Regionen ebenfalls („Nordostchina", „Russischer Ferner Osten").
