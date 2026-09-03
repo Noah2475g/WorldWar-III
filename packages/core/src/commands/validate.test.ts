@@ -63,8 +63,9 @@ describe('R-ARCH-02 Allgemeine Kommandopruefung', () => {
   })
 
   it('weist Kommandos ohne zustaendigen Baustein zurueck', () => {
-    // DIPLOMACY arrives with T-M6-01. Until then it is rejected, never silently ignored.
-    const command: Command = { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'declareWar' }
+    // Every command type has a handler by now, so this uses an invented one: an
+    // unknown command must be rejected, never silently ignored.
+    const command = { type: 'SUMMON_DRAGON', playerId: 'p1' } as unknown as Command
     expect(canApply(state, command, ctx)).toMatchObject({ ok: false, code: 'UNKNOWN_COMMAND' })
   })
 
@@ -75,7 +76,7 @@ describe('R-ARCH-02 Allgemeine Kommandopruefung', () => {
       { type: 'SET_STANCE', playerId: 'p2', armyId: 'a1', stance: 'defensive' },
       { type: 'SET_STANCE', playerId: 'p1', armyId: 'unbekannt', stance: 'defensive' },
       { type: 'SET_CAPITAL', playerId: 'p1', provinceId: 'nirgendwo' },
-      { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'declareWar' },
+      { type: 'SUMMON_DRAGON', playerId: 'p1' } as unknown as Command,
     ]
     for (const command of rejected) {
       expect(applyCommand(state, command, ctx).ok).toBe(false)

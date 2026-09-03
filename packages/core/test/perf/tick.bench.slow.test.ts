@@ -16,6 +16,9 @@ import { createInitialState, type GameConfig } from '../../src/state/create'
  * Note on the numbers: the budget in the requirements refers to a 200-province world.
  * The test map has twelve, so the per-tick budget is scaled down accordingly; the point
  * is to catch an order-of-magnitude regression, not to certify the final map.
+ *
+ * This runs in the slow suite (`pnpm bench`), on its own. Timing a simulation while
+ * thirty other test files run in parallel measures the machine's load, not the code.
  */
 const map = smallWorld()
 const rules = TEST_RULES
@@ -76,6 +79,8 @@ describe('R-ARCH-06 Rechenzeit je Tick', () => {
     )
 
     // Twelve provinces, so the budget is a fraction of the 0.5 ms allowed for 200.
+    // The tail is measured while the rest of the suite runs in parallel, so it gets a
+    // wider allowance than the median — a regression shows up in the median first.
     expect(tickMedian).toBeLessThan(0.5)
     expect(p99).toBeLessThan(2)
   })

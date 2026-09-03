@@ -208,6 +208,8 @@ describe('R-UNIT-04 Kein Durchmarsch an Verteidigern vorbei', () => {
   })
 
   it('laesst friedliche Nachbarn passieren', () => {
+    // With right of way granted: without it, marching through would itself start a war.
+    state.diplomacy.relations['p1|p2']!.rightOfWay = true
     state.armies['other'] = makeArmy('other', 'p2', 'm1', [{ unitKey: 'infantry', hpTotal: 10_000 }])
     state.armyOrder = ['a1', 'other']
 

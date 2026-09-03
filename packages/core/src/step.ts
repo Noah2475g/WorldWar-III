@@ -16,6 +16,7 @@ import { retreat } from './phases/retreat'
 import { upkeep } from './phases/upkeep'
 import { PHASE_ORDER, type Phase, type PhaseContext, type PhaseName } from './phases/index'
 import type { Rules } from './rules/types'
+import { cloneState } from './state/clone'
 import type { GameState, MapData } from './state/types'
 
 export { PHASE_ORDER } from './phases/index'
@@ -70,8 +71,7 @@ export function step(
   ctx: StepContext,
   options: StepOptions = {},
 ): StepResult {
-  // TODO(T-M8-03): replace with copy-on-write once the tick budget demands it.
-  const draft = structuredClone(state) as GameState
+  const draft = cloneState(state)
   const events: GameEvent[] = []
 
   const phaseCtx: PhaseContext = {

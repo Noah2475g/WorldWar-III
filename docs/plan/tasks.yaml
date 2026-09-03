@@ -435,7 +435,7 @@ tasks:
   - id: T-M6-01
     milestone: M6
     title: Diplomatische Zustaende
-    status: todo
+    status: done
     deps: [T-M5-03]
     requirements: [R-DIP-01, R-DIP-02]
     files: [packages/core/src/phases/diplomacy.ts, packages/core/src/commands/diplomacy.ts]
@@ -445,7 +445,7 @@ tasks:
   - id: T-M6-02
     milestone: M6
     title: Oeffentliche Sicht Nebel des Krieges
-    status: todo
+    status: done
     deps: [T-M6-01]
     requirements: [R-DIP-04, R-AI-01]
     files: [packages/core/src/view/publicView.ts]
@@ -455,7 +455,7 @@ tasks:
   - id: T-M6-03
     milestone: M6
     title: Aufklaerungswissen
-    status: todo
+    status: done
     deps: [T-M6-02]
     requirements: [R-DIP-04]
     files: [packages/core/src/view/intel.ts]
@@ -465,7 +465,7 @@ tasks:
   - id: T-M7-00
     milestone: M7
     title: KI-Gedaechtnis im Spielzustand
-    status: todo
+    status: done
     deps: [T-M6-03]
     requirements: [R-AI-07, R-GAME-03]
     design: [D-13]
@@ -476,7 +476,7 @@ tasks:
   - id: T-M7-01
     milestone: M7
     title: KI-Grundgeruest und Erklaerbarkeit
-    status: todo
+    status: done
     deps: [T-M7-00]
     requirements: [R-AI-01, R-AI-05]
     design: [D-10]
@@ -487,7 +487,7 @@ tasks:
   - id: T-M7-02
     milestone: M7
     title: Wirtschafts- und Bau-KI
-    status: todo
+    status: done
     deps: [T-M7-01]
     requirements: [R-AI-03]
     files: [packages/ai/src/economy.ts]
@@ -497,7 +497,7 @@ tasks:
   - id: T-M7-02b
     milestone: M7
     title: Bedrohungskarte und Kraeftevergleich
-    status: todo
+    status: done
     deps: [T-M7-02]
     requirements: [R-AI-03]
     files: [packages/ai/src/threat.ts, packages/ai/src/strength.ts]
@@ -507,7 +507,7 @@ tasks:
   - id: T-M7-03
     milestone: M7
     title: Militaer-KI
-    status: todo
+    status: done
     deps: [T-M7-02b]
     requirements: [R-AI-03]
     files: [packages/ai/src/military.ts, packages/ai/src/targeting.ts]
@@ -517,7 +517,7 @@ tasks:
   - id: T-M7-04
     milestone: M7
     title: Diplomatie-KI
-    status: todo
+    status: done
     deps: [T-M7-03]
     requirements: [R-DIP-03]
     files: [packages/ai/src/diplomacy.ts]
@@ -527,7 +527,7 @@ tasks:
   - id: T-M7-05
     milestone: M7
     title: Schwierigkeitsgrade und Rechenbudget
-    status: todo
+    status: done
     deps: [T-M7-04]
     requirements: [R-AI-02, R-AI-04, R-AI-06]
     files: [packages/ai/src/difficulty.ts, docs/reports/ai-tournament.md, docs/reports/ai-bench.json]
