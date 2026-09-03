@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WorldWar",
+  "version": "0.1.0",
+  "identifier": "de.noahhaumersen.worldwar",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @worldwar/desktop dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm --filter @worldwar/desktop build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "WorldWar",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'",
+      "capabilities": ["local-only"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis", "deb", "appimage", "dmg"],
+    "icon": ["icons/icon.png"],
+    "category": "Game",
+    "shortDescription": "Globalstrategie ohne Wartezeiten und ohne Bezahlvorteile",
+    "longDescription": "Ein Einzelspieler-Strategiespiel auf einer Weltkarte mit 237 Provinzen. Die Spielgeschwindigkeit ist frei regelbar; es gibt keine Käufe, keine Wartezeiten und keinen Netzzugriff."
+  }
+}

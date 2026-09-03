@@ -47,3 +47,14 @@ konkreten Werk.
 oder *Conflict of Nations*. Die Mechanik-Recherche in `docs/research/SUPREMACY-MECHANICS.md`
 beschreibt Spielregeln — Regeln sind nicht urheberrechtlich geschützt, ihre Darstellung
 schon.
+
+## Icons und Klänge — selbst erstellt
+
+**Icons** (`apps/desktop/src/ui/icons.tsx`): dreizehn Symbole als eingebettetes SVG,
+gezeichnet in der Formensprache militärischer Lagekarten — Rechteck mit Diagonalkreuz
+für Infanterie, Oval für Panzer, Winkel für Artillerie. Diese Formensprache ist eine
+gemeinfreie Konvention, kein Werk; übernommen wurde nichts.
+
+**Klänge** (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern erzeugte Töne über
+die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und
+Hüllkurve. Nichts wird geladen, nichts ist lizenziert, nichts wiegt etwas.

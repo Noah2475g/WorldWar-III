@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "local-only",
+  "description": "Alles, was das Spiel darf — und nichts weiter. Kein Netzzugriff (R-FREE-04, Ziel Z3): keine http-, shell- oder updater-Berechtigung, damit das Programm technisch nicht nach Hause funken kann, statt es nur zu versprechen.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "fs:allow-appdata-read-recursive",
+    "fs:allow-appdata-write-recursive",
+    "dialog:allow-save",
+    "dialog:allow-open"
+  ]
+}

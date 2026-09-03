@@ -23,8 +23,8 @@
     "bench": "vitest run --config vitest.slow.config.ts packages/core/test/perf",
     "balance:sweep": "node scripts/not-yet.mjs balance:sweep T-M12-00",
     "dev": "pnpm --filter @worldwar/desktop dev",
-    "tauri:dev": "node scripts/not-yet.mjs tauri:dev T-M11-03",
-    "tauri:build": "node scripts/not-yet.mjs tauri:build T-M11-03",
+    "tauri:dev": "tauri dev --config apps/desktop/src-tauri/tauri.conf.json",
+    "tauri:build": "tauri build --config apps/desktop/src-tauri/tauri.conf.json",
     "desktop:build": "pnpm --filter @worldwar/desktop build"
   },
   "devDependencies": {

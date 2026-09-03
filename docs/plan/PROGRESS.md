@@ -183,3 +183,12 @@ Nationen, Startwerte innerhalb 14 % vom Median.
 | T-M10-11 | 2026-09-03 | Kartenauswahl im Startdialog, mit Provinzzahl je Karte | grün |
 | T-M10-12 | 2026-09-03 | Bedienung ohne Maus: jede Aktion über Tastatur, Fokusring sichtbar, Schriftgröße einstellbar, Dialoge fangen den Fokus und geben ihn zurück | grün |
 | T-M11-04 | 2026-09-03 | Lokalisierung: ein Katalog, keine Anzeigetexte im Code; ein Test verlangt einen Satz für jeden Fehlercode, jede Ereignisart und jede Ressource | grün |
+
+## Meilenstein M11 — Politur und Verpackung
+
+| Aufgabe | Datum | Ergebnis | verify |
+|---|---|---|---|
+| T-M11-01 | 2026-09-03 | 13 Icons als eingebettetes SVG in der Formensprache militärischer Lagekarten; nehmen die Textfarbe an, skalieren mit der Schriftgröße, für Vorleseprogramme unsichtbar solange sie Zierde sind | grün |
+| T-M11-02 | 2026-09-03 | Erzeugte Klänge statt Aufnahmen (nichts geladen, nichts lizenziert); Ton abschaltbar, und oberhalb von 10 Spielstunden/s schweigen Töne und Animationen — sonst wären die Meldungen eine Störsirene | grün |
+| T-M11-03 | 2026-09-03 | Tauri-Verpackung für Windows, Linux und macOS. **Kein Netzzugriff möglich:** keine http-, shell- oder updater-Berechtigung, `connect-src 'none'` in der Inhaltsrichtlinie — ein Guard prüft beides | grün |
+| T-M11-04 | 2026-09-03 | (siehe M10) | grün |

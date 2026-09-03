@@ -806,7 +806,7 @@ tasks:
   - id: T-M11-01
     milestone: M11
     title: Icons und Kartengrafik
-    status: todo
+    status: done
     deps: [T-M10-12]
     requirements: [R-UI-04, R-ASSET-01, R-ASSET-02]
     files: [apps/desktop/src/assets/, docs/ASSETS.md]
@@ -816,7 +816,7 @@ tasks:
   - id: T-M11-02
     milestone: M11
     title: Animationen und Ton
-    status: todo
+    status: done
     deps: [T-M11-01]
     requirements: [R-UI-04]
     files: [apps/desktop/src/fx/, apps/desktop/src/audio/]
@@ -826,7 +826,7 @@ tasks:
   - id: T-M11-03
     milestone: M11
     title: Tauri-Verpackung
-    status: todo
+    status: done
     deps: [T-M11-02]
     requirements: [R-FREE-04]
     constraints: [C-02]
