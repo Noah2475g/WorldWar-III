@@ -1,4 +1,5 @@
 import { toScreen, type Point, type View } from './picking.ts'
+import { UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -20,9 +21,16 @@ export interface ArmyMarker {
   strength: number
   own: boolean
   fighting?: boolean
+  /**
+   * The symbol of the army's strongest arm of service (T-M13-09, R-UI-10).
+   *
+   * Only known for own armies — a foreign stack shows a strength estimate and nothing
+   * about its composition (R-DIP-04), so it keeps the plain infantry box.
+   */
+  icon?: IconName
 }
 
-export type MarkerKind = 'building' | 'army' | 'battle'
+export type MarkerKind = 'building' | 'army' | 'battle' | 'capital'
 
 export interface Marker {
   kind: MarkerKind
@@ -36,6 +44,19 @@ export interface Marker {
   count?: number
   /** Armies and battles: which army this belongs to. */
   armyId?: string
+  /** Armies: which symbol to draw in the box. */
+  icon?: IconName
+}
+
+/** Which arm of service a stack is mostly made of — that is the symbol it wears. */
+export function dominantIcon(units: readonly { unitKey: string; hp: number }[]): IconName | undefined {
+  let best: { icon: IconName; hp: number } | null = null
+  for (const stack of units) {
+    const icon = UNIT_ICONS[stack.unitKey]
+    if (!icon) continue
+    if (!best || stack.hp > best.hp) best = { icon, hp: stack.hp }
+  }
+  return best?.icon
 }
 
 /** At most this many building pips per province — beyond it they become a smear. */
@@ -44,11 +65,19 @@ export const MAX_BUILDING_PIPS = 4
 /** Buildings sit below the army box so the two never overlap. */
 export const BUILDING_OFFSET_Y = 12
 
+export interface MarkerExtras {
+  /** The player's own capital, drawn as a star. */
+  capitalProvinceId?: string | null
+  /** Provinces where fighting is going on, from the view — not from the armies. */
+  battleProvinces?: readonly string[]
+}
+
 export function markersFor(
   armies: readonly ArmyMarker[],
   buildings: Readonly<Record<string, number>>,
   centres: Readonly<Record<string, Point>>,
   view: View,
+  extras: MarkerExtras = {},
 ): Marker[] {
   const markers: Marker[] = []
 
@@ -72,17 +101,45 @@ export function markersFor(
     if (!centre) continue
 
     const point = toScreen(centre, view)
-    markers.push({ kind: 'army', provinceId: army.provinceId, x: point.x, y: point.y, own: army.own, armyId: army.id })
+    markers.push({
+      kind: 'army',
+      provinceId: army.provinceId,
+      x: point.x,
+      y: point.y,
+      own: army.own,
+      armyId: army.id,
+      ...(army.icon ? { icon: army.icon } : {}),
+    })
   }
 
-  // Rings last, so a battle is visible over every unit taking part in it.
-  for (const army of armies) {
-    if (!army.fighting) continue
-    const centre = centres[army.provinceId]
+  // The capital sits above the units of its own province: it is a place, not a piece,
+  // and the player looks for it more often than for anything else on the map.
+  if (extras.capitalProvinceId) {
+    const centre = centres[extras.capitalProvinceId]
+    if (centre) {
+      const point = toScreen(centre, view)
+      markers.push({ kind: 'capital', provinceId: extras.capitalProvinceId, x: point.x, y: point.y })
+    }
+  }
+
+  /*
+   * Battle rings last, so fighting is visible over every unit taking part in it.
+   *
+   * Taken from the view's list of battles rather than from a flag on the army: the old
+   * `fighting` flag was never set by anything, so the ring never appeared once in the
+   * finished game. The view knows which battles the player may see, which is also the
+   * right answer to "whose fighting is this".
+   */
+  const battleProvinces = new Set([
+    ...(extras.battleProvinces ?? []),
+    ...armies.filter((army) => army.fighting).map((army) => army.provinceId),
+  ])
+  for (const provinceId of battleProvinces) {
+    const centre = centres[provinceId]
     if (!centre) continue
 
     const point = toScreen(centre, view)
-    markers.push({ kind: 'battle', provinceId: army.provinceId, x: point.x, y: point.y, armyId: army.id })
+    markers.push({ kind: 'battle', provinceId, x: point.x, y: point.y })
   }
 
   return markers

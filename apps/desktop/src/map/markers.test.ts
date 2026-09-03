@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MAP_COLORS } from './render.ts'
 import { colorForPlayer, fillFor } from './modes.ts'
 import { zoomAt, type View, type ViewLimits } from './picking.ts'
-import { BUILDING_OFFSET_Y, MAX_BUILDING_PIPS, markersFor, type ArmyMarker } from './markers.ts'
+import { BUILDING_OFFSET_Y, MAX_BUILDING_PIPS, dominantIcon, markersFor, type ArmyMarker } from './markers.ts'
 import { PLAYER_COLORS, contrastRatio, deltaE } from '../ui/tokens.ts'
 
 /**
@@ -120,5 +120,62 @@ describe('R-MAP-05 Kartendarstellung', () => {
   it('zeichnet nichts fuer eine Provinz, die es auf der Karte nicht gibt', () => {
     // Sonst landet ein Symbol auf Koordinate NaN und verschwindet unsichtbar irgendwo.
     expect(markersFor([army('a1', 'nirgendwo')], { nirgendwo: 3 }, centres, view)).toEqual([])
+  })
+})
+
+/**
+ * Was auf der Karte steht (T-M13-09, R-UI-12).
+ *
+ * Drei Dinge fehlten: die eigene Hauptstadt war nicht zu finden, ein Kampf zeigte sich
+ * nie (die Fahne `fighting` setzte niemand), und jede Armee trug das Infanteriekreuz,
+ * ganz gleich, woraus sie bestand.
+ */
+describe('R-UI-12 Hauptstadt, Kampf und Gattung', () => {
+  it('zeichnet die eigene Hauptstadt als eigenes Zeichen', () => {
+    const markers = markersFor([], {}, centres, view, { capitalProvinceId: 'alpha' })
+
+    expect(markers.map((m) => m.kind)).toEqual(['capital'])
+    expect(markers[0]).toMatchObject({ provinceId: 'alpha', x: 100, y: 100 })
+  })
+
+  it('zeichnet einen Kampf dort, wo die Sicht einen meldet', () => {
+    const markers = markersFor([], {}, centres, view, { battleProvinces: ['beta'] })
+
+    expect(markers.filter((m) => m.kind === 'battle').map((m) => m.provinceId)).toEqual(['beta'])
+  })
+
+  it('zeichnet keinen Kampf ohne Meldung — die alte Fahne setzte niemand', () => {
+    const markers = markersFor([army('a1', 'alpha')], {}, centres, view)
+
+    expect(markers.some((m) => m.kind === 'battle')).toBe(false)
+  })
+
+  it('fasst mehrere Armeen in derselben Schlacht zu einem Zeichen zusammen', () => {
+    const markers = markersFor([army('a1', 'beta'), army('a2', 'beta')], {}, centres, view, {
+      battleProvinces: ['beta', 'beta'],
+    })
+
+    expect(markers.filter((m) => m.kind === 'battle')).toHaveLength(1)
+  })
+
+  it('gibt der Armee das Zeichen ihres staerksten Stapels', () => {
+    expect(dominantIcon([{ unitKey: 'infantry', hp: 1000 }, { unitKey: 'tank', hp: 4000 }])).toBe('armour')
+    expect(dominantIcon([{ unitKey: 'infantry', hp: 4000 }, { unitKey: 'tank', hp: 1000 }])).toBe('infantry')
+  })
+
+  it('bleibt ohne bekannte Zusammensetzung beim schlichten Kasten', () => {
+    // Fremde Armeen zeigen nur eine Staerke — was in ihnen steckt, geht den Spieler
+    // nichts an (R-DIP-04).
+    expect(dominantIcon([])).toBeUndefined()
+    expect(dominantIcon([{ unitKey: 'gibtesnicht', hp: 5000 }])).toBeUndefined()
+  })
+
+  it('haelt die Reihenfolge ein: Gebaeude, Armee, Hauptstadt, Kampf', () => {
+    const markers = markersFor([army('a1', 'alpha')], { alpha: 2 }, centres, view, {
+      capitalProvinceId: 'alpha',
+      battleProvinces: ['alpha'],
+    })
+
+    expect(markers.map((m) => m.kind)).toEqual(['building', 'army', 'capital', 'battle'])
   })
 })

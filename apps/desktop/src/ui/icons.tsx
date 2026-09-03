@@ -155,5 +155,14 @@ export const RESOURCE_ICONS: Record<string, IconName> = {
   money: 'money',
 }
 
+/**
+ * The raw drawings, for anything that is not React.
+ *
+ * The map draws the same symbols onto a canvas through Path2D — one set of shapes for
+ * the whole game, so a unit looks the same in the panel and on the map because it is
+ * literally the same path (R-UI-10).
+ */
+export const ICON_PATHS: Readonly<Record<IconName, string>> = PATHS
+
 /** Every icon name, for the test that keeps the set complete. */
 export const ICON_NAMES = Object.keys(PATHS) as IconName[]

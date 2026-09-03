@@ -4,6 +4,7 @@ import { TOKENS, TYPE } from '../ui/tokens.ts'
 import { MAP_COLORS, prepareFrame, type RenderProvince } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
 import { markersFor, type ArmyMarker } from './markers.ts'
+import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
 import type { MapMode } from './modes.ts'
 
@@ -17,6 +18,29 @@ import type { MapMode } from './modes.ts'
  */
 
 export type { ArmyMarker } from './markers.ts'
+
+/**
+ * Draws one symbol from the icon set onto the canvas (T-M13-09).
+ *
+ * The paths are the ones the panels render as SVG — the map and the panels agree
+ * because they read the same twenty-four-unit drawings, not because someone kept two
+ * sets in step. `Path2D` takes the same `d` string a `<path>` does.
+ */
+function drawIcon(
+  context: CanvasRenderingContext2D,
+  name: IconName,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  if (typeof Path2D !== 'function') return
+  const scale = size / 24
+  context.save()
+  context.translate(x - size / 2, y - size / 2)
+  context.scale(scale, scale)
+  context.stroke(new Path2D(ICON_PATHS[name]))
+  context.restore()
+}
 
 export interface MapCanvasProps {
   provinces: readonly RenderProvince[]
@@ -32,6 +56,10 @@ export interface MapCanvasProps {
   selectedProvince: string | null
   /** Provinces the marching order would pass through, drawn as a preview. */
   path?: readonly string[]
+  /** Die eigene Hauptstadt — der Ort, den der Spieler am haeufigsten sucht. */
+  capitalProvinceId?: string | null
+  /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
+  battleProvinces?: readonly string[]
   onSelect: (provinceId: string | null) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
@@ -159,7 +187,10 @@ export function MapCanvas(props: MapCanvasProps) {
       }
     }
 
-    for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view)) {
+    for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
+      capitalProvinceId: props.capitalProvinceId ?? null,
+      battleProvinces: props.battleProvinces ?? [],
+    })) {
       if (marker.kind === 'building') {
         // Ein Quadrat je Gebaeude, in einer Reihe unter der Provinzmitte.
         const pip = 4
@@ -173,33 +204,41 @@ export function MapCanvas(props: MapCanvasProps) {
       }
 
       if (marker.kind === 'army') {
-        // The NATO shape: a rectangle with a diagonal cross for infantry.
-        const w = 18
-        const h = 12
+        // The situation-map box, with the symbol of the strongest arm of service in it
+        // — the same symbol the panels use, drawn from the same paths (R-UI-10).
+        const w = 20
+        const h = 14
         context.fillStyle = marker.own ? TOKENS.ink : TOKENS.accent
         context.fillRect(marker.x - w / 2, marker.y - h / 2, w, h)
         context.strokeStyle = TOKENS.onDark
-        context.lineWidth = 1
-        context.beginPath()
-        context.moveTo(marker.x - w / 2, marker.y - h / 2)
-        context.lineTo(marker.x + w / 2, marker.y + h / 2)
-        context.moveTo(marker.x + w / 2, marker.y - h / 2)
-        context.lineTo(marker.x - w / 2, marker.y + h / 2)
-        context.stroke()
+        context.lineWidth = 1.2
+        drawIcon(context, marker.icon ?? 'infantry', marker.x, marker.y, 13)
         continue
       }
 
+      if (marker.kind === 'capital') {
+        context.strokeStyle = TOKENS.ink
+        context.lineWidth = 1.6
+        drawIcon(context, 'capital', marker.x, marker.y - 14, 15)
+        continue
+      }
+
+      // A battle: the ring says where, the sabres say what.
       context.strokeStyle = MAP_COLORS.battle
       context.lineWidth = 2
       context.beginPath()
-      context.arc(marker.x, marker.y, 13, 0, Math.PI * 2)
+      context.arc(marker.x, marker.y, 14, 0, Math.PI * 2)
       context.stroke()
+      context.lineWidth = 1.6
+      drawIcon(context, 'battle', marker.x, marker.y, 14)
     }
   }, [
     props.armies,
     props.buildings,
     props.selectedProvince,
     props.path,
+    props.capitalProvinceId,
+    props.battleProvinces,
     props.view,
     props.centres,
     withBounds,

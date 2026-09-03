@@ -29,6 +29,7 @@ import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
+import { dominantIcon } from './map/markers.ts'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
 import {
@@ -262,15 +263,38 @@ export function App(props: AppProps) {
 
   const armies: ArmyMarker[] = useMemo(
     () =>
-      (view?.armies ?? []).map((army) => ({
-        id: army.id,
-        provinceId: army.provinceId,
-        owner: army.owner,
-        strength: army.strength,
-        own: army.owner === 'p1',
-      })),
+      (view?.armies ?? []).map((army) => {
+        // Eigene Armeen tragen das Zeichen ihrer staerksten Gattung; von fremden weiss
+        // der Spieler nur die Staerke, also bleibt es dort beim schlichten Kasten.
+        const icon = army.units
+          ? dominantIcon(army.units.map((stack) => ({ unitKey: stack.unitKey, hp: stack.hpTotal })))
+          : undefined
+        return {
+          id: army.id,
+          provinceId: army.provinceId,
+          owner: army.owner,
+          strength: army.strength,
+          own: army.owner === 'p1',
+          ...(icon ? { icon } : {}),
+        }
+      }),
     [view],
   )
+
+  /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
+  const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
+
+  /**
+   * Der Weg der gewaehlten Armee, als Linie auf der Karte (R-UI-12).
+   *
+   * Die Ebene dafuer gibt es in `MapCanvas` seit M10 — befuellt hat sie nie jemand, und
+   * damit war der Marschbefehl das einzige, was man gab, ohne zu sehen, wohin.
+   */
+  const selectedPath = useMemo(() => {
+    const army = view?.armies.find((a) => a.id === ui.selectedArmy)
+    if (!army?.path || army.path.length === 0) return undefined
+    return [army.provinceId, ...army.path]
+  }, [view, ui.selectedArmy])
 
   /** One game hour, AI included. */
   const step = useCallback(
@@ -632,6 +656,9 @@ export function App(props: AppProps) {
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
+            capitalProvinceId={view.self.capitalProvinceId}
+            battleProvinces={battleProvinces}
+            {...(selectedPath ? { path: selectedPath } : {})}
             onSelect={selectOnMap}
             onViewChange={(next) => dispatch({ type: 'setView', view: next })}
             labelFor={nameOfProvince}
