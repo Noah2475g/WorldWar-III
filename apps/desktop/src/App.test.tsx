@@ -173,3 +173,55 @@ describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
     expect(screen.queryByText('p1')).toBeNull()
   })
 })
+
+describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
+  const clock = () => screen.queryByText(/Tag \d+ · \d{2}:\d{2}/)
+
+  it('steht von der ersten Sekunde an in der Kopfleiste', () => {
+    startGame()
+    expect(clock()).toBeTruthy()
+  })
+
+  it('bleibt sichtbar, waehrend ein Dialog offen ist', () => {
+    // "Jederzeit" heisst auch: waehrend der Spieler etwas anderes tut. Eine Uhr, die
+    // hinter jedem Dialog verschwindet, beantwortet die Frage "wie spaet ist es"
+    // genau dann nicht, wenn sie gestellt wird.
+    startGame()
+    fireEvent.keyDown(window, { key: 'F1' })
+
+    expect(screen.getByRole('dialog', { name: 'Tastatur' })).toBeTruthy()
+    expect(clock()).toBeTruthy()
+  })
+
+  it('geht mit der Spielzeit weiter', () => {
+    startGame()
+    expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(screen.queryByText(/Tag 1 · 00:00/)).toBeNull()
+    expect(screen.getByText(/Tag 2 · 00:00/)).toBeTruthy()
+  })
+})
+
+describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () => {
+  it('zeigt Bestand, Produktion, Verbrauch und Bilanz je Rohstoff', () => {
+    startGame()
+    const panel = screen.getByRole('region', { name: 'Wirtschaft' })
+
+    for (const column of ['Bestand', 'Produktion', 'Verbrauch', 'Bilanz']) {
+      expect(within(panel).getByText(column), `Spalte ${column} fehlt`).toBeTruthy()
+    }
+    for (const resource of ['Nahrung', 'Eisen', 'Geld']) {
+      expect(within(panel).getByText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
+    }
+  })
+
+  it('nennt in der Kopfleiste die Bilanz, nicht nur den Bestand', () => {
+    startGame()
+    const resources = screen.getByRole('list', { name: 'Rohstoffe' })
+
+    // Vorzeichenbehaftet, damit die Richtung auf einen Blick lesbar ist.
+    expect(resources.textContent).toMatch(/[+−±]\d/)
+  })
+})

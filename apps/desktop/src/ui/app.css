@@ -450,6 +450,15 @@ body {
   border-bottom: 1px solid var(--paper-sunk);
 }
 
+/* Zahlenkolonnen: rechtsbuendig und dicktengleich, damit die Spalten untereinander
+   lesbar sind statt zu zappeln (Wirtschaftsuebersicht, R-ECON-06). */
+.table--numbers td + td,
+.table--numbers th + th {
+  text-align: right;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
 .state--war {
   color: var(--accent);
   font-weight: 500;

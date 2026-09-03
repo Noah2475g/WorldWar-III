@@ -30,8 +30,17 @@ und keine europäische Macht hätte die geforderten drei Provinzen erreicht (R-M
 
 ## Schrift — IBM Plex
 
-**Lizenz:** SIL Open Font License 1.1 (OFL). Verwendet werden IBM Plex Sans, IBM Plex Sans
-Condensed und IBM Plex Mono. Quelle: https://github.com/IBM/plex
+**Lizenz:** SIL Open Font License 1.1 (OFL). Quelle: https://github.com/IBM/plex
+
+| Familie | Wofür |
+|---|---|
+| IBM Plex Sans | Bedienelemente, Fließtext |
+| IBM Plex Sans Condensed | Provinznamen, Kartenlegende |
+| IBM Plex Mono | Zahlenkolonnen, Uhrzeit |
+
+Die Namen stehen bewusst ungebrochen in einer Tabelle: `test/guards/no-foreign-assets.test.ts`
+sucht jede Familie, die die Oberfläche verlangt, wörtlich in dieser Datei — ein über
+zwei Zeilen umgebrochener Name wäre ein Eintrag, den weder Prüfung noch Mensch findet.
 
 Im Mockup (`docs/design/ui-mockup.html`) über Google Fonts eingebunden; die ausgelieferte
 Anwendung bettet die Schriftdateien ein, damit sie ohne Netz funktioniert (R-FREE-04).

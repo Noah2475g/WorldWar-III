@@ -15,7 +15,16 @@ import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
-import { ArmyPanel, DiplomacyPanel, EventLog, ProvincePanel, hintFor, type Action, type EventEntry } from './ui/Panels.tsx'
+import {
+  ArmyPanel,
+  DiplomacyPanel,
+  EconomyPanel,
+  EventLog,
+  ProvincePanel,
+  hintFor,
+  type Action,
+  type EventEntry,
+} from './ui/Panels.tsx'
 import { DebugPanel, KeyboardHelp, NewGameDialog, SavesDialog, SettingsDialog, fontScaleStyle } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
@@ -57,7 +66,8 @@ export function App(props: AppProps) {
   // (T-M8-00 built all three against the same contract).
   const storage = useMemo(() => props.storage ?? new MemoryStorage(), [props.storage])
 
-  const view = useMemo(() => (state ? publicView(state, 'p1') : null), [state])
+  // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
+  const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
 
   const provinces = useMemo(
     () =>
@@ -79,6 +89,16 @@ export function App(props: AppProps) {
     () => Object.fromEntries(props.map.provinces.map((p) => [p.id, p.center])),
     [props.map.provinces],
   )
+
+  /** Gebaeude je Provinz — nur die eigenen sind bekannt (R-DIP-04). */
+  const buildings = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const province of view?.provinces ?? []) {
+      const total = Object.values(province.buildings ?? {}).reduce((sum, level) => sum + (level ?? 0), 0)
+      if (total > 0) counts[province.id] = total
+    }
+    return counts
+  }, [view])
 
   const armies: ArmyMarker[] = useMemo(
     () =>
@@ -336,7 +356,6 @@ export function App(props: AppProps) {
         speed={speed}
         fastForwarding={false}
         mode={ui.mode}
-        balance={{}}
         onSpeed={(value) => setSpeed(Math.min(value, ui.settings.maxSpeed))}
         onFastForward={() => step(ticksPerDay)}
         onAbort={() => setSpeed(0)}
@@ -349,6 +368,7 @@ export function App(props: AppProps) {
           provinces={provinces}
           centres={centres}
           armies={armies}
+          buildings={buildings}
           mode={ui.mode}
           width={props.map.width}
           height={props.map.height}
@@ -380,6 +400,7 @@ export function App(props: AppProps) {
             />
           )}
           {ui.panel === 'diplomacy' && <DiplomacyPanel view={view} nameOf={nameOf} />}
+          <EconomyPanel view={view} />
           <DebugPanel
             enabled={ui.settings.debug}
             info={{ tick: state.tick, hash: '', aiGoals: [], commands: [] }}

@@ -30,6 +30,17 @@ export const de = {
     menu: 'Menü',
   },
 
+  economy: {
+    title: 'Wirtschaft',
+    resource: 'Rohstoff',
+    stock: 'Bestand',
+    production: 'Produktion',
+    consumption: 'Verbrauch',
+    balance: 'Bilanz',
+    perDay: 'je Tag',
+    shortage: 'Mangel',
+  },
+
   resources: {
     food: 'Nahrung',
     wood: 'Material',

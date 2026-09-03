@@ -2,7 +2,7 @@
 
 Erzeugt von `apps/headless/test/sweep.slow.test.ts` (`pnpm balance:sweep`).
 6 Mächte, 120 Spieltage, 2 Startzahlen je Variante,
-jede Konstante um ±25 % bewegt. Laufzeit 3.3 Minuten.
+jede Konstante um ±25 % bewegt.
 
 ## Was gemessen wird
 

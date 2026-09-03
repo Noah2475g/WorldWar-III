@@ -3,6 +3,7 @@ import { t } from '../i18n/text.ts'
 import { TOKENS } from '../ui/tokens.ts'
 import { MAP_COLORS, prepareFrame, type RenderProvince } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
+import { markersFor, type ArmyMarker } from './markers.ts'
 import type { MapMode } from './modes.ts'
 
 /**
@@ -14,19 +15,14 @@ import type { MapMode } from './modes.ts'
  * keeps its frame budget at a hundred game hours a second (design D11).
  */
 
-export interface ArmyMarker {
-  id: string
-  provinceId: string
-  owner: string
-  strength: number
-  own: boolean
-  fighting?: boolean
-}
+export type { ArmyMarker } from './markers.ts'
 
 export interface MapCanvasProps {
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
+  /** Gebaeude je Provinz, als Anzahl — die Symbole darunter (R-MAP-05). */
+  buildings: Readonly<Record<string, number>>
   mode: MapMode
   width: number
   height: number
@@ -140,33 +136,52 @@ export function MapCanvas(props: MapCanvasProps) {
       }
     }
 
-    for (const army of props.armies) {
-      const centre = props.centres[army.provinceId]
-      if (!centre) continue
-      const point = toScreen(centre, props.view)
-      // The NATO shape: a rectangle with a diagonal cross for infantry.
-      const w = 18
-      const h = 12
-      context.fillStyle = army.own ? TOKENS.ink : TOKENS.accent
-      context.fillRect(point.x - w / 2, point.y - h / 2, w, h)
-      context.strokeStyle = TOKENS.onDark
-      context.lineWidth = 1
-      context.beginPath()
-      context.moveTo(point.x - w / 2, point.y - h / 2)
-      context.lineTo(point.x + w / 2, point.y + h / 2)
-      context.moveTo(point.x + w / 2, point.y - h / 2)
-      context.lineTo(point.x - w / 2, point.y + h / 2)
-      context.stroke()
-
-      if (army.fighting) {
-        context.strokeStyle = MAP_COLORS.battle
-        context.lineWidth = 2
-        context.beginPath()
-        context.arc(point.x, point.y, 13, 0, Math.PI * 2)
-        context.stroke()
+    for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view)) {
+      if (marker.kind === 'building') {
+        // Ein Quadrat je Gebaeude, in einer Reihe unter der Provinzmitte.
+        const pip = 4
+        const gap = 2
+        const total = (marker.count ?? 1) * (pip + gap) - gap
+        context.fillStyle = TOKENS.inkSoft
+        for (let i = 0; i < (marker.count ?? 1); i++) {
+          context.fillRect(marker.x - total / 2 + i * (pip + gap), marker.y, pip, pip)
+        }
+        continue
       }
+
+      if (marker.kind === 'army') {
+        // The NATO shape: a rectangle with a diagonal cross for infantry.
+        const w = 18
+        const h = 12
+        context.fillStyle = marker.own ? TOKENS.ink : TOKENS.accent
+        context.fillRect(marker.x - w / 2, marker.y - h / 2, w, h)
+        context.strokeStyle = TOKENS.onDark
+        context.lineWidth = 1
+        context.beginPath()
+        context.moveTo(marker.x - w / 2, marker.y - h / 2)
+        context.lineTo(marker.x + w / 2, marker.y + h / 2)
+        context.moveTo(marker.x + w / 2, marker.y - h / 2)
+        context.lineTo(marker.x - w / 2, marker.y + h / 2)
+        context.stroke()
+        continue
+      }
+
+      context.strokeStyle = MAP_COLORS.battle
+      context.lineWidth = 2
+      context.beginPath()
+      context.arc(marker.x, marker.y, 13, 0, Math.PI * 2)
+      context.stroke()
     }
-  }, [props.armies, props.selectedProvince, props.path, props.view, props.centres, withBounds, size])
+  }, [
+    props.armies,
+    props.buildings,
+    props.selectedProvince,
+    props.path,
+    props.view,
+    props.centres,
+    withBounds,
+    size,
+  ])
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {

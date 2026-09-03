@@ -61,6 +61,16 @@ function percentile(values: number[], p: number): number {
   return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0
 }
 
+/**
+ * Gibt die Ereignisschleife zwischen den Spieltagen frei.
+ *
+ * Eine Simulation ist ein synchroner Block, und wer laenger als eine Minute in einem
+ * steckt, beantwortet dem Testlaeufer nichts mehr — der haelt den Arbeitsprozess fuer
+ * haengengeblieben und laesst den Lauf scheitern, obwohl jede Zusicherung darin
+ * durchgeht. Eine Umdrehung der Schleife je Spieltag ist die ganze Abhilfe.
+ */
+const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
 describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
   it('ist ueberhaupt eine gueltige Karte', () => {
     const result = validateMap(map)
@@ -103,7 +113,7 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
     expect(report.p99Ms, `p99 ${report.p99Ms} ms`).toBeLessThan(40)
   })
 
-  it('laeuft tausend Spieltage ohne Fehler und ohne Speicherwuchs', () => {
+  it('laeuft tausend Spieltage ohne Fehler und ohne Speicherwuchs', async () => {
     let state = newGame()
     const ticksPerDay = rules.constants.ticksPerDay
 
@@ -113,6 +123,7 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
       state = result.state
       storeMemories(state, memories)
       if (state.victory.winner !== null) break
+      if (day % 10 === 9) await breathe()
     }
 
     expect(state.tick).toBeGreaterThan(0)

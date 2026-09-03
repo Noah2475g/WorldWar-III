@@ -173,41 +173,96 @@ export function sweepableConstants(rules: Rules): string[] {
     .sort((a, b) => a.localeCompare(b, 'en'))
 }
 
-export function sweep(options: SweepOptions, constants?: readonly string[]): ConstantEffect[] {
+/** The unchanged rules, played out. Everything else is measured against this. */
+export function baselineOf(options: SweepOptions): TrialResult {
+  const { map, rules, players, days, seeds } = options
+  return average(seeds.map((seed) => playOut(map, rules, players, days, seed, options.nations)))
+}
+
+/**
+ * Hands the event loop back between games.
+ *
+ * Not a nicety: a simulation is a synchronous block, and a process that stays inside
+ * one for minutes answers nothing while it does. The test runner takes that for a hung
+ * worker and fails the run — with every measurement in it correct. One turn of the
+ * loop per game is the whole fix.
+ */
+const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+async function playSeries(options: SweepOptions, rules: Rules): Promise<TrialResult> {
+  const results: TrialResult[] = []
+  for (const seed of options.seeds) {
+    results.push(playOut(options.map, rules, options.players, options.days, seed, options.nations))
+    await breathe()
+  }
+  return average(results)
+}
+
+function effectOf(
+  constant: string,
+  baseline: TrialResult,
+  lower: TrialResult,
+  upper: TrialResult,
+): ConstantEffect {
+  const swing = Math.max(
+    Math.abs(lower.leaderShare - baseline.leaderShare),
+    Math.abs(upper.leaderShare - baseline.leaderShare),
+  )
+
+  return {
+    constant,
+    baseline,
+    lower,
+    upper,
+    swing: Math.round(swing * 1000) / 1000,
+    loadBearing: swing >= SWING_THRESHOLD,
+  }
+}
+
+/**
+ * One constant, moved both ways and played out.
+ *
+ * Separate from `sweep` so a caller can measure one constant at a time. The slow test
+ * uses that: fourteen constants in one call is a quarter of an hour in which nothing
+ * is reported, and a run that says nothing for a quarter of an hour cannot be told
+ * apart from a run that has hung.
+ */
+export function measure(options: SweepOptions, constant: string, baseline: TrialResult): ConstantEffect {
   const spread = options.spread ?? 0.25
   const { map, rules, players, days, seeds } = options
 
-  const baseline = average(seeds.map((seed) => playOut(map, rules, players, days, seed, options.nations)))
-
-  const names = constants ?? sweepableConstants(rules)
-  const effects: ConstantEffect[] = []
-
-  for (const constant of names) {
-    const lower = average(
+  const play = (factor: number): TrialResult =>
+    average(
       seeds.map((seed) =>
-        playOut(map, withConstant(rules, constant, 1 - spread), players, days, seed, options.nations),
-      ),
-    )
-    const upper = average(
-      seeds.map((seed) =>
-        playOut(map, withConstant(rules, constant, 1 + spread), players, days, seed, options.nations),
+        playOut(map, withConstant(rules, constant, factor), players, days, seed, options.nations),
       ),
     )
 
-    const swing = Math.max(
-      Math.abs(lower.leaderShare - baseline.leaderShare),
-      Math.abs(upper.leaderShare - baseline.leaderShare),
-    )
+  return effectOf(constant, baseline, play(1 - spread), play(1 + spread))
+}
 
-    effects.push({
-      constant,
-      baseline,
-      lower,
-      upper,
-      swing: Math.round(swing * 1000) / 1000,
-      loadBearing: swing >= SWING_THRESHOLD,
-    })
-  }
+/** The same measurement, but breathing between games. Use this for long runs. */
+export async function measureSlowly(
+  options: SweepOptions,
+  constant: string,
+  baseline: TrialResult,
+): Promise<ConstantEffect> {
+  const spread = options.spread ?? 0.25
+  const lower = await playSeries(options, withConstant(options.rules, constant, 1 - spread))
+  const upper = await playSeries(options, withConstant(options.rules, constant, 1 + spread))
+  return effectOf(constant, baseline, lower, upper)
+}
 
-  return effects.sort((a, b) => b.swing - a.swing)
+/** The baseline, breathing between games. */
+export function baselineSlowly(options: SweepOptions): Promise<TrialResult> {
+  return playSeries(options, options.rules)
+}
+
+export function sweep(options: SweepOptions, constants?: readonly string[]): ConstantEffect[] {
+  const baseline = baselineOf(options)
+  const names = constants ?? sweepableConstants(options.rules)
+
+  return names
+    .map((constant) => measure(options, constant, baseline))
+    .sort((a, b) => b.swing - a.swing)
 }

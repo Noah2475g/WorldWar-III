@@ -83,7 +83,7 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
     expect(covered.get('R-DEMO-01')).toHaveLength(2)
   })
 
-  it('laeuft als Skript und meldet offene Anforderungen mit Exit-Code', () => {
+  it('laeuft als Skript und meldet den Stand mit Exit-Code', () => {
     // Regression guard: the script once exported everything correctly and still did
     // nothing at all, because its "am I the entry point?" check compared a hand-built
     // file:// string that never matches on Windows. Unit tests of the pure functions
@@ -93,7 +93,12 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
 
     expect(result.stdout).toMatch(/Anforderungen gesamt:\s+\d+/)
     expect(result.stdout).toMatch(/mit belegtem Test:\s+\d+/)
-    // Red while requirements are still open — that is the point of the gate.
-    expect(result.status).toBe(1)
+    // Der Exit-Code muss zu dem passen, was das Skript gerade berichtet: rot, solange
+    // eine Anforderung offen ist, gruen, wenn keine mehr offen ist. Auf "immer 1"
+    // festgenagelt war der Test bis T-M12-03 richtig — und danach einer, der das
+    // Erreichen des Ziels als Fehler gemeldet haette.
+    const open = /Offen ((d+))/.exec(result.stdout)
+    expect(result.status, result.stdout).toBe(open ? 1 : 0)
+    if (!open) expect(result.stdout).toMatch(/Jede V1-Anforderung ist durch mindestens einen Test belegt/)
   })
 })

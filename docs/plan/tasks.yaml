@@ -890,7 +890,7 @@ tasks:
     title: Abnahmelauf
     status: todo
     gate: true
-    gate_reason: "Playtest und Abnahme durch Noah"
+    gate_reason: "sechs von sieben Abnahmekriterien maschinell gruen (docs/reports/acceptance.md, pnpm acceptance); offen bleibt AK-7, der Playtest durch Noah nach docs/PLAYTEST.md"
     deps: [T-M12-01, T-M12-02b]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []

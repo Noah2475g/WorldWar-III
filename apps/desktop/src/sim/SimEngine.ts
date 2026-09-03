@@ -184,7 +184,8 @@ export class SimEngine {
 
   #emitView(): void {
     this.#flushDigest()
-    this.#emit({ kind: 'view', view: publicView(this.#state, this.#viewerId) })
+    // Mit Regeln: die Sicht traegt dann auch die Tagesbilanz (R-ECON-06).
+    this.#emit({ kind: 'view', view: publicView(this.#state, this.#viewerId, this.#ctx.rules) })
   }
 
   /** The current view on demand — after a command, or when a panel opens. */

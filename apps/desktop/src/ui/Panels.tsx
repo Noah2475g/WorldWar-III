@@ -1,6 +1,6 @@
 import type { PublicView, VisibleArmy, VisibleProvince } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { amount, arrival, costs, duration, percent, population, unfix } from './format.ts'
+import { amount, arrival, costs, duration, percent, population, rate, unfix } from './format.ts'
 
 /**
  * The side panels (T-M10-05, T-M10-06, R-UI-05).
@@ -236,6 +236,50 @@ export function DiplomacyPanel({ view, nameOf }: { view: PublicView | null; name
               </tr>
             )
           })}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+/**
+ * The economy overview (R-ECON-06).
+ *
+ * Four columns per resource: what is in store, what comes in over a game day, what
+ * goes out, and the difference. The header shows only the last of those, because a
+ * bar with four numbers per resource is unreadable — but the balance alone does not
+ * say whether a shortage comes from a lost mine or from a new army, and that is the
+ * question a player asks the moment a figure turns red.
+ */
+export function EconomyPanel({ view }: { view: PublicView | null }) {
+  const economy = view?.self.economy
+  if (!economy) return null
+
+  const shortages = new Set(view?.self.shortages ?? [])
+
+  return (
+    <section className="panel" aria-label={t('economy.title')}>
+      <h2>{t('economy.title')}</h2>
+      <table className="table table--numbers">
+        <thead>
+          <tr>
+            <th>{t('economy.resource')}</th>
+            <th>{t('economy.stock')}</th>
+            <th>{t('economy.production')}</th>
+            <th>{t('economy.consumption')}</th>
+            <th>{t('economy.balance')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(economy).map(([key, flow]) => (
+            <tr key={key} className={shortages.has(key as never) ? 'state state--war' : undefined}>
+              <td>{t(`resources.${key}`)}</td>
+              <td>{amount(flow.stock)}</td>
+              <td>{rate(flow.production)}</td>
+              <td>{rate(-flow.consumption)}</td>
+              <td>{rate(flow.balance)}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </section>

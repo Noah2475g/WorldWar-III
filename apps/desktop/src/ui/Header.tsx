@@ -18,8 +18,6 @@ export interface HeaderProps {
   speed: number
   fastForwarding: boolean
   mode: MapMode
-  /** Net change per day, per resource — the balance the player steers by. */
-  balance: Partial<Record<string, number>>
   onSpeed: (hoursPerSecond: number) => void
   onFastForward: () => void
   onAbort: () => void
@@ -34,15 +32,24 @@ export function Header(props: HeaderProps) {
   return (
     <header className="header">
       <ul className="resources" aria-label="Rohstoffe">
-        {RESOURCE_KEYS.map((key) => (
-          <li key={key} className={shortages.has(key) ? 'resource resource--short' : 'resource'}>
-            <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
-            <span>{t(`resources.${key}`)}</span>
-            {props.balance[key] !== undefined && (
-              <em title={`${t('header.balance')} ${t('header.perDay')}`}>{rate(props.balance[key] ?? 0)}</em>
-            )}
-          </li>
-        ))}
+        {RESOURCE_KEYS.map((key) => {
+          const flow = props.view?.self.economy?.[key]
+          return (
+            <li key={key} className={shortages.has(key) ? 'resource resource--short' : 'resource'}>
+              <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
+              <span>{t(`resources.${key}`)}</span>
+              {flow && (
+                // Der sichtbare Wert ist die Bilanz; woraus sie sich ergibt, steht im
+                // Tooltip und vollstaendig in der Wirtschaftsuebersicht (R-ECON-06).
+                <em
+                  title={`${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${t('economy.perDay')}`}
+                >
+                  {rate(flow.balance)}
+                </em>
+              )}
+            </li>
+          )
+        })}
       </ul>
 
       <div className="clock">

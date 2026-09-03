@@ -12,6 +12,8 @@ import type {
   Tick,
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
+import type { Rules } from '../rules/types'
+import { economyOverview, type EconomyOverview } from './economy'
 
 /**
  * What one player may see (R-DIP-04, T-M6-02).
@@ -71,6 +73,13 @@ export interface PublicView {
     score: number
     reputation: Fixed
     aiBonusMultiplier: Fixed
+    /**
+     * Stock, production, consumption and balance per resource (R-ECON-06).
+     *
+     * Only present when the caller passed the rules — the AI does not need it, and
+     * computing it walks every province.
+     */
+    economy?: EconomyOverview
   }
   others: { id: PlayerId; name: string; nation: string; color: string; alive: boolean; score: number }[]
   relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean }>
@@ -112,7 +121,7 @@ export function visibleProvinces(state: GameState, playerId: PlayerId): Set<Prov
 }
 
 /** Builds the filtered view. Never returns anything the player may not know. */
-export function publicView(state: GameState, playerId: PlayerId): PublicView {
+export function publicView(state: GameState, playerId: PlayerId, rules?: Rules): PublicView {
   const player = state.players[playerId]
   if (!player) throw new Error(`Unbekannter Spieler: ${playerId}`)
 
@@ -212,6 +221,7 @@ export function publicView(state: GameState, playerId: PlayerId): PublicView {
       score: player.score,
       reputation: player.reputation,
       aiBonusMultiplier: player.aiBonusMultiplier,
+      ...(rules ? { economy: economyOverview(state, playerId, rules) } : {}),
     },
     others: state.playerOrder
       .filter((id) => id !== playerId)

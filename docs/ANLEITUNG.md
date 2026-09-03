@@ -84,6 +84,23 @@ Praktisch heißt das:
 
 ---
 
+## Die Wirtschaftsübersicht
+
+Rechts unten steht für jeden Rohstoff, was Sie haben, was hereinkommt, was hinausgeht
+und was unter dem Strich bleibt — alles je Spieltag.
+
+Die Kopfleiste zeigt nur die letzte dieser vier Zahlen, weil vier Zahlen je Rohstoff in
+einer Leiste niemand liest. Für die Frage „warum wird das Eisen knapp" reicht die
+Bilanz aber nicht: sie sagt nicht, ob eine Mine verloren ging oder eine neue Armee
+frisst. Dafür ist die Übersicht da.
+
+**Die Vorschau stimmt.** Die angezeigte Produktion ist nicht die des letzten Ticks,
+sondern die, die der kommende Tag tatsächlich liefert — gerechnet mit derselben Formel,
+die die Simulation benutzt. Nur die Moral wandert im Lauf des Tages, deshalb kann die
+gelieferte Menge um ein paar Prozent abweichen.
+
+---
+
 ## Tastatur
 
 Alles ist ohne Maus erreichbar.

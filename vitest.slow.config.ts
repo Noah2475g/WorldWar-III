@@ -19,6 +19,11 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**'],
     environment: 'node',
     testTimeout: 1_800_000,
-    hookTimeout: 300_000,
+    hookTimeout: 1_800_000,
+    // Serial, and not for tidiness: half of this suite measures time. A benchmark that
+    // shares a core with a four-minute simulation measures the machine's load rather
+    // than the code — the world-map tick budget failed at 8,3 ms beside the parameter
+    // sweep and passed at 5 ms on its own.
+    fileParallelism: false,
   },
 })

@@ -38,6 +38,7 @@ pnpm --filter @worldwar/desktop dev
 | 8 | R-UI-03 | Wird beim Klicken **die** Provinz ausgewählt, auf die Sie gezeigt haben? | |
 | 9 | R-UI-03 | Fühlen sich Zoom und Verschieben natürlich an — bleibt der Punkt unter dem Zeiger? | |
 | 10 | R-MAP-06 | Sagen die vier Kartenmodi (M) jeweils etwas Verständliches? | |
+| 10b | R-MAP-05 | Sehen Sie auf der Karte, wo Ihre Einheiten stehen, wo gebaut ist und wo gekämpft wird? | |
 | 11 | R-DIP-04 | Bleibt fremdes Gebiet grau, solange Sie es nicht aufgeklärt haben? | |
 | 12 | R-ARCH-06 | Ruckelt die Karte irgendwann? (Erwartet: **nein**, auch bei Tempo 100) | |
 
@@ -48,7 +49,8 @@ pnpm --filter @worldwar/desktop dev
 | 13 | R-UI-05 | Sagt jeder Knopf **vorher**, was er kostet und wie lange er dauert? | |
 | 14 | R-UI-05 | Steht bei einer ausgegrauten Aktion der Grund dabei — und ist er verständlich? | |
 | 15 | R-ECON-01 | Verstehen Sie nach zehn Minuten, woher Ihre Rohstoffe kommen und wohin sie gehen? | |
-| 16 | R-ECON-06 | Ist die Bilanz in der Kopfleiste das, was Sie zum Steuern brauchen? | |
+| 16 | R-ECON-06 | Sagt Ihnen die Wirtschaftsübersicht (Bestand, Produktion, Verbrauch, Bilanz), warum ein Rohstoff knapp wird? | |
+| 16b | R-ECON-06 | Stimmt die angekündigte Tagesproduktion mit dem überein, was der Tag dann liefert? | |
 
 ## Zeit (8 min) — der Kern des Spiels
 

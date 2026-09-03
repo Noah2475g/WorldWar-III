@@ -57,7 +57,12 @@ if (existsSync(summaryPath)) {
 
 // AK-2: jede V1-Anforderung durch einen Test belegt.
 const open = /Offen \((\d+)\)/.exec(coverage)
-const openCount = open ? Number(open[1]) : -1
+// Zwei Faelle, und der zweite hat diesen Bericht schon einmal falsch rot gemeldet: ist
+// eine Anforderung offen, nennt das Skript sie unter "Offen (n)"; ist keine mehr offen,
+// steht dort keine solche Zeile, sondern die Erfolgsmeldung. Nur auf die erste gebaut,
+// meldet die Pruefung das Erreichen des Ziels als "unbekannt".
+const allCovered = /Jede V1-Anforderung ist durch mindestens einen Test belegt/.test(coverage)
+const openCount = open ? Number(open[1]) : allCovered ? 0 : -1
 check(
   'AK-2',
   `Anforderungen ohne Test: ${openCount === -1 ? 'unbekannt' : openCount}`,

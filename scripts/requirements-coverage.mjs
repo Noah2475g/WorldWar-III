@@ -3,7 +3,11 @@
  * Abgleich Anforderungen <-> Tests (T-M0-04).
  *
  * Liest die Anforderungs-IDs aus docs/plan/01-REQUIREMENTS.md, den Umfang aus dem
- * `scope`-Block in Abschnitt 2.14 und die in Testnamen belegten IDs aus allen *.test.ts.
+ * `scope`-Block in Abschnitt 2.14 und die in Testnamen belegten IDs aus allen Testdateien.
+ *
+ * Auch aus *.test.tsx: die Oberflaeche wird in TSX getestet, und ein Tor, das genau die
+ * Dateien uebersieht, in denen die UI-Anforderungen belegt werden, meldet Luecken, die
+ * keine sind.
  *
  * Damit das keine reine Namenspruefung bleibt, zaehlt eine ID nur als abgedeckt, wenn der
  * zugehoerige describe-Block mindestens eine Zusicherung enthaelt und nicht uebersprungen ist.
@@ -64,7 +68,11 @@ export function analyse(requirementsText, sources) {
 
   const required = ids.filter((id) => !v2Only.has(id))
   const missing = required.filter((id) => !covered.has(id))
-  const hollowOnly = [...hollow.keys()].filter((id) => !covered.has(id))
+  // Nur echte Anforderungen: die Testdaten des Pruefskripts selbst enthalten erfundene
+  // IDs (R-DEMO-*), und die als Luecke zu melden waere eine Falschmeldung ueber genau
+  // das Werkzeug, das die Meldung erzeugt.
+  const known = new Set(ids)
+  const hollowOnly = [...hollow.keys()].filter((id) => known.has(id) && !covered.has(id))
 
   return { ids, required, missing, hollowOnly, v2Only, partial, testOnly, covered, hollow }
 }
@@ -74,7 +82,7 @@ function collectTestFiles(dir, out = []) {
     if (['node_modules', 'dist', 'coverage'].includes(entry.name)) continue
     const full = join(dir, entry.name)
     if (entry.isDirectory()) collectTestFiles(full, out)
-    else if (entry.name.endsWith('.test.ts')) out.push(full)
+    else if (entry.name.endsWith('.test.ts') || entry.name.endsWith('.test.tsx')) out.push(full)
   }
   return out
 }

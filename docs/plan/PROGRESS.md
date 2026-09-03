@@ -192,3 +192,37 @@ Nationen, Startwerte innerhalb 14 % vom Median.
 | T-M11-02 | 2026-09-03 | Erzeugte Klänge statt Aufnahmen (nichts geladen, nichts lizenziert); Ton abschaltbar, und oberhalb von 10 Spielstunden/s schweigen Töne und Animationen — sonst wären die Meldungen eine Störsirene | grün |
 | T-M11-03 | 2026-09-03 | Tauri-Verpackung für Windows, Linux und macOS. **Kein Netzzugriff möglich:** keine http-, shell- oder updater-Berechtigung, `connect-src 'none'` in der Inhaltsrichtlinie — ein Guard prüft beides | grün |
 | T-M11-04 | 2026-09-03 | (siehe M10) | grün |
+
+## Meilenstein M12 — Balancing, Anleitung, Abnahme
+
+| Aufgabe | Datum | Ergebnis | verify |
+|---|---|---|---|
+| T-M12-00 | 2026-09-03 | Parameterlauf: jede beobachtete Konstante um ±25 % bewegt und ausgespielt. **4 von 14 Konstanten sind tragend, alle vier drehen sich um Moral und Ausdehnung**; `battleRate`, `minDamage` und `defenceCap` verschieben den Ausgang um 0,0 %. Der erste Lauf meldete, dass keine Zahl etwas ausmacht — zwischen den USA und Russland passiert in vierzig Tagen nichts. Ein Durchgang zählt jetzt Eroberungen und weigert sich, einen Befund zu melden, wenn keine stattfand | grün |
+| T-M12-01 | 2026-09-03 | Alle 60 Konstanten in `BALANCING.md` mit Status, Herkunft und gemessenem Ausschlag; ein Test lässt jede neue Zahl ohne Eintrag durchfallen | grün |
+| T-M12-02 | 2026-09-03 | Spielanleitung und Playtest-Vorlage; jede Frage trägt die Anforderungs-ID, die sie prüft | grün |
+| T-M12-02b | 2026-09-03 | Einstiegshilfe für die erste Partie: fünf Schritte, die keine Eingabe blockieren, nur beim ersten Mal erscheinen und abschaltbar bleiben | grün |
+| T-M12-03 | 2026-09-03 | **Abnahmelauf: 6 von 6 maschinellen Kriterien grün** (`pnpm acceptance`, `docs/reports/acceptance.md`). Offen bleibt AK-7, der Playtest durch Noah | grün |
+
+### Was der Abnahmelauf ans Licht gebracht hat
+
+Drei Befunde, die ohne den Lauf niemand gesehen hätte:
+
+1. **Sechs Anforderungen waren nie geprüft** — und zwei davon nicht, weil ein Test
+   fehlte, sondern weil die Sache fehlte. `balance={{}}` stand in der Kopfleiste: die
+   Wirtschaftsbilanz war eine leere Eigenschaft. Gebäude wurden auf der Karte nie
+   gezeichnet. Beides ist jetzt gebaut, mit Test.
+2. **Das Prüfskript sah `*.test.tsx` nicht an** — also genau die Dateien, in denen die
+   Oberflächen-Anforderungen belegt werden.
+3. **Die langsame Suite scheiterte an sich selbst.** Ein Test, der 467 Sekunden am Stück
+   rechnet, beantwortet dem Testläufer nichts mehr; der hält den Arbeitsprozess für
+   hängengeblieben und lässt den Lauf scheitern, obwohl jede Zusicherung darin
+   durchgeht. Die Langläufe geben die Ereignisschleife jetzt regelmäßig frei. Dazu läuft
+   die Suite seriell: ein Bildratenbudget neben einer vierminütigen Simulation misst die
+   Maschinenlast, nicht den Code — genau daran war das Tickbudget mit 8,3 ms gegen 8 ms
+   gescheitert und lief allein mit 2,2 ms durch.
+
+**Stand 2026-09-03:** M0 bis M12 abgeschlossen (**82 von 83 Aufgaben**). 900 Tests grün
+plus die langsame Suite, Kern-Abdeckung 95,9 %, Gesamtabdeckung 90,9 %, **alle 74
+V1-Anforderungen durch einen Test belegt**. Offen ist allein T-M12-03 als Tor: der
+Playtest durch Noah nach `docs/PLAYTEST.md` — ob das Spiel Spaß macht, findet kein
+Skript heraus.

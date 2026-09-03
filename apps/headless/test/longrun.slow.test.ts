@@ -28,8 +28,18 @@ const CONFIG: GameConfig = {
   victory: { condition: 'points', pointsShareToWin: 950, dayLimit: null },
 }
 
+/**
+ * Gibt die Ereignisschleife zwischen den Spieltagen frei.
+ *
+ * Eine Simulation ist ein synchroner Block, und wer laenger als eine Minute in einem
+ * steckt, beantwortet dem Testlaeufer nichts mehr — der haelt den Arbeitsprozess fuer
+ * haengengeblieben und laesst den Lauf scheitern, obwohl jede Zusicherung darin
+ * durchgeht. Eine Umdrehung der Schleife je Spieltag ist die ganze Abhilfe.
+ */
+const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
 describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
-  it('laeuft fehlerfrei und ohne unbegrenztes Wachstum durch', () => {
+  it('laeuft fehlerfrei und ohne unbegrenztes Wachstum durch', async () => {
     const days = 1000
     const ticks = days * rules.constants.ticksPerDay
 
@@ -38,15 +48,23 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
 
     const started = performance.now()
     let ended = 0
+    // Die Atempausen zaehlen nicht zur Rechenzeit: sonst misst der Bericht, wie oft
+    // die Schleife freigegeben wurde, statt wie schnell der Kern rechnet.
+    let paused = 0
 
     for (let i = 0; i < ticks; i++) {
       const { commands, memories } = runAi(state, ctx)
       state = runTicks(state, 1, ctx, () => commands).state
       storeMemories(state, memories)
       if (state.victory.winner !== null && ended === 0) ended = state.tick
+      if (i % 240 === 239) {
+        const idle = performance.now()
+        await breathe()
+        paused += performance.now() - idle
+      }
     }
 
-    const elapsed = performance.now() - started
+    const elapsed = performance.now() - started - paused
 
     // The event log is a ring buffer: it must not have grown into the save file.
     expect(state.eventLog.length).toBeLessThanOrEqual(500)

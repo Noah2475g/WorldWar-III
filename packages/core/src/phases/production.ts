@@ -1,6 +1,6 @@
 import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
-import type { GameState, Province, ResourceKey } from '../state/types'
+import type { GameState, Player, Province, ResourceKey } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
 /**
@@ -57,6 +57,58 @@ export function occupationFactor(province: Province, tick: number, rules: Rules)
   return 500 + mulChain([500, recovered])
 }
 
+/** Losing the capital hits the whole nation's output, not just one province (D6.8). */
+export function capitalPenalty(player: Player, tick: number, rules: Rules): Fixed {
+  return player.capitalLostUntil !== null && tick < player.capitalLostUntil
+    ? rules.constants.capitalLossProductionFactor
+    : ONE
+}
+
+/**
+ * What one province yields in one tick — scaled by ONE, before the carry is applied.
+ *
+ * Split out of the phase so the economy overview (R-ECON-06) can add these up instead
+ * of deriving the formula a second time. An overview with its own copy of the
+ * arithmetic is an overview that starts lying the first time production changes, and
+ * a balance sheet that lies is worse than none.
+ */
+export function provinceYieldScaled(
+  province: Province,
+  tick: number,
+  penalty: Fixed,
+  rules: Rules,
+): Partial<Record<ResourceKey, number>> {
+  const factorWithoutBuildings = mulChain([
+    moraleFactor(province.morale, rules),
+    populationFactor(province),
+    occupationFactor(province, tick, rules),
+    penalty,
+  ])
+
+  const scaled: Partial<Record<ResourceKey, number>> = {}
+
+  // Taxes: money is raised from people, not dug out of the ground. Morale and
+  // occupation apply the same way — an unhappy province pays less.
+  // eslint-disable-next-line no-restricted-syntax -- population in thousands x rate, plain integers
+  const taxBase = Math.trunc(province.population / 1000) * rules.constants.taxPerThousandPopulationPerTick
+  if (taxBase > 0) {
+    // eslint-disable-next-line no-restricted-syntax -- exact integer product; the carry keeps it lossless
+    scaled.money = taxBase * factorWithoutBuildings
+  }
+
+  for (const [key, deposit] of Object.entries(province.deposits)) {
+    if (!deposit) continue
+    const resource = key as ResourceKey
+    if (resource === 'money') continue // taxation handles money, above
+
+    const factor = mulChain([buildingFactor(province, resource, rules), factorWithoutBuildings])
+    // eslint-disable-next-line no-restricted-syntax -- exact integer product; the carry keeps it lossless
+    scaled[resource] = deposit * factor
+  }
+
+  return scaled
+}
+
 export const production: Phase = (draft: GameState, ctx: PhaseContext) => {
   const { rules } = ctx
 
@@ -67,52 +119,20 @@ export const production: Phase = (draft: GameState, ctx: PhaseContext) => {
     const player = draft.players[province.owner]
     if (!player || !player.alive) continue
 
-    // Losing the capital hits the whole nation's output, not just one province (D6.8).
-    const capitalPenalty =
-      player.capitalLostUntil !== null && draft.tick < player.capitalLostUntil
-        ? rules.constants.capitalLossProductionFactor
-        : ONE
+    const yields = provinceYieldScaled(province, draft.tick, capitalPenalty(player, draft.tick, rules), rules)
 
-    const factorWithoutBuildings = mulChain([
-      moraleFactor(province.morale, rules),
-      populationFactor(province),
-      occupationFactor(province, draft.tick, rules),
-      capitalPenalty,
-    ])
-
-    // Taxes: money is raised from people, not dug out of the ground. Morale and
-    // occupation apply the same way — an unhappy province pays less.
-    // eslint-disable-next-line no-restricted-syntax -- population in thousands x rate, plain integers
-    const taxBase = Math.trunc(province.population / 1000) * rules.constants.taxPerThousandPopulationPerTick
-    if (taxBase > 0) {
-      // eslint-disable-next-line no-restricted-syntax -- exact integer product; the carry keeps it lossless
-      const scaledTax = taxBase * factorWithoutBuildings + (province.productionRemainder.money ?? 0)
-      // eslint-disable-next-line no-restricted-syntax -- integer division with explicit remainder handling
-      const tax = Math.trunc(scaledTax / ONE)
-      province.productionRemainder.money = scaledTax % ONE
-      if (tax !== 0) player.resources.money += tax
-    }
-
-    for (const [key, deposit] of Object.entries(province.deposits)) {
-      if (!deposit) continue
+    for (const [key, base] of Object.entries(yields)) {
       const resource = key as ResourceKey
-      if (resource === 'money') continue // taxation handles money, above
-
-      const factor = mulChain([buildingFactor(province, resource, rules), factorWithoutBuildings])
 
       // Bresenham, not rounding: the fractional part is carried into the next tick.
       // Without it, fixed-point rounding quietly loses yield across 24 000 ticks —
       // and small provinces lose proportionally most.
-      // eslint-disable-next-line no-restricted-syntax -- exact integer product; the carry below is what keeps it lossless
-      const scaled = deposit * factor + (province.productionRemainder[resource] ?? 0)
+      const scaled = base + (province.productionRemainder[resource] ?? 0)
       // eslint-disable-next-line no-restricted-syntax -- integer division with explicit remainder handling
       const produced = Math.trunc(scaled / ONE)
-      const remainder = scaled % ONE
 
-      province.productionRemainder[resource] = remainder
-      if (produced !== 0) {
-        player.resources[resource] += produced
-      }
+      province.productionRemainder[resource] = scaled % ONE
+      if (produced !== 0) player.resources[resource] += produced
     }
   }
 }
