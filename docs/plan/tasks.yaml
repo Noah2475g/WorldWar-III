@@ -579,7 +579,7 @@ tasks:
   - id: T-M9-01
     milestone: M9
     title: Geodaten beschaffen und aufbereiten
-    status: todo
+    status: done
     gate: true
     gate_reason: "Externer Download von Geodaten - Freigabe durch Noah einholen"
     deps: [T-M2-01]
@@ -652,7 +652,7 @@ tasks:
   - id: T-M10-01
     milestone: M10
     title: Design-Gate Mockup vorlegen
-    status: todo
+    status: done
     gate: true
     gate_reason: "UI-Mockup muss von Noah freigegeben werden, bevor die Oberflaeche gebaut wird (R-UI-01)"
     deps: [T-M8-03]
