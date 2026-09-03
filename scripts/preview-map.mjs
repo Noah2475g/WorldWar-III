@@ -21,11 +21,8 @@ const OUT = at === -1 ? join(ROOT, 'docs/design/world-preview.html') : process.a
 
 const world = JSON.parse(readFileSync(join(ROOT, 'data/maps/world-shapes.json'), 'utf8'))
 const rules = JSON.parse(readFileSync(join(ROOT, 'data/mapgen/merge-rules.json'), 'utf8'))
-const lanes = readFileSync(join(ROOT, 'data/maps/world-sealinks.csv'), 'utf8')
-  .split('\n')
-  .slice(1)
-  .filter((line) => line.trim())
-  .map((line) => line.split(','))
+// Alle Seewege aus der gebauten Karte - die kuratierten und die abgeleiteten.
+const lanes = (world.seaLanes ?? []).map((l) => [l.from, l.to, l.crossing === "strait" ? "strait" : "sea"])
 
 const W = 2000
 const H = 1400

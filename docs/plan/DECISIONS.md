@@ -344,3 +344,60 @@ die anderen 23 untergliederten Länder zeigte, dass nur Frankreich betroffen ist
 
 **Auswirkung:** Frankreich bleibt kompakt. Sollen die Übersee-Gebiete später spielbar sein,
 gehören sie als eigene Provinzen in die Regeldatei — nicht in einen Quadranten des Kernlands.
+
+---
+
+## 2026-09-03 · T-M9-02c · Zu kleine Gebiete werden dem Nachbarn zugeschlagen
+
+**Entscheidung:** Jedes als zu klein abgelehnte Gebiet mit Landnachbarn geht an die
+Provinz, mit der es die längste Grenze teilt — 21 Fälle, darunter Liechtenstein,
+Luxemburg, Andorra, Monaco, Montenegro und die Westsahara. Abgelehnte Inseln (64) bleiben
+draußen.
+
+**Begründung:** Ein abgelehntes Gebiet hört nicht auf zu existieren. Als Loch in der Karte
+hinterlässt es einen weißen Fleck — und, schlimmer, seine Nachbarn sehen aus wie
+Küstenländer: die Grenze zu einem fehlenden Land ist ein Stück Umriss, das mit niemandem
+geteilt wird, also genau die Form einer Küste. So kamen die Schweiz und Österreich als
+seefahrende Nationen heraus.
+
+Die längste gemeinsame Grenze statt des nächsten Schwerpunkts, weil letzterer für einen
+Streifen entlang eines Gebirges nahezu willkürlich ist; und statt des größten Nachbarn,
+weil sonst jedes Loch Europas beim nächstgelegenen Großland landet.
+
+**Auswirkung:** Belgien enthält jetzt Luxemburg, die Schweiz Liechtenstein. Die
+Gesamtfläche steigt von 133,9 auf 134,2 Mio km². Küstenprovinzen: 184 von 237.
+
+---
+
+## 2026-09-03 · T-M9-02c · Seewege: die Engstellen von Hand, der Rest abgeleitet
+
+**Entscheidung:** 91 Seewege sind kuratiert (`world-sealinks.csv`), 119 werden aus der
+Geometrie abgeleitet. Ein abgeleiteter Weg entsteht nur, wenn die Verbindungslinie keine
+dritte Provinz durchquert — geprüft an acht Zwischenpunkten.
+
+**Begründung:** Was Hormus wichtig macht, ist nicht seine Breite; solche Engstellen kann
+kein Algorithmus finden. Umgekehrt braucht jede der 184 Küstenprovinzen einen Zugang zum
+Meer, sonst ist sie per Schiff unerreichbar und die halbe Karte für Flotten geschlossen.
+Eine zweite Runde verbindet die Übriggebliebenen mit der nächsten erreichbaren Küste, auch
+über größere Entfernung und auch, wenn es sich um einen Landnachbarn handelt: Eine
+Landgrenze kann eine Armee überschreiten, eine Flotte nicht befahren.
+
+**Auswirkung:** 0 Küstenprovinzen ohne Seeweg. Drei Fehler in der kuratierten Tabelle kamen
+dabei ans Licht — Andamanensee, Östliche Ostsee und Río de la Plata endeten an Provinzen
+ohne Küste.
+
+---
+
+## 2026-09-03 · T-M9-02c · Die Datumsgrenze in der Punkt-in-Fläche-Prüfung
+
+**Entscheidung:** Ringpunkte werden relativ zum Prüfpunkt gemessen (kürzester
+Längenunterschied). Ergibt ein Ring dabei mehr als 180° Breite, gilt der Punkt als außerhalb.
+
+**Begründung:** Die relative Messung löst den einfachen Fall — ein Polygon beiderseits der
+Datumsgrenze wird nicht mehr zerrissen. Ein Test fand die Grenze der Methode: von der
+anderen Seite der Erde aus gemessen klappt so ein Polygon zu einem auf, das scheinbar den
+ganzen Globus umspannt, und verschluckt den Prüfpunkt. Ein Ring, der relativ zum Punkt
+mehr als eine halbe Welt breit ist, ist schlicht zu weit weg.
+
+**Auswirkung:** Seewege über die Datumsgrenze werden kurz gemessen (Kamtschatka–Alaska),
+und kein Seeweg entsteht durch eine irrtümlich getroffene Landmasse.

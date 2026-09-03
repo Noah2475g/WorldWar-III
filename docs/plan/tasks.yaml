@@ -622,7 +622,7 @@ tasks:
   - id: T-M9-02c
     milestone: M9
     title: Seewege und Datumsgrenze
-    status: todo
+    status: done
     deps: [T-M9-02b]
     requirements: [R-MAP-01, R-UNIT-06]
     files: [packages/mapgen/src/sealinks.ts, data/maps/world.json]

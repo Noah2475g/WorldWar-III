@@ -6,6 +6,10 @@ import { open } from 'shapefile'
 import { curate } from '../packages/mapgen/src/curation.ts'
 import { mergeProvinces } from '../packages/mapgen/src/provinces.ts'
 import { buildAdjacency, findEnclaves } from '../packages/mapgen/src/adjacency.ts'
+import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
+import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
+import { readCsv } from '../packages/mapgen/src/csv.ts'
+import { project } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
 /**
@@ -81,6 +85,9 @@ for (const unit of raw.units) {
   unitsByCountry.set(unit.countryIso, list)
 }
 
+const partsFor = (provinceId, codes) =>
+  codes.map((code) => ({ code, provinceId, geometry: unitShapes.get(code) })).filter((p) => p.geometry)
+
 const parts = []
 const missing = []
 for (const province of result.provinces) {
@@ -91,11 +98,41 @@ for (const province of result.provinces) {
     continue
   }
   for (const code of codes) {
-    const shape = unitShapes.get(code)
-    if (!shape) missing.push(`${province.id}/${code}`)
-    else parts.push({ code, provinceId: province.id, geometry: shape })
+    if (!unitShapes.has(code)) missing.push(`${province.id}/${code}`)
   }
+  parts.push(...partsFor(province.id, codes))
 }
+
+/**
+ * A territory refused as too small is still land. Left out, it becomes a white patch
+ * between provinces — and its neighbours look coastal, because the border to a hole is
+ * a stretch of outline shared with nobody. That is how Switzerland and Austria first
+ * came out as countries with a sea front.
+ *
+ * So every hole with a land neighbour is handed to the one it shares the most border
+ * with. Refused islands stay out; the sea around them is not a hole.
+ */
+const kept = new Set(result.provinces.map((p) => p.id))
+const holeParts = []
+for (const entry of result.excluded) {
+  const codes = unitsByCountry.get(entry.id) ?? []
+  if (codes.length === 0) continue
+  holeParts.push(...partsFor(`HOLE:${entry.id}`, codes))
+}
+
+const probe = buildAdjacency([...parts, ...holeParts])
+const holeIds = [...new Set(holeParts.map((p) => p.provinceId))]
+const absorptions = planAbsorptions(holeIds, probe.edges, kept)
+
+const absorbedInto = new Map(absorptions.map((a) => [a.id, a.into]))
+for (const part of holeParts) {
+  const into = absorbedInto.get(part.provinceId)
+  if (into) parts.push({ ...part, provinceId: into })
+}
+console.log(
+  `${absorptions.length} zu kleine Gebiete einem Nachbarn zugeschlagen, ` +
+    `${holeIds.length - absorptions.length} abgelehnte Inseln bleiben draußen.`,
+)
 
 if (missing.length > 0) {
   console.error(`Ohne Geometrie: ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? ' …' : ''}`)
@@ -114,6 +151,14 @@ console.log('Bestimme Nachbarschaften …')
 const adjacency = buildAdjacency(parts)
 const countryOf_ = Object.fromEntries(result.provinces.map((p) => [p.id, p.countryIso]))
 const enclaves = findEnclaves(adjacency.neighbours, countryOf_, adjacency.ringed)
+
+/**
+ * A province has a coast when part of its outline is shared with nobody. On a world
+ * map that unshared stretch can only be sea — which is why the holes had to be closed
+ * first: a border facing a missing country has exactly the same shape as a coastline,
+ * and it made Switzerland and Austria look seafaring.
+ */
+const landlocked = new Set(adjacency.ringed)
 const byId = new Map(result.provinces.map((p) => [p.id, p]))
 const countryOf = new Map(raw.countries.map((c) => [c.iso, c]))
 
@@ -147,6 +192,7 @@ const provinces = merged.map((province) => {
     continent: country?.continent ?? '',
     areaKm2: Math.round(shapeAreaKm2(geometry)),
     centre: { lon: round(centre.lon), lat: round(centre.lat) },
+    coastal: !landlocked.has(province.id),
     neighbors: adjacency.neighbours[province.id] ?? [],
     geometry,
   }
@@ -157,12 +203,79 @@ function round(value) {
   return Math.round(value * 1000) / 1000
 }
 
+// ---------------------------------------------------------------- sea lanes
+
+const linkKey = (a, b) => [a, b].sort((x, y) => x.localeCompare(y, 'en')).join('|')
+
+/**
+ * The decisive lanes are curated by hand: what makes Hormuz matter is not its width.
+ * Everything else is derived, because a coastal province with no way out to sea is
+ * unreachable by ship and half the map would be closed to fleets.
+ */
+const curated = readCsv(readFileSync(join(ROOT, 'data/maps/world-sealinks.csv'), 'utf8'))
+const provinceById = new Map(provinces.map((p) => [p.id, p]))
+
+const curatedProblems = []
+for (const lane of curated) {
+  for (const end of [lane.from, lane.to]) {
+    const province = provinceById.get(end)
+    if (!province) curatedProblems.push(`${lane.name}: ${end} gibt es nicht`)
+    else if (!province.coastal) curatedProblems.push(`${lane.name}: ${end} hat keine Küste`)
+  }
+}
+if (curatedProblems.length > 0) {
+  console.error('\nKuratierte Seewege mit Fehlern:')
+  for (const problem of curatedProblems) console.error(`  ${problem}`)
+  process.exit(1)
+}
+
+const settled = new Set([
+  ...adjacency.edges.map((e) => linkKey(e.from, e.to)),
+  ...curated.map((l) => linkKey(l.from, l.to)),
+])
+
+const coastalProvinces = provinces
+  .filter((p) => p.coastal)
+  .map((p) => ({ id: p.id, centre: p.centre, shape: p.geometry }))
+
+console.log(`Leite Seewege fuer ${coastalProvinces.length} Kuestenprovinzen ab …`)
+const curatedPairs = new Set(curated.map((lane) => linkKey(lane.from, lane.to)))
+const derived = deriveSeaLanes(coastalProvinces, settled, { curatedPairs })
+
+const seaLanes = [
+  ...curated.map((l) => ({
+    from: l.from,
+    to: l.to,
+    crossing: l.kind === 'strait' ? 'strait' : 'none',
+    name: l.name,
+    distanceKm: Math.round(
+      distanceBetween(provinceById.get(l.from).centre, provinceById.get(l.to).centre),
+    ),
+  })),
+  ...derived.map((l) => ({ from: l.from, to: l.to, crossing: 'none', name: '', distanceKm: l.distanceKm })),
+]
+
+function distanceBetween(a, b) {
+  const R = 6371.0088
+  const rad = (d) => (d * Math.PI) / 180
+  const dLat = rad(b.lat - a.lat)
+  const dLon = rad(b.lon - a.lon)
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+}
+
+const withoutLane = provinces.filter(
+  (p) => p.coastal && !seaLanes.some((l) => l.from === p.id || l.to === p.id),
+)
+
 const out = {
   note: 'Erzeugt von scripts/build-map.mjs aus Natural Earth 1:10 Mio (gemeinfrei). Nicht von Hand ändern — Regeln stehen in data/mapgen/merge-rules.json.',
   scale: '10m',
   simplifyWeight: WEIGHT,
   provinces,
   edges: adjacency.edges,
+  seaLanes,
   enclaves,
   islands: adjacency.islands,
 }
@@ -170,6 +283,109 @@ writeFileSync(join(ROOT, 'data/maps/world-shapes.json'), JSON.stringify(out) + '
 
 const zero = provinces.filter((p) => p.areaKm2 <= 0)
 console.log(`\n${provinces.length} Provinzen, ${before} Stützpunkte auf ${after} vereinfacht (${Math.round((1 - after / before) * 100)} %).`)
-console.log(`${adjacency.edges.length} Grenzen, ${enclaves.length} Enklaven, ${adjacency.islands.length} Inseln ohne Landnachbarn.`)
+console.log(
+  `${adjacency.edges.length} Grenzen, ${enclaves.length} Enklaven, ` +
+    `${adjacency.islands.length} Inseln ohne Landnachbarn, ` +
+    `${provinces.filter((p) => p.coastal).length} Provinzen mit Küste.`,
+)
 if (zero.length > 0) console.log(`⚠ ohne Fläche: ${zero.map((p) => p.id).join(', ')}`)
+console.log(
+  `${seaLanes.length} Seewege (${curated.length} kuratiert, ${derived.length} abgeleitet); ` +
+    `${withoutLane.length} Kuestenprovinzen ohne Seeweg.`,
+)
+if (withoutLane.length > 0) {
+  console.log(`  ohne: ${withoutLane.map((p) => p.name).join(', ')}`)
+}
 console.log(`data/maps/world-shapes.json geschrieben (${(JSON.stringify(out).length / 1024 / 1024).toFixed(2)} MB).`)
+
+// ---------------------------------------------------------------- world.json
+
+/**
+ * The map in the shape the core expects (data/maps/world.json).
+ *
+ * Two conversions matter here. Coordinates become screen pixels, because the interface
+ * draws in pixels — but distances stay kilometres, measured on the globe, because the
+ * game charges movement in kilometres. Keeping those apart is the whole reason
+ * project() and distanceKm() are separate functions.
+ *
+ * Population, terrain and deposits are placeholders until T-M9-03 fills them in from
+ * the real figures.
+ */
+const WIDTH = 4000
+const HEIGHT = 2400
+const TOP = project({ lon: 0, lat: 78 }).y
+const BOTTOM = project({ lon: 0, lat: -58 }).y
+const toX = (lon) => Math.round(project({ lon, lat: 0 }).x * WIDTH)
+const toY = (lat) => Math.round(((project({ lon: 0, lat }).y - TOP) / (BOTTOM - TOP)) * HEIGHT)
+
+/** The core stores every quantity as fixed-point with three decimals. */
+const FIXED = 1000
+const toFixed = (value) => Math.round(value * FIXED)
+
+const gameProvinces = provinces.map((p) => {
+  const outer =
+    p.geometry.type === 'MultiPolygon'
+      ? p.geometry.coordinates.reduce((a, b) => (a[0].length >= b[0].length ? a : b))[0]
+      : p.geometry.coordinates[0]
+
+  return {
+    id: p.id,
+    name: p.name,
+    kind: p.areaKm2 > 0 && p.population > 0 ? 'city' : 'rural',
+    terrain: 'plains',
+    coastal: p.coastal,
+    center: { x: toX(p.centre.lon), y: toY(p.centre.lat) },
+    polygon: outer.map(([lon, lat]) => [toX(lon), toY(lat)]),
+    population: 0,
+    deposits: {},
+  }
+})
+
+const gameEdges = [
+  ...adjacency.edges.map((e) => ({
+    a: e.from,
+    b: e.to,
+    kind: 'land',
+    distanceKm: toFixed(e.distanceKm),
+    crossing: 'none',
+  })),
+  ...seaLanes.map((l) => ({
+    a: l.from,
+    b: l.to,
+    kind: 'sea',
+    distanceKm: toFixed(l.distanceKm),
+    crossing: l.crossing,
+  })),
+]
+
+const edgesByProvince = {}
+gameEdges.forEach((edge, index) => {
+  ;(edgesByProvince[edge.a] ??= []).push(index)
+  ;(edgesByProvince[edge.b] ??= []).push(index)
+})
+for (const province of gameProvinces) edgesByProvince[province.id] ??= []
+
+const startPositions = Object.values(rules.startNations.nations).map((nation) => {
+  const own = gameProvinces.filter((p) => nation.countries.includes(byId.get(p.id).countryIso))
+  return {
+    nation: nation.name,
+    capital: own[0]?.id ?? '',
+    provinces: own.map((p) => p.id),
+  }
+})
+
+const world = {
+  id: 'world',
+  name: 'Welt',
+  width: WIDTH,
+  height: HEIGHT,
+  provinces: gameProvinces,
+  edges: gameEdges,
+  edgesByProvince,
+  startPositions,
+}
+writeFileSync(join(ROOT, 'data/maps/world.json'), JSON.stringify(world) + '\n')
+console.log(
+  `data/maps/world.json geschrieben: ${gameProvinces.length} Provinzen, ${gameEdges.length} Kanten, ` +
+    `${startPositions.length} Startnationen (${(JSON.stringify(world).length / 1024 / 1024).toFixed(2)} MB).`,
+)
