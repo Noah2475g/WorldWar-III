@@ -141,3 +141,8 @@ Anforderungs-Tor: 57 von 74 Anforderungen durch Tests belegt.
 - Der erste Datenschutztest war grün aus dem falschen Grund und dann rot aus dem
   falschen Grund: beide Nationen starten gleich, also hat eine fremde Provinz denselben
   Moral*wert* wie eine eigene. Der Test prüft jetzt die Struktur, nicht die Zahl.
+
+**T-M10-01 vorgelegt (2026-09-03):** Drei Design-Richtungen als Mockup unter
+`docs/design/ui-mockup.html`, Tokens und Kontrastwerte in `docs/design/tokens.md`.
+Artifact: https://claude.ai/code/artifact/14e02471-d4ab-4267-833d-b6d98f8616e7 —
+wartet auf Noahs Freigabe. Bis dahin bleiben T-M10-01b bis T-M11-04 gesperrt.

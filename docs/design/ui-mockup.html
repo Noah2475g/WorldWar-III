@@ -1,0 +1,530 @@
+<title>Lagekarte oder Leuchtpult</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --page: #EDEAE1;
+    --card: #FAF8F3;
+    --text: #22261F;
+    --text-soft: #5C6157;
+    --rule: #C8C3B4;
+    --mark: #B3341E;
+    --ok: #3D6B4A;
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+    --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #16181A;
+      --card: #202326;
+      --text: #E7E9E3;
+      --text-soft: #A0A69B;
+      --rule: #383C3F;
+      --mark: #E0705A;
+      --ok: #7FB08C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #16181A; --card: #202326; --text: #E7E9E3;
+    --text-soft: #A0A69B; --rule: #383C3F; --mark: #E0705A; --ok: #7FB08C;
+  }
+
+  body { background: var(--page); color: var(--text); font-family: var(--sans); line-height: 1.55; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 96px; }
+  h1 { font-family: var(--cond); font-size: 40px; font-weight: 600; line-height: 1.1;
+       letter-spacing: -0.01em; margin: 0 0 12px; text-wrap: balance; }
+  h2 { font-family: var(--cond); font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  .lede { font-size: 17px; color: var(--text-soft); max-width: 64ch; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+             text-transform: uppercase; color: var(--text-soft); margin: 0 0 8px; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 44px 0; }
+  a { color: var(--mark); }
+
+  .head-note { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 22px;
+               padding-top: 18px; border-top: 1px solid var(--rule); }
+  .head-note div { flex: 1 1 200px; }
+  .head-note dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+                  text-transform: uppercase; color: var(--text-soft); margin-bottom: 2px; }
+  .head-note dd { margin: 0; font-size: 14px; }
+
+  .dir { margin: 0 0 12px; }
+  .dir-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .badge { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+           text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--rule);
+           border-radius: 2px; color: var(--text-soft); }
+  .badge.pick { border-color: var(--ok); color: var(--ok); }
+
+  /* --- the mockup frame: its own colour world, deliberately not theme-aware --- */
+  .screen { border: 1px solid var(--rule); border-radius: 3px; overflow: hidden;
+            font-family: var(--sans); }
+  .screen * { box-sizing: border-box; }
+  .bar { display: flex; align-items: center; gap: 18px; padding: 7px 12px; font-size: 12px; }
+  .res { display: flex; gap: 14px; font-family: var(--mono); font-size: 12px;
+         font-variant-numeric: tabular-nums; }
+  .res b { font-weight: 500; }
+  .res span { opacity: 0.62; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .clock { margin-left: auto; display: flex; align-items: center; gap: 10px;
+           font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .speeds { display: flex; gap: 2px; }
+  .speeds i { font-style: normal; font-family: var(--mono); font-size: 11px;
+              padding: 2px 6px; border-radius: 2px; }
+  .body-row { display: grid; grid-template-columns: 1fr 232px; }
+  .side { padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 11px; }
+  .side h4 { font-family: var(--cond); font-size: 17px; margin: 0; font-weight: 600; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px;
+        font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .kv dt { opacity: 0.66; }
+  .kv dd { margin: 0; font-family: var(--mono); text-align: right; }
+  .meter { height: 5px; border-radius: 3px; overflow: hidden; }
+  .meter i { display: block; height: 100%; }
+  .act { display: flex; gap: 5px; flex-wrap: wrap; }
+  .act button { font: inherit; font-size: 11px; padding: 4px 9px; border-radius: 2px;
+                cursor: default; border: 1px solid; }
+  .log { padding: 7px 12px; font-size: 11.5px; display: flex; flex-direction: column; gap: 3px; }
+  .log div { display: grid; grid-template-columns: 62px 1fr; gap: 10px; }
+  .log time { font-family: var(--mono); opacity: 0.6; font-variant-numeric: tabular-nums; }
+  .scroller { overflow-x: auto; }
+  .scroller > .screen { min-width: 680px; }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 26px; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .swatches li { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em;
+                 padding: 5px 8px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.14); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 10px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em;
+       text-transform: uppercase; color: var(--text-soft); font-weight: 400; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .pass { color: var(--ok); }
+
+  .ask { border-left: 3px solid var(--mark); padding: 2px 0 2px 16px; margin: 30px 0 0; }
+  .ask ol { margin: 8px 0 0; padding-left: 20px; }
+  .ask li { margin-bottom: 5px; }
+  @media (max-width: 620px) { .body-row { grid-template-columns: 1fr; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="lage" viewBox="0 0 640 360">
+    <!-- 1 Meer -->
+    <rect width="640" height="360" fill="var(--m-water)"/>
+    <!-- 2 Provinzflaechen, nach Eigentuemer eingefaerbt -->
+    <g stroke="var(--m-line)" stroke-width="1.1" stroke-linejoin="round">
+      <polygon points="42,132 118,104 166,150 128,208 50,198" fill="var(--m-n1)"/>
+      <polygon points="118,104 204,80 238,132 166,150" fill="var(--m-n1)"/>
+      <polygon points="204,80 300,71 320,127 238,132" fill="var(--m-n2)"/>
+      <polygon points="300,71 392,85 402,141 320,127" fill="var(--m-n2)"/>
+      <polygon points="392,85 470,113 460,168 402,141" fill="var(--m-n3)"/>
+      <polygon points="166,150 238,132 252,200 180,218 128,208" fill="var(--m-n1)"/>
+      <polygon points="238,132 320,127 334,190 252,200" fill="var(--m-none)"/>
+      <polygon points="320,127 402,141 412,199 334,190" fill="var(--m-n2)"/>
+      <polygon points="402,141 460,168 456,224 412,199" fill="var(--m-n3)"/>
+      <polygon points="128,208 180,218 190,278 118,268" fill="var(--m-n4)"/>
+      <polygon points="180,218 252,200 271,268 190,278" fill="var(--m-none)"/>
+      <polygon points="252,200 334,190 348,258 271,268" fill="var(--m-n4)"/>
+      <polygon points="334,190 412,199 420,256 348,258" fill="var(--m-n3)"/>
+      <polygon points="512,238 560,224 574,268 528,286" fill="var(--m-n3)"/>
+    </g>
+    <!-- 4 Eisenbahn -->
+    <path d="M60 168 L170 140 L262 116 L356 108 L436 128" fill="none"
+          stroke="var(--m-rail)" stroke-width="1.6" stroke-dasharray="7 3.5"/>
+    <!-- Seeweg zur Insel, gestrichelt -->
+    <path d="M456 196 Q492 208 522 250" fill="none" stroke="var(--m-sea)"
+          stroke-width="1.4" stroke-dasharray="2.5 4" stroke-linecap="round"/>
+    <!-- 6 Auswahl und Wegvorschau -->
+    <polygon points="238,132 320,127 334,190 252,200" fill="none"
+             stroke="var(--m-sel)" stroke-width="2.6"/>
+    <path d="M288 163 L372 168" fill="none" stroke="var(--m-sel)" stroke-width="1.8"
+          stroke-dasharray="5 4" marker-end="url(#arw)"/>
+    <marker id="arw" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="var(--m-sel)"/>
+    </marker>
+    <!-- 5 Armeen: NATO-Rechteck, Diagonalkreuz = Infanterie -->
+    <g stroke-width="1.2">
+      <g transform="translate(272,152)">
+        <rect width="30" height="19" fill="var(--m-own)" stroke="var(--m-line)"/>
+        <path d="M0 0 L30 19 M30 0 L0 19" stroke="var(--m-own-ink)" stroke-width="1"/>
+        <text x="15" y="30" font-size="9" font-family="var(--cond)" text-anchor="middle"
+              fill="var(--m-label)">4. Armee</text>
+      </g>
+      <g transform="translate(356,158)">
+        <rect width="30" height="19" fill="var(--m-foe)" stroke="var(--m-line)"/>
+        <path d="M0 0 L30 19 M30 0 L0 19" stroke="var(--m-foe-ink)" stroke-width="1"/>
+      </g>
+      <g transform="translate(392,120)">
+        <circle r="9" fill="none" stroke="var(--m-alert)" stroke-width="2"/>
+        <path d="M-5.5 -5.5 L5.5 5.5 M5.5 -5.5 L-5.5 5.5" stroke="var(--m-alert)" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- 7 Beschriftungen -->
+    <g font-size="9.5" fill="var(--m-label)" letter-spacing="0.06em"
+       font-family="IBM Plex Sans Condensed, sans-serif">
+      <text x="88" y="158">NORDMARK</text>
+      <text x="176" y="118">SEEHAFEN</text>
+      <text x="252" y="102">OSTFELD</text>
+      <text x="348" y="112">KRONLAND</text>
+      <text x="418" y="132">WESTBUCHT</text>
+      <text x="286" y="168" font-weight="600">MITTSTADT</text>
+      <text x="150" y="252">SUEDMARK</text>
+      <text x="300" y="238">TALGRUND</text>
+      <text x="530" y="262">INSEL</text>
+    </g>
+  </symbol>
+</svg>
+
+<div class="wrap">
+<p class="eyebrow">WorldWar · Aufgabe T-M10-01 · Haltepunkt</p>
+<h1>Wie soll die Lage aussehen?</h1>
+<p class="lede">Drei Richtungen für dieselbe Hauptansicht. Bitte eine wählen — ohne
+diese Freigabe wird keine Oberfläche gebaut. Der Simulationskern läuft bereits
+vollständig; was fehlt, ist das Fenster darauf.</p>
+
+<dl class="head-note">
+  <div><dt>Was gezeigt wird</dt><dd>Kopfleiste, Karte, Provinzpanel, Ereignisleiste — die
+    Bestandteile aus R-UI-03, mit echten Zahlen aus einer laufenden Partie.</dd></div>
+  <div><dt>Was schon feststeht</dt><dd>Schrift: IBM Plex in drei Schnitten, frei lizenziert.
+    Kontrast mindestens 4,5:1, später als Test festgeschrieben.</dd></div>
+  <div><dt>Was die Freigabe auslöst</dt><dd>20 Aufgaben von T-M10-01b bis T-M11-04 —
+    Karte, Panels, Partie erstellen, Speichern, Tastatur, Verpackung.</dd></div>
+</dl>
+
+<hr>
+
+<section class="dir">
+  <div class="dir-head">
+    <h2>A · Lagekarte</h2>
+    <span class="badge pick">Empfehlung</span>
+    <span class="badge">hell · Tinte · eine Signalfarbe</span>
+  </div>
+  <p>Eine Stabskarte auf dem Tisch: Leinenton, Tinte, gedeckte Nationsfarben. Zinnober ist
+  für genau eine Sache reserviert — Kampf und Alarm. Dadurch sieht man beim Blick auf den
+  Bildschirm sofort, wo es brennt, ohne irgendetwas zu lesen.</p>
+
+  <div class="scroller">
+  <div class="screen" style="
+      --m-water:#BFC9C6; --m-line:#8C8676; --m-rail:#6E6A5C; --m-sea:#7E8C8A;
+      --m-none:#D8D3C3; --m-n1:#9FB2BE; --m-n2:#C4A99C; --m-n3:#B7BE9F; --m-n4:#B5A6C0;
+      --m-own:#2C5F7C; --m-own-ink:#EAF0F3; --m-foe:#7C3F2C; --m-foe-ink:#F3EAE7;
+      --m-alert:#B3341E; --m-sel:#1F2420; --m-label:#2B302A;
+      background:#F2EEE3; color:#1F2420; border-color:#8C8676;">
+
+    <div class="bar" style="background:#E4E0D2; border-bottom:1px solid #8C8676;">
+      <div class="res">
+        <b>4 812 <span>Nahrung</span></b>
+        <b>2 100 <span>Holz</span></b>
+        <b>1 344 <span>Eisen</span></b>
+        <b style="color:#9A6B14;">312 <span>Öl</span></b>
+        <b>18 950 <span>Geld</span></b>
+      </div>
+      <div class="clock">
+        <span>Tag 34 · 06:00</span>
+        <span class="speeds">
+          <i style="background:#DAD5C6;">‖</i><i style="background:#DAD5C6;">1</i>
+          <i style="background:#DAD5C6;">2</i><i style="background:#DAD5C6;">5</i>
+          <i style="background:#1F2420;color:#F2EEE3;">10</i>
+          <i style="background:#DAD5C6;">25</i><i style="background:#DAD5C6;">50</i>
+          <i style="background:#DAD5C6;">100</i>
+        </span>
+        <span style="border:1px solid #8C8676;padding:2px 7px;border-radius:2px;">▸▸ Vorspulen</span>
+      </div>
+    </div>
+
+    <div class="body-row">
+      <svg viewBox="0 0 640 360" style="display:block;width:100%;height:auto;"
+           role="img" aria-label="Kartenausschnitt mit Provinzen, Armeen und laufendem Gefecht">
+        <use href="#lage"/>
+      </svg>
+
+      <aside class="side" style="background:#F2EEE3; border-left:1px solid #8C8676;">
+        <div>
+          <h4>Mittstadt</h4>
+          <p style="margin:1px 0 0;font-size:11px;color:#5A6055;">Großstadt · Ebene · eigen seit Tag 12</p>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:#5A6055;">Moral</span><span style="font-family:var(--mono);">71 %</span>
+          </div>
+          <div class="meter" style="background:#DAD5C6;"><i style="width:71%;background:#3D6B4A;"></i></div>
+        </div>
+        <dl class="kv">
+          <dt>Bevölkerung</dt><dd>1,24 Mio</dd>
+          <dt>Nahrung</dt><dd>+42 / Tag</dd>
+          <dt>Eisen</dt><dd>+18 / Tag</dd>
+          <dt>Kasernen</dt><dd>Stufe 2</dd>
+          <dt>Bauplätze</dt><dd>3 von 5</dd>
+        </dl>
+        <div>
+          <h3 style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5A6055;">Im Bau</h3>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;">
+            <span>Werkstatt Stufe 2</span>
+            <span style="font-family:var(--mono);">14 h</span>
+          </div>
+          <div class="meter" style="background:#DAD5C6;margin-top:4px;"><i style="width:58%;background:#5A6055;"></i></div>
+        </div>
+        <div class="act">
+          <button style="background:#1F2420;color:#F2EEE3;border-color:#1F2420;">Bauen</button>
+          <button style="background:transparent;color:#1F2420;border-color:#8C8676;">Rekrutieren</button>
+          <button style="background:transparent;color:#5A6055;border-color:#C8C3B4;">Hauptstadt</button>
+        </div>
+        <p style="margin:0;font-size:10.5px;color:#5A6055;border-top:1px solid #DAD5C6;padding-top:7px;">
+          Rekrutieren: 5 Infanterie · 750 Geld, 400 Eisen · 18 h.
+          Bei Moral 71 % kommen sie mit 4 Einheiten Stärke an.</p>
+      </aside>
+    </div>
+
+    <div class="log" style="background:#E4E0D2; border-top:1px solid #8C8676;">
+      <div><time>34 · 05:00</time><span style="color:#B3341E;font-weight:500;">Gefecht bei Kronland — 4. Armee gegen 2. Ostmark-Korps.</span></div>
+      <div><time>34 · 02:00</time><span>Westbucht: Hafen Stufe 1 fertiggestellt.</span></div>
+      <div><time>33 · 22:00</time><span style="color:#9A6B14;">Öl reicht noch 6 Tage. Verbrauch 52 / Tag.</span></div>
+      <div><time>33 · 18:00</time><span>Ostmark hat Nordmark den Krieg erklärt. Wirksam ab Tag 34, 18:00.</span></div>
+    </div>
+  </div>
+  </div>
+
+  <ul class="swatches">
+    <li style="background:#E4E0D2;color:#1F2420;">ground #E4E0D2</li>
+    <li style="background:#F2EEE3;color:#1F2420;">paper #F2EEE3</li>
+    <li style="background:#1F2420;color:#F2EEE3;">ink #1F2420</li>
+    <li style="background:#5A6055;color:#F2EEE3;">ink-soft #5A6055</li>
+    <li style="background:#B3341E;color:#FFF;">accent #B3341E</li>
+    <li style="background:#3D6B4A;color:#FFF;">good #3D6B4A</li>
+    <li style="background:#9A6B14;color:#FFF;">warn #9A6B14</li>
+  </ul>
+</section>
+
+<hr>
+
+<section class="dir">
+  <div class="dir-head">
+    <h2>B · Nachtlage</h2>
+    <span class="badge">dunkel · Bernstein · Leuchtpult</span>
+  </div>
+  <p>Der Lagetisch als beleuchtete Glasplatte. Näher am Original und abends angenehmer —
+  aber genau die Richtung, die bei <em>Rotation</em> den Playtest nach einer Minute beendet
+  hat. Deshalb hier mit aufgehellten Provinzflächen statt dunkelblau auf dunkelblau: die
+  Farbe trägt die Fläche, der Text sitzt immer auf ruhigem Grund.</p>
+
+  <div class="scroller">
+  <div class="screen" style="
+      --m-water:#10161A; --m-line:#4A555C; --m-rail:#7E8A92; --m-sea:#6E7C86;
+      --m-none:#2A3237; --m-n1:#3E5A6B; --m-n2:#6B4A3E; --m-n3:#4E5E3C; --m-n4:#4E3E5E;
+      --m-own:#7FC4E8; --m-own-ink:#0E1417; --m-foe:#E0705A; --m-foe-ink:#160D0B;
+      --m-alert:#E2573C; --m-sel:#E0A33E; --m-label:#D6DCD8;
+      background:#1E2528; color:#E6EAE4; border-color:#3A4247;">
+
+    <div class="bar" style="background:#151A1C; border-bottom:1px solid #3A4247;">
+      <div class="res">
+        <b>4 812 <span>Nahrung</span></b>
+        <b>2 100 <span>Holz</span></b>
+        <b>1 344 <span>Eisen</span></b>
+        <b style="color:#E0A33E;">312 <span>Öl</span></b>
+        <b>18 950 <span>Geld</span></b>
+      </div>
+      <div class="clock">
+        <span>Tag 34 · 06:00</span>
+        <span class="speeds">
+          <i style="background:#252D31;">‖</i><i style="background:#252D31;">1</i>
+          <i style="background:#252D31;">2</i><i style="background:#252D31;">5</i>
+          <i style="background:#E0A33E;color:#151A1C;">10</i>
+          <i style="background:#252D31;">25</i><i style="background:#252D31;">50</i>
+          <i style="background:#252D31;">100</i>
+        </span>
+        <span style="border:1px solid #4A555C;padding:2px 7px;border-radius:2px;">Vorspulen</span>
+      </div>
+    </div>
+
+    <div class="body-row">
+      <svg viewBox="0 0 640 360" style="display:block;width:100%;height:auto;"
+           role="img" aria-label="Dieselbe Lage in der dunklen Richtung"><use href="#lage"/></svg>
+
+      <aside class="side" style="background:#1E2528; border-left:1px solid #3A4247;">
+        <div>
+          <h4>Mittstadt</h4>
+          <p style="margin:1px 0 0;font-size:11px;color:#A0A69B;">Großstadt · Ebene · eigen seit Tag 12</p>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:#A0A69B;">Moral</span><span style="font-family:var(--mono);">71 %</span>
+          </div>
+          <div class="meter" style="background:#2A3237;"><i style="width:71%;background:#7FB08C;"></i></div>
+        </div>
+        <dl class="kv">
+          <dt>Bevölkerung</dt><dd>1,24 Mio</dd>
+          <dt>Nahrung</dt><dd>+42 / Tag</dd>
+          <dt>Kasernen</dt><dd>Stufe 2</dd>
+          <dt>Bauplätze</dt><dd>3 von 5</dd>
+        </dl>
+        <div class="act">
+          <button style="background:#E0A33E;color:#151A1C;border-color:#E0A33E;">Bauen</button>
+          <button style="background:transparent;color:#E6EAE4;border-color:#4A555C;">Rekrutieren</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="log" style="background:#151A1C; border-top:1px solid #3A4247;">
+      <div><time>34 · 05:00</time><span style="color:#E2573C;font-weight:500;">Gefecht bei Kronland — 4. Armee gegen 2. Ostmark-Korps.</span></div>
+      <div><time>34 · 02:00</time><span>Westbucht: Hafen Stufe 1 fertiggestellt.</span></div>
+      <div><time>33 · 22:00</time><span style="color:#E0A33E;">Öl reicht noch 6 Tage. Verbrauch 52 / Tag.</span></div>
+    </div>
+  </div>
+  </div>
+
+  <ul class="swatches">
+    <li style="background:#151A1C;color:#E6EAE4;">ground #151A1C</li>
+    <li style="background:#1E2528;color:#E6EAE4;">paper #1E2528</li>
+    <li style="background:#E6EAE4;color:#151A1C;">ink #E6EAE4</li>
+    <li style="background:#E0A33E;color:#151A1C;">accent #E0A33E</li>
+    <li style="background:#E2573C;color:#151A1C;">alert #E2573C</li>
+  </ul>
+</section>
+
+<hr>
+
+<section class="dir">
+  <div class="dir-head">
+    <h2>C · Atlasdruck</h2>
+    <span class="badge">weiß · Drucksatz · flache Farben</span>
+  </div>
+  <p>Ein Zeitungsatlas: fast weißes Papier, feine Linien, Nationen in flachen Druckfarben,
+  Rot als einzige Signalfarbe. Am ruhigsten und am besten lesbar von allen dreien — dafür
+  am wenigsten nach Krieg aussehend. Wer lange Partien spielt, gewinnt hier am meisten;
+  wer Atmosphäre will, am wenigsten.</p>
+
+  <div class="scroller">
+  <div class="screen" style="
+      --m-water:#E8EBEC; --m-line:#9AA0A0; --m-rail:#5C6364; --m-sea:#8A9498;
+      --m-none:#F0EFEA; --m-n1:#B8CBD6; --m-n2:#E0C9BC; --m-n3:#CBD6B4; --m-n4:#CDBFD8;
+      --m-own:#1E4E6E; --m-own-ink:#FFFFFF; --m-foe:#8C3320; --m-foe-ink:#FFFFFF;
+      --m-alert:#C42B1C; --m-sel:#14171A; --m-label:#14171A;
+      background:#FBFAF7; color:#14171A; border-color:#C9CCC4;">
+
+    <div class="bar" style="background:#FBFAF7; border-bottom:1px solid #14171A;">
+      <div class="res">
+        <b>4 812 <span>Nahrung</span></b>
+        <b>2 100 <span>Holz</span></b>
+        <b>1 344 <span>Eisen</span></b>
+        <b style="color:#8A6200;">312 <span>Öl</span></b>
+        <b>18 950 <span>Geld</span></b>
+      </div>
+      <div class="clock">
+        <span>Tag 34 · 06:00</span>
+        <span class="speeds">
+          <i style="background:#EFEEE9;">‖</i><i style="background:#EFEEE9;">1</i>
+          <i style="background:#EFEEE9;">2</i><i style="background:#EFEEE9;">5</i>
+          <i style="background:#C42B1C;color:#FFF;">10</i>
+          <i style="background:#EFEEE9;">25</i><i style="background:#EFEEE9;">50</i>
+          <i style="background:#EFEEE9;">100</i>
+        </span>
+        <span style="border:1px solid #14171A;padding:2px 7px;">Vorspulen</span>
+      </div>
+    </div>
+
+    <div class="body-row">
+      <svg viewBox="0 0 640 360" style="display:block;width:100%;height:auto;"
+           role="img" aria-label="Dieselbe Lage in der Druck-Richtung"><use href="#lage"/></svg>
+
+      <aside class="side" style="background:#FBFAF7; border-left:1px solid #14171A;">
+        <div>
+          <h4 style="border-bottom:2px solid #14171A;padding-bottom:3px;">Mittstadt</h4>
+          <p style="margin:4px 0 0;font-size:11px;color:#5A5F5C;">Großstadt · Ebene · eigen seit Tag 12</p>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:#5A5F5C;">Moral</span><span style="font-family:var(--mono);">71 %</span>
+          </div>
+          <div class="meter" style="background:#E4E3DE;"><i style="width:71%;background:#2E6B45;"></i></div>
+        </div>
+        <dl class="kv">
+          <dt>Bevölkerung</dt><dd>1,24 Mio</dd>
+          <dt>Nahrung</dt><dd>+42 / Tag</dd>
+          <dt>Kasernen</dt><dd>Stufe 2</dd>
+          <dt>Bauplätze</dt><dd>3 von 5</dd>
+        </dl>
+        <div class="act">
+          <button style="background:#14171A;color:#FBFAF7;border-color:#14171A;">Bauen</button>
+          <button style="background:transparent;color:#14171A;border-color:#14171A;">Rekrutieren</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="log" style="background:#F3F2ED; border-top:1px solid #14171A;">
+      <div><time>34 · 05:00</time><span style="color:#C42B1C;font-weight:500;">Gefecht bei Kronland — 4. Armee gegen 2. Ostmark-Korps.</span></div>
+      <div><time>34 · 02:00</time><span>Westbucht: Hafen Stufe 1 fertiggestellt.</span></div>
+      <div><time>33 · 22:00</time><span style="color:#8A6200;">Öl reicht noch 6 Tage. Verbrauch 52 / Tag.</span></div>
+    </div>
+  </div>
+  </div>
+
+  <ul class="swatches">
+    <li style="background:#FBFAF7;color:#14171A;">ground #FBFAF7</li>
+    <li style="background:#14171A;color:#FBFAF7;">ink #14171A</li>
+    <li style="background:#C42B1C;color:#FFF;">accent #C42B1C</li>
+    <li style="background:#2E6B45;color:#FFF;">good #2E6B45</li>
+  </ul>
+</section>
+
+<hr>
+
+<section>
+  <p class="eyebrow">Nachweis</p>
+  <h2>Lesbarkeit, gerechnet statt behauptet</h2>
+  <p>Diese Werte werden nach der Freigabe zu einem Test (T-M10-01b, Anforderung R-UI-02):
+  er bricht, sobald jemand eine Farbe verschiebt und ein Paar unter 4,5:1 fällt. Gezeigt
+  ist die empfohlene Richtung A; die beiden anderen sind ebenso gerechnet.</p>
+  <table>
+    <thead><tr><th>Vordergrund auf Hintergrund</th><th>Wofür</th><th style="text-align:right">Verhältnis</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>ink #1F2420 auf paper #F2EEE3</td><td>Panels, Fließtext</td><td class="num">13,9:1</td><td class="pass">✓</td></tr>
+      <tr><td>ink #1F2420 auf ground #E4E0D2</td><td>Leisten, Kartenschrift</td><td class="num">12,4:1</td><td class="pass">✓</td></tr>
+      <tr><td>ink-soft #5A6055 auf paper #F2EEE3</td><td>Einheiten, Nebentext</td><td class="num">5,2:1</td><td class="pass">✓</td></tr>
+      <tr><td>accent #B3341E auf paper #F2EEE3</td><td>Kampf, Kriegserklärung</td><td class="num">5,6:1</td><td class="pass">✓</td></tr>
+      <tr><td>good #3D6B4A auf paper #F2EEE3</td><td>fertig, Frieden</td><td class="num">5,4:1</td><td class="pass">✓</td></tr>
+      <tr><td>warn #9A6B14 auf paper #F2EEE3</td><td>Mangel, Frist</td><td class="num">4,6:1</td><td class="pass">✓</td></tr>
+      <tr><td>paper #F2EEE3 auf ink #1F2420</td><td>Hauptknopf</td><td class="num">13,9:1</td><td class="pass">✓</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section style="margin-top:44px;">
+  <p class="eyebrow">Bewusst so entschieden</p>
+  <h2>Drei Dinge, die in allen Richtungen gleich bleiben</h2>
+  <div class="grid2" style="margin-top:14px;">
+    <div>
+      <h3>Farbe bedeutet etwas</h3>
+      <p style="font-size:14px;">Nationsfarben füllen Flächen, nie Text. Die Signalfarbe
+      gehört ausschließlich Kampf und Alarm — sie taucht nirgends als Zierde auf. Deshalb
+      erkennt man den Ernstfall, ohne ein Wort zu lesen.</p>
+    </div>
+    <div>
+      <h3>Zahlen stehen untereinander</h3>
+      <p style="font-size:14px;">Ressourcen, Uhrzeit, Bestände und Fristen laufen in einer
+      dicktengleichen Schrift mit Tabellenziffern. Bei 100 Spielstunden je Sekunde zappeln
+      die Werte sonst in der Breite und werden unlesbar.</p>
+    </div>
+    <div>
+      <h3>Jede Aktion nennt ihren Preis</h3>
+      <p style="font-size:14px;">Der Hinweis unter dem Panel ist kein Beiwerk, sondern
+      Anforderung R-UI-05: Kosten, Dauer und — bei Rekrutierung — die zu erwartende Stärke
+      statt nur der Stückzahl, weil die Provinzmoral sie mitbestimmt.</p>
+    </div>
+  </div>
+</section>
+
+<div class="ask">
+  <p class="eyebrow" style="margin-bottom:4px;">Entscheidung</p>
+  <p style="margin-bottom:0;"><strong>A, B oder C?</strong> Empfohlen wird <strong>A —
+  Lagekarte</strong>: sie hat von sich aus den höchsten Kontrast, und die Lesson aus
+  <em>Rotation</em> spricht gegen einen dunklen Grund. B ist stimmungsvoller und
+  nachtauglich, trägt aber genau das Risiko. C ist am ruhigsten, wirkt aber weniger nach
+  Krieg. Abweichungen bei Einzelfarben oder Schrift sind jederzeit möglich — die Richtung
+  festzulegen ist das, was jetzt gebraucht wird.</p>
+  <ol>
+    <li>Freigabe der Richtung → T-M10-01b schreibt sie als Tokens mit Kontrasttest fest.</li>
+    <li>Danach laufen Karte, Panels, Partie erstellen, Speichern, Tastatur und Verpackung
+      durch — 20 Aufgaben bis Ende M11.</li>
+  </ol>
+</div>
+</div>
