@@ -193,3 +193,29 @@ Suite verschoben.
 
 **Status:** offen, kein Blocker — aber ein Kandidat für dieselbe Behandlung
 (eigenes Zeitlimit oder eigener Lauf). Vorgemerkt für T-M13-17.
+
+---
+
+## 2026-09-04 · T-M13-17 · Vier Befunde, die erst am Bildschirm auftraten
+
+**Befund:** Vier Dinge waren durch grüne Tests gedeckt und trotzdem falsch — sie zeigen
+sich nur im laufenden Programm:
+
+1. **Die Karte blieb beim Spielstart namenlos.** Die Zoomschwelle für Provinznamen lag bei
+   1,2, das Spiel öffnet bei 1,6. Der Test prüfte „oberhalb der Schwelle keine Namen" und
+   war grün — er kannte die Startzoomstufe nicht. *Behoben:* Schwelle 2,0.
+2. **Die Erklärzeichen standen unter den Knöpfen** und bildeten eine Reihe einsamer
+   Kreise. Der Test prüfte „der Knopf trägt ein Fragezeichen", nicht wo. *Behoben:* Knopf
+   und Zeichen in einer Zeile.
+3. **In der Lagetabelle stand jeder Name doppelt** — Spalte und Balkenbeschriftung. Beide
+   Tests waren richtig, keiner sah beides zusammen. *Behoben:* `labelHidden` am Balken.
+4. **Die leere Balkenspur war vom Panel kaum zu unterscheiden** (1,27:1). Das fiel beim
+   Nachrechnen des Kontrasts auf, nicht beim Ansehen. *Behoben:* Umriss aus `line`, und ein
+   Kontrasttest für Anzeigen ohne Schrift.
+
+**Die Lehre, schon einmal notiert und hier bestätigt:** Ein Test misst, was er liest.
+Layout, Zoomstufe und Doppelungen zwischen zwei richtigen Bauteilen sieht er nicht — dafür
+braucht es den Blick ins laufende Programm, und der gehört als Aufgabe in den Plan, nicht
+in die Hoffnung.
+
+**Status:** alle vier behoben.

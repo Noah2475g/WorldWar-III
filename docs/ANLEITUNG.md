@@ -156,9 +156,11 @@ Alles ist ohne Maus erreichbar.
 | **Besitz** | wem was gehört |
 | **Rohstoffe** | wo etwas im Boden liegt |
 | **Moral** | wo es ruhig ist und wo es brennt |
-| **Bedrohung** | wo ein Angriff zu erwarten ist |
+| **Truppenstärke** | wo Truppen stehen — so weit Sie sehen können |
 
-Grau heißt in jedem Modus dasselbe: **nicht aufgeklärt**. Was Sie nicht sehen, färbt das
+Zu jedem Modus steht unten rechts auf der Karte eine Legende; das Fragezeichen daneben
+sagt in einem Satz, was die Farben bedeuten. Grau heißt in jedem Modus dasselbe:
+**nicht aufgeklärt**. Was Sie nicht sehen, färbt das
 Spiel nicht ein — eine ungesehene Provinz ist keine Provinz mit Moral null.
 
 ---
@@ -181,3 +183,40 @@ eingeschlossen — und spielt auf jeder Schwierigkeitsstufe **ohne Bonus**: kein
 keine geschenkten Truppen, kein Blick auf Ihre Karte. Der
 Unterschied zwischen „leicht" und „schwer" ist, wie weit sie vorausplant und an wie
 vielen Fronten sie gleichzeitig kämpft. Der Startdialog weist das aus.
+
+---
+
+## Was die Oberfläche von selbst sagt
+
+Vieles, wofür man sonst rechnen müsste, steht als Anzeige da:
+
+| Wo | Was |
+|---|---|
+| Kopfleiste | je Rohstoff Bestand, Tagesbilanz — und, sobald ein Vorrat schrumpft, wie viele Tage er noch reicht. Unter drei Tagen wird die Zeile zur Warnung. |
+| Kopfleiste | der Balken **Siegziel**: Ihr Anteil an allen Punkten gegen den Anteil, den der Sieg verlangt |
+| Provinzpanel | **Moral** als Balken mit Pfeil — der Pfeil zeigt, wohin sie läuft, nicht nur wo sie steht |
+| Provinzpanel | jedes laufende Bauvorhaben und jede Aushebung als Balken mit Restzeit |
+| Armeepanel | der Marsch als Balken mit der Ankunftszeit |
+| Seitenleiste | **Meldungen**: Kampf im eigenen Land, verlorene Hauptstadt, Rohstoffmangel, Aufstandsgefahr. Ein Klick führt die Karte hin. |
+
+## Die Lage der Mächte (Taste `L`)
+
+Alle Mächte, von denen Sie wissen, mit Punktebalken, Verhältnis und der Truppenstärke,
+**die Sie sehen können**. Was hinter dem Nebel steht, steht nicht in der Tabelle — die
+Übersicht weiß nicht mehr als Sie.
+
+Ist die Partie entschieden, sagt das Spiel es einmal, hält die Uhr an und lässt Sie das
+Fenster schließen, wenn Sie sich die Karte noch ansehen wollen.
+
+## Wenn Sie etwas nicht kennen
+
+Hinter jedem Gebäude, jeder Einheit, jedem Rohstoff, jeder Geländeart, jedem Kartenmodus
+und jedem diplomatischen Zustand steht ein kleines **?**. Ein Druck darauf — mit Maus oder
+Tastatur — sagt in ein bis zwei Sätzen, wofür das Ding gut ist. Kosten und Dauer stehen
+ohnehin im Tooltip des Knopfes.
+
+## Das Ereignisprotokoll filtern
+
+Unten links über dem Protokoll stehen vier Schalter: **alles**, **Kämpfe**, **Aufbau**,
+**Verträge**. Bei hoher Geschwindigkeit ist das der Unterschied zwischen „irgendwo stand
+gerade etwas Wichtiges" und „hier ist es".

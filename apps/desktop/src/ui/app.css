@@ -895,3 +895,10 @@ body {
 .meter__track--done {
   animation: meter-done 600ms ease-out;
 }
+
+/* Knopf und Erklaerzeichen gehoeren in eine Zeile. */
+.action__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

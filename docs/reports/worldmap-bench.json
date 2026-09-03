@@ -4,7 +4,7 @@
   "edges": 658,
   "players": 12,
   "ticks": 480,
-  "medianMs": 2.897,
-  "p99Ms": 7.979,
-  "measuredAt": "2026-09-03T20:33:51.237Z"
+  "medianMs": 2.427,
+  "p99Ms": 5.352,
+  "measuredAt": "2026-09-03T23:10:49.433Z"
 }

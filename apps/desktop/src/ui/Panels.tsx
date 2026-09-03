@@ -70,18 +70,23 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
   const reasonId = `${action.id}-reason`
   return (
     <div className="action">
-      <button
-        type="button"
-        className="button"
-        disabled={action.disabledReason !== null}
-        title={action.disabledReason ?? action.hint ?? undefined}
-        aria-describedby={action.disabledReason ? reasonId : undefined}
-        onClick={action.onRun}
-      >
-        {action.icon && <Icon name={action.icon} size={13} />}
-        {action.label}
-      </button>
-      {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
+      {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
+          Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
+          zu T-M13-17 gefunden). */}
+      <span className="action__head">
+        <button
+          type="button"
+          className="button"
+          disabled={action.disabledReason !== null}
+          title={action.disabledReason ?? action.hint ?? undefined}
+          aria-describedby={action.disabledReason ? reasonId : undefined}
+          onClick={action.onRun}
+        >
+          {action.icon && <Icon name={action.icon} size={13} />}
+          {action.label}
+        </button>
+        {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
+      </span>
       {action.disabledReason &&
         (showReason ? (
           <p id={reasonId} className="action__reason">

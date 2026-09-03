@@ -88,6 +88,7 @@ export function StandingsPanel({ view, nameOf }: { view: PublicView | null; name
                   max={leader}
                   text={String(Math.round(row.score))}
                   tone={row.own ? 'good' : 'neutral'}
+                  labelHidden
                 />
               </td>
               <td className={row.relation === t('diplomacy.war') ? 'state state--war' : 'state'}>{row.relation}</td>

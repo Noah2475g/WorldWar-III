@@ -81,6 +81,33 @@ pnpm --filter @worldwar/desktop dev
 
 ---
 
+
+## Was die Oberfläche zeigt (8 min)
+
+| # | Anforderung | Frage | ja/nein |
+|---|---|---|---|
+| 30 | R-UI-10 | Steht neben jedem Gebäude, jeder Einheit und jedem Rohstoff sein Symbol — und lassen sich die Symbole auseinanderhalten? | |
+| 31 | R-UI-09 | Sehen Sie die Moral einer Provinz als Balken mit Pfeil statt als bloße Prozentzahl? | |
+| 32 | R-UI-09 | Zeigt ein laufender Bau, wie weit er ist und wie lange er noch braucht? | |
+| 33 | R-UI-09 | Sagt Ihnen die Kopfleiste bei einem schrumpfenden Vorrat, wie viele Tage er noch reicht? | |
+| 34 | R-UI-11 | Konnten Sie mit dem **?** herausfinden, wofür ein Gebäude gut ist, ohne die Anleitung zu öffnen? | |
+| 35 | R-UI-12 | Stehen die Provinznamen auf der Karte, sobald Sie nah genug sind — und ist keiner davon über einen Nachbarn geschrieben? | |
+| 36 | R-UI-12 | Finden Sie Ihre Hauptstadt auf der Karte auf einen Blick? | |
+| 37 | R-UI-12 | Sehen Sie, wo gekämpft wird, ohne das Protokoll zu lesen? | |
+| 38 | R-UI-12 | Zeigt die Karte den Weg einer marschierenden Armee, wenn Sie sie auswählen? | |
+| 39 | R-MAP-07 | Färbt jeder der vier Kartenmodi etwas ein — oder ist einer durchweg grau? (Erwartet: **jeder färbt**) | |
+| 40 | R-UI-13 | Beantwortet die Lageübersicht (Taste L) die Frage „gewinne ich gerade?" | |
+| 41 | R-UI-13 | Sagt Ihnen das Spiel von selbst, wenn die Partie entschieden ist? | |
+| 42 | R-UI-14 | Haben die Meldungen Sie auf etwas hingewiesen, das Sie sonst übersehen hätten? | |
+| 43 | R-GAME-06 | Können Sie das Ereignisprotokoll auf Kämpfe filtern? | |
+| 44 | R-UI-04 | Hören Sie einen Ton bei Kampf, Eroberung und Fertigstellung — und hört er auf, wenn Sie ihn abschalten? | |
+| 45 | R-UI-04 | Bewegt sich irgendetwas, das sich nicht bewegen sollte? (Erwartet: **nein**) | |
+| 46 | R-UI-05 | Hat die Einstiegshilfe in der ersten Partie geholfen, ohne im Weg zu stehen? | |
+| 47 | R-GAME-04 | Liegt nach einer Weile ein automatischer Spielstand in der Liste? | |
+| 48 | R-UI-08 | Gibt es eine Einstellung im Menü, die sichtbar nichts bewirkt? (Erwartet: **nein**) | |
+
+---
+
 ## Die drei Fragen, auf die es ankommt
 
 > **A. Wollten Sie weiterspielen, als die 45 Minuten um waren?**

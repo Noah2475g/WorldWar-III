@@ -5,9 +5,11 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-03): **V1 gebaut — 82 von 83 Aufgaben, alle 74 Anforderungen testbelegt,
-Abnahmelauf maschinell bestanden.** Offen ist allein der Playtest durch Noah
-([`docs/PLAYTEST.md`](docs/PLAYTEST.md)); Anleitung in [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md).
+Status (2026-09-04): **V1 gebaut, Oberfläche ausgebaut (M13)** — 99 von 100 Aufgaben, alle
+82 Anforderungen testbelegt, Abnahmelauf maschinell bestanden. Offen ist allein der
+Playtest durch Noah ([`docs/PLAYTEST.md`](docs/PLAYTEST.md)); Anleitung in
+[`docs/ANLEITUNG.md`](docs/ANLEITUNG.md), was M13 gemessen verändert hat in
+[`docs/reports/ui-expansion.md`](docs/reports/ui-expansion.md).
 
 ```bash
 pnpm install

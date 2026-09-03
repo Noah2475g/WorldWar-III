@@ -68,3 +68,29 @@ describe('R-UI-05 Die Playtest-Vorlage', () => {
     expect(playtest).toContain('pnpm')
   })
 })
+
+/**
+ * Die Dokumente ziehen mit dem Ausbau mit (T-M13-17, R-UI-03).
+ *
+ * Eine Anleitung, die eine Woche alt ist, ist schlimmer als keine: sie beschreibt ein
+ * Spiel, das es nicht mehr gibt, und der Leser sucht den Fehler bei sich.
+ */
+describe('R-UI-03 Anleitung und Playtest kennen den Ausbau', () => {
+  it('erklaert die neuen Teile der Oberflaeche', () => {
+    for (const topic of ['Lage der Mächte', 'Meldungen', 'Siegziel', 'filtern', 'Truppenstärke']) {
+      expect(guide, `${topic} fehlt in der Anleitung`).toContain(topic)
+    }
+  })
+
+  it('nennt den alten Kartenmodus nicht mehr', () => {
+    // "Bedrohung" gibt es nicht mehr; eine Anleitung, die ihn noch anbietet, schickt den
+    // Leser zu einem Menuepunkt, den es nicht gibt.
+    expect(guide).not.toContain('**Bedrohung**')
+  })
+
+  it('stellt zu jeder neuen Anforderung mindestens eine Playtest-Frage', () => {
+    for (const id of ['R-UI-08', 'R-UI-09', 'R-UI-10', 'R-UI-11', 'R-UI-12', 'R-UI-13', 'R-UI-14', 'R-MAP-07']) {
+      expect(playtest, `Keine Playtest-Frage zu ${id}`).toContain(id)
+    }
+  })
+})

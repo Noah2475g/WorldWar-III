@@ -901,7 +901,7 @@ tasks:
   - id: T-M13-01
     milestone: M13
     title: Symbole erreichen die Oberflaeche
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-10, R-UI-04]
     files: [apps/desktop/src/ui/IconRow.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Header.tsx]
@@ -911,7 +911,7 @@ tasks:
   - id: T-M13-02
     milestone: M13
     title: Ton und Einstiegshilfe werden eingeschaltet
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-04, R-UI-05]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/ui/sound.ts]
@@ -921,7 +921,7 @@ tasks:
   - id: T-M13-03
     milestone: M13
     title: Automatisches Speichern tut, was die Einstellung verspricht
-    status: todo
+    status: done
     deps: []
     requirements: [R-GAME-04]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts]
@@ -931,7 +931,7 @@ tasks:
   - id: T-M13-04
     milestone: M13
     title: Guard gegen tote Bausubstanz
-    status: todo
+    status: done
     deps: [T-M13-01, T-M13-02, T-M13-03]
     requirements: [R-UI-08]
     files: [test/guards/reachability.ts, test/guards/ui-reachability.test.ts]
@@ -941,7 +941,7 @@ tasks:
   - id: T-M13-05
     milestone: M13
     title: Die Sicht liefert, was Anzeigen brauchen
-    status: todo
+    status: done
     deps: []
     requirements: [R-DIP-04, R-UI-09]
     files: [packages/core/src/view/publicView.ts]
@@ -951,7 +951,7 @@ tasks:
   - id: T-M13-06
     milestone: M13
     title: Der Balken als Bauteil, Moral als erster Fall
-    status: todo
+    status: done
     deps: [T-M13-05]
     requirements: [R-UI-09, R-UI-02]
     files: [apps/desktop/src/ui/Meter.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
@@ -961,7 +961,7 @@ tasks:
   - id: T-M13-07
     milestone: M13
     title: Fortschritt sichtbar - Bau, Aushebung, Marsch, Siegziel
-    status: todo
+    status: done
     deps: [T-M13-06]
     requirements: [R-UI-09, R-UI-13]
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/format.ts]
@@ -971,7 +971,7 @@ tasks:
   - id: T-M13-08
     milestone: M13
     title: Die Karte beschriftet sich und erklaert ihre Farben
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-12, R-MAP-05]
     files: [apps/desktop/src/map/labels.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/Legend.tsx]
@@ -981,7 +981,7 @@ tasks:
   - id: T-M13-09
     milestone: M13
     title: Hauptstadt, Kampf, Gattung und Marschweg auf der Karte
-    status: todo
+    status: done
     deps: [T-M13-05]
     requirements: [R-UI-12, R-MAP-05]
     files: [apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx]
@@ -991,7 +991,7 @@ tasks:
   - id: T-M13-10
     milestone: M13
     title: Kartenmodus Truppenstaerke statt eines Modus ohne Daten
-    status: todo
+    status: done
     deps: [T-M13-05]
     requirements: [R-MAP-06, R-MAP-07]
     files: [apps/desktop/src/map/modes.ts, apps/desktop/src/i18n/de.ts]
@@ -1001,7 +1001,7 @@ tasks:
   - id: T-M13-11
     milestone: M13
     title: Jedes Ding erklaert sich, wo es steht
-    status: todo
+    status: done
     deps: [T-M13-01]
     requirements: [R-UI-11]
     files: [apps/desktop/src/ui/Explain.tsx, apps/desktop/src/i18n/de.ts]
@@ -1011,7 +1011,7 @@ tasks:
   - id: T-M13-12
     milestone: M13
     title: Die Lage der Partie auf einen Blick
-    status: todo
+    status: done
     deps: [T-M13-05, T-M13-06]
     requirements: [R-UI-13, R-GAME-02]
     files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/keyboard.ts]
@@ -1021,7 +1021,7 @@ tasks:
   - id: T-M13-13
     milestone: M13
     title: Meldungen mit Sprungziel und ein filterbares Protokoll
-    status: todo
+    status: done
     deps: [T-M13-01, T-M13-05]
     requirements: [R-UI-14, R-GAME-06]
     files: [apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts]
@@ -1031,7 +1031,7 @@ tasks:
   - id: T-M13-14
     milestone: M13
     title: Die Kopfleiste zeigt Vorraete, nicht nur Zahlen
-    status: todo
+    status: done
     deps: [T-M13-01, T-M13-06]
     requirements: [R-UI-09, R-UI-10]
     files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/format.ts]
@@ -1041,7 +1041,7 @@ tasks:
   - id: T-M13-15
     milestone: M13
     title: Das Provinzpanel wird aufgeraeumt
-    status: todo
+    status: done
     deps: [T-M13-06, T-M13-11]
     requirements: [R-UI-09, R-UI-10, R-UI-11]
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
@@ -1051,7 +1051,7 @@ tasks:
   - id: T-M13-16
     milestone: M13
     title: Bewegung, sparsam
-    status: todo
+    status: done
     deps: [T-M13-09, T-M13-13]
     requirements: [R-UI-04]
     files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/app.css]
@@ -1061,7 +1061,7 @@ tasks:
   - id: T-M13-17
     milestone: M13
     title: Sichtpruefung im laufenden Spiel und Nachfuehrung der Dokumente
-    status: todo
+    status: done
     deps: [T-M13-04, T-M13-07, T-M13-08, T-M13-10, T-M13-12, T-M13-14, T-M13-15, T-M13-16]
     requirements: [R-UI-02, R-UI-03]
     files: [docs/ANLEITUNG.md, docs/PLAYTEST.md, docs/plan/PROGRESS.md, docs/reports/ui-expansion.md]

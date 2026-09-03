@@ -48,6 +48,14 @@ export interface MeterProps {
   text: string
   tone?: MeterTone
   trend?: Trend
+  /**
+   * Blendet die Beschriftung fuers Auge aus, nicht fuers Ohr.
+   *
+   * In einer Tabelle steht der Name schon in der ersten Spalte; ein Balken, der ihn
+   * wiederholt, sagt dasselbe zweimal — fuer ein Vorleseprogramm bleibt er trotzdem
+   * noetig, sonst ist der Balken ein namenloser Wert.
+   */
+  labelHidden?: boolean
 }
 
 const TREND_TEXT: Record<'up' | 'down', string> = {
@@ -60,7 +68,7 @@ const TREND_MARK: Record<'up' | 'down', string> = {
   down: '▼',
 }
 
-export function Meter({ label, value, max, text, tone = 'neutral', trend = null }: MeterProps) {
+export function Meter({ label, value, max, text, tone = 'neutral', trend = null, labelHidden = false }: MeterProps) {
   const fraction = fillFraction(value, max)
   const spoken = trend ? `${label}: ${text}, ${TREND_TEXT[trend]}` : `${label}: ${text}`
 
@@ -75,7 +83,7 @@ export function Meter({ label, value, max, text, tone = 'neutral', trend = null 
       aria-valuetext={spoken}
       title={spoken}
     >
-      <span className="meter__label">{label}</span>
+      <span className={labelHidden ? 'visually-hidden' : 'meter__label'}>{label}</span>
       <span className="meter__track">
         <span className={`meter__fill meter__fill--${tone}`} style={{ width: `${Math.round(fraction * 100)}%` }} />
       </span>
