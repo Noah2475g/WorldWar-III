@@ -1,0 +1,62 @@
+import { emit } from '../events/emit'
+import { planRoute } from '../phases/movement'
+import type { PhaseContext } from '../phases/index'
+import { edgeBetween, edgeTravelTicks } from '../rules/movement'
+import type { Army, GameState, ProvinceId } from '../state/types'
+import { registerCommand } from './registry'
+import { fail, ok, type MoveArmyCommand } from './types'
+
+/** Ticks to the first waypoint — the movement phase advances one leg at a time. */
+function firstLegTicks(state: GameState, army: Army, next: ProvinceId, ctx: PhaseContext): number {
+  const edge = edgeBetween(ctx.map.edges, ctx.map.edgesByProvince[army.locationProvinceId], army.locationProvinceId, next)
+  if (!edge) return 1
+  return edgeTravelTicks(state, army, edge, army.locationProvinceId, next, ctx.rules)
+}
+
+/**
+ * Ordering an army to march (R-UNIT-04, T-M4-02).
+ *
+ * The route is planned with the same cost function the movement phase uses, so the
+ * arrival time reported here is the arrival time that happens (R-UNIT-04/AK1).
+ */
+registerCommand<MoveArmyCommand>('MOVE_ARMY', {
+  check: (state: GameState, command, ctx) => {
+    const army = state.armies[command.armyId]
+    if (!army) return fail('ARMY_NOT_FOUND', { armyId: command.armyId })
+    if (army.owner !== command.playerId) return fail('NOT_OWNER', { armyId: command.armyId })
+    if (army.units.length === 0) return fail('INVALID_TARGET', { reason: 'leere Armee' })
+
+    const target = state.provinces[command.targetProvinceId]
+    if (!target) return fail('PROVINCE_NOT_FOUND', { provinceId: command.targetProvinceId })
+    if (target.id === army.locationProvinceId) {
+      return fail('INVALID_TARGET', { reason: 'bereits dort' })
+    }
+
+    if (!planRoute(state, army, command.targetProvinceId, ctx.map, ctx.rules)) {
+      return fail('NO_PATH', { from: army.locationProvinceId, to: command.targetProvinceId })
+    }
+    return ok
+  },
+
+  apply: (draft, command, ctx) => {
+    const army = draft.armies[command.armyId]!
+    const route = planRoute(draft, army, command.targetProvinceId, ctx.map, ctx.rules)!
+
+    army.path = route.path
+    army.departureTick = draft.tick
+    // `arrivalTick` tracks the *next leg*; the event reports the arrival at the
+    // destination, which is what the player asked about.
+    army.arrivalTick = draft.tick + firstLegTicks(draft, army, route.path[0]!, ctx)
+    // Leaving costs order: the army fights at reduced strength while it forms up.
+    army.deployDelayUntil = draft.tick + ctx.rules.constants.deployDelayTicks
+
+    emit(ctx.events, draft.tick, 'ARMY_DEPARTED', {
+      playerId: army.owner,
+      armyId: army.id,
+      fromProvinceId: army.locationProvinceId,
+      toProvinceId: command.targetProvinceId,
+      arrivalTick: route.arrivalTick,
+      audience: [army.owner],
+    })
+  },
+})

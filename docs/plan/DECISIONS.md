@@ -49,3 +49,20 @@ Untergrenze: 25 % — eine Einheit wird nie schon gebrochen geboren.
 **Auswirkung:** Der Spieler bezahlt für fünf und bekommt bei schlechter Moral weniger
 Kampfkraft. Das muss die Oberfläche erklären (T-M10-05: Tooltip nennt die zu erwartende
 Stärke, nicht nur die Stückzahl). Aufgenommen als Hinweis für den UI-Meilenstein.
+
+---
+
+## 2026-09-03 · T-M4-03 · Kein separater Zustandsfaktor im Kampf
+
+**Entscheidung:** Das Original skaliert den Schaden einer Einheit mit ihren
+verbleibenden Trefferpunkten (100 % → 100 % Schaden, 0 % → 50 %). Im
+Trefferpunkte-Pool-Modell entfällt diese Kurve ersatzlos.
+
+**Begründung:** Der Pool *ist* die Stärke. Eine angeschlagene Armee hat weniger
+Trefferpunkte, entspricht damit weniger Einheiten und richtet dadurch bereits weniger
+Schaden an. Die Kurve zusätzlich anzuwenden würde dieselben Verluste zweimal bestrafen —
+eine halb aufgeriebene Armee wäre dann viermal so schwach wie eine volle statt zweimal.
+
+**Auswirkung:** `healthDamageFloor` bleibt als Konstante im Regelwerk erhalten, wird
+aber nicht mehr gelesen. Die Wirkung ist im Test „laesst eine geschwaechte Armee weniger
+ausrichten" belegt.
