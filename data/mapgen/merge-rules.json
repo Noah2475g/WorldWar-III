@@ -1,0 +1,513 @@
+{
+  "note": "Zuschnitt der Weltkarte (T-M9-00). Von Hand entschieden, nicht abgeleitet: die Rohdaten haben keine Körnung, aus der ein Skript eine spielbare Karte machen könnte. Jede Verwaltungseinheit ist genau einer Provinz zugeordnet oder ausdrücklich ausgeschlossen - dafür gibt es einen Test.",
+  "targetProvinces": {
+    "min": 150,
+    "max": 250
+  },
+  "admin0": {
+    "note": "Staaten, die Natural Earth bei 1:50 Mio nicht untergliedert - je einer wird eine Provinz. Aufgenommen wird, wer eine der beiden Schwellen erreicht: genug Menschen für eine Wirtschaft, oder genug Fläche, um auf der Karte überhaupt sichtbar zu sein.",
+    "minPopulation": 1200000,
+    "minAreaKm2": 90000,
+    "alwaysInclude": {
+      "ISL": "Island - Nordatlantik, Brücke zwischen Europa und Nordamerika",
+      "SGP": "Singapur - die Straße von Malakka",
+      "CYP": "Zypern - östliches Mittelmeer",
+      "MLT": "Malta - Mittelmeerenge",
+      "BHR": "Bahrain - Persischer Golf",
+      "DJI": "Dschibuti - Bab al-Mandab",
+      "PAN": "Panama - der Kanal",
+      "GRL": "Grönland - Nordpolarroute",
+      "FLK": "Falklandinseln - Südatlantik",
+      "TLS": "Osttimor - Timorsee",
+      "FJI": "Fidschi - Stützpunkt im Südpazifik, sonst hätte Ozeanien kaum Halt"
+    },
+    "exclude": {
+      "ATA": "Antarktis - kein Spielgebiet",
+      "ATF": "Französische Süd- und Antarktisgebiete - unbewohnt",
+      "HMD": "Heard und McDonaldinseln - unbewohnt",
+      "SGS": "Südgeorgien - unbewohnt",
+      "IOT": "Britisches Territorium im Indischen Ozean - Militärbasis ohne Zivilbevölkerung",
+      "CYN": "Nordzypern - Teil der Provinz Zypern",
+      "KAS": "Siachen-Gletscher - umstrittenes Gebiet ohne eigene Provinz",
+      "SOL": "Somaliland - Teil der Provinz Somalia",
+      "PSX": "Palästina - Teil der Provinz Israel",
+      "SAH": "Westsahara - Teil der Provinz Marokko",
+      "VAT": "Vatikanstadt - zu klein für eine Provinz"
+    },
+    "excludeTypes": [
+      "Indeterminate"
+    ],
+    "excludeTypesNote": "Nur Typen, die in den Rohdaten wirklich vorkommen - ein Test verlangt das. Inseln im offenen Ozean werden nicht pauschal gestrichen: Mauritius ist ein Staat mit 1,27 Mio Einwohnern und gehoert auf die Karte, Heard und McDonald nicht."
+  },
+  "admin1": {
+    "note": "Die neun Länder, die Natural Earth untergliedert. 'region' nutzt das mitgelieferte Regionsfeld, 'explicit' eine Zuordnung von Hand - nötig, wo das Feld leer ist oder die Verwaltungsgliederung nicht der Geografie folgt.",
+    "countries": {
+      "USA": {
+        "strategy": "region",
+        "regions": {
+          "West": {
+            "id": "USA-WEST",
+            "name": "Westen der USA"
+          },
+          "Midwest": {
+            "id": "USA-MW",
+            "name": "Mittlerer Westen"
+          },
+          "South": {
+            "id": "USA-SOUTH",
+            "name": "Südstaaten"
+          },
+          "Northeast": {
+            "id": "USA-NE",
+            "name": "Nordosten der USA"
+          }
+        }
+      },
+      "CAN": {
+        "strategy": "region",
+        "regions": {
+          "Western Canada": {
+            "id": "CAN-WEST",
+            "name": "Westkanada"
+          },
+          "Eastern Canada": {
+            "id": "CAN-EAST",
+            "name": "Ostkanada"
+          },
+          "Northern Canada": {
+            "id": "CAN-NORTH",
+            "name": "Nordkanada"
+          }
+        }
+      },
+      "RUS": {
+        "strategy": "region",
+        "regions": {
+          "Central": {
+            "id": "RUS-CENTRAL",
+            "name": "Zentralrussland"
+          },
+          "Northwestern": {
+            "id": "RUS-NW",
+            "name": "Nordwestrussland"
+          },
+          "Volga": {
+            "id": "RUS-VOLGA",
+            "name": "Wolgaregion"
+          },
+          "Urals": {
+            "id": "RUS-URAL",
+            "name": "Ural"
+          },
+          "Siberian": {
+            "id": "RUS-SIB",
+            "name": "Sibirien"
+          },
+          "Far Eastern": {
+            "id": "RUS-FAREAST",
+            "name": "Russischer Ferner Osten"
+          }
+        }
+      },
+      "CHN": {
+        "strategy": "region",
+        "overrides": {
+          "CHN-1178": "East China"
+        },
+        "regions": {
+          "North China": {
+            "id": "CHN-NORTH",
+            "name": "Nordchina"
+          },
+          "Northeast China": {
+            "id": "CHN-NE",
+            "name": "Nordostchina"
+          },
+          "East China": {
+            "id": "CHN-EAST",
+            "name": "Ostchina"
+          },
+          "South Central China": {
+            "id": "CHN-SOUTH",
+            "name": "Südchina"
+          },
+          "Southwest China": {
+            "id": "CHN-SW",
+            "name": "Südwestchina"
+          },
+          "Northwest China": {
+            "id": "CHN-NW",
+            "name": "Nordwestchina"
+          }
+        }
+      },
+      "IND": {
+        "strategy": "region",
+        "overrides": {
+          "IND-20012": "North",
+          "IND-2474": "South"
+        },
+        "regions": {
+          "North": {
+            "id": "IND-NORTH",
+            "name": "Nordindien"
+          },
+          "Central": {
+            "id": "IND-CENTRAL",
+            "name": "Zentralindien"
+          },
+          "East": {
+            "id": "IND-EAST",
+            "name": "Ostindien"
+          },
+          "Northeast": {
+            "id": "IND-NE",
+            "name": "Nordostindien"
+          },
+          "West": {
+            "id": "IND-WEST",
+            "name": "Westindien"
+          },
+          "South": {
+            "id": "IND-SOUTH",
+            "name": "Südindien"
+          }
+        }
+      },
+      "AUS": {
+        "strategy": "explicit",
+        "groups": {
+          "AUS-EAST": {
+            "name": "Ostaustralien",
+            "units": [
+              "Queensland",
+              "New South Wales",
+              "Australian Capital Territory",
+              "Jervis Bay Territory"
+            ]
+          },
+          "AUS-SE": {
+            "name": "Südostaustralien",
+            "units": [
+              "Victoria",
+              "Tasmania"
+            ]
+          },
+          "AUS-SOUTH": {
+            "name": "Südaustralien",
+            "units": [
+              "South Australia"
+            ]
+          },
+          "AUS-WEST": {
+            "name": "Westaustralien",
+            "units": [
+              "Western Australia",
+              "Northern Territory"
+            ]
+          }
+        }
+      },
+      "ZAF": {
+        "strategy": "explicit",
+        "groups": {
+          "ZAF-CAPE": {
+            "name": "Kapregion",
+            "units": [
+              "Western Cape",
+              "Northern Cape",
+              "Eastern Cape"
+            ]
+          },
+          "ZAF-HIGHVELD": {
+            "name": "Hochveld",
+            "units": [
+              "Gauteng",
+              "North West",
+              "Free State"
+            ]
+          },
+          "ZAF-NE": {
+            "name": "Nordost-Südafrika",
+            "units": [
+              "Limpopo",
+              "Mpumalanga",
+              "KwaZulu-Natal"
+            ]
+          }
+        }
+      },
+      "BRA": {
+        "strategy": "explicit",
+        "note": "Die fünf amtlichen Großregionen Brasiliens.",
+        "groups": {
+          "BRA-NORTH": {
+            "name": "Nordbrasilien",
+            "units": [
+              "Acre",
+              "Rondônia",
+              "Roraima",
+              "Amazonas",
+              "Pará",
+              "Amapá",
+              "Tocantins"
+            ]
+          },
+          "BRA-NE": {
+            "name": "Nordostbrasilien",
+            "units": [
+              "Maranhão",
+              "Piauí",
+              "Ceará",
+              "Rio Grande do Norte",
+              "Paraíba",
+              "Pernambuco",
+              "Alagoas",
+              "Sergipe",
+              "Bahia"
+            ]
+          },
+          "BRA-CENTRAL": {
+            "name": "Zentralbrasilien",
+            "units": [
+              "Mato Grosso",
+              "Mato Grosso do Sul",
+              "Goiás",
+              "Distrito Federal"
+            ]
+          },
+          "BRA-SE": {
+            "name": "Südostbrasilien",
+            "units": [
+              "Minas Gerais",
+              "Espírito Santo",
+              "Rio de Janeiro",
+              "São Paulo"
+            ]
+          },
+          "BRA-SOUTH": {
+            "name": "Südbrasilien",
+            "units": [
+              "Paraná",
+              "Santa Catarina",
+              "Rio Grande do Sul"
+            ]
+          }
+        }
+      },
+      "IDN": {
+        "strategy": "explicit",
+        "note": "Nach Inselgruppen statt nach Verwaltung - auf einer Karte mit Seewegen ist die Insel die Einheit, die zählt.",
+        "groups": {
+          "IDN-SUM": {
+            "name": "Sumatra",
+            "units": [
+              "Aceh",
+              "Sumatera Utara",
+              "Sumatera Barat",
+              "Riau",
+              "Kepulauan Riau",
+              "Jambi",
+              "Bengkulu",
+              "Sumatera Selatan",
+              "Bangka-Belitung",
+              "Lampung"
+            ]
+          },
+          "IDN-JAVA": {
+            "name": "Java",
+            "units": [
+              "Banten",
+              "Jakarta Raya",
+              "Jawa Barat",
+              "Jawa Tengah",
+              "Yogyakarta",
+              "Jawa Timur"
+            ]
+          },
+          "IDN-KAL": {
+            "name": "Kalimantan",
+            "units": [
+              "Kalimantan Barat",
+              "Kalimantan Tengah",
+              "Kalimantan Selatan",
+              "Kalimantan Timur"
+            ]
+          },
+          "IDN-SUL": {
+            "name": "Sulawesi",
+            "units": [
+              "Sulawesi Utara",
+              "Gorontalo",
+              "Sulawesi Tengah",
+              "Sulawesi Barat",
+              "Sulawesi Selatan",
+              "Sulawesi Tenggara"
+            ]
+          },
+          "IDN-EAST": {
+            "name": "Ostindonesien",
+            "units": [
+              "Bali",
+              "Nusa Tenggara Barat",
+              "Nusa Tenggara Timur",
+              "Maluku",
+              "Maluku Utara",
+              "Papua",
+              "Papua Barat"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "startNations": {
+    "note": "Spielbare Mächte. Modernes Setting, also teils einzelne Staaten und teils Bündnisse - und genau deshalb hat jede mindestens drei Provinzen, obwohl Natural Earth bei 1:50 Mio nur neun Länder untergliedert. Wem welche Provinz zu Beginn gehört, entscheidet T-M9-03; hier steht nur, aus welchen Ländern eine Macht besteht.",
+    "nations": {
+      "USA": {
+        "name": "Vereinigte Staaten",
+        "countries": [
+          "USA"
+        ]
+      },
+      "RUS": {
+        "name": "Russland",
+        "countries": [
+          "RUS"
+        ]
+      },
+      "CHN": {
+        "name": "China",
+        "countries": [
+          "CHN"
+        ]
+      },
+      "IND": {
+        "name": "Indien",
+        "countries": [
+          "IND"
+        ]
+      },
+      "BRA": {
+        "name": "Brasilien",
+        "countries": [
+          "BRA"
+        ]
+      },
+      "CAN": {
+        "name": "Kanada",
+        "countries": [
+          "CAN"
+        ]
+      },
+      "ZAF": {
+        "name": "Südafrika",
+        "countries": [
+          "ZAF"
+        ]
+      },
+      "IDN": {
+        "name": "Indonesien",
+        "countries": [
+          "IDN"
+        ]
+      },
+      "AUS": {
+        "name": "Australien",
+        "countries": [
+          "AUS",
+          "NZL",
+          "PNG"
+        ]
+      },
+      "EUR": {
+        "name": "Europäische Union",
+        "countries": [
+          "DEU",
+          "FRA",
+          "ITA",
+          "POL",
+          "ESP",
+          "NLD",
+          "BEL",
+          "AUT",
+          "CZE",
+          "SWE"
+        ]
+      },
+      "GBR": {
+        "name": "Vereinigtes Königreich",
+        "countries": [
+          "GBR",
+          "IRL",
+          "ISL",
+          "NOR"
+        ]
+      },
+      "TUR": {
+        "name": "Türkei",
+        "countries": [
+          "TUR",
+          "AZE",
+          "GEO",
+          "SYR"
+        ]
+      },
+      "IRN": {
+        "name": "Iran",
+        "countries": [
+          "IRN",
+          "IRQ",
+          "AFG",
+          "TKM"
+        ]
+      },
+      "JPN": {
+        "name": "Japan",
+        "countries": [
+          "JPN",
+          "KOR",
+          "PHL",
+          "TWN"
+        ]
+      },
+      "NGA": {
+        "name": "Nigeria",
+        "countries": [
+          "NGA",
+          "NER",
+          "CMR",
+          "BEN",
+          "TCD"
+        ]
+      },
+      "ARG": {
+        "name": "Argentinien",
+        "countries": [
+          "ARG",
+          "CHL",
+          "URY",
+          "PRY"
+        ]
+      },
+      "EGY": {
+        "name": "Ägypten",
+        "countries": [
+          "EGY",
+          "SDN",
+          "LBY",
+          "SAU"
+        ]
+      },
+      "MEX": {
+        "name": "Mexiko",
+        "countries": [
+          "MEX",
+          "GTM",
+          "CUB",
+          "COL"
+        ]
+      }
+    }
+  }
+}

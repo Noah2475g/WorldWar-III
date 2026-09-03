@@ -1,0 +1,4536 @@
+{
+ "countries": [
+  {
+   "iso": "ZWE",
+   "name": "Zimbabwe",
+   "nameDe": "Simbabwe",
+   "population": 14645468,
+   "areaKm2": 390184,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ZMB",
+   "name": "Zambia",
+   "nameDe": "Sambia",
+   "population": 17861030,
+   "areaKm2": 755592,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "YEM",
+   "name": "Yemen",
+   "nameDe": "Jemen",
+   "population": 29161922,
+   "areaKm2": 454138,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "VNM",
+   "name": "Vietnam",
+   "nameDe": "Vietnam",
+   "population": 96462106,
+   "areaKm2": 328941,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "VEN",
+   "name": "Venezuela",
+   "nameDe": "Venezuela",
+   "population": 28515829,
+   "areaKm2": 914317,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "VAT",
+   "name": "Vatican",
+   "nameDe": "Vatikanstadt",
+   "population": 825,
+   "areaKm2": 1,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "VUT",
+   "name": "Vanuatu",
+   "nameDe": "Vanuatu",
+   "population": 299882,
+   "areaKm2": 11292,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "UZB",
+   "name": "Uzbekistan",
+   "nameDe": "Usbekistan",
+   "population": 33580650,
+   "areaKm2": 447371,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "URY",
+   "name": "Uruguay",
+   "nameDe": "Uruguay",
+   "population": 3461734,
+   "areaKm2": 177561,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "FSM",
+   "name": "Micronesia",
+   "nameDe": "Föderierte Staaten von Mikronesien",
+   "population": 113815,
+   "areaKm2": 524,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MHL",
+   "name": "Marshall Is.",
+   "nameDe": "Marshallinseln",
+   "population": 58791,
+   "areaKm2": 237,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MNP",
+   "name": "N. Mariana Is.",
+   "nameDe": "Nördliche Marianen",
+   "population": 57216,
+   "areaKm2": 394,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "VIR",
+   "name": "U.S. Virgin Is.",
+   "nameDe": "Amerikanische Jungferninseln",
+   "population": 106631,
+   "areaKm2": 316,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "GUM",
+   "name": "Guam",
+   "nameDe": "Guam",
+   "population": 167294,
+   "areaKm2": 482,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "ASM",
+   "name": "American Samoa",
+   "nameDe": "Amerikanisch-Samoa",
+   "population": 55312,
+   "areaKm2": 120,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "PRI",
+   "name": "Puerto Rico",
+   "nameDe": "Puerto Rico",
+   "population": 3193694,
+   "areaKm2": 8943,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "USA",
+   "name": "United States of America",
+   "nameDe": "Vereinigte Staaten",
+   "population": 328239523,
+   "areaKm2": 9439416,
+   "continent": "North America",
+   "type": "Country"
+  },
+  {
+   "iso": "SGS",
+   "name": "S. Geo. and the Is.",
+   "nameDe": "Südgeorgien und die Südlichen Sandwichinseln",
+   "population": 30,
+   "areaKm2": 3668,
+   "continent": "Seven seas (open ocean)",
+   "type": "Dependency"
+  },
+  {
+   "iso": "IOT",
+   "name": "Br. Indian Ocean Ter.",
+   "nameDe": "Britisches Territorium im Indischen Ozean",
+   "population": 3000,
+   "areaKm2": 132,
+   "continent": "Seven seas (open ocean)",
+   "type": "Disputed"
+  },
+  {
+   "iso": "SHN",
+   "name": "Saint Helena",
+   "nameDe": "St. Helena",
+   "population": 4534,
+   "areaKm2": 186,
+   "continent": "Seven seas (open ocean)",
+   "type": "Dependency"
+  },
+  {
+   "iso": "PCN",
+   "name": "Pitcairn Is.",
+   "nameDe": "Pitcairninseln",
+   "population": 54,
+   "areaKm2": 39,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "AIA",
+   "name": "Anguilla",
+   "nameDe": "Anguilla",
+   "population": 14731,
+   "areaKm2": 83,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "FLK",
+   "name": "Falkland Is.",
+   "nameDe": "Falklandinseln",
+   "population": 3398,
+   "areaKm2": 11386,
+   "continent": "South America",
+   "type": "Disputed"
+  },
+  {
+   "iso": "CYM",
+   "name": "Cayman Is.",
+   "nameDe": "Cayman Islands",
+   "population": 64948,
+   "areaKm2": 301,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "BMU",
+   "name": "Bermuda",
+   "nameDe": "Bermuda",
+   "population": 63918,
+   "areaKm2": 66,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "VGB",
+   "name": "British Virgin Is.",
+   "nameDe": "Britische Jungferninseln",
+   "population": 30030,
+   "areaKm2": 135,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "TCA",
+   "name": "Turks and Caicos Is.",
+   "nameDe": "Turks- und Caicosinseln",
+   "population": 38191,
+   "areaKm2": 330,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "MSR",
+   "name": "Montserrat",
+   "nameDe": "Montserrat",
+   "population": 4649,
+   "areaKm2": 80,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "JEY",
+   "name": "Jersey",
+   "nameDe": "Jersey",
+   "population": 107800,
+   "areaKm2": 126,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "GGY",
+   "name": "Guernsey",
+   "nameDe": "Guernsey",
+   "population": 62792,
+   "areaKm2": 48,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "IMN",
+   "name": "Isle of Man",
+   "nameDe": "Isle of Man",
+   "population": 84584,
+   "areaKm2": 557,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "GBR",
+   "name": "United Kingdom",
+   "nameDe": "Vereinigtes Königreich",
+   "population": 66834405,
+   "areaKm2": 239611,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "ARE",
+   "name": "United Arab Emirates",
+   "nameDe": "Vereinigte Arabische Emirate",
+   "population": 9770529,
+   "areaKm2": 71276,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "UKR",
+   "name": "Ukraine",
+   "nameDe": "Ukraine",
+   "population": 44385155,
+   "areaKm2": 570157,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "UGA",
+   "name": "Uganda",
+   "nameDe": "Uganda",
+   "population": 44269594,
+   "areaKm2": 242555,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TKM",
+   "name": "Turkmenistan",
+   "nameDe": "Turkmenistan",
+   "population": 5942089,
+   "areaKm2": 470628,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TUR",
+   "name": "Turkey",
+   "nameDe": "Türkei",
+   "population": 83429615,
+   "areaKm2": 779809,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TUN",
+   "name": "Tunisia",
+   "nameDe": "Tunesien",
+   "population": 11694719,
+   "areaKm2": 156658,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TTO",
+   "name": "Trinidad and Tobago",
+   "nameDe": "Trinidad und Tobago",
+   "population": 1394973,
+   "areaKm2": 5102,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TON",
+   "name": "Tonga",
+   "nameDe": "Tonga",
+   "population": 104494,
+   "areaKm2": 432,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TGO",
+   "name": "Togo",
+   "nameDe": "Togo",
+   "population": 8082366,
+   "areaKm2": 57139,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TLS",
+   "name": "Timor-Leste",
+   "nameDe": "Osttimor",
+   "population": 1293119,
+   "areaKm2": 15021,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "THA",
+   "name": "Thailand",
+   "nameDe": "Thailand",
+   "population": 69625582,
+   "areaKm2": 515729,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TZA",
+   "name": "Tanzania",
+   "nameDe": "Tansania",
+   "population": 58005463,
+   "areaKm2": 945786,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TJK",
+   "name": "Tajikistan",
+   "nameDe": "Tadschikistan",
+   "population": 9321018,
+   "areaKm2": 142294,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TWN",
+   "name": "Taiwan",
+   "nameDe": "Republik China",
+   "population": 23568378,
+   "areaKm2": 35992,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SYR",
+   "name": "Syria",
+   "nameDe": "Syrien",
+   "population": 17070135,
+   "areaKm2": 185974,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CHE",
+   "name": "Switzerland",
+   "nameDe": "Schweiz",
+   "population": 8574832,
+   "areaKm2": 41207,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SWE",
+   "name": "Sweden",
+   "nameDe": "Schweden",
+   "population": 10285453,
+   "areaKm2": 442977,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SWZ",
+   "name": "eSwatini",
+   "nameDe": "Eswatini",
+   "population": 1148130,
+   "areaKm2": 16992,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SUR",
+   "name": "Suriname",
+   "nameDe": "Suriname",
+   "population": 581363,
+   "areaKm2": 145574,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SDS",
+   "name": "S. Sudan",
+   "nameDe": "Südsudan",
+   "population": 11062113,
+   "areaKm2": 623965,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SDN",
+   "name": "Sudan",
+   "nameDe": "Sudan",
+   "population": 42813238,
+   "areaKm2": 1863052,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LKA",
+   "name": "Sri Lanka",
+   "nameDe": "Sri Lanka",
+   "population": 21803000,
+   "areaKm2": 66043,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ESP",
+   "name": "Spain",
+   "nameDe": "Spanien",
+   "population": 47076781,
+   "areaKm2": 506174,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KOR",
+   "name": "South Korea",
+   "nameDe": "Südkorea",
+   "population": 51709098,
+   "areaKm2": 97150,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ZAF",
+   "name": "South Africa",
+   "nameDe": "Südafrika",
+   "population": 58558270,
+   "areaKm2": 1221652,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SOM",
+   "name": "Somalia",
+   "nameDe": "Somalia",
+   "population": 10192317.3,
+   "areaKm2": 473607,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SOL",
+   "name": "Somaliland",
+   "nameDe": "Somaliland",
+   "population": 5096159,
+   "areaKm2": 168492,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SLB",
+   "name": "Solomon Is.",
+   "nameDe": "Salomonen",
+   "population": 669823,
+   "areaKm2": 25740,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SVK",
+   "name": "Slovakia",
+   "nameDe": "Slowakei",
+   "population": 5454073,
+   "areaKm2": 48340,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SVN",
+   "name": "Slovenia",
+   "nameDe": "Slowenien",
+   "population": 2087946,
+   "areaKm2": 20194,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SGP",
+   "name": "Singapore",
+   "nameDe": "Singapur",
+   "population": 5703569,
+   "areaKm2": 485,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SLE",
+   "name": "Sierra Leone",
+   "nameDe": "Sierra Leone",
+   "population": 7813215,
+   "areaKm2": 71876,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SYC",
+   "name": "Seychelles",
+   "nameDe": "Seychellen",
+   "population": 97625,
+   "areaKm2": 174,
+   "continent": "Seven seas (open ocean)",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SRB",
+   "name": "Serbia",
+   "nameDe": "Serbien",
+   "population": 6944975,
+   "areaKm2": 77490,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SEN",
+   "name": "Senegal",
+   "nameDe": "Senegal",
+   "population": 16296364,
+   "areaKm2": 197327,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SAU",
+   "name": "Saudi Arabia",
+   "nameDe": "Saudi-Arabien",
+   "population": 34268528,
+   "areaKm2": 1925841,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "STP",
+   "name": "São Tomé and Principe",
+   "nameDe": "São Tomé und Príncipe",
+   "population": 215056,
+   "areaKm2": 986,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SMR",
+   "name": "San Marino",
+   "nameDe": "San Marino",
+   "population": 33860,
+   "areaKm2": 68,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "WSM",
+   "name": "Samoa",
+   "nameDe": "Samoa",
+   "population": 197097,
+   "areaKm2": 2702,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "VCT",
+   "name": "St. Vin. and Gren.",
+   "nameDe": "St. Vincent und die Grenadinen",
+   "population": 110589,
+   "areaKm2": 311,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LCA",
+   "name": "Saint Lucia",
+   "nameDe": "St. Lucia",
+   "population": 182790,
+   "areaKm2": 551,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KNA",
+   "name": "St. Kitts and Nevis",
+   "nameDe": "St. Kitts und Nevis",
+   "population": 52834,
+   "areaKm2": 233,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "RWA",
+   "name": "Rwanda",
+   "nameDe": "Ruanda",
+   "population": 12626950,
+   "areaKm2": 25386,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "RUS",
+   "name": "Russia",
+   "nameDe": "Russland",
+   "population": 144373535,
+   "areaKm2": 16879675,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ROU",
+   "name": "Romania",
+   "nameDe": "Rumänien",
+   "population": 19356544,
+   "areaKm2": 235772,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "QAT",
+   "name": "Qatar",
+   "nameDe": "Katar",
+   "population": 2832067,
+   "areaKm2": 11074,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PRT",
+   "name": "Portugal",
+   "nameDe": "Portugal",
+   "population": 10269417,
+   "areaKm2": 90758,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "POL",
+   "name": "Poland",
+   "nameDe": "Polen",
+   "population": 37970874,
+   "areaKm2": 312544,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PHL",
+   "name": "Philippines",
+   "nameDe": "Philippinen",
+   "population": 108116615,
+   "areaKm2": 290305,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PER",
+   "name": "Peru",
+   "nameDe": "Peru",
+   "population": 32510453,
+   "areaKm2": 1296283,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PRY",
+   "name": "Paraguay",
+   "nameDe": "Paraguay",
+   "population": 7044636,
+   "areaKm2": 400905,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PNG",
+   "name": "Papua New Guinea",
+   "nameDe": "Papua-Neuguinea",
+   "population": 8776109,
+   "areaKm2": 464292,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PAN",
+   "name": "Panama",
+   "nameDe": "Panama",
+   "population": 4246439,
+   "areaKm2": 74245,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PLW",
+   "name": "Palau",
+   "nameDe": "Palau",
+   "population": 18008,
+   "areaKm2": 341,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PAK",
+   "name": "Pakistan",
+   "nameDe": "Pakistan",
+   "population": 216565318,
+   "areaKm2": 873773,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "OMN",
+   "name": "Oman",
+   "nameDe": "Oman",
+   "population": 4974986,
+   "areaKm2": 312072,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NOR",
+   "name": "Norway",
+   "nameDe": "Norwegen",
+   "population": 5347896,
+   "areaKm2": 384251,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "PRK",
+   "name": "North Korea",
+   "nameDe": "Nordkorea",
+   "population": 25666161,
+   "areaKm2": 122494,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NGA",
+   "name": "Nigeria",
+   "nameDe": "Nigeria",
+   "population": 200963599,
+   "areaKm2": 911553,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NER",
+   "name": "Niger",
+   "nameDe": "Niger",
+   "population": 23310715,
+   "areaKm2": 1185044,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NIC",
+   "name": "Nicaragua",
+   "nameDe": "Nicaragua",
+   "population": 6545502,
+   "areaKm2": 129244,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NZL",
+   "name": "New Zealand",
+   "nameDe": "Neuseeland",
+   "population": 4917000,
+   "areaKm2": 266855,
+   "continent": "Oceania",
+   "type": "Country"
+  },
+  {
+   "iso": "NIU",
+   "name": "Niue",
+   "nameDe": "Niue",
+   "population": 1620,
+   "areaKm2": 197,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "COK",
+   "name": "Cook Is.",
+   "nameDe": "Cookinseln",
+   "population": 17459,
+   "areaKm2": 61,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "NLD",
+   "name": "Netherlands",
+   "nameDe": "Niederlande",
+   "population": 17332850,
+   "areaKm2": 37132,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "ABW",
+   "name": "Aruba",
+   "nameDe": "Aruba",
+   "population": 106314,
+   "areaKm2": 155,
+   "continent": "North America",
+   "type": "Country"
+  },
+  {
+   "iso": "CUW",
+   "name": "Curaçao",
+   "nameDe": "Curaçao",
+   "population": 157538,
+   "areaKm2": 430,
+   "continent": "North America",
+   "type": "Country"
+  },
+  {
+   "iso": "NPL",
+   "name": "Nepal",
+   "nameDe": "Nepal",
+   "population": 28608710,
+   "areaKm2": 147194,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NRU",
+   "name": "Nauru",
+   "nameDe": "Nauru",
+   "population": 12581,
+   "areaKm2": 28,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "NAM",
+   "name": "Namibia",
+   "nameDe": "Namibia",
+   "population": 2494530,
+   "areaKm2": 824633,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MOZ",
+   "name": "Mozambique",
+   "nameDe": "Mosambik",
+   "population": 30366036,
+   "areaKm2": 790668,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MAR",
+   "name": "Morocco",
+   "nameDe": "Marokko",
+   "population": 36471769,
+   "areaKm2": 582388,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SAH",
+   "name": "W. Sahara",
+   "nameDe": "Westsahara",
+   "population": 603253,
+   "areaKm2": 90794,
+   "continent": "Africa",
+   "type": "Indeterminate"
+  },
+  {
+   "iso": "MNE",
+   "name": "Montenegro",
+   "nameDe": "Montenegro",
+   "population": 622137,
+   "areaKm2": 13667,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MNG",
+   "name": "Mongolia",
+   "nameDe": "Mongolei",
+   "population": 3225167,
+   "areaKm2": 1560411,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MDA",
+   "name": "Moldova",
+   "nameDe": "Republik Moldau",
+   "population": 2657637,
+   "areaKm2": 33117,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MCO",
+   "name": "Monaco",
+   "nameDe": "Monaco",
+   "population": 38964,
+   "areaKm2": 12,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MEX",
+   "name": "Mexico",
+   "nameDe": "Mexiko",
+   "population": 127575529,
+   "areaKm2": 1962277,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MUS",
+   "name": "Mauritius",
+   "nameDe": "Mauritius",
+   "population": 1265711,
+   "areaKm2": 1879,
+   "continent": "Seven seas (open ocean)",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MRT",
+   "name": "Mauritania",
+   "nameDe": "Mauretanien",
+   "population": 4525696,
+   "areaKm2": 1038343,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MLT",
+   "name": "Malta",
+   "nameDe": "Malta",
+   "population": 502653,
+   "areaKm2": 274,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MLI",
+   "name": "Mali",
+   "nameDe": "Mali",
+   "population": 19658031,
+   "areaKm2": 1258205,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MDV",
+   "name": "Maldives",
+   "nameDe": "Malediven",
+   "population": 530953,
+   "areaKm2": 66,
+   "continent": "Seven seas (open ocean)",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MYS",
+   "name": "Malaysia",
+   "nameDe": "Malaysia",
+   "population": 31949777,
+   "areaKm2": 327644,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MWI",
+   "name": "Malawi",
+   "nameDe": "Malawi",
+   "population": 18628747,
+   "areaKm2": 119795,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MDG",
+   "name": "Madagascar",
+   "nameDe": "Madagaskar",
+   "population": 26969307,
+   "areaKm2": 594597,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MKD",
+   "name": "North Macedonia",
+   "nameDe": "Nordmazedonien",
+   "population": 2083459,
+   "areaKm2": 25364,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LUX",
+   "name": "Luxembourg",
+   "nameDe": "Luxemburg",
+   "population": 619896,
+   "areaKm2": 2612,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LTU",
+   "name": "Lithuania",
+   "nameDe": "Litauen",
+   "population": 2786844,
+   "areaKm2": 64518,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LIE",
+   "name": "Liechtenstein",
+   "nameDe": "Liechtenstein",
+   "population": 38019,
+   "areaKm2": 138,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LBY",
+   "name": "Libya",
+   "nameDe": "Libyen",
+   "population": 6777452,
+   "areaKm2": 1626512,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LBR",
+   "name": "Liberia",
+   "nameDe": "Liberia",
+   "population": 4937374,
+   "areaKm2": 95667,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LSO",
+   "name": "Lesotho",
+   "nameDe": "Lesotho",
+   "population": 2125268,
+   "areaKm2": 30028,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LBN",
+   "name": "Lebanon",
+   "nameDe": "Libanon",
+   "population": 6855713,
+   "areaKm2": 10011,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LVA",
+   "name": "Latvia",
+   "nameDe": "Lettland",
+   "population": 1912789,
+   "areaKm2": 64260,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "LAO",
+   "name": "Laos",
+   "nameDe": "Laos",
+   "population": 7169455,
+   "areaKm2": 228945,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KGZ",
+   "name": "Kyrgyzstan",
+   "nameDe": "Kirgisistan",
+   "population": 6456900,
+   "areaKm2": 198650,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KWT",
+   "name": "Kuwait",
+   "nameDe": "Kuwait",
+   "population": 4207083,
+   "areaKm2": 17329,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KOS",
+   "name": "Kosovo",
+   "nameDe": "Kosovo",
+   "population": 1794248,
+   "areaKm2": 10912,
+   "continent": "Europe",
+   "type": "Disputed"
+  },
+  {
+   "iso": "KIR",
+   "name": "Kiribati",
+   "nameDe": "Kiribati",
+   "population": 117606,
+   "areaKm2": 938,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KEN",
+   "name": "Kenya",
+   "nameDe": "Kenia",
+   "population": 52573973,
+   "areaKm2": 594835,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KAZ",
+   "name": "Kazakhstan",
+   "nameDe": "Kasachstan",
+   "population": 18513930,
+   "areaKm2": 2712778,
+   "continent": "Asia",
+   "type": "Sovereignty"
+  },
+  {
+   "iso": "JOR",
+   "name": "Jordan",
+   "nameDe": "Jordanien",
+   "population": 10101694,
+   "areaKm2": 88859,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "JPN",
+   "name": "Japan",
+   "nameDe": "Japan",
+   "population": 126264931,
+   "areaKm2": 370099,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "JAM",
+   "name": "Jamaica",
+   "nameDe": "Jamaika",
+   "population": 2948279,
+   "areaKm2": 10932,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ITA",
+   "name": "Italy",
+   "nameDe": "Italien",
+   "population": 60297396,
+   "areaKm2": 300288,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ISR",
+   "name": "Israel",
+   "nameDe": "Israel",
+   "population": 9053300,
+   "areaKm2": 22050,
+   "continent": "Asia",
+   "type": "Disputed"
+  },
+  {
+   "iso": "PSX",
+   "name": "Palestine",
+   "nameDe": "Palästina",
+   "population": 4685306,
+   "areaKm2": 6333,
+   "continent": "Asia",
+   "type": "Indeterminate"
+  },
+  {
+   "iso": "IRL",
+   "name": "Ireland",
+   "nameDe": "Irland",
+   "population": 4941444,
+   "areaKm2": 68700,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "IRQ",
+   "name": "Iraq",
+   "nameDe": "Irak",
+   "population": 39309783,
+   "areaKm2": 437457,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "IRN",
+   "name": "Iran",
+   "nameDe": "Iran",
+   "population": 82913906,
+   "areaKm2": 1622819,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "IDN",
+   "name": "Indonesia",
+   "nameDe": "Indonesien",
+   "population": 270625568,
+   "areaKm2": 1872160,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "IND",
+   "name": "India",
+   "nameDe": "Indien",
+   "population": 1366417754,
+   "areaKm2": 3155830,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ISL",
+   "name": "Iceland",
+   "nameDe": "Island",
+   "population": 361313,
+   "areaKm2": 101161,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "HUN",
+   "name": "Hungary",
+   "nameDe": "Ungarn",
+   "population": 9769949,
+   "areaKm2": 92959,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "HND",
+   "name": "Honduras",
+   "nameDe": "Honduras",
+   "population": 9746117,
+   "areaKm2": 113514,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "HTI",
+   "name": "Haiti",
+   "nameDe": "Haiti",
+   "population": 11263077,
+   "areaKm2": 26805,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GUY",
+   "name": "Guyana",
+   "nameDe": "Guyana",
+   "population": 782766,
+   "areaKm2": 211947,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GNB",
+   "name": "Guinea-Bissau",
+   "nameDe": "Guinea-Bissau",
+   "population": 1920922,
+   "areaKm2": 32056,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GIN",
+   "name": "Guinea",
+   "nameDe": "Guinea",
+   "population": 12771246,
+   "areaKm2": 244926,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GTM",
+   "name": "Guatemala",
+   "nameDe": "Guatemala",
+   "population": 16604026,
+   "areaKm2": 108481,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GRD",
+   "name": "Grenada",
+   "nameDe": "Grenada",
+   "population": 112003,
+   "areaKm2": 286,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GRC",
+   "name": "Greece",
+   "nameDe": "Griechenland",
+   "population": 10716322,
+   "areaKm2": 130167,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GHA",
+   "name": "Ghana",
+   "nameDe": "Ghana",
+   "population": 30417856,
+   "areaKm2": 239566,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "DEU",
+   "name": "Germany",
+   "nameDe": "Deutschland",
+   "population": 83132799,
+   "areaKm2": 356163,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GEO",
+   "name": "Georgia",
+   "nameDe": "Georgien",
+   "population": 3720382,
+   "areaKm2": 69305,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GMB",
+   "name": "Gambia",
+   "nameDe": "Gambia",
+   "population": 2347706,
+   "areaKm2": 10314,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GAB",
+   "name": "Gabon",
+   "nameDe": "Gabun",
+   "population": 2172579,
+   "areaKm2": 260662,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "FRA",
+   "name": "France",
+   "nameDe": "Frankreich",
+   "population": 67059887,
+   "areaKm2": 635045,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "SPM",
+   "name": "St. Pierre and Miquelon",
+   "nameDe": "Saint-Pierre und Miquelon",
+   "population": 5997,
+   "areaKm2": 205,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "WLF",
+   "name": "Wallis and Futuna Is.",
+   "nameDe": "Wallis und Futuna",
+   "population": 11558,
+   "areaKm2": 132,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "MAF",
+   "name": "St-Martin",
+   "nameDe": "Saint-Martin",
+   "population": 38002,
+   "areaKm2": 49,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "BLM",
+   "name": "St-Barthélemy",
+   "nameDe": "Saint-Barthélemy",
+   "population": 9961,
+   "areaKm2": 25,
+   "continent": "North America",
+   "type": "Dependency"
+  },
+  {
+   "iso": "PYF",
+   "name": "Fr. Polynesia",
+   "nameDe": "Französisch-Polynesien",
+   "population": 279287,
+   "areaKm2": 2615,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "NCL",
+   "name": "New Caledonia",
+   "nameDe": "Neukaledonien",
+   "population": 287800,
+   "areaKm2": 18667,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "ATF",
+   "name": "Fr. S. Antarctic Lands",
+   "nameDe": "Französische Süd- und Antarktisgebiete",
+   "population": 140,
+   "areaKm2": 6972,
+   "continent": "Seven seas (open ocean)",
+   "type": "Dependency"
+  },
+  {
+   "iso": "ALD",
+   "name": "Åland",
+   "nameDe": "Åland",
+   "population": 29884,
+   "areaKm2": 760,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "FIN",
+   "name": "Finland",
+   "nameDe": "Finnland",
+   "population": 5520314,
+   "areaKm2": 330494,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "FJI",
+   "name": "Fiji",
+   "nameDe": "Fidschi",
+   "population": 889953,
+   "areaKm2": 18407,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ETH",
+   "name": "Ethiopia",
+   "nameDe": "Äthiopien",
+   "population": 112078730,
+   "areaKm2": 1131785,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "EST",
+   "name": "Estonia",
+   "nameDe": "Estland",
+   "population": 1326590,
+   "areaKm2": 45452,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ERI",
+   "name": "Eritrea",
+   "nameDe": "Eritrea",
+   "population": 6081196,
+   "areaKm2": 123679,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GNQ",
+   "name": "Eq. Guinea",
+   "nameDe": "Äquatorialguinea",
+   "population": 1355986,
+   "areaKm2": 26644,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "SLV",
+   "name": "El Salvador",
+   "nameDe": "El Salvador",
+   "population": 6453553,
+   "areaKm2": 20392,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "EGY",
+   "name": "Egypt",
+   "nameDe": "Ägypten",
+   "population": 100388073,
+   "areaKm2": 1003584,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ECU",
+   "name": "Ecuador",
+   "nameDe": "Ecuador",
+   "population": 17373662,
+   "areaKm2": 255667,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "DOM",
+   "name": "Dominican Rep.",
+   "nameDe": "Dominikanische Republik",
+   "population": 10738958,
+   "areaKm2": 48589,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "DMA",
+   "name": "Dominica",
+   "nameDe": "Dominica",
+   "population": 71808,
+   "areaKm2": 698,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "DJI",
+   "name": "Djibouti",
+   "nameDe": "Dschibuti",
+   "population": 973560,
+   "areaKm2": 21704,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "GRL",
+   "name": "Greenland",
+   "nameDe": "Grönland",
+   "population": 56225,
+   "areaKm2": 2154808,
+   "continent": "North America",
+   "type": "Country"
+  },
+  {
+   "iso": "FRO",
+   "name": "Faeroe Is.",
+   "nameDe": "Färöer",
+   "population": 48678,
+   "areaKm2": 1036,
+   "continent": "Europe",
+   "type": "Dependency"
+  },
+  {
+   "iso": "DNK",
+   "name": "Denmark",
+   "nameDe": "Dänemark",
+   "population": 5818553,
+   "areaKm2": 42417,
+   "continent": "Europe",
+   "type": "Country"
+  },
+  {
+   "iso": "CZE",
+   "name": "Czechia",
+   "nameDe": "Tschechien",
+   "population": 10669709,
+   "areaKm2": 78482,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CYN",
+   "name": "N. Cyprus",
+   "nameDe": "Türkische Republik Nordzypern",
+   "population": 326000,
+   "areaKm2": 3472,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CYP",
+   "name": "Cyprus",
+   "nameDe": "Republik Zypern",
+   "population": 1198575,
+   "areaKm2": 5708,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CUB",
+   "name": "Cuba",
+   "nameDe": "Kuba",
+   "population": 11333483,
+   "areaKm2": 109296,
+   "continent": "North America",
+   "type": "Sovereignty"
+  },
+  {
+   "iso": "HRV",
+   "name": "Croatia",
+   "nameDe": "Kroatien",
+   "population": 4067500,
+   "areaKm2": 54422,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CIV",
+   "name": "Côte d'Ivoire",
+   "nameDe": "Elfenbeinküste",
+   "population": 25716544,
+   "areaKm2": 322297,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CRI",
+   "name": "Costa Rica",
+   "nameDe": "Costa Rica",
+   "population": 5047561,
+   "areaKm2": 51513,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "COD",
+   "name": "Dem. Rep. Congo",
+   "nameDe": "Demokratische Republik Kongo",
+   "population": 86790567,
+   "areaKm2": 2334626,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "COG",
+   "name": "Congo",
+   "nameDe": "Republik Kongo",
+   "population": 5380508,
+   "areaKm2": 346876,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "COM",
+   "name": "Comoros",
+   "nameDe": "Komoren",
+   "population": 850886,
+   "areaKm2": 1586,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "COL",
+   "name": "Colombia",
+   "nameDe": "Kolumbien",
+   "population": 50339443,
+   "areaKm2": 1139431,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CHN",
+   "name": "China",
+   "nameDe": "Volksrepublik China",
+   "population": 1397715000,
+   "areaKm2": 9371215,
+   "continent": "Asia",
+   "type": "Country"
+  },
+  {
+   "iso": "MAC",
+   "name": "Macao",
+   "nameDe": "Macau",
+   "population": 640445,
+   "areaKm2": 23,
+   "continent": "Asia",
+   "type": "Country"
+  },
+  {
+   "iso": "HKG",
+   "name": "Hong Kong",
+   "nameDe": "Hongkong",
+   "population": 7507400,
+   "areaKm2": 1029,
+   "continent": "Asia",
+   "type": "Country"
+  },
+  {
+   "iso": "CHL",
+   "name": "Chile",
+   "nameDe": "Chile",
+   "population": 18952038,
+   "areaKm2": 737448,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "TCD",
+   "name": "Chad",
+   "nameDe": "Tschad",
+   "population": 15946876,
+   "areaKm2": 1270988,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CAF",
+   "name": "Central African Rep.",
+   "nameDe": "Zentralafrikanische Republik",
+   "population": 4745185,
+   "areaKm2": 620984,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CPV",
+   "name": "Cabo Verde",
+   "nameDe": "Kap Verde",
+   "population": 549935,
+   "areaKm2": 3585,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CAN",
+   "name": "Canada",
+   "nameDe": "Kanada",
+   "population": 37589262,
+   "areaKm2": 9872085,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "CMR",
+   "name": "Cameroon",
+   "nameDe": "Kamerun",
+   "population": 25876380,
+   "areaKm2": 465882,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KHM",
+   "name": "Cambodia",
+   "nameDe": "Kambodscha",
+   "population": 16486542,
+   "areaKm2": 181363,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "MMR",
+   "name": "Myanmar",
+   "nameDe": "Myanmar",
+   "population": 54045420,
+   "areaKm2": 662766,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BDI",
+   "name": "Burundi",
+   "nameDe": "Burundi",
+   "population": 11530580,
+   "areaKm2": 27207,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BFA",
+   "name": "Burkina Faso",
+   "nameDe": "Burkina Faso",
+   "population": 20321378,
+   "areaKm2": 273684,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BGR",
+   "name": "Bulgaria",
+   "nameDe": "Bulgarien",
+   "population": 6975761,
+   "areaKm2": 112419,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BRN",
+   "name": "Brunei",
+   "nameDe": "Brunei",
+   "population": 433285,
+   "areaKm2": 5672,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BRA",
+   "name": "Brazil",
+   "nameDe": "Brasilien",
+   "population": 211049527,
+   "areaKm2": 8499361,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BWA",
+   "name": "Botswana",
+   "nameDe": "Botswana",
+   "population": 2303697,
+   "areaKm2": 580623,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BIH",
+   "name": "Bosnia and Herz.",
+   "nameDe": "Bosnien und Herzegowina",
+   "population": 3301000,
+   "areaKm2": 51685,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BOL",
+   "name": "Bolivia",
+   "nameDe": "Bolivien",
+   "population": 11513100,
+   "areaKm2": 1090269,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BTN",
+   "name": "Bhutan",
+   "nameDe": "Bhutan",
+   "population": 763092,
+   "areaKm2": 39877,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BEN",
+   "name": "Benin",
+   "nameDe": "Benin",
+   "population": 11801151,
+   "areaKm2": 116582,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BLZ",
+   "name": "Belize",
+   "nameDe": "Belize",
+   "population": 390353,
+   "areaKm2": 22781,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BEL",
+   "name": "Belgium",
+   "nameDe": "Belgien",
+   "population": 11484055,
+   "areaKm2": 30631,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BLR",
+   "name": "Belarus",
+   "nameDe": "Belarus",
+   "population": 9466856,
+   "areaKm2": 206693,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BRB",
+   "name": "Barbados",
+   "nameDe": "Barbados",
+   "population": 287025,
+   "areaKm2": 389,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BGD",
+   "name": "Bangladesh",
+   "nameDe": "Bangladesch",
+   "population": 163046161,
+   "areaKm2": 135650,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BHR",
+   "name": "Bahrain",
+   "nameDe": "Bahrain",
+   "population": 1641172,
+   "areaKm2": 542,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "BHS",
+   "name": "Bahamas",
+   "nameDe": "Bahamas",
+   "population": 389482,
+   "areaKm2": 12668,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AZE",
+   "name": "Azerbaijan",
+   "nameDe": "Aserbaidschan",
+   "population": 10023318,
+   "areaKm2": 86404,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AUT",
+   "name": "Austria",
+   "nameDe": "Österreich",
+   "population": 8877067,
+   "areaKm2": 83911,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AUS",
+   "name": "Australia",
+   "nameDe": "Australien",
+   "population": 25364307,
+   "areaKm2": 7705990,
+   "continent": "Oceania",
+   "type": "Country"
+  },
+  {
+   "iso": "IOA",
+   "name": "Indian Ocean Ter.",
+   "nameDe": "Australische Territorien im Indischen Ozean",
+   "population": 2387,
+   "areaKm2": 144,
+   "continent": "Asia",
+   "type": "Dependency"
+  },
+  {
+   "iso": "HMD",
+   "name": "Heard I. and McDonald Is.",
+   "nameDe": "Heard und McDonaldinseln",
+   "population": 0,
+   "areaKm2": 419,
+   "continent": "Seven seas (open ocean)",
+   "type": "Dependency"
+  },
+  {
+   "iso": "NFK",
+   "name": "Norfolk Island",
+   "nameDe": "Norfolkinsel",
+   "population": 2169,
+   "areaKm2": 41,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "ATC",
+   "name": "Ashmore and Cartier Is.",
+   "nameDe": "Ashmore- und Cartierinseln",
+   "population": 0,
+   "areaKm2": 3,
+   "continent": "Oceania",
+   "type": "Dependency"
+  },
+  {
+   "iso": "ARM",
+   "name": "Armenia",
+   "nameDe": "Armenien",
+   "population": 2957731,
+   "areaKm2": 29558,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ARG",
+   "name": "Argentina",
+   "nameDe": "Argentinien",
+   "population": 44938712,
+   "areaKm2": 2782678,
+   "continent": "South America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ATG",
+   "name": "Antigua and Barb.",
+   "nameDe": "Antigua und Barbuda",
+   "population": 97118,
+   "areaKm2": 433,
+   "continent": "North America",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AGO",
+   "name": "Angola",
+   "nameDe": "Angola",
+   "population": 31825295,
+   "areaKm2": 1249457,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AND",
+   "name": "Andorra",
+   "nameDe": "Andorra",
+   "population": 77142,
+   "areaKm2": 442,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "DZA",
+   "name": "Algeria",
+   "nameDe": "Algerien",
+   "population": 43053054,
+   "areaKm2": 2322755,
+   "continent": "Africa",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "ALB",
+   "name": "Albania",
+   "nameDe": "Albanien",
+   "population": 2854191,
+   "areaKm2": 28336,
+   "continent": "Europe",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "AFG",
+   "name": "Afghanistan",
+   "nameDe": "Afghanistan",
+   "population": 38041754,
+   "areaKm2": 642054,
+   "continent": "Asia",
+   "type": "Sovereign country"
+  },
+  {
+   "iso": "KAS",
+   "name": "Siachen Glacier",
+   "nameDe": "Siachen-Gletscher",
+   "population": 6000,
+   "areaKm2": 2118,
+   "continent": "Asia",
+   "type": "Indeterminate"
+  },
+  {
+   "iso": "ATA",
+   "name": "Antarctica",
+   "nameDe": "Antarktika",
+   "population": 4490,
+   "areaKm2": 12256671,
+   "continent": "Antarctica",
+   "type": "Indeterminate"
+  },
+  {
+   "iso": "SXM",
+   "name": "Sint Maarten",
+   "nameDe": "Sint Maarten",
+   "population": 40733,
+   "areaKm2": 42,
+   "continent": "North America",
+   "type": "Country"
+  },
+  {
+   "iso": "TUV",
+   "name": "Tuvalu",
+   "nameDe": "Tuvalu",
+   "population": 11646,
+   "areaKm2": 10,
+   "continent": "Oceania",
+   "type": "Sovereign country"
+  }
+ ],
+ "units": [
+  {
+   "code": "AUS-2651",
+   "countryIso": "AUS",
+   "name": "Western Australia",
+   "nameDe": "Western Australia",
+   "region": "",
+   "areaKm2": 2533674
+  },
+  {
+   "code": "AUS-2650",
+   "countryIso": "AUS",
+   "name": "Northern Territory",
+   "nameDe": "Northern Territory",
+   "region": "",
+   "areaKm2": 1351825
+  },
+  {
+   "code": "AUS-2655",
+   "countryIso": "AUS",
+   "name": "South Australia",
+   "nameDe": "South Australia",
+   "region": "",
+   "areaKm2": 986429
+  },
+  {
+   "code": "AUS-2657",
+   "countryIso": "AUS",
+   "name": "Queensland",
+   "nameDe": "Queensland",
+   "region": "",
+   "areaKm2": 1733748
+  },
+  {
+   "code": "AUS-2660",
+   "countryIso": "AUS",
+   "name": "Tasmania",
+   "nameDe": "Tasmanien",
+   "region": "",
+   "areaKm2": 67593
+  },
+  {
+   "code": "AUS-2656",
+   "countryIso": "AUS",
+   "name": "Victoria",
+   "nameDe": "Victoria",
+   "region": "",
+   "areaKm2": 227903
+  },
+  {
+   "code": "AUS-2653",
+   "countryIso": "AUS",
+   "name": "Australian Capital Territory",
+   "nameDe": "Australian Capital Territory",
+   "region": "",
+   "areaKm2": 2309
+  },
+  {
+   "code": "AUS-1932",
+   "countryIso": "AUS",
+   "name": "Jervis Bay Territory",
+   "nameDe": "Jervis Bay Territory",
+   "region": "",
+   "areaKm2": 38
+  },
+  {
+   "code": "AUS-2654",
+   "countryIso": "AUS",
+   "name": "New South Wales",
+   "nameDe": "New South Wales",
+   "region": "",
+   "areaKm2": 802367
+  },
+  {
+   "code": "BRA-576",
+   "countryIso": "BRA",
+   "name": "Acre",
+   "nameDe": "Acre",
+   "region": "",
+   "areaKm2": 154808
+  },
+  {
+   "code": "BRA-595",
+   "countryIso": "BRA",
+   "name": "Rondônia",
+   "nameDe": "Rondônia",
+   "region": "",
+   "areaKm2": 239100
+  },
+  {
+   "code": "BRA-670",
+   "countryIso": "BRA",
+   "name": "Roraima",
+   "nameDe": "Roraima",
+   "region": "",
+   "areaKm2": 226044
+  },
+  {
+   "code": "BRA-592",
+   "countryIso": "BRA",
+   "name": "Amazonas",
+   "nameDe": "Amazonas",
+   "region": "",
+   "areaKm2": 1572208
+  },
+  {
+   "code": "BRA-594",
+   "countryIso": "BRA",
+   "name": "Pará",
+   "nameDe": "Pará",
+   "region": "",
+   "areaKm2": 1232696
+  },
+  {
+   "code": "BRA-600",
+   "countryIso": "BRA",
+   "name": "Mato Grosso do Sul",
+   "nameDe": "Mato Grosso do Sul",
+   "region": "",
+   "areaKm2": 356892
+  },
+  {
+   "code": "BRA-681",
+   "countryIso": "BRA",
+   "name": "Amapá",
+   "nameDe": "Amapá",
+   "region": "",
+   "areaKm2": 139113
+  },
+  {
+   "code": "BRA-602",
+   "countryIso": "BRA",
+   "name": "Mato Grosso",
+   "nameDe": "Mato Grosso",
+   "region": "",
+   "areaKm2": 906687
+  },
+  {
+   "code": "BRA-613",
+   "countryIso": "BRA",
+   "name": "Paraná",
+   "nameDe": "Paraná",
+   "region": "",
+   "areaKm2": 198825
+  },
+  {
+   "code": "BRA-599",
+   "countryIso": "BRA",
+   "name": "Distrito Federal",
+   "nameDe": "Bundesdistrikt",
+   "region": "",
+   "areaKm2": 5822
+  },
+  {
+   "code": "BRA-1294",
+   "countryIso": "BRA",
+   "name": "Goiás",
+   "nameDe": "Goiás",
+   "region": "",
+   "areaKm2": 342211
+  },
+  {
+   "code": "BRA-596",
+   "countryIso": "BRA",
+   "name": "Tocantins",
+   "nameDe": "Tocantins",
+   "region": "",
+   "areaKm2": 279775
+  },
+  {
+   "code": "BRA-1311",
+   "countryIso": "BRA",
+   "name": "São Paulo",
+   "nameDe": "São Paulo",
+   "region": "",
+   "areaKm2": 249325
+  },
+  {
+   "code": "BRA-593",
+   "countryIso": "BRA",
+   "name": "Maranhão",
+   "nameDe": "Maranhão",
+   "region": "",
+   "areaKm2": 326004
+  },
+  {
+   "code": "BRA-627",
+   "countryIso": "BRA",
+   "name": "Rio de Janeiro",
+   "nameDe": "Rio de Janeiro",
+   "region": "",
+   "areaKm2": 44088
+  },
+  {
+   "code": "BRA-622",
+   "countryIso": "BRA",
+   "name": "Piauí",
+   "nameDe": "Piauí",
+   "region": "",
+   "areaKm2": 253089
+  },
+  {
+   "code": "BRA-601",
+   "countryIso": "BRA",
+   "name": "Minas Gerais",
+   "nameDe": "Minas Gerais",
+   "region": "",
+   "areaKm2": 588625
+  },
+  {
+   "code": "BRA-625",
+   "countryIso": "BRA",
+   "name": "Espírito Santo",
+   "nameDe": "Espírito Santo",
+   "region": "",
+   "areaKm2": 45872
+  },
+  {
+   "code": "BRA-624",
+   "countryIso": "BRA",
+   "name": "Bahia",
+   "nameDe": "Bahia",
+   "region": "",
+   "areaKm2": 561870
+  },
+  {
+   "code": "BRA-621",
+   "countryIso": "BRA",
+   "name": "Ceará",
+   "nameDe": "Ceará",
+   "region": "",
+   "areaKm2": 150977
+  },
+  {
+   "code": "BRA-629",
+   "countryIso": "BRA",
+   "name": "Sergipe",
+   "nameDe": "Sergipe",
+   "region": "",
+   "areaKm2": 21633
+  },
+  {
+   "code": "BRA-623",
+   "countryIso": "BRA",
+   "name": "Alagoas",
+   "nameDe": "Alagoas",
+   "region": "",
+   "areaKm2": 27768
+  },
+  {
+   "code": "BRA-628",
+   "countryIso": "BRA",
+   "name": "Rio Grande do Norte",
+   "nameDe": "Rio Grande do Norte",
+   "region": "",
+   "areaKm2": 52943
+  },
+  {
+   "code": "BRA-1313",
+   "countryIso": "BRA",
+   "name": "Pernambuco",
+   "nameDe": "Pernambuco",
+   "region": "",
+   "areaKm2": 98028
+  },
+  {
+   "code": "BRA-626",
+   "countryIso": "BRA",
+   "name": "Paraíba",
+   "nameDe": "Paraíba",
+   "region": "",
+   "areaKm2": 56729
+  },
+  {
+   "code": "BRA-614",
+   "countryIso": "BRA",
+   "name": "Santa Catarina",
+   "nameDe": "Santa Catarina",
+   "region": "",
+   "areaKm2": 95107
+  },
+  {
+   "code": "BRA-612",
+   "countryIso": "BRA",
+   "name": "Rio Grande do Sul",
+   "nameDe": "Rio Grande do Sul",
+   "region": "",
+   "areaKm2": 273125
+  },
+  {
+   "code": "CAN-632",
+   "countryIso": "CAN",
+   "name": "Alberta",
+   "nameDe": "Alberta",
+   "region": "Western Canada",
+   "areaKm2": 660799
+  },
+  {
+   "code": "CAN-633",
+   "countryIso": "CAN",
+   "name": "British Columbia",
+   "nameDe": "British Columbia",
+   "region": "Western Canada",
+   "areaKm2": 938534
+  },
+  {
+   "code": "CAN-630",
+   "countryIso": "CAN",
+   "name": "Manitoba",
+   "nameDe": "Manitoba",
+   "region": "Western Canada",
+   "areaKm2": 649486
+  },
+  {
+   "code": "CAN-684",
+   "countryIso": "CAN",
+   "name": "New Brunswick",
+   "nameDe": "New Brunswick",
+   "region": "Eastern Canada",
+   "areaKm2": 72427
+  },
+  {
+   "code": "CAN-686",
+   "countryIso": "CAN",
+   "name": "Newfoundland and Labrador",
+   "nameDe": "Neufundland und Labrador",
+   "region": "Eastern Canada",
+   "areaKm2": 394528
+  },
+  {
+   "code": "CAN-685",
+   "countryIso": "CAN",
+   "name": "Nova Scotia",
+   "nameDe": "Nova Scotia",
+   "region": "Eastern Canada",
+   "areaKm2": 54128
+  },
+  {
+   "code": "CAN-635",
+   "countryIso": "CAN",
+   "name": "Northwest Territories",
+   "nameDe": "Nordwest-Territorien",
+   "region": "Northern Canada",
+   "areaKm2": 1337195
+  },
+  {
+   "code": "CAN-634",
+   "countryIso": "CAN",
+   "name": "Nunavut",
+   "nameDe": "Nunavut",
+   "region": "Northern Canada",
+   "areaKm2": 2053239
+  },
+  {
+   "code": "CAN-682",
+   "countryIso": "CAN",
+   "name": "Ontario",
+   "nameDe": "Ontario",
+   "region": "Eastern Canada",
+   "areaKm2": 1074059
+  },
+  {
+   "code": "CAN-687",
+   "countryIso": "CAN",
+   "name": "Prince Edward Island",
+   "nameDe": "Prince Edward Island",
+   "region": "Eastern Canada",
+   "areaKm2": 5681
+  },
+  {
+   "code": "CAN-683",
+   "countryIso": "CAN",
+   "name": "Québec",
+   "nameDe": "Québec",
+   "region": "Eastern Canada",
+   "areaKm2": 1502741
+  },
+  {
+   "code": "CAN-631",
+   "countryIso": "CAN",
+   "name": "Saskatchewan",
+   "nameDe": "Saskatchewan",
+   "region": "Western Canada",
+   "areaKm2": 648048
+  },
+  {
+   "code": "CAN-636",
+   "countryIso": "CAN",
+   "name": "Yukon",
+   "nameDe": "Yukon",
+   "region": "Northern Canada",
+   "areaKm2": 481371
+  },
+  {
+   "code": "USA-3563",
+   "countryIso": "USA",
+   "name": "Alaska",
+   "nameDe": "Alaska",
+   "region": "West",
+   "areaKm2": 1487846
+  },
+  {
+   "code": "USA-3541",
+   "countryIso": "USA",
+   "name": "Alabama",
+   "nameDe": "Alabama",
+   "region": "South",
+   "areaKm2": 134140
+  },
+  {
+   "code": "USA-3528",
+   "countryIso": "USA",
+   "name": "Arkansas",
+   "nameDe": "Arkansas",
+   "region": "South",
+   "areaKm2": 137527
+  },
+  {
+   "code": "USA-3520",
+   "countryIso": "USA",
+   "name": "Arizona",
+   "nameDe": "Arizona",
+   "region": "West",
+   "areaKm2": 295217
+  },
+  {
+   "code": "USA-3521",
+   "countryIso": "USA",
+   "name": "California",
+   "nameDe": "Kalifornien",
+   "region": "West",
+   "areaKm2": 409375
+  },
+  {
+   "code": "USA-3522",
+   "countryIso": "USA",
+   "name": "Colorado",
+   "nameDe": "Colorado",
+   "region": "West",
+   "areaKm2": 270006
+  },
+  {
+   "code": "USA-3537",
+   "countryIso": "USA",
+   "name": "Connecticut",
+   "nameDe": "Connecticut",
+   "region": "Northeast",
+   "areaKm2": 12635
+  },
+  {
+   "code": "USA-3556",
+   "countryIso": "USA",
+   "name": "District of Columbia",
+   "nameDe": "Washington",
+   "region": "South",
+   "areaKm2": 143
+  },
+  {
+   "code": "USA-3555",
+   "countryIso": "USA",
+   "name": "Delaware",
+   "nameDe": "Delaware",
+   "region": "South",
+   "areaKm2": 5290
+  },
+  {
+   "code": "USA-3542",
+   "countryIso": "USA",
+   "name": "Florida",
+   "nameDe": "Florida",
+   "region": "South",
+   "areaKm2": 147425
+  },
+  {
+   "code": "USA-3543",
+   "countryIso": "USA",
+   "name": "Georgia",
+   "nameDe": "Georgia",
+   "region": "South",
+   "areaKm2": 152525
+  },
+  {
+   "code": "USA-3517",
+   "countryIso": "USA",
+   "name": "Hawaii",
+   "nameDe": "Hawaii",
+   "region": "West",
+   "areaKm2": 16292
+  },
+  {
+   "code": "USA-3529",
+   "countryIso": "USA",
+   "name": "Iowa",
+   "nameDe": "Iowa",
+   "region": "Midwest",
+   "areaKm2": 144325
+  },
+  {
+   "code": "USA-3518",
+   "countryIso": "USA",
+   "name": "Idaho",
+   "nameDe": "Idaho",
+   "region": "West",
+   "areaKm2": 215548
+  },
+  {
+   "code": "USA-3546",
+   "countryIso": "USA",
+   "name": "Illinois",
+   "nameDe": "Illinois",
+   "region": "Midwest",
+   "areaKm2": 149970
+  },
+  {
+   "code": "USA-3547",
+   "countryIso": "USA",
+   "name": "Indiana",
+   "nameDe": "Indiana",
+   "region": "Midwest",
+   "areaKm2": 94343
+  },
+  {
+   "code": "USA-3530",
+   "countryIso": "USA",
+   "name": "Kansas",
+   "nameDe": "Kansas",
+   "region": "Midwest",
+   "areaKm2": 211813
+  },
+  {
+   "code": "USA-3548",
+   "countryIso": "USA",
+   "name": "Kentucky",
+   "nameDe": "Kentucky",
+   "region": "South",
+   "areaKm2": 104052
+  },
+  {
+   "code": "USA-3535",
+   "countryIso": "USA",
+   "name": "Louisiana",
+   "nameDe": "Louisiana",
+   "region": "South",
+   "areaKm2": 119706
+  },
+  {
+   "code": "USA-3513",
+   "countryIso": "USA",
+   "name": "Massachusetts",
+   "nameDe": "Massachusetts",
+   "region": "Northeast",
+   "areaKm2": 21204
+  },
+  {
+   "code": "USA-3557",
+   "countryIso": "USA",
+   "name": "Maryland",
+   "nameDe": "Maryland",
+   "region": "South",
+   "areaKm2": 25106
+  },
+  {
+   "code": "USA-3561",
+   "countryIso": "USA",
+   "name": "Maine",
+   "nameDe": "Maine",
+   "region": "Northeast",
+   "areaKm2": 83241
+  },
+  {
+   "code": "USA-3562",
+   "countryIso": "USA",
+   "name": "Michigan",
+   "nameDe": "Michigan",
+   "region": "Midwest",
+   "areaKm2": 249386
+  },
+  {
+   "code": "USA-3514",
+   "countryIso": "USA",
+   "name": "Minnesota",
+   "nameDe": "Minnesota",
+   "region": "Midwest",
+   "areaKm2": 224186
+  },
+  {
+   "code": "USA-3531",
+   "countryIso": "USA",
+   "name": "Missouri",
+   "nameDe": "Missouri",
+   "region": "Midwest",
+   "areaKm2": 181394
+  },
+  {
+   "code": "USA-3544",
+   "countryIso": "USA",
+   "name": "Mississippi",
+   "nameDe": "Mississippi",
+   "region": "South",
+   "areaKm2": 123869
+  },
+  {
+   "code": "USA-3515",
+   "countryIso": "USA",
+   "name": "Montana",
+   "nameDe": "Montana",
+   "region": "West",
+   "areaKm2": 379374
+  },
+  {
+   "code": "USA-3549",
+   "countryIso": "USA",
+   "name": "North Carolina",
+   "nameDe": "North Carolina",
+   "region": "South",
+   "areaKm2": 128577
+  },
+  {
+   "code": "USA-3516",
+   "countryIso": "USA",
+   "name": "North Dakota",
+   "nameDe": "North Dakota",
+   "region": "Midwest",
+   "areaKm2": 181565
+  },
+  {
+   "code": "USA-3532",
+   "countryIso": "USA",
+   "name": "Nebraska",
+   "nameDe": "Nebraska",
+   "region": "Midwest",
+   "areaKm2": 200071
+  },
+  {
+   "code": "USA-3538",
+   "countryIso": "USA",
+   "name": "New Hampshire",
+   "nameDe": "New Hampshire",
+   "region": "Northeast",
+   "areaKm2": 24151
+  },
+  {
+   "code": "USA-3558",
+   "countryIso": "USA",
+   "name": "New Jersey",
+   "nameDe": "New Jersey",
+   "region": "Northeast",
+   "areaKm2": 19594
+  },
+  {
+   "code": "USA-3524",
+   "countryIso": "USA",
+   "name": "New Mexico",
+   "nameDe": "New Mexico",
+   "region": "West",
+   "areaKm2": 315197
+  },
+  {
+   "code": "USA-3523",
+   "countryIso": "USA",
+   "name": "Nevada",
+   "nameDe": "Nevada",
+   "region": "West",
+   "areaKm2": 286772
+  },
+  {
+   "code": "USA-3559",
+   "countryIso": "USA",
+   "name": "New York",
+   "nameDe": "New York",
+   "region": "Northeast",
+   "areaKm2": 136779
+  },
+  {
+   "code": "USA-3550",
+   "countryIso": "USA",
+   "name": "Ohio",
+   "nameDe": "Ohio",
+   "region": "Midwest",
+   "areaKm2": 116135
+  },
+  {
+   "code": "USA-3533",
+   "countryIso": "USA",
+   "name": "Oklahoma",
+   "nameDe": "Oklahoma",
+   "region": "South",
+   "areaKm2": 180573
+  },
+  {
+   "code": "USA-3525",
+   "countryIso": "USA",
+   "name": "Oregon",
+   "nameDe": "Oregon",
+   "region": "West",
+   "areaKm2": 251209
+  },
+  {
+   "code": "USA-3560",
+   "countryIso": "USA",
+   "name": "Pennsylvania",
+   "nameDe": "Pennsylvania",
+   "region": "Northeast",
+   "areaKm2": 119161
+  },
+  {
+   "code": "USA-3539",
+   "countryIso": "USA",
+   "name": "Rhode Island",
+   "nameDe": "Rhode Island",
+   "region": "Northeast",
+   "areaKm2": 2602
+  },
+  {
+   "code": "USA-3545",
+   "countryIso": "USA",
+   "name": "South Carolina",
+   "nameDe": "South Carolina",
+   "region": "South",
+   "areaKm2": 79959
+  },
+  {
+   "code": "USA-3534",
+   "countryIso": "USA",
+   "name": "South Dakota",
+   "nameDe": "South Dakota",
+   "region": "Midwest",
+   "areaKm2": 198081
+  },
+  {
+   "code": "USA-3551",
+   "countryIso": "USA",
+   "name": "Tennessee",
+   "nameDe": "Tennessee",
+   "region": "South",
+   "areaKm2": 109044
+  },
+  {
+   "code": "USA-3536",
+   "countryIso": "USA",
+   "name": "Texas",
+   "nameDe": "Texas",
+   "region": "South",
+   "areaKm2": 686280
+  },
+  {
+   "code": "USA-3526",
+   "countryIso": "USA",
+   "name": "Utah",
+   "nameDe": "Utah",
+   "region": "West",
+   "areaKm2": 219563
+  },
+  {
+   "code": "USA-3552",
+   "countryIso": "USA",
+   "name": "Virginia",
+   "nameDe": "Virginia",
+   "region": "South",
+   "areaKm2": 102771
+  },
+  {
+   "code": "USA-3540",
+   "countryIso": "USA",
+   "name": "Vermont",
+   "nameDe": "Vermont",
+   "region": "Northeast",
+   "areaKm2": 24533
+  },
+  {
+   "code": "USA-3519",
+   "countryIso": "USA",
+   "name": "Washington",
+   "nameDe": "Washington",
+   "region": "West",
+   "areaKm2": 173366
+  },
+  {
+   "code": "USA-3553",
+   "countryIso": "USA",
+   "name": "Wisconsin",
+   "nameDe": "Wisconsin",
+   "region": "Midwest",
+   "areaKm2": 168969
+  },
+  {
+   "code": "USA-3554",
+   "countryIso": "USA",
+   "name": "West Virginia",
+   "nameDe": "West Virginia",
+   "region": "South",
+   "areaKm2": 62550
+  },
+  {
+   "code": "USA-3527",
+   "countryIso": "USA",
+   "name": "Wyoming",
+   "nameDe": "Wyoming",
+   "region": "West",
+   "areaKm2": 253938
+  },
+  {
+   "code": "CHN-1150",
+   "countryIso": "CHN",
+   "name": "Gansu",
+   "nameDe": "Gansu",
+   "region": "Northwest China",
+   "areaKm2": 405417
+  },
+  {
+   "code": "CHN-1151",
+   "countryIso": "CHN",
+   "name": "Qinghai",
+   "nameDe": "Qinghai",
+   "region": "Northwest China",
+   "areaKm2": 714447
+  },
+  {
+   "code": "CHN-1152",
+   "countryIso": "CHN",
+   "name": "Guangxi",
+   "nameDe": "Guangxi",
+   "region": "South Central China",
+   "areaKm2": 237864
+  },
+  {
+   "code": "CHN-1153",
+   "countryIso": "CHN",
+   "name": "Guizhou",
+   "nameDe": "Guizhou",
+   "region": "Southwest China",
+   "areaKm2": 175450
+  },
+  {
+   "code": "CHN-1154",
+   "countryIso": "CHN",
+   "name": "Chongqing",
+   "nameDe": "Chongqing",
+   "region": "Southwest China",
+   "areaKm2": 82452
+  },
+  {
+   "code": "CHN-1155",
+   "countryIso": "CHN",
+   "name": "Beijing",
+   "nameDe": "Peking",
+   "region": "North China",
+   "areaKm2": 16146
+  },
+  {
+   "code": "CHN-1178",
+   "countryIso": "CHN",
+   "name": "Fujian",
+   "nameDe": "Fujian",
+   "region": "",
+   "areaKm2": 121378
+  },
+  {
+   "code": "CHN-1179",
+   "countryIso": "CHN",
+   "name": "Anhui",
+   "nameDe": "Anhui",
+   "region": "East China",
+   "areaKm2": 140296
+  },
+  {
+   "code": "CHN-1180",
+   "countryIso": "CHN",
+   "name": "Guangdong",
+   "nameDe": "Guangdong",
+   "region": "South Central China",
+   "areaKm2": 174542
+  },
+  {
+   "code": "CHN-1662",
+   "countryIso": "CHN",
+   "name": "Xizang",
+   "nameDe": "Autonomes Gebiet Tibet",
+   "region": "Southwest China",
+   "areaKm2": 1131036
+  },
+  {
+   "code": "IND-3259",
+   "countryIso": "IND",
+   "name": "Sikkim",
+   "nameDe": "Sikkim",
+   "region": "East",
+   "areaKm2": 6966
+  },
+  {
+   "code": "CHN-1756",
+   "countryIso": "CHN",
+   "name": "Xinjiang",
+   "nameDe": "Xinjiang",
+   "region": "Northwest China",
+   "areaKm2": 1628334
+  },
+  {
+   "code": "CHN-1775",
+   "countryIso": "CHN",
+   "name": "Hainan",
+   "nameDe": "Hainan",
+   "region": "South Central China",
+   "areaKm2": 33867
+  },
+  {
+   "code": "CHN-1803",
+   "countryIso": "CHN",
+   "name": "Ningxia",
+   "nameDe": "Ningxia",
+   "region": "Northwest China",
+   "areaKm2": 51946
+  },
+  {
+   "code": "CHN-1804",
+   "countryIso": "CHN",
+   "name": "Shaanxi",
+   "nameDe": "Shaanxi",
+   "region": "Northwest China",
+   "areaKm2": 205692
+  },
+  {
+   "code": "CHN-1805",
+   "countryIso": "CHN",
+   "name": "Shanxi",
+   "nameDe": "Shanxi",
+   "region": "North China",
+   "areaKm2": 155904
+  },
+  {
+   "code": "CHN-1807",
+   "countryIso": "CHN",
+   "name": "Hubei",
+   "nameDe": "Hubei",
+   "region": "South Central China",
+   "areaKm2": 185756
+  },
+  {
+   "code": "CHN-1808",
+   "countryIso": "CHN",
+   "name": "Hunan",
+   "nameDe": "Hunan",
+   "region": "South Central China",
+   "areaKm2": 211803
+  },
+  {
+   "code": "CHN-1809",
+   "countryIso": "CHN",
+   "name": "Sichuan",
+   "nameDe": "Sichuan",
+   "region": "Southwest China",
+   "areaKm2": 485192
+  },
+  {
+   "code": "CHN-1810",
+   "countryIso": "CHN",
+   "name": "Yunnan",
+   "nameDe": "Yunnan",
+   "region": "Southwest China",
+   "areaKm2": 386413
+  },
+  {
+   "code": "CHN-1811",
+   "countryIso": "CHN",
+   "name": "Hebei",
+   "nameDe": "Hebei",
+   "region": "North China",
+   "areaKm2": 188372
+  },
+  {
+   "code": "CHN-1812",
+   "countryIso": "CHN",
+   "name": "Henan",
+   "nameDe": "Henan",
+   "region": "South Central China",
+   "areaKm2": 165990
+  },
+  {
+   "code": "CHN-1813",
+   "countryIso": "CHN",
+   "name": "Liaoning",
+   "nameDe": "Liaoning",
+   "region": "Northeast China",
+   "areaKm2": 146669
+  },
+  {
+   "code": "CHN-1814",
+   "countryIso": "CHN",
+   "name": "Shandong",
+   "nameDe": "Shandong",
+   "region": "East China",
+   "areaKm2": 155653
+  },
+  {
+   "code": "CHN-1816",
+   "countryIso": "CHN",
+   "name": "Tianjin",
+   "nameDe": "Tianjin",
+   "region": "North China",
+   "areaKm2": 11519
+  },
+  {
+   "code": "CHN-1817",
+   "countryIso": "CHN",
+   "name": "Jiangxi",
+   "nameDe": "Jiangxi",
+   "region": "East China",
+   "areaKm2": 167946
+  },
+  {
+   "code": "CHN-1818",
+   "countryIso": "CHN",
+   "name": "Jiangsu",
+   "nameDe": "Jiangsu",
+   "region": "East China",
+   "areaKm2": 100238
+  },
+  {
+   "code": "CHN-1819",
+   "countryIso": "CHN",
+   "name": "Shanghai",
+   "nameDe": "Shanghai",
+   "region": "East China",
+   "areaKm2": 5710
+  },
+  {
+   "code": "CHN-1820",
+   "countryIso": "CHN",
+   "name": "Zhejiang",
+   "nameDe": "Zhejiang",
+   "region": "East China",
+   "areaKm2": 99762
+  },
+  {
+   "code": "CHN-1828",
+   "countryIso": "CHN",
+   "name": "Jilin",
+   "nameDe": "Jilin",
+   "region": "Northeast China",
+   "areaKm2": 190579
+  },
+  {
+   "code": "CHN-1838",
+   "countryIso": "CHN",
+   "name": "Inner Mongol",
+   "nameDe": "Innere Mongolei",
+   "region": "North China",
+   "areaKm2": 1142653
+  },
+  {
+   "code": "CHN-1839",
+   "countryIso": "CHN",
+   "name": "Heilongjiang",
+   "nameDe": "Heilongjiang",
+   "region": "Northeast China",
+   "areaKm2": 450655
+  },
+  {
+   "code": "IDN-1136",
+   "countryIso": "IDN",
+   "name": "Aceh",
+   "nameDe": "Aceh",
+   "region": "",
+   "areaKm2": 55991
+  },
+  {
+   "code": "IDN-1185",
+   "countryIso": "IDN",
+   "name": "Kalimantan Timur",
+   "nameDe": "Ostkalimantan",
+   "region": "",
+   "areaKm2": 195317
+  },
+  {
+   "code": "IDN-1223",
+   "countryIso": "IDN",
+   "name": "Jawa Barat",
+   "nameDe": "Jawa Barat",
+   "region": "",
+   "areaKm2": 37032
+  },
+  {
+   "code": "IDN-1224",
+   "countryIso": "IDN",
+   "name": "Jawa Tengah",
+   "nameDe": "Jawa Tengah",
+   "region": "",
+   "areaKm2": 34041
+  },
+  {
+   "code": "IDN-1225",
+   "countryIso": "IDN",
+   "name": "Bengkulu",
+   "nameDe": "Bengkulu",
+   "region": "",
+   "areaKm2": 20921
+  },
+  {
+   "code": "IDN-1226",
+   "countryIso": "IDN",
+   "name": "Banten",
+   "nameDe": "Banten",
+   "region": "",
+   "areaKm2": 9772
+  },
+  {
+   "code": "IDN-1227",
+   "countryIso": "IDN",
+   "name": "Jakarta Raya",
+   "nameDe": "Jakarta",
+   "region": "",
+   "areaKm2": 850
+  },
+  {
+   "code": "IDN-1228",
+   "countryIso": "IDN",
+   "name": "Kalimantan Barat",
+   "nameDe": "Kalimantan Barat",
+   "region": "",
+   "areaKm2": 148666
+  },
+  {
+   "code": "IDN-1229",
+   "countryIso": "IDN",
+   "name": "Lampung",
+   "nameDe": "Lampung",
+   "region": "",
+   "areaKm2": 33333
+  },
+  {
+   "code": "IDN-1230",
+   "countryIso": "IDN",
+   "name": "Sumatera Selatan",
+   "nameDe": "Sumatera Selatan",
+   "region": "",
+   "areaKm2": 84571
+  },
+  {
+   "code": "IDN-1231",
+   "countryIso": "IDN",
+   "name": "Bangka-Belitung",
+   "nameDe": "Bangka-Belitung",
+   "region": "",
+   "areaKm2": 16433
+  },
+  {
+   "code": "IDN-1232",
+   "countryIso": "IDN",
+   "name": "Bali",
+   "nameDe": "Bali",
+   "region": "",
+   "areaKm2": 5545
+  },
+  {
+   "code": "IDN-1233",
+   "countryIso": "IDN",
+   "name": "Jawa Timur",
+   "nameDe": "Jawa Timur",
+   "region": "",
+   "areaKm2": 46475
+  },
+  {
+   "code": "IDN-1234",
+   "countryIso": "IDN",
+   "name": "Kalimantan Selatan",
+   "nameDe": "Kalimantan Selatan",
+   "region": "",
+   "areaKm2": 38580
+  },
+  {
+   "code": "IDN-1235",
+   "countryIso": "IDN",
+   "name": "Nusa Tenggara Timur",
+   "nameDe": "Nusa Tenggara Timur",
+   "region": "",
+   "areaKm2": 44469
+  },
+  {
+   "code": "IDN-1236",
+   "countryIso": "IDN",
+   "name": "Sulawesi Selatan",
+   "nameDe": "Sulawesi Selatan",
+   "region": "",
+   "areaKm2": 46674
+  },
+  {
+   "code": "IDN-1237",
+   "countryIso": "IDN",
+   "name": "Sulawesi Barat",
+   "nameDe": "Westsulawesi",
+   "region": "",
+   "areaKm2": 16651
+  },
+  {
+   "code": "IDN-1796",
+   "countryIso": "IDN",
+   "name": "Kepulauan Riau",
+   "nameDe": "Kepulauan Riau",
+   "region": "",
+   "areaKm2": 4521
+  },
+  {
+   "code": "IDN-1837",
+   "countryIso": "IDN",
+   "name": "Gorontalo",
+   "nameDe": "Gorontalo",
+   "region": "",
+   "areaKm2": 12118
+  },
+  {
+   "code": "IDN-1930",
+   "countryIso": "IDN",
+   "name": "Jambi",
+   "nameDe": "Jambi",
+   "region": "",
+   "areaKm2": 51689
+  },
+  {
+   "code": "IDN-1931",
+   "countryIso": "IDN",
+   "name": "Kalimantan Tengah",
+   "nameDe": "Kalimantan Tengah",
+   "region": "",
+   "areaKm2": 152375
+  },
+  {
+   "code": "IDN-1933",
+   "countryIso": "IDN",
+   "name": "Papua Barat",
+   "nameDe": "Papua Barat",
+   "region": "",
+   "areaKm2": 94661
+  },
+  {
+   "code": "IDN-381",
+   "countryIso": "IDN",
+   "name": "Sumatera Utara",
+   "nameDe": "Sumatera Utara",
+   "region": "",
+   "areaKm2": 73192
+  },
+  {
+   "code": "IDN-492",
+   "countryIso": "IDN",
+   "name": "Riau",
+   "nameDe": "Riau",
+   "region": "",
+   "areaKm2": 87308
+  },
+  {
+   "code": "IDN-513",
+   "countryIso": "IDN",
+   "name": "Sulawesi Utara",
+   "nameDe": "Sulawesi Utara",
+   "region": "",
+   "areaKm2": 14375
+  },
+  {
+   "code": "IDN-538",
+   "countryIso": "IDN",
+   "name": "Maluku Utara",
+   "nameDe": "Nordmolukken",
+   "region": "",
+   "areaKm2": 30431
+  },
+  {
+   "code": "IDN-539",
+   "countryIso": "IDN",
+   "name": "Sumatera Barat",
+   "nameDe": "Sumatera Barat",
+   "region": "",
+   "areaKm2": 41654
+  },
+  {
+   "code": "IDN-540",
+   "countryIso": "IDN",
+   "name": "Yogyakarta",
+   "nameDe": "Yogyakarta",
+   "region": "",
+   "areaKm2": 2974
+  },
+  {
+   "code": "IDN-554",
+   "countryIso": "IDN",
+   "name": "Maluku",
+   "nameDe": "Maluku",
+   "region": "",
+   "areaKm2": 41840
+  },
+  {
+   "code": "IDN-555",
+   "countryIso": "IDN",
+   "name": "Nusa Tenggara Barat",
+   "nameDe": "Nusa Tenggara Barat",
+   "region": "",
+   "areaKm2": 19316
+  },
+  {
+   "code": "IDN-556",
+   "countryIso": "IDN",
+   "name": "Sulawesi Tenggara",
+   "nameDe": "Sulawesi Tenggara",
+   "region": "",
+   "areaKm2": 34407
+  },
+  {
+   "code": "IDN-557",
+   "countryIso": "IDN",
+   "name": "Sulawesi Tengah",
+   "nameDe": "Sulawesi Tengah",
+   "region": "",
+   "areaKm2": 60069
+  },
+  {
+   "code": "IDN-558",
+   "countryIso": "IDN",
+   "name": "Papua",
+   "nameDe": "Papua",
+   "region": "",
+   "areaKm2": 312513
+  },
+  {
+   "code": "IND-20011",
+   "countryIso": "IND",
+   "name": "Telangana",
+   "nameDe": "Telangana",
+   "region": "South",
+   "areaKm2": 115262
+  },
+  {
+   "code": "IND-20012",
+   "countryIso": "IND",
+   "name": "Ladakh",
+   "nameDe": "Ladakh",
+   "region": "",
+   "areaKm2": 63517
+  },
+  {
+   "code": "IND-2427",
+   "countryIso": "IND",
+   "name": "Chandigarh",
+   "nameDe": "Chandigarh",
+   "region": "North",
+   "areaKm2": 94
+  },
+  {
+   "code": "IND-2428",
+   "countryIso": "IND",
+   "name": "Delhi",
+   "nameDe": "Delhi",
+   "region": "Central",
+   "areaKm2": 1533
+  },
+  {
+   "code": "IND-2429",
+   "countryIso": "IND",
+   "name": "Himachal Pradesh",
+   "nameDe": "Himachal Pradesh",
+   "region": "North",
+   "areaKm2": 55543
+  },
+  {
+   "code": "IND-2430",
+   "countryIso": "IND",
+   "name": "Haryana",
+   "nameDe": "Haryana",
+   "region": "Central",
+   "areaKm2": 43940
+  },
+  {
+   "code": "IND-2431",
+   "countryIso": "IND",
+   "name": "Jammu and Kashmir",
+   "nameDe": "Jammu und Kashmir",
+   "region": "North",
+   "areaKm2": 42691
+  },
+  {
+   "code": "IND-2441",
+   "countryIso": "IND",
+   "name": "Andhra Pradesh",
+   "nameDe": "Andhra Pradesh",
+   "region": "South",
+   "areaKm2": 161633
+  },
+  {
+   "code": "IND-2442",
+   "countryIso": "IND",
+   "name": "Kerala",
+   "nameDe": "Kerala",
+   "region": "South",
+   "areaKm2": 37863
+  },
+  {
+   "code": "IND-2443",
+   "countryIso": "IND",
+   "name": "Lakshadweep",
+   "nameDe": "Lakshadweep",
+   "region": "South",
+   "areaKm2": 21
+  },
+  {
+   "code": "IND-2444",
+   "countryIso": "IND",
+   "name": "Odisha",
+   "nameDe": "Odisha",
+   "region": "East",
+   "areaKm2": 155826
+  },
+  {
+   "code": "IND-2445",
+   "countryIso": "IND",
+   "name": "Dadra and Nagar Haveli and Daman and Diu",
+   "nameDe": "Dadra und Nagar Haveli und Daman und Diu",
+   "region": "West",
+   "areaKm2": 469
+  },
+  {
+   "code": "IND-2446",
+   "countryIso": "IND",
+   "name": "Karnataka",
+   "nameDe": "Karnataka",
+   "region": "South",
+   "areaKm2": 192148
+  },
+  {
+   "code": "IND-3265",
+   "countryIso": "IND",
+   "name": "Goa",
+   "nameDe": "Goa",
+   "region": "West",
+   "areaKm2": 3305
+  },
+  {
+   "code": "IND-2474",
+   "countryIso": "IND",
+   "name": "Andaman and Nicobar",
+   "nameDe": "Andamanen und Nikobaren",
+   "region": "",
+   "areaKm2": 6537
+  },
+  {
+   "code": "IND-2477",
+   "countryIso": "IND",
+   "name": "Assam",
+   "nameDe": "Assam",
+   "region": "Northeast",
+   "areaKm2": 79638
+  },
+  {
+   "code": "IND-2478",
+   "countryIso": "IND",
+   "name": "Manipur",
+   "nameDe": "Manipur",
+   "region": "Northeast",
+   "areaKm2": 21734
+  },
+  {
+   "code": "IND-2479",
+   "countryIso": "IND",
+   "name": "Nagaland",
+   "nameDe": "Nagaland",
+   "region": "Northeast",
+   "areaKm2": 16302
+  },
+  {
+   "code": "IND-2489",
+   "countryIso": "IND",
+   "name": "Meghalaya",
+   "nameDe": "Meghalaya",
+   "region": "Northeast",
+   "areaKm2": 23182
+  },
+  {
+   "code": "IND-3249",
+   "countryIso": "IND",
+   "name": "Punjab",
+   "nameDe": "Punjab",
+   "region": "North",
+   "areaKm2": 50519
+  },
+  {
+   "code": "IND-3250",
+   "countryIso": "IND",
+   "name": "Rajasthan",
+   "nameDe": "Rajasthan",
+   "region": "Central",
+   "areaKm2": 343867
+  },
+  {
+   "code": "IND-3253",
+   "countryIso": "IND",
+   "name": "Uttar Pradesh",
+   "nameDe": "Uttar Pradesh",
+   "region": "Central",
+   "areaKm2": 240630
+  },
+  {
+   "code": "IND-3254",
+   "countryIso": "IND",
+   "name": "Uttarakhand",
+   "nameDe": "Uttarakhand",
+   "region": "Central",
+   "areaKm2": 52603
+  },
+  {
+   "code": "IND-3256",
+   "countryIso": "IND",
+   "name": "Jharkhand",
+   "nameDe": "Jharkhand",
+   "region": "East",
+   "areaKm2": 78242
+  },
+  {
+   "code": "IND-3257",
+   "countryIso": "IND",
+   "name": "West Bengal",
+   "nameDe": "Westbengalen",
+   "region": "East",
+   "areaKm2": 86253
+  },
+  {
+   "code": "IND-3258",
+   "countryIso": "IND",
+   "name": "Bihar",
+   "nameDe": "Bihar",
+   "region": "East",
+   "areaKm2": 94791
+  },
+  {
+   "code": "IND-3260",
+   "countryIso": "IND",
+   "name": "Chhattisgarh",
+   "nameDe": "Chhattisgarh",
+   "region": "Central",
+   "areaKm2": 134616
+  },
+  {
+   "code": "IND-3261",
+   "countryIso": "IND",
+   "name": "Madhya Pradesh",
+   "nameDe": "Madhya Pradesh",
+   "region": "Central",
+   "areaKm2": 310118
+  },
+  {
+   "code": "IND-3262",
+   "countryIso": "IND",
+   "name": "Puducherry",
+   "nameDe": "Puducherry",
+   "region": "South",
+   "areaKm2": 360
+  },
+  {
+   "code": "IND-3263",
+   "countryIso": "IND",
+   "name": "Tamil Nadu",
+   "nameDe": "Tamil Nadu",
+   "region": "South",
+   "areaKm2": 131083
+  },
+  {
+   "code": "IND-3264",
+   "countryIso": "IND",
+   "name": "Gujarat",
+   "nameDe": "Gujarat",
+   "region": "West",
+   "areaKm2": 184558
+  },
+  {
+   "code": "IND-3299",
+   "countryIso": "IND",
+   "name": "Arunachal Pradesh",
+   "nameDe": "Arunachal Pradesh",
+   "region": "Northeast",
+   "areaKm2": 81769
+  },
+  {
+   "code": "IND-3300",
+   "countryIso": "IND",
+   "name": "Mizoram",
+   "nameDe": "Mizoram",
+   "region": "Northeast",
+   "areaKm2": 21347
+  },
+  {
+   "code": "IND-3301",
+   "countryIso": "IND",
+   "name": "Tripura",
+   "nameDe": "Tripura",
+   "region": "Northeast",
+   "areaKm2": 10753
+  },
+  {
+   "code": "RUS-2167",
+   "countryIso": "RUS",
+   "name": "Tomsk",
+   "nameDe": "Tomsk",
+   "region": "Siberian",
+   "areaKm2": 313150
+  },
+  {
+   "code": "RUS-2279",
+   "countryIso": "RUS",
+   "name": "Adygey",
+   "nameDe": "Adygeja",
+   "region": "Volga",
+   "areaKm2": 7612
+  },
+  {
+   "code": "RUS-2280",
+   "countryIso": "RUS",
+   "name": "Karachay-Cherkess",
+   "nameDe": "Karatschai-Tscherkessien",
+   "region": "Volga",
+   "areaKm2": 14394
+  },
+  {
+   "code": "RUS-2303",
+   "countryIso": "RUS",
+   "name": "Ingush",
+   "nameDe": "Inguschetien",
+   "region": "Volga",
+   "areaKm2": 3265
+  },
+  {
+   "code": "RUS-2304",
+   "countryIso": "RUS",
+   "name": "Kabardin-Balkar",
+   "nameDe": "Kabardino-Balkarien",
+   "region": "Volga",
+   "areaKm2": 12443
+  },
+  {
+   "code": "RUS-2305",
+   "countryIso": "RUS",
+   "name": "North Ossetia",
+   "nameDe": "Nordossetien-Alanien",
+   "region": "Volga",
+   "areaKm2": 7922
+  },
+  {
+   "code": "RUS-2306",
+   "countryIso": "RUS",
+   "name": "Stavropol'",
+   "nameDe": "Stawropol",
+   "region": "Volga",
+   "areaKm2": 66596
+  },
+  {
+   "code": "RUS-2321",
+   "countryIso": "RUS",
+   "name": "Chukchi Autonomous Okrug",
+   "nameDe": "Autonomer Kreis der Tschuktschen",
+   "region": "Far Eastern",
+   "areaKm2": 711607
+  },
+  {
+   "code": "RUS-2324",
+   "countryIso": "RUS",
+   "name": "Kaliningrad",
+   "nameDe": "Kaliningrad",
+   "region": "Northwestern",
+   "areaKm2": 13458
+  },
+  {
+   "code": "RUS-2333",
+   "countryIso": "RUS",
+   "name": "Murmansk",
+   "nameDe": "Murmansk",
+   "region": "Northwestern",
+   "areaKm2": 314889
+  },
+  {
+   "code": "RUS-2334",
+   "countryIso": "RUS",
+   "name": "Novgorod",
+   "nameDe": "Nowgorod",
+   "region": "Northwestern",
+   "areaKm2": 54930
+  },
+  {
+   "code": "RUS-2335",
+   "countryIso": "RUS",
+   "name": "Pskov",
+   "nameDe": "Pskow",
+   "region": "Northwestern",
+   "areaKm2": 55647
+  },
+  {
+   "code": "RUS-2336",
+   "countryIso": "RUS",
+   "name": "Leningrad",
+   "nameDe": "Leningrad",
+   "region": "Northwestern",
+   "areaKm2": 82318
+  },
+  {
+   "code": "RUS-2337",
+   "countryIso": "RUS",
+   "name": "City of St. Petersburg",
+   "nameDe": "Sankt Petersburg",
+   "region": "Northwestern",
+   "areaKm2": 2032
+  },
+  {
+   "code": "RUS-2342",
+   "countryIso": "RUS",
+   "name": "Bryansk",
+   "nameDe": "Brjansk",
+   "region": "Central",
+   "areaKm2": 35240
+  },
+  {
+   "code": "RUS-2343",
+   "countryIso": "RUS",
+   "name": "Smolensk",
+   "nameDe": "Smolensk",
+   "region": "Central",
+   "areaKm2": 50153
+  },
+  {
+   "code": "RUS-2353",
+   "countryIso": "RUS",
+   "name": "Karelia",
+   "nameDe": "Republik Karelien",
+   "region": "Northwestern",
+   "areaKm2": 222
+  },
+  {
+   "code": "RUS-2354",
+   "countryIso": "RUS",
+   "name": "Arkhangel'sk",
+   "nameDe": "Archangelsk",
+   "region": "Northwestern",
+   "areaKm2": 401904
+  },
+  {
+   "code": "RUS-2355",
+   "countryIso": "RUS",
+   "name": "Ivanovo",
+   "nameDe": "Iwanowo",
+   "region": "Central",
+   "areaKm2": 23349
+  },
+  {
+   "code": "RUS-2359",
+   "countryIso": "RUS",
+   "name": "Vologda",
+   "nameDe": "Wologda",
+   "region": "Northwestern",
+   "areaKm2": 145094
+  },
+  {
+   "code": "RUS-2356",
+   "countryIso": "RUS",
+   "name": "Kostroma",
+   "nameDe": "Kostroma",
+   "region": "Central",
+   "areaKm2": 59987
+  },
+  {
+   "code": "RUS-2357",
+   "countryIso": "RUS",
+   "name": "Nizhegorod",
+   "nameDe": "Nischni Nowgorod",
+   "region": "Volga",
+   "areaKm2": 74793
+  },
+  {
+   "code": "RUS-2358",
+   "countryIso": "RUS",
+   "name": "Tver'",
+   "nameDe": "Twer",
+   "region": "Central",
+   "areaKm2": 84315
+  },
+  {
+   "code": "RUS-2360",
+   "countryIso": "RUS",
+   "name": "Yaroslavl'",
+   "nameDe": "Jaroslawl",
+   "region": "Central",
+   "areaKm2": 35868
+  },
+  {
+   "code": "RUS-2361",
+   "countryIso": "RUS",
+   "name": "Kaluga",
+   "nameDe": "Kaluga",
+   "region": "Central",
+   "areaKm2": 29356
+  },
+  {
+   "code": "RUS-2362",
+   "countryIso": "RUS",
+   "name": "Kursk",
+   "nameDe": "Kursk",
+   "region": "Central",
+   "areaKm2": 30171
+  },
+  {
+   "code": "RUS-2363",
+   "countryIso": "RUS",
+   "name": "Lipetsk",
+   "nameDe": "Lipezk",
+   "region": "Central",
+   "areaKm2": 24155
+  },
+  {
+   "code": "RUS-2364",
+   "countryIso": "RUS",
+   "name": "Moskovskaya",
+   "nameDe": "Moskau",
+   "region": "Central",
+   "areaKm2": 43965
+  },
+  {
+   "code": "RUS-2365",
+   "countryIso": "RUS",
+   "name": "Moskva",
+   "nameDe": "Moskau",
+   "region": "Central",
+   "areaKm2": 2555
+  },
+  {
+   "code": "RUS-2366",
+   "countryIso": "RUS",
+   "name": "Orel",
+   "nameDe": "Orjol",
+   "region": "Central",
+   "areaKm2": 24548
+  },
+  {
+   "code": "RUS-2367",
+   "countryIso": "RUS",
+   "name": "Rostov",
+   "nameDe": "Rostow",
+   "region": "Volga",
+   "areaKm2": 101386
+  },
+  {
+   "code": "RUS-2368",
+   "countryIso": "RUS",
+   "name": "Tula",
+   "nameDe": "Tula",
+   "region": "Central",
+   "areaKm2": 25331
+  },
+  {
+   "code": "RUS-2369",
+   "countryIso": "RUS",
+   "name": "Volgograd",
+   "nameDe": "Wolgograd",
+   "region": "Volga",
+   "areaKm2": 113034
+  },
+  {
+   "code": "RUS-2370",
+   "countryIso": "RUS",
+   "name": "Belgorod",
+   "nameDe": "Belgorod",
+   "region": "Central",
+   "areaKm2": 27583
+  },
+  {
+   "code": "RUS-2371",
+   "countryIso": "RUS",
+   "name": "Krasnodar",
+   "nameDe": "Krasnodar",
+   "region": "Volga",
+   "areaKm2": 75369
+  },
+  {
+   "code": "RUS-2372",
+   "countryIso": "RUS",
+   "name": "Mordovia",
+   "nameDe": "Mordwinien",
+   "region": "Volga",
+   "areaKm2": 25824
+  },
+  {
+   "code": "RUS-2373",
+   "countryIso": "RUS",
+   "name": "Penza",
+   "nameDe": "Pensa",
+   "region": "Volga",
+   "areaKm2": 43319
+  },
+  {
+   "code": "RUS-2374",
+   "countryIso": "RUS",
+   "name": "Ryazan'",
+   "nameDe": "Rjasan",
+   "region": "Central",
+   "areaKm2": 39347
+  },
+  {
+   "code": "RUS-2375",
+   "countryIso": "RUS",
+   "name": "Tambov",
+   "nameDe": "Tambow",
+   "region": "Central",
+   "areaKm2": 34433
+  },
+  {
+   "code": "RUS-2376",
+   "countryIso": "RUS",
+   "name": "Vladimir",
+   "nameDe": "Wladimir",
+   "region": "Central",
+   "areaKm2": 29317
+  },
+  {
+   "code": "RUS-2377",
+   "countryIso": "RUS",
+   "name": "Voronezh",
+   "nameDe": "Woronesch",
+   "region": "Central",
+   "areaKm2": 52012
+  },
+  {
+   "code": "RUS-2378",
+   "countryIso": "RUS",
+   "name": "Bashkortostan",
+   "nameDe": "Baschkortostan",
+   "region": "Volga",
+   "areaKm2": 142202
+  },
+  {
+   "code": "RUS-2379",
+   "countryIso": "RUS",
+   "name": "Chelyabinsk",
+   "nameDe": "Tscheljabinsk",
+   "region": "Urals",
+   "areaKm2": 88522
+  },
+  {
+   "code": "RUS-2380",
+   "countryIso": "RUS",
+   "name": "Kurgan",
+   "nameDe": "Kurgan",
+   "region": "Urals",
+   "areaKm2": 71582
+  },
+  {
+   "code": "RUS-2381",
+   "countryIso": "RUS",
+   "name": "Nenets",
+   "nameDe": "Autonomer Kreis der Nenzen",
+   "region": "Northwestern",
+   "areaKm2": 176277
+  },
+  {
+   "code": "RUS-2382",
+   "countryIso": "RUS",
+   "name": "Yamal-Nenets",
+   "nameDe": "Autonomer Kreis der Jamal-Nenzen",
+   "region": "Urals",
+   "areaKm2": 681352
+  },
+  {
+   "code": "RUS-2383",
+   "countryIso": "RUS",
+   "name": "Komi",
+   "nameDe": "Republik Komi",
+   "region": "Northwestern",
+   "areaKm2": 414665
+  },
+  {
+   "code": "RUS-2384",
+   "countryIso": "RUS",
+   "name": "Kirov",
+   "nameDe": "Kirow",
+   "region": "Volga",
+   "areaKm2": 119688
+  },
+  {
+   "code": "RUS-2385",
+   "countryIso": "RUS",
+   "name": "Mariy-El",
+   "nameDe": "Mari El",
+   "region": "Volga",
+   "areaKm2": 23343
+  },
+  {
+   "code": "RUS-2386",
+   "countryIso": "RUS",
+   "name": "Sverdlovsk",
+   "nameDe": "Swerdlowsk",
+   "region": "Urals",
+   "areaKm2": 193370
+  },
+  {
+   "code": "RUS-2387",
+   "countryIso": "RUS",
+   "name": "Udmurt",
+   "nameDe": "Udmurtien",
+   "region": "Volga",
+   "areaKm2": 41898
+  },
+  {
+   "code": "RUS-2388",
+   "countryIso": "RUS",
+   "name": "Astrakhan'",
+   "nameDe": "Astrachan",
+   "region": "Volga",
+   "areaKm2": 46158
+  },
+  {
+   "code": "RUS-2389",
+   "countryIso": "RUS",
+   "name": "Chuvash",
+   "nameDe": "Tschuwaschien",
+   "region": "Volga",
+   "areaKm2": 18395
+  },
+  {
+   "code": "RUS-2390",
+   "countryIso": "RUS",
+   "name": "Kalmyk",
+   "nameDe": "Kalmückien",
+   "region": "Volga",
+   "areaKm2": 73192
+  },
+  {
+   "code": "RUS-2392",
+   "countryIso": "RUS",
+   "name": "Samara",
+   "nameDe": "Samara",
+   "region": "Volga",
+   "areaKm2": 53445
+  },
+  {
+   "code": "RUS-2391",
+   "countryIso": "RUS",
+   "name": "Orenburg",
+   "nameDe": "Orenburg",
+   "region": "Volga",
+   "areaKm2": 124351
+  },
+  {
+   "code": "RUS-2393",
+   "countryIso": "RUS",
+   "name": "Saratov",
+   "nameDe": "Saratow",
+   "region": "Volga",
+   "areaKm2": 101575
+  },
+  {
+   "code": "RUS-2394",
+   "countryIso": "RUS",
+   "name": "Tatarstan",
+   "nameDe": "Tatarstan",
+   "region": "Volga",
+   "areaKm2": 67206
+  },
+  {
+   "code": "RUS-2395",
+   "countryIso": "RUS",
+   "name": "Ul'yanovsk",
+   "nameDe": "Uljanowsk",
+   "region": "Volga",
+   "areaKm2": 36906
+  },
+  {
+   "code": "RUS-2396",
+   "countryIso": "RUS",
+   "name": "Khanty-Mansiy",
+   "nameDe": "Autonomer Kreis der Chanten und Mansen/Jugra",
+   "region": "Urals",
+   "areaKm2": 530623
+  },
+  {
+   "code": "RUS-2397",
+   "countryIso": "RUS",
+   "name": "Omsk",
+   "nameDe": "Omsk",
+   "region": "Siberian",
+   "areaKm2": 140518
+  },
+  {
+   "code": "RUS-2398",
+   "countryIso": "RUS",
+   "name": "Tyumen'",
+   "nameDe": "Tjumen",
+   "region": "Urals",
+   "areaKm2": 159137
+  },
+  {
+   "code": "RUS-2399",
+   "countryIso": "RUS",
+   "name": "Altay",
+   "nameDe": "Republik Altai",
+   "region": "Siberian",
+   "areaKm2": 171055
+  },
+  {
+   "code": "RUS-2400",
+   "countryIso": "RUS",
+   "name": "Gorno-Altay",
+   "nameDe": "Republik Altai",
+   "region": "Siberian",
+   "areaKm2": 92485
+  },
+  {
+   "code": "RUS-2401",
+   "countryIso": "RUS",
+   "name": "Kemerovo",
+   "nameDe": "Kemerowo",
+   "region": "Siberian",
+   "areaKm2": 94826
+  },
+  {
+   "code": "RUS-2402",
+   "countryIso": "RUS",
+   "name": "Khakass",
+   "nameDe": "Chakassien",
+   "region": "Siberian",
+   "areaKm2": 59173
+  },
+  {
+   "code": "RUS-2403",
+   "countryIso": "RUS",
+   "name": "Novosibirsk",
+   "nameDe": "Nowosibirsk",
+   "region": "Siberian",
+   "areaKm2": 176869
+  },
+  {
+   "code": "RUS-2416",
+   "countryIso": "RUS",
+   "name": "Chechnya",
+   "nameDe": "Tschetschenien",
+   "region": "Volga",
+   "areaKm2": 16106
+  },
+  {
+   "code": "RUS-2417",
+   "countryIso": "RUS",
+   "name": "Dagestan",
+   "nameDe": "Dagestan",
+   "region": "Volga",
+   "areaKm2": 50056
+  },
+  {
+   "code": "RUS-2602",
+   "countryIso": "RUS",
+   "name": "Irkutsk",
+   "nameDe": "Irkutsk",
+   "region": "Siberian",
+   "areaKm2": 769943
+  },
+  {
+   "code": "RUS-2603",
+   "countryIso": "RUS",
+   "name": "Krasnoyarsk",
+   "nameDe": "Krasnojarsk",
+   "region": "Siberian",
+   "areaKm2": 2312359
+  },
+  {
+   "code": "RUS-2605",
+   "countryIso": "RUS",
+   "name": "Tuva",
+   "nameDe": "Tuwa",
+   "region": "Siberian",
+   "areaKm2": 168515
+  },
+  {
+   "code": "RUS-2606",
+   "countryIso": "RUS",
+   "name": "Buryat",
+   "nameDe": "Burjatien",
+   "region": "Siberian",
+   "areaKm2": 351425
+  },
+  {
+   "code": "RUS-2609",
+   "countryIso": "RUS",
+   "name": "Amur",
+   "nameDe": "Amur",
+   "region": "Far Eastern",
+   "areaKm2": 359358
+  },
+  {
+   "code": "RUS-2610",
+   "countryIso": "RUS",
+   "name": "Chita",
+   "nameDe": "Transbaikalien",
+   "region": "Siberian",
+   "areaKm2": 430631
+  },
+  {
+   "code": "RUS-2611",
+   "countryIso": "RUS",
+   "name": "Primor'ye",
+   "nameDe": "Primorje",
+   "region": "Far Eastern",
+   "areaKm2": 164875
+  },
+  {
+   "code": "RUS-2612",
+   "countryIso": "RUS",
+   "name": "Sakha (Yakutia)",
+   "nameDe": "Sacha",
+   "region": "Far Eastern",
+   "areaKm2": 3050545
+  },
+  {
+   "code": "RUS-2613",
+   "countryIso": "RUS",
+   "name": "Yevrey",
+   "nameDe": "Jüdische",
+   "region": "Far Eastern",
+   "areaKm2": 35809
+  },
+  {
+   "code": "RUS-2614",
+   "countryIso": "RUS",
+   "name": "Khabarovsk",
+   "nameDe": "Chabarowsk",
+   "region": "Far Eastern",
+   "areaKm2": 783238
+  },
+  {
+   "code": "RUS-2615",
+   "countryIso": "RUS",
+   "name": "Maga Buryatdan",
+   "nameDe": "Magadan",
+   "region": "Far Eastern",
+   "areaKm2": 460761
+  },
+  {
+   "code": "RUS-2616",
+   "countryIso": "RUS",
+   "name": "Sakhalin",
+   "nameDe": "Sachalin",
+   "region": "Far Eastern",
+   "areaKm2": 85978
+  },
+  {
+   "code": "RUS-283",
+   "countryIso": "RUS",
+   "name": "Crimea",
+   "nameDe": "Autonome Republik Krim",
+   "region": "Volga",
+   "areaKm2": 26291
+  },
+  {
+   "code": "RUS-3200",
+   "countryIso": "RUS",
+   "name": "Perm'",
+   "nameDe": "Perm",
+   "region": "Volga",
+   "areaKm2": 160509
+  },
+  {
+   "code": "RUS-3468",
+   "countryIso": "RUS",
+   "name": "Kamchatka",
+   "nameDe": "Kamtschatka",
+   "region": "Far Eastern",
+   "areaKm2": 460565
+  },
+  {
+   "code": "RUS-5482",
+   "countryIso": "RUS",
+   "name": "Sevastopol",
+   "nameDe": "Sewastopol",
+   "region": "Volga",
+   "areaKm2": 680
+  },
+  {
+   "code": "ZAF-1188",
+   "countryIso": "ZAF",
+   "name": "Northern Cape",
+   "nameDe": "Nordkap",
+   "region": "",
+   "areaKm2": 373085
+  },
+  {
+   "code": "ZAF-1189",
+   "countryIso": "ZAF",
+   "name": "Western Cape",
+   "nameDe": "Westkap",
+   "region": "",
+   "areaKm2": 130044
+  },
+  {
+   "code": "ZAF-1201",
+   "countryIso": "ZAF",
+   "name": "North West",
+   "nameDe": "Nordwest",
+   "region": "",
+   "areaKm2": 105075
+  },
+  {
+   "code": "ZAF-1206",
+   "countryIso": "ZAF",
+   "name": "Free State",
+   "nameDe": "Freistaat",
+   "region": "",
+   "areaKm2": 130220
+  },
+  {
+   "code": "ZAF-1208",
+   "countryIso": "ZAF",
+   "name": "Gauteng",
+   "nameDe": "Gauteng",
+   "region": "",
+   "areaKm2": 18089
+  },
+  {
+   "code": "ZAF-1209",
+   "countryIso": "ZAF",
+   "name": "Mpumalanga",
+   "nameDe": "Mpumalanga",
+   "region": "",
+   "areaKm2": 75670
+  },
+  {
+   "code": "ZAF-1210",
+   "countryIso": "ZAF",
+   "name": "Limpopo",
+   "nameDe": "Limpopo",
+   "region": "",
+   "areaKm2": 126063
+  },
+  {
+   "code": "ZAF-1216",
+   "countryIso": "ZAF",
+   "name": "KwaZulu-Natal",
+   "nameDe": "KwaZulu-Natal",
+   "region": "",
+   "areaKm2": 94021
+  },
+  {
+   "code": "ZAF-1926",
+   "countryIso": "ZAF",
+   "name": "Eastern Cape",
+   "nameDe": "Ostkap",
+   "region": "",
+   "areaKm2": 169389
+  },
+  {
+   "code": "IND-2447",
+   "countryIso": "IND",
+   "name": "Maharashtra",
+   "nameDe": "Maharashtra",
+   "region": "West",
+   "areaKm2": 307514
+  }
+ ]
+}

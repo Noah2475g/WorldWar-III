@@ -153,3 +153,37 @@ den der Kontrastwert durchgewinkt hätte: `slate #AFB6BC` und `petrol #9FB2BE` l
 sich quer über die Karte hinweg auf einen Blick unterscheiden, nicht erst im direkten
 Vergleich. Farbenblindheit ist damit noch nicht abgedeckt; das gehört zu T-M10-12
 (Zugänglichkeit) und braucht zusätzlich Musterung oder Beschriftung.
+
+---
+
+## 2026-09-03 · T-M9-00 · Startnationen sind teils Staaten, teils Bündnisse
+
+**Entscheidung:** Die 18 spielbaren Mächte bestehen nicht durchweg aus je einem Staat.
+Neun sind es (die von Natural Earth untergliederten Länder), die übrigen fassen mehrere
+Staaten zusammen — „Europäische Union" aus zehn Ländern, „Japan" aus Japan, Korea, den
+Philippinen und Taiwan.
+
+**Begründung:** Die Anforderung verlangt mindestens drei Provinzen je Startnation, sonst
+ist eine Macht mit dem ersten verlorenen Gefecht aus dem Spiel. Bei 1:50 Mio untergliedert
+Natural Earth nur neun Länder; Deutschland, Frankreich und Großbritannien wären je eine
+einzige Provinz. Ohne Europa wäre es kein Weltkrieg. Blöcke statt Einzelstaaten lösen das
+ohne feinere Geodaten und passen zum modernen Setting.
+
+**Auswirkung:** Wer zu Beginn welche Provinz besitzt, entscheidet T-M9-03. Ein Test hält
+fest, dass jede Macht mindestens drei Provinzen und mindestens einen Seeweg hat.
+
+---
+
+## 2026-09-03 · T-M9-00 · Provinzkennungen stehen in der Regeldatei, sie werden nicht gezählt
+
+**Entscheidung:** Jede zusammengefasste Provinz trägt eine ausgeschriebene Kennung
+(`RUS-SIB`, `CHN-EAST`, `IDN-JAVA`), festgelegt in `merge-rules.json` — statt einer
+laufenden Nummer aus der Verarbeitung.
+
+**Begründung:** Der erste Entwurf vergab `RUS-1`, `RUS-2` in Verarbeitungsreihenfolge.
+Seewege, Szenarien und Startaufstellungen zeigen aber auf genau diese Zeichenketten:
+liefert Natural Earth eines Tages die Datensätze in anderer Reihenfolge, zeigt die
+Straße von Malakka plötzlich auf Sibirien, und nichts schlägt an. Ein Test prüft jetzt,
+dass eine umgedrehte Eingabe dieselben Kennungen ergibt.
+
+**Auswirkung:** Die Regeldatei ist länger, dafür sind die Kennungen lesbar und stabil.
