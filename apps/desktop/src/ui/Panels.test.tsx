@@ -138,3 +138,55 @@ describe('R-UI-09 Moral als Balken mit Trend', () => {
     expect(meter.textContent).not.toContain('fallend')
   })
 })
+
+describe('R-UI-09 Was gerade entsteht, zeigt seinen Fortschritt', () => {
+  const building = (startedTick: number, completesAtTick: number): VisibleProvince => ({
+    ...province,
+    buildQueue: [{ building: 'barracks', startedTick, completesAtTick }],
+    buildQueueLength: 1,
+  })
+
+  it('fuellt den Balken zur Haelfte und nennt die Restzeit', () => {
+    render(
+      <ProvincePanel province={building(0, 48)} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={24} />,
+    )
+
+    const meter = screen.getByRole('meter', { name: 'Kaserne' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('24')
+    expect(meter.getAttribute('aria-valuemax')).toBe('48')
+    expect(meter.textContent).toContain('noch 1 Tage')
+  })
+
+  it('nennt Stunden, solange es weniger als ein Tag ist', () => {
+    render(
+      <ProvincePanel province={building(0, 48)} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={42} />,
+    )
+
+    expect(screen.getByRole('meter', { name: 'Kaserne' }).textContent).toContain('noch 6 h')
+  })
+
+  it('zeigt nichts, wenn nichts gebaut wird', () => {
+    render(<ProvincePanel province={province} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(screen.queryByRole('meter', { name: 'Kaserne' })).toBeNull()
+  })
+
+  it('zeigt Aushebungen mit Anzahl und Gattung', () => {
+    const raising: VisibleProvince = {
+      ...province,
+      recruitQueue: [{ unitKey: 'infantry', count: 2, startedTick: 0, completesAtTick: 20 }],
+    }
+    render(<ProvincePanel province={raising} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={10} />)
+
+    expect(screen.getByRole('meter', { name: '2 × Infanterie' })).toBeTruthy()
+  })
+
+  it('faellt auf die blosse Anzahl zurueck, wenn die Sicht keine Einzelheiten kennt', () => {
+    // Die Sicht ohne Regeln liefert nur buildQueueLength — dann ist die Zahl das Beste,
+    // was die Oberflaeche ehrlich sagen kann.
+    const lean: VisibleProvince = { ...province, buildQueueLength: 2 }
+    render(<ProvincePanel province={lean} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(screen.getByText(/Im Bau: 2/)).toBeTruthy()
+  })
+})

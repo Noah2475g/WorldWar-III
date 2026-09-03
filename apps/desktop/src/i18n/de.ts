@@ -386,10 +386,15 @@ export const de = {
   meter: {
     progress: '{{percent}} %',
     remaining: 'noch {{time}}',
-    building: 'Bau',
-    recruiting: 'Aushebung',
+    done: 'fertig',
     march: 'Marsch',
     victoryGoal: 'Siegziel',
+    victoryShare: '{{percent}} % von {{goal}} %',
+  },
+
+  time: {
+    hours: '{{hours}} h',
+    days: '{{days}} Tage',
   },
 } as const
 

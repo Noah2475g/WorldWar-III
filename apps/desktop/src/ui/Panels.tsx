@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { amount, arrival, costs, duration, percent, population, rate, unfix } from './format.ts'
+import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
@@ -253,7 +253,33 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </>
       )}
 
-      {province.buildQueueLength !== undefined && province.buildQueueLength > 0 && (
+      {/* Was gerade entsteht, mit Fortschritt und Restzeit (R-UI-09). Vorher stand hier
+          allein die Anzahl der Vorhaben — eine Zahl, die nichts darueber sagt, ob sich
+          das Warten noch lohnt. */}
+      {(province.buildQueue ?? []).map((order) => (
+        <Meter
+          key={`build-${order.building}-${order.completesAtTick}`}
+          label={t(`buildings.${order.building}`)}
+          value={props.currentTick - order.startedTick}
+          max={Math.max(1, order.completesAtTick - order.startedTick)}
+          text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
+          tone="good"
+        />
+      ))}
+
+      {(province.recruitQueue ?? []).map((order) => (
+        <Meter
+          key={`recruit-${order.unitKey}-${order.completesAtTick}`}
+          label={`${order.count} × ${t(`units.${order.unitKey}`)}`}
+          value={props.currentTick - order.startedTick}
+          max={Math.max(1, order.completesAtTick - order.startedTick)}
+          text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
+          tone="good"
+        />
+      ))}
+
+      {/* Die Sicht ohne Regeln kennt nur die Anzahl — dann bleibt es bei der Zahl. */}
+      {province.buildQueue === undefined && province.buildQueueLength !== undefined && province.buildQueueLength > 0 && (
         <p className="facts__inline">
           {t('province.buildQueue')}: {province.buildQueueLength}
         </p>
@@ -328,13 +354,23 @@ export function ArmyPanel(props: ArmyPanelProps) {
             <dd>{t(`army.stance${army.stance[0]!.toUpperCase()}${army.stance.slice(1)}`)}</dd>
           </>
         )}
-        <dt>{t('army.moving')}</dt>
-        <dd>
-          {army.arrivalTick != null
-            ? arrival(props.currentTick, army.arrivalTick, props.ticksPerDay)
-            : t('army.idle')}
-        </dd>
+        {army.arrivalTick == null && (
+          <>
+            <dt>{t('army.moving')}</dt>
+            <dd>{t('army.idle')}</dd>
+          </>
+        )}
       </dl>
+
+      {/* Ein laufender Marsch als Anzeige: wie weit, und wie lange noch (R-UI-09). */}
+      {army.arrivalTick != null && (
+        <Meter
+          label={t('meter.march')}
+          value={props.currentTick - (army.departureTick ?? props.currentTick)}
+          max={Math.max(1, army.arrivalTick - (army.departureTick ?? props.currentTick))}
+          text={arrival(props.currentTick, army.arrivalTick, props.ticksPerDay)}
+        />
+      )}
 
       {props.units && props.units.length > 0 && (
         <>

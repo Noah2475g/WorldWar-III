@@ -94,6 +94,21 @@ export function arrival(nowTick: number, arrivalTick: number, ticksPerDay: numbe
   return t('army.arrivesAt', { day: num(day), hour: String(hour).padStart(2, '0') })
 }
 
+/**
+ * How much longer something has to run: "noch 6 h", "noch 2 Tage" (T-M13-07).
+ *
+ * The counterpart to `arrival`, which names a point in time. A progress bar is asking a
+ * different question — not "when does it land" but "how much of my patience is left" —
+ * and for that a duration reads faster than a date.
+ */
+export function remaining(nowTick: number, endTick: number, ticksPerDay: number): string {
+  const hours = Math.max(0, endTick - nowTick)
+  if (hours === 0) return t('meter.done')
+  if (hours < ticksPerDay) return t('meter.remaining', { time: t('time.hours', { hours: Math.round(hours) }) })
+  const days = Math.round((hours / ticksPerDay) * 10) / 10
+  return t('meter.remaining', { time: t('time.days', { days: days.toLocaleString('de-DE') }) })
+}
+
 /** A list of costs: "750 Geld, 400 Eisen". */
 export function costs(entries: Partial<Record<string, number>>): string {
   return Object.entries(entries)

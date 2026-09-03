@@ -3,6 +3,7 @@ import { SPEED_STOPS } from '../sim/SimHost.ts'
 import { t } from '../i18n/text.ts'
 import { amount, formatTime, rate } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
+import { Meter } from './Meter.tsx'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
@@ -28,9 +29,29 @@ export interface HeaderProps {
   onPanel: (panel: 'diplomacy' | 'market') => void
 }
 
+/**
+ * The player's share of all points, against the share it takes to win (R-UI-13).
+ *
+ * Points on their own answer nothing — 4 200 is a good score in a small game and a
+ * hopeless one in a large one. The share against the threshold is the figure the
+ * question "how far along am I" is actually asking about.
+ */
+export function victoryProgress(view: PublicView | null): { share: number; goal: number } | null {
+  if (!view?.victory.pointsShareToWin) return null
+  const total = view.self.score + view.others.reduce((sum, other) => sum + other.score, 0)
+  if (total <= 0) return null
+
+  return {
+    share: (view.self.score / total) * 100,
+    // The threshold is fixed-point per mille of the total: 900 means 90 %.
+    goal: view.victory.pointsShareToWin / 10,
+  }
+}
+
 export function Header(props: HeaderProps) {
   const resources = props.view?.self.resources
   const shortages = new Set(props.view?.self.shortages ?? [])
+  const victory = victoryProgress(props.view)
 
   return (
     <header className="header">
@@ -61,6 +82,18 @@ export function Header(props: HeaderProps) {
           )
         })}
       </ul>
+
+      {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
+          gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). */}
+      {victory && (
+        <Meter
+          label={t('meter.victoryGoal')}
+          value={victory.share}
+          max={victory.goal}
+          text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+          tone={victory.share >= victory.goal ? 'good' : 'neutral'}
+        />
+      )}
 
       <div className="clock">
         <span className="clock__time">{formatTime(props.view?.tick ?? 0, props.ticksPerDay)}</span>

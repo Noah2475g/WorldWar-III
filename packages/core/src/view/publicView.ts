@@ -44,15 +44,17 @@ export interface VisibleProvince {
   buildings?: Partial<Record<BuildingKey, number>>
   buildQueueLength?: number
   /**
-   * What is being built here and when it is finished (R-UI-09).
+   * What is being built here, when it started and when it is finished (R-UI-09).
    *
    * Only for own provinces, and only when the view was asked for with the rules: a
    * progress bar is a fine thing right until it tells the player what an opponent is
-   * building. Ids and start ticks stay behind — a display needs the end, not the paperwork.
+   * building. The start tick is part of it — a bar needs both ends, and the first
+   * version of this field left it out on the grounds that "a display needs the end,
+   * not the paperwork", which turned out to be exactly wrong.
    */
-  buildQueue?: { building: BuildingKey; completesAtTick: Tick }[]
+  buildQueue?: { building: BuildingKey; startedTick: Tick; completesAtTick: Tick }[]
   /** The same for levies being raised. */
-  recruitQueue?: { unitKey: string; count: number; completesAtTick: Tick }[]
+  recruitQueue?: { unitKey: string; count: number; startedTick: Tick; completesAtTick: Tick }[]
   /**
    * Where morale is heading. The current figure alone cannot say whether a province is
    * settling down or coming apart, which is the one thing the player wants to know.
@@ -74,6 +76,8 @@ export interface VisibleArmy {
   stance?: Stance
   path?: ProvinceId[]
   arrivalTick?: Tick | null
+  /** When the march began — a progress bar needs both ends of the stretch (R-UI-09). */
+  departureTick?: Tick | null
 }
 
 export interface PublicView {
@@ -107,7 +111,12 @@ export interface PublicView {
    */
   battles?: { provinceId: ProvinceId; startedTick: Tick }[]
   marketPrices: Record<ResourceKey, Fixed>
-  victory: { condition: string; winner: PlayerId | null }
+  /**
+   * The victory condition, its winner — and the share of points it takes to win
+   * (R-UI-13). Without the threshold the interface can show a score but not how far
+   * away the end of the game is.
+   */
+  victory: { condition: string; winner: PlayerId | null; pointsShareToWin?: number }
 }
 
 /** Provinces the player can currently observe. */
@@ -178,11 +187,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
                 ? {
                     buildQueue: province.buildQueue.map((order) => ({
                       building: order.building,
+                      startedTick: order.startedTick,
                       completesAtTick: order.completesAtTick,
                     })),
                     recruitQueue: province.recruitQueue.map((order) => ({
                       unitKey: order.unitKey,
                       count: order.count,
+                      startedTick: order.startedTick,
                       completesAtTick: order.completesAtTick,
                     })),
                     moraleTarget: province.targetMorale,
@@ -229,6 +240,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
             stance: army.stance,
             path: [...army.path],
             arrivalTick: army.arrivalTick,
+            departureTick: army.departureTick,
           }
         : {}),
     })
@@ -277,6 +289,10 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
         }
       : {}),
     marketPrices: { ...state.market.prices },
-    victory: { condition: state.victory.condition, winner: state.victory.winner },
+    victory: {
+      condition: state.victory.condition,
+      winner: state.victory.winner,
+      ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
+    },
   }
 }
