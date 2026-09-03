@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import type { PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Header, victoryProgress } from './Header.tsx'
+import { reachInDays } from './format.ts'
 
 /**
  * The header (T-M13-07, R-UI-13).
@@ -96,5 +97,50 @@ describe('R-UI-10 Die Kopfleiste zeigt Rohstoffe mit Symbol', () => {
     // Und der Name bleibt lesbar — fuer Vorleseprogramme und fuer den Zeiger.
     expect(screen.getByText('Nahrung')).toBeTruthy()
     expect(container.querySelector('.resource')?.getAttribute('title')).toBe('Nahrung')
+  })
+})
+
+describe('R-UI-09 Die Kopfleiste sagt, wie lange es reicht', () => {
+  const withEconomy = (stock: number, balance: number): PublicView => {
+    const base = view(100, [100], 900)
+    return {
+      ...base,
+      self: {
+        ...base.self,
+        economy: {
+          food: { stock, production: 0, consumption: Math.max(0, -balance), balance },
+          wood: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+          iron: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+          coal: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+          oil: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+          rare: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+          money: { stock: 5000, production: 100, consumption: 0, balance: 100 },
+        },
+      },
+    } as PublicView
+  }
+
+  it('nennt die Reichweite, wenn der Vorrat schrumpft', () => {
+    renderHeader(withEconomy(10_000, -5000))
+
+    expect(screen.getByText('noch 2 Tage')).toBeTruthy()
+  })
+
+  it('schweigt, solange der Vorrat waechst', () => {
+    renderHeader(withEconomy(10_000, 5000))
+
+    expect(screen.queryByText(/noch .* Tage/)).toBeNull()
+  })
+
+  it('kennzeichnet einen Vorrat unter drei Tagen als Mangel', () => {
+    const { container } = renderHeader(withEconomy(4000, -2000))
+
+    expect(container.querySelector('.resource--short')).toBeTruthy()
+  })
+
+  it('rechnet keine Reichweite aus einem leeren Lager oder einer Null-Bilanz', () => {
+    expect(reachInDays(0, -100)).toBeNull()
+    expect(reachInDays(1000, 0)).toBeNull()
+    expect(reachInDays(1000, -100)).toBe(10)
   })
 })

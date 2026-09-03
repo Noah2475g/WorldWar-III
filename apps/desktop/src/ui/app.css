@@ -857,3 +857,10 @@ body {
   gap: var(--sp-xs);
   margin-bottom: var(--sp-sm);
 }
+
+/* Die Reichweite steht nur da, wenn der Vorrat schrumpft — sonst waere sie Rauschen. */
+.resource__reach {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--warn);
+}

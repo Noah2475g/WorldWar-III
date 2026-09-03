@@ -1,7 +1,7 @@
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { SPEED_STOPS } from '../sim/SimHost.ts'
 import { t } from '../i18n/text.ts'
-import { amount, formatTime, rate } from './format.ts'
+import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachText } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
 import { Meter } from './Meter.tsx'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
@@ -58,10 +58,13 @@ export function Header(props: HeaderProps) {
       <ul className="resources" aria-label="Rohstoffe">
         {RESOURCE_KEYS.map((key) => {
           const flow = props.view?.self.economy?.[key]
+          // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).
+          const days = flow ? reachInDays(flow.stock, flow.balance) : null
+          const running = days !== null && days < SHORT_REACH_DAYS
           return (
             <li
               key={key}
-              className={shortages.has(key) ? 'resource resource--short' : 'resource'}
+              className={shortages.has(key) || running ? 'resource resource--short' : 'resource'}
               title={t(`resources.${key}`)}
             >
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
@@ -78,6 +81,7 @@ export function Header(props: HeaderProps) {
                   {rate(flow.balance)}
                 </em>
               )}
+              {days !== null && <i className="resource__reach">{reachText(days)}</i>}
             </li>
           )
         })}

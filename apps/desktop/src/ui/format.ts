@@ -109,6 +109,27 @@ export function remaining(nowTick: number, endTick: number, ticksPerDay: number)
   return t('meter.remaining', { time: t('time.days', { days: days.toLocaleString('de-DE') }) })
 }
 
+/**
+ * How many game days a stock lasts at the current balance (T-M13-14, R-UI-09).
+ *
+ * Null while the balance is positive: a stock that is growing has no range, and a
+ * figure like "reicht 4000 Tage" is noise pretending to be information. The question
+ * this answers is the only one a red balance raises — how long have I got.
+ */
+export function reachInDays(stock: number, balancePerDay: number): number | null {
+  if (balancePerDay >= 0 || stock <= 0) return null
+  return stock / Math.abs(balancePerDay)
+}
+
+/** Below this many days of stock left, a resource is a shortage rather than a figure. */
+export const SHORT_REACH_DAYS = 3
+
+/** "noch 2 Tage" — the range of a stock, rounded the way a player thinks about it. */
+export function reachText(days: number): string {
+  const rounded = days < 10 ? Math.round(days * 10) / 10 : Math.round(days)
+  return t('meter.remaining', { time: t('time.days', { days: rounded.toLocaleString('de-DE') }) })
+}
+
 /** A list of costs: "750 Geld, 400 Eisen". */
 export function costs(entries: Partial<Record<string, number>>): string {
   return Object.entries(entries)
