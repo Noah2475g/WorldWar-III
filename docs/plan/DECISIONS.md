@@ -66,3 +66,21 @@ eine halb aufgeriebene Armee wäre dann viermal so schwach wie eine volle statt 
 **Auswirkung:** `healthDamageFloor` bleibt als Konstante im Regelwerk erhalten, wird
 aber nicht mehr gelesen. Die Wirkung ist im Test „laesst eine geschwaechte Armee weniger
 ausrichten" belegt.
+
+---
+
+## 2026-09-03 · T-M10-02 · Vorspulen läuft in Häppchen über die Ereignisschleife
+
+**Entscheidung:** `fastForward` wird im Worker nicht in einem Zug aufgerufen, sondern in
+Stapeln zu 250 Spielstunden — einer je Zeitscheibe des Worker-Takts. Der Kern bleibt
+unverändert; die Stapelung liegt im Simulations-Host (`SimEngine.continueFastForward`).
+
+**Begründung:** Ein Test hat es aufgedeckt: JavaScript ist einfädig. Ein Vorspulen, das
+in einem Aufruf durchläuft, kommt nie an die Nachricht „Abbrechen" heran — der Worker
+liest seinen Posteingang erst, wenn er ohnehin fertig ist. Der Abbruchknopf aus Design D5
+wäre eine Attrappe gewesen. Dasselbe gilt für die Fortschrittsanzeige.
+
+**Auswirkung:** Der Abbruch greift innerhalb einer Bildschirmscheibe (16 ms). Der
+Durchsatz bleibt weit über der Zusage — gemessen deutlich über 500 Spielstunden je
+Sekunde auf der Testkarte. `SimEngine.fastForward(target, shouldAbort?)` bleibt als
+blockierende Bequemlichkeit für Tests und den kopflosen Betrieb erhalten.

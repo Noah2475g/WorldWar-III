@@ -674,7 +674,7 @@ tasks:
   - id: T-M10-02
     milestone: M10
     title: Simulations-Host im Worker
-    status: todo
+    status: done
     deps: [T-M8-01]
     requirements: [R-TIME-02, R-TIME-03, R-DIP-04]
     design: [D-03, D-12]

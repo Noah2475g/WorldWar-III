@@ -36,6 +36,22 @@ importers:
         specifier: ^2.8.1
         version: 2.9.0
 
+  apps/desktop:
+    dependencies:
+      '@worldwar/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@worldwar/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@worldwar/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      '@worldwar/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
+
   apps/headless:
     dependencies:
       '@worldwar/ai':
