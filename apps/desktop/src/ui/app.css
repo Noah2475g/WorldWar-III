@@ -764,3 +764,44 @@ body {
   border: 1px solid var(--line);
   border-radius: 1px;
 }
+
+/* ---------------------------------------------------------------- erklaerung */
+
+/* Ein Fragezeichen neben dem Namen (R-UI-11). Geschlossen elf Pixel breit, offen ein
+   bis zwei Saetze — und beides mit der Tastatur erreichbar, was ein title-Attribut
+   nicht waere. */
+.explain {
+  display: inline;
+}
+
+.explain__toggle {
+  font: inherit;
+  font-size: 10px;
+  line-height: 1;
+  width: 14px;
+  height: 14px;
+  margin-left: 3px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: help;
+  vertical-align: middle;
+}
+
+.explain__toggle[aria-expanded='true'] {
+  background: var(--ink);
+  color: var(--on-dark);
+  border-color: var(--ink);
+}
+
+.explain__text {
+  display: block;
+  margin: var(--sp-sm) 0;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--paper-sunk);
+  border-left: 2px solid var(--line);
+}

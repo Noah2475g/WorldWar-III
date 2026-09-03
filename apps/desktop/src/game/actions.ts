@@ -46,6 +46,8 @@ export interface ActionSpec {
   label: string
   /** The symbol of the thing being ordered — a building, an arm of service (R-UI-10). */
   icon?: IconName
+  /** Where the one-sentence explanation of this thing lives (R-UI-11). */
+  explainKey?: string
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
   /** Null when the order can be given; otherwise why not. */
@@ -63,6 +65,7 @@ function checked(
   label: string,
   hint?: string,
   icon?: IconName,
+  explainKey?: string,
 ): ActionSpec {
   const result = canApply(ctx.state, command, {
     map: ctx.map,
@@ -74,6 +77,7 @@ function checked(
     id,
     label,
     ...(icon ? { icon } : {}),
+    ...(explainKey ? { explainKey } : {}),
     ...(hint ? { hint } : {}),
     disabledReason: result.ok ? null : describeRejection(result, command, ctx),
     command,
@@ -95,6 +99,7 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
       t(`buildings.${key}`),
       costHint(rule.cost, rule.buildTicks, ctx.ticksPerDay),
       BUILDING_ICONS[key],
+      `explain.buildings.${key}`,
     ),
   )
 }
@@ -119,6 +124,7 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
       t(`units.${key}`),
       `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}`,
       UNIT_ICONS[key],
+      `explain.units.${key}`,
     )
   })
 }

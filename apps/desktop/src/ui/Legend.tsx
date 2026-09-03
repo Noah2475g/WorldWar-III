@@ -1,4 +1,5 @@
 import { legendFor, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
+import { Explain } from './Explain.tsx'
 
 /**
  * What the colours on the map mean (T-M13-08, R-UI-12).
@@ -16,7 +17,10 @@ export function Legend({ mode }: { mode: MapMode }) {
 
   return (
     <div className="legend" aria-label={`Legende: ${MAP_MODE_NAMES[mode]}`}>
-      <span className="legend__title">{MAP_MODE_NAMES[mode]}</span>
+      <span className="legend__title">
+        {MAP_MODE_NAMES[mode]}
+        <Explain textKey={`explain.mapModes.${mode}`} subject={MAP_MODE_NAMES[mode]} />
+      </span>
       <ul className="legend__items">
         {entries.map((entry) => (
           <li key={entry.label} className="legend__item">

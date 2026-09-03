@@ -365,6 +365,7 @@ export function App(props: AppProps) {
       label: spec.label,
       disabledReason: spec.disabledReason,
       ...(spec.icon ? { icon: spec.icon } : {}),
+      ...(spec.explainKey ? { explainKey: spec.explainKey } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
       onRun: () => {
         if (spec.id.startsWith('build-')) tutor('openBuild')

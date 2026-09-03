@@ -383,6 +383,72 @@ export const de = {
     dismiss: 'Nicht mehr zeigen',
   },
 
+  /**
+   * Was ein Ding ist, in höchstens zwei Sätzen (T-M13-11, R-UI-11).
+   *
+   * Die Regel für jeden dieser Texte: er sagt, wofür man das Ding *nimmt*, nicht was in
+   * den Regeln steht. Zahlen gehören nicht hierher — Kosten, Dauer und Werte kommen aus
+   * den Regeldateien und stünden hier nur ein zweites Mal, wo sie beim nächsten
+   * Balancing-Lauf falsch werden.
+   */
+  explain: {
+    buildings: {
+      barracks: 'Hebt Infanterie aus und beschleunigt jede weitere Aushebung in dieser Provinz.',
+      fortress: 'Verstärkt die Verteidiger der Provinz erheblich und hebt die Moral. Die einzige Antwort auf einen stärkeren Gegner.',
+      factory: 'Erlaubt Panzer und Artillerie und steigert die Rohstoffproduktion der Provinz.',
+      harbour: 'Braucht Küste. Schiffe legen hier deutlich schneller an und ab, und die Provinz ist zufriedener.',
+      shipyard: 'Braucht Küste und einen Hafen. Erst hier entstehen Kriegsschiffe.',
+      airfield: 'Erlaubt Flugzeuge und bestimmt, wie weit sie über die Grenze hinaus wirken.',
+      railway: 'Truppen marschieren im eigenen Gebiet schneller, und die Provinz ist merklich zufriedener.',
+    },
+    units: {
+      infantry: 'Billig, langsam und zäh — das Rückgrat jeder Front. Hält Gelände, das sonst niemand hält.',
+      motorized: 'Infanterie auf Rädern: fast dreimal so schnell, entsprechend teurer. Für Lücken und Gegenstöße.',
+      tank: 'Bricht Stellungen, gegen die Infanterie anrennt. Braucht eine Fabrik und viel Öl.',
+      heavy_tank: 'Der schwerste Stoß, den das Spiel kennt, und der langsamste. Gegen Befestigungen unersetzlich.',
+      artillery: 'Schießt in die Nachbarprovinz, ohne selbst hineinzugehen. Gegen Infanterie verheerend, allein schutzlos.',
+      rocket_artillery: 'Artillerie mit doppelter Reichweite und höherem Tempo. Trifft, was zwei Provinzen entfernt steht.',
+      fighter: 'Herrscht über die Luft und macht gegnerische Flugzeuge nieder. Am Boden richtet er wenig aus.',
+      bomber: 'Trägt den Krieg drei Provinzen weit. Gegen Erdziele hart, gegen Jäger wehrlos.',
+      destroyer: 'Beherrscht die See, deckt Transporte und beschießt die Küste.',
+      transport: 'Bringt Landtruppen über See. Wehrlos — niemals ohne Geleit.',
+    },
+    resources: {
+      food: 'Ernährt Bevölkerung und Truppen. Fehlt sie, sinkt die Moral in jeder Provinz.',
+      wood: 'Baustoff für alles, was errichtet wird. Der erste Engpass jeder jungen Macht.',
+      iron: 'Panzerung und Geschütze. Ohne Eisen keine schweren Verbände.',
+      coal: 'Treibt Fabriken und Eisenbahnen an.',
+      oil: 'Alles, was fährt und fliegt, verbraucht es — im Frieden wenig, im Feldzug viel.',
+      rare: 'Selten und teuer; die modernsten Waffen kommen ohne sie nicht aus.',
+      money: 'Bezahlt Bau, Aushebung und Unterhalt. Am Markt in jeden anderen Rohstoff tauschbar.',
+    },
+    mapModes: {
+      political: 'Wem gehört was. Jede Macht hat ihre eigene Farbe, herrenloses Land bleibt grau.',
+      resources: 'Wo etwas im Boden liegt. Je kräftiger das Grün, desto reicher die Provinz.',
+      morale: 'Wie treu eine Provinz ist. Rot heißt aufstandsgefährdet, grün heißt ruhig.',
+      strength: 'Wo Truppen stehen — so weit Sie sehen können. Je dunkler, desto stärker besetzt.',
+    },
+    terrain: {
+      plains: 'Offenes Land: schneller Marsch, wenig Deckung.',
+      forest: 'Bremst den Vormarsch und begünstigt den Verteidiger.',
+      mountain: 'Der langsamste Grund und der beste Schutz. Ein Gebirge hält kleine Verbände lange auf.',
+      desert: 'Weite Wege, karge Erträge.',
+      urban: 'Dichte Bebauung: viele Menschen, hohe Erträge, schwer zu nehmen.',
+    },
+    diplomacy: {
+      peace: 'Kein Krieg, kein Bündnis. Truppen dürfen die Grenze nicht überschreiten.',
+      war: 'Offener Krieg: beide Seiten dürfen angreifen und erobern.',
+      truce: 'Kampfpause auf Zeit. Vor ihrem Ablauf ist kein neuer Krieg möglich.',
+      alliance: 'Gemeinsame Sache: Durchmarsch und Kartenwissen inbegriffen.',
+      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung.',
+      sharedMap: 'Beide sehen, was der andere sieht.',
+    },
+  },
+
+  explainUi: {
+    about: 'Was ist {{subject}}?',
+  },
+
   meter: {
     progress: '{{percent}} %',
     remaining: 'noch {{time}}',

@@ -5,6 +5,7 @@ import { amount, arrival, costs, duration, percent, population, rate, remaining,
 import { IconRow, type IconItem } from './IconRow.tsx'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
+import { Explain } from './Explain.tsx'
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
 const MORALE_SCALE = 100_000
@@ -23,6 +24,8 @@ export interface Action {
   label: string
   /** The symbol of the thing being ordered, drawn on the button (R-UI-10). */
   icon?: IconName
+  /** Where the explanation of the thing being ordered lives (R-UI-11). */
+  explainKey?: string
   /** Null when the action is available; otherwise the reason it is not. */
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
@@ -78,6 +81,7 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         {action.icon && <Icon name={action.icon} size={13} />}
         {action.label}
       </button>
+      {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       {action.disabledReason &&
         (showReason ? (
           <p id={reasonId} className="action__reason">
@@ -198,7 +202,8 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </h2>
         <p className="panel__sub">
           {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
-          {t(`terrain.${province.terrain}`)} ·{' '}
+          {t(`terrain.${province.terrain}`)}
+          <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
           {province.coastal ? t('province.coastal') : t('province.landlocked')}
         </p>
       </header>
@@ -516,6 +521,10 @@ export function DiplomacyPanel({
                 <td>{nameOf(other.id)}</td>
                 <td className={relation?.state === 'war' ? 'state state--war' : 'state'}>
                   {t(`diplomacy.${relation?.state ?? 'peace'}`)}
+                  <Explain
+                    textKey={`explain.diplomacy.${relation?.state ?? 'peace'}`}
+                    subject={t(`diplomacy.${relation?.state ?? 'peace'}`)}
+                  />
                 </td>
                 {actionsFor && (
                   <td>
@@ -628,7 +637,10 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
         <tbody>
           {Object.entries(economy).map(([key, flow]) => (
             <tr key={key} className={shortages.has(key as never) ? 'state state--war' : undefined}>
-              <td>{t(`resources.${key}`)}</td>
+              <td>
+                {t(`resources.${key}`)}
+                <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
+              </td>
               <td>{amount(flow.stock)}</td>
               <td>{rate(flow.production)}</td>
               <td>{rate(-flow.consumption)}</td>
