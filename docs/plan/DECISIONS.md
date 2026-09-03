@@ -250,3 +250,30 @@ Namen vergeben; eine Stichprobe zeigte, dass sie falsch waren — im „bayerisc
 lagen auch Baden-Württemberg und Sachsen, die „Provence" war in Wahrheit Zentralfrankreich,
 und „Andalusien" enthielt die Kanarischen Inseln. Wer nach Lage schneidet, muss nach Lage
 benennen.
+
+---
+
+## 2026-09-03 · T-M9-02a · Verschmelzen über eine Topologie, nicht über Polygon-Arithmetik
+
+**Entscheidung:** Die Teile einer Provinz werden über eine gemeinsame TopoJSON-Topologie
+verschmolzen (`topojson-server` + `topojson-client`, beide frei), nicht über eine
+Polygon-Vereinigung.
+
+**Begründung:** In einer Topologie teilen sich zwei aneinandergrenzende Einheiten
+denselben *Bogen* — eine Linie, zweimal verwendet. Das Auflösen ist damit exakt: Der
+gemeinsame Bogen fällt weg, die äußeren bleiben auf die letzte Stelle dort, wo sie waren.
+Eine Polygon-Vereinigung würde stattdessen zwei Linien vergleichen, die nur im Rahmen der
+Gleitkommagenauigkeit gleich sind, und Haarrisse zwischen Provinzen hinterlassen, die sich
+in Wirklichkeit berühren — die Nachbarschaftsberechnung (T-M9-02b) läse das als „keine
+Nachbarn".
+
+**Und die Reihenfolge:** erst verschmelzen, dann vereinfachen. Vereinfacht man die Teile
+zuerst, rücken ihre gemeinsamen Kanten je um Bruchteile eines Grades auseinander, und beim
+Verschmelzen gibt es nichts Exaktes mehr zu kürzen.
+
+**Auswirkung:** 1279 Teile werden zu 237 Provinzen; die Vereinfachung bei 0,05° drückt
+602 842 Stützpunkte auf 62 195 (−90 %), Ergebnisdatei 1,03 MB. Gesamtfläche 133,9 Mio km²
+gegen erwartete rund 135 Mio ohne Antarktis. Zwei Nachbesserungen waren nötig, beide für
+den Diff und nicht für die Geometrie: die Provinzen werden nach Kennung sortiert, und jeder
+Ring beginnt an seinem westlichsten Punkt — sonst lieferte derselbe Bau je nach
+Eingabereihenfolge dasselbe Rechteck ab einer anderen Ecke, also eine andere Datei.

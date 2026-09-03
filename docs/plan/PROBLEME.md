@@ -33,3 +33,26 @@ statt `Äthiopien`). Beides muss der Lader abfangen, bevor irgendetwas gruppiert
 sonst stehen die Fehler später in der Karte.
 
 **Status:** offen, T-M9-00 in Arbeit. Kein Blocker.
+
+---
+
+## 2026-09-03 · T-M9-02a → vorgemerkt für T-M9-02c · Vier Provinzen liegen auf der Datumsgrenze
+
+**Befund:** Fidschi, Neuseeland, der Russische Ferne Osten und der Westen der USA
+(Alaska mit den Aleuten) spannen in den Rohdaten über die volle Längenspanne von −180°
+bis 180°. Das ist geografisch richtig, aber jede Rechnung, die „westlichster minus
+östlichster Punkt" bildet, hält diese Provinzen für so breit wie die halbe Welt.
+
+**Kleinster reproduzierbarer Fall:** In `world-shapes.json` die Längenspanne je Provinz
+bilden — vier liegen über 180°.
+
+**Noch keine Auswirkung:** Die Karte zeichnet richtig (die Polygone selbst sind korrekt,
+nur weit auseinander), und die Flächenrechnung stimmt — 133,9 Mio km² gegen erwartete
+rund 135 Mio ohne Antarktis.
+
+**Wo es weh tun wird:** T-M9-02b (Nachbarschaft über Schwerpunktabstände) und T-M9-02c
+(Seewege, „kein Sprung über die halbe Welt"). Beide müssen die Längendifferenz über die
+Datumsgrenze rechnen, nicht linear. `distanceKm` in `project.ts` tut das bereits und hat
+einen Test dafür; die noch zu schreibenden Schritte müssen es ebenso tun.
+
+**Status:** kein Blocker, vorgemerkt für T-M9-02c.

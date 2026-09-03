@@ -602,7 +602,7 @@ tasks:
   - id: T-M9-02a
     milestone: M9
     title: Provinzauswahl und Zusammenfassung
-    status: todo
+    status: done
     deps: [T-M9-00]
     requirements: [R-MAP-01, R-MAP-03]
     files: [packages/mapgen/src/provinces.ts, data/mapgen/merge-rules.json]
