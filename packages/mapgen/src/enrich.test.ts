@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   densityFactor,
   depositsFor,
+  ensureStartingBasics,
   enrich,
   scalePopulation,
   startingValue,
   terrainFor,
+  type EnrichedProvince,
   type RawProvince,
 } from './enrich.ts'
 
@@ -201,5 +203,59 @@ describe('R-GAME-01 Startwert einer Nation', () => {
     const ore = startingValue([{ id: 'A', terrain: 'plains', kind: 'rural', population: 0, deposits: { rare: 100 } }], weights)
 
     expect(ore).toBeGreaterThan(bread)
+  })
+})
+
+describe('R-GAME-01 Keine Startnation ohne Bauholz und Erz', () => {
+  const plains = (id: string): EnrichedProvince => ({
+    id,
+    terrain: 'plains',
+    kind: 'rural',
+    population: 1_000_000,
+    deposits: { food: 2000, coal: 900 },
+  })
+  const forest = (id: string): EnrichedProvince => ({
+    id,
+    terrain: 'forest',
+    kind: 'rural',
+    population: 800_000,
+    deposits: { food: 1200, wood: 2400, iron: 700 },
+  })
+
+  it('gibt einer Nation aus lauter Ebenen Holz und Erz in der Hauptstadt', () => {
+    // Italy on the first world map: grain and coal, nothing to build with.
+    const result = ensureStartingBasics(
+      [plains('I1'), plains('I2'), forest('N1'), forest('N2')],
+      [{ nation: 'Italien', provinces: ['I1', 'I2'] }],
+    )
+    const capital = result.find((p) => p.id === 'I1')!
+    const other = result.find((p) => p.id === 'I2')!
+
+    expect(capital.deposits.wood).toBeGreaterThan(0)
+    expect(capital.deposits.iron).toBeGreaterThan(0)
+    expect(other.deposits.wood).toBeUndefined()
+  })
+
+  it('laesst eine Nation in Ruhe, die schon alles hat', () => {
+    const before = [forest('N1'), plains('N2')]
+    const result = ensureStartingBasics(before, [{ nation: 'Nordland', provinces: ['N1', 'N2'] }])
+
+    expect(result.map((p) => p.deposits)).toEqual(before.map((p) => p.deposits))
+  })
+
+  it('bemisst das Vorkommen wie ein typisches der Karte, nicht wie das reichste', () => {
+    const rich: EnrichedProvince = { ...forest('R1'), deposits: { food: 1000, wood: 9000, iron: 5000 } }
+    const result = ensureStartingBasics(
+      [plains('I1'), forest('N1'), rich],
+      [{ nation: 'Italien', provinces: ['I1'] }],
+    )
+
+    expect(result.find((p) => p.id === 'I1')!.deposits.wood).toBe(2400)
+  })
+
+  it('laesst neutrales Land, wie das Gelaende es gemacht hat', () => {
+    const result = ensureStartingBasics([plains('X1'), forest('N1')], [{ nation: 'Nordland', provinces: ['N1'] }])
+
+    expect(result.find((p) => p.id === 'X1')!.deposits.wood).toBeUndefined()
   })
 })

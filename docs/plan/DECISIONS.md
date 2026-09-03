@@ -477,3 +477,47 @@ Maschine, nicht die Kosten des Codes. Das Projekt hatte diese Lehre schon einmal
 
 **Auswirkung:** `pnpm verify` bleibt verlässlich. Das Budget wird weiterhin gemessen, nur
 in `pnpm test:slow`, wo die Messung etwas bedeutet.
+
+---
+
+## 2026-09-03 · vor T-M12-03 · Die Weltkarte kommt auf die Skala der Regeln, nicht die Regeln auf die Karte
+
+**Entscheidung:** `scripts/build-map.mjs` schreibt Vorkommen und Bevölkerung so in
+`world.json`, wie die Anreicherung sie liefert — ohne die zweite Multiplikation mit
+1000. Die komprimierte Bevölkerung wird zusätzlich auf ein Fünftel gebracht
+(`POPULATION_SCALE` in `enrich.ts`, Stadt- und Ballungsschwellen entsprechend),
+jede Startnation bekommt in ihrer Hauptstadt Holz und Erz, falls ihr Gelände keines
+hergibt (`ensureStartingBasics`), und ein Skalentest (`economy-scale.test.ts`) misst
+seither, wie viele Tage Einkommen die erste Kaserne kostet — auf der Weltkarte gegen die
+Referenzkarte, mit den echten Regeln. Die Regeln, ihre 60 Konstanten und die Tests des
+Kerns bleiben unverändert.
+
+**Begründung:** Noahs Kriterium war „weniger Probleme beim Spielen". Zwei Wege standen
+offen: die Karte auf die Skala der Regeln (dieser) oder die Regeln auf die Skala der
+Karte (Kosten, Startbestände, Unterhalt, Marktpreise, Punkteformel — sechzig Zahlen mit
+Status, dazu jeder Kerntest, jeder Golden-Master und die Referenzkarte, auf der M3
+abgestimmt wurde). Der erste Weg berührt eine Datei im Generator, eine Konstante in der
+Anreicherung und die Karte selbst; alles, was das Regelwerk über sich weiß, bleibt wahr,
+und die Zahlen auf dem Bildschirm bleiben lesbar (Hunderte statt Hunderttausende).
+
+Die Bevölkerungsskala kam als zweiter Schritt: nach der ersten Korrektur lagen Holz und
+Nahrung im Band der Referenz, aber Geld war noch sechs- bis zwanzigfach zu reichlich.
+Der Kern rechnet mit 300 000 Menschen als Referenzbevölkerung (Faktor 1,0, Deckel 1,5)
+und besteuert je tausend; die komprimierten zwei bis fünf Millionen je Provinz hingen
+sämtlich am Deckel — Bevölkerung bedeutete nichts mehr. Ein Fünftel setzt die
+Weltprovinzen dorthin, wo die der Referenzkarte liegen (180 000 bis 900 000).
+
+**Auswirkung, gemessen mit `economyOverview` am ersten Spieltag:**
+
+| | Referenz (Nordland) | Deutschland vorher | Deutschland nachher | Italien vorher → nachher |
+|---|---|---|---|---|
+| Kaserne in Tagen Material | 8,8 | 0,003 (4 Spielminuten) | 2,4 | nie → 3,5 |
+| Kaserne in Tagen Geld | 4,1 | 0,0005 | 2,3 | 0,0006 → 3,1 |
+| Material je Tag | 38 | 132.805 | 137 | 0 → 96 |
+
+Über alle 24 Mächte: Kaserne 1,1–15 Tage Material und 0,8–4,9 Tage Geld; jede Macht
+produziert Nahrung, Material, Erz und Geld vom ersten Tag an. Startwerte: Median 41.262,
+größte Abweichung 13 % (Grenze 15 %). Bevölkerung je Provinz: Median 443.000. Der
+Parameterlauf ist auf der neuen Karte wiederholt (`docs/reports/balance-sweep.md`,
+`BALANCING.md`); die Befunde des ersten Laufs über eine gesättigte Wirtschaft gelten
+nicht mehr. Die Datei `world-shapes.json` blieb beim Neubau bitgleich.

@@ -34,9 +34,16 @@ export function rate(fixed: number): string {
   return value > 0 ? `+${num(value)}` : `−${num(Math.abs(value))}`
 }
 
-/** Population, shortened where the exact figure is noise: 1,24 Mio. */
+/**
+ * Population, shortened where the exact figure is noise: 1,24 Mio.
+ *
+ * The core counts people in fixed-point thousands (production.ts: 300 000 is a
+ * reference population of three hundred thousand), so the raw figure *is* the number
+ * of people. Dividing it by a thousand, as the first version did, showed a province
+ * of nine hundred thousand as "900".
+ */
 export function population(fixed: number): string {
-  const people = unfix(fixed)
+  const people = fixed
   if (people >= 1_000_000) return `${(people / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mio`
   if (people >= 1_000) return `${Math.round(people / 1000)} Tsd`
   return num(Math.round(people))

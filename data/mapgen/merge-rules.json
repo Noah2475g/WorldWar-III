@@ -826,7 +826,7 @@
     }
   },
   "targets": {
-    "note": "Zielkorridore fuer die Anreicherung (T-M9-03). Gemessen am gebauten Ergebnis; ein Test schlaegt an, wenn eine Verteilung herauslaeuft - dann ist entweder die Anreicherung kaputt oder die Karte hat sich absichtlich geaendert und der Korridor gehoert nachgezogen.",
+    "note": "Zielkorridore fuer die Anreicherung (T-M9-03). Gemessen am gebauten Ergebnis; ein Test schlaegt an, wenn eine Verteilung herauslaeuft - dann ist entweder die Anreicherung kaputt oder die Karte hat sich absichtlich geaendert und der Korridor gehoert nachgezogen. Bevoelkerung auf der Spielskala des Kerns (Referenz 300 000 = Faktor 1,0), seit 2026-09-03.",
     "terrainShare": {
       "plains": [
         0.3,
@@ -854,8 +854,8 @@
       0.55
     ],
     "populationPerProvinceMio": [
-      0.1,
-      9
+      0.02,
+      1.8
     ],
     "startValueDeviation": 0.15
   }

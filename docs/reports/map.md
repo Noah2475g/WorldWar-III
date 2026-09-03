@@ -13,7 +13,7 @@ Erzeugt von `scripts/build-map.mjs` aus Natural Earth 1:10 Mio. Nicht von Hand �
 | Inseln ohne Landnachbarn | 21 |
 | Startnationen | 24 |
 | Gesamtfläche | 134.2 Mio km² |
-| Gesamtbevölkerung | 0.56 Mrd |
+| Gesamtbevölkerung | 0.11 Mrd |
 
 ## Gelände
 
@@ -27,31 +27,31 @@ Erzeugt von `scripts/build-map.mjs` aus Natural Earth 1:10 Mio. Nicht von Hand �
 
 ## Startwerte der Nationen
 
-Formel: 10 × Provinzen + 2 × gewichtete Vorkommen + Bevölkerung/1000. Median 48010, größte Abweichung 14 % (Grenze 15 %).
+Formel: 10 × Provinzen + 2 × gewichtete Vorkommen + Bevölkerung/1000. Median 41262, größte Abweichung 13 % (Grenze 15 %).
 
 | Nation | Provinzen | Startwert | Abweichung |
 |---|---|---|---|
-| China | 6 | 54.502 | +14 % |
-| Russland | 6 | 53.754 | +12 % |
-| Indien | 6 | 51.909 | +8 % |
-| Brasilien | 4 | 50.858 | +6 % |
-| Vereinigte Staaten | 4 | 49.821 | +4 % |
-| Australien | 4 | 49.402 | +3 % |
-| Kanada | 3 | 49.353 | +3 % |
-| Mexiko | 4 | 49.244 | +3 % |
-| Indonesien | 5 | 48.689 | +1 % |
-| Iran | 4 | 48.278 | +1 % |
-| Südafrika | 3 | 48.020 | 0 % |
-| Nigeria | 4 | 48.010 | 0 % |
-| Ägypten | 3 | 47.218 | -2 % |
-| Argentinien | 3 | 47.155 | -2 % |
-| Deutschland | 4 | 46.983 | -2 % |
-| Frankreich | 4 | 46.971 | -2 % |
-| Ukraine | 4 | 46.907 | -2 % |
-| Spanien | 4 | 46.712 | -3 % |
-| Türkei | 3 | 46.692 | -3 % |
-| Polen | 4 | 46.647 | -3 % |
-| Pakistan | 3 | 46.623 | -3 % |
-| Japan | 3 | 46.612 | -3 % |
-| Italien | 3 | 46.576 | -3 % |
-| Vereinigtes Königreich | 4 | 46.326 | -4 % |
+| Russland | 6 | 46.670 | +13 % |
+| China | 6 | 46.641 | +13 % |
+| Indien | 6 | 44.449 | +8 % |
+| Brasilien | 4 | 44.329 | +7 % |
+| Australien | 4 | 43.020 | +4 % |
+| Vereinigte Staaten | 4 | 42.965 | +4 % |
+| Kanada | 3 | 42.899 | +4 % |
+| Mexiko | 4 | 42.559 | +3 % |
+| Südafrika | 3 | 41.744 | +1 % |
+| Indonesien | 5 | 41.559 | +1 % |
+| Iran | 4 | 41.475 | +1 % |
+| Nigeria | 4 | 41.262 | 0 % |
+| Argentinien | 3 | 40.926 | -1 % |
+| Ägypten | 3 | 40.494 | -2 % |
+| Spanien | 4 | 40.383 | -2 % |
+| Ukraine | 4 | 40.362 | -2 % |
+| Pakistan | 3 | 40.254 | -2 % |
+| Frankreich | 4 | 40.176 | -3 % |
+| Deutschland | 4 | 40.156 | -3 % |
+| Türkei | 3 | 40.145 | -3 % |
+| Italien | 3 | 40.105 | -3 % |
+| Japan | 3 | 40.075 | -3 % |
+| Polen | 4 | 39.930 | -3 % |
+| Vereinigtes Königreich | 4 | 39.539 | -4 % |

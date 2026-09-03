@@ -26,8 +26,16 @@ export interface EnrichedProvince {
   id: string
   terrain: Terrain
   kind: 'city' | 'rural'
-  /** People, in whole numbers. */
+  /**
+   * People, in whole numbers — which is exactly the core's unit (fixed-point thousands:
+   * 300 000 means 300 000 people). The map build writes this figure as it is.
+   */
   population: number
+  /**
+   * On the core's scale already: fixed-point production per tick, 2000 = 2,0 units an
+   * hour — the scale of the test map the rules were balanced on. Not to be multiplied
+   * by a thousand again on the way out (PROBLEME.md, 2026-09-03).
+   */
   deposits: Partial<Record<ResourceKey, number>>
 }
 
@@ -64,10 +72,22 @@ export function scalePopulation(real: number): number {
   return Math.round(POPULATION_ANCHOR * (real / POPULATION_ANCHOR) ** POPULATION_EXPONENT)
 }
 
-/** Population from which a province counts as a city, on the compressed scale. */
-export const CITY_THRESHOLD = 2_400_000
+/**
+ * From the compressed census to the core's scale.
+ *
+ * The core's reference population is 300 000 people for a production factor of 1,0
+ * (production.ts), and its tax is levied per thousand people. The rules were balanced
+ * on the test map, whose provinces hold 180 000 to 900 000. Compression alone leaves a
+ * world province at two to five million: every one of them sat on the factor's ceiling
+ * of 1,5, and a nation earned twenty times the money the rules expect — a barracks cost
+ * a fifth of a day. One fifth puts the world's provinces where the test map's are.
+ */
+export const POPULATION_SCALE = 0.2
+
+/** Population from which a province counts as a city, on the game scale. */
+export const CITY_THRESHOLD = 480_000
 /** From here the province is built up enough that the ground under it stops mattering. */
-export const URBAN_THRESHOLD = 3_400_000
+export const URBAN_THRESHOLD = 680_000
 
 /**
  * A small deterministic generator. The seed is the province id, so a province always
@@ -151,7 +171,10 @@ export function enrich(
     )
     const sum = weights.reduce((a, b) => a + b, 0) || 1
     own.forEach((province, index) => {
-      populationOf.set(province.id, scalePopulation((total * weights[index]!) / sum))
+      populationOf.set(
+        province.id,
+        Math.round(scalePopulation((total * weights[index]!) / sum) * POPULATION_SCALE),
+      )
     })
   }
 
@@ -163,8 +186,8 @@ export function enrich(
 
       return {
         id: province.id,
-        // Thresholds are on the compressed scale, where a province of ten million is
-        // among the largest in the world rather than merely large.
+        // Thresholds are on the game scale, where a province of a million is among
+        // the largest in the world rather than merely large.
         terrain: population > URBAN_THRESHOLD ? ('urban' as const) : terrain,
         // A city province is where the people are, not where the land is.
         kind: population > CITY_THRESHOLD ? ('city' as const) : ('rural' as const),
@@ -220,6 +243,49 @@ export function depositsFor(
   if (province.coastal && random() < 0.35) deposits.food = (deposits.food ?? 0) + amount(700)
 
   return deposits
+}
+
+/** The ground every playable power needs to build and arm at all. */
+export const STARTING_ESSENTIALS: readonly ResourceKey[] = ['wood', 'iron']
+
+/**
+ * Makes sure no playable power starts without the ground a first game needs (R-GAME-01).
+ *
+ * Terrain decides deposits, and a nation of three plains provinces has grain and coal
+ * and nothing to build with: a barracks costs timber, a factory timber and ore. Such a
+ * power cannot build its first building from its own production and is beaten before
+ * the first move — Italy was, on the first world map. Every start nation therefore gets
+ * each essential in its capital, sized like a typical deposit of that resource so the
+ * levelling afterwards has something ordinary to work with. Neutral ground is left as
+ * the terrain made it.
+ */
+export function ensureStartingBasics(
+  provinces: readonly EnrichedProvince[],
+  nations: readonly { nation: string; provinces: readonly string[] }[],
+  essentials: readonly ResourceKey[] = STARTING_ESSENTIALS,
+): EnrichedProvince[] {
+  const byId = new Map(provinces.map((p) => [p.id, { ...p, deposits: { ...p.deposits } }]))
+
+  const typical = (resource: ResourceKey): number => {
+    const values = provinces
+      .map((p) => p.deposits[resource] ?? 0)
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b)
+    // The lower median: a typical deposit, never the richest of an even pair.
+    return values[Math.floor((values.length - 1) / 2)] ?? 1000
+  }
+
+  for (const nation of nations) {
+    const own = nation.provinces.map((id) => byId.get(id)).filter((p): p is EnrichedProvince => !!p)
+    const capital = own[0]
+    if (!capital) continue
+    for (const resource of essentials) {
+      const has = own.some((p) => (p.deposits[resource] ?? 0) > 0)
+      if (!has) capital.deposits[resource] = typical(resource)
+    }
+  }
+
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id, 'en'))
 }
 
 /**

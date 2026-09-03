@@ -9,7 +9,7 @@ import { buildAdjacency, findEnclaves } from '../packages/mapgen/src/adjacency.t
 import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
 import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
 import { readCsv } from '../packages/mapgen/src/csv.ts'
-import { balanceStartingValues, enrich, startingValue } from '../packages/mapgen/src/enrich.ts'
+import { balanceStartingValues, enrich, ensureStartingBasics, startingValue } from '../packages/mapgen/src/enrich.ts'
 import { project } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
@@ -309,8 +309,13 @@ console.log(`data/maps/world-shapes.json geschrieben (${(JSON.stringify(out).len
  * game charges movement in kilometres. Keeping those apart is the whole reason
  * project() and distanceKm() are separate functions.
  *
- * Population, terrain and deposits are placeholders until T-M9-03 fills them in from
- * the real figures.
+ * Population, terrain and deposits come from the enrichment (T-M9-03) — and they are
+ * written **as the core reads them**, not scaled again. The core's units: a deposit is
+ * fixed-point production per tick (2000 = 2,0 units an hour), population is fixed-point
+ * thousands (300 000 = 300 000 people, a factor of 1,0 in production.ts). The enrichment
+ * already produces both on that scale — the same scale as the test map the rules were
+ * balanced on. The first build multiplied both by a thousand once more, and a barracks
+ * cost four game-minutes of income; see PROBLEME.md, 2026-09-03.
  */
 const WIDTH = 4000
 const HEIGHT = 2400
@@ -319,7 +324,11 @@ const BOTTOM = project({ lon: 0, lat: -58 }).y
 const toX = (lon) => Math.round(project({ lon, lat: 0 }).x * WIDTH)
 const toY = (lat) => Math.round(((project({ lon: 0, lat }).y - TOP) / (BOTTOM - TOP)) * HEIGHT)
 
-/** The core stores every quantity as fixed-point with three decimals. */
+/**
+ * The core stores every quantity as fixed-point with three decimals. Used for the
+ * distances, which the pipeline measures in plain kilometres. Population and deposits
+ * are *not* passed through here — see the note above.
+ */
 const FIXED = 1000
 const toFixed = (value) => Math.round(value * FIXED)
 
@@ -346,8 +355,12 @@ const enrichedRaw = enrich(
   })),
   { populationByCountry, resourceWeights: rulesAi.resourceWeights },
 )
+// Every playable power gets the ground a first game needs before the values are
+// levelled — a nation without timber cannot build its first barracks from its own
+// production, and no start position is allowed to be that kind of trap.
+const withBasics = ensureStartingBasics(enrichedRaw, nationProvinces)
 const enriched = new Map(
-  balanceStartingValues(enrichedRaw, nationProvinces, rulesAi.resourceWeights).map((e) => [e.id, e]),
+  balanceStartingValues(withBasics, nationProvinces, rulesAi.resourceWeights).map((e) => [e.id, e]),
 )
 
 const gameProvinces = provinces.map((p) => {
@@ -364,9 +377,9 @@ const gameProvinces = provinces.map((p) => {
     coastal: p.coastal,
     center: { x: toX(p.centre.lon), y: toY(p.centre.lat) },
     polygon: outer.map(([lon, lat]) => [toX(lon), toY(lat)]),
-    population: toFixed(enriched.get(p.id).population),
+    population: Math.round(enriched.get(p.id).population),
     deposits: Object.fromEntries(
-      Object.entries(enriched.get(p.id).deposits).map(([key, value]) => [key, toFixed(value)]),
+      Object.entries(enriched.get(p.id).deposits).map(([key, value]) => [key, Math.round(value)]),
     ),
   }
 })
@@ -439,7 +452,8 @@ const worst = Math.max(...values.map((v) => Math.abs(deviation(v.value))))
 
 const terrainCount = {}
 for (const p of gameProvinces) terrainCount[p.terrain] = (terrainCount[p.terrain] ?? 0) + 1
-const totalPopulation = gameProvinces.reduce((sum, p) => sum + p.population / 1000, 0)
+// Fixed-point thousands: the raw figure is the number of people.
+const totalPopulation = gameProvinces.reduce((sum, p) => sum + p.population, 0)
 
 const report = [
   '# Kartenbericht',

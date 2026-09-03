@@ -67,9 +67,10 @@ Meldungen werden zu Tagesbündeln zusammengefasst. Sonst wären es Dutzende je S
 
 ## Was das Spiel entscheidet
 
-Aus dem gemessenen Parameterlauf (`docs/reports/balance-sweep.md`): Von den geprüften
-Stellschrauben kippen nur vier den Partieausgang, und **alle vier haben mit Moral und
-Ausdehnung zu tun**. Wie hart zwei Armeen zuschlagen, ändert am Ende fast nichts.
+Aus dem gemessenen Parameterlauf (`docs/reports/balance-sweep.md`): Keine einzelne
+Stellschraube kippt den Partieausgang für sich allein — aber **was ihn bewegt, sind die
+Moralzahlen** (Zielmoral, Startmoral, wie stark schlechte Moral die Produktion drückt).
+Wie hart zwei Armeen zuschlagen, ändert am Ende fast nichts.
 
 Praktisch heißt das:
 

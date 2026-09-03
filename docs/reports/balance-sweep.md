@@ -16,36 +16,31 @@ dieser Liste.
 
 | Kennzahl | Wert |
 |---|---|
-| Anteil des Stärksten | 55.8 % |
+| Anteil des Stärksten | 55.0 % |
 | Überlebende Mächte | 5.0 von 6 |
-| Wirtschaft gesamt | 456.380.389 |
+| Wirtschaft gesamt | 172.762 |
 | Eroberte Provinzen | 3 |
 | Gespielte Tage | 120 |
 
-## Tragende Konstanten (4 von 14)
+## Tragende Konstanten (0 von 14)
 
-| Konstante | Ausschlag | −25 % | Grundwert | +25 % |
-|---|---|---|---|---|
-| `baseTargetMorale` | 15.6 % | 51 % | 56 % | 71 % |
-| `moraleDriftDivisor` | 15.6 % | 71 % | 56 % | 71 % |
-| `startMorale` | 15.2 % | 71 % | 56 % | 71 % |
-| `expansionPenaltyPerProvince` | 15.2 % | 51 % | 56 % | 71 % |
+**Keine.** Keine einzelne Konstante kippt den Ausgang um mehr als die Schwelle — das Regelwerk hängt an keiner Zahl allein, und ein Balancing-Fehler an einer Stelle verdirbt nicht die ganze Partie.
 
 ## Alle geprüften Konstanten
 
 | Konstante | Ausschlag | Überlebende −25 % / +25 % | tragend |
 |---|---|---|---|
-| `baseTargetMorale` | 15.6 % | 5.0 / 5.0 | **ja** |
-| `moraleDriftDivisor` | 15.6 % | 5.0 / 5.0 | **ja** |
-| `startMorale` | 15.2 % | 5.0 / 5.0 | **ja** |
-| `expansionPenaltyPerProvince` | 15.2 % | 5.0 / 5.0 | **ja** |
-| `revoltThreshold` | 7.0 % | 5.0 / 5.0 | — |
-| `battleRate` | 0.5 % | 5.0 / 5.0 | — |
+| `baseTargetMorale` | 10.2 % | 5.0 / 5.0 | — |
+| `productionMoraleFloor` | 6.4 % | 5.0 / 5.0 | — |
+| `startMorale` | 4.3 % | 5.0 / 5.0 | — |
+| `revoltThreshold` | 2.6 % | 5.0 / 5.0 | — |
+| `moraleDriftDivisor` | 2.5 % | 5.0 / 5.0 | — |
+| `marketElasticity` | 2.2 % | 5.0 / 5.0 | — |
+| `expansionPenaltyPerProvince` | 1.5 % | 5.0 / 5.0 | — |
+| `battleRate` | 1.4 % | 5.0 / 5.0 | — |
 | `minDamage` | 0.0 % | 5.0 / 5.0 | — |
 | `defenceCap` | 0.0 % | 5.0 / 5.0 | — |
-| `productionMoraleFloor` | 0.0 % | 5.0 / 5.0 | — |
 | `deployDelayTicks` | 0.0 % | 5.0 / 5.0 | — |
 | `regenPermillePerTick` | 0.0 % | 5.0 / 5.0 | — |
 | `taxPerThousandPopulationPerTick` | 0.0 % | 5.0 / 5.0 | — |
-| `marketElasticity` | 0.0 % | 5.0 / 5.0 | — |
 | `stackFullContribution` | 0.0 % | 5.0 / 5.0 | — |

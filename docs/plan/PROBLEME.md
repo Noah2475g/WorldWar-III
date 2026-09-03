@@ -116,7 +116,15 @@ Startnation ein Mindestvorkommen an Nahrung, Material und Geld sichern, `world.j
 und `docs/reports/map.md` neu erzeugen, Golden-Master und Parameterlauf wiederholen.
 Erst danach ist der Playtest aussagekräftig.
 
-**Status:** offen, blockiert die Aussagekraft von T-M12-03. Kein Code geändert.
+**Status: behoben am 2026-09-03** (Entscheidung Noah: der Weg mit den wenigsten
+Spielproblemen — die Karte auf die Regelskala, nicht umgekehrt; `DECISIONS.md`). Der
+Generator schreibt beide Größen ungeskaliert, die Bevölkerung geht zusätzlich auf ein
+Fünftel (die komprimierten Millionen hingen alle am Deckel des Bevölkerungsfaktors,
+Geld war noch zwanzigfach zu reichlich), jede Startnation erhält Holz und Erz, und
+`apps/headless/test/economy-scale.test.ts` misst seither die Tage Einkommen je Kaserne
+gegen die Referenzkarte. Nachher: Deutschland 2,4 Tage Material, 2,3 Tage Geld; Italien
+3,5 / 3,1; über alle Mächte 1,1–15 bzw. 0,8–4,9 Tage (Referenz 8,8 / 4,1).
+
 
 ## 2026-09-03 · vor T-M12-03 · Rauchtest der Oberfläche — behoben
 

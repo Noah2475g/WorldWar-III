@@ -35,8 +35,12 @@ const ai = JSON.parse(readFileSync(`${ROOT}/data/rules/default/ai.json`, 'utf8')
   resourceWeights: Record<string, number>
 }
 
-/** The core stores every quantity as fixed-point with three decimals. */
-const FIXED = 1000
+/**
+ * The map carries the core's units: population as fixed-point thousands (the raw figure
+ * is the number of people) and deposits as fixed-point production per tick — the same
+ * scale the enrichment produces, so nothing is converted here.
+ */
+const PEOPLE_PER_MILLION = 1_000_000
 
 describe('R-MAP-03 Verteilungen liegen im Zielkorridor', () => {
   it('haelt jede Gelaendeart in ihrem Anteil', () => {
@@ -64,7 +68,7 @@ describe('R-MAP-03 Verteilungen liegen im Zielkorridor', () => {
   it('haelt jede Provinzbevoelkerung im Korridor', () => {
     const [low, high] = rules.targets.populationPerProvinceMio
     for (const province of world.provinces) {
-      const millions = province.population / FIXED / 1_000_000
+      const millions = province.population / PEOPLE_PER_MILLION
       expect(millions, `${province.id}: ${millions.toFixed(2)} Mio`).toBeGreaterThanOrEqual(low)
       expect(millions, `${province.id}: ${millions.toFixed(2)} Mio`).toBeLessThanOrEqual(high)
     }
@@ -95,10 +99,8 @@ describe('R-GAME-01 Keine Nation beginnt geschlagen', () => {
           id: p.id,
           terrain: p.terrain,
           kind: p.kind,
-          population: p.population / FIXED,
-          deposits: Object.fromEntries(
-            Object.entries(p.deposits).map(([key, value]) => [key, value / FIXED]),
-          ),
+          population: p.population,
+          deposits: { ...p.deposits },
         } as EnrichedProvince,
       ]),
     )
@@ -131,6 +133,32 @@ describe('R-GAME-01 Keine Nation beginnt geschlagen', () => {
         return sum + (province?.deposits.food ?? 0)
       }, 0)
       expect(food, `${start.nation} ohne Nahrungsvorkommen`).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('R-GAME-01 Jede Nation kann bauen', () => {
+  it('gibt jeder Startnation Bauholz und Erz', () => {
+    // Italy on the first world map had grain and coal and could never build a barracks
+    // from its own production. A start like that is a lost game nobody was told about.
+    for (const start of world.startPositions) {
+      for (const resource of ['wood', 'iron']) {
+        const total = start.provinces.reduce((sum, id) => {
+          const province = world.provinces.find((p) => p.id === id)
+          return sum + (province?.deposits[resource] ?? 0)
+        }, 0)
+        expect(total, `${start.nation} ohne ${resource}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('traegt Vorkommen auf der Skala der Regeln, nicht tausendfach darueber', () => {
+    // The rules were balanced on the test map, where a deposit is one to four units an
+    // hour. A world province a thousand times richer makes every cost meaningless.
+    for (const province of world.provinces) {
+      for (const [key, value] of Object.entries(province.deposits)) {
+        expect(value, `${province.id}: ${key} = ${value}`).toBeLessThan(40_000)
+      }
     }
   })
 })

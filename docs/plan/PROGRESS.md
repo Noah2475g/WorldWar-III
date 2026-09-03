@@ -247,3 +247,21 @@ Sieben Befunde, sechs behoben — Einzelheiten in `PROBLEME.md`:
 95,9 %, Gesamtabdeckung 90,9 %, `pnpm verify` vollständig grün. Der Playtest sollte
 erst nach der Entscheidung zur Wirtschaftsskala stattfinden — vorher misst er die
 Wirtschaft nicht.
+
+## Nachtrag zu T-M9-03 — Die Weltkarte auf der Skala der Regeln (2026-09-03, Nacht)
+
+Noahs Entscheidung zum siebten Befund: der Weg mit den wenigsten Spielproblemen. Das ist
+die Karte auf die Regelskala zu bringen, nicht die Regeln auf die Karte
+(`DECISIONS.md`, 2026-09-03).
+
+| Schritt | Ergebnis | verify |
+|---|---|---|
+| Generator ohne doppelte Festkomma-Umrechnung | `world.json` neu gebaut; `world-shapes.json` bitgleich; Startwerte Median 41.262, größte Abweichung 13 % | grün |
+| Bevölkerung auf die Referenz des Kerns (ein Fünftel) | Median 443.000 je Provinz statt 2,4 Mio — der Bevölkerungsfaktor hing zuvor bei jeder Provinz am Deckel, Geld war zwanzigfach zu reichlich | grün |
+| Mindestvorkommen Holz und Erz je Startnation (`ensureStartingBasics`) | Italien kann bauen; jede der 24 Mächte produziert Nahrung, Material, Erz und Geld ab Tag 1 | grün |
+| Skalentest `economy-scale.test.ts` | Kaserne kostet jede Macht 0,5–30 Tage Einkommen, die typische Macht liegt binnen Faktor 4 an der Referenzkarte; Bevölkerung auf der Referenz | grün |
+| Bevölkerungsanzeige | zeigte die Testkarte als „900" statt „900 Tsd" — Einheit des Kerns sind Festkomma-Tausender | grün |
+
+Gemessen: Deutschland Kaserne 2,4 Tage Material / 2,3 Tage Geld (vorher 4 Spielminuten),
+Italien 3,5 / 3,1 (vorher nie), Referenz Nordland 8,8 / 4,1. Der Parameterlauf ist auf
+der neuen Karte wiederholt — Ergebnis in `BALANCING.md` und `docs/reports/balance-sweep.md`.

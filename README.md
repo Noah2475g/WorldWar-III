@@ -5,7 +5,20 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status: **Planung abgeschlossen, Umsetzung noch nicht begonnen.**
+Status (2026-09-03): **V1 gebaut — 82 von 83 Aufgaben, alle 74 Anforderungen testbelegt,
+Abnahmelauf maschinell bestanden.** Offen ist allein der Playtest durch Noah
+([`docs/PLAYTEST.md`](docs/PLAYTEST.md)); Anleitung in [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md).
+
+```bash
+pnpm install
+pnpm --filter @worldwar/desktop dev
+```
+
+Prüfen: `pnpm verify` (Lint, Typen, Tests, Guards, Abdeckung) · `pnpm test:slow`
+(Langläufe, Turnier, Budgets, Parameterlauf) · `pnpm acceptance` (beides plus
+Anforderungs-Tor, schreibt `docs/reports/acceptance.md`). Weltkarte neu bauen:
+`node scripts/build-map.mjs` (braucht die Rohdaten aus `scripts/fetch-geodata.mjs`).
+
 
 ## Für Noah
 
@@ -16,8 +29,12 @@ Status: **Planung abgeschlossen, Umsetzung noch nicht begonnen.**
 | In welcher Reihenfolge (Aufgabenplan) | [`docs/plan/03-TASKS.md`](docs/plan/03-TASKS.md) |
 | Mechanik-Referenz des Originals | [`docs/research/SUPREMACY-MECHANICS.md`](docs/research/SUPREMACY-MECHANICS.md) |
 
-Drei Stellen im Plan brauchen dich: die Freigabe für den Geodaten-Download (T-M9-01), die
-Design-Freigabe für die Oberfläche (T-M10-01) und der Abnahme-Playtest (T-M12-03).
+| Wo es steht (Fortschritt, Entscheidungen, Befunde) | [`docs/plan/PROGRESS.md`](docs/plan/PROGRESS.md) · [`docs/plan/DECISIONS.md`](docs/plan/DECISIONS.md) · [`docs/plan/PROBLEME.md`](docs/plan/PROBLEME.md) |
+| Jede Zahl mit Status und gemessenem Ausschlag | [`docs/plan/BALANCING.md`](docs/plan/BALANCING.md) |
+| Berichte (Abnahme, Karte, Parameterlauf, Budgets) | [`docs/reports/`](docs/reports/) |
+
+Von den drei Stellen, die dich brauchten — Geodaten-Freigabe (T-M9-01), Design-Freigabe
+(T-M10-01), Abnahme-Playtest (T-M12-03) — ist nur noch der Playtest offen.
 
 ## Für den umsetzenden Agenten
 

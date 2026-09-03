@@ -65,12 +65,12 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | Konstante | Wert | Status | Ausschlag | Herkunft |
 |---|---|---|---|---|
 | `ticksPerDay` | 24 | belegt | — | Combat Tick = 1 Spielstunde, Day Change = 24 Ticks |
-| `startMorale` | 70.000 | belegt | **15.2 %** | Handbuch: Startmoral 70 |
+| `startMorale` | 70.000 | belegt | 4.3 % | Handbuch: Startmoral 70 |
 | `capturedMorale` | 25.000 | belegt | — | Handbuch: Moral nach Eroberung 25 |
-| `baseTargetMorale` | 102.000 | belegt | **15.6 %** | Handbuch: Grundzielmoral 102 |
-| `moraleDriftDivisor` | 7 | belegt | **15.6 %** | Fan-Wiki: ein Siebtel der Lücke je Spieltag |
-| `productionMoraleFloor` | 200 | belegt | 0.0 % | Bytro-Hilfe 2023: Produktion = 0,20 + 0,80 × Moral |
-| `revoltThreshold` | 33.000 | belegt | 7.0 % | Fan-Wiki: Aufstände ab Moral 33 |
+| `baseTargetMorale` | 102.000 | belegt | 10.2 % | Handbuch: Grundzielmoral 102 |
+| `moraleDriftDivisor` | 7 | belegt | 2.5 % | Fan-Wiki: ein Siebtel der Lücke je Spieltag |
+| `productionMoraleFloor` | 200 | belegt | 6.4 % | Bytro-Hilfe 2023: Produktion = 0,20 + 0,80 × Moral |
+| `revoltThreshold` | 33.000 | belegt | 2.6 % | Fan-Wiki: Aufstände ab Moral 33 |
 | `revoltChancePerPointPermille` | 30 | belegt | — | Fan-Wiki: (33 − Moral) × 3 % je Tag |
 | `ownNeighborBonus` | 1.000 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `ownNeighborBonusMax` | 4.000 | abgeleitet | — | Deckel des belegten Nachbarbonus |
@@ -83,7 +83,7 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `capitalLossDays` | 14 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `capitalLossProductionFactor` | 750 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `capitalLossMoralePenalty` | 10.000 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
-| `battleRate` | 80 | geschätzt | 0.5 % | begründet gesetzt, im Parameterlauf gemessen |
+| `battleRate` | 80 | geschätzt | 1.4 % | begründet gesetzt, im Parameterlauf gemessen |
 | `minDamage` | 100 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 | `defenceCap` | 4.000 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 | `battleMoraleLoss` | 1.000 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
@@ -110,7 +110,7 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `warDeclarationDelayTicks` | 12 | belegt | — | Handbuch: Kriegserklärung wird nach Vorlaufzeit wirksam |
 | `surpriseAttackReputationLoss` | 200 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `truceDurationDays` | 5 | belegt | — | Handbuch: Waffenstillstand läuft nach fester Frist ab |
-| `marketElasticity` | 50 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
+| `marketElasticity` | 50 | geschätzt | 2.2 % | begründet gesetzt, im Parameterlauf gemessen |
 | `marketReversionPermille` | 50 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `marketMinPrice` | 200 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `marketMaxPrice` | 5.000 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
@@ -121,21 +121,30 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `capitalDistancePenalty` | 35.000 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `capitalDistanceRange` | 8 | abgeleitet | — | Reichweite der belegten Hauptstadtentfernung |
 | `expansionFreeProvinces` | 2 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
-| `expansionPenaltyPerProvince` | 3.000 | geschätzt | **15.2 %** | begründet gesetzt, im Parameterlauf gemessen |
+| `expansionPenaltyPerProvince` | 3.000 | geschätzt | 1.5 % | begründet gesetzt, im Parameterlauf gemessen |
 | `expansionPenaltyMax` | 35.000 | abgeleitet | — | Deckel der Ausdehnungsstrafe |
 | `taxPerThousandPopulationPerTick` | 2 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 
 ## Was der Parameterlauf ergeben hat
 
-Von 14 gemessenen Konstanten sind **4 tragend** — und alle vier haben mit
-Moral und Ausdehnung zu tun, nicht mit Kampfwerten. `battleRate`, `minDamage` und
-`defenceCap` um ein Viertel zu bewegen ändert am Ausgang **nichts**.
+Gemessen am 2026-09-03 auf der Weltkarte **nach** der Korrektur ihrer Wirtschaftsskala
+(`DECISIONS.md`, gleicher Tag): Von 14 Konstanten ist **keine tragend** — keine einzelne
+kippt den Anteil des Stärksten um mehr als die Schwelle von 15 %. Am meisten bewegen
+die Moralzahlen: `baseTargetMorale` 10,2 %, `productionMoraleFloor` 6,4 %,
+`startMorale` 4,3 %. Die Kampfwerte `battleRate`, `minDamage` und `defenceCap` um ein
+Viertel zu bewegen ändert am Ausgang **so gut wie nichts** (1,4 % und weniger).
 
-Das ist die Art Befund, die man ohne Messung nicht hat, und sie sagt etwas über das
-Spiel: Partien werden über die Moral entschieden — über Produktion, Aufstände und die
-Stärke frisch ausgehobener Truppen —, nicht darüber, wie hart zwei Armeen zuschlagen.
-Wer am Balancing arbeitet, arbeitet an diesen vier Zahlen; die übrigen kann er in Ruhe
-lassen.
+Das sagt zweierlei über das Spiel: Das Regelwerk hängt an keiner Zahl allein — ein
+Balancing-Fehler an einer Stelle verdirbt nicht die ganze Partie. Und was Partien
+bewegt, ist die Moral — über Produktion, Aufstände und die Stärke frisch ausgehobener
+Truppen —, nicht die Härte, mit der zwei Armeen zuschlagen. Wer am Balancing arbeitet,
+arbeitet an den Moralzahlen; die Kampfwerte kann er in Ruhe lassen.
+
+Der erste Lauf (vor der Korrektur) hatte vier tragende Konstanten gemeldet, alle rund um
+Moral und Ausdehnung. Er lief auf einer Karte, deren Vorkommen tausendfach über der
+Skala der Regeln lagen — Geld und Material waren nie knapp, und die Ausschläge bildeten
+nur ab, wie schnell sich eine gesättigte Wirtschaft in Provinzen umsetzt. Diese Zahlen
+gelten nicht mehr; die Spalte oben trägt die neuen.
 
 ## Keine ausartende Wirtschaft, keine unbesiegbare Strategie
 

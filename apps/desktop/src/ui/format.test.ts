@@ -37,11 +37,13 @@ describe('R-UI-04 Mengen und Raten', () => {
   })
 
   it('kuerzt grosse Bevoelkerungen', () => {
-    // Fixed-point: 1_240_000_000 is 1 240 000 people.
-    expect(population(1_240_000_000)).toBe('1,24 Mio')
-    expect(population(45_000_000)).toBe('45 Tsd')
-    expect(population(320_000)).toBe('320')
-    expect(population(9_400_000_000)).toBe('9,4 Mio')
+    // The core counts people in fixed-point thousands, so the raw figure is the number
+    // of people: the test map's 900 000 is nine hundred thousand, not nine hundred.
+    expect(population(1_240_000)).toBe('1,24 Mio')
+    expect(population(900_000)).toBe('900 Tsd')
+    expect(population(45_000)).toBe('45 Tsd')
+    expect(population(320)).toBe('320')
+    expect(population(9_400_000)).toBe('9,4 Mio')
   })
 
   it('rundet Prozente', () => {
