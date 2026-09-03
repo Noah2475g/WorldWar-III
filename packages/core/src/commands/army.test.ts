@@ -27,7 +27,7 @@ beforeEach(() => {
   state = createInitialState(CONFIG, ctx)
   placeArmy(state, {
     owner: 'p1',
-    at: 'n1',
+    at: 'm2',
     units: [
       { unitKey: 'infantry', hpTotal: 10_000 },
       { unitKey: 'tank', hpTotal: 5_200 },
@@ -50,20 +50,23 @@ describe('R-UNIT-03 Armeen teilen', () => {
 
     expect(after.armyOrder).toHaveLength(2)
     const fresh = after.armies[after.armyOrder.find((id) => id !== 'a1')!]!
-    expect(fresh.locationProvinceId).toBe('n1')
+    expect(fresh.locationProvinceId).toBe('m2')
     expect(fresh.units).toEqual([{ unitKey: 'infantry', hpTotal: 4_000 }])
     expect(after.armies['a1']!.units.find((u) => u.unitKey === 'infantry')!.hpTotal).toBe(6_000)
   })
 
   it('erhaelt die Gesamtstaerke exakt', () => {
+    // On neutral ground, so regeneration does not add to the pool in the same tick.
     const before = totalHp(state)
     const command: Command = {
       type: 'SPLIT_ARMY',
       playerId: 'p1',
       armyId: 'a1',
       take: [
+        // Whole units on both sides: a partially filled unit would regenerate in the
+        // same tick and hide the conservation being tested here.
         { unitKey: 'infantry', hpTotal: 3_000 },
-        { unitKey: 'tank', hpTotal: 1_200 },
+        { unitKey: 'tank', hpTotal: 2_600 },
       ],
     }
     const after = step(state, [command], ctx).state
@@ -97,7 +100,7 @@ describe('R-UNIT-03 Armeen teilen', () => {
 
 describe('R-UNIT-03 Armeen zusammenlegen', () => {
   beforeEach(() => {
-    placeArmy(state, { owner: 'p1', at: 'n1', units: [{ unitKey: 'infantry', hpTotal: 7_000 }] })
+    placeArmy(state, { owner: 'p1', at: 'm2', units: [{ unitKey: 'infantry', hpTotal: 7_000 }] })
   })
 
   it('vereint die Staerke in einer Armee', () => {
@@ -140,10 +143,11 @@ describe('R-UNIT-03 Staerke bleibt erhalten', () => {
     // The invariant every later combat calculation relies on.
     fc.assert(
       fc.property(
-        fc.array(fc.integer({ min: 500, max: 9_000 }), { minLength: 1, maxLength: 6 }),
+        // Whole units only, for the same reason as above.
+        fc.array(fc.integer({ min: 1, max: 9 }).map((n) => n * 1000), { minLength: 1, maxLength: 6 }),
         (splits) => {
           let current = createInitialState(CONFIG, ctx)
-          placeArmy(current, { owner: 'p1', at: 'n1', units: [{ unitKey: 'infantry', hpTotal: 40_000 }] })
+          placeArmy(current, { owner: 'p1', at: 'm2', units: [{ unitKey: 'infantry', hpTotal: 40_000 }] })
           const before = totalHp(current)
 
           for (const amount of splits) {

@@ -47,6 +47,10 @@ importers:
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+    devDependencies:
+      '@worldwar/testkit':
+        specifier: workspace:*
+        version: link:../../packages/testkit
 
   packages/ai:
     dependencies:

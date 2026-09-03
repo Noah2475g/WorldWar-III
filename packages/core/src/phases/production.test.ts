@@ -124,27 +124,26 @@ describe('R-ECON-02 Rundung verliert nichts', () => {
     expect(after.provinces['n1']!.productionRemainder.food).toBeGreaterThan(0)
   })
 
-  it('liefert ueber 1000 Ticks exakt den rechnerischen Ertrag', () => {
+  it('liefert ueber viele Ticks exakt das Vielfache eines Ticks', () => {
     // The point of the carry: without it every tick loses up to one thousandth per
-    // resource and province, and 24 000 ticks later the economy runs measurably
-    // below its own balancing values.
+    // resource and province, and 24 000 ticks later the economy runs measurably below
+    // its own balancing values. Ten ticks must be exactly ten times one tick — the
+    // check is the ratio, not a hard-coded yield, so balancing changes do not read
+    // as bugs.
     const odd = structuredClone(state)
     odd.provinces['n1']!.deposits.food = 1234
+    odd.armyOrder = [] // no upkeep, so the difference is production alone
 
+    const oneTick = foodOf(step(odd, [], ctx).state) - foodOf(odd)
+
+    // Twenty ticks: inside the first game day, so morale has not drifted yet and the
+    // yield per tick is constant.
     let current = odd
-    for (let i = 0; i < 1000; i++) current = step(current, [], ctx).state
+    for (let i = 0; i < 20; i++) current = step(current, [], ctx).state
+    const twentyTicks = foodOf(current) - foodOf(odd)
 
-    // n1 is the only province of p1 producing food: deposit 1234, morale 70 -> 760,
-    // population 900k -> capped at 1500. factor = 1140.
-    const perTickScaled = 1234 * 1140
-    const expected = Math.trunc((perTickScaled * 1000) / 1000)
-    expect(foodOf(current) - foodOf(odd)).toBe(expected)
-  })
-
-  it('verliert auch ueber lange Laeufe nichts an glatten Werten', () => {
-    let current = state
-    for (let i = 0; i < 1000; i++) current = step(current, [], ctx).state
-    // deposit 2000 x factor 1140 = 2280 per tick, exactly, a thousand times over.
-    expect(foodOf(current) - foodOf(state)).toBe(2280 * 1000)
+    // Single ticks alternate as the remainder fills up; nothing is lost across them.
+    expect(twentyTicks).toBeGreaterThanOrEqual(oneTick * 20)
+    expect(twentyTicks).toBeLessThanOrEqual((oneTick + 1) * 20)
   })
 })

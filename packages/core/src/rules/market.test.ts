@@ -39,15 +39,15 @@ describe('R-ECON-05 Umtausch zu Marktpreisen', () => {
   it('rechnet den Gegenwert ueber beide Preise', () => {
     const market = createMarket(TEST_RULES)
     // Iron costs 1400, food 1000: a ton of iron buys 1.4 tons of food.
-    expect(exchangeAmount(market, 'iron', 1_000_000, 'food')).toBe(1_400_000)
-    expect(exchangeAmount(market, 'food', 1_400_000, 'iron')).toBe(1_000_000)
+    expect(exchangeAmount(market, 'iron', 100_000, 'food')).toBe(140_000)
+    expect(exchangeAmount(market, 'food', 140_000, 'iron')).toBe(100_000)
   })
 
   it('fuehrt einen Tausch aus und meldet ihn', () => {
     const foodBefore = state.players['p1']!.resources.food
     const ironBefore = state.players['p1']!.resources.iron
 
-    const result = step(state, [trade('p1', 'iron', 1_000_000, 'food')], ctx)
+    const result = step(state, [trade('p1', 'iron', 100_000, 'food')], ctx)
     const player = result.state.players['p1']!
 
     expect(player.resources.iron).toBeLessThan(ironBefore)
@@ -61,14 +61,14 @@ describe('R-ECON-05 Umtausch zu Marktpreisen', () => {
 
   it('weist Taeusche ohne Deckung ab', () => {
     state.players['p1']!.resources.rare = 0
-    const result = step(state, [trade('p1', 'rare', 1_000_000, 'food')], ctx)
+    const result = step(state, [trade('p1', 'rare', 100_000, 'food')], ctx)
     expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toMatchObject({
       code: 'INSUFFICIENT_RESOURCES',
     })
   })
 
   it('weist sinnlose Taeusche ab', () => {
-    const same = step(state, [trade('p1', 'food', 1_000_000, 'food')], ctx)
+    const same = step(state, [trade('p1', 'food', 100_000, 'food')], ctx)
     expect(same.events.find((e) => e.type === 'COMMAND_REJECTED')).toMatchObject({ code: 'INVALID_TARGET' })
 
     const tiny = step(state, [trade('p1', 'food', 5, 'iron')], ctx)
@@ -83,7 +83,7 @@ describe('R-FREE-02 Der Markt bevorzugt niemanden', () => {
     // sells for money and we refuse to sell at all.
     const result = step(
       state,
-      [trade('p2', 'iron', 1_000_000, 'food'), trade('p1', 'iron', 1_000_000, 'food')],
+      [trade('p2', 'iron', 100_000, 'food'), trade('p1', 'iron', 100_000, 'food')],
       ctx,
     )
 
@@ -97,7 +97,7 @@ describe('R-FREE-02 Der Markt bevorzugt niemanden', () => {
 
   it('bewegt den Preis erst nach dem Tick', () => {
     const priceBefore = state.market.prices.food
-    const after = step(state, [trade('p1', 'iron', 5_000_000, 'food')], ctx).state
+    const after = step(state, [trade('p1', 'iron', 200_000, 'food')], ctx).state
     expect(after.market.prices.food).not.toBe(priceBefore)
   })
 })

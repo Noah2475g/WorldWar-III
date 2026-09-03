@@ -95,8 +95,13 @@ export interface RuleConstants {
   revoltThreshold: Fixed
   revoltChancePerPointPermille: number
 
-  capitalProximityBonus: Fixed
-  capitalProximityRange: number
+  /** Distance from the capital is a penalty, not a bonus (belegt: up to -35). */
+  capitalDistancePenalty: Fixed
+  capitalDistanceRange: number
+  /** Holding many provinces costs morale everywhere (belegt: up to -35). */
+  expansionFreeProvinces: number
+  expansionPenaltyPerProvince: Fixed
+  expansionPenaltyMax: Fixed
   ownNeighborBonus: Fixed
   ownNeighborBonusMax: Fixed
   enemyNeighborPenalty: Fixed

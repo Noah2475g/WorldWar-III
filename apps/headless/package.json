@@ -8,5 +8,8 @@
     "@worldwar/shared": "workspace:*",
     "@worldwar/core": "workspace:*",
     "@worldwar/ai": "workspace:*"
+  },
+  "devDependencies": {
+    "@worldwar/testkit": "workspace:*"
   }
 }

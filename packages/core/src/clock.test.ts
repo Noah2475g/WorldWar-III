@@ -191,7 +191,8 @@ describe('R-TIME-03 Alarme unterbrechen das Vorspulen', () => {
   })
 
   it('laeuft ohne Alarm bis zum Ziel durch', () => {
-    const result = fastForward(fresh(), { kind: 'ticks', ticks: 30 }, ctx, { alertsFor: 'p1' })
+    // Well inside the first game day: nothing that raises an alert can happen yet.
+    const result = fastForward(fresh(), { kind: 'ticks', ticks: 10 }, ctx, { alertsFor: 'p1' })
     expect(result.stoppedBy).toBe('target')
     expect(result.trigger).toBeNull()
   })

@@ -157,6 +157,7 @@ export function damageFor(
 ): Fixed {
   if (attackValue <= 0) return 0
   const raw = mulChain([attackValue, rules.constants.battleRate])
+  // eslint-disable-next-line no-restricted-syntax -- scaling to permille before the single division
   const reduced = divFixed(raw * ONE, defence)
   return Math.max(rules.constants.minDamage, reduced)
 }

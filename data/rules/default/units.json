@@ -4,131 +4,341 @@
     "infantry": {
       "name": "Infanterie",
       "class": "infantry",
-      "cost": { "food": 900000, "wood": 600000, "money": 800000 },
+      "cost": {
+        "food": 75000,
+        "wood": 50000,
+        "money": 67000
+      },
       "buildTicks": 12,
       "requiresBuilding": "barracks",
       "hpPerUnit": 1000,
       "speedKmh": 6000,
-      "upkeep": { "food": 12000, "money": 9000 },
-      "attack": { "infantry": 1000, "armor": 400, "artillery": 1200, "air": 200, "navy": 100 },
-      "defence": { "infantry": 1100, "armor": 700, "artillery": 1100, "air": 300, "navy": 200 }
+      "upkeep": {
+        "food": 80,
+        "money": 60,
+        "wood": 10
+      },
+      "attack": {
+        "infantry": 1000,
+        "armor": 400,
+        "artillery": 1200,
+        "air": 200,
+        "navy": 100
+      },
+      "defence": {
+        "infantry": 1100,
+        "armor": 700,
+        "artillery": 1100,
+        "air": 300,
+        "navy": 200
+      }
     },
     "motorized": {
       "name": "Motorisierte Infanterie",
       "class": "infantry",
-      "cost": { "food": 800000, "iron": 700000, "oil": 500000, "money": 1400000 },
+      "cost": {
+        "food": 67000,
+        "iron": 58000,
+        "oil": 42000,
+        "money": 117000
+      },
       "buildTicks": 18,
       "requiresBuilding": "barracks",
       "hpPerUnit": 1200,
       "speedKmh": 22000,
-      "upkeep": { "food": 10000, "oil": 8000, "money": 14000 },
-      "attack": { "infantry": 1200, "armor": 600, "artillery": 1400, "air": 300, "navy": 100 },
-      "defence": { "infantry": 1200, "armor": 800, "artillery": 1200, "air": 400, "navy": 200 }
+      "upkeep": {
+        "food": 67,
+        "oil": 53,
+        "money": 93,
+        "iron": 13
+      },
+      "attack": {
+        "infantry": 1200,
+        "armor": 600,
+        "artillery": 1400,
+        "air": 300,
+        "navy": 100
+      },
+      "defence": {
+        "infantry": 1200,
+        "armor": 800,
+        "artillery": 1200,
+        "air": 400,
+        "navy": 200
+      }
     },
     "tank": {
       "name": "Kampfpanzer",
       "class": "armor",
-      "cost": { "iron": 2200000, "oil": 1400000, "money": 3000000 },
+      "cost": {
+        "iron": 183000,
+        "oil": 117000,
+        "money": 250000
+      },
       "buildTicks": 36,
       "requiresBuilding": "factory",
       "hpPerUnit": 2600,
       "speedKmh": 18000,
-      "upkeep": { "oil": 22000, "money": 26000 },
-      "attack": { "infantry": 2400, "armor": 1900, "artillery": 2600, "air": 200, "navy": 300 },
-      "defence": { "infantry": 2000, "armor": 2000, "artillery": 1800, "air": 400, "navy": 300 }
+      "upkeep": {
+        "oil": 147,
+        "money": 173,
+        "iron": 40
+      },
+      "attack": {
+        "infantry": 2400,
+        "armor": 1900,
+        "artillery": 2600,
+        "air": 200,
+        "navy": 300
+      },
+      "defence": {
+        "infantry": 2000,
+        "armor": 2000,
+        "artillery": 1800,
+        "air": 400,
+        "navy": 300
+      }
     },
     "heavy_tank": {
       "name": "Schwerer Kampfpanzer",
       "class": "armor",
-      "cost": { "iron": 3600000, "oil": 2200000, "rare": 700000, "money": 5200000 },
+      "cost": {
+        "iron": 300000,
+        "oil": 183000,
+        "rare": 58000,
+        "money": 433000
+      },
       "buildTicks": 60,
       "requiresBuilding": "factory",
       "requiresBuildingLevel": 2,
       "hpPerUnit": 4200,
       "speedKmh": 13000,
-      "upkeep": { "oil": 34000, "money": 40000 },
-      "attack": { "infantry": 3400, "armor": 3000, "artillery": 3400, "air": 200, "navy": 400 },
-      "defence": { "infantry": 3000, "armor": 3200, "artillery": 2600, "air": 500, "navy": 400 }
+      "upkeep": {
+        "oil": 227,
+        "money": 267,
+        "iron": 67
+      },
+      "attack": {
+        "infantry": 3400,
+        "armor": 3000,
+        "artillery": 3400,
+        "air": 200,
+        "navy": 400
+      },
+      "defence": {
+        "infantry": 3000,
+        "armor": 3200,
+        "artillery": 2600,
+        "air": 500,
+        "navy": 400
+      }
     },
     "artillery": {
       "name": "Artillerie",
       "class": "artillery",
-      "cost": { "iron": 1800000, "wood": 900000, "money": 2400000 },
+      "cost": {
+        "iron": 150000,
+        "wood": 75000,
+        "money": 200000
+      },
       "buildTicks": 30,
       "requiresBuilding": "factory",
       "hpPerUnit": 1400,
       "speedKmh": 8000,
       "rangeProvinces": 1,
-      "upkeep": { "oil": 9000, "money": 20000 },
-      "attack": { "infantry": 3000, "armor": 2200, "artillery": 2000, "air": 100, "navy": 800 },
-      "defence": { "infantry": 700, "armor": 500, "artillery": 800, "air": 200, "navy": 300 }
+      "upkeep": {
+        "oil": 60,
+        "money": 133,
+        "iron": 27,
+        "wood": 13
+      },
+      "attack": {
+        "infantry": 3000,
+        "armor": 2200,
+        "artillery": 2000,
+        "air": 100,
+        "navy": 800
+      },
+      "defence": {
+        "infantry": 700,
+        "armor": 500,
+        "artillery": 800,
+        "air": 200,
+        "navy": 300
+      }
     },
     "rocket_artillery": {
       "name": "Raketenartillerie",
       "class": "artillery",
-      "cost": { "iron": 2600000, "oil": 1200000, "rare": 600000, "money": 4000000 },
+      "cost": {
+        "iron": 217000,
+        "oil": 100000,
+        "rare": 50000,
+        "money": 333000
+      },
       "buildTicks": 48,
       "requiresBuilding": "factory",
       "requiresBuildingLevel": 2,
       "hpPerUnit": 1600,
       "speedKmh": 16000,
       "rangeProvinces": 2,
-      "upkeep": { "oil": 18000, "money": 32000 },
-      "attack": { "infantry": 4200, "armor": 3000, "artillery": 2800, "air": 100, "navy": 1200 },
-      "defence": { "infantry": 700, "armor": 500, "artillery": 700, "air": 200, "navy": 300 }
+      "upkeep": {
+        "oil": 120,
+        "money": 213,
+        "iron": 47,
+        "rare": 10
+      },
+      "attack": {
+        "infantry": 4200,
+        "armor": 3000,
+        "artillery": 2800,
+        "air": 100,
+        "navy": 1200
+      },
+      "defence": {
+        "infantry": 700,
+        "armor": 500,
+        "artillery": 700,
+        "air": 200,
+        "navy": 300
+      }
     },
     "fighter": {
       "name": "Jagdflugzeug",
       "class": "air",
-      "cost": { "iron": 1600000, "oil": 1800000, "rare": 500000, "money": 3400000 },
+      "cost": {
+        "iron": 133000,
+        "oil": 150000,
+        "rare": 42000,
+        "money": 283000
+      },
       "buildTicks": 42,
       "requiresBuilding": "airfield",
       "hpPerUnit": 1200,
       "speedKmh": 60000,
       "rangeProvinces": 2,
-      "upkeep": { "oil": 26000, "money": 30000 },
-      "attack": { "infantry": 900, "armor": 700, "artillery": 1400, "air": 3200, "navy": 1200 },
-      "defence": { "infantry": 500, "armor": 400, "artillery": 500, "air": 2800, "navy": 600 }
+      "upkeep": {
+        "oil": 173,
+        "money": 200,
+        "iron": 33,
+        "rare": 13
+      },
+      "attack": {
+        "infantry": 900,
+        "armor": 700,
+        "artillery": 1400,
+        "air": 3200,
+        "navy": 1200
+      },
+      "defence": {
+        "infantry": 500,
+        "armor": 400,
+        "artillery": 500,
+        "air": 2800,
+        "navy": 600
+      }
     },
     "bomber": {
       "name": "Bomber",
       "class": "air",
-      "cost": { "iron": 2400000, "oil": 2600000, "rare": 800000, "money": 5000000 },
+      "cost": {
+        "iron": 200000,
+        "oil": 217000,
+        "rare": 67000,
+        "money": 417000
+      },
       "buildTicks": 60,
       "requiresBuilding": "airfield",
       "requiresBuildingLevel": 2,
       "hpPerUnit": 1600,
       "speedKmh": 48000,
       "rangeProvinces": 3,
-      "upkeep": { "oil": 38000, "money": 44000 },
-      "attack": { "infantry": 3400, "armor": 3000, "artillery": 3200, "air": 600, "navy": 2600 },
-      "defence": { "infantry": 500, "armor": 400, "artillery": 500, "air": 900, "navy": 500 }
+      "upkeep": {
+        "oil": 253,
+        "money": 293,
+        "iron": 53,
+        "rare": 20
+      },
+      "attack": {
+        "infantry": 3400,
+        "armor": 3000,
+        "artillery": 3200,
+        "air": 600,
+        "navy": 2600
+      },
+      "defence": {
+        "infantry": 500,
+        "armor": 400,
+        "artillery": 500,
+        "air": 900,
+        "navy": 500
+      }
     },
     "destroyer": {
       "name": "Zerstoerer",
       "class": "navy",
-      "cost": { "iron": 3000000, "oil": 1600000, "money": 4600000 },
+      "cost": {
+        "iron": 250000,
+        "oil": 133000,
+        "money": 383000
+      },
       "buildTicks": 66,
       "requiresBuilding": "shipyard",
       "hpPerUnit": 3200,
       "speedKmh": 30000,
       "rangeProvinces": 1,
-      "upkeep": { "oil": 24000, "money": 36000 },
-      "attack": { "infantry": 1600, "armor": 1200, "artillery": 1600, "air": 1400, "navy": 3000 },
-      "defence": { "infantry": 900, "armor": 700, "artillery": 900, "air": 1600, "navy": 2800 }
+      "upkeep": {
+        "oil": 160,
+        "money": 240,
+        "iron": 47
+      },
+      "attack": {
+        "infantry": 1600,
+        "armor": 1200,
+        "artillery": 1600,
+        "air": 1400,
+        "navy": 3000
+      },
+      "defence": {
+        "infantry": 900,
+        "armor": 700,
+        "artillery": 900,
+        "air": 1600,
+        "navy": 2800
+      }
     },
     "transport": {
       "name": "Transportschiff",
       "class": "navy",
-      "cost": { "wood": 1800000, "iron": 900000, "money": 2000000 },
+      "cost": {
+        "wood": 150000,
+        "iron": 75000,
+        "money": 167000
+      },
       "buildTicks": 30,
       "requiresBuilding": "harbour",
       "hpPerUnit": 1800,
       "speedKmh": 24000,
       "transportCapacity": 6,
-      "upkeep": { "oil": 8000, "money": 12000 },
-      "attack": { "infantry": 100, "armor": 100, "artillery": 100, "air": 100, "navy": 200 },
-      "defence": { "infantry": 400, "armor": 300, "artillery": 400, "air": 500, "navy": 600 }
+      "upkeep": {
+        "oil": 53,
+        "money": 80,
+        "wood": 20
+      },
+      "attack": {
+        "infantry": 100,
+        "armor": 100,
+        "artillery": 100,
+        "air": 100,
+        "navy": 200
+      },
+      "defence": {
+        "infantry": 400,
+        "armor": 300,
+        "artillery": 400,
+        "air": 500,
+        "navy": 600
+      }
     }
   }
 }

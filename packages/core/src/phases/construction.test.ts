@@ -108,6 +108,9 @@ describe('R-PROV-01 Voraussetzungen', () => {
     })
 
     state.provinces['n1']!.buildings.harbour = 1
+    state.players['p1']!.resources.wood = 5_000_000
+    state.players['p1']!.resources.iron = 5_000_000
+    state.players['p1']!.resources.money = 5_000_000
     const withHarbour = step(state, [build('n1', 'shipyard')], ctx)
     expect(withHarbour.state.provinces['n1']!.buildQueue).toHaveLength(1)
   })

@@ -90,8 +90,12 @@ export function edgeTravelTicks(
   if (effectiveSpeed <= 0) return Number.MAX_SAFE_INTEGER
 
   // distance / speed, both in Fixed, rounded up: an hour begun is an hour spent.
+  // eslint-disable-next-line no-restricted-syntax -- distance/speed in permille, then back to whole ticks
   const ticks = Math.ceil(divFixed(edge.distanceKm * ONE, effectiveSpeed) / ONE)
-  return Math.max(1, ticks)
+  const boarding = edge.kind === 'sea' && !isAirFormation(army, rules) && needsTransport(army, rules)
+    ? embarkCost(state, army, fromProvince, toProvince, rules)
+    : 0
+  return Math.max(1, ticks + boarding)
 }
 
 /** Edge connecting two provinces, or undefined if they are not neighbours. */
@@ -109,6 +113,45 @@ export function edgeBetween(
   return undefined
 }
 
+/** Pure air formation: moves only between airfields, and only by flying (R-UNIT-08). */
+export function isAirFormation(army: Army, rules: Rules): boolean {
+  if (army.units.length === 0) return false
+  return army.units.every((stack) => rules.units[stack.unitKey]?.class === 'air')
+}
+
+/**
+ * Extra hours for going aboard and landing again (belegt: 3 h and 1.5 h with a
+ * harbour, half again as much on a hostile shore).
+ */
+export function embarkCost(
+  state: GameState,
+  army: Army,
+  from: Province,
+  to: Province,
+  rules: Rules,
+): number {
+  const harbour = (from.buildings.harbour ?? 0) > 0
+  const base = harbour
+    ? rules.constants.embarkTicks
+    // eslint-disable-next-line no-restricted-syntax -- ticks scaled by a permille factor, then back to whole ticks
+    : Math.ceil(mulChain([rules.constants.embarkTicks * ONE, 1500]) / ONE)
+
+  const hostile = to.owner !== null && to.owner !== army.owner
+  const landing = hostile
+    // eslint-disable-next-line no-restricted-syntax -- ticks scaled by a permille factor, then back to whole ticks
+    ? Math.ceil((rules.constants.disembarkTicks * rules.constants.hostileCoastFactor) / ONE)
+    : rules.constants.disembarkTicks
+  return base + landing
+}
+
+/** True when the army carries land units that have to be shipped. */
+export function needsTransport(army: Army, rules: Rules): boolean {
+  return army.units.some((stack) => {
+    const rule = rules.units[stack.unitKey]
+    return rule && rule.class !== 'navy' && rule.class !== 'air'
+  })
+}
+
 /** Can this army use sea routes? Ships always, land units only when carried. */
 export function canUseSea(army: Army, rules: Rules): boolean {
   let capacity = 0
@@ -121,6 +164,7 @@ export function canUseSea(army: Army, rules: Rules): boolean {
       capacity += rule.transportCapacity * Math.ceil(stack.hpTotal / rule.hpPerUnit)
     }
     if (rule.class !== 'navy' && rule.class !== 'air') {
+      // eslint-disable-next-line no-restricted-syntax -- hit points divided by per-unit hit points, plain integers
       landUnits += Math.ceil(stack.hpTotal / rule.hpPerUnit)
     }
   }

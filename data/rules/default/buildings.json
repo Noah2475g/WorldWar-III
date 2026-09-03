@@ -4,68 +4,115 @@
     "barracks": {
       "name": "Rekrutierungsbuero",
       "maxLevel": 3,
-      "cost": { "wood": 4000000, "money": 3000000 },
+      "cost": {
+        "wood": 333000,
+        "money": 250000
+      },
       "buildTicks": 24,
-      "allowsUnitClasses": ["infantry"],
+      "allowsUnitClasses": [
+        "infantry"
+      ],
       "moraleBonus": 0,
-      "effects": { "recruitSpeedPermille": 100 }
+      "effects": {
+        "recruitSpeedPermille": 100
+      }
     },
     "fortress": {
       "name": "Festung",
       "maxLevel": 5,
-      "cost": { "wood": 6000000, "iron": 4000000, "money": 5000000 },
+      "cost": {
+        "wood": 500000,
+        "iron": 333000,
+        "money": 417000
+      },
       "buildTicks": 48,
       "allowsUnitClasses": [],
       "moraleBonus": 5000,
-      "effects": { "defenceBonusPermille": 200 }
+      "effects": {
+        "defenceBonusPermille": 200
+      }
     },
     "factory": {
       "name": "Fabrik",
       "maxLevel": 3,
-      "cost": { "wood": 8000000, "iron": 6000000, "money": 8000000 },
+      "cost": {
+        "wood": 667000,
+        "iron": 500000,
+        "money": 667000
+      },
       "buildTicks": 72,
-      "allowsUnitClasses": ["armor", "artillery"],
+      "allowsUnitClasses": [
+        "armor",
+        "artillery"
+      ],
       "moraleBonus": 4000,
-      "effects": { "productionBonusPermille": 250 }
+      "effects": {
+        "productionBonusPermille": 250
+      }
     },
     "harbour": {
       "name": "Hafen",
       "maxLevel": 2,
-      "cost": { "wood": 5000000, "money": 4000000 },
+      "cost": {
+        "wood": 417000,
+        "money": 333000
+      },
       "buildTicks": 36,
       "requiresCoastal": true,
       "allowsUnitClasses": [],
       "moraleBonus": 10000,
-      "effects": { "embarkSpeedPermille": 500 }
+      "effects": {
+        "embarkSpeedPermille": 500
+      }
     },
     "shipyard": {
       "name": "Werft",
       "maxLevel": 2,
-      "cost": { "wood": 9000000, "iron": 7000000, "money": 9000000 },
+      "cost": {
+        "wood": 750000,
+        "iron": 583000,
+        "money": 750000
+      },
       "buildTicks": 96,
       "requiresCoastal": true,
       "requiresBuilding": "harbour",
-      "allowsUnitClasses": ["navy"],
+      "allowsUnitClasses": [
+        "navy"
+      ],
       "moraleBonus": 0,
       "effects": {}
     },
     "airfield": {
       "name": "Flugplatz",
       "maxLevel": 2,
-      "cost": { "wood": 6000000, "oil": 3000000, "money": 7000000 },
+      "cost": {
+        "wood": 500000,
+        "oil": 250000,
+        "money": 583000
+      },
       "buildTicks": 72,
-      "allowsUnitClasses": ["air"],
+      "allowsUnitClasses": [
+        "air"
+      ],
       "moraleBonus": 0,
-      "effects": { "airRangeProvinces": 2 }
+      "effects": {
+        "airRangeProvinces": 2
+      }
     },
     "railway": {
       "name": "Eisenbahn",
       "maxLevel": 3,
-      "cost": { "iron": 5000000, "coal": 4000000, "money": 6000000 },
+      "cost": {
+        "iron": 417000,
+        "coal": 333000,
+        "money": 500000
+      },
       "buildTicks": 48,
       "allowsUnitClasses": [],
       "moraleBonus": 15000,
-      "effects": { "movementBonusPermille": 250 }
+      "effects": {
+        "movementBonusPermille": 250
+      }
     }
   }
 }

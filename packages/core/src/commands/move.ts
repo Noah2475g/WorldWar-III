@@ -1,7 +1,7 @@
 import { emit } from '../events/emit'
 import { planRoute } from '../phases/movement'
 import type { PhaseContext } from '../phases/index'
-import { edgeBetween, edgeTravelTicks } from '../rules/movement'
+import { edgeBetween, edgeTravelTicks, isAirFormation } from '../rules/movement'
 import type { Army, GameState, ProvinceId } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type MoveArmyCommand } from './types'
@@ -30,6 +30,13 @@ registerCommand<MoveArmyCommand>('MOVE_ARMY', {
     if (!target) return fail('PROVINCE_NOT_FOUND', { provinceId: command.targetProvinceId })
     if (target.id === army.locationProvinceId) {
       return fail('INVALID_TARGET', { reason: 'bereits dort' })
+    }
+
+    // Aircraft are bound to their airfields; they strike at range instead of marching
+    // (R-UNIT-08 — full sortie orders with return flights are V2).
+    if (isAirFormation(army, ctx.rules)) {
+      const ownsField = target.owner === command.playerId && (target.buildings.airfield ?? 0) > 0
+      if (!ownsField) return fail('INVALID_TARGET', { reason: 'kein eigener Flugplatz' })
     }
 
     if (!planRoute(state, army, command.targetProvinceId, ctx.map, ctx.rules)) {

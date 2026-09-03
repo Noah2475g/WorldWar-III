@@ -3,6 +3,7 @@ import './recruit' // registers RECRUIT
 import './trade' // registers TRADE
 import './army' // registers SPLIT_ARMY, MERGE_ARMIES, STOP_ARMY
 import './move' // registers MOVE_ARMY
+import './bombard' // registers BOMBARD
 import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'
 import type { GameState } from '../state/types'
