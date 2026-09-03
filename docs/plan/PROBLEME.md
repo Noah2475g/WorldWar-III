@@ -169,3 +169,27 @@ Routenrechnung, die die Simulation ausführt. Diplomatie (D) und Markt (H) sind 
 Kopfleiste und per Taste erreichbar; eine Provinzliste in der Seitenleiste macht die
 Auswahl ohne Maus möglich. Fünf Ende-zu-Ende-Tests fahren die Kette Bauen → Ausheben →
 Armee → Marsch, Kriegserklärung, Tausch und den Abbruch der Zielwahl.
+
+---
+
+## 2026-09-04 · T-M13-10 · Die ESLint-Guards laufen unter Last in eine Zeitüberschreitung
+
+**Befund:** In einem `pnpm verify`-Lauf meldeten drei Guards gleichzeitig einen
+Fehlschlag — `no-color-literals`, `import-boundaries`, `core-purity` —, alle drei nach
+rund 11,7 Sekunden. Einzeln ausgeführt läuft derselbe Guard in 0,8 Sekunden grün, und der
+unmittelbar folgende `verify`-Lauf war ebenfalls grün.
+
+**Ursache:** Diese drei Guards starten je eine eigene ESLint-Instanz. Wenn sie neben
+hundert anderen Testdateien parallel laufen und die Maschine gerade beschäftigt ist,
+reißen sie das Vitest-Standardlimit — sie melden dann die Auslastung der Maschine, nicht
+einen Verstoß im Code.
+
+**Kleinster reproduzierbarer Fall:** `pnpm verify` mehrfach hintereinander; der
+Fehlschlag tritt sporadisch auf und verschwindet beim nächsten Lauf.
+
+**Dieselbe Klasse wie schon einmal:** Der Renderbenchmark hatte genau dieses Verhalten
+(18,6 ms unter `verify`, ein Bruchteil davon allein) und wurde deshalb in die langsame
+Suite verschoben.
+
+**Status:** offen, kein Blocker — aber ein Kandidat für dieselbe Behandlung
+(eigenes Zeitlimit oder eigener Lauf). Vorgemerkt für T-M13-17.

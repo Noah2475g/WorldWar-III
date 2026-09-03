@@ -8,14 +8,14 @@ import { TOKENS, PLAYER_COLORS } from '../ui/tokens.ts'
  * modes never costs the player their bearings.
  */
 
-export const MAP_MODES = ['political', 'resources', 'morale', 'threat'] as const
+export const MAP_MODES = ['political', 'resources', 'morale', 'strength'] as const
 export type MapMode = (typeof MAP_MODES)[number]
 
 export const MAP_MODE_NAMES: Record<MapMode, string> = {
   political: 'Besitz',
   resources: 'Rohstoffe',
   morale: 'Moral',
-  threat: 'Bedrohung',
+  strength: 'Truppenstärke',
 }
 
 export interface ShadedProvince {
@@ -28,11 +28,38 @@ export interface ShadedProvince {
    */
   morale?: number | undefined
   deposits?: Partial<Record<string, number>> | undefined
-  /** 0…1000, how exposed the province is. Only computed for what the player can see. */
-  threat?: number | undefined
+  /**
+   * Total strength of the visible armies standing here (R-MAP-06/R-MAP-07).
+   *
+   * Replaces the old `threat`, which no part of the game ever computed: the fourth mode
+   * shaded all 237 provinces in the same grey and told the player nothing at all.
+   */
+  strength?: number | undefined
 }
 
 const PLAYER_FILL = Object.values(PLAYER_COLORS)
+
+/**
+ * Ab hier faerbt der Staerkemodus nicht mehr dunkler.
+ *
+ * Zwanzig Einheiten zu je 1000 Trefferpunkten sind der Stapel-Deckel des Originals —
+ * was darueber steht, ist selten und muss nicht mehr unterschieden werden.
+ */
+export const STRENGTH_FULL = 20_000
+
+/**
+ * Die sichtbare Truppenstaerke je Provinz (T-M13-10).
+ *
+ * Bewusst hier und nicht im Kern: `view.armies` ist bereits nach Sichtbarkeit
+ * gefiltert, eine Summe darueber ist Darstellung und keine Spiellogik (D18.2).
+ */
+export function strengthByProvince(
+  armies: readonly { provinceId: string; strength: number }[],
+): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const army of armies) out[army.provinceId] = (out[army.provinceId] ?? 0) + army.strength
+  return out
+}
 
 /** Stable colour per player, so a nation keeps its colour across sessions and saves. */
 export function colorForPlayer(playerId: string): string {
@@ -81,9 +108,11 @@ export function fillFor(province: ShadedProvince, mode: MapMode): string {
       // for a scale rather than an alarm, and it means the same thing — trouble.
       return mix(TOKENS.accent, TOKENS.good, province.morale / 100)
 
-    case 'threat':
-      if (province.threat === undefined) return TOKENS.paperSunk
-      return mix(TOKENS.paper, TOKENS.accent, province.threat / 1000)
+    case 'strength':
+      if (province.strength === undefined) return TOKENS.paperSunk
+      // Zwanzig Einheiten sind ein voller Stapel (Stapel-Deckel, D6); darueber
+      // unterscheidet die Faerbung nichts mehr.
+      return mix(TOKENS.paper, TOKENS.ink, province.strength / STRENGTH_FULL)
   }
 }
 
@@ -105,10 +134,10 @@ export function legendFor(mode: MapMode): { label: string; color: string }[] {
         { label: 'aufständisch', color: TOKENS.accent },
         { label: 'treu', color: TOKENS.good },
       ]
-    case 'threat':
+    case 'strength':
       return [
-        { label: 'ruhig', color: TOKENS.paper },
-        { label: 'bedroht', color: TOKENS.accent },
+        { label: 'leer', color: TOKENS.paper },
+        { label: 'stark besetzt', color: TOKENS.ink },
       ]
   }
 }

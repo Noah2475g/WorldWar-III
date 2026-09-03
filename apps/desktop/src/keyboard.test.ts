@@ -51,7 +51,7 @@ describe('R-UI-06 Tastaturkuerzel', () => {
       mode: 'resources',
     })
     // And wraps around at the end rather than stopping.
-    expect(resolveKey({ key: 'm' }, context({ mode: 'threat' }))).toEqual({
+    expect(resolveKey({ key: 'm' }, context({ mode: 'strength' }))).toEqual({
       type: 'cycleMode',
       mode: 'political',
     })

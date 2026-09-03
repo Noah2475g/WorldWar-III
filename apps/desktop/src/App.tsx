@@ -30,6 +30,7 @@ import { t } from './i18n/text.ts'
 import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon } from './map/markers.ts'
+import { strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
 import {
@@ -225,6 +226,9 @@ export function App(props: AppProps) {
     [state, props.map, props.rules, ticksPerDay],
   )
 
+  /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
+  const strengths = useMemo(() => strengthByProvince(view?.armies ?? []), [view])
+
   const provinces = useMemo(
     () =>
       props.map.provinces.map((province) => {
@@ -234,11 +238,14 @@ export function App(props: AppProps) {
           owner: seen?.owner ?? null,
           morale: seen?.morale === undefined ? undefined : seen.morale / 1000,
           deposits: seen?.deposits as Record<string, number> | undefined,
+          // Nur was der Spieler sieht: eine Provinz hinter dem Nebel bleibt unbekannt,
+          // statt als "keine Truppen" zu erscheinen.
+          strength: seen === undefined ? undefined : (strengths[province.id] ?? 0),
           polygon: province.polygon,
           bounds: boundsOf(province.polygon),
         }
       }),
-    [props.map.provinces, view],
+    [props.map.provinces, view, strengths],
   )
 
   const centres = useMemo(

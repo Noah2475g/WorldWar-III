@@ -280,7 +280,7 @@ export const de = {
     political: 'Besitz',
     resources: 'Rohstoffe',
     morale: 'Moral',
-    threat: 'Bedrohung',
+    strength: 'Truppenstärke',
   },
 
   newGame: {

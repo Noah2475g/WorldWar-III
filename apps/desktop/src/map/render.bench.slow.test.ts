@@ -39,7 +39,7 @@ const provinces: RenderProvince[] = world.provinces.map((p, index) => ({
   owner: index % 5 === 0 ? null : `p${(index % 8) + 1}`,
   morale: 40 + (index % 60),
   deposits: p.deposits,
-  threat: (index * 37) % 1000,
+  strength: (index * 37) % 20_000,
   polygon: p.polygon,
   bounds: boundsOf(p.polygon),
 }))
