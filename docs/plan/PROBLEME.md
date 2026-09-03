@@ -55,4 +55,9 @@ rund 135 Mio ohne Antarktis.
 Datumsgrenze rechnen, nicht linear. `distanceKm` in `project.ts` tut das bereits und hat
 einen Test dafür; die noch zu schreibenden Schritte müssen es ebenso tun.
 
-**Status:** kein Blocker, vorgemerkt für T-M9-02c.
+**Erledigt in T-M9-02b:** Die Nachbarschaft rechnet Entfernungen mit `distanceKm`
+(Haversine), das die Datumsgrenze richtig behandelt — keine der 445 Landgrenzen kommt
+über 6000 km, was ein Test festhält. **Offen bleibt es für T-M9-02c:** die Seewege aus
+der Geometrie dürfen dort ebenfalls nicht linear rechnen.
+
+**Status:** halb erledigt, Rest vorgemerkt für T-M9-02c.

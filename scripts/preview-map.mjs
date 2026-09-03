@@ -79,6 +79,14 @@ const laneLines = lanes
   })
   .filter(Boolean)
 
+// Die Grenzen als Graph: jede Linie ist eine Landverbindung, über die Armeen ziehen.
+const borderLines = (world.edges ?? []).map((edge) => {
+  const a = centreOf.get(edge.from)
+  const b = centreOf.get(edge.to)
+  if (!a || !b || Math.abs(a.lon - b.lon) > 180) return ""
+  return `<line x1="${toX(a.lon).toFixed(1)}" y1="${toY(a.lat).toFixed(1)}" x2="${toX(b.lon).toFixed(1)}" y2="${toY(b.lat).toFixed(1)}" stroke="#1F2420" stroke-width="0.8" opacity="0.5"/>`
+}).filter(Boolean)
+
 const labels = world.provinces
   .filter((p) => p.areaKm2 > 400_000)
   .map(
@@ -120,6 +128,7 @@ const html = `<title>Weltkarte, gebaut</title>
   .legend { display:flex; gap:18px; font-size:12px; color:var(--soft); margin-top:10px; align-items:center; flex-wrap:wrap; }
   .legend i { display:inline-block; width:22px; height:0; border-top:2.5px dashed var(--mark); margin-right:5px; vertical-align:middle; }
   .legend i.sea { border-top:1.2px dashed var(--soft); }
+  .legend i.land { border-top:1.5px solid var(--text); }
   h2 { font-size:19px; margin:34px 0 0; font-weight:600; }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -132,18 +141,21 @@ Zeigen Sie auf eine Fläche, um Name, Kennung und Größe zu sehen.</p>
 <div class="figures">
   <div><b>${world.provinces.length}</b><span>Provinzen</span></div>
   <div><b>${Object.keys(rules.startNations.nations).length}</b><span>Startnationen</span></div>
+  <div><b>${(world.edges ?? []).length}</b><span>Landgrenzen</span></div>
   <div><b>${lanes.length}</b><span>Seewege</span></div>
-  <div><b>${world.toleranceDegrees}°</b><span>Vereinfachung</span></div>
+  <div><b>${(world.enclaves ?? []).length}</b><span>Enklaven</span></div>
 </div>
 
 <div class="map"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Weltkarte mit ${world.provinces.length} Provinzen">
 <g>${paths.join('')}</g>
+<g>${borderLines.join('')}</g>
 <g>${laneLines.join('')}</g>
 <g>${labels.join('')}</g>
 </svg></div>
 <div class="legend">
   <span><i></i>Meerenge — Engstelle, die eine Kampagne entscheidet</span>
   <span><i class="sea"></i>Seeweg</span>
+  <span><i class="land"></i>Landgrenze</span>
   <span>Beschriftet sind Provinzen über 400 000 km².</span>
 </div>
 

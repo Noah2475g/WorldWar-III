@@ -277,3 +277,70 @@ gegen erwartete rund 135 Mio ohne Antarktis. Zwei Nachbesserungen waren nötig, 
 den Diff und nicht für die Geometrie: die Provinzen werden nach Kennung sortiert, und jeder
 Ring beginnt an seinem westlichsten Punkt — sonst lieferte derselbe Bau je nach
 Eingabereihenfolge dasselbe Rechteck ab einer anderen Ecke, also eine andere Datei.
+
+---
+
+## 2026-09-03 · T-M9-02b · Die Vereinfachung läuft über die Topologie, nicht je Provinz
+
+**Entscheidung:** Die aus T-M9-02a stammende Vereinfachung Ring für Ring ist ersetzt durch
+Visvalingam über die Topologie (`topojson-simplify`). Das Gewicht ist eine Fläche in
+Quadratgrad (0,002) statt eines Abstands in Grad.
+
+**Begründung:** Ein Nachweis hat den Mangel gezeigt: nach der alten Vereinfachung teilten
+Frankreich und Spanien keinen einzigen Punkt mehr. Jede Provinz wurde für sich gedünnt,
+und dieselbe Grenze bekam auf beiden Seiten unterschiedliche Stützpunkte — auf der Karte
+ein Spalt, für die Nachbarschaftsberechnung eine fehlende Grenze. Über die Topologie wird
+jeder Bogen genau einmal gedünnt, und beide Seiten behalten dieselbe Linie.
+
+**Auswirkung:** 602 408 Stützpunkte auf 102 355 statt auf 62 195 — die Datei wächst von
+1,03 auf 1,69 MB. Das ist der Preis dafür, dass Grenzen zusammenpassen, und er ist es wert.
+
+---
+
+## 2026-09-03 · T-M9-02b · Die ganze Karte kommt aus einer einzigen Datei
+
+**Entscheidung:** Auch die 142 Provinzen, die ein ganzes Land sind, werden aus den
+Admin-1-Einheiten dieses Landes gebaut — nicht aus der Admin-0-Geometrie. Bei 1:10 Mio
+sind alle 142 dort untergliedert vorhanden.
+
+**Begründung:** Natural Earth zeichnet Staatsumrisse und Bundesland-Umrisse getrennt; sie
+stimmen nicht auf die letzte Stelle überein. Lesotho, aus Admin-0 genommen, teilte deshalb
+nur einen Teil seines Randes mit den südafrikanischen Einheiten ringsum und sah aus wie
+ein Land mit Küste. Aus einer Datei ist jede Grenze ein Bogen.
+
+**Auswirkung:** `data/geo/admin0` wird für die Geometrie nicht mehr gelesen, nur noch für
+Bevölkerung, Fläche und Kontinent.
+
+---
+
+## 2026-09-03 · T-M9-02b · Enklave heißt: umschlossen **und** von einem einzigen fremden Land
+
+**Entscheidung:** Eine Provinz gilt als Enklave, wenn (a) kein Teil ihres Randes ins Freie
+zeigt und (b) alle ihre Landnachbarn zu einem einzigen fremden Land gehören.
+
+**Begründung:** Drei Anläufe, jeder von einem falschen Ergebnis korrigiert.
+„Von genau einer Provinz umschlossen" fand **nichts** — Lesotho grenzt an zwei
+südafrikanische Provinzen, weil Südafrika selbst geteilt ist. „Alle Nachbarn gehören zu
+einem fremden Land" hielt dann auch den **Umschließenden** für eine Enklave, dessen
+einziger Nachbar ja ebenfalls fremd ist. Und die Prüfung auf den freien Rand zählte
+zunächst die Grenzen *zwischen Lesothos eigenen Distrikten* als Außenrand mit — die
+verschwinden aber beim Verschmelzen. Erst auf Einheiten-Ebene gezählt stimmt es.
+
+**Auswirkung:** Lesotho ist die einzige Enklave der Karte, was für diesen Zuschnitt richtig
+ist. Der Unterschied zählt im Spiel: eine Enklave kann über Land genommen, aber nie über
+Land entsetzt werden.
+
+---
+
+## 2026-09-03 · T-M9-02b · Frankreichs Übersee-Départements sind nicht Teil des Kernlands
+
+**Entscheidung:** Guyane française, Martinique, Guadeloupe, Réunion und Mayotte sind vom
+Zuschnitt ausgenommen.
+
+**Begründung:** Ein Test fand es: „Südwestfrankreich" grenzte an **Brasilien**. Die
+Übersee-Départements waren in die Frankreich-Quadranten gefallen, hatten deren Schwerpunkt
+um Tausende Kilometer verschoben und ihnen Nachbarn in Südamerika verschafft. Ein Blick auf
+die anderen 23 untergliederten Länder zeigte, dass nur Frankreich betroffen ist.
+
+**Auswirkung:** Frankreich bleibt kompakt. Sollen die Übersee-Gebiete später spielbar sein,
+gehören sie als eigene Provinzen in die Regeldatei — nicht in einen Quadranten des Kernlands.

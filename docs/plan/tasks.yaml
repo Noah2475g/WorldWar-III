@@ -612,7 +612,7 @@ tasks:
   - id: T-M9-02b
     milestone: M9
     title: Nachbarschaft und Kanten
-    status: todo
+    status: done
     deps: [T-M9-02a]
     requirements: [R-MAP-01, R-MAP-02]
     files: [packages/mapgen/src/adjacency.ts]

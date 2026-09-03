@@ -1,5 +1,6 @@
 import { topology } from 'topojson-server'
 import { merge } from 'topojson-client'
+import { presimplify, simplify } from 'topojson-simplify'
 import type { Position, Ring, Shape } from './area.ts'
 
 /**
@@ -30,7 +31,19 @@ export interface ProvinceShape {
   sourceUnits: string[]
 }
 
-export function mergeProvinces(units: readonly UnitShape[]): ProvinceShape[] {
+export interface MergeOptions {
+  /**
+   * Visvalingam weight below which a point is dropped, in square degrees. Applied to
+   * the topology, so a border is thinned once and both provinces along it keep the
+   * same line — thinning each province separately pulls neighbours apart.
+   */
+  simplifyWeight?: number
+}
+
+export function mergeProvinces(
+  units: readonly UnitShape[],
+  options: MergeOptions = {},
+): ProvinceShape[] {
   if (units.length === 0) return []
 
   const groups = new Map<string, UnitShape[]>()
@@ -46,7 +59,12 @@ export function mergeProvinces(units: readonly UnitShape[]): ProvinceShape[] {
   for (const unit of [...units].sort((a, b) => a.code.localeCompare(b.code, 'en'))) {
     objects[unit.code] = { type: unit.geometry.type, coordinates: unit.geometry.coordinates }
   }
-  const topo = topology(objects as Parameters<typeof topology>[0])
+  // The three packages describe the same topology with slightly different property
+  // types; the one presimplify expects is the common denominator.
+  let topo = topology(objects as Parameters<typeof topology>[0]) as Parameters<typeof presimplify>[0]
+  if (options.simplifyWeight !== undefined && options.simplifyWeight > 0) {
+    topo = simplify(presimplify(topo), options.simplifyWeight)
+  }
 
   // Sorted by id, not by the order the units arrived in: the merged map is checked
   // in, and a file that reshuffles itself because an upstream sort changed produces

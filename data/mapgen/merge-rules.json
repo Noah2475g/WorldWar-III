@@ -361,7 +361,14 @@
             "name": "Nordostfrankreich"
           }
         ],
-        "note": "Die 101 Départements kämen mit 18 Regionen — beides zu fein für eine Weltkarte."
+        "note": "Die 101 Départements kämen mit 18 Regionen — beides zu fein für eine Weltkarte.",
+        "excludeUnits": {
+          "FRA-2000": "Französisch-Guayana - Übersee-Département, tausende Kilometer vom Kernland; als Teil eines Frankreich-Quadranten würde es dessen Schwerpunkt und Nachbarn verfälschen",
+          "FRA-1442": "Martinique - Übersee-Département, tausende Kilometer vom Kernland; als Teil eines Frankreich-Quadranten würde es dessen Schwerpunkt und Nachbarn verfälschen",
+          "FRA-4603": "Guadeloupe - Übersee-Département, tausende Kilometer vom Kernland; als Teil eines Frankreich-Quadranten würde es dessen Schwerpunkt und Nachbarn verfälschen",
+          "FRA-4601": "Réunion - Übersee-Département, tausende Kilometer vom Kernland; als Teil eines Frankreich-Quadranten würde es dessen Schwerpunkt und Nachbarn verfälschen",
+          "FRA-4602": "Mayotte - Übersee-Département, tausende Kilometer vom Kernland; als Teil eines Frankreich-Quadranten würde es dessen Schwerpunkt und Nachbarn verfälschen"
+        }
       },
       "GBR": {
         "strategy": "geographic",

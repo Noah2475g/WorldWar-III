@@ -20,6 +20,9 @@ importers:
       '@types/topojson-server':
         specifier: ^3.0.4
         version: 3.0.4
+      '@types/topojson-simplify':
+        specifier: ^3.0.3
+        version: 3.0.3
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.7(supports-color@7.2.0)(vitest@3.2.7(@types/node@24.13.3)(supports-color@7.2.0)(yaml@2.9.0))
@@ -38,6 +41,9 @@ importers:
       topojson-server:
         specifier: ^3.0.1
         version: 3.0.1
+      topojson-simplify:
+        specifier: ^3.0.3
+        version: 3.0.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -563,6 +569,9 @@ packages:
 
   '@types/topojson-server@3.0.4':
     resolution: {integrity: sha512-5+ieK8ePfP+K2VH6Vgs1VCt+fO1U8XZHj0UsF+NktaF0DavAo1q3IvCBXgokk/xmtvoPltSUs6vxuR/zMdOE1g==}
+
+  '@types/topojson-simplify@3.0.3':
+    resolution: {integrity: sha512-sBO5UZ0O2dB0bNwo0vut2yLHhj3neUGi9uL7/ROdm8Gs6dtt4jcB9OGDKr+M2isZwQM2RuzVmifnMZpxj4IGNw==}
 
   '@types/topojson-specification@1.0.5':
     resolution: {integrity: sha512-C7KvcQh+C2nr6Y2Ub4YfgvWvWCgP2nOQMtfhlnwsRL4pYmmwzBS7HclGiS87eQfDOU/DLQpX6GEscviaz4yLIQ==}
@@ -1222,6 +1231,10 @@ packages:
     resolution: {integrity: sha512-/VS9j/ffKr2XAOjlZ9CgyyeLmgJ9dMwq6Y0YEON8O7p/tGGk+dCWnrE03zEdu7i4L7YsFZLEPZPzCvcB7lEEXw==}
     hasBin: true
 
+  topojson-simplify@3.0.3:
+    resolution: {integrity: sha512-V+pBjLVzSQ3+hSOxBiV01OVXgFiCmMO8ia3huxKEyIMTC1ApQHBcdXdOqcQ6U2JJJD31TZduwY6KyF15R8sUgg==}
+    hasBin: true
+
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
@@ -1645,6 +1658,11 @@ snapshots:
       '@types/topojson-specification': 1.0.5
 
   '@types/topojson-server@3.0.4':
+    dependencies:
+      '@types/geojson': 7946.0.16
+      '@types/topojson-specification': 1.0.5
+
+  '@types/topojson-simplify@3.0.3':
     dependencies:
       '@types/geojson': 7946.0.16
       '@types/topojson-specification': 1.0.5
@@ -2373,6 +2391,11 @@ snapshots:
   topojson-server@3.0.1:
     dependencies:
       commander: 2.20.3
+
+  topojson-simplify@3.0.3:
+    dependencies:
+      commander: 2.20.3
+      topojson-client: 3.1.0
 
   ts-api-utils@2.5.0(typescript@5.9.3):
     dependencies:

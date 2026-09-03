@@ -5,18 +5,22 @@ import { fileURLToPath } from 'node:url'
 import { open } from 'shapefile'
 import { curate } from '../packages/mapgen/src/curation.ts'
 import { mergeProvinces } from '../packages/mapgen/src/provinces.ts'
-import { simplifyRing } from '../packages/mapgen/src/simplify.ts'
+import { buildAdjacency, findEnclaves } from '../packages/mapgen/src/adjacency.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
 /**
- * Builds the province geometry of the world map (T-M9-02a).
+ * Builds the world map: province shapes and who borders whom (T-M9-02a, T-M9-02b).
  *
  * Reads the shapefiles, merges every province's units into one shape through a shared
- * topology, then simplifies — in that order, never the other way round. Simplifying the
- * parts first would move their shared borders apart by a fraction of a degree each and
- * leave slivers between provinces that in truth touch.
+ * topology, simplifies *that topology* rather than each province on its own, and reads
+ * the neighbours off the same arcs.
  *
- * Usage:  node scripts/build-map.mjs [--tolerance 0.05]
+ * Simplifying province by province was the first attempt and it was wrong: afterwards
+ * Poland and Germany shared no point at all, which on the drawn map is a gap and for
+ * the adjacency pass is a missing border. Thinning the topology thins each arc once,
+ * so both sides of a border keep the same line.
+ *
+ * Usage:  node scripts/build-map.mjs [--weight 0.002]
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -28,10 +32,11 @@ const arg = (name, fallback) => {
 }
 
 /**
- * How far a coastline may move, in degrees. 0.05° is roughly 5 km at the equator —
- * invisible on a world map, and it cuts the file to a fraction of its size.
+ * Visvalingam weight below which a point is dropped, in square degrees. A point whose
+ * triangle covers less than this is invisible at world scale; 0.002 deg² is roughly a
+ * 5 km triangle at the equator.
  */
-const TOLERANCE = arg('--tolerance', 0.05)
+const WEIGHT = arg('--weight', 0.002)
 
 const clean = (value) => (typeof value === 'string' ? value.replace(/\0/g, '').trim() : value)
 
@@ -59,25 +64,33 @@ const unitShapes = await readShapes(
   join(GEO, 'admin1', 'ne_10m_admin_1_states_provinces.dbf'),
   'adm1_code',
 )
-const countryShapes = await readShapes(
-  join(GEO, 'admin0', 'ne_10m_admin_0_countries.shp'),
-  join(GEO, 'admin0', 'ne_10m_admin_0_countries.dbf'),
-  'ADM0_A3',
-)
+/**
+ * Every province is built from admin-1 units, including the ones that are a whole
+ * country: at 1:10m all 142 of them are subdivided in the raw data anyway.
+ *
+ * Mixing the two files was the first attempt and it cost the enclave detection.
+ * Natural Earth's country outlines and its state outlines are drawn separately and do
+ * not match to the last digit, so Lesotho — taken from admin-0 — shared only part of
+ * its border with the South African states around it, and looked like a province with
+ * a coast. From one file, every border is one arc.
+ */
+const unitsByCountry = new Map()
+for (const unit of raw.units) {
+  const list = unitsByCountry.get(unit.countryIso) ?? []
+  list.push(unit.code)
+  unitsByCountry.set(unit.countryIso, list)
+}
 
-// Whole-country provinces enter the merge as a single "unit" of their own, so that
-// they share the same topology as the subdivided ones — a border between Germany and
-// Denmark has to be the same arc on both sides, whichever way each was built.
 const parts = []
 const missing = []
 for (const province of result.provinces) {
-  if (province.sourceUnits.length === 0) {
-    const shape = countryShapes.get(province.countryIso)
-    if (!shape) missing.push(province.id)
-    else parts.push({ code: `C:${province.countryIso}`, provinceId: province.id, geometry: shape })
+  const codes =
+    province.sourceUnits.length > 0 ? province.sourceUnits : (unitsByCountry.get(province.countryIso) ?? [])
+  if (codes.length === 0) {
+    missing.push(`${province.id} (keine Einheiten)`)
     continue
   }
-  for (const code of province.sourceUnits) {
+  for (const code of codes) {
     const shape = unitShapes.get(code)
     if (!shape) missing.push(`${province.id}/${code}`)
     else parts.push({ code, provinceId: province.id, geometry: shape })
@@ -90,35 +103,39 @@ if (missing.length > 0) {
 }
 
 console.log(`Verschmelze ${parts.length} Teile zu ${result.provinces.length} Provinzen …`)
-const merged = mergeProvinces(parts)
+const detailed = mergeProvinces(parts)
+console.log(`Vereinfache die Topologie bei ${WEIGHT} Quadratgrad …`)
+const merged = mergeProvinces(parts, { simplifyWeight: WEIGHT })
 
-console.log(`Vereinfache bei ${TOLERANCE}° …`)
+// Neighbours come from the unsimplified topology on purpose: thinning can drop an arc
+// so short that two provinces stop touching, and a border that exists on the ground
+// must not disappear because it was too small to draw.
+console.log('Bestimme Nachbarschaften …')
+const adjacency = buildAdjacency(parts)
+const countryOf_ = Object.fromEntries(result.provinces.map((p) => [p.id, p.countryIso]))
+const enclaves = findEnclaves(adjacency.neighbours, countryOf_, adjacency.ringed)
 const byId = new Map(result.provinces.map((p) => [p.id, p]))
 const countryOf = new Map(raw.countries.map((c) => [c.iso, c]))
 
-let before = 0
+const countPoints = (shape) => {
+  const polygons = shape.type === 'MultiPolygon' ? shape.coordinates : [shape.coordinates]
+  return polygons.reduce((n, polygon) => n + polygon.reduce((m, ring) => m + ring.length, 0), 0)
+}
+const before = detailed.reduce((n, p) => n + countPoints(p.geometry), 0)
 let after = 0
+
 const provinces = merged.map((province) => {
   const meta = byId.get(province.id)
   const polygons =
     province.geometry.type === 'MultiPolygon' ? province.geometry.coordinates : [province.geometry.coordinates]
 
-  const simplified = polygons
-    .map((polygon) => {
-      before += polygon.reduce((n, ring) => n + ring.length, 0)
-      const rings = polygon
-        .map((ring) => simplifyRing(ring.map(([lon, lat]) => ({ lon, lat })), TOLERANCE))
-        .filter((ring) => ring.length >= 4)
-        .map((ring) => ring.map(({ lon, lat }) => [round(lon), round(lat)]))
-      after += rings.reduce((n, ring) => n + ring.length, 0)
-      return rings
-    })
+  const rounded = polygons
+    .map((polygon) => polygon.filter((ring) => ring.length >= 4).map((ring) => ring.map(([lon, lat]) => [round(lon), round(lat)])))
     .filter((polygon) => polygon.length > 0)
+  after += rounded.reduce((n, polygon) => n + polygon.reduce((m, ring) => m + ring.length, 0), 0)
 
   const geometry =
-    simplified.length === 1
-      ? { type: 'Polygon', coordinates: simplified[0] }
-      : { type: 'MultiPolygon', coordinates: simplified }
+    rounded.length === 1 ? { type: 'Polygon', coordinates: rounded[0] } : { type: 'MultiPolygon', coordinates: rounded }
 
   const country = countryOf.get(meta.countryIso)
   const centre = shapeCentre(geometry)
@@ -130,6 +147,7 @@ const provinces = merged.map((province) => {
     continent: country?.continent ?? '',
     areaKm2: Math.round(shapeAreaKm2(geometry)),
     centre: { lon: round(centre.lon), lat: round(centre.lat) },
+    neighbors: adjacency.neighbours[province.id] ?? [],
     geometry,
   }
 })
@@ -142,12 +160,16 @@ function round(value) {
 const out = {
   note: 'Erzeugt von scripts/build-map.mjs aus Natural Earth 1:10 Mio (gemeinfrei). Nicht von Hand ändern — Regeln stehen in data/mapgen/merge-rules.json.',
   scale: '10m',
-  toleranceDegrees: TOLERANCE,
+  simplifyWeight: WEIGHT,
   provinces,
+  edges: adjacency.edges,
+  enclaves,
+  islands: adjacency.islands,
 }
 writeFileSync(join(ROOT, 'data/maps/world-shapes.json'), JSON.stringify(out) + '\n')
 
 const zero = provinces.filter((p) => p.areaKm2 <= 0)
 console.log(`\n${provinces.length} Provinzen, ${before} Stützpunkte auf ${after} vereinfacht (${Math.round((1 - after / before) * 100)} %).`)
+console.log(`${adjacency.edges.length} Grenzen, ${enclaves.length} Enklaven, ${adjacency.islands.length} Inseln ohne Landnachbarn.`)
 if (zero.length > 0) console.log(`⚠ ohne Fläche: ${zero.map((p) => p.id).join(', ')}`)
 console.log(`data/maps/world-shapes.json geschrieben (${(JSON.stringify(out).length / 1024 / 1024).toFixed(2)} MB).`)

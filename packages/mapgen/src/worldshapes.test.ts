@@ -17,7 +17,7 @@ import type { MergeRules } from './curation.ts'
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world-shapes.json`, 'utf8')) as {
   scale: string
-  toleranceDegrees: number
+  simplifyWeight: number
   provinces: {
     id: string
     name: string
@@ -109,7 +109,7 @@ describe('R-MAP-03 Die gebaute Weltkarte', () => {
 
   it('nennt Massstab und Vereinfachung, statt sie zu verschweigen', () => {
     expect(world.scale).toBe('10m')
-    expect(world.toleranceDegrees).toBeGreaterThan(0)
-    expect(world.toleranceDegrees).toBeLessThan(0.5)
+    expect(world.simplifyWeight).toBeGreaterThan(0)
+    expect(world.simplifyWeight).toBeLessThan(0.05)
   })
 })
