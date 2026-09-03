@@ -80,9 +80,23 @@ export const production: Phase = (draft: GameState, ctx: PhaseContext) => {
       capitalPenalty,
     ])
 
+    // Taxes: money is raised from people, not dug out of the ground. Morale and
+    // occupation apply the same way — an unhappy province pays less.
+    // eslint-disable-next-line no-restricted-syntax -- population in thousands x rate, plain integers
+    const taxBase = Math.trunc(province.population / 1000) * rules.constants.taxPerThousandPopulationPerTick
+    if (taxBase > 0) {
+      // eslint-disable-next-line no-restricted-syntax -- exact integer product; the carry keeps it lossless
+      const scaledTax = taxBase * factorWithoutBuildings + (province.productionRemainder.money ?? 0)
+      // eslint-disable-next-line no-restricted-syntax -- integer division with explicit remainder handling
+      const tax = Math.trunc(scaledTax / ONE)
+      province.productionRemainder.money = scaledTax % ONE
+      if (tax !== 0) player.resources.money += tax
+    }
+
     for (const [key, deposit] of Object.entries(province.deposits)) {
       if (!deposit) continue
       const resource = key as ResourceKey
+      if (resource === 'money') continue // taxation handles money, above
 
       const factor = mulChain([buildingFactor(province, resource, rules), factorWithoutBuildings])
 

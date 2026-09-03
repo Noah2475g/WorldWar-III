@@ -44,6 +44,7 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'baseTargetMorale',
   'moraleDriftDivisor',
   'productionMoraleFloor',
+  'taxPerThousandPopulationPerTick',
   'revoltThreshold',
   'revoltChancePerPointPermille',
   'capitalDistancePenalty',

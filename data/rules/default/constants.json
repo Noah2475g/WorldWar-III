@@ -58,5 +58,6 @@
   "capitalDistanceRange": 8,
   "expansionFreeProvinces": 2,
   "expansionPenaltyPerProvince": 3000,
-  "expansionPenaltyMax": 35000
+  "expansionPenaltyMax": 35000,
+  "taxPerThousandPopulationPerTick": 2
 }

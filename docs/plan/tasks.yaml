@@ -293,7 +293,7 @@ tasks:
   - id: T-M4-01
     milestone: M4
     title: Armeen bilden teilen zusammenlegen
-    status: todo
+    status: done
     deps: [T-M3-05]
     requirements: [R-UNIT-03]
     files: [packages/core/src/commands/army.ts]
@@ -303,7 +303,7 @@ tasks:
   - id: T-M4-02
     milestone: M4
     title: Bewegung
-    status: todo
+    status: done
     deps: [T-M4-01, T-M2-03]
     requirements: [R-UNIT-04, R-UNIT-05]
     files: [packages/core/src/phases/movement.ts]
@@ -313,7 +313,7 @@ tasks:
   - id: T-M4-03
     milestone: M4
     title: Kampfaufloesung
-    status: todo
+    status: done
     deps: [T-M4-02]
     requirements: [R-BAT-01, R-BAT-02, R-BAT-03, R-BAT-07]
     files: [packages/core/src/phases/combat.ts]
@@ -323,7 +323,7 @@ tasks:
   - id: T-M4-04
     milestone: M4
     title: Bombardement und Rueckzug
-    status: todo
+    status: done
     deps: [T-M4-03]
     requirements: [R-BAT-05, R-BAT-06]
     files: [packages/core/src/commands/bombard.ts, packages/core/src/phases/retreat.ts]
@@ -333,7 +333,7 @@ tasks:
   - id: T-M4-05
     milestone: M4
     title: Einheitenzustand und Regeneration
-    status: todo
+    status: done
     deps: [T-M4-04]
     requirements: [R-UNIT-07]
     files: [packages/core/src/phases/regeneration.ts]
@@ -343,7 +343,7 @@ tasks:
   - id: T-M4-05b
     milestone: M4
     title: Seetransport
-    status: todo
+    status: done
     deps: [T-M4-05]
     requirements: [R-UNIT-06]
     files: [packages/core/src/phases/transport.ts]
@@ -353,7 +353,7 @@ tasks:
   - id: T-M4-05c
     milestone: M4
     title: Luftstreitkraefte als Fernwaffe
-    status: todo
+    status: done
     deps: [T-M4-05b]
     requirements: [R-UNIT-08, R-BAT-06]
     files: [packages/core/src/phases/air.ts]
@@ -363,7 +363,7 @@ tasks:
   - id: T-M4-06
     milestone: M4
     title: Durchstich kopflose Minimalpartie
-    status: todo
+    status: done
     deps: [T-M4-05c]
     requirements: [R-ARCH-03]
     acceptance: [AK-1]
@@ -374,7 +374,7 @@ tasks:
   - id: T-M5-01
     milestone: M5
     title: Moral
-    status: todo
+    status: done
     deps: [T-M4-06]
     requirements: [R-PROV-03, R-PROV-04]
     files: [packages/core/src/phases/morale.ts]
@@ -384,7 +384,7 @@ tasks:
   - id: T-M5-02
     milestone: M5
     title: Eroberung und Aufstaende
-    status: todo
+    status: done
     deps: [T-M5-01]
     requirements: [R-BAT-04, R-PROV-03]
     files: [packages/core/src/phases/occupation.ts]
@@ -394,7 +394,7 @@ tasks:
   - id: T-M5-03
     milestone: M5
     title: Hauptstadt Punkte Sieg Ausscheiden
-    status: todo
+    status: done
     deps: [T-M5-02]
     requirements: [R-PROV-05, R-GAME-02, R-GAME-01]
     files: [packages/core/src/phases/scoring.ts, packages/core/src/rules/victory.ts]

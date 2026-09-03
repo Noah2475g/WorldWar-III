@@ -91,6 +91,8 @@ export interface RuleConstants {
   baseTargetMorale: Fixed
   moraleDriftDivisor: number
   productionMoraleFloor: Fixed
+  /** Money is taxation: this much per thousand inhabitants per hour. */
+  taxPerThousandPopulationPerTick: Fixed
 
   revoltThreshold: Fixed
   revoltChancePerPointPermille: number
