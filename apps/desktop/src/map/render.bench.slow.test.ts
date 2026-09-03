@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import { prepareFrame, type RenderProvince } from './render.ts'
+import { labelsFor } from './labels.ts'
 
 /**
  * The frame budget (T-M10-03b, R-ARCH-06/AK2).
@@ -79,5 +80,45 @@ describe('R-ARCH-06 Bildratenbudget der Kartenansicht', () => {
 
     const p95 = percentile(durations, 0.95)
     expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+  })
+})
+
+/**
+ * Die Beschriftung im selben Budget (T-M13-08, R-UI-12).
+ *
+ * Die Namen sitzen auf derselben teuren Ebene wie die Flaechen, also zaehlt ihre Zeit
+ * zur selben Bildrate. Gemessen wird bei der Zoomstufe, bei der sie ueberhaupt
+ * erscheinen — auf Weltansicht faellt die Funktion sofort heraus und misst nichts.
+ */
+describe('R-UI-12 Die Beschriftung passt ins Bildbudget', () => {
+  const candidates = provinces.map((province) => ({
+    id: province.id,
+    name: `Provinz ${province.id}`,
+    centre: {
+      x: (province.bounds!.minX + province.bounds!.maxX) / 2,
+      y: (province.bounds!.minY + province.bounds!.maxY) / 2,
+    },
+    bounds: province.bounds!,
+  }))
+  // Eine Textbreite, wie eine 11-px-Schrift sie liefert; die echte kommt aus dem Canvas.
+  const measure = (text: string): number => text.length * 6
+  const closeUp = { x: 0, y: 0, scale: 1 }
+
+  it('stellt die Namen der ganzen Karte in unter 16,7 ms zusammen', () => {
+    for (let i = 0; i < 5; i++) labelsFor(candidates, closeUp, viewport, measure)
+
+    const durations: number[] = []
+    for (let frame = 0; frame < 60; frame++) {
+      const started = performance.now()
+      labelsFor(candidates, closeUp, viewport, measure)
+      durations.push(performance.now() - started)
+    }
+
+    const p95 = percentile(durations, 0.95)
+    expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+  })
+
+  it('kostet auf Weltansicht gar nichts, weil dort keine Namen stehen', () => {
+    expect(labelsFor(candidates, wholeWorld, viewport, measure)).toEqual([])
   })
 })

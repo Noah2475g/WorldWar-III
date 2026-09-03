@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
-import { TOKENS } from '../ui/tokens.ts'
+import { TOKENS, TYPE } from '../ui/tokens.ts'
 import { MAP_COLORS, prepareFrame, type RenderProvince } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
 import { markersFor, type ArmyMarker } from './markers.ts'
+import { labelsFor } from './labels.ts'
 import type { MapMode } from './modes.ts'
 
 /**
@@ -96,7 +97,29 @@ export function MapCanvas(props: MapCanvasProps) {
       context.lineWidth = 0.7
       context.stroke()
     }
-  }, [withBounds, props.view, props.mode, props.ownershipVersion, size])
+
+    // Die Namen gehoeren auf diese Ebene: sie aendern sich mit Zoom und Ausschnitt,
+    // also genau dann, wenn die Flaechen ohnehin neu gezeichnet werden (D18.3).
+    context.font = `500 11px ${TYPE.map}`
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    const candidates = withBounds.map((province) => ({
+      id: province.id,
+      name: props.labelFor(province.id),
+      centre: props.centres[province.id] ?? { x: 0, y: 0 },
+      bounds: province.bounds!,
+    }))
+
+    for (const label of labelsFor(candidates, props.view, size, (text) => context.measureText(text).width)) {
+      // Heller Saum, damit die Schrift auf jeder Fuellung lesbar bleibt — auf einer
+      // dunklen Machtfarbe genauso wie auf dem hellen Leinen des Neutralen.
+      context.lineWidth = 3
+      context.strokeStyle = MAP_COLORS.labelHalo
+      context.strokeText(label.text, label.x, label.y)
+      context.fillStyle = MAP_COLORS.label
+      context.fillText(label.text, label.x, label.y)
+    }
+  }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
 
   // The cheap layer: armies, selection, labels.
   useEffect(() => {

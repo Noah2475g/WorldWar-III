@@ -113,5 +113,7 @@ export const MAP_COLORS = {
   border: TOKENS.line,
   selection: TOKENS.ink,
   label: TOKENS.onPlayer,
+  /** Heller Saum unter der Kartenschrift, damit sie auf jeder Fuellung lesbar bleibt. */
+  labelHalo: TOKENS.paper,
   battle: TOKENS.accent,
 } as const

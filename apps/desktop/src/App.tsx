@@ -52,6 +52,7 @@ import { MemoryStorage } from '@worldwar/core'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
+import { Legend } from './ui/Legend.tsx'
 import { cueForEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -619,21 +620,25 @@ export function App(props: AppProps) {
       />
 
       <main className="main">
-        <MapCanvas
-          provinces={provinces}
-          centres={centres}
-          armies={armies}
-          buildings={buildings}
-          mode={ui.mode}
-          width={props.map.width}
-          height={props.map.height}
-          view={ui.view}
-          ownershipVersion={ui.ownershipVersion}
-          selectedProvince={ui.selectedProvince}
-          onSelect={selectOnMap}
-          onViewChange={(next) => dispatch({ type: 'setView', view: next })}
-          labelFor={nameOfProvince}
-        />
+        <div className="map-area">
+          <MapCanvas
+            provinces={provinces}
+            centres={centres}
+            armies={armies}
+            buildings={buildings}
+            mode={ui.mode}
+            width={props.map.width}
+            height={props.map.height}
+            view={ui.view}
+            ownershipVersion={ui.ownershipVersion}
+            selectedProvince={ui.selectedProvince}
+            onSelect={selectOnMap}
+            onViewChange={(next) => dispatch({ type: 'setView', view: next })}
+            labelFor={nameOfProvince}
+          />
+          {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
+          <Legend mode={ui.mode} />
+        </div>
 
         <aside className="side">
           <ProvincePicker

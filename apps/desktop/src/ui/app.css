@@ -712,3 +712,55 @@ body {
 .meter__trend--down {
   color: var(--warn);
 }
+
+/* ---------------------------------------------------------------- legende */
+
+.map-area {
+  position: relative;
+  min-height: 0;
+  display: grid;
+}
+
+/* Der Schluessel zur Karte sitzt auf der Karte — unten links, klein, und er nimmt
+   keine Klicks weg (R-UI-12). */
+.legend {
+  position: absolute;
+  right: var(--sp-lg);
+  bottom: var(--sp-lg);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 11px;
+}
+
+.legend__title {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+
+.legend__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--sp-md);
+}
+
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend__swatch {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--line);
+  border-radius: 1px;
+}
