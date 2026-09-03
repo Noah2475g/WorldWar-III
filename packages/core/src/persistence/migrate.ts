@@ -30,24 +30,37 @@ export class UnsupportedSaveVersion extends Error {
 }
 
 /** One step from version n to n+1. Registered in order. */
-type Migration = (envelope: SaveEnvelope) => SaveEnvelope
+export type Migration = (envelope: SaveEnvelope) => SaveEnvelope
 
 const MIGRATIONS: Record<number, Migration> = {
   // Example of the shape a real migration takes; there is nothing to migrate yet.
   // 1: (envelope) => ({ ...envelope, schemaVersion: 2, state: addFieldTo(envelope.state) }),
 }
 
-export function migrate(envelope: SaveEnvelope): SaveEnvelope {
+/**
+ * A migration that changes the state invalidates the stored hash: the hash describes the
+ * state as written, not as migrated. The key is removed rather than set to undefined —
+ * the save format must not carry a hash field that means "no hash".
+ */
+function withoutHash(envelope: SaveEnvelope): SaveEnvelope {
+  const copy = { ...envelope }
+  delete copy.hash
+  return copy
+}
+
+export function migrate(
+  envelope: SaveEnvelope,
+  migrations: Record<number, Migration> = MIGRATIONS,
+  target: number = SCHEMA_VERSION,
+): SaveEnvelope {
   let current = envelope
 
-  while (current.schemaVersion < SCHEMA_VERSION) {
-    const step = MIGRATIONS[current.schemaVersion]
+  while (current.schemaVersion < target) {
+    const step = migrations[current.schemaVersion]
     if (!step) throw new UnsupportedSaveVersion(envelope.schemaVersion)
-    const next = step(current)
-    // A migration that changes the state invalidates the stored hash.
-    current = { ...next, hash: undefined } as SaveEnvelope
+    current = withoutHash(step(current))
   }
 
-  if (current.schemaVersion > SCHEMA_VERSION) throw new UnsupportedSaveVersion(current.schemaVersion)
+  if (current.schemaVersion > target) throw new UnsupportedSaveVersion(current.schemaVersion)
   return current
 }
