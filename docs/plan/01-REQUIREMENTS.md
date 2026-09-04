@@ -50,6 +50,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 | C-08 | **Vorgehen:** strikt **TDD** — Test zuerst, dann Implementierung. Kein Produktionscode ohne vorher fehlschlagenden Test. |
 | C-09 | **Regelwerk:** Kernmechanik nach **Supremacy 1914 in der Fassung nach dem Umbau vom 10.01.2023** (deterministischer Kampf, Moral mit Ziel- und Istwert, Stapel-Deckel), **Setting und Einheiten modern (WW3)**. Grund: Für dieses Modell liegen belegte Formeln vor. *(Die verlinkte Steam-Anwendung 784950 ist das umbenannte „Conflict of Nations: World War 3“ — ein Schwesterspiel mit eigenem Modell und weitgehend unveröffentlichten Werten.)* |
 | C-10 | **Balancing:** belegte Zahlen aus `docs/research/SUPREMACY-MECHANICS.md` werden übernommen; Lücken werden begründet geschätzt und über automatisierte Testpartien abgestimmt. |
+| C-11 | **Mehrspieler (später, entschieden 2026-09-04):** Im Mehrspielermodus gibt es **keine dynamische Zeitsteuerung**. Die Spielgeschwindigkeit wird **beim Start der Partie fest gewählt** und gilt für alle Teilnehmer unverändert, damit in Online-Partien keine Synchronisationsprobleme entstehen. Pause, stufenloses Tempo und Vorspulen bleiben Einzelspieler-Funktionen. Folge für heute: die Zeitsteuerung liegt vollständig **außerhalb** des Simulationskerns und des Spielzustands (R-ARCH-04/AK2), damit sie später durch eine feste Rate ersetzt werden kann, ohne den Kern anzufassen. |
 
 ## 2. Anforderungen
 
@@ -78,6 +79,10 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   Kommandos sind pro Spieler adressiert und tickgenau eingeordnet.
   - AK1: WENN eine Partie mit zwei als „menschlich“ markierten Spielern erzeugt wird, DANN
     SOLL die Simulation ohne Anpassung des Kerns korrekt laufen (Hot-Seat-Test).
+  - AK2 (C-11, 2026-09-04): WENN der Spielzustand oder der Kern nach einer Tempo-, Pause-
+    oder Vorspulgröße durchsucht wird, DANN SOLL es keine geben — Geschwindigkeit ist Sache
+    der Hülle (Oberfläche, Simulations-Host), nie des Zustands. Ein Mehrspielermodus mit
+    fester Startgeschwindigkeit ersetzt später die Hülle, nicht den Kern.
 
 - **R-ARCH-05 — Testabdeckung.** Simulationskern ≥ 90 % Zeilenabdeckung, Gesamtprojekt ≥ 80 %.
   Unterschreitung lässt die Prüfkette fehlschlagen.
@@ -351,11 +356,306 @@ Test brauchen. Ohne ihn wäre „nicht als V2 markiert“ nur Fließtext und nic
 scope:
   v2_only: []                       # vollständig auf V2 verschoben — derzeit keine ID
   v1_partial:                       # nur ein Teil gehört zu V1
-    R-ECON-05: "V1 nur Umtausch zu dynamischem Preis; Spielermarkt mit Angeboten ist V2"
-    R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge sind V2"
+    # R-ECON-05 stand hier bis M14 ("Spielermarkt mit Angeboten ist V2"); seit R-DIP-05 gebaut.
+    R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind V2 (M15)"
     R-UNIT-08: "V1 nur Fernwirkung vom Flugplatz; Einsatzbefehle mit Rückflug sind V2"
   test_only: [R-ARCH-04]            # kein eigener Produktionscode, aber Test verpflichtend
 ```
+
+### 2.15 Tiefe zwischen den Kriegen (V1.2, aufgenommen 2026-09-04)
+
+Die V1 spielt sich als Folge von Kriegen: Wer nicht kämpft, baut und wartet. Zwischen zwei
+Mächten gibt es genau vier Handlungen — Krieg, Frieden, Bündnis, Durchmarsch — und von der
+Welt jenseits der eigenen Grenzen erfährt der Spieler nur, was seine Armeen sehen. Tag 1
+unterscheidet sich von Tag 40 durch nichts als den Kontostand. Der Rahmen C-04 hatte genau
+diese Tiefe auf V2 verschoben: *Diplomatie-Tiefe, Spionage, Forschung, Zeitung, Markt,
+Nuklearwaffen*. Dieser Abschnitt holt vier davon in den Umfang und schließt drei Lücken, die
+beim Lesen des Codes am 2026-09-04 ans Licht kamen:
+
+1. **„Vorspulen bis Ereignis“ erreicht die Oberfläche nicht.** Der Kern (`fastForward`,
+   sechs Ziele, Alarmstopp) und der Simulations-Host können es, die Anleitung verspricht es,
+   der Knopf in der Anwendung läuft schlicht einen Spieltag weiter (`step(ticksPerDay)`).
+   Dazu erzeugt der Kern das Ereignis `BATTLE_STARTED` nirgends — das Ziel „ein Gefecht
+   beginnt“ kann nicht greifen —, und öffentliche Alarme (jede Eroberung irgendwo auf der
+   Welt) würden das Vorspulen eines Unbeteiligten anhalten. Ziel Z1 ist damit nur zur
+   Hälfte eingelöst. → R-TIME-06.
+2. **Die KI beschießt nie.** Kein Pfad in `packages/ai` erzeugt `BOMBARD`; Bündnisse nimmt
+   sie nie an, Durchmarsch erwidert sie nie. Beschuss ist ein reiner Spielervorteil — ein
+   Bruch von R-AI-01 in die andere Richtung. → R-BAT-08, R-DIP-06.
+3. **Die KI erklärt den Krieg nur, wenn ein Nachbar deutlich schwächer ist.** Das Verhältnis
+   zwischen zwei Mächten — Ansehen, Verstimmungen, Bündnisse, Kriege gegen Verbündete —
+   spielt keine Rolle; `reputation` wird von keiner Zeile gelesen. Noahs Vorgabe vom
+   2026-09-04: *die KI muss auch auf Grundlage der Beziehung angreifen können.* → R-DIP-06.
+
+**Nachtrag zu C-04 (2026-09-04):** Spionage, Zeitung, Handel zwischen Mächten und
+Forschung — Letztere in der Form, die das gewählte Regelwerk (C-09, D-11) tatsächlich hat:
+Supremacy 1914 kennt keinen Forschungsbaum, sondern **Freischaltung nach Spieltag und
+Gebäudestufe** (Referenz 1.4, 5.2, 10.1) — gehören ab M14 zur V1.2. **Verschoben auf M15,
+ausdrücklich:** Nuklearwaffen (nur im Schwesterspiel belegt, Referenz 6.7 und 7.11),
+Lufteinsatzbefehle mit Rückflug (R-UNIT-08, Referenz 7.8), Koalitionen (Referenz 9.3),
+Verträge mit Provinz-, Karten- und Tributterm (R-DIP-01, Referenz 9.4), Gebäude- und
+Moralschaden durch Beschuss samt Hauptstadtbeute (Referenz 7.7, 3.8), Sammelpunkte und
+Dauerrekrutierung (in D12 als „frei verfügbar“ zugesagt, bis heute nicht gebaut — die
+Zusage bleibt, der Bau folgt in M15), die Verdrahtung des Hintergrundprozesses (D-03) und
+der Mehrspielermodus mit fester Startgeschwindigkeit (C-11).
+
+Vier Regeln gelten für jede Anforderung dieses Abschnitts:
+1. **Die KI kann alles, was der Spieler kann** (R-AI-01) — auch das, was die V1 dem Spieler
+   schon gab. Eine Mechanik, die nur der Mensch nutzt, ist ein Spielervorteil und damit ein
+   Bruch der Zusage „die KI schummelt nicht“, nur in die andere Richtung.
+2. **Kein Wissen ohne Quelle** (R-DIP-04). Jedes neue Feld der Sicht nennt, warum der
+   Spieler es sehen darf.
+3. **Jede Zahl steht in den Regeldateien** (D-08) und in `BALANCING.md` mit Status.
+4. **Ein Spielstand der V1 läuft weiter** (R-GAME-05): neue Zustandsfelder kommen mit einer
+   Migration, nie mit einer Ablehnung.
+
+#### Die Zusagen der V1 einlösen (`R-TIME`, `R-BAT`)
+
+- **R-TIME-06 — Vorspulen bis Ereignis in der Oberfläche.** Der Vorspulknopf bietet die
+  Ziele aus R-TIME-03 (Bau fertig, Armee am Ziel, Gefecht beginnt, Tageswechsel, feste Zahl
+  Tage) an, zeigt den Fortschritt, lässt sich abbrechen und hält bei jedem Alarm an, **der
+  den Spieler betrifft** — und nur bei dem.
+  - AK1: WENN ein Ziel gewählt wird, DANN SOLL die Anwendung den Kern mit genau diesem Ziel
+    vorspulen lassen (dieselbe Funktion wie der Simulations-Host, keine zweite Schleife) und
+    beim Halt den Grund in Worten nennen.
+  - AK2: WENN ein öffentlicher Alarm eintritt, der den Spieler nicht betrifft (eine
+    Eroberung zwischen zwei anderen Mächten), DANN SOLL das Vorspulen **nicht** anhalten;
+    WENN er ihn betrifft (eigene Provinz, eigene Armee, eigene Hauptstadt, Kriegserklärung
+    an ihn, Partieende), DANN SOLL es anhalten.
+  - AK3: WENN ein Kampf beginnt, DANN SOLL der Kern `BATTLE_STARTED` mit den Beteiligten
+    erzeugen — bisher entsteht das Ereignis nie, obwohl Vorspulziel und Alarmliste es kennen.
+  - AK4: WENN die Anwendung über viele Tage vorspult, DANN SOLL sie in Häppchen rechnen und
+    zwischen den Häppchen die Ereignisschleife freigeben, damit der Abbruchknopf antwortet
+    (die Simulation läuft nach der Entscheidung vom 2026-09-03 im Hauptthread).
+  - AK5 (C-11): WENN Zustand und Kern geprüft werden, DANN SOLL kein Tempo, keine Pause und
+    kein Vorspulziel darin liegen — alles davon gehört der Hülle (R-ARCH-04/AK2).
+- **R-BAT-08 — Feuerautomatik und Feuerleitung.** Nach Referenz 6.5 beschießen untätige
+  Fernwaffen selbsttätig den nächsten Feind. Eine stehende Armee mit Fernwaffen beschießt in
+  jeder Kampfphase die feindliche Nachbarprovinz mit der größten sichtbaren Truppenstärke,
+  sofern sie mit deren Eigentümer im Krieg ist — für Mensch und KI gleichermaßen. Der
+  Spieler kann je Armee **Feuer halten** (das ist die in D12 als „frei“ zugesagte
+  Feuerleitung, in ihrer kleinsten Form).
+  - AK1: WENN eine stehende Armee mit Fernwaffen eine feindliche Provinz in Reichweite hat
+    und nicht „Feuer halten“ befohlen ist, DANN SOLL sie ohne Befehl beschießen, mit einem
+    Ereignis, das den selbsttätigen Beschuss kennzeichnet.
+  - AK2: WENN zwei Ziele gleich stark sind, DANN SOLL die Wahl deterministisch sein
+    (kleinste Provinzkennung), und WENN die Seiten vertauscht werden, DANN SOLL das
+    Ergebnis gespiegelt sein.
+  - AK3: WENN eine KI-Macht Artillerie besitzt und im Krieg ist, DANN SOLL ihre Artillerie
+    im Turnier Beschussereignisse erzeugen — die KI beschießt, ohne es lernen zu müssen —
+    und ihre Fernwaffenverbände SOLLEN in Reichweite eines Ziels stehen bleiben, statt in
+    den Nahkampf zu laufen.
+
+#### Freischaltung (`R-TECH`)
+
+- **R-TECH-01 — Gebäude und Einheiten werden nach Spieltag freigeschaltet.** Jedes Gebäude
+  und jede Einheit trägt in den Regeln einen ersten Spieltag (`availableFromDay`); vorher
+  lehnt das Spiel den Auftrag ab. Die belegten Tage des Originals (Referenz 1.4: Kaserne
+  Tag 1, Hafen Tag 2, Eisenbahn Tag 5, Fabrik Tag 8, Flugplatz Tag 10) werden übernommen,
+  die Tage der Einheiten daraus abgeleitet.
+  - AK1: WENN ein Bau- oder Aushebeauftrag vor dem ersten Spieltag der Sache erteilt wird,
+    DANN SOLL der Kern ihn mit `NOT_YET_AVAILABLE` ablehnen und den Tag nennen, ab dem es
+    geht — für Mensch und KI gleichermaßen.
+  - AK2: WENN der erste Spieltag erreicht ist, DANN SOLL derselbe Auftrag ohne weitere
+    Bedingung angenommen werden.
+  - AK3: WENN eine Regeldatei ein Gebäude oder eine Einheit ohne ersten Spieltag enthält,
+    DANN SOLL der Lader das mit klarer Meldung ablehnen — ein Tag, der fehlt, wäre still
+    Tag 1.
+  - *Begründung: Ohne Zeitachse ist Tag 1 wie Tag 40 — wer die Fabrik bezahlen kann, baut
+    sie sofort, und der Aufbau einer Macht ist keine Abfolge von Entscheidungen, sondern
+    eine Einkaufsliste. C-04 nennt „Forschung“; das Regelwerk kennt stattdessen diese
+    Zeitachse, und die wird gebaut statt eines erfundenen Baums.*
+- **R-TECH-02 — Der Spieler sieht, was wann kommt.** Ein noch gesperrter Knopf nennt den
+  Tag, an dem er frei wird; der Tooltip nennt ihn auch vorher.
+  - AK1: WENN ein Bau- oder Aushebeknopf wegen des Spieltags gesperrt ist, DANN SOLL er
+    den Tag der Freischaltung in Worten nennen — nicht nur „nicht verfügbar“.
+  - AK2: WENN die KI ein Gebäude oder eine Einheit wählt, DANN SOLL sie nichts wählen, was
+    heute noch gesperrt ist — ein täglich abgelehnter Befehl ist Rauschen im Protokoll,
+    kein Verhalten.
+
+#### Spionage (`R-SPY`)
+
+Nach Referenz 10.2: Spione sind keine Einheiten auf der Karte. Sie werden gegen Geld auf
+eine Zielprovinz angesetzt, führen ihren Auftrag einmal je Spieltag aus, kosten je Auftrag
+einen täglichen Sold und können von Gegenspionage enttarnt werden. Was das Original gegen
+Goldmark sofort verkauft (Referenz 11.1, „Instant Espionage“), gibt es hier ausschließlich
+auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, Kategorie b).
+
+- **R-SPY-01 — Spione anwerben, ansetzen, entlassen.** Ein Spion wird für einen festen
+  Geldbetrag angeworben und auf eine Provinz mit einem von vier Aufträgen angesetzt:
+  *Aufklärung*, *Wirtschaftssabotage*, *Militärsabotage* (nur fremde Provinzen) oder
+  *Gegenspionage* (nur eigene Provinzen). Auftrag und Ziel sind jederzeit änderbar; ein
+  Spion ist jederzeit entlassbar; je Macht gibt es eine Regelhöchstzahl.
+  - AK1: WENN ein Spion angeworben wird, DANN SOLL der Betrag sofort abgezogen und der
+    Spion mit Auftrag, Ziel und Anwerbetag im Spielzustand geführt werden.
+  - AK2: WENN das Geld nicht reicht, DANN SOLL der Kern mit `INSUFFICIENT_RESOURCES`
+    ablehnen; WENN das Ziel zum Auftrag nicht passt (Sabotage oder Aufklärung in eigener,
+    Gegenspionage in fremder Provinz, Sabotage in herrenloser Provinz), DANN SOLL er mit
+    `INVALID_TARGET` ablehnen; WENN die Höchstzahl erreicht ist, DANN SOLL er mit
+    `QUEUE_FULL` ablehnen.
+  - AK3: WENN ein Spion angesetzt wird, DANN SOLL das Ziel eine Provinz sein, die der
+    Spieler kennt (sichtbar oder im Aufklärungsgedächtnis) — niemand schickt einen Spion
+    in eine Stadt, von der er nie gehört hat.
+- **R-SPY-02 — Sold und Tageslauf.** Am Tageswechsel wird je Spion der Sold seines
+  Auftrags abgebucht; wer ihn nicht zahlen kann, verliert den Spion. Danach führt jeder
+  Spion seinen Auftrag genau einmal aus — frühestens am Tag nach der Anwerbung.
+  - AK1: WENN ein Spieltag endet, DANN SOLL für jeden Spion genau einmal Sold abgezogen und
+    genau einmal ein Auftrag ausgeführt werden, in fester Reihenfolge und aus dem
+    geseedeten Zufall des Zustands (R-ARCH-01).
+  - AK2: WENN der Sold nicht gezahlt werden kann, DANN SOLL der Spion aus dem Zustand
+    entfernt und der Besitzer mit dem Grund benachrichtigt werden.
+  - AK3: WENN ein Spion am selben Tag angeworben wurde, DANN SOLL er an diesem Tageswechsel
+    noch nichts ausführen.
+- **R-SPY-03 — Aufklärung öffnet den Nebel.** Ein gelungener Aufklärungsauftrag macht
+  die Zielprovinz für den Tag sichtbar — einschließlich ihrer Gebäude mit Stufe und der
+  Zusammensetzung der dort stehenden Armeen, die der Spieler sonst nur als Stärke sieht.
+  - AK1: WENN ein Aufklärungsauftrag gelungen ist, DANN SOLL die Sicht (`publicView`) die
+    Zielprovinz als beobachtet führen, mit Gebäuden und Armeezusammensetzung.
+  - AK2: WENN der Spion entfernt wird oder der Auftrag misslingt, DANN SOLL die Provinz
+    zum nächsten Tageswechsel wieder hinter den Nebel fallen; das Aufklärungsgedächtnis
+    behält den letzten Stand (R-DIP-04/AK1).
+- **R-SPY-04 — Sabotage trifft, was das Original trifft.** Wirtschaftssabotage senkt bei
+  Erfolg die Moral der Zielprovinz um den belegten Betrag (Referenz 4.6: −10) und
+  vernichtet einen Teil ihres Tagesertrags beim Eigentümer; Militärsabotage verzögert bei
+  Erfolg die laufenden Bau- und Aushebeaufträge der Provinz und deckt die dort stehenden
+  Armeen auf. Je Provinz und Tag wirkt höchstens eine Sabotage. Der Betroffene erfährt,
+  *dass* etwas geschah, nicht *wer* es war.
+  - AK1: WENN Wirtschaftssabotage gelingt, DANN SOLL die Provinzmoral um den Regelwert
+    sinken und der Eigentümer den Regelanteil des Tagesertrags dieser Provinz verlieren,
+    nie mehr, als er hat.
+  - AK2: WENN Militärsabotage gelingt, DANN SOLL jeder laufende Auftrag der Provinz um die
+    Regelzahl Stunden später fertig werden.
+  - AK3: WENN eine Sabotage gelingt, DANN SOLL der Betroffene ein Ereignis ohne Nennung des
+    Urhebers erhalten und der Urheber eines mit dem Ergebnis; das Ereignis des Betroffenen
+    SOLL sein Vorspulen anhalten (R-TIME-03), das eines Dritten nicht.
+  - AK4: WENN in einer Provinz an einem Tag bereits eine Sabotage gelungen ist, DANN SOLL
+    eine zweite an diesem Tag nichts mehr bewirken — sonst fällt jede Provinz binnen einer
+    Woche in den Aufstand.
+- **R-SPY-05 — Gegenspionage enttarnt.** Ein Gegenspion in einer eigenen Provinz hat je
+  Tag eine Regelchance, jeden fremden Spion in derselben Provinz zu enttarnen. Ein
+  enttarnter Spion ist verloren, beide Seiten erfahren es, der Urheber verliert Ansehen —
+  bei Sabotage gegen eine Macht, mit der er nicht im Krieg ist, doppelt — und der
+  Betroffene merkt sich die Verstimmung (R-DIP-06).
+  - AK1: WENN ein fremder Spion enttarnt wird, DANN SOLL er entfernt, beide Mächte
+    benachrichtigt (mit Nennung der Macht), das Ansehen des Urhebers gesenkt und die
+    Verstimmung des Betroffenen gegen den Urheber erhöht werden.
+  - AK2: WENN keine Gegenspionage in der Provinz steht, DANN SOLL kein Spion enttarnt werden
+    — Sabotage ist dann unsichtbar, und Gegenspionage ist der einzige Schutz.
+- **R-SPY-06 — Spionage in der Oberfläche.** Eine Spionageübersicht (Taste `S`) zeigt die
+  eigenen Spione mit Auftrag, Ziel, Tagessold und letztem Ergebnis; Anwerben und Umsetzen
+  läuft über die Provinzleiste der Zielprovinz (fremd: Aufklärung und Sabotage; eigen:
+  Gegenspionage) mit Kosten im Tooltip und Grund bei Sperre; Ergebnisse, Enttarnungen und
+  erlittene Sabotage erscheinen als Meldung (R-UI-14) und im Protokoll; jeder Auftrag
+  trägt eine Erklärung (R-UI-11) und ein Symbol (R-UI-10).
+  - AK1: WENN eine fremde Provinz gewählt ist, DANN SOLL die Provinzleiste das Anwerben
+    eines Spions je Auftrag anbieten — gesperrt mit Grund, wenn das Geld fehlt.
+  - AK2: WENN eine Sabotage erlitten wurde, DANN SOLL eine Meldung mit Sprungziel erscheinen.
+
+#### Handel und Verhältnis zwischen Mächten (`R-DIP`, Fortsetzung)
+
+- **R-DIP-05 — Handelsangebote zwischen Mächten.** Nach Referenz 9.4 und 3.7: Eine Macht
+  bietet einer anderen Rohstoffe oder Geld gegen Rohstoffe oder Geld an. Das Angebotene
+  wird beim Angebot hinterlegt (Treuhand) und kehrt bei Ablauf, Ablehnung oder Rücknahme
+  zurück; Annahme tauscht sofort. Im Krieg gibt es keinen Handel. Damit ist der in
+  R-ECON-05 auf V2 verschobene „Spielermarkt mit Angeboten“ gebaut; der anonyme Umtausch
+  bleibt daneben bestehen.
+  - AK1: WENN ein Angebot gemacht wird, DANN SOLL die angebotene Menge sofort aus dem
+    Bestand in die Treuhand wandern und das Angebot nach der Regelfrist ohne Antwort
+    verfallen — mit Rückgabe.
+  - AK2: WENN der Empfänger annimmt und die Gegenleistung aufbringen kann, DANN SOLLEN
+    beide Seiten im selben Tick tauschen; kann er es nicht, DANN SOLL die Annahme mit
+    `INSUFFICIENT_RESOURCES` abgelehnt werden und das Angebot bestehen bleiben.
+  - AK3: WENN beide Mächte im Krieg sind (oder es werden), DANN SOLL kein Angebot
+    möglich sein und ein offenes Angebot mit Rückgabe verfallen.
+  - AK4: WENN ein Tausch zustande kommt, DANN SOLL die Welt davon erfahren, dass die beiden
+    Mächte handeln — nicht, wie viel (die Mengen bleiben bei den beiden Parteien).
+- **R-DIP-06 — Das Verhältnis steuert die KI: Krieg, Frieden, Bündnis, Durchmarsch.**
+  Die KI führt je fremder Macht ein **Verhältnis** aus dem, was sie wissen darf: dem
+  öffentlichen Ansehen der Macht, ihren eigenen Verstimmungen (enttarnte Spione gegen sie,
+  Überfälle ohne Kriegserklärung, gebrochene Bündnisse), bestehenden Bündnissen und
+  gewährtem Durchmarsch, Kriegen der Macht gegen ihre Verbündeten (Kriege sind öffentlich,
+  Referenz 10.3) und der Bedrohung an der Grenze. Auf dieser Grundlage — nicht nur, wenn
+  ein Nachbar deutlich schwächer ist — erklärt sie den Krieg, tritt für Verbündete ein,
+  nimmt Bündnisse an und erwidert Durchmarsch (Referenz 9.5). Ansehen erholt sich je
+  Spieltag um einen Regelbetrag bis zum Ausgangswert; Verstimmungen klingen ab.
+  - AK1: WENN das Verhältnis zu einer Nachbarmacht unter die Kriegsschwelle der
+    Schwierigkeitsstufe fällt und das Kräfteverhältnis die Stufe nicht abschreckt, DANN
+    SOLL die KI den Krieg erklären — auch einer gleich starken Macht; WENN das Verhältnis
+    gut ist, DANN SOLL sie einen schwächeren Nachbarn **nicht** angreifen, nur weil er
+    schwächer ist.
+  - AK2: WENN ein Verbündeter der KI angegriffen wird und ihre Fronten es zulassen, DANN
+    SOLL sie dem Angreifer den Krieg erklären (Bündnisfall).
+  - AK3: WENN eine Macht mit gutem Verhältnis ein Bündnis anbietet, DANN SOLL die KI
+    annehmen; WENN das Verhältnis schlecht oder das Ansehen unter der Vertrauensschwelle
+    ist, DANN SOLL sie ablehnen. WENN ihr Durchmarsch gewährt wurde und das Verhältnis gut
+    ist, DANN SOLL sie ihn binnen der Regelfrist erwidern.
+  - AK4: WENN ein Krieg seit der Regelzahl Tage keinen Provinzwechsel mehr gebracht hat und
+    das Verhältnis nicht feindselig ist, DANN SOLL die KI Frieden anbieten oder annehmen.
+  - AK5: WENN ein Spieltag endet, DANN SOLL das Ansehen um den Regelbetrag Richtung
+    Ausgangswert wandern und jede Verstimmung um den Regelanteil abklingen.
+  - AK6: WENN die KI eine dieser Entscheidungen trifft, DANN SOLL ihre Erklärung (R-AI-05)
+    das Verhältnis und seinen ausschlaggebenden Anteil nennen.
+- **R-DIP-07 — Handel in der Oberfläche.** Die Diplomatieübersicht bietet je Macht ein
+  Angebotsformular mit Vorschau (Marktwert beider Seiten), listet eingehende Angebote mit
+  Annehmen/Ablehnen und ausgehende mit Rücknahme, zeigt das Ansehen der Macht als Balken
+  und nennt, welche Mächte miteinander im Krieg liegen; ein eingehendes Angebot meldet sich
+  (R-UI-14).
+  - AK1: WENN ein Angebot eingeht, DANN SOLL eine Meldung erscheinen, die zur
+    Diplomatieübersicht führt, und das Angebot dort mit beiden Seiten in Worten stehen.
+
+#### Zeitung (`R-NEWS`)
+
+- **R-NEWS-01 — Eine Ausgabe je Spieltag.** Nach Referenz 10.3 erscheint am Tageswechsel
+  eine Zeitung mit: dem Index der Mächte (alle lebenden Mächte mit Punkten), den
+  Schlagzeilen des Tages (Kriegserklärungen, Friedensschlüsse, Bündnisse, Eroberungen,
+  gefallene Hauptstädte, Aufstände, ausgeschiedene Mächte, Handelsabkommen, enttarnte
+  Spione, entschiedene Schlachten), einer täglich wechselnden Statistik und den
+  Spielinformationen (Siegbedingung, Tag). Die letzten Ausgaben bleiben lesbar.
+  - AK1: WENN ein Spieltag endet, DANN SOLL genau eine Ausgabe entstehen und im Spielstand
+    liegen; WENN mehr als die Regelzahl Ausgaben vorliegen, DANN SOLL die älteste weichen.
+  - AK2: WENN ein Spielstand geladen wird, DANN SOLLEN die gespeicherten Ausgaben
+    unverändert vorliegen.
+- **R-NEWS-02 — Die Zeitung verrät nichts.** Jede Schlagzeile stammt aus einer Ereignisart
+  einer festen Positivliste, deren Inhalt das Original selbst druckt, und trägt nur Art,
+  Beteiligte, Ort und Zeitpunkt — nie Mengen, Vorräte, Truppen oder Gebäude. Die Ausgabe ist
+  für alle Mächte dieselbe. Die Positivliste, nicht der Empfängerkreis der Ereignisse,
+  entscheidet: Kriegserklärungen bleiben Alarm für die Beteiligten und werden für Dritte
+  Lektüre, nicht Alarm (R-TIME-06/AK2).
+  - AK1: WENN eine Ausgabe entsteht, DANN SOLL jede Schlagzeile eine Art der Positivliste
+    haben und ausschließlich die Felder Art, Zeitpunkt, Beteiligte und Ort tragen — als
+    Eigenschaftstest über zufällige Ereignisfolgen.
+  - AK2: WENN die Zeitung eine Statistik nennt, DANN SOLL sie aus öffentlichen Größen
+    gebildet sein (Punkte, Eroberungen des Tages, geführte Kriege) — nie aus Vorräten,
+    Truppen oder Gebäuden fremder Mächte.
+- **R-NEWS-03 — Die Zeitung in der Oberfläche.** Taste `Z` öffnet die aktuelle Ausgabe;
+  ältere sind blätterbar; Schlagzeilen sind Sätze mit Namen und führen per Klick zum Ort
+  (R-UI-14/AK1); der Index zeigt Punkte als Balken (R-UI-09).
+  - AK1: WENN die Zeitung geöffnet ist, DANN SOLL jede Schlagzeile ein deutscher Satz ohne
+    Kennungen sein und, wo sie einen Ort betrifft, die Karte dorthin führen.
+  - AK2: WENN eine neue Ausgabe erschienen ist, DANN SOLL die Kopfleiste das anzeigen,
+    ohne das Spiel anzuhalten — die Zeitung ist Lektüre, kein Alarm.
+
+#### Querschnitt
+
+- **R-AI-08 — Die KI nutzt die neuen Mittel.** Die KI wirbt Spione an (Gegenspionage
+  in der Hauptstadt bei Krieg oder erlittener Sabotage; Aufklärung auf das Hauptziel;
+  Sabotage auf der schweren Stufe), beantwortet Handelsangebote nach Nutzen und Verhältnis
+  und macht auf der schweren Stufe selbst welche, lässt ihre Fernwaffen wirken (R-BAT-08)
+  und beachtet die Freischaltung — alles über dieselben Kommandos wie der Mensch (R-AI-01).
+  - AK1: WENN eine KI-Macht im Krieg ist und Geld über der Rücklage hat, DANN SOLL sie
+    binnen der Regelfrist einen Gegenspion in ihrer Hauptstadt führen.
+  - AK2: WENN eine KI ein Angebot erhält, dessen Gegenwert zum Marktpreis mindestens die
+    Regelmarge über dem Gegebenen liegt und das Verhältnis zum Anbieter nicht schlecht ist,
+    DANN SOLL sie annehmen; sonst ablehnen — und beides begründen (R-AI-05).
+  - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie durch Sold und Angebote nie
+    zahlungsunfähig werden, und jede Stufe SOLL im Turnier Spionage-, Beschuss- und
+    Handelsereignisse erzeugen — sonst ist die Mechanik für die KI tot.
+- **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder (Spione,
+  Aufklärung, Verstimmungen, Angebote, Feuerleitung, Zeitung) kommen mit einer Migration
+  von Version 1 auf 2.
+  - AK1: WENN ein Spielstand der Version 1 geladen wird, DANN SOLL er nach der Migration
+    laufen, mit leeren neuen Feldern, und derselbe Stand SOLL nach Speichern und Laden
+    hashgleich bleiben (R-GAME-03/AK1).
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 
