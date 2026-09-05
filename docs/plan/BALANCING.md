@@ -63,6 +63,20 @@ Die Spalte **Ausschlag** kommt aus dem Parameterlauf (`pnpm balance:sweep`,
 die Zahl um ±25 % bewegt wird. Fett = tragend, also eine Zahl, die stimmen muss.
 Ein Strich heißt: im Lauf nicht geprüft.
 
+> **Und was die Spalte heute nicht sagen kann (T-M14-05, 2026-09-06).** Der Lauf misst
+> seit dem 2026-09-06 seine eigene Auflösung: die Zielgröße streut **allein durch die
+> Startzahl um 0,085**, ohne jede Regeländerung. Der größte gemessene Ausschlag über alle
+> Konstanten liegt bei **6,5 %** — also *unterhalb* dieser Rauschgrenze.
+>
+> Daraus folgt nicht „keine Konstante ist tragend", sondern: **der Lauf kann es in dieser
+> Auflösung nicht entscheiden.** Bis zum 2026-09-06 stand hier die erste Lesart, und sie
+> war unbelegt (Befund 23 des Audits) — mit zwei Startzahlen je Variante gemittelt, wo
+> die Streuung acht gebraucht hätte. Jetzt sind es zwölf, und die Grenze steht im Bericht.
+>
+> Wer eine Aussage über eine einzelne Konstante braucht, braucht mehr Startzahlen oder
+> eine schärfere Zielgröße. Was der Lauf weiterhin zuverlässig findet, ist der grobe
+> Fall: eine Zahl, die die Partie *kippt*, läge weit über 17 %.
+
 | Konstante | Wert | Status | Ausschlag | Herkunft |
 |---|---|---|---|---|
 | `ticksPerDay` | 24 | belegt | — | Combat Tick = 1 Spielstunde, Day Change = 24 Ticks |

@@ -3,343 +3,353 @@
   "days": 120,
   "seeds": [
     1914,
-    2015
+    2015,
+    1939,
+    1871,
+    1806,
+    1683,
+    1945,
+    1789,
+    1848,
+    1990,
+    2001,
+    1066
   ],
   "threshold": 0.15,
   "effects": [
     {
-      "constant": "baseTargetMorale",
+      "constant": "revoltThreshold",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.4483695652173913,
-        "captures": 7,
-        "survivors": 5,
-        "economy": 183041,
+        "leaderShare": 0.27922228102759267,
+        "captures": 170,
+        "survivors": 5.5,
+        "stockpile": 345906,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.4875,
-        "captures": 4,
-        "survivors": 5,
-        "economy": 184298,
+        "leaderShare": 0.3866801787896404,
+        "captures": 608,
+        "survivors": 4.916666666666667,
+        "stockpile": 328891,
         "days": 120
       },
-      "swing": 0.102,
+      "swing": 0.065,
       "loadBearing": false
     },
     {
-      "constant": "productionMoraleFloor",
+      "constant": "baseTargetMorale",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.5253283302063789,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 160941,
+        "leaderShare": 0.34634020177498437,
+        "captures": 569,
+        "survivors": 4.833333333333333,
+        "stockpile": 252696,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.4861842105263158,
-        "captures": 2,
-        "survivors": 5,
-        "economy": 177085,
+        "leaderShare": 0.28031148410062073,
+        "captures": 181,
+        "survivors": 5.333333333333333,
+        "stockpile": 412681,
         "days": 120
       },
       "swing": 0.064,
       "loadBearing": false
     },
     {
-      "constant": "startMorale",
-      "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.5128205128205128,
-        "captures": 2,
-        "survivors": 5,
-        "economy": 172942,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.507051282051282,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 174584,
-        "days": 120
-      },
-      "swing": 0.043,
-      "loadBearing": false
-    },
-    {
-      "constant": "revoltThreshold",
-      "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.55,
-        "captures": 1,
-        "survivors": 5,
-        "economy": 159462,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.5757575757575758,
-        "captures": 8,
-        "survivors": 5,
-        "economy": 301002,
-        "days": 120
-      },
-      "swing": 0.026,
-      "loadBearing": false
-    },
-    {
-      "constant": "moraleDriftDivisor",
-      "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.525,
-        "captures": 4,
-        "survivors": 5,
-        "economy": 158341,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.5657894736842106,
-        "captures": 1,
-        "survivors": 5,
-        "economy": 158019,
-        "days": 120
-      },
-      "swing": 0.025,
-      "loadBearing": false
-    },
-    {
-      "constant": "marketElasticity",
-      "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.5715249662618084,
-        "captures": 4,
-        "survivors": 5,
-        "economy": 176992,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 167089,
-        "days": 120
-      },
-      "swing": 0.022,
-      "loadBearing": false
-    },
-    {
       "constant": "expansionPenaltyPerProvince",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.5567307692307693,
-        "captures": 1,
-        "survivors": 5,
-        "economy": 163630,
+        "leaderShare": 0.2919386806252057,
+        "captures": 297,
+        "survivors": 5.333333333333333,
+        "stockpile": 353124,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.5651420651420651,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 177410,
+        "leaderShare": 0.3621506859332317,
+        "captures": 331,
+        "survivors": 5.333333333333333,
+        "stockpile": 329568,
         "days": 120
       },
-      "swing": 0.015,
+      "swing": 0.052,
       "loadBearing": false
     },
     {
-      "constant": "battleRate",
+      "constant": "startMorale",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.5625,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 173351,
+        "leaderShare": 0.39040382092582265,
+        "captures": 302,
+        "survivors": 4.833333333333333,
+        "stockpile": 348505,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.5644736842105263,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172203,
+        "leaderShare": 0.3743278939109545,
+        "captures": 295,
+        "survivors": 4.75,
+        "stockpile": 335479,
         "days": 120
       },
-      "swing": 0.014,
+      "swing": 0.046,
+      "loadBearing": false
+    },
+    {
+      "constant": "productionMoraleFloor",
+      "baseline": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.38195297249147603,
+        "captures": 307,
+        "survivors": 4.5,
+        "stockpile": 332117,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.36495162131739806,
+        "captures": 299,
+        "survivors": 4.833333333333333,
+        "stockpile": 352572,
+        "days": 120
+      },
+      "swing": 0.038,
       "loadBearing": false
     },
     {
       "constant": "minDamage",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3093900967386761,
+        "captures": 315,
+        "survivors": 5.416666666666667,
+        "stockpile": 340387,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.55,
-        "captures": 3,
+        "leaderShare": 0.33224252483264455,
+        "captures": 306,
         "survivors": 5,
-        "economy": 172762,
+        "stockpile": 342981,
         "days": 120
       },
-      "swing": 0,
+      "swing": 0.035,
       "loadBearing": false
     },
     {
-      "constant": "defenceCap",
+      "constant": "battleRate",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.33540360220034754,
+        "captures": 316,
+        "survivors": 5.083333333333333,
+        "stockpile": 347635,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.32779043517322176,
+        "captures": 313,
+        "survivors": 5.166666666666667,
+        "stockpile": 346672,
         "days": 120
       },
-      "swing": 0,
-      "loadBearing": false
-    },
-    {
-      "constant": "deployDelayTicks",
-      "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
-        "days": 120
-      },
-      "swing": 0,
+      "swing": 0.016,
       "loadBearing": false
     },
     {
       "constant": "regenPermillePerTick",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172816,
+        "leaderShare": 0.3602987997791152,
+        "captures": 283,
+        "survivors": 5.166666666666667,
+        "stockpile": 343197,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.55,
-        "captures": 3,
+        "leaderShare": 0.3450648571969372,
+        "captures": 332,
         "survivors": 5,
-        "economy": 172761,
+        "stockpile": 338562,
+        "days": 120
+      },
+      "swing": 0.016,
+      "loadBearing": false
+    },
+    {
+      "constant": "moraleDriftDivisor",
+      "baseline": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3376002219348053,
+        "captures": 298,
+        "survivors": 5.25,
+        "stockpile": 352854,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.3460676924861455,
+        "captures": 322,
+        "survivors": 4.75,
+        "stockpile": 327492,
+        "days": 120
+      },
+      "swing": 0.006,
+      "loadBearing": false
+    },
+    {
+      "constant": "taxPerThousandPopulationPerTick",
+      "baseline": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.34746765467282453,
+        "captures": 285,
+        "survivors": 4.666666666666667,
+        "stockpile": 279775,
+        "days": 120
+      },
+      "swing": 0.004,
+      "loadBearing": false
+    },
+    {
+      "constant": "deployDelayTicks",
+      "baseline": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.3422949828713933,
+        "captures": 300,
+        "survivors": 5.166666666666667,
+        "stockpile": 347018,
+        "days": 120
+      },
+      "swing": 0.002,
+      "loadBearing": false
+    },
+    {
+      "constant": "defenceCap",
+      "baseline": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "swing": 0,
       "loadBearing": false
     },
     {
-      "constant": "taxPerThousandPopulationPerTick",
+      "constant": "marketElasticity",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.55,
-        "captures": 5,
-        "survivors": 5,
-        "economy": 161536,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "swing": 0,
@@ -348,24 +358,24 @@
     {
       "constant": "stackFullContribution",
       "baseline": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172762,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.55,
-        "captures": 3,
-        "survivors": 5,
-        "economy": 172289,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.55,
-        "captures": 2,
-        "survivors": 5,
-        "economy": 172796,
+        "leaderShare": 0.3439613351414539,
+        "captures": 305,
+        "survivors": 5.083333333333333,
+        "stockpile": 344610,
         "days": 120
       },
       "swing": 0,

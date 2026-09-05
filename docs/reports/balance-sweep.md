@@ -1,7 +1,8 @@
 # Balancing — Parameterlauf
 
 Erzeugt von `apps/headless/test/sweep.slow.test.ts` (`pnpm balance:sweep`).
-6 Mächte, 120 Spieltage, 2 Startzahlen je Variante,
+6 Mächte, 120 Spieltage, 12 Startzahlen je Variante,
+**Rauschgrenze der Zielgröße: 0.085** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am 2026-09-05). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also 0.170.
 jede Konstante um ±25 % bewegt.
 
 ## Was gemessen wird
@@ -16,10 +17,10 @@ dieser Liste.
 
 | Kennzahl | Wert |
 |---|---|
-| Anteil des Stärksten | 55.0 % |
-| Überlebende Mächte | 5.0 von 6 |
-| Wirtschaft gesamt | 172.762 |
-| Eroberte Provinzen | 3 |
+| Anteil des Stärksten | 34.4 % |
+| Überlebende Mächte | 5.1 von 6 |
+| Endbestaende gesamt | 344.610 |
+| Eroberte Provinzen | 305 |
 | Gespielte Tage | 120 |
 
 ## Tragende Konstanten (0 von 14)
@@ -30,17 +31,17 @@ dieser Liste.
 
 | Konstante | Ausschlag | Überlebende −25 % / +25 % | tragend |
 |---|---|---|---|
-| `baseTargetMorale` | 10.2 % | 5.0 / 5.0 | — |
-| `productionMoraleFloor` | 6.4 % | 5.0 / 5.0 | — |
-| `startMorale` | 4.3 % | 5.0 / 5.0 | — |
-| `revoltThreshold` | 2.6 % | 5.0 / 5.0 | — |
-| `moraleDriftDivisor` | 2.5 % | 5.0 / 5.0 | — |
-| `marketElasticity` | 2.2 % | 5.0 / 5.0 | — |
-| `expansionPenaltyPerProvince` | 1.5 % | 5.0 / 5.0 | — |
-| `battleRate` | 1.4 % | 5.0 / 5.0 | — |
-| `minDamage` | 0.0 % | 5.0 / 5.0 | — |
-| `defenceCap` | 0.0 % | 5.0 / 5.0 | — |
-| `deployDelayTicks` | 0.0 % | 5.0 / 5.0 | — |
-| `regenPermillePerTick` | 0.0 % | 5.0 / 5.0 | — |
-| `taxPerThousandPopulationPerTick` | 0.0 % | 5.0 / 5.0 | — |
-| `stackFullContribution` | 0.0 % | 5.0 / 5.0 | — |
+| `revoltThreshold` | 6.5 % | 5.5 / 4.9 | — |
+| `baseTargetMorale` | 6.4 % | 4.8 / 5.3 | — |
+| `expansionPenaltyPerProvince` | 5.2 % | 5.3 / 5.3 | — |
+| `startMorale` | 4.6 % | 4.8 / 4.8 | — |
+| `productionMoraleFloor` | 3.8 % | 4.5 / 4.8 | — |
+| `minDamage` | 3.5 % | 5.4 / 5.0 | — |
+| `battleRate` | 1.6 % | 5.1 / 5.2 | — |
+| `regenPermillePerTick` | 1.6 % | 5.2 / 5.0 | — |
+| `moraleDriftDivisor` | 0.6 % | 5.3 / 4.8 | — |
+| `taxPerThousandPopulationPerTick` | 0.4 % | 5.1 / 4.7 | — |
+| `deployDelayTicks` | 0.2 % | 5.1 / 5.2 | — |
+| `defenceCap` | 0.0 % | 5.1 / 5.1 | — |
+| `marketElasticity` | 0.0 % | 5.1 / 5.1 | — |
+| `stackFullContribution` | 0.0 % | 5.1 / 5.1 | — |
