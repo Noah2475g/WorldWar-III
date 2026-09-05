@@ -1,7 +1,6 @@
-import { runAi, storeMemories } from '@worldwar/ai'
+import { advanceTicks } from '@worldwar/ai'
 import {
   createInitialState,
-  runTicks,
   scoreOf,
   type Difficulty,
   type GameConfig,
@@ -65,18 +64,17 @@ export function playMatch(options: MatchOptions): MatchResult {
   // They are here to fight; a peace treaty at tick zero would make the match pointless.
   state.diplomacy.relations['p1|p2']!.state = 'war'
 
+  // Dieselbe Schleife wie die Anwendung (T-M14-04). Vorher stand hier eine eigene —
+  // gleich gebaut, aber eben eine zweite, und zwei Schleifen sind zwei Spiele.
   const limit = days * options.rules.constants.ticksPerDay
-  for (let i = 0; i < limit; i++) {
-    const { commands, memories } = runAi(state, { map: options.map, rules: options.rules })
-    state = runTicks(state, 1, { map: options.map, rules: options.rules }, () => commands).state
-    storeMemories(state, memories)
-    if (state.victory.winner !== null) {
-      return {
-        winner: state.victory.winner,
-        scores: { p1: scoreOf(state, 'p1', options.rules), p2: scoreOf(state, 'p2', options.rules) },
-        ticks: state.tick,
-        reason: 'victory',
-      }
+  state = advanceTicks(state, limit, { map: options.map, rules: options.rules }).state
+
+  if (state.victory.winner !== null) {
+    return {
+      winner: state.victory.winner,
+      scores: { p1: scoreOf(state, 'p1', options.rules), p2: scoreOf(state, 'p2', options.rules) },
+      ticks: state.tick,
+      reason: 'victory',
     }
   }
 

@@ -1,4 +1,4 @@
-import { runAi, storeMemories } from '@worldwar/ai'
+import { advanceTicks } from '@worldwar/ai'
 import {
   HASH_OMIT_KEYS,
   createInitialState,
@@ -54,19 +54,13 @@ export function recordGame(options: {
   let state = createInitialState(options.config, ctx)
   options.setup?.(state)
 
-  const commands: Recording['commands'] = []
-
-  for (let i = 0; i < options.ticks; i++) {
-    const { commands: aiCommands, memories } = runAi(state, ctx)
-    const scripted = options.scripted?.(state.tick) ?? []
-    const all = [...scripted, ...aiCommands]
-
-    for (const command of all) commands.push({ tick: state.tick, command })
-
-    state = runTicks(state, 1, ctx, () => all).state
-    storeMemories(state, memories)
-    if (state.victory.winner !== null) break
-  }
+  // Aufgezeichnet wird dieselbe Schleife, die auch gespielt wird (T-M14-04). Ein
+  // Rekorder mit eigener Schleife zeichnet ein anderes Spiel auf als das gespielte —
+  // und genau das waere bei einer Wiedergabe nicht zu bemerken, sondern erst am
+  // abweichenden Endhash, ohne jeden Hinweis worauf.
+  const gespielt = advanceTicks(state, options.ticks, ctx, { scripted: options.scripted })
+  const commands: Recording['commands'] = gespielt.applied
+  state = gespielt.state
 
   return {
     recording: {

@@ -1,5 +1,5 @@
-import { runTicks, type GameConfig, type MapData, type Rules } from '@worldwar/core'
-import { runAi, storeMemories } from '@worldwar/ai'
+import { type GameConfig, type MapData, type Rules } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
 import { createInitialState } from '@worldwar/core'
 
 /**
@@ -107,12 +107,13 @@ export function playOut(
     }
   }
 
-  for (let day = 0; day < days; day++) {
-    const { commands, memories } = runAi(state, ctx)
-    state = runTicks(state, rules.constants.ticksPerDay, ctx, () => commands).state
-    storeMemories(state, memories)
-    if (state.victory.winner !== null) break
-  }
+  // Eine Schleife, dieselbe wie in der Anwendung (T-M14-04). Vorher stand hier ein
+  // `runAi` je Spieltag, dessen Befehlspaket auf alle 24 Ticks angewandt wurde — das
+  // liess bei sechs Maechten fuenf nie denken, weil `shouldThinkThisTick` die Denkzeit
+  // ueber `tick % aiCount` verteilt und `tick` hier stets ein Vielfaches von 24 war.
+  // Jede Balancezahl aus dieser Datei beschrieb bis dahin ein anderes Spiel.
+  const gespielt = advanceTicks(state, days * rules.constants.ticksPerDay, ctx)
+  state = gespielt.state
 
   const owned = new Map<string, number>()
   for (const province of Object.values(state.provinces)) {

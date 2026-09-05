@@ -1130,7 +1130,7 @@ tasks:
   - id: T-M14-04
     milestone: M14
     title: Eine Spielschleife fuer alle
-    status: todo
+    status: done
     deps: [T-M14-03]
     requirements: [R-AI-01, R-AI-06]
     constraints: [C-10]
