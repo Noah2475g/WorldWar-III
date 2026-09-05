@@ -1206,7 +1206,7 @@ tasks:
   - id: T-M14-11
     milestone: M14
     title: Die KI findet ihr Ziel
-    status: todo
+    status: done
     deps: [T-M14-02]
     requirements: [R-AI-01, R-AI-03, R-GAME-01]
     files: [packages/core/src/map/neighbourhood.ts, packages/core/src/index.ts, packages/ai/src/targeting.ts, packages/ai/src/military.ts, packages/ai/src/decide.ts, apps/desktop/src/game/newGame.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-reachability.md]

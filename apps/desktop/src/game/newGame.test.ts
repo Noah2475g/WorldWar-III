@@ -114,3 +114,46 @@ describe('R-AI-02 Der KI-Bonus wird offen ausgewiesen', () => {
     expect(aiBonusPercent(withBonus, 'hard')).toBe(25)
   })
 })
+
+describe('R-GAME-01 Die Gegner sind Nachbarn, keine Listenanfaenge', () => {
+  it('waehlt die naechstgelegenen Maechte statt der ersten in der Kartendatei', () => {
+    // Befund 30: Gegner wurden in Kartenreihenfolge genommen. In der ausgelieferten
+    // Voreinstellung (Vereinigte Staaten, sieben Gegner) hiess das: kein Landweg zum
+    // Spieler, 0 Kriegserklaerungen in 1000 Spieltagen. Fast jede Messung 'es passiert
+    // nichts' im Audit haengt daran — die KI kann in dieser Aufstellung gar nicht kaempfen.
+    const world = map
+    const spieler = world.startPositions[0]!.nation
+
+    const gegner = toConfig({ ...DEFAULT_NEW_GAME, nation: spieler, opponents: 3 }, world)
+      .players.filter((p) => p.kind === 'ai')
+      .map((p) => p.nation)
+
+    // Jeder Gegner ist ueber Land erreichbar — das ist die Bedingung dafuer, dass
+    // ueberhaupt etwas geschieht.
+    const heimat = new Set(world.startPositions[0]!.provinces)
+    const landNachbarn = new Set<string>()
+    for (const edge of world.edges) {
+      if (edge.kind !== 'land') continue
+      if (heimat.has(edge.a)) landNachbarn.add(edge.b)
+      if (heimat.has(edge.b)) landNachbarn.add(edge.a)
+    }
+    const nachbarNationen = new Set(
+      world.startPositions
+        .filter((start) => start.provinces.some((id) => landNachbarn.has(id)))
+        .map((start) => start.nation),
+    )
+
+    expect(gegner.length).toBe(3)
+    expect(
+      gegner.some((name) => nachbarNationen.has(name)),
+      `keiner der Gegner (${gegner.join(', ')}) grenzt an den Spieler`,
+    ).toBe(true)
+  })
+
+  it('bleibt bei gleicher Startzahl bei derselben Wahl', () => {
+    const world = map
+    const einmal = toConfig(DEFAULT_NEW_GAME, world).players.map((p) => p.nation)
+    const nochmal = toConfig(DEFAULT_NEW_GAME, world).players.map((p) => p.nation)
+    expect(einmal).toEqual(nochmal)
+  })
+})

@@ -36,19 +36,80 @@ export const DEFAULT_NEW_GAME: NewGameOptions = {
 }
 
 /**
+ * Die Gegner nach Nachbarschaft, nicht nach Kartenreihenfolge (T-M14-11, Befund 30).
+ *
+ * Bis zum 2026-09-06 wurden die ersten N Nationen der Kartendatei genommen. In der
+ * ausgelieferten Voreinstellung — Vereinigte Staaten, sieben Gegner — waren das Russland,
+ * China, Indien und weitere ohne Landweg zum Spieler: **0 Kriegserklaerungen in 1000
+ * Spieltagen**. Fast jede Messung des Audits, in der 'nichts passiert', haengt daran; die
+ * KI konnte in dieser Aufstellung gar nicht kaempfen.
+ *
+ * Gesucht wird per Breitensuche ueber Landgrenzen ab dem Gebiet des Spielers: wer zuerst
+ * gefunden wird, ist zuerst Gegner. Die Reihenfolge ist deterministisch (Kartenreihenfolge
+ * innerhalb derselben Entfernung), also gibt dieselbe Startzahl weiterhin dieselbe Partie.
+ * Reicht die Nachbarschaft nicht fuer die gewuenschte Zahl, fuellen die uebrigen Nationen
+ * in Kartenreihenfolge auf — eine Partie mit zu wenigen Gegnern waere schlimmer als eine
+ * mit einem fernen.
+ */
+export function opponentsNear(nation: string, map: MapData): string[] {
+  const start = map.startPositions.find((entry) => entry.nation === nation)
+  const nationOf = new Map<string, string>()
+  for (const entry of map.startPositions) {
+    for (const id of entry.provinces) nationOf.set(id, entry.nation)
+  }
+
+  const landNeighbours = new Map<string, string[]>()
+  for (const edge of map.edges) {
+    if (edge.kind !== 'land') continue
+    landNeighbours.set(edge.a, [...(landNeighbours.get(edge.a) ?? []), edge.b])
+    landNeighbours.set(edge.b, [...(landNeighbours.get(edge.b) ?? []), edge.a])
+  }
+
+  const found: string[] = []
+  const seenProvince = new Set<string>(start?.provinces ?? [])
+  const seenNation = new Set<string>([nation])
+  let frontier = [...(start?.provinces ?? [])]
+
+  while (frontier.length > 0) {
+    const next: string[] = []
+    for (const id of frontier) {
+      for (const neighbour of landNeighbours.get(id) ?? []) {
+        if (seenProvince.has(neighbour)) continue
+        seenProvince.add(neighbour)
+        next.push(neighbour)
+
+        const owner = nationOf.get(neighbour)
+        if (owner && !seenNation.has(owner)) {
+          seenNation.add(owner)
+          found.push(owner)
+        }
+      }
+    }
+    frontier = next
+  }
+
+  // Auffuellen, falls die Landmasse zu klein ist — eine Insel hat sonst keine Gegner.
+  const rest = map.startPositions
+    .map((entry) => entry.nation)
+    .filter((name) => !seenNation.has(name))
+  return [...found, ...rest]
+}
+
+/**
  * Turns the dialogue's answers into a game configuration.
  *
- * Opponents are taken from the map's start positions in order, skipping the player's
- * own nation — deterministically, so the same seed really does give the same game
- * rather than merely the same random numbers.
+ * Opponents come from `opponentsNear`, so the game starts with somebody within reach —
+ * deterministically, so the same seed really does give the same game rather than merely
+ * the same random numbers.
  */
 export function toConfig(options: NewGameOptions, map: MapData): GameConfig {
   const available = map.startPositions.map((start) => start.nation)
   const nation = available.includes(options.nation) ? options.nation : (available[0] ?? 'Unbekannt')
 
-  const opponents = available
-    .filter((name) => name !== nation)
-    .slice(0, Math.max(0, Math.min(options.opponents, available.length - 1)))
+  const opponents = opponentsNear(nation, map).slice(
+    0,
+    Math.max(0, Math.min(options.opponents, available.length - 1)),
+  )
 
   return {
     seed: options.seed,
