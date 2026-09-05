@@ -776,12 +776,12 @@ tasks:
   - id: T-M10-09
     milestone: M10
     title: Einstellungen
-    status: todo
+    status: done
     reopened: "geschlossen durch T-M14-08: Settings.tsx und Settings.test.tsx existieren nicht (die Einstellungen liegen in ui/Dialogs.tsx und state/uiState.ts), und parseSettings hat ausser uiState.test.ts keinen Aufrufer - die Zusage 'Einstellungen ueberleben den Neustart' war nie eingeloest, weil es gar keinen dauerhaften Speicher gab. T-M14-02 hat den Besitzer am 2026-09-06 benannt: T-M14-08 baut den dauerhaften Speicher und nimmt die Einstellungen darin mit; danach steht diese Aufgabe in beiden Plandateien wieder auf done."
     deps: [T-M10-07b]
     requirements: [R-GAME-04, R-UI-06, R-FREE-05]
-    files: [apps/desktop/src/ui/Settings.tsx]
-    tests: [apps/desktop/src/ui/Settings.test.tsx]
+    files: [apps/desktop/src/state/uiState.ts]
+    tests: [apps/desktop/src/state/uiState.test.ts]
     dod: "Autospeicher-Intervall, Ton, Tempogrenze und Debug schaltbar; Einstellungen ueberleben Neustart"
 
   - id: T-M10-10
@@ -1162,7 +1162,7 @@ tasks:
   - id: T-M14-07
     milestone: M14
     title: Festungsbonus am Eigentuemer, Rueckzugssperre im Nahkampf, Beschuss mit Diplomatie und in Phase 8
-    status: todo
+    status: done
     deps: [T-M14-06]
     requirements: [R-BAT-03, R-BAT-05, R-BAT-06, R-BAT-07]
     files: [packages/core/src/rules/combat.ts, packages/core/src/phases/combat.ts, packages/core/src/commands/bombard.ts, packages/core/src/phases/applyCommands.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, docs/plan/BALANCING.md, docs/reports/balance-sweep.md, docs/reports/balance-sweep.json, docs/reports/ai-tournament.md]
@@ -1172,12 +1172,12 @@ tasks:
   - id: T-M14-08
     milestone: M14
     title: Ein Speicher, der das Schliessen des Fensters ueberlebt
-    status: todo
+    status: done
     deps: [T-M13-03, T-M14-02]
     requirements: [R-GAME-03, R-GAME-04, R-GAME-05]
     constraints: [C-02, C-08]
     files: [apps/desktop/src/storage/IndexedDbStorage.ts, apps/desktop/src/storage/createStorage.ts, packages/testkit/src/storageContract.ts, packages/testkit/src/index.ts, packages/core/src/persistence/StoragePort.ts, apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/state/uiState.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, package.json, vitest.config.ts, docs/plan/PROGRESS.md]
-    tests: [apps/desktop/src/storage/IndexedDbStorage.test.ts, apps/desktop/src/storage/createStorage.test.ts, test/guards/persistence-contract.test.ts, packages/core/src/persistence/save.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/App.test.tsx]
+    tests: [apps/desktop/src/storage/IndexedDbStorage.test.ts, test/guards/persistence-contract.test.ts, packages/core/src/persistence/save.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/App.test.tsx]
     dod: "die Einstellungen ueberleben den Neustart - parseSettings bekommt endlich einen Aufrufer und ein gespeicherter Wert (Tempo, Schriftgroesse, Ton) steht nach dem Neuladen wieder da (schliesst T-M10-09, das seit dem 2026-09-06 auf diese Aufgabe zeigt); storagePortContract laeuft gegen mindestens zwei Umsetzungen (Memory, IndexedDB) und der Waechter persistence-contract faellt, sobald nur eine Fabrik registriert ist; ein ueber eine verworfene IndexedDbStorage-Instanz geschriebener Stand liefert aus einer neuen Instanz denselben Zustands-Hash; der Vertrag deckt fehlschlagendes Schreiben, halb geschriebenen Stand und zwei Schreibvorgaenge auf denselben Namen ab; ohne indexedDB meldet createStorage volatile true und die Oberflaeche zeigt den Hinweis; ein unlesbarer Platz erscheint als unlesbar statt leer und laesst sich laden; nach simuliertem Neustart trifft der naechste Automatikstand den Platz mit dem kleinsten savedAtTick. vitest.config.ts nimmt main.tsx nicht mehr von der Abdeckung aus - an dieser Datei haengen die Auslieferungsbefunde, und die AK-3-Schwellen (Kern 90 Prozent, gesamt 80 Prozent) bleiben danach gehalten. Diese Aufgabe baut gegen das von T-M14-03 praezisierte C-02 (V1 im Browser mit dauerhaftem Speicher, Datei-Port und Tauri-Bau in M16) und aendert den Status von T-M8-00 NICHT selbst: die Rueckstufung samt Begruendung liegt bei T-M14-02, hier steht nur der eigene Fortschrittseintrag in PROGRESS.md"
 
   - id: T-M14-09

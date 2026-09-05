@@ -31,7 +31,11 @@ export default defineConfig({
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: './coverage',
       include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}'],
-      exclude: ['**/index.ts', '**/*.test.{ts,tsx}', '**/types.ts', '**/main.tsx'],
+      // `main.tsx` stand hier bis zum 2026-09-06 (T-M14-08, Befund N5). Ausgerechnet die
+      // Datei, die entscheidet, *was ausgeliefert wird*, war die einzige der Anwendung,
+      // die die Abdeckungszahl nicht sehen konnte — und an ihr hingen sieben Befunde des
+      // Audits, darunter der Speicher, der nie verdrahtet war.
+      exclude: ['**/index.ts', '**/*.test.{ts,tsx}', '**/types.ts'],
     },
   },
 })

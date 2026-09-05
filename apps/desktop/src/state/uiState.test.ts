@@ -3,7 +3,10 @@ import {
   DEFAULT_SETTINGS,
   FONT_SCALES,
   INITIAL_UI,
+  SETTINGS_STORAGE_KEY,
+  loadSettings,
   parseSettings,
+  saveSettings,
   uiReducer,
   type UiState,
 } from './uiState.ts'
@@ -136,5 +139,55 @@ describe('R-UI-05 Meldungen', () => {
 
     expect(state.notice).toEqual({ text: 'Es fehlt an Rohstoffen: 400 Eisen.', kind: 'error' })
     expect(uiReducer(state, { type: 'clearNotice' }).notice).toBeNull()
+  })
+})
+
+describe('R-GAME-05 Einstellungen ueberleben den Neustart', () => {
+  /** Ein Speicher, wie ihn der Browser bietet — ohne Browser. */
+  const store = () => {
+    const eintraege = new Map<string, string>()
+    return {
+      getItem: (key: string) => eintraege.get(key) ?? null,
+      setItem: (key: string, value: string) => void eintraege.set(key, value),
+    }
+  }
+
+  it('liest zurueck, was gespeichert wurde', () => {
+    // T-M14-08, schliesst T-M10-09: parseSettings hatte seit M10 keinen Aufrufer, und die
+    // Zusage 'Einstellungen ueberleben den Neustart' stand trotzdem als erledigt im Plan.
+    // Sie war nicht einloesbar — es gab keinen dauerhaften Speicher.
+    const s = store()
+    saveSettings({ ...DEFAULT_SETTINGS, sound: false, fontScale: 'large', maxSpeed: 42 }, s)
+
+    const zurueck = loadSettings(s)
+    expect(zurueck.sound).toBe(false)
+    expect(zurueck.fontScale).toBe('large')
+    expect(zurueck.maxSpeed).toBe(42)
+  })
+
+  it('faellt auf die Vorgaben zurueck, wenn nichts gespeichert ist', () => {
+    expect(loadSettings(store())).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('laesst sich von einem kaputten Eintrag nicht aufhalten', () => {
+    // Eine Einstellung darf den Start des Spiels nicht verhindern.
+    const s = store()
+    s.setItem(SETTINGS_STORAGE_KEY, '{kein json')
+    expect(loadSettings(s)).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('bringt unsinnige Werte in den erlaubten Bereich', () => {
+    const s = store()
+    s.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ maxSpeed: 9999, fontScale: 'banane', autosaveMinutes: -3 }))
+    const zurueck = loadSettings(s)
+    expect(zurueck.maxSpeed).toBeLessThanOrEqual(100)
+    expect(zurueck.fontScale).toBe(DEFAULT_SETTINGS.fontScale)
+    expect(zurueck.autosaveMinutes).toBeGreaterThanOrEqual(1)
+  })
+
+  it('kommt ohne jeden Speicher aus', () => {
+    // Privates Fenster, verweigerter Zugriff, Node: kein Grund, das Spiel zu stoeren.
+    expect(loadSettings(undefined)).toEqual(DEFAULT_SETTINGS)
+    expect(() => saveSettings(DEFAULT_SETTINGS, undefined)).not.toThrow()
   })
 })

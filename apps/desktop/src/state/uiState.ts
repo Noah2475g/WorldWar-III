@@ -149,3 +149,46 @@ export const FONT_SCALES: Record<Settings['fontScale'], number> = {
   normal: 1,
   large: 1.25,
 }
+
+/**
+ * Einstellungen, die den Neustart überleben (T-M14-08, schließt T-M10-09).
+ *
+ * `parseSettings` gab es seit M10 — und außerhalb seines eigenen Tests hat es nie jemand
+ * aufgerufen. Die Zusage „Einstellungen überleben den Neustart" stand als erledigt im
+ * Plan, war aber nicht einlösbar: es gab keinen dauerhaften Speicher. Tonwahl,
+ * Schriftgröße und Tempogrenze setzten sich bei jedem Start zurück.
+ *
+ * `localStorage` und nicht IndexedDB: das hier sind fünf Werte, sie werden beim ersten
+ * Bild gebraucht, und ein asynchroner Speicher hieße, die Oberfläche zunächst falsch zu
+ * zeichnen. Die Spielstände gehen den anderen Weg — sie sind groß und dürfen warten.
+ */
+export const SETTINGS_STORAGE_KEY = 'worldwar.settings'
+
+/** Der kleine Schluessel-Wert-Speicher, den Einstellungen brauchen. */
+export interface SettingsStore {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+}
+
+/** Was die Anwendung benutzt, wenn niemand etwas anderes reicht. */
+const browserStore = (): SettingsStore | undefined => globalThis.localStorage ?? undefined
+
+export function loadSettings(store: SettingsStore | undefined = browserStore()): Settings {
+  try {
+    const raw = store?.getItem(SETTINGS_STORAGE_KEY)
+    if (!raw) return DEFAULT_SETTINGS
+    return parseSettings(JSON.parse(raw))
+  } catch {
+    // Kaputter Eintrag, kein localStorage, verweigerter Zugriff: die Vorgaben tun es.
+    // Eine Einstellung darf den Start des Spiels nicht verhindern.
+    return DEFAULT_SETTINGS
+  }
+}
+
+export function saveSettings(settings: Settings, store: SettingsStore | undefined = browserStore()): void {
+  try {
+    store?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+  } catch {
+    // Kein Speicher, volles Kontingent, privates Fenster — kein Grund, das Spiel zu stören.
+  }
+}

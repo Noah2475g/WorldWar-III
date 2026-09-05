@@ -27,7 +27,7 @@ import {
 } from './game/actions.ts'
 import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
-import { INITIAL_UI, uiReducer, type Settings } from './state/uiState.ts'
+import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon } from './map/markers.ts'
 import { strengthByProvince } from './map/modes.ts'
@@ -50,7 +50,7 @@ import { DebugPanel, KeyboardHelp, NewGameDialog, SavesDialog, SettingsDialog, f
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { describeEvent } from './game/events.ts'
-import { MemoryStorage } from '@worldwar/core'
+import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
@@ -90,7 +90,7 @@ export interface AppProps {
   map: MapData
   rules: Rules
   maps: readonly { id: string; name: string; provinces: number }[]
-  /** Where saves go. Memory by default; the packaged app passes a file-system port. */
+  /** Wohin Spielstaende gehen. Ohne Angabe waehlt createStorage den dauerhaften Speicher. */
   storage?: StoragePort
   /**
    * Where sound comes from. The browser's own audio by default; a test passes a stand-in
@@ -135,7 +135,18 @@ function rememberTutorialSeen(): void {
 }
 
 export function App(props: AppProps) {
-  const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI)
+  // Die gespeicherten Einstellungen sind der Startzustand, nicht die Vorgaben
+  // (T-M14-08, schliesst T-M10-09): parseSettings hatte seit M10 keinen Aufrufer, und
+  // Ton, Schriftgroesse und Tempogrenze setzten sich bei jedem Start zurueck.
+  const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI, (start) => ({
+    ...start,
+    settings: loadSettings(),
+  }))
+
+  // Und zurueckgeschrieben wird, sobald sich etwas aendert.
+  useEffect(() => {
+    saveSettings(ui.settings)
+  }, [ui.settings])
   const [options, setOptions] = useState<NewGameOptions>({
     ...DEFAULT_NEW_GAME,
     nation: props.map.startPositions[0]?.nation ?? '',
@@ -163,9 +174,12 @@ export function App(props: AppProps) {
   const writingAutosave = useRef(false)
   const now = props.now ?? Date.now
   const ticksPerDay = props.rules.constants.ticksPerDay
-  // In the browser this is memory; the packaged app swaps in the file-system port
-  // (T-M8-00 built all three against the same contract).
-  const storage = useMemo(() => props.storage ?? new MemoryStorage(), [props.storage])
+  // Der Speicher der laufenden Anwendung. Bis zum 2026-09-06 stand hier ein stiller
+  // Rueckfall auf MemoryStorage, und main.tsx reichte nie etwas herein: die Anwendung
+  // meldete 'gespeichert', und nach dem Schliessen des Fensters war alles weg (T-M14-08).
+  // Tests geben ihren eigenen Port; sonst entscheidet createStorage.
+  const chosen = useMemo(() => (props.storage ? null : createStorage()), [props.storage])
+  const storage = props.storage ?? chosen!.storage
 
   // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
   const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
@@ -298,7 +312,16 @@ export function App(props: AppProps) {
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
-  const alerts = useMemo(() => alertsFor(view), [view])
+  const alerts = useMemo(() => {
+    const aus = alertsFor(view)
+    // Kein dauerhafter Speicher? Dann erfaehrt es der Spieler jetzt und nicht beim
+    // naechsten Start (T-M14-08). Ein stiller Rueckfall auf den Arbeitsspeicher war
+    // genau der Zustand, den diese Aufgabe behebt.
+    if (chosen?.warning) {
+      aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
+    }
+    return aus
+  }, [view, chosen])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])

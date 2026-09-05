@@ -75,9 +75,18 @@ registerCommand<BombardCommand>('BOMBARD', {
     const army = draft.armies[command.armyId]!
     const province = draft.provinces[command.targetProvinceId]!
 
+    // Getroffen wird, mit wem man im Krieg ist — nicht jeder, der zufällig hier steht
+    // (T-M14-07, Befund 51). Die Prüfung davor sieht nur, wem die *Provinz* gehört; ein
+    // Verbündeter oder eine neutrale Macht in derselben Provinz bekam bisher die volle
+    // Ladung, ohne dass je eine Kriegserklärung gefallen wäre.
     const defenders = draft.armyOrder
       .map((id) => draft.armies[id]!)
-      .filter((other) => other.locationProvinceId === command.targetProvinceId && other.owner !== army.owner)
+      .filter(
+        (other) =>
+          other.locationProvinceId === command.targetProvinceId &&
+          other.owner !== army.owner &&
+          atWar(draft, army.owner, other.owner),
+      )
 
     if (defenders.length === 0) {
       // Shelling an empty province only hurts its morale.
@@ -113,6 +122,22 @@ registerCommand<BombardCommand>('BOMBARD', {
     }
 
     army.cannotAttackUntil = draft.tick + 1
+
+    // Eine ausgelöschte Armee verschwindet, statt als leere Hülle liegen zu bleiben
+    // (T-M14-07, Befund 53). Der Nahkampf tat das längst; der Beschuss nicht — und eine
+    // Hülle ohne Einheiten hält ihren Besitzer am Leben, weshalb eine Partie nie zu einem
+    // Sieger kommt. Genau daran hätte der Abnahmetest aus T-M14-14 gehangen.
+    for (const defender of defenders) {
+      if (defender.units.length > 0) continue
+      emit(ctx.events, draft.tick, 'ARMY_DESTROYED', {
+        playerId: defender.owner,
+        armyId: defender.id,
+        provinceId: command.targetProvinceId,
+        audience: [defender.owner],
+      })
+      delete draft.armies[defender.id]
+      draft.armyOrder = draft.armyOrder.filter((id) => id !== defender.id)
+    }
 
     emit(ctx.events, draft.tick, 'BOMBARDMENT', {
       playerId: army.owner,

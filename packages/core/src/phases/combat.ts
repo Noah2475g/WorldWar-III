@@ -82,15 +82,23 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
       const enemies = fighting.filter((other) => atWar(draft, side.player, other.player))
       if (enemies.length === 0) continue
 
+      // Wer unter Sperre steht, greift nicht an — getroffen wird er trotzdem (T-M14-07,
+      // Befund 49). `cannotAttackUntil` wurde beim Rueckzug gesetzt und nur vom Beschuss
+      // gelesen; der Nahkampf sah die Sperre nie, und eine Armee zog sich zurueck und
+      // schlug im selben Tick wieder zu. Eine Sperre, die nur die Haelfte der Kampfarten
+      // kennt, ist keine.
+      const angriffsfaehig = side.armies.filter((army) => draft.tick >= army.cannotAttackUntil)
+      if (angriffsfaehig.length === 0) continue
+
       const enemyArmies = enemies.flatMap((other) => other.armies)
       const shares = classShares(enemyArmies, rules)
 
       // Entrenched defenders fight with defence values and do not counter-attack;
       // a meeting engagement lets both sides use their attack values (belegt).
-      const stationary = side.armies.every((army) => army.path.length === 0 && army.stance === 'defensive')
+      const stationary = angriffsfaehig.every((army) => army.path.length === 0 && army.stance === 'defensive')
       const isDefender = stationary && province.owner === side.player
 
-      const value = sideAttackValue(draft, side.armies, shares, isDefender, rules)
+      const value = sideAttackValue(draft, angriffsfaehig, shares, isDefender, rules)
       const spread = applySpread(value, draft.rng, rules)
 
       // Split the blow across every enemy present, by their share of the strength —
@@ -102,9 +110,12 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
         const enemyHp = enemy.armies.reduce((sum, army) => sum + armyHp(army), 0)
         if (enemyHp <= 0) continue
 
-        const entrenched =
-          province.owner === enemy.player && enemy.armies.every((army) => army.path.length === 0)
-        const defence = defenceMultiplier(province, entrenched, rules)
+        // Die Festung gehoert dem Eigentuemer der Provinz, das Gelaende allen
+        // (T-M14-07). Vorher bekam jede Seite beides — auch der Angreifer, der die
+        // Festung gerade sturmt.
+        const ownsProvince = province.owner === enemy.player
+        const entrenched = ownsProvince && enemy.armies.every((army) => army.path.length === 0)
+        const defence = defenceMultiplier(province, entrenched, rules, ownsProvince)
 
         const share = quotFixed(enemyHp, enemyTotal)
         const portion = mulChain([spread, share])

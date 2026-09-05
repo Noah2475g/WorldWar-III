@@ -91,10 +91,33 @@ describe('R-BAT-02 Einheitenklassen wirken unterschiedlich', () => {
 describe('R-BAT-03 Verteidigungsvorteile', () => {
   it('erhoeht die Verteidigung durch Festungen', () => {
     const plain = state.provinces['m1']!
-    const base = defenceMultiplier(plain, false, TEST_RULES)
+    const base = defenceMultiplier(plain, false, TEST_RULES, true)
 
     plain.buildings.fortress = 3
-    expect(defenceMultiplier(plain, false, TEST_RULES)).toBeGreaterThan(base)
+    expect(defenceMultiplier(plain, false, TEST_RULES, true)).toBeGreaterThan(base)
+  })
+
+  it('laesst die Festung nur ihren Eigentuemer schuetzen', () => {
+    // Befund 18: Die Festung wirkte fuer jede Seite, die in der Provinz stand — auch fuer
+    // den Angreifer, der sie gerade sturmt. Schlimmer noch: weil der Bonus gedeckelt ist,
+    // ging der Eingrabungsvorteil des Verteidigers im Deckel unter, sobald beide Seiten
+    // die Festung mitbekamen. Eine Festung, die den Angreifer schuetzt, ist keine.
+    const festung = state.provinces['m1']!
+    festung.buildings.fortress = 3
+
+    const fuerDenEigentuemer = defenceMultiplier(festung, false, TEST_RULES, true)
+    const fuerDenAngreifer = defenceMultiplier(festung, false, TEST_RULES, false)
+
+    expect(fuerDenAngreifer).toBeLessThan(fuerDenEigentuemer)
+  })
+
+  it('laesst das Gelaende beide Seiten schuetzen', () => {
+    // Der Unterschied zur Festung: ein Berg gehoert niemandem. Wer dort steht, steht gut —
+    // gleich, wem die Provinz gehoert.
+    const berg = state.provinces['n3']!
+    expect(defenceMultiplier(berg, false, TEST_RULES, false)).toBe(
+      defenceMultiplier(berg, false, TEST_RULES, true),
+    )
   })
 
   it('erhoeht die Verteidigung im Gebirge und in der Stadt', () => {
@@ -116,6 +139,10 @@ describe('R-BAT-03 Verteidigungsvorteile', () => {
 
   it('schuetzt den Verteidiger messbar', () => {
     const open = structuredClone(state)
+    // Die Provinz gehoert dem Verteidiger — seit T-M14-07 ist das noetig, damit die
+    // Festung ueberhaupt wirkt. Vorher stand sie in einer herrenlosen Provinz und half
+    // beiden Seiten; dass der Test trotzdem gruen war, lag genau an diesem Fehler.
+    open.provinces['m1']!.owner = 'p2'
     placeArmy(open, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
     placeArmy(open, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
 

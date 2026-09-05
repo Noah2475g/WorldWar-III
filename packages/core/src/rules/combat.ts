@@ -169,11 +169,26 @@ export function sideAttackValue(
 }
 
 /** Defence multiplier of the defending province: additive bonuses, hard capped. */
-export function defenceMultiplier(province: Province, entrenched: boolean, rules: Rules): Fixed {
+export function defenceMultiplier(
+  province: Province,
+  entrenched: boolean,
+  rules: Rules,
+  /**
+   * Does this side own the province? The fortress is theirs alone (T-M14-07, Befund 18).
+   *
+   * It used to protect whoever stood here, the storming attacker included — and because
+   * the bonus is capped, handing it to both sides also swallowed the defender's
+   * entrenchment inside the cap: a fortress made the defender's advantage *smaller*.
+   * Terrain is different and stays shared: a mountain belongs to nobody.
+   *
+   * Defaults to true so that existing call sites keep the defender's reading.
+   */
+  ownsProvince = true,
+): Fixed {
   let bonus = 0
 
   const fortress = province.buildings.fortress ?? 0
-  if (fortress > 0) {
+  if (fortress > 0 && ownsProvince) {
     const perLevel = rules.buildings.fortress.effects.defenceBonusPermille ?? 0
     // eslint-disable-next-line no-restricted-syntax -- permille bonus x level, plain integers
     bonus += perLevel * fortress

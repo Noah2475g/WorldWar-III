@@ -673,3 +673,35 @@ oben — dann sagt die Anforderung, was das Spiel wirklich braucht. **(b)** Den 
 schneller machen, bis 0,5 ms gehalten sind — teuer, und ohne erkennbaren Gewinn für den
 Spieler. Vorschlag: **(a)**, mit der Messung als Begründung. Vorgemerkt für **M16**, wo
 die Leistung am echten Bau ohnehin neu zu messen ist.
+
+---
+
+## 2026-09-06 · T-M14-07 · Der Beschuss löst sich in Phase 1 auf, der Nahkampf in Phase 8
+
+**Befund:** `BOMBARD` ist ein Kommando und wirkt deshalb in Phase 1 der Tick-Pipeline
+(Kommandos anwenden); der Nahkampf wird in Phase 8 aufgelöst. Damit gelten für zwei
+Kampfarten zwei verschiedene Zeitpunkte: der Beschuss trifft, bevor Bewegung und Kampf
+desselben Ticks stattgefunden haben. Eine Armee, die in diesem Tick abmarschiert, wird
+noch am alten Ort getroffen.
+
+**Kleinster reproduzierbarer Fall:** `packages/core/src/phases/index.ts` (Phasenordnung)
+gegen `packages/core/src/commands/bombard.ts` (`apply` wirkt sofort).
+
+**Warum er hier nicht behoben wird — und das ist eine Entscheidung, keine Auslassung:**
+Der Umbau verlangt, dass `BOMBARD` künftig nur noch eine *Absicht* im Zustand setzt, die
+eine neue Phase neben dem Nahkampf auflöst. Das ändert die Reihenfolge, in der Schaden
+entsteht, und damit **jeden Golden-Master und jede Balancezahl** — für sich genommen ohne
+einen einzigen Gewinn für den Spieler, denn heute gibt es nur den Handbeschuss, und der
+ist in sich stimmig.
+
+Sinn bekommt der Umbau erst mit **R-BAT-08** (T-M15-07): die Feuerautomatik ist ihrer Natur
+nach eine Phase, keine Handlung, und dann müssen Handbeschuss und Automatik zwingend
+denselben Zeitpunkt haben — sonst hat dieselbe Kanone zwei Regeln, je nachdem, wer
+abdrückt. Den Umbau einmal zu machen, zusammen mit dem, was ihn braucht, ist billiger und
+ehrlicher als ihn zweimal zu messen.
+
+**Status: offen, zugewiesen an T-M15-07.** Die Aufgabe führt ihn bereits als Vorbedingung;
+diese Akte hält fest, warum er dort und nicht hier steht. Die beiden anderen
+Beschuss-Vorbedingungen aus derselben Aufgabe — der Diplomatiefilter (Befund 51) und die
+leeren Armee-Hüllen (Befund 53) — sind am 2026-09-06 **behoben**, weil sie den heutigen
+Handbeschuss betreffen und nichts an der Reihenfolge ändern.

@@ -190,3 +190,51 @@ describe('R-BAT-06 Bombardement', () => {
     expect(after.provinces['m1']!.morale).toBeLessThan(moraleBefore)
   })
 })
+
+describe('R-BAT-05 Die Rueckzugssperre wirkt auch im Nahkampf', () => {
+  it('laesst eine eben zurueckgezogene Armee nicht sofort wieder angreifen', () => {
+    // Befund 49: `cannotAttackUntil` wurde gesetzt (hier und beim Beschuss) und nur vom
+    // Beschuss gelesen. Der Nahkampf sah die Sperre nie — eine Armee zog sich zurueck und
+    // schlug im selben Tick wieder zu, als waere nichts gewesen. Eine Sperre, die nur die
+    // Haelfte der Kampfarten kennt, ist keine.
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+    placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+
+    // p1 steht unter Sperre, p2 nicht.
+    const gesperrt = state.armyOrder.find((id) => state.armies[id]!.owner === 'p1')!
+    state.armies[gesperrt]!.cannotAttackUntil = state.tick + 10
+
+    const nachher = step(state, [], ctx).state
+    const verlusteP2 =
+      20_000 -
+      nachher.armyOrder
+        .filter((id) => nachher.armies[id]!.owner === 'p2')
+        .reduce((sum, id) => sum + armyHp(nachher.armies[id]!), 0)
+
+    expect(verlusteP2, 'die gesperrte Armee hat trotzdem zugeschlagen').toBe(0)
+  })
+
+  it('laesst sie sich aber weiterhin verteidigen', () => {
+    // Nicht angreifen heisst nicht wehrlos: wer unter Sperre steht, wird getroffen und
+    // haelt stand. Sonst waere der Rueckzug ein Selbstmordbefehl.
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+    placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+    const gesperrt = state.armyOrder.find((id) => state.armies[id]!.owner === 'p1')!
+    state.armies[gesperrt]!.cannotAttackUntil = state.tick + 10
+
+    const nachher = step(state, [], ctx).state
+    const verlusteP1 =
+      20_000 -
+      nachher.armyOrder
+        .filter((id) => nachher.armies[id]!.owner === 'p1')
+        .reduce((sum, id) => sum + armyHp(nachher.armies[id]!), 0)
+
+    expect(verlusteP1, 'die gesperrte Armee blieb unbehelligt').toBeGreaterThan(0)
+  })
+})
