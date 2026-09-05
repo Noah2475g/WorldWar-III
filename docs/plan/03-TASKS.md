@@ -32,6 +32,19 @@ T-M12-03. Für `verify` genügt die Kurzform derselben Prüfung (3 Turnierpartie
 Jeder Bench schreibt sein Ergebnis nach `docs/reports/<name>.json`; ein begleitender Test
 `*.budget.test.ts` liest diese Datei und schlägt fehl, sobald der Median das Budget reißt.
 
+**Die beiden Plandateien werden gemeinsam gepflegt (T-M14-01).** Jede Aufgabe steht in
+`03-TASKS.md` *und* in `tasks.yaml` mit denselben IDs, denselben `deps` und denselben
+Anforderungsbezügen; `test/plan-consistency.test.ts` prüft genau das. `docs/plan/03-TASKS.md`
+wird deshalb in den `files`-Listen der einzelnen Aufgaben **nicht** einzeln geführt — sonst
+stünde derselbe Pfad in jeder Aufgabe und würde in genau der einen vergessen, in der es darauf
+ankommt. Was eine Aufgabe an den Plandateien ändert, sagt ihre DoD.
+
+**Was `files:` und `tests:` bedeuten (T-M14-02).** Beide Listen sind eine Zusage über das
+Dateisystem, keine Absichtserklärung: Sobald eine Aufgabe auf `status: done` steht, muss jeder
+dort genannte Pfad existieren, und `test/plan-consistency.test.ts` prüft es. Am 2026-09-05
+zeigten 79 von 289 Einträgen ins Leere — sämtlich bei `done`-Aufgaben, und niemand hat es
+bemerkt, weil kein Prüfer die Felder las.
+
 ---
 
 ## Meilenstein M0 — Fundament
@@ -1735,7 +1748,7 @@ Jeder Bench schreibt sein Ergebnis nach `docs/reports/<name>.json`; ein begleite
      aus der ersten Sitzung ist überschrieben, der jünger ist als ein noch vorhandener.
      `resumeAutosave(storage)` leitet `nextSlot` aus den vorhandenen `autosave-*.json` ab statt
      ihn bei jedem Start auf 0 zu setzen.
-- **Fertig wenn:** `pnpm verify` grün; `storagePortContract` läuft gegen mindestens zwei
+- **Fertig wenn:** `pnpm verify` grün; **die Einstellungen überleben den Neustart** — `parseSettings` bekommt endlich einen Aufrufer, und ein gespeicherter Wert (Tempo, Schriftgröße, Ton) steht nach dem Neuladen wieder da; damit schließt diese Aufgabe **T-M10-09**, das seit dem 2026-09-06 auf sie zeigt (die Zusage „Einstellungen überleben den Neustart" war nie einlösbar, weil es keinen dauerhaften Speicher gab); `storagePortContract` läuft gegen mindestens zwei
   Umsetzungen und der Wächter fällt, wenn es wieder eine wird; ein über eine verworfene Instanz
   geschriebener Stand liefert aus einer neuen Instanz denselben Zustands-Hash; ohne `indexedDB`
   meldet `createStorage` `volatile: true` und die Oberfläche sagt es; ein unlesbarer Platz heißt
@@ -2668,7 +2681,7 @@ Jeder Bench schreibt sein Ergebnis nach `docs/reports/<name>.json`; ein begleite
   ein verstecktes Risiko: `HASH_OMIT_KEYS` nimmt nur `eventLog` vom Simulationshash aus, jede
   Ausgabe liefe also in den Hash, und jede spätere Änderung an einer Schlagzeilenformulierung
   bräche Golden-Master und Wiedergabe. Der Filter kostet kein Zustandsfeld. *(Befunde 27 und 9)*
-- **Anforderungen:** R-GAME-06
+- **Anforderungen:** R-GAME-06, R-NEWS-04, R-NEWS-01, R-NEWS-02, R-NEWS-03
 - **Abhängigkeiten:** T-M13-13, T-M15-01
 - **Dateien:** `packages/core/src/events/world.ts` *(neu)*, `packages/core/src/index.ts`,
   `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/App.tsx`,

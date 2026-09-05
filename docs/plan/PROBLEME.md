@@ -578,3 +578,60 @@ widerlegten mit Grund, die 13 Punkte der Vollständigkeitskritik, die sechs geme
 Ursachen A–F, der Abhängigkeitsgraph und die 47 nie geprüften Befunde — steht in
 `docs/reports/audit-2026-09-05.md`. Die daraus abgeleiteten Aufgaben stehen als M14 und M15
 in `docs/plan/tasks.yaml` und `docs/plan/03-TASKS.md`.
+
+---
+
+## 2026-09-06 · T-M14-01 · Der Ende-zu-Ende-Test der Oberfläche reißt unter der Abdeckungsmessung sein Zeitlimit
+
+**Befund:** Nach dem Einbau der Meilensteinachse meldete `pnpm verify` einen roten Test —
+`App.test.tsx > baut, hebt aus, waehlt die Armee und marschiert mit angesagter Ankunft`,
+`Test timed out in 5000ms`. Allein ausgeführt läuft derselbe Test in **3,5 s** durch
+(dreimal wiederholt, dreimal grün, 37 Tests der Datei). Unter `pnpm verify`, das die
+Abdeckung mitmisst, braucht er **5,3 s** und reißt damit das Standardlimit von 5 s.
+
+**Kleinster reproduzierbarer Fall:** `npx vitest run` → 1098 grün. `npx vitest run
+--coverage` → derselbe eine Test rot. Der Unterschied ist ausschließlich die
+Instrumentierung.
+
+**Warum jetzt:** Der Test lag schon vorher dicht am Limit (4,3 s im verify-Lauf vom
+2026-09-05). Die neun Tests, die T-M14-01 hinzufügt, waren der Tropfen — nicht die
+Ursache.
+
+**Dieselbe Klasse zum dritten Mal:** der Renderbenchmark (T-M10-03b, 18,6 ms unter
+`verify`, ein Bruchteil davon allein) und die drei ESLint-Guards (2026-09-04, 11,7 s
+gegen 0,8 s). In allen drei Fällen misst der Test unter Last die Auslastung der
+Maschine, nicht das Verhalten des Codes.
+
+**Behoben:** Eigenes Zeitlimit von 20 s für diesen einen Test, mit Begründung an Ort und
+Stelle. Nicht das globale `testTimeout` angehoben — das hätte jeden künftigen echten
+Hänger um denselben Faktor verzögert. Der Test fährt die ganze Befehlskette (bauen,
+vorspulen, ausheben, Armee wählen, Ziel wählen, marschieren) und zeichnet die Anwendung
+dabei dutzendfach neu; er ist berechtigt langsam.
+
+**Status: behoben am 2026-09-06.** Offen bleibt die Frage, ob weitere Tests dicht am
+Limit liegen — heute misst das niemand. Vorgemerkt für **T-M14-05** (die Messgeräte):
+eine Liste der zehn langsamsten Tests je Lauf, damit der nächste Fall auffällt, bevor er
+rot wird.
+
+---
+
+## 2026-09-06 · T-M14-03 · Acht kleinere Befunde ohne eigene Aufgabe — hier ist ihr Ort
+
+Aus der Auswertung vom 2026-09-05 (`docs/reports/audit-2026-09-05.md`) blieben acht
+Befunde, die weder eine Aufgabe in M14/M15 bekommen haben noch als Zusage zurückgenommen
+wurden. Sie stehen hier mit Meilenstein, damit keiner zwischen „nicht gebaut" und „nicht
+entschieden" verschwindet. Ein Eintrag in dieser Akte ist keine Zusage, ihn zu bauen — er
+ist die Zusage, ihn nicht zu vergessen.
+
+| Befund | Beleg | Wohin |
+|---|---|---|
+| **`MapCanvas` läuft in keinem Test** — 141 von 249 Zeilen unausgeführt, weil `App.test.tsx` `getContext` als `null` liefert; R-ARCH-06/AK2 (60 FPS) misst damit niemand, der zeichnet | Befund 16, N11 | **M16** — zusammen mit dem echten Bau, wo ein Zeichenkontext existiert |
+| **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt |
+| **R-AI-04 ist gemessen verletzt** — die KI hält 43,1 % statt der zugesagten 30 % Rücklage, und der Test ist trotzdem grün, weil er die Schwelle nicht prüft | Befund 46 | **M15**, mit T-M15-08 (Integrationstor) — dort wird die KI ohnehin gemessen |
+| **Hauptstadtverlegung kostet nichts** und löscht die Strafe für den Hauptstadtverlust; wer seine Hauptstadt verliert, verlegt sie sofort und ist die Folgen los | Befund 50 | **M15**, mit T-M15-05 — die KI lernt dort `SET_CAPITAL`, und der Preis gehört zur selben Regel |
+| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben |
+| **314 von 374 Regelzahlen ohne Belegstatus** — der Test prüft nur `constants.json`, die übrigen Dateien (Einheiten, Gebäude, Rohstoffe) tragen keinen Status „belegt/geschätzt" | Befund 59 | **M15**, mit T-M14-05s Nachfolge: sobald die Messgeräte stimmen, wird der Status messbar statt behauptet |
+| **Rückzug ist ein Teleport** — eine Armee ohne Gegner springt in einem Tick dorthin, wofür ein Marsch 15 Ticks braucht | Befund 66 | **M15**, mit T-M15-07 — die Feuerleitung fasst dieselbe Haltungslogik an |
+| **Barrierefreiheit jenseits des Kontrasts** — kein Test öffnet einen Dialog und schließt ihn mit Escape, keiner prüft Fokusfang, Tabreihenfolge oder `aria`; belegt ist nur die Tastenzuordnung als reine Funktion | Befund N12 | **M16** — zusammen mit dem Bau, in dem sich Fokus überhaupt beobachten lässt |
+
+**Status: offen, je mit Meilenstein.** Keiner dieser acht blockiert die Abnahme der V1.

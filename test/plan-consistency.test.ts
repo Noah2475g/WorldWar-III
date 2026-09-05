@@ -1,6 +1,10 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse as parseYaml } from 'yaml'
+import { checkScope, parseRequirements } from '../scripts/requirements-coverage.mjs'
+import { missingPaths, reopenedWithoutReason, type PlanTask } from './plan-paths'
 
 /**
  * The plan guards itself (T-M0-05).
@@ -26,6 +30,10 @@ interface YamlTask {
   acceptance?: string[]
   gate?: boolean
   gate_reason?: string
+  /** T-M14-02: was der Plan über das Dateisystem behauptet — und was ihn zurückstuft. */
+  files?: string[]
+  tests?: string[]
+  reopened?: string
 }
 
 const plan = parseYaml(yamlText) as {
@@ -122,6 +130,20 @@ describe('R-ARCH-05 Plan-Konsistenz', () => {
     expect(orphans, `unbekannter Meilenstein bei: ${orphans.join(', ')}`).toEqual([])
   })
 
+  // T-M14-01: Die zweite Richtung derselben Bindung. Der scope-Block verschiebt
+  // Anforderungen auf Meilensteine; nennt er einen, den der Aufgabenplan nicht kennt,
+  // ist die Verschiebung ein Zettel ohne Adresse — die Anforderung wäre aus der
+  // V1-Pflicht heraus und in keiner Planung drin.
+  it('der scope-Block nennt nur Meilensteine, die der Aufgabenplan deklariert', () => {
+    const known = new Set(plan.milestones.map((m) => m.id))
+    const errors = checkScope(
+      parseRequirements(requirementsText).later,
+      new Set(parseRequirements(requirementsText).ids),
+      known,
+    )
+    expect(errors, errors.join('\n')).toEqual([])
+  })
+
   it('referenziert nur Anforderungen, die es wirklich gibt', () => {
     const known = new Set([...requirementsText.matchAll(/^- \*\*(R-[A-Z]+-\d{2})/gm)].map((m) => m[1]))
     const unknown: string[] = []
@@ -158,5 +180,126 @@ describe('R-ARCH-05 Plan-Konsistenz', () => {
       // A gate without a stated reason is just a blocked task.
       expect(byId.get(id)?.gate_reason, `${id} braucht eine Begründung`).toBeTruthy()
     }
+  })
+})
+
+// T-M14-02: Was der Plan über das Dateisystem behauptet, muss stimmen.
+//
+// Die Prüfung läuft zweimal: an erfundenen Aufgabenlisten (damit der Fehlerfall selbst
+// geprüft ist und die Prüfung nicht bedeutungslos wird, sobald die echten Pfade stimmen)
+// und an der echten `tasks.yaml`.
+describe('R-ARCH-05 Der Plan beschreibt Dateien, die es gibt', () => {
+  const erfunden = (kind: (path: string) => 'file' | 'dir' | null) => kind
+
+  it('meldet einen toten Pfad einer erledigten Aufgabe', () => {
+    const tasks: PlanTask[] = [{ id: 'T-X-01', status: 'done', files: ['gibtsnicht.ts'] }]
+    const result = missingPaths(tasks, erfunden(() => null))
+    expect(result).toEqual([{ task: 'T-X-01', field: 'files', path: 'gibtsnicht.ts', reason: 'fehlt' }])
+  })
+
+  it('lässt einer offenen Aufgabe ihre künftigen Dateien', () => {
+    // Eine Aufgabe darf benennen, was sie anlegen wird — das ist der Zweck eines Plans.
+    const tasks: PlanTask[] = [{ id: 'T-X-01', status: 'todo', files: ['kommtnoch.ts'] }]
+    expect(missingPaths(tasks, erfunden(() => null))).toEqual([])
+  })
+
+  it('unterscheidet Datei und Verzeichnis am Schrägstrich', () => {
+    const tasks: PlanTask[] = [
+      { id: 'T-X-01', status: 'done', files: ['ordner/'] },
+      { id: 'T-X-02', status: 'done', files: ['datei.ts'] },
+    ]
+    const result = missingPaths(tasks, erfunden((p) => (p === 'ordner' ? 'file' : 'dir')))
+    expect(result).toEqual([
+      { task: 'T-X-01', field: 'files', path: 'ordner/', reason: 'kein Verzeichnis' },
+      { task: 'T-X-02', field: 'files', path: 'datei.ts', reason: 'keine Datei' },
+    ])
+  })
+
+  it('prüft auch das Feld tests', () => {
+    const tasks: PlanTask[] = [{ id: 'T-X-01', status: 'done', tests: ['weg.test.ts'] }]
+    expect(missingPaths(tasks, erfunden(() => null))[0]?.field).toBe('tests')
+  })
+
+  it('verlangt eine Begründung, wenn eine erledigte Aufgabe von einer offenen abhängt', () => {
+    const ohne: PlanTask[] = [
+      { id: 'T-X-01', status: 'todo' },
+      { id: 'T-X-02', status: 'done', deps: ['T-X-01'] },
+    ]
+    expect(reopenedWithoutReason(ohne)).toEqual(['T-X-01'])
+
+    const mit: PlanTask[] = [
+      { id: 'T-X-01', status: 'todo', reopened: 'abgelöst durch T-X-09' },
+      { id: 'T-X-02', status: 'done', deps: ['T-X-01'] },
+    ]
+    expect(reopenedWithoutReason(mit)).toEqual([])
+  })
+
+  it('lässt eine offene Aufgabe ohne erledigten Nachfolger in Ruhe', () => {
+    const tasks: PlanTask[] = [
+      { id: 'T-X-01', status: 'todo' },
+      { id: 'T-X-02', status: 'todo', deps: ['T-X-01'] },
+    ]
+    expect(reopenedWithoutReason(tasks)).toEqual([])
+  })
+
+  it('jede erledigte Aufgabe nennt nur Pfade, die es gibt', () => {
+    const root = fileURLToPath(new URL('..', import.meta.url))
+    const onDisk = (path: string): 'file' | 'dir' | null => {
+      try {
+        return statSync(join(root, path)).isDirectory() ? 'dir' : 'file'
+      } catch {
+        return null
+      }
+    }
+    const result = missingPaths(plan.tasks as PlanTask[], onDisk)
+    const lines = result.map((m) => `${m.task} ${m.field}: ${m.path} (${m.reason})`)
+    expect(result, `${result.length} tote Pfade:\n${lines.join('\n')}`).toEqual([])
+  })
+
+  it('jede zurückgestufte Aufgabe sagt, warum und wer sie schließt', () => {
+    const open = reopenedWithoutReason(plan.tasks as PlanTask[])
+    expect(open, `ohne reopened-Begründung: ${open.join(', ')}`).toEqual([])
+  })
+
+  // T-M14-02b, die Gegenrichtung. Bisher prüfte der Wächter nur Aufgabe → Anforderung.
+  // Genau auf dem umgekehrten Weg liefen am 2026-09-04 achtzehn Anforderungen ohne
+  // Entwurfstext und ohne Aufgabe grün durch: eine Anforderung ohne beides ist kein
+  // Auftrag, sondern ein Wunsch.
+  /**
+   * Ein Meilenstein ist *geplant*, sobald er Aufgaben hat. M16 bis M18 stehen heute als
+   * Achse in `milestones:`, tragen aber keine Aufgabe — sie sind Vorrat, kein Auftrag.
+   * Für ihre Anforderungen jetzt Entwurf und Aufgabe zu verlangen hieße, Jahre im Voraus
+   * zu entwerfen; sobald jemand M17 plant, greift die Regel dort von selbst.
+   */
+  const geplant = new Set(plan.tasks.map((t) => t.milestone))
+
+  it('jede Anforderung eines geplanten Meilensteins hat eine Aufgabe', () => {
+    const { ids, v2Only, later } = parseRequirements(requirementsText)
+    const inAufgaben = new Set(plan.tasks.flatMap((t) => t.requirements ?? []))
+    const faellig = ids.filter((id: string) => {
+      if (v2Only.has(id)) return false
+      const milestone = String(later[id] ?? '').split('—')[0]?.trim()
+      return !milestone || geplant.has(milestone)
+    })
+    const ohneAufgabe = faellig.filter((id: string) => !inAufgaben.has(id))
+    expect(ohneAufgabe, `ohne Aufgabe: ${ohneAufgabe.join(', ')}`).toEqual([])
+  })
+
+  it('jede noch zu bauende Anforderung hat auch einen Entwurfstext', () => {
+    // Bewusst nur für das, was als Nächstes gebaut wird. Für die fertige V1 ist der Code
+    // der Beleg — 32 ihrer IDs kommen in 02-DESIGN.md nicht namentlich vor, weil der
+    // Entwurf Mechanismen beschreibt und keine Anforderungen abschreibt. Wo es weh tat,
+    // war das andere Ende: R-TECH-01 und die siebzehn anderen aus dem Nachtrag hatten
+    // weder Entwurf noch Aufgabe.
+    const design = readFileSync(new URL('../docs/plan/02-DESIGN.md', import.meta.url), 'utf8')
+    const { later } = parseRequirements(requirementsText)
+    const zuBauen = Object.entries(later).filter(([, wert]) =>
+      geplant.has(String(wert).split('—')[0]?.trim() ?? ''),
+    )
+    const ohneEntwurf = zuBauen
+      .filter(([, wert]) => !String(wert).includes('gestrichen'))
+      .map(([id]) => id)
+      .filter((id) => !design.includes(id))
+    expect(ohneEntwurf, `zu bauen, aber ohne Entwurfstext: ${ohneEntwurf.join(', ')}`).toEqual([])
   })
 })

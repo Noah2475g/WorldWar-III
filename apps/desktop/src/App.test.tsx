@@ -311,7 +311,14 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
     expect(log()).toContain('marschiert nach')
-  })
+    // Eigenes Zeitlimit, weil dieser Test die ganze Kette faehrt (bauen, vorspulen,
+    // ausheben, Armee waehlen, Ziel waehlen, marschieren) und dabei die Anwendung
+    // dutzendfach neu zeichnet: allein 3,5 s, unter der Abdeckungsmessung von
+    // `pnpm verify` 5,3 s — und damit ueber dem Standardlimit von 5 s. Dieselbe Klasse
+    // wie der Renderbenchmark (T-M10-03b) und die ESLint-Guards: gemessen wird dann die
+    // Auslastung der Maschine, nicht das Verhalten des Codes. Ein zu knappes Limit macht
+    // aus einer langsamen Maschine einen roten Test und aus einem roten Test Rauschen.
+  }, 20_000)
 
   it('erklaert den Krieg aus der Diplomatie und nennt den Wirkungstag', () => {
     startGame()

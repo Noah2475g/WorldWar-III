@@ -41,7 +41,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 | ID | Entscheidung |
 |---|---|
 | C-01 | **Tech-Stack:** TypeScript. Simulationskern als reines, UI-freies Package. UI mit React. Kartenrendering über Canvas/WebGL. Build mit Vite. |
-| C-02 | **Auslieferung:** Desktop-Anwendung über **Tauri**. Savegames im echten Dateisystem. |
+| C-02 | **Auslieferung:** Ziel bleibt die Desktop-Anwendung über **Tauri** mit Savegames im echten Dateisystem. **Präzisiert am 2026-09-05 (Entscheidung 2):** Die V1 wird als Browserbau mit dauerhaftem Speicher (**IndexedDB**) abgenommen; die Tauri-Verpackung samt Datei-Port ist **M16** mit eigenem Abnahmekriterium **AK-8**. Grund: C-02 war die einzige Rahmenbedingung, die nie ausgeführt wurde — kein CLI, kein Symbol, kein `Cargo.lock`, keine JS-Bindung, kein Bau; es ist bis heute unbekannt, ob das Programm überhaupt startet. Die Bedingung wird damit nicht aufgehoben, sondern ihr Zeitpunkt festgelegt. |
 | C-03 | **Karte:** echte Weltkarte, **150–250 Provinzen**, aus frei lizenzierten Geodaten erzeugt. |
 | C-04 | **V1-Umfang:** Kern-Loop (Karte, Wirtschaft, Bau, Einheiten, Bewegung, Kampf, Moral, Zeitsteuerung, KI, Sieg/Niederlage, Speichern/Laden). Diplomatie-Tiefe, Spionage, Forschung, Zeitung, Markt, Nuklearwaffen → V2. |
 | C-05 | **Zeitsteuerung:** Pause + frei regelbarer Faktor + „Vorspulen bis Ereignis“. |
@@ -164,7 +164,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   Öl, Kohle, Eisen/Stahl, Seltene Rohstoffe) plus **Geld**. Endgültige Liste in `02-DESIGN.md`.
 - **R-ECON-02 — Produktion pro Tick** je Provinz, abhängig von Vorkommen, Gebäuden, Moral
   und Bevölkerung.
-- **R-ECON-03 — Verbrauch und Mangel.** Armeen und Gebäude verbrauchen Ressourcen.
+- **R-ECON-03 — Verbrauch und Mangel.** Armeen verbrauchen Ressourcen. *(Gebäudeunterhalt am 2026-09-05 zurückgenommen, T-M14-03: `BuildingRule` und `buildings.json` kennen kein `upkeep`-Feld, und die Unterhaltsphase sammelt den Bedarf allein über `armyOrder`. Begründung in DECISIONS.md.)*
   - AK1: WENN ein Vorrat unter null fallen würde, DANN SOLL ein Mangelzustand mit definierten
     Maluspunkten eintreten statt negativer Bestände.
 - **R-ECON-04 — Lagergrenzen** je Ressource, mit definierter Überschussbehandlung.
@@ -210,15 +210,15 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 - **R-UNIT-08 — Luftstreitkräfte in V1.** Flugzeuge sind auf Flugplätzen stationiert, wirken
   als Fernwaffe in einem Umkreis, verlegen nur zwischen eigenen Flugplätzen und erobern nichts.
   *(Vollwertige Einsatzbefehle mit Rückflug und Bodenzeit: V2.)*
-- **R-UNIT-07 — Zustand.** Einheiten haben Stärke/Trefferpunkte und Moral; beschädigte Einheiten
-  regenerieren in eigenem Gebiet.
+- **R-UNIT-07 — Zustand.** Einheiten haben Stärke in Trefferpunkten; beschädigte Einheiten
+  regenerieren in eigenem Gebiet. *(Einheitenmoral am 2026-09-05 zurückgenommen, T-M14-03: ein Verband ist `{ unitKey, hpTotal }`; im Trefferpunkte-Pool ist der Pool die Stärke. DECISIONS.md.)*
 
 ### 2.8 Kampf (`R-BAT`)
 
 - **R-BAT-01 — Kampfauflösung pro Tick** nach dokumentierter Formel, wenn feindliche Armeen in
   derselben Provinz stehen.
 - **R-BAT-02 — Klassenmatrix.** Schaden hängt von Angreifer- und Verteidigerklasse ab.
-- **R-BAT-03 — Verteidigungsboni** durch Festung, Gelände, Fluss/Küste.
+- **R-BAT-03 — Verteidigungsboni** durch Festung, Gelände und Eingrabung. *(Der Malus für Fluss- und Meerengenübergänge am 2026-09-05 zurückgenommen, T-M14-03: `crossingFactor` war toter Code ohne einen einzigen Aufrufer. Das Kartenfeld `crossing` bleibt als Datenbestand. DECISIONS.md.)*
 - **R-BAT-04 — Provinzeroberung**, wenn keine Verteidiger mehr vorhanden sind; eroberte Provinz
   erhält Moralmalus.
 - **R-BAT-05 — Rückzug** ist möglich und kostet definierte Nachteile.
@@ -267,7 +267,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 
 - **R-GAME-01 — Partie erstellen:** Karte, Anzahl KI-Gegner, eigenes Land, Schwierigkeit,
   Siegbedingung, Seed.
-- **R-GAME-02 — Siegbedingungen:** Punktesieg, Eroberungssieg, Zeitlimit; Auswahl bei Partiestart.
+- **R-GAME-02 — Siegbedingungen:** Punktesieg und Eroberungssieg; Auswahl bei Partiestart. *(Der Zeitsieg am 2026-09-05 als Auswahl zurückgenommen, T-M14-03: der Kern beherrscht ihn, aber keine Produktionsdatei setzt `condition: time`. Er bleibt im Kern und ist über eine Konfiguration erreichbar — siehe `v1_partial`. DECISIONS.md.)*
 - **R-GAME-03 — Speichern/Laden** in eine Datei; ein geladener Stand setzt die Simulation
   bitgenau fort.
   - AK1: WENN gespeichert und sofort geladen wird, DANN SOLL der Zustands-Hash identisch sein.
@@ -347,19 +347,95 @@ beides: die tote Bausubstanz und die Textlastigkeit.
 - **R-ASSET-02 — Nur freie Lizenzen** (gemeinfrei, CC0, OFL, MIT o. ä.). Kein kostenpflichtiger
   Dienst, keine Registrierung.
 
-### 2.14 Umfang von V1 — maschinenlesbar
+### 2.14 Umfang und Meilensteine — maschinenlesbar
 
-Das Prüfskript aus T-M0-04 liest diesen Block. Er entscheidet, welche Anforderungs-IDs einen
-Test brauchen. Ohne ihn wäre „nicht als V2 markiert“ nur Fließtext und nicht auswertbar.
+Das Prüfskript aus T-M0-04 (`scripts/requirements-coverage.mjs`) liest diesen Block. Er
+entscheidet, welche Anforderungs-ID **jetzt** einen Test braucht und welche später. Ohne ihn
+wäre „gehört zur V1“ Fließtext und nicht auswertbar.
+
+**Die Regel in einem Satz:** Eine ID aus Abschnitt 2 ist **V1-Pflicht**, solange sie weder unter
+`v2_only` noch unter `later` steht. Nicht umgekehrt — wer eine Anforderung aufnimmt und diesen
+Block vergisst, bekommt eine V1-Pflicht zu viel und ein rotes Tor, nie eine stillschweigend
+verschwundene Zusage. Das ist die sichere Richtung des Fehlers. Die unsichere hat am 2026-09-04
+das Tor ohne eine Zeile Codeänderung von 82/82 auf 82/100 kippen lassen und damit AK-2
+gebrochen (`docs/reports/audit-2026-09-05.md`, Befunde 7, 15, 22).
+
+**Was das Skript aus dem Block macht** (Vertrag, geprüft in `test/requirements.test.ts`):
+
+1. **V1 ist hart.** Fehlt einer V1-Pflicht-ID der Testbeleg, endet der Lauf mit Code 1. Das ist
+   die Messgröße von AK-2.
+2. **Spätere Meilensteine sind Fortschritt.** Je Meilenstein wird „x von y belegt“ gemeldet,
+   ohne Einfluss auf den Exit-Code.
+3. **Ein `later`-Eintrag kostet zwei Angaben** — einen Meilenstein, den `tasks.yaml` unter
+   `milestones:` deklariert, und eine Begründung, getrennt durch „—“. Fehlt eines von beidem,
+   endet der Lauf mit Code 1. Damit ist „ID von Hand ausnehmen“ kein billiger Ausweg, sondern
+   eine schriftliche Entscheidung.
+4. **Die Buchhaltung wird mitgeprüft:** eine ID im `later`-Fach, die es in Abschnitt 2 nicht
+   gibt, ist ein Fehler — sonst verschöbe der Block Anforderungen, die niemand geschrieben hat.
 
 ```yaml
 scope:
-  v2_only: []                       # vollständig auf V2 verschoben — derzeit keine ID
+  v2_only: []                       # vollständig gestrichen — derzeit keine ID
+  later:                            # "<Meilenstein> — <Begründung>"; Achse: DECISIONS.md, 2026-09-05
+    R-TIME-06:  "M15 — Vorspulen bis Ereignis erreicht die Oberfläche (T-M15-06)"
+    R-BAT-08:   "M15 — Feuerautomatik und Feuerleitung (T-M15-07)"
+    R-TECH-01:  "M15 — Freischaltung nach Spieltag (T-M15-02)"
+    R-TECH-02:  "M15 — Freischaltung in der Oberfläche (T-M15-03)"
+    R-DIP-06:   "M15 — das Verhältnis steuert die KI (T-M15-05)"
+    R-AI-08:    "M15 — die KI nutzt die neuen Mittel (T-M15-08)"
+    R-GAME-07:  "M15 — Migration der Spielstände v1 auf v2 (T-M15-04)"
+    R-NEWS-01:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
+    R-NEWS-02:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
+    R-NEWS-03:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
+    R-NEWS-04:  "M15 — Weltgeschehen als Filter im Ereignisprotokoll, der Ersatz für die Zeitung (T-M15-09)"
+    R-SPY-01:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-SPY-02:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-SPY-03:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-SPY-04:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-SPY-05:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-SPY-06:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
+    R-DIP-05:   "M17 — Handelsangebote mit Treuhand; erst braucht die bestehende Börse einen Nutzer"
+    R-DIP-07:   "M17 — Handel in der Oberfläche; folgt R-DIP-05"
   v1_partial:                       # nur ein Teil gehört zu V1
-    # R-ECON-05 stand hier bis M14 ("Spielermarkt mit Angeboten ist V2"); seit R-DIP-05 gebaut.
-    R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind V2 (M15)"
-    R-UNIT-08: "V1 nur Fernwirkung vom Flugplatz; Einsatzbefehle mit Rückflug sind V2"
+    R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
+    R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
+    R-UNIT-08: "V1 nur Fernwirkung vom Flugplatz; Einsatzbefehle mit Rückflug sind M18"
   test_only: [R-ARCH-04]            # kein eigener Produktionscode, aber Test verpflichtend
+  # Übergangsliste (T-M14-02b, eingefroren am 2026-09-06). Diese 26 Anforderungen tragen
+  # Akzeptanzkriterien, sind aber nur auf Namensebene gebucht: irgendwo steht ein
+  # `describe('R-XX-nn …')` mit einer Zusicherung, und welches AK dabei geprüft wurde, hat
+  # nie jemand gelesen. Sie sind eine **Schuld mit Namen**, keine Ausnahme ohne Ende: die
+  # Liste darf nur schrumpfen (ein Test hält das fest), und wer eine dieser Anforderungen
+  # anfasst, benennt seine Testblöcke `R-XX-nn/AK1` und streicht die ID hier.
+  # Die übrigen 56 V1-Anforderungen führen gar keine Kriterien — dort gibt es nichts
+  # nachzuziehen. Jede NEUE Anforderung wird von Anfang an je Kriterium gebucht.
+  name_level:
+    - R-ARCH-01
+    - R-ARCH-02
+    - R-ARCH-03
+    - R-ARCH-04
+    - R-ARCH-06
+    - R-TIME-02
+    - R-TIME-03
+    - R-FREE-01
+    - R-FREE-04
+    - R-MAP-02
+    - R-MAP-07
+    - R-ECON-03
+    - R-PROV-01
+    - R-PROV-03
+    - R-UNIT-04
+    - R-UNIT-06
+    - R-BAT-07
+    - R-DIP-04
+    - R-AI-01
+    - R-AI-07
+    - R-GAME-03
+    - R-UI-08
+    - R-UI-09
+    - R-UI-10
+    - R-UI-11
+    - R-UI-14
 ```
 
 ### 2.15 Tiefe zwischen den Kriegen (V1.2, aufgenommen 2026-09-04)
@@ -390,14 +466,29 @@ beim Lesen des Codes am 2026-09-04 ans Licht kamen:
 **Nachtrag zu C-04 (2026-09-04):** Spionage, Zeitung, Handel zwischen Mächten und
 Forschung — Letztere in der Form, die das gewählte Regelwerk (C-09, D-11) tatsächlich hat:
 Supremacy 1914 kennt keinen Forschungsbaum, sondern **Freischaltung nach Spieltag und
-Gebäudestufe** (Referenz 1.4, 5.2, 10.1) — gehören ab M14 zur V1.2. **Verschoben auf M15,
-ausdrücklich:** Nuklearwaffen (nur im Schwesterspiel belegt, Referenz 6.7 und 7.11),
-Lufteinsatzbefehle mit Rückflug (R-UNIT-08, Referenz 7.8), Koalitionen (Referenz 9.3),
-Verträge mit Provinz-, Karten- und Tributterm (R-DIP-01, Referenz 9.4), Gebäude- und
-Moralschaden durch Beschuss samt Hauptstadtbeute (Referenz 7.7, 3.8), Sammelpunkte und
-Dauerrekrutierung (in D12 als „frei verfügbar“ zugesagt, bis heute nicht gebaut — die
-Zusage bleibt, der Bau folgt in M15), die Verdrahtung des Hintergrundprozesses (D-03) und
-der Mehrspielermodus mit fester Startgeschwindigkeit (C-11).
+Gebäudestufe** (Referenz 1.4, 5.2, 10.1) — wurden hier in den Umfang geholt.
+
+**Auf Umfang gebracht (2026-09-05, Entscheidung 3 in `DECISIONS.md`).** Der Abschnitt
+begründet sich mit einem Satz — *Tag 1 unterscheidet sich von Tag 40 durch nichts als den
+Kontostand* —, sein Umfang bestand aber zu zwei Dritteln aus Atmosphäre: Spionage allein war
+32 % des Akzeptanzbudgets und beantwortet diesen Satz nicht. Was bleibt, ist **M15 „Die KI
+wird ein Gegner"**: R-TIME-06, R-BAT-08, R-TECH-01/02, R-DIP-06, R-AI-08, R-GAME-07.
+**Nach M17 verschoben:** Spionage (R-SPY-01…06) und die Handelsangebote mit Treuhand
+(R-DIP-05, R-DIP-07) — Letztere, weil ein zweiter Handelsweg über einem ersten steht, den
+noch niemand benutzt (die KI erzeugte in drei Läufen null `TRADE`). **Gestrichen:** die
+Zeitung (R-NEWS-01/02/03), ersetzt durch **R-NEWS-04**, einen Filter „Weltgeschehen" im
+bestehenden Ereignisprotokoll — Begründung dort. Die verschobenen Anforderungen bleiben
+unten ausformuliert stehen; ihr Meilenstein steht im `scope`-Block (2.14), nicht im Fließtext.
+
+**Weiterhin vertagt, jetzt auf M18:** Nuklearwaffen (nur im Schwesterspiel belegt,
+Referenz 6.7 und 7.11), Lufteinsatzbefehle mit Rückflug (R-UNIT-08, Referenz 7.8),
+Koalitionen (Referenz 9.3), Verträge mit Provinz-, Karten- und Tributterm (R-DIP-01,
+Referenz 9.4), Gebäude- und Moralschaden durch Beschuss samt Hauptstadtbeute (Referenz 7.7,
+3.8), Sammelpunkte und Dauerrekrutierung (in D12 als „frei verfügbar“ zugesagt, bis heute
+nicht gebaut — die Zusage bleibt, der Bau folgt in M18), die Verdrahtung des
+Hintergrundprozesses (D-03) und der Mehrspielermodus mit fester Startgeschwindigkeit (C-11).
+Die **Verpackung als Programm** (Tauri, C-02) ist seit dem 2026-09-05 ein eigener
+Meilenstein **M16** mit eigenem Abnahmekriterium.
 
 Vier Regeln gelten für jede Anforderung dieses Abschnitts:
 1. **Die KI kann alles, was der Spieler kann** (R-AI-01) — auch das, was die V1 dem Spieler
@@ -603,7 +694,40 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK1: WENN ein Angebot eingeht, DANN SOLL eine Meldung erscheinen, die zur
     Diplomatieübersicht führt, und das Angebot dort mit beiden Seiten in Worten stehen.
 
-#### Zeitung (`R-NEWS`)
+#### Weltgeschehen statt Zeitung (`R-NEWS`)
+
+> **R-NEWS-01, R-NEWS-02 und R-NEWS-03 werden nicht gebaut** (Entscheidung 3 vom 2026-09-05,
+> `DECISIONS.md`). Sie bleiben hier stehen, bis **T-M15-09** ihren Ersatz gebaut hat und sie
+> mit ihm streicht — eine Zusage verschwindet nicht, bevor das da ist, was an ihre Stelle
+> tritt. Die Begründung, damit die Streichung nicht stillschweigend geschieht:
+>
+> - **Die Zeitung durfte per Anforderung keine Entscheidung ermöglichen.** R-NEWS-02 verbietet
+>   ausdrücklich Mengen, Vorräte, Truppen und Gebäude. Was übrig bleibt — Kriegserklärungen,
+>   Friedensschlüsse, Bündnisse, Eroberungen, gefallene Hauptstädte, Aufstände, ausgeschiedene
+>   Mächte, entschiedene Schlachten — liegt bereits vollständig im Ereignisprotokoll, dessen
+>   Filterbarkeit R-GAME-06 und dessen Anspringbarkeit R-UI-14/AK1 ohnehin fordern.
+> - **Der Preis war hoch und zum Teil versteckt.** Eine Ausgabe, die „im Spielstand liegt“
+>   (R-NEWS-01/AK1), ist ein neues Zustandsfeld mit Ringpuffer, Migration und wachsendem
+>   Spielstand — und sie liefe in den Simulationshash: `HASH_OMIT_KEYS`
+>   (`packages/core/src/state/types.ts`) nimmt heute allein `eventLog` aus. Jede spätere
+>   Änderung an einer Schlagzeilenformulierung bräche Golden-Master und Wiedergabe.
+> - **Der Ersatz kostet einen Tag und trägt den größten Teil des Werts:** derselbe
+>   Ereignisstrom, dieselbe Positivliste, als Filter statt als zweites Erzeugnis.
+
+- **R-NEWS-04 (M15) — Weltgeschehen im Ereignisprotokoll.** Das Ereignisprotokoll (R-GAME-06)
+  bekommt einen Filter „Weltgeschehen“. Er zeigt genau die Ereignisarten einer festen
+  Positivliste — Kriegserklärung, Wechsel des diplomatischen Zustands, Eroberung, Verlust
+  einer Hauptstadt, Aufstand, ausgeschiedene Macht, entschiedene Schlacht, Partieende —,
+  gleich, ob sie den Spieler betreffen; alle diese Ereignisse sind bereits öffentlich. Kein
+  neues Zustandsfeld, keine Migration, kein Text im Simulationshash.
+  - AK1: WENN der Filter „Weltgeschehen“ gewählt ist, DANN SOLL die Liste genau die Ereignisse
+    der Positivliste enthalten und kein anderes — als Eigenschaftstest über zufällige
+    Ereignisfolgen.
+  - AK2: WENN ein Eintrag des Weltgeschehens einen Ort trägt, DANN SOLL ein Klick darauf die
+    Karte dorthin führen (R-UI-14/AK1), und der Eintrag SOLL ein deutscher Satz mit Namen
+    sein, ohne Kennungen.
+  - AK3: WENN ein Ereignis des Weltgeschehens den Spieler nicht betrifft, DANN SOLL es sein
+    Vorspulen nicht anhalten (R-TIME-06/AK2) — Weltgeschehen ist Lektüre, kein Alarm.
 
 - **R-NEWS-01 — Eine Ausgabe je Spieltag.** Nach Referenz 10.3 erscheint am Tageswechsel
   eine Zeitung mit: dem Index der Mächte (alle lebenden Mächte mit Punkten), den
@@ -664,7 +788,7 @@ V1 gilt als fertig, wenn **alle** Punkte gemessen erfüllt sind:
 | ID | Abnahmekriterium |
 |---|---|
 | **AK-1** | Eine vollständige Partie gegen mindestens 4 KI-Gegner ist von Start bis Sieg/Niederlage spielbar, ohne Absturz und ohne Blockade. |
-| **AK-2** | Alle Anforderungen aus Abschnitt 2, die der `scope`-Block als V1 ausweist, sind durch grüne automatisierte Tests belegt. |
+| **AK-2** | Alle Anforderungen aus Abschnitt 2, die der `scope`-Block **keinem späteren Meilenstein zuweist**, sind durch grüne automatisierte Tests belegt — nachgewiesen dadurch, dass `pnpm coverage:requirements` die Zeile `V1 offen: 0` meldet und mit Exit 0 endet. |
 | **AK-3** | Abdeckung: Kern ≥ 90 %, gesamt ≥ 80 %. |
 | **AK-4** | Determinismus-, Speicher-/Lade- und Kampf-Eigenschaftstests sind grün. |
 | **AK-5** | Guard-Tests für Z2 (keine Monetarisierung) und Z3 (kein Netzwerk) sind grün. |

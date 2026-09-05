@@ -55,17 +55,18 @@ if (existsSync(summaryPath)) {
   check('AK-3', `Abdeckung gesamt ${total.toFixed(1)} % (Schwelle 80 %)`, total >= 80, `${total} %`)
 }
 
-// AK-2: jede V1-Anforderung durch einen Test belegt.
-const open = /Offen \((\d+)\)/.exec(coverage)
-// Zwei Faelle, und der zweite hat diesen Bericht schon einmal falsch rot gemeldet: ist
-// eine Anforderung offen, nennt das Skript sie unter "Offen (n)"; ist keine mehr offen,
-// steht dort keine solche Zeile, sondern die Erfolgsmeldung. Nur auf die erste gebaut,
-// meldet die Pruefung das Erreichen des Ziels als "unbekannt".
-const allCovered = /Jede V1-Anforderung ist durch mindestens einen Test belegt/.test(coverage)
-const openCount = open ? Number(open[1]) : allCovered ? 0 : -1
+// AK-2: jede V1-pflichtige Anforderung durch einen Test belegt.
+//
+// Genau eine Zeile, immer vorhanden (T-M14-01). Vorher waren es zwei Faelle — eine
+// "Offen (n)"-Zeile bei Luecken, eine Erfolgsmeldung ohne Zahl bei null — und diese
+// Doppelheuristik hat den Abnahmebericht schon einmal "unbekannt" melden lassen. Und
+// weil "V1 offen" nur die V1-Pflicht zaehlt, haengt die Abnahme der V1 nicht mehr an
+// den Anforderungen spaeterer Meilensteine.
+const open = /^V1 offen: (\d+)$/m.exec(coverage)
+const openCount = open ? Number(open[1]) : -1
 check(
   'AK-2',
-  `Anforderungen ohne Test: ${openCount === -1 ? 'unbekannt' : openCount}`,
+  `V1-Anforderungen ohne Test: ${openCount === -1 ? 'unbekannt (Zeile "V1 offen" fehlt)' : openCount}`,
   openCount === 0,
   `${openCount} offen`,
 )

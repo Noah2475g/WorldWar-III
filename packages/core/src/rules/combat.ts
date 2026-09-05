@@ -135,12 +135,17 @@ export function defenceMultiplier(province: Province, entrenched: boolean, rules
   return clampFixed(ONE + bonus, ONE, rules.constants.defenceCap)
 }
 
-/** Attack penalty for crossing a river or a strait (belegt as a concept, values geschätzt). */
-export function crossingFactor(crossing: 'none' | 'river' | 'strait'): Fixed {
-  if (crossing === 'river') return 800
-  if (crossing === 'strait') return 700
-  return ONE
-}
+/*
+ * There was a `crossingFactor` here — an attack penalty for crossing a river or a strait.
+ * It was deleted on 2026-09-05 (T-M14-03): the only occurrence in the whole repository was
+ * its own definition. No caller, no test, no effect on a single battle, and the map data it
+ * would have read (`crossing`) was maintained on the test map all along. Code that is never
+ * called is not a feature waiting to be switched on; it is a claim the rules make and the
+ * game does not keep.
+ *
+ * The map field `crossing` stays: it costs nothing and is the data an amphibious landing
+ * would need. R-BAT-03 no longer promises the penalty (DECISIONS.md, 2026-09-05).
+ */
 
 /** ±10 % spread from the seeded generator (belegt: no misses, just variance). */
 export function applySpread(value: Fixed, rng: RngState, rules: Rules): Fixed {

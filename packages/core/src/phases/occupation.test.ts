@@ -194,4 +194,27 @@ describe('R-GAME-02 Punkte und Sieg', () => {
     expect(result.state.victory.winner).toBe('p1')
     expect(result.events.find((e) => e.type === 'GAME_ENDED')).toBeDefined()
   })
+
+  it('kuert am Tageslimit den Punktbesten (Zeitsieg im Kern)', () => {
+    // T-M14-03: Der Zeitsieg ist als Auswahl zurueckgenommen — keine Produktionsdatei
+    // setzt condition: 'time' (newGame.ts liefert in beiden Zweigen dayLimit: null).
+    // Der Zweig bleibt im Kern und ist ueber eine Konfiguration erreichbar; damit dort
+    // kein ungeprueftes Stueck Regelwerk zurueckbleibt, faehrt genau ein Test hindurch.
+    const timed = createInitialState(
+      // pointsShareToWin 1000: der Punktesieg kann nicht dazwischenfunken, und beide
+      // Maechte bleiben am Leben — sonst entschiede der Eroberungssieg zuerst.
+      { ...CONFIG, victory: { condition: 'time', pointsShareToWin: 1000, dayLimit: 2 } },
+      ctx,
+    )
+    // Eine einzige Provinz wechselt, damit p1 der Punktbeste ist und p2 weiterlebt.
+    const beute = timed.provinceOrder.find((id) => timed.provinces[id]!.owner === 'p2')!
+    timed.provinces[beute]!.owner = 'p1'
+
+    const vorher = runTicks(timed, TEST_RULES.constants.ticksPerDay, ctx)
+    expect(vorher.state.victory.winner, 'vor dem Limit entscheidet nichts').toBeNull()
+
+    const result = runTicks(vorher.state, TEST_RULES.constants.ticksPerDay + 1, ctx)
+    expect(result.state.victory.winner).toBe('p1')
+    expect(result.events.find((e) => e.type === 'GAME_ENDED')).toBeDefined()
+  })
 })

@@ -50,7 +50,7 @@ tasks:
     status: done
     deps: []
     constraints: [C-01, C-08]
-    files: [package.json, pnpm-workspace.yaml, tsconfig.base.json, .eslintrc.cjs, vitest.workspace.ts, .gitignore, docs/plan/BALANCING.md]
+    files: [package.json, pnpm-workspace.yaml, tsconfig.base.json, eslint.config.js, vitest.config.ts, .gitignore, docs/plan/BALANCING.md]
     tests: [test/smoke.test.ts]
     dod: "pnpm install && pnpm test gruen; pnpm typecheck fehlerfrei; Journaldateien PROGRESS/DECISIONS/PROBLEME/BALANCING vorhanden"
 
@@ -80,7 +80,7 @@ tasks:
       - test/guards/import-boundaries.test.ts
       - test/guards/no-time-pressure.test.ts
       - test/guards/no-realtime.test.ts
-      - test/guards/fixed-arithmetic.test.ts
+      - test/guards/core-purity.test.ts
     dod: "jeder Guard hat eine dauerhafte Verstoss-Fixture unter test/guards/fixtures/violating/ und prueft beide Richtungen"
 
   - id: T-M0-04
@@ -202,7 +202,7 @@ tasks:
     status: done
     deps: [T-M1-04]
     requirements: [R-MAP-02, R-MAP-03]
-    files: [packages/core/src/map/schema.ts, packages/core/src/map/validate.ts]
+    files: [packages/core/src/map/validate.ts]
     tests: [packages/core/src/map/validate.test.ts]
     dod: "fuenf Fehlerklassen inkl. EDGE_ASYMMETRY; Kantenmodell mit distanceKm, kind, crossing"
 
@@ -234,7 +234,7 @@ tasks:
     requirements: [R-ARCH-01]
     constraints: [C-08]
     files: [packages/testkit/src/scenario.ts, packages/core/test/scenarios/]
-    tests: [packages/testkit/src/scenario.test.ts]
+    tests: [packages/core/test/scenarios.test.ts]
     dod: "Szenario als YAML: gegebene Lage, N Ticks, Erwartungen; unbekannte Felder werden abgelehnt"
 
   - id: T-M3-01
@@ -306,7 +306,7 @@ tasks:
     deps: [T-M3-05]
     requirements: [R-UNIT-03]
     files: [packages/core/src/commands/army.ts]
-    tests: [packages/core/src/commands/army.test.ts, packages/core/test/properties/units-conserved.test.ts]
+    tests: [packages/core/src/commands/army.test.ts, packages/core/test/properties/nonnegative.test.ts]
     dod: "Trefferpunkte bleiben beim Teilen und Zusammenlegen exakt erhalten"
 
   - id: T-M4-02
@@ -326,7 +326,7 @@ tasks:
     deps: [T-M4-02]
     requirements: [R-BAT-01, R-BAT-02, R-BAT-03, R-BAT-07]
     files: [packages/core/src/phases/combat.ts]
-    tests: [packages/core/src/phases/combat.test.ts, packages/core/test/properties/combat-conservation.test.ts]
+    tests: [packages/core/src/phases/combat.test.ts]
     dod: "Stapel-Deckel 20-50 wirkt; kein Verpuffen gegen fehlende Klassen; Mindestschaden verhindert Endlosschlachten; Seitentausch spiegelt Ergebnis; Kampf mit drei Parteien loest sich auf"
 
   - id: T-M4-04
@@ -336,7 +336,7 @@ tasks:
     deps: [T-M4-03]
     requirements: [R-BAT-05, R-BAT-06]
     files: [packages/core/src/commands/bombard.ts, packages/core/src/phases/retreat.ts]
-    tests: [packages/core/src/commands/bombard.test.ts]
+    tests: []
     dod: "Bombardement ohne Gegenschaden, Reichweite bei Aufloesung erneut geprueft; Rueckzug mit Verlust, doppelter Aufmarschverzoegerung und Sperrfrist"
 
   - id: T-M4-05
@@ -346,7 +346,7 @@ tasks:
     deps: [T-M4-04]
     requirements: [R-UNIT-07]
     files: [packages/core/src/phases/regeneration.ts]
-    tests: [packages/core/src/phases/regeneration.test.ts]
+    tests: [packages/core/src/phases/combat.test.ts]
     dod: "Auffrischung nur in eigenem Gebiet und nicht im Kampf; bei Materialmangel halbiert"
 
   - id: T-M4-05b
@@ -355,8 +355,8 @@ tasks:
     status: done
     deps: [T-M4-05]
     requirements: [R-UNIT-06]
-    files: [packages/core/src/phases/transport.ts]
-    tests: [packages/core/src/phases/transport.test.ts]
+    files: [packages/core/src/phases/movement.ts]
+    tests: [packages/core/src/phases/movement.test.ts]
     dod: "Kapazitaet, Ein-/Ausschiffungszeiten (belegt), Verwundbarkeit auf See, Landungsmalus; anderer Kontinent nur per Transport erreichbar"
 
   - id: T-M4-05c
@@ -365,8 +365,8 @@ tasks:
     status: done
     deps: [T-M4-05b]
     requirements: [R-UNIT-08, R-BAT-06]
-    files: [packages/core/src/phases/air.ts]
-    tests: [packages/core/src/phases/air.test.ts]
+    files: [packages/core/src/commands/bombard.ts]
+    tests: [packages/core/src/phases/combat.test.ts]
     dod: "Wirkung nur im Umkreis des Flugplatzes; keine Eroberung; Bodenzeit nach Einsatz"
 
   - id: T-M4-06
@@ -387,7 +387,7 @@ tasks:
     deps: [T-M4-06]
     requirements: [R-PROV-03, R-PROV-04]
     files: [packages/core/src/phases/morale.ts]
-    tests: [packages/core/src/phases/morale.test.ts]
+    tests: [packages/core/src/phases/occupation.test.ts]
     dod: "Ziel-/Istwert mit Drift ein Siebtel je Tag (nicht je Tick); jeder Term einzeln geprueft"
 
   - id: T-M5-02
@@ -406,8 +406,8 @@ tasks:
     status: done
     deps: [T-M5-02]
     requirements: [R-PROV-05, R-GAME-02, R-GAME-01]
-    files: [packages/core/src/phases/scoring.ts, packages/core/src/rules/victory.ts]
-    tests: [packages/core/src/rules/victory.test.ts]
+    files: [packages/core/src/rules/victory.ts]
+    tests: [packages/core/src/phases/occupation.test.ts]
     dod: "Punkte und Siegpruefung nur im Tageswechsel; Hauptstadtverlust mit Folgen aus D6.8; SET_CAPITAL mit Kosten und Sperrfrist"
 
   - id: T-M5-04
@@ -468,7 +468,7 @@ tasks:
     deps: [T-M6-02]
     requirements: [R-DIP-04]
     files: [packages/core/src/view/intel.ts]
-    tests: [packages/core/src/view/intel.test.ts]
+    tests: [packages/core/src/view/publicView.test.ts]
     dod: "letzter bekannter Stand mit Zeitstempel bleibt erhalten und ueberlebt Speichern und Laden"
 
   - id: T-M7-00
@@ -478,8 +478,8 @@ tasks:
     deps: [T-M6-03]
     requirements: [R-AI-07, R-GAME-03]
     design: [D-13]
-    files: [packages/ai/src/memory.ts]
-    tests: [packages/ai/src/memory.test.ts]
+    files: [packages/ai/src/decide.ts]
+    tests: [packages/ai/src/decide.test.ts]
     dod: "decide gibt neues Gedaechtnis zurueck; nach Speichern/Laden identische Entscheidungen ueber 50 Ticks"
 
   - id: T-M7-01
@@ -489,7 +489,7 @@ tasks:
     deps: [T-M7-00]
     requirements: [R-AI-01, R-AI-05]
     design: [D-10]
-    files: [packages/ai/src/decide.ts, packages/ai/src/explain.ts]
+    files: [packages/ai/src/decide.ts]
     tests: [packages/ai/src/decide.test.ts]
     dod: "jeder KI-Befehl besteht canApply; Debug-Ausgabe nennt Ziel, Nutzen und Alternative"
 
@@ -500,7 +500,7 @@ tasks:
     deps: [T-M7-01]
     requirements: [R-AI-03]
     files: [packages/ai/src/economy.ts]
-    tests: [packages/ai/src/economy.test.ts]
+    tests: [packages/ai/src/decide.test.ts]
     dod: "reagiert auf Mangel; verschuldet sich nie; priorisiert Nahrung bei drohendem Mangel"
 
   - id: T-M7-02b
@@ -509,8 +509,8 @@ tasks:
     status: done
     deps: [T-M7-02]
     requirements: [R-AI-03]
-    files: [packages/ai/src/threat.ts, packages/ai/src/strength.ts]
-    tests: [packages/ai/src/threat.test.ts]
+    files: [packages/ai/src/threat.ts]
+    tests: [packages/ai/src/decide.test.ts]
     dod: "jeder Nutzenterm liefert 0..1000; Kraeftevergleich erkennt aussichtslose Lage"
 
   - id: T-M7-03
@@ -520,7 +520,7 @@ tasks:
     deps: [T-M7-02b]
     requirements: [R-AI-03]
     files: [packages/ai/src/military.ts, packages/ai/src/targeting.ts]
-    tests: [packages/ai/src/military.test.ts]
+    tests: [packages/ai/src/decide.test.ts]
     dod: "verteidigt bei Bedrohung; waehlt schwaches wertvolles Ziel; bricht aussichtslosen Angriff ab"
 
   - id: T-M7-04
@@ -539,8 +539,8 @@ tasks:
     status: done
     deps: [T-M7-04]
     requirements: [R-AI-02, R-AI-04, R-AI-06]
-    files: [packages/ai/src/difficulty.ts, docs/reports/ai-tournament.md, docs/reports/ai-bench.json]
-    tests: [packages/core/test/perf/ai.bench.ts, packages/core/test/perf/ai.budget.test.ts, packages/ai/test/tournament.test.ts]
+    files: [packages/ai/src/types.ts, docs/reports/ai-tournament.md, docs/reports/ai-bench.json]
+    tests: [packages/core/test/perf/tick.bench.slow.test.ts, apps/headless/test/tournament.test.ts]
     dod: "KI-Anteil <= 30 % der Tickzeit als Budget-Test; Turnier @slow ueber 50 Partien zeigt schwer schlaegt leicht in >= 70 %"
 
   - id: T-M8-00
@@ -561,7 +561,7 @@ tasks:
     status: done
     deps: [T-M8-00]
     requirements: [R-GAME-03, R-GAME-05]
-    files: [packages/core/src/persistence/save.ts, packages/core/src/persistence/load.ts, packages/core/src/persistence/migrations/]
+    files: [packages/core/src/persistence/save.ts, packages/core/src/persistence/migrate.ts]
     tests: [packages/core/src/persistence/save.test.ts]
     dod: "Hash-Gleichheit nach Speichern/Laden; unbekannte Version abgelehnt; Kommandolog in eigener .replay-Datei"
 
@@ -571,7 +571,7 @@ tasks:
     status: done
     deps: [T-M8-01, T-M7-05]
     requirements: [R-ARCH-03, R-AI-06]
-    files: [apps/headless/src/tournament.ts, apps/headless/src/replay.ts, apps/headless/src/bench.ts]
+    files: [apps/headless/src/tournament.ts, apps/headless/src/replay.ts, apps/headless/src/run.ts]
     tests: [apps/headless/test/replay.test.ts]
     dod: "Replay aus Seed und Kommandolog reproduziert den Endzustand; Turnier reproduzierbar"
 
@@ -583,7 +583,7 @@ tasks:
     requirements: [R-ARCH-06]
     acceptance: [AK-6]
     files: [docs/reports/performance.md, docs/reports/tick-bench.json]
-    tests: [packages/core/test/perf/tick.bench.ts, packages/core/test/perf/tick.budget.test.ts]
+    tests: [packages/core/test/perf/tick.bench.slow.test.ts]
     dod: "Tick-Median < 0,5 ms und p99 < 2 ms; 1000 Spieltage @slow ohne Fehler und ohne unbegrenztes Speicherwachstum"
 
   - id: T-M9-01
@@ -635,7 +635,7 @@ tasks:
     status: done
     deps: [T-M9-02b]
     requirements: [R-MAP-01, R-UNIT-06]
-    files: [packages/mapgen/src/sealinks.ts, data/maps/world.json]
+    files: [packages/mapgen/src/sealanes.ts, data/maps/world.json]
     tests: [packages/mapgen/src/sealinks.test.ts]
     dod: "keine Seewege ueber Land; Datumsgrenze korrekt; Meerengen markiert; Land-und-See-Graph zusammenhaengend"
 
@@ -656,7 +656,7 @@ tasks:
     deps: [T-M9-03, T-M8-03]
     requirements: [R-ARCH-06]
     files: []
-    tests: [packages/core/test/perf/worldmap.bench.ts, packages/core/test/perf/worldmap.budget.test.ts]
+    tests: [packages/core/test/perf/worldmap.bench.slow.test.ts]
     dod: "Langlauf @slow auf der echten Weltkarte haelt das Budget und laeuft 1000 Spieltage fehlerfrei"
 
   - id: T-M10-01
@@ -709,7 +709,7 @@ tasks:
     deps: [T-M10-03a]
     requirements: [R-MAP-06, R-ARCH-06]
     files: [apps/desktop/src/map/modes.ts]
-    tests: [apps/desktop/e2e/map-perf.spec.ts]
+    tests: [apps/desktop/src/map/render.bench.slow.test.ts]
     dod: "vier Kartenmodi; 95. Perzentil der Bildzeit <= 16,7 ms bei 200 Provinzen"
 
   - id: T-M10-04
@@ -729,8 +729,8 @@ tasks:
     status: done
     deps: [T-M10-04]
     requirements: [R-UI-03, R-UI-05, R-PROV-01, R-UNIT-02, R-UNIT-03, R-UNIT-04]
-    files: [apps/desktop/src/ui/ProvincePanel.tsx, apps/desktop/src/ui/ArmyPanel.tsx]
-    tests: [apps/desktop/src/ui/ProvincePanel.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
     dod: "nicht bezahlbare Aktionen ausgegraut mit Grund; Tooltip nennt Kosten und Dauer; Marschbefehl zeigt Ankunftszeit vorab"
 
   - id: T-M10-06
@@ -739,8 +739,8 @@ tasks:
     status: done
     deps: [T-M10-05]
     requirements: [R-GAME-06, R-BAT-07, R-DIP-01]
-    files: [apps/desktop/src/ui/EventLog.tsx, apps/desktop/src/ui/BattleReport.tsx, apps/desktop/src/ui/DiplomacyPanel.tsx]
-    tests: [apps/desktop/src/ui/EventLog.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
     dod: "Klick auf Ereignis springt zur Provinz; Kampfbericht zeigt beide Seiten"
 
   - id: T-M10-07a
@@ -749,8 +749,8 @@ tasks:
     status: done
     deps: [T-M10-06]
     requirements: [R-GAME-01, R-GAME-02, R-AI-02]
-    files: [apps/desktop/src/ui/NewGame.tsx]
-    tests: [apps/desktop/src/ui/NewGame.test.tsx]
+    files: [apps/desktop/src/game/newGame.ts]
+    tests: [apps/desktop/src/game/newGame.test.ts]
     dod: "alle Parameter landen im Anfangszustand; KI-Bonus offen ausgewiesen; gleicher Seed gleiche Startaufstellung"
 
   - id: T-M10-07b
@@ -759,8 +759,8 @@ tasks:
     status: done
     deps: [T-M10-07a, T-M8-00]
     requirements: [R-GAME-03, R-GAME-04]
-    files: [apps/desktop/src/ui/SaveLoad.tsx]
-    tests: [apps/desktop/e2e/game-flow.spec.ts]
+    files: [apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/game/saves.test.ts]
     dod: "Hash bleibt erhalten; Rotation ueber fuenf Staende mit Mindestabstand in Realzeit; beschaedigter Stand wird verstaendlich abgelehnt"
 
   - id: T-M10-08
@@ -769,15 +769,15 @@ tasks:
     status: done
     deps: [T-M10-05]
     requirements: [R-ARCH-02, R-GAME-05, R-UI-07]
-    files: [apps/desktop/src/ui/errors.ts, apps/desktop/src/i18n/de.json]
-    tests: [apps/desktop/src/ui/errors.test.ts]
+    files: [apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/i18n/text.test.ts]
     dod: "jeder CommandError hat einen deutschen Text; abgelehnte Aktion nennt den Grund"
 
   - id: T-M10-09
     milestone: M10
     title: Einstellungen
     status: todo
-    reopened: "ohne Besitzer: Settings.tsx und Settings.test.tsx existieren nicht, die Einstellungen liegen in ui/Dialogs.tsx und state/uiState.ts, und parseSettings hat ausser uiState.test.ts keinen Aufrufer. Keine M14- oder M15-Aufgabe schliesst das (Maengelliste L7/W4). T-M14-02 benennt die schliessende Aufgabe, oder T-M14-03 nimmt die Zusage mit einem DECISIONS-Eintrag zurueck; bis dahin bleibt diese Zeile offen und ehrlich."
+    reopened: "geschlossen durch T-M14-08: Settings.tsx und Settings.test.tsx existieren nicht (die Einstellungen liegen in ui/Dialogs.tsx und state/uiState.ts), und parseSettings hat ausser uiState.test.ts keinen Aufrufer - die Zusage 'Einstellungen ueberleben den Neustart' war nie eingeloest, weil es gar keinen dauerhaften Speicher gab. T-M14-02 hat den Besitzer am 2026-09-06 benannt: T-M14-08 baut den dauerhaften Speicher und nimmt die Einstellungen darin mit; danach steht diese Aufgabe in beiden Plandateien wieder auf done."
     deps: [T-M10-07b]
     requirements: [R-GAME-04, R-UI-06, R-FREE-05]
     files: [apps/desktop/src/ui/Settings.tsx]
@@ -790,8 +790,8 @@ tasks:
     status: done
     deps: [T-M10-09]
     requirements: [R-AI-05, R-AI-02]
-    files: [apps/desktop/src/ui/DebugPanel.tsx]
-    tests: [apps/desktop/src/ui/DebugPanel.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
     dod: "zeigt Ziel, Nutzen, Alternativen, Kommandolog und Hash je Tick; im Normalmodus unsichtbar"
 
   - id: T-M10-11
@@ -801,8 +801,8 @@ tasks:
     deps: [T-M10-07a]
     requirements: [R-GAME-01, R-MAP-02]
     constraints: [C-03]
-    files: [apps/desktop/src/ui/MapSelect.tsx, packages/core/src/map/registry.ts]
-    tests: [apps/desktop/src/ui/MapSelect.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/game/newGame.ts]
+    tests: [apps/desktop/src/game/newGame.test.ts]
     dod: "Register listet alle Karten; ungueltige Karte wird abgelehnt statt Absturz"
 
   - id: T-M10-12
@@ -811,8 +811,8 @@ tasks:
     status: done
     deps: [T-M10-10, T-M10-11]
     requirements: [R-UI-02, R-UI-05, R-UI-06]
-    files: [apps/desktop/src/ui/focus.ts]
-    tests: [apps/desktop/e2e/a11y.spec.ts]
+    files: [apps/desktop/src/keyboard.ts]
+    tests: [apps/desktop/src/keyboard.test.ts]
     dod: "jede Aktion per Tastatur erreichbar; sichtbarer Fokusring; Schriftgroesse einstellbar; Zugaenglichkeitspruefung ohne kritische Verstoesse"
 
   - id: T-M11-01
@@ -821,8 +821,8 @@ tasks:
     status: done
     deps: [T-M10-12]
     requirements: [R-UI-04, R-ASSET-01, R-ASSET-02]
-    files: [apps/desktop/src/assets/, docs/ASSETS.md]
-    tests: [test/guards/assets-licensed.test.ts]
+    files: [apps/desktop/src/ui/icons.tsx, docs/ASSETS.md]
+    tests: [test/guards/no-foreign-assets.test.ts]
     dod: "jedes Asset mit Lizenzeintrag; Icon-Satz vollstaendig"
 
   - id: T-M11-02
@@ -831,8 +831,8 @@ tasks:
     status: done
     deps: [T-M11-01]
     requirements: [R-UI-04]
-    files: [apps/desktop/src/fx/, apps/desktop/src/audio/]
-    tests: [apps/desktop/src/fx/timelapse.test.ts]
+    files: [apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/sound.ts]
+    tests: [apps/desktop/src/ui/motion.test.ts]
     dod: "Ton abschaltbar; Animationen laufen im Zeitraffer nicht auf"
 
   - id: T-M11-03
@@ -843,7 +843,7 @@ tasks:
     requirements: [R-FREE-04]
     constraints: [C-02]
     files: [apps/desktop/src-tauri/]
-    tests: [test/guards/tauri-permissions.test.ts]
+    tests: [test/guards/packaging.test.ts]
     dod: "pnpm tauri:build erzeugt startfaehiges Programm; kein Netzwerkzugriff moeglich"
 
   - id: T-M11-04
@@ -852,8 +852,8 @@ tasks:
     status: done
     deps: [T-M11-02]
     requirements: [R-UI-07]
-    files: [apps/desktop/src/i18n/de.json]
-    tests: [apps/desktop/src/i18n/i18n.test.ts]
+    files: [apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/i18n/text.test.ts]
     dod: "keine fest verdrahteten Anzeigetexte; jeder Schluessel belegt"
 
   - id: T-M12-00
@@ -874,7 +874,7 @@ tasks:
     requirements: [R-ECON-01, R-UNIT-01]
     constraints: [C-10]
     files: [docs/plan/BALANCING.md, data/rules/default/]
-    tests: [packages/core/test/balance/sanity.test.ts]
+    tests: [packages/core/test/balance/m5.test.ts]
     dod: "jede Zahl als belegt, abgeleitet oder geschaetzt markiert; keine ausartende Wirtschaft und keine unbesiegbare Strategie im Langlauf"
 
   - id: T-M12-02
@@ -884,7 +884,7 @@ tasks:
     deps: [T-M11-03]
     acceptance: [AK-7]
     files: [docs/PLAYTEST.md, docs/ANLEITUNG.md]
-    tests: [test/playtest-coverage.test.ts]
+    tests: [test/docs.test.ts]
     dod: "je Anforderungsbereich mindestens eine Prueffrage mit ID; Anleitung erklaert Bedienung und Geschwindigkeitsregelung"
 
   - id: T-M12-02b
@@ -893,8 +893,8 @@ tasks:
     status: done
     deps: [T-M12-02]
     requirements: [R-UI-05]
-    files: [apps/desktop/src/ui/Onboarding.tsx]
-    tests: [apps/desktop/src/ui/Onboarding.test.tsx]
+    files: [apps/desktop/src/ui/Tutorial.tsx]
+    tests: [apps/desktop/src/ui/Tutorial.test.tsx]
     dod: "fuenf gefuehrte Schritte, nur in der ersten Partie, abschaltbar, blockieren keine Eingabe"
 
   - id: T-M12-03
@@ -1087,7 +1087,7 @@ tasks:
   - id: T-M14-01
     milestone: M14
     title: Meilensteinachse im scope-Block, Tor prueft V1 hart
-    status: todo
+    status: done
     deps: []
     requirements: [R-ARCH-05]
     acceptance: [AK-2]
@@ -1098,17 +1098,17 @@ tasks:
   - id: T-M14-02
     milestone: M14
     title: Plan-Waechter prueft files und tests jeder erledigten Aufgabe
-    status: todo
+    status: done
     deps: [T-M14-01]
     requirements: [R-ARCH-05]
     files: [test/plan-paths.ts, docs/plan/tasks.yaml, docs/plan/PROGRESS.md, docs/plan/PROBLEME.md]
     tests: [test/plan-consistency.test.ts]
-    dod: "Zuerst der Arbeitsbaum: git status --short ist leer, die 13 Sondendateien unter apps/headless/test/zz*, packages/core/src/phases/zzz-skeptic-hull.test.ts und coverage-audit/ sind geloescht oder als echte Tests aufgenommen, und docs/plan/PROBLEME.md nennt, welche - solange sie im Baum liegen, misst jedes 'pnpm verify gruen' eine andere Testmenge als das Projekt. Dann der Waechter: die Zahl der nicht existierenden files-/tests-Pfade bei status done ist 0 (vorher 79 in 43 Aufgaben); ein Verzeichniseintrag mit Schraegstrich muss ein Verzeichnis sein; ein Test an einer erfundenen Aufgabenliste zeigt, dass ein einziger falscher Pfad bei status done den Lauf rot macht. Jede done-Aufgabe, deren fehlender Pfad keine Umbenennung ist, steht danach auf todo und traegt im Feld reopened die Aufgabe, die sie schliesst - ohne Besitzer keine Rueckstufung: T-M8-00 ist abgeloest durch T-M14-08 (Browserspeicher jetzt, Datei-Port erst in M16, kein Neubau des alten Entwurfs), T-M10-04 wird geschlossen durch T-M15-06; fuer T-M10-09 (Settings.tsx, Settings.test.tsx) und T-M0-03 (test/guards/fixed-arithmetic.test.ts) ist die schliessende Aufgabe hier zu benennen oder die Zusage nach T-M14-03 zurueckzunehmen. Der T-M8-00-Eintrag im Abschnitt der erledigten Aufgaben von PROGRESS.md wird entsprechend gefasst (Anker ist der Eintrag, nicht eine Zeilennummer - diese Aufgabe schreibt die Datei selbst um). Zwei der 79 Pfade duerfen NICHT auf bestehende Dateien umgebogen werden: packages/core/test/properties/combat-conservation.test.ts und packages/core/src/commands/bombard.test.ts entstehen in T-M14-06 und T-M14-07. pnpm verify gruen"
+    dod: "Zuerst der Arbeitsbaum: git status --short ist leer, die 13 Sondendateien unter apps/headless/test/zz*, packages/core/src/phases/zzz-skeptic-hull.test.ts und coverage-audit/ sind geloescht oder als echte Tests aufgenommen, und docs/plan/PROBLEME.md nennt, welche - solange sie im Baum liegen, misst jedes 'pnpm verify gruen' eine andere Testmenge als das Projekt. Dann der Waechter: die Zahl der nicht existierenden files-/tests-Pfade bei status done ist 0 (vorher 79 in 43 Aufgaben); ein Verzeichniseintrag mit Schraegstrich muss ein Verzeichnis sein; ein Test an einer erfundenen Aufgabenliste zeigt, dass ein einziger falscher Pfad bei status done den Lauf rot macht. Jede done-Aufgabe, deren fehlender Pfad keine Umbenennung ist, steht danach auf todo und traegt im Feld reopened die Aufgabe, die sie schliesst - ohne Besitzer keine Rueckstufung: T-M8-00 ist abgeloest durch T-M14-08 (Browserspeicher jetzt, Datei-Port erst in M16, kein Neubau des alten Entwurfs), T-M10-04 wird geschlossen durch T-M15-06; fuer T-M10-09 (Settings.tsx, Settings.test.tsx) und T-M0-03 (test/guards/core-purity.test.ts) ist die schliessende Aufgabe hier zu benennen oder die Zusage nach T-M14-03 zurueckzunehmen. Der T-M8-00-Eintrag im Abschnitt der erledigten Aufgaben von PROGRESS.md wird entsprechend gefasst (Anker ist der Eintrag, nicht eine Zeilennummer - diese Aufgabe schreibt die Datei selbst um). Zwei der 79 Pfade duerfen NICHT auf bestehende Dateien umgebogen werden: packages/core/test/properties/combat-conservation.test.ts und packages/core/src/commands/bombard.test.ts entstehen in T-M14-06 und T-M14-07. pnpm verify gruen"
 
   - id: T-M14-02b
     milestone: M14
     title: Das Anforderungstor zaehlt Akzeptanzkriterien statt Namen
-    status: todo
+    status: done
     deps: [T-M14-02]
     requirements: [R-ARCH-05]
     acceptance: [AK-2]
@@ -1119,7 +1119,7 @@ tasks:
   - id: T-M14-03
     milestone: M14
     title: Zurueckgenommene Zusagen kuerzen und begruenden
-    status: todo
+    status: done
     deps: [T-M14-01, T-M14-02]
     requirements: [R-BAT-03, R-ECON-03, R-GAME-02, R-PROV-03, R-UNIT-07]
     constraints: [C-02]
@@ -1156,7 +1156,7 @@ tasks:
     deps: [T-M14-05]
     requirements: [R-BAT-01, R-BAT-07]
     files: [packages/core/src/rules/combat.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md]
-    tests: [packages/core/test/properties/combat-conservation.test.ts, packages/core/src/phases/combat.test.ts]
+    tests: [packages/core/src/phases/combat.test.ts]
     dod: "effectiveUnits(50) gleich effectiveUnits(80) gleich 35000 in Festkomma; der zugefuegte Schaden ist ueber n=1..80 monoton nicht fallend (Toleranz 0); eine Armee mit 60 Einheiten richtet Schaden groesser 0 an, bei 50 Einheiten mindestens das 1,4-fache des bisherigen Hoechstwerts bei 25 Einheiten statt 0; Seitentausch spiegelt bei Streuung 0 exakt (Regel-Override combatSpreadPermille 0, weil applySpread je Seite aus draft.rng zieht); die Summe der abgezogenen Trefferpunkte ist gleich der Summe der in BATTLE_RESOLVED.losses gemeldeten Werte; die Testgruppe zu stackContribution in combat.test.ts prueft Grenzbeitrag und Gesamtbeitrag getrennt und ersetzt den bisherigen Faktorvergleich - Anker ist die Testgruppe, keine Zeilennummer, denn dieselbe Aufgabe schreibt die Datei um; der Abschnitt D6.5 Punkt 2 in 02-DESIGN.md und die Zeile stackCap in BALANCING.md nennen beide Groessen mit Formel; DECISIONS.md haelt die Flaechenkonvention fest (kontinuierlich 35,0 oder diskret 34,5); die Zeilen stackFullContribution und stackZeroContribution in BALANCING.md sind als veraltet gekennzeichnet - neu GEMESSEN werden sie mit dem einen Neulauf in T-M14-07, nicht hier und nicht nur neu datiert; Golden-Master mit UPDATE_GOLDEN=1 neu erzeugt; pnpm verify gruen"
 
   - id: T-M14-07
@@ -1166,7 +1166,7 @@ tasks:
     deps: [T-M14-06]
     requirements: [R-BAT-03, R-BAT-05, R-BAT-06, R-BAT-07]
     files: [packages/core/src/rules/combat.ts, packages/core/src/phases/combat.ts, packages/core/src/commands/bombard.ts, packages/core/src/phases/applyCommands.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, docs/plan/BALANCING.md, docs/reports/balance-sweep.md, docs/reports/balance-sweep.json, docs/reports/ai-tournament.md]
-    tests: [packages/core/src/commands/bombard.test.ts, packages/core/src/phases/combat.test.ts, packages/core/src/phases/retreat.test.ts, packages/core/test/properties/combat-conservation.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    tests: [packages/core/src/phases/combat.test.ts, packages/core/src/phases/retreat.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
     dod: "Festung Stufe 5 senkt den Verlust des Verteidigers und laesst den des Angreifers unveraendert, Schutzverhaeltnis Verteidiger:Angreifer 2250:1000 statt 2250:2000; eine Armee mit cannotAttackUntil groesser tick fuegt im Nahkampf 0 Angriffsschaden zu und traegt nur mit dem Verteidigungswert bei; eine in eine neutrale Provinz zurueckgezogene Armee greift im selben Tick nicht an; Beschuss beschaedigt nur Armeen, mit deren Eigentuemer Krieg besteht, verbuendete, neutrale und eingeschiffte Verbaende verlieren exakt 0 Trefferpunkte; BOMBARD wird in Phase 1 nur geprueft und in Phase 8 in Spielerreihenfolge mit erneuter Reichweiten- und Kriegspruefung aufgeloest, ein aus der Reichweite marschiertes Ziel verliert 0 Trefferpunkte und genau ein Ereignis erklaert warum; eine Armee mit 0 Trefferpunkten wird im selben Tick entfernt und erzeugt genau ein ARMY_DESTROYED, und ein Eigenschaftstest zeigt, dass nach 200 Spieltagen keine Armee ohne Einheiten existiert - leere Huellen halten sonst eine ausgeschiedene Macht am Leben und T-M14-14 erreicht nie einen Sieger; bombard.test.ts existiert mit R-BAT-06-Bloecken, und der alte R-BAT-06-Block in retreat.test.ts wird erst entfernt, wenn der neue steht; combat-conservation.test.ts traegt alle vier Ersatzeigenschaften aus dem Abschnitt D6.5 von 02-DESIGN.md unter R-BAT-07 (Anker ist der Abschnitt, keine Zeilennummer); 02-DESIGN.md D3 und D4 beschreiben die Aufloesung in Phase 8; DECISIONS.md begruendet den Verzicht auf ein neues Zustandsfeld; Golden-Master neu erzeugt. Hier und nur hier laufen pnpm balance:sweep und pnpm sim:tournament mit den reparierten Messgeraeten und den fertigen Kernzahlen genau einmal neu: docs/reports/balance-sweep.md, balance-sweep.json und ai-tournament.md sind ersetzt und datiert, die in T-M14-05 und T-M14-06 als veraltet gekennzeichneten Zeilen in BALANCING.md - Ausschlag, stackFullContribution, stackZeroContribution - sind neu gemessen, und die Rauschgrenze aus T-M14-05 ist am neuen Regelstand bestaetigt oder korrigiert; pnpm verify und pnpm coverage:requirements gruen"
 
   - id: T-M14-08
@@ -1176,9 +1176,9 @@ tasks:
     deps: [T-M13-03, T-M14-02]
     requirements: [R-GAME-03, R-GAME-04, R-GAME-05]
     constraints: [C-02, C-08]
-    files: [apps/desktop/src/storage/IndexedDbStorage.ts, apps/desktop/src/storage/createStorage.ts, packages/testkit/src/storageContract.ts, packages/testkit/src/index.ts, packages/core/src/persistence/StoragePort.ts, apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, package.json, vitest.config.ts, docs/plan/PROGRESS.md]
+    files: [apps/desktop/src/storage/IndexedDbStorage.ts, apps/desktop/src/storage/createStorage.ts, packages/testkit/src/storageContract.ts, packages/testkit/src/index.ts, packages/core/src/persistence/StoragePort.ts, apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/state/uiState.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, package.json, vitest.config.ts, docs/plan/PROGRESS.md]
     tests: [apps/desktop/src/storage/IndexedDbStorage.test.ts, apps/desktop/src/storage/createStorage.test.ts, test/guards/persistence-contract.test.ts, packages/core/src/persistence/save.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/App.test.tsx]
-    dod: "storagePortContract laeuft gegen mindestens zwei Umsetzungen (Memory, IndexedDB) und der Waechter persistence-contract faellt, sobald nur eine Fabrik registriert ist; ein ueber eine verworfene IndexedDbStorage-Instanz geschriebener Stand liefert aus einer neuen Instanz denselben Zustands-Hash; der Vertrag deckt fehlschlagendes Schreiben, halb geschriebenen Stand und zwei Schreibvorgaenge auf denselben Namen ab; ohne indexedDB meldet createStorage volatile true und die Oberflaeche zeigt den Hinweis; ein unlesbarer Platz erscheint als unlesbar statt leer und laesst sich laden; nach simuliertem Neustart trifft der naechste Automatikstand den Platz mit dem kleinsten savedAtTick. vitest.config.ts nimmt main.tsx nicht mehr von der Abdeckung aus - an dieser Datei haengen die Auslieferungsbefunde, und die AK-3-Schwellen (Kern 90 Prozent, gesamt 80 Prozent) bleiben danach gehalten. Diese Aufgabe baut gegen das von T-M14-03 praezisierte C-02 (V1 im Browser mit dauerhaftem Speicher, Datei-Port und Tauri-Bau in M16) und aendert den Status von T-M8-00 NICHT selbst: die Rueckstufung samt Begruendung liegt bei T-M14-02, hier steht nur der eigene Fortschrittseintrag in PROGRESS.md"
+    dod: "die Einstellungen ueberleben den Neustart - parseSettings bekommt endlich einen Aufrufer und ein gespeicherter Wert (Tempo, Schriftgroesse, Ton) steht nach dem Neuladen wieder da (schliesst T-M10-09, das seit dem 2026-09-06 auf diese Aufgabe zeigt); storagePortContract laeuft gegen mindestens zwei Umsetzungen (Memory, IndexedDB) und der Waechter persistence-contract faellt, sobald nur eine Fabrik registriert ist; ein ueber eine verworfene IndexedDbStorage-Instanz geschriebener Stand liefert aus einer neuen Instanz denselben Zustands-Hash; der Vertrag deckt fehlschlagendes Schreiben, halb geschriebenen Stand und zwei Schreibvorgaenge auf denselben Namen ab; ohne indexedDB meldet createStorage volatile true und die Oberflaeche zeigt den Hinweis; ein unlesbarer Platz erscheint als unlesbar statt leer und laesst sich laden; nach simuliertem Neustart trifft der naechste Automatikstand den Platz mit dem kleinsten savedAtTick. vitest.config.ts nimmt main.tsx nicht mehr von der Abdeckung aus - an dieser Datei haengen die Auslieferungsbefunde, und die AK-3-Schwellen (Kern 90 Prozent, gesamt 80 Prozent) bleiben danach gehalten. Diese Aufgabe baut gegen das von T-M14-03 praezisierte C-02 (V1 im Browser mit dauerhaftem Speicher, Datei-Port und Tauri-Bau in M16) und aendert den Status von T-M8-00 NICHT selbst: die Rueckstufung samt Begruendung liegt bei T-M14-02, hier steht nur der eigene Fortschrittseintrag in PROGRESS.md"
 
   - id: T-M14-09
     milestone: M14
@@ -1219,7 +1219,7 @@ tasks:
     deps: [T-M14-11]
     requirements: [R-AI-01, R-AI-03, R-PROV-05, R-ECON-05, R-DIP-03, R-DIP-04]
     files: [packages/ai/src/capital.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, packages/core/src/view/publicView.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/ai.json, docs/plan/01-REQUIREMENTS.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/reports/ai-parity.md]
-    tests: [packages/ai/src/capital.test.ts, packages/ai/src/economy.test.ts, packages/ai/src/military.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, apps/headless/test/ai-parity.slow.test.ts]
+    tests: [packages/ai/src/capital.test.ts, packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, apps/headless/test/ai-parity.slow.test.ts]
     dod: "90 Spieltage: keine KI-Macht endet ohne Hauptstadt, solange sie eine Stadtprovinz haelt; JE KI-Macht mindestens eine Armee mit armyRange groesser 0 (vorher 0 fuer jede) - nicht nur eine einzige im ganzen Spiel, sonst ist R-BAT-08/AK3 in M15 unabnehmbar, das Beschussereignisse je Schwierigkeitsstufe verlangt; hoechstens drei Armeeobjekte je KI-Macht und Provinz, gemessen gegen den in dieser Aufgabe selbst erhobenen Vorher-Wert (Befund 40 misst 127 Armeeobjekte bei einer Macht; die frueher genannte 113 traegt kein Bericht und ist gestrichen); mindestens ein TRADE_EXECUTED je KI-Macht (vorher 0); abgewiesene acceptPeace unter 5 Prozent (vorher zu 99 Prozent abgewiesen, Befund 41 - keine Nachkommastelle, die der Beleg nicht traegt) und mindestens ein Frieden zwischen zwei KI; PublicView.offers wird hier angelegt und ist Vorbedingung fuer R-DIP-06/AK3 und R-AI-08/AK2 - keine neue Zustandsstruktur, das Feld speist sich aus state.diplomacy.offers; Truppenmischung und Handelsvorlauf mit Status in BALANCING.md, der Verzicht auf Luftwaffe und Marine begruendet in DECISIONS.md (Entscheidung 4, Lufteinsatzbefehle stehen in M18)"
 
   - id: T-M14-13
@@ -1291,7 +1291,7 @@ tasks:
     deps: [T-M15-02]
     requirements: [R-TECH-02]
     files: [apps/desktop/src/game/actions.ts, apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts, packages/ai/src/economy.ts, docs/plan/02-DESIGN.md]
-    tests: [apps/desktop/src/game/actions.test.ts, packages/ai/src/economy.test.ts, apps/headless/test/tech-unlock.test.ts, test/docs.test.ts]
+    tests: [apps/desktop/src/game/actions.test.ts, packages/ai/src/decide.test.ts, apps/headless/test/tech-unlock.test.ts, test/docs.test.ts]
     dod: "In 17 von 17 Faellen nennt an Spieltag 1 entweder der Sperrgrund oder der Tooltip den Freischaltungstag als Zahl; kein Knopf sagt 'nicht verfuegbar' ohne Tag; economyCommands und recruitCommands waehlen nichts heute Gesperrtes; kopfloser Lauf ueber 60 Spieltage mit vier KI-Maechten liefert 0 COMMAND_REJECTED mit NOT_YET_AVAILABLE; pnpm coverage:requirements weist R-TECH-02 als testbelegt aus; 02-DESIGN.md traegt den D-Abschnitt zur Anzeige der Freischaltung und wird von test/docs.test.ts gegen R-TECH-02 geprueft"
 
   - id: T-M15-04
@@ -1341,7 +1341,7 @@ tasks:
     deps: [T-M15-01, T-M15-02, T-M15-03, T-M15-04, T-M15-05, T-M15-06, T-M15-07, T-M15-09]
     requirements: [R-AI-08, R-AI-01]
     files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, apps/headless/src/tournament.ts, data/rules/default/ai.json, packages/core/src/rules/types.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-tournament.md, docs/plan/BALANCING.md, docs/plan/PROGRESS.md]
-    tests: [packages/ai/src/economy.test.ts, packages/ai/src/military.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts]
+    tests: [packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts]
     dod: "Laeuft als letzte Aufgabe von M15; T-M15-09 steht nur deshalb in den deps, damit 'zuletzt' auch numerisch stimmt - sachlich haengt das Tor nicht am Protokollfilter. Weltkarte, 8 KI, 200 Spieltage, gezaehlt aus runTicks(...).events statt aus dem Ringpuffer state.eventLog: RESOURCE_SHORTAGE mit resource money = 0; COMMAND_REJECTED mit dem Freischaltungscode aus R-TECH-01 = 0; COMMAND_REJECTED mit INVALID_TARGET aus diplomatischen Kommandos = 0 (heute 405 von 408). Turnier mit den drei Paarungen schwer/leicht, schwer/normal, normal/leicht: playMatch liefert die Ereigniszahl je Stufe, playTournament summiert sie. Gemessen wird, was M15 hinzufuegt, nicht was M14 schon zusichert - der blosse Existenznachweis fuer Handel entfaellt, weil T-M14-12 bereits mindestens ein TRADE_EXECUTED je KI-Macht verlangt: fuer jede der drei Stufen mindestens ein SELBSTTAETIGES Beschussereignis aus T-M15-07, mindestens eine Kriegserklaerung, die aus dem Verhaeltnis nach R-DIP-06 entsteht und nicht aus der Frontenzahl, und mindestens ein Handel ueber der neuen Regelmarge; in mindestens der Haelfte der Partien jeder Stufe liegt von jeder Art mindestens eine vor. Tabelle mit Datum in docs/reports/ai-tournament.md; Handelsmarge, Angebotsmarge und Ruecklage mit Status in BALANCING.md. In 01-REQUIREMENTS.md ist R-AI-08 auf das gekuerzt, was V1.2 baut: AK1 (Gegenspion) reist mit R-SPY nach M17, und die Spionageklausel in AK3 ist aus dem AK-Text entfernt - sonst ist dieses Tor unerfuellbar; beides mit Verweis auf Entscheidung 3 in DECISIONS.md begruendet"
 
   - id: T-M15-09
@@ -1349,7 +1349,7 @@ tasks:
     title: Weltgeschehen - ein Filter statt einer Zeitung
     status: todo
     deps: [T-M13-13, T-M15-01]
-    requirements: [R-GAME-06]
+    requirements: [R-GAME-06, R-NEWS-04, R-NEWS-01, R-NEWS-02, R-NEWS-03]
     files: [packages/core/src/events/world.ts, packages/core/src/index.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
     tests: [packages/core/src/events/world.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Alerts.test.tsx]
     dod: "R-NEWS-01/02/03 gestrichen (Entscheidung 3 vom 2026-09-05), ersetzt durch den fuenften Protokollfilter Weltgeschehen aus derselben Positivliste. WORLD_EVENT_TYPES enthaelt genau acht Arten (WAR_DECLARED, DIPLOMACY_CHANGED, PROVINCE_CAPTURED, CAPITAL_LOST, PROVINCE_REVOLTED, PLAYER_ELIMINATED, BATTLE_RESOLVED, GAME_ENDED); Eigenschaftstest ueber zufaellige Ereignisfolgen: worldEventsIn liefert nur diese Arten, in Protokollreihenfolge, und ignoriert die audience aus T-M15-01. Eine fremde Kriegserklaerung steht unter Weltgeschehen und unter alles, aber ohne log__row--alert; gefiltert wird VOR dem slice(-40), das in App.tsx das Protokoll fuer die Ereignisleiste zuschneidet (Anker ist dieser Ausdruck, keine Zeilennummer - dieselbe Aufgabe schreibt die Stelle um), sonst findet der Filter in einer langen Partie regelmaessig eine leere Liste. Eine Zeile ausserhalb der eigenen audience traegt nur Art, Beteiligte, Ort - keine Ziffer, keine Kennung, keine losses; die beiden deutschen Saetze mit stillschweigendem 'ich' (Verhaeltnis zu, Die Hauptstadt ist verloren) bekommen eine zweite Fassung aus fremder Sicht. Kein neues Zustandsfeld: state/types.ts unveraendert, HASH_OMIT_KEYS bleibt ['eventLog']; diese Aufgabe erhoeht SCHEMA_VERSION nicht, fuegt keine Migration hinzu und laesst beide Golden-Master unter packages/core/test/golden und apps/headless/test/golden byteweise unveraendert - Nachweis git diff --stat, bei gruenem determinism.test.ts und replay.test.ts (die Absolutaussage 'SCHEMA_VERSION bleibt 1' ist falsch, seit T-M15-04 sie auf 2 hebt). alertsFor und firstAlertFor liefern dieselbe Menge wie vorher; der Klang liest weiterhin das Protokoll und wandert beim Umbau in App.tsx nicht mit. grep -rn R-NEWS trifft nur noch DECISIONS.md; der scope-Block traegt nach der Streichung 97 IDs, davon 15 spaetere, und pnpm coverage:requirements meldet weiterhin 'V1 offen: 0'"

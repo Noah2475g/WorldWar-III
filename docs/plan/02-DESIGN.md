@@ -362,10 +362,15 @@ zielMoral(provinz) = basis(50)
                    − besatzungsMalus     (−25 frisch erobert, klingt über 14 Tage ab)
 ```
 Aufstandsrisiko je Spieltag [belegt]: `risiko% = max(0, (33 − moral) × 3)`. Der Wurf erfolgt
-einmal je Spieltag aus dem geseedeten Zufallsgenerator. Eine Garnison in der Provinzmitte
-unterdrückt den Aufstand, wenn ihre Verteidigungsstärke mindestens dem Prozentwert entspricht.
-Bei Erfolg wechselt die Provinz zu „Rebellen“ (Eigentümer `null`) und erhält eine
-Aufständischen-Armee.
+einmal je Spieltag aus dem geseedeten Zufallsgenerator. Bei Erfolg wechselt die Provinz zu
+„Rebellen“ (Eigentümer `null`) und fällt damit herrenlos zurück.
+
+> **Zurückgenommen am 2026-09-05 (T-M14-03).** Zwei Zusagen standen hier, die nie gebaut
+> wurden: dass eine Garnison den Aufstand unterdrückt, und dass die Provinz eine
+> Aufständischen-Armee erhält. `settleMorale` liest `draft.armies` nirgends, und
+> `Army.owner: PlayerId` lässt eine besitzerlose Armee typseitig gar nicht zu. Die
+> Anforderung R-PROV-03/AK1 bleibt erfüllt — die Provinz wird herrenlos, und das ist
+> die Wirkung, auf die es ankommt. Begründung in DECISIONS.md.
 
 Weitere belegte Moralwirkungen: Bauzeiten laufen bei 100 Moral um 10 % schneller und bei
 0 Moral auf 20 % Geschwindigkeit; frisch rekrutierte Infanterie startet mit Trefferpunkten
@@ -390,7 +395,7 @@ Das Modell folgt dem belegten Stand nach dem Umbau von 2023: **deterministisch m
 Streuung, keine Fehlschläge, gleichmäßige Schadensverteilung, ein einziger Stapel-Deckel.**
 
 Ein Kampf hat **N Seiten**, nicht zwei — bei acht Spielern treffen regelmäßig drei Parteien
-plus Aufständische in derselben Provinz aufeinander. Jede Seite trifft alle, mit denen sie im
+in derselben Provinz aufeinander. Jede Seite trifft alle, mit denen sie im
 Krieg steht (`Battle { provinceId, sides: PlayerId[][] }`).
 
 ```
@@ -500,7 +505,8 @@ Kommando mit `INVALID_TARGET` abgelehnt.
 **Aufstandsrisiko (R-PROV-03).**
 `risiko = clamp((AUFSTAND_SCHWELLE − moral) / AUFSTAND_SCHWELLE, 0, 1) × AUFSTAND_BASIS`
 (Schwelle 20, Basis 0,02 je Spieltag). Der Wurf erfolgt einmal je Spieltag aus dem geseedeten
-PRNG. Bei Erfolg: Eigentümer → `null`, Rebellenarmee mit Stärke proportional zur Bevölkerung.
+PRNG. Bei Erfolg: Eigentümer → `null`; die Provinz fällt herrenlos zurück (die zuvor hier
+zugesagte eigene Truppe der Aufständischen ist am 2026-09-05 zurückgenommen, T-M14-03).
 
 **Hauptstadt (R-PROV-05).**
 Verlust der Hauptstadt: für `CAPITAL_LOSS_DAYS` (Startwert 14 Tage) sinkt die Produktion aller
@@ -602,7 +608,8 @@ nicht über eine Zeitmessung zur Laufzeit — gemessen wird ausschließlich im B
 - **Speicher-Schnittstelle statt direktem Dateizugriff:**
   `StoragePort { list(); read(name); write(name, data); remove(name) }` mit drei Umsetzungen —
   `TauriStorage` (Produktion, `<AppData>/WorldWar/saves/`), `NodeStorage` (Headless und Tests),
-  `MemoryStorage` (Web-Build und E2E). Nur so ist Persistenz ohne Desktop-Hülle testbar.
+  `MemoryStorage` (Tests). Nur so ist Persistenz ohne Desktop-Hülle testbar. Die
+  ausgelieferte V1 nutzt `IndexedDbStorage` (T-M14-08); der Datei-Port folgt in M16.
 - Laden prüft `schemaVersion`; bekannte ältere Versionen laufen durch Migrationsfunktionen
   (`packages/core/src/persistence/migrations/v1_to_v2.ts`), unbekannte werden mit klarer
   Meldung abgelehnt.
@@ -721,7 +728,6 @@ Klienten verteilt und die Hashes vergleicht. **Kein Kernumbau nötig** — der H
 | Performance | tinybench | `packages/core/test/perf/` | Budgets aus R-ARCH-06/R-AI-04 |
 | Guards | Vitest | `test/guards/` | keine Monetarisierung, kein Netzwerk, Import-Grenzen, kein `Math.random` |
 | UI-Komponenten | Vitest + Testing Library | `apps/desktop/src/**/*.test.tsx` | Panels, Tooltips, Kontrast |
-| E2E | Playwright (Web-Build) | `apps/desktop/e2e/` | Partie starten, bauen, marschieren, speichern/laden |
 
 **Namenskonvention:** jeder Test beginnt mit der Anforderungs-ID, z. B.
 `describe('R-BAT-07 Kampfbericht', …)`. Ein Skript `pnpm coverage:requirements` prüft, dass für
@@ -1305,3 +1311,33 @@ Drei weitere Stellen, die der Plan benennen muss:
 **Der Prüfstein am Ende ist keine Testzahl**, sondern eine Turnierpartie, in der eine KI-Macht
 eine gleich starke Nachbarin angreift, ihre Artillerie ohne Befehl feuert und vor Tag 8 keine
 Fabrik bestellt — drei Ereignisse, die es heute nachweislich nicht gibt.
+### D19.8 Weltgeschehen statt Zeitung (R-NEWS-04)
+
+Die Zeitung aus R-NEWS-01/02/03 wird nicht gebaut (Entscheidung 3 vom 2026-09-05). An ihre
+Stelle tritt ein **Filter im bestehenden Ereignisprotokoll** — dasselbe Material, ein
+Anzeigezustand statt eines zweiten Erzeugnisses.
+
+**Warum das kein Verzicht ist.** R-NEWS-02 verbot der Zeitung ausdrücklich Mengen, Vorräte,
+Truppen und Gebäude. Was danach bleibt, ist eine Liste öffentlicher Ereignisse — und die
+liegt bereits vollständig im Protokoll, dessen Filterbarkeit R-GAME-06 seit M5 fordert und
+dessen Anspringbarkeit R-UI-14/AK1 seit M13 liefert. Die Zeitung hätte diesen Strom ein
+zweites Mal aufgeschrieben.
+
+**Und warum die Ersparnis größer ist, als sie aussieht.** Eine Ausgabe, die „im Spielstand
+liegt“ (R-NEWS-01/AK1), wäre ein neues Zustandsfeld mit Ringpuffer und Migration — und sie
+liefe **in den Simulationshash**: `HASH_OMIT_KEYS` (`packages/core/src/state/types.ts`) nimmt
+heute allein `eventLog` aus. Eine andere Formulierung einer Schlagzeile hätte damit
+Golden-Master und Wiedergabe gebrochen, also eine Textänderung zu einer Regeländerung
+gemacht. Der Filter fasst den Zustand nicht an.
+
+**Die Positivliste** ist dieselbe, die die Zeitung gedruckt hätte: Kriegserklärung, Wechsel
+des diplomatischen Zustands, Eroberung, Verlust einer Hauptstadt, Aufstand, ausgeschiedene
+Macht, entschiedene Schlacht, Partieende. Sie steht als Datum neben dem Filter, nicht als
+`if` in der Anzeige — dieselbe Liste beantwortet später auch die Frage, was Lektüre ist und
+was Alarm (D19.1).
+
+**Die eine Regel, die der Filter braucht:** Weltgeschehen zeigt auch, was **zwischen fremden
+Mächten** geschieht, hält aber niemandes Vorspulen an. Das ist genau die Unterscheidung aus
+D19.1 — öffentlich heißt sichtbar, nicht dringend. Ohne sie würde die Eroberung zweier
+Unbeteiligter am anderen Ende der Welt den Spieler aus seinem Vorspulen reißen, und
+R-TIME-06/AK2 wäre gebrochen, kaum dass es gebaut ist.
