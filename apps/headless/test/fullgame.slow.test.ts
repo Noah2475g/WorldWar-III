@@ -43,21 +43,43 @@ const map = load('data/maps/world.json') as MapData
 /** Obergrenze: ohne sie wäre ein hängendes Spiel ein ewig laufender Test. */
 const MAX_DAYS = 1500
 
+/**
+ * Gibt die Ereignisschleife frei.
+ *
+ * Keine Nettigkeit: eine Simulation ist ein synchroner Block, und ein Prozess, der
+ * Minuten darin verbringt, antwortet währenddessen auf nichts. Der Testläufer hält das
+ * für einen hängenden Worker und meldet `Timeout calling "onTaskUpdate"` — bei einem Lauf,
+ * dessen Messungen sämtlich richtig sind. Der Parameterlauf hat diese Lehre schon
+ * gezogen (`sweep.ts`); hier gilt sie genauso.
+ */
+const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
 describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () => {
-  it('kommt zu einem Ausgang, und unterwegs geschieht etwas', () => {
+  it('kommt zu einem Ausgang, und unterwegs geschieht etwas', async () => {
     const config = toConfig(DEFAULT_NEW_GAME, map)
     const ki = config.players.filter((player) => player.kind === 'ai').length
     expect(ki, 'AK-1 verlangt mindestens vier KI-Gegner').toBeGreaterThanOrEqual(4)
 
-    const state = createInitialState(config, { map, rules })
+    let current = createInitialState(config, { map, rules })
     const ticksPerDay = rules.constants.ticksPerDay
 
-    const result = advanceTicks(state, MAX_DAYS * ticksPerDay, { map, rules })
+    // In Abschnitten, mit einem Atemzug dazwischen — siehe `breathe` oben.
+    const events: { type: string }[] = []
+    const CHUNK_DAYS = 50
+    for (let day = 0; day < MAX_DAYS; day += CHUNK_DAYS) {
+      const chunk = advanceTicks(current, CHUNK_DAYS * ticksPerDay, { map, rules })
+      current = chunk.state
+      events.push(...chunk.events)
+      if (current.victory.winner !== null) break
+      await breathe()
+    }
+
+    const result = { state: current }
     const tag = Math.floor(result.state.tick / ticksPerDay)
 
-    const kriege = result.events.filter((event) => event.type === 'WAR_DECLARED').length
-    const eroberungen = result.events.filter((event) => event.type === 'PROVINCE_CAPTURED').length
-    const kaempfe = result.events.filter((event) => event.type === 'BATTLE_RESOLVED').length
+    const kriege = events.filter((event) => event.type === 'WAR_DECLARED').length
+    const eroberungen = events.filter((event) => event.type === 'PROVINCE_CAPTURED').length
+    const kaempfe = events.filter((event) => event.type === 'BATTLE_RESOLVED').length
 
     // Der Bericht wird immer geschrieben, auch wenn die Zusicherungen greifen — eine
     // gescheiterte Abnahme ist die Messung, die man dann am dringendsten braucht.

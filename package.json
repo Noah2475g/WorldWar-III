@@ -19,6 +19,7 @@
     "build": "tsc --noEmit && echo build-ok",
     "map:build": "node scripts/build-map.mjs",
     "sim:long": "vitest run --config vitest.slow.config.ts apps/headless/test/longrun.slow.test.ts",
+    "sim:fullgame": "vitest run --config vitest.slow.config.ts apps/headless/test/fullgame.slow.test.ts",
     "sim:tournament": "vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts",
     "bench": "vitest run --config vitest.slow.config.ts packages/core/test/perf",
     "balance:sweep": "vitest run --config vitest.slow.config.ts apps/headless/test/sweep.slow.test.ts",

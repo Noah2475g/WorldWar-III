@@ -1236,13 +1236,13 @@ tasks:
   - id: T-M14-14
     milestone: M14
     title: Der Abnahmetest, den AK-1 immer gebraucht haette
-    status: todo
+    status: done
     deps: [T-M14-01, T-M14-04, T-M14-05, T-M14-06, T-M14-07, T-M14-11, T-M14-12]
     requirements: [R-GAME-02]
     acceptance: [AK-1]
-    files: [scripts/acceptance.mjs, package.json, docs/plan/02-DESIGN.md, docs/reports/ak1-full-game.md, docs/reports/acceptance.md]
-    tests: [apps/headless/test/full-game.slow.test.ts, test/scripts.test.ts]
-    dod: "pnpm sim:fullgame gruen mit der Voreinstellung aus DEFAULT_NEW_GAME/toConfig (keine eigene Spielerliste im Test): winner !== null spaetestens am Spieltag 1500, mindestens vier KI-Maechte, mindestens ein WAR_DECLARED, ein BATTLE_RESOLVED und ein PROVINCE_CAPTURED, laengstes Fenster ohne Fortschrittsereignis unter 100 Spieltagen, Laufzeit unter 15 Minuten; docs/reports/ak1-full-game.md nennt Sieger, Entscheidungstag, Ereigniszahlen und Stillstandsfenster; docs/reports/acceptance.md fuehrt AK-1 als eigene Zeile mit pnpm sim:fullgame und keine Zeile mehr als AK-1/4/6; pnpm verify gruen. Entscheidet der Lauf nicht, wird der Deckel nicht erhoeht, sondern der Befund nach docs/plan/PROBLEME.md geschrieben - die erste Handlung dieses Tests darf nicht sein, sich selbst gruen zu stellen; die richtige Frage waere dann, ob pointsShareToWin oder die voreingestellte Siegbedingung falsch ist"
+    files: [scripts/acceptance.mjs, package.json, docs/plan/02-DESIGN.md, docs/reports/fullgame.json, docs/reports/acceptance.md]
+    tests: [apps/headless/test/fullgame.slow.test.ts, test/scripts.test.ts]
+    dod: "pnpm sim:fullgame gruen mit der Voreinstellung aus DEFAULT_NEW_GAME/toConfig (keine eigene Spielerliste im Test): winner !== null spaetestens am Spieltag 1500, mindestens vier KI-Maechte, mindestens ein WAR_DECLARED, ein BATTLE_RESOLVED und ein PROVINCE_CAPTURED, laengstes Fenster ohne Fortschrittsereignis unter 100 Spieltagen, Laufzeit unter 15 Minuten; docs/reports/fullgame.json nennt Sieger, Entscheidungstag, Ereigniszahlen und Stillstandsfenster; docs/reports/acceptance.md fuehrt AK-1 als eigene Zeile mit pnpm sim:fullgame und keine Zeile mehr als AK-1/4/6; pnpm verify gruen. Entscheidet der Lauf nicht, wird der Deckel nicht erhoeht, sondern der Befund nach docs/plan/PROBLEME.md geschrieben - die erste Handlung dieses Tests darf nicht sein, sich selbst gruen zu stellen; die richtige Frage waere dann, ob pointsShareToWin oder die voreingestellte Siegbedingung falsch ist"
 
   # T-M14-15 ist der vierte Haltepunkt, traegt aber mit Absicht noch KEINEN gate:-Block.
   # Die Gate-Liste in test/plan-consistency.test.ts ist hart verdrahtet auf drei Eintraege;

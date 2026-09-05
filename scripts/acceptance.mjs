@@ -44,7 +44,25 @@ function check(id, description, condition, detail) {
 console.log('Abnahmelauf WorldWar V1\n')
 
 run('AK-2/3', 'pnpm verify (Lint, Typen, Tests, Guards, Abdeckung)', 'pnpm verify')
-run('AK-1/4/6', 'pnpm test:slow (Langläufe, Turnier, Budgets)', 'pnpm test:slow')
+run('AK-4/6', 'pnpm test:slow (Langläufe, Turnier, Budgets)', 'pnpm test:slow')
+
+// AK-1 hat seit T-M14-14 eine eigene Zeile — vorher stand es in der Sammelzeile oben und
+// wurde von keinem einzigen Test berührt: die einzigen `winner`-Zusicherungen im Bestand
+// waren ein Zweispieler-Einheitstest und ein Determinismusvergleich. Das erste und
+// wichtigste Abnahmekriterium galt als bestanden, weil daneben etwas anderes lief.
+const fullgamePath = join(ROOT, 'docs/reports/fullgame.json')
+if (existsSync(fullgamePath)) {
+  const game = JSON.parse(readFileSync(fullgamePath, 'utf8'))
+  check(
+    'AK-1',
+    `Vollständige Partie: ${game.ai} KI-Gegner, entschieden an Tag ${game.decidedOnDay ?? '—'}` +
+      ` (${game.captures} Eroberungen, ${game.warDeclarations} Kriegserklärungen)`,
+    game.decidedOnDay !== null && game.ai >= 4 && game.captures > 0,
+    `Sieger ${game.winner ?? 'keiner'}`,
+  )
+} else {
+  check('AK-1', 'Vollständige Partie: kein Bericht (pnpm sim:fullgame läuft nicht)', false)
+}
 const coverage = run('AK-2', 'pnpm coverage:requirements (Anforderungs-Tor)', 'pnpm coverage:requirements')
 
 // AK-3: die gemessene Abdeckung aus dem letzten verify-Lauf.

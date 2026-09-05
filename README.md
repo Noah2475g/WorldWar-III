@@ -5,11 +5,22 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-04): **V1 gebaut, Oberfläche ausgebaut (M13)** — 99 von 100 Aufgaben, alle
-82 Anforderungen testbelegt, Abnahmelauf maschinell bestanden. Offen ist allein der
-Playtest durch Noah ([`docs/PLAYTEST.md`](docs/PLAYTEST.md)); Anleitung in
-[`docs/ANLEITUNG.md`](docs/ANLEITUNG.md), was M13 gemessen verändert hat in
-[`docs/reports/ui-expansion.md`](docs/reports/ui-expansion.md).
+Status (2026-09-06): **V1 gebaut, in Reparatur vor der Abnahme (M14).**
+
+Eine Auswertung am 2026-09-05 fand 68 bestätigte Befunde, darunter sieben Blocker: kein
+Spielstand überlebte das Schließen des Fensters, der Stapel-Deckel machte Armeen ab 50
+Einheiten wertlos, das Anforderungstor war rot, AK-1 prüfte kein Test, und das Spiel hatte
+keine Schrift. Nachzulesen in [`docs/reports/audit-2026-09-05.md`](docs/reports/audit-2026-09-05.md)
+— samt dem, was das Verfahren selbst nicht abdeckt.
+
+**M14 macht den Bericht über das Spiel wieder wahr**, statt neue Mechanik zu bauen: 13 von
+16 Aufgaben sind fertig, `pnpm verify` grün, das Anforderungstor meldet wieder
+`V1 offen: 0`. Offen sind die Schrift (braucht eine Entscheidung, siehe
+[`docs/plan/PROBLEME.md`](docs/plan/PROBLEME.md)) und **Noahs Playtest**
+([`docs/PLAYTEST.md`](docs/PLAYTEST.md)). Danach folgt M15 „Die KI wird ein Gegner".
+
+Anleitung in [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md), Plan in
+[`docs/plan/03-TASKS.md`](docs/plan/03-TASKS.md).
 
 ```bash
 pnpm install
