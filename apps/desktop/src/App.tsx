@@ -210,8 +210,8 @@ export function App(props: AppProps) {
   // Eine entschiedene Partie laeuft nicht weiter: die Uhr haelt an, sobald ein Sieger
   // feststeht (R-UI-13). Das Fenster darf man schliessen, die Uhr bleibt stehen.
   useEffect(() => {
-    if (view?.victory.winner) setSpeed(0)
-  }, [view?.victory.winner])
+    if (view?.victory.winner || view?.self.alive === false) setSpeed(0)
+  }, [view?.victory.winner, view?.self.alive])
 
   // Once it has run its course it never comes back — the same promise as the button.
   useEffect(() => {
@@ -831,12 +831,18 @@ export function App(props: AppProps) {
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}
-      {view.victory.winner !== null && !victoryAcknowledged && (
+      {(view.victory.winner !== null || !view.self.alive) && !victoryAcknowledged && (
         <VictoryDialog
           view={view}
           nameOf={nameOf}
           ticksPerDay={ticksPerDay}
           onClose={() => setVictoryAcknowledged(true)}
+          onNewGame={() => {
+            // Der Weg zurueck zum Startdialog. Ohne ihn war nach der ersten Partie
+            // Schluss, bis jemand das Programm neu startete (T-M14-10, Befund 37).
+            setVictoryAcknowledged(true)
+            setDialog('new')
+          }}
         />
       )}
     </div>

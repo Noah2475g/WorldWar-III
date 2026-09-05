@@ -114,14 +114,21 @@ export function VictoryDialog({
   nameOf,
   ticksPerDay,
   onClose,
+  onNewGame,
 }: {
   view: PublicView
   nameOf: (id: string) => string
   ticksPerDay: number
   onClose: () => void
+  /** Eine zweite Partie. Ohne diesen Weg war nach der ersten Schluss (Befund 37). */
+  onNewGame?: (() => void) | undefined
 }) {
   const winner = view.victory.winner
   const own = winner === view.playerId
+  // Die eigene Niederlage ist ein Ausgang, auch wenn die Partie weiterlaeuft (T-M14-10,
+  // Befund N4). Der Kern setzt einen Sieger erst, wenn genau eine Macht uebrig ist —
+  // scheidet der Mensch als einer von acht aus, erfuhr er es bis heute gar nicht.
+  const eliminated = !view.self.alive
   const provinces = view.provinces.filter((province) => province.owner === view.playerId).length
 
   return (
@@ -132,7 +139,11 @@ export function VictoryDialog({
         </div>
         <div className="dialog__body">
           <p className={own ? 'state' : 'state state--war'}>
-            {own ? t('standings.won') : t('standings.lost', { nation: winner ? nameOf(winner) : '—' })}
+            {own
+              ? t('standings.won')
+              : eliminated && !winner
+                ? t('standings.eliminated')
+                : t('standings.lost', { nation: winner ? nameOf(winner) : '—' })}
           </p>
           <p className="facts__inline">
             {t('standings.summary', {
@@ -142,7 +153,12 @@ export function VictoryDialog({
             })}
           </p>
           <div className="actions">
-            <button type="button" className="button button--primary" onClick={onClose}>
+            {onNewGame && (
+              <button type="button" className="button button--primary" onClick={onNewGame}>
+                {t('standings.newGame')}
+              </button>
+            )}
+            <button type="button" className="button" onClick={onClose}>
               {t('standings.close')}
             </button>
           </div>

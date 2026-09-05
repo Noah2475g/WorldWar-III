@@ -86,6 +86,15 @@ export interface PublicView {
   self: {
     name: string
     nation: string
+    /**
+     * Ist der Spieler noch im Spiel? (T-M14-10, Befund N4)
+     *
+     * Der Abschlussdialog haengt an `victory.winner`, und den setzt der Kern erst, wenn
+     * genau eine Macht uebrig ist. Scheidet der Mensch als einer von acht aus, bleibt
+     * `winner` null: das Spiel tickt weiter, er hat keine Provinz, keine Armee und kein
+     * Wort dazu. Die Oberflaeche konnte es nicht einmal wissen.
+     */
+    alive: boolean
     resources: Record<ResourceKey, Fixed>
     shortages: readonly ResourceKey[]
     capitalProvinceId: ProvinceId | null
@@ -264,6 +273,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     self: {
       name: player.name,
       nation: player.nation,
+      alive: player.alive,
       resources: { ...player.resources },
       shortages: [...player.shortages],
       capitalProvinceId: player.capitalProvinceId,

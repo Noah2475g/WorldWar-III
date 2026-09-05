@@ -461,6 +461,12 @@ export const de = {
     diplomacy: 'Verträge',
   },
 
+  error: {
+    title: 'Das Spiel ist auf einen Fehler gelaufen',
+    body: 'Etwas in der Oberflaeche hat aufgegeben. Die Partie selbst ist davon nicht betroffen — der letzte automatische Spielstand liegt weiterhin in der Liste.',
+    hint: 'Bitte den Text oben weitergeben, wenn der Fehler wiederkehrt. Er wird nirgendwohin gesendet.',
+    reload: 'Neu laden',
+  },
   standings: {
     title: 'Lage',
     points: 'Punkte',
@@ -470,7 +476,9 @@ export const de = {
     open: 'Lage',
     victoryTitle: 'Die Partie ist entschieden',
     won: 'Sie haben gewonnen.',
+    newGame: 'Neue Partie',
     lost: '{{nation}} hat gewonnen.',
+    eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie laeuft ohne Sie weiter.',
     summary: 'Tag {{day}} · {{points}} Punkte · {{provinces}} Provinzen',
     close: 'Karte ansehen',
   },

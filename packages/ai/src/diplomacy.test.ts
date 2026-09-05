@@ -31,6 +31,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
     self: {
       name: 'KI',
       nation: 'Ostmark',
+      alive: true,
       resources: zeroResources(),
       shortages: [],
       capitalProvinceId: 'home',

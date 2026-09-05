@@ -705,3 +705,48 @@ diese Akte hält fest, warum er dort und nicht hier steht. Die beiden anderen
 Beschuss-Vorbedingungen aus derselben Aufgabe — der Diplomatiefilter (Befund 51) und die
 leeren Armee-Hüllen (Befund 53) — sind am 2026-09-06 **behoben**, weil sie den heutigen
 Handbeschuss betreffen und nichts an der Reihenfolge ändern.
+
+---
+
+## 2026-09-06 · T-M14-09 · Das Spiel hat keine Schrift — und die Aufgabe braucht eine Entscheidung
+
+**Befund (N1 des Audits, bestätigt):** `git ls-files` mit Asset-Muster liefert **null
+Treffer** — das Repository trackt keine einzige Schriftdatei. Es gibt kein `@font-face`,
+keinen `<link>`, nichts. Gleichzeitig verlangt `apps/desktop/src/ui/tokens.ts` IBM Plex in
+drei Schnitten, und `docs/ASSETS.md` behauptet: *„die Anwendung bettet die Schriftdateien
+ein, damit sie ohne Netz funktioniert (R-FREE-04)"*.
+
+Ausgeliefert wird also der Rückfall des Stacks: `system-ui`. Das freigegebene Mockup
+(`docs/design/ui-mockup.html`) lädt IBM Plex von Google Fonts und sieht damit nachweislich
+anders aus als das Spiel auf jedem Rechner ohne installiertes IBM Plex. **Playtest-Frage 1
+lautet „Sieht das Spiel aus wie die freigegebene Richtung A?" — sie wird heute gegen eine
+andere Schrift beantwortet.**
+
+**Warum drei Wächter das durchgewinkt haben:** `test/guards/no-foreign-assets.test.ts`
+prüft (a) „jede eingecheckte Asset-Datei steht in ASSETS.md" — über einer leeren Menge
+trivial wahr; (b) „ASSETS.md nennt die Familien" — tut sie; (c) „die Anwendung lädt nichts
+nach" — tut sie nicht, sie hat nichts. Drei grüne Zusicherungen, und das Erzeugnis hat
+keine Schrift. *Ein Wächter über einer leeren Menge ist immer grün.*
+
+**Status: offen, Entscheidung steht aus — und zwar bei Noah.** Der Bau verlangt, vier
+`.woff2`-Dateien (IBM Plex Sans, Sans Condensed, Mono, dazu die OFL-Lizenzdatei, zusammen
+rund 300 kB) von `github.com/IBM/plex` **herunterzuladen und einzuchecken**. Ein Download
+aus einer externen Quelle ist nichts, was ich ungefragt tue.
+
+Zwei Wege:
+
+- **(a) IBM Plex einbetten** — hält die Design-Freigabe ein, das Spiel sieht überall gleich
+  aus, und `R-FREE-04` (kein Netz zur Laufzeit) bleibt erfüllt, weil die Dateien mitkommen.
+  Kosten: rund 300 kB im Repository, ein Skript `scripts/fetch-fonts.mjs` mit Prüfsummen,
+  ein `@font-face`-Block. **Braucht Noahs Freigabe für den Download.**
+- **(b) Auf Systemschriften umstellen** — `tokens.ts` verlangt nur noch, was jedes System
+  hat; `ASSETS.md` nimmt die Zusage zurück; das Design-Gate wird auf den neuen Stand
+  nachgeführt. Kostet nichts, sieht aber nicht aus wie das freigegebene Mockup.
+
+**Vorschlag: (a).** Das Design-Gate war eine ausdrückliche Freigabe auf ein Bild, und die
+Schrift trägt daran mehr als die Farben — Richtung A lebt von der schmalen Kartenschrift.
+
+Bis zur Entscheidung bleibt der Wächter, wie er ist. Ihn jetzt zu schärfen hieße, `pnpm
+verify` rot zu machen und damit alles Weitere aufzuhalten — dieselbe Falle wie bei der
+Turnier-Obergrenze (T-M14-05). **Zur Aufgabe gehört ab jetzt beides:** die Schriften *und*
+ein Wächter, der eine leere Asset-Menge nicht mehr für Erfüllung hält.

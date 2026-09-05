@@ -209,3 +209,22 @@ describe('R-UI-09 Die Sicht sagt, seit wann eine Armee marschiert', () => {
     expect(seen?.departureTick).toBeUndefined()
   })
 })
+
+describe('R-UI-13 Die Sicht sagt, ob man selbst noch im Spiel ist', () => {
+  it('meldet die eigene Niederlage', () => {
+    // Befund N4: Der Abschlussdialog haengt an `victory.winner`, und den setzt der Kern
+    // erst, wenn genau EINE Macht uebrig ist. Scheidet der Mensch als einer von acht aus,
+    // bleibt winner null — das Spiel tickt weiter, ohne Provinz, ohne Armee, ohne ein
+    // Wort. Die Oberflaeche kann das bis heute gar nicht wissen: `self` fuehrt kein
+    // `alive`, und `grep -c alive App.tsx` ergibt 0.
+    const state = createInitialState(CONFIG, ctx)
+    state.players['p1']!.alive = false
+
+    expect(publicView(state, 'p1').self.alive).toBe(false)
+  })
+
+  it('meldet, solange man lebt, dass man lebt', () => {
+    const state = createInitialState(CONFIG, ctx)
+    expect(publicView(state, 'p1').self.alive).toBe(true)
+  })
+})

@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { parseRules } from '@worldwar/core'
 import type { MapData } from '@worldwar/core'
 import { App } from './App.tsx'
@@ -41,7 +42,11 @@ const root = document.getElementById('root')
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <App map={worldMap as unknown as MapData} rules={rules} maps={maps} />
+      {/* Ohne diese Grenze ergibt jeder Renderfehler eine weisse Flaeche ohne Hinweis
+          (T-M14-10, Befund N6). */}
+      <ErrorBoundary>
+        <App map={worldMap as unknown as MapData} rules={rules} maps={maps} />
+      </ErrorBoundary>
     </StrictMode>,
   )
 }
