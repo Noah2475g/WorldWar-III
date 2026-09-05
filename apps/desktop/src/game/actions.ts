@@ -105,6 +105,26 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
 }
 
 /**
+ * Ein Knopf je laufendem Bauvorhaben, um es abzubrechen (T-M14-13, Befund 36).
+ *
+ * `CANCEL_BUILD` gibt es seit M3 — gebaut, getestet, benannt und von keinem Element der
+ * Oberflaeche erreichbar. Und zwar strukturell: der Befehl braucht die Kennung des
+ * Auftrags, und die Sicht fuehrte sie nicht. Wer sich vergriffen hatte, musste zusehen,
+ * wie die Kaserne fertig wurde, die er nicht mehr wollte.
+ */
+export function cancelActions(ctx: ActionContext, provinceId: string): ActionSpec[] {
+  const province = ctx.state.provinces[provinceId]
+  return (province?.buildQueue ?? []).map((order) =>
+    checked(
+      ctx,
+      { type: 'CANCEL_BUILD', playerId: ctx.playerId, provinceId, orderId: order.id } as never,
+      `cancel-${order.id}`,
+      t('province.cancelBuild', { building: t(`buildings.${order.building}`) }),
+    ),
+  )
+}
+
+/**
  * One button per unit. The hint carries what the core will do with the province's
  * morale: how long the levy takes, and how strong it arrives — a demoralised province
  * raises weak soldiers, and the player should know before paying.
@@ -203,6 +223,10 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     stop,
     stance('aggressive', t('army.stanceAggressive')),
     stance('defensive', t('army.stanceDefensive')),
+    // Der Rueckzug war die einzige Kampfhandlung, die die KI befehlen konnte und der
+    // Spieler nicht (T-M14-13, Befund 8): die Hilfsfunktion ist ueber den vollen
+    // Stance-Typ generisch, aufgerufen wurde sie mit zwei von drei Werten.
+    stance('retreat', t('army.stanceRetreat')),
     merge,
     split,
     bombard,

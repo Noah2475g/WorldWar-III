@@ -1226,10 +1226,10 @@ tasks:
   - id: T-M14-13
     milestone: M14
     title: Was der Kern kann, muss der Spieler erreichen
-    status: todo
+    status: done
     deps: [T-M14-12]
     requirements: [R-UI-05, R-UI-08, R-BAT-05, R-BAT-07, R-GAME-01, R-AI-05, R-DIP-04]
-    files: [test/guards/ui-command-coverage.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/game/events.ts, apps/desktop/src/game/advance.ts, apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/main.tsx, packages/core/src/view/publicView.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/game/events.ts, apps/desktop/src/game/advance.ts, apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/main.tsx, packages/core/src/view/publicView.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
     tests: [test/guards/ui-command-coverage.test.ts, apps/desktop/src/game/actions.test.ts, apps/desktop/src/game/events.test.ts, apps/desktop/src/game/advance.test.ts, apps/desktop/src/game/newGame.test.ts, apps/desktop/src/App.test.tsx, packages/core/src/view/publicView.test.ts]
     dod: "Diese Aufgabe besitzt ausschliesslich die Kommandoabdeckung - Fehlerfall, Niederlagendialog und der Neustart einer zweiten Partie liegen bei T-M14-10, und apps/desktop/src/ui/Dialogs.tsx und apps/desktop/src/i18n/de.ts gehoeren nicht in diese Dateiliste. Der Waechter findet fuer jeden im Kern registrierten Kommandotyp (12 von 12) und jede Variante von Stance (3), DiplomacyAction (8), BuildingKey und den Einheitenschluesseln einen Erzeuger in der Oberflaeche, in beide Richtungen geprueft und aus den Laufzeit-Registrierungen gelesen statt aus einer dritten Liste; UI_COVERAGE_EXCEPTIONS enthaelt genau einen Eintrag (victory time) mit Begruendung und Verweis auf DECISIONS.md, weil T-M14-03 den Zeitsieg zurueckgenommen hat - wer die Liste spaeter leert, baut eine zurueckgenommene Zusage; pnpm verify und pnpm coverage:requirements gruen; die Playtest-Frage zu Kartenwahl und Debug-Ansicht ist mit nein beantwortbar"
 

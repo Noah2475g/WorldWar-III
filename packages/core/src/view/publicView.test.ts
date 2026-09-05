@@ -55,8 +55,12 @@ describe('R-UI-09 Die Sicht nennt, was gerade laeuft', () => {
 
     const seen = publicView(state, 'p1', TEST_RULES).provinces.find((p) => p.id === id)
 
-    // Anfang und Ende: ein Fortschrittsbalken braucht beide Enden.
-    expect(seen?.buildQueue).toEqual([{ building: 'barracks', startedTick: 0, completesAtTick: 48 }])
+    // Anfang und Ende: ein Fortschrittsbalken braucht beide Enden. Und die Kennung, ohne
+    // die `CANCEL_BUILD` nicht zu bilden ist — der Befehl war seit M3 gebaut, getestet
+    // und aus genau diesem Grund unerreichbar (T-M14-13, Befund 36).
+    expect(seen?.buildQueue).toEqual([
+      { id: 'o1', building: 'barracks', startedTick: 0, completesAtTick: 48 },
+    ])
     // The length stays as it was; a display that already reads it keeps working.
     expect(seen?.buildQueueLength).toBe(1)
   })

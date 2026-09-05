@@ -52,7 +52,11 @@ export interface VisibleProvince {
    * version of this field left it out on the grounds that "a display needs the end,
    * not the paperwork", which turned out to be exactly wrong.
    */
-  buildQueue?: { building: BuildingKey; startedTick: Tick; completesAtTick: Tick }[]
+  /**
+   * Die Kennung gehoert dazu (T-M14-13): ohne sie kann die Oberflaeche CANCEL_BUILD
+   * nicht bilden, und der Befehl war seit M3 gebaut, getestet und unerreichbar.
+   */
+  buildQueue?: { id: string; building: BuildingKey; startedTick: Tick; completesAtTick: Tick }[]
   /** The same for levies being raised. */
   recruitQueue?: { unitKey: string; count: number; startedTick: Tick; completesAtTick: Tick }[]
   /**
@@ -207,6 +211,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
               ...(rules
                 ? {
                     buildQueue: province.buildQueue.map((order) => ({
+                      id: order.id,
                       building: order.building,
                       startedTick: order.startedTick,
                       completesAtTick: order.completesAtTick,

@@ -66,6 +66,18 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
   if (typeof record.targetPlayerId === 'string') values.target = playerName(record.targetPlayerId)
   if ('victor' in record || 'winner' in record) values.winner = playerName(record.victor ?? record.winner)
 
+  // Die Verluste beider Seiten (T-M14-13, Befund 9). `losses` ist ein Objekt und fiel
+  // aus der Schleife oben still heraus, die nur flache Werte übernimmt: der Spieler
+  // erfuhr nach einem Gefecht nur, wer das Feld behauptet — nicht, was es gekostet hat.
+  // R-BAT-07 verlangt den Bericht seit M4.
+  if (record.losses && typeof record.losses === 'object') {
+    const parts = Object.entries(record.losses as Record<string, number>)
+      .filter(([, value]) => typeof value === 'number' && value > 0)
+      .sort(([a], [b]) => a.localeCompare(b, 'de'))
+      .map(([id, value]) => `${playerName(id)} ${amount(value)}`)
+    values.losses = parts.length > 0 ? parts.join(', ') : t('events_ui.noLosses')
+  }
+
   if (typeof record.resource === 'string') values.resource = t(`resources.${record.resource}`)
   if (typeof record.give === 'string') values.give = t(`resources.${record.give}`)
   if (typeof record.want === 'string') values.want = t(`resources.${record.want}`)

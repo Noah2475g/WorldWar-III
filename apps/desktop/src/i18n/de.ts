@@ -183,6 +183,7 @@ export const de = {
     days: '{{count}} Tage',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
+    cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',
     acceptPeace: 'Frieden annehmen',
@@ -231,7 +232,8 @@ export const de = {
     ARMY_DESTROYED: '{{army}} ist vernichtet.',
     ARMY_RETREATED: '{{army}} hat sich nach {{province}} zurückgezogen.',
     BATTLE_STARTED: 'Gefecht bei {{province}}.',
-    BATTLE_RESOLVED: '{{province}}: Gefecht entschieden — {{winner}} behauptet das Feld.',
+    BATTLE_RESOLVED:
+      '{{province}}: Gefecht entschieden — {{winner}} behauptet das Feld. Verluste: {{losses}}.',
     BOMBARDMENT: '{{province}} wird beschossen.',
     PROVINCE_CAPTURED: '{{province}} ist gefallen und gehört jetzt {{player}}.',
     PROVINCE_REVOLTED: '{{province}} hat sich erhoben.',
@@ -347,6 +349,7 @@ export const de = {
   events_ui: {
     title: 'Ereignisse',
     empty: 'Noch nichts geschehen.',
+    noLosses: 'keine',
     jumpTo: 'Zur Provinz springen',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',

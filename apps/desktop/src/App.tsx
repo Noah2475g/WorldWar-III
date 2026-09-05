@@ -14,6 +14,7 @@ import { advance } from './game/advance.ts'
 import {
   armyActions,
   buildActions,
+  cancelActions,
   capitalAction,
   diplomacyActions,
   ownArmiesIn,
@@ -554,6 +555,17 @@ export function App(props: AppProps) {
         title: t('actions.recruitGroup'),
         actions: recruitActions(ctx, selected.id).map((spec) => toAction(spec)),
       },
+      // Laufende Bauvorhaben abbrechen (T-M14-13, Befund 36). Die Gruppe entfaellt,
+      // wenn nichts gebaut wird — ein leerer Kasten ist keine Auskunft.
+      ...(cancelActions(ctx, selected.id).length > 0
+        ? [
+            {
+              id: 'cancel',
+              title: t('actions.cancelGroup'),
+              actions: cancelActions(ctx, selected.id).map((spec) => toAction(spec)),
+            },
+          ]
+        : []),
     ]
   }, [ctx, selected, toAction])
 

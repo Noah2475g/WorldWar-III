@@ -194,3 +194,46 @@ describe('R-UI-07 Keine Kennung erreicht das Protokoll', () => {
     expect(entry.text).toBe('400 Material gegen 250 Eisen getauscht.')
   })
 })
+
+describe('R-BAT-07 Der Kampfbericht nennt die Verluste beider Seiten', () => {
+  const naming = { player: (id: string) => (id === 'p1' ? 'Deutschland' : 'Frankreich') }
+
+  it('nennt beide Seiten mit ihren Verlusten', () => {
+    // Befund 9: Der Kern erzeugt BATTLE_RESOLVED mit `losses: Record<PlayerId, Fixed>`
+    // seit M4. Die Anwendung uebernahm in die Textwerte nur flache Zahlen und
+    // Zeichenketten — `losses` ist ein Objekt und fiel still heraus. Der Spieler erfuhr
+    // nach einem Gefecht nur, wer das Feld behauptet, nicht was es gekostet hat, und
+    // R-BAT-07 ('Kampfbericht mit Verlusten beider Seiten, nachlesbar') war damit im
+    // Kern erfuellt und in der Oberflaeche gar nicht gebaut.
+    const entry = describeEvent(
+      event({ type: 'BATTLE_RESOLVED', provinceId, victor: 'p1', losses: { p1: 3000, p2: 12_000 } }),
+      0,
+      map,
+      naming,
+    )
+
+    expect(entry.text).toContain('Deutschland')
+    expect(entry.text).toContain('Frankreich')
+    expect(entry.text).toMatch(/Verluste/)
+  })
+
+  it('sagt es, wenn niemand etwas verloren hat', () => {
+    const entry = describeEvent(
+      event({ type: 'BATTLE_RESOLVED', provinceId, victor: 'p1', losses: {} }),
+      0,
+      map,
+      naming,
+    )
+    expect(entry.text).toMatch(/keine/)
+  })
+
+  it('laesst keine Kennung durch', () => {
+    const entry = describeEvent(
+      event({ type: 'BATTLE_RESOLVED', provinceId, victor: 'p1', losses: { p1: 100, p2: 200 } }),
+      0,
+      map,
+      naming,
+    )
+    expect(entry.text).not.toMatch(/\bp1\b|\bp2\b/)
+  })
+})

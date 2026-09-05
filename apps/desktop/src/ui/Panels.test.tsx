@@ -142,7 +142,7 @@ describe('R-UI-09 Moral als Balken mit Trend', () => {
 describe('R-UI-09 Was gerade entsteht, zeigt seinen Fortschritt', () => {
   const building = (startedTick: number, completesAtTick: number): VisibleProvince => ({
     ...province,
-    buildQueue: [{ building: 'barracks', startedTick, completesAtTick }],
+    buildQueue: [{ id: 'b1', building: 'barracks', startedTick, completesAtTick }],
     buildQueueLength: 1,
   })
 

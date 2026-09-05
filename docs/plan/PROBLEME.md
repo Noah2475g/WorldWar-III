@@ -750,3 +750,34 @@ Bis zur Entscheidung bleibt der Wächter, wie er ist. Ihn jetzt zu schärfen hie
 verify` rot zu machen und damit alles Weitere aufzuhalten — dieselbe Falle wie bei der
 Turnier-Obergrenze (T-M14-05). **Zur Aufgabe gehört ab jetzt beides:** die Schriften *und*
 ein Wächter, der eine leere Asset-Menge nicht mehr für Erfüllung hält.
+
+---
+
+## 2026-09-06 · T-M14-12 · Die KI handelt erst, wenn der Mangel schon da ist
+
+**Befund (13 des Audits):** `tradeCommands` beginnt mit `if (shortages.length === 0)
+return []` — die KI tauscht also erst, wenn ein Vorrat bereits aufgebraucht ist und der
+Mangelzustand eingetreten. Gemessen: **in drei Probeläufen entstand kein einziges
+`TRADE`**, und keine Testzeile ruft `tradeCommands` überhaupt auf.
+
+Der Auslöser ist die falsche Größe. `view.self.shortages` meldet einen Ausfall, der schon
+stattgefunden hat; bis dahin sind Bauvorhaben gestoppt und Armeen ohne Nachschub. Ein
+Händler, der erst kauft, wenn er nichts mehr hat, handelt zu spät — und der Markt, den
+R-ECON-05 gebaut hat, bleibt für die halbe Welt totes Inventar.
+
+**Kleinster reproduzierbarer Fall:** eine Partie über 200 Spieltage, `TRADE_EXECUTED` in
+den Ereignissen zählen — null.
+
+**Der bessere Auslöser** (aus der Vollständigkeitskritik, Abschnitt 4): *WENN ich über der
+Rücklage einen Bestand halte, der meinen teuersten offenen Bauauftrag zum Marktpreis
+bezahlen würde, DANN tausche ich.* Die Sicht trägt seit T-M13-05 die Tagesbilanz je
+Rohstoff (`self.economy`), also ist auch „dieser Vorrat reicht noch N Tage" ohne neues
+Feld zu haben.
+
+**Status: offen, zugewiesen an T-M15-08** (R-AI-08, das Integrationstor). Dort wird die KI
+ohnehin über 200 Spieltage gemessen, und AK3 verlangt ausdrücklich, dass jede
+Schwierigkeitsstufe im Turnier Handelsereignisse erzeugt — „sonst ist die Mechanik für die
+KI tot". Diese Akte hält fest, dass der Grund bekannt ist und nicht gesucht werden muss.
+
+**Was T-M14-12 stattdessen gebaut hat**, weil es Vorbedingung für M15 war: Truppenmischung
+samt Artillerie, `SET_CAPITAL`, `MERGE_ARMIES` und `PublicView.incomingOffers`.
