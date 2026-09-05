@@ -1,6 +1,6 @@
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { defenceMultiplier, stackContribution } from '../rules/combat'
+import { defenceMultiplier, effectiveUnits, stackContribution } from '../rules/combat'
 import { armyHp } from '../state/army'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { GameState } from '../state/types'
@@ -137,7 +137,12 @@ describe('R-BAT-01 Stapelgrenze', () => {
     expect(stackContribution(80, TEST_RULES)).toBe(0)
   })
 
-  it('laesst 60 Einheiten nicht mehr ausrichten als 50', () => {
+  it('laesst 60 Einheiten nicht weniger ausrichten als 50', () => {
+    // Bis zum 2026-09-06 stand hier das Gegenteil ('nicht MEHR als 50'), und der Test war
+    // gruen — weil beide exakt null ausrichteten. Der Deckel wirkte als Faktor auf die
+    // ganze Armee statt auf die zusaetzliche Einheit: ab 50 Einheiten richtete eine Armee
+    // keinen Schaden mehr an, bei unveraendertem eigenem Verlust. Ein Test, der das
+    // festhielt, hat den Fehler nicht gefunden, sondern zementiert.
     const fifty = structuredClone(state)
     placeArmy(fifty, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 50_000 }] })
     placeArmy(fifty, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 30_000 }] })
@@ -148,12 +153,42 @@ describe('R-BAT-01 Stapelgrenze', () => {
 
     const lossesFifty = 30_000 - totalHp(step(fifty, [], ctx).state, 'p2')
     const lossesSixty = 30_000 - totalHp(step(sixty, [], ctx).state, 'p2')
-    expect(lossesSixty).toBeLessThanOrEqual(lossesFifty)
+    expect(lossesFifty, 'fuenfzig Einheiten richten nichts aus').toBeGreaterThan(0)
+    expect(lossesSixty).toBeGreaterThanOrEqual(lossesFifty)
   })
 
-  it('macht zwanzig Einheiten staerker als fuenfzig', () => {
-    // The sweet spot the original is built around.
-    expect(stackContribution(20, TEST_RULES)).toBeGreaterThan(stackContribution(45, TEST_RULES))
+  it('unterscheidet Grenzbeitrag und Gesamtbeitrag', () => {
+    // Belegt ist der GRENZBEITRAG: 'the strength added by additional units linearly drops
+    // to 0 %' (Referenz 6.4). Die einundzwanzigste Einheit traegt weniger bei als die
+    // erste, die fuenfzigste gar nichts — aber die Armee als Ganzes verliert dadurch
+    // nichts von dem, was ihre ersten zwanzig Einheiten leisten.
+    expect(stackContribution(20, TEST_RULES)).toBe(1000)
+    expect(stackContribution(50, TEST_RULES)).toBe(0)
+
+    // Der Gesamtbeitrag waechst und faellt nie: er laeuft auf ein Plateau zu.
+    expect(effectiveUnits(20, TEST_RULES)).toBe(20_000)
+    expect(effectiveUnits(50, TEST_RULES)).toBe(effectiveUnits(80, TEST_RULES))
+    expect(effectiveUnits(50, TEST_RULES)).toBeGreaterThan(effectiveUnits(20, TEST_RULES))
+  })
+
+  it('richtet mit mehr Einheiten nie weniger aus (Monotonie ueber die ganze Kurve)', () => {
+    // Der eigentliche Befund in einer Zusicherung. Gemessen ergab die alte Kurve:
+    // 20 -> 1501, 25 -> 1563 (Hoehepunkt), 30 -> 1502, 40 -> 1000, 49 -> 121, ab 50 -> 0.
+    const schaden = (einheiten: number): number => {
+      const fall = structuredClone(state)
+      placeArmy(fall, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: einheiten * 1000 }] })
+      placeArmy(fall, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+      return 10_000 - totalHp(step(fall, [], ctx).state, 'p2')
+    }
+
+    let vorher = -1
+    for (const n of [1, 5, 10, 20, 25, 30, 40, 49, 50, 60, 80]) {
+      const jetzt = schaden(n)
+      expect(jetzt, `${n} Einheiten richten weniger aus als die Stufe davor`).toBeGreaterThanOrEqual(
+        vorher,
+      )
+      vorher = jetzt
+    }
   })
 })
 

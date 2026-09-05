@@ -33,7 +33,8 @@ Alle Zahlen des Spiels mit Belegstatus. Quelle für Belegtes ist
 | Größe | Wert | Status | Herkunft |
 |---|---|---|---|
 | Streuung je Kampftick | ±10 %, keine Fehlschläge | belegt | Umbau 2023 |
-| Stapel-Deckel | 100 % bis 20 Einheiten, linear auf 0 % bis 50 | belegt | Umbau 2023 |
+| Stapel-Deckel, **Grenzbeitrag** | 100 % bis 20 Einheiten, linear auf 0 % bis 50 | belegt | Umbau 2023 |
+| Stapel-Deckel, **Gesamtbeitrag** | `n` bis 20, dann `n − (n−20)²/60`, Plateau bei 35 ab 50 | abgeleitet (Integral) | T-M14-06, 2026-09-06 |
 | Zustandsfaktor | 100 % Trefferpunkte → 100 % Schaden, 0 % → 50 % | belegt | Umbau 2023 |
 | Angriffs-/Verteidigungswerte je Einheit | **offen** | geschätzt | nach 2023 neu skaliert, nicht veröffentlicht |
 | Trefferpunkte je Einheit | **offen** | geschätzt | dieselbe Lücke |

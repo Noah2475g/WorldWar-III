@@ -412,11 +412,32 @@ Pro Kampftick (1 Spielstunde), für jede Seite S gleichzeitig:
       aufmarschFaktor  (während der Aufmarschverzögerung halbe Wirkung)
 
 2. Stapel-Deckel (die zentrale Balancing-Bremse):                                  [belegt]
-      anteil(n) = 1                        für n ≤ 20
-      anteil(n) = 1 − (n − 20)/30          für 20 < n < 50
-      anteil(n) = 0                        ab n ≥ 50
-   Der Bestwert liegt damit bei etwa 20 Einheiten je Armee; jenseits von 50 trägt keine
-   weitere Einheit mehr zum Schaden bei — sie kostet nur Unterhalt und fängt Schaden ab.
+
+   **Grenzbeitrag** — was die *nächste* Einheit noch beiträgt (`stackContribution`):
+      grenze(n) = 1                        für n ≤ 20
+      grenze(n) = 1 − (n − 20)/30          für 20 < n < 50
+      grenze(n) = 0                        ab n ≥ 50
+
+   **Gesamtbeitrag** — was die Armee als Ganzes wert ist, das Integral darüber
+   (`effectiveUnits`, das ist die Größe, mit der `sideAttackValue` rechnet):
+      wert(n) = n                          für n ≤ 20
+      wert(n) = n − (n − 20)²/60           für 20 < n < 50
+      wert(n) = 35                         ab n ≥ 50  (Plateau)
+
+   > **Die Unterscheidung ist nicht akademisch, sie hat das Spiel gekostet** (T-M14-06,
+   > Befund 3 des Audits). Bis zum 2026-09-06 multiplizierte `sideAttackValue` die **ganze**
+   > Armee mit dem *Grenz*beitrag. Gemessen ergab das: 20 Einheiten → 1501 Schaden,
+   > 25 → 1563 (Höhepunkt), 30 → 1502, 40 → 1000, 49 → 121, **ab 50 → exakt 0** — bei
+   > unverändertem eigenem Verlust und weiterlaufendem Unterhalt. Jede Einheit jenseits der
+   > fünfundzwanzigsten machte eine Armee *schwächer*, und die KI, die Verbände zusammenlegt,
+   > lief genau hinein. Ein Deckel begrenzt das Wachstum; er bestraft nicht die Größe.
+   >
+   > Für Armeen bis zwanzig Einheiten sind beide Fassungen **identisch** — deshalb blieb der
+   > Golden-Master beim Umbau unverändert gültig.
+
+   Der Bestwert liegt weiterhin bei etwa 20 Einheiten je Armee: darüber trägt jede weitere
+   Einheit weniger bei als die davor, ab 50 gar nichts mehr — sie kostet dann nur noch
+   Unterhalt und fängt Schaden ab.
 
 3. Streuung:  pool_S × (1 ± 0,10)    aus dem geseedeten Zufallsgenerator             [belegt]
 

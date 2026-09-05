@@ -19,8 +19,11 @@ import type { Army, GameState, Province, UnitClass } from '../state/types'
  */
 
 /**
- * Stack cap — the single most important balancing rule of the original (belegt):
- * full contribution up to 20 units, falling linearly to zero at 50.
+ * Stack cap — the single most important balancing rule of the original (belegt).
+ *
+ * This is the **marginal** contribution: what the *next* unit adds. Full up to 20, falling
+ * linearly to nothing at 50. The reference is explicit about it: "the strength added by
+ * additional units linearly drops to 0 %".
  */
 export function stackContribution(units: number, rules: Rules): Fixed {
   const full = rules.constants.stackFullContribution
@@ -28,6 +31,39 @@ export function stackContribution(units: number, rules: Rules): Fixed {
   if (units <= full) return ONE
   if (units >= zero) return 0
   return quotFixed(zero - units, zero - full)
+}
+
+/**
+ * What a stack of `units` units is worth in total — the integral of the curve above.
+ *
+ * The distinction is the whole point, and getting it wrong cost this game its large
+ * armies. Until 2026-09-06 `sideAttackValue` multiplied the *whole* army by the marginal
+ * factor, so an army of 50 dealt exactly zero damage while taking losses as before. The
+ * damage curve peaked at 25 units and fell from there: 20 → 1501, 25 → 1563, 30 → 1502,
+ * 40 → 1000, 49 → 121, 50 → 0. Every unit past the twenty-fifth made an army weaker, and
+ * the AI — which merges armies — walked straight into it.
+ *
+ *   units ≤ full          →  units                    (every unit counts fully)
+ *   full < units < zero   →  units − (units−full)² / (2·(zero−full))
+ *   units ≥ zero          →  full + (zero−full)/2     (the plateau: 35 units' worth)
+ *
+ * Monotone by construction: more units are never worth less, they are only worth less
+ * *each*. That is what a cap is — a limit on growth, not a punishment for size.
+ */
+export function effectiveUnits(units: number, rules: Rules): Fixed {
+  const full = rules.constants.stackFullContribution
+  const zero = rules.constants.stackZeroContribution
+  // eslint-disable-next-line no-restricted-syntax -- unit count x ONE, plain integers
+  if (units <= full) return units * ONE
+
+  // eslint-disable-next-line no-restricted-syntax -- unit counts and the rule's own thresholds, plain integers
+  const plateau = (full * 2 + (zero - full)) * (ONE / 2)
+  if (units >= zero) return plateau
+
+  // eslint-disable-next-line no-restricted-syntax -- the triangle under the marginal curve, plain integers
+  const shortfall = Math.round(((units - full) * (units - full) * ONE) / (2 * (zero - full)))
+  // eslint-disable-next-line no-restricted-syntax -- unit count x ONE, plain integers
+  return units * ONE - shortfall
 }
 
 /**
@@ -91,12 +127,16 @@ export function sideAttackValue(
 
   for (const army of armies) {
     const units = army.units.reduce((sum, stack) => sum + unitCount(stack, rules), 0)
+
     const modifiers = mulChain([
-      stackContribution(units, rules),
       deploymentFactor(army, state.tick, rules),
       supplyFactor(state, army),
     ])
 
+    // Erst der volle Wert der Armee, dann der Deckel — einmal. Wird je Verband skaliert,
+    // rundet jeder Verband für sich, und dieselbe Armee ist mit sechzig Einheiten um eine
+    // Festkomma-Einheit schwächer als mit fünfzig: eine Unstetigkeit, die keine Regel will.
+    let armyValue = 0
     for (const stack of army.units) {
       const rule = rules.units[stack.unitKey]
       if (!rule) continue
@@ -110,8 +150,19 @@ export function sideAttackValue(
 
       const count = unitCount(stack, rules)
       // eslint-disable-next-line no-restricted-syntax -- weighted value x unit count, plain integers
-      total += mulChain([weighted * count, modifiers])
+      armyValue += weighted * count
     }
+
+    // Der Deckel als Anteil dessen, was die Armee ohne ihn wert wäre: effectiveUnits(n)/n.
+    // Vorher stand hier stackContribution(n) — der Grenzbeitrag, angewandt auf die *ganze*
+    // Armee, was ab 50 Einheiten jeden Schaden auf null setzte (T-M14-06).
+    // Eine Division statt zweier Schritte: quotFixed rundet den Anteil auf drei
+    // Nachkommastellen, und aus 583,33 wird 583 — womit dieselbe Armee mit sechzig
+    // Einheiten um eine Festkomma-Einheit schwaecher waere als mit fuenfzig.
+    // eslint-disable-next-line no-restricted-syntax -- Einheitenzahl x ONE, ganze Zahlen
+    const capped = units > 0 ? divFixed(armyValue * effectiveUnits(units, rules), units * ONE) : armyValue
+
+    total += mulChain([capped, modifiers])
   }
 
   return total

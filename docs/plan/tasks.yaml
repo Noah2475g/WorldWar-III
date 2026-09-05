@@ -1152,7 +1152,7 @@ tasks:
   - id: T-M14-06
     milestone: M14
     title: Stapel-Deckel als Grenzbeitrag statt als Faktor auf die ganze Armee
-    status: todo
+    status: done
     deps: [T-M14-05]
     requirements: [R-BAT-01, R-BAT-07]
     files: [packages/core/src/rules/combat.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md]
