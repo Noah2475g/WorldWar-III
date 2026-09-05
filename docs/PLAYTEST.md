@@ -26,7 +26,7 @@ pnpm --filter @worldwar/desktop dev
 
 | # | Anforderung | Frage | ja/nein |
 |---|---|---|---|
-| 4 | R-GAME-01 | Können Sie Macht, Gegnerzahl, Schwierigkeit und Startzahl frei wählen? | |
+| 4 | R-GAME-01 | Können Sie **Karte**, Macht, Gegnerzahl, Schwierigkeit und Startzahl frei wählen — und **wirkt die Kartenwahl auch**? | |
 | 5 | R-AI-02 | Steht dort, welchen Bonus die KI bekommt? (Erwartet: **ohne Bonus**) | |
 | 6 | R-UI-03 | Öffnet die Karte auf Ihrem eigenen Land, nicht irgendwo? | |
 | 7 | R-MAP-01 | Wirkt die Weltkarte wie eine Weltkarte — Kontinente am richtigen Platz, Grenzen sauber? | |
@@ -70,12 +70,19 @@ pnpm --filter @worldwar/desktop dev
 | 23 | R-DIP-01 | Ist die Diplomatie verständlich — Kriegserklärung, Vorlaufzeit, Folgen? | |
 | 24 | R-AI-01 | Spielt die KI nachvollziehbar? Tut sie irgendwann etwas offensichtlich Dummes? | |
 | 25 | R-AI-03 | Fühlt sich „schwer" schwerer an als „normal"? | |
+| 25a | R-BAT-05 | **Können Sie eine bedrängte Armee zurückziehen — und sagt der Knopf, was es kostet?** *(Bis zum 2026-09-06 konnte das nur die KI)* | |
+| 25b | R-BAT-07 | **Nennt das Protokoll nach einem Gefecht die Verluste beider Seiten?** *(Standen im Ereignis und erreichten den Spieler nie)* | |
+| 25c | R-UI-05 | **Können Sie ein laufendes Bauvorhaben abbrechen?** *(Der Befehl gibt es seit M3; einen Knopf dafür nicht)* | |
+| 25d | R-UI-13 | **Wenn Sie Ihre letzte Provinz verlieren: sagt das Spiel es Ihnen?** *(Vorher tickte es wortlos weiter)* | |
+| 25e | R-GAME-01 | **Können Sie nach dem Ende eine zweite Partie beginnen, ohne das Programm neu zu starten?** | |
 
 ## Speichern und Einstellungen (4 min)
 
 | # | Anforderung | Frage | ja/nein |
 |---|---|---|---|
 | 26 | R-GAME-03 | Speichern, laden, weiterspielen — ist alles wie vorher? | |
+| 26a | R-GAME-03 | **Speichern, das Fenster schließen, neu öffnen: steht der Stand noch in der Liste und lädt er?** *(Bis zum 2026-09-06 nicht — der Speicher lag im Arbeitsspeicher)* | |
+| 26b | R-GAME-05 | Ton aus, Schriftgröße ändern, neu starten: sind die Einstellungen noch so? | |
 | 27 | R-UI-06 | Kommen Sie ohne Maus durch das Spiel? (Leertaste, +/−, F, M, Pfeile, Strg+S) | |
 | 28 | R-UI-07 | Ist irgendwo englischer Text oder eine Kennung wie „p1" stehengeblieben? (Erwartet: **nein**) | |
 
@@ -117,6 +124,26 @@ pnpm --filter @worldwar/desktop dev
 > **C. Hatten Sie das Gefühl, dass die KI schummelt?**
 
 Erwartet: **ja / nein / nein.**
+
+---
+
+## Was dieser Bogen am 2026-09-06 dazubekommen hat
+
+Der Bogen war nach dem **Gebauten** geschrieben, nicht nach der Anforderung — Frage 4
+fragte nach „Macht, Gegnerzahl, Schwierigkeit, Startzahl", während R-GAME-01 an erster
+Stelle die **Karte** nennt, und die war ein Blindschalter (Befund N10 des Audits). Ein
+Abnahmebogen, der abfragt, was ohnehin da ist, kann eine Abnahme nur bestehen.
+
+Neu sind die Fragen zu den Dingen, die bis zum 2026-09-06 **gar nicht gingen** und in
+einer einzelnen Sitzung auch nicht auffallen: das Fenster schließen und wiederkommen (der
+Speicher lag im Arbeitsspeicher), eine zweite Partie, der Rückzug, der Kampfbericht, der
+Bauabbruch, die eigene Niederlage. Jede davon war im Kern gebaut, getestet und für den
+Spieler unerreichbar.
+
+**Frage 48** — „Gibt es eine Einstellung im Menü, die sichtbar nichts bewirkt? Erwartet:
+nein" — war am 2026-09-05 mit **ja** vorbeantwortet: Kartenwahl, Zeitsieg und das leere
+Debug-Panel. Kartenwahl und Debug sind seither geschlossen; der Zeitsieg ist mit
+Begründung zurückgenommen (`DECISIONS.md`) und steht nicht mehr im Menü.
 
 ---
 
