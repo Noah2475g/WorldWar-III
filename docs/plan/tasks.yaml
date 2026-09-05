@@ -4,6 +4,7 @@
 #
 # status:       todo | in_progress | done | blocked
 # gate: true => Haltepunkt, benötigt Freigabe durch Noah
+# reopened:     Begründung, warum eine bereits erledigte Aufgabe wieder auf todo steht (T-M14-02)
 # requirements: nur R-IDs | constraints: nur C-IDs | design: nur D-IDs | acceptance: Abnahmekriterien
 
 meta:
@@ -34,6 +35,13 @@ milestones:
   - { id: M11, title: Look, Ton, Verpackung }
   - { id: M12, title: Balancing und Abnahme }
   - { id: M13, title: Oberflaeche im Ausbau }
+  # Neue Meilensteinachse, festgelegt von Noah am 2026-09-05 (ENTSCHEIDUNGEN, Achse).
+  # Sie ersetzt die alten "M15"-Verweise im scope-Block von 01-REQUIREMENTS.md 2.15.
+  - { id: M14, title: Der Stand wird wieder wahr }
+  - { id: M15, title: Die KI wird ein Gegner }
+  - { id: M16, title: Verpackung als Programm }
+  - { id: M17, title: Tiefe zwischen den Kriegen }
+  - { id: M18, title: Spaeter }
 
 tasks:
   - id: T-M0-01
@@ -538,7 +546,8 @@ tasks:
   - id: T-M8-00
     milestone: M8
     title: Speicher-Schnittstelle Tauri Node Speicher
-    status: done
+    status: todo
+    reopened: "abgeloest durch T-M14-08: von den vier zugesagten Dateien existiert nur packages/core/src/persistence/StoragePort.ts, MemoryStorage ist die einzige Umsetzung. V1 liefert stattdessen den dauerhaften Browserspeicher (IndexedDB); TauriStorage, NodeStorage und der Datei-Port entstehen erst in M16 (Entscheidung 2 vom 2026-09-05, C-02 praezisiert durch T-M14-03). Kein reopened im Sinne von 'nochmal so bauen' - die Zusage ist abgeloest, nicht offen."
     deps: [T-M5-04]
     requirements: [R-GAME-03, R-GAME-04]
     constraints: [C-02]
@@ -706,7 +715,8 @@ tasks:
   - id: T-M10-04
     milestone: M10
     title: Kopfleiste Ressourcen Zeit Geschwindigkeit
-    status: done
+    status: todo
+    reopened: "geschlossen durch T-M15-06: TopBar.tsx, SpeedControl.tsx und SpeedControl.test.tsx existieren nicht (geliefert wurde ui/Header.tsx), und das Vorspulen-Menue ist unvollstaendig - onFastForward springt um genau einen Tag und fastForwarding ist ein Literal false. T-M15-06 baut das Vorspulen und setzt diese Aufgabe danach in beiden Plandateien wieder auf done."
     deps: [T-M10-03b]
     requirements: [R-TIME-02, R-TIME-04, R-ECON-06, R-UI-06]
     files: [apps/desktop/src/ui/TopBar.tsx, apps/desktop/src/ui/SpeedControl.tsx]
@@ -766,7 +776,8 @@ tasks:
   - id: T-M10-09
     milestone: M10
     title: Einstellungen
-    status: done
+    status: todo
+    reopened: "ohne Besitzer: Settings.tsx und Settings.test.tsx existieren nicht, die Einstellungen liegen in ui/Dialogs.tsx und state/uiState.ts, und parseSettings hat ausser uiState.test.ts keinen Aufrufer. Keine M14- oder M15-Aufgabe schliesst das (Maengelliste L7/W4). T-M14-02 benennt die schliessende Aufgabe, oder T-M14-03 nimmt die Zusage mit einem DECISIONS-Eintrag zurueck; bis dahin bleibt diese Zeile offen und ehrlich."
     deps: [T-M10-07b]
     requirements: [R-GAME-04, R-UI-06, R-FREE-05]
     files: [apps/desktop/src/ui/Settings.tsx]
@@ -891,12 +902,12 @@ tasks:
     title: Abnahmelauf
     status: todo
     gate: true
-    gate_reason: "sechs von sieben Abnahmekriterien maschinell gruen (docs/reports/acceptance.md, pnpm acceptance); offen bleibt AK-7, der Playtest durch Noah nach docs/PLAYTEST.md"
-    deps: [T-M12-01, T-M12-02b]
+    gate_reason: "sechs von sieben Abnahmekriterien maschinell gruen (docs/reports/acceptance.md, pnpm acceptance); offen bleibt AK-7, der Playtest durch Noah - er laeuft nach dem von T-M14-15 ueberarbeiteten docs/PLAYTEST.md und wird in docs/reports/playtest-v1.md beantwortet"
+    deps: [T-M12-01, T-M12-02b, T-M14-15]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []
     tests: []
-    dod: "pnpm verify, pnpm test:slow und pnpm coverage:requirements alle gruen; alle sieben Abnahmekriterien erfuellt; Noah hat abgenommen"
+    dod: "Abgenommen wird der V1-Satz, nicht mehr und nicht weniger: pnpm verify und pnpm test:slow gruen; pnpm acceptance weist alle sieben Abnahmekriterien als erfuellt aus, AK-1 mit eigener Zeile (pnpm sim:fullgame aus T-M14-14) statt in der Sammelzeile AK-1/4/6; das Anforderungstor misst den V1-Umfang, den der scope-Block aus T-M14-01 ausweist, und meldet 'V1 offen: 0' - die nach M15 bis M18 vertagten IDs aus Abschnitt 2.15 zaehlen nicht dagegen (das ist die Korrektur des Nachtrags 2.15, der 82/82 auf 82/100 gekippt und diese DoD unerreichbar gemacht hat); AK-7 ist erfuellt, wenn docs/reports/playtest-v1.md jede Frage aus docs/PLAYTEST.md beantwortet und jedes Nein in der Befundtabelle traegt; Noah hat abgenommen"
 
   - id: T-M13-01
     milestone: M13
@@ -1067,3 +1078,278 @@ tasks:
     files: [docs/ANLEITUNG.md, docs/PLAYTEST.md, docs/plan/PROGRESS.md, docs/reports/ui-expansion.md]
     tests: [test/docs.test.ts]
     dod: "pnpm verify und pnpm coverage:requirements gruen; Kennzahlen vorher/nachher im Bericht; jede neue Anforderung testbelegt"
+
+  # --- M14: Der Stand wird wieder wahr (Reparatur, macht die Abnahme moeglich) ---
+  # Planregel fuer alle Aufgaben ab hier (Maengelliste F3): beide Plandateien werden je
+  # Aufgabe gemeinsam gepflegt. docs/plan/03-TASKS.md wird deshalb nicht mehr in jeder
+  # files-Liste einzeln gefuehrt; T-M14-01 haelt die Regel in 03-TASKS.md fest.
+
+  - id: T-M14-01
+    milestone: M14
+    title: Meilensteinachse im scope-Block, Tor prueft V1 hart
+    status: todo
+    deps: []
+    requirements: [R-ARCH-05]
+    acceptance: [AK-2]
+    files: [docs/plan/01-REQUIREMENTS.md, scripts/requirements-coverage.mjs, scripts/acceptance.mjs, docs/plan/tasks.yaml, docs/plan/03-TASKS.md]
+    tests: [test/requirements.test.ts, test/plan-consistency.test.ts]
+    dod: "pnpm coverage:requirements meldet 'V1 offen: 0' und endet mit Exit 0; jede in Abschnitt 2.15 gefuehrte ID traegt ein Fach mit Meilenstein und Begruendung, und eine ID ohne Fach bleibt V1-Pflicht - die DoD nennt bewusst keine feste Zahl, weil T-M15-09 drei IDs streicht; ein later-Eintrag ohne Begruendung oder mit einem in tasks.yaml unbekannten Meilenstein bricht mit Exit 1 ab; der milestones-Block von tasks.yaml fuehrt M14 Der Stand wird wieder wahr, M15 Die KI wird ein Gegner, M16 Verpackung als Programm, M17 Tiefe zwischen den Kriegen und M18 Spaeter, und 03-TASKS.md traegt die zugehoerigen Ueberschriften - ohne diese fuenf Zeilen faellt der Waechter 'jede Aufgabe gehoert zu einem deklarierten Meilenstein' bei der ersten M14-Aufgabe; kein Verweis in 2.14/2.15 nennt einen Meilenstein, den die neue Achse nicht kennt, und der Satz zu R-ECON-05/R-DIP-05 ist entfernt; R-NEWS-01/02/03 bekommen das Fach M17 mit dem Hinweis auf die Ersetzung durch den Filter Weltgeschehen, ihren Anforderungstext fasst T-M15-09 an, nicht diese Aufgabe; 03-TASKS.md traegt als Planregel, dass beide Plandateien je Aufgabe gemeinsam gepflegt werden und 03-TASKS.md deshalb nicht mehr in jeder files-Liste einzeln erscheint; AK-2 in scripts/acceptance.mjs liest die Zeile 'V1 offen:' ohne den Exit-Code zu maskieren"
+
+  - id: T-M14-02
+    milestone: M14
+    title: Plan-Waechter prueft files und tests jeder erledigten Aufgabe
+    status: todo
+    deps: [T-M14-01]
+    requirements: [R-ARCH-05]
+    files: [test/plan-paths.ts, docs/plan/tasks.yaml, docs/plan/PROGRESS.md, docs/plan/PROBLEME.md]
+    tests: [test/plan-consistency.test.ts]
+    dod: "Zuerst der Arbeitsbaum: git status --short ist leer, die 13 Sondendateien unter apps/headless/test/zz*, packages/core/src/phases/zzz-skeptic-hull.test.ts und coverage-audit/ sind geloescht oder als echte Tests aufgenommen, und docs/plan/PROBLEME.md nennt, welche - solange sie im Baum liegen, misst jedes 'pnpm verify gruen' eine andere Testmenge als das Projekt. Dann der Waechter: die Zahl der nicht existierenden files-/tests-Pfade bei status done ist 0 (vorher 79 in 43 Aufgaben); ein Verzeichniseintrag mit Schraegstrich muss ein Verzeichnis sein; ein Test an einer erfundenen Aufgabenliste zeigt, dass ein einziger falscher Pfad bei status done den Lauf rot macht. Jede done-Aufgabe, deren fehlender Pfad keine Umbenennung ist, steht danach auf todo und traegt im Feld reopened die Aufgabe, die sie schliesst - ohne Besitzer keine Rueckstufung: T-M8-00 ist abgeloest durch T-M14-08 (Browserspeicher jetzt, Datei-Port erst in M16, kein Neubau des alten Entwurfs), T-M10-04 wird geschlossen durch T-M15-06; fuer T-M10-09 (Settings.tsx, Settings.test.tsx) und T-M0-03 (test/guards/fixed-arithmetic.test.ts) ist die schliessende Aufgabe hier zu benennen oder die Zusage nach T-M14-03 zurueckzunehmen. Der T-M8-00-Eintrag im Abschnitt der erledigten Aufgaben von PROGRESS.md wird entsprechend gefasst (Anker ist der Eintrag, nicht eine Zeilennummer - diese Aufgabe schreibt die Datei selbst um). Zwei der 79 Pfade duerfen NICHT auf bestehende Dateien umgebogen werden: packages/core/test/properties/combat-conservation.test.ts und packages/core/src/commands/bombard.test.ts entstehen in T-M14-06 und T-M14-07. pnpm verify gruen"
+
+  - id: T-M14-02b
+    milestone: M14
+    title: Das Anforderungstor zaehlt Akzeptanzkriterien statt Namen
+    status: todo
+    deps: [T-M14-02]
+    requirements: [R-ARCH-05]
+    acceptance: [AK-2]
+    files: [scripts/requirements-coverage.mjs, test/plan-consistency.test.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
+    tests: [test/requirements.test.ts, test/plan-consistency.test.ts]
+    dod: "T-M14-01 repariert den Nenner, diese Aufgabe den Zaehler: requirements-coverage.mjs zaehlt je Akzeptanzkriterium statt je ID. Belegt ist eine AK-Nummer, wenn ein describe-Block ihren Namen in der Form 'R-DIP-06/AK1' traegt und mindestens eine Zusicherung enthaelt; eine ID gilt erst als belegt, wenn jede ihrer AK-Nummern belegt ist - heute genuegt ein einziges describe mit dem ID-Namen, und das Akzeptanzkriterium wird nie gelesen. Fuer die bereits belegten IDs traegt das Skript eine datierte Uebergangsliste, die je ID nennt, welche AK-Nummern noch auf der alten Namenszaehlung stehen; ein Test sichert zu, dass die Liste nur schrumpft, und jede ab M14 neu belegte ID laeuft ohne Uebergangseintrag - R-DIP-06/AK1..AK6 und R-BAT-08/AK1..AK3 aus M15 werden also einzeln gezaehlt. Zusaetzlich prueft plan-consistency die bisher ungepruefte Richtung Anforderung nach Aufgabe: jede vom scope-Block als V1-pflichtig gefuehrte ID kommt in mindestens einer Aufgabe in tasks.yaml und in mindestens einem Abschnitt von 02-DESIGN.md vor - genau der Weg, auf dem die IDs aus 2.15 ohne Entwurf und ohne Aufgabe gruen durchliefen. Ein Selbsttest an einer erfundenen Anforderung mit zwei AK und nur einem Testblock macht das Tor rot. DECISIONS.md haelt fest, dass die Uebergangsliste ein datierter Schuldschein ist und kein Dauerzustand; pnpm verify und pnpm coverage:requirements gruen"
+
+  - id: T-M14-03
+    milestone: M14
+    title: Zurueckgenommene Zusagen kuerzen und begruenden
+    status: todo
+    deps: [T-M14-01, T-M14-02]
+    requirements: [R-BAT-03, R-ECON-03, R-GAME-02, R-PROV-03, R-UNIT-07]
+    constraints: [C-02]
+    files: [docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/03-TASKS.md, docs/plan/tasks.yaml, docs/plan/PROGRESS.md, packages/core/src/rules/combat.ts]
+    tests: [test/withdrawals.test.ts, packages/core/src/phases/occupation.test.ts]
+    dod: "DECISIONS.md enthaelt sieben Eintraege vom 2026-09-05 zu T-M14-03: die sechs Ruecknahmen (Gebaeudeunterhalt, Einheitenmoral, Garnison und Rebellenarmee, E2E-Ebene, Zeitsieg-Auswahl, Uebergangsmalus) und als siebten die Praezisierung von C-02 nach Entscheidung 2 - der Wortlaut in 01-REQUIREMENTS.md lautet danach 'V1: Browserbau mit dauerhaftem Speicher (IndexedDB); Tauri-Verpackung mit Datei-Port in M16, mit eigenem Abnahmekriterium AK-8' statt 'Savegames im echten Dateisystem', damit T-M14-08 nicht gegen eine gueltige Rahmenbedingung baut und M16 ein Abnahmekriterium bekommt statt einer Absichtserklaerung. grep crossingFactor ueber packages und apps liefert 0 Treffer; 02-DESIGN.md nennt weder Playwright noch Garnison-Unterdrueckung noch Aufstaendischen-Armee; der Zeitsieg-Zweig in victory.ts wird von genau einem Test ausgefuehrt. Die acht kleineren Befunde ohne Aufgabe stehen danach entweder als ausdrueckliche Ruecknahme in DECISIONS.md oder mit Meilenstein in docs/plan/PROBLEME.md - keiner bleibt zwischen 'nicht gebaut' und 'nicht entschieden' liegen: die unausgefuehrten Zeichenzeilen in MapCanvas.tsx samt unbelegtem R-ARCH-06/AK2, die nach der Ruecknahme des Gebaeudeunterhalts offene zweite Kohlesenke, R-AI-04 gemessen ueber der Zusage bei gruenem Test, die kostenlose Hauptstadtverlegung, der 350-fache Vorratsaufbau, die Regelzahlen ohne Belegstatus, der Rueckzug als Teleport und die fehlende Pruefung von Tastatur, Fokus und aria. pnpm coverage:requirements meldet weiterhin 'V1 offen: 0'; pnpm verify gruen"
+
+  - id: T-M14-04
+    milestone: M14
+    title: Eine Spielschleife fuer alle
+    status: todo
+    deps: [T-M14-03]
+    requirements: [R-AI-01, R-AI-06]
+    constraints: [C-10]
+    files: [packages/ai/src/loop.ts, packages/ai/src/index.ts, apps/desktop/src/game/advance.ts, apps/headless/src/sweep.ts, apps/headless/src/tournament.ts, apps/headless/src/replay.ts, docs/plan/DECISIONS.md]
+    tests: [packages/ai/src/loop.test.ts, test/guards/single-loop.test.ts, apps/desktop/src/game/advance.test.ts, apps/headless/test/replay.test.ts, apps/headless/test/longrun.slow.test.ts, packages/core/src/persistence/save.test.ts, packages/core/test/perf/worldmap.bench.slow.test.ts]
+    dod: "genau eine Datei unter packages/*/src und apps/*/src nennt runAi und runTicks zugleich (Waechter test/guards/single-loop.test.ts), naemlich packages/ai/src/loop.ts; LOOP_EXCEPTIONS hoechstens 2 Eintraege mit je einem Satz Begruendung; advance.ts ohne for und ohne runTicks, unter 20 Zeilen, App.tsx unveraendert; sechs KI-Maechte handeln in 24 Ticks alle sechs; advanceTicks ist der neue Name der gemeinsamen Schleife - er existiert heute nirgends und wird aus packages/ai/src/loop.ts ausgefuehrt, waehrend apps/desktop/src/game/advance.ts seinen Export advance behaelt und ihn nur noch aufruft; advanceTicks liefert die Ereignisse aller Ticks (mehr als EVENT_LOG_LIMIT=500 im langen Lauf); ein ueber 50 Ticks mit KI gelaufener Stand, in der Mitte gespeichert und geladen, liefert denselben Zustands-Hash wie der ununterbrochene Lauf - damit ist R-AI-07/AK1 (das KI-Gedaechtnis ist Teil des Spielstands) zum ersten Mal geprueft, denn storeMemories schreibt heute ausserhalb der Tick-Pipeline in den Zustand und save.test.ts faehrt seinen Vergleich ohne KI; Golden-Master und Replay ohne Aenderung an apps/headless/test/golden gruen; DECISIONS.md traegt den datierten Eintrag 'genau eine Fortschreibungsschleife' inklusive der Feststellung, dass ueber apps/desktop/src/sim erst R-TIME-06 in T-M15-06 entschieden wird"
+
+  - id: T-M14-05
+    milestone: M14
+    title: Die Messgeraete richtigstellen und die Rauschgrenze messen
+    status: todo
+    deps: [T-M14-04]
+    requirements: [R-AI-06, R-ARCH-06]
+    constraints: [C-10]
+    files: [apps/headless/src/sweep.ts, docs/plan/BALANCING.md, docs/plan/PROBLEME.md, docs/reports/balance-sweep.md, docs/reports/balance-sweep.json, docs/reports/ai-tournament.md, docs/reports/worldmap-bench.json]
+    tests: [apps/headless/test/sweep.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, packages/core/test/perf/worldmap.bench.slow.test.ts, test/balancing.test.ts]
+    dod: "captures kommt aus den waehrend des Laufs gesammelten events statt aus dem 500er-Ringpuffer und stimmt bei mehr als 500 Ereignissen mit der Besitzdifferenz ueberein; die Kennzahl economy ist als Endbestand beschriftet; die Startzahlen je Variante steigen von 2 auf mindestens 12, und ein Grundlauf ohne Regelaenderung misst die Rauschgrenze der Zielgroesse - sie steht mit Datum in docs/reports/balance-sweep.md und in docs/plan/BALANCING.md, die Schwelle fuer 'tragend' ist das Doppelte dieser Grenze, und die Spalte Ausschlag in BALANCING.md ist bis zur Neumessung als nicht aussagekraeftig gekennzeichnet; der Weltkarten-Bench misst reine Tickzeit getrennt von der KI-Zeit bei 8 Maechten und mindestens 400 Armeen auf data/maps/world.json und schreibt Median, p99 und den Faktor zu 0,5/2 ms nach docs/reports/worldmap-bench.json; test/balancing.test.ts scheitert, wenn BALANCING.md eine Zahl nennt, die der zitierte Bericht nicht traegt. Der Turniertest behaelt die Untergrenze 0,70 und bekommt hier KEINE Obergrenze: die schwere Stufe gewinnt heute 50:0, eine Obergrenze 0,95 waere sofort rot, machte pnpm test:slow rot und damit AK-1/4/6, T-M12-03 und den Playtest-Haltepunkt unerreichbar - also genau das, was diese Phase aufloesen soll. Stattdessen misst der Lauf die Siegquote und haelt den Ist-Wert mit Datum und Ursache in docs/plan/PROBLEME.md fest, ein it.skip mit Verweis auf T-M15-05 haelt die Zusicherung sichtbar offen, und T-M15-05 stellt die Obergrenze scharf, nachdem die Stufenleiter gebaut ist. Die Spielzahlen in docs/reports/balance-sweep.md und docs/reports/ai-tournament.md werden hier NICHT neu veroeffentlicht, sondern als 'gemessen vor T-M14-06/07' gekennzeichnet - der eine Neulauf beider Berichte steht in T-M14-07, damit die veroeffentlichten Zahlen nicht dreimal ein anderes Spiel beschreiben"
+
+  - id: T-M14-06
+    milestone: M14
+    title: Stapel-Deckel als Grenzbeitrag statt als Faktor auf die ganze Armee
+    status: todo
+    deps: [T-M14-05]
+    requirements: [R-BAT-01, R-BAT-07]
+    files: [packages/core/src/rules/combat.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md]
+    tests: [packages/core/test/properties/combat-conservation.test.ts, packages/core/src/phases/combat.test.ts]
+    dod: "effectiveUnits(50) gleich effectiveUnits(80) gleich 35000 in Festkomma; der zugefuegte Schaden ist ueber n=1..80 monoton nicht fallend (Toleranz 0); eine Armee mit 60 Einheiten richtet Schaden groesser 0 an, bei 50 Einheiten mindestens das 1,4-fache des bisherigen Hoechstwerts bei 25 Einheiten statt 0; Seitentausch spiegelt bei Streuung 0 exakt (Regel-Override combatSpreadPermille 0, weil applySpread je Seite aus draft.rng zieht); die Summe der abgezogenen Trefferpunkte ist gleich der Summe der in BATTLE_RESOLVED.losses gemeldeten Werte; die Testgruppe zu stackContribution in combat.test.ts prueft Grenzbeitrag und Gesamtbeitrag getrennt und ersetzt den bisherigen Faktorvergleich - Anker ist die Testgruppe, keine Zeilennummer, denn dieselbe Aufgabe schreibt die Datei um; der Abschnitt D6.5 Punkt 2 in 02-DESIGN.md und die Zeile stackCap in BALANCING.md nennen beide Groessen mit Formel; DECISIONS.md haelt die Flaechenkonvention fest (kontinuierlich 35,0 oder diskret 34,5); die Zeilen stackFullContribution und stackZeroContribution in BALANCING.md sind als veraltet gekennzeichnet - neu GEMESSEN werden sie mit dem einen Neulauf in T-M14-07, nicht hier und nicht nur neu datiert; Golden-Master mit UPDATE_GOLDEN=1 neu erzeugt; pnpm verify gruen"
+
+  - id: T-M14-07
+    milestone: M14
+    title: Festungsbonus am Eigentuemer, Rueckzugssperre im Nahkampf, Beschuss mit Diplomatie und in Phase 8
+    status: todo
+    deps: [T-M14-06]
+    requirements: [R-BAT-03, R-BAT-05, R-BAT-06, R-BAT-07]
+    files: [packages/core/src/rules/combat.ts, packages/core/src/phases/combat.ts, packages/core/src/commands/bombard.ts, packages/core/src/phases/applyCommands.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, docs/plan/BALANCING.md, docs/reports/balance-sweep.md, docs/reports/balance-sweep.json, docs/reports/ai-tournament.md]
+    tests: [packages/core/src/commands/bombard.test.ts, packages/core/src/phases/combat.test.ts, packages/core/src/phases/retreat.test.ts, packages/core/test/properties/combat-conservation.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "Festung Stufe 5 senkt den Verlust des Verteidigers und laesst den des Angreifers unveraendert, Schutzverhaeltnis Verteidiger:Angreifer 2250:1000 statt 2250:2000; eine Armee mit cannotAttackUntil groesser tick fuegt im Nahkampf 0 Angriffsschaden zu und traegt nur mit dem Verteidigungswert bei; eine in eine neutrale Provinz zurueckgezogene Armee greift im selben Tick nicht an; Beschuss beschaedigt nur Armeen, mit deren Eigentuemer Krieg besteht, verbuendete, neutrale und eingeschiffte Verbaende verlieren exakt 0 Trefferpunkte; BOMBARD wird in Phase 1 nur geprueft und in Phase 8 in Spielerreihenfolge mit erneuter Reichweiten- und Kriegspruefung aufgeloest, ein aus der Reichweite marschiertes Ziel verliert 0 Trefferpunkte und genau ein Ereignis erklaert warum; eine Armee mit 0 Trefferpunkten wird im selben Tick entfernt und erzeugt genau ein ARMY_DESTROYED, und ein Eigenschaftstest zeigt, dass nach 200 Spieltagen keine Armee ohne Einheiten existiert - leere Huellen halten sonst eine ausgeschiedene Macht am Leben und T-M14-14 erreicht nie einen Sieger; bombard.test.ts existiert mit R-BAT-06-Bloecken, und der alte R-BAT-06-Block in retreat.test.ts wird erst entfernt, wenn der neue steht; combat-conservation.test.ts traegt alle vier Ersatzeigenschaften aus dem Abschnitt D6.5 von 02-DESIGN.md unter R-BAT-07 (Anker ist der Abschnitt, keine Zeilennummer); 02-DESIGN.md D3 und D4 beschreiben die Aufloesung in Phase 8; DECISIONS.md begruendet den Verzicht auf ein neues Zustandsfeld; Golden-Master neu erzeugt. Hier und nur hier laufen pnpm balance:sweep und pnpm sim:tournament mit den reparierten Messgeraeten und den fertigen Kernzahlen genau einmal neu: docs/reports/balance-sweep.md, balance-sweep.json und ai-tournament.md sind ersetzt und datiert, die in T-M14-05 und T-M14-06 als veraltet gekennzeichneten Zeilen in BALANCING.md - Ausschlag, stackFullContribution, stackZeroContribution - sind neu gemessen, und die Rauschgrenze aus T-M14-05 ist am neuen Regelstand bestaetigt oder korrigiert; pnpm verify und pnpm coverage:requirements gruen"
+
+  - id: T-M14-08
+    milestone: M14
+    title: Ein Speicher, der das Schliessen des Fensters ueberlebt
+    status: todo
+    deps: [T-M13-03, T-M14-02]
+    requirements: [R-GAME-03, R-GAME-04, R-GAME-05]
+    constraints: [C-02, C-08]
+    files: [apps/desktop/src/storage/IndexedDbStorage.ts, apps/desktop/src/storage/createStorage.ts, packages/testkit/src/storageContract.ts, packages/testkit/src/index.ts, packages/core/src/persistence/StoragePort.ts, apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, package.json, vitest.config.ts, docs/plan/PROGRESS.md]
+    tests: [apps/desktop/src/storage/IndexedDbStorage.test.ts, apps/desktop/src/storage/createStorage.test.ts, test/guards/persistence-contract.test.ts, packages/core/src/persistence/save.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/App.test.tsx]
+    dod: "storagePortContract laeuft gegen mindestens zwei Umsetzungen (Memory, IndexedDB) und der Waechter persistence-contract faellt, sobald nur eine Fabrik registriert ist; ein ueber eine verworfene IndexedDbStorage-Instanz geschriebener Stand liefert aus einer neuen Instanz denselben Zustands-Hash; der Vertrag deckt fehlschlagendes Schreiben, halb geschriebenen Stand und zwei Schreibvorgaenge auf denselben Namen ab; ohne indexedDB meldet createStorage volatile true und die Oberflaeche zeigt den Hinweis; ein unlesbarer Platz erscheint als unlesbar statt leer und laesst sich laden; nach simuliertem Neustart trifft der naechste Automatikstand den Platz mit dem kleinsten savedAtTick. vitest.config.ts nimmt main.tsx nicht mehr von der Abdeckung aus - an dieser Datei haengen die Auslieferungsbefunde, und die AK-3-Schwellen (Kern 90 Prozent, gesamt 80 Prozent) bleiben danach gehalten. Diese Aufgabe baut gegen das von T-M14-03 praezisierte C-02 (V1 im Browser mit dauerhaftem Speicher, Datei-Port und Tauri-Bau in M16) und aendert den Status von T-M8-00 NICHT selbst: die Rueckstufung samt Begruendung liegt bei T-M14-02, hier steht nur der eigene Fortschrittseintrag in PROGRESS.md"
+
+  - id: T-M14-09
+    milestone: M14
+    title: Das Spiel bekommt seine Schrift
+    status: todo
+    deps: [T-M14-02]
+    requirements: [R-UI-04, R-ASSET-01, R-ASSET-02, R-FREE-04]
+    constraints: [C-08]
+    files: [apps/desktop/src/ui/fonts/IBMPlexSans-Regular.woff2, apps/desktop/src/ui/fonts/IBMPlexSans-SemiBold.woff2, apps/desktop/src/ui/fonts/IBMPlexSansCondensed-SemiBold.woff2, apps/desktop/src/ui/fonts/IBMPlexMono-Regular.woff2, apps/desktop/src/ui/fonts/OFL.txt, scripts/fetch-fonts.mjs, apps/desktop/src/ui/app.css, docs/ASSETS.md]
+    tests: [test/guards/no-foreign-assets.test.ts, test/design-gate.test.ts]
+    dod: "git ls-files findet mindestens vier woff2-Dateien unter apps/desktop/src/ui/fonts, zusammen unter 400 KB; der Waechter verlangt je IBM-Plex-Familie aus TYPE ein @font-face mit lokaler url() und faellt gegen eine leere Asset-Menge (Selbsttest wie bei der kuenstlichen Waise); weder app.css noch index.html nennen eine Schriftquelle mit https:; design-gate vergleicht die Schriftfamilien von Mockup und Code; ASSETS.md nennt jede der vier Dateien und die OFL 1.1, und der Satz ueber das Einbetten ist testbelegt. Der einmalige Fremdbezug der Schriften laeuft unter der Freigabe, die T-M9-01 fuer Geodaten bereits erteilt hat - kein neuer Haltepunkt, aber scripts/fetch-fonts.mjs nennt Quelle, Lizenz und Pruefsumme"
+
+  - id: T-M14-10
+    milestone: M14
+    title: Was passiert, wenn es schiefgeht
+    status: todo
+    deps: [T-M13-12, T-M14-08]
+    requirements: [R-UI-13, R-GAME-01, R-GAME-05]
+    constraints: [C-08]
+    files: [apps/desktop/src/ui/ErrorBoundary.tsx, apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, packages/core/src/view/publicView.ts]
+    tests: [apps/desktop/src/ui/ErrorBoundary.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/ui/Standings.test.tsx, packages/core/src/view/publicView.test.ts, packages/core/test/determinism.test.ts]
+    dod: "Diese Aufgabe besitzt den Fehlerfall, die Niederlage und den Neustart; die Kommandoabdeckung der Oberflaeche liegt ausschliesslich bei T-M14-13, und apps/desktop/src/ui/Dialogs.tsx und apps/desktop/src/i18n/de.ts werden ausser hier nur von T-M14-08 angefasst, das vorher laeuft. Ein Kind, das beim Rendern wirft, ergibt die Auffangflaeche mit Satz, Fehlermeldung und Knopf statt einer weissen Seite, und ein nicht werfendes Kind wird unveraendert durchgereicht; publicView(state,'p1').self.alive existiert und ist false, sobald die Macht ausgeschieden ist; die Oberflaeche zeigt darauf genau einen Niederlagendialog und setzt die Geschwindigkeit auf 0; determinism.test.ts und walkthrough.test.ts bleiben unveraendert gruen (keine Regelaenderung an checkVictory - die Niederlage entsteht in Sicht und Oberflaeche); aus Menue, Sieg- und Niederlagendialog beginnt eine zweite Partie ohne Programmneustart; ui-reachability bleibt ohne neue Ausnahme gruen"
+
+  - id: T-M14-11
+    milestone: M14
+    title: Die KI findet ihr Ziel
+    status: todo
+    deps: [T-M14-02]
+    requirements: [R-AI-01, R-AI-03, R-GAME-01]
+    files: [packages/core/src/map/neighbourhood.ts, packages/core/src/index.ts, packages/ai/src/targeting.ts, packages/ai/src/military.ts, packages/ai/src/decide.ts, apps/desktop/src/game/newGame.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-reachability.md]
+    tests: [packages/core/src/map/neighbourhood.test.ts, packages/ai/src/targeting.test.ts, apps/desktop/src/game/newGame.test.ts, apps/headless/test/ai-reachability.slow.test.ts]
+    dod: "90 Spieltage Weltkarte mit der ausgelieferten Voreinstellung, alle Zahlen aus runGame(...).events gezaehlt und nie aus dem 500er-Ringpuffer state.eventLog: Anteil abgelehnter KI-Befehle unter 10 Prozent (vorher 57), NO_PATH-Anteil an MOVE_ARMY unter 2 Prozent (vorher 68), keine Paarung Armee/Fehlercode oefter als dreimal, mindestens ein WAR_DECLARED (vorher 0 in 1000 Tagen); Gegnerauswahl nach Nachbarschaft statt Listenreihenfolge und Erreichbarkeitsfilter in rateProvinces ueber das vorhandene reachableFrom - keine amphibische KI (Entscheidung 4), und der Filter bricht R-AI-01/R-DIP-04 nicht, weil AiContext die Karte schon fuehrt; R-AI-04-Budget bleibt gruen; alle vier Zahlen vorher/nachher in docs/reports/ai-reachability.md"
+
+  - id: T-M14-12
+    milestone: M14
+    title: Die KI benutzt, was sie hat
+    status: todo
+    deps: [T-M14-11]
+    requirements: [R-AI-01, R-AI-03, R-PROV-05, R-ECON-05, R-DIP-03, R-DIP-04]
+    files: [packages/ai/src/capital.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, packages/core/src/view/publicView.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/ai.json, docs/plan/01-REQUIREMENTS.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/reports/ai-parity.md]
+    tests: [packages/ai/src/capital.test.ts, packages/ai/src/economy.test.ts, packages/ai/src/military.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, apps/headless/test/ai-parity.slow.test.ts]
+    dod: "90 Spieltage: keine KI-Macht endet ohne Hauptstadt, solange sie eine Stadtprovinz haelt; JE KI-Macht mindestens eine Armee mit armyRange groesser 0 (vorher 0 fuer jede) - nicht nur eine einzige im ganzen Spiel, sonst ist R-BAT-08/AK3 in M15 unabnehmbar, das Beschussereignisse je Schwierigkeitsstufe verlangt; hoechstens drei Armeeobjekte je KI-Macht und Provinz, gemessen gegen den in dieser Aufgabe selbst erhobenen Vorher-Wert (Befund 40 misst 127 Armeeobjekte bei einer Macht; die frueher genannte 113 traegt kein Bericht und ist gestrichen); mindestens ein TRADE_EXECUTED je KI-Macht (vorher 0); abgewiesene acceptPeace unter 5 Prozent (vorher zu 99 Prozent abgewiesen, Befund 41 - keine Nachkommastelle, die der Beleg nicht traegt) und mindestens ein Frieden zwischen zwei KI; PublicView.offers wird hier angelegt und ist Vorbedingung fuer R-DIP-06/AK3 und R-AI-08/AK2 - keine neue Zustandsstruktur, das Feld speist sich aus state.diplomacy.offers; Truppenmischung und Handelsvorlauf mit Status in BALANCING.md, der Verzicht auf Luftwaffe und Marine begruendet in DECISIONS.md (Entscheidung 4, Lufteinsatzbefehle stehen in M18)"
+
+  - id: T-M14-13
+    milestone: M14
+    title: Was der Kern kann, muss der Spieler erreichen
+    status: todo
+    deps: [T-M14-12]
+    requirements: [R-UI-05, R-UI-08, R-BAT-05, R-BAT-07, R-GAME-01, R-AI-05, R-DIP-04]
+    files: [test/guards/ui-command-coverage.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/game/events.ts, apps/desktop/src/game/advance.ts, apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/main.tsx, packages/core/src/view/publicView.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
+    tests: [test/guards/ui-command-coverage.test.ts, apps/desktop/src/game/actions.test.ts, apps/desktop/src/game/events.test.ts, apps/desktop/src/game/advance.test.ts, apps/desktop/src/game/newGame.test.ts, apps/desktop/src/App.test.tsx, packages/core/src/view/publicView.test.ts]
+    dod: "Diese Aufgabe besitzt ausschliesslich die Kommandoabdeckung - Fehlerfall, Niederlagendialog und der Neustart einer zweiten Partie liegen bei T-M14-10, und apps/desktop/src/ui/Dialogs.tsx und apps/desktop/src/i18n/de.ts gehoeren nicht in diese Dateiliste. Der Waechter findet fuer jeden im Kern registrierten Kommandotyp (12 von 12) und jede Variante von Stance (3), DiplomacyAction (8), BuildingKey und den Einheitenschluesseln einen Erzeuger in der Oberflaeche, in beide Richtungen geprueft und aus den Laufzeit-Registrierungen gelesen statt aus einer dritten Liste; UI_COVERAGE_EXCEPTIONS enthaelt genau einen Eintrag (victory time) mit Begruendung und Verweis auf DECISIONS.md, weil T-M14-03 den Zeitsieg zurueckgenommen hat - wer die Liste spaeter leert, baut eine zurueckgenommene Zusage; pnpm verify und pnpm coverage:requirements gruen; die Playtest-Frage zu Kartenwahl und Debug-Ansicht ist mit nein beantwortbar"
+
+  - id: T-M14-14
+    milestone: M14
+    title: Der Abnahmetest, den AK-1 immer gebraucht haette
+    status: todo
+    deps: [T-M14-01, T-M14-04, T-M14-05, T-M14-06, T-M14-07, T-M14-11, T-M14-12]
+    requirements: [R-GAME-02]
+    acceptance: [AK-1]
+    files: [scripts/acceptance.mjs, package.json, docs/plan/02-DESIGN.md, docs/reports/ak1-full-game.md, docs/reports/acceptance.md]
+    tests: [apps/headless/test/full-game.slow.test.ts, test/scripts.test.ts]
+    dod: "pnpm sim:fullgame gruen mit der Voreinstellung aus DEFAULT_NEW_GAME/toConfig (keine eigene Spielerliste im Test): winner !== null spaetestens am Spieltag 1500, mindestens vier KI-Maechte, mindestens ein WAR_DECLARED, ein BATTLE_RESOLVED und ein PROVINCE_CAPTURED, laengstes Fenster ohne Fortschrittsereignis unter 100 Spieltagen, Laufzeit unter 15 Minuten; docs/reports/ak1-full-game.md nennt Sieger, Entscheidungstag, Ereigniszahlen und Stillstandsfenster; docs/reports/acceptance.md fuehrt AK-1 als eigene Zeile mit pnpm sim:fullgame und keine Zeile mehr als AK-1/4/6; pnpm verify gruen. Entscheidet der Lauf nicht, wird der Deckel nicht erhoeht, sondern der Befund nach docs/plan/PROBLEME.md geschrieben - die erste Handlung dieses Tests darf nicht sein, sich selbst gruen zu stellen; die richtige Frage waere dann, ob pointsShareToWin oder die voreingestellte Siegbedingung falsch ist"
+
+  # T-M14-15 ist der vierte Haltepunkt, traegt aber mit Absicht noch KEINEN gate:-Block.
+  # Die Gate-Liste in test/plan-consistency.test.ts ist hart verdrahtet auf drei Eintraege;
+  # ein gate: true hier waere ein roter Waechter, den keine andere Aufgabe gruen machen kann,
+  # und damit waere die DoD-Zusage "pnpm verify gruen" fuer jede M14-Aufgabe unerfuellbar.
+  # gate: true, gate_reason und die erweiterte Waechterliste werden von dieser Aufgabe
+  # selbst in EINER Aenderung eingetragen (siehe ihre dod und 03-TASKS.md, Test 5).
+  - id: T-M14-15
+    milestone: M14
+    title: Der Playtest-Bogen misst, was schiefgehen kann
+    status: todo
+    deps: [T-M14-03, T-M14-08, T-M14-09, T-M14-10, T-M14-13, T-M14-14]
+    requirements: [R-UI-05]
+    acceptance: [AK-7]
+    files: [docs/PLAYTEST.md, docs/ANLEITUNG.md, test/plan-consistency.test.ts, docs/plan/tasks.yaml, docs/plan/03-TASKS.md, docs/reports/playtest-v1.md]
+    tests: [test/docs.test.ts, test/plan-consistency.test.ts]
+    dod: "pnpm verify gruen: die Frage zu R-GAME-01 nennt jede Wahlmoeglichkeit der Anforderungszeile mit der Karte zuerst; je eine Frage zu R-GAME-01, R-GAME-02, R-GAME-03, R-GAME-04, R-BAT-05, R-BAT-07, R-PROV-01; je eine Frage zu Neustart des Fensters und zur Schrift IBM Plex; die Anleitung erklaert Rueckzug, Kampfbericht und Bauabbruch. Der vierte Haltepunkt und der Waechter wandern in EINER Aenderung: diese Aufgabe traegt gate: true und gate_reason ('Noah spielt die V1 nach dem ueberarbeiteten docs/PLAYTEST.md (AK-7); ohne seine Antworten in docs/reports/playtest-v1.md ist T-M12-03 nicht abschliessbar') in tasks.yaml nach UND setzt im selben Zug die hart verdrahtete Gate-Liste in test/plan-consistency.test.ts auf ['T-M9-01','T-M10-01','T-M12-03','T-M14-15']; bis dahin steht der gate:-Block mit Absicht NICHT in tasks.yaml, damit der Plan-Waechter waehrend des ganzen Meilensteins gruen bleibt und die Zusage 'pnpm verify gruen' in jeder M14-Aufgabe erfuellbar ist. Der Waechter prueft danach zusaetzlich, dass jede Aufgabe mit gate: true in der Haltepunkttabelle von 03-TASKS.md steht. T-M12-03 haengt in beiden Plandateien an T-M12-01, T-M12-02b und T-M14-15 (T-M14-14 kommt ueber die deps von T-M14-15 mit) und fasst seine DoD auf den V1-Satz - beides ist bereits in beiden Dateien eingetragen und bleibt hier nur zu pruefen. Haltepunkt erfuellt, wenn docs/reports/playtest-v1.md jede Frage beantwortet und jedes Nein in der Befundtabelle traegt"
+
+  # --- M15: Die KI wird ein Gegner (das reduzierte V1.2, Entscheidung 3 vom 2026-09-05) ---
+  # Erst reparieren, dann abnehmen: T-M15-01 und T-M15-02 haengen an T-M14-15, dem
+  # Playtest-Haltepunkt. Damit kann M15 nicht vor der V1-Abnahme beginnen.
+
+  - id: T-M15-01
+    milestone: M15
+    title: Wer erfaehrt was - Alarm, Lektuere, Adressat - und BATTLE_STARTED
+    status: todo
+    deps: [T-M14-15]
+    requirements: [R-TIME-06]
+    files: [packages/core/src/events/types.ts, packages/core/src/events/emit.ts, packages/core/src/clock.ts, packages/core/src/phases/combat.ts, packages/core/src/phases/occupation.ts, packages/core/src/phases/morale.ts, packages/core/src/phases/dailyTick.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/commands/diplomacy.ts, docs/plan/02-DESIGN.md]
+    tests: [packages/core/src/events/types.test.ts, packages/core/src/clock.test.ts, packages/core/src/phases/combat.test.ts, packages/core/test/properties/event-audience.test.ts, test/docs.test.ts]
+    dod: "Ereignisse tragen drei getrennte Felder (audience = Lektuere, severity = Dringlichkeit, concerns = Adressat); concerns ist Pflichtfeld an BaseEvent mit der Vorgabe concerns = audience im emit(), weil ein fehlendes Betroffenenfeld still 'betrifft niemanden' hiesse und das Vorspulen bei einem verlorenen Landstrich durchliefe; firstAlertFor haelt nur bei concerns an und nicht mehr bei leerer audience; Eigenschaftslauf ueber 200 Spieltage und acht Maechte: 0 Alarme ohne Betroffenen und 0 Verstoesse gegen concerns-Teilmenge-audience; ein Gefecht ueber drei Ticks erzeugt genau 1 BATTLE_STARTED (die Kampfliste wird je Tick neu gebaut und vergibt jedes Mal eine neue battleId - der Vergleich gegen die Liste des Vortricks entprellt); determinism.test.ts bleibt ohne Golden-Erneuerung gruen; 02-DESIGN.md traegt das Kapitel 'Wer erfaehrt was' und wird von test/docs.test.ts gegen R-TIME-06 geprueft"
+
+  - id: T-M15-02
+    milestone: M15
+    title: R-TECH-01 - Freischaltung nach Spieltag
+    status: todo
+    deps: [T-M14-15]
+    requirements: [R-TECH-01]
+    files: [data/rules/default/buildings.json, data/rules/default/units.json, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, packages/core/src/commands/build.ts, packages/core/src/commands/recruit.ts, packages/core/src/commands/types.ts, apps/desktop/src/i18n/de.ts, docs/plan/BALANCING.md, docs/plan/02-DESIGN.md, apps/headless/test/golden/walkthrough.json]
+    tests: [packages/core/src/rules/load.test.ts, packages/core/src/commands/validate.test.ts, test/balancing.test.ts, test/docs.test.ts]
+    dod: "availableFromDay an jedem Gebaeude und jeder Einheit; Bau/Aushebung davor mit NOT_YET_AVAILABLE und genanntem Tag abgelehnt, fuer Mensch und KI; die fuenf belegten Tage stehen woertlich (barracks 1, harbour 2, railway 5, factory 8, airfield 10); der Lader lehnt einen fehlenden Tag ab und eine Einheit, die frueher verfuegbar waere als ihr Gebaeude; alle nicht belegten Tage laufen ueber die pruefbare Ableitungsregel unit.availableFromDay >= buildings[unit.requiresBuilding].availableFromDay und stehen als 'abgeleitet' oder 'geschaetzt' mit Status in BALANCING.md, von test/balancing.test.ts geprueft; de.ts hat NOT_YET_AVAILABLE in errors und rejections; ein geaenderter Golden-Master wird mit UPDATE_GOLDEN=1 erneuert und benannt (determinism.test.ts laeuft ohne Befehle und bleibt unberuehrt, walkthrough.json enthaelt eine KI-Bauabfolge und kann sich aendern); 02-DESIGN.md traegt den D-Abschnitt zur Freischaltungsachse und wird von test/docs.test.ts gegen R-TECH-01 geprueft"
+
+  - id: T-M15-03
+    milestone: M15
+    title: R-TECH-02 - der Spieler sieht, was wann kommt
+    status: todo
+    deps: [T-M15-02]
+    requirements: [R-TECH-02]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts, packages/ai/src/economy.ts, docs/plan/02-DESIGN.md]
+    tests: [apps/desktop/src/game/actions.test.ts, packages/ai/src/economy.test.ts, apps/headless/test/tech-unlock.test.ts, test/docs.test.ts]
+    dod: "In 17 von 17 Faellen nennt an Spieltag 1 entweder der Sperrgrund oder der Tooltip den Freischaltungstag als Zahl; kein Knopf sagt 'nicht verfuegbar' ohne Tag; economyCommands und recruitCommands waehlen nichts heute Gesperrtes; kopfloser Lauf ueber 60 Spieltage mit vier KI-Maechten liefert 0 COMMAND_REJECTED mit NOT_YET_AVAILABLE; pnpm coverage:requirements weist R-TECH-02 als testbelegt aus; 02-DESIGN.md traegt den D-Abschnitt zur Anzeige der Freischaltung und wird von test/docs.test.ts gegen R-TECH-02 geprueft"
+
+  - id: T-M15-04
+    milestone: M15
+    title: R-GAME-07 - Spielstaende der V1 laufen weiter, und die Migration wird geprueft
+    status: todo
+    deps: [T-M15-01, T-M15-02]
+    requirements: [R-GAME-07]
+    files: [packages/core/src/state/types.ts, packages/core/src/state/clone.ts, packages/core/src/persistence/migrate.ts, packages/core/src/persistence/save.ts, packages/core/src/persistence/validate.ts, packages/core/src/persistence/index.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, packages/core/test/golden/save-v1.json]
+    tests: [packages/core/src/persistence/migrate.test.ts, packages/core/src/persistence/save.test.ts, packages/core/src/persistence/validate.test.ts, test/docs.test.ts]
+    dod: "SCHEMA_VERSION ist 2 und MIGRATIONS enthaelt genau einen Schritt (1 nach 2), der an einem eingefrorenen echten V1-Stand laeuft. Dieser eine Schritt legt ALLE in M15 hinzukommenden Zustandsfelder leer an - concerns an jedem Ereignis (T-M15-01), die Verstimmungen in AiMemory (T-M15-05) und das Feuerleitungsfeld am Army-Objekt (T-M15-07); state/types.ts und clone.ts fuehren sie mit, und keine spaetere M15-Aufgabe erhoeht die Versionsnummer noch einmal oder fuegt einen zweiten Schritt hinzu. Das ist die Aufloesung des Widerspruchs, an dem sich T-M15-04, T-M15-05 und T-M15-07 sonst gegenseitig blockieren (Entscheidung (a), in DECISIONS.md festgehalten): die Migration entsteht mit dem ersten neuen Feld, nie danach. 0 Ladewege ohne Pruefung - nach Migration laeuft validateState, ohne Migration wird der Hash geprueft, ein Stand ohne beides wird abgelehnt (drei Tests, einzeln gezaehlt); eine vergessliche Migration, die state.schemaVersion nicht mitzieht, wird abgelehnt; der migrierte V1-Stand ist nach Speichern und Laden hashgleich; der Formatwaechter scheitert, wenn ein Zustandsfeld ohne Versionserhoehung dazukommt - kein Feld darf also nach dieser Aufgabe noch neu erfunden werden. In 01-REQUIREMENTS.md nennt R-GAME-07 nur noch die tatsaechlich entstehenden Felder: Spione, Aufklaerung und Zeitung sind aus dem Anforderungstext gestrichen und mit Verweis auf M17 in DECISIONS.md begruendet. DECISIONS.md haelt den Umschlag als fuehrende Versionsnummer fest; 02-DESIGN.md traegt den D-Abschnitt zum Speicherformat V2 und wird von test/docs.test.ts gegen R-GAME-07 geprueft"
+
+  - id: T-M15-05
+    milestone: M15
+    title: Das Verhaeltnis steuert die KI - erst die Messlatte, dann die Regel
+    status: todo
+    deps: [T-M14-05, T-M14-11, T-M14-12, T-M15-04]
+    requirements: [R-DIP-06, R-AI-02, R-AI-06]
+    files: [apps/headless/src/tournament.ts, packages/ai/src/relationship.ts, packages/ai/src/diplomacy.ts, packages/ai/src/index.ts, packages/core/src/view/publicView.ts, packages/core/src/state/types.ts, packages/core/src/state/clone.ts, packages/core/src/phases/dailyTick.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/ai.json, data/rules/default/constants.json, docs/reports/ai-tournament.md, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md]
+    tests: [apps/headless/test/tournament.slow.test.ts, packages/ai/src/relationship.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, packages/core/src/phases/diplomacy.test.ts, packages/core/src/rules/load.test.ts]
+    dod: "Schritt 1 vor Schritt 2: der Grundlauf 'schwer gegen normal' steht datiert in docs/reports/ai-tournament.md mit Siegquote, Kriegserklaerungen und Friedensschluessen je Stufe, bevor packages/ai/src/diplomacy.ts geaendert wird. Danach liegt die Siegquote ausserhalb des Rauschbands aus T-M14-05 und unter der Obergrenze 0,95 - diese Obergrenze wird HIER scharf gestellt, nicht in T-M14-05: dort waere sie gegen die gemessenen 50:0 sofort rot gewesen und haette pnpm test:slow und damit AK-1/4/6, T-M12-03 und den Playtest-Haltepunkt blockiert. Der it.skip aus T-M14-05 entfaellt, und der in PROBLEME.md datierte Ist-Wert wird durch den neuen ersetzt. Grundwert, Endwert und Rauschband mit Status in BALANCING.md, kein Lauf endet 25:25. R-DIP-06/AK1..AK6 je durch einen Verhaltenstest belegt (erzeugtes Kommando, nicht Nutzenzahl) und je AK-Nummer im Anforderungstor aus T-M14-02b gezaehlt; im 50-Partien-Lauf mindestens eine Kriegserklaerung mit Punkteverhaeltnis zwischen 900 und 1100. Kriegsschwelle je Stufe als eigener Regelwert, maxFronts traegt danach nur die Frontenzahl; der Regellader lehnt eine Stufe ohne Kriegsschwelle ab. PublicView.others fuehrt das oeffentliche Ansehen und die oeffentlichen Kriege einer Macht - ohne beides ist AK2 nicht baubar - und wird mit der offers-Erweiterung aus T-M14-12 in derselben Datei zusammengefuehrt. Ansehen und Verstimmungen klingen in packages/core/src/phases/diplomacy.ts ueber playerOrder ab, clone.ts kopiert das neue Record tief (heute kaeme es ueber den Spread als geteilte Referenz durch); der Verstimmungsspeicher ist bereits in T-M15-04 leer angelegt - diese Aufgabe erhoeht SCHEMA_VERSION nicht und aendert persistence/migrate.ts nicht. In 01-REQUIREMENTS.md ist der Teilsatz zu Verstimmungen aus enttarnten Spionen aus R-DIP-06 entfernt und mit Verweis auf M17 in DECISIONS.md begruendet. Determinismus- und Wiedergabetest unveraendert gruen"
+
+  - id: T-M15-06
+    milestone: M15
+    title: Vorspulen erreicht die Oberflaeche - nach einer Entscheidung ueber die Huelle
+    status: todo
+    deps: [T-M14-04, T-M15-01]
+    requirements: [R-TIME-06, R-TIME-03]
+    files: [docs/plan/DECISIONS.md, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/sim/SimEngine.ts, apps/desktop/src/sim/SimHost.ts, apps/desktop/src/sim/worker.ts, apps/desktop/src/sim/protocol.ts, packages/core/src/clock.ts, test/guards/reachability.ts, docs/ANLEITUNG.md, docs/reports/performance.md, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/tasks.yaml]
+    tests: [test/docs.test.ts, apps/desktop/src/App.test.tsx, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/sim/SimHost.test.ts, apps/desktop/src/sim/worker.test.ts, packages/core/src/clock.test.ts, test/guards/ui-reachability.test.ts, test/guards/no-realtime.test.ts]
+    dod: "Der DECISIONS.md-Eintrag zu T-M15-06 steht datiert vor der ersten Codeaenderung und wird von test/docs.test.ts geprueft (beide Wege, ihre Kosten - 521 Produktionszeilen unter apps/desktop/src/sim stehen zur Disposition -, das Kriterium, der gewaehlte Weg). Danach: genau ein Aufruf von fastForward des Kerns je Vorspulvorgang, nachgewiesen ueber die Gleichheit von Huellen-Ticks und ticksRun (keine zweite Schleife); fastForwarding={false} existiert nicht mehr und der Abbruchknopf ist in einem Test erreichbar; eine Eroberung zwischen zwei fremden Maechten haelt nicht an, dieselbe mit dem Spieler als Beteiligtem haelt an; BATTLE_STARTED beendet das Ziel 'Gefecht beginnt'; ein zwischen zwei Haeppchen gesetzter Abbruch greift und die Fortschrittszahl waechst mehr als einmal; ein Waechter stellt fest, dass Tempo, Pausenstand und Vorspulziel nicht im GameState liegen (R-ARCH-04/AK2 hat heute keinen); apps/desktop/src/sim hat keinen Eintrag mehr in REACHABILITY_EXCEPTIONS - erreichbar oder geloescht; R-TIME-02/AK3 wird an dem Code geprueft, den der Spieler ausfuehrt; alle fuenf Ziele aus R-TIME-06 sind waehlbar und in docs/ANLEITUNG.md genannt, und in derselben Aufgabe wird entschieden und in 01-REQUIREMENTS.md eingetragen, ob R-TIME-03 auf dieselben fuenf gekuerzt oder R-TIME-06 um 'Angriff auf eigenes Gebiet' auf sechs ergaenzt wird - zwei V1-Anforderungen duerfen nicht mit verschiedenen Zahlen nebeneinander stehen; der Durchsatz steht auf der gespielten Karte gemessen in docs/reports/performance.md gegen die 500 Spielstunden je Sekunde aus R-TIME-02/AK4. Mit dieser Aufgabe ist T-M10-04 geschlossen: das Vorspulen-Menue ist vollstaendig und erreichbar, und die Aufgabe wird in beiden Plandateien wieder auf done gesetzt, mit Verweis auf diese hier"
+
+  - id: T-M15-07
+    milestone: M15
+    title: Feuerautomatik und Feuerleitung
+    status: todo
+    deps: [T-M14-06, T-M14-07, T-M14-12, T-M15-01, T-M15-04]
+    requirements: [R-BAT-08, R-BAT-06]
+    files: [packages/core/src/state/types.ts, packages/core/src/state/clone.ts, packages/core/src/commands/types.ts, packages/core/src/commands/handlers.ts, packages/core/src/commands/bombard.ts, packages/core/src/phases/combat.ts, packages/core/src/events/types.ts, packages/core/src/view/publicView.ts, packages/ai/src/military.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, data/rules/default/constants.json, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md]
+    tests: [packages/core/src/phases/autofire.test.ts, packages/core/src/phases/combat.test.ts, packages/core/src/commands/army.test.ts, packages/ai/src/decide.test.ts, apps/desktop/src/game/actions.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "Selbsttaetiger Beschuss erzeugt ein BOMBARDMENT, das ihn als selbsttaetig kennzeichnet; 'Feuer halten' unterdrueckt ihn vollstaendig und ist ueber armyActions erreichbar; bei gleicher sichtbarer Staerke gewinnt die kleinste Provinzkennung, in beiden Reihenfolgen der Armeeliste, und der Seitentausch spiegelt das Ergebnis trefferpunktgenau; marschierende, eingeschiffte und durch cannotAttackUntil gesperrte Armeen feuern nicht; kein Beschuss - von Hand oder selbsttaetig - trifft eine Armee ohne Kriegszustand (Eigenschaftstest ueber zufaellige Dreiparteienlagen); der Schaden einer feuernden Artilleriearmee ist ueber die Einheitenzahl monoton nicht fallend bis 50 und danach konstant; eine KI-Fernwaffenarmee bleibt in Reichweite stehen statt in den Nahkampf zu laufen, und weil T-M14-12 je KI-Macht mindestens eine Armee mit armyRange groesser 0 zusichert, erzeugt im 50-Partien-Turnier aus T-M15-05 jede Schwierigkeitsstufe mindestens ein selbsttaetiges Beschussereignis, Zahl je Stufe mit Status in BALANCING.md; das Feuerleitungsfeld am Army-Objekt ist bereits in T-M15-04 leer angelegt - diese Aufgabe erhoeht SCHEMA_VERSION nicht und aendert persistence/migrate.ts nicht, ein Spielstand ohne das Feld laedt mit bestandener Hashpruefung ueber den einen Schritt 1 nach 2; die Automatik laeuft ueber armyOrder, Determinismus- und Wiedergabetest bleiben gruen"
+
+  - id: T-M15-08
+    milestone: M15
+    title: Die KI nutzt die neuen Mittel - das Integrationstor
+    status: todo
+    deps: [T-M15-01, T-M15-02, T-M15-03, T-M15-04, T-M15-05, T-M15-06, T-M15-07, T-M15-09]
+    requirements: [R-AI-08, R-AI-01]
+    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, apps/headless/src/tournament.ts, data/rules/default/ai.json, packages/core/src/rules/types.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-tournament.md, docs/plan/BALANCING.md, docs/plan/PROGRESS.md]
+    tests: [packages/ai/src/economy.test.ts, packages/ai/src/military.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts]
+    dod: "Laeuft als letzte Aufgabe von M15; T-M15-09 steht nur deshalb in den deps, damit 'zuletzt' auch numerisch stimmt - sachlich haengt das Tor nicht am Protokollfilter. Weltkarte, 8 KI, 200 Spieltage, gezaehlt aus runTicks(...).events statt aus dem Ringpuffer state.eventLog: RESOURCE_SHORTAGE mit resource money = 0; COMMAND_REJECTED mit dem Freischaltungscode aus R-TECH-01 = 0; COMMAND_REJECTED mit INVALID_TARGET aus diplomatischen Kommandos = 0 (heute 405 von 408). Turnier mit den drei Paarungen schwer/leicht, schwer/normal, normal/leicht: playMatch liefert die Ereigniszahl je Stufe, playTournament summiert sie. Gemessen wird, was M15 hinzufuegt, nicht was M14 schon zusichert - der blosse Existenznachweis fuer Handel entfaellt, weil T-M14-12 bereits mindestens ein TRADE_EXECUTED je KI-Macht verlangt: fuer jede der drei Stufen mindestens ein SELBSTTAETIGES Beschussereignis aus T-M15-07, mindestens eine Kriegserklaerung, die aus dem Verhaeltnis nach R-DIP-06 entsteht und nicht aus der Frontenzahl, und mindestens ein Handel ueber der neuen Regelmarge; in mindestens der Haelfte der Partien jeder Stufe liegt von jeder Art mindestens eine vor. Tabelle mit Datum in docs/reports/ai-tournament.md; Handelsmarge, Angebotsmarge und Ruecklage mit Status in BALANCING.md. In 01-REQUIREMENTS.md ist R-AI-08 auf das gekuerzt, was V1.2 baut: AK1 (Gegenspion) reist mit R-SPY nach M17, und die Spionageklausel in AK3 ist aus dem AK-Text entfernt - sonst ist dieses Tor unerfuellbar; beides mit Verweis auf Entscheidung 3 in DECISIONS.md begruendet"
+
+  - id: T-M15-09
+    milestone: M15
+    title: Weltgeschehen - ein Filter statt einer Zeitung
+    status: todo
+    deps: [T-M13-13, T-M15-01]
+    requirements: [R-GAME-06]
+    files: [packages/core/src/events/world.ts, packages/core/src/index.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
+    tests: [packages/core/src/events/world.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Alerts.test.tsx]
+    dod: "R-NEWS-01/02/03 gestrichen (Entscheidung 3 vom 2026-09-05), ersetzt durch den fuenften Protokollfilter Weltgeschehen aus derselben Positivliste. WORLD_EVENT_TYPES enthaelt genau acht Arten (WAR_DECLARED, DIPLOMACY_CHANGED, PROVINCE_CAPTURED, CAPITAL_LOST, PROVINCE_REVOLTED, PLAYER_ELIMINATED, BATTLE_RESOLVED, GAME_ENDED); Eigenschaftstest ueber zufaellige Ereignisfolgen: worldEventsIn liefert nur diese Arten, in Protokollreihenfolge, und ignoriert die audience aus T-M15-01. Eine fremde Kriegserklaerung steht unter Weltgeschehen und unter alles, aber ohne log__row--alert; gefiltert wird VOR dem slice(-40), das in App.tsx das Protokoll fuer die Ereignisleiste zuschneidet (Anker ist dieser Ausdruck, keine Zeilennummer - dieselbe Aufgabe schreibt die Stelle um), sonst findet der Filter in einer langen Partie regelmaessig eine leere Liste. Eine Zeile ausserhalb der eigenen audience traegt nur Art, Beteiligte, Ort - keine Ziffer, keine Kennung, keine losses; die beiden deutschen Saetze mit stillschweigendem 'ich' (Verhaeltnis zu, Die Hauptstadt ist verloren) bekommen eine zweite Fassung aus fremder Sicht. Kein neues Zustandsfeld: state/types.ts unveraendert, HASH_OMIT_KEYS bleibt ['eventLog']; diese Aufgabe erhoeht SCHEMA_VERSION nicht, fuegt keine Migration hinzu und laesst beide Golden-Master unter packages/core/test/golden und apps/headless/test/golden byteweise unveraendert - Nachweis git diff --stat, bei gruenem determinism.test.ts und replay.test.ts (die Absolutaussage 'SCHEMA_VERSION bleibt 1' ist falsch, seit T-M15-04 sie auf 2 hebt). alertsFor und firstAlertFor liefern dieselbe Menge wie vorher; der Klang liest weiterhin das Protokoll und wandert beim Umbau in App.tsx nicht mit. grep -rn R-NEWS trifft nur noch DECISIONS.md; der scope-Block traegt nach der Streichung 97 IDs, davon 15 spaetere, und pnpm coverage:requirements meldet weiterhin 'V1 offen: 0'"

@@ -521,3 +521,274 @@ größte Abweichung 13 % (Grenze 15 %). Bevölkerung je Provinz: Median 443.000.
 Parameterlauf ist auf der neuen Karte wiederholt (`docs/reports/balance-sweep.md`,
 `BALANCING.md`); die Befunde des ersten Laufs über eine gesättigte Wirtschaft gelten
 nicht mehr. Die Datei `world-shapes.json` blieb beim Neubau bitgleich.
+
+---
+
+---
+
+## 2026-09-05 · vor M14 · Der Reparaturumfang ist schmal — was nicht gebaut wird, wird als Zusage zurückgenommen
+
+**Entscheidung:** Aus den 68 Befunden der Auswertung vom 2026-09-04 wird gebaut, was das
+Spiel unspielbar oder eine Messung unbrauchbar macht — rund fünfzehn Aufgaben in M14. Jeder
+übrige Befund der Form „das Dokument verspricht X, der Code tut Y" wird **keine Aufgabe,
+sondern eine zurückgenommene Zusage**: Anforderungstext, Entwurf und Definition-of-Done
+werden auf das Gebaute gekürzt, und die Kürzung steht hier mit ihrem Preis.
+
+**Begründung:** Über dreißig der 68 Befunde haben genau diese Form. Für jeden gibt es zwei
+ehrliche Auflösungen — das Dokument nachziehen oder den Code bauen —, und beide sind
+legitim; falsch ist allein, die Lücke offenzulassen, denn dann behauptet der Plan weiter
+etwas, das niemand prüft. Würde jeder Befund eine Aufgabe, wüchse der Plan um 68 Einträge,
+und T-M12-03 — der Abnahme-Haltepunkt und heute die letzte offene Aufgabe — rückte weiter
+weg, statt näher. Ein Plan, der nur wächst, wird nie fertig. Die Gegenrichtung, alles
+nachzuziehen und nichts zu bauen, scheidet ebenso aus: sieben der Befunde sind als Blocker
+eingestuft, darunter der Speicher, der kein Fenster überlebt, und ein Stapel-Deckel, der
+eine Armee ab 50 Einheiten auf null Schaden setzt. Ohne sie ist eine Abnahme sinnlos.
+
+**Auswirkung:** Sechs Zusagen werden zurückgenommen, jede mit eigenem Eintrag unten:
+Gebäudeunterhalt, Einheitenmoral, Garnison gegen Aufstand, E2E-Ebene, Zeitsieg,
+Übergangsmalus. Das Spiel kann nach M14 weniger, als 01-REQUIREMENTS.md heute verspricht.
+Es kann dafür genau das, was dort dann steht — und das ist der eigentliche Zweck der
+Übung. Die Rücknahmen sind erst vollzogen, wenn die betroffenen Zeilen in
+01-REQUIREMENTS.md, 02-DESIGN.md, 03-TASKS.md und tasks.yaml tatsächlich gekürzt sind;
+bis dahin sind sie eine Absicht, kein Zustand.
+
+---
+
+## 2026-09-05 · M14/M16 · Die Abnahme läuft im Browser, Tauri wird ein eigener Meilenstein
+
+**Entscheidung:** Die V1 wird im Browser-Bau abgenommen (AK-7, `docs/PLAYTEST.md`). Die
+Verpackung als Programm wird **M16** — mit einem echten Bau und einem eigenen
+Abnahmekriterium. C-02 („Auslieferung: Desktop-Anwendung über Tauri. Savegames im echten
+Dateisystem", 01-REQUIREMENTS.md:44) wird präzisiert: das gilt ab M16, nicht für die
+V1-Abnahme. Der dauerhafte Speicher-Port der V1 ist **IndexedDB**, nicht `fs`.
+
+**Begründung:** C-02 ist die einzige Rahmenbedingung des Projekts, die nie auch nur einmal
+ausgeführt wurde. Nachgeprüft im Worktree: `@tauri-apps` kommt in `pnpm-lock.yaml` null mal
+vor, es gibt also keine JS-Bindung, mit der ein Dateiport überhaupt schreiben könnte;
+`apps/desktop/src-tauri/icons/` existiert nicht, es gibt also kein Programmsymbol;
+`Cargo.lock` existiert nicht, es hat also nie ein Rust-Bau stattgefunden. Und
+`docs/PLAYTEST.md` startet in seiner eigenen Startanweisung `pnpm --filter
+@worldwar/desktop dev` — den Vite-Server. Die Abnahme war längst im Browser geplant, nur
+hatte es niemand aufgeschrieben. Damit ist der Bau als Programm unbekanntes Gelände: heute
+weiß niemand, ob das Programm startet. So etwas gehört an den Anfang eines eigenen
+Meilensteins, nicht ans Ende eines fremden.
+
+**Auswirkung:** Der Speicher-Port wird IndexedDB. Das geht ohne Bruch, weil `StoragePort`
+(packages/core/src/persistence/StoragePort.ts:9-15) schon durchgehend asynchron ist —
+`list`/`read`/`write`/`remove`/`exists` geben Promises zurück; die Schnittstelle bleibt
+unverändert. Ein Spielstand überlebt damit das Schließen des Fensters, aber er liegt im
+Browserprofil und nicht in einer Datei, die Noah kopieren, sichern oder verschicken kann.
+Das holt M16 nach, und bis dahin muss die Oberfläche es sagen statt es zu verschweigen. Die
+Vertragstestreihe wird als gemeinsame Funktion herausgezogen und läuft ab M14 gegen jede
+Umsetzung, die es gibt — zwei jetzt, drei ab M16. Die Befunde zu Symbol, CLI und dem
+Verpackungswächter, der heute nur Zeichenketten aus zwei JSON-Dateien liest, wandern
+vollständig nach M16 (Befunde 17, 20, 21).
+
+---
+
+## 2026-09-05 · M15 · V1.2 heißt „die KI wird ein Gegner"; die Zeitung wird ein Filter
+
+**Entscheidung:** Der Nachtrag 2.15 wird auf einen Satz gekürzt. **In M15:** R-TECH-01,
+R-TECH-02, R-DIP-06, R-BAT-08, R-AI-08, R-GAME-07, R-TIME-06. **Gestrichen:** R-NEWS-01,
+R-NEWS-02, R-NEWS-03 — ersetzt durch einen Filter „Weltgeschehen" im bestehenden
+Ereignisprotokoll, gespeist aus derselben Positivliste. **Nach M15 (M17):** R-SPY-01 bis
+R-SPY-06, R-DIP-05, R-DIP-07.
+
+**Begründung, mit den Zahlen:** 2.15 begründet sich selbst mit dem Satz *„Tag 1
+unterscheidet sich von Tag 40 durch nichts als den Kontostand"* — und zwei Drittel seines
+Umfangs beantworten diese Frage nicht. Von den 50 Akzeptanzkriterien des Nachtrags gehören
+**16 zu R-SPY, also 32 %**; ein Spion ändert am Verlauf eines Tages nichts, den der Spieler
+sonst durchklickt. Die Anforderung, die die Frage beantwortet, ist **R-TECH-01 mit 3 AK**:
+ein Feld in den Regeldateien, eine Prüfung in `build.ts`/`recruit.ts`, ein Fehlercode, ein
+Filter in `nextBuilding`. Das ist der beste Aufwand-Nutzen-Quotient im ganzen Nachtrag.
+
+Die Zeitung geht aus zwei Gründen. Erstens verbietet ihr **R-NEWS-02 ausdrücklich alles,
+was eine Entscheidung ermöglichen würde** — „nie Mengen, Vorräte, Truppen oder Gebäude"
+(01-REQUIREMENTS.md:618-620). Was übrig bleibt, liegt bereits vollständig im
+Ereignisprotokoll. Zweitens wäre sie teuer bezahlt worden: `HASH_OMIT_KEYS`
+(packages/core/src/state/types.ts:296) nimmt vom Simulationshash genau **einen** Schlüssel
+aus, `eventLog`. R-NEWS-01/AK1 verlangt aber, dass jede Ausgabe „im Spielstand liegt" —
+Zeitungstext liefe damit in den Hash, den `save.ts:26`, der Golden-Master und die Wiedergabe
+benutzen. Jede geänderte Schlagzeilenformulierung hätte Determinismus- und Replaytest
+gebrochen, und zwar erst Wochen später und scheinbar grundlos.
+
+**Auswirkung:** Der Ersatz kostet fast nichts, weil die Mechanik steht: `EVENT_FILTERS` und
+`categoryOf` in `apps/desktop/src/ui/Panels.tsx:455-471` gibt es seit T-M13-13.
+„Weltgeschehen" ist ein weiterer Eintrag in dieser Liste plus die Positivliste aus
+R-NEWS-01 — kein neues Zustandsfeld, keine Migration, kein Hashrisiko, ein Tag statt einer
+Woche. Was verloren geht, ist die Atmosphäre einer gedruckten Ausgabe; das ist der Preis.
+Kommt die Zeitung in M17 doch, muss die Hash-Frage **zuerst** beantwortet werden, nicht
+nebenbei. Der `scope`-Block bekommt für all das ein maschinenlesbares Fach je Meilenstein,
+sonst zählt das Anforderungstor die verschobenen IDs weiter als V1-Pflicht (Befund 7).
+
+---
+
+## 2026-09-05 · M14 · Die Zielpartie bekommt Nachbarn, keinen amphibischen Umbau
+
+**Entscheidung:** Die Standardpartie füllt ihre Gegner nach **Nachbarschaft** statt nach
+Listenreihenfolge, und `rateProvinces` bekommt einen **Erreichbarkeitsfilter**. Ein
+amphibischer Umbau der KI — Hafen und Werft in der Bauliste, Transporter in der
+Aushebeliste, `MERGE_ARMIES`, Zielbewertung über See — wird in diesem Zug **nicht** gebaut.
+
+**Begründung:** In der ausgelieferten Voreinstellung (`apps/desktop/src/game/newGame.ts`,
+sieben Gegner in Kartenreihenfolge, Spieler = Vereinigte Staaten) fallen **0
+Kriegserklärungen in 1000 Spieltagen**, und sieben von acht Mächten bewegen sich ab Tag 200
+nicht mehr. Der Grund ist doppelt: kein Standardgegner hat eine Landverbindung zum Spieler,
+und die KI kann kein Wasser überqueren — **3.046 von 4.464 Marschbefehlen** werden mit
+`NO_PATH` abgelehnt, weil `hopDistance` (packages/ai/src/targeting.ts:26) Seewege wie
+Landwege zählt, während der Kern den Weg mit `canUseSea` plant. AK-1 („eine vollständige
+Partie gegen mindestens vier KI-Gegner") ist in dieser Aufstellung nicht schwer zu messen,
+sondern **nicht messbar**: das zu messende Ereignis tritt nie ein.
+
+Beide Hälften der billigen Kur sind Filter, keine neuen Fähigkeiten — die Gegnerauswahl
+liest den Nachbarschaftsgraphen der Karte, die Zielbewertung fragt vorher, ob ein Weg
+existiert. Der amphibische Umbau ist das Richtige für R-AI-01, aber er ist ein eigenes
+Arbeitspaket mit eigenem Balancerisiko, und er darf nicht zwischen der V1 und ihrer
+Abnahme stehen.
+
+**Auswirkung:** Inselmächte bleiben handlungsunfähig; sie werden nur nicht mehr als
+Standardgegner vorbelegt (Befund 31 bleibt offen, nicht in M14 und nicht in M15 — wann,
+entscheidet der Stand nach der Abnahme). Die Zielpartie ist damit eine andere als die heute
+vorbelegte, also müssen die Balancezahlen der Weltkarte an ihr neu gemessen werden — und
+zwar erst, nachdem die Messgeräte repariert sind (Befunde 24, 25, 33, 45, 62). Erst danach
+existiert AK-1 als Ereignis, das ein Test sehen kann.
+
+---
+
+## 2026-09-05 · R-ECON-03 · Zurückgenommen: Gebäude verbrauchen nichts
+
+**Entscheidung:** R-ECON-03 wird auf das Gebaute gekürzt — „Armeen verbrauchen
+Ressourcen." Die Gebäudehälfte entfällt aus der Anforderung und aus der Phasenzeile in
+02-DESIGN.md. Gebäude bekommen in dieser Version kein `upkeep`-Feld.
+
+**Begründung:** Nachgeprüft: `BuildingRule` (packages/core/src/rules/types.ts:32-44) hat
+kein `upkeep`-Feld, `data/rules/default/buildings.json` folglich auch nicht, und
+`phases/upkeep.ts:33-46` bildet die Nachfrage ausschließlich über `draft.armyOrder`. Nur
+`UnitRule` trägt `upkeep` (types.ts:61). Die Zusage war nie gebaut — und sie nachzubauen ist
+kein Feld, sondern ein Wirtschaftspaket: unbezahlter Unterhalt braucht eine Regel, was mit
+dem Gebäude geschieht (aussetzen statt zerstören), also einen Zustand je Gebäude, also eine
+Migration, dazu neue Zahlen in BALANCING.md — gemessen mit Messgeräten, die heute selbst
+falsch messen.
+
+**Auswirkung:** Die Wirtschaft behält genau eine laufende Senke: Armeeunterhalt. Wer nicht
+kämpft, häuft an, und Kohle bleibt ohne laufenden Verbraucher (Befunde 26, 35). Das ist ein
+echter Verlust an Spieltiefe im Frieden, und der Playtest wird ihn zeigen. Er steht ab jetzt
+in der Anforderung, statt sich hinter einem grünen Haken zu verstecken.
+
+---
+
+## 2026-09-05 · T-M4-05 · R-UNIT-07 · Zurückgenommen: Einheiten haben keine Moral
+
+**Entscheidung:** R-UNIT-07 wird auf Trefferpunkte gekürzt. Die Sätze in 02-DESIGN.md
+(D6.8) und in T-M4-05, die Einheitenmoral wörtlich zusagen, entfallen.
+
+**Begründung:** Nachgeprüft: ein Verband ist `{ unitKey, hpTotal }`
+(packages/core/src/state/types.ts:156-159) — mehr trägt er nicht. Provinzmoral berührt ihn
+genau einmal, bei der Aufstellung (`phases/recruitment.ts:48-52`). Eine zweite Moral
+einzuziehen hieße: ein Feld je Verband, eine Drift je Spieltag, zwei Einflüsse
+(Nahrungsmangel, Feindesland) und ein Schadensfaktor — und dieser Schadensfaktor ist genau
+die Kurve, die dieses Projekt in T-M4-03 (Eintrag vom 2026-09-03) mit Begründung gestrichen
+hat, weil der Trefferpunkte-Pool die Stärke bereits *ist*. Die Zusage nachzubauen hieße,
+dieselbe Entscheidung ein zweites Mal zu treffen und diesmal anders.
+
+**Auswirkung:** Der Zustand einer Armee bleibt eine einzige Zahl. Eine seit vierzig Tagen im
+Feindesland stehende Armee ist so gut wie eine frische aus der Hauptstadt; es gibt damit
+keinen Grund, Truppen heimzuholen. Kommt die Moral später, kommt sie als eigene Anforderung
+mit eigener Zahl und eigenem Test — nicht als Halbsatz in einer alten.
+
+---
+
+## 2026-09-05 · T-M5-02 · R-PROV-03 · Zurückgenommen: Garnison unterdrückt keinen Aufstand, es gibt keine Aufständischen
+
+**Entscheidung:** Zwei Zusagen aus T-M5-02 werden zurückgenommen: die Unterdrückung eines
+Aufstands durch eine anwesende Garnison und die Aufständischen-Armee. Ein Aufstand bleibt,
+was er heute ist — die Provinz fällt an niemanden (`owner = null`).
+
+**Begründung:** Nachgeprüft: `settleMorale` (packages/core/src/phases/morale.ts:137-158)
+liest `draft.armies` nirgends, und `revoltChance(morale, rules)` (:125) bekommt den
+Provinzkontext gar nicht. Die Garnisonshälfte wäre billig; die Aufständischen sind es nicht:
+`Army.owner` ist `PlayerId` (state/types.ts:163) und lässt eine besitzerlose Armee typseitig
+nicht zu, während `Province.owner` (:128) `PlayerId | null` längst kennt. Ein
+Rebellen-Eigentümer berührt damit den Vertrag jeder Kampfphase und braucht eine Migration.
+**Nur die billige Hälfte zu bauen wäre die schlechtere Wahl:** eine Garnison, die den
+Aufstand verhindert, ohne dass es Aufständische gibt, macht Moral zu einem Knopf, den man
+mit Truppen abschaltet.
+
+**Auswirkung:** Moral bleibt eine Einbahnstraße — sie sinkt, die Provinz geht verloren,
+Truppen helfen nicht. Die Warnung „Aufstandsgefahr" kündigt damit etwas an, das der Spieler
+nur vermeiden (durch Moralpflege), nicht abwenden kann (durch Besatzung). T-M5-02 verliert
+zwei Zeilen seiner Definition-of-Done, und PROGRESS.md wird an dieser Stelle
+richtiggestellt (Befunde 19, 63).
+
+---
+
+## 2026-09-05 · D14 · Zurückgenommen: es gibt keine E2E-Teststufe
+
+**Entscheidung:** Die E2E-Zeile der Teststufentabelle (02-DESIGN.md:724, „E2E | Playwright
+(Web-Build) | `apps/desktop/e2e/`") entfällt. Die drei Aufgaben, die e2e-Dateien als ihren
+Testbeleg führen (tasks.yaml:703 `map-perf.spec.ts`, :753 `game-flow.spec.ts`, :804
+`a11y.spec.ts`), bekommen den Beleg, den sie tatsächlich haben — oder verlieren ihr `done`.
+
+**Begründung:** Nachgeprüft: `apps/desktop/e2e/` existiert nicht, und `playwright` steht in
+keiner `package.json` und in keinem Lockfile. Die Stufe gab es nie. Sie jetzt einzuführen
+heißt: eine zweite Testlaufzeit, ein Browser in der Prüfkette, eigene Zeitbudgets und eigene
+Flakiness — Aufwand, der sich lohnt, wenn eine Anwendung Ende zu Ende steht, und der heute
+an einer Anwendung gemessen würde, deren Auslieferungspfad selbst gerade erst entschieden
+wurde. Der eigentliche Schaden ist ohnehin nicht die fehlende Stufe, sondern dass drei
+erledigte Aufgaben ihren Beleg in einem Verzeichnis führen, das es nicht gibt.
+
+**Auswirkung:** Was E2E geprüft hätte, prüft in der V1 der Playtest-Bogen — und der wird vor
+der Abnahme um die Fragen ergänzt, die er heute nicht stellt: Fenster schließen und neu
+öffnen, zweite Partie nach der ersten, Rückzug, Kampfbericht, Bauabbruch. Das Zeichnen misst
+weiterhin kein Test: 141 von 249 Zeilen in `MapCanvas.tsx` laufen in keinem Test, weil
+`getContext` in `App.test.tsx` `null` liefert (Befund 16). Das bleibt so — und es steht
+jetzt geschrieben, statt als grüner Haken zu erscheinen.
+
+---
+
+## 2026-09-05 · T-M10-07a · R-GAME-02 · Zurückgenommen: der Zeitsieg ist keine wählbare Siegbedingung
+
+**Entscheidung:** „Zeitlimit" entfällt aus R-GAME-02. Die V1 kennt zwei Siegbedingungen:
+Punkte und Eroberung.
+
+**Begründung:** Nachgeprüft: der Kern kann es (packages/core/src/rules/victory.ts:73-86),
+aber `NewGameOptions.victory` (apps/desktop/src/game/newGame.ts:25) kennt nur `'points' |
+'conquest'`, und `condition: 'time'` wird von **keiner** Produktionsdatei und **keinem** Test
+gesetzt. Der Zweig ist zugleich unerreichbar und unbelegt; ihn an den Dialog zu hängen
+hieße, ungeprüften Code scharfzuschalten. Der Weg dahin ist auch nicht der Schalter, sondern
+das Eingabefeld für die Tage, die Vorgabe, die Anzeige der verbleibenden Zeit und ein Test
+für den Ausgang an Tag N.
+
+**Auswirkung:** Eine Partie lässt sich im Spiel nicht auf eine feste Länge begrenzen. Der
+Startdialog verspricht dafür nichts mehr, was er nicht hält (Befund 39 ist damit erledigt,
+ohne dass eine Zeile Code entsteht). Der kopflose Abnahmelauf setzt seine Obergrenze im
+Test, nicht im Dialog. Der Zeitzweig im Kern bleibt zunächst stehen — **benutzt ihn der
+Abnahmelauf nicht, ist er nach dem Maßstab dieses Projekts toter Code und gehört gelöscht**,
+so wie unten `crossingFactor`.
+
+---
+
+## 2026-09-05 · R-BAT-03 · Zurückgenommen: kein Übergangsmalus für Flüsse und Meerengen
+
+**Entscheidung:** „Fluss/Küste" entfällt aus R-BAT-03; die Verteidigungsboni der V1 sind
+Festung und Gelände. `crossingFactor` (packages/core/src/rules/combat.ts:138-143) wird
+gelöscht. Das Kartenfeld `crossing` bleibt in `world.json` — es beschreibt die Karte richtig
+und kostet nichts.
+
+**Begründung:** Nachgeprüft: `crossingFactor` hat im ganzen Repo genau einen Treffer, seine
+eigene Definition — toter Code seit dem Tag, an dem er geschrieben wurde. Er hätte auch gar
+nicht angewandt werden können: die Kampfphase weiß nicht, über welche Kante angegriffen
+wurde. `phases/movement.ts:75` hält die benutzte Kante als `travelled`, verwertet sie aber
+nur für `embarked` (:79) und schreibt sie nicht in den Zustand. Dazu die Karte selbst,
+gezählt in `data/maps/world.json`: **633 Kanten ohne Übergang, 25 Meerengen, 0 Flüsse** —
+Flüsse gibt es nur auf der Testkarte (packages/testkit/src/maps.ts). Die Zusage nachzubauen
+hieße also, dem Zustand ein neues Feld zu geben (die zuletzt benutzte Kante je Armee), um
+eine Regel anzuwenden, die auf der ausgelieferten Karte 25 Kanten beträfe.
+
+**Auswirkung:** Eine Landung über die Meerenge kostet dasselbe wie ein Marsch über die
+Ebene. Das ist ein spürbarer Verlust — Gibraltar, der Ärmelkanal und der Öresund sind genau
+die Stellen, an denen ein Verteidiger einen Vorteil erwartet. Er wird in Kauf genommen, weil
+der Landungsmalus sachlich zum Seetransport gehört und der Seetransport der KI ohnehin ein
+eigenes Arbeitspaket ist (siehe den Eintrag zur Zielpartie); kommt er wieder, kommt er dort.
+Bis dahin gilt: was gebaut liegen bleibt, wird nicht besser — deshalb wird die Funktion
+gelöscht und nicht aufgehoben.

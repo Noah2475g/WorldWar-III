@@ -219,3 +219,362 @@ braucht es den Blick ins laufende Programm, und der gehört als Aufgabe in den P
 in die Hoffnung.
 
 **Status:** alle vier behoben.
+
+---
+
+## 2026-09-05 · Auswertung vor M14 · Wie diese Einträge entstanden — und was das Verfahren nicht sehen konnte
+
+**Verfahren:** Acht Leser sind den Stand auf `1008774` getrennt durchgegangen — Kern, KI,
+Oberfläche, Tests, Persistenz, Wirtschaft, Plan und Referenzabgleich — und meldeten
+zusammen **127 Befunde**. Geprüft wurden davon **80**: je Dimension die ersten zehn. Das ist
+eine Kappung des auswertenden Skripts, keine Auswahl nach Wichtigkeit — **47 Befunde sind
+nie geprüft worden.** Jeder der 80 bekam einen zweiten Leser mit dem ausdrücklichen Auftrag,
+ihn zu *widerlegen*: **68 hielten stand, 12 fielen.** Eine anschließende
+Vollständigkeitskritik fand **13 weitere Punkte**, darunter zwei, die keiner der acht Leser
+gesehen hatte: das Spiel hat keine Schrift, und die Niederlage des Menschen kommt in der
+Oberfläche nicht vor.
+
+**Der Vorbehalt, der über allem steht: niemand hat das Spiel gestartet.** Jeder Beleg der
+Auswertung stammt aus `grep`, aus `readFileSync`, aus kopflosen Läufen und aus dem Lesen der
+Plandateien. Das ist genau die Ebene, auf der die vier Bildschirmfehler vom 2026-09-04
+(Eintrag T-M13-17 oben) unsichtbar waren. Die beiden Punkte, die erst die
+Vollständigkeitskritik fand, hätten eine Minute vor dem laufenden Programm gezeigt; 68
+geprüfte Befunde haben sie nicht gefunden. Was unten steht, ist deshalb eine Untergrenze,
+kein vollständiges Bild.
+
+Eingetragen sind hier nur die **sieben Blocker** und die **zwei Ursachen**, die sie tragen.
+Alles Übrige steht im Auditbericht, auf den der Schluss dieser Datei verweist.
+
+---
+
+## 2026-09-05 · T-M14-08 · Kein Spielstand überlebt das Schließen des Fensters
+
+**Befund:** `MemoryStorage` (`packages/core/src/persistence/StoragePort.ts:25`) ist die
+einzige Umsetzung des Speicher-Ports im ganzen Repo. `apps/desktop/src/main.tsx:44` reicht
+kein `storage` herein, `apps/desktop/src/App.tsx:168` fällt deshalb auf
+`new MemoryStorage()` zurück. Jeder lauffähige Bau speichert damit in den Arbeitsspeicher:
+die Anwendung meldet „gespeichert", die Platzliste zeigt den Spieltag — und nach dem
+Schließen des Fensters ist alles weg. Das automatische Speichern aus T-M13-03, gerade erst
+verdrahtet, schützt vor gar nichts.
+
+Der Unterbau, den der Plan als vorhanden führt, wurde nie geschrieben. `tasks.yaml:538-547`
+führt T-M8-00 mit `status: done`, vier Dateien und der DoD „dieselbe Vertragstestreihe läuft
+gegen alle drei Umsetzungen". Von diesen vier existiert genau eine, `StoragePort.ts`;
+`apps/desktop/src/storage/TauriStorage.ts`, `apps/headless/src/storage/NodeStorage.ts`,
+`packages/testkit/src/MemoryStorage.ts` und der als Beleg genannte
+`packages/core/src/persistence/StoragePort.test.ts` haben laut `git log --all` **nie
+existiert**. `PROGRESS.md:117` meldet die Zeile trotzdem als grün. Auch die Bindung fehlt,
+mit der ein Datei-Port überhaupt schreiben könnte: `@tauri-apps` kommt in `pnpm-lock.yaml`
+**nullmal** vor, obwohl `apps/desktop/src-tauri/capabilities/local-only.json` bereits
+`fs:`-Berechtigungen vergibt.
+
+**Kleinster reproduzierbarer Fall:**
+`grep -c "@tauri-apps" pnpm-lock.yaml` → `0`;
+`git log --all --diff-filter=A -- "*TauriStorage*" "*NodeStorage*" "*StoragePort.test.ts*"`
+→ keine Zeile;
+`grep -rn "implements StoragePort" packages apps` → genau ein Treffer.
+
+**Folge:** R-GAME-03 („Speichern/Laden in eine Datei"), R-GAME-04 und R-GAME-05 gelten alle
+drei als testbelegt und sind auf Anwendungsebene wirkungslos. Der Playtest scheitert an
+Frage 26 („Speichern, laden, weiterspielen") und Frage 47 („Liegt nach einer Weile ein
+automatischer Spielstand in der Liste?"), sobald das Fenster einmal geschlossen wird.
+
+**Status:** offen, aufgelöst durch **T-M14-08** („Ein Speicher, der das Schließen des
+Fensters überlebt") — IndexedDB als dauerhafter Port für die Browser-Auslieferung, der
+Datei-Port erst in M16 (Entscheidung 2 vom 2026-09-05). Die Rückstufung von T-M8-00 auf
+`todo` samt Begründung liegt bei T-M14-02, nicht hier.
+
+---
+
+## 2026-09-05 · T-M14-06 · Der Stapel-Deckel wirkt auf die ganze Armee statt auf die zusätzliche Einheit
+
+**Befund:** Der Entwurf beschreibt einen **Grenzbeitrag**: „jenseits von 50 trägt keine
+*weitere* Einheit mehr zum Schaden bei" (`02-DESIGN.md:413-414`); die Referenz sagt
+dasselbe. Gebaut ist ein **Faktor auf den Gesamtwert**:
+`packages/core/src/rules/combat.ts:25-31` liefert `ONE` bis 20 Einheiten, fällt linear bis
+50 und gibt ab 50 exakt `0` zurück — und `combat.ts:95` multipliziert damit den Angriffswert
+der **ganzen** Armee, nicht den der überzähligen Einheiten.
+
+Gemessen mit den echten Regeln (Infanterie gegen 10 Einheiten Infanterie, ein Tick,
+zugefügter Schaden über die Armeegröße n):
+
+| n | 20 | 25 | 30 | 40 | 45 | 49 | ab 50 |
+|---|---|---|---|---|---|---|---|
+| zugefügter Schaden | 1501 | **1563** | 1502 | 1000 | 564 | 121 | **0** |
+
+Der eigene Verlust bleibt dabei konstant 804, der Unterhalt läuft weiter. Die Kurve kippt
+schon bei 26 Einheiten, nicht erst bei 50.
+
+**Kleinster reproduzierbarer Fall:** `stackContribution(50, rules)` → `0`; damit ist der
+Angriffswert jeder Armee ab 50 Einheiten null, bei unverändertem eigenem Verlust.
+
+**Folge:** Die zentrale Balancebremse des Vorbilds ist im Klon eine Falle. Wer eine große
+Armee baut, verliert sie ohne Gegenwehr — und die KI legt Verbände zusammen
+(`MERGE_ARMIES` in `packages/core/src/commands/army.ts`) und rennt genau hinein. Jede
+Kampfaussage des Turniers, des Parameterlaufs und des kommenden Playtests steht auf dieser
+Kurve.
+
+**Status:** offen, aufgelöst durch **T-M14-06** — `effectiveUnits` als Integralwert statt
+als Faktor, Schaden über n = 1…80 monoton nicht fallend, `effectiveUnits(50)` gleich
+`effectiveUnits(80)`, Golden-Master neu erzeugt, und D6.5 in `02-DESIGN.md` sowie die Zeile
+`stackCap` in `BALANCING.md` nennen Grenz- und Gesamtbeitrag getrennt mit Formel.
+
+---
+
+## 2026-09-05 · T-M14-01 · Das Anforderungstor ist rot — 82 von 100
+
+**Befund:** Commit `1008774` hat Abschnitt 2.15 mit 18 neuen Anforderungs-IDs in
+`01-REQUIREMENTS.md` eingefügt, ohne sie im maschinenlesbaren `scope`-Block (2.14)
+einzuordnen — obwohl derselbe Commit diesen Block angefasst hat. `requirements-coverage.mjs`
+sammelt alle `- **R-XXX-nn`-Zeilen des Dokuments ein und bildet die V1-Pflichtmenge als
+„alle IDs minus `v2_only`"; `v2_only` ist leer. Alle 18 V1.2-IDs zählen seither als
+V1-Pflicht. Lauf von heute im Worktree auf `1008774`:
+
+```
+davon fuer V1 verpflichtend: 100  (V2-only uebersprungen: 0)
+mit belegtem Test:           82
+Offen (18):
+```
+
+Exit-Code 1. Kein V1-Testbeleg ist verloren gegangen — gewachsen ist der Nenner, nicht
+gefallen der Zähler. Es ist ein Buchhaltungsfehler im scope-Block, kein Regress im Code.
+
+**Kleinster reproduzierbarer Fall:** `node scripts/requirements-coverage.mjs` → 82 von 100,
+18 offen, Exit 1. Dasselbe Skript gegen den Dokumentstand von `eef9648` und dieselben
+Testdateien → 82 von 82, 0 offen.
+
+**Folge:** Die AK-2-Prüfung in `scripts/acceptance.mjs` (Zeile 48 als Lauf, Zeile 66 als
+Auswertung) ist rot. Die DoD von T-M12-03 („`pnpm coverage:requirements` alle grün") und
+dessen `gate_reason` („sechs von sieben Abnahmekriterien maschinell grün") sind nicht mehr
+erfüllbar, solange M14 nicht gebaut ist: die Abnahme der V1 hängt damit an der
+Fertigstellung der V1.2, und Noahs Playtest (AK-7) steht hinter einem Tor, das aus rein
+dokumentarischen Gründen rot ist. Die bequeme Reparatur wäre die schlechteste — Exit-Code
+maskieren oder IDs von Hand ausnehmen, und das Tor misst künftig nichts.
+
+**Status:** offen, aufgelöst durch **T-M14-01** — ein Fach je Meilenstein im scope-Block,
+eine ID ohne Fach bleibt V1-Pflicht, ein `later`-Eintrag ohne Begründung bricht mit Exit 1
+ab, und AK-2 liest die Zeile „V1 offen:", ohne den Exit-Code zu maskieren. Der Zähler (die
+Namenszählung) ist ein eigener Befund, siehe Ursache A.
+
+---
+
+## 2026-09-05 · T-M14-14 · AK-1 prüft kein Test
+
+**Befund:** AK-1 lautet „vollständige Partie gegen mindestens 4 KI-Gegner von Start bis
+Sieg/Niederlage, ohne Absturz und ohne Blockade". `scripts/acceptance.mjs:47` bescheinigt
+es kollektiv über eine Sammelzeile `AK-1/4/6` → `pnpm test:slow`. Im ganzen Repo gibt es
+genau zwei Zusicherungen auf einen Sieger: `packages/core/src/phases/occupation.test.ts:194`
+(Zweispieler-Einheitstest) und `apps/headless/test/tournament.test.ts:27` (ein
+Determinismusvergleich, der nur `a.winner === b.winner` fordert, ohne einen Sieger zu
+verlangen). Die im Plan an AK-1 gebundene Aufgabe T-M4-06 hängt an
+`apps/headless/test/walkthrough.test.ts` — zwei Spieler, 500 Ticks, kein Spielende.
+
+Der Weltkarten-Langlauf existiert
+(`packages/core/test/perf/worldmap.bench.slow.test.ts`, zwölf KI-Mächte, 1000 Spieltage),
+prüft aber nur Absturzfreiheit, ein begrenztes Ereignisprotokoll und endliche Provinzmoral;
+seine Zeile 125 bricht bei einem Sieger lediglich ab, ohne ihn je zu fordern. **Kein
+eingecheckter Test sichert zu, dass irgendeine Partie auf irgendeiner Karte einen Sieger
+hervorbringt** — und keiner spielt die Aufstellung, die der Startdialog vorbelegt.
+
+**Kleinster reproduzierbarer Fall:**
+`grep -rn "winner" --include=*.ts packages apps | grep expect` → zwei Treffer, beide oben
+genannt.
+
+**Folge:** Genau die Fehlerarten, die AK-1 fangen soll — Blockade, Partie ohne Entscheidung,
+Absturz bei acht Mächten auf der Weltkarte —, sind unbeobachtet. Das erste und wichtigste
+Abnahmekriterium wird als bestanden gebucht, ohne dass ein Test es berührt.
+
+**Status:** offen, aufgelöst durch **T-M14-14** („Der Abnahmetest, den AK-1 immer gebraucht
+hätte") — `pnpm sim:fullgame` mit der Voreinstellung aus `DEFAULT_NEW_GAME`/`toConfig`,
+Sieger spätestens am Spieltag 1500, mindestens vier KI-Mächte, längstes Fenster ohne
+Fortschrittsereignis unter 100 Spieltagen, eigene Zeile in `docs/reports/acceptance.md`
+statt der Sammelzeile. Die DoD hält ausdrücklich fest: entscheidet der Lauf nicht, wird
+nicht der Deckel erhöht, sondern der Befund hierher geschrieben.
+
+---
+
+## 2026-09-05 · T-M14-02 · Der Plan-Wächter liest `files:` und `tests:` gar nicht
+
+**Befund:** `test/plan-consistency.test.ts` ist der einzige Leser von `tasks.yaml` im Repo.
+Sein `YamlTask`-Interface (Zeilen 17–29) kennt `id`, `milestone`, `title`, `status`, `deps`,
+`requirements`, `constraints`, `design`, `acceptance`, `gate` und `gate_reason` — **die
+Felder `files:` und `tests:` stehen nicht darin**. Kein anderer Prüfer liest sie, obwohl die
+DoD von T-M0-05 (`tasks.yaml:96`) genau diesen Abgleich zusagt („03-TASKS.md und tasks.yaml
+stimmen in IDs, deps, **files** und requirements überein").
+
+Nachgezählt im Worktree auf `1008774`, nur bei Aufgaben mit `status: done`: **38 von 174
+`files`-Einträgen und 41 von 115 `tests`-Einträgen zeigen auf nicht existierende Pfade — 79
+von 289, verteilt auf 43 Aufgaben.** Die Mehrzahl ist berechtigtes Umbauen, das nur nie in
+den Plan zurückgeschrieben wurde (`migrate.ts` statt `load.ts`, `packaging.test.ts` statt
+`tauri-permissions.test.ts`, `Dialogs.tsx` statt `SaveLoad.tsx`). Ein Teil ist es nicht: der
+Speicher-Unterbau aus dem Eintrag oben, und die Eigenschaftstests, die die Kernregeln
+geprüft hätten (`combat-conservation.test.ts`, `bombard.test.ts`) — sie fehlen, weil sie nie
+geschrieben wurden, nicht weil sie umbenannt wurden.
+
+**Kleinster reproduzierbarer Fall:** `tasks.yaml` parsen, über jede Aufgabe mit
+`status: done` jeden Pfad aus `files` und `tests` mit `existsSync` prüfen — 79 fehlen. Und
+`pnpm verify` bleibt dabei grün.
+
+**Folge:** „done" kann bedeuten, dass zwei von vier zugesagten Dateien nie geschrieben
+wurden. Genau so ist der Speicher-Blocker durchgerutscht. Wer M14 nach `tasks.yaml`
+umsetzt, schreibt in Dateien, die es nicht gibt, und sucht Tests an Orten, die leer sind.
+
+**Status:** offen, aufgelöst durch **T-M14-02** — jeder `files`- und `tests`-Pfad einer
+erledigten Aufgabe muss existieren (ein Eintrag mit Schrägstrich als Verzeichnis), ein
+einziger falscher Pfad macht den Lauf rot, und jede `done`-Aufgabe, deren fehlender Pfad
+keine Umbenennung ist, geht auf `todo` zurück und trägt im Feld `reopened` die Aufgabe, die
+sie schließt.
+
+---
+
+## 2026-09-05 · T-M14-08 · Die Vertragstestreihe für den Speicher-Port läuft gegen eine Umsetzung, nicht gegen drei
+
+**Befund:** Was der Plan als „dieselbe Vertragstestreihe gegen alle drei Umsetzungen"
+führt, ist ein einzelnes `it()`: `packages/core/src/persistence/save.test.ts:131-144`,
+`describe('R-GAME-03 Der Speicher-Port ist austauschbar')`. Es legt in Zeile 132 ein
+`new MemoryStorage()` an und prüft `exists`, `write`, `read`, `list` und `remove` gegen
+dieselbe eine Umsetzung. Austauschbarkeit prüft es nicht — es gibt nichts, wogegen
+ausgetauscht werden könnte.
+
+**Kleinster reproduzierbarer Fall:** `save.test.ts:132` —
+`const port: StoragePort = new MemoryStorage()`. Die einzige Fabrik im Test ist zugleich die
+einzige Umsetzung im Repo.
+
+**Folge:** Sobald ein dauerhafter Port kommt, existiert kein Vertrag, der ihn prüft. Die
+Unterschiede, die nur ein echter Speicher hat — fehlschlagendes Schreiben, halb
+geschriebener Stand, zwei Schreibvorgänge auf denselben Namen, Namen mit Sonderzeichen —,
+treffen dann zuerst den Spieler.
+
+**Status:** offen, aufgelöst durch **T-M14-08** — `storagePortContract(name, factory)` in
+`packages/testkit`, gefahren gegen mindestens zwei Umsetzungen (Arbeitsspeicher und
+IndexedDB), plus ein Wächter `test/guards/persistence-contract.test.ts`, der fällt, sobald
+nur eine Fabrik registriert ist.
+
+---
+
+## 2026-09-05 · T-M14-09 · Das Spiel hat keine Schrift
+
+**Befund:** `git ls-files` findet im ganzen Repository **null** Bild-, Ton- oder
+Schriftdateien (Muster `\.(png|jpe?g|svg|mp3|wav|ttf|otf|woff2?)$`). Gleichzeitig verlangt
+`apps/desktop/src/ui/tokens.ts:89-93` „IBM Plex Sans Condensed", „IBM Plex Sans" und
+„IBM Plex Mono", `apps/desktop/src/ui/app.css:22-24` wiederholt es, und `docs/ASSETS.md`
+behauptet, die ausgelieferte Anwendung bette die Schriftdateien ein, damit sie ohne Netz
+funktioniere (R-FREE-04). Es gibt **kein `@font-face`** (null Treffer über
+`apps/desktop/src`), keine Schriftdatei und kein `<link>`: `apps/desktop/index.html` enthält
+Titel, Wurzel-Element und `main.tsx`, sonst nichts. Die Anwendung läuft auf jedem Rechner
+ohne installiertes IBM Plex in der Systemschrift — das freigegebene Mockup
+(`docs/design/ui-mockup.html`, lädt IBM Plex von `fonts.googleapis.com`) sieht damit
+nachweislich anders aus als das Programm.
+
+**Warum drei Wächter grün sind:** `test/guards/no-foreign-assets.test.ts` prüft dreimal
+dasselbe Muster gegen eine leere Menge — (a) jede *eingecheckte* Asset-Datei steht in
+`ASSETS.md` (es gibt keine, also grün), (b) `ASSETS.md` nennt die *Namen* der
+Schriftfamilien (tut sie), (c) die Anwendung lädt nichts von außen nach (tut sie nicht — sie
+hat nichts zu laden). `test/design-gate.test.ts` vergleicht Mockup und Code nur über
+Farbtokens, nie über Typografie.
+
+**Kleinster reproduzierbarer Fall:**
+`git ls-files | grep -Ei "\.(woff2?|ttf|otf)$"` → leer;
+`grep -rn "font-face" apps/desktop/src` → leer;
+`pnpm verify` → grün.
+
+**Folge:** Playtest-Frage 1 („Sieht das Spiel aus wie die freigegebene Richtung A?") ist die
+erste Frage der Abnahme und würde gegen eine Systemschrift beantwortet. Diesen Befund hat
+keiner der acht Leser gefunden — er stammt aus der Vollständigkeitskritik und ist der Beleg
+dafür, dass der fehlende Blick ins laufende Programm ein echtes Loch ist und keine
+Stilkritik.
+
+**Status:** offen, aufgelöst durch **T-M14-09** („Das Spiel bekommt seine Schrift") — vier
+`woff2`-Dateien unter `apps/desktop/src/ui/fonts`, zusammen unter 400 KB, je Familie ein
+`@font-face` mit lokaler `url()`, keine Schriftquelle mit `https:` in `app.css` oder
+`index.html`, OFL 1.1 in `ASSETS.md`, und ein Selbsttest, der den Wächter gegen eine leere
+Asset-Menge fallen lässt.
+
+---
+
+## 2026-09-05 · T-M14-02 / T-M14-02b · Ursache A — die Zusage wurde nie an das Erzeugnis gebunden
+
+**Befund:** Achtzehn der 68 bestätigten Befunde — vierzehn ganz, vier zum Teil — hängen an
+**zwei Zeichenkettenvergleichen**, die zusammen die gesamte Statusaussage des Projekts
+tragen:
+
+1. `scripts/requirements-coverage.mjs:24` zählt eine Anforderungs-ID als belegt, sobald
+   irgendwo im Repo ein `describe('R-XX-nn` mit mindestens einer Zusicherung steht. Das
+   Akzeptanzkriterium selbst liest das Skript nie. „82 von 82" war damit eine
+   Namenszählung, keine Verhaltensaussage — R-BAT-07/AK1, der Erhaltungssatz, gilt als
+   belegt, ohne dass ein Test ihn prüft.
+2. `test/plan-consistency.test.ts` liest `files:` und `tests:` nicht (Eintrag oben) — 79 von
+   289 Pfadangaben bei `status: done` existieren nicht.
+
+Damit sind `PROGRESS.md`, die DoD-Zeilen in `tasks.yaml` und `03-TASKS.md` ein zweites,
+unabhängiges Dokument **ohne Rückkopplung an den Code**. Jede Zusage, die dort steht, bleibt
+so lange wahr, wie niemand nachsieht.
+
+**Kleinster reproduzierbarer Fall:** Eine Datei mit
+`describe('R-XYZ-99', () => { it('x', () => { expect(1).toBe(1) }) })` genügt dem
+Anforderungstor. Eine `done`-Aufgabe mit einem frei erfundenen Pfad in `files:` genügt dem
+Plan-Wächter.
+
+**Folge:** Die Reparatur ist ein Wächter, nicht achtzehn Einzelaufgaben. Solange beide
+Vergleiche stehen bleiben, erzeugt M14 dieselbe Art von Grün ein zweites Mal.
+
+**Status:** offen. Die Dateiliste löst **T-M14-02** auf; die Zählung je Akzeptanzkriterium
+statt je ID — samt datierter Übergangsliste für die heute schon belegten IDs und der bisher
+ungeprüften Richtung Anforderung → Aufgabe → Entwurf — löst **T-M14-02b** auf.
+
+---
+
+## 2026-09-05 · T-M14-08 / T-M14-09 / T-M14-10 / M16 · Ursache B — der Auslieferungspfad wurde nie ausgeführt
+
+**Befund:** Kein `tauri build` ist je gelaufen; `@tauri-apps` steht nicht im Lockfile; das
+Programmsymbol fehlt; die Schrift fehlt; ein dauerhafter Speicher-Port fehlt; einen
+Fehlerfall zur Laufzeit gibt es nicht — `grep -rnE
+"ErrorBoundary|componentDidCatch|getDerivedStateFromError|window\.onerror|unhandledrejection"`
+über `apps` und `packages` liefert **null Treffer**, jeder unabgefangene Renderfehler ergibt
+also eine weiße Fläche. Und die eine Datei, an der all das hängt, ist von der Messung
+ausgenommen: `vitest.config.ts:34` — `exclude: [… , '**/main.tsx']`.
+
+Jede Zusicherung des Projekts liegt damit **eine Ebene unterhalb dessen, was ausgeliefert
+wird**. Das ist derselbe Fehler wie im Eintrag vom 2026-09-04 (die vier Befunde, die erst am
+Bildschirm auftraten) — nur angewandt auf das Paket statt auf ein Panel.
+
+**Kleinster reproduzierbarer Fall:** `grep -n "main.tsx" vitest.config.ts` → die Datei steht
+in `coverage.exclude`; `grep -c "@tauri-apps" pnpm-lock.yaml` → `0`.
+
+**Folge:** Dreizehn Befunde hängen daran, darunter vier der sieben Blocker: der fehlende
+Speicher, die Vertragsreihe ohne zweite Umsetzung, die fehlende Schrift und — gemeinsam mit
+Ursache A — der Plan-Wächter. Und es ist die Ursache, die eine Testsuite grundsätzlich nicht
+findet: sie prüft, was gebaut wurde, nicht, was ausgeliefert wird.
+
+**Status:** offen. Dauerhafter Speicher, und `main.tsx` zurück in die Abdeckung, ohne die
+AK-3-Schwellen zu reißen → **T-M14-08**; Schrift → **T-M14-09**; Fehlerfall zur Laufzeit →
+**T-M14-10**; Symbol, `@tauri-apps` und ein echter `tauri build` mit eigenem
+Abnahmekriterium → **M16** (Entscheidung 2 vom 2026-09-05: die V1 liefert im Browser aus,
+die Verpackung wird ein eigener Meilenstein).
+
+---
+
+## 2026-09-05 · T-M14-02 · Die Sondendateien der Auswertung sind aus dem Arbeitsbaum entfernt
+
+**Befund:** Die Auswertung selbst hat ihre Messsonden im Arbeitsbaum liegen lassen: 13
+Sondentests unter `apps/headless/test/zz*`, dazu
+`packages/core/src/phases/zzz-skeptic-hull.test.ts` und ein Verzeichnis `coverage-audit/` —
+15 unverfolgte Einträge. `vitest.config.ts:26` schließt sie nicht aus
+(`include: ['{packages,apps,test}/**/*.test.{ts,tsx}']`), sie liefen also in jedem
+`verify`-Lauf mit. Jede Zahl der Auswertung wurde damit in einem Baum gemessen, dessen
+Testmenge nicht die des Projekts ist.
+
+**Kleinster reproduzierbarer Fall:** `git status --short` zeigte 15 unverfolgte Einträge;
+`ls apps/headless/test/zz*` fand Testdateien, die in keiner Aufgabe stehen.
+
+**Status: behoben am 2026-09-05** — mit `git clean` entfernt; `ls apps/headless/test/` und
+`git status --short` weisen keine `zz`-Datei und kein `coverage-audit/` mehr aus. Dass der
+Baum vor jedem Abnahmelauf sauber ist, hält T-M14-02 als erste Zusage seiner DoD fest.
+
+---
+
+**Der vollständige Befundstand** — die 68 bestätigten Befunde mit Belegen, die 12
+widerlegten mit Grund, die 13 Punkte der Vollständigkeitskritik, die sechs gemeinsamen
+Ursachen A–F, der Abhängigkeitsgraph und die 47 nie geprüften Befunde — steht in
+`docs/reports/audit-2026-09-05.md`. Die daraus abgeleiteten Aufgaben stehen als M14 und M15
+in `docs/plan/tasks.yaml` und `docs/plan/03-TASKS.md`.
