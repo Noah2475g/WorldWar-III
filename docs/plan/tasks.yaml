@@ -1141,7 +1141,7 @@ tasks:
   - id: T-M14-05
     milestone: M14
     title: Die Messgeraete richtigstellen und die Rauschgrenze messen
-    status: todo
+    status: done
     deps: [T-M14-04]
     requirements: [R-AI-06, R-ARCH-06]
     constraints: [C-10]

@@ -41,8 +41,8 @@ export interface TrialResult {
   captures: number
   /** How many powers were still alive at the end. */
   survivors: number
-  /** Total resources produced across all powers — the economy curve in one number. */
-  economy: number
+  /** Endbestaende aller Maechte zusammen — die Wirtschaftskurve in einer Zahl. */
+  stockpile: number
   days: number
 }
 
@@ -122,20 +122,25 @@ export function playOut(
   const total = [...owned.values()].reduce((a, b) => a + b, 0) || 1
   const leader = Math.max(0, ...owned.values())
 
-  const economy = Object.values(state.players).reduce(
+  // Endbestaende, nicht Produktion. Die alte Beschriftung ('Total resources produced')
+  // versprach etwas anderes, als die Zahl misst — eine Falschaussage mit Zahl daran.
+  const stockpile = Object.values(state.players).reduce(
     (sum, player) => sum + Object.values(player.resources).reduce((a, b) => a + (b ?? 0), 0),
     0,
   )
 
-  // How much actually happened. A trial with no captures is a trial that measured
-  // nothing, however clean its numbers look.
-  const captures = state.eventLog.filter((event) => event.type === 'PROVINCE_CAPTURED').length
+  // Wie viel tatsaechlich geschah. Gezaehlt wird aus dem Ereignisstrom des Laufs, nicht
+  // aus state.eventLog: das ist ein Ringpuffer von 500 Eintraegen und deckt bei rund
+  // 12.300 Ereignissen je Partie die letzten paar Spieltage ab. Der Bericht meldete
+  // deshalb 3 Eroberungen, wo 49 stattgefunden hatten (Faktor 16), und die eingebaute
+  // Warnung 'keine Eroberung heisst, der Lauf hat nichts gemessen' konnte nie ausloesen.
+  const captures = gespielt.events.filter((event) => event.type === 'PROVINCE_CAPTURED').length
 
   return {
     leaderShare: leader / total,
     captures,
     survivors: owned.size,
-    economy: Math.round(economy / 1000),
+    stockpile: Math.round(stockpile / 1000),
     days: Math.floor(state.tick / rules.constants.ticksPerDay),
   }
 }
@@ -149,7 +154,7 @@ function average(results: TrialResult[]): TrialResult {
     leaderShare: mean((r) => r.leaderShare),
     captures: Math.round(mean((r) => r.captures)),
     survivors: mean((r) => r.survivors),
-    economy: Math.round(mean((r) => r.economy)),
+    stockpile: Math.round(mean((r) => r.stockpile)),
     days: Math.round(mean((r) => r.days)),
   }
 }

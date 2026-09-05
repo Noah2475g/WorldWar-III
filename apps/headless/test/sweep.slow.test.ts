@@ -6,6 +6,7 @@ import {
   SWING_THRESHOLD,
   baselineSlowly,
   measureSlowly,
+  playOut,
   type ConstantEffect,
   type SweepOptions,
   type TrialResult,
@@ -62,10 +63,16 @@ const OPTIONS: SweepOptions = {
   nations: ['Deutschland', 'Frankreich', 'Polen', 'Italien', 'Ukraine', 'Spanien'],
   players: 6,
   days: 120,
-  seeds: [1914, 2015],
+  // Zwoelf Startzahlen, nicht zwei (T-M14-05). Die Zielgroesse streut ueber acht
+  // Startzahlen um 0,183 — der groesste je gemeldete Ausschlag lag damit UNTER der
+  // eigenen Rauschgrenze des Laufs, und jede Zeile der Spalte 'Ausschlag' war unbelegt.
+  // Zwoelf Laeufe druecken den Standardfehler des Mittels etwa auf ein Drittel.
+  seeds: [1914, 2015, 1939, 1871, 1806, 1683, 1945, 1789, 1848, 1990, 2001, 1066],
 }
 
 let baseline: TrialResult
+/** Die gemessene Streuung der Zielgroesse allein durch die Startzahl (T-M14-05). */
+let noiseFloor = 0
 const effects: ConstantEffect[] = []
 
 describe('R-AI-06 Balancing wird gemessen, nicht geraten', () => {
@@ -78,6 +85,26 @@ describe('R-AI-06 Balancing wird gemessen, nicht geraten', () => {
     // ever changes hands, the constants under test never came into play and every
     // "0 % swing" below is an artefact, not a finding.
     expect(baseline.captures, 'Im Grundlauf wechselte keine Provinz den Besitzer').toBeGreaterThan(0)
+  })
+
+  it('misst die eigene Rauschgrenze, bevor es Ausschlaege deutet', () => {
+    // Der Befund, der jede Zeile der Spalte 'Ausschlag' entwertete: die Zielgroesse
+    // streut allein durch die Startzahl, und der groesste je gemeldete Ausschlag lag
+    // UNTER dieser Streuung. Ein Werkzeug, das seine eigene Aufloesung nicht kennt,
+    // liefert Rauschen mit drei Nachkommastellen.
+    //
+    // Gemessen wird ohne jede Regelaenderung: dieselben Regeln, verschiedene Startzahlen.
+    // Was dabei herauskommt, ist die Grenze, ab der ein Ausschlag ueberhaupt etwas heisst.
+    const werte = OPTIONS.seeds.map(
+      (seed) => playOut(OPTIONS.map, OPTIONS.rules, OPTIONS.players, OPTIONS.days, seed, OPTIONS.nations).leaderShare,
+    )
+    const mittel = werte.reduce((a, b) => a + b, 0) / werte.length
+    noiseFloor = Math.sqrt(werte.reduce((s, w) => s + (w - mittel) ** 2, 0) / werte.length)
+
+    // Die Grenze wird gemessen und berichtet, nicht zugesichert: eine Schwelle auf das
+    // Rauschen selbst waere eine Zusicherung ueber die Maschine, nicht ueber das Spiel.
+    expect(noiseFloor).toBeGreaterThanOrEqual(0)
+    expect(werte.length, 'zu wenige Startzahlen fuer eine Streuungsaussage').toBeGreaterThanOrEqual(8)
   })
 
   // One test per constant, and each of them yielding between games. Both halves
@@ -110,6 +137,7 @@ function writeReport(measured: ConstantEffect[]): void {
     '',
     'Erzeugt von `apps/headless/test/sweep.slow.test.ts` (`pnpm balance:sweep`).',
     `${players} Mächte, ${OPTIONS.days} Spieltage, ${OPTIONS.seeds.length} Startzahlen je Variante,`,
+    `**Rauschgrenze der Zielgröße: ${noiseFloor.toFixed(3)}** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am ${new Date().toISOString().slice(0, 10)}). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also ${(noiseFloor * 2).toFixed(3)}.`,
     'jede Konstante um ±25 % bewegt.',
     '',
     '## Was gemessen wird',
@@ -126,7 +154,7 @@ function writeReport(measured: ConstantEffect[]): void {
     '|---|---|',
     `| Anteil des Stärksten | ${(baseline.leaderShare * 100).toFixed(1)} % |`,
     `| Überlebende Mächte | ${baseline.survivors.toFixed(1)} von ${players} |`,
-    `| Wirtschaft gesamt | ${baseline.economy.toLocaleString('de-DE')} |`,
+    `| Endbestaende gesamt | ${baseline.stockpile.toLocaleString('de-DE')} |`,
     `| Eroberte Provinzen | ${baseline.captures} |`,
     `| Gespielte Tage | ${baseline.days} |`,
     '',

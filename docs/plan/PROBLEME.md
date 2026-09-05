@@ -635,3 +635,41 @@ ist die Zusage, ihn nicht zu vergessen.
 | **Barrierefreiheit jenseits des Kontrasts** — kein Test öffnet einen Dialog und schließt ihn mit Escape, keiner prüft Fokusfang, Tabreihenfolge oder `aria`; belegt ist nur die Tastenzuordnung als reine Funktion | Befund N12 | **M16** — zusammen mit dem Bau, in dem sich Fokus überhaupt beobachten lässt |
 
 **Status: offen, je mit Meilenstein.** Keiner dieser acht blockiert die Abnahme der V1.
+
+---
+
+## 2026-09-06 · T-M14-05 · Das Tickbudget der Anforderung ist auf der Weltkarte um Faktor 5 gerissen
+
+**Befund:** R-ARCH-06/AK1 fordert für 200 Provinzen, 8 Spieler und rund 400 Armeen einen
+Tick im **Median unter 0,5 ms** und im 99. Perzentil unter 2 ms. Gemessen auf der
+Weltkarte (`docs/reports/worldmap-bench.json`, 237 Provinzen, 12 Spieler):
+**2,463 ms Median, 5,53 ms p99** — Faktor 4,9 bzw. 2,8 über der Anforderung.
+
+**Warum das niemand bemerkt hat:** Der Weltkarten-Bench sichert 8 ms und 40 ms zu, also
+das Sechzehn- und Zwanzigfache der Anforderung. Der zweite Bench
+(`tick.bench.slow.test.ts`) prüft zwar gegen die Zahlen der Anforderung — aber an
+**12 Provinzen** statt 200, einer zwanzigmal kleineren Karte, auf der 0,04 ms herauskommen.
+Beide Tests sind grün, und keiner misst, was die Anforderung meint. Ein Budget, das um den
+Faktor sechzehn über der Anforderung liegt, ist keine Prüfung, sondern eine Erlaubnis.
+
+**Kleinster reproduzierbarer Fall:** `docs/reports/worldmap-bench.json` gegen
+`01-REQUIREMENTS.md`, R-ARCH-06/AK1 halten.
+
+**Was daran nicht schlimm ist:** Die interaktive Betriebsart aus R-TIME-02 (bis 100
+Spielstunden je Sekunde) ist bei 2,463 ms je Tick erreichbar — rechnerisch rund 400 Ticks
+je Sekunde. Die Zahl 0,5 ms stammt aus der Entwurfsphase und ist nirgends nachgemessen
+worden; ihre eigene Begründung im Anforderungstext („nur so ist die interaktive
+Betriebsart erreichbar") trifft nach dieser Rechnung nicht zu.
+
+**Behandelt am 2026-09-06 (T-M14-05):** Der Bericht nennt jetzt neben der Messung die
+Anforderung, ob sie eingehalten ist und um welchen Faktor sie verfehlt wird. Die
+Zusicherung bleibt beim erreichbaren Budget — eine Zusicherung auf 0,5 ms wäre sofort rot,
+machte `pnpm test:slow` rot und damit AK-4, AK-6 und die Abnahmekette; das ist genau der
+Fehler, den T-M14-01 behoben hat.
+
+**Status: offen, Entscheidung steht aus.** Zwei Wege, und die Wahl gehört Noah:
+**(a)** R-ARCH-06/AK1 auf einen nachgemessenen Wert anheben, begründet mit der Rechnung
+oben — dann sagt die Anforderung, was das Spiel wirklich braucht. **(b)** Den Kern
+schneller machen, bis 0,5 ms gehalten sind — teuer, und ohne erkennbaren Gewinn für den
+Spieler. Vorschlag: **(a)**, mit der Messung als Begründung. Vorgemerkt für **M16**, wo
+die Leistung am echten Bau ohnehin neu zu messen ist.

@@ -93,22 +93,38 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
       durations.push(performance.now() - started)
     }
 
+    const medianMs = Number(median(durations).toFixed(3))
+    const p99Ms = Number(percentile(durations, 0.99).toFixed(3))
+
+    // T-M14-05: Was die Anforderung fordert, steht jetzt neben dem, was gemessen wurde.
+    // R-ARCH-06/AK1 verlangt Median < 0,5 ms und p99 < 2 ms; dieser Test sicherte bisher
+    // 8 ms und 40 ms zu — das Sechzehn- und Zwanzigfache. Ein Budget, das um den Faktor
+    // sechzehn über der Anforderung liegt, ist keine Prüfung, sondern eine Erlaubnis.
     const report = {
       map: map.id,
       provinces: map.provinces.length,
       edges: map.edges.length,
       players: CONFIG.players.length,
       ticks: durations.length,
-      medianMs: Number(median(durations).toFixed(3)),
-      p99Ms: Number(percentile(durations, 0.99).toFixed(3)),
+      medianMs,
+      p99Ms,
+      requirement: { id: 'R-ARCH-06/AK1', medianMs: 0.5, p99Ms: 2, provinces: 200, players: 8 },
+      meetsRequirement: medianMs < 0.5 && p99Ms < 2,
+      note:
+        medianMs < 0.5 && p99Ms < 2
+          ? 'Die Anforderung ist auf der Weltkarte eingehalten.'
+          : `Gemessen ${medianMs} ms Median gegen ${0.5} ms gefordert (Faktor ${(medianMs / 0.5).toFixed(1)}). Offener Befund in docs/plan/PROBLEME.md, Entscheidung steht aus.`,
       measuredAt: new Date().toISOString(),
     }
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
     writeFileSync(`${ROOT}/docs/reports/worldmap-bench.json`, JSON.stringify(report, null, 2) + '\n')
 
-    // The budget from the design, scaled to a full world: a tick has to stay well
-    // inside a display frame, or the interactive speeds are a promise that cannot be
-    // kept (R-TIME-02).
+    // Zugesichert wird weiterhin das erreichbare Budget, nicht das geforderte: eine
+    // Zusicherung auf 0,5 ms wäre gegen die heutige Messung (2,463 ms) sofort rot, machte
+    // `pnpm test:slow` rot und damit AK-4, AK-6 und die Abnahmekette — derselbe Fehler,
+    // den T-M14-01 gerade behoben hat. Die Abweichung ist im Bericht und in PROBLEME.md
+    // benannt; die Entscheidung (Kern schneller machen oder Anforderung nachmessen und
+    // begründet anheben) gehört Noah, nicht diesem Test.
     expect(report.medianMs, `Median ${report.medianMs} ms`).toBeLessThan(8)
     expect(report.p99Ms, `p99 ${report.p99Ms} ms`).toBeLessThan(40)
   })

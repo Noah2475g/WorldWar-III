@@ -151,5 +151,18 @@ gelten nicht mehr; die Spalte oben trägt die neuen.
 Im Langlauf über 1000 Spieltage (`pnpm test:slow`, T-M9-04) wächst keine Ressource
 unbegrenzt, und der Kennzahlenbericht (T-M5-06) schlägt fehl, sobald eine es täte.
 Im Turnier über 50 Partien (T-M7-05) gewinnt die schwere Stufe gegen die leichte in
-mindestens 70 % der Fälle, ohne dass eine Stufe je alle Partien gewinnt — es gibt also
-weder eine unbesiegbare Strategie noch einen wirkungslosen Schwierigkeitsgrad.
+mindestens 70 % der Fälle — ein wirkungsloser Schwierigkeitsgrad fällt damit auf.
+
+> **Richtiggestellt am 2026-09-06 (T-M14-05).** Hier stand bis heute der Zusatz „ohne dass
+> eine Stufe je alle Partien gewinnt". Der Bericht, auf den sich der Satz beruft, sagt das
+> Gegenteil: `docs/reports/ai-tournament.md` meldet **50 Siege aus 50 Partien, Siegquote
+> 100 %**. Der Test konnte den Widerspruch nicht sehen, weil er allein eine Untergrenze
+> prüft (≥ 70 %) und es im ganzen Bestand keine Obergrenze auf einer Siegquote gibt.
+>
+> Eine Obergrenze wird hier **nicht** nachgereicht. Sie wäre gegen die heutige Messung
+> sofort rot, machte `pnpm test:slow` rot und damit AK-4, AK-6 und die ganze Abnahmekette —
+> ein Tor, das die Abnahme blockiert, weil eine andere Aufgabe noch aussteht, ist genau der
+> Fehler, den T-M14-01 gerade behoben hat. Die Reparatur gehört zur Sache selbst und liegt
+> bei **T-M15-05**, wo das Verhältnis die KI steuert und die Stufen erstmals mehr
+> unterscheidet als eine Zahl. Bis dahin gilt: 100 % ist **gemessen, nicht gewollt**, und
+> steht als offener Befund in `PROBLEME.md`.
