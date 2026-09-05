@@ -79,6 +79,65 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
   return commands
 }
 
+/**
+ * Das Zielverhaeltnis der Truppengattungen (T-M14-12, Befund 32).
+ *
+ * Bis zum 2026-09-06 waehlte die KI 'tank' oder 'infantry' — zwei von zehn Arten.
+ * Artillerie, Luftwaffe und Marine waren damit reiner Spielervorteil, ein Bruch von
+ * R-AI-01 in die andere Richtung. Fuer die Artillerie kommt hinzu, dass sie Vorbedingung
+ * fuer R-BAT-08 ist: eine Feuerautomatik ohne Fernwaffen waere gebaut, gruen getestet und
+ * wirkungslos, weil `armyRange` fuer jede KI-Armee null bliebe.
+ *
+ * Die Anteile sind bewusst grob — es geht nicht um die beste Mischung, sondern darum,
+ * dass die KI ueberhaupt eine hat. Luft und Marine bleiben aussen vor, solange sie mit
+ * ihnen nichts anzufangen weiss (M17, amphibische KI).
+ */
+const TARGET_MIX: readonly { unitKey: string; share: number }[] = [
+  { unitKey: 'infantry', share: 0.5 },
+  { unitKey: 'tank', share: 0.3 },
+  { unitKey: 'artillery', share: 0.2 },
+]
+
+/**
+ * Welche Einheit als naechstes fehlt — gemessen am eigenen Bestand, nicht am Zufall.
+ *
+ * Gebaut wird, was in dieser Provinz gebaut werden kann und wovon die Macht gemessen am
+ * Zielverhaeltnis am weitesten entfernt ist.
+ */
+export function nextUnitFor(context: AiContext, province: { buildings?: Record<string, number> }): string | null {
+  const owned = new Map<string, number>()
+  let total = 0
+  for (const army of context.view.armies) {
+    if (army.owner !== context.view.playerId) continue
+    for (const stack of army.units ?? []) {
+      owned.set(stack.unitKey, (owned.get(stack.unitKey) ?? 0) + 1)
+      total += 1
+    }
+  }
+
+  const buildable = TARGET_MIX.filter(({ unitKey }) => {
+    const rule = context.rules.units[unitKey]
+    if (!rule) return false
+    const needed = rule.requiresBuilding
+    return !needed || (province.buildings?.[needed] ?? 0) > 0
+  })
+  if (buildable.length === 0) return null
+
+  // Groesster Rueckstand zuerst; bei Gleichstand entscheidet die Reihenfolge oben,
+  // damit dieselbe Lage denselben Befehl ergibt (R-ARCH-01).
+  let best = buildable[0]!
+  let bestGap = -Infinity
+  for (const entry of buildable) {
+    const have = total > 0 ? (owned.get(entry.unitKey) ?? 0) / total : 0
+    const gap = entry.share - have
+    if (gap > bestGap) {
+      bestGap = gap
+      best = entry
+    }
+  }
+  return best.unitKey
+}
+
 /** Raises troops where possible, sized to what the treasury can carry. */
 export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const commands: Command[] = []
@@ -88,7 +147,8 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     if (province.owner !== playerId) continue
     if ((province.buildings?.barracks ?? 0) === 0) continue
 
-    const unitKey = (province.buildings?.factory ?? 0) > 0 ? 'tank' : 'infantry'
+    const unitKey = nextUnitFor(context, province)
+    if (!unitKey) continue
     const unit = context.rules.units[unitKey]
     if (!unit) continue
 

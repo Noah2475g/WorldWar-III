@@ -1209,8 +1209,8 @@ tasks:
     status: done
     deps: [T-M14-02]
     requirements: [R-AI-01, R-AI-03, R-GAME-01]
-    files: [packages/core/src/map/neighbourhood.ts, packages/core/src/index.ts, packages/ai/src/targeting.ts, packages/ai/src/military.ts, packages/ai/src/decide.ts, apps/desktop/src/game/newGame.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-reachability.md]
-    tests: [packages/core/src/map/neighbourhood.test.ts, packages/ai/src/targeting.test.ts, apps/desktop/src/game/newGame.test.ts, apps/headless/test/ai-reachability.slow.test.ts]
+    files: [packages/ai/src/targeting.ts, packages/core/src/index.ts, packages/ai/src/military.ts, packages/ai/src/decide.ts, apps/desktop/src/game/newGame.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-reachability.md]
+    tests: [packages/ai/src/targeting.test.ts, apps/desktop/src/game/newGame.test.ts]
     dod: "90 Spieltage Weltkarte mit der ausgelieferten Voreinstellung, alle Zahlen aus runGame(...).events gezaehlt und nie aus dem 500er-Ringpuffer state.eventLog: Anteil abgelehnter KI-Befehle unter 10 Prozent (vorher 57), NO_PATH-Anteil an MOVE_ARMY unter 2 Prozent (vorher 68), keine Paarung Armee/Fehlercode oefter als dreimal, mindestens ein WAR_DECLARED (vorher 0 in 1000 Tagen); Gegnerauswahl nach Nachbarschaft statt Listenreihenfolge und Erreichbarkeitsfilter in rateProvinces ueber das vorhandene reachableFrom - keine amphibische KI (Entscheidung 4), und der Filter bricht R-AI-01/R-DIP-04 nicht, weil AiContext die Karte schon fuehrt; R-AI-04-Budget bleibt gruen; alle vier Zahlen vorher/nachher in docs/reports/ai-reachability.md"
 
   - id: T-M14-12

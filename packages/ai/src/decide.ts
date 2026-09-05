@@ -1,5 +1,6 @@
 import type { AiMemory, Command, DifficultyRule, MapData, PublicView, Rules } from '@worldwar/core'
 import { diplomacyCommands } from './diplomacy'
+import { capitalCommands } from './capital'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
 import type { AiContext, AiDecision, Explanation } from './types'
@@ -57,6 +58,9 @@ export function decide(options: DecideOptions): AiDecision {
   // Strategy: what to build and whom to fight. Once a game day.
   if (memory.lastStrategicTick < 0 || tick - memory.lastStrategicTick >= STRATEGIC_INTERVAL) {
     memory.lastStrategicTick = tick
+    // Zuerst die Hauptstadt: ohne sie trifft die Entfernungsstrafe jede eigene Provinz
+    // mit vollem Betrag, und keine andere Entscheidung wiegt das auf (T-M14-12).
+    commands.push(...capitalCommands(context, explanations))
     commands.push(...diplomacyCommands(context, explanations))
     commands.push(...economyCommands(context, explanations))
   }

@@ -12,6 +12,8 @@ import { decide, emptyMemory, shouldThinkThisTick } from './decide'
 import { runAi, storeMemories } from './runner'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { hopDistance, rateProvinces } from './targeting'
+import { nextUnitFor } from './economy'
+import { capitalCommands } from './capital'
 
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -36,6 +38,18 @@ const contextFor = (playerId = 'p2') => ({
   map,
   difficulty: TEST_RULES.ai.difficulties.normal,
 })
+
+/** Ein Kontext, in dem jede eigene Provinz die genannten Gebaeude hat und Geld da ist. */
+const contextWithBuildings = (buildings: Record<string, number>) => {
+  for (const id of state.provinceOrder) {
+    const province = state.provinces[id]!
+    if (province.owner !== 'p2') continue
+    province.buildings = { ...province.buildings, ...buildings }
+  }
+  const resources = state.players['p2']!.resources as Record<string, number>
+  for (const key of Object.keys(resources)) resources[key] = 5_000_000
+  return contextFor('p2')
+}
 
 beforeEach(() => {
   state = createInitialState(CONFIG, ctx)
@@ -218,5 +232,98 @@ describe('R-AI-03 Die KI spielt eine Partie', () => {
     for (const key of Object.keys(current.players['p2']!.resources)) {
       expect(current.players['p2']!.resources[key as 'food']).toBeGreaterThanOrEqual(0)
     }
+  })
+})
+
+describe('R-AI-01 Die KI fuehrt mehr als zwei Einheitenarten', () => {
+  // Befund 32: economy.ts waehlte 'tank' oder 'infantry' — zwei von zehn Arten.
+  // Artillerie, Luftwaffe und Marine waren reiner Spielervorteil, ein Bruch von R-AI-01
+  // in die andere Richtung. Fuer die Artillerie kommt hinzu: sie ist Vorbedingung fuer
+  // R-BAT-08 (T-M15-07). Eine Feuerautomatik ohne Fernwaffen waere gebaut, gruen
+  // getestet und wirkungslos, weil armyRange fuer jede KI-Armee null bliebe.
+
+  /** Ein Kontext, dessen eigene Armee den genannten Bestand hat. */
+  const mitBestand = (bestand: Record<string, number>) => {
+    const context = contextWithBuildings({ barracks: 1, factory: 1 })
+    const units = Object.entries(bestand).flatMap(([unitKey, count]) =>
+      Array.from({ length: count }, () => ({ unitKey, hpTotal: 1000 })),
+    )
+    return {
+      ...context,
+      view: {
+        ...context.view,
+        armies: [{ id: 'a1', owner: 'p2', locationProvinceId: 'o1', units }],
+      },
+    } as unknown as typeof context
+  }
+
+  const mitFabrik = { buildings: { barracks: 1, factory: 1 } }
+
+  it('faengt mit Infanterie an', () => {
+    expect(nextUnitFor(mitBestand({}), mitFabrik)).toBe('infantry')
+  })
+
+  it('geht zu Panzern ueber, wenn genug Infanterie steht', () => {
+    expect(nextUnitFor(mitBestand({ infantry: 10 }), mitFabrik)).toBe('tank')
+  })
+
+  it('baut Artillerie, sobald Infanterie und Panzer da sind', () => {
+    // Ohne diese Zeile kann R-BAT-08 nicht wirken.
+    expect(nextUnitFor(mitBestand({ infantry: 10, tank: 6 }), mitFabrik)).toBe('artillery')
+  })
+
+  it('baut ohne Fabrik nur, was die Kaserne hergibt', () => {
+    const nur = { buildings: { barracks: 1 } }
+    expect(nextUnitFor(mitBestand({ infantry: 10, tank: 6 }), nur)).toBe('infantry')
+  })
+
+  it('waehlt bei gleicher Lage dasselbe', () => {
+    // R-ARCH-01: dieselbe Lage, derselbe Befehl.
+    const a = nextUnitFor(mitBestand({ infantry: 4, tank: 2 }), mitFabrik)
+    const b = nextUnitFor(mitBestand({ infantry: 4, tank: 2 }), mitFabrik)
+    expect(a).toBe(b)
+  })
+})
+
+describe('R-AI-01 Die KI verlegt ihre Hauptstadt', () => {
+  it('sucht sich eine neue, wenn die alte verloren ist', () => {
+    // Befund 12: SET_CAPITAL wurde von keiner Zeile in packages/ai erzeugt. Wer seine
+    // Hauptstadt verlor, hatte fuer den Rest der Partie keine — und die
+    // Entfernungsstrafe auf die Moral rechnet gegen capitalProvinceId, trifft also JEDE
+    // Provinz mit vollem Betrag. Die Macht faellt bis zum Aufstand durch und erholt sich
+    // nie. Der Mensch kann verlegen, die KI nicht: R-AI-01 in die andere Richtung.
+    state.players['p2']!.capitalProvinceId = null
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'city'
+    }
+
+    const commands = capitalCommands(contextFor('p2'), [])
+    expect(commands).toHaveLength(1)
+    expect(commands[0]!.type).toBe('SET_CAPITAL')
+  })
+
+  it('laesst eine heile Hauptstadt in Ruhe', () => {
+    expect(capitalCommands(contextFor('p2'), [])).toEqual([])
+  })
+
+  it('verlegt nicht, wenn keine Stadt uebrig ist', () => {
+    state.players['p2']!.capitalProvinceId = null
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'rural'
+    }
+    expect(capitalCommands(contextFor('p2'), [])).toEqual([])
+  })
+
+  it('waehlt bei gleicher Lage dieselbe Stadt', () => {
+    state.players['p2']!.capitalProvinceId = null
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'city'
+    }
+    const a = capitalCommands(contextFor('p2'), [])
+    const b = capitalCommands(contextFor('p2'), [])
+    expect(a).toEqual(b)
   })
 })
