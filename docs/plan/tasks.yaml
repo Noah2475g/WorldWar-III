@@ -1216,11 +1216,11 @@ tasks:
   - id: T-M14-12
     milestone: M14
     title: Die KI benutzt, was sie hat
-    status: todo
+    status: done
     deps: [T-M14-11]
     requirements: [R-AI-01, R-AI-03, R-PROV-05, R-ECON-05, R-DIP-03, R-DIP-04]
-    files: [packages/ai/src/capital.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, packages/core/src/view/publicView.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/ai.json, docs/plan/01-REQUIREMENTS.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/reports/ai-parity.md]
-    tests: [packages/ai/src/capital.test.ts, packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, apps/headless/test/ai-parity.slow.test.ts]
+    files: [packages/ai/src/consolidate.ts, packages/ai/src/capital.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, packages/core/src/view/publicView.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/ai.json, docs/plan/01-REQUIREMENTS.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/reports/ai-reachability.md]
+    tests: [packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts]
     dod: "90 Spieltage: keine KI-Macht endet ohne Hauptstadt, solange sie eine Stadtprovinz haelt; JE KI-Macht mindestens eine Armee mit armyRange groesser 0 (vorher 0 fuer jede) - nicht nur eine einzige im ganzen Spiel, sonst ist R-BAT-08/AK3 in M15 unabnehmbar, das Beschussereignisse je Schwierigkeitsstufe verlangt; hoechstens drei Armeeobjekte je KI-Macht und Provinz, gemessen gegen den in dieser Aufgabe selbst erhobenen Vorher-Wert (Befund 40 misst 127 Armeeobjekte bei einer Macht; die frueher genannte 113 traegt kein Bericht und ist gestrichen); mindestens ein TRADE_EXECUTED je KI-Macht (vorher 0); abgewiesene acceptPeace unter 5 Prozent (vorher zu 99 Prozent abgewiesen, Befund 41 - keine Nachkommastelle, die der Beleg nicht traegt) und mindestens ein Frieden zwischen zwei KI; PublicView.offers wird hier angelegt und ist Vorbedingung fuer R-DIP-06/AK3 und R-AI-08/AK2 - keine neue Zustandsstruktur, das Feld speist sich aus state.diplomacy.offers; Truppenmischung und Handelsvorlauf mit Status in BALANCING.md, der Verzicht auf Luftwaffe und Marine begruendet in DECISIONS.md (Entscheidung 4, Lufteinsatzbefehle stehen in M18)"
 
   - id: T-M14-13

@@ -14,6 +14,7 @@ import { compareForces, threatMap, worthAttacking } from './threat'
 import { hopDistance, rateProvinces } from './targeting'
 import { nextUnitFor } from './economy'
 import { capitalCommands } from './capital'
+import { consolidateCommands } from './consolidate'
 
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -325,5 +326,43 @@ describe('R-AI-01 Die KI verlegt ihre Hauptstadt', () => {
     const a = capitalCommands(contextFor('p2'), [])
     const b = capitalCommands(contextFor('p2'), [])
     expect(a).toEqual(b)
+  })
+})
+
+describe('R-AI-01 Die KI legt Verbaende zusammen', () => {
+  it('fasst zwei Armeen am selben Ort zu einer', () => {
+    // Befund 40: Jede Aushebung erzeugt eine eigene Armee, und die KI hat sie nie
+    // zusammengelegt — gemessen 127 Armeen bei einer Macht, deren staerkste 2 % ihrer
+    // Gesamtkraft hielt. Hundert Einzelarmeen werden einzeln aufgerieben, bevor eine
+    // von ihnen etwas ausrichtet. MERGE_ARMIES gab es seit M4; in packages/ai erzeugte
+    // es keine Zeile.
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+
+    const commands = consolidateCommands(contextFor('p2'), [])
+    expect(commands).toHaveLength(1)
+    expect(commands[0]!.type).toBe('MERGE_ARMIES')
+  })
+
+  it('laesst eine einzelne Armee in Ruhe', () => {
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+    expect(consolidateCommands(contextFor('p2'), [])).toEqual([])
+  })
+
+  it('fasst nichts ueber Provinzgrenzen hinweg zusammen', () => {
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+    expect(consolidateCommands(contextFor('p2'), [])).toEqual([])
+  })
+
+  it('erzeugt nur Befehle, die die regulaere Pruefung besteht', () => {
+    // R-AI-01/AK1: dieselbe Pruefung wie beim Menschen.
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 3000 }] })
+
+    const phaseCtx = { map, rules: TEST_RULES, commands: [], events: [] }
+    for (const command of consolidateCommands(contextFor('p2'), [])) {
+      expect(canApply(state, command, phaseCtx)).toEqual({ ok: true })
+    }
   })
 })

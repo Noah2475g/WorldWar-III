@@ -36,9 +36,19 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
 
     const ratio = standing(context, other)
     if (ratio < 900) {
-      // Losing: take the way out.
-      commands.push({ type: 'DIPLOMACY', playerId, targetPlayerId: other, action: 'acceptPeace' })
-      commands.push({ type: 'DIPLOMACY', playerId, targetPlayerId: other, action: 'offerPeace' })
+      // Losing: take the way out. Angenommen wird nur, was auch angeboten wurde
+      // (T-M14-12, Befund 41): vorher warf die KI acceptPeace ins Blaue, weil die Sicht
+      // die eingehenden Angebote gar nicht fuehrte — 99 % dieser Befehle wurden
+      // abgelehnt, und zwischen zwei KI-Maechten konnte ein Krieg strukturell fast nie
+      // enden, weil beide anboten und keine das Angebot der anderen sah.
+      const liegtVor = context.view.incomingOffers.some(
+        (offer) => offer.from === other && offer.kind === 'peace',
+      )
+      if (liegtVor) {
+        commands.push({ type: 'DIPLOMACY', playerId, targetPlayerId: other, action: 'acceptPeace' })
+      } else {
+        commands.push({ type: 'DIPLOMACY', playerId, targetPlayerId: other, action: 'offerPeace' })
+      }
       explanations.push({
         action: `Sucht Frieden mit ${other}`,
         reason: `unterlegen (Verhältnis ${ratio})`,

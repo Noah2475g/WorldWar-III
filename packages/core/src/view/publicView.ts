@@ -111,6 +111,18 @@ export interface PublicView {
   }
   others: { id: PlayerId; name: string; nation: string; color: string; alive: boolean; score: number }[]
   relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean }>
+  /**
+   * Angebote, die auf meine Antwort warten (T-M14-12, Befund 41).
+   *
+   * Ohne sie warf die KI `acceptPeace` ins Blaue: sie konnte nicht wissen, ob überhaupt
+   * ein Angebot vorlag, und **99 % dieser Befehle wurden abgelehnt**. Zwischen zwei
+   * KI-Mächten konnte ein Krieg dadurch strukturell fast nie enden — beide boten Frieden
+   * an, keine sah das Angebot der anderen.
+   *
+   * Kein Verstoß gegen R-DIP-04: ein Angebot **an mich** ist mein eigenes Wissen. Was
+   * andere einander anbieten, steht hier nicht.
+   */
+  incomingOffers: { from: PlayerId; kind: 'peace' | 'alliance'; tick: Tick }[]
   provinces: VisibleProvince[]
   armies: VisibleArmy[]
   /**
@@ -255,6 +267,11 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     })
   }
 
+  // Angebote an mich — mein eigenes Wissen, kein Bruch von R-DIP-04 (T-M14-12).
+  const incomingOffers = state.diplomacy.offers
+    .filter((offer) => offer.to === playerId)
+    .map((offer) => ({ from: offer.from, kind: offer.kind, tick: offer.tick }))
+
   const relations: PublicView['relations'] = {}
   for (const other of state.playerOrder) {
     if (other === playerId) continue
@@ -289,6 +306,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
         return { id, name: other.name, nation: other.nation, color: other.color, alive: other.alive, score: other.score }
       }),
     relations,
+    incomingOffers,
     provinces,
     armies,
     ...(rules

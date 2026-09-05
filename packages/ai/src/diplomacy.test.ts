@@ -80,6 +80,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
     ],
     armies: [],
     marketPrices: zeroResources(),
+    incomingOffers: [],
     victory: { condition: 'points', winner: null },
   }
 }
@@ -93,17 +94,32 @@ const contextOf = (view: PublicView, difficulty: 'easy' | 'normal' | 'hard' = 'n
 })
 
 describe('R-DIP-03 Die KI antwortet auf Angebote nach nachvollziehbaren Regeln', () => {
-  it('sucht Frieden, sobald sie klar unterlegen ist', () => {
+  it('bietet Frieden an, sobald sie klar unterlegen ist', () => {
     const explanations: Explanation[] = []
     const context = contextOf(viewOf(500, [{ id: 'stark', score: 1000, relation: 'war' }]))
 
     const commands = diplomacyCommands(context, explanations)
 
     expect(commands.map((command) => command.type === 'DIPLOMACY' && command.action)).toEqual([
-      'acceptPeace',
       'offerPeace',
     ])
     expect(explanations.some((entry) => /Frieden/.test(entry.action))).toBe(true)
+  })
+
+  it('nimmt an, statt anzubieten, wenn ein Angebot vorliegt', () => {
+    // Befund 41: Vorher warf die KI 'acceptPeace' ins Blaue — die Sicht fuehrte die
+    // eingehenden Angebote gar nicht, und 99 % dieser Befehle wurden abgelehnt. Zwischen
+    // zwei KI-Maechten konnte ein Krieg dadurch strukturell fast nie enden: beide boten
+    // an, keine sah das Angebot der anderen. Der alte Test hielt genau dieses blinde
+    // Verhalten fest ('acceptPeace' UND 'offerPeace' in jedem Fall).
+    const view = viewOf(500, [{ id: 'stark', score: 1000, relation: 'war' }])
+    view.incomingOffers = [{ from: 'stark', kind: 'peace', tick: 200 }]
+
+    const commands = diplomacyCommands(contextOf(view), [])
+
+    expect(commands.map((command) => command.type === 'DIPLOMACY' && command.action)).toEqual([
+      'acceptPeace',
+    ])
   })
 
   it('kaempft weiter, solange sie nicht unterlegen ist', () => {

@@ -1,6 +1,7 @@
 import type { AiMemory, Command, DifficultyRule, MapData, PublicView, Rules } from '@worldwar/core'
 import { diplomacyCommands } from './diplomacy'
 import { capitalCommands } from './capital'
+import { consolidateCommands } from './consolidate'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
 import type { AiContext, AiDecision, Explanation } from './types'
@@ -68,6 +69,7 @@ export function decide(options: DecideOptions): AiDecision {
   // Operations: raising troops and covering shortages. Every six hours.
   if (memory.lastOperationalTick < 0 || tick - memory.lastOperationalTick >= OPERATIONAL_INTERVAL) {
     memory.lastOperationalTick = tick
+    commands.push(...consolidateCommands(context, explanations))
     commands.push(...tradeCommands(context, explanations))
     commands.push(...recruitCommands(context, explanations))
   }
