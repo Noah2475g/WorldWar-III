@@ -1115,3 +1115,69 @@ ausdrücklich **nicht** der Weg.
 **Was daran lehrreich ist:** Eine Korrektur ist erst fertig, wenn sie **jede** Stelle
 derselben Klasse erreicht hat. Der Kommentar, der den Fehler benennt, ist kein Beleg dafür,
 dass er behoben ist — er stand hier über einem Block, der ihn noch beging.
+
+---
+
+## 2026-09-06 · T-M12-03 · Das gerissene Tickbudget war Fremdlast, kein Rückschritt
+
+**Befund:** Der Abnahmelauf gegen `5065b99` meldete **6 von 7**; gerissen war genau eine
+Zusicherung, R-ARCH-06/AK1 mit **3,525 ms Median gegen 3,5 ms**. Das ist **kein**
+Rückschritt im Code, sondern eine Messung unter Fremdlast.
+
+**Die Messreihe, alles derselbe Commit:**
+
+| Bedingung | Median | Urteil |
+|---|---|---|
+| 2026-09-06, 17:02 (Referenz, vorher gemessen) | 2,528 ms | grün |
+| im Abnahmelauf, 22:25 | **3,525 ms** | **rot** |
+| einzeln nachgemessen, gleiche Lage | 3,535 ms | rot |
+| nach dem Schließen der Fremdlast, 3 Durchgänge | **2,546 / 2,606 / 2,655 ms** | **grün** |
+
+**Die Ursache:** `OPERATOR.exe` (ein Spiel aus dem Steam-Ordner) lief ab 21:20:13 und
+belegte **2,7 von 6 Kernen**. Der Abnahmelauf startete 21:02, seine Benchmarks liefen
+gegen 22:25 — mitten hinein. Ein Ryzen 5600X taktet bei mehreren belegten Kernen deutlich
+niedriger als bei einem, dazu kommt Speicher- und Cache-Konkurrenz; zusammen rund **30 %**,
+und damit genug, um 2,5 ms über die Grenze von 3,5 zu heben.
+
+**Zwei Irrwege auf dem Weg dorthin, beide lehrreich:**
+
+**(a) Der Einzelvergleich hätte die falsche Ursache benannt.** Eine Messung vor der
+AK-1-Reparatur (`0d551ac`) ergab 3,126 ms, eine danach 3,535 ms — daraus wäre „die
+Reparatur kostet 13 %" geworden. **Im Wechsel** gemessen, dreimal, überlappen die Spannen:
+
+| Durchgang | vor der Reparatur | nach der Reparatur |
+|---|---|---|
+| 1 | 3,139 | 3,323 |
+| 2 | 3,267 | 3,315 |
+| 3 | 3,307 | **3,279** |
+
+Kein nachweisbarer Unterschied — und im Verlauf sieht man, wie die Maschine warmläuft.
+Genau der Fall aus dem Lessons Log vom 2026-08-12: ein Werkzeug, das stärker streut als
+der Effekt, den es messen soll, darf **kein Verhältnis** ausgeben, sondern muss
+„kein Unterschied nachweisbar" melden.
+
+**(b) Die Kontrolle „ist die Maschine frei" war blind.** Gefragt wurde `Get-Process node`
+— also ausschließlich nach den **eigenen** Prozessen. Die Antwort „keine rechnenden
+node-Prozesse" war wahr und wertlos; die Gesamtlast stand bei 24 %. Richtig ist die
+Gesamtlast plus die Liste der größten Verbraucher, unabhängig davon, wem sie gehören.
+
+**Folgen, eingetragen:**
+
+1. **Die Grenze bleibt bei 3,5 ms.** Sie war nie das Problem. Die Reserve liegt bei rund
+   **1,32-fach** (3,5 gegen 2,65) — etwas unter der bei der Festlegung gemeinten
+   1,5-fachen, aber die Festlegung nannte 2,344/2,359/2,463 als Grundlage, und die
+   heutigen 2,546/2,606/2,655 liegen darüber. Wer das für zu knapp hält, misst nach und
+   begründet; **angehoben wird sie nicht, damit eine Zahl passt.**
+2. **`WORKFLOW.md`, Falle 5** sagt jetzt ausdrücklich, dass „Maschine allein" *jeden*
+   Prozess meint, und nennt den Prüfbefehl samt Schwelle (brauchbar unter etwa 10 %
+   Grundlast).
+3. **`docs/reports/acceptance.md` weist AK-4/6 weiterhin als rot aus** und ist damit für
+   diesen Lauf korrekt — der Lauf *war* rot. Der nächste vollständige Abnahmelauf steht
+   ohnehin nach Noahs Playtest an (AK-7), und er ist die Stelle, an der der Bericht wieder
+   grün wird. Bis dahin gilt: **die Zeile ist erklärt, nicht offen.**
+
+**Was daran lehrreich ist:** Eine rote Zusicherung ist eine Frage, keine Antwort. Sie kann
+drei Dinge heißen — der Code ist schlechter geworden, die Zusicherung war falsch, oder die
+Messung war es. Wer sofort am Code oder an der Zahl arbeitet, hat eine der drei Möglichkeiten
+gewählt, ohne sie zu prüfen. Hier war es die dritte, und das Einzige, was sie sichtbar
+gemacht hat, war eine Wiederholung unter geänderten Bedingungen.

@@ -79,8 +79,21 @@ Mehr Kontext brauchst du für keine der Aufgaben unten.
    `$?`, oder lass die Pipe weg.
 4. **Der Rust-Bau erzeugt 1,2 GB** unter `apps/desktop/src-tauri/target/`. Ignoriert, aber
    `git add -A` vor einem `.gitignore`-Eintrag wäre teuer. `gen/` ist ebenfalls ignoriert.
-5. **Benchmarks brauchen die Maschine allein.** Alles unter `packages/core/test/perf`
-   misst sonst die Auslastung. Nie parallel zu einem Bau oder einer zweiten Suite.
+5. **Benchmarks brauchen die Maschine allein — und „allein" heißt *jeder* Prozess.**
+   Alles unter `packages/core/test/perf` misst sonst die Auslastung. Am 2026-09-06 riss
+   das Tickbudget mit 3,525 ms gegen 3,5 ms, und die Ursache war **ein Spiel im
+   Vordergrund** (`OPERATOR.exe`, 2,7 von 6 Kernen) — derselbe Commit maß vorher 2,53 ms.
+   Der Fehler bei der Kontrolle war so groß wie der Befund: gefragt wurde
+   `Get-Process node`, also nur nach den **eigenen** Prozessen. Richtig ist die
+   Gesamtlast und die Liste der größten Verbraucher:
+
+   ```bash
+   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
+   ```
+
+   Unter etwa 10 % Grundlast ist die Messung brauchbar. Ein Benchmark, der neben
+   irgendetwas läuft, misst die Maschine und nicht den Code — und er reißt dann eine
+   Zusicherung, die in Ordnung ist.
 6. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` — lieber
    ein WIP-Commit.
 7. **Einen langen Lauf abzubrechen beendet ihn nicht.** `TaskStop` (und Strg+C) trifft die
@@ -133,6 +146,13 @@ das, sparst du 80 Minuten.
 
 **Erwartet:** 6 von 7 maschinell grün, offen bleibt AK-7. Danach ist
 `docs/reports/acceptance.md` wieder eine Aussage über das Projekt.
+
+> **Der letzte Lauf (2026-09-06, gegen `5065b99`) steht auf 6 von 7 mit AK-4/6 rot** —
+> Tickbudget 3,525 ms gegen 3,5 ms. **Das ist erklärt und kein offener Punkt:** ein Spiel
+> belegte 2,7 von 6 Kernen. Nach dem Schließen dreimal nachgemessen: 2,546 / 2,606 /
+> 2,655 ms, alle grün, gleicher Commit. Einzelheiten in `PROBLEME.md` (letzter Abschnitt).
+> Der Bericht wird beim Abschlusslauf nach dem Playtest wieder grün — **nicht vorher
+> reparieren, es gibt nichts zu reparieren.**
 
 **Wenn rot:** die betroffene Prüfung einzeln nachfahren
 (`pnpm sim:fullgame`, `pnpm bench`, `pnpm sim:tournament`) und den Befund in
