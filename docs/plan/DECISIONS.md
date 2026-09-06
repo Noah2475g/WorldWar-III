@@ -845,3 +845,47 @@ hält und der Bericht Anforderung, Messung und Abstand nebeneinander ausweist.
 Rückschritt in der Rechenzeit fällt auf, statt in einem sechzehnfachen Spielraum zu
 verschwinden. Für den Spieler ändert sich nichts — die interaktive Betriebsart war schon
 vorher erreichbar.
+
+---
+
+## 2026-09-06 · T-M15-04 · R-GAME-07 · Ein Migrationsschritt für den ganzen Meilenstein
+
+**Entscheidung:** `SCHEMA_VERSION` geht auf **2**, und `MIGRATIONS` enthält **genau einen**
+Schritt 1 → 2. Dieser Schritt legt **alle** Zustandsfelder von M15 leer an — das
+Betroffenenfeld an jedem Protokolleintrag (T-M15-01), das Verstimmungs-Record (T-M15-05)
+und die Feuerleitung jeder Armee (T-M15-07). T-M15-05 und T-M15-07 füllen ihre Felder mit
+Verhalten und erhöhen die Version **nicht** ein zweites Mal.
+
+**Begründung:** Drei Schritte für einen Meilenstein hießen drei eingefrorene Stände, drei
+Prüfpfade und einen Formatwächter, der sich mit sich selbst streitet: er sichert zu, dass
+`SCHEMA_VERSION` genau um eins größer ist als die höchste Stufe in `MIGRATIONS`, und wäre
+zwischen zwei Aufgaben regelmäßig rot. Der Preis ist, dass T-M15-04 Felder anlegt, die es
+selbst nicht benutzt — sichtbar in `state/types.ts`, wo beide Felder ihren künftigen
+Besitzer namentlich nennen. Das ist die ehrlichere Seite des Tauschs: ein leeres Feld mit
+Adresse ist auffindbar, eine vierte Schemastufe im Nachhinein nicht mehr rückgängig.
+
+**Auswirkung:** Der Umschlag ist die **führende** Versionsnummer; `deserialise` erzwingt,
+dass `state.schemaVersion` mit ihr übereinstimmt, und lehnt sonst ab (Befund 56 — es gab
+zwei Nummern und nur eine wurde geführt). Dazu hat seit heute **jeder** Ladeweg eine
+Prüfung: nach einer Migration `validateState`, ohne Migration die Prüfsumme, ohne beides
+eine Ablehnung. Vorher hing die einzige Prüfung an einem Hash, den `migrate` selbst
+entfernt — ab dem ersten echten Migrationsschritt wäre jeder migrierte Stand ungeprüft
+durchgelaufen (Befund 55).
+
+---
+
+## 2026-09-06 · R-GAME-07 · Zurückgenommen: die Migration kennt keine Spione und keine Zeitung
+
+**Entscheidung:** Aus dem Text von R-GAME-07 werden **Spione, Aufklärung, Angebote und
+Zeitung** gestrichen; genannt werden die drei Felder, die in M15 tatsächlich entstehen.
+
+**Begründung:** Spionage ist am 2026-09-05 nach M17 verschoben (Entscheidung 3), die
+Zeitung ist durch den Filter „Weltgeschehen" ersetzt, der **kein** Zustandsfeld braucht
+(D19.8), und die Angebote liegen seit T-M14-12 in `PublicView`, gespeist aus
+`state.diplomacy.offers` — auch kein neues Feld. Eine Anforderung, die Felder nennt, die
+in ihrem Meilenstein nicht entstehen, ist entweder unerfüllbar oder wird stillschweigend
+kleiner gelesen, als sie dasteht. Genau das war der Fehler des Nachtrags 2.15, den
+T-M14-01 behoben hat; ihn hier zu wiederholen wäre unentschuldbar.
+
+**Auswirkung:** R-GAME-07 bekommt zusätzlich ein **AK2** für das, was diese Aufgabe
+wirklich leistet und was vorher in keiner Anforderung stand: kein Ladeweg ohne Prüfung.

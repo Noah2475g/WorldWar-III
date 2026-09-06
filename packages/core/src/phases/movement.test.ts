@@ -34,6 +34,7 @@ const makeArmy = (id: string, owner: string, at: string, units: { unitKey: strin
   stance: 'aggressive',
   embarked: false,
   cannotAttackUntil: 0,
+    holdFire: false,
 })
 
 let state: GameState

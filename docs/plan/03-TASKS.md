@@ -2389,9 +2389,15 @@ bemerkt, weil kein Prüfer die Felder las.
   `packages/core/test/golden/save-v1.json` *(neu, ein mit dem V1-Serialisierer erzeugter Stand)*
 - **Tests zuerst:**
   1. `R-GAME-07/AK1`: Der eingefrorene V1-Stand lädt nach der Migration, jeder Eintrag seines
-     Protokolls trägt danach ein leeres Betroffenenfeld, und der Hash des migrierten Zustands
-     ist derselbe wie der im V1-Umschlag — die Migration rührt nichts an, was die Simulation
-     liest. Heute wird der Stand mit `UnsupportedSaveVersion` abgewiesen (rot).
+     Protokolls trägt danach ein leeres Betroffenenfeld, und **der Unterschied zwischen altem
+     und migriertem Zustand besteht ausschließlich aus den neu angelegten Feldern** — die
+     Migration rührt nichts an, was die Simulation liest. Heute wird der Stand mit
+     `UnsupportedSaveVersion` abgewiesen (rot).
+     *(Am 2026-09-06 korrigiert: hier stand „der Hash des migrierten Zustands ist derselbe wie
+     der im V1-Umschlag". Das ist nicht einlösbar — der Hash sortiert die Schlüssel und nimmt
+     jeden mit, ein neues Feld ändert ihn zwangsläufig. Die Zusage dahinter ist prüfbar, und
+     der Feldvergleich ist schärfer als ein Hashvergleich: er sagt, **was** sich geändert hat.
+     Begründung in PROBLEME.md.)*
   2. Befund 55: Ein migrierter Stand, dem ein Pflichtfeld fehlt (`playerOrder` entfernt), wird
      mit `SaveFormatError` abgelehnt; heute kommt selbst `{}` durch (rot).
   3. Befund 56: Eine absichtlich vergessliche Migration, die `state.schemaVersion` nicht
@@ -2419,7 +2425,12 @@ bemerkt, weil kein Prüfer die Felder las.
   Speicherformat V2 mit der Anforderungs-ID; **in `01-REQUIREMENTS.md` nennt R-GAME-07 keine
   Spione, keine Aufklärung und keine Zeitung mehr** — die auf M17 verschobenen Teilsätze sind
   aus Anforderungs- und AK-Text entfernt und in `DECISIONS.md` begründet;
-  `packages/core/test/determinism.test.ts` bleibt ohne Erneuerung der Golden-Datei grün.
+  `packages/core/test/determinism.test.ts` wird erneuert — **aber erst nach dem Beweis**, dass
+sich nur die Gestalt geändert hat: derselbe 500-Tick-Lauf liefert nach Abzug von
+`schemaVersion`, `grievances` und `holdFire` bitgleich die alten Werte. *(Am 2026-09-06
+korrigiert: hier stand „bleibt ohne Erneuerung grün". Ein Zustands-Hash ändert sich, sobald
+ein Feld dazukommt; die Zusage war nicht einlösbar. Ein stillschweigend erneuerter
+Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLEME.md.)*
 
 ### T-M15-05 · Das Verhältnis steuert die KI — erst die Messlatte, dann die Regel
 - **Ziel:** In zwei Schritten, und die Reihenfolge ist der eigentliche Inhalt der Aufgabe.

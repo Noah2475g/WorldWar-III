@@ -1,6 +1,7 @@
 import { hashValue } from '@worldwar/shared'
 import { HASH_OMIT_KEYS, SCHEMA_VERSION, type GameState } from '../state/types'
-import { migrate, type SaveEnvelope } from './migrate'
+import { assertSupported, migrate, type SaveEnvelope } from './migrate'
+import { InvalidStateError, validateState } from './validate'
 import type { StoragePort } from './StoragePort'
 
 /**
@@ -47,16 +48,55 @@ export function deserialise(text: string): GameState {
     throw new SaveFormatError('Dem Speicherstand fehlen Version oder Spielstand.')
   }
 
+  // Erst die Frage, ob wir diese Stufe ueberhaupt kennen: ein Stand aus einer neueren
+  // Fassung soll das erfahren und nicht zuerst etwas ueber Formatversionen lesen.
+  assertSupported(envelope.schemaVersion)
+
+  // Befund 56: Es gab zwei Versionsnummern — die im Umschlag und die im Zustand — und
+  // nur eine wurde geführt. Der Umschlag ist die führende; sagt der Zustand etwas
+  // anderes, ist der Stand von einer Migration angefasst worden, die ihn nicht mitzog,
+  // und niemand kann sagen, welche Regeln für ihn gelten.
+  const stateVersion = (envelope.state as { schemaVersion?: unknown }).schemaVersion
+  if (typeof stateVersion !== 'number') {
+    throw new SaveFormatError('Dem Spielstand fehlt seine Formatversion.')
+  }
+  if (stateVersion !== envelope.schemaVersion) {
+    throw new SaveFormatError(
+      `Umschlag und Spielstand nennen verschiedene Formatversionen (${envelope.schemaVersion} gegen ${stateVersion}).`,
+    )
+  }
+
+  const wasMigrated = envelope.schemaVersion !== SCHEMA_VERSION
   const migrated = migrate(envelope as SaveEnvelope)
   const state = migrated.state
 
-  if (migrated.hash) {
+  // Drei Ladewege, und seit dem 2026-09-06 hat jeder eine Prüfung (Befund 55).
+  //
+  // Vorher stand hier nur `if (migrated.hash)` — und `migrate` entfernt den Hash nach
+  // jedem Schritt, weil er den Zustand *vor* der Umstellung beschreibt. Solange
+  // MIGRATIONS leer war, fiel das nicht auf; ab dem ersten echten Schritt wäre jeder
+  // migrierte Stand ungeprüft durchgelaufen, auch `{}`.
+  if (wasMigrated) {
+    // Migriert: der Hash von damals kann nicht mehr stimmen, also wird der Zustand
+    // selbst befragt.
+    try {
+      validateState(state)
+    } catch (error) {
+      throw new SaveFormatError(
+        error instanceof InvalidStateError ? error.message : 'Der Speicherstand ist unvollständig.',
+      )
+    }
+  } else if (typeof migrated.hash === 'string') {
     const actual = hashValue(state, { omitKeys: HASH_OMIT_KEYS })
     if (actual !== migrated.hash) {
       throw new SaveFormatError(
         'Der Speicherstand wurde verändert oder ist beschädigt: die Prüfsumme stimmt nicht.',
       )
     }
+  } else {
+    // Weder migriert noch mit Hash: `serialise` schreibt immer einen. Ein aktueller
+    // Stand ohne Hash stammt nicht von diesem Spiel.
+    throw new SaveFormatError('Dem Speicherstand fehlt die Prüfsumme.')
   }
 
   return state

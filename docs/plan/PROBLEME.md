@@ -811,3 +811,54 @@ KI tot". Diese Akte hält fest, dass der Grund bekannt ist und nicht gesucht wer
 
 **Was T-M14-12 stattdessen gebaut hat**, weil es Vorbedingung für M15 war: Truppenmischung
 samt Artillerie, `SET_CAPITAL`, `MERGE_ARMIES` und `PublicView.incomingOffers`.
+
+---
+
+## 2026-09-06 · T-M15-04 · Zwei Zusagen der Aufgabe waren nicht einlösbar — und was an ihre Stelle tritt
+
+**Befund:** Die Aufgabenbeschreibung verlangte zweierlei, das mit einem neuen Zustandsfeld
+nicht gleichzeitig zu haben ist:
+
+1. *„der Hash des migrierten Zustands ist derselbe wie der im V1-Umschlag"* — der Hash
+   (`packages/shared/src/hash.ts`) sortiert die Schlüssel eines Objekts und nimmt **jeden**
+   mit. Ein hinzugefügtes Feld ändert ihn zwangsläufig, gleich wie neutral sein Wert ist.
+2. *„`determinism.test.ts` bleibt ohne Erneuerung der Golden-Datei grün"* — aus demselben
+   Grund. Der Golden-Master ist ein Zustands-Hash je Prüfpunkt.
+
+**Was daran nicht schlimm ist:** Beide Sätze meinen dieselbe Sache, und die ist prüfbar —
+nur nicht über den Hash: **die Migration rührt nichts an, was die Simulation liest.**
+
+**Was an ihre Stelle getreten ist, und warum es schärfer ist:**
+
+- Statt eines Hashvergleichs prüft `migration-v1.test.ts` den *Unterschied* zwischen altem
+  und migriertem Zustand und verlangt, dass er **ausschließlich** aus den in
+  `ADDED_IN_VERSION_2` genannten Feldern besteht. Ein Hashvergleich hätte nur „gleich oder
+  ungleich" gesagt; das hier sagt, *was* sich geändert hat, und lässt genau die drei
+  erlaubten Felder durch.
+- Der Golden-Master wurde erneuert — aber **erst nach dem Beweis**, dass sich nur die
+  Gestalt geändert hat. Gemessen am 2026-09-06: derselbe 500-Tick-Lauf liefert nach Abzug
+  von `schemaVersion`, `grievances` und `holdFire` **bitgleich** die alten Werte
+  (`tick1 63ad299674899dac`, `tick24 99829740ca0a2912`, `tick100 63815fde347d0fb4`,
+  `tick500 f9f4259d8eaff2f3`). Die neuen stehen in `tiny-500.json`. Ein stillschweigend
+  erneuerter Golden-Master gilt in diesem Projekt als Fehlschlag — dies ist die
+  dazugehörige Akte.
+
+**Status: behoben.** Die Aufgabenbeschreibung in `03-TASKS.md` ist auf die einlösbare
+Fassung gezogen, mit Verweis hierher.
+
+---
+
+## 2026-09-06 · T-M15-04 · Die Migration stürzte an fremdem Inhalt ab, statt ihn abzulehnen
+
+**Befund:** Der erste Entwurf von `toVersion2` griff direkt auf `state.armies`,
+`state.diplomacy` und `state.eventLog` zu. Ein Umschlag mit `state: { schemaVersion: 1 }`
+ergab damit einen `TypeError` statt einer Meldung — und für den Spieler ist ein TypeError
+nicht von einem Absturz des Spiels zu unterscheiden.
+
+**Kleinster reproduzierbarer Fall:**
+`deserialise('{"schemaVersion":1,"savedAtTick":0,"state":{"schemaVersion":1}}')`.
+
+**Behoben am 2026-09-06.** Die Migration ist nachsichtig gegenüber fehlenden Teilen: sie
+darf an fremdem Inhalt nicht *abstürzen*, sie darf ihn nur nicht verstehen. Die Ablehnung
+gehört zu `validateState`, das danach läuft — und das ist auch die Stelle, an der die
+Meldung entsteht, die der Spieler lesen kann.

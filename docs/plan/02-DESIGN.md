@@ -1203,6 +1203,25 @@ Unterschied zwischen einer gebauten und einer wirksamen Feuerautomatik:
 
 ### D19.5 Die Migration v1 → v2 (R-GAME-07)
 
+> **Gebaut am 2026-09-06 (T-M15-04).** `SCHEMA_VERSION` ist 2, `MIGRATIONS` hat **genau
+> einen** Schritt, und der legt alle drei M15-Felder leer an: `concerns` an jedem
+> Protokolleintrag, `diplomacy.grievances` und `Army.holdFire`. Alle drei Werte sind
+> neutral — ein leeres Betroffenenfeld heißt „geht niemanden an" (D19.1), ein leeres
+> Verstimmungs-Record „niemand ist auf niemanden böse", `holdFire: false` heißt „feuert",
+> also genau das Verhalten einer V1-Armee.
+>
+> **Der Umschlag führt die Version**, und `deserialise` erzwingt, dass der Zustand dasselbe
+> sagt. Vorher gab es zwei Nummern und nur eine wurde geführt (Befund 56).
+>
+> **Kein Ladeweg ohne Prüfung** (Befund 55, das eigentliche Loch): nach einer Migration
+> `validateState`, ohne Migration die Prüfsumme, ohne beides eine Ablehnung. Der alte Code
+> prüfte `if (migrated.hash)` — und `migrate` entfernt den Hash selbst, weil er den
+> Zustand *vor* der Umstellung beschreibt. Solange `MIGRATIONS` leer war, fiel das nicht
+> auf; ab dem ersten echten Schritt wäre jeder migrierte Stand ungeprüft durchgelaufen.
+>
+> Gefahren wird der Schritt an einem **eingefrorenen echten V1-Stand**
+> (`packages/core/test/golden/save-v1.json`), nicht an einer Testtabelle.
+
 **Ausgangslage, belegt.** `MIGRATIONS` (`persistence/migrate.ts:35-38`) ist ein **leeres Objekt
 mit einem auskommentierten Beispiel**; `SCHEMA_VERSION` steht auf 1 (`state/types.ts:298`). Der
 Test füttert der Kette eine eigene Tabelle und einen erfundenen Zustand

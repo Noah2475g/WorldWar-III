@@ -174,6 +174,15 @@ export interface Army {
   embarked: boolean
   /** Set while a retreat cooldown is running (D6.8). */
   cannotAttackUntil: Tick
+  /**
+   * Feuerleitung: `true` heisst „Feuer halten" (R-BAT-08, T-M15-07).
+   *
+   * Das Feld wird von **T-M15-04** leer angelegt und erst von T-M15-07 mit Verhalten
+   * gefuellt. Der Grund fuer diese Reihenfolge steht in DECISIONS.md: alle Zustandsfelder
+   * von M15 entstehen in **einem** Migrationsschritt, sonst braeuchte jede weitere
+   * Aufgabe eine eigene Schemastufe und der Formatwaechter widerspraeche sich selbst.
+   */
+  holdFire: boolean
 }
 
 export interface IntelEntry {
@@ -227,6 +236,16 @@ export interface DiplomacyState {
   relations: Record<string, Relation>
   /** Offers waiting for an answer; accepting is a deliberate second step. */
   offers: DiplomaticOffer[]
+  /**
+   * Wer ist auf wen wie boese (R-DIP-06, T-M15-05).
+   *
+   * **Gerichtet**, anders als `relations`: `grievances[a][b]` ist die Verstimmung, die
+   * a gegen b hegt. Ein Ueberfall macht das Opfer boese, nicht den Taeter, und ein
+   * gemeinsamer Schluessel koennte das nicht ausdruecken.
+   *
+   * Von **T-M15-04** leer angelegt, von T-M15-05 gefuellt — siehe `Army.holdFire`.
+   */
+  grievances: Record<PlayerId, Record<PlayerId, Fixed>>
 }
 
 export interface MarketState {
@@ -295,4 +314,13 @@ export interface GameState {
 /** Keys the simulation hash ignores (design D2, "Was der Hash umfasst"). */
 export const HASH_OMIT_KEYS: readonly string[] = ['eventLog']
 
-export const SCHEMA_VERSION = 1
+/**
+ * Die Stufe des Speicherformats (R-GAME-05, R-GAME-07).
+ *
+ * **2 seit dem 2026-09-06 (T-M15-04).** Der Schritt 1 → 2 legt alle Zustandsfelder von
+ * M15 leer an: das Betroffenenfeld an jedem Protokolleintrag, das Verstimmungs-Record
+ * und die Feuerleitung jeder Armee. `test/format` sichert zu, dass diese Zahl genau um
+ * eins groesser ist als die hoechste Stufe in `MIGRATIONS` — wer ein Zustandsfeld
+ * hinzufuegt, ohne beides nachzuziehen, laesst den Testlauf scheitern.
+ */
+export const SCHEMA_VERSION = 2

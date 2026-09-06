@@ -158,6 +158,7 @@ export function runScenario(scenario: Scenario, ctx: ScenarioContext): ScenarioR
       stance: entry.stance ?? 'aggressive',
       embarked: entry.embarked ?? false,
       cannotAttackUntil: entry.cannotAttackUntil ?? 0,
+    holdFire: false,
     }
     state.armyOrder = [...state.armyOrder, entry.id].sort()
   }

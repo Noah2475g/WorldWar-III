@@ -66,6 +66,7 @@ export const recruitment: Phase = (draft: GameState, ctx: PhaseContext) => {
           deployDelayUntil: 0,
           stance: 'defensive',
           embarked: false,
+          holdFire: false,
           cannotAttackUntil: 0,
         }
         draft.armies[id] = army

@@ -50,6 +50,7 @@ function cloneArmy(army: Army): Army {
     stance: army.stance,
     embarked: army.embarked,
     cannotAttackUntil: army.cannotAttackUntil,
+    holdFire: army.holdFire,
   }
 }
 
@@ -95,6 +96,14 @@ export function cloneState(state: GameState): GameState {
     relations[key] = { ...state.diplomacy.relations[key]! }
   }
 
+  // Zwei Ebenen, also zwei Schleifen. Ein Spread waere hier eine geteilte Referenz auf
+  // die inneren Records — und damit ein Determinismusfehler mit Ansage: der "vorherige"
+  // Zustand aenderte sich mit, und der Golden-Master faende es erst Wochen spaeter.
+  const grievances: GameState['diplomacy']['grievances'] = {}
+  for (const key of Object.keys(state.diplomacy.grievances)) {
+    grievances[key] = { ...state.diplomacy.grievances[key]! }
+  }
+
   const ai: GameState['ai'] = {}
   for (const key of Object.keys(state.ai)) {
     const memory = state.ai[key]!
@@ -118,7 +127,7 @@ export function cloneState(state: GameState): GameState {
     provinceOrder: state.provinceOrder.slice(),
     armies,
     armyOrder: state.armyOrder.slice(),
-    diplomacy: { relations, offers: state.diplomacy.offers.map((offer) => ({ ...offer })) },
+    diplomacy: { relations, offers: state.diplomacy.offers.map((offer) => ({ ...offer })), grievances },
     market: {
       prices: { ...state.market.prices },
       tickDemand: { ...state.market.tickDemand },

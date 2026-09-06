@@ -30,6 +30,7 @@ export function placeArmy(
     departureTick: null,
     deployDelayUntil: options.deployDelayUntil ?? 0,
     stance: options.stance ?? 'aggressive',
+    holdFire: false,
     embarked: options.embarked ?? false,
     cannotAttackUntil: 0,
   }

@@ -32,6 +32,7 @@ const army = (id: string, owner: string, unitKey: string, hpTotal: number): Army
   stance: 'defensive',
   embarked: false,
   cannotAttackUntil: 0,
+    holdFire: false,
 })
 
 let state: GameState

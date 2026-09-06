@@ -1300,11 +1300,11 @@ tasks:
   - id: T-M15-04
     milestone: M15
     title: R-GAME-07 - Spielstaende der V1 laufen weiter, und die Migration wird geprueft
-    status: todo
+    status: done
     deps: [T-M15-01, T-M15-02]
     requirements: [R-GAME-07]
     files: [packages/core/src/state/types.ts, packages/core/src/state/clone.ts, packages/core/src/persistence/migrate.ts, packages/core/src/persistence/save.ts, packages/core/src/persistence/validate.ts, packages/core/src/persistence/index.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, packages/core/test/golden/save-v1.json]
-    tests: [packages/core/src/persistence/migrate.test.ts, packages/core/src/persistence/save.test.ts, packages/core/src/persistence/validate.test.ts, test/docs.test.ts]
+    tests: [packages/core/src/persistence/migration-v1.test.ts, packages/core/src/persistence/migrate.test.ts, packages/core/src/persistence/save.test.ts, packages/core/test/determinism.test.ts]
     dod: "SCHEMA_VERSION ist 2 und MIGRATIONS enthaelt genau einen Schritt (1 nach 2), der an einem eingefrorenen echten V1-Stand laeuft. Dieser eine Schritt legt ALLE in M15 hinzukommenden Zustandsfelder leer an - concerns an jedem Ereignis (T-M15-01), die Verstimmungen in AiMemory (T-M15-05) und das Feuerleitungsfeld am Army-Objekt (T-M15-07); state/types.ts und clone.ts fuehren sie mit, und keine spaetere M15-Aufgabe erhoeht die Versionsnummer noch einmal oder fuegt einen zweiten Schritt hinzu. Das ist die Aufloesung des Widerspruchs, an dem sich T-M15-04, T-M15-05 und T-M15-07 sonst gegenseitig blockieren (Entscheidung (a), in DECISIONS.md festgehalten): die Migration entsteht mit dem ersten neuen Feld, nie danach. 0 Ladewege ohne Pruefung - nach Migration laeuft validateState, ohne Migration wird der Hash geprueft, ein Stand ohne beides wird abgelehnt (drei Tests, einzeln gezaehlt); eine vergessliche Migration, die state.schemaVersion nicht mitzieht, wird abgelehnt; der migrierte V1-Stand ist nach Speichern und Laden hashgleich; der Formatwaechter scheitert, wenn ein Zustandsfeld ohne Versionserhoehung dazukommt - kein Feld darf also nach dieser Aufgabe noch neu erfunden werden. In 01-REQUIREMENTS.md nennt R-GAME-07 nur noch die tatsaechlich entstehenden Felder: Spione, Aufklaerung und Zeitung sind aus dem Anforderungstext gestrichen und mit Verweis auf M17 in DECISIONS.md begruendet. DECISIONS.md haelt den Umschlag als fuehrende Versionsnummer fest; 02-DESIGN.md traegt den D-Abschnitt zum Speicherformat V2 und wird von test/docs.test.ts gegen R-GAME-07 geprueft"
 
   - id: T-M15-05

@@ -68,6 +68,7 @@ function withArmy(state: GameState, where: string, hp = 3000): Army {
     stance: 'defensive',
     embarked: false,
     cannotAttackUntil: 0,
+    holdFire: false,
   }
   state.armies[army.id] = army
   state.armyOrder = [...state.armyOrder, army.id]

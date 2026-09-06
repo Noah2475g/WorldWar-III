@@ -783,12 +783,20 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie durch Sold und Angebote nie
     zahlungsunfähig werden, und jede Stufe SOLL im Turnier Spionage-, Beschuss- und
     Handelsereignisse erzeugen — sonst ist die Mechanik für die KI tot.
-- **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder (Spione,
-  Aufklärung, Verstimmungen, Angebote, Feuerleitung, Zeitung) kommen mit einer Migration
-  von Version 1 auf 2.
+- **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
+  **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
+  Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum
+  2026-09-06 und sind gestrichen: Spionage ist nach M17 verschoben, die Zeitung durch den
+  Filter „Weltgeschehen" ersetzt, der kein Zustandsfeld braucht — beides begründet in
+  DECISIONS.md. Eine Anforderung, die Felder nennt, die in ihrem Meilenstein nicht
+  entstehen, ist entweder unerfüllbar oder wird stillschweigend kleiner gelesen als sie
+  dasteht; das war der Nachtrags-Fehler von 2.15.)*
   - AK1: WENN ein Spielstand der Version 1 geladen wird, DANN SOLL er nach der Migration
     laufen, mit leeren neuen Feldern, und derselbe Stand SOLL nach Speichern und Laden
     hashgleich bleiben (R-GAME-03/AK1).
+  - AK2: WENN ein Spielstand geladen wird, DANN SOLL **kein Ladeweg ohne Prüfung** bleiben:
+    nach einer Migration prüft `validateState` den Zustand, ohne Migration die Prüfsumme,
+    und ein Stand ohne beides wird abgelehnt.
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

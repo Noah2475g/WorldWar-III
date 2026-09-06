@@ -50,6 +50,7 @@ registerCommand<SplitArmyCommand>('SPLIT_ARMY', {
       stance: source.stance,
       embarked: source.embarked,
       cannotAttackUntil: source.cannotAttackUntil,
+      holdFire: source.holdFire,
     }
 
     for (const wanted of command.take) {
