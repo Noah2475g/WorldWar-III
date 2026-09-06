@@ -1181,3 +1181,90 @@ drei Dinge heißen — der Code ist schlechter geworden, die Zusicherung war fal
 Messung war es. Wer sofort am Code oder an der Zahl arbeitet, hat eine der drei Möglichkeiten
 gewählt, ohne sie zu prüfen. Hier war es die dritte, und das Einzige, was sie sichtbar
 gemacht hat, war eine Wiederholung unter geänderten Bedingungen.
+
+---
+
+## 2026-09-06 · AK-7 · Was der Playtest gefunden hat
+
+**Gefahren am 2026-09-06 von einem Agenten, nicht von Noah.** AK-7 verlangt im Wortlaut
+seine Abnahme; dieser Durchgang ersetzt sie nicht, er nimmt ihr die Suche ab.
+Vollständig in `docs/reports/playtest-v1.md`: **39 ja · 13 nein · 8 nicht geprüft**, zwei
+vollständige Partien bis Spieltag 171.
+
+### Die vier schweren Befunde
+
+**1. Die Kartenwahl ist ein Blindschalter — Befund 38/N10 ist NICHT geschlossen.**
+„Kleine Welt (12)" gewählt, Partie begonnen — es läuft die Weltkarte. Die Provinzliste
+zeigt „Mittlerer Westen", „Ostkanada"; `data/maps/testworld.json` enthält „Hafen",
+„Waldland", „Bergland". **`docs/PLAYTEST.md:149` behauptet das Gegenteil** („Kartenwahl und
+Debug sind seither geschlossen") — der Abnahmebogen trägt damit selbst eine Falschaussage,
+und zwar an der Stelle, die den Befund für erledigt erklärt.
+
+**2. Der Spielstand überlebt, ist aber nicht erreichbar.** IndexedDB führt `stand-1` nach
+dem Neuladen korrekt — die Liste öffnet aber **ausschließlich Strg+S**, kein Knopf führt
+dorthin, und die Tastenkombination wirkt **ohne laufende Partie nicht**. Wer das Fenster
+schließt, kommt an seinen Stand nicht mehr heran. Dazu eine Sackgasse: schließt man den
+Startdialog mit dem Kreuz, bleibt eine leere Fläche mit „Die Welt wird aufgebaut …" —
+kein Knopf, kein Dialog, keine Taste führt zurück, nur Neuladen hilft.
+
+**3. Der Knopf „Neue Partie" im Endedialog führt ins Leere.** Das Spiel meldet das Ende
+und bietet ihn an; der Klick schließt den Dialog, öffnet **keinen** Startdialog und lässt
+den Spieler in der beendeten Partie zurück (Tag 171, Siegziel 0 %, jede Produktion null).
+Damit ist die zweite Partie ohne Programmneustart nicht möglich, obwohl der Knopf sie
+verspricht — und **T-M14-10 hat genau das als erledigt gemeldet.**
+
+**4. Es erscheint nie eine Meldung.** Über zwei vollständige Partien — Hauptstadtverlust,
+Überrennen, eigenes Ausscheiden, eigene Gefechte mit Verlusten — erschien **keine
+einzige**. Der Bereich `.alerts` existiert zu keinem Zeitpunkt im DOM. Was hätte warnen
+können, stand nur im Ereignisprotokoll, und das läuft als Ringpuffer gleichzeitig mit
+fremden Gefechten voll.
+
+### Die mittleren
+
+| Was | Wo |
+|---|---|
+| **Roher Übersetzungsschlüssel auf dem Bildschirm:** der Abbruchknopf heißt `[province.cancelBuild]`. Er funktioniert; nur sein Name fehlt | Provinzpanel, „Im Bau" |
+| **Die Siegbedingung wird nicht erklärt.** Punkte und Eroberung sind wählbar, und nirgends steht, was sie bedeuten — dabei entscheidet die Wahl, wie die Partie endet. Unter „Startzahl" steht ein erklärender Satz, hier keiner | Startdialog |
+| **Der Rückzug sagt nicht, was er kostet.** Der Knopf ist da und wirkt, trägt aber keinen Tooltip. Dasselbe bei Marschieren, Angriff, Teilen — während die Bauknöpfe es vormachen („333 Material, 250 Geld · 1 Tag") | Armeepanel |
+| **Die Spalte „Verbrauch" steht dauerhaft auf 0.** Über 35 Spieltage laufend gebaut und ausgehoben; die Spalte führt nur den Armeeunterhalt. Die Frage „wohin gehen meine Rohstoffe" bleibt unbeantwortet | Wirtschaftsübersicht |
+| **Das Vorspulen sagt nie, warum es anhält** — über 30 Klicks kein Hinweistext, auch nicht während Gefechte liefen. R-TIME-03 verlangt die Begründung ausdrücklich | Kopfleiste |
+| **Nach einem Gefecht fehlt das Warum.** Verluste beider Seiten stehen da („Verluste: Vereinigte Staaten 3, Kanada 0"), aber keine Stärken, kein Gelände. Dazu fünfmal hintereinander im Stundentakt „Verluste: 0, 0" — ein Patt, das niemand erklärt | Ereignisprotokoll |
+| **Die Debug-Ansicht ist praktisch leer:** „Tick: 8", ein **leerer** Zustands-Hash, und die Überschriften „Ziel" und „Kommandolog" ohne Inhalt. Damit ist Frage 48 („gibt es eine Einstellung, die sichtbar nichts bewirkt?") mit **ja** zu beantworten, erwartet war nein | Menü |
+| **Flugplatz und Jagdflugzeug teilen ein Symbol** — beide zeigen auf `aircraft` (`icons.tsx:131` und `:143`). Gebäude und Einheit sind nicht auseinanderzuhalten | Symbolsatz |
+| **Nebel und herrenloses Land sind gleich gefärbt** (#DAD5C6), und die Legende nennt beides „neutral" | Karte, Modus Besitz |
+| **„1 Provinzen"** im Endedialog — Mehrzahl bei eins, und die Zahl widerspricht dem Satz darüber („Ihre letzte Provinz ist gefallen") | Endedialog |
+
+### Zwei Fehler im Abnahmebogen selbst
+
+- **`docs/PLAYTEST.md:149`** erklärt Kartenwahl und Debug-Panel für geschlossen. **Beides
+  ist offen** (Befunde 1 und die Debug-Ansicht oben).
+- **Frage 13b** unterstellt, ein Bauabbruch gebe „nichts zurück". Gemessen werden **50 %**
+  erstattet, und das Protokoll sagt es auch. Die Frage ist falsch gestellt, nicht das Spiel.
+- **`scripts/playtest-sheet.mjs`** verlangt für *jedes* „nein" einen Befund — auch bei den
+  Fragen, deren erwartete Antwort „nein" **ist** (3: nichts zu kaufen, 45: nichts bewegt
+  sich). Ein bestandener Punkt erzwingt so einen Befundeintrag; die Regel müsste die
+  Polarität der Frage kennen.
+
+### Was der Playtest bestätigt hat, mit Zahlen
+
+Damit der Bericht nicht nur die Mängel führt: die angekündigte Tagesproduktion trifft die
+Lieferung **auf die Einheit genau** (fünf Rohstoffe, +450/+450, +176/+176, +27/+27,
++68/+68, +198/+198). Baukosten werden exakt wie angekündigt abgezogen, der Abbruch
+erstattet gemessene 50 %. Alle vier IBM-Plex-Schnitte melden `loaded`. Alle vier
+Kartenmodi färben nachweislich (22/22/19/18 verschiedene Farben über ein Raster). Die
+Ankunftsvorschau steht vor der Bestätigung und trifft zu. Der Endedialog kommt von selbst.
+Automatikstände rotieren. Einstellungen überleben den Neustart.
+
+### Was daran lehrreich ist
+
+**Drei der vier schweren Befunde sind dieselbe Klasse:** die Mechanik ist gebaut und
+funktioniert — der Spielstand wird geschrieben, die neue Partie ist im Kern vorgesehen,
+die Meldungen sind programmiert — und **der Weg des Spielers dorthin fehlt oder endet im
+Nichts**. Das ist Ursache A aus der Auswertung vom 2026-09-05, zum fünften Mal, und
+diesmal an Stellen, die als erledigt gemeldet waren.
+
+**Und die Gegenprobe zählt genauso:** Zwei Verdachtsfälle aus der Codelektüre haben sich
+im Lauf **nicht** bestätigt — „jede eigene Provinz wird im Moral-Modus zinnoberrot" (live
+gemessen: Oliv #505738) und „ein Klick auf die Karte wählt nichts aus" (ein Werkzeugfehler
+des Prüfers, kein Produktfehler). Wer aus dem Code auf das Verhalten schließt, liegt
+regelmäßig daneben — in beide Richtungen.

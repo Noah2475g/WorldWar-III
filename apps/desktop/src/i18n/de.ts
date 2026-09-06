@@ -174,7 +174,7 @@ export const de = {
 
   actions: {
     build: 'Bauen',
-    cancelBuild: 'Bau abbrechen',
+    cancelBuild: '{{building}} abbrechen',
     recruit: 'Rekrutieren',
     setCapital: 'Hauptstadt verlegen',
     trade: 'Handeln',

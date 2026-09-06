@@ -137,7 +137,7 @@ export function cancelActions(ctx: ActionContext, provinceId: string): ActionSpe
       ctx,
       { type: 'CANCEL_BUILD', playerId: ctx.playerId, provinceId, orderId: order.id } as never,
       `cancel-${order.id}`,
-      t('province.cancelBuild', { building: t(`buildings.${order.building}`) }),
+      t('actions.cancelBuild', { building: t(`buildings.${order.building}`) }),
     ),
   )
 }

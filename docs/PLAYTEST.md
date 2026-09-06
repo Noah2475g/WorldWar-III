@@ -50,7 +50,7 @@ pnpm --filter @worldwar/desktop dev
 |---|---|---|---|
 | 13 | R-UI-05 | Sagt jeder Knopf **vorher**, was er kostet und wie lange er dauert? | |
 | 13a | R-PROV-01 | Werden die Kosten eines Bauauftrags **sofort** abgezogen, und steht der Fertigstellungstag am Auftrag? | |
-| 13b | R-PROV-01 | Können Sie ein laufendes Bauvorhaben abbrechen — und sagt das Spiel dazu, dass es nichts zurückgibt? | |
+| 13b | R-PROV-01 | Können Sie ein laufendes Bauvorhaben abbrechen — und sagt das Spiel dazu, **was mit den Kosten geschieht**? *(Bis zum 2026-09-06 stand hier „dass es nichts zurückgibt". Gemessen werden **50 %** erstattet, und das Protokoll sagt es auch — die Frage war falsch gestellt, nicht das Spiel.)* | |
 | 14 | R-UI-05 | Steht bei einer ausgegrauten Aktion der Grund dabei — und ist er verständlich? | |
 | 15 | R-ECON-01 | Verstehen Sie nach zehn Minuten, woher Ihre Rohstoffe kommen und wohin sie gehen? | |
 | 16 | R-ECON-06 | Sagt Ihnen die Wirtschaftsübersicht (Bestand, Produktion, Verbrauch, Bilanz), warum ein Rohstoff knapp wird? | |
@@ -146,8 +146,18 @@ Spieler unerreichbar.
 
 **Frage 48** — „Gibt es eine Einstellung im Menü, die sichtbar nichts bewirkt? Erwartet:
 nein" — war am 2026-09-05 mit **ja** vorbeantwortet: Kartenwahl, Zeitsieg und das leere
-Debug-Panel. Kartenwahl und Debug sind seither geschlossen; der Zeitsieg ist mit
-Begründung zurückgenommen (`DECISIONS.md`) und steht nicht mehr im Menü.
+Debug-Panel. Der Zeitsieg ist mit Begründung zurückgenommen (`DECISIONS.md`) und steht
+nicht mehr im Menü.
+
+> ⚠ **Berichtigt am 2026-09-06.** Bis dahin stand hier: „Kartenwahl und Debug sind
+> seither geschlossen." **Beides ist falsch**, und der Durchgang an diesem Tag hat es
+> gemessen: „Kleine Welt (12)" gewählt startet weiterhin die Weltkarte, und die
+> Debug-Ansicht zeigt „Tick: 8", einen leeren Zustands-Hash und zwei Überschriften ohne
+> Inhalt. Frage 48 ist damit weiterhin mit **ja** zu beantworten. Einzelheiten in
+> `PROBLEME.md`.
+>
+> Ein Abnahmebogen, der einen Befund für geschlossen erklärt, ohne dass jemand
+> nachgesehen hat, ist schlimmer als einer, der ihn offen führt: er lenkt den Blick weg.
 
 ---
 
