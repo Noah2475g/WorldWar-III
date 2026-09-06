@@ -2866,10 +2866,11 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Anforderungen:** R-PKG-01, R-FREE-04
 - **Rahmen:** C-02
 - **Abhängigkeiten:** T-M16-01
-- **Dateien:** `package.json`, `pnpm-lock.yaml`, `apps/desktop/package.json`,
-  `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`,
+- **Dateien:** `package.json`, `pnpm-lock.yaml`, `.gitignore`,
+  `scripts/build-icon.mjs` *(neu)*, `apps/desktop/src-tauri/tauri.conf.json`,
   `apps/desktop/src-tauri/Cargo.lock` *(neu)*,
-  `apps/desktop/src-tauri/icons/icon.png` *(neu)*
+  `apps/desktop/src-tauri/icons/icon.png` *(neu)*,
+  `apps/desktop/src-tauri/icons/icon.ico` *(neu)*
 - **Reihenfolge, und sie ist nicht beliebig:** erst das **Symbol**, weil `tauri.conf.json`
   es verlangt und ein Bau, der daran scheitert, über den Rest nichts sagt; es wird **selbst
   erzeugt und nicht bezogen** (R-ASSET-01). Dann die Abhängigkeiten. Dann der Bau.

@@ -14,13 +14,29 @@ created: 2026-09-02
 
 ## 0. Startsequenz (einmal pro Sitzung)
 
-1. Lies `C:\Users\noahh\Documents\Vaults\Claude\START-HERE.md` und `SESSION-STATE.md`
-   (Noahs Wissensspeicher, Pflicht laut Projektvorgabe).
-2. Lies in dieser Reihenfolge: `01-REQUIREMENTS.md` → `02-DESIGN.md` → `03-TASKS.md`.
-3. Lies `docs/research/SUPREMACY-MECHANICS.md` (Mechanik-Referenz des Originals), sofern
-   vorhanden — sie ist die Quelle für Balancing-Zahlen.
-4. Öffne `tasks.yaml` und wähle die nächste Aufgabe (siehe §1).
-5. Wenn `docs/plan/PROGRESS.md` existiert, lies zuerst dort den letzten Eintrag.
+> **Am 2026-09-06 gekürzt, und die Kürzung ist der Punkt.** Die alte Fassung verlangte
+> `01-REQUIREMENTS.md` → `02-DESIGN.md` → `03-TASKS.md` **am Stück** — über 5400 Zeilen,
+> jede Sitzung, bevor eine Zeile Code entsteht. Das ist der Grund, warum Sitzungen hier
+> mit halbem Kontext anfingen und ihn beim Arbeiten immer wieder umwarfen.
+
+1. **Lies `docs/plan/WORKFLOW.md`.** Eine Datei, und sie enthält den Ablauf, die Fallen und
+   den Stand in Zahlen.
+2. Prüfe den Branch: `git log --oneline -1`. `main` ist sechzig Commits alt; der
+   Spitzenstand liegt auf einem `claude/*`-Branch (`WORKFLOW.md` §0).
+3. `pnpm install`.
+4. Wähle die nächste Aufgabe aus `tasks.yaml` (§1) und lies **genau zwei Dinge**: ihren
+   Abschnitt `### T-…` in `03-TASKS.md` und das Entwurfskapitel, das sie nennt.
+
+**Erst nachschlagen, wenn du es brauchst:** `01-REQUIREMENTS.md` (was gebaut wird),
+`02-DESIGN.md` (wie), `PROBLEME.md` (offene Befunde, die neuesten unten), `DECISIONS.md`
+(warum etwas so entschieden wurde), `docs/research/SUPREMACY-MECHANICS.md` (Quelle für
+Balancing-Zahlen). Der Vault (`START-HERE.md`, `SESSION-STATE.md`) ist Noahs
+Wissensspeicher über alle Projekte — für WorldWar reicht dessen oberster Abschnitt, der
+hierher zeigt.
+
+**`docs/reports/audit-2026-09-05.md` (580 Zeilen) liest du gar nicht.** Alles daraus, was
+noch lebt, steht in `PROBLEME.md`.
+
 
 ## 1. Auswahl der nächsten Aufgabe
 

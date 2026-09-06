@@ -7,6 +7,22 @@ import { playtestStatus } from './playtest-sheet.mjs'
 import { CRITERIA, v1Failures } from './acceptance-criteria.mjs'
 
 /**
+ * Der Stand, gegen den dieser Lauf gelaufen ist (T-M16-01a).
+ *
+ * Ein Abnahmebericht ohne Commit ist nach der naechsten Reparatur eine Falschaussage,
+ * die aussieht wie ein Messwert. Am 2026-09-06 meldete acceptance.md "AK-1
+ * fehlgeschlagen, 5 von 7", waehrend fullgame.json daneben Spieltag 876 und einen
+ * Sieger auswies: derselbe Tag, verschiedene Staende, und nichts in der Datei sagte es.
+ */
+function head() {
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim()
+  } catch {
+    return 'unbekannt'
+  }
+}
+
+/**
  * The acceptance run (T-M12-03).
  *
  * Six of the seven criteria are machine-checkable, so they are checked rather than
@@ -129,7 +145,10 @@ const v1Failed = v1Failures(results)
 const report = [
   '# Abnahmelauf V1',
   '',
-  `Erzeugt von \`scripts/acceptance.mjs\` am ${new Date().toISOString().slice(0, 10)}.`,
+  `Erzeugt von \`scripts/acceptance.mjs\` am ${new Date().toISOString().slice(0, 10)} gegen \`${head()}\`.`,
+  '',
+  '> Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas',
+  '> anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).',
   '',
   '| Kriterium | Prüfung | Ergebnis |',
   '|---|---|---|',

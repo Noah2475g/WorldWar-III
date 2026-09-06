@@ -5,32 +5,29 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-06): **V1 gebaut, in Reparatur vor der Abnahme (M14).**
+Status (2026-09-06): **V1 gebaut, und seit heute gibt es ein Programm.**
+
+`pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup — der
+Auslieferungsweg ist zum ersten Mal wirklich gelaufen und nicht nur beschrieben. Offen
+sind noch **ein vollständiger Abnahmelauf** (`pnpm acceptance`, ~90 Minuten) und **Noahs
+Playtest** ([`docs/PLAYTEST.md`](docs/PLAYTEST.md)).
+
+**Arbeitest du an diesem Projekt, lies genau eine Datei:**
+[`docs/plan/WORKFLOW.md`](docs/plan/WORKFLOW.md). Sie sagt, wo der Stand liegt, was gilt,
+welche Fallen es gibt und was in welcher Reihenfolge zu tun ist.
+
+### Wie es hierher kam
 
 Eine Auswertung am 2026-09-05 fand 68 bestätigte Befunde, darunter sieben Blocker: kein
 Spielstand überlebte das Schließen des Fensters, der Stapel-Deckel machte Armeen ab 50
 Einheiten wertlos, das Anforderungstor war rot, AK-1 prüfte kein Test, und das Spiel hatte
-keine Schrift. Nachzulesen in [`docs/reports/audit-2026-09-05.md`](docs/reports/audit-2026-09-05.md)
-— samt dem, was das Verfahren selbst nicht abdeckt.
+keine Schrift. Der blinde Fleck über allem: **niemand hatte das Spiel je gestartet.**
 
-**M14 macht den Bericht über das Spiel wieder wahr**, statt neue Mechanik zu bauen: 13 von
-16 Aufgaben sind fertig, `pnpm verify` grün, das Anforderungstor meldet wieder
-`V1 offen: 0`. Offen sind die Schrift (braucht eine Entscheidung, siehe
-[`docs/plan/PROBLEME.md`](docs/plan/PROBLEME.md)) und **Noahs Playtest**
-([`docs/PLAYTEST.md`](docs/PLAYTEST.md)). Danach folgt M15 „Die KI wird ein Gegner".
-
-Anleitung in [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md), Plan in
-[`docs/plan/03-TASKS.md`](docs/plan/03-TASKS.md).
-
-```bash
-pnpm install
-pnpm --filter @worldwar/desktop dev
-```
-
-Prüfen: `pnpm verify` (Lint, Typen, Tests, Guards, Abdeckung) · `pnpm test:slow`
-(Langläufe, Turnier, Budgets, Parameterlauf) · `pnpm acceptance` (beides plus
-Anforderungs-Tor, schreibt `docs/reports/acceptance.md`). Weltkarte neu bauen:
-`node scripts/build-map.mjs` (braucht die Rohdaten aus `scripts/fetch-geodata.mjs`).
+Drei Meilensteine haben das abgeräumt. **M14** machte den Bericht über das Spiel wieder
+wahr — Spielstände überleben das Fenster, das Anforderungstor meldet `V1 offen: 0`, und
+AK-1 ist erstmals belegt. **M15** machte die KI zu einem Gegner; die Lehre steckt in
+ihrem Integrationstor: eine Mechanik war in zwölf Einzeltests belegt und **im Spiel tot**.
+**M16** verpackt das Ganze als Programm.
 
 
 ## Für Noah

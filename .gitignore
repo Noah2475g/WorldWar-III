@@ -7,6 +7,10 @@ Thumbs.db
 
 # Tauri build output (M11)
 apps/desktop/src-tauri/target/
+# Vom Bau erzeugte ACL-Schemata (T-M16-03). Sie entstehen bei jedem tauri build neu
+# aus capabilities/ und tauri.conf.json; eingecheckt waeren sie eine zweite Wahrheit
+# neben der Konfiguration, die sie erzeugt.
+apps/desktop/src-tauri/gen/
 
 # Local runtime artefacts
 *.log

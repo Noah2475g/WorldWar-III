@@ -903,7 +903,7 @@ tasks:
     title: Abnahmelauf
     status: todo
     gate: true
-    gate_reason: "sechs von sieben Abnahmekriterien maschinell gruen (docs/reports/acceptance.md, pnpm acceptance); offen bleibt AK-7, der Playtest durch Noah - er laeuft nach dem von T-M14-15 ueberarbeiteten docs/PLAYTEST.md und wird in docs/reports/playtest-v1.md beantwortet"
+    gate_reason: "Stand 2026-09-06 abends: der letzte VOLLSTAENDIGE Abnahmelauf meldete 5 von 7 (docs/reports/acceptance.md) - er lief VOR der Reparatur von AK-1 und ist damit ueberholt, keine Aussage ueber den heutigen Stand. Einzeln nachgewiesen gruen sind seither AK-1 (docs/reports/fullgame.json, entschieden an Spieltag 876), Turnier und KI-Integrationslauf; die uebrigen langsamen Pruefungen sind seit der Reparatur nicht nachgemessen. Der naechste vollstaendige Lauf ist Schritt 1 von docs/plan/WORKFLOW.md. Offen bleibt danach AK-7, der Playtest durch Noah - er laeuft nach dem von T-M14-15 ueberarbeiteten docs/PLAYTEST.md und wird in docs/reports/playtest-v1.md beantwortet"
     deps: [T-M12-01, T-M12-02b, T-M14-15]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []
@@ -1384,11 +1384,11 @@ tasks:
   - id: T-M16-03
     milestone: M16
     title: Der erste Bau
-    status: todo
+    status: done
     deps: [T-M16-01]
     requirements: [R-PKG-01, R-FREE-04]
     constraints: [C-02]
-    files: [package.json, pnpm-lock.yaml, apps/desktop/src-tauri/tauri.conf.json, apps/desktop/src-tauri/Cargo.toml, apps/desktop/src-tauri/Cargo.lock, apps/desktop/src-tauri/icons/icon.png, apps/desktop/package.json]
+    files: [package.json, pnpm-lock.yaml, .gitignore, scripts/build-icon.mjs, apps/desktop/src-tauri/tauri.conf.json, apps/desktop/src-tauri/Cargo.lock, apps/desktop/src-tauri/icons/icon.png, apps/desktop/src-tauri/icons/icon.ico]
     tests: [test/guards/packaging.test.ts]
     dod: "Der Auslieferungspfad wird zum ersten Mal ausgefuehrt. Reihenfolge nicht beliebig: erst das Symbol, weil tauri.conf.json es verlangt und ein Bau, der daran scheitert, ueber den Rest nichts sagt; es wird selbst erzeugt und nicht bezogen (R-ASSET-01). Dann die Abhaengigkeiten - tauri-apps/cli und tauri-apps/api stehen in package.json UND im Lockfile, das heute null Treffer fuer tauri hat. Dann der Bau: pnpm tauri:build laeuft durch und erzeugt ein startfaehiges Erzeugnis, Cargo.lock liegt danach im Baum. Der Waechter packaging.test.ts bekommt einen zweiten Teil, der an Dingen haengt, die nur ein Bau erzeugt: heute vergleicht er tauri.conf.json gegen capabilities/local-only.json - zwei Dateien derselben Hand - und bleibt gruen, wenn nie ein Bau lief. Der erste Teil bleibt unveraendert: R-FREE-04 in der Konfiguration ist richtig geprueft, er ist nur nicht der Beleg fuer einen Bau. Was der Bau an Werkzeug braucht, wird im Fortschrittseintrag genannt: Rust ist vorhanden, der erste cargo-Lauf bezieht die Crates aus dem Netz - Freigabe von Noah am 2026-09-06"
 

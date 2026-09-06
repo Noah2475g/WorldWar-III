@@ -116,7 +116,14 @@ describe('R-AI-04 Rechenzeit der KI', () => {
     const dir = fileURLToPath(new URL('../../../../docs/reports/', import.meta.url))
     writeFileSync(
       `${dir}ai-bench.json`,
-      `${JSON.stringify({ aiMedianMs: aiMedian, tickMedianMs: tickMedian, share: Number(share.toFixed(3)) }, null, 2)}\n`,
+      `${JSON.stringify({ aiMedianMs: aiMedian, tickMedianMs: tickMedian, share: Number(share.toFixed(3)),
+        // Die Bedingungen gehoeren in die Datei, sonst liest die naechste Person den
+        // Anteil als erfuellte Anforderung: R-AI-04 verlangt acht KI-Maechte, hier
+        // stehen drei auf zwoelf Provinzen. T-M16-02 zieht die Messung auf die
+        // Weltkarte; dann faellt dieser Vermerk mit dem Block weg.
+        provinces: map.provinces.length, players: CONFIG.players.length,
+        certifies: 'nichts - R-AI-04 verlangt acht KI-Maechte auf der ausgelieferten Karte (T-M16-02)',
+      }, null, 2)}\n`,
     )
 
     expect(share).toBeLessThan(0.5)

@@ -361,7 +361,7 @@ describe('R-ARCH-05 Ein spaeteres Kriterium faerbt die V1-Abnahme nicht rot', ()
 
   it('faengt dieselbe Zeile, sobald sie zur V1 gehoert', () => {
     const alsV1 = CRITERIA.map((c) => (c.id === 'AK-8' ? { ...c, scope: 'V1' } : c))
-    expect(v1Failures(ergebnisse, alsV1).map((r) => r.id)).toEqual(['AK-8'])
+    expect(v1Failures(ergebnisse, alsV1).map((r: { id: string }) => r.id)).toEqual(['AK-8'])
   })
 
   it('loest eine Sammelzeile in ihre Kriterien auf', () => {
