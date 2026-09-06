@@ -5,7 +5,7 @@ import { MemoryStorage, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
-import { TEST_RULES } from '@worldwar/testkit'
+import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { App } from './App.tsx'
 
@@ -805,5 +805,79 @@ describe('R-UI-05 Die Spielstaende sind erreichbar', () => {
 
     // Vorher war der Startdialog hier fuer immer weg und nur Neuladen half.
     expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+  })
+})
+
+/**
+ * Die Meldungen erreichen den Spieler (T-M12-09, R-UI-14, Playtest-Frage 42).
+ *
+ * Ueber zwei vollstaendige Partien bis Tag 171 erschien keine einzige Meldung, und der
+ * Bereich `.alerts` stand zu keinem Zeitpunkt im DOM. Hauptstadtverlust, Ueberrennen und
+ * das eigene Ausscheiden liefen wortlos vorbei.
+ *
+ * Die gemeldete Ursache — "die Kette bis zur Sicht fehlt" — stimmte nicht: App zeichnet
+ * <Alerts> unverwandt und ruft `alertsFor` auf der lebenden Sicht. Leer war die LISTE,
+ * und zwar aus drei getrennten Gruenden: die Hauptstadtbedingung fragte nach einer
+ * Kennung, die im selben Tick auf null geht; eine unverteidigte Provinz wechselt ohne
+ * Gefecht den Besitzer, und ohne Gefecht sagte nichts etwas; und die vierte von R-UI-14
+ * geforderte Quelle, die Fertigstellungen, fehlte ganz.
+ *
+ * Deshalb pruefen diese Tests den BILDSCHIRM aus einer echten Partie heraus. Ein
+ * Einzeltest von `alertsFor` hat den Befund nicht verhindert — es gab ihn, gruen — und
+ * er wird ihn nicht verhindern.
+ */
+describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
+  /** Einen vorbereiteten Zustand durch den Ladeweg der Oberflaeche schicken. */
+  const zeige = async (state: Parameters<typeof serialise>[0]) => {
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Lage'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    return screen.findByRole('region', { name: 'Meldungen' })
+  }
+
+  const partie = () => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const p1 = state.playerOrder[0]!
+    const p2 = state.playerOrder[1]!
+    const heimat = state.provinceOrder.find((id) => state.provinces[id]!.owner === p1)!
+    return { state, p1, p2, heimat }
+  }
+
+  it('meldet die fremde Armee auf eigenem Boden, auch ohne Gefecht', async () => {
+    const { state, p2, heimat } = partie()
+    // Ueberrennen: kein Verteidiger, also kein Kampf — und vorher kein Wort darueber.
+    placeArmy(state, { owner: p2, at: heimat, units: [{ unitKey: 'infantry', hpTotal: 100_000 }] })
+
+    const meldungen = await zeige(state)
+
+    expect(meldungen.textContent).toContain(state.provinces[heimat]!.name)
+  })
+
+  it('meldet den Verlust der Hauptstadt', async () => {
+    const { state, p1 } = partie()
+    // occupation setzt capitalProvinceId im selben Tick auf null und merkt den Verlust
+    // nur noch in capitalLostUntil — die alte Bedingung war genau hier tot.
+    state.players[p1]!.capitalProvinceId = null
+    state.players[p1]!.capitalLostUntil = state.tick + 100
+
+    const meldungen = await zeige(state)
+
+    expect(meldungen.textContent).toContain('Hauptstadt')
+  })
+
+  it('meldet, was gerade fertig geworden ist', async () => {
+    const { state, p1, heimat } = partie()
+    const provinz = state.provinces[heimat]!
+    provinz.buildQueue = [
+      { id: 'b1', building: 'barracks', startedTick: 0, completesAtTick: state.tick },
+    ] as never
+    expect(provinz.owner).toBe(p1)
+
+    const meldungen = await zeige(state)
+
+    // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
+    expect(meldungen.textContent).toContain('fertig')
   })
 })

@@ -1491,7 +1491,7 @@ tasks:
   - id: T-M12-09
     milestone: M12
     title: Die Meldungen erreichen den Spieler
-    status: todo
+    status: done
     deps: [T-M13-14]
     requirements: [R-UI-14]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Alerts.tsx]

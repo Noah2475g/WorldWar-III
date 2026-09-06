@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { createInitialState, type GameConfig } from '../src/state/create'
 import { PHASE_ORDER, step } from '../src/step'
 import { HASH_OMIT_KEYS } from '../src/state/types'
+import { EVENT_LOG_LIMIT } from '../src/phases/bookkeeping'
 
 const CONFIG: GameConfig = {
   seed: 42,
@@ -135,5 +136,61 @@ describe('R-ARCH-01 Wiederholbarkeit der Pipeline', () => {
       return hashes
     }
     expect(runHashes()).toEqual(runHashes())
+  })
+})
+
+/**
+ * Was am Tagesende geschieht, steht auch im Protokoll (T-M12-09, R-UI-14).
+ *
+ * `step` laesst die Phasenreihe laufen und ruft `dailyTick` danach — `bookkeeping` ist
+ * aber die Phase, die `ctx.events` an `draft.eventLog` haengt, und sie ist die letzte.
+ * Alles, was am Tagesende entsteht, kam damit zurueck (`StepResult.events`) und stand
+ * doch nie im Protokoll. Fuer die Oberflaeche heisst das: nie. `advance` gibt nur
+ * `.state` weiter, das Protokoll ist ihre einzige Ereignisquelle.
+ *
+ * Der Playtest hat es als "das eigene Ausscheiden lief wortlos an mir vorbei" gemeldet.
+ *
+ * Die Reihenfolge der Phasen wird dafuer NICHT angefasst — sie ist der Golden Master.
+ * Nachtragen genuegt, und es ist hashneutral, weil `eventLog` in HASH_OMIT_KEYS steht.
+ */
+describe('R-UI-14 Das Tagesende erreicht das Protokoll', () => {
+  const ticksPerDay = TEST_RULES.constants.ticksPerDay
+
+  const runDays = (days: number) => {
+    let state = fresh()
+    const returned: string[] = []
+    for (let i = 0; i < days * ticksPerDay; i += 1) {
+      const result = step(state, [], ctx)
+      returned.push(...result.events.map((event) => event.type))
+      state = result.state
+    }
+    return { state, returned }
+  }
+
+  it('traegt den Tagesbericht ins Protokoll, nicht nur in die Rueckgabe', () => {
+    const { state, returned } = runDays(3)
+
+    expect(returned.filter((type) => type === 'DAY_REPORT')).toHaveLength(3)
+    // Genau hier stand vorher null.
+    expect(state.eventLog.filter((event) => event.type === 'DAY_REPORT')).toHaveLength(3)
+  })
+
+  it('laesst den Simulationshash unberuehrt', () => {
+    // Der Beweis, dass das Nachtragen keine Regeländerung ist: der Hash laesst das
+    // Protokoll aus, also darf es wachsen, ohne dass die Partie eine andere wird.
+    const { state } = runDays(1)
+
+    expect(HASH_OMIT_KEYS).toContain('eventLog')
+    expect(hashValue(state, { omitKeys: HASH_OMIT_KEYS })).toBe(
+      hashValue({ ...state, eventLog: [] }, { omitKeys: HASH_OMIT_KEYS }),
+    )
+  })
+
+  it('haelt auch mit dem Tagesende den Deckel des Ringspeichers ein', () => {
+    // Ein blosses push waere der naechstliegende Fehler: das Protokoll waechst dann an
+    // jeder Tagesgrenze ueber seine Grenze hinaus und in die Spielstaende hinein.
+    const { state } = runDays(30)
+
+    expect(state.eventLog.length).toBeLessThanOrEqual(EVENT_LOG_LIMIT)
   })
 })

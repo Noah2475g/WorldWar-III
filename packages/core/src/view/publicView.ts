@@ -110,6 +110,16 @@ export interface PublicView {
     resources: Record<ResourceKey, Fixed>
     shortages: readonly ResourceKey[]
     capitalProvinceId: ProvinceId | null
+    /**
+     * Bis wann der Verlust der Hauptstadt nachwirkt — und damit das einzige Zeichen,
+     * dass sie ueberhaupt gefallen ist (T-M12-09).
+     *
+     * `capitalProvinceId` taugt dafuer nicht: `occupation` setzt es im selben Tick auf
+     * null, in dem die Hauptstadt faellt. Die Meldung "Ihre Hauptstadt ist gefallen"
+     * fragte danach und war deshalb toter Code — sie konnte nur noch bei einem Aufstand
+     * auslösen, wo der Eigentuemer wegfaellt und die Kennung stehen bleibt.
+     */
+    capitalLostUntil: Tick | null
     score: number
     reputation: Fixed
     aiBonusMultiplier: Fixed
@@ -358,6 +368,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       resources: { ...player.resources },
       shortages: [...player.shortages],
       capitalProvinceId: player.capitalProvinceId,
+      capitalLostUntil: player.capitalLostUntil,
       score: player.score,
       reputation: player.reputation,
       grievances: { ...(state.diplomacy.grievances[playerId] ?? {}) },

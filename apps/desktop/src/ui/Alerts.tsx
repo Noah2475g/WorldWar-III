@@ -1,6 +1,6 @@
 import type { PublicView } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
+import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
 
 /**
  * What needs looking at, right now (T-M13-13, R-UI-14).
@@ -15,7 +15,7 @@ import { Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
  * an alert is its cause, so the same cause is the same alert.
  */
 
-export type AlertKind = 'battle' | 'shortage' | 'unrest' | 'capital'
+export type AlertKind = 'battle' | 'overrun' | 'shortage' | 'unrest' | 'capital' | 'completion'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -28,6 +28,19 @@ export interface Alert {
 
 /** Below this morale a province is at risk of revolt (D6: Aufstandsrisiko ab 33). */
 export const UNREST_MORALE = 33_000
+
+/**
+ * Wie lange eine Fertigstellung gemeldet bleibt.
+ *
+ * Eine Meldung, die nur in dem einen Tick steht, in dem der Bau fertig wird, sieht bei
+ * hoher Geschwindigkeit niemand. Ein halber Spieltag ist lang genug, um gelesen zu
+ * werden, und kurz genug, dass die Liste nicht zulaeuft.
+ */
+export const COMPLETION_ALERT_TICKS = 12
+
+function justFinished(completesAtTick: number, tick: number): boolean {
+  return completesAtTick <= tick && tick - completesAtTick < COMPLETION_ALERT_TICKS
+}
 
 export function alertsFor(view: PublicView | null): Alert[] {
   if (!view) return []
@@ -47,14 +60,41 @@ export function alertsFor(view: PublicView | null): Alert[] {
     })
   }
 
+  // Ueberrannt (T-M12-09): eine unverteidigte Provinz wechselt ohne einen Schuss den
+  // Besitzer — `occupation` genuegt die blosse Anwesenheit. Es entsteht kein Gefecht,
+  // also sagte die Kampfmeldung nichts, und genau das hat der Playtest erlebt: die
+  // Hauptstadt weg, das Ausscheiden wortlos. Eigene Provinzen sind immer sichtbar, die
+  // fremde Armee darauf steht also in der Sicht.
+  const contested = new Set((view.battles ?? []).map((battle) => battle.provinceId))
+  for (const army of view.armies ?? []) {
+    if (army.owner === view.playerId) continue
+    if (!own.has(army.provinceId) || contested.has(army.provinceId)) continue
+    contested.add(army.provinceId)
+    alerts.push({
+      id: `overrun:${army.provinceId}`,
+      kind: 'overrun',
+      icon: 'warning',
+      text: t('alerts.overrun', { province: nameOf(army.provinceId) }),
+      provinceId: army.provinceId,
+    })
+  }
+
   // A capital that has fallen outranks everything else the player could be doing.
-  if (view.self.capitalProvinceId && !own.has(view.self.capitalProvinceId)) {
+  //
+  // Gefragt wird nach `capitalLostUntil`, nicht nach der Kennung (T-M12-09): `occupation`
+  // setzt `capitalProvinceId` im selben Tick auf null, in dem die Hauptstadt faellt, und
+  // die alte Bedingung war damit fuer den Fall, fuer den sie geschrieben wurde, tot.
+  const capitalLost = view.self.capitalLostUntil !== null && view.tick < view.self.capitalLostUntil
+  // Der zweite Weg bleibt: bei einem Aufstand faellt der Eigentuemer weg und die
+  // Kennung bleibt stehen — dort ist die alte Bedingung die richtige.
+  const capitalRevolted = view.self.capitalProvinceId !== null && !own.has(view.self.capitalProvinceId)
+  if (capitalLost || capitalRevolted) {
     alerts.push({
       id: 'capital:lost',
       kind: 'capital',
       icon: 'capital',
       text: t('alerts.capitalLost'),
-      provinceId: view.self.capitalProvinceId,
+      ...(view.self.capitalProvinceId ? { provinceId: view.self.capitalProvinceId } : {}),
     })
   }
 
@@ -77,6 +117,40 @@ export function alertsFor(view: PublicView | null): Alert[] {
       text: t('alerts.unrest', { province: province.name }),
       provinceId: province.id,
     })
+  }
+
+  // Fertigstellungen — die vierte Quelle, die R-UI-14 nennt und die ganz fehlte
+  // (T-M12-09). Aus der Sicht abgelesen und nicht aus dem Protokoll: dieses Feld haelt
+  // sich an die Regel der Datei — Zustaende, keine Ereignisse — und haengt damit nicht
+  // an einem Protokoll, das bis heute an der Tagesgrenze leckte.
+  for (const province of view.provinces) {
+    if (province.owner !== view.playerId) continue
+    for (const entry of province.buildQueue ?? []) {
+      if (!justFinished(entry.completesAtTick, view.tick)) continue
+      alerts.push({
+        id: `completion:build:${entry.id}`,
+        kind: 'completion',
+        icon: BUILDING_ICONS[entry.building] ?? 'barracks',
+        text: t('alerts.completionBuilding', {
+          building: t(`buildings.${entry.building}`),
+          province: province.name,
+        }),
+        provinceId: province.id,
+      })
+    }
+    for (const entry of province.recruitQueue ?? []) {
+      if (!justFinished(entry.completesAtTick, view.tick)) continue
+      alerts.push({
+        id: `completion:recruit:${province.id}:${entry.unitKey}:${entry.completesAtTick}`,
+        kind: 'completion',
+        icon: UNIT_ICONS[entry.unitKey] ?? 'infantry',
+        text: t('alerts.completionUnit', {
+          unit: t(`units.${entry.unitKey}`),
+          province: province.name,
+        }),
+        provinceId: province.id,
+      })
+    }
   }
 
   return alerts

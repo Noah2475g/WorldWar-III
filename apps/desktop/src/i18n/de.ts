@@ -471,7 +471,12 @@ export const de = {
   alerts: {
     title: 'Meldungen',
     battle: 'Kampf in {{province}}',
+    // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
+    // Besitzer, und genau das erschien vorher nirgends (T-M12-09).
+    overrun: 'Feindliche Truppen in {{province}}',
     capitalLost: 'Die Hauptstadt ist verloren',
+    completionBuilding: '{{building}} in {{province}} ist fertig',
+    completionUnit: '{{unit}} in {{province}} ist ausgehoben',
     shortage: '{{resource}} wird knapp',
     unrest: '{{province}} steht vor dem Aufstand',
     world: 'Weltgeschehen',

@@ -3,7 +3,7 @@ import type { Command } from './commands/types'
 import type { GameEvent } from './events/types'
 import { applyCommands } from './phases/applyCommands'
 import { bombardment } from './phases/bombardment'
-import { bookkeeping } from './phases/bookkeeping'
+import { appendEvents, bookkeeping } from './phases/bookkeeping'
 import { combat } from './phases/combat'
 import { construction } from './phases/construction'
 import { dailyTick } from './phases/dailyTick'
@@ -90,8 +90,19 @@ export function step(
 
   // The day settles after bookkeeping has advanced the clock, so tick 24 closes day 1.
   if (draft.tick % ctx.rules.constants.ticksPerDay === 0) {
+    const before = events.length
     dailyTick(draft, phaseCtx)
     options.onPhase?.('dailyTick', draft)
+    // Nachtragen, was nach der letzten Phase entstanden ist (T-M12-09).
+    //
+    // `bookkeeping` haengt `ctx.events` ans Protokoll und ist die LETZTE Phase; alles
+    // aus `dailyTick` kam deshalb hier heraus und stand doch nie im Protokoll —
+    // Tagesbericht, Ausscheiden, Spielende. Fuer die Oberflaeche hiess das: nie, denn
+    // `advance` reicht nur den Zustand weiter.
+    //
+    // Nachgetragen wird statt umsortiert: die Phasenreihe ist der Golden Master. Und
+    // hashneutral ist es, weil `eventLog` in HASH_OMIT_KEYS steht.
+    appendEvents(draft.eventLog, events.slice(before))
   }
 
   return { state: draft, events }

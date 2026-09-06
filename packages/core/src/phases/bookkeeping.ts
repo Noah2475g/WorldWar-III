@@ -1,5 +1,6 @@
 import { settleMarket } from '../rules/market'
 import { updateIntel } from '../view/intel'
+import type { GameEvent } from '../events/types'
 import type { Phase } from './index'
 
 /**
@@ -11,6 +12,21 @@ import type { Phase } from './index'
  */
 export const EVENT_LOG_LIMIT = 500
 
+/**
+ * Ereignisse ins Protokoll haengen und den Deckel einhalten.
+ *
+ * Steht hier als eigener Griff, weil `step` ihn ein zweites Mal braucht: was am
+ * Tagesende entsteht, entsteht NACH dieser Phase und muss nachgetragen werden (T-M12-09).
+ * Zwei Kopien des Deckels waeren zwei Stellen, an denen er sich aendern kann.
+ */
+export function appendEvents(log: GameEvent[], events: readonly GameEvent[]): void {
+  if (events.length === 0) return
+  log.push(...events)
+  if (log.length > EVENT_LOG_LIMIT) {
+    log.splice(0, log.length - EVENT_LOG_LIMIT)
+  }
+}
+
 export const bookkeeping: Phase = (draft, ctx) => {
   // Prices move once per tick, after every trade has been settled at the frozen rate.
   settleMarket(draft.market, ctx.rules, draft.tick % ctx.rules.constants.ticksPerDay === 0)
@@ -20,10 +36,5 @@ export const bookkeeping: Phase = (draft, ctx) => {
 
   draft.tick += 1
 
-  if (ctx.events.length > 0) {
-    draft.eventLog.push(...ctx.events)
-    if (draft.eventLog.length > EVENT_LOG_LIMIT) {
-      draft.eventLog.splice(0, draft.eventLog.length - EVENT_LOG_LIMIT)
-    }
-  }
+  appendEvents(draft.eventLog, ctx.events)
 }
