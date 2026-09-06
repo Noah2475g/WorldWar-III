@@ -73,6 +73,21 @@ export interface SetStanceCommand {
   stance: Stance
 }
 
+/**
+ * Feuerleitung (R-BAT-08, T-M15-07).
+ *
+ * „Feuer halten" ist die **Ausnahme**: eine stehende Fernwaffenarmee schießt von selbst,
+ * solange nichts anderes befohlen ist. Andersherum — Feuer erst auf Befehl — wäre der
+ * Normalfall eine stumme Batterie an der Front gewesen, und niemand hätte den Unterschied
+ * bemerkt. Für Mensch und KI dieselbe Regel.
+ */
+export interface SetHoldFireCommand {
+  type: 'SET_HOLD_FIRE'
+  playerId: PlayerId
+  armyId: ArmyId
+  holdFire: boolean
+}
+
 export interface BombardCommand {
   type: 'BOMBARD'
   playerId: PlayerId
@@ -120,6 +135,7 @@ export type Command =
   | SplitArmyCommand
   | MergeArmiesCommand
   | SetStanceCommand
+  | SetHoldFireCommand
   | BombardCommand
   | TradeCommand
   | DiplomacyCommand

@@ -42,6 +42,7 @@ beforeEach(() => {
     stance: 'aggressive',
     embarked: false,
     cannotAttackUntil: 0,
+    bombardTarget: null,
     holdFire: false,
   }
   state.armyOrder = ['a1']

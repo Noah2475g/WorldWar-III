@@ -2,6 +2,7 @@ import './commands/handlers' // registers the command handlers
 import type { Command } from './commands/types'
 import type { GameEvent } from './events/types'
 import { applyCommands } from './phases/applyCommands'
+import { bombardment } from './phases/bombardment'
 import { bookkeeping } from './phases/bookkeeping'
 import { combat } from './phases/combat'
 import { construction } from './phases/construction'
@@ -30,6 +31,7 @@ const PHASES: Record<(typeof PHASE_ORDER)[number], Phase> = {
   recruitment,
   retreat,
   movement,
+  bombardment,
   combat,
   occupation,
   regeneration,

@@ -49,6 +49,14 @@ export interface MatchResult {
    */
   warDeclarations: number
   peaceAgreements: number
+  /**
+   * Selbsttaetige Beschussereignisse (R-BAT-08/AK3, T-M15-07).
+   *
+   * Ohne diese Zahl waere die Feuerautomatik gebaut, gruen getestet und im Spiel
+   * moeglicherweise wirkungslos: alle Einzeltests stellen die Lage selbst her, in der
+   * geschossen wird. Erst der Turnierlauf sagt, ob sie ueberhaupt vorkommt.
+   */
+  automaticBombardments: number
 }
 
 export function playMatch(options: MatchOptions): MatchResult {
@@ -99,14 +107,17 @@ export function playMatch(options: MatchOptions): MatchResult {
   const peaceAgreements = run.events.filter(
     (event) => event.type === 'DIPLOMACY_CHANGED' && event.newState === 'truce',
   ).length
+  const automaticBombardments = run.events.filter(
+    (event) => event.type === 'BOMBARDMENT' && event.automatic,
+  ).length
 
   const scores = { p1: scoreOf(state, 'p1', options.rules), p2: scoreOf(state, 'p2', options.rules) }
   if (state.victory.winner !== null) {
-    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements }
+    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements, automaticBombardments }
   }
 
   const winner = scores.p1 === scores.p2 ? null : scores.p1 > scores.p2 ? 'p1' : 'p2'
-  return { winner, scores, ticks: state.tick, reason: 'timeLimit', warDeclarations, peaceAgreements }
+  return { winner, scores, ticks: state.tick, reason: 'timeLimit', warDeclarations, peaceAgreements, automaticBombardments }
 }
 
 export interface TournamentResult {
@@ -139,6 +150,8 @@ export interface TournamentResult {
   /** Kriegserklaerungen und Friedensschluesse je Stufe, ueber alle Partien summiert. */
   warDeclarations: Record<Difficulty, number>
   peaceAgreements: Record<Difficulty, number>
+  /** Selbsttaetiger Beschuss je Stufe (R-BAT-08/AK3). */
+  automaticBombardments: Record<Difficulty, number>
 }
 
 /**
@@ -170,6 +183,7 @@ export function playTournament(options: {
   let draws = 0
   const wars = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   const peaces = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
+  const shells = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   let matchWinsA = 0
   let matchWinsB = 0
 
@@ -197,6 +211,7 @@ export function playTournament(options: {
     for (const difficulty of new Set(options.difficulties)) {
       wars[difficulty] += hin.warDeclarations + rueck.warDeclarations
       peaces[difficulty] += hin.peaceAgreements + rueck.peaceAgreements
+      shells[difficulty] += hin.automaticBombardments + rueck.automaticBombardments
     }
 
     // A spielt hin als p1, rueck als p2.
@@ -219,5 +234,6 @@ export function playTournament(options: {
     matchWinRateA: matchWinsA + matchWinsB === 0 ? 0 : matchWinsA / (matchWinsA + matchWinsB),
     warDeclarations: wars,
     peaceAgreements: peaces,
+    automaticBombardments: shells,
   }
 }

@@ -23,6 +23,13 @@ describe('R-ARCH-01 Tick-Pipeline', () => {
   it('haelt die im Design festgelegte Phasenreihenfolge ein', () => {
     // The order is not cosmetic: retreat before movement, movement before combat,
     // combat before occupation. Swapping any two changes the game (design D3).
+    //
+    // `bombardment` ist am 2026-09-06 dazugekommen (T-M15-07, Befund 52) und steht
+    // **zwischen Bewegung und Nahkampf**. Vorher wirkte `BOMBARD` als Kommando in Phase 1:
+    // der Beschuss traf, bevor Bewegung und Kampf desselben Ticks stattgefunden hatten,
+    // und eine Armee, die in diesem Tick abmarschierte, wurde noch am alten Ort getroffen.
+    // Mit der Feuerautomatik haette dieselbe Kanone zwei Regeln gehabt, je nachdem, wer
+    // abdrueckt.
     expect(PHASE_ORDER).toEqual([
       'applyCommands',
       'production',
@@ -31,6 +38,7 @@ describe('R-ARCH-01 Tick-Pipeline', () => {
       'recruitment',
       'retreat',
       'movement',
+      'bombardment',
       'combat',
       'occupation',
       'regeneration',

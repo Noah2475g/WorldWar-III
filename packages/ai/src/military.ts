@@ -1,4 +1,4 @@
-import type { Command, ProvinceId } from '@worldwar/core'
+import { armyRange, type Command, type ProvinceId } from '@worldwar/core'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { rateProvinces } from './targeting'
 import type { AiContext, Explanation } from './types'
@@ -15,6 +15,25 @@ import type { AiContext, Explanation } from './types'
 /** How much risk this difficulty accepts: 1 cautious, 3 bold. */
 function boldness(context: AiContext): number {
   return Math.min(3, Math.max(1, context.difficulty.maxFronts))
+}
+
+/**
+ * Steht ein Kriegsgegner in Reichweite dieser Armee?
+ *
+ * Aus der oeffentlichen Sicht gerechnet, nicht aus dem Zustand: die KI darf nur wissen,
+ * was sie sieht (R-AI-01). Deshalb zaehlt hier auch nur, was in `view.provinces` steht.
+ */
+function hasTargetInRange(context: AiContext, army: { provinceId: string }): boolean {
+  const { view } = context
+  const here = view.provinces.find((province) => province.id === army.provinceId)
+  if (!here) return false
+
+  return here.neighbors.some((id) => {
+    const neighbour = view.provinces.find((province) => province.id === id)
+    if (!neighbour?.owner || neighbour.owner === view.playerId) return false
+    if (view.relations[neighbour.owner]?.state !== 'war') return false
+    return view.armies.some((other) => other.provinceId === id && other.owner === neighbour.owner)
+  })
 }
 
 export function militaryCommands(context: AiContext, explanations: Explanation[]): Command[] {
@@ -68,6 +87,23 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
         memory.assignments[army.id] = `defend:${target}`
         continue
       }
+    }
+
+    // R-BAT-08/AK3: Eine Fernwaffenarmee, die ein Ziel in Reichweite hat, bleibt stehen.
+    //
+    // Sie schiesst dann von selbst (phases/bombardment.ts) — Schaden ohne Gegenschlag.
+    // Marschierte sie stattdessen ins Ziel, gaebe sie genau das auf, wofuer sie da ist:
+    // eine Artilleriearmee im Nahkampf ist eine schlechte Infanteriearmee.
+    // Eigene Armeen zeigen ihre Zusammensetzung; fremde nicht — deshalb der Vorbehalt.
+    if (armyRange({ units: army.units ?? [] }, context.rules) > 0 && hasTargetInRange(context, army)) {
+      explanations.push({
+        action: `${army.id} haelt Stellung in ${army.provinceId}`,
+        reason: 'Fernwaffen mit Ziel in Reichweite — Feuer ohne Gegenschlag',
+        score: 700,
+        alternative: { action: 'in den Nahkampf marschieren', score: 300 },
+      })
+      memory.assignments[army.id] = `bombard:${army.provinceId}`
+      continue
     }
 
     // Nothing to defend: look for something worth taking.

@@ -16,6 +16,7 @@ export function placeArmy(
     stance?: Stance
     deployDelayUntil?: number
     embarked?: boolean
+    holdFire?: boolean
   },
 ): Army {
   const id = `a${state.nextIds.army++}`
@@ -30,7 +31,8 @@ export function placeArmy(
     departureTick: null,
     deployDelayUntil: options.deployDelayUntil ?? 0,
     stance: options.stance ?? 'aggressive',
-    holdFire: false,
+    bombardTarget: null,
+    holdFire: options.holdFire ?? false,
     embarked: options.embarked ?? false,
     cannotAttackUntil: 0,
   }

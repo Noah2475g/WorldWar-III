@@ -944,3 +944,40 @@ erzeugt.
 Partien**, wo vorher null standen. Der Befund „kein Krieg endet je" war zur Hälfte echt
 (es fehlte die Bedingung für einen festgefahrenen Krieg) und zur Hälfte ein Messfehler —
 und ohne die Korrektur wäre die Hälfte, die echt war, mit einer grünen Zahl zugedeckt worden.
+
+---
+
+## 2026-09-06 · T-M15-07 → T-M15-08 · Die Feuerautomatik kommt im Turnier nicht vor
+
+**Befund:** R-BAT-08 ist gebaut und in zwölf Einzeltests belegt — aber im Turnier über
+150 Spieltage entsteht **kein einziges** selbsttätiges Beschussereignis. Damit ist AK3
+(„jede Schwierigkeitsstufe erzeugt mindestens ein selbsttätiges Beschussereignis im
+50-Partien-Turnier") nicht erfüllt.
+
+**Die Kette, Glied für Glied nachgemessen** an einer Partie über 60 Spieltage
+(`hard` gegen `normal`, Testkarte):
+
+| Frage | Gemessen |
+|---|---|
+| Wird Artillerie rekrutiert? | **nein** — nur `infantry`, 12 Stück |
+| Steht eine Fabrik? | **nein** — gebaut werden `barracks` (4×) und `railway` (2×) |
+| Blockiert ein Mangel? | **nein** — `shortages` ist leer |
+| Reicht das Holz? | **nein: 83.081 vorhanden, die Fabrik kostet 667.000** |
+
+**Das ist die eigentliche Ursache.** Die KI auf der Testkarte wird nie reich genug für
+eine Fabrik; ohne Fabrik keine Artillerie, ohne Artillerie ist `armyRange` jeder Armee 0,
+und die Feuerautomatik hat nichts, womit sie feuern könnte. Genau der Zustand, vor dem
+die Aufgabenbeschreibung warnt: *gebaut, grün getestet und wirkungslos.*
+
+**Ein Nebenblocker ist dabei behoben worden:** `nextBuilding` verlangte für die Fabrik
+`shortages.size === 0` — als „unter Druck befestigen statt ausbauen" gedacht und in der
+Praxis eine Dauersperre, denn eine KI, der irgendein Rohstoff knapp ist, hat *immer* einen
+Mangel. Ob die Fabrik bezahlbar ist, entscheidet ohnehin `canAfford`, und das hält eine
+Rücklage frei; zwei Sperren für dieselbe Frage, von denen eine nie aufgeht, sind eine zu
+viel. Nach der Änderung: immer noch kein Beschuss, weil die Holzmenge bindet.
+
+**Status: offen, zugewiesen an T-M15-08** — dem Integrationstor, dessen erklärter Zweck
+genau das ist: *die KI nutzt die neuen Mittel.* Dort gehört die Frage hin, ob die KI zu
+arm ist, ob die Fabrik zu teuer ist, oder ob die Testkarte für diese Messung zu klein ist.
+Was hier **nicht** getan wird, ist die Zusicherung so zu formulieren, dass sie grün wird:
+eine Obergrenze über null Ereignissen wäre grün und sagte nichts.

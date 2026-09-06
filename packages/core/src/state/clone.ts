@@ -50,6 +50,7 @@ function cloneArmy(army: Army): Army {
     stance: army.stance,
     embarked: army.embarked,
     cannotAttackUntil: army.cannotAttackUntil,
+    bombardTarget: army.bombardTarget,
     holdFire: army.holdFire,
   }
 }

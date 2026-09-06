@@ -181,6 +181,23 @@ keine einzige Partie. Eine Obergrenze dafür ist nicht einzuhalten, ohne „schw
 absichtlich schlechter zu machen; sie steht deshalb zwischen den *benachbarten* Stufen,
 wo eine Mauer dem Spieler wirklich schadet. Begründet in `PROBLEME.md`.
 
+## Feuerautomatik (R-BAT-08, T-M15-07)
+
+Die Automatik führt **keine eigene Zahl** ein: sie benutzt dieselbe Rechnung wie der
+Handbeschuss, einschließlich `bombardFactor`. Das ist die ganze Absicht des Umbaus —
+dieselbe Kanone, eine Regel, gleich wer abdrückt.
+
+**Was neu ist, ist eine Reihenfolge, keine Zahl:** die Beschussphase steht zwischen
+Bewegung und Nahkampf. Vorher wirkte `BOMBARD` als Kommando in Phase 1, der Nahkampf in
+Phase 8; eine Armee, die in diesem Tick abmarschierte, wurde noch am alten Ort getroffen.
+
+**Selbsttätige Beschussereignisse je Stufe, gemessen am 2026-09-06:** 0, 0, 0 — in 20
+Partien über 40 und in 10 über 150 Spieltage. Die Ursache ist nachgemessen und steht in
+`PROBLEME.md`: die KI baut auf der Testkarte nie eine Fabrik (83.081 Holz gegen 667.000
+Kosten), also nie Artillerie. **R-BAT-08/AK3 ist damit offen** und an T-M15-08 zugewiesen.
+Die Zahl steht hier trotzdem, weil eine fehlende Zeile in dieser Tabelle so aussähe, als
+wäre die Frage nie gestellt worden.
+
 ## Die Freischaltungsachse — erster Spieltag je Sache
 
 R-TECH-01 (T-M15-02, 2026-09-06). Der Befund war keine falsche Zahl, sondern eine fehlende

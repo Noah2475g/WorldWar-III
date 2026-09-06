@@ -9,7 +9,7 @@ import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'
 import type { GameState } from '../state/types'
 import { registerCommand } from './registry'
-import { fail, ok, type SetCapitalCommand, type SetStanceCommand } from './types'
+import { fail, ok, type SetCapitalCommand, type SetHoldFireCommand, type SetStanceCommand } from './types'
 
 /**
  * The first two real command handlers.
@@ -31,6 +31,18 @@ registerCommand<SetStanceCommand>('SET_STANCE', {
   },
   apply: (draft, command) => {
     draft.armies[command.armyId]!.stance = command.stance
+  },
+})
+
+registerCommand<SetHoldFireCommand>('SET_HOLD_FIRE', {
+  check: (state: GameState, command) => {
+    const army = state.armies[command.armyId]
+    if (!army) return fail('ARMY_NOT_FOUND', { armyId: command.armyId })
+    if (army.owner !== command.playerId) return fail('NOT_OWNER', { armyId: command.armyId })
+    return ok
+  },
+  apply: (draft, command) => {
+    draft.armies[command.armyId]!.holdFire = command.holdFire
   },
 })
 

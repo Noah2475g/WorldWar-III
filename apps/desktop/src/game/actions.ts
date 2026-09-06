@@ -236,6 +236,25 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     targetKind: 'bombard',
   }
 
+  /**
+   * Feuerleitung (T-M15-07, R-BAT-08).
+   *
+   * Ein Umschalter, kein Paar aus zwei Knoepfen: der Zustand ist binaer, und zwei Knoepfe,
+   * von denen immer einer ausgegraut ist, kosten Platz und sagen dasselbe. Der Tooltip
+   * erklaert, was ohne Zutun geschieht — sonst ist "Feuer halten" ein Knopf gegen etwas,
+   * von dem der Spieler nicht weiss, dass es passiert.
+   */
+  const holdFire: ActionSpec = checked(
+    ctx,
+    { type: 'SET_HOLD_FIRE', playerId, armyId, holdFire: !army.holdFire },
+    'holdFire',
+    army.holdFire ? t('army.resumeFire') : t('army.holdFire'),
+    t('army.holdFireHint'),
+  )
+  if (holdFire.disabledReason === null && !hasRangedUnits(army, ctx.rules)) {
+    holdFire.disabledReason = t('army.noRanged')
+  }
+
   return [
     march,
     stop,
@@ -248,6 +267,7 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     merge,
     split,
     bombard,
+    holdFire,
   ]
 }
 

@@ -9,12 +9,14 @@ import {
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { decide, emptyMemory, shouldThinkThisTick } from './decide'
+import type { Explanation } from './types'
 import { runAi, storeMemories } from './runner'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { hopDistance, rateProvinces } from './targeting'
 import { nextUnitFor } from './economy'
 import { capitalCommands } from './capital'
 import { consolidateCommands } from './consolidate'
+import { militaryCommands } from './military'
 
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -375,5 +377,51 @@ describe('R-AI-01 Die KI legt Verbaende zusammen', () => {
     for (const command of consolidateCommands(contextFor('p2'), [])) {
       expect(canApply(state, command, phaseCtx)).toEqual({ ok: true })
     }
+  })
+})
+
+describe('R-BAT-08/AK3 Die KI laesst Fernwaffen stehen', () => {
+  it('schickt eine Artilleriearmee mit Ziel in Reichweite nicht in den Nahkampf', () => {
+    // Sie schießt dann von selbst — Schaden ohne Gegenschlag. Marschierte sie ins Ziel,
+    // gäbe sie genau das auf, wofür sie da ist: eine Artilleriearmee im Nahkampf ist eine
+    // schlechte Infanteriearmee.
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    // m1 gehoert jetzt p2 und grenzt an n2 von p1 — sonst sehen die beiden Maechte auf
+    // dieser Karte einander gar nicht: zwischen n* und o* liegt neutrales Land, und die
+    // KI darf nur mit dem rechnen, was sie sieht (R-AI-01).
+    state.provinces['m1']!.owner = 'p2'
+    placeArmy(state, {
+      owner: 'p2',
+      at: 'm1',
+      units: [{ unitKey: 'artillery', hpTotal: 20 * TEST_RULES.units['artillery']!.hpPerUnit }],
+      stance: 'defensive',
+    })
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 50_000 }] })
+
+    const artillerie = state.armyOrder.find(
+      (id) => state.armies[id]!.owner === 'p2' && state.armies[id]!.units.some((u) => u.unitKey === 'artillery'),
+    )!
+
+    const explanations: Explanation[] = []
+    const commands = militaryCommands(contextFor('p2'), explanations)
+
+    // Gezielt auf diese Armee: andere Verbaende derselben Macht duerfen sehr wohl
+    // marschieren — geprueft wird die Fernwaffe, nicht die ganze Streitmacht.
+    expect(
+      commands.filter((command) => command.type === 'MOVE_ARMY' && command.armyId === artillerie),
+      'die Artillerie wurde in den Nahkampf geschickt',
+    ).toEqual([])
+    expect(explanations.some((entry) => entry.action.includes(artillerie) && /Stellung/.test(entry.action))).toBe(true)
+  })
+
+  it('schickt eine Armee ohne Fernwaffen weiterhin los', () => {
+    // Die Gegenrichtung: ein Filter, der jede Armee stehen lässt, bestünde die
+    // Zusicherung oben und machte die KI handlungsunfähig.
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 200_000 }] })
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    const commands = militaryCommands(contextFor('p2'), [])
+    expect(commands.some((command) => command.type === 'MOVE_ARMY')).toBe(true)
   })
 })

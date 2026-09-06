@@ -66,6 +66,7 @@ export const recruitment: Phase = (draft: GameState, ctx: PhaseContext) => {
           deployDelayUntil: 0,
           stance: 'defensive',
           embarked: false,
+          bombardTarget: null,
           holdFire: false,
           cannotAttackUntil: 0,
         }

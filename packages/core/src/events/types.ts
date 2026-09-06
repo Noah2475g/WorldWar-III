@@ -155,6 +155,14 @@ export interface BombardmentEvent extends BaseEvent {
   armyId: ArmyId
   targetProvinceId: ProvinceId
   damage: Fixed
+  /**
+   * Selbsttaetiges Feuer statt eines Befehls (R-BAT-08, T-M15-07).
+   *
+   * Der Unterschied gehoert ins Ereignis, nicht in die Textbildung: der Spieler soll im
+   * Protokoll sehen koennen, welche seiner Batterien von selbst geschossen haben — sonst
+   * sieht eine Automatik aus wie ein Befehl, den er nicht erteilt hat.
+   */
+  automatic: boolean
 }
 
 export interface ProvinceCapturedEvent extends BaseEvent {

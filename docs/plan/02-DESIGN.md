@@ -1182,6 +1182,29 @@ benennen lässt, ist ein Verhältnis, das niemand nachvollziehen kann.
 
 ### D19.4 Feuerautomatik (R-BAT-08)
 
+> **Gebaut am 2026-09-06 (T-M15-07).** Eine eigene Phase `bombardment` **zwischen Bewegung
+> und Nahkampf**, und das ist zugleich die Behebung von Befund 52: `BOMBARD` setzt seither
+> nur noch eine Absicht (`Army.bombardTarget`), aufgelöst wird sie dort — mit demselben
+> Code und zum selben Zeitpunkt wie das selbsttätige Feuer. Vorher wirkte der Handbeschuss
+> in Phase 1, der Nahkampf in Phase 8; eine Armee, die in diesem Tick abmarschierte, wurde
+> noch am alten Ort getroffen, und mit einer Automatik hätte **dieselbe Kanone zwei Regeln**
+> gehabt, je nachdem, wer abdrückt.
+>
+> **„Feuer halten" ist die Ausnahme**, nicht die Regel: eine stehende Fernwaffenarmee
+> schießt von selbst. Andersherum wäre der Normalfall eine stumme Batterie an der Front
+> gewesen, und niemand hätte den Unterschied bemerkt. Für Mensch und KI dieselbe Regel;
+> die KI lässt eine Armee mit Reichweite und Ziel stehen, statt sie in den Nahkampf zu
+> schicken — eine Artilleriearmee im Nahkampf ist eine schlechte Infanteriearmee.
+>
+> **Die Zielwahl ist bestimmt:** größte sichtbare Truppenstärke, bei Gleichstand die
+> kleinere Provinzkennung, gelaufen über `provinceOrder` und `armyOrder`. Ohne feste Regel
+> hinge das Ziel an der Einfügereihenfolge eines Records, und zwei Läufe mit demselben Seed
+> gäben verschiedene Ergebnisse (R-ARCH-01).
+>
+> **AK3 ist offen**, und zwar begründet: im Turnier entsteht kein einziges selbsttätiges
+> Beschussereignis, weil die KI auf der Testkarte nie eine Fabrik bezahlen kann. Die Kette
+> ist Glied für Glied nachgemessen und in `PROBLEME.md` an T-M15-08 zugewiesen.
+
 Drei Teile: wo geschossen wird, was getroffen wird, wie man es abstellt.
 
 **Wo.** Nicht dort, wo der Beschuss heute liegt. `BOMBARD` ist ein gewöhnlicher Kommandohandler

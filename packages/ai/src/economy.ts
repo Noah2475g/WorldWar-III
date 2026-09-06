@@ -39,7 +39,6 @@ function nextBuilding(context: AiContext, provinceId: string): BuildingKey | nul
   if (!province || province.owner !== context.view.playerId) return null
 
   const level = (key: BuildingKey) => province.buildings?.[key] ?? 0
-  const shortages = new Set(context.view.self.shortages)
 
   // R-TECH-02/AK2: Was es heute noch nicht gibt, waehlt sie nicht. Ein Befehl, den der
   // Kern jeden Tag ablehnt, ist Rauschen im Protokoll statt Verhalten — und die KI
@@ -50,8 +49,18 @@ function nextBuilding(context: AiContext, provinceId: string): BuildingKey | nul
 
   // A nation that cannot raise infantry has no other problem worth solving.
   if (available('barracks') && level('barracks') === 0) return 'barracks'
-  // Under pressure, fortify rather than expand.
-  if (available('factory') && shortages.size === 0 && level('factory') === 0 && province.kind === 'city') {
+  // Die Fabrik, sobald es sie gibt — und **nicht** erst, wenn kein Mangel mehr besteht.
+  //
+  // Die alte Bedingung `shortages.size === 0` war als "unter Druck befestigen statt
+  // ausbauen" gedacht und wurde zur Dauersperre: eine KI, der irgendein Rohstoff knapp
+  // ist, hat *immer* einen Mangel, und so entstand in einer Turnierpartie ueber 150
+  // Spieltage **keine einzige Fabrik** — also nie Artillerie, also nie ein
+  // Beschussereignis, und R-BAT-08/AK3 war unerreichbar (T-M15-07).
+  //
+  // Ob die Fabrik bezahlbar ist, entscheidet ohnehin `canAfford` weiter unten, und das
+  // haelt eine Ruecklage frei. Zwei Sperren fuer dieselbe Frage, von denen eine nie
+  // aufgeht, sind eine zu viel.
+  if (available('factory') && level('factory') === 0 && province.kind === 'city') {
     return 'factory'
   }
   if (available('railway') && level('railway') === 0) return 'railway'

@@ -32,6 +32,7 @@ export const PHASE_ORDER = [
   'recruitment',
   'retreat',
   'movement',
+  'bombardment',
   'combat',
   'occupation',
   'regeneration',

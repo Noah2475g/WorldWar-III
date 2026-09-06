@@ -59,7 +59,7 @@ const toVersion2: Migration = (envelope) => {
     const record = armies as Record<string, Record<string, unknown>>
     for (const id of Object.keys(record)) {
       const army = record[id]
-      if (army !== null && typeof army === 'object') record[id] = { ...army, holdFire: false }
+      if (army !== null && typeof army === 'object') record[id] = { ...army, bombardTarget: null, holdFire: false }
     }
   }
 
@@ -91,7 +91,7 @@ const toVersion2: Migration = (envelope) => {
  * dagegen genau pruefbar, und zwar schaerfer: der Unterschied zwischen altem und neuem
  * Zustand darf **ausschliesslich** aus dieser Liste bestehen. Siehe PROBLEME.md.
  */
-export const ADDED_IN_VERSION_2 = ['schemaVersion', 'holdFire', 'grievances', 'concerns'] as const
+export const ADDED_IN_VERSION_2 = ['schemaVersion', 'holdFire', 'bombardTarget', 'grievances', 'concerns'] as const
 
 const MIGRATIONS: Record<number, Migration> = {
   1: toVersion2,

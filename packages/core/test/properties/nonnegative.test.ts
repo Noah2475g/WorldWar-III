@@ -70,6 +70,7 @@ describe('R-ECON-03 Vorraete werden niemals negativ', () => {
               stance: 'defensive',
               embarked: false,
               cannotAttackUntil: 0,
+    bombardTarget: null,
     holdFire: false,
             }
             state.armyOrder = [...state.armyOrder, id].sort()

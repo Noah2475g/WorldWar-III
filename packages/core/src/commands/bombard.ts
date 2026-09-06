@@ -1,8 +1,4 @@
-import { mulChain, quotFixed } from '@worldwar/shared'
-import { emit } from '../events/emit'
 import { neighborsOf } from '../map/pathfinding'
-import { applySpread, classShares, damageFor, defenceMultiplier, sideAttackValue } from '../rules/combat'
-import { armyHp, pruneEmptyStacks } from '../state/army'
 import { atWar } from '../phases/combat'
 import type { GameState, ProvinceId } from '../state/types'
 import { registerCommand } from './registry'
@@ -71,79 +67,16 @@ registerCommand<BombardCommand>('BOMBARD', {
     return ok
   },
 
-  apply: (draft, command, ctx) => {
-    const army = draft.armies[command.armyId]!
-    const province = draft.provinces[command.targetProvinceId]!
-
-    // Getroffen wird, mit wem man im Krieg ist — nicht jeder, der zufällig hier steht
-    // (T-M14-07, Befund 51). Die Prüfung davor sieht nur, wem die *Provinz* gehört; ein
-    // Verbündeter oder eine neutrale Macht in derselben Provinz bekam bisher die volle
-    // Ladung, ohne dass je eine Kriegserklärung gefallen wäre.
-    const defenders = draft.armyOrder
-      .map((id) => draft.armies[id]!)
-      .filter(
-        (other) =>
-          other.locationProvinceId === command.targetProvinceId &&
-          other.owner !== army.owner &&
-          atWar(draft, army.owner, other.owner),
-      )
-
-    if (defenders.length === 0) {
-      // Shelling an empty province only hurts its morale.
-      province.morale = Math.max(0, province.morale - ctx.rules.constants.battleMoraleLoss)
-      emit(ctx.events, draft.tick, 'BOMBARDMENT', {
-        playerId: army.owner,
-        armyId: army.id,
-        targetProvinceId: command.targetProvinceId,
-        damage: 0,
-        audience: [army.owner],
-      })
-      return
-    }
-
-    const shares = classShares(defenders, ctx.rules)
-    const value = sideAttackValue(draft, [army], shares, false, ctx.rules)
-    const spread = applySpread(value, draft.rng, ctx.rules)
-    const defence = defenceMultiplier(province, true, ctx.rules)
-
-    // Ranged fire is deliberately weaker than closing with the enemy.
-    const damage = mulChain([damageFor(spread, defence, ctx.rules), ctx.rules.constants.bombardFactor])
-
-    const total = defenders.reduce((sum, other) => sum + armyHp(other), 0)
-    let dealt = 0
-    for (const defender of defenders) {
-      for (const stack of defender.units) {
-        const share = quotFixed(stack.hpTotal, total)
-        const hit = Math.min(stack.hpTotal, mulChain([damage, share]))
-        stack.hpTotal -= hit
-        dealt += hit
-      }
-      pruneEmptyStacks(defender)
-    }
-
-    army.cannotAttackUntil = draft.tick + 1
-
-    // Eine ausgelöschte Armee verschwindet, statt als leere Hülle liegen zu bleiben
-    // (T-M14-07, Befund 53). Der Nahkampf tat das längst; der Beschuss nicht — und eine
-    // Hülle ohne Einheiten hält ihren Besitzer am Leben, weshalb eine Partie nie zu einem
-    // Sieger kommt. Genau daran hätte der Abnahmetest aus T-M14-14 gehangen.
-    for (const defender of defenders) {
-      if (defender.units.length > 0) continue
-      emit(ctx.events, draft.tick, 'ARMY_DESTROYED', {
-        playerId: defender.owner,
-        armyId: defender.id,
-        provinceId: command.targetProvinceId,
-        audience: [defender.owner],
-      })
-      delete draft.armies[defender.id]
-      draft.armyOrder = draft.armyOrder.filter((id) => id !== defender.id)
-    }
-
-    emit(ctx.events, draft.tick, 'BOMBARDMENT', {
-      playerId: army.owner,
-      armyId: army.id,
-      targetProvinceId: command.targetProvinceId,
-      damage: dealt,
-    })
+  /**
+   * Setzt nur noch die **Absicht** (T-M15-07, Befund 52).
+   *
+   * Bis zum 2026-09-06 richtete diese Stelle den Schaden sofort an — in Phase 1, waehrend
+   * der Nahkampf in Phase 8 aufgeloest wird. Damit galten fuer zwei Kampfarten zwei
+   * Zeitpunkte, und eine Armee, die in diesem Tick abmarschierte, wurde noch am alten Ort
+   * getroffen. Aufgeloest wird jetzt in `phases/bombardment.ts`, direkt vor dem Nahkampf
+   * und mit demselben Code wie die Feuerautomatik: dieselbe Kanone, eine Regel.
+   */
+  apply: (draft, command) => {
+    draft.armies[command.armyId]!.bombardTarget = command.targetProvinceId
   },
 })

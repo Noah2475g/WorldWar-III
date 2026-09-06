@@ -175,6 +175,18 @@ export interface Army {
   /** Set while a retreat cooldown is running (D6.8). */
   cannotAttackUntil: Tick
   /**
+   * Das Ziel des Beschusses in diesem Tick, gesetzt vom Kommando, aufgeloest in der
+   * Beschussphase — und danach wieder `null` (R-BAT-06, T-M15-07).
+   *
+   * Bis zum 2026-09-06 wirkte `BOMBARD` sofort in Phase 1, waehrend der Nahkampf in
+   * Phase 8 aufgeloest wird. Damit galten fuer zwei Kampfarten zwei Zeitpunkte: der
+   * Beschuss traf, bevor Bewegung und Kampf desselben Ticks stattgefunden hatten, und
+   * eine Armee, die in diesem Tick abmarschierte, wurde noch am alten Ort getroffen.
+   * Mit der Feuerautomatik waere daraus **dieselbe Kanone mit zwei Regeln** geworden,
+   * je nachdem, wer abdrueckt (Befund 52, vertagt von T-M14-07).
+   */
+  bombardTarget: ProvinceId | null
+  /**
    * Feuerleitung: `true` heisst „Feuer halten" (R-BAT-08, T-M15-07).
    *
    * Das Feld wird von **T-M15-04** leer angelegt und erst von T-M15-07 mit Verhalten
