@@ -1268,3 +1268,55 @@ im Lauf **nicht** bestätigt — „jede eigene Provinz wird im Moral-Modus zinn
 gemessen: Oliv #505738) und „ein Klick auf die Karte wählt nichts aus" (ein Werkzeugfehler
 des Prüfers, kein Produktfehler). Wer aus dem Code auf das Verhalten schließt, liegt
 regelmäßig daneben — in beide Richtungen.
+
+---
+
+## 2026-09-07 · T-M12-09 · Was `dailyTick` erzeugt, kommt nie im Protokoll an
+
+**Gefunden von der Gegenprobe, nicht von der Diagnose** — und das ist der Punkt. Ein
+Diagnose-Agent führte den Befund „es erscheint nie eine Meldung" auf einen fehlenden
+Kanal in `App.tsx` zurück und schlug dort eine Reparatur vor. Der Skeptiker, dessen
+einziger Auftrag das Widerlegen war, hat nachgemessen und **ein übersprungenes Glied
+gefunden, an dem diese Reparatur gescheitert wäre**.
+
+**Der Befund:** `step.ts` ruft `dailyTick` **nach** der gesamten `PHASE_ORDER` auf — also
+**nach** `bookkeeping`. Und `bookkeeping` ist die Phase, die `ctx.events` an
+`draft.eventLog` hängt. Alles, was `dailyTick` danach erzeugt, landet **nie im
+Protokoll**.
+
+Gemessen über drei Spieltage: zurückgegeben `{"DAY_REPORT": 3}`, im `eventLog` davon
+**nichts**.
+
+**Warum das mehr ist als ein Schönheitsfehler:** Der Ereignisstrom ist seit T-M14-05 die
+Grundlage der Messungen — Eroberungen werden aus `runTicks(...).events` gezählt, nicht
+mehr aus dem Ringpuffer. Ereignisse, die den Rückgabewert erreichen, aber nicht das
+Protokoll, sind für die *Messung* da und für den *Spieler* nicht. Genau diese Trennung
+macht den Befund schwer zu sehen: wer die Zahlen prüft, sieht sie; wer das Spiel spielt,
+nicht.
+
+**Was der Skeptiker außerdem widerlegt hat.** Die Diagnose behauptete, ein Kampf im
+eigenen Gebiet erzeuge „strukturell null" Meldungen, weil die Eroberung im selben Tick
+greife. Nachgestellt mit echtem Kern: **zehn von zehn Ticks liefern `alerts: ["battle"]`**,
+die Provinz bleibt beim Verteidiger. Die Null im Messlauf entstand allein daraus, dass die
+gemessene Macht **passiv** war und nie in Feindberührung kam — nicht aus dem Code. Aus
+einer Partie ohne Spieler wurde eine Aussage über eine Partie mit Spieler abgeleitet.
+
+**Zwei weitere Funde derselben Gegenprobe**, beide bestätigt:
+
+- Die Hauptstadt-Bedingung in `Alerts.tsx` ist **toter Code**: `occupation.ts` setzt
+  `capitalProvinceId = null` im selben Tick, in dem die Hauptstadt fällt — die Bedingung
+  kann danach nie mehr wahr werden.
+- Die vierte von R-UI-14 geforderte Quelle, **„Fertigstellungen"**, fehlt in `alertsFor`
+  ganz.
+
+**Status: offen, T-M12-09.** Die Reparatur des Lecks gehört in den Kern und muss ohne
+Phasenumstellung auskommen — eine geänderte Phasenreihenfolge wäre eine Änderung am
+Golden-Master. `eventLog` steht in `HASH_OMIT_KEYS`, der Simulationshash bleibt also
+unberührt, wenn man die in `dailyTick` entstandenen Ereignisse nachträgt statt die Phasen
+zu tauschen.
+
+**Was daran lehrreich ist:** Die Gegenprobe hat sich bezahlt gemacht. Vier von fünf
+Diagnosen wurden bestätigt; die fünfte war plausibel, gut belegt, an der entscheidenden
+Stelle falsch — und hätte zu einer Reparatur geführt, die den Befund nicht behebt. Ein
+Skeptiker mit dem ausdrücklichen Auftrag zu widerlegen ist billiger als eine Reparatur,
+die nicht wirkt.
