@@ -5,9 +5,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
-    "@worldwar/shared": "workspace:*",
-    "@worldwar/core": "workspace:*",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-fs": "^2.5.2",
     "@worldwar/ai": "workspace:*",
+    "@worldwar/core": "workspace:*",
+    "@worldwar/shared": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

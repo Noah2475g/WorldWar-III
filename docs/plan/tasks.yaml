@@ -546,13 +546,13 @@ tasks:
   - id: T-M8-00
     milestone: M8
     title: Speicher-Schnittstelle Tauri Node Speicher
-    status: todo
-    reopened: "abgeloest durch T-M14-08: von den vier zugesagten Dateien existiert nur packages/core/src/persistence/StoragePort.ts, MemoryStorage ist die einzige Umsetzung. V1 liefert stattdessen den dauerhaften Browserspeicher (IndexedDB); TauriStorage, NodeStorage und der Datei-Port entstehen erst in M16 (Entscheidung 2 vom 2026-09-05, C-02 praezisiert durch T-M14-03). Kein reopened im Sinne von 'nochmal so bauen' - die Zusage ist abgeloest, nicht offen."
+    status: done
+    reopened: "geschlossen am 2026-09-07 durch T-M16-04. Die Zusage stand seit M8 auf done und nannte vier Dateien, von denen eine existierte; MemoryStorage war die einzige Umsetzung, und die ausgelieferte Anwendung speicherte in den Arbeitsspeicher. T-M14-08 brachte IndexedDB als zweite, T-M16-04 den Datei-Port als dritte - erst damit stimmt der Wortlaut 'dieselbe Vertragstestreihe gegen alle drei Umsetzungen'. NodeStorage entfaellt: der kopflose Laeufer speichert nicht, und eine vierte Umsetzung ohne Aufrufer waere genau die Art Zusage, die diesen Eintrag verursacht hat."
     deps: [T-M5-04]
     requirements: [R-GAME-03, R-GAME-04]
     constraints: [C-02]
-    files: [packages/core/src/persistence/StoragePort.ts, apps/desktop/src/storage/TauriStorage.ts, apps/headless/src/storage/NodeStorage.ts, packages/testkit/src/MemoryStorage.ts]
-    tests: [packages/core/src/persistence/StoragePort.test.ts]
+    files: [packages/core/src/persistence/StoragePort.ts, apps/desktop/src/storage/TauriStorage.ts, apps/desktop/src/storage/IndexedDbStorage.ts, packages/testkit/src/storageContract.ts]
+    tests: [apps/desktop/src/storage/TauriStorage.test.ts, apps/desktop/src/storage/IndexedDbStorage.test.ts, test/guards/persistence-contract.test.ts]
     dod: "dieselbe Vertragstestreihe laeuft gegen alle drei Umsetzungen"
 
   - id: T-M8-01
@@ -1395,7 +1395,7 @@ tasks:
   - id: T-M16-04
     milestone: M16
     title: Der Datei-Port
-    status: todo
+    status: done
     deps: [T-M14-08, T-M16-03]
     requirements: [R-PKG-02, R-GAME-03, R-GAME-04]
     constraints: [C-02]

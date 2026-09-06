@@ -1,5 +1,6 @@
 import { MemoryStorage, type StoragePort } from '@worldwar/core'
 import { IndexedDbStorage, isIndexedDbAvailable } from './IndexedDbStorage'
+import { TauriStorage, isTauriAvailable } from './TauriStorage'
 
 /**
  * Welcher Speicher die laufende Anwendung benutzt (T-M14-08).
@@ -17,6 +18,15 @@ export interface StorageChoice {
 }
 
 export function createStorage(): StorageChoice {
+  // Im Programm liegen die Staende als Dateien (T-M16-04, R-PKG-02). Das ist nicht nur
+  // eine andere Ablage, sondern eine andere Zusage: eine Datei laesst sich sichern,
+  // kopieren und im Dateimanager ansehen — genau das erwartet jemand, der ein Programm
+  // installiert hat. Die Pruefung gilt der Laufzeit, nicht dem Bau: derselbe
+  // Buendelinhalt laeuft im Browser und im Programm.
+  if (isTauriAvailable()) {
+    return { storage: new TauriStorage(), persistent: true }
+  }
+
   if (isIndexedDbAvailable()) {
     return { storage: new IndexedDbStorage(), persistent: true }
   }

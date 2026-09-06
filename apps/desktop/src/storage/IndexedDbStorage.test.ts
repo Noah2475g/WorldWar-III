@@ -4,6 +4,7 @@ import { storagePortContract } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { IndexedDbStorage, isIndexedDbAvailable } from './IndexedDbStorage'
 import { createStorage } from './createStorage'
+import { TauriStorage } from './TauriStorage'
 
 /**
  * Der Speichervertrag, gegen beide Umsetzungen (T-M14-08).
@@ -59,5 +60,17 @@ describe('R-GAME-03 Der Speicher ueberlebt das Fenster', () => {
     expect(wahl.warning).toMatch(/verloren/)
 
     globalThis.indexedDB = echt
+  })
+it('waehlt im Programm die Dateien, nicht die Browserdatenbank', () => {
+    // Beides ist dauerhaft, aber nicht dasselbe (T-M16-04): eine Datei laesst sich
+    // sichern und kopieren, eine IndexedDB nicht. Wer das Programm installiert hat,
+    // erwartet Dateien — und R-PKG-02 sagt es zu.
+    ;(globalThis as Record<string, unknown>).__TAURI_INTERNALS__ = {}
+
+    const wahl = createStorage()
+    expect(wahl.persistent).toBe(true)
+    expect(wahl.storage).toBeInstanceOf(TauriStorage)
+
+    delete (globalThis as Record<string, unknown>).__TAURI_INTERNALS__
   })
 })
