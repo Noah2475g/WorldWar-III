@@ -1320,3 +1320,37 @@ Diagnosen wurden bestätigt; die fünfte war plausibel, gut belegt, an der entsc
 Stelle falsch — und hätte zu einer Reparatur geführt, die den Befund nicht behebt. Ein
 Skeptiker mit dem ausdrücklichen Auftrag zu widerlegen ist billiger als eine Reparatur,
 die nicht wirkt.
+
+---
+
+## 2026-09-07 · T-M14-13 stand auf `done` und hatte zwei seiner Punkte nie geliefert
+
+**Gefunden** bei der Aufarbeitung der Playtest-Befunde, nicht gesucht.
+
+`03-TASKS.md` beschreibt T-M14-13 in sechs Punkten. Zwei davon sind nie gebaut worden:
+
+| Punkt | Zusage | Stand am 2026-09-07 |
+|---|---|---|
+| 5 | Die Debug-Ansicht füllt sich | `App.tsx` übergab `{ tick, hash: '', aiGoals: [], commands: [] }` — drei feste Leerwerte |
+| 6 | `main.tsx` übergibt eine Kartensammlung, `startGame` wählt daraus | `main.tsx` warf `testMap` weg, `startGame` bekam immer die Weltkarte |
+
+`tasks.yaml` führte die Aufgabe trotzdem als `done`, und ihre Fertig-wenn-Zeile behauptete
+wörtlich, „die Playtest-Frage zu Kartenwahl und Debug-Ansicht ist mit nein beantwortbar".
+**Beides war falsch**, und der Playtest hat genau diese beiden Punkte als Befunde 4 und 48
+wieder eingesammelt — eine Runde später und mit dem Umweg über einen Menschen.
+
+**Warum der Plan-Wächter das nicht gefunden hat:** Er prüft, ob die in `files:`/`tests:`
+genannten Pfade existieren (T-M14-02), und ob jede Anforderung eine Aufgabe hat. Beides war
+erfüllt: die Dateien existierten, sie enthielten nur nicht, was die Aufgabe versprach. Eine
+Fertig-wenn-Zeile ist Prosa, und Prosa prüft kein Wächter.
+
+**Was daraus folgt — und was ausdrücklich nicht:** Es folgt *nicht*, dass es einen Wächter
+für Prosa braucht; den kann es nicht geben. Es folgt, dass eine mehrteilige Aufgabe je Teil
+einen Test braucht, der ohne den Teil fällt. T-M12-08 und T-M12-10 tragen jetzt genau das:
+die Kartenwahl wird an der Provinzzahl der begonnenen Partie gemessen, die Debug-Ansicht am
+gerenderten Hash und an gefüllten Listen. Beide Tests wurden gegen den Stand von vorher
+geprüft und fallen dort.
+
+**Status: geschlossen** durch T-M12-08 und T-M12-10. Der Eintrag bleibt stehen, weil die
+Fehlerklasse bleibt: „`done` heißt gebaut" gilt in diesem Projekt nur so weit, wie ein Test
+es trägt.

@@ -1,4 +1,5 @@
-import { runTicks, type Command, type GameEvent, type GameState, type MapData, type Rules } from '@worldwar/core'
+import { runTicks, type Command, type GameEvent, type GameState, type MapData, type PlayerId, type Rules } from '@worldwar/core'
+import type { Explanation } from './types'
 import { runAi, storeMemories } from './runner'
 
 /**
@@ -33,6 +34,14 @@ export interface AdvanceResult {
   applied: { tick: number; command: Command }[]
   /** How many ticks actually ran; fewer than asked when the game was decided. */
   ticks: number
+  /**
+   * Warum die KI tat, was sie tat — nur wenn danach gefragt wurde (R-AI-05).
+   *
+   * Die Begruendungen entstanden seit M7 in `decide`, `runAi` reichte sie weiter, und
+   * hier endete die Kette: `advanceTicks` rief `runAi` ohne Optionen, also konnte die
+   * Debug-Ansicht sie nie bekommen und zeigte eine leere Ueberschrift (T-M12-10).
+   */
+  explanations: Record<PlayerId, Explanation[]>
 }
 
 export interface AdvanceOptions {
@@ -46,6 +55,13 @@ export interface AdvanceOptions {
    * records a different game than the one that is played.
    */
   scripted?: ((tick: number) => readonly Command[]) | undefined
+  /**
+   * Begruendungen der KI mitfuehren. Aus, solange niemand fragt: sie kosten Zeit, und
+   * das Vorspulen laeuft mit hundert Spielstunden je Sekunde durch diese Schleife.
+   *
+   * Sie duerfen die Partie nicht aendern — die Befehle sind mit und ohne dieselben.
+   */
+  explain?: boolean
 }
 
 export function advanceTicks(
@@ -59,12 +75,14 @@ export function advanceTicks(
   let current = state
   const events: GameEvent[] = []
   const applied: { tick: number; command: Command }[] = []
+  let explanations: Record<PlayerId, Explanation[]> = {}
   let ran = 0
 
   for (let i = 0; i < ticks; i++) {
     if (current.victory.winner !== null) break
 
-    const { commands, memories } = runAi(current, ctx)
+    const { commands, memories, explanations: reasons } = runAi(current, ctx, opts.explain ? { explain: true } : {})
+    if (opts.explain) explanations = reasons
     const scripted = opts.scripted?.(current.tick) ?? []
     const all = [...(i === 0 ? playerCommands : []), ...scripted, ...commands]
 
@@ -78,5 +96,5 @@ export function advanceTicks(
     storeMemories(current, memories)
   }
 
-  return { state: current, events, applied, ticks: ran }
+  return { state: current, events, applied, ticks: ran, explanations }
 }

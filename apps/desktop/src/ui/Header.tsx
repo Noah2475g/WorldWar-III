@@ -19,6 +19,14 @@ export interface HeaderProps {
   ticksPerDay: number
   speed: number
   fastForwarding: boolean
+  /**
+   * Warum das Vorspulen anhielt, und wie weit es kam (T-M12-10, R-TIME-03).
+   *
+   * Der Kern fuehrt beides seit M15, App hielt beides im Zustand — gelesen hat es
+   * niemand. R-TIME-03/AK1 verlangt ausdruecklich "stoppen und melden"; ohne diese
+   * Zeile war die Haelfte davon nicht gebaut.
+   */
+  fastForwardNotice: string | null
   mode: MapMode
   onSpeed: (hoursPerSecond: number) => void
   onFastForward: () => void
@@ -126,6 +134,12 @@ export function Header(props: HeaderProps) {
           <button type="button" className="button" onClick={props.onFastForward}>
             {t('header.fastForward')}
           </button>
+        )}
+
+        {!props.fastForwarding && props.fastForwardNotice !== null && (
+          <span className="header__notice" role="status">
+            {props.fastForwardNotice}
+          </span>
         )}
 
         <label className="mode-picker">

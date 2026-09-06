@@ -320,6 +320,9 @@ export function DebugPanel({ info, enabled }: { info: DebugInfo | null; enabled:
       </dl>
 
       <h3>{t('debug.aiGoal')}</h3>
+      {/* Eine Ueberschrift ueber einer leeren Liste ist genau der Befund aus dem
+          Playtest (Frage 48): sie sieht kaputt aus, auch wenn nur nichts anliegt. */}
+      {info.aiGoals.length === 0 && <p className="muted">{t('debug.noGoals')}</p>}
       <ul className="debug-list">
         {info.aiGoals.map((goal) => (
           <li key={goal.player}>
@@ -337,6 +340,7 @@ export function DebugPanel({ info, enabled }: { info: DebugInfo | null; enabled:
       </ul>
 
       <h3>{t('debug.commandLog')}</h3>
+      {info.commands.length === 0 && <p className="muted">{t('debug.noCommands')}</p>}
       <ol className="debug-list mono">
         {info.commands.slice(-12).map((line, index) => (
           <li key={index}>{line}</li>

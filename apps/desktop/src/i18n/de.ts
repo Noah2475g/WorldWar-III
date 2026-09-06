@@ -24,6 +24,14 @@ export const de = {
     pause: 'Pause',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
+    // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
+    // M15 mit und gab ihn zurueck; die Oberflaeche hat ihn weggeworfen, und der Spieler
+    // sah die Uhr stehenbleiben, ohne zu erfahren warum.
+    stoppedTarget: 'Angehalten nach {{time}}: ein Spieltag ist vorbei.',
+    stoppedAlert: 'Angehalten nach {{time}}: {{event}}',
+    stoppedAlertPlain: 'Angehalten nach {{time}}: etwas ist geschehen, das Sie sehen sollten.',
+    stoppedLimit: 'Angehalten nach {{time}}: die Obergrenze ist erreicht, das Ziel trat nicht ein.',
+    stoppedAborted: 'Abgebrochen nach {{time}}.',
     abort: 'Abbrechen',
     balance: 'Bilanz',
     perDay: 'je Tag',
@@ -37,8 +45,12 @@ export const de = {
     resource: 'Rohstoff',
     stock: 'Bestand',
     production: 'Produktion',
-    consumption: 'Verbrauch',
+    // „Verbrauch“ hiess immer nur der Armeeunterhalt, und ohne Armee stand die Spalte
+    // auf null — der Playtest las das als „die Spalte tut nichts“. Der Name sagt es
+    // jetzt, und daneben steht, was in laufenden Auftraegen gebunden ist (T-M12-10).
+    consumption: 'Unterhalt',
     balance: 'Bilanz',
+    committed: 'In Auftrag',
     perDay: 'je Tag',
     shortage: 'Mangel',
   },
@@ -167,6 +179,20 @@ export const de = {
     noPartner: 'Keine zweite eigene Armee an diesem Ort.',
     tooSmall: 'Zu klein zum Teilen.',
     noRanged: 'Keine Einheit mit Reichweite dabei.',
+    // Was ein Befehl kostet, bevor er gegeben wird (T-M12-10, R-UI-05, Playtest 25a).
+    // Die Bauknoepfe machten es seit M10 vor ("333 Material, 250 Geld · 1 Tag"); die
+    // Armeebefehle trugen ueberhaupt keinen Hinweis, obwohl Rueckzug und Marsch die
+    // teuersten Entscheidungen des Spiels sind. Die Zahlen kommen aus den Regeln, nie
+    // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
+    moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
+    stopHint: 'Die Armee haelt an, wo sie gerade steht.',
+    stanceAggressiveHint: 'Greift von sich aus an, was in Reichweite kommt.',
+    stanceDefensiveHint: 'Haelt die Stellung und greift nicht von sich aus an.',
+    stanceRetreatHint: 'Kostet {{loss}} % der Staerke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',
+    splitHint: 'Teilt die Haelfte ab: {{units}}.',
+    splitHintNone: 'Teilt die Haelfte ab — dafuer braucht es mindestens zwei Einheiten.',
+    bombardHint: 'Reichweite {{range}}, danach eine Stunde keine Bewegung.',
     holdFireHint: 'Steht die Armee und ist ein Kriegsgegner in Reichweite, feuert sie von selbst.',
     empty: 'Die Armee hat keine Einheiten.',
     noRoute: 'Dorthin führt kein Weg.',
@@ -361,6 +387,8 @@ export const de = {
     aiGoal: 'Ziel',
     aiUtility: 'Nutzen',
     aiAlternatives: 'Verworfen',
+    noGoals: 'Noch keine Entscheidung der KI in diesem Lauf.',
+    noCommands: 'Noch kein Befehl in diesem Lauf.',
     commandLog: 'Kommandolog',
     hidden: 'Die Debug-Ansicht ist ausgeschaltet.',
   },
@@ -507,7 +535,14 @@ export const de = {
     newGame: 'Neue Partie',
     lost: '{{nation}} hat gewonnen.',
     eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie laeuft ohne Sie weiter.',
-    summary: 'Tag {{day}} · {{points}} Punkte · {{provinces}} Provinzen',
+    // Vier Zeilen statt einer, weil in dem einen Satz zwei Zahlen stehen, die beide bei
+    // eins in die Einzahl gehen (T-M12-10). "1 Provinzen" war der gemeldete Befund,
+    // "1 Punkte" derselbe Fehler daneben.
+    summaryHead: 'Tag {{day}}',
+    summaryPointsOne: '1 Punkt',
+    summaryPointsMany: '{{count}} Punkte',
+    summaryProvincesOne: '1 Provinz',
+    summaryProvincesMany: '{{count}} Provinzen',
     close: 'Karte ansehen',
   },
 

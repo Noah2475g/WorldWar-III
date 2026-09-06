@@ -149,12 +149,15 @@ nein" — war am 2026-09-05 mit **ja** vorbeantwortet: Kartenwahl, Zeitsieg und 
 Debug-Panel. Der Zeitsieg ist mit Begründung zurückgenommen (`DECISIONS.md`) und steht
 nicht mehr im Menü.
 
-> ⚠ **Berichtigt am 2026-09-06.** Bis dahin stand hier: „Kartenwahl und Debug sind
-> seither geschlossen." **Beides ist falsch**, und der Durchgang an diesem Tag hat es
-> gemessen: „Kleine Welt (12)" gewählt startet weiterhin die Weltkarte, und die
-> Debug-Ansicht zeigt „Tick: 8", einen leeren Zustands-Hash und zwei Überschriften ohne
-> Inhalt. Frage 48 ist damit weiterhin mit **ja** zu beantworten. Einzelheiten in
-> `PROBLEME.md`.
+> ⚠ **Berichtigt am 2026-09-06, erledigt am 2026-09-07.** Bis zum 2026-09-06 stand hier:
+> „Kartenwahl und Debug sind seither geschlossen." **Beides war falsch**, und der
+> Durchgang an diesem Tag hat es gemessen: „Kleine Welt (12)" gewählt startete weiterhin
+> die Weltkarte, und die Debug-Ansicht zeigte „Tick: 8", einen leeren Zustands-Hash und
+> zwei Überschriften ohne Inhalt.
+>
+> **Seit dem 2026-09-07 sind beide wirklich geschlossen** — T-M12-08 und T-M12-10 (f),
+> jeweils mit einem Test, der ohne die Reparatur fällt. Frage 48 ist damit erstmals
+> begründet mit **nein** zu beantworten. Einzelheiten in `PROBLEME.md`.
 >
 > Ein Abnahmebogen, der einen Befund für geschlossen erklärt, ohne dass jemand
 > nachgesehen hat, ist schlimmer als einer, der ihn offen führt: er lenkt den Blick weg.

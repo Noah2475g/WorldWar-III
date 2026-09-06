@@ -1,6 +1,7 @@
 import { ONE } from '@worldwar/shared'
 import {
   armyHp,
+  armyRange,
   canApply,
   currentDay,
   exchangeAmount,
@@ -198,18 +199,41 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   if (!army || army.owner !== ctx.playerId) return []
   const playerId = ctx.playerId
 
+  // Die Zahlen kommen aus den Regeln, nicht aus dem Text (T-M12-10): eine
+  // festgeschriebene 2 im Satz waere die zweite Wahrheit ueber dieselbe Sache.
+  const konstanten = ctx.rules.constants
+  const hinweisZeit = (ticks: number): string => duration(ticks, ctx.ticksPerDay)
+
   const march: ActionSpec = {
     id: 'march',
     label: t('army.move'),
+    hint: t('army.moveHint', { time: hinweisZeit(konstanten.deployDelayTicks) }),
     disabledReason: army.units.length === 0 ? t('army.empty') : null,
     targetKind: 'move',
   }
 
-  const stop = checked(ctx, { type: 'STOP_ARMY', playerId, armyId }, 'stop', t('army.stop'))
+  const stop = checked(ctx, { type: 'STOP_ARMY', playerId, armyId }, 'stop', t('army.stop'), t('army.stopHint'))
   if (stop.disabledReason === null && army.path.length === 0) stop.disabledReason = t('army.notMoving')
 
+  const stanceHints: Record<Stance, string> = {
+    aggressive: t('army.stanceAggressiveHint'),
+    defensive: t('army.stanceDefensiveHint'),
+    // Der Rueckzug ist der teuerste Befehl des Spiels und trug bis heute kein Wort dazu.
+    retreat: t('army.stanceRetreatHint', {
+      loss: Math.round(konstanten.retreatLossPermille / 10),
+      cooldown: hinweisZeit(konstanten.retreatCooldownTicks),
+      deploy: hinweisZeit(konstanten.deployDelayTicks * 2),
+    }),
+  }
+
   const stance = (value: Stance, label: string): ActionSpec => {
-    const spec = checked(ctx, { type: 'SET_STANCE', playerId, armyId, stance: value }, `stance-${value}`, label)
+    const spec = checked(
+      ctx,
+      { type: 'SET_STANCE', playerId, armyId, stance: value },
+      `stance-${value}`,
+      label,
+      stanceHints[value],
+    )
     if (spec.disabledReason === null && army.stance === value) spec.disabledReason = t('army.alreadyStance')
     return spec
   }
@@ -220,18 +244,27 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   })
   const merge: ActionSpec =
     partners.length < 2
-      ? { id: 'merge', label: t('army.merge'), disabledReason: t('army.noPartner') }
-      : checked(ctx, { type: 'MERGE_ARMIES', playerId, armyIds: partners }, 'merge', t('army.merge'))
+      ? { id: 'merge', label: t('army.merge'), hint: t('army.mergeHint'), disabledReason: t('army.noPartner') }
+      : checked(ctx, { type: 'MERGE_ARMIES', playerId, armyIds: partners }, 'merge', t('army.merge'), t('army.mergeHint'))
 
   const take = halfOf(army)
   const split: ActionSpec =
     take.length === 0
-      ? { id: 'split', label: t('army.split'), disabledReason: t('army.tooSmall') }
-      : checked(ctx, { type: 'SPLIT_ARMY', playerId, armyId, take }, 'split', t('army.split'))
+      ? { id: 'split', label: t('army.split'), hint: t('army.splitHintNone'), disabledReason: t('army.tooSmall') }
+      : checked(
+          ctx,
+          { type: 'SPLIT_ARMY', playerId, armyId, take },
+          'split',
+          t('army.split'),
+          t('army.splitHint', {
+            units: unitLines({ ...army, units: take } as Army, ctx.rules).join(', '),
+          }),
+        )
 
   const bombard: ActionSpec = {
     id: 'bombard',
     label: t('army.bombard'),
+    hint: t('army.bombardHint', { range: armyRange(army, ctx.rules) }),
     disabledReason: hasRangedUnits(army, ctx.rules) ? null : t('army.noRanged'),
     targetKind: 'bombard',
   }

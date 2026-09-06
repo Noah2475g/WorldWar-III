@@ -220,11 +220,15 @@ describe('R-TIME-04 Datum und Uhrzeit sind jederzeit sichtbar', () => {
 })
 
 describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () => {
-  it('zeigt Bestand, Produktion, Verbrauch und Bilanz je Rohstoff', () => {
+  // Die Spalte hiess bis zum 2026-09-07 "Verbrauch" und fuehrte doch nur den
+  // Armeeunterhalt. Ohne Armee stand sie auf null, und der Playtest las das als
+  // "die Spalte tut nichts" (Frage 15). Sie heisst jetzt, was sie ist, und daneben
+  // steht die Antwort auf die eigentliche Frage: was in Auftraegen gebunden ist.
+  it('zeigt Bestand, Produktion, Unterhalt, Bilanz und Gebundenes je Rohstoff', () => {
     startGame()
     const panel = screen.getByRole('region', { name: 'Wirtschaft' })
 
-    for (const column of ['Bestand', 'Produktion', 'Verbrauch', 'Bilanz']) {
+    for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz', 'In Auftrag']) {
       expect(within(panel).getByText(column), `Spalte ${column} fehlt`).toBeTruthy()
     }
     for (const resource of ['Nahrung', 'Eisen', 'Geld']) {
@@ -879,5 +883,67 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
     expect(meldungen.textContent).toContain('fertig')
+  })
+})
+
+/**
+ * Das Vorspulen sagt, warum es anhaelt (T-M12-10, R-TIME-03/AK1, Playtest-Frage 19).
+ *
+ * Die Anforderung sagt "stoppen UND melden". Gestoppt wurde seit M15 richtig, der Grund
+ * lag im Zustand von App — und wurde an keine Komponente weitergereicht. Der Spieler sah
+ * die Uhr stehenbleiben und erfuhr nie warum.
+ */
+describe('R-TIME-03 Das Vorspulen begruendet seinen Halt', () => {
+  it('nennt nach dem Lauf den Grund und die verstrichene Zeit', async () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const meldung = await screen.findByRole('status')
+    expect(meldung.textContent).toMatch(/Angehalten|Abgebrochen/)
+  })
+
+  it('sagt vorher nichts — eine Meldung ohne Lauf waere eine Meldung ueber nichts', () => {
+    startGame({ storage: new MemoryStorage() })
+
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+/**
+ * Die Debug-Ansicht fuellt sich (T-M12-10, R-AI-05, Playtest-Frage 48).
+ *
+ * Sie zeigte "Tick: 8", einen LEEREN Zustands-Hash und zwei Ueberschriften ohne Inhalt.
+ * Der Plan liess nur zwei Ausgaenge zu: sie fuellt sich oder sie verschwindet. Sie fuellt
+ * sich, denn alle drei Groessen gab es bereits und wurden weggeworfen — der Hash ist
+ * dieselbe Rechnung wie im Spielstand, die Befehlsliste gibt `advanceTicks` seit M14
+ * zurueck, und die Begruendungen der KI entstehen seit M7 in `decide`.
+ *
+ * Damit ist Frage 48 mit nein zu beantworten, wie der Bogen es erwartet — vorher war sie
+ * mit ja zu beantworten, und der Bogen behauptete das Gegenteil.
+ */
+describe('R-AI-05 Die Debug-Ansicht zeigt etwas', () => {
+  const mitDebug = () => {
+    globalThis.localStorage?.setItem('worldwar.settings', JSON.stringify({ debug: true }))
+    startGame({ storage: new MemoryStorage() })
+  }
+
+  it('zeigt einen echten Zustands-Hash statt eines leeren Feldes', () => {
+    mitDebug()
+
+    const panel = screen.getByRole('region', { name: 'Debug' })
+    const hash = panel.querySelector('.mono')
+    expect(hash?.textContent).toMatch(/^[0-9a-f]{8,}$/i)
+  })
+
+  it('fuellt Ziel und Kommandolog, sobald die Partie laeuft', async () => {
+    mitDebug()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    await waitFor(() => {
+      const panel = screen.getByRole('region', { name: 'Debug' })
+      expect(panel.querySelectorAll('.debug-list li').length).toBeGreaterThan(0)
+    })
   })
 })

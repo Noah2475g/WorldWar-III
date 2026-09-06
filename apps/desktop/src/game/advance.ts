@@ -20,3 +20,20 @@ export function advance(
 ): GameState {
   return advanceTicks(state, ticks, ctx, { playerCommands }).state
 }
+
+/**
+ * Dasselbe, aber mit dem, was die Debug-Ansicht braucht (T-M12-10, R-AI-05).
+ *
+ * `advance` gibt nur den Zustand zurueck und wirft `applied` weg — die Kommandoliste
+ * gab es also seit M14, und die Ansicht zeigte darueber eine leere Ueberschrift. Die
+ * Begruendungen der KI kosten Zeit, deshalb werden sie nur geholt, wenn die Ansicht
+ * offen ist; die Befehle sind mit und ohne dieselben.
+ */
+export function advanceWithTrace(
+  state: GameState,
+  ticks: number,
+  ctx: { map: MapData; rules: Rules },
+  playerCommands: readonly Command[] = [],
+): ReturnType<typeof advanceTicks> {
+  return advanceTicks(state, ticks, ctx, { playerCommands, explain: true })
+}

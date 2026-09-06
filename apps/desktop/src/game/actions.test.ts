@@ -128,6 +128,28 @@ describe('R-UNIT-02 Ausheben braucht das Gebaeude und nennt die Anfangsstaerke',
 })
 
 describe('R-UNIT-03/04 Armeebefehle', () => {
+  it('sagt bei JEDEM Armeebefehl, was er kostet', () => {
+    // Playtest 25a: Rueckzug, Marschieren, Angriff und Teilen trugen keinen Hinweis,
+    // waehrend die Bauknoepfe seit M10 "333 Material, 250 Geld · 1 Tag" vormachen.
+    // R-UI-05 gilt fuer jede Aktion, nicht fuer die billigen.
+    const { ctx, capital } = fresh()
+    withArmy(ctx.state, capital)
+
+    for (const action of armyActions(ctx, 'a1')) {
+      expect(action.hint, `Befehl "${action.id}" ohne Hinweis`).toBeTruthy()
+    }
+  })
+
+  it('nennt beim Rueckzug die Zahlen der Regeln, nicht erfundene', () => {
+    // Steht der Wert im Text statt in den Regeln, hat das Spiel zwei Wahrheiten und
+    // eine davon aendert sich beim naechsten Balancing nicht mit.
+    const { ctx, capital } = fresh()
+    withArmy(ctx.state, capital)
+
+    const retreat = armyActions(ctx, 'a1').find((a) => a.id === 'stance-retreat')!
+    expect(retreat.hint).toContain(`${Math.round(ctx.rules.constants.retreatLossPermille / 10)} %`)
+  })
+
   it('bietet Marsch, Haltung und Teilen an und begruendet den Rest', () => {
     const { ctx, capital } = fresh()
     withArmy(ctx.state, capital)

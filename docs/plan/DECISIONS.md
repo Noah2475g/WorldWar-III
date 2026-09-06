@@ -1037,3 +1037,38 @@ gebunden), nur in der Zukunftsform: sichtbar falsch erst in dem Moment, in dem j
 für fertig erklärt. T-M16-01 baut deshalb nicht den Einzelfall, sondern die Regel — ein
 Test, der **jedes** im Anforderungstext genannte AK auf einen Ort in einer Abnahmeliste
 prüft.
+
+---
+
+## 2026-09-07 · T-M12-10 · Die Wirtschaftsübersicht zeigt Gebundenes statt eines Hauptbuchs
+
+**Entscheidung:** Die Spalte „Verbrauch" heißt jetzt **„Unterhalt"** und bleibt, was sie
+immer war: der Armeeunterhalt je Spieltag. Daneben steht eine neue Spalte **„In Auftrag"**
+— was in laufenden Bau- und Aushebungsaufträgen steckt, bezahlt und noch nicht geliefert.
+Es gibt **kein** Ausgabenhauptbuch im Zustand.
+
+**Begründung:** Der Playtest (Frage 15) fand die Spalte „dauerhaft auf 0" und die Frage
+„wohin gehen meine Rohstoffe" unbeantwortet. Beides stimmte, aber aus zwei verschiedenen
+Gründen: die Spalte war richtig benannt für etwas anderes, als der Spieler las (ohne Armee
+ist der Unterhalt null), und die Einmalzahlungen für Bau und Aushebung erschienen nirgends.
+
+Zwei nähere Wege wurden verworfen:
+
+- **Aus dem Ereignisprotokoll summieren.** Das Protokoll ist ein Ringspeicher von 500
+  Einträgen; bei acht Mächten und hoher Geschwindigkeit ist ein Spieltag darin nicht
+  vollständig. Eine Zahl, die manchmal stimmt, ist in einer Wirtschaftsübersicht schlimmer
+  als keine. Außerdem gibt es zur Aushebung gar kein Ereignis zum Zeitpunkt der Bestellung.
+- **Ein Hauptbuch je Spieler im Zustand.** Exakt, aber es kostet `SCHEMA_VERSION` 3, eine
+  Migration und eine Entscheidung über `HASH_OMIT_KEYS` — vier Tage vor der V1-Abnahme, für
+  einen der sechs *kleineren* Befunde. Der Preis steht nicht im Verhältnis.
+
+Was in Aufträgen gebunden ist, ist dagegen eine **reine Funktion über den Zustand**: die
+Warteschlangen stehen dort, die Kosten in den Regeln. Kein Schema, kein Ringspeicher, kein
+Golden Master — und es beantwortet die Frage des Spielers wörtlich: „333 Material stecken
+in der Kaserne, die gerade gebaut wird."
+
+**Auswirkung:** `ResourceFlow` bekommt das Feld `committed`. Es geht **nicht** in `balance`
+ein: der Playtest hat die Bilanz fünfmal gegen den echten Tageszuwachs geprüft, und eine
+Einmalzahlung in einer Tagesrate hätte genau diesen Nachweis zerstört. Ein Test hält das
+fest. Soll später doch ein Hauptbuch kommen, ist dies kein Hindernis — die Spalte bliebe
+richtig und bekäme eine zweite daneben.

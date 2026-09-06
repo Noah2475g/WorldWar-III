@@ -54,6 +54,7 @@ const renderHeader = (v: PublicView | null) =>
       ticksPerDay={24}
       speed={0}
       fastForwarding={false}
+      fastForwardNotice={null}
       mode="political"
       onSpeed={noop}
       onFastForward={noop}

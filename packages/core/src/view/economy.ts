@@ -26,6 +26,20 @@ export interface ResourceFlow {
   consumption: Fixed
   /** production − consumption. Negative means the stock is running down. */
   balance: Fixed
+  /**
+   * Was in laufenden Bau- und Aushebungsauftraegen steckt (T-M12-10, R-ECON-06).
+   *
+   * Der Playtest fragte "wohin gehen meine Rohstoffe", und die Uebersicht konnte es
+   * nicht sagen: sie fuehrte allein den Armeeunterhalt, und der steht ohne Armee auf
+   * null. Bau- und Aushebungskosten sind aber keine Rate, sondern Einmalzahlungen — sie
+   * gehoeren deshalb NICHT in `consumption` und nicht in `balance`, die als Tagesrate
+   * gegen den echten Zuwachs geprueft sind.
+   *
+   * Was hier steht, ist bereits bezahlt und noch nicht geliefert. Das ist die ehrliche
+   * Antwort auf die Frage, und sie ist eine reine Funktion ueber den Zustand: kein
+   * Hauptbuch, keine Schemastufe, keine Abhaengigkeit vom Ringspeicher des Protokolls.
+   */
+  committed: Fixed
 }
 
 export type EconomyOverview = Record<ResourceKey, ResourceFlow>
@@ -43,6 +57,7 @@ export function economyOverview(state: GameState, playerId: PlayerId, rules: Rul
 
   const production: Partial<Record<ResourceKey, number>> = {}
   const consumption: Partial<Record<ResourceKey, number>> = {}
+  const committed: Partial<Record<ResourceKey, number>> = {}
 
   if (player?.alive) {
     const penalty = capitalPenalty(player, state.tick, rules)
@@ -54,6 +69,24 @@ export function economyOverview(state: GameState, playerId: PlayerId, rules: Rul
       for (const [key, scaled] of Object.entries(provinceYieldScaled(province, state.tick, penalty, rules))) {
         const resource = key as ResourceKey
         production[resource] = (production[resource] ?? 0) + scaled
+      }
+
+      // Was in dieser Provinz gerade entsteht — bezahlt, noch nicht da. Nur eigene
+      // Auftraege: ein Auftrag des Voreigentuemers liefert nicht an uns.
+      for (const order of province.buildQueue) {
+        if (order.ownerAtStart !== playerId) continue
+        for (const [key, amount] of Object.entries(rules.buildings[order.building]?.cost ?? {})) {
+          const resource = key as ResourceKey
+          committed[resource] = (committed[resource] ?? 0) + (amount ?? 0)
+        }
+      }
+      for (const order of province.recruitQueue) {
+        if (order.ownerAtStart !== playerId) continue
+        for (const [key, amount] of Object.entries(rules.units[order.unitKey]?.cost ?? {})) {
+          const resource = key as ResourceKey
+          // eslint-disable-next-line no-restricted-syntax -- unit cost x batch size, plain integers (wie commands/recruit.ts:72)
+          committed[resource] = (committed[resource] ?? 0) + (amount ?? 0) * order.count
+        }
       }
     }
 
@@ -82,6 +115,7 @@ export function economyOverview(state: GameState, playerId: PlayerId, rules: Rul
       production: perDay,
       consumption: eaten,
       balance: perDay - eaten,
+      committed: committed[resource] ?? 0,
     }
   }
 

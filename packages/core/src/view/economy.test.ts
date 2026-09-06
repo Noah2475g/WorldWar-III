@@ -118,4 +118,75 @@ describe('R-ECON-06 Bestand, Produktion, Verbrauch und Bilanz je Rohstoff', () =
     expect(economy).toBeDefined()
     expect(economy!.food.production).toBe(economyOverview(state, 'p1', TEST_RULES).food.production)
   })
+/**
+   * Wohin die Rohstoffe gehen (T-M12-10, Playtest-Frage 15).
+   *
+   * Die Uebersicht fuehrte allein den Armeeunterhalt. Wer baute, sah seinen Bestand
+   * fallen und fand die Zahl nirgends wieder — die Frage "wohin gehen meine Rohstoffe"
+   * blieb offen, obwohl das Panel genau dafuer da ist.
+   *
+   * Gemessen wird gegen die Regeln, nicht gegen eine zweite Kopie der Rechnung.
+   */
+  describe('R-ECON-06 Was in Auftraegen gebunden ist', () => {
+    it('zaehlt einen laufenden Bau zu den gebundenen Mitteln', () => {
+      const eigene = state.provinceOrder.find((id) => state.provinces[id]!.owner === 'p1')!
+      const kosten = TEST_RULES.buildings.barracks!.cost
+      state.provinces[eigene]!.buildQueue = [
+        {
+          id: 'o1',
+          building: 'barracks',
+          level: 1,
+          startedTick: 0,
+          completesAtTick: 24,
+          ownerAtStart: 'p1',
+        },
+      ]
+
+      const overview = economyOverview(state, 'p1', TEST_RULES)
+
+      for (const [key, amount] of Object.entries(kosten)) {
+        expect(overview[key as ResourceKey].committed).toBe(amount)
+      }
+    })
+
+    it('laesst Bilanz und Unterhalt unberuehrt — eine Einmalzahlung ist keine Rate', () => {
+      const eigene = state.provinceOrder.find((id) => state.provinces[id]!.owner === 'p1')!
+      const vorher = economyOverview(state, 'p1', TEST_RULES)
+      state.provinces[eigene]!.buildQueue = [
+        {
+          id: 'o1',
+          building: 'barracks',
+          level: 1,
+          startedTick: 0,
+          completesAtTick: 24,
+          ownerAtStart: 'p1',
+        },
+      ]
+
+      const nachher = economyOverview(state, 'p1', TEST_RULES)
+
+      // Playtest 16b hat die Bilanz fuenfmal gegen den echten Tageszuwachs geprueft.
+      // Eine Einmalzahlung darin waere genau dieser Nachweis, kaputtgemacht.
+      expect(nachher.wood.balance).toBe(vorher.wood.balance)
+      expect(nachher.wood.consumption).toBe(vorher.wood.consumption)
+    })
+
+    it('zaehlt den Auftrag eines Voreigentuemers nicht als eigenen', () => {
+      const eigene = state.provinceOrder.find((id) => state.provinces[id]!.owner === 'p1')!
+      state.provinces[eigene]!.buildQueue = [
+        {
+          id: 'o1',
+          building: 'barracks',
+          level: 1,
+          startedTick: 0,
+          completesAtTick: 24,
+          ownerAtStart: 'p2',
+        },
+      ]
+
+      const overview = economyOverview(state, 'p1', TEST_RULES)
+
+      expect(overview.wood.committed).toBe(0)
+    })
+  })
 })

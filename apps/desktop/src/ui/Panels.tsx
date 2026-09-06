@@ -710,6 +710,7 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
             <th>{t('economy.production')}</th>
             <th>{t('economy.consumption')}</th>
             <th>{t('economy.balance')}</th>
+            <th>{t('economy.committed')}</th>
           </tr>
         </thead>
         <tbody>
@@ -723,6 +724,9 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
               <td>{rate(flow.production)}</td>
               <td>{rate(-flow.consumption)}</td>
               <td>{rate(flow.balance)}</td>
+              {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne Vorzeichen
+                  und ausserhalb der Bilanz (T-M12-10). */}
+              <td>{amount(flow.committed)}</td>
             </tr>
           ))}
         </tbody>

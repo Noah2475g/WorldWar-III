@@ -47,6 +47,19 @@ export function t(key: TextKey, values: Placeholders = {}): string {
   })
 }
 
+/**
+ * Einzahl oder Mehrzahl, je nach Anzahl (T-M12-10).
+ *
+ * Der Abschlussdialog schrieb "1 Provinzen" und "1 Punkte". Das gab es im Haus schon
+ * einmal — `duration` verzweigt seit M10 von Hand zwischen "1 Tag" und "1,5 Tage" —,
+ * und eine zweite handgeschriebene Verzweigung waere die zweite Stelle, an der dieselbe
+ * Frage anders beantwortet wird. Deutsch braucht nur die eine Grenze bei eins; mehr
+ * Regeln waeren hier erfunden und nicht gebraucht.
+ */
+export function plural(count: number, one: TextKey, many: TextKey, values: Placeholders = {}): string {
+  return t(count === 1 ? one : many, { ...values, count })
+}
+
 /** Every key in the catalog, flattened — used by the test that keeps it complete. */
 export function allKeys(node: unknown = catalog, prefix = ''): string[] {
   if (typeof node === 'string') return [prefix]

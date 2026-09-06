@@ -10,6 +10,7 @@ import {
   type MapData,
   type Rules,
   type FastForwardTarget,
+  type GameEvent,
   type StopReason,
   type StoragePort,
 } from '@worldwar/core'
@@ -51,10 +52,20 @@ import {
   type EventEntry,
   type Targeting,
 } from './ui/Panels.tsx'
-import { DebugPanel, KeyboardHelp, NewGameDialog, SavesDialog, SettingsDialog, fontScaleStyle } from './ui/Dialogs.tsx'
+import {
+  DebugPanel,
+  KeyboardHelp,
+  NewGameDialog,
+  SavesDialog,
+  SettingsDialog,
+  fontScaleStyle,
+  type DebugInfo,
+} from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { describeEvent } from './game/events.ts'
+import { advanceWithTrace } from './game/advance.ts'
+import { duration } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
@@ -73,7 +84,8 @@ import {
   type TutorialStep,
 } from './game/tutorial.ts'
 import { autosaveDue, listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
-import { writeAutosave, type AutosaveState } from '@worldwar/core'
+import { writeAutosave, HASH_OMIT_KEYS, type AutosaveState } from '@worldwar/core'
+import { hashValue } from '@worldwar/shared'
 
 /**
  * The game, assembled (T-M10-03 … T-M10-12).
@@ -185,7 +197,9 @@ export function App(props: AppProps) {
     running: boolean
     ticksRun: number
     reason: StopReason | 'aborted' | null
-  }>({ running: false, ticksRun: 0, reason: null })
+    /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
+    trigger: GameEvent | null
+  }>({ running: false, ticksRun: 0, reason: null, trigger: null })
   const [dialog, setDialog] = useState<'new' | 'saves' | 'settings' | 'keys' | null>('new')
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
@@ -368,6 +382,9 @@ export function App(props: AppProps) {
   /** Wie viele Zeilen das Protokoll je Rubrik vorhält. */
   const LOG_LINES = 40
 
+  /** Wie viele Befehlszeilen die Debug-Ansicht vorhält. */
+  const TRACE_LINES = 50
+
   /** Obergrenze eines Vorspulvorgangs: 30 Spieltage, damit ein nie eintretendes Ziel endet. */
   const MAX_FAST_FORWARD_TICKS = 30 * ticksPerDay
 
@@ -377,12 +394,62 @@ export function App(props: AppProps) {
     return [army.provinceId, ...army.path]
   }, [view, ui.selectedArmy])
 
+  /**
+   * Die letzten Befehle und die letzten Begruendungen der KI (T-M12-10, R-AI-05).
+   *
+   * Beides entstand schon und wurde weggeworfen: `advanceTicks` gibt `applied`
+   * zurueck, `advance` reichte nur den Zustand weiter, und die Debug-Ansicht bekam
+   * feste leere Listen. Gefuehrt wird nur, solange die Ansicht offen ist — die
+   * Begruendungen kosten Zeit, und die Schleife laeuft mit hundert Spielstunden je
+   * Sekunde.
+   */
+  const [trace, setTrace] = useState<{ commands: string[]; goals: DebugInfo['aiGoals'] }>({
+    commands: [],
+    goals: [],
+  })
+  const debugOn = ui.settings.debug
+
+  /** Was die KI gerade befohlen hat, in die Spur der Debug-Ansicht. */
+  const noteTrace = useCallback(
+    (entry: {
+      tick: number
+      commands: readonly { type: string }[]
+      explanations: Record<string, { action: string; reason: string; score: number; alternative?: { action: string } }[]>
+    }) => {
+      setTrace((old) => ({
+        commands: [...old.commands, ...entry.commands.map((command) => `${entry.tick}  ${command.type}`)].slice(
+          -TRACE_LINES,
+        ),
+        goals: Object.entries(entry.explanations).flatMap(([playerId, list]) =>
+          list.slice(0, 1).map((explanation) => ({
+            player: playerId,
+            goal: `${explanation.action} — ${explanation.reason}`,
+            utility: explanation.score,
+            alternatives: explanation.alternative ? [explanation.alternative.action] : [],
+          })),
+        ),
+      }))
+    },
+    [],
+  )
+
   /** One game hour, AI included. */
   const step = useCallback(
     (ticks: number) => {
-      setState((current) => (current ? advance(current, ticks, { map: activeMap, rules: props.rules }) : current))
+      setState((current) => {
+        if (!current) return current
+        if (!debugOn) return advance(current, ticks, { map: activeMap, rules: props.rules })
+
+        const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules })
+        noteTrace({
+          tick: current.tick,
+          commands: result.applied.map((entry) => entry.command),
+          explanations: result.explanations,
+        })
+        return result.state
+      })
     },
-    [activeMap, props.rules],
+    [activeMap, props.rules, debugOn, noteTrace],
   )
 
   /**
@@ -400,7 +467,7 @@ export function App(props: AppProps) {
       if (!viewerId) return
       abortFastForward.current = false
       setSpeed(0)
-      setFastForward({ running: true, ticksRun: 0, reason: null })
+      setFastForward({ running: true, ticksRun: 0, reason: null, trigger: null })
 
       const request = { target, alertsFor: viewerId, maxTicks: MAX_FAST_FORWARD_TICKS }
       let ticksRun = 0
@@ -409,21 +476,27 @@ export function App(props: AppProps) {
         setState((current) => {
           if (!current) return current
           if (abortFastForward.current) {
-            setFastForward({ running: false, ticksRun, reason: 'aborted' })
+            setFastForward({ running: false, ticksRun, reason: 'aborted', trigger: null })
             return current
           }
 
-          const result = fastForwardChunk(current, request, { map: activeMap, rules: props.rules }, MAX_FAST_FORWARD_TICKS - ticksRun)
+          const result = fastForwardChunk(
+            current,
+            request,
+            { map: activeMap, rules: props.rules },
+            MAX_FAST_FORWARD_TICKS - ticksRun,
+            debugOn ? noteTrace : undefined,
+          )
           ticksRun += result.ticksRun
 
           // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
           // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
           const weiter = result.stoppedBy === 'limit' && ticksRun < MAX_FAST_FORWARD_TICKS
           if (weiter) {
-            setFastForward({ running: true, ticksRun, reason: null })
+            setFastForward({ running: true, ticksRun, reason: null, trigger: null })
             setTimeout(chunk, 0)
           } else {
-            setFastForward({ running: false, ticksRun, reason: result.stoppedBy })
+            setFastForward({ running: false, ticksRun, reason: result.stoppedBy, trigger: result.trigger })
           }
           return result.state
         })
@@ -431,7 +504,7 @@ export function App(props: AppProps) {
 
       chunk()
     },
-    [activeMap, props.rules],
+    [activeMap, props.rules, debugOn, noteTrace],
   )
 
   // The clock. Deliberately capped at two ticks per frame: when the machine cannot
@@ -676,6 +749,44 @@ export function App(props: AppProps) {
       .map((event, index) => describeEvent(event, index, activeMap, naming))
   }, [state, activeMap, nameOf, ticksPerDay])
 
+  /**
+   * Der Zustands-Hash der Debug-Ansicht (T-M12-10).
+   *
+   * Er stand fest auf dem leeren Text und wurde als leeres Feld gezeichnet. Gerechnet
+   * wird dieselbe Groesse wie im Spielstand — und nur, wenn die Ansicht offen ist: den
+   * ganzen Zustand bei jedem Bild zu hashen waere bei hundert Spielstunden je Sekunde
+   * ein echter Preis, und R-TIME-02/AK2 wird gegen genau diese Schleife gemessen.
+   */
+  const debugHash = useMemo(
+    () => (debugOn && state ? hashValue(state, { omitKeys: HASH_OMIT_KEYS }) : ''),
+    [debugOn, state],
+  )
+
+  /**
+   * Warum das Vorspulen anhielt, in einem Satz (T-M12-10, R-TIME-03/AK1).
+   *
+   * "Stoppen und melden" verlangt die Anforderung. Gestoppt wurde seit M15 richtig, und
+   * der Grund lag im Zustand — gemeldet wurde er nie. Beim Alarm wird das ausloesende
+   * Ereignis selbst benannt: dass etwas passiert ist, sieht der Spieler ohnehin an der
+   * stehenden Uhr; er will wissen, WAS.
+   */
+  const fastForwardNotice: string | null = useMemo(() => {
+    const { running, reason, ticksRun, trigger } = fastForwardState
+    if (running || reason === null) return null
+    const time = duration(ticksRun, ticksPerDay)
+    if (reason === 'aborted') return t('header.stoppedAborted', { time })
+    if (reason === 'limit') return t('header.stoppedLimit', { time })
+    if (reason === 'target') return t('header.stoppedTarget', { time })
+    if (!trigger || !state) return t('header.stoppedAlertPlain', { time })
+    const beschrieben = describeEvent(trigger, 0, activeMap, {
+      player: nameOf,
+      army: (id: string) => state.armies[id]?.name ?? id,
+      ticksPerDay,
+      viewer: 'p1',
+    })
+    return t('header.stoppedAlert', { time, event: beschrieben.text })
+  }, [fastForwardState, ticksPerDay, state, activeMap, nameOf])
+
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
     if (!ctx || !selected || selected.owner !== 'p1') return []
@@ -866,6 +977,7 @@ export function App(props: AppProps) {
         ticksPerDay={ticksPerDay}
         speed={speed}
         fastForwarding={fastForwardState.running}
+        fastForwardNotice={fastForwardNotice}
         mode={ui.mode}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
@@ -972,7 +1084,7 @@ export function App(props: AppProps) {
           <EconomyPanel view={view} />
           <DebugPanel
             enabled={ui.settings.debug}
-            info={{ tick: state.tick, hash: '', aiGoals: [], commands: [] }}
+            info={{ tick: state.tick, hash: debugHash, aiGoals: trace.goals, commands: trace.commands }}
           />
         </aside>
       </main>

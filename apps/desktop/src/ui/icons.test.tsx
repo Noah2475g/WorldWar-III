@@ -103,4 +103,19 @@ describe('R-UI-10 Der Satz deckt die ausgelieferten Regeln', () => {
       expect(buildings.has(key), `"${key}" steht im Symbolsatz, aber nicht in den Regeln`).toBe(true)
     }
   })
+it('gibt Gebaeuden und Einheiten nicht dasselbe Zeichen', () => {
+    // Playtest-Befund 30: Flugplatz und Jagdflugzeug zeigten beide auf "aircraft". In
+    // einer Bauliste sagt ein Gebaeude, das aussieht wie eine Einheit, genau das
+    // Falsche. Vorher hielt nichts die beiden Tabellen auseinander — die Kollision war
+    // moeglich, ohne dass ein Test zuckte.
+    const units = new Map<string, string>()
+    for (const [key, icon] of Object.entries(UNIT_ICONS)) units.set(icon, key)
+
+    for (const [key, icon] of Object.entries(BUILDING_ICONS)) {
+      expect(
+        units.has(icon),
+        `Gebaeude "${key}" teilt sich das Zeichen "${icon}" mit der Einheit "${units.get(icon)}"`,
+      ).toBe(false)
+    }
+  })
 })

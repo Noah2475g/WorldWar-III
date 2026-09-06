@@ -118,3 +118,62 @@ describe('R-GAME-02 Das Ende der Partie', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 })
+
+/**
+ * Der Abschlussdialog widerspricht sich nicht mehr selbst (T-M12-10, Playtest 25d).
+ *
+ * Er schrieb "Tag 171 · 0 Punkte · 1 Provinzen" ueber dem Satz "Ihre letzte Provinz ist
+ * gefallen". Zwei Fehler in einer Zeile: die Mehrzahl bei eins, und eine Zahl, die die
+ * Erinnerung mitzaehlte — `view.provinces` fuehrt auch erinnerte Provinzen, und die
+ * Erinnerung eines Ausgeschiedenen friert im Tick vor dem Fall ein.
+ */
+describe('R-UI-13 Der Abschlussdialog zaehlt richtig', () => {
+  const beendet = (provinces: { owner: string | null; stale: boolean }[], score: number) =>
+    ({
+      tick: 171 * 24,
+      playerId: 'p1',
+      self: { alive: false, score, name: 'Noah', nation: 'Nordland' },
+      victory: { condition: 'points', winner: null },
+      provinces: provinces.map((province, index) => ({
+        id: `x${index}`,
+        name: `Provinz ${index}`,
+        ...province,
+      })),
+      others: [],
+    }) as unknown as PublicView
+
+  const summary = () =>
+    screen.getByRole('dialog', { name: 'Die Partie ist entschieden' }).textContent ?? ''
+
+  it('zaehlt die erinnerte Provinz eines Ausgeschiedenen nicht mit', () => {
+    render(
+      <VictoryDialog
+        view={beendet([{ owner: 'p1', stale: true }], 0)}
+        nameOf={(id) => id}
+        ticksPerDay={24}
+        onClose={() => undefined}
+      />,
+    )
+
+    // Vorher stand hier "1 Provinzen", waehrend der Satz darueber vom Fall der letzten
+    // Provinz sprach.
+    expect(summary()).toContain('0 Provinzen')
+  })
+
+  it('schreibt die Einzahl, wo eins gemeint ist', () => {
+    render(
+      <VictoryDialog
+        view={beendet([{ owner: 'p1', stale: false }], 1)}
+        nameOf={(id) => id}
+        ticksPerDay={24}
+        onClose={() => undefined}
+      />,
+    )
+
+    // Kein \b: der Text laeuft im textContent direkt in den Knopf daneben.
+    expect(summary()).toContain('1 Provinz')
+    expect(summary()).not.toContain('1 Provinzen')
+    expect(summary()).toContain('1 Punkt')
+    expect(summary()).not.toContain('1 Punkte')
+  })
+})

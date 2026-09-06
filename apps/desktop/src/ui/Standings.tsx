@@ -1,5 +1,5 @@
 import type { PublicView } from '@worldwar/core'
-import { t } from '../i18n/text.ts'
+import { plural, t } from '../i18n/text.ts'
 import { amount } from './format.ts'
 import { Meter } from './Meter.tsx'
 
@@ -129,7 +129,13 @@ export function VictoryDialog({
   // Befund N4). Der Kern setzt einen Sieger erst, wenn genau eine Macht uebrig ist —
   // scheidet der Mensch als einer von acht aus, erfuhr er es bis heute gar nicht.
   const eliminated = !view.self.alive
-  const provinces = view.provinces.filter((province) => province.owner === view.playerId).length
+  // Nur was WIRKLICH noch da ist (T-M12-10): `view.provinces` fuehrt auch erinnerte
+  // Provinzen, und die Erinnerung eines Ausgeschiedenen friert im Tick vor dem Fall ein.
+  // Der Dialog schrieb deshalb "1 Provinzen" ueber dem Satz "Ihre letzte Provinz ist
+  // gefallen" — er widersprach sich selbst, und die Zahl war die falsche der beiden.
+  const provinces = view.provinces.filter(
+    (province) => province.owner === view.playerId && !province.stale,
+  ).length
 
   return (
     <div className="dialog-backdrop">
@@ -146,11 +152,15 @@ export function VictoryDialog({
                 : t('standings.lost', { nation: winner ? nameOf(winner) : '—' })}
           </p>
           <p className="facts__inline">
-            {t('standings.summary', {
-              day: Math.floor(view.tick / ticksPerDay) + 1,
-              points: Math.round(view.self.score),
-              provinces,
-            })}
+            {[
+              t('standings.summaryHead', { day: Math.floor(view.tick / ticksPerDay) + 1 }),
+              plural(
+                Math.round(view.self.score),
+                'standings.summaryPointsOne',
+                'standings.summaryPointsMany',
+              ),
+              plural(provinces, 'standings.summaryProvincesOne', 'standings.summaryProvincesMany'),
+            ].join(' · ')}
           </p>
           <div className="actions">
             {onNewGame && (

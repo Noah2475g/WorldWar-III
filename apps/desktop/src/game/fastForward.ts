@@ -61,6 +61,14 @@ export function fastForwardChunk(
   request: FastForwardRequest,
   ctx: { map: MapData; rules: Rules },
   remainingTicks: number,
+  /**
+   * Mitschreiben, was die KI befiehlt und warum (T-M12-10, R-AI-05).
+   *
+   * Ohne diesen Griff bliebe die Debug-Ansicht beim Vorspulen leer, und das Vorspulen
+   * ist der Weg, auf dem die meisten Spielstunden vergehen. Die Begruendungen werden nur
+   * geholt, wenn jemand zusieht: sie kosten Zeit und aendern die Befehle nicht.
+   */
+  trace?: (entry: { tick: number; commands: readonly Command[]; explanations: ReturnType<typeof runAi>['explanations'] }) => void,
 ): FastForwardResult {
   // Das Gedächtnis, das zu den Befehlen dieses Ticks gehört. Es wird *einmal* gerechnet
   // und nach dem Tick abgelegt — ein zweiter `runAi`-Aufruf im Nachlauf wäre nicht nur
@@ -76,8 +84,9 @@ export function fastForwardChunk(
     // gar nicht aufgerufen werden, und *das* ist der Grund, warum die Oberfläche sich eine
     // eigene Schleife gebaut hat.
     commandSource: (current: GameState): readonly Command[] => {
-      const { commands, memories } = runAi(current, ctx)
+      const { commands, memories, explanations } = runAi(current, ctx, trace ? { explain: true } : {})
       pending = memories
+      trace?.({ tick: current.tick, commands, explanations })
       return commands
     },
     afterTick: (next: GameState): void => {

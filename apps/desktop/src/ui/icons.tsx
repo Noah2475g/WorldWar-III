@@ -26,6 +26,7 @@ export type IconName =
   | 'factory'
   | 'harbour'
   | 'shipyard'
+  | 'airfield'
   | 'fortress'
   | 'railway'
   | 'battle'
@@ -72,6 +73,11 @@ const PATHS: Record<IconName, string> = {
   harbour: 'M12 4v14 M8 8h8 M5 14a7 7 0 0 0 14 0 M12 2.5a1.4 1.4 0 1 0 0 .01',
   // A crane over a hull — the shipyard, which the set had no answer for at all.
   shipyard: 'M4 20h16 M6 20V5h9 M15 5l3 6 M8 12h6',
+  // Landebahn mit Halle — der Flugplatz (T-M12-10). Er teilte sich bis zum 2026-09-07
+  // die Tragflaeche mit dem Jagdflugzeug, und ein Gebaeude, das aussieht wie eine
+  // Einheit, ist in einer Bauliste genau die falsche Auskunft. Ein Ort wird von der
+  // Seite gezeigt wie Hafen und Werft, kein Fluggeraet.
+  airfield: 'M3 20h18 M4 17h16 M6 17v-4h6l2 4 M7 13V9h4v4',
   fortress: 'M4 20V8h3V5h3v3h4V5h3v3h3v12z M10 20v-5h4v5',
   railway: 'M4 8h16 M4 16h16 M8 4v16 M16 4v16',
   // Crossed sabres — a battle.
@@ -140,7 +146,7 @@ export const BUILDING_ICONS: Record<string, IconName> = {
   factory: 'factory',
   harbour: 'harbour',
   shipyard: 'shipyard',
-  airfield: 'aircraft',
+  airfield: 'airfield',
   railway: 'railway',
 }
 

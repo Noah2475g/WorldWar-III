@@ -1501,7 +1501,7 @@ tasks:
   - id: T-M12-10
     milestone: M12
     title: Die kleineren Befunde des Playtests
-    status: todo
+    status: done
     deps: [T-M12-04, T-M12-05]
     requirements: [R-UI-05, R-UI-09, R-UI-10, R-ECON-06, R-TIME-03]
     files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Dialogs.tsx]
