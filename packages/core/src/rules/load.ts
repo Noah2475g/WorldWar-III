@@ -160,6 +160,15 @@ export function parseRules(raw: RawRules, id: string): Rules {
       problems.push(`${where}: verweist auf unbekanntes Gebäude "${String(requires)}"`)
     }
 
+    // R-TECH-01/AK3: Ein fehlender Tag ist ein Fehler, keine Vorgabe. "Fehlt der Tag,
+    // gilt Tag 1" waere genau der Zustand, den die Freischaltungsachse beendet — nur
+    // unauffindbar. Dieselbe Lehre wie bei der fehlenden Schrift: eine Pruefung ueber
+    // einer Abwesenheit ist keine Pruefung.
+    const availableFromDay = Number(entry['availableFromDay'])
+    if (!Number.isSafeInteger(availableFromDay) || availableFromDay < 1) {
+      problems.push(`${where}: availableFromDay fehlt oder ist ungueltig`)
+    }
+
     const classes = Array.isArray(entry['allowsUnitClasses']) ? (entry['allowsUnitClasses'] as string[]) : []
     for (const unitClass of classes) {
       if (!UNIT_CLASSES.includes(unitClass as UnitClass)) {
@@ -172,6 +181,7 @@ export function parseRules(raw: RawRules, id: string): Rules {
       maxLevel,
       cost: checkAmounts(entry['cost'], `${where} (Kosten)`, problems),
       buildTicks,
+      availableFromDay,
       ...(entry['requiresCoastal'] === true ? { requiresCoastal: true } : {}),
       ...(requires ? { requiresBuilding: requires } : {}),
       allowsUnitClasses: classes as UnitClass[],
@@ -206,6 +216,22 @@ export function parseRules(raw: RawRules, id: string): Rules {
       if (typeof defence[target] !== 'number') problems.push(`${where}: Verteidigungswert gegen "${target}" fehlt`)
     }
 
+    const unitAvailableFromDay = Number(entry['availableFromDay'])
+    if (!Number.isSafeInteger(unitAvailableFromDay) || unitAvailableFromDay < 1) {
+      problems.push(`${where}: availableFromDay fehlt oder ist ungueltig`)
+    } else if (
+      BUILDING_KEYS.includes(requires) &&
+      buildings[requires] &&
+      unitAvailableFromDay < buildings[requires].availableFromDay
+    ) {
+      // Eine Einheit vor ihrem Gebaeude ist nicht frueh verfuegbar, sondern nie: der
+      // Auftrag scheiterte dann an MISSING_BUILDING statt am Tag, und der Spieler laese
+      // die falsche Begruendung.
+      problems.push(
+        `${where}: ab Tag ${unitAvailableFromDay} verfuegbar, das noetige Gebaeude "${requires}" erst ab Tag ${buildings[requires].availableFromDay}`,
+      )
+    }
+
     const hpPerUnit = Number(entry['hpPerUnit'])
     if (!Number.isSafeInteger(hpPerUnit) || hpPerUnit <= 0) problems.push(`${where}: hpPerUnit ungültig`)
     const speedKmh = Number(entry['speedKmh'])
@@ -217,6 +243,7 @@ export function parseRules(raw: RawRules, id: string): Rules {
       cost: checkAmounts(entry['cost'], `${where} (Kosten)`, problems),
       buildTicks: Number(entry['buildTicks'] ?? 1),
       requiresBuilding: requires,
+      availableFromDay: unitAvailableFromDay,
       ...(entry['requiresBuildingLevel'] !== undefined
         ? { requiresBuildingLevel: Number(entry['requiresBuildingLevel']) }
         : {}),

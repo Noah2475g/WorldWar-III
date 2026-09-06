@@ -15,7 +15,8 @@
       "moraleBonus": 0,
       "effects": {
         "recruitSpeedPermille": 100
-      }
+      },
+      "availableFromDay": 1
     },
     "fortress": {
       "name": "Festung",
@@ -30,7 +31,8 @@
       "moraleBonus": 5000,
       "effects": {
         "defenceBonusPermille": 200
-      }
+      },
+      "availableFromDay": 3
     },
     "factory": {
       "name": "Fabrik",
@@ -48,7 +50,8 @@
       "moraleBonus": 4000,
       "effects": {
         "productionBonusPermille": 250
-      }
+      },
+      "availableFromDay": 8
     },
     "harbour": {
       "name": "Hafen",
@@ -63,7 +66,8 @@
       "moraleBonus": 10000,
       "effects": {
         "embarkSpeedPermille": 500
-      }
+      },
+      "availableFromDay": 2
     },
     "shipyard": {
       "name": "Werft",
@@ -80,7 +84,8 @@
         "navy"
       ],
       "moraleBonus": 0,
-      "effects": {}
+      "effects": {},
+      "availableFromDay": 9
     },
     "airfield": {
       "name": "Flugplatz",
@@ -97,7 +102,8 @@
       "moraleBonus": 0,
       "effects": {
         "airRangeProvinces": 2
-      }
+      },
+      "availableFromDay": 10
     },
     "railway": {
       "name": "Eisenbahn",
@@ -112,7 +118,8 @@
       "moraleBonus": 15000,
       "effects": {
         "movementBonusPermille": 250
-      }
+      },
+      "availableFromDay": 5
     }
   }
 }

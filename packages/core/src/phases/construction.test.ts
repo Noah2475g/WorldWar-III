@@ -1,6 +1,7 @@
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Command } from '../commands/types'
+import { tickOfDay } from '../rules/availability'
 import { buildDuration, buildSpeedFactor } from '../rules/build'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { GameState } from '../state/types'
@@ -26,7 +27,15 @@ const build = (provinceId: string, building: string, playerId = 'p1'): Command =
 
 beforeEach(() => {
   state = createInitialState(CONFIG, ctx)
+  // T-M15-02: Seit der Freischaltungsachse (R-TECH-01) traegt jedes Gebaeude einen
+  // ersten Spieltag. Diese Datei prueft die *anderen* Voraussetzungen — Kueste, Hafen,
+  // Bauplaetze, Geld —, also wird die Uhr auf einen Tag gestellt, an dem alles zu haben
+  // ist. Sonst schluege hier die neue Ablehnung zu und die alte bliebe ungeprueft.
+  state.tick = tickOfDay(LATEST_BUILDING_DAY, TEST_RULES)
 })
+
+/** Der spaeteste erste Spieltag im Regelwerk — ab hier ist jedes Gebaeude zu haben. */
+const LATEST_BUILDING_DAY = Math.max(...Object.values(TEST_RULES.buildings).map((rule) => rule.availableFromDay))
 
 /** Runs `ticks` hours, feeding `commands` into the first one. */
 function run(from: GameState, ticks: number, commands: Command[] = []) {

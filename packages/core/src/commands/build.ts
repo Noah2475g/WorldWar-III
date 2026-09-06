@@ -1,4 +1,5 @@
 import { emit } from '../events/emit'
+import { currentDay } from '../rules/availability'
 import { buildSlots, canAfford, completionTick, payCost, refundCost } from '../rules/build'
 import type { GameState } from '../state/types'
 import { registerCommand } from './registry'
@@ -27,6 +28,14 @@ registerCommand<BuildCommand>('BUILD', {
 
     if (rule.requiresCoastal && !province.coastal) {
       return fail('INVALID_TARGET', { building: command.building, reason: 'braucht Küste' })
+    }
+    // R-TECH-01: vor ihrem ersten Spieltag gibt es die Sache nicht — und die Ablehnung
+    // nennt den Tag, statt den Spieler raten zu lassen. Die Pruefung steht vor dem Geld:
+    // "du kannst es dir nicht leisten" waere fuer etwas, das es noch gar nicht gibt, die
+    // falsche Auskunft.
+    const day = currentDay(state, ctx.rules)
+    if (day < rule.availableFromDay) {
+      return fail('NOT_YET_AVAILABLE', { building: command.building, availableFromDay: rule.availableFromDay })
     }
     if (rule.requiresBuilding && (province.buildings[rule.requiresBuilding] ?? 0) < 1) {
       return fail('MISSING_BUILDING', { required: rule.requiresBuilding })

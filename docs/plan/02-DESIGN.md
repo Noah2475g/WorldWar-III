@@ -1022,6 +1022,20 @@ füllt das Protokoll deshalb **nicht** nach.
 
 ### D19.2 Die Zeitachse (R-TECH-01/02)
 
+> **Teil 1 gebaut am 2026-09-06 (T-M15-02).** `availableFromDay` ist ein **Pflichtfeld** an
+> jedem Gebäude und jeder Einheit; der Lader lehnt ein Regelwerk ab, das es auslässt, und
+> ebenso eine Einheit, die es früher gäbe als das Gebäude, das sie braucht (dann schlüge
+> der Auftrag an `MISSING_BUILDING` fehl und der Spieler läse die falsche Begründung).
+> Die Ablehnung heißt `NOT_YET_AVAILABLE` und **nennt den Tag**. Fünf Tage sind belegt,
+> zwölf abgeleitet, alle siebzehn mit Begründung in `BALANCING.md` und dort maschinell
+> geprüft. Die Zählung ist **eins-basiert** (`rules/availability.ts`): der erste Tick liegt
+> auf Tag 1 — dieselbe Zählung, die die Oberfläche schon benutzt. Null-basiert wäre die
+> Kaserne am ersten Spieltag nicht baubar gewesen.
+>
+> **Was die Achse bewusst nicht ist:** die späteste Freischaltung liegt bei Tag 16, eine
+> Standardpartie dauert 822 Spieltage. Sie prägt die **Eröffnung**, nicht den Verlauf.
+> Ob das zu kurz greift, beantwortet der Playtest und nicht dieser Entwurf.
+
 Drei Teile, und keiner davon ist eine neue Mechanik: ein Feld, eine Ablehnung, ein Filter.
 
 **(a) Freischaltung als Feld in den Regeldateien.** `availableFromDay: number` in `BuildingRule`

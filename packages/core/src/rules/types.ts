@@ -34,6 +34,15 @@ export interface BuildingRule {
   maxLevel: number
   cost: ResourceAmounts
   buildTicks: number
+  /**
+   * First game day on which this may be built (R-TECH-01).
+   *
+   * Mandatory, and the loader refuses a rule set that leaves it out: a missing day
+   * would silently mean day 1, which is exactly the state this axis exists to end —
+   * only harder to find. Five days are documented (barracks 1, harbour 2, railway 5,
+   * factory 8, airfield 10); the rest are derived, with their status in BALANCING.md.
+   */
+  availableFromDay: number
   requiresCoastal?: boolean
   requiresBuilding?: BuildingKey
   /** Unit classes this building unlocks for recruitment. */
@@ -49,6 +58,15 @@ export interface UnitRule {
   cost: ResourceAmounts
   buildTicks: number
   requiresBuilding: BuildingKey
+  /**
+   * First game day on which this may be recruited (R-TECH-01).
+   *
+   * Never earlier than the building it needs — the loader enforces that. A unit
+   * available before its building is not available early, it is unavailable: the order
+   * would fail on MISSING_BUILDING instead of on the day, and the player would read the
+   * wrong reason.
+   */
+  availableFromDay: number
   requiresBuildingLevel?: number
   /** Hit points of a single unit; a stack stores the pool, the count is derived. */
   hpPerUnit: Fixed

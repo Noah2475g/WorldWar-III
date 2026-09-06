@@ -1,6 +1,7 @@
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Command } from '../commands/types'
+import { tickOfDay } from '../rules/availability'
 import { recruitDuration, recruitSpeedFactor, recruitStartCondition } from '../rules/recruit'
 import { unitCount } from '../state/army'
 import { createInitialState, type GameConfig } from '../state/create'
@@ -35,9 +36,17 @@ function runUntilQuiet(from: GameState, maxTicks = 60): GameState {
   return current
 }
 
+/** Der spaeteste erste Spieltag im Regelwerk — ab hier ist jede Einheit zu haben. */
+const LATEST_UNIT_DAY = Math.max(...Object.values(TEST_RULES.units).map((rule) => rule.availableFromDay))
+
 beforeEach(() => {
   state = createInitialState(CONFIG, ctx)
   state.provinces['n1']!.buildings.barracks = 1
+  // T-M15-02: Diese Datei prueft die Gebaeudevoraussetzung und die Dauern, nicht die
+  // Freischaltung nach Spieltag (R-TECH-01) — die Uhr steht deshalb hinter dem letzten
+  // Freischaltungstag. Ohne das schluege die neue Ablehnung zu, und die alte Zusicherung
+  // waere gruen, ohne noch etwas zu belegen.
+  state.tick = tickOfDay(LATEST_UNIT_DAY, TEST_RULES)
 })
 
 describe('R-UNIT-02 Rekrutierung beauftragen', () => {

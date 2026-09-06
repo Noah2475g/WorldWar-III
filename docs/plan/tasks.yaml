@@ -1280,11 +1280,11 @@ tasks:
   - id: T-M15-02
     milestone: M15
     title: R-TECH-01 - Freischaltung nach Spieltag
-    status: todo
+    status: done
     deps: [T-M14-15]
     requirements: [R-TECH-01]
-    files: [data/rules/default/buildings.json, data/rules/default/units.json, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, packages/core/src/commands/build.ts, packages/core/src/commands/recruit.ts, packages/core/src/commands/types.ts, apps/desktop/src/i18n/de.ts, docs/plan/BALANCING.md, docs/plan/02-DESIGN.md, apps/headless/test/golden/walkthrough.json]
-    tests: [packages/core/src/rules/load.test.ts, packages/core/src/commands/validate.test.ts, test/balancing.test.ts, test/docs.test.ts]
+    files: [data/rules/default/buildings.json, data/rules/default/units.json, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, packages/core/src/rules/availability.ts, packages/core/src/commands/build.ts, packages/core/src/commands/recruit.ts, packages/core/src/commands/types.ts, apps/desktop/src/i18n/de.ts, docs/plan/BALANCING.md, docs/plan/02-DESIGN.md]
+    tests: [packages/core/src/rules/availability.test.ts, packages/core/src/phases/construction.test.ts, packages/core/src/phases/recruitment.test.ts, test/balancing.test.ts, test/docs.test.ts]
     dod: "availableFromDay an jedem Gebaeude und jeder Einheit; Bau/Aushebung davor mit NOT_YET_AVAILABLE und genanntem Tag abgelehnt, fuer Mensch und KI; die fuenf belegten Tage stehen woertlich (barracks 1, harbour 2, railway 5, factory 8, airfield 10); der Lader lehnt einen fehlenden Tag ab und eine Einheit, die frueher verfuegbar waere als ihr Gebaeude; alle nicht belegten Tage laufen ueber die pruefbare Ableitungsregel unit.availableFromDay >= buildings[unit.requiresBuilding].availableFromDay und stehen als 'abgeleitet' oder 'geschaetzt' mit Status in BALANCING.md, von test/balancing.test.ts geprueft; de.ts hat NOT_YET_AVAILABLE in errors und rejections; ein geaenderter Golden-Master wird mit UPDATE_GOLDEN=1 erneuert und benannt (determinism.test.ts laeuft ohne Befehle und bleibt unberuehrt, walkthrough.json enthaelt eine KI-Bauabfolge und kann sich aendern); 02-DESIGN.md traegt den D-Abschnitt zur Freischaltungsachse und wird von test/docs.test.ts gegen R-TECH-01 geprueft"
 
   - id: T-M15-03

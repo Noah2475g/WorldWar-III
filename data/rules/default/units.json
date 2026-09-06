@@ -31,7 +31,8 @@
         "artillery": 1100,
         "air": 300,
         "navy": 200
-      }
+      },
+      "availableFromDay": 1
     },
     "motorized": {
       "name": "Motorisierte Infanterie",
@@ -65,7 +66,8 @@
         "artillery": 1200,
         "air": 400,
         "navy": 200
-      }
+      },
+      "availableFromDay": 4
     },
     "tank": {
       "name": "Kampfpanzer",
@@ -97,7 +99,8 @@
         "artillery": 1800,
         "air": 400,
         "navy": 300
-      }
+      },
+      "availableFromDay": 8
     },
     "heavy_tank": {
       "name": "Schwerer Kampfpanzer",
@@ -131,7 +134,8 @@
         "artillery": 2600,
         "air": 500,
         "navy": 400
-      }
+      },
+      "availableFromDay": 14
     },
     "artillery": {
       "name": "Artillerie",
@@ -165,7 +169,8 @@
         "artillery": 800,
         "air": 200,
         "navy": 300
-      }
+      },
+      "availableFromDay": 9
     },
     "rocket_artillery": {
       "name": "Raketenartillerie",
@@ -201,7 +206,8 @@
         "artillery": 700,
         "air": 200,
         "navy": 300
-      }
+      },
+      "availableFromDay": 16
     },
     "fighter": {
       "name": "Jagdflugzeug",
@@ -236,7 +242,8 @@
         "artillery": 500,
         "air": 2800,
         "navy": 600
-      }
+      },
+      "availableFromDay": 10
     },
     "bomber": {
       "name": "Bomber",
@@ -272,7 +279,8 @@
         "artillery": 500,
         "air": 900,
         "navy": 500
-      }
+      },
+      "availableFromDay": 13
     },
     "destroyer": {
       "name": "Zerstoerer",
@@ -305,7 +313,8 @@
         "artillery": 900,
         "air": 1600,
         "navy": 2800
-      }
+      },
+      "availableFromDay": 11
     },
     "transport": {
       "name": "Transportschiff",
@@ -338,7 +347,8 @@
         "artillery": 400,
         "air": 500,
         "navy": 600
-      }
+      },
+      "availableFromDay": 3
     }
   }
 }

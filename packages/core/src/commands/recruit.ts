@@ -1,3 +1,4 @@
+import { currentDay } from '../rules/availability'
 import { canAfford, payCost } from '../rules/build'
 import { recruitDuration } from '../rules/recruit'
 import type { GameState, ResourceKey } from '../state/types'
@@ -25,6 +26,14 @@ registerCommand<RecruitCommand>('RECRUIT', {
 
     if (!Number.isSafeInteger(command.count) || command.count < 1 || command.count > MAX_RECRUIT_BATCH) {
       return fail('INVALID_TARGET', { count: command.count })
+    }
+
+    // R-TECH-01: derselbe Riegel wie beim Bauen, und ebenfalls vor der Gebaeudepruefung —
+    // eine Einheit ist nie frueher zu haben als ihr Gebaeude (der Lader sichert das zu),
+    // also ist der Tag hier die genauere Auskunft.
+    const day = currentDay(state, ctx.rules)
+    if (day < unit.availableFromDay) {
+      return fail('NOT_YET_AVAILABLE', { unitKey: command.unitKey, availableFromDay: unit.availableFromDay })
     }
 
     const level = province.buildings[unit.requiresBuilding] ?? 0

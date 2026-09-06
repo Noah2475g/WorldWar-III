@@ -2292,10 +2292,16 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Abhängigkeiten:** T-M14-15
 - **Dateien:** `data/rules/default/buildings.json`, `data/rules/default/units.json`,
   `packages/core/src/rules/types.ts`, `packages/core/src/rules/load.ts`,
+  `packages/core/src/rules/availability.ts` *(neu)*,
   `packages/core/src/commands/build.ts`, `packages/core/src/commands/recruit.ts`,
   `packages/core/src/commands/types.ts`, `apps/desktop/src/i18n/de.ts`,
-  `docs/plan/BALANCING.md`, `docs/plan/02-DESIGN.md`,
-  `apps/headless/test/golden/walkthrough.json`
+  `docs/plan/BALANCING.md`, `docs/plan/02-DESIGN.md`
+  *(Am 2026-09-06 gebaut. `availability.ts` kam dazu, weil `currentDay` sonst an zwei
+  Stellen entstanden wäre — und die **eins-basierte** Zählung ist die eigentliche Frage
+  dieser Aufgabe: null-basiert wäre die Kaserne am ersten Spieltag nicht baubar gewesen,
+  und der Fehler hätte im Playtest wie ein Wirtschaftsproblem ausgesehen. Der
+  Golden-Master `walkthrough.json` blieb unverändert und ist deshalb aus der Liste
+  genommen.)*
 - **Tests zuerst:**
   1. `R-TECH-01/AK1`: Ein `BUILD` einer Fabrik an Spieltag 1 wird mit `NOT_YET_AVAILABLE`
      abgelehnt und trägt `detail.availableFromDay === 8`; ein `RECRUIT` eines Jägers vor Tag 10

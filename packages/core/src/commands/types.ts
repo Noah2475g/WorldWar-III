@@ -144,6 +144,8 @@ export type CommandError =
   | 'QUEUE_FULL'
   | 'INVALID_TARGET'
   | 'ON_COOLDOWN'
+  /** Its first game day has not come yet (R-TECH-01). `detail.availableFromDay` says which. */
+  | 'NOT_YET_AVAILABLE'
 
 export type CommandResult =
   | { ok: true }

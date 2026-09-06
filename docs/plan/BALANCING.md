@@ -140,6 +140,52 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `expansionPenaltyMax` | 35.000 | abgeleitet | — | Deckel der Ausdehnungsstrafe |
 | `taxPerThousandPopulationPerTick` | 2 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 
+## Die Freischaltungsachse — erster Spieltag je Sache
+
+R-TECH-01 (T-M15-02, 2026-09-06). Der Befund war keine falsche Zahl, sondern eine fehlende
+Achse: **Spieltag 1 unterschied sich von Spieltag 40 durch nichts als den Kontostand.**
+Jede Sache trägt jetzt einen ersten Spieltag; davor lehnt der Kern mit
+`NOT_YET_AVAILABLE` ab und nennt den Tag.
+
+**Fünf Zahlen sind belegt** (Referenz 1.4, `docs/research/SUPREMACY-MECHANICS.md`), die
+übrigen zwölf abgeleitet. Die Ableitungsregel steht in der letzten Spalte und ist überall
+dieselbe Idee: eine Sache kommt nie vor dem Gebäude, das sie braucht, und der Abstand
+folgt dem Aufwand. `test/balancing.test.ts` verlangt für jedes der 7 Gebäude und jede der
+10 Einheiten eine Zeile hier — eine neue Sache ohne Eintrag lässt den Testlauf scheitern.
+
+### Gebäude
+
+| Sache | Tag | Status | Begründung |
+|---|---|---|---|
+| `barracks` | 1 | belegt | Referenz 1.4 — das Spiel beginnt mit der Möglichkeit zu rekrutieren |
+| `harbour` | 2 | belegt | Referenz 1.4 |
+| `fortress` | 3 | abgeleitet | zwischen Hafen und Eisenbahn: rein defensiv, deshalb früh, aber nicht am ersten Tag — sonst gräbt sich jeder ein, bevor überhaupt jemand marschiert |
+| `railway` | 5 | belegt | Referenz 1.4 |
+| `factory` | 8 | belegt | Referenz 1.4 |
+| `shipyard` | 9 | abgeleitet | einen Tag nach der Fabrik: Kriegsschiffe sind der Fabrik gleichrangig, brauchen aber zusätzlich einen Hafen |
+| `airfield` | 10 | belegt | Referenz 1.4 |
+
+### Einheiten
+
+| Sache | Tag | Status | Begründung |
+|---|---|---|---|
+| `infantry` | 1 | abgeleitet | mit der Kaserne — die erste Partie muss am ersten Tag etwas zu tun haben |
+| `transport` | 3 | abgeleitet | einen Tag nach dem Hafen; Transport ist kein Kampfmittel und darf früh kommen |
+| `motorized` | 4 | abgeleitet | drei Tage nach der Infanterie: dieselbe Kaserne, spürbar mehr Tempo |
+| `tank` | 8 | abgeleitet | mit der Fabrik — sie hat sonst am Tag ihrer Freischaltung keinen Zweck |
+| `artillery` | 9 | abgeleitet | einen Tag nach dem Panzer; sie ist Vorbedingung der Feuerautomatik (R-BAT-08) und darf nicht ans Ende rutschen |
+| `fighter` | 10 | abgeleitet | mit dem Flugplatz |
+| `destroyer` | 11 | abgeleitet | zwei Tage nach der Werft: das erste Kriegsschiff |
+| `bomber` | 13 | abgeleitet | drei Tage nach dem Jäger — Luftüberlegenheit vor Bodenwirkung |
+| `heavy_tank` | 14 | abgeleitet | sechs Tage nach dem Panzer; er braucht ohnehin die zweite Fabrikstufe |
+| `rocket_artillery` | 16 | abgeleitet | die späteste Sache im Spiel: größte Reichweite, deshalb der Schlusspunkt der Achse |
+
+**Was hier bewusst fehlt:** eine Zahl für „wie lange dauert eine Partie". Der Abnahmelauf
+misst 822 Spieltage (`docs/reports/fullgame.json`), die späteste Freischaltung liegt bei
+Tag 16 — die Achse prägt also die **Eröffnung**, nicht den Verlauf. Das ist beabsichtigt
+und die kleinste Fassung, die den Befund behebt; ob sie zu kurz greift, beantwortet der
+Playtest und nicht diese Tabelle.
+
 ## Was der Parameterlauf ergeben hat
 
 Gemessen am 2026-09-03 auf der Weltkarte **nach** der Korrektur ihrer Wirtschaftsskala
