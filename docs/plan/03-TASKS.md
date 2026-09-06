@@ -892,7 +892,7 @@ bemerkt, weil kein Prüfer die Felder las.
 
 ### T-M12-03 · Abnahmelauf ⛔ **Haltepunkt**
 - **Anforderungen:** alle Abnahmekriterien aus `01-REQUIREMENTS.md` §3
-- **Abhängigkeiten:** T-M12-01, T-M12-02b, T-M14-15
+- **Abhängigkeiten:** T-M12-01, T-M12-02b, T-M14-15, T-M12-04, T-M12-05, T-M12-06, T-M12-07, T-M12-08, T-M12-09, T-M12-10
 - **Fertig wenn:** Abgenommen wird der **V1-Satz**, nicht mehr und nicht weniger: `pnpm verify`
   und `pnpm test:slow` sind grün; `pnpm acceptance` weist alle sieben Abnahmekriterien als
   erfüllt aus, **AK-1 mit eigener Zeile** (`pnpm sim:fullgame`, gebaut in T-M14-14) statt in der
@@ -906,6 +906,110 @@ bemerkt, weil kein Prüfer die Felder las.
 ---
 
 ---
+
+### Die Befunde des Abnahme-Playtests (2026-09-06)
+
+> Der Playtest wurde am 2026-09-06 von einem Agenten gefahren (`docs/reports/playtest-v1.md`,
+> 39 ja · 13 nein · 8 nicht geprüft, zwei Partien bis Spieltag 171). **AK-7 verlangt im
+> Wortlaut Noahs Abnahme und bleibt offen** — der Durchgang nimmt ihr nur die Suche ab.
+> Diese sieben Aufgaben stehen in `T-M12-03`s Abhängigkeiten: ein Playtest mit dreizehn
+> Nein ist kein bestandener Playtest.
+>
+> **Drei der vier schweren Befunde sind dieselbe Klasse** — die Mechanik ist gebaut und
+> funktioniert, und der Weg des Spielers dorthin fehlt oder endet im Nichts. Das ist
+> Ursache A aus der Auswertung vom 2026-09-05, zum fünften Mal, diesmal an Stellen, die
+> als erledigt gemeldet waren.
+
+### T-M12-04 · Der Abbruchknopf bekommt sein Wort zurück
+- **Ziel:** Unter „Im Bau" stand die Zeichenfolge `[province.cancelBuild]`. Der Knopf
+  wirkte — Abbruch klappt, 50 % werden erstattet, das Protokoll sagt es —, nur sein Name
+  fehlte.
+- **Anforderungen:** R-UI-07
+- **Abhängigkeiten:** T-M12-02b
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/i18n/de.ts`
+- **Fertig wenn:** Der Ausreißer ist behoben (`province.` → `actions.`) und die
+  Beschriftung nennt das Gebäude, weil eine Provinz mit mehreren Aufträgen sonst mehrere
+  gleiche Knöpfe zeigt. **Der eigentliche Teil ist der Wächter:** `text.test.ts` prüft den
+  Katalog nur in *einer* Richtung und nie, ob ein vom Code abgefragter Schlüssel existiert
+  — verschärfend hat der Sichtbarmacher für fehlende Schlüssel einen eigenen grünen Test,
+  der Mechanismus vor dem Spieler war also geprüft. `test/guards/text-keys.test.ts` sammelt
+  jeden statisch geschriebenen `t('a.b')`, prüft die Menge auf Nichtleere und nennt die
+  Zahl der zusammengesetzten Aufrufe, die er nicht auflösen kann.
+
+### T-M12-05 · Der Startdialog sagt, was Gewinnen heißt
+- **Ziel:** Punkte und Eroberung waren wählbar und nirgends erklärt, während das Feld
+  darüber („Startzahl") einen erklärenden Satz trug.
+- **Anforderungen:** R-GAME-02
+- **Abhängigkeiten:** T-M12-02b
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Fertig wenn:** Der Hinweis nennt die Schwelle aus `newGame.ts` (700 bzw. 1000 von 1000)
+  und **wechselt mit der Auswahl** — ein Hinweis, der sich nicht ändert, erklärt keine
+  Wahl. Der Test hält Satz und Schwelle zusammen.
+
+### T-M12-06 · Die zweite Partie beginnt wirklich
+- **Ziel:** Der Endedialog bietet „Neue Partie" an, und der Klick führt ins Leere: er
+  schließt den Dialog, öffnet keinen Startdialog und lässt den Spieler in der beendeten
+  Partie zurück (gemessen an Tag 171: Siegziel 0 %, jede Produktion null, keine Dialoge im
+  DOM). Nur Neuladen hilft.
+- **Anforderungen:** R-GAME-01, R-UI-13
+- **Abhängigkeiten:** T-M14-10
+- **Dateien:** `apps/desktop/src/App.tsx`
+- **Fertig wenn:** ein Test die **Kette** prüft — Partie beenden, „Neue Partie" klicken,
+  Startdialog steht da, Partie beginnen, neuer Tag 1, alles ohne Neuladen. **T-M14-10 hat
+  genau diesen Weg als erledigt gemeldet**; der Test dort prüft offenbar den Zustand und
+  nicht die Sicht, und das ist der eigentliche Befund.
+
+### T-M12-07 · Die Spielstände sind erreichbar, auch nach dem Neustart
+- **Ziel:** Der Stand überlebt korrekt (IndexedDB führt `stand-1` nach dem Neuladen), ist
+  aber nicht erreichbar: die Liste öffnet **ausschließlich Strg+S**, kein Knopf führt
+  dorthin, und ohne laufende Partie wirkt die Tastenkombination nicht. Wer das Fenster
+  schließt, kommt an seinen Spielstand nicht mehr heran. Dazu eine Sackgasse: schließt man
+  den Startdialog mit dem Kreuz, bleibt „Die Welt wird aufgebaut …" ohne jeden Ausweg.
+- **Anforderungen:** R-GAME-03, R-UI-05
+- **Abhängigkeiten:** T-M14-08
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Header.tsx`,
+  `apps/desktop/src/ui/Dialogs.tsx`
+- **Fertig wenn:** die Spielstände ohne Tastatur erreichbar sind, **auch vor der ersten
+  Partie**, und der leere Zustand keine Sackgasse mehr ist. R-UI-05 verlangt jede Aktion
+  per Klick; eine nur über die Tastatur erreichbare Funktion erfüllt das nicht.
+
+### T-M12-08 · Die Kartenwahl wirkt
+- **Ziel:** Blindschalter. „Kleine Welt (12)" gewählt startet weiterhin die Weltkarte —
+  gemessen an den Provinznamen (*Mittlerer Westen, Ostkanada* gegen *Hafen, Waldland,
+  Bergland* in `testworld.json`). **Befund 38/N10 ist damit nicht geschlossen**, und
+  `docs/PLAYTEST.md:149` behauptete das Gegenteil; die Zeile ist berichtigt.
+- **Anforderungen:** R-GAME-01
+- **Abhängigkeiten:** T-M14-03
+- **Dateien:** `apps/desktop/src/main.tsx`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/game/newGame.ts`
+- **Fertig wenn:** ein Test die Kette prüft: Karte umstellen, Partie beginnen, **die
+  Provinzzahl des Zustands** entspricht der gewählten Karte. Der Test darf **nicht** gegen
+  den Dialogzustand prüfen — genau diese Verwechslung hat den Befund entstehen lassen.
+
+### T-M12-09 · Die Meldungen erreichen den Spieler
+- **Ziel:** Über zwei vollständige Partien bis Tag 171 — Hauptstadtverlust, Überrennen,
+  eigenes Ausscheiden, eigene Gefechte mit Verlusten — erschien **keine einzige** Meldung,
+  und der Bereich `.alerts` existierte zu keinem Zeitpunkt im DOM.
+- **Anforderungen:** R-UI-14
+- **Abhängigkeiten:** T-M13-14
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`
+- **Fertig wenn:** ein Test **aus einer echten Partie heraus** prüft, dass bei einem
+  eigenen Ereignis eine Meldung im Baum steht — nicht, dass `alertsFor` die richtige Liste
+  zurückgibt. Ein Einzeltest der Funktion hat den Befund nicht verhindert und wird ihn
+  nicht verhindern.
+
+### T-M12-10 · Die kleineren Befunde des Playtests
+- **Ziel:** Sechs Befunde, jeder klein, keiner erfunden — Tooltips an den Armeebefehlen,
+  die Spalte „Verbrauch" dauerhaft auf 0, das Vorspulen ohne Begründung, Flugplatz und
+  Jagdflugzeug mit demselben Symbol, „1 Provinzen" im Endedialog, und die leere
+  Debug-Ansicht.
+- **Anforderungen:** R-UI-05, R-UI-09, R-UI-10, R-ECON-06, R-TIME-03
+- **Abhängigkeiten:** T-M12-04, T-M12-05
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/icons.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/Dialogs.tsx`
+- **Fertig wenn:** alle sechs behoben sind. Zur Debug-Ansicht: **entweder sie füllt sich
+  oder sie verschwindet** — ein drittes gibt es nicht, sonst bleibt Playtest-Frage 48 mit
+  *ja* beantwortet, wo *nein* erwartet ist.
 
 ## Meilenstein M13 — Eine Oberfläche, die man ansieht
 

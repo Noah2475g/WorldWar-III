@@ -904,7 +904,7 @@ tasks:
     status: todo
     gate: true
     gate_reason: "Stand 2026-09-06 abends: der letzte VOLLSTAENDIGE Abnahmelauf meldete 5 von 7 (docs/reports/acceptance.md) - er lief VOR der Reparatur von AK-1 und ist damit ueberholt, keine Aussage ueber den heutigen Stand. Einzeln nachgewiesen gruen sind seither AK-1 (docs/reports/fullgame.json, entschieden an Spieltag 876), Turnier und KI-Integrationslauf; die uebrigen langsamen Pruefungen sind seit der Reparatur nicht nachgemessen. Der naechste vollstaendige Lauf ist Schritt 1 von docs/plan/WORKFLOW.md. Offen bleibt danach AK-7, der Playtest durch Noah - er laeuft nach dem von T-M14-15 ueberarbeiteten docs/PLAYTEST.md und wird in docs/reports/playtest-v1.md beantwortet"
-    deps: [T-M12-01, T-M12-02b, T-M14-15]
+    deps: [T-M12-01, T-M12-02b, T-M14-15, T-M12-04, T-M12-05, T-M12-06, T-M12-07, T-M12-08, T-M12-09, T-M12-10]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []
     tests: []
@@ -1433,3 +1433,77 @@ tasks:
     files: [apps/desktop/src/ui/Dialog.tsx, apps/desktop/src/ui/Panels.tsx]
     tests: [apps/desktop/src/ui/a11y.test.tsx]
     dod: "Belegt ist heute der Kontrast (R-UI-02) und die Tastenzuordnung als reine Funktion (R-UI-06); kein Test oeffnet einen Dialog und schliesst ihn. Danach: Escape schliesst jeden Dialog, der Fokus bleibt im offenen Dialog und kehrt beim Schliessen an das ausloesende Element zurueck, die Tabreihenfolge folgt der Leserichtung, und ein Waechter findet jedes Bedienelement ohne sichtbaren Text, das keinen Namen fuer Hilfsmittel traegt. Kein Barrierefreiheits-Rahmenwerk und keine neue Abhaengigkeit - die Pruefung ist die Zusage. pnpm verify gruen"
+
+  # --- Befunde des Abnahme-Playtests vom 2026-09-06 -------------------------------------
+  # Sie gehoeren zu M12, weil T-M12-03 das Tor ist, das sie blockieren: ein Playtest, der
+  # dreizehn Nein liefert, ist kein bestandener Playtest. Reihenfolge nach Schwere.
+
+  - id: T-M12-04
+    milestone: M12
+    title: Der Abbruchknopf bekommt sein Wort zurueck
+    status: done
+    deps: [T-M12-02b]
+    requirements: [R-UI-07]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts]
+    tests: [test/guards/text-keys.test.ts]
+    dod: "Auf dem Bildschirm stand unter 'Im Bau' die Zeichenfolge [province.cancelBuild] - der Knopf wirkte, nur sein Name fehlte. Ursache ist ein Wort: actions.ts fragte province.cancelBuild ab, der Katalog fuehrt actions.cancelBuild; in derselben Datei stehen 23 Aufrufe t('army...'), drei t('market...'), drei t('actions...') und genau dieser eine Ausreisser. Die Beschriftung nennt jetzt das Gebaeude, weil eine Provinz mit mehreren Auftraegen sonst mehrere gleiche Knoepfe zeigt. Der eigentliche Teil ist der Waechter: text.test.ts prueft den Katalog nur in EINER Richtung (fuer jede Ereignisart, jeden Rohstoff, jedes Gebaeude gibt es einen Satz) und nie, ob ein vom Code abgefragter Schluessel existiert; verschaerfend hat der Sichtbarmacher fuer fehlende Schluessel einen eigenen gruenen Test, der Mechanismus vor dem Spieler war also geprueft. Der neue Waechter sammelt jeden statisch geschriebenen t('a.b') im Produktionscode und verlangt den Schluessel - gegen den Baum vor der Reparatur meldete er genau einen Verstoss und keinen Fehlalarm -, prueft die Menge auf Nichtleere und nennt die Zahl der zusammengesetzten Aufrufe, die er NICHT aufloesen kann"
+
+  - id: T-M12-05
+    milestone: M12
+    title: Der Startdialog sagt, was Gewinnen heisst
+    status: done
+    deps: [T-M12-02b]
+    requirements: [R-GAME-02]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Punkte und Eroberung waren waehlbar und nirgends erklaert, waehrend das Feld darueber (Startzahl) einen erklaerenden Satz trug - die Wahl entscheidet aber, wie die Partie endet. Der Hinweis nennt jetzt die Schwelle aus newGame.ts (Punkte 700, Eroberung 1000 von 1000) und wechselt mit der Auswahl; ein Hinweis, der sich nicht aendert, erklaert keine Wahl. Der Test haelt Satz und Schwelle zusammen, sodass eine geaenderte Zahl ohne geaenderten Satz faellt, und prueft ausserdem, dass das Feld seinen Wert nach oben meldet - genau das, was das Kartenfeld daneben nicht tut (T-M12-08)"
+
+  - id: T-M12-06
+    milestone: M12
+    title: Die zweite Partie beginnt wirklich
+    status: todo
+    deps: [T-M14-10]
+    requirements: [R-GAME-01, R-UI-13]
+    files: [apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Der Endedialog bietet 'Neue Partie' an, und der Klick fuehrt ins Leere: er schliesst den Dialog, oeffnet keinen Startdialog und laesst den Spieler in der beendeten Partie zurueck (gemessen an Tag 171: Siegziel 0 Prozent, jede Produktion null, keine Dialoge im DOM). Nur Neuladen hilft. T-M14-10 hat genau diesen Weg als erledigt gemeldet - der Test dort prueft offenbar den Zustand, nicht die Sicht. Fertig, wenn ein Test die KETTE prueft: Partie beenden, 'Neue Partie' klicken, Startdialog steht da, Partie beginnen, neuer Tag 1 - alles ohne Neuladen. Waehrend einer laufenden Partie gibt es ebenfalls keinen Weg zu einer neuen; ob das so bleibt, ist eine Entscheidung und gehoert in DECISIONS.md"
+
+  - id: T-M12-07
+    milestone: M12
+    title: Die Spielstaende sind erreichbar, auch nach dem Neustart
+    status: todo
+    deps: [T-M14-08]
+    requirements: [R-GAME-03, R-UI-05]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Der Stand ueberlebt korrekt (IndexedDB fuehrt stand-1 nach dem Neuladen), ist aber nicht erreichbar: die Liste oeffnet ausschliesslich Strg+S, kein Knopf fuehrt dorthin, und ohne laufende Partie wirkt die Tastenkombination nicht - wer das Fenster schliesst, kommt an seinen Spielstand nicht mehr heran. Dazu eine Sackgasse: schliesst man den Startdialog mit dem Kreuz, bleibt eine leere Flaeche mit 'Die Welt wird aufgebaut ...', aus der kein Knopf und keine Taste herausfuehrt. Fertig, wenn (a) die Spielstaende ohne Tastatur erreichbar sind, (b) sie auch VOR der ersten Partie erreichbar sind, damit ein gespeicherter Stand geladen werden kann, und (c) der leere Zustand keine Sackgasse mehr ist. R-UI-05 verlangt jede Aktion per Klick; eine nur ueber die Tastatur erreichbare Funktion erfuellt das nicht"
+
+  - id: T-M12-08
+    milestone: M12
+    title: Die Kartenwahl wirkt
+    status: todo
+    deps: [T-M14-03]
+    requirements: [R-GAME-01]
+    files: [apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/newGame.ts]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Blindschalter, und Befund 38/N10 ist damit NICHT geschlossen: 'Kleine Welt (12)' gewaehlt startet weiterhin die Weltkarte - gemessen an den Provinznamen (Mittlerer Westen, Ostkanada gegen Hafen, Waldland, Bergland in testworld.json). Verschaerfend hat docs/PLAYTEST.md:149 behauptet, der Befund sei geschlossen; die Zeile ist am 2026-09-06 berichtigt. Fertig, wenn ein Test die Kette prueft: Karte im Dialog umstellen, Partie beginnen, die Provinzzahl des Zustands entspricht der gewaehlten Karte. Der Test darf NICHT gegen den Dialogzustand pruefen, sondern gegen die Zahl der Provinzen im begonnenen Spiel - genau diese Verwechslung hat den Befund entstehen lassen"
+
+  - id: T-M12-09
+    milestone: M12
+    title: Die Meldungen erreichen den Spieler
+    status: todo
+    deps: [T-M13-14]
+    requirements: [R-UI-14]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Alerts.tsx]
+    tests: [apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Ueber zwei vollstaendige Partien bis Tag 171 - Hauptstadtverlust, Ueberrennen, eigenes Ausscheiden, eigene Gefechte mit Verlusten - erschien KEINE einzige Meldung, und der Bereich mit der Klasse .alerts existierte zu keinem Zeitpunkt im DOM. Die Funktion alertsFor ist gebaut und hat gruene Einzeltests; was fehlt, ist die Kette bis zur Sicht - dieselbe Ursache A wie viermal zuvor. Fertig, wenn ein Test aus einer echten Partie heraus prueft, dass bei einem eigenen Ereignis (Kampf in eigener Provinz, Hauptstadtverlust, Rohstoffmangel) eine Meldung im Baum steht - nicht, dass alertsFor die richtige Liste zurueckgibt. Ein Einzeltest der Funktion hat den Befund nicht verhindert und wird ihn nicht verhindern"
+
+  - id: T-M12-10
+    milestone: M12
+    title: Die kleineren Befunde des Playtests
+    status: todo
+    deps: [T-M12-04, T-M12-05]
+    requirements: [R-UI-05, R-UI-09, R-UI-10, R-ECON-06, R-TIME-03]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/IconRow.test.tsx]
+    dod: "Sechs Befunde, jeder klein, keiner erfunden. (a) Rueckzug, Marschieren, Angriff und Teilen tragen keinen Tooltip mit Kosten, waehrend die Bauknoepfe es vormachen ('333 Material, 250 Geld - 1 Tag'). (b) Die Spalte Verbrauch der Wirtschaftsuebersicht steht dauerhaft auf 0, weil sie nur den Armeeunterhalt fuehrt - Bau- und Aushebungskosten erscheinen nirgends, und die Frage 'wohin gehen meine Rohstoffe' bleibt offen. (c) Das Vorspulen sagt nie, warum es anhaelt, obwohl R-TIME-03 die Begruendung ausdruecklich verlangt. (d) Flugplatz und Jagdflugzeug teilen dasselbe Symbol (icons.tsx:131 und :143). (e) Der Endedialog schreibt '1 Provinzen' und die Zahl widerspricht dem Satz darueber. (f) Die Debug-Ansicht zeigt einen leeren Zustands-Hash und zwei Ueberschriften ohne Inhalt, womit Playtest-Frage 48 mit ja zu beantworten ist statt mit nein - entweder sie fuellt sich oder sie verschwindet, ein drittes gibt es nicht"
