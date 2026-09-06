@@ -78,7 +78,26 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
   const rules = context.rules
   const grievances = context.view.self.grievances
 
-  const towards = (other: PlayerId) => relationship(context.view, other, grievances, rules)
+  /**
+   * Das Verhältnis, **einmal je Macht und Tick** (R-AI-04).
+   *
+   * `relationship` läuft über alle Provinzen und Armeen der Sicht, um die Truppen an der
+   * eigenen Grenze zu zählen — auf der Weltkarte sind das 237 und ein paar hundert. Der
+   * Wert wird hier bis zu viermal je Gegner gebraucht (Friedensfrage, Bündnis, Durchmarsch,
+   * Kriegsentscheidung), und ohne diese Ablage stieg der KI-Anteil an der Tickzeit auf
+   * **51,7 %** — über die Grenze aus R-AI-04. Die Sicht ändert sich innerhalb eines Ticks
+   * nicht, also ist die Ablage nicht nur schneller, sondern auch richtiger als vier
+   * getrennte Rechnungen auf demselben Zustand.
+   */
+  const abgelegt = new Map<PlayerId, ReturnType<typeof relationship>>()
+  const towards = (other: PlayerId) => {
+    let wert = abgelegt.get(other)
+    if (!wert) {
+      wert = relationship(context.view, other, grievances, rules)
+      abgelegt.set(other, wert)
+    }
+    return wert
+  }
 
   // 1. Answer standing offers first.
   for (const [other, relation] of Object.entries(context.view.relations)) {
@@ -212,7 +231,17 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
     // schwelenden Streit eher zum Krieg, und das soll sie: sonst wäre die Stärke ohne
     // jeden Einfluss, und die Grenze zwischen "gereizt" und "gereizt und im Vorteil"
     // verschwände.
-    const verlockung = Math.max(0, Math.min(200, Math.trunc((ratio - 1000) / 4)))
+    // Die Obergrenze der Verlockung ist **450 und nicht 200**, und das ist die Antwort auf
+    // einen gemessenen Befund: mit 200 endete die ausgelieferte Standardpartie nicht mehr.
+    // Der Führende kam auf 127 Provinzen und **57 % der Punkte**, brauchte 70 % — und hörte
+    // ab Spieltag 900 auf, sich auszudehnen, weil er zu den Restmächten schlicht kein
+    // schlechtes Verhältnis mehr hatte. Das Verhältnis ist das Tor für *gewöhnliche*
+    // Entscheidungen; eine erdrückende Übermacht ist irgendwann ihr eigenes Argument, sonst
+    // gibt es keine Partie, die zu Ende geht. 450 liegt bewusst knapp über der Skala des
+    // Verhältnisses (0..1000): erst bei einem Stärkeverhältnis von rund 1:2,8 kann selbst
+    // ein tadelloses Verhältnis überstimmt werden — ein Nachbar mit doppelten Punkten und
+    // gutem Verhältnis bleibt unbehelligt (R-DIP-06/AK1, zweite Richtung).
+    const verlockung = Math.max(0, Math.min(450, Math.trunc((ratio - 1000) / 4)))
     const schwelle = context.difficulty.warThreshold + verlockung
     if (wert.value >= schwelle) {
       // Auch das Nichtstun wird begründet (R-AI-05). Eine Debug-Ansicht, die nur zeigt,

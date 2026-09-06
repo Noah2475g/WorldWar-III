@@ -981,3 +981,92 @@ genau das ist: *die KI nutzt die neuen Mittel.* Dort gehört die Frage hin, ob d
 arm ist, ob die Fabrik zu teuer ist, oder ob die Testkarte für diese Messung zu klein ist.
 Was hier **nicht** getan wird, ist die Zusicherung so zu formulieren, dass sie grün wird:
 eine Obergrenze über null Ereignissen wäre grün und sagte nichts.
+
+---
+
+## 2026-09-06 · T-M15-07/T-M15-08 · M15 hat AK-1 gebrochen — die Front war eingefroren
+
+**Befund:** Der volle Abnahmelauf nach M15 meldete **5 von 7**. Gerissen war unter anderem
+**AK-1**: die ausgelieferte Standardpartie kam über 1500 Spieltage zu **keinem Ausgang**,
+obwohl 2453 Provinzen den Besitzer wechselten und 8083 Gefechte stattfanden. Vor M15 wurde
+dieselbe Aufstellung an Spieltag 822 entschieden.
+
+**Nachgemessen, Spieltag für Spieltag** (Punktanteil des Führenden, Schwelle 700 ‰):
+
+| Spieltag | lebende Mächte | Anteil des Führenden | Provinzen des Führenden |
+|---|---|---|---|
+| 200 | 8 | 332 | 55 |
+| 500 | 7 | 453 | 87 |
+| 900 | 5 | 560 | 123 |
+| 1500 | 5 | **570** | **127** |
+
+**Die Ausdehnung hört ab Spieltag 900 praktisch auf.** Nicht, weil die Gegner stark wären —
+zwei Mächte halten drei und vier Provinzen —, sondern weil sich nichts mehr bewegt.
+
+**Die Ursache, und sie war eine Zeile aus T-M15-07:** Die Regel „eine Fernwaffenarmee mit
+Ziel in Reichweite bleibt stehen" prüfte `armyRange(army) > 0` — also **jede Armee, die
+irgendeine Kanone dabeihat**. Die KI rekrutiert gemischt (Zielverhältnis 50/30/20), also
+enthielt nach einiger Zeit praktisch jeder Verband Artillerie, und **praktisch jede Armee
+an der Front blieb stehen**. Eine Armee aus zwanzig Infanteristen und einer Haubitze ist
+kein Artillerieverband — sie hat eine Haubitze dabei.
+
+**Behoben am 2026-09-06:** Es bleibt nur stehen, wessen Einheiten **sämtlich** Fernwaffen
+sind. **Gemessen: entschieden an Spieltag 876**, Sieger p6, 11 Kriegserklärungen, 2025
+Eroberungen. AK-1 ist wieder grün.
+
+**Zweite Änderung derselben Untersuchung, kleiner und ebenfalls gemessen:** die Obergrenze
+der „Verlockung" in der Kriegsentscheidung ist von 200 auf **450** angehoben. Mit 200 konnte
+eine erdrückende Übermacht ein tadelloses Verhältnis nie überstimmen — der Führende hatte
+zu den Restmächten schlicht nichts vorzuwerfen und griff nie an. Das Verhältnis bleibt das
+Tor für *gewöhnliche* Entscheidungen; ab einem Stärkeverhältnis von rund 1:2,8 ist die
+Übermacht ihr eigenes Argument. R-DIP-06/AK1 (zweite Richtung) bleibt erfüllt: ein Nachbar
+mit doppelten Punkten und gutem Verhältnis bleibt unbehelligt.
+
+**Was daran lehrreich ist:** Beide Regeln waren einzeln richtig und in ihren Tests grün.
+Erst der **Lauf über die ganze Partie** hat gezeigt, dass sie zusammen das Spiel anhalten.
+Dasselbe Muster wie beim Integrationstor — nur diesmal nicht „die Mechanik kommt nie vor",
+sondern „die Mechanik kommt überall vor".
+
+---
+
+## 2026-09-06 · T-M15-08 · Die KI ist in M15 um 73 % teurer geworden
+
+**Befund:** `R-AI-04` verlangt, dass die Entscheidungen aller KI-Spieler im Mittel höchstens
+**30 % der Tickzeit** kosten. Gemessen:
+
+| | vor M15 (`f78470e`) | nach M15 |
+|---|---|---|
+| KI je Tick | 0,0468 ms | **0,0808 ms** (+73 %) |
+| Anteil an der Tickzeit | 0,443 | **0,498** |
+
+Der Test in `tick.bench.slow.test.ts` sichert `< 0,5` zu und war damit zeitweise **rot**
+(0,517). Nach zwei Änderungen — das Verhältnis wird je Macht und Tick einmal statt viermal
+gerechnet, und `nextBuilding` bekommt die Provinz statt ihrer Kennung, was einen
+quadratischen Durchlauf je Tick beseitigt — steht er bei 0,498.
+
+**0,498 gegen eine Grenze von 0,500 ist kein Ergebnis, das man stehen lässt.** Es steht hier
+als offener Befund und nicht als Erfolg.
+
+**Was die Messung darüber hinaus zeigt** (Profil auf der Testkarte, drei Mächte):
+
+```
+publicView für drei Mächte   0,0254 ms
+runAi gesamt                 0,0262 ms
+```
+
+**Rund 97 % der „KI-Zeit" ist der Bau der öffentlichen Sicht, nicht die Entscheidung.**
+R-AI-04 misst dem Wortlaut nach „die Entscheidungen der KI" und misst tatsächlich
+überwiegend `publicView` — dieselbe Art von Diskrepanz wie beim Tickbudget, das bis zum
+2026-09-06 an einer zwanzigmal kleineren Karte geprüft wurde.
+
+Dazu kommt: die Zusicherung im Test (`< 0,5`) ist **67 % lockerer als die Anforderung**
+(≤ 0,30), und das war schon vor M15 so (gemessen 0,443). Eine Anforderung, die seit
+Monaten um die Hälfte verfehlt wird, ohne dass ein Test es sagt, ist genau der Zustand, den
+T-M14-01 anderswo behoben hat.
+
+**Status: offen, zugewiesen an M16** — dort ist die Leistung am echten Bau ohnehin neu zu
+messen. Drei Fragen gehören dann beantwortet: (a) ist `publicView` je Macht und Tick
+überhaupt nötig oder lässt sich der unveränderliche Teil teilen, (b) misst R-AI-04 das, was
+es messen will, und (c) auf welchen Wert gehört die Zusicherung, wenn die Anforderung
+30 % sagt. **Nicht** getan wurde das Naheliegende: die Grenze von 0,5 anzuheben, damit die
+Zahl passt.

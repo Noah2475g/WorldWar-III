@@ -34,9 +34,19 @@ function dayOf(context: AiContext): number {
   return Math.trunc(context.view.tick / context.rules.constants.ticksPerDay) + 1
 }
 
-function nextBuilding(context: AiContext, provinceId: string): BuildingKey | null {
-  const province = context.view.provinces.find((entry) => entry.id === provinceId)
-  if (!province || province.owner !== context.view.playerId) return null
+/**
+ * Dasselbe, aber mit der Provinz statt ihrer Kennung (R-AI-04, T-M15-08).
+ *
+ * Der Unterschied ist kein Stil: `nextBuilding` beginnt mit einem `find` ueber alle
+ * Provinzen der Sicht, und seit `missingForNextBuilding` ihn **je eigener Provinz und
+ * Tick** ruft, ist das quadratisch. Der KI-Anteil an der Tickzeit stieg dadurch von 44 %
+ * auf 52 % und riss R-AI-04.
+ */
+function nextBuildingFor(
+  context: AiContext,
+  province: AiContext['view']['provinces'][number],
+): BuildingKey | null {
+  if (province.owner !== context.view.playerId) return null
 
   const level = (key: BuildingKey) => province.buildings?.[key] ?? 0
 
@@ -95,7 +105,7 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
   for (const province of own) {
     if ((province.buildQueueLength ?? 0) > 0) continue
 
-    const building = nextBuilding(context, province.id)
+    const building = nextBuildingFor(context, province)
     if (!building) continue
 
     const rule = context.rules.buildings[building]
@@ -304,7 +314,7 @@ function missingForNextBuilding(context: AiContext): ResourceKey | null {
 
   for (const province of own) {
     if ((province.buildQueueLength ?? 0) > 0) continue
-    const building = nextBuilding(context, province.id)
+    const building = nextBuildingFor(context, province)
     if (!building) continue
 
     const rule = context.rules.buildings[building]

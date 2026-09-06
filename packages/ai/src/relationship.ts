@@ -51,6 +51,38 @@ export interface Relationship {
 const clamp = (value: number, low: number, high: number): number => Math.max(low, Math.min(high, value))
 
 /**
+ * Die Provinzen, die zu meinem Grenzsaum gehören — je Sicht **einmal** gerechnet.
+ *
+ * Die Menge hängt nicht davon ab, über *wen* geurteilt wird, wurde aber je Gegner neu
+ * aufgebaut: zwei Durchläufe über alle Provinzen, bei acht Mächten also sechzehn statt
+ * zwei. Zusammen mit dem quadratischen `nextBuilding` hat das den KI-Anteil an der
+ * Tickzeit von 44 % auf 52 % getrieben und R-AI-04 gerissen (T-M15-08).
+ *
+ * Eine `WeakMap` auf die Sicht: sie lebt genau einen Tick, und mit ihr der Eintrag.
+ */
+const borderCache = new WeakMap<PublicView, Set<string>>()
+
+function borderArea(view: PublicView): Set<string> {
+  const gemerkt = borderCache.get(view)
+  if (gemerkt) return gemerkt
+
+  const meine = new Set<string>()
+  for (const province of view.provinces) {
+    if (province.owner === view.playerId) meine.add(province.id)
+  }
+
+  const grenznah = new Set<string>()
+  for (const province of view.provinces) {
+    if (!meine.has(province.id)) continue
+    grenznah.add(province.id)
+    for (const neighbour of province.neighbors) grenznah.add(neighbour)
+  }
+
+  borderCache.set(view, grenznah)
+  return grenznah
+}
+
+/**
  * Das Verhältnis von `view.playerId` zu `other`, 0..1000.
  *
  * 1000 heißt „nichts spricht gegen sie", 0 heißt „Feind". Der Ausgangswert ohne jede
@@ -91,13 +123,7 @@ export function relationship(
   // Truppen dieser Macht in Provinzen, die an meine grenzen — gemessen an dem, was ich
   // selbst dort stehen habe. Ein Nachbar mit doppelt so vielen Soldaten an der Grenze ist
   // ein Anlass zur Sorge, einer mit gleich vielen nicht.
-  const meine = new Set(view.provinces.filter((entry) => entry.owner === view.playerId).map((entry) => entry.id))
-  const grenznah = new Set<string>()
-  for (const province of view.provinces) {
-    if (!meine.has(province.id)) continue
-    grenznah.add(province.id)
-    for (const neighbour of province.neighbors) grenznah.add(neighbour)
-  }
+  const grenznah = borderArea(view)
 
   let ihre = 0
   let unsere = 0

@@ -1,4 +1,4 @@
-import { armyRange, type Command, type ProvinceId } from '@worldwar/core'
+import type { Command, ProvinceId } from '@worldwar/core'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { rateProvinces } from './targeting'
 import type { AiContext, Explanation } from './types'
@@ -94,8 +94,19 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     // Sie schiesst dann von selbst (phases/bombardment.ts) — Schaden ohne Gegenschlag.
     // Marschierte sie stattdessen ins Ziel, gaebe sie genau das auf, wofuer sie da ist:
     // eine Artilleriearmee im Nahkampf ist eine schlechte Infanteriearmee.
+    // **Nur eine reine Fernwaffenarmee bleibt stehen** — nicht jede, die eine Kanone
+    // dabeihat. Die erste Fassung prüfte `armyRange > 0`, und weil die KI gemischt
+    // rekrutiert, blieb damit praktisch **jede** Armee an der Front stehen: die
+    // ausgelieferte Standardpartie kam über 1500 Spieltage zu keinem Ausgang, obwohl 2453
+    // Provinzen den Besitzer wechselten. Eine Armee aus zwanzig Infanteristen und einer
+    // Haubitze ist kein Artillerieverband, sie hat eine Haubitze dabei.
+    //
     // Eigene Armeen zeigen ihre Zusammensetzung; fremde nicht — deshalb der Vorbehalt.
-    if (armyRange({ units: army.units ?? [] }, context.rules) > 0 && hasTargetInRange(context, army)) {
+    const eigeneEinheiten = army.units ?? []
+    const nurFernwaffen =
+      eigeneEinheiten.length > 0 &&
+      eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
+    if (nurFernwaffen && hasTargetInRange(context, army)) {
       explanations.push({
         action: `${army.id} haelt Stellung in ${army.provinceId}`,
         reason: 'Fernwaffen mit Ziel in Reichweite — Feuer ohne Gegenschlag',
