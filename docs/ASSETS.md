@@ -88,3 +88,30 @@ gemeinfreie Konvention, kein Werk; übernommen wurde nichts.
 **Klänge** (`apps/desktop/src/ui/sound.ts`): keine Aufnahmen, sondern erzeugte Töne über
 die Web-Audio-Schnittstelle — je Ereignis ein Oszillator mit Frequenz, Dauer und
 Hüllkurve. Nichts wird geladen, nichts ist lizenziert, nichts wiegt etwas.
+
+## Anwendungssymbol — Eigenerzeugnis, kein Fremdinhalt
+
+**Lizenz:** keine nötig. Das Symbol ist **kein Fremdasset**: es wird von
+`scripts/build-icon.mjs` gezeichnet, aus den Farbwerten der eigenen Oberfläche
+(`apps/desktop/src/ui/tokens.ts`, Entwurfsrichtung A „Lagekarte"). Es enthält keine fremde
+Grafik, keine fremde Schrift und keinen fremden Code — die Datei besteht aus Geometrie
+und einem PNG-/ICO-Kodierer über `node:zlib`.
+
+**Warum als Skript und nicht als Bild:** Ein Asset, das niemand neu bauen kann, ist ein
+Asset, das niemand ändern kann. `node scripts/build-icon.mjs` erzeugt alle vier Dateien
+neu; jede Größe wird **gerendert statt skaliert**, weil die Zeichnung in Einheitskoordinaten
+vorliegt.
+
+| Datei | Zweck |
+|---|---|
+| `apps/desktop/src-tauri/icons/icon.png` | 512 × 512, Grundgröße; von `tauri.conf.json` verlangt |
+| `apps/desktop/src-tauri/icons/icon.ico` | 16/24/32/48/64/128/256; **`tauri-build` bricht auf Windows ohne sie ab** und der Bundler verlangt sie zusätzlich in `bundle.icon` |
+| `apps/desktop/src-tauri/icons/32x32.png` | Taskleiste und Fensterecke |
+| `apps/desktop/src-tauri/icons/128x128.png` | Explorer, Verknüpfungen |
+
+**Das Motiv** ist eine Einheitenmarke auf der Lagekarte — ein Rechteck mit dem
+Andreaskreuz, das Kartenzeichen für einen Truppenverband, auf Leinengrund mit
+Provinzgrenzen und einer Meeresecke. Zinnoberrot ist im Entwurf für Kampf und Alarm
+reserviert und wird auch hier für nichts anderes benutzt; das ist zugleich der Grund,
+warum das Symbol bei sechzehn Pixeln noch trägt: **eine** gesättigte Form auf ruhigem
+Grund.
