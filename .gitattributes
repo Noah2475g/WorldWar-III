@@ -2,3 +2,4 @@
 *.png binary
 *.jpg binary
 *.woff2 binary
+apps/desktop/src/ui/fonts/OFL.txt -text

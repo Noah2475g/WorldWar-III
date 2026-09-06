@@ -6,6 +6,48 @@
  * a component may use var(--ink), never #1F2420, and a lint rule enforces it.
  */
 
+/*
+ * The font ships with the game (T-M14-09, R-UI-04, R-FREE-04).
+ *
+ * IBM Plex, SIL Open Font License 1.1, checked in under ui/fonts/ and fetched once by
+ * scripts/fetch-fonts.mjs — see docs/ASSETS.md. Until 2026-09-06 these three families
+ * were named in tokens.ts and nowhere else: on a machine without IBM Plex installed the
+ * game fell back to system-ui and looked nothing like the approved direction A, which
+ * lives on the condensed map lettering. `url()` stays relative on purpose; an https:
+ * source here would put a network call between the player and their own game.
+ */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('./fonts/IBMPlexSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('./fonts/IBMPlexSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Condensed';
+  src: url('./fonts/IBMPlexSansCondensed-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('./fonts/IBMPlexMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ground: #e4e0d2;
   --paper: #f2eee3;

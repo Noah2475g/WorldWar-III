@@ -30,7 +30,8 @@ und keine europäische Macht hätte die geforderten drei Provinzen erreicht (R-M
 
 ## Schrift — IBM Plex
 
-**Lizenz:** SIL Open Font License 1.1 (OFL). Quelle: https://github.com/IBM/plex
+**Lizenz:** SIL Open Font License 1.1 (OFL), Wortlaut in
+`apps/desktop/src/ui/fonts/OFL.txt`. Quelle: https://github.com/IBM/plex, Stand `v6.4.0`.
 
 | Familie | Wofür |
 |---|---|
@@ -42,8 +43,28 @@ Die Namen stehen bewusst ungebrochen in einer Tabelle: `test/guards/no-foreign-a
 sucht jede Familie, die die Oberfläche verlangt, wörtlich in dieser Datei — ein über
 zwei Zeilen umgebrochener Name wäre ein Eintrag, den weder Prüfung noch Mensch findet.
 
-Im Mockup (`docs/design/ui-mockup.html`) über Google Fonts eingebunden; die ausgelieferte
-Anwendung bettet die Schriftdateien ein, damit sie ohne Netz funktioniert (R-FREE-04).
+**Eingecheckt** unter `apps/desktop/src/ui/fonts/`, zusammen 208 kB:
+
+| Datei | Schnitt | Größe |
+|---|---|---|
+| `IBMPlexSans-Regular.woff2` | Sans 400 | 61,5 kB |
+| `IBMPlexSans-SemiBold.woff2` | Sans 600 | 65,5 kB |
+| `IBMPlexSansCondensed-SemiBold.woff2` | Condensed 600 | 36,5 kB |
+| `IBMPlexMono-Regular.woff2` | Mono 400 | 44,6 kB |
+
+**Bezug:** `node scripts/fetch-fonts.mjs` holt sie einmalig von der oben genannten
+Adresse und prüft jede Datei gegen eine SHA-256-Summe; `--check` prüft die eingecheckten
+Dateien, ohne etwas zu laden. Anders als bei den Geodaten wird hier das *Ergebnis*
+mitgeliefert: `apps/desktop/src/ui/app.css` bindet die vier Dateien über `@font-face`
+mit relativer `url()` ein, damit das Spiel ohne Netz auskommt (R-FREE-04) und auf jedem
+Rechner so aussieht wie die freigegebene Richtung A — auch auf einem, der IBM Plex nie
+installiert hat.
+
+Das Mockup (`docs/design/ui-mockup.html`) lädt dieselben drei Familien über Google Fonts.
+Dass es dieselben sind, prüft `test/design-gate.test.ts`; dass die Anwendung sie
+mitbringt statt sie vorauszusetzen, prüft `test/guards/no-foreign-assets.test.ts` — und
+zwar so, dass die Zusicherung gegen eine leere Dateimenge fällt. Bis zum 2026-09-06 stand
+an dieser Stelle dieselbe Behauptung ohne eine einzige Datei dahinter.
 
 ## Alles Übrige
 

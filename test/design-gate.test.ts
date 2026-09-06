@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { PLAYER_COLORS, TOKENS, relativeLuminance } from '../apps/desktop/src/ui/tokens.ts'
+import { PLAYER_COLORS, TOKENS, TYPE, relativeLuminance } from '../apps/desktop/src/ui/tokens.ts'
 import { ROOT } from './guards/scan.ts'
 
 /**
@@ -77,6 +77,28 @@ describe('R-UI-01 Vor dem UI-Bau lag ein Mockup zur Freigabe vor', () => {
       expect(relativeLuminance(color), `Spielerfarbe ${name} ist zu dunkel fuer Kartenschrift`).toBeGreaterThan(
         relativeLuminance(TOKENS.accent),
       )
+    }
+  })
+
+  it('zeigt das Mockup dieselben Schriften, die das Spiel verlangt', () => {
+    // Bis zum 2026-09-06 verglich dieses Tor nur Farben — und genau daneben lag der
+    // groesste Unterschied zwischen Bild und Erzeugnis: das Mockup laedt IBM Plex,
+    // das Spiel hatte keine Schriftdatei und fiel auf system-ui zurueck. Richtung A
+    // lebt von der schmalen Kartenschrift; eine Freigabe auf ein Bild, das anders
+    // gesetzt ist als das Spiel, ist keine Freigabe auf das Spiel.
+    const families = (text: string): Set<string> =>
+      new Set(
+        [...text.matchAll(/["']?(IBM Plex[A-Za-z ]*)["']?/g)]
+          .map((match) => match[1]!.trim())
+          .filter((name) => name.length > 'IBM Plex'.length),
+      )
+
+    const wanted = families([TYPE.map, TYPE.ui, TYPE.num].join(','))
+    const shown = families(mockup)
+
+    expect(wanted.size, 'TYPE verlangt keine benannte Schriftfamilie').toBeGreaterThan(0)
+    for (const family of wanted) {
+      expect([...shown], `Das Mockup zeigt "${family}" nicht`).toContain(family)
     }
   })
 })

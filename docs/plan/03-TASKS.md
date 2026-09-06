@@ -601,9 +601,12 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Anforderungen:** R-ARCH-06/AK1, Abnahmekriterium 6
 - **Abhängigkeiten:** T-M8-02
 - **Dateien:** `packages/core/test/perf/tick.bench.ts`, `docs/reports/performance.md`
-- **Tests zuerst:** Der Bench schreibt nach `docs/reports/tick-bench.json`; ein
-  `tick.budget.test.ts` schlägt fehl, sobald der Median 0,5 ms oder das 99. Perzentil 2 ms
-  überschreitet (200 Provinzen, 8 Spieler, 400 Armeen). Der Langlauf über 1000 Spieltage trägt `@slow` und prüft zusätzlich,
+- **Tests zuerst:** Der Bench schreibt nach `docs/reports/tick-bench.json`; er schlägt fehl,
+  sobald der Median 0,5 ms oder das 99. Perzentil 2 ms überschreitet. *(Am 2026-09-06
+  richtiggestellt: dieser Bench läuft an der Testkarte mit **12** Provinzen und belegt
+  R-ARCH-06/AK1 damit nicht — er ist eine Frühwarnung. Die Abnahme der Anforderung liegt seit
+  T-M9-04 bei `worldmap.bench.slow.test.ts` an der ausgelieferten Karte, seit dem 2026-09-06
+  mit nachgemessenen 3,5 ms / 8 ms.)* Der Langlauf über 1000 Spieltage trägt `@slow` und prüft zusätzlich,
   dass der Speicherverbrauch nicht unbegrenzt wächst (Ereignis-Ringpuffer greift).
 - **Fertig wenn:** grün — einschließlich `pnpm test:slow`; Messwerte im Bericht.
 

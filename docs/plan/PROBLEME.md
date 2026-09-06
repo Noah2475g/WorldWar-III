@@ -667,12 +667,25 @@ Zusicherung bleibt beim erreichbaren Budget — eine Zusicherung auf 0,5 ms wär
 machte `pnpm test:slow` rot und damit AK-4, AK-6 und die Abnahmekette; das ist genau der
 Fehler, den T-M14-01 behoben hat.
 
-**Status: offen, Entscheidung steht aus.** Zwei Wege, und die Wahl gehört Noah:
-**(a)** R-ARCH-06/AK1 auf einen nachgemessenen Wert anheben, begründet mit der Rechnung
-oben — dann sagt die Anforderung, was das Spiel wirklich braucht. **(b)** Den Kern
-schneller machen, bis 0,5 ms gehalten sind — teuer, und ohne erkennbaren Gewinn für den
-Spieler. Vorschlag: **(a)**, mit der Messung als Begründung. Vorgemerkt für **M16**, wo
-die Leistung am echten Bau ohnehin neu zu messen ist.
+**Entschieden am 2026-09-06 (Noah): (a) — Anforderung nachmessen und anheben.** Nicht auf
+M16 vertagt, sondern sofort umgesetzt, weil die Zahl sonst als offener Widerspruch in die
+Abnahme gegangen wäre.
+
+**Was jetzt gilt:** R-ARCH-06/AK1 nennt die **ausgelieferte** Karte (237 Provinzen, 12
+Mächte) und fordert Median unter **3,5 ms**, p99 unter **8 ms**. Die Herleitung steht in
+der Anforderung selbst: R-TIME-02 verlangt rund 100 Ticks je Sekunde, dafür genügen 10 ms;
+3,5 ms halten das mit dreifacher Reserve. Gemessen wurde dreimal — 2,344 / 2,359 / 2,463 ms
+Median, Streuung unter 5 % — die Zusicherung liegt also rund 1,5-fach über der Messung.
+
+**Und das war der eigentliche Befund:** Die Zusicherung im Bench ist jetzt **dieselbe Zahl**
+wie die Anforderung, nicht das Sechzehnfache. Ein angehobenes Budget mit weiterhin lockerer
+Zusicherung wäre derselbe Fehler in neuer Höhe gewesen. Der Bericht nennt zusätzlich die
+Reserve je Größe, damit ein Rückschritt sichtbar wird, bevor er die Grenze reißt.
+
+**Der kleine Bench ist eingeordnet statt gelöscht:** `tick.bench.slow.test.ts` misst 12
+Provinzen und behauptete, die Anforderung zu prüfen — er ist jetzt als Frühwarnung
+beschrieben, mit dem Vermerk, dass er bei 0,04 ms grün war, während die Anforderung um den
+Faktor fünf gerissen wurde.
 
 ---
 
@@ -746,10 +759,27 @@ Zwei Wege:
 **Vorschlag: (a).** Das Design-Gate war eine ausdrückliche Freigabe auf ein Bild, und die
 Schrift trägt daran mehr als die Farben — Richtung A lebt von der schmalen Kartenschrift.
 
-Bis zur Entscheidung bleibt der Wächter, wie er ist. Ihn jetzt zu schärfen hieße, `pnpm
-verify` rot zu machen und damit alles Weitere aufzuhalten — dieselbe Falle wie bei der
-Turnier-Obergrenze (T-M14-05). **Zur Aufgabe gehört ab jetzt beides:** die Schriften *und*
-ein Wächter, der eine leere Asset-Menge nicht mehr für Erfüllung hält.
+**Entschieden am 2026-09-06 (Noah): (a), einbetten.** Umgesetzt in T-M14-09. Bezogen wurden
+vier Schnitte von `github.com/IBM/plex`, Stand `v6.4.0` — ein Tag, kein Branch, sonst wären
+die Prüfsummen im Skript nach dem nächsten Fremd-Commit Rauschen. Zusammen **208,1 kB**,
+die Grenze der Aufgabe lag bei 400 kB. `scripts/fetch-fonts.mjs` hält Quelle, Lizenz und
+je Datei eine SHA-256-Summe fest und prüft mit `--check` das Eingecheckte nach, ohne etwas
+zu laden.
+
+**Und der Wächter kann jetzt fallen.** Das war der eigentliche Befund, nicht die fehlende
+Schrift: `familiesWithoutEmbeddedFile(tracked, css)` nimmt die Dateiliste als Parameter,
+damit eine Zusicherung sie gegen die **leere** Liste laufen lassen und verlangen kann, dass
+sie klagt — dieselbe Zwei-Richtungs-Probe, die `ui-reachability` mit der künstlichen Waise
+fährt. Ein Wächter, der nur die echte Welt liest, wird grün, sobald jemand sie repariert,
+und beweist danach nichts mehr.
+
+**Zwei Nebenbefunde beim Bau:**
+1. `OFL.txt` wäre bei jedem Auschecken auf LF normalisiert worden und hätte damit eine
+   andere Prüfsumme gehabt als die geladene Datei — `.gitattributes` führt sie jetzt als
+   `-text`. Eine Prüfsumme über eine Datei, die das Versionssystem unterwegs umschreibt,
+   ist keine Prüfung.
+2. Das Design-Tor verglich bis heute **nur Farbtokens**. Der größte sichtbare Unterschied
+   zwischen Freigabebild und Erzeugnis war aber die Schrift. Es vergleicht jetzt beides.
 
 ---
 

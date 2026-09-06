@@ -4,16 +4,20 @@
   "edges": 658,
   "players": 12,
   "ticks": 480,
-  "medianMs": 2.359,
-  "p99Ms": 5.262,
+  "medianMs": 2.403,
+  "p99Ms": 5.207,
   "requirement": {
     "id": "R-ARCH-06/AK1",
-    "medianMs": 0.5,
-    "p99Ms": 2,
-    "provinces": 200,
-    "players": 8
+    "medianMs": 3.5,
+    "p99Ms": 8,
+    "provinces": 237,
+    "players": 12
   },
-  "meetsRequirement": false,
-  "note": "Gemessen 2.359 ms Median gegen 0.5 ms gefordert (Faktor 4.7). Offener Befund in docs/plan/PROBLEME.md, Entscheidung steht aus.",
-  "measuredAt": "2026-09-06T00:32:19.213Z"
+  "meetsRequirement": true,
+  "headroom": {
+    "median": 1.46,
+    "p99": 1.54
+  },
+  "note": "Eingehalten: 2.403 ms Median gegen 3.5 ms gefordert, 5.207 ms p99 gegen 8 ms.",
+  "measuredAt": "2026-09-06T11:45:12.345Z"
 }

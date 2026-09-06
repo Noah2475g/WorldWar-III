@@ -1183,13 +1183,13 @@ tasks:
   - id: T-M14-09
     milestone: M14
     title: Das Spiel bekommt seine Schrift
-    status: blocked
+    status: done
     deps: [T-M14-02]
     requirements: [R-UI-04, R-ASSET-01, R-ASSET-02, R-FREE-04]
     constraints: [C-08]
     files: [apps/desktop/src/ui/fonts/IBMPlexSans-Regular.woff2, apps/desktop/src/ui/fonts/IBMPlexSans-SemiBold.woff2, apps/desktop/src/ui/fonts/IBMPlexSansCondensed-SemiBold.woff2, apps/desktop/src/ui/fonts/IBMPlexMono-Regular.woff2, apps/desktop/src/ui/fonts/OFL.txt, scripts/fetch-fonts.mjs, apps/desktop/src/ui/app.css, docs/ASSETS.md]
     tests: [test/guards/no-foreign-assets.test.ts, test/design-gate.test.ts]
-    gate_reason: "braucht Noahs Freigabe: vier .woff2-Dateien plus OFL-Lizenz (rund 300 kB) von github.com/IBM/plex herunterladen und einchecken, oder stattdessen auf Systemschriften umstellen und die Design-Freigabe nachfuehren - Begruendung und beide Wege in PROBLEME.md, 2026-09-06"
+    decided: "2026-09-06, Noah: einbetten. Vier .woff2-Schnitte plus OFL 1.1 von github.com/IBM/plex, Stand v6.4.0, ueber scripts/fetch-fonts.mjs mit Pruefsummen bezogen und eingecheckt - zusammen 208 kB. Der zweite Weg (Systemschriften, Design-Freigabe nachfuehren) ist damit verworfen; Begruendung in PROBLEME.md, 2026-09-06."
     dod: "git ls-files findet mindestens vier woff2-Dateien unter apps/desktop/src/ui/fonts, zusammen unter 400 KB; der Waechter verlangt je IBM-Plex-Familie aus TYPE ein @font-face mit lokaler url() und faellt gegen eine leere Asset-Menge (Selbsttest wie bei der kuenstlichen Waise); weder app.css noch index.html nennen eine Schriftquelle mit https:; design-gate vergleicht die Schriftfamilien von Mockup und Code; ASSETS.md nennt jede der vier Dateien und die OFL 1.1, und der Satz ueber das Einbetten ist testbelegt. Der einmalige Fremdbezug der Schriften laeuft unter der Freigabe, die T-M9-01 fuer Geodaten bereits erteilt hat - kein neuer Haltepunkt, aber scripts/fetch-fonts.mjs nennt Quelle, Lizenz und Pruefsumme"
 
   - id: T-M14-10

@@ -103,7 +103,7 @@ stellen, kurz, mit Empfehlung.
 | Testabdeckung Kern | ≥ 90 % Zeilen | `pnpm coverage` (leere Pakete ausgenommen) |
 | Testabdeckung gesamt | ≥ 80 % | `pnpm coverage` |
 | Anforderungen mit Test | 100 % der V1-IDs | `pnpm coverage:requirements` — **eigenes Tor, nicht Teil von `verify`**; erst in T-M12-03 verpflichtend grün |
-| Tick-Rechenzeit | Median < 0,5 ms, p99 < 2 ms (200 Provinzen, 8 Spieler) | `pnpm bench` + Budget-Test |
+| Tick-Rechenzeit | Median < 3,5 ms, p99 < 8 ms auf der **ausgelieferten** Weltkarte (237 Provinzen, 12 Mächte) | `pnpm test:slow` → `worldmap.bench.slow.test.ts`, Messwert in `docs/reports/worldmap-bench.json`. Die Zahl ist am 2026-09-06 nachgemessen und ersetzt die nie nachgerechneten 0,5 ms (DECISIONS.md); der kleine Bench an 12 Provinzen ist eine Frühwarnung, keine Abnahme |
 | KI-Rechenzeit | ≤ 30 % der Tickzeit | `pnpm bench` + Budget-Test |
 | Guards | alle grün | `pnpm verify` |
 

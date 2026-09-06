@@ -792,3 +792,56 @@ der Landungsmalus sachlich zum Seetransport gehört und der Seetransport der KI 
 eigenes Arbeitspaket ist (siehe den Eintrag zur Zielpartie); kommt er wieder, kommt er dort.
 Bis dahin gilt: was gebaut liegen bleibt, wird nicht besser — deshalb wird die Funktion
 gelöscht und nicht aufgehoben.
+---
+
+## 2026-09-06 · T-M14-09 · R-UI-04 · Die Schrift kommt mit, statt vorausgesetzt zu werden
+
+**Entscheidung (Noah):** IBM Plex wird **eingebettet**. Vier `.woff2`-Schnitte plus die
+OFL 1.1 werden von `github.com/IBM/plex` bezogen, unter `apps/desktop/src/ui/fonts/`
+eingecheckt und von `app.css` über `@font-face` mit relativer `url()` geladen. Der zweite
+Weg — auf Systemschriften umstellen und die Design-Freigabe nachführen — ist verworfen.
+
+**Begründung:** Die Freigabe von T-M10-01 war eine Freigabe auf ein *Bild*. Richtung A
+„Lagekarte" lebt von der schmalen Kartenschrift, und das Mockup lädt IBM Plex von Google
+Fonts; das Spiel hatte keine einzige Schriftdatei und fiel auf `system-ui` zurück. Damit
+wäre die erste Frage des Abnahme-Playtests („Sieht das Spiel aus wie Richtung A?") gegen
+eine andere Schrift beantwortet worden als die freigegebene. Eine Freigabe auf ein Bild,
+das anders gesetzt ist als das Erzeugnis, ist keine Freigabe auf das Erzeugnis.
+
+**Warum das kein neuer Haltepunkt war:** Der einmalige externe Bezug läuft unter derselben
+Freigabe, die T-M9-01 für die Geodaten erteilt hat — so steht es seit dem 2026-09-05 in
+der Aufgabe selbst. Nachgefragt wurde trotzdem, weil ein Download in ein Repository etwas
+anderes ist als ein Download in ein nicht eingechecktes Arbeitsverzeichnis: die Bytes
+bleiben.
+
+**Auswirkung:** 208,1 kB im Repository (die Aufgabe zog die Grenze bei 400 kB).
+`scripts/fetch-fonts.mjs` hält Quelle, Version, Lizenz und je Datei eine SHA-256-Summe
+fest; `--check` prüft das Eingecheckte, ohne etwas zu laden. Zur Laufzeit ändert sich
+nichts an R-FREE-04: es gibt weiterhin keinen Netzaufruf, die Dateien liegen bei.
+
+---
+
+## 2026-09-06 · R-ARCH-06 · Das Tickbudget wird auf einen gemessenen Wert gesetzt
+
+**Entscheidung (Noah):** R-ARCH-06/AK1 bekommt statt der Entwurfszahl 0,5 ms einen
+**nachgemessenen** Wert, und die Zusicherung im Weltkarten-Bench wird auf diesen Wert
+geschärft. Der Kern wird nicht optimiert, um eine nie nachgerechnete Zahl zu halten.
+
+**Begründung:** Die 0,5 ms stammen aus der Entwurfsphase und tragen im Anforderungstext
+ihre eigene Begründung — „nur so ist die interaktive Betriebsart erreichbar". Diese
+Begründung ist nachgerechnet falsch: R-TIME-02 verlangt bis zu 100 Spielstunden je Sekunde,
+also rund 100 Ticks je Sekunde, und bei den gemessenen 2,463 ms je Tick sind rund 400
+möglich. Die Anforderung fordert damit das Achtfache dessen, was sie begründet.
+
+**Warum das keine Selbstfreisprechung ist:** Der eigentliche Befund war nicht die verfehlte
+Zahl, sondern dass **keine Prüfung sie je gemessen hat**. Der Weltkarten-Bench sicherte
+8 ms zu — das Sechzehnfache, also eine Erlaubnis statt einer Prüfung; der zweite Bench
+prüfte gegen die Zahl der Anforderung, aber an 12 Provinzen statt 200. Beide grün, keiner
+aussagekräftig. Ein angehobenes Budget ohne scharfe Zusicherung wäre derselbe Fehler in
+neuer Höhe, deshalb gehört zur Entscheidung zwingend, dass der Bench den neuen Wert eng
+hält und der Bericht Anforderung, Messung und Abstand nebeneinander ausweist.
+
+**Auswirkung:** Die Anforderung sagt ab jetzt, was das Spiel wirklich braucht, und ein
+Rückschritt in der Rechenzeit fällt auf, statt in einem sechzehnfachen Spielraum zu
+verschwinden. Für den Spieler ändert sich nichts — die interaktive Betriebsart war schon
+vorher erreichbar.

@@ -88,10 +88,19 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   Unterschreitung lässt die Prüfkette fehlschlagen.
 
 - **R-ARCH-06 — Performance.**
-  - AK1: WENN eine Partie mit 200 Provinzen, 8 Spielern und ~400 Armeen simuliert wird, DANN
-    SOLL ein Tick im Median unter **0,5 ms** und im 99. Perzentil unter 2 ms dauern.
-    *(Nur so ist die interaktive Betriebsart aus R-TIME-02 überhaupt erreichbar; das frühere
-    Budget von 5 ms widersprach ihr um den Faktor zehn.)*
+  - AK1: WENN die **ausgelieferte Weltkarte** simuliert wird (237 Provinzen, 12 Mächte, KI
+    für alle), DANN SOLL ein Tick im Median unter **3,5 ms** und im 99. Perzentil unter
+    **8 ms** dauern.
+    *(Nachgemessen und begründet am 2026-09-06, siehe DECISIONS.md. R-TIME-02 verlangt bis
+    zu 100 Spielstunden je Sekunde, also rund 100 Ticks je Sekunde — dafür genügen 10 ms je
+    Tick; 3,5 ms halten die interaktive Betriebsart mit dreifacher Reserve. Die frühere
+    Zahl 0,5 ms stammte aus der Entwurfsphase, ist nie nachgerechnet worden und forderte
+    das Achtfache dessen, was ihre eigene Begründung trug. Gemessen wird ausdrücklich die
+    Karte, die ausgeliefert wird, nicht eine gedachte mit 200 Provinzen: der alte Wortlaut
+    ließ zu, dass ein Test die Zahl an einer zwanzigmal kleineren Karte für erfüllt
+    erklärt. Die Zusicherung im Bench liegt bei genau diesen Werten — dreimal gemessen
+    2,344/2,359/2,463 ms Median, also rund 1,5-fache Reserve: genug für die Schwankung
+    einer Maschine, zu wenig für einen echten Rückschritt.)*
   - AK2: WENN die Karte gerendert wird, DANN SOLL die Anzeige bei 200 Provinzen ≥ 60 FPS halten.
 
 ### 2.2 Zeit & Geschwindigkeit (`R-TIME`) — Kernziel Z1

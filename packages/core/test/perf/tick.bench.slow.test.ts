@@ -13,9 +13,13 @@ import { createInitialState, type GameConfig } from '../../src/state/create'
  * values are written to docs/reports so a regression can be compared against history
  * rather than against memory.
  *
- * Note on the numbers: the budget in the requirements refers to a 200-province world.
- * The test map has twelve, so the per-tick budget is scaled down accordingly; the point
- * is to catch an order-of-magnitude regression, not to certify the final map.
+ * Note on the numbers: R-ARCH-06/AK1 is measured on the *shipped* world map, and the
+ * test that certifies it lives in worldmap.bench.slow.test.ts. This map has twelve
+ * provinces — a twentieth of the real one — so the numbers here certify nothing about
+ * the requirement; they catch an order-of-magnitude regression early, on a map small
+ * enough to be fast. Until 2026-09-06 this file asserted the requirement's own figures
+ * on twelve provinces and was green at 0.04 ms, which is how a budget breached by a
+ * factor of five stayed invisible for a milestone.
  *
  * This runs in the slow suite (`pnpm bench`), on its own. Timing a simulation while
  * thirty other test files run in parallel measures the machine's load, not the code.
@@ -78,7 +82,7 @@ describe('R-ARCH-06 Rechenzeit je Tick', () => {
       `${JSON.stringify({ provinces: map.provinces.length, armies: 12, tickMedianMs: tickMedian, tickP99Ms: p99 }, null, 2)}\n`,
     )
 
-    // Twelve provinces, so the budget is a fraction of the 0.5 ms allowed for 200.
+    // Twelve provinces: a local guard rail, not the requirement (see the file comment).
     // The tail is measured while the rest of the suite runs in parallel, so it gets a
     // wider allowance than the median — a regression shows up in the median first.
     expect(tickMedian).toBeLessThan(0.5)

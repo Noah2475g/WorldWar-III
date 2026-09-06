@@ -78,7 +78,7 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
     expect(map.provinces.length).toBeGreaterThan(150)
   })
 
-  it('haelt das Tickbudget auf 237 Provinzen', () => {
+  it('R-ARCH-06/AK1 haelt das Tickbudget auf 237 Provinzen', () => {
     let state = newGame()
     const durations: number[] = []
 
@@ -96,10 +96,18 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
     const medianMs = Number(median(durations).toFixed(3))
     const p99Ms = Number(percentile(durations, 0.99).toFixed(3))
 
-    // T-M14-05: Was die Anforderung fordert, steht jetzt neben dem, was gemessen wurde.
-    // R-ARCH-06/AK1 verlangt Median < 0,5 ms und p99 < 2 ms; dieser Test sicherte bisher
-    // 8 ms und 40 ms zu — das Sechzehn- und Zwanzigfache. Ein Budget, das um den Faktor
-    // sechzehn über der Anforderung liegt, ist keine Prüfung, sondern eine Erlaubnis.
+    // Die Anforderung, an der gemessen wird — eine Zahl, nicht zwei.
+    //
+    // Bis zum 2026-09-06 standen hier drei verschiedene: R-ARCH-06/AK1 forderte 0,5 ms,
+    // dieser Test sicherte 8 ms zu (das Sechzehnfache — eine Erlaubnis, keine Prüfung),
+    // und gemessen wurden 2,4 ms. Nachgerechnet trug die Anforderung ihre eigene Zahl
+    // nicht: R-TIME-02 verlangt rund 100 Ticks je Sekunde, dafür genügen 10 ms je Tick.
+    // Noahs Entscheidung (DECISIONS.md, 2026-09-06): die Anforderung wird auf einen
+    // gemessenen Wert gesetzt — und die Zusicherung genau darauf, mit rund 1,5-facher
+    // Reserve über der dreifach wiederholten Messung. Wer sie anhebt, muss erklären warum.
+    const REQUIREMENT = { id: 'R-ARCH-06/AK1', medianMs: 3.5, p99Ms: 8, provinces: 237, players: 12 }
+    const meets = medianMs < REQUIREMENT.medianMs && p99Ms < REQUIREMENT.p99Ms
+
     const report = {
       map: map.id,
       provinces: map.provinces.length,
@@ -108,25 +116,22 @@ describe('R-ARCH-06 Die Weltkarte traegt die Kernregeln', () => {
       ticks: durations.length,
       medianMs,
       p99Ms,
-      requirement: { id: 'R-ARCH-06/AK1', medianMs: 0.5, p99Ms: 2, provinces: 200, players: 8 },
-      meetsRequirement: medianMs < 0.5 && p99Ms < 2,
-      note:
-        medianMs < 0.5 && p99Ms < 2
-          ? 'Die Anforderung ist auf der Weltkarte eingehalten.'
-          : `Gemessen ${medianMs} ms Median gegen ${0.5} ms gefordert (Faktor ${(medianMs / 0.5).toFixed(1)}). Offener Befund in docs/plan/PROBLEME.md, Entscheidung steht aus.`,
+      requirement: REQUIREMENT,
+      meetsRequirement: meets,
+      headroom: {
+        median: Number((REQUIREMENT.medianMs / Math.max(0.001, medianMs)).toFixed(2)),
+        p99: Number((REQUIREMENT.p99Ms / Math.max(0.001, p99Ms)).toFixed(2)),
+      },
+      note: meets
+        ? `Eingehalten: ${medianMs} ms Median gegen ${REQUIREMENT.medianMs} ms gefordert, ${p99Ms} ms p99 gegen ${REQUIREMENT.p99Ms} ms.`
+        : `Verfehlt: ${medianMs} ms Median gegen ${REQUIREMENT.medianMs} ms gefordert (Faktor ${(medianMs / REQUIREMENT.medianMs).toFixed(1)}).`,
       measuredAt: new Date().toISOString(),
     }
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
     writeFileSync(`${ROOT}/docs/reports/worldmap-bench.json`, JSON.stringify(report, null, 2) + '\n')
 
-    // Zugesichert wird weiterhin das erreichbare Budget, nicht das geforderte: eine
-    // Zusicherung auf 0,5 ms wäre gegen die heutige Messung (2,463 ms) sofort rot, machte
-    // `pnpm test:slow` rot und damit AK-4, AK-6 und die Abnahmekette — derselbe Fehler,
-    // den T-M14-01 gerade behoben hat. Die Abweichung ist im Bericht und in PROBLEME.md
-    // benannt; die Entscheidung (Kern schneller machen oder Anforderung nachmessen und
-    // begründet anheben) gehört Noah, nicht diesem Test.
-    expect(report.medianMs, `Median ${report.medianMs} ms`).toBeLessThan(8)
-    expect(report.p99Ms, `p99 ${report.p99Ms} ms`).toBeLessThan(40)
+    expect(report.medianMs, `Median ${report.medianMs} ms`).toBeLessThan(REQUIREMENT.medianMs)
+    expect(report.p99Ms, `p99 ${report.p99Ms} ms`).toBeLessThan(REQUIREMENT.p99Ms)
   })
 
   it('laeuft tausend Spieltage ohne Fehler und ohne Speicherwuchs', async () => {
