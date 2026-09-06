@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
+import { CRITERIA, v1Failures } from './acceptance-criteria.mjs'
 
 /**
  * The acceptance run (T-M12-03).
@@ -115,6 +116,16 @@ const playtestLine = playtest.ok
 const passed = results.filter((r) => r.ok).length
 const failed = results.filter((r) => !r.ok)
 
+// T-M16-01: Was die V1-Abnahme rot faerbt, und was nicht.
+//
+// AK-8 gehoert zu M16, das ausdruecklich hinter der V1 liegt. Zaehlte es hier mit,
+// hinge die Abnahme der V1 an einem spaeteren Bau - genau der Fehler des Nachtrags
+// 2.15, der AK-2 unerfuellbar gemacht hat, bis T-M14-01 ihn reparierte. Die Zeile steht
+// trotzdem im Bericht: eine Zusage ganz ohne Ort ist der andere Fehler derselben Art,
+// und AK-8 war bis zum 2026-09-06 in genau dem Zustand.
+const spaetere = CRITERIA.filter((c) => c.scope !== 'V1')
+const v1Failed = v1Failures(results)
+
 const report = [
   '# Abnahmelauf V1',
   '',
@@ -124,6 +135,10 @@ const report = [
   '|---|---|---|',
   ...results.map((r) => `| ${r.id} | ${r.description} | ${r.ok ? '✅ bestanden' : '❌ fehlgeschlagen'} |`),
   `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\`, Antworten in \`docs/reports/playtest-v1.md\` | ${playtestLine} |`,
+  ...spaetere.map(
+    (c) =>
+      `| ${c.id} | Verpackung als Programm, gemessen in T-M16-05 | ⏸ ${c.scope}, zaehlt nicht gegen V1 |`,
+  ),
   '',
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
@@ -140,4 +155,8 @@ console.log(`\n${passed} von ${results.length} Prüfungen bestanden.`)
 console.log('docs/reports/acceptance.md geschrieben.')
 console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 
-process.exit(failed.length === 0 ? 0 : 1)
+for (const c of spaetere) {
+  console.log(`${c.id}: ${c.scope}, zaehlt nicht gegen die V1-Abnahme (T-M16-01)`)
+}
+
+process.exit(v1Failed.length === 0 ? 0 : 1)

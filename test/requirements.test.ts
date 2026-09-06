@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
+import { CRITERIA, criteriaOf, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
 
 const DOC = `
 ### 2.1 Beispiel
@@ -275,5 +276,112 @@ scope:
     const script = fileURLToPath(new URL('../scripts/requirements-coverage.mjs', import.meta.url))
     const result = spawnSync(process.execPath, [script], { encoding: 'utf8' })
     expect(result.stdout).toMatch(/M15: \d+ von \d+ belegt \(Fortschritt, kein Tor\)/)
+  })
+})
+
+/**
+ * Jedes Abnahmekriterium hat einen Ort (T-M16-01).
+ *
+ * Der Anlass war AK-8: C-02 sagt seit dem 2026-09-05 „eigenes Abnahmekriterium AK-8",
+ * und danach suchte kein Skript — Abschnitt 3 kannte AK-1 bis AK-7, `acceptance.mjs`
+ * pruefte AK-1 bis AK-5 und AK-7. Geprueft wird deshalb nicht der Einzelfall, sondern
+ * die Regel, und sie wird zuerst an erfundenen Dokumenten gezeigt: eine Pruefung, die
+ * nur an den echten Dateien laeuft, wird in dem Moment bedeutungslos, in dem die echten
+ * Kennungen stimmen — die Lehre aus T-M14-02, wo drei Waechter ueber einer leeren Menge
+ * gruen waren.
+ */
+const DOC_AK = `
+## 3. Abnahmekriterien für V1
+
+| ID | Abnahmekriterium |
+|---|---|
+| **AK-1** | Erstes Kriterium. |
+| **AK-2** | Zweites Kriterium. |
+
+### 3.1 Abnahmekriterium für M9 — nicht Teil der V1
+
+| ID | Abnahmekriterium |
+|---|---|
+| **AK-3** | Drittes Kriterium, gehört einem späteren Meilenstein. |
+`
+
+/** Dasselbe Dokument, in dem AK-4 nur im Fließtext einer Rahmenbedingung vorkommt. */
+const DOC_AK_NUR_ERWAEHNT = `${DOC_AK}
+| C-99 | Auslieferung: später, mit eigenem Abnahmekriterium **AK-4**. |
+`
+
+const LISTE = [
+  { id: 'AK-1', scope: 'V1' },
+  { id: 'AK-2', scope: 'V1' },
+  { id: 'AK-3', scope: 'M9' },
+]
+
+describe('R-ARCH-05 Jedes Abnahmekriterium hat einen Ort', () => {
+  it('findet ein Kriterium, das der Anforderungstext fuehrt und keine Liste kennt', () => {
+    const { ohneOrt } = unhomedCriteria(DOC_AK, LISTE.slice(0, 2))
+    expect(ohneOrt).toEqual(['AK-3'])
+  })
+
+  it('findet die Gegenrichtung: eine Liste, die ein unbekanntes Kriterium fuehrt', () => {
+    const { ohneKriterium } = unhomedCriteria(DOC_AK, [...LISTE, { id: 'AK-9', scope: 'V1' }])
+    expect(ohneKriterium).toEqual(['AK-9'])
+  })
+
+  it('nimmt eine blosse Erwaehnung nicht fuer einen Ort', () => {
+    // Genau der Zustand, in dem AK-8 bis zum 2026-09-06 war: in C-02 zugesagt, in
+    // keiner Tabelle definiert. Wer die Erwaehnung als Definition zaehlt, findet den
+    // Fehler nie — die Zusage stand ja da.
+    const { nurErwaehnt, ohneOrt } = unhomedCriteria(DOC_AK_NUR_ERWAEHNT, LISTE)
+    expect(nurErwaehnt).toEqual(['AK-4'])
+    expect(ohneOrt).toEqual([])
+  })
+
+  it('ist an den echten Dateien gruen', () => {
+    const text = readFileSync(new URL('../docs/plan/01-REQUIREMENTS.md', import.meta.url), 'utf8')
+    const { ohneOrt, ohneKriterium, nurErwaehnt } = unhomedCriteria(text)
+    expect(ohneOrt, `ohne Ort: ${ohneOrt.join(', ')}`).toEqual([])
+    expect(ohneKriterium, `ohne Anforderung: ${ohneKriterium.join(', ')}`).toEqual([])
+    expect(nurErwaehnt, `nur erwaehnt, nirgends definiert: ${nurErwaehnt.join(', ')}`).toEqual([])
+  })
+})
+
+describe('R-ARCH-05 Ein spaeteres Kriterium faerbt die V1-Abnahme nicht rot', () => {
+  // Die Trennung ist der Kern von T-M16-01. Ein AK-8 in der V1-Tabelle kettete die
+  // Abnahme an einen Bau, der ausdruecklich hinter ihr liegt — der Fehler des Nachtrags
+  // 2.15, der AK-2 unerfuellbar gemacht hat und von T-M14-01 repariert wurde.
+  const ergebnisse = [
+    { id: 'AK-1', ok: true },
+    { id: 'AK-2/3', ok: true },
+    { id: 'AK-8', ok: false },
+  ]
+
+  it('laesst ein gerissenes M16-Kriterium den Ausgang der V1 unberuehrt', () => {
+    expect(v1Failures(ergebnisse)).toEqual([])
+  })
+
+  it('faengt dieselbe Zeile, sobald sie zur V1 gehoert', () => {
+    const alsV1 = CRITERIA.map((c) => (c.id === 'AK-8' ? { ...c, scope: 'V1' } : c))
+    expect(v1Failures(ergebnisse, alsV1).map((r) => r.id)).toEqual(['AK-8'])
+  })
+
+  it('loest eine Sammelzeile in ihre Kriterien auf', () => {
+    // Der Abnahmelauf fasst Pruefungen zusammen, die denselben Befehl teilen: eine Zeile
+    // AK-4/6 steht fuer zwei Kriterien. Wer sie als eine Kennung liest, findet AK-6 nie.
+    expect(criteriaOf('AK-4/6')).toEqual(['AK-4', 'AK-6'])
+    expect(criteriaOf('AK-1')).toEqual(['AK-1'])
+    expect(criteriaOf('Langlauf')).toEqual([])
+  })
+
+  it('jedes Kriterium der Liste traegt einen Umfang, und V1 ist nicht leer', () => {
+    expect(CRITERIA.every((c) => typeof c.scope === 'string' && c.scope.length > 0)).toBe(true)
+    expect(CRITERIA.filter((c) => c.scope === 'V1').map((c) => c.id)).toEqual([
+      'AK-1',
+      'AK-2',
+      'AK-3',
+      'AK-4',
+      'AK-5',
+      'AK-6',
+      'AK-7',
+    ])
   })
 })

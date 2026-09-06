@@ -2798,7 +2798,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Mechanik.
 - **Abhängigkeiten:** T-M14-01
 - **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `scripts/acceptance.mjs`,
-  `docs/plan/PROGRESS.md`
+  `scripts/acceptance-criteria.mjs` *(neu)*, `docs/plan/PROGRESS.md`
 - **Tests zuerst:**
   (a) `test/requirements.test.ts`: **die Verallgemeinerung, nicht der Einzelfall.** Der Test
   sammelt jede Kennung der Form `AK-n`, die der Anforderungstext nennt, und verlangt für

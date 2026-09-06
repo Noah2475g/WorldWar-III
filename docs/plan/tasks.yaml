@@ -1365,9 +1365,9 @@ tasks:
   - id: T-M16-01
     milestone: M16
     title: AK-8 bekommt einen Ort
-    status: todo
+    status: done
     deps: [T-M14-01]
-    files: [docs/plan/01-REQUIREMENTS.md, scripts/acceptance.mjs, docs/plan/PROGRESS.md]
+    files: [docs/plan/01-REQUIREMENTS.md, scripts/acceptance.mjs, scripts/acceptance-criteria.mjs, docs/plan/PROGRESS.md]
     tests: [test/requirements.test.ts]
     dod: "C-02 sagt seit dem 2026-09-05 eigenes Abnahmekriterium AK-8, und bis zum 2026-09-06 suchte danach kein Skript: Abschnitt 3 kannte AK-1 bis AK-7, acceptance.mjs prueft AK-1 bis AK-5 und AK-7. Danach gilt: 01-REQUIREMENTS.md fuehrt AK-8 in einem eigenen Abschnitt 3.1 mit dem Vermerk, dass es NICHT gegen die V1 zaehlt; pnpm acceptance weist AK-8 als eigene Zeile aus und laesst den Exit-Code unberuehrt, solange M16 nicht gebaut ist - ein AK-8, das gegen V1 zaehlte, waere der Fehler des Nachtrags 2.15 in neuer Gestalt, der AK-2 unerfuellbar gemacht hat. Dazu die Verallgemeinerung, denn der Einzelfall ist nicht das Problem: ein Test findet jedes AK, das der Anforderungstext nennt, und faellt, wenn eines in keiner Abnahmeliste steht - an einer erfundenen Liste nachgewiesen, damit die Pruefung nicht bedeutungslos wird, sobald die echten Kennungen stimmen. pnpm verify gruen, pnpm coverage:requirements meldet weiterhin V1 offen: 0"
 
