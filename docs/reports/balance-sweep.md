@@ -31,7 +31,7 @@ dieser Liste.
 
 | Konstante | Ausschlag | Überlebende −25 % / +25 % | tragend |
 |---|---|---|---|
-| `productionMoraleFloor` | 10.2 % | 4.9 / 4.8 | — |
+| `productionMoraleFloor` | 10.1 % | 4.9 / 4.8 | — |
 | `taxPerThousandPopulationPerTick` | 7.9 % | 5.2 / 4.8 | — |
 | `baseTargetMorale` | 7.0 % | 4.2 / 4.7 | — |
 | `moraleDriftDivisor` | 5.7 % | 4.6 / 4.1 | — |

@@ -1,5 +1,8 @@
 {
-  "aiMedianMs": 0.08080000000018117,
-  "tickMedianMs": 0.08149999999977808,
-  "share": 0.498
+  "aiMedianMs": 0.07979999999997744,
+  "tickMedianMs": 0.09259999999994761,
+  "share": 0.463,
+  "provinces": 12,
+  "players": 3,
+  "certifies": "nichts - R-AI-04 verlangt acht KI-Maechte auf der ausgelieferten Karte (T-M16-02)"
 }

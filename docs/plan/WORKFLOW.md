@@ -65,7 +65,7 @@ Mehr Kontext brauchst du für keine der Aufgaben unten.
 
 ---
 
-## 3 · Sechs Fallen, die schon jemanden gekostet haben
+## 3 · Sieben Fallen, die schon jemanden gekostet haben
 
 1. **`docs/reports/acceptance.md` ist überholt.** Es meldet „AK-1 ❌, 5 von 7" aus einem
    Lauf **vor** der Reparatur — daneben liegt `fullgame.json` mit Sieg an Spieltag 876.
@@ -83,6 +83,18 @@ Mehr Kontext brauchst du für keine der Aufgaben unten.
    misst sonst die Auslastung. Nie parallel zu einem Bau oder einer zweiten Suite.
 6. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` — lieber
    ein WIP-Commit.
+7. **Einen langen Lauf abzubrechen beendet ihn nicht.** `TaskStop` (und Strg+C) trifft die
+   Hülle, nicht den Prozessbaum: `pnpm` → `vitest` → `tinypool`-Arbeiter laufen weiter.
+   Am 2026-09-06 liefen dadurch **zwei Abnahmeläufe 105 Minuten nebeneinander** — halbe
+   Geschwindigkeit, verfälschte Benchmarks, und am Ende hätten beide in dieselben
+   Berichtsdateien geschrieben. Nach jedem Abbruch **nachsehen und den Baum killen**:
+
+   ```bash
+   tasklist //FI "IMAGENAME eq node.exe"
+   ```
+
+   Dann `taskkill //PID <pid> //T //F` auf die Wurzel. Ein `pnpm acceptance` erkennst du
+   an der Startzeit; alles, was älter ist als dein eigener Start, gehört jemand anderem.
 
 ---
 
@@ -207,12 +219,12 @@ schließt ihn (Escape, Fokusfang, Tabreihenfolge, `aria`).
 
 | | |
 |---|---|
-| Aufgaben | 132, davon **125 erledigt** |
+| Aufgaben | 132, davon **124 erledigt** |
 | Offen | T-M12-03 (Abnahme) · T-M16-02, -04, -05, -06, -07 |
 | Zurückgenommen, keine Arbeit | T-M8-00 (Datei-Port → M16) · T-M10-02 (Worker-Host → gelöscht) |
 | Anforderungen | 101, davon 82 V1-pflichtig, **`V1 offen: 0`** |
-| Tests | ~1350 schnell · Kern 96,8 % · gesamt 94,4 % |
+| Tests | **1330** schnell (gemessen 2026-09-06) · Kern 96,8 % · gesamt 94,4 % |
 | AK-1 | belegt: Sieg an **Spieltag 876**, 11 Kriegserklärungen, 2025 Eroberungen |
 | Tickbudget | 2,528 ms Median gegen 3,5 ms gefordert (Weltkarte, 237 Provinzen) |
 | KI-Budget | **ungemessen** unter den Bedingungen der Anforderung (siehe Schritt 5) |
-| Programm | `worldwar.exe`, 7,86 MB, gebaut am 2026-09-06 |
+| Programm | `worldwar.exe` 7,86 MB + **MSI 2,94 MB** + NSIS-Setup 2,20 MB, gebaut am 2026-09-06 (T-M16-03 erledigt) |

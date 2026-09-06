@@ -27,10 +27,10 @@
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.4253361696640677,
+        "leaderShare": 0.42490808747228687,
         "captures": 236,
         "survivors": 4.916666666666667,
-        "stockpile": 46262,
+        "stockpile": 46163,
         "days": 120
       },
       "upper": {
@@ -40,7 +40,7 @@
         "stockpile": 54112,
         "days": 120
       },
-      "swing": 0.102,
+      "swing": 0.101,
       "loadBearing": false
     },
     {
