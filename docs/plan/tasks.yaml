@@ -1270,10 +1270,10 @@ tasks:
   - id: T-M15-01
     milestone: M15
     title: Wer erfaehrt was - Alarm, Lektuere, Adressat - und BATTLE_STARTED
-    status: todo
+    status: done
     deps: [T-M14-15]
     requirements: [R-TIME-06]
-    files: [packages/core/src/events/types.ts, packages/core/src/events/emit.ts, packages/core/src/clock.ts, packages/core/src/phases/combat.ts, packages/core/src/phases/occupation.ts, packages/core/src/phases/morale.ts, packages/core/src/phases/dailyTick.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/commands/diplomacy.ts, docs/plan/02-DESIGN.md]
+    files: [packages/core/src/events/types.ts, packages/core/src/events/emit.ts, packages/core/src/clock.ts, packages/core/src/phases/combat.ts, packages/core/src/phases/occupation.ts, packages/core/src/phases/morale.ts, packages/core/src/phases/dailyTick.ts, packages/core/src/state/create.ts, docs/plan/02-DESIGN.md]
     tests: [packages/core/src/events/types.test.ts, packages/core/src/clock.test.ts, packages/core/src/phases/combat.test.ts, packages/core/test/properties/event-audience.test.ts, test/docs.test.ts]
     dod: "Ereignisse tragen drei getrennte Felder (audience = Lektuere, severity = Dringlichkeit, concerns = Adressat); concerns ist Pflichtfeld an BaseEvent mit der Vorgabe concerns = audience im emit(), weil ein fehlendes Betroffenenfeld still 'betrifft niemanden' hiesse und das Vorspulen bei einem verlorenen Landstrich durchliefe; firstAlertFor haelt nur bei concerns an und nicht mehr bei leerer audience; Eigenschaftslauf ueber 200 Spieltage und acht Maechte: 0 Alarme ohne Betroffenen und 0 Verstoesse gegen concerns-Teilmenge-audience; ein Gefecht ueber drei Ticks erzeugt genau 1 BATTLE_STARTED (die Kampfliste wird je Tick neu gebaut und vergibt jedes Mal eine neue battleId - der Vergleich gegen die Liste des Vortricks entprellt); determinism.test.ts bleibt ohne Golden-Erneuerung gruen; 02-DESIGN.md traegt das Kapitel 'Wer erfaehrt was' und wird von test/docs.test.ts gegen R-TIME-06 geprueft"
 

@@ -28,6 +28,9 @@ const alertEvent = (tick: number): GameEvent => ({
   tick,
   severity: 'alert',
   audience: [],
+  // T-M15-01: Ein Alarm nennt seit dem 2026-09-06 seine Betroffenen; wen er nicht nennt,
+  // haelt er auch nicht an. Hier sind es Vorbesitzer und Neubesitzer.
+  concerns: ['p1', 'p2'],
   provinceId: 'beta',
   previousOwner: 'p1',
   newOwner: 'p2',
@@ -38,6 +41,7 @@ const arrivalEvent = (tick: number, armyId = 'a1'): GameEvent => ({
   tick,
   severity: 'info',
   audience: [],
+  concerns: ['p1'],
   playerId: 'p1',
   armyId,
   provinceId: 'beta',
@@ -156,6 +160,7 @@ describe('R-TIME-03 Zielerkennung', () => {
         tick: 10,
         severity: 'info',
         audience: [],
+        concerns: ['p1'],
         playerId: 'p1',
         provinceId: 'alpha',
         building: 'barracks',
@@ -174,9 +179,17 @@ describe('R-TIME-03 Alarme unterbrechen das Vorspulen', () => {
   })
 
   it('ignoriert Alarme, die einen anderen Spieler betreffen', () => {
-    const privateAlert: GameEvent = { ...alertEvent(2), audience: ['p2'] }
+    const privateAlert: GameEvent = { ...alertEvent(2), audience: ['p2'], concerns: ['p2'] }
     expect(firstAlertFor([privateAlert], 'p1')).toBeNull()
     expect(firstAlertFor([privateAlert], 'p2')).not.toBeNull()
+  })
+
+  it('ignoriert oeffentliche Alarme, die einen Unbeteiligten nichts angehen', () => {
+    // T-M15-01: die zweite Bedingung. Eine Eroberung zwischen p2 und p3 ist oeffentlich
+    // lesbar und hielt bis zum 2026-09-06 trotzdem p1 an.
+    const fremd: GameEvent = { ...alertEvent(2), concerns: ['p2', 'p3'] }
+    expect(firstAlertFor([fremd], 'p1')).toBeNull()
+    expect(firstAlertFor([fremd], 'p2')).not.toBeNull()
   })
 
   it('haelt an, sobald ein Waechter ausloest', () => {

@@ -153,10 +153,12 @@ export function settleMorale(draft: GameState, ctx: PhaseContext): void {
       province.buildQueue = []
       province.recruitQueue = []
 
+      // Ein Aufstand geht den an, dem die Provinz gerade abhandenkommt (T-M15-01).
       emit(ctx.events, draft.tick, 'PROVINCE_REVOLTED', {
         provinceId,
         previousOwner,
         morale: province.morale,
+        concerns: previousOwner ? [previousOwner] : [],
       })
     }
   }

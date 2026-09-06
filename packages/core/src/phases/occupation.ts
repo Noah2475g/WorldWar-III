@@ -45,10 +45,14 @@ export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
     // Orders die with the change of owner; the construction phase reports it.
     province.recruitQueue = []
 
+    // Betroffen sind die beiden, denen die Provinz gehoerte und gehoert — nicht jeder,
+    // der zusieht (T-M15-01). Ein Vorbesitzer kann null sein: herrenloses Land geht
+    // niemanden an ausser dem, der es nimmt.
     emit(ctx.events, draft.tick, 'PROVINCE_CAPTURED', {
       provinceId,
       previousOwner,
       newOwner: claimant,
+      concerns: previousOwner ? [previousOwner, claimant] : [claimant],
     })
 
     // Losing a capital hurts the whole nation for a while (design D6.8).
@@ -63,6 +67,7 @@ export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
         playerId: previousOwner,
         provinceId,
         penaltyUntilTick: until,
+        concerns: [previousOwner, claimant],
       })
     }
   }

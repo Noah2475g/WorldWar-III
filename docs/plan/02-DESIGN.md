@@ -946,6 +946,21 @@ gleichzeitig gebraucht und deshalb ohne Entwurf **viermal verschieden** improvis
 
 ### D19.1 Das Grundmuster: wer erfährt was
 
+> **Gebaut am 2026-09-06 (T-M15-01).** `concerns: PlayerId[]` ist ein **Pflichtfeld** an
+> `BaseEvent`, mit der Vorgabe `concerns = audience` in `emit()`. Damit ist jedes private
+> Ereignis ohne Zutun richtig, und ein **öffentlicher** Alarm — der Fall, um den es geht —
+> muss seine Betroffenen an der Erzeugungsstelle nennen. Pflicht statt optional war die
+> teurere, aber einzig ehrliche Wahl: ein fehlendes Feld hätte still „betrifft niemanden"
+> geheißen, und die Typprüfung fand so vier von Hand gebaute Ereignisse, die `emit()`
+> umgehen. `firstAlertFor` verlangt jetzt beides — Lektüre *und* Betroffenheit.
+> `BATTLE_STARTED` wird erzeugt, **einmal je Gefecht**, entprellt gegen die Kampfliste des
+> Vortricks (die Liste wird tickweise neu aufgebaut; ohne Entprellung meldete ein Gefecht
+> über drei Ticks dreimal seinen Beginn). Der Golden-Master blieb unverändert gültig:
+> `eventLog` steht in `HASH_OMIT_KEYS`, und die Vergabe der `battleId` wurde bewusst
+> **nicht** angefasst — sie liegt im Zustand.
+>
+> Der Text darunter ist der Befund von vorher und bleibt als Begründung stehen.
+
 Ein Ereignis trägt heute zwei Angaben über seine Empfänger, und eine dritte fehlt:
 
 - **`severity`** wird aus der *Art* abgeleitet, nicht von der Aufrufstelle gesetzt

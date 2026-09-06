@@ -27,7 +27,12 @@ export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
     const holdsArmy = draft.armyOrder.some((id) => draft.armies[id]!.owner === playerId)
     if (!holdsProvince && !holdsArmy) {
       player.alive = false
-      emit(ctx.events, draft.tick, 'PLAYER_ELIMINATED', { playerId })
+      // Das Ausscheiden einer Macht geht jeden an, der noch spielt — es verschiebt
+      // die Punkteverhaeltnisse und die Siegbedingung (T-M15-01).
+      emit(ctx.events, draft.tick, 'PLAYER_ELIMINATED', {
+        playerId,
+        concerns: draft.playerOrder.filter((id) => draft.players[id]!.alive || id === playerId),
+      })
     }
   }
 
@@ -39,6 +44,9 @@ export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
       emit(ctx.events, draft.tick, 'GAME_ENDED', {
         winner: verdict.winner,
         condition: verdict.condition ?? draft.victory.condition,
+        // Das Ende der Partie geht alle an, auch die Ausgeschiedenen: sie erfahren hier,
+        // wie es ausgegangen ist.
+        concerns: [...draft.playerOrder],
       })
     }
   }

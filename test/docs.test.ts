@@ -155,6 +155,48 @@ describe('R-UI-05/AK2 Die Anleitung erklaert die nachgereichten Befehle', () => 
  * Mensch heraus; ob er geantwortet hat, ist prüfbar. Und die Regel, an der Abnahmebögen
  * sonst scheitern, wird hier zur Zusicherung: **jedes „nein" braucht einen Befund.**
  */
+/**
+ * Der Entwurf beschreibt, was gebaut wurde (T-M15-01 ff.).
+ *
+ * Der Nachtrag 2.15 rutschte durch, weil eine Anforderung ohne Entwurfstext niemandem
+ * auffiel (T-M14-02b). Die Gegenrichtung fehlte: ein Entwurfskapitel, das seine
+ * Anforderungs-ID nicht nennt, ist von ihr aus nicht auffindbar.
+ */
+describe('R-ARCH-05 Der Entwurf nennt die Anforderungen, die er ausfuehrt', () => {
+  const design = readFileSync(join(ROOT, 'docs/plan/02-DESIGN.md'), 'utf8')
+
+  it('traegt zu jedem M15-Kapitel die Anforderung, die es entwirft', () => {
+    // Über die Überschriften, nicht über den Fließtext: „Die Migration" kommt auch in
+    // D19.1 vor, und ein Test, der die erste Fundstelle nimmt, prüft das falsche Kapitel.
+    const chapters = new Map(
+      [...design.matchAll(/^### (D19\.\d) ([^\n]+)$/gm)].map((match, index, all) => {
+        const start = match.index!
+        const end = all[index + 1]?.index ?? design.length
+        return [match[1]!, `${match[2]!}\n${design.slice(start, end)}`]
+      }),
+    )
+
+    for (const [id, requirement] of [
+      ['D19.1', 'R-TIME-06'],
+      ['D19.2', 'R-TECH-01'],
+      ['D19.3', 'R-DIP-06'],
+      ['D19.4', 'R-BAT-08'],
+      ['D19.5', 'R-GAME-07'],
+    ] as const) {
+      const section = chapters.get(id)
+      expect(section, `Kein Entwurfskapitel ${id}`).toBeDefined()
+      expect(section, `${id} nennt ${requirement} nicht`).toContain(requirement)
+    }
+  })
+
+  it('nennt die drei Felder des Ereignismusters beim Namen', () => {
+    const section = design.slice(design.indexOf('### D19.1'), design.indexOf('### D19.2'))
+    for (const field of ['audience', 'severity', 'concerns']) {
+      expect(section, `D19.1 nennt "${field}" nicht`).toContain(field)
+    }
+  })
+})
+
 describe('R-UI-05/AK3 Der Antwortbogen prueft sich selbst', () => {
   const sheet = ['| # | Anforderung | Frage | ja/nein |', '|---|---|---|---|', '| 1 | R-UI-01 | Sieht es aus? | |', '| 2a | R-UI-02 | Lesbar? | |'].join('\n')
 

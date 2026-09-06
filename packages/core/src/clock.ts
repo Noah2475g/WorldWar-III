@@ -116,7 +116,17 @@ export function targetReached(
   }
 }
 
-/** The first alert this player must see before time moves on (R-TIME-03/AK1). */
+/**
+ * The first alert this player must see before time moves on (R-TIME-03/AK1).
+ *
+ * Two conditions, and until 2026-09-06 only the first: he must be allowed to read it
+ * (`audience`) **and** it must be about him (`concerns`, T-M15-01). Without the second,
+ * every public alert stopped everybody — a capture between two foreign powers halted an
+ * uninvolved player's fast-forward, which on an eight-power world map meant it could not
+ * run three game days. An alert without any party named stops nobody: that is the safe
+ * direction of the mistake, and the property test in events/audience.test.ts makes sure
+ * the situation does not arise in play.
+ */
 export function firstAlertFor(
   events: readonly GameEvent[],
   playerId: PlayerId | null | undefined,
@@ -125,7 +135,9 @@ export function firstAlertFor(
   return (
     events.find(
       (event) =>
-        event.severity === 'alert' && (event.audience.length === 0 || event.audience.includes(playerId)),
+        event.severity === 'alert' &&
+        (event.audience.length === 0 || event.audience.includes(playerId)) &&
+        event.concerns.includes(playerId),
     ) ?? null
   )
 }

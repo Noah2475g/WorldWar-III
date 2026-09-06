@@ -26,6 +26,22 @@ export interface BaseEvent {
   severity: EventSeverity
   /** Who may see this. Empty means everyone. */
   audience: PlayerId[]
+  /**
+   * Whom it is *about* (T-M15-01, R-TIME-06).
+   *
+   * Three different questions used to share two fields: who may read it (`audience`),
+   * whether it must be seen before time moves on (`severity`) and — this one — whom it
+   * actually concerns. Without the third, `firstAlertFor` stopped every player's
+   * fast-forward at every public alert: a capture between two foreign powers halted an
+   * uninvolved bystander, and nobody could skip three game days on the world map.
+   *
+   * Mandatory, not optional. An optional field would have saved the migration and
+   * repeated exactly the mistake R-TECH-01/AK3 names: a missing value would silently
+   * mean "concerns nobody", and the guard would be green over an absence. `emit()`
+   * defaults it to `audience`, so a private event is right without thinking about it and
+   * a **public alert has to name its parties** — which is the case that was wrong.
+   */
+  concerns: PlayerId[]
 }
 
 export interface GameStartedEvent extends BaseEvent {

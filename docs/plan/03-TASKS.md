@@ -2244,8 +2244,13 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Dateien:** `packages/core/src/events/types.ts`, `packages/core/src/events/emit.ts`,
   `packages/core/src/clock.ts`, `packages/core/src/phases/combat.ts`,
   `packages/core/src/phases/occupation.ts`, `packages/core/src/phases/morale.ts`,
-  `packages/core/src/phases/dailyTick.ts`, `packages/core/src/phases/diplomacy.ts`,
-  `packages/core/src/commands/diplomacy.ts`, `docs/plan/02-DESIGN.md`
+  `packages/core/src/phases/dailyTick.ts`, `packages/core/src/state/create.ts`,
+  `docs/plan/02-DESIGN.md`
+  *(Am 2026-09-06 gebaut: `phases/diplomacy.ts` und `commands/diplomacy.ts` blieben
+  unangetastet — beide `WAR_DECLARED`-Stellen setzen schon `audience: both`, und die Vorgabe
+  `concerns = audience` trifft dort genau richtig. Dafür kam `state/create.ts` dazu: das
+  `GAME_STARTED` des ersten Ticks wird von Hand gebaut und umgeht `emit()` — die Typprüfung
+  des Pflichtfelds hat es gefunden, zusammen mit drei ebensolchen Stellen in Tests.)*
 - **Tests zuerst:**
   1. `firstAlertFor` liefert für `p1` `null`, wenn im Tick nur eine Eroberung zwischen `p2` und
      `p3` liegt, und liefert dasselbe Ereignis, sobald `p1` Vorbesitzer oder Neubesitzer ist

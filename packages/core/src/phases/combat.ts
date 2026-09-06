@@ -133,12 +133,40 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
     province.morale = Math.max(0, province.morale - rules.constants.battleMoraleLoss)
 
     const battleId = `b${draft.nextIds.battle++}`
+    const parties = fighting.map((side) => side.player)
     battles.push({
       id: battleId,
       provinceId,
       sides: fighting.map((side) => [side.player]),
       startedTick: draft.tick,
     })
+
+    // Der Beginn eines Gefechts, genau einmal (T-M15-01, R-TIME-06/AK3).
+    //
+    // `BATTLE_STARTED` stand seit M1 im Ereignistyp, in der Alarmliste und als Ziel des
+    // Vorspulens — und wurde von keiner Zeile erzeugt. „Bis zum ersten Gefecht vorspulen"
+    // lief deshalb stumm bis zur Obergrenze durch.
+    //
+    // Die Kampfliste wird in jedem Tick neu aufgebaut und bekommt dabei eine neue
+    // `battleId`; ohne Entprellung gegen die Liste des Vortricks meldete ein Gefecht über
+    // drei Ticks dreimal seinen Beginn, und das Vorspulen bliebe an derselben Schlacht
+    // stehen, bis sie entschieden ist. Verglichen wird deshalb Ort und Beteiligung, nicht
+    // die Kennung. Die Kennung selbst bleibt tickweise — sie wandert in den Zustand, und
+    // eine Änderung an ihrer Vergabe wäre eine Änderung am Golden-Master.
+    const wasFighting = draft.battles.some(
+      (previous) =>
+        previous.provinceId === provinceId &&
+        previous.sides.flat().length === parties.length &&
+        parties.every((player) => previous.sides.some((side) => side.includes(player))),
+    )
+    if (!wasFighting) {
+      emit(ctx.events, draft.tick, 'BATTLE_STARTED', {
+        battleId,
+        provinceId,
+        sides: fighting.map((side) => [side.player]),
+        concerns: parties,
+      })
+    }
 
     const survivors = fighting.filter((side) => side.armies.some((army) => army.units.length > 0))
     const victor = survivors.length === 1 ? survivors[0]!.player : null
@@ -148,6 +176,7 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
       provinceId,
       losses,
       victor,
+      concerns: parties,
     })
 
     // Remove armies that were wiped out entirely.

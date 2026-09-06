@@ -193,6 +193,8 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
         tick: 0,
         severity: 'info',
         audience: [],
+        // Der Beginn geht jeden an, der mitspielt (T-M15-01).
+        concerns: playerOrder,
         mapId: map.id,
         playerCount: config.players.length,
       },

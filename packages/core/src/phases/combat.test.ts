@@ -318,3 +318,47 @@ describe('R-ARCH-01 Kampf ist deterministisch', () => {
     expect(totalHp(a, 'p2')).toBe(totalHp(b, 'p2'))
   })
 })
+
+describe('R-TIME-06/AK3 Der Beginn eines Gefechts wird gemeldet', () => {
+  const fighting = () => {
+    const s = createInitialState(CONFIG, ctx)
+    s.diplomacy.relations['p1|p2']!.state = 'war'
+    placeArmy(s, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 400_000 }] })
+    placeArmy(s, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 400_000 }] })
+    return s
+  }
+
+  it('meldet dasselbe Gefecht nicht in jedem Tick erneut', () => {
+    // Die Kampfliste wird je Tick neu aufgebaut und bekommt jedes Mal eine neue battleId.
+    // Ohne Entprellung gegen die Liste des Vortricks hielte das Vorspulen an derselben
+    // Schlacht stehen, bis sie entschieden ist — bei zwei gleich starken Armeen also lange.
+    let state = fighting()
+    let started = 0
+    for (let tick = 0; tick < 5; tick++) {
+      const result = step(state, [], ctx)
+      state = result.state
+      started += result.events.filter((event) => event.type === 'BATTLE_STARTED').length
+    }
+    expect(started).toBe(1)
+  })
+
+  it('meldet ein neues Gefecht in einer anderen Provinz eigenstaendig', () => {
+    // Die Gegenrichtung der Entprellung: sie darf nicht jedes weitere Gefecht schlucken.
+    let state = fighting()
+    state = step(state, [], ctx).state
+
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 200_000 }] })
+    placeArmy(state, { owner: 'p2', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 200_000 }] })
+
+    const result = step(state, [], ctx)
+    const started = result.events.filter((event) => event.type === 'BATTLE_STARTED')
+    expect(started.length).toBe(1)
+    expect(started[0]).toMatchObject({ provinceId: 'n2' })
+  })
+
+  it('nennt die beteiligten Maechte als Betroffene', () => {
+    const result = step(fighting(), [], ctx)
+    const started = result.events.find((event) => event.type === 'BATTLE_STARTED')
+    expect(started?.concerns.slice().sort()).toEqual(['p1', 'p2'])
+  })
+})
