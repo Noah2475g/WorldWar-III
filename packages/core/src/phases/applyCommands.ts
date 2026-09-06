@@ -25,6 +25,11 @@ export const applyCommands: Phase = (draft, ctx) => {
         playerId: command.playerId,
         command: command.type,
         code: result.code,
+        // Der Grund kam bis zum 2026-09-06 nie hier an, obwohl der Kern ihn kennt.
+        // `INVALID_TARGET` steht für drei verschiedene Fehler, und einer davon —
+        // "bereits dort" — hat sich dahinter einen ganzen Meilenstein lang versteckt:
+        // 762 von 807 Ablehnungen einer Turnierpartie (T-M15-05).
+        ...(result.detail ? { detail: result.detail } : {}),
         audience: [command.playerId],
       })
     }

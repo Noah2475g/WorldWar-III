@@ -27,9 +27,17 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(a.winner).toBe(b.winner)
   })
 
-  it('tauscht im Turnier die Seiten, damit die Startposition nicht entscheidet', () => {
+  it('wertet paarweise, damit die Startposition nicht entscheidet', () => {
+    // **Am 2026-09-06 umgestellt (T-M15-05).** Vorher tauschte das Turnier zwar die
+    // Seiten, wertete aber jede Partie einzeln — und maß damit die Startaufstellung der
+    // Testkarte statt der Spielstärke: „schwer gegen normal" endete exakt 25:25, weil in
+    // allen 50 Partien die *erste Nation* gewann. Gewertet wird jetzt das Paar aus Hin-
+    // und Rückpartie desselben Seeds; die Position fällt heraus.
     const result = playTournament({ map, rules, difficulties: ['hard', 'easy'], matches: 4, days: 20 })
+
     expect(result.matches).toBe(4)
-    expect(result.winsA + result.winsB + result.draws).toBe(4)
+    expect(result.winsA + result.winsB + result.draws, 'zwei Paare, zwei Wertungen').toBe(2)
+    expect(result.winRateA).toBeGreaterThanOrEqual(0)
+    expect(result.winRateA).toBeLessThanOrEqual(1)
   })
 })

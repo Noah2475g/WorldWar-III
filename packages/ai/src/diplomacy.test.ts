@@ -2,6 +2,7 @@ import { RESOURCE_KEYS, type PublicView, type ResourceKey } from '@worldwar/core
 import { TEST_RULES } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { diplomacyCommands } from './diplomacy'
+import { relationship } from './relationship'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -21,6 +22,10 @@ interface Power {
   score: number
   /** Diplomatic state towards the AI. Absent means no relation at all. */
   relation?: 'peace' | 'war' | 'truce' | 'alliance'
+  /** Oeffentliches Ansehen (T-M15-05). Vorgabe: der Ausgangswert 1000. */
+  reputation?: number
+  /** Verstimmung, die die KI gegen diese Macht hegt (0..1000). */
+  grievance?: number
 }
 
 /** A view of "me against these powers", with one province of mine touching each of them. */
@@ -37,6 +42,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
       capitalProvinceId: 'home',
       score: ownScore,
       reputation: 1000,
+      grievances: Object.fromEntries(powers.filter((p) => p.grievance).map((p) => [p.id, p.grievance!])),
       aiBonusMultiplier: 1000,
     },
     others: powers.map((power) => ({
@@ -46,11 +52,13 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
       color: '#000000',
       alive: true,
       score: power.score,
+      reputation: power.reputation ?? 1000,
     })),
+    publicWars: [],
     relations: Object.fromEntries(
       powers
         .filter((power) => power.relation)
-        .map((power) => [power.id, { state: power.relation!, rightOfWay: false, sharedMap: false }]),
+        .map((power) => [power.id, { state: power.relation!, rightOfWay: false, sharedMap: false, sinceTick: 0 }]),
     ),
     provinces: [
       {
@@ -149,12 +157,20 @@ describe('R-DIP-03 Die KI antwortet auf Angebote nach nachvollziehbaren Regeln',
     expect(explanations.some((entry) => /Grenze 2/.test(entry.reason))).toBe(true)
   })
 
-  it('erklaert nur einem deutlich schwaecheren Nachbarn den Krieg', () => {
+  it('erklaert dem Schwaecheren den Krieg, sobald das Verhaeltnis nachgibt', () => {
+    // **Am 2026-09-06 umgeschrieben (T-M15-05).** Diese Zusicherung hielt bis dahin die
+    // alte Regel fest: „ein Nachbar ist schwächer, also Krieg" — unabhängig davon, wie
+    // man zueinander stand. Genau das ersetzt R-DIP-06, und ein Test, der die abgelöste
+    // Regel weiter einfordert, würde die neue verhindern.
+    //
+    // Neu gilt: **das Verhältnis ist das Tor, die Stärke verschiebt nur seine Schwelle.**
+    // Der Schwächere bekommt die Erklärung, wenn beides zusammenkommt — hier ein
+    // mittelmäßiges Ansehen und Übermacht; der Ebenbürtige mit gutem Ansehen nicht.
     const explanations: Explanation[] = []
     const context = contextOf(
       viewOf(2000, [
-        { id: 'ebenbuertig', score: 1900, relation: 'peace' },
-        { id: 'schwach', score: 500, relation: 'peace' },
+        { id: 'ebenbuertig', score: 1900, relation: 'peace', reputation: 1000 },
+        { id: 'schwach', score: 500, relation: 'peace', reputation: 550 },
       ]),
     )
 
@@ -182,7 +198,10 @@ describe('R-DIP-03 Die KI antwortet auf Angebote nach nachvollziehbaren Regeln',
 
   it('begruendet jede Entscheidung mit Zahl und Alternative', () => {
     const explanations: Explanation[] = []
-    diplomacyCommands(contextOf(viewOf(2000, [{ id: 'schwach', score: 500, relation: 'peace' }])), explanations)
+    diplomacyCommands(
+      contextOf(viewOf(2000, [{ id: 'schwach', score: 500, relation: 'peace', reputation: 550 }])),
+      explanations,
+    )
 
     expect(explanations.length).toBeGreaterThan(0)
     for (const entry of explanations) {
@@ -190,5 +209,170 @@ describe('R-DIP-03 Die KI antwortet auf Angebote nach nachvollziehbaren Regeln',
       expect(entry.reason).toMatch(/\d/)
       expect(typeof entry.score).toBe('number')
     }
+  })
+})
+
+/**
+ * Das Verhältnis steuert die Kriegsentscheidung (T-M15-05, R-DIP-06).
+ *
+ * Der Grundlauf vom 2026-09-06 (`docs/reports/ai-tournament.md`): „schwer gegen normal"
+ * endet 25:25, und zwar so, dass in **allen** 50 Partien die erste Nation gewinnt — die
+ * Stufe entscheidet nichts. Kein einziger Krieg endet in 150 Partien. Die Ursache steht
+ * in zwei Zeilen: die Kriegsentscheidung hing allein am Punkteverhältnis, und
+ * `reputation` wurde von keiner Zeile des Projekts gelesen.
+ */
+const contextFor = (view: PublicView, difficulty: 'easy' | 'normal' | 'hard' = 'hard'): AiContext =>
+  ({
+    view,
+    memory: { targetPriority: {}, assignments: {}, seed: 1 },
+    rules: TEST_RULES,
+    map: { id: 'x' },
+    difficulty: TEST_RULES.ai.difficulties[difficulty],
+  }) as unknown as AiContext
+
+const declarations = (commands: ReturnType<typeof diplomacyCommands>): string[] =>
+  commands
+    .filter((command) => command.type === 'DIPLOMACY' && command.action === 'declareWar')
+    .map((command) => (command.type === 'DIPLOMACY' ? command.targetPlayerId : ''))
+
+describe('R-DIP-06/AK1 Das Verhaeltnis entscheidet ueber den Krieg', () => {
+  it('erklaert einem gleich starken Nachbarn mit schlechtem Verhaeltnis den Krieg', () => {
+    // Vorher unmöglich: die Schwelle lag beim Punkteverhältnis 1200 (schwer) bzw. 1600.
+    // Ein gleich starker Nachbar bekam nie eine Kriegserklärung, gleich was er getan hat.
+    const view = viewOf(1000, [{ id: 'boese', score: 1000, relation: 'peace', reputation: 200, grievance: 600 }])
+
+    expect(declarations(diplomacyCommands(contextFor(view), []))).toEqual(['boese'])
+  })
+
+  it('laesst einen schwaecheren Nachbarn mit gutem Verhaeltnis in Ruhe', () => {
+    // Die Gegenrichtung, und die wichtigere: vorher bekam er die Erklärung *immer*,
+    // sobald er schwach genug war. Ein Spiel, in dem Wohlverhalten nichts nützt, hat
+    // keine Diplomatie, sondern eine Rangliste.
+    const view = viewOf(2000, [{ id: 'freund', score: 1000, relation: 'peace', reputation: 1000, grievance: 0 }])
+
+    expect(declarations(diplomacyCommands(contextFor(view), []))).toEqual([])
+  })
+
+  it('nennt in der Erklaerung den Verhaeltniswert und den ausschlaggebenden Anteil (AK6)', () => {
+    const view = viewOf(1000, [{ id: 'boese', score: 1000, relation: 'peace', reputation: 200, grievance: 600 }])
+    const explanations: Explanation[] = []
+    diplomacyCommands(contextFor(view), explanations)
+
+    const erklaerung = explanations.find((entry) => entry.action.includes('Krieg'))
+    expect(erklaerung?.reason).toMatch(/Verhältnis \d+/)
+    expect(erklaerung?.reason).toMatch(/Verstimmung|Ansehen|Bindungen|Verbündeten/)
+  })
+
+  it('haelt sich an die Frontenzahl, auch bei schlechtestem Verhaeltnis', () => {
+    // `maxFronts` trägt seit T-M15-05 nur noch die Frontenzahl — aber die trägt es weiter.
+    const view = viewOf(1000, [
+      { id: 'krieg1', score: 1000, relation: 'war' },
+      { id: 'boese', score: 1000, relation: 'peace', reputation: 0, grievance: 1000 },
+    ])
+
+    expect(declarations(diplomacyCommands(contextFor(view, 'easy'), []))).toEqual([])
+  })
+
+  it('schlaegt bei gleicher Lage gleich aus — das Verhaeltnis ist eine reine Funktion', () => {
+    const view = viewOf(1000, [{ id: 'boese', score: 1000, relation: 'peace', reputation: 200, grievance: 600 }])
+    const einmal = relationship(view, 'boese', view.self.grievances, TEST_RULES)
+    const nochmal = relationship(view, 'boese', view.self.grievances, TEST_RULES)
+
+    expect(einmal).toEqual(nochmal)
+    expect(einmal.value).toBeGreaterThanOrEqual(0)
+    expect(einmal.value).toBeLessThanOrEqual(1000)
+  })
+
+  it('senkt das Verhaeltnis bei Verstimmung und hebt es bei einem Buendnis', () => {
+    const neutral = viewOf(1000, [{ id: 'x', score: 1000, relation: 'peace', reputation: 1000 }])
+    const verstimmt = viewOf(1000, [{ id: 'x', score: 1000, relation: 'peace', reputation: 1000, grievance: 400 }])
+    const verbuendet = viewOf(1000, [{ id: 'x', score: 1000, relation: 'alliance', reputation: 1000 }])
+
+    const wert = (view: PublicView) => relationship(view, 'x', view.self.grievances, TEST_RULES).value
+    expect(wert(verstimmt)).toBeLessThan(wert(neutral))
+    expect(wert(verbuendet)).toBeGreaterThanOrEqual(wert(neutral))
+  })
+})
+
+describe('R-DIP-06/AK2 Der Buendnisfall', () => {
+  it('erklaert dem Angreifer eines Verbuendeten den Krieg', () => {
+    // Braucht die öffentlichen Kriege in PublicView: `relations` führt nur meine eigenen
+    // Beziehungen, und damit war ein Bündnisfall bis zum 2026-09-06 nicht entscheidbar.
+    const view = viewOf(1000, [
+      { id: 'freund', score: 1000, relation: 'alliance', reputation: 1000 },
+      { id: 'angreifer', score: 1000, relation: 'peace', reputation: 1000 },
+    ])
+    view.publicWars = [{ a: 'angreifer', b: 'freund' }]
+
+    expect(declarations(diplomacyCommands(contextFor(view), []))).toEqual(['angreifer'])
+  })
+
+  it('bleibt aus Kriegen heraus, die niemanden angehen', () => {
+    const view = viewOf(1000, [
+      { id: 'fremd1', score: 1000, relation: 'peace', reputation: 1000 },
+      { id: 'fremd2', score: 1000, relation: 'peace', reputation: 1000 },
+    ])
+    view.publicWars = [{ a: 'fremd1', b: 'fremd2' }]
+
+    expect(declarations(diplomacyCommands(contextFor(view), []))).toEqual([])
+  })
+})
+
+describe('R-DIP-06/AK3 Buendnis und Durchmarsch', () => {
+  const actions = (view: PublicView, name: string): string[] =>
+    diplomacyCommands(contextFor(view), [])
+      .filter((command) => command.type === 'DIPLOMACY' && command.action === name)
+      .map((command) => (command.type === 'DIPLOMACY' ? command.targetPlayerId : ''))
+
+  it('nimmt ein Buendnis bei gutem Ansehen an', () => {
+    const view = viewOf(1000, [{ id: 'ehrlich', score: 1000, relation: 'peace', reputation: 1000 }])
+    view.incomingOffers = [{ from: 'ehrlich', kind: 'alliance', tick: 200 }]
+
+    expect(actions(view, 'acceptAlliance')).toEqual(['ehrlich'])
+  })
+
+  it('lehnt ein Buendnis unter der Vertrauensschwelle ab', () => {
+    // Getrennt vom Verhältnis: das Verhältnis ist meine Sicht auf dich, das Ansehen ist,
+    // was alle über dich wissen. Ein Wortbrüchiger kann sympathisch und trotzdem ein
+    // schlechter Bündnispartner sein.
+    const view = viewOf(1000, [{ id: 'wortbruechig', score: 1000, relation: 'peace', reputation: 300 }])
+    view.incomingOffers = [{ from: 'wortbruechig', kind: 'alliance', tick: 200 }]
+
+    expect(actions(view, 'acceptAlliance')).toEqual([])
+  })
+
+  it('erwidert gewaehrten Durchmarsch bei gutem Verhaeltnis', () => {
+    const view = viewOf(1000, [{ id: 'grosszuegig', score: 1000, relation: 'peace', reputation: 1000 }])
+    view.relations.grosszuegig!.rightOfWay = true
+
+    expect(actions(view, 'grantRightOfWay')).toEqual(['grosszuegig'])
+  })
+})
+
+describe('R-DIP-06/AK4 Ein festgefahrener Krieg endet', () => {
+  const offers = (view: PublicView): string[] =>
+    diplomacyCommands(contextFor(view), [])
+      .filter((command) => command.type === 'DIPLOMACY' && command.action === 'offerPeace')
+      .map((command) => (command.type === 'DIPLOMACY' ? command.targetPlayerId : ''))
+
+  it('bietet Frieden an, wenn seit Tagen keine Provinz mehr gewechselt hat', () => {
+    // Über 150 Turnierpartien: null Friedensschlüsse. Es gab schlicht keine Bedingung,
+    // unter der eine KI einen laufenden Krieg beendet hätte, solange sie nicht unterlegen
+    // war (`docs/reports/ai-tournament.md`, Grundlauf).
+    const view = viewOf(1000, [{ id: 'patt', score: 1000, relation: 'war', reputation: 1000 }])
+    view.tick = 100 * TEST_RULES.constants.ticksPerDay
+    view.relations.patt!.sinceTick = 0
+    for (const province of view.provinces) province.occupiedSince = 0
+
+    expect(offers(view)).toEqual(['patt'])
+  })
+
+  it('bietet keinen Frieden an, solange die Front sich bewegt', () => {
+    const view = viewOf(1000, [{ id: 'patt', score: 1000, relation: 'war', reputation: 1000 }])
+    view.tick = 100 * TEST_RULES.constants.ticksPerDay
+    view.relations.patt!.sinceTick = 0
+    for (const province of view.provinces) province.occupiedSince = view.tick - TEST_RULES.constants.ticksPerDay
+
+    expect(offers(view)).toEqual([])
   })
 })

@@ -71,7 +71,16 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     }
 
     // Nothing to defend: look for something worth taking.
-    const targets = rateProvinces(context, army.provinceId)
+    //
+    // Der Filter auf die eigene Provinz ist nicht Kosmetik (T-M15-05, gefunden beim
+    // Grundlauf): `rateProvinces` bewertet auch die Provinz, in der die Armee steht, und
+    // ohne diese Zeile befahl die KI ihr in **jedem Tick** den Marsch dorthin, wo sie
+    // schon war. Gemessen an einer Partie ueber 40 Spieltage: **762 von 807 Ablehnungen**
+    // waren MOVE_ARMY "bereits dort" — auf 133 angenommene Befehle. Dieselbe Klasse wie
+    // die 3046 NO_PATH aus T-M14-11: die KI sah handlungsfaehig aus und war es nicht.
+    const targets = rateProvinces(context, army.provinceId).filter(
+      (candidate) => candidate.id !== army.provinceId,
+    )
     const choice = targets.find((candidate) => {
       const comparison = compareForces(view, candidate.id, army.strength)
       return worthAttacking(comparison, boldness(context))

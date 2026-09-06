@@ -96,6 +96,23 @@ export interface DifficultyRule {
   recruitShare: Fixed
   /** 1000 = no bonus. Anything else is shown openly (R-AI-02). */
   resourceBonus: Fixed
+  /**
+   * Unter diesem Verhältnis (0..1000) erklärt diese Stufe einem Nachbarn den Krieg
+   * (R-DIP-06/AK1, T-M15-05).
+   *
+   * Ein **eigener** Wert, weil `maxFronts` bis zum 2026-09-06 drei Dinge gleichzeitig
+   * bedeutete: Frontenzahl, Kriegsschwelle (`maxFronts >= 3 ? 1200 : 1600`) und
+   * Risikobereitschaft. Wer eine davon ändern wollte, änderte alle drei.
+   */
+  warThreshold: Fixed
+  /**
+   * Ab diesem Ansehen (0..1000) nimmt diese Stufe ein Bündnisangebot an (R-DIP-06/AK3).
+   *
+   * Getrennt vom Verhältnis: das Verhältnis ist meine Sicht auf *dich*, das Ansehen ist,
+   * was alle über dich wissen. Ein Wortbrüchiger kann mir sehr wohl sympathisch sein und
+   * bleibt trotzdem ein schlechter Bündnispartner.
+   */
+  trustThreshold: Fixed
 }
 
 export interface AiRules {
@@ -107,6 +124,20 @@ export interface AiRules {
 
 export interface RuleConstants {
   ticksPerDay: number
+  /** Ausgangswert des öffentlichen Ansehens, und das Ziel, zu dem es zurückkriecht. */
+  reputationBaseline: Fixed
+  /** Wie viel Ansehen je Spieltag Richtung Ausgangswert wandert (R-DIP-06/AK5). */
+  reputationRecoveryPerDay: Fixed
+  /** Verstimmung für eine verlorene Provinz. */
+  grievanceOnProvinceLost: Fixed
+  /** Verstimmung für einen Überfall ohne Kriegserklärung. */
+  grievanceOnSurpriseAttack: Fixed
+  /** Anteil in Promille, um den jede Verstimmung je Spieltag abklingt. */
+  grievanceDecayPermillePerDay: Fixed
+  /** Obergrenze einer einzelnen Verstimmung. */
+  grievanceMax: Fixed
+  /** Spieltage ohne Provinzwechsel, nach denen ein Krieg als festgefahren gilt. */
+  stalemateDaysBeforePeace: number
 
   startMorale: Fixed
   capturedMorale: Fixed

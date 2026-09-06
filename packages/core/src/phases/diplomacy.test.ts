@@ -192,3 +192,83 @@ describe('R-DIP-04 Aufklaerungsgedaechtnis', () => {
     expect(later.players['p1']!.intel['m1']!.tick).toBeGreaterThan(early.players['p1']!.intel['m1']!.tick)
   })
 })
+
+/**
+ * Ansehen und Verstimmung klingen ab (T-M15-05, R-DIP-06/AK5).
+ *
+ * Ohne das Abklingen wäre beides ein Einbahnverkehr: ein Überfall im dritten Spieljahr
+ * hinge einer Macht bis zum Ende der Partie an, und die Diplomatie hätte kein Gedächtnis,
+ * sondern ein Strafregister. Geprüft wird hier, in der Datei, die das Abklingen wirklich
+ * enthält — nicht in der KI, die es nur liest.
+ */
+describe('R-DIP-06/AK5 Zeit heilt, langsam und in beide Richtungen', () => {
+  it('traegt dem Ueberfallenen eine Verstimmung ein — und nicht dem Angreifer', () => {
+    // Gerichtet, und das ist der ganze Grund für ein eigenes Record: `relations` hat
+    // einen gemeinsamen Schlüssel je Paar und könnte "wer ist auf wen böse" gar nicht
+    // ausdrücken.
+    const state = createInitialState(CONFIG, ctx)
+    placeArmy(state, { owner: 'p1', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    const after = step(state, [], ctx).state
+
+    expect(after.diplomacy.grievances['p2']?.['p1'], 'das Opfer ist nicht verstimmt').toBeGreaterThan(0)
+    expect(after.diplomacy.grievances['p1']?.['p2'], 'der Angreifer ist verstimmt').toBeUndefined()
+  })
+
+  it('laesst das Ansehen je Spieltag um den Regelbetrag zurueckwandern', () => {
+    const state = createInitialState(CONFIG, ctx)
+    state.players['p1']!.reputation = TEST_RULES.constants.reputationBaseline - 500
+
+    const einTag = runTicks(state, TEST_RULES.constants.ticksPerDay, ctx).state
+
+    expect(einTag.players['p1']!.reputation).toBe(
+      TEST_RULES.constants.reputationBaseline - 500 + TEST_RULES.constants.reputationRecoveryPerDay,
+    )
+  })
+
+  it('haelt am Ausgangswert an, statt darueber hinauszuschiessen', () => {
+    const state = createInitialState(CONFIG, ctx)
+    state.players['p1']!.reputation = TEST_RULES.constants.reputationBaseline - 1
+
+    const einTag = runTicks(state, TEST_RULES.constants.ticksPerDay, ctx).state
+
+    expect(einTag.players['p1']!.reputation).toBe(TEST_RULES.constants.reputationBaseline)
+  })
+
+  it('verkleinert jede Verstimmung je Spieltag um den Regelanteil', () => {
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.grievances = { p1: { p2: 1000 } }
+
+    const einTag = runTicks(state, TEST_RULES.constants.ticksPerDay, ctx).state
+    const erwartet = 1000 - Math.trunc((1000 * TEST_RULES.constants.grievanceDecayPermillePerDay) / 1000)
+
+    expect(einTag.diplomacy.grievances['p1']?.['p2']).toBe(erwartet)
+  })
+
+  it('vergisst eine abgeklungene Verstimmung ganz', () => {
+    // Sonst wüchse das Record über eine lange Partie mit Einträgen voller Nullen — und
+    // stünde in jedem Speicherstand.
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.grievances = { p1: { p2: 1 } }
+
+    const einTag = runTicks(state, TEST_RULES.constants.ticksPerDay, ctx).state
+
+    expect(einTag.diplomacy.grievances['p1']).toBeUndefined()
+  })
+
+  it('laeuft ueber playerOrder, nicht ueber die Einfuegereihenfolge', () => {
+    // R-ARCH-01. Ein Object.keys-Durchlauf gäbe dasselbe Ergebnis, solange die Records
+    // zufällig in derselben Reihenfolge entstehen — und ein anderes an dem Tag, an dem
+    // sie es nicht tun. Geprüft, indem die Einfügereihenfolge umgedreht wird.
+    const vorwaerts = createInitialState(CONFIG, ctx)
+    vorwaerts.diplomacy.grievances = { p1: { p2: 500, p3: 300 }, p3: { p1: 200 } }
+
+    const rueckwaerts = createInitialState(CONFIG, ctx)
+    rueckwaerts.diplomacy.grievances = { p3: { p1: 200 }, p1: { p3: 300, p2: 500 } }
+
+    const a = runTicks(vorwaerts, TEST_RULES.constants.ticksPerDay, ctx).state
+    const b = runTicks(rueckwaerts, TEST_RULES.constants.ticksPerDay, ctx).state
+
+    expect(a.diplomacy.grievances).toEqual(b.diplomacy.grievances)
+  })
+})

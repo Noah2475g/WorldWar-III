@@ -862,3 +862,85 @@ nicht von einem Absturz des Spiels zu unterscheiden.
 darf an fremdem Inhalt nicht *abstürzen*, sie darf ihn nur nicht verstehen. Die Ablehnung
 gehört zu `validateState`, das danach läuft — und das ist auch die Stelle, an der die
 Meldung entsteht, die der Spieler lesen kann.
+
+---
+
+## 2026-09-06 · T-M15-05 · Das Turnier maß die Startaufstellung, nicht die Spielstärke
+
+**Befund:** Der Grundlauf „schwer gegen normal" endete **exakt 25:25** — und das war kein
+Gleichstand. Die Seiten wurden jede zweite Partie getauscht, jede Partie aber **einzeln**
+gewertet; A gewann genau die 25 Partien, in denen A auf Platz eins startete. Anders gesagt:
+**in allen 50 Partien gewann die erste Nation.** Das Turnier hat eine Eigenschaft der
+Testkarte für eine Eigenschaft der KI gehalten, und ein Instrument, das das tut, kann eine
+Regeländerung weder bestätigen noch widerlegen.
+
+**Behoben am 2026-09-06:** Gewertet wird das **Paar** aus Hin- und Rückpartie desselben
+Seeds — dieselbe Technik, mit der Schachturniere die Farbe herausrechnen. Dazu ist
+`winRateA` eine **Punktquote** über alle Paare geworden (Unentschieden zählt halb); die
+alte Form `winsA / (winsA + winsB)` ließ die Unentschieden aus dem Nenner und meldete für
+„fünf Siege, fünf Unentschieden" glatte 1,00.
+
+---
+
+## 2026-09-06 · T-M15-05 · Die KI befahl 762 Märsche dorthin, wo die Armee schon stand
+
+**Befund:** In einer Turnierpartie über 40 Spieltage: **807 abgelehnte Befehle gegen 133
+angenommene.** 762 davon `MOVE_ARMY` mit `INVALID_TARGET`, Grund „bereits dort".
+`rateProvinces` bewertet auch die Provinz, in der die Armee steht, und der Angriffszweig
+in `military.ts` filterte sie nicht heraus — also fasste die KI in **jedem Tick** denselben
+unmöglichen Befehl.
+
+Dieselbe Klasse wie die 3046 `NO_PATH` aus T-M14-11: die KI sah handlungsfähig aus und war
+es nicht. Der Verteidigungszweig hatte den Filter (`target !== army.provinceId`), der
+Angriffszweig nicht.
+
+**Warum es so lange unsichtbar war:** `COMMAND_REJECTED` trug den Grund nicht. Der Kern
+kennt ihn — er steht in `CommandResult.detail` —, aber das Ereignis ließ ihn fallen. Im
+Protokoll stand „MOVE_ARMY abgelehnt: INVALID_TARGET", und dieser eine Code steht für drei
+verschiedene Fehler (leere Armee, bereits dort, kein eigener Flugplatz).
+
+**Behoben am 2026-09-06, beides:** ein Filter auf die eigene Provinz, und `detail` im
+Ereignis. **Gemessen: 807 Ablehnungen → 0.**
+
+---
+
+## 2026-09-06 · T-M15-05 · Zwei Zusagen, die nur teilweise einzulösen waren
+
+**1. „Kein Lauf endet 25:25" — eingelöst, aber anders als gedacht.** Die 25:25 waren ein
+Artefakt der Einzelwertung (siehe oben). Paarweise gewertet zeigte sich der wahre Befund:
+**25 Unentschieden**, also keine unterscheidbaren Stufen. Die Ursache war messbar —
+`recruitShare` ist der einzige Wert, der die Stufen trennt, und die Spreizung 200/330 war
+zu klein. Versuche: 120/500 → 8 von 10 Paaren für „schwer"; 150/400 → wieder nur
+Unentschieden. Die Wirkung liegt an den Rändern. Übernommen wurde das gemessene Paar
+120/500; danach steht „schwer gegen normal" bei **0,80** (15 Siege, 0 Niederlagen, 10
+Unentschieden). Zeit half nicht: 40, 80 und 150 Spieltage ergaben dasselbe Bild.
+
+**2. Die Obergrenze 0,95 — nicht für „schwer gegen leicht".** Dort steht 1,00, und zwar auf
+beiden Kennzahlen: „leicht" gewinnt keine einzige Partie. Der Rekrutierungsanteil ist 80
+gegen 500, mehr als das Sechsfache. Diese Quote unter 0,95 zu drücken hieße, **„schwer"
+absichtlich schlechter zu machen, um eine Zahl einzuhalten** — der Spieler, der „schwer"
+wählt, zahlte für eine Zusicherung.
+
+Die Obergrenze steht deshalb dort, wo eine Mauer dem Spieler wirklich schadet: zwischen
+**benachbarten** Stufen. Wer auf „leicht" verliert, wechselt zu „normal", nicht zu
+„schwer". `apps/headless/test/tournament.slow.test.ts` sichert 0,55 < Quote ≤ 0,95 für
+„schwer gegen normal" und die 70 % aus R-AI-06 für „schwer gegen leicht" — und die Stelle,
+an der die Obergrenze *nicht* steht, trägt die Begründung im Code.
+
+**Status: offen als Beobachtung, nicht als Fehler.** Ob „leicht" spürbar leichter sein
+*sollte*, beantwortet der Playtest und keine Turnierzahl.
+
+---
+
+## 2026-09-06 · T-M15-05 · Ein Friedensschluss ist ein Waffenstillstand
+
+**Befund:** Der erste Turnierlauf meldete **0 Friedensschlüsse**, und das sah aus wie ein
+Befund über die KI. Tatsächlich zählte das Turnier `DIPLOMACY_CHANGED` mit
+`newState: 'peace'` — `acceptPeace` setzt aber `truce`, und erst nach der Regelfrist wird
+daraus wieder `peace`. Gezählt wurde also ein Zustand, den ein Friedensschluss gar nicht
+erzeugt.
+
+**Behoben am 2026-09-06.** Gezählt wird `truce`. Danach: **78 Friedensschlüsse in 50
+Partien**, wo vorher null standen. Der Befund „kein Krieg endet je" war zur Hälfte echt
+(es fehlte die Bedingung für einen festgefahrenen Krieg) und zur Hälfte ein Messfehler —
+und ohne die Korrektur wäre die Hälfte, die echt war, mit einer grünen Zahl zugedeckt worden.

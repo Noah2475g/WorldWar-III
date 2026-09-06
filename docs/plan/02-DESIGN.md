@@ -1095,6 +1095,35 @@ der heute die Kosten stehen — keine neue Farbe, kein neues Bauteil (Regel aus 
 
 ### D19.3 Das Verhältnis (R-DIP-06)
 
+> **Gebaut am 2026-09-06 (T-M15-05).** `relationship(view, other, grievances, rules)` ist
+> eine **reine Funktion über die öffentliche Sicht** — sie bekommt `PublicView` und sonst
+> nichts, also ist R-AI-01 keine Zusage, sondern eine Eigenschaft der Signatur. Fünf
+> Anteile: **Ansehen** (öffentlich, seit M6 geschrieben und bis heute von keiner Zeile
+> gelesen), **Verstimmung** (gerichtet — ein Überfall macht das Opfer böse, nicht den
+> Täter), **Bindungen** (Bündnis 300, Durchmarsch 150, geteilte Karte 50), **Krieg gegen
+> meinen Verbündeten** und **Truppen an meiner Grenze**.
+>
+> Der letzte Anteil stand nicht im Entwurf und ist beim Bauen dazugekommen: **ohne ihn
+> entsteht in einer Aufstellung ohne Vorgeschichte nie ein Krieg.** Ansehen startet beim
+> Ausgangswert, Verstimmungen bei null, Bindungen bei null — das Verhältnis stünde bei
+> 1000 und bliebe dort, und AK-1 (mindestens eine Kriegserklärung) wäre unerfüllbar.
+> Truppen an der Grenze sind das, was ohne jedes Zutun entsteht, sobald zwei Mächte
+> rekrutieren, und sie sind öffentlich sichtbar.
+>
+> **Das Verhältnis ist das Tor, die Stärke verschiebt nur seine Schwelle** — nicht
+> umgekehrt. Vorher bekam ein schwächerer Nachbar die Kriegserklärung *immer*, gleich wie
+> gut man sich verstand; ein Spiel, in dem Wohlverhalten nichts nützt, hat keine
+> Diplomatie, sondern eine Rangliste. Umgekehrt macht Übermacht einen schwelenden Streit
+> eher zum Krieg (bis zu 200 Punkte auf die Schwelle), und das soll sie.
+>
+> **Zwei Schwellen, nicht eine:** `warThreshold` misst das Verhältnis (meine Sicht auf
+> dich), `trustThreshold` das Ansehen (was alle über dich wissen). Ein Wortbrüchiger kann
+> mir sympathisch sein und bleibt trotzdem ein schlechter Bündnispartner.
+>
+> **Festgefahren statt unterlegen (AK4):** ein Krieg, in dem seit `stalemateDaysBeforePeace`
+> keine Provinz mehr wechselte, wird beendet. Abgeleitet aus `occupiedSince` der sichtbaren
+> Provinzen — **kein neues Zustandsfeld**, also auch keine zweite Schemastufe in M15.
+
 `player.reputation` (`state/types.ts:204`) wird heute an **einer** Stelle geschrieben —
 `phases/diplomacy.ts:31` zieht `surpriseAttackReputationLoss` ab (`constants.json:47`, 200) —
 und von **keiner** Zeile in `packages/ai` gelesen; der einzige Treffer dort ist eine

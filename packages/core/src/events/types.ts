@@ -56,6 +56,15 @@ export interface CommandRejectedEvent extends BaseEvent {
   command: string
   code: string
   provinceId?: ProvinceId
+  /**
+   * Der Grund, den der Kern bereits kennt (T-M15-05).
+   *
+   * Die Ablehnung trug ihn seit jeher in `CommandResult.detail` — und das Ereignis liess
+   * ihn fallen. Ein Protokoll, das "MOVE_ARMY abgelehnt: INVALID_TARGET" sagt, nennt drei
+   * verschiedene Fehler mit demselben Wort (leere Armee, bereits dort, kein Flugplatz),
+   * und der teuerste davon hat sich dahinter einen ganzen Meilenstein lang versteckt.
+   */
+  detail?: Record<string, string | number>
 }
 
 export interface BuildStartedEvent extends BaseEvent {

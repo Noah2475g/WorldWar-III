@@ -11,7 +11,9 @@
       "maxFronts": 1,
       "resourceBonus": 1000,
       "tacticalInterval": 6,
-      "recruitShare": 80
+      "recruitShare": 80,
+      "warThreshold": 300,
+      "trustThreshold": 500
     },
     "normal": {
       "economy": 280,
@@ -23,7 +25,9 @@
       "maxFronts": 2,
       "resourceBonus": 1000,
       "tacticalInterval": 2,
-      "recruitShare": 200
+      "recruitShare": 120,
+      "warThreshold": 450,
+      "trustThreshold": 650
     },
     "hard": {
       "economy": 260,
@@ -35,7 +39,9 @@
       "maxFronts": 3,
       "resourceBonus": 1000,
       "tacticalInterval": 1,
-      "recruitShare": 330
+      "recruitShare": 500,
+      "warThreshold": 600,
+      "trustThreshold": 800
     }
   },
   "resourceWeights": {

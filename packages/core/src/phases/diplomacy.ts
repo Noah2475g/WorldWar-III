@@ -1,5 +1,6 @@
 import { emit } from '../events/emit'
 import { relationKey } from '../state/create'
+import type { Fixed } from '@worldwar/shared'
 import type { GameState, PlayerId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
@@ -29,6 +30,15 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
     relation.sinceTick = draft.tick
     relation.warEffectiveAtTick = null
     draft.players[army.owner]!.reputation -= ctx.rules.constants.surpriseAttackReputationLoss
+    // Der Ueberfall macht das **Opfer** boese, nicht den Taeter — deshalb ist das
+    // Verstimmungs-Record gerichtet und kein gemeinsamer Schluessel wie `relations`.
+    addGrievance(
+      draft,
+      province.owner,
+      army.owner,
+      ctx.rules.constants.grievanceOnSurpriseAttack,
+      ctx.rules.constants.grievanceMax,
+    )
 
     emit(ctx.events, draft.tick, 'WAR_DECLARED', {
       playerId: army.owner,
@@ -76,4 +86,52 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
   draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => draft.tick - offer.tick < offerLifetime)
 
   detectSurpriseAttacks(draft, ctx)
+  relax(draft, ctx)
+}
+
+/**
+ * Ansehen und Verstimmungen klingen ab (T-M15-05, R-DIP-06/AK5).
+ *
+ * Ohne diesen Schritt wäre beides ein Einbahnverkehr: ein Überfall im dritten Spieljahr
+ * hinge einer Macht bis zum Ende der Partie an, und die Diplomatie hätte kein Gedächtnis,
+ * sondern ein Strafregister. Zeit heilt — langsam, und in beide Richtungen.
+ *
+ * Läuft **einmal je Spieltag** und über `playerOrder`, nicht über `Object.keys`: sonst
+ * hinge das Ergebnis an der Einfügereihenfolge eines Records, und R-ARCH-01 wäre gebrochen
+ * an einer Stelle, die kein Golden-Master findet, weil Records in der Praxis meist doch
+ * in derselben Reihenfolge entstehen.
+ */
+function relax(draft: GameState, ctx: PhaseContext): void {
+  const { constants } = ctx.rules
+  if (draft.tick % constants.ticksPerDay !== 0) return
+
+  for (const id of draft.playerOrder) {
+    const player = draft.players[id]!
+
+    // Das Ansehen kriecht zum Ausgangswert zurück — von oben wie von unten.
+    if (player.reputation < constants.reputationBaseline) {
+      player.reputation = Math.min(constants.reputationBaseline, player.reputation + constants.reputationRecoveryPerDay)
+    } else if (player.reputation > constants.reputationBaseline) {
+      player.reputation = Math.max(constants.reputationBaseline, player.reputation - constants.reputationRecoveryPerDay)
+    }
+
+    const mine = draft.diplomacy.grievances[id]
+    if (!mine) continue
+    for (const other of draft.playerOrder) {
+      const value = mine[other]
+      if (value === undefined) continue
+      // eslint-disable-next-line no-restricted-syntax -- Promilleanteil auf einen Verhältniswert, ganze Zahlen
+      const next = value - Math.max(1, Math.trunc((value * constants.grievanceDecayPermillePerDay) / 1000))
+      if (next <= 0) delete mine[other]
+      else mine[other] = next
+    }
+    if (Object.keys(mine).length === 0) delete draft.diplomacy.grievances[id]
+  }
+}
+
+/** Eine Verstimmung eintragen, gedeckelt. `who` ist der Verstimmte, `against` der Anlass. */
+export function addGrievance(draft: GameState, who: PlayerId, against: PlayerId, amount: Fixed, max: Fixed): void {
+  if (who === against) return
+  const mine = (draft.diplomacy.grievances[who] ??= {})
+  mine[against] = Math.min(max, (mine[against] ?? 0) + amount)
 }

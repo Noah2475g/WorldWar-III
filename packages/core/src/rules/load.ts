@@ -39,6 +39,13 @@ const BUILDING_KEYS: readonly BuildingKey[] = [
 
 const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'ticksPerDay',
+  'reputationBaseline',
+  'reputationRecoveryPerDay',
+  'grievanceOnProvinceLost',
+  'grievanceOnSurpriseAttack',
+  'grievanceDecayPermillePerDay',
+  'grievanceMax',
+  'stalemateDaysBeforePeace',
   'startMorale',
   'capturedMorale',
   'baseTargetMorale',
@@ -269,7 +276,10 @@ export function parseRules(raw: RawRules, id: string): Rules {
       problems.push(`KI-Stufe "${level}" fehlt`)
       continue
     }
-    for (const field of ['tacticalInterval', 'recruitShare'] as const) {
+    // `warThreshold` steht hier mit Absicht in derselben Liste wie der Rest: ein
+    // fehlender Wert wäre still eine Null, und eine Null heißt "erklärt jedem den Krieg"
+    // — der teuerste stille Vorgabewert, den dieses Regelwerk haben könnte (T-M15-05).
+    for (const field of ['tacticalInterval', 'recruitShare', 'warThreshold', 'trustThreshold'] as const) {
       if (typeof entry[field] !== 'number') problems.push(`KI-Stufe "${level}": "${field}" fehlt`)
     }
     const weights = ['economy', 'position', 'defence', 'distance', 'weakness'] as const

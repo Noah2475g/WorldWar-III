@@ -59,5 +59,12 @@
   "expansionFreeProvinces": 2,
   "expansionPenaltyPerProvince": 3000,
   "expansionPenaltyMax": 35000,
-  "taxPerThousandPopulationPerTick": 2
+  "taxPerThousandPopulationPerTick": 2,
+  "reputationBaseline": 1000,
+  "reputationRecoveryPerDay": 10,
+  "grievanceOnProvinceLost": 250,
+  "grievanceOnSurpriseAttack": 400,
+  "grievanceDecayPermillePerDay": 30,
+  "grievanceMax": 1000,
+  "stalemateDaysBeforePeace": 20
 }

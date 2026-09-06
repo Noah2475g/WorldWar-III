@@ -140,6 +140,47 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `expansionPenaltyMax` | 35.000 | abgeleitet | — | Deckel der Ausdehnungsstrafe |
 | `taxPerThousandPopulationPerTick` | 2 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 
+## Das Verhältnis zwischen zwei Mächten (R-DIP-06, T-M15-05)
+
+Alle sieben Zahlen **geschätzt** — für Ansehen und Verstimmung gibt es im Vorbild keine
+veröffentlichten Werte, und der Umbau 2023 hat die Skalen ohnehin neu gesetzt. Was sie
+tragen, ist gemessen und steht in `docs/reports/ai-tournament.md`.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `reputationBaseline` | 1.000 | geschätzt | der Ausgangswert, auf den alles zurückkriecht; 1000 = „nichts vorgefallen", damit die Skala mit dem Verhältnis dieselbe ist |
+| `reputationRecoveryPerDay` | 10 | geschätzt | ein Überfall kostet 200, ist also nach 20 Spieltagen vergessen — lang genug, um im selben Krieg zu wirken, kurz genug, um eine Partie nicht zu bestimmen |
+| `grievanceOnProvinceLost` | 250 | geschätzt | vier verlorene Provinzen erreichen den Deckel; der häufigste Anlass, und deshalb der kleinere der beiden |
+| `grievanceOnSurpriseAttack` | 400 | geschätzt | schwerer als eine verlorene Provinz: der Überfall bricht ein Versprechen, die Eroberung nur eine Front |
+| `grievanceDecayPermillePerDay` | 30 | geschätzt | 3 % je Tag — eine Verstimmung von 400 ist nach rund 80 Spieltagen unter 40; Zeit heilt, aber nicht innerhalb eines Krieges |
+| `grievanceMax` | 1.000 | abgeleitet | die Skala des Verhältnisses; ohne Deckel könnte eine einzige Macht das Verhältnis auf null drücken und dort halten |
+| `stalemateDaysBeforePeace` | 20 | geschätzt | Spieltage ohne Provinzwechsel, nach denen ein Krieg als festgefahren gilt. **Gemessen:** ohne diese Bedingung endete in 150 Turnierpartien *kein einziger* Krieg; mit ihr 78 Friedensschlüsse in 50 Partien |
+
+### Die Kriegs- und Vertrauensschwelle je Stufe
+
+| Stufe | `warThreshold` | `trustThreshold` | `recruitShare` |
+|---|---|---|---|
+| leicht | 300 | 500 | 80 |
+| normal | 450 | 650 | **120** |
+| schwer | 600 | 800 | **500** |
+
+`warThreshold` ist **neu und ein eigener Wert**: bis zum 2026-09-06 leitete sich die
+Kriegsschwelle aus `maxFronts` ab (`maxFronts >= 3 ? 1200 : 1600`), und dieser eine Wert
+bedeutete damit drei Dinge — Frontenzahl, Kriegsschwelle und Risikobereitschaft. Wer eine
+davon ändern wollte, änderte alle drei. `maxFronts` trägt jetzt nur noch die Frontenzahl.
+
+**`recruitShare` ist am 2026-09-06 gespreizt worden, und zwar gemessen.** Vorher 80 / 200 /
+330; „schwer gegen normal" war damit **nicht unterscheidbar** — jedes der 25 Paare endete
+unentschieden. Ein Versuch mit 120 / 500 ergab 8 von 10 Paaren für „schwer", einer mit
+150 / 400 wieder nur Unentschieden; die Wirkung liegt also an den Rändern, nicht in der
+Mitte. Übernommen wurde das gemessene Paar. Zeit half nicht: 40, 80 und 150 Spieltage
+ergaben dasselbe Bild.
+
+**Was dabei offen bleibt:** „schwer gegen leicht" steht bei **1,00** — „leicht" gewinnt
+keine einzige Partie. Eine Obergrenze dafür ist nicht einzuhalten, ohne „schwer"
+absichtlich schlechter zu machen; sie steht deshalb zwischen den *benachbarten* Stufen,
+wo eine Mauer dem Spieler wirklich schadet. Begründet in `PROBLEME.md`.
+
 ## Die Freischaltungsachse — erster Spieltag je Sache
 
 R-TECH-01 (T-M15-02, 2026-09-06). Der Befund war keine falsche Zahl, sondern eine fehlende

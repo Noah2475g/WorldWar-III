@@ -37,6 +37,14 @@ export interface VisibleProvince {
   coastal: boolean
   neighbors: readonly ProvinceId[]
   seaLinks: readonly ProvinceId[]
+  /**
+   * Seit wann diese Provinz ihrem jetzigen Eigentümer gehört (T-M15-05, R-DIP-06/AK4).
+   *
+   * Öffentlich: wer eine Provinz erobert, tut das vor aller Augen. Daraus — und nur
+   * daraus — leitet die KI ab, ob ein Krieg festgefahren ist; ein eigenes Zustandsfeld
+   * dafür hätte eine zweite Schemastufe in M15 gekostet.
+   */
+  occupiedSince?: Tick
   /** Only for provinces the player owns. */
   morale?: Fixed
   population?: Fixed
@@ -106,6 +114,15 @@ export interface PublicView {
     reputation: Fixed
     aiBonusMultiplier: Fixed
     /**
+     * Wie böse ich auf wen bin (T-M15-05, R-DIP-06).
+     *
+     * Das ist **eigenes** Wissen und gehört deshalb unter `self`, nicht zu `others`:
+     * meine Verstimmungen kennt niemand ausser mir. Wer sie in `others` gesetzt hätte,
+     * gäbe der KI Einblick in fremde Gemütslagen — ein Bruch von R-DIP-04 in genau der
+     * Richtung, die am schwersten auffällt.
+     */
+    grievances: Record<PlayerId, Fixed>
+    /**
      * Stock, production, consumption and balance per resource (R-ECON-06).
      *
      * Only present when the caller passed the rules — the AI does not need it, and
@@ -113,8 +130,33 @@ export interface PublicView {
      */
     economy?: EconomyOverview
   }
-  others: { id: PlayerId; name: string; nation: string; color: string; alive: boolean; score: number }[]
-  relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean }>
+  /**
+   * Die anderen Mächte — mit ihrem **öffentlichen Ansehen** (T-M15-05, R-DIP-06).
+   *
+   * `reputation` wurde seit M6 geschrieben (ein Überfall ohne Erklärung kostet welches)
+   * und von **keiner Zeile** gelesen: die Sicht führte es nicht, also konnte die KI nicht
+   * darauf reagieren, und der Spieler sah es nirgends. Es ist ausdrücklich öffentlich —
+   * wer wortbrüchig wird, tut das vor aller Augen, und kein Nebel verdeckt das.
+   */
+  others: {
+    id: PlayerId
+    name: string
+    nation: string
+    color: string
+    alive: boolean
+    score: number
+    reputation: Fixed
+  }[]
+  relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean; sinceTick: Tick }>
+  /**
+   * Wer mit wem öffentlich Krieg führt (T-M15-05, R-DIP-06/AK2).
+   *
+   * `relations` führt nur **meine** Beziehungen. Ein Bündnisfall — „mein Verbündeter wird
+   * angegriffen" — ist damit nicht entscheidbar, und AK2 wäre unerfüllbar gewesen.
+   * Kriege sind erklärt und öffentlich; Waffenstillstände und Bündnisse Dritter stehen
+   * hier bewusst **nicht**, die sind Sache der Beteiligten (R-DIP-04).
+   */
+  publicWars: { a: PlayerId; b: PlayerId }[]
   /**
    * Angebote, die auf meine Antwort warten (T-M14-12, Befund 41).
    *
@@ -195,6 +237,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
         kind: province.kind,
         terrain: province.terrain,
         coastal: province.coastal,
+        ...(province.occupiedSince !== null ? { occupiedSince: province.occupiedSince } : {}),
         neighbors: province.neighbors,
         seaLinks: province.seaLinks,
         stale: false,
@@ -241,6 +284,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
         kind: province.kind,
         terrain: province.terrain,
         coastal: province.coastal,
+        ...(province.occupiedSince !== null ? { occupiedSince: province.occupiedSince } : {}),
         neighbors: province.neighbors,
         seaLinks: province.seaLinks,
         stale: true,
@@ -286,6 +330,21 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       state: relation.state,
       rightOfWay: relation.rightOfWay,
       sharedMap: relation.sharedMap,
+      // Seit wann dieser Zustand gilt. Der Krieg hat ein Anfangsdatum, sonst kann
+      // niemand fragen, ob er sich festgefahren hat (R-DIP-06/AK4).
+      sinceTick: relation.sinceTick,
+    }
+  }
+
+  // Über playerOrder statt über Object.keys(relations): die Reihenfolge muss aus dem
+  // Zustand kommen und nicht aus der Einfügereihenfolge eines Records, sonst hängt das
+  // Verhalten der KI daran, in welcher Reihenfolge Beziehungen angelegt wurden (R-ARCH-01).
+  const publicWars: PublicView['publicWars'] = []
+  for (let i = 0; i < state.playerOrder.length; i++) {
+    for (let j = i + 1; j < state.playerOrder.length; j++) {
+      const a = state.playerOrder[i]!
+      const b = state.playerOrder[j]!
+      if (state.diplomacy.relations[relationKey(a, b)]?.state === 'war') publicWars.push({ a, b })
     }
   }
 
@@ -301,6 +360,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       capitalProvinceId: player.capitalProvinceId,
       score: player.score,
       reputation: player.reputation,
+      grievances: { ...(state.diplomacy.grievances[playerId] ?? {}) },
       aiBonusMultiplier: player.aiBonusMultiplier,
       ...(rules ? { economy: economyOverview(state, playerId, rules) } : {}),
     },
@@ -308,8 +368,17 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       .filter((id) => id !== playerId)
       .map((id) => {
         const other = state.players[id]!
-        return { id, name: other.name, nation: other.nation, color: other.color, alive: other.alive, score: other.score }
+        return {
+          id,
+          name: other.name,
+          nation: other.nation,
+          color: other.color,
+          alive: other.alive,
+          score: other.score,
+          reputation: other.reputation,
+        }
       }),
+    publicWars,
     relations,
     incomingOffers,
     provinces,

@@ -1,5 +1,6 @@
 import { emit } from '../events/emit'
 import { atWar } from './combat'
+import { addGrievance } from './diplomacy'
 import type { GameState, PlayerId, ProvinceId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
@@ -44,6 +45,19 @@ export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
     province.occupiedSince = draft.tick
     // Orders die with the change of owner; the construction phase reports it.
     province.recruitQueue = []
+
+    // Eine verlorene Provinz ist der haeufigste Anlass fuer eine Verstimmung — und der
+    // Grund, warum ein Krieg sich verhaertet, statt nach dem ersten Gefecht zu enden
+    // (T-M15-05, R-DIP-06).
+    if (previousOwner) {
+      addGrievance(
+        draft,
+        previousOwner,
+        claimant,
+        ctx.rules.constants.grievanceOnProvinceLost,
+        ctx.rules.constants.grievanceMax,
+      )
+    }
 
     // Betroffen sind die beiden, denen die Provinz gehoerte und gehoert — nicht jeder,
     // der zusieht (T-M15-01). Ein Vorbesitzer kann null sein: herrenloses Land geht
