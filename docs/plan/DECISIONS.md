@@ -889,3 +889,46 @@ T-M14-01 behoben hat; ihn hier zu wiederholen wäre unentschuldbar.
 
 **Auswirkung:** R-GAME-07 bekommt zusätzlich ein **AK2** für das, was diese Aufgabe
 wirklich leistet und was vorher in keiner Anforderung stand: kein Ladeweg ohne Prüfung.
+
+---
+
+## 2026-09-06 · T-M15-06 · R-TIME-06 · Eine Spielschleife, und der Worker-Host wird gelöscht
+
+**Entscheidung (Noah):** Weg **(b)**. Die Schleife in `apps/desktop/src/App.tsx` bekommt
+echtes Vorspulen über `fastForward` des Kerns; `apps/desktop/src/sim/` — SimEngine, SimHost,
+worker, protocol, zusammen **521 Produktionszeilen und 371 Testzeilen** — wird gelöscht.
+Weg (a), den Worker-Host zu verdrahten, ist verworfen.
+
+**Der Befund, der die Entscheidung nötig machte:** Der Vorspulknopf ruft den Kern nicht auf.
+`App.tsx` und die Taste `F` rechnen `step(ticksPerDay)`, also genau einen Spieltag;
+`fastForwarding` steht hart auf `false`, wodurch der Abbruchzweig in `ui/Header.tsx` toter
+Code ist; und `fastForward` aus `packages/core/src/clock.ts` wird in `apps/desktop/src` an
+**keiner** Stelle gerufen. Der einzige Aufrufer ist `sim/SimEngine.ts`, den nichts startet.
+**Ziel Z1 — die frei regelbare Spielgeschwindigkeit, das erste erklärte Produktziel — ist
+damit halb eingelöst, und R-TIME-02 wurde ausschließlich gegen Code geprüft, den kein
+Spieler ausführt.**
+
+**Warum (b):**
+
+1. **T-M14-04 hat genau diesen Fehler behoben.** Es gab vier Spielschleifen; die des
+   Parameterlaufs fragte die KI einmal je Spieltag, wodurch bei sechs Mächten nur die erste
+   dachte, und jede Balancezahl beschrieb eine Welt, in der fünf von sechs stillstehen. Den
+   Worker-Host zu verdrahten hieße, die zweite Schleife wieder einzuführen — vier Wochen
+   nachdem sie mit einem eigenen Wächter (`single-loop`) verboten wurde.
+2. **Der Host hat nie gelaufen.** „521 Zeilen retten" rettet Code, den kein Spieler je
+   ausgeführt hat. Der Test dazu prüft eine Schnittstelle, kein Verhalten.
+3. **Er kann die KI gar nicht.** `SimEngine.ts` importiert nichts aus `@worldwar/ai`; sein
+   `commandSource` kann `storeMemories` nicht ausführen. Beim Vorspulen verlöre die KI ihr
+   Gedächtnis — R-AI-07 wäre gebrochen, und zwar nur in der Betriebsart, in der niemand
+   hinsieht. Das zu reparieren wäre der eigentliche Preis von (a), und er steht nicht in
+   den 521 Zeilen.
+
+**Der Preis, offen benannt:** Das Vorspulen rechnet im Hauptthread. Bei den gemessenen
+2,463 ms je Tick auf der Weltkarte sind 1000 Spieltage rund **59 Sekunden Rechenzeit**. In
+Häppchen mit freigegebener Ereignisschleife bleibt die Oberfläche bedienbar und der
+Abbruch erreichbar — aber nebenher läuft es nicht. Wer das später anders will, baut den
+Worker gegen die *bestehende* Schleife und nicht neben ihr; das ist ein Thema für M16, wo
+die Leistung am echten Bau ohnehin neu zu messen ist.
+
+**Was mitgeht:** T-M10-04 (Kopfleiste mit Vorspulmenü) ist seit T-M14-02 auf `todo`
+zurückgestuft und wird von dieser Aufgabe geschlossen.

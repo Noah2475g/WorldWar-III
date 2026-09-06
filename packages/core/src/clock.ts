@@ -24,7 +24,22 @@ export type StopReason = 'target' | 'alert' | 'limit'
 
 export interface FastForwardOptions {
   /** Commands to inject for a given tick — how the AI feeds the simulation. */
-  commandSource?: (tick: Tick) => readonly Command[]
+  /**
+   * Die Befehle dieses Ticks. Bekommt den **Zustand**, nicht nur den Tick (T-M15-06).
+   *
+   * Der Grund ist die KI: sie entscheidet aus der Lage, und mit einer Tickzahl allein
+   * konnte sie hier gar nicht aufgerufen werden. Deshalb rief bis zum 2026-09-06 kein
+   * einziger Spieler-Pfad `fastForward` — die Oberfläche rechnete stattdessen ihre eigene
+   * Schleife, und der Kern hatte eine Betriebsart, die niemand ausführte.
+   */
+  commandSource?: (state: GameState) => readonly Command[]
+  /**
+   * Läuft nach jedem Tick auf dem **neuen** Zustand.
+   *
+   * Nur für das, was zum Tick gehört und nicht in den Zustand des Kerns: das Gedächtnis
+   * der KI wird so mitgeführt, ohne dass der Kern die KI kennen muss (R-ARCH-01).
+   */
+  afterTick?: (state: GameState, events: readonly GameEvent[]) => void
   /**
    * Whose alerts interrupt. Usually the human player: skipping three game days and
    * only then learning that a province fell is the worst thing this game could do.
@@ -161,10 +176,11 @@ export function fastForward(
   let ticksRun = 0
 
   while (ticksRun < maxTicks) {
-    const result = step(current, options.commandSource?.(current.tick) ?? [], ctx)
+    const result = step(current, options.commandSource?.(current) ?? [], ctx)
     current = result.state
     ticksRun += 1
     collected.push(...result.events)
+    options.afterTick?.(current, result.events)
 
     const alert = firstAlertFor(result.events, options.alertsFor)
     if (alert) {

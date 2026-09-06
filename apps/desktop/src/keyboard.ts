@@ -1,4 +1,4 @@
-import { SPEED_STOPS } from './sim/SimHost.ts'
+import { SPEED_STOPS } from './game/speed.ts'
 import { MAP_MODES, type MapMode } from './map/modes.ts'
 
 /**

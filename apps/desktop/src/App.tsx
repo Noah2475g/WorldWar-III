@@ -8,9 +8,12 @@ import {
   type GameState,
   type MapData,
   type Rules,
+  type FastForwardTarget,
+  type StopReason,
   type StoragePort,
 } from '@worldwar/core'
 import { advance } from './game/advance.ts'
+import { fastForwardChunk } from './game/fastForward.ts'
 import {
   armyActions,
   buildActions,
@@ -154,6 +157,15 @@ export function App(props: AppProps) {
   })
   const [state, setState] = useState<GameState | null>(null)
   const [speed, setSpeed] = useState(0)
+  /**
+   * Der laufende Vorspulvorgang (T-M15-06). `reason` traegt den Grund des Halts in
+   * derselben Sprache, die der Kern spricht — Ziel erreicht, Alarm, Obergrenze, Abbruch.
+   */
+  const [fastForwardState, setFastForward] = useState<{
+    running: boolean
+    ticksRun: number
+    reason: StopReason | 'aborted' | null
+  }>({ running: false, ticksRun: 0, reason: null })
   const [dialog, setDialog] = useState<'new' | 'saves' | 'settings' | 'keys' | null>('new')
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
@@ -333,6 +345,9 @@ export function App(props: AppProps) {
    * Die Ebene dafuer gibt es in `MapCanvas` seit M10 — befuellt hat sie nie jemand, und
    * damit war der Marschbefehl das einzige, was man gab, ohne zu sehen, wohin.
    */
+  /** Obergrenze eines Vorspulvorgangs: 30 Spieltage, damit ein nie eintretendes Ziel endet. */
+  const MAX_FAST_FORWARD_TICKS = 30 * ticksPerDay
+
   const selectedPath = useMemo(() => {
     const army = view?.armies.find((a) => a.id === ui.selectedArmy)
     if (!army?.path || army.path.length === 0) return undefined
@@ -343,6 +358,55 @@ export function App(props: AppProps) {
   const step = useCallback(
     (ticks: number) => {
       setState((current) => (current ? advance(current, ticks, { map: props.map, rules: props.rules }) : current))
+    },
+    [props.map, props.rules],
+  )
+
+  /**
+   * Vorspulen bis zum naechsten Ereignis (T-M15-06, R-TIME-02/AK2, R-TIME-03).
+   *
+   * Ruft **die Schleife des Kerns**, in Haeppchen: zwischen zwei Haeppchen kommt die
+   * Ereignisschleife dran, also bleibt die Oberflaeche bedienbar und der Abbruch
+   * erreichbar. Bis zum 2026-09-06 rechnete diese Stelle `step(ticksPerDay)` — genau
+   * einen Spieltag, ohne Ziel, ohne Alarm, ohne Abbruch.
+   */
+  const abortFastForward = useRef(false)
+  const fastForwardRun = useCallback(
+    (target: FastForwardTarget) => {
+      const viewerId = 'p1'
+      if (!viewerId) return
+      abortFastForward.current = false
+      setSpeed(0)
+      setFastForward({ running: true, ticksRun: 0, reason: null })
+
+      const request = { target, alertsFor: viewerId, maxTicks: MAX_FAST_FORWARD_TICKS }
+      let ticksRun = 0
+
+      const chunk = (): void => {
+        setState((current) => {
+          if (!current) return current
+          if (abortFastForward.current) {
+            setFastForward({ running: false, ticksRun, reason: 'aborted' })
+            return current
+          }
+
+          const result = fastForwardChunk(current, request, { map: props.map, rules: props.rules }, MAX_FAST_FORWARD_TICKS - ticksRun)
+          ticksRun += result.ticksRun
+
+          // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
+          // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
+          const weiter = result.stoppedBy === 'limit' && ticksRun < MAX_FAST_FORWARD_TICKS
+          if (weiter) {
+            setFastForward({ running: true, ticksRun, reason: null })
+            setTimeout(chunk, 0)
+          } else {
+            setFastForward({ running: false, ticksRun, reason: result.stoppedBy })
+          }
+          return result.state
+        })
+      }
+
+      chunk()
     },
     [props.map, props.rules],
   )
@@ -467,7 +531,7 @@ export function App(props: AppProps) {
           break
         case 'fastForward':
           tutor('fastForward')
-          step(ticksPerDay)
+          fastForwardRun({ kind: 'days', days: 1 })
           break
         case 'save':
         case 'load':
@@ -682,7 +746,7 @@ export function App(props: AppProps) {
         view={view}
         ticksPerDay={ticksPerDay}
         speed={speed}
-        fastForwarding={false}
+        fastForwarding={fastForwardState.running}
         mode={ui.mode}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
@@ -690,9 +754,12 @@ export function App(props: AppProps) {
         }}
         onFastForward={() => {
           tutor('fastForward')
-          step(ticksPerDay)
+          fastForwardRun({ kind: 'days', days: 1 })
         }}
-        onAbort={() => setSpeed(0)}
+        onAbort={() => {
+          abortFastForward.current = true
+          setSpeed(0)
+        }}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
         onMenu={() => setDialog('settings')}
         onPanel={(panel) => dispatch({ type: 'openPanel', panel })}

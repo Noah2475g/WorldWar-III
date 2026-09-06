@@ -197,6 +197,27 @@ describe('R-ARCH-05 Der Entwurf nennt die Anforderungen, die er ausfuehrt', () =
   })
 })
 
+/**
+ * Eine Entscheidung, die Produktionscode löscht, steht vorher schriftlich (T-M15-06).
+ *
+ * Der Plan verlangt sie ausdrücklich *bevor* Code fällt — und dieser Test ist der Grund,
+ * warum das nicht bloß eine Absichtserklärung ist. 521 Zeilen zu löschen ist die eine
+ * Sorte Änderung, die sich nicht mehr aus dem Ergebnis rekonstruieren lässt: hinterher
+ * sieht der Baum aus, als hätte es die Alternative nie gegeben.
+ */
+describe('R-ARCH-05 Die Entscheidung zu T-M15-06 steht in DECISIONS.md', () => {
+  const decisions = readFileSync(join(ROOT, 'docs/plan/DECISIONS.md'), 'utf8')
+  const section = decisions.slice(decisions.indexOf('## 2026-09-06 · T-M15-06'))
+
+  it('nennt beide Wege, ihre Kosten und den gewählten', () => {
+    expect(section.length, 'kein Eintrag zu T-M15-06').toBeGreaterThan(500)
+    expect(section, 'der gewählte Weg ist nicht benannt').toContain('Weg **(b)**')
+    expect(section, 'der verworfene Weg ist nicht benannt').toContain('Weg (a)')
+    expect(section, 'die Kosten des Löschens fehlen').toMatch(/521/)
+    expect(section, 'der Preis der gewählten Lösung fehlt').toMatch(/Hauptthread/)
+  })
+})
+
 describe('R-UI-05/AK3 Der Antwortbogen prueft sich selbst', () => {
   const sheet = ['| # | Anforderung | Frage | ja/nein |', '|---|---|---|---|', '| 1 | R-UI-01 | Sieht es aus? | |', '| 2a | R-UI-02 | Lesbar? | |'].join('\n')
 

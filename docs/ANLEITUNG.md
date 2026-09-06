@@ -64,6 +64,16 @@ verlorene Armee, eine Kriegserklärung halten das Vorspulen sofort an und sagen,
 **Oberhalb von 10 Spielstunden je Sekunde** verstummen Töne und Animationen, und
 Meldungen werden zu Tagesbündeln zusammengefasst. Sonst wären es Dutzende je Sekunde.
 
+**Ein fremder Krieg hält Sie nicht auf.** Das Vorspulen bricht nur ab, wenn ein Alarm
+*Sie* betrifft — eine Eroberung zwischen zwei anderen Mächten läuft durch, dieselbe
+Eroberung auf Ihre Kosten hält an. Auf einer Weltkarte mit acht Mächten wäre es sonst
+nach drei Spieltagen jedes Mal vorbei.
+
+**Es rechnet in Häppchen**, und Sie können jederzeit abbrechen: Der Knopf wechselt
+während des Laufs zu **Abbrechen**, und die Zahl daneben zeigt, wie weit es gekommen
+ist. Am Ende steht der Grund in Worten — Ziel erreicht, angehalten, oder Obergrenze
+(30 Spieltage; ein Ziel, das nie eintritt, soll nicht ewig laufen).
+
 ---
 
 ## Was das Spiel entscheidet

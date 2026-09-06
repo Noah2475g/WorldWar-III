@@ -1307,6 +1307,23 @@ still fallen ließe. Die einzige Fortsetzungsprüfung, die es heute gibt
 
 ### D19.6 Vorspulen in der Hülle (R-TIME-06) — die Entscheidung, die vorher fällt
 
+> **Entschieden und gebaut am 2026-09-06 (T-M15-06): Weg (b).** `apps/desktop/src/sim/` ist
+> gelöscht — 521 Produktionszeilen und 371 Testzeilen. Das Vorspulen liegt in
+> `apps/desktop/src/game/fastForward.ts` und **ruft die Schleife des Kerns**; es rechnet
+> nicht selbst. Die KI kommt über zwei neue Haken hinein: `commandSource` bekommt seit
+> heute den **Zustand** statt nur der Tickzahl (mit einer Tickzahl allein konnte die KI dort
+> gar nicht aufgerufen werden — *das* ist der Grund, warum die Oberfläche sich eine eigene
+> Schleife gebaut hatte), und `afterTick` legt das Gedächtnis ab, ohne dass der Kern die KI
+> kennen muss.
+>
+> **In Häppchen von 24 Ticks**, mit Abbruch dazwischen: bei den gemessenen 2,463 ms je Tick
+> wären 30 Spieltage sonst ein paar Sekunden ohne Lebenszeichen, und 1000 Spieltage eine
+> Minute. Der Grund des Halts erreicht die Oberfläche in Worten — Ziel erreicht, angehalten,
+> Obergrenze, abgebrochen.
+>
+> Der Preis steht in DECISIONS.md: das Vorspulen rechnet im Hauptthread. Kommt der
+> Hintergrundprozess wieder, dann in M16 gegen die *bestehende* Schleife und nicht neben ihr.
+
 **Der Befund, nüchtern.** `apps/desktop/src/sim/` umfasst 521 Produktionszeilen (`SimEngine.ts`
 285, `SimHost.ts` 136, `worker.ts` 64, `protocol.ts` 36) und 371 Testzeilen
 (`SimHost.test.ts` 216, `worker.test.ts` 155). Die laufende Anwendung importiert daraus **eine

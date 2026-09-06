@@ -104,10 +104,6 @@ export function applicationModules(dir: string): string[] {
 export const REACHABILITY_EXCEPTIONS: Readonly<Record<string, string>> = {
   'apps/desktop/src/index.ts':
     'Paketeinstieg (package.json "main") fuer andere Pakete, nicht Teil der laufenden Anwendung.',
-  'apps/desktop/src/sim/worker.ts':
-    'Huelle fuer den Simulationslauf im Hintergrundprozess — gebaut und geprueft in T-M10-02, verdrahtet wird sie erst, wenn die Weltkarte das Bildbudget reisst (D11).',
-  'apps/desktop/src/sim/SimEngine.ts':
-    'Die Maschine, die dieser Hintergrundprozess fahren wuerde; gehoert zu worker.ts und faellt mit ihr.',
 }
 
 export function unreachableModules(entryFiles: readonly string[], directory: string): string[] {

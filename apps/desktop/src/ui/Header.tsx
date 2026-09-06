@@ -1,5 +1,5 @@
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
-import { SPEED_STOPS } from '../sim/SimHost.ts'
+import { SPEED_STOPS } from '../game/speed.ts'
 import { t } from '../i18n/text.ts'
 import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachText } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
