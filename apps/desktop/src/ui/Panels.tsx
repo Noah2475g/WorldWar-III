@@ -450,11 +450,22 @@ export interface EventEntry {
   severity: 'info' | 'alert'
   /** Which drawer of the log this line belongs in (R-GAME-06). */
   category?: EventCategory
+  /**
+   * Gehört diese Zeile zum Weltgeschehen (R-NEWS-04, T-M15-09)?
+   *
+   * Getrennt von `category`, weil es eine andere Frage ist: die Rubrik sagt *worum* es
+   * geht, das Weltgeschehen sagt, ob es **die Welt** angeht — eine Eroberung zwischen zwei
+   * fremden Mächten ist beides „Kampf" und Weltgeschehen, ein eigener Bauabschluss weder
+   * noch.
+   */
+  world?: boolean
 }
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
 
-export const EVENT_FILTERS: readonly (EventCategory | 'all')[] = ['all', 'combat', 'economy', 'diplomacy']
+export type EventFilterKey = EventCategory | 'all' | 'world'
+
+export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'economy', 'diplomacy', 'world']
 
 /**
  * Which drawer an event belongs in (T-M13-13, R-GAME-06).
@@ -479,8 +490,15 @@ export function EventLog({
   ticksPerDay: number
   onJump: (provinceId: string) => void
 }) {
-  const [filter, setFilter] = useState<EventCategory | 'all'>('all')
-  const shown = filter === 'all' ? entries : entries.filter((entry) => (entry.category ?? 'other') === filter)
+  const [filter, setFilter] = useState<EventFilterKey>('all')
+  const shown =
+    filter === 'all'
+      ? entries
+      : filter === 'world'
+        ? // Weltgeschehen fragt nicht nach der Rubrik, sondern nach der Positivliste des
+          // Kerns (R-NEWS-04) — auch wenn es zwischen zwei fremden Mächten geschieht.
+          entries.filter((entry) => entry.world === true)
+        : entries.filter((entry) => (entry.category ?? 'other') === filter)
 
   const filterBar = (
     <div className="log__filters" role="group" aria-label={t('alerts.filter')}>

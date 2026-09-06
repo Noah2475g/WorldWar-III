@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
-import { EventLog, ProvincePanel, buildingItems, depositItems, type Action } from './Panels.tsx'
+import { EventLog, ProvincePanel, buildingItems, depositItems, type Action, type EventEntry } from './Panels.tsx'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -314,5 +314,50 @@ describe('R-UI-09 Das Provinzpanel bleibt knapp', () => {
 
     expect(hidden).toContain('Dafür fehlt das Gebäude: Fabrik.')
     expect(hidden.filter((text) => text === 'Dafür fehlt das Gebäude: Fabrik.')).toHaveLength(2)
+  })
+})
+
+/**
+ * Der Filter „Weltgeschehen" (T-M15-09, R-NEWS-04, R-GAME-06).
+ *
+ * Der Ersatz für die Zeitung — und der Grund, warum sie entfällt: was R-NEWS-02 einer
+ * Zeitung erlaubt hätte, liegt bereits vollständig im Protokoll.
+ */
+describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
+  const eintrag = (over: Partial<EventEntry>): EventEntry => ({
+    id: `e${Math.random()}`,
+    tick: 24,
+    text: 'Etwas geschieht',
+    severity: 'info',
+    category: 'other',
+    ...over,
+  })
+
+  it('bietet fuenf Knoepfe an', () => {
+    render(<EventLog entries={[eintrag({})]} ticksPerDay={24} onJump={() => {}} />)
+
+    expect(screen.getByRole('button', { name: 'Weltgeschehen' })).toBeTruthy()
+    expect(screen.getAllByRole('button').length).toBe(5)
+  })
+
+  it('zeigt unter Weltgeschehen eine Kriegserklaerung zwischen zwei fremden Maechten', () => {
+    const fremd = eintrag({ text: 'Ostmark erklärt Süden den Krieg.', world: true, category: 'diplomacy' })
+    const eigen = eintrag({ text: 'Kaserne fertig.', world: false, category: 'economy' })
+    render(<EventLog entries={[fremd, eigen]} ticksPerDay={24} onJump={() => {}} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Weltgeschehen' }))
+
+    expect(screen.getByText('Ostmark erklärt Süden den Krieg.')).toBeTruthy()
+    expect(screen.queryByText('Kaserne fertig.')).toBeNull()
+  })
+
+  it('macht aus einem fremden Ereignis keinen Alarm', () => {
+    // Unter „alles" steht die Zeile ebenfalls — aber ohne die Alarmklasse. Ein fremder
+    // Krieg ist Lektüre, kein Grund, den Spieler anzuhalten (T-M15-01).
+    const fremd = eintrag({ text: 'Ostmark erklärt Süden den Krieg.', world: true, severity: 'info' })
+    const { container } = render(<EventLog entries={[fremd]} ticksPerDay={24} onJump={() => {}} />)
+
+    expect(container.querySelectorAll('.log__row--alert').length).toBe(0)
+    expect(screen.getByText('Ostmark erklärt Süden den Krieg.')).toBeTruthy()
   })
 })

@@ -393,9 +393,6 @@ scope:
     R-DIP-06:   "M15 — das Verhältnis steuert die KI (T-M15-05)"
     R-AI-08:    "M15 — die KI nutzt die neuen Mittel (T-M15-08)"
     R-GAME-07:  "M15 — Migration der Spielstände v1 auf v2 (T-M15-04)"
-    R-NEWS-01:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
-    R-NEWS-02:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
-    R-NEWS-03:  "M15 — die Zeitung wird durch den Filter Weltgeschehen ersetzt und dort gestrichen (T-M15-09)"
     R-NEWS-04:  "M15 — Weltgeschehen als Filter im Ereignisprotokoll, der Ersatz für die Zeitung (T-M15-09)"
     R-SPY-01:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-SPY-02:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
@@ -485,8 +482,9 @@ wird ein Gegner"**: R-TIME-06, R-BAT-08, R-TECH-01/02, R-DIP-06, R-AI-08, R-GAME
 **Nach M17 verschoben:** Spionage (R-SPY-01…06) und die Handelsangebote mit Treuhand
 (R-DIP-05, R-DIP-07) — Letztere, weil ein zweiter Handelsweg über einem ersten steht, den
 noch niemand benutzt (die KI erzeugte in drei Läufen null `TRADE`). **Gestrichen:** die
-Zeitung (R-NEWS-01/02/03), ersetzt durch **R-NEWS-04**, einen Filter „Weltgeschehen" im
-bestehenden Ereignisprotokoll — Begründung dort. Die verschobenen Anforderungen bleiben
+Zeitung, ersetzt durch **R-NEWS-04**, einen Filter „Weltgeschehen" im bestehenden
+Ereignisprotokoll — Begründung dort. Die drei Anforderungen sind am 2026-09-06 mit
+T-M15-09 aus diesem Dokument entfernt worden, nachdem ihr Ersatz stand. Die verschobenen Anforderungen bleiben
 unten ausformuliert stehen; ihr Meilenstein steht im `scope`-Block (2.14), nicht im Fließtext.
 
 **Weiterhin vertagt, jetzt auf M18:** Nuklearwaffen (nur im Schwesterspiel belegt,
@@ -705,23 +703,16 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
 
 #### Weltgeschehen statt Zeitung (`R-NEWS`)
 
-> **R-NEWS-01, R-NEWS-02 und R-NEWS-03 werden nicht gebaut** (Entscheidung 3 vom 2026-09-05,
-> `DECISIONS.md`). Sie bleiben hier stehen, bis **T-M15-09** ihren Ersatz gebaut hat und sie
-> mit ihm streicht — eine Zusage verschwindet nicht, bevor das da ist, was an ihre Stelle
-> tritt. Die Begründung, damit die Streichung nicht stillschweigend geschieht:
->
-> - **Die Zeitung durfte per Anforderung keine Entscheidung ermöglichen.** R-NEWS-02 verbietet
->   ausdrücklich Mengen, Vorräte, Truppen und Gebäude. Was übrig bleibt — Kriegserklärungen,
->   Friedensschlüsse, Bündnisse, Eroberungen, gefallene Hauptstädte, Aufstände, ausgeschiedene
->   Mächte, entschiedene Schlachten — liegt bereits vollständig im Ereignisprotokoll, dessen
->   Filterbarkeit R-GAME-06 und dessen Anspringbarkeit R-UI-14/AK1 ohnehin fordern.
-> - **Der Preis war hoch und zum Teil versteckt.** Eine Ausgabe, die „im Spielstand liegt“
->   (R-NEWS-01/AK1), ist ein neues Zustandsfeld mit Ringpuffer, Migration und wachsendem
->   Spielstand — und sie liefe in den Simulationshash: `HASH_OMIT_KEYS`
->   (`packages/core/src/state/types.ts`) nimmt heute allein `eventLog` aus. Jede spätere
->   Änderung an einer Schlagzeilenformulierung bräche Golden-Master und Wiedergabe.
-> - **Der Ersatz kostet einen Tag und trägt den größten Teil des Werts:** derselbe
->   Ereignisstrom, dieselbe Positivliste, als Filter statt als zweites Erzeugnis.
+> **R-NEWS-01, R-NEWS-02 und R-NEWS-03 sind am 2026-09-06 gestrichen** — ersatzlos, mit
+> **T-M15-09**, das ihren Ersatz gebaut hat. Sie standen bis dahin ausformuliert hier, weil
+> eine Zusage nicht verschwindet, bevor das da ist, was an ihre Stelle tritt. Jetzt ist es
+> da, und der Text ist weg: eine Anforderung, die niemand mehr baut und die trotzdem im
+> Anforderungsdokument steht, wird beim nächsten Lesen wieder zur Zusage. Die Begründung
+> steht in `DECISIONS.md` (Entscheidung 3 vom 2026-09-05) und in `02-DESIGN.md`, D19.8 —
+> kurz: R-NEWS-02 verbot der Zeitung ausdrücklich Mengen, Vorräte, Truppen und Gebäude, und
+> was danach übrig blieb, liegt bereits vollständig im Ereignisprotokoll. Die Zeitung
+> hätte ein Zustandsfeld mit Ringpuffer, eine Migration und Text im Simulationshash
+> gekostet; der Filter kostet nichts davon.
 
 - **R-NEWS-04 (M15) — Weltgeschehen im Ereignisprotokoll.** Das Ereignisprotokoll (R-GAME-06)
   bekommt einen Filter „Weltgeschehen“. Er zeigt genau die Ereignisarten einer festen
@@ -737,36 +728,6 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
     sein, ohne Kennungen.
   - AK3: WENN ein Ereignis des Weltgeschehens den Spieler nicht betrifft, DANN SOLL es sein
     Vorspulen nicht anhalten (R-TIME-06/AK2) — Weltgeschehen ist Lektüre, kein Alarm.
-
-- **R-NEWS-01 — Eine Ausgabe je Spieltag.** Nach Referenz 10.3 erscheint am Tageswechsel
-  eine Zeitung mit: dem Index der Mächte (alle lebenden Mächte mit Punkten), den
-  Schlagzeilen des Tages (Kriegserklärungen, Friedensschlüsse, Bündnisse, Eroberungen,
-  gefallene Hauptstädte, Aufstände, ausgeschiedene Mächte, Handelsabkommen, enttarnte
-  Spione, entschiedene Schlachten), einer täglich wechselnden Statistik und den
-  Spielinformationen (Siegbedingung, Tag). Die letzten Ausgaben bleiben lesbar.
-  - AK1: WENN ein Spieltag endet, DANN SOLL genau eine Ausgabe entstehen und im Spielstand
-    liegen; WENN mehr als die Regelzahl Ausgaben vorliegen, DANN SOLL die älteste weichen.
-  - AK2: WENN ein Spielstand geladen wird, DANN SOLLEN die gespeicherten Ausgaben
-    unverändert vorliegen.
-- **R-NEWS-02 — Die Zeitung verrät nichts.** Jede Schlagzeile stammt aus einer Ereignisart
-  einer festen Positivliste, deren Inhalt das Original selbst druckt, und trägt nur Art,
-  Beteiligte, Ort und Zeitpunkt — nie Mengen, Vorräte, Truppen oder Gebäude. Die Ausgabe ist
-  für alle Mächte dieselbe. Die Positivliste, nicht der Empfängerkreis der Ereignisse,
-  entscheidet: Kriegserklärungen bleiben Alarm für die Beteiligten und werden für Dritte
-  Lektüre, nicht Alarm (R-TIME-06/AK2).
-  - AK1: WENN eine Ausgabe entsteht, DANN SOLL jede Schlagzeile eine Art der Positivliste
-    haben und ausschließlich die Felder Art, Zeitpunkt, Beteiligte und Ort tragen — als
-    Eigenschaftstest über zufällige Ereignisfolgen.
-  - AK2: WENN die Zeitung eine Statistik nennt, DANN SOLL sie aus öffentlichen Größen
-    gebildet sein (Punkte, Eroberungen des Tages, geführte Kriege) — nie aus Vorräten,
-    Truppen oder Gebäuden fremder Mächte.
-- **R-NEWS-03 — Die Zeitung in der Oberfläche.** Taste `Z` öffnet die aktuelle Ausgabe;
-  ältere sind blätterbar; Schlagzeilen sind Sätze mit Namen und führen per Klick zum Ort
-  (R-UI-14/AK1); der Index zeigt Punkte als Balken (R-UI-09).
-  - AK1: WENN die Zeitung geöffnet ist, DANN SOLL jede Schlagzeile ein deutscher Satz ohne
-    Kennungen sein und, wo sie einen Ort betrifft, die Karte dorthin führen.
-  - AK2: WENN eine neue Ausgabe erschienen ist, DANN SOLL die Kopfleiste das anzeigen,
-    ohne das Spiel anzuhalten — die Zeitung ist Lektüre, kein Alarm.
 
 #### Querschnitt
 

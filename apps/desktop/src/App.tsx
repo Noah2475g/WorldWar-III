@@ -3,6 +3,7 @@ import {
   RESOURCE_KEYS,
   canApply,
   eventsFor,
+  worldEventsIn,
   publicView,
   type Command,
   type GameState,
@@ -345,6 +346,9 @@ export function App(props: AppProps) {
    * Die Ebene dafuer gibt es in `MapCanvas` seit M10 — befuellt hat sie nie jemand, und
    * damit war der Marschbefehl das einzige, was man gab, ohne zu sehen, wohin.
    */
+  /** Wie viele Zeilen das Protokoll je Rubrik vorhält. */
+  const LOG_LINES = 40
+
   /** Obergrenze eines Vorspulvorgangs: 30 Spieltage, damit ein nie eintretendes Ziel endet. */
   const MAX_FAST_FORWARD_TICKS = 30 * ticksPerDay
 
@@ -602,9 +606,22 @@ export function App(props: AppProps) {
       player: nameOf,
       army: (id: string) => state.armies[id]?.name ?? id,
       ticksPerDay,
+      viewer: 'p1',
     }
-    return eventsFor(state.eventLog, 'p1')
-      .slice(-40)
+    // **Erst deuten, dann zuschneiden** (T-M15-09). Bis zum 2026-09-06 stand hier
+    // `.slice(-40)` *vor* allem anderen: das Protokoll wurde auf die letzten vierzig
+    // Zeilen gekürzt und der Filter suchte danach in diesem Ausschnitt. Bei fünfhundert
+    // Ereignissen, von denen nur die drei ältesten Weltgeschehen sind, fände
+    // „Weltgeschehen" **nichts** — und der Knopf wäre ein Knopf, der lügt.
+    //
+    // Gekürzt wird deshalb auf eine Menge, in der jede Rubrik noch etwas zu zeigen hat:
+    // die letzten vierzig Zeilen **und** die letzten vierzig Weltereignisse.
+    const alle = eventsFor(state.eventLog, 'p1')
+    const jüngste = new Set(alle.slice(-LOG_LINES))
+    for (const event of worldEventsIn(alle).slice(-LOG_LINES)) jüngste.add(event)
+
+    return alle
+      .filter((event) => jüngste.has(event))
       .reverse()
       .map((event, index) => describeEvent(event, index, props.map, naming))
   }, [state, props.map, nameOf, ticksPerDay])

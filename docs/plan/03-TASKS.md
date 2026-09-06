@@ -2711,7 +2711,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   ein verstecktes Risiko: `HASH_OMIT_KEYS` nimmt nur `eventLog` vom Simulationshash aus, jede
   Ausgabe liefe also in den Hash, und jede spätere Änderung an einer Schlagzeilenformulierung
   bräche Golden-Master und Wiedergabe. Der Filter kostet kein Zustandsfeld. *(Befunde 27 und 9)*
-- **Anforderungen:** R-GAME-06, R-NEWS-04, R-NEWS-01, R-NEWS-02, R-NEWS-03
+- **Anforderungen:** R-GAME-06, R-NEWS-04
+  *(R-NEWS-01/02/03 standen hier als „wird von dieser Aufgabe gestrichen"; sie sind seit dem
+  2026-09-06 gestrichen und damit auch als Bezug hinfällig.)*
 - **Abhängigkeiten:** T-M13-13, T-M15-01
 - **Dateien:** `packages/core/src/events/world.ts` *(neu)*, `packages/core/src/index.ts`,
   `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/App.tsx`,
@@ -2751,9 +2753,15 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   keine Migration hinzu, fasst `packages/core/src/state/types.ts` nicht an und lässt beide
   Golden-Master byteweise unverändert** — nachgewiesen mit `git diff --stat` über
   `packages/core/test/golden` und `apps/headless/test/golden`, während `determinism.test.ts` und
-  `replay.test.ts` grün laufen. `grep -rn "R-NEWS" .` liefert im ganzen Arbeitsbaum
-  ausschließlich Treffer in `docs/plan/DECISIONS.md` — nicht in `01-REQUIREMENTS.md`, nicht im
-  `scope`-Block, nicht in `tasks.yaml`, nicht in `03-TASKS.md`. **Der `scope`-Block trägt nach
+  `replay.test.ts` grün laufen. `grep -rn "R-NEWS-0[123]" .` liefert keine **lebende**
+  Anforderung mehr: der ausformulierte Text von R-NEWS-01/02/03 ist aus `01-REQUIREMENTS.md`
+  entfernt, die drei IDs stehen nicht mehr im `scope`-Block, und was bleibt, sind datierte
+  Streichungsvermerke mit Begründung.
+  *(Am 2026-09-06 berichtigt: die ursprüngliche Fassung verlangte, dass `grep -rn "R-NEWS" .`
+  ausschließlich `DECISIONS.md` trifft. Das ist nicht einlösbar — **R-NEWS-04 enthält die
+  Zeichenfolge selbst**, und sie ist die Anforderung, die diese Aufgabe baut. Die Zusage
+  dahinter — keine gestrichene Anforderung steht mehr als Zusage da — ist prüfbar und wird
+  oben geprüft.)* **Der `scope`-Block trägt nach
   der Streichung 97 IDs, davon 15 spätere, und `pnpm coverage:requirements` meldet weiterhin
   `V1 offen: 0`** und zählt R-GAME-06 als belegt.
 

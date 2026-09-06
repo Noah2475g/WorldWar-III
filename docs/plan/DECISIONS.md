@@ -932,3 +932,36 @@ die Leistung am echten Bau ohnehin neu zu messen ist.
 
 **Was mitgeht:** T-M10-04 (Kopfleiste mit Vorspulmenü) ist seit T-M14-02 auf `todo`
 zurückgestuft und wird von dieser Aufgabe geschlossen.
+
+---
+
+## 2026-09-06 · T-M15-09 · R-NEWS-01/02/03 · Die Zeitung ist gestrichen, der Ersatz steht
+
+**Entscheidung:** Die drei Zeitungsanforderungen sind am 2026-09-06 **ersatzlos aus
+`01-REQUIREMENTS.md` entfernt** — Text, `scope`-Einträge und Bezüge. An ihrer Stelle steht
+R-NEWS-04, der Filter „Weltgeschehen" im Ereignisprotokoll, und er ist gebaut.
+
+**Warum jetzt und nicht früher:** Eine Zusage verschwindet nicht, bevor das da ist, was an
+ihre Stelle tritt. Seit dem 2026-09-05 stand über den drei Anforderungen ein Vermerk, dass
+sie nicht gebaut werden und T-M15-09 sie mit ihrem Ersatz streicht; genau das ist jetzt
+geschehen. Umgekehrt bleibt eine Anforderung, die niemand mehr baut und die trotzdem
+ausformuliert im Anforderungsdokument steht, beim nächsten Lesen wieder eine Zusage —
+und das Anforderungstor zählte sie mit.
+
+**Die Rechnung, in einem Satz:** R-NEWS-02 verbot der Zeitung ausdrücklich Mengen, Vorräte,
+Truppen und Gebäude; was danach übrig bleibt, ist eine Positivliste von acht Ereignisarten,
+und die liegt vollständig im Ereignisprotokoll, dessen Filterbarkeit R-GAME-06 seit M5
+fordert.
+
+**Der versteckte Preis, den der Filter nicht hat:** Eine Ausgabe, die „im Spielstand liegt"
+(R-NEWS-01/AK1), wäre ein neues Zustandsfeld mit Ringpuffer, eine Migration — und sie liefe
+in den **Simulationshash**: `HASH_OMIT_KEYS` nimmt allein `eventLog` aus. Jede spätere
+Umformulierung einer Schlagzeile hätte Golden-Master und Wiedergabe gebrochen. Nachweis,
+dass der Filter diesen Preis wirklich nicht zahlt: `git diff` über beide Golden-Verzeichnisse
+ist nach dieser Aufgabe **leer**.
+
+**Was beim Bauen dazukam und nicht im Plan stand:** Drei Sätze des Protokolls tragen ein
+stillschweigendes „ich" — „Verhältnis zu X", „Die Hauptstadt ist verloren", der
+Kampfbericht mit Verlusten. Aus fremder Sicht sind sie falsch beziehungsweise verraten
+mehr, als R-DIP-04 erlaubt. Es gibt jetzt vier Fassungen mit der Endung `_FOREIGN`, gewählt
+über `concerns` — dieselbe Angabe, die seit T-M15-01 am Ereignis steht.

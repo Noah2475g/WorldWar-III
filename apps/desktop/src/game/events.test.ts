@@ -237,3 +237,76 @@ describe('R-BAT-07 Der Kampfbericht nennt die Verluste beider Seiten', () => {
     expect(entry.text).not.toMatch(/\bp1\b|\bp2\b/)
   })
 })
+
+/**
+ * Aus fremder Sicht (T-M15-09, R-DIP-04).
+ *
+ * Der Sicherheitsgurt für den Kampfbericht aus T-M14-13: sobald Verluste in die Zeile
+ * kommen, kommen sie **nur für die Beteiligten** hinein. Und drei Sätze tragen ein
+ * stillschweigendes „ich" — „Verhältnis zu X", „Die Hauptstadt ist verloren" —, das im
+ * Weltgeschehen schlicht falsch wäre.
+ */
+describe('R-DIP-04 Was zwischen Fremden geschieht, erfaehrt man dem Wesen nach', () => {
+  const namen = { player: (id: string) => ({ p1: 'Nordland', p2: 'Ostmark', p3: 'Süden' })[id] ?? id, ticksPerDay: 24, viewer: 'p1' }
+
+  const zeile = (event: Partial<GameEvent> & { type: GameEvent['type'] }) =>
+    describeEvent({ tick: 48, severity: 'info', audience: [], concerns: ['p2', 'p3'], ...event } as GameEvent, 0, map, namen).text
+
+  it('nennt Dritten die Verluste eines Gefechts nicht', () => {
+    const text = zeile({
+      type: 'BATTLE_RESOLVED',
+      battleId: 'b1',
+      provinceId: 'AFG',
+      losses: { p2: 12_345, p3: 6_789 },
+      victor: 'p2',
+    } as never)
+
+    expect(text).not.toMatch(/12|345|6.?789/)
+    expect(text, 'der Ausgang darf sehr wohl dastehen').toContain('Ostmark')
+  })
+
+  it('traegt in keiner fremden Zeile eine Ziffer oder eine Kennung', () => {
+    const zeilen = [
+      zeile({ type: 'BATTLE_RESOLVED', battleId: 'b1', provinceId: 'AFG', losses: { p2: 1 }, victor: 'p2' } as never),
+      zeile({ type: 'WAR_DECLARED', playerId: 'p2', targetPlayerId: 'p3', effectiveAtTick: 96, withoutDeclaration: false } as never),
+      zeile({ type: 'DIPLOMACY_CHANGED', playerId: 'p2', targetPlayerId: 'p3', newState: 'war' } as never),
+      zeile({ type: 'CAPITAL_LOST', playerId: 'p2', provinceId: 'AFG', penaltyUntilTick: 500 } as never),
+    ]
+
+    for (const text of zeilen) {
+      expect(text, `Ziffer in "${text}"`).not.toMatch(/\d/)
+      expect(text, `Kennung in "${text}"`).not.toMatch(/\bp\d\b/)
+      expect(text, `Provinzkennung in "${text}"`).not.toMatch(/[A-Z]{3}-/)
+    }
+  })
+
+  it('nennt bei beiden mehrdeutigen Saetzen beide Beteiligte', () => {
+    // "Verhältnis zu Ostmark: Krieg." waere aus fremder Sicht die Aussage, *ich* fuehre
+    // Krieg — und das ist falsch.
+    expect(zeile({ type: 'DIPLOMACY_CHANGED', playerId: 'p2', targetPlayerId: 'p3', newState: 'war' } as never)).toContain('Süden')
+    expect(zeile({ type: 'CAPITAL_LOST', playerId: 'p2', provinceId: 'AFG', penaltyUntilTick: 500 } as never)).toContain('Ostmark')
+  })
+
+  it('erzaehlt dem Betroffenen weiterhin die volle Fassung', () => {
+    // Die Gegenrichtung: die Zusicherungen oben waeren auch dann gruen, wenn jede Zeile
+    // auf die Kurzfassung fiele — und der Kampfbericht aus T-M14-13 waere still wieder weg.
+    const eigen = describeEvent(
+      {
+        type: 'BATTLE_RESOLVED',
+        tick: 48,
+        severity: 'info',
+        audience: [],
+        concerns: ['p1', 'p2'],
+        battleId: 'b1',
+        provinceId: 'AFG',
+        losses: { p1: 12_000, p2: 8_000 },
+        victor: 'p2',
+      } as unknown as GameEvent,
+      0,
+      map,
+      namen,
+    ).text
+
+    expect(eigen).toMatch(/Verluste/)
+  })
+})

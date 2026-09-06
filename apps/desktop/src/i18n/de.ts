@@ -250,6 +250,14 @@ export const de = {
     DIPLOMACY_CHANGED: 'Verhältnis zu {{player}}: {{state}}.',
     CAPITAL_LOST: 'Die Hauptstadt {{province}} ist verloren.',
     CAPITAL_MOVED: 'Die Hauptstadt liegt jetzt in {{province}}.',
+    // Fassungen aus fremder Sicht (T-M15-09, R-DIP-04). Drei der Sätze oben tragen ein
+    // stillschweigendes „ich" — „Verhältnis zu X", „Die Hauptstadt ist verloren" — und
+    // wären im Weltgeschehen schlicht falsch. Und keiner nennt Zahlen: was zwischen zwei
+    // fremden Mächten geschieht, erfährt man dem Wesen nach, nicht der Menge nach.
+    DIPLOMACY_CHANGED_FOREIGN: '{{player}} und {{target}}: {{state}}.',
+    CAPITAL_LOST_FOREIGN: 'Die Hauptstadt {{province}} von {{player}} ist gefallen.',
+    BATTLE_RESOLVED_FOREIGN: '{{province}}: Gefecht entschieden — {{winner}} behauptet das Feld.',
+    WAR_DECLARED_FOREIGN: '{{player}} erklärt {{target}} den Krieg.',
     PLAYER_ELIMINATED: '{{player}} ist ausgeschieden.',
     GAME_ENDED: 'Die Partie ist entschieden: {{winner}} hat gewonnen.',
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
@@ -461,6 +469,7 @@ export const de = {
     capitalLost: 'Die Hauptstadt ist verloren',
     shortage: '{{resource}} wird knapp',
     unrest: '{{province}} steht vor dem Aufstand',
+    world: 'Weltgeschehen',
     filter: 'Filter',
     // Eigene Woerter, nicht die der Kopfleiste: zwei Knoepfe namens "Diplomatie" sind
     // fuer eine Vorleseansage (und fuer einen Test) nicht auseinanderzuhalten.

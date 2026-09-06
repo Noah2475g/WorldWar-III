@@ -84,8 +84,14 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       expect(hasKey(`events.${type}`), `events.${type} fehlt`).toBe(true)
     }
     // And the other way round: no text for an event that does not exist.
+    //
+    // Die Endung `_FOREIGN` ist die Fassung aus fremder Sicht (T-M15-09): sie gehoert zu
+    // derselben Ereignisart und wird gewaehlt, wenn der Betrachter nicht unter den
+    // Betroffenen steht. Geprueft wird deshalb der Stamm — eine Fassung fuer eine Art, die
+    // es nicht gibt, faellt weiterhin auf.
     for (const key of Object.keys(de.events)) {
-      expect(types as readonly string[], `events.${key} gehoert zu keinem Ereignis`).toContain(key)
+      const stamm = key.replace(/_FOREIGN$/, '')
+      expect(types as readonly string[], `events.${key} gehoert zu keinem Ereignis`).toContain(stamm)
     }
   })
 
