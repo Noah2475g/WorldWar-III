@@ -1471,7 +1471,7 @@ tasks:
   - id: T-M12-07
     milestone: M12
     title: Die Spielstaende sind erreichbar, auch nach dem Neustart
-    status: todo
+    status: done
     deps: [T-M14-08]
     requirements: [R-GAME-03, R-UI-05]
     files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/Dialogs.tsx]
@@ -1481,7 +1481,7 @@ tasks:
   - id: T-M12-08
     milestone: M12
     title: Die Kartenwahl wirkt
-    status: todo
+    status: done
     deps: [T-M14-03]
     requirements: [R-GAME-01]
     files: [apps/desktop/src/main.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/newGame.ts]

@@ -33,9 +33,16 @@ const rules = parseRules(
   'default',
 )
 
+/**
+ * Die Karten zur Wahl — mit ihren Daten, nicht nur mit ihren Namen (T-M12-08).
+ *
+ * Vorher stand hier die blosse Provinzzahl fuer die Beschriftung, und die Karte selbst
+ * wurde weggeworfen: die App bekam immer die Welt. Die Wahl war damit ein Blindschalter,
+ * der nicht auffallen konnte, weil er richtig aussah.
+ */
 const maps = [
-  { id: 'world', name: 'Welt', provinces: (worldMap as unknown as MapData).provinces.length },
-  { id: 'testworld', name: 'Kleine Welt', provinces: (testMap as unknown as MapData).provinces.length },
+  { id: 'world', name: 'Welt', data: worldMap as unknown as MapData },
+  { id: 'testworld', name: 'Kleine Welt', data: testMap as unknown as MapData },
 ]
 
 const root = document.getElementById('root')

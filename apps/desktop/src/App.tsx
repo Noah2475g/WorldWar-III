@@ -94,7 +94,7 @@ import { writeAutosave, type AutosaveState } from '@worldwar/core'
 export interface AppProps {
   map: MapData
   rules: Rules
-  maps: readonly { id: string; name: string; provinces: number }[]
+  maps: readonly { id: string; name: string; data: MapData }[]
   /** Wohin Spielstaende gehen. Ohne Angabe waehlt createStorage den dauerhaften Speicher. */
   storage?: StoragePort
   /**
@@ -157,6 +157,25 @@ export function App(props: AppProps) {
     nation: props.map.startPositions[0]?.nation ?? '',
   })
   const [state, setState] = useState<GameState | null>(null)
+
+  /**
+   * Die Karte der laufenden Partie (T-M12-08).
+   *
+   * Vorher gab es sie nicht: alles las die feste `props.map`, waehrend der Dialog
+   * `options.mapId` schrieb, das niemand las. Die Wahl war ein Blindschalter. Die
+   * laufende Karte muss ein Zustand sein, weil sie sich mit jeder Partie aendert — und
+   * weil ein geladener Stand seine eigene mitbringt.
+   */
+  const [activeMap, setActiveMap] = useState<MapData>(props.map)
+
+  /** Die Karte zu einer Kennung; unbekannte Kennung faellt auf die Anfangskarte zurueck. */
+  const mapById = useCallback(
+    (id: string): MapData => props.maps.find((entry) => entry.id === id)?.data ?? props.map,
+    [props.maps, props.map],
+  )
+
+  /** Die im Dialog gewaehlte Karte — sie fuellt die Maechteliste, bevor die Partie laeuft. */
+  const selectedMap = mapById(options.mapId)
   const [speed, setSpeed] = useState(0)
   /**
    * Der laufende Vorspulvorgang (T-M15-06). `reason` traegt den Grund des Halts in
@@ -259,8 +278,8 @@ export function App(props: AppProps) {
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
-    () => (state ? { state, map: props.map, rules: props.rules, playerId: 'p1', ticksPerDay } : null),
-    [state, props.map, props.rules, ticksPerDay],
+    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay } : null),
+    [state, activeMap, props.rules, ticksPerDay],
   )
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
@@ -268,7 +287,7 @@ export function App(props: AppProps) {
 
   const provinces = useMemo(
     () =>
-      props.map.provinces.map((province) => {
+      activeMap.provinces.map((province) => {
         const seen = view?.provinces.find((p) => p.id === province.id)
         return {
           id: province.id,
@@ -282,17 +301,17 @@ export function App(props: AppProps) {
           bounds: boundsOf(province.polygon),
         }
       }),
-    [props.map.provinces, view, strengths],
+    [activeMap.provinces, view, strengths],
   )
 
   const centres = useMemo(
-    () => Object.fromEntries(props.map.provinces.map((p) => [p.id, p.center])),
-    [props.map.provinces],
+    () => Object.fromEntries(activeMap.provinces.map((p) => [p.id, p.center])),
+    [activeMap.provinces],
   )
 
   const nameOfProvince = useCallback(
-    (id: string): string => props.map.provinces.find((p) => p.id === id)?.name ?? id,
-    [props.map.provinces],
+    (id: string): string => activeMap.provinces.find((p) => p.id === id)?.name ?? id,
+    [activeMap.provinces],
   )
 
   /** Gebaeude je Provinz — nur die eigenen sind bekannt (R-DIP-04). */
@@ -361,9 +380,9 @@ export function App(props: AppProps) {
   /** One game hour, AI included. */
   const step = useCallback(
     (ticks: number) => {
-      setState((current) => (current ? advance(current, ticks, { map: props.map, rules: props.rules }) : current))
+      setState((current) => (current ? advance(current, ticks, { map: activeMap, rules: props.rules }) : current))
     },
-    [props.map, props.rules],
+    [activeMap, props.rules],
   )
 
   /**
@@ -394,7 +413,7 @@ export function App(props: AppProps) {
             return current
           }
 
-          const result = fastForwardChunk(current, request, { map: props.map, rules: props.rules }, MAX_FAST_FORWARD_TICKS - ticksRun)
+          const result = fastForwardChunk(current, request, { map: activeMap, rules: props.rules }, MAX_FAST_FORWARD_TICKS - ticksRun)
           ticksRun += result.ticksRun
 
           // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
@@ -412,7 +431,7 @@ export function App(props: AppProps) {
 
       chunk()
     },
-    [props.map, props.rules],
+    [activeMap, props.rules],
   )
 
   // The clock. Deliberately capped at two ticks per frame: when the machine cannot
@@ -446,7 +465,7 @@ export function App(props: AppProps) {
     (command: Command) => {
       if (!state || !ctx) return
       const result = canApply(state, command, {
-        map: props.map,
+        map: activeMap,
         rules: props.rules,
         commands: [command],
         events: [],
@@ -456,10 +475,10 @@ export function App(props: AppProps) {
         return
       }
       setState((current) =>
-        current ? advance(current, 1, { map: props.map, rules: props.rules }, [command]) : current,
+        current ? advance(current, 1, { map: activeMap, rules: props.rules }, [command]) : current,
       )
     },
-    [state, ctx, props.map, props.rules],
+    [state, ctx, activeMap, props.rules],
   )
 
   /** A description becomes a button: orders are sent, target orders open target mode. */
@@ -493,10 +512,10 @@ export function App(props: AppProps) {
       dispatch({ type: 'selectProvince', id: provinceId })
       dispatch({
         type: 'setView',
-        view: centreOn(centre, ui.view, { width: props.map.width, height: props.map.height, ...VIEWPORT }),
+        view: centreOn(centre, ui.view, { width: activeMap.width, height: activeMap.height, ...VIEWPORT }),
       })
     },
-    [centres, ui.view, props.map, tutor],
+    [centres, ui.view, activeMap, tutor],
   )
 
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
@@ -551,8 +570,11 @@ export function App(props: AppProps) {
           setDialog('keys')
           break
         case 'close':
-          // Before the first game there is nothing behind the dialogue to return to.
-          if (dialog === 'new' && !state) break
+          // Bis T-M12-07 stand hier eine Ausnahme: vor der ersten Partie lag hinter dem
+          // Dialog nichts, zu dem man haette zurueckkehren koennen, also durfte Escape
+          // ihn nicht schliessen. Jetzt liegt der Weg zurueck dahinter, und Escape
+          // schliesst wieder jeden Dialog — eine Taste mit einer Ausnahme ist eine
+          // Taste, die man zweimal erklaeren muss.
           if (dialog) setDialog(null)
           else if (targeting) {
             setTargeting(null)
@@ -568,7 +590,7 @@ export function App(props: AppProps) {
                 y: ui.view.y + shortcut.dy * PAN_STEP * ui.view.scale,
                 scale: ui.view.scale,
               },
-              { width: props.map.width, height: props.map.height, ...VIEWPORT },
+              { width: activeMap.width, height: activeMap.height, ...VIEWPORT },
             ),
           })
           break
@@ -577,12 +599,40 @@ export function App(props: AppProps) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, props.map, state, targeting, tutor])
+  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, activeMap, state, targeting, tutor])
 
   useEffect(() => {
     if (dialog !== 'saves') return
     void listSlots(storage, ticksPerDay).then(setSlots)
   }, [dialog, storage, ticksPerDay])
+
+  /**
+   * Einen Stand laden — aus der laufenden Partie wie aus dem leeren Fenster (T-M12-07).
+   *
+   * Der Griff steht hier oben, weil ihn zwei Zweige brauchen: der Befund 26a war, dass
+   * genau der zweite fehlte, und wer das Fenster geschlossen hatte, kam an seinen Stand
+   * nicht mehr heran.
+   */
+  const loadSave = useCallback(
+    (name: string) => {
+      void loadFrom(storage, name).then(async (result) => {
+        if (result.ok) {
+          // Der Stand bringt seine Karte mit (T-M12-08).
+          setActiveMap(mapById(result.state.mapId))
+          setState(result.state)
+          setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
+          setSaveNotice(t('saves.loaded'))
+          setDialog(null)
+        } else {
+          // A refused save says why, in a sentence — never an exception and never
+          // a silent restart (T-M10-08).
+          setSaveNotice(result.message)
+        }
+        setSlots(await listSlots(storage, ticksPerDay))
+      })
+    },
+    [storage, ticksPerDay, mapById, now],
+  )
 
   const selected = view?.provinces.find((p) => p.id === ui.selectedProvince) ?? null
 
@@ -623,8 +673,8 @@ export function App(props: AppProps) {
     return alle
       .filter((event) => jüngste.has(event))
       .reverse()
-      .map((event, index) => describeEvent(event, index, props.map, naming))
-  }, [state, props.map, nameOf, ticksPerDay])
+      .map((event, index) => describeEvent(event, index, activeMap, naming))
+  }, [state, activeMap, nameOf, ticksPerDay])
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
@@ -680,7 +730,7 @@ export function App(props: AppProps) {
     if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
     const army = state.armies[targeting.armyId]
     if (!army) return null
-    const options = props.map.provinces
+    const options = activeMap.provinces
       .filter((p) => p.id !== army.locationProvinceId)
       .map((p) => ({ id: p.id, name: p.name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
@@ -713,21 +763,69 @@ export function App(props: AppProps) {
         dispatch({ type: 'clearNotice' })
       },
     }
-  }, [ctx, targeting, state, ui.selectedArmy, props.map.provinces, nameOfProvince, toAction, send])
+  }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send])
 
   if (!state || !view || !ctx) {
     return (
       <div className="app app--empty" style={fontScaleStyle(ui.settings)}>
         <p>{t('app.loading')}</p>
+        {/*
+          Der Weg zurueck (T-M12-07, Befund 26a). Vorher war diese Flaeche eine
+          Sackgasse: Strg+S ersetzte den Startdialog durch nichts, Escape loeschte ihn
+          endgueltig, und nur Neuladen half. Beide Knoepfe sind auch der Grund, warum das
+          Kreuz des Startdialogs jetzt schliessen darf.
+        */}
+        {dialog === null && (
+          <p className="app__empty-actions">
+            <button type="button" className="button button--primary" onClick={() => setDialog('new')}>
+              {t('newGame.title')}
+            </button>
+            <button type="button" className="button" onClick={() => setDialog('saves')}>
+              {t('saves.title')}
+            </button>
+          </p>
+        )}
+        {/*
+          Die Spielstaende auch ohne Partie: wer das Fenster geschlossen hat, kommt sonst
+          an seinen Stand nicht mehr heran. Gespeichert wird hier nichts — es gibt nichts
+          zu speichern —, deshalb faellt der Griff onSave weg.
+        */}
+        {dialog === 'saves' && (
+          <SavesDialog
+            slots={slots}
+            notice={saveNotice}
+            onLoad={loadSave}
+            onClose={() => {
+              setSaveNotice(null)
+              setDialog('new')
+            }}
+          />
+        )}
         {dialog === 'new' && (
           <NewGameDialog
             options={options}
-            nations={props.map.startPositions.map((s) => s.nation)}
+            nations={selectedMap.startPositions.map((s) => s.nation)}
             maps={props.maps}
             aiBonus={aiBonusPercent(props.rules, options.difficulty)}
-            onChange={setOptions}
+            onChange={(next) => {
+              // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
+              // der Dialog "Vereinigte Staaten" und die Partie beginnt als "Nordland" —
+              // der stille Zwilling des Blindschalters, den toConfig still auffaengt.
+              if (next.mapId !== options.mapId) {
+                const nations = mapById(next.mapId).startPositions.map((entry) => entry.nation)
+                setOptions({
+                  ...next,
+                  nation: nations.includes(next.nation) ? next.nation : (nations[0] ?? ''),
+                })
+                return
+              }
+              setOptions(next)
+            }}
             onStart={() => {
-              const fresh = startGame(options, props.map, props.rules)
+              // Die gewaehlte Karte, nicht die Anfangskarte (T-M12-08).
+              const chosen = mapById(options.mapId)
+              const fresh = startGame(options, chosen, props.rules)
+              setActiveMap(chosen)
               setState(fresh)
               // The autosave clock starts now, not at the epoch — otherwise the
               // real-time half of the rule is satisfied before the first day is played
@@ -735,19 +833,23 @@ export function App(props: AppProps) {
               setAutosave({ lastSavedTick: fresh.tick, lastSavedRealTime: now(), nextSlot: 0 })
               // Open on the player's own country rather than on the top-left corner of
               // the world — the first thing they look for is where they are.
+              // Die Mitten kommen aus der gewaehlten Karte: der Merker `centres` haelt
+              // auf diesem Durchlauf noch die alten und faende die neue Hauptstadt nicht.
               const capital = fresh.players.p1?.capitalProvinceId
-              const centre = capital ? centres[capital] : undefined
+              const centre = capital ? chosen.provinces.find((province) => province.id === capital)?.center : undefined
               if (centre) {
                 dispatch({
                   type: 'setView',
-                  view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: props.map.width, height: props.map.height, ...VIEWPORT }),
+                  view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: chosen.width, height: chosen.height, ...VIEWPORT }),
                 })
               }
               setDialog(null)
             }}
-            // Closing without a game would leave a blank screen with no way back —
-            // found in the first smoke test, one Escape before the first click.
-            onClose={() => undefined}
+            // Schliessen darf es jetzt: der leere Zustand darueber traegt den Weg
+            // zurueck. Vorher war dies ein toter Knopf — sichtbar, bedienbar, wirkungslos
+            // — und damit selbst ein Verstoss gegen R-UI-05 (T-M12-07).
+            onClose={() => setDialog(null)}
+            onSaves={() => setDialog('saves')}
           />
         )}
       </div>
@@ -779,6 +881,7 @@ export function App(props: AppProps) {
         }}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
         onMenu={() => setDialog('settings')}
+        onSaves={() => setDialog('saves')}
         onPanel={(panel) => dispatch({ type: 'openPanel', panel })}
       />
 
@@ -790,8 +893,8 @@ export function App(props: AppProps) {
             armies={armies}
             buildings={buildings}
             mode={ui.mode}
-            width={props.map.width}
-            height={props.map.height}
+            width={activeMap.width}
+            height={activeMap.height}
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
@@ -902,21 +1005,7 @@ export function App(props: AppProps) {
               setSlots(await listSlots(storage, ticksPerDay))
             })
           }}
-          onLoad={(name) => {
-            void loadFrom(storage, name).then(async (result) => {
-              if (result.ok) {
-                setState(result.state)
-                setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
-                setSaveNotice(t('saves.loaded'))
-                setDialog(null)
-              } else {
-                // A refused save says why, in a sentence — never an exception and never
-                // a silent restart (T-M10-08).
-                setSaveNotice(result.message)
-              }
-              setSlots(await listSlots(storage, ticksPerDay))
-            })
-          }}
+          onLoad={loadSave}
           onClose={() => {
             setSaveNotice(null)
             setDialog(null)

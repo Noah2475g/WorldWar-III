@@ -25,6 +25,8 @@ export interface HeaderProps {
   onAbort: () => void
   onMode: (mode: MapMode) => void
   onMenu: () => void
+  /** Die Spielstaende brauchen einen Knopf: eine Funktion nur auf der Tastatur ist keine (T-M12-07). */
+  onSaves: () => void
   /** Diplomacy, market and standings live in the side panel; the header only opens them. */
   onPanel: (panel: 'diplomacy' | 'market' | 'standings') => void
 }
@@ -145,6 +147,9 @@ export function Header(props: HeaderProps) {
         </button>
         <button type="button" className="button" onClick={() => props.onPanel('standings')}>
           {t('standings.open')}
+        </button>
+        <button type="button" className="button" onClick={props.onSaves}>
+          {t('saves.title')}
         </button>
         <button type="button" className="button" onClick={props.onMenu}>
           {t('header.menu')}

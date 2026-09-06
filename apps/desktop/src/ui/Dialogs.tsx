@@ -65,14 +65,21 @@ export function NewGameDialog({
   onChange,
   onStart,
   onClose,
+  onSaves,
 }: {
   options: NewGameOptions
   nations: readonly string[]
-  maps: readonly { id: string; name: string; provinces: number }[]
+  maps: readonly { id: string; name: string; data: { provinces: readonly unknown[] } }[]
   aiBonus: number
   onChange: (options: NewGameOptions) => void
   onStart: () => void
   onClose: () => void
+  /**
+   * Der Weg zu den Spielstaenden (T-M12-07). Wer wiederkommt, will laden und nicht neu
+   * anfangen — und vor der ersten Partie steht dieser Dialog davor. Ohne den Griff waere
+   * der Stand nur zu erreichen, indem man den Dialog erst wegklickt.
+   */
+  onSaves?: () => void
 }) {
   return (
     <Dialog title={t('newGame.title')} onClose={onClose}>
@@ -81,7 +88,7 @@ export function NewGameDialog({
         <select value={options.mapId} onChange={(e) => onChange({ ...options, mapId: e.target.value })}>
           {maps.map((map) => (
             <option key={map.id} value={map.id}>
-              {map.name} ({map.provinces})
+              {map.name} ({map.data.provinces.length})
             </option>
           ))}
         </select>
@@ -151,9 +158,16 @@ export function NewGameDialog({
         {aiBonus === 0 ? t('newGame.aiBonusNone') : t('newGame.aiBonus', { percent: aiBonus })}
       </p>
 
-      <button type="button" className="button button--primary" onClick={onStart}>
-        {t('newGame.start')}
-      </button>
+      <p className="dialog__actions">
+        <button type="button" className="button button--primary" onClick={onStart}>
+          {t('newGame.start')}
+        </button>
+        {onSaves && (
+          <button type="button" className="button" onClick={onSaves}>
+            {t('saves.title')}
+          </button>
+        )}
+      </p>
     </Dialog>
   )
 }
@@ -172,7 +186,12 @@ export function SavesDialog({
   notice,
 }: {
   slots: readonly SaveSlot[]
-  onSave: (name: string) => void
+  /**
+   * Fehlt der Griff, wird nur geladen: vor der ersten Partie gibt es keinen Zustand zu
+   * sichern, und ein Knopf, der nichts tun kann, waere genau der Fehler aus 26a
+   * (T-M12-07).
+   */
+  onSave?: (name: string) => void
   onLoad: (name: string) => void
   onClose: () => void
   notice: string | null
@@ -188,9 +207,11 @@ export function SavesDialog({
               {slot.savedAtDay !== null ? ` — ${t('header.day')} ${slot.savedAtDay}` : ` — ${t('saves.empty')}`}
             </span>
             <span className="slot__actions">
-              <button type="button" className="button" onClick={() => onSave(slot.name)}>
-                {t('saves.save')}
-              </button>
+              {onSave && (
+                <button type="button" className="button" onClick={() => onSave(slot.name)}>
+                  {t('saves.save')}
+                </button>
+              )}
               <button
                 type="button"
                 className="button"

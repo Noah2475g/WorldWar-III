@@ -60,6 +60,7 @@ const renderHeader = (v: PublicView | null) =>
       onAbort={noop}
       onMode={noop}
       onMenu={noop}
+      onSaves={noop}
       onPanel={noop}
     />,
   )

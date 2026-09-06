@@ -25,7 +25,7 @@ function zeige(victory: 'points' | 'conquest') {
     <NewGameDialog
       options={{ ...DEFAULT_NEW_GAME, victory }}
       nations={['Vereinigte Staaten', 'Kanada']}
-      maps={[{ id: 'world', name: 'Welt', provinces: 237 }]}
+      maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
       aiBonus={0}
       onChange={onChange}
       onStart={vi.fn()}

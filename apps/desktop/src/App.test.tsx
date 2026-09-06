@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryStorage, type MapData } from '@worldwar/core'
-import { serialise } from '@worldwar/core'
+import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
 import { TEST_RULES } from '@worldwar/testkit'
@@ -22,7 +22,13 @@ import { App } from './App.tsx'
 // jsdom does not give import.meta.url a file: scheme; vitest runs from the repo root.
 const ROOT = process.cwd()
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as MapData
-const maps = [{ id: 'world', name: 'Welt', provinces: world.provinces.length }]
+const testworld = JSON.parse(readFileSync(`${ROOT}/data/maps/testworld.json`, 'utf8')) as MapData
+// Die Sammlung traegt die Karten selbst, nicht nur ihre Namen (T-M12-08): eine Auswahl,
+// zu der die Daten fehlen, kann nur ein Blindschalter sein.
+const maps = [
+  { id: 'world', name: 'Welt', data: world },
+  { id: 'testworld', name: 'Kleine Welt', data: testworld },
+]
 
 beforeAll(() => {
   // jsdom has no canvas and no ResizeObserver; the map draws nothing here, which is
@@ -247,14 +253,35 @@ describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', 
   })
 })
 
+/**
+ * Vor der ersten Partie gibt es keine Sackgasse.
+ *
+ * Das Mittel hat sich am 2026-09-07 geaendert, die Zusage nicht. Bis dahin blieb der
+ * Startdialog bei Escape und beim Kreuz einfach stehen — dahinter lag eine leere Flaeche
+ * ohne jeden Ausgang, also durfte man ihn nicht verlassen koennen. Der Preis war ein
+ * sichtbarer Knopf, der nichts tat, und das ist selbst ein Verstoss gegen R-UI-05.
+ *
+ * Seit T-M12-07 traegt die Flaeche dahinter den Weg zurueck, also darf der Dialog
+ * schliessen. Geprueft wird deshalb die Zusage — der Spieler strandet nicht — und nicht
+ * mehr das alte Mittel.
+ */
 describe('R-UI-03 Vor der ersten Partie gibt es keine Sackgasse', () => {
-  it('laesst den Startdialog bei Escape stehen, solange keine Partie laeuft', () => {
+  it('laesst den Spieler nach Escape nicht ohne Ausweg zurueck', () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} />)
 
     fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+  })
+
+  it('laesst den Spieler nach dem Kreuz nicht ohne Ausweg zurueck', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
-    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+    // Das Kreuz wirkt jetzt. Frueher war es ein toter Knopf.
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
   })
 })
 
@@ -636,5 +663,147 @@ describe('R-GAME-01/AK1 Nach dem Ende beginnt die naechste Partie', () => {
       fireEvent.click(await screen.findByRole('button', { name: 'Partie beginnen' }))
       await waitFor(() => expect(screen.getByText(/Tag 1\b/)).toBeTruthy())
     }
+  })
+})
+
+/**
+ * Die Kartenwahl (T-M12-08, R-GAME-01, Playtest-Frage 4).
+ *
+ * Der Befund war ein Blindschalter: „Kleine Welt (12)" gewaehlt, es startet die
+ * Weltkarte. Die Falle beim Nachweis ist, gegen den Dialogzustand zu pruefen — genau
+ * diese Verwechslung hat den Befund ueberhaupt entstehen lassen, denn `options.mapId`
+ * trug die Wahl korrekt und wurde nur nie gelesen. Geprueft wird deshalb die Zahl der
+ * Provinzen der BEGONNENEN Partie, aus dem Spielstand heraus.
+ *
+ * Und nicht an der Provinzliste der Oberflaeche: die ist vom Nebel begrenzt (7 von 12
+ * auf der kleinen Karte, 13 von 237 auf der Welt). Sie sieht aus wie die Provinzzahl
+ * und ist es nicht.
+ */
+describe('R-GAME-01 Die Kartenwahl wirkt', () => {
+  const startOn = async (mapId: string) => {
+    const storage = new MemoryStorage()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Karte' }), { target: { value: mapId } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Speichern' }))[0]!)
+    await screen.findByText('Gespeichert.')
+    return deserialise((await storage.read(manualSlotName(0)))!)
+  }
+
+  it('beginnt die Partie auf der gewaehlten Karte', async () => {
+    const saved = await startOn('testworld')
+
+    expect(saved.mapId).toBe('testworld')
+    expect(saved.provinceOrder).toHaveLength(12)
+  })
+
+  it('bleibt ohne Wahl bei der Weltkarte', async () => {
+    const saved = await startOn('world')
+
+    expect(saved.mapId).toBe('world')
+    expect(saved.provinceOrder).toHaveLength(237)
+  })
+
+  it('zeigt die Provinzen der gewaehlten Karte, nicht die der Welt', async () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Karte' }), { target: { value: 'testworld' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    // Namen unterscheiden, Zahlen nicht: die Liste ist vom Nebel begrenzt.
+    expect(screen.getByRole('option', { name: 'Hafen' })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: 'Mittlerer Westen' })).toBeNull()
+  })
+
+  it('stellt die Maechte der gewaehlten Karte zur Wahl', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Karte' }), { target: { value: 'testworld' } })
+
+    // Sonst waehlt der Spieler die Vereinigten Staaten und spielt Nordland — der
+    // stille Zwilling des Blindschalters.
+    const nations = screen.getByRole('combobox', { name: 'Macht' })
+    expect(within(nations).getByRole('option', { name: 'Nordland' })).toBeTruthy()
+    expect(within(nations).queryByRole('option', { name: 'Vereinigte Staaten' })).toBeNull()
+  })
+
+  it('spielt die gewaehlte Karte auch weiter, statt am Vorspulen zu zerbrechen', async () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Karte' }), { target: { value: 'testworld' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    // Wird nur der Start umgestellt und der Rest nicht, laeuft die Schleife mit 237
+    // Provinzen gegen einen Zustand mit zwoelf.
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 2/)).toBeTruthy())
+  })
+})
+
+/**
+ * Die Spielstaende sind erreichbar (T-M12-07, R-GAME-03, R-UI-05, Playtest-Frage 26a).
+ *
+ * Der Stand ueberlebte korrekt und war trotzdem verloren: die Liste oeffnete nur Strg+S,
+ * kein Knopf fuehrte dorthin, und ohne laufende Partie wirkte die Tastenkombination
+ * nicht — wer das Fenster schloss, kam an seinen Spielstand nicht mehr heran. R-UI-05
+ * verlangt jede Aktion per Klick; eine Funktion, die nur die Tastatur kennt, ist keine.
+ *
+ * Der Durchgang nannte als Weg in die Sackgasse das Kreuz des Startdialogs. Gemessen
+ * wurde etwas anderes: das Kreuz war ein toter Knopf (`onClose={() => undefined}`), und
+ * in die leere Flaeche fuehrte Strg+S. Beides ist hier abgedeckt.
+ */
+describe('R-UI-05 Die Spielstaende sind erreichbar', () => {
+  const withSave = async () => {
+    const storage = new MemoryStorage()
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    await storage.write(manualSlotName(0), serialise(state, 'Vor dem Schliessen'))
+    return storage
+  }
+
+  it('oeffnet die Liste per Knopf, nicht nur per Tastenkombination', async () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
+  })
+
+  it('laesst den Stand auch vor der ersten Partie laden', async () => {
+    const storage = await withSave()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+
+    // Der Fall aus dem Befund: Fenster geschlossen, neu geoeffnet, keine Partie laeuft.
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+
+    await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy())
+  })
+
+  it('zeigt die Liste auch, wenn Strg+S sie ohne Partie oeffnet', async () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={await withSave()} skipTutorial />)
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+
+    // Vorher wurde der Startdialog dadurch ersetzt — durch nichts.
+    expect(await screen.findByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
+  })
+
+  it('laesst den leeren Zustand nicht als Sackgasse stehen', async () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+
+    // Das Kreuz war ein toter Knopf. Jetzt schliesst es — und der Weg zurueck steht da.
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+    expect(await screen.findByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+  })
+
+  it('fuehrt auch aus der leeren Flaeche zurueck, in die Strg+S geraten kann', async () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    // Vorher war der Startdialog hier fuer immer weg und nur Neuladen half.
+    expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
   })
 })
