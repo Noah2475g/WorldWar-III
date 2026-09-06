@@ -2,6 +2,9 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryStorage, type MapData } from '@worldwar/core'
+import { serialise } from '@worldwar/core'
+import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
+import { manualSlotName } from './game/saves.ts'
 import { TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { App } from './App.tsx'
@@ -545,5 +548,93 @@ describe('R-UI-13 Die Lageuebersicht ist erreichbar', () => {
 
     expect(panel.textContent).toContain('Vereinigte Staaten')
     expect(within(panel).getAllByRole('meter').length).toBeGreaterThan(1)
+  })
+})
+
+/**
+ * Nach dem Ende geht es weiter (R-GAME-01, R-UI-13, T-M12-06).
+ *
+ * Der Playtest vom 2026-09-06 fand den Knopf "Neue Partie" im Endedialog und stellte
+ * fest, dass er ins Leere fuehrt: er schloss den Dialog, oeffnete keinen Startdialog und
+ * liess den Spieler in der beendeten Partie stehen. Ursache war ein Zustandswert ohne
+ * Renderzweig — `setDialog('new')` wird nur hinter dem Fruehausstieg gezeichnet, den eine
+ * geladene Partie nie erreicht.
+ *
+ * Warum kein Test das fand, ist der lehrreichere Teil: `Standings.test.tsx` rendert den
+ * VictoryDialog dreimal und jedes Mal OHNE `onNewGame`. Da die Eigenschaft optional ist,
+ * lag der Knopf in keinem einzigen Testlauf im DOM. Und keiner der ueber dreissig Tests
+ * hier erreichte je eine entschiedene Partie. Geprueft wurde, DASS ein Handler gerufen
+ * wird — nie, WAS danach auf dem Bildschirm steht.
+ *
+ * Dieser Test geht deshalb den Weg des Spielers: eine entschiedene Partie laden, klicken,
+ * und hinsehen.
+ */
+describe('R-GAME-01/AK1 Nach dem Ende beginnt die naechste Partie', () => {
+  /** Ein Spielstand, dessen Partie entschieden ist — ohne ihn dauert der Weg 171 Tage. */
+  async function entschiedenerStand() {
+    const storage = new MemoryStorage()
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    // Der Spieler ist ausgeschieden: genau der Fall, den der Playtest erreicht hat.
+    const p1 = state.playerOrder[0]!
+    state.players[p1]!.alive = false
+    await storage.write(manualSlotName(0), serialise(state, 'Ende'))
+    return storage
+  }
+
+  it('zeigt den Startdialog, nachdem "Neue Partie" gedrueckt wurde', async () => {
+    const storage = await entschiedenerStand()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    // Den entschiedenen Stand laden — der Endedialog muss von selbst kommen.
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const liste = await screen.findByRole('dialog', { name: 'Spielstände' })
+    fireEvent.click(within(liste).getAllByRole('button', { name: 'Laden' })[0]!)
+    const ende = await screen.findByRole('dialog', { name: 'Die Partie ist entschieden' })
+
+    // Und jetzt der Knopf, der bis zum 2026-09-06 ins Leere fuehrte.
+    fireEvent.click(within(ende).getByRole('button', { name: 'Neue Partie' }))
+
+    // Die Zusicherung ist der BILDSCHIRM, nicht der Zustand: genau daran ist der
+    // Befund vorbeigekommen.
+    expect(await screen.findByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+    expect(screen.getByText('Die Welt wird aufgebaut …')).toBeTruthy()
+  })
+
+  it('spielt die zweite Partie wirklich an', async () => {
+    const storage = await entschiedenerStand()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    const liste = await screen.findByRole('dialog', { name: 'Spielstände' })
+    fireEvent.click(within(liste).getAllByRole('button', { name: 'Laden' })[0]!)
+    const ende = await screen.findByRole('dialog', { name: 'Die Partie ist entschieden' })
+    fireEvent.click(within(ende).getByRole('button', { name: 'Neue Partie' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Partie beginnen' }))
+
+    // Tag 1 statt des Tages, an dem die alte Partie endete.
+    await waitFor(() => expect(screen.getByText(/Tag 1\b/)).toBeTruthy())
+    expect(screen.queryByRole('dialog', { name: 'Die Partie ist entschieden' })).toBeNull()
+  })
+
+  it('meldet auch der ZWEITEN Partie ihr Ende', async () => {
+    // Die Flagge victoryAcknowledged wird nirgends sonst zurueckgesetzt. Bliebe sie
+    // stehen, endete die zweite Partie stumm — der Fehler, den R-UI-13 beheben sollte,
+    // nur eine Partie spaeter.
+    const storage = await entschiedenerStand()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    for (const durchgang of [1, 2]) {
+      fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+      const liste = await screen.findByRole('dialog', { name: 'Spielstände' })
+      fireEvent.click(within(liste).getAllByRole('button', { name: 'Laden' })[0]!)
+      const ende = await screen.findByRole('dialog', { name: 'Die Partie ist entschieden' })
+      expect(ende, `Durchgang ${durchgang}`).toBeTruthy()
+      fireEvent.click(within(ende).getByRole('button', { name: 'Neue Partie' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Partie beginnen' }))
+      await waitFor(() => expect(screen.getByText(/Tag 1\b/)).toBeTruthy())
+    }
   })
 })

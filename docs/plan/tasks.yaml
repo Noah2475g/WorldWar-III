@@ -1461,7 +1461,7 @@ tasks:
   - id: T-M12-06
     milestone: M12
     title: Die zweite Partie beginnt wirklich
-    status: todo
+    status: done
     deps: [T-M14-10]
     requirements: [R-GAME-01, R-UI-13]
     files: [apps/desktop/src/App.tsx]

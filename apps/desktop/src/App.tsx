@@ -934,9 +934,21 @@ export function App(props: AppProps) {
           ticksPerDay={ticksPerDay}
           onClose={() => setVictoryAcknowledged(true)}
           onNewGame={() => {
-            // Der Weg zurueck zum Startdialog. Ohne ihn war nach der ersten Partie
-            // Schluss, bis jemand das Programm neu startete (T-M14-10, Befund 37).
-            setVictoryAcknowledged(true)
+            // Der Weg zurueck zum Startdialog (T-M14-10, Befund 37; berichtigt T-M12-04
+            // nach dem Playtest vom 2026-09-06).
+            //
+            // `setState(null)` ist der Kern der Sache, nicht Aufraeumen: den
+            // NewGameDialog zeichnet genau EINE Stelle, und die liegt hinter dem
+            // Fruehausstieg `if (!state || !view || !ctx)` weiter oben. Der Hauptbaum
+            // kennt nur 'settings', 'saves' und 'keys'. Ohne diese Zeile war
+            // `dialog === 'new'` ein Zustandswert, den niemand zeichnet — der
+            // Endedialog verschwand, kein Startdialog kam, und der Spieler stand in
+            // der beendeten Partie fest.
+            //
+            // Die Flagge muss zurueck auf false, sonst meldet die ZWEITE Partie ihr
+            // eigenes Ende nie: sie wird sonst nirgends zurueckgesetzt.
+            setVictoryAcknowledged(false)
+            setState(null)
             setDialog('new')
           }}
         />
