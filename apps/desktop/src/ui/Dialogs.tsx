@@ -140,6 +140,11 @@ export function NewGameDialog({
           <option value="points">{t('newGame.victoryPoints')}</option>
           <option value="conquest">{t('newGame.victoryConquest')}</option>
         </select>
+        <small>
+          {options.victory === 'points'
+            ? t('newGame.victoryPointsHint')
+            : t('newGame.victoryConquestHint')}
+        </small>
       </label>
 
       <p className="notice notice--info">

@@ -312,6 +312,11 @@ export const de = {
     victory: 'Siegbedingung',
     victoryPoints: 'Punkte',
     victoryConquest: 'Eroberung',
+    // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
+    // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
+    // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
+    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehoeren.',
+    victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehoert — 100 % der Siegpunkte.',
     map: 'Karte',
     start: 'Partie beginnen',
     aiBonus: 'KI-Bonus: {{percent}} %',
