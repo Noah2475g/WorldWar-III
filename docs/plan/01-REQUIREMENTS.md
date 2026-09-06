@@ -394,6 +394,9 @@ scope:
     R-AI-08:    "M15 — die KI nutzt die neuen Mittel (T-M15-08)"
     R-GAME-07:  "M15 — Migration der Spielstände v1 auf v2 (T-M15-04)"
     R-NEWS-04:  "M15 — Weltgeschehen als Filter im Ereignisprotokoll, der Ersatz für die Zeitung (T-M15-09)"
+    R-PKG-01:   "M16 — das Erzeugnis wird zum ersten Mal wirklich gebaut (T-M16-03)"
+    R-PKG-02:   "M16 — Datei-Port, die Einlösung der Zusage von T-M8-00 (T-M16-04)"
+    R-UI-15:    "M16 — Fokus und Escape sind erst am gebauten Programm beobachtbar (T-M16-07)"
     R-SPY-01:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-SPY-02:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-SPY-03:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
@@ -763,6 +766,50 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
     nach einer Migration prüft `validateState` den Zustand, ohne Migration die Prüfsumme,
     und ein Stand ohne beides wird abgelehnt.
 
+### 2.16 Verpackung als Programm (M16, aufgenommen 2026-09-06) — `R-PKG`
+
+Bis heute ist unbekannt, ob WorldWar überhaupt als Programm startet. C-02 nennt Tauri seit
+dem ersten Tag als Ziel, und C-02 ist die einzige Rahmenbedingung, die **nie ausgeführt**
+wurde: `@tauri-apps/cli` hat null Treffer im Lockfile, `Cargo.lock` und `src-tauri/target/`
+fehlen, das in `tauri.conf.json` verlangte Symbol gibt es nicht, und der einzige Beleg ist
+ein Wächter, der zwei JSON-Dateien gegeneinander hält — also die Konfiguration gegen sich
+selbst prüft (Befunde 17, 20, 21).
+
+Dieser Abschnitt macht daraus zwei Anforderungen mit Kriterien, damit **AK-8 etwas hat,
+worauf es ruht**. Bis zum 2026-09-06 war AK-8 eine Zusage in C-02 und stand in keiner
+Abnahmeliste — genau die Fehlerklasse, die M14 abgeräumt hat (die Zusage wurde nie ans
+Erzeugnis gebunden), nur in der Zukunftsform.
+
+- **R-PKG-01 — Das Spiel läuft als eigenständiges Programm.** Die Verpackung ist gebaut
+  worden, nicht bloß beschrieben.
+  - AK1: WENN die Verpackung gebaut wird, DANN SOLL ein startfähiges Erzeugnis entstehen,
+    und `Cargo.lock`, das Anwendungssymbol sowie ein Eintrag für `@tauri-apps/cli` im
+    Lockfile SOLLEN im Baum liegen. *(Die Zusicherung liest das Erzeugnis, nicht die
+    Konfiguration: ein Wächter, der `tauri.conf.json` gegen `capabilities/local-only.json`
+    hält, bleibt auch dann grün, wenn nie ein Bau lief.)*
+  - AK2: WENN das Erzeugnis läuft, DANN SOLL R-FREE-04 auch dort gelten — keine
+    Netzberechtigung, keine ausgehende Verbindung.
+- **R-PKG-02 — Spielstände liegen im Dateisystem.** Der Datei-Port, den T-M8-00 zusagte und
+  nie baute; die V1 liefert stattdessen IndexedDB (C-02, präzisiert am 2026-09-05).
+  - AK1: WENN das Programm läuft, DANN SOLL `createStorage` den Datei-Port wählen, und
+    dieser SOLL dieselbe Vertragsreihe erfüllen wie `MemoryStorage` und `IndexedDbStorage`
+    — damit erfüllt T-M8-00s Zusage „dieselbe Vertragstestreihe gegen alle drei
+    Umsetzungen" zum ersten Mal ihren Wortlaut.
+  - AK2: WENN ein Spielstand **außerhalb** des Programms gelöscht wird, DANN SOLL er nicht
+    mehr in der Liste stehen. *(Der Beleg, dass wirklich das Dateisystem gelesen wird und
+    nicht ein Zwischenspeicher, der zufällig dieselben Namen kennt.)*
+
+Dazu eine Anforderung, die nicht die Verpackung betrifft, aber erst am gebauten Programm
+prüfbar ist:
+
+- **R-UI-15 — Bedienbar ohne Maus.** Belegt ist bisher nur der Kontrast (R-UI-02) und die
+  Tastenzuordnung als reine Funktion (R-UI-06); **kein Test öffnet einen Dialog und
+  schließt ihn** (Befund N12).
+  - AK1: WENN ein Dialog offen ist, DANN SOLL Escape ihn schließen und der Fokus SOLL im
+    Dialog bleiben, solange er offen ist.
+  - AK2: WENN ein Bedienelement keinen sichtbaren Text trägt, DANN SOLL es einen Namen für
+    Hilfsmittel tragen (`aria-label` oder gleichwertig).
+
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 
 V1 gilt als fertig, wenn **alle** Punkte gemessen erfüllt sind:
@@ -776,6 +823,25 @@ V1 gilt als fertig, wenn **alle** Punkte gemessen erfüllt sind:
 | **AK-5** | Guard-Tests für Z2 (keine Monetarisierung) und Z3 (kein Netzwerk) sind grün. |
 | **AK-6** | Ein Langlauf (1000 Spieltage, 8 Spieler, kopflos) läuft fehlerfrei durch und hält das Performancebudget ein. |
 | **AK-7** | Noah hat einen Playtest nach `docs/PLAYTEST.md` durchgeführt und abgenommen. |
+
+### 3.1 Abnahmekriterium für M16 — nicht Teil der V1
+
+| ID | Abnahmekriterium |
+|---|---|
+| **AK-8** | Das verpackte Programm startet, schreibt einen Spielstand, wird geschlossen, neu gestartet — und der Stand liegt wieder in der Liste. Belegt durch R-PKG-01/AK1 und R-PKG-02/AK1. |
+
+**Warum es hier steht und trotzdem nicht mitzählt.** C-02 sagt seit dem 2026-09-05: die
+Tauri-Verpackung ist M16 „mit eigenem Abnahmekriterium **AK-8**". Bis zum 2026-09-06 war das
+eine Zusage ohne Ort: Abschnitt 3 kannte AK-1 bis AK-7, `scripts/acceptance.mjs` prüfte
+AK-1 bis AK-5 und AK-7, und **nach AK-8 suchte kein Skript**. Damit war es dieselbe
+Fehlerklasse, die M14 abgeräumt hat — die Zusage wurde nie ans Erzeugnis gebunden.
+
+AK-8 bekommt deshalb einen Ort, aber **einen eigenen**: die V1 wird nach AK-1 bis AK-7
+abgenommen, und ein AK-8, das gegen die V1 zählte, würde die Abnahme an einen Bau ketten,
+der ausdrücklich hinter ihr liegt. Das wäre der Fehler des Nachtrags 2.15 in neuer Gestalt
+— dort hatte eine später zugefügte Zeile AK-2 unerfüllbar gemacht. `pnpm acceptance` weist
+AK-8 als eigene Zeile mit dem Vermerk „M16, zählt nicht gegen V1" aus und lässt den
+Exit-Code unberührt, solange M16 nicht gebaut ist.
 
 ## 4. Offene Punkte
 

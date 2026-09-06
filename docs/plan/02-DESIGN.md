@@ -1494,3 +1494,87 @@ Mächten** geschieht, hält aber niemandes Vorspulen an. Das ist genau die Unter
 D19.1 — öffentlich heißt sichtbar, nicht dringend. Ohne sie würde die Eroberung zweier
 Unbeteiligter am anderen Ende der Welt den Spieler aus seinem Vorspulen reißen, und
 R-TIME-06/AK2 wäre gebrochen, kaum dass es gebaut ist.
+
+---
+
+## D20. Verpackung als Programm (M16 — R-PKG-01, R-PKG-02, R-UI-15; dazu R-AI-04 und R-ARCH-06/AK2)
+
+**Was dieser Meilenstein tut, und was er ausdrücklich nicht tut.** M16 baut kein Spiel. Er
+führt zum ersten Mal den Auslieferungspfad aus und richtet die Messgeräte auf das
+Erzeugnis, das entsteht. Er liegt hinter M14 und M15, weil ein Bau, der ein unfertiges
+Spiel verpackt, nichts beweist, was M14 nicht billiger beweisen kann.
+
+### D20.1 Der Bau (R-PKG-01)
+
+Heute prüft `test/guards/packaging.test.ts` `tauri.conf.json` gegen
+`capabilities/local-only.json` — zwei Dateien, die derselbe Mensch am selben Tag geschrieben
+hat. Der Wächter ist gut für das, was er prüft (R-FREE-04 in der Konfiguration), aber er
+bleibt **auch dann grün, wenn nie ein Bau lief**. Deshalb bekommt er einen zweiten Teil, der
+an Dingen hängt, die nur ein Bau erzeugt: ein Eintrag für `@tauri-apps/cli` im Lockfile,
+`Cargo.lock`, das Anwendungssymbol.
+
+**Die Reihenfolge ist wichtig und nicht beliebig.** Erst das Symbol, dann die Abhängigkeiten,
+dann der Bau — denn `tauri.conf.json` verlangt `icons/icon.png`, und ein Bau, der daran
+scheitert, sagt nichts über den Rest. Das Symbol wird selbst erzeugt (R-ASSET-01: keine
+Fremdassets) aus dem, was das Spiel schon hat.
+
+**R-FREE-04 gilt im Erzeugnis weiter** (AK2). Die Zusicherung wandert dabei nicht von der
+Konfiguration weg — sie bekommt eine zweite Stelle, an der sie am Gebauten hängt.
+
+### D20.2 Der Datei-Port (R-PKG-02)
+
+`createStorage` ist seit T-M14-08 die eine prüfbare Stelle, an der entschieden wird, wohin
+gespeichert wird, und `storagePortContract` läuft gegen zwei Umsetzungen. Der Datei-Port
+tritt als **dritte** hinzu und ändert an beidem nichts: er erfüllt denselben Vertrag oder er
+ist falsch. Damit löst M16 die Zusage von T-M8-00 ein — „dieselbe Vertragstestreihe läuft
+gegen alle drei Umsetzungen" —, die seit M8 dastand und deren Dateien nie existierten.
+
+**Die zweite Prüfung ist die eigentliche** (AK2): ein außerhalb des Programms gelöschter
+Stand verschwindet aus der Liste. Ohne sie könnte ein Port, der die Namen nur im Speicher
+führt und beim Start einmal einliest, grün sein — genau die Art von Umsetzung, die im
+Vertrag nicht auffällt, weil der Vertrag den Prozess nie verlässt.
+
+### D20.3 Die Messgeräte am Erzeugnis (R-AI-04, R-ARCH-06/AK2)
+
+Zwei Zusicherungen messen bis heute etwas anderes, als ihr Wortlaut sagt.
+
+**R-AI-04** verlangt den Anteil „bei 8 KI-Spielern" und wird auf zwölf Provinzen mit drei
+Mächten gemessen (PROBLEME.md, 2026-09-06). Die Korrektur ist dieselbe wie bei R-ARCH-06/AK1
+am selben Tag: die Messung zieht auf die ausgelieferte Weltkarte. Der Weg dahin führt über
+`publicView`, denn rund 97 % der gemessenen KI-Zeit ist ihr Bau. Drei Beobachtungen, die den
+Entwurf tragen:
+
+1. **`visibleProvinces` läuft zweimal je Macht und Tick** — einmal in `updateIntel`, einmal
+   in `publicView`. Die zweite Rechnung ist dieselbe wie die erste, im selben Tick, über
+   denselben Zustand. Das ist der billigste Schnitt: er ändert keinen Vertrag und keine
+   Sicht.
+2. **Die Geografie wird je Macht und Tick neu abgeschrieben.** Sieben Felder jeder
+   `VisibleProvince` — `id`, `name`, `kind`, `terrain`, `coastal`, `neighbors`, `seaLinks` —
+   ändern sich in einer Partie nie. Auf der Weltkarte sind das 237 Provinzen mal acht Mächte
+   mal jeden Tick. Der unveränderliche Teil lässt sich einmal je Karte bauen und teilen; was
+   je Macht bleibt, ist Besitzer, Sichtbarkeit und das Erinnerte.
+3. **Der Nenner ist der Tick, der Zähler die Sicht.** Ein Anteil, der wächst, kann von beidem
+   kommen. Die Messung schreibt deshalb beide Zahlen einzeln fort, nicht nur den Quotienten.
+
+**Ob R-AI-04 unter seinen eigenen Bedingungen gehalten wird, ist bis heute ungemessen.**
+Fällt die Messung auf der Weltkarte gegen die Anforderung aus, ist das eine Entscheidung
+wie bei R-ARCH-06 am 2026-09-06 — nachmessen, begründen, in `DECISIONS.md` eintragen. Die
+Grenze anzuheben, damit die Zahl passt, ist ausdrücklich nicht der Weg; die Zusicherung im
+Bench darf nach M16 auch nicht mehr lockerer sein als die Anforderung, die sie vertritt.
+
+**R-ARCH-06/AK2** (60 FPS beim Zeichnen) misst niemand: `MapCanvas` läuft in keinem Test,
+weil `getContext` in der Testumgebung `null` liefert — 141 von 249 Zeilen unausgeführt.
+Am gebauten Programm existiert ein Zeichenkontext, und damit wird die Zusicherung zum
+ersten Mal überhaupt prüfbar.
+
+### D20.4 Bedienbar ohne Maus (R-UI-15)
+
+Belegt ist heute der Kontrast (R-UI-02) und die Tastenzuordnung als reine Funktion
+(R-UI-06). Was fehlt, ist die Ebene dazwischen: **kein Test öffnet einen Dialog und schließt
+ihn**. Fokusfang und Escape sind keine Eigenschaften einer Funktion, sondern eines
+laufenden Baums — sie gehören deshalb hierher und nicht in M10.
+
+Der Entwurf ist bewusst klein: ein Fokusfang, der beim Öffnen den ersten fokussierbaren
+Knopf wählt und Tab im Dialog hält, Escape als Schließen, und ein Wächter, der jedes
+Bedienelement ohne sichtbaren Text mit einem Namen für Hilfsmittel findet. Kein
+Barrierefreiheits-Rahmenwerk, keine neue Abhängigkeit — die Prüfung ist die Zusage.

@@ -1070,3 +1070,48 @@ messen. Drei Fragen gehören dann beantwortet: (a) ist `publicView` je Macht und
 es messen will, und (c) auf welchen Wert gehört die Zusicherung, wenn die Anforderung
 30 % sagt. **Nicht** getan wurde das Naheliegende: die Grenze von 0,5 anzuheben, damit die
 Zahl passt.
+
+---
+
+## 2026-09-06 · M16 · R-AI-04 wird auf der falschen Karte gemessen
+
+**Befund:** Die Reparatur vom 2026-09-06 hat R-ARCH-06/AK1 von der Testkarte auf die
+ausgelieferte Weltkarte gezogen — und **R-AI-04 auf der Testkarte stehen lassen**. Beide
+Zusicherungen stehen in derselben Datei, elf Zeilen auseinander:
+
+| | R-ARCH-06/AK1 | R-AI-04 |
+|---|---|---|
+| Wortlaut der Anforderung | „die ausgelieferte Weltkarte (237 Provinzen, 12 Mächte)" | „alle KI-Spieler … **bei 8 KI-Spielern**" |
+| gemessen in | `worldmap.bench.slow.test.ts` | `tick.bench.slow.test.ts` |
+| Karte | 237 Provinzen | **12** (`smallWorld()`) |
+| Mächte | 12 | **3** |
+
+Der Dateikopf von `tick.bench.slow.test.ts` beschreibt den Fehler selbst und in aller
+Schärfe — „a twentieth of the real one … the numbers here certify nothing about the
+requirement … which is how a budget breached by a factor of five stayed invisible for a
+milestone" —, und **direkt darunter steht ein zweiter `describe`, der genau das wieder
+tut**: `R-AI-04 Rechenzeit der KI` sichert den Anteil der Anforderung auf zwölf Provinzen
+und drei Mächten zu. Die Korrektur wurde auf einen von zwei Blöcken derselben Datei
+angewandt.
+
+`worldmap.bench.slow.test.ts` ruft `runAi` in beiden Prüfungen auf, **misst es aber nie**:
+gemessen wird dort ausschließlich die Tickzeit.
+
+**Warum die Richtung des Fehlers hier besonders schlecht ist.** Rund 97 % der gemessenen
+„KI-Zeit" ist der Bau der öffentlichen Sicht (Befund vom selben Tag), und `publicView`
+läuft **je Macht über alle Provinzen**. Von der Testkarte zur Weltkarte wächst dieser
+Anteil also mit rund 237/12 ≈ 20 an Provinzen **und** mit 8/3 an Mächten, während die
+Tickzeit im Nenner anders wächst. **Der gemeldete Wert 0,498 sagt über die Bedingungen,
+die R-AI-04 selbst nennt, nichts.** Ob die Anforderung unter ihren eigenen Bedingungen
+gehalten wird, ist bis heute **ungemessen** — und das ist eine andere Aussage als „knapp
+gehalten".
+
+**Nicht behoben, weil es sich nicht nebenbei beheben lässt:** die Messung auf der
+Weltkarte kann die Zusicherung reißen, und dann steht eine Entscheidung an — dieselbe wie
+bei R-ARCH-06 am 2026-09-06. **Zugewiesen an T-M16-02**, zusammen mit den drei Fragen des
+Befundes von heute Nachmittag. Die Grenze anzuheben, damit die Zahl passt, ist auch hier
+ausdrücklich **nicht** der Weg.
+
+**Was daran lehrreich ist:** Eine Korrektur ist erst fertig, wenn sie **jede** Stelle
+derselben Klasse erreicht hat. Der Kommentar, der den Fehler benennt, ist kein Beleg dafür,
+dass er behoben ist — er stand hier über einem Block, der ihn noch beging.

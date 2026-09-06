@@ -1357,3 +1357,79 @@ tasks:
     files: [packages/core/src/events/world.ts, packages/core/src/index.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md]
     tests: [packages/core/src/events/world.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Alerts.test.tsx]
     dod: "R-NEWS-01/02/03 gestrichen (Entscheidung 3 vom 2026-09-05), ersetzt durch den fuenften Protokollfilter Weltgeschehen aus derselben Positivliste. WORLD_EVENT_TYPES enthaelt genau acht Arten (WAR_DECLARED, DIPLOMACY_CHANGED, PROVINCE_CAPTURED, CAPITAL_LOST, PROVINCE_REVOLTED, PLAYER_ELIMINATED, BATTLE_RESOLVED, GAME_ENDED); Eigenschaftstest ueber zufaellige Ereignisfolgen: worldEventsIn liefert nur diese Arten, in Protokollreihenfolge, und ignoriert die audience aus T-M15-01. Eine fremde Kriegserklaerung steht unter Weltgeschehen und unter alles, aber ohne log__row--alert; gefiltert wird VOR dem slice(-40), das in App.tsx das Protokoll fuer die Ereignisleiste zuschneidet (Anker ist dieser Ausdruck, keine Zeilennummer - dieselbe Aufgabe schreibt die Stelle um), sonst findet der Filter in einer langen Partie regelmaessig eine leere Liste. Eine Zeile ausserhalb der eigenen audience traegt nur Art, Beteiligte, Ort - keine Ziffer, keine Kennung, keine losses; die beiden deutschen Saetze mit stillschweigendem 'ich' (Verhaeltnis zu, Die Hauptstadt ist verloren) bekommen eine zweite Fassung aus fremder Sicht. Kein neues Zustandsfeld: state/types.ts unveraendert, HASH_OMIT_KEYS bleibt ['eventLog']; diese Aufgabe erhoeht SCHEMA_VERSION nicht, fuegt keine Migration hinzu und laesst beide Golden-Master unter packages/core/test/golden und apps/headless/test/golden byteweise unveraendert - Nachweis git diff --stat, bei gruenem determinism.test.ts und replay.test.ts (die Absolutaussage 'SCHEMA_VERSION bleibt 1' ist falsch, seit T-M15-04 sie auf 2 hebt). alertsFor und firstAlertFor liefern dieselbe Menge wie vorher; der Klang liest weiterhin das Protokoll und wandert beim Umbau in App.tsx nicht mit. grep -rn R-NEWS trifft nur noch DECISIONS.md; der scope-Block traegt nach der Streichung 97 IDs, davon 15 spaetere, und pnpm coverage:requirements meldet weiterhin 'V1 offen: 0'"
+
+  # --- Meilenstein M16 - Verpackung als Programm (geplant am 2026-09-06) ---------------
+  # Reihenfolge: erst die Buchhaltung (AK-8 bekommt einen Ort), dann der Befund, der nicht
+  # am Bau haengt (R-AI-04), dann der Bau selbst und was nur an ihm messbar ist.
+
+  - id: T-M16-01
+    milestone: M16
+    title: AK-8 bekommt einen Ort
+    status: todo
+    deps: [T-M14-01]
+    files: [docs/plan/01-REQUIREMENTS.md, scripts/acceptance.mjs, docs/plan/PROGRESS.md]
+    tests: [test/requirements.test.ts]
+    dod: "C-02 sagt seit dem 2026-09-05 eigenes Abnahmekriterium AK-8, und bis zum 2026-09-06 suchte danach kein Skript: Abschnitt 3 kannte AK-1 bis AK-7, acceptance.mjs prueft AK-1 bis AK-5 und AK-7. Danach gilt: 01-REQUIREMENTS.md fuehrt AK-8 in einem eigenen Abschnitt 3.1 mit dem Vermerk, dass es NICHT gegen die V1 zaehlt; pnpm acceptance weist AK-8 als eigene Zeile aus und laesst den Exit-Code unberuehrt, solange M16 nicht gebaut ist - ein AK-8, das gegen V1 zaehlte, waere der Fehler des Nachtrags 2.15 in neuer Gestalt, der AK-2 unerfuellbar gemacht hat. Dazu die Verallgemeinerung, denn der Einzelfall ist nicht das Problem: ein Test findet jedes AK, das der Anforderungstext nennt, und faellt, wenn eines in keiner Abnahmeliste steht - an einer erfundenen Liste nachgewiesen, damit die Pruefung nicht bedeutungslos wird, sobald die echten Kennungen stimmen. pnpm verify gruen, pnpm coverage:requirements meldet weiterhin V1 offen: 0"
+
+  - id: T-M16-02
+    milestone: M16
+    title: Die oeffentliche Sicht kostet, was sie wert ist
+    status: todo
+    deps: [T-M15-08]
+    requirements: [R-AI-04, R-ARCH-06]
+    files: [packages/core/src/view/publicView.ts, packages/core/src/view/intel.ts, packages/ai/src/runner.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/ai-bench.json]
+    tests: [packages/core/test/perf/worldmap.bench.slow.test.ts, packages/core/test/perf/tick.bench.slow.test.ts, packages/core/src/view/publicView.test.ts]
+    dod: "Zuerst die Messung, dann die Reparatur - in dieser Reihenfolge, sonst ist unbekannt, was die Reparatur bewirkt hat. (a) R-AI-04 wird auf der ausgelieferten Weltkarte mit acht KI-Maechten gemessen, so wie R-ARCH-06/AK1 es seit dem 2026-09-06 wird; die Zusicherung wandert dazu nach worldmap.bench.slow.test.ts, und was in tick.bench.slow.test.ts bleibt, traegt wie der Nachbarblock den Vermerk, dass es die Anforderung NICHT belegt. Der Ausgangswert wird festgehalten, bevor eine Zeile Produktionscode faellt. (b) Zwei Schnitte, jeder einzeln gemessen: visibleProvinces laeuft nicht mehr zweimal je Macht und Tick (heute einmal in updateIntel, einmal in publicView, ueber denselben Zustand im selben Tick), und der unveraenderliche Teil der Provinzsicht - id, name, kind, terrain, coastal, neighbors, seaLinks - wird einmal je Karte gebaut statt je Macht und Tick neu abgeschrieben. publicView.test.ts belegt, dass die Sicht danach dieselbe ist: gleicher Inhalt, gleiche Reihenfolge, und kein Aufrufer kann den geteilten Teil veraendern. (c) ai-bench.json fuehrt aiMedianMs und tickMedianMs einzeln fort, nicht nur den Quotienten - ein gestiegener Anteil kann von beidem kommen. (d) Faellt die Messung gegen die Anforderung aus, wird sie nachgemessen und begruendet wie R-ARCH-06 am 2026-09-06, mit Eintrag in DECISIONS.md und Noahs Entscheidung; das blosse Anheben der Grenze, damit die Zahl passt, ist ausgeschlossen. Nach dieser Aufgabe ist die Zusicherung im Bench nicht mehr lockerer als die Anforderung, die sie vertritt - heute sichert sie 0,5 zu, wo die Anforderung 0,30 sagt. pnpm verify und pnpm test:slow gruen"
+
+  - id: T-M16-03
+    milestone: M16
+    title: Der erste Bau
+    status: todo
+    deps: [T-M16-01]
+    requirements: [R-PKG-01, R-FREE-04]
+    constraints: [C-02]
+    files: [package.json, pnpm-lock.yaml, apps/desktop/src-tauri/tauri.conf.json, apps/desktop/src-tauri/Cargo.toml, apps/desktop/src-tauri/Cargo.lock, apps/desktop/src-tauri/icons/icon.png, apps/desktop/package.json]
+    tests: [test/guards/packaging.test.ts]
+    dod: "Der Auslieferungspfad wird zum ersten Mal ausgefuehrt. Reihenfolge nicht beliebig: erst das Symbol, weil tauri.conf.json es verlangt und ein Bau, der daran scheitert, ueber den Rest nichts sagt; es wird selbst erzeugt und nicht bezogen (R-ASSET-01). Dann die Abhaengigkeiten - tauri-apps/cli und tauri-apps/api stehen in package.json UND im Lockfile, das heute null Treffer fuer tauri hat. Dann der Bau: pnpm tauri:build laeuft durch und erzeugt ein startfaehiges Erzeugnis, Cargo.lock liegt danach im Baum. Der Waechter packaging.test.ts bekommt einen zweiten Teil, der an Dingen haengt, die nur ein Bau erzeugt: heute vergleicht er tauri.conf.json gegen capabilities/local-only.json - zwei Dateien derselben Hand - und bleibt gruen, wenn nie ein Bau lief. Der erste Teil bleibt unveraendert: R-FREE-04 in der Konfiguration ist richtig geprueft, er ist nur nicht der Beleg fuer einen Bau. Was der Bau an Werkzeug braucht, wird im Fortschrittseintrag genannt: Rust ist vorhanden, der erste cargo-Lauf bezieht die Crates aus dem Netz - Freigabe von Noah am 2026-09-06"
+
+  - id: T-M16-04
+    milestone: M16
+    title: Der Datei-Port
+    status: todo
+    deps: [T-M14-08, T-M16-03]
+    requirements: [R-PKG-02, R-GAME-03, R-GAME-04]
+    constraints: [C-02]
+    files: [apps/desktop/src/storage/TauriStorage.ts, apps/desktop/src/storage/createStorage.ts, packages/core/src/persistence/StoragePort.ts, docs/plan/PROGRESS.md]
+    tests: [apps/desktop/src/storage/TauriStorage.test.ts, test/guards/persistence-contract.test.ts]
+    dod: "Der Port tritt als DRITTE Umsetzung zu Memory und IndexedDB und aendert an createStorage und storagePortContract nichts: er erfuellt denselben Vertrag oder er ist falsch. Damit ist die Zusage von T-M8-00 zum ersten Mal ihrem Wortlaut nach erfuellt - dieselbe Vertragstestreihe gegen alle drei Umsetzungen -, die seit M8 dastand und deren Dateien nie existierten; T-M8-00 wird von dieser Aufgabe geschlossen und traegt sie im Feld reopened. Die zweite Pruefung ist die eigentliche (R-PKG-02/AK2): ein ausserhalb des Programms geloeschter Stand verschwindet aus der Liste. Ohne sie waere ein Port gruen, der die Namen nur im Speicher fuehrt und beim Start einmal einliest - genau die Umsetzung, die im Vertrag nicht auffaellt, weil der Vertrag den Prozess nie verlaesst. Der Waechter persistence-contract faellt weiterhin, sobald nur eine Fabrik registriert ist. pnpm verify gruen"
+
+  - id: T-M16-05
+    milestone: M16
+    title: AK-8 gemessen
+    status: todo
+    deps: [T-M16-03, T-M16-04]
+    acceptance: [AK-8]
+    requirements: [R-PKG-01, R-PKG-02]
+    files: [scripts/acceptance.mjs, docs/reports/packaging.md, docs/plan/PROGRESS.md]
+    tests: []
+    dod: "Das Erzeugnis startet, schreibt einen Spielstand, wird geschlossen, wird neu gestartet, und der Stand liegt wieder in der Liste - gemessen und mit Datum in docs/reports/packaging.md festgehalten, nicht behauptet. Erst jetzt zaehlt AK-8 in pnpm acceptance mit; die Zeile aus T-M16-01 wechselt von M16, zaehlt nicht gegen V1 auf ein gemessenes Ergebnis. Die V1-Abnahme AK-1 bis AK-7 bleibt davon unberuehrt: T-M12-03 wird von dieser Aufgabe nicht angefasst"
+
+  - id: T-M16-06
+    milestone: M16
+    title: Die Karte wird zum ersten Mal zeichnend gemessen
+    status: todo
+    deps: [T-M16-03]
+    requirements: [R-ARCH-06, R-UI-12]
+    files: [apps/desktop/src/ui/MapCanvas.tsx, docs/reports/render-bench.json]
+    tests: [apps/desktop/src/ui/MapCanvas.test.tsx]
+    dod: "R-ARCH-06/AK2 - 60 FPS bei 200 Provinzen - misst bis heute niemand, der zeichnet: MapCanvas laeuft in keinem Test, weil getContext in der Testumgebung null liefert, und 141 von 249 Zeilen sind unausgefuehrt. Am gebauten Programm existiert ein Zeichenkontext. Danach ist die Zusicherung erstmals an einem Lauf belegt, der wirklich zeichnet, und die unausgefuehrten Zeilen von MapCanvas sind gezaehlt statt geschaetzt. Faellt die Messung gegen die Anforderung aus, gilt dasselbe wie in T-M16-02: nachmessen und begruenden, nicht die Zahl weichspuelen"
+
+  - id: T-M16-07
+    milestone: M16
+    title: Bedienbar ohne Maus
+    status: todo
+    deps: [T-M16-03]
+    requirements: [R-UI-15, R-UI-06]
+    files: [apps/desktop/src/ui/Dialog.tsx, apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/a11y.test.tsx]
+    dod: "Belegt ist heute der Kontrast (R-UI-02) und die Tastenzuordnung als reine Funktion (R-UI-06); kein Test oeffnet einen Dialog und schliesst ihn. Danach: Escape schliesst jeden Dialog, der Fokus bleibt im offenen Dialog und kehrt beim Schliessen an das ausloesende Element zurueck, die Tabreihenfolge folgt der Leserichtung, und ein Waechter findet jedes Bedienelement ohne sichtbaren Text, das keinen Namen fuer Hilfsmittel traegt. Kein Barrierefreiheits-Rahmenwerk und keine neue Abhaengigkeit - die Pruefung ist die Zusage. pnpm verify gruen"

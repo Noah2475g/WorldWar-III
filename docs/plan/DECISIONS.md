@@ -987,3 +987,53 @@ die vorher niemand geprüft hat: Fabriken, Artillerie **und** selbsttätigen Bes
 war zum Zeitpunkt der Formulierung nachweislich **gerissen** — auf der Testkarte an der
 Fabrik, auf der Weltkarte an der Aushebung. Beides ist mit dieser Aufgabe behoben und
 gemessen (`docs/reports/ai-integration.json`).
+
+---
+
+## 2026-09-06 · M16 · Der Tauri-Bau ist freigegeben, und der Meilenstein bekommt einen Plan
+
+**Entscheidung (Noah):** Der erste Tauri-Bau darf ausgeführt werden, **einschließlich des
+Bezugs der Rust-Crates aus dem Netz** (crates.io, mehrere hundert MB, erster Lauf 10–30
+Minuten). Rust ist auf der Maschine bereits vorhanden. Damit ist T-M16-03 nicht mehr an
+einen Haltepunkt gebunden.
+
+**Begründung:** C-02 ist seit dem ersten Tag die einzige Rahmenbedingung, die **nie
+ausgeführt** wurde — es ist bis heute unbekannt, ob das Programm überhaupt startet. Je
+länger das so bleibt, desto größer die Menge Code, die gegen eine ungeprüfte Annahme
+gebaut wird. Der Bezug ist frei und quelloffen; er verstößt gegen keine Zusage
+(R-ASSET-02, kein kostenpflichtiger Dienst).
+
+**Was die Freigabe nicht bedeutet:** Sie greift der V1-Abnahme nicht vor. AK-8 zählt
+**nicht** gegen die V1 (siehe Abschnitt 3.1 der Anforderungen und T-M16-01), und T-M12-03
+bleibt an AK-1 bis AK-7 gebunden. Ein Bau, der eine noch nicht durchgespielte V1 verpackt,
+beweist über das Spiel nichts — er beweist etwas über den **Auslieferungspfad**, und das ist
+genau die Lücke, die M16 schließt.
+
+**Zweite Entscheidung derselben Absprache:** M16 wird **geplant, bevor er gebaut wird**.
+Der Meilenstein war seit dem 2026-09-05 deklariert und trug **null Aufgaben und null
+Anforderungen** — Prosa in `03-TASKS.md`, ein zugesagtes AK-8 ohne Ort und vier Befunde ohne
+Besitzer. Er hat jetzt sieben Aufgaben, drei Anforderungen (R-PKG-01, R-PKG-02, R-UI-15)
+und ein Entwurfskapitel (D20).
+
+---
+
+## 2026-09-06 · T-M16-01 · AK-8 zählt nicht gegen die V1
+
+**Entscheidung:** AK-8 bekommt einen **eigenen** Abschnitt 3.1 in `01-REQUIREMENTS.md` und
+eine eigene Zeile in `pnpm acceptance`, die den Exit-Code unberührt lässt, solange M16 nicht
+gebaut ist.
+
+**Begründung:** Die naheliegende Lösung — AK-8 in die Tabelle von Abschnitt 3 schreiben —
+wäre der Fehler des Nachtrags 2.15 in neuer Gestalt. Dort hatte eine später zugefügte Zeile
+AK-2 gebrochen und die V1-Abnahme **unerreichbar** gemacht; T-M14-01 hat das repariert. Ein
+AK-8 in derselben Tabelle kettete die V1-Abnahme an einen Bau, der ausdrücklich hinter ihr
+liegt.
+
+**Die Gegenrichtung ist aber genauso falsch, und deshalb steht AK-8 überhaupt irgendwo:**
+Bis zum 2026-09-06 nannte C-02 ein „eigenes Abnahmekriterium AK-8", und **kein Skript suchte
+danach** — Abschnitt 3 kannte AK-1 bis AK-7, `acceptance.mjs` prüfte AK-1 bis AK-5 und AK-7.
+Das ist Ursache A aus der Auswertung vom 2026-09-05 (die Zusage wurde nie ans Erzeugnis
+gebunden), nur in der Zukunftsform: sichtbar falsch erst in dem Moment, in dem jemand M16
+für fertig erklärt. T-M16-01 baut deshalb nicht den Einzelfall, sondern die Regel — ein
+Test, der **jedes** im Anforderungstext genannte AK auf einen Ort in einer Abnahmeliste
+prüft.

@@ -2781,6 +2781,173 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > M14 und M15, weil ein Bau, der ein unfertiges Spiel verpackt, nichts beweist, was M14 nicht
 > billiger beweisen kann.
 
+> **Reihenfolge und ihr Grund.** Erst die Buchhaltung, wie in M14: AK-8 bekommt einen Ort,
+> bevor irgendetwas darauf zeigt. Dann T-M16-02, der einzige Befund dieses Meilensteins, der
+> **nicht am Bau hängt** — er liegt im Kern und wird von keinem Playtest-Befund entwertet.
+> Erst danach der Bau und das, was allein an ihm messbar ist: ein Zeichenkontext, ein Fokus,
+> ein Prozess, den man schließen und neu starten kann.
+
+### T-M16-01 · AK-8 bekommt einen Ort
+- **Ziel:** C-02 sagt seit dem 2026-09-05, die Tauri-Verpackung sei M16 „mit eigenem
+  Abnahmekriterium **AK-8**". Bis zum 2026-09-06 war das eine Zusage ohne Ort: Abschnitt 3
+  der Anforderungen kannte AK-1 bis AK-7, `scripts/acceptance.mjs` prüfte AK-1 bis AK-5 und
+  AK-7, und **nach AK-8 suchte kein Skript**. Das ist dieselbe Fehlerklasse, die M14
+  abgeräumt hat — Ursache A, die Zusage wurde nie ans Erzeugnis gebunden —, nur in der
+  Zukunftsform: sie wird erst dann sichtbar falsch, wenn jemand M16 für fertig erklärt.
+- **Anforderungen:** keine neue; diese Aufgabe bindet ein Abnahmekriterium, sie baut keine
+  Mechanik.
+- **Abhängigkeiten:** T-M14-01
+- **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `scripts/acceptance.mjs`,
+  `docs/plan/PROGRESS.md`
+- **Tests zuerst:**
+  (a) `test/requirements.test.ts`: **die Verallgemeinerung, nicht der Einzelfall.** Der Test
+  sammelt jede Kennung der Form `AK-n`, die der Anforderungstext nennt, und verlangt für
+  jede einen Ort in einer Abnahmeliste — er fällt, wenn eine Zusage wie AK-8 nirgends
+  ankommt. An einer **erfundenen** Anforderungsliste nachgewiesen, damit die Prüfung nicht
+  bedeutungslos wird, sobald die echten Kennungen stimmen; das ist die Lehre aus T-M14-02,
+  wo ein Wächter über einer leeren Menge grün war.
+  (b) Gegenrichtung: eine Abnahmeliste, die ein AK führt, das der Anforderungstext nicht
+  kennt, fällt ebenfalls. Ein Kriterium ohne Anforderung ist so wenig wert wie eine
+  Anforderung ohne Kriterium.
+- **Fertig wenn:** `01-REQUIREMENTS.md` führt AK-8 in einem eigenen **Abschnitt 3.1** mit
+  dem ausdrücklichen Vermerk, dass es **nicht gegen die V1 zählt**; `pnpm acceptance` weist
+  AK-8 als eigene Zeile aus und **lässt den Exit-Code unberührt**, solange M16 nicht gebaut
+  ist. Diese Trennung ist der Kern der Aufgabe: ein AK-8, das gegen die V1 zählte, kettete
+  die Abnahme an einen Bau, der ausdrücklich hinter ihr liegt — das wäre der Fehler des
+  Nachtrags 2.15 in neuer Gestalt, der AK-2 unerfüllbar gemacht hat. `pnpm verify` grün,
+  `pnpm coverage:requirements` meldet weiterhin `V1 offen: 0`.
+
+### T-M16-02 · Die öffentliche Sicht kostet, was sie wert ist
+- **Ziel:** Zwei Befunde vom 2026-09-06, die dieselbe Wurzel haben. Der erste: die KI ist in
+  M15 um 73 % teurer geworden, und **rund 97 % der gemessenen „KI-Zeit" ist der Bau der
+  öffentlichen Sicht**, nicht die Entscheidung. Der zweite, an diesem Tag nachgetragen: die
+  Zusicherung wird **auf zwölf Provinzen mit drei Mächten** gemessen, während die
+  Anforderung „bei 8 KI-Spielern" sagt — dieselbe Diskrepanz, die für R-ARCH-06/AK1 am
+  selben Tag behoben wurde, im selben Dateikopf beschrieben und im Block darunter erneut
+  begangen. Damit ist der gemeldete Wert 0,498 **keine Aussage über die Anforderung**: ob
+  R-AI-04 unter seinen eigenen Bedingungen gehalten wird, ist bis heute ungemessen.
+- **Anforderungen:** R-AI-04, R-ARCH-06
+- **Abhängigkeiten:** T-M15-08
+- **Dateien:** `packages/core/src/view/publicView.ts`, `packages/core/src/view/intel.ts`,
+  `packages/ai/src/runner.ts`, `docs/plan/01-REQUIREMENTS.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/reports/ai-bench.json`
+- **Tests zuerst:**
+  (a) **Zuerst messen, dann reparieren** — in dieser Reihenfolge, sonst ist hinterher
+  unbekannt, was die Reparatur bewirkt hat. Die Zusicherung für R-AI-04 wandert nach
+  `worldmap.bench.slow.test.ts` (237 Provinzen, acht KI-Mächte); was in
+  `tick.bench.slow.test.ts` bleibt, trägt denselben Vermerk wie sein Nachbarblock: es
+  belegt die Anforderung **nicht**, es fängt einen Rückschritt um eine Größenordnung früh
+  ab. Der Ausgangswert wird festgehalten, **bevor** eine Zeile Produktionscode fällt.
+  (b) `packages/core/src/view/publicView.test.ts`: die Sicht ist nach den Schnitten
+  dieselbe — gleicher Inhalt, gleiche Reihenfolge —, und **kein Aufrufer kann den geteilten
+  Teil verändern**. Das ist die Prüfung, an der ein geteilter unveränderlicher Teil scheitern
+  würde: geteilte Objekte, die jemand beschreibt, sind schlimmer als kopierte.
+- **Die zwei Schnitte, jeder einzeln gemessen:**
+  1. `visibleProvinces` läuft nicht mehr **zweimal je Macht und Tick** — heute einmal in
+     `updateIntel`, einmal in `publicView`, über denselben Zustand im selben Tick. Kein
+     Vertrag ändert sich, keine Sicht.
+  2. Der unveränderliche Teil der Provinzsicht — `id`, `name`, `kind`, `terrain`, `coastal`,
+     `neighbors`, `seaLinks` — wird **einmal je Karte** gebaut statt je Macht und Tick neu
+     abgeschrieben. Auf der Weltkarte sind das 237 Provinzen mal acht Mächte mal jeden Tick.
+- **Fertig wenn:** `ai-bench.json` führt `aiMedianMs` und `tickMedianMs` **einzeln** fort,
+  nicht nur den Quotienten — ein gestiegener Anteil kann von beidem kommen. Die Zusicherung
+  im Bench ist danach **nicht mehr lockerer als die Anforderung, die sie vertritt**: heute
+  sichert sie 0,5 zu, wo die Anforderung 0,30 sagt. Fällt die Messung gegen die Anforderung
+  aus, wird nachgemessen und begründet wie bei R-ARCH-06 am 2026-09-06 — Eintrag in
+  `DECISIONS.md`, Entscheidung durch Noah. **Das bloße Anheben der Grenze, damit die Zahl
+  passt, ist ausgeschlossen.** `pnpm verify` und `pnpm test:slow` grün.
+
+### T-M16-03 · Der erste Bau
+- **Ziel:** Den Auslieferungspfad zum ersten Mal wirklich ausführen. Heute hat
+  `@tauri-apps/cli` **null Treffer im Lockfile**, `Cargo.lock` fehlt, das von
+  `tauri.conf.json` verlangte Symbol gibt es nicht — und der einzige Beleg ist ein Wächter,
+  der `tauri.conf.json` gegen `capabilities/local-only.json` hält, also zwei Dateien
+  derselben Hand.
+- **Anforderungen:** R-PKG-01, R-FREE-04
+- **Rahmen:** C-02
+- **Abhängigkeiten:** T-M16-01
+- **Dateien:** `package.json`, `pnpm-lock.yaml`, `apps/desktop/package.json`,
+  `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/src-tauri/Cargo.toml`,
+  `apps/desktop/src-tauri/Cargo.lock` *(neu)*,
+  `apps/desktop/src-tauri/icons/icon.png` *(neu)*
+- **Reihenfolge, und sie ist nicht beliebig:** erst das **Symbol**, weil `tauri.conf.json`
+  es verlangt und ein Bau, der daran scheitert, über den Rest nichts sagt; es wird **selbst
+  erzeugt und nicht bezogen** (R-ASSET-01). Dann die Abhängigkeiten. Dann der Bau.
+- **Tests zuerst:** `test/guards/packaging.test.ts` bekommt einen **zweiten Teil**, der an
+  Dingen hängt, die nur ein Bau erzeugt: ein Eintrag für die Tauri-Werkzeugkette im
+  Lockfile, `Cargo.lock`, das Symbol. Der erste Teil bleibt **unverändert** — R-FREE-04 in
+  der Konfiguration ist richtig geprüft; er ist nur kein Beleg dafür, dass je ein Bau lief.
+- **Fertig wenn:** der Bau läuft durch und erzeugt ein startfähiges Erzeugnis; `Cargo.lock`
+  liegt danach im Baum. Der Fortschrittseintrag nennt, was der Bau an Werkzeug gebraucht
+  hat: Rust ist auf der Maschine vorhanden, der erste `cargo`-Lauf bezieht die Crates aus
+  dem Netz — **Freigabe durch Noah am 2026-09-06**.
+
+### T-M16-04 · Der Datei-Port
+- **Ziel:** Spielstände im echten Dateisystem — die Zusage, die T-M8-00 seit M8 trug und
+  deren vier Dateien nie existierten. Seit T-M14-08 gibt es `createStorage` als **eine**
+  prüfbare Stelle und `storagePortContract` gegen zwei Umsetzungen; der Datei-Port tritt als
+  **dritte** hinzu.
+- **Anforderungen:** R-PKG-02, R-GAME-03, R-GAME-04
+- **Rahmen:** C-02
+- **Abhängigkeiten:** T-M14-08, T-M16-03
+- **Dateien:** `apps/desktop/src/storage/TauriStorage.ts` *(neu)*,
+  `apps/desktop/src/storage/createStorage.ts`,
+  `packages/core/src/persistence/StoragePort.ts`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:**
+  (a) `storagePortContract` läuft unverändert gegen die dritte Umsetzung. **Er erfüllt
+  denselben Vertrag oder er ist falsch** — an Vertrag und Fabrik ändert diese Aufgabe
+  nichts. Damit ist T-M8-00s Wortlaut („dieselbe Vertragstestreihe gegen alle drei
+  Umsetzungen") zum ersten Mal erfüllt.
+  (b) **Die zweite Prüfung ist die eigentliche** (R-PKG-02/AK2): ein **außerhalb** des
+  Programms gelöschter Stand verschwindet aus der Liste. Ohne sie wäre ein Port grün, der
+  die Namen nur im Speicher führt und beim Start einmal einliest — genau die Umsetzung, die
+  im Vertrag nicht auffällt, weil der Vertrag den Prozess nie verlässt.
+- **Fertig wenn:** T-M8-00 ist **geschlossen** und trägt diese Aufgabe im Feld `reopened`;
+  der Wächter `persistence-contract` fällt weiterhin, sobald nur eine Fabrik registriert
+  ist. `pnpm verify` grün.
+
+### T-M16-05 · AK-8 gemessen
+- **Ziel:** Das Abnahmekriterium des Meilensteins, gemessen statt behauptet.
+- **Anforderungen:** R-PKG-01, R-PKG-02
+- **Abnahme:** AK-8
+- **Abhängigkeiten:** T-M16-03, T-M16-04
+- **Dateien:** `scripts/acceptance.mjs`, `docs/reports/packaging.md` *(neu)*,
+  `docs/plan/PROGRESS.md`
+- **Fertig wenn:** das Erzeugnis startet, schreibt einen Spielstand, wird geschlossen, wird
+  neu gestartet — und der Stand liegt wieder in der Liste, mit Datum in
+  `docs/reports/packaging.md`. Erst jetzt zählt AK-8 in `pnpm acceptance` mit; die Zeile aus
+  T-M16-01 wechselt vom Vermerk „zählt nicht gegen V1" auf ein gemessenes Ergebnis. **Die
+  V1-Abnahme AK-1 bis AK-7 bleibt unberührt**, und T-M12-03 wird von dieser Aufgabe nicht
+  angefasst.
+
+### T-M16-06 · Die Karte wird zum ersten Mal zeichnend gemessen
+- **Ziel:** R-ARCH-06/AK2 — 60 FPS bei 200 Provinzen — misst bis heute **niemand, der
+  zeichnet**: `MapCanvas` läuft in keinem Test, weil `getContext` in der Testumgebung `null`
+  liefert, und 141 von 249 Zeilen sind unausgeführt. Am gebauten Programm existiert ein
+  Zeichenkontext, und damit wird die Zusicherung zum ersten Mal überhaupt prüfbar.
+- **Anforderungen:** R-ARCH-06, R-UI-12
+- **Abhängigkeiten:** T-M16-03
+- **Dateien:** `apps/desktop/src/ui/MapCanvas.tsx`, `docs/reports/render-bench.json`
+- **Fertig wenn:** die Zusicherung ist an einem Lauf belegt, der wirklich zeichnet, und die
+  unausgeführten Zeilen von `MapCanvas` sind **gezählt statt geschätzt**. Fällt die Messung
+  gegen die Anforderung aus, gilt dasselbe wie in T-M16-02: nachmessen und begründen, nicht
+  die Zahl weichspülen.
+
+### T-M16-07 · Bedienbar ohne Maus
+- **Ziel:** Belegt ist heute der Kontrast (R-UI-02) und die Tastenzuordnung als **reine
+  Funktion** (R-UI-06). Was fehlt, ist die Ebene dazwischen: **kein Test öffnet einen Dialog
+  und schließt ihn** (Befund N12). Fokusfang und Escape sind keine Eigenschaften einer
+  Funktion, sondern eines laufenden Baums.
+- **Anforderungen:** R-UI-15, R-UI-06
+- **Abhängigkeiten:** T-M16-03
+- **Dateien:** `apps/desktop/src/ui/Dialog.tsx`, `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** `apps/desktop/src/ui/a11y.test.tsx` — Escape schließt jeden Dialog; der
+  Fokus bleibt im offenen Dialog und kehrt beim Schließen an das auslösende Element zurück;
+  die Tabreihenfolge folgt der Leserichtung; ein Wächter findet jedes Bedienelement ohne
+  sichtbaren Text, das keinen Namen für Hilfsmittel trägt.
+- **Fertig wenn:** `pnpm verify` grün. **Kein Barrierefreiheits-Rahmenwerk und keine neue
+  Abhängigkeit** — die Prüfung ist die Zusage.
+
 ## Meilenstein M17 — Tiefe zwischen den Kriegen
 
 > **Warum es diesen Meilenstein gibt.** Was M15 bewusst weggelassen hat, kommt hier: Spionage
