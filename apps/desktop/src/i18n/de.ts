@@ -184,6 +184,7 @@ export const de = {
     days: '{{count}} Tage',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
+    availableFrom: 'ab Spieltag {{day}}',
     cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',

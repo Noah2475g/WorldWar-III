@@ -2,6 +2,7 @@ import { ONE } from '@worldwar/shared'
 import {
   armyHp,
   canApply,
+  currentDay,
   exchangeAmount,
   planRoute,
   recruitDuration,
@@ -89,6 +90,23 @@ export function costHint(cost: Partial<Record<string, number>>, hours: number, t
   return `${costs(cost)} · ${duration(hours, ticksPerDay)}`
 }
 
+/**
+ * Der Freischaltungstag im Tooltip (T-M15-03, R-TECH-02).
+ *
+ * Der Ablehnungstext nennt ihn schon — aber nur, solange die Reihenfolge der Pruefungen
+ * im Kern ihn zuerst finden laesst. Das ist eine Reihenfolge, keine Zusage: waere die
+ * Kasse leer, koennte morgen "zu wenig Rohstoffe" davorstehen, und der Spieler wuesste
+ * nicht, dass die Sache ohnehin noch nicht existiert. Der Tag gehoert deshalb an die
+ * **Sache**, nicht an ihren jeweils dringendsten Hinderungsgrund.
+ *
+ * Nach der Freischaltung faellt er weg: "ab Spieltag 1" an der Kaserne waere eine
+ * Auskunft, die nur beim ersten Lesen etwas heisst und danach Rauschen ist.
+ */
+export function availabilityHint(ctx: ActionContext, availableFromDay: number): string {
+  const day = currentDay(ctx.state, ctx.rules)
+  return day >= availableFromDay ? '' : ` · ${t('actions.availableFrom', { day: availableFromDay })}`
+}
+
 /** One button per building the rules know, in the order the rules list them. */
 export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec[] {
   return Object.entries(ctx.rules.buildings).map(([key, rule]) =>
@@ -97,7 +115,7 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
       { type: 'BUILD', playerId: ctx.playerId, provinceId, building: key as never },
       `build-${key}`,
       t(`buildings.${key}`),
-      costHint(rule.cost, rule.buildTicks, ctx.ticksPerDay),
+      `${costHint(rule.cost, rule.buildTicks, ctx.ticksPerDay)}${availabilityHint(ctx, rule.availableFromDay)}`,
       BUILDING_ICONS[key],
       `explain.buildings.${key}`,
     ),
@@ -142,7 +160,7 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
       { type: 'RECRUIT', playerId: ctx.playerId, provinceId, unitKey: key, count: 1 },
       `recruit-${key}`,
       t(`units.${key}`),
-      `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}`,
+      `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}${availabilityHint(ctx, rule.availableFromDay)}`,
       UNIT_ICONS[key],
       `explain.units.${key}`,
     )

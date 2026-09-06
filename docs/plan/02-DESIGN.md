@@ -1035,6 +1035,21 @@ füllt das Protokoll deshalb **nicht** nach.
 > **Was die Achse bewusst nicht ist:** die späteste Freischaltung liegt bei Tag 16, eine
 > Standardpartie dauert 822 Spieltage. Sie prägt die **Eröffnung**, nicht den Verlauf.
 > Ob das zu kurz greift, beantwortet der Playtest und nicht dieser Entwurf.
+>
+> **Teil 2 gebaut am 2026-09-06 (T-M15-03, R-TECH-02).** Der Tag erreicht den Bildschirm auf
+> **zwei** Wegen, und das ist Absicht: der Ablehnungstext nennt ihn (`NOT_YET_AVAILABLE` mit
+> `detail.availableFromDay`), *und* der Tooltip der Sache trägt „ab Spieltag N", solange sie
+> gesperrt ist. Nur der erste Weg wäre eine Zusage über die **Reihenfolge der Prüfungen im
+> Kern**: stünde die Kasse davor, läse der Spieler „zu wenig Rohstoffe" für etwas, das es
+> noch gar nicht gibt. Nach der Freischaltung fällt der Zusatz weg — „ab Spieltag 1" an der
+> Kaserne wäre eine Auskunft, die nur beim ersten Lesen etwas heißt.
+>
+> **Die KI wählt nichts Gesperrtes.** `nextBuilding` und `nextUnitFor` filtern auf den Tag,
+> gelesen aus `view.tick` — keine zweite Zeitrechnung. Der Grund ist nicht Schönheit: ein
+> Befehl, den der Kern jeden Tag ablehnt, ist Rauschen im Protokoll statt Verhalten, und
+> die KI fasste ihn in jedem Tick neu. Gemessen über 60 Spieltage mit drei KI-Mächten:
+> **0 Ablehnungen** `NOT_YET_AVAILABLE` — ohne den Filter sind es 2, also kann der
+> Wächter fallen.
 
 Drei Teile, und keiner davon ist eine neue Mechanik: ein Feld, eine Ablehnung, ein Filter.
 

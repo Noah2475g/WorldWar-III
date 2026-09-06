@@ -1290,11 +1290,11 @@ tasks:
   - id: T-M15-03
     milestone: M15
     title: R-TECH-02 - der Spieler sieht, was wann kommt
-    status: todo
+    status: done
     deps: [T-M15-02]
     requirements: [R-TECH-02]
     files: [apps/desktop/src/game/actions.ts, apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts, packages/ai/src/economy.ts, docs/plan/02-DESIGN.md]
-    tests: [apps/desktop/src/game/actions.test.ts, packages/ai/src/decide.test.ts, apps/headless/test/tech-unlock.test.ts, test/docs.test.ts]
+    tests: [apps/desktop/src/game/actions.test.ts, packages/ai/src/economy.test.ts, apps/headless/test/availability.test.ts, test/docs.test.ts]
     dod: "In 17 von 17 Faellen nennt an Spieltag 1 entweder der Sperrgrund oder der Tooltip den Freischaltungstag als Zahl; kein Knopf sagt 'nicht verfuegbar' ohne Tag; economyCommands und recruitCommands waehlen nichts heute Gesperrtes; kopfloser Lauf ueber 60 Spieltage mit vier KI-Maechten liefert 0 COMMAND_REJECTED mit NOT_YET_AVAILABLE; pnpm coverage:requirements weist R-TECH-02 als testbelegt aus; 02-DESIGN.md traegt den D-Abschnitt zur Anzeige der Freischaltung und wird von test/docs.test.ts gegen R-TECH-02 geprueft"
 
   - id: T-M15-04

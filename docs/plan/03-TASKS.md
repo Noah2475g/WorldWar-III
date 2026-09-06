@@ -2337,6 +2337,11 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Abhängigkeiten:** T-M15-02
 - **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/game/rejections.ts`,
   `apps/desktop/src/i18n/de.ts`, `packages/ai/src/economy.ts`, `docs/plan/02-DESIGN.md`
+  *(Am 2026-09-06 gebaut. `rejections.ts` blieb unangetastet: der Satz entsteht aus dem
+  i18n-Eintrag und `detail.availableFromDay`, ohne Sonderfall im Übersetzer — genau die
+  Bauweise, die `ON_COOLDOWN` schon hat. Belege sind `apps/desktop/src/game/actions.test.ts`,
+  `packages/ai/src/economy.test.ts` (neu angelegt — die Datei stand im Plan und existierte
+  nicht) und `apps/headless/test/availability.test.ts` für den 60-Tage-Lauf.)*
 - **Tests zuerst:**
   1. `R-TECH-02/AK1`: An Spieltag 1 gilt für jedes der 7 Gebäude und jede der 10 Einheiten:
      entweder ist `disabledReason` null, oder der Grund enthält den Freischaltungstag als Zahl.

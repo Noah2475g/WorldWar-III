@@ -243,8 +243,16 @@ describe('R-AI-01 Die KI fuehrt mehr als zwei Einheitenarten', () => {
   // R-BAT-08 (T-M15-07). Eine Feuerautomatik ohne Fernwaffen waere gebaut, gruen
   // getestet und wirkungslos, weil armyRange fuer jede KI-Armee null bliebe.
 
-  /** Ein Kontext, dessen eigene Armee den genannten Bestand hat. */
+  /**
+   * Ein Kontext, dessen eigene Armee den genannten Bestand hat.
+   *
+   * Die Uhr steht hinter dem letzten Freischaltungstag (T-M15-02, R-TECH-01): geprueft
+   * wird hier die *Truppenmischung*, nicht die Zeitachse. Ohne das lieferte nextUnitFor
+   * an Tag 1 immer Infanterie, und die Zusicherungen unten waeren gruen, ohne noch etwas
+   * ueber die Mischung zu sagen.
+   */
   const mitBestand = (bestand: Record<string, number>) => {
+    state.tick = LETZTER_FREISCHALTUNGSTAG * TEST_RULES.constants.ticksPerDay
     const context = contextWithBuildings({ barracks: 1, factory: 1 })
     const units = Object.entries(bestand).flatMap(([unitKey, count]) =>
       Array.from({ length: count }, () => ({ unitKey, hpTotal: 1000 })),
@@ -259,6 +267,9 @@ describe('R-AI-01 Die KI fuehrt mehr als zwei Einheitenarten', () => {
   }
 
   const mitFabrik = { buildings: { barracks: 1, factory: 1 } }
+
+  /** Der spaeteste erste Spieltag im Regelwerk — ab hier ist jede Einheit zu haben. */
+  const LETZTER_FREISCHALTUNGSTAG = Math.max(...Object.values(TEST_RULES.units).map((rule) => rule.availableFromDay))
 
   it('faengt mit Infanterie an', () => {
     expect(nextUnitFor(mitBestand({}), mitFabrik)).toBe('infantry')

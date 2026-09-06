@@ -239,3 +239,98 @@ describe('R-UI-07 Ablehnungen in Worten', () => {
     )
   })
 })
+
+/**
+ * Die Freischaltung erreicht den Bildschirm (T-M15-03, R-TECH-02).
+ *
+ * T-M15-02 hat den Riegel gebaut; ohne diese Aufgabe erführe der Spieler davon nur, dass
+ * ein Knopf grau ist. Ein gesperrter Knopf, der nicht sagt *wann*, ist schlimmer als
+ * keiner: er sieht aus wie ein Fehler im Spiel statt wie eine Regel.
+ */
+describe('R-TECH-02/AK1 Ein gesperrter Knopf nennt seinen Tag', () => {
+  /** Die Zahl im Text — der Tag, den der Spieler lesen soll. */
+  const mentionsDay = (text: string | null | undefined, day: number): boolean =>
+    typeof text === 'string' && new RegExp(String.raw`\b${day}\b`).test(text)
+
+  it('nennt an Spieltag 1 fuer jedes Gebaeude entweder nichts oder den Tag', () => {
+    const { ctx, capital } = fresh()
+    const actions = buildActions(ctx, capital)
+
+    expect(actions.length).toBe(Object.keys(rules.buildings).length)
+
+    const stumm = actions.filter((action) => {
+      const key = action.id.replace('build-', '')
+      const day = rules.buildings[key as keyof typeof rules.buildings]!.availableFromDay
+      if (day <= 1) return false
+      // Gesperrt sein darf er aus jedem Grund — aber der Tag muss irgendwo stehen.
+      return !mentionsDay(action.disabledReason, day) && !mentionsDay(action.hint, day)
+    })
+
+    expect(stumm.map((action) => action.id), 'Knopf ohne Freischaltungstag').toEqual([])
+  })
+
+  it('nennt an Spieltag 1 fuer jede Einheit entweder nichts oder den Tag', () => {
+    const { ctx, capital } = fresh()
+    const actions = recruitActions(ctx, capital)
+
+    expect(actions.length).toBe(Object.keys(rules.units).length)
+
+    const stumm = actions.filter((action) => {
+      const key = action.id.replace('recruit-', '')
+      const day = rules.units[key]!.availableFromDay
+      if (day <= 1) return false
+      return !mentionsDay(action.disabledReason, day) && !mentionsDay(action.hint, day)
+    })
+
+    expect(stumm.map((action) => action.id), 'Knopf ohne Freischaltungstag').toEqual([])
+  })
+
+  it('nennt den Tag im Tooltip, auch wenn der Knopf zusaetzlich am Geld haengt', () => {
+    // Der Fall, an dem eine Anzeige sonst scheitert: zwei Gründe, und der Spieler liest
+    // nur den, den der Kern zuerst prüft. Heute gewinnt der Tag, weil die Prüfung vor
+    // der Kasse steht — aber das ist eine Reihenfolge im Kern, keine Zusage der
+    // Oberfläche. Der Tag gehört deshalb **zusätzlich** in den Tooltip, der die Sache
+    // beschreibt und nicht ihren jeweils dringendsten Hinderungsgrund.
+    const { ctx, capital } = fresh()
+    for (const key of Object.keys(ctx.state.players.p1!.resources)) {
+      ctx.state.players.p1!.resources[key as 'money'] = 0
+    }
+
+    const airfield = buildActions(ctx, capital).find((action) => action.id === 'build-airfield')
+    expect(airfield?.disabledReason, 'kein Grund trotz leerer Kasse').not.toBeNull()
+    expect(mentionsDay(airfield?.hint, 10), `Tooltip ohne Tag 10: ${airfield?.hint}`).toBe(true)
+  })
+
+  it('laesst den Tag aus dem Tooltip, sobald er gekommen ist', () => {
+    // Sonst stünde bis zum Partieende "ab Spieltag 1" an der Kaserne — eine Auskunft,
+    // die nur beim ersten Lesen etwas heißt und danach Rauschen ist.
+    const { ctx, capital } = fresh()
+    ctx.state.tick = 40 * ctx.ticksPerDay
+
+    for (const action of buildActions(ctx, capital)) {
+      expect(action.hint ?? '', `${action.id} nennt nach der Freischaltung noch einen Tag`).not.toMatch(/Spieltag/)
+    }
+  })
+
+  it('uebersetzt NOT_YET_AVAILABLE in einen Satz mit dem Tag', () => {
+    const { ctx } = fresh()
+    const text = describeRejection(
+      { code: 'NOT_YET_AVAILABLE', detail: { availableFromDay: 8, building: 'factory' } },
+      null,
+      ctx,
+    )
+
+    expect(text).toMatch(/\b8\b/)
+    expect(text, 'der Rohschluessel erreicht den Spieler').not.toContain('NOT_YET_AVAILABLE')
+  })
+
+  it('sperrt nach dem Freischaltungstag nicht mehr aus diesem Grund', () => {
+    // Die Gegenrichtung: die Zusicherungen oben waeren auch dann gruen, wenn alles fuer
+    // immer gesperrt bliebe.
+    const { ctx, capital } = fresh()
+    ctx.state.tick = 40 * ctx.ticksPerDay
+
+    const airfield = buildActions(ctx, capital).find((action) => action.id === 'build-airfield')
+    expect(airfield?.disabledReason ?? '').not.toMatch(/Spieltag/)
+  })
+})

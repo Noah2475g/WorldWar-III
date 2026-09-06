@@ -23,6 +23,17 @@ function canAfford(context: AiContext, cost: Partial<Record<ResourceKey, number>
 }
 
 /** What a province is missing most, in the order the AI cares about. */
+/**
+ * Der laufende Spieltag aus der Sicht — nicht aus einer zweiten Zeitrechnung.
+ *
+ * `view.tick` und `rules.constants.ticksPerDay` sind beide da; eine eigene Zaehlung hier
+ * waere die zweite Wahrheit ueber dieselbe Frage, und die geht erfahrungsgemaess
+ * auseinander (T-M15-03).
+ */
+function dayOf(context: AiContext): number {
+  return Math.trunc(context.view.tick / context.rules.constants.ticksPerDay) + 1
+}
+
 function nextBuilding(context: AiContext, provinceId: string): BuildingKey | null {
   const province = context.view.provinces.find((entry) => entry.id === provinceId)
   if (!province || province.owner !== context.view.playerId) return null
@@ -30,13 +41,22 @@ function nextBuilding(context: AiContext, provinceId: string): BuildingKey | nul
   const level = (key: BuildingKey) => province.buildings?.[key] ?? 0
   const shortages = new Set(context.view.self.shortages)
 
+  // R-TECH-02/AK2: Was es heute noch nicht gibt, waehlt sie nicht. Ein Befehl, den der
+  // Kern jeden Tag ablehnt, ist Rauschen im Protokoll statt Verhalten — und die KI
+  // fasste ihn in jedem Tick neu. Dasselbe Muster hat 3046 von 4464 Marschbefehlen als
+  // NO_PATH enden lassen (T-M14-11).
+  const day = dayOf(context)
+  const available = (key: BuildingKey) => context.rules.buildings[key].availableFromDay <= day
+
   // A nation that cannot raise infantry has no other problem worth solving.
-  if (level('barracks') === 0) return 'barracks'
+  if (available('barracks') && level('barracks') === 0) return 'barracks'
   // Under pressure, fortify rather than expand.
-  if (shortages.size === 0 && level('factory') === 0 && province.kind === 'city') return 'factory'
-  if (level('railway') === 0) return 'railway'
-  if (level('fortress') < 2) return 'fortress'
-  if (province.coastal && level('harbour') === 0) return 'harbour'
+  if (available('factory') && shortages.size === 0 && level('factory') === 0 && province.kind === 'city') {
+    return 'factory'
+  }
+  if (available('railway') && level('railway') === 0) return 'railway'
+  if (available('fortress') && level('fortress') < 2) return 'fortress'
+  if (available('harbour') && province.coastal && level('harbour') === 0) return 'harbour'
   return null
 }
 
@@ -115,9 +135,12 @@ export function nextUnitFor(context: AiContext, province: { buildings?: Record<s
     }
   }
 
+  const day = dayOf(context)
   const buildable = TARGET_MIX.filter(({ unitKey }) => {
     const rule = context.rules.units[unitKey]
     if (!rule) return false
+    // R-TECH-02/AK2: erst der Tag, dann das Gebaeude — beides muss stimmen.
+    if (rule.availableFromDay > day) return false
     const needed = rule.requiresBuilding
     return !needed || (province.buildings?.[needed] ?? 0) > 0
   })
