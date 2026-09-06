@@ -19,6 +19,7 @@ pnpm --filter @worldwar/desktop dev
 | # | Anforderung | Frage | ja/nein |
 |---|---|---|---|
 | 1 | R-UI-01 | Sieht das Spiel aus wie die freigegebene Richtung A („Lagekarte")? | |
+| 1a | R-UI-04 | Steht die Schrift **IBM Plex** auf dem Bildschirm — schmale Buchstaben auf der Karte, gleich breite Ziffern in der Kopfleiste? *(Bis zum 2026-09-06 lag keine Schriftdatei bei; das Spiel fiel still auf die Systemschrift zurück und sah damit anders aus als das freigegebene Bild)* | |
 | 2 | R-UI-02 | Ist alles auf Anhieb lesbar — kein Text, bei dem Sie die Augen zusammenkneifen? | |
 | 3 | R-FREE-02 | Sehen Sie irgendwo etwas zu kaufen, ein Abonnement oder eine Wartezeit gegen Geld? (Erwartet: **nein**) | |
 
@@ -26,7 +27,8 @@ pnpm --filter @worldwar/desktop dev
 
 | # | Anforderung | Frage | ja/nein |
 |---|---|---|---|
-| 4 | R-GAME-01 | Können Sie **Karte**, Macht, Gegnerzahl, Schwierigkeit und Startzahl frei wählen — und **wirkt die Kartenwahl auch**? | |
+| 4 | R-GAME-01 | Können Sie **Karte**, Macht, Gegnerzahl, Schwierigkeit, Siegbedingung und Startzahl frei wählen — und **wirkt die Kartenwahl auch**? | |
+| 4a | R-GAME-02 | Stehen **Punktesieg und Eroberungssieg** zur Wahl, und sagt das Spiel, was das jeweils heißt? *(Der Zeitsieg ist am 2026-09-05 mit Begründung zurückgenommen und steht deshalb nicht mehr im Menü — `DECISIONS.md`)* | |
 | 5 | R-AI-02 | Steht dort, welchen Bonus die KI bekommt? (Erwartet: **ohne Bonus**) | |
 | 6 | R-UI-03 | Öffnet die Karte auf Ihrem eigenen Land, nicht irgendwo? | |
 | 7 | R-MAP-01 | Wirkt die Weltkarte wie eine Weltkarte — Kontinente am richtigen Platz, Grenzen sauber? | |
@@ -47,6 +49,8 @@ pnpm --filter @worldwar/desktop dev
 | # | Anforderung | Frage | ja/nein |
 |---|---|---|---|
 | 13 | R-UI-05 | Sagt jeder Knopf **vorher**, was er kostet und wie lange er dauert? | |
+| 13a | R-PROV-01 | Werden die Kosten eines Bauauftrags **sofort** abgezogen, und steht der Fertigstellungstag am Auftrag? | |
+| 13b | R-PROV-01 | Können Sie ein laufendes Bauvorhaben abbrechen — und sagt das Spiel dazu, dass es nichts zurückgibt? | |
 | 14 | R-UI-05 | Steht bei einer ausgegrauten Aktion der Grund dabei — und ist er verständlich? | |
 | 15 | R-ECON-01 | Verstehen Sie nach zehn Minuten, woher Ihre Rohstoffe kommen und wohin sie gehen? | |
 | 16 | R-ECON-06 | Sagt Ihnen die Wirtschaftsübersicht (Bestand, Produktion, Verbrauch, Bilanz), warum ein Rohstoff knapp wird? | |

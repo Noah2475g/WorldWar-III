@@ -173,13 +173,27 @@ describe('R-ARCH-05 Plan-Konsistenz', () => {
     expect(wrong, `falsch einsortierte IDs: ${wrong.join(', ')}`).toEqual([])
   })
 
-  it('hält die drei Haltepunkte fest', () => {
+  it('hält die vier Haltepunkte fest', () => {
     const gates = plan.tasks.filter((t) => t.gate).map((t) => t.id)
-    expect(gates).toEqual(['T-M9-01', 'T-M10-01', 'T-M12-03'])
+    expect(gates).toEqual(['T-M9-01', 'T-M10-01', 'T-M12-03', 'T-M14-15'])
     for (const id of gates) {
       // A gate without a stated reason is just a blocked task.
       expect(byId.get(id)?.gate_reason, `${id} braucht eine Begründung`).toBeTruthy()
     }
+  })
+
+  it('führt jeden Haltepunkt in der Übersicht von 03-TASKS.md', () => {
+    // T-M14-15: Die Liste oben ist maschinenlesbar, die Übersicht am Ende von 03-TASKS.md
+    // ist das, was ein Mensch liest — und die vierte Zeile stand dort einen Meilenstein
+    // lang, ohne dass `tasks.yaml` etwas davon wusste. Ein Haltepunkt, den nur eine der
+    // beiden Seiten kennt, hält niemanden auf.
+    const table = md.slice(md.indexOf('## Übersicht: Haltepunkte'))
+    expect(table.length, 'Keine Haltepunkt-Übersicht in 03-TASKS.md').toBeGreaterThan(0)
+
+    const listed = [...table.matchAll(/^\| (T-M\d+-\d+[a-z]?) \|/gm)].map((match) => match[1]!)
+    const gates = plan.tasks.filter((t) => t.gate).map((t) => t.id)
+
+    expect(listed, 'Die Übersicht nennt andere Haltepunkte als tasks.yaml').toEqual(gates)
   })
 })
 

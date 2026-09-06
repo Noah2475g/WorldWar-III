@@ -104,6 +104,23 @@ Anhalten, Haltung (Angriff/Verteidigung), Teilen (halbiert jede Einheitenart),
 Zusammenlegen (alle eigenen Armeen am Ort) und Beschießen (nur mit Artillerie oder
 Bombern, nur im Krieg). Escape bricht die Zielwahl ab.
 
+**Rückzug** (Knopf am Armeepanel, nur im Gefecht): Die Armee löst sich aus dem Kampf
+und weicht in eine benachbarte eigene Provinz aus. Der Preis steht am Knopf — sie
+verliert beim Absetzen Stärke und darf für eine Anzahl Tage **nicht angreifen**; getroffen
+werden kann sie in dieser Zeit sehr wohl. Ein Rückzug ist deshalb eine Entscheidung, keine
+Rücknahme: er rettet Einheiten und kostet die Gelegenheit.
+
+**Bauabbruch** (Knopf am laufenden Bauvorhaben in der Provinz): bricht den Auftrag ab und
+gibt die Baustelle frei. **Es gibt nichts zurück** — die Rohstoffe sind mit dem Auftrag
+abgeflossen, nicht mit seiner Fertigstellung. Sinnvoll ist der Abbruch, wenn die
+Bauplätze knapp sind oder die Provinz zu fallen droht (fällt sie, bricht der Auftrag
+ohnehin ab).
+
+**Der Kampfbericht** steht im Ereignisprotokoll: nach jedem Gefecht, wer das Feld behalten
+hat *und* was es beide Seiten gekostet hat — Verluste getrennt nach Angreifer und
+Verteidiger. Filtern Sie das Protokoll auf **Kämpfe**, wenn Sie eine Schlachtreihe
+nachlesen wollen.
+
 **Diplomatie** (D oder Knopf in der Kopfleiste): Verhältnis zu jeder Macht; eine Macht
 auswählen, dann Krieg erklären (wirkt nach Vorlaufzeit — das Protokoll nennt den Tag),
 Frieden anbieten oder annehmen, Bündnis, Durchmarsch, Kartenaustausch.

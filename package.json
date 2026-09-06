@@ -27,7 +27,8 @@
     "tauri:dev": "tauri dev --config apps/desktop/src-tauri/tauri.conf.json",
     "tauri:build": "tauri build --config apps/desktop/src-tauri/tauri.conf.json",
     "desktop:build": "pnpm --filter @worldwar/desktop build",
-    "acceptance": "node scripts/acceptance.mjs"
+    "acceptance": "node scripts/acceptance.mjs",
+    "playtest:sheet": "node scripts/playtest-sheet.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

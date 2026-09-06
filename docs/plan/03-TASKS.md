@@ -2780,8 +2780,13 @@ bemerkt, weil kein Prüfer die Felder las.
 
 Alles dazwischen ist ohne Rückfrage ausführbar.
 
-> **Zur vierten Zeile.** T-M14-15 trägt in `tasks.yaml` noch kein `gate: true`. Die Gate-Liste in
-> `test/plan-consistency.test.ts` ist hart auf die ersten drei Kennungen verdrahtet; ein
-> vorgezogener `gate:`-Block wäre ein roter Wächter für die gesamte Dauer von M14 und würde die
-> Zusage „`pnpm verify` grün" in jeder M14-Aufgabe unerfüllbar machen. T-M14-15 setzt den Block
-> und die erweiterte Wächterliste in **einer** Änderung (siehe dort, Test 5).
+> **Zur vierten Zeile.** Sie ist seit dem 2026-09-06 scharf: T-M14-15 trägt `gate: true` samt
+> Begründung, und die Wächterliste in `test/plan-consistency.test.ts` nennt alle vier. Beides
+> ist in **einer** Änderung eingetragen worden, wie die Aufgabe es verlangt — bis dahin fehlte
+> der Block mit Absicht, weil ein vorgezogenes `gate: true` gegen eine dreistellige Wächterliste
+> die Zusage „`pnpm verify` grün" in jeder M14-Aufgabe unerfüllbar gemacht hätte.
+>
+> Neu prüft der Wächter zusätzlich die Gegenrichtung: **diese Tabelle und `tasks.yaml` müssen
+> dieselben Haltepunkte nennen.** Die vierte Zeile stand hier einen Meilenstein lang, ohne dass
+> `tasks.yaml` etwas davon wusste — ein Haltepunkt, den nur eine der beiden Seiten kennt, hält
+> niemanden auf.

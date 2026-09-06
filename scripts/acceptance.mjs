@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { playtestStatus } from './playtest-sheet.mjs'
 
 /**
  * The acceptance run (T-M12-03).
@@ -11,6 +12,11 @@ import { fileURLToPath } from 'node:url'
  * asserted — each one runs its actual command and reports what came back. The seventh
  * is Noah's playtest, and no script can stand in for a person finding out whether the
  * game is worth playing.
+ *
+ * What a script *can* do, and since T-M14-15 does: say whether he has answered. AK-7
+ * used to be a fixed line reading "⏳ ausstehend" — a criterion that cannot change state
+ * is not a criterion, and this report would have printed it unchanged on the day after
+ * the playtest. It now reads docs/reports/playtest-v1.md and counts.
  */
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -92,6 +98,20 @@ check(
 // AK-5: die beiden Guards, auf denen die Produktversprechen ruhen.
 run('AK-5', 'Guards für Monetarisierung und Netzwerk', 'pnpm vitest run test/guards')
 
+// AK-7: der Playtest. Gespielt wird er von Noah; gezählt wird hier.
+const answersPath = join(ROOT, 'docs/reports/playtest-v1.md')
+const playtest = playtestStatus(
+  readFileSync(join(ROOT, 'docs/PLAYTEST.md'), 'utf8'),
+  existsSync(answersPath) ? readFileSync(answersPath, 'utf8') : null,
+)
+const playtestLine = playtest.ok
+  ? `✅ beantwortet (${playtest.total} Fragen)`
+  : playtest.answered === 0
+    ? `⏳ ausstehend (0 von ${playtest.total} Fragen beantwortet)`
+    : `⏳ angefangen (${playtest.answered} von ${playtest.total}` +
+      (playtest.noWithoutFinding.length > 0 ? `, „nein" ohne Befund: ${playtest.noWithoutFinding.join(', ')}` : '') +
+      ')'
+
 const passed = results.filter((r) => r.ok).length
 const failed = results.filter((r) => !r.ok)
 
@@ -103,7 +123,7 @@ const report = [
   '| Kriterium | Prüfung | Ergebnis |',
   '|---|---|---|',
   ...results.map((r) => `| ${r.id} | ${r.description} | ${r.ok ? '✅ bestanden' : '❌ fehlgeschlagen'} |`),
-  `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\` | ⏳ ausstehend |`,
+  `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\`, Antworten in \`docs/reports/playtest-v1.md\` | ${playtestLine} |`,
   '',
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
@@ -118,6 +138,6 @@ writeFileSync(join(ROOT, 'docs/reports/acceptance.md'), report)
 
 console.log(`\n${passed} von ${results.length} Prüfungen bestanden.`)
 console.log('docs/reports/acceptance.md geschrieben.')
-console.log('\nOffen bleibt AK-7: der Playtest nach docs/PLAYTEST.md.')
+console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 
 process.exit(failed.length === 0 ? 0 : 1)

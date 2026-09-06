@@ -1244,20 +1244,22 @@ tasks:
     tests: [apps/headless/test/fullgame.slow.test.ts, test/scripts.test.ts]
     dod: "pnpm sim:fullgame gruen mit der Voreinstellung aus DEFAULT_NEW_GAME/toConfig (keine eigene Spielerliste im Test): winner !== null spaetestens am Spieltag 1500, mindestens vier KI-Maechte, mindestens ein WAR_DECLARED, ein BATTLE_RESOLVED und ein PROVINCE_CAPTURED, laengstes Fenster ohne Fortschrittsereignis unter 100 Spieltagen, Laufzeit unter 15 Minuten; docs/reports/fullgame.json nennt Sieger, Entscheidungstag, Ereigniszahlen und Stillstandsfenster; docs/reports/acceptance.md fuehrt AK-1 als eigene Zeile mit pnpm sim:fullgame und keine Zeile mehr als AK-1/4/6; pnpm verify gruen. Entscheidet der Lauf nicht, wird der Deckel nicht erhoeht, sondern der Befund nach docs/plan/PROBLEME.md geschrieben - die erste Handlung dieses Tests darf nicht sein, sich selbst gruen zu stellen; die richtige Frage waere dann, ob pointsShareToWin oder die voreingestellte Siegbedingung falsch ist"
 
-  # T-M14-15 ist der vierte Haltepunkt, traegt aber mit Absicht noch KEINEN gate:-Block.
-  # Die Gate-Liste in test/plan-consistency.test.ts ist hart verdrahtet auf drei Eintraege;
-  # ein gate: true hier waere ein roter Waechter, den keine andere Aufgabe gruen machen kann,
-  # und damit waere die DoD-Zusage "pnpm verify gruen" fuer jede M14-Aufgabe unerfuellbar.
-  # gate: true, gate_reason und die erweiterte Waechterliste werden von dieser Aufgabe
-  # selbst in EINER Aenderung eingetragen (siehe ihre dod und 03-TASKS.md, Test 5).
+  # T-M14-15 ist der vierte Haltepunkt. Sein gate:-Block stand waehrend des ganzen
+  # Meilensteins mit Absicht NICHT hier: die Gate-Liste in test/plan-consistency.test.ts war
+  # hart auf drei Eintraege verdrahtet, ein vorgezogenes gate: true waere also ein roter
+  # Waechter gewesen, den keine andere Aufgabe gruen machen kann - und damit die Zusage
+  # "pnpm verify gruen" in jeder M14-Aufgabe unerfuellbar. Am 2026-09-06 sind Block und
+  # Waechterliste in EINER Aenderung eingetragen worden, wie die dod es verlangt.
   - id: T-M14-15
     milestone: M14
     title: Der Playtest-Bogen misst, was schiefgehen kann
-    status: in_progress
+    status: done
+    gate: true
+    gate_reason: "Noah spielt die V1 nach dem ueberarbeiteten docs/PLAYTEST.md (AK-7); ohne seine Antworten in docs/reports/playtest-v1.md ist T-M12-03 nicht abschliessbar"
     deps: [T-M14-03, T-M14-08, T-M14-09, T-M14-10, T-M14-13, T-M14-14]
     requirements: [R-UI-05]
     acceptance: [AK-7]
-    files: [docs/PLAYTEST.md, docs/ANLEITUNG.md, test/plan-consistency.test.ts, docs/plan/tasks.yaml, docs/plan/03-TASKS.md, docs/reports/playtest-v1.md]
+    files: [docs/PLAYTEST.md, docs/ANLEITUNG.md, scripts/playtest-sheet.mjs, scripts/acceptance.mjs, package.json, test/plan-consistency.test.ts, docs/plan/tasks.yaml, docs/plan/03-TASKS.md, docs/reports/playtest-v1.md]
     tests: [test/docs.test.ts, test/plan-consistency.test.ts]
     dod: "pnpm verify gruen: die Frage zu R-GAME-01 nennt jede Wahlmoeglichkeit der Anforderungszeile mit der Karte zuerst; je eine Frage zu R-GAME-01, R-GAME-02, R-GAME-03, R-GAME-04, R-BAT-05, R-BAT-07, R-PROV-01; je eine Frage zu Neustart des Fensters und zur Schrift IBM Plex; die Anleitung erklaert Rueckzug, Kampfbericht und Bauabbruch. Der vierte Haltepunkt und der Waechter wandern in EINER Aenderung: diese Aufgabe traegt gate: true und gate_reason ('Noah spielt die V1 nach dem ueberarbeiteten docs/PLAYTEST.md (AK-7); ohne seine Antworten in docs/reports/playtest-v1.md ist T-M12-03 nicht abschliessbar') in tasks.yaml nach UND setzt im selben Zug die hart verdrahtete Gate-Liste in test/plan-consistency.test.ts auf ['T-M9-01','T-M10-01','T-M12-03','T-M14-15']; bis dahin steht der gate:-Block mit Absicht NICHT in tasks.yaml, damit der Plan-Waechter waehrend des ganzen Meilensteins gruen bleibt und die Zusage 'pnpm verify gruen' in jeder M14-Aufgabe erfuellbar ist. Der Waechter prueft danach zusaetzlich, dass jede Aufgabe mit gate: true in der Haltepunkttabelle von 03-TASKS.md steht. T-M12-03 haengt in beiden Plandateien an T-M12-01, T-M12-02b und T-M14-15 (T-M14-14 kommt ueber die deps von T-M14-15 mit) und fasst seine DoD auf den V1-Satz - beides ist bereits in beiden Dateien eingetragen und bleibt hier nur zu pruefen. Haltepunkt erfuellt, wenn docs/reports/playtest-v1.md jede Frage beantwortet und jedes Nein in der Befundtabelle traegt"
 
