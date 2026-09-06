@@ -731,19 +731,23 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
 
 #### Querschnitt
 
-- **R-AI-08 — Die KI nutzt die neuen Mittel.** Die KI wirbt Spione an (Gegenspionage
-  in der Hauptstadt bei Krieg oder erlittener Sabotage; Aufklärung auf das Hauptziel;
-  Sabotage auf der schweren Stufe), beantwortet Handelsangebote nach Nutzen und Verhältnis
-  und macht auf der schweren Stufe selbst welche, lässt ihre Fernwaffen wirken (R-BAT-08)
-  und beachtet die Freischaltung — alles über dieselben Kommandos wie der Mensch (R-AI-01).
-  - AK1: WENN eine KI-Macht im Krieg ist und Geld über der Rücklage hat, DANN SOLL sie
-    binnen der Regelfrist einen Gegenspion in ihrer Hauptstadt führen.
-  - AK2: WENN eine KI ein Angebot erhält, dessen Gegenwert zum Marktpreis mindestens die
+- **R-AI-08 — Die KI nutzt die neuen Mittel.** Die KI beantwortet vorliegende Angebote nach
+  Nutzen und Verhältnis, lässt ihre Fernwaffen wirken (R-BAT-08) und beachtet die
+  Freischaltung (R-TECH-01) — alles über dieselben Kommandos wie der Mensch (R-AI-01).
+  *(Die Spionageklauseln — Gegenspion in der Hauptstadt, Aufklärung, Sabotage — sind am
+  2026-09-06 mit R-SPY nach M17 gezogen und aus Anforderungs- und AK-Text entfernt
+  (Entscheidung 3 vom 2026-09-05, begründet in `DECISIONS.md`). Ohne diese Kürzung wäre das
+  Integrationstor unerfüllbar: es verlangte Ereignisse einer Mechanik, die in diesem
+  Meilenstein gar nicht gebaut wird.)*
+  - AK1: WENN eine KI ein Angebot erhält, dessen Gegenwert zum Marktpreis mindestens die
     Regelmarge über dem Gegebenen liegt und das Verhältnis zum Anbieter nicht schlecht ist,
     DANN SOLL sie annehmen; sonst ablehnen — und beides begründen (R-AI-05).
-  - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie durch Sold und Angebote nie
-    zahlungsunfähig werden, und jede Stufe SOLL im Turnier Spionage-, Beschuss- und
-    Handelsereignisse erzeugen — sonst ist die Mechanik für die KI tot.
+  - AK2: WENN die KI über 200 Spieltage spielt, DANN SOLL sie nie zahlungsunfähig werden
+    und keinen Befehl erzeugen, den der Kern wegen der Freischaltung oder eines fehlenden
+    Angebots verwirft.
+  - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie Fabriken bauen, Artillerie
+    ausheben und selbsttätigen Beschuss erzeugen — sonst ist die Feuerautomatik aus
+    R-BAT-08 für die KI tot, gleich wie viele Einzeltests grün sind.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum

@@ -1341,11 +1341,11 @@ tasks:
   - id: T-M15-08
     milestone: M15
     title: Die KI nutzt die neuen Mittel - das Integrationstor
-    status: todo
+    status: done
     deps: [T-M15-01, T-M15-02, T-M15-03, T-M15-04, T-M15-05, T-M15-06, T-M15-07, T-M15-09]
     requirements: [R-AI-08, R-AI-01]
-    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, packages/ai/src/diplomacy.ts, packages/ai/src/decide.ts, apps/headless/src/tournament.ts, data/rules/default/ai.json, packages/core/src/rules/types.ts, docs/plan/01-REQUIREMENTS.md, docs/reports/ai-tournament.md, docs/plan/BALANCING.md, docs/plan/PROGRESS.md]
-    tests: [packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts]
+    files: [packages/ai/src/economy.ts, apps/headless/src/tournament.ts, data/rules/default/ai.json, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/reports/ai-tournament.md, docs/reports/ai-integration.json, docs/plan/BALANCING.md, docs/plan/PROGRESS.md]
+    tests: [packages/ai/src/economy.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
     dod: "Laeuft als letzte Aufgabe von M15; T-M15-09 steht nur deshalb in den deps, damit 'zuletzt' auch numerisch stimmt - sachlich haengt das Tor nicht am Protokollfilter. Weltkarte, 8 KI, 200 Spieltage, gezaehlt aus runTicks(...).events statt aus dem Ringpuffer state.eventLog: RESOURCE_SHORTAGE mit resource money = 0; COMMAND_REJECTED mit dem Freischaltungscode aus R-TECH-01 = 0; COMMAND_REJECTED mit INVALID_TARGET aus diplomatischen Kommandos = 0 (heute 405 von 408). Turnier mit den drei Paarungen schwer/leicht, schwer/normal, normal/leicht: playMatch liefert die Ereigniszahl je Stufe, playTournament summiert sie. Gemessen wird, was M15 hinzufuegt, nicht was M14 schon zusichert - der blosse Existenznachweis fuer Handel entfaellt, weil T-M14-12 bereits mindestens ein TRADE_EXECUTED je KI-Macht verlangt: fuer jede der drei Stufen mindestens ein SELBSTTAETIGES Beschussereignis aus T-M15-07, mindestens eine Kriegserklaerung, die aus dem Verhaeltnis nach R-DIP-06 entsteht und nicht aus der Frontenzahl, und mindestens ein Handel ueber der neuen Regelmarge; in mindestens der Haelfte der Partien jeder Stufe liegt von jeder Art mindestens eine vor. Tabelle mit Datum in docs/reports/ai-tournament.md; Handelsmarge, Angebotsmarge und Ruecklage mit Status in BALANCING.md. In 01-REQUIREMENTS.md ist R-AI-08 auf das gekuerzt, was V1.2 baut: AK1 (Gegenspion) reist mit R-SPY nach M17, und die Spionageklausel in AK3 ist aus dem AK-Text entfernt - sonst ist dieses Tor unerfuellbar; beides mit Verweis auf Entscheidung 3 in DECISIONS.md begruendet"
 
   - id: T-M15-09

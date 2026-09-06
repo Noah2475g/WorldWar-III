@@ -1,0 +1,26 @@
+{
+  "spieltage": 200,
+  "maechte": 8,
+  "ereignisse": 24656,
+  "kriegserklaerungen": 15,
+  "friedensschluesse": 5,
+  "handel": 3155,
+  "fabriken": 44,
+  "artillerie": 11,
+  "beschussSelbsttaetig": 114,
+  "abgelehnt": 1401,
+  "abgelehntZuFrueh": 0,
+  "rekrutiert": {
+    "infantry": 2961,
+    "tank": 3,
+    "artillery": 11
+  },
+  "ablehnungen": {
+    "MOVE_ARMY:ARMY_NOT_FOUND": 1220,
+    "RECRUIT:INSUFFICIENT_RESOURCES": 4,
+    "SET_CAPITAL:ON_COOLDOWN": 28,
+    "SET_STANCE:ARMY_NOT_FOUND": 15,
+    "RECRUIT:INVALID_TARGET": 4,
+    "BUILD:NOT_OWNER": 130
+  }
+}

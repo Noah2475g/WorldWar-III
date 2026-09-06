@@ -25,7 +25,7 @@
       "maxFronts": 2,
       "resourceBonus": 1000,
       "tacticalInterval": 2,
-      "recruitShare": 120,
+      "recruitShare": 200,
       "warThreshold": 450,
       "trustThreshold": 650
     },
@@ -39,7 +39,7 @@
       "maxFronts": 3,
       "resourceBonus": 1000,
       "tacticalInterval": 1,
-      "recruitShare": 500,
+      "recruitShare": 360,
       "warThreshold": 600,
       "trustThreshold": 800
     }

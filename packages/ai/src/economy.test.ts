@@ -2,7 +2,7 @@ import { createInitialState, publicView, type Command, type GameConfig } from '@
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { economyCommands, recruitCommands } from './economy'
+import { economyCommands, recruitCommands, tradeCommands } from './economy'
 
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -86,5 +86,48 @@ describe('R-TECH-02/AK2 Die KI kennt die Freischaltung', () => {
     const commands = economyCommands(context, [])
 
     expect(commands.length, 'die KI baut auch an Tag 31 nichts').toBeGreaterThan(0)
+  })
+})
+
+describe('R-AI-08/AK3 Die KI handelt, bevor der Mangel da ist', () => {
+  it('tauscht fuer das naechste Bauvorhaben, ohne dass etwas knapp ist', () => {
+    // Der teuerste Befund des Meilensteins: gehandelt wurde **erst bei eingetretenem
+    // Mangel** — und ein Mangel heißt, dass ein Vorrat schon aufgebraucht ist. Wer erst
+    // dann tauscht, tauscht immer zu spät und nie für etwas, das er *vorhat*. Auf der
+    // Testkarte baute die KI dadurch über 150 Spieltage keine einzige Fabrik.
+    const context = richContext(30 * TEST_RULES.constants.ticksPerDay)
+    // Reich an allem außer Holz — die Fabrik kostet Holz, ein Mangel liegt nicht vor.
+    ;(context.view.self.resources as Record<string, number>).wood = 1000
+    expect(context.view.self.shortages.length, 'die Lage soll gerade keinen Mangel zeigen').toBe(0)
+
+    const commands = tradeCommands(context, [])
+    const trade = commands.find((command) => command.type === 'TRADE')
+
+    expect(trade, 'kein Tauschbefehl trotz fehlendem Baustoff').toBeDefined()
+    if (trade?.type === 'TRADE') expect(trade.want).toBe('wood')
+  })
+
+  it('tauscht nicht, wenn nichts fehlt', () => {
+    // Die Gegenrichtung: eine KI, die in jedem Tick tauscht, verbrennt am Markt Geld —
+    // und die Zusicherung oben wäre auch dann grün.
+    const context = richContext(30 * TEST_RULES.constants.ticksPerDay)
+
+    expect(tradeCommands(context, [])).toEqual([])
+  })
+
+  it('nimmt die dringlichste Einheit, die auch bezahlbar ist', () => {
+    // Vorher wurde genau eine gewählt — die mit dem größten Rückstand — und wenn die
+    // unbezahlbar war, ging die Provinz leer aus. Gemessen: 3322 Infanteristen, 15 Panzer,
+    // **0 Artillerie**, weil der Panzer den größeren Rückstand hat und am Öl scheitert.
+    const context = richContext(30 * TEST_RULES.constants.ticksPerDay)
+    ;(context.view.self.resources as Record<string, number>).oil = 0
+
+    const commands = recruitCommands(context, [])
+    const recruit = commands.find((command) => command.type === 'RECRUIT')
+
+    expect(recruit, 'kein Aushebungsbefehl trotz vollem Lager').toBeDefined()
+    if (recruit?.type === 'RECRUIT') {
+      expect(recruit.unitKey, 'ohne Öl darf kein Panzer gewählt werden').not.toBe('tank')
+    }
   })
 })

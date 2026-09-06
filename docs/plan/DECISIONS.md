@@ -965,3 +965,25 @@ stillschweigendes „ich" — „Verhältnis zu X", „Die Hauptstadt ist verlor
 Kampfbericht mit Verlusten. Aus fremder Sicht sind sie falsch beziehungsweise verraten
 mehr, als R-DIP-04 erlaubt. Es gibt jetzt vier Fassungen mit der Endung `_FOREIGN`, gewählt
 über `concerns` — dieselbe Angabe, die seit T-M15-01 am Ereignis steht.
+
+---
+
+## 2026-09-06 · T-M15-08 · R-AI-08 · Zurückgenommen: die KI wirbt in M15 keine Spione an
+
+**Entscheidung:** Aus R-AI-08 werden **Gegenspionage, Aufklärung und Sabotage** gestrichen;
+AK1 (Gegenspion in der Hauptstadt) und die Spionageklausel aus AK3 sind entfernt. Die drei
+Akzeptanzkriterien nennen jetzt Angebote, Zahlungsfähigkeit und die Kette
+Fabrik → Artillerie → selbsttätiger Beschuss.
+
+**Begründung:** Spionage ist am 2026-09-05 mit R-SPY-01…06 nach M17 verschoben
+(Entscheidung 3). Eine Anforderung, die Ereignisse einer Mechanik verlangt, die in ihrem
+Meilenstein gar nicht gebaut wird, ist nicht streng — sie ist unerfüllbar, und das
+Integrationstor hätte nie zumachen können. Genau dieser Fehler hat schon einmal das
+Anforderungstor auf 82 von 100 gedrückt und die Abnahme unerreichbar gemacht (Nachtrag
+2.15, behoben von T-M14-01); ihn hier zu wiederholen wäre unentschuldbar.
+
+**Was an die Stelle tritt, ist strenger, nicht milder.** AK3 verlangt jetzt eine **Kette**,
+die vorher niemand geprüft hat: Fabriken, Artillerie **und** selbsttätigen Beschuss. Sie
+war zum Zeitpunkt der Formulierung nachweislich **gerissen** — auf der Testkarte an der
+Fabrik, auf der Weltkarte an der Aushebung. Beides ist mit dieser Aufgabe behoben und
+gemessen (`docs/reports/ai-integration.json`).
