@@ -15,7 +15,15 @@
 export const de = {
   app: {
     title: 'WorldWar',
+    // Die Titelzeile des Startdialogs (T-M22-04, Befund V2-03): der erste Eindruck
+    // sagte "Formular", nicht "Strategiespiel".
+    subtitle: 'Große Strategie, Stunde um Stunde',
+    version: 'Fassung {{version}}',
     loading: 'Die Welt wird aufgebaut …',
+  },
+
+  menu: {
+    title: 'Menü',
   },
 
   header: {
@@ -330,6 +338,9 @@ export const de = {
 
   newGame: {
     title: 'Neue Partie',
+    // Der erste Knopf, wenn ein Stand existiert (T-M22-04, Befund V2-04): wer
+    // wiederkommt, will weiterspielen — nicht suchen.
+    resume: 'Weiterspielen (Tag {{day}})',
     nation: 'Macht',
     seed: 'Startzahl',
     seedHint: 'Dieselbe Startzahl ergibt dieselbe Partie.',

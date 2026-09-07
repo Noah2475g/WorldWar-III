@@ -55,6 +55,7 @@ import {
 import {
   DebugPanel,
   KeyboardHelp,
+  MenuDialog,
   NewGameDialog,
   SavesDialog,
   SettingsDialog,
@@ -84,7 +85,7 @@ import {
   type TutorialState,
   type TutorialTrigger,
 } from './game/tutorial.ts'
-import { autosaveDue, listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
+import { autosaveDue, latestSlot, listSlots, loadFrom, saveTo, type LatestSave, type SlotInfo } from './game/saves.ts'
 import { writeAutosave, HASH_OMIT_KEYS, type AutosaveState } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 
@@ -201,8 +202,10 @@ export function App(props: AppProps) {
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
-  const [dialog, setDialog] = useState<'new' | 'saves' | 'settings' | 'keys' | null>('new')
+  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | null>('new')
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
+  /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
+  const [resume, setResume] = useState<LatestSave | null>(null)
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [targeting, setTargeting] = useState<PendingTarget | null>(null)
   const [victoryAcknowledged, setVictoryAcknowledged] = useState(false)
@@ -727,6 +730,22 @@ export function App(props: AppProps) {
   }, [dialog, storage, ticksPerDay])
 
   /**
+   * Der juengste Stand, sobald keine Partie laeuft (T-M22-04, Befund V2-04): nach dem
+   * Neustart war er zwei Klicks entfernt und wurde nicht angeboten. Er speist den
+   * ersten Knopf des Startdialogs, "Weiterspielen (Tag N)".
+   */
+  useEffect(() => {
+    if (state) return
+    let active = true
+    void latestSlot(storage, ticksPerDay).then((latest) => {
+      if (active) setResume(latest)
+    })
+    return () => {
+      active = false
+    }
+  }, [state, storage, ticksPerDay])
+
+  /**
    * Einen Stand laden — aus der laufenden Partie wie aus dem leeren Fenster (T-M12-07).
    *
    * Der Griff steht hier oben, weil ihn zwei Zweige brauchen: der Befund 26a war, dass
@@ -753,6 +772,75 @@ export function App(props: AppProps) {
     },
     [storage, ticksPerDay, mapById, now],
   )
+
+  /**
+   * Eine neue Partie beginnen — aus dem leeren Fenster wie aus der laufenden Partie
+   * (T-M22-04, Befund V2-05: das Menue kannte vorher nur die Einstellungen, und der
+   * Startdialog wurde ausschliesslich hinter dem Fruehausstieg gezeichnet).
+   */
+  const startNewGame = useCallback(() => {
+    // Die gewaehlte Karte, nicht die Anfangskarte (T-M12-08).
+    const chosenMap = mapById(options.mapId)
+    const fresh = startGame(options, chosenMap, props.rules)
+    setActiveMap(chosenMap)
+    setState(fresh)
+    // The autosave clock starts now, not at the epoch — otherwise the
+    // real-time half of the rule is satisfied before the first day is played
+    // and the chosen interval never applies.
+    setAutosave({ lastSavedTick: fresh.tick, lastSavedRealTime: now(), nextSlot: 0 })
+    // Open on the player's own country rather than on the top-left corner of
+    // the world — the first thing they look for is where they are.
+    // Die Mitten kommen aus der gewaehlten Karte: der Merker `centres` haelt
+    // auf diesem Durchlauf noch die alten und faende die neue Hauptstadt nicht.
+    const capital = fresh.players.p1?.capitalProvinceId
+    const centre = capital ? chosenMap.provinces.find((province) => province.id === capital)?.center : undefined
+    if (centre) {
+      dispatch({
+        type: 'setView',
+        view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: chosenMap.width, height: chosenMap.height, ...VIEWPORT }),
+      })
+    }
+    setDialog(null)
+  }, [options, mapById, props.rules, now])
+
+  /**
+   * Der Startdialog, EINMAL beschrieben: vor der ersten Partie steht er hinter dem
+   * Fruehausstieg, aus der laufenden Partie oeffnet ihn das Menue (T-M22-04).
+   */
+  const newGameDialog =
+    dialog === 'new' ? (
+      <NewGameDialog
+        options={options}
+        nations={selectedMap.startPositions.map((s) => s.nation)}
+        maps={props.maps}
+        aiBonus={aiBonusPercent(props.rules, options.difficulty)}
+        onChange={(next) => {
+          // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
+          // der Dialog "Vereinigte Staaten" und die Partie beginnt als "Nordland" —
+          // der stille Zwilling des Blindschalters, den toConfig still auffaengt.
+          if (next.mapId !== options.mapId) {
+            const nations = mapById(next.mapId).startPositions.map((entry) => entry.nation)
+            setOptions({
+              ...next,
+              nation: nations.includes(next.nation) ? next.nation : (nations[0] ?? ''),
+            })
+            return
+          }
+          setOptions(next)
+        }}
+        onStart={startNewGame}
+        // Schliessen darf es: der leere Zustand traegt den Weg zurueck (T-M12-07),
+        // und aus der laufenden Partie geht es einfach dorthin zurueck.
+        onClose={() => setDialog(null)}
+        onSaves={() => setDialog('saves')}
+        // Weiterspielen nur, solange keine Partie laeuft: mitten in einer Partie
+        // hiesse der Knopf "die laufende Partie verwerfen" und truege den falschen Namen.
+        resume={state ? null : resume}
+        onResume={() => {
+          if (resume) loadSave(resume.name)
+        }}
+      />
+    ) : null
 
   const selected = view?.provinces.find((p) => p.id === ui.selectedProvince) ?? null
 
@@ -964,57 +1052,7 @@ export function App(props: AppProps) {
             }}
           />
         )}
-        {dialog === 'new' && (
-          <NewGameDialog
-            options={options}
-            nations={selectedMap.startPositions.map((s) => s.nation)}
-            maps={props.maps}
-            aiBonus={aiBonusPercent(props.rules, options.difficulty)}
-            onChange={(next) => {
-              // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
-              // der Dialog "Vereinigte Staaten" und die Partie beginnt als "Nordland" —
-              // der stille Zwilling des Blindschalters, den toConfig still auffaengt.
-              if (next.mapId !== options.mapId) {
-                const nations = mapById(next.mapId).startPositions.map((entry) => entry.nation)
-                setOptions({
-                  ...next,
-                  nation: nations.includes(next.nation) ? next.nation : (nations[0] ?? ''),
-                })
-                return
-              }
-              setOptions(next)
-            }}
-            onStart={() => {
-              // Die gewaehlte Karte, nicht die Anfangskarte (T-M12-08).
-              const chosen = mapById(options.mapId)
-              const fresh = startGame(options, chosen, props.rules)
-              setActiveMap(chosen)
-              setState(fresh)
-              // The autosave clock starts now, not at the epoch — otherwise the
-              // real-time half of the rule is satisfied before the first day is played
-              // and the chosen interval never applies.
-              setAutosave({ lastSavedTick: fresh.tick, lastSavedRealTime: now(), nextSlot: 0 })
-              // Open on the player's own country rather than on the top-left corner of
-              // the world — the first thing they look for is where they are.
-              // Die Mitten kommen aus der gewaehlten Karte: der Merker `centres` haelt
-              // auf diesem Durchlauf noch die alten und faende die neue Hauptstadt nicht.
-              const capital = fresh.players.p1?.capitalProvinceId
-              const centre = capital ? chosen.provinces.find((province) => province.id === capital)?.center : undefined
-              if (centre) {
-                dispatch({
-                  type: 'setView',
-                  view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: chosen.width, height: chosen.height, ...VIEWPORT }),
-                })
-              }
-              setDialog(null)
-            }}
-            // Schliessen darf es jetzt: der leere Zustand darueber traegt den Weg
-            // zurueck. Vorher war dies ein toter Knopf — sichtbar, bedienbar, wirkungslos
-            // — und damit selbst ein Verstoss gegen R-UI-05 (T-M12-07).
-            onClose={() => setDialog(null)}
-            onSaves={() => setDialog('saves')}
-          />
-        )}
+        {newGameDialog}
       </div>
     )
   }
@@ -1044,7 +1082,8 @@ export function App(props: AppProps) {
           setSpeed(0)
         }}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
-        onMenu={() => setDialog('settings')}
+        // Das Menue mit Wegen statt eines Sprungs in die Einstellungen (T-M22-04, V2-05).
+        onMenu={() => setDialog('menu')}
         onSaves={() => setDialog('saves')}
         onPanel={(panel) => dispatch({ type: 'openPanel', panel })}
       />
@@ -1155,6 +1194,17 @@ export function App(props: AppProps) {
         }}
       />
 
+      {/* Das Menue: Neue Partie / Spielstaende / Einstellungen — auch aus der
+          laufenden Partie (T-M22-04, Befund V2-05). */}
+      {dialog === 'menu' && (
+        <MenuDialog
+          onNewGame={() => setDialog('new')}
+          onSaves={() => setDialog('saves')}
+          onSettings={() => setDialog('settings')}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {newGameDialog}
       {dialog === 'settings' && (
         <SettingsDialog
           settings={ui.settings}

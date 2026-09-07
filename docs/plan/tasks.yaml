@@ -1740,12 +1740,12 @@ tasks:
   - id: T-M22-04
     milestone: M22
     title: Start mit Gesicht, Menue mit Wegen, Weiterspielen mit einem Klick
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05, R-GAME-03]
     design: [D-24]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befunde V2-03/V2-04/V2-05: der Startdialog ist ein Formular ohne Titel; nach dem Neustart ist der juengste Stand zwei Klicks entfernt; das Menue kennt nur Einstellungen. Fertig, wenn (1) der Startdialog eine Titelzeile mit Spielnamen traegt, (2) bei vorhandenem Spielstand der ERSTE Knopf Weiterspielen (Tag N) ist und den juengsten Stand laedt, (3) das Menue die drei Wege Neue Partie / Spielstaende / Einstellungen bietet - auch aus der laufenden Partie. Tests am gerenderten Baum; der Weiterspielen-Test faellt gegen den heutigen Stand"
 
   - id: T-M22-05

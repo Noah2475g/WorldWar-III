@@ -56,21 +56,54 @@ export async function listSlots(storage: StoragePort, ticksPerDay: number): Prom
   return slots
 }
 
-async function savedDay(
-  storage: StoragePort,
-  name: string,
-  ticksPerDay: number,
-): Promise<number | null> {
+async function savedTick(storage: StoragePort, name: string): Promise<number | null> {
   if (!(await storage.exists(name))) return null
   try {
     const raw = JSON.parse(await storage.read(name)) as { savedAtTick?: number }
     if (typeof raw.savedAtTick !== 'number') return null
-    return Math.floor(raw.savedAtTick / ticksPerDay) + 1
+    return raw.savedAtTick
   } catch {
     // A slot that cannot be read is shown as unreadable rather than as empty: the
     // difference matters when the player is looking for a game they know they saved.
     return null
   }
+}
+
+async function savedDay(
+  storage: StoragePort,
+  name: string,
+  ticksPerDay: number,
+): Promise<number | null> {
+  const tick = await savedTick(storage, name)
+  return tick === null ? null : Math.floor(tick / ticksPerDay) + 1
+}
+
+export interface LatestSave {
+  name: string
+  day: number
+}
+
+/**
+ * Der jüngste Stand — für „Weiterspielen (Tag N)" (T-M22-04, Befund V2-04).
+ *
+ * „Jüngst" heißt hier: der am weitesten gespielte Stand. Der Umschlag trägt keine
+ * Wanduhrzeit, nur `savedAtTick` — und der weiteste Stand ist ohnehin das, was
+ * „Weiterspielen" meint: dort ging die Partie zuletzt weiter. Autosaves und manuelle
+ * Stände zählen gleichermaßen; bei Gleichstand gewinnt der zuerst gelistete.
+ */
+export async function latestSlot(storage: StoragePort, ticksPerDay: number): Promise<LatestSave | null> {
+  const names = [
+    ...Array.from({ length: MANUAL_SLOTS }, (_, i) => manualSlotName(i)),
+    ...Array.from({ length: AUTOSAVE_SLOTS }, (_, i) => autosaveName(i)),
+  ]
+
+  let best: { name: string; tick: number } | null = null
+  for (const name of names) {
+    const tick = await savedTick(storage, name)
+    if (tick === null) continue
+    if (!best || tick > best.tick) best = { name, tick }
+  }
+  return best ? { name: best.name, day: Math.floor(best.tick / ticksPerDay) + 1 } : null
 }
 
 export type LoadOutcome =

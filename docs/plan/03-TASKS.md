@@ -3462,8 +3462,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D24.3
 - **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`,
-  `apps/desktop/src/game/saves.ts`
-- **Tests zuerst:** der Weiterspielen-Test (lädt den jüngsten Stand) — fällt heute.
+  `apps/desktop/src/game/saves.ts`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** der Weiterspielen-Test (lädt den jüngsten Stand;
+  `Dialogs.test.tsx` und `App.test.tsx`) — fällt heute.
 - **Fertig wenn:** Titelzeile im Startdialog; „Weiterspielen (Tag N)" als **erster**
   Knopf, wenn ein Stand existiert; Menü mit Neue Partie / Spielstände / Einstellungen,
   auch aus der laufenden Partie.

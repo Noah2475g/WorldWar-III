@@ -144,7 +144,9 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
 describe('R-UI-05 Einstellungen wirken', () => {
   it('aendert die Schriftgroesse sichtbar', () => {
     startGame()
+    // Seit T-M22-04 oeffnet "Menü" das Menue mit Wegen; die Einstellungen sind einer davon.
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
 
     const select = screen.getByRole('combobox', { name: /Schriftgröße/ }) as HTMLSelectElement
     fireEvent.change(select, { target: { value: 'large' } })
@@ -160,6 +162,7 @@ describe('R-UI-05 Einstellungen wirken', () => {
     expect(screen.queryByRole('region', { name: 'Debug' })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Debug-Ansicht' }))
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
@@ -511,6 +514,7 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
     const audio = fakeAudio()
     startGame({ audio: audio.factory })
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Ton' }))
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
@@ -877,6 +881,88 @@ describe('R-UI-05 Die Spielstaende sind erreichbar', () => {
 
     // Vorher war der Startdialog hier fuer immer weg und nur Neuladen half.
     expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+  })
+})
+
+/**
+ * Weiterspielen mit einem Klick, ein Menü mit Wegen (T-M22-04, R-UI-05, R-GAME-03,
+ * Befunde V2-04/V2-05).
+ *
+ * Nach dem Neustart war der jüngste Stand zwei Klicks entfernt und wurde nicht
+ * angeboten; das Menü kannte nur die Einstellungen. Jetzt: existiert ein Spielstand,
+ * ist „Weiterspielen (Tag N)" der ERSTE Knopf des Startdialogs und lädt den jüngsten
+ * Stand; das Menü bietet aus der laufenden Partie die drei Wege Neue Partie /
+ * Spielstände / Einstellungen.
+ */
+describe('R-GAME-03 Weiterspielen mit einem Klick', () => {
+  const withSaves = async () => {
+    const storage = new MemoryStorage()
+    const older = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    await storage.write(manualSlotName(1), serialise(older, 'Alt'))
+    // Der juengste Stand: Tag 3 (Tick 48 bei 24 Ticks je Tag).
+    const newer = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    newer.tick = 48
+    await storage.write(manualSlotName(0), serialise(newer, 'Neu'))
+    return storage
+  }
+
+  it('bietet Weiterspielen als ERSTEN Knopf des Startdialogs an und laedt den juengsten Stand', async () => {
+    const storage = await withSaves()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+
+    // Der Knopf nennt den Tag des juengsten Stands …
+    const resume = await screen.findByRole('button', { name: 'Weiterspielen (Tag 3)' })
+    // … und steht VOR allem anderen im Dialog (V2-04: er war zwei Klicks entfernt).
+    const body = document.querySelector('.dialog__body')
+    expect(body?.querySelector('button')).toBe(resume)
+
+    fireEvent.click(resume)
+
+    // Ein Klick, und die Partie laeuft am geladenen Tag weiter.
+    await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy())
+    expect(screen.getByText(/Tag 3 · 00:00/)).toBeTruthy()
+  })
+
+  it('bietet ohne Spielstand kein Weiterspielen an', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+
+    expect(screen.queryByRole('button', { name: /Weiterspielen/ })).toBeNull()
+  })
+})
+
+describe('R-UI-05 Das Menue kennt drei Wege — auch aus der laufenden Partie', () => {
+  it('bietet Neue Partie, Spielstaende und Einstellungen an', async () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    const menu = screen.getByRole('dialog', { name: 'Menü' })
+
+    expect(within(menu).getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+    expect(within(menu).getByRole('button', { name: 'Spielstände' })).toBeTruthy()
+    expect(within(menu).getByRole('button', { name: 'Einstellungen' })).toBeTruthy()
+  })
+
+  it('fuehrt aus der laufenden Partie zu den Einstellungen', () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+
+    expect(screen.getByRole('dialog', { name: 'Einstellungen' })).toBeTruthy()
+  })
+
+  it('fuehrt aus der laufenden Partie zum Startdialog fuer eine neue Partie', () => {
+    // V2-05: aus der laufenden Partie gab es keinen Weg zu "Neue Partie".
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+
+    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+    // Abbrechen laesst die laufende Partie unberuehrt.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+    expect(screen.getByRole('banner')).toBeTruthy()
   })
 })
 

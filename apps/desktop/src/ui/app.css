@@ -456,6 +456,43 @@ body {
   gap: var(--sp-lg);
 }
 
+/* Start mit Gesicht (T-M22-04, Befund V2-03): der Spielname als Kopf des
+   Startdialogs, Untertitel und Fassung gedaempft darunter. */
+.start {
+  text-align: center;
+  border-bottom: 1px solid var(--paper-sunk);
+  padding-bottom: var(--sp-md);
+}
+
+.start__title {
+  font-family: var(--font-map);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.start__subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.start__version {
+  margin: 2px 0 0;
+  font-family: var(--font-num);
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+/* Das Menue mit Wegen (T-M22-04): drei Knoepfe untereinander, gut zu treffen. */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  min-width: 220px;
+}
+
 .field {
   display: flex;
   flex-direction: column;
