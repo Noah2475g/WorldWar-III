@@ -2,7 +2,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Tutorial } from './Tutorial.tsx'
+import { TEST_RULES } from '@worldwar/testkit'
 import { TUTORIAL_START, TUTORIAL_STEPS, advance, dismiss } from '../game/tutorial.ts'
+import { t } from '../i18n/text.ts'
+import { firstUnitAt } from '../game/opening.ts'
+import { duration } from './format.ts'
+
+/** Die Regeln der laufenden Partie tragen die Zahlen, die im Wartschritt erscheinen. */
+const rules = TEST_RULES
+const ticksPerDay = TEST_RULES.constants.ticksPerDay
 
 /**
  * The guided start, on screen (T-M13-02, R-UI-05).
@@ -17,21 +25,21 @@ afterEach(cleanup)
 
 describe('R-UI-05 Die Einstiegshilfe', () => {
   it('zeigt den ersten Schritt mit Fortschritt', () => {
-    render(<Tutorial state={TUTORIAL_START} onDismiss={() => undefined} />)
+    render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
 
-    expect(screen.getByText(TUTORIAL_STEPS[0]!.title)).toBeTruthy()
+    expect(screen.getByText(t(`tutorial.steps.${TUTORIAL_STEPS[0]!.id}.title`))).toBeTruthy()
     expect(screen.getByText(`Schritt 1 von ${TUTORIAL_STEPS.length}`)).toBeTruthy()
   })
 
   it('zeigt nichts, wenn sie abgeschaltet ist', () => {
-    const { container } = render(<Tutorial state={dismiss()} onDismiss={() => undefined} />)
+    const { container } = render(<Tutorial state={dismiss()} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
 
     expect(container.firstChild).toBeNull()
   })
 
   it('laesst sich abschalten', () => {
     const onDismiss = vi.fn()
-    render(<Tutorial state={TUTORIAL_START} onDismiss={onDismiss} />)
+    render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={onDismiss} />)
 
     fireEvent.click(screen.getByRole('button', { name: /Nicht mehr zeigen/ }))
 
@@ -41,7 +49,7 @@ describe('R-UI-05 Die Einstiegshilfe', () => {
   it('faengt keine Eingabe ab', () => {
     // A hint beside the game, not a door in front of it: no dialogue role, no modal,
     // and nothing that swallows a click meant for the map.
-    const { container } = render(<Tutorial state={TUTORIAL_START} onDismiss={() => undefined} />)
+    const { container } = render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
     const box = container.firstElementChild as HTMLElement
 
     expect(box.getAttribute('role')).not.toBe('dialog')
@@ -54,13 +62,46 @@ describe('R-UI-05 Die Einstiegshilfe', () => {
     // the component is fed by it rather than by its own copy of the sequence.
     let state = TUTORIAL_START
     for (const step of TUTORIAL_STEPS) {
-      const { unmount } = render(<Tutorial state={state} onDismiss={() => undefined} />)
-      expect(screen.getByText(step.title)).toBeTruthy()
+      const { unmount } = render(<Tutorial state={state} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
+      expect(screen.getByText(t(`tutorial.steps.${step.id}.title`))).toBeTruthy()
       unmount()
       state = advance(state, step.completesOn)
     }
 
     expect(state.step).toBeNull()
     expect(state.seen).toBe(true)
+  })
+})
+
+describe('R-UI-05 Die Fuehrung nennt das Warten beim Namen (T-M21-03)', () => {
+  /** Die Führung bis zu dem Schritt, der das Warten erklärt. */
+  const bisZumWarten = ['selectProvince', 'openBuild', 'setSpeed'].reduce(
+    (state, klick) => advance(state, klick as never),
+    TUTORIAL_START,
+  )
+
+  it('setzt die Wartezeit aus den Regeln in den Satz ein', () => {
+    render(<Tutorial state={bisZumWarten} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
+    const text = screen.getByText(/Startvorrat/).textContent ?? ''
+
+    expect(text, 'der Platzhalter steht noch da').not.toContain('{{')
+    expect(text, 'die Dauer fehlt').toContain(duration(firstUnitAt(rules), ticksPerDay))
+    expect(text, 'auf das Vorspulen wird nicht gezeigt').toMatch(/spulen|Tempo/)
+  })
+
+  it('schreibt die Zahl nirgends in den Text', () => {
+    // Die Regel des Projekts: eine Zahl steht nicht an zwei Orten. Stünde sie im Satz,
+    // wäre sie beim ersten Balancing falsch, und niemand merkte es — die Führung wird ja
+    // gerade von dem gelesen, der die Regeln noch nicht kennt.
+    const vorlage = t('tutorial.steps.dayPassed.text')
+
+    expect(vorlage, 'die Vorlage nennt eine feste Stundenzahl').not.toMatch(/\b\d+\s*(h|Stunden)\b/)
+    expect(vorlage, 'ohne Platzhalter kann die Dauer nicht aus den Regeln kommen').toContain('{{wait}}')
+  })
+
+  it('nennt bei einem anderen Schritt keine Zahl', () => {
+    render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
+
+    expect(screen.getByText(t('tutorial.steps.select.text'))).toBeTruthy()
   })
 })

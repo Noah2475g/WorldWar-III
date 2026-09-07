@@ -448,8 +448,14 @@ export const de = {
         text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
       },
       dayPassed: {
-        title: 'Der erste Tag ist um',
-        text: 'Alles rechnet stündlich weiter: Vorkommen fördern, Bauten wachsen, Moral steigt oder fällt. Sie müssen dafür nichts tun — nur entscheiden, wann Sie eingreifen.',
+        title: 'Jetzt heißt es warten',
+        // Die Dauer kommt aus den Regeln (T-M21-03) — sie steht hier bewusst nicht als
+        // Zahl, sonst waere sie beim ersten Balancing falsch und niemand merkte es.
+        text:
+          'Ihr Startvorrat trägt genau ein Gebäude, und bis Ihre erste Einheit steht, vergehen ' +
+          '{{wait}} — Spieltag {{day}}. Bis dahin gibt es nichts zu klicken, was voranbringt: ' +
+          'alles rechnet stündlich von selbst weiter. Stellen Sie das Tempo höher oder spulen ' +
+          'Sie vor. Das Warten ist kein Fehler, es ist das Spiel.',
       },
       buildCompleted: {
         title: 'Das erste Gebäude steht',

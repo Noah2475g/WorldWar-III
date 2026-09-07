@@ -41,9 +41,17 @@ export type TutorialTrigger =
   | 'dayPassed'
 
 export interface TutorialStep {
+  /**
+   * Die Kennung — und zugleich der Pfad zu den Texten: `tutorial.steps.<id>.title` und
+   * `.text` (T-M21-01, T-M21-03).
+   *
+   * Der Schritt traegt seinen Text nicht mehr selbst. Das war bis T-M21-03 so und ging
+   * gut, solange kein Text eine Zahl brauchte: `TUTORIAL_STEPS` ist eine Konstante, wird
+   * beim Laden des Moduls ausgewertet und kennt die Regeln des laufenden Spiels nicht.
+   * Ein Satz wie „bis dahin vergehen 43 Stunden" laesst sich dort nicht bilden, ohne die
+   * Zahl hineinzuschreiben — und dann stuende sie an zwei Orten.
+   */
   id: string
-  title: string
-  text: string
   /** What the player has to do — or what has to happen — for the step to complete. */
   completesOn: TutorialTrigger
 }
@@ -69,57 +77,17 @@ export function triggerFor(eventType: string): TutorialTrigger | null {
 }
 
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [
-  {
-    id: 'select',
-    title: t('tutorial.steps.select.title'),
-    text: t('tutorial.steps.select.text'),
-    completesOn: 'selectProvince',
-  },
-  {
-    id: 'build',
-    title: t('tutorial.steps.build.title'),
-    text: t('tutorial.steps.build.text'),
-    completesOn: 'openBuild',
-  },
-  {
-    id: 'speed',
-    title: t('tutorial.steps.speed.title'),
-    text: t('tutorial.steps.speed.text'),
-    completesOn: 'setSpeed',
-  },
+  { id: 'select', completesOn: 'selectProvince' },
+  { id: 'build', completesOn: 'openBuild' },
+  { id: 'speed', completesOn: 'setSpeed' },
   // Ab hier fuehrt das Spiel, nicht die Knopfleiste (T-M21-02). Die Reihenfolge folgt
   // dem, was ein neuer Spieler tatsaechlich erlebt: erst laeuft die Uhr, dann steht das
   // Gebaeude, dann marschiert die erste Einheit.
-  {
-    id: 'dayPassed',
-    title: t('tutorial.steps.dayPassed.title'),
-    text: t('tutorial.steps.dayPassed.text'),
-    completesOn: 'dayPassed',
-  },
-  {
-    id: 'buildCompleted',
-    title: t('tutorial.steps.buildCompleted.title'),
-    text: t('tutorial.steps.buildCompleted.text'),
-    completesOn: 'buildCompleted',
-  },
-  {
-    id: 'unitRecruited',
-    title: t('tutorial.steps.unitRecruited.title'),
-    text: t('tutorial.steps.unitRecruited.text'),
-    completesOn: 'unitRecruited',
-  },
-  {
-    id: 'fastForward',
-    title: t('tutorial.steps.fastForward.title'),
-    text: t('tutorial.steps.fastForward.text'),
-    completesOn: 'fastForward',
-  },
-  {
-    id: 'events',
-    title: t('tutorial.steps.events.title'),
-    text: t('tutorial.steps.events.text'),
-    completesOn: 'openEvents',
-  },
+  { id: 'dayPassed', completesOn: 'dayPassed' },
+  { id: 'buildCompleted', completesOn: 'buildCompleted' },
+  { id: 'unitRecruited', completesOn: 'unitRecruited' },
+  { id: 'fastForward', completesOn: 'fastForward' },
+  { id: 'events', completesOn: 'openEvents' },
 ]
 
 export interface TutorialState {

@@ -1136,6 +1136,8 @@ export function App(props: AppProps) {
 
       <Tutorial
         state={tutorial}
+        rules={props.rules}
+        ticksPerDay={ticksPerDay}
         onDismiss={() => {
           setTutorial(dismissTutorial())
           rememberTutorialSeen()

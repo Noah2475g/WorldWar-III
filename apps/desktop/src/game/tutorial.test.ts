@@ -1,6 +1,7 @@
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { createInitialState, step, type GameConfig } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
+import { hasKey, t } from '../i18n/text.ts'
 import {
   TUTORIAL_OFF,
   TUTORIAL_START,
@@ -28,9 +29,13 @@ describe('R-UI-05 Einstiegshilfe', () => {
   it('fuehrt durch acht Schritte, und jeder sagt etwas', () => {
     // Fuenf waren es bis T-M21-02; drei folgen seither dem Spiel statt der Knopfleiste.
     expect(TUTORIAL_STEPS).toHaveLength(8)
+    // Der Schritt traegt seit T-M21-03 nur noch seine Kennung; der Text steht in der
+    // Sprachdatei und wird ueber genau diese Kennung gefunden. Ein Schritt ohne Eintrag
+    // dort bekaeme von t() den rohen Schluessel in Klammern — also wird beides geprueft.
     for (const step of TUTORIAL_STEPS) {
-      expect(step.text.length, step.id).toBeGreaterThan(40)
-      expect(step.title.length, step.id).toBeGreaterThan(3)
+      expect(hasKey(`tutorial.steps.${step.id}.title`), step.id).toBe(true)
+      expect(hasKey(`tutorial.steps.${step.id}.text`), step.id).toBe(true)
+      expect(t(`tutorial.steps.${step.id}.text`).length, step.id).toBeGreaterThan(40)
     }
   })
 
