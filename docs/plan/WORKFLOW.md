@@ -61,10 +61,12 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
    seit dem 2026-09-03 eine uncommittete, überholte Änderung an
    `packages/core/src/persistence/migrate.ts` — vor dem Merge verwerfen.
-2. **AK-8 auffrischen (optional, M16-Pflege):** `worldwar.exe` wurde gegen `1c33ec7`
-   gebaut; seither sind 37 Erzeugnis-Dateien weiter (M22–M24). Für ein frisches Bündel:
-   Tauri-Bau **bei unangefasster Quelle** laufen lassen, dann AK-8 nachmessen
-   (`docs/reports/packaging.md`). Zählt nicht gegen V1.
+2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+   2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
+   Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
+   neuen Bündel (starten, speichern, schließen, neu starten, laden —
+   `docs/reports/packaging.md` dokumentiert noch den Lauf gegen `1c33ec7`). Zählt
+   nicht gegen V1.
 3. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
    nächste Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich
    weiterspielen?*
@@ -123,4 +125,4 @@ rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
 | Tests | ~1650 schnell · Kern 96,8 % · gesamt 95,4 % |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
-| Programm | `worldwar.exe` 7,50 MiB (Stand `1c33ec7`, vor M22–M24) |
+| Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |
