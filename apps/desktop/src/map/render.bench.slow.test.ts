@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
+import { markersFor } from './markers.ts'
 import { prepareFrame, type RenderProvince } from './render.ts'
 import { labelsFor } from './labels.ts'
 
@@ -120,5 +121,84 @@ describe('R-UI-12 Die Beschriftung passt ins Bildbudget', () => {
 
   it('kostet auf Weltansicht gar nichts, weil dort keine Namen stehen', () => {
     expect(labelsFor(candidates, wholeWorld, viewport, measure)).toEqual([])
+  })
+})
+
+/**
+ * Was die Bewegung kostet (T-M20-04, R-ARCH-06/AK2).
+ *
+ * Seit T-M20-04 steht eine marschierende Armee zwischen den Provinzen statt in der Mitte,
+ * und das ist eine Rechnung je Armee und Bild. Sie liegt auf der **billigen** Ebene — die
+ * Flächen werden davon nicht neu gezeichnet —, aber „billig" ist eine Behauptung, bis sie
+ * gemessen ist.
+ *
+ * Gemessen wird der Aufschlag **relativ**: derselbe Lauf mit und ohne Uhr, unmittelbar
+ * nacheinander. Ein absoluter Wert wäre auf einer Maschine, die nebenher etwas anderes
+ * tut, eine Aussage über die Maschine.
+ */
+describe('R-ARCH-06 Was die Bewegung der Armeen kostet', () => {
+  const centres = Object.fromEntries(world.provinces.map((p, i) => [p.id, { x: i * 7, y: i * 3 }]))
+  // Sechzig Armeen, die Hälfte unterwegs — mehr, als eine echte Partie in einer Provinz
+  // je zusammenbringt.
+  const armies = world.provinces.slice(0, 60).map((province, index) => ({
+    id: `a${index}`,
+    provinceId: province.id,
+    owner: 'p1',
+    strength: 1000,
+    own: true,
+    ...(index % 2 === 0
+      ? {
+          march: {
+            toProvinceId: world.provinces[(index + 7) % world.provinces.length]!.id,
+            departureTick: 0,
+            arrivalTick: 100,
+          },
+        }
+      : {}),
+  }))
+  const buildings = Object.fromEntries(world.provinces.slice(0, 80).map((p) => [p.id, 2]))
+  const view = { x: 0, y: 0, scale: 2.78 }
+
+  const messe = (tick?: number): number => {
+    const extras = { battleProvinces: [], ...(tick === undefined ? {} : { tick }) }
+    for (let i = 0; i < 20; i++) markersFor(armies, buildings, centres, view, extras)
+
+    const durations: number[] = []
+    for (let frame = 0; frame < 300; frame++) {
+      const started = performance.now()
+      markersFor(armies, buildings, centres, view, extras)
+      durations.push(performance.now() - started)
+    }
+    return percentile(durations, 0.95)
+  }
+
+  it('bleibt mit Bewegung im selben Budget wie ohne', () => {
+    const ohne = messe()
+    const mit = messe(50)
+
+    // Beide weit unter dem Bild — die Markerebene ist nicht die teure.
+    expect(mit, `mit Bewegung ${mit.toFixed(3)} ms`).toBeLessThan(16.7)
+    // Und der Aufschlag bleibt in derselben Größenordnung: eine Interpolation je Armee
+    // ist zwei Multiplikationen, keine neue Ebene.
+    expect(mit, `ohne ${ohne.toFixed(3)} ms, mit ${mit.toFixed(3)} ms`).toBeLessThan(Math.max(ohne * 4, 1))
+  })
+
+  it('haelt das Bildbudget mit Flaechen und Bewegung zusammen', () => {
+    const provincesForFrame = provinces
+    for (let i = 0; i < 10; i++) {
+      prepareFrame(provincesForFrame, view, viewport, 'political')
+      markersFor(armies, buildings, centres, view, { battleProvinces: [], tick: 50 })
+    }
+
+    const durations: number[] = []
+    for (let frame = 0; frame < 120; frame++) {
+      const started = performance.now()
+      prepareFrame(provincesForFrame, view, viewport, 'political')
+      markersFor(armies, buildings, centres, view, { battleProvinces: [], tick: 50 })
+      durations.push(performance.now() - started)
+    }
+
+    const p95 = percentile(durations, 0.95)
+    expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
   })
 })

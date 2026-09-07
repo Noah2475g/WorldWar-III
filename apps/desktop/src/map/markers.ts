@@ -28,6 +28,18 @@ export interface ArmyMarker {
    * about its composition (R-DIP-04), so it keeps the plain infantry box.
    */
   icon?: IconName
+  /**
+   * Der laufende Marsch, wenn die Armee unterwegs ist (T-M20-04, R-UI-04).
+   *
+   * Alle drei zusammen oder gar nicht: ohne Abmarschzeit gibt es keinen Anteil, ohne
+   * Ankunft keinen Nenner, ohne naechste Provinz kein Ziel.
+   */
+  march?: {
+    /** Die naechste Provinz auf dem Weg — dorthin bewegt sich der Marker. */
+    toProvinceId: string
+    departureTick: number
+    arrivalTick: number
+  }
 }
 
 export type MarkerKind = 'building' | 'army' | 'battle' | 'capital'
@@ -66,10 +78,51 @@ export const MAX_BUILDING_PIPS = 4
 export const BUILDING_OFFSET_Y = 12
 
 export interface MarkerExtras {
+  /**
+   * Die Spieluhr. Ohne sie stehen marschierende Armeen in der Provinzmitte — genau wie
+   * bis T-M20-04, und genau das, was bei abgeschalteter Bewegung gewollt ist.
+   */
+  tick?: number
   /** The player's own capital, drawn as a star. */
   capitalProvinceId?: string | null
   /** Provinces where fighting is going on, from the view — not from the armies. */
   battleProvinces?: readonly string[]
+}
+
+/**
+ * Wo eine marschierende Armee gerade steht — zwischen zwei Provinzen (T-M20-04).
+ *
+ * R-UI-04 verspricht **Bewegungs- und** Kampfanimationen, und nur die Kampfhaelfte gab es:
+ * der Ring um ein Gefecht atmet seit T-M13-16, eine marschierende Armee dagegen klebte in
+ * der Provinzmitte und stand im naechsten Bild ohne Uebergang in der naechsten. Die
+ * Bewegung, die das Spiel die ganze Zeit rechnet, war unsichtbar.
+ *
+ * **Eine reine Funktion, und das ist der eigentliche Entwurf.** `MapCanvas` ist die am
+ * schlechtesten abgedeckte Datei der Oberflaeche (168 von 249 Zeilen), weil sie ohne
+ * Leinwand nicht laeuft. Was hier steht, laeuft ohne alles: der Anteil des Weges ist
+ * Arithmetik, und Arithmetik kann ein Test festnageln.
+ *
+ * Springt zurueck auf die Provinzmitte, sobald etwas fehlt oder nicht stimmt — eine
+ * Armee an einem erfundenen Zwischenort waere schlimmer als eine, die nicht wandert.
+ */
+export function marchPoint(
+  army: ArmyMarker,
+  centres: Readonly<Record<string, Point>>,
+  tick: number,
+): Point | null {
+  const from = centres[army.provinceId]
+  const march = army.march
+  if (!from || !march) return null
+
+  const to = centres[march.toProvinceId]
+  const spanne = march.arrivalTick - march.departureTick
+  // Ein Marsch ohne Dauer ist ein Sprung, und durch null teilt niemand.
+  if (!to || spanne <= 0) return null
+
+  const anteil = (tick - march.departureTick) / spanne
+  if (anteil <= 0 || anteil >= 1) return null
+
+  return { x: from.x + (to.x - from.x) * anteil, y: from.y + (to.y - from.y) * anteil }
 }
 
 export function markersFor(
@@ -100,7 +153,10 @@ export function markersFor(
     const centre = centres[army.provinceId]
     if (!centre) continue
 
-    const point = toScreen(centre, view)
+    // Unterwegs steht der Marker zwischen den Provinzen, sonst in der Mitte. `tick`
+    // fehlt heisst: keine Bewegung — der Aufrufer will keine, oder es gibt keine Uhr.
+    const unterwegs = extras.tick === undefined ? null : marchPoint(army, centres, extras.tick)
+    const point = toScreen(unterwegs ?? centre, view)
     markers.push({
       kind: 'army',
       provinceId: army.provinceId,

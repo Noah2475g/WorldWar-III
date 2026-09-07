@@ -63,6 +63,13 @@ export interface MapCanvasProps {
   battleProvinces?: readonly string[]
   /** Spielstunden je Sekunde — darueber hoert jede Bewegung auf (T-M13-16). */
   speed?: number
+  /**
+   * Die Spieluhr, fuer den Ort einer marschierenden Armee (T-M20-04).
+   *
+   * Fehlt sie, stehen alle Armeen in der Provinzmitte — was bei abgeschalteter Bewegung
+   * genau das Richtige ist und was jeder Test bekommt, der sie nicht mitgibt.
+   */
+  tick?: number
   onSelect: (provinceId: string | null) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
@@ -73,8 +80,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 960, height: 600 })
-  // Die Uhr fuer die eine Bewegung, die es gibt. Sie laeuft nur, solange irgendwo
-  // gekaempft wird — eine Animationsschleife ohne Anlass ist ein Ventilator.
+  // Die Bildschirmuhr fuer alles, was sich von selbst bewegt. Sie laeuft nur, solange es
+  // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
 
@@ -156,8 +163,12 @@ export function MapCanvas(props: MapCanvasProps) {
   }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
 
   useEffect(() => {
+    // Die Schleife laeuft, solange irgendetwas sich bewegt: ein Gefecht atmet, eine
+    // Armee marschiert. Ohne Anlass laeuft sie gar nicht — eine Animationsschleife ohne
+    // Grund ist ein Ventilator (T-M13-16), und das gilt fuer Maersche wie fuer Ringe.
     const fighting = (props.battleProvinces ?? []).length > 0
-    if (!fighting || !motionAllowed(props.speed ?? 0)) return
+    const marching = props.armies.some((army) => army.march !== undefined)
+    if ((!fighting && !marching) || !motionAllowed(props.speed ?? 0)) return
 
     let running = true
     const step = (time: number): void => {
@@ -169,7 +180,7 @@ export function MapCanvas(props: MapCanvasProps) {
     return () => {
       running = false
     }
-  }, [props.battleProvinces, props.speed])
+  }, [props.battleProvinces, props.armies, props.speed])
 
   // The cheap layer: armies, selection, labels.
   useEffect(() => {
@@ -217,6 +228,9 @@ export function MapCanvas(props: MapCanvasProps) {
     for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
+      // Ohne `tick` stehen marschierende Armeen in der Provinzmitte. Genau das ist
+      // gewollt, wenn Bewegung abgeschaltet ist (T-M20-04).
+      ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
     })) {
       if (marker.kind === 'building') {
         // Ein Quadrat je Gebaeude, in einer Reihe unter der Provinzmitte.
@@ -267,6 +281,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.path,
     props.capitalProvinceId,
     props.battleProvinces,
+    props.tick,
     props.speed,
     clock,
     props.view,

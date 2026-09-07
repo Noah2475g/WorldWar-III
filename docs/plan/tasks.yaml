@@ -1617,12 +1617,12 @@ tasks:
   - id: T-M20-04
     milestone: M20
     title: Die Oberflaeche antwortet
-    status: todo
+    status: done
     deps: [T-M20-02, T-M20-03, T-M19-02]
     requirements: [R-UI-17, R-UI-04]
     design: [D-22]
-    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/app.css]
-    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    files: [apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/markers.test.ts, apps/desktop/src/map/render.bench.slow.test.ts]
     dod: "Der Teil von interaktiver, der keine Symbole meint - und hier liegt eine offene V1-Zusage: R-UI-04 verspricht Bewegungs- UND Kampfanimationen, und nur die Kampfhaelfte existiert. Fertig, wenn die gewaehlte Provinz ihr Kennzeichen auf der Karte traegt, eine marschierende Armee sich zwischen zwei Bildern bewegt, und BEIDES aufhoert, sobald motionAllowed falsch sagt. pnpm verify gruen und die Zeichenmessung wiederholt: 16,7 ms bei p95, gemessen statt geschaetzt. Die zwei gebauten Bremsen bleiben unangetastet - oberhalb der Tempogrenze und unter prefers-reduced-motion bewegt sich nichts. Steht zuletzt, weil sie die riskanteste Aufgabe ist: MapCanvas ist die am schlechtesten abgedeckte Datei der Oberflaeche"
 
   # --- M21: Die ersten Spieltage fuehren (Noahs Wunsch vom 2026-09-07) -----------------

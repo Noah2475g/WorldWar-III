@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { MAP_COLORS } from './render.ts'
 import { colorForPlayer, fillFor } from './modes.ts'
 import { zoomAt, type View, type ViewLimits } from './picking.ts'
-import { BUILDING_OFFSET_Y, MAX_BUILDING_PIPS, dominantIcon, markersFor, type ArmyMarker } from './markers.ts'
+import {
+  BUILDING_OFFSET_Y,
+  MAX_BUILDING_PIPS,
+  dominantIcon,
+  marchPoint,
+  markersFor,
+  type ArmyMarker,
+} from './markers.ts'
 import { PLAYER_COLORS, contrastRatio, deltaE } from '../ui/tokens.ts'
 
 /**
@@ -177,5 +184,79 @@ describe('R-UI-12 Hauptstadt, Kampf und Gattung', () => {
     })
 
     expect(markers.map((m) => m.kind)).toEqual(['building', 'army', 'capital', 'battle'])
+  })
+})
+
+describe('R-UI-04 Eine marschierende Armee bewegt sich (T-M20-04)', () => {
+  /**
+   * Die offene Hälfte einer V1-Zusage: R-UI-04 verspricht „Bewegungs- **und**
+   * Kampfanimationen", und nur die Kampfhälfte gab es. Der Ring um ein Gefecht atmet
+   * seit T-M13-16; eine marschierende Armee klebte in der Provinzmitte und stand im
+   * nächsten Bild ohne Übergang in der nächsten.
+   *
+   * Geprüft wird als **Arithmetik**, nicht am Bild. `MapCanvas` ist die am schlechtesten
+   * abgedeckte Datei der Oberfläche, weil sie ohne Leinwand nicht läuft — der Anteil des
+   * Weges dagegen läuft überall, und was hier grün ist, ist wirklich geprüft.
+   */
+  const centres = { a: { x: 0, y: 0 }, b: { x: 100, y: 200 } }
+  const marschierend: ArmyMarker = {
+    id: 'a1',
+    provinceId: 'a',
+    owner: 'p1',
+    strength: 1000,
+    own: true,
+    march: { toProvinceId: 'b', departureTick: 10, arrivalTick: 20 },
+  }
+
+  it('steht auf halbem Weg, wenn die Haelfte der Zeit um ist', () => {
+    expect(marchPoint(marschierend, centres, 15)).toEqual({ x: 50, y: 100 })
+  })
+
+  it('bewegt sich gleichmaessig ueber die ganze Strecke', () => {
+    expect(marchPoint(marschierend, centres, 12)).toEqual({ x: 20, y: 40 })
+    expect(marchPoint(marschierend, centres, 18)).toEqual({ x: 80, y: 160 })
+  })
+
+  it('steht vor dem Abmarsch und nach der Ankunft in der Provinzmitte', () => {
+    // Null heisst „nimm die Mitte". Ein Marker, der vor dem Abmarsch schon unterwegs
+    // waere, zeigte einen Befehl an, den der Spieler noch gar nicht gegeben hat.
+    expect(marchPoint(marschierend, centres, 10)).toBeNull()
+    expect(marchPoint(marschierend, centres, 9)).toBeNull()
+    expect(marchPoint(marschierend, centres, 20)).toBeNull()
+    expect(marchPoint(marschierend, centres, 25)).toBeNull()
+  })
+
+  it('bleibt in der Mitte, wenn etwas fehlt oder nicht stimmt', () => {
+    // Eine Armee an einem erfundenen Zwischenort waere schlimmer als eine, die nicht
+    // wandert: der Spieler klickt dorthin, wo nichts ist.
+    const ohneMarsch: ArmyMarker = { ...marschierend }
+    delete ohneMarsch.march
+    expect(marchPoint(ohneMarsch, centres, 15), 'ohne Marschangabe').toBeNull()
+    expect(
+      marchPoint({ ...marschierend, march: { ...marschierend.march!, toProvinceId: 'gibtesnicht' } }, centres, 15),
+      'Ziel ohne Mittelpunkt',
+    ).toBeNull()
+    expect(
+      marchPoint({ ...marschierend, march: { ...marschierend.march!, arrivalTick: 10 } }, centres, 10),
+      'Marsch ohne Dauer — hier wuerde durch null geteilt',
+    ).toBeNull()
+    expect(marchPoint({ ...marschierend, provinceId: 'gibtesnicht' }, centres, 15), 'Start ohne Mittelpunkt').toBeNull()
+  })
+
+  it('setzt den Marker unterwegs zwischen die Provinzen', () => {
+    const view = { x: 0, y: 0, scale: 1 }
+    const unterwegs = markersFor([marschierend], {}, centres, view, { tick: 15 })
+      .find((marker) => marker.kind === 'army')
+
+    expect(unterwegs).toMatchObject({ x: 50, y: 100 })
+  })
+
+  it('laesst ihn in der Mitte, wenn keine Uhr mitkommt', () => {
+    // Genau der Fall „Bewegung abgeschaltet": ohne `tick` gibt es keinen Anteil, und der
+    // Marker steht da, wo er bis T-M20-04 immer stand.
+    const view = { x: 0, y: 0, scale: 1 }
+    const still = markersFor([marschierend], {}, centres, view, {}).find((marker) => marker.kind === 'army')
+
+    expect(still).toMatchObject({ x: 0, y: 0 })
   })
 })

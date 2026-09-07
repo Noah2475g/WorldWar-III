@@ -383,6 +383,15 @@ export function App(props: AppProps) {
         const icon = army.units
           ? dominantIcon(army.units.map((stack) => ({ unitKey: stack.unitKey, hp: stack.hpTotal })))
           : undefined
+        // Der laufende Marsch, wenn die Sicht ihn kennt: erste Station des Weges,
+        // Abmarsch und Ankunft. Fehlt eines davon, bleibt der Marker in der Mitte
+        // stehen — eine Armee an einem erfundenen Zwischenort waere schlimmer als eine,
+        // die nicht wandert (T-M20-04).
+        const naechste = army.path?.[0]
+        const march =
+          naechste && army.departureTick != null && army.arrivalTick != null
+            ? { toProvinceId: naechste, departureTick: army.departureTick, arrivalTick: army.arrivalTick }
+            : undefined
         return {
           id: army.id,
           provinceId: army.provinceId,
@@ -390,6 +399,7 @@ export function App(props: AppProps) {
           strength: army.strength,
           own: army.owner === 'p1',
           ...(icon ? { icon } : {}),
+          ...(march ? { march } : {}),
         }
       }),
     [view],
@@ -1055,6 +1065,7 @@ export function App(props: AppProps) {
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
             speed={speed}
+            tick={state.tick}
             {...(selectedPath ? { path: selectedPath } : {})}
             onSelect={selectOnMap}
             onViewChange={(next) => dispatch({ type: 'setView', view: next })}
