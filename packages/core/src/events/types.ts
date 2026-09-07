@@ -6,6 +6,7 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Terrain,
   Tick,
 } from '../state/types'
 
@@ -140,6 +141,12 @@ export interface BattleStartedEvent extends BaseEvent {
   sides: PlayerId[][]
 }
 
+/** Staerke einer Seite vor und nach dem Schlagabtausch eines Ticks, in Trefferpunkten. */
+export interface BattleSideStrength {
+  before: Fixed
+  after: Fixed
+}
+
 export interface BattleResolvedEvent extends BaseEvent {
   type: 'BATTLE_RESOLVED'
   battleId: BattleId
@@ -147,6 +154,24 @@ export interface BattleResolvedEvent extends BaseEvent {
   /** Losses in hit points per player — the basis of the battle report (R-BAT-07). */
   losses: Record<PlayerId, Fixed>
   victor: PlayerId | null
+  /**
+   * Was der Kampfbericht zeichnet (T-M27-01, R-BAT-05, D25.6).
+   *
+   * Der Kern kannte Staerken, Gelaende und Festung seit M4 — das Ereignis nannte nur
+   * die Verluste, und die Anzeige haette raten muessen. ADDITIV und deshalb optional:
+   * Ereignisse gehen nicht in den Zustands-Hash ein, aber alte Spielstaende tragen
+   * BATTLE_RESOLVED ohne diese Felder, und die duerfen weiter laden. Jede neue
+   * Erzeugung setzt alle fuenf.
+   */
+  strengths?: Record<PlayerId, BattleSideStrength>
+  /** Das Gelaende gehoert allen — es steht am Ereignis, damit der Bericht es nennt. */
+  terrain?: Terrain
+  /** Festungsstufe der Provinz (0 = keine); sie schuetzt nur den Eigentuemer. */
+  fortressLevel?: number
+  /** Seiten, die eingegraben kaempften: Eigentuemer der Provinz, alle Armeen stehend. */
+  entrenched?: PlayerId[]
+  /** Seiten unter Rueckzugssperre: keine ihrer Armeen durfte in diesem Tick angreifen. */
+  attackBlocked?: PlayerId[]
 }
 
 export interface BombardmentEvent extends BaseEvent {

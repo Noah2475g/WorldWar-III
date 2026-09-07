@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
+import { battleReport, dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -599,5 +599,83 @@ describe('R-DIP-04 Was zwischen Fremden geschieht, erfaehrt man dem Wesen nach',
     ).text
 
     expect(eigen).toMatch(/Verluste/)
+  })
+})
+
+/**
+ * Das Gefecht sammelt seine Zahlen fuer die Anzeige (T-M27-01, R-BAT-05, D25.6).
+ *
+ * Der Kern kennt Staerken, Verluste, Gelaende und Festung — der Protokolleintrag
+ * nannte nur die Verluste. `battleReport` formt aus dem BATTLE_RESOLVED-Ereignis den
+ * Anzeigedatensatz, den die Staerkebalken (T-M27-02) zeichnen. Drei Grenzen gehoeren
+ * dazu: ein altes Ereignis ohne die additiven Felder ergibt KEINEN Datensatz (lieber
+ * kein Bild als ein erfundenes), ein Unbeteiligter bekommt keine Mengen (R-DIP-04),
+ * und der Betrachter steht zuerst — es ist sein Bericht.
+ */
+describe('R-BAT-05 Der Anzeigedatensatz eines Gefechts', () => {
+  const nations: Record<string, string> = { p1: 'Deutschland', p2: 'Russland', p3: 'Frankreich' }
+  const namen = { player: (id: string) => nations[id] ?? id, ticksPerDay: 24 }
+
+  const gefecht = (over: Record<string, unknown> = {}): GameEvent =>
+    event({
+      type: 'BATTLE_RESOLVED',
+      concerns: ['p1', 'p2'],
+      battleId: 'b1',
+      provinceId,
+      losses: { p1: 5_000, p2: 12_000 },
+      victor: 'p1',
+      strengths: {
+        p1: { before: 40_000, after: 35_000 },
+        p2: { before: 20_000, after: 8_000 },
+      },
+      terrain: 'mountain',
+      fortressLevel: 2,
+      entrenched: ['p1'],
+      attackBlocked: ['p2'],
+      ...over,
+    })
+
+  it('bindet Staerken, Verluste und Umstaende an bekannte Zahlen', () => {
+    const report = battleReport(gefecht(), map, { ...namen, viewer: 'p1' })
+
+    expect(report).not.toBeNull()
+    expect(report!.provinceName).toBe(provinceName)
+    expect(report!.terrain).toBe('mountain')
+    expect(report!.fortressLevel).toBe(2)
+    expect(report!.victor).toBe('Deutschland')
+
+    expect(report!.sides).toHaveLength(2)
+    const [ich, gegner] = report!.sides
+    expect(ich!.name).toBe('Deutschland')
+    expect(ich!.before).toBe(40_000)
+    expect(ich!.after).toBe(35_000)
+    expect(ich!.losses).toBe(5_000)
+    expect(ich!.entrenched).toBe(true)
+    expect(ich!.attackBlocked).toBe(false)
+    expect(gegner!.name).toBe('Russland')
+    expect(gegner!.losses).toBe(12_000)
+    expect(gegner!.entrenched).toBe(false)
+    expect(gegner!.attackBlocked).toBe(true)
+  })
+
+  it('stellt den Betrachter an die erste Stelle — es ist sein Bericht', () => {
+    const report = battleReport(gefecht(), map, { ...namen, viewer: 'p2' })
+
+    expect(report!.sides[0]!.name).toBe('Russland')
+    expect(report!.sides[1]!.name).toBe('Deutschland')
+  })
+
+  it('gibt fuer ein altes Ereignis ohne die additiven Felder keinen Datensatz', () => {
+    const alt = gefecht({ strengths: undefined, terrain: undefined, fortressLevel: undefined })
+
+    expect(battleReport(alt, map, { ...namen, viewer: 'p1' })).toBeNull()
+  })
+
+  it('gibt einem Unbeteiligten keine Mengen (R-DIP-04)', () => {
+    expect(battleReport(gefecht(), map, { ...namen, viewer: 'p3' })).toBeNull()
+  })
+
+  it('gibt fuer andere Ereignisarten nichts', () => {
+    expect(battleReport(event({ type: 'BATTLE_STARTED', provinceId }), map, namen)).toBeNull()
   })
 })

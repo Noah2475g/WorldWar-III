@@ -3775,9 +3775,13 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-BAT-05, R-UI-10
 - **Entwurf:** D25.6
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/game/events.ts`
+- **Dateien:** `apps/desktop/src/game/events.ts`, `packages/core/src/events/types.ts`,
+  `packages/core/src/phases/combat.ts`
+  *(die fehlenden Angaben — Stärken vorher/nachher, Gelände, Festungsstufe, Eingrabung,
+  Rückzugssperre — kamen additiv als optionale Felder ans `BATTLE_RESOLVED`-Ereignis;
+  alte Spielstände tragen sie nicht und ergeben ehrlich keinen Datensatz)*
 - **Tests zuerst:** der Datensatz an ein Gefecht mit bekannten Zahlen gebunden — fällt
-  ohne die Sammlung.
+  ohne die Sammlung (`events.test.ts`, `combat.test.ts` für die neuen Ereignisfelder).
 - **Fertig wenn:** je Gefecht ein Anzeigedatensatz entsteht (Stärke beider Seiten
   vorher/nachher, Verluste, Gelände, Festung, Eingrabung, Rückzugssperre), gespeist aus
   den BATTLE-Ereignissen plus der Sicht zum Ereigniszeitpunkt. Fehlende Angaben werden

@@ -1931,12 +1931,12 @@ tasks:
   - id: T-M27-01
     milestone: M27
     title: Das Gefecht sammelt seine Zahlen fuer die Anzeige
-    status: todo
+    status: done
     deps: []
     requirements: [R-BAT-05, R-UI-10]
     design: [D-25]
-    files: [apps/desktop/src/game/events.ts]
-    tests: [apps/desktop/src/game/events.test.ts]
+    files: [apps/desktop/src/game/events.ts, packages/core/src/events/types.ts, packages/core/src/phases/combat.ts]
+    tests: [apps/desktop/src/game/events.test.ts, packages/core/src/phases/combat.test.ts]
     dod: "Der Kern kennt Staerken, Verluste, Gelaende und Festung - der Protokolleintrag nennt nur die Verluste. Fertig, wenn je Gefecht ein Anzeigedatensatz entsteht (Staerke beider Seiten vorher/nachher, Verluste, Gelaende, Festung, Eingrabung, Rueckzugssperre), gespeist aus den BATTLE-Ereignissen plus der Sicht zum Ereigniszeitpunkt. Fehlt eine Angabe im Ereignis, wird sie dort ADDITIV ergaenzt (kein Hash-Bruch, Golden-Master unberuehrt - sonst Entscheid in DECISIONS.md statt stillem Umbau). Ein Test bindet den Datensatz an ein Gefecht mit bekannten Zahlen und faellt ohne die Sammlung"
 
   - id: T-M27-02

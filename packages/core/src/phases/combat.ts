@@ -123,6 +123,12 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
       }
     }
 
+    // Die Staerke vor dem Schlagabtausch, je Seite — fuer den Kampfbericht (T-M27-01).
+    const strengthBefore: Record<PlayerId, Fixed> = {}
+    for (const side of fighting) {
+      strengthBefore[side.player] = side.armies.reduce((sum, army) => sum + armyHp(army), 0)
+    }
+
     const losses: Record<PlayerId, Fixed> = {}
     for (const entry of planned) {
       const dealt = applyDamage(entry.side, entry.damage)
@@ -171,11 +177,36 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
     const survivors = fighting.filter((side) => side.armies.some((army) => army.units.length > 0))
     const victor = survivors.length === 1 ? survivors[0]!.player : null
 
+    // Der Anzeigedatensatz des Gefechts (T-M27-01, R-BAT-05, D25.6) — additiv am
+    // Ereignis, denn der Kern kennt diese Groessen und die Anzeige soll nicht raten.
+    // Nachher wird nachgemessen statt gerechnet: dieselbe Quelle wie die Verluste.
+    const strengths: Record<PlayerId, { before: Fixed; after: Fixed }> = {}
+    for (const side of fighting) {
+      strengths[side.player] = {
+        before: strengthBefore[side.player] ?? 0,
+        after: side.armies.reduce((sum, army) => sum + armyHp(army), 0),
+      }
+    }
+    // Eingegraben ist exakt, wem defenceMultiplier den Eingrabungsbonus gibt:
+    // Eigentuemer der Provinz, alle Armeen stehend. Die Rueckzugssperre nennt Seiten,
+    // von denen KEINE Armee in diesem Tick angreifen durfte (D6.8).
+    const entrenched = fighting
+      .filter((side) => province.owner === side.player && side.armies.every((army) => army.path.length === 0))
+      .map((side) => side.player)
+    const attackBlocked = fighting
+      .filter((side) => side.armies.every((army) => draft.tick < army.cannotAttackUntil))
+      .map((side) => side.player)
+
     emit(ctx.events, draft.tick, 'BATTLE_RESOLVED', {
       battleId,
       provinceId,
       losses,
       victor,
+      strengths,
+      terrain: province.terrain,
+      fortressLevel: province.buildings.fortress ?? 0,
+      entrenched,
+      attackBlocked,
       concerns: parties,
     })
 

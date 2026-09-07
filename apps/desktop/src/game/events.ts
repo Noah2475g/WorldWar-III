@@ -1,4 +1,4 @@
-import type { GameEvent, MapData, PublicView, Rules } from '@worldwar/core'
+import type { GameEvent, MapData, PublicView, Rules, Terrain } from '@worldwar/core'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { hasKey, t } from '../i18n/text.ts'
 import { amount, unfix } from '../ui/format.ts'
@@ -141,6 +141,75 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
       return event.playerId === viewer
     default:
       return false
+  }
+}
+
+/**
+ * Eine Seite des Kampfberichts, mit Namen statt Kennungen (T-M27-01, R-BAT-05).
+ *
+ * Die Zahlen bleiben Festkomma — formatiert wird beim Zeichnen, nicht beim Sammeln,
+ * damit die Balkenlängen aus denselben Werten entstehen wie die Zahlen daneben.
+ */
+export interface BattleReportSide {
+  playerId: string
+  name: string
+  /** Stärke in Trefferpunkten vor und nach dem Schlagabtausch (Festkomma). */
+  before: number
+  after: number
+  losses: number
+  entrenched: boolean
+  attackBlocked: boolean
+}
+
+/** Der Anzeigedatensatz eines Gefechts — die Datenquelle der Stärkebalken (D25.6). */
+export interface BattleReportData {
+  provinceName: string
+  terrain: Terrain
+  /** Festungsstufe der Provinz; 0 heißt keine. Sie schützt nur den Eigentümer. */
+  fortressLevel: number
+  /** Wer das Feld behauptet, beim Namen — oder null, wenn niemand. */
+  victor: string | null
+  sides: BattleReportSide[]
+}
+
+/**
+ * Das Gefecht sammelt seine Zahlen für die Anzeige (T-M27-01, R-BAT-05, D25.6).
+ *
+ * Drei Grenzen, jede mit Absicht: ein altes Ereignis ohne die additiven Felder ergibt
+ * **keinen** Datensatz — lieber kein Bild als ein erfundenes; ein Unbeteiligter bekommt
+ * keine Mengen (R-DIP-04, dieselbe Linie wie die `_FOREIGN`-Textfassung); und der
+ * Betrachter steht zuerst, denn es ist sein Bericht.
+ */
+export function battleReport(
+  event: GameEvent,
+  map: MapData,
+  naming: EventNaming = {},
+): BattleReportData | null {
+  if (event.type !== 'BATTLE_RESOLVED') return null
+  if (!event.strengths || event.terrain === undefined) return null
+  if (!concernsViewer(event, naming.viewer)) return null
+
+  const playerName = (id: string): string => naming.player?.(id) ?? id
+  const ids = Object.keys(event.strengths).sort((a, b) => a.localeCompare(b, 'de'))
+  if (naming.viewer && ids.includes(naming.viewer)) {
+    ids.splice(ids.indexOf(naming.viewer), 1)
+    ids.unshift(naming.viewer)
+  }
+
+  return {
+    provinceName: map.provinces.find((p) => p.id === event.provinceId)?.name ?? event.provinceId,
+    terrain: event.terrain,
+    fortressLevel: event.fortressLevel ?? 0,
+    victor: event.victor ? playerName(event.victor) : null,
+    sides: ids.map((id) => ({
+      playerId: id,
+      name: playerName(id),
+      before: event.strengths![id]?.before ?? 0,
+      after: event.strengths![id]?.after ?? 0,
+      losses: event.losses[id] ?? 0,
+      entrenched: event.entrenched?.includes(id) ?? false,
+      attackBlocked: event.attackBlocked?.includes(id) ?? false,
+    })),
   }
 }
 
