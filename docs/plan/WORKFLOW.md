@@ -75,7 +75,25 @@ alte Worktrees weg (`git worktree list` zeigt mehrere; nur dieser ist aktuell).
 
 ---
 
+## 2b · Geplant, nicht gebaut: M19, M20, M21
+
+Aus Noahs Playtest am 2026-09-07 sind drei Meilensteine mit **fünfzehn Aufgaben** entstanden.
+**Nichts davon ist gebaut**, und keiner blockiert die V1-Abnahme.
+
+| | | |
+|---|---|---|
+| **M19** | Die Karte zeigt, was da ist | der Kartenfehler: 130 von 237 Provinzen verlieren Land |
+| **M20** | Die Karte spricht mit | Symbole und Farben, wo heute Wörter stehen |
+| **M21** | Die ersten Spieltage führen | der geführte Einstieg |
+
+> **Wenn du das umsetzt, lies `docs/plan/BAUPLAN-M19-M21.md`** — eine Datei, je Aufgabe
+> Dateien, Zeilen, Code vorher/nachher, Test und Fallen. Sie ist so gebaut, dass du **nicht
+> suchen musst**. Die Reihenfolge steht dort oben; arbeite sie von oben ab.
+
+---
+
 ## 3 · Was gilt (nicht neu herleiten)
+
 
 - **Kein Remote, nichts gemerged.** Es gibt keinen Push, kein GitHub, keine CI.
 - **Der Plan-Wächter ist scharf.** `npx vitest run test/plan-consistency.test.ts` sagt in

@@ -27,6 +27,13 @@ created: 2026-09-02
 4. Wähle die nächste Aufgabe aus `tasks.yaml` (§1) und lies **genau zwei Dinge**: ihren
    Abschnitt `### T-…` in `03-TASKS.md` und das Entwurfskapitel, das sie nennt.
 
+> **Für M19, M20 und M21 gilt etwas anderes, und es spart dir das meiste:** diese fünfzehn
+> Aufgaben haben einen **Bauplan** — `docs/plan/BAUPLAN-M19-M21.md`. Er nennt je Aufgabe die
+> Dateien, die Zeilen, den Code vorher und nachher, den Test und die Fallen. Lies **nur den
+> Abschnitt deiner Aufgabe** dort; er ist selbsttragend. Weder `03-TASKS.md` noch
+> `02-DESIGN.md` sind dafür nötig — sie begründen, der Bauplan baut.
+
+
 **Erst nachschlagen, wenn du es brauchst:** `01-REQUIREMENTS.md` (was gebaut wird),
 `02-DESIGN.md` (wie), `PROBLEME.md` (offene Befunde, die neuesten unten), `DECISIONS.md`
 (warum etwas so entschieden wurde), `docs/research/SUPREMACY-MECHANICS.md` (Quelle für
