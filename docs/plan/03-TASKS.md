@@ -3574,9 +3574,13 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D24.4
 - **Abhängigkeiten:** T-M22-01
 - **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/App.tsx`,
-  `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`
+  *(Panels und Stylesheet kamen dazu: der aufklappbare Eintrag lebt im Protokoll —
+  `EventEntry.body` und das `details/summary` gehören dorthin, nicht in die App)*
 - **Tests zuerst:** der Körper an einem Tag mit bekannten Zahlen — fällt gegen den
-  heutigen leeren Eintrag.
+  heutigen leeren Eintrag (`events.test.ts`); das Aufklappen am gerenderten Baum
+  (`Panels.test.tsx`); die Verdrahtung über einen ganzen Spieltag (`App.test.tsx`).
 - **Fertig wenn:** der Bericht aufklappbar trägt: Bilanz je Rohstoff (nur ≠ 0),
   Moralrichtung je eigener Provinz, fertige/laufende Aufträge, „morgen neu: X". Kein
   neues Kern-Ereignis — die Oberfläche liest den Zustand am Tageswechsel.

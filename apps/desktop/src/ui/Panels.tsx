@@ -535,6 +535,14 @@ export interface EventEntry {
    * haben wie „Vietnam ist gefallen" am anderen Ende der Welt.
    */
   self?: boolean
+  /**
+   * Der aufklappbare Körper einer Zeile (T-M24-01, R-TIME-06, Befund V2-06).
+   *
+   * Heute trägt ihn nur der Tagesbericht: die Zeile wird ein `details/summary`, die
+   * Überschrift bleibt die Zeile, die Absätze stehen dahinter. Eine Zeile ohne Körper
+   * bleibt, was sie war.
+   */
+  body?: readonly string[]
 }
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
@@ -647,7 +655,19 @@ export function EventLog({
                   title={t(`alerts.${entry.category ?? 'other'}`)}
                 />
               )}
-              {entry.provinceId ? (
+              {entry.body ? (
+                /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
+                   die Überschrift, der Körper steht dahinter — details/summary reicht,
+                   im Stil der Lagekarte. */
+                <details className="log__report">
+                  <summary>{entry.text}</summary>
+                  <ul>
+                    {entry.body.map((line, lineIndex) => (
+                      <li key={lineIndex}>{line}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : entry.provinceId ? (
                 <button
                   type="button"
                   className="log__jump"

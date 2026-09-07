@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { EVENT_TYPES, type EventType, type GameEvent, type MapData } from '@worldwar/core'
+import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { describeEvent, provinceOf } from './events.ts'
+import { dayReportBody, describeEvent, provinceOf } from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -389,6 +389,123 @@ describe('R-UI-07 Der Machtname bestimmt den Numerus des Satzes', () => {
 
     expect(raus).toContain('Vereinigte Staaten sind ausgeschieden')
     expect(sieg).toContain('Vereinigte Staaten haben gewonnen')
+  })
+})
+
+/**
+ * Der Tagesbericht bekommt einen Koerper (T-M24-01, R-TIME-06, R-UI-05, Befund V2-06).
+ *
+ * "Tagesbericht fuer Tag 8." war eine Ueberschrift ohne Koerper — der wichtigste
+ * wiederkehrende Eintrag sagte nichts. Der Koerper kommt NICHT aus einem neuen
+ * Kern-Ereignis: die Huelle liest am Tageswechsel den Zustand (D24.4) und formt daraus
+ * die vier Absaetze — Bilanz je Rohstoff (nur die von null verschiedenen), Moral je
+ * eigener Provinz mit Richtung, fertige und laufende Auftraege, "morgen neu: X" aus der
+ * Freischaltungsachse.
+ *
+ * Der Test bindet den Koerper an einen Tag mit bekannten Zahlen; gegen den heutigen
+ * leeren Eintrag faellt er schon beim Import.
+ */
+describe('R-TIME-06 Der Tagesbericht traegt einen Koerper', () => {
+  /** Eine Sicht mit bekannten Zahlen: Tick 24 = Morgen des zweiten Spieltags. */
+  const sicht = (): PublicView =>
+    ({
+      tick: 24,
+      playerId: 'p1',
+      self: {
+        economy: {
+          food: { stock: 500_000, production: 220_000, consumption: 100_000, balance: 120_000, committed: 0 },
+          wood: { stock: 100_000, production: 50_000, consumption: 50_000, balance: 0, committed: 0 },
+          iron: { stock: 80_000, production: 0, consumption: 40_000, balance: -40_000, committed: 0 },
+        },
+      },
+      provinces: [
+        {
+          id: 'A',
+          name: 'Alpha',
+          owner: 'p1',
+          morale: 62_000,
+          moraleTarget: 80_000,
+          buildQueue: [{ id: 'b1', building: 'fortress', startedTick: 20, completesAtTick: 68 }],
+          recruitQueue: [],
+        },
+        {
+          id: 'B',
+          name: 'Beta',
+          owner: 'p1',
+          morale: 70_000,
+          moraleTarget: 55_000,
+          buildQueue: [],
+          recruitQueue: [],
+        },
+        { id: 'C', name: 'Gamma', owner: 'p2' },
+      ],
+    }) as unknown as PublicView
+
+  const regeln = (): Rules =>
+    ({
+      constants: { ticksPerDay: 24 },
+      buildings: { barracks: { availableFromDay: 1 }, fortress: { availableFromDay: 3 } },
+      units: { infantry: { availableFromDay: 1 }, transport: { availableFromDay: 3 } },
+    }) as unknown as Rules
+
+  const tagesereignisse = (): GameEvent[] => [
+    event({ type: 'BUILD_COMPLETED', tick: 20, provinceId: 'A', building: 'barracks' }),
+    event({ type: 'UNIT_RECRUITED', tick: 22, provinceId: 'B', unitKey: 'infantry', count: 3, armyId: 'a1' }),
+  ]
+
+  it('nennt die Bilanz je Rohstoff — und nur die von null verschiedenen', () => {
+    const text = dayReportBody(sicht(), regeln(), tagesereignisse()).join('\n')
+
+    expect(text).toContain('Nahrung +120')
+    expect(text).toContain('Eisen −40')
+    // Material steht auf ±0 und ist damit keine Auskunft.
+    expect(text).not.toContain('Material')
+  })
+
+  it('nennt die Moral jeder eigenen Provinz mit Richtung', () => {
+    const text = dayReportBody(sicht(), regeln(), tagesereignisse()).join('\n')
+
+    // Alpha strebt nach oben (Ziel 80 ueber 62), Beta nach unten (Ziel 55 unter 70).
+    expect(text).toContain('Alpha 62 % ↗')
+    expect(text).toContain('Beta 70 % ↘')
+    // Die fremde Provinz gehoert nicht in meinen Bericht.
+    expect(text).not.toContain('Gamma')
+  })
+
+  it('nennt fertige und laufende Auftraege', () => {
+    const text = dayReportBody(sicht(), regeln(), tagesereignisse()).join('\n')
+
+    expect(text).toContain('Kaserne')
+    expect(text).toMatch(/3\s*×\s*Infanterie/)
+    // Die Festung ist noch im Bau und nennt ihren Fertigtag (Tick 68 → Tag 3).
+    expect(text).toMatch(/Festung.*Tag 3/)
+  })
+
+  it('sagt, was morgen neu ist — aus der Freischaltungsachse', () => {
+    const text = dayReportBody(sicht(), regeln(), tagesereignisse()).join('\n')
+
+    // Tick 24 = Spieltag 2; morgen ist Tag 3: Festung und Transportschiff.
+    expect(text).toMatch(/Morgen neu:.*Festung/)
+    expect(text).toMatch(/Morgen neu:.*Transportschiff/)
+    // Was laengst da ist, ist nicht neu.
+    expect(text).not.toMatch(/Morgen neu:.*Kaserne/)
+  })
+
+  it('laesst keinen Platzhalter und keine Kennung durch', () => {
+    const zeilen = dayReportBody(sicht(), regeln(), tagesereignisse())
+    for (const zeile of zeilen) {
+      expect(zeile).not.toContain('{{')
+      expect(zeile).not.toMatch(/\bp\d\b|\[|fortress|infantry|barracks/)
+    }
+  })
+
+  it('sagt an einem leeren Tag EINEN ehrlichen Satz statt gar nichts', () => {
+    const leer = { tick: 24, playerId: 'p1', self: {}, provinces: [] } as unknown as PublicView
+    const zeilen = dayReportBody(leer, regeln(), [])
+
+    expect(zeilen).toHaveLength(1)
+    expect(zeilen[0]!.length).toBeGreaterThan(10)
+    expect(zeilen[0]).not.toContain('[')
   })
 })
 

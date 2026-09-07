@@ -1810,12 +1810,12 @@ tasks:
   - id: T-M24-01
     milestone: M24
     title: Der Tagesbericht bekommt einen Koerper
-    status: todo
+    status: done
     deps: [T-M22-01]
     requirements: [R-TIME-06, R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/game/events.test.ts]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befund V2-06 und Frage 50 des Bogens: Tagesbericht fuer Tag 8. ist eine Ueberschrift ohne Koerper - der wichtigste wiederkehrende Eintrag sagt nichts. Fertig, wenn der Tagesbericht aufklappbar traegt: Bilanz je Rohstoff (nur die von null verschiedenen), Moralrichtung je eigener Provinz, fertige und laufende Auftraege, und morgen neu: X aus der Freischaltungsachse. Kein neues Kern-Ereignis: die Oberflaeche liest den Zustand am Tageswechsel (D24.4). Ein Test bindet den Koerper an einen Tag mit bekannten Zahlen und faellt gegen den heutigen leeren Eintrag"
 
   - id: T-M24-02

@@ -64,7 +64,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { describeEvent } from './game/events.ts'
+import { dayReportBody, describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -295,6 +295,50 @@ export function App(props: AppProps) {
     const cue = cueForEvents(fresh)
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
   }, [state, ui.settings.sound, speed, props.audio])
+
+  /**
+   * Die Körper der Tagesberichte, je Ereignis-Tick (T-M24-01, D24.4, Befund V2-06).
+   *
+   * Die Hülle liest den Zustand **am Tageswechsel** — deshalb ein Effekt, der wie der
+   * Ton daneben nur die frischen Ereignisse ansieht, und kein Rechnen beim Zeichnen:
+   * ein Bericht, der beim Rendern aus dem *aktuellen* Zustand entstünde, beschriebe
+   * drei Tage später einen anderen Tag als seine Überschrift. Die Karte ist reiner
+   * Oberflächenzustand; ein geladener Stand beginnt ohne Körper für alte Berichte —
+   * die kommenden Tage bekommen wieder welche.
+   */
+  const [dayBodies, setDayBodies] = useState<ReadonlyMap<number, readonly string[]>>(new Map())
+  const reportedUpTo = useRef(0)
+  useEffect(() => {
+    if (!state || !view) return
+    const own = eventsFor(state.eventLog, 'p1')
+    // Dieselbe Rücksetzung wie beim Ton: eine neue Partie beginnt mit leerem Protokoll.
+    if (own.length < reportedUpTo.current) {
+      reportedUpTo.current = 0
+      setDayBodies(new Map())
+    }
+    const fresh = own.slice(reportedUpTo.current)
+    reportedUpTo.current = own.length
+    const reports = fresh.filter((event) => event.type === 'DAY_REPORT')
+    if (reports.length === 0) return
+
+    setDayBodies((previous) => {
+      const next = new Map(previous)
+      for (const report of reports) {
+        // Die eigenen Ereignisse des zu Ende gegangenen Tages — für "fertig geworden".
+        const dayEvents = own.filter(
+          (event) => event.tick > report.tick - ticksPerDay && event.tick <= report.tick,
+        )
+        next.set(report.tick, dayReportBody(view, props.rules, dayEvents))
+      }
+      // Deckel: das Protokoll zeigt die letzten vierzig Zeilen; ältere Körper trägt
+      // niemand mehr ab, und ein Speicher, der nur wächst, ist ein Leck mit Absicht.
+      while (next.size > 60) {
+        const oldest = Math.min(...next.keys())
+        next.delete(oldest)
+      }
+      return next
+    })
+  }, [state, view, ticksPerDay, props.rules])
 
   /** A step of the guided start ends because the player did the thing it asked for. */
   const tutor = useCallback((action: TutorialTrigger) => {
@@ -973,8 +1017,14 @@ export function App(props: AppProps) {
     return alle
       .filter((event) => jüngste.has(event))
       .reverse()
-      .map((event, index) => describeEvent(event, index, activeMap, naming))
-  }, [state, activeMap, nameOf, ticksPerDay])
+      .map((event, index) => {
+        const entry = describeEvent(event, index, activeMap, naming)
+        // Der Tagesbericht trägt seinen Körper (T-M24-01): am Tageswechsel gelesen,
+        // hier nur angeheftet. Ohne Körper (geladener Stand) bleibt die Zeile schlicht.
+        const body = event.type === 'DAY_REPORT' ? dayBodies.get(event.tick) : undefined
+        return body && body.length > 0 ? { ...entry, body } : entry
+      })
+  }, [state, activeMap, nameOf, ticksPerDay, dayBodies])
 
   /**
    * Der Zustands-Hash der Debug-Ansicht (T-M12-10).

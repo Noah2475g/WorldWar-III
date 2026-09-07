@@ -414,6 +414,23 @@ body {
   margin: 0;
 }
 
+/* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist die
+   Ueberschrift, der Koerper steht als Liste dahinter — im Stil der Lagekarte. */
+.log__report {
+  min-width: 0;
+}
+
+.log__report summary {
+  cursor: pointer;
+}
+
+.log__report ul {
+  margin: 2px 0 4px;
+  padding-left: var(--sp-lg);
+  list-style: disc;
+  color: var(--ink-soft);
+}
+
 /* ---------------------------------------------------------------- dialogs */
 
 .dialog-backdrop {

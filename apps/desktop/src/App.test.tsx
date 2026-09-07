@@ -316,6 +316,30 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
   })
 })
 
+/**
+ * Der Tagesbericht bekommt einen Koerper (T-M24-01, R-TIME-06, Befund V2-06).
+ *
+ * Die Verdrahtung, nicht die Rechnung: die Huelle liest am Tageswechsel den Zustand
+ * (dayReportBody, geprueft in events.test.ts) und haengt den Koerper an den
+ * DAY_REPORT-Eintrag des Protokolls. Ohne diese Verdrahtung bliebe der Bericht die
+ * Ueberschrift ohne Koerper, die der Playtest fand.
+ */
+describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
+  it('traegt nach einem Spieltag einen aufklappbaren Koerper', async () => {
+    startGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const log = screen.getByRole('region', { name: 'Ereignisse' })
+    await waitFor(() => {
+      const bericht = [...log.querySelectorAll('details.log__report')].find((element) =>
+        /Tagesbericht/.test(element.querySelector('summary')?.textContent ?? ''),
+      )
+      expect(bericht, 'kein aufklappbarer Tagesbericht im Protokoll').toBeTruthy()
+      expect(bericht!.textContent).toMatch(/Bilanz|Moral|Morgen neu|ruhiger Tag/)
+    })
+  })
+})
+
 describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', () => {
   it('zeigt nach einem Tag keine Kennung, keinen Platzhalter und keinen fremden Befehl', () => {
     // The first smoke test read "Bau von barracks begonnen" for another power's

@@ -1,7 +1,7 @@
-import type { GameEvent, MapData } from '@worldwar/core'
+import type { GameEvent, MapData, PublicView, Rules } from '@worldwar/core'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { hasKey, t } from '../i18n/text.ts'
-import { amount } from '../ui/format.ts'
+import { amount, rate, unfix } from '../ui/format.ts'
 import { isWorldEventType } from '@worldwar/core'
 import { categoryOf, type EventEntry } from '../ui/Panels.tsx'
 
@@ -142,6 +142,117 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
     default:
       return false
   }
+}
+
+/**
+ * Der Körper des Tagesberichts (T-M24-01, R-TIME-06, R-UI-05, Befund V2-06, D24.4).
+ *
+ * „Tagesbericht für Tag 8." war eine Überschrift ohne Körper — der wichtigste
+ * wiederkehrende Eintrag sagte nichts. Der Körper kommt **nicht** aus einem neuen
+ * Kern-Ereignis: die Hülle liest am Tageswechsel den Zustand über die Sicht und formt
+ * daraus vier Absätze — Bilanz je Rohstoff (nur die von null verschiedenen), Moral je
+ * eigener Provinz mit Richtung, fertige und laufende Aufträge, „morgen neu: X" aus der
+ * Freischaltungsachse.
+ *
+ * Rein und ohne Gedächtnis: Sicht und Regeln hinein, Zeilen heraus. `dayEvents` sind
+ * die eigenen Ereignisse des zu Ende gegangenen Tages — nur daraus lässt sich „fertig
+ * geworden" ehrlich sagen, denn der Zustand kennt nur, was noch läuft.
+ */
+export function dayReportBody(
+  view: PublicView,
+  rules: Rules,
+  dayEvents: readonly GameEvent[] = [],
+): string[] {
+  const lines: string[] = []
+  const ticksPerDay = rules.constants.ticksPerDay
+
+  // Bilanz je Rohstoff — nur die von null verschiedenen: eine Zeile voller ±0 ist
+  // keine Auskunft, sie versteckt die eine Zahl, die eine wäre.
+  const balance = Object.entries(view.self.economy ?? {})
+    .filter(([, flow]) => Math.round(unfix(flow.balance)) !== 0)
+    .map(([key, flow]) => `${t(`resources.${key}`)} ${rate(flow.balance)}`)
+  if (balance.length > 0) lines.push(t('dayReport.balance', { list: balance.join(', ') }))
+
+  // Moral je eigener Provinz, mit Richtung: der Stand allein sagt nicht, ob eine
+  // Provinz zur Ruhe kommt oder kippt — genau das will der Spieler wissen.
+  const own = view.provinces.filter(
+    (province) => province.owner === view.playerId && province.morale !== undefined,
+  )
+  const morale = own.map((province) => {
+    const current = province.morale!
+    const target = province.moraleTarget ?? current
+    const key =
+      target - current > 500 ? 'moraleRising' : current - target > 500 ? 'moraleFalling' : 'moraleSteady'
+    return t(`dayReport.${key}`, { province: province.name, percent: Math.round(unfix(current)) })
+  })
+  if (morale.length > 0) lines.push(t('dayReport.morale', { list: morale.join(', ') }))
+
+  const provinceName = (id: unknown): string =>
+    view.provinces.find((province) => province.id === id)?.name ?? String(id ?? '')
+
+  // Fertig geworden: aus den Ereignissen des Tages — der Zustand kennt nur, was läuft.
+  const done: string[] = []
+  for (const event of dayEvents) {
+    const record = event as unknown as Record<string, unknown>
+    if (event.type === 'BUILD_COMPLETED') {
+      done.push(
+        t('dayReport.completedEntry', {
+          thing: t(`buildings.${String(record.building)}`),
+          province: provinceName(record.provinceId),
+        }),
+      )
+    }
+    if (event.type === 'UNIT_RECRUITED') {
+      done.push(
+        t('dayReport.completedEntry', {
+          thing: t('army.unitCount', { count: Number(record.count), unit: t(`units.${String(record.unitKey)}`) }),
+          province: provinceName(record.provinceId),
+        }),
+      )
+    }
+  }
+  if (done.length > 0) lines.push(t('dayReport.completed', { list: done.join(', ') }))
+
+  // In Arbeit: die Warteschlangen der eigenen Provinzen, jede mit ihrem Fertigtag.
+  const running: string[] = []
+  for (const province of own) {
+    for (const order of province.buildQueue ?? []) {
+      running.push(
+        t('dayReport.orderEntry', {
+          thing: t(`buildings.${order.building}`),
+          province: province.name,
+          day: Math.floor(order.completesAtTick / ticksPerDay) + 1,
+        }),
+      )
+    }
+    for (const order of province.recruitQueue ?? []) {
+      running.push(
+        t('dayReport.orderEntry', {
+          thing: t('army.unitCount', { count: order.count, unit: t(`units.${order.unitKey}`) }),
+          province: province.name,
+          day: Math.floor(order.completesAtTick / ticksPerDay) + 1,
+        }),
+      )
+    }
+  }
+  if (running.length > 0) lines.push(t('dayReport.running', { list: running.join(', ') }))
+
+  // Morgen neu: die Freischaltungsachse einen Tag voraus. Heute ist der Tag, der am
+  // Tick der Sicht angebrochen ist — der Bericht entsteht am Tageswechsel.
+  const tomorrow = Math.floor(view.tick / ticksPerDay) + 2
+  const unlocks = [
+    ...Object.entries(rules.buildings)
+      .filter(([, rule]) => rule.availableFromDay === tomorrow)
+      .map(([key]) => t(`buildings.${key}`)),
+    ...Object.entries(rules.units)
+      .filter(([, rule]) => rule.availableFromDay === tomorrow)
+      .map(([key]) => t(`units.${key}`)),
+  ]
+  if (unlocks.length > 0) lines.push(t('dayReport.tomorrow', { list: unlocks.join(', ') }))
+
+  // Ein leerer Bericht wäre wieder die Überschrift ohne Körper — dann lieber der eine
+  // ehrliche Satz, dass nichts zu berichten ist.
+  return lines.length > 0 ? lines : [t('dayReport.quiet')]
 }
 
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {

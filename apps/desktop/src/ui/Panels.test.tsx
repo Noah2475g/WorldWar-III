@@ -249,6 +249,35 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
 
     expect(screen.getByText(/Noch nichts|keine/i)).toBeTruthy()
   })
+
+  /**
+   * Der Tagesbericht klappt auf (T-M24-01, R-TIME-06, Befund V2-06): eine Zeile mit
+   * Koerper wird ein details/summary — die Ueberschrift bleibt die Zeile, der Koerper
+   * steht dahinter. Zeilen ohne Koerper bleiben, was sie waren.
+   */
+  it('klappt eine Zeile mit Koerper auf und zeigt ihn', () => {
+    const bericht: EventEntry = {
+      id: 'r1',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      body: ['Bilanz je Tag: Nahrung +120', 'Moral: Alpha 62 % ↗'],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    const details = document.querySelector('details.log__report')
+    expect(details, 'der Bericht traegt kein details-Element').toBeTruthy()
+    expect(details!.querySelector('summary')!.textContent).toContain('Tagesbericht für Tag 1.')
+    expect(screen.getByText('Bilanz je Tag: Nahrung +120')).toBeTruthy()
+    expect(screen.getByText('Moral: Alpha 62 % ↗')).toBeTruthy()
+  })
+
+  it('laesst Zeilen ohne Koerper ohne details', () => {
+    renderLog()
+
+    expect(document.querySelector('details.log__report')).toBeNull()
+  })
 })
 
 /**

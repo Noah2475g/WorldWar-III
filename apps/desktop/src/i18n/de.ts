@@ -362,6 +362,28 @@ export const de = {
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
   } as const,
 
+  /**
+   * Der Körper des Tagesberichts (T-M24-01, R-TIME-06, Befund V2-06).
+   *
+   * „Tagesbericht für Tag 8." war eine Überschrift ohne Körper. Die Zeilen hier füllen
+   * ihn: Bilanz je Rohstoff (nur die von null verschiedenen), Moral je eigener Provinz
+   * mit Richtung, fertige und laufende Aufträge, „morgen neu: X". Die Zahlen kommen aus
+   * dem Zustand am Tageswechsel (D24.4), nie aus diesem Text.
+   */
+  dayReport: {
+    balance: 'Bilanz je Tag: {{list}}',
+    morale: 'Moral: {{list}}',
+    moraleRising: '{{province}} {{percent}} % ↗',
+    moraleFalling: '{{province}} {{percent}} % ↘',
+    moraleSteady: '{{province}} {{percent}} % →',
+    completed: 'Fertig geworden: {{list}}',
+    running: 'In Arbeit: {{list}}',
+    completedEntry: '{{thing}} in {{province}}',
+    orderEntry: '{{thing}} in {{province}} — fertig Tag {{day}}',
+    tomorrow: 'Morgen neu: {{list}}',
+    quiet: 'Ein ruhiger Tag: nichts fertig, nichts in Arbeit, die Bilanz hält.',
+  },
+
   diplomacy: {
     title: 'Diplomatie',
     peace: 'Frieden',
