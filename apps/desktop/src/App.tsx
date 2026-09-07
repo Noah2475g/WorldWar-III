@@ -66,7 +66,7 @@ import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
-import { duration } from './ui/format.ts'
+import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
@@ -1000,7 +1000,8 @@ export function App(props: AppProps) {
   const fastForwardNotice: string | null = useMemo(() => {
     const { running, reason, ticksRun, trigger } = fastForwardState
     if (running || reason === null) return null
-    const time = duration(ticksRun, ticksPerDay)
+    // „Angehalten nach 2 Tagen" — nach verlangt den Dativ (T-M23-02, V2-11).
+    const time = durationDative(ticksRun, ticksPerDay)
     if (reason === 'aborted') return t('header.stoppedAborted', { time })
     if (reason === 'limit') return t('header.stoppedLimit', { time })
     if (reason === 'target') return t('header.stoppedTarget', { time })

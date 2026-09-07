@@ -439,7 +439,9 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
 
-    expect(log()).toMatch(/erklärt .* den Krieg\. Wirksam ab Tag \d+/)
+    // Der Spieler ist die Mehrzahl-Macht Vereinigte Staaten: das Verb steht in der
+    // Mehrzahl (T-M23-02, V2-11).
+    expect(log()).toMatch(/Vereinigte Staaten erklären .* den Krieg\. Wirksam ab Tag \d+/)
     expect(log()).not.toMatch(/\bp\d\b/)
   })
 
@@ -496,11 +498,12 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     expect(panel.textContent).toContain('befohlen')
     expect(panel.textContent).toContain('wirkt beim Weiterlaufen')
     // Abgeschickt, nicht angewendet: das Protokoll kennt den Befehl noch nicht.
-    expect(log()).not.toContain('erklärt')
+    expect(log()).not.toMatch(/erklär(t|en)/)
 
-    // Der naechste Tick wendet ihn an; die Quittung verschwindet.
+    // Der naechste Tick wendet ihn an; die Quittung verschwindet. Die Vereinigten
+    // Staaten erklaeren in der Mehrzahl (T-M23-02, V2-11).
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
-    expect(log()).toMatch(/erklärt .* den Krieg/)
+    expect(log()).toMatch(/erklären .* den Krieg/)
     expect(screen.getByRole('region', { name: 'Diplomatie' }).textContent).not.toContain('befohlen')
   })
 

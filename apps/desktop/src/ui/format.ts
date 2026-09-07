@@ -77,12 +77,26 @@ export function formatTime(tick: number, ticksPerDay: number): string {
  * thinking in days, so that is what the interface says.
  */
 export function duration(hours: number, ticksPerDay = 24): string {
+  return durationIn('actions.days', hours, ticksPerDay)
+}
+
+/**
+ * Dieselbe Dauer im Dativ: „nach 2 Tagen", nicht „nach 2 Tage" (T-M23-02, V2-11).
+ *
+ * Nur die Mehrzahl beugt sich — „1 Tag" und „14 h" sind im Dativ dieselben Wörter.
+ * Für Sätze mit „nach", „in", „seit"; die Kopfleiste nutzt sie für den Vorspul-Halt.
+ */
+export function durationDative(hours: number, ticksPerDay = 24): string {
+  return durationIn('actions.daysDative', hours, ticksPerDay)
+}
+
+function durationIn(daysKey: 'actions.days' | 'actions.daysDative', hours: number, ticksPerDay: number): string {
   if (hours < ticksPerDay) return t('actions.hours', { count: Math.max(0, Math.round(hours)) })
   const days = hours / ticksPerDay
   const rounded = days >= 10 ? Math.round(days) : Math.round(days * 10) / 10
   // One day is singular; "1 Tage" is the kind of slip a player notices before anything else.
   if (rounded === 1) return t('actions.day', { count: 1 })
-  return t('actions.days', { count: rounded.toLocaleString('de-DE') })
+  return t(daysKey, { count: rounded.toLocaleString('de-DE') })
 }
 
 /** When a march will arrive, said as a time rather than as a countdown. */

@@ -337,6 +337,61 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
   })
 })
 
+/**
+ * Der Machtname bestimmt die Beugung des Satzes (T-M23-02, R-UI-07, Befund V2-11).
+ *
+ * "Vereinigte Staaten erklaert Mexiko den Krieg" — der Name ist grammatisch Mehrzahl,
+ * das Verb stand in der Einzahl. Die Numerus-Tabelle (de.grammar.pluralNations) speist
+ * die Wahl; jede Ereignisart, die eine Macht als Satzgegenstand hat, bekommt ueber die
+ * Endung `_PLURAL` eine Mehrzahlfassung.
+ */
+describe('R-UI-07 Der Machtname bestimmt den Numerus des Satzes', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+  const krieg = (playerId: string, targetPlayerId: string) =>
+    describeEvent(
+      event({ type: 'WAR_DECLARED', playerId, targetPlayerId, effectiveAtTick: 48, withoutDeclaration: false }),
+      0,
+      map,
+      namen,
+    ).text
+
+  it('beugt die Kriegserklaerung einer Mehrzahl-Macht in die Mehrzahl', () => {
+    expect(krieg('p2', 'p1')).toContain('Vereinigte Staaten erklären Mexiko den Krieg')
+  })
+
+  it('laesst die Einzahl-Macht in der Einzahl', () => {
+    expect(krieg('p1', 'p2')).toContain('Mexiko erklärt Vereinigte Staaten den Krieg')
+  })
+
+  it('beugt auch die Fassung aus fremder Sicht', () => {
+    const fremd = describeEvent(
+      event({
+        type: 'WAR_DECLARED',
+        concerns: ['p2', 'p3'],
+        playerId: 'p2',
+        targetPlayerId: 'p3',
+        effectiveAtTick: 96,
+        withoutDeclaration: false,
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    ).text
+    expect(fremd).toContain('Vereinigte Staaten erklären')
+  })
+
+  it('beugt Ausscheiden und Sieg derselben Macht mit', () => {
+    const raus = describeEvent(event({ type: 'PLAYER_ELIMINATED', playerId: 'p2' }), 0, map, namen).text
+    const sieg = describeEvent(event({ type: 'GAME_ENDED', winner: 'p2', condition: 'points' }), 0, map, namen).text
+
+    expect(raus).toContain('Vereinigte Staaten sind ausgeschieden')
+    expect(sieg).toContain('Vereinigte Staaten haben gewonnen')
+  })
+})
+
 describe('R-DIP-04 Was zwischen Fremden geschieht, erfaehrt man dem Wesen nach', () => {
   const namen = { player: (id: string) => ({ p1: 'Nordland', p2: 'Ostmark', p3: 'Süden' })[id] ?? id, ticksPerDay: 24, viewer: 'p1' }
 

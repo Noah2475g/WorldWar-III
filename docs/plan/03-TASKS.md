@@ -3528,9 +3528,16 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-07
 - **Entwurf:** D24.6
 - **Abhängigkeiten:** T-M23-01
-- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/tutorial.ts`,
-  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/ui/Standings.tsx`
-- **Tests zuerst:** je gemessenem Fall ein Test, der gegen den alten Text fällt.
+- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/i18n/grammar.ts`,
+  `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/game/events.ts`,
+  `apps/desktop/src/ui/format.ts`, `apps/desktop/src/ui/Meter.tsx`,
+  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/App.tsx`
+  *(der Genus-Satz entsteht in `Alerts.tsx`, nicht in `tutorial.ts`; der Dativ in
+  `format.ts`/`App.tsx`, nicht in `fastForward.ts` — die Listen nennen die Orte, an
+  denen tatsächlich gebaut wurde)*
+- **Tests zuerst:** je gemessenem Fall ein Test, der gegen den alten Text fällt
+  (`grammar.test.ts`, `Alerts.test.tsx`, `events.test.ts`, `format.test.ts`,
+  `Standings.test.tsx`, `App.test.tsx`).
 - **Fertig wenn:** eine kleine Genus/Numerus-Tabelle je Gebäude, Einheit und Macht
   speist die Sätze; die vier Fälle sind korrekt.
 

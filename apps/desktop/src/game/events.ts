@@ -1,5 +1,6 @@
 import type { GameEvent, MapData } from '@worldwar/core'
-import { t } from '../i18n/text.ts'
+import { isPluralNation } from '../i18n/grammar.ts'
+import { hasKey, t } from '../i18n/text.ts'
 import { amount } from '../ui/format.ts'
 import { isWorldEventType } from '@worldwar/core'
 import { categoryOf, type EventEntry } from '../ui/Panels.tsx'
@@ -150,7 +151,18 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
   // Die Auswahl steht hier und nicht im Filter — sonst läge die Geheimhaltung an zwei
   // Stellen, und eine davon würde eines Tages vergessen.
   const fremd = !concernsViewer(event, naming.viewer)
-  const key = fremd && FOREIGN_TEXTS.has(event.type) ? `${event.type}_FOREIGN` : event.type
+  let key = fremd && FOREIGN_TEXTS.has(event.type) ? `${event.type}_FOREIGN` : event.type
+
+  const values = valuesFor(event, map, naming)
+
+  // Der Numerus des Satzgegenstands (T-M23-02, V2-11): trägt der Satz eine
+  // Mehrzahl-Macht als Subjekt und kennt der Katalog eine Mehrzahlfassung, wird sie
+  // gewählt — „Vereinigte Staaten erklären", nicht „erklärt". Die Konvention ist die
+  // der `_FOREIGN`-Fassungen: ein Suffix am selben Stamm, keine zweite Zuordnung.
+  const subject = event.type === 'GAME_ENDED' ? values.winner : values.player
+  if (typeof subject === 'string' && isPluralNation(subject) && hasKey(`events.${key}_PLURAL`)) {
+    key = `${key}_PLURAL`
+  }
 
   return {
     id: `${event.tick}-${event.type}-${index}`,
@@ -160,7 +172,7 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     // Was mich selbst trifft, sieht anders aus (T-M22-03): die Zeile bekommt im
     // Protokoll den Zinnober-Balken und Fettung.
     self: isSelfSetback(event, naming.viewer),
-    text: t(`events.${key}`, valuesFor(event, map, naming)),
+    text: t(`events.${key}`, values),
     ...(province ? { provinceId: province } : {}),
     severity: event.severity === 'alert' ? 'alert' : 'info',
   }

@@ -112,6 +112,45 @@ export const de = {
   },
 
   /**
+   * Genus und Numerus, damit Sätze sich beugen können (T-M23-02, R-UI-07, V2-11).
+   *
+   * „Sie können **es** jetzt bauen" über der Kaserne und „Vereinigte Staaten
+   * **erklärt**" waren derselbe Fehler: ein Satz, der sich nach seinem Gegenstand
+   * richten muss, kannte den Gegenstand nicht. Die Tabellen stehen hier und nicht im
+   * Code, weil sie Sprache sind — ein neues Gebäude bekommt seinen Artikel dort, wo es
+   * seinen Namen bekommt. `grammar.test.ts` hält beide Tabellen vollständig.
+   */
+  grammar: {
+    /** Akkusativpronomen je Genus: „Sie können sie/ihn/es jetzt bauen." */
+    pronoun: { f: 'sie', m: 'ihn', n: 'es' },
+    /** Die Kaserne, der Hafen — das Genus je Gebäude. */
+    buildings: {
+      barracks: 'f',
+      fortress: 'f',
+      factory: 'f',
+      harbour: 'm',
+      shipyard: 'f',
+      airfield: 'm',
+      railway: 'f',
+    },
+    /** Die Infanterie, der Kampfpanzer, das Jagdflugzeug — das Genus je Einheit. */
+    units: {
+      infantry: 'f',
+      motorized: 'f',
+      tank: 'm',
+      heavy_tank: 'm',
+      artillery: 'f',
+      rocket_artillery: 'f',
+      fighter: 'n',
+      bomber: 'm',
+      destroyer: 'm',
+      transport: 'n',
+    },
+    /** Machtnamen in grammatischer Mehrzahl: „Vereinigte Staaten erklären". */
+    pluralNations: ['Vereinigte Staaten'],
+  },
+
+  /**
    * The same refusals as `errors`, in three words for the log. A log line has no room
    * for "es fehlen 400 Eisen" — and no number to put there, because the event that
    * records a refusal carries only its code.
@@ -233,6 +272,8 @@ export const de = {
     hours: '{{count}} h',
     day: '{{count}} Tag',
     days: '{{count}} Tage',
+    // Nach „nach", „in", „seit" steht die Dauer im Dativ: „nach 2 Tagen" (T-M23-02).
+    daysDative: '{{count}} Tagen',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
     availableFrom: 'ab Spieltag {{day}}',
@@ -299,6 +340,9 @@ export const de = {
     STORAGE_OVERFLOW: 'Die Lager für {{resource}} sind voll — der Überschuss verfällt.',
     TRADE_EXECUTED: '{{giveAmount}} {{give}} gegen {{wantAmount}} {{want}} getauscht.',
     WAR_DECLARED: '{{player}} erklärt {{target}} den Krieg. Wirksam ab Tag {{day}}.',
+    // Numerus-Fassungen (T-M23-02, V2-11): gewählt, wenn der Satzgegenstand eine
+    // Mehrzahl-Macht ist (grammar.pluralNations) — „Vereinigte Staaten erklären".
+    WAR_DECLARED_PLURAL: '{{player}} erklären {{target}} den Krieg. Wirksam ab Tag {{day}}.',
     DIPLOMACY_CHANGED: 'Verhältnis zu {{player}}: {{state}}.',
     CAPITAL_LOST: 'Die Hauptstadt {{province}} ist verloren.',
     CAPITAL_MOVED: 'Die Hauptstadt liegt jetzt in {{province}}.',
@@ -310,8 +354,11 @@ export const de = {
     CAPITAL_LOST_FOREIGN: 'Die Hauptstadt {{province}} von {{player}} ist gefallen.',
     BATTLE_RESOLVED_FOREIGN: '{{province}}: Gefecht entschieden — {{winner}} behauptet das Feld.',
     WAR_DECLARED_FOREIGN: '{{player}} erklärt {{target}} den Krieg.',
+    WAR_DECLARED_FOREIGN_PLURAL: '{{player}} erklären {{target}} den Krieg.',
     PLAYER_ELIMINATED: '{{player}} ist ausgeschieden.',
+    PLAYER_ELIMINATED_PLURAL: '{{player}} sind ausgeschieden.',
     GAME_ENDED: 'Die Partie ist entschieden: {{winner}} hat gewonnen.',
+    GAME_ENDED_PLURAL: 'Die Partie ist entschieden: {{winner}} haben gewonnen.',
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
   } as const,
 
@@ -573,8 +620,10 @@ export const de = {
     title: 'Meldungen',
     // Was heute neu dazugekommen ist (T-M21-04). Der Tag steht nicht im Satz: er ist
     // heute, sonst stuende die Meldung nicht da.
-    unlockBuilding: 'Neu ab heute: {{building}}. Sie können es jetzt bauen.',
-    unlockUnit: 'Neu ab heute: {{unit}}. Sie können sie jetzt ausheben.',
+    // Das Pronomen kommt aus der Genus-Tabelle (grammar, T-M23-02, V2-11): die
+    // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
+    unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
+    unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).
@@ -611,6 +660,7 @@ export const de = {
     won: 'Sie haben gewonnen.',
     newGame: 'Neue Partie',
     lost: '{{nation}} hat gewonnen.',
+    lostPlural: '{{nation}} haben gewonnen.',
     eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie läuft ohne Sie weiter.',
     // Vier Zeilen statt einer, weil in dem einen Satz zwei Zahlen stehen, die beide bei
     // eins in die Einzahl gehen (T-M12-10). "1 Provinzen" war der gemeldete Befund,

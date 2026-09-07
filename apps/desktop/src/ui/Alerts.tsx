@@ -1,4 +1,5 @@
 import type { PublicView } from '@worldwar/core'
+import { accusativePronoun } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
 
@@ -76,7 +77,11 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
       id: `unlock:building:${key}`,
       kind: 'unlock',
       icon: BUILDING_ICONS[key] ?? 'barracks',
-      text: t('alerts.unlockBuilding', { building: t(`buildings.${key}`) }),
+      // Das Pronomen richtet sich nach dem Genus der Sache (T-M23-02, V2-11).
+      text: t('alerts.unlockBuilding', {
+        building: t(`buildings.${key}`),
+        pronoun: accusativePronoun('buildings', key),
+      }),
     })
   }
   for (const [key, rule] of Object.entries(rules.units)) {
@@ -85,7 +90,10 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
       id: `unlock:unit:${key}`,
       kind: 'unlock',
       icon: UNIT_ICONS[key] ?? 'infantry',
-      text: t('alerts.unlockUnit', { unit: t(`units.${key}`) }),
+      text: t('alerts.unlockUnit', {
+        unit: t(`units.${key}`),
+        pronoun: accusativePronoun('units', key),
+      }),
     })
   }
   return alerts

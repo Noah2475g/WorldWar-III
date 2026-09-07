@@ -1,4 +1,5 @@
 import type { PublicView } from '@worldwar/core'
+import { isPluralNation } from '../i18n/grammar.ts'
 import { plural, t } from '../i18n/text.ts'
 import { amount } from './format.ts'
 import { Meter } from './Meter.tsx'
@@ -156,7 +157,12 @@ export function VictoryDialog({
               ? t('standings.won')
               : eliminated && !winner
                 ? t('standings.eliminated')
-                : t('standings.lost', { nation: winner ? nameOf(winner) : '—' })}
+                : (() => {
+                    // „Vereinigte Staaten haben gewonnen" — der Numerus haengt am
+                    // Machtnamen (T-M23-02, V2-11).
+                    const nation = winner ? nameOf(winner) : '—'
+                    return t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })
+                  })()}
           </p>
           <p className="facts__inline">
             {[

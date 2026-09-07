@@ -90,6 +90,22 @@ describe('R-UI-13 Die Lage der Maechte', () => {
     expect(leader.getAttribute('aria-valuemax')).toBe('300')
     expect(screen.getByRole('meter', { name: 'Nordland' }).getAttribute('aria-valuenow')).toBe('100')
   })
+
+  it('rendert den Machtnamen je Zeile nur einmal (T-M23-02, Befund V2-17)', () => {
+    // "Indien Indien 6148": der Punktebalken wiederholte den Namen als Textknoten neben
+    // der Namensspalte. Fuers Ohr bleibt er — als aria-label des Balkens, nicht als Text.
+    const { container } = render(
+      <StandingsPanel view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })} nameOf={nameOf} />,
+    )
+
+    for (const [zeile, name] of [
+      [0, 'Ostmark'],
+      [1, 'Nordland'],
+    ] as const) {
+      const text = container.querySelectorAll('tbody tr')[zeile]!.textContent!
+      expect(text.split(name).length - 1, `"${name}" steht ${zeile + 1}. Zeile mehrfach`).toBe(1)
+    }
+  })
 })
 
 describe('R-GAME-02 Das Ende der Partie', () => {

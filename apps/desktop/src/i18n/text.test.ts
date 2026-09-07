@@ -89,8 +89,10 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
     // derselben Ereignisart und wird gewaehlt, wenn der Betrachter nicht unter den
     // Betroffenen steht. Geprueft wird deshalb der Stamm — eine Fassung fuer eine Art, die
     // es nicht gibt, faellt weiterhin auf.
+    // `_PLURAL` ist die Numerus-Fassung (T-M23-02): gewaehlt, wenn der Satzgegenstand
+    // eine Mehrzahl-Macht ist. Beide Endungen haengen am selben Stamm.
     for (const key of Object.keys(de.events)) {
-      const stamm = key.replace(/_FOREIGN$/, '')
+      const stamm = key.replace(/(_FOREIGN)?(_PLURAL)?$/, '')
       expect(types as readonly string[], `events.${key} gehoert zu keinem Ereignis`).toContain(stamm)
     }
   })

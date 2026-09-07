@@ -1786,12 +1786,12 @@ tasks:
   - id: T-M23-02
     milestone: M23
     title: Grammatik - Genus, Dativ, Numerus, doppelte Namen
-    status: todo
+    status: done
     deps: [T-M23-01]
     requirements: [R-UI-07]
     design: [D-24]
-    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/game/tutorial.ts, apps/desktop/src/game/fastForward.ts, apps/desktop/src/ui/Standings.tsx]
-    tests: [apps/desktop/src/game/tutorial.test.ts, apps/desktop/src/ui/Standings.test.tsx]
+    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/i18n/grammar.ts, apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/format.ts, apps/desktop/src/ui/Meter.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/i18n/grammar.test.ts, apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/format.test.ts, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befunde V2-11/V2-17: Neu ab heute: Kaserne. Sie koennen ES jetzt bauen (Genus haengt am Gebaeude), Angehalten nach 2 Tage (Dativ), Vereinigte Staaten erklaert Mexiko den Krieg (Numerus - der Machtname verlangt Plural), Lage-Tabelle rendert den Machtnamen doppelt. Fertig, wenn eine kleine Genus/Numerus-Tabelle je Gebaeude, Einheit und Macht die Saetze speist, die vier gemessenen Faelle korrekt sind und ein Test je Fall gegen den alten Text faellt"
 
   - id: T-M23-03
