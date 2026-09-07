@@ -380,12 +380,12 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     startGame()
     pickCapital()
 
-    const barracks = screen.getByRole('button', { name: 'Kaserne' })
+    const barracks = screen.getByRole('button', { name: 'Kaserne bauen' })
     expect(barracks.hasAttribute('disabled')).toBe(false)
     expect(barracks.getAttribute('title')).toContain('Material')
 
     const recruit = screen.getByRole('region', { name: 'Ausheben' })
-    expect(within(recruit).getByRole('button', { name: 'Infanterie' }).hasAttribute('disabled')).toBe(true)
+    expect(within(recruit).getByRole('button', { name: 'Infanterie ausheben' }).hasAttribute('disabled')).toBe(true)
     // One shared reason above the group, not ten below the buttons.
     expect(recruit.textContent).toContain('Dafür fehlt das Gebäude: Kaserne.')
   })
@@ -393,7 +393,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
   it('baut, hebt aus, waehlt die Armee und marschiert mit angesagter Ankunft', () => {
     startGame()
     pickCapital()
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
     // Seit T-M22-05 wirkt ein Befehl im naechsten Tick (V2-08): erst quittiert er …
     expect(log()).not.toContain('Bau von Kaserne begonnen')
     fastForward(1)
@@ -401,7 +401,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(log()).toContain('Bau von Kaserne begonnen')
 
     fastForward(2)
-    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' })
+    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' })
     expect(infantry.hasAttribute('disabled')).toBe(false)
     fireEvent.click(infantry)
     fastForward(2)
@@ -458,9 +458,9 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
   it('bricht die Zielwahl mit Escape ab, ohne das Panel zu schliessen', () => {
     startGame()
     pickCapital()
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
     fastForward(2)
-    fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' }))
+    fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }))
     fastForward(2)
     fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
     const panel = screen.getByRole('region', { name: 'Armee' })
@@ -592,7 +592,7 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
   /** Build something, then let it finish — a completion is the cheapest audible event. */
   const buildAndFinish = (days: number) => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
     for (let day = 0; day < days; day++) fireEvent.keyDown(window, { key: 'f' })
   }
 

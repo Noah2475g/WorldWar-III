@@ -30,6 +30,11 @@ const MORALE_SCALE = 100_000
 export interface Action {
   id: string
   label: string
+  /**
+   * Der zugaengliche Name mit Verb (T-M22-06, R-UI-06, V2-13): sichtbar "Kaserne",
+   * hoerbar "Kaserne bauen". Fehlt er, ist die Beschriftung selbst die Handlung.
+   */
+  aria?: string
   /** The symbol of the thing being ordered, drawn on the button (R-UI-10). */
   icon?: IconName
   /** Where the explanation of the thing being ordered lives (R-UI-11). */
@@ -118,6 +123,8 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
           className="button"
           disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
           title={buttonTitle(action)}
+          // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
+          aria-label={action.aria}
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
         >

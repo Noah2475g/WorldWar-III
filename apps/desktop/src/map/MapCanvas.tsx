@@ -3,7 +3,7 @@ import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
 import { MAP_COLORS, prepareFrame, type RenderProvince } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
-import { markersFor, type ArmyMarker } from './markers.ts'
+import { markersFor, pickArmy, type ArmyMarker } from './markers.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
 import { motionAllowed, ringRadius } from '../ui/motion.ts'
@@ -71,6 +71,14 @@ export interface MapCanvasProps {
    */
   tick?: number
   onSelect: (provinceId: string | null) => void
+  /**
+   * Ein Klick nahe genug an einem EIGENEN Armee-Marker (T-M22-06, Befund V2-14):
+   * die Armee wird gemeldet statt der Provinz darunter. Die Trefferflaeche ist
+   * groesser als der gezeichnete Kasten (ARMY_HIT_BOX, mindestens 24 px). Ohne den
+   * Griff bleibt jeder Klick eine Provinzwahl — der Aufrufer entscheidet, ob eine
+   * Armeewahl gerade Sinn ergibt (in der Zielwahl z. B. nicht).
+   */
+  onSelectArmy?: (armyId: string) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
 }
@@ -294,6 +302,19 @@ export function MapCanvas(props: MapCanvasProps) {
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
       const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+
+      // Erst die Armee, dann die Provinz (T-M22-06, V2-14): mit derselben
+      // Ortsrechnung wie das Zeichnen, damit auch eine marschierende getroffen wird.
+      if (props.onSelectArmy) {
+        const armyId = pickArmy(screen, props.armies, props.centres, props.view, {
+          ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+        })
+        if (armyId) {
+          props.onSelectArmy(armyId)
+          return
+        }
+      }
+
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
     [props, withBounds],

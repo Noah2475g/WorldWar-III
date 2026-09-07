@@ -3491,8 +3491,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D24.5
 - **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
-  `apps/desktop/src/map/markers.ts`
-- **Tests zuerst:** ein a11y-Test über **alle** Aktionen aus `actions.ts`.
+  `apps/desktop/src/map/markers.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein a11y-Test über **alle** Aktionen aus `actions.ts`
+  (`a11y.test.tsx`); der Picking-Radius rein in `markers.test.ts`.
 - **Fertig wenn:** jeder Befehlsknopf einen aria-Namen „VERB OBJEKT" trägt (Kosten
   bleiben im `title`); Armee-Marker-Trefferfläche mindestens 24 px (Picking-Radius,
   nicht Zeichnungsgröße).

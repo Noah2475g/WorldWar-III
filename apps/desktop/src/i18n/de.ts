@@ -178,6 +178,10 @@ export const de = {
     bombard: 'Beschießen',
     holdFire: 'Feuer halten',
     resumeFire: 'Feuer frei',
+    // Hoerbare Namen mit Verb (T-M22-06): "Angriff" und "Feuer frei" sind Zustaende,
+    // die Handlung dahinter braucht ein Verb.
+    stanceAria: 'Haltung {{stance}} einnehmen',
+    resumeFireAria: 'Feuer freigeben',
     here: 'Armeen hier',
     select: 'Auswählen',
     units: 'Einheiten',
@@ -214,6 +218,10 @@ export const de = {
 
   actions: {
     build: 'Bauen',
+    // Hoerbare Namen mit Verb (T-M22-06, Befund V2-13): sichtbar bleibt die kurze
+    // Beschriftung, ein Vorleseprogramm hoert die Handlung.
+    buildAria: '{{thing}} bauen',
+    recruitAria: '{{thing}} ausheben',
     cancelBuild: '{{building}} abbrechen',
     recruit: 'Rekrutieren',
     setCapital: 'Hauptstadt verlegen',

@@ -1762,12 +1762,12 @@ tasks:
   - id: T-M22-06
     milestone: M22
     title: Knoepfe sagen, was sie tun
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-06, R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/map/markers.ts]
-    tests: [apps/desktop/src/ui/a11y.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/map/markers.test.ts]
     dod: "Befunde V2-13/V2-14: die Bau- und Aushebeknoepfe tragen als zugaenglichen Namen den Kosten-Tooltip statt der Aktion - ein Vorleseprogramm hoert nie Kaserne bauen; Armee-Marker sind ~12-px-Klickziele. Fertig, wenn jeder Befehlsknopf einen aria-Namen VERB OBJEKT traegt (Kosten bleiben im title), ein a11y-Test das fuer ALLE Aktionen aus actions.ts bindet, und die Trefferflaeche der Armee-Marker auf mindestens 24 px waechst (Picking-Radius, nicht Zeichnungsgroesse)"
 
   # --- M23: Die Sprache wird fertig (LEVEL-UP.md, Achse Stil) ---

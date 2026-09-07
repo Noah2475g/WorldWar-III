@@ -685,6 +685,7 @@ export function App(props: AppProps) {
       id: spec.id,
       label: spec.label,
       disabledReason: spec.disabledReason,
+      ...(spec.aria ? { aria: spec.aria } : {}),
       ...(spec.icon ? { icon: spec.icon } : {}),
       ...(spec.explainKey ? { explainKey: spec.explainKey } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
@@ -1194,6 +1195,15 @@ export function App(props: AppProps) {
             tick={state.tick}
             {...(selectedPath ? { path: selectedPath } : {})}
             onSelect={selectOnMap}
+            // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
+            // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
+            {...(targeting
+              ? {}
+              : {
+                  onSelectArmy: (armyId: string) => {
+                    dispatch({ type: 'selectArmy', id: armyId })
+                  },
+                })}
             onViewChange={(next) => dispatch({ type: 'setView', view: next })}
             labelFor={nameOfProvince}
           />
