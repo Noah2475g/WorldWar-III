@@ -1606,3 +1606,32 @@ die einzelne Aussage, die falsch war, ein Test gegen die einzelne Größe, die s
 ist Handarbeit je Fall und ehrlich darüber.
 
 **Status: bewusst offen, dokumentiert.** Keine Aufgabe, kein Termin — eine benannte Lücke.
+
+---
+
+## 2026-09-07 · T-M21-01 · Anzeigetext außerhalb des bewachten Bereichs
+
+**Befund:** `test/guards/prose-in-code.test.ts` prüft seit heute die Gegenrichtung zu
+`text-keys.test.ts`: nicht nur, ob jeder abgefragte Schlüssel existiert, sondern ob es
+Text **ohne** Schlüssel gibt. Der bewachte Bereich ist eng — `game/tutorial.ts` und
+`ui/*.tsx` —, und das ist eine Entscheidung, keine Nachlässigkeit.
+
+**Außerhalb liegt Anzeigetext, der dieselbe Prüfung verdiente.** Beim Ziehen der Grenze
+gemessen und hier festgehalten, damit es nicht verlorengeht:
+
+| Datei | Text |
+|---|---|
+| `apps/desktop/src/storage/createStorage.ts` | „Dieser Browser bietet keinen dauerhaften Speicher. Spielstände gehen beim Schließen verloren." |
+
+Dazu kommt eine ganze Klasse, die die Regel prinzipiell nicht sieht: **Text zwischen
+JSX-Marken.** `<p>Ein ganzer Satz hier</p>` ist kein Zeichenketten-Literal. Heute gibt es
+davon keinen Fall, aber die Regel würde einen auch nicht melden.
+
+**Warum der Bereich nicht größer ist:** Jede Ausweitung bringt neue Fehlalarme mit —
+CSS-Selektoren, Schriftlisten, SVG-Pfade, Meldungen an die Entwicklerkonsole. Drei davon
+sind schon in diesem engen Bereich aufgetreten und mussten einzeln ausgenommen werden. Ein
+Wächter, der öfter falsch als richtig meldet, wird abgeschaltet, und dann ist die Lage
+schlechter als ohne ihn.
+
+**Status: bewusst offen, dokumentiert.** Die eine bekannte Stelle ist genannt; wer den
+Bereich ausweitet, weiß, was ihn erwartet.

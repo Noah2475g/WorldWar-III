@@ -432,6 +432,30 @@ export const de = {
   tutorial: {
     title: 'Einstieg',
     dismiss: 'Nicht mehr zeigen',
+    /** "Schritt 2 von 5" — damit der Spieler weiss, wie viel noch kommt. */
+    progress: 'Schritt {{step}} von {{total}}',
+    steps: {
+      select: {
+        title: 'Ihre Provinzen',
+        text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+      },
+      build: {
+        title: 'Etwas bauen',
+        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+      },
+      speed: {
+        title: 'Die Zeit läuft',
+        text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
+      },
+      fastForward: {
+        title: 'Vorspulen',
+        text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',
+      },
+      events: {
+        title: 'Was geschieht',
+        text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+      },
+    },
   },
 
   /**

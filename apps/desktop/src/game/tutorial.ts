@@ -25,32 +25,32 @@ export interface TutorialStep {
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: 'select',
-    title: 'Ihre Provinzen',
-    text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+    title: t('tutorial.steps.select.title'),
+    text: t('tutorial.steps.select.text'),
     completesOn: 'selectProvince',
   },
   {
     id: 'build',
-    title: 'Etwas bauen',
-    text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+    title: t('tutorial.steps.build.title'),
+    text: t('tutorial.steps.build.text'),
     completesOn: 'openBuild',
   },
   {
     id: 'speed',
-    title: 'Die Zeit läuft',
-    text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
+    title: t('tutorial.steps.speed.title'),
+    text: t('tutorial.steps.speed.text'),
     completesOn: 'setSpeed',
   },
   {
     id: 'fastForward',
-    title: 'Vorspulen',
-    text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',
+    title: t('tutorial.steps.fastForward.title'),
+    text: t('tutorial.steps.fastForward.text'),
     completesOn: 'fastForward',
   },
   {
     id: 'events',
-    title: 'Was geschieht',
-    text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+    title: t('tutorial.steps.events.title'),
+    text: t('tutorial.steps.events.text'),
     completesOn: 'openEvents',
   },
 ]
@@ -93,7 +93,7 @@ export function currentStep(state: TutorialState): TutorialStep | null {
 /** Progress as "Schritt 2 von 5", so the player knows how much is left. */
 export function progressLabel(state: TutorialState): string {
   if (state.step === null) return ''
-  return `Schritt ${state.step + 1} von ${TUTORIAL_STEPS.length}`
+  return t('tutorial.progress', { step: state.step + 1, total: TUTORIAL_STEPS.length })
 }
 
 /** Where the tutorial's memory lives. */

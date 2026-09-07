@@ -1,0 +1,32 @@
+export const TUTORIAL_STEPS: readonly TutorialStep[] = [
+  {
+    id: 'select',
+    title: 'Ihre Provinzen',
+    text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+    completesOn: 'selectProvince',
+  },
+  {
+    id: 'build',
+    title: 'Etwas bauen',
+    text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+    completesOn: 'openBuild',
+  },
+  {
+    id: 'speed',
+    title: 'Die Zeit läuft',
+    text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
+    completesOn: 'setSpeed',
+  },
+  {
+    id: 'fastForward',
+    title: 'Vorspulen',
+    text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',
+    completesOn: 'fastForward',
+  },
+  {
+    id: 'events',
+    title: 'Was geschieht',
+    text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+    completesOn: 'openEvents',
+  },
+]

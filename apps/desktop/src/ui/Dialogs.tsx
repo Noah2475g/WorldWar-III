@@ -13,7 +13,8 @@ import type { Difficulty, NewGameOptions } from '../game/newGame.ts'
  */
 
 /** Was in einem Dialog den Fokus annehmen kann — eine Liste, damit sie nicht auseinanderlaeuft. */
-const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'
+// prettier-ignore
+const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])' // GUARD-ALLOW prose-in-code: ein CSS-Waehler, kein Satz
 
 export function Dialog({
   title,

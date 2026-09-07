@@ -1452,7 +1452,7 @@ tasks:
     deps: [T-M12-02b]
     requirements: [R-UI-07]
     files: [apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts]
-    tests: [test/guards/text-keys.test.ts]
+    tests: [test/guards/prose-in-code.test.ts, test/guards/text-keys.test.ts]
     dod: "Auf dem Bildschirm stand unter 'Im Bau' die Zeichenfolge [province.cancelBuild] - der Knopf wirkte, nur sein Name fehlte. Ursache ist ein Wort: actions.ts fragte province.cancelBuild ab, der Katalog fuehrt actions.cancelBuild; in derselben Datei stehen 23 Aufrufe t('army...'), drei t('market...'), drei t('actions...') und genau dieser eine Ausreisser. Die Beschriftung nennt jetzt das Gebaeude, weil eine Provinz mit mehreren Auftraegen sonst mehrere gleiche Knoepfe zeigt. Der eigentliche Teil ist der Waechter: text.test.ts prueft den Katalog nur in EINER Richtung (fuer jede Ereignisart, jeden Rohstoff, jedes Gebaeude gibt es einen Satz) und nie, ob ein vom Code abgefragter Schluessel existiert; verschaerfend hat der Sichtbarmacher fuer fehlende Schluessel einen eigenen gruenen Test, der Mechanismus vor dem Spieler war also geprueft. Der neue Waechter sammelt jeden statisch geschriebenen t('a.b') im Produktionscode und verlangt den Schluessel - gegen den Baum vor der Reparatur meldete er genau einen Verstoss und keinen Fehlalarm -, prueft die Menge auf Nichtleere und nennt die Zahl der zusammengesetzten Aufrufe, die er NICHT aufloesen kann"
 
   - id: T-M12-05
@@ -1634,12 +1634,12 @@ tasks:
   - id: T-M21-01
     milestone: M21
     title: Die Texte der Fuehrung ziehen in die Sprachdatei
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-07]
     design: [D-23]
     files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts]
-    tests: [test/guards/text-keys.test.ts, apps/desktop/src/game/tutorial.test.ts]
+    tests: [test/guards/prose-in-code.test.ts, test/guards/text-keys.test.ts, apps/desktop/src/game/tutorial.test.ts]
     dod: "Die fuenf Schritttexte stehen im Quelltext von tutorial.ts; de.ts kennt unter tutorial nur title und dismiss. Das verletzt R-UI-07 (Texte zentral in einer Sprachdatei). Gefangen hat es nichts, weil der Textwaechter die Gegenrichtung prueft: er sucht Schluessel ohne Text, nicht Text ohne Schluessel. Fertig, wenn jeder Schritt seinen Text aus t() bezieht UND ein Waechter die neue Richtung prueft - ein anzeigbarer Text im Quelltext einer Komponente faellt auf. Muss vor T-M21-02 stehen: sonst entstehen zwoelf neue Texte an der falschen Stelle"
 
   - id: T-M21-02
