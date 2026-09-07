@@ -345,6 +345,21 @@ body {
   padding: 1px 0;
 }
 
+/* Symbol und Text in einer Spur (T-M22-01, Befund V2-01): das Rubriksymbol aus
+   T-M20-03 war ein drittes Rasterkind, der Text fiel in die zweite Zeile und erbte
+   die 72 px der Zeitspalte — jeder Eintrag brach nach ein bis zwei Woertern um. */
+.log__entry {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.log__entry svg {
+  flex: none;
+  align-self: center;
+}
+
 .log__row--alert {
   color: var(--accent);
   font-weight: 500;

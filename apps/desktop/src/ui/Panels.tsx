@@ -600,25 +600,30 @@ export function EventLog({
               {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}
               {String(entry.tick % ticksPerDay).padStart(2, '0')}:00
             </time>
-            {CATEGORY_ICONS[entry.category ?? 'other'] && (
-              <Icon
-                name={CATEGORY_ICONS[entry.category ?? 'other']!}
-                size={13}
-                title={t(`alerts.${entry.category ?? 'other'}`)}
-              />
-            )}
-            {entry.provinceId ? (
-              <button
-                type="button"
-                className="log__jump"
-                onClick={() => onJump(entry.provinceId!)}
-                title={t('events_ui.jumpTo')}
-              >
-                {entry.text}
-              </button>
-            ) : (
-              <span>{entry.text}</span>
-            )}
+            {/* Symbol und Text teilen sich EINE Rasterspur (T-M22-01, Befund V2-01):
+                als drittes Rasterkind rutschte der Text in die zweite Zeile und erbte
+                dort die 72 px der Zeitspalte — jeder Eintrag brach nach 1-2 Woertern um. */}
+            <span className="log__entry">
+              {CATEGORY_ICONS[entry.category ?? 'other'] && (
+                <Icon
+                  name={CATEGORY_ICONS[entry.category ?? 'other']!}
+                  size={13}
+                  title={t(`alerts.${entry.category ?? 'other'}`)}
+                />
+              )}
+              {entry.provinceId ? (
+                <button
+                  type="button"
+                  className="log__jump"
+                  onClick={() => onJump(entry.provinceId!)}
+                  title={t('events_ui.jumpTo')}
+                >
+                  {entry.text}
+                </button>
+              ) : (
+                <span>{entry.text}</span>
+              )}
+            </span>
           </li>
         ))}
       </ul>

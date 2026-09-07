@@ -3419,9 +3419,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-TIME-06, R-UI-05
 - **Entwurf:** D24.1
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`
-- **Tests zuerst:** ein Test am gerenderten Baum, der die Eintragsbreite an die
-  Leistenbreite bindet (abzüglich Zeitstempel, kein fester Pixelwert) — fällt heute.
+- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/App.tsx`
+- **Tests zuerst:** ein Test am gerenderten Baum (`apps/desktop/src/App.test.tsx`), der
+  die Eintragsbreite an die Leistenbreite bindet (abzüglich Zeitstempel, kein fester
+  Pixelwert) — fällt heute.
 - **Fertig wenn:** ein Eintrag die verfügbare Breite nutzt und der Test grün ist.
 
 ### T-M22-02 · Die Seitenleiste hört auf, seitwärts zu kriechen

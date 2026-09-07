@@ -1707,11 +1707,11 @@ tasks:
   - id: T-M22-01
     milestone: M22
     title: Das Protokoll spricht in ganzen Zeilen
-    status: todo
+    status: done
     deps: []
     requirements: [R-TIME-06, R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx]
+    files: [apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx]
     tests: [apps/desktop/src/App.test.tsx]
     dod: "Befund V2-01: jeder Protokolleintrag bricht in einer ~90-px-Spalte nach je 1-2 Woertern um; die Leiste ist ~1400 px breit. Fertig, wenn ein Eintrag die verfuegbare Breite nutzt und ein Test am gerenderten Baum die Eintragsbreite an die Leistenbreite bindet (abzueglich Zeitstempel, kein fester Pixelwert). Der Test faellt gegen den heutigen Stand"
 

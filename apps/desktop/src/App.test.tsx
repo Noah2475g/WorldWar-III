@@ -245,6 +245,70 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
   })
 })
 
+/**
+ * Das Protokoll nutzt die volle Breite (T-M22-01, R-TIME-06, R-UI-05, Befund V2-01).
+ *
+ * Der Playtest V2 fand jeden Eintrag in einer ~90-px-Spalte umgebrochen, waehrend die
+ * Leiste ~1400 px breit ist. Ursache: `.log__row` deklariert zwei Rasterspuren (Zeit,
+ * Text), aber seit T-M20-03 traegt eine Zeile mit Rubriksymbol DREI Kinder — der Text
+ * rutscht in die zweite Rasterzeile und erbt dort die Breite der Zeitspalte.
+ *
+ * jsdom rechnet kein Layout, also wird die Zusage strukturell gebunden: das echte
+ * Stylesheet wird geladen, und jede Zeile darf hoechstens so viele Kinder haben, wie
+ * das Raster Spuren deklariert — und die letzte Spur ist die flexible (`fr`), sodass
+ * der Text die verfuegbare Breite abzueglich der festen Zeitspalte bekommt. Kein
+ * fester Pixelwert fuer den Text.
+ */
+describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
+  const withStylesheet = () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${ROOT}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    return style
+  }
+
+  it('gibt dem Text jeder Zeile die flexible Spur — auch mit Rubriksymbol davor', () => {
+    const style = withStylesheet()
+    try {
+      startGame()
+      // Genau der Satz des Befunds: eine Kriegserklaerung, deren Zeile ein
+      // Rubriksymbol traegt. Ein Tick danach, damit der Befehl sicher angewendet ist.
+      fireEvent.keyDown(window, { key: 'd' })
+      const panel = screen.getByRole('region', { name: 'Diplomatie' })
+      fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+      fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+      const log = screen.getByRole('region', { name: 'Ereignisse' })
+      const rows = [...log.querySelectorAll('.log__row')]
+      expect(rows.length).toBeGreaterThan(0)
+      expect(
+        rows.some((row) => row.querySelector('svg')),
+        'keine Zeile traegt ein Rubriksymbol — der Befundfall fehlt',
+      ).toBe(true)
+
+      for (const row of rows) {
+        const tracks = window
+          .getComputedStyle(row)
+          .getPropertyValue('grid-template-columns')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+        expect(
+          row.children.length,
+          `Zeile "${row.textContent?.slice(0, 60)}" hat mehr Kinder als Rasterspuren — ihr Text faellt aus der flexiblen Spur`,
+        ).toBeLessThanOrEqual(tracks.length)
+        // Die letzte Spur ist die flexible: der Text bekommt die Breite der Leiste
+        // abzueglich der festen Zeitspalte — kein fester Pixelwert.
+        expect(tracks[tracks.length - 1]).toMatch(/fr$/)
+        expect(tracks[0]).toMatch(/px$/)
+      }
+    } finally {
+      style.remove()
+    }
+  })
+})
+
 describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', () => {
   it('zeigt nach einem Tag keine Kennung, keinen Platzhalter und keinen fremden Befehl', () => {
     // The first smoke test read "Bau von barracks begonnen" for another power's
