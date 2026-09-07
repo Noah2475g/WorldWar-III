@@ -1,5 +1,37 @@
-# BAUPLAN M19–M21 — für den umsetzenden Agenten
+# ✅ ERLEDIGT — BAUPLAN M19–M21
 
+> # Alle fünfzehn Aufgaben sind gebaut.
+>
+> **Abgeschlossen am 2026-09-07.** Diese Datei beschreibt **keine offene Arbeit mehr.** Sie
+> bleibt stehen, weil sie die *Begründungen* trägt, gegen die gebaut wurde — und weil sich
+> mehrere Entscheidungen dieser Umsetzung nur im Kontrast zu ihr verstehen lassen.
+>
+> **Was tatsächlich gebaut wurde, und wo es abweicht**, steht in `PROGRESS.md` (fünfzehn
+> Einträge, T-M19-01 bis T-M20-04) und in den Berichten `docs/reports/map-geometry.md` und
+> `docs/reports/onboarding.md`. `tasks.yaml` führt alle fünfzehn auf `done`.
+>
+> ## Fünf Zahlen dieses Plans waren nicht reproduzierbar
+>
+> Sie sind alle nachgemessen; die Messungen stehen in den Berichten. Wer hier liest, muss
+> das wissen:
+>
+> | Behauptung | gemessen |
+> |---|---|
+> | „G2 fällt mit 130 von 237" bei 99 % Schwelle | **66** — die 130 gilt für 100 % |
+> | „G1 mit 4" | **14** ohne Toleranz, 4 erst ab über 6 px |
+> | „G3 10 von 28" | nicht prüfbar, die Datei gab es nicht |
+> | 25 px² Filterschwelle | lässt **38 Provinzen** unter der 99-%-Schwelle, die dieselbe Aufgabe grün verlangt |
+> | „AUS-SE ist zu klein zum Anklicken" | Singapur (4 px²), Bahrain (5), Malta (6) sind kleiner und anklickbar — die **Überdeckung** war der Fehler, nicht die Größe |
+>
+> **Eine Zahl des Plans war dagegen richtig und hat einen Fehler von mir gefangen:** die
+> 43 Ticks bis zur ersten Einheit. Meine Rechnung kam auf 41, weil Bauen und Ausheben die
+> Moral verschieden skalieren. Ohne die Zahl im Plan hätte mein eigener Test die falsche
+> zementiert.
+>
+> ---
+>
+> <details><summary>Der ursprüngliche Bauplan (2026-09-07, vor der Umsetzung)</summary>
+>
 > **Das ist die einzige Datei, die du für die Umsetzung von M19, M20 und M21 brauchst.**
 > Sie enthält je Aufgabe die Dateien, die Zeilen, den Code vorher und nachher, den Test und
 > die Fallen. Du musst **nicht** suchen, nicht greppen, keine Kapitel querlesen.
@@ -563,3 +595,5 @@ Alle fünfzehn Aufgaben auf `done`, `pnpm verify` grün, und dann:
 2. `WORKFLOW.md` und `SESSION-STATE.md` im Vault nachziehen.
 3. **Diese Datei löschen oder als erledigt kennzeichnen.** Ein Bauplan, der nach dem Bau
    stehen bleibt, wird beim nächsten Lesen für offene Arbeit gehalten.
+
+</details>

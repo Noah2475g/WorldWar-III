@@ -3,7 +3,8 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-07 · **Alle Bauaufgaben sind erledigt.** Was bleibt, gehört Noah.
+> **Stand:** 2026-09-07 · **Alle Bauaufgaben sind erledigt — auch M19, M20 und M21.**
+> Was bleibt, gehört Noah.
 
 ---
 
@@ -13,12 +14,14 @@
 git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:short)'
 ```
 
-**Der Spitzenstand liegt auf `claude/offenen-plan-abarbeiten-4d4c8e`.** `main` steht auf
+**Der Spitzenstand liegt auf `claude/bauplan-m19-m21-ec7e6a`** (bis zum 2026-09-07
+auf `claude/offenen-plan-abarbeiten-4d4c8e`; dieser Zweig baut darauf auf und ist
+fuenfzehn Aufgaben weiter). `main` steht auf
 M8 und ist **über neunzig Commits alt** — ein frischer Worktree landet dort und sieht ein
 anderes Projekt. Zeigt dein `HEAD` nicht auf die Spitze:
 
 ```bash
-git reset --hard claude/offenen-plan-abarbeiten-4d4c8e && pnpm install
+git reset --hard claude/bauplan-m19-m21-ec7e6a && pnpm install
 ```
 
 Das ist die Falle, in die **drei** Sitzungen hintereinander gelaufen sind, zuletzt am
@@ -28,7 +31,8 @@ Das ist die Falle, in die **drei** Sitzungen hintereinander gelaufen sind, zulet
 
 ## 1 · Der Stand in einem Absatz
 
-Von 139 Aufgaben sind **137 erledigt**. Offen sind zwei, und keine davon ist Bauarbeit:
+Von 154 Aufgaben sind **152 erledigt** — die fuenfzehn aus M19, M20 und M21 sind seit
+dem 2026-09-07 dabei. Offen sind zwei, und keine davon ist Bauarbeit:
 
 | Aufgabe | Was fehlt |
 |---|---|
@@ -75,20 +79,43 @@ alte Worktrees weg (`git worktree list` zeigt mehrere; nur dieser ist aktuell).
 
 ---
 
-## 2b · Geplant, nicht gebaut: M19, M20, M21
+## 2b · ✅ Gebaut am 2026-09-07: M19, M20, M21
 
-Aus Noahs Playtest am 2026-09-07 sind drei Meilensteine mit **fünfzehn Aufgaben** entstanden.
-**Nichts davon ist gebaut**, und keiner blockiert die V1-Abnahme.
+Aus Noahs Playtest am 2026-09-07 sind drei Meilensteine mit **fünfzehn Aufgaben**
+entstanden. **Alle fünfzehn sind erledigt**, jede mit einem Test, der ohne die Reparatur
+fällt.
 
-| | | |
+| | | Ergebnis |
 |---|---|---|
-| **M19** | Die Karte zeigt, was da ist | der Kartenfehler: 130 von 237 Provinzen verlieren Land |
-| **M20** | Die Karte spricht mit | Symbole und Farben, wo heute Wörter stehen |
-| **M21** | Die ersten Spieltage führen | der geführte Einstieg |
+| **M19** | Die Karte zeigt, was da ist | **85,78 % → 100,00 %** der Landfläche; Kalifornien ist da |
+| **M20** | Die Karte spricht mit | elf neue Symbole, Farbfelder je Macht, marschierende Armeen |
+| **M21** | Die ersten Spieltage führen | fünf Schritte wurden acht, das Warten hat einen Namen |
 
-> **Wenn du das umsetzt, lies `docs/plan/BAUPLAN-M19-M21.md`** — eine Datei, je Aufgabe
-> Dateien, Zeilen, Code vorher/nachher, Test und Fallen. Sie ist so gebaut, dass du **nicht
-> suchen musst**. Die Reihenfolge steht dort oben; arbeite sie von oben ab.
+**Wo die Zahlen stehen:** `docs/reports/map-geometry.md` (die vier Kartenprüfungen,
+vorher/nachher, mit Bildbeleg) und `docs/reports/onboarding.md` (der Durchgang über
+sechzehn Spieltage). Fünfzehn Einträge in `PROGRESS.md` sagen je Aufgabe, was gebaut
+wurde und was anders kam als geplant.
+
+> **`docs/plan/BAUPLAN-M19-M21.md` ist abgearbeitet** und trägt seit dem 2026-09-07 einen
+> entsprechenden Kopf. Er bleibt als Begründungssammlung stehen — **aber fünf seiner
+> Zahlen sind nicht reproduzierbar** und dort einzeln richtiggestellt. Wer ihn liest, muss
+> das wissen.
+
+### Drei Dinge, die daraus für Noah offen sind
+
+Alle drei sind **Entscheidungen**, keine Bauarbeit, und alle drei stehen mit Begründung in
+`PROBLEME.md` beziehungsweise `DECISIONS.md`:
+
+1. **Der Name `AUS-SE`.** „Südostaustralien" besteht aus dem Hauptstadtterritorium, Jervis
+   Bay und der Macquarie-Insel; Victoria und New South Wales stecken in `AUS-NE`. Die
+   Provinz ist seit T-M19-04 anklickbar, der Name bleibt falsch. Umbenennen wäre die
+   billige ehrliche Antwort; den Zuschnitt zu ändern hieße, die Anreicherung neu zu
+   würfeln.
+2. **Drei leere Spieltage.** Zwischen der Eisenbahn an Tag 5 und der Fabrik an Tag 8
+   meldet das Spiel nichts. Gemessen in `onboarding.md`, drei Wege dort genannt, keiner
+   empfohlen — das ist Balancing.
+3. **Der Markt ohne Symbole.** `<option>` kann kein SVG tragen; eine eigene Liste wäre
+   Bedienbarkeit gegen Aussehen. Steht in `DECISIONS.md`.
 
 ---
 
@@ -144,17 +171,33 @@ Aus Noahs Playtest am 2026-09-07 sind drei Meilensteine mit **fünfzehn Aufgaben
 
 | | |
 |---|---|
-| Aufgaben | 139, davon **137 erledigt** |
+| Aufgaben | 154, davon **152 erledigt** (M19–M21 dazugekommen) |
 | Offen | T-M12-03 (Noahs Abnahme) · T-M10-02 (zurückgenommen, keine Arbeit) |
-| Tests | **1400** schnell · Kern 96,8 % · gesamt 95,1 % |
+| Tests | **1528** schnell · Kern 96,8 % · gesamt 95,3 % |
 | Anforderungen | `V1 offen: 0` |
 | AK-1 | belegt: Sieg an Spieltag 876, 2025 Eroberungen, 11 Kriegserklärungen |
-| Abnahmelauf | **7 von 7** maschinell, 2026-09-07 gegen `009bec6` |
+| Abnahmelauf | **7 von 7** maschinell, 2026-09-07 gegen `009bec6` — ⚠ **vor M19–M21**, siehe unten |
 | AK-8 | **erfüllt und gemessen** — `docs/reports/packaging.md` |
 | Tickbudget | 2,5 ms Median gegen 3,5 ms (Weltkarte, 237 Provinzen, 12 Mächte) |
 | KI-Budget | **0,074 gegen 0,30** — erstmals unter den Bedingungen der Anforderung |
-| Zeichenbudget | 1,0–1,7 ms Median, 7,3 ms schlechtestes Einzelbild, gegen 16,7 ms |
+| Zeichenbudget | **p95 4,57 ms** mit Flächen und Bewegung, gegen 16,7 ms (2026-09-07, nach M19–M21) |
+| Landfläche gezeichnet | **100,00 %** (vorher 85,78 %) — `docs/reports/map-geometry.md` |
 | Programm | `worldwar.exe` 7,50 MiB + MSI 2,81 MiB + NSIS 2,11 MiB |
+
+> ⚠ **Der Abnahmelauf ist älter als M19–M21 und muss wiederholt werden.** Er lief gegen
+> `009bec6`, also vor den fünfzehn Aufgaben. `pnpm verify` ist auf dem neuen Stand grün
+> (1528 Tests), aber das ist die schnelle Kette — der volle Lauf mit Langläufen, Turnier
+> und Budgets steht aus:
+>
+> ```bash
+> pnpm acceptance
+> ```
+>
+> **Er braucht die Maschine allein** (rund 75 Minuten). Am 2026-09-07 lag die Grundlast bei
+> 19–30 % (ein laufendes Spiel und ein Browser), und ein Lauf unter Last überschreibt die
+> Benchmark-Berichte mit Zahlen, die die Maschine messen statt den Code — genau das ist am
+> selben Tag schon einmal passiert und musste verworfen werden (§4, Falle 4). Deshalb steht
+> er aus und wurde nicht blind gestartet.
 
 ---
 
