@@ -35,7 +35,9 @@ Von 139 Aufgaben sind **137 erledigt**. Offen sind zwei, und keine davon ist Bau
 | **T-M12-03** (Haltepunkt) | **Noahs Playtest und seine Abnahme.** Kein Skript kann das |
 | T-M10-02 | Nichts. Am 2026-09-06 zurückgenommen und gelöscht; steht mit Begründung im `reopened`-Feld |
 
-`pnpm verify` ist grün (1396 Tests, Kern 96,8 %, gesamt 95,1 %). **AK-8 ist gemessen**
+**Der vollständige Abnahmelauf ist gelaufen: 7 von 7 maschinelle Prüfungen bestanden**
+(`pnpm acceptance` gegen `009bec6`, 73 min, Exit 0) — `docs/reports/acceptance.md`.
+`pnpm verify` ist grün (1400 Tests, Kern 96,8 %, gesamt 95,1 %). **AK-8 ist gemessen**
 (`docs/reports/packaging.md`), **R-AI-04 ist zum ersten Mal unter seinen eigenen
 Bedingungen gemessen** (`docs/reports/ai-bench.json`, Anteil 0,074 gegen 0,30), und die
 Karte ist zum ersten Mal an einem Kontext gemessen, der wirklich zeichnet
@@ -52,8 +54,13 @@ eigenen Kopf:
 > *Durchgang durch einen Agenten am 2026-09-06, nicht durch Noah. **AK-7 verlangt im
 > Wortlaut Noahs Abnahme** — dieser Bogen ersetzt sie nicht, er nimmt ihr die Suche ab.*
 
-Das Skript prüft Vollständigkeit, nicht Urheberschaft. Wer nur die Zahl liest, hält AK-7
-für erfüllt. **Es ist der einzige echte Haltepunkt, der noch offen ist.**
+Seit dem 2026-09-07 **sagt das Skript das selbst**: der Bogen trägt eine Zeile
+`Durchgang von:`, und solange dort nicht Noah steht, meldet der Abnahmebericht AK-7 als
+offen — vorher stand dort ein Haken, während der Satz zwei Zeilen weiter das Gegenteil
+sagte. **Es ist der einzige echte Haltepunkt, der noch offen ist.**
+
+Trag dich nach dem Spielen in `docs/reports/playtest-v1.md` bei `**Durchgang von:**`
+ein; `pnpm playtest:sheet` sagt dann, ob noch etwas fehlt.
 
 ```bash
 pnpm --filter @worldwar/desktop dev
@@ -121,9 +128,10 @@ alte Worktrees weg (`git worktree list` zeigt mehrere; nur dieser ist aktuell).
 |---|---|
 | Aufgaben | 139, davon **137 erledigt** |
 | Offen | T-M12-03 (Noahs Abnahme) · T-M10-02 (zurückgenommen, keine Arbeit) |
-| Tests | **1396** schnell · Kern 96,8 % · gesamt 95,1 % |
+| Tests | **1400** schnell · Kern 96,8 % · gesamt 95,1 % |
 | Anforderungen | `V1 offen: 0` |
-| AK-1 | belegt: Sieg an Spieltag 876 |
+| AK-1 | belegt: Sieg an Spieltag 876, 2025 Eroberungen, 11 Kriegserklärungen |
+| Abnahmelauf | **7 von 7** maschinell, 2026-09-07 gegen `009bec6` |
 | AK-8 | **erfüllt und gemessen** — `docs/reports/packaging.md` |
 | Tickbudget | 2,5 ms Median gegen 3,5 ms (Weltkarte, 237 Provinzen, 12 Mächte) |
 | KI-Budget | **0,074 gegen 0,30** — erstmals unter den Bedingungen der Anforderung |
