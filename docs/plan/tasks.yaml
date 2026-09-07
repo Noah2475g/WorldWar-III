@@ -46,6 +46,9 @@ milestones:
   # Untersuchung hat ihn als systematisch nachgewiesen (130 von 237 Provinzen).
   - { id: M19, title: Die Karte zeigt, was da ist }
   - { id: M20, title: Die Karte spricht mit }
+  # Noahs zweiter Wunsch vom 2026-09-07: der Spieler soll wissen, was er anklicken muss,
+  # um voranzukommen. Die bestehende Einstiegshilfe erklaert die Bedienung, nicht das Spiel.
+  - { id: M21, title: Die ersten Spieltage fuehren }
 
 tasks:
   - id: T-M0-01
@@ -1621,3 +1624,64 @@ tasks:
     files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "Der Teil von interaktiver, der keine Symbole meint - und hier liegt eine offene V1-Zusage: R-UI-04 verspricht Bewegungs- UND Kampfanimationen, und nur die Kampfhaelfte existiert. Fertig, wenn die gewaehlte Provinz ihr Kennzeichen auf der Karte traegt, eine marschierende Armee sich zwischen zwei Bildern bewegt, und BEIDES aufhoert, sobald motionAllowed falsch sagt. pnpm verify gruen und die Zeichenmessung wiederholt: 16,7 ms bei p95, gemessen statt geschaetzt. Die zwei gebauten Bremsen bleiben unangetastet - oberhalb der Tempogrenze und unter prefers-reduced-motion bewegt sich nichts. Steht zuletzt, weil sie die riskanteste Aufgabe ist: MapCanvas ist die am schlechtesten abgedeckte Datei der Oberflaeche"
+
+  # --- M21: Die ersten Spieltage fuehren (Noahs Wunsch vom 2026-09-07) -----------------
+  # Die bestehende Einstiegshilfe erklaert die BEDIENUNG in fuenf Schritten und ist nach
+  # wenigen Minuten vorbei. Was fehlt, ist der ZWECK: wozu eine Kaserne, wie daraus eine
+  # Armee wird, woher Siegpunkte kommen. Rueckgrat ist die Freischaltungsachse, die das
+  # Spiel ohnehin hat (Tag 1 bis 16). Entwurf D23.
+
+  - id: T-M21-01
+    milestone: M21
+    title: Die Texte der Fuehrung ziehen in die Sprachdatei
+    status: todo
+    deps: []
+    requirements: [R-UI-07]
+    design: [D-23]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts]
+    tests: [test/guards/text-keys.test.ts, apps/desktop/src/game/tutorial.test.ts]
+    dod: "Die fuenf Schritttexte stehen im Quelltext von tutorial.ts; de.ts kennt unter tutorial nur title und dismiss. Das verletzt R-UI-07 (Texte zentral in einer Sprachdatei). Gefangen hat es nichts, weil der Textwaechter die Gegenrichtung prueft: er sucht Schluessel ohne Text, nicht Text ohne Schluessel. Fertig, wenn jeder Schritt seinen Text aus t() bezieht UND ein Waechter die neue Richtung prueft - ein anzeigbarer Text im Quelltext einer Komponente faellt auf. Muss vor T-M21-02 stehen: sonst entstehen zwoelf neue Texte an der falschen Stelle"
+
+  - id: T-M21-02
+    milestone: M21
+    title: Die Fuehrung folgt dem Spiel, nicht der Knopfleiste
+    status: todo
+    deps: [T-M21-01]
+    requirements: [R-UI-18]
+    design: [D-23]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/tutorial.test.ts, apps/desktop/src/App.test.tsx]
+    dod: "completesOn kennt heute fuenf Oberflaechenereignisse (Provinz gewaehlt, Baumenue offen, Tempo gesetzt, vorgespult, Protokoll gesehen). Es kommt hinzu, was das SPIEL meldet - Bau fertig, Einheit ausgehoben, Armee marschiert, Provinz erobert - und die Zeit: ein Spieltag vergangen. Damit fuehrt die Anleitung den Kreislauf bauen, ausheben, fuehren, erobern statt der Knopfleiste. Die drei Regeln der bestehenden Hilfe bleiben unangetastet: sie blockiert nie, sie kommt nur beim ersten Mal, sie laesst sich abschalten und bleibt aus. Fertig, wenn ein Test eine echte Partie so weit fuehrt, dass ein Schritt durch ein SPIELereignis endet - nicht durch einen Klick"
+
+  - id: T-M21-03
+    milestone: M21
+    title: Die Fuehrung nennt das Warten beim Namen
+    status: todo
+    deps: [T-M21-02]
+    requirements: [R-UI-18]
+    design: [D-23]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/tutorial.test.ts]
+    dod: "Aus den Regeln gerechnet: der Startvorrat traegt 350 Material, die Kaserne kostet 333 - der Spieler kann am ersten Tag GENAU EINE bauen. Danach vergeht ein Spieltag Bauzeit und ein halber fuer die Infanterie: die erste Einheit steht fruehestens an Spieltag 2,5. Dazwischen gibt es nichts zu klicken, was voranbringt, und genau dort steigt ein neuer Spieler aus. Fertig, wenn die Fuehrung diese Luecke ausdruecklich benennt und auf Tempo und Vorspulen zeigt, statt so zu tun, als gaebe es etwas zu tun. Ein Hinweis, der Warten als Warten benennt, ist besser als einer, der es verschweigt"
+
+  - id: T-M21-04
+    milestone: M21
+    title: Jede Mechanik wird erklaert, wenn sie freigeschaltet wird
+    status: todo
+    deps: [T-M21-02]
+    requirements: [R-UI-18]
+    design: [D-23]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts, data/rules/default/buildings.json, data/rules/default/units.json]
+    tests: [apps/desktop/src/game/tutorial.test.ts]
+    dod: "Das Rueckgrat ist die Freischaltungsachse, die das Spiel ohnehin hat: Kaserne und Infanterie an Tag 1, Hafen an Tag 2, Festung und Transporter an Tag 3, Motorisierte an Tag 4, Eisenbahn an Tag 5, Fabrik und Panzer an Tag 8, Werft und Artillerie an Tag 9, Flugplatz und Jagdflugzeug an Tag 10, Zerstoerer an Tag 11, Bomber an Tag 13. Fertig, wenn ein WAECHTER das bindet: jede Sache mit availableFromDay hat einen Fuehrungsschritt oder steht auf einer begruendeten Ausnahmeliste. Sonst faellt eine neue Einheit still aus der Anleitung heraus - dieselbe Bauart wie der Symbolsatz, der Schluessel fuehrte, die es in den Regeln nicht gab"
+
+  - id: T-M21-05
+    milestone: M21
+    title: Der Durchgang wird gemessen, nicht behauptet
+    status: todo
+    deps: [T-M21-03, T-M21-04]
+    requirements: [R-UI-18]
+    design: [D-23]
+    files: [docs/reports/onboarding.md, docs/PLAYTEST.md]
+    tests: []
+    dod: "Eine Fuehrung, die nur ihre eigenen Tests besteht, ist eine Fuehrung, die niemand gefuehrt hat. Fertig, wenn ein Lauf ueber die ersten 16 Spieltage protokolliert ist: welcher Schritt wann kam, wie lange der Spieler zwischen zwei Schritten ohne Aufgabe war, und an welcher Stelle die laengste Pause liegt. Die laengste Pause ist die Zahl, die zaehlt - sie ist die Stelle, an der jemand aufhoert. Dazu Fragen im Playtest-Bogen, die ein Mensch beantwortet: wusste ich, was zu tun ist; wusste ich, wozu"

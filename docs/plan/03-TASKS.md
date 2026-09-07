@@ -3283,3 +3283,87 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Störungslampe."
   **Diese Aufgabe steht zuletzt, weil sie die riskanteste ist:** `MapCanvas` ist die am
   schlechtesten abgedeckte Datei der Oberfläche (168 von 249 Zeilen seit T-M16-06).
+
+## Meilenstein M21 — Die ersten Spieltage führen
+
+> **Herkunft:** Noah, 2026-09-07 — „eine Art geführte Anleitung, die in den ersten Spieltagen
+> den Spielzyklus mit all seinen Mechaniken erklärt, damit der Spieler nicht überfordert ist
+> und nicht weiß, was er anklicken muss, um Progress zu machen." Entwurf: **D23**.
+>
+> Die bestehende Einstiegshilfe erklärt in fünf Schritten die **Bedienung** und ist nach
+> wenigen Minuten vorbei. Was fehlt, ist der **Zweck** — und die Stunden danach.
+
+### T-M21-01 · Die Texte der Führung ziehen in die Sprachdatei
+- **Ziel:** Die fünf Schritttexte stehen im **Quelltext** von `tutorial.ts`; `de.ts` kennt
+  unter `tutorial` nur `title` und `dismiss`. Das verletzt R-UI-07 („Texte zentral in einer
+  Sprachdatei"). Gefangen hat es nichts, weil der Textwächter die **Gegenrichtung** prüft: er
+  sucht Schlüssel ohne Text, nicht Text ohne Schlüssel.
+- **Anforderungen:** R-UI-07
+- **Entwurf:** D23.1
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `test/guards/text-keys.test.ts` — die neue Richtung: ein anzeigbarer Text
+  im Quelltext einer Komponente fällt auf.
+- **Fertig wenn:** jeder Schritt bezieht seinen Text aus `t()`. **Diese Aufgabe steht zuerst**
+  — sonst entstehen in T-M21-02 zwölf neue Texte an der falschen Stelle.
+
+### T-M21-02 · Die Führung folgt dem Spiel, nicht der Knopfleiste
+- **Ziel:** `completesOn` kennt heute fünf Oberflächenereignisse. Es kommt hinzu, was das
+  **Spiel** meldet — Bau fertig, Einheit ausgehoben, Armee marschiert, Provinz erobert — und
+  die **Zeit**: ein Spieltag vergangen. Damit führt die Anleitung den Kreislauf *bauen →
+  ausheben → führen → erobern* statt der Knopfleiste.
+- **Anforderungen:** R-UI-18
+- **Entwurf:** D23.4
+- **Abhängigkeiten:** T-M21-01
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/ui/Tutorial.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/game/tutorial.test.ts` und `App.test.tsx` — ein Test
+  führt eine **echte Partie** so weit, dass ein Schritt durch ein **Spielereignis** endet,
+  nicht durch einen Klick.
+- **Fertig wenn:** die drei Regeln der bestehenden Hilfe unangetastet gelten — sie blockiert
+  nie, sie kommt nur beim ersten Mal, sie bleibt aus, wenn man sie abschaltet. **Auch die
+  freundliche Sperre ist eine Sperre** („erst wenn Sie X getan haben"): wer die Führung
+  ignoriert, spielt weiter, und sie holt ihn ein.
+
+### T-M21-03 · Die Führung nennt das Warten beim Namen
+- **Ziel:** Aus den Regeln gerechnet: der Startvorrat trägt **350 Material**, die Kaserne
+  kostet **333** — genau eine ist drin. Danach vergeht ein Spieltag Bauzeit und ein halber für
+  die Infanterie: **die erste Einheit steht frühestens an Spieltag 2,5.** Dazwischen gibt es
+  nichts zu klicken, was voranbringt. Genau dort steigt ein neuer Spieler aus.
+- **Anforderungen:** R-UI-18
+- **Entwurf:** D23.3
+- **Abhängigkeiten:** T-M21-02
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/game/tutorial.test.ts` — der Warteschritt erscheint und
+  nennt Tempo und Vorspulen.
+- **Fertig wenn:** die Lücke ist ausdrücklich benannt. **Ein Hinweis, der Warten als Warten
+  benennt, ist besser als einer, der so tut, als gäbe es etwas zu tun.**
+
+### T-M21-04 · Jede Mechanik wird erklärt, wenn sie freigeschaltet wird
+- **Ziel:** Das Rückgrat ist die Freischaltungsachse, die das Spiel **ohnehin hat** — Kaserne
+  und Infanterie an Tag 1, Hafen an Tag 2, Festung und Transporter an Tag 3, Motorisierte an
+  Tag 4, Eisenbahn an Tag 5, Fabrik und Panzer an Tag 8, Werft und Artillerie an Tag 9,
+  Flugplatz und Jagdflugzeug an Tag 10, Zerstörer an Tag 11, Bomber an Tag 13. Jede Mechanik
+  wird erklärt, **wenn sie kommt** — nicht vorher und nicht alles auf einmal.
+- **Anforderungen:** R-UI-18
+- **Entwurf:** D23.2
+- **Abhängigkeiten:** T-M21-02
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein **Wächter**, der die Bindung hält: jede Sache mit `availableFromDay`
+  hat einen Führungsschritt oder steht auf einer **begründeten** Ausnahmeliste.
+- **Fertig wenn:** der Wächter steht. Ohne ihn fällt eine neue Einheit still aus der Anleitung
+  — dieselbe Bauart wie der Symbolsatz, der Schlüssel führte, die es in den Regeln nicht gab.
+
+### T-M21-05 · Der Durchgang wird gemessen, nicht behauptet
+- **Ziel:** Eine Führung, die nur ihre eigenen Tests besteht, ist eine Führung, die niemand
+  geführt hat.
+- **Anforderungen:** R-UI-18
+- **Abhängigkeiten:** T-M21-03, T-M21-04
+- **Dateien:** `docs/reports/onboarding.md`, `docs/PLAYTEST.md`
+- **Tests zuerst:** keine — der Bericht ist ein Erzeugnis; seine Wächter sind T-M21-04 und die
+  Tests der Schritte.
+- **Fertig wenn:** ein Lauf über die ersten **16 Spieltage** ist protokolliert: welcher Schritt
+  wann kam, wie lange der Spieler zwischen zwei Schritten **ohne Aufgabe** war, und wo die
+  längste Pause liegt. **Die längste Pause ist die Zahl, die zählt** — sie ist die Stelle, an
+  der jemand aufhört. Dazu zwei Fragen im Playtest-Bogen, die ein Mensch beantwortet: *wusste
+  ich, was zu tun ist* und *wusste ich, wozu*.

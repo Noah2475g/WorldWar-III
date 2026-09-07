@@ -396,6 +396,18 @@ gemeint ist, steht ihr Name; wo ein Gelände gemeint ist, steht das Wort.
   - AK1: WENN eine Meldung ein Gebiet betrifft, DANN SOLL ein Klick darauf die Karte
     dorthin führen.
 
+- **R-UI-18 — Die ersten Spieltage führen.** Ein neuer Spieler wird durch den **Spielkreislauf**
+  geführt, nicht durch die Knopfleiste: bauen → ausheben → Armee führen → erobern → Punkte. Die
+  Führung läuft über die ersten Spieltage mit und erklärt jede Mechanik **dann, wenn das Spiel
+  sie freischaltet** — nicht alles am Anfang.
+  - AK1: WENN eine Mechanik zum ersten Mal verfügbar wird, DANN SOLL die Führung sagen, wozu
+    sie dient und was als Nächstes zu tun ist.
+  - AK2: WENN der Spieler etwas anderes tut als vorgeschlagen, DANN SOLL die Führung **nicht
+    blockieren** und nicht zurückspringen — sie wartet oder überspringt.
+  - AK3: WENN der Spieler die Führung abschaltet, DANN SOLL sie abgeschaltet bleiben.
+  - AK4: WENN die Führung einen Schritt zeigt, DANN SOLL ihr Text aus der Sprachdatei kommen —
+    wie jeder andere Text der Oberfläche (R-UI-07).
+
 ### 2.13 Assets & Recht (`R-ASSET`)
 
 - **R-ASSET-01 — Keine Fremdassets.** Keine Grafiken, Sounds, Texte, Daten oder Codeteile aus
@@ -438,6 +450,7 @@ scope:
     R-MAP-09:   "M19 — der Waechter, der den Fehler haette finden muessen (T-M19-01)"
     R-UI-16:    "M20 — die Macht an ihrer Farbe erkennbar (T-M20-02)"
     R-UI-17:    "M20 — Rueckmeldung auf eigene Handlungen (T-M20-04)"
+    R-UI-18:    "M21 — der gefuehrte Einstieg ueber die ersten Spieltage (T-M21-02)"
     R-BAT-08:   "M15 — Feuerautomatik und Feuerleitung (T-M15-07)"
     R-TECH-01:  "M15 — Freischaltung nach Spieltag (T-M15-02)"
     R-TECH-02:  "M15 — Freischaltung in der Oberfläche (T-M15-03)"

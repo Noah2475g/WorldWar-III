@@ -1651,9 +1651,12 @@ Die Reparatur ist deshalb nicht die bessere Auswahl, sondern **keine Auswahl meh
 - Alles behalten kostet +48 % Punkte. Umrisse ab 25 px² behalten kostet **+26 %** und holt
   **99,79 %** der Landfläche zurück; nur 56 Provinzen brauchen dann mehr als einen Umriss.
 
-Die Zwischenstufe (größter Ring nach **echter** Fläche, nicht nach projizierter) bleibt als
-Sofortmaßnahme möglich — sie repariert die vier verschobenen Provinzen und lässt 6,7 % der
-Landfläche fehlen. Sie ist ein Stopp der Blutung, nicht die Naht.
+**Die Zwischenstufe ist gestrichen** (Noahs Entscheidung vom 2026-09-07). Sie hätte den
+größten Ring nach *echter* Fläche gewählt, die vier verschobenen Provinzen repariert und
+**6,7 % der Landfläche weiterhin fehlen lassen** — ein Stopp der Blutung, nicht die Naht. Da
+der richtige Weg nicht wesentlich größer ist und beide dieselben Dateien anfassen, wäre sie
+Arbeit gewesen, die man hinterher wieder auszieht. Sie steht hier, damit niemand sie ein
+zweites Mal vorschlägt.
 
 ### D21.4 Die Wächter, die es hätten finden müssen
 
@@ -1776,3 +1779,89 @@ und das ist keine Atmosphäre, sondern eine Störungslampe". Und die 16,7 ms.
 Dazu kommt ein Risiko, das benannt gehört: `MapCanvas` ist die am schlechtesten abgedeckte
 Datei der Oberfläche (seit T-M16-06: 168 von 249 Zeilen). Bewegung dort einzubauen ist die
 riskanteste Stelle des ganzen Meilensteins — deshalb steht sie am Ende und nicht am Anfang.
+
+## D23. Die ersten Spieltage führen (M21 — R-UI-18)
+
+Noah, 2026-09-07: „eine Art geführte Anleitung, die in den ersten Spieltagen den Spielzyklus
+mit all seinen Mechaniken erklärt, damit der Spieler nicht überfordert ist und nicht weiß, was
+er anklicken muss, um Progress zu machen."
+
+### D23.1 Was es schon gibt — und wo es aufhört
+
+`game/tutorial.ts` führt fünf Schritte: Provinz anklicken, Baumenü öffnen, Tempo setzen,
+vorspulen, ins Protokoll sehen. Sie sind gut gebaut und tragen drei Regeln, die **bleiben**:
+
+- **Sie blockiert nie.** Ein Schritt ist ein Hinweis neben dem Spiel, keine Tür davor.
+- **Sie kommt nur beim ersten Mal** und merkt sich das.
+- **Sie lässt sich mittendrin abschalten** und bleibt aus.
+
+Was sie erklärt, ist die **Bedienung**: welche Knöpfe es gibt. Was sie nie sagt, ist der
+**Zweck**: wozu eine Kaserne gut ist, warum man Infanterie aushebt, wie daraus eine Armee
+wird, wie man eine Provinz nimmt, woher Siegpunkte kommen. Sie ist nach wenigen Minuten
+vorbei — Noah beschreibt die Stunden danach.
+
+> **Nebenbefund:** Die fünf Texte stehen **im Quelltext** von `tutorial.ts`, nicht in der
+> Sprachdatei; `de.ts` kennt unter `tutorial` nur `title` und `dismiss`. Das verletzt R-UI-07
+> („Texte zentral in einer Sprachdatei"). Gefangen hat es nichts, weil der Textwächter die
+> Gegenrichtung prüft — er sucht Schlüssel ohne Text, nicht Text ohne Schlüssel.
+
+### D23.2 Das Rückgrat liegt schon im Spiel
+
+Die Führung braucht keine eigene Dramaturgie. Das Spiel hat eine: die **Freischaltungen**
+(R-TECH-01/02, seit T-M15-03).
+
+| Tag | frei | Tag | frei |
+|---|---|---|---|
+| 1 | Kaserne, Infanterie | 8 | Fabrik, Panzer |
+| 2 | Hafen | 9 | Werft, Artillerie |
+| 3 | Festung, Transporter | 10 | Flugplatz, Jagdflugzeug |
+| 4 | Motorisierte | 11 | Zerstörer |
+| 5 | Eisenbahn | 13 | Bomber |
+
+**Jede Mechanik wird erklärt, wenn das Spiel sie freischaltet** — nicht vorher und nicht alles
+auf einmal. Das ist die Antwort auf „nicht überfordert": die Führung folgt einer Reihenfolge,
+die ohnehin existiert, statt eine zweite zu erfinden, die mit ihr auseinanderläuft.
+
+### D23.3 Die enge erste Stunde — gerechnet, nicht geschätzt
+
+| | |
+|---|---|
+| Startvorrat Material | 350 |
+| Kaserne kostet | **333** |
+| Kaserne braucht | 24 Ticks = 1,0 Spieltage |
+| Infanterie kostet | 75 Nahrung, 50 Material, 67 Geld |
+| Infanterie braucht | 12 Ticks = 0,5 Spieltage, **und eine Kaserne** |
+
+Der Spieler kann am ersten Tag **genau eine** Kaserne bauen — danach ist das Material weg. Die
+erste Einheit steht **frühestens an Spieltag 2,5**. Dazwischen liegt anderthalb Spieltage, in
+denen es nichts zu klicken gibt, was voranbringt.
+
+Das ist die Stelle, an der ein neuer Spieler aussteigt, und die Führung muss sie ausdrücklich
+benennen: *„Das dauert jetzt einen Spieltag. Stellen Sie das Tempo höher oder spulen Sie
+vor."* Ein Hinweis, der Warten als Warten benennt, ist besser als einer, der so tut, als gäbe
+es etwas zu tun.
+
+### D23.4 Die Form: ein Schritt ist eine Bedingung, kein Bildschirm
+
+Die bestehende Hilfe endet einen Schritt, wenn der Spieler **die Sache tut**
+(`completesOn: 'selectProvince'`) — nicht auf „Weiter". Das ist richtig und wird erweitert:
+heute kennt `completesOn` fünf Oberflächenereignisse, künftig auch **Spielereignisse**
+(Bau fertig, Einheit ausgehoben, Provinz erobert) und **Zeitpunkte** (ein Spieltag vergangen).
+
+Damit die Führung nicht bevormundet (AK2):
+
+- **Sie wartet, sie springt nicht zurück.** Wer Schritt 4 überspringt, indem er es früher tut,
+  bekommt Schritt 5.
+- **Sie hat keine Reihenfolge, die das Spiel nicht auch hätte.** Wer zuerst angreift statt zu
+  bauen, wird nicht korrigiert — der Bauschritt bleibt stehen, bis er dran ist.
+- **Sie endet von selbst**, wenn der Kreislauf einmal ganz durchlaufen ist: bauen → ausheben →
+  führen → erobern.
+
+### D23.5 Was ausdrücklich nicht gebaut wird
+
+- **Keine eigene Kampagne, kein Vorspiel, kein Textfenster über dem Spiel.** Das Spiel beginnt
+  auf der Karte, und die Führung steht daneben.
+- **Kein Nachschlagewerk.** Das ist R-UI-11 und existiert: jedes Ding erklärt sich dort, wo es
+  steht. Die Führung sagt, *was als Nächstes*, nicht *was alles*.
+- **Keine Sperren.** Auch nicht die freundliche Art („erst wenn Sie X getan haben"). Ein
+  Spieler, der die Führung ignoriert, spielt weiter, und sie holt ihn ein.

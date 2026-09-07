@@ -1123,3 +1123,30 @@ reparieren* hat hier genau das geleistet, wofür es da ist: die Reparatur ist ni
 - Er schreibt nach `ai-bench-smallmap.json`; `ai-bench.json` gehört der Messung, die die
   Anforderung belegt. Zwei Schreiber auf eine Datei ergeben einen Bericht, der davon
   abhängt, wer zuletzt lief.
+
+---
+
+## 2026-09-07 · M19 · Der Kartenfehler wird gleich richtig behoben, und er hält die V1 nicht auf
+
+**Zwei Entscheidungen von Noah**, beide am 2026-09-07 auf die Vorlage des Plans:
+
+**1. M19 blockiert die V1-Abnahme nicht.** Der Fehler ist rein sichtbar — nachgemessen, nicht
+angenommen: `polygon` wird außerhalb von `validate.ts` nirgends gelesen, weder im Kern noch in
+der KI noch im kopflosen Läufer. Eine Provinz gehört, wem sie gehört; Bevölkerung und Vorkommen
+sind Attribute und werden nicht aus der Fläche gerechnet. AK-1 ist unberührt, und deshalb darf
+die Abnahme laufen, während die Karte repariert wird.
+
+> Die einzige Ausnahme steht in T-M19-04 und ist dort vermerkt: `AUS-SE` zu streichen *würde*
+> die Partie ändern.
+
+**2. Kein Zwischenschritt — gleich der richtige Weg.** Zur Wahl stand eine Sofortmaßnahme: den
+größten Ring nach *echter* Fläche wählen, ein Einzeiler. Sie hätte die vier verschobenen
+Provinzen repariert und **6,7 % der Landfläche weiterhin fehlen lassen**.
+
+**Begründung:** Beide Wege fassen dieselben Dateien an, und der richtige ist nicht wesentlich
+größer. Ein Zwischenschritt wäre Arbeit gewesen, die man hinterher wieder auszieht — und
+schlimmer: er hätte den Fehler *fast* behoben, was die schlechteste aller Lagen ist. Eine
+Karte, auf der 6,7 % fehlen, sieht richtig genug aus, dass niemand mehr hinsieht.
+
+**Auswirkung:** T-M19-02 baut `polygon` zu einer Liste von Umrissen um. Die Zwischenstufe ist
+in D21.3 ausdrücklich als gestrichen vermerkt, damit sie niemand ein zweites Mal vorschlägt.
