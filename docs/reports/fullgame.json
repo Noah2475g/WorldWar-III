@@ -12,12 +12,12 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 876,
+  "decidedOnDay": 798,
   "winner": "p6",
   "condition": "points",
-  "warDeclarations": 11,
-  "captures": 2025,
-  "battles": 8113,
+  "warDeclarations": 15,
+  "captures": 2717,
+  "battles": 7079,
   "maxDays": 1500,
-  "measuredAt": "2026-09-07T11:46:37.918Z"
+  "measuredAt": "2026-09-07T20:58:52.839Z"
 }

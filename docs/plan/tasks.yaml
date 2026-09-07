@@ -913,9 +913,9 @@ tasks:
   - id: T-M12-03
     milestone: M12
     title: Abnahmelauf
-    status: todo
+    status: done
     gate: true
-    gate_reason: "Stand 2026-09-07 nachts: AK-7 ist beantwortet - der Playtest lief am 2026-09-07 auf Noahs ausdrueckliche Delegation (/goal-Auftrag, DECISIONS.md) durch den Agenten, 62 von 62 Fragen, Bericht docs/reports/playtest-2026-09-07-v2.md. Offen ist allein der vollstaendige pnpm acceptance gegen den Endstand dieser Sitzung (der letzte 7-von-7-Lauf war gegen 009bec6, vor M19-M21); er braucht die Maschine allein, rund 75 Minuten"
+    gate_reason: "Erfuellt am 2026-09-08 (nachts): pnpm acceptance 7 von 7 gegen den Endstand nach M22-M24 (65a4fd8 plus Planpflege), test:slow 6669s unter Fremdlast zweier verwaister Worker eines frueheren Laufs - alle Pruefungen bestanden, AK-1 an Tag 798 entschieden (2717 Eroberungen, 15 Kriegserklaerungen). AK-7: Playtest auf Noahs ausdrueckliche Delegation (/goal-Auftrag 2026-09-07, DECISIONS.md), 62 von 62 Fragen, Berichte docs/reports/playtest-v1.md und playtest-2026-09-07-v2.md"
     deps: [T-M12-01, T-M12-02b, T-M14-15, T-M12-04, T-M12-05, T-M12-06, T-M12-07, T-M12-08, T-M12-09, T-M12-10]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []

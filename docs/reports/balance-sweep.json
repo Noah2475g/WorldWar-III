@@ -18,208 +18,156 @@
   "threshold": 0.15,
   "effects": [
     {
-      "constant": "productionMoraleFloor",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.42490808747228687,
-        "captures": 236,
-        "survivors": 4.916666666666667,
-        "stockpile": 46163,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.36915519615693276,
-        "captures": 238,
-        "survivors": 4.833333333333333,
-        "stockpile": 54112,
-        "days": 120
-      },
-      "swing": 0.101,
-      "loadBearing": false
-    },
-    {
-      "constant": "taxPerThousandPopulationPerTick",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.40224718725115355,
-        "captures": 230,
-        "survivors": 4.833333333333333,
-        "stockpile": 43211,
-        "days": 120
-      },
-      "swing": 0.079,
-      "loadBearing": false
-    },
-    {
       "constant": "baseTargetMorale",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.37533791958575863,
-        "captures": 647,
-        "survivors": 4.166666666666667,
-        "stockpile": 30470,
+        "leaderShare": 0.3550248664311082,
+        "captures": 656,
+        "survivors": 4,
+        "stockpile": 28965,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.3936532333792608,
-        "captures": 164,
-        "survivors": 4.666666666666667,
-        "stockpile": 69933,
-        "days": 120
-      },
-      "swing": 0.07,
-      "loadBearing": false
-    },
-    {
-      "constant": "moraleDriftDivisor",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.3803295915402037,
-        "captures": 212,
-        "survivors": 4.583333333333333,
-        "stockpile": 54269,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.37354692658247485,
-        "captures": 236,
-        "survivors": 4.083333333333333,
-        "stockpile": 50292,
-        "days": 120
-      },
-      "swing": 0.057,
-      "loadBearing": false
-    },
-    {
-      "constant": "expansionPenaltyPerProvince",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.3576758349423675,
-        "captures": 204,
+        "leaderShare": 0.396485495071472,
+        "captures": 188,
         "survivors": 4.5,
-        "stockpile": 51169,
+        "stockpile": 75600,
+        "days": 120
+      },
+      "swing": 0.063,
+      "loadBearing": false
+    },
+    {
+      "constant": "marketElasticity",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.4009754524047717,
+        "captures": 245,
+        "survivors": 4.083333333333333,
+        "stockpile": 50257,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.37737831139778816,
-        "captures": 243,
-        "survivors": 4.416666666666667,
-        "stockpile": 50881,
+        "leaderShare": 0.3588841199806156,
+        "captures": 257,
+        "survivors": 4.833333333333333,
+        "stockpile": 57140,
+        "days": 120
+      },
+      "swing": 0.059,
+      "loadBearing": false
+    },
+    {
+      "constant": "startMorale",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3638792294932259,
+        "captures": 282,
+        "survivors": 4.666666666666667,
+        "stockpile": 54692,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.4027051392981941,
+        "captures": 272,
+        "survivors": 4.25,
+        "stockpile": 51900,
         "days": 120
       },
       "swing": 0.054,
       "loadBearing": false
     },
     {
-      "constant": "marketElasticity",
+      "constant": "minDamage",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.33758860016212955,
-        "captures": 254,
-        "survivors": 5.166666666666667,
-        "stockpile": 43602,
+        "leaderShare": 0.40985375442406585,
+        "captures": 252,
+        "survivors": 4.083333333333333,
+        "stockpile": 53042,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.37381645064065266,
-        "captures": 232,
-        "survivors": 4.333333333333333,
-        "stockpile": 55553,
+        "leaderShare": 0.3642404897822922,
+        "captures": 272,
+        "survivors": 4.25,
+        "stockpile": 52439,
         "days": 120
       },
-      "swing": 0.05,
+      "swing": 0.053,
+      "loadBearing": false
+    },
+    {
+      "constant": "expansionPenaltyPerProvince",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.3742647232478009,
+        "captures": 258,
+        "survivors": 4.416666666666667,
+        "stockpile": 57218,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.4483714438582495,
+        "captures": 251,
+        "survivors": 4,
+        "stockpile": 53314,
+        "days": 120
+      },
+      "swing": 0.043,
       "loadBearing": false
     },
     {
       "constant": "battleRate",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.36512628035607736,
-        "captures": 244,
-        "survivors": 4.666666666666667,
-        "stockpile": 52275,
+        "leaderShare": 0.37696689569943964,
+        "captures": 258,
+        "survivors": 4.333333333333333,
+        "stockpile": 54959,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.35055706829911437,
-        "captures": 228,
-        "survivors": 4.833333333333333,
-        "stockpile": 52610,
-        "days": 120
-      },
-      "swing": 0.041,
-      "loadBearing": false
-    },
-    {
-      "constant": "startMorale",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
+        "leaderShare": 0.43842645255031343,
         "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.31396295118978734,
-        "captures": 243,
-        "survivors": 4.916666666666667,
-        "stockpile": 52112,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.36505132432571585,
-        "captures": 263,
-        "survivors": 4.916666666666667,
-        "stockpile": 51257,
+        "survivors": 4.083333333333333,
+        "stockpile": 54864,
         "days": 120
       },
       "swing": 0.041,
@@ -228,154 +176,206 @@
     {
       "constant": "revoltThreshold",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.3227160594351151,
-        "captures": 157,
-        "survivors": 4.583333333333333,
-        "stockpile": 49838,
+        "leaderShare": 0.41745925892014574,
+        "captures": 149,
+        "survivors": 4,
+        "stockpile": 53856,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.36471185106752,
-        "captures": 578,
-        "survivors": 4.416666666666667,
-        "stockpile": 45077,
+        "leaderShare": 0.37755264709206166,
+        "captures": 596,
+        "survivors": 4.5,
+        "stockpile": 50941,
         "days": 120
       },
-      "swing": 0.041,
+      "swing": 0.04,
       "loadBearing": false
     },
     {
-      "constant": "minDamage",
+      "constant": "moraleDriftDivisor",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.34968864818537154,
-        "captures": 229,
-        "survivors": 4.333333333333333,
-        "stockpile": 50137,
-        "days": 120
-      },
-      "upper": {
-        "leaderShare": 0.2959584968815662,
+        "leaderShare": 0.38155865477794243,
         "captures": 253,
-        "survivors": 5.416666666666667,
-        "stockpile": 42095,
-        "days": 120
-      },
-      "swing": 0.028,
-      "loadBearing": false
-    },
-    {
-      "constant": "regenPermillePerTick",
-      "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
-        "days": 120
-      },
-      "lower": {
-        "leaderShare": 0.3376354533729424,
-        "captures": 224,
-        "survivors": 4.416666666666667,
-        "stockpile": 52338,
+        "survivors": 4.5,
+        "stockpile": 54663,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.3418110059957677,
-        "captures": 269,
-        "survivors": 5.083333333333333,
-        "stockpile": 51187,
+        "leaderShare": 0.4239785236897184,
+        "captures": 270,
+        "survivors": 4.25,
+        "stockpile": 50693,
         "days": 120
       },
-      "swing": 0.018,
+      "swing": 0.036,
+      "loadBearing": false
+    },
+    {
+      "constant": "productionMoraleFloor",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.40857017084390795,
+        "captures": 276,
+        "survivors": 4.166666666666667,
+        "stockpile": 51634,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.43777287058808384,
+        "captures": 276,
+        "survivors": 4.333333333333333,
+        "stockpile": 55674,
+        "days": 120
+      },
+      "swing": 0.02,
+      "loadBearing": false
+    },
+    {
+      "constant": "taxPerThousandPopulationPerTick",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.3979928898267698,
+        "captures": 267,
+        "survivors": 4.166666666666667,
+        "stockpile": 47248,
+        "days": 120
+      },
+      "swing": 0.02,
       "loadBearing": false
     },
     {
       "constant": "deployDelayTicks",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.33159569932780747,
-        "captures": 241,
-        "survivors": 4.916666666666667,
-        "stockpile": 49653,
+        "leaderShare": 0.431473750271091,
+        "captures": 246,
+        "survivors": 4.166666666666667,
+        "stockpile": 54129,
         "days": 120
       },
-      "swing": 0.008,
+      "swing": 0.014,
+      "loadBearing": false
+    },
+    {
+      "constant": "regenPermillePerTick",
+      "baseline": {
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
+        "days": 120
+      },
+      "lower": {
+        "leaderShare": 0.4292615008435326,
+        "captures": 243,
+        "survivors": 4.083333333333333,
+        "stockpile": 54165,
+        "days": 120
+      },
+      "upper": {
+        "leaderShare": 0.41311459006528933,
+        "captures": 250,
+        "survivors": 4.166666666666667,
+        "stockpile": 53412,
+        "days": 120
+      },
+      "swing": 0.012,
       "loadBearing": false
     },
     {
       "constant": "stackFullContribution",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.32268890904755154,
-        "captures": 245,
-        "survivors": 5,
-        "stockpile": 50087,
+        "leaderShare": 0.4217133261441756,
+        "captures": 246,
+        "survivors": 4,
+        "stockpile": 52483,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.3239788305312128,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49981,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
-      "swing": 0.001,
+      "swing": 0.004,
       "loadBearing": false
     },
     {
       "constant": "defenceCap",
       "baseline": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "lower": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "upper": {
-        "leaderShare": 0.32373961747509833,
-        "captures": 246,
-        "survivors": 5.166666666666667,
-        "stockpile": 49954,
+        "leaderShare": 0.41770747819095916,
+        "captures": 247,
+        "survivors": 4,
+        "stockpile": 52320,
         "days": 120
       },
       "swing": 0,
