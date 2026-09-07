@@ -35,7 +35,7 @@ export const CRITERIA = [
   { id: 'AK-5', scope: 'V1' },
   { id: 'AK-6', scope: 'V1' },
   { id: 'AK-7', scope: 'V1' },
-  { id: 'AK-8', scope: 'M16' },
+  { id: 'AK-8', scope: 'M16', report: 'docs/reports/packaging.md' },
 ]
 
 /**
@@ -99,4 +99,30 @@ export function countsForV1(reportId, criteria = CRITERIA) {
  */
 export function v1Failures(results, criteria = CRITERIA) {
   return results.filter((result) => !result.ok && countsForV1(result.id, criteria))
+}
+
+/**
+ * Was die Messung eines Kriteriums sagt - Datum und Commit, aus ihrem eigenen Bericht.
+ *
+ * Gelesen wird die Kopfzeile des Berichts, nicht ein Vermerk daneben: ein Bericht, der
+ * seinen Stand nicht nennt, ist keine Messung, und einer gegen einen anderen Commit ist
+ * eine Messung von etwas anderem. Dieselbe Regel wie fuer acceptance.md seit T-M16-01a.
+ */
+export function measurementOf(criterion, readFile, head) {
+  if (!criterion.report) return null
+  let text
+  try {
+    text = readFile(criterion.report)
+  } catch {
+    return { state: 'fehlt', file: criterion.report }
+  }
+  const stamp = /Gemessen am [*][*]([0-9]{4}-[0-9]{2}-[0-9]{2})[*][*] gegen `([0-9a-f]+)`/.exec(text)
+  if (!stamp) return { state: 'ohne Stempel', file: criterion.report }
+  const [, date, commit] = stamp
+  return {
+    state: head.startsWith(commit) || commit.startsWith(head) ? 'gemessen' : 'ueberholt',
+    date,
+    commit,
+    file: criterion.report,
+  }
 }

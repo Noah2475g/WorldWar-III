@@ -12,6 +12,9 @@ import type { Difficulty, NewGameOptions } from '../game/newGame.ts'
  * the fourth one — and the fourth one is where a player gets stuck.
  */
 
+/** Was in einem Dialog den Fokus annehmen kann — eine Liste, damit sie nicht auseinanderlaeuft. */
+const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'
+
 export function Dialog({
   title,
   onClose,
@@ -26,7 +29,7 @@ export function Dialog({
 
   useEffect(() => {
     returnTo.current = document.activeElement
-    ref.current?.querySelector<HTMLElement>('button, input, select, [tabindex]')?.focus()
+    ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
     return () => {
       if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
     }
@@ -42,7 +45,31 @@ export function Dialog({
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') onClose()
+          if (event.key === 'Escape') {
+            onClose()
+            return
+          }
+          // Der Fokusfang (T-M16-07, R-UI-15/AK1).
+          //
+          // `aria-modal` sagt einem Vorleseprogramm, dass dahinter nichts ist — die
+          // Tabulatortaste hoert nicht darauf. Ohne diese Zeilen tabbt man aus einem
+          // modalen Dialog in die Karte dahinter: sichtbar verdeckt, mit der Tastatur
+          // erreichbar und bedienbar. Das ist der Fehler, den ein Sehender nie bemerkt.
+          if (event.key !== 'Tab') return
+          const felder = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter(
+            (element) => !element.hasAttribute('disabled'),
+          )
+          if (felder.length === 0) return
+          const erster = felder[0]!
+          const letzter = felder[felder.length - 1]!
+          const aktiv = document.activeElement
+          if (event.shiftKey && (aktiv === erster || !ref.current?.contains(aktiv))) {
+            event.preventDefault()
+            letzter.focus()
+          } else if (!event.shiftKey && (aktiv === letzter || !ref.current?.contains(aktiv))) {
+            event.preventDefault()
+            erster.focus()
+          }
         }}
       >
         <header className="dialog__head">

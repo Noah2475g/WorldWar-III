@@ -1427,10 +1427,10 @@ tasks:
   - id: T-M16-07
     milestone: M16
     title: Bedienbar ohne Maus
-    status: todo
+    status: done
     deps: [T-M16-03]
     requirements: [R-UI-15, R-UI-06]
-    files: [apps/desktop/src/ui/Dialog.tsx, apps/desktop/src/ui/Panels.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx]
     tests: [apps/desktop/src/ui/a11y.test.tsx]
     dod: "Belegt ist heute der Kontrast (R-UI-02) und die Tastenzuordnung als reine Funktion (R-UI-06); kein Test oeffnet einen Dialog und schliesst ihn. Danach: Escape schliesst jeden Dialog, der Fokus bleibt im offenen Dialog und kehrt beim Schliessen an das ausloesende Element zurueck, die Tabreihenfolge folgt der Leserichtung, und ein Waechter findet jedes Bedienelement ohne sichtbaren Text, das keinen Namen fuer Hilfsmittel traegt. Kein Barrierefreiheits-Rahmenwerk und keine neue Abhaengigkeit - die Pruefung ist die Zusage. pnpm verify gruen"
 

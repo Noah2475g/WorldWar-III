@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, measurementOf, v1Failures } from './acceptance-criteria.mjs'
 
 /**
  * Der Stand, gegen den dieser Lauf gelaufen ist (T-M16-01a).
@@ -140,6 +140,29 @@ const failed = results.filter((r) => !r.ok)
 // trotzdem im Bericht: eine Zusage ganz ohne Ort ist der andere Fehler derselben Art,
 // und AK-8 war bis zum 2026-09-06 in genau dem Zustand.
 const spaetere = CRITERIA.filter((c) => c.scope !== 'V1')
+
+/**
+ * Was ueber ein Kriterium ausserhalb der V1 zu sagen ist.
+ *
+ * Bis T-M16-05 konnte hier nur die Zustaendigkeit stehen ("M16, zaehlt nicht gegen V1")
+ * - wahr, aber keine Aussage darueber, ob die Sache funktioniert. Jetzt steht das
+ * Ergebnis da, wenn es eines gibt, und der Bericht sagt selbst, wenn er ueberholt ist.
+ */
+function spaetereZeile(criterion) {
+  const messung = measurementOf(criterion, (file) => readFileSync(join(ROOT, file), 'utf8'), head())
+  const nicht = ', zaehlt nicht gegen V1'
+  if (!messung || messung.state === 'fehlt') return `⏸ ${criterion.scope}, noch nicht gemessen${nicht}`
+  if (messung.state === 'ohne Stempel') return `⚠ ${messung.file} nennt keinen Stand - keine Messung${nicht}`
+  if (messung.state === 'ueberholt') {
+    return (
+      `⚠ gemessen am ${messung.date} gegen ${q(messung.commit)} - nicht dieser Stand, siehe ${q(messung.file)}${nicht}`
+    )
+  }
+  return `✅ erfuellt, gemessen am ${messung.date} (${q(messung.file)})${nicht}`
+}
+
+/** Ein Wert in Schreibmaschinenschrift, fuer die Tabelle des Berichts. */
+const q = (text) => `'${text}'`.replaceAll("'", String.fromCharCode(96))
 const v1Failed = v1Failures(results)
 
 const report = [
@@ -154,10 +177,7 @@ const report = [
   '|---|---|---|',
   ...results.map((r) => `| ${r.id} | ${r.description} | ${r.ok ? '✅ bestanden' : '❌ fehlgeschlagen'} |`),
   `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\`, Antworten in \`docs/reports/playtest-v1.md\` | ${playtestLine} |`,
-  ...spaetere.map(
-    (c) =>
-      `| ${c.id} | Verpackung als Programm, gemessen in T-M16-05 | ⏸ ${c.scope}, zaehlt nicht gegen V1 |`,
-  ),
+  ...spaetere.map((c) => `| ${c.id} | Verpackung als Programm (T-M16-05) | ${spaetereZeile(c)} |`),
   '',
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
@@ -175,7 +195,7 @@ console.log('docs/reports/acceptance.md geschrieben.')
 console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 
 for (const c of spaetere) {
-  console.log(`${c.id}: ${c.scope}, zaehlt nicht gegen die V1-Abnahme (T-M16-01)`)
+  console.log(`${c.id}: ${spaetereZeile(c)}`)
 }
 
 process.exit(v1Failed.length === 0 ? 0 : 1)

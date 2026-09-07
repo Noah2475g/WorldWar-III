@@ -396,7 +396,7 @@ scope:
     R-NEWS-04:  "M15 — Weltgeschehen als Filter im Ereignisprotokoll, der Ersatz für die Zeitung (T-M15-09)"
     R-PKG-01:   "M16 — das Erzeugnis wird zum ersten Mal wirklich gebaut (T-M16-03)"
     R-PKG-02:   "M16 — Datei-Port, die Einlösung der Zusage von T-M8-00 (T-M16-04)"
-    R-UI-15:    "M16 — Fokus und Escape sind erst am gebauten Programm beobachtbar (T-M16-07)"
+    R-UI-15:    "M16 — gebaut und belegt am 2026-09-07 (T-M16-07); bleibt hier, weil M16 hinter der V1-Abnahme liegt"
     R-SPY-01:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-SPY-02:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-SPY-03:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
@@ -802,9 +802,11 @@ Erzeugnis gebunden), nur in der Zukunftsform.
 Dazu eine Anforderung, die nicht die Verpackung betrifft, aber erst am gebauten Programm
 prüfbar ist:
 
-- **R-UI-15 — Bedienbar ohne Maus.** Belegt ist bisher nur der Kontrast (R-UI-02) und die
-  Tastenzuordnung als reine Funktion (R-UI-06); **kein Test öffnet einen Dialog und
-  schließt ihn** (Befund N12).
+- **R-UI-15 — Bedienbar ohne Maus.** Bis zum 2026-09-07 war nur der Kontrast (R-UI-02) und
+  die Tastenzuordnung als reine Funktion (R-UI-06) belegt; **kein Test öffnete einen Dialog
+  und schloss ihn** (Befund N12). Seit T-M16-07 tut das `a11y.test.tsx` — einschließlich
+  des Fokusfangs, den es vorher gar nicht gab: `aria-modal` sagt einem Vorleseprogramm,
+  dass hinter dem Dialog nichts ist, die Tabulatortaste hört nicht darauf.
   - AK1: WENN ein Dialog offen ist, DANN SOLL Escape ihn schließen und der Fokus SOLL im
     Dialog bleiben, solange er offen ist.
   - AK2: WENN ein Bedienelement keinen sichtbaren Text trägt, DANN SOLL es einen Namen für
