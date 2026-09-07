@@ -1606,7 +1606,7 @@ tasks:
   - id: T-M20-03
     milestone: M20
     title: Was laengst berechnet wird, wird auch gezeigt
-    status: todo
+    status: done
     deps: [T-M20-01]
     requirements: [R-UI-10]
     design: [D-22]

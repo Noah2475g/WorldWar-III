@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
   DiplomacyPanel,
+  EconomyPanel,
   EventLog,
   ProvincePanel,
   buildingItems,
@@ -493,5 +494,68 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bild
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Krieg')
     expect(cell?.querySelector('svg'), 'kein Beziehungssymbol in der Diplomatie').toBeTruthy()
+  })
+})
+
+describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
+  /**
+   * Drei Größen, die das Spiel seit Monaten ausrechnet und nie gezeigt hat: die Rubrik
+   * einer Protokollzeile, die vorherrschende Gattung einer Armee und das Zeichen eines
+   * Rohstoffs in der Wirtschaftstabelle. Alle drei geprüft am gerenderten Baum — ob eine
+   * Zahl *berechnet* wird, sagt nichts darüber, ob sie **ankommt** (T-M21-06).
+   */
+  it('zeichnet die Rubrik einer Protokollzeile als Symbol', () => {
+    const entries: EventEntry[] = [
+      { id: '1', tick: 5, text: 'Gefecht bei Mittstadt', severity: 'info', category: 'combat' },
+      { id: '2', tick: 6, text: 'Kaserne fertig', severity: 'info', category: 'economy' },
+    ]
+    const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
+    const rows = container.querySelectorAll('.log__row')
+
+    expect(rows[0]?.querySelector('svg'), 'die Kampfzeile traegt kein Rubriksymbol').toBeTruthy()
+    expect(rows[1]?.querySelector('svg'), 'die Wirtschaftszeile traegt kein Rubriksymbol').toBeTruthy()
+  })
+
+  it('laesst eine Zeile ohne Rubrik ohne Symbol', () => {
+    // Ein Zeichen für "nichts davon" wäre eine Auskunft, die keine ist — und in einer
+    // Spalte voller gleicher Symbole findet das Auge die Ausnahme nicht mehr.
+    const entries: EventEntry[] = [{ id: '1', tick: 5, text: 'Die Partie beginnt.', severity: 'info' }]
+    const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
+
+    expect(container.querySelector('.log__row svg')).toBeNull()
+  })
+
+  it('zeichnet die vorherrschende Gattung neben den Armeenamen', () => {
+    const { container } = render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[]}
+        armies={[{ id: 'a1', name: 'Armee 1', strength: 3000, icon: 'armour' }]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+    const row = container.querySelector('.army-list li')
+
+    expect(row?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Armee 1')
+    expect(row?.querySelector('svg'), 'kein Gattungssymbol in der Armeezeile').toBeTruthy()
+  })
+
+  it('zeichnet das Rohstoffsymbol in der Wirtschaftstabelle', () => {
+    const view = {
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 1000, production: 349, consumption: 0, balance: 349, committed: 0 },
+        },
+      },
+    } as unknown as PublicView
+
+    const { container } = render(<EconomyPanel view={view} />)
+    const cell = container.querySelector('tbody td')
+
+    expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Nahrung')
+    expect(cell?.querySelector('svg'), 'kein Rohstoffsymbol in der Wirtschaftstabelle').toBeTruthy()
   })
 })

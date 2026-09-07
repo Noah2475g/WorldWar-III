@@ -1217,3 +1217,29 @@ Ereignistextes, keine Farbfrage.
 **Auswirkung:** R-UI-16 ist an den drei Orten erfüllt, an denen eine Macht **als Macht**
 in einer Liste steht. Das Protokoll bleibt Text. Wenn Noah die Einfärbung im Satz will,
 ist es eine eigene Aufgabe mit eigenem Umfang.
+
+---
+
+## 2026-09-07 · T-M20-03 · Der Markt behält seine Auswahlliste ohne Symbole
+
+**Entscheidung:** Rubrik, Gattung und Rohstoff tragen jetzt ihr Zeichen — im Protokoll, in
+der Armeeliste und in der Wirtschaftstabelle. Der **Markt** bleibt ohne, obwohl er
+dieselben Rohstoffe aufzählt.
+
+**Begründung:** Er benutzt `<select><option>`, und ein `<option>` kann kein SVG tragen —
+das ist keine Stilfrage, sondern eine Festlegung des Browsers. Es gäbe genau einen Weg
+dorthin: die Auswahlliste gegen eine selbstgebaute Liste tauschen.
+
+Das wäre **Bedienbarkeit gegen Aussehen** getauscht, und zwar zu einem schlechten Kurs.
+Eine `<select>` bringt mit, was eine nachgebaute Liste einzeln nachbauen muss und was
+dabei erfahrungsgemäß zur Hälfte fehlt: Tastaturbedienung mit Pfeilen und
+Anfangsbuchstaben, die Rolle für Vorleseprogramme, das Verhalten unter einer
+Bildschirmlupe, und auf einem Touchgerät das Rad des Systems statt einer Liste, die
+danebengreift.
+
+R-UI-06 verlangt, dass sich das Spiel **ohne Maus** bedienen lässt. Ein Bildchen im Markt
+gegen dieses Versprechen einzutauschen, ist nicht meine Entscheidung.
+
+**Auswirkung:** Der Markt nennt seine Rohstoffe weiter beim Namen. Falls Noah die Symbole
+dort haben will, ist der Preis benannt: eine eigene Liste mit vollständiger
+Tastaturbedienung, als eigene Aufgabe.

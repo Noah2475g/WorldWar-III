@@ -235,7 +235,7 @@ export interface ProvincePanelProps {
   /** Build, recruit — the orders a province takes, grouped. */
   groups?: readonly ActionGroupSpec[]
   /** The player's own armies standing here. */
-  armies?: readonly { id: string; name: string; strength: number }[]
+  armies?: readonly { id: string; name: string; strength: number; icon?: IconName | undefined }[]
   selectedArmy?: string | null
   onSelectArmy?: (id: string) => void
   isCapital?: boolean
@@ -361,7 +361,10 @@ export function ProvincePanel(props: ProvincePanelProps) {
             {props.armies.map((army) => (
               <li key={army.id} className={army.id === props.selectedArmy ? 'is-selected' : undefined}>
                 <span>
-                  {army.name} · {t('army.strength')} {amount(army.strength)}
+                  {/* Die vorherrschende Gattung — seit M13 fuer die Kartenmarke
+                      gerechnet, in dieser Liste bis T-M20-03 nicht gezeigt. */}
+                  {army.icon && <Icon name={army.icon} size={13} />} {army.name} ·{' '}
+                  {t('army.strength')} {amount(army.strength)}
                 </span>
                 <button type="button" className="button" onClick={() => props.onSelectArmy?.(army.id)}>
                   {t('army.select')}
@@ -508,6 +511,23 @@ export interface EventEntry {
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
 
+/**
+ * Das Zeichen einer Protokollrubrik (T-M20-03).
+ *
+ * `categoryOf` sortiert jede Zeile seit M13 in eine Schublade, und sichtbar war die
+ * Einteilung nur, solange ein Filter gedrueckt war. Mit dem Zeichen sieht man beim
+ * Ueberfliegen, welche Art Meldung eine Zeile ist, ohne sie zu lesen.
+ *
+ * `other` bekommt bewusst keines: ein Zeichen fuer „nichts davon" waere eine Auskunft,
+ * die keine ist, und in einer Spalte mit lauter gleichen Symbolen faende das Auge die
+ * Ausnahme nicht mehr.
+ */
+export const CATEGORY_ICONS: Partial<Record<EventCategory, IconName>> = {
+  combat: 'battle',
+  economy: 'money',
+  diplomacy: 'alliance',
+}
+
 export type EventFilterKey = EventCategory | 'all' | 'world'
 
 export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'economy', 'diplomacy', 'world']
@@ -580,6 +600,13 @@ export function EventLog({
               {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}
               {String(entry.tick % ticksPerDay).padStart(2, '0')}:00
             </time>
+            {CATEGORY_ICONS[entry.category ?? 'other'] && (
+              <Icon
+                name={CATEGORY_ICONS[entry.category ?? 'other']!}
+                size={13}
+                title={t(`alerts.${entry.category ?? 'other'}`)}
+              />
+            )}
             {entry.provinceId ? (
               <button
                 type="button"
@@ -768,6 +795,9 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
           {Object.entries(economy).map(([key, flow]) => (
             <tr key={key} className={shortages.has(key as never) ? 'state state--war' : undefined}>
               <td>
+                {/* Dasselbe Zeichen wie in der Kopfleiste und in der Vorkommenzeile:
+                    der Satz ist da, die Tabelle war die letzte Stelle ohne ihn. */}
+                <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={13} />{' '}
                 {t(`resources.${key}`)}
                 <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
               </td>

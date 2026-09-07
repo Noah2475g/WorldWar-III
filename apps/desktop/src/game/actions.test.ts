@@ -207,7 +207,11 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
     const army = withArmy(ctx.state, capital, 3000)
 
     expect(unitLines(army, rules)).toEqual(['3 × Infanterie'])
-    expect(ownArmiesIn(ctx, capital)).toEqual([{ id: 'a1', name: 'Armee 1', strength: 3000 }])
+    // Seit T-M20-03 traegt die Zeile auch die vorherrschende Gattung — dieselbe, die die
+    // Karte auf die Armeemarke zeichnet.
+    expect(ownArmiesIn(ctx, capital)).toEqual([
+      { id: 'a1', name: 'Armee 1', strength: 3000, icon: 'infantry' },
+    ])
   })
 })
 

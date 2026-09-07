@@ -21,6 +21,7 @@ import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
+import { dominantIcon } from '../map/markers.ts'
 
 /**
  * Every order the player can give, as data (T-M10-05, T-M10-06, R-UI-05).
@@ -173,11 +174,21 @@ export function capitalAction(ctx: ActionContext, provinceId: string): ActionSpe
 }
 
 /** The player's own armies standing in a province, for the panel's list. */
-export function ownArmiesIn(ctx: ActionContext, provinceId: string): { id: string; name: string; strength: number }[] {
+export function ownArmiesIn(
+  ctx: ActionContext,
+  provinceId: string,
+): { id: string; name: string; strength: number; icon: IconName | undefined }[] {
   return ctx.state.armyOrder
     .map((id) => ctx.state.armies[id])
     .filter((army): army is Army => !!army && army.owner === ctx.playerId && army.locationProvinceId === provinceId)
-    .map((army) => ({ id: army.id, name: army.name, strength: armyHp(army) }))
+    .map((army) => ({
+      id: army.id,
+      name: army.name,
+      strength: armyHp(army),
+      // Dieselbe Gattung, die die Karte auf die Armeemarke zeichnet — seit M13 gerechnet,
+      // in der Liste daneben aber nie gezeigt (T-M20-03).
+      icon: dominantIcon(army.units.map((stack) => ({ unitKey: stack.unitKey, hp: stack.hpTotal }))),
+    }))
 }
 
 /** Half of every stack, rounded down — what "Teilen" detaches. */
