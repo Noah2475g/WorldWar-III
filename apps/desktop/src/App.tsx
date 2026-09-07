@@ -311,8 +311,8 @@ export function App(props: AppProps) {
           // Nur was der Spieler sieht: eine Provinz hinter dem Nebel bleibt unbekannt,
           // statt als "keine Truppen" zu erscheinen.
           strength: seen === undefined ? undefined : (strengths[province.id] ?? 0),
-          polygon: province.polygon,
-          bounds: boundsOf(province.polygon),
+          polygons: province.polygons,
+          bounds: boundsOf(province.polygons),
         }
       }),
     [activeMap.provinces, view, strengths],

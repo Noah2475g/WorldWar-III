@@ -1,4 +1,4 @@
-import { boundsOf, toScreen, type Bounds, type View } from './picking.ts'
+import { boundsOf, toScreen, type Bounds, type Ring, type View } from './picking.ts'
 import { fillFor, type MapMode, type ShadedProvince } from './modes.ts'
 import { TOKENS } from '../ui/tokens.ts'
 
@@ -16,7 +16,8 @@ import { TOKENS } from '../ui/tokens.ts'
  */
 
 export interface RenderProvince extends ShadedProvince {
-  polygon: readonly (readonly [number, number])[]
+  /** One outline per piece of land — a province may be in several (T-M19-02). */
+  polygons: readonly Ring[]
   bounds?: Bounds
 }
 
@@ -46,19 +47,15 @@ export function isVisible(bounds: Bounds, view: View, viewport: Viewport): boole
  * data keeps every point; this decides how many of them are worth sending to the
  * canvas at the current zoom, and at world scale that is a fraction.
  */
-export function thin(
-  polygon: readonly (readonly [number, number])[],
-  view: View,
-  minPixels = 1.5,
-): [number, number][] {
-  if (polygon.length <= 4) return polygon.map(([x, y]) => [x, y])
+export function thin(ring: Ring, view: View, minPixels = 1.5): [number, number][] {
+  if (ring.length <= 4) return ring.map(([x, y]) => [x, y])
 
   const step = minPixels * view.scale
   const out: [number, number][] = []
   let lastX = Number.NEGATIVE_INFINITY
   let lastY = Number.NEGATIVE_INFINITY
 
-  for (const [x, y] of polygon) {
+  for (const [x, y] of ring) {
     if (Math.abs(x - lastX) < step && Math.abs(y - lastY) < step) continue
     out.push([x, y])
     lastX = x
@@ -67,10 +64,17 @@ export function thin(
 
   // A shape thinned below a triangle is not a shape; keep the original rather than
   // drawing a line where a province should be.
-  return out.length >= 3 ? out : polygon.map(([x, y]) => [x, y])
+  return out.length >= 3 ? out : ring.map(([x, y]) => [x, y])
 }
 
-/** Everything the canvas needs for one frame, and nothing it does not. */
+/**
+ * Everything the canvas needs for one frame, and nothing it does not.
+ *
+ * Since T-M19-02 a province contributes **one shape per piece of land**, so `id` is no
+ * longer unique in the result — Alaska and California both come back as `USA-WEST`.
+ * That is what the drawing loop wants (it fills each shape with the same colour and
+ * never looks an id up), and it is why the return type is a list and not a map.
+ */
 export function prepareFrame(
   provinces: readonly RenderProvince[],
   view: View,
@@ -80,15 +84,18 @@ export function prepareFrame(
   const shapes: PreparedShape[] = []
 
   for (const province of provinces) {
-    const bounds = province.bounds ?? boundsOf(province.polygon)
+    const bounds = province.bounds ?? boundsOf(province.polygons)
     if (!isVisible(bounds, view, viewport)) continue
 
-    const points = thin(province.polygon, view).map(([x, y]) => {
-      const screen = toScreen({ x, y }, view)
-      return [screen.x, screen.y] as [number, number]
-    })
+    const fill = fillFor(province, mode)
+    for (const ring of province.polygons) {
+      const points = thin(ring, view).map(([x, y]) => {
+        const screen = toScreen({ x, y }, view)
+        return [screen.x, screen.y] as [number, number]
+      })
 
-    shapes.push({ id: province.id, fill: fillFor(province, mode), points })
+      shapes.push({ id: province.id, fill, points })
+    }
   }
 
   return shapes

@@ -1534,11 +1534,11 @@ tasks:
   - id: T-M19-02
     milestone: M19
     title: Eine Provinz darf mehrteilig sein
-    status: todo
+    status: done
     deps: [T-M19-01]
     requirements: [R-MAP-08]
     design: [D-21]
-    files: [packages/core/src/state/types.ts, packages/core/src/map/validate.ts, scripts/build-map.mjs, apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts, data/maps/world.json]
+    files: [packages/core/src/state/types.ts, packages/core/src/map/validate.ts, scripts/build-map.mjs, scripts/reproject-map.mjs, packages/mapgen/src/project.ts, apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts, apps/desktop/src/App.tsx, packages/testkit/src/maps.ts, data/maps/world.json, data/maps/testworld.json]
     tests: [packages/mapgen/src/worldmap.geometry.test.ts, apps/desktop/src/map/picking.test.ts]
     dod: "polygon wird von einem Umriss zu einer Liste von Umrissen - nicht die bessere Auswahl, sondern keine Auswahl mehr. Billig ist das, weil polygon reine Zeichendatei ist: der Kern liest es ausserhalb von validateMap nicht, die KI nie, Spielstaende enthalten die Karte nicht - keine Migration, kein Golden Master, kein Schemaschritt. Die vier Pruefungen aus T-M19-01 werden gruen, OHNE dass ihre Schwelle weicher wird; ein Klick auf Alaska und einer auf Kalifornien waehlen dieselbe Provinz. Mindestens 99 Prozent der Landflaeche gezeichnet, pnpm verify gruen, und die Zeichenmessung aus T-M16-06 wiederholt und im Budget (16,7 ms p95) - plus 26 Prozent Punkte sind zu messen, nicht zu schaetzen. ACHTUNG, die naheliegende Reparatur ist ausdruecklich NICHT diese Aufgabe: der groesste Ring waehlt nach der Mercator-Projektion wieder Alaska, weil sie hohe Breiten aufblaeht (Alaska 84453 px2 gegen Weststaaten 58147 px2, bei echter Flaeche aber 268 gegen 329 Grad2)"
 

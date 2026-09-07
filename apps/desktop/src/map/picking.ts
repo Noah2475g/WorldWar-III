@@ -20,9 +20,12 @@ export interface View {
   scale: number
 }
 
+export type Ring = readonly (readonly [number, number])[]
+
 export interface PickableProvince {
   id: string
-  polygon: readonly (readonly [number, number])[]
+  /** One outline per piece of land — a province may be in several (T-M19-02). */
+  polygons: readonly Ring[]
   /** Axis-aligned bounds, so most provinces are ruled out with four comparisons. */
   bounds?: Bounds
 }
@@ -34,16 +37,26 @@ export interface Bounds {
   maxY: number
 }
 
-export function boundsOf(polygon: readonly (readonly [number, number])[]): Bounds {
+/**
+ * The box around *all* of a province's outlines.
+ *
+ * The hull of several pieces is larger than any one of them — for `USA-WEST` it spans
+ * from Alaska to Arizona — so it rules out fewer clicks than it used to. That is the
+ * price of the province being in two places, and it is only a prefilter: the ray cast
+ * below still decides, and it walks each ring separately.
+ */
+export function boundsOf(polygons: readonly Ring[]): Bounds {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
   let maxY = -Infinity
-  for (const [x, y] of polygon) {
-    if (x < minX) minX = x
-    if (x > maxX) maxX = x
-    if (y < minY) minY = y
-    if (y > maxY) maxY = y
+  for (const ring of polygons) {
+    for (const [x, y] of ring) {
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
   }
   return { minX, minY, maxX, maxY }
 }
@@ -89,10 +102,12 @@ export function pickProvince(
   const point = toMap(screen, view)
 
   for (const province of provinces) {
-    const bounds = province.bounds ?? boundsOf(province.polygon)
+    const bounds = province.bounds ?? boundsOf(province.polygons)
     if (point.x < bounds.minX || point.x > bounds.maxX) continue
     if (point.y < bounds.minY || point.y > bounds.maxY) continue
-    if (pointInPolygon(point, province.polygon)) return province.id
+    // Any piece counts: a click on Alaska and a click on California both select the
+    // western United States, because both are the western United States.
+    if (province.polygons.some((ring) => pointInPolygon(point, ring))) return province.id
   }
   return null
 }

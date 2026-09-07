@@ -24,7 +24,7 @@ const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) a
   height: number
   provinces: {
     id: string
-    polygon: [number, number][]
+    polygons: [number, number][][]
     population: number
     deposits: Record<string, number>
   }[]
@@ -36,8 +36,8 @@ const provinces: RenderProvince[] = world.provinces.map((p, index) => ({
   morale: 40 + (index % 60),
   deposits: p.deposits,
   threat: (index * 37) % 1000,
-  polygon: p.polygon,
-  bounds: boundsOf(p.polygon),
+  polygons: p.polygons,
+  bounds: boundsOf(p.polygons),
 }))
 
 const viewport = { width: 1600, height: 900 }
@@ -51,17 +51,24 @@ describe('R-ARCH-06 Was das Budget traegt', () => {
 
     const shapes = prepareFrame(provinces, zoomed, viewport, 'political')
 
-    expect(shapes.length).toBeLessThan(provinces.length / 3)
-    expect(shapes.length).toBeGreaterThan(0)
+    // Gezaehlt werden Provinzen, nicht Formen: seit T-M19-02 liefert prepareFrame je
+    // Umriss eine Form, und eine Provinz bringt im Schnitt neun mit. Was die Aussage
+    // traegt, ist unveraendert — wer nicht im Ausschnitt liegt, kommt gar nicht vor.
+    const drawn = new Set(shapes.map((shape) => shape.id))
+
+    expect(drawn.size).toBeLessThan(provinces.length / 3)
+    expect(drawn.size).toBeGreaterThan(0)
   })
 
   it('duennt Stuetzpunkte mit der Zoomstufe aus', () => {
-    const biggest = provinces.reduce((a, b) => (a.polygon.length >= b.polygon.length ? a : b))
+    // Der laengste Einzelring der Karte, nicht die Provinz mit den meisten Ringen:
+    // ausgeduennt wird je Umriss (T-M19-02).
+    const biggest = provinces.flatMap((p) => p.polygons).reduce((a, b) => (a.length >= b.length ? a : b))
 
-    const far = thin(biggest.polygon, wholeWorld)
-    const near = thin(biggest.polygon, { x: 0, y: 0, scale: 0.1 })
+    const far = thin(biggest, wholeWorld)
+    const near = thin(biggest, { x: 0, y: 0, scale: 0.1 })
 
-    expect(far.length).toBeLessThan(biggest.polygon.length)
+    expect(far.length).toBeLessThan(biggest.length)
     expect(near.length).toBeGreaterThan(far.length)
   })
 

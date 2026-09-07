@@ -112,10 +112,12 @@ describe('R-MAP-02 Erreichbarkeit ueber Land und See', () => {
           terrain: 'plains',
           coastal: true,
           center: { x: 95, y: 95 },
-          polygon: [
-            [90, 90],
-            [99, 90],
-            [99, 99],
+          polygons: [
+            [
+              [90, 90],
+              [99, 90],
+              [99, 99],
+            ],
           ],
           population: 1000,
           deposits: {},

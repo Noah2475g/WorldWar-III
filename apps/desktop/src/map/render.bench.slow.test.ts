@@ -28,7 +28,7 @@ const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) a
   height: number
   provinces: {
     id: string
-    polygon: [number, number][]
+    polygons: [number, number][][]
     population: number
     deposits: Record<string, number>
   }[]
@@ -40,8 +40,8 @@ const provinces: RenderProvince[] = world.provinces.map((p, index) => ({
   morale: 40 + (index % 60),
   deposits: p.deposits,
   strength: (index * 37) % 20_000,
-  polygon: p.polygon,
-  bounds: boundsOf(p.polygon),
+  polygons: p.polygons,
+  bounds: boundsOf(p.polygons),
 }))
 
 const viewport = { width: 1600, height: 900 }

@@ -20,10 +20,12 @@ export function tinyMap(): MapData {
         terrain: 'plains',
         coastal: true,
         center: { x: 10, y: 10 },
-        polygon: [
-          [0, 0],
-          [20, 0],
-          [20, 20],
+        polygons: [
+          [
+            [0, 0],
+            [20, 0],
+            [20, 20],
+          ],
         ],
         population: 500_000,
         deposits: { food: 3000, iron: 1000 },
@@ -35,10 +37,12 @@ export function tinyMap(): MapData {
         terrain: 'forest',
         coastal: false,
         center: { x: 40, y: 10 },
-        polygon: [
-          [30, 0],
-          [50, 0],
-          [50, 20],
+        polygons: [
+          [
+            [30, 0],
+            [50, 0],
+            [50, 20],
+          ],
         ],
         population: 200_000,
         deposits: { wood: 2000 },
@@ -50,10 +54,12 @@ export function tinyMap(): MapData {
         terrain: 'mountain',
         coastal: true,
         center: { x: 70, y: 10 },
-        polygon: [
-          [60, 0],
-          [80, 0],
-          [80, 20],
+        polygons: [
+          [
+            [60, 0],
+            [80, 0],
+            [80, 20],
+          ],
         ],
         population: 150_000,
         deposits: { coal: 1500 },

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { LAT_LIMIT, distanceKm, project, unproject } from './project.ts'
+import {
+  LAT_LIMIT,
+  MAP_HEIGHT,
+  MAP_LAT_BOTTOM,
+  MAP_LAT_TOP,
+  MAP_WIDTH,
+  anchorFor,
+  anchorOf,
+  distanceKm,
+  drawableRings,
+  project,
+  ringAreaPx2,
+  toMapX,
+  toMapY,
+  unproject,
+} from './project.ts'
 
 /**
  * The point of these tests is one distinction: the picture and the world are not the
@@ -100,5 +115,147 @@ describe('R-MAP-04 Geodaetische Entfernung', () => {
 
     expect(equatorPixels).toBeCloseTo(northPixels, 12)
     expect(northKm).toBeLessThan(equatorKm * 0.5)
+  })
+})
+
+describe('T-M19-01 Die Leinwand', () => {
+  it('legt die Beschnittkanten genau auf den Rand', () => {
+    // The band the canvas shows is 78° N to 58° S. If these drifted, every point in
+    // the map would be off by the same amount and nothing would look wrong.
+    expect(toMapY(MAP_LAT_TOP)).toBe(0)
+    expect(toMapY(MAP_LAT_BOTTOM)).toBe(MAP_HEIGHT)
+  })
+
+  it('legt den Nullmeridian in die Mitte und die Datumsgrenze an die Raender', () => {
+    expect(toMapX(0)).toBe(MAP_WIDTH / 2)
+    expect(toMapX(-180)).toBe(0)
+    expect(toMapX(180)).toBe(MAP_WIDTH)
+  })
+
+  it('waechst nach Norden schneller als nach Sueden — das ist Mercator', () => {
+    // Ten degrees at the equator against ten degrees at 60° N: on the globe the same
+    // distance, on this canvas not. It is why "take the biggest ring" picks Alaska.
+    const equator = toMapY(0) - toMapY(10)
+    const north = toMapY(50) - toMapY(60)
+
+    expect(north).toBeGreaterThan(equator * 1.5)
+  })
+})
+
+describe('T-M19-02 Die Umrisse einer Provinz', () => {
+  /** A square of `size` degrees with its bottom-left corner at (lon, lat). */
+  const square = (lon: number, lat: number, size: number) => [
+    [lon, lat],
+    [lon + size, lat],
+    [lon + size, lat + size],
+    [lon, lat + size],
+    [lon, lat],
+  ]
+
+  it('nimmt bei einem MultiPolygon jeden Teil, nicht den groessten', () => {
+    // The whole of T-M19-02 in one assertion. Alaska and California belong to the same
+    // power and do not touch; a province that may only have one outline loses one.
+    const shape = {
+      type: 'MultiPolygon',
+      coordinates: [[square(-150, 60, 8)], [square(-120, 34, 8)]],
+    }
+
+    expect(drawableRings(shape)).toHaveLength(2)
+  })
+
+  it('laesst die Loecher eines Teils weg', () => {
+    // Ring two of a part is a hole. The map fills a province in one colour, so a hole
+    // would have to be cut out of a fill that something else has already painted.
+    const shape = { type: 'Polygon', coordinates: [square(0, 0, 20), square(5, 5, 5)] }
+
+    expect(drawableRings(shape)).toHaveLength(1)
+  })
+
+  it('verwirft Ringe, die nach dem Runden keine Flaeche mehr haben', () => {
+    // 1228 of the world's 3393 outer rings are in this state: after rounding to whole
+    // pixels they are a line or a point, and filling them covers nothing.
+    const shape = {
+      type: 'MultiPolygon',
+      coordinates: [[square(0, 0, 20)], [square(100, 0, 0.0001)]],
+    }
+    const rings = drawableRings(shape)
+
+    expect(rings).toHaveLength(1)
+    expect(ringAreaPx2(rings[0]!)).toBeGreaterThan(0)
+  })
+
+  it('misst die Flaeche eines Rings unabhaengig von seiner Umlaufrichtung', () => {
+    const clockwise: [number, number][] = [
+      [0, 0],
+      [0, 10],
+      [10, 10],
+      [10, 0],
+    ]
+    const anticlockwise = [...clockwise].reverse()
+
+    expect(ringAreaPx2(clockwise)).toBe(100)
+    expect(ringAreaPx2(anticlockwise)).toBe(100)
+    expect(ringAreaPx2([[0, 0], [10, 10]])).toBe(0)
+  })
+})
+
+describe('T-M19-02 Der Ankerpunkt', () => {
+  const ring = (points: [number, number][]) => points
+
+  it('laesst einen Anker stehen, der schon auf seiner Flaeche liegt', () => {
+    const square = ring([
+      [0, 0],
+      [100, 0],
+      [100, 100],
+      [0, 100],
+    ])
+
+    expect(anchorFor([50, 50], [square])).toEqual([50, 50])
+  })
+
+  it('holt einen Anker zurueck, der neben der Provinz liegt', () => {
+    // A crescent: the average of its boundary points is in the bay, not on the land.
+    // That is Norway, and its army marker stood in the North Sea until T-M19-02.
+    const crescent = ring([
+      [0, 0],
+      [100, 0],
+      [100, 20],
+      [60, 20],
+      [60, 80],
+      [100, 80],
+      [100, 100],
+      [0, 100],
+    ])
+
+    const anchor = anchorFor([80, 50], [crescent])
+
+    expect(anchor).not.toEqual([80, 50])
+    expect(anchor[0]).toBeLessThan(60)
+  })
+
+  it('waehlt den groessten Teil, nicht irgendeinen', () => {
+    // An anchor on a province's smallest offshore island would put its label out at sea.
+    const mainland = ring([
+      [0, 0],
+      [200, 0],
+      [200, 200],
+      [0, 200],
+    ])
+    const islet = ring([
+      [900, 900],
+      [910, 900],
+      [910, 910],
+      [900, 910],
+    ])
+
+    const anchor = anchorFor([500, 500], [islet, mainland])
+
+    expect(anchor[0]).toBeLessThan(200)
+    expect(anchor[1]).toBeLessThan(200)
+  })
+
+  it('gibt null, wenn es nichts zu ankern gibt', () => {
+    expect(anchorOf([])).toBeNull()
+    expect(anchorOf([[[0, 0], [1, 1]]])).toBeNull()
   })
 })

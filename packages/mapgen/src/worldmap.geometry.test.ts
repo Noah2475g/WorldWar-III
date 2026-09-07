@@ -38,7 +38,9 @@ const landmarks = readCsv(readFileSync(`${ROOT}/data/maps/landmarks.csv`, 'utf8'
 const source = new Map(shapes.provinces.map((p) => [p.id, drawableRings(p.geometry)]))
 
 /** What the drawing *is*. */
-const drawn = new Map(world.provinces.map((p) => [p.id, [p.polygon as ReadonlyArray<MapPoint>]]))
+const drawn = new Map(
+  world.provinces.map((p) => [p.id, p.polygons as ReadonlyArray<ReadonlyArray<MapPoint>>]),
+)
 
 // ------------------------------------------------------------------ transition
 
@@ -56,32 +58,25 @@ const drawn = new Map(world.provinces.map((p) => [p.id, [p.polygon as ReadonlyAr
  */
 
 /** G1 — the anchor sits outside the province's own drawn area. Measured 2026-09-07. */
-const G1_OFFEN: ReadonlySet<string> = new Set([
-  'CAN-NORTH', 'FJI', 'GRC', 'HRV', 'HTI', 'MEX-SE',
-  'NOR', 'NZL', 'PHL', 'SGP', 'SWE', 'THA',
-  'USA-WEST', 'VNM',
-])
+const G1_OFFEN: ReadonlySet<string> = new Set([])
 
 /** G2 — less than 99 % of the source area is drawn. Measured 2026-09-07: 66 of 237. */
-const G2_OFFEN: ReadonlySet<string> = new Set([
-  'ARG-NORTH', 'ARG-SOUTH', 'AUS-SE', 'AUS-SW', 'AZE', 'BGD',
-  'BRA-NW', 'CAN-EAST', 'CAN-NORTH', 'CAN-WEST', 'CHL', 'CHN-SOUTH',
-  'CUB', 'DEU-NE', 'DNK', 'ECU', 'EGY-NORTH', 'EGY-SOUTH',
-  'ESP-SE', 'ESP-SW', 'EST', 'FJI', 'FLK', 'FRA-SE',
-  'GBR-NE', 'GBR-NW', 'GNB', 'GNQ', 'GRC', 'GRL',
-  'HKG', 'HRV', 'HTI', 'IDN-EAST', 'IDN-JAVA', 'IDN-SUL',
-  'IDN-SUM', 'IND-SOUTH', 'ITA-SOUTH', 'JPN-CENTRAL', 'JPN-NORTH', 'JPN-SOUTH',
-  'KOR', 'KWT', 'MEX-NE', 'MLT', 'MUS', 'MYS',
-  'NLD', 'NOR', 'NZL', 'PAK-CENTRAL', 'PAN', 'PHL',
-  'PNG', 'PRI', 'PRT', 'RUS-FAREAST', 'RUS-NW', 'RUS-SIB',
-  'RUS-VOLGA', 'TLS', 'TTO', 'TUR-WEST', 'USA-NE', 'USA-WEST',
-])
+const G2_OFFEN: ReadonlySet<string> = new Set([])
 
 /** G3 — the city is not inside the province the source puts it in. Measured 2026-09-07. */
-const G3_OFFEN: ReadonlySet<string> = new Set(['Los Angeles', 'Tokio', 'Singapur'])
+const G3_OFFEN: ReadonlySet<string> = new Set([])
 
-/** G4 — a point lies off the canvas. Measured 2026-09-07: Greenland, y down to -436. */
-const G4_OFFEN: ReadonlySet<string> = new Set(['GRL'])
+/**
+ * G4 — a point lies off the canvas. T-M19-03 empties this one.
+ *
+ * It **grew** with the repair, from Greenland alone to four provinces, and that is the
+ * repair working rather than breaking something: the 78° cut in `build-map.mjs` decides
+ * the strip of the world the canvas shows, but nothing ever clips against it. While
+ * only the ring with the most points was drawn, most of what lies above the cut simply
+ * was not in the file. Now every piece of land is, including the arctic islands of
+ * northern Canada, Norway and Russia.
+ */
+const G4_OFFEN: ReadonlySet<string> = new Set(['CAN-NORTH', 'GRL', 'NOR', 'RUS-NW', 'RUS-SIB'])
 
 // ------------------------------------------------------------------ geometry
 
@@ -206,8 +201,10 @@ describe('R-MAP-08 G2 Die gezeichnete Flaeche traegt die Quellflaeche', () => {
     }
     const share = actual / expected
 
-    // 0,858 on 2026-09-07. The threshold is the transition, and T-M19-02 raises it to 0,99.
-    expect(share, `gezeichnet: ${(share * 100).toFixed(2)} % der Quellflaeche`).toBeGreaterThan(0.85)
+    // 85,78 % before T-M19-02, 100,00 % after: dropping only the rings that enclose no
+    // area at all after rounding costs nothing measurable. The threshold stays at 99 %
+    // rather than at 100 % so that a future simplification has room to cost a little.
+    expect(share, `gezeichnet: ${(share * 100).toFixed(2)} % der Quellflaeche`).toBeGreaterThan(0.99)
   })
 })
 

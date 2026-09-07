@@ -109,8 +109,10 @@ function checkProvinces(map: MapData, errors: MapError[]): void {
     if (!Number.isSafeInteger(province.population) || province.population < 0) {
       errors.push({ code: 'INVALID_TYPE', message: 'Bevölkerung muss eine nicht-negative ganze Zahl sein.', where })
     }
-    if (!Array.isArray(province.polygon) || province.polygon.length < 3) {
-      errors.push({ code: 'MISSING_FIELD', message: 'Provinzumriss braucht mindestens drei Punkte.', where })
+    if (!Array.isArray(province.polygons) || province.polygons.length === 0) {
+      errors.push({ code: 'MISSING_FIELD', message: 'Provinz braucht mindestens einen Umriss.', where })
+    } else if (province.polygons.some((ring) => !Array.isArray(ring) || ring.length < 3)) {
+      errors.push({ code: 'MISSING_FIELD', message: 'Jeder Provinzumriss braucht mindestens drei Punkte.', where })
     }
     for (const [resource, amount] of Object.entries(province.deposits ?? {})) {
       if (!RESOURCES.includes(resource as ResourceKey)) {

@@ -184,3 +184,95 @@ export function drawableRings(shape: {
     .map((ring) => ring.map((point): MapPoint => [toMapX(point[0] ?? 0), toMapY(point[1] ?? 0)]))
     .filter((ring) => ringAreaPx2(ring) > 0)
 }
+
+/** Ray casting on canvas pixels. Mirrors the interface's `pointInPolygon`. */
+function pointInRing(point: MapPoint, ring: ReadonlyArray<MapPoint>): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i]!
+    const b = ring[j]!
+    if (a[1] > point[1] !== b[1] > point[1]) {
+      if (point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]) inside = !inside
+    }
+  }
+  return inside
+}
+
+/**
+ * A point that is certainly *inside* the province, for the army marker and the label.
+ *
+ * `shapeCentre` averages the boundary points of the largest ring, and for a coast as
+ * folded as Norway's that average is at sea: nine provinces carried an anchor outside
+ * their own land on 2026-09-07, among them Sweden, Greece, Croatia, Vietnam and
+ * Thailand. The marker then floats in the water next to the country it belongs to.
+ *
+ * The answer is the midpoint of the longest horizontal chord of the largest ring. It
+ * is inside by construction — a chord between two crossings of the outline lies in the
+ * shape — it is deterministic, and it needs no iteration to converge.
+ */
+export function anchorOf(rings: ReadonlyArray<ReadonlyArray<MapPoint>>): MapPoint | null {
+  let best: ReadonlyArray<MapPoint> | null = null
+  let bestArea = -1
+  for (const ring of rings) {
+    const area = ringAreaPx2(ring)
+    if (area > bestArea) {
+      bestArea = area
+      best = ring
+    }
+  }
+  if (!best || best.length < 3) return null
+
+  let minY = Infinity
+  let maxY = -Infinity
+  for (const [, y] of best) {
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+
+  // Half-integer rows, so a scan line never runs exactly along a horizontal edge —
+  // there the crossings come in the wrong parity and the chord would be nonsense.
+  const ROWS = 128
+  let widest = 0
+  let anchor: MapPoint | null = null
+
+  for (let row = 0; row < ROWS; row++) {
+    const y = minY + ((maxY - minY) * (row + 0.5)) / ROWS
+    const crossings: number[] = []
+    for (let i = 0, j = best.length - 1; i < best.length; j = i++) {
+      const a = best[i]!
+      const b = best[j]!
+      if (a[1] > y !== b[1] > y) {
+        crossings.push(((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]) + a[0])
+      }
+    }
+    crossings.sort((p, q) => p - q)
+
+    for (let i = 0; i + 1 < crossings.length; i += 2) {
+      const width = crossings[i + 1]! - crossings[i]!
+      if (width <= widest) continue
+      const candidate: MapPoint = [
+        Math.round((crossings[i]! + crossings[i + 1]!) / 2),
+        Math.round(y),
+      ]
+      // Rounding to whole pixels can push the midpoint of a very thin chord back out,
+      // so the candidate is only taken once it has been checked.
+      if (!pointInRing(candidate, best)) continue
+      widest = width
+      anchor = candidate
+    }
+  }
+  return anchor
+}
+
+/**
+ * The anchor a province should carry: its own centre when that already lies on its
+ * land, and the chord midpoint when it does not. Keeping the centre where it works
+ * means the repair touches only the provinces that were wrong.
+ */
+export function anchorFor(
+  centre: MapPoint,
+  rings: ReadonlyArray<ReadonlyArray<MapPoint>>,
+): MapPoint {
+  if (rings.some((ring) => pointInRing(centre, ring))) return centre
+  return anchorOf(rings) ?? centre
+}

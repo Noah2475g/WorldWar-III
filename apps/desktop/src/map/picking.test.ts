@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   LAYERS,
@@ -24,11 +26,13 @@ import {
 
 const square = (id: string, x: number, y: number, size = 10): PickableProvince => ({
   id,
-  polygon: [
-    [x, y],
-    [x + size, y],
-    [x + size, y + size],
-    [x, y + size],
+  polygons: [
+    [
+      [x, y],
+      [x + size, y],
+      [x + size, y + size],
+      [x, y + size],
+    ],
   ],
 })
 
@@ -89,23 +93,26 @@ describe('R-UI-03 Trefferpruefung', () => {
     // province — which on a coastline is most of them.
     const shape: PickableProvince = {
       id: 'L',
-      polygon: [
-        [0, 0],
-        [10, 0],
-        [10, 4],
-        [4, 4],
-        [4, 10],
-        [0, 10],
+      polygons: [
+        [
+          [0, 0],
+          [10, 0],
+          [10, 4],
+          [4, 4],
+          [4, 10],
+          [0, 10],
+        ],
       ],
     }
+    const ring = shape.polygons[0]!
 
-    expect(pointInPolygon({ x: 2, y: 8 }, shape.polygon)).toBe(true)
-    expect(pointInPolygon({ x: 8, y: 2 }, shape.polygon)).toBe(true)
-    expect(pointInPolygon({ x: 8, y: 8 }, shape.polygon)).toBe(false)
+    expect(pointInPolygon({ x: 2, y: 8 }, ring)).toBe(true)
+    expect(pointInPolygon({ x: 8, y: 2 }, ring)).toBe(true)
+    expect(pointInPolygon({ x: 8, y: 8 }, ring)).toBe(false)
   })
 
   it('nutzt die Umgrenzung als schnellen Ausschluss', () => {
-    const bounds = boundsOf(square('a', 5, 7, 3).polygon)
+    const bounds = boundsOf(square('a', 5, 7, 3).polygons)
 
     expect(bounds).toEqual({ minX: 5, minY: 7, maxX: 8, maxY: 10 })
   })
@@ -188,5 +195,45 @@ describe('R-UI-03 Ebenen', () => {
     for (const change of ['ownership', 'mode', 'zoom'] as const) {
       expect(layersToRedraw(change)).toEqual([...LAYERS])
     }
+  })
+})
+
+describe('R-MAP-08 Eine Provinz darf mehrteilig sein', () => {
+  /**
+   * The finding from Noah's playtest on 2026-09-07, as a click.
+   *
+   * `USA-WEST` is Alaska *and* the western states — one power, two pieces of land that
+   * do not touch. Until T-M19-02 the generator had to choose one outline per province
+   * and chose the ring with the most points, which after the Mercator projection is
+   * Alaska's fjord coast. So California was not drawn, and not clickable: the province
+   * was there, the land was not.
+   *
+   * The two points are computed, not guessed — Anchorage and Los Angeles through the
+   * same projection the map is built with (`packages/mapgen/src/project.ts`).
+   */
+  const ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
+  const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as {
+    provinces: { id: string; polygons: [number, number][][] }[]
+  }
+  const pickable: PickableProvince[] = world.provinces.map((p) => ({ id: p.id, polygons: p.polygons }))
+  const identity = { x: 0, y: 0, scale: 1 }
+
+  it('waehlt bei einem Klick auf Alaska die Provinz USA-WEST', () => {
+    // Anchorage, 149,9° W / 61,2° N.
+    expect(pickProvince({ x: 334, y: 612 }, identity, pickable)).toBe('USA-WEST')
+  })
+
+  it('waehlt bei einem Klick auf Kalifornien dieselbe Provinz', () => {
+    // Los Angeles, 118,2° W / 34,1° N. This is the click that did nothing at all.
+    expect(pickProvince({ x: 686, y: 1110 }, identity, pickable)).toBe('USA-WEST')
+  })
+
+  it('trifft auch Tokio und Neuseelands Suedinsel', () => {
+    // Two more provinces the source keeps in many pieces. Both points hit nothing at
+    // all before the repair: Tokyo (139,7° E / 35,7° N) sits on Honshu, and
+    // Christchurch (172,6° E / 43,5° S) on the South Island — and neither island was
+    // the ring with the most points.
+    expect(pickProvince({ x: 3552, y: 1086 }, identity, pickable)).toBe('JPN-CENTRAL')
+    expect(pickProvince({ x: 3918, y: 2123 }, identity, pickable)).toBe('NZL')
   })
 })

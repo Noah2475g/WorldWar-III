@@ -74,7 +74,19 @@ export interface MapProvince {
   coastal: boolean
   /** Screen position of the province centre, for rendering and labels only. */
   center: { x: number; y: number }
-  polygon: ReadonlyArray<readonly [number, number]>
+  /**
+   * Die Umrisse der Provinz — **mehrere**, denn Alaska und Kalifornien gehoeren
+   * derselben Macht und liegen nicht aneinander (T-M19-02, R-MAP-08).
+   *
+   * Bis zum 2026-09-07 stand hier ein einzelner Ring, und der Generator musste
+   * waehlen. Er waehlte den mit den meisten Punkten — fuer "Westen der USA" also
+   * Alaskas Fjordkueste, und die Weststaaten fielen aus der Karte. 130 von 237
+   * Provinzen verloren so Land, 66 davon mehr als ein Prozent.
+   *
+   * Wie `center` reine Zeichendatei: der Kern liest sie ausserhalb von
+   * `validateMap` nicht, die KI nie, und ein Spielstand enthaelt die Karte nicht.
+   */
+  polygons: ReadonlyArray<ReadonlyArray<readonly [number, number]>>
   population: Fixed
   deposits: Partial<Record<ResourceKey, Fixed>>
 }

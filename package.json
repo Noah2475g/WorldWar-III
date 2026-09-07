@@ -18,6 +18,7 @@
     "verify": "node scripts/verify.mjs",
     "build": "tsc --noEmit && echo build-ok",
     "map:build": "node scripts/build-map.mjs",
+    "map:reproject": "node scripts/reproject-map.mjs",
     "sim:long": "vitest run --config vitest.slow.config.ts apps/headless/test/longrun.slow.test.ts",
     "sim:fullgame": "vitest run --config vitest.slow.config.ts apps/headless/test/fullgame.slow.test.ts",
     "sim:tournament": "vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts",

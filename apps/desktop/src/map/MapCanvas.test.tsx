@@ -25,7 +25,7 @@ const ROOT = process.cwd()
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as {
   width: number
   height: number
-  provinces: { id: string; polygon: [number, number][]; population: number; deposits: Record<string, number> }[]
+  provinces: { id: string; polygons: [number, number][][]; population: number; deposits: Record<string, number> }[]
 }
 
 /** Jeder Aufruf wird gezaehlt; jede Eigenschaft nimmt an, was man ihr gibt. */
@@ -86,12 +86,12 @@ const provinces: RenderProvince[] = world.provinces.map((province, index) => ({
   morale: 40_000 + (index % 60) * 1000,
   deposits: province.deposits,
   strength: (index * 37) % 20_000,
-  polygon: province.polygon,
-  bounds: boundsOf(province.polygon),
+  polygons: province.polygons,
+  bounds: boundsOf(province.polygons),
 }))
 
 const centres = Object.fromEntries(
-  world.provinces.map((province) => [province.id, { x: province.polygon[0]![0], y: province.polygon[0]![1] }]),
+  world.provinces.map((province) => [province.id, { x: province.polygons[0]![0]![0], y: province.polygons[0]![0]![1] }]),
 )
 
 const zeichne = (extra: Partial<Parameters<typeof MapCanvas>[0]> = {}) => {

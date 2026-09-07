@@ -79,7 +79,7 @@ export function MapCanvas(props: MapCanvasProps) {
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
 
   const withBounds = useMemo(
-    () => props.provinces.map((province) => ({ ...province, bounds: province.bounds ?? boundsOf(province.polygon) })),
+    () => props.provinces.map((province) => ({ ...province, bounds: province.bounds ?? boundsOf(province.polygons) })),
     [props.provinces],
   )
 
@@ -198,14 +198,19 @@ export function MapCanvas(props: MapCanvasProps) {
     if (props.selectedProvince) {
       const province = withBounds.find((p) => p.id === props.selectedProvince)
       if (province) {
-        const points = province.polygon.map(([x, y]) => toScreen({ x, y }, props.view))
-        context.beginPath()
-        context.moveTo(points[0]!.x, points[0]!.y)
-        for (const point of points.slice(1)) context.lineTo(point.x, point.y)
-        context.closePath()
         context.strokeStyle = MAP_COLORS.selection
         context.lineWidth = 2.5
-        context.stroke()
+        // Je Teil ein eigener Zug. Ein einziger Pfad ueber alle Umrisse zoege eine
+        // Linie von Alaska nach Kalifornien quer durch den Pazifik (T-M19-02).
+        for (const ring of province.polygons) {
+          const points = ring.map(([x, y]) => toScreen({ x, y }, props.view))
+          if (points.length === 0) continue
+          context.beginPath()
+          context.moveTo(points[0]!.x, points[0]!.y)
+          for (const point of points.slice(1)) context.lineTo(point.x, point.y)
+          context.closePath()
+          context.stroke()
+        }
       }
     }
 
