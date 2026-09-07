@@ -66,17 +66,8 @@ const G2_OFFEN: ReadonlySet<string> = new Set([])
 /** G3 — the city is not inside the province the source puts it in. Measured 2026-09-07. */
 const G3_OFFEN: ReadonlySet<string> = new Set([])
 
-/**
- * G4 — a point lies off the canvas. T-M19-03 empties this one.
- *
- * It **grew** with the repair, from Greenland alone to four provinces, and that is the
- * repair working rather than breaking something: the 78° cut in `build-map.mjs` decides
- * the strip of the world the canvas shows, but nothing ever clips against it. While
- * only the ring with the most points was drawn, most of what lies above the cut simply
- * was not in the file. Now every piece of land is, including the arctic islands of
- * northern Canada, Norway and Russia.
- */
-const G4_OFFEN: ReadonlySet<string> = new Set(['CAN-NORTH', 'GRL', 'NOR', 'RUS-NW', 'RUS-SIB'])
+/** G4 — a point lies off the canvas. Emptied by T-M19-03. */
+const G4_OFFEN: ReadonlySet<string> = new Set([])
 
 // ------------------------------------------------------------------ geometry
 
@@ -254,6 +245,26 @@ describe('R-MAP-08 G4 Nichts liegt neben der Leinwand', () => {
 
     expect(unexpected, `Punkte ausserhalb der Leinwand: ${unexpected.join(', ')}`).toEqual([])
     keineVeralteteAusnahme(G4_OFFEN, broken)
+  })
+
+  it('faltet die Nordkueste nicht auf die Kante', () => {
+    // The check a green G4 cannot give on its own (T-M19-03). `y = Math.max(0, y)`
+    // also puts every point inside the rectangle — by laying Greenland's whole north
+    // coast on one straight line at the top. Before the clip, 796 of Greenland's 3430
+    // points were above the edge; folded, all of them would sit exactly on y = 0.
+    // Properly clipped only the crossings do, and there are seven.
+    for (const province of world.provinces) {
+      const points = (drawn.get(province.id) ?? []).flat()
+      const onEdge = points.filter(
+        ([x, y]) => x === 0 || x === MAP_WIDTH || y === 0 || y === MAP_HEIGHT,
+      ).length
+
+      expect(
+        onEdge / points.length,
+        `${province.id}: ${onEdge} von ${points.length} Punkten liegen genau auf der ` +
+          `Leinwandkante — das ist eine zusammengefaltete Kueste, keine geklippte`,
+      ).toBeLessThan(0.1)
+    }
   })
 
   it('nennt die Leinwand so gross, wie die Karte selbst sagt', () => {

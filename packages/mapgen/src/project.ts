@@ -182,6 +182,7 @@ export function drawableRings(shape: {
 }): ReadonlyArray<ReadonlyArray<MapPoint>> {
   return outerRings(shape)
     .map((ring) => ring.map((point): MapPoint => [toMapX(point[0] ?? 0), toMapY(point[1] ?? 0)]))
+    .map((ring) => clipRing(ring))
     .filter((ring) => ringAreaPx2(ring) > 0)
 }
 
@@ -276,3 +277,66 @@ export function anchorFor(
   if (rings.some((ring) => pointInRing(centre, ring))) return centre
   return anchorOf(rings) ?? centre
 }
+
+/**
+ * Clips a ring to the canvas rectangle (Sutherland–Hodgman, T-M19-03).
+ *
+ * The 78° cut decides which strip of the world the canvas shows, but until T-M19-03
+ * nothing ever clipped against it: Greenland reached 436 pixels above the top edge, and
+ * once every ring was drawn the arctic islands of Canada, Norway and Russia joined it —
+ * 4087 of 97 463 points off the picture.
+ *
+ * The obvious repair is the wrong one. `y = Math.max(0, y)` folds the whole north coast
+ * onto a single straight line at the top edge, which looks like a rendering fault rather
+ * than like a map. Sutherland–Hodgman inserts the crossing points instead, so the
+ * coastline runs to the edge, along it, and back — which is what a cut-off coast looks
+ * like.
+ *
+ * The alternative was measured and rejected: moving the cut north to 83,7° fits
+ * everything in, but it shrinks the scale from 11,96 to 10,00 pixels per degree — the
+ * whole world 16 % smaller so that 4 % of it, all of it arctic islands, can be seen.
+ */
+export function clipRing(
+  ring: ReadonlyArray<MapPoint>,
+  width = MAP_WIDTH,
+  height = MAP_HEIGHT,
+): ReadonlyArray<MapPoint> {
+  // One pass per edge, each keeping what is on the inside and cutting what crosses.
+  const edges: ReadonlyArray<[(p: MapPoint) => boolean, (a: MapPoint, b: MapPoint) => MapPoint]> = [
+    [(p) => p[0] >= 0, (a, b) => atX(a, b, 0)],
+    [(p) => p[0] <= width, (a, b) => atX(a, b, width)],
+    [(p) => p[1] >= 0, (a, b) => atY(a, b, 0)],
+    [(p) => p[1] <= height, (a, b) => atY(a, b, height)],
+  ]
+
+  let out: MapPoint[] = ring.map((p) => p)
+  for (const [inside, crossing] of edges) {
+    const input = out
+    out = []
+    for (let i = 0, j = input.length - 1; i < input.length; j = i++) {
+      const current = input[i]!
+      const previous = input[j]!
+      const currentIn = inside(current)
+      const previousIn = inside(previous)
+
+      if (currentIn) {
+        if (!previousIn) out.push(crossing(previous, current))
+        out.push(current)
+      } else if (previousIn) {
+        out.push(crossing(previous, current))
+      }
+    }
+    if (out.length === 0) return []
+  }
+  return out
+}
+
+const atX = (a: MapPoint, b: MapPoint, x: number): MapPoint => [
+  x,
+  Math.round(a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])),
+]
+
+const atY = (a: MapPoint, b: MapPoint, y: number): MapPoint => [
+  Math.round(a[0] + ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1])),
+  y,
+]

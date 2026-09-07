@@ -7,6 +7,7 @@ import {
   MAP_WIDTH,
   anchorFor,
   anchorOf,
+  clipRing,
   distanceKm,
   drawableRings,
   project,
@@ -257,5 +258,71 @@ describe('T-M19-02 Der Ankerpunkt', () => {
   it('gibt null, wenn es nichts zu ankern gibt', () => {
     expect(anchorOf([])).toBeNull()
     expect(anchorOf([[[0, 0], [1, 1]]])).toBeNull()
+  })
+})
+
+describe('T-M19-03 Der Beschnitt an der Leinwandkante', () => {
+  it('laesst eine Flaeche, die ganz drinnen liegt, unveraendert', () => {
+    const inside: [number, number][] = [
+      [10, 10],
+      [90, 10],
+      [90, 90],
+      [10, 90],
+    ]
+
+    expect(clipRing(inside, 100, 100)).toEqual(inside)
+  })
+
+  it('schneidet die Spitze ab, statt sie auf die Kante zu legen', () => {
+    // The distinction the whole task is about. A triangle whose tip is 50 above the
+    // edge becomes a trapezium of four points — clipped. `Math.max(0, y)` would keep
+    // three points and move the tip down, which changes the shape into something that
+    // was never there.
+    const spike: [number, number][] = [
+      [20, -50],
+      [80, 100],
+      [0, 100],
+    ]
+    const clipped = clipRing(spike, 100, 100)
+
+    expect(clipped.length).toBeGreaterThan(spike.length)
+    expect(clipped.every(([, y]) => y >= 0)).toBe(true)
+    // Exactly the two crossings sit on the edge, not the whole coast.
+    expect(clipped.filter(([, y]) => y === 0)).toHaveLength(2)
+  })
+
+  it('verliert nur, was ausserhalb liegt', () => {
+    // Half a square outside the top edge keeps half its area, not none and not all.
+    const half: [number, number][] = [
+      [0, -100],
+      [100, -100],
+      [100, 100],
+      [0, 100],
+    ]
+
+    expect(ringAreaPx2(clipRing(half, 100, 100))).toBe(100 * 100)
+  })
+
+  it('gibt nichts zurueck, wenn nichts auf der Leinwand liegt', () => {
+    const far: [number, number][] = [
+      [500, 500],
+      [600, 500],
+      [600, 600],
+    ]
+
+    expect(clipRing(far, 100, 100)).toEqual([])
+  })
+
+  it('klippt an allen vier Kanten', () => {
+    const bigger: [number, number][] = [
+      [-50, -50],
+      [150, -50],
+      [150, 150],
+      [-50, 150],
+    ]
+    const clipped = clipRing(bigger, 100, 100)
+
+    expect(ringAreaPx2(clipped)).toBe(100 * 100)
+    expect(clipped.every(([x, y]) => x >= 0 && x <= 100 && y >= 0 && y <= 100)).toBe(true)
   })
 })

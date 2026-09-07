@@ -1545,11 +1545,11 @@ tasks:
   - id: T-M19-03
     milestone: M19
     title: Groenland bleibt auf der Leinwand
-    status: todo
+    status: done
     deps: [T-M19-02]
     requirements: [R-MAP-08]
     design: [D-21]
-    files: [scripts/build-map.mjs, data/maps/world.json]
+    files: [packages/mapgen/src/project.ts, data/maps/world.json]
     tests: [packages/mapgen/src/worldmap.geometry.test.ts]
     dod: "796 Punkte Groenlands liegen oberhalb der Leinwand, bis y = -436; der 78-Grad-Beschnitt wird nie geklippt. Fertig, wenn kein Punkt ausserhalb 0..4000 mal 0..2400 liegt und die Kuestenlinie an der Beschnittkante sichtbar durchgehend bleibt, statt zu einer geraden Linie zusammengefaltet zu werden. Eigene Aufgabe, damit der kleine Fehler nicht in der grossen mitschwimmt und unbemerkt bleibt"
 
