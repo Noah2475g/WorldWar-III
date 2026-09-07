@@ -17,6 +17,7 @@ import {
   type EventEntry,
 } from './Panels.tsx'
 import { ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
+import type { TimelineEntry } from '../game/saves.ts'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -721,6 +722,98 @@ describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Nahrung')
     expect(cell?.querySelector('svg'), 'kein Rohstoffsymbol in der Wirtschaftstabelle').toBeTruthy()
+  })
+})
+
+/**
+ * Die Wirtschaft zeigt Trend und Bilanz als Bild (T-M25-03, R-UI-05, R-UI-13, D25.2).
+ *
+ * Sieben Rohstoffe mal fünf Zahlenspalten — Trends musste man sich merken. Jede Zeile
+ * trägt jetzt eine Sparkline der letzten sieben Tage (aus der Zeitreihe, T-M25-01) und
+ * einen Bilanzbalken: positiv grün, negativ zinnober, null als Strich. Beides sind
+ * Bilder ohne Stimme (aria-hidden) — die Zahl daneben bleibt der zugängliche Wert.
+ * Und die Tabelle bleibt in der Leiste: keine sechste Spalte, feste schmale Breiten.
+ */
+describe('R-UI-05 Die Wirtschaftstabelle traegt Sparkline und Bilanzbalken', () => {
+  const wirtschaft = (): PublicView =>
+    ({
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 400_000, production: 220_000, consumption: 100_000, balance: 120_000, committed: 0 },
+          iron: { stock: 80_000, production: 0, consumption: 40_000, balance: -40_000, committed: 0 },
+          wood: { stock: 50_000, production: 10_000, consumption: 10_000, balance: 0, committed: 0 },
+        },
+      },
+    }) as unknown as PublicView
+
+  /** Drei Tage Bestand fuer Nahrung — Werte, deren Sparkline-Punkte glatt sind. */
+  const zeitreihe: TimelineEntry[] = [
+    { day: 1, scores: {}, stock: { food: 100_000 }, balance: {} },
+    { day: 2, scores: {}, stock: { food: 250_000 }, balance: {} },
+    { day: 3, scores: {}, stock: { food: 400_000 }, balance: {} },
+  ]
+
+  const zeilen = (container: HTMLElement) => [...container.querySelectorAll('tbody tr')]
+
+  it('zeigt die Bilanz als Balken: positiv gruen, negativ zinnober, null als Strich', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    const [nahrung, eisen, holz] = zeilen(container)
+
+    expect(nahrung!.querySelector('.delta__fill--plus'), 'kein gruener Balken bei +120').toBeTruthy()
+    expect(eisen!.querySelector('.delta__fill--minus'), 'kein zinnoberner Balken bei −40').toBeTruthy()
+    expect(holz!.querySelector('.delta__zero'), 'kein Strich bei ±0').toBeTruthy()
+    expect(holz!.querySelector('.delta__fill')).toBeNull()
+  })
+
+  it('richtet die Balkenlaenge am groessten Betrag aus', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} />)
+    const plus = container.querySelector('.delta__fill--plus') as HTMLElement
+    const minus = container.querySelector('.delta__fill--minus') as HTMLElement
+
+    // +120 ist der groesste Betrag → die halbe Spur; −40 ein Drittel davon, nach links.
+    expect(plus.style.width).toBe('50%')
+    expect(plus.style.left).toBe('50%')
+    expect(minus.style.width).toBe('16.7%')
+    expect(minus.style.right).toBe('50%')
+  })
+
+  it('zeichnet die Sparkline der letzten sieben Tage aus der Zeitreihe', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    const linie = zeilen(container)[0]!.querySelector('.sparkline polyline')
+
+    // Bestand 100/250/400: Spanne 100…400 → y 100, 50, 0; drei Tage → x 0, 50, 100.
+    expect(linie, 'keine Sparkline in der Nahrungszeile').toBeTruthy()
+    expect(linie!.getAttribute('points')).toBe('0,100 50,50 100,0')
+  })
+
+  it('laesst eine Zeile ohne Verlauf ohne Sparkline', () => {
+    // Eisen kommt in der Zeitreihe nicht vor — ein erfundener Trend waere schlimmer
+    // als keiner. Und ganz ohne Zeitreihe (alter Stand) traegt keine Zeile eine.
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    expect(zeilen(container)[1]!.querySelector('.sparkline')).toBeNull()
+
+    const ohne = render(<EconomyPanel view={wirtschaft()} />)
+    expect(ohne.container.querySelector('.sparkline')).toBeNull()
+  })
+
+  it('laesst die Bilder stumm — die Zahl bleibt der zugaengliche Wert', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+
+    expect(container.querySelector('.delta')?.getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelector('.sparkline')?.getAttribute('aria-hidden')).toBe('true')
+    // Die Zahlen stehen weiterhin als Text in ihren Zellen.
+    expect(zeilen(container)[0]!.textContent).toContain('+120')
+    expect(zeilen(container)[1]!.textContent).toContain('−40')
+    expect(zeilen(container)[2]!.textContent).toContain('±0')
+  })
+
+  it('R-UI-05 Waechter: die Tabelle behaelt ihre fuenf Spalten', () => {
+    // Die Bilder wohnen IN den Zellen — eine sechste Spalte war es, die die Leiste
+    // seitwaerts schob (T-M22-02, Befund V2-02).
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+
+    expect(container.querySelectorAll('thead th')).toHaveLength(5)
   })
 })
 

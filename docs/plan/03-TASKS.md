@@ -3674,8 +3674,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-05, R-UI-13
 - **Entwurf:** D25.2
 - **Abhängigkeiten:** T-M25-01
-- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
-- **Tests zuerst:** Balkenrichtung und Sparkline-Punkte an bekannte Werte gebunden.
+- **Dateien:** `apps/desktop/src/ui/charts/DeltaBar.tsx`, `apps/desktop/src/ui/charts/Sparkline.tsx`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`
+  *(die Bausteine wurden eigene Komponenten unter `ui/charts/` — der DeltaBar wird in
+  T-M25-04 wiederverwendet; die App reicht die Zeitreihe an das Wirtschaftspanel durch)*
+- **Tests zuerst:** Balkenrichtung und Sparkline-Punkte an bekannte Werte gebunden
+  (`Panels.test.tsx`, `charts/DeltaBar.test.tsx`, `charts/Sparkline.test.tsx`).
 - **Fertig wenn:** jede Rohstoffzeile eine Sparkline der letzten sieben Tage (aus der
   Zeitreihe) und einen Bilanzbalken trägt (positiv grün, negativ zinnober, null als
   Strich; die Zahl bleibt daneben und bleibt der zugängliche Wert); die Tabelle bleibt

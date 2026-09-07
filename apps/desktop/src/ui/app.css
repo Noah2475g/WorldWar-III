@@ -926,6 +926,70 @@ body {
   margin: 0 0 var(--sp-md);
 }
 
+/* Die Sparkline in der Tabellenzelle: fest und schmal, damit die Leiste nicht wieder
+   seitwaerts kriecht (T-M22-02) — der Punktraum 0…100 wird hierauf gestaucht. */
+.sparkline {
+  width: 40px;
+  height: 11px;
+  margin-left: var(--sp-sm);
+  vertical-align: middle;
+}
+
+.sparkline__line {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Der ±-Balken: Mitte ist null, rechts waechst Gruen, links Zinnober; die Zahl steht
+   daneben und bleibt der zugaengliche Wert (der Balken ist aria-hidden). */
+.delta {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 7px;
+  margin-left: var(--sp-sm);
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: 1px;
+  vertical-align: middle;
+}
+
+.delta::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.delta__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.delta__fill--plus {
+  background: var(--good);
+}
+
+.delta__fill--minus {
+  background: var(--accent);
+}
+
+.delta__zero {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  background: var(--ink-soft);
+}
+
 /* ---------------------------------------------------------------- legende */
 
 .map-area {

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { TimelineEntry } from '../game/saves.ts'
 import { t } from '../i18n/text.ts'
+import { DeltaBar } from './charts/DeltaBar.tsx'
+import { Sparkline } from './charts/Sparkline.tsx'
 import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
@@ -841,11 +844,27 @@ export function MarketPanel({
  * say whether a shortage comes from a lost mine or from a new army, and that is the
  * question a player asks the moment a figure turns red.
  */
-export function EconomyPanel({ view }: { view: PublicView | null }) {
+export function EconomyPanel({
+  view,
+  timeline = [],
+}: {
+  view: PublicView | null
+  /** Die Zeitreihe der Partie (T-M25-01) — sie speist die Sparkline je Rohstoff. */
+  timeline?: readonly TimelineEntry[]
+}) {
   const economy = view?.self.economy
   if (!economy) return null
 
   const shortages = new Set(view?.self.shortages ?? [])
+
+  // Der Massstab der Bilanzbalken: der groesste Betrag bekommt die halbe Spur, alle
+  // anderen skalieren dagegen — so ist "Oel frisst am meisten" ohne Lesen sichtbar.
+  const maxBalance = Math.max(...Object.values(economy).map((flow) => Math.abs(flow.balance)), 1)
+
+  // Das Sieben-Tage-Fenster der Sparkline (D25.2), je Rohstoff aus der Zeitreihe.
+  const window7 = timeline.slice(-7)
+  const stockHistory = (key: string): number[] =>
+    window7.filter((entry) => key in entry.stock).map((entry) => entry.stock[key]!)
 
   return (
     <section className="panel" aria-label={t('economy.title')}>
@@ -886,10 +905,16 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
                     {amount(flow.committed)}
                   </span>
                 )}
+                {/* Der Trend der letzten sieben Tage (T-M25-03): ein Bild ohne Stimme
+                    in der Zelle — keine sechste Spalte, die Leiste bleibt stehen. */}
+                <Sparkline values={stockHistory(key)} />
               </td>
               <td>{rate(flow.production)}</td>
               <td>{rate(-flow.consumption)}</td>
-              <td>{rate(flow.balance)}</td>
+              <td>
+                {rate(flow.balance)}
+                <DeltaBar value={flow.balance} max={maxBalance} />
+              </td>
             </tr>
           ))}
         </tbody>

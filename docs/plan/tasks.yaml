@@ -1872,12 +1872,12 @@ tasks:
   - id: T-M25-03
     milestone: M25
     title: Die Wirtschaft zeigt Trend und Bilanz als Bild
-    status: todo
+    status: done
     deps: [T-M25-01]
     requirements: [R-UI-05, R-UI-13]
     design: [D-25]
-    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
-    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    files: [apps/desktop/src/ui/charts/DeltaBar.tsx, apps/desktop/src/ui/charts/Sparkline.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/ui/charts/DeltaBar.test.tsx, apps/desktop/src/ui/charts/Sparkline.test.tsx, apps/desktop/src/ui/Panels.test.tsx]
     dod: "Vorschlag B: sieben Rohstoffe mal fuenf Zahlenspalten - Trends muss man sich merken. Fertig, wenn jede Rohstoffzeile eine Sparkline der letzten sieben Tage (aus der Zeitreihe) und einen Bilanzbalken traegt (positiv gruen, negativ zinnober, null als Strich; Zahl bleibt daneben), die Tabelle dabei in der Leiste bleibt (Waechter T-M22-02) und ein Test die Balkenrichtung und die Sparkline-Punkte an bekannte Werte bindet. Fuer das Ohr bleibt die Zahl der zugaengliche Wert (aria)"
 
   - id: T-M25-04

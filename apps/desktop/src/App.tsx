@@ -1362,7 +1362,7 @@ export function App(props: AppProps) {
               }}
             />
           )}
-          <EconomyPanel view={view} />
+          <EconomyPanel view={view} timeline={timeline} />
           <DebugPanel
             enabled={ui.settings.debug}
             info={{ tick: state.tick, hash: debugHash, aiGoals: trace.goals, commands: trace.commands }}
