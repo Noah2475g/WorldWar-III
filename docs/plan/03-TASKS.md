@@ -3433,9 +3433,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-05
 - **Entwurf:** D24.2
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/Panels.tsx`
-- **Tests zuerst:** ein Wächter-Test am gerenderten Baum: `scrollWidth <= clientWidth`
-  für die Leiste.
+- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/icons.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein Wächter-Test am gerenderten Baum (`Panels.test.tsx`, dazu
+  `App.test.tsx`): `scrollWidth <= clientWidth` für die Leiste — in jsdom als
+  Struktur- und Kaskadenprüfung gebunden (DECISIONS.md, 2026-09-07).
 - **Fertig wenn:** kein horizontales Scrollen mehr; „In Auftrag" wird ein Zeichen mit
   Zahl hinter dem Bestand.
 

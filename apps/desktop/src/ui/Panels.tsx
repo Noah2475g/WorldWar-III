@@ -793,7 +793,6 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
             <th>{t('economy.production')}</th>
             <th>{t('economy.consumption')}</th>
             <th>{t('economy.balance')}</th>
-            <th>{t('economy.committed')}</th>
           </tr>
         </thead>
         <tbody>
@@ -806,13 +805,26 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
                 {t(`resources.${key}`)}
                 <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
               </td>
-              <td>{amount(flow.stock)}</td>
+              <td>
+                {amount(flow.stock)}
+                {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne
+                    Vorzeichen und ausserhalb der Bilanz (T-M12-10). Als sechste Spalte
+                    schob dieser Wert die Tabelle aus der Leiste (T-M22-02, V2-02);
+                    jetzt steht er als Zeichen mit Zahl hinter dem Bestand, und nur,
+                    wenn es ihn gibt — eine Null ist keine Auskunft. */}
+                {flow.committed > 0 && (
+                  <span
+                    className="committed"
+                    title={t('economy.committedTitle', { amount: amount(flow.committed) })}
+                  >
+                    <Icon name="queue" size={11} title={t('economy.committed')} />
+                    {amount(flow.committed)}
+                  </span>
+                )}
+              </td>
               <td>{rate(flow.production)}</td>
               <td>{rate(-flow.consumption)}</td>
               <td>{rate(flow.balance)}</td>
-              {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne Vorzeichen
-                  und ausserhalb der Bilanz (T-M12-10). */}
-              <td>{amount(flow.committed)}</td>
             </tr>
           ))}
         </tbody>

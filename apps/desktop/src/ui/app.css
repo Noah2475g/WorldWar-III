@@ -256,9 +256,25 @@ body {
   background: var(--paper);
   padding: var(--sp-lg);
   overflow-y: auto;
+  /* Kein seitliches Kriechen (T-M22-02, Befund V2-02): ein einziges zu breites Panel
+     schob sonst die GANZE Leiste zur Seite — Knoepfe abgeschnitten, Ueberschriften
+     ohne ersten Buchstaben. Was breiter sein will als die Leiste, wird beschnitten
+     und faellt damit sofort auf, statt alle anderen Panels zu verschieben. */
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--sp-lg);
+}
+
+/* Das Auftragszeichen hinter dem Bestand (T-M22-02): Zeichen und Zahl, gedaempft,
+   mit der Textfassung im Titel. */
+.committed {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: var(--sp-sm);
+  color: var(--ink-soft);
+  font-size: 11px;
 }
 
 .panel h2 {

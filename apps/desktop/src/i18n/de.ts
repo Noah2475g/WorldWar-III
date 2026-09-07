@@ -51,6 +51,9 @@ export const de = {
     consumption: 'Unterhalt',
     balance: 'Bilanz',
     committed: 'In Auftrag',
+    // Die Textfassung des Auftragszeichens hinter dem Bestand (T-M22-02): die Spalte
+    // "In Auftrag" schob die Tabelle aus der Leiste, die Auskunft selbst bleibt.
+    committedTitle: 'In Auftrag: {{amount}}',
     perDay: 'je Tag',
     shortage: 'Mangel',
   },

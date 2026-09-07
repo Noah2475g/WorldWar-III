@@ -1718,12 +1718,12 @@ tasks:
   - id: T-M22-02
     milestone: M22
     title: Die Seitenleiste hoert auf, seitwaerts zu kriechen
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx]
-    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    files: [apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befund V2-02: die Wirtschaftstabelle (Spalte In Auftrag) ist breiter als die Leiste, die ganze Leiste scrollt horizontal, Armeeknoepfe erscheinen abgeschnitten, Ueberschriften verlieren Buchstaben. Fertig, wenn die Leiste kein horizontales Scrollen mehr kennt, die Tabelle in die Leiste passt (D24.2: In Auftrag wird ein Zeichen mit Zahl hinter dem Bestand) und ein Waechter-Test am gerenderten Baum scrollWidth <= clientWidth fuer die Leiste bindet"
 
   - id: T-M22-03

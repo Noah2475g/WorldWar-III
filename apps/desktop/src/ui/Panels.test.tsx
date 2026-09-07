@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { PublicView, VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -494,6 +495,75 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bild
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Krieg')
     expect(cell?.querySelector('svg'), 'kein Beziehungssymbol in der Diplomatie').toBeTruthy()
+  })
+})
+
+/**
+ * Die Seitenleiste hoert auf, seitwaerts zu kriechen (T-M22-02, R-UI-05, Befund V2-02).
+ *
+ * Die sechste Spalte „In Auftrag" machte die Wirtschaftstabelle breiter als die Leiste;
+ * die ganze Leiste scrollte seitlich, Armeeknoepfe erschienen abgeschnitten,
+ * Ueberschriften verloren Buchstaben. Die Spalte wird ein Zeichen mit Zahl hinter dem
+ * Bestand (D24.2), und die Leiste unterbindet horizontales Scrollen.
+ *
+ * jsdom rechnet kein Layout — `scrollWidth`/`clientWidth` sind dort immer 0, die
+ * Zusage `scrollWidth <= clientWidth` waere leer. Gebunden wird deshalb, was jsdom
+ * pruefen kann und was die Zusage im Browser erzwingt: das echte Stylesheet setzt
+ * `overflow-x: hidden` auf die Leiste, und die Tabelle traegt keine sechste Spalte
+ * mehr (siehe DECISIONS.md, 2026-09-07).
+ */
+describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
+  const economy = (committed: number): PublicView =>
+    ({
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 1_000_000, production: 349, consumption: 0, balance: 349, committed },
+        },
+      },
+    }) as unknown as PublicView
+
+  it('ersetzt die Spalte In Auftrag durch Zeichen und Zahl hinter dem Bestand', () => {
+    const { container } = render(<EconomyPanel view={economy(200_000)} />)
+
+    // Die Spalte ist weg — sie war es, die die Tabelle aus der Leiste schob. (Als Wort
+    // lebt "In Auftrag" weiter: im Titel des Zeichens, nur eben nicht als Spaltenkopf.)
+    const headers = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
+    expect(headers).not.toContain('In Auftrag')
+    expect(headers).toHaveLength(5)
+
+    // Die Auskunft bleibt: Zeichen und Zahl hinter dem Bestand, Textfassung im Titel.
+    const marker = container.querySelector('.committed')
+    expect(marker, 'kein Auftragszeichen hinter dem Bestand').toBeTruthy()
+    expect(marker?.textContent).toContain('200')
+    expect(marker?.getAttribute('title')).toContain('In Auftrag')
+    expect(marker?.querySelector('svg'), 'das Zeichen fehlt').toBeTruthy()
+  })
+
+  it('zeigt ohne laufende Auftraege kein Zeichen — eine Null ist keine Auskunft', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} />)
+
+    expect(container.querySelector('.committed')).toBeNull()
+  })
+
+  it('R-UI-05 Waechter: die Leiste unterbindet horizontales Scrollen', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const { container } = render(
+        <aside className="side">
+          <EconomyPanel view={economy(200_000)} />
+        </aside>,
+      )
+      const side = container.querySelector('.side') as HTMLElement
+
+      expect(window.getComputedStyle(side).getPropertyValue('overflow-x')).toBe('hidden')
+      // In jsdom sind beide 0; im Browser ist genau das die Zusage aus dem Befund.
+      expect(side.scrollWidth).toBeLessThanOrEqual(side.clientWidth)
+    } finally {
+      style.remove()
+    }
   })
 })
 

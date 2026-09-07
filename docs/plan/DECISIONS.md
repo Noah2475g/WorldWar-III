@@ -1280,3 +1280,24 @@ Freischalttage blieben Stückwerk für genau drei Tage. (Befund V2-06.)
 **3. Der Markt bleibt bei `<select>` ohne Symbole** — die Entscheidung vom
 T-M20-03 wird bestätigt; stattdessen zeigt der Markt das Symbol des jeweils
 *gewählten* Rohstoffs neben der Liste (kein Tausch Bedienbarkeit gegen Aussehen).
+
+---
+
+## 2026-09-07 · T-M22-01/02 · Layout-Wächter binden Struktur und Kaskade, nicht Pixel
+
+**Lage:** Die DoD von T-M22-01/02 verlangen Wächter am gerenderten Baum („Eintragsbreite
+an Leistenbreite", „`scrollWidth <= clientWidth`"). Die Testumgebung ist jsdom, und jsdom
+**rechnet kein Layout**: `scrollWidth` und `clientWidth` sind dort immer 0 — die
+wörtliche Prüfung wäre ein Wächter, der nur grün sein kann.
+
+**Entscheidung (Randstelle, Geist des Entwurfs):** Die Wächter laden das **echte
+Stylesheet** in jsdom (die Kaskade wendet jsdom an) und binden das, was die Zusage im
+Browser erzwingt: (1) im Protokoll hat jede Zeile höchstens so viele Rasterkinder wie
+deklarierte Spuren, die letzte Spur ist `fr`, die Zeitspalte fest — damit gehört dem Text
+die Breite der Leiste abzüglich Zeitstempel; (2) die Seitenleiste trägt
+`overflow-x: hidden` als berechneten Stil, und die Wirtschaftstabelle hat keine sechste
+Spalte mehr. Die `scrollWidth`-Zeile steht zusätzlich im Test — in jsdom leer, im
+Browser die eigentliche Zusage. Beide Wächter fielen vor der Reparatur.
+
+**Auswirkung:** keine Änderung an den Zusagen selbst; ein Browser-Layout-Test bleibt
+außerhalb der schnellen Kette (kein Playwright im Haus, R-FREE bleibt unberührt).

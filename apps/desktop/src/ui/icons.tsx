@@ -47,6 +47,7 @@ export type IconName =
   | 'alliance'
   | 'rightOfWay'
   | 'sharedMap'
+  | 'queue'
   | 'mountain'
   | 'plains'
   | 'desert'
@@ -61,6 +62,8 @@ export interface IconProps {
 
 /** Every icon is drawn in a 24×24 box, so they line up without per-icon nudging. */
 const PATHS: Record<IconName, string> = {
+  // Sanduhr — was bezahlt ist und noch entsteht (T-M22-02, "In Auftrag").
+  queue: 'M6 4h12 M6 20h12 M8 4v2.5L12 11l4-4.5V4 M8 20v-2.5L12 13l4 4.5V20',
   // Rectangle with a diagonal cross — infantry, as on any situation map.
   infantry: 'M3 7h18v10H3z M3 7l18 10 M21 7L3 17',
   // The same rectangle on wheels — motorised infantry.

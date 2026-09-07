@@ -224,13 +224,17 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
   // Armeeunterhalt. Ohne Armee stand sie auf null, und der Playtest las das als
   // "die Spalte tut nichts" (Frage 15). Sie heisst jetzt, was sie ist, und daneben
   // steht die Antwort auf die eigentliche Frage: was in Auftraegen gebunden ist.
-  it('zeigt Bestand, Produktion, Unterhalt, Bilanz und Gebundenes je Rohstoff', () => {
+  it('zeigt Bestand, Produktion, Unterhalt und Bilanz je Rohstoff', () => {
     startGame()
     const panel = screen.getByRole('region', { name: 'Wirtschaft' })
 
-    for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz', 'In Auftrag']) {
+    // "In Auftrag" ist seit T-M22-02 keine Spalte mehr: sie schob die Tabelle aus der
+    // Leiste (Befund V2-02). Die Auskunft steht jetzt als Zeichen mit Zahl hinter dem
+    // Bestand — geprueft in Panels.test.tsx am Fall mit laufenden Auftraegen.
+    for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz']) {
       expect(within(panel).getByText(column), `Spalte ${column} fehlt`).toBeTruthy()
     }
+    expect(within(panel).queryByText('In Auftrag')).toBeNull()
     for (const resource of ['Nahrung', 'Eisen', 'Geld']) {
       expect(within(panel).getByText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
     }
