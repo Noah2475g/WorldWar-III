@@ -17,15 +17,15 @@ git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:sh
 **Der Spitzenstand liegt auf `claude/bauplan-m19-m21-ec7e6a`** (bis zum 2026-09-07
 auf `claude/offenen-plan-abarbeiten-4d4c8e`; dieser Zweig baut darauf auf und ist
 fuenfzehn Aufgaben weiter). `main` steht auf
-M8 und ist **über neunzig Commits alt** — ein frischer Worktree landet dort und sieht ein
+M8 und ist **über hundert Commits alt** — ein frischer Worktree landet dort und sieht ein
 anderes Projekt. Zeigt dein `HEAD` nicht auf die Spitze:
 
 ```bash
 git reset --hard claude/bauplan-m19-m21-ec7e6a && pnpm install
 ```
 
-Das ist die Falle, in die **drei** Sitzungen hintereinander gelaufen sind, zuletzt am
-2026-09-07. Sie kostet, wenn man sie übersieht, eine halbe Sitzung.
+Das ist die Falle, in die **vier** Sitzungen hintereinander gelaufen sind, zuletzt am
+2026-09-07 abends — auch die Sitzung, die M19–M21 gebaut hat. Sie kostet, wenn man sie übersieht, eine halbe Sitzung.
 
 ---
 
@@ -39,9 +39,12 @@ dem 2026-09-07 dabei. Offen sind zwei, und keine davon ist Bauarbeit:
 | **T-M12-03** (Haltepunkt) | **Noahs Playtest und seine Abnahme.** Kein Skript kann das |
 | T-M10-02 | Nichts. Am 2026-09-06 zurückgenommen und gelöscht; steht mit Begründung im `reopened`-Feld |
 
-**Der vollständige Abnahmelauf ist gelaufen: 7 von 7 maschinelle Prüfungen bestanden**
-(`pnpm acceptance` gegen `009bec6`, 73 min, Exit 0) — `docs/reports/acceptance.md`.
-`pnpm verify` ist grün (1400 Tests, Kern 96,8 %, gesamt 95,1 %). **AK-8 ist gemessen**
+**Der letzte vollständige Abnahmelauf war 7 von 7** (`pnpm acceptance` gegen `009bec6`,
+73 min, Exit 0) — `docs/reports/acceptance.md`. ⚠ **Er ist älter als M19–M21 und muss
+wiederholt werden**; die Einzelheiten und der Grund, warum er noch nicht lief, stehen in
+Abschnitt 5. `pnpm verify` ist auf dem heutigen Stand grün (**1528 Tests**, Kern 96,8 %,
+gesamt 95,3 %), und **AK-1 ist nach M19–M21 erneut gefahren: bitgleich** (Spieltag 876,
+2025 Eroberungen, 11 Kriegserklärungen). **AK-8 ist gemessen**
 (`docs/reports/packaging.md`), **R-AI-04 ist zum ersten Mal unter seinen eigenen
 Bedingungen gemessen** (`docs/reports/ai-bench.json`, Anteil 0,074 gegen 0,30), und die
 Karte ist zum ersten Mal an einem Kontext gemessen, der wirklich zeichnet
@@ -137,7 +140,7 @@ Alle drei sind **Entscheidungen**, keine Bauarbeit, und alle drei stehen mit Beg
 
 ## 4 · Sieben Fallen, die schon jemanden gekostet haben
 
-1. **Der Worktree landet auf `main`.** Siehe Abschnitt 0. Drei Sitzungen in Folge.
+1. **Der Worktree landet auf `main`.** Siehe Abschnitt 0. Vier Sitzungen in Folge.
 2. **`tail` verschluckt den Exit-Code.** `cmd | tail` meldet den Status von `tail`.
    Schreib in eine Datei und frag `$?`, oder lass die Pipe weg. Am 2026-09-07 hat das
    einmal einen roten `pnpm verify` als grün gemeldet.
