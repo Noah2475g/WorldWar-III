@@ -3367,3 +3367,35 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   längste Pause liegt. **Die längste Pause ist die Zahl, die zählt** — sie ist die Stelle, an
   der jemand aufhört. Dazu zwei Fragen im Playtest-Bogen, die ein Mensch beantwortet: *wusste
   ich, was zu tun ist* und *wusste ich, wozu*.
+
+### T-M21-06 · Drei Auskünfte, die falsch sind oder nie ankommen
+- **Ziel:** Bei der Bestandsaufnahme für M21 gefunden, alle drei nachgemessen. Sie gehören
+  nicht zur Führung, sondern sind Fehler in dem, was das Spiel **heute schon** sagt — und eine
+  falsche Auskunft ist schlimmer als keine, weil der Spieler ihr glaubt.
+  1. **Die Kosten gesperrter Dinge sind unsichtbar.** `Panels.tsx:81` setzt
+     `title={action.disabledReason ?? action.hint ?? undefined}`. Bei einem gesperrten Knopf
+     gewinnt der Grund, und der Hinweis mit Kosten und Dauer fällt weg. Der Spieler erfährt
+     *dass* es die Fabrik erst ab Tag 8 gibt, aber nie, *was sie kosten wird* — Vorausplanen
+     ist damit unmöglich. Verschärfend: `availabilityHint()` (`actions.ts:106`) liefert seinen
+     Text **nur, solange die Sache gesperrt ist** — also genau dann, wenn er verworfen wird.
+     **Toter Code, gebaut in T-M15-03**, und der Test dazu prüft die Daten, nicht den Baum.
+  2. **Die Erklärung zum Frieden ist falsch.** `de.ts:490`: „Truppen dürfen die Grenze nicht
+     überschreiten." `movement.ts:33` ruft `findPath` **ohne** `canEnter` — sie dürfen. Frieden
+     hindert nur am *Behalten* (`occupation.ts:40`), nicht am Betreten. Ein Spieler, der dem
+     Text glaubt, hält seine Grenze für sicher.
+  3. **Die Anleitung widerspricht dem Spiel.** `ANLEITUNG.md:124`: „Es gibt nichts zurück."
+     Der Code erstattet die Hälfte, und der Playtest hat es gemessen (+166 Material, +125
+     Geld). Derselbe Irrtum stand im Playtest-Bogen und ist dort am 2026-09-06 berichtigt
+     worden — in der Anleitung steht er noch.
+- **Anforderungen:** R-UI-05, R-UI-11
+- **Entwurf:** D23.4
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`
+- **Tests zuerst:** ein Test am **gerenderten Baum**, nicht an den Daten: ein gesperrter Knopf
+  trägt Kosten *und* Grund. Dazu ein Test, der die Friedensregel gegen den **Code** prüft statt
+  gegen den Text — er wäre heute rot.
+- **Fertig wenn:** alle drei stimmen. Und der dritte Punkt bekommt einen Wächter, der die Art
+  Fehler fängt statt des Einzelfalls: **die Anleitung darf keine Zahl nennen, die den
+  Regeldateien widerspricht.** Zwei Wahrheiten über dieselbe Sache sind der Grund, warum
+  dieser Eintrag existiert.

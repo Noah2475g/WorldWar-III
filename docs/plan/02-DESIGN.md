@@ -1822,26 +1822,77 @@ Die Führung braucht keine eigene Dramaturgie. Das Spiel hat eine: die **Freisch
 auf einmal. Das ist die Antwort auf „nicht überfordert": die Führung folgt einer Reihenfolge,
 die ohnehin existiert, statt eine zweite zu erfinden, die mit ihr auseinanderläuft.
 
-### D23.3 Die enge erste Stunde — gerechnet, nicht geschätzt
+### D23.3 Die enge erste Woche — gerechnet, nicht geschätzt
+
+Der Einstieg ist deutlich härter, als er von außen aussieht. Alle Zahlen sind aus den
+Regeldateien gerechnet, mit den Rundungsfunktionen des Projekts.
+
+**Der Spieler startet mit null Armeen.** `create.ts:184` legt `armies: {}` an. Nichts in der
+Oberfläche, im Einstieg oder in der Anleitung sagt das — wer eine Armee sucht, sucht etwas,
+das es nicht gibt.
 
 | | |
 |---|---|
 | Startvorrat Material | 350 |
-| Kaserne kostet | **333** |
-| Kaserne braucht | 24 Ticks = 1,0 Spieltage |
-| Infanterie kostet | 75 Nahrung, 50 Material, 67 Geld |
-| Infanterie braucht | 12 Ticks = 0,5 Spieltage, **und eine Kaserne** |
+| Kaserne kostet | **333** — genau eine ist drin |
+| Kaserne braucht | 24 Ticks · **27 nach Moralskalierung** (Moral 70 000 → Faktor 900 ‰) |
+| Infanterie braucht | 12 Ticks · **16 nach Skalierung**, und eine fertige Kaserne |
+| **Erste Einheit steht** | **Tick 43 = Spieltag 2, 19:00** |
 
-Der Spieler kann am ersten Tag **genau eine** Kaserne bauen — danach ist das Material weg. Die
-erste Einheit steht **frühestens an Spieltag 2,5**. Dazwischen liegt anderthalb Spieltage, in
-denen es nichts zu klicken gibt, was voranbringt.
+**Und die erste Eroberung liegt bei Spieltag 7.** Die Standardpartie beginnt als Vereinigte
+Staaten, und die haben **keinen einzigen neutralen Nachbarn**: 201 der 237 Provinzen sind
+herrenlos, aber jeder Landnachbar der USA gehört einer KI. Der kürzeste Weg zu fremdem Boden
+ist USA-SOUTH → MEX-NE, 442 km bei 6 km/h und Faktor 0,7 auf fremdem Gebiet: 106 Ticks.
+Marsch ab Tick 43, Ankunft Tick 149 — **Spieltag 7, 05:00**.
 
-Das ist die Stelle, an der ein neuer Spieler aussteigt, und die Führung muss sie ausdrücklich
-benennen: *„Das dauert jetzt einen Spieltag. Stellen Sie das Tempo höher oder spulen Sie
-vor."* Ein Hinweis, der Warten als Warten benennt, ist besser als einer, der so tut, als gäbe
-es etwas zu tun.
+> Nebenbei fällt daraus eine Balancing-Beobachtung, die nicht in diesen Meilenstein gehört,
+> aber notiert sein will: **eine Kriegserklärung macht langsamer.** Auf fremdem Boden zählt
+> Faktor 0,7, im Krieg 0,35 — 106 Ticks gegen 211. Der schnellste Eröffnungszug ist der
+> Überraschungsangriff, der 200 Ansehen kostet. Ob das so gemeint ist, entscheidet Noah.
 
-### D23.4 Die Form: ein Schritt ist eine Bedingung, kein Bildschirm
+### D23.4 Was die Führung sagen muss, und heute niemand sagt
+
+**Nur Eroberung zählt.** Gemessen an der Startaufstellung der USA:
+
+| Handlung | Punkte |
+|---|---|
+| Eine Provinz besitzen | 10 |
+| Ihre Bevölkerung | **1 je 1000 Einwohner** |
+| Eine Kaserne bauen | 2 |
+| Eine Infanterie ausheben | 1 |
+
+Die vier Startprovinzen tragen 40 Provinzpunkte und **2825 Bevölkerungspunkte** — die
+Bevölkerung ist **98,6 %** des Punktestands. Eine Kaserne bringt 2 von 2865. **Eine einzige
+Eroberung wiegt mehr als 285 Kasernen**, weil sie dem Gegner zugleich abgeht.
+
+Ein Spieler, der das nicht weiß, baut aus. Das Spiel belohnt es fast nicht — und bestraft es
+sogar: ab der dritten Provinz kostet jede weitere 3000 Zielmoral, im ganzen Reich
+(`morale.ts:66-72`). **Die Mechanik, die die einzige punktende Handlung bestraft, ist
+nirgends erklärt.**
+
+Das ist der Kern dessen, was die Führung leisten muss. Nicht „hier ist ein Bauknopf", sondern:
+*wozu das alles dient, wie lange es dauert, und dass die ersten Tage Vorbereitung sind.*
+
+### D23.5 Die Überforderung ist gezählt
+
+Am ersten Spieltag stehen dem Spieler rund **52 Bedienelemente** gegenüber — 36 in der
+Provinzansicht, etwa 16 in Kopfleiste und Seitenleiste.
+
+**Genau eines bringt ihn voran: „Kaserne bauen".**
+
+Die übrigen 17 Befehlsknöpfe der Provinzansicht sind abgelehnt, mit **16 sichtbaren
+Ablehnungssätzen** untereinander: neun verschiedene „Das gibt es erst ab Spieltag N",
+„braucht Küste", „Dafür fehlt das Gebäude: Kaserne". Wählt er eine Armee, kommen neun weitere
+Knöpfe, von denen sechs abgelehnt sind.
+
+Der Zusammenfasser in `ActionGroup` greift hier nicht: er fasst nur zusammen, wenn **alle**
+Aktionen einer Gruppe denselben Grund tragen — und „ab Spieltag 3" ist ein anderer Text als
+„ab Spieltag 5".
+
+Das ist die gemessene Gestalt von „überfordert": nicht zu viele Möglichkeiten, sondern **ein
+Wald aus Absagen, in dem die eine offene Tür nicht auffällt.**
+
+### D23.6 Die Form: ein Schritt ist eine Bedingung, kein Bildschirm
 
 Die bestehende Hilfe endet einen Schritt, wenn der Spieler **die Sache tut**
 (`completesOn: 'selectProvince'`) — nicht auf „Weiter". Das ist richtig und wird erweitert:
@@ -1857,7 +1908,7 @@ Damit die Führung nicht bevormundet (AK2):
 - **Sie endet von selbst**, wenn der Kreislauf einmal ganz durchlaufen ist: bauen → ausheben →
   führen → erobern.
 
-### D23.5 Was ausdrücklich nicht gebaut wird
+### D23.7 Was ausdrücklich nicht gebaut wird
 
 - **Keine eigene Kampagne, kein Vorspiel, kein Textfenster über dem Spiel.** Das Spiel beginnt
   auf der Karte, und die Führung steht daneben.

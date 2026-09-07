@@ -1461,3 +1461,59 @@ wahr und für `world.json` falsch — geprüft wurde die Quelle, ausgeliefert wi
 **Status: geplant, nicht gebaut.** M19 (T-M19-01 bis -05), Entwurf D21, Anforderungen
 R-MAP-08 und R-MAP-09. Die Reihenfolge ist Absicht: erst der Wächter mit seiner roten Zahl,
 dann die Reparatur, dann der Bildbeleg.
+
+---
+
+## 2026-09-07 · Der Einstieg ist enger, als jede Zahl im Plan bisher sagte
+
+Aufgenommen bei der Bestandsaufnahme für M21. Alle Zahlen aus den Regeldateien gerechnet,
+mit den Rundungsfunktionen des Projekts.
+
+**Der erste Spieltag.** Dem Spieler stehen rund **52 Bedienelemente** gegenüber — 36 in der
+Provinzansicht, 16 in Kopf- und Seitenleiste. **Genau eines bringt ihn voran:** „Kaserne
+bauen". Die übrigen 17 Befehlsknöpfe sind abgelehnt, mit **16 sichtbaren Ablehnungssätzen**
+untereinander. Wählt er eine Armee, kommen neun weitere Knöpfe, sechs davon abgelehnt.
+
+Das ist die gemessene Gestalt von „überfordert": nicht zu viele Möglichkeiten, sondern ein
+Wald aus Absagen, in dem die eine offene Tür nicht auffällt.
+
+**Der Spieler startet mit null Armeen** (`create.ts:184`). Nichts sagt es ihm.
+
+**Die erste Einheit steht an Tick 43** — Spieltag 2, 19:00. Die Moral skaliert die Bauzeit:
+Kaserne 24 → 27 Ticks, Infanterie 12 → 16.
+
+**Die erste Eroberung ist frühestens an Spieltag 7 möglich.** Die Standardpartie beginnt als
+Vereinigte Staaten, und die haben **keinen neutralen Nachbarn** — 201 von 237 Provinzen sind
+herrenlos, aber jeder Landnachbar der USA gehört einer KI.
+
+**Und nur Eroberung zählt.** Die vier Startprovinzen tragen 40 Provinzpunkte und **2825
+Bevölkerungspunkte**: die Bevölkerung ist **98,6 %** des Punktestands. Eine Kaserne bringt 2,
+eine Infanterie 1. Eine einzige Eroberung wiegt mehr als 285 Kasernen. Wer das nicht weiß,
+baut aus — und wird dafür bestraft: ab der dritten Provinz kostet jede weitere 3000 Zielmoral
+im ganzen Reich (`morale.ts:66-72`), unerklärt.
+
+### Drei Auskünfte, die falsch sind oder nie ankommen
+
+Diese drei sind keine Entwurfsfragen, sondern Fehler — **Status: offen, T-M21-06.**
+
+1. **Die Kosten gesperrter Dinge erreichen den Bildschirm nie.** `Panels.tsx:81` setzt
+   `title={action.disabledReason ?? action.hint ?? undefined}`; bei einem gesperrten Knopf
+   gewinnt der Grund. `availabilityHint()` liefert seinen Text **nur, solange die Sache
+   gesperrt ist** — also genau dann, wenn er verworfen wird. **Toter Code, gebaut in
+   T-M15-03**, und der Test dazu prüft die Daten statt den gerenderten Baum. Dieselbe
+   Fehlerklasse wie T-M14-13 und AK-7: erledigt geführt, ohne zu wirken.
+2. **Die Erklärung zum Frieden ist falsch.** `de.ts:490` sagt „Truppen dürfen die Grenze nicht
+   überschreiten"; `movement.ts:33` ruft `findPath` ohne `canEnter`. Frieden hindert nur am
+   *Behalten*, nicht am Betreten. Wer dem Text glaubt, hält seine Grenze für sicher.
+3. **Die Anleitung widerspricht dem Spiel.** `ANLEITUNG.md:124`: „Es gibt nichts zurück."
+   Der Code erstattet die Hälfte. Derselbe Irrtum stand im Playtest-Bogen und ist dort am
+   2026-09-06 berichtigt worden — in der Anleitung steht er noch. **Zwei Wahrheiten über
+   dieselbe Sache**, und die berichtigte war die weniger gelesene.
+
+### Eine Balancing-Beobachtung, die nicht hierher gehört, aber notiert sein will
+
+**Eine Kriegserklärung macht langsamer.** Auf fremdem Boden gilt Marschfaktor 0,7, im Krieg
+0,35 (`constants.json:37-38`). Der Weg USA-SOUTH → MEX-NE kostet 106 Ticks im Frieden und 211
+im Krieg. Der schnellste Eröffnungszug ist damit der **Überraschungsangriff**, der 200 Ansehen
+kostet und automatisch Krieg auslöst. Ob das so gemeint ist, ist eine Balancing-Frage für
+Noah — sie steht hier, damit sie nicht verloren geht.

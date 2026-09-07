@@ -1685,3 +1685,14 @@ tasks:
     files: [docs/reports/onboarding.md, docs/PLAYTEST.md]
     tests: []
     dod: "Eine Fuehrung, die nur ihre eigenen Tests besteht, ist eine Fuehrung, die niemand gefuehrt hat. Fertig, wenn ein Lauf ueber die ersten 16 Spieltage protokolliert ist: welcher Schritt wann kam, wie lange der Spieler zwischen zwei Schritten ohne Aufgabe war, und an welcher Stelle die laengste Pause liegt. Die laengste Pause ist die Zahl, die zaehlt - sie ist die Stelle, an der jemand aufhoert. Dazu Fragen im Playtest-Bogen, die ein Mensch beantwortet: wusste ich, was zu tun ist; wusste ich, wozu"
+
+  - id: T-M21-06
+    milestone: M21
+    title: Drei Auskuenfte, die falsch sind oder nie ankommen
+    status: todo
+    deps: []
+    requirements: [R-UI-05, R-UI-11]
+    design: [D-23]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/actions.test.ts]
+    dod: "Drei nachgemessene Fehler in dem, was das Spiel heute schon sagt - eine falsche Auskunft ist schlimmer als keine, weil der Spieler ihr glaubt. (1) Panels.tsx:81 setzt title auf disabledReason ODER hint: bei einem gesperrten Knopf gewinnt der Grund, und Kosten und Dauer fallen weg. Der Spieler erfaehrt, dass es die Fabrik erst ab Tag 8 gibt, aber nie, was sie kosten wird. Verschaerfend ist availabilityHint in actions.ts:106 damit toter Code: es liefert seinen Text nur, solange die Sache gesperrt ist, also genau dann, wenn er verworfen wird - gebaut in T-M15-03, nie sichtbar, und der Test prueft die Daten statt den Baum. (2) de.ts:490 sagt, Truppen duerften bei Frieden die Grenze nicht ueberschreiten; movement.ts:33 ruft findPath ohne canEnter, sie duerfen. Frieden hindert nur am Behalten. (3) ANLEITUNG.md:124 sagt, ein Bauabbruch gebe nichts zurueck; der Code erstattet die Haelfte, und der Playtest hat es gemessen. Fertig, wenn alle drei stimmen, die Tests am gerenderten Baum haengen und ein Waechter die Fehlerklasse faengt: die Anleitung darf keine Zahl nennen, die den Regeldateien widerspricht"
