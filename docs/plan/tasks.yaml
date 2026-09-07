@@ -1678,12 +1678,12 @@ tasks:
   - id: T-M21-05
     milestone: M21
     title: Der Durchgang wird gemessen, nicht behauptet
-    status: todo
+    status: done
     deps: [T-M21-03, T-M21-04]
     requirements: [R-UI-18]
     design: [D-23]
-    files: [docs/reports/onboarding.md, docs/PLAYTEST.md]
-    tests: []
+    files: [docs/reports/onboarding.md, docs/PLAYTEST.md, docs/reports/playtest-v1.md]
+    tests: [apps/desktop/src/game/onboarding.slow.test.ts]
     dod: "Eine Fuehrung, die nur ihre eigenen Tests besteht, ist eine Fuehrung, die niemand gefuehrt hat. Fertig, wenn ein Lauf ueber die ersten 16 Spieltage protokolliert ist: welcher Schritt wann kam, wie lange der Spieler zwischen zwei Schritten ohne Aufgabe war, und an welcher Stelle die laengste Pause liegt. Die laengste Pause ist die Zahl, die zaehlt - sie ist die Stelle, an der jemand aufhoert. Dazu Fragen im Playtest-Bogen, die ein Mensch beantwortet: wusste ich, was zu tun ist; wusste ich, wozu"
 
   - id: T-M21-06

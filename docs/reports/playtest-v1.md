@@ -5,25 +5,18 @@
 > Dateien nicht auseinanderlaufen können. Läuft der Bogen weiter, den Befehl erneut
 > aufrufen — bereits gegebene Antworten bleiben stehen.
 
+**Durchgang von:** 
+
+> Die Zeile darueber liest `scripts/playtest-sheet.mjs`. AK-7 verlangt im Wortlaut
+> **Noahs** Abnahme - steht dort jemand anders oder niemand, gilt der Bogen als
+> ausgefuellt, aber nicht als abgenommen. Das ist die sichere Richtung des Fehlers.
+
 **Erlaubte Antworten:** `ja`, `nein`, `n.z.` (nicht zutreffend/nicht geprüft).
 **Jedes `nein` braucht eine Zeile in der Befundtabelle unten**, mit derselben
 Fragenummer — sonst gilt AK-7 als offen. Das ist die einzige Regel, die dieser Bogen
 sich selbst auferlegt, und sie ist die, an der Abnahmebögen sonst scheitern.
 
-**Durchgang von:** ein Agent (nicht Noah)
-
-> ⚠ **AK-7 ist damit NICHT erfüllt.** Die Anforderung verlangt im Wortlaut Noahs
-> Abnahme; dieser Bogen ersetzt sie nicht, er nimmt ihr die Suche ab. Die Zeile
-> „Durchgang von" oben ist die, die `scripts/playtest-sheet.mjs` liest — trägt Noah
-> sich dort ein, zählt AK-7 als erfüllt. Vorher meldete der Abnahmebericht bei sechzig
-> beantworteten Fragen einen Haken und widersprach sich zwei Zeilen weiter selbst.
-
-**Fragen im Bogen:** 60
-
-**Ergebnis (Agentendurchgang 2026-09-06):** 39 ja · 13 nein · 8 nicht geprueft.
-Die acht offenen brauchen ein **sichtbares Fenster** - im minimierten Fenster feuert
-`requestAnimationFrame` nicht, die Karte zeichnet nie, und daran haengen Zoom, Bildrate,
-Kartenmarken und der Marschweg. Alles Uhrabhaengige liess sich dagegen nachholen.
+**Fragen im Bogen:** 62
 
 | Frage | Anforderung | ja/nein | Anmerkung |
 |---|---|---|---|
@@ -87,6 +80,8 @@ Kartenmarken und der Marschweg. Alles Uhrabhaengige liess sich dagegen nachholen
 | 46 | R-UI-05 | ja | [G] Fuenf Schritte, unten links, ohne etwas zu verdecken, reagieren auf das eigene Tun. Schritt 3 erklaert die Kernmechanik verstaendlich: "Die Zahlen sind Spielstunden je Sekunde - bei 10 vergeht ein Spieltag in gut zwei Sekunden." Abschaltbar ueber "Nicht mehr zeigen". |
 | 47 | R-GAME-04 | ja | [G] Nach einer laengeren Partie: "Automatisch gespeichert 1 - Tag 15" und "Automatisch gespeichert 2 - Tag 36" in der Liste, in IndexedDB als autosave-0.json und autosave-1.json. Die Rotation ueber fuenf Plaetze greift. Einschraenkung: im laufenden Spiel gibt es keine Rueckmeldung, dass gesichert wurde. |
 | 48 | R-UI-08 | ja | [G] BEFUND. Die "Debug-Ansicht" laesst sich einschalten und zeigt: "Tick: 8", einen LEEREN Zustands-Hash und zwei Ueberschriften - "Ziel" und "Kommandolog" - mit NICHTS darunter. Damit ist die Antwort auf "gibt es eine Einstellung, die sichtbar nichts bewirkt" ein Ja, und die erwartete Antwort war Nein. Befund P-13. |
+| 49 | R-UI-05 |  |  |
+| 50 | R-UI-05 |  |  |
 
 ---
 

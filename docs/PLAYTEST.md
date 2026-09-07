@@ -116,6 +116,8 @@ pnpm --filter @worldwar/desktop dev
 | 46 | R-UI-05 | Hat die Einstiegshilfe in der ersten Partie geholfen, ohne im Weg zu stehen? | |
 | 47 | R-GAME-04 | Liegt nach einer Weile ein automatischer Spielstand in der Liste? | |
 | 48 | R-UI-08 | Gibt es eine Einstellung im Menü, die sichtbar nichts bewirkt? (Erwartet: **nein**) | |
+| 49 | R-UI-05 | **Wussten Sie in den ersten drei Spieltagen jederzeit, was zu tun ist?** Wenn nein: an welcher Stelle nicht? | |
+| 50 | R-UI-05 | **Wussten Sie auch, wozu?** Also warum die Kaserne vor der Infanterie kommt und warum zwischendurch gewartet wird — nicht nur, welchen Knopf man drückt. | |
 
 ---
 
