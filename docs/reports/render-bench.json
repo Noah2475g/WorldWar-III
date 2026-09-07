@@ -1,0 +1,42 @@
+{
+  "requirement": {
+    "id": "R-ARCH-06/AK2",
+    "text": "WENN die Karte gerendert wird, DANN SOLL die Anzeige bei 200 Provinzen >= 60 FPS halten.",
+    "frameBudgetMs": 16.7
+  },
+  "measuredAt": "2026-09-07",
+  "commit": "ee888b1",
+  "how": "Im Browser (Vite-Entwicklungsserver, Chromium), mit einem echten 2D-Kontext von 1440x900 und den echten Modulen des laufenden Spiels - prepareFrame und labelsFor, ueber /@fs geladen, keine Nachbildung. Je Fall 10 Bilder Einlauf, dann 120 gemessene.",
+  "cases": [
+    {
+      "name": "Weltansicht",
+      "view": { "x": 0, "y": 0, "scale": 2.78 },
+      "shapes": 237,
+      "labels": 0,
+      "medianMs": 1.0,
+      "p95Ms": 3.0,
+      "maxMs": 7.2
+    },
+    {
+      "name": "Nah heran, mit Beschriftung",
+      "view": { "x": 1200, "y": 600, "scale": 1.5 },
+      "shapes": 203,
+      "labels": 103,
+      "medianMs": 1.7,
+      "p95Ms": 4.1,
+      "maxMs": 7.3
+    }
+  ],
+  "meetsFrameBudget": true,
+  "note": "Der teuerste gemessene Einzelfall liegt bei 7,3 ms gegen 16,7 ms Budget - Faktor 2,3 auch im Maximum, nicht nur im Median. Die Zeitaufloesung des Browsers ist auf ganze Millisekunden gerundet; das begrenzt die Praezision der Mediane, nicht die Aussage.",
+  "certifies": "Die Zeichenarbeit eines Bildes passt ins 60-FPS-Budget, gemessen an einem Kontext, der wirklich zeichnet - zum ersten Mal.",
+  "certifiesNot": "NICHT die Bildrate des laufenden Fensters. requestAnimationFrame feuerte in dieser Umgebung 0-mal in einer Sekunde, obwohl document.visibilityState 'visible' meldete - dieselbe Grenze, an der der Playtest vom 2026-09-06 die Bildfragen 9, 10b, 12, 18, 20 und 38 offen gelassen hat. Was hier fehlt, ist der Anteil, den Browser und Fenstersystem beitragen; was gemessen ist, ist der Anteil des Spiels.",
+  "coverage": {
+    "file": "apps/desktop/src/map/MapCanvas.tsx",
+    "linesTotal": 249,
+    "linesCovered": 168,
+    "linesUncovered": 81,
+    "pct": 67.46,
+    "before": "108 von 249 - MapCanvas lief in keinem Test, weil getContext in jsdom null liefert. Die 141 unausgefuehrten Zeilen sind jetzt 81, und sie sind gezaehlt statt geschaetzt."
+  }
+}

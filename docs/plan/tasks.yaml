@@ -1417,11 +1417,11 @@ tasks:
   - id: T-M16-06
     milestone: M16
     title: Die Karte wird zum ersten Mal zeichnend gemessen
-    status: todo
+    status: done
     deps: [T-M16-03]
     requirements: [R-ARCH-06, R-UI-12]
-    files: [apps/desktop/src/ui/MapCanvas.tsx, docs/reports/render-bench.json]
-    tests: [apps/desktop/src/ui/MapCanvas.test.tsx]
+    files: [apps/desktop/src/map/MapCanvas.tsx, docs/reports/render-bench.json]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "R-ARCH-06/AK2 - 60 FPS bei 200 Provinzen - misst bis heute niemand, der zeichnet: MapCanvas laeuft in keinem Test, weil getContext in der Testumgebung null liefert, und 141 von 249 Zeilen sind unausgefuehrt. Am gebauten Programm existiert ein Zeichenkontext. Danach ist die Zusicherung erstmals an einem Lauf belegt, der wirklich zeichnet, und die unausgefuehrten Zeilen von MapCanvas sind gezaehlt statt geschaetzt. Faellt die Messung gegen die Anforderung aus, gilt dasselbe wie in T-M16-02: nachmessen und begruenden, nicht die Zahl weichspuelen"
 
   - id: T-M16-07
