@@ -487,7 +487,9 @@ export const de = {
       urban: 'Dichte Bebauung: viele Menschen, hohe Erträge, schwer zu nehmen.',
     },
     diplomacy: {
-      peace: 'Kein Krieg, kein Bündnis. Truppen dürfen die Grenze nicht überschreiten.',
+      peace:
+        'Kein Krieg, kein Bündnis. Fremde Truppen dürfen einmarschieren — behalten lässt sich ' +
+        'das Gebiet aber erst im Krieg. Ihre Grenze ist nicht bewacht, nur unantastbar.',
       war: 'Offener Krieg: beide Seiten dürfen angreifen und erobern.',
       truce: 'Kampfpause auf Zeit. Vor ihrem Ablauf ist kein neuer Krieg möglich.',
       alliance: 'Gemeinsame Sache: Durchmarsch und Kartenwissen inbegriffen.',

@@ -2,7 +2,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
-import { EventLog, ProvincePanel, buildingItems, depositItems, type Action, type EventEntry } from './Panels.tsx'
+import {
+  EventLog,
+  ProvincePanel,
+  buildingItems,
+  buttonTitle,
+  depositItems,
+  type Action,
+  type EventEntry,
+} from './Panels.tsx'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -359,5 +367,91 @@ describe('R-NEWS-04 Weltgeschehen ist der fuenfte Filter', () => {
 
     expect(container.querySelectorAll('.log__row--alert').length).toBe(0)
     expect(screen.getByText('Ostmark erklärt Süden den Krieg.')).toBeTruthy()
+  })
+})
+
+describe('T-M21-06 Die Kosten einer gesperrten Sache erreichen den Bildschirm', () => {
+  /**
+   * Der Befund vom 2026-09-07, und er ist am gerenderten Baum zu pruefen — nicht an den
+   * Daten.
+   *
+   * `actions.test.ts` prueft seit T-M15-03, dass `hint` den Freischaltungstag traegt, und
+   * war deshalb gruen. Verloren ging der Text eine Ebene spaeter: `title` nahm
+   * `disabledReason ?? hint`, und bei einem gesperrten Knopf gewinnt immer der Grund.
+   * Der Spieler erfuhr, *dass* es die Fabrik erst ab Tag 8 gibt, aber nie, *was sie
+   * kosten wird* — Vorausplanen war unmoeglich.
+   *
+   * Verschaerfend liefert `availabilityHint()` seinen Text ausschliesslich, solange die
+   * Sache gesperrt ist: also genau dann, wenn er verworfen wurde. Toter Code, gebaut in
+   * T-M15-03, gefunden erst, als jemand auf den Knopf zeigte.
+   */
+  const gesperrt: Action = {
+    id: 'build-factory',
+    label: 'Fabrik',
+    hint: '750 Geld, 400 Eisen · 18 h',
+    disabledReason: 'Erst ab Spieltag 8',
+    onRun: () => undefined,
+  }
+
+  const panel = (actions: Action[]) =>
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[]}
+        groups={[{ id: 'build', title: 'Bauen', actions }]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+  it('nennt bei einem gesperrten Knopf Grund UND Kosten', () => {
+    panel([gesperrt])
+    const title = screen.getByRole('button', { name: /Fabrik/ }).getAttribute('title')
+
+    expect(title).toContain('Erst ab Spieltag 8')
+    expect(title, 'die Kosten fehlen — genau der Befund vom 2026-09-07').toContain('750 Geld')
+  })
+
+  it('nennt bei einem freien Knopf nur die Kosten', () => {
+    // Kein leeres " · " davor: ein Trenner ohne linke Seite sieht aus wie ein Fehler.
+    panel([{ ...gesperrt, id: 'build-barracks', label: 'Kaserne', disabledReason: null }])
+
+    expect(screen.getByRole('button', { name: /Kaserne/ }).getAttribute('title')).toBe(
+      '750 Geld, 400 Eisen · 18 h',
+    )
+  })
+
+  it('laesst title ganz weg, wenn es nichts zu sagen gibt', () => {
+    // Ein leeres title-Attribut ist ein Tooltip, der beim Zeigen nichts zeigt.
+    panel([{ id: 'x', label: 'Ohne', disabledReason: null, onRun: () => undefined }])
+
+    expect(screen.getByRole('button', { name: /Ohne/ }).hasAttribute('title')).toBe(false)
+  })
+})
+
+describe('T-M21-06 Der Tooltip wiederholt sich nicht', () => {
+  it('nennt den Freischaltungstag einmal, nicht zweimal', () => {
+    // `describeRejection` sagt „Das gibt es erst ab Spieltag 8.", `availabilityHint`
+    // haengt „ab Spieltag 8" an die Kosten. Beides zusammen ergaebe denselben Tag zweimal
+    // im selben Satz.
+    const title = buttonTitle({
+      disabledReason: 'Das gibt es erst ab Spieltag 8.',
+      hint: '750 Geld, 400 Eisen · 18 h · ab Spieltag 8',
+    })
+
+    expect(title).toBe('Das gibt es erst ab Spieltag 8. · 750 Geld, 400 Eisen · 18 h')
+  })
+
+  it('behaelt den Tag, wenn der Grund ein anderer ist', () => {
+    // Der Fall, für den `availabilityHint` überhaupt gebaut wurde: die Kasse ist leer,
+    // also meldet der Kern das — und der Spieler wüsste sonst nicht, dass die Sache
+    // ohnehin noch nicht existiert.
+    const title = buttonTitle({
+      disabledReason: 'Zu wenig Material.',
+      hint: '750 Geld, 400 Eisen · 18 h · ab Spieltag 8',
+    })
+
+    expect(title).toBe('Zu wenig Material. · 750 Geld, 400 Eisen · 18 h · ab Spieltag 8')
   })
 })

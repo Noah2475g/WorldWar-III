@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { CANCEL_REFUND_PERMILLE } from '@worldwar/core'
 import { parseAnswers, parseQuestions, playtestStatus, renderSheet } from '../scripts/playtest-sheet.mjs'
 import { ROOT } from './guards/scan'
 
@@ -319,5 +320,57 @@ describe('R-UI-05/AK3 Der Antwortbogen prueft sich selbst', () => {
     const real = playtestStatus(playtest, answerSheet)
     expect(real.total, 'Der Antwortbogen kennt keine Frage').toBeGreaterThan(40)
     expect(parseQuestions(playtest).map((q) => q.nr)).toEqual([...parseAnswers(answerSheet).keys()])
+  })
+})
+
+/**
+ * Die Anleitung sagt über den Bauabbruch, was der Code tut (T-M21-06).
+ *
+ * Bis zum 2026-09-07 stand dort „**Es gibt nichts zurück**" — der Code erstattet die
+ * Hälfte (`CANCEL_REFUND_PERMILLE = 500`), und der Playtest hat es gemessen: +166
+ * Material, +125 Geld. Derselbe Irrtum stand im Playtest-Bogen und ist dort am
+ * 2026-09-06 berichtigt worden; in der Anleitung stand er noch. **Zwei Wahrheiten über
+ * dieselbe Sache, und die berichtigte war die weniger gelesene.**
+ *
+ * ⚠ **Was dieser Wächter kann und was nicht.** Er prüft *eine* Aussage gegen *eine*
+ * Konstante. Er kann nicht prüfen, ob die Anleitung im Allgemeinen mit den Regeln
+ * übereinstimmt: Prosa lässt sich nicht gegen JSON diffen, ohne eine
+ * Falschmeldungsmaschine zu bauen, die bei jeder Umformulierung anschlägt und die
+ * irgendwann jemand abschaltet. Die allgemeine Fehlerklasse — „die Anleitung nennt eine
+ * Zahl, die den Regeln widerspricht" — **bleibt ungeprüft**, und das steht so in
+ * PROBLEME.md, 2026-09-07. Ein enger Wächter, der sagt, was er kann, ist besser als ein
+ * breiter, der es nur behauptet.
+ */
+describe('R-UI-05 Die Anleitung widerspricht den Regeln nicht', () => {
+  const abbruch = guide.slice(guide.indexOf('**Bauabbruch**'), guide.indexOf('**Der Kampfbericht**'))
+  // Als Zahl, nicht als Literaltyp: sonst haelt der Compiler jeden Vergleich hier fuer
+  // entschieden und meldet genau die Verzweigung als tot, die den Waechter mitwandern
+  // laesst, wenn die Konstante sich aendert.
+  const erstattung: number = CANCEL_REFUND_PERMILLE
+
+  it('findet den Abschnitt ueberhaupt', () => {
+    // Sonst prüfen die beiden folgenden Tests eine leere Zeichenkette und sind grün,
+    // ohne etwas gesehen zu haben.
+    expect(abbruch.length, 'Kein Abschnitt "Bauabbruch" in der Anleitung').toBeGreaterThan(150)
+  })
+
+  it('behauptet nicht, ein Abbruch gebe nichts zurueck', () => {
+    if (erstattung === 0) return
+    expect(
+      abbruch,
+      `Die Regeln erstatten ${erstattung} Promille, die Anleitung sagt "nichts zurueck"`,
+    ).not.toMatch(/nichts zur(ü|ue)ck/i)
+  })
+
+  it('nennt die Haelfte genau dann, wenn die Regeln die Haelfte erstatten', () => {
+    // Die Zahl steht damit an zwei Orten, und dieser Test ist der Preis dafür: ändert
+    // jemand die Konstante, fällt er, statt die Anleitung still falsch werden zu lassen.
+    const sagtHaelfte = /(die )?H(ä|ae)lfte/i.test(abbruch)
+    expect(
+      sagtHaelfte,
+      erstattung === 500
+        ? 'Die Regeln erstatten die Haelfte; die Anleitung sagt es nicht'
+        : `Die Regeln erstatten ${erstattung} Promille, nicht die Haelfte`,
+    ).toBe(erstattung === 500)
   })
 })

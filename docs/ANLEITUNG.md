@@ -121,10 +121,11 @@ werden kann sie in dieser Zeit sehr wohl. Ein Rückzug ist deshalb eine Entschei
 Rücknahme: er rettet Einheiten und kostet die Gelegenheit.
 
 **Bauabbruch** (Knopf am laufenden Bauvorhaben in der Provinz): bricht den Auftrag ab und
-gibt die Baustelle frei. **Es gibt nichts zurück** — die Rohstoffe sind mit dem Auftrag
-abgeflossen, nicht mit seiner Fertigstellung. Sinnvoll ist der Abbruch, wenn die
-Bauplätze knapp sind oder die Provinz zu fallen droht (fällt sie, bricht der Auftrag
-ohnehin ab).
+gibt die Baustelle frei. **Sie bekommen die Hälfte der Rohstoffe zurück** — die andere
+Hälfte ist mit dem Auftrag abgeflossen und bleibt es. Ein Abbruch ist damit kein
+Totalverlust, aber auch keine folgenlose Rücknahme: er lohnt, wenn die Bauplätze knapp
+sind, wenn Sie das Material dringender anderswo brauchen, oder wenn die Provinz zu fallen
+droht (fällt sie, bricht der Auftrag ohnehin ab — dann ohne Erstattung).
 
 **Der Kampfbericht** steht im Ereignisprotokoll: nach jedem Gefecht, wer das Feld behalten
 hat *und* was es beide Seiten gekostet hat — Verluste getrennt nach Angreifer und

@@ -1510,7 +1510,9 @@ im ganzen Reich (`morale.ts:66-72`), unerklärt.
 
 ### Drei Auskünfte, die falsch sind oder nie ankommen
 
-Diese drei sind keine Entwurfsfragen, sondern Fehler — **Status: offen, T-M21-06.**
+Diese drei sind keine Entwurfsfragen, sondern Fehler — **Status: behoben am 2026-09-07
+(T-M21-06).** Jede der drei hat jetzt einen Test, der gegen den alten Stand nachweislich
+rot ist; die Einzelheiten stehen unten unter „Was ungeprüft bleibt".
 
 1. **Die Kosten gesperrter Dinge erreichen den Bildschirm nie.** `Panels.tsx:81` setzt
    `title={action.disabledReason ?? action.hint ?? undefined}`; bei einem gesperrten Knopf
@@ -1570,3 +1572,37 @@ node -e "const w=require('./data/maps/world.json');const p=w.provinces.find(x=>x
 3. **So lassen.** Die Provinz ist spielbar; nur ihr Name ist irreführend.
 
 Die erste ist die billigste ehrliche Antwort und wäre die Empfehlung.
+
+---
+
+## 2026-09-07 · T-M21-06 · Was ungeprüft bleibt: Prosa gegen Regeln
+
+**Befund:** Alle drei Falschauskünfte vom 2026-09-07 sind behoben, jede mit einem Test, der
+gegen den alten Stand fällt:
+
+| | Fehler | Prüfung |
+|---|---|---|
+| (a) | Der Tooltip eines gesperrten Knopfs verschluckte die Kosten | `Panels.test.tsx` am gerenderten Baum: `expected 'Erst ab Spieltag 8' to contain '750 Geld'` |
+| (b) | „Truppen dürfen die Grenze nicht überschreiten" — sie dürfen | `occupation.test.ts` gegen den **Code**: ein Marsch mitten durch fremdes Gebiet gelingt, die Eroberung nicht |
+| (c) | „Es gibt nichts zurück" — der Code erstattet die Hälfte | `docs.test.ts` gegen `CANCEL_REFUND_PERMILLE` |
+
+**Was damit nicht geprüft ist, und das ist die eigentliche Meldung:** die allgemeine
+Fehlerklasse „**die Anleitung nennt eine Zahl oder eine Regel, die dem Code
+widerspricht**" bleibt ungeprüft. Der Wächter zu (c) hält *eine* Aussage gegen *eine*
+Konstante; er weiß nichts über die übrigen vierhundert Zeilen der Anleitung.
+
+**Warum kein breiterer Wächter gebaut wurde:** Prosa lässt sich nicht gegen JSON diffen.
+Eine Regel wie „jede Zahl in `ANLEITUNG.md`, die auch in `constants.json` steht, muss dort
+denselben Wert haben" klingt billig und ist es nicht — sie schlägt bei jeder Jahreszahl, bei
+jeder Tastenbezeichnung und bei jeder umformulierten Erklärung an. Ein Wächter, der öfter
+falsch als richtig meldet, wird nach dem dritten Mal abgeschaltet, und dann ist die Lage
+schlechter als vorher: es steht ein Test da, der nichts mehr prüft.
+
+Verschärfend hätte er **genau diesen Fall nicht gefangen**: `CANCEL_REFUND_PERMILLE` steht
+in `packages/core/src/rules/build.ts`, nicht in `constants.json`.
+
+**Was stattdessen hilft, wenn die Klasse wieder zuschlägt:** dieselbe Bauart wie (c) — für
+die einzelne Aussage, die falsch war, ein Test gegen die einzelne Größe, die sie meint. Das
+ist Handarbeit je Fall und ehrlich darüber.
+
+**Status: bewusst offen, dokumentiert.** Keine Aufgabe, kein Termin — eine benannte Lücke.

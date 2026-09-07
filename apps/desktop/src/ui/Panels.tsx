@@ -66,6 +66,31 @@ export interface ActionGroupSpec {
   actions: readonly Action[]
 }
 
+/**
+ * Was im Tooltip eines Knopfes steht: der Grund **und** die Kosten (T-M21-06).
+ *
+ * Bis zum 2026-09-07 stand hier `disabledReason ?? hint`, und bei einem gesperrten Knopf
+ * gewann der Grund. Der Spieler erfuhr, *dass* es die Fabrik erst ab Tag 8 gibt, aber nie,
+ * *was sie kosten wird* — Vorausplanen war unmoeglich. Verschaerfend liefert
+ * `availabilityHint()` seinen Text ausschliesslich, solange die Sache gesperrt ist: also
+ * genau dann, wenn er verworfen wurde. Toter Code, gebaut in T-M15-03.
+ *
+ * Der Hinweis ist mit " · " gegliedert, und ein Glied, das der Grund schon sagt, faellt
+ * weg — sonst stuende bei einer gesperrten Fabrik zweimal derselbe Spieltag. **Die Grenze
+ * dieser Regel:** sie vergleicht Text, also greift sie nur, solange der Grund den Hinweis
+ * woertlich enthaelt (`de.ts`: „ab Spieltag 8" steckt in „Das gibt es erst ab Spieltag
+ * 8."). Trifft sie in einer anderen Sprache nicht, steht die Angabe doppelt da — haesslich,
+ * aber nicht falsch, und deshalb ist sie diesen kleinen Kniff wert.
+ */
+export function buttonTitle(action: Pick<Action, 'disabledReason' | 'hint'>): string | undefined {
+  const reason = action.disabledReason
+  const parts = (action.hint ?? '')
+    .split(' · ')
+    .filter((part) => part !== '' && !(reason ?? '').includes(part))
+
+  return [reason, ...parts].filter(Boolean).join(' · ') || undefined
+}
+
 function ActionButton({ action, showReason }: { action: Action; showReason: boolean }) {
   const reasonId = `${action.id}-reason`
   return (
@@ -78,7 +103,7 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
           type="button"
           className="button"
           disabled={action.disabledReason !== null}
-          title={action.disabledReason ?? action.hint ?? undefined}
+          title={buttonTitle(action)}
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
         >

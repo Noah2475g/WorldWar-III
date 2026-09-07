@@ -1,6 +1,7 @@
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { revoltChance, targetMoraleFor } from './morale'
+import { planRoute } from './movement'
 import { scoreOf } from '../rules/victory'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { GameState } from '../state/types'
@@ -216,5 +217,56 @@ describe('R-GAME-02 Punkte und Sieg', () => {
     const result = runTicks(vorher.state, TEST_RULES.constants.ticksPerDay + 1, ctx)
     expect(result.state.victory.winner).toBe('p1')
     expect(result.events.find((e) => e.type === 'GAME_ENDED')).toBeDefined()
+  })
+})
+
+describe('T-M21-06 Frieden hindert am Behalten, nicht am Betreten', () => {
+  /**
+   * Die Behauptung wird gegen den **Code** geprüft, nicht gegen den Text.
+   *
+   * `de.ts` sagte bis zum 2026-09-07 über den Frieden: „Truppen dürfen die Grenze nicht
+   * überschreiten." Das stimmt nicht — `planRoute` ruft `findPath` ohne `canEnter`, also
+   * marschiert eine Armee ungehindert über eine Friedensgrenze. Was der Frieden verhindert,
+   * steht in `occupation.ts`: fremdes Gebiet wechselt den Besitzer nur im Krieg.
+   *
+   * Wer dem alten Text glaubte, hielt seine Grenze für gesichert und stellte keine Wache
+   * auf. Diese Prüfung hält beide Hälften fest, damit der berichtigte Text nicht
+   * unbemerkt wieder auseinanderläuft.
+   */
+  beforeEach(() => {
+    state.diplomacy.relations['p1|p2']!.state = 'peace'
+  })
+
+  it('laesst eine Armee im Frieden mitten durch fremdes Gebiet marschieren', () => {
+    // Der Weg von n2 nach o3 führt durch m1. Gehört m1 dem Gegner und wäre der Frieden
+    // eine Schranke, müsste die Route den Umweg über n3-m2-s2-o2 nehmen — `findPath`
+    // lässt das *Ziel* ohnehin immer betreten, also sagt nur ein **Zwischen**stück
+    // etwas darüber aus, ob eine Grenze hält.
+    state.provinces['m1']!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    const route = planRoute(state, army, 'o3', map, TEST_RULES)
+
+    expect(route, 'gar kein Weg nach o3 — dann stimmt an dieser Prüfung etwas nicht').not.toBeNull()
+    expect(
+      route!.path,
+      'die Route weicht fremdem Gebiet aus — dann wäre der alte Text richtig gewesen',
+    ).toContain('m1')
+  })
+
+  it('laesst sie das betretene Gebiet aber nicht behalten', () => {
+    state.provinces['m1']!.owner = 'p2'
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    const after = step(state, [], ctx).state
+    expect(after.provinces['m1']!.owner, 'ohne Krieg wechselt kein Besitzer').toBe('p2')
+  })
+
+  it('und im Krieg gilt beides', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.provinces['m1']!.owner = 'p2'
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    expect(step(state, [], ctx).state.provinces['m1']!.owner).toBe('p1')
   })
 })
