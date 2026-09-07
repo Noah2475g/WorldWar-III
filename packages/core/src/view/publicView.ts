@@ -9,6 +9,7 @@ import type {
   ProvinceId,
   ResourceKey,
   Stance,
+  Terrain,
   Tick,
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
@@ -33,7 +34,15 @@ export interface VisibleProvince {
   name: string
   owner: PlayerId | null
   kind: 'city' | 'rural'
-  terrain: string
+  /**
+   * Die Gelaendeart, mit dem Typ der Karte statt als blosses 'string' (T-M20-01).
+   *
+   * Der Wert kam schon immer aus `MapProvince.terrain` und war nie etwas anderes; als
+   * `string` deklariert hat er nur den Compiler daran gehindert, das zu wissen — und
+   * jede Oberflaeche, die ein Zeichen dazu nachschlagen will, zu einer Behauptung
+   * gezwungen.
+   */
+  terrain: Terrain
   coastal: boolean
   neighbors: readonly ProvinceId[]
   seaLinks: readonly ProvinceId[]

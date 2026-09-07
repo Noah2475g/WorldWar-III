@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { VisibleProvince } from '@worldwar/core'
+import type { PublicView, VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
+import { TOKENS } from './tokens.ts'
 import {
+  DiplomacyPanel,
   EventLog,
   ProvincePanel,
   buildingItems,
@@ -21,6 +23,9 @@ import {
  */
 
 afterEach(cleanup)
+
+/** Eine Spielerfarbe, wie sie aus der Sicht kaeme — nicht als Literal im Quelltext. */
+const FARBE = TOKENS.accent
 
 const province: VisibleProvince = {
   id: 'USA-MW',
@@ -453,5 +458,40 @@ describe('T-M21-06 Der Tooltip wiederholt sich nicht', () => {
     })
 
     expect(title).toBe('Zu wenig Material. · 750 Geld, 400 Eisen · 18 h · ab Spieltag 8')
+  })
+})
+
+describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bildschirm', () => {
+  /**
+   * Der Satz allein genügt nicht — die Lehre aus T-M21-06.
+   *
+   * `icons.test.tsx` prüft, dass es zu jeder Geländeart und zu jedem Beziehungszustand
+   * ein Zeichen **gibt**. Ob es auch **erscheint**, ist eine andere Frage, und genau an
+   * dieser Stelle ging am 2026-09-07 ein Text verloren, den ein Datentest für vorhanden
+   * hielt. Geprüft wird deshalb am gerenderten Baum.
+   */
+  it('zeichnet das Gelaendesymbol neben den Gelaendenamen', () => {
+    const { container } = render(
+      <ProvincePanel province={province} ownerName="Vereinigte Staaten" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+
+    const sub = container.querySelector('.panel__sub')
+    expect(sub?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Ebene')
+    expect(sub?.querySelector('svg'), 'kein Gelaendesymbol in der Provinzansicht').toBeTruthy()
+  })
+
+  it('zeichnet das Beziehungssymbol neben den Beziehungsnamen', () => {
+    const view = {
+      // Die Farbe steht als Datum in der Sicht; ein Literal hier waere ein Farbwert im
+      // Quelltext und faellt zu Recht durch die Lint-Regel (R-UI-02).
+      others: [{ id: 'p2', nation: 'Ostmark', color: FARBE }],
+      relations: { p2: { state: 'war' } },
+    } as unknown as PublicView
+
+    const { container } = render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
+    const cell = container.querySelector('td.state, td.state--war, td.state.state--war')
+
+    expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Krieg')
+    expect(cell?.querySelector('svg'), 'kein Beziehungssymbol in der Diplomatie').toBeTruthy()
   })
 })

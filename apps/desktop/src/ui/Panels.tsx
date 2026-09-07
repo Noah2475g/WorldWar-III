@@ -3,7 +3,14 @@ import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@wor
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
-import { BUILDING_ICONS, Icon, RESOURCE_ICONS, type IconName } from './icons.tsx'
+import {
+  BUILDING_ICONS,
+  Icon,
+  RELATION_ICONS,
+  RESOURCE_ICONS,
+  TERRAIN_ICONS,
+  type IconName,
+} from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { Explain } from './Explain.tsx'
 
@@ -248,6 +255,10 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </h2>
         <p className="panel__sub">
           {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
+          {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
+              und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
+              (T-M20-01). */}
+          <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
           {t(`terrain.${province.terrain}`)}
           <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
           {province.coastal ? t('province.coastal') : t('province.landlocked')}
@@ -623,6 +634,10 @@ export function DiplomacyPanel({
               <tr key={other.id} className={other.id === chosen ? 'is-selected' : undefined}>
                 <td>{nameOf(other.id)}</td>
                 <td className={relation?.state === 'war' ? 'state state--war' : 'state'}>
+                  {/* R-UI-10 nennt den Beziehungszustand — bis T-M20-01 stand er als
+                      blosses Wort da. Das Wort bleibt: die Farbe der Kriegszeile darf
+                      nie das einzige Unterscheidungsmerkmal sein. */}
+                  <Icon name={RELATION_ICONS[relation?.state ?? 'peace']} size={13} />{' '}
                   {t(`diplomacy.${relation?.state ?? 'peace'}`)}
                   <Explain
                     textKey={`explain.diplomacy.${relation?.state ?? 'peace'}`}

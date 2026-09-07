@@ -11,6 +11,8 @@
  * font setting without a second asset.
  */
 
+import type { DiplomaticState, Terrain } from '@worldwar/core'
+
 export type IconName =
   | 'infantry'
   | 'motorized'
@@ -39,6 +41,17 @@ export type IconName =
   | 'oil'
   | 'rare'
   | 'money'
+  | 'peace'
+  | 'war'
+  | 'truce'
+  | 'alliance'
+  | 'rightOfWay'
+  | 'sharedMap'
+  | 'mountain'
+  | 'plains'
+  | 'desert'
+  | 'forest'
+  | 'urban'
 
 export interface IconProps {
   name: IconName
@@ -95,6 +108,33 @@ const PATHS: Record<IconName, string> = {
   oil: 'M12 4c3.5 5 5.5 7.5 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 11.5 8.5 9 12 4z',
   rare: 'M12 3l6 5.5-6 12.5-6-12.5z M6 8.5h12',
   money: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16 M9.5 9.5h5 M9.5 14.5h5 M12 7v10',
+  // Die sechs Beziehungen (T-M20-01, R-UI-10). Sie erzaehlen eine Reihe: eine Grenze,
+  // die haelt — eine, die gebrochen ist — die Fahne, die das Feuer einstellt — der
+  // gemeinsame Ring — der Durchgang — das geteilte Auge.
+  // Grenze mit zwei Pfosten: kein Krieg, kein Buendnis.
+  peace: 'M4 12h16 M4 8.5v7 M20 8.5v7',
+  // Dieselbe Grenze, in der Mitte durchbrochen und durchstossen.
+  war: 'M4 12h5 M15 12h5 M4 8.5v7 M20 8.5v7 M9.5 7.5l5 9 M14.5 7.5l-5 9',
+  // Fahne am Mast — die Kampfpause auf Zeit.
+  truce: 'M6 21V3 M6 4.5h11l-2.6 3.6L17 12H6',
+  // Zwei ineinandergreifende Ringe — gemeinsame Sache.
+  alliance: 'M6 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0 M10 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
+  // Pfeil zwischen zwei Pfosten — Durchmarsch ohne Kriegserklaerung.
+  rightOfWay: 'M6 4v16 M18 4v16 M3 12h13 M13 9l3 3-3 3',
+  // Auge — beide sehen, was der andere sieht.
+  sharedMap: 'M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z M12 9.6a2.4 2.4 0 1 0 0 4.8a2.4 2.4 0 1 0 0-4.8',
+  // Die fuenf Gelaendearten (T-M20-01, R-UI-11). Von der Seite gesehen, wie eine
+  // Gelaendeschnittzeichnung — nicht von oben wie die Karte selbst, damit sie sich von
+  // den Provinzflaechen unterscheiden, auf denen sie stehen.
+  mountain: 'M2 19l6.5-11 4 6.5 2.5-3.5 7 8z M8.5 8l2.2 3.7h-4.4z',
+  // Zwei Horizonte und ein paar Halme — offenes Land.
+  plains: 'M3 15.5h18 M3 20h18 M8 15.5v-3 M12 15.5v-4.5 M16 15.5v-3',
+  // Duene unter der Sonne.
+  desert: 'M2.5 19c4.5 0 5-5 9.5-5s5 5 9.5 5 M12 3.5a2.6 2.6 0 1 0 0 5.2a2.6 2.6 0 1 0 0-5.2',
+  // Zwei Nadelbaeume — nicht einer, sonst waere es der Rohstoff Holz.
+  forest: 'M7.5 5l3 4.5H8.5l2.6 4H3.9l2.6-4H4.5z M7.5 13.5V19 M16.5 9l2.4 3.6h-1.7l2.1 3.4h-5.6l2.1-3.4h-1.7z M16.5 16V19',
+  // Haeuserzeile — dichte Bebauung.
+  urban: 'M3.5 20V11h5v9 M8.5 20V5h6.5v15 M15 20v-6h5.5v6 M5.5 14h1 M11 9h2 M17.5 17h1',
 }
 
 export function Icon({ name, size = 16, title }: IconProps) {
@@ -172,3 +212,33 @@ export const ICON_PATHS: Readonly<Record<IconName, string>> = PATHS
 
 /** Every icon name, for the test that keeps the set complete. */
 export const ICON_NAMES = Object.keys(PATHS) as IconName[]
+
+/**
+ * Ein Zeichen je Beziehungszustand (T-M20-01, R-UI-10).
+ *
+ * R-UI-10 nennt den Beziehungszustand im Anforderungstext, und bis zum 2026-09-07 stand
+ * er als deutsches Wort da. Unbemerkt blieb das, weil R-UI-10/AK1 nur nach Gebaeude und
+ * Einheit fragt — ein Kriterium, das einen Teil des Versprechens prueft und den Rest
+ * erfuellt aussehen laesst.
+ *
+ * Vier davon sind Zustaende (`DiplomaticState`), zwei sind Rechte, die dazukommen
+ * koennen. Der Typ unten haelt beides zusammen, damit der Compiler einen neuen Zustand
+ * meldet, statt ihn still ohne Zeichen zu lassen.
+ */
+export const RELATION_ICONS: Record<DiplomaticState | 'rightOfWay' | 'sharedMap', IconName> = {
+  peace: 'peace',
+  war: 'war',
+  truce: 'truce',
+  alliance: 'alliance',
+  rightOfWay: 'rightOfWay',
+  sharedMap: 'sharedMap',
+}
+
+/** Und eines je Gelaendeart (T-M20-01, R-UI-11). Die Karte kennt genau diese fuenf. */
+export const TERRAIN_ICONS: Record<Terrain, IconName> = {
+  plains: 'plains',
+  forest: 'forest',
+  mountain: 'mountain',
+  desert: 'desert',
+  urban: 'urban',
+}
