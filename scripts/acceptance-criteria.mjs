@@ -119,10 +119,41 @@ export function measurementOf(criterion, readFile, head) {
   const stamp = /Gemessen am [*][*]([0-9]{4}-[0-9]{2}-[0-9]{2})[*][*] gegen `([0-9a-f]+)`/.exec(text)
   if (!stamp) return { state: 'ohne Stempel', file: criterion.report }
   const [, date, commit] = stamp
+  const passt = head.startsWith(commit) || commit.startsWith(head)
   return {
-    state: head.startsWith(commit) || commit.startsWith(head) ? 'gemessen' : 'ueberholt',
+    state: passt ? 'gemessen' : 'ueberholt',
     date,
     commit,
     file: criterion.report,
   }
+}
+
+/**
+ * Ob eine Messung trotz aelterem Stand noch gilt.
+ *
+ * Der strenge Vergleich auf den Commit ist richtig und trotzdem zu grob: er meldet eine
+ * Messung als ueberholt, sobald jemand ein Dokument angefasst hat. Beim Abschlusslauf am
+ * 2026-09-07 war genau das der Fall — zwischen der AK-8-Messung und dem Bericht lagen
+ * nur Tests, Berichte und Plandateien, keine Zeile, die ins Erzeugnis geht.
+ *
+ * Statt das wegzuerklaeren, sieht der Bericht nach. Was zaehlt, ist ausgeliefertes
+ * Gut: Quellcode, Regeln, Karten, die Huelle. Was nicht zaehlt, kommt im Programm nicht
+ * vor — und die Liste ist absichtlich kurz und positiv formuliert, damit eine neue Art
+ * von Datei im Zweifel als **relevant** gilt.
+ */
+export function artefactUnchangedSince(commit, changedFiles) {
+  /** Ordner, deren Inhalt ins Erzeugnis geht. */
+  // scripts/ steht bewusst NICHT hier: ein Skript geht nicht ins Programm. Was es
+  //   erzeugt, liegt unter data/ und ist damit erfasst.
+  const LIEFERT = ['apps/', 'packages/', 'data/']
+  /** Und was darin trotzdem nur die Werkbank betrifft. */
+  const WERKBANK = ['/test/', '.test.', '.bench.', '.slow.']
+
+  const relevant = changedFiles.filter((file) => {
+    if (!file) return false
+    if (file.startsWith('docs/') || file.startsWith('test/')) return false
+    if (WERKBANK.some((teil) => file.includes(teil))) return false
+    return LIEFERT.some((ordner) => file.startsWith(ordner))
+  })
+  return { unchanged: relevant.length === 0, relevant, commit }
 }

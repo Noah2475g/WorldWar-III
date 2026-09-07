@@ -246,7 +246,56 @@ describe('R-UI-05/AK3 Der Antwortbogen prueft sich selbst', () => {
     const mit = ohne.replace('| | | |', '| 2a | Text zu klein | mittel |')
     const status = playtestStatus(sheet, mit)
     expect(status.noWithoutFinding).toEqual([])
-    expect(status.ok).toBe(true)
+    // `complete` heisst "vollstaendig ausgefuellt". Ob AK-7 damit erfuellt ist, haengt
+    // seit dem 2026-09-07 zusaetzlich daran, WER gefahren ist — siehe unten.
+    expect(status.complete).toBe(true)
+  })
+
+  /**
+   * Wer den Bogen gefahren hat (T-M16-05a).
+   *
+   * AK-7 verlangt im Wortlaut Noahs Abnahme. Bis zum 2026-09-07 zaehlte dieser Bogen
+   * nur, ob jede Frage beantwortet ist — und der Abnahmebericht setzte daraufhin einen
+   * Haken hinter AK-7, obwohl der Durchgang vom 2026-09-06 von einem Agenten stammte
+   * und die Antwortdatei das in ihrem eigenen Kopf sagte. Der Bericht widersprach sich
+   * damit in derselben Datei: die Tabelle meldete "beantwortet", der Satz darunter
+   * "offen bleibt AK-7".
+   *
+   * Die Person ist nicht pruefbar. Ihre ANGABE ist es.
+   */
+  describe('R-UI-05/AK3 Der Bogen sagt, wer ihn gefahren hat', () => {
+    const vollstaendig = [
+      '| Frage | Anforderung | ja/nein | Anmerkung |',
+      '|---|---|---|---|',
+      '| 1 | R-UI-01 | ja | |',
+      '| 2a | R-UI-02 | ja | |',
+    ].join('\n')
+
+    it('gilt ohne Unterschrift als ausgefuellt, aber nicht als abgenommen', () => {
+      const status = playtestStatus(sheet, vollstaendig)
+      expect(status.complete).toBe(true)
+      expect(status.ok).toBe(false)
+      expect(status.author).toBe('')
+    })
+
+    it('erkennt einen fremden Durchgang und laesst AK-7 offen', () => {
+      const status = playtestStatus(sheet, `**Durchgang von:** ein Agent\n\n${vollstaendig}`)
+      expect(status.complete).toBe(true)
+      expect(status.byNoah).toBe(false)
+      expect(status.ok).toBe(false)
+    })
+
+    it('erfuellt AK-7, wenn Noah unterschrieben hat', () => {
+      const status = playtestStatus(sheet, `**Durchgang von:** Noah\n\n${vollstaendig}`)
+      expect(status.byNoah).toBe(true)
+      expect(status.ok).toBe(true)
+    })
+
+    it('laesst sich nicht von einem aehnlichen Namen taeuschen', () => {
+      // Die sichere Richtung: alles, was nicht Noah ist, ist nicht Noah.
+      const status = playtestStatus(sheet, `**Durchgang von:** Noahs Assistent\n\n${vollstaendig}`)
+      expect(status.byNoah).toBe(false)
+    })
   })
 
   it('gilt ohne Antwortdatei als offen, nicht als erfuellt', () => {

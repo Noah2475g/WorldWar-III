@@ -2,7 +2,7 @@
 
 Erzeugt von `apps/headless/test/sweep.slow.test.ts` (`pnpm balance:sweep`).
 6 Mächte, 120 Spieltage, 12 Startzahlen je Variante,
-**Rauschgrenze der Zielgröße: 0.062** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am 2026-09-06). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also 0.124.
+**Rauschgrenze der Zielgröße: 0.062** (Streuung des Führungsanteils allein durch die Startzahl, ohne jede Regeländerung, gemessen am 2026-09-07). Ein Ausschlag unterhalb dieser Grenze sagt nichts über die Konstante — er sagt etwas über die Startzahl. Aussagekräftig ist ab dem Doppelten, also 0.124.
 jede Konstante um ±25 % bewegt.
 
 ## Was gemessen wird

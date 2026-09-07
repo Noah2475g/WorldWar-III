@@ -1,250 +1,147 @@
 # WORKFLOW — der Weg bis Noah spielt
 
-> **Diese Datei ist der Einstieg.** Sie ist absichtlich die einzige, die du ganz lesen
-> musst. Wenn du hier fertig bist, weißt du, wo du bist, was gilt, was du nicht noch
-> einmal herausfinden musst, und was in welcher Reihenfolge zu tun ist.
+> **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
+> gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-06, abends · **Aufgesetzt nach** dem Abbruch des vorigen Agenten.
+> **Stand:** 2026-09-07 · **Alle Bauaufgaben sind erledigt.** Was bleibt, gehört Noah.
 
 ---
 
-## 0 · Ankommen (zwei Befehle, keine Suche)
+## 0 · Ankommen (ein Befehl, keine Suche)
 
 ```bash
 git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:short)'
 ```
 
-**Der Spitzenstand liegt auf `claude/next-steps-parallel-857224`.** `main` steht auf M8 und
-ist **sechzig Commits alt** — ein frischer Worktree landet dort und sieht ein anderes
-Projekt. Zeigt dein `HEAD` nicht auf die Spitze:
+**Der Spitzenstand liegt auf `claude/offenen-plan-abarbeiten-4d4c8e`.** `main` steht auf
+M8 und ist **über neunzig Commits alt** — ein frischer Worktree landet dort und sieht ein
+anderes Projekt. Zeigt dein `HEAD` nicht auf die Spitze:
 
 ```bash
-git reset --hard claude/next-steps-parallel-857224 && pnpm install
+git reset --hard claude/offenen-plan-abarbeiten-4d4c8e && pnpm install
 ```
 
-Das ist die Falle, in die diese Sitzung und die davor gelaufen sind. Sie kostet, wenn man
-sie übersieht, eine halbe Sitzung.
+Das ist die Falle, in die **drei** Sitzungen hintereinander gelaufen sind, zuletzt am
+2026-09-07. Sie kostet, wenn man sie übersieht, eine halbe Sitzung.
 
 ---
 
-## 1 · Was du **nicht** lesen musst
+## 1 · Der Stand in einem Absatz
 
-Das Projekt hat 10 500 Zeilen Planungstext. Du brauchst davon fast nichts.
+Von 139 Aufgaben sind **137 erledigt**. Offen sind zwei, und keine davon ist Bauarbeit:
 
-| Datei | Zeilen | Lies sie … |
-|---|---|---|
-| `docs/reports/audit-2026-09-05.md` | 580 | **gar nicht.** Alles Lebende daraus steht in `PROBLEME.md` oder ist erledigt |
-| `docs/plan/03-TASKS.md` | 2994 | **nur den Abschnitt der Aufgabe, die du gerade baust** (`### T-M16-0n`) |
-| `docs/plan/02-DESIGN.md` | 1580 | nur das Kapitel, das deine Aufgabe nennt (M16 = **D20**) |
-| `docs/plan/PROBLEME.md` | 1117 | nur, wenn du einen Befund suchst — die neuesten stehen **unten** |
-| `docs/plan/DECISIONS.md` | 1039 | nur, wenn du eine Entscheidung ändern willst |
-| `SESSION-STATE.md` (Vault) | – | nur den obersten Abschnitt; darunter liegt Geschichte |
-| `docs/plan/tasks.yaml` | – | ist die **Wahrheit** über Status und Aufgaben. Maschinell lesen, nicht überfliegen |
+| Aufgabe | Was fehlt |
+|---|---|
+| **T-M12-03** (Haltepunkt) | **Noahs Playtest und seine Abnahme.** Kein Skript kann das |
+| T-M10-02 | Nichts. Am 2026-09-06 zurückgenommen und gelöscht; steht mit Begründung im `reopened`-Feld |
 
-**Regel:** eine Aufgabe = ein Abschnitt in `03-TASKS.md` + ihr Eintrag in `tasks.yaml`.
-Mehr Kontext brauchst du für keine der Aufgaben unten.
+`pnpm verify` ist grün (1396 Tests, Kern 96,8 %, gesamt 95,1 %). **AK-8 ist gemessen**
+(`docs/reports/packaging.md`), **R-AI-04 ist zum ersten Mal unter seinen eigenen
+Bedingungen gemessen** (`docs/reports/ai-bench.json`, Anteil 0,074 gegen 0,30), und die
+Karte ist zum ersten Mal an einem Kontext gemessen, der wirklich zeichnet
+(`docs/reports/render-bench.json`).
 
 ---
 
-## 2 · Was gilt (nicht neu herleiten)
+## 2 · ⏸ Was noch aussteht — und es ist Noahs Teil
 
-- **Kein Remote, nichts gemerged.** Es gibt keinen Push, kein GitHub, keine CI.
-- **Der Plan-Wächter ist scharf.** `tasks.yaml` und `03-TASKS.md` müssen dieselben IDs,
-  Abhängigkeiten und Anforderungen nennen; jeder `files:`/`tests:`-Pfad einer Aufgabe auf
-  `done` muss existieren. `npx vitest run test/plan-consistency.test.ts` sagt es in einer
-  Sekunde.
-- **Anforderungstor:** `pnpm coverage:requirements` muss `V1 offen: 0` melden und mit 0
-  enden. Eine neue Anforderung eines *geplanten* Meilensteins braucht **Aufgabe und
-  Entwurfstext**, sonst fällt der Wächter.
-- **Sprache:** Dokumente Deutsch, Code und Bezeichner Englisch. `tasks.yaml` ohne Umlaute.
-- **Vier Haltepunkte** brauchen Noah (`tasks.yaml`, `gate: true`). Der einzige noch offene
-  ist **T-M12-03** (Abnahme) — und der Playtest darin.
-- **Ein grüner Einzeltest sagt nichts über das Spiel.** Jede Mechanik braucht eine Zahl aus
-  einem Lauf. Und die Umkehrung gilt auch: eine Regel, die *überall* greift, friert das
-  Spiel ein, ohne dass ein Einzeltest zuckt (so ging AK-1 am 2026-09-06 kaputt).
+**AK-7 ist formal offen, und die Zahl täuscht.** `pnpm playtest:sheet` meldet „60 von 60
+Fragen beantwortet", und das stimmt — aber `docs/reports/playtest-v1.md` sagt in seinem
+eigenen Kopf:
 
----
+> *Durchgang durch einen Agenten am 2026-09-06, nicht durch Noah. **AK-7 verlangt im
+> Wortlaut Noahs Abnahme** — dieser Bogen ersetzt sie nicht, er nimmt ihr die Suche ab.*
 
-## 3 · Sieben Fallen, die schon jemanden gekostet haben
-
-1. **`docs/reports/acceptance.md` ist überholt.** Es meldet „AK-1 ❌, 5 von 7" aus einem
-   Lauf **vor** der Reparatur — daneben liegt `fullgame.json` mit Sieg an Spieltag 876.
-   Seit dem 2026-09-06 stempelt der Bericht den Commit, gegen den er lief. **Schritt 1
-   unten macht ihn wieder wahr. Bis dahin: nicht zitieren.**
-2. **`ai-bench.json` mit `share: 0.498` belegt nichts.** Gemessen auf **zwölf** Provinzen
-   mit **drei** Mächten; R-AI-04 verlangt **acht**. Die Datei sagt das seit dem 2026-09-06
-   selbst (`certifies`). Siehe `PROBLEME.md`, letzter Abschnitt, und **T-M16-02**.
-3. **`tail` verschluckt den Exit-Code.** `cmd | tail` meldet den Status von `tail`. Ein
-   gescheiterter Tauri-Bau sah dadurch aus wie „exit 0". Schreib in eine Datei und frag
-   `$?`, oder lass die Pipe weg.
-4. **Der Rust-Bau erzeugt 1,2 GB** unter `apps/desktop/src-tauri/target/`. Ignoriert, aber
-   `git add -A` vor einem `.gitignore`-Eintrag wäre teuer. `gen/` ist ebenfalls ignoriert.
-5. **Benchmarks brauchen die Maschine allein — und „allein" heißt *jeder* Prozess.**
-   Alles unter `packages/core/test/perf` misst sonst die Auslastung. Am 2026-09-06 riss
-   das Tickbudget mit 3,525 ms gegen 3,5 ms, und die Ursache war **ein Spiel im
-   Vordergrund** (`OPERATOR.exe`, 2,7 von 6 Kernen) — derselbe Commit maß vorher 2,53 ms.
-   Der Fehler bei der Kontrolle war so groß wie der Befund: gefragt wurde
-   `Get-Process node`, also nur nach den **eigenen** Prozessen. Richtig ist die
-   Gesamtlast und die Liste der größten Verbraucher:
-
-   ```bash
-   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
-   ```
-
-   Unter etwa 10 % Grundlast ist die Messung brauchbar. Ein Benchmark, der neben
-   irgendetwas läuft, misst die Maschine und nicht den Code — und er reißt dann eine
-   Zusicherung, die in Ordnung ist.
-6. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` — lieber
-   ein WIP-Commit.
-7. **Einen langen Lauf abzubrechen beendet ihn nicht.** `TaskStop` (und Strg+C) trifft die
-   Hülle, nicht den Prozessbaum: `pnpm` → `vitest` → `tinypool`-Arbeiter laufen weiter.
-   Am 2026-09-06 liefen dadurch **zwei Abnahmeläufe 105 Minuten nebeneinander** — halbe
-   Geschwindigkeit, verfälschte Benchmarks, und am Ende hätten beide in dieselben
-   Berichtsdateien geschrieben. Nach jedem Abbruch **nachsehen und den Baum killen**:
-
-   ```bash
-   tasklist //FI "IMAGENAME eq node.exe"
-   ```
-
-   Dann `taskkill //PID <pid> //T //F` auf die Wurzel. Ein `pnpm acceptance` erkennst du
-   an der Startzeit; alles, was älter ist als dein eigener Start, gehört jemand anderem.
-
----
-
-## 4 · Der Ablauf
-
-> **Parallelität, die zählt:** Schritt A gehört Noah und kostet dich nichts. Gib ihm den
-> Befehl und arbeite an B weiter — er ist der Engpass, nicht die Maschine.
-
-### ⏸ A · Noah spielt (AK-7) — kann sofort und jederzeit laufen
+Das Skript prüft Vollständigkeit, nicht Urheberschaft. Wer nur die Zahl liest, hält AK-7
+für erfüllt. **Es ist der einzige echte Haltepunkt, der noch offen ist.**
 
 ```bash
 pnpm --filter @worldwar/desktop dev
 ```
 
-Bogen: `docs/PLAYTEST.md` (60 Fragen, ~45 min). Antworten kommen nach
-`docs/reports/playtest-v1.md`. `pnpm playtest:sheet` sagt, wie weit er ist und welches
-„nein" noch keinen Befund trägt. **AK-7 ist erfüllt, wenn jede Frage beantwortet ist und
-jedes „nein" eine Zeile in der Befundtabelle hat.**
+Oder das Programm selbst:
+`apps/desktop/src-tauri/target/release/worldwar.exe` (7,50 MiB, gebaut am 2026-09-07
+gegen `1c33ec7`; dazu MSI und NSIS-Setup unter `bundle/`).
 
-Seit T-M16-03 gibt es auch ein echtes Programm:
-`apps/desktop/src-tauri/target/release/worldwar.exe`.
-
----
-
-### 1 · Die Wahrheit herstellen — **ein** Befehl, ~90 Minuten
-
-```bash
-pnpm acceptance
-```
-
-Er enthält `pnpm verify` **und** `pnpm test:slow`; einzeln zu laufen bringt nichts außer
-Wartezeit. Vorher einmal `pnpm verify` allein (~4 min) lohnt trotzdem: scheitert schon
-das, sparst du 80 Minuten.
-
-**Während er läuft: nichts anderes auf der Maschine starten** (Falle 5).
-
-**Erwartet:** 6 von 7 maschinell grün, offen bleibt AK-7. Danach ist
-`docs/reports/acceptance.md` wieder eine Aussage über das Projekt.
-
-> **Der letzte Lauf (2026-09-06, gegen `5065b99`) steht auf 6 von 7 mit AK-4/6 rot** —
-> Tickbudget 3,525 ms gegen 3,5 ms. **Das ist erklärt und kein offener Punkt:** ein Spiel
-> belegte 2,7 von 6 Kernen. Nach dem Schließen dreimal nachgemessen: 2,546 / 2,606 /
-> 2,655 ms, alle grün, gleicher Commit. Einzelheiten in `PROBLEME.md` (letzter Abschnitt).
-> Der Bericht wird beim Abschlusslauf nach dem Playtest wieder grün — **nicht vorher
-> reparieren, es gibt nichts zu reparieren.**
-
-**Wenn rot:** die betroffene Prüfung einzeln nachfahren
-(`pnpm sim:fullgame`, `pnpm bench`, `pnpm sim:tournament`) und den Befund in
-`PROBLEME.md` eintragen, **bevor** du reparierst. Erst messen, dann ändern.
+**Danach:** T-M12-03 auf `done`, Fortschrittseintrag in `PROGRESS.md`, Merge auf `main`,
+alte Worktrees weg (`git worktree list` zeigt mehrere; nur dieser ist aktuell).
 
 ---
 
-### 2 · T-M16-04 · Der Datei-Port
+## 3 · Was gilt (nicht neu herleiten)
 
-Spielstände im echten Dateisystem — die Zusage, die seit M8 dasteht. `createStorage` ist
-seit T-M14-08 die eine Stelle, `storagePortContract` läuft gegen zwei Umsetzungen; die
-dritte tritt hinzu und ändert an beidem nichts.
-
-Braucht `@tauri-apps/api` und `@tauri-apps/plugin-fs` in `apps/desktop`.
-**Die entscheidende Prüfung ist R-PKG-02/AK2:** ein *außerhalb* des Programms gelöschter
-Stand verschwindet aus der Liste — sonst besteht auch ein Port, der die Namen nur im
-Speicher führt.
-
-Schließt **T-M8-00**. Einzelheiten: `03-TASKS.md`, Abschnitt `### T-M16-04`.
-
----
-
-### 3 · T-M16-05 · AK-8 gemessen
-
-Starten, speichern, schließen, neu starten, Stand steht wieder in der Liste — mit Datum in
-`docs/reports/packaging.md`. Erst danach zählt AK-8 in `pnpm acceptance` mit.
-**Die V1-Abnahme AK-1…AK-7 bleibt unberührt** (T-M12-03 wird hier nicht angefasst).
+- **Kein Remote, nichts gemerged.** Es gibt keinen Push, kein GitHub, keine CI.
+- **Der Plan-Wächter ist scharf.** `npx vitest run test/plan-consistency.test.ts` sagt in
+  einer Sekunde, ob `tasks.yaml` und `03-TASKS.md` zusammenpassen und ob jeder
+  `files:`/`tests:`-Pfad existiert. Er hat am 2026-09-07 zweimal sofort gebissen — beide
+  Male, weil eine Aufgabe einen Pfad nannte, den es nicht gab.
+- **Anforderungstor:** `pnpm coverage:requirements` meldet `V1 offen: 0`.
+- **Sprache:** Dokumente Deutsch, Code und Bezeichner Englisch. `tasks.yaml` ohne Umlaute.
+- **Ein grüner Einzeltest sagt nichts über das Spiel.** Und die schärfere Fassung, die
+  diese Sitzung zweimal gebraucht hat: **ein Test, der grün ist, ohne dass die Reparatur
+  drin ist, belegt gar nichts.** Nimm die Reparatur weg und sieh nach, dass er fällt.
 
 ---
 
-### 4 · Befunde aus Noahs Playtest
+## 4 · Sieben Fallen, die schon jemanden gekostet haben
 
-Jedes „nein" aus `docs/reports/playtest-v1.md` bekommt eine Zeile in der Befundtabelle und
-— wenn es Arbeit ist — eine Aufgabe. Kleines sofort, Größeres mit Meilenstein in
-`PROBLEME.md`. Nichts bleibt zwischen „nicht gebaut" und „nicht entschieden" liegen.
-
----
-
-### 5 · T-M16-02 · Das Rechenbudget der KI
-
-Der schwerste offene Befund, und er hängt an keinem Bau.
-
-**Erst messen, dann reparieren.** R-AI-04 zieht auf die ausgelieferte Weltkarte mit acht
-KI-Mächten (heute: zwölf Provinzen, drei Mächte). Ausgangswert festhalten, **bevor** eine
-Zeile Produktionscode fällt.
-
-Dann zwei Schnitte, jeder einzeln gemessen:
-1. `visibleProvinces` läuft **zweimal je Macht und Tick** — `updateIntel` und
-   `publicView`, gleicher Zustand, gleicher Tick. Kein Vertrag ändert sich.
-2. Die Geografie jeder `VisibleProvince` (`id`, `name`, `kind`, `terrain`, `coastal`,
-   `neighbors`, `seaLinks`) ändert sich nie und wird trotzdem je Macht und Tick neu
-   abgeschrieben — auf der Weltkarte 237 × 8 × jeden Tick.
-
-Rund **97 %** der gemessenen KI-Zeit ist der Bau der Sicht, nicht die Entscheidung.
-
-**Reißt die Messung die Anforderung, ist das eine Entscheidung für Noah** — nachmessen und
-begründen wie bei R-ARCH-06 am 2026-09-06, Eintrag in `DECISIONS.md`. **Die Grenze
-anzuheben, damit die Zahl passt, ist ausgeschlossen.**
-
----
-
-### 6 · T-M16-06 · Die Karte zeichnend messen · 7 · T-M16-07 · Bedienbar ohne Maus
-
-Zwei kleinere Aufgaben, beide erst am gebauten Programm sinnvoll: R-ARCH-06/AK2 (60 FPS)
-misst bis heute niemand, der zeichnet — `MapCanvas` läuft in keinem Test, weil
-`getContext` in der Testumgebung `null` liefert. Und kein Test öffnet einen Dialog und
-schließt ihn (Escape, Fokusfang, Tabreihenfolge, `aria`).
+1. **Der Worktree landet auf `main`.** Siehe Abschnitt 0. Drei Sitzungen in Folge.
+2. **`tail` verschluckt den Exit-Code.** `cmd | tail` meldet den Status von `tail`.
+   Schreib in eine Datei und frag `$?`, oder lass die Pipe weg. Am 2026-09-07 hat das
+   einmal einen roten `pnpm verify` als grün gemeldet.
+3. **Benchmarks brauchen die Maschine allein — und „allein" heißt *jeder* Prozess.**
+   ```bash
+   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
+   ```
+   Unter etwa 10 % Grundlast ist die Messung brauchbar.
+4. **Einen langen Lauf abzubrechen beendet ihn nicht.** `TaskStop` trifft die Hülle, nicht
+   den Prozessbaum. Nach jedem Abbruch nachsehen und killen:
+   ```bash
+   tasklist //FI "IMAGENAME eq node.exe"
+   ```
+   Am 2026-09-07 hat ein versehentliches `node scripts/acceptance.mjs` (statt einer
+   Einzelprüfung) einen 90-Minuten-Lauf gestartet, der zwei Benchmark-Berichte unter Last
+   überschrieben hat. Beide mussten verworfen und neu gemessen werden.
+5. **`scripts/acceptance.mjs` IST der ganze Abnahmelauf.** Es gibt keinen Trockenlauf. Wer
+   nur eine Zeile des Berichts prüfen will, ruft die Funktion direkt.
+6. **Der Rust-Bau erzeugt 1,2 GB** unter `apps/desktop/src-tauri/target/`. Ignoriert, aber
+   `git add -A` vor einem `.gitignore`-Eintrag wäre teuer.
+7. **Ändere keine Quelldatei, während der Tauri-Bau läuft.** `beforeBuildCommand` baut das
+   Frontend **am Anfang**; alles danach steht nicht im Erzeugnis. Am 2026-09-07 wurde AK-8
+   deshalb an einem Programm gemessen, das den gerade geschriebenen Code nicht enthielt —
+   nachgewiesen am Bündel selbst. Der Lauf musste wiederholt werden.
+8. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` — lieber
+   ein WIP-Commit.
 
 ---
 
-### 8 · Abschluss
-
-1. `pnpm acceptance` ein letztes Mal — **7 von 7**, AK-7 mit Noahs Antworten.
-2. **T-M12-03 auf `done`** in `tasks.yaml`, Fortschrittseintrag in `PROGRESS.md`.
-3. Merge auf `main`. **Vorher** die überholte Änderung an
-   `packages/core/src/persistence/migrate.ts` im Haupt-Checkout verwerfen — der
-   Spitzenstand löst dasselbe besser (`delete copy.hash` statt `hash: undefined`).
-4. Alte Worktrees entfernen (`git worktree list` zeigt sieben; sechs sind Geschichte).
-5. `SESSION-STATE.md` im Vault und `WORKFLOW.md` hier nachziehen.
-
----
-
-## 5 · Der Stand in Zahlen (2026-09-06, abends)
+## 5 · Der Stand in Zahlen (2026-09-07)
 
 | | |
 |---|---|
-| Aufgaben | 132, davon **124 erledigt** |
-| Offen | T-M12-03 (Abnahme) · T-M16-02, -04, -05, -06, -07 |
-| Zurückgenommen, keine Arbeit | T-M8-00 (Datei-Port → M16) · T-M10-02 (Worker-Host → gelöscht) |
-| Anforderungen | 101, davon 82 V1-pflichtig, **`V1 offen: 0`** |
-| Tests | **1330** schnell (gemessen 2026-09-06) · Kern 96,8 % · gesamt 94,4 % |
-| AK-1 | belegt: Sieg an **Spieltag 876**, 11 Kriegserklärungen, 2025 Eroberungen |
-| Tickbudget | 2,528 ms Median gegen 3,5 ms gefordert (Weltkarte, 237 Provinzen) |
-| KI-Budget | **ungemessen** unter den Bedingungen der Anforderung (siehe Schritt 5) |
-| Programm | `worldwar.exe` 7,86 MB + **MSI 2,94 MB** + NSIS-Setup 2,20 MB, gebaut am 2026-09-06 (T-M16-03 erledigt) |
+| Aufgaben | 139, davon **137 erledigt** |
+| Offen | T-M12-03 (Noahs Abnahme) · T-M10-02 (zurückgenommen, keine Arbeit) |
+| Tests | **1396** schnell · Kern 96,8 % · gesamt 95,1 % |
+| Anforderungen | `V1 offen: 0` |
+| AK-1 | belegt: Sieg an Spieltag 876 |
+| AK-8 | **erfüllt und gemessen** — `docs/reports/packaging.md` |
+| Tickbudget | 2,5 ms Median gegen 3,5 ms (Weltkarte, 237 Provinzen, 12 Mächte) |
+| KI-Budget | **0,074 gegen 0,30** — erstmals unter den Bedingungen der Anforderung |
+| Zeichenbudget | 1,0–1,7 ms Median, 7,3 ms schlechtestes Einzelbild, gegen 16,7 ms |
+| Programm | `worldwar.exe` 7,50 MiB + MSI 2,81 MiB + NSIS 2,11 MiB |
+
+---
+
+## 6 · Was diese Sitzung gefunden hat, das keine Aufgabe war
+
+Drei Dinge, die niemand gesucht hat und die den Plan betreffen — alle in `PROBLEME.md`:
+
+1. **T-M14-13 stand auf `done` und hatte zwei seiner sechs Punkte nie geliefert** — genau
+   die beiden, die der Playtest später als Befund 4 und 48 wieder einsammelte. Die
+   Fertig-wenn-Zeile behauptete wörtlich das Gegenteil.
+2. **R-AI-04s alte Zahl war in die falsche Richtung falsch.** 0,463 auf zwölf Provinzen
+   las sich wie „knapp an der Grenze" und hat zwei Optimierungen in den Plan gebracht, die
+   nicht nötig sind: unter den echten Bedingungen liegt der Anteil bei 0,074.
+3. **Ein Geländer mit 2,6 % Reserve** (0,487 gegen 0,5) hätte beim nächsten Abnahmelauf
+   zufällig gerissen. Es misst jetzt die absolute Zeit statt eines Quotienten, der auf
+   einer kleinen Karte von Natur aus nahe 0,5 liegt.

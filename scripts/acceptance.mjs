@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, artefactUnchangedSince, measurementOf, v1Failures } from './acceptance-criteria.mjs'
 
 /**
  * Der Stand, gegen den dieser Lauf gelaufen ist (T-M16-01a).
@@ -14,6 +14,20 @@ import { CRITERIA, measurementOf, v1Failures } from './acceptance-criteria.mjs'
  * fehlgeschlagen, 5 von 7", waehrend fullgame.json daneben Spieltag 876 und einen
  * Sieger auswies: derselbe Tag, verschiedene Staende, und nichts in der Datei sagte es.
  */
+
+/** Welche Dateien sich seit einem Stand geaendert haben - leer, wenn git nicht antwortet. */
+function changedSince(commit) {
+  try {
+    return execSync(`git diff --name-only ${commit}..HEAD`, { cwd: ROOT, encoding: 'utf8' })
+      .split(String.fromCharCode(10))
+      .map((line) => line.trim())
+      .filter(Boolean)
+  } catch {
+    // Kein git, kein Urteil: dann bleibt es bei "ueberholt", der sicheren Richtung.
+    return ['unbekannt']
+  }
+}
+
 function head() {
   try {
     return execSync('git rev-parse --short HEAD', { cwd: ROOT, encoding: 'utf8' }).trim()
@@ -121,13 +135,25 @@ const playtest = playtestStatus(
   readFileSync(join(ROOT, 'docs/PLAYTEST.md'), 'utf8'),
   existsSync(answersPath) ? readFileSync(answersPath, 'utf8') : null,
 )
+/**
+ * Der Stand von AK-7 - und ausdruecklich auch, WER geantwortet hat.
+ *
+ * Bis zum 2026-09-07 stand hier bei sechzig beantworteten Fragen ein Haken, obwohl der
+ * Durchgang vom 2026-09-06 von einem Agenten stammt und die Antwortdatei das selbst
+ * sagt. Der Bericht widersprach sich damit in derselben Datei: die Tabelle meldete
+ * "beantwortet", der Satz darunter "offen bleibt AK-7". Zaehlbar ist die
+ * Vollstaendigkeit, nicht die Person - aber die ANGABE der Person ist zaehlbar, und
+ * ohne sie gilt der Durchgang als nicht von Noah.
+ */
 const playtestLine = playtest.ok
-  ? `✅ beantwortet (${playtest.total} Fragen)`
+  ? `✅ beantwortet und abgenommen von ${playtest.author} (${playtest.total} Fragen)`
   : playtest.answered === 0
     ? `⏳ ausstehend (0 von ${playtest.total} Fragen beantwortet)`
-    : `⏳ angefangen (${playtest.answered} von ${playtest.total}` +
-      (playtest.noWithoutFinding.length > 0 ? `, „nein" ohne Befund: ${playtest.noWithoutFinding.join(', ')}` : '') +
-      ')'
+    : playtest.complete
+      ? `⏳ vollstaendig ausgefuellt (${playtest.total} Fragen), aber ${playtest.author ? `von ${playtest.author}` : 'ohne Angabe, von wem'} - AK-7 verlangt Noahs Abnahme`
+      : `⏳ angefangen (${playtest.answered} von ${playtest.total}` +
+        (playtest.noWithoutFinding.length > 0 ? `, „nein" ohne Befund: ${playtest.noWithoutFinding.join(', ')}` : '') +
+        ')'
 
 const passed = results.filter((r) => r.ok).length
 const failed = results.filter((r) => !r.ok)
@@ -154,8 +180,16 @@ function spaetereZeile(criterion) {
   if (!messung || messung.state === 'fehlt') return `⏸ ${criterion.scope}, noch nicht gemessen${nicht}`
   if (messung.state === 'ohne Stempel') return `⚠ ${messung.file} nennt keinen Stand - keine Messung${nicht}`
   if (messung.state === 'ueberholt') {
+    // Aelterer Stand heisst nicht automatisch ueberholt: liegen dazwischen nur
+    // Dokumente und Tests, ist das gemessene Erzeugnis dasselbe.
+    const seither = artefactUnchangedSince(messung.commit, changedSince(messung.commit))
+    if (seither.unchanged) {
+      return (
+        `✅ erfuellt, gemessen am ${messung.date} gegen ${q(messung.commit)} - seither nur Dokumente und Tests, das Erzeugnis ist unveraendert${nicht}`
+      )
+    }
     return (
-      `⚠ gemessen am ${messung.date} gegen ${q(messung.commit)} - nicht dieser Stand, siehe ${q(messung.file)}${nicht}`
+      `⚠ gemessen am ${messung.date} gegen ${q(messung.commit)} - seither ${seither.relevant.length} Datei(en) am Erzeugnis geaendert, siehe ${q(messung.file)}${nicht}`
     )
   }
   return `✅ erfuellt, gemessen am ${messung.date} (${q(messung.file)})${nicht}`
@@ -183,7 +217,9 @@ const report = [
   '',
   failed.length > 0
     ? ['## Fehlgeschlagen', '', ...failed.map((r) => `### ${r.id}\n\n\`\`\`\n${r.output}\n\`\`\`\n`)].join('\n')
-    : 'Alle maschinell prüfbaren Abnahmekriterien sind erfüllt. Offen bleibt AK-7 — der Playtest, für den kein Skript einspringen kann: ob das Spiel Spaß macht, findet nur ein Mensch heraus.',
+    : playtest.ok
+      ? 'Alle Abnahmekriterien sind erfüllt, AK-7 eingeschlossen.'
+      : 'Alle maschinell prüfbaren Abnahmekriterien sind erfüllt. Offen bleibt AK-7 — der Playtest, für den kein Skript einspringen kann: ob das Spiel Spaß macht, findet nur ein Mensch heraus.',
   '',
 ].join('\n')
 

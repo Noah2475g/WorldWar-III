@@ -10,6 +10,14 @@
 Fragenummer — sonst gilt AK-7 als offen. Das ist die einzige Regel, die dieser Bogen
 sich selbst auferlegt, und sie ist die, an der Abnahmebögen sonst scheitern.
 
+**Durchgang von:** ein Agent (nicht Noah)
+
+> ⚠ **AK-7 ist damit NICHT erfüllt.** Die Anforderung verlangt im Wortlaut Noahs
+> Abnahme; dieser Bogen ersetzt sie nicht, er nimmt ihr die Suche ab. Die Zeile
+> „Durchgang von" oben ist die, die `scripts/playtest-sheet.mjs` liest — trägt Noah
+> sich dort ein, zählt AK-7 als erfüllt. Vorher meldete der Abnahmebericht bei sechzig
+> beantworteten Fragen einen Haken und widersprach sich zwei Zeilen weiter selbst.
+
 **Fragen im Bogen:** 60
 
 **Ergebnis (Agentendurchgang 2026-09-06):** 39 ja · 13 nein · 8 nicht geprueft.

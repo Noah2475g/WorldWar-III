@@ -62,6 +62,27 @@ export function parseFindings(text) {
  * real files, the test calls it with invented ones. A check that can only read the real
  * world goes green the moment somebody fixes the world and proves nothing after that.
  */
+/**
+ * Wer den Bogen gefahren hat.
+ *
+ * AK-7 verlangt im Wortlaut **Noahs** Abnahme. Bis zum 2026-09-07 hat diese Datei nur
+ * gezaehlt, ob jede Frage beantwortet ist — und der Abnahmebericht meldete daraufhin
+ * "AK-7 beantwortet (60 Fragen)" mit einem Haken, obwohl der Durchgang am 2026-09-06
+ * von einem Agenten stammt und die Antwortdatei das in ihrem eigenen Kopf sagt.
+ *
+ * Vollstaendigkeit ist pruefbar, Urheberschaft ist es nicht — aber die **Angabe** der
+ * Urheberschaft ist es. Deshalb traegt der Bogen eine Zeile, die das Skript liest,
+ * statt eines Satzes, ueber den es hinwegliest. Fehlt sie, gilt der Durchgang als
+ * nicht von Noah: das ist die sichere Richtung des Fehlers.
+ */
+const SIGNATUR = /^\s*[*_]{0,2}Durchgang von[*_]{0,2}\s*:?\s*(.+?)\s*$/im
+
+export function playtestAuthor(answerText) {
+  const treffer = SIGNATUR.exec(answerText ?? String())
+  const name = treffer ? treffer[1].replace(/[*_`]/g, '').trim() : ''
+  return { name, isNoah: /^noah\b/i.test(name) }
+}
+
 export function playtestStatus(sheetText, answerText) {
   const questions = parseQuestions(sheetText)
   const answers = parseAnswers(answerText ?? '')
@@ -73,12 +94,23 @@ export function playtestStatus(sheetText, answerText) {
     .filter((q) => answers.get(q.nr)?.answer === 'nein' && !findings.has(q.nr))
     .map((q) => q.nr)
 
+  const author = playtestAuthor(answerText)
+
   return {
     total: questions.length,
     answered: questions.length - unanswered.length,
     unanswered,
     noWithoutFinding,
-    ok: questions.length > 0 && unanswered.length === 0 && noWithoutFinding.length === 0,
+    author: author.name,
+    byNoah: author.isNoah,
+    /** Vollstaendig ausgefuellt - sagt noch nicht, von wem. */
+    complete: questions.length > 0 && unanswered.length === 0 && noWithoutFinding.length === 0,
+    /** AK-7 im Wortlaut: vollstaendig UND von Noah. */
+    ok:
+      questions.length > 0 &&
+      unanswered.length === 0 &&
+      noWithoutFinding.length === 0 &&
+      author.isNoah,
   }
 }
 
@@ -103,6 +135,12 @@ export function renderSheet(sheetText, previous) {
     '> Fragen und Reihenfolge stehen dort; hier stehen nur die Antworten, damit beide',
     '> Dateien nicht auseinanderlaufen können. Läuft der Bogen weiter, den Befehl erneut',
     '> aufrufen — bereits gegebene Antworten bleiben stehen.',
+    '',
+    '**Durchgang von:** ',
+    '',
+    '> Die Zeile darueber liest `scripts/playtest-sheet.mjs`. AK-7 verlangt im Wortlaut',
+    '> **Noahs** Abnahme - steht dort jemand anders oder niemand, gilt der Bogen als',
+    '> ausgefuellt, aber nicht als abgenommen. Das ist die sichere Richtung des Fehlers.',
     '',
     `**Erlaubte Antworten:** \`ja\`, \`nein\`, \`n.z.\` (nicht zutreffend/nicht geprüft).`,
     `**Jedes \`nein\` braucht eine Zeile in der Befundtabelle unten**, mit derselben`,
@@ -147,6 +185,15 @@ function main() {
   console.log(`AK-7: ${status.answered} von ${status.total} Fragen beantwortet.`)
   if (status.unanswered.length > 0) console.log(`  offen: ${status.unanswered.join(', ')}`)
   if (status.noWithoutFinding.length > 0) console.log(`  "nein" ohne Befund: ${status.noWithoutFinding.join(', ')}`)
+  // Wer gefahren ist, gehoert in dieselbe Ausgabe wie die Zahl: sonst liest jemand
+  // "60 von 60" und haelt AK-7 fuer erledigt - genau das ist am 2026-09-07 passiert.
+  if (!status.byNoah) {
+    console.log(
+      status.author
+        ? `  Durchgang von: ${status.author} - AK-7 verlangt Noahs Abnahme, also OFFEN.`
+        : '  Keine Zeile "Durchgang von" im Bogen - AK-7 gilt damit als OFFEN.',
+    )
+  }
   process.exitCode = status.ok ? 0 : 1
 }
 
