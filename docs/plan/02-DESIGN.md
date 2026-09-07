@@ -1578,3 +1578,201 @@ Der Entwurf ist bewusst klein: ein Fokusfang, der beim Öffnen den ersten fokuss
 Knopf wählt und Tab im Dialog hält, Escape als Schließen, und ein Wächter, der jedes
 Bedienelement ohne sichtbaren Text mit einem Namen für Hilfsmittel findet. Kein
 Barrierefreiheits-Rahmenwerk, keine neue Abhängigkeit — die Prüfung ist die Zusage.
+
+## D21. Die Karte zeigt, was da ist (M19 — R-MAP-08, R-MAP-09)
+
+Noah hat beim Abnahme-Playtest am 2026-09-07 gemeldet, im Westen der USA und in Nordkanada
+überlappe der Ozean das Land. Die Untersuchung hat etwas anderes gefunden: **es überlappt
+nichts.** Es fehlt.
+
+### D21.1 Die Ursache — ein Ausdruck, 130 Provinzen
+
+`scripts/build-map.mjs:366-370` schreibt `world.json` aus `world-shapes.json` und behält je
+Provinz **einen** Umriss:
+
+```js
+p.geometry.coordinates.reduce((a, b) => (a[0].length >= b[0].length ? a : b))[0]
+```
+
+`a[0].length` ist die **Zahl der Punkte**. Nicht die Fläche. Für „Westen der USA" wählt das
+Alaskas Küste (1521 Punkte) und wirft die zusammenhängenden Weststaaten weg (320 Punkte) —
+Alaskas Fjorde brauchen viele Stützpunkte, die geraden Vermessungslinien Nevadas wenige.
+
+Der Renderer malt zuerst das Meer über die ganze Leinwand und dann die Provinzen darüber
+(`MapCanvas.tsx:119`). Ein weggeworfener Umriss ist deshalb nicht *unsichtbar*, sondern
+**Meer** — genau das, was Noah gesehen hat.
+
+Gemessen: **3156 von 3393 Umrissen (93 %) verworfen, 14,2 % der Landfläche, 130 von 237
+Provinzen betroffen.** Der schwerste Fall ist nicht der gemeldete: `CAN-NORTH` behält 11,6 %
+von sich — es zeichnet die Baffininsel und verliert das Festland. Los Angeles, Seattle,
+Denver, Tokio, Kuala Lumpur und Kopenhagen liegen in `world.json` im offenen Meer.
+
+### D21.2 Die Falle in der naheliegenden Reparatur
+
+„Dann nimm eben den **größten** Ring statt den mit den meisten Punkten" — und genau hier
+scheitert es, wenn man nicht nachrechnet:
+
+| Ring | Punkte | echte Fläche | nach Mercator |
+|---|---|---|---|
+| Alaska | 1521 | 267,8 Grad² | **84 453 px²** |
+| Weststaaten | 320 | **328,6 Grad²** | 58 147 px² |
+
+Mercator bläht hohe Breiten mit 1/cos²(φ) auf; Alaska wird dadurch um das Viereinhalbfache
+größer gezeichnet, als es ist. **Wer die Fläche nach der Projektion misst, wählt wieder
+Alaska.** Ein Einzeiler, der plausibel aussieht und den gemeldeten Fehler nicht behebt.
+
+### D21.3 Die Entscheidung: eine Provinz darf mehrteilig sein
+
+Der eigentliche Grund für die Auswahl steht in `packages/core/src/state/types.ts:77`:
+
+```ts
+polygon: ReadonlyArray<readonly [number, number]>
+```
+
+**Ein** Ring. Das Datenmodell kann „Alaska und Kalifornien gehören derselben Provinz" nicht
+ausdrücken, also musste der Generator wählen — und niemand hat aufgeschrieben, dass er wählt.
+Jeder andere Block in `build-map.mjs` trägt einen erklärenden Absatz; diese fünf Zeilen
+tragen keinen.
+
+Die Reparatur ist deshalb nicht die bessere Auswahl, sondern **keine Auswahl mehr**:
+`polygon` wird zu einer Liste von Umrissen. Was dafür spricht:
+
+- `polygon` ist **reine Zeichendatei** — nachgemessen am 2026-09-07, nicht angenommen: ein
+  `grep` über `packages/core/src`, `packages/ai/src` und `apps/headless/src` findet **einen**
+  Leser, `validate.ts:112`. Der Kern liest es außerhalb von `validateMap` nicht,
+  die KI nie, und Spielstände enthalten die Karte nicht — **keine Migration, kein Golden
+  Master**, kein Schemaschritt. Das ist der Grund, warum der richtige Weg hier billig ist.
+
+  **Und die Folgerung, die daran hängt:** die Reparatur ändert die *Partie* nicht. Eine
+  Provinz gehörte schon vorher, wem sie gehört; ihre Bevölkerung und ihre Vorkommen stehen
+  als Attribute da und werden nicht aus der Fläche gerechnet. Was sich ändert, ist, was man
+  **sieht** — und was man **anklicken** kann. AK-1 ist davon unberührt, und das ist keine
+  Hoffnung, sondern eine Folge des Befundes darüber.
+- Alles behalten kostet +48 % Punkte. Umrisse ab 25 px² behalten kostet **+26 %** und holt
+  **99,79 %** der Landfläche zurück; nur 56 Provinzen brauchen dann mehr als einen Umriss.
+
+Die Zwischenstufe (größter Ring nach **echter** Fläche, nicht nach projizierter) bleibt als
+Sofortmaßnahme möglich — sie repariert die vier verschobenen Provinzen und lässt 6,7 % der
+Landfläche fehlen. Sie ist ein Stopp der Blutung, nicht die Naht.
+
+### D21.4 Die Wächter, die es hätten finden müssen
+
+Kein Test im Projekt sagt irgendetwas über `polygon`. `validateMap` prüft eine einzige
+geometrische Eigenschaft: `polygon.length >= 3`. Der eine Test, der geografische Lage prüft
+und sogar `USA-WEST` beim Namen nennt, zeigt auf `world-shapes.json` — die Quelle, wo die
+Geometrie richtig ist. Das ist Befund N9 der Auswertung vom 2026-09-05 („kein Test bindet
+`world.json` an die Pipeline"), offen und ohne Besitzer.
+
+Drei Prüfungen, jede allein hinreichend, **alle drei heute rot**:
+
+| | Prüfung | heute |
+|---|---|---|
+| G1 | Der Ankerpunkt liegt in der eigenen gezeichneten Fläche | 4 von 237 fallen |
+| G2 | Die gezeichnete Fläche trägt ≥ 99 % der Quellfläche | 130 von 237 fallen |
+| G3 | Bekannte Städte liegen an Land | 10 von 28 fallen |
+
+G2 ist die vollständige: ein reiner Datenvergleich zweier Dateien, die beide im Baum liegen,
+ohne Zeichnen, und sie wäre in dem Moment rot geworden, in dem der Generator den ersten Ring
+verworfen hat.
+
+**Ein Wächter, der heute rot ist, wird nicht stillschweigend eingebaut** (Lehre vom
+2026-09-06): er wird gemessen, berichtet und einer Aufgabe zugewiesen. Deshalb ist die
+Reihenfolge in M19: erst messen und die Zahl festhalten, dann reparieren, dann den Wächter
+scharf schalten.
+
+### D21.5 Was ausdrücklich **nicht** gemacht wird
+
+- **Kein Tor auf Selbstüberschneidung.** 35 von 237 Provinzen haben Überkreuzungen, fast alle
+  ein Pixel groß und Folge des Rundens auf ganze Bildpunkte. Die `nonzero`-Füllregel versteckt
+  sie vollständig. Ein Tor darauf wäre 35-mal rot für einen Fehler, den niemand sieht.
+- **Kein Neu-Herunterladen.** `world-shapes.json` liegt im Baum und ist vollständig richtig.
+> ⚠ **Eine Aufgabe in M19 ist ausdrücklich KEINE reine Zeichenänderung: T-M19-04.**
+> `AUS-SE` steht in Australiens Startaufstellung, trägt 52 097 Einwohner, zwei Vorkommen und
+> drei Kanten. Sie zu entfernen ändert die Wirtschaft einer Macht und den Graphen — also die
+> Partie, also AK-1. Deshalb ist die sichere Richtung dort, ihr die Fläche zu **geben**, die
+> ihr Name behauptet, statt sie zu streichen; und wenn gestrichen wird, gehört ein neuer
+> `sim:fullgame` dazu. Die übrigen vier Aufgaben rühren an keine Zahl, die das Spiel liest.
+
+- **Grönland** läuft oben aus der Leinwand (796 Punkte bis y = −436). Das ist ein eigener,
+  kleinerer Fehler (der 78°-Beschnitt wird nie geklippt) und bekommt eine eigene Aufgabe.
+
+## D22. Die Karte spricht mit (M20 — R-UI-16, R-UI-17; dazu die Lücken in R-UI-10 und R-UI-11)
+
+Noahs zweiter Wunsch: „Bilder/Icons ins UI miteinarbeiten" für ein interaktiveres Gefühl.
+Bevor irgendetwas entworfen wird, der Bestand — denn er ist überraschend gut und überraschend
+schmal zugleich.
+
+### D22.1 Was da ist
+
+**Null Bilder.** Der Baum enthält acht Binärdateien: vier Tauri-Programmsymbole (von
+`scripts/build-icon.mjs` **gezeichnet**, nicht geladen) und vier Schriftschnitte. Keine
+Illustration, kein Porträt, keine Textur, keine Flagge.
+
+Die gesamte Bildsprache sind **27 Symbole in einer Datei** (`apps/desktop/src/ui/icons.tsx`,
+6,2 kB) — je ein SVG-Pfad in einem 24×24-Feld, in `currentColor` gestrichen. Der ganze Satz
+kostet **2854 Byte Quelltext**. Dieselben Pfadzeichenketten zeichnet die Karte über `Path2D`,
+weshalb ein Panzer im Panel und auf der Karte nicht auseinanderlaufen *können*.
+
+Die Anmutung ist Richtung A „Lagekarte": Leinen (#E4E0D2), Tusche (#1F2420), und Zinnober
+(#B3341E) **ausschließlich** für Kampf und Alarm.
+
+### D22.2 Die Grenzen — und sie sind maschinell bewacht
+
+Bildsprache fehlt hier nicht aus Nachlässigkeit, sondern ist **eingezäunt**:
+
+| Grenze | Wo | Folge |
+|---|---|---|
+| `<img ` ist im Produktionscode verboten | `test/guards/no-foreign-assets.test.ts:106` | jede `<img>`-Lösung bricht `pnpm verify` |
+| Jede Binärdatei braucht einen Eintrag in `docs/ASSETS.md` | derselbe Wächter, :74 | eine Bilddatei ist eine Zwei-Dateien-Änderung |
+| Fremde Grafik ist verboten | R-ASSET-01/02, CSP `connect-src 'none'`, `no-network` | vierfach gesperrt, kein Abwägen |
+| Der helle Grund ist festgeschrieben | `test/design-gate.test.ts` | keine dunkle oder fotografische Fassung |
+| 16,7 ms je Bild bei p95 | `render.bench.slow.test.ts` | neue Zeichenarbeit misst sich daran |
+
+Das ist kein Hindernis, sondern die Antwort auf die Frage „welche Art Bild?": **gezeichnete,
+die aus dem eigenen Satz kommen.** Der billigste Weg ist zugleich der einzige, der durch alle
+Wächter geht — ein neuer Pfad in `icons.tsx` kostet eine Zeichenkette, ist sofort auf der
+Karte *und* im Panel verfügbar und verletzt nichts.
+
+### D22.3 Zuerst die Lücken in dem, was schon zugesagt ist
+
+Bevor Neues dazukommt: **R-UI-10 nennt den Beziehungszustand** und es gibt kein Symbol dafür.
+**R-UI-11 nennt die Geländeart** und sie steht als Wort da. Beides sind V1-Anforderungen.
+Unbemerkt blieb es, weil R-UI-10/AK1 nur nach Gebäude und Einheit fragt — ein Kriterium, das
+einen Teil des Versprechens prüft und den Rest erfüllt aussehen lässt. Dieselbe Bauart wie
+AK-7 vor seiner Reparatur am 2026-09-07.
+
+### D22.4 Wo ein Zeichen mehr trägt als ein Wort
+
+Gemessen an den Komponenten, nicht geraten:
+
+| Ort | heute | was fehlt |
+|---|---|---|
+| Diplomatie | `<td>{nameOf(other.id)}</td>` | die Kartenfarbe der Macht (R-UI-16) |
+| Beziehungszustand | das deutsche Wort | ein Symbol (R-UI-10, zugesagt) |
+| Geländeart | das deutsche Wort | ein Symbol (R-UI-11, zugesagt) |
+| Ereignisprotokoll | Zeit + Prosa | die Rubrik als Zeichen — `categoryOf` gibt es längst |
+| Armeen im Panel | `{army.name} · Stärke …` | das Gattungszeichen — `dominantIcon()` gibt es längst |
+| Markt | `<select><option>` | **strukturell unmöglich**, `<option>` trägt kein SVG |
+
+Dreimal steht „gibt es längst": die Größe wird bereits berechnet und nicht gezeigt. Das ist
+die billigste Art Verbesserung, die es gibt, und dieselbe Bauart wie die Playtest-Befunde
+vom 2026-09-06 — gebaut, getestet, unerreichbar.
+
+Der Markt ist die Ausnahme, die eine Entscheidung braucht: ein `<option>` kann kein Bild
+tragen. Entweder er bleibt, wie er ist, oder das Auswahlfeld wird eine eigene Liste — und
+das ist Bedienbarkeit gegen Aussehen, also nichts, was ein Agent allein entscheidet.
+
+### D22.5 „Interaktiver" heißt Rückmeldung, nicht Zierde
+
+R-UI-17 ist der Teil des Wunsches, der nicht Symbole meint. Und hier liegt eine offene
+Zusage: **R-UI-04 verspricht „Bewegungs- und Kampfanimationen", und nur die Kampfhälfte
+existiert.** Sie ist V1-pflichtig und nicht vertagt.
+
+Zwei Bremsen sind dabei einzuhalten, beide bereits gebaut und begründet:
+`motionAllowed(speed, reduced)` schaltet jede Bewegung oberhalb einer Tempogrenze und unter
+`prefers-reduced-motion` ab — „bei hundert Spielstunden je Sekunde würde der Ring stroboskopieren,
+und das ist keine Atmosphäre, sondern eine Störungslampe". Und die 16,7 ms.
+
+Dazu kommt ein Risiko, das benannt gehört: `MapCanvas` ist die am schlechtesten abgedeckte
+Datei der Oberfläche (seit T-M16-06: 168 von 249 Zeilen). Bewegung dort einzubauen ist die
+riskanteste Stelle des ganzen Meilensteins — deshalb steht sie am Ende und nicht am Anfang.

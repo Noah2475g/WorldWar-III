@@ -167,6 +167,22 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   - AK1: WENN ein Kartenmodus in der Auswahl steht, DANN SOLL für mindestens eine Provinz
     einer laufenden Partie eine andere Füllung als „unbekannt“ herauskommen.
 
+- **R-MAP-08 — Die Karte zeigt jedes Stück Land, das eine Provinz hat.** Eine Provinz besteht
+  aus **einem oder mehreren** Umrissen: Alaska und Kalifornien gehören zur selben Macht und
+  liegen nicht aneinander, eine Insel gehört zu ihrem Festland. Die ausgelieferte Kartendatei
+  führt sie alle.
+  - AK1: WENN eine Provinz gezeichnet wird, DANN SOLL die Summe ihrer gezeichneten Flächen
+    **mindestens 99 %** der Fläche ihrer Quellgeometrie betragen.
+  - AK2: WENN eine Provinz einen Ankerpunkt (`center`) hat, DANN SOLL dieser **in einer ihrer
+    gezeichneten Flächen** liegen — eine Beschriftung im offenen Meer benennt nichts.
+  - AK3: WENN eine Provinz gezeichnet wird, DANN SOLL kein Punkt außerhalb der Leinwand liegen.
+- **R-MAP-09 — Die Kartendatei ist an ihre Quelle gebunden.** `world.json` ist ein Erzeugnis;
+  `world-shapes.json` ist die Quelle. Ein Wächter vergleicht beide, statt der Datei zu glauben.
+  - AK1: WENN `world.json` erzeugt wurde, DANN SOLL ein Test es gegen `world-shapes.json`
+    nachrechnen und bei Abweichung fallen — mit Nennung der betroffenen Provinzen.
+  - AK2: WENN eine bekannte Landmarke (Stadt) auf die Karte projiziert wird, DANN SOLL sie in
+    einer Provinz liegen und nicht im Meer.
+
 ### 2.5 Wirtschaft (`R-ECON`)
 
 - **R-ECON-01 — Ressourcenmodell.** Ressourcen analog zum Original (Nahrung, Material/Holz,
@@ -337,6 +353,37 @@ beides: die tote Bausubstanz und die Textlastigkeit.
   - AK1: WENN eines dieser Dinge in der Oberfläche vorkommt, DANN SOLL eine Beschreibung
     dazu abrufbar sein, ohne die Ansicht zu verlassen.
   - AK2: WENN eine Beschreibung fehlt, DANN SOLL das ein Test melden, nicht der Spieler.
+
+#### Die Karte spricht mit (V1.3, aufgenommen 2026-09-07)
+
+Der Abnahme-Playtest hat einen Kartenfehler zutage gefördert und dabei eine zweite Sache
+sichtbar gemacht: die Oberfläche sagt fast alles in Wörtern. Der Symbolsatz existiert und ist
+gut — 27 Zeichen, gezeichnet statt geladen —, aber er steht an wenigen Stellen. Wo eine Macht
+gemeint ist, steht ihr Name; wo ein Gelände gemeint ist, steht das Wort.
+
+> **Zuerst die Lücken in dem, was schon zugesagt ist.** R-UI-10 nennt im Text den
+> **Beziehungszustand**, und dafür gibt es kein Symbol; R-UI-11 nennt die **Geländeart**, und
+> die steht als Wort da. Beide sind V1-Anforderungen. Ihr AK1 prüft weniger als ihr Satz
+> verspricht — R-UI-10/AK1 fragt nur nach Gebäude und Einheit —, deshalb ist die Lücke nie
+> aufgefallen. Das ist dieselbe Bauart wie AK-7 vor dem 2026-09-07: ein Kriterium, das einen
+> Teil des Versprechens prüft und den Rest als erfüllt aussehen lässt.
+
+- **R-UI-16 — Jede Macht hat ein Gesicht.** Wo eine Macht genannt wird — Diplomatie, Lage,
+  Protokoll, Provinzansicht —, steht ihre Farbe daneben, dieselbe, die sie auf der Karte hat.
+  Ein Name allein zwingt den Spieler, sich elf Zuordnungen zu merken, die die Karte längst
+  zeigt.
+  - AK1: WENN eine Macht in einer Liste oder Zeile erscheint, DANN SOLL ihre Kartenfarbe
+    unmittelbar daneben stehen.
+  - AK2: WENN die Farbe die einzige Unterscheidung wäre, DANN SOLL zusätzlich ein Text oder
+    ein Zeichen tragen — eine Farbe allein ist für rund acht Prozent der Männer keine.
+- **R-UI-17 — Die Oberfläche antwortet auf das, was der Spieler tut.** Ein Klick, der etwas
+  bewirkt, sieht anders aus als einer, der nichts bewirkt hat: die gewählte Provinz, die
+  laufende Zielwahl, der eben gegebene Befehl sind sichtbar, ohne dass man den Text liest.
+  - AK1: WENN eine Provinz gewählt ist, DANN SOLL sie auf der Karte und in der Ansicht
+    dasselbe Kennzeichen tragen.
+  - AK2: WENN ein Befehl angenommen wurde, DANN SOLL die Oberfläche das innerhalb eines
+    Bildes zeigen — nicht erst mit dem nächsten Spieltag.
+
 - **R-UI-12 — Die Karte trägt die Lage.** Provinznamen ab einer festgelegten Zoomstufe,
   Legende zum jeweiligen Kartenmodus, Hauptstadt und laufende Kämpfe als Symbol, Marschweg
   und Ziel der ausgewählten Armee als Linie.
@@ -387,6 +434,10 @@ scope:
   v2_only: []                       # vollständig gestrichen — derzeit keine ID
   later:                            # "<Meilenstein> — <Begründung>"; Achse: DECISIONS.md, 2026-09-05
     R-TIME-06:  "M15 — Vorspulen bis Ereignis erreicht die Oberfläche (T-M15-06)"
+    R-MAP-08:   "M19 — mehrteilige Provinzen; gefunden im Abnahme-Playtest am 2026-09-07 (T-M19-02)"
+    R-MAP-09:   "M19 — der Waechter, der den Fehler haette finden muessen (T-M19-01)"
+    R-UI-16:    "M20 — die Macht an ihrer Farbe erkennbar (T-M20-02)"
+    R-UI-17:    "M20 — Rueckmeldung auf eigene Handlungen (T-M20-04)"
     R-BAT-08:   "M15 — Feuerautomatik und Feuerleitung (T-M15-07)"
     R-TECH-01:  "M15 — Freischaltung nach Spieltag (T-M15-02)"
     R-TECH-02:  "M15 — Freischaltung in der Oberfläche (T-M15-03)"

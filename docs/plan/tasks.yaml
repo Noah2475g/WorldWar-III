@@ -42,6 +42,10 @@ milestones:
   - { id: M16, title: Verpackung als Programm }
   - { id: M17, title: Tiefe zwischen den Kriegen }
   - { id: M18, title: Spaeter }
+  # Aus dem Abnahme-Playtest vom 2026-09-07: Noah hat einen Kartenfehler gefunden, und die
+  # Untersuchung hat ihn als systematisch nachgewiesen (130 von 237 Provinzen).
+  - { id: M19, title: Die Karte zeigt, was da ist }
+  - { id: M20, title: Die Karte spricht mit }
 
 tasks:
   - id: T-M0-01
@@ -1507,3 +1511,113 @@ tasks:
     files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Dialogs.tsx]
     tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/IconRow.test.tsx]
     dod: "Sechs Befunde, jeder klein, keiner erfunden. (a) Rueckzug, Marschieren, Angriff und Teilen tragen keinen Tooltip mit Kosten, waehrend die Bauknoepfe es vormachen ('333 Material, 250 Geld - 1 Tag'). (b) Die Spalte Verbrauch der Wirtschaftsuebersicht steht dauerhaft auf 0, weil sie nur den Armeeunterhalt fuehrt - Bau- und Aushebungskosten erscheinen nirgends, und die Frage 'wohin gehen meine Rohstoffe' bleibt offen. (c) Das Vorspulen sagt nie, warum es anhaelt, obwohl R-TIME-03 die Begruendung ausdruecklich verlangt. (d) Flugplatz und Jagdflugzeug teilen dasselbe Symbol (icons.tsx:131 und :143). (e) Der Endedialog schreibt '1 Provinzen' und die Zahl widerspricht dem Satz darueber. (f) Die Debug-Ansicht zeigt einen leeren Zustands-Hash und zwei Ueberschriften ohne Inhalt, womit Playtest-Frage 48 mit ja zu beantworten ist statt mit nein - entweder sie fuellt sich oder sie verschwindet, ein drittes gibt es nicht"
+
+  # --- M19: Die Karte zeigt, was da ist (Playtest-Befund vom 2026-09-07) ---------------
+  # Gemeldet als "Ozean ueberlappt Land", gemessen als das Gegenteil: es fehlt. Ein Ausdruck
+  # in build-map.mjs behaelt je Provinz den Umriss mit den MEISTEN PUNKTEN statt der groessten
+  # Flaeche - 3156 von 3393 Umrissen verworfen, 130 von 237 Provinzen betroffen. Entwurf D21.
+
+  - id: T-M19-01
+    milestone: M19
+    title: Der Waechter, der es haette finden muessen
+    status: todo
+    deps: []
+    requirements: [R-MAP-09]
+    design: [D-21]
+    files: [packages/mapgen/src/project.ts, data/maps/landmarks.csv]
+    tests: [packages/mapgen/src/worldmap.geometry.test.ts]
+    dod: "Vier Pruefungen gegen world-shapes.json: (G2) je Provinz traegt die gezeichnete Flaeche mindestens 99 Prozent der Quellflaeche; (G1) der Ankerpunkt liegt in einer gezeichneten Flaeche; (G3) bekannte Staedte liegen an Land; (G4) kein Punkt ausserhalb der Leinwand. Sie sind ERWARTET ROT - heute fallen G2 mit 130 von 237, G1 mit 4, G3 mit 10 von 28, G4 mit Groenland - und werden als Uebergang gefuehrt, bis T-M19-02 sie gruen macht: ein neuer roter Waechter blockiert die Abnahmekette nicht (Lehre vom 2026-09-06). Die Zahlen stehen gemessen in docs/reports/map-geometry.md. Die Projektion wird aus build-map.mjs nach packages/mapgen VERSCHOBEN, nicht kopiert - zwei Tabellen der Wahrheit sind genau der Fehler, vor dem die Zeichentests warnen. Schliesst Befund N9 der Auswertung vom 2026-09-05"
+
+  - id: T-M19-02
+    milestone: M19
+    title: Eine Provinz darf mehrteilig sein
+    status: todo
+    deps: [T-M19-01]
+    requirements: [R-MAP-08]
+    design: [D-21]
+    files: [packages/core/src/state/types.ts, packages/core/src/map/validate.ts, scripts/build-map.mjs, apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts, data/maps/world.json]
+    tests: [packages/mapgen/src/worldmap.geometry.test.ts, apps/desktop/src/map/picking.test.ts]
+    dod: "polygon wird von einem Umriss zu einer Liste von Umrissen - nicht die bessere Auswahl, sondern keine Auswahl mehr. Billig ist das, weil polygon reine Zeichendatei ist: der Kern liest es ausserhalb von validateMap nicht, die KI nie, Spielstaende enthalten die Karte nicht - keine Migration, kein Golden Master, kein Schemaschritt. Die vier Pruefungen aus T-M19-01 werden gruen, OHNE dass ihre Schwelle weicher wird; ein Klick auf Alaska und einer auf Kalifornien waehlen dieselbe Provinz. Mindestens 99 Prozent der Landflaeche gezeichnet, pnpm verify gruen, und die Zeichenmessung aus T-M16-06 wiederholt und im Budget (16,7 ms p95) - plus 26 Prozent Punkte sind zu messen, nicht zu schaetzen. ACHTUNG, die naheliegende Reparatur ist ausdruecklich NICHT diese Aufgabe: der groesste Ring waehlt nach der Mercator-Projektion wieder Alaska, weil sie hohe Breiten aufblaeht (Alaska 84453 px2 gegen Weststaaten 58147 px2, bei echter Flaeche aber 268 gegen 329 Grad2)"
+
+  - id: T-M19-03
+    milestone: M19
+    title: Groenland bleibt auf der Leinwand
+    status: todo
+    deps: [T-M19-02]
+    requirements: [R-MAP-08]
+    design: [D-21]
+    files: [scripts/build-map.mjs, data/maps/world.json]
+    tests: [packages/mapgen/src/worldmap.geometry.test.ts]
+    dod: "796 Punkte Groenlands liegen oberhalb der Leinwand, bis y = -436; der 78-Grad-Beschnitt wird nie geklippt. Fertig, wenn kein Punkt ausserhalb 0..4000 mal 0..2400 liegt und die Kuestenlinie an der Beschnittkante sichtbar durchgehend bleibt, statt zu einer geraden Linie zusammengefaltet zu werden. Eigene Aufgabe, damit der kleine Fehler nicht in der grossen mitschwimmt und unbemerkt bleibt"
+
+  - id: T-M19-04
+    milestone: M19
+    title: Suedostaustralien ist ein Punkt
+    status: todo
+    deps: [T-M19-02]
+    requirements: [R-MAP-08]
+    design: [D-21]
+    files: [data/maps/world-provinces.csv, data/maps/world.json]
+    tests: [packages/mapgen/src/worldmap.geometry.test.ts]
+    dod: "AUS-SE Suedostaustralien ist eine spielbare Provinz von 39 px2, die ganz innerhalb von AUS-NE liegt - zusammengesetzt aus Australian Capital Territory, Jervis Bay und Macquarie-Insel. Quellendatenfehler, nicht Generatorfehler. Fertig, wenn AUS-SE entweder die Flaeche traegt, die ihr Name behauptet, oder verschwindet und ihre Einheiten an AUS-NE gehen. Ein drittes gibt es nicht: eine Provinz, die man nicht anklicken kann, ist keine. Dazu ein Waechter ueber die Mindestgroesse einer SPIELBAREN Provinz, der seine Schwelle nennt. ACHTUNG, diese Aufgabe ist als einzige in M19 KEINE reine Zeichenaenderung: AUS-SE steht in Australiens Startaufstellung, traegt 52097 Einwohner, zwei Vorkommen und drei Kanten. Sie zu streichen aendert die Wirtschaft einer Macht und den Graphen, also die Partie, also AK-1. Die sichere Richtung ist deshalb, ihr die Flaeche zu GEBEN statt sie zu streichen; wird doch gestrichen, gehoert ein neuer pnpm sim:fullgame dazu und die neue Zahl in den Bericht"
+
+  - id: T-M19-05
+    milestone: M19
+    title: Der Bericht sagt, was die Karte zeigt
+    status: todo
+    deps: [T-M19-02, T-M19-03, T-M19-04]
+    requirements: [R-MAP-09]
+    design: [D-21]
+    files: [docs/reports/map-geometry.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md]
+    tests: []
+    dod: "Vorher/nachher je Pruefung, gegen den Commit gestempelt - wie acceptance.md und packaging.md. Ohne ihn wandert die Zahl 14,2 Prozent als nackte Zahl durch Berichte und wird unterwegs zur Aussage. Dazu wird der Eintrag in PROBLEME.md vom 2026-09-03 berichtigt, der ueber genau diese vier Provinzen feststellte, die Karte zeichne richtig: er war fuer world-shapes.json wahr und fuer world.json falsch. Dazu ein BILDBELEG: der gemeldete Fehler war sichtbar, also gehoert ein Vorher/Nachher-Bild derselben Kartenstelle in den Bericht. Vier Zahlen, die gruen sind, sind kein Nachweis dafuer, dass Noah jetzt Kalifornien sieht"
+
+  # --- M20: Die Karte spricht mit (Noahs Wunsch vom 2026-09-07) ------------------------
+  # Der Baum enthaelt NULL Bilder; die ganze Bildsprache sind 27 gezeichnete Symbole in einer
+  # Datei. Fremde Grafik, img-Marken und eine dunkle Fassung sind maschinell gesperrt -
+  # deshalb lautet die Antwort auf die Frage nach der Art Bild: gezeichnete, aus dem eigenen
+  # Satz. Entwurf D22.
+
+  - id: T-M20-01
+    milestone: M20
+    title: Die zugesagten Symbole, die es nicht gibt
+    status: todo
+    deps: []
+    requirements: [R-UI-10, R-UI-11]
+    design: [D-22]
+    files: [apps/desktop/src/ui/icons.tsx, apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/icons.test.tsx]
+    dod: "R-UI-10 nennt im Text den Beziehungszustand, R-UI-11 die Gelaendeart - beides V1-Anforderungen, beides steht als deutsches Wort da. Unbemerkt blieb es, weil R-UI-10/AK1 nur nach Gebaeude und Einheit fragt: ein Kriterium, das einen Teil des Versprechens prueft und den Rest erfuellt aussehen laesst, dieselbe Bauart wie AK-7 vor dem 2026-09-07. Fertig, wenn der Vollstaendigkeitswaechter JEDEN im Anforderungstext genannten Satz gegen die Regeldateien prueft - also auch die sechs Beziehungszustaende und fuenf Gelaendearten - und wenn er gegen den heutigen Stand nachweislich rot gewesen waere"
+
+  - id: T-M20-02
+    milestone: M20
+    title: Jede Macht hat ein Gesicht
+    status: todo
+    deps: [T-M20-01]
+    requirements: [R-UI-16]
+    design: [D-22]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Die Kartenfarbe jeder Macht steht neben ihrem Namen - in Diplomatie, Lage, Protokoll und Provinzansicht. Sie steht im Zustand und wird ausserhalb der Karte nirgends benutzt; ein Name allein zwingt den Spieler, sich elf Zuordnungen zu merken, die die Karte laengst zeigt. AK2 ist kein Beiwerk: die Farbe ist nie das einzige Unterscheidungsmerkmal, denn rund acht Prozent der Maenner unterscheiden Rot und Gruen nicht, und die Spielerfarben enthalten beides"
+
+  - id: T-M20-03
+    milestone: M20
+    title: Was laengst berechnet wird, wird auch gezeigt
+    status: todo
+    deps: [T-M20-01]
+    requirements: [R-UI-10]
+    design: [D-22]
+    files: [apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Drei Stellen berechnen die Groesse, die ein Zeichen truege, und zeigen sie nicht: categoryOf klassifiziert jede Protokollzeile, dominantIcon kennt die staerkste Gattung jeder Armee, RESOURCE_ICONS steht in der Kopfleiste. Dieselbe Bauart wie die Playtest-Befunde vom 2026-09-06: gebaut, getestet, unerreichbar. Fertig, wenn eine Protokollzeile der Rubrik Kampf das Kampfzeichen traegt und eine Armeezeile das Zeichen ihrer staerksten Gattung. Der Markt bleibt ausgenommen, und das ist eine Entscheidung: ein option-Element kann kein SVG tragen, und es gegen eine eigene Liste zu tauschen waere Bedienbarkeit gegen Aussehen - der Verzicht steht mit Begruendung in DECISIONS.md"
+
+  - id: T-M20-04
+    milestone: M20
+    title: Die Oberflaeche antwortet
+    status: todo
+    deps: [T-M20-02, T-M20-03, T-M19-02]
+    requirements: [R-UI-17, R-UI-04]
+    design: [D-22]
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Der Teil von interaktiver, der keine Symbole meint - und hier liegt eine offene V1-Zusage: R-UI-04 verspricht Bewegungs- UND Kampfanimationen, und nur die Kampfhaelfte existiert. Fertig, wenn die gewaehlte Provinz ihr Kennzeichen auf der Karte traegt, eine marschierende Armee sich zwischen zwei Bildern bewegt, und BEIDES aufhoert, sobald motionAllowed falsch sagt. pnpm verify gruen und die Zeichenmessung wiederholt: 16,7 ms bei p95, gemessen statt geschaetzt. Die zwei gebauten Bremsen bleiben unangetastet - oberhalb der Tempogrenze und unter prefers-reduced-motion bewegt sich nichts. Steht zuletzt, weil sie die riskanteste Aufgabe ist: MapCanvas ist die am schlechtesten abgedeckte Datei der Oberflaeche"

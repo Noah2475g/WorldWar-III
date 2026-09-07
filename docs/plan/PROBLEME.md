@@ -1400,3 +1400,64 @@ etwas anderes bedeutet.
 
 **Status: geschlossen** durch T-M16-02. Die beiden Schnitte sind nicht gebaut und werden
 nicht als Aufgabe geführt — Begründung in `DECISIONS.md`, 2026-09-07.
+
+---
+
+## 2026-09-07 · Der Ozean überlappt kein Land — es fehlt einfach
+
+**Gemeldet** von Noah im Abnahme-Playtest: „im Westen der USA und Nordkanada ein Map-Problem:
+der Ozean überlappt mit dem Land."
+
+**Gemessen** wurde das Gegenteil. Es überlappt nichts: über alle 237 Provinzen gibt es vier
+Überlappungspaare, das schlimmste 39 px² groß. Der Renderer malt zuerst das Meer über die
+ganze Leinwand und dann die Provinzen darüber (`MapCanvas.tsx:119`) — **wo kein Polygon
+liegt, ist Meer.** Was Noah gesehen hat, war ein Loch.
+
+**Die Ursache ist ein Ausdruck** in `scripts/build-map.mjs:366-370`:
+
+```js
+p.geometry.coordinates.reduce((a, b) => (a[0].length >= b[0].length ? a : b))[0]
+```
+
+`a[0].length` ist die **Zahl der Punkte**, nicht die Fläche. Für „Westen der USA" wählt das
+Alaskas Küste (1521 Punkte) und wirft die zusammenhängenden Weststaaten weg (320 Punkte).
+Alaskas Fjorde brauchen viele Stützpunkte, Nevadas gerade Vermessungslinien wenige.
+
+| | |
+|---|---|
+| Umrisse verworfen | **3156 von 3393 (93 %)** |
+| Landfläche nie gezeichnet | **14,2 %** |
+| Provinzen betroffen | **130 von 237** |
+| schwerster Fall | `CAN-NORTH` behält **11,6 %** von sich — es zeichnet die Baffininsel und verliert das Festland |
+
+Los Angeles, Seattle, Denver, Phoenix, Tokio, Kuala Lumpur, Kopenhagen und Belfast liegen in
+`world.json` im offenen Meer. Bei vier Provinzen (`USA-WEST`, `CAN-NORTH`, `NZL`, `FJI`) sitzt
+zusätzlich die Beschriftung außerhalb der gezeichneten Form, weil `center` aus der **echten**
+Geometrie kommt und `polygon` aus der gewählten.
+
+**Die Falle in der naheliegenden Reparatur** — und sie ist der Grund, warum dieser Eintrag
+so ausführlich ist:
+
+| Ring | Punkte | echte Fläche | nach Mercator |
+|---|---|---|---|
+| Alaska | 1521 | 267,8 Grad² | **84 453 px²** |
+| Weststaaten | 320 | **328,6 Grad²** | 58 147 px² |
+
+„Nimm den größten Ring" klingt richtig und **behebt den gemeldeten Fehler nicht**, wenn man
+die Fläche nach der Projektion misst: Mercator bläht hohe Breiten mit 1/cos²(φ) auf, Alaska
+gewinnt wieder. Zwei unabhängige Messungen dieser Sitzung kamen deshalb zu entgegengesetzten
+Ergebnissen — die eine rechnete in Grad², die andere in Pixel². **Beide hatten recht.**
+
+**Warum es niemand gefunden hat:** kein Test im Projekt sagt etwas über `polygon`.
+`validateMap` prüft `polygon.length >= 3` und nichts weiter. Der eine Test, der geografische
+Lage prüft und sogar `USA-WEST` beim Namen nennt, zeigt auf `world-shapes.json` — die Quelle,
+wo die Geometrie vollständig und richtig ist. Das ist **Befund N9** der Auswertung vom
+2026-09-05 („kein Test bindet `world.json` an die Pipeline"), seither offen und ohne Besitzer.
+
+**Und ein Eintrag hier ist dadurch falsch geworden:** die Notiz vom 2026-09-03 stellte über
+genau diese Provinzen fest, „die Karte zeichnet richtig". Sie war für `world-shapes.json`
+wahr und für `world.json` falsch — geprüft wurde die Quelle, ausgeliefert wird das Erzeugnis.
+
+**Status: geplant, nicht gebaut.** M19 (T-M19-01 bis -05), Entwurf D21, Anforderungen
+R-MAP-08 und R-MAP-09. Die Reihenfolge ist Absicht: erst der Wächter mit seiner roten Zahl,
+dann die Reparatur, dann der Bildbeleg.
