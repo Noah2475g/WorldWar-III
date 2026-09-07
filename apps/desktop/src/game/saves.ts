@@ -6,6 +6,7 @@ import {
   shouldAutosave,
   type AutosaveState,
   type GameState,
+  type PublicView,
   type StoragePort,
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
@@ -136,6 +137,101 @@ export async function saveTo(
   label?: string,
 ): Promise<void> {
   await storage.write(name, serialise(state, label))
+}
+
+/**
+ * Die Zeitreihe der Partie (T-M25-01, R-UI-13, D25.1).
+ *
+ * Die Sicht kennt nur das Jetzt; jeder Verlauf — die Punktekurve, die Sparkline der
+ * Wirtschaft — braucht eine Aufzeichnung, und die ist Sache der Hülle, nicht des Kerns
+ * (Golden-Master-Schutz). Aufgezeichnet wird am Tageswechsel, am selben Effekt-Ort wie
+ * der Tagesbericht: je lebender bekannter Macht die Punkte, für die eigene Macht
+ * Bestände und Tagesbilanzen je Rohstoff, alles in Festkomma wie in der Sicht.
+ */
+export interface TimelineEntry {
+  /** Der Spieltag, der mit diesem Eintrag angebrochen ist. */
+  day: number
+  /** Punkte je Macht, die eigene eingeschlossen; Ausgeschiedene enden hier. */
+  scores: Record<string, number>
+  /** Eigene Bestände je Rohstoff, Festkomma. */
+  stock: Record<string, number>
+  /** Eigene Tagesbilanz je Rohstoff, Festkomma. */
+  balance: Record<string, number>
+}
+
+/**
+ * Der Deckel des Ringpuffers: ~400 Tage × 8 Mächte sind ein paar Kilobyte (D25.1).
+ * Eine Aufzeichnung ohne Deckel wäre ein Leck mit Absicht.
+ */
+export const TIMELINE_CAP = 400
+
+/**
+ * Ein Tageswechsel kommt in die Reihe — höchstens einmal je Spieltag.
+ *
+ * Ein zweiter Aufruf am selben Tag (Vorspulen läuft in Häppchen, und jedes Häppchen
+ * kann denselben Tagesbericht noch einmal anfassen) gibt die Reihe **unverändert
+ * zurück** — dieselbe Referenz, damit ein setState darauf nichts umsonst zeichnet.
+ */
+export function recordTimelineDay(
+  timeline: readonly TimelineEntry[],
+  view: PublicView,
+  ticksPerDay: number,
+): readonly TimelineEntry[] {
+  const day = Math.floor(view.tick / ticksPerDay) + 1
+  if (timeline[timeline.length - 1]?.day === day) return timeline
+
+  const scores: Record<string, number> = { [view.playerId]: view.self.score }
+  for (const other of view.others) {
+    if (other.alive) scores[other.id] = other.score
+  }
+
+  const stock: Record<string, number> = {}
+  const balance: Record<string, number> = {}
+  for (const [key, flow] of Object.entries(view.self.economy ?? {})) {
+    stock[key] = flow.stock
+    balance[key] = flow.balance
+  }
+
+  const next = [...timeline, { day, scores, stock, balance }]
+  return next.length > TIMELINE_CAP ? next.slice(next.length - TIMELINE_CAP) : next
+}
+
+/**
+ * Der Speicherschlüssel der Zeitreihe eines Slots — ein Nachbar, kein Teil des Stands.
+ *
+ * Als Präfix, nicht als Suffix: wer Stände über ihren Namensanfang aufzählt
+ * (`autosave-…`, `stand-…`), darf die Zeitreihe dabei nicht mitzählen.
+ */
+export function timelineName(slotName: string): string {
+  return `zeitreihe.${slotName}`
+}
+
+export async function saveTimeline(
+  storage: StoragePort,
+  slotName: string,
+  timeline: readonly TimelineEntry[],
+): Promise<void> {
+  await storage.write(timelineName(slotName), JSON.stringify({ version: 1, entries: timeline }))
+}
+
+/**
+ * Die Zeitreihe eines Slots — best effort, niemals ein Fehler.
+ *
+ * Ein alter Stand hat keine; ein unlesbarer Schlüssel ist dasselbe wie keiner. In
+ * beiden Fällen beginnt die Kurve ehrlich am Ladetag, und der Leerzustand des
+ * Diagramms sagt das (T-M25-02) — eine erfundene Vergangenheit wäre schlimmer.
+ */
+export async function loadTimeline(storage: StoragePort, slotName: string): Promise<readonly TimelineEntry[]> {
+  try {
+    const raw = JSON.parse(await storage.read(timelineName(slotName))) as { entries?: unknown }
+    if (!Array.isArray(raw.entries)) return []
+    return raw.entries.filter(
+      (entry): entry is TimelineEntry =>
+        typeof entry === 'object' && entry !== null && typeof (entry as TimelineEntry).day === 'number',
+    )
+  } catch {
+    return []
+  }
 }
 
 /**

@@ -85,8 +85,20 @@ import {
   type TutorialState,
   type TutorialTrigger,
 } from './game/tutorial.ts'
-import { autosaveDue, latestSlot, listSlots, loadFrom, saveTo, type LatestSave, type SlotInfo } from './game/saves.ts'
-import { writeAutosave, HASH_OMIT_KEYS, type AutosaveState } from '@worldwar/core'
+import {
+  autosaveDue,
+  latestSlot,
+  listSlots,
+  loadFrom,
+  loadTimeline,
+  recordTimelineDay,
+  saveTimeline,
+  saveTo,
+  type LatestSave,
+  type SlotInfo,
+  type TimelineEntry,
+} from './game/saves.ts'
+import { autosaveName, writeAutosave, HASH_OMIT_KEYS, type AutosaveState } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 
 /**
@@ -308,6 +320,15 @@ export function App(props: AppProps) {
    */
   const [dayBodies, setDayBodies] = useState<ReadonlyMap<number, readonly string[]>>(new Map())
   const reportedUpTo = useRef(0)
+
+  /**
+   * Die Zeitreihe der Partie (T-M25-01, R-UI-13, D25.1): am Tageswechsel — demselben
+   * Effekt-Ort wie der Tagesbericht — je bekannter Macht die Punkte und für die eigene
+   * Macht Bestände und Bilanzen. Reiner Oberflächenzustand mit Deckel; sie wandert je
+   * Spielstand-Slot in den Speicher mit und beginnt bei einem alten Stand ehrlich leer.
+   */
+  const [timeline, setTimeline] = useState<readonly TimelineEntry[]>([])
+
   useEffect(() => {
     if (!state || !view) return
     const own = eventsFor(state.eventLog, 'p1')
@@ -320,6 +341,9 @@ export function App(props: AppProps) {
     reportedUpTo.current = own.length
     const reports = fresh.filter((event) => event.type === 'DAY_REPORT')
     if (reports.length === 0) return
+
+    // Ein Tageswechsel, ein Eintrag: recordTimelineDay lässt denselben Tag unverändert.
+    setTimeline((previous) => recordTimelineDay(previous, view, ticksPerDay))
 
     setDayBodies((previous) => {
       const next = new Map(previous)
@@ -408,15 +432,19 @@ export function App(props: AppProps) {
     if (!autosaveDue(autosave, state, at, ui.settings.autosaveMinutes, ticksPerDay)) return
 
     writingAutosave.current = true
+    // Der Slot, in den writeAutosave gleich schreibt — die Zeitreihe wandert als
+    // Nachbarschlüssel mit (T-M25-01). Best effort: scheitert sie, bleibt der Stand gültig.
+    const slotName = autosaveName(autosave.nextSlot)
     void writeAutosave(storage, autosave, state, at)
-      .then((next) => {
+      .then(async (next) => {
+        await saveTimeline(storage, slotName, timeline).catch(() => undefined)
         setAutosave(next)
         setSaveNotice(t('saves.autosaved'))
       })
       .finally(() => {
         writingAutosave.current = false
       })
-  }, [state, autosave, ui.settings.autosaveMinutes, ticksPerDay, storage, now])
+  }, [state, autosave, ui.settings.autosaveMinutes, ticksPerDay, storage, now, timeline])
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
@@ -893,6 +921,9 @@ export function App(props: AppProps) {
           // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
           pendingRef.current = []
           setPendingCommands([])
+          // Die Zeitreihe des Slots — oder ehrlich leer: ein alter Stand ohne
+          // Aufzeichnung beginnt die Kurve am Ladetag (T-M25-01, D25.1).
+          setTimeline(await loadTimeline(storage, name))
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -921,6 +952,8 @@ export function App(props: AppProps) {
     // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
     pendingRef.current = []
     setPendingCommands([])
+    // Die Aufzeichnung auch: eine neue Partie beginnt ohne Vergangenheit (T-M25-01).
+    setTimeline([])
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1374,6 +1407,9 @@ export function App(props: AppProps) {
           notice={saveNotice}
           onSave={(name) => {
             void saveTo(storage, name, state).then(async () => {
+              // Die Zeitreihe wandert je Slot mit (T-M25-01) — best effort: ein
+              // Fehlschlag hier macht den gespeicherten Stand nicht ungültig.
+              await saveTimeline(storage, name, timeline).catch(() => undefined)
               setSaveNotice(t('saves.saved'))
               setSlots(await listSlots(storage, ticksPerDay))
             })

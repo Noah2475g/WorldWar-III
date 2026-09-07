@@ -1850,7 +1850,7 @@ tasks:
   - id: T-M25-01
     milestone: M25
     title: Die Partie bekommt ein Gedaechtnis - Zeitreihe je Spieltag
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-13]
     design: [D-25]
