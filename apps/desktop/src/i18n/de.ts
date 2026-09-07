@@ -420,6 +420,7 @@ export const de = {
     resources: 'Rohstoffe',
     morale: 'Moral',
     strength: 'Truppenstärke',
+    relations: 'Beziehungen',
   },
 
   newGame: {
@@ -657,6 +658,8 @@ export const de = {
       resources: 'Wo etwas im Boden liegt. Je kräftiger das Grün, desto reicher die Provinz.',
       morale: 'Wie treu eine Provinz ist. Rot heißt aufstandsgefährdet, grün heißt ruhig.',
       strength: 'Wo Truppen stehen — so weit Sie sehen können. Je dunkler, desto stärker besetzt.',
+      relations:
+        'Wie Sie zu den Mächten stehen. Gold ist Ihres, Grün verbündet, Leinen in Frieden, der rote Ton im Krieg — und Grau bedeutet: Sie wissen es nicht.',
     },
     terrain: {
       plains: 'Offenes Land: schneller Marsch, wenig Deckung.',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CONTRAST_PAIRS,
   PLAYER_COLORS,
+  RELATION_COLORS,
   TOKENS,
   contrastRatio,
   deltaE,
@@ -91,6 +92,27 @@ describe('R-UI-02 Kontrast', () => {
         const [nameB, b] = colors[j]!
         expect(deltaE(a, b), `${nameA} gegen ${nameB} zu aehnlich`).toBeGreaterThan(10)
       }
+    }
+  })
+
+  it('unterscheidet die fuenf Beziehungsfarben voneinander (T-M26-03)', () => {
+    // Dieselbe Schwelle wie bei den Spielerfarben: der Beziehungsmodus faerbt die
+    // ganze Welt aus genau diesen fuenf, und zwei aehnliche Zustaende auf einer Karte
+    // sind schlimmer als einer, der falsch aussieht.
+    const colors = Object.entries(RELATION_COLORS)
+    for (let i = 0; i < colors.length; i++) {
+      for (let j = i + 1; j < colors.length; j++) {
+        const [nameA, a] = colors[i]!
+        const [nameB, b] = colors[j]!
+        expect(deltaE(a, b), `${nameA} gegen ${nameB} zu aehnlich`).toBeGreaterThan(10)
+      }
+    }
+  })
+
+  it('haelt Kartenschrift auf jeder Beziehungsfarbe lesbar (T-M26-03)', () => {
+    // Die Provinznamen sitzen im Beziehungsmodus auf genau diesen Fuellungen.
+    for (const [name, color] of Object.entries(RELATION_COLORS)) {
+      expect(contrastRatio(TOKENS.onPlayer, color), `Kartenschrift auf ${name}`).toBeGreaterThanOrEqual(AA_TEXT)
     }
   })
 

@@ -36,7 +36,7 @@ import { t } from './i18n/text.ts'
 import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon } from './map/markers.ts'
-import { strengthByProvince } from './map/modes.ts'
+import { relationKindFor, strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
 import {
@@ -475,6 +475,10 @@ export function App(props: AppProps) {
           // Nur was der Spieler sieht: eine Provinz hinter dem Nebel bleibt unbekannt,
           // statt als "keine Truppen" zu erscheinen.
           strength: seen === undefined ? undefined : (strengths[province.id] ?? 0),
+          // Der Beziehungsmodus (T-M26-03): aus dem gemerkten Eigentuemer und der
+          // EIGENEN Beziehungslage — auch ein veralteter Eigentuemer traegt die
+          // heutige Beziehung, denn die kennt man von sich selbst.
+          relation: seen === undefined ? undefined : relationKindFor(seen.owner, 'p1', view?.relations ?? {}),
           polygons: province.polygons,
           bounds: boundsOf(province.polygons),
         }

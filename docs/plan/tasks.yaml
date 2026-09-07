@@ -1918,12 +1918,12 @@ tasks:
   - id: T-M26-03
     milestone: M26
     title: Der fuenfte Kartenmodus - Beziehungen
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-06]
     design: [D-25]
-    files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts]
+    files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/keyboard.test.ts]
     dod: "Vorschlag E: die Diplomatie wohnt nur in einer Tabelle, obwohl PublicView.relations je Macht Zustand und Dauer fuehrt. Fertig, wenn MAP_MODES einen Modus relations kennt (eigen / verbuendet / Frieden / Krieg / unbekannt faerben die Welt aus eigener Sicht), die Legende alle fuenf nennt, die Taste M ihn im Zyklus erreicht, die fuenf Farben den bestehenden Farbabstandstest (Delta E) bestehen und ein Test die Farbwahl je Beziehungszustand bindet. Die Diplomatie-Tabelle bleibt unveraendert bestehen"
 
   # --- M27: Das Gefecht zeigt sich (LEVEL-UP-2-GRAFIK.md, Vorschlag D) ---

@@ -1,14 +1,14 @@
-import { TOKENS, PLAYER_COLORS } from '../ui/tokens.ts'
+import { TOKENS, PLAYER_COLORS, RELATION_COLORS } from '../ui/tokens.ts'
 
 /**
  * What the colours on the map mean (T-M10-03b, R-MAP-06).
  *
- * Four ways of looking at the same world. The mode decides only the fill of a
+ * Five ways of looking at the same world. The mode decides only the fill of a
  * province — borders, armies and labels are the same in all of them, so switching
  * modes never costs the player their bearings.
  */
 
-export const MAP_MODES = ['political', 'resources', 'morale', 'strength'] as const
+export const MAP_MODES = ['political', 'resources', 'morale', 'strength', 'relations'] as const
 export type MapMode = (typeof MAP_MODES)[number]
 
 export const MAP_MODE_NAMES: Record<MapMode, string> = {
@@ -16,6 +16,46 @@ export const MAP_MODE_NAMES: Record<MapMode, string> = {
   resources: 'Rohstoffe',
   morale: 'Moral',
   strength: 'Truppenstärke',
+  relations: 'Beziehungen',
+}
+
+/**
+ * Der Beziehungszustand einer Provinz aus EIGENER Sicht (T-M26-03, D25.5).
+ *
+ * Kein fuenfter Wert fuer "unbekannt": das ist `undefined`, wie ueberall auf der
+ * Karte — keine Auskunft ist ein eigener Zustand und keine Behauptung.
+ */
+export type RelationKind = 'self' | 'ally' | 'peace' | 'war'
+
+/**
+ * Leitet den Beziehungszustand aus Eigentuemer und eigener Beziehungslage ab.
+ *
+ * - `owner === undefined`: die Provinz selbst ist unbekannt (Nebel) → unbekannt.
+ * - `owner === null`: herrenloses Land liegt mit niemandem im Streit → Frieden.
+ * - Waffenstillstand zaehlt als Frieden: es wird nicht geschossen.
+ * - Eine Macht ohne bekannte Beziehung bleibt unbekannt — Frieden zu behaupten,
+ *   den man nicht kennt, waere gelogen.
+ */
+export function relationKindFor(
+  owner: string | null | undefined,
+  playerId: string,
+  relations: Readonly<Record<string, { state: 'peace' | 'war' | 'truce' | 'alliance' }>>,
+): RelationKind | undefined {
+  if (owner === undefined) return undefined
+  if (owner === null) return 'peace'
+  if (owner === playerId) return 'self'
+
+  switch (relations[owner]?.state) {
+    case 'alliance':
+      return 'ally'
+    case 'war':
+      return 'war'
+    case 'peace':
+    case 'truce':
+      return 'peace'
+    default:
+      return undefined
+  }
 }
 
 export interface ShadedProvince {
@@ -35,6 +75,8 @@ export interface ShadedProvince {
    * shaded all 237 provinces in the same grey and told the player nothing at all.
    */
   strength?: number | undefined
+  /** Beziehung des Eigentuemers zum Spieler, aus dessen Sicht (T-M26-03). */
+  relation?: RelationKind | undefined
 }
 
 const PLAYER_FILL = Object.values(PLAYER_COLORS)
@@ -117,6 +159,11 @@ export function fillFor(province: ShadedProvince, mode: MapMode): string {
       // Zwanzig Einheiten sind ein voller Stapel (Stapel-Deckel, D6); darueber
       // unterscheidet die Faerbung nichts mehr.
       return mixColors(TOKENS.paper, TOKENS.ink, province.strength / STRENGTH_FULL)
+
+    case 'relations':
+      // Fuenf Zustaende, fuenf Farben — und "unbekannt" ist die fuenfte, kein Grau
+      // aus Verlegenheit (D25.5).
+      return RELATION_COLORS[province.relation ?? 'unknown']
   }
 }
 
@@ -142,6 +189,14 @@ export function legendFor(mode: MapMode): { label: string; color: string }[] {
       return [
         { label: 'leer', color: TOKENS.paper },
         { label: 'stark besetzt', color: TOKENS.ink },
+      ]
+    case 'relations':
+      return [
+        { label: 'eigen', color: RELATION_COLORS.self },
+        { label: 'verbündet', color: RELATION_COLORS.ally },
+        { label: 'Frieden', color: RELATION_COLORS.peace },
+        { label: 'Krieg', color: RELATION_COLORS.war },
+        { label: 'unbekannt', color: RELATION_COLORS.unknown },
       ]
   }
 }

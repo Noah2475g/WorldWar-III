@@ -3751,9 +3751,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D25.5
 - **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/src/ui/Legend.tsx`,
-  `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/App.tsx`
+  *(die App leitet je Provinz den Beziehungszustand aus Eigentümer und eigener
+  Beziehungslage ab und reicht ihn als `relation` an die Schattierung; die Legende
+  selbst blieb unverändert — sie liest `legendFor` wie bisher)*
 - **Tests zuerst:** die Farbwahl je Beziehungszustand gebunden; die fünf Farben
-  bestehen den ΔE-Farbabstandstest.
+  bestehen den ΔE-Farbabstandstest; der M-Zyklus erreicht den fünften Modus
+  (`keyboard.test.ts`).
 - **Fertig wenn:** `MAP_MODES` einen Modus `relations` kennt (eigen / verbündet /
   Frieden / Krieg / unbekannt aus eigener Sicht), die Legende alle fünf nennt und die
   Taste M ihn im Zyklus erreicht. Die Diplomatie-Tabelle bleibt.
