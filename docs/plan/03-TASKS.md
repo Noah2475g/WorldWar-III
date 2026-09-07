@@ -3513,8 +3513,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-07
 - **Entwurf:** D24.6
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/actions.ts`
-- **Tests zuerst:** der Wächter (fällt heute): jeder Text aus `de.ts` und jeder
+- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/actions.ts`,
+  `packages/ai/src/economy.ts`, `packages/ai/src/military.ts`
+- **Tests zuerst:** der Wächter (fällt heute; `test/guards/text-keys.test.ts`, dazu
+  `Dialogs.test.tsx`): jeder Text aus `de.ts` und jeder
   Prosa-String aus `actions.ts` ohne ae/oe/ue-Ersatzschrift; Ausnahmen über eine
   Musterliste („Neue", „Feuer"), nicht über Einzelfälle.
 - **Fertig wenn:** alle deutschen Anzeigetexte echte Umlaute tragen, Wächter grün.

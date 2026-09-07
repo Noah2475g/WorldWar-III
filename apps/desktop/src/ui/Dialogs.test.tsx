@@ -92,13 +92,13 @@ describe('R-GAME-02/AK1 Der Startdialog erklaert die Siegbedingung', () => {
 
   it('nennt bei der Eroberung, dass alles gehoeren muss', () => {
     zeige('conquest')
-    expect(screen.getByText(/alles gehoert/)).toBeTruthy()
+    expect(screen.getByText(/alles gehört/)).toBeTruthy()
   })
 
   it('wechselt den Satz mit der Auswahl, statt einen festen zu zeigen', () => {
     // Ein Hinweis, der sich nicht aendert, ist keine Erklaerung der Wahl.
     zeige('points')
-    expect(screen.queryByText(/alles gehoert/)).toBeNull()
+    expect(screen.queryByText(/alles gehört/)).toBeNull()
     cleanup()
     zeige('conquest')
     expect(screen.queryByText(/70 % aller Siegpunkte/)).toBeNull()

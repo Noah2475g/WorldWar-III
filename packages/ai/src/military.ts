@@ -108,7 +108,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
       eigeneEinheiten.every((stack) => (context.rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
     if (nurFernwaffen && hasTargetInRange(context, army)) {
       explanations.push({
-        action: `${army.id} haelt Stellung in ${army.provinceId}`,
+        action: `${army.id} hält Stellung in ${army.provinceId}`,
         reason: 'Fernwaffen mit Ziel in Reichweite — Feuer ohne Gegenschlag',
         score: 700,
         alternative: { action: 'in den Nahkampf marschieren', score: 300 },

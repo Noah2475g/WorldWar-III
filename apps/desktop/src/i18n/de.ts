@@ -203,13 +203,13 @@ export const de = {
     // teuersten Entscheidungen des Spiels sind. Die Zahlen kommen aus den Regeln, nie
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
-    stopHint: 'Die Armee haelt an, wo sie gerade steht.',
+    stopHint: 'Die Armee hält an, wo sie gerade steht.',
     stanceAggressiveHint: 'Greift von sich aus an, was in Reichweite kommt.',
-    stanceDefensiveHint: 'Haelt die Stellung und greift nicht von sich aus an.',
-    stanceRetreatHint: 'Kostet {{loss}} % der Staerke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    stanceDefensiveHint: 'Hält die Stellung und greift nicht von sich aus an.',
+    stanceRetreatHint: 'Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',
-    splitHint: 'Teilt die Haelfte ab: {{units}}.',
-    splitHintNone: 'Teilt die Haelfte ab — dafuer braucht es mindestens zwei Einheiten.',
+    splitHint: 'Teilt die Hälfte ab: {{units}}.',
+    splitHintNone: 'Teilt die Hälfte ab — dafür braucht es mindestens zwei Einheiten.',
     bombardHint: 'Reichweite {{range}}, danach eine Stunde keine Bewegung.',
     holdFireHint: 'Steht die Armee und ist ein Kriegsgegner in Reichweite, feuert sie von selbst.',
     empty: 'Die Armee hat keine Einheiten.',
@@ -370,8 +370,8 @@ export const de = {
     // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
     // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
     // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
-    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehoeren.',
-    victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehoert — 100 % der Siegpunkte.',
+    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.',
+    victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehört — 100 % der Siegpunkte.',
     map: 'Karte',
     start: 'Partie beginnen',
     aiBonus: 'KI-Bonus: {{percent}} %',
@@ -596,7 +596,7 @@ export const de = {
 
   error: {
     title: 'Das Spiel ist auf einen Fehler gelaufen',
-    body: 'Etwas in der Oberflaeche hat aufgegeben. Die Partie selbst ist davon nicht betroffen — der letzte automatische Spielstand liegt weiterhin in der Liste.',
+    body: 'Etwas in der Oberfläche hat aufgegeben. Die Partie selbst ist davon nicht betroffen — der letzte automatische Spielstand liegt weiterhin in der Liste.',
     hint: 'Bitte den Text oben weitergeben, wenn der Fehler wiederkehrt. Er wird nirgendwohin gesendet.',
     reload: 'Neu laden',
   },
@@ -611,7 +611,7 @@ export const de = {
     won: 'Sie haben gewonnen.',
     newGame: 'Neue Partie',
     lost: '{{nation}} hat gewonnen.',
-    eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie laeuft ohne Sie weiter.',
+    eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie läuft ohne Sie weiter.',
     // Vier Zeilen statt einer, weil in dem einen Satz zwei Zahlen stehen, die beide bei
     // eins in die Einzahl gehen (T-M12-10). "1 Provinzen" war der gemeldete Befund,
     // "1 Punkte" derselbe Fehler daneben.

@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { de } from '../../apps/desktop/src/i18n/de'
 import { hasKey } from '../../apps/desktop/src/i18n/text'
-import { productionFiles } from './scan'
+import { ROOT, productionFiles } from './scan'
 
 /**
  * Jeder Schluessel, den der Code abfragt, existiert auch (R-UI-07, Playtest 2026-09-06).
@@ -71,5 +73,93 @@ describe('R-UI-07 Jeder abgefragte Textschluessel existiert', () => {
     // Damit die Pruefung nicht bedeutungslos wird, sobald die echten Pfade stimmen.
     expect(hasKey('province.cancelBuild')).toBe(false)
     expect(hasKey('actions.cancelBuild')).toBe(true)
+  })
+})
+
+/**
+ * Keine Umlaut-Ersatzschrift in Spielertexten (T-M23-01, R-UI-07, Befund V2-10).
+ *
+ * Die tasks.yaml-Regel "ohne Umlaute" ist in Spielertexte durchgesickert: Tooltips
+ * sagten "haelt", "Staerke", "Haelfte". Die Regel hier ist eine WORT-Regel, keine
+ * Zeichenregel: `ae`/`oe`/`ue` ist nur dann Ersatzschrift, wenn davor ein Konsonant
+ * steht oder das Wort damit beginnt — "bauen", "Feuer", "Neue", "genauer" tragen den
+ * Zwielaut zu Recht (Vokal davor) und bleiben unangetastet. Was trotzdem echt ist
+ * ("zuerst" = zu + erst), steht auf einer MUSTERLISTE, nicht als Einzelfall im Test.
+ */
+
+/** Ersatzschrift: ae/oe/ue am Wortanfang oder nach einem Konsonanten. */
+const ERSATZSCHRIFT = /(^|[^aeouäöüq])(ae|oe|ue)/i
+
+/** Echte Vorkommen nach Konsonant — Fugen und Fremdwoerter, als Muster. */
+const AUSNAHMEN: readonly RegExp[] = [
+  /zuerst/i, // zu + erst
+  /queue/i, // Fremdwort
+  /(aktu|eventu|manu|individu|punktu)ell/i, // lateinisch -uell
+  /statue/i, // Statu-e
+]
+
+/** Die Woerter eines Textes, die nach der Regel Ersatzschrift tragen. */
+function ersatzWoerter(text: string): string[] {
+  return text
+    .split(/\s+/)
+    .map((wort) => wort.replace(/[^A-Za-zÄÖÜäöüß]/g, ''))
+    .filter((wort) => ERSATZSCHRIFT.test(wort) && !AUSNAHMEN.some((muster) => muster.test(wort)))
+}
+
+/** Alle Textwerte des Katalogs, mit Pfad — Kommentare der Datei zaehlen nicht. */
+function katalogTexte(node: unknown = de, pfad = 'de'): { pfad: string; text: string }[] {
+  if (typeof node === 'string') return [{ pfad, text: node }]
+  if (typeof node !== 'object' || node === null) return []
+  return Object.entries(node).flatMap(([key, value]) => katalogTexte(value, `${pfad}.${key}`))
+}
+
+/**
+ * Die Zeichenketten-Literale einer Quelldatei, ohne Kommentare und ohne `${…}`-Teile.
+ * Kommentare duerfen Ersatzschrift tragen (Bezeichner-Regel des Hauses); was in einem
+ * Literal steht, kann den Spieler erreichen.
+ */
+function literaleIn(datei: string): string[] {
+  const quelltext = readFileSync(datei, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n')
+    .map((zeile) => zeile.replace(/(^|[^:])\/\/.*$/, '$1'))
+    .join('\n')
+  const literale: string[] = []
+  for (const treffer of quelltext.matchAll(/(["'`])((?:\\.|(?!\1)[^\\])*)\1/g)) {
+    literale.push(treffer[2]!.replace(/\$\{[^}]*\}/g, ' '))
+  }
+  return literale
+}
+
+describe('R-UI-07 Keine Umlaut-Ersatzschrift in Spielertexten', () => {
+  it('prueft ueberhaupt Texte — sonst bewacht der Waechter das Nichts', () => {
+    expect(katalogTexte().length).toBeGreaterThan(100)
+    expect(literaleIn(join(ROOT, 'apps/desktop/src/game/actions.ts')).length).toBeGreaterThan(10)
+  })
+
+  it('findet in de.ts keine Ersatzschrift', () => {
+    const funde = katalogTexte()
+      .flatMap(({ pfad, text }) => ersatzWoerter(text).map((wort) => `${pfad}: ${wort}`))
+    expect(funde, `Ersatzschrift in Spielertexten:\n${funde.join('\n')}`).toEqual([])
+  })
+
+  it('findet in den Prosa-Strings der actions.ts keine Ersatzschrift', () => {
+    const funde = literaleIn(join(ROOT, 'apps/desktop/src/game/actions.ts')).flatMap((literal) =>
+      ersatzWoerter(literal),
+    )
+    expect(funde, `Ersatzschrift in actions.ts:\n${funde.join('\n')}`).toEqual([])
+  })
+
+  it('faellt gegen die Tooltips, wie sie vor T-M23-01 standen', () => {
+    // Der Nachweis, dass die Regel beisst — die drei Beispiele des Befunds V2-10.
+    expect(ersatzWoerter('Die Armee haelt an, wo sie gerade steht.')).toEqual(['haelt'])
+    expect(ersatzWoerter('Kostet 10 % der Staerke.')).toEqual(['Staerke'])
+    expect(ersatzWoerter('Teilt die Haelfte ab — dafuer braucht es zwei.')).toEqual(['Haelfte', 'dafuer'])
+    expect(ersatzWoerter('Uebersicht oeffnen')).toEqual(['Uebersicht', 'oeffnen'])
+  })
+
+  it('haelt echte Zwielaute und die Musterliste nicht fuer Ersatzschrift', () => {
+    expect(ersatzWoerter('Neue Partie: bauen dauert, Feuer frei, genauer im Blauen.')).toEqual([])
+    expect(ersatzWoerter('Erklären Sie zuerst den Krieg — aktuell steht die Queue.')).toEqual([])
   })
 })

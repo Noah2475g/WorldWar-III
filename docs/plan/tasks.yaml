@@ -1775,12 +1775,12 @@ tasks:
   - id: T-M23-01
     milestone: M23
     title: Umlaute kehren zurueck, ein Waechter haelt die Tuer
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-07]
     design: [D-24]
-    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/game/actions.ts]
-    tests: [test/guards/text-keys.test.ts]
+    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/game/actions.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts]
+    tests: [test/guards/text-keys.test.ts, apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "Befund V2-10: Tooltips sagen haelt, Staerke, Haelfte; das Debug-Panel fuer, naechste - die tasks.yaml-Regel ohne Umlaute ist in Spielertexte durchgesickert. Fertig, wenn alle deutschen Anzeigetexte echte Umlaute tragen und ein Waechter jeden Text aus de.ts und jeden Prosa-String der actions.ts auf ae/oe/ue-Ersatzschrift prueft (Ausnahmen wie Neue oder Feuer ueber eine Musterliste, nicht ueber Einzelfaelle). Der Waechter faellt gegen den heutigen Stand"
 
   - id: T-M23-02
