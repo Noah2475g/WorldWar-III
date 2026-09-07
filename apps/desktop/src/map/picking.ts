@@ -87,12 +87,29 @@ export function pointInPolygon(
   return inside
 }
 
+/** Shoelace area of a ring. Only needed to break a tie between overlapping outlines. */
+function ringArea(ring: Ring): number {
+  let twice = 0
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i]!
+    const b = ring[j]!
+    twice += b[0] * a[1] - a[0] * b[1]
+  }
+  return Math.abs(twice) / 2
+}
+
 /**
  * The province under a screen point, or null.
  *
- * Provinces are tested in the order given and the first hit wins. Overlaps do not
- * happen on a merged map, so the order only decides ties along a shared border — and
- * for those any answer is right as long as it is always the same one.
+ * Where two outlines cover the same point, the **smaller** one wins (T-M19-04). That is
+ * not a tie-break for its own sake: on this map exactly one point in 196 196 is claimed
+ * twice, and it is an enclave — the Australian Capital Territory belongs to `AUS-SE`
+ * and lies inside New South Wales, which belongs to `AUS-NE`, because the source
+ * outline of the larger province has no hole cut for the smaller one.
+ *
+ * The order of the list used to decide, and `AUS-NE` comes first, so `AUS-SE` could
+ * only be clicked on Macquarie Island — five pixels, 331 of them south of the country
+ * it belongs to. A province that cannot be clicked where it is, is not one.
  */
 export function pickProvince(
   screen: Point,
@@ -101,15 +118,29 @@ export function pickProvince(
 ): string | null {
   const point = toMap(screen, view)
 
+  let bestId: string | null = null
+  let bestArea = Infinity
+
   for (const province of provinces) {
     const bounds = province.bounds ?? boundsOf(province.polygons)
     if (point.x < bounds.minX || point.x > bounds.maxX) continue
     if (point.y < bounds.minY || point.y > bounds.maxY) continue
-    // Any piece counts: a click on Alaska and a click on California both select the
-    // western United States, because both are the western United States.
-    if (province.polygons.some((ring) => pointInPolygon(point, ring))) return province.id
+
+    for (const ring of province.polygons) {
+      // Any piece counts: a click on Alaska and a click on California both select the
+      // western United States, because both are the western United States.
+      if (!pointInPolygon(point, ring)) continue
+      const area = ringArea(ring)
+      // Strictly smaller, so equal outlines keep the order they were given in — a tie
+      // along a shared border may be decided either way, but always the same way.
+      if (area < bestArea) {
+        bestArea = area
+        bestId = province.id
+      }
+      break
+    }
   }
-  return null
+  return bestId
 }
 
 export interface ViewLimits {

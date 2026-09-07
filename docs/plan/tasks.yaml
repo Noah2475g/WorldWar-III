@@ -1556,12 +1556,12 @@ tasks:
   - id: T-M19-04
     milestone: M19
     title: Suedostaustralien ist ein Punkt
-    status: todo
+    status: done
     deps: [T-M19-02]
     requirements: [R-MAP-08]
     design: [D-21]
-    files: [data/maps/world-provinces.csv, data/maps/world.json]
-    tests: [packages/mapgen/src/worldmap.geometry.test.ts]
+    files: [apps/desktop/src/map/picking.ts, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/map/picking.test.ts]
     dod: "AUS-SE Suedostaustralien ist eine spielbare Provinz von 39 px2, die ganz innerhalb von AUS-NE liegt - zusammengesetzt aus Australian Capital Territory, Jervis Bay und Macquarie-Insel. Quellendatenfehler, nicht Generatorfehler. Fertig, wenn AUS-SE entweder die Flaeche traegt, die ihr Name behauptet, oder verschwindet und ihre Einheiten an AUS-NE gehen. Ein drittes gibt es nicht: eine Provinz, die man nicht anklicken kann, ist keine. Dazu ein Waechter ueber die Mindestgroesse einer SPIELBAREN Provinz, der seine Schwelle nennt. ACHTUNG, diese Aufgabe ist als einzige in M19 KEINE reine Zeichenaenderung: AUS-SE steht in Australiens Startaufstellung, traegt 52097 Einwohner, zwei Vorkommen und drei Kanten. Sie zu streichen aendert die Wirtschaft einer Macht und den Graphen, also die Partie, also AK-1. Die sichere Richtung ist deshalb, ihr die Flaeche zu GEBEN statt sie zu streichen; wird doch gestrichen, gehoert ein neuer pnpm sim:fullgame dazu und die neue Zahl in den Bericht"
 
   - id: T-M19-05

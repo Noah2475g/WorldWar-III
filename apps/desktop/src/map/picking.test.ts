@@ -237,3 +237,73 @@ describe('R-MAP-08 Eine Provinz darf mehrteilig sein', () => {
     expect(pickProvince({ x: 3918, y: 2123 }, identity, pickable)).toBe('NZL')
   })
 })
+
+describe('R-MAP-08 Jede spielbare Provinz ist dort anklickbar, wo sie liegt', () => {
+  /**
+   * The guard for T-M19-04, and it is deliberately *not* about size.
+   *
+   * The obvious rule — "a playable province must be bigger than n pixels" — would be
+   * wrong on this map: Bahrain covers 5 px², Singapore 4, Malta 6, and all three are
+   * perfectly clickable. `AUS-SE` covers 43 and was not, because its mainland is inside
+   * `AUS-NE`. Size was never the fault; being covered was.
+   *
+   * So what is checked is the property that actually matters: the anchor of every
+   * province — the point that carries its army marker and its label — selects that
+   * province. If a click where the marker sits picks the neighbour, the province is
+   * unreachable no matter how large it is.
+   */
+  const ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
+  const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as {
+    provinces: { id: string; center: { x: number; y: number }; polygons: [number, number][][] }[]
+  }
+  const pickable: PickableProvince[] = world.provinces.map((p) => ({
+    id: p.id,
+    polygons: p.polygons,
+    bounds: boundsOf(p.polygons),
+  }))
+  const identity = { x: 0, y: 0, scale: 1 }
+
+  it('waehlt an jedem Ankerpunkt die Provinz, der er gehoert', () => {
+    const wrong = world.provinces
+      .map((province) => ({
+        id: province.id,
+        picked: pickProvince(province.center, identity, pickable),
+      }))
+      .filter((row) => row.picked !== row.id)
+      .map((row) => `${row.id} -> ${row.picked ?? 'nichts'}`)
+
+    expect(wrong, `nicht an ihrem eigenen Anker anklickbar: ${wrong.join(', ')}`).toEqual([])
+  })
+
+  it('waehlt bei ineinanderliegenden Flaechen die kleinere', () => {
+    // The rule in isolation: an enclave is only reachable if it beats the province it
+    // sits in, and the order of the list must not decide it.
+    const big: PickableProvince = {
+      id: 'gross',
+      polygons: [
+        [
+          [0, 0],
+          [100, 0],
+          [100, 100],
+          [0, 100],
+        ],
+      ],
+    }
+    const small: PickableProvince = {
+      id: 'klein',
+      polygons: [
+        [
+          [40, 40],
+          [60, 40],
+          [60, 60],
+          [40, 60],
+        ],
+      ],
+    }
+
+    expect(pickProvince({ x: 50, y: 50 }, identity, [big, small])).toBe('klein')
+    expect(pickProvince({ x: 50, y: 50 }, identity, [small, big])).toBe('klein')
+    // Outside the enclave the larger one still answers.
+    expect(pickProvince({ x: 10, y: 10 }, identity, [big, small])).toBe('gross')
+  })
+})

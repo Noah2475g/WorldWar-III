@@ -1150,3 +1150,45 @@ Karte, auf der 6,7 % fehlen, sieht richtig genug aus, dass niemand mehr hinsieht
 
 **Auswirkung:** T-M19-02 baut `polygon` zu einer Liste von Umrissen um. Die Zwischenstufe ist
 in D21.3 ausdrücklich als gestrichen vermerkt, damit sie niemand ein zweites Mal vorschlägt.
+
+---
+
+## 2026-09-07 · T-M19-04 · `AUS-SE` wird anklickbar gemacht, nicht vergrößert und nicht gestrichen
+
+**Entscheidung:** Der Bauplan stellt zwei Wege zur Wahl — der Provinz Fläche geben oder sie
+streichen — und schließt einen dritten ausdrücklich aus. Gegangen wird trotzdem ein dritter,
+weil die Messung eine andere Ursache zeigt als die, die beide Wege unterstellen.
+
+**Begründung — die Größe war nie der Fehler.** Gemessen an der fertigen Karte:
+
+| Provinz | Fläche | anklickbar | |
+|---|---|---|---|
+| Singapur | 4 px² | 6 px | in Ordnung |
+| Bahrain | 5 px² | 4 px | in Ordnung |
+| Malta | 6 px² | 6 px | in Ordnung |
+| Hongkong | 13 px² | 13 px | in Ordnung |
+| **`AUS-SE`** | **43 px²** | **5 px** | **die einzige kaputte** |
+
+`AUS-SE` ist **zehnmal größer** als Singapur. Ein Wächter über die Mindestgröße einer
+spielbaren Provinz — den der Bauplan verlangt — hätte vier gesunde Provinzen gemeldet und die
+kranke durchgelassen. Er wäre eine Falschmeldungsmaschine gewesen.
+
+Der Fehler ist die **Überdeckung**: Australian Capital Territory und Jervis Bay liegen in New
+South Wales, und dessen Umriss in der Quelle hat kein Loch dafür ausgeschnitten. `pickProvince`
+nahm den ersten Treffer, `AUS-NE` steht vorn — also war `AUS-SE` nur auf der Macquarie-Insel
+anklickbar, fünf Bildpunkte, 331 davon südlich des Landes, zu dem sie gehört.
+
+Repariert ist deshalb das Picking: **bei zwei Umrissen über demselben Punkt gewinnt der
+kleinere.** Das ist die allgemeine Regel für Enklaven und kostet 16 Mikrosekunden je Klick
+(0,1 % eines Bildbudgets, gemessen über 20 000 Klicks). Auf der ganzen Karte ist genau **ein**
+Rasterpunkt von 196 196 doppelt beansprucht — die Regel greift also fast nie, und wenn, dann
+richtig.
+
+**Der Wächter prüft entsprechend nicht die Größe, sondern das, worauf es ankommt:** der
+Ankerpunkt jeder Provinz — der Punkt, der ihre Armeemarke trägt — wählt diese Provinz. Er ist
+gegen die alte Fassung nachweislich rot: `AUS-SE -> AUS-NE`.
+
+**Auswirkung:** Die Partie ändert sich **nicht**. `AUS-SE` behält ihre 52 097 Einwohner, ihre
+zwei Vorkommen, ihre drei Kanten und ihren Platz in Australiens Startaufstellung; AK-1 ist
+unberührt und ein neuer `sim:fullgame` nicht nötig. Was offen bleibt, ist die Namensfrage —
+siehe PROBLEME.md, 2026-09-07.

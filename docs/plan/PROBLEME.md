@@ -1517,3 +1517,40 @@ Diese drei sind keine Entwurfsfragen, sondern Fehler — **Status: offen, T-M21-
 im Krieg. Der schnellste Eröffnungszug ist damit der **Überraschungsangriff**, der 200 Ansehen
 kostet und automatisch Krieg auslöst. Ob das so gemeint ist, ist eine Balancing-Frage für
 Noah — sie steht hier, damit sie nicht verloren geht.
+
+---
+
+## 2026-09-07 · T-M19-04 · „Südostaustralien" trägt seinen Namen weiterhin nicht
+
+**Befund:** `AUS-SE` heißt Südostaustralien und besteht aus dem Australian Capital Territory,
+Jervis Bay und der Macquarie-Insel — zusammen 43 px². Victoria und New South Wales, die den
+Namen tragen würden, stecken in `AUS-NE`. Das ist ein Kuratierungsfehler in
+`data/maps/world-provinces.csv:12` (`sourceUnits: AUS-2653 AUS-1932 AUS+00?` — der letzte
+Eintrag ist nicht einmal eine gültige Kennung), kein Fehler des Generators.
+
+**Anklickbar ist die Provinz seit T-M19-04**, und damit ist sie spielbar. Der Name bleibt
+falsch.
+
+**Warum es hier steht und nicht behoben ist:** Die Behebung heißt, `world-provinces.csv` die
+Quelleinheiten Victoria und New South Wales zu geben und **`pnpm map:build` laufen zu lassen**.
+Das Skript liest die Natural-Earth-Shapefiles unter `data/geo/`, und die liegen nicht im Baum
+(`data/.gitignore`); sie zu holen ist der einzige Netzzugriff des Projekts. Vor allem aber
+würde ein voller Lauf die **Anreicherung neu ausführen** — Bevölkerung, Gelände und Vorkommen
+aller 237 Provinzen — und damit die Zahlen ändern, gegen die das Balancing gemessen und AK-1
+belegt wurde. Eine Namenskorrektur würde die Partie neu würfeln.
+
+**Kleinster reproduzierbarer Fall:**
+```
+node -e "const w=require('./data/maps/world.json');const p=w.provinces.find(x=>x.id==='AUS-SE');console.log(p.name,p.population)"
+→ Südostaustralien 52097     (Victoria und NSW haben zusammen rund 14 Millionen)
+```
+
+**Status: offen, Entscheidung liegt bei Noah.** Drei Möglichkeiten, alle vertretbar:
+
+1. **Umbenennen** — „Hauptstadtterritorium" statt „Südostaustralien". Kostet nichts, ändert
+   die Partie nicht, und die Karte sagt dann die Wahrheit.
+2. **Zuschnitt korrigieren** und die Karte samt Balancing neu bauen. Braucht die Geodaten, einen
+   neuen `sim:fullgame` und einen neuen Abnahmelauf.
+3. **So lassen.** Die Provinz ist spielbar; nur ihr Name ist irreführend.
+
+Die erste ist die billigste ehrliche Antwort und wäre die Empfehlung.
