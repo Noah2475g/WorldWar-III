@@ -2,8 +2,8 @@
 
 Lauf: 1000 Spieltage (24000 Ticks), drei KI-Spieler, Karte "Kleine Welt".
 
-- Dauer gesamt: 3502 ms
-- Zeit je Tick inkl. KI: 0.146 ms
+- Dauer gesamt: 3613 ms
+- Zeit je Tick inkl. KI: 0.151 ms
 - Ereignisprotokoll am Ende: 500 Einträge (Ringpuffer greift)
 - Partie entschieden bei Tick: 480
 

@@ -150,7 +150,7 @@ const playtestLine = playtest.ok
   : playtest.answered === 0
     ? `⏳ ausstehend (0 von ${playtest.total} Fragen beantwortet)`
     : playtest.complete
-      ? `⏳ vollstaendig ausgefuellt (${playtest.total} Fragen), aber ${playtest.author ? `von ${playtest.author}` : 'ohne Angabe, von wem'} - AK-7 verlangt Noahs Abnahme`
+      ? `⏳ vollstaendig ausgefuellt (${playtest.total} Fragen), ${playtest.author ? `Durchgang von: ${playtest.author}` : 'aber ohne Angabe, wer ihn gefahren hat'} - AK-7 verlangt Noahs Abnahme`
       : `⏳ angefangen (${playtest.answered} von ${playtest.total}` +
         (playtest.noWithoutFinding.length > 0 ? `, „nein" ohne Befund: ${playtest.noWithoutFinding.join(', ')}` : '') +
         ')'

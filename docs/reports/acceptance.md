@@ -1,6 +1,6 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-09-07 gegen `058f45b`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-09-07 gegen `009bec6`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).
@@ -14,8 +14,8 @@ Erzeugt von `scripts/acceptance.mjs` am 2026-09-07 gegen `058f45b`.
 | AK-3 | Abdeckung gesamt 95.1 % (Schwelle 80 %) | ✅ bestanden |
 | AK-2 | V1-Anforderungen ohne Test: 0 | ✅ bestanden |
 | AK-5 | Guards für Monetarisierung und Netzwerk | ✅ bestanden |
-| AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ✅ beantwortet (60 Fragen) |
-| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ gemessen am 2026-09-07 gegen `1c33ec7` - nicht dieser Stand, siehe `docs/reports/packaging.md`, zaehlt nicht gegen V1 |
+| AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ⏳ vollstaendig ausgefuellt (60 Fragen), Durchgang von: ein Agent (nicht Noah) - AK-7 verlangt Noahs Abnahme |
+| AK-8 | Verpackung als Programm (T-M16-05) | ✅ erfuellt, gemessen am 2026-09-07 gegen `1c33ec7` - seither nur Dokumente und Tests, das Erzeugnis ist unveraendert, zaehlt nicht gegen V1 |
 
 **7 von 7 maschinellen Prüfungen bestanden.**
 
