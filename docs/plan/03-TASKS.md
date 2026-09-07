@@ -3448,9 +3448,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D24.1
 - **Abhängigkeiten:** T-M22-01
 - **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/app.css`,
-  `apps/desktop/src/game/events.ts`
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/events.ts`
 - **Tests zuerst:** die Zuordnung Ereignis → Klasse gegen die Ereignisarten des Kerns —
-  für **jede** Art, nicht für ein Beispiel.
+  für **jede** Art, nicht für ein Beispiel (`events.test.ts`); die Klasse am gerenderten
+  Baum in `Panels.test.tsx`.
 - **Fertig wenn:** Einträge, die den Spieler selbst betreffen (Provinzverlust,
   Hauptstadt, Aufstand, eigenes Ausscheiden), Zinnober-Balken und Fettung tragen.
 

@@ -507,6 +507,14 @@ export interface EventEntry {
    * noch.
    */
   world?: boolean
+  /**
+   * Trifft diese Zeile den Betrachter selbst — als Rückschlag (T-M22-03, V2-07)?
+   *
+   * Eigener Provinzverlust, eigene Hauptstadt, Aufstand im eigenen Land, eigenes
+   * Ausscheiden: der Fall der eigenen Großstadt darf nicht dieselbe optische Stimme
+   * haben wie „Vietnam ist gefallen" am anderen Ende der Welt.
+   */
+  self?: boolean
 }
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
@@ -595,7 +603,15 @@ export function EventLog({
       {filterBar}
       <ul>
         {shown.map((entry) => (
-          <li key={entry.id} className={entry.severity === 'alert' ? 'log__row log__row--alert' : 'log__row'}>
+          <li
+            key={entry.id}
+            className={[
+              'log__row',
+              ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
+              // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
+              ...(entry.self ? ['log__row--self'] : []),
+            ].join(' ')}
+          >
             <time>
               {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}
               {String(entry.tick % ticksPerDay).padStart(2, '0')}:00

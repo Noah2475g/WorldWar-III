@@ -121,6 +121,28 @@ function concernsViewer(event: GameEvent, viewer: string | undefined): boolean {
   return event.concerns.length === 0 || event.concerns.includes(viewer)
 }
 
+/**
+ * Trifft dieses Ereignis den Betrachter **selbst** — als Rückschlag (T-M22-03, V2-07)?
+ *
+ * Vier Arten, aus dem Entwurf D24.1: eigener Provinzverlust, Aufstand im eigenen Land,
+ * die eigene Hauptstadt, das eigene Ausscheiden. Absichtlich eng: der Zinnober-Balken
+ * ist nur ein Signal, solange er selten ist. Ein fremder Fall („Vietnam ist gefallen")
+ * bleibt gewöhnlich; eine eigene **Eroberung** ist kein Rückschlag und bleibt es auch.
+ */
+export function isSelfSetback(event: GameEvent, viewer: string | undefined): boolean {
+  if (!viewer) return false
+  switch (event.type) {
+    case 'PROVINCE_CAPTURED':
+    case 'PROVINCE_REVOLTED':
+      return event.previousOwner === viewer
+    case 'CAPITAL_LOST':
+    case 'PLAYER_ELIMINATED':
+      return event.playerId === viewer
+    default:
+      return false
+  }
+}
+
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {
   const province = provinceOf(event)
 
@@ -135,6 +157,9 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     tick: event.tick,
     category: categoryOf(event.type),
     world: isWorldEventType(event.type),
+    // Was mich selbst trifft, sieht anders aus (T-M22-03): die Zeile bekommt im
+    // Protokoll den Zinnober-Balken und Fettung.
+    self: isSelfSetback(event, naming.viewer),
     text: t(`events.${key}`, valuesFor(event, map, naming)),
     ...(province ? { provinceId: province } : {}),
     severity: event.severity === 'alert' ? 'alert' : 'info',

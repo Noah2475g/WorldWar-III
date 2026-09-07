@@ -381,6 +381,16 @@ body {
   font-weight: 500;
 }
 
+/* Was mich selbst trifft, sieht anders aus (T-M22-03, Befund V2-07): eigener
+   Provinzverlust, eigene Hauptstadt, Aufstand im eigenen Land, eigenes Ausscheiden —
+   Zinnober-Balken links und Fettung, damit der Fall der eigenen Grossstadt nicht
+   dieselbe Stimme hat wie ein Weltereignis am anderen Ende der Karte. */
+.log__row--self {
+  border-left: 3px solid var(--accent);
+  padding-left: var(--sp-md);
+  font-weight: 600;
+}
+
 .log__row time {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;

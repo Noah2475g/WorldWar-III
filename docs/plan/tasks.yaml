@@ -1729,12 +1729,12 @@ tasks:
   - id: T-M22-03
     milestone: M22
     title: Was mich betrifft, sieht anders aus
-    status: todo
+    status: done
     deps: [T-M22-01]
     requirements: [R-TIME-06, R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/game/events.ts]
-    tests: [apps/desktop/src/game/events.test.ts]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
     dod: "Befund V2-07: der Fall der eigenen Grossstadt hat dieselbe optische Stimme wie ein Weltereignis am anderen Ende der Karte. Fertig, wenn Eintraege, die den Spieler selbst betreffen (eigener Provinzverlust, Hauptstadt, Aufstand im eigenen Land, eigenes Ausscheiden), eine eigene Klasse tragen (Zinnober-Balken, fett) und ein Test die Zuordnung Ereignis zu Klasse gegen die Ereignisarten des Kerns bindet - fuer jede Art, nicht fuer ein Beispiel"
 
   - id: T-M22-04

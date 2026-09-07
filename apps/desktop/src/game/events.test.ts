@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import type { GameEvent, MapData } from '@worldwar/core'
+import { EVENT_TYPES, type EventType, type GameEvent, type MapData } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import { describeEvent, provinceOf } from './events.ts'
 
@@ -246,6 +246,97 @@ describe('R-BAT-07 Der Kampfbericht nennt die Verluste beider Seiten', () => {
  * stillschweigendes „ich" — „Verhältnis zu X", „Die Hauptstadt ist verloren" —, das im
  * Weltgeschehen schlicht falsch wäre.
  */
+/**
+ * Was mich betrifft, sieht anders aus (T-M22-03, R-TIME-06, R-UI-05, Befund V2-07).
+ *
+ * Der Fall der eigenen Großstadt hatte dieselbe optische Stimme wie „Vietnam ist
+ * gefallen" am anderen Ende der Welt. Einträge, die den Spieler selbst treffen —
+ * eigener Provinzverlust, eigene Hauptstadt, Aufstand im eigenen Land, eigenes
+ * Ausscheiden — tragen deshalb `self: true` und damit die Klasse `log__row--self`
+ * (Zinnober-Balken, fett).
+ *
+ * Geprüft wird die Zuordnung für **jede** Ereignisart des Kerns, nicht für ein
+ * Beispiel: eine neue Art fällt sonst still in die falsche Schublade.
+ */
+describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
+  const viewer = 'p1'
+
+  /** Je Art ein Ereignis, in dem p1 der Betroffene ist, wo die Art einen kennt. */
+  const asVictim: Record<EventType, Record<string, unknown>> = {
+    GAME_STARTED: { mapId: 'world', playerCount: 2 },
+    COMMAND_REJECTED: { playerId: 'p1', command: 'BUILD', code: 'QUEUE_FULL' },
+    BUILD_STARTED: { playerId: 'p1', provinceId, building: 'barracks', level: 1, completesAtTick: 10 },
+    BUILD_COMPLETED: { playerId: 'p1', provinceId, building: 'barracks', level: 1 },
+    BUILD_CANCELLED: { playerId: 'p1', provinceId, building: 'barracks', reason: 'byPlayer' },
+    UNIT_RECRUITED: { playerId: 'p1', provinceId, unitKey: 'infantry', count: 1, armyId: 'a1' },
+    ARMY_DEPARTED: { playerId: 'p1', armyId: 'a1', fromProvinceId: provinceId, toProvinceId: provinceId, arrivalTick: 5 },
+    ARMY_ARRIVED: { playerId: 'p1', armyId: 'a1', provinceId },
+    ARMY_DESTROYED: { playerId: 'p1', armyId: 'a1', provinceId },
+    ARMY_RETREATED: { playerId: 'p1', armyId: 'a1', fromProvinceId: provinceId, toProvinceId: provinceId, hpLost: 100 },
+    BATTLE_STARTED: { battleId: 'b1', provinceId, sides: [['p1'], ['p2']] },
+    BATTLE_RESOLVED: { battleId: 'b1', provinceId, losses: {}, victor: 'p2' },
+    BOMBARDMENT: { playerId: 'p2', armyId: 'a2', targetProvinceId: provinceId, damage: 100, automatic: false },
+    PROVINCE_CAPTURED: { provinceId, previousOwner: 'p1', newOwner: 'p2' },
+    PROVINCE_REVOLTED: { provinceId, previousOwner: 'p1', morale: 10_000 },
+    RESOURCE_SHORTAGE: { playerId: 'p1', resource: 'oil' },
+    STORAGE_OVERFLOW: { playerId: 'p1', resource: 'wood', wasted: 100 },
+    TRADE_EXECUTED: { playerId: 'p1', give: 'wood', giveAmount: 1000, want: 'iron', wantAmount: 500 },
+    WAR_DECLARED: { playerId: 'p2', targetPlayerId: 'p1', effectiveAtTick: 48, withoutDeclaration: false },
+    DIPLOMACY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', newState: 'war' },
+    CAPITAL_LOST: { playerId: 'p1', provinceId, penaltyUntilTick: 500 },
+    CAPITAL_MOVED: { playerId: 'p1', provinceId },
+    PLAYER_ELIMINATED: { playerId: 'p1' },
+    GAME_ENDED: { winner: 'p2', condition: 'points' },
+    DAY_REPORT: { day: 3, scores: {} },
+  }
+
+  /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
+  const SELF: ReadonlySet<EventType> = new Set([
+    'PROVINCE_CAPTURED',
+    'PROVINCE_REVOLTED',
+    'CAPITAL_LOST',
+    'PLAYER_ELIMINATED',
+  ])
+
+  const beschreibe = (type: EventType, over: Record<string, unknown>) =>
+    describeEvent(event({ type, concerns: [], ...over }), 0, map, { viewer })
+
+  it('ordnet JEDE Ereignisart zu — nicht nur ein Beispiel', () => {
+    for (const type of EVENT_TYPES) {
+      const entry = beschreibe(type, asVictim[type])
+      expect(entry.self ?? false, `${type} als Betroffener`).toBe(SELF.has(type))
+    }
+  })
+
+  it('laesst fremdes Unglueck ohne die Klasse — der Kern des Befunds V2-07', () => {
+    // Dieselben vier Arten, nur ist der Betroffene ein anderer: "Vietnam ist gefallen"
+    // darf nicht dieselbe Stimme haben wie der Fall der eigenen Grossstadt.
+    const fremd: [EventType, Record<string, unknown>][] = [
+      ['PROVINCE_CAPTURED', { provinceId, previousOwner: 'p3', newOwner: 'p2' }],
+      ['PROVINCE_REVOLTED', { provinceId, previousOwner: 'p3', morale: 10_000 }],
+      ['CAPITAL_LOST', { playerId: 'p3', provinceId, penaltyUntilTick: 500 }],
+      ['PLAYER_ELIMINATED', { playerId: 'p3' }],
+    ]
+    for (const [type, over] of fremd) {
+      expect(beschreibe(type, over).self ?? false, `${type} als Zuschauer`).toBe(false)
+    }
+  })
+
+  it('bleibt ohne Betrachter ohne Klasse — niemand ist "selbst"', () => {
+    const entry = describeEvent(
+      event({ type: 'PROVINCE_CAPTURED', concerns: [], provinceId, previousOwner: 'p1', newOwner: 'p2' }),
+      0,
+      map,
+    )
+    expect(entry.self ?? false).toBe(false)
+  })
+
+  it('eine eroberte Provinz ist MEIN Rueckschlag nur als Verlierer, nicht als Eroberer', () => {
+    const erobert = beschreibe('PROVINCE_CAPTURED', { provinceId, previousOwner: 'p2', newOwner: 'p1' })
+    expect(erobert.self ?? false).toBe(false)
+  })
+})
+
 describe('R-DIP-04 Was zwischen Fremden geschieht, erfaehrt man dem Wesen nach', () => {
   const namen = { player: (id: string) => ({ p1: 'Nordland', p2: 'Ostmark', p3: 'Süden' })[id] ?? id, ticksPerDay: 24, viewer: 'p1' }
 

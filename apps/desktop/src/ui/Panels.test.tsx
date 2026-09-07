@@ -567,6 +567,22 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
   })
 })
 
+describe('T-M22-03 Der eigene Rueckschlag traegt Balken und Fettung', () => {
+  it('gibt einer self-Zeile die Klasse log__row--self — und nur ihr', () => {
+    // Die Zuordnung Ereignis -> self prueft events.test.ts fuer jede Kernart;
+    // hier steht die andere Haelfte: dass die Klasse auch am Baum ankommt.
+    const entries: EventEntry[] = [
+      { id: '1', tick: 5, text: 'Südstaaten ist gefallen.', severity: 'alert', category: 'combat', self: true },
+      { id: '2', tick: 6, text: 'Vietnam ist gefallen.', severity: 'alert', category: 'combat' },
+    ]
+    const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
+    const rows = [...container.querySelectorAll('.log__row')]
+
+    expect(rows[0]?.classList.contains('log__row--self')).toBe(true)
+    expect(rows[1]?.classList.contains('log__row--self')).toBe(false)
+  })
+})
+
 describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
   /**
    * Drei Größen, die das Spiel seit Monaten ausrechnet und nie gezeigt hat: die Rubrik
