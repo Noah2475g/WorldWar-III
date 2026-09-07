@@ -3,8 +3,28 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-08 (nachts) · **V1 ist abgenommen (7 von 7), und der
-> LEVEL-UP-Plan M22–M24 ist vollständig gebaut.**
+> **Stand:** 2026-09-08 (spät) · **V1 ist abgenommen (7 von 7); LEVEL-UP M22–M24 und
+> LEVEL-UP 2 „Grafik statt Text" M25–M27 sind vollständig gebaut.**
+>
+> **Neu am 2026-09-08 (LEVEL-UP 2, Noahs Wahl: alle fünf Vorschläge A–E,
+> `docs/plan/LEVEL-UP-2-GRAFIK.md`):** Zeitreihe je Spieltag · Machtverlauf-Kurve im
+> Lage-Panel · Wirtschafts-Sparklines und Bilanzbalken (auch im Tagesbericht) ·
+> Marschpfeile mit Fortschritt · Eroberungs-Farbwelle und skalierte Kampfringe ·
+> fünfter Kartenmodus „Beziehungen" · Gefechtsbericht mit Stärkebalken und Zeichen
+> (BATTLE_RESOLVED additiv um fünf Anzeigefelder ergänzt, Golden-Master unberührt).
+> Zeichenbudget nachgemessen: p95 5,39 ms gegen 16,7 ms.
+>
+> **Dazu ein schwerer Fund aus der Sichtprüfung** (PROBLEME.md, 2026-09-08): die
+> setState-Updater der App rechneten mit Seiteneffekten — unter `<StrictMode>` (so
+> rendert main.tsx!) verlor das Vorspulen die gesammelten Befehle **spurlos**, und
+> die Stoppmeldung zählte doppelt („nach 2 Tagen" bei einem). Kein Test sah es, weil
+> alle ohne StrictMode renderten. Repariert (Rechnung außerhalb des Updaters,
+> `stateRef`), ein Test rendert jetzt im Harness der echten App. **Regel:** Updater
+> sind pur; mindestens ein Test rendert im selben Wrapper wie der Einstiegspunkt.
+>
+> ⚠ Der 7-von-7-Abnahmelauf lief gegen `0ea1af3` (vor M25–M27). `pnpm verify` ist auf
+> dem Endstand grün; der nächste volle `pnpm acceptance` (~75–130 min, Maschine
+> allein) steht an, wenn wieder abgenommen wird.
 
 ---
 
