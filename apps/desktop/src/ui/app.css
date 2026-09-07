@@ -630,6 +630,19 @@ body {
   margin: 0 0 var(--sp-sm);
 }
 
+/* Die Befehls-Quittung (T-M22-05): abgeschickt, wirkt im naechsten Tick. */
+.action__pending {
+  font-size: 11px;
+  color: var(--good);
+  margin: 0 0 var(--sp-sm);
+}
+
+/* Die ehrliche Uhr (T-M22-05): Tempo eingestellt, aber kein Tick — "Pausiert". */
+.clock__stalled {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 .action {
   display: flex;
   flex-direction: column;

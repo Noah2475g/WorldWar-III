@@ -3477,9 +3477,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D24.5
 - **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Header.tsx`,
-  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/ui/app.css`
 - **Tests zuerst:** beide fallen heute — ausstehender Befehl sichtbar; „Pausiert" nach
-  zwei Sekunden ohne Tick trotz eingestelltem Tempo.
+  zwei Sekunden ohne Tick trotz eingestelltem Tempo (`App.test.tsx`, dazu
+  `Panels.test.tsx`/`Header.test.tsx` je Komponente).
 - **Fertig wenn:** beide Anzeigen stehen, gespeist aus der Befehlsübergabe der Hülle.
 
 ### T-M22-06 · Knöpfe sagen, was sie tun

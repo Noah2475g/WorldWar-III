@@ -567,6 +567,53 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
   })
 })
 
+/**
+ * Die Befehls-Quittung am Knopf (T-M22-05, R-UI-05, Befund V2-08): ob ein Befehl
+ * aussteht, entscheidet App; hier steht die andere Haelfte — dass der Knopf die
+ * Quittung zeigt und solange gesperrt ist (ein Doppelklick waere ein Doppelbefehl).
+ */
+describe('T-M22-05 Der ausloesende Knopf quittiert', () => {
+  it('zeigt den Quittungssatz und sperrt den Knopf, solange der Befehl aussteht', () => {
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[
+          {
+            id: 'build-barracks',
+            label: 'Kaserne',
+            disabledReason: null,
+            pendingNotice: '✓ befohlen — wirkt beim Weiterlaufen.',
+            onRun: () => undefined,
+          },
+        ]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Kaserne' })
+    expect(button.hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('status').textContent).toContain('befohlen')
+    expect(screen.getByRole('status').textContent).toContain('wirkt beim Weiterlaufen')
+  })
+
+  it('zeigt ohne ausstehenden Befehl keine Quittung', () => {
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[{ id: 'build-barracks', label: 'Kaserne', disabledReason: null, onRun: () => undefined }]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Kaserne' }).hasAttribute('disabled')).toBe(false)
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
 describe('T-M22-03 Der eigene Rueckschlag traegt Balken und Fettung', () => {
   it('gibt einer self-Zeile die Klasse log__row--self — und nur ihr', () => {
     // Die Zuordnung Ereignis -> self prueft events.test.ts fuer jede Kernart;

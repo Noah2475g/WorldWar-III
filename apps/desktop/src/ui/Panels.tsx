@@ -38,6 +38,12 @@ export interface Action {
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
+  /**
+   * Die Quittung (T-M22-05, Befund V2-08): der Befehl ist abgeschickt und noch nicht
+   * angewendet. Der Knopf zeigt den Satz und ist gesperrt, bis der naechste Tick den
+   * Befehl anwendet — ein Doppelklick waere sonst ein Doppelbefehl.
+   */
+  pendingNotice?: string
   onRun: () => void
 }
 
@@ -110,7 +116,7 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         <button
           type="button"
           className="button"
-          disabled={action.disabledReason !== null}
+          disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
           title={buttonTitle(action)}
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
@@ -120,6 +126,13 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         </button>
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
+      {/* Die Quittung am ausloesenden Element (T-M22-05): abgeschickt, wirkt im
+          naechsten Tick — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
+      {action.pendingNotice && (
+        <p className="action__pending" role="status">
+          {action.pendingNotice}
+        </p>
+      )}
       {action.disabledReason &&
         (showReason ? (
           <p id={reasonId} className="action__reason">

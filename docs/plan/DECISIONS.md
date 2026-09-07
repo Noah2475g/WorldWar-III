@@ -1301,3 +1301,27 @@ Browser die eigentliche Zusage. Beide Wächter fielen vor der Reparatur.
 
 **Auswirkung:** keine Änderung an den Zusagen selbst; ein Browser-Layout-Test bleibt
 außerhalb der schnellen Kette (kein Playwright im Haus, R-FREE bleibt unberührt).
+
+---
+
+## 2026-09-07 · T-M22-05 · Ein Spielerbefehl rechnet keinen eigenen Tick mehr
+
+**Lage:** `send` in `App.tsx` rief für jeden Befehl `advance(state, 1, …, [command])` —
+jeder Klick bewegte die Spielzeit um eine Stunde, samt KI, auch bei stehender Uhr. Der
+Entwurf D24.5 spricht dagegen von `pendingCommands` der Hülle, „existiert für die
+Übergabe an den Kern" — die es so nie gab. Der Playtest V2 beschreibt als erlebtes
+Verhalten bereits das Sammeln („Befehle wirken erst im Folgetick", V2-08) — nur ohne
+Quittung.
+
+**Entscheidung:** Die Hülle sammelt Befehle (`pendingCommands`) und reicht sie dem
+**ersten Tick** des nächsten Laufs — der laufenden Uhr, dem Vorspulen
+(`FastForwardRequest.playerCommands`, nur erstes Häppchen). Geprüft wird ein Befehl
+weiterhin **sofort** (`canApply` → Absage jetzt, nicht im nächsten Tick). Der
+auslösende Knopf zeigt die Quittung und ist bis zur Anwendung gesperrt. Vier
+Bestandstests, die das alte Sofort-Anwenden voraussetzten, gehen jetzt den
+Spielerweg (Befehl → Tick → Wirkung); die Anforderung dahinter hat sich mit
+M22/D24.5 geändert, nicht die Tests allein.
+
+**Auswirkung:** Bei Pause wirkt ein Befehl erst beim Weiterlaufen — und sagt das am
+Knopf. Kein Golden-Master-Einfluss (Kernschleife unverändert; die Änderung liegt in
+der Hülle).

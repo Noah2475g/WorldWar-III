@@ -130,6 +130,11 @@ interface PendingTarget {
 
 const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
 
+/** Nach so viel Stille trotz eingestelltem Tempo nennt die Uhr sich "Pausiert" (T-M22-05). */
+const STALL_AFTER_MS = 2000
+/** Wie oft die stehende Uhr nachsieht — oft genug, dass die Meldung nicht nachhinkt. */
+const STALL_CHECK_MS = 500
+
 /**
  * Whether this player has seen the introduction before.
  *
@@ -226,6 +231,38 @@ export function App(props: AppProps) {
   // against the same slot before the first has finished.
   const writingAutosave = useRef(false)
   const now = props.now ?? Date.now
+
+  /**
+   * Befehle, die abgeschickt und noch nicht angewendet sind (T-M22-05, D24.5,
+   * Befund V2-08).
+   *
+   * Bis zum 2026-09-07 rechnete `send` fuer jeden Befehl sofort einen ganzen Tick —
+   * ein Klick bei stehender Uhr bewegte die Spielzeit um eine Stunde, samt KI. Jetzt
+   * sammelt die Huelle die Befehle und reicht sie dem NAECHSTEN Tick der laufenden
+   * Uhr (oder dem Vorspulen); der ausloesende Knopf zeigt bis dahin die Quittung.
+   *
+   * Zustand UND Ref: der Zustand zeichnet die Quittung, die Ref uebergibt an den
+   * Kern — eine Uebergabe aus dem Zustand heraus hinge einen Render hinterher.
+   */
+  const [pendingCommands, setPendingCommands] = useState<readonly { actionId: string; command: Command }[]>([])
+  const pendingRef = useRef<readonly { actionId: string; command: Command }[]>([])
+  const takePending = useCallback((): Command[] => {
+    const commands = pendingRef.current.map((entry) => entry.command)
+    if (commands.length > 0) {
+      pendingRef.current = []
+      setPendingCommands([])
+    }
+    return commands
+  }, [])
+
+  /**
+   * Wann zuletzt ein Tick lief — fuer die ehrliche Uhr (T-M22-05, Befund V2-09):
+   * bei verdecktem Fenster feuert `requestAnimationFrame` nicht, die Anzeige stand
+   * auf "100" und die Zeit stand. Laeuft trotz eingestelltem Tempo laenger als zwei
+   * Sekunden kein Tick, sagt die Kopfleiste "Pausiert".
+   */
+  const [stalled, setStalled] = useState(false)
+  const lastTickAt = useRef(0)
   const ticksPerDay = props.rules.constants.ticksPerDay
   // Der Speicher der laufenden Anwendung. Bis zum 2026-09-06 stand hier ein stiller
   // Rueckfall auf MemoryStorage, und main.tsx reichte nie etwas herein: die Anwendung
@@ -483,14 +520,18 @@ export function App(props: AppProps) {
     [],
   )
 
-  /** One game hour, AI included. */
+  /** One game hour, AI included — and the moment the collected orders take effect. */
   const step = useCallback(
     (ticks: number) => {
+      // Die gesammelten Befehle gehoeren dem ersten Tick dieses Schritts (T-M22-05).
+      const commands = takePending()
+      lastTickAt.current = now()
+      setStalled((wasStalled) => (wasStalled ? false : wasStalled))
       setState((current) => {
         if (!current) return current
-        if (!debugOn) return advance(current, ticks, { map: activeMap, rules: props.rules })
+        if (!debugOn) return advance(current, ticks, { map: activeMap, rules: props.rules }, commands)
 
-        const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules })
+        const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
         noteTrace({
           tick: current.tick,
           commands: result.applied.map((entry) => entry.command),
@@ -499,8 +540,26 @@ export function App(props: AppProps) {
         return result.state
       })
     },
-    [activeMap, props.rules, debugOn, noteTrace],
+    [activeMap, props.rules, debugOn, noteTrace, takePending, now],
   )
+
+  /**
+   * Die ehrliche Uhr (T-M22-05, R-TIME-02, Befund V2-09): laeuft trotz eingestelltem
+   * Tempo laenger als zwei Sekunden kein Tick — verdecktes Fenster, stehendes
+   * `requestAnimationFrame` —, zeigt die Kopfleiste "Pausiert" statt des Tempos.
+   */
+  const hasGame = state !== null
+  useEffect(() => {
+    if (speed === 0 || !hasGame) {
+      setStalled(false)
+      return
+    }
+    lastTickAt.current = now()
+    const id = setInterval(() => {
+      setStalled(now() - lastTickAt.current > STALL_AFTER_MS)
+    }, STALL_CHECK_MS)
+    return () => clearInterval(id)
+  }, [speed, hasGame, now])
 
   /**
    * Vorspulen bis zum naechsten Ereignis (T-M15-06, R-TIME-02/AK2, R-TIME-03).
@@ -519,6 +578,9 @@ export function App(props: AppProps) {
       setSpeed(0)
       setFastForward({ running: true, ticksRun: 0, reason: null, trigger: null })
 
+      // Die gesammelten Befehle gehoeren dem ERSTEN Tick des Laufs (T-M22-05) —
+      // gegeben wurden sie jetzt, nicht in jedem Haeppchen erneut.
+      let playerCommands: readonly Command[] = takePending()
       const request = { target, alertsFor: viewerId, maxTicks: MAX_FAST_FORWARD_TICKS }
       let ticksRun = 0
 
@@ -532,11 +594,12 @@ export function App(props: AppProps) {
 
           const result = fastForwardChunk(
             current,
-            request,
+            { ...request, playerCommands },
             { map: activeMap, rules: props.rules },
             MAX_FAST_FORWARD_TICKS - ticksRun,
             debugOn ? noteTrace : undefined,
           )
+          playerCommands = []
           ticksRun += result.ticksRun
 
           // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
@@ -554,7 +617,7 @@ export function App(props: AppProps) {
 
       chunk()
     },
-    [activeMap, props.rules, debugOn, noteTrace],
+    [activeMap, props.rules, debugOn, noteTrace, takePending],
   )
 
   // The clock. Deliberately capped at two ticks per frame: when the machine cannot
@@ -584,8 +647,18 @@ export function App(props: AppProps) {
     }
   }, [speed, state, step])
 
+  /**
+   * Einen Befehl abschicken (T-M22-05, Befund V2-08).
+   *
+   * Geprueft wird sofort — eine Absage soll den Spieler jetzt erreichen, nicht im
+   * naechsten Tick. Angewendet wird NICHT sofort: bis zum 2026-09-07 rechnete diese
+   * Stelle fuer jeden Befehl einen ganzen Tick, ein Klick bei stehender Uhr bewegte
+   * also die Spielzeit um eine Stunde, samt KI. Der Befehl geht stattdessen in die
+   * Sammlung der Huelle und wirkt im naechsten Tick; die `actionId` laesst den
+   * ausloesenden Knopf bis dahin die Quittung zeigen.
+   */
   const send = useCallback(
-    (command: Command) => {
+    (command: Command, actionId?: string) => {
       if (!state || !ctx) return
       const result = canApply(state, command, {
         map: activeMap,
@@ -597,12 +670,14 @@ export function App(props: AppProps) {
         dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
         return
       }
-      setState((current) =>
-        current ? advance(current, 1, { map: activeMap, rules: props.rules }, [command]) : current,
-      )
+      pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
+      setPendingCommands(pendingRef.current)
     },
     [state, ctx, activeMap, props.rules],
   )
+
+  /** Welche Knoepfe gerade eine Quittung tragen (T-M22-05): ihr Befehl steht noch aus. */
+  const pendingIds = useMemo(() => new Set(pendingCommands.map((entry) => entry.actionId)), [pendingCommands])
 
   /** A description becomes a button: orders are sent, target orders open target mode. */
   const toAction = useCallback(
@@ -613,6 +688,11 @@ export function App(props: AppProps) {
       ...(spec.icon ? { icon: spec.icon } : {}),
       ...(spec.explainKey ? { explainKey: spec.explainKey } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
+      // Die Quittung am ausloesenden Knopf (T-M22-05, D24.5): abgeschickt, noch nicht
+      // angewendet — bei stehender Uhr mit dem Hinweis, wann es so weit sein wird.
+      ...(pendingIds.has(spec.id)
+        ? { pendingNotice: speed === 0 ? t('actions.orderedPaused') : t('actions.ordered') }
+        : {}),
       onRun: () => {
         if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
@@ -620,11 +700,11 @@ export function App(props: AppProps) {
           setTargeting({ armyId, kind: spec.targetKind, target: null })
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
-          send(spec.command)
+          send(spec.command, spec.id)
         }
       },
     }),
-    [send, tutor],
+    [send, tutor, pendingIds, speed],
   )
 
   const jumpTo = useCallback(
@@ -758,6 +838,9 @@ export function App(props: AppProps) {
         if (result.ok) {
           // Der Stand bringt seine Karte mit (T-M12-08).
           setActiveMap(mapById(result.state.mapId))
+          // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
+          pendingRef.current = []
+          setPendingCommands([])
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -783,6 +866,9 @@ export function App(props: AppProps) {
     const chosenMap = mapById(options.mapId)
     const fresh = startGame(options, chosenMap, props.rules)
     setActiveMap(chosenMap)
+    // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
+    pendingRef.current = []
+    setPendingCommands([])
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -997,7 +1083,7 @@ export function App(props: AppProps) {
       ? {
           ...toAction(confirmSpec),
           onRun: () => {
-            if (confirmSpec.command) send(confirmSpec.command)
+            if (confirmSpec.command) send(confirmSpec.command, confirmSpec.id)
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           },
@@ -1066,6 +1152,7 @@ export function App(props: AppProps) {
         view={view}
         ticksPerDay={ticksPerDay}
         speed={speed}
+        stalled={stalled}
         fastForwarding={fastForwardState.running}
         fastForwardNotice={fastForwardNotice}
         mode={ui.mode}

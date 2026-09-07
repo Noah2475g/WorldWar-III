@@ -47,12 +47,13 @@ const view = (self: number, others: number[], goal?: number): PublicView =>
 
 const noop = () => undefined
 
-const renderHeader = (v: PublicView | null) =>
+const renderHeader = (v: PublicView | null, extra: { stalled?: boolean; speed?: number } = {}) =>
   render(
     <Header
       view={v}
       ticksPerDay={24}
-      speed={0}
+      speed={extra.speed ?? 0}
+      stalled={extra.stalled ?? false}
       fastForwarding={false}
       fastForwardNotice={null}
       mode="political"
@@ -87,6 +88,27 @@ describe('R-UI-13 Der Weg zum Sieg', () => {
 
     renderHeader(view(0, [0], 900))
     expect(screen.queryByRole('meter', { name: 'Siegziel' })).toBeNull()
+  })
+})
+
+/**
+ * Eine stehende Uhr nennt sich Pausiert (T-M22-05, R-TIME-02, Befund V2-09): bei
+ * verdecktem Fenster feuert requestAnimationFrame nicht, die Anzeige stand auf "100",
+ * die Zeit stand — ohne ein Wort. Ob sie steht, entscheidet App; hier steht die
+ * andere Haelfte: dass die Leiste es auch sagt, als role="status" fuers Ohr.
+ */
+describe('R-TIME-02 Eine stehende Uhr sagt es', () => {
+  it('zeigt Pausiert, wenn die Uhr trotz Tempo steht', () => {
+    renderHeader(view(300, [400], 900), { stalled: true, speed: 10 })
+
+    expect(screen.getByRole('status')).toBeTruthy()
+    expect(screen.getByText('Pausiert')).toBeTruthy()
+  })
+
+  it('schweigt, solange die Uhr laeuft oder bewusst pausiert ist', () => {
+    renderHeader(view(300, [400], 900), { stalled: false, speed: 10 })
+
+    expect(screen.queryByText('Pausiert')).toBeNull()
   })
 })
 

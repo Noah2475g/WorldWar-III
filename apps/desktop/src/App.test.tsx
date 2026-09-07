@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryStorage, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 
 /**
@@ -394,6 +394,10 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     startGame()
     pickCapital()
     fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    // Seit T-M22-05 wirkt ein Befehl im naechsten Tick (V2-08): erst quittiert er …
+    expect(log()).not.toContain('Bau von Kaserne begonnen')
+    fastForward(1)
+    // … dann wendet der naechste Tick ihn an.
     expect(log()).toContain('Bau von Kaserne begonnen')
 
     fastForward(2)
@@ -415,6 +419,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(panel.textContent).toMatch(/Ankunft/)
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
+    fastForward(1)
     expect(log()).toContain('marschiert nach')
     // Eigenes Zeitlimit, weil dieser Test die ganze Kette faehrt (bauen, vorspulen,
     // ausheben, Armee waehlen, Ziel waehlen, marschieren) und dabei die Anwendung
@@ -431,6 +436,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    // Der Befehl wirkt im naechsten Tick (T-M22-05).
+    fastForward(1)
 
     expect(log()).toMatch(/erklärt .* den Krieg\. Wirksam ab Tag \d+/)
     expect(log()).not.toMatch(/\bp\d\b/)
@@ -443,6 +450,8 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(panel.textContent).toMatch(/Ergibt etwa \d+/)
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Handeln' }))
+    // Der Befehl wirkt im naechsten Tick (T-M22-05).
+    fastForward(1)
     expect(log()).toMatch(/gegen \d+ .* getauscht/)
   })
 
@@ -461,6 +470,92 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
+  })
+})
+
+/**
+ * Jeder Befehl quittiert; eine stehende Uhr sagt es (T-M22-05, R-UI-05, R-TIME-02,
+ * Befunde V2-08/V2-09).
+ *
+ * Ein Befehl wirkt erst im nächsten Tick — bei stehender Uhr also gar nicht, und das
+ * Panel zeigte weiter „Frieden", ohne jeden Hinweis. Jetzt sammelt die Hülle die
+ * Befehle (`pendingCommands`), der auslösende Knopf zeigt bis zur Anwendung die
+ * Quittung, und bei stehender Uhr sagt sie „wirkt beim Weiterlaufen".
+ */
+describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  it('zeigt am ausloesenden Knopf "befohlen", bis der naechste Tick den Befehl anwendet', () => {
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+
+    // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
+    expect(panel.textContent).toContain('befohlen')
+    expect(panel.textContent).toContain('wirkt beim Weiterlaufen')
+    // Abgeschickt, nicht angewendet: das Protokoll kennt den Befehl noch nicht.
+    expect(log()).not.toContain('erklärt')
+
+    // Der naechste Tick wendet ihn an; die Quittung verschwindet.
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(log()).toMatch(/erklärt .* den Krieg/)
+    expect(screen.getByRole('region', { name: 'Diplomatie' }).textContent).not.toContain('befohlen')
+  })
+
+  it('sperrt den Knopf, solange sein Befehl aussteht — ein Doppelklick ist kein Doppelbefehl', () => {
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
+    fireEvent.click(war)
+
+    expect(war.hasAttribute('disabled')).toBe(true)
+  })
+})
+
+describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
+  /**
+   * Der Befundfall nachgestellt (V2-09): `requestAnimationFrame` feuert nicht — im
+   * Spiel bei verdecktem Fenster, hier per Stummschaltung. Wichtig: OHNE die
+   * Stummschaltung haengt jsdoms rAF an `setInterval`, und unter falschen Uhren
+   * treibt `advanceTimersByTime` dann die komplette Spielschleife an — genau das
+   * Gegenteil des Falls, um den es geht.
+   */
+  const stehendeUhr = () => {
+    vi.stubGlobal('requestAnimationFrame', () => 0)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'Date'] })
+  }
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('zeigt Pausiert, wenn trotz eingestelltem Tempo zwei Sekunden kein Tick lief', () => {
+    stehendeUhr()
+    startGame({ storage: new MemoryStorage() })
+    expect(screen.queryByText('Pausiert')).toBeNull()
+
+    fireEvent.keyDown(window, { key: ' ' })
+    act(() => {
+      vi.advanceTimersByTime(2500)
+    })
+
+    expect(screen.getByText('Pausiert')).toBeTruthy()
+  })
+
+  it('sagt bei bewusster Pause nichts — Pause ist kein Fehler', () => {
+    stehendeUhr()
+    startGame({ storage: new MemoryStorage() })
+
+    act(() => {
+      vi.advanceTimersByTime(2500)
+    })
+
+    expect(screen.queryByText('Pausiert')).toBeNull()
   })
 })
 

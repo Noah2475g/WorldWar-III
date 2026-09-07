@@ -1751,12 +1751,12 @@ tasks:
   - id: T-M22-05
     milestone: M22
     title: Jeder Befehl quittiert; eine stehende Uhr sagt es
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05, R-TIME-02]
     design: [D-24]
-    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Header.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/game/fastForward.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befunde V2-08/V2-09: nach Krieg erklaeren zeigt das Panel weiter Frieden ohne jeden Hinweis, bis der naechste Tick laeuft - bei Pause dauerhaft; und eine Uhr, die nicht laeuft (verdecktes Fenster, requestAnimationFrame steht), behauptet weiter ihr Tempo. Fertig, wenn (1) ein abgeschickter, noch nicht angewendeter Befehl am ausloesenden Element sichtbar ist (befohlen - wirkt beim Weiterlaufen), gespeist aus der Befehlsuebergabe der Huelle, und (2) die Kopfleiste Pausiert zeigt, wenn trotz eingestelltem Tempo laenger als zwei Sekunden kein Tick lief. Beide Tests fallen gegen den heutigen Stand"
 
   - id: T-M22-06

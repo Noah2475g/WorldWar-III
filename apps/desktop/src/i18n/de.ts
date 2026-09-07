@@ -40,6 +40,9 @@ export const de = {
     stoppedAlertPlain: 'Angehalten nach {{time}}: etwas ist geschehen, das Sie sehen sollten.',
     stoppedLimit: 'Angehalten nach {{time}}: die Obergrenze ist erreicht, das Ziel trat nicht ein.',
     stoppedAborted: 'Abgebrochen nach {{time}}.',
+    // Die ehrliche Uhr (T-M22-05, Befund V2-09): trotz eingestelltem Tempo laeuft kein
+    // Tick — verdecktes Fenster, stehendes requestAnimationFrame.
+    paused: 'Pausiert',
     abort: 'Abbrechen',
     balance: 'Bilanz',
     perDay: 'je Tag',
@@ -225,6 +228,10 @@ export const de = {
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
     availableFrom: 'ab Spieltag {{day}}',
+    // Die Befehls-Quittung (T-M22-05, Befund V2-08): abgeschickt, noch nicht
+    // angewendet — und bei stehender Uhr sagt der Satz dazu, wann es so weit ist.
+    ordered: '✓ befohlen — wirkt im nächsten Tick.',
+    orderedPaused: '✓ befohlen — wirkt beim Weiterlaufen.',
     cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',
