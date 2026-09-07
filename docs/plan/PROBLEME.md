@@ -1639,3 +1639,36 @@ schlechter als ohne ihn.
 
 **Status: bewusst offen, dokumentiert.** Die eine bekannte Stelle ist genannt; wer den
 Bereich ausweitet, weiß, was ihn erwartet.
+
+---
+
+## 2026-09-08 · Sichtprüfung nach M25–M27 · Ein Marschbefehl verschwand spurlos — der setState-Updater war unrein
+
+**Symptom (nur im echten Programm, kein Test sah es):** Armee wählen, Ziel wählen,
+„Marsch befehlen" — keine Ablehnung, keine Quittung, kein Protokolleintrag, kein Marsch,
+auch nach dem Vorspulen nicht. Konsole leer.
+
+**Ursache:** `fastForwardRun` (App.tsx) rechnete die Simulation **im
+setState-Updater** und mutierte dabei Laufvariablen (`playerCommands = []`,
+`ticksRun +=`). Die echte Anwendung rendert in `<StrictMode>` (main.tsx), und React
+ruft Updater dort **doppelt**: der erste Lauf verbrauchte die gesammelten Befehle
+(T-M22-05) und sein Ergebnis wurde verworfen; der zweite — dessen Ergebnis zählt —
+rechnete ohne sie. Derselbe Mechanismus verdoppelte `ticksRun`: die Stoppmeldung sagte
+seit M21 konstant „Angehalten nach 2 Tagen", wenn ein Tag übersprungen wurde — im
+Playtest V2 notiert, für einen Textfehler gehalten, tatsächlich dieselbe Wurzel.
+
+**Warum kein Test biss:** alle App-Tests rendern `<App/>` **ohne** StrictMode — die
+Testumgebung war freundlicher als die Anwendung. Der neue Test rendert wie main.tsx
+(`App.test.tsx`, „verliert gesammelte Befehle nicht, wenn React den Updater doppelt
+ruft") und fiel gegen den alten Stand mit exakt dem Playtest-Symptom.
+
+**Reparatur:** Die Rechnung verlässt den Updater. `stateRef` (synchron gepflegter
+Spiegel) liefert den Ausgangszustand, `chunk` reicht den Zustand explizit weiter,
+`setState` setzt nur noch Ergebnisse. `step()` gleich mitgezogen (dort war der
+Doppellauf ergebnisgleich, aber `noteTrace` feuerte zweimal) — danach hat App.tsx
+keinen rechnenden Updater mehr.
+
+**Regel für die Nachwelt:** Ein setState-Updater ist eine **pure Funktion** — wer darin
+rechnet, was Seiteneffekte hat oder Laufvariablen mutiert, baut einen Fehler, den nur
+die echte Anwendung zeigt. Und: mindestens ein Test je App rendert **in demselben
+StrictMode wie der Einstiegspunkt**, sonst prüft die Testumgebung eine andere Anwendung.

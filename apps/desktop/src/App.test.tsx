@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
+import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryStorage, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
@@ -432,6 +433,33 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
   }
   const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  /**
+   * Befund vom 2026-09-08 (Sichtpruefung nach M25-M27): ein Marschbefehl ueber die
+   * Zielwahl verschwand im laufenden Programm SPURLOS — keine Ablehnung, keine
+   * Quittung, kein Marsch. Ursache: der setState-Updater von fastForwardRun trug
+   * Seiteneffekte (playerCommands = [], ticksRun +=). React ruft Updater unter
+   * StrictMode (main.tsx rendert die App darin) doppelt: der erste Lauf verbrauchte
+   * die Befehle, der zweite — dessen Ergebnis zaehlt — rechnete ohne sie. Alle
+   * uebrigen Tests rendern ohne StrictMode und konnten das nicht sehen; dieser
+   * rendert wie die echte Anwendung.
+   */
+  it('verliert gesammelte Befehle nicht, wenn React den Updater doppelt ruft (StrictMode wie main.tsx)', () => {
+    render(
+      <StrictMode>
+        <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
+      </StrictMode>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(log()).toContain('Bau von Kaserne begonnen')
+    // Und die Stoppmeldung zaehlt den Sprung nicht doppelt ("nach 2 Tagen" bei einem):
+    // ticksRun += im doppelt gelaufenen Updater war derselbe Fehler von der anderen Seite.
+    expect(screen.getByRole('status').textContent).not.toContain('2 Tag')
+  })
 
   it('bietet in der eigenen Provinz jedes Gebaeude mit Preis und jede Einheit mit Grund', () => {
     startGame()

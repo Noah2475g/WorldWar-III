@@ -189,6 +189,10 @@ export function App(props: AppProps) {
     nation: props.map.startPositions[0]?.nation ?? '',
   })
   const [state, setState] = useState<GameState | null>(null)
+  // Synchron gepflegter Spiegel fuer Ablaeufe ausserhalb des Renderzyklus (Vorspulen):
+  // sie duerfen nicht im setState-Updater rechnen (StrictMode ruft Updater doppelt).
+  const stateRef = useRef<GameState | null>(null)
+  stateRef.current = state
 
   /**
    * Die Karte der laufenden Partie (T-M12-08).
@@ -617,18 +621,22 @@ export function App(props: AppProps) {
       const commands = takePending()
       lastTickAt.current = now()
       setStalled((wasStalled) => (wasStalled ? false : wasStalled))
-      setState((current) => {
-        if (!current) return current
-        if (!debugOn) return advance(current, ticks, { map: activeMap, rules: props.rules }, commands)
-
-        const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
-        noteTrace({
-          tick: current.tick,
-          commands: result.applied.map((entry) => entry.command),
-          explanations: result.explanations,
-        })
-        return result.state
+      // Gerechnet wird ausserhalb des Updaters — dieselbe Klasse wie beim Vorspulen
+      // (Befund 2026-09-08): ein Updater muss pur sein, StrictMode ruft ihn doppelt.
+      // Hier war der Doppellauf ergebnisgleich, aber noteTrace feuerte zweimal.
+      const current = stateRef.current
+      if (!current) return
+      if (!debugOn) {
+        setState(advance(current, ticks, { map: activeMap, rules: props.rules }, commands))
+        return
+      }
+      const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
+      noteTrace({
+        tick: current.tick,
+        commands: result.applied.map((entry) => entry.command),
+        explanations: result.explanations,
       })
+      setState(result.state)
     },
     [activeMap, props.rules, debugOn, noteTrace, takePending, now],
   )
@@ -674,38 +682,42 @@ export function App(props: AppProps) {
       const request = { target, alertsFor: viewerId, maxTicks: MAX_FAST_FORWARD_TICKS }
       let ticksRun = 0
 
-      const chunk = (): void => {
-        setState((current) => {
-          if (!current) return current
-          if (abortFastForward.current) {
-            setFastForward({ running: false, ticksRun, reason: 'aborted', trigger: null })
-            return current
-          }
+      // Gerechnet wird AUSSERHALB des setState-Updaters, und der Zustand wird von
+      // Haeppchen zu Haeppchen explizit weitergereicht. Ein Updater muss pur sein:
+      // React ruft ihn unter StrictMode doppelt, und die fruehere Fassung verlor
+      // dabei die gesammelten Befehle (der erste Lauf leerte `playerCommands`, der
+      // zweite — dessen Ergebnis zaehlt — rechnete ohne sie) und zaehlte `ticksRun`
+      // doppelt ("Angehalten nach 2 Tagen" bei einem). Befund vom 2026-09-08.
+      const chunk = (current: GameState): void => {
+        if (abortFastForward.current) {
+          setFastForward({ running: false, ticksRun, reason: 'aborted', trigger: null })
+          return
+        }
 
-          const result = fastForwardChunk(
-            current,
-            { ...request, playerCommands },
-            { map: activeMap, rules: props.rules },
-            MAX_FAST_FORWARD_TICKS - ticksRun,
-            debugOn ? noteTrace : undefined,
-          )
-          playerCommands = []
-          ticksRun += result.ticksRun
+        const result = fastForwardChunk(
+          current,
+          { ...request, playerCommands },
+          { map: activeMap, rules: props.rules },
+          MAX_FAST_FORWARD_TICKS - ticksRun,
+          debugOn ? noteTrace : undefined,
+        )
+        playerCommands = []
+        ticksRun += result.ticksRun
+        setState(result.state)
 
-          // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
-          // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
-          const weiter = result.stoppedBy === 'limit' && ticksRun < MAX_FAST_FORWARD_TICKS
-          if (weiter) {
-            setFastForward({ running: true, ticksRun, reason: null, trigger: null })
-            setTimeout(chunk, 0)
-          } else {
-            setFastForward({ running: false, ticksRun, reason: result.stoppedBy, trigger: result.trigger })
-          }
-          return result.state
-        })
+        // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
+        // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
+        const weiter = result.stoppedBy === 'limit' && ticksRun < MAX_FAST_FORWARD_TICKS
+        if (weiter) {
+          setFastForward({ running: true, ticksRun, reason: null, trigger: null })
+          setTimeout(() => chunk(result.state), 0)
+        } else {
+          setFastForward({ running: false, ticksRun, reason: result.stoppedBy, trigger: result.trigger })
+        }
       }
 
-      chunk()
+      const start = stateRef.current
+      if (start) chunk(start)
     },
     [activeMap, props.rules, debugOn, noteTrace, takePending],
   )
