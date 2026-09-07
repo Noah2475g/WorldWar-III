@@ -1,0 +1,36 @@
+name,lon,lat,continent,note
+London,-0.1276,51.5072,Europe,
+Paris,2.3522,48.8566,Europe,
+Berlin,13.4050,52.5200,Europe,
+Rom,12.4964,41.9028,Europe,Auf der italienischen Halbinsel — ein eigener Ring
+Madrid,-3.7038,40.4168,Europe,
+Moskau,37.6173,55.7558,Europe,
+Stockholm,18.0686,59.3293,Europe,Schwedens Kueste ist stark zergliedert
+Athen,23.7275,37.9838,Europe,Griechenland verliert heute die Halbinsel
+Warschau,21.0122,52.2297,Europe,
+Istanbul,28.9784,41.0082,Europe,Am Bosporus — Provinzgrenze und Meerenge
+New York,-74.0060,40.7128,North America,Liegt 0.9 px vor der vereinfachten Kueste
+Los Angeles,-118.2437,34.0522,North America,In USA-WEST — heute gar nicht gezeichnet
+Chicago,-87.6298,41.8781,North America,
+Mexiko-Stadt,-99.1332,19.4326,North America,
+Toronto,-79.3832,43.6532,North America,
+Vancouver,-123.1207,49.2827,North America,
+Sao Paulo,-46.6333,-23.5505,South America,
+Buenos Aires,-58.3816,-34.6037,South America,
+Lima,-77.0428,-12.0464,South America,
+Bogota,-74.0721,4.7110,South America,
+Kairo,31.2357,30.0444,Africa,
+Lagos,3.3792,6.5244,Africa,
+Nairobi,36.8219,-1.2921,Africa,
+Kapstadt,18.4241,-33.9249,Africa,
+Casablanca,-7.5898,33.5731,Africa,
+Tokio,139.6917,35.6895,Asia,Honshu ist einer von vielen Ringen Japans
+Peking,116.4074,39.9042,Asia,
+Delhi,77.2090,28.6139,Asia,
+Jakarta,106.8456,-6.2088,Asia,Java — Indonesien ist nur als Inselkette zu zeichnen
+Singapur,103.8198,1.3521,Asia,Eine Insel von wenigen Bildpunkten
+Dubai,55.2708,25.2048,Asia,
+Bangkok,100.5018,13.7563,Asia,
+Manila,120.9842,14.5995,Asia,Luzon — die Philippinen zeichnen heute 37 Prozent
+Sydney,151.2093,-33.8688,Oceania,
+Auckland,174.7633,-36.8485,Oceania,Neuseeland zeichnet heute 38 Prozent

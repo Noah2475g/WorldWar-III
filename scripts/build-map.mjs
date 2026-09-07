@@ -10,7 +10,7 @@ import { planAbsorptions } from '../packages/mapgen/src/absorb.ts'
 import { deriveSeaLanes } from '../packages/mapgen/src/sealanes.ts'
 import { readCsv } from '../packages/mapgen/src/csv.ts'
 import { balanceStartingValues, enrich, ensureStartingBasics, startingValue } from '../packages/mapgen/src/enrich.ts'
-import { project } from '../packages/mapgen/src/project.ts'
+import { MAP_HEIGHT, MAP_WIDTH, drawableRings, toMapX, toMapY } from '../packages/mapgen/src/project.ts'
 import { shapeAreaKm2, shapeCentre } from '../packages/mapgen/src/area.ts'
 
 /**
@@ -317,12 +317,9 @@ console.log(`data/maps/world-shapes.json geschrieben (${(JSON.stringify(out).len
  * balanced on. The first build multiplied both by a thousand once more, and a barracks
  * cost four game-minutes of income; see PROBLEME.md, 2026-09-03.
  */
-const WIDTH = 4000
-const HEIGHT = 2400
-const TOP = project({ lon: 0, lat: 78 }).y
-const BOTTOM = project({ lon: 0, lat: -58 }).y
-const toX = (lon) => Math.round(project({ lon, lat: 0 }).x * WIDTH)
-const toY = (lat) => Math.round(((project({ lon: 0, lat }).y - TOP) / (BOTTOM - TOP)) * HEIGHT)
+// Canvas size and the globe-to-pixel conversion live in packages/mapgen/src/project.ts
+// since T-M19-01. They were here, and that is why a guard could not check the drawn map
+// against its source without copying them — two tables of the truth.
 
 /**
  * The core stores every quantity as fixed-point with three decimals. Used for the
@@ -364,10 +361,10 @@ const enriched = new Map(
 )
 
 const gameProvinces = provinces.map((p) => {
-  const outer =
-    p.geometry.type === 'MultiPolygon'
-      ? p.geometry.coordinates.reduce((a, b) => (a[0].length >= b[0].length ? a : b))[0]
-      : p.geometry.coordinates[0]
+  // Every piece of the province, not the biggest one. Choosing was the bug: after the
+  // Mercator projection the largest ring of "the western United States" is Alaska
+  // (84 453 px² against 58 147), so the west coast simply was not drawn (T-M19-02).
+  const polygons = drawableRings(p.geometry)
 
   return {
     id: p.id,
@@ -375,8 +372,8 @@ const gameProvinces = provinces.map((p) => {
     kind: enriched.get(p.id).kind,
     terrain: enriched.get(p.id).terrain,
     coastal: p.coastal,
-    center: { x: toX(p.centre.lon), y: toY(p.centre.lat) },
-    polygon: outer.map(([lon, lat]) => [toX(lon), toY(lat)]),
+    center: { x: toMapX(p.centre.lon), y: toMapY(p.centre.lat) },
+    polygons,
     population: Math.round(enriched.get(p.id).population),
     deposits: Object.fromEntries(
       Object.entries(enriched.get(p.id).deposits).map(([key, value]) => [key, Math.round(value)]),
@@ -420,8 +417,8 @@ const startPositions = Object.values(rules.startNations.nations).map((nation) =>
 const world = {
   id: 'world',
   name: 'Welt',
-  width: WIDTH,
-  height: HEIGHT,
+  width: MAP_WIDTH,
+  height: MAP_HEIGHT,
   provinces: gameProvinces,
   edges: gameEdges,
   edgesByProvince,

@@ -95,3 +95,92 @@ export function centroid(ring: readonly LonLat[]): LonLat {
 
   return { lon: lon / (3 * twiceArea), lat: lat / (3 * twiceArea) }
 }
+
+// ------------------------------------------------------------------ the canvas
+
+/**
+ * From the globe to the game's canvas (T-M19-01).
+ *
+ * This lived in `scripts/build-map.mjs` until 2026-09-07, and that was the reason the
+ * map could be wrong without anything noticing: a guard that wants to check the drawn
+ * map against its source has to project the source the same way, and the only way to
+ * do that from a test was to copy these six lines. Two tables of the truth is exactly
+ * the fault this project has already paid for twice — so the generator and the guard
+ * now read from here, and neither owns it.
+ */
+
+/** Canvas size in pixels. The core stores it as `MapData.width`/`height`. */
+export const MAP_WIDTH = 4000
+export const MAP_HEIGHT = 2400
+
+/**
+ * The latitude band the canvas shows. Cut at 78° N and 58° S: further north there is
+ * only ice, further south only Antarctica, and Mercator spends most of the picture on
+ * both if it is allowed to.
+ */
+export const MAP_LAT_TOP = 78
+export const MAP_LAT_BOTTOM = -58
+
+const TOP = project({ lon: 0, lat: MAP_LAT_TOP }).y
+const BOTTOM = project({ lon: 0, lat: MAP_LAT_BOTTOM }).y
+
+/** Longitude to a whole pixel column. */
+export const toMapX = (lon: number): number => Math.round(project({ lon, lat: 0 }).x * MAP_WIDTH)
+
+/** Latitude to a whole pixel row, within the band above. */
+export const toMapY = (lat: number): number =>
+  Math.round(((project({ lon: 0, lat }).y - TOP) / (BOTTOM - TOP)) * MAP_HEIGHT)
+
+/** A point on the canvas, as the core stores it in a province outline. */
+export type MapPoint = readonly [number, number]
+
+/**
+ * The outer rings of a GeoJSON shape — one for a Polygon, one per part for a
+ * MultiPolygon. Holes (every ring after the first of a part) are dropped: the game
+ * fills a province in one colour, and a hole would have to be cut from a fill that
+ * something else has already painted.
+ */
+export function outerRings(shape: {
+  type: string
+  coordinates: unknown
+}): ReadonlyArray<ReadonlyArray<readonly number[]>> {
+  const coordinates = shape.coordinates as number[][][] | number[][][][]
+  return shape.type === 'MultiPolygon'
+    ? (coordinates as number[][][][]).map((part) => part[0] ?? [])
+    : [(coordinates as number[][][])[0] ?? []]
+}
+
+/** Shoelace area of a ring already in pixels. Sign discarded. */
+export function ringAreaPx2(ring: ReadonlyArray<MapPoint>): number {
+  if (ring.length < 3) return 0
+
+  let twice = 0
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i]!
+    const b = ring[j]!
+    twice += b[0] * a[1] - a[0] * b[1]
+  }
+  return Math.abs(twice) / 2
+}
+
+/**
+ * Every ring of a shape that actually paints something, in canvas pixels.
+ *
+ * Rings with no area left are dropped, and that threshold is not a taste: after
+ * rounding to whole pixels 1228 of the world's 3393 outer rings enclose exactly zero
+ * area — they are a line or a point, and a fill over them covers nothing. Dropping
+ * them costs 0,000 % of the land and saves 4934 points (measured 2026-09-07).
+ *
+ * What this function must **not** do is pick one ring. The generator did that until
+ * T-M19-02, taking the one with the most points, and so drew Alaska's fjord coast in
+ * place of the western United States — 130 of 237 provinces lost land that way. A
+ * province may be in more than one piece, because a power may be.
+ */
+export function drawableRings(shape: {
+  type: string
+  coordinates: unknown
+}): ReadonlyArray<ReadonlyArray<MapPoint>> {
+  return outerRings(shape)
+    .map((ring) => ring.map((point): MapPoint => [toMapX(point[0] ?? 0), toMapY(point[1] ?? 0)]))
+    .filter((ring) => ringAreaPx2(ring) > 0)
+}

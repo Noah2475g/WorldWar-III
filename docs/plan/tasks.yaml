@@ -1523,11 +1523,11 @@ tasks:
   - id: T-M19-01
     milestone: M19
     title: Der Waechter, der es haette finden muessen
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-09]
     design: [D-21]
-    files: [packages/mapgen/src/project.ts, data/maps/landmarks.csv]
+    files: [packages/mapgen/src/project.ts, data/maps/landmarks.csv, scripts/build-map.mjs, docs/reports/map-geometry.md]
     tests: [packages/mapgen/src/worldmap.geometry.test.ts]
     dod: "Vier Pruefungen gegen world-shapes.json: (G2) je Provinz traegt die gezeichnete Flaeche mindestens 99 Prozent der Quellflaeche; (G1) der Ankerpunkt liegt in einer gezeichneten Flaeche; (G3) bekannte Staedte liegen an Land; (G4) kein Punkt ausserhalb der Leinwand. Sie sind ERWARTET ROT - heute fallen G2 mit 130 von 237, G1 mit 4, G3 mit 10 von 28, G4 mit Groenland - und werden als Uebergang gefuehrt, bis T-M19-02 sie gruen macht: ein neuer roter Waechter blockiert die Abnahmekette nicht (Lehre vom 2026-09-06). Die Zahlen stehen gemessen in docs/reports/map-geometry.md. Die Projektion wird aus build-map.mjs nach packages/mapgen VERSCHOBEN, nicht kopiert - zwei Tabellen der Wahrheit sind genau der Fehler, vor dem die Zeichentests warnen. Schliesst Befund N9 der Auswertung vom 2026-09-05"
 
