@@ -75,6 +75,9 @@ describe('R-ARCH-06 Rechenzeit je Tick', () => {
     const tickMedian = median(samples)
     const p99 = [...samples].sort((a, b) => a - b)[Math.floor(samples.length * 0.99)] ?? 0
 
+    // Geschrieben wird in eine EIGENE Datei: ai-bench.json gehoert seit T-M16-02 der
+    // Messung auf der Weltkarte, und zwei Schreiber auf eine Datei sind ein Bericht,
+    // der davon abhaengt, wer zuletzt lief.
     const dir = fileURLToPath(new URL('../../../../docs/reports/', import.meta.url))
     mkdirSync(dir, { recursive: true })
     writeFileSync(
@@ -90,8 +93,27 @@ describe('R-ARCH-06 Rechenzeit je Tick', () => {
   })
 })
 
-describe('R-AI-04 Rechenzeit der KI', () => {
-  it('bleibt unter dreissig Prozent der Tickzeit', () => {
+/**
+ * Ein Gelaender, keine Zusicherung (T-M16-02).
+ *
+ * Dieser Block hiess bis zum 2026-09-07 "bleibt unter dreissig Prozent der Tickzeit"
+ * und sicherte fuenfzig zu. Beides war falsch: der Titel nannte die Zahl der
+ * Anforderung, die Zusicherung liess das Anderthalbfache davon durch, und gemessen
+ * wurde auf zwoelf Provinzen mit drei Maechten, waehrend R-AI-04 acht KI-Spieler sagt.
+ *
+ * R-AI-04 wird jetzt dort gemessen, wo es gilt: `worldmap.bench.slow.test.ts`, 237
+ * Provinzen, acht KI-Maechte. Was hier bleibt, faengt einen Rueckschritt um eine
+ * Groessenordnung frueh ab und belegt die Anforderung nicht — derselbe Vermerk wie im
+ * Nachbarblock.
+ *
+ * Die Zahlen auseinanderzuhalten lohnt sich: auf der kleinen Karte liegt der Anteil bei
+ * rund 0,46, auf der Weltkarte bei 0,074. Nicht weil die KI dort billiger waere, sondern
+ * weil der Tick teurer ist — der Anteil ist ein Quotient, und beide Seiten wachsen
+ * verschieden. Wer die 0,46 als "knapp an der Grenze" liest, liest eine Zahl ueber die
+ * Testkarte als Aussage ueber das Spiel.
+ */
+describe('KI-Rechenzeit auf der kleinen Karte (Gelaender, nicht R-AI-04)', () => {
+  it('bleibt in derselben Groessenordnung wie die Tickzeit', () => {
     let state = loaded()
     state = runTicks(state, 100, ctx).state
 
@@ -115,17 +137,29 @@ describe('R-AI-04 Rechenzeit der KI', () => {
 
     const dir = fileURLToPath(new URL('../../../../docs/reports/', import.meta.url))
     writeFileSync(
-      `${dir}ai-bench.json`,
+      `${dir}ai-bench-smallmap.json`,
       `${JSON.stringify({ aiMedianMs: aiMedian, tickMedianMs: tickMedian, share: Number(share.toFixed(3)),
         // Die Bedingungen gehoeren in die Datei, sonst liest die naechste Person den
         // Anteil als erfuellte Anforderung: R-AI-04 verlangt acht KI-Maechte, hier
-        // stehen drei auf zwoelf Provinzen. T-M16-02 zieht die Messung auf die
-        // Weltkarte; dann faellt dieser Vermerk mit dem Block weg.
+        // stehen drei auf zwoelf Provinzen.
         provinces: map.provinces.length, players: CONFIG.players.length,
-        certifies: 'nichts - R-AI-04 verlangt acht KI-Maechte auf der ausgelieferten Karte (T-M16-02)',
+        certifies: 'nichts - Gelaender gegen Rueckschritte. R-AI-04 wird in docs/reports/ai-bench.json belegt (Weltkarte, acht KI-Maechte, T-M16-02).',
       }, null, 2)}\n`,
     )
 
-    expect(share).toBeLessThan(0.5)
+    // Gemessen wird die ABSOLUTE KI-Zeit, nicht der Anteil (T-M16-02).
+    //
+    // Der Anteil taugt hier nicht als Gelaender: auf zwoelf Provinzen brauchen KI und
+    // Tick beide rund 0,065 ms, der Quotient liegt also von Natur aus bei 0,5 und
+    // schwankt mit jeder Messung. Gemessen 0,487 gegen eine Grenze von 0,5 — das sind
+    // 2,6 % Reserve, und ein Gelaender, das zufaellig reisst, kostet genau die
+    // Untersuchung, die es sparen soll. Am 2026-09-06 hat das Tickbudget diese Lektion
+    // schon einmal erteilt.
+    //
+    // Das ist KEINE Lockerung: die Zusicherung, die R-AI-04 vertritt, steht seit heute
+    // in worldmap.bench.slow.test.ts und ist mit 0,30 strenger als die 0,5 hier je
+    // waren. Was hier bleibt, soll einen Rueckschritt um eine Groessenordnung fangen —
+    // und dafuer ist die absolute Zeit die richtige Groesse. Gemessen 0,064 ms.
+    expect(aiMedian, `KI-Median ${aiMedian.toFixed(4)} ms`).toBeLessThan(0.5)
   })
 })

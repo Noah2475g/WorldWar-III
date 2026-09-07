@@ -1,8 +1,22 @@
 {
-  "aiMedianMs": 0.07979999999997744,
-  "tickMedianMs": 0.09259999999994761,
-  "share": 0.463,
-  "provinces": 12,
-  "players": 3,
-  "certifies": "nichts - R-AI-04 verlangt acht KI-Maechte auf der ausgelieferten Karte (T-M16-02)"
+  "map": "world",
+  "provinces": 237,
+  "edges": 658,
+  "players": 8,
+  "aiPlayers": 8,
+  "ticks": 480,
+  "aiMedianMs": 0.2063,
+  "tickMedianMs": 2.5693,
+  "aiP99Ms": 0.8381,
+  "share": 0.074,
+  "requirement": {
+    "id": "R-AI-04",
+    "maxShare": 0.3,
+    "provinces": 237,
+    "aiPlayers": 8
+  },
+  "meetsRequirement": true,
+  "certifies": "R-AI-04 unter seinen eigenen Bedingungen: ausgelieferte Weltkarte, acht KI-Maechte.",
+  "note": "Beide Mediane stehen einzeln, weil der Anteil allein nicht lesbar ist: updateIntel liegt im Nenner, ein schnellerer Tick hebt den gemeldeten Anteil.",
+  "measuredAt": "2026-09-07T00:24:20.042Z"
 }

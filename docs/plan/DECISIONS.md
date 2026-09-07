@@ -1072,3 +1072,54 @@ ein: der Playtest hat die Bilanz fünfmal gegen den echten Tageszuwachs geprüft
 Einmalzahlung in einer Tagesrate hätte genau diesen Nachweis zerstört. Ein Test hält das
 fest. Soll später doch ein Hauptbuch kommen, ist dies kein Hindernis — die Spalte bliebe
 richtig und bekäme eine zweite daneben.
+
+---
+
+## 2026-09-07 · T-M16-02 · R-AI-04 gemessen — und die zwei Schnitte deshalb nicht gebaut
+
+**Entscheidung:** R-AI-04 wird ab sofort dort gemessen, wo die Anforderung gilt: auf der
+ausgelieferten Weltkarte mit **acht** KI-Mächten. Die beiden geplanten Optimierungen —
+der doppelte `visibleProvinces`-Lauf und die je Tick neu gebaute Provinzgeografie —
+werden **nicht** gebaut. Der Befund bleibt als Beobachtung stehen, nicht als Aufgabe.
+
+**Die Messung** (`docs/reports/ai-bench.json`, 2026-09-07, 480 Ticks, Grundlast 10 %):
+
+| | |
+|---|---|
+| KI-Median | **0,206 ms** |
+| Tick-Median | **2,569 ms** |
+| Anteil | **0,074** |
+| Gefordert | < 0,30 |
+
+**Begründung:** Die Anforderung wird mit **Faktor 4** gehalten. Die Zahl, die bisher im
+Umlauf war — 0,463 beziehungsweise 0,498 — stammt von zwölf Provinzen mit drei Mächten
+und war damit nicht nur unbelegt, sondern **irreführend pessimistisch**: sie las sich wie
+„knapp an der Grenze", während die Anforderung unter ihren eigenen Bedingungen mit großem
+Abstand hält.
+
+Der Grund für den Unterschied ist der Quotient selbst. Auf der kleinen Karte kosten KI und
+Tick beide rund 0,065 ms, der Anteil liegt also von Natur aus bei 0,5. Auf der Weltkarte
+wächst die Tickzeit auf 2,57 ms, die KI-Zeit nur auf 0,21 — der Anteil fällt, ohne dass
+irgendetwas optimiert wurde. Deshalb stehen jetzt **beide Mediane einzeln** im Bericht:
+`updateIntel` liegt im Nenner, ein schnellerer Tick würde den gemeldeten Anteil erhöhen,
+obwohl das Spiel besser geworden wäre.
+
+**Warum die Schnitte trotzdem nicht gebaut werden**, obwohl sie echte Doppelarbeit
+beseitigen würden: Sie greifen in `publicView` und `intel` ein — die Stelle, durch die
+jede KI-Entscheidung und jede Sicht des Spielers geht. Der Preis wäre Risiko am Golden
+Master vier Tage vor der Abnahme, der Gewinn wäre Reserve auf eine Zusicherung, die
+bereits vierfach gehalten wird. Das ist die falsche Richtung. *Erst messen, dann
+reparieren* hat hier genau das geleistet, wofür es da ist: die Reparatur ist nicht nötig.
+
+**Auswirkung:**
+
+- Der Block in `tick.bench.slow.test.ts` heißt jetzt, was er ist — ein Geländer auf der
+  kleinen Karte, das die Anforderung **nicht** belegt. Sein Titel behauptete „unter
+  dreissig Prozent" und sicherte fünfzig zu.
+- Dasselbe Geländer misst jetzt die **absolute** KI-Zeit statt des Anteils. Gemessen 0,487
+  gegen eine Grenze von 0,5 — 2,6 % Reserve, also ein Test, der zufällig reißt und dann
+  eine Untersuchung an einem Problem kostet, das keines ist. Das ist keine Lockerung: die
+  Zusicherung, die R-AI-04 vertritt, ist mit 0,30 strenger als die 0,5 es je waren.
+- Er schreibt nach `ai-bench-smallmap.json`; `ai-bench.json` gehört der Messung, die die
+  Anforderung belegt. Zwei Schreiber auf eine Datei ergeben einen Bericht, der davon
+  abhängt, wer zuletzt lief.

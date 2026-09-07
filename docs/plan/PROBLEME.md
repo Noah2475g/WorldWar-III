@@ -1354,3 +1354,49 @@ geprüft und fallen dort.
 **Status: geschlossen** durch T-M12-08 und T-M12-10. Der Eintrag bleibt stehen, weil die
 Fehlerklasse bleibt: „`done` heißt gebaut" gilt in diesem Projekt nur so weit, wie ein Test
 es trägt.
+
+---
+
+## 2026-09-07 · R-AI-04 ist gemessen — und die Zahl war in die falsche Richtung falsch
+
+**Der Befund vom 2026-09-06 stimmte:** R-AI-04 wurde auf **zwölf Provinzen mit drei
+Mächten** gemessen, während die Anforderung „bei 8 KI-Spielern" sagt. Der gemeldete
+Anteil (0,463, davor 0,498) war keine Aussage über die Anforderung.
+
+**Was die Messung unter den richtigen Bedingungen ergibt** (Weltkarte, 237 Provinzen,
+acht KI-Mächte, 480 Ticks):
+
+| | gemessen | gefordert |
+|---|---|---|
+| KI-Median | 0,206 ms | — |
+| Tick-Median | 2,569 ms | — |
+| **Anteil** | **0,074** | < 0,30 |
+
+**Die Anforderung hält mit Faktor 4.** Und das ist der eigentliche Punkt dieses Eintrags:
+die alte Zahl war nicht nur unbelegt, sie war **irreführend pessimistisch**. 0,463 gegen
+eine Grenze von 0,5 liest sich wie „knapp", und wer so liest, plant Optimierungsarbeit
+gegen ein Problem, das keines ist. Genau das stand in T-M16-02 als „zwei Schnitte".
+
+Der Grund für die Diskrepanz steckt im Quotienten. Auf zwölf Provinzen kosten KI und Tick
+beide rund 0,065 ms — der Anteil liegt dort **von Natur aus** bei 0,5. Auf der Weltkarte
+wächst die Tickzeit auf das Vierzigfache, die KI-Zeit nur auf das Dreifache. Der Anteil
+fällt, ohne dass eine Zeile optimiert wurde.
+
+**Die Lehre ist nicht „falsch gemessen"**, sondern spezifischer: *Ein Anteil ist auf einer
+kleinen Karte keine kleinere Version desselben Anteils auf einer großen.* Die Fehlerklasse
+E aus der Auswertung vom 2026-09-05 („jedes Messgerät misst das Falsche") hat hier eine
+Untervariante — das Messgerät misst die richtige Größe unter Bedingungen, unter denen sie
+etwas anderes bedeutet.
+
+**Zwei Dinge daran wurden abgestellt:**
+
+- Der Block auf der kleinen Karte hieß „bleibt unter dreissig Prozent der Tickzeit" und
+  sicherte **fünfzig** zu. Der Titel nannte die Zahl der Anforderung, die Zusicherung ließ
+  das Anderthalbfache durch, und belegt hat er keine von beiden.
+- Er sicherte einen **Anteil** zu, der bei 0,487 gegen 0,5 lag: 2,6 % Reserve. Ein
+  Geländer, das zufällig reißt, kostet die Untersuchung, die es sparen soll — dieselbe
+  Lektion, die das Tickbudget am 2026-09-06 erteilt hat. Es misst jetzt die absolute
+  KI-Zeit, wo die Reserve das Achtfache beträgt.
+
+**Status: geschlossen** durch T-M16-02. Die beiden Schnitte sind nicht gebaut und werden
+nicht als Aufgabe geführt — Begründung in `DECISIONS.md`, 2026-09-07.

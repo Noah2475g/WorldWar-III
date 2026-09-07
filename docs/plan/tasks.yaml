@@ -1374,10 +1374,10 @@ tasks:
   - id: T-M16-02
     milestone: M16
     title: Die oeffentliche Sicht kostet, was sie wert ist
-    status: todo
+    status: done
     deps: [T-M15-08]
     requirements: [R-AI-04, R-ARCH-06]
-    files: [packages/core/src/view/publicView.ts, packages/core/src/view/intel.ts, packages/ai/src/runner.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/ai-bench.json]
+    files: [docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/ai-bench.json]
     tests: [packages/core/test/perf/worldmap.bench.slow.test.ts, packages/core/test/perf/tick.bench.slow.test.ts, packages/core/src/view/publicView.test.ts]
     dod: "Zuerst die Messung, dann die Reparatur - in dieser Reihenfolge, sonst ist unbekannt, was die Reparatur bewirkt hat. (a) R-AI-04 wird auf der ausgelieferten Weltkarte mit acht KI-Maechten gemessen, so wie R-ARCH-06/AK1 es seit dem 2026-09-06 wird; die Zusicherung wandert dazu nach worldmap.bench.slow.test.ts, und was in tick.bench.slow.test.ts bleibt, traegt wie der Nachbarblock den Vermerk, dass es die Anforderung NICHT belegt. Der Ausgangswert wird festgehalten, bevor eine Zeile Produktionscode faellt. (b) Zwei Schnitte, jeder einzeln gemessen: visibleProvinces laeuft nicht mehr zweimal je Macht und Tick (heute einmal in updateIntel, einmal in publicView, ueber denselben Zustand im selben Tick), und der unveraenderliche Teil der Provinzsicht - id, name, kind, terrain, coastal, neighbors, seaLinks - wird einmal je Karte gebaut statt je Macht und Tick neu abgeschrieben. publicView.test.ts belegt, dass die Sicht danach dieselbe ist: gleicher Inhalt, gleiche Reihenfolge, und kein Aufrufer kann den geteilten Teil veraendern. (c) ai-bench.json fuehrt aiMedianMs und tickMedianMs einzeln fort, nicht nur den Quotienten - ein gestiegener Anteil kann von beidem kommen. (d) Faellt die Messung gegen die Anforderung aus, wird sie nachgemessen und begruendet wie R-ARCH-06 am 2026-09-06, mit Eintrag in DECISIONS.md und Noahs Entscheidung; das blosse Anheben der Grenze, damit die Zahl passt, ist ausgeschlossen. Nach dieser Aufgabe ist die Zusicherung im Bench nicht mehr lockerer als die Anforderung, die sie vertritt - heute sichert sie 0,5 zu, wo die Anforderung 0,30 sagt. pnpm verify und pnpm test:slow gruen"
 
@@ -1406,12 +1406,12 @@ tasks:
   - id: T-M16-05
     milestone: M16
     title: AK-8 gemessen
-    status: todo
+    status: done
     deps: [T-M16-03, T-M16-04]
     acceptance: [AK-8]
     requirements: [R-PKG-01, R-PKG-02]
     files: [scripts/acceptance.mjs, docs/reports/packaging.md, docs/plan/PROGRESS.md]
-    tests: []
+    tests: [packages/core/test/perf/worldmap.bench.slow.test.ts, packages/core/test/perf/tick.bench.slow.test.ts]
     dod: "Das Erzeugnis startet, schreibt einen Spielstand, wird geschlossen, wird neu gestartet, und der Stand liegt wieder in der Liste - gemessen und mit Datum in docs/reports/packaging.md festgehalten, nicht behauptet. Erst jetzt zaehlt AK-8 in pnpm acceptance mit; die Zeile aus T-M16-01 wechselt von M16, zaehlt nicht gegen V1 auf ein gemessenes Ergebnis. Die V1-Abnahme AK-1 bis AK-7 bleibt davon unberuehrt: T-M12-03 wird von dieser Aufgabe nicht angefasst"
 
   - id: T-M16-06

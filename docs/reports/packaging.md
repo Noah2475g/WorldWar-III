@@ -1,6 +1,6 @@
 # AK-8 — der Spielstand überlebt den Programmneustart
 
-Gemessen am **2026-09-07** gegen `c7dd2c1` (T-M16-05), am gebauten Programm und nicht im
+Gemessen am **2026-09-07** gegen `1c33ec7` (T-M16-05), am gebauten Programm und nicht im
 Browser. Der Bericht gilt für genau diesen Stand.
 
 > **Warum diese Datei existiert:** AK-8 stand seit dem 2026-09-05 in C-02 und hatte bis
@@ -49,9 +49,28 @@ war sauber, die Datei ist in diesem Lauf entstanden.
   „Spielstände" in der Kopfleiste und die Wirtschaftsspalten „Unterhalt" und „In Auftrag"
   (T-M12-10 a/b).
 
+## Zweimal gemessen, und warum
+
+Der erste Lauf (2026-09-07, gegen `c7dd2c1`) hat AK-8 ebenso erfüllt, mit demselben
+Ergebnis in allen sieben Schritten. Er wird hier trotzdem **nicht** als die Messung
+geführt, weil sein Erzeugnis den damals aktuellen Code nicht enthielt: `Dialogs.tsx`
+wurde um 01:59 geändert, das Bündel war um 01:56 gebaut. Nachgewiesen am Bündel selbst —
+es trug die alte Fokusliste, nicht die aus T-M16-07.
+
+Für AK-8 hätte das nichts geändert; der Fokusfang hat mit Spielständen nichts zu tun.
+Aber ein Bericht, der auf ein Erzeugnis zeigt, in dem der beschriebene Code nicht
+steckt, ist genau die Falschaussage, die am 2026-09-06 schon einmal Zeit gekostet hat —
+`acceptance.md` meldete damals einen Stand von **vor** der Reparatur, während die Datei
+daneben das Gegenteil auswies. Also wurde neu gebaut und neu gemessen.
+
+Der zweite Lauf ist auch der bessere Beleg. Beim ersten sprang die Tastatur im
+Startdialog nicht dorthin, wo sie sollte — mit dem Fokusfang tut sie es, und auf dem
+Bild aus Schritt 6 steht der Fokusring auf dem Schließen-Kreuz. Das ist R-UI-15/AK1 am
+gebauten Programm beobachtet, nebenbei und ungeplant.
+
 ## Grenzen dieser Messung
 
-- Sie lief **einmal**, auf **einem** Rechner (Windows 11), aus dem gebauten Ordner heraus
+- Sie lief auf **einem** Rechner (Windows 11), aus dem gebauten Ordner heraus
   — **nicht aus einer Installation** über MSI oder Setup. Ob der Installationspfad
   dieselben Rechte hat, ist damit nicht gemessen.
 - Die Bedienung geschah über `SendKeys` und Mausereignisse, nicht durch einen Menschen.
