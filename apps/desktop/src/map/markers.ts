@@ -39,6 +39,11 @@ export interface ArmyMarker {
     toProvinceId: string
     departureTick: number
     arrivalTick: number
+    /**
+     * Die ganze Restroute ab der naechsten Station, fuer den Marschpfeil (T-M26-01).
+     * Fehlt sie, bleibt der Pfeil bei der einen Etappe, die `toProvinceId` kennt.
+     */
+    route?: readonly string[]
   }
 }
 

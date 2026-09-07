@@ -148,12 +148,36 @@ describe('R-ARCH-06/AK2 Die Karte zeichnet wirklich', () => {
     expect(recorder.calls.measureText ?? 0).toBeGreaterThan(0)
   })
 
-  it('zeichnet den Marschweg der gewaehlten Armee', () => {
-    const wege = world.provinces.slice(0, 4).map((province) => province.id)
-    zeichne({ path: wege, selectedProvince: wege[0]! })
+  it('zeichnet Marschrouten als Pfeil statt als gestrichelte Linie (T-M26-01)', () => {
+    const stationen = world.provinces.slice(0, 4).map((province) => province.id)
+    // speed 100 haelt die Bildschleife an (motionAllowed=false): der synchron
+    // gestubbte requestAnimationFrame dieser Datei wuerde sonst endlos rekurrieren.
+    // Der Pfeil ist Zustand, keine Bewegung — er muss trotzdem dastehen.
+    zeichne({
+      armies: [
+        {
+          id: 'a1',
+          provinceId: stationen[0]!,
+          owner: 'p1',
+          strength: 1000,
+          own: true,
+          march: {
+            toProvinceId: stationen[1]!,
+            departureTick: 0,
+            arrivalTick: 100,
+            route: stationen.slice(1),
+          },
+        },
+      ],
+      tick: 50,
+      speed: 100,
+    })
 
-    // Der gestrichelte Weg ist die einzige Stelle mit setLineDash.
-    expect(recorder.calls.setLineDash ?? 0).toBeGreaterThan(0)
+    // Die gestrichelte Vorschau ist ersetzt; gestrichen wird nirgends mehr.
+    expect(recorder.calls.setLineDash ?? 0).toBe(0)
+    // Der blasse Routenrest ist die einzige Stelle, die globalAlpha anfasst — der
+    // Recorder behaelt den letzten gesetzten Wert (save/restore stellt er nicht nach).
+    expect(recorder.props.globalAlpha).toBe(0.35)
   })
 
   it('meldet die angeklickte Provinz an den Aufrufer', () => {

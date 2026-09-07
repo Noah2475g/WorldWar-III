@@ -2,7 +2,19 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
-import { cacheKey, isVisible, prepareFrame, thin, worthDrawing, type RenderProvince } from './render.ts'
+import {
+  cacheKey,
+  isVisible,
+  marchArrow,
+  marchProgress,
+  marchStroke,
+  prepareFrame,
+  thin,
+  worthDrawing,
+  type RenderProvince,
+} from './render.ts'
+import { colorForPlayer } from './modes.ts'
+import { TOKENS } from '../ui/tokens.ts'
 
 /**
  * The frame budget (T-M10-03b, R-ARCH-06/AK2).
@@ -91,6 +103,79 @@ describe('R-ARCH-06 Was das Budget traegt', () => {
     expect(isVisible({ minX: -50, minY: 0, maxX: -10, maxY: 20 }, view, viewport)).toBe(false)
     // Touching the edge counts as visible: a province half on screen must be drawn.
     expect(isVisible({ minX: -10, minY: 0, maxX: 5, maxY: 20 }, view, viewport)).toBe(true)
+  })
+})
+
+/**
+ * Marschpfeile (T-M26-01, R-UI-16, D25.3).
+ *
+ * Die Sicht liefert je eigener Armee den Abmarschtick der ganzen Route und den
+ * Ankunftstick der NAECHSTEN Etappe (publicView.ts, movement.ts setzt arrivalTick je
+ * Etappe neu, departureTick nur beim Befehl). Der Fortschritt ist deshalb der Anteil
+ * der laufenden Etappe — dieselbe Rechnung, mit der `marchPoint` seit T-M20-04 den
+ * Marker setzt, damit Pfeilfuellung und Marker nie auseinanderlaufen.
+ */
+describe('T-M26-01 Marschpfeile mit Fortschritt', () => {
+  const timing = { departureTick: 100, arrivalTick: 200 }
+
+  it('bindet den Fortschritt an bekannte Ticks: 0 beim Abmarsch, halb in der Mitte, voll bei Ankunft', () => {
+    expect(marchProgress(timing, 100)).toBe(0)
+    expect(marchProgress(timing, 150)).toBe(0.5)
+    expect(marchProgress(timing, 200)).toBe(1)
+  })
+
+  it('klemmt ausserhalb der Spanne, statt Orte zu erfinden', () => {
+    expect(marchProgress(timing, 90)).toBe(0)
+    expect(marchProgress(timing, 260)).toBe(1)
+    // Ein Marsch ohne Dauer ist angekommen, nicht unterwegs — und niemand teilt durch null.
+    expect(marchProgress({ departureTick: 5, arrivalTick: 5 }, 5)).toBe(1)
+  })
+
+  it('teilt die Route am Fortschrittspunkt in gefuellt und blass', () => {
+    const arrow = marchArrow(
+      [
+        [0, 0],
+        [100, 0],
+        [100, 50],
+      ],
+      0.5,
+    )!
+
+    // Gefuellt: von der aktuellen Provinz bis zur Mitte der laufenden Etappe.
+    expect(arrow.done).toEqual([
+      [0, 0],
+      [50, 0],
+    ])
+    // Blass: vom Fortschrittspunkt ueber alle restlichen Stationen bis zum Ziel.
+    expect(arrow.ahead[0]).toEqual([50, 0])
+    expect(arrow.ahead).toContainEqual([100, 0])
+    expect(arrow.ahead[arrow.ahead.length - 1]).toEqual([100, 50])
+  })
+
+  it('setzt die Pfeilspitze ans Ziel, entlang des letzten Abschnitts', () => {
+    const arrow = marchArrow(
+      [
+        [0, 0],
+        [100, 0],
+      ],
+      0,
+      8,
+    )!
+
+    // Die Spitze steht am Ziel, die beiden Flanken dahinter (gegen die Marschrichtung).
+    expect(arrow.head[0]).toEqual([100, 0])
+    expect(arrow.head).toHaveLength(3)
+    for (const flank of arrow.head.slice(1)) expect(flank[0]).toBeCloseTo(92, 6)
+  })
+
+  it('liefert fuer eine Route ohne zweiten Punkt nichts', () => {
+    expect(marchArrow([[0, 0]], 0.5)).toBeNull()
+    expect(marchArrow([], 0)).toBeNull()
+  })
+
+  it('zeichnet eigene Maersche in Tinte, fremde in Spielerfarbe', () => {
+    expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.ink)
+    expect(marchStroke({ own: false, owner: 'p4' })).toBe(colorForPlayer('p4'))
   })
 })
 

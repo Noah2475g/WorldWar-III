@@ -1896,12 +1896,12 @@ tasks:
   - id: T-M26-01
     milestone: M26
     title: Maersche werden Pfeile mit Fortschritt
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-05, R-UI-16]
     design: [D-25]
-    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx]
-    tests: [apps/desktop/src/map/render.test.ts]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/markers.ts, apps/desktop/src/App.tsx, docs/reports/render-bench.json]
+    tests: [apps/desktop/src/map/render.test.ts, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/render.bench.slow.test.ts]
     dod: "Heute ist eine Bewegung eine gestrichelte Linie ohne Richtung und ohne Fortschritt. Fertig, wenn jede sichtbare marschierende Armee ihre Route als Pfad mit Pfeilspitze zeigt, der zurueckgelegte Anteil (aus Abmarsch- und Ankunftstick gerechnet) gefuellt und der Rest blass ist, eigene Armeen in Tinte und fremde in Spielerfarbe gezeichnet werden, und ein Test die Fortschrittsrechnung an bekannte Ticks bindet (0 Prozent beim Abmarsch, die Haelfte in der Mitte, voll bei Ankunft). Danach das Zeichenbudget nachmessen (render.bench, p95 gegen 16,7 ms) und die Zahl in docs/reports/render-bench.json begruenden"
 
   - id: T-M26-02

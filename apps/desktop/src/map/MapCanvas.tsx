@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
-import { MAP_COLORS, prepareFrame, type RenderProvince } from './render.ts'
+import {
+  MAP_COLORS,
+  MARCH_AHEAD_ALPHA,
+  marchArrow,
+  marchProgress,
+  marchStroke,
+  prepareFrame,
+  type RenderProvince,
+} from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
 import { markersFor, pickArmy, type ArmyMarker } from './markers.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
@@ -55,8 +63,6 @@ export interface MapCanvasProps {
   view: View
   ownershipVersion: number
   selectedProvince: string | null
-  /** Provinces the marching order would pass through, drawn as a preview. */
-  path?: readonly string[]
   /** Die eigene Hauptstadt — der Ort, den der Spieler am haeufigsten sucht. */
   capitalProvinceId?: string | null
   /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
@@ -198,20 +204,49 @@ export function MapCanvas(props: MapCanvasProps) {
 
     context.clearRect(0, 0, size.width, size.height)
 
-    if (props.path && props.path.length > 1) {
-      context.beginPath()
-      props.path.forEach((id, index) => {
+    // Marschpfeile (T-M26-01, D25.3): jede sichtbare marschierende Armee zeigt ihre
+    // Route — der zurueckgelegte Anteil voll, der Rest blass, die Spitze am Ziel. Das
+    // ersetzt die gestrichelte Linie, die nur die GEWAEHLTE Armee und ohne Richtung
+    // zeigte. Der Fortschritt haengt am Spieltick, nicht an der Bildschirmuhr: er ist
+    // Zustand wie ein Fortschrittsbalken und bleibt auch unter prefers-reduced-motion
+    // ablesbar — nur der GLEITENDE Marker (markersFor) respektiert die Einstellung.
+    for (const army of props.armies) {
+      if (!army.march) continue
+      const stations = [army.provinceId, ...(army.march.route ?? [army.march.toProvinceId])]
+      const points: [number, number][] = []
+      for (const id of stations) {
         const centre = props.centres[id]
-        if (!centre) return
-        const point = toScreen(centre, props.view)
-        if (index === 0) context.moveTo(point.x, point.y)
-        else context.lineTo(point.x, point.y)
-      })
-      context.strokeStyle = MAP_COLORS.selection
-      context.setLineDash([6, 5])
+        if (!centre) break
+        const screen = toScreen(centre, props.view)
+        points.push([screen.x, screen.y])
+      }
+      const arrow = marchArrow(points, props.tick === undefined ? 0 : marchProgress(army.march, props.tick))
+      if (!arrow) continue
+
+      const stroke = marchStroke(army)
+      const drawLine = (line: [number, number][]): void => {
+        context.beginPath()
+        context.moveTo(line[0]![0], line[0]![1])
+        for (const [x, y] of line.slice(1)) context.lineTo(x, y)
+        context.stroke()
+      }
+
+      context.strokeStyle = stroke
+      context.save()
+      context.globalAlpha = MARCH_AHEAD_ALPHA
       context.lineWidth = 2
-      context.stroke()
-      context.setLineDash([])
+      drawLine(arrow.ahead)
+      context.restore()
+      context.lineWidth = 2.5
+      drawLine(arrow.done)
+
+      // Die Spitze in voller Farbe: die Richtung ist die halbe Botschaft des Pfeils.
+      context.fillStyle = stroke
+      context.beginPath()
+      context.moveTo(arrow.head[0]![0], arrow.head[0]![1])
+      for (const [x, y] of arrow.head.slice(1)) context.lineTo(x, y)
+      context.closePath()
+      context.fill()
     }
 
     if (props.selectedProvince) {
@@ -286,7 +321,6 @@ export function MapCanvas(props: MapCanvasProps) {
     props.armies,
     props.buildings,
     props.selectedProvince,
-    props.path,
     props.capitalProvinceId,
     props.battleProvinces,
     props.tick,

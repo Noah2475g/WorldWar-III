@@ -517,7 +517,13 @@ export function App(props: AppProps) {
         const naechste = army.path?.[0]
         const march =
           naechste && army.departureTick != null && army.arrivalTick != null
-            ? { toProvinceId: naechste, departureTick: army.departureTick, arrivalTick: army.arrivalTick }
+            ? {
+                toProvinceId: naechste,
+                departureTick: army.departureTick,
+                arrivalTick: army.arrivalTick,
+                // Die ganze Restroute, fuer den Marschpfeil (T-M26-01).
+                route: army.path!,
+              }
             : undefined
         return {
           id: army.id,
@@ -547,12 +553,11 @@ export function App(props: AppProps) {
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
 
-  /**
-   * Der Weg der gewaehlten Armee, als Linie auf der Karte (R-UI-12).
-   *
-   * Die Ebene dafuer gibt es in `MapCanvas` seit M10 — befuellt hat sie nie jemand, und
-   * damit war der Marschbefehl das einzige, was man gab, ohne zu sehen, wohin.
-   */
+  // Der Weg der gewaehlten Armee war seit T-M20-03 eine gestrichelte Linie; seit
+  // T-M26-01 zeichnet die Karte JEDEN sichtbaren Marsch als Pfeil mit Fortschritt —
+  // die Route wandert oben als `march.route` in die Armee-Marker, eine eigene
+  // Vorschau-Ebene braucht es nicht mehr.
+
   /** Wie viele Zeilen das Protokoll je Rubrik vorhält. */
   const LOG_LINES = 40
 
@@ -561,12 +566,6 @@ export function App(props: AppProps) {
 
   /** Obergrenze eines Vorspulvorgangs: 30 Spieltage, damit ein nie eintretendes Ziel endet. */
   const MAX_FAST_FORWARD_TICKS = 30 * ticksPerDay
-
-  const selectedPath = useMemo(() => {
-    const army = view?.armies.find((a) => a.id === ui.selectedArmy)
-    if (!army?.path || army.path.length === 0) return undefined
-    return [army.provinceId, ...army.path]
-  }, [view, ui.selectedArmy])
 
   /**
    * Die letzten Befehle und die letzten Begruendungen der KI (T-M12-10, R-AI-05).
@@ -1295,7 +1294,6 @@ export function App(props: AppProps) {
             battleProvinces={battleProvinces}
             speed={speed}
             tick={state.tick}
-            {...(selectedPath ? { path: selectedPath } : {})}
             onSelect={selectOnMap}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.

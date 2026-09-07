@@ -3712,9 +3712,16 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MAP-05, R-UI-16
 - **Entwurf:** D25.3
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/map/markers.ts`, `apps/desktop/src/App.tsx`,
+  `docs/reports/render-bench.json`
+  *(die Marker tragen den Marsch jetzt samt Restroute; die App reicht sie durch — dafür
+  entfiel die gestrichelte Vorschau der gewählten Armee samt `path`-Prop, D25.3 „ersetzt
+  die gestrichelte Linie"; der Slow-Bench misst die Pfeile mit und schreibt die Zahl in
+  den Bericht)*
 - **Tests zuerst:** die Fortschrittsrechnung an bekannte Ticks gebunden — 0 % beim
-  Abmarsch, ½ in der Mitte, voll bei Ankunft.
+  Abmarsch, ½ in der Mitte, voll bei Ankunft (`render.test.ts`, `MapCanvas.test.tsx`,
+  `render.bench.slow.test.ts`).
 - **Fertig wenn:** jede sichtbare marschierende Armee ihre Route als Pfad mit
   Pfeilspitze zeigt, der zurückgelegte Anteil gefüllt, der Rest blass; eigene Armeen in
   Tinte, fremde in Spielerfarbe. Danach Zeichenbudget nachmessen

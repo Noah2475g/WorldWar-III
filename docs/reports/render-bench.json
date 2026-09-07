@@ -10,16 +10,24 @@
   "cases": [
     {
       "name": "Weltansicht",
-      "view": { "x": 0, "y": 0, "scale": 2.78 },
+      "view": {
+        "x": 0,
+        "y": 0,
+        "scale": 2.78
+      },
       "shapes": 237,
       "labels": 0,
-      "medianMs": 1.0,
-      "p95Ms": 3.0,
+      "medianMs": 1,
+      "p95Ms": 3,
       "maxMs": 7.2
     },
     {
       "name": "Nah heran, mit Beschriftung",
-      "view": { "x": 1200, "y": 600, "scale": 1.5 },
+      "view": {
+        "x": 1200,
+        "y": 600,
+        "scale": 1.5
+      },
       "shapes": 203,
       "labels": 103,
       "medianMs": 1.7,
@@ -38,5 +46,14 @@
     "linesUncovered": 81,
     "pct": 67.46,
     "before": "108 von 249 - MapCanvas lief in keinem Test, weil getContext in jsdom null liefert. Die 141 unausgefuehrten Zeilen sind jetzt 81, und sie sind gezaehlt statt geschaetzt."
+  },
+  "nodeRemeasurements": {
+    "task": "T-M26-01",
+    "how": "Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.",
+    "measuredAt": "2026-09-08",
+    "p95Ms": 5.77,
+    "medianMs": 3.88,
+    "maxMs": 10.13,
+    "frameBudgetMs": 16.7
   }
 }
