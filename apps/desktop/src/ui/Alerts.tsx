@@ -15,7 +15,14 @@ import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from 
  * an alert is its cause, so the same cause is the same alert.
  */
 
-export type AlertKind = 'battle' | 'overrun' | 'shortage' | 'unrest' | 'capital' | 'completion'
+export type AlertKind =
+  | 'battle'
+  | 'overrun'
+  | 'shortage'
+  | 'unrest'
+  | 'capital'
+  | 'completion'
+  | 'unlock'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -42,9 +49,58 @@ function justFinished(completesAtTick: number, tick: number): boolean {
   return completesAtTick <= tick && tick - completesAtTick < COMPLETION_ALERT_TICKS
 }
 
-export function alertsFor(view: PublicView | null): Alert[] {
-  if (!view) return []
+/**
+ * Was heute neu dazugekommen ist (T-M21-04, R-TECH-02).
+ *
+ * Das Rueckgrat hatte das Spiel laengst: `availableFromDay` schaltet siebzehn Sachen ueber
+ * sechzehn Spieltage frei — Hafen an Tag 2, Fabrik an Tag 8, Raketenartillerie an Tag 16.
+ * Gesagt hat es das nie. Wer nicht von sich aus jeden Tag die Bauliste durchsah, erfuhr
+ * von der Werft, wenn er sie zufaellig brauchte.
+ *
+ * Gemeldet wird aus den **Regeln**, nicht aus einem Ereignis: der Kern kennt keine
+ * Freischaltung als Vorgang, sie ist bloss ein Vergleich zweier Zahlen. Die Oberflaeche
+ * kann denselben Vergleich anstellen, und das ist billiger als ein Ereignis, das der Kern
+ * fuehren, speichern und wiederherstellen muesste.
+ */
+function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
+  const perDay = rules.constants.ticksPerDay
+  // Nur in den ersten Stunden des Tages — genauso lange wie eine Fertigstellung steht.
+  if (view.tick % perDay >= COMPLETION_ALERT_TICKS) return []
+
+  const today = Math.floor(view.tick / perDay) + 1
   const alerts: Alert[] = []
+
+  for (const [key, rule] of Object.entries(rules.buildings)) {
+    if (rule.availableFromDay !== today) continue
+    alerts.push({
+      id: `unlock:building:${key}`,
+      kind: 'unlock',
+      icon: BUILDING_ICONS[key] ?? 'barracks',
+      text: t('alerts.unlockBuilding', { building: t(`buildings.${key}`) }),
+    })
+  }
+  for (const [key, rule] of Object.entries(rules.units)) {
+    if (rule.availableFromDay !== today) continue
+    alerts.push({
+      id: `unlock:unit:${key}`,
+      kind: 'unlock',
+      icon: UNIT_ICONS[key] ?? 'infantry',
+      text: t('alerts.unlockUnit', { unit: t(`units.${key}`) }),
+    })
+  }
+  return alerts
+}
+
+/** Genau so viel von den Regeln, wie die Freischaltungsmeldung braucht. */
+export interface UnlockRules {
+  constants: { ticksPerDay: number }
+  buildings: Record<string, { availableFromDay: number }>
+  units: Record<string, { availableFromDay: number }>
+}
+
+export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[] {
+  if (!view) return []
+  const alerts: Alert[] = rules ? unlockAlerts(view, rules) : []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
   const nameOf = (id: string): string => view.provinces.find((province) => province.id === id)?.name ?? id
 

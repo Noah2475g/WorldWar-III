@@ -397,7 +397,7 @@ export function App(props: AppProps) {
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
-    const aus = alertsFor(view)
+    const aus = alertsFor(view, props.rules)
     // Kein dauerhafter Speicher? Dann erfaehrt es der Spieler jetzt und nicht beim
     // naechsten Start (T-M14-08). Ein stiller Rueckfall auf den Arbeitsspeicher war
     // genau der Zustand, den diese Aufgabe behebt.

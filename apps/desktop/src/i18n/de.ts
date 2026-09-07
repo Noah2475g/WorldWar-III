@@ -542,6 +542,10 @@ export const de = {
 
   alerts: {
     title: 'Meldungen',
+    // Was heute neu dazugekommen ist (T-M21-04). Der Tag steht nicht im Satz: er ist
+    // heute, sonst stuende die Meldung nicht da.
+    unlockBuilding: 'Neu ab heute: {{building}}. Sie können es jetzt bauen.',
+    unlockUnit: 'Neu ab heute: {{unit}}. Sie können sie jetzt ausheben.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).
