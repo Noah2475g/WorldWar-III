@@ -354,6 +354,12 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     key = `${key}_PLURAL`
   }
 
+  // Das Gefecht trägt seinen Anzeigedatensatz (T-M27-02, D25.6): die Zeile bleibt die
+  // Überschrift, der Körper zeichnet die Stärkebalken daraus. Ohne die additiven
+  // Felder (alter Spielstand) oder aus fremder Sicht entsteht keiner — die Zeile
+  // bleibt dann, was sie war.
+  const battle = battleReport(event, map, naming)
+
   return {
     id: `${event.tick}-${event.type}-${index}`,
     tick: event.tick,
@@ -364,6 +370,7 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
     self: isSelfSetback(event, naming.viewer),
     text: t(`events.${key}`, values),
     ...(province ? { provinceId: province } : {}),
+    ...(battle ? { battle } : {}),
     severity: event.severity === 'alert' ? 'alert' : 'info',
   }
 }

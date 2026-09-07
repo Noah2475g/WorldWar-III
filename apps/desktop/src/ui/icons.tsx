@@ -53,6 +53,8 @@ export type IconName =
   | 'desert'
   | 'forest'
   | 'urban'
+  | 'entrenched'
+  | 'noRetreat'
 
 export interface IconProps {
   name: IconName
@@ -138,6 +140,11 @@ const PATHS: Record<IconName, string> = {
   forest: 'M7.5 5l3 4.5H8.5l2.6 4H3.9l2.6-4H4.5z M7.5 13.5V19 M16.5 9l2.4 3.6h-1.7l2.1 3.4h-5.6l2.1-3.4h-1.7z M16.5 16V19',
   // Haeuserzeile — dichte Bebauung.
   urban: 'M3.5 20V11h5v9 M8.5 20V5h6.5v15 M15 20v-6h5.5v6 M5.5 14h1 M11 9h2 M17.5 17h1',
+  // Die zwei Umstaende des Kampfberichts (T-M27-02, R-UI-10). Der Stellungsbogen der
+  // Lagekarte — eine eingegrabene Stellung, von der Seite geschnitten.
+  entrenched: 'M4 19v-4a8 8 0 0 1 16 0v4 M2.5 19h19',
+  // Pfeil zurueck, der an der Sperre endet — die Rueckzugssperre nach D6.8.
+  noRetreat: 'M6 4v16 M20 12H10 M13.5 8.5L10 12l3.5 3.5',
 }
 
 export function Icon({ name, size = 16, title }: IconProps) {

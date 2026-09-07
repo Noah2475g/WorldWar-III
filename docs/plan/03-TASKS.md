@@ -3794,9 +3794,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D25.6
 - **Abhängigkeiten:** T-M27-01
 - **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`,
-  `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/icons.tsx`,
+  `apps/desktop/src/game/events.ts`
+  *(zwei neue Zeichen — Stellungsbogen für die Eingrabung, gesperrter Pfeil für die
+  Rückzugssperre — kamen in den Symbolsatz; `describeEvent` heftet den Datensatz aus
+  T-M27-01 an den Protokolleintrag)*
 - **Tests zuerst:** Balkenlängen und Zeichen an den Datensatz aus T-M27-01 gebunden —
-  fällt gegen den heutigen Texteintrag.
+  fällt gegen den heutigen Texteintrag (`Panels.test.tsx`, Anheftung in
+  `events.test.ts`).
 - **Fertig wenn:** der Protokolleintrag eines Gefechts einen aufklappbaren Körper trägt
   (Muster Tagesbericht): je Seite ein Stärkebalken vorher → nachher mit dem Verlust als
   zinnoberrotem Abschnitt, dazu Zeichen für Gelände, Festung, Eingrabung und

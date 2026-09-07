@@ -505,6 +505,16 @@ export const de = {
     losses: 'Verluste',
     outcome: 'Ausgang',
     nobody: 'niemand',
+    // Der Kampfbericht als Bild (T-M27-02, R-BAT-05, D25.6): je Seite ein
+    // Stärkebalken, die Umstände als Zeichen — und fürs Ohr die Satzfassung.
+    battleSide: '{{name}}: Stärke {{before}} auf {{after}}, Verluste {{losses}}.',
+    battleEntrenched: 'Eingegraben',
+    battleBlocked: 'Rückzugssperre',
+    battleTerrain: 'Gelände: {{terrain}}.',
+    battleFortress: 'Festung Stufe {{level}}',
+    battleFortressSentence: 'Festung Stufe {{level}}.',
+    battleEntrenchedSentence: '{{name}} kämpft eingegraben.',
+    battleBlockedSentence: '{{name}} steht unter Rückzugssperre.',
   },
 
   a11y: {

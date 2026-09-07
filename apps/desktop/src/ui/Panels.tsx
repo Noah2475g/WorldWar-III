@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
+// Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
+import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
@@ -554,6 +556,15 @@ export interface EventEntry {
    * Textzeile pressen, und die Zahl daneben bleibt der zugängliche Wert.
    */
   deltas?: readonly DayReportDelta[]
+  /**
+   * Der Anzeigedatensatz eines Gefechts (T-M27-02, R-BAT-05, D25.6).
+   *
+   * Anders als `body` ist der Gefechtskörper strukturiert — Balken statt Absätze:
+   * je Seite Stärke vorher/nachher und Verlust, dazu die Umstände als Zeichen.
+   * Gebaut von `battleReport` in game/events.ts; ein altes Ereignis ohne die
+   * additiven Felder trägt keinen, und die Zeile bleibt, was sie war.
+   */
+  battle?: BattleReportData
 }
 
 /** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
@@ -597,6 +608,106 @@ export function categoryOf(type: string): EventCategory {
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
   return 'other'
+}
+
+/**
+ * Die Balkenlängen des Kampfberichts (T-M27-02, D25.6), rein und exakt gebunden.
+ *
+ * Der Maßstab ist die stärkste Seite **vorher**: ihre volle Stärke ist die volle Spur,
+ * alles andere skaliert dagegen — so ist das Kräfteverhältnis der beiden Balken
+ * ablesbar, nicht nur der eigene Schwund. Der Verlust ist die Differenz vorher−nachher
+ * und wird an die Restspur geklemmt, damit Rundung nie über 100 % läuft.
+ */
+export function battleBarWidths(
+  before: number,
+  after: number,
+  max: number,
+): { after: number; loss: number } {
+  if (!Number.isFinite(before) || !Number.isFinite(after) || !(max > 0)) return { after: 0, loss: 0 }
+  const track = (value: number) => Math.max(0, Math.min(100, Math.round((value / max) * 1000) / 10))
+  const kept = track(after)
+  const loss = Math.max(0, Math.min(100 - kept, track(before - after)))
+  return { after: kept, loss }
+}
+
+/**
+ * Die Satzfassung des Gefechtsbilds — fürs Ohr (T-M27-02, R-UI-10).
+ *
+ * Das Bild trägt sie als aria-Text: je Seite Stärke vorher/nachher und Verluste mit
+ * denselben Zahlen, die neben den Balken stehen, danach Gelände und Festung. Ein
+ * Vorleseprogramm bekommt so den ganzen Bericht als einen Satzzug, nicht als
+ * zusammenhanglose Balkenbreiten.
+ */
+export function battleSentence(battle: BattleReportData): string {
+  const parts = battle.sides.map((side) => {
+    const satz = t('events_ui.battleSide', {
+      name: side.name,
+      before: amount(side.before),
+      after: amount(side.after),
+      losses: amount(side.losses),
+    })
+    const extras = [
+      ...(side.entrenched ? [t('events_ui.battleEntrenchedSentence', { name: side.name })] : []),
+      ...(side.attackBlocked ? [t('events_ui.battleBlockedSentence', { name: side.name })] : []),
+    ]
+    return [satz, ...extras].join(' ')
+  })
+  parts.push(t('events_ui.battleTerrain', { terrain: t(`terrain.${battle.terrain}`) }))
+  if (battle.fortressLevel > 0) {
+    parts.push(t('events_ui.battleFortressSentence', { level: battle.fortressLevel }))
+  }
+  return parts.join(' ')
+}
+
+/**
+ * Der Gefechtskörper: je Seite ein Stärkebalken vorher → nachher, der Verlust als
+ * zinnoberroter Abschnitt (der Signalton, hier zu Recht), die Umstände als Zeichen
+ * aus dem bestehenden Symbolsatz. Die Zahlen stehen sichtbar daneben — das Bild
+ * ersetzt sie nicht, es macht sie vergleichbar.
+ */
+function BattleBody({ battle }: { battle: BattleReportData }) {
+  const max = Math.max(...battle.sides.map((side) => side.before), 1)
+  return (
+    <div className="battle" role="img" aria-label={battleSentence(battle)}>
+      {battle.sides.map((side) => {
+        const widths = battleBarWidths(side.before, side.after, max)
+        return (
+          <div key={side.playerId} className="battle__side">
+            <span className="battle__name">
+              {side.name}
+              {side.entrenched && (
+                <Icon name="entrenched" size={12} title={t('events_ui.battleEntrenched')} />
+              )}
+              {side.attackBlocked && (
+                <Icon name="noRetreat" size={12} title={t('events_ui.battleBlocked')} />
+              )}
+            </span>
+            <span className="battle__bar">
+              <span className="battle__after" style={{ width: `${widths.after}%` }} />
+              <span className="battle__loss" style={{ width: `${widths.loss}%` }} />
+            </span>
+            <span className="battle__numbers">
+              {amount(side.before)} → {amount(side.after)}
+            </span>
+          </div>
+        )
+      })}
+      <p className="battle__facts">
+        <Icon name={TERRAIN_ICONS[battle.terrain]} size={12} title={t(`terrain.${battle.terrain}`)} />
+        <span>{t(`terrain.${battle.terrain}`)}</span>
+        {battle.fortressLevel > 0 && (
+          <>
+            <Icon
+              name="fortress"
+              size={12}
+              title={t('events_ui.battleFortress', { level: battle.fortressLevel })}
+            />
+            <span>{t('events_ui.battleFortress', { level: battle.fortressLevel })}</span>
+          </>
+        )}
+      </p>
+    </div>
+  )
 }
 
 export function EventLog({
@@ -672,12 +783,14 @@ export function EventLog({
                   title={t(`alerts.${entry.category ?? 'other'}`)}
                 />
               )}
-              {entry.body || (entry.deltas && entry.deltas.length > 0) ? (
+              {entry.body || entry.battle || (entry.deltas && entry.deltas.length > 0) ? (
                 /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
                    die Überschrift, der Körper steht dahinter — details/summary reicht,
-                   im Stil der Lagekarte. */
+                   im Stil der Lagekarte. Seit T-M27-02 nutzt der Kampfbericht dasselbe
+                   Muster, sein Körper ist aber strukturiert: Balken statt Absätze. */
                 <details className="log__report">
                   <summary>{entry.text}</summary>
+                  {entry.battle && <BattleBody battle={entry.battle} />}
                   {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
                       Wirtschaftstabelle; der groesste Betrag des Tages ist der
                       Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}

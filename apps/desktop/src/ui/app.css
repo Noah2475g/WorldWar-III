@@ -453,6 +453,65 @@ body {
   white-space: nowrap;
 }
 
+/* Das Gefechtsbild (T-M27-02, D25.6): je Seite ein Staerkebalken vorher-zu-nachher,
+   der Verlust als zinnoberner Abschnitt — der Signalton, hier zu Recht. Die Zahlen
+   stehen daneben; das Bild selbst spricht als EIN Satz (role=img, aria-label). */
+.battle {
+  display: grid;
+  gap: 3px;
+  margin: 4px 0 4px var(--sp-md);
+  font-size: 11px;
+  color: var(--ink-soft);
+  max-width: 280px;
+}
+
+.battle__side {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) 1fr auto;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.battle__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle__bar {
+  display: flex;
+  height: 8px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.battle__after {
+  background: var(--ink-soft);
+}
+
+.battle__loss {
+  background: var(--accent);
+}
+
+.battle__numbers {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.battle__facts {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: 0;
+}
+
 /* ---------------------------------------------------------------- dialogs */
 
 .dialog-backdrop {

@@ -678,4 +678,15 @@ describe('R-BAT-05 Der Anzeigedatensatz eines Gefechts', () => {
   it('gibt fuer andere Ereignisarten nichts', () => {
     expect(battleReport(event({ type: 'BATTLE_STARTED', provinceId }), map, namen)).toBeNull()
   })
+
+  it('haengt den Datensatz an den Protokolleintrag, ohne Datensatz bleibt die Zeile schlicht (T-M27-02)', () => {
+    const entry = describeEvent(gefecht(), 0, map, { ...namen, viewer: 'p1' })
+    expect(entry.battle?.sides[0]?.before).toBe(40_000)
+
+    const alt = describeEvent(gefecht({ strengths: undefined, terrain: undefined }), 0, map, {
+      ...namen,
+      viewer: 'p1',
+    })
+    expect(alt.battle).toBeUndefined()
+  })
 })

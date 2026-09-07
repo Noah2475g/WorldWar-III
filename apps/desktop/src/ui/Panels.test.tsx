@@ -17,6 +17,7 @@ import {
   type EventEntry,
 } from './Panels.tsx'
 import { ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
+import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 
 /**
@@ -332,6 +333,116 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
     render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
 
     expect(document.querySelector('details.log__report')).toBeTruthy()
+  })
+})
+
+/**
+ * Das Gefecht zeigt sich (T-M27-02, R-BAT-05, R-UI-10, D25.6).
+ *
+ * Der Kampfbericht war ein Satz. Jetzt traegt der Protokolleintrag eines Gefechts
+ * einen aufklappbaren Koerper nach dem Muster des Tagesberichts: je Seite ein
+ * Staerkebalken vorher-zu-nachher, der Verlust als zinnoberner Abschnitt, dazu die
+ * Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre. Die Balkenlaengen
+ * sind an den Datensatz aus T-M27-01 gebunden — gegen den heutigen Texteintrag
+ * faellt jeder dieser Tests.
+ */
+describe('R-BAT-05 Der Kampfbericht wird ein Bild', () => {
+  const battle: BattleReportData = {
+    provinceName: 'Alpha',
+    terrain: 'mountain',
+    fortressLevel: 2,
+    victor: 'Deutschland',
+    sides: [
+      {
+        playerId: 'p1',
+        name: 'Deutschland',
+        before: 40_000,
+        after: 35_000,
+        losses: 5_000,
+        entrenched: true,
+        attackBlocked: false,
+      },
+      {
+        playerId: 'p2',
+        name: 'Russland',
+        before: 20_000,
+        after: 8_000,
+        losses: 12_000,
+        entrenched: false,
+        attackBlocked: true,
+      },
+    ],
+  }
+
+  const eintrag: EventEntry = {
+    id: 'g1',
+    tick: 48,
+    text: 'Alpha: Gefecht entschieden — Deutschland behauptet das Feld.',
+    severity: 'alert',
+    category: 'combat',
+    battle,
+  }
+
+  const renderBattle = () =>
+    render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+
+  it('klappt den Gefechtseintrag auf und bindet die Balkenlaengen an den Datensatz', () => {
+    renderBattle()
+    const details = document.querySelector('details.log__report')
+    expect(details, 'der Gefechtseintrag traegt kein details-Element').toBeTruthy()
+
+    const seiten = [...details!.querySelectorAll('.battle__side')]
+    expect(seiten, 'nicht je Seite ein Staerkebalken').toHaveLength(2)
+
+    // Die staerkste Seite vorher (40 000) ist der Massstab der Spur: Deutschland
+    // behaelt 35 000 (87,5 %), verliert 5 000 (12,5 %); Russland behaelt 8 000
+    // (20 %) und verliert 12 000 (30 %).
+    const erste = seiten[0]!
+    expect((erste.querySelector('.battle__after') as HTMLElement).style.width).toBe('87.5%')
+    expect((erste.querySelector('.battle__loss') as HTMLElement).style.width).toBe('12.5%')
+    const zweite = seiten[1]!
+    expect((zweite.querySelector('.battle__after') as HTMLElement).style.width).toBe('20%')
+    expect((zweite.querySelector('.battle__loss') as HTMLElement).style.width).toBe('30%')
+
+    // Die Zahlen stehen sichtbar neben dem Balken — das Bild ersetzt sie nicht.
+    expect(erste.textContent).toContain('40')
+    expect(erste.textContent).toContain('35')
+    expect(zweite.textContent).toContain('20')
+    expect(zweite.textContent).toContain('8')
+  })
+
+  it('zeigt die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre', () => {
+    renderBattle()
+    const details = document.querySelector('details.log__report')!
+    const titles = [...details.querySelectorAll('svg title')].map((title) => title.textContent)
+
+    expect(titles).toContain('Gebirge')
+    expect(titles.some((title) => title?.includes('Festung'))).toBe(true)
+    expect(titles).toContain('Eingegraben')
+    expect(titles).toContain('Rückzugssperre')
+  })
+
+  it('traegt fuers Ohr eine Satzfassung mit den Zahlen', () => {
+    renderBattle()
+    const bild = document.querySelector('.battle')
+    expect(bild, 'kein Gefechtsbild im Koerper').toBeTruthy()
+    expect(bild!.getAttribute('role')).toBe('img')
+
+    const satz = bild!.getAttribute('aria-label') ?? ''
+    expect(satz).toContain('Deutschland')
+    expect(satz).toContain('Russland')
+    expect(satz).toContain('40')
+    expect(satz).toContain('35')
+    expect(satz).toContain('Gebirge')
+    expect(satz).toContain('Festung')
+  })
+
+  it('laesst ein Gefecht ohne Datensatz als schlichte Zeile', () => {
+    const schlicht: EventEntry = { ...eintrag, id: 'g2' }
+    delete (schlicht as { battle?: BattleReportData }).battle
+    render(<EventLog entries={[schlicht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    expect(document.querySelector('details.log__report')).toBeNull()
   })
 })
 
