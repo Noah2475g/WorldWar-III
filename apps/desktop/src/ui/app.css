@@ -944,3 +944,21 @@ body {
   align-items: center;
   gap: 2px;
 }
+
+/* Die Farbe einer Macht, ueberall dort, wo ihr Name steht (T-M20-02, R-UI-16).
+   Der Farbwert kommt als style aus den Daten; hier steht nur die Form. */
+.nation {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.nation__swatch {
+  width: 0.7em;
+  height: 0.7em;
+  flex: none;
+  border-radius: 2px;
+  /* Ein Rahmen in der Linienfarbe, damit ein helles Feld auf hellem Grund nicht
+     verschwindet — und ein dunkles nicht wie ein Loch aussieht. */
+  border: 1px solid var(--line);
+}

@@ -108,6 +108,14 @@ export interface PublicView {
     name: string
     nation: string
     /**
+     * Die eigene Farbe (T-M20-02, R-UI-16).
+     *
+     * `others` fuehrt sie seit M6; die eigene fehlte, weil die Karte den eigenen Besitz
+     * ueber `playerId` einfaerbt und keine Liste braucht. Eine Tabelle der Maechte
+     * braucht sie: sonst traegt jede Zeile ein Farbfeld ausser der eigenen.
+     */
+    color: string
+    /**
      * Ist der Spieler noch im Spiel? (T-M14-10, Befund N4)
      *
      * Der Abschlussdialog haengt an `victory.winner`, und den setzt der Kern erst, wenn
@@ -373,6 +381,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     self: {
       name: player.name,
       nation: player.nation,
+      color: player.color,
       alive: player.alive,
       resources: { ...player.resources },
       shortages: [...player.shortages],

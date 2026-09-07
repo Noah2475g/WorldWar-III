@@ -2,6 +2,7 @@ import type { PublicView } from '@worldwar/core'
 import { plural, t } from '../i18n/text.ts'
 import { amount } from './format.ts'
 import { Meter } from './Meter.tsx'
+import { NationName } from './Nation.tsx'
 
 /**
  * Where everyone stands (T-M13-12, R-UI-13).
@@ -19,6 +20,8 @@ import { Meter } from './Meter.tsx'
 export interface StandingsRow {
   id: string
   nation: string
+  /** Die Farbe dieser Macht auf der Karte (T-M20-02, R-UI-16). */
+  color: string
   score: number
   relation: string
   /** Strength of that power's armies the player can currently see. */
@@ -37,6 +40,7 @@ export function standingsRows(view: PublicView | null, nameOf: (id: string) => s
     {
       id: view.playerId,
       nation: view.self.nation,
+      color: view.self.color,
       score: view.self.score,
       relation: t('standings.you'),
       seenStrength: seen.get(view.playerId) ?? 0,
@@ -47,6 +51,7 @@ export function standingsRows(view: PublicView | null, nameOf: (id: string) => s
       .map((other) => ({
         id: other.id,
         nation: nameOf(other.id),
+        color: other.color,
         score: other.score,
         relation: t(`diplomacy.${view.relations[other.id]?.state ?? 'peace'}`),
         seenStrength: seen.get(other.id) ?? 0,
@@ -78,7 +83,9 @@ export function StandingsPanel({ view, nameOf }: { view: PublicView | null; name
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} className={row.own ? 'is-selected' : undefined}>
-              <td>{row.nation}</td>
+              <td>
+                <NationName color={row.color}>{row.nation}</NationName>
+              </td>
               <td>
                 {/* Gegen den Fuehrenden, nicht gegen eine Zahl aus dem Nichts: so sieht
                     man den Abstand, nicht nur den eigenen Stand. */}

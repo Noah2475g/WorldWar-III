@@ -12,6 +12,7 @@ import {
   type IconName,
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
+import { NationName } from './Nation.tsx'
 import { Explain } from './Explain.tsx'
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
@@ -228,6 +229,8 @@ export function ProvincePicker({
 export interface ProvincePanelProps {
   province: VisibleProvince | null
   ownerName: string | null
+  /** Die Farbe des Besitzers auf der Karte (T-M20-02, R-UI-16). */
+  ownerColor?: string | null
   actions: readonly Action[]
   /** Build, recruit — the orders a province takes, grouped. */
   groups?: readonly ActionGroupSpec[]
@@ -273,7 +276,13 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       <dl className="facts">
         <dt>{t('province.owner')}</dt>
-        <dd>{props.ownerName ?? t('province.neutral')}</dd>
+        <dd>
+          {props.ownerName && props.ownerColor ? (
+            <NationName color={props.ownerColor}>{props.ownerName}</NationName>
+          ) : (
+            (props.ownerName ?? t('province.neutral'))
+          )}
+        </dd>
 
         {province.population !== undefined && (
           <>
@@ -632,7 +641,9 @@ export function DiplomacyPanel({
             const relation = view.relations[other.id]
             return (
               <tr key={other.id} className={other.id === chosen ? 'is-selected' : undefined}>
-                <td>{nameOf(other.id)}</td>
+                <td>
+                  <NationName color={other.color}>{nameOf(other.id)}</NationName>
+                </td>
                 <td className={relation?.state === 'war' ? 'state state--war' : 'state'}>
                   {/* R-UI-10 nennt den Beziehungszustand — bis T-M20-01 stand er als
                       blosses Wort da. Das Wort bleibt: die Farbe der Kriegszeile darf

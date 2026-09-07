@@ -717,6 +717,11 @@ export function App(props: AppProps) {
     },
     [state],
   )
+  /** Die Farbe einer Macht — dieselbe, mit der die Karte ihren Besitz fuellt (T-M20-02). */
+  const colorOf = useCallback(
+    (playerId: string): string | null => state?.players[playerId]?.color ?? null,
+    [state],
+  )
 
   /**
    * The log as this player may read it: their own doings and the public ones. The
@@ -1039,6 +1044,7 @@ export function App(props: AppProps) {
             <ProvincePanel
               province={selected}
               ownerName={selected?.owner ? nameOf(selected.owner) : null}
+              ownerColor={selected?.owner ? colorOf(selected.owner) : null}
               actions={provinceActions}
               groups={provinceGroups}
               armies={armiesHere}

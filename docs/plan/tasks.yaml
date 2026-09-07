@@ -1595,7 +1595,7 @@ tasks:
   - id: T-M20-02
     milestone: M20
     title: Jede Macht hat ein Gesicht
-    status: todo
+    status: done
     deps: [T-M20-01]
     requirements: [R-UI-16]
     design: [D-22]

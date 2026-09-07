@@ -24,12 +24,19 @@ const view = (options: {
   ({
     tick: 240,
     playerId: 'p1',
-    self: { name: 'Mensch', nation: 'Nordland', score: options.self ?? 100, resources: {}, shortages: [] },
+    self: {
+      name: 'Mensch',
+      nation: 'Nordland',
+      color: 'darkslategray',
+      score: options.self ?? 100,
+      resources: {},
+      shortages: [],
+    },
     others: (options.others ?? []).map((other) => ({
       id: other.id,
       name: other.id,
       nation: `Macht ${other.id}`,
-      color: 'testfarbe',
+      color: 'rebeccapurple',
       alive: other.alive ?? true,
       score: other.score,
     })),
@@ -175,5 +182,48 @@ describe('R-UI-13 Der Abschlussdialog zaehlt richtig', () => {
     expect(summary()).not.toContain('1 Provinzen')
     expect(summary()).toContain('1 Punkt')
     expect(summary()).not.toContain('1 Punkte')
+  })
+})
+
+describe('R-UI-16 Jede Macht hat ein Gesicht', () => {
+  /**
+   * Die Farbe stand seit M6 in der Sicht und wurde ausserhalb der Karte nirgends
+   * benutzt (T-M20-02). Wer auf der Karte eine rote Front sah, musste raten, welche der
+   * acht Zeilen dazugehoert.
+   */
+  it('traegt die Farbe jeder Macht in die Zeile — auch die eigene', () => {
+    const rows = standingsRows(view({ self: 100, others: [{ id: 'p2', score: 300 }] }), nameOf)
+
+    expect(rows.map((row) => row.color)).toEqual(['rebeccapurple', 'darkslategray'])
+  })
+
+  it('zeichnet zu jeder Zeile ein Farbfeld', () => {
+    const { container } = render(
+      <StandingsPanel view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })} nameOf={nameOf} />,
+    )
+    const swatches = container.querySelectorAll('.nation__swatch')
+
+    expect(swatches.length, 'nicht jede Zeile traegt ein Farbfeld').toBe(2)
+    // jsdom verwirft einen ungueltigen Farbwert stillschweigend, also steht hier ein
+    // echter — und der Test sieht damit auch, dass der Wert wirklich ankommt.
+    expect((swatches[0] as HTMLElement).style.background).toBe('rebeccapurple')
+  })
+
+  it('laesst die Farbe nie das einzige Unterscheidungsmerkmal sein (AK2)', () => {
+    // Rund acht Prozent der Maenner unterscheiden Rot und Gruen nicht, und die
+    // Spielerfarben enthalten beides. Der Name muss neben dem Feld stehen bleiben —
+    // und das Feld selbst darf nichts sagen, was der Name nicht schon sagt, sonst
+    // liest ein Vorleseprogramm die Macht zweimal.
+    const { container } = render(
+      <StandingsPanel view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })} nameOf={nameOf} />,
+    )
+
+    // getAllByText: der Name steht auch im (versteckten) Label des Punktebalkens.
+    expect(screen.getAllByText('Ostmark').length, 'der Name fehlt neben der Farbe').toBeGreaterThan(0)
+    expect(screen.getAllByText('Nordland').length).toBeGreaterThan(0)
+    for (const swatch of container.querySelectorAll('.nation__swatch')) {
+      expect(swatch.getAttribute('aria-hidden'), 'das Farbfeld spricht mit').toBe('true')
+      expect(swatch.textContent, 'das Farbfeld traegt Text').toBe('')
+    }
   })
 })

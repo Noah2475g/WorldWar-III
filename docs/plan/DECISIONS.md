@@ -1192,3 +1192,28 @@ gegen die alte Fassung nachweislich rot: `AUS-SE -> AUS-NE`.
 zwei Vorkommen, ihre drei Kanten und ihren Platz in Australiens Startaufstellung; AK-1 ist
 unberührt und ein neuer `sim:fullgame` nicht nötig. Was offen bleibt, ist die Namensfrage —
 siehe PROBLEME.md, 2026-09-07.
+
+---
+
+## 2026-09-07 · T-M20-02 · Das Protokoll bekommt kein Farbfeld
+
+**Entscheidung:** Die Farbe einer Macht steht jetzt in der Lage, in der Diplomatie und in
+der Provinzansicht. Das **Ereignisprotokoll** bleibt ausgenommen.
+
+**Begründung:** Eine Protokollzeile ist ein fertiger Satz, und die meisten nennen **zwei**
+Mächte: „Ostmark erklärt Nordland den Krieg." Ein Farbfeld davor müsste sich für eine der
+beiden entscheiden, und welche das wäre, könnte der Leser nicht wissen — ein Zeichen, das
+zweideutig ist, ist schlechter als keines.
+
+Technisch käme dazu, dass `EventEntry` gar keine Spielerkennung führt, sondern nur den
+fertigen Text; die Farbe zuzuordnen hieße, das Ereignismodell um ein Feld zu erweitern,
+das nur diese eine Anzeige braucht.
+
+**Der Weg, der es lösen würde**, ist ein anderer und größer: die Namen **im Satz**
+einfärben, statt ein Feld davorzusetzen. Das verlangt, dass `describeEvent` nicht mehr
+eine Zeichenkette liefert, sondern Teile — und das ist eine Umstellung des
+Ereignistextes, keine Farbfrage.
+
+**Auswirkung:** R-UI-16 ist an den drei Orten erfüllt, an denen eine Macht **als Macht**
+in einer Liste steht. Das Protokoll bleibt Text. Wenn Noah die Einfärbung im Satz will,
+ist es eine eigene Aufgabe mit eigenem Umfang.
