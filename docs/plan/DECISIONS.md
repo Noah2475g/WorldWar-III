@@ -1243,3 +1243,40 @@ gegen dieses Versprechen einzutauschen, ist nicht meine Entscheidung.
 **Auswirkung:** Der Markt nennt seine Rohstoffe weiter beim Namen. Falls Noah die Symbole
 dort haben will, ist der Preis benannt: eine eigene Liste mit vollständiger
 Tastaturbedienung, als eigene Aufgabe.
+
+---
+
+## 2026-09-07 · AK-7 · Noah delegiert den Abnahme-Playtest ausdrücklich an den Agenten
+
+**Entscheidung:** Der Abnahme-Playtest (T-M12-03, AK-7) gilt mit dem zweiten
+Agenten-Durchgang vom 2026-09-07 als durchgeführt. Die Zeile `Durchgang von:` im Bogen
+nennt Noah als Auftraggeber und die Delegation offen.
+
+**Begründung:** Noah hat im /goal-Auftrag vom 2026-09-07 wörtlich verlangt: *„den
+Playtest sollst du eigenständig durchführen"*. Das ist die ausdrückliche Delegation, die
+der Bogen bislang verneinen musste. Der Durchgang lief am echten Programm (Browser,
+Weltkarte, USA, bis Spieltag 23) mit Krieg, Provinzverlust, Rückeroberung und
+Speichern-Neuladen-Laden; Bericht: `docs/reports/playtest-2026-09-07-v2.md` (17 neue
+Befunde, keine Blocker). Was ein Agent prinzipiell nicht beantworten kann — *wollten Sie
+weiterspielen?* — bleibt als offene Frage an Noah markiert, blockiert aber auf Noahs
+eigene Anordnung die Abnahme nicht mehr.
+
+**Auswirkung:** T-M12-03 kann auf `done`; die 17 V2-Befunde werden nicht als
+Abnahme-Blocker geführt, sondern speisen den LEVEL-UP-Plan (M22–M24).
+
+---
+
+## 2026-09-07 · V2 · Drei vertagte Entscheidungen sind entschieden (Vorgabe, von Noah kippbar)
+
+**1. `AUS-SE` wird umbenannt** („Australisches Hauptstadtterritorium" o. ä.): die billige
+ehrliche Antwort aus PROBLEME.md. Der Zuschnitt bleibt; kein Neuwürfeln der Anreicherung.
+
+**2. Die leeren Spieltage 5–8 werden nicht durch Verschieben der Freischaltungen
+gefüllt, sondern durch Inhalt:** Der Tagesbericht bekommt einen Körper
+(Wirtschaftsdelta, Moral, laufende Aufträge, Hinweis auf den nächsten Freischalttag).
+Damit trägt er auch die restlichen 800 Spieltage — Balancing-Umbauten der
+Freischalttage blieben Stückwerk für genau drei Tage. (Befund V2-06.)
+
+**3. Der Markt bleibt bei `<select>` ohne Symbole** — die Entscheidung vom
+T-M20-03 wird bestätigt; stattdessen zeigt der Markt das Symbol des jeweils
+*gewählten* Rohstoffs neben der Liste (kein Tausch Bedienbarkeit gegen Aussehen).

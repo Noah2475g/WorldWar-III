@@ -1916,3 +1916,35 @@ Damit die Führung nicht bevormundet (AK2):
   steht. Die Führung sagt, *was als Nächstes*, nicht *was alles*.
 - **Keine Sperren.** Auch nicht die freundliche Art („erst wenn Sie X getan haben"). Ein
   Spieler, der die Führung ignoriert, spielt weiter, und sie holt ihn ein.
+
+## D24. Das nächste Niveau (M22–M24 — LEVEL-UP.md)
+
+Der Entwurf steht in Kurzform in `docs/plan/LEVEL-UP.md` §3 (D24.1–D24.8) und wird
+hier gebunden, damit der Plan-Wächter eine Adresse hat. Die Leitidee in einem Satz:
+**der Kern erzeugt jede Information vollständig — die Oberfläche darf sie auf dem
+letzten Meter nicht mehr verlieren.**
+
+- **D24.1 Protokoll:** volle Breitenzeile je Eintrag; Einträge, die den Spieler selbst
+  betreffen, tragen eine eigene Klasse (Zinnober-Balken, fett). Tagesberichte werden
+  aufklappbare Einträge mit Körper (D24.4).
+- **D24.2 Seitenleiste:** kein horizontales Scrollen; die Wirtschaftstabelle verliert
+  die Spalte „In Auftrag" an ein Zeichen mit Zahl hinter dem Bestand. Wächter am
+  gerenderten Baum: `scrollWidth <= clientWidth`.
+- **D24.3 Start und Menü:** Titelzeile im Startdialog; „Weiterspielen (Tag N)" als
+  erster Knopf, wenn ein Stand existiert; Menü dreiteilig: Neue Partie · Spielstände ·
+  Einstellungen.
+- **D24.4 Tagesbericht:** die Oberfläche liest den Zustand am Tageswechsel und rendert
+  Bilanz je Rohstoff (nur ≠ 0), Moralrichtung, Aufträge, „morgen neu: X". Kein neues
+  Kern-Ereignis.
+- **D24.5 Befehls-Quittung und Pausiert:** ausstehende Befehle sind am auslösenden
+  Element sichtbar; steht die Uhr trotz eingestelltem Tempo länger als zwei Sekunden,
+  zeigt die Kopfleiste „Pausiert". Dazu A11y-Namen „VERB OBJEKT" für Befehlsknöpfe und
+  24-px-Trefferflächen für Armee-Marker.
+- **D24.6 Sprachwächter:** Ersatzschrift-Prüfung über `de.ts` und die Prosa-Strings
+  der `actions.ts`; Genus/Numerus-Tabelle je Gebäude, Einheit und Macht speist die
+  Systemsätze. Ehrliche Namen: `AUS-SE`; Marktzeichen neben dem `<select>`.
+- **D24.7 Wozu-Sätze:** Führungsschritte tragen ein `why`-Feld; zwei neue Schritte
+  erklären Punktequellen und Ausdehnungs-Moralstrafe, bevor sie wirken; der Wächter
+  `unlocks-explained` prüft mit.
+- **D24.8 Kriegsmarsch:** beide Varianten (0,35 gegen 0,5) im Parameterlauf messen,
+  mit Zahlen entscheiden, in DECISIONS.md und BALANCING.md binden.

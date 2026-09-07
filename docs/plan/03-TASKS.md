@@ -3399,3 +3399,188 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Fehler fängt statt des Einzelfalls: **die Anleitung darf keine Zahl nennen, die den
   Regeldateien widerspricht.** Zwei Wahrheiten über dieselbe Sache sind der Grund, warum
   dieser Eintrag existiert.
+
+---
+
+## Meilenstein M22 — Die Oberfläche hält, was der Kern rechnet
+
+> **Herkunft:** der delegierte Abnahme-Playtest V2 vom 2026-09-07
+> (`docs/reports/playtest-2026-09-07-v2.md`) und der LEVEL-UP-Plan
+> (`docs/plan/LEVEL-UP.md`), Achse **UI/UX**. Entwurf: **D24**.
+>
+> Diagnose in einem Satz: das Spiel *rechnet* auf dem Niveau eines fertigen
+> Strategiespiels und *spricht* auf dem Niveau eines Debug-Werkzeugs. Der Kern erzeugt
+> die Information vollständig — die Oberfläche wirft sie auf dem letzten Meter weg.
+
+### T-M22-01 · Das Protokoll spricht in ganzen Zeilen
+- **Ziel:** Befund V2-01 — jeder Protokolleintrag bricht in einer ~90-px-Spalte nach je
+  1–2 Wörtern um; die Leiste ist ~1400 px breit. Der wichtigste Kanal des Spiels ist
+  faktisch unlesbar.
+- **Anforderungen:** R-TIME-06, R-UI-05
+- **Entwurf:** D24.1
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** ein Test am gerenderten Baum, der die Eintragsbreite an die
+  Leistenbreite bindet (abzüglich Zeitstempel, kein fester Pixelwert) — fällt heute.
+- **Fertig wenn:** ein Eintrag die verfügbare Breite nutzt und der Test grün ist.
+
+### T-M22-02 · Die Seitenleiste hört auf, seitwärts zu kriechen
+- **Ziel:** Befund V2-02 — die Wirtschaftstabelle (Spalte „In Auftrag") ist breiter als
+  die Leiste; die ganze Leiste scrollt horizontal, Armeeknöpfe erscheinen abgeschnitten
+  („…arschieren"), Überschriften verlieren Buchstaben („ebug").
+- **Anforderungen:** R-UI-05
+- **Entwurf:** D24.2
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** ein Wächter-Test am gerenderten Baum: `scrollWidth <= clientWidth`
+  für die Leiste.
+- **Fertig wenn:** kein horizontales Scrollen mehr; „In Auftrag" wird ein Zeichen mit
+  Zahl hinter dem Bestand.
+
+### T-M22-03 · Was mich betrifft, sieht anders aus
+- **Ziel:** Befund V2-07 — der Fall der eigenen Großstadt hat dieselbe optische Stimme
+  wie „Vietnam ist gefallen" am anderen Ende der Welt.
+- **Anforderungen:** R-TIME-06, R-UI-05
+- **Entwurf:** D24.1
+- **Abhängigkeiten:** T-M22-01
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/game/events.ts`
+- **Tests zuerst:** die Zuordnung Ereignis → Klasse gegen die Ereignisarten des Kerns —
+  für **jede** Art, nicht für ein Beispiel.
+- **Fertig wenn:** Einträge, die den Spieler selbst betreffen (Provinzverlust,
+  Hauptstadt, Aufstand, eigenes Ausscheiden), Zinnober-Balken und Fettung tragen.
+
+### T-M22-04 · Start mit Gesicht, Menü mit Wegen, Weiterspielen mit einem Klick
+- **Ziel:** Befunde V2-03/04/05 — der Startdialog ist ein Formular ohne Titel; nach dem
+  Neustart ist der jüngste Stand zwei Klicks entfernt; das Menü kennt nur Einstellungen.
+- **Anforderungen:** R-UI-05, R-GAME-03
+- **Entwurf:** D24.3
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/game/saves.ts`
+- **Tests zuerst:** der Weiterspielen-Test (lädt den jüngsten Stand) — fällt heute.
+- **Fertig wenn:** Titelzeile im Startdialog; „Weiterspielen (Tag N)" als **erster**
+  Knopf, wenn ein Stand existiert; Menü mit Neue Partie / Spielstände / Einstellungen,
+  auch aus der laufenden Partie.
+
+### T-M22-05 · Jeder Befehl quittiert; eine stehende Uhr sagt es
+- **Ziel:** Befunde V2-08/09 — nach „Krieg erklären" zeigt das Panel weiter „Frieden"
+  bis zum nächsten Tick (bei Pause dauerhaft); eine stehende Uhr behauptet ihr Tempo.
+- **Anforderungen:** R-UI-05, R-TIME-02
+- **Entwurf:** D24.5
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Header.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** beide fallen heute — ausstehender Befehl sichtbar; „Pausiert" nach
+  zwei Sekunden ohne Tick trotz eingestelltem Tempo.
+- **Fertig wenn:** beide Anzeigen stehen, gespeist aus der Befehlsübergabe der Hülle.
+
+### T-M22-06 · Knöpfe sagen, was sie tun
+- **Ziel:** Befunde V2-13/14 — Bau-/Aushebeknöpfe tragen als zugänglichen Namen den
+  Kosten-Tooltip statt der Aktion; Armee-Marker sind ~12-px-Klickziele.
+- **Anforderungen:** R-UI-06, R-UI-05
+- **Entwurf:** D24.5
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** ein a11y-Test über **alle** Aktionen aus `actions.ts`.
+- **Fertig wenn:** jeder Befehlsknopf einen aria-Namen „VERB OBJEKT" trägt (Kosten
+  bleiben im `title`); Armee-Marker-Trefferfläche mindestens 24 px (Picking-Radius,
+  nicht Zeichnungsgröße).
+
+---
+
+## Meilenstein M23 — Die Sprache wird fertig
+
+> **Herkunft:** LEVEL-UP.md, Achse **Stil**. „Stil" heißt hier nicht Schmuck, sondern ob
+> man dem Spiel glaubt: Ersatzschrift und Kongruenzfehler geben ihm die Anmutung eines
+> Provisoriums. Entwurf: **D24**.
+
+### T-M23-01 · Umlaute kehren zurück, ein Wächter hält die Tür
+- **Ziel:** Befund V2-10 — Tooltips sagen „haelt", „Staerke", „Haelfte"; die
+  tasks.yaml-Regel „ohne Umlaute" ist in Spielertexte durchgesickert.
+- **Anforderungen:** R-UI-07
+- **Entwurf:** D24.6
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/actions.ts`
+- **Tests zuerst:** der Wächter (fällt heute): jeder Text aus `de.ts` und jeder
+  Prosa-String aus `actions.ts` ohne ae/oe/ue-Ersatzschrift; Ausnahmen über eine
+  Musterliste („Neue", „Feuer"), nicht über Einzelfälle.
+- **Fertig wenn:** alle deutschen Anzeigetexte echte Umlaute tragen, Wächter grün.
+
+### T-M23-02 · Grammatik — Genus, Dativ, Numerus, doppelte Namen
+- **Ziel:** Befunde V2-11/17 — „Sie können **es** jetzt bauen" (Genus), „nach 2
+  **Tage**" (Dativ), „Vereinigte Staaten **erklärt**" (Numerus), Lage-Tabelle rendert
+  den Machtnamen doppelt.
+- **Anforderungen:** R-UI-07
+- **Entwurf:** D24.6
+- **Abhängigkeiten:** T-M23-01
+- **Dateien:** `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/game/tutorial.ts`,
+  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/ui/Standings.tsx`
+- **Tests zuerst:** je gemessenem Fall ein Test, der gegen den alten Text fällt.
+- **Fertig wenn:** eine kleine Genus/Numerus-Tabelle je Gebäude, Einheit und Macht
+  speist die Sätze; die vier Fälle sind korrekt.
+
+### T-M23-03 · AUS-SE bekommt einen ehrlichen Namen, der Markt sein Zeichen
+- **Ziel:** die zwei verbliebenen vertagten Entscheidungen, am 2026-09-07 entschieden
+  (DECISIONS.md): der Name lügt („Südostaustralien" ist das Hauptstadtterritorium plus
+  Jervis Bay und Macquarie), und der Markt ist die letzte Liste ohne Zeichen.
+- **Anforderungen:** R-MAP-01, R-UI-05
+- **Entwurf:** D24.6
+- **Abhängigkeiten:** keine
+- **Dateien:** `data/maps/world.json`, `apps/desktop/src/ui/Panels.tsx`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** ein Test bindet den neuen Anzeigenamen.
+- **Fertig wenn:** der Name ehrlich ist (Zuschnitt bleibt, Anreicherung wird nicht neu
+  gewürfelt) und der Markt das Zeichen des jeweils **gewählten** Rohstoffs neben der
+  Liste zeigt — das `<select>` bleibt (T-M20-03 bestätigt).
+
+---
+
+## Meilenstein M24 — Die Tage bekommen Inhalt
+
+> **Herkunft:** LEVEL-UP.md, Achse **Spiellogik**. Frage 50 des Abnahmebogens, ehrlich
+> beantwortet: das *Was* ist geführt, das *Wozu* fehlt — und die Frühphase belohnt das
+> Falsche, ohne es zu sagen. Entwurf: **D24**.
+
+### T-M24-01 · Der Tagesbericht bekommt einen Körper
+- **Ziel:** Befund V2-06 — „Tagesbericht für Tag 8." ist eine Überschrift ohne Körper.
+  Zusammen mit den leeren Tagen 5–8 fühlt sich die Frühphase tot an.
+- **Anforderungen:** R-TIME-06, R-UI-05
+- **Entwurf:** D24.4
+- **Abhängigkeiten:** T-M22-01
+- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** der Körper an einem Tag mit bekannten Zahlen — fällt gegen den
+  heutigen leeren Eintrag.
+- **Fertig wenn:** der Bericht aufklappbar trägt: Bilanz je Rohstoff (nur ≠ 0),
+  Moralrichtung je eigener Provinz, fertige/laufende Aufträge, „morgen neu: X". Kein
+  neues Kern-Ereignis — die Oberfläche liest den Zustand am Tageswechsel.
+
+### T-M24-02 · Das Wozu — Punkte, Moralstrafe, zwei neue Führungsschritte
+- **Ziel:** gemessen (PROBLEME.md „Der Einstieg ist enger…"): die Bevölkerung stellt
+  98,6 % der Startpunkte, eine Eroberung wiegt 285 Kasernen, ab der dritten Provinz
+  kostet jede weitere 3000 Zielmoral — nichts davon sagt das Spiel.
+- **Anforderungen:** R-UI-18, R-UI-05
+- **Entwurf:** D24.7
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** der bestehende Wächter `unlocks-explained` prüft das neue
+  `why`-Feld mit.
+- **Fertig wenn:** jeder Führungsschritt einen Begründungssatz trägt; zwei neue
+  Schritte erklären Punktequellen und Moralstrafe, **bevor** sie zum ersten Mal wirken.
+
+### T-M24-03 · Das Kriegsmarsch-Paradox wird gemessen und entschieden
+- **Ziel:** auf fremdem Boden Marschfaktor 0,7, im Krieg 0,35 — eine Kriegserklärung
+  **halbiert** das Tempo; der schnellste Eröffnungszug ist der unangekündigte Überfall.
+  Dazu Befund V2-15: Märsche von 14–31 Tagen dominieren die Frühphase.
+- **Anforderungen:** R-BAT-04
+- **Entwurf:** D24.8
+- **Abhängigkeiten:** keine
+- **Dateien:** `data/rules/constants.json`, `docs/plan/BALANCING.md`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** keine neuen — der Parameterlauf ist das Messgerät.
+- **Fertig wenn:** beide Varianten (0,35 gegen gemildert, Vorschlag 0,5) gemessen sind
+  (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md
+  steht und BALANCING.md den Eintrag trägt. Eine **Änderung** ist nur fertig, wenn der
+  Golden-Master-Umgang begründet ist; ein Beibehalten ist als Ergebnis zulässig.
