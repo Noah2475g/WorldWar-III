@@ -115,3 +115,16 @@ Provinzgrenzen und einer Meeresecke. Zinnoberrot ist im Entwurf für Kampf und A
 reserviert und wird auch hier für nichts anderes benutzt; das ist zugleich der Grund,
 warum das Symbol bei sechzehn Pixeln noch trägt: **eine** gesättigte Form auf ruhigem
 Grund.
+
+## Abbildungen in den Berichten
+
+Kein Fremdinhalt — erzeugt aus den eigenen Kartendateien und deshalb ohne Lizenzfrage. Sie
+stehen hier trotzdem, damit niemand sie für zugekaufte Grafik hält.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/reports/map-nordamerika.svg` | `node scripts/map-figure.mjs` | Nordamerika vor und nach T-M19-02 |
+| `docs/reports/map-groenland.svg` | `node scripts/map-figure.mjs` | Grönland vor und nach dem Beschnitt (T-M19-03) |
+
+Beide sind SVG und damit Text: sie lassen sich versionieren und vergleichen, was ein
+Bildschirmfoto nicht kann. Die Farben stammen aus `apps/desktop/src/ui/tokens.ts`.

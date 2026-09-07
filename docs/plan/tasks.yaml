@@ -1567,7 +1567,7 @@ tasks:
   - id: T-M19-05
     milestone: M19
     title: Der Bericht sagt, was die Karte zeigt
-    status: todo
+    status: done
     deps: [T-M19-02, T-M19-03, T-M19-04]
     requirements: [R-MAP-09]
     design: [D-21]

@@ -50,6 +50,22 @@ bilden — vier liegen über 180°.
 nur weit auseinander), und die Flächenrechnung stimmt — 133,9 Mio km² gegen erwartete
 rund 135 Mio ohne Antarktis.
 
+> ### ⚠ Berichtigt am 2026-09-07 (T-M19-05)
+>
+> **Der Absatz darüber ist falsch, und er war es schon, als er geschrieben wurde.**
+>
+> Er gilt für `world-shapes.json` — dort sind die Umrisse tatsächlich vollständig. Er gilt
+> **nicht** für `world.json`, die Datei, die das Spiel zeichnet: dort behielt der Generator
+> je Provinz nur *einen* Umriss, und für genau diese vier Provinzen war das der falsche.
+> `USA-WEST` zeichnete 58,0 % seiner Fläche (Alaska statt der Weststaaten), `NZL` 38,5 %,
+> `FJI` 31,3 %, `CAN-NORTH` 11,6 %.
+>
+> Der Satz „die Karte zeichnet richtig" hat den Fehler vier Tage lang gedeckt — bis Noah ihn
+> am 2026-09-07 im Playtest **sah**. Die Lehre steht in `docs/reports/map-geometry.md`: eine
+> Aussage über „die Karte" muss sagen, **welche Datei** sie meint, sobald es zwei gibt.
+> Geprüft wird das seither von `packages/mapgen/src/worldmap.geometry.test.ts`, das die
+> beiden Dateien gegeneinander hält.
+
 **Wo es weh tun wird:** T-M9-02b (Nachbarschaft über Schwerpunktabstände) und T-M9-02c
 (Seewege, „kein Sprung über die halbe Welt"). Beide müssen die Längendifferenz über die
 Datumsgrenze rechnen, nicht linear. `distanceKm` in `project.ts` tut das bereits und hat
