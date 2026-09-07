@@ -1645,7 +1645,7 @@ tasks:
   - id: T-M21-02
     milestone: M21
     title: Die Fuehrung folgt dem Spiel, nicht der Knopfleiste
-    status: todo
+    status: done
     deps: [T-M21-01]
     requirements: [R-UI-18]
     design: [D-23]

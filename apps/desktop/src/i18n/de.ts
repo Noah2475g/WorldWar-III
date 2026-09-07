@@ -447,6 +447,18 @@ export const de = {
         title: 'Die Zeit läuft',
         text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
       },
+      dayPassed: {
+        title: 'Der erste Tag ist um',
+        text: 'Alles rechnet stündlich weiter: Vorkommen fördern, Bauten wachsen, Moral steigt oder fällt. Sie müssen dafür nichts tun — nur entscheiden, wann Sie eingreifen.',
+      },
+      buildCompleted: {
+        title: 'Das erste Gebäude steht',
+        text: 'Eine Kaserne macht aus Rohstoffen Soldaten. Wählen Sie die Provinz und heben Sie aus — die Einheit braucht danach noch ihre Zeit.',
+      },
+      unitRecruited: {
+        title: 'Ihre erste Einheit',
+        text: 'Klicken Sie die Armee an, dann ein Ziel auf der Karte. Die Ankunft steht am Knopf, bevor Sie ihn drücken.',
+      },
       fastForward: {
         title: 'Vorspulen',
         text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',

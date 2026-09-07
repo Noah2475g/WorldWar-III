@@ -471,7 +471,7 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
 
     const hint = screen.getByRole('complementary', { name: 'Einstieg' })
-    expect(hint.textContent).toContain('Schritt 1 von 5')
+    expect(hint.textContent).toContain('Schritt 1 von 8')
   })
 
   it('geht weiter, sobald der Spieler die genannte Handlung ausfuehrt', () => {
@@ -480,7 +480,7 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
 
-    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 5')
+    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 8')
   })
 
   it('bleibt weg, wenn der Spieler sie abgeschaltet hat', () => {

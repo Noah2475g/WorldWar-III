@@ -78,10 +78,11 @@ import {
   TUTORIAL_OFF,
   TUTORIAL_STORAGE_KEY,
   advance as advanceTutorial,
+  advanceOnce,
   dismiss as dismissTutorial,
   initialTutorial,
   type TutorialState,
-  type TutorialStep,
+  type TutorialTrigger,
 } from './game/tutorial.ts'
 import { autosaveDue, listSlots, loadFrom, saveTo, type SlotInfo } from './game/saves.ts'
 import { writeAutosave, HASH_OMIT_KEYS, type AutosaveState } from '@worldwar/core'
@@ -211,6 +212,8 @@ export function App(props: AppProps) {
   // How far the event log had been read the last time a sound was played. Without it
   // every render would replay the same battle.
   const soundedUpTo = useRef(0)
+  /** Wie weit die Fuehrung das Protokoll schon gesehen hat (T-M21-02). */
+  const tutoredUpTo = useRef(0)
   const [autosave, setAutosave] = useState<AutosaveState>({
     lastSavedTick: 0,
     lastSavedRealTime: 0,
@@ -241,6 +244,10 @@ export function App(props: AppProps) {
   useEffect(() => {
     if (!state) return
     const own = eventsFor(state.eventLog, 'p1')
+    // Eine neue Partie faengt mit einem leeren Protokoll an, und ein geladener Stand
+    // kann kuerzer sein als der laufende. Ohne diese Zeile bleibt der Merker stehen und
+    // die naechste Partie ist stumm, bis sie den alten Stand ueberholt hat (T-M21-02).
+    if (own.length < soundedUpTo.current) soundedUpTo.current = 0
     const fresh = own.slice(soundedUpTo.current)
     soundedUpTo.current = own.length
     if (fresh.length === 0) return
@@ -250,9 +257,39 @@ export function App(props: AppProps) {
   }, [state, ui.settings.sound, speed, props.audio])
 
   /** A step of the guided start ends because the player did the thing it asked for. */
-  const tutor = useCallback((action: TutorialStep['completesOn']) => {
+  const tutor = useCallback((action: TutorialTrigger) => {
     setTutorial((current) => advanceTutorial(current, action))
   }, [])
+
+  /**
+   * Und ein Schritt endet, weil das **Spiel** etwas meldet (T-M21-02).
+   *
+   * Dieselbe Bauart wie der Ton daneben: gelesen wird nur der eigene Anteil des
+   * Protokolls, und ein Merker haelt fest, wie weit schon gehoert wurde — sonst liefe die
+   * Fuehrung bei jedem Bild ueber dieselben Ereignisse und spraenge durch alle Schritte
+   * auf einmal.
+   *
+   * Nacheinander, nicht in einem Rutsch: `advanceTutorial` geht nur weiter, wenn der
+   * Ausloeser zum **aktuellen** Schritt gehoert. Ein Tick, in dem drei Dinge zugleich
+   * geschehen, bringt die Fuehrung also hoechstens um einen Schritt voran — sie ist eine
+   * Fuehrung und kein Zaehlwerk.
+   */
+  useEffect(() => {
+    if (!state) return
+    const own = eventsFor(state.eventLog, 'p1')
+    // Dieselbe Ruecksetzung wie beim Ton: sonst wuerde die Fuehrung in einer zweiten
+    // Partie genau die Schritte ueberspringen, fuer die sie gebaut ist.
+    if (own.length < tutoredUpTo.current) tutoredUpTo.current = 0
+
+    const { state: next, consumed } = advanceOnce(
+      tutorial,
+      own.slice(tutoredUpTo.current).map((event) => event.type),
+    )
+    tutoredUpTo.current += consumed
+    if (next !== tutorial) setTutorial(next)
+    // `tutorial` steht in den Abhaengigkeiten: hat ein Ereignis einen Schritt beendet,
+    // laeuft dieser Effekt erneut und bietet den Rest des Stroms dem naechsten Schritt an.
+  }, [state, tutorial])
 
   // Eine entschiedene Partie laeuft nicht weiter: die Uhr haelt an, sobald ein Sieger
   // feststeht (R-UI-13). Das Fenster darf man schliessen, die Uhr bleibt stehen.
