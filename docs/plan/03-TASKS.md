@@ -3656,10 +3656,13 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-13
 - **Entwurf:** D25.2
 - **Abhängigkeiten:** T-M25-01
-- **Dateien:** `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/tokens.ts`,
-  `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/ui/charts/LineChart.tsx`, `apps/desktop/src/ui/Standings.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+  *(die Kurve wurde ein eigener Baustein unter `ui/charts/`; `tokens.ts` blieb unberührt —
+  die Spielerfarben kommen als Daten aus der Sicht, genau wie beim Farbfeld der Tabelle)*
 - **Tests zuerst:** ein Test am gerenderten Baum bindet die Kurvenpfade an bekannte
-  Reihen; der Querscroll-Wächter (T-M22-02) bleibt grün.
+  Reihen (`Standings.test.tsx`, `charts/LineChart.test.tsx`); die Verdrahtung über zwei
+  Spieltage in `App.test.tsx`; der Querscroll-Wächter (T-M22-02) bleibt grün.
 - **Fertig wenn:** das Lage-Panel über der Punktetabelle ein Liniendiagramm des
   Punkteverlaufs aller bekannten Mächte zeigt — eigene SVG-Komponente, **keine
   Fremdbibliothek**, Spielerfarben aus `tokens.ts`, Legende, aria-Beschreibung mit den

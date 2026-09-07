@@ -340,6 +340,39 @@ describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
   })
 })
 
+/**
+ * Der Machtverlauf erreicht das Lage-Panel (T-M25-02, R-UI-13).
+ *
+ * Die Rechnung prueft Standings.test.tsx an bekannten Reihen; hier steht die
+ * Verdrahtung: die Zeitreihe (T-M25-01) waechst am Tageswechsel, und das Lage-Panel
+ * bekommt sie — nach zwei Spieltagen gibt es eine Kurve.
+ */
+describe('R-UI-13 Der Machtverlauf erreicht das Lage-Panel', () => {
+  it('zeichnet nach zwei Spieltagen eine Kurve im Lage-Panel', async () => {
+    startGame()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 2/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 3/)).toBeTruthy())
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    await waitFor(() => {
+      const kurve = document.querySelector('.chart path[data-series="p1"]')
+      expect(kurve, 'keine eigene Kurve im Lage-Panel').toBeTruthy()
+    })
+  })
+
+  it('sagt ohne zweiten Tag den ehrlichen Satz', () => {
+    startGame()
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    expect(document.querySelector('.chart__empty'), 'kein Leerzustand im Lage-Panel').toBeTruthy()
+  })
+})
+
 describe('R-UI-07 / R-DIP-04 Das Protokoll spricht deutsch und verraet nichts', () => {
   it('zeigt nach einem Tag keine Kennung, keinen Platzhalter und keinen fremden Befehl', () => {
     // The first smoke test read "Bau von barracks begonnen" for another power's

@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { TimelineEntry } from '../game/saves.ts'
 import { StandingsPanel, VictoryDialog, standingsRows } from './Standings.tsx'
 
 /**
@@ -105,6 +106,90 @@ describe('R-UI-13 Die Lage der Maechte', () => {
       const text = container.querySelectorAll('tbody tr')[zeile]!.textContent!
       expect(text.split(name).length - 1, `"${name}" steht ${zeile + 1}. Zeile mehrfach`).toBe(1)
     }
+  })
+})
+
+/**
+ * Der Machtverlauf als Kurve (T-M25-02, R-UI-13, D25.2).
+ *
+ * Die spannendste Kurve des Spiels — wer führt, wer holt auf — existierte nirgends.
+ * Das Lage-Panel zeigt über der Punktetabelle ein Liniendiagramm aus der Zeitreihe
+ * (T-M25-01): eigene SVG-Komponente, Spielerfarben aus der Sicht, Legende, eine
+ * aria-Beschreibung mit den Endwerten. Ohne Aufzeichnung sagt der Leerzustand einen
+ * ehrlichen Satz statt eine leere Fläche zu zeigen.
+ */
+describe('R-UI-13 Der Machtverlauf als Kurve', () => {
+  /** Drei Tage mit Zahlen, deren Pfadpunkte glatt sind: Höchstwert 260, Spanne 2 Tage. */
+  const zeitreihe: TimelineEntry[] = [
+    { day: 1, scores: { p1: 0, p2: 260 }, stock: {}, balance: {} },
+    { day: 2, scores: { p1: 130, p2: 130 }, stock: {}, balance: {} },
+    { day: 3, scores: { p1: 260, p2: 260 }, stock: {}, balance: {} },
+  ]
+
+  const lage = () =>
+    render(
+      <StandingsPanel
+        view={view({ self: 260, others: [{ id: 'p2', score: 260 }] })}
+        nameOf={nameOf}
+        timeline={zeitreihe}
+      />,
+    )
+
+  it('bindet die Kurvenpfade an die bekannten Reihen', () => {
+    const { container } = lage()
+
+    // Der Pfadraum ist 0…100 in beiden Achsen: Tag 1 → x 0, Tag 3 → x 100;
+    // Punkte 0 → y 100 (unten), Höchstwert 260 → y 0 (oben).
+    const eigene = container.querySelector('path[data-series="p1"]')
+    const fremde = container.querySelector('path[data-series="p2"]')
+    expect(eigene, 'keine Kurve der eigenen Macht').toBeTruthy()
+    expect(eigene!.getAttribute('d')).toBe('M0,100 L50,50 L100,0')
+    expect(fremde!.getAttribute('d')).toBe('M0,0 L50,50 L100,0')
+  })
+
+  it('zeichnet jede Kurve in der Farbe ihrer Macht', () => {
+    const { container } = lage()
+
+    expect((container.querySelector('path[data-series="p2"]') as SVGPathElement).style.stroke).toBe(
+      'rebeccapurple',
+    )
+    expect((container.querySelector('path[data-series="p1"]') as SVGPathElement).style.stroke).toBe(
+      'darkslategray',
+    )
+  })
+
+  it('traegt eine Legende und nennt dem Ohr die Endwerte', () => {
+    const { container } = lage()
+
+    const legende = container.querySelector('.chart__legend')
+    expect(legende?.textContent).toContain('Ostmark')
+    expect(legende?.textContent).toContain('Nordland')
+
+    const beschreibung = container.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? ''
+    expect(beschreibung, 'die Endwerte fehlen der Beschreibung').toContain('Nordland 260')
+    expect(beschreibung).toContain('Ostmark 260')
+  })
+
+  it('sagt ohne Aufzeichnung einen ehrlichen Satz statt einer leeren Flaeche', () => {
+    const { container } = render(
+      <StandingsPanel view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })} nameOf={nameOf} timeline={[]} />,
+    )
+
+    expect(container.querySelector('.chart'), 'ein leeres Diagramm ist keine Auskunft').toBeNull()
+    expect(container.querySelector('.chart__empty')?.textContent ?? '').toMatch(/Aufzeichnung/)
+  })
+
+  it('braucht zwei Tage: ein einzelner Punkt ist noch keine Kurve', () => {
+    const { container } = render(
+      <StandingsPanel
+        view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })}
+        nameOf={nameOf}
+        timeline={[zeitreihe[0]!]}
+      />,
+    )
+
+    expect(container.querySelector('.chart')).toBeNull()
+    expect(container.querySelector('.chart__empty')).toBeTruthy()
   })
 })
 

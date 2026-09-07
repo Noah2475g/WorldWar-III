@@ -1351,7 +1351,7 @@ export function App(props: AppProps) {
               actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
             />
           )}
-          {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} />}
+          {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
           {ui.panel === 'market' && (
             <MarketPanel
               resources={RESOURCE_KEYS}

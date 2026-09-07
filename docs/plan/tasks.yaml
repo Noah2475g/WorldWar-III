@@ -1861,12 +1861,12 @@ tasks:
   - id: T-M25-02
     milestone: M25
     title: Der Machtverlauf wird eine Kurve
-    status: todo
+    status: done
     deps: [T-M25-01]
     requirements: [R-UI-13]
     design: [D-25]
-    files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Standings.test.tsx]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/charts/LineChart.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Vorschlag A: die spannendste Kurve des Spiels - wer fuehrt, wer holt auf - existiert nirgends. Fertig, wenn das Lage-Panel ueber der Punktetabelle ein Liniendiagramm des Punkteverlaufs aller bekannten Maechte zeigt (eigene SVG-Komponente, KEINE Fremdbibliothek; Spielerfarben aus tokens.ts; Legende; aria-Beschreibung nennt die Endwerte), der Leerzustand bei fehlender Aufzeichnung einen ehrlichen Satz sagt, und ein Test am gerenderten Baum die Kurvenpfade an bekannte Reihen bindet. Die Seitenleiste darf nicht querscrollen (Waechter aus T-M22-02 bleibt gruen)"
 
   - id: T-M25-03

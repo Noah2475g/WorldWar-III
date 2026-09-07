@@ -710,6 +710,10 @@ export const de = {
   },
   standings: {
     title: 'Lage',
+    // Der Machtverlauf als Kurve (T-M25-02, R-UI-13): die Beschreibung nennt dem Ohr
+    // die Endwerte, der Leerzustand sagt ehrlich, warum noch keine Kurve da ist.
+    historyAria: 'Punkteverlauf — Stand: {{list}}',
+    historyEmpty: 'Noch keine Aufzeichnung: Die Kurve beginnt mit dem nächsten Tageswechsel.',
     points: 'Punkte',
     relation: 'Verhältnis',
     seenStrength: 'Gesehene Stärke',
