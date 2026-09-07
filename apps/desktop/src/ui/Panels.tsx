@@ -546,6 +546,20 @@ export interface EventEntry {
    * bleibt, was sie war.
    */
   body?: readonly string[]
+  /**
+   * Die Bilanzen des Tagesberichts als Balken (T-M25-04, R-UI-05, D25.2).
+   *
+   * Dieselben Delta-Balken wie in der Wirtschaftstabelle — eine Komponente, zweimal
+   * verwendet. Als Daten getrennt vom Text: ein Balken lässt sich nicht in eine
+   * Textzeile pressen, und die Zahl daneben bleibt der zugängliche Wert.
+   */
+  deltas?: readonly DayReportDelta[]
+}
+
+/** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
+export interface DayReportDelta {
+  label: string
+  balance: number
 }
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
@@ -658,17 +672,38 @@ export function EventLog({
                   title={t(`alerts.${entry.category ?? 'other'}`)}
                 />
               )}
-              {entry.body ? (
+              {entry.body || (entry.deltas && entry.deltas.length > 0) ? (
                 /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
                    die Überschrift, der Körper steht dahinter — details/summary reicht,
                    im Stil der Lagekarte. */
                 <details className="log__report">
                   <summary>{entry.text}</summary>
-                  <ul>
-                    {entry.body.map((line, lineIndex) => (
-                      <li key={lineIndex}>{line}</li>
-                    ))}
-                  </ul>
+                  {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
+                      Wirtschaftstabelle; der groesste Betrag des Tages ist der
+                      Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
+                  {entry.deltas && entry.deltas.length > 0 && (
+                    <ul className="log__deltas" aria-label={t('dayReport.balance')}>
+                      {entry.deltas.map((delta) => (
+                        <li key={delta.label}>
+                          <span>{delta.label}</span>
+                          <span className="log__delta-value">
+                            {rate(delta.balance)}
+                            <DeltaBar
+                              value={delta.balance}
+                              max={Math.max(...entry.deltas!.map((d) => Math.abs(d.balance)), 1)}
+                            />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {entry.body && entry.body.length > 0 && (
+                    <ul>
+                      {entry.body.map((line, lineIndex) => (
+                        <li key={lineIndex}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
                 </details>
               ) : entry.provinceId ? (
                 <button

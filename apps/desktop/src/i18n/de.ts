@@ -371,7 +371,9 @@ export const de = {
    * dem Zustand am Tageswechsel (D24.4), nie aus diesem Text.
    */
   dayReport: {
-    balance: 'Bilanz je Tag: {{list}}',
+    // Seit T-M25-04 die Überschrift der Balkenliste, kein Satz mit Aufzählung mehr:
+    // die Bilanzen zeichnet der DeltaBar, die Zahl steht daneben.
+    balance: 'Bilanz je Tag',
     morale: 'Moral: {{list}}',
     moraleRising: '{{province}} {{percent}} % ↗',
     moraleFalling: '{{province}} {{percent}} % ↘',

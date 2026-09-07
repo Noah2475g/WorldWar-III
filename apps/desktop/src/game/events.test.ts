@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { dayReportBody, describeEvent, provinceOf } from './events.ts'
+import { dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -453,13 +453,41 @@ describe('R-TIME-06 Der Tagesbericht traegt einen Koerper', () => {
     event({ type: 'UNIT_RECRUITED', tick: 22, provinceId: 'B', unitKey: 'infantry', count: 3, armyId: 'a1' }),
   ]
 
-  it('nennt die Bilanz je Rohstoff — und nur die von null verschiedenen', () => {
+  /**
+   * Die Bilanz wird ein Bild (T-M25-04, R-UI-05, D25.2): die Rohstoffzeilen des
+   * Berichts tragen dieselben Delta-Balken wie die Wirtschaftstabelle — deshalb
+   * liefert `dayReportDeltas` sie als Daten (Beschriftung + Festkomma-Bilanz), und die
+   * Textfassung des Körpers nennt sie nicht mehr doppelt.
+   */
+  it('liefert die Bilanz je Rohstoff als Delta-Datensatz — nur die von null verschiedenen', () => {
+    const deltas = dayReportDeltas(sicht())
+
+    expect(deltas).toEqual([
+      { label: 'Nahrung', balance: 120_000 },
+      { label: 'Eisen', balance: -40_000 },
+    ])
+  })
+
+  it('nennt die Bilanz nicht mehr als Textzeile — die Balken uebernehmen', () => {
     const text = dayReportBody(sicht(), regeln(), tagesereignisse()).join('\n')
 
-    expect(text).toContain('Nahrung +120')
-    expect(text).toContain('Eisen −40')
-    // Material steht auf ±0 und ist damit keine Auskunft.
-    expect(text).not.toContain('Material')
+    expect(text).not.toContain('Nahrung +120')
+    expect(text).not.toContain('Bilanz je Tag:')
+  })
+
+  it('schweigt NICHT als ruhiger Tag, solange die Bilanz etwas zu zeigen hat', () => {
+    // Nur Wirtschaft, sonst nichts: die Textfassung ist leer, aber die Balken sprechen —
+    // der eine ehrliche Satz gehoert dem Tag, an dem wirklich nichts ist.
+    const nurBilanz = {
+      tick: 24,
+      playerId: 'p1',
+      self: { economy: sicht().self.economy },
+      provinces: [],
+    } as unknown as PublicView
+    // Regeln ohne Freischaltungen an Tag 3 — sonst spraeche „Morgen neu" mit.
+    const ohneNeues = { constants: { ticksPerDay: 24 }, buildings: {}, units: {} } as unknown as Rules
+
+    expect(dayReportBody(nurBilanz, ohneNeues, [])).toEqual([])
   })
 
   it('nennt die Moral jeder eigenen Provinz mit Richtung', () => {

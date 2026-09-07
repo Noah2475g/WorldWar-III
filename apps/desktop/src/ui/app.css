@@ -431,6 +431,28 @@ body {
   color: var(--ink-soft);
 }
 
+/* Die Bilanzen des Berichts als Balken (T-M25-04): je Zeile Rohstoff, Zahl und
+   derselbe DeltaBar wie in der Wirtschaftstabelle — ohne Aufzaehlungspunkte, die
+   Balken sind selbst die Marken. */
+.log__report ul.log__deltas {
+  list-style: none;
+  padding-left: var(--sp-md);
+}
+
+.log__deltas li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  max-width: 260px;
+}
+
+.log__delta-value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------- dialogs */
 
 .dialog-backdrop {

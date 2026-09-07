@@ -3690,8 +3690,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-05
 - **Entwurf:** D25.2
 - **Abhängigkeiten:** T-M25-03
-- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/ui/Panels.tsx`
-- **Tests zuerst:** am gerenderten Eintrag gebunden.
+- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+  *(App und Stylesheet kamen dazu: die App heftet die Bilanz-Daten an den Eintrag, das
+  Protokoll zeichnet sie; die alte Bilanz-Textzeile wurde zur Überschrift der Balkenliste)*
+- **Tests zuerst:** am gerenderten Eintrag gebunden (`Panels.test.tsx`); die
+  Delta-Daten und die verstummte Textzeile in `events.test.ts`.
 - **Fertig wenn:** die Rohstoffzeilen des Berichts **dieselben** Delta-Balken nutzen wie
   die Wirtschaftstabelle — eine Komponente, zweimal verwendet, nicht zwei Kopien.
 

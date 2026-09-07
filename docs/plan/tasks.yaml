@@ -1883,12 +1883,12 @@ tasks:
   - id: T-M25-04
     milestone: M25
     title: Der Tagesbericht bekommt Balken
-    status: todo
+    status: done
     deps: [T-M25-03]
     requirements: [R-UI-05]
     design: [D-25]
-    files: [apps/desktop/src/game/events.ts, apps/desktop/src/ui/Panels.tsx]
-    tests: [apps/desktop/src/game/events.test.ts]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
     dod: "Der Koerper des Tagesberichts (T-M24-01) nennt Bilanzen als Text. Fertig, wenn die Rohstoffzeilen des Berichts dieselben Delta-Balken nutzen wie die Wirtschaftstabelle (eine Komponente, zweimal verwendet - nicht zwei Kopien) und ein Test das am gerenderten Eintrag bindet"
 
   # --- M26: Die Karte lebt (LEVEL-UP-2-GRAFIK.md, Vorschlaege C+E) ---

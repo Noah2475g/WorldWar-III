@@ -49,6 +49,7 @@ import {
   ProvincePicker,
   type Action,
   type ActionGroupSpec,
+  type DayReportDelta,
   type EventEntry,
   type Targeting,
 } from './ui/Panels.tsx'
@@ -64,7 +65,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayReportBody, describeEvent } from './game/events.ts'
+import { dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -318,7 +319,11 @@ export function App(props: AppProps) {
    * Oberflächenzustand; ein geladener Stand beginnt ohne Körper für alte Berichte —
    * die kommenden Tage bekommen wieder welche.
    */
-  const [dayBodies, setDayBodies] = useState<ReadonlyMap<number, readonly string[]>>(new Map())
+  // Seit T-M25-04 trägt der Bericht neben den Textzeilen die Bilanzen als Daten:
+  // die Delta-Balken des Protokolls sind dieselbe Komponente wie in der Wirtschaft.
+  const [dayBodies, setDayBodies] = useState<
+    ReadonlyMap<number, { lines: readonly string[]; deltas: readonly DayReportDelta[] }>
+  >(new Map())
   const reportedUpTo = useRef(0)
 
   /**
@@ -352,7 +357,10 @@ export function App(props: AppProps) {
         const dayEvents = own.filter(
           (event) => event.tick > report.tick - ticksPerDay && event.tick <= report.tick,
         )
-        next.set(report.tick, dayReportBody(view, props.rules, dayEvents))
+        next.set(report.tick, {
+          lines: dayReportBody(view, props.rules, dayEvents),
+          deltas: dayReportDeltas(view),
+        })
       }
       // Deckel: das Protokoll zeigt die letzten vierzig Zeilen; ältere Körper trägt
       // niemand mehr ab, und ein Speicher, der nur wächst, ist ein Leck mit Absicht.
@@ -1061,8 +1069,11 @@ export function App(props: AppProps) {
         const entry = describeEvent(event, index, activeMap, naming)
         // Der Tagesbericht trägt seinen Körper (T-M24-01): am Tageswechsel gelesen,
         // hier nur angeheftet. Ohne Körper (geladener Stand) bleibt die Zeile schlicht.
-        const body = event.type === 'DAY_REPORT' ? dayBodies.get(event.tick) : undefined
-        return body && body.length > 0 ? { ...entry, body } : entry
+        // Die Bilanzen kommen als Daten dazu — die Balken zeichnet das Protokoll (T-M25-04).
+        const report = event.type === 'DAY_REPORT' ? dayBodies.get(event.tick) : undefined
+        return report && (report.lines.length > 0 || report.deltas.length > 0)
+          ? { ...entry, body: report.lines, deltas: report.deltas }
+          : entry
       })
   }, [state, activeMap, nameOf, ticksPerDay, dayBodies])
 

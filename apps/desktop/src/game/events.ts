@@ -1,9 +1,9 @@
 import type { GameEvent, MapData, PublicView, Rules } from '@worldwar/core'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { hasKey, t } from '../i18n/text.ts'
-import { amount, rate, unfix } from '../ui/format.ts'
+import { amount, unfix } from '../ui/format.ts'
 import { isWorldEventType } from '@worldwar/core'
-import { categoryOf, type EventEntry } from '../ui/Panels.tsx'
+import { categoryOf, type DayReportDelta, type EventEntry } from '../ui/Panels.tsx'
 
 /**
  * Turning an event into a sentence (T-M10-06, R-UI-07).
@@ -158,6 +158,20 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
  * die eigenen Ereignisse des zu Ende gegangenen Tages — nur daraus lässt sich „fertig
  * geworden" ehrlich sagen, denn der Zustand kennt nur, was noch läuft.
  */
+/**
+ * Die Bilanz je Rohstoff als Daten für die Delta-Balken (T-M25-04, R-UI-05, D25.2).
+ *
+ * Bis M25 war die Bilanz eine Textzeile im Körper; jetzt zeichnen die Rohstoffzeilen
+ * des Berichts **dieselben** Balken wie die Wirtschaftstabelle — dafür braucht das
+ * Protokoll die Zahlen, nicht einen Satz. Nur die von null verschiedenen: eine Zeile
+ * voller ±0 ist keine Auskunft, sie versteckt die eine Zahl, die eine wäre.
+ */
+export function dayReportDeltas(view: PublicView): DayReportDelta[] {
+  return Object.entries(view.self.economy ?? {})
+    .filter(([, flow]) => Math.round(unfix(flow.balance)) !== 0)
+    .map(([key, flow]) => ({ label: t(`resources.${key}`), balance: flow.balance }))
+}
+
 export function dayReportBody(
   view: PublicView,
   rules: Rules,
@@ -165,13 +179,6 @@ export function dayReportBody(
 ): string[] {
   const lines: string[] = []
   const ticksPerDay = rules.constants.ticksPerDay
-
-  // Bilanz je Rohstoff — nur die von null verschiedenen: eine Zeile voller ±0 ist
-  // keine Auskunft, sie versteckt die eine Zahl, die eine wäre.
-  const balance = Object.entries(view.self.economy ?? {})
-    .filter(([, flow]) => Math.round(unfix(flow.balance)) !== 0)
-    .map(([key, flow]) => `${t(`resources.${key}`)} ${rate(flow.balance)}`)
-  if (balance.length > 0) lines.push(t('dayReport.balance', { list: balance.join(', ') }))
 
   // Moral je eigener Provinz, mit Richtung: der Stand allein sagt nicht, ob eine
   // Provinz zur Ruhe kommt oder kippt — genau das will der Spieler wissen.
@@ -251,8 +258,11 @@ export function dayReportBody(
   if (unlocks.length > 0) lines.push(t('dayReport.tomorrow', { list: unlocks.join(', ') }))
 
   // Ein leerer Bericht wäre wieder die Überschrift ohne Körper — dann lieber der eine
-  // ehrliche Satz, dass nichts zu berichten ist.
-  return lines.length > 0 ? lines : [t('dayReport.quiet')]
+  // ehrliche Satz, dass nichts zu berichten ist. „Leer" heißt seit T-M25-04: auch die
+  // Bilanzbalken (dayReportDeltas) hätten nichts zu zeigen — solange sie sprechen,
+  // bleibt die Textfassung einfach leer statt fälschlich still.
+  if (lines.length > 0) return lines
+  return dayReportDeltas(view).length > 0 ? [] : [t('dayReport.quiet')]
 }
 
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {

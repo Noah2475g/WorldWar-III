@@ -279,6 +279,60 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
 
     expect(document.querySelector('details.log__report')).toBeNull()
   })
+
+  /**
+   * Der Tagesbericht bekommt Balken (T-M25-04, R-UI-05, D25.2): die Rohstoffzeilen des
+   * Berichts nutzen DIESELBEN Delta-Balken wie die Wirtschaftstabelle — eine
+   * Komponente, zweimal verwendet. Die Zahl steht daneben und bleibt der zugaengliche
+   * Wert; der Balken selbst ist stumm.
+   */
+  it('zeichnet die Bilanzen des Tagesberichts als Delta-Balken mit der Zahl daneben', () => {
+    const bericht: EventEntry = {
+      id: 'r2',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      body: ['Moral: Alpha 62 % ↗'],
+      deltas: [
+        { label: 'Nahrung', balance: 120_000 },
+        { label: 'Eisen', balance: -40_000 },
+      ],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    const details = document.querySelector('details.log__report')!
+    const zeilen = [...details.querySelectorAll('.log__deltas li')]
+    expect(zeilen, 'keine Delta-Zeilen im Bericht').toHaveLength(2)
+
+    // Dieselbe Komponente wie in der Wirtschaftstabelle: die delta-Klassen kommen an,
+    // der groesste Betrag bekommt die halbe Spur, der kleinere skaliert dagegen.
+    const plus = zeilen[0]!.querySelector('.delta__fill--plus') as HTMLElement
+    const minus = zeilen[1]!.querySelector('.delta__fill--minus') as HTMLElement
+    expect(plus, 'kein gruener Balken bei +120').toBeTruthy()
+    expect(plus.style.width).toBe('50%')
+    expect(minus, 'kein zinnoberner Balken bei −40').toBeTruthy()
+    expect(minus.style.width).toBe('16.7%')
+
+    expect(zeilen[0]!.textContent).toContain('Nahrung')
+    expect(zeilen[0]!.textContent).toContain('+120')
+    expect(zeilen[1]!.textContent).toContain('−40')
+    expect(zeilen[0]!.querySelector('.delta')?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('klappt einen Bericht auch dann auf, wenn er NUR Bilanzen traegt', () => {
+    const bericht: EventEntry = {
+      id: 'r3',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      deltas: [{ label: 'Nahrung', balance: 120_000 }],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    expect(document.querySelector('details.log__report')).toBeTruthy()
+  })
 })
 
 /**
