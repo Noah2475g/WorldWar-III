@@ -3,17 +3,19 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import {
+  battleIntensity,
   cacheKey,
   isVisible,
   marchArrow,
   marchProgress,
   marchStroke,
+  ownershipChanges,
   prepareFrame,
   thin,
   worthDrawing,
   type RenderProvince,
 } from './render.ts'
-import { colorForPlayer } from './modes.ts'
+import { STRENGTH_FULL, colorForPlayer } from './modes.ts'
 import { TOKENS } from '../ui/tokens.ts'
 
 /**
@@ -176,6 +178,45 @@ describe('T-M26-01 Marschpfeile mit Fortschritt', () => {
   it('zeichnet eigene Maersche in Tinte, fremde in Spielerfarbe', () => {
     expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.ink)
     expect(marchStroke({ own: false, owner: 'p4' })).toBe(colorForPlayer('p4'))
+  })
+})
+
+/**
+ * Kampf und Eroberung auf der Karte (T-M26-02, R-UI-17, D25.4).
+ *
+ * Der Wechsel selbst wird als Differenz zweier Besitzstaende erkannt — eine reine
+ * Funktion, damit "welche Provinz blendet gerade" nicht an einer Leinwand haengt.
+ * Die Ringintensitaet skaliert mit der Gefechtsgroesse: ein Scharmuetzel atmet leise,
+ * eine Feldschlacht ist vom anderen Ende der Karte zu sehen.
+ */
+describe('T-M26-02 Besitzwechsel und Gefechtsgroesse', () => {
+  it('erkennt genau die Provinzen, deren Eigentuemer gewechselt hat', () => {
+    const previous = { A: 'p1', B: 'p2', C: null }
+    const current = [
+      { id: 'A', owner: 'p2' },
+      { id: 'B', owner: 'p2' },
+      { id: 'C', owner: 'p1' },
+    ]
+
+    expect(ownershipChanges(previous, current)).toEqual([
+      { id: 'A', from: 'p1', to: 'p2' },
+      { id: 'C', from: null, to: 'p1' },
+    ])
+  })
+
+  it('haelt ein erstes Bild nicht fuer eine Eroberung', () => {
+    // Eine Provinz, die vorher gar nicht bekannt war, hat keinen alten Zustand, von
+    // dem man blenden koennte — beim Partiestart wuerde sonst die halbe Welt wabern.
+    expect(ownershipChanges({}, [{ id: 'A', owner: 'p1' }])).toEqual([])
+  })
+
+  it('skaliert die Ringintensitaet nach der Gefechtsgroesse', () => {
+    expect(battleIntensity(0)).toBe(0)
+    expect(battleIntensity(STRENGTH_FULL)).toBe(1)
+    // Wurzel, nicht linear: ein kleines Gefecht bleibt sichtbar, statt im Rauschen
+    // zu verschwinden — ein Viertel der vollen Staerke ist der halbe Ring.
+    expect(battleIntensity(STRENGTH_FULL / 4)).toBeCloseTo(0.5, 9)
+    expect(battleIntensity(STRENGTH_FULL * 3)).toBe(1)
   })
 })
 

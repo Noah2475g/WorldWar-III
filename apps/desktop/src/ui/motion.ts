@@ -42,3 +42,27 @@ export function motionAllowed(speed: number, reduced = prefersReducedMotion()): 
 export function ringRadius(timeMs: number, base: number, options: Parameters<typeof pulse>[1] = {}): number {
   return base + pulse(timeMs, options) * 3
 }
+
+/** Wie lange die Farbwelle eines Besitzwechsels laeuft (T-M26-02, D25.4). */
+export const OWNERSHIP_FADE_MS = 600
+
+/**
+ * Die Blendkurve eines Besitzwechsels: 0 bei Beginn, 1 am Ende, dazwischen weich.
+ *
+ * Smoothstep statt linear — eine Flaeche, die mit konstanter Rate umkippt, wirkt wie
+ * ein Ladebalken; eine, die sich einschwingt, wie ein Ereignis. Und wie beim Puls:
+ * wer weniger Bewegung verlangt (Systemeinstellung) oder die Partie schneller laufen
+ * laesst, als ein Mensch zusieht, bekommt sofort den neuen Zustand — der alte harte
+ * Wechsel war nie falsch, nur stumm.
+ */
+export function fadeProgress(
+  elapsedMs: number,
+  options: { speed?: number; reduced?: boolean; duration?: number } = {},
+): number {
+  const reduced = options.reduced ?? prefersReducedMotion()
+  if (reduced || (options.speed ?? 0) > CUE_SPEED_LIMIT) return 1
+
+  const duration = options.duration ?? OWNERSHIP_FADE_MS
+  const t = Math.min(1, Math.max(0, elapsedMs / duration))
+  return t * t * (3 - 2 * t)
+}

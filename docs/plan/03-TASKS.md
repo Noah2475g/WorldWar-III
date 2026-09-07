@@ -3734,9 +3734,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Entwurf:** D25.4
 - **Abhängigkeiten:** T-M26-01
 - **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
-  `apps/desktop/src/ui/motion.ts`
+  `apps/desktop/src/ui/motion.ts`, `apps/desktop/src/map/modes.ts`
+  *(die Mischformel `mixColors` der Kartenmodi wurde exportiert statt kopiert — die
+  Welle blendet mit genau der Formel, aus der die Modi ihre Skalen mischen)*
 - **Tests zuerst:** die Blendkurve an feste Zeitpunkte gebunden; der
-  reduced-motion-Pfad geprüft.
+  reduced-motion-Pfad geprüft (`motion.test.ts`); Besitzwechsel-Erkennung und
+  Ringintensität rein gebunden (`render.test.ts`).
 - **Fertig wenn:** ein Besitzwechsel als kurze Farbwelle läuft (~600 ms; bei
   `prefers-reduced-motion` sofortiger Wechsel) und die Kampfzone ihre Intensität nach
   Gefechtsgröße skaliert.

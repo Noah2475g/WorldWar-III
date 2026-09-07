@@ -73,8 +73,12 @@ export function colorForPlayer(playerId: string): string {
  *
  * Kept to the palette rather than reaching for a rainbow: a gradient invented per
  * chart is how an interface stops looking like one interface (R-UI-02).
+ *
+ * Seit T-M26-02 exportiert: die Farbwelle eines Besitzwechsels blendet mit GENAU
+ * dieser Funktion von der alten zur neuen Fuellung — eine zweite Mischformel daneben
+ * waere der Anfang von zwei Farbtabellen.
  */
-function mix(from: string, to: string, t: number): string {
+export function mixColors(from: string, to: string, t: number): string {
   const clamped = Math.min(1, Math.max(0, t))
   const channel = (hex: string, at: number): number => parseInt(hex.slice(at, at + 2), 16)
   const blend = (at: number): string =>
@@ -99,20 +103,20 @@ export function fillFor(province: ShadedProvince, mode: MapMode): string {
       const total = Object.values(province.deposits ?? {}).reduce((sum, value) => (sum ?? 0) + (value ?? 0), 0) ?? 0
       if (province.deposits === undefined) return TOKENS.paperSunk
       // Ten thousand is a rich province; beyond that the shading stops distinguishing.
-      return mix(TOKENS.paperSunk, TOKENS.good, total / 10_000)
+      return mixColors(TOKENS.paperSunk, TOKENS.good, total / 10_000)
     }
 
     case 'morale':
       if (province.morale === undefined) return TOKENS.paperSunk
       // Vermilion at nothing, green at full: the one place the signal colour is used
       // for a scale rather than an alarm, and it means the same thing — trouble.
-      return mix(TOKENS.accent, TOKENS.good, province.morale / 100)
+      return mixColors(TOKENS.accent, TOKENS.good, province.morale / 100)
 
     case 'strength':
       if (province.strength === undefined) return TOKENS.paperSunk
       // Zwanzig Einheiten sind ein voller Stapel (Stapel-Deckel, D6); darueber
       // unterscheidet die Faerbung nichts mehr.
-      return mix(TOKENS.paper, TOKENS.ink, province.strength / STRENGTH_FULL)
+      return mixColors(TOKENS.paper, TOKENS.ink, province.strength / STRENGTH_FULL)
   }
 }
 

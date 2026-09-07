@@ -4,9 +4,13 @@ import { TOKENS, TYPE } from '../ui/tokens.ts'
 import {
   MAP_COLORS,
   MARCH_AHEAD_ALPHA,
+  battleIntensity,
+  battleRingBase,
+  battleRingWidth,
   marchArrow,
   marchProgress,
   marchStroke,
+  ownershipChanges,
   prepareFrame,
   type RenderProvince,
 } from './render.ts'
@@ -14,8 +18,8 @@ import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type Vi
 import { markersFor, pickArmy, type ArmyMarker } from './markers.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
-import { motionAllowed, ringRadius } from '../ui/motion.ts'
-import type { MapMode } from './modes.ts'
+import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
+import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 
 /**
  * The map (T-M10-03a/b, R-UI-03).
@@ -99,6 +103,19 @@ export function MapCanvas(props: MapCanvasProps) {
   const [clock, setClock] = useState(0)
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
 
+  /**
+   * Laufende Farbwellen eines Besitzwechsels (T-M26-02, D25.4).
+   *
+   * `startedMs` bleibt null, bis das erste Bild der Schleife laeuft: die Uhr der
+   * Bildschleife (rAF-Zeitstempel) ist die einzige, gegen die der Fortschritt gerechnet
+   * wird — ein Start "jetzt" mit einer anderen Uhr ergaebe eine Welle, die je nach
+   * Standzeit der Schleife schon vorbei waere, bevor jemand sie sah.
+   */
+  const [fades, setFades] = useState<
+    { id: string; from: string | null; to: string | null; startedMs: number | null }[]
+  >([])
+  const previousOwners = useRef<Record<string, string | null> | null>(null)
+
   const withBounds = useMemo(
     () => props.provinces.map((province) => ({ ...province, bounds: province.bounds ?? boundsOf(province.polygons) })),
     [props.provinces],
@@ -176,25 +193,64 @@ export function MapCanvas(props: MapCanvasProps) {
     }
   }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
 
+  // Der Besitzstand des letzten Bildes gegen den jetzigen: was gewechselt hat, blendet
+  // als Farbwelle (T-M26-02). Ohne Bewegungserlaubnis wird nichts vorgemerkt — der
+  // harte Wechsel der teuren Ebene IST dann der reduced-motion-Pfad.
+  useEffect(() => {
+    const previous = previousOwners.current
+    const next: Record<string, string | null> = {}
+    for (const province of props.provinces) next[province.id] = province.owner
+    previousOwners.current = next
+
+    if (!previous || !motionAllowed(props.speed ?? 0)) return
+    const changes = ownershipChanges(previous, props.provinces)
+    if (changes.length === 0) return
+    setFades((old) => [
+      // Wechselt eine Provinz erneut, ersetzt die neue Welle die alte.
+      ...old.filter((fade) => !changes.some((change) => change.id === fade.id)),
+      ...changes.map((change) => ({ ...change, startedMs: null })),
+    ])
+  }, [props.provinces, props.speed])
+
+  const fading = fades.length > 0
+
   useEffect(() => {
     // Die Schleife laeuft, solange irgendetwas sich bewegt: ein Gefecht atmet, eine
-    // Armee marschiert. Ohne Anlass laeuft sie gar nicht — eine Animationsschleife ohne
-    // Grund ist ein Ventilator (T-M13-16), und das gilt fuer Maersche wie fuer Ringe.
+    // Armee marschiert, eine Eroberung blendet. Ohne Anlass laeuft sie gar nicht — eine
+    // Animationsschleife ohne Grund ist ein Ventilator (T-M13-16).
     const fighting = (props.battleProvinces ?? []).length > 0
     const marching = props.armies.some((army) => army.march !== undefined)
-    if ((!fighting && !marching) || !motionAllowed(props.speed ?? 0)) return
+    if ((!fighting && !marching && !fading) || !motionAllowed(props.speed ?? 0)) return
 
     let running = true
     const step = (time: number): void => {
       if (!running) return
       setClock(time)
+      // Wellen bekommen ihren Start vom ersten Bild und enden nach der Blenddauer;
+      // sind alle vorbei, endet mit ihnen der Anlass, und die Schleife steht wieder.
+      setFades((old) => {
+        if (old.length === 0) return old
+        let changed = false
+        const next = old.flatMap((fade) => {
+          if (fade.startedMs === null) {
+            changed = true
+            return [{ ...fade, startedMs: time }]
+          }
+          if (time - fade.startedMs >= OWNERSHIP_FADE_MS) {
+            changed = true
+            return []
+          }
+          return [fade]
+        })
+        return changed ? next : old
+      })
       requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
     return () => {
       running = false
     }
-  }, [props.battleProvinces, props.armies, props.speed])
+  }, [props.battleProvinces, props.armies, props.speed, fading])
 
   // The cheap layer: armies, selection, labels.
   useEffect(() => {
@@ -203,6 +259,35 @@ export function MapCanvas(props: MapCanvasProps) {
     if (!canvas || !context) return
 
     context.clearRect(0, 0, size.width, size.height)
+
+    // Die Farbwelle eines Besitzwechsels (T-M26-02, D25.4): die teure Ebene traegt
+    // laengst die neue Farbe, hier blendet die Flaeche ~600 ms von der alten hinueber —
+    // mit derselben Mischformel, aus der auch die Modi ihre Skalen mischen. Zuunterst,
+    // damit Pfeile, Marker und Ringe darueber lesbar bleiben.
+    for (const fade of fades) {
+      const province = withBounds.find((p) => p.id === fade.id)
+      if (!province) continue
+      // Durch fadeProgress auch bei noch nicht gestarteter Welle: faellt die Bewegungs-
+      // erlaubnis zwischen Vormerken und erstem Bild weg, liefert es 1 — die Welle
+      // entfaellt, statt die alte Farbe festzunageln.
+      const progress = fadeProgress(fade.startedMs === null ? 0 : clock - fade.startedMs, {
+        speed: props.speed ?? 0,
+      })
+      if (progress >= 1) continue
+      const from = fillFor({ ...province, owner: fade.from }, props.mode)
+      const to = fillFor(province, props.mode)
+      if (from === to) continue
+      context.fillStyle = mixColors(from, to, progress)
+      for (const ring of province.polygons) {
+        const points = ring.map(([x, y]) => toScreen({ x, y }, props.view))
+        if (points.length < 3) continue
+        context.beginPath()
+        context.moveTo(points[0]!.x, points[0]!.y)
+        for (const point of points.slice(1)) context.lineTo(point.x, point.y)
+        context.closePath()
+        context.fill()
+      }
+    }
 
     // Marschpfeile (T-M26-01, D25.3): jede sichtbare marschierende Armee zeigt ihre
     // Route — der zurueckgelegte Anteil voll, der Rest blass, die Spitze am Ziel. Das
@@ -268,6 +353,9 @@ export function MapCanvas(props: MapCanvasProps) {
       }
     }
 
+    // Die sichtbare Gesamtstaerke je Provinz, fuer die Intensitaet der Gefechtsringe.
+    const strengthOf = strengthByProvince(props.armies)
+
     for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
@@ -308,18 +396,29 @@ export function MapCanvas(props: MapCanvasProps) {
       }
 
       // A battle: the ring says where, the sabres say what — and it breathes, so a
-      // fight is findable on a map of 237 provinces (T-M13-16).
+      // fight is findable on a map of 237 provinces (T-M13-16). Seit T-M26-02 traegt
+      // der Ring die Groesse des Gefechts: Radius und Strich wachsen mit der sichtbaren
+      // Gesamtstaerke der Provinz — ein Scharmuetzel fluestert, eine Feldschlacht ruft.
+      const intensity = battleIntensity(strengthOf[marker.provinceId] ?? 0)
       context.strokeStyle = MAP_COLORS.battle
-      context.lineWidth = 2
+      context.lineWidth = battleRingWidth(intensity)
       context.beginPath()
-      context.arc(marker.x, marker.y, ringRadius(clock, 14, { speed: props.speed ?? 0 }), 0, Math.PI * 2)
+      context.arc(
+        marker.x,
+        marker.y,
+        ringRadius(clock, battleRingBase(intensity), { speed: props.speed ?? 0 }),
+        0,
+        Math.PI * 2,
+      )
       context.stroke()
       context.lineWidth = 1.6
       drawIcon(context, 'battle', marker.x, marker.y, 14)
     }
   }, [
+    fades,
     props.armies,
     props.buildings,
+    props.mode,
     props.selectedProvince,
     props.capitalProvinceId,
     props.battleProvinces,

@@ -1,5 +1,5 @@
 import { boundsOf, toScreen, type Bounds, type Ring, type View } from './picking.ts'
-import { colorForPlayer, fillFor, type MapMode, type ShadedProvince } from './modes.ts'
+import { STRENGTH_FULL, colorForPlayer, fillFor, type MapMode, type ShadedProvince } from './modes.ts'
 import { TOKENS } from '../ui/tokens.ts'
 
 /**
@@ -256,6 +256,63 @@ export function marchArrow(
 /** Eigene Maersche in Tinte, fremde in der Farbe ihrer Macht (D25.3). */
 export function marchStroke(army: { own: boolean; owner: string }): string {
   return army.own ? TOKENS.ink : colorForPlayer(army.owner)
+}
+
+/**
+ * Kampf und Eroberung auf der Karte (T-M26-02, R-UI-17, D25.4).
+ *
+ * Ein Besitzwechsel war ein harter Farbsprung zwischen zwei Bildern der teuren Ebene.
+ * Die Welle selbst zeichnet `MapCanvas` auf dem Ueberzug; was hier steht, ist der
+ * testbare Teil — WELCHE Provinzen gerade wechseln, und wie stark ein Gefechtsring
+ * auftritt.
+ */
+
+export interface OwnershipChange {
+  id: string
+  from: string | null
+  to: string | null
+}
+
+/**
+ * Die Provinzen, deren Eigentuemer sich gegenueber dem letzten Bild geaendert hat.
+ *
+ * Nur Provinzen, die vorher schon bekannt waren: eine, die zum ersten Mal auftaucht,
+ * hat keinen alten Zustand, von dem man blenden koennte — beim Partiestart und beim
+ * Kartenwechsel wuerde sonst die halbe Welt wabern.
+ */
+export function ownershipChanges(
+  previous: Readonly<Record<string, string | null>>,
+  current: readonly { id: string; owner: string | null }[],
+): OwnershipChange[] {
+  const changes: OwnershipChange[] = []
+  for (const province of current) {
+    const before = previous[province.id]
+    if (before === undefined || before === province.owner) continue
+    changes.push({ id: province.id, from: before, to: province.owner })
+  }
+  return changes
+}
+
+/**
+ * Wie stark der Ring eines Gefechts auftritt, 0…1 nach sichtbarer Gesamtstaerke.
+ *
+ * Wurzel statt linear: ein Scharmuetzel von ein paar hundert Trefferpunkten bleibt
+ * sichtbar, statt im Rauschen zu verschwinden, und der volle Stapel (STRENGTH_FULL,
+ * der Deckel aus D6) ist das Ende der Skala — wie im Staerkemodus der Karte.
+ */
+export function battleIntensity(strength: number): number {
+  if (strength <= 0) return 0
+  return Math.min(1, Math.sqrt(strength / STRENGTH_FULL))
+}
+
+/** Grundradius des Gefechtsrings zu einer Intensitaet — das Atmen kommt oben drauf. */
+export function battleRingBase(intensity: number): number {
+  return 9 + 7 * intensity
+}
+
+/** Strichbreite des Gefechtsrings zu einer Intensitaet. */
+export function battleRingWidth(intensity: number): number {
+  return 1.4 + 1.6 * intensity
 }
 
 /** Border and label colours are the same in every mode — the map stays legible. */

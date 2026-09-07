@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PULSE_PERIOD_MS, motionAllowed, pulse, ringRadius } from './motion.ts'
+import { OWNERSHIP_FADE_MS, PULSE_PERIOD_MS, fadeProgress, motionAllowed, pulse, ringRadius } from './motion.ts'
 import { CUE_SPEED_LIMIT } from './sound.ts'
 
 /**
@@ -52,5 +52,49 @@ describe('R-UI-04 Der Puls des Kampfrings', () => {
 
     expect(small).toBeCloseTo(14, 6)
     expect(large).toBeCloseTo(17, 6)
+  })
+})
+
+/**
+ * Die Farbwelle eines Besitzwechsels (T-M26-02, R-UI-17, D25.4).
+ *
+ * Ein Besitzwechsel war ein harter Farbsprung zwischen zwei Bildern. Die Blendkurve
+ * ist an feste Zeitpunkte gebunden, damit "laeuft in rund 600 ms" eine Testaussage
+ * ist und kein Eindruck — und der reduced-motion-Pfad springt sofort ans Ende, denn
+ * wer weniger Bewegung verlangt, bekommt den alten harten (ehrlichen) Wechsel.
+ */
+describe('R-UI-17 Die Blendkurve des Besitzwechsels', () => {
+  const options = { reduced: false, speed: 1 }
+
+  it('ist an feste Zeitpunkte gebunden: Anfang, Mitte, Ende', () => {
+    expect(fadeProgress(0, options)).toBe(0)
+    // Smoothstep ist punktsymmetrisch: die halbe Dauer liegt exakt in der Mitte.
+    expect(fadeProgress(OWNERSHIP_FADE_MS / 2, options)).toBeCloseTo(0.5, 9)
+    expect(fadeProgress(OWNERSHIP_FADE_MS, options)).toBe(1)
+  })
+
+  it('laeuft in rund 600 ms und bleibt danach am Ende stehen', () => {
+    expect(OWNERSHIP_FADE_MS).toBe(600)
+    expect(fadeProgress(OWNERSHIP_FADE_MS * 3, options)).toBe(1)
+    // Vor dem Anfang gibt es nichts zu blenden — auch nicht bei krummen Uhren.
+    expect(fadeProgress(-50, options)).toBe(0)
+  })
+
+  it('setzt die Farbe bei prefers-reduced-motion sofort um', () => {
+    expect(fadeProgress(0, { reduced: true })).toBe(1)
+    expect(fadeProgress(300, { reduced: true })).toBe(1)
+  })
+
+  it('setzt die Farbe sofort um, wenn die Partie schneller laeuft als ein Mensch zusieht', () => {
+    expect(fadeProgress(0, { reduced: false, speed: CUE_SPEED_LIMIT + 1 })).toBe(1)
+  })
+
+  it('steigt monoton — eine Welle, die zurueckschwappt, waere ein Flackern', () => {
+    let previous = -1
+    for (let time = 0; time <= OWNERSHIP_FADE_MS; time += 50) {
+      const value = fadeProgress(time, options)
+      expect(value).toBeGreaterThanOrEqual(previous)
+      previous = value
+    }
   })
 })

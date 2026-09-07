@@ -1907,12 +1907,12 @@ tasks:
   - id: T-M26-02
     milestone: M26
     title: Kampf und Eroberung sind auf der Karte sichtbar
-    status: todo
+    status: done
     deps: [T-M26-01]
     requirements: [R-MAP-05, R-UI-17]
     design: [D-25]
-    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts]
-    tests: [apps/desktop/src/map/render.test.ts]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts, apps/desktop/src/map/modes.ts]
+    tests: [apps/desktop/src/map/render.test.ts, apps/desktop/src/ui/motion.test.ts]
     dod: "Ein Besitzwechsel ist heute ein harter Farbsprung, ein Kampf ein Ring fester Staerke. Fertig, wenn ein Besitzwechsel als kurze Farbwelle laeuft (rund 600 ms, Flaeche blendet von alter zu neuer Farbe; bei prefers-reduced-motion sofortiger Wechsel - Muster in motion.ts), die Kampfzone ihre Intensitaet nach Gefechtsgroesse skaliert, und Tests die Blendkurve an feste Zeitpunkte binden sowie den reduced-motion-Pfad pruefen"
 
   - id: T-M26-03
