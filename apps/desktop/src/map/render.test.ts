@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
-import { cacheKey, isVisible, prepareFrame, thin, type RenderProvince } from './render.ts'
+import { cacheKey, isVisible, prepareFrame, thin, worthDrawing, type RenderProvince } from './render.ts'
 
 /**
  * The frame budget (T-M10-03b, R-ARCH-06/AK2).
@@ -110,5 +110,74 @@ describe('R-ARCH-06 Zwischenspeicher der Provinzflaechen', () => {
     expect(cacheKey({ x: 0, y: 0, scale: 1 }, 'morale', 7)).not.toBe(base)
     expect(cacheKey({ x: 0, y: 0, scale: 2 }, 'political', 7)).not.toBe(base)
     expect(cacheKey({ x: 0, y: 0, scale: 1 }, 'political', 8)).not.toBe(base)
+  })
+})
+
+describe('T-M19-02 Was ein Umriss kostet, wenn er kleiner als ein Bildpunkt ist', () => {
+  const islet: [number, number][] = [
+    [100, 100],
+    [102, 100],
+    [102, 102],
+    [100, 102],
+  ]
+  const mainland: [number, number][] = [
+    [0, 0],
+    [500, 0],
+    [500, 500],
+    [0, 500],
+  ]
+
+  it('laesst eine Insel weg, die auf dem Schirm unter einen Bildpunkt faellt', () => {
+    // Zoomed out to world scale, a two-unit island is barely a tenth of a pixel. The
+    // path, the fill and the stroke cost the same as they do for Australia.
+    expect(worthDrawing(islet, { x: 0, y: 0, scale: 20 })).toBe(false)
+  })
+
+  it('zeichnet dieselbe Insel, sobald man nah genug heran ist', () => {
+    expect(worthDrawing(islet, { x: 0, y: 0, scale: 1 })).toBe(true)
+  })
+
+  it('laesst niemals eine Flaeche weg, die man sehen koennte', () => {
+    // The one thing this filter must never do is drop the piece a province is drawn
+    // from. A mainland stays at any zoom the map allows.
+    for (const scale of [0.2, 1, 2.78, 4]) {
+      expect(worthDrawing(mainland, { x: 0, y: 0, scale })).toBe(true)
+    }
+  })
+
+  it('haelt einen langen schmalen Umriss, der nur in einer Richtung duenn ist', () => {
+    // A fjord or a spit is one pixel wide and two hundred long — dropping it because
+    // of its width would tear a hole in the coast.
+    const spit: [number, number][] = [
+      [0, 0],
+      [200, 0],
+      [200, 1],
+      [0, 1],
+    ]
+
+    expect(worthDrawing(spit, { x: 0, y: 0, scale: 2.78 })).toBe(true)
+  })
+
+  const worldView = { x: 0, y: 0, scale: 2.78 }
+  const screen = { width: 1440, height: 900 }
+
+  it('spart auf der Weltkarte mehr als die Haelfte der Formen', () => {
+    // The measurement the filter exists for, as a test: 2070 outlines in the data,
+    // 901 worth drawing at world scale.
+    const all = provinces.reduce((sum, province) => sum + province.polygons.length, 0)
+    const shapes = prepareFrame(provinces, worldView, screen, 'political')
+
+    expect(shapes.length).toBeLessThan(all / 2)
+  })
+
+  it('laesst dabei keine einzige Provinz verschwinden', () => {
+    // The filter arriving from the other direction. Malta and Singapore are under a
+    // pixel across at world scale, so every one of their outlines falls below the
+    // threshold — and dropping them all would leave the player with a province they
+    // own and cannot see. That is the fault of T-M19-02 all over again.
+    const drawn = new Set(prepareFrame(provinces, worldView, screen, 'political').map((s) => s.id))
+    const missing = provinces.filter((p) => !drawn.has(p.id)).map((p) => p.id)
+
+    expect(missing, `auf der Weltkarte nicht gezeichnet: ${missing.join(', ')}`).toEqual([])
   })
 })

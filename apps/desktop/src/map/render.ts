@@ -68,6 +68,47 @@ export function thin(ring: Ring, view: View, minPixels = 1.5): [number, number][
 }
 
 /**
+ * Is this outline big enough on screen to be worth a path?
+ *
+ * The counterpart to `thin` for whole pieces rather than for points, and it earns its
+ * keep since T-M19-02: a province is no longer one outline but nine on average, and at
+ * world scale most of the new ones are islands under a pixel across. Building a path,
+ * filling it and stroking it to cover half a pixel costs the same as doing it for
+ * Australia — and it was the whole of the frame-budget regression the change caused.
+ *
+ * The threshold is the one `thin` already uses, so both agree on what "the same pixel"
+ * means. It drops nothing a player could see: a shape narrower than a pixel has no
+ * inside left to fill. And it looks only at how large *this* piece is, never at how
+ * many a province has — so the piece a province depends on is never the one dropped.
+ */
+export function worthDrawing(ring: Ring, view: View, minPixels = 1.5): boolean {
+  return span(ring) >= minPixels * view.scale
+}
+
+/** The longer side of a ring's bounding box, in map units. */
+function span(ring: Ring): number {
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const [x, y] of ring) {
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+  return Math.max(maxX - minX, maxY - minY)
+}
+
+/** Ring in map units to thinned points in screen pixels. */
+function toScreenPoints(ring: Ring, view: View): [number, number][] {
+  return thin(ring, view).map(([x, y]) => {
+    const screen = toScreen({ x, y }, view)
+    return [screen.x, screen.y] as [number, number]
+  })
+}
+
+/**
  * Everything the canvas needs for one frame, and nothing it does not.
  *
  * Since T-M19-02 a province contributes **one shape per piece of land**, so `id` is no
@@ -88,13 +129,20 @@ export function prepareFrame(
     if (!isVisible(bounds, view, viewport)) continue
 
     const fill = fillFor(province, mode)
-    for (const ring of province.polygons) {
-      const points = thin(ring, view).map(([x, y]) => {
-        const screen = toScreen({ x, y }, view)
-        return [screen.x, screen.y] as [number, number]
-      })
+    const before = shapes.length
 
-      shapes.push({ id: province.id, fill, points })
+    for (const ring of province.polygons) {
+      if (!worthDrawing(ring, view)) continue
+      shapes.push({ id: province.id, fill, points: toScreenPoints(ring, view) })
+    }
+
+    // A province is never allowed to vanish. Malta and Singapore are smaller than one
+    // pixel at world scale, and dropping their only outline would leave the map with a
+    // province the player owns and cannot see — which is the fault T-M19-02 exists to
+    // repair, arriving from the other direction.
+    if (shapes.length === before) {
+      const largest = province.polygons.reduce((a, b) => (span(a) >= span(b) ? a : b))
+      shapes.push({ id: province.id, fill, points: toScreenPoints(largest, view) })
     }
   }
 
