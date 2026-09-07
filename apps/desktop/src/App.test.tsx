@@ -665,7 +665,7 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
 
     const hint = screen.getByRole('complementary', { name: 'Einstieg' })
-    expect(hint.textContent).toContain('Schritt 1 von 8')
+    expect(hint.textContent).toContain('Schritt 1 von 10')
   })
 
   it('geht weiter, sobald der Spieler die genannte Handlung ausfuehrt', () => {
@@ -674,7 +674,26 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
 
-    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 8')
+    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 10')
+  })
+
+  it('beendet den Punkteschritt, wenn die Lage der Maechte offen ist (T-M24-02)', () => {
+    // Der vierte Schritt erklaert, woher die Punkte kommen, und bittet um einen Blick
+    // in die Lage der Maechte. Er endet auf JEDEM Weg dorthin — Taste L wie Kopfleiste —,
+    // weil die Verdrahtung am geoeffneten Panel haengt, nicht an einer Taste.
+    globalThis.localStorage?.clear()
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '10' }))
+
+    const hint = () => screen.getByRole('complementary', { name: 'Einstieg' }).textContent ?? ''
+    expect(hint(), 'die drei Klickschritte sind nicht durch').toContain('Schritt 4 von 10')
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    expect(hint(), 'der Blick auf die Lage hat den Schritt nicht beendet').toContain('Schritt 5 von 10')
   })
 
   it('bleibt weg, wenn der Spieler sie abgeschaltet hat', () => {

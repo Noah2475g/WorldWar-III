@@ -58,12 +58,15 @@ interface Ereignis {
  */
 function durchgang(): { ereignisse: Ereignis[]; ende: TutorialState } {
   let state: GameState = createInitialState(config, ctx)
-  // Die ersten drei Schritte hängen an Klicks; ein Spieler macht sie in der ersten Minute.
-  let tutorial: TutorialState = ['selectProvince', 'openBuild', 'setSpeed'].reduce(
+  // Die ersten vier Schritte hängen an Klicks (seit T-M24-02 gehört der Blick auf die
+  // Lage der Mächte dazu); ein Spieler macht sie in der ersten Minute.
+  let tutorial: TutorialState = ['selectProvince', 'openBuild', 'setSpeed', 'openStandings'].reduce(
     (current, klick) => advance(current, klick as never),
     TUTORIAL_START,
   )
-  const ereignisse: Ereignis[] = [{ tick: 0, art: 'Schritt', was: 'select, build, speed (drei Klicks)' }]
+  const ereignisse: Ereignis[] = [
+    { tick: 0, art: 'Schritt', was: 'select, build, speed, score (vier Klicks)' },
+  ]
 
   const eigene = (s: GameState): string[] =>
     s.provinceOrder.filter((id) => s.provinces[id]?.owner === 'p1')

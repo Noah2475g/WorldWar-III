@@ -26,17 +26,40 @@ import {
  */
 
 describe('R-UI-05 Einstiegshilfe', () => {
-  it('fuehrt durch acht Schritte, und jeder sagt etwas', () => {
-    // Fuenf waren es bis T-M21-02; drei folgen seither dem Spiel statt der Knopfleiste.
-    expect(TUTORIAL_STEPS).toHaveLength(8)
+  it('fuehrt durch zehn Schritte, und jeder sagt etwas', () => {
+    // Fuenf waren es bis T-M21-02; drei folgen seither dem Spiel statt der Knopfleiste,
+    // und T-M24-02 erklaert dazu die Punktequellen und die Ausdehnungs-Moralstrafe.
+    expect(TUTORIAL_STEPS).toHaveLength(10)
     // Der Schritt traegt seit T-M21-03 nur noch seine Kennung; der Text steht in der
     // Sprachdatei und wird ueber genau diese Kennung gefunden. Ein Schritt ohne Eintrag
     // dort bekaeme von t() den rohen Schluessel in Klammern — also wird beides geprueft.
+    // Seit T-M24-02 gehoert das Wozu dazu: der Satz, der den Schritt begruendet.
     for (const step of TUTORIAL_STEPS) {
       expect(hasKey(`tutorial.steps.${step.id}.title`), step.id).toBe(true)
       expect(hasKey(`tutorial.steps.${step.id}.text`), step.id).toBe(true)
       expect(t(`tutorial.steps.${step.id}.text`).length, step.id).toBeGreaterThan(40)
+      expect(hasKey(`tutorial.steps.${step.id}.why`), `${step.id} ohne Wozu`).toBe(true)
+      expect(t(`tutorial.steps.${step.id}.why`).length, step.id).toBeGreaterThan(30)
     }
+  })
+
+  it('erklaert die Punktequellen frueh und die Moralstrafe vor der ersten Eroberung', () => {
+    // T-M24-02, beide BEVOR sie zum ersten Mal wirken. Die Punktequellen im Klickblock
+    // vor dem ersten Wartschritt: wer nicht weiss, dass die Bevoelkerung fast alle
+    // Punkte stellt, investiert die ersten Tage in das Falsche. Der Schritt endet, wenn
+    // die Lage der Maechte offen ist — dort stehen die Punkte, von denen er spricht.
+    const ids = TUTORIAL_STEPS.map((step) => step.id)
+    expect(ids.indexOf('score'), 'kein Schritt erklaert die Punktequellen').toBeGreaterThanOrEqual(0)
+    expect(ids.indexOf('score')).toBeLessThan(ids.indexOf('dayPassed'))
+    expect(TUTORIAL_STEPS[ids.indexOf('score')]!.completesOn).toBe('openStandings')
+
+    // Die Moralstrafe als letzter Schritt: gezeigt, sobald die Schritte davor durch
+    // sind — Tage vor dem fruehesten Eroberungszug —, und beendet erst von der ersten
+    // Eroberung selbst. So steht die Warnung genau so lange, wie sie gebraucht wird.
+    expect(ids[ids.length - 1], 'die Moralstrafe ist nicht der letzte Schritt').toBe('expansion')
+    expect(TUTORIAL_STEPS[ids.length - 1]!.completesOn).toBe('provinceCaptured')
+    // Und kein frueherer Schritt verbraucht die Eroberung vorweg.
+    expect(TUTORIAL_STEPS.filter((step) => step.completesOn === 'provinceCaptured')).toHaveLength(1)
   })
 
   it('zeigt sich nur in der ersten Partie', () => {
@@ -75,8 +98,8 @@ describe('R-UI-05 Einstiegshilfe', () => {
   })
 
   it('sagt, wie viel noch kommt', () => {
-    expect(progressLabel(TUTORIAL_START)).toBe('Schritt 1 von 8')
-    expect(progressLabel(advance(TUTORIAL_START, 'selectProvince'))).toBe('Schritt 2 von 8')
+    expect(progressLabel(TUTORIAL_START)).toBe('Schritt 1 von 10')
+    expect(progressLabel(advance(TUTORIAL_START, 'selectProvince'))).toBe('Schritt 2 von 10')
     expect(progressLabel(TUTORIAL_OFF)).toBe('')
   })
 })
@@ -133,17 +156,18 @@ describe('R-UI-05 Die Fuehrung folgt dem Spiel, nicht der Knopfleiste (T-M21-02)
     // Die Führung steht auf dem Schritt, der auf den Tagesbericht wartet — erreicht über
     // die drei Oberflächenschritte davor, wie ein Spieler sie durchläuft.
     let start = TUTORIAL_START
-    for (const klick of ['selectProvince', 'openBuild', 'setSpeed'] as const) start = advance(start, klick)
-    expect(currentStep(start)?.id, 'der vierte Schritt wartet nicht auf den Tag').toBe('dayPassed')
+    for (const klick of ['selectProvince', 'openBuild', 'setSpeed', 'openStandings'] as const)
+      start = advance(start, klick)
+    expect(currentStep(start)?.id, 'der fuenfte Schritt wartet nicht auf den Tag').toBe('dayPassed')
 
     const { tutorial } = spiele(TEST_RULES.constants.ticksPerDay + 1, start)
 
     expect(currentStep(tutorial)?.id, 'der Tagesbericht hat den Schritt nicht beendet').not.toBe('dayPassed')
   })
 
-  /** Die drei Klicks, mit denen ein Spieler bis zum ersten Wartschritt kommt. */
+  /** Die vier Klicks, mit denen ein Spieler bis zum ersten Wartschritt kommt. */
   const nachDenKlicks = (): TutorialState =>
-    ['selectProvince', 'openBuild', 'setSpeed'].reduce(
+    ['selectProvince', 'openBuild', 'setSpeed', 'openStandings'].reduce(
       (state, klick) => advance(state, klick as never),
       TUTORIAL_START,
     )

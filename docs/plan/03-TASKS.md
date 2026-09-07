@@ -3592,9 +3592,17 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UI-18, R-UI-05
 - **Entwurf:** D24.7
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/Tutorial.tsx`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/ui/app.css`
+  *(Tutorial.tsx, App und Stylesheet kamen dazu: das `why` wird als eigener Absatz
+  gerendert, die Zahlen der Moralstrafe kommen zur Laufzeit aus den Regeln, und der
+  Punkteschritt endet am geöffneten Lage-Panel — die Verdrahtung lebt in der App)*
 - **Tests zuerst:** der bestehende Wächter `unlocks-explained` prüft das neue
-  `why`-Feld mit.
+  `why`-Feld mit (`test/guards/unlocks-explained.test.ts`); Reihenfolge und Auslöser
+  der zwei neuen Schritte in `tutorial.test.ts`; das gerenderte Wozu und die
+  eingesetzten Zahlen in `Tutorial.test.tsx`; die Verdrahtung über die Taste L in
+  `App.test.tsx`; der Durchgang in `onboarding.slow.test.ts` (vier Klicks).
 - **Fertig wenn:** jeder Führungsschritt einen Begründungssatz trägt; zwei neue
   Schritte erklären Punktequellen und Moralstrafe, **bevor** sie zum ersten Mal wirken.
 

@@ -1821,12 +1821,12 @@ tasks:
   - id: T-M24-02
     milestone: M24
     title: Das Wozu - Punkte, Moralstrafe, zwei neue Fuehrungsschritte
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-18, R-UI-05]
     design: [D-24]
-    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/game/tutorial.test.ts, test/guards/unlocks-explained.test.ts]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/tutorial.test.ts, test/guards/unlocks-explained.test.ts, apps/desktop/src/ui/Tutorial.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/game/onboarding.slow.test.ts]
     dod: "Frage 50 ehrlich beantwortet: nein, das Wozu fehlt. Gemessen (PROBLEME.md Der Einstieg ist enger): die Bevoelkerung stellt 98,6 Prozent der Startpunkte, eine Eroberung wiegt 285 Kasernen, und ab der dritten Provinz kostet jede weitere 3000 Zielmoral - nichts davon sagt das Spiel. Fertig, wenn (1) jeder bestehende Fuehrungsschritt einen Begruendungssatz traegt (Feld why - warum kommt die Kaserne vor der Infanterie), (2) zwei neue Schritte die Punktequellen und die Ausdehnungs-Moralstrafe erklaeren, BEVOR sie zum ersten Mal wirken, und (3) der bestehende Waechter unlocks-explained das why-Feld mitprueft"
 
   - id: T-M24-03

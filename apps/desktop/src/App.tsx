@@ -345,6 +345,13 @@ export function App(props: AppProps) {
     setTutorial((current) => advanceTutorial(current, action))
   }, [])
 
+  // Der Punkteschritt endet, wenn die Lage der Maechte offen ist (T-M24-02) — auf
+  // JEDEM Weg dorthin, Taste L wie Kopfleiste. Deshalb haengt die Verdrahtung am
+  // geoeffneten Panel und nicht an einer der Stellen, die es oeffnen.
+  useEffect(() => {
+    if (ui.panel === 'standings') tutor('openStandings')
+  }, [ui.panel, tutor])
+
   /**
    * Und ein Schritt endet, weil das **Spiel** etwas meldet (T-M21-02).
    *

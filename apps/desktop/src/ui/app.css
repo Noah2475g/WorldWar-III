@@ -805,8 +805,17 @@ body {
 }
 
 .tutorial__text {
-  margin: 0 0 var(--sp-md);
+  margin: 0 0 var(--sp-sm);
   font-size: 12px;
+}
+
+/* Das Wozu (T-M24-02): der Begruendungssatz unter der Handlungsanweisung — kursiv und
+   gedaempft, damit das Was die Stimme behaelt und das Warum die Fussnote bleibt. */
+.tutorial__why {
+  margin: 0 0 var(--sp-md);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-soft);
 }
 
 /* ---------------------------------------------------------------- anzeigen */

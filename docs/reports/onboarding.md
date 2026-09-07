@@ -22,28 +22,28 @@ erklärt nur, warum sie so lang ist.
 
 | Zeit | Art | Was |
 |---|---|---|
-| Tag 1, 00:00 | Schritt | select, build, speed (drei Klicks) |
-| Tag 1, 01:00 | Meldung | Neu ab heute: Kaserne. Sie können es jetzt bauen. |
+| Tag 1, 00:00 | Schritt | select, build, speed, score (vier Klicks) |
+| Tag 1, 01:00 | Meldung | Neu ab heute: Kaserne. Sie können sie jetzt bauen. |
 | Tag 1, 01:00 | Meldung | Neu ab heute: Infanterie. Sie können sie jetzt ausheben. |
-| Tag 2, 00:00 | Meldung | Neu ab heute: Hafen. Sie können es jetzt bauen. |
+| Tag 2, 00:00 | Meldung | Neu ab heute: Hafen. Sie können ihn jetzt bauen. |
 | Tag 2, 00:00 | Schritt | dayPassed beendet |
 | Tag 2, 03:00 | Fertig | BUILD_COMPLETED |
 | Tag 2, 03:00 | Schritt | buildCompleted beendet |
 | Tag 2, 19:00 | Fertig | UNIT_RECRUITED |
 | Tag 2, 19:00 | Schritt | unitRecruited beendet |
-| Tag 3, 00:00 | Meldung | Neu ab heute: Festung. Sie können es jetzt bauen. |
-| Tag 3, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können sie jetzt ausheben. |
+| Tag 3, 00:00 | Meldung | Neu ab heute: Festung. Sie können sie jetzt bauen. |
+| Tag 3, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können es jetzt ausheben. |
 | Tag 4, 00:00 | Meldung | Neu ab heute: Motorisierte Infanterie. Sie können sie jetzt ausheben. |
-| Tag 5, 00:00 | Meldung | Neu ab heute: Eisenbahn. Sie können es jetzt bauen. |
-| Tag 8, 00:00 | Meldung | Neu ab heute: Fabrik. Sie können es jetzt bauen. |
-| Tag 8, 00:00 | Meldung | Neu ab heute: Kampfpanzer. Sie können sie jetzt ausheben. |
-| Tag 9, 00:00 | Meldung | Neu ab heute: Werft. Sie können es jetzt bauen. |
+| Tag 5, 00:00 | Meldung | Neu ab heute: Eisenbahn. Sie können sie jetzt bauen. |
+| Tag 8, 00:00 | Meldung | Neu ab heute: Fabrik. Sie können sie jetzt bauen. |
+| Tag 8, 00:00 | Meldung | Neu ab heute: Kampfpanzer. Sie können ihn jetzt ausheben. |
+| Tag 9, 00:00 | Meldung | Neu ab heute: Werft. Sie können sie jetzt bauen. |
 | Tag 9, 00:00 | Meldung | Neu ab heute: Artillerie. Sie können sie jetzt ausheben. |
-| Tag 10, 00:00 | Meldung | Neu ab heute: Flugplatz. Sie können es jetzt bauen. |
-| Tag 10, 00:00 | Meldung | Neu ab heute: Jagdflugzeug. Sie können sie jetzt ausheben. |
-| Tag 11, 00:00 | Meldung | Neu ab heute: Zerstörer. Sie können sie jetzt ausheben. |
-| Tag 13, 00:00 | Meldung | Neu ab heute: Bomber. Sie können sie jetzt ausheben. |
-| Tag 14, 00:00 | Meldung | Neu ab heute: Schwerer Kampfpanzer. Sie können sie jetzt ausheben. |
+| Tag 10, 00:00 | Meldung | Neu ab heute: Flugplatz. Sie können ihn jetzt bauen. |
+| Tag 10, 00:00 | Meldung | Neu ab heute: Jagdflugzeug. Sie können es jetzt ausheben. |
+| Tag 11, 00:00 | Meldung | Neu ab heute: Zerstörer. Sie können ihn jetzt ausheben. |
+| Tag 13, 00:00 | Meldung | Neu ab heute: Bomber. Sie können ihn jetzt ausheben. |
+| Tag 14, 00:00 | Meldung | Neu ab heute: Schwerer Kampfpanzer. Sie können ihn jetzt ausheben. |
 | Tag 16, 00:00 | Meldung | Neu ab heute: Raketenartillerie. Sie können sie jetzt ausheben. |
 
 ## Wie der Lauf gedacht ist

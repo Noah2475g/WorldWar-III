@@ -31,6 +31,7 @@ export type TutorialTrigger =
   | 'selectProvince'
   | 'openBuild'
   | 'setSpeed'
+  | 'openStandings'
   | 'fastForward'
   | 'openEvents'
   // Was das Spiel meldet.
@@ -42,8 +43,14 @@ export type TutorialTrigger =
 
 export interface TutorialStep {
   /**
-   * Die Kennung — und zugleich der Pfad zu den Texten: `tutorial.steps.<id>.title` und
-   * `.text` (T-M21-01, T-M21-03).
+   * Die Kennung — und zugleich der Pfad zu den Texten: `tutorial.steps.<id>.title`,
+   * `.text` und seit T-M24-02 `.why` (T-M21-01, T-M21-03).
+   *
+   * Das `why`-Feld ist die Antwort auf Frage 50 des Abnahmebogens: das *Was* war
+   * gefuehrt, das *Wozu* fehlte. Jeder Schritt traegt in der Sprachdatei einen dritten
+   * Satz, der ihn begruendet — warum die Kaserne vor der Infanterie kommt, warum das
+   * Warten kein Fehler ist. Der Waechter `test/guards/unlocks-explained.test.ts`
+   * verlangt ihn fuer jeden Schritt.
    *
    * Der Schritt traegt seinen Text nicht mehr selbst. Das war bis T-M21-03 so und ging
    * gut, solange kein Text eine Zahl brauchte: `TUTORIAL_STEPS` ist eine Konstante, wird
@@ -80,6 +87,12 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   { id: 'select', completesOn: 'selectProvince' },
   { id: 'build', completesOn: 'openBuild' },
   { id: 'speed', completesOn: 'setSpeed' },
+  // Das Wozu, BEVOR es wirkt (T-M24-02): die Bevoelkerung stellt fast alle Startpunkte,
+  // eine Eroberung wiegt hunderte Bauwerke — wer das nicht weiss, investiert die ersten
+  // Tage in das Falsche. Deshalb noch im Klickblock, vor dem ersten vollen Spieltag;
+  // der Schritt endet, wenn die Lage der Maechte offen ist, denn dort stehen die
+  // Punkte, von denen er spricht.
+  { id: 'score', completesOn: 'openStandings' },
   // Ab hier fuehrt das Spiel, nicht die Knopfleiste (T-M21-02). Die Reihenfolge folgt
   // dem, was ein neuer Spieler tatsaechlich erlebt: erst laeuft die Uhr, dann steht das
   // Gebaeude, dann marschiert die erste Einheit.
@@ -88,6 +101,13 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   { id: 'unitRecruited', completesOn: 'unitRecruited' },
   { id: 'fastForward', completesOn: 'fastForward' },
   { id: 'events', completesOn: 'openEvents' },
+  // Der Schlussstein (T-M24-02): ab der dritten Provinz kostet jede weitere Zielmoral
+  // in allen Provinzen (morale.ts, expansionPenaltyPerProvince) — unerklaert war das
+  // die tueckischste Regel des Spiels. Als letzter Schritt steht die Warnung, sobald
+  // die Schritte davor durch sind — Tage vor dem fruehesten Eroberungszug —, und sie
+  // bleibt stehen, bis die erste Eroberung sie einloest. Ein Spieler, der nie erobert,
+  // behaelt den Hinweis; das ist Absicht, und der Knopf daneben schaltet ihn ab.
+  { id: 'expansion', completesOn: 'provinceCaptured' },
 ]
 
 export interface TutorialState {

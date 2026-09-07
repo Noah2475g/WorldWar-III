@@ -532,18 +532,40 @@ export const de = {
     dismiss: 'Nicht mehr zeigen',
     /** "Schritt 2 von 5" — damit der Spieler weiss, wie viel noch kommt. */
     progress: 'Schritt {{step}} von {{total}}',
+    /**
+     * Jeder Schritt trägt drei Sätze (T-M24-02): `title` sagt, worum es geht, `text`
+     * sagt, was zu tun ist — und `why` sagt, **wozu**. Frage 50 des Abnahmebogens,
+     * ehrlich beantwortet: das Was war geführt, das Wozu fehlte. Der Wächter
+     * `unlocks-explained` verlangt das dritte Feld für jeden Schritt.
+     */
     steps: {
       select: {
         title: 'Ihre Provinzen',
         text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+        why: 'Alles in diesem Spiel — Bau, Aushebung, Moral, Punkte — geschieht in Provinzen. Wer seine kennt, kennt seine Lage.',
       },
       build: {
         title: 'Etwas bauen',
         text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+        why: 'Gebäude kommen vor Einheiten: erst die Kaserne macht das Ausheben möglich, und dieselbe Kaserne macht jedes weitere schneller.',
       },
       speed: {
         title: 'Die Zeit läuft',
         text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
+        why: 'Das Spiel rechnet in Spielstunden von selbst weiter; das Tempo bestimmt nur, wie schnell Sie zusehen.',
+      },
+      score: {
+        title: 'Woher die Punkte kommen',
+        // Der eine Satz, der die Frühphase vom Kopf auf die Füße stellt (T-M24-02,
+        // gemessen in PROBLEME.md): die Bevölkerung stellt fast alle Startpunkte, eine
+        // Eroberung wiegt hunderte Bauwerke. Die Größenordnung steht bewusst als
+        // Verhältnis im Satz, nicht als Zahl — sie hängt an der Karte, nicht an den
+        // Regeln, und eine Zahl an zwei Orten wäre beim nächsten Kartenbau falsch.
+        text:
+          'Drücken Sie L: die Lage der Mächte zeigt die Punkte, um die gespielt wird. Fast alle ' +
+          'stecken in der Bevölkerung — eine eroberte Provinz bringt deshalb mehr Punkte als ' +
+          'jeder Ausbau daheim.',
+        why: 'Wer nur baut, fällt zurück: der Sieg wird in Menschen gerechnet, und Menschen gewinnt man mit Land.',
       },
       dayPassed: {
         title: 'Jetzt heißt es warten',
@@ -554,22 +576,37 @@ export const de = {
           '{{wait}} — Spieltag {{day}}. Bis dahin gibt es nichts zu klicken, was voranbringt: ' +
           'alles rechnet stündlich von selbst weiter. Stellen Sie das Tempo höher oder spulen ' +
           'Sie vor. Das Warten ist kein Fehler, es ist das Spiel.',
+        why: 'Ihre Befehle wirken über Tage, nicht über Klicks — das Spiel belohnt Planung, nicht die schnellere Hand.',
       },
       buildCompleted: {
         title: 'Das erste Gebäude steht',
         text: 'Eine Kaserne macht aus Rohstoffen Soldaten. Wählen Sie die Provinz und heben Sie aus — die Einheit braucht danach noch ihre Zeit.',
+        why: 'Darum kam die Kaserne vor der Infanterie: jede Einheit braucht ihr Gebäude, keine entsteht auf freiem Feld.',
       },
       unitRecruited: {
         title: 'Ihre erste Einheit',
         text: 'Klicken Sie die Armee an, dann ein Ziel auf der Karte. Die Ankunft steht am Knopf, bevor Sie ihn drücken.',
+        why: 'Nur Armeen verändern die Karte — und nur die Karte bringt die Punkte, die den Sieg entscheiden.',
       },
       fastForward: {
         title: 'Vorspulen',
         text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',
+        why: 'Märsche dauern Tage. Vorspulen überspringt nichts Wichtiges: es hält an, sobald etwas geschieht.',
       },
       events: {
         title: 'Was geschieht',
         text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+        why: 'Was Sie hier übersehen, meldet niemand ein zweites Mal — das Protokoll ist das Gedächtnis der Partie.',
+      },
+      expansion: {
+        title: 'Ausdehnung kostet Moral',
+        // Die Zahlen kommen aus den Regeln der laufenden Partie (Tutorial.tsx setzt sie
+        // ein) — dieselbe Regel wie beim Wartschritt: eine Zahl steht nicht an zwei Orten.
+        text:
+          'Ab der {{third}}. Provinz drückt jede weitere die Zielmoral in allen Ihren Provinzen ' +
+          'um {{penalty}} Punkte. Sinkt die Moral zu tief, stockt die Produktion und es drohen ' +
+          'Aufstände.',
+        why: 'Erobern Sie, was Sie halten können, nicht alles, was erreichbar ist: wer schneller wächst, als seine Moral trägt, verliert das Reich von innen.',
       },
     },
   },
