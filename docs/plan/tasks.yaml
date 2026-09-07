@@ -1797,12 +1797,12 @@ tasks:
   - id: T-M23-03
     milestone: M23
     title: AUS-SE bekommt einen ehrlichen Namen, der Markt sein Zeichen
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-01, R-UI-05]
     design: [D-24]
-    files: [data/maps/world.json, apps/desktop/src/ui/Panels.tsx, docs/plan/DECISIONS.md]
-    tests: [apps/headless/test/worldmap.test.ts]
+    files: [data/maps/world.json, data/maps/world-shapes.json, data/mapgen/merge-rules.json, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, docs/plan/DECISIONS.md]
+    tests: [apps/headless/test/worldmap.test.ts, apps/desktop/src/ui/Panels.test.tsx]
     dod: "Entscheidungen vom 2026-09-07 (DECISIONS.md): (1) Suedostaustralien besteht aus Hauptstadtterritorium, Jervis Bay und Macquarie-Insel - der Name wird ehrlich (Australisches Hauptstadtterritorium), der Zuschnitt bleibt, die Anreicherung wird nicht neu gewuerfelt; ein Test bindet den neuen Anzeigenamen. (2) Der Markt behaelt sein select (T-M20-03 bestaetigt), zeigt aber das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste - Bedienbarkeit unangetastet, das Auge bekommt seinen Anker"
 
   # --- M24: Die Tage bekommen Inhalt (LEVEL-UP.md, Achse Spiellogik) ---

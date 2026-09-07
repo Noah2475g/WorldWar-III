@@ -1325,3 +1325,23 @@ M22/D24.5 geändert, nicht die Tests allein.
 **Auswirkung:** Bei Pause wirkt ein Befehl erst beim Weiterlaufen — und sagt das am
 Knopf. Kein Golden-Master-Einfluss (Kernschleife unverändert; die Änderung liegt in
 der Hülle).
+
+## 2026-09-07 · T-M23-03 · Der neue Name steht in Quelle, Zwischenstand und Produkt zugleich
+
+**Lage:** `world.json` ist ein Bauprodukt (`scripts/build-map.mjs`); die Namensquelle ist
+`data/mapgen/merge-rules.json`, dazwischen liegt `data/maps/world-shapes.json`. Der
+Neubau braucht die Natural-Earth-Rohdaten (`data/geodata/`, Download hinter dem
+Haltepunkt T-M9-01) — sie liegen nicht im Repository, ein bitgleicher Neubau war in
+dieser Sitzung nicht fahrbar.
+
+**Entscheidung (Randstelle):** Die Umbenennung von `AUS-SE` („Südostaustralien" →
+„Australisches Hauptstadtterritorium") wird in **allen drei Dateien** von Hand
+gleichlautend eingetragen — Quelle zuerst, damit der nächste Kartenneubau denselben
+Namen erzeugt statt den alten zurückzubringen. `apps/headless/test/worldmap.test.ts`
+bindet genau diese Kette: Name im Produkt, kein „Südostaustralien" mehr, Name auch in
+merge-rules.json und world-shapes.json, und Zuschnitt/Anreicherung unverändert
+(Bevölkerung 52 097, Vorkommen, drei Umrisse).
+
+**Auswirkung:** Kein Golden-Master-Einfluss: Provinznamen speisen keine Regel, und kein
+schneller Test bindet einen Zustands-Hash der Weltkarte an einen Festwert; die
+Simulation liest den Namen nicht.

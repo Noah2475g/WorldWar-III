@@ -3548,9 +3548,13 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MAP-01, R-UI-05
 - **Entwurf:** D24.6
 - **Abhängigkeiten:** keine
-- **Dateien:** `data/maps/world.json`, `apps/desktop/src/ui/Panels.tsx`,
-  `docs/plan/DECISIONS.md`
-- **Tests zuerst:** ein Test bindet den neuen Anzeigenamen.
+- **Dateien:** `data/maps/world.json`, `data/maps/world-shapes.json`,
+  `data/mapgen/merge-rules.json`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`, `docs/plan/DECISIONS.md`
+  *(der Name wird in Quelle, Zwischenstand und Produkt zugleich geändert — der
+  Kartenneubau braucht die nicht eingecheckten Geodaten; Begründung in DECISIONS.md)*
+- **Tests zuerst:** ein Test bindet den neuen Anzeigenamen über die ganze Baukette
+  (`worldmap.test.ts`); das Marktzeichen am gerenderten Baum (`Panels.test.tsx`).
 - **Fertig wenn:** der Name ehrlich ist (Zuschnitt bleibt, Anreicherung wird nicht neu
   gewürfelt) und der Markt das Zeichen des jeweils **gewählten** Rohstoffs neben der
   Liste zeigt — das `<select>` bleibt (T-M20-03 bestätigt).

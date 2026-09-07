@@ -676,6 +676,19 @@ body {
   font-size: 12px;
 }
 
+/* Das Zeichen des gewaehlten Rohstoffs neben der Liste (T-M23-03). */
+.market__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.market__choice select {
+  flex: 1;
+  min-width: 0;
+}
+
 .army-list {
   list-style: none;
   margin: var(--sp-sm) 0;

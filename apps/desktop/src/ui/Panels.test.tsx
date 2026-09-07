@@ -8,6 +8,7 @@ import {
   DiplomacyPanel,
   EconomyPanel,
   EventLog,
+  MarketPanel,
   ProvincePanel,
   buildingItems,
   buttonTitle,
@@ -15,6 +16,7 @@ import {
   type Action,
   type EventEntry,
 } from './Panels.tsx'
+import { ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -690,5 +692,37 @@ describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Nahrung')
     expect(cell?.querySelector('svg'), 'kein Rohstoffsymbol in der Wirtschaftstabelle').toBeTruthy()
+  })
+})
+
+/**
+ * Der Markt bekommt sein Zeichen (T-M23-03, R-UI-05, DECISIONS.md 2026-09-07).
+ *
+ * Die Entscheidung von T-M20-03 bleibt: das `select` ist die bedienbarste Liste.
+ * Aber der Markt war die letzte Liste ohne Zeichen — neben jeder der beiden Listen
+ * steht jetzt das Symbol des jeweils GEWAEHLTEN Rohstoffs, und es wechselt mit.
+ */
+describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
+  const handel = () => ({ text: 'Ergibt etwas.', action: action('trade', undefined, 'Handeln') })
+  const zeichnung = (container: HTMLElement, seite: string) =>
+    container.querySelector(`.market__choice--${seite} svg path`)?.getAttribute('d')
+
+  it('zeichnet neben beiden Listen das Symbol der Auswahl', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+
+    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.wood!])
+    expect(zeichnung(container, 'want')).toBe(ICON_PATHS[RESOURCE_ICONS.iron!])
+  })
+
+  it('wechselt das Zeichen mit der Auswahl', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+
+    fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
+
+    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
   })
 })

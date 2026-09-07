@@ -771,13 +771,19 @@ export function MarketPanel({
       <h2>{t('market.title')}</h2>
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
-        <select id="market-give" value={give} onChange={(event) => setGive(event.target.value as ResourceKey)}>
-          {resources.map((key) => (
-            <option key={key} value={key}>
-              {t(`resources.${key}`)} ({amount(stock[key] ?? 0)})
-            </option>
-          ))}
-        </select>
+        {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
+            DECISIONS.md 2026-09-07): das select bleibt — T-M20-03 bestaetigt —, aber
+            das Auge bekommt seinen Anker. Ohne title: die Liste nennt den Namen. */}
+        <span className="market__choice market__choice--give">
+          <Icon name={RESOURCE_ICONS[give] ?? 'money'} size={14} />
+          <select id="market-give" value={give} onChange={(event) => setGive(event.target.value as ResourceKey)}>
+            {resources.map((key) => (
+              <option key={key} value={key}>
+                {t(`resources.${key}`)} ({amount(stock[key] ?? 0)})
+              </option>
+            ))}
+          </select>
+        </span>
         <label htmlFor="market-amount">{t('market.amount')}</label>
         <input
           id="market-amount"
@@ -788,13 +794,16 @@ export function MarketPanel({
           onChange={(event) => setUnits(Number(event.target.value))}
         />
         <label htmlFor="market-want">{t('market.want')}</label>
-        <select id="market-want" value={want} onChange={(event) => setWant(event.target.value as ResourceKey)}>
-          {resources.map((key) => (
-            <option key={key} value={key}>
-              {t(`resources.${key}`)}
-            </option>
-          ))}
-        </select>
+        <span className="market__choice market__choice--want">
+          <Icon name={RESOURCE_ICONS[want] ?? 'money'} size={14} />
+          <select id="market-want" value={want} onChange={(event) => setWant(event.target.value as ResourceKey)}>
+            {resources.map((key) => (
+              <option key={key} value={key}>
+                {t(`resources.${key}`)}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
       <p className="facts__inline">{result.text}</p>
       <ActionRow actions={[result.action]} />
