@@ -44,12 +44,37 @@ Alle Zahlen des Spiels mit Belegstatus. Quelle für Belegtes ist
 | Größe | Wert | Status | Herkunft |
 |---|---|---|---|
 | Fremdes Gebiet | ×0,70 | belegt | Geschwindigkeitstabelle |
-| Feindliches Gebiet | ×0,35 | belegt | Geschwindigkeitstabelle |
+| Feindliches Gebiet | ×0,50 | geschätzt | **entschieden T-M24-03** (DECISIONS 2026-09-07): Kriegsmalus halbiert statt gestrichen; im Vorbild ×0,35 (Geschwindigkeitstabelle) |
 | Eisenbahn | ×2,5 | belegt | Geschwindigkeitstabelle |
 | Einschiffen / Ausschiffen mit Hafen | 3 h / 1,5 h | belegt | Handbuch |
 | An feindlicher Küste | ×1,5 auf beide Zeiten | belegt | Handbuch |
 
 _Weitere Zeilen entstehen mit den zugehörigen Aufgaben (T-M3-01 Regelwerk, T-M12-01 Festschreibung)._
+
+### Das Kriegsmarsch-Paradox, gemessen und entschieden (T-M24-03, 2026-09-07)
+
+Das Vorbild macht eine Kriegserklärung zur Bremse: fremder Boden ×0,7, feindlicher ×0,35 —
+der Weg USA-SOUTH → MEX-NE kostete 106 Ticks im Frieden und 211 im Krieg, und der
+schnellste Eröffnungszug war der **unangekündigte Überfall** (PROBLEME.md 2026-09-07,
+Befund V2-15: Märsche von 14–31 Tagen dominieren die Frühphase). Gemessen wurden drei
+Werte für `hostileTerritoryFactor` im Aufbau des Parameterlaufs (Weltkarte, sechs
+europäische Nachbarn, alle ab Tick 0 im Krieg, Siegbedingung 700 ‰ Punktanteil,
+**200 Spieltage, 12 Startzahlen je Variante** — Startzahlen wie `pnpm balance:sweep`):
+
+| Metrik (Ø über 12 Läufe) | 0,35 (Vorbild) | **0,50 (entschieden)** | 0,70 (Malus gestrichen) |
+|---|---|---|---|
+| Eroberungen je Partie | 514,5 | 444,4 | 478,3 |
+| Beendete Kriege (von 15) | 9,3 | 6,4 | 7,6 |
+| Mittlere Kriegsdauer (Tage) | 44,3 | 33,2 | 31,0 |
+| Sieg-Tag | keiner in 200 Tagen | keiner in 200 Tagen | keiner in 200 Tagen |
+| Anteil des Stärksten | 34,4 % | 39,0 % | 42,8 % |
+| Überlebende Mächte (von 6) | 5,0 | 4,0 | 4,0 |
+
+Entscheidung mit Begründung: `DECISIONS.md` (2026-09-07 · T-M24-03), Rohzahlen:
+`docs/reports/warmarch.json`. Kurz: 0,5 nimmt dem Überfall die Hälfte seines
+Tempovorteils (Faktor 2,0 → 1,4), verkürzt festgefahrene Kriege um ein Viertel und
+kippt nichts — kein Eroberungssprung, kein Sieg-Tag-Sprung; 0,7 konzentriert die Macht
+am stärksten und gäbe dem Verteidiger gar nichts zurück.
 
 ## Alle Konstanten mit Status
 
@@ -114,7 +139,7 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `regenPermillePerTick` | 5 | geschätzt | 0.0 % | begründet gesetzt, im Parameterlauf gemessen |
 | `regenShortageFactor` | 500 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
 | `foreignTerritoryFactor` | 700 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
-| `hostileTerritoryFactor` | 350 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
+| `hostileTerritoryFactor` | 500 | geschätzt | — | entschieden T-M24-03 (DECISIONS 2026-09-07); im Vorbild 350, Kriegsmalus halbiert statt gestrichen, mit Messlauf über 0,35/0,5/0,7 |
 | `railwayFactor` | 2.500 | belegt | — | Handbuch: Bahnbonus auf die Marschgeschwindigkeit |
 | `embarkTicks` | 3 | belegt | — | Handbuch: feste Einschiffungszeit |
 | `disembarkTicks` | 2 | belegt | — | Handbuch: feste Ausschiffungszeit |

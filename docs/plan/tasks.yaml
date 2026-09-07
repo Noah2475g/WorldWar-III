@@ -1832,10 +1832,10 @@ tasks:
   - id: T-M24-03
     milestone: M24
     title: Das Kriegsmarsch-Paradox wird gemessen und entschieden
-    status: todo
+    status: done
     deps: []
     requirements: [R-BAT-04]
     design: [D-24]
-    files: [data/rules/constants.json, docs/plan/BALANCING.md, docs/plan/DECISIONS.md]
-    tests: [apps/headless/test/economy-scale.test.ts]
+    files: [data/rules/default/constants.json, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/warmarch.json]
+    tests: [apps/headless/test/economy-scale.test.ts, apps/headless/test/walkthrough.test.ts, packages/core/src/phases/movement.test.ts]
     dod: "PROBLEME.md (2026-09-07): auf fremdem Boden gilt Marschfaktor 0,7, im Krieg 0,35 - eine Kriegserklaerung HALBIERT das Tempo, der schnellste Eroeffnungszug ist damit der unangekuendigte Ueberfall (200 Ansehen, loest Krieg aus). Dazu Befund V2-15: Maersche von 14-31 Tagen dominieren die Fruehphase. Fertig, wenn beide Varianten (0,35 heute gegen einen gemilderten Kriegsfaktor, Vorschlag 0,5) im Parameterlauf gemessen sind (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md steht und BALANCING.md den Eintrag traegt. Eine AENDERUNG der Konstante ist nur fertig, wenn der Golden-Master-Umgang begruendet ist; ein Beibehalten ist als Ergebnis zulaessig"

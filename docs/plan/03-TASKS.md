@@ -3613,9 +3613,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-BAT-04
 - **Entwurf:** D24.8
 - **Abhängigkeiten:** keine
-- **Dateien:** `data/rules/constants.json`, `docs/plan/BALANCING.md`,
-  `docs/plan/DECISIONS.md`
-- **Tests zuerst:** keine neuen — der Parameterlauf ist das Messgerät.
+- **Dateien:** `data/rules/default/constants.json`, `docs/plan/BALANCING.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/reports/warmarch.json`
+  *(der Pfad hieß im Plan `data/rules/constants.json` — die Regeln liegen unter
+  `data/rules/default/`; die Rohzahlen des Messlaufs liegen als Bericht bei, PROBLEME.md
+  verweist bei der Beobachtung auf die Entscheidung)*
+- **Tests zuerst:** keine neuen — der Parameterlauf ist das Messgerät. Die Änderung
+  selbst wies sich am Golden-Master nach: `walkthrough.json` fiel gegen den neuen Wert
+  und wurde bewusst neu erzeugt (`UPDATE_GOLDEN=1`); `movement.test.ts` bindet die
+  Konstante symbolisch und blieb grün.
 - **Fertig wenn:** beide Varianten (0,35 gegen gemildert, Vorschlag 0,5) gemessen sind
   (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md
   steht und BALANCING.md den Eintrag trägt. Eine **Änderung** ist nur fertig, wenn der

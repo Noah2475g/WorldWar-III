@@ -1345,3 +1345,60 @@ merge-rules.json und world-shapes.json, und Zuschnitt/Anreicherung unverändert
 **Auswirkung:** Kein Golden-Master-Einfluss: Provinznamen speisen keine Regel, und kein
 schneller Test bindet einen Zustands-Hash der Weltkarte an einen Festwert; die
 Simulation liest den Namen nicht.
+
+## 2026-09-07 · T-M24-03 · Das Kriegsmarsch-Paradox: Kriegsmalus halbiert statt gestrichen
+
+**Lage:** Belegt aus dem Vorbild: fremder Boden ×0,7, feindlicher ×0,35
+(`hostileTerritoryFactor` 350). Damit **halbierte** eine Kriegserklärung das Marschtempo
+auf dem Boden des Gegners — der Weg USA-SOUTH → MEX-NE kostete 106 Ticks im Frieden und
+211 im Krieg (PROBLEME.md, 2026-09-07). Der schnellste Eröffnungszug war der
+unangekündigte Überfall (kostet 200 Ansehen, löst den Krieg automatisch aus): das Spiel
+bestrafte den, der ansagt, und belohnte den, der überfällt. Dazu Befund V2-15: Märsche
+von 14–31 Tagen dominieren die Frühphase.
+
+**Messung** (Headless-Vergleichslauf, Aufbau des Parameterlaufs: Weltkarte, sechs
+europäische Nachbarn — Deutschland, Frankreich, Polen, Italien, Ukraine, Spanien —, alle
+ab Tick 0 im Krieg, Siegbedingung 700 ‰ Punktanteil, 200 Spieltage Budget, **12 feste
+Startzahlen je Variante**, dieselben wie `pnpm balance:sweep`; Rohzahlen in
+`docs/reports/warmarch.json`):
+
+| Metrik (Ø über 12 Läufe) | 0,35 (Vorbild) | **0,50** | 0,70 (gestrichen) |
+|---|---|---|---|
+| Eroberungen je Partie | 514,5 | 444,4 | 478,3 |
+| Erster Eroberungstag | 5 | 5 | 5 |
+| Beendete Kriege (von 15 erzwungenen) | 9,3 | 6,4 | 7,6 |
+| Mittlere Kriegsdauer bis zum Frieden (Tage) | 44,3 | 33,2 | 31,0 |
+| Entschiedene Partien (Sieg-Tag) | 0 von 12 | 0 von 12 | 0 von 12 |
+| Anteil des Stärksten an allen Provinzen | 34,4 % | 39,0 % | 42,8 % |
+| Überlebende Mächte (von 6) | 5,0 | 4,0 | 4,0 |
+
+**Entscheidung:** `hostileTerritoryFactor` **350 → 500** — der Kriegsmalus wird halbiert,
+nicht gestrichen (die Voreinstellung aus D24.8). Begründung aus den Zahlen:
+
+1. **Das Paradox schrumpft, ohne zu kippen.** Der Tempovorteil des Überfalls fällt von
+   Faktor 2,0 (0,7/0,35) auf 1,4 (0,7/0,5). Kein Eroberungssprung (444 gegen 514 — eher
+   weniger, weil Provinzen seltener hin- und herwechseln), erster Eroberungstag
+   unverändert, kein Sieg-Tag-Sprung (keine Variante entscheidet eine Partie in 200
+   Tagen — die Siegschwelle liegt an der Punktverteilung, nicht am Marschtempo).
+2. **Kriege enden statt zu gären.** Die mittlere Kriegsdauer fällt um ein Viertel
+   (44,3 → 33,2 Tage) — direkt gegen V2-15, die zermürbenden Märsche der Frühphase.
+3. **0,7 wäre zu viel.** Der Malus ganz gestrichen konzentriert die Macht am stärksten
+   (Anteil des Stärksten 42,8 %, kürzeste Kriege) und nähme dem Verteidiger jede
+   Zeitreserve; 0,5 behält die Hälfte davon als Verteidigervorteil.
+4. **Die Nebenwirkung ist benannt:** auch bei 0,5 stirbt im erzwungenen Sechserkrieg im
+   Mittel eine Macht mehr als bei 0,35 (4,0 gegen 5,0 Überlebende) und der Stärkste
+   steht bei 39 % statt 34 %. Das ist die gewollte Richtung — Kriege haben wieder
+   Folgen —, liegt aber nahe der Rauschgrenze des Laufs (Streuung des Führungsanteils
+   allein durch die Startzahl: 0,085 je Einzellauf, ≈0,025 im Mittel über 12).
+
+**Golden-Master-Umgang:** Die Änderung greift in den Kriegsmarsch und ändert damit den
+festgeschriebenen Durchstich: `apps/headless/test/golden/walkthrough.json` fiel
+nachweislich (Hash-Abweichung, Eroberung von `m1` findet früher statt) und wurde mit
+`UPDATE_GOLDEN=1` **bewusst neu erzeugt**; der Endstand des Durchstichs bleibt inhaltlich
+gleich (`m1` gehört `p1`). `packages/core/test/golden/tiny-500.json` bleibt unberührt —
+der Lauf enthält keine Märsche. Das steht so auch in der Commit-Nachricht.
+
+**Auswirkung:** BALANCING.md trägt den neuen Wert mit Herkunft (Zeile „Feindliches
+Gebiet" und Konstantentabelle); die Bewegungs-Tests binden die Konstante symbolisch und
+blieben grün; `PROBLEME.md` verweist bei der Beobachtung auf diese Entscheidung. Wer die
+Zahl erneut anfassen will, wiederholt den Messlauf (Aufbau oben) statt zu raten.

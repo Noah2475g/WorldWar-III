@@ -1536,6 +1536,10 @@ im Krieg. Der schnellste Eröffnungszug ist damit der **Überraschungsangriff**,
 kostet und automatisch Krieg auslöst. Ob das so gemeint ist, ist eine Balancing-Frage für
 Noah — sie steht hier, damit sie nicht verloren geht.
 
+> **Entschieden am 2026-09-07 (T-M24-03):** gemessen über 0,35/0,5/0,7 und auf **0,5**
+> gesetzt — Kriegsmalus halbiert statt gestrichen. Zahlen und Begründung in
+> `DECISIONS.md` (2026-09-07 · T-M24-03), Messwerte in `docs/reports/warmarch.json`.
+
 ---
 
 ## 2026-09-07 · T-M19-04 · „Südostaustralien" trägt seinen Namen weiterhin nicht
