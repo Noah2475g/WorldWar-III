@@ -175,7 +175,7 @@ Alle drei sind **Entscheidungen**, keine Bauarbeit, und alle drei stehen mit Beg
 | Offen | T-M12-03 (Noahs Abnahme) · T-M10-02 (zurückgenommen, keine Arbeit) |
 | Tests | **1528** schnell · Kern 96,8 % · gesamt 95,3 % |
 | Anforderungen | `V1 offen: 0` |
-| AK-1 | belegt: Sieg an Spieltag 876, 2025 Eroberungen, 11 Kriegserklärungen |
+| AK-1 | belegt: Sieg an Spieltag 876, 2025 Eroberungen, 11 Kriegserklärungen — **nach M19–M21 erneut gefahren, bitgleich** |
 | Abnahmelauf | **7 von 7** maschinell, 2026-09-07 gegen `009bec6` — ⚠ **vor M19–M21**, siehe unten |
 | AK-8 | **erfüllt und gemessen** — `docs/reports/packaging.md` |
 | Tickbudget | 2,5 ms Median gegen 3,5 ms (Weltkarte, 237 Provinzen, 12 Mächte) |
