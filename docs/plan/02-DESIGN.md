@@ -1948,3 +1948,26 @@ letzten Meter nicht mehr verlieren.**
   `unlocks-explained` prüft mit.
 - **D24.8 Kriegsmarsch:** beide Varianten (0,35 gegen 0,5) im Parameterlauf messen,
   mit Zahlen entscheiden, in DECISIONS.md und BALANCING.md binden.
+
+## D25. Grafik statt Text (M25–M27 — LEVEL-UP-2-GRAFIK.md)
+
+Der Entwurf steht in Kurzform in `docs/plan/LEVEL-UP-2-GRAFIK.md` §3 (D25.1–D25.6)
+und wird hier gebunden. Leitidee: **die Daten sind längst da — sie werden gezeichnet
+statt aufgezählt.** Leitplanken: eigene SVG/Canvas-Komponenten ohne Fremdbibliothek,
+Lagekarten-Stil (Zinnober nur als Signal), Querscroll-Wächter und Zeichenbudget
+gelten weiter, prefers-reduced-motion schaltet gewollte Bewegung ab, der Kern bleibt
+unangetastet (Zeitreihe ist Sache der Hülle; Ereignis-Ergänzungen nur additiv).
+
+- **D25.1 Zeitreihe:** Aufzeichnung am Tageswechsel (Punkte je bekannter Macht,
+  eigene Bestände/Bilanzen), Ringpuffer mit Deckel, je Spielstand-Slot in IndexedDB.
+- **D25.2 Diagramm-Bausteine:** `ui/charts/` — LineChart (Machtverlauf), Sparkline
+  (7 Tage), DeltaBar (±-Balken); Zahlen bleiben die zugänglichen Werte (aria).
+- **D25.3 Marschpfeile:** Route als Pfad mit Pfeilspitze, zurückgelegter Anteil
+  gefüllt; eigene Tinte, fremde Spielerfarbe.
+- **D25.4 Kartenereignisse:** Besitzwechsel als ~600-ms-Farbwelle, Kampfring nach
+  Gefechtsgröße; reduced-motion → sofort.
+- **D25.5 Beziehungsmodus:** MAP_MODES + relations (eigen/verbündet/Frieden/Krieg/
+  unbekannt), Legende, Taste M, ΔE-geprüfte Palette.
+- **D25.6 Gefechtsbild:** aufklappbarer Protokollkörper mit zwei Stärkebalken
+  (Verlust als zinnoberner Abschnitt) und Zeichen für Gelände/Festung/Eingrabung/
+  Rückzugssperre; Datensatz aus BATTLE-Ereignissen plus Sicht.

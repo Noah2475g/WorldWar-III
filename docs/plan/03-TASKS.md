@@ -3626,3 +3626,148 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md
   steht und BALANCING.md den Eintrag trägt. Eine **Änderung** ist nur fertig, wenn der
   Golden-Master-Umgang begründet ist; ein Beibehalten ist als Ergebnis zulässig.
+
+---
+
+## Meilenstein M25 — Die Zahlen werden Bilder
+
+> **Herkunft:** Noahs Auftrag vom 2026-09-08 nach der V1-Abnahme — *„wir wollen noch mehr
+> weg vom Text und eher auf Grafiken setzen"* — fünf Vorschläge, alle fünf gewählt.
+> Plan: `docs/plan/LEVEL-UP-2-GRAFIK.md`. Entwurf: **D25**. Dieses Kapitel: Vorschläge
+> A (Machtverlauf) und B (Wirtschaft visuell).
+
+### T-M25-01 · Die Partie bekommt ein Gedächtnis — Zeitreihe je Spieltag
+- **Ziel:** Die Sicht kennt nur das Jetzt; für jeden Verlauf braucht die Hülle eine
+  Aufzeichnung.
+- **Anforderungen:** R-UI-13
+- **Entwurf:** D25.1
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/game/saves.ts`
+- **Tests zuerst:** die Aufzeichnung wächst je Tag genau um einen Eintrag; der Deckel
+  hält; Speichern → Laden erhält sie. Alle fallen ohne die Reparatur.
+- **Fertig wenn:** am Tageswechsel (derselbe Effekt-Ort wie der Tagesbericht) je
+  bekannter Macht die Punkte und für die eigene Macht Bestände und Bilanzen in einen
+  Ringpuffer mit Deckel geschrieben werden; der Puffer wandert je Spielstand-Slot in
+  IndexedDB mit; ein alter Stand ohne Aufzeichnung beginnt die Kurve ehrlich am Ladetag.
+
+### T-M25-02 · Der Machtverlauf wird eine Kurve
+- **Ziel:** Vorschlag A — die spannendste Kurve des Spiels (wer führt, wer holt auf)
+  existiert nirgends.
+- **Anforderungen:** R-UI-13
+- **Entwurf:** D25.2
+- **Abhängigkeiten:** T-M25-01
+- **Dateien:** `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/tokens.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein Test am gerenderten Baum bindet die Kurvenpfade an bekannte
+  Reihen; der Querscroll-Wächter (T-M22-02) bleibt grün.
+- **Fertig wenn:** das Lage-Panel über der Punktetabelle ein Liniendiagramm des
+  Punkteverlaufs aller bekannten Mächte zeigt — eigene SVG-Komponente, **keine
+  Fremdbibliothek**, Spielerfarben aus `tokens.ts`, Legende, aria-Beschreibung mit den
+  Endwerten; der Leerzustand ohne Aufzeichnung sagt einen ehrlichen Satz.
+
+### T-M25-03 · Die Wirtschaft zeigt Trend und Bilanz als Bild
+- **Ziel:** Vorschlag B — sieben Rohstoffe × fünf Zahlenspalten; Trends muss man sich
+  merken.
+- **Anforderungen:** R-UI-05, R-UI-13
+- **Entwurf:** D25.2
+- **Abhängigkeiten:** T-M25-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Balkenrichtung und Sparkline-Punkte an bekannte Werte gebunden.
+- **Fertig wenn:** jede Rohstoffzeile eine Sparkline der letzten sieben Tage (aus der
+  Zeitreihe) und einen Bilanzbalken trägt (positiv grün, negativ zinnober, null als
+  Strich; die Zahl bleibt daneben und bleibt der zugängliche Wert); die Tabelle bleibt
+  in der Leiste (Wächter T-M22-02).
+
+### T-M25-04 · Der Tagesbericht bekommt Balken
+- **Ziel:** Der Körper des Tagesberichts (T-M24-01) nennt Bilanzen als Text.
+- **Anforderungen:** R-UI-05
+- **Entwurf:** D25.2
+- **Abhängigkeiten:** T-M25-03
+- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** am gerenderten Eintrag gebunden.
+- **Fertig wenn:** die Rohstoffzeilen des Berichts **dieselben** Delta-Balken nutzen wie
+  die Wirtschaftstabelle — eine Komponente, zweimal verwendet, nicht zwei Kopien.
+
+---
+
+## Meilenstein M26 — Die Karte lebt
+
+> **Herkunft:** LEVEL-UP 2, Vorschläge C (lebendige Karte) und E (Beziehungsmodus).
+> Entwurf: **D25**. Leitplanke: das Zeichenbudget gilt weiter (p95 gegen 16,7 ms).
+
+### T-M26-01 · Märsche werden Pfeile mit Fortschritt
+- **Ziel:** Eine Bewegung ist heute eine gestrichelte Linie ohne Richtung und ohne
+  Fortschritt.
+- **Anforderungen:** R-MAP-05, R-UI-16
+- **Entwurf:** D25.3
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** die Fortschrittsrechnung an bekannte Ticks gebunden — 0 % beim
+  Abmarsch, ½ in der Mitte, voll bei Ankunft.
+- **Fertig wenn:** jede sichtbare marschierende Armee ihre Route als Pfad mit
+  Pfeilspitze zeigt, der zurückgelegte Anteil gefüllt, der Rest blass; eigene Armeen in
+  Tinte, fremde in Spielerfarbe. Danach Zeichenbudget nachmessen
+  (`docs/reports/render-bench.json`).
+
+### T-M26-02 · Kampf und Eroberung sind auf der Karte sichtbar
+- **Ziel:** Ein Besitzwechsel ist ein harter Farbsprung, ein Kampf ein Ring fester
+  Stärke.
+- **Anforderungen:** R-MAP-05, R-UI-17
+- **Entwurf:** D25.4
+- **Abhängigkeiten:** T-M26-01
+- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/ui/motion.ts`
+- **Tests zuerst:** die Blendkurve an feste Zeitpunkte gebunden; der
+  reduced-motion-Pfad geprüft.
+- **Fertig wenn:** ein Besitzwechsel als kurze Farbwelle läuft (~600 ms; bei
+  `prefers-reduced-motion` sofortiger Wechsel) und die Kampfzone ihre Intensität nach
+  Gefechtsgröße skaliert.
+
+### T-M26-03 · Der fünfte Kartenmodus — Beziehungen
+- **Ziel:** Vorschlag E — die Diplomatie wohnt nur in einer Tabelle, obwohl
+  `PublicView.relations` je Macht Zustand und Dauer führt.
+- **Anforderungen:** R-MAP-06
+- **Entwurf:** D25.5
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/src/ui/Legend.tsx`,
+  `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** die Farbwahl je Beziehungszustand gebunden; die fünf Farben
+  bestehen den ΔE-Farbabstandstest.
+- **Fertig wenn:** `MAP_MODES` einen Modus `relations` kennt (eigen / verbündet /
+  Frieden / Krieg / unbekannt aus eigener Sicht), die Legende alle fünf nennt und die
+  Taste M ihn im Zyklus erreicht. Die Diplomatie-Tabelle bleibt.
+
+---
+
+## Meilenstein M27 — Das Gefecht zeigt sich
+
+> **Herkunft:** LEVEL-UP 2, Vorschlag D. Entwurf: **D25**.
+
+### T-M27-01 · Das Gefecht sammelt seine Zahlen für die Anzeige
+- **Ziel:** Der Kern kennt Stärken, Verluste, Gelände und Festung — der
+  Protokolleintrag nennt nur die Verluste.
+- **Anforderungen:** R-BAT-05, R-UI-10
+- **Entwurf:** D25.6
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/game/events.ts`
+- **Tests zuerst:** der Datensatz an ein Gefecht mit bekannten Zahlen gebunden — fällt
+  ohne die Sammlung.
+- **Fertig wenn:** je Gefecht ein Anzeigedatensatz entsteht (Stärke beider Seiten
+  vorher/nachher, Verluste, Gelände, Festung, Eingrabung, Rückzugssperre), gespeist aus
+  den BATTLE-Ereignissen plus der Sicht zum Ereigniszeitpunkt. Fehlende Angaben werden
+  im Ereignis **additiv** ergänzt (kein Hash-Bruch, Golden-Master unberührt — sonst
+  Entscheid in DECISIONS.md statt stillem Umbau).
+
+### T-M27-02 · Das Gefecht zeigt sich — Stärkebalken und Zeichen
+- **Ziel:** Vorschlag D — der Kampfbericht wird ein Bild.
+- **Anforderungen:** R-BAT-05, R-UI-10
+- **Entwurf:** D25.6
+- **Abhängigkeiten:** T-M27-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Balkenlängen und Zeichen an den Datensatz aus T-M27-01 gebunden —
+  fällt gegen den heutigen Texteintrag.
+- **Fertig wenn:** der Protokolleintrag eines Gefechts einen aufklappbaren Körper trägt
+  (Muster Tagesbericht): je Seite ein Stärkebalken vorher → nachher mit dem Verlust als
+  zinnoberrotem Abschnitt, dazu Zeichen für Gelände, Festung, Eingrabung und
+  Rückzugssperre aus dem bestehenden Symbolsatz; fürs Ohr eine Satzfassung (aria).

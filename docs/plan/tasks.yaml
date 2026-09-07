@@ -54,6 +54,11 @@ milestones:
   - { id: M22, title: Die Oberflaeche haelt, was der Kern rechnet }
   - { id: M23, title: Die Sprache wird fertig }
   - { id: M24, title: Die Tage bekommen Inhalt }
+  # LEVEL-UP 2 vom 2026-09-08 (docs/plan/LEVEL-UP-2-GRAFIK.md): Noahs Auftrag
+  # "weg vom Text, hin zu Grafiken" - alle fuenf Vorschlaege A-E gewaehlt.
+  - { id: M25, title: Die Zahlen werden Bilder }
+  - { id: M26, title: Die Karte lebt }
+  - { id: M27, title: Das Gefecht zeigt sich }
 
 tasks:
   - id: T-M0-01
@@ -1839,3 +1844,108 @@ tasks:
     files: [data/rules/default/constants.json, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/warmarch.json]
     tests: [apps/headless/test/economy-scale.test.ts, apps/headless/test/walkthrough.test.ts, packages/core/src/phases/movement.test.ts]
     dod: "PROBLEME.md (2026-09-07): auf fremdem Boden gilt Marschfaktor 0,7, im Krieg 0,35 - eine Kriegserklaerung HALBIERT das Tempo, der schnellste Eroeffnungszug ist damit der unangekuendigte Ueberfall (200 Ansehen, loest Krieg aus). Dazu Befund V2-15: Maersche von 14-31 Tagen dominieren die Fruehphase. Fertig, wenn beide Varianten (0,35 heute gegen einen gemilderten Kriegsfaktor, Vorschlag 0,5) im Parameterlauf gemessen sind (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md steht und BALANCING.md den Eintrag traegt. Eine AENDERUNG der Konstante ist nur fertig, wenn der Golden-Master-Umgang begruendet ist; ein Beibehalten ist als Ergebnis zulaessig"
+
+  # --- M25: Die Zahlen werden Bilder (LEVEL-UP-2-GRAFIK.md, Vorschlaege A+B) ---
+
+  - id: T-M25-01
+    milestone: M25
+    title: Die Partie bekommt ein Gedaechtnis - Zeitreihe je Spieltag
+    status: todo
+    deps: []
+    requirements: [R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts]
+    tests: [apps/desktop/src/game/saves.test.ts]
+    dod: "Die Sicht kennt nur das Jetzt - fuer einen Verlauf braucht die Huelle eine Aufzeichnung. Fertig, wenn am Tageswechsel (derselbe Effekt-Ort wie der Tagesbericht) je bekannter Macht die Punkte und fuer die eigene Macht Bestaende und Bilanzen in einen Ringpuffer mit Deckel geschrieben werden, der Puffer je Spielstand-Slot in IndexedDB mitgefuehrt wird (Speichern wie Laden), und ein alter Stand ohne Aufzeichnung die Kurve ehrlich am Ladetag beginnt. Tests: die Aufzeichnung waechst je Tag genau um einen Eintrag, der Deckel haelt, Speichern-Laden erhaelt sie; alle fallen ohne die Reparatur"
+
+  - id: T-M25-02
+    milestone: M25
+    title: Der Machtverlauf wird eine Kurve
+    status: todo
+    deps: [T-M25-01]
+    requirements: [R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Standings.test.tsx]
+    dod: "Vorschlag A: die spannendste Kurve des Spiels - wer fuehrt, wer holt auf - existiert nirgends. Fertig, wenn das Lage-Panel ueber der Punktetabelle ein Liniendiagramm des Punkteverlaufs aller bekannten Maechte zeigt (eigene SVG-Komponente, KEINE Fremdbibliothek; Spielerfarben aus tokens.ts; Legende; aria-Beschreibung nennt die Endwerte), der Leerzustand bei fehlender Aufzeichnung einen ehrlichen Satz sagt, und ein Test am gerenderten Baum die Kurvenpfade an bekannte Reihen bindet. Die Seitenleiste darf nicht querscrollen (Waechter aus T-M22-02 bleibt gruen)"
+
+  - id: T-M25-03
+    milestone: M25
+    title: Die Wirtschaft zeigt Trend und Bilanz als Bild
+    status: todo
+    deps: [T-M25-01]
+    requirements: [R-UI-05, R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Vorschlag B: sieben Rohstoffe mal fuenf Zahlenspalten - Trends muss man sich merken. Fertig, wenn jede Rohstoffzeile eine Sparkline der letzten sieben Tage (aus der Zeitreihe) und einen Bilanzbalken traegt (positiv gruen, negativ zinnober, null als Strich; Zahl bleibt daneben), die Tabelle dabei in der Leiste bleibt (Waechter T-M22-02) und ein Test die Balkenrichtung und die Sparkline-Punkte an bekannte Werte bindet. Fuer das Ohr bleibt die Zahl der zugaengliche Wert (aria)"
+
+  - id: T-M25-04
+    milestone: M25
+    title: Der Tagesbericht bekommt Balken
+    status: todo
+    deps: [T-M25-03]
+    requirements: [R-UI-05]
+    design: [D-25]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/game/events.test.ts]
+    dod: "Der Koerper des Tagesberichts (T-M24-01) nennt Bilanzen als Text. Fertig, wenn die Rohstoffzeilen des Berichts dieselben Delta-Balken nutzen wie die Wirtschaftstabelle (eine Komponente, zweimal verwendet - nicht zwei Kopien) und ein Test das am gerenderten Eintrag bindet"
+
+  # --- M26: Die Karte lebt (LEVEL-UP-2-GRAFIK.md, Vorschlaege C+E) ---
+
+  - id: T-M26-01
+    milestone: M26
+    title: Maersche werden Pfeile mit Fortschritt
+    status: todo
+    deps: []
+    requirements: [R-MAP-05, R-UI-16]
+    design: [D-25]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/render.test.ts]
+    dod: "Heute ist eine Bewegung eine gestrichelte Linie ohne Richtung und ohne Fortschritt. Fertig, wenn jede sichtbare marschierende Armee ihre Route als Pfad mit Pfeilspitze zeigt, der zurueckgelegte Anteil (aus Abmarsch- und Ankunftstick gerechnet) gefuellt und der Rest blass ist, eigene Armeen in Tinte und fremde in Spielerfarbe gezeichnet werden, und ein Test die Fortschrittsrechnung an bekannte Ticks bindet (0 Prozent beim Abmarsch, die Haelfte in der Mitte, voll bei Ankunft). Danach das Zeichenbudget nachmessen (render.bench, p95 gegen 16,7 ms) und die Zahl in docs/reports/render-bench.json begruenden"
+
+  - id: T-M26-02
+    milestone: M26
+    title: Kampf und Eroberung sind auf der Karte sichtbar
+    status: todo
+    deps: [T-M26-01]
+    requirements: [R-MAP-05, R-UI-17]
+    design: [D-25]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts]
+    tests: [apps/desktop/src/map/render.test.ts]
+    dod: "Ein Besitzwechsel ist heute ein harter Farbsprung, ein Kampf ein Ring fester Staerke. Fertig, wenn ein Besitzwechsel als kurze Farbwelle laeuft (rund 600 ms, Flaeche blendet von alter zu neuer Farbe; bei prefers-reduced-motion sofortiger Wechsel - Muster in motion.ts), die Kampfzone ihre Intensitaet nach Gefechtsgroesse skaliert, und Tests die Blendkurve an feste Zeitpunkte binden sowie den reduced-motion-Pfad pruefen"
+
+  - id: T-M26-03
+    milestone: M26
+    title: Der fuenfte Kartenmodus - Beziehungen
+    status: todo
+    deps: []
+    requirements: [R-MAP-06]
+    design: [D-25]
+    files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "Vorschlag E: die Diplomatie wohnt nur in einer Tabelle, obwohl PublicView.relations je Macht Zustand und Dauer fuehrt. Fertig, wenn MAP_MODES einen Modus relations kennt (eigen / verbuendet / Frieden / Krieg / unbekannt faerben die Welt aus eigener Sicht), die Legende alle fuenf nennt, die Taste M ihn im Zyklus erreicht, die fuenf Farben den bestehenden Farbabstandstest (Delta E) bestehen und ein Test die Farbwahl je Beziehungszustand bindet. Die Diplomatie-Tabelle bleibt unveraendert bestehen"
+
+  # --- M27: Das Gefecht zeigt sich (LEVEL-UP-2-GRAFIK.md, Vorschlag D) ---
+
+  - id: T-M27-01
+    milestone: M27
+    title: Das Gefecht sammelt seine Zahlen fuer die Anzeige
+    status: todo
+    deps: []
+    requirements: [R-BAT-05, R-UI-10]
+    design: [D-25]
+    files: [apps/desktop/src/game/events.ts]
+    tests: [apps/desktop/src/game/events.test.ts]
+    dod: "Der Kern kennt Staerken, Verluste, Gelaende und Festung - der Protokolleintrag nennt nur die Verluste. Fertig, wenn je Gefecht ein Anzeigedatensatz entsteht (Staerke beider Seiten vorher/nachher, Verluste, Gelaende, Festung, Eingrabung, Rueckzugssperre), gespeist aus den BATTLE-Ereignissen plus der Sicht zum Ereigniszeitpunkt. Fehlt eine Angabe im Ereignis, wird sie dort ADDITIV ergaenzt (kein Hash-Bruch, Golden-Master unberuehrt - sonst Entscheid in DECISIONS.md statt stillem Umbau). Ein Test bindet den Datensatz an ein Gefecht mit bekannten Zahlen und faellt ohne die Sammlung"
+
+  - id: T-M27-02
+    milestone: M27
+    title: Das Gefecht zeigt sich - Staerkebalken und Zeichen
+    status: todo
+    deps: [T-M27-01]
+    requirements: [R-BAT-05, R-UI-10]
+    design: [D-25]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Vorschlag D: der Kampfbericht wird ein Bild. Fertig, wenn der Protokolleintrag eines Gefechts einen aufklappbaren Koerper traegt (Muster Tagesbericht aus T-M24-01): je Seite ein Staerkebalken vorher-zu-nachher mit dem Verlust als zinnobernem Abschnitt, dazu die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre aus dem bestehenden Symbolsatz, fuer das Ohr eine Satzfassung (aria). Ein Test bindet Balkenlaengen und Zeichen an den Datensatz aus T-M27-01 und faellt gegen den heutigen Texteintrag"
