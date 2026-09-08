@@ -157,3 +157,24 @@ export function artefactUnchangedSince(commit, changedFiles) {
   })
   return { unchanged: relevant.length === 0, relevant, commit }
 }
+
+/**
+ * Frische der Balancing-Messgeraete (2026-09-08, DECISIONS.md).
+ *
+ * Die Abnahme faehrt Parameterlauf und Turnier nicht mehr mit - sie sind
+ * Messgeraete, keine Kriterien, und kosteten den Loewenanteil der 75-130 Minuten.
+ * Damit sie nicht still veralten, prueft die Abnahme stattdessen: ist der Bericht
+ * des Messgeraets aelter als die letzte Aenderung an den Regeldateien, ist die
+ * Abnahme rot. Alle Unbekannten zaehlen als veraltet - die sichere Richtung.
+ *
+ * Zeiten sind Commit-Zeitstempel (git log -1 --format=%ct -- <pfad>), keine
+ * Datei-mtimes: ein checkout setzt mtimes neu und wuerde jedes Urteil verwischen.
+ */
+export function gaugeStatus({ rulesChangedAt, gaugeChangedAt, rulesDirty }) {
+  if (rulesDirty) return { fresh: false, reason: 'uncommittete Aenderungen unter data/rules - erst committen, dann messen' }
+  if (!gaugeChangedAt) return { fresh: false, reason: 'kein Bericht mit Stand gefunden' }
+  if (!rulesChangedAt) return { fresh: false, reason: 'Regelstand unbekannt (git antwortet nicht)' }
+  return rulesChangedAt <= gaugeChangedAt
+    ? { fresh: true, reason: 'Bericht ist juenger als die letzte Regelaenderung' }
+    : { fresh: false, reason: 'Regeln sind juenger als der Bericht des Messgeraets' }
+}

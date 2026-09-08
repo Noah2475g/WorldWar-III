@@ -1402,3 +1402,35 @@ der Lauf enthält keine Märsche. Das steht so auch in der Commit-Nachricht.
 Gebiet" und Konstantentabelle); die Bewegungs-Tests binden die Konstante symbolisch und
 blieben grün; `PROBLEME.md` verweist bei der Beobachtung auf diese Entscheidung. Wer die
 Zahl erneut anfassen will, wiederholt den Messlauf (Aufbau oben) statt zu raten.
+
+---
+
+## 2026-09-08 · Abnahme · Der Abnahmelauf fährt nur noch seine Kriterien — und sagt seine Dauer voraus
+
+**Entscheidung (Noahs Auftrag: „den Akzeptanztest deutlich verkürzen"):** `pnpm
+acceptance` ruft nicht mehr pauschal die ganze langsame Suite (75–130 min), sondern
+genau das, was AK-1 bis AK-6 wörtlich verlangen: `pnpm verify` (deckt AK-4 —
+Determinismus, Speichern/Laden, Kampf-Eigenschaften), **parallel** dazu die volle
+Partie (AK-1, `sim:fullgame`) und den 1000-Tage-Langlauf (AK-6, `sim:long`) — beide
+messen Ergebnisse, keine Zeiten —, danach **seriell** die Zeitbudgets (Tick,
+Weltkarte, Zeichnen) auf ruhiger Maschine.
+
+**Was nicht mehr je Abnahme läuft:** Parameterlauf (~29 Varianten × 12 Startzahlen ×
+120 Spieltage ≈ der Löwenanteil der Laufzeit), Turnier, KI-Integrationslauf,
+Onboarding-Durchgang. Sie sind **Messgeräte, keine Abnahmekriterien** — kein AK
+verlangt sie je Lauf. Sie bleiben in `pnpm test:slow` (Vollsuite für die Nacht) und
+als Einzelbefehle (`pnpm balance:sweep` …).
+
+**Damit sie nicht still veralten:** ein Frische-Wächter (`gaugeStatus` in
+`acceptance-criteria.mjs`, getestet in `test/requirements.test.ts`) vergleicht die
+Commit-Zeit von `data/rules/**` mit der des jeweiligen Berichts — sind die Regeln
+jünger (oder uncommittet geändert, oder irgendetwas unbekannt), ist die **Abnahme
+rot** mit der Ansage, welcher Befehl zu laufen hat. Commit-Zeiten statt Datei-mtimes,
+weil ein checkout mtimes verwischt.
+
+**Dazu:** Das Skript druckt vorab die **erwartete Dauer aus der Messung des letzten
+Laufs** (`docs/reports/acceptance-timing.json`) statt einer Schätzung — nachdem
+„rund 75 Minuten" real 111 wurden.
+
+**Kippbar:** Wer die alte Vollprüfung je Abnahme zurück will, ersetzt die drei
+Aufrufe wieder durch `pnpm test:slow`.

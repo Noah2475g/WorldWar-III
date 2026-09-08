@@ -1,10 +1,10 @@
 # Langlauf und Rechenzeit
 
-Lauf: 1000 Spieltage (24000 Ticks), drei KI-Spieler, Karte "Kleine Welt".
+Lauf: 1000 Spieltage (24000 Ticks), 8 KI-Spieler, Weltkarte (237 Provinzen) — die ausgelieferte Voreinstellung.
 
-- Dauer gesamt: 4230 ms
-- Zeit je Tick inkl. KI: 0.176 ms
+- Dauer gesamt: 290950 ms
+- Zeit je Tick inkl. KI: 12.123 ms
 - Ereignisprotokoll am Ende: 500 Einträge (Ringpuffer greift)
-- Partie entschieden bei Tick: 312
+- Partie entschieden bei Tick: 17952
 
 Erzeugt von `apps/headless/test/longrun.slow.test.ts`.
