@@ -729,6 +729,9 @@ export const de = {
     // die Endwerte, der Leerzustand sagt ehrlich, warum noch keine Kurve da ist.
     historyAria: 'Punkteverlauf — Stand: {{list}}',
     historyEmpty: 'Noch keine Aufzeichnung: Die Kurve beginnt mit dem nächsten Tageswechsel.',
+    // Der ehrliche Wartesatz unter drei Aufzeichnungspunkten (T-M28-01): zwei Punkte
+    // wären eine Gerade, die einen Verlauf nur vortäuscht.
+    historyWaiting: 'Erst {{days}} von 3 Tagen aufgezeichnet — die Kurve kommt mit dem dritten Tageswechsel.',
     points: 'Punkte',
     relation: 'Verhältnis',
     seenStrength: 'Gesehene Stärke',

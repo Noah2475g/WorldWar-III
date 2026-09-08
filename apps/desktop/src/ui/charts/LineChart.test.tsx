@@ -18,20 +18,21 @@ afterEach(cleanup)
 const FARBE = TOKENS.good
 
 describe('R-UI-13 linePath rechnet Tage und Werte in den Pfadraum', () => {
-  it('spannt die Tage auf 0…100 und die Werte von unten (0) nach oben (Maximum)', () => {
+  it('spannt die Tage auf 0…100 und die Werte von unten (minValue) nach oben (maxValue)', () => {
     const punkte = [
       { day: 1, value: 0 },
       { day: 2, value: 130 },
       { day: 3, value: 260 },
     ]
 
-    expect(linePath(punkte, { minDay: 1, maxDay: 3, maxValue: 260 })).toBe('M0,100 L50,50 L100,0')
+    expect(linePath(punkte, { minDay: 1, maxDay: 3, minValue: 0, maxValue: 260 })).toBe('M0,100 L50,50 L100,0')
   })
 
   it('rundet krumme Koordinaten auf eine Nachkommastelle', () => {
     const pfad = linePath([{ day: 1, value: 100 }, { day: 3, value: 200 }], {
       minDay: 1,
       maxDay: 4,
+      minValue: 0,
       maxValue: 300,
     })
 
@@ -39,24 +40,40 @@ describe('R-UI-13 linePath rechnet Tage und Werte in den Pfadraum', () => {
     expect(pfad).toBe('M0,66.7 L66.7,33.3')
   })
 
+  it('rechnet gegen die untere Skalengrenze, nicht gegen null (T-M28-01)', () => {
+    // Punktestaende 2 800…10 000 nutzten mit 0-Basis nur das obere Fuenftel; die Skala
+    // beginnt jetzt bei minValue. 100 liegt in 100…200 unten, 200 oben.
+    const pfad = linePath([{ day: 1, value: 100 }, { day: 2, value: 200 }], {
+      minDay: 1,
+      maxDay: 2,
+      minValue: 100,
+      maxValue: 200,
+    })
+
+    expect(pfad).toBe('M0,100 L100,0')
+  })
+
   it('laesst eine Reihe mit weniger als zwei Punkten ohne Pfad', () => {
-    expect(linePath([{ day: 1, value: 5 }], { minDay: 1, maxDay: 3, maxValue: 10 })).toBe('')
+    expect(linePath([{ day: 1, value: 5 }], { minDay: 1, maxDay: 3, minValue: 0, maxValue: 10 })).toBe('')
   })
 })
 
-describe('R-UI-13 chartDomain nimmt das Maximum ueber alle Reihen', () => {
-  it('findet Spanne und Hoechstwert', () => {
+describe('R-UI-13 chartDomain spannt die Skala von min−Rand bis max+Rand (T-M28-01)', () => {
+  it('findet Spanne und Wertgrenzen mit einem Zehntel Rand', () => {
+    // Werte 10…40, Spanne 30, Rand 3: die Skala laeuft 7…43 — die 0-Basis ist weg,
+    // acht flache Tage druecken die Kurve nicht mehr an den oberen Rand.
     const domain = chartDomain([
       { id: 'a', label: 'A', color: FARBE, points: [{ day: 2, value: 10 }] },
       { id: 'b', label: 'B', color: FARBE, points: [{ day: 5, value: 40 }] },
     ])
 
-    expect(domain).toEqual({ minDay: 2, maxDay: 5, maxValue: 40 })
+    expect(domain).toEqual({ minDay: 2, maxDay: 5, minValue: 7, maxValue: 43 })
   })
 
-  it('faellt bei lauter Nullen auf ein Maximum von eins zurueck — nie durch null teilen', () => {
+  it('gibt einer flachen Reihe mindestens einen Rand von eins — nie durch null teilen', () => {
     const domain = chartDomain([{ id: 'a', label: 'A', color: FARBE, points: [{ day: 1, value: 0 }, { day: 2, value: 0 }] }])
 
+    expect(domain.minValue).toBe(-1)
     expect(domain.maxValue).toBe(1)
   })
 })
@@ -79,8 +96,22 @@ describe('R-UI-13 LineChart zeichnet Reihen, Legende und Beschreibung', () => {
 
     const pfad = container.querySelector('path[data-series="p1"]') as SVGPathElement
     expect(pfad).toBeTruthy()
-    expect(pfad.getAttribute('d')).toBe('M0,100 L100,0')
+    // Werte 0…260, Rand 26: die Skala laeuft −26…286, also 0 → y 91.7 und 260 → y 8.3
+    // (T-M28-01) — gegen die alte 0-Basis ('M0,100 L100,0') faellt dieser Test.
+    expect(pfad.getAttribute('d')).toBe('M0,91.7 L100,8.3')
     expect(pfad.classList.contains('chart__line')).toBe(true)
+  })
+
+  it('schreibt den Endwert jeder Linie an den rechten Rand (T-M28-01)', () => {
+    const { container } = render(<LineChart series={reihen} ariaLabel="Punkteverlauf" />)
+
+    const endwert = container.querySelector('.chart__endvalue[data-series="p1"]') as HTMLElement
+    expect(endwert, 'kein Endwert am rechten Rand').toBeTruthy()
+    expect(endwert.textContent).toBe('260')
+    // Auf der Hoehe des letzten Punkts: 260 in der Skala −26…286 liegt bei 8.3 %.
+    expect(endwert.style.top).toBe('8.3%')
+    // jsdom normalisiert Hex zu rgb(): gebunden wird, DASS die Reihenfarbe ankommt.
+    expect(endwert.style.color).toBe('rgb(51, 97, 63)')
   })
 
   it('nennt die Reihe in der Legende und beschreibt das Bild fuers Ohr', () => {

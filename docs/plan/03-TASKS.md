@@ -3812,16 +3812,19 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ## Meilenstein M28 — Der Feinschliff nach dem Spielen
 
 > **Herkunft:** LEVEL-UP 3 (`docs/plan/LEVEL-UP-3.md`), 2026-09-08 — die kritische
-> Überprüfung nach der Grafikrunde. Entwurf: **D26**. **Haltepunkt:** gebaut wird
-> erst nach Noahs Spiel-Feedback; seine Befunde werden als T-M28-06+ ergänzt.
+> Überprüfung nach der Grafikrunde. Entwurf: **D26**. Der **Haltepunkt** (gebaut wird
+> erst nach Noahs Spiel-Feedback) ist am 2026-09-08 durch Noahs Freigabe aufgehoben;
+> seine Befunde werden weiterhin als T-M28-06+ ergänzt.
 
 ### T-M28-01 · Die Kurve wird bei jeder Historienlänge lesbar
 - **Ziel:** Sichtprüfung 2026-09-08 — acht Tage Historie ergeben flache, oben
   gedrängte Linien (Y-Skala ab 0, Punktestände im oberen Fünftel).
 - **Anforderungen:** R-UI-13 · **Entwurf:** D26.1 · **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/ui/charts/LineChart.tsx`,
-  `apps/desktop/src/ui/Standings.tsx`
-- **Tests zuerst:** Skalengrenzen an bekannte Reihen gebunden — fällt gegen die 0-Basis.
+  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Skalengrenzen an bekannte Reihen gebunden — fällt gegen die 0-Basis
+  (`LineChart.test.tsx`, `Standings.test.tsx`; Verdrahtung in `App.test.tsx`).
 - **Fertig wenn:** Skala von min−Rand bis max+Rand, Endwert je Linie am rechten
   Rand, unter drei Punkten der ehrliche Wartesatz.
 

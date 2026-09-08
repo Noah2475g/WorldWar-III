@@ -1954,18 +1954,19 @@ tasks:
     dod: "Vorschlag D: der Kampfbericht wird ein Bild. Fertig, wenn der Protokolleintrag eines Gefechts einen aufklappbaren Koerper traegt (Muster Tagesbericht aus T-M24-01): je Seite ein Staerkebalken vorher-zu-nachher mit dem Verlust als zinnobernem Abschnitt, dazu die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre aus dem bestehenden Symbolsatz, fuer das Ohr eine Satzfassung (aria). Ein Test bindet Balkenlaengen und Zeichen an den Datensatz aus T-M27-01 und faellt gegen den heutigen Texteintrag"
 
   # --- M28: Der Feinschliff nach dem Spielen (LEVEL-UP-3.md) ---
-  # HALTEPUNKT: gebaut wird erst nach Noahs Spiel-Feedback; seine Befunde werden
-  # als T-M28-06+ ergaenzt. Begruendung im Plan.
+  # Der HALTEPUNKT (gebaut wird erst nach Noahs Spiel-Feedback) ist am 2026-09-08
+  # durch Noahs Freigabe aufgehoben; seine Befunde werden weiterhin als T-M28-06+
+  # ergaenzt. Begruendung im Plan.
 
   - id: T-M28-01
     milestone: M28
     title: Die Kurve wird bei jeder Historienlaenge lesbar
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-13]
     design: [D-26]
-    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx]
-    tests: [apps/desktop/src/ui/Standings.test.tsx]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/charts/LineChart.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Sichtpruefung 2026-09-08: acht Tage Historie ergeben flache, oben gedraengte Linien, weil die Y-Skala bei 0 beginnt und die Punktestaende das obere Fuenftel nutzen. Fertig, wenn die Skala von min minus Rand bis max plus Rand laeuft, jede Linie am rechten Rand ihren Endwert traegt, unter drei Punkten der ehrliche Wartesatz statt einer Pseudokurve steht, und ein Test die Skalengrenzen an bekannte Reihen bindet (faellt gegen die 0-Basis)"
 
   - id: T-M28-02

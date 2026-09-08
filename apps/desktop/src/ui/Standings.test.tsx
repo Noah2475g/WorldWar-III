@@ -138,13 +138,22 @@ describe('R-UI-13 Der Machtverlauf als Kurve', () => {
   it('bindet die Kurvenpfade an die bekannten Reihen', () => {
     const { container } = lage()
 
-    // Der Pfadraum ist 0…100 in beiden Achsen: Tag 1 → x 0, Tag 3 → x 100;
-    // Punkte 0 → y 100 (unten), Höchstwert 260 → y 0 (oben).
+    // Der Pfadraum ist 0…100 in beiden Achsen: Tag 1 → x 0, Tag 3 → x 100. Die
+    // Y-Skala läuft seit T-M28-01 von min−Rand bis max+Rand statt ab 0: Werte 0…260,
+    // Rand 26, Skala −26…286 — also 0 → y 91.7 und 260 → y 8.3. Gegen die alte
+    // 0-Basis ('M0,100 L50,50 L100,0') fällt dieser Test.
     const eigene = container.querySelector('path[data-series="p1"]')
     const fremde = container.querySelector('path[data-series="p2"]')
     expect(eigene, 'keine Kurve der eigenen Macht').toBeTruthy()
-    expect(eigene!.getAttribute('d')).toBe('M0,100 L50,50 L100,0')
-    expect(fremde!.getAttribute('d')).toBe('M0,0 L50,50 L100,0')
+    expect(eigene!.getAttribute('d')).toBe('M0,91.7 L50,50 L100,8.3')
+    expect(fremde!.getAttribute('d')).toBe('M0,8.3 L50,50 L100,8.3')
+  })
+
+  it('schreibt jeden Endwert an den rechten Rand (T-M28-01)', () => {
+    const { container } = lage()
+
+    const endwerte = [...container.querySelectorAll('.chart__endvalue')].map((el) => el.textContent)
+    expect(endwerte).toEqual(['260', '260'])
   })
 
   it('zeichnet jede Kurve in der Farbe ihrer Macht', () => {
@@ -179,7 +188,22 @@ describe('R-UI-13 Der Machtverlauf als Kurve', () => {
     expect(container.querySelector('.chart__empty')?.textContent ?? '').toMatch(/Aufzeichnung/)
   })
 
-  it('braucht zwei Tage: ein einzelner Punkt ist noch keine Kurve', () => {
+  it('braucht drei Tage: unter drei Punkten steht der ehrliche Wartesatz (T-M28-01)', () => {
+    // Zwei Punkte ergeben eine Pseudokurve — eine Gerade, die nichts belegt. Statt
+    // ihrer steht der Wartesatz, und er nennt den Stand: „Erst 2 von 3 Tagen …".
+    const { container } = render(
+      <StandingsPanel
+        view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })}
+        nameOf={nameOf}
+        timeline={[zeitreihe[0]!, zeitreihe[1]!]}
+      />,
+    )
+
+    expect(container.querySelector('.chart'), 'zwei Punkte sind noch keine Kurve').toBeNull()
+    expect(container.querySelector('.chart__empty')?.textContent ?? '').toContain('2 von 3')
+  })
+
+  it('sagt auch bei einem einzelnen Punkt den Wartesatz statt einer Kurve', () => {
     const { container } = render(
       <StandingsPanel
         view={view({ self: 100, others: [{ id: 'p2', score: 300 }] })}

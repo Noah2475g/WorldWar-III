@@ -97,8 +97,10 @@ export function StandingsPanel({
 
   const leader = Math.max(...rows.map((row) => row.score), 1)
 
-  // Unter zwei aufgezeichneten Tagen gibt es keine Kurve — ein einzelner Punkt wäre
-  // eine leere Behauptung. Der Leerzustand sagt stattdessen, woran es liegt.
+  // Unter drei aufgezeichneten Tagen gibt es keine Kurve (T-M28-01, D26.1): ein
+  // einzelner Punkt wäre eine leere Behauptung, zwei Punkte eine Gerade, die einen
+  // Verlauf nur vortäuscht. Der Wartesatz sagt stattdessen ehrlich, wie weit die
+  // Aufzeichnung ist.
   const series = scoreSeries(rows, timeline)
   const days = new Set(timeline.map((entry) => entry.day))
   const endwerte = rows
@@ -112,10 +114,14 @@ export function StandingsPanel({
   return (
     <section className="panel" aria-label={t('standings.title')}>
       <h2>{t('standings.title')}</h2>
-      {days.size >= 2 ? (
+      {days.size >= 3 ? (
         <LineChart series={series} ariaLabel={t('standings.historyAria', { list: endwerte })} />
       ) : (
-        <p className="chart__empty">{t('standings.historyEmpty')}</p>
+        <p className="chart__empty">
+          {days.size === 0
+            ? t('standings.historyEmpty')
+            : t('standings.historyWaiting', { days: days.size })}
+        </p>
       )}
       <table className="table">
         <thead>

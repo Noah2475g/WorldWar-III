@@ -346,16 +346,19 @@ describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
  *
  * Die Rechnung prueft Standings.test.tsx an bekannten Reihen; hier steht die
  * Verdrahtung: die Zeitreihe (T-M25-01) waechst am Tageswechsel, und das Lage-Panel
- * bekommt sie — nach zwei Spieltagen gibt es eine Kurve.
+ * bekommt sie — nach drei Spieltagen gibt es eine Kurve (unter drei Punkten steht
+ * seit T-M28-01 der ehrliche Wartesatz statt einer Pseudokurve).
  */
 describe('R-UI-13 Der Machtverlauf erreicht das Lage-Panel', () => {
-  it('zeichnet nach zwei Spieltagen eine Kurve im Lage-Panel', async () => {
+  it('zeichnet nach drei Spieltagen eine Kurve im Lage-Panel', async () => {
     startGame()
 
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
     await waitFor(() => expect(screen.getByText(/Tag 2/)).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
     await waitFor(() => expect(screen.getByText(/Tag 3/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 4/)).toBeTruthy())
 
     fireEvent.keyDown(window, { key: 'l' })
 
