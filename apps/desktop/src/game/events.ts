@@ -241,6 +241,58 @@ export function dayReportDeltas(view: PublicView): DayReportDelta[] {
     .map(([key, flow]) => ({ label: t(`resources.${key}`), balance: flow.balance }))
 }
 
+/**
+ * Der Tagesabfluss: wohin die Rohstoffe gehen (T-M28-05, R-UI-05, v1-Befund 15, D26.5).
+ *
+ * Die Wirtschaftstabelle führte nur den Armeeunterhalt; Bau-, Aushebungs- und
+ * Marktkosten erschienen nirgends — seit den Sparklines fiel der Bestand sichtbar,
+ * ohne dass eine Spalte sagt warum. Gerechnet wird aus denselben Quellen wie der
+ * Tagesbericht (Sicht, Regeln, die eigenen Ereignisse des Tages), je Quelle die
+ * ehrlichste, die es gibt:
+ *
+ * - **Bau** aus den `BUILD_STARTED`-Ereignissen des Tages — sie kennen den Auftrag
+ *   auch dann, wenn er am selben Tag fertig wurde (die Warteschlange nicht mehr).
+ * - **Aushebung** aus den heute begonnenen Aufträgen der eigenen Warteschlangen —
+ *   das Erteilen einer Aushebung hat kein eigenes Ereignis (`UNIT_RECRUITED` kommt
+ *   erst bei Fertigstellung, bezahlt wurde beim Erteilen). Eine am selben Tag
+ *   erteilte UND fertige Aushebung entgeht dieser Rechnung — benannt, nicht versteckt.
+ * - **Markt** aus `TRADE_EXECUTED`: die Abgabe ist Abfluss, der Ertrag keiner.
+ *
+ * Das Fenster ist der Spieltag bis `view.tick`: `view.tick − ticksPerDay < t ≤ view.tick`
+ * — dasselbe Fenster, mit dem die App die Tagesereignisse für den Tagesbericht schneidet.
+ */
+export function dayExpenses(
+  view: PublicView,
+  rules: Rules,
+  dayEvents: readonly GameEvent[] = [],
+): Partial<Record<string, number>> {
+  const spent: Record<string, number> = {}
+  const add = (cost: Partial<Record<string, number>> | undefined, factor: number): void => {
+    for (const [key, value] of Object.entries(cost ?? {})) {
+      if (!value) continue
+      spent[key] = (spent[key] ?? 0) + value * factor
+    }
+  }
+
+  for (const event of dayEvents) {
+    if (event.type === 'BUILD_STARTED') add(rules.buildings[event.building]?.cost, 1)
+    if (event.type === 'TRADE_EXECUTED') {
+      spent[event.give] = (spent[event.give] ?? 0) + event.giveAmount
+    }
+  }
+
+  const ticksPerDay = rules.constants.ticksPerDay
+  for (const province of view.provinces) {
+    if (province.owner !== view.playerId) continue
+    for (const order of province.recruitQueue ?? []) {
+      if (order.startedTick <= view.tick - ticksPerDay || order.startedTick > view.tick) continue
+      add(rules.units[order.unitKey]?.cost, order.count)
+    }
+  }
+
+  return spent
+}
+
 export function dayReportBody(
   view: PublicView,
   rules: Rules,

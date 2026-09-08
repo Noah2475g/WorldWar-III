@@ -2005,10 +2005,10 @@ tasks:
   - id: T-M28-05
     milestone: M28
     title: Die Wirtschaft sagt, wohin die Rohstoffe gehen
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05, R-UI-13]
     design: [D-26]
-    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts]
     dod: "v1-Befund 15, nie adressiert: die Spalte Unterhalt fuehrt nur den Armeeunterhalt; Bau-, Aushebungs- und Marktkosten erscheinen in keiner Uebersicht - seit den Sparklines faellt der Bestand sichtbar, ohne dass eine Spalte sagt warum. Fertig, wenn die Tabelle einen Tagesabfluss Ausgaben fuehrt (Bau + Aushebung + Markt des Tages, aus denselben Zahlen wie der Tagesbericht), die Bilanz wieder zur sichtbaren Bestandskurve passt und ein Test die Spalte an einen Tag mit bekannten Ausgaben bindet"

@@ -3862,7 +3862,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   ohne dass eine Spalte sagt warum.
 - **Anforderungen:** R-UI-05, R-UI-13 · **Entwurf:** D26.5 · **Abhängigkeiten:** keine
 - **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/events.ts`,
-  `apps/desktop/src/i18n/de.ts`
-- **Tests zuerst:** die Spalte an einen Tag mit bekannten Ausgaben gebunden.
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** die Ausgaben-Auskunft an einen Tag mit bekannten Ausgaben gebunden
+  (`Panels.test.tsx`, `events.test.ts` für `dayExpenses`).
 - **Fertig wenn:** ein Tagesabfluss „Ausgaben" steht neben dem Unterhalt, aus
-  denselben Zahlen wie der Tagesbericht.
+  denselben Zahlen wie der Tagesbericht — im D24.2-Stil (Zahl mit Titel in der
+  Unterhalt-Zelle), damit der Querscroll-Wächter aus T-M22-02 bindend bleibt.

@@ -65,7 +65,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
+import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -1038,6 +1038,20 @@ export function App(props: AppProps) {
 
   const selected = view?.provinces.find((p) => p.id === ui.selectedProvince) ?? null
 
+  /**
+   * Der Tagesabfluss für die Wirtschaftstabelle (T-M28-05, D26.5): Bau + Aushebung +
+   * Markt des laufenden Spieltags, gerechnet von `dayExpenses` aus denselben Quellen
+   * wie der Tagesbericht — die eigenen Ereignisse im Fenster des Tages plus die
+   * frischen Aufträge der Sicht.
+   */
+  const expenses = useMemo(() => {
+    if (!state || !view) return {}
+    const own = eventsFor(state.eventLog, 'p1').filter(
+      (event) => event.tick > view.tick - ticksPerDay && event.tick <= view.tick,
+    )
+    return dayExpenses(view, props.rules, own)
+  }, [state, view, ticksPerDay, props.rules])
+
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
     (playerId: string): string => {
@@ -1407,7 +1421,7 @@ export function App(props: AppProps) {
               }}
             />
           )}
-          <EconomyPanel view={view} timeline={timeline} />
+          <EconomyPanel view={view} timeline={timeline} expenses={expenses} />
           <DebugPanel
             enabled={ui.settings.debug}
             // Auch das Debug spricht Namen (T-M28-04, V2-12): die App kennt sie.

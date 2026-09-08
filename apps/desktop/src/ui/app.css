@@ -277,6 +277,17 @@ body {
   font-size: 11px;
 }
 
+/* Die Ausgaben des Tages hinter dem Unterhalt (T-M28-05): dasselbe Muster — Zahl
+   gedaempft, Textfassung im Titel; keine sechste Spalte (T-M22-02). */
+.expense {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--sp-sm);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .panel h2 {
   font-family: var(--font-map);
   font-size: 18px;

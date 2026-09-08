@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { battleReport, dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
+import { battleReport, dayExpenses, dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -688,5 +688,71 @@ describe('R-BAT-05 Der Anzeigedatensatz eines Gefechts', () => {
       viewer: 'p1',
     })
     expect(alt.battle).toBeUndefined()
+  })
+})
+
+/**
+ * Der Tagesabfluss: wohin die Rohstoffe gehen (T-M28-05, R-UI-05, v1-Befund 15, D26.5).
+ *
+ * Die Spalte Unterhalt fuehrte nur den Armeeunterhalt; Bau-, Aushebungs- und
+ * Marktkosten erschienen in keiner Uebersicht — seit den Sparklines faellt der Bestand
+ * sichtbar, ohne dass eine Spalte sagt warum. `dayExpenses` rechnet den Abfluss des
+ * Tages aus denselben Quellen wie der Tagesbericht: Sicht, Regeln, Tagesereignisse.
+ */
+describe('R-UI-05 dayExpenses rechnet den Tagesabfluss je Rohstoff', () => {
+  const sicht = (): PublicView =>
+    ({
+      tick: 24,
+      playerId: 'p1',
+      self: {},
+      provinces: [
+        {
+          id: 'A',
+          name: 'Alpha',
+          owner: 'p1',
+          buildQueue: [],
+          recruitQueue: [
+            // Heute erteilt (Tick 10 liegt im Fenster 0 < t <= 24): zaehlt.
+            { id: 'r1', unitKey: 'infantry', count: 2, startedTick: 10, completesAtTick: 70 },
+            // Gestern erteilt (Tick 0): zaehlt nicht zum Tag.
+            { id: 'r0', unitKey: 'infantry', count: 5, startedTick: 0, completesAtTick: 30 },
+          ],
+        },
+        {
+          id: 'C',
+          name: 'Gamma',
+          owner: 'p2',
+          recruitQueue: [{ id: 'rx', unitKey: 'infantry', count: 9, startedTick: 12, completesAtTick: 70 }],
+        },
+      ],
+    }) as unknown as PublicView
+
+  const regeln = (): Rules =>
+    ({
+      constants: { ticksPerDay: 24 },
+      buildings: { barracks: { cost: { wood: 300_000, money: 200_000 } } },
+      units: { infantry: { cost: { money: 50_000, iron: 10_000 } } },
+    }) as unknown as Rules
+
+  it('summiert Bau, Aushebung und Markt des Tages — fremde Provinzen und gestrige Auftraege nicht', () => {
+    const abfluss = dayExpenses(sicht(), regeln(), [
+      event({ type: 'BUILD_STARTED', tick: 5, provinceId: 'A', building: 'barracks', level: 1 }),
+      event({ type: 'TRADE_EXECUTED', tick: 9, give: 'wood', giveAmount: 100_000, want: 'iron', wantAmount: 40_000 }),
+    ])
+
+    expect(abfluss).toEqual({
+      // 300 Bau + 100 Markt-Abgabe.
+      wood: 400_000,
+      // 200 Bau + 2 x 50 Aushebung.
+      money: 300_000,
+      // 2 x 10 Aushebung — der Markt-ERTRAG (40 Eisen) ist kein Abfluss.
+      iron: 20_000,
+    })
+  })
+
+  it('bleibt ohne frische Auftraege und Ereignisse leer', () => {
+    const leer = { tick: 24, playerId: 'p1', self: {}, provinces: [] } as unknown as PublicView
+
+    expect(dayExpenses(leer, regeln(), [])).toEqual({})
   })
 })

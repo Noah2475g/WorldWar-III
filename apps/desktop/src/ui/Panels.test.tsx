@@ -743,6 +743,32 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
     expect(container.querySelector('.committed')).toBeNull()
   })
 
+  /**
+   * Die Wirtschaft sagt, wohin die Rohstoffe gehen (T-M28-05, R-UI-05, v1-Befund 15,
+   * D26.5). Bau-, Aushebungs- und Marktkosten des Tages erschienen in keiner
+   * Uebersicht. Die Auskunft steht als Zeichen mit Zahl neben dem Unterhalt —
+   * D24.2-Stil, KEINE sechste Spalte: der Querscroll-Waechter oben bleibt bindend.
+   */
+  it('zeigt die Tagesausgaben als Zahl mit Titel neben dem Unterhalt (T-M28-05)', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} expenses={{ food: 400_000 }} />)
+
+    const marker = container.querySelector('.expense')
+    expect(marker, 'keine Ausgaben-Auskunft in der Tabelle').toBeTruthy()
+    expect(marker?.textContent).toContain('400')
+    expect(marker?.getAttribute('title')).toContain('Ausgaben')
+    // Neben dem Unterhalt (vierte Spalte), nicht als eigene.
+    const zelle = marker?.closest('td')
+    const zeile = marker?.closest('tr')
+    expect([...zeile!.children].indexOf(zelle!)).toBe(3)
+    expect([...container.querySelectorAll('thead th')]).toHaveLength(5)
+  })
+
+  it('zeigt ohne Tagesausgaben kein Ausgaben-Zeichen — eine Null ist keine Auskunft', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} expenses={{}} />)
+
+    expect(container.querySelector('.expense')).toBeNull()
+  })
+
   it('R-UI-05 Waechter: die Leiste unterbindet horizontales Scrollen', () => {
     const style = document.createElement('style')
     style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')

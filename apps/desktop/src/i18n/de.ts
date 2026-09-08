@@ -65,6 +65,9 @@ export const de = {
     // Die Textfassung des Auftragszeichens hinter dem Bestand (T-M22-02): die Spalte
     // "In Auftrag" schob die Tabelle aus der Leiste, die Auskunft selbst bleibt.
     committedTitle: 'In Auftrag: {{amount}}',
+    // Der Tagesabfluss hinter dem Unterhalt (T-M28-05, v1-Befund 15): wohin die
+    // Rohstoffe gehen — im selben D24.2-Stil, damit die Tabelle in der Leiste bleibt.
+    expensesTitle: 'Ausgaben des Tages: {{amount}} — Bau, Aushebung und Markt',
     perDay: 'je Tag',
     shortage: 'Mangel',
   },

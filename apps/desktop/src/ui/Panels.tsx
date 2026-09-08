@@ -1012,10 +1012,18 @@ export function MarketPanel({
 export function EconomyPanel({
   view,
   timeline = [],
+  expenses = {},
 }: {
   view: PublicView | null
   /** Die Zeitreihe der Partie (T-M25-01) — sie speist die Sparkline je Rohstoff. */
   timeline?: readonly TimelineEntry[]
+  /**
+   * Der Tagesabfluss je Rohstoff (T-M28-05, v1-Befund 15): Bau + Aushebung + Markt
+   * des Tages, gerechnet von `dayExpenses` in game/events.ts — denselben Quellen wie
+   * der Tagesbericht. Steht als Zeichen mit Zahl neben dem Unterhalt (D24.2-Stil):
+   * eine sechste Spalte schob die Tabelle schon einmal aus der Leiste (T-M22-02).
+   */
+  expenses?: Partial<Record<string, number>>
 }) {
   const economy = view?.self.economy
   if (!economy) return null
@@ -1075,7 +1083,21 @@ export function EconomyPanel({
                 <Sparkline values={stockHistory(key)} />
               </td>
               <td>{rate(flow.production)}</td>
-              <td>{rate(-flow.consumption)}</td>
+              <td>
+                {rate(-flow.consumption)}
+                {/* Die Ausgaben des Tages hinter dem Unterhalt (T-M28-05): Bau,
+                    Aushebung und Markt — die Antwort auf „wohin geht mein Bestand,
+                    obwohl die Bilanz stimmt". Nur wenn es sie gibt: eine Null ist
+                    keine Auskunft. Textfassung im Titel, Muster wie „In Auftrag". */}
+                {(expenses[key] ?? 0) > 0 && (
+                  <span
+                    className="expense"
+                    title={t('economy.expensesTitle', { amount: amount(expenses[key]!) })}
+                  >
+                    −{amount(expenses[key]!)}
+                  </span>
+                )}
+              </td>
               <td>
                 {rate(flow.balance)}
                 <DeltaBar value={flow.balance} max={maxBalance} />
