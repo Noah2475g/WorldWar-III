@@ -8,6 +8,10 @@
     "core:window:allow-start-dragging",
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }]
+    },
     "dialog:allow-save",
     "dialog:allow-open"
   ]

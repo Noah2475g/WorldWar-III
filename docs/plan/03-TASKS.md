@@ -3869,3 +3869,38 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** ein Tagesabfluss „Ausgaben" steht neben dem Unterhalt, aus
   denselben Zahlen wie der Tagesbericht — im D24.2-Stil (Zahl mit Titel in der
   Unterhalt-Zelle), damit der Querscroll-Wächter aus T-M22-02 bindend bleibt.
+
+### T-M28-06 · Der Einmarsch schlägt Alarm *(vorgemerkt)*
+- **Ziel:** Noahs Spiel-Feedback 2026-09-08 — man kriegt es kaum mit, wenn feindliche
+  Truppen in eigene Gebiete einlaufen.
+- **Anforderungen:** R-TIME-06, R-UI-05 · **Entwurf:** D26 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** das Einmarsch-Ereignis löst Banner, Hervorhebung und
+  Vorspul-Stopp aus — je Art, nicht je Beispiel.
+- **Fertig wenn:** der Einmarsch ein deutliches Signal trägt (Alarmbanner mit
+  Provinznamen, Karten-Hervorhebung, Ton, `log--self`) und das Vorspulen anhält.
+  Entwurfsfrage vorab: welches Kern-Ereignis ihn trägt (additiv, ohne
+  Golden-Master-Bruch).
+
+### T-M28-07 · Angriff und Verteidigung führen sich selbst aus *(vorgemerkt)*
+- **Ziel:** Noahs Spiel-Feedback 2026-09-08 — Angriffs-/Verteidigungsszenarien sollen
+  die Truppen automatisch ausführen; heute verlangt jedes Gefecht Mikromanagement.
+- **Anforderungen:** R-BAT-03, R-UI-05 · **Entwurf:** D26 (nachzutragen)
+- **Abhängigkeiten:** T-M28-06
+- **Dateien:** `docs/plan/LEVEL-UP-3.md`
+- **Tests zuerst:** erst nach der Analyse — dieser Eintrag ist die Vormerkung.
+- **Fertig wenn:** die Analyse geklärt hat, was konkret fehlt (Verteidiger marschieren
+  selbsttätig zur bedrohten eigenen Provinz in Reichweite? Haltung Angriff verfolgt?
+  Garnisonshaltung?), der Entwurf in LEVEL-UP-3.md steht und die Aufgabe in
+  Teilaufgaben mit begründetem Golden-Master-Umgang geschnitten ist.
+
+### T-M28-08 · Kämpfe werden ein Ereignis *(vorgemerkt)*
+- **Ziel:** Noahs Spiel-Feedback 2026-09-08 — die Kämpfe sind noch zu unspektakulär.
+- **Anforderungen:** R-MAP-05, R-UI-17 · **Entwurf:** D26 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/ui/sound.ts`
+- **Tests zuerst:** Kampfdarstellung skaliert mit der Gefechtsgröße; der
+  reduced-motion-Pfad bleibt ruhig.
+- **Fertig wenn:** ein laufendes Gefecht auf der Karte unübersehbar ist (kräftigere
+  Kampfzone, Aufblitzen je Runde, Einschlagzeichen), eigene Gefechte einen Ton
+  auslösen und das Zeichenbudget hält. **Maßstab: im Vorspulen fällt ein Krieg auf,
+  ohne dass man das Protokoll liest.**

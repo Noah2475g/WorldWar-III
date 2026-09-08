@@ -2019,3 +2019,39 @@ tasks:
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts]
     dod: "v1-Befund 15, nie adressiert: die Spalte Unterhalt fuehrt nur den Armeeunterhalt; Bau-, Aushebungs- und Marktkosten erscheinen in keiner Uebersicht - seit den Sparklines faellt der Bestand sichtbar, ohne dass eine Spalte sagt warum. Fertig, wenn die Tabelle einen Tagesabfluss Ausgaben fuehrt (Bau + Aushebung + Markt des Tages, aus denselben Zahlen wie der Tagesbericht), die Bilanz wieder zur sichtbaren Bestandskurve passt und ein Test die Spalte an einen Tag mit bekannten Ausgaben bindet"
+
+  # Noahs Spiel-Feedback vom 2026-09-08 (T-M28-06+, wie in LEVEL-UP-3.md vorgesehen).
+  # VORGEMERKT auf Noahs Wunsch ("bitte in den Plan vormerken") - Bau nach Freigabe.
+
+  - id: T-M28-06
+    milestone: M28
+    title: Der Einmarsch schlaegt Alarm
+    status: todo
+    deps: []
+    requirements: [R-TIME-06, R-UI-05]
+    design: [D-26]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/game/events.test.ts]
+    dod: "Noahs Spiel-Feedback 2026-09-08: man kriegt es kaum mit, wenn feindliche Truppen in eigene Gebiete einlaufen. Fertig, wenn das Betreten eigenen Gebiets durch eine kriegsfuehrende fremde Armee ein DEUTLICHES Signal ausloest (Alarmbanner mit Provinznamen, Karten-Hervorhebung der Provinz, Ton nach dem bestehenden Muster, Eintrag mit log--self-Auszeichnung) und das Vorspulen dort anhaelt (Ereignis-Stopp wie bei M21). Entwurfsfrage vorab klaeren: welches Kern-Ereignis den Einmarsch traegt (ARMY_ARRIVED beim Gegner? additiv ergaenzen wie bei T-M27-01), ohne Golden-Master-Bruch"
+
+  - id: T-M28-07
+    milestone: M28
+    title: Angriff und Verteidigung fuehren sich selbst aus
+    status: todo
+    deps: [T-M28-06]
+    requirements: [R-BAT-03, R-UI-05]
+    design: [D-26]
+    files: [docs/plan/LEVEL-UP-3.md]
+    tests: []
+    dod: "Noahs Spiel-Feedback 2026-09-08: bei Angriffs- und Verteidigungsszenarien sollen die Truppen diese automatisch ausfuehren - heute verlangt jedes Gefecht Mikromanagement. ZUERST eine kleine Analyse (die Haltungen Angriff/Verteidigung existieren im Kern - was fehlt konkret? Kandidaten: Verteidiger marschieren selbsttaetig zur bedrohten eigenen Provinz in Reichweite; Haltung Angriff verfolgt zurueckweichende Gegner; eine Provinz-Garnisonshaltung), dann Entwurf in LEVEL-UP-3.md nachtragen und die Aufgabe in konkrete Teilaufgaben mit Kern-Beteiligung schneiden (Golden-Master-Umgang begruenden!). Erst nach dem Entwurf bauen - dieser Eintrag ist die Vormerkung, nicht der Bau"
+
+  - id: T-M28-08
+    milestone: M28
+    title: Kaempfe werden ein Ereignis
+    status: todo
+    deps: []
+    requirements: [R-MAP-05, R-UI-17]
+    design: [D-26]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/ui/sound.ts]
+    tests: [apps/desktop/src/map/render.test.ts]
+    dod: "Noahs Spiel-Feedback 2026-09-08: die Kaempfe sind noch zu unspektakulaer. Fertig, wenn ein laufendes Gefecht auf der Karte unuebersehbar ist (kraeftigere, groessere Kampfzone; Aufblitzen je Gefechtsrunde; Einschlag-/Rauchzeichen nach Gefechtsgroesse), eigene Gefechte einen Ton ausloesen (bestehendes Tonmuster, prefers-reduced-motion respektiert die Bewegung) und das Zeichenbudget die Erweiterung uebersteht (render.bench nachgemessen, p95 gegen 16,7 ms). Der Massstab: im Vorspulen faellt ein Krieg auf, ohne dass man das Protokoll liest"
