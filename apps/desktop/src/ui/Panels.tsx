@@ -426,6 +426,15 @@ export interface ArmyPanelProps {
   units?: readonly IconItem[] | undefined
   actions: readonly Action[]
   targeting?: Targeting | null | undefined
+  /**
+   * Die Quittung eines abgeschickten Armee-Befehls (T-M28-02, D26.2, R-UI-05).
+   *
+   * Die Quittung aus T-M22-05 hing am auslösenden Knopf — der Bestätigungsknopf der
+   * Zielwahl verschwindet aber im selben Klick (`setTargeting(null)`), und der Spieler
+   * sah nach dem Bestätigen nichts. Sie steht deshalb zusätzlich hier, in der
+   * Statuszeile der Armee, gespeist aus derselben `pendingCommands`-Sammlung der App.
+   */
+  pendingNotice?: string | null | undefined
   ticksPerDay: number
   currentTick: number
 }
@@ -443,6 +452,14 @@ export function ArmyPanel(props: ArmyPanelProps) {
           {t('army.strength')}: {amount(army.strength)}
         </p>
       </header>
+
+      {/* Die Zielwahl-Quittung in der Statuszeile (T-M28-02): abgeschickt, noch nicht
+          angewendet — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
+      {props.pendingNotice && (
+        <p className="action__pending" role="status">
+          {props.pendingNotice}
+        </p>
+      )}
 
       <dl className="facts">
         {army.stance && (

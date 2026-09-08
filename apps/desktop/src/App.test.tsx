@@ -605,6 +605,59 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
 
     expect(war.hasAttribute('disabled')).toBe(true)
   })
+
+  /**
+   * Auch die Zielwahl quittiert sichtbar (T-M28-02, D26.2, Debugging 2026-09-08).
+   *
+   * Die Quittung aus T-M22-05 hing per actionId am „Marsch befehlen"-Knopf — und der
+   * verschwindet mit `setTargeting(null)` im selben Klick. Der Spieler sah nach dem
+   * Bestätigen NICHTS: genau das Loch, das T-M22-05 schließen sollte, einen Pfad
+   * weiter. Jetzt steht die Quittung in der Armee-Statuszeile, gespeist aus derselben
+   * `pendingCommands`-Sammlung. Gerendert wie main.tsx in StrictMode — die Falle vom
+   * 2026-09-08 (doppelt gerufene Updater) sieht nur dieser Weg.
+   */
+  it('quittiert die Zielwahl in der Armee-Statuszeile (StrictMode wie main.tsx)', () => {
+    render(
+      <StrictMode>
+        <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
+      </StrictMode>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    const capital = world.startPositions[0]!.capital
+    const fastForward = (days: number) => {
+      for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    }
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fastForward(3)
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }),
+    )
+    fastForward(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    const panel = screen.getByRole('region', { name: 'Armee' })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
+    const target = within(panel).getByRole('combobox', { name: 'Ziel' })
+    const options = Array.from((target as HTMLSelectElement).options).map((option) => option.value)
+    const neighbour = world.startPositions[0]!.provinces.find((id) => id !== capital && options.includes(id))!
+    fireEvent.change(target, { target: { value: neighbour } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
+
+    // Der Bestätigungsknopf ist weg — die Quittung steht in der Statuszeile der Armee,
+    // und bei stehender Uhr nennt sie das Weiterlaufen.
+    const armee = screen.getByRole('region', { name: 'Armee' })
+    expect(within(armee).queryByRole('button', { name: 'Marsch befehlen' })).toBeNull()
+    const quittung = within(armee).getByRole('status')
+    expect(quittung.textContent).toContain('befohlen')
+    expect(quittung.textContent).toContain('wirkt beim Weiterlaufen')
+    // Abgeschickt, nicht angewendet: das Protokoll kennt den Marsch noch nicht.
+    expect(log()).not.toContain('marschiert nach')
+
+    // Der nächste Tick wendet den Befehl an; die Quittung verschwindet wieder.
+    fastForward(1)
+    expect(log()).toContain('marschiert nach')
+    expect(within(screen.getByRole('region', { name: 'Armee' })).queryByRole('status')).toBeNull()
+  }, 20_000)
 })
 
 describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {

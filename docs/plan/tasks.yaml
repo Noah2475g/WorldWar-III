@@ -1972,7 +1972,7 @@ tasks:
   - id: T-M28-02
     milestone: M28
     title: Auch die Zielwahl quittiert sichtbar
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05]
     design: [D-26]

@@ -1180,6 +1180,25 @@ export function App(props: AppProps) {
     [ctx, ui.selectedArmy, toAction],
   )
 
+  /**
+   * Die Zielwahl-Quittung der gewählten Armee (T-M28-02, D26.2, Befund vom
+   * Debugging 2026-09-08): der Bestätigungsknopf der Zielwahl verschwindet mit
+   * `setTargeting(null)` im selben Klick — seine `actionId`-Quittung (T-M22-05) hat
+   * also nie jemand gesehen. Die Armee-Statuszeile zeigt sie stattdessen, gespeist
+   * aus derselben `pendingCommands`-Sammlung; nur für Marsch und Beschuss, denn die
+   * übrigen Armee-Befehle behalten ihren sichtbaren Knopf samt Quittung.
+   */
+  const armyPendingNotice = useMemo(() => {
+    if (!ui.selectedArmy) return null
+    const waiting = pendingCommands.some(
+      (entry) =>
+        (entry.command.type === 'MOVE_ARMY' || entry.command.type === 'BOMBARD') &&
+        entry.command.armyId === ui.selectedArmy,
+    )
+    if (!waiting) return null
+    return speed === 0 ? t('actions.orderedPaused') : t('actions.ordered')
+  }, [pendingCommands, ui.selectedArmy, speed])
+
   /** Target mode for the selected army: options, the chosen place, and its arrival. */
   const armyTargeting: Targeting | null = useMemo(() => {
     if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
@@ -1365,6 +1384,7 @@ export function App(props: AppProps) {
               units={armyUnitItems}
               actions={armyActionList}
               targeting={armyTargeting}
+              pendingNotice={armyPendingNotice}
               ticksPerDay={ticksPerDay}
               currentTick={state.tick}
             />
