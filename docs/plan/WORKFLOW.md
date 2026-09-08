@@ -22,9 +22,11 @@
 > `stateRef`), ein Test rendert jetzt im Harness der echten App. **Regel:** Updater
 > sind pur; mindestens ein Test rendert im selben Wrapper wie der Einstiegspunkt.
 >
-> ⚠ Der 7-von-7-Abnahmelauf lief gegen `0ea1af3` (vor M25–M27). `pnpm verify` ist auf
-> dem Endstand grün; der nächste volle `pnpm acceptance` (~75–130 min, Maschine
-> allein) steht an, wenn wieder abgenommen wird.
+> `pnpm acceptance` dauert seit dem Umbau vom 2026-09-08 **~6,5 min** (gemessen; das
+> Skript nennt die erwartete Dauer vorab selbst) und lief gegen den Endstand
+> **11 von 11 grün** — inklusive des reparierten AK-6-Langlaufs, der jetzt wirklich
+> die Weltkarte mit 8 Spielern fährt (vorher: Testkarte, 3 Spieler — eine Attrappe,
+> sichtbar geworden durch den Umbau).
 
 ---
 
@@ -121,9 +123,13 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    kann `taskkill`/`Stop-Process` **verweigern**; dann Noah bitten (so geschehen am
    2026-09-08: zwei verwaiste Worker banden Stunden lang je einen Kern und machten den
    Abnahmelauf um die Hälfte langsamer).
-5. **`scripts/acceptance.mjs` IST der ganze Abnahmelauf** (~75 min frei, 130 min unter
-   Last) — und er **schreibt** die Benchmark-Berichte. Einzelne Aussagen prüft man an
-   der Funktion, nie am Skript.
+5. **`scripts/acceptance.mjs` IST der ganze Abnahmelauf** (~6,5 min seit dem Umbau vom
+   2026-09-08; die Prognose druckt er selbst aus `acceptance-timing.json`) — und er
+   **schreibt** Berichte. Einzelne Aussagen prüft man an der Funktion, nie am Skript.
+   Parameterlauf und Turnier laufen NICHT mehr je Abnahme — sie stecken in
+   `pnpm test:slow` (Vollsuite, Maschine allein, für die Nacht) und hinter dem
+   Frische-Wächter: ändern sich `data/rules/**`, wird die Abnahme rot, bis
+   `pnpm balance:sweep` bzw. das Turnier neu gelaufen sind.
 6. **Ändere keine Quelldatei, während der Tauri-Bau läuft.** `beforeBuildCommand` liest
    am Anfang; alles danach fehlt im Erzeugnis.
 7. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` —
