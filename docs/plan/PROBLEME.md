@@ -1672,3 +1672,20 @@ keinen rechnenden Updater mehr.
 rechnet, was Seiteneffekte hat oder Laufvariablen mutiert, baut einen Fehler, den nur
 die echte Anwendung zeigt. Und: mindestens ein Test je App rendert **in demselben
 StrictMode wie der Einstiegspunkt**, sonst prüft die Testumgebung eine andere Anwendung.
+
+---
+
+## 2026-09-08 · T-M28-03 · Zwei Randnotizen von der Bündel-Messung
+
+1. **Die Messung musste abbrechen, weil der Bildschirm besetzt war.** Die AK-8-Messung
+   simuliert Eingaben im Vordergrund — und der Kontroll-Screenshot zeigte ein fremdes
+   Vollbildspiel (Noah spielte gerade). Simulierte Klicks wären in **sein** Spiel
+   gegangen; der Abbruch war die einzig richtige Wahl. Regel für die Nachwelt: **vor
+   simulierten Eingaben immer erst ein Screenshot, und wenn darauf nicht das eigene
+   Zielfenster zu sehen ist, keine einzige Taste senden.** Das Bündel selbst ist frisch
+   gebaut (36b63a8); nur die Messung wartet auf einen freien Bildschirm.
+2. **`autosave-0.json.json`** — die Spielstände des Datei-Ports tragen eine
+   Doppelendung: der Slotname enthält bereits `.json`, der Port hängt ein zweites an.
+   Funktional folgenlos (Schreiben und Lesen sind symmetrisch, der M25-Zeitreihen-Test
+   stolperte deshalb schon über den Slotnamen), aber unsauber. Kleiner Kandidat für
+   T-M28-06+.

@@ -1983,7 +1983,14 @@ tasks:
   - id: T-M28-03
     milestone: M28
     title: Frisches Buendel, AK-8 am echten Stand gemessen
-    status: todo
+    status: in_progress
+    # 2026-09-08: Buendel FRISCH gebaut gegen 36b63a8 (worldwar.exe 7,94 MB, MSI, NSIS,
+    # 4m05s, Exit 0, Quelle waehrend des Baus unangefasst). Die AK-8-MESSUNG steht aus:
+    # sie braucht simulierte Eingaben im Vordergrund, und Noahs Bildschirm war von einem
+    # laufenden Vollbildspiel belegt - Eingaben haetten SEIN Spiel getroffen. Abbruch war
+    # die einzig richtige Wahl. Ausgangspunkt ist vorbereitet: der alte Messstand liegt
+    # in %APPDATA%/de.noahhaumersen.worldwar/saves.geparkt-2026-09-08 (geparkt, nicht
+    # geloescht), saves/ ist leer. Nachholen, sobald der Bildschirm frei ist.
     deps: []
     requirements: [R-PKG-01, R-PKG-02]
     design: [D-26]
