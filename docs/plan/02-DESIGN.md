@@ -1971,3 +1971,10 @@ unangetastet (Zeitreihe ist Sache der Hülle; Ereignis-Ergänzungen nur additiv)
 - **D25.6 Gefechtsbild:** aufklappbarer Protokollkörper mit zwei Stärkebalken
   (Verlust als zinnoberner Abschnitt) und Zeichen für Gelände/Festung/Eingrabung/
   Rückzugssperre; Datensatz aus BATTLE-Ereignissen plus Sicht.
+
+## D26. Der Feinschliff nach dem Spielen (M28 — LEVEL-UP-3.md)
+
+Kurzform in `docs/plan/LEVEL-UP-3.md` §3 (D26.1–D26.5): Kurvenskala ab min statt 0
+mit Endwert-Beschriftung · Zielwahl-Quittung in der Armee-Statuszeile · frisches
+Tauri-Bündel mit AK-8-Messung · Debug-Texte mit Macht- und Rohstoffnamen ·
+Ausgaben-Spalte der Wirtschaft aus den Zahlen des Tagesberichts.

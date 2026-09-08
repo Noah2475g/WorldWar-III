@@ -3806,3 +3806,59 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (Muster Tagesbericht): je Seite ein Stärkebalken vorher → nachher mit dem Verlust als
   zinnoberrotem Abschnitt, dazu Zeichen für Gelände, Festung, Eingrabung und
   Rückzugssperre aus dem bestehenden Symbolsatz; fürs Ohr eine Satzfassung (aria).
+
+---
+
+## Meilenstein M28 — Der Feinschliff nach dem Spielen
+
+> **Herkunft:** LEVEL-UP 3 (`docs/plan/LEVEL-UP-3.md`), 2026-09-08 — die kritische
+> Überprüfung nach der Grafikrunde. Entwurf: **D26**. **Haltepunkt:** gebaut wird
+> erst nach Noahs Spiel-Feedback; seine Befunde werden als T-M28-06+ ergänzt.
+
+### T-M28-01 · Die Kurve wird bei jeder Historienlänge lesbar
+- **Ziel:** Sichtprüfung 2026-09-08 — acht Tage Historie ergeben flache, oben
+  gedrängte Linien (Y-Skala ab 0, Punktestände im oberen Fünftel).
+- **Anforderungen:** R-UI-13 · **Entwurf:** D26.1 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/charts/LineChart.tsx`,
+  `apps/desktop/src/ui/Standings.tsx`
+- **Tests zuerst:** Skalengrenzen an bekannte Reihen gebunden — fällt gegen die 0-Basis.
+- **Fertig wenn:** Skala von min−Rand bis max+Rand, Endwert je Linie am rechten
+  Rand, unter drei Punkten der ehrliche Wartesatz.
+
+### T-M28-02 · Auch die Zielwahl quittiert sichtbar
+- **Ziel:** Debugging 2026-09-08 — die Quittung hängt am „Marsch befehlen"-Knopf,
+  der nach dem Bestätigen verschwindet; der Spieler sieht nichts.
+- **Anforderungen:** R-UI-05 · **Entwurf:** D26.2 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** der volle Zielwahl-Weg am gerenderten Baum — fällt heute.
+- **Fertig wenn:** die Quittung in der Armee-Statuszeile steht, gespeist aus
+  `pendingCommands`.
+
+### T-M28-03 · Frisches Bündel, AK-8 am echten Stand gemessen
+- **Ziel:** `worldwar.exe` ist Stand `75a0128`; die AK-8-Messung beschreibt `1c33ec7`.
+- **Anforderungen:** R-PKG-01, R-PKG-02 · **Entwurf:** D26.3 · **Abhängigkeiten:** keine
+- **Dateien:** `docs/reports/packaging.md`
+- **Tests zuerst:** keine — die Messung ist das Erzeugnis.
+- **Fertig wenn:** Bau bei unangefasster Quelle; AK-8 (starten, speichern,
+  schließen, neu starten, laden) am neuen Bündel; Stand-Stempel in `packaging.md`.
+
+### T-M28-04 · Die Debug-Ansicht spricht Namen
+- **Ziel:** Befund V2-12 — das opt-in-Debug sagt „p2" und „money".
+- **Anforderungen:** R-UI-07 · **Entwurf:** D26.4 · **Abhängigkeiten:** keine
+- **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/military.ts`,
+  `apps/desktop/src/ui/Dialogs.tsx`
+- **Tests zuerst:** ein Zieltext mit Namen gebunden.
+- **Fertig wenn:** Macht- und Rohstoffnamen aus derselben Quelle wie die übrige
+  Oberfläche; die Übersetzung passiert in der Anzeige, die KI bleibt englisch.
+
+### T-M28-05 · Die Wirtschaft sagt, wohin die Rohstoffe gehen
+- **Ziel:** v1-Befund 15, nie adressiert — Bau-, Aushebungs- und Marktkosten
+  erscheinen in keiner Übersicht; seit den Sparklines fällt der Bestand sichtbar,
+  ohne dass eine Spalte sagt warum.
+- **Anforderungen:** R-UI-05, R-UI-13 · **Entwurf:** D26.5 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/events.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** die Spalte an einen Tag mit bekannten Ausgaben gebunden.
+- **Fertig wenn:** ein Tagesabfluss „Ausgaben" steht neben dem Unterhalt, aus
+  denselben Zahlen wie der Tagesbericht.

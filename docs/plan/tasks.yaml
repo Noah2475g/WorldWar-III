@@ -59,6 +59,9 @@ milestones:
   - { id: M25, title: Die Zahlen werden Bilder }
   - { id: M26, title: Die Karte lebt }
   - { id: M27, title: Das Gefecht zeigt sich }
+  # LEVEL-UP 3 vom 2026-09-08 (docs/plan/LEVEL-UP-3.md): der Feinschliff nach dem
+  # Spielen - Ausfuehrung erst nach Noahs Feedback (Haltepunkt, siehe Plan).
+  - { id: M28, title: Der Feinschliff nach dem Spielen }
 
 tasks:
   - id: T-M0-01
@@ -1949,3 +1952,62 @@ tasks:
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/game/events.ts]
     tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts]
     dod: "Vorschlag D: der Kampfbericht wird ein Bild. Fertig, wenn der Protokolleintrag eines Gefechts einen aufklappbaren Koerper traegt (Muster Tagesbericht aus T-M24-01): je Seite ein Staerkebalken vorher-zu-nachher mit dem Verlust als zinnobernem Abschnitt, dazu die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre aus dem bestehenden Symbolsatz, fuer das Ohr eine Satzfassung (aria). Ein Test bindet Balkenlaengen und Zeichen an den Datensatz aus T-M27-01 und faellt gegen den heutigen Texteintrag"
+
+  # --- M28: Der Feinschliff nach dem Spielen (LEVEL-UP-3.md) ---
+  # HALTEPUNKT: gebaut wird erst nach Noahs Spiel-Feedback; seine Befunde werden
+  # als T-M28-06+ ergaenzt. Begruendung im Plan.
+
+  - id: T-M28-01
+    milestone: M28
+    title: Die Kurve wird bei jeder Historienlaenge lesbar
+    status: todo
+    deps: []
+    requirements: [R-UI-13]
+    design: [D-26]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx]
+    tests: [apps/desktop/src/ui/Standings.test.tsx]
+    dod: "Sichtpruefung 2026-09-08: acht Tage Historie ergeben flache, oben gedraengte Linien, weil die Y-Skala bei 0 beginnt und die Punktestaende das obere Fuenftel nutzen. Fertig, wenn die Skala von min minus Rand bis max plus Rand laeuft, jede Linie am rechten Rand ihren Endwert traegt, unter drei Punkten der ehrliche Wartesatz statt einer Pseudokurve steht, und ein Test die Skalengrenzen an bekannte Reihen bindet (faellt gegen die 0-Basis)"
+
+  - id: T-M28-02
+    milestone: M28
+    title: Auch die Zielwahl quittiert sichtbar
+    status: todo
+    deps: []
+    requirements: [R-UI-05]
+    design: [D-26]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Debugging 2026-09-08: die Quittung aus T-M22-05 haengt per actionId am Marsch-befehlen-Knopf, der nach dem Bestaetigen verschwindet (setTargeting null) - der Spieler sieht nach dem Klick nichts. Fertig, wenn die Quittung in der Armee-Statuszeile erscheint (Marsch befohlen - wirkt beim Weiterlaufen), gespeist aus derselben pendingCommands-Sammlung, und ein Test den VOLLEN Zielwahl-Weg am gerenderten Baum faehrt und die Quittung nach dem Bestaetigen sieht - er faellt gegen den heutigen Stand"
+
+  - id: T-M28-03
+    milestone: M28
+    title: Frisches Buendel, AK-8 am echten Stand gemessen
+    status: todo
+    deps: []
+    requirements: [R-PKG-01, R-PKG-02]
+    design: [D-26]
+    files: [docs/reports/packaging.md]
+    tests: []
+    dod: "worldwar.exe ist gegen 75a0128 gebaut - seither StrictMode-Fix und die ganze Grafikrunde; die AK-8-Messung beschreibt sogar noch 1c33ec7. Fertig, wenn der Tauri-Bau bei unangefasster Quelle gegen den Endstand laeuft (waehrend des Baus keine Quelldatei anfassen - Falle 6) und die AK-8-Messung am NEUEN Buendel wiederholt ist: starten, speichern, schliessen, neu starten, laden; packaging.md traegt den Stand-Stempel"
+
+  - id: T-M28-04
+    milestone: M28
+    title: Die Debug-Ansicht spricht Namen
+    status: todo
+    deps: []
+    requirements: [R-UI-07]
+    design: [D-26]
+    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Befund V2-12: das opt-in-Debug sagt p2 und money statt Mexiko und Geld. Fertig, wenn die Ziel-Texte Machtnamen und Rohstoffnamen aus derselben Quelle wie die uebrige Oberflaeche tragen (die Uebersetzung passiert in der Anzeige, nicht im KI-Paket - die KI bleibt englisch) und ein Test einen Zieltext mit Namen bindet"
+
+  - id: T-M28-05
+    milestone: M28
+    title: Die Wirtschaft sagt, wohin die Rohstoffe gehen
+    status: todo
+    deps: []
+    requirements: [R-UI-05, R-UI-13]
+    design: [D-26]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "v1-Befund 15, nie adressiert: die Spalte Unterhalt fuehrt nur den Armeeunterhalt; Bau-, Aushebungs- und Marktkosten erscheinen in keiner Uebersicht - seit den Sparklines faellt der Bestand sichtbar, ohne dass eine Spalte sagt warum. Fertig, wenn die Tabelle einen Tagesabfluss Ausgaben fuehrt (Bau + Aushebung + Markt des Tages, aus denselben Zahlen wie der Tagesbericht), die Bilanz wieder zur sichtbaren Bestandskurve passt und ein Test die Spalte an einen Tag mit bekannten Ausgaben bindet"
