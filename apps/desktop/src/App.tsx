@@ -1410,6 +1410,8 @@ export function App(props: AppProps) {
           <EconomyPanel view={view} timeline={timeline} />
           <DebugPanel
             enabled={ui.settings.debug}
+            // Auch das Debug spricht Namen (T-M28-04, V2-12): die App kennt sie.
+            nameOf={nameOf}
             info={{ tick: state.tick, hash: debugHash, aiGoals: trace.goals, commands: trace.commands }}
           />
         </aside>

@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NewGameDialog } from './Dialogs.tsx'
+import { DebugPanel, NewGameDialog, localizeDebugText } from './Dialogs.tsx'
 import { DEFAULT_NEW_GAME } from '../game/newGame.ts'
 
 /**
@@ -111,5 +111,53 @@ describe('R-GAME-02/AK1 Der Startdialog erklaert die Siegbedingung', () => {
     const feld = screen.getByDisplayValue('Punkte')
     fireEvent.change(feld, { target: { value: 'conquest' } })
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ victory: 'conquest' }))
+  })
+})
+
+/**
+ * Die Debug-Ansicht spricht Namen (T-M28-04, R-UI-07, Befund V2-12, D26.4).
+ *
+ * Das opt-in-Debug sagte „p2" und „money" — die KI bleibt englisch und kernnah, die
+ * Übersetzung passiert beim Rendern: Spieler-Kennungen werden per Wortgrenze durch
+ * Machtnamen ersetzt, Rohstoffschlüssel durch die deutschen Namen aus de.ts.
+ */
+describe('R-UI-07 Die Debug-Ansicht spricht Namen', () => {
+  const nameOf = (id: string): string => (id === 'p2' ? 'Mexiko' : id === 'p3' ? 'Kanada' : id)
+
+  it('ersetzt Spieler-Kennungen und Rohstoffschlüssel in freier Prosa', () => {
+    expect(localizeDebugText('Tauscht 500 money gegen iron', nameOf)).toBe('Tauscht 500 Geld gegen Eisen')
+    expect(localizeDebugText('Mangel an oil decken', nameOf)).toBe('Mangel an Öl decken')
+    expect(localizeDebugText('Greift p3 mit p2 an', nameOf)).toBe('Greift Kanada mit Mexiko an')
+    // Wortgrenzen: „p2" in einer Provinzkennung wie „p22" bleibt, was es ist.
+    expect(localizeDebugText('p22 bleibt stehen', nameOf)).toBe('p22 bleibt stehen')
+  })
+
+  it('bindet einen Zieltext mit Namen an den gerenderten Baum', () => {
+    render(
+      <DebugPanel
+        enabled
+        nameOf={nameOf}
+        info={{
+          tick: 12,
+          hash: 'abcdef0123456789',
+          aiGoals: [
+            {
+              player: 'p2',
+              goal: 'Tauscht 500 money gegen iron — Mangel an iron decken',
+              utility: 320,
+              alternatives: ['nichts tauschen'],
+            },
+          ],
+          commands: [],
+        }}
+      />,
+    )
+
+    const panel = screen.getByRole('region', { name: 'Debug' })
+    expect(panel.textContent).toContain('Mexiko')
+    expect(panel.textContent).toContain('Geld')
+    expect(panel.textContent).toContain('Eisen')
+    expect(panel.textContent).not.toContain('p2')
+    expect(panel.textContent).not.toContain('money')
   })
 })

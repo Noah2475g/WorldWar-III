@@ -3850,8 +3850,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Ziel:** Befund V2-12 — das opt-in-Debug sagt „p2" und „money".
 - **Anforderungen:** R-UI-07 · **Entwurf:** D26.4 · **Abhängigkeiten:** keine
 - **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/military.ts`,
-  `apps/desktop/src/ui/Dialogs.tsx`
-- **Tests zuerst:** ein Zieltext mit Namen gebunden.
+  `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** ein Zieltext mit Namen gebunden (`Dialogs.test.tsx`); der
+  Umlaut-Wächter deckt die KI-Debug-Strings mit ab (`test/guards/text-keys.test.ts`).
 - **Fertig wenn:** Macht- und Rohstoffnamen aus derselben Quelle wie die übrige
   Oberfläche; die Übersetzung passiert in der Anzeige, die KI bleibt englisch.
 

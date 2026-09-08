@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { de } from '../../apps/desktop/src/i18n/de'
@@ -148,6 +148,22 @@ describe('R-UI-07 Keine Umlaut-Ersatzschrift in Spielertexten', () => {
       ersatzWoerter(literal),
     )
     expect(funde, `Ersatzschrift in actions.ts:\n${funde.join('\n')}`).toEqual([])
+  })
+
+  it('findet in den Debug-Strings der KI keine Ersatzschrift (T-M28-04, D26.4)', () => {
+    // Die Zieltexte der KI erreichen den Spieler ueber die Debug-Ansicht (V2-12) —
+    // seit T-M28-04 mit Machtnamen statt Kennungen. Damit sind sie Spielertexte, und
+    // fuer Spielertexte gilt die Wortregel: keine Ersatzschrift.
+    const dir = join(ROOT, 'packages/ai/src')
+    const dateien = readdirSync(dir).filter((datei) => datei.endsWith('.ts') && !datei.includes('.test.'))
+    expect(dateien.length, 'keine KI-Quelldateien gefunden — der Waechter bewacht das Nichts').toBeGreaterThan(5)
+
+    const funde = dateien.flatMap((datei) =>
+      literaleIn(join(dir, datei)).flatMap((literal) =>
+        ersatzWoerter(literal).map((wort) => `${datei}: ${wort}`),
+      ),
+    )
+    expect(funde, `Ersatzschrift in KI-Debug-Strings:\n${funde.join('\n')}`).toEqual([])
   })
 
   it('faellt gegen die Tooltips, wie sie vor T-M23-01 standen', () => {

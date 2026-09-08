@@ -1994,12 +1994,12 @@ tasks:
   - id: T-M28-04
     milestone: M28
     title: Die Debug-Ansicht spricht Namen
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-07]
     design: [D-26]
-    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, apps/desktop/src/ui/Dialogs.tsx]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, test/guards/text-keys.test.ts]
     dod: "Befund V2-12: das opt-in-Debug sagt p2 und money statt Mexiko und Geld. Fertig, wenn die Ziel-Texte Machtnamen und Rohstoffnamen aus derselben Quelle wie die uebrige Oberflaeche tragen (die Uebersetzung passiert in der Anzeige, nicht im KI-Paket - die KI bleibt englisch) und ein Test einen Zieltext mit Namen bindet"
 
   - id: T-M28-05
