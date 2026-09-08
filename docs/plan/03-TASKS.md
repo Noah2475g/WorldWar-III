@@ -3841,10 +3841,21 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ### T-M28-03 · Frisches Bündel, AK-8 am echten Stand gemessen
 - **Ziel:** `worldwar.exe` ist Stand `75a0128`; die AK-8-Messung beschreibt `1c33ec7`.
 - **Anforderungen:** R-PKG-01, R-PKG-02 · **Entwurf:** D26.3 · **Abhängigkeiten:** keine
-- **Dateien:** `docs/reports/packaging.md`
-- **Tests zuerst:** keine — die Messung ist das Erzeugnis.
+- **Dateien:** `docs/reports/packaging.md`, `apps/desktop/src-tauri/src/main.rs`,
+  `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/capabilities/local-only.json`,
+  `apps/desktop/src/storage/TauriStorage.ts`, `apps/desktop/package.json`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:** die Vertragsreihe des Ports gegen die Nachbildung der neuen
+  Hüllen-Kommandos (`apps/desktop/src/storage/TauriStorage.test.ts`).
 - **Fertig wenn:** Bau bei unangefasster Quelle; AK-8 (starten, speichern,
   schließen, neu starten, laden) am neuen Bündel; Stand-Stempel in `packaging.md`.
+- **So kam es (2026-09-08):** Die Messung **brach** AK-8 am frischen Bündel — Schreiben
+  ging, Wiederlesen war „forbidden path". Ursache (Falsifikationskette in PROBLEME.md):
+  die Scope-Prüfung von `tauri-plugin-fs` kanonisiert existierende Pfade zur
+  `\\?\C:\…`-Form, auf die kein Scope-Muster passt. Der Speicherweg läuft jetzt über
+  **sechs eigene, engere Kommandos der Hülle** (Dateiname statt Pfad, fest auf
+  `$APPDATA/saves`); das fs-Plugin samt Berechtigungen ist entfernt. Danach alle
+  sieben Schritte grün, erstmals einschließlich „Weiterspielen (Tag 1)" am Programm.
 
 ### T-M28-04 · Die Debug-Ansicht spricht Namen
 - **Ziel:** Befund V2-12 — das opt-in-Debug sagt „p2" und „money".

@@ -1689,3 +1689,42 @@ StrictMode wie der Einstiegspunkt**, sonst prüft die Testumgebung eine andere A
    Funktional folgenlos (Schreiben und Lesen sind symmetrisch, der M25-Zeitreihen-Test
    stolperte deshalb schon über den Slotnamen), aber unsauber. Kleiner Kandidat für
    T-M28-06+.
+
+---
+
+## 2026-09-08 · T-M28-03 · AK-8 war am neuen Bündel gebrochen — die Scope-Prüfung des fs-Plugins kanonisiert sich selbst ins Aus
+
+**Symptom:** Das frische Bündel schrieb Spielstände („Gespeichert.", Datei auf der
+Platte) — aber jede Anzeige blieb „leer", kein Laden, kein Weiterspielen-Knopf. Im
+Browserbau (IndexedDB) war derselbe Code gesund.
+
+**Falsifikationskette** (über CDP am laufenden Programm, jede Hypothese gemessen):
+
+| # | Hypothese | Messung | Ergebnis |
+|---|---|---|---|
+| 1 | Separator-Mix (`saves/stand-1.json` hinter `\`-Pfad) | `exists('saves')` ganz ohne Separator ebenso „forbidden" | widerlegt |
+| 2 | Crate-/npm-Versionen seit der alten Messung gewandert | Cargo.lock und pnpm-lock.yaml unverändert | widerlegt |
+| 3 | Fehlender expliziter `fs:scope` | ergänzt, neu gebaut → weiter „forbidden" (Capability nachweislich einkompiliert) | widerlegt |
+| 4 | Laufzeit-Freigabe fehlt | `fs_scope().allow_directory` beider Schreibweisen → `Ok`, und `is_allowed` im selben Prozess direkt danach `false` (Diagnosedatei aus dem Setup-Hook) | widerlegt |
+| 5 | `is_allowed` kanonisiert existierende Pfade (`\?\C:\…`), kein Muster passt | **Geisterdatei: `exists` → sauber `false`. Existierende Datei, gleicher Pfad: „forbidden"** | **bestätigt** |
+
+Damit erklärt sich auch die Asymmetrie, die alles verschleierte: **Schreiben neuer
+Dateien ging immer** (nichts zu kanonisieren), das Wiederlesen nie.
+
+**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs eigene, engere
+Kommandos** (`saves_list` … `saves_exists`, `src-tauri/src/main.rs`): Dateiname statt
+Pfad (Separatoren/`..` werden verweigert), fest auf `$APPDATA/saves`.
+`tauri-plugin-fs` samt Berechtigungen entfernt; `TauriStorage` ruft `invoke`, die
+Vertragsreihe läuft gegen eine Nachbildung der Kommandos mit denselben Regeln.
+AK-8 danach vollständig neu gemessen: `docs/reports/packaging.md`.
+
+**Zwei ehrliche Ränder:**
+1. Die **Messung vom 2026-09-07** (gegen `1c33ec7`) meldete Schritt 6 als bestanden —
+   mit identischem Code, identischen Rechten, identischen Abhängigkeiten heute nicht
+   reproduzierbar. Sie bleibt als nicht nachvollziehbar markiert.
+2. **Warum kein Test es sah:** die Vertragsreihe prüft den Port gegen eine
+   Nachbildung — die Scope-Prüfung der Plattform kommt darin nicht vor und ist mit
+   jsdom auch nicht erreichbar. Die Regel daraus: **was eine Plattform-Berechtigung
+   durchsetzt, gilt erst nach einer Messung am gebauten Erzeugnis** — genau die
+   AK-8-Messung, die diesen Fehler gefunden hat. Sie gehört nach jedem Umbau am
+   Speicherweg wiederholt.

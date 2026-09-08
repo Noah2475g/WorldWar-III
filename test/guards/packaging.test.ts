@@ -43,9 +43,13 @@ describe('R-FREE-04 Die Verpackung kann nicht ins Netz', () => {
   })
 
   it('erlaubt genau die Berechtigungen, die das Spiel braucht', () => {
-    // Saving to disk and a file dialogue. Nothing else.
-    expect(capability.permissions.some((p) => p.startsWith('fs:'))).toBe(true)
-    expect(capability.permissions.some((p) => p.startsWith('dialog:'))).toBe(true)
+    // A file dialogue and the window basics. Nothing else — since T-M28-03 the save
+    // files go through the shell's own narrow commands, so there is no fs plugin and
+    // no fs permission left to grant. The plugin's scope check canonicalised existing
+    // paths into the Windows `\\?\` form no pattern ever matched, which silently broke
+    // every read-back in the packaged app (PROBLEME.md, 2026-09-08).
+    expect(capability.permissions.some((p) => typeof p === 'string' && p.startsWith('fs:'))).toBe(false)
+    expect(capability.permissions.some((p) => typeof p === 'string' && p.startsWith('dialog:'))).toBe(true)
     expect(capability.description).toContain('R-FREE-04')
   })
 
@@ -57,13 +61,22 @@ describe('R-FREE-04 Die Verpackung kann nicht ins Netz', () => {
     }
   })
 
-  it('hat eine Rust-Schale ohne Spiellogik', () => {
-    // The game is the bundle; this only supplies a window and a place to save.
+  it('hat eine Rust-Schale ohne Spiellogik und ohne Netz', () => {
+    // The game is the bundle; this only supplies a window and a place to save. Since
+    // T-M28-03 "a place to save" means six own commands over $APPDATA/saves — file
+    // I/O, no game rules. The old line-count cap made way for sharper assertions:
+    // no networking, no path accepted from the caller (names are refused, not
+    // sanitised, when they carry separators), and every command pinned to saves_dir.
     const main = readFileSync(join(TAURI, 'src/main.rs'), 'utf8')
 
     expect(main).toContain('tauri::Builder')
-    expect(main).not.toMatch(/reqwest|hyper|ureq|TcpStream/)
-    expect(main.split('\n').length).toBeLessThan(30)
+    expect(main).not.toMatch(/reqwest|hyper|ureq|TcpStream|UdpSocket/)
+    // The whole write/read surface goes through the one checked path builder.
+    expect(main).toContain('fn checked_name')
+    expect(main).toContain("name.contains(['/', '\\\\', ':'])")
+    expect(main).toContain('fn saves_dir')
+    // No command takes a directory or a path — only a name and, for writes, data.
+    expect(main).not.toMatch(/fn saves_\w+\([^)]*path/)
   })
 
   it('bringt die Karte mit, statt sie zu laden', () => {

@@ -1,77 +1,78 @@
 # AK-8 — der Spielstand überlebt den Programmneustart
 
-Gemessen am **2026-09-07** gegen `1c33ec7` (T-M16-05), am gebauten Programm und nicht im
-Browser. Der Bericht gilt für genau diesen Stand.
+Gemessen am **2026-09-08** gegen den M28-Stand (T-M28-03), am gebauten Programm und
+nicht im Browser. Der Bericht gilt für genau diesen Stand.
 
 > **Warum diese Datei existiert:** AK-8 stand seit dem 2026-09-05 in C-02 und hatte bis
 > zum 2026-09-06 keinen Ort, an dem es geprüft wird. Eine Zusage ohne Messung ist genau
-> die Fehlerklasse, die dieses Projekt schon zweimal Sitzungen gekostet hat. Hier steht,
-> was tatsächlich gelaufen ist — nicht, was gelten soll.
+> die Fehlerklasse, die dieses Projekt schon mehrfach Sitzungen gekostet hat. Hier
+> steht, was tatsächlich gelaufen ist — nicht, was gelten soll.
 
 ## Das Erzeugnis
 
 | | |
 |---|---|
-| `worldwar.exe` | 7 864 320 Bytes (7,50 MiB) |
-| `WorldWar_0.1.0_x64_en-US.msi` | 2 945 024 Bytes |
-| `WorldWar_0.1.0_x64-setup.exe` | 2 207 714 Bytes (NSIS) |
-| Bauzeit | 3 min 27 s (`release`, LTO, `opt-level = "s"`) |
-| Bauergebnis | Exit 0 |
+| `worldwar.exe` | 7 933 952 Bytes (7,57 MiB) |
+| `WorldWar_0.1.0_x64_en-US.msi` + NSIS-Setup | unter `src-tauri/target/release/bundle/` |
+| Bau | `release`, LTO, Exit 0, Quelle während des Baus unangefasst |
 
-## Der Ablauf, Schritt für Schritt
+## Der Ablauf, Schritt für Schritt (Ausgangspunkt: `saves/` leer)
 
 | # | Handlung | Beobachtung |
 |---|---|---|
-| 1 | `worldwar.exe` gestartet | Fenster „WorldWar" da, Prozess antwortet |
-| 2 | Partie begonnen (Tastatur) | Weltkarte, Vereinigte Staaten, Tag 1 · 00:00 |
-| 3 | Strg+S → „Speichern" auf Stand 1 | **`%APPDATA%/de.noahhaumersen.worldwar/saves/stand-1.json`, 96 198 Bytes** |
-| 4 | Programm beendet | Prozess weg, Datei bleibt |
-| 5 | `worldwar.exe` erneut gestartet | Startdialog, keine laufende Partie |
-| 6 | „Spielstände" im Startdialog | **„Stand 1 — Tag 1"** in der Liste; alle anderen „leer" und ausgegraut |
-| 7 | „Laden" auf Stand 1 | Partie läuft wieder, Tag 1 · 00:00, Protokoll: „Die Partie beginnt." |
+| 1 | `worldwar.exe` gestartet | Startdialog mit Titelzeile (M22), **kein** „Weiterspielen" — richtig, es gibt keinen Stand |
+| 2 | Partie begonnen | Weltkarte, Vereinigte Staaten, Tag 1 · 00:00; Führung „Schritt 1 von 10" |
+| 3 | Strg+S → „Speichern" auf Stand 1 | „Gespeichert." **und die Zeile wird sofort „Stand 1 — Tag 1"**, Laden aktiv. Auf der Platte: `stand-1.json` (96 216 B) **und `zeitreihe.stand-1.json`** — die M25-Zeitreihe wandert mit |
+| 4 | Programm beendet | Prozess weg, Dateien bleiben |
+| 5 | `worldwar.exe` erneut gestartet | Startdialog zeigt als ersten Knopf **„Weiterspielen (Tag 1)"** (T-M22-04, erstmals am Programm gemessen) |
+| 6 | „Spielstände" geprüft | „Stand 1 — Tag 1" in der Liste, Laden aktiv |
+| 7 | „Weiterspielen (Tag 1)" geklickt | Partie läuft: Tag 1 · 00:00, eigene Provinzen, Wirtschaft identisch, Protokoll „Die Partie beginnt." |
 
-**AK-8 ist erfüllt.** Der Ordner war vor Schritt 1 nicht vorhanden — der Ausgangspunkt
-war sauber, die Datei ist in diesem Lauf entstanden.
+**AK-8 ist erfüllt** — einschließlich des neuen Weiterspielen-Wegs.
+
+## Der Befund, der diese Messung zu einer Reparatur machte
+
+Der **erste** Lauf des Tages (Bündel gegen `36b63a8`, noch mit `tauri-plugin-fs`)
+**brach AK-8**: Schritt 3 schrieb die Datei und meldete „Gespeichert." — aber die
+Zeile blieb „Stand 1 — leer", nach dem Neustart ebenso, kein Weiterspielen-Knopf.
+
+Ursache, per Falsifikationskette am laufenden Programm über CDP gemessen (vollständig
+in `PROBLEME.md`, 2026-09-08): Die Scope-Prüfung von `tauri-plugin-fs` kanonisiert
+Pfade, **die existieren** — unter Windows ergibt das die `\\?\C:\…`-Schreibweise, und
+kein Scope-Muster passt je auf sie. Deshalb ging das **Schreiben neuer** Dateien
+(nichts zu kanonisieren) und das **Wiederlesen** war „forbidden path" — trotz
+`fs:allow-appdata-read-recursive`, explizitem `fs:scope` und Laufzeit-Freigabe beider
+Schreibweisen (`is_allowed` blieb `false` unmittelbar nach `allow_directory == Ok`).
+Der Beweis-Moment: `exists` auf eine **Geisterdatei** lieferte sauber `false`,
+derselbe Pfad **mit existierender Datei** „forbidden".
+
+**Die Reparatur:** Das Spiel spricht nicht mehr mit `tauri-plugin-fs`, sondern mit
+**sechs eigenen, engen Kommandos der Hülle** (`saves_list` … `saves_exists` in
+`src-tauri/src/main.rs`): sie nehmen einen Datei**namen** an, nie einen Pfad
+(Separatoren und `..` werden verweigert, nicht bereinigt), und berühren
+ausschließlich `$APPDATA/saves`. Das fs-Plugin und seine Berechtigungen sind
+entfernt — weniger Oberfläche als vorher.
+
+> **Zur Messung vom 2026-09-07 (gegen `1c33ec7`):** sie berichtete Schritt 6 als
+> bestanden. Mit identischem Storage-Code, identischen Berechtigungen und identischen
+> Crate-Versionen (Cargo.lock/pnpm-lock unverändert) ist das heute **nicht
+> reproduzierbar** — derselbe Schritt scheiterte vor der Reparatur zuverlässig. Die
+> alte Messung bleibt als nicht nachvollziehbar markiert; maßgeblich ist dieser Lauf.
 
 ## Was dieser Lauf nebenbei belegt
 
-- **Der Datei-Port arbeitet im Programm** (T-M16-04), nicht nur gegen eine Nachbildung im
-  Test: die Tauri-Berechtigungen `fs:allow-appdata-read-recursive` und
-  `…-write-recursive` greifen, das Plugin ist registriert, und der Ordner `saves/` wird
-  beim ersten Schreiben angelegt.
-- **Schritt 6 ist zugleich der Nachweis für T-M12-07** (Playtest-Befund 26a). Genau das
-  war nicht möglich: die Liste öffnete nur Strg+S, und ohne laufende Partie wirkte die
-  Tastenkombination nicht — wer das Fenster geschlossen hatte, kam an seinen Spielstand
-  nicht mehr heran. Der Weg über den Startdialog ist der, den die Reparatur gebaut hat.
-- Im selben Dialog steht **kein** „Speichern"-Knopf, weil es ohne laufende Partie nichts
-  zu speichern gibt.
-- Auf dem Bildschirm aus Schritt 2 sind zwei weitere Reparaturen zu sehen: der Knopf
-  „Spielstände" in der Kopfleiste und die Wirtschaftsspalten „Unterhalt" und „In Auftrag"
-  (T-M12-10 a/b).
-
-## Zweimal gemessen, und warum
-
-Der erste Lauf (2026-09-07, gegen `c7dd2c1`) hat AK-8 ebenso erfüllt, mit demselben
-Ergebnis in allen sieben Schritten. Er wird hier trotzdem **nicht** als die Messung
-geführt, weil sein Erzeugnis den damals aktuellen Code nicht enthielt: `Dialogs.tsx`
-wurde um 01:59 geändert, das Bündel war um 01:56 gebaut. Nachgewiesen am Bündel selbst —
-es trug die alte Fokusliste, nicht die aus T-M16-07.
-
-Für AK-8 hätte das nichts geändert; der Fokusfang hat mit Spielständen nichts zu tun.
-Aber ein Bericht, der auf ein Erzeugnis zeigt, in dem der beschriebene Code nicht
-steckt, ist genau die Falschaussage, die am 2026-09-06 schon einmal Zeit gekostet hat —
-`acceptance.md` meldete damals einen Stand von **vor** der Reparatur, während die Datei
-daneben das Gegenteil auswies. Also wurde neu gebaut und neu gemessen.
-
-Der zweite Lauf ist auch der bessere Beleg. Beim ersten sprang die Tastatur im
-Startdialog nicht dorthin, wo sie sollte — mit dem Fokusfang tut sie es, und auf dem
-Bild aus Schritt 6 steht der Fokusring auf dem Schließen-Kreuz. Das ist R-UI-15/AK1 am
-gebauten Programm beobachtet, nebenbei und ungeplant.
+- Der neue Startdialog (Titel, Weiterspielen) und die Zehn-Schritte-Führung (M24)
+  laufen im gebauten Programm.
+- Die Zeitreihe (M25) wandert je Slot als Nachbardatei mit.
+- Bekannter Kleinbefund bleibt: Autosave-Dateien heißen `autosave-N.json.json`
+  (der Kern-Slotname trägt `.json`, die Hülle hängt ein zweites an) — funktional
+  folgenlos, da Schreiben und Lesen symmetrisch sind; notiert in PROBLEME.md.
 
 ## Grenzen dieser Messung
 
-- Sie lief auf **einem** Rechner (Windows 11), aus dem gebauten Ordner heraus
-  — **nicht aus einer Installation** über MSI oder Setup. Ob der Installationspfad
-  dieselben Rechte hat, ist damit nicht gemessen.
-- Die Bedienung geschah über `SendKeys` und Mausereignisse, nicht durch einen Menschen.
-  Was ein Mensch dabei empfindet, steht in AK-7 und ist davon unberührt.
+- Ein Rechner (Windows 11), aus dem gebauten Ordner — nicht aus einer Installation
+  über MSI/Setup.
+- Bedienung über simulierte Eingaben mit Screenshot-Kontrolle vor jedem Klick; was
+  ein Mensch dabei empfindet, steht in AK-7 und ist davon unberührt.
+- Die alten Messdaten von gestern liegen geparkt in
+  `%APPDATA%/de.noahhaumersen.worldwar/saves.geparkt-2026-09-08` (nichts gelöscht).

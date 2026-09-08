@@ -1983,19 +1983,18 @@ tasks:
   - id: T-M28-03
     milestone: M28
     title: Frisches Buendel, AK-8 am echten Stand gemessen
-    status: in_progress
-    # 2026-09-08: Buendel FRISCH gebaut gegen 36b63a8 (worldwar.exe 7,94 MB, MSI, NSIS,
-    # 4m05s, Exit 0, Quelle waehrend des Baus unangefasst). Die AK-8-MESSUNG steht aus:
-    # sie braucht simulierte Eingaben im Vordergrund, und Noahs Bildschirm war von einem
-    # laufenden Vollbildspiel belegt - Eingaben haetten SEIN Spiel getroffen. Abbruch war
-    # die einzig richtige Wahl. Ausgangspunkt ist vorbereitet: der alte Messstand liegt
-    # in %APPDATA%/de.noahhaumersen.worldwar/saves.geparkt-2026-09-08 (geparkt, nicht
-    # geloescht), saves/ ist leer. Nachholen, sobald der Bildschirm frei ist.
+    status: done
+    # 2026-09-08: Die Messung am frischen Buendel BRACH AK-8 (Schreiben ging, Wiederlesen
+    # "forbidden path") und wurde zur Reparatur: tauri-plugin-fs kanonisiert existierende
+    # Pfade in die \\?\-Form, auf die kein Scope-Muster passt (Falsifikationskette in
+    # PROBLEME.md). Der Speicherweg laeuft jetzt ueber sechs eigene, engere Kommandos der
+    # Huelle; das fs-Plugin samt Berechtigungen ist entfernt. AK-8 danach vollstaendig
+    # neu gemessen, inkl. Weiterspielen-Knopf am Programm: docs/reports/packaging.md.
     deps: []
     requirements: [R-PKG-01, R-PKG-02]
     design: [D-26]
-    files: [docs/reports/packaging.md]
-    tests: []
+    files: [docs/reports/packaging.md, apps/desktop/src-tauri/src/main.rs, apps/desktop/src-tauri/Cargo.toml, apps/desktop/src-tauri/capabilities/local-only.json, apps/desktop/src/storage/TauriStorage.ts, apps/desktop/package.json, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/storage/TauriStorage.test.ts]
     dod: "worldwar.exe ist gegen 75a0128 gebaut - seither StrictMode-Fix und die ganze Grafikrunde; die AK-8-Messung beschreibt sogar noch 1c33ec7. Fertig, wenn der Tauri-Bau bei unangefasster Quelle gegen den Endstand laeuft (waehrend des Baus keine Quelldatei anfassen - Falle 6) und die AK-8-Messung am NEUEN Buendel wiederholt ist: starten, speichern, schliessen, neu starten, laden; packaging.md traegt den Stand-Stempel"
 
   - id: T-M28-04
