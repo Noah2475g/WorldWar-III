@@ -1536,6 +1536,10 @@ im Krieg. Der schnellste Eröffnungszug ist damit der **Überraschungsangriff**,
 kostet und automatisch Krieg auslöst. Ob das so gemeint ist, ist eine Balancing-Frage für
 Noah — sie steht hier, damit sie nicht verloren geht.
 
+> **Entschieden am 2026-09-07 (T-M24-03):** gemessen über 0,35/0,5/0,7 und auf **0,5**
+> gesetzt — Kriegsmalus halbiert statt gestrichen. Zahlen und Begründung in
+> `DECISIONS.md` (2026-09-07 · T-M24-03), Messwerte in `docs/reports/warmarch.json`.
+
 ---
 
 ## 2026-09-07 · T-M19-04 · „Südostaustralien" trägt seinen Namen weiterhin nicht
@@ -1635,3 +1639,92 @@ schlechter als ohne ihn.
 
 **Status: bewusst offen, dokumentiert.** Die eine bekannte Stelle ist genannt; wer den
 Bereich ausweitet, weiß, was ihn erwartet.
+
+---
+
+## 2026-09-08 · Sichtprüfung nach M25–M27 · Ein Marschbefehl verschwand spurlos — der setState-Updater war unrein
+
+**Symptom (nur im echten Programm, kein Test sah es):** Armee wählen, Ziel wählen,
+„Marsch befehlen" — keine Ablehnung, keine Quittung, kein Protokolleintrag, kein Marsch,
+auch nach dem Vorspulen nicht. Konsole leer.
+
+**Ursache:** `fastForwardRun` (App.tsx) rechnete die Simulation **im
+setState-Updater** und mutierte dabei Laufvariablen (`playerCommands = []`,
+`ticksRun +=`). Die echte Anwendung rendert in `<StrictMode>` (main.tsx), und React
+ruft Updater dort **doppelt**: der erste Lauf verbrauchte die gesammelten Befehle
+(T-M22-05) und sein Ergebnis wurde verworfen; der zweite — dessen Ergebnis zählt —
+rechnete ohne sie. Derselbe Mechanismus verdoppelte `ticksRun`: die Stoppmeldung sagte
+seit M21 konstant „Angehalten nach 2 Tagen", wenn ein Tag übersprungen wurde — im
+Playtest V2 notiert, für einen Textfehler gehalten, tatsächlich dieselbe Wurzel.
+
+**Warum kein Test biss:** alle App-Tests rendern `<App/>` **ohne** StrictMode — die
+Testumgebung war freundlicher als die Anwendung. Der neue Test rendert wie main.tsx
+(`App.test.tsx`, „verliert gesammelte Befehle nicht, wenn React den Updater doppelt
+ruft") und fiel gegen den alten Stand mit exakt dem Playtest-Symptom.
+
+**Reparatur:** Die Rechnung verlässt den Updater. `stateRef` (synchron gepflegter
+Spiegel) liefert den Ausgangszustand, `chunk` reicht den Zustand explizit weiter,
+`setState` setzt nur noch Ergebnisse. `step()` gleich mitgezogen (dort war der
+Doppellauf ergebnisgleich, aber `noteTrace` feuerte zweimal) — danach hat App.tsx
+keinen rechnenden Updater mehr.
+
+**Regel für die Nachwelt:** Ein setState-Updater ist eine **pure Funktion** — wer darin
+rechnet, was Seiteneffekte hat oder Laufvariablen mutiert, baut einen Fehler, den nur
+die echte Anwendung zeigt. Und: mindestens ein Test je App rendert **in demselben
+StrictMode wie der Einstiegspunkt**, sonst prüft die Testumgebung eine andere Anwendung.
+
+---
+
+## 2026-09-08 · T-M28-03 · Zwei Randnotizen von der Bündel-Messung
+
+1. **Die Messung musste abbrechen, weil der Bildschirm besetzt war.** Die AK-8-Messung
+   simuliert Eingaben im Vordergrund — und der Kontroll-Screenshot zeigte ein fremdes
+   Vollbildspiel (Noah spielte gerade). Simulierte Klicks wären in **sein** Spiel
+   gegangen; der Abbruch war die einzig richtige Wahl. Regel für die Nachwelt: **vor
+   simulierten Eingaben immer erst ein Screenshot, und wenn darauf nicht das eigene
+   Zielfenster zu sehen ist, keine einzige Taste senden.** Das Bündel selbst ist frisch
+   gebaut (36b63a8); nur die Messung wartet auf einen freien Bildschirm.
+2. **`autosave-0.json.json`** — die Spielstände des Datei-Ports tragen eine
+   Doppelendung: der Slotname enthält bereits `.json`, der Port hängt ein zweites an.
+   Funktional folgenlos (Schreiben und Lesen sind symmetrisch, der M25-Zeitreihen-Test
+   stolperte deshalb schon über den Slotnamen), aber unsauber. Kleiner Kandidat für
+   T-M28-06+.
+
+---
+
+## 2026-09-08 · T-M28-03 · AK-8 war am neuen Bündel gebrochen — die Scope-Prüfung des fs-Plugins kanonisiert sich selbst ins Aus
+
+**Symptom:** Das frische Bündel schrieb Spielstände („Gespeichert.", Datei auf der
+Platte) — aber jede Anzeige blieb „leer", kein Laden, kein Weiterspielen-Knopf. Im
+Browserbau (IndexedDB) war derselbe Code gesund.
+
+**Falsifikationskette** (über CDP am laufenden Programm, jede Hypothese gemessen):
+
+| # | Hypothese | Messung | Ergebnis |
+|---|---|---|---|
+| 1 | Separator-Mix (`saves/stand-1.json` hinter `\`-Pfad) | `exists('saves')` ganz ohne Separator ebenso „forbidden" | widerlegt |
+| 2 | Crate-/npm-Versionen seit der alten Messung gewandert | Cargo.lock und pnpm-lock.yaml unverändert | widerlegt |
+| 3 | Fehlender expliziter `fs:scope` | ergänzt, neu gebaut → weiter „forbidden" (Capability nachweislich einkompiliert) | widerlegt |
+| 4 | Laufzeit-Freigabe fehlt | `fs_scope().allow_directory` beider Schreibweisen → `Ok`, und `is_allowed` im selben Prozess direkt danach `false` (Diagnosedatei aus dem Setup-Hook) | widerlegt |
+| 5 | `is_allowed` kanonisiert existierende Pfade (`\?\C:\…`), kein Muster passt | **Geisterdatei: `exists` → sauber `false`. Existierende Datei, gleicher Pfad: „forbidden"** | **bestätigt** |
+
+Damit erklärt sich auch die Asymmetrie, die alles verschleierte: **Schreiben neuer
+Dateien ging immer** (nichts zu kanonisieren), das Wiederlesen nie.
+
+**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs eigene, engere
+Kommandos** (`saves_list` … `saves_exists`, `src-tauri/src/main.rs`): Dateiname statt
+Pfad (Separatoren/`..` werden verweigert), fest auf `$APPDATA/saves`.
+`tauri-plugin-fs` samt Berechtigungen entfernt; `TauriStorage` ruft `invoke`, die
+Vertragsreihe läuft gegen eine Nachbildung der Kommandos mit denselben Regeln.
+AK-8 danach vollständig neu gemessen: `docs/reports/packaging.md`.
+
+**Zwei ehrliche Ränder:**
+1. Die **Messung vom 2026-09-07** (gegen `1c33ec7`) meldete Schritt 6 als bestanden —
+   mit identischem Code, identischen Rechten, identischen Abhängigkeiten heute nicht
+   reproduzierbar. Sie bleibt als nicht nachvollziehbar markiert.
+2. **Warum kein Test es sah:** die Vertragsreihe prüft den Port gegen eine
+   Nachbildung — die Scope-Prüfung der Plattform kommt darin nicht vor und ist mit
+   jsdom auch nicht erreichbar. Die Regel daraus: **was eine Plattform-Berechtigung
+   durchsetzt, gilt erst nach einer Messung am gebauten Erzeugnis** — genau die
+   AK-8-Messung, die diesen Fehler gefunden hat. Sie gehört nach jedem Umbau am
+   Speicherweg wiederholt.

@@ -356,7 +356,7 @@ export function tradeCommands(context: AiContext, explanations: Explanation[]): 
 
   explanations.push({
     action: `Tauscht ${give} ${best} gegen ${need}`,
-    reason: shortages.length > 0 ? `Mangel an ${need} decken` : `${need} fuer das naechste Bauvorhaben`,
+    reason: shortages.length > 0 ? `Mangel an ${need} decken` : `${need} für das nächste Bauvorhaben`,
     score: 700,
   })
   return [{ type: 'TRADE', playerId: context.view.playerId, give: best, giveAmount: give, want: need }]

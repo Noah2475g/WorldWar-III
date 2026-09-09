@@ -6,25 +6,23 @@ import { StorageEntryNotFound } from '@worldwar/core'
  *
  * Die dritte Umsetzung des Ports — und damit die erste, in der die Zusage von T-M8-00
  * ihrem Wortlaut nach stimmt: „dieselbe Vertragstestreihe gegen alle drei Umsetzungen".
- * Sie stand seit M8 im Plan, und die vier Dateien, die sie nannte, hat es nie gegeben.
  *
- * Warum sie neben IndexedDB existiert und nicht statt ihr: Der Browserbau bleibt die
- * abgenommene V1 (Entscheidung 2 vom 2026-09-05). Im Programm ist eine Datei aber die
- * ehrlichere Ablage — sie lässt sich sichern, kopieren, mailen und im Dateimanager
- * ansehen, und genau das erwartet jemand, der ein Programm installiert hat und keine
- * Webseite offen hat.
- *
- * Die Module von Tauri werden **spät** geladen. Der Browserbau enthält sie nicht, und ein
- * `import` an der Dateispitze wäre in ihm ein Fehler beim Laden des Bündels — also der
- * Fall, in dem gar nichts mehr startet, um eines Speichers willen, den dieser Bau nicht
- * benutzt.
+ * Seit T-M28-03 (2026-09-08) läuft sie über **eigene Kommandos der Hülle**
+ * (`saves_list` … `saves_exists` in `src-tauri/src/main.rs`) statt über
+ * `tauri-plugin-fs`. Der Grund ist gemessen, nicht vermutet: die Scope-Prüfung des
+ * Plugins kanonisiert existierende Pfade, was unter Windows die `\\?\C:\…`-Schreibweise
+ * ergibt — und kein Scope-Muster passt je auf sie. Ergebnis am gebauten Programm:
+ * **Schreiben neuer Stände ging, Wiederlesen war „forbidden path"** — trotz
+ * `fs:allow-appdata-read-recursive`, explizitem `fs:scope` und Laufzeit-Freigabe
+ * beider Schreibweisen. Die eigenen Kommandos sind zugleich die engere Zusage: sie
+ * nehmen einen Datei**namen** an, nie einen Pfad, und berühren ausschließlich
+ * `$APPDATA/saves` (PROBLEME.md, 2026-09-08).
  */
 
-/** Wo die Stände liegen: der Anwendungsordner, den die Berechtigung freigibt. */
-const DIR_NAME = 'saves'
-
-/** Die Endung. Der Inhalt ist JSON, also heißt die Datei auch so. */
-const SUFFIX = '.json'
+/** Was von `@tauri-apps/api/core` gebraucht wird — als Form, damit ein Test sie stellen kann. */
+export interface SavesApi {
+  invoke<T>(command: string, args?: Record<string, unknown>): Promise<T>
+}
 
 /**
  * Ob das Programm in einer Tauri-Hülle läuft.
@@ -35,17 +33,6 @@ const SUFFIX = '.json'
  */
 export function isTauriAvailable(): boolean {
   return typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-}
-
-/** Was von `@tauri-apps/plugin-fs` gebraucht wird — als Form, damit ein Test sie stellen kann. */
-export interface FsApi {
-  readTextFile(path: string, options?: { baseDir?: number }): Promise<string>
-  writeTextFile(path: string, data: string, options?: { baseDir?: number }): Promise<void>
-  remove(path: string, options?: { baseDir?: number }): Promise<void>
-  exists(path: string, options?: { baseDir?: number }): Promise<boolean>
-  mkdir(path: string, options?: { baseDir?: number; recursive?: boolean }): Promise<void>
-  readDir(path: string, options?: { baseDir?: number }): Promise<{ name: string; isFile?: boolean }[]>
-  readonly appDataDir: number
 }
 
 /**
@@ -68,64 +55,31 @@ export function decodeName(file: string): string {
 }
 
 export class TauriStorage implements StoragePort {
-  private fs: Promise<FsApi> | null = null
-  private ready: Promise<void> | null = null
+  private api_: Promise<SavesApi> | null = null
 
   /** Der Test reicht eine Nachbildung herein; die Anwendung lädt das echte Modul. */
-  constructor(private readonly api?: FsApi) {}
+  constructor(private readonly api?: SavesApi) {}
 
-  private load(): Promise<FsApi> {
-    this.fs ??= this.api
+  private load(): Promise<SavesApi> {
+    this.api_ ??= this.api
       ? Promise.resolve(this.api)
-      : import('@tauri-apps/plugin-fs').then(
-          (mod): FsApi => ({
-            readTextFile: mod.readTextFile,
-            writeTextFile: mod.writeTextFile,
-            remove: mod.remove,
-            exists: mod.exists,
-            mkdir: mod.mkdir,
-            readDir: mod.readDir,
-            appDataDir: mod.BaseDirectory.AppData,
-          }),
-        )
-    return this.fs
-  }
-
-  /**
-   * Den Ordner anlegen, bevor jemand hineinschreibt.
-   *
-   * Beim ersten Start gibt es ihn nicht, und `writeTextFile` legt keinen Ordner an. Das
-   * ist der Fehler, der genau einmal auftritt — beim allerersten Speichern eines neuen
-   * Spielers, also dort, wo ihn niemand mehr sieht, der das Programm schon benutzt.
-   */
-  private async ensureDir(fs: FsApi): Promise<void> {
-    this.ready ??= fs.mkdir(DIR_NAME, { baseDir: fs.appDataDir, recursive: true }).catch(() => undefined)
-    await this.ready
-  }
-
-  private path(name: string): string {
-    return `${DIR_NAME}/${encodeName(name)}${SUFFIX}`
+      : import('@tauri-apps/api/core').then((mod): SavesApi => ({ invoke: mod.invoke }))
+    return this.api_
   }
 
   async list(): Promise<string[]> {
-    const fs = await this.load()
-    await this.ensureDir(fs)
+    const api = await this.load()
     // Gelesen wird jedes Mal vom Datenträger, nicht aus einem Merker (R-PKG-02/AK2):
     // ein Stand, den jemand ausserhalb des Programms gelöscht hat, ist weg — und die
-    // Liste muss das sagen. Ein Speicher, der die Namen nur beim Start einliest, fällt
-    // im Vertrag nicht auf, weil der Vertrag den Prozess nie verlässt.
-    const entries = await fs.readDir(DIR_NAME, { baseDir: fs.appDataDir }).catch(() => [])
-    return entries
-      .filter((entry) => entry.name.endsWith(SUFFIX))
-      .map((entry) => decodeName(entry.name.slice(0, -SUFFIX.length)))
-      .sort()
+    // Liste muss das sagen.
+    const names = await api.invoke<string[]>('saves_list').catch(() => [])
+    return names.map(decodeName).sort()
   }
 
   async read(name: string): Promise<string> {
-    const fs = await this.load()
-    await this.ensureDir(fs)
+    const api = await this.load()
     try {
-      return await fs.readTextFile(this.path(name), { baseDir: fs.appDataDir })
+      return await api.invoke<string>('saves_read', { name: encodeName(name) })
     } catch {
       // Jeder Grund, aus dem sich die Datei nicht lesen lässt, heißt für den Aufrufer
       // dasselbe: den Stand gibt es nicht. Der Vertrag verlangt genau diesen Fehler.
@@ -134,21 +88,19 @@ export class TauriStorage implements StoragePort {
   }
 
   async write(name: string, data: string): Promise<void> {
-    const fs = await this.load()
-    await this.ensureDir(fs)
-    await fs.writeTextFile(this.path(name), data, { baseDir: fs.appDataDir })
+    const api = await this.load()
+    await api.invoke<void>('saves_write', { name: encodeName(name), data })
   }
 
   async remove(name: string): Promise<void> {
-    const fs = await this.load()
-    await this.ensureDir(fs)
-    // Etwas zu entfernen, das nicht da ist, ist kein Fehler — so steht es im Vertrag.
-    await fs.remove(this.path(name), { baseDir: fs.appDataDir }).catch(() => undefined)
+    const api = await this.load()
+    // Etwas zu entfernen, das nicht da ist, ist kein Fehler — so steht es im Vertrag,
+    // und so setzt es das Kommando der Hülle um.
+    await api.invoke<void>('saves_remove', { name: encodeName(name) }).catch(() => undefined)
   }
 
   async exists(name: string): Promise<boolean> {
-    const fs = await this.load()
-    await this.ensureDir(fs)
-    return fs.exists(this.path(name), { baseDir: fs.appDataDir }).catch(() => false)
+    const api = await this.load()
+    return api.invoke<boolean>('saves_exists', { name: encodeName(name) }).catch(() => false)
   }
 }

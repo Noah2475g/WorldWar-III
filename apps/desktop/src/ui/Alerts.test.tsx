@@ -125,3 +125,29 @@ describe('R-GAME-06 Das Protokoll ist filterbar', () => {
     expect(categoryOf('DAY_REPORT')).toBe('other')
   })
 })
+
+/**
+ * Die Freischaltungsmeldung beugt ihr Pronomen (T-M23-02, R-UI-07, Befund V2-11).
+ *
+ * "Neu ab heute: Kaserne. Sie koennen ES jetzt bauen." — das Pronomen hing nicht am
+ * Genus der Sache. Die Genus-Tabelle (de.grammar) speist den Satz: die Kaserne → sie,
+ * der Hafen → ihn, das Jagdflugzeug → es.
+ */
+describe('R-UI-07 Die Freischaltungsmeldung beugt ihr Pronomen', () => {
+  // view() steht auf Tick 100: Tagesanfang von Spieltag 5 — die Meldung erscheint.
+  const regeln = {
+    constants: { ticksPerDay: 24 },
+    buildings: { barracks: { availableFromDay: 5 }, harbour: { availableFromDay: 5 } },
+    units: { infantry: { availableFromDay: 5 }, tank: { availableFromDay: 5 }, fighter: { availableFromDay: 5 } },
+  }
+
+  it('setzt das Pronomen nach dem Genus der Sache', () => {
+    const texte = Object.fromEntries(alertsFor(view({}), regeln).map((alert) => [alert.id, alert.text]))
+
+    expect(texte['unlock:building:barracks']).toBe('Neu ab heute: Kaserne. Sie können sie jetzt bauen.')
+    expect(texte['unlock:building:harbour']).toBe('Neu ab heute: Hafen. Sie können ihn jetzt bauen.')
+    expect(texte['unlock:unit:infantry']).toBe('Neu ab heute: Infanterie. Sie können sie jetzt ausheben.')
+    expect(texte['unlock:unit:tank']).toBe('Neu ab heute: Kampfpanzer. Sie können ihn jetzt ausheben.')
+    expect(texte['unlock:unit:fighter']).toBe('Neu ab heute: Jagdflugzeug. Sie können es jetzt ausheben.')
+  })
+})

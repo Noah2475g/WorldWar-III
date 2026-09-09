@@ -15,7 +15,15 @@
 export const de = {
   app: {
     title: 'WorldWar',
+    // Die Titelzeile des Startdialogs (T-M22-04, Befund V2-03): der erste Eindruck
+    // sagte "Formular", nicht "Strategiespiel".
+    subtitle: 'Große Strategie, Stunde um Stunde',
+    version: 'Fassung {{version}}',
     loading: 'Die Welt wird aufgebaut …',
+  },
+
+  menu: {
+    title: 'Menü',
   },
 
   header: {
@@ -32,6 +40,9 @@ export const de = {
     stoppedAlertPlain: 'Angehalten nach {{time}}: etwas ist geschehen, das Sie sehen sollten.',
     stoppedLimit: 'Angehalten nach {{time}}: die Obergrenze ist erreicht, das Ziel trat nicht ein.',
     stoppedAborted: 'Abgebrochen nach {{time}}.',
+    // Die ehrliche Uhr (T-M22-05, Befund V2-09): trotz eingestelltem Tempo laeuft kein
+    // Tick — verdecktes Fenster, stehendes requestAnimationFrame.
+    paused: 'Pausiert',
     abort: 'Abbrechen',
     balance: 'Bilanz',
     perDay: 'je Tag',
@@ -51,6 +62,12 @@ export const de = {
     consumption: 'Unterhalt',
     balance: 'Bilanz',
     committed: 'In Auftrag',
+    // Die Textfassung des Auftragszeichens hinter dem Bestand (T-M22-02): die Spalte
+    // "In Auftrag" schob die Tabelle aus der Leiste, die Auskunft selbst bleibt.
+    committedTitle: 'In Auftrag: {{amount}}',
+    // Der Tagesabfluss hinter dem Unterhalt (T-M28-05, v1-Befund 15): wohin die
+    // Rohstoffe gehen — im selben D24.2-Stil, damit die Tabelle in der Leiste bleibt.
+    expensesTitle: 'Ausgaben des Tages: {{amount}} — Bau, Aushebung und Markt',
     perDay: 'je Tag',
     shortage: 'Mangel',
   },
@@ -95,6 +112,45 @@ export const de = {
     bomber: 'Bomber',
     destroyer: 'Zerstörer',
     transport: 'Transportschiff',
+  },
+
+  /**
+   * Genus und Numerus, damit Sätze sich beugen können (T-M23-02, R-UI-07, V2-11).
+   *
+   * „Sie können **es** jetzt bauen" über der Kaserne und „Vereinigte Staaten
+   * **erklärt**" waren derselbe Fehler: ein Satz, der sich nach seinem Gegenstand
+   * richten muss, kannte den Gegenstand nicht. Die Tabellen stehen hier und nicht im
+   * Code, weil sie Sprache sind — ein neues Gebäude bekommt seinen Artikel dort, wo es
+   * seinen Namen bekommt. `grammar.test.ts` hält beide Tabellen vollständig.
+   */
+  grammar: {
+    /** Akkusativpronomen je Genus: „Sie können sie/ihn/es jetzt bauen." */
+    pronoun: { f: 'sie', m: 'ihn', n: 'es' },
+    /** Die Kaserne, der Hafen — das Genus je Gebäude. */
+    buildings: {
+      barracks: 'f',
+      fortress: 'f',
+      factory: 'f',
+      harbour: 'm',
+      shipyard: 'f',
+      airfield: 'm',
+      railway: 'f',
+    },
+    /** Die Infanterie, der Kampfpanzer, das Jagdflugzeug — das Genus je Einheit. */
+    units: {
+      infantry: 'f',
+      motorized: 'f',
+      tank: 'm',
+      heavy_tank: 'm',
+      artillery: 'f',
+      rocket_artillery: 'f',
+      fighter: 'n',
+      bomber: 'm',
+      destroyer: 'm',
+      transport: 'n',
+    },
+    /** Machtnamen in grammatischer Mehrzahl: „Vereinigte Staaten erklären". */
+    pluralNations: ['Vereinigte Staaten'],
   },
 
   /**
@@ -164,6 +220,10 @@ export const de = {
     bombard: 'Beschießen',
     holdFire: 'Feuer halten',
     resumeFire: 'Feuer frei',
+    // Hoerbare Namen mit Verb (T-M22-06): "Angriff" und "Feuer frei" sind Zustaende,
+    // die Handlung dahinter braucht ein Verb.
+    stanceAria: 'Haltung {{stance}} einnehmen',
+    resumeFireAria: 'Feuer freigeben',
     here: 'Armeen hier',
     select: 'Auswählen',
     units: 'Einheiten',
@@ -185,13 +245,13 @@ export const de = {
     // teuersten Entscheidungen des Spiels sind. Die Zahlen kommen aus den Regeln, nie
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
-    stopHint: 'Die Armee haelt an, wo sie gerade steht.',
+    stopHint: 'Die Armee hält an, wo sie gerade steht.',
     stanceAggressiveHint: 'Greift von sich aus an, was in Reichweite kommt.',
-    stanceDefensiveHint: 'Haelt die Stellung und greift nicht von sich aus an.',
-    stanceRetreatHint: 'Kostet {{loss}} % der Staerke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    stanceDefensiveHint: 'Hält die Stellung und greift nicht von sich aus an.',
+    stanceRetreatHint: 'Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',
-    splitHint: 'Teilt die Haelfte ab: {{units}}.',
-    splitHintNone: 'Teilt die Haelfte ab — dafuer braucht es mindestens zwei Einheiten.',
+    splitHint: 'Teilt die Hälfte ab: {{units}}.',
+    splitHintNone: 'Teilt die Hälfte ab — dafür braucht es mindestens zwei Einheiten.',
     bombardHint: 'Reichweite {{range}}, danach eine Stunde keine Bewegung.',
     holdFireHint: 'Steht die Armee und ist ein Kriegsgegner in Reichweite, feuert sie von selbst.',
     empty: 'Die Armee hat keine Einheiten.',
@@ -200,6 +260,10 @@ export const de = {
 
   actions: {
     build: 'Bauen',
+    // Hoerbare Namen mit Verb (T-M22-06, Befund V2-13): sichtbar bleibt die kurze
+    // Beschriftung, ein Vorleseprogramm hoert die Handlung.
+    buildAria: '{{thing}} bauen',
+    recruitAria: '{{thing}} ausheben',
     cancelBuild: '{{building}} abbrechen',
     recruit: 'Rekrutieren',
     setCapital: 'Hauptstadt verlegen',
@@ -211,9 +275,15 @@ export const de = {
     hours: '{{count}} h',
     day: '{{count}} Tag',
     days: '{{count}} Tage',
+    // Nach „nach", „in", „seit" steht die Dauer im Dativ: „nach 2 Tagen" (T-M23-02).
+    daysDative: '{{count}} Tagen',
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
     availableFrom: 'ab Spieltag {{day}}',
+    // Die Befehls-Quittung (T-M22-05, Befund V2-08): abgeschickt, noch nicht
+    // angewendet — und bei stehender Uhr sagt der Satz dazu, wann es so weit ist.
+    ordered: '✓ befohlen — wirkt im nächsten Tick.',
+    orderedPaused: '✓ befohlen — wirkt beim Weiterlaufen.',
     cancelGroup: 'Im Bau',
     buildGroup: 'Bauen',
     recruitGroup: 'Ausheben',
@@ -273,6 +343,9 @@ export const de = {
     STORAGE_OVERFLOW: 'Die Lager für {{resource}} sind voll — der Überschuss verfällt.',
     TRADE_EXECUTED: '{{giveAmount}} {{give}} gegen {{wantAmount}} {{want}} getauscht.',
     WAR_DECLARED: '{{player}} erklärt {{target}} den Krieg. Wirksam ab Tag {{day}}.',
+    // Numerus-Fassungen (T-M23-02, V2-11): gewählt, wenn der Satzgegenstand eine
+    // Mehrzahl-Macht ist (grammar.pluralNations) — „Vereinigte Staaten erklären".
+    WAR_DECLARED_PLURAL: '{{player}} erklären {{target}} den Krieg. Wirksam ab Tag {{day}}.',
     DIPLOMACY_CHANGED: 'Verhältnis zu {{player}}: {{state}}.',
     CAPITAL_LOST: 'Die Hauptstadt {{province}} ist verloren.',
     CAPITAL_MOVED: 'Die Hauptstadt liegt jetzt in {{province}}.',
@@ -284,10 +357,37 @@ export const de = {
     CAPITAL_LOST_FOREIGN: 'Die Hauptstadt {{province}} von {{player}} ist gefallen.',
     BATTLE_RESOLVED_FOREIGN: '{{province}}: Gefecht entschieden — {{winner}} behauptet das Feld.',
     WAR_DECLARED_FOREIGN: '{{player}} erklärt {{target}} den Krieg.',
+    WAR_DECLARED_FOREIGN_PLURAL: '{{player}} erklären {{target}} den Krieg.',
     PLAYER_ELIMINATED: '{{player}} ist ausgeschieden.',
+    PLAYER_ELIMINATED_PLURAL: '{{player}} sind ausgeschieden.',
     GAME_ENDED: 'Die Partie ist entschieden: {{winner}} hat gewonnen.',
+    GAME_ENDED_PLURAL: 'Die Partie ist entschieden: {{winner}} haben gewonnen.',
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
   } as const,
+
+  /**
+   * Der Körper des Tagesberichts (T-M24-01, R-TIME-06, Befund V2-06).
+   *
+   * „Tagesbericht für Tag 8." war eine Überschrift ohne Körper. Die Zeilen hier füllen
+   * ihn: Bilanz je Rohstoff (nur die von null verschiedenen), Moral je eigener Provinz
+   * mit Richtung, fertige und laufende Aufträge, „morgen neu: X". Die Zahlen kommen aus
+   * dem Zustand am Tageswechsel (D24.4), nie aus diesem Text.
+   */
+  dayReport: {
+    // Seit T-M25-04 die Überschrift der Balkenliste, kein Satz mit Aufzählung mehr:
+    // die Bilanzen zeichnet der DeltaBar, die Zahl steht daneben.
+    balance: 'Bilanz je Tag',
+    morale: 'Moral: {{list}}',
+    moraleRising: '{{province}} {{percent}} % ↗',
+    moraleFalling: '{{province}} {{percent}} % ↘',
+    moraleSteady: '{{province}} {{percent}} % →',
+    completed: 'Fertig geworden: {{list}}',
+    running: 'In Arbeit: {{list}}',
+    completedEntry: '{{thing}} in {{province}}',
+    orderEntry: '{{thing}} in {{province}} — fertig Tag {{day}}',
+    tomorrow: 'Morgen neu: {{list}}',
+    quiet: 'Ein ruhiger Tag: nichts fertig, nichts in Arbeit, die Bilanz hält.',
+  },
 
   diplomacy: {
     title: 'Diplomatie',
@@ -323,10 +423,14 @@ export const de = {
     resources: 'Rohstoffe',
     morale: 'Moral',
     strength: 'Truppenstärke',
+    relations: 'Beziehungen',
   },
 
   newGame: {
     title: 'Neue Partie',
+    // Der erste Knopf, wenn ein Stand existiert (T-M22-04, Befund V2-04): wer
+    // wiederkommt, will weiterspielen — nicht suchen.
+    resume: 'Weiterspielen (Tag {{day}})',
     nation: 'Macht',
     seed: 'Startzahl',
     seedHint: 'Dieselbe Startzahl ergibt dieselbe Partie.',
@@ -341,8 +445,8 @@ export const de = {
     // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
     // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
     // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
-    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehoeren.',
-    victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehoert — 100 % der Siegpunkte.',
+    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.',
+    victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehört — 100 % der Siegpunkte.',
     map: 'Karte',
     start: 'Partie beginnen',
     aiBonus: 'KI-Bonus: {{percent}} %',
@@ -404,6 +508,16 @@ export const de = {
     losses: 'Verluste',
     outcome: 'Ausgang',
     nobody: 'niemand',
+    // Der Kampfbericht als Bild (T-M27-02, R-BAT-05, D25.6): je Seite ein
+    // Stärkebalken, die Umstände als Zeichen — und fürs Ohr die Satzfassung.
+    battleSide: '{{name}}: Stärke {{before}} auf {{after}}, Verluste {{losses}}.',
+    battleEntrenched: 'Eingegraben',
+    battleBlocked: 'Rückzugssperre',
+    battleTerrain: 'Gelände: {{terrain}}.',
+    battleFortress: 'Festung Stufe {{level}}',
+    battleFortressSentence: 'Festung Stufe {{level}}.',
+    battleEntrenchedSentence: '{{name}} kämpft eingegraben.',
+    battleBlockedSentence: '{{name}} steht unter Rückzugssperre.',
   },
 
   a11y: {
@@ -434,18 +548,40 @@ export const de = {
     dismiss: 'Nicht mehr zeigen',
     /** "Schritt 2 von 5" — damit der Spieler weiss, wie viel noch kommt. */
     progress: 'Schritt {{step}} von {{total}}',
+    /**
+     * Jeder Schritt trägt drei Sätze (T-M24-02): `title` sagt, worum es geht, `text`
+     * sagt, was zu tun ist — und `why` sagt, **wozu**. Frage 50 des Abnahmebogens,
+     * ehrlich beantwortet: das Was war geführt, das Wozu fehlte. Der Wächter
+     * `unlocks-explained` verlangt das dritte Feld für jeden Schritt.
+     */
     steps: {
       select: {
         title: 'Ihre Provinzen',
         text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+        why: 'Alles in diesem Spiel — Bau, Aushebung, Moral, Punkte — geschieht in Provinzen. Wer seine kennt, kennt seine Lage.',
       },
       build: {
         title: 'Etwas bauen',
         text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+        why: 'Gebäude kommen vor Einheiten: erst die Kaserne macht das Ausheben möglich, und dieselbe Kaserne macht jedes weitere schneller.',
       },
       speed: {
         title: 'Die Zeit läuft',
         text: 'Die Leertaste startet und stoppt. Die Zahlen sind Spielstunden je Sekunde — bei 10 vergeht ein Spieltag in gut zwei Sekunden.',
+        why: 'Das Spiel rechnet in Spielstunden von selbst weiter; das Tempo bestimmt nur, wie schnell Sie zusehen.',
+      },
+      score: {
+        title: 'Woher die Punkte kommen',
+        // Der eine Satz, der die Frühphase vom Kopf auf die Füße stellt (T-M24-02,
+        // gemessen in PROBLEME.md): die Bevölkerung stellt fast alle Startpunkte, eine
+        // Eroberung wiegt hunderte Bauwerke. Die Größenordnung steht bewusst als
+        // Verhältnis im Satz, nicht als Zahl — sie hängt an der Karte, nicht an den
+        // Regeln, und eine Zahl an zwei Orten wäre beim nächsten Kartenbau falsch.
+        text:
+          'Drücken Sie L: die Lage der Mächte zeigt die Punkte, um die gespielt wird. Fast alle ' +
+          'stecken in der Bevölkerung — eine eroberte Provinz bringt deshalb mehr Punkte als ' +
+          'jeder Ausbau daheim.',
+        why: 'Wer nur baut, fällt zurück: der Sieg wird in Menschen gerechnet, und Menschen gewinnt man mit Land.',
       },
       dayPassed: {
         title: 'Jetzt heißt es warten',
@@ -456,22 +592,37 @@ export const de = {
           '{{wait}} — Spieltag {{day}}. Bis dahin gibt es nichts zu klicken, was voranbringt: ' +
           'alles rechnet stündlich von selbst weiter. Stellen Sie das Tempo höher oder spulen ' +
           'Sie vor. Das Warten ist kein Fehler, es ist das Spiel.',
+        why: 'Ihre Befehle wirken über Tage, nicht über Klicks — das Spiel belohnt Planung, nicht die schnellere Hand.',
       },
       buildCompleted: {
         title: 'Das erste Gebäude steht',
         text: 'Eine Kaserne macht aus Rohstoffen Soldaten. Wählen Sie die Provinz und heben Sie aus — die Einheit braucht danach noch ihre Zeit.',
+        why: 'Darum kam die Kaserne vor der Infanterie: jede Einheit braucht ihr Gebäude, keine entsteht auf freiem Feld.',
       },
       unitRecruited: {
         title: 'Ihre erste Einheit',
         text: 'Klicken Sie die Armee an, dann ein Ziel auf der Karte. Die Ankunft steht am Knopf, bevor Sie ihn drücken.',
+        why: 'Nur Armeen verändern die Karte — und nur die Karte bringt die Punkte, die den Sieg entscheiden.',
       },
       fastForward: {
         title: 'Vorspulen',
         text: 'Für längere Strecken: läuft, bis etwas passiert, das Sie sehen müssen — und sagt dann, was es war.',
+        why: 'Märsche dauern Tage. Vorspulen überspringt nichts Wichtiges: es hält an, sobald etwas geschieht.',
       },
       events: {
         title: 'Was geschieht',
         text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+        why: 'Was Sie hier übersehen, meldet niemand ein zweites Mal — das Protokoll ist das Gedächtnis der Partie.',
+      },
+      expansion: {
+        title: 'Ausdehnung kostet Moral',
+        // Die Zahlen kommen aus den Regeln der laufenden Partie (Tutorial.tsx setzt sie
+        // ein) — dieselbe Regel wie beim Wartschritt: eine Zahl steht nicht an zwei Orten.
+        text:
+          'Ab der {{third}}. Provinz drückt jede weitere die Zielmoral in allen Ihren Provinzen ' +
+          'um {{penalty}} Punkte. Sinkt die Moral zu tief, stockt die Produktion und es drohen ' +
+          'Aufstände.',
+        why: 'Erobern Sie, was Sie halten können, nicht alles, was erreichbar ist: wer schneller wächst, als seine Moral trägt, verliert das Reich von innen.',
       },
     },
   },
@@ -520,6 +671,8 @@ export const de = {
       resources: 'Wo etwas im Boden liegt. Je kräftiger das Grün, desto reicher die Provinz.',
       morale: 'Wie treu eine Provinz ist. Rot heißt aufstandsgefährdet, grün heißt ruhig.',
       strength: 'Wo Truppen stehen — so weit Sie sehen können. Je dunkler, desto stärker besetzt.',
+      relations:
+        'Wie Sie zu den Mächten stehen. Gold ist Ihres, Grün verbündet, Leinen in Frieden, der rote Ton im Krieg — und Grau bedeutet: Sie wissen es nicht.',
     },
     terrain: {
       plains: 'Offenes Land: schneller Marsch, wenig Deckung.',
@@ -544,8 +697,10 @@ export const de = {
     title: 'Meldungen',
     // Was heute neu dazugekommen ist (T-M21-04). Der Tag steht nicht im Satz: er ist
     // heute, sonst stuende die Meldung nicht da.
-    unlockBuilding: 'Neu ab heute: {{building}}. Sie können es jetzt bauen.',
-    unlockUnit: 'Neu ab heute: {{unit}}. Sie können sie jetzt ausheben.',
+    // Das Pronomen kommt aus der Genus-Tabelle (grammar, T-M23-02, V2-11): die
+    // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
+    unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
+    unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).
@@ -567,12 +722,19 @@ export const de = {
 
   error: {
     title: 'Das Spiel ist auf einen Fehler gelaufen',
-    body: 'Etwas in der Oberflaeche hat aufgegeben. Die Partie selbst ist davon nicht betroffen — der letzte automatische Spielstand liegt weiterhin in der Liste.',
+    body: 'Etwas in der Oberfläche hat aufgegeben. Die Partie selbst ist davon nicht betroffen — der letzte automatische Spielstand liegt weiterhin in der Liste.',
     hint: 'Bitte den Text oben weitergeben, wenn der Fehler wiederkehrt. Er wird nirgendwohin gesendet.',
     reload: 'Neu laden',
   },
   standings: {
     title: 'Lage',
+    // Der Machtverlauf als Kurve (T-M25-02, R-UI-13): die Beschreibung nennt dem Ohr
+    // die Endwerte, der Leerzustand sagt ehrlich, warum noch keine Kurve da ist.
+    historyAria: 'Punkteverlauf — Stand: {{list}}',
+    historyEmpty: 'Noch keine Aufzeichnung: Die Kurve beginnt mit dem nächsten Tageswechsel.',
+    // Der ehrliche Wartesatz unter drei Aufzeichnungspunkten (T-M28-01): zwei Punkte
+    // wären eine Gerade, die einen Verlauf nur vortäuscht.
+    historyWaiting: 'Erst {{days}} von 3 Tagen aufgezeichnet — die Kurve kommt mit dem dritten Tageswechsel.',
     points: 'Punkte',
     relation: 'Verhältnis',
     seenStrength: 'Gesehene Stärke',
@@ -582,7 +744,8 @@ export const de = {
     won: 'Sie haben gewonnen.',
     newGame: 'Neue Partie',
     lost: '{{nation}} hat gewonnen.',
-    eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie laeuft ohne Sie weiter.',
+    lostPlural: '{{nation}} haben gewonnen.',
+    eliminated: 'Sie sind ausgeschieden. Ihre letzte Provinz ist gefallen — die Partie läuft ohne Sie weiter.',
     // Vier Zeilen statt einer, weil in dem einen Satz zwei Zahlen stehen, die beide bei
     // eins in die Einzahl gehen (T-M12-10). "1 Provinzen" war der gemeldete Befund,
     // "1 Punkte" derselbe Fehler daneben.

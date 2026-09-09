@@ -3,11 +3,13 @@ import { MAP_COLORS } from './render.ts'
 import { colorForPlayer, fillFor } from './modes.ts'
 import { zoomAt, type View, type ViewLimits } from './picking.ts'
 import {
+  ARMY_HIT_BOX,
   BUILDING_OFFSET_Y,
   MAX_BUILDING_PIPS,
   dominantIcon,
   marchPoint,
   markersFor,
+  pickArmy,
   type ArmyMarker,
 } from './markers.ts'
 import { PLAYER_COLORS, contrastRatio, deltaE } from '../ui/tokens.ts'
@@ -258,5 +260,56 @@ describe('R-UI-04 Eine marschierende Armee bewegt sich (T-M20-04)', () => {
     const still = markersFor([marschierend], {}, centres, view, {}).find((marker) => marker.kind === 'army')
 
     expect(still).toMatchObject({ x: 0, y: 0 })
+  })
+})
+
+/**
+ * Armee-Marker sind Klickziele (T-M22-06, R-UI-05, Befund V2-14).
+ *
+ * Der Kasten wird ~20x14 px gezeichnet, und ausgewaehlt wurde nur ueber das
+ * Provinz-Panel — ein Klick auf die Karte traf immer die Provinz. `pickArmy` gibt dem
+ * Marker eine Trefferflaeche von mindestens 24 px (Picking, nicht Zeichnung): der
+ * Kasten bleibt klein, der Finger darf daneben liegen.
+ */
+describe('R-UI-05 Armee-Marker haben eine Trefferflaeche von mindestens 24 px', () => {
+  it('deckelt die Trefferflaeche nicht unter 24 px', () => {
+    expect(ARMY_HIT_BOX).toBeGreaterThanOrEqual(24)
+  })
+
+  it('trifft die eigene Armee auch knapp neben dem Kasten', () => {
+    const armies = [army('a1', 'alpha')]
+
+    // 11 px daneben: innerhalb der 24-px-Flaeche, obwohl der Kasten nur 20 px breit ist.
+    expect(pickArmy({ x: 111, y: 100 }, armies, centres, view)).toBe('a1')
+    expect(pickArmy({ x: 100, y: 89 }, armies, centres, view)).toBe('a1')
+  })
+
+  it('trifft nichts ausserhalb der Trefferflaeche', () => {
+    const armies = [army('a1', 'alpha')]
+
+    expect(pickArmy({ x: 100 + ARMY_HIT_BOX / 2 + 1, y: 100 }, armies, centres, view)).toBeNull()
+    expect(pickArmy({ x: 300, y: 300 }, armies, centres, view)).toBeNull()
+  })
+
+  it('waehlt bei zwei Treffern den naeheren', () => {
+    const armies = [army('fern', 'alpha'), army('nah', 'beta')]
+    // Punkt zwischen beiden, aber naeher an beta (300/200).
+    expect(pickArmy({ x: 295, y: 195 }, armies, centres, view)).toBe('nah')
+  })
+
+  it('greift nur eigene Armeen — eine fremde waehlt man nicht per Klick', () => {
+    const armies = [army('fremd', 'alpha', { own: false, owner: 'p2' })]
+
+    expect(pickArmy({ x: 100, y: 100 }, armies, centres, view)).toBeNull()
+  })
+
+  it('trifft eine marschierende Armee dort, wo sie gerade gezeichnet wird', () => {
+    const unterwegs = army('a1', 'alpha', {
+      march: { toProvinceId: 'beta', departureTick: 0, arrivalTick: 10 },
+    })
+
+    // Zur Haelfte des Weges steht der Marker bei (200, 150) — nicht in der Provinzmitte.
+    expect(pickArmy({ x: 200, y: 150 }, [unterwegs], centres, view, { tick: 5 })).toBe('a1')
+    expect(pickArmy({ x: 100, y: 100 }, [unterwegs], centres, view, { tick: 5 })).toBeNull()
   })
 })

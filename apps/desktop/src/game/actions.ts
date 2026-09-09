@@ -47,6 +47,13 @@ export interface ActionContext {
 export interface ActionSpec {
   id: string
   label: string
+  /**
+   * Der zugaengliche Name, wenn die Beschriftung allein die Handlung nicht nennt
+   * (T-M22-06, R-UI-06, Befund V2-13): der Bauknopf heisst sichtbar "Kaserne", ein
+   * Vorleseprogramm hoert "Kaserne bauen". Fehlt das Feld, IST die Beschriftung die
+   * Handlung ("Krieg erklären", "Marschieren").
+   */
+  aria?: string
   /** The symbol of the thing being ordered — a building, an arm of service (R-UI-10). */
   icon?: IconName
   /** Where the one-sentence explanation of this thing lives (R-UI-11). */
@@ -111,8 +118,8 @@ export function availabilityHint(ctx: ActionContext, availableFromDay: number): 
 
 /** One button per building the rules know, in the order the rules list them. */
 export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec[] {
-  return Object.entries(ctx.rules.buildings).map(([key, rule]) =>
-    checked(
+  return Object.entries(ctx.rules.buildings).map(([key, rule]) => ({
+    ...checked(
       ctx,
       { type: 'BUILD', playerId: ctx.playerId, provinceId, building: key as never },
       `build-${key}`,
@@ -121,7 +128,9 @@ export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec
       BUILDING_ICONS[key],
       `explain.buildings.${key}`,
     ),
-  )
+    // Sichtbar "Kaserne", hoerbar "Kaserne bauen" (T-M22-06, V2-13).
+    aria: t('actions.buildAria', { thing: t(`buildings.${key}`) }),
+  }))
 }
 
 /**
@@ -157,15 +166,19 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
     const condition = recruitStartCondition(morale)
     const strength =
       condition < ONE ? ` · ${t('actions.startStrength', { percent: Math.round(unfix(condition) * 100) })}` : ''
-    return checked(
-      ctx,
-      { type: 'RECRUIT', playerId: ctx.playerId, provinceId, unitKey: key, count: 1 },
-      `recruit-${key}`,
-      t(`units.${key}`),
-      `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}${availabilityHint(ctx, rule.availableFromDay)}`,
-      UNIT_ICONS[key],
-      `explain.units.${key}`,
-    )
+    return {
+      ...checked(
+        ctx,
+        { type: 'RECRUIT', playerId: ctx.playerId, provinceId, unitKey: key, count: 1 },
+        `recruit-${key}`,
+        t(`units.${key}`),
+        `${costHint(rule.cost, hours, ctx.ticksPerDay)}${strength}${availabilityHint(ctx, rule.availableFromDay)}`,
+        UNIT_ICONS[key],
+        `explain.units.${key}`,
+      ),
+      // Sichtbar "Infanterie", hoerbar "Infanterie ausheben" (T-M22-06, V2-13).
+      aria: t('actions.recruitAria', { thing: t(`units.${key}`) }),
+    }
   })
 }
 
@@ -246,6 +259,8 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
       stanceHints[value],
     )
     if (spec.disabledReason === null && army.stance === value) spec.disabledReason = t('army.alreadyStance')
+    // "Angriff" ist eine Haltung, kein Befehl — hoerbar wird ein Verb daraus (T-M22-06).
+    spec.aria = t('army.stanceAria', { stance: label })
     return spec
   }
 
@@ -298,6 +313,8 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   if (holdFire.disabledReason === null && !hasRangedUnits(army, ctx.rules)) {
     holdFire.disabledReason = t('army.noRanged')
   }
+  // "Feuer frei" traegt kein Verb — hoerbar heisst der Knopf "Feuer freigeben" (T-M22-06).
+  if (army.holdFire) holdFire.aria = t('army.resumeFireAria')
 
   return [
     march,

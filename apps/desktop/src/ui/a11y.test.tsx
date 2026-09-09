@@ -2,8 +2,23 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { createInitialState, parseRules, type Army, type GameState, type MapData } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Dialog } from './Dialogs.tsx'
+import { ActionRow, type Action } from './Panels.tsx'
+import {
+  armyActions,
+  buildActions,
+  cancelActions,
+  capitalAction,
+  diplomacyActions,
+  recruitActions,
+  targetAction,
+  tradePreview,
+  type ActionContext,
+  type ActionSpec,
+} from '../game/actions.ts'
+import { DEFAULT_NEW_GAME, toConfig } from '../game/newGame.ts'
 
 /**
  * Bedienbar ohne Maus (T-M16-07, R-UI-15, R-UI-06, Befund N12).
@@ -138,5 +153,113 @@ describe('R-UI-15/AK2 Bedienelemente ohne Text tragen einen Namen', () => {
     expect(treffer).toHaveLength(1)
     expect(LESBAR.test(treffer[0]![2]!.trim())).toBe(false)
     expect(treffer[0]![1]!.includes('aria-label')).toBe(false)
+  })
+})
+
+/**
+ * Knoepfe sagen, was sie tun (T-M22-06, R-UI-06, Befund V2-13).
+ *
+ * Der Bauknopf hiess fuer ein Vorleseprogramm „Kaserne", der Aushebeknopf
+ * „Infanterie" — die Sache, nie die Handlung. Ein Blinder hoert „Kaserne" und weiss
+ * nicht, ob der Knopf baut, abreisst oder erklaert. Jeder Befehlsknopf traegt jetzt
+ * einen zugaenglichen Namen mit Verb („Kaserne bauen"); Kosten bleiben im `title`.
+ *
+ * Geprueft werden ALLE Aktionen aus `actions.ts`, nicht die zwei, an die jemand
+ * gedacht hat: eine neue Aktion ohne Verb faellt hier auf.
+ */
+describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
+  const ROOT = process.cwd()
+  const load = (path: string) => JSON.parse(readFileSync(`${ROOT}/${path}`, 'utf8')) as never
+  const world = load('data/maps/world.json') as MapData
+  const rules = parseRules(
+    {
+      constants: load('data/rules/default/constants.json'),
+      resources: load('data/rules/default/resources.json'),
+      buildings: load('data/rules/default/buildings.json'),
+      units: load('data/rules/default/units.json'),
+      ai: load('data/rules/default/ai.json'),
+    },
+    'default',
+  )
+
+  /** Die Verben des Hauses — ein Befehl, dessen Name keines traegt, ist ein Substantiv. */
+  const VERB =
+    /\b(bauen|ausheben|abbrechen|verlegen|erklären|anbieten|annehmen|aufkündigen|gewähren|teilen|zusammenlegen|marschieren|anhalten|beschießen|halten|freigeben|einnehmen|befehlen|handeln)\b/i
+
+  function alleAktionen(): { ctx: ActionContext; specs: ActionSpec[] } {
+    const state = createInitialState(
+      toConfig({ ...DEFAULT_NEW_GAME, nation: 'Deutschland', opponents: 3 }, world),
+      { map: world, rules },
+    )
+    const capital = state.players.p1!.capitalProvinceId!
+    const edge = world.edgesByProvince[capital]!.map((i) => world.edges[i]!).find((e) => e.kind === 'land')!
+    const neighbour = edge.a === capital ? edge.b : edge.a
+
+    // Eine Armee, damit auch die Armeebefehle in der Liste stehen.
+    const army: Army = {
+      id: 'a1',
+      owner: 'p1',
+      name: 'Armee 1',
+      locationProvinceId: capital,
+      units: [{ unitKey: 'infantry', hpTotal: 3000 }],
+      path: [],
+      arrivalTick: null,
+      departureTick: null,
+      deployDelayUntil: 0,
+      stance: 'defensive',
+      embarked: false,
+      cannotAttackUntil: 0,
+      bombardTarget: null,
+      holdFire: false,
+    }
+    ;(state as GameState).armies[army.id] = army
+    state.armyOrder = [...state.armyOrder, army.id]
+
+    // Ein laufender Bau, damit auch der Abbrechen-Knopf in der Liste steht.
+    state.provinces[capital]!.buildQueue = [
+      { id: 'b1', building: 'barracks', startedTick: 0, completesAtTick: 24 },
+    ] as never
+
+    const ctx: ActionContext = { state, map: world, rules, playerId: 'p1', ticksPerDay: rules.constants.ticksPerDay }
+    const specs = [
+      ...buildActions(ctx, capital),
+      ...recruitActions(ctx, capital),
+      ...cancelActions(ctx, capital),
+      capitalAction(ctx, capital),
+      ...armyActions(ctx, 'a1'),
+      targetAction(ctx, 'a1', 'move', neighbour),
+      targetAction(ctx, 'a1', 'bombard', neighbour),
+      ...diplomacyActions(ctx, state.playerOrder[1]!),
+      tradePreview(ctx, 'wood', 1000, 'iron').action,
+    ]
+    return { ctx, specs }
+  }
+
+  it('gibt JEDER Aktion aus actions.ts einen Namen mit Verb', () => {
+    const { specs } = alleAktionen()
+    expect(specs.length).toBeGreaterThan(25)
+
+    for (const spec of specs) {
+      const name = spec.aria ?? spec.label
+      expect(name, `"${spec.id}" heisst "${name}" — VERB OBJEKT fehlt (V2-13)`).toMatch(VERB)
+    }
+  })
+
+  it('setzt den Verbnamen als aria-label an den Knopf; die Kosten bleiben im title', () => {
+    const { specs } = alleAktionen()
+    const barracks = specs.find((spec) => spec.id === 'build-barracks')!
+    const action: Action = {
+      id: barracks.id,
+      label: barracks.label,
+      ...(barracks.aria ? { aria: barracks.aria } : {}),
+      ...(barracks.hint ? { hint: barracks.hint } : {}),
+      disabledReason: barracks.disabledReason,
+      onRun: () => undefined,
+    }
+    render(<ActionRow actions={[action]} />)
+
+    const button = screen.getByRole('button', { name: 'Kaserne bauen' })
+    expect(button.textContent, 'sichtbar bleibt die kurze Beschriftung').toBe('Kaserne')
+    expect(button.getAttribute('title'), 'die Kosten bleiben im Tooltip').toContain('Material')
   })
 })

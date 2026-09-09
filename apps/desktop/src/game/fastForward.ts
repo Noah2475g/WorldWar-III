@@ -43,6 +43,12 @@ export interface FastForwardRequest {
   maxTicks: number
   /** Häppchengröße in Ticks. Zwischen zwei Häppchen kann abgebrochen werden. */
   chunkTicks?: number
+  /**
+   * Die gesammelten Befehle des Menschen (T-M22-05): sie gehören dem ERSTEN Tick
+   * dieses Häppchens — gegeben wurden sie jetzt, nicht in jeder Spielstunde erneut.
+   * Der Aufrufer reicht sie nur dem ersten Häppchen eines Laufs.
+   */
+  playerCommands?: readonly Command[]
 }
 
 /** Wie viele Ticks ein Häppchen rechnet, bevor die Ereignisschleife wieder drankommt. */
@@ -76,6 +82,10 @@ export function fastForwardChunk(
   // Absichten ab, die die KI nie gefasst hat.
   let pending: ReturnType<typeof runAi>['memories'] | null = null
 
+  // Nur der erste Tick bekommt die Spielerbefehle — dieselbe Regel wie in der Schleife
+  // des Kerns (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
+  let firstTick = true
+
   return fastForward(state, request.target, ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
@@ -87,7 +97,9 @@ export function fastForwardChunk(
       const { commands, memories, explanations } = runAi(current, ctx, trace ? { explain: true } : {})
       pending = memories
       trace?.({ tick: current.tick, commands, explanations })
-      return commands
+      const player = firstTick ? (request.playerCommands ?? []) : []
+      firstTick = false
+      return [...player, ...commands]
     },
     afterTick: (next: GameState): void => {
       if (pending) storeMemories(next, pending)

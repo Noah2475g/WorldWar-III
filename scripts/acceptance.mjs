@@ -1,10 +1,13 @@
 #!/usr/bin/env node
-import { execSync } from 'node:child_process'
+import { exec, execSync } from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, artefactUnchangedSince, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, artefactUnchangedSince, gaugeStatus, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+
+const execAsync = promisify(exec)
 
 /**
  * Der Stand, gegen den dieser Lauf gelaufen ist (T-M16-01a).
@@ -78,10 +81,95 @@ function check(id, description, condition, detail) {
   return ok
 }
 
-console.log('Abnahmelauf WorldWar V1\n')
+/**
+ * Zwei Läufe gleichzeitig — erlaubt, weil beide ERGEBNISSE messen, keine Zeiten.
+ * Die Zeitmessungen (Budgets) laufen danach seriell auf ruhiger Maschine; genau
+ * deshalb dürfen diese beiden hier nicht mit den Budgets in einen Topf.
+ */
+async function runParallel(entries) {
+  console.log(`${entries.map((e) => e.id).join(' + ')}  ${entries.map((e) => e.description).join(' ‖ ')} …`)
+  await Promise.all(
+    entries.map(async ({ id, description, command }) => {
+      const started = Date.now()
+      try {
+        const { stdout } = await execAsync(command, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+        const seconds = Number(((Date.now() - started) / 1000).toFixed(0))
+        console.log(`  ${id} bestanden (${seconds}s)`)
+        results.push({ id, description, ok: true, seconds, output: String(stdout).slice(-400) })
+      } catch (error) {
+        const seconds = Number(((Date.now() - started) / 1000).toFixed(0))
+        console.log(`  ${id} FEHLGESCHLAGEN (${seconds}s)`)
+        const output = `${error.stdout ?? ''}${error.stderr ?? ''}`
+        results.push({ id, description, ok: false, seconds, output: output.slice(-1200) })
+      }
+    }),
+  )
+}
 
-run('AK-2/3', 'pnpm verify (Lint, Typen, Tests, Guards, Abdeckung)', 'pnpm verify')
-run('AK-4/6', 'pnpm test:slow (Langläufe, Turnier, Budgets)', 'pnpm test:slow')
+/**
+ * Die Prognose kommt aus der Messung des letzten Laufs, nicht aus einer Schätzung —
+ * Noahs Auftrag vom 2026-09-08, nachdem "rund 75 Minuten" real 111 wurden.
+ */
+const timingPath = join(ROOT, 'docs/reports/acceptance-timing.json')
+const lastTiming = existsSync(timingPath) ? JSON.parse(readFileSync(timingPath, 'utf8')) : null
+
+console.log('Abnahmelauf WorldWar V1\n')
+console.log(
+  lastTiming
+    ? `Erwartete Dauer: ~${Math.ceil(lastTiming.totalSeconds / 60)} min (gemessen am ${lastTiming.measuredAt.slice(0, 10)} gegen ${lastTiming.commit})\n`
+    : 'Erwartete Dauer: noch keine Messung (erster Lauf seit dem Umbau vom 2026-09-08)\n',
+)
+const runStarted = Date.now()
+
+// Seit dem 2026-09-08 (Entscheid in DECISIONS.md) fährt die Abnahme nur noch, was
+// ihre Kriterien wörtlich verlangen — nicht mehr die ganze langsame Suite:
+//   AK-4 (Determinismus, Speichern/Laden, Kampf-Eigenschaften) läuft in pnpm verify.
+//   AK-1 (eine volle Partie) und AK-6 (der 1000-Tage-Langlauf) laufen PARALLEL.
+//   AK-6-Budgets (Tick, Weltkarte, Zeichnen) laufen danach SERIELL — sie messen Zeit.
+// Parameterlauf, Turnier, KI-Integrationslauf und Onboarding-Durchgang bleiben in
+// pnpm test:slow (Vollsuite für die Nacht); dass die Messgeräte nicht veralten,
+// prüft der Frische-Wächter weiter unten.
+run('AK-2/3/4', 'pnpm verify (Lint, Typen, Tests inkl. Determinismus/Speichern/Kampf, Guards, Abdeckung)', 'pnpm verify')
+await runParallel([
+  { id: 'AK-1', description: 'Vollständige Partie (pnpm sim:fullgame)', command: 'pnpm sim:fullgame' },
+  { id: 'AK-6', description: 'Langlauf 1000 Spieltage (pnpm sim:long)', command: 'pnpm sim:long' },
+])
+run(
+  'AK-6',
+  'Zeitbudgets seriell auf ruhiger Maschine (Tick, Weltkarte, Zeichnen)',
+  'pnpm vitest run --config vitest.slow.config.ts packages/core/test/perf apps/desktop/src/map/render.bench.slow.test.ts',
+)
+
+// Der Frische-Wächter: Parameterlauf und Turnier laufen nicht mehr je Abnahme —
+// aber ihre Berichte dürfen nicht älter sein als die Regeln, die sie vermessen.
+const commitTime = (path) => {
+  try {
+    const out = execSync(`git log -1 --format=%ct -- ${path}`, { cwd: ROOT, encoding: 'utf8' }).trim()
+    return out ? Number(out) : null
+  } catch {
+    return null
+  }
+}
+const rulesDirty = (() => {
+  try {
+    return execSync('git status --porcelain -- data/rules', { cwd: ROOT, encoding: 'utf8' }).trim().length > 0
+  } catch {
+    return true
+  }
+})()
+const rulesChangedAt = commitTime('data/rules')
+for (const gauge of [
+  { name: 'Parameterlauf', report: 'docs/reports/balance-sweep.md', command: 'pnpm balance:sweep' },
+  { name: 'Turnier', report: 'docs/reports/ai-tournament-run.md', command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts' },
+]) {
+  const status = gaugeStatus({ rulesChangedAt, gaugeChangedAt: commitTime(gauge.report), rulesDirty })
+  check(
+    'MESSGERAET',
+    `${gauge.name} ist frischer als die letzte Regeländerung (${gauge.report})`,
+    status.fresh,
+    status.fresh ? status.reason : `${status.reason} — bitte ${gauge.command} laufen lassen`,
+  )
+}
 
 // AK-1 hat seit T-M14-14 eine eigene Zeile — vorher stand es in der Sammelzeile oben und
 // wurde von keinem einzigen Test berührt: die einzigen `winner`-Zusicherungen im Bestand
@@ -226,7 +314,23 @@ const report = [
 mkdirSync(join(ROOT, 'docs/reports'), { recursive: true })
 writeFileSync(join(ROOT, 'docs/reports/acceptance.md'), report)
 
-console.log(`\n${passed} von ${results.length} Prüfungen bestanden.`)
+// Die Messung, aus der der nächste Lauf seine Prognose zieht (2026-09-08).
+const totalSeconds = Math.round((Date.now() - runStarted) / 1000)
+writeFileSync(
+  timingPath,
+  JSON.stringify(
+    {
+      totalSeconds,
+      measuredAt: new Date().toISOString(),
+      commit: head(),
+      steps: results.filter((r) => typeof r.seconds === 'number').map((r) => ({ id: r.id, description: r.description, seconds: r.seconds })),
+    },
+    null,
+    2,
+  ) + String.fromCharCode(10),
+)
+
+console.log(`\n${passed} von ${results.length} Prüfungen bestanden — Gesamtdauer ${Math.round(totalSeconds / 60)} min ${totalSeconds % 60} s.`)
 console.log('docs/reports/acceptance.md geschrieben.')
 console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 
@@ -234,4 +338,7 @@ for (const c of spaetere) {
   console.log(`${c.id}: ${spaetereZeile(c)}`)
 }
 
-process.exit(v1Failed.length === 0 ? 0 : 1)
+// Ein veraltetes Messgerät färbt die Abnahme rot, obwohl es kein AK-Kriterium ist:
+// eine Abnahme auf Regeln, die nie vermessen wurden, wäre eine stille Lücke.
+const gaugeFailed = results.filter((r) => r.id === 'MESSGERAET' && !r.ok)
+process.exit(v1Failed.length === 0 && gaugeFailed.length === 0 ? 0 : 1)

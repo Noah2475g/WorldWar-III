@@ -18,6 +18,13 @@ export interface HeaderProps {
   view: PublicView | null
   ticksPerDay: number
   speed: number
+  /**
+   * Die Uhr behauptet Tempo, das nicht laeuft (T-M22-05, R-TIME-02, Befund V2-09):
+   * trotz eingestellter Geschwindigkeit lief laenger als zwei Sekunden kein Tick —
+   * verdecktes Fenster, stehendes requestAnimationFrame. Dann sagt die Leiste
+   * "Pausiert" statt stillschweigend weiter ihr Tempo zu zeigen.
+   */
+  stalled?: boolean
   fastForwarding: boolean
   /**
    * Warum das Vorspulen anhielt, und wie weit es kam (T-M12-10, R-TIME-03).
@@ -111,6 +118,14 @@ export function Header(props: HeaderProps) {
 
       <div className="clock">
         <span className="clock__time">{formatTime(props.view?.tick ?? 0, props.ticksPerDay)}</span>
+
+        {/* Eine stehende Uhr sagt es (T-M22-05, V2-09) — als role="status", damit
+            auch ein Vorleseprogramm erfaehrt, dass die Zeit gerade nicht laeuft. */}
+        {props.stalled && (
+          <span className="clock__stalled" role="status">
+            {t('header.paused')}
+          </span>
+        )}
 
         <div className="speeds" role="group" aria-label={t('header.speed')}>
           {SPEED_STOPS.map((stop) => (

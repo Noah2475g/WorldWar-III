@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
-import { CRITERIA, criteriaOf, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
+import { CRITERIA, criteriaOf, gaugeStatus, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
 
 const DOC = `
 ### 2.1 Beispiel
@@ -383,5 +383,36 @@ describe('R-ARCH-05 Ein spaeteres Kriterium faerbt die V1-Abnahme nicht rot', ()
       'AK-6',
       'AK-7',
     ])
+  })
+})
+
+/**
+ * Die Abnahme faehrt seit dem 2026-09-08 nicht mehr die ganze langsame Suite
+ * (75-130 min), sondern nur, was ihre Kriterien woertlich verlangen. Die Balancing-
+ * Messgeraete (Parameterlauf, Turnier) ersetzt ein Frische-Waechter: sind die
+ * Regeldateien juenger als der Bericht des Messgeraets, ist die Abnahme rot -
+ * ein Messgeraet darf nicht still veralten. Entscheid in DECISIONS.md.
+ */
+describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
+  it('meldet frisch, wenn der Bericht juenger ist als die letzte Regelaenderung', () => {
+    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: 200, rulesDirty: false }).fresh).toBe(true)
+  })
+
+  it('meldet veraltet, wenn die Regeln juenger sind als der Bericht', () => {
+    const status = gaugeStatus({ rulesChangedAt: 300, gaugeChangedAt: 200, rulesDirty: false })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Regeln')
+  })
+
+  it('meldet veraltet bei uncommitteten Regelaenderungen - die sichere Richtung', () => {
+    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: 200, rulesDirty: true }).fresh).toBe(false)
+  })
+
+  it('meldet veraltet, wenn der Bericht keinen Stand hat', () => {
+    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: null, rulesDirty: false }).fresh).toBe(false)
+  })
+
+  it('meldet veraltet, wenn der Regelstand unbekannt ist - die sichere Richtung', () => {
+    expect(gaugeStatus({ rulesChangedAt: null, gaugeChangedAt: 200, rulesDirty: false }).fresh).toBe(false)
   })
 })

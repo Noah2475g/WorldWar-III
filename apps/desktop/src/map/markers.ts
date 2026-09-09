@@ -39,6 +39,11 @@ export interface ArmyMarker {
     toProvinceId: string
     departureTick: number
     arrivalTick: number
+    /**
+     * Die ganze Restroute ab der naechsten Station, fuer den Marschpfeil (T-M26-01).
+     * Fehlt sie, bleibt der Pfeil bei der einen Etappe, die `toProvinceId` kennt.
+     */
+    route?: readonly string[]
   }
 }
 
@@ -123,6 +128,48 @@ export function marchPoint(
   if (anteil <= 0 || anteil >= 1) return null
 
   return { x: from.x + (to.x - from.x) * anteil, y: from.y + (to.y - from.y) * anteil }
+}
+
+/**
+ * Trefferflaeche eines Armee-Markers in Bildpunkten (T-M22-06, R-UI-05, Befund V2-14).
+ *
+ * Der Kasten wird 20×14 gezeichnet und war damit ein ~12-px-Klickziel; ausgewaehlt
+ * wurde praktisch nur ueber das Provinz-Panel. Gepickt wird groesser als gezeichnet:
+ * mindestens 24 px, der Finger darf danebenliegen.
+ */
+export const ARMY_HIT_BOX = 24
+
+/**
+ * Die eigene Armee unter einem Bildschirmpunkt — oder null.
+ *
+ * Dieselbe Ortsrechnung wie das Zeichnen (`markersFor`, samt Marschposition), damit
+ * getroffen wird, was man sieht, und nicht die Provinzmitte, die eine marschierende
+ * Armee laengst verlassen hat. Nur eigene Armeen: eine fremde traegt keine Befehle,
+ * und ihr Kasten soll den Klick auf die Provinz darunter nicht schlucken.
+ */
+export function pickArmy(
+  screen: Point,
+  armies: readonly ArmyMarker[],
+  centres: Readonly<Record<string, Point>>,
+  view: View,
+  extras: MarkerExtras = {},
+): string | null {
+  const reach = ARMY_HIT_BOX / 2
+  let bestId: string | null = null
+  let bestDistance = Infinity
+
+  for (const marker of markersFor(armies, {}, centres, view, extras)) {
+    if (marker.kind !== 'army' || !marker.own || !marker.armyId) continue
+    const dx = screen.x - marker.x
+    const dy = screen.y - marker.y
+    if (Math.abs(dx) > reach || Math.abs(dy) > reach) continue
+    const distance = dx * dx + dy * dy
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestId = marker.armyId
+    }
+  }
+  return bestId
 }
 
 export function markersFor(

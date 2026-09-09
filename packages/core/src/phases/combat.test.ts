@@ -362,3 +362,81 @@ describe('R-TIME-06/AK3 Der Beginn eines Gefechts wird gemeldet', () => {
     expect(started?.concerns.slice().sort()).toEqual(['p1', 'p2'])
   })
 })
+
+/**
+ * Das Gefecht sammelt seine Zahlen fuer die Anzeige (T-M27-01, R-BAT-05, D25.6).
+ *
+ * Der Kern kannte Staerken, Gelaende und Festung — das Ereignis nannte nur die
+ * Verluste. Die Felder kommen ADDITIV dazu (optional im Typ, immer gesetzt beim
+ * Erzeugen): Ereignisse gehen nicht in den Zustands-Hash ein, alte Spielstaende
+ * tragen sie schlicht nicht.
+ */
+describe('R-BAT-05 Das Gefecht meldet Staerken und Umstaende (T-M27-01)', () => {
+  type Report = {
+    losses: Record<string, number>
+    strengths?: Record<string, { before: number; after: number }>
+    terrain?: string
+    fortressLevel?: number
+    entrenched?: string[]
+    attackBlocked?: string[]
+  }
+
+  const resolvedIn = (result: { events: readonly { type: string }[] }): Report =>
+    result.events.find((e) => e.type === 'BATTLE_RESOLVED') as unknown as Report
+
+  it('traegt Staerke vorher/nachher beider Seiten, Gelaende und Festung', () => {
+    state.provinces['n2']!.buildings.fortress = 2
+    placeArmy(state, {
+      owner: 'p1',
+      at: 'n2',
+      units: [{ unitKey: 'infantry', hpTotal: 30_000 }],
+      stance: 'defensive',
+    })
+    placeArmy(state, { owner: 'p2', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+
+    const report = resolvedIn(step(state, [], ctx))
+
+    expect(report.strengths).toBeDefined()
+    expect(report.strengths!['p1']!.before).toBe(30_000)
+    expect(report.strengths!['p2']!.before).toBe(20_000)
+    // Nachher ist exakt vorher minus Verlust — dieselbe Groesse, die der Bericht nennt.
+    expect(report.strengths!['p1']!.after).toBe(30_000 - report.losses['p1']!)
+    expect(report.strengths!['p2']!.after).toBe(20_000 - report.losses['p2']!)
+    expect(report.terrain).toBe('forest')
+    expect(report.fortressLevel).toBe(2)
+  })
+
+  it('nennt die eingegrabene Seite und die Seite unter Rueckzugssperre', () => {
+    placeArmy(state, {
+      owner: 'p1',
+      at: 'n2',
+      units: [{ unitKey: 'infantry', hpTotal: 30_000 }],
+      stance: 'defensive',
+    })
+    const angreifer = placeArmy(state, {
+      owner: 'p2',
+      at: 'n2',
+      units: [{ unitKey: 'infantry', hpTotal: 20_000 }],
+    })
+    angreifer.cannotAttackUntil = 100
+
+    const report = resolvedIn(step(state, [], ctx))
+
+    // Eingegraben ist, wer die Provinz besitzt und stillsteht — exakt die Bedingung,
+    // unter der defenceMultiplier den Eingrabungsbonus vergibt.
+    expect(report.entrenched).toEqual(['p1'])
+    expect(report.attackBlocked).toEqual(['p2'])
+  })
+
+  it('meldet ohne Festung die Stufe 0, und niemand ist eingegraben, der angreift', () => {
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+    placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+
+    const report = resolvedIn(step(state, [], ctx))
+
+    expect(report.fortressLevel).toBe(0)
+    expect(report.terrain).toBe('plains')
+    expect(report.entrenched).toEqual([])
+    expect(report.attackBlocked).toEqual([])
+  })
+})

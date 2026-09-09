@@ -6,7 +6,6 @@
   "main": "./src/index.ts",
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
-    "@tauri-apps/plugin-fs": "^2.5.2",
     "@worldwar/ai": "workspace:*",
     "@worldwar/core": "workspace:*",
     "@worldwar/shared": "workspace:*",

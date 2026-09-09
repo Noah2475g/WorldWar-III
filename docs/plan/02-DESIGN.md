@@ -1916,3 +1916,65 @@ Damit die Führung nicht bevormundet (AK2):
   steht. Die Führung sagt, *was als Nächstes*, nicht *was alles*.
 - **Keine Sperren.** Auch nicht die freundliche Art („erst wenn Sie X getan haben"). Ein
   Spieler, der die Führung ignoriert, spielt weiter, und sie holt ihn ein.
+
+## D24. Das nächste Niveau (M22–M24 — LEVEL-UP.md)
+
+Der Entwurf steht in Kurzform in `docs/plan/LEVEL-UP.md` §3 (D24.1–D24.8) und wird
+hier gebunden, damit der Plan-Wächter eine Adresse hat. Die Leitidee in einem Satz:
+**der Kern erzeugt jede Information vollständig — die Oberfläche darf sie auf dem
+letzten Meter nicht mehr verlieren.**
+
+- **D24.1 Protokoll:** volle Breitenzeile je Eintrag; Einträge, die den Spieler selbst
+  betreffen, tragen eine eigene Klasse (Zinnober-Balken, fett). Tagesberichte werden
+  aufklappbare Einträge mit Körper (D24.4).
+- **D24.2 Seitenleiste:** kein horizontales Scrollen; die Wirtschaftstabelle verliert
+  die Spalte „In Auftrag" an ein Zeichen mit Zahl hinter dem Bestand. Wächter am
+  gerenderten Baum: `scrollWidth <= clientWidth`.
+- **D24.3 Start und Menü:** Titelzeile im Startdialog; „Weiterspielen (Tag N)" als
+  erster Knopf, wenn ein Stand existiert; Menü dreiteilig: Neue Partie · Spielstände ·
+  Einstellungen.
+- **D24.4 Tagesbericht:** die Oberfläche liest den Zustand am Tageswechsel und rendert
+  Bilanz je Rohstoff (nur ≠ 0), Moralrichtung, Aufträge, „morgen neu: X". Kein neues
+  Kern-Ereignis.
+- **D24.5 Befehls-Quittung und Pausiert:** ausstehende Befehle sind am auslösenden
+  Element sichtbar; steht die Uhr trotz eingestelltem Tempo länger als zwei Sekunden,
+  zeigt die Kopfleiste „Pausiert". Dazu A11y-Namen „VERB OBJEKT" für Befehlsknöpfe und
+  24-px-Trefferflächen für Armee-Marker.
+- **D24.6 Sprachwächter:** Ersatzschrift-Prüfung über `de.ts` und die Prosa-Strings
+  der `actions.ts`; Genus/Numerus-Tabelle je Gebäude, Einheit und Macht speist die
+  Systemsätze. Ehrliche Namen: `AUS-SE`; Marktzeichen neben dem `<select>`.
+- **D24.7 Wozu-Sätze:** Führungsschritte tragen ein `why`-Feld; zwei neue Schritte
+  erklären Punktequellen und Ausdehnungs-Moralstrafe, bevor sie wirken; der Wächter
+  `unlocks-explained` prüft mit.
+- **D24.8 Kriegsmarsch:** beide Varianten (0,35 gegen 0,5) im Parameterlauf messen,
+  mit Zahlen entscheiden, in DECISIONS.md und BALANCING.md binden.
+
+## D25. Grafik statt Text (M25–M27 — LEVEL-UP-2-GRAFIK.md)
+
+Der Entwurf steht in Kurzform in `docs/plan/LEVEL-UP-2-GRAFIK.md` §3 (D25.1–D25.6)
+und wird hier gebunden. Leitidee: **die Daten sind längst da — sie werden gezeichnet
+statt aufgezählt.** Leitplanken: eigene SVG/Canvas-Komponenten ohne Fremdbibliothek,
+Lagekarten-Stil (Zinnober nur als Signal), Querscroll-Wächter und Zeichenbudget
+gelten weiter, prefers-reduced-motion schaltet gewollte Bewegung ab, der Kern bleibt
+unangetastet (Zeitreihe ist Sache der Hülle; Ereignis-Ergänzungen nur additiv).
+
+- **D25.1 Zeitreihe:** Aufzeichnung am Tageswechsel (Punkte je bekannter Macht,
+  eigene Bestände/Bilanzen), Ringpuffer mit Deckel, je Spielstand-Slot in IndexedDB.
+- **D25.2 Diagramm-Bausteine:** `ui/charts/` — LineChart (Machtverlauf), Sparkline
+  (7 Tage), DeltaBar (±-Balken); Zahlen bleiben die zugänglichen Werte (aria).
+- **D25.3 Marschpfeile:** Route als Pfad mit Pfeilspitze, zurückgelegter Anteil
+  gefüllt; eigene Tinte, fremde Spielerfarbe.
+- **D25.4 Kartenereignisse:** Besitzwechsel als ~600-ms-Farbwelle, Kampfring nach
+  Gefechtsgröße; reduced-motion → sofort.
+- **D25.5 Beziehungsmodus:** MAP_MODES + relations (eigen/verbündet/Frieden/Krieg/
+  unbekannt), Legende, Taste M, ΔE-geprüfte Palette.
+- **D25.6 Gefechtsbild:** aufklappbarer Protokollkörper mit zwei Stärkebalken
+  (Verlust als zinnoberner Abschnitt) und Zeichen für Gelände/Festung/Eingrabung/
+  Rückzugssperre; Datensatz aus BATTLE-Ereignissen plus Sicht.
+
+## D26. Der Feinschliff nach dem Spielen (M28 — LEVEL-UP-3.md)
+
+Kurzform in `docs/plan/LEVEL-UP-3.md` §3 (D26.1–D26.5): Kurvenskala ab min statt 0
+mit Endwert-Beschriftung · Zielwahl-Quittung in der Armee-Statuszeile · frisches
+Tauri-Bündel mit AK-8-Messung · Debug-Texte mit Macht- und Rohstoffnamen ·
+Ausgaben-Spalte der Wirtschaft aus den Zahlen des Tagesberichts.

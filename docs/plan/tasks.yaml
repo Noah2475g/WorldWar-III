@@ -49,6 +49,19 @@ milestones:
   # Noahs zweiter Wunsch vom 2026-09-07: der Spieler soll wissen, was er anklicken muss,
   # um voranzukommen. Die bestehende Einstiegshilfe erklaert die Bedienung, nicht das Spiel.
   - { id: M21, title: Die ersten Spieltage fuehren }
+  # LEVEL-UP-Plan vom 2026-09-07 (docs/plan/LEVEL-UP.md), aus dem delegierten
+  # Abnahme-Playtest V2: drei Achsen UI/UX, Stil, Spiellogik.
+  - { id: M22, title: Die Oberflaeche haelt, was der Kern rechnet }
+  - { id: M23, title: Die Sprache wird fertig }
+  - { id: M24, title: Die Tage bekommen Inhalt }
+  # LEVEL-UP 2 vom 2026-09-08 (docs/plan/LEVEL-UP-2-GRAFIK.md): Noahs Auftrag
+  # "weg vom Text, hin zu Grafiken" - alle fuenf Vorschlaege A-E gewaehlt.
+  - { id: M25, title: Die Zahlen werden Bilder }
+  - { id: M26, title: Die Karte lebt }
+  - { id: M27, title: Das Gefecht zeigt sich }
+  # LEVEL-UP 3 vom 2026-09-08 (docs/plan/LEVEL-UP-3.md): der Feinschliff nach dem
+  # Spielen - Ausfuehrung erst nach Noahs Feedback (Haltepunkt, siehe Plan).
+  - { id: M28, title: Der Feinschliff nach dem Spielen }
 
 tasks:
   - id: T-M0-01
@@ -908,9 +921,9 @@ tasks:
   - id: T-M12-03
     milestone: M12
     title: Abnahmelauf
-    status: todo
+    status: done
     gate: true
-    gate_reason: "Stand 2026-09-06 abends: der letzte VOLLSTAENDIGE Abnahmelauf meldete 5 von 7 (docs/reports/acceptance.md) - er lief VOR der Reparatur von AK-1 und ist damit ueberholt, keine Aussage ueber den heutigen Stand. Einzeln nachgewiesen gruen sind seither AK-1 (docs/reports/fullgame.json, entschieden an Spieltag 876), Turnier und KI-Integrationslauf; die uebrigen langsamen Pruefungen sind seit der Reparatur nicht nachgemessen. Der naechste vollstaendige Lauf ist Schritt 1 von docs/plan/WORKFLOW.md. Offen bleibt danach AK-7, der Playtest durch Noah - er laeuft nach dem von T-M14-15 ueberarbeiteten docs/PLAYTEST.md und wird in docs/reports/playtest-v1.md beantwortet"
+    gate_reason: "Erfuellt am 2026-09-08 (nachts): pnpm acceptance 7 von 7 gegen den Endstand nach M22-M24 (65a4fd8 plus Planpflege), test:slow 6669s unter Fremdlast zweier verwaister Worker eines frueheren Laufs - alle Pruefungen bestanden, AK-1 an Tag 798 entschieden (2717 Eroberungen, 15 Kriegserklaerungen). AK-7: Playtest auf Noahs ausdrueckliche Delegation (/goal-Auftrag 2026-09-07, DECISIONS.md), 62 von 62 Fragen, Berichte docs/reports/playtest-v1.md und playtest-2026-09-07-v2.md"
     deps: [T-M12-01, T-M12-02b, T-M14-15, T-M12-04, T-M12-05, T-M12-06, T-M12-07, T-M12-08, T-M12-09, T-M12-10]
     acceptance: [AK-1, AK-2, AK-3, AK-4, AK-5, AK-6, AK-7]
     files: []
@@ -1696,3 +1709,348 @@ tasks:
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, docs/plan/PROBLEME.md]
     tests: [apps/desktop/src/ui/Panels.test.tsx, packages/core/src/phases/occupation.test.ts, test/docs.test.ts]
     dod: "Drei nachgemessene Fehler in dem, was das Spiel heute schon sagt - eine falsche Auskunft ist schlimmer als keine, weil der Spieler ihr glaubt. (1) Panels.tsx:81 setzt title auf disabledReason ODER hint: bei einem gesperrten Knopf gewinnt der Grund, und Kosten und Dauer fallen weg. Der Spieler erfaehrt, dass es die Fabrik erst ab Tag 8 gibt, aber nie, was sie kosten wird. Verschaerfend ist availabilityHint in actions.ts:106 damit toter Code: es liefert seinen Text nur, solange die Sache gesperrt ist, also genau dann, wenn er verworfen wird - gebaut in T-M15-03, nie sichtbar, und der Test prueft die Daten statt den Baum. (2) de.ts:490 sagt, Truppen duerften bei Frieden die Grenze nicht ueberschreiten; movement.ts:33 ruft findPath ohne canEnter, sie duerfen. Frieden hindert nur am Behalten. (3) ANLEITUNG.md:124 sagt, ein Bauabbruch gebe nichts zurueck; der Code erstattet die Haelfte, und der Playtest hat es gemessen. Fertig, wenn alle drei stimmen, die Tests am gerenderten Baum haengen und ein Waechter die Fehlerklasse faengt: die Anleitung darf keine Zahl nennen, die den Regeldateien widerspricht"
+
+  # --- M22: Die Oberflaeche haelt, was der Kern rechnet (LEVEL-UP.md, Achse UI/UX) ---
+
+  - id: T-M22-01
+    milestone: M22
+    title: Das Protokoll spricht in ganzen Zeilen
+    status: done
+    deps: []
+    requirements: [R-TIME-06, R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Befund V2-01: jeder Protokolleintrag bricht in einer ~90-px-Spalte nach je 1-2 Woertern um; die Leiste ist ~1400 px breit. Fertig, wenn ein Eintrag die verfuegbare Breite nutzt und ein Test am gerenderten Baum die Eintragsbreite an die Leistenbreite bindet (abzueglich Zeitstempel, kein fester Pixelwert). Der Test faellt gegen den heutigen Stand"
+
+  - id: T-M22-02
+    milestone: M22
+    title: Die Seitenleiste hoert auf, seitwaerts zu kriechen
+    status: done
+    deps: []
+    requirements: [R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befund V2-02: die Wirtschaftstabelle (Spalte In Auftrag) ist breiter als die Leiste, die ganze Leiste scrollt horizontal, Armeeknoepfe erscheinen abgeschnitten, Ueberschriften verlieren Buchstaben. Fertig, wenn die Leiste kein horizontales Scrollen mehr kennt, die Tabelle in die Leiste passt (D24.2: In Auftrag wird ein Zeichen mit Zahl hinter dem Bestand) und ein Waechter-Test am gerenderten Baum scrollWidth <= clientWidth fuer die Leiste bindet"
+
+  - id: T-M22-03
+    milestone: M22
+    title: Was mich betrifft, sieht anders aus
+    status: done
+    deps: [T-M22-01]
+    requirements: [R-TIME-06, R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Befund V2-07: der Fall der eigenen Grossstadt hat dieselbe optische Stimme wie ein Weltereignis am anderen Ende der Karte. Fertig, wenn Eintraege, die den Spieler selbst betreffen (eigener Provinzverlust, Hauptstadt, Aufstand im eigenen Land, eigenes Ausscheiden), eine eigene Klasse tragen (Zinnober-Balken, fett) und ein Test die Zuordnung Ereignis zu Klasse gegen die Ereignisarten des Kerns bindet - fuer jede Art, nicht fuer ein Beispiel"
+
+  - id: T-M22-04
+    milestone: M22
+    title: Start mit Gesicht, Menue mit Wegen, Weiterspielen mit einem Klick
+    status: done
+    deps: []
+    requirements: [R-UI-05, R-GAME-03]
+    design: [D-24]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befunde V2-03/V2-04/V2-05: der Startdialog ist ein Formular ohne Titel; nach dem Neustart ist der juengste Stand zwei Klicks entfernt; das Menue kennt nur Einstellungen. Fertig, wenn (1) der Startdialog eine Titelzeile mit Spielnamen traegt, (2) bei vorhandenem Spielstand der ERSTE Knopf Weiterspielen (Tag N) ist und den juengsten Stand laedt, (3) das Menue die drei Wege Neue Partie / Spielstaende / Einstellungen bietet - auch aus der laufenden Partie. Tests am gerenderten Baum; der Weiterspielen-Test faellt gegen den heutigen Stand"
+
+  - id: T-M22-05
+    milestone: M22
+    title: Jeder Befehl quittiert; eine stehende Uhr sagt es
+    status: done
+    deps: []
+    requirements: [R-UI-05, R-TIME-02]
+    design: [D-24]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/game/fastForward.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befunde V2-08/V2-09: nach Krieg erklaeren zeigt das Panel weiter Frieden ohne jeden Hinweis, bis der naechste Tick laeuft - bei Pause dauerhaft; und eine Uhr, die nicht laeuft (verdecktes Fenster, requestAnimationFrame steht), behauptet weiter ihr Tempo. Fertig, wenn (1) ein abgeschickter, noch nicht angewendeter Befehl am ausloesenden Element sichtbar ist (befohlen - wirkt beim Weiterlaufen), gespeist aus der Befehlsuebergabe der Huelle, und (2) die Kopfleiste Pausiert zeigt, wenn trotz eingestelltem Tempo laenger als zwei Sekunden kein Tick lief. Beide Tests fallen gegen den heutigen Stand"
+
+  - id: T-M22-06
+    milestone: M22
+    title: Knoepfe sagen, was sie tun
+    status: done
+    deps: []
+    requirements: [R-UI-06, R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/map/markers.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/map/markers.test.ts]
+    dod: "Befunde V2-13/V2-14: die Bau- und Aushebeknoepfe tragen als zugaenglichen Namen den Kosten-Tooltip statt der Aktion - ein Vorleseprogramm hoert nie Kaserne bauen; Armee-Marker sind ~12-px-Klickziele. Fertig, wenn jeder Befehlsknopf einen aria-Namen VERB OBJEKT traegt (Kosten bleiben im title), ein a11y-Test das fuer ALLE Aktionen aus actions.ts bindet, und die Trefferflaeche der Armee-Marker auf mindestens 24 px waechst (Picking-Radius, nicht Zeichnungsgroesse)"
+
+  # --- M23: Die Sprache wird fertig (LEVEL-UP.md, Achse Stil) ---
+
+  - id: T-M23-01
+    milestone: M23
+    title: Umlaute kehren zurueck, ein Waechter haelt die Tuer
+    status: done
+    deps: []
+    requirements: [R-UI-07]
+    design: [D-24]
+    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/game/actions.ts, packages/ai/src/economy.ts, packages/ai/src/military.ts]
+    tests: [test/guards/text-keys.test.ts, apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Befund V2-10: Tooltips sagen haelt, Staerke, Haelfte; das Debug-Panel fuer, naechste - die tasks.yaml-Regel ohne Umlaute ist in Spielertexte durchgesickert. Fertig, wenn alle deutschen Anzeigetexte echte Umlaute tragen und ein Waechter jeden Text aus de.ts und jeden Prosa-String der actions.ts auf ae/oe/ue-Ersatzschrift prueft (Ausnahmen wie Neue oder Feuer ueber eine Musterliste, nicht ueber Einzelfaelle). Der Waechter faellt gegen den heutigen Stand"
+
+  - id: T-M23-02
+    milestone: M23
+    title: Grammatik - Genus, Dativ, Numerus, doppelte Namen
+    status: done
+    deps: [T-M23-01]
+    requirements: [R-UI-07]
+    design: [D-24]
+    files: [apps/desktop/src/i18n/de.ts, apps/desktop/src/i18n/grammar.ts, apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/format.ts, apps/desktop/src/ui/Meter.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/i18n/grammar.test.ts, apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/format.test.ts, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befunde V2-11/V2-17: Neu ab heute: Kaserne. Sie koennen ES jetzt bauen (Genus haengt am Gebaeude), Angehalten nach 2 Tage (Dativ), Vereinigte Staaten erklaert Mexiko den Krieg (Numerus - der Machtname verlangt Plural), Lage-Tabelle rendert den Machtnamen doppelt. Fertig, wenn eine kleine Genus/Numerus-Tabelle je Gebaeude, Einheit und Macht die Saetze speist, die vier gemessenen Faelle korrekt sind und ein Test je Fall gegen den alten Text faellt"
+
+  - id: T-M23-03
+    milestone: M23
+    title: AUS-SE bekommt einen ehrlichen Namen, der Markt sein Zeichen
+    status: done
+    deps: []
+    requirements: [R-MAP-01, R-UI-05]
+    design: [D-24]
+    files: [data/maps/world.json, data/maps/world-shapes.json, data/mapgen/merge-rules.json, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, docs/plan/DECISIONS.md]
+    tests: [apps/headless/test/worldmap.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Entscheidungen vom 2026-09-07 (DECISIONS.md): (1) Suedostaustralien besteht aus Hauptstadtterritorium, Jervis Bay und Macquarie-Insel - der Name wird ehrlich (Australisches Hauptstadtterritorium), der Zuschnitt bleibt, die Anreicherung wird nicht neu gewuerfelt; ein Test bindet den neuen Anzeigenamen. (2) Der Markt behaelt sein select (T-M20-03 bestaetigt), zeigt aber das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste - Bedienbarkeit unangetastet, das Auge bekommt seinen Anker"
+
+  # --- M24: Die Tage bekommen Inhalt (LEVEL-UP.md, Achse Spiellogik) ---
+
+  - id: T-M24-01
+    milestone: M24
+    title: Der Tagesbericht bekommt einen Koerper
+    status: done
+    deps: [T-M22-01]
+    requirements: [R-TIME-06, R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befund V2-06 und Frage 50 des Bogens: Tagesbericht fuer Tag 8. ist eine Ueberschrift ohne Koerper - der wichtigste wiederkehrende Eintrag sagt nichts. Fertig, wenn der Tagesbericht aufklappbar traegt: Bilanz je Rohstoff (nur die von null verschiedenen), Moralrichtung je eigener Provinz, fertige und laufende Auftraege, und morgen neu: X aus der Freischaltungsachse. Kein neues Kern-Ereignis: die Oberflaeche liest den Zustand am Tageswechsel (D24.4). Ein Test bindet den Koerper an einen Tag mit bekannten Zahlen und faellt gegen den heutigen leeren Eintrag"
+
+  - id: T-M24-02
+    milestone: M24
+    title: Das Wozu - Punkte, Moralstrafe, zwei neue Fuehrungsschritte
+    status: done
+    deps: []
+    requirements: [R-UI-18, R-UI-05]
+    design: [D-24]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/tutorial.test.ts, test/guards/unlocks-explained.test.ts, apps/desktop/src/ui/Tutorial.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/game/onboarding.slow.test.ts]
+    dod: "Frage 50 ehrlich beantwortet: nein, das Wozu fehlt. Gemessen (PROBLEME.md Der Einstieg ist enger): die Bevoelkerung stellt 98,6 Prozent der Startpunkte, eine Eroberung wiegt 285 Kasernen, und ab der dritten Provinz kostet jede weitere 3000 Zielmoral - nichts davon sagt das Spiel. Fertig, wenn (1) jeder bestehende Fuehrungsschritt einen Begruendungssatz traegt (Feld why - warum kommt die Kaserne vor der Infanterie), (2) zwei neue Schritte die Punktequellen und die Ausdehnungs-Moralstrafe erklaeren, BEVOR sie zum ersten Mal wirken, und (3) der bestehende Waechter unlocks-explained das why-Feld mitprueft"
+
+  - id: T-M24-03
+    milestone: M24
+    title: Das Kriegsmarsch-Paradox wird gemessen und entschieden
+    status: done
+    deps: []
+    requirements: [R-BAT-04]
+    design: [D-24]
+    files: [data/rules/default/constants.json, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/reports/warmarch.json]
+    tests: [apps/headless/test/economy-scale.test.ts, apps/headless/test/walkthrough.test.ts, packages/core/src/phases/movement.test.ts]
+    dod: "PROBLEME.md (2026-09-07): auf fremdem Boden gilt Marschfaktor 0,7, im Krieg 0,35 - eine Kriegserklaerung HALBIERT das Tempo, der schnellste Eroeffnungszug ist damit der unangekuendigte Ueberfall (200 Ansehen, loest Krieg aus). Dazu Befund V2-15: Maersche von 14-31 Tagen dominieren die Fruehphase. Fertig, wenn beide Varianten (0,35 heute gegen einen gemilderten Kriegsfaktor, Vorschlag 0,5) im Parameterlauf gemessen sind (Eroberungen, Kriegsdauer, Sieg-Tag), die Entscheidung mit Zahlen in DECISIONS.md steht und BALANCING.md den Eintrag traegt. Eine AENDERUNG der Konstante ist nur fertig, wenn der Golden-Master-Umgang begruendet ist; ein Beibehalten ist als Ergebnis zulaessig"
+
+  # --- M25: Die Zahlen werden Bilder (LEVEL-UP-2-GRAFIK.md, Vorschlaege A+B) ---
+
+  - id: T-M25-01
+    milestone: M25
+    title: Die Partie bekommt ein Gedaechtnis - Zeitreihe je Spieltag
+    status: done
+    deps: []
+    requirements: [R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/game/saves.ts]
+    tests: [apps/desktop/src/game/saves.test.ts]
+    dod: "Die Sicht kennt nur das Jetzt - fuer einen Verlauf braucht die Huelle eine Aufzeichnung. Fertig, wenn am Tageswechsel (derselbe Effekt-Ort wie der Tagesbericht) je bekannter Macht die Punkte und fuer die eigene Macht Bestaende und Bilanzen in einen Ringpuffer mit Deckel geschrieben werden, der Puffer je Spielstand-Slot in IndexedDB mitgefuehrt wird (Speichern wie Laden), und ein alter Stand ohne Aufzeichnung die Kurve ehrlich am Ladetag beginnt. Tests: die Aufzeichnung waechst je Tag genau um einen Eintrag, der Deckel haelt, Speichern-Laden erhaelt sie; alle fallen ohne die Reparatur"
+
+  - id: T-M25-02
+    milestone: M25
+    title: Der Machtverlauf wird eine Kurve
+    status: done
+    deps: [T-M25-01]
+    requirements: [R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/charts/LineChart.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Vorschlag A: die spannendste Kurve des Spiels - wer fuehrt, wer holt auf - existiert nirgends. Fertig, wenn das Lage-Panel ueber der Punktetabelle ein Liniendiagramm des Punkteverlaufs aller bekannten Maechte zeigt (eigene SVG-Komponente, KEINE Fremdbibliothek; Spielerfarben aus tokens.ts; Legende; aria-Beschreibung nennt die Endwerte), der Leerzustand bei fehlender Aufzeichnung einen ehrlichen Satz sagt, und ein Test am gerenderten Baum die Kurvenpfade an bekannte Reihen bindet. Die Seitenleiste darf nicht querscrollen (Waechter aus T-M22-02 bleibt gruen)"
+
+  - id: T-M25-03
+    milestone: M25
+    title: Die Wirtschaft zeigt Trend und Bilanz als Bild
+    status: done
+    deps: [T-M25-01]
+    requirements: [R-UI-05, R-UI-13]
+    design: [D-25]
+    files: [apps/desktop/src/ui/charts/DeltaBar.tsx, apps/desktop/src/ui/charts/Sparkline.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/ui/charts/DeltaBar.test.tsx, apps/desktop/src/ui/charts/Sparkline.test.tsx, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Vorschlag B: sieben Rohstoffe mal fuenf Zahlenspalten - Trends muss man sich merken. Fertig, wenn jede Rohstoffzeile eine Sparkline der letzten sieben Tage (aus der Zeitreihe) und einen Bilanzbalken traegt (positiv gruen, negativ zinnober, null als Strich; Zahl bleibt daneben), die Tabelle dabei in der Leiste bleibt (Waechter T-M22-02) und ein Test die Balkenrichtung und die Sparkline-Punkte an bekannte Werte bindet. Fuer das Ohr bleibt die Zahl der zugaengliche Wert (aria)"
+
+  - id: T-M25-04
+    milestone: M25
+    title: Der Tagesbericht bekommt Balken
+    status: done
+    deps: [T-M25-03]
+    requirements: [R-UI-05]
+    design: [D-25]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Der Koerper des Tagesberichts (T-M24-01) nennt Bilanzen als Text. Fertig, wenn die Rohstoffzeilen des Berichts dieselben Delta-Balken nutzen wie die Wirtschaftstabelle (eine Komponente, zweimal verwendet - nicht zwei Kopien) und ein Test das am gerenderten Eintrag bindet"
+
+  # --- M26: Die Karte lebt (LEVEL-UP-2-GRAFIK.md, Vorschlaege C+E) ---
+
+  - id: T-M26-01
+    milestone: M26
+    title: Maersche werden Pfeile mit Fortschritt
+    status: done
+    deps: []
+    requirements: [R-MAP-05, R-UI-16]
+    design: [D-25]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/markers.ts, apps/desktop/src/App.tsx, docs/reports/render-bench.json]
+    tests: [apps/desktop/src/map/render.test.ts, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "Heute ist eine Bewegung eine gestrichelte Linie ohne Richtung und ohne Fortschritt. Fertig, wenn jede sichtbare marschierende Armee ihre Route als Pfad mit Pfeilspitze zeigt, der zurueckgelegte Anteil (aus Abmarsch- und Ankunftstick gerechnet) gefuellt und der Rest blass ist, eigene Armeen in Tinte und fremde in Spielerfarbe gezeichnet werden, und ein Test die Fortschrittsrechnung an bekannte Ticks bindet (0 Prozent beim Abmarsch, die Haelfte in der Mitte, voll bei Ankunft). Danach das Zeichenbudget nachmessen (render.bench, p95 gegen 16,7 ms) und die Zahl in docs/reports/render-bench.json begruenden"
+
+  - id: T-M26-02
+    milestone: M26
+    title: Kampf und Eroberung sind auf der Karte sichtbar
+    status: done
+    deps: [T-M26-01]
+    requirements: [R-MAP-05, R-UI-17]
+    design: [D-25]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/motion.ts, apps/desktop/src/map/modes.ts]
+    tests: [apps/desktop/src/map/render.test.ts, apps/desktop/src/ui/motion.test.ts]
+    dod: "Ein Besitzwechsel ist heute ein harter Farbsprung, ein Kampf ein Ring fester Staerke. Fertig, wenn ein Besitzwechsel als kurze Farbwelle laeuft (rund 600 ms, Flaeche blendet von alter zu neuer Farbe; bei prefers-reduced-motion sofortiger Wechsel - Muster in motion.ts), die Kampfzone ihre Intensitaet nach Gefechtsgroesse skaliert, und Tests die Blendkurve an feste Zeitpunkte binden sowie den reduced-motion-Pfad pruefen"
+
+  - id: T-M26-03
+    milestone: M26
+    title: Der fuenfte Kartenmodus - Beziehungen
+    status: done
+    deps: []
+    requirements: [R-MAP-06]
+    design: [D-25]
+    files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx, apps/desktop/src/ui/tokens.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/keyboard.test.ts]
+    dod: "Vorschlag E: die Diplomatie wohnt nur in einer Tabelle, obwohl PublicView.relations je Macht Zustand und Dauer fuehrt. Fertig, wenn MAP_MODES einen Modus relations kennt (eigen / verbuendet / Frieden / Krieg / unbekannt faerben die Welt aus eigener Sicht), die Legende alle fuenf nennt, die Taste M ihn im Zyklus erreicht, die fuenf Farben den bestehenden Farbabstandstest (Delta E) bestehen und ein Test die Farbwahl je Beziehungszustand bindet. Die Diplomatie-Tabelle bleibt unveraendert bestehen"
+
+  # --- M27: Das Gefecht zeigt sich (LEVEL-UP-2-GRAFIK.md, Vorschlag D) ---
+
+  - id: T-M27-01
+    milestone: M27
+    title: Das Gefecht sammelt seine Zahlen fuer die Anzeige
+    status: done
+    deps: []
+    requirements: [R-BAT-05, R-UI-10]
+    design: [D-25]
+    files: [apps/desktop/src/game/events.ts, packages/core/src/events/types.ts, packages/core/src/phases/combat.ts]
+    tests: [apps/desktop/src/game/events.test.ts, packages/core/src/phases/combat.test.ts]
+    dod: "Der Kern kennt Staerken, Verluste, Gelaende und Festung - der Protokolleintrag nennt nur die Verluste. Fertig, wenn je Gefecht ein Anzeigedatensatz entsteht (Staerke beider Seiten vorher/nachher, Verluste, Gelaende, Festung, Eingrabung, Rueckzugssperre), gespeist aus den BATTLE-Ereignissen plus der Sicht zum Ereigniszeitpunkt. Fehlt eine Angabe im Ereignis, wird sie dort ADDITIV ergaenzt (kein Hash-Bruch, Golden-Master unberuehrt - sonst Entscheid in DECISIONS.md statt stillem Umbau). Ein Test bindet den Datensatz an ein Gefecht mit bekannten Zahlen und faellt ohne die Sammlung"
+
+  - id: T-M27-02
+    milestone: M27
+    title: Das Gefecht zeigt sich - Staerkebalken und Zeichen
+    status: done
+    deps: [T-M27-01]
+    requirements: [R-BAT-05, R-UI-10]
+    design: [D-25]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/game/events.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts]
+    dod: "Vorschlag D: der Kampfbericht wird ein Bild. Fertig, wenn der Protokolleintrag eines Gefechts einen aufklappbaren Koerper traegt (Muster Tagesbericht aus T-M24-01): je Seite ein Staerkebalken vorher-zu-nachher mit dem Verlust als zinnobernem Abschnitt, dazu die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre aus dem bestehenden Symbolsatz, fuer das Ohr eine Satzfassung (aria). Ein Test bindet Balkenlaengen und Zeichen an den Datensatz aus T-M27-01 und faellt gegen den heutigen Texteintrag"
+
+  # --- M28: Der Feinschliff nach dem Spielen (LEVEL-UP-3.md) ---
+  # Der HALTEPUNKT (gebaut wird erst nach Noahs Spiel-Feedback) ist am 2026-09-08
+  # durch Noahs Freigabe aufgehoben; seine Befunde werden weiterhin als T-M28-06+
+  # ergaenzt. Begruendung im Plan.
+
+  - id: T-M28-01
+    milestone: M28
+    title: Die Kurve wird bei jeder Historienlaenge lesbar
+    status: done
+    deps: []
+    requirements: [R-UI-13]
+    design: [D-26]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/charts/LineChart.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Sichtpruefung 2026-09-08: acht Tage Historie ergeben flache, oben gedraengte Linien, weil die Y-Skala bei 0 beginnt und die Punktestaende das obere Fuenftel nutzen. Fertig, wenn die Skala von min minus Rand bis max plus Rand laeuft, jede Linie am rechten Rand ihren Endwert traegt, unter drei Punkten der ehrliche Wartesatz statt einer Pseudokurve steht, und ein Test die Skalengrenzen an bekannte Reihen bindet (faellt gegen die 0-Basis)"
+
+  - id: T-M28-02
+    milestone: M28
+    title: Auch die Zielwahl quittiert sichtbar
+    status: done
+    deps: []
+    requirements: [R-UI-05]
+    design: [D-26]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Debugging 2026-09-08: die Quittung aus T-M22-05 haengt per actionId am Marsch-befehlen-Knopf, der nach dem Bestaetigen verschwindet (setTargeting null) - der Spieler sieht nach dem Klick nichts. Fertig, wenn die Quittung in der Armee-Statuszeile erscheint (Marsch befohlen - wirkt beim Weiterlaufen), gespeist aus derselben pendingCommands-Sammlung, und ein Test den VOLLEN Zielwahl-Weg am gerenderten Baum faehrt und die Quittung nach dem Bestaetigen sieht - er faellt gegen den heutigen Stand"
+
+  - id: T-M28-03
+    milestone: M28
+    title: Frisches Buendel, AK-8 am echten Stand gemessen
+    status: done
+    # 2026-09-08: Die Messung am frischen Buendel BRACH AK-8 (Schreiben ging, Wiederlesen
+    # "forbidden path") und wurde zur Reparatur: tauri-plugin-fs kanonisiert existierende
+    # Pfade in die \\?\-Form, auf die kein Scope-Muster passt (Falsifikationskette in
+    # PROBLEME.md). Der Speicherweg laeuft jetzt ueber sechs eigene, engere Kommandos der
+    # Huelle; das fs-Plugin samt Berechtigungen ist entfernt. AK-8 danach vollstaendig
+    # neu gemessen, inkl. Weiterspielen-Knopf am Programm: docs/reports/packaging.md.
+    deps: []
+    requirements: [R-PKG-01, R-PKG-02]
+    design: [D-26]
+    files: [docs/reports/packaging.md, apps/desktop/src-tauri/src/main.rs, apps/desktop/src-tauri/Cargo.toml, apps/desktop/src-tauri/capabilities/local-only.json, apps/desktop/src/storage/TauriStorage.ts, apps/desktop/package.json, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/storage/TauriStorage.test.ts]
+    dod: "worldwar.exe ist gegen 75a0128 gebaut - seither StrictMode-Fix und die ganze Grafikrunde; die AK-8-Messung beschreibt sogar noch 1c33ec7. Fertig, wenn der Tauri-Bau bei unangefasster Quelle gegen den Endstand laeuft (waehrend des Baus keine Quelldatei anfassen - Falle 6) und die AK-8-Messung am NEUEN Buendel wiederholt ist: starten, speichern, schliessen, neu starten, laden; packaging.md traegt den Stand-Stempel"
+
+  - id: T-M28-04
+    milestone: M28
+    title: Die Debug-Ansicht spricht Namen
+    status: done
+    deps: []
+    requirements: [R-UI-07]
+    design: [D-26]
+    files: [packages/ai/src/economy.ts, packages/ai/src/military.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, test/guards/text-keys.test.ts]
+    dod: "Befund V2-12: das opt-in-Debug sagt p2 und money statt Mexiko und Geld. Fertig, wenn die Ziel-Texte Machtnamen und Rohstoffnamen aus derselben Quelle wie die uebrige Oberflaeche tragen (die Uebersetzung passiert in der Anzeige, nicht im KI-Paket - die KI bleibt englisch) und ein Test einen Zieltext mit Namen bindet"
+
+  - id: T-M28-05
+    milestone: M28
+    title: Die Wirtschaft sagt, wohin die Rohstoffe gehen
+    status: done
+    deps: []
+    requirements: [R-UI-05, R-UI-13]
+    design: [D-26]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/events.test.ts]
+    dod: "v1-Befund 15, nie adressiert: die Spalte Unterhalt fuehrt nur den Armeeunterhalt; Bau-, Aushebungs- und Marktkosten erscheinen in keiner Uebersicht - seit den Sparklines faellt der Bestand sichtbar, ohne dass eine Spalte sagt warum. Fertig, wenn die Tabelle einen Tagesabfluss Ausgaben fuehrt (Bau + Aushebung + Markt des Tages, aus denselben Zahlen wie der Tagesbericht), die Bilanz wieder zur sichtbaren Bestandskurve passt und ein Test die Spalte an einen Tag mit bekannten Ausgaben bindet"
+
+  # Noahs Spiel-Feedback vom 2026-09-08 (T-M28-06+, wie in LEVEL-UP-3.md vorgesehen).
+  # VORGEMERKT auf Noahs Wunsch ("bitte in den Plan vormerken") - Bau nach Freigabe.
+
+  - id: T-M28-06
+    milestone: M28
+    title: Der Einmarsch schlaegt Alarm
+    status: todo
+    deps: []
+    requirements: [R-TIME-06, R-UI-05]
+    design: [D-26]
+    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/game/events.test.ts]
+    dod: "Noahs Spiel-Feedback 2026-09-08: man kriegt es kaum mit, wenn feindliche Truppen in eigene Gebiete einlaufen. Fertig, wenn das Betreten eigenen Gebiets durch eine kriegsfuehrende fremde Armee ein DEUTLICHES Signal ausloest (Alarmbanner mit Provinznamen, Karten-Hervorhebung der Provinz, Ton nach dem bestehenden Muster, Eintrag mit log--self-Auszeichnung) und das Vorspulen dort anhaelt (Ereignis-Stopp wie bei M21). Entwurfsfrage vorab klaeren: welches Kern-Ereignis den Einmarsch traegt (ARMY_ARRIVED beim Gegner? additiv ergaenzen wie bei T-M27-01), ohne Golden-Master-Bruch"
+
+  - id: T-M28-07
+    milestone: M28
+    title: Angriff und Verteidigung fuehren sich selbst aus
+    status: todo
+    deps: [T-M28-06]
+    requirements: [R-BAT-03, R-UI-05]
+    design: [D-26]
+    files: [docs/plan/LEVEL-UP-3.md]
+    tests: []
+    dod: "Noahs Spiel-Feedback 2026-09-08: bei Angriffs- und Verteidigungsszenarien sollen die Truppen diese automatisch ausfuehren - heute verlangt jedes Gefecht Mikromanagement. ZUERST eine kleine Analyse (die Haltungen Angriff/Verteidigung existieren im Kern - was fehlt konkret? Kandidaten: Verteidiger marschieren selbsttaetig zur bedrohten eigenen Provinz in Reichweite; Haltung Angriff verfolgt zurueckweichende Gegner; eine Provinz-Garnisonshaltung), dann Entwurf in LEVEL-UP-3.md nachtragen und die Aufgabe in konkrete Teilaufgaben mit Kern-Beteiligung schneiden (Golden-Master-Umgang begruenden!). Erst nach dem Entwurf bauen - dieser Eintrag ist die Vormerkung, nicht der Bau"
+
+  - id: T-M28-08
+    milestone: M28
+    title: Kaempfe werden ein Ereignis
+    status: todo
+    deps: []
+    requirements: [R-MAP-05, R-UI-17]
+    design: [D-26]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/ui/sound.ts]
+    tests: [apps/desktop/src/map/render.test.ts]
+    dod: "Noahs Spiel-Feedback 2026-09-08: die Kaempfe sind noch zu unspektakulaer. Fertig, wenn ein laufendes Gefecht auf der Karte unuebersehbar ist (kraeftigere, groessere Kampfzone; Aufblitzen je Gefechtsrunde; Einschlag-/Rauchzeichen nach Gefechtsgroesse), eigene Gefechte einen Ton ausloesen (bestehendes Tonmuster, prefers-reduced-motion respektiert die Bewegung) und das Zeichenbudget die Erweiterung uebersteht (render.bench nachgemessen, p95 gegen 16,7 ms). Der Massstab: im Vorspulen faellt ein Krieg auf, ohne dass man das Protokoll liest"

@@ -1,9 +1,9 @@
-import { runAi, storeMemories } from '@worldwar/ai'
-import { RESOURCE_KEYS, createInitialState, runTicks, type GameConfig } from '@worldwar/core'
-import { TEST_RULES, smallWorld } from '@worldwar/testkit'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { runAi, storeMemories } from '@worldwar/ai'
+import { RESOURCE_KEYS, createInitialState, parseRules, runTicks, type MapData, type Rules } from '@worldwar/core'
+import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
 /**
  * The long run (R-ARCH-06, acceptance criterion 6). Slow suite only.
@@ -11,22 +11,31 @@ import { describe, expect, it } from 'vitest'
  * A thousand game days with everything switched on. What this catches is not a wrong
  * number but a slow rot: an event log that grows without bound, memory that never gets
  * released, a rule that only misbehaves after the four-hundredth day.
+ *
+ * Until 2026-09-08 this ran the 12-province test map with THREE players — while AK-6
+ * reads, verbatim, "1000 Spieltage, 8 Spieler". The same failure class as R-AI-04
+ * being measured on the wrong map (PROBLEME.md, 2026-09-06): the criterion looked
+ * covered because *a* long run existed, not *the* long run it names. It surfaced the
+ * day the acceptance script started calling this file by name and its seven-second
+ * runtime became visible. Now it plays the SHIPPED default setup — the same world,
+ * the same eight powers a player gets on first start — and pins those conditions
+ * with assertions so they cannot silently shrink again.
  */
-const map = smallWorld()
-const rules = TEST_RULES
-const ctx = { map, rules }
+const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+const load = (path: string) => JSON.parse(readFileSync(`${ROOT}/${path}`, 'utf8')) as never
 
-const CONFIG: GameConfig = {
-  seed: 31337,
-  mapId: 'testworld',
-  rulesId: 'default',
-  players: [
-    { name: 'A', kind: 'ai', nation: 'Nordland', color: '#0f62bc', difficulty: 'hard' },
-    { name: 'B', kind: 'ai', nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' },
-    { name: 'C', kind: 'ai', nation: 'Sueden', color: '#2e7d32', difficulty: 'easy' },
-  ],
-  victory: { condition: 'points', pointsShareToWin: 950, dayLimit: null },
-}
+const rules: Rules = parseRules(
+  {
+    constants: load('data/rules/default/constants.json'),
+    resources: load('data/rules/default/resources.json'),
+    buildings: load('data/rules/default/buildings.json'),
+    units: load('data/rules/default/units.json'),
+    ai: load('data/rules/default/ai.json'),
+  },
+  'default',
+)
+const map = load('data/maps/world.json') as MapData
+const ctx = { map, rules }
 
 /**
  * Gibt die Ereignisschleife zwischen den Spieltagen frei.
@@ -39,12 +48,21 @@ const CONFIG: GameConfig = {
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
-  it('laeuft fehlerfrei und ohne unbegrenztes Wachstum durch', async () => {
+  it('laeuft in der ausgelieferten Aufstellung fehlerfrei und ohne unbegrenztes Wachstum durch', async () => {
     const days = 1000
     const ticks = days * rules.constants.ticksPerDay
 
-    let state = createInitialState(CONFIG, ctx)
-    state.diplomacy.relations['p1|p2']!.state = 'war'
+    // Die ausgelieferte Voreinstellung — dieselbe Partie wie beim ersten Start und
+    // wie im AK-1-Test. Alle Plaetze KI-besetzt: der Lauf ist kopflos.
+    const config = toConfig({ ...DEFAULT_NEW_GAME, seed: 31337 }, map)
+    const aiConfig = { ...config, players: config.players.map((p) => ({ ...p, kind: 'ai' as const })) }
+
+    // AK-6 beim Wort genommen — und festgenagelt, damit die Bedingungen nie wieder
+    // still schrumpfen: 8 Spieler, die Weltkarte, 1000 Tage.
+    expect(aiConfig.players).toHaveLength(8)
+    expect(map.provinces.length).toBeGreaterThanOrEqual(200)
+
+    let state = createInitialState(aiConfig, ctx)
 
     const started = performance.now()
     let ended = 0
@@ -92,7 +110,7 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
       [
         '# Langlauf und Rechenzeit',
         '',
-        `Lauf: ${days} Spieltage (${ticks} Ticks), drei KI-Spieler, Karte "Kleine Welt".`,
+        `Lauf: ${days} Spieltage (${ticks} Ticks), ${aiConfig.players.length} KI-Spieler, Weltkarte (${map.provinces.length} Provinzen) — die ausgelieferte Voreinstellung.`,
         '',
         `- Dauer gesamt: ${Math.round(elapsed)} ms`,
         `- Zeit je Tick inkl. KI: ${(elapsed / ticks).toFixed(3)} ms`,

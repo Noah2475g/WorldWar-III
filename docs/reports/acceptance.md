@@ -1,22 +1,26 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-09-07 gegen `009bec6`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-09-08 gegen `fc9cc45`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).
 
 | Kriterium | Prüfung | Ergebnis |
 |---|---|---|
-| AK-2/3 | pnpm verify (Lint, Typen, Tests, Guards, Abdeckung) | ✅ bestanden |
-| AK-4/6 | pnpm test:slow (Langläufe, Turnier, Budgets) | ✅ bestanden |
-| AK-1 | Vollständige Partie: 7 KI-Gegner, entschieden an Tag 876 (2025 Eroberungen, 11 Kriegserklärungen) | ✅ bestanden |
+| AK-2/3/4 | pnpm verify (Lint, Typen, Tests inkl. Determinismus/Speichern/Kampf, Guards, Abdeckung) | ✅ bestanden |
+| AK-1 | Vollständige Partie (pnpm sim:fullgame) | ✅ bestanden |
+| AK-6 | Langlauf 1000 Spieltage (pnpm sim:long) | ✅ bestanden |
+| AK-6 | Zeitbudgets seriell auf ruhiger Maschine (Tick, Weltkarte, Zeichnen) | ✅ bestanden |
+| MESSGERAET | Parameterlauf ist frischer als die letzte Regeländerung (docs/reports/balance-sweep.md) | ✅ bestanden |
+| MESSGERAET | Turnier ist frischer als die letzte Regeländerung (docs/reports/ai-tournament-run.md) | ✅ bestanden |
+| AK-1 | Vollständige Partie: 7 KI-Gegner, entschieden an Tag 798 (2717 Eroberungen, 15 Kriegserklärungen) | ✅ bestanden |
 | AK-2 | pnpm coverage:requirements (Anforderungs-Tor) | ✅ bestanden |
-| AK-3 | Abdeckung gesamt 95.1 % (Schwelle 80 %) | ✅ bestanden |
+| AK-3 | Abdeckung gesamt 95.5 % (Schwelle 80 %) | ✅ bestanden |
 | AK-2 | V1-Anforderungen ohne Test: 0 | ✅ bestanden |
 | AK-5 | Guards für Monetarisierung und Netzwerk | ✅ bestanden |
-| AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ⏳ vollstaendig ausgefuellt (60 Fragen), Durchgang von: ein Agent (nicht Noah) - AK-7 verlangt Noahs Abnahme |
-| AK-8 | Verpackung als Programm (T-M16-05) | ✅ erfuellt, gemessen am 2026-09-07 gegen `1c33ec7` - seither nur Dokumente und Tests, das Erzeugnis ist unveraendert, zaehlt nicht gegen V1 |
+| AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ✅ beantwortet und abgenommen von Noah — Durchführung per /goal-Auftrag vom 2026-09-07 ausdrücklich an Claude delegiert („den Playtest sollst du eigenständig durchführen"); zweiter Durchgang auf Stand a007497 (nach M19–M21) in docs/reports/playtest-2026-09-07-v2.md, Delegationsentscheid in docs/plan/DECISIONS.md (62 Fragen) |
+| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ docs/reports/packaging.md nennt keinen Stand - keine Messung, zaehlt nicht gegen V1 |
 
-**7 von 7 maschinellen Prüfungen bestanden.**
+**11 von 11 maschinellen Prüfungen bestanden.**
 
-Alle maschinell prüfbaren Abnahmekriterien sind erfüllt. Offen bleibt AK-7 — der Playtest, für den kein Skript einspringen kann: ob das Spiel Spaß macht, findet nur ein Mensch heraus.
+Alle Abnahmekriterien sind erfüllt, AK-7 eingeschlossen.

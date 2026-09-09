@@ -1,8 +1,21 @@
-import { HASH_OMIT_KEYS, MemoryStorage, createInitialState, type GameConfig, type GameState } from '@worldwar/core'
+import { HASH_OMIT_KEYS, MemoryStorage, createInitialState, type GameConfig, type GameState, type PublicView } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { MANUAL_SLOTS, autosaveDue, listSlots, loadFrom, manualSlotName, saveTo } from './saves.ts'
+import {
+  MANUAL_SLOTS,
+  TIMELINE_CAP,
+  autosaveDue,
+  listSlots,
+  loadFrom,
+  loadTimeline,
+  manualSlotName,
+  recordTimelineDay,
+  saveTimeline,
+  saveTo,
+  timelineName,
+  type TimelineEntry,
+} from './saves.ts'
 
 /**
  * Saving from the interface's side (T-M10-07b, R-GAME-03/04/05).
@@ -93,6 +106,85 @@ describe('R-GAME-04 Die Liste der Staende', () => {
 
     expect(slots.find((s) => s.name === manualSlotName(0))?.savedAtDay).toBe(34)
     expect(slots.find((s) => s.name === manualSlotName(1))?.savedAtDay).toBeNull()
+  })
+})
+
+/**
+ * Die Zeitreihe der Partie (T-M25-01, R-UI-13, D25.1).
+ *
+ * Die Sicht kennt nur das Jetzt — für jeden Verlauf braucht die Hülle eine
+ * Aufzeichnung. Sie wächst am Tageswechsel um genau einen Eintrag (Punkte je bekannter
+ * Macht, eigene Bestände und Bilanzen), hält einen Deckel und wandert je
+ * Spielstand-Slot als eigener Schlüssel mit. Best effort: ein alter Stand ohne
+ * Aufzeichnung beginnt die Kurve ehrlich am Ladetag statt eine zu erfinden.
+ */
+describe('R-UI-13 Die Zeitreihe der Partie', () => {
+  const sicht = (tick: number, score = 100): PublicView =>
+    ({
+      tick,
+      playerId: 'p1',
+      self: {
+        score,
+        economy: {
+          food: { stock: 500_000, production: 220_000, consumption: 100_000, balance: 120_000, committed: 0 },
+          iron: { stock: 80_000, production: 0, consumption: 40_000, balance: -40_000, committed: 0 },
+        },
+      },
+      others: [
+        { id: 'p2', score: 300, alive: true },
+        { id: 'p3', score: 50, alive: false },
+      ],
+    }) as unknown as PublicView
+
+  it('waechst je Spieltag um genau einen Eintrag', () => {
+    const ersterTag = recordTimelineDay([], sicht(24), 24)
+    expect(ersterTag).toHaveLength(1)
+
+    // Ein zweiter Aufruf am selben Tag (Vorspulen in Haeppchen) erfindet keinen zweiten
+    // Eintrag — und laesst die Reihe unveraendert, damit React nichts umsonst zeichnet.
+    expect(recordTimelineDay(ersterTag, sicht(30), 24)).toBe(ersterTag)
+
+    expect(recordTimelineDay(ersterTag, sicht(48), 24)).toHaveLength(2)
+  })
+
+  it('traegt Punkte je lebender Macht sowie eigene Bestaende und Bilanzen', () => {
+    const [eintrag] = recordTimelineDay([], sicht(24), 24)
+
+    expect(eintrag!.day).toBe(2)
+    // Die ausgeschiedene Macht p3 bekommt keinen Punktestand mehr.
+    expect(eintrag!.scores).toEqual({ p1: 100, p2: 300 })
+    expect(eintrag!.stock.food).toBe(500_000)
+    expect(eintrag!.balance.food).toBe(120_000)
+    expect(eintrag!.balance.iron).toBe(-40_000)
+  })
+
+  it('haelt den Deckel: alte Tage fallen vorn heraus', () => {
+    let reihe: readonly TimelineEntry[] = []
+    for (let tag = 0; tag < TIMELINE_CAP + 20; tag++) {
+      reihe = recordTimelineDay(reihe, sicht(tag * 24), 24)
+    }
+
+    expect(reihe).toHaveLength(TIMELINE_CAP)
+    // Der aelteste verbliebene Tag ist der einundzwanzigste des Laufs.
+    expect(reihe[0]!.day).toBe(21)
+    expect(reihe[reihe.length - 1]!.day).toBe(TIMELINE_CAP + 20)
+  })
+
+  it('wandert je Spielstand-Slot mit: Speichern und Laden erhalten sie', async () => {
+    const reihe = recordTimelineDay([], sicht(24), 24)
+
+    await saveTimeline(storage, manualSlotName(0), reihe)
+
+    expect(await loadTimeline(storage, manualSlotName(0))).toEqual(reihe)
+  })
+
+  it('beginnt ohne Aufzeichnung ehrlich leer — auch bei einem kaputten Schluessel', async () => {
+    // Ein alter Stand hat keine Zeitreihe; die Kurve beginnt am Ladetag.
+    expect(await loadTimeline(storage, manualSlotName(1))).toEqual([])
+
+    // Und ein unlesbarer Schluessel ist dasselbe wie keiner: best effort, kein Absturz.
+    await storage.write(timelineName(manualSlotName(2)), '{ das ist keine Zeitreihe')
+    expect(await loadTimeline(storage, manualSlotName(2))).toEqual([])
   })
 })
 

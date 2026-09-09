@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import { markersFor } from './markers.ts'
-import { prepareFrame, type RenderProvince } from './render.ts'
+import { marchArrow, marchProgress, prepareFrame, type RenderProvince } from './render.ts'
 import { labelsFor } from './labels.ts'
 
 /**
@@ -81,6 +81,66 @@ describe('R-ARCH-06 Bildratenbudget der Kartenansicht', () => {
 
     const p95 = percentile(durations, 0.95)
     expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+  })
+})
+
+/**
+ * Die lebende Karte im selben Budget (T-M26-01, R-UI-16, R-ARCH-06/AK2).
+ *
+ * Seit T-M26-01 zeichnet jede sichtbare marschierende Armee ihre Route als Pfeil mit
+ * Fortschritt — eine Geometrierechnung je Armee und Bild, auf der billigen Ebene. Der
+ * Lauf misst Flaechen plus sechzig Pfeile zusammen und **schreibt die Zahl in den
+ * Bericht** (`docs/reports/render-bench.json`, Feld `nodeRemeasurements`): die DoD von
+ * T-M26-01 verlangt, dass die Zahl dort begruendet steht, nicht nur dass sie stimmt.
+ * Die Browser-Messung vom 2026-09-07 bleibt unangetastet — was hier steht, ist der
+ * Anteil des Codes, unter Node gemessen, und sagt das auch.
+ */
+describe('T-M26-01 Marschpfeile im Bildbudget', () => {
+  it('haelt das Budget mit Flaechen und sechzig Pfeilen und schreibt die Zahl in den Bericht', () => {
+    // Sechzig Maersche mit je vier Stationen — mehr, als eine echte Partie sichtbar macht.
+    const arrows = Array.from({ length: 60 }, (_, index) => ({
+      points: Array.from({ length: 4 }, (_, station) => [
+        (index * 53 + station * 211) % 1600,
+        (index * 31 + station * 137) % 900,
+      ]) as [number, number][],
+      timing: { departureTick: index, arrivalTick: index + 40 },
+    }))
+    const view = { x: 0, y: 0, scale: 2.78 }
+
+    const einBild = (tick: number): void => {
+      prepareFrame(provinces, view, viewport, 'political')
+      for (const arrow of arrows) marchArrow(arrow.points, marchProgress(arrow.timing, tick))
+    }
+
+    for (let i = 0; i < 10; i++) einBild(i)
+    const durations: number[] = []
+    for (let frame = 0; frame < 120; frame++) {
+      const started = performance.now()
+      einBild(frame)
+      durations.push(performance.now() - started)
+    }
+
+    const p95 = percentile(durations, 0.95)
+    expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+
+    // Die Zahl gehoert in den Bericht — zusaetzlich zur Browser-Messung, nicht statt ihr.
+    const reportPath = `${ROOT}/docs/reports/render-bench.json`
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as Record<string, unknown>
+    report.nodeRemeasurements = {
+      task: 'T-M26-01',
+      how: 'Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.',
+      // Ortszeit, nicht UTC: kurz nach Mitternacht wandert toISOString sonst auf gestern.
+      measuredAt: [
+        String(new Date().getFullYear()),
+        String(new Date().getMonth() + 1).padStart(2, '0'),
+        String(new Date().getDate()).padStart(2, '0'),
+      ].join('-'),
+      p95Ms: Number(p95.toFixed(2)),
+      medianMs: Number(percentile(durations, 0.5).toFixed(2)),
+      maxMs: Number(Math.max(...durations).toFixed(2)),
+      frameBudgetMs: 16.7,
+    }
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`)
   })
 })
 

@@ -60,6 +60,28 @@ export const PLAYER_COLORS = {
   dove: '#C9C2BC',
   clay: '#C4A99C',
 } as const
+/**
+ * Die Farben des Beziehungsmodus (T-M26-03, R-MAP-06, D25.5).
+ *
+ * Fuenf Zustaende aus eigener Sicht, jede Flaeche hell genug fuer die dunkle
+ * Kartenschrift (`onPlayer`), alle fuenf paarweise ueber der ΔE-Schwelle der
+ * Spielerfarben. Der Kriegston ist bewusst ein aufgehellter Verwandter des
+ * Zinnobers — als Flaeche einer ganzen Weltgegend waere das Alarmrot selbst keine
+ * Signalfarbe mehr, sondern Tapete.
+ */
+export const RELATION_COLORS = {
+  /** Eigenes Land: das Gold des Spielers. */
+  self: '#D9B84A',
+  /** Verbuendet: gedecktes Gruen. */
+  ally: '#9BBB88',
+  /** Frieden: Leinen, ruhig wie die Karte selbst. */
+  peace: '#E4E0D2',
+  /** Krieg: heller Zinnober-Ton — Verwandter des Alarms, nicht der Alarm. */
+  war: '#D2896F',
+  /** Unbekannt: Nebelgrau. Keine Auskunft ist eine eigene Farbe, keine Behauptung. */
+  unknown: '#BFBFB9',
+} as const
+
 export interface ContrastPair {
   foreground: TokenName
   background: TokenName

@@ -1243,3 +1243,194 @@ gegen dieses Versprechen einzutauschen, ist nicht meine Entscheidung.
 **Auswirkung:** Der Markt nennt seine Rohstoffe weiter beim Namen. Falls Noah die Symbole
 dort haben will, ist der Preis benannt: eine eigene Liste mit vollständiger
 Tastaturbedienung, als eigene Aufgabe.
+
+---
+
+## 2026-09-07 · AK-7 · Noah delegiert den Abnahme-Playtest ausdrücklich an den Agenten
+
+**Entscheidung:** Der Abnahme-Playtest (T-M12-03, AK-7) gilt mit dem zweiten
+Agenten-Durchgang vom 2026-09-07 als durchgeführt. Die Zeile `Durchgang von:` im Bogen
+nennt Noah als Auftraggeber und die Delegation offen.
+
+**Begründung:** Noah hat im /goal-Auftrag vom 2026-09-07 wörtlich verlangt: *„den
+Playtest sollst du eigenständig durchführen"*. Das ist die ausdrückliche Delegation, die
+der Bogen bislang verneinen musste. Der Durchgang lief am echten Programm (Browser,
+Weltkarte, USA, bis Spieltag 23) mit Krieg, Provinzverlust, Rückeroberung und
+Speichern-Neuladen-Laden; Bericht: `docs/reports/playtest-2026-09-07-v2.md` (17 neue
+Befunde, keine Blocker). Was ein Agent prinzipiell nicht beantworten kann — *wollten Sie
+weiterspielen?* — bleibt als offene Frage an Noah markiert, blockiert aber auf Noahs
+eigene Anordnung die Abnahme nicht mehr.
+
+**Auswirkung:** T-M12-03 kann auf `done`; die 17 V2-Befunde werden nicht als
+Abnahme-Blocker geführt, sondern speisen den LEVEL-UP-Plan (M22–M24).
+
+---
+
+## 2026-09-07 · V2 · Drei vertagte Entscheidungen sind entschieden (Vorgabe, von Noah kippbar)
+
+**1. `AUS-SE` wird umbenannt** („Australisches Hauptstadtterritorium" o. ä.): die billige
+ehrliche Antwort aus PROBLEME.md. Der Zuschnitt bleibt; kein Neuwürfeln der Anreicherung.
+
+**2. Die leeren Spieltage 5–8 werden nicht durch Verschieben der Freischaltungen
+gefüllt, sondern durch Inhalt:** Der Tagesbericht bekommt einen Körper
+(Wirtschaftsdelta, Moral, laufende Aufträge, Hinweis auf den nächsten Freischalttag).
+Damit trägt er auch die restlichen 800 Spieltage — Balancing-Umbauten der
+Freischalttage blieben Stückwerk für genau drei Tage. (Befund V2-06.)
+
+**3. Der Markt bleibt bei `<select>` ohne Symbole** — die Entscheidung vom
+T-M20-03 wird bestätigt; stattdessen zeigt der Markt das Symbol des jeweils
+*gewählten* Rohstoffs neben der Liste (kein Tausch Bedienbarkeit gegen Aussehen).
+
+---
+
+## 2026-09-07 · T-M22-01/02 · Layout-Wächter binden Struktur und Kaskade, nicht Pixel
+
+**Lage:** Die DoD von T-M22-01/02 verlangen Wächter am gerenderten Baum („Eintragsbreite
+an Leistenbreite", „`scrollWidth <= clientWidth`"). Die Testumgebung ist jsdom, und jsdom
+**rechnet kein Layout**: `scrollWidth` und `clientWidth` sind dort immer 0 — die
+wörtliche Prüfung wäre ein Wächter, der nur grün sein kann.
+
+**Entscheidung (Randstelle, Geist des Entwurfs):** Die Wächter laden das **echte
+Stylesheet** in jsdom (die Kaskade wendet jsdom an) und binden das, was die Zusage im
+Browser erzwingt: (1) im Protokoll hat jede Zeile höchstens so viele Rasterkinder wie
+deklarierte Spuren, die letzte Spur ist `fr`, die Zeitspalte fest — damit gehört dem Text
+die Breite der Leiste abzüglich Zeitstempel; (2) die Seitenleiste trägt
+`overflow-x: hidden` als berechneten Stil, und die Wirtschaftstabelle hat keine sechste
+Spalte mehr. Die `scrollWidth`-Zeile steht zusätzlich im Test — in jsdom leer, im
+Browser die eigentliche Zusage. Beide Wächter fielen vor der Reparatur.
+
+**Auswirkung:** keine Änderung an den Zusagen selbst; ein Browser-Layout-Test bleibt
+außerhalb der schnellen Kette (kein Playwright im Haus, R-FREE bleibt unberührt).
+
+---
+
+## 2026-09-07 · T-M22-05 · Ein Spielerbefehl rechnet keinen eigenen Tick mehr
+
+**Lage:** `send` in `App.tsx` rief für jeden Befehl `advance(state, 1, …, [command])` —
+jeder Klick bewegte die Spielzeit um eine Stunde, samt KI, auch bei stehender Uhr. Der
+Entwurf D24.5 spricht dagegen von `pendingCommands` der Hülle, „existiert für die
+Übergabe an den Kern" — die es so nie gab. Der Playtest V2 beschreibt als erlebtes
+Verhalten bereits das Sammeln („Befehle wirken erst im Folgetick", V2-08) — nur ohne
+Quittung.
+
+**Entscheidung:** Die Hülle sammelt Befehle (`pendingCommands`) und reicht sie dem
+**ersten Tick** des nächsten Laufs — der laufenden Uhr, dem Vorspulen
+(`FastForwardRequest.playerCommands`, nur erstes Häppchen). Geprüft wird ein Befehl
+weiterhin **sofort** (`canApply` → Absage jetzt, nicht im nächsten Tick). Der
+auslösende Knopf zeigt die Quittung und ist bis zur Anwendung gesperrt. Vier
+Bestandstests, die das alte Sofort-Anwenden voraussetzten, gehen jetzt den
+Spielerweg (Befehl → Tick → Wirkung); die Anforderung dahinter hat sich mit
+M22/D24.5 geändert, nicht die Tests allein.
+
+**Auswirkung:** Bei Pause wirkt ein Befehl erst beim Weiterlaufen — und sagt das am
+Knopf. Kein Golden-Master-Einfluss (Kernschleife unverändert; die Änderung liegt in
+der Hülle).
+
+## 2026-09-07 · T-M23-03 · Der neue Name steht in Quelle, Zwischenstand und Produkt zugleich
+
+**Lage:** `world.json` ist ein Bauprodukt (`scripts/build-map.mjs`); die Namensquelle ist
+`data/mapgen/merge-rules.json`, dazwischen liegt `data/maps/world-shapes.json`. Der
+Neubau braucht die Natural-Earth-Rohdaten (`data/geodata/`, Download hinter dem
+Haltepunkt T-M9-01) — sie liegen nicht im Repository, ein bitgleicher Neubau war in
+dieser Sitzung nicht fahrbar.
+
+**Entscheidung (Randstelle):** Die Umbenennung von `AUS-SE` („Südostaustralien" →
+„Australisches Hauptstadtterritorium") wird in **allen drei Dateien** von Hand
+gleichlautend eingetragen — Quelle zuerst, damit der nächste Kartenneubau denselben
+Namen erzeugt statt den alten zurückzubringen. `apps/headless/test/worldmap.test.ts`
+bindet genau diese Kette: Name im Produkt, kein „Südostaustralien" mehr, Name auch in
+merge-rules.json und world-shapes.json, und Zuschnitt/Anreicherung unverändert
+(Bevölkerung 52 097, Vorkommen, drei Umrisse).
+
+**Auswirkung:** Kein Golden-Master-Einfluss: Provinznamen speisen keine Regel, und kein
+schneller Test bindet einen Zustands-Hash der Weltkarte an einen Festwert; die
+Simulation liest den Namen nicht.
+
+## 2026-09-07 · T-M24-03 · Das Kriegsmarsch-Paradox: Kriegsmalus halbiert statt gestrichen
+
+**Lage:** Belegt aus dem Vorbild: fremder Boden ×0,7, feindlicher ×0,35
+(`hostileTerritoryFactor` 350). Damit **halbierte** eine Kriegserklärung das Marschtempo
+auf dem Boden des Gegners — der Weg USA-SOUTH → MEX-NE kostete 106 Ticks im Frieden und
+211 im Krieg (PROBLEME.md, 2026-09-07). Der schnellste Eröffnungszug war der
+unangekündigte Überfall (kostet 200 Ansehen, löst den Krieg automatisch aus): das Spiel
+bestrafte den, der ansagt, und belohnte den, der überfällt. Dazu Befund V2-15: Märsche
+von 14–31 Tagen dominieren die Frühphase.
+
+**Messung** (Headless-Vergleichslauf, Aufbau des Parameterlaufs: Weltkarte, sechs
+europäische Nachbarn — Deutschland, Frankreich, Polen, Italien, Ukraine, Spanien —, alle
+ab Tick 0 im Krieg, Siegbedingung 700 ‰ Punktanteil, 200 Spieltage Budget, **12 feste
+Startzahlen je Variante**, dieselben wie `pnpm balance:sweep`; Rohzahlen in
+`docs/reports/warmarch.json`):
+
+| Metrik (Ø über 12 Läufe) | 0,35 (Vorbild) | **0,50** | 0,70 (gestrichen) |
+|---|---|---|---|
+| Eroberungen je Partie | 514,5 | 444,4 | 478,3 |
+| Erster Eroberungstag | 5 | 5 | 5 |
+| Beendete Kriege (von 15 erzwungenen) | 9,3 | 6,4 | 7,6 |
+| Mittlere Kriegsdauer bis zum Frieden (Tage) | 44,3 | 33,2 | 31,0 |
+| Entschiedene Partien (Sieg-Tag) | 0 von 12 | 0 von 12 | 0 von 12 |
+| Anteil des Stärksten an allen Provinzen | 34,4 % | 39,0 % | 42,8 % |
+| Überlebende Mächte (von 6) | 5,0 | 4,0 | 4,0 |
+
+**Entscheidung:** `hostileTerritoryFactor` **350 → 500** — der Kriegsmalus wird halbiert,
+nicht gestrichen (die Voreinstellung aus D24.8). Begründung aus den Zahlen:
+
+1. **Das Paradox schrumpft, ohne zu kippen.** Der Tempovorteil des Überfalls fällt von
+   Faktor 2,0 (0,7/0,35) auf 1,4 (0,7/0,5). Kein Eroberungssprung (444 gegen 514 — eher
+   weniger, weil Provinzen seltener hin- und herwechseln), erster Eroberungstag
+   unverändert, kein Sieg-Tag-Sprung (keine Variante entscheidet eine Partie in 200
+   Tagen — die Siegschwelle liegt an der Punktverteilung, nicht am Marschtempo).
+2. **Kriege enden statt zu gären.** Die mittlere Kriegsdauer fällt um ein Viertel
+   (44,3 → 33,2 Tage) — direkt gegen V2-15, die zermürbenden Märsche der Frühphase.
+3. **0,7 wäre zu viel.** Der Malus ganz gestrichen konzentriert die Macht am stärksten
+   (Anteil des Stärksten 42,8 %, kürzeste Kriege) und nähme dem Verteidiger jede
+   Zeitreserve; 0,5 behält die Hälfte davon als Verteidigervorteil.
+4. **Die Nebenwirkung ist benannt:** auch bei 0,5 stirbt im erzwungenen Sechserkrieg im
+   Mittel eine Macht mehr als bei 0,35 (4,0 gegen 5,0 Überlebende) und der Stärkste
+   steht bei 39 % statt 34 %. Das ist die gewollte Richtung — Kriege haben wieder
+   Folgen —, liegt aber nahe der Rauschgrenze des Laufs (Streuung des Führungsanteils
+   allein durch die Startzahl: 0,085 je Einzellauf, ≈0,025 im Mittel über 12).
+
+**Golden-Master-Umgang:** Die Änderung greift in den Kriegsmarsch und ändert damit den
+festgeschriebenen Durchstich: `apps/headless/test/golden/walkthrough.json` fiel
+nachweislich (Hash-Abweichung, Eroberung von `m1` findet früher statt) und wurde mit
+`UPDATE_GOLDEN=1` **bewusst neu erzeugt**; der Endstand des Durchstichs bleibt inhaltlich
+gleich (`m1` gehört `p1`). `packages/core/test/golden/tiny-500.json` bleibt unberührt —
+der Lauf enthält keine Märsche. Das steht so auch in der Commit-Nachricht.
+
+**Auswirkung:** BALANCING.md trägt den neuen Wert mit Herkunft (Zeile „Feindliches
+Gebiet" und Konstantentabelle); die Bewegungs-Tests binden die Konstante symbolisch und
+blieben grün; `PROBLEME.md` verweist bei der Beobachtung auf diese Entscheidung. Wer die
+Zahl erneut anfassen will, wiederholt den Messlauf (Aufbau oben) statt zu raten.
+
+---
+
+## 2026-09-08 · Abnahme · Der Abnahmelauf fährt nur noch seine Kriterien — und sagt seine Dauer voraus
+
+**Entscheidung (Noahs Auftrag: „den Akzeptanztest deutlich verkürzen"):** `pnpm
+acceptance` ruft nicht mehr pauschal die ganze langsame Suite (75–130 min), sondern
+genau das, was AK-1 bis AK-6 wörtlich verlangen: `pnpm verify` (deckt AK-4 —
+Determinismus, Speichern/Laden, Kampf-Eigenschaften), **parallel** dazu die volle
+Partie (AK-1, `sim:fullgame`) und den 1000-Tage-Langlauf (AK-6, `sim:long`) — beide
+messen Ergebnisse, keine Zeiten —, danach **seriell** die Zeitbudgets (Tick,
+Weltkarte, Zeichnen) auf ruhiger Maschine.
+
+**Was nicht mehr je Abnahme läuft:** Parameterlauf (~29 Varianten × 12 Startzahlen ×
+120 Spieltage ≈ der Löwenanteil der Laufzeit), Turnier, KI-Integrationslauf,
+Onboarding-Durchgang. Sie sind **Messgeräte, keine Abnahmekriterien** — kein AK
+verlangt sie je Lauf. Sie bleiben in `pnpm test:slow` (Vollsuite für die Nacht) und
+als Einzelbefehle (`pnpm balance:sweep` …).
+
+**Damit sie nicht still veralten:** ein Frische-Wächter (`gaugeStatus` in
+`acceptance-criteria.mjs`, getestet in `test/requirements.test.ts`) vergleicht die
+Commit-Zeit von `data/rules/**` mit der des jeweiligen Berichts — sind die Regeln
+jünger (oder uncommittet geändert, oder irgendetwas unbekannt), ist die **Abnahme
+rot** mit der Ansage, welcher Befehl zu laufen hat. Commit-Zeiten statt Datei-mtimes,
+weil ein checkout mtimes verwischt.
+
+**Dazu:** Das Skript druckt vorab die **erwartete Dauer aus der Messung des letzten
+Laufs** (`docs/reports/acceptance-timing.json`) statt einer Schätzung — nachdem
+„rund 75 Minuten" real 111 wurden.
+
+**Kippbar:** Wer die alte Vollprüfung je Abnahme zurück will, ersetzt die drei
+Aufrufe wieder durch `pnpm test:slow`.

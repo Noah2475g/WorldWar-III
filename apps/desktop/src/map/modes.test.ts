@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { MAP_MODES, colorForPlayer, fillFor, legendFor, strengthByProvince, type ShadedProvince } from './modes.ts'
-import { TOKENS } from '../ui/tokens.ts'
+import {
+  MAP_MODES,
+  colorForPlayer,
+  fillFor,
+  legendFor,
+  relationKindFor,
+  strengthByProvince,
+  type ShadedProvince,
+} from './modes.ts'
+import { RELATION_COLORS, TOKENS } from '../ui/tokens.ts'
 import { contrastRatio, deltaE } from '../ui/tokens.ts'
 
 /**
@@ -17,9 +25,9 @@ const province = (over: Partial<ShadedProvince> = {}): ShadedProvince => ({
   ...over,
 })
 
-describe('R-MAP-06 Vier Kartenmodi', () => {
-  it('kennt genau die vier', () => {
-    expect(MAP_MODES).toEqual(['political', 'resources', 'morale', 'strength'])
+describe('R-MAP-06 Fuenf Kartenmodi', () => {
+  it('kennt genau die fuenf, Beziehungen zuletzt', () => {
+    expect(MAP_MODES).toEqual(['political', 'resources', 'morale', 'strength', 'relations'])
   })
 
   it('gibt in jedem Modus eine gueltige Farbe zurueck', () => {
@@ -35,6 +43,7 @@ describe('R-MAP-06 Vier Kartenmodi', () => {
     expect(fillFor(province({ strength: undefined }), 'strength')).toBe(TOKENS.paperSunk)
     expect(fillFor(province({ deposits: undefined }), 'resources')).toBe(TOKENS.paperSunk)
     expect(fillFor(province({ owner: null }), 'political')).toBe(TOKENS.paperSunk)
+    expect(fillFor(province({ relation: undefined }), 'relations')).toBe(RELATION_COLORS.unknown)
   })
 
   it('unterscheidet hohe von niedriger Moral', () => {
@@ -81,6 +90,59 @@ describe('R-MAP-06 Vier Kartenmodi', () => {
 })
 
 /**
+ * Der fuenfte Modus: Beziehungen (T-M26-03, R-MAP-06, D25.5).
+ *
+ * Die Diplomatie wohnte nur in einer Tabelle, obwohl die Sicht je Macht Zustand und
+ * Dauer fuehrt. Der Modus faerbt die Welt aus EIGENER Sicht: eigen, verbuendet,
+ * Frieden, Krieg, unbekannt — und "unbekannt" ist auch hier ein eigener Wert, keine
+ * Behauptung.
+ */
+describe('T-M26-03 Der Beziehungsmodus', () => {
+  it('bindet die Farbwahl je Beziehungszustand an die Palette', () => {
+    expect(fillFor(province({ relation: 'self' }), 'relations')).toBe(RELATION_COLORS.self)
+    expect(fillFor(province({ relation: 'ally' }), 'relations')).toBe(RELATION_COLORS.ally)
+    expect(fillFor(province({ relation: 'peace' }), 'relations')).toBe(RELATION_COLORS.peace)
+    expect(fillFor(province({ relation: 'war' }), 'relations')).toBe(RELATION_COLORS.war)
+    expect(fillFor(province({ relation: undefined }), 'relations')).toBe(RELATION_COLORS.unknown)
+  })
+
+  it('leitet den Beziehungszustand aus Eigentuemer und eigener Beziehungslage ab', () => {
+    const relations = {
+      p2: { state: 'alliance' as const },
+      p3: { state: 'war' as const },
+      p4: { state: 'peace' as const },
+      p5: { state: 'truce' as const },
+    }
+
+    expect(relationKindFor('p1', 'p1', relations)).toBe('self')
+    expect(relationKindFor('p2', 'p1', relations)).toBe('ally')
+    expect(relationKindFor('p3', 'p1', relations)).toBe('war')
+    expect(relationKindFor('p4', 'p1', relations)).toBe('peace')
+    // Waffenstillstand ist kein Krieg: es wird nicht geschossen.
+    expect(relationKindFor('p5', 'p1', relations)).toBe('peace')
+    // Herrenloses Land liegt mit niemandem im Streit.
+    expect(relationKindFor(null, 'p1', relations)).toBe('peace')
+    // Eine Provinz, deren Eigentuemer man nicht kennt, bleibt unbekannt …
+    expect(relationKindFor(undefined, 'p1', relations)).toBeUndefined()
+    // … und eine Macht ohne bekannte Beziehung ebenso — Frieden zu behaupten waere gelogen.
+    expect(relationKindFor('p9', 'p1', relations)).toBeUndefined()
+  })
+
+  it('nennt in der Legende alle fuenf Zustaende mit ihren Farben', () => {
+    const legend = legendFor('relations')
+
+    expect(legend.map((entry) => entry.label)).toEqual(['eigen', 'verbündet', 'Frieden', 'Krieg', 'unbekannt'])
+    expect(legend.map((entry) => entry.color)).toEqual([
+      RELATION_COLORS.self,
+      RELATION_COLORS.ally,
+      RELATION_COLORS.peace,
+      RELATION_COLORS.war,
+      RELATION_COLORS.unknown,
+    ])
+  })
+})
+
+/**
  * Kein Modus ohne Daten (T-M13-10, R-MAP-07).
  *
  * Der vierte Modus hiess "Bedrohung" und faerbte alle 237 Provinzen gleich grau: die
@@ -89,8 +151,8 @@ describe('R-MAP-06 Vier Kartenmodi', () => {
  */
 describe('R-MAP-07 Jeder angebotene Modus faerbt aus gefuehrten Daten', () => {
   it('liefert in jedem Modus mindestens zwei verschiedene Fuellungen', () => {
-    const rich = province({ owner: 'p1', morale: 80, strength: 15_000, deposits: { food: 8000 } })
-    const poor = province({ owner: 'p2', morale: 20, strength: 500, deposits: { food: 100 } })
+    const rich = province({ owner: 'p1', morale: 80, strength: 15_000, deposits: { food: 8000 }, relation: 'self' })
+    const poor = province({ owner: 'p2', morale: 20, strength: 500, deposits: { food: 100 }, relation: 'war' })
 
     for (const mode of MAP_MODES) {
       expect(new Set([fillFor(rich, mode), fillFor(poor, mode)]).size, `Modus ${mode} faerbt alles gleich`).toBe(2)

@@ -1,7 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { RESOURCE_KEYS } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
 import type { Difficulty, NewGameOptions } from '../game/newGame.ts'
+// Die Fassung aus package.json — nicht als zweite Wahrheit in der Sprachdatei (T-M22-04).
+import { version as APP_VERSION } from '../../../../package.json'
 
 /**
  * Everything that opens over the map (T-M10-07a/b, T-M10-09, T-M10-10, T-M10-11).
@@ -94,6 +97,8 @@ export function NewGameDialog({
   onStart,
   onClose,
   onSaves,
+  resume,
+  onResume,
 }: {
   options: NewGameOptions
   nations: readonly string[]
@@ -108,9 +113,29 @@ export function NewGameDialog({
    * der Stand nur zu erreichen, indem man den Dialog erst wegklickt.
    */
   onSaves?: () => void
+  /**
+   * Der juengste Stand, wenn es einen gibt (T-M22-04, Befund V2-04): dann ist
+   * "Weiterspielen (Tag N)" der ERSTE Knopf — wer wiederkommt, will weiterspielen.
+   */
+  resume?: { day: number } | null
+  onResume?: () => void
 }) {
   return (
     <Dialog title={t('newGame.title')} onClose={onClose}>
+      {/* Start mit Gesicht (T-M22-04, Befund V2-03): Name, Untertitel, Fassung —
+          der erste Eindruck sagte vorher "Formular", nicht "Strategiespiel". */}
+      <header className="start">
+        <h1 className="start__title">{t('app.title')}</h1>
+        <p className="start__subtitle">{t('app.subtitle')}</p>
+        <p className="start__version">{t('app.version', { version: APP_VERSION })}</p>
+      </header>
+
+      {resume && onResume && (
+        <button type="button" className="button button--primary" onClick={onResume}>
+          {t('newGame.resume', { day: resume.day })}
+        </button>
+      )}
+
       <label className="field">
         <span>{t('newGame.map')}</span>
         <select value={options.mapId} onChange={(e) => onChange({ ...options, mapId: e.target.value })}>
@@ -196,6 +221,38 @@ export function NewGameDialog({
           </button>
         )}
       </p>
+    </Dialog>
+  )
+}
+
+/**
+ * Das Menue mit Wegen (T-M22-04, Befund V2-05): aus der laufenden Partie gab es nur
+ * die Einstellungen — keinen Weg zu einer neuen Partie, keinen zu den Spielstaenden.
+ */
+export function MenuDialog({
+  onNewGame,
+  onSaves,
+  onSettings,
+  onClose,
+}: {
+  onNewGame: () => void
+  onSaves: () => void
+  onSettings: () => void
+  onClose: () => void
+}) {
+  return (
+    <Dialog title={t('menu.title')} onClose={onClose}>
+      <div className="menu">
+        <button type="button" className="button button--primary" onClick={onNewGame}>
+          {t('newGame.title')}
+        </button>
+        <button type="button" className="button" onClick={onSaves}>
+          {t('saves.title')}
+        </button>
+        <button type="button" className="button" onClick={onSettings}>
+          {t('settings.title')}
+        </button>
+      </div>
     </Dialog>
   )
 }
@@ -333,7 +390,34 @@ export interface DebugInfo {
   commands: string[]
 }
 
-export function DebugPanel({ info, enabled }: { info: DebugInfo | null; enabled: boolean }) {
+/**
+ * Debug-Prosa spricht Namen (T-M28-04, R-UI-07, Befund V2-12, D26.4).
+ *
+ * Die KI bleibt englisch und kernnah — ihre Zieltexte nennen `p2` und `money`. Die
+ * Übersetzung passiert HIER, beim Rendern, aus denselben Quellen wie die übrige
+ * Oberfläche: Spieler-Kennungen ersetzt der Aufrufer über `nameOf` (die Sicht kennt
+ * die Machtnamen), Rohstoffschlüssel kommen aus `de.ts`. Weil die Zieltexte freie
+ * Prosa sind, ersetzt ein Wortgrenzen-Muster — `p22` (eine Provinzkennung) bleibt
+ * unangetastet, nur ein freistehendes `p2` wird zur Macht.
+ */
+export function localizeDebugText(text: string, nameOf: (id: string) => string): string {
+  let result = text.replace(/\bp\d+\b/g, (id) => nameOf(id))
+  for (const key of RESOURCE_KEYS) {
+    result = result.replace(new RegExp(`\\b${key}\\b`, 'g'), t(`resources.${key}`))
+  }
+  return result
+}
+
+export function DebugPanel({
+  info,
+  enabled,
+  nameOf = (id) => id,
+}: {
+  info: DebugInfo | null
+  enabled: boolean
+  /** Der Machtname zu einer Spielerkennung — ohne ihn bleibt die Kennung stehen. */
+  nameOf?: (id: string) => string
+}) {
   if (!enabled) return null
   if (!info) return <section className="panel">{t('debug.hidden')}</section>
 
@@ -354,13 +438,13 @@ export function DebugPanel({ info, enabled }: { info: DebugInfo | null; enabled:
       <ul className="debug-list">
         {info.aiGoals.map((goal) => (
           <li key={goal.player}>
-            <b>{goal.player}</b>: {goal.goal}{' '}
+            <b>{nameOf(goal.player)}</b>: {localizeDebugText(goal.goal, nameOf)}{' '}
             <span className="mono">
               ({t('debug.aiUtility')} {goal.utility})
             </span>
             {goal.alternatives.length > 0 && (
               <div className="debug-alt">
-                {t('debug.aiAlternatives')}: {goal.alternatives.join(', ')}
+                {t('debug.aiAlternatives')}: {localizeDebugText(goal.alternatives.join(', '), nameOf)}
               </div>
             )}
           </li>

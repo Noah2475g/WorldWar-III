@@ -130,7 +130,9 @@ describe('R-UNIT-04 Geschwindigkeit', () => {
   })
 
   it('bremst in fremdem und feindlichem Gebiet', () => {
-    // Belegt: foreign ground 0.70, hostile ground 0.35.
+    // Belegt: foreign ground 0.70. Hostile ground war belegt 0.35 und ist seit
+    // T-M24-03 entschieden 0.50 (DECISIONS 2026-09-07): eine Kriegserklaerung
+    // HALBIERTE das Tempo, der schnellste Eroeffnungszug war der Ueberfall.
     const neutral = state.provinces['m1']!
     expect(territoryFactor(state, neutral, 'p1', TEST_RULES)).toBe(
       TEST_RULES.constants.foreignTerritoryFactor,

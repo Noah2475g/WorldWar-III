@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { PublicView, VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -7,6 +8,7 @@ import {
   DiplomacyPanel,
   EconomyPanel,
   EventLog,
+  MarketPanel,
   ProvincePanel,
   buildingItems,
   buttonTitle,
@@ -14,6 +16,9 @@ import {
   type Action,
   type EventEntry,
 } from './Panels.tsx'
+import { ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
+import type { BattleReportData } from '../game/events.ts'
+import type { TimelineEntry } from '../game/saves.ts'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -245,6 +250,199 @@ describe('R-GAME-06 Der Filter im Ereignisprotokoll', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Aufbau' }))
 
     expect(screen.getByText(/Noch nichts|keine/i)).toBeTruthy()
+  })
+
+  /**
+   * Der Tagesbericht klappt auf (T-M24-01, R-TIME-06, Befund V2-06): eine Zeile mit
+   * Koerper wird ein details/summary — die Ueberschrift bleibt die Zeile, der Koerper
+   * steht dahinter. Zeilen ohne Koerper bleiben, was sie waren.
+   */
+  it('klappt eine Zeile mit Koerper auf und zeigt ihn', () => {
+    const bericht: EventEntry = {
+      id: 'r1',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      body: ['Bilanz je Tag: Nahrung +120', 'Moral: Alpha 62 % ↗'],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    const details = document.querySelector('details.log__report')
+    expect(details, 'der Bericht traegt kein details-Element').toBeTruthy()
+    expect(details!.querySelector('summary')!.textContent).toContain('Tagesbericht für Tag 1.')
+    expect(screen.getByText('Bilanz je Tag: Nahrung +120')).toBeTruthy()
+    expect(screen.getByText('Moral: Alpha 62 % ↗')).toBeTruthy()
+  })
+
+  it('laesst Zeilen ohne Koerper ohne details', () => {
+    renderLog()
+
+    expect(document.querySelector('details.log__report')).toBeNull()
+  })
+
+  /**
+   * Der Tagesbericht bekommt Balken (T-M25-04, R-UI-05, D25.2): die Rohstoffzeilen des
+   * Berichts nutzen DIESELBEN Delta-Balken wie die Wirtschaftstabelle — eine
+   * Komponente, zweimal verwendet. Die Zahl steht daneben und bleibt der zugaengliche
+   * Wert; der Balken selbst ist stumm.
+   */
+  it('zeichnet die Bilanzen des Tagesberichts als Delta-Balken mit der Zahl daneben', () => {
+    const bericht: EventEntry = {
+      id: 'r2',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      body: ['Moral: Alpha 62 % ↗'],
+      deltas: [
+        { label: 'Nahrung', balance: 120_000 },
+        { label: 'Eisen', balance: -40_000 },
+      ],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    const details = document.querySelector('details.log__report')!
+    const zeilen = [...details.querySelectorAll('.log__deltas li')]
+    expect(zeilen, 'keine Delta-Zeilen im Bericht').toHaveLength(2)
+
+    // Dieselbe Komponente wie in der Wirtschaftstabelle: die delta-Klassen kommen an,
+    // der groesste Betrag bekommt die halbe Spur, der kleinere skaliert dagegen.
+    const plus = zeilen[0]!.querySelector('.delta__fill--plus') as HTMLElement
+    const minus = zeilen[1]!.querySelector('.delta__fill--minus') as HTMLElement
+    expect(plus, 'kein gruener Balken bei +120').toBeTruthy()
+    expect(plus.style.width).toBe('50%')
+    expect(minus, 'kein zinnoberner Balken bei −40').toBeTruthy()
+    expect(minus.style.width).toBe('16.7%')
+
+    expect(zeilen[0]!.textContent).toContain('Nahrung')
+    expect(zeilen[0]!.textContent).toContain('+120')
+    expect(zeilen[1]!.textContent).toContain('−40')
+    expect(zeilen[0]!.querySelector('.delta')?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('klappt einen Bericht auch dann auf, wenn er NUR Bilanzen traegt', () => {
+    const bericht: EventEntry = {
+      id: 'r3',
+      tick: 24,
+      text: 'Tagesbericht für Tag 1.',
+      severity: 'info',
+      category: 'other',
+      deltas: [{ label: 'Nahrung', balance: 120_000 }],
+    }
+    render(<EventLog entries={[bericht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    expect(document.querySelector('details.log__report')).toBeTruthy()
+  })
+})
+
+/**
+ * Das Gefecht zeigt sich (T-M27-02, R-BAT-05, R-UI-10, D25.6).
+ *
+ * Der Kampfbericht war ein Satz. Jetzt traegt der Protokolleintrag eines Gefechts
+ * einen aufklappbaren Koerper nach dem Muster des Tagesberichts: je Seite ein
+ * Staerkebalken vorher-zu-nachher, der Verlust als zinnoberner Abschnitt, dazu die
+ * Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre. Die Balkenlaengen
+ * sind an den Datensatz aus T-M27-01 gebunden — gegen den heutigen Texteintrag
+ * faellt jeder dieser Tests.
+ */
+describe('R-BAT-05 Der Kampfbericht wird ein Bild', () => {
+  const battle: BattleReportData = {
+    provinceName: 'Alpha',
+    terrain: 'mountain',
+    fortressLevel: 2,
+    victor: 'Deutschland',
+    sides: [
+      {
+        playerId: 'p1',
+        name: 'Deutschland',
+        before: 40_000,
+        after: 35_000,
+        losses: 5_000,
+        entrenched: true,
+        attackBlocked: false,
+      },
+      {
+        playerId: 'p2',
+        name: 'Russland',
+        before: 20_000,
+        after: 8_000,
+        losses: 12_000,
+        entrenched: false,
+        attackBlocked: true,
+      },
+    ],
+  }
+
+  const eintrag: EventEntry = {
+    id: 'g1',
+    tick: 48,
+    text: 'Alpha: Gefecht entschieden — Deutschland behauptet das Feld.',
+    severity: 'alert',
+    category: 'combat',
+    battle,
+  }
+
+  const renderBattle = () =>
+    render(<EventLog entries={[eintrag]} ticksPerDay={24} onJump={() => undefined} />)
+
+  it('klappt den Gefechtseintrag auf und bindet die Balkenlaengen an den Datensatz', () => {
+    renderBattle()
+    const details = document.querySelector('details.log__report')
+    expect(details, 'der Gefechtseintrag traegt kein details-Element').toBeTruthy()
+
+    const seiten = [...details!.querySelectorAll('.battle__side')]
+    expect(seiten, 'nicht je Seite ein Staerkebalken').toHaveLength(2)
+
+    // Die staerkste Seite vorher (40 000) ist der Massstab der Spur: Deutschland
+    // behaelt 35 000 (87,5 %), verliert 5 000 (12,5 %); Russland behaelt 8 000
+    // (20 %) und verliert 12 000 (30 %).
+    const erste = seiten[0]!
+    expect((erste.querySelector('.battle__after') as HTMLElement).style.width).toBe('87.5%')
+    expect((erste.querySelector('.battle__loss') as HTMLElement).style.width).toBe('12.5%')
+    const zweite = seiten[1]!
+    expect((zweite.querySelector('.battle__after') as HTMLElement).style.width).toBe('20%')
+    expect((zweite.querySelector('.battle__loss') as HTMLElement).style.width).toBe('30%')
+
+    // Die Zahlen stehen sichtbar neben dem Balken — das Bild ersetzt sie nicht.
+    expect(erste.textContent).toContain('40')
+    expect(erste.textContent).toContain('35')
+    expect(zweite.textContent).toContain('20')
+    expect(zweite.textContent).toContain('8')
+  })
+
+  it('zeigt die Zeichen fuer Gelaende, Festung, Eingrabung und Rueckzugssperre', () => {
+    renderBattle()
+    const details = document.querySelector('details.log__report')!
+    const titles = [...details.querySelectorAll('svg title')].map((title) => title.textContent)
+
+    expect(titles).toContain('Gebirge')
+    expect(titles.some((title) => title?.includes('Festung'))).toBe(true)
+    expect(titles).toContain('Eingegraben')
+    expect(titles).toContain('Rückzugssperre')
+  })
+
+  it('traegt fuers Ohr eine Satzfassung mit den Zahlen', () => {
+    renderBattle()
+    const bild = document.querySelector('.battle')
+    expect(bild, 'kein Gefechtsbild im Koerper').toBeTruthy()
+    expect(bild!.getAttribute('role')).toBe('img')
+
+    const satz = bild!.getAttribute('aria-label') ?? ''
+    expect(satz).toContain('Deutschland')
+    expect(satz).toContain('Russland')
+    expect(satz).toContain('40')
+    expect(satz).toContain('35')
+    expect(satz).toContain('Gebirge')
+    expect(satz).toContain('Festung')
+  })
+
+  it('laesst ein Gefecht ohne Datensatz als schlichte Zeile', () => {
+    const schlicht: EventEntry = { ...eintrag, id: 'g2' }
+    delete (schlicht as { battle?: BattleReportData }).battle
+    render(<EventLog entries={[schlicht]} ticksPerDay={24} onJump={() => undefined} />)
+
+    expect(document.querySelector('details.log__report')).toBeNull()
   })
 })
 
@@ -497,6 +695,164 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bild
   })
 })
 
+/**
+ * Die Seitenleiste hoert auf, seitwaerts zu kriechen (T-M22-02, R-UI-05, Befund V2-02).
+ *
+ * Die sechste Spalte „In Auftrag" machte die Wirtschaftstabelle breiter als die Leiste;
+ * die ganze Leiste scrollte seitlich, Armeeknoepfe erschienen abgeschnitten,
+ * Ueberschriften verloren Buchstaben. Die Spalte wird ein Zeichen mit Zahl hinter dem
+ * Bestand (D24.2), und die Leiste unterbindet horizontales Scrollen.
+ *
+ * jsdom rechnet kein Layout — `scrollWidth`/`clientWidth` sind dort immer 0, die
+ * Zusage `scrollWidth <= clientWidth` waere leer. Gebunden wird deshalb, was jsdom
+ * pruefen kann und was die Zusage im Browser erzwingt: das echte Stylesheet setzt
+ * `overflow-x: hidden` auf die Leiste, und die Tabelle traegt keine sechste Spalte
+ * mehr (siehe DECISIONS.md, 2026-09-07).
+ */
+describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
+  const economy = (committed: number): PublicView =>
+    ({
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 1_000_000, production: 349, consumption: 0, balance: 349, committed },
+        },
+      },
+    }) as unknown as PublicView
+
+  it('ersetzt die Spalte In Auftrag durch Zeichen und Zahl hinter dem Bestand', () => {
+    const { container } = render(<EconomyPanel view={economy(200_000)} />)
+
+    // Die Spalte ist weg — sie war es, die die Tabelle aus der Leiste schob. (Als Wort
+    // lebt "In Auftrag" weiter: im Titel des Zeichens, nur eben nicht als Spaltenkopf.)
+    const headers = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
+    expect(headers).not.toContain('In Auftrag')
+    expect(headers).toHaveLength(5)
+
+    // Die Auskunft bleibt: Zeichen und Zahl hinter dem Bestand, Textfassung im Titel.
+    const marker = container.querySelector('.committed')
+    expect(marker, 'kein Auftragszeichen hinter dem Bestand').toBeTruthy()
+    expect(marker?.textContent).toContain('200')
+    expect(marker?.getAttribute('title')).toContain('In Auftrag')
+    expect(marker?.querySelector('svg'), 'das Zeichen fehlt').toBeTruthy()
+  })
+
+  it('zeigt ohne laufende Auftraege kein Zeichen — eine Null ist keine Auskunft', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} />)
+
+    expect(container.querySelector('.committed')).toBeNull()
+  })
+
+  /**
+   * Die Wirtschaft sagt, wohin die Rohstoffe gehen (T-M28-05, R-UI-05, v1-Befund 15,
+   * D26.5). Bau-, Aushebungs- und Marktkosten des Tages erschienen in keiner
+   * Uebersicht. Die Auskunft steht als Zeichen mit Zahl neben dem Unterhalt —
+   * D24.2-Stil, KEINE sechste Spalte: der Querscroll-Waechter oben bleibt bindend.
+   */
+  it('zeigt die Tagesausgaben als Zahl mit Titel neben dem Unterhalt (T-M28-05)', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} expenses={{ food: 400_000 }} />)
+
+    const marker = container.querySelector('.expense')
+    expect(marker, 'keine Ausgaben-Auskunft in der Tabelle').toBeTruthy()
+    expect(marker?.textContent).toContain('400')
+    expect(marker?.getAttribute('title')).toContain('Ausgaben')
+    // Neben dem Unterhalt (vierte Spalte), nicht als eigene.
+    const zelle = marker?.closest('td')
+    const zeile = marker?.closest('tr')
+    expect([...zeile!.children].indexOf(zelle!)).toBe(3)
+    expect([...container.querySelectorAll('thead th')]).toHaveLength(5)
+  })
+
+  it('zeigt ohne Tagesausgaben kein Ausgaben-Zeichen — eine Null ist keine Auskunft', () => {
+    const { container } = render(<EconomyPanel view={economy(0)} expenses={{}} />)
+
+    expect(container.querySelector('.expense')).toBeNull()
+  })
+
+  it('R-UI-05 Waechter: die Leiste unterbindet horizontales Scrollen', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const { container } = render(
+        <aside className="side">
+          <EconomyPanel view={economy(200_000)} />
+        </aside>,
+      )
+      const side = container.querySelector('.side') as HTMLElement
+
+      expect(window.getComputedStyle(side).getPropertyValue('overflow-x')).toBe('hidden')
+      // In jsdom sind beide 0; im Browser ist genau das die Zusage aus dem Befund.
+      expect(side.scrollWidth).toBeLessThanOrEqual(side.clientWidth)
+    } finally {
+      style.remove()
+    }
+  })
+})
+
+/**
+ * Die Befehls-Quittung am Knopf (T-M22-05, R-UI-05, Befund V2-08): ob ein Befehl
+ * aussteht, entscheidet App; hier steht die andere Haelfte — dass der Knopf die
+ * Quittung zeigt und solange gesperrt ist (ein Doppelklick waere ein Doppelbefehl).
+ */
+describe('T-M22-05 Der ausloesende Knopf quittiert', () => {
+  it('zeigt den Quittungssatz und sperrt den Knopf, solange der Befehl aussteht', () => {
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[
+          {
+            id: 'build-barracks',
+            label: 'Kaserne',
+            disabledReason: null,
+            pendingNotice: '✓ befohlen — wirkt beim Weiterlaufen.',
+            onRun: () => undefined,
+          },
+        ]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Kaserne' })
+    expect(button.hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('status').textContent).toContain('befohlen')
+    expect(screen.getByRole('status').textContent).toContain('wirkt beim Weiterlaufen')
+  })
+
+  it('zeigt ohne ausstehenden Befehl keine Quittung', () => {
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[{ id: 'build-barracks', label: 'Kaserne', disabledReason: null, onRun: () => undefined }]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Kaserne' }).hasAttribute('disabled')).toBe(false)
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('T-M22-03 Der eigene Rueckschlag traegt Balken und Fettung', () => {
+  it('gibt einer self-Zeile die Klasse log__row--self — und nur ihr', () => {
+    // Die Zuordnung Ereignis -> self prueft events.test.ts fuer jede Kernart;
+    // hier steht die andere Haelfte: dass die Klasse auch am Baum ankommt.
+    const entries: EventEntry[] = [
+      { id: '1', tick: 5, text: 'Südstaaten ist gefallen.', severity: 'alert', category: 'combat', self: true },
+      { id: '2', tick: 6, text: 'Vietnam ist gefallen.', severity: 'alert', category: 'combat' },
+    ]
+    const { container } = render(<EventLog entries={entries} ticksPerDay={24} onJump={() => undefined} />)
+    const rows = [...container.querySelectorAll('.log__row')]
+
+    expect(rows[0]?.classList.contains('log__row--self')).toBe(true)
+    expect(rows[1]?.classList.contains('log__row--self')).toBe(false)
+  })
+})
+
 describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
   /**
    * Drei Größen, die das Spiel seit Monaten ausrechnet und nie gezeigt hat: die Rubrik
@@ -557,5 +913,129 @@ describe('T-M20-03 Was laengst gerechnet wird, steht auch da', () => {
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Nahrung')
     expect(cell?.querySelector('svg'), 'kein Rohstoffsymbol in der Wirtschaftstabelle').toBeTruthy()
+  })
+})
+
+/**
+ * Die Wirtschaft zeigt Trend und Bilanz als Bild (T-M25-03, R-UI-05, R-UI-13, D25.2).
+ *
+ * Sieben Rohstoffe mal fünf Zahlenspalten — Trends musste man sich merken. Jede Zeile
+ * trägt jetzt eine Sparkline der letzten sieben Tage (aus der Zeitreihe, T-M25-01) und
+ * einen Bilanzbalken: positiv grün, negativ zinnober, null als Strich. Beides sind
+ * Bilder ohne Stimme (aria-hidden) — die Zahl daneben bleibt der zugängliche Wert.
+ * Und die Tabelle bleibt in der Leiste: keine sechste Spalte, feste schmale Breiten.
+ */
+describe('R-UI-05 Die Wirtschaftstabelle traegt Sparkline und Bilanzbalken', () => {
+  const wirtschaft = (): PublicView =>
+    ({
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 400_000, production: 220_000, consumption: 100_000, balance: 120_000, committed: 0 },
+          iron: { stock: 80_000, production: 0, consumption: 40_000, balance: -40_000, committed: 0 },
+          wood: { stock: 50_000, production: 10_000, consumption: 10_000, balance: 0, committed: 0 },
+        },
+      },
+    }) as unknown as PublicView
+
+  /** Drei Tage Bestand fuer Nahrung — Werte, deren Sparkline-Punkte glatt sind. */
+  const zeitreihe: TimelineEntry[] = [
+    { day: 1, scores: {}, stock: { food: 100_000 }, balance: {} },
+    { day: 2, scores: {}, stock: { food: 250_000 }, balance: {} },
+    { day: 3, scores: {}, stock: { food: 400_000 }, balance: {} },
+  ]
+
+  const zeilen = (container: HTMLElement) => [...container.querySelectorAll('tbody tr')]
+
+  it('zeigt die Bilanz als Balken: positiv gruen, negativ zinnober, null als Strich', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    const [nahrung, eisen, holz] = zeilen(container)
+
+    expect(nahrung!.querySelector('.delta__fill--plus'), 'kein gruener Balken bei +120').toBeTruthy()
+    expect(eisen!.querySelector('.delta__fill--minus'), 'kein zinnoberner Balken bei −40').toBeTruthy()
+    expect(holz!.querySelector('.delta__zero'), 'kein Strich bei ±0').toBeTruthy()
+    expect(holz!.querySelector('.delta__fill')).toBeNull()
+  })
+
+  it('richtet die Balkenlaenge am groessten Betrag aus', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} />)
+    const plus = container.querySelector('.delta__fill--plus') as HTMLElement
+    const minus = container.querySelector('.delta__fill--minus') as HTMLElement
+
+    // +120 ist der groesste Betrag → die halbe Spur; −40 ein Drittel davon, nach links.
+    expect(plus.style.width).toBe('50%')
+    expect(plus.style.left).toBe('50%')
+    expect(minus.style.width).toBe('16.7%')
+    expect(minus.style.right).toBe('50%')
+  })
+
+  it('zeichnet die Sparkline der letzten sieben Tage aus der Zeitreihe', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    const linie = zeilen(container)[0]!.querySelector('.sparkline polyline')
+
+    // Bestand 100/250/400: Spanne 100…400 → y 100, 50, 0; drei Tage → x 0, 50, 100.
+    expect(linie, 'keine Sparkline in der Nahrungszeile').toBeTruthy()
+    expect(linie!.getAttribute('points')).toBe('0,100 50,50 100,0')
+  })
+
+  it('laesst eine Zeile ohne Verlauf ohne Sparkline', () => {
+    // Eisen kommt in der Zeitreihe nicht vor — ein erfundener Trend waere schlimmer
+    // als keiner. Und ganz ohne Zeitreihe (alter Stand) traegt keine Zeile eine.
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+    expect(zeilen(container)[1]!.querySelector('.sparkline')).toBeNull()
+
+    const ohne = render(<EconomyPanel view={wirtschaft()} />)
+    expect(ohne.container.querySelector('.sparkline')).toBeNull()
+  })
+
+  it('laesst die Bilder stumm — die Zahl bleibt der zugaengliche Wert', () => {
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+
+    expect(container.querySelector('.delta')?.getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelector('.sparkline')?.getAttribute('aria-hidden')).toBe('true')
+    // Die Zahlen stehen weiterhin als Text in ihren Zellen.
+    expect(zeilen(container)[0]!.textContent).toContain('+120')
+    expect(zeilen(container)[1]!.textContent).toContain('−40')
+    expect(zeilen(container)[2]!.textContent).toContain('±0')
+  })
+
+  it('R-UI-05 Waechter: die Tabelle behaelt ihre fuenf Spalten', () => {
+    // Die Bilder wohnen IN den Zellen — eine sechste Spalte war es, die die Leiste
+    // seitwaerts schob (T-M22-02, Befund V2-02).
+    const { container } = render(<EconomyPanel view={wirtschaft()} timeline={zeitreihe} />)
+
+    expect(container.querySelectorAll('thead th')).toHaveLength(5)
+  })
+})
+
+/**
+ * Der Markt bekommt sein Zeichen (T-M23-03, R-UI-05, DECISIONS.md 2026-09-07).
+ *
+ * Die Entscheidung von T-M20-03 bleibt: das `select` ist die bedienbarste Liste.
+ * Aber der Markt war die letzte Liste ohne Zeichen — neben jeder der beiden Listen
+ * steht jetzt das Symbol des jeweils GEWAEHLTEN Rohstoffs, und es wechselt mit.
+ */
+describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
+  const handel = () => ({ text: 'Ergibt etwas.', action: action('trade', undefined, 'Handeln') })
+  const zeichnung = (container: HTMLElement, seite: string) =>
+    container.querySelector(`.market__choice--${seite} svg path`)?.getAttribute('d')
+
+  it('zeichnet neben beiden Listen das Symbol der Auswahl', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+
+    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.wood!])
+    expect(zeichnung(container, 'want')).toBe(ICON_PATHS[RESOURCE_ICONS.iron!])
+  })
+
+  it('wechselt das Zeichen mit der Auswahl', () => {
+    const { container } = render(
+      <MarketPanel resources={['wood', 'iron', 'oil'] as never} stock={{}} preview={handel} />,
+    )
+
+    fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
+
+    expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
   })
 })

@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
+// Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
+import type { BattleReportData } from '../game/events.ts'
+import type { TimelineEntry } from '../game/saves.ts'
 import { t } from '../i18n/text.ts'
+import { DeltaBar } from './charts/DeltaBar.tsx'
+import { Sparkline } from './charts/Sparkline.tsx'
 import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
@@ -30,6 +35,11 @@ const MORALE_SCALE = 100_000
 export interface Action {
   id: string
   label: string
+  /**
+   * Der zugaengliche Name mit Verb (T-M22-06, R-UI-06, V2-13): sichtbar "Kaserne",
+   * hoerbar "Kaserne bauen". Fehlt er, ist die Beschriftung selbst die Handlung.
+   */
+  aria?: string
   /** The symbol of the thing being ordered, drawn on the button (R-UI-10). */
   icon?: IconName
   /** Where the explanation of the thing being ordered lives (R-UI-11). */
@@ -38,6 +48,12 @@ export interface Action {
   disabledReason: string | null
   /** What it costs and how long it takes, for the tooltip. */
   hint?: string
+  /**
+   * Die Quittung (T-M22-05, Befund V2-08): der Befehl ist abgeschickt und noch nicht
+   * angewendet. Der Knopf zeigt den Satz und ist gesperrt, bis der naechste Tick den
+   * Befehl anwendet — ein Doppelklick waere sonst ein Doppelbefehl.
+   */
+  pendingNotice?: string
   onRun: () => void
 }
 
@@ -110,8 +126,10 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         <button
           type="button"
           className="button"
-          disabled={action.disabledReason !== null}
+          disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
           title={buttonTitle(action)}
+          // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
+          aria-label={action.aria}
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
         >
@@ -120,6 +138,13 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
         </button>
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
+      {/* Die Quittung am ausloesenden Element (T-M22-05): abgeschickt, wirkt im
+          naechsten Tick — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
+      {action.pendingNotice && (
+        <p className="action__pending" role="status">
+          {action.pendingNotice}
+        </p>
+      )}
       {action.disabledReason &&
         (showReason ? (
           <p id={reasonId} className="action__reason">
@@ -401,6 +426,15 @@ export interface ArmyPanelProps {
   units?: readonly IconItem[] | undefined
   actions: readonly Action[]
   targeting?: Targeting | null | undefined
+  /**
+   * Die Quittung eines abgeschickten Armee-Befehls (T-M28-02, D26.2, R-UI-05).
+   *
+   * Die Quittung aus T-M22-05 hing am auslösenden Knopf — der Bestätigungsknopf der
+   * Zielwahl verschwindet aber im selben Klick (`setTargeting(null)`), und der Spieler
+   * sah nach dem Bestätigen nichts. Sie steht deshalb zusätzlich hier, in der
+   * Statuszeile der Armee, gespeist aus derselben `pendingCommands`-Sammlung der App.
+   */
+  pendingNotice?: string | null | undefined
   ticksPerDay: number
   currentTick: number
 }
@@ -418,6 +452,14 @@ export function ArmyPanel(props: ArmyPanelProps) {
           {t('army.strength')}: {amount(army.strength)}
         </p>
       </header>
+
+      {/* Die Zielwahl-Quittung in der Statuszeile (T-M28-02): abgeschickt, noch nicht
+          angewendet — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
+      {props.pendingNotice && (
+        <p className="action__pending" role="status">
+          {props.pendingNotice}
+        </p>
+      )}
 
       <dl className="facts">
         {army.stance && (
@@ -507,6 +549,45 @@ export interface EventEntry {
    * noch.
    */
   world?: boolean
+  /**
+   * Trifft diese Zeile den Betrachter selbst — als Rückschlag (T-M22-03, V2-07)?
+   *
+   * Eigener Provinzverlust, eigene Hauptstadt, Aufstand im eigenen Land, eigenes
+   * Ausscheiden: der Fall der eigenen Großstadt darf nicht dieselbe optische Stimme
+   * haben wie „Vietnam ist gefallen" am anderen Ende der Welt.
+   */
+  self?: boolean
+  /**
+   * Der aufklappbare Körper einer Zeile (T-M24-01, R-TIME-06, Befund V2-06).
+   *
+   * Heute trägt ihn nur der Tagesbericht: die Zeile wird ein `details/summary`, die
+   * Überschrift bleibt die Zeile, die Absätze stehen dahinter. Eine Zeile ohne Körper
+   * bleibt, was sie war.
+   */
+  body?: readonly string[]
+  /**
+   * Die Bilanzen des Tagesberichts als Balken (T-M25-04, R-UI-05, D25.2).
+   *
+   * Dieselben Delta-Balken wie in der Wirtschaftstabelle — eine Komponente, zweimal
+   * verwendet. Als Daten getrennt vom Text: ein Balken lässt sich nicht in eine
+   * Textzeile pressen, und die Zahl daneben bleibt der zugängliche Wert.
+   */
+  deltas?: readonly DayReportDelta[]
+  /**
+   * Der Anzeigedatensatz eines Gefechts (T-M27-02, R-BAT-05, D25.6).
+   *
+   * Anders als `body` ist der Gefechtskörper strukturiert — Balken statt Absätze:
+   * je Seite Stärke vorher/nachher und Verlust, dazu die Umstände als Zeichen.
+   * Gebaut von `battleReport` in game/events.ts; ein altes Ereignis ohne die
+   * additiven Felder trägt keinen, und die Zeile bleibt, was sie war.
+   */
+  battle?: BattleReportData
+}
+
+/** Eine Bilanzzeile des Tagesberichts: Rohstoffname und Festkomma-Tagesbilanz. */
+export interface DayReportDelta {
+  label: string
+  balance: number
 }
 
 export type EventCategory = 'combat' | 'economy' | 'diplomacy' | 'other'
@@ -544,6 +625,106 @@ export function categoryOf(type: string): EventCategory {
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
   return 'other'
+}
+
+/**
+ * Die Balkenlängen des Kampfberichts (T-M27-02, D25.6), rein und exakt gebunden.
+ *
+ * Der Maßstab ist die stärkste Seite **vorher**: ihre volle Stärke ist die volle Spur,
+ * alles andere skaliert dagegen — so ist das Kräfteverhältnis der beiden Balken
+ * ablesbar, nicht nur der eigene Schwund. Der Verlust ist die Differenz vorher−nachher
+ * und wird an die Restspur geklemmt, damit Rundung nie über 100 % läuft.
+ */
+export function battleBarWidths(
+  before: number,
+  after: number,
+  max: number,
+): { after: number; loss: number } {
+  if (!Number.isFinite(before) || !Number.isFinite(after) || !(max > 0)) return { after: 0, loss: 0 }
+  const track = (value: number) => Math.max(0, Math.min(100, Math.round((value / max) * 1000) / 10))
+  const kept = track(after)
+  const loss = Math.max(0, Math.min(100 - kept, track(before - after)))
+  return { after: kept, loss }
+}
+
+/**
+ * Die Satzfassung des Gefechtsbilds — fürs Ohr (T-M27-02, R-UI-10).
+ *
+ * Das Bild trägt sie als aria-Text: je Seite Stärke vorher/nachher und Verluste mit
+ * denselben Zahlen, die neben den Balken stehen, danach Gelände und Festung. Ein
+ * Vorleseprogramm bekommt so den ganzen Bericht als einen Satzzug, nicht als
+ * zusammenhanglose Balkenbreiten.
+ */
+export function battleSentence(battle: BattleReportData): string {
+  const parts = battle.sides.map((side) => {
+    const satz = t('events_ui.battleSide', {
+      name: side.name,
+      before: amount(side.before),
+      after: amount(side.after),
+      losses: amount(side.losses),
+    })
+    const extras = [
+      ...(side.entrenched ? [t('events_ui.battleEntrenchedSentence', { name: side.name })] : []),
+      ...(side.attackBlocked ? [t('events_ui.battleBlockedSentence', { name: side.name })] : []),
+    ]
+    return [satz, ...extras].join(' ')
+  })
+  parts.push(t('events_ui.battleTerrain', { terrain: t(`terrain.${battle.terrain}`) }))
+  if (battle.fortressLevel > 0) {
+    parts.push(t('events_ui.battleFortressSentence', { level: battle.fortressLevel }))
+  }
+  return parts.join(' ')
+}
+
+/**
+ * Der Gefechtskörper: je Seite ein Stärkebalken vorher → nachher, der Verlust als
+ * zinnoberroter Abschnitt (der Signalton, hier zu Recht), die Umstände als Zeichen
+ * aus dem bestehenden Symbolsatz. Die Zahlen stehen sichtbar daneben — das Bild
+ * ersetzt sie nicht, es macht sie vergleichbar.
+ */
+function BattleBody({ battle }: { battle: BattleReportData }) {
+  const max = Math.max(...battle.sides.map((side) => side.before), 1)
+  return (
+    <div className="battle" role="img" aria-label={battleSentence(battle)}>
+      {battle.sides.map((side) => {
+        const widths = battleBarWidths(side.before, side.after, max)
+        return (
+          <div key={side.playerId} className="battle__side">
+            <span className="battle__name">
+              {side.name}
+              {side.entrenched && (
+                <Icon name="entrenched" size={12} title={t('events_ui.battleEntrenched')} />
+              )}
+              {side.attackBlocked && (
+                <Icon name="noRetreat" size={12} title={t('events_ui.battleBlocked')} />
+              )}
+            </span>
+            <span className="battle__bar">
+              <span className="battle__after" style={{ width: `${widths.after}%` }} />
+              <span className="battle__loss" style={{ width: `${widths.loss}%` }} />
+            </span>
+            <span className="battle__numbers">
+              {amount(side.before)} → {amount(side.after)}
+            </span>
+          </div>
+        )
+      })}
+      <p className="battle__facts">
+        <Icon name={TERRAIN_ICONS[battle.terrain]} size={12} title={t(`terrain.${battle.terrain}`)} />
+        <span>{t(`terrain.${battle.terrain}`)}</span>
+        {battle.fortressLevel > 0 && (
+          <>
+            <Icon
+              name="fortress"
+              size={12}
+              title={t('events_ui.battleFortress', { level: battle.fortressLevel })}
+            />
+            <span>{t('events_ui.battleFortress', { level: battle.fortressLevel })}</span>
+          </>
+        )}
+      </p>
+    </div>
+  )
 }
 
 export function EventLog({
@@ -595,30 +776,78 @@ export function EventLog({
       {filterBar}
       <ul>
         {shown.map((entry) => (
-          <li key={entry.id} className={entry.severity === 'alert' ? 'log__row log__row--alert' : 'log__row'}>
+          <li
+            key={entry.id}
+            className={[
+              'log__row',
+              ...(entry.severity === 'alert' ? ['log__row--alert'] : []),
+              // Der eigene Rueckschlag traegt Balken und Fettung (T-M22-03, V2-07).
+              ...(entry.self ? ['log__row--self'] : []),
+            ].join(' ')}
+          >
             <time>
               {Math.floor(entry.tick / ticksPerDay) + 1} ·{' '}
               {String(entry.tick % ticksPerDay).padStart(2, '0')}:00
             </time>
-            {CATEGORY_ICONS[entry.category ?? 'other'] && (
-              <Icon
-                name={CATEGORY_ICONS[entry.category ?? 'other']!}
-                size={13}
-                title={t(`alerts.${entry.category ?? 'other'}`)}
-              />
-            )}
-            {entry.provinceId ? (
-              <button
-                type="button"
-                className="log__jump"
-                onClick={() => onJump(entry.provinceId!)}
-                title={t('events_ui.jumpTo')}
-              >
-                {entry.text}
-              </button>
-            ) : (
-              <span>{entry.text}</span>
-            )}
+            {/* Symbol und Text teilen sich EINE Rasterspur (T-M22-01, Befund V2-01):
+                als drittes Rasterkind rutschte der Text in die zweite Zeile und erbte
+                dort die 72 px der Zeitspalte — jeder Eintrag brach nach 1-2 Woertern um. */}
+            <span className="log__entry">
+              {CATEGORY_ICONS[entry.category ?? 'other'] && (
+                <Icon
+                  name={CATEGORY_ICONS[entry.category ?? 'other']!}
+                  size={13}
+                  title={t(`alerts.${entry.category ?? 'other'}`)}
+                />
+              )}
+              {entry.body || entry.battle || (entry.deltas && entry.deltas.length > 0) ? (
+                /* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist
+                   die Überschrift, der Körper steht dahinter — details/summary reicht,
+                   im Stil der Lagekarte. Seit T-M27-02 nutzt der Kampfbericht dasselbe
+                   Muster, sein Körper ist aber strukturiert: Balken statt Absätze. */
+                <details className="log__report">
+                  <summary>{entry.text}</summary>
+                  {entry.battle && <BattleBody battle={entry.battle} />}
+                  {/* Die Bilanzen als Balken (T-M25-04): DERSELBE DeltaBar wie in der
+                      Wirtschaftstabelle; der groesste Betrag des Tages ist der
+                      Massstab, die Zahl daneben bleibt der zugaengliche Wert. */}
+                  {entry.deltas && entry.deltas.length > 0 && (
+                    <ul className="log__deltas" aria-label={t('dayReport.balance')}>
+                      {entry.deltas.map((delta) => (
+                        <li key={delta.label}>
+                          <span>{delta.label}</span>
+                          <span className="log__delta-value">
+                            {rate(delta.balance)}
+                            <DeltaBar
+                              value={delta.balance}
+                              max={Math.max(...entry.deltas!.map((d) => Math.abs(d.balance)), 1)}
+                            />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {entry.body && entry.body.length > 0 && (
+                    <ul>
+                      {entry.body.map((line, lineIndex) => (
+                        <li key={lineIndex}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </details>
+              ) : entry.provinceId ? (
+                <button
+                  type="button"
+                  className="log__jump"
+                  onClick={() => onJump(entry.provinceId!)}
+                  title={t('events_ui.jumpTo')}
+                >
+                  {entry.text}
+                </button>
+              ) : (
+                <span>{entry.text}</span>
+              )}
+            </span>
           </li>
         ))}
       </ul>
@@ -730,13 +959,19 @@ export function MarketPanel({
       <h2>{t('market.title')}</h2>
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
-        <select id="market-give" value={give} onChange={(event) => setGive(event.target.value as ResourceKey)}>
-          {resources.map((key) => (
-            <option key={key} value={key}>
-              {t(`resources.${key}`)} ({amount(stock[key] ?? 0)})
-            </option>
-          ))}
-        </select>
+        {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
+            DECISIONS.md 2026-09-07): das select bleibt — T-M20-03 bestaetigt —, aber
+            das Auge bekommt seinen Anker. Ohne title: die Liste nennt den Namen. */}
+        <span className="market__choice market__choice--give">
+          <Icon name={RESOURCE_ICONS[give] ?? 'money'} size={14} />
+          <select id="market-give" value={give} onChange={(event) => setGive(event.target.value as ResourceKey)}>
+            {resources.map((key) => (
+              <option key={key} value={key}>
+                {t(`resources.${key}`)} ({amount(stock[key] ?? 0)})
+              </option>
+            ))}
+          </select>
+        </span>
         <label htmlFor="market-amount">{t('market.amount')}</label>
         <input
           id="market-amount"
@@ -747,13 +982,16 @@ export function MarketPanel({
           onChange={(event) => setUnits(Number(event.target.value))}
         />
         <label htmlFor="market-want">{t('market.want')}</label>
-        <select id="market-want" value={want} onChange={(event) => setWant(event.target.value as ResourceKey)}>
-          {resources.map((key) => (
-            <option key={key} value={key}>
-              {t(`resources.${key}`)}
-            </option>
-          ))}
-        </select>
+        <span className="market__choice market__choice--want">
+          <Icon name={RESOURCE_ICONS[want] ?? 'money'} size={14} />
+          <select id="market-want" value={want} onChange={(event) => setWant(event.target.value as ResourceKey)}>
+            {resources.map((key) => (
+              <option key={key} value={key}>
+                {t(`resources.${key}`)}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
       <p className="facts__inline">{result.text}</p>
       <ActionRow actions={[result.action]} />
@@ -771,11 +1009,35 @@ export function MarketPanel({
  * say whether a shortage comes from a lost mine or from a new army, and that is the
  * question a player asks the moment a figure turns red.
  */
-export function EconomyPanel({ view }: { view: PublicView | null }) {
+export function EconomyPanel({
+  view,
+  timeline = [],
+  expenses = {},
+}: {
+  view: PublicView | null
+  /** Die Zeitreihe der Partie (T-M25-01) — sie speist die Sparkline je Rohstoff. */
+  timeline?: readonly TimelineEntry[]
+  /**
+   * Der Tagesabfluss je Rohstoff (T-M28-05, v1-Befund 15): Bau + Aushebung + Markt
+   * des Tages, gerechnet von `dayExpenses` in game/events.ts — denselben Quellen wie
+   * der Tagesbericht. Steht als Zeichen mit Zahl neben dem Unterhalt (D24.2-Stil):
+   * eine sechste Spalte schob die Tabelle schon einmal aus der Leiste (T-M22-02).
+   */
+  expenses?: Partial<Record<string, number>>
+}) {
   const economy = view?.self.economy
   if (!economy) return null
 
   const shortages = new Set(view?.self.shortages ?? [])
+
+  // Der Massstab der Bilanzbalken: der groesste Betrag bekommt die halbe Spur, alle
+  // anderen skalieren dagegen — so ist "Oel frisst am meisten" ohne Lesen sichtbar.
+  const maxBalance = Math.max(...Object.values(economy).map((flow) => Math.abs(flow.balance)), 1)
+
+  // Das Sieben-Tage-Fenster der Sparkline (D25.2), je Rohstoff aus der Zeitreihe.
+  const window7 = timeline.slice(-7)
+  const stockHistory = (key: string): number[] =>
+    window7.filter((entry) => key in entry.stock).map((entry) => entry.stock[key]!)
 
   return (
     <section className="panel" aria-label={t('economy.title')}>
@@ -788,7 +1050,6 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
             <th>{t('economy.production')}</th>
             <th>{t('economy.consumption')}</th>
             <th>{t('economy.balance')}</th>
-            <th>{t('economy.committed')}</th>
           </tr>
         </thead>
         <tbody>
@@ -801,13 +1062,46 @@ export function EconomyPanel({ view }: { view: PublicView | null }) {
                 {t(`resources.${key}`)}
                 <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
               </td>
-              <td>{amount(flow.stock)}</td>
+              <td>
+                {amount(flow.stock)}
+                {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne
+                    Vorzeichen und ausserhalb der Bilanz (T-M12-10). Als sechste Spalte
+                    schob dieser Wert die Tabelle aus der Leiste (T-M22-02, V2-02);
+                    jetzt steht er als Zeichen mit Zahl hinter dem Bestand, und nur,
+                    wenn es ihn gibt — eine Null ist keine Auskunft. */}
+                {flow.committed > 0 && (
+                  <span
+                    className="committed"
+                    title={t('economy.committedTitle', { amount: amount(flow.committed) })}
+                  >
+                    <Icon name="queue" size={11} title={t('economy.committed')} />
+                    {amount(flow.committed)}
+                  </span>
+                )}
+                {/* Der Trend der letzten sieben Tage (T-M25-03): ein Bild ohne Stimme
+                    in der Zelle — keine sechste Spalte, die Leiste bleibt stehen. */}
+                <Sparkline values={stockHistory(key)} />
+              </td>
               <td>{rate(flow.production)}</td>
-              <td>{rate(-flow.consumption)}</td>
-              <td>{rate(flow.balance)}</td>
-              {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne Vorzeichen
-                  und ausserhalb der Bilanz (T-M12-10). */}
-              <td>{amount(flow.committed)}</td>
+              <td>
+                {rate(-flow.consumption)}
+                {/* Die Ausgaben des Tages hinter dem Unterhalt (T-M28-05): Bau,
+                    Aushebung und Markt — die Antwort auf „wohin geht mein Bestand,
+                    obwohl die Bilanz stimmt". Nur wenn es sie gibt: eine Null ist
+                    keine Auskunft. Textfassung im Titel, Muster wie „In Auftrag". */}
+                {(expenses[key] ?? 0) > 0 && (
+                  <span
+                    className="expense"
+                    title={t('economy.expensesTitle', { amount: amount(expenses[key]!) })}
+                  >
+                    −{amount(expenses[key]!)}
+                  </span>
+                )}
+              </td>
+              <td>
+                {rate(flow.balance)}
+                <DeltaBar value={flow.balance} max={maxBalance} />
+              </td>
             </tr>
           ))}
         </tbody>

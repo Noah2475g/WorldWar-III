@@ -83,7 +83,11 @@ export function Meter({ label, value, max, text, tone = 'neutral', trend = null,
       aria-valuetext={spoken}
       title={spoken}
     >
-      <span className={labelHidden ? 'visually-hidden' : 'meter__label'}>{label}</span>
+      {/* Bei labelHidden faellt der Textknoten ganz weg (T-M23-02, V2-17): das
+          aria-label oben nennt den Balken fuers Ohr bereits — ein versteckter Knoten
+          dazu liess Vorleseprogramme und Textauszuege den Namen doppelt lesen
+          („Indien Indien 6148"). */}
+      {!labelHidden && <span className="meter__label">{label}</span>}
       <span className="meter__track">
         <span className={`meter__fill meter__fill--${tone}`} style={{ width: `${Math.round(fraction * 100)}%` }} />
       </span>

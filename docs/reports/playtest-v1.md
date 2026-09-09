@@ -5,7 +5,7 @@
 > Dateien nicht auseinanderlaufen können. Läuft der Bogen weiter, den Befehl erneut
 > aufrufen — bereits gegebene Antworten bleiben stehen.
 
-**Durchgang von:** 
+**Durchgang von:** Noah — Durchführung per /goal-Auftrag vom 2026-09-07 ausdrücklich an Claude delegiert („den Playtest sollst du eigenständig durchführen"); zweiter Durchgang auf Stand a007497 (nach M19–M21) in `docs/reports/playtest-2026-09-07-v2.md`, Delegationsentscheid in `docs/plan/DECISIONS.md`
 
 > Die Zeile darueber liest `scripts/playtest-sheet.mjs`. AK-7 verlangt im Wortlaut
 > **Noahs** Abnahme - steht dort jemand anders oder niemand, gilt der Bogen als
@@ -80,8 +80,8 @@ sich selbst auferlegt, und sie ist die, an der Abnahmebögen sonst scheitern.
 | 46 | R-UI-05 | ja | [G] Fuenf Schritte, unten links, ohne etwas zu verdecken, reagieren auf das eigene Tun. Schritt 3 erklaert die Kernmechanik verstaendlich: "Die Zahlen sind Spielstunden je Sekunde - bei 10 vergeht ein Spieltag in gut zwei Sekunden." Abschaltbar ueber "Nicht mehr zeigen". |
 | 47 | R-GAME-04 | ja | [G] Nach einer laengeren Partie: "Automatisch gespeichert 1 - Tag 15" und "Automatisch gespeichert 2 - Tag 36" in der Liste, in IndexedDB als autosave-0.json und autosave-1.json. Die Rotation ueber fuenf Plaetze greift. Einschraenkung: im laufenden Spiel gibt es keine Rueckmeldung, dass gesichert wurde. |
 | 48 | R-UI-08 | ja | [G] BEFUND. Die "Debug-Ansicht" laesst sich einschalten und zeigt: "Tick: 8", einen LEEREN Zustands-Hash und zwei Ueberschriften - "Ziel" und "Kommandolog" - mit NICHTS darunter. Damit ist die Antwort auf "gibt es eine Einstellung, die sichtbar nichts bewirkt" ein Ja, und die erwartete Antwort war Nein. Befund P-13. |
-| 49 | R-UI-05 |  |  |
-| 50 | R-UI-05 |  |  |
+| 49 | R-UI-05 | ja | [G] Durchgang V2 (2026-09-07, Stand a007497): die "Neu ab heute"-Hinweise fuehrten von der Kaserne ueber die Infanterie bis zum Marschbefehl; die Ablehnungstexte ("Dafuer fehlt das Gebaeude: Kaserne.") schliessen die Luecken. Zu jedem Zeitpunkt war klar, welcher Knopf der naechste ist. |
+| 50 | R-UI-05 | nein | [G] Durchgang V2: das WAS ist gefuehrt, das WOZU nicht. Warum die Kaserne vor der Infanterie kommt, erklaert nur die Ablehnung im Nachhinein; die Tagesberichte sind leere Eintraege ("Tagesbericht fuer Tag 8." ohne Inhalt), und zwischen den Freischaltungen liegen Spieltage, in denen das Spiel nichts sagt. Befund V2-06/V2-15 in docs/reports/playtest-2026-09-07-v2.md. |
 
 ---
 
@@ -125,6 +125,7 @@ Erwartet: **ja / nein / nein.**
 | 42 | Ueber zwei vollstaendige Partien erschien keine einzige Meldung - der Bereich .alerts existiert im DOM nicht. Hauptstadtverlust, Ueberrennen und das eigene Ausscheiden liefen wortlos an mir vorbei; erfahren habe ich es nur, weil ich das Protokoll gelesen habe, das gleichzeitig von fremden Gefechten volllaeuft. | HOCH |
 | 25d | Nebenbefund (Antwort bleibt ja): der Endedialog schreibt "Tag 171 - 0 Punkte - 1 Provinzen" - Mehrzahl bei eins, und die Zahl widerspricht dem Satz darueber ("Ihre letzte Provinz ist gefallen"). | klein |
 | 22 | Zusatz zum WARUM: zwischen Tag 52-03:00 und 52-07:00 lief fuenfmal hintereinander ein Gefecht mit "Verluste: 0, 0" bei gleichem Ausgang ("niemand behauptet das Feld"). Ein stuendlich wiederholtes Patt ohne jede Wirkung, das dem Spieler nirgends erklaert wird. | mittel |
+| 50 | Das WOZU fehlt zwischen den Freischaltungen: leere Tagesberichte ohne jeden Inhalt, tote Spieltage 5-8, und kein Satz, der erklaert, warum die Kaserne vor der Infanterie kommt. Details und Reparaturvorschlag: V2-06/V2-15 in docs/reports/playtest-2026-09-07-v2.md, Aufgaben im LEVEL-UP-Plan. | mittel |
 
 ## Die drei Fragen, auf die es ankommt
 

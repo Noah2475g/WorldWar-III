@@ -1,0 +1,465 @@
+{
+  "days": 200,
+  "seeds": [
+    1914,
+    2015,
+    1939,
+    1871,
+    1806,
+    1683,
+    1945,
+    1789,
+    1848,
+    1990,
+    2001,
+    1066
+  ],
+  "nations": [
+    "Deutschland",
+    "Frankreich",
+    "Polen",
+    "Italien",
+    "Ukraine",
+    "Spanien"
+  ],
+  "out": {
+    "350": {
+      "runs": [
+        {
+          "seed": 1914,
+          "captures": 714,
+          "firstCaptureDay": 5,
+          "warsEnded": 10,
+          "warsOpen": 5,
+          "meanWarDays": 46.30833333333333,
+          "winnerDay": null,
+          "leaderShare": 0.4766355140186916,
+          "survivors": 5
+        },
+        {
+          "seed": 2015,
+          "captures": 481,
+          "firstCaptureDay": 5,
+          "warsEnded": 13,
+          "warsOpen": 2,
+          "meanWarDays": 74.34294871794872,
+          "winnerDay": null,
+          "leaderShare": 0.22641509433962265,
+          "survivors": 6
+        },
+        {
+          "seed": 1939,
+          "captures": 593,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 35.238095238095234,
+          "winnerDay": null,
+          "leaderShare": 0.3619047619047619,
+          "survivors": 5
+        },
+        {
+          "seed": 1871,
+          "captures": 412,
+          "firstCaptureDay": 5,
+          "warsEnded": 10,
+          "warsOpen": 5,
+          "meanWarDays": 49.85,
+          "winnerDay": null,
+          "leaderShare": 0.30303030303030304,
+          "survivors": 4
+        },
+        {
+          "seed": 1806,
+          "captures": 452,
+          "firstCaptureDay": 5,
+          "warsEnded": 10,
+          "warsOpen": 5,
+          "meanWarDays": 47.69583333333333,
+          "winnerDay": null,
+          "leaderShare": 0.34615384615384615,
+          "survivors": 6
+        },
+        {
+          "seed": 1683,
+          "captures": 442,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 42.67261904761905,
+          "winnerDay": null,
+          "leaderShare": 0.43478260869565216,
+          "survivors": 5
+        },
+        {
+          "seed": 1945,
+          "captures": 425,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 34.78240740740741,
+          "winnerDay": null,
+          "leaderShare": 0.3333333333333333,
+          "survivors": 4
+        },
+        {
+          "seed": 1789,
+          "captures": 547,
+          "firstCaptureDay": 5,
+          "warsEnded": 10,
+          "warsOpen": 5,
+          "meanWarDays": 40.25833333333333,
+          "winnerDay": null,
+          "leaderShare": 0.3173076923076923,
+          "survivors": 5
+        },
+        {
+          "seed": 1848,
+          "captures": 658,
+          "firstCaptureDay": 5,
+          "warsEnded": 11,
+          "warsOpen": 4,
+          "meanWarDays": 39.625,
+          "winnerDay": null,
+          "leaderShare": 0.336734693877551,
+          "survivors": 5
+        },
+        {
+          "seed": 1990,
+          "captures": 423,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 51.72916666666668,
+          "winnerDay": null,
+          "leaderShare": 0.3235294117647059,
+          "survivors": 5
+        },
+        {
+          "seed": 2001,
+          "captures": 474,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 37.697916666666664,
+          "winnerDay": null,
+          "leaderShare": 0.35185185185185186,
+          "survivors": 5
+        },
+        {
+          "seed": 1066,
+          "captures": 553,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 31.73148148148148,
+          "winnerDay": null,
+          "leaderShare": 0.3211009174311927,
+          "survivors": 5
+        }
+      ],
+      "summary": {
+        "captures": 514.5,
+        "firstCaptureDay": 5,
+        "warsEnded": 9.333333333333334,
+        "meanWarDays": 44.327677935490435,
+        "decidedGames": 0,
+        "winnerDay": null,
+        "leaderShare": 0.344398335725767,
+        "survivors": 5
+      }
+    },
+    "500": {
+      "runs": [
+        {
+          "seed": 1914,
+          "captures": 454,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 30.553571428571427,
+          "winnerDay": null,
+          "leaderShare": 0.4649122807017544,
+          "survivors": 4
+        },
+        {
+          "seed": 2015,
+          "captures": 409,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 46.44642857142857,
+          "winnerDay": null,
+          "leaderShare": 0.38738738738738737,
+          "survivors": 4
+        },
+        {
+          "seed": 1939,
+          "captures": 470,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 51.65972222222222,
+          "winnerDay": null,
+          "leaderShare": 0.43636363636363634,
+          "survivors": 4
+        },
+        {
+          "seed": 1871,
+          "captures": 405,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 29.767857142857142,
+          "winnerDay": null,
+          "leaderShare": 0.3425925925925926,
+          "survivors": 4
+        },
+        {
+          "seed": 1806,
+          "captures": 353,
+          "firstCaptureDay": 5,
+          "warsEnded": 5,
+          "warsOpen": 10,
+          "meanWarDays": 17.683333333333334,
+          "winnerDay": null,
+          "leaderShare": 0.3627450980392157,
+          "survivors": 4
+        },
+        {
+          "seed": 1683,
+          "captures": 526,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 27.51388888888889,
+          "winnerDay": null,
+          "leaderShare": 0.3508771929824561,
+          "survivors": 4
+        },
+        {
+          "seed": 1945,
+          "captures": 494,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 36.074074074074076,
+          "winnerDay": null,
+          "leaderShare": 0.34285714285714286,
+          "survivors": 4
+        },
+        {
+          "seed": 1789,
+          "captures": 390,
+          "firstCaptureDay": 5,
+          "warsEnded": 7,
+          "warsOpen": 8,
+          "meanWarDays": 36.125,
+          "winnerDay": null,
+          "leaderShare": 0.4594594594594595,
+          "survivors": 4
+        },
+        {
+          "seed": 1848,
+          "captures": 479,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 17.23611111111111,
+          "winnerDay": null,
+          "leaderShare": 0.34545454545454546,
+          "survivors": 4
+        },
+        {
+          "seed": 1990,
+          "captures": 407,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 32.111111111111114,
+          "winnerDay": null,
+          "leaderShare": 0.4774774774774775,
+          "survivors": 4
+        },
+        {
+          "seed": 2001,
+          "captures": 487,
+          "firstCaptureDay": 5,
+          "warsEnded": 5,
+          "warsOpen": 10,
+          "meanWarDays": 28.71666666666667,
+          "winnerDay": null,
+          "leaderShare": 0.3163265306122449,
+          "survivors": 4
+        },
+        {
+          "seed": 1066,
+          "captures": 459,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 44.65972222222223,
+          "winnerDay": null,
+          "leaderShare": 0.39814814814814814,
+          "survivors": 4
+        }
+      ],
+      "summary": {
+        "captures": 444.4166666666667,
+        "firstCaptureDay": 5,
+        "warsEnded": 6.416666666666667,
+        "meanWarDays": 33.2122905643739,
+        "decidedGames": 0,
+        "winnerDay": null,
+        "leaderShare": 0.39038345767300503,
+        "survivors": 4
+      }
+    },
+    "700": {
+      "runs": [
+        {
+          "seed": 1914,
+          "captures": 442,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 32.11111111111111,
+          "winnerDay": null,
+          "leaderShare": 0.43636363636363634,
+          "survivors": 4
+        },
+        {
+          "seed": 2015,
+          "captures": 548,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 28.9375,
+          "winnerDay": null,
+          "leaderShare": 0.4857142857142857,
+          "survivors": 4
+        },
+        {
+          "seed": 1939,
+          "captures": 533,
+          "firstCaptureDay": 5,
+          "warsEnded": 6,
+          "warsOpen": 9,
+          "meanWarDays": 24.659722222222225,
+          "winnerDay": null,
+          "leaderShare": 0.3482142857142857,
+          "survivors": 4
+        },
+        {
+          "seed": 1871,
+          "captures": 469,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 28.754629629629626,
+          "winnerDay": null,
+          "leaderShare": 0.3392857142857143,
+          "survivors": 4
+        },
+        {
+          "seed": 1806,
+          "captures": 453,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 22.942708333333332,
+          "winnerDay": null,
+          "leaderShare": 0.4824561403508772,
+          "survivors": 4
+        },
+        {
+          "seed": 1683,
+          "captures": 477,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 38.078125,
+          "winnerDay": null,
+          "leaderShare": 0.5565217391304348,
+          "survivors": 4
+        },
+        {
+          "seed": 1945,
+          "captures": 404,
+          "firstCaptureDay": 5,
+          "warsEnded": 9,
+          "warsOpen": 6,
+          "meanWarDays": 37.675925925925924,
+          "winnerDay": null,
+          "leaderShare": 0.30097087378640774,
+          "survivors": 4
+        },
+        {
+          "seed": 1789,
+          "captures": 523,
+          "firstCaptureDay": 5,
+          "warsEnded": 5,
+          "warsOpen": 10,
+          "meanWarDays": 29.625,
+          "winnerDay": null,
+          "leaderShare": 0.39603960396039606,
+          "survivors": 4
+        },
+        {
+          "seed": 1848,
+          "captures": 437,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 38.552083333333336,
+          "winnerDay": null,
+          "leaderShare": 0.48717948717948717,
+          "survivors": 4
+        },
+        {
+          "seed": 1990,
+          "captures": 434,
+          "firstCaptureDay": 5,
+          "warsEnded": 8,
+          "warsOpen": 7,
+          "meanWarDays": 32.28125,
+          "winnerDay": null,
+          "leaderShare": 0.3939393939393939,
+          "survivors": 4
+        },
+        {
+          "seed": 2001,
+          "captures": 513,
+          "firstCaptureDay": 5,
+          "warsEnded": 5,
+          "warsOpen": 10,
+          "meanWarDays": 15.883333333333331,
+          "winnerDay": null,
+          "leaderShare": 0.4166666666666667,
+          "survivors": 4
+        },
+        {
+          "seed": 1066,
+          "captures": 506,
+          "firstCaptureDay": 5,
+          "warsEnded": 10,
+          "warsOpen": 5,
+          "meanWarDays": 42.78333333333333,
+          "winnerDay": null,
+          "leaderShare": 0.4954954954954955,
+          "survivors": 4
+        }
+      ],
+      "summary": {
+        "captures": 478.25,
+        "firstCaptureDay": 5,
+        "warsEnded": 7.583333333333333,
+        "meanWarDays": 31.023726851851848,
+        "decidedGames": 0,
+        "winnerDay": null,
+        "leaderShare": 0.4282372768822567,
+        "survivors": 4
+      }
+    }
+  }
+}

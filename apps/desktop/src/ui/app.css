@@ -256,9 +256,36 @@ body {
   background: var(--paper);
   padding: var(--sp-lg);
   overflow-y: auto;
+  /* Kein seitliches Kriechen (T-M22-02, Befund V2-02): ein einziges zu breites Panel
+     schob sonst die GANZE Leiste zur Seite — Knoepfe abgeschnitten, Ueberschriften
+     ohne ersten Buchstaben. Was breiter sein will als die Leiste, wird beschnitten
+     und faellt damit sofort auf, statt alle anderen Panels zu verschieben. */
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--sp-lg);
+}
+
+/* Das Auftragszeichen hinter dem Bestand (T-M22-02): Zeichen und Zahl, gedaempft,
+   mit der Textfassung im Titel. */
+.committed {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: var(--sp-sm);
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+/* Die Ausgaben des Tages hinter dem Unterhalt (T-M28-05): dasselbe Muster — Zahl
+   gedaempft, Textfassung im Titel; keine sechste Spalte (T-M22-02). */
+.expense {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--sp-sm);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .panel h2 {
@@ -345,9 +372,34 @@ body {
   padding: 1px 0;
 }
 
+/* Symbol und Text in einer Spur (T-M22-01, Befund V2-01): das Rubriksymbol aus
+   T-M20-03 war ein drittes Rasterkind, der Text fiel in die zweite Zeile und erbte
+   die 72 px der Zeitspalte — jeder Eintrag brach nach ein bis zwei Woertern um. */
+.log__entry {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.log__entry svg {
+  flex: none;
+  align-self: center;
+}
+
 .log__row--alert {
   color: var(--accent);
   font-weight: 500;
+}
+
+/* Was mich selbst trifft, sieht anders aus (T-M22-03, Befund V2-07): eigener
+   Provinzverlust, eigene Hauptstadt, Aufstand im eigenen Land, eigenes Ausscheiden —
+   Zinnober-Balken links und Fettung, damit der Fall der eigenen Grossstadt nicht
+   dieselbe Stimme hat wie ein Weltereignis am anderen Ende der Karte. */
+.log__row--self {
+  border-left: 3px solid var(--accent);
+  padding-left: var(--sp-md);
+  font-weight: 600;
 }
 
 .log__row time {
@@ -370,6 +422,104 @@ body {
 .log__empty {
   font-size: 12px;
   color: var(--ink-soft);
+  margin: 0;
+}
+
+/* Der Tagesbericht klappt auf (T-M24-01, Befund V2-06): die Zeile ist die
+   Ueberschrift, der Koerper steht als Liste dahinter — im Stil der Lagekarte. */
+.log__report {
+  min-width: 0;
+}
+
+.log__report summary {
+  cursor: pointer;
+}
+
+.log__report ul {
+  margin: 2px 0 4px;
+  padding-left: var(--sp-lg);
+  list-style: disc;
+  color: var(--ink-soft);
+}
+
+/* Die Bilanzen des Berichts als Balken (T-M25-04): je Zeile Rohstoff, Zahl und
+   derselbe DeltaBar wie in der Wirtschaftstabelle — ohne Aufzaehlungspunkte, die
+   Balken sind selbst die Marken. */
+.log__report ul.log__deltas {
+  list-style: none;
+  padding-left: var(--sp-md);
+}
+
+.log__deltas li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  max-width: 260px;
+}
+
+.log__delta-value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Das Gefechtsbild (T-M27-02, D25.6): je Seite ein Staerkebalken vorher-zu-nachher,
+   der Verlust als zinnoberner Abschnitt — der Signalton, hier zu Recht. Die Zahlen
+   stehen daneben; das Bild selbst spricht als EIN Satz (role=img, aria-label). */
+.battle {
+  display: grid;
+  gap: 3px;
+  margin: 4px 0 4px var(--sp-md);
+  font-size: 11px;
+  color: var(--ink-soft);
+  max-width: 280px;
+}
+
+.battle__side {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) 1fr auto;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.battle__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.battle__bar {
+  display: flex;
+  height: 8px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.battle__after {
+  background: var(--ink-soft);
+}
+
+.battle__loss {
+  background: var(--accent);
+}
+
+.battle__numbers {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.battle__facts {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
   margin: 0;
 }
 
@@ -413,6 +563,43 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--sp-lg);
+}
+
+/* Start mit Gesicht (T-M22-04, Befund V2-03): der Spielname als Kopf des
+   Startdialogs, Untertitel und Fassung gedaempft darunter. */
+.start {
+  text-align: center;
+  border-bottom: 1px solid var(--paper-sunk);
+  padding-bottom: var(--sp-md);
+}
+
+.start__title {
+  font-family: var(--font-map);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.start__subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.start__version {
+  margin: 2px 0 0;
+  font-family: var(--font-num);
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+/* Das Menue mit Wegen (T-M22-04): drei Knoepfe untereinander, gut zu treffen. */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  min-width: 220px;
 }
 
 .field {
@@ -552,6 +739,19 @@ body {
   margin: 0 0 var(--sp-sm);
 }
 
+/* Die Befehls-Quittung (T-M22-05): abgeschickt, wirkt im naechsten Tick. */
+.action__pending {
+  font-size: 11px;
+  color: var(--good);
+  margin: 0 0 var(--sp-sm);
+}
+
+/* Die ehrliche Uhr (T-M22-05): Tempo eingestellt, aber kein Tick — "Pausiert". */
+.clock__stalled {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 .action {
   display: flex;
   flex-direction: column;
@@ -583,6 +783,19 @@ body {
   gap: var(--sp-sm) var(--sp-md);
   align-items: center;
   font-size: 12px;
+}
+
+/* Das Zeichen des gewaehlten Rohstoffs neben der Liste (T-M23-03). */
+.market__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.market__choice select {
+  flex: 1;
+  min-width: 0;
 }
 
 .army-list {
@@ -684,8 +897,17 @@ body {
 }
 
 .tutorial__text {
-  margin: 0 0 var(--sp-md);
+  margin: 0 0 var(--sp-sm);
   font-size: 12px;
+}
+
+/* Das Wozu (T-M24-02): der Begruendungssatz unter der Handlungsanweisung — kursiv und
+   gedaempft, damit das Was die Stimme behaelt und das Warum die Fussnote bleibt. */
+.tutorial__why {
+  margin: 0 0 var(--sp-md);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-soft);
 }
 
 /* ---------------------------------------------------------------- anzeigen */
@@ -753,6 +975,131 @@ body {
 
 .meter__trend--down {
   color: var(--warn);
+}
+
+/* ------------------------------------------------------------- diagramme */
+
+/* Die Diagramm-Bausteine (T-M25-02/-03, D25.2): eigene SVG-Komponenten im Stil der
+   Lagekarte. Der Pfadraum ist 0…100 (viewBox) und wird hier auf die Panelbreite
+   gestreckt; non-scaling-stroke haelt die Striche dabei gleich duenn. */
+.chart {
+  margin: 0 0 var(--sp-md);
+}
+
+.chart__plot {
+  display: block;
+  width: 100%;
+  height: 96px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: 1px;
+}
+
+/* Der Rahmen um die Zeichenflaeche traegt die Endwerte (T-M28-01): absolut auf der
+   Hoehe des letzten Punkts, am rechten Rand — der Zehntel-Rand der Skala haelt sie
+   im Bild. Stumm (aria-hidden): die Bildbeschreibung nennt die Endwerte mit Namen. */
+.chart__frame {
+  position: relative;
+}
+
+.chart__endvalue {
+  position: absolute;
+  right: 3px;
+  transform: translateY(-50%);
+  font-size: 10px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-shadow:
+    0 0 2px var(--paper-sunk),
+    0 0 4px var(--paper-sunk);
+}
+
+.chart__line {
+  fill: none;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs) var(--sp-lg);
+  margin-top: var(--sp-xs);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.chart__empty {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0 0 var(--sp-md);
+}
+
+/* Die Sparkline in der Tabellenzelle: fest und schmal, damit die Leiste nicht wieder
+   seitwaerts kriecht (T-M22-02) — der Punktraum 0…100 wird hierauf gestaucht. */
+.sparkline {
+  width: 40px;
+  height: 11px;
+  margin-left: var(--sp-sm);
+  vertical-align: middle;
+}
+
+.sparkline__line {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Der ±-Balken: Mitte ist null, rechts waechst Gruen, links Zinnober; die Zahl steht
+   daneben und bleibt der zugaengliche Wert (der Balken ist aria-hidden). */
+.delta {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 7px;
+  margin-left: var(--sp-sm);
+  background: var(--paper-sunk);
+  border: 1px solid var(--line);
+  border-radius: 1px;
+  vertical-align: middle;
+}
+
+.delta::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.delta__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.delta__fill--plus {
+  background: var(--good);
+}
+
+.delta__fill--minus {
+  background: var(--accent);
+}
+
+.delta__zero {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  background: var(--ink-soft);
 }
 
 /* ---------------------------------------------------------------- legende */

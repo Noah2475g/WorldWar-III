@@ -4,6 +4,7 @@ import {
   arrival,
   costs,
   duration,
+  durationDative,
   formatTime,
   gameTime,
   missing,
@@ -95,6 +96,15 @@ describe('R-UI-05 Dauern und Ankunft', () => {
 
   it('sagt bei erreichtem Ziel, dass die Armee steht', () => {
     expect(arrival(120, 120, 24)).toBe('Steht')
+  })
+
+  it('beugt die Dauer nach "nach" in den Dativ (T-M23-02, V2-11)', () => {
+    // "Angehalten nach 2 Tage" war der gemessene Fehler; nach verlangt den Dativ.
+    expect(durationDative(48, 24)).toBe('2 Tagen')
+    expect(durationDative(36, 24)).toBe('1,5 Tagen')
+    // Ein Tag und Stunden beugen sich im Dativ nicht anders.
+    expect(durationDative(24, 24)).toBe('1 Tag')
+    expect(durationDative(14, 24)).toBe('14 h')
   })
 })
 

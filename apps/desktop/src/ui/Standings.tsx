@@ -1,5 +1,8 @@
 import type { PublicView } from '@worldwar/core'
+import type { TimelineEntry } from '../game/saves.ts'
+import { isPluralNation } from '../i18n/grammar.ts'
 import { plural, t } from '../i18n/text.ts'
+import { LineChart, type ChartSeries } from './charts/LineChart.tsx'
 import { amount } from './format.ts'
 import { Meter } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
@@ -62,15 +65,64 @@ export function standingsRows(view: PublicView | null, nameOf: (id: string) => s
   return rows.sort((a, b) => b.score - a.score)
 }
 
-export function StandingsPanel({ view, nameOf }: { view: PublicView | null; nameOf: (id: string) => string }) {
+/**
+ * Der Machtverlauf als Kurve (T-M25-02, R-UI-13, D25.2): die Zeitreihe der Hülle
+ * (T-M25-01) wird je bekannter Macht eine Reihe in Spielerfarbe. Eine Macht, die einem
+ * Tag fehlt (noch nicht getroffen, ausgeschieden), fehlt dort einfach — die Kurve
+ * beginnt und endet, wo das Wissen beginnt und endet.
+ */
+export function scoreSeries(rows: readonly StandingsRow[], timeline: readonly TimelineEntry[]): ChartSeries[] {
+  return rows.map((row) => ({
+    id: row.id,
+    label: row.nation,
+    color: row.color,
+    points: timeline
+      .filter((entry) => row.id in entry.scores)
+      .map((entry) => ({ day: entry.day, value: entry.scores[row.id]! })),
+  }))
+}
+
+export function StandingsPanel({
+  view,
+  nameOf,
+  timeline = [],
+}: {
+  view: PublicView | null
+  nameOf: (id: string) => string
+  /** Die Zeitreihe der Partie (T-M25-01); ohne sie bleibt es beim ehrlichen Satz. */
+  timeline?: readonly TimelineEntry[]
+}) {
   const rows = standingsRows(view, nameOf)
   if (rows.length === 0) return null
 
   const leader = Math.max(...rows.map((row) => row.score), 1)
 
+  // Unter drei aufgezeichneten Tagen gibt es keine Kurve (T-M28-01, D26.1): ein
+  // einzelner Punkt wäre eine leere Behauptung, zwei Punkte eine Gerade, die einen
+  // Verlauf nur vortäuscht. Der Wartesatz sagt stattdessen ehrlich, wie weit die
+  // Aufzeichnung ist.
+  const series = scoreSeries(rows, timeline)
+  const days = new Set(timeline.map((entry) => entry.day))
+  const endwerte = rows
+    .map((row) => {
+      const last = series.find((line) => line.id === row.id)?.points.at(-1)
+      return last ? `${row.nation} ${Math.round(last.value)}` : null
+    })
+    .filter(Boolean)
+    .join(', ')
+
   return (
     <section className="panel" aria-label={t('standings.title')}>
       <h2>{t('standings.title')}</h2>
+      {days.size >= 3 ? (
+        <LineChart series={series} ariaLabel={t('standings.historyAria', { list: endwerte })} />
+      ) : (
+        <p className="chart__empty">
+          {days.size === 0
+            ? t('standings.historyEmpty')
+            : t('standings.historyWaiting', { days: days.size })}
+        </p>
+      )}
       <table className="table">
         <thead>
           <tr>
@@ -156,7 +208,12 @@ export function VictoryDialog({
               ? t('standings.won')
               : eliminated && !winner
                 ? t('standings.eliminated')
-                : t('standings.lost', { nation: winner ? nameOf(winner) : '—' })}
+                : (() => {
+                    // „Vereinigte Staaten haben gewonnen" — der Numerus haengt am
+                    // Machtnamen (T-M23-02, V2-11).
+                    const nation = winner ? nameOf(winner) : '—'
+                    return t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })
+                  })()}
           </p>
           <p className="facts__inline">
             {[

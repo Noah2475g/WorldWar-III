@@ -35,7 +35,7 @@
   "regenPermillePerTick": 5,
   "regenShortageFactor": 500,
   "foreignTerritoryFactor": 700,
-  "hostileTerritoryFactor": 350,
+  "hostileTerritoryFactor": 500,
   "railwayFactor": 2500,
   "embarkTicks": 3,
   "disembarkTicks": 2,

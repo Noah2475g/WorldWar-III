@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { StrictMode } from 'react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryStorage, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 
 /**
@@ -144,7 +145,9 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
 describe('R-UI-05 Einstellungen wirken', () => {
   it('aendert die Schriftgroesse sichtbar', () => {
     startGame()
+    // Seit T-M22-04 oeffnet "Menü" das Menue mit Wegen; die Einstellungen sind einer davon.
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
 
     const select = screen.getByRole('combobox', { name: /Schriftgröße/ }) as HTMLSelectElement
     fireEvent.change(select, { target: { value: 'large' } })
@@ -160,6 +163,7 @@ describe('R-UI-05 Einstellungen wirken', () => {
     expect(screen.queryByRole('region', { name: 'Debug' })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Debug-Ansicht' }))
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
@@ -224,13 +228,17 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
   // Armeeunterhalt. Ohne Armee stand sie auf null, und der Playtest las das als
   // "die Spalte tut nichts" (Frage 15). Sie heisst jetzt, was sie ist, und daneben
   // steht die Antwort auf die eigentliche Frage: was in Auftraegen gebunden ist.
-  it('zeigt Bestand, Produktion, Unterhalt, Bilanz und Gebundenes je Rohstoff', () => {
+  it('zeigt Bestand, Produktion, Unterhalt und Bilanz je Rohstoff', () => {
     startGame()
     const panel = screen.getByRole('region', { name: 'Wirtschaft' })
 
-    for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz', 'In Auftrag']) {
+    // "In Auftrag" ist seit T-M22-02 keine Spalte mehr: sie schob die Tabelle aus der
+    // Leiste (Befund V2-02). Die Auskunft steht jetzt als Zeichen mit Zahl hinter dem
+    // Bestand — geprueft in Panels.test.tsx am Fall mit laufenden Auftraegen.
+    for (const column of ['Bestand', 'Produktion', 'Unterhalt', 'Bilanz']) {
       expect(within(panel).getByText(column), `Spalte ${column} fehlt`).toBeTruthy()
     }
+    expect(within(panel).queryByText('In Auftrag')).toBeNull()
     for (const resource of ['Nahrung', 'Eisen', 'Geld']) {
       expect(within(panel).getByText(resource), `Zeile ${resource} fehlt`).toBeTruthy()
     }
@@ -242,6 +250,130 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
 
     // Vorzeichenbehaftet, damit die Richtung auf einen Blick lesbar ist.
     expect(resources.textContent).toMatch(/[+−±]\d/)
+  })
+})
+
+/**
+ * Das Protokoll nutzt die volle Breite (T-M22-01, R-TIME-06, R-UI-05, Befund V2-01).
+ *
+ * Der Playtest V2 fand jeden Eintrag in einer ~90-px-Spalte umgebrochen, waehrend die
+ * Leiste ~1400 px breit ist. Ursache: `.log__row` deklariert zwei Rasterspuren (Zeit,
+ * Text), aber seit T-M20-03 traegt eine Zeile mit Rubriksymbol DREI Kinder — der Text
+ * rutscht in die zweite Rasterzeile und erbt dort die Breite der Zeitspalte.
+ *
+ * jsdom rechnet kein Layout, also wird die Zusage strukturell gebunden: das echte
+ * Stylesheet wird geladen, und jede Zeile darf hoechstens so viele Kinder haben, wie
+ * das Raster Spuren deklariert — und die letzte Spur ist die flexible (`fr`), sodass
+ * der Text die verfuegbare Breite abzueglich der festen Zeitspalte bekommt. Kein
+ * fester Pixelwert fuer den Text.
+ */
+describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
+  const withStylesheet = () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${ROOT}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    return style
+  }
+
+  it('gibt dem Text jeder Zeile die flexible Spur — auch mit Rubriksymbol davor', () => {
+    const style = withStylesheet()
+    try {
+      startGame()
+      // Genau der Satz des Befunds: eine Kriegserklaerung, deren Zeile ein
+      // Rubriksymbol traegt. Ein Tick danach, damit der Befehl sicher angewendet ist.
+      fireEvent.keyDown(window, { key: 'd' })
+      const panel = screen.getByRole('region', { name: 'Diplomatie' })
+      fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+      fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+      const log = screen.getByRole('region', { name: 'Ereignisse' })
+      const rows = [...log.querySelectorAll('.log__row')]
+      expect(rows.length).toBeGreaterThan(0)
+      expect(
+        rows.some((row) => row.querySelector('svg')),
+        'keine Zeile traegt ein Rubriksymbol — der Befundfall fehlt',
+      ).toBe(true)
+
+      for (const row of rows) {
+        const tracks = window
+          .getComputedStyle(row)
+          .getPropertyValue('grid-template-columns')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+        expect(
+          row.children.length,
+          `Zeile "${row.textContent?.slice(0, 60)}" hat mehr Kinder als Rasterspuren — ihr Text faellt aus der flexiblen Spur`,
+        ).toBeLessThanOrEqual(tracks.length)
+        // Die letzte Spur ist die flexible: der Text bekommt die Breite der Leiste
+        // abzueglich der festen Zeitspalte — kein fester Pixelwert.
+        expect(tracks[tracks.length - 1]).toMatch(/fr$/)
+        expect(tracks[0]).toMatch(/px$/)
+      }
+    } finally {
+      style.remove()
+    }
+  })
+})
+
+/**
+ * Der Tagesbericht bekommt einen Koerper (T-M24-01, R-TIME-06, Befund V2-06).
+ *
+ * Die Verdrahtung, nicht die Rechnung: die Huelle liest am Tageswechsel den Zustand
+ * (dayReportBody, geprueft in events.test.ts) und haengt den Koerper an den
+ * DAY_REPORT-Eintrag des Protokolls. Ohne diese Verdrahtung bliebe der Bericht die
+ * Ueberschrift ohne Koerper, die der Playtest fand.
+ */
+describe('R-TIME-06 Der Tagesbericht im Protokoll klappt auf', () => {
+  it('traegt nach einem Spieltag einen aufklappbaren Koerper', async () => {
+    startGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const log = screen.getByRole('region', { name: 'Ereignisse' })
+    await waitFor(() => {
+      const bericht = [...log.querySelectorAll('details.log__report')].find((element) =>
+        /Tagesbericht/.test(element.querySelector('summary')?.textContent ?? ''),
+      )
+      expect(bericht, 'kein aufklappbarer Tagesbericht im Protokoll').toBeTruthy()
+      expect(bericht!.textContent).toMatch(/Bilanz|Moral|Morgen neu|ruhiger Tag/)
+    })
+  })
+})
+
+/**
+ * Der Machtverlauf erreicht das Lage-Panel (T-M25-02, R-UI-13).
+ *
+ * Die Rechnung prueft Standings.test.tsx an bekannten Reihen; hier steht die
+ * Verdrahtung: die Zeitreihe (T-M25-01) waechst am Tageswechsel, und das Lage-Panel
+ * bekommt sie — nach drei Spieltagen gibt es eine Kurve (unter drei Punkten steht
+ * seit T-M28-01 der ehrliche Wartesatz statt einer Pseudokurve).
+ */
+describe('R-UI-13 Der Machtverlauf erreicht das Lage-Panel', () => {
+  it('zeichnet nach drei Spieltagen eine Kurve im Lage-Panel', async () => {
+    startGame()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 2/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 3/)).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    await waitFor(() => expect(screen.getByText(/Tag 4/)).toBeTruthy())
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    await waitFor(() => {
+      const kurve = document.querySelector('.chart path[data-series="p1"]')
+      expect(kurve, 'keine eigene Kurve im Lage-Panel').toBeTruthy()
+    })
+  })
+
+  it('sagt ohne zweiten Tag den ehrlichen Satz', () => {
+    startGame()
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    expect(document.querySelector('.chart__empty'), 'kein Leerzustand im Lage-Panel').toBeTruthy()
   })
 })
 
@@ -305,16 +437,43 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
   }
   const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
 
+  /**
+   * Befund vom 2026-09-08 (Sichtpruefung nach M25-M27): ein Marschbefehl ueber die
+   * Zielwahl verschwand im laufenden Programm SPURLOS — keine Ablehnung, keine
+   * Quittung, kein Marsch. Ursache: der setState-Updater von fastForwardRun trug
+   * Seiteneffekte (playerCommands = [], ticksRun +=). React ruft Updater unter
+   * StrictMode (main.tsx rendert die App darin) doppelt: der erste Lauf verbrauchte
+   * die Befehle, der zweite — dessen Ergebnis zaehlt — rechnete ohne sie. Alle
+   * uebrigen Tests rendern ohne StrictMode und konnten das nicht sehen; dieser
+   * rendert wie die echte Anwendung.
+   */
+  it('verliert gesammelte Befehle nicht, wenn React den Updater doppelt ruft (StrictMode wie main.tsx)', () => {
+    render(
+      <StrictMode>
+        <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
+      </StrictMode>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    pickCapital()
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(log()).toContain('Bau von Kaserne begonnen')
+    // Und die Stoppmeldung zaehlt den Sprung nicht doppelt ("nach 2 Tagen" bei einem):
+    // ticksRun += im doppelt gelaufenen Updater war derselbe Fehler von der anderen Seite.
+    expect(screen.getByRole('status').textContent).not.toContain('2 Tag')
+  })
+
   it('bietet in der eigenen Provinz jedes Gebaeude mit Preis und jede Einheit mit Grund', () => {
     startGame()
     pickCapital()
 
-    const barracks = screen.getByRole('button', { name: 'Kaserne' })
+    const barracks = screen.getByRole('button', { name: 'Kaserne bauen' })
     expect(barracks.hasAttribute('disabled')).toBe(false)
     expect(barracks.getAttribute('title')).toContain('Material')
 
     const recruit = screen.getByRole('region', { name: 'Ausheben' })
-    expect(within(recruit).getByRole('button', { name: 'Infanterie' }).hasAttribute('disabled')).toBe(true)
+    expect(within(recruit).getByRole('button', { name: 'Infanterie ausheben' }).hasAttribute('disabled')).toBe(true)
     // One shared reason above the group, not ten below the buttons.
     expect(recruit.textContent).toContain('Dafür fehlt das Gebäude: Kaserne.')
   })
@@ -322,11 +481,15 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
   it('baut, hebt aus, waehlt die Armee und marschiert mit angesagter Ankunft', () => {
     startGame()
     pickCapital()
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    // Seit T-M22-05 wirkt ein Befehl im naechsten Tick (V2-08): erst quittiert er …
+    expect(log()).not.toContain('Bau von Kaserne begonnen')
+    fastForward(1)
+    // … dann wendet der naechste Tick ihn an.
     expect(log()).toContain('Bau von Kaserne begonnen')
 
     fastForward(2)
-    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' })
+    const infantry = within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' })
     expect(infantry.hasAttribute('disabled')).toBe(false)
     fireEvent.click(infantry)
     fastForward(2)
@@ -344,6 +507,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(panel.textContent).toMatch(/Ankunft/)
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
+    fastForward(1)
     expect(log()).toContain('marschiert nach')
     // Eigenes Zeitlimit, weil dieser Test die ganze Kette faehrt (bauen, vorspulen,
     // ausheben, Armee waehlen, Ziel waehlen, marschieren) und dabei die Anwendung
@@ -360,8 +524,12 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    // Der Befehl wirkt im naechsten Tick (T-M22-05).
+    fastForward(1)
 
-    expect(log()).toMatch(/erklärt .* den Krieg\. Wirksam ab Tag \d+/)
+    // Der Spieler ist die Mehrzahl-Macht Vereinigte Staaten: das Verb steht in der
+    // Mehrzahl (T-M23-02, V2-11).
+    expect(log()).toMatch(/Vereinigte Staaten erklären .* den Krieg\. Wirksam ab Tag \d+/)
     expect(log()).not.toMatch(/\bp\d\b/)
   })
 
@@ -372,15 +540,17 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     expect(panel.textContent).toMatch(/Ergibt etwa \d+/)
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Handeln' }))
+    // Der Befehl wirkt im naechsten Tick (T-M22-05).
+    fastForward(1)
     expect(log()).toMatch(/gegen \d+ .* getauscht/)
   })
 
   it('bricht die Zielwahl mit Escape ab, ohne das Panel zu schliessen', () => {
     startGame()
     pickCapital()
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
     fastForward(2)
-    fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie' }))
+    fireEvent.click(within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }))
     fastForward(2)
     fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
     const panel = screen.getByRole('region', { name: 'Armee' })
@@ -390,6 +560,146 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
+  })
+})
+
+/**
+ * Jeder Befehl quittiert; eine stehende Uhr sagt es (T-M22-05, R-UI-05, R-TIME-02,
+ * Befunde V2-08/V2-09).
+ *
+ * Ein Befehl wirkt erst im nächsten Tick — bei stehender Uhr also gar nicht, und das
+ * Panel zeigte weiter „Frieden", ohne jeden Hinweis. Jetzt sammelt die Hülle die
+ * Befehle (`pendingCommands`), der auslösende Knopf zeigt bis zur Anwendung die
+ * Quittung, und bei stehender Uhr sagt sie „wirkt beim Weiterlaufen".
+ */
+describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  it('zeigt am ausloesenden Knopf "befohlen", bis der naechste Tick den Befehl anwendet', () => {
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+
+    // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
+    expect(panel.textContent).toContain('befohlen')
+    expect(panel.textContent).toContain('wirkt beim Weiterlaufen')
+    // Abgeschickt, nicht angewendet: das Protokoll kennt den Befehl noch nicht.
+    expect(log()).not.toMatch(/erklär(t|en)/)
+
+    // Der naechste Tick wendet ihn an; die Quittung verschwindet. Die Vereinigten
+    // Staaten erklaeren in der Mehrzahl (T-M23-02, V2-11).
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(log()).toMatch(/erklären .* den Krieg/)
+    expect(screen.getByRole('region', { name: 'Diplomatie' }).textContent).not.toContain('befohlen')
+  })
+
+  it('sperrt den Knopf, solange sein Befehl aussteht — ein Doppelklick ist kein Doppelbefehl', () => {
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
+    fireEvent.click(war)
+
+    expect(war.hasAttribute('disabled')).toBe(true)
+  })
+
+  /**
+   * Auch die Zielwahl quittiert sichtbar (T-M28-02, D26.2, Debugging 2026-09-08).
+   *
+   * Die Quittung aus T-M22-05 hing per actionId am „Marsch befehlen"-Knopf — und der
+   * verschwindet mit `setTargeting(null)` im selben Klick. Der Spieler sah nach dem
+   * Bestätigen NICHTS: genau das Loch, das T-M22-05 schließen sollte, einen Pfad
+   * weiter. Jetzt steht die Quittung in der Armee-Statuszeile, gespeist aus derselben
+   * `pendingCommands`-Sammlung. Gerendert wie main.tsx in StrictMode — die Falle vom
+   * 2026-09-08 (doppelt gerufene Updater) sieht nur dieser Weg.
+   */
+  it('quittiert die Zielwahl in der Armee-Statuszeile (StrictMode wie main.tsx)', () => {
+    render(
+      <StrictMode>
+        <App map={world} rules={TEST_RULES} maps={maps} skipTutorial />
+      </StrictMode>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    const capital = world.startPositions[0]!.capital
+    const fastForward = (days: number) => {
+      for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    }
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fastForward(3)
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Ausheben' })).getByRole('button', { name: 'Infanterie ausheben' }),
+    )
+    fastForward(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Auswählen' }))
+    const panel = screen.getByRole('region', { name: 'Armee' })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marschieren' }))
+    const target = within(panel).getByRole('combobox', { name: 'Ziel' })
+    const options = Array.from((target as HTMLSelectElement).options).map((option) => option.value)
+    const neighbour = world.startPositions[0]!.provinces.find((id) => id !== capital && options.includes(id))!
+    fireEvent.change(target, { target: { value: neighbour } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Marsch befehlen' }))
+
+    // Der Bestätigungsknopf ist weg — die Quittung steht in der Statuszeile der Armee,
+    // und bei stehender Uhr nennt sie das Weiterlaufen.
+    const armee = screen.getByRole('region', { name: 'Armee' })
+    expect(within(armee).queryByRole('button', { name: 'Marsch befehlen' })).toBeNull()
+    const quittung = within(armee).getByRole('status')
+    expect(quittung.textContent).toContain('befohlen')
+    expect(quittung.textContent).toContain('wirkt beim Weiterlaufen')
+    // Abgeschickt, nicht angewendet: das Protokoll kennt den Marsch noch nicht.
+    expect(log()).not.toContain('marschiert nach')
+
+    // Der nächste Tick wendet den Befehl an; die Quittung verschwindet wieder.
+    fastForward(1)
+    expect(log()).toContain('marschiert nach')
+    expect(within(screen.getByRole('region', { name: 'Armee' })).queryByRole('status')).toBeNull()
+  }, 20_000)
+})
+
+describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
+  /**
+   * Der Befundfall nachgestellt (V2-09): `requestAnimationFrame` feuert nicht — im
+   * Spiel bei verdecktem Fenster, hier per Stummschaltung. Wichtig: OHNE die
+   * Stummschaltung haengt jsdoms rAF an `setInterval`, und unter falschen Uhren
+   * treibt `advanceTimersByTime` dann die komplette Spielschleife an — genau das
+   * Gegenteil des Falls, um den es geht.
+   */
+  const stehendeUhr = () => {
+    vi.stubGlobal('requestAnimationFrame', () => 0)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'Date'] })
+  }
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('zeigt Pausiert, wenn trotz eingestelltem Tempo zwei Sekunden kein Tick lief', () => {
+    stehendeUhr()
+    startGame({ storage: new MemoryStorage() })
+    expect(screen.queryByText('Pausiert')).toBeNull()
+
+    fireEvent.keyDown(window, { key: ' ' })
+    act(() => {
+      vi.advanceTimersByTime(2500)
+    })
+
+    expect(screen.getByText('Pausiert')).toBeTruthy()
+  })
+
+  it('sagt bei bewusster Pause nichts — Pause ist kein Fehler', () => {
+    stehendeUhr()
+    startGame({ storage: new MemoryStorage() })
+
+    act(() => {
+      vi.advanceTimersByTime(2500)
+    })
+
+    expect(screen.queryByText('Pausiert')).toBeNull()
   })
 })
 
@@ -426,7 +736,7 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
   /** Build something, then let it finish — a completion is the cheapest audible event. */
   const buildAndFinish = (days: number) => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kaserne' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
     for (let day = 0; day < days; day++) fireEvent.keyDown(window, { key: 'f' })
   }
 
@@ -443,6 +753,7 @@ describe('R-UI-04 Der Ton haengt am Spiel', () => {
     const audio = fakeAudio()
     startGame({ audio: audio.factory })
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Ton' }))
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
 
@@ -471,7 +782,7 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
 
     const hint = screen.getByRole('complementary', { name: 'Einstieg' })
-    expect(hint.textContent).toContain('Schritt 1 von 8')
+    expect(hint.textContent).toContain('Schritt 1 von 10')
   })
 
   it('geht weiter, sobald der Spieler die genannte Handlung ausfuehrt', () => {
@@ -480,7 +791,26 @@ describe('R-UI-05 Die Einstiegshilfe empfaengt den neuen Spieler', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
 
-    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 8')
+    expect(screen.getByRole('complementary', { name: 'Einstieg' }).textContent).toContain('Schritt 2 von 10')
+  })
+
+  it('beendet den Punkteschritt, wenn die Lage der Maechte offen ist (T-M24-02)', () => {
+    // Der vierte Schritt erklaert, woher die Punkte kommen, und bittet um einen Blick
+    // in die Lage der Maechte. Er endet auf JEDEM Weg dorthin — Taste L wie Kopfleiste —,
+    // weil die Verdrahtung am geoeffneten Panel haengt, nicht an einer Taste.
+    globalThis.localStorage?.clear()
+    render(<App map={world} rules={TEST_RULES} maps={maps} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '10' }))
+
+    const hint = () => screen.getByRole('complementary', { name: 'Einstieg' }).textContent ?? ''
+    expect(hint(), 'die drei Klickschritte sind nicht durch').toContain('Schritt 4 von 10')
+
+    fireEvent.keyDown(window, { key: 'l' })
+
+    expect(hint(), 'der Blick auf die Lage hat den Schritt nicht beendet').toContain('Schritt 5 von 10')
   })
 
   it('bleibt weg, wenn der Spieler sie abgeschaltet hat', () => {
@@ -809,6 +1139,88 @@ describe('R-UI-05 Die Spielstaende sind erreichbar', () => {
 
     // Vorher war der Startdialog hier fuer immer weg und nur Neuladen half.
     expect(screen.getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+  })
+})
+
+/**
+ * Weiterspielen mit einem Klick, ein Menü mit Wegen (T-M22-04, R-UI-05, R-GAME-03,
+ * Befunde V2-04/V2-05).
+ *
+ * Nach dem Neustart war der jüngste Stand zwei Klicks entfernt und wurde nicht
+ * angeboten; das Menü kannte nur die Einstellungen. Jetzt: existiert ein Spielstand,
+ * ist „Weiterspielen (Tag N)" der ERSTE Knopf des Startdialogs und lädt den jüngsten
+ * Stand; das Menü bietet aus der laufenden Partie die drei Wege Neue Partie /
+ * Spielstände / Einstellungen.
+ */
+describe('R-GAME-03 Weiterspielen mit einem Klick', () => {
+  const withSaves = async () => {
+    const storage = new MemoryStorage()
+    const older = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    await storage.write(manualSlotName(1), serialise(older, 'Alt'))
+    // Der juengste Stand: Tag 3 (Tick 48 bei 24 Ticks je Tag).
+    const newer = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    newer.tick = 48
+    await storage.write(manualSlotName(0), serialise(newer, 'Neu'))
+    return storage
+  }
+
+  it('bietet Weiterspielen als ERSTEN Knopf des Startdialogs an und laedt den juengsten Stand', async () => {
+    const storage = await withSaves()
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+
+    // Der Knopf nennt den Tag des juengsten Stands …
+    const resume = await screen.findByRole('button', { name: 'Weiterspielen (Tag 3)' })
+    // … und steht VOR allem anderen im Dialog (V2-04: er war zwei Klicks entfernt).
+    const body = document.querySelector('.dialog__body')
+    expect(body?.querySelector('button')).toBe(resume)
+
+    fireEvent.click(resume)
+
+    // Ein Klick, und die Partie laeuft am geladenen Tag weiter.
+    await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy())
+    expect(screen.getByText(/Tag 3 · 00:00/)).toBeTruthy()
+  })
+
+  it('bietet ohne Spielstand kein Weiterspielen an', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={new MemoryStorage()} skipTutorial />)
+
+    expect(screen.queryByRole('button', { name: /Weiterspielen/ })).toBeNull()
+  })
+})
+
+describe('R-UI-05 Das Menue kennt drei Wege — auch aus der laufenden Partie', () => {
+  it('bietet Neue Partie, Spielstaende und Einstellungen an', async () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    const menu = screen.getByRole('dialog', { name: 'Menü' })
+
+    expect(within(menu).getByRole('button', { name: 'Neue Partie' })).toBeTruthy()
+    expect(within(menu).getByRole('button', { name: 'Spielstände' })).toBeTruthy()
+    expect(within(menu).getByRole('button', { name: 'Einstellungen' })).toBeTruthy()
+  })
+
+  it('fuehrt aus der laufenden Partie zu den Einstellungen', () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+
+    expect(screen.getByRole('dialog', { name: 'Einstellungen' })).toBeTruthy()
+  })
+
+  it('fuehrt aus der laufenden Partie zum Startdialog fuer eine neue Partie', () => {
+    // V2-05: aus der laufenden Partie gab es keinen Weg zu "Neue Partie".
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+
+    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+    // Abbrechen laesst die laufende Partie unberuehrt.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+    expect(screen.getByRole('banner')).toBeTruthy()
   })
 })
 
