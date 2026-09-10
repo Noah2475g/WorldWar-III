@@ -1470,3 +1470,25 @@ Geschichte stehen; die gültigen Werte stehen in KRIEGSRAT.md D27.1 und nach T-M
 `tokens.ts`.
 
 ---
+
+## 2026-09-11 · T-M29-01 · Beziehungsflächen sind dunkle Verwandte, nicht die Signalfarben selbst
+
+**Entscheid:** `RELATION_COLORS` füllt den Beziehungsmodus mit abgedunkelten Verwandten
+(`self #3C6E44`, `ally #2A4A66`, `war #7A2E22`, `peace = paperSunk`, `unknown #3A3D40`)
+— nicht mit `good`, `#6FA8DC` und `accent`, wie das „Fertig wenn" von T-M29-01 wörtlich
+sagt. Die drei Leuchtfarben bleiben Token (`good`, `ally`, `accent`) für Marker, Linien
+und Text; als Flächen einer ganzen Weltgegend gibt es sie nicht.
+
+**Begründung:** Zwei Wächter, die der Plan ausdrücklich behält, widersprechen dem Wortlaut:
+`tokens.contrast.test.ts` verlangt `onPlayer` ≥ 4,5 : 1 auf jeder Beziehungsfläche
+(`#E6E1D3` auf `#7EC57E` sind 1,5 : 1), und D27.1 selbst nennt „Eigene Provinzen
+`#3C6E44`, Feind `#7A2E22`" als Beziehungs-Füllungen. KRIEGSRAT.md D27.1: „der
+Kontrasttest hat das letzte Wort". Aus demselben Grund weichen `line` (`#5C6A78` statt
+`#2F3944`, 3 : 1 Nicht-Text auf `paper`) und `accent` (`#E8583F` statt `#E2503A`,
+AA-Text auf `paper`) minimal vom Entwurf ab — beides im Token dokumentiert.
+
+**Auswirkung:** Kein Aufrufer ändert sich; `fillFor('relations')` und `legendFor` lesen
+weiter `RELATION_COLORS`. Wer den Beziehungsmodus später leuchtender will, ändert die
+fünf Werte und lässt den Kontrasttest entscheiden.
+
+---

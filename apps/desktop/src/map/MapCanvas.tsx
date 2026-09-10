@@ -380,7 +380,7 @@ export function MapCanvas(props: MapCanvasProps) {
         // — the same symbol the panels use, drawn from the same paths (R-UI-10).
         const w = 20
         const h = 14
-        context.fillStyle = marker.own ? TOKENS.ink : TOKENS.accent
+        context.fillStyle = marker.own ? TOKENS.good : TOKENS.accent
         context.fillRect(marker.x - w / 2, marker.y - h / 2, w, h)
         context.strokeStyle = TOKENS.onDark
         context.lineWidth = 1.2

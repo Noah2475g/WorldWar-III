@@ -1,40 +1,59 @@
 /**
- * The approved look, as values (T-M10-01b, R-UI-02).
+ * The approved look, as values (T-M10-01b, T-M29-01, R-UI-02).
  *
- * Direction A "Lagekarte", approved by Noah on 2026-09-03 — a light linen map, ink for
- * text, muted national colours, and vermilion reserved for exactly one thing: combat
- * and alarm. Reserving it is what makes it work; a signal colour used for decoration
- * stops being a signal.
+ * Direction A "Kriegsrat", chosen by Noah on 2026-09-10 (KRIEGSRAT.md D27.1) — a dark
+ * map table, amber for time, orders and selection, phosphor green for what is ours,
+ * vermilion reserved for exactly one thing: the enemy, combat and alarm. Reserving it
+ * is what makes it work; a signal colour used for decoration stops being a signal.
  *
- * No component may write a colour of its own (enforced by a lint rule). Every value
- * here is under a contrast test that fails if a change drops a pair below WCAG AA.
+ * Token names survived the change from the light "Lagekarte" so no caller had to move;
+ * only their values did. Three names are new because three roles are new: `onWarn`
+ * (text on an amber surface), `building` (building markers and resource glyphs) and
+ * `ally` (an allied power on the map and in the chart).
+ *
+ * No component may write a colour of its own (enforced by a lint rule), and `app.css`
+ * must mirror every value here (enforced by test/guards/css-mirrors-tokens.test.ts).
+ * Every value is under a contrast test that fails if a change drops a pair below WCAG AA.
  */
 
 export const TOKENS = {
-  /** Map ground, linen. */
-  ground: '#E4E0D2',
+  /** Map ground, the dark table. */
+  ground: '#0D1117',
   /** Panels and bars. */
-  paper: '#F2EEE3',
-  /** Sunk surfaces: table rows, meter tracks. */
-  paperSunk: '#DAD5C6',
+  paper: '#161C25',
+  /** Sunk surfaces: table rows, meter tracks, empty building slots. */
+  paperSunk: '#1E2632',
   /** Text. */
-  ink: '#1F2420',
-  /** Secondary text, units, captions. */
-  inkSoft: '#54594F',
-  /** Province borders, panel rules. */
-  line: '#8C8676',
-  /** Sea. */
-  water: '#BFC9C6',
-  /** Combat and alarm. Nothing else. */
-  accent: '#B3341E',
-  /** Completed, at peace, in surplus. */
-  good: '#33613F',
-  /** Shortage, deadline running. */
-  warn: '#7A5410',
-  /** Text on a filled accent or ink surface. */
+  ink: '#E6E1D3',
+  /** Secondary text, units, captions, the clock in the footer. */
+  inkSoft: '#9AA0A8',
+  /**
+   * Panel rules and meter outlines. D27.1 proposed #2F3944; at 1.46:1 against `paper`
+   * an empty meter track would have been invisible, so the value is the nearest tone
+   * that clears the 3:1 non-text threshold. The contrast test has the last word.
+   */
+  line: '#5C6A78',
+  /** Sea, one shade below the ground. */
+  water: '#0A0E14',
+  /**
+   * Enemy, combat and alarm. Nothing else. D27.1 proposed #E2503A, which reads at
+   * 4.44:1 on `paper`; nudged to the first value that clears AA text.
+   */
+  accent: '#E8583F',
+  /** Ours: own armies and provinces, surplus, completed. */
+  good: '#7EC57E',
+  /** Amber: time, orders, selection, the build queue, a deadline running. */
+  warn: '#E0A220',
+  /** Light text and halos on a filled dark surface (marker rims, the map ground). */
   onDark: '#F7F4EC',
-  /** Map labels sitting on a player-coloured province. */
-  onPlayer: '#161A15',
+  /** Text on an amber (`warn`) or vermilion (`accent`) surface — filled buttons. */
+  onWarn: '#1A1200',
+  /** Map labels sitting on a player-coloured province (dark fills, light lettering). */
+  onPlayer: '#E6E1D3',
+  /** Building markers on the map and resource glyphs in the bar. */
+  building: '#C9B98A',
+  /** An allied power: marker rims, the ally line in the power chart. */
+  ally: '#6FA8DC',
 } as const
 
 export type TokenName = keyof typeof TOKENS
@@ -43,43 +62,48 @@ export type TokenName = keyof typeof TOKENS
  * Province fills — one per power in a game.
  *
  * Eleven, not six: with six, a game of eight nations gave two of them the same colour,
- * and two nations that look alike on the map are worse than one that looks wrong. They
- * are chosen greedily for maximum perceived distance, each light enough that dark map
- * labels stay readable on it.
+ * and two nations that look alike on the map are worse than one that looks wrong.
+ * Since T-M29-01 they are dark, muted table colours, each deep enough that the light
+ * map lettering (`onPlayer`) stays readable on it. Five of D27.1's eleven candidates
+ * survived the ΔE > 10 pairwise check; the rest were found by a greedy search over
+ * muted dark tones for maximum perceived distance from everything already chosen,
+ * the neutral fill (`paperSunk`) and the border (`line`).
  */
 export const PLAYER_COLORS = {
-  petrol: '#9FB2BE',
-  ochre: '#CDB77E',
-  rose: '#DCAFAF',
-  fern: '#A2C293',
-  lilac: '#C3B2D6',
-  sage: '#B0C4B1',
-  apricot: '#E2BC9B',
-  teal: '#8FC0BE',
-  straw: '#DBD3A6',
-  dove: '#C9C2BC',
-  clay: '#C4A99C',
+  moss: '#2C4A3A',
+  slate: '#3A3A52',
+  umber: '#4C3A2A',
+  petrol: '#2F4A55',
+  wine: '#4A2E3A',
+  heather: '#704470',
+  olive: '#606034',
+  plum: '#381C48',
+  taupe: '#6C5C60',
+  fern: '#346034',
+  pine: '#20281C',
 } as const
 /**
- * Die Farben des Beziehungsmodus (T-M26-03, R-MAP-06, D25.5).
+ * Die Farben des Beziehungsmodus (T-M26-03, T-M29-01, R-MAP-06, D25.5, D27.1).
  *
- * Fuenf Zustaende aus eigener Sicht, jede Flaeche hell genug fuer die dunkle
+ * Fuenf Zustaende aus eigener Sicht als FLAECHEN — dunkel genug fuer die helle
  * Kartenschrift (`onPlayer`), alle fuenf paarweise ueber der ΔE-Schwelle der
- * Spielerfarben. Der Kriegston ist bewusst ein aufgehellter Verwandter des
- * Zinnobers — als Flaeche einer ganzen Weltgegend waere das Alarmrot selbst keine
- * Signalfarbe mehr, sondern Tapete.
+ * Spielerfarben. D27.1 nennt fuer Fuellungen ausdruecklich die abgedunkelten
+ * Verwandten der Signalfarben (eigen `#3C6E44`, Feind `#7A2E22`): `good` und `accent`
+ * selbst wuerden als Flaeche einer ganzen Weltgegend die Schrift unlesbar machen und
+ * als Signal verbraucht sein. Die Zuordnung der Rollen bleibt: eigen = Gruen,
+ * Buendnis = Blau, Krieg = Zinnober — nur als Tischfarbe statt als Leuchtfarbe.
  */
 export const RELATION_COLORS = {
-  /** Eigenes Land: das Gold des Spielers. */
-  self: '#D9B84A',
-  /** Verbuendet: gedecktes Gruen. */
-  ally: '#9BBB88',
-  /** Frieden: Leinen, ruhig wie die Karte selbst. */
-  peace: '#E4E0D2',
-  /** Krieg: heller Zinnober-Ton — Verwandter des Alarms, nicht der Alarm. */
-  war: '#D2896F',
+  /** Eigenes Land: das dunkle Phosphorgruen des Tisches. */
+  self: '#3C6E44',
+  /** Verbuendet: gedecktes Blau, Verwandter von `ally`. */
+  ally: '#2A4A66',
+  /** Frieden: die vertiefte Tischflaeche, ruhig wie die Karte selbst. */
+  peace: '#1E2632',
+  /** Krieg: dunkler Zinnober-Ton — Verwandter des Alarms, nicht der Alarm. */
+  war: '#7A2E22',
   /** Unbekannt: Nebelgrau. Keine Auskunft ist eine eigene Farbe, keine Behauptung. */
-  unknown: '#BFBFB9',
+  unknown: '#3A3D40',
 } as const
 
 export interface ContrastPair {
@@ -100,10 +124,15 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   { foreground: 'inkSoft', background: 'ground', use: 'Kartenlegende' },
   { foreground: 'accent', background: 'paper', use: 'Kampf, Kriegserklärung' },
   { foreground: 'accent', background: 'ground', use: 'Alarm in der Kopfleiste' },
-  { foreground: 'good', background: 'paper', use: 'fertiggestellt, Frieden' },
-  { foreground: 'warn', background: 'paper', use: 'Mangel, Frist' },
-  { foreground: 'onDark', background: 'ink', use: 'Hauptknopf' },
-  { foreground: 'onDark', background: 'accent', use: 'Alarmknopf' },
+  { foreground: 'good', background: 'paper', use: 'fertiggestellt, Überschuss' },
+  { foreground: 'warn', background: 'paper', use: 'Uhr, Frist, Auswahl' },
+  { foreground: 'warn', background: 'ground', use: 'Kopfzeilen der Panels' },
+  { foreground: 'onWarn', background: 'warn', use: 'Hauptknopf (Bernstein)' },
+  { foreground: 'onWarn', background: 'accent', use: 'Alarmknopf' },
+  { foreground: 'onDark', background: 'ground', use: 'Markerrand, Halo auf der Karte' },
+  { foreground: 'building', background: 'ground', use: 'Gebäudemarker auf der Karte' },
+  { foreground: 'building', background: 'paper', use: 'Rohstoffsymbole in der Leiste' },
+  { foreground: 'ally', background: 'paper', use: 'Verbündeter im Machtverlauf' },
   { foreground: 'ink', background: 'water', use: 'Beschriftung auf See' },
 ]
 

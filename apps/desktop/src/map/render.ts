@@ -253,9 +253,9 @@ export function marchArrow(
   return { done, ahead, head }
 }
 
-/** Eigene Maersche in Tinte, fremde in der Farbe ihrer Macht (D25.3). */
+/** Eigene Maersche in Phosphorgruen (D27.1, eigen = `good`), fremde in der Farbe ihrer Macht (D25.3). */
 export function marchStroke(army: { own: boolean; owner: string }): string {
-  return army.own ? TOKENS.ink : colorForPlayer(army.owner)
+  return army.own ? TOKENS.good : colorForPlayer(army.owner)
 }
 
 /**
@@ -319,9 +319,10 @@ export function battleRingWidth(intensity: number): number {
 export const MAP_COLORS = {
   sea: TOKENS.water,
   border: TOKENS.line,
-  selection: TOKENS.ink,
+  /** Auswahl in Bernstein — die Handlungsfarbe des Kriegsrats (D27.1). */
+  selection: TOKENS.warn,
   label: TOKENS.onPlayer,
-  /** Heller Saum unter der Kartenschrift, damit sie auf jeder Fuellung lesbar bleibt. */
-  labelHalo: TOKENS.paper,
+  /** Dunkler Saum unter der hellen Kartenschrift, damit sie auf jeder Fuellung lesbar bleibt. */
+  labelHalo: TOKENS.ground,
   battle: TOKENS.accent,
 } as const

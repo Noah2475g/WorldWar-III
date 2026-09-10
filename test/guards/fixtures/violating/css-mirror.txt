@@ -1,0 +1,8 @@
+:root {
+  --ground: #0d1117;
+  --paper: #ffffff;
+  --orphan: #123456;
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+.button { color: var(--ink); }

@@ -1,8 +1,8 @@
 /*
  * The approved look, as stylesheet (T-M10-01b).
  *
- * Direction A "Lagekarte": a light linen map, ink for text, vermilion reserved for
- * combat and alarm. Every colour comes from a custom property mirroring tokens.ts —
+ * Direction A "Kriegsrat" (T-M29-01): a dark map table, amber for time and orders,
+ * phosphor green for what is ours, vermilion reserved for the enemy, combat and alarm. Every colour comes from a custom property mirroring tokens.ts —
  * a component may use var(--ink), never #1F2420, and a lint rule enforces it.
  */
 
@@ -49,18 +49,21 @@
 }
 
 :root {
-  --ground: #e4e0d2;
-  --paper: #f2eee3;
-  --paper-sunk: #dad5c6;
-  --ink: #1f2420;
-  --ink-soft: #54594f;
-  --line: #8c8676;
-  --water: #bfc9c6;
-  --accent: #b3341e;
-  --good: #33613f;
-  --warn: #7a5410;
+  --ground: #0d1117;
+  --paper: #161c25;
+  --paper-sunk: #1e2632;
+  --ink: #e6e1d3;
+  --ink-soft: #9aa0a8;
+  --line: #5c6a78;
+  --water: #0a0e14;
+  --accent: #e8583f;
+  --good: #7ec57e;
+  --warn: #e0a220;
   --on-dark: #f7f4ec;
-
+  --on-warn: #1a1200;
+  --on-player: #e6e1d3;
+  --building: #c9b98a;
+  --ally: #6fa8dc;
   --font-map: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
   --font-num: 'IBM Plex Mono', ui-monospace, monospace;
@@ -189,8 +192,9 @@ body {
 }
 
 .speed--active {
-  background: var(--ink);
-  color: var(--on-dark);
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
 }
 
 .button {
@@ -212,14 +216,14 @@ body {
 }
 
 .button--primary {
-  background: var(--ink);
-  color: var(--on-dark);
-  border-color: var(--ink);
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
 }
 
 .button--accent {
   background: var(--accent);
-  color: var(--on-dark);
+  color: var(--on-warn);
   border-color: var(--accent);
 }
 
@@ -1180,9 +1184,9 @@ body {
 }
 
 .explain__toggle[aria-expanded='true'] {
-  background: var(--ink);
-  color: var(--on-dark);
-  border-color: var(--ink);
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
 }
 
 .explain__text {

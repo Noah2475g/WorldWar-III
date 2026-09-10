@@ -175,8 +175,8 @@ describe('T-M26-01 Marschpfeile mit Fortschritt', () => {
     expect(marchArrow([], 0)).toBeNull()
   })
 
-  it('zeichnet eigene Maersche in Tinte, fremde in Spielerfarbe', () => {
-    expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.ink)
+  it('zeichnet eigene Maersche in Phosphorgruen, fremde in Spielerfarbe (D27.1)', () => {
+    expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.good)
     expect(marchStroke({ own: false, owner: 'p4' })).toBe(colorForPlayer('p4'))
   })
 })
