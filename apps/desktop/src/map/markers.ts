@@ -29,6 +29,15 @@ export interface ArmyMarker {
    */
   icon?: IconName
   /**
+   * Stueckzahl und Zustand des Stapels (T-M30-01, D27.2) — nur fuer eigene Armeen,
+   * denn nur deren Zusammensetzung kennt die Sicht (R-DIP-04). `condition` ist der
+   * Anteil der Trefferpunkte am Vollstand, 0…1.
+   */
+  count?: number
+  condition?: number
+  /** Die Beziehung des Besitzers zum Spieler, fuer die Rahmenfarbe fremder Stapel. */
+  relation?: 'peace' | 'war' | 'truce' | 'alliance'
+  /**
    * Der laufende Marsch, wenn die Armee unterwegs ist (T-M20-04, R-UI-04).
    *
    * Alle drei zusammen oder gar nicht: ohne Abmarschzeit gibt es keinen Anteil, ohne
@@ -49,6 +58,9 @@ export interface ArmyMarker {
 
 export type MarkerKind = 'building' | 'army' | 'battle' | 'capital'
 
+/** Wessen Stapel das ist — entscheidet die Rahmenfarbe (D27.2). */
+export type MarkerTone = 'own' | 'ally' | 'enemy' | 'other'
+
 export interface Marker {
   kind: MarkerKind
   provinceId: string
@@ -57,13 +69,53 @@ export interface Marker {
   y: number
   /** Armies only: drawn in the player's own colour or in the alarm colour. */
   own?: boolean
-  /** Buildings only: how many stand there, capped for drawing. */
+  /** Buildings: how many stand there, capped for drawing. Armies: the unit count (T-M30-01). */
   count?: number
+  /** Armies: the share of hit points left, 0…1 — the condition bar (T-M30-01). */
+  condition?: number
+  /** Armies: whose stack, for the rim colour (T-M30-01, D27.2). */
+  tone?: MarkerTone
   /** Armies and battles: which army this belongs to. */
   armyId?: string
   /** Armies: which symbol to draw in the box. */
   icon?: IconName
 }
+
+/**
+ * Stueckzahl und Zustand eines Stapels (T-M30-01, D27.2).
+ *
+ * Die Stueckzahl ist nie gespeichert (D2): `ceil(hpTotal / hpPerUnit)` je Gattung, wie
+ * `unitCount` im Kern — eine angeschlagene Einheit zaehlt als vorhanden. Der Zustand
+ * ist Σ hpTotal / Σ (Stueckzahl · hpPerUnit). Unbekannte Gattungen zaehlen nicht.
+ */
+export function stackSummary(
+  units: readonly { unitKey: string; hpTotal: number }[],
+  rules: { units: Readonly<Record<string, { hpPerUnit: number } | undefined>> },
+): { count: number; condition: number } {
+  let count = 0
+  let hp = 0
+  let full = 0
+  for (const stack of units) {
+    const perUnit = rules.units[stack.unitKey]?.hpPerUnit ?? 0
+    if (perUnit <= 0 || stack.hpTotal <= 0) continue
+    const n = Math.ceil(stack.hpTotal / perUnit)
+    count += n
+    hp += stack.hpTotal
+    full += n * perUnit
+  }
+  return { count, condition: full > 0 ? hp / full : 0 }
+}
+
+/** Der Stapel-Ton aus Besitz und Beziehung. */
+export function toneFor(army: Pick<ArmyMarker, 'own' | 'relation'>): MarkerTone {
+  if (army.own) return 'own'
+  if (army.relation === 'war') return 'enemy'
+  if (army.relation === 'alliance') return 'ally'
+  return 'other'
+}
+
+/** Der gezeichnete Stapel in Bildpunkten (D27.2): Rechteck mit Zahl und Zustandsbalken. */
+export const ARMY_BOX = { width: 30, height: 18 } as const
 
 /** Which arm of service a stack is mostly made of — that is the symbol it wears. */
 export function dominantIcon(units: readonly { unitKey: string; hp: number }[]): IconName | undefined {
@@ -154,7 +206,9 @@ export function pickArmy(
   view: View,
   extras: MarkerExtras = {},
 ): string | null {
-  const reach = ARMY_HIT_BOX / 2
+  // Nie kleiner als der gezeichnete Stapel (T-M30-01): quer greift dessen halbe Breite.
+  const reachX = Math.max(ARMY_HIT_BOX, ARMY_BOX.width) / 2
+  const reachY = Math.max(ARMY_HIT_BOX, ARMY_BOX.height) / 2
   let bestId: string | null = null
   let bestDistance = Infinity
 
@@ -162,7 +216,7 @@ export function pickArmy(
     if (marker.kind !== 'army' || !marker.own || !marker.armyId) continue
     const dx = screen.x - marker.x
     const dy = screen.y - marker.y
-    if (Math.abs(dx) > reach || Math.abs(dy) > reach) continue
+    if (Math.abs(dx) > reachX || Math.abs(dy) > reachY) continue
     const distance = dx * dx + dy * dy
     if (distance < bestDistance) {
       bestDistance = distance
@@ -210,8 +264,11 @@ export function markersFor(
       x: point.x,
       y: point.y,
       own: army.own,
+      tone: toneFor(army),
       armyId: army.id,
       ...(army.icon ? { icon: army.icon } : {}),
+      ...(army.count !== undefined ? { count: army.count } : {}),
+      ...(army.condition !== undefined ? { condition: army.condition } : {}),
     })
   }
 

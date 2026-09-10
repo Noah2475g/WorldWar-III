@@ -192,3 +192,24 @@ describe('R-ARCH-06/AK2 Die Karte zeichnet wirklich', () => {
     expect(gewaehlt !== undefined).toBe(true)
   })
 })
+
+describe('T-M30-01 Stapelmarker werden gestempelt, nicht je Bild gezeichnet', () => {
+  it('zeichnet den Stapel per drawImage aus dem Zwischenspeicher und schreibt die Zahl dazu', () => {
+    const wo = world.provinces[0]!.id
+    zeichne({
+      speed: 100,
+      armies: [
+        { id: 'a1', provinceId: wo, owner: 'p1', strength: 5000, own: true, icon: 'armour', count: 7, condition: 0.6 },
+        { id: 'a2', provinceId: world.provinces[1]!.id, owner: 'p2', strength: 5000, own: false, relation: 'war' },
+      ],
+    })
+
+    // Zwei Stapel, zwei Stempel — der Rahmen samt Glyphe kommt aus dem Zwischenspeicher.
+    expect(recorder.calls.drawImage ?? 0).toBeGreaterThanOrEqual(2)
+    // Die Zahl steht nur am eigenen Stapel; die Weltansicht (scale 4) beschriftet
+    // keine Provinzen, also sind diese fillText die der Stapelzahl — je Bild einer,
+    // bei zwei Stempeln je Bild (der Ueberzug zeichnet nach dem Messen der Groesse erneut).
+    expect(recorder.calls.fillText ?? 0).toBeGreaterThanOrEqual(1)
+    expect((recorder.calls.fillText ?? 0) * 2).toBe(recorder.calls.drawImage)
+  })
+})

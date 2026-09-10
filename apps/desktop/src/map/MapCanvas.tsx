@@ -15,7 +15,7 @@ import {
   type RenderProvince,
 } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
-import { markersFor, pickArmy, type ArmyMarker } from './markers.ts'
+import { ARMY_BOX, markersFor, pickArmy, type ArmyMarker, type MarkerTone } from './markers.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
@@ -53,6 +53,48 @@ function drawIcon(
   context.scale(scale, scale)
   context.stroke(new Path2D(ICON_PATHS[name]))
   context.restore()
+}
+
+/** Die Rahmenfarbe eines Stapels je Ton (D27.2). */
+const TONE_COLORS: Record<MarkerTone, string> = {
+  own: TOKENS.good,
+  ally: TOKENS.ally,
+  enemy: TOKENS.accent,
+  other: TOKENS.inkSoft,
+}
+
+/** Rand um den Stempel, damit der Rahmenstrich nicht angeschnitten wird. */
+const STAMP_PAD = 2
+
+/**
+ * Vorgezeichnete Stapel je (Ton, Glyphe) — gestempelt statt je Bild als Path2D gefuellt
+ * (T-M30-01, KRIEGSRAT §6.1). Zahl und Zustandsbalken aendern sich je Armee und werden
+ * darueber gezeichnet; Rahmen und Glyphe sind fuer alle gleich und kommen von hier.
+ */
+function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, icon: IconName): HTMLCanvasElement | null {
+  const key = `${tone}:${icon}`
+  const cached = cache.get(key)
+  if (cached) return cached
+  if (typeof document === 'undefined') return null
+
+  const canvas = document.createElement('canvas')
+  canvas.width = ARMY_BOX.width + STAMP_PAD * 2
+  canvas.height = ARMY_BOX.height + STAMP_PAD * 2
+  const context = canvas.getContext('2d')
+  if (!context) return null
+
+  const rim = TONE_COLORS[tone]
+  context.fillStyle = TOKENS.ground
+  context.fillRect(STAMP_PAD, STAMP_PAD, ARMY_BOX.width, ARMY_BOX.height)
+  context.strokeStyle = rim
+  context.lineWidth = 1.2
+  context.strokeRect(STAMP_PAD + 0.5, STAMP_PAD + 0.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+  // Die Glyphe links, damit rechts Platz fuer die Zahl bleibt.
+  context.lineWidth = 1.5
+  drawIcon(context, icon, STAMP_PAD + 9, STAMP_PAD + ARMY_BOX.height / 2 - 1, 11)
+
+  cache.set(key, canvas)
+  return canvas
 }
 
 export interface MapCanvasProps {
@@ -102,6 +144,8 @@ export function MapCanvas(props: MapCanvasProps) {
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
+  /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
+  const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
 
   /**
    * Laufende Farbwellen eines Besitzwechsels (T-M26-02, D25.4).
@@ -376,15 +420,46 @@ export function MapCanvas(props: MapCanvasProps) {
       }
 
       if (marker.kind === 'army') {
-        // The situation-map box, with the symbol of the strongest arm of service in it
-        // — the same symbol the panels use, drawn from the same paths (R-UI-10).
-        const w = 20
-        const h = 14
-        context.fillStyle = marker.own ? TOKENS.good : TOKENS.accent
-        context.fillRect(marker.x - w / 2, marker.y - h / 2, w, h)
-        context.strokeStyle = TOKENS.onDark
-        context.lineWidth = 1.2
-        drawIcon(context, marker.icon ?? 'infantry', marker.x, marker.y, 13)
+        // Der Stapel im NATO-Stil (T-M30-01, D27.2): Rechteck 30×18, Rahmen in der
+        // Besitzerfarbe, Glyphe der staerksten Gattung — als Stempel aus dem
+        // Zwischenspeicher —, dazu die Stueckzahl in Ziffernschrift und der
+        // 3-px-Zustandsbalken am unteren Rand. Beides nur, wo die Sicht es kennt.
+        const tone = marker.tone ?? (marker.own ? 'own' : 'other')
+        const rim = TONE_COLORS[tone]
+        const left = marker.x - ARMY_BOX.width / 2
+        const top = marker.y - ARMY_BOX.height / 2
+        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry')
+        if (stamp) {
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+        } else {
+          context.fillStyle = TOKENS.ground
+          context.fillRect(left, top, ARMY_BOX.width, ARMY_BOX.height)
+          context.strokeStyle = rim
+          context.lineWidth = 1.2
+          context.strokeRect(left + 0.5, top + 0.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+          context.lineWidth = 1.5
+          drawIcon(context, marker.icon ?? 'infantry', left + 9, marker.y - 1, 11)
+        }
+
+        if (marker.count !== undefined) {
+          context.fillStyle = TOKENS.ink
+          context.font = `600 9px ${TYPE.num}`
+          context.textAlign = 'right'
+          context.textBaseline = 'middle'
+          context.fillText(String(marker.count), left + ARMY_BOX.width - 3, marker.y - 1)
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
+        }
+
+        if (marker.condition !== undefined) {
+          const trackLeft = left + 2
+          const trackWidth = ARMY_BOX.width - 4
+          const barY = top + ARMY_BOX.height - 4
+          context.fillStyle = TOKENS.line
+          context.fillRect(trackLeft, barY, trackWidth, 3)
+          context.fillStyle = rim
+          context.fillRect(trackLeft, barY, Math.round(trackWidth * Math.max(0, Math.min(1, marker.condition))), 3)
+        }
         continue
       }
 

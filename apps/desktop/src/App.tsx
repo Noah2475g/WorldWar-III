@@ -35,7 +35,7 @@ import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
-import { dominantIcon } from './map/markers.ts'
+import { dominantIcon, stackSummary } from './map/markers.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
@@ -522,6 +522,9 @@ export function App(props: AppProps) {
         // Abmarsch und Ankunft. Fehlt eines davon, bleibt der Marker in der Mitte
         // stehen — eine Armee an einem erfundenen Zwischenort waere schlimmer als eine,
         // die nicht wandert (T-M20-04).
+        // Zahl und Zustand des Stapels (T-M30-01) — nur, wo die Sicht die Einheiten kennt.
+        const summary = army.units ? stackSummary(army.units, props.rules) : null
+        const relation = view?.relations[army.owner]?.state
         const naechste = army.path?.[0]
         const march =
           naechste && army.departureTick != null && army.arrivalTick != null
@@ -540,10 +543,12 @@ export function App(props: AppProps) {
           strength: army.strength,
           own: army.owner === 'p1',
           ...(icon ? { icon } : {}),
+          ...(summary ? { count: summary.count, condition: summary.condition } : {}),
+          ...(relation ? { relation } : {}),
           ...(march ? { march } : {}),
         }
       }),
-    [view],
+    [view, props.rules],
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
