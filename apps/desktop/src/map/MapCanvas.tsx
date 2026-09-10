@@ -3,11 +3,17 @@ import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
 import {
   MAP_COLORS,
-  MARCH_AHEAD_ALPHA,
+  MARCH_AHEAD_WIDTH,
+  MARCH_DASH,
+  MARCH_DONE_WIDTH,
+  MARCH_LABEL_PX,
+  MARCH_STANDPOINT_RADIUS,
   battleIntensity,
   battleRingBase,
   battleRingWidth,
   marchArrow,
+  marchDays,
+  marchLabel,
   marchProgress,
   marchStroke,
   ownershipChanges,
@@ -22,6 +28,7 @@ import {
   toMap,
   toScreen,
   zoomAt,
+  zoomTier,
   type View,
   type ViewLimits,
 } from './picking.ts'
@@ -172,6 +179,8 @@ export interface MapCanvasProps {
    * genau das Richtige ist und was jeder Test bekommt, der sie nicht mitgibt.
    */
   tick?: number
+  /** Ticks je Spieltag, fuer die Tagesangabe am Marschweg (T-M30-04). Ohne: keine Angabe. */
+  ticksPerDay?: number
   onSelect: (provinceId: string | null) => void
   /**
    * Ein Klick nahe genug an einem EIGENEN Armee-Marker (T-M22-06, Befund V2-14):
@@ -412,14 +421,21 @@ export function MapCanvas(props: MapCanvasProps) {
         context.stroke()
       }
 
+      // Der Marschweg im Kriegsrat (T-M30-04, D27.5): der Rest gestrichelt und duenn,
+      // das Gelaufene voll und rund, dazwischen der Standpunkt als Kreis mit dunklem
+      // Rand — und ab der mittleren Stufe die Tagesangabe "n/m T" daneben.
       context.strokeStyle = stroke
       context.save()
-      context.globalAlpha = MARCH_AHEAD_ALPHA
-      context.lineWidth = 2
+      context.setLineDash([...MARCH_DASH])
+      context.lineWidth = MARCH_AHEAD_WIDTH
       drawLine(arrow.ahead)
       context.restore()
-      context.lineWidth = 2.5
+      context.save()
+      context.lineCap = 'round'
+      context.lineJoin = 'round'
+      context.lineWidth = MARCH_DONE_WIDTH
       drawLine(arrow.done)
+      context.restore()
 
       // Die Spitze in voller Farbe: die Richtung ist die halbe Botschaft des Pfeils.
       context.fillStyle = stroke
@@ -428,6 +444,28 @@ export function MapCanvas(props: MapCanvasProps) {
       for (const [x, y] of arrow.head.slice(1)) context.lineTo(x, y)
       context.closePath()
       context.fill()
+
+      const [standX, standY] = arrow.standpoint
+      context.beginPath()
+      context.arc(standX, standY, MARCH_STANDPOINT_RADIUS, 0, Math.PI * 2)
+      context.fillStyle = stroke
+      context.fill()
+      context.strokeStyle = TOKENS.ground
+      context.lineWidth = 1.2
+      context.stroke()
+
+      if (props.tick !== undefined && props.ticksPerDay !== undefined && zoomTier(props.view.scale) !== 'far') {
+        const label = marchLabel(marchDays(army.march, props.tick, props.ticksPerDay))
+        context.font = `600 ${MARCH_LABEL_PX}px ${TYPE.num}`
+        context.textAlign = 'left'
+        context.textBaseline = 'bottom'
+        context.lineWidth = 2
+        context.strokeStyle = TOKENS.ground
+        context.strokeText(label, standX + MARCH_STANDPOINT_RADIUS + 2, standY - 2)
+        context.fillStyle = TOKENS.ink
+        context.fillText(label, standX + MARCH_STANDPOINT_RADIUS + 2, standY - 2)
+        context.textBaseline = 'alphabetic'
+      }
     }
 
     if (props.selectedProvince) {
@@ -570,6 +608,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.capitalProvinceId,
     props.battleProvinces,
     props.tick,
+    props.ticksPerDay,
     props.speed,
     clock,
     props.view,

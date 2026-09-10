@@ -197,16 +197,43 @@ export function marchProgress(march: MarchTiming, tick: number): number {
 }
 
 export interface MarchArrow {
-  /** Zurueckgelegt: volle Farbe. Bildschirmpunkte. */
+  /** Zurueckgelegt: volle Farbe, 3 px, rund. Bildschirmpunkte. */
   done: [number, number][]
-  /** Voraus: blass. Beginnt am Fortschrittspunkt, endet am Ziel. */
+  /** Voraus: gestrichelt. Beginnt am Standpunkt, endet am Ziel. */
   ahead: [number, number][]
   /** Pfeilspitze am Ziel: [Spitze, Flanke, Flanke]. */
   head: [number, number][]
+  /** Wo die Armee gerade steht — die Segmentgrenze des Fortschritts (T-M30-04). */
+  standpoint: [number, number]
 }
 
-/** Wie durchscheinend der noch nicht marschierte Teil der Route gezeichnet wird. */
-export const MARCH_AHEAD_ALPHA = 0.35
+/** Der Marschweg im Kriegsrat (T-M30-04, D27.5): Strichbreiten, Strichelung, Standpunkt. */
+export const MARCH_DONE_WIDTH = 3
+export const MARCH_AHEAD_WIDTH = 1.6
+export const MARCH_DASH: readonly number[] = [3, 3]
+export const MARCH_STANDPOINT_RADIUS = 3.5
+export const MARCH_LABEL_PX = 7
+
+/**
+ * Tage gelaufen und Tage insgesamt, beide aufgerundet (T-M30-04).
+ *
+ * Aufgerundet, weil "noch 0 Tage" eine Luege ueber eine Armee waere, die noch
+ * marschiert; geklemmt, weil ein Tick nach der Ankunft kein dritter Tag ist. Ein Marsch
+ * ohne Dauer ist angekommen: 1/1, nicht 0/0.
+ */
+export function marchDays(march: MarchTiming, tick: number, ticksPerDay: number): { done: number; total: number } {
+  const spanne = march.arrivalTick - march.departureTick
+  const perDay = Math.max(1, ticksPerDay)
+  if (spanne <= 0) return { done: 1, total: 1 }
+  const total = Math.max(1, Math.ceil(spanne / perDay))
+  const done = Math.min(total, Math.max(0, Math.ceil((tick - march.departureTick) / perDay)))
+  return { done, total }
+}
+
+/** "3/5 T" — die Tagesangabe neben dem Standpunkt. */
+export function marchLabel(days: { done: number; total: number }): string {
+  return `${days.done}/${days.total} T`
+}
 
 /** Kantenlaenge der Pfeilspitze in Bildschirmpunkten. */
 export const MARCH_HEAD_SIZE = 8
@@ -250,7 +277,7 @@ export function marchArrow(
     [baseX + uy * half, baseY - ux * half],
   ]
 
-  return { done, ahead, head }
+  return { done, ahead, head, standpoint: split }
 }
 
 /** Eigene Maersche in Phosphorgruen (D27.1, eigen = `good`), fremde in der Farbe ihrer Macht (D25.3). */

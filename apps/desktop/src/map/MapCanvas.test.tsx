@@ -180,11 +180,14 @@ describe('R-ARCH-06/AK2 Die Karte zeichnet wirklich', () => {
       speed: 100,
     })
 
-    // Die gestrichelte Vorschau ist ersetzt; gestrichen wird nirgends mehr.
-    expect(recorder.calls.setLineDash ?? 0).toBe(0)
-    // Der blasse Routenrest ist die einzige Stelle, die globalAlpha anfasst — der
-    // Recorder behaelt den letzten gesetzten Wert (save/restore stellt er nicht nach).
-    expect(recorder.props.globalAlpha).toBe(0.35)
+    // Seit T-M30-04 (D27.5) ist der REST der Route gestrichelt — die Strichelung ist
+    // jetzt Absicht, nicht der alte Zustand. Was hier bindet: das Gelaufene ist voll, und
+    // die Spitze steht als Flaeche am Ziel.
+    expect(recorder.calls.setLineDash ?? 0).toBeGreaterThan(0)
+    // Kein blasser Rest mehr: seit D27.5 traegt der Rest die Strichelung statt einer
+    // Deckung — globalAlpha wird fuer den Pfeil nicht mehr angefasst.
+    expect(recorder.props.globalAlpha).toBeUndefined()
+    expect(recorder.calls.fill ?? 0).toBeGreaterThan(0)
   })
 
   it('meldet die angeklickte Provinz an den Aufrufer', () => {
@@ -281,5 +284,34 @@ describe('T-M30-03 Zoomknoepfe und Uebersichtskarte', () => {
     // sitzt links oben — der Klickpunkt ist der Kartenpunkt mal diesem Massstab.
     const overviewScale = Math.max(world.width / 132, world.height / 74)
     expect(changes[0]!.x + (320 * changes[0]!.scale) / 2).toBeCloseTo(66 * overviewScale, 0)
+  })
+})
+
+describe('T-M30-04 Der Marschweg zeigt Stand und Rest', () => {
+  it('zeichnet den Rest gestrichelt, den Standpunkt als Kreis und ab mittel die Tagesangabe', () => {
+    const stationen = world.provinces.slice(0, 3).map((province) => province.id)
+    const start = world.provinces[0]!
+    zeichne({
+      speed: 100,
+      tick: 12,
+      ticksPerDay: 24,
+      view: { x: centres[start.id]!.x - 300, y: centres[start.id]!.y - 200, scale: 1.5 },
+      armies: [
+        {
+          id: 'a1',
+          provinceId: stationen[0]!,
+          owner: 'p1',
+          strength: 5000,
+          own: true,
+          march: { toProvinceId: stationen[1]!, departureTick: 0, arrivalTick: 48, route: stationen.slice(1) },
+        },
+      ],
+    })
+
+    expect(recorder.calls.setLineDash ?? 0).toBeGreaterThanOrEqual(1)
+    // Der Standpunkt ist ein Kreis; die Gefechtsringe sind es auch, aber hier kaempft niemand.
+    expect(recorder.calls.arc ?? 0).toBeGreaterThanOrEqual(1)
+    // Die Tagesangabe steht als Text da (die Stapelzahl auch: beide sind fillText).
+    expect(recorder.calls.fillText ?? 0).toBeGreaterThanOrEqual(1)
   })
 })

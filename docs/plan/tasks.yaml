@@ -2126,7 +2126,7 @@ tasks:
   - id: T-M30-04
     milestone: M30
     title: Der Marschweg zeigt Stand und Rest
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-MAP-05, R-UI-12]
     design: [D-27]

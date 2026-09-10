@@ -1371,6 +1371,7 @@ export function App(props: AppProps) {
             battleProvinces={battleProvinces}
             speed={speed}
             tick={state.tick}
+            ticksPerDay={ticksPerDay}
             onSelect={selectOnMap}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
