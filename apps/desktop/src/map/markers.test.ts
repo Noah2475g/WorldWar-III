@@ -5,8 +5,8 @@ import { zoomAt, type View, type ViewLimits } from './picking.ts'
 import {
   ARMY_BOX,
   ARMY_HIT_BOX,
+  BUILDING_MAX_SCALE,
   BUILDING_OFFSET_Y,
-  MAX_BUILDING_PIPS,
   dominantIcon,
   stackSummary,
   marchPoint,
@@ -84,10 +84,16 @@ describe('R-MAP-05 Kartendarstellung', () => {
   })
 
   it('setzt Einheiten, Gebaeude und Kampfsymbole auf die Karte', () => {
-    const markers = markersFor([army('a1', 'alpha', { fighting: true })], { alpha: 2, beta: 1 }, centres, view)
+    const markers = markersFor(
+      [army('a1', 'alpha', { fighting: true })],
+      { alpha: { barracks: 1, factory: 1 }, beta: { fortress: 1 } },
+      centres,
+      view,
+    )
 
-    expect(markers.map((marker) => marker.kind)).toEqual(['building', 'building', 'army', 'battle'])
+    expect(markers.map((marker) => marker.kind)).toEqual(['building', 'building', 'building', 'army', 'battle'])
     expect(markers.filter((marker) => marker.kind === 'building').map((marker) => marker.provinceId)).toEqual([
+      'alpha',
       'alpha',
       'beta',
     ])
@@ -101,8 +107,8 @@ describe('R-MAP-05 Kartendarstellung', () => {
     expect(battle).toBeGreaterThan(unit)
   })
 
-  it('legt die Gebaeude unter die Einheit statt darunter zu verschwinden', () => {
-    const markers = markersFor([army('a1', 'alpha')], { alpha: 1 }, centres, view)
+  it('legt die Gebaeude ohne Anker unter die Einheit statt darunter zu verschwinden', () => {
+    const markers = markersFor([army('a1', 'alpha')], { alpha: { barracks: 1 } }, centres, view)
     const building = markers.find((marker) => marker.kind === 'building')!
     const unit = markers.find((marker) => marker.kind === 'army')!
 
@@ -110,9 +116,26 @@ describe('R-MAP-05 Kartendarstellung', () => {
     expect(building.y - unit.y).toBe(BUILDING_OFFSET_Y)
   })
 
-  it('deckelt die Gebaeudesymbole, statt eine Provinz zuzupflastern', () => {
-    const markers = markersFor([], { alpha: 12 }, centres, view)
-    expect(markers[0]!.count).toBe(MAX_BUILDING_PIPS)
+  it('stellt Gebaeude an die Anker der Provinz, mit Glyphe und Stufe (T-M30-02)', () => {
+    const anchors = {
+      alpha: [
+        { x: 110, y: 90, edgeDistance: 30 },
+        { x: 80, y: 120, edgeDistance: 5 },
+      ],
+    }
+    const markers = markersFor([], { alpha: { barracks: 2, harbour: 1 } }, centres, view, { anchors })
+
+    expect(markers).toEqual([
+      { kind: 'building', provinceId: 'alpha', x: 110, y: 90, icon: 'barracks', level: 2 },
+      // Der Hafen nimmt den randnaechsten Anker.
+      { kind: 'building', provinceId: 'alpha', x: 80, y: 120, icon: 'harbour', level: 1 },
+    ])
+  })
+
+  it('zeigt Gebaeude erst ab der mittleren Zoomstufe (D27.4)', () => {
+    const far = { x: 0, y: 0, scale: BUILDING_MAX_SCALE * 2 }
+    expect(markersFor([], { alpha: { barracks: 1 } }, centres, far)).toEqual([])
+    expect(markersFor([], { alpha: { barracks: 1 } }, centres, view).length).toBe(1)
   })
 
   it('unterscheidet eigene von fremden Einheiten', () => {
@@ -130,7 +153,7 @@ describe('R-MAP-05 Kartendarstellung', () => {
 
   it('zeichnet nichts fuer eine Provinz, die es auf der Karte nicht gibt', () => {
     // Sonst landet ein Symbol auf Koordinate NaN und verschwindet unsichtbar irgendwo.
-    expect(markersFor([army('a1', 'nirgendwo')], { nirgendwo: 3 }, centres, view)).toEqual([])
+    expect(markersFor([army('a1', 'nirgendwo')], { nirgendwo: { barracks: 3 } }, centres, view)).toEqual([])
   })
 })
 
@@ -182,7 +205,7 @@ describe('R-UI-12 Hauptstadt, Kampf und Gattung', () => {
   })
 
   it('haelt die Reihenfolge ein: Gebaeude, Armee, Hauptstadt, Kampf', () => {
-    const markers = markersFor([army('a1', 'alpha')], { alpha: 2 }, centres, view, {
+    const markers = markersFor([army('a1', 'alpha')], { alpha: { barracks: 1 } }, centres, view, {
       capitalProvinceId: 'alpha',
       battleProvinces: ['alpha'],
     })

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { MapCanvas } from './MapCanvas.tsx'
+import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
 
@@ -25,7 +26,13 @@ const ROOT = process.cwd()
 const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as {
   width: number
   height: number
-  provinces: { id: string; polygons: [number, number][][]; population: number; deposits: Record<string, number> }[]
+  provinces: {
+    id: string
+    center: { x: number; y: number }
+    polygons: [number, number][][]
+    population: number
+    deposits: Record<string, number>
+  }[]
 }
 
 /** Jeder Aufruf wird gezaehlt; jede Eigenschaft nimmt an, was man ihr gibt. */
@@ -211,5 +218,23 @@ describe('T-M30-01 Stapelmarker werden gestempelt, nicht je Bild gezeichnet', ()
     // bei zwei Stempeln je Bild (der Ueberzug zeichnet nach dem Messen der Groesse erneut).
     expect(recorder.calls.fillText ?? 0).toBeGreaterThanOrEqual(1)
     expect((recorder.calls.fillText ?? 0) * 2).toBe(recorder.calls.drawImage)
+  })
+})
+
+describe('T-M30-02 Gebaeude stehen als Stempel an ihren Ankern', () => {
+  it('stempelt je Gebaeude ein Quadrat und schreibt die Stufe ab 2 dazu', () => {
+    const wo = world.provinces[0]!
+    const anchors = { [wo.id]: anchorsFor(wo.polygons, wo.center) }
+    zeichne({
+      speed: 100,
+      view: { x: wo.center.x - 400, y: wo.center.y - 300, scale: 1 },
+      buildings: { [wo.id]: { barracks: 1, factory: 2 } },
+      anchors,
+    })
+
+    // Zwei Gebaeude, zwei Stempel je Bild — und keine Pips mehr (fillRect nur noch
+    // fuer Grund, Spuren und Balken, nicht 4-px-Quadrate je Gebaeude).
+    expect(recorder.calls.drawImage ?? 0).toBeGreaterThanOrEqual(2)
+    expect((recorder.calls.drawImage ?? 0) % 2).toBe(0)
   })
 })

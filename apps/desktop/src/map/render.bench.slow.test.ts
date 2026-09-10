@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import { markersFor } from './markers.ts'
+import { anchorsFor } from './anchors.ts'
 import { marchArrow, marchProgress, prepareFrame, type RenderProvince } from './render.ts'
 import { labelsFor } from './labels.ts'
 
@@ -29,6 +30,7 @@ const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) a
   height: number
   provinces: {
     id: string
+    center: { x: number; y: number }
     polygons: [number, number][][]
     population: number
     deposits: Record<string, number>
@@ -169,12 +171,23 @@ describe('T-M30-01 Stapel mit Zahl und Zustand im Bildbudget', () => {
       condition: 0.3 + (index % 7) / 10,
       relation: (['war', 'peace', 'alliance', 'truce'] as const)[index % 4]!,
     }))
-    const buildings = Object.fromEntries(ids.map((id, index) => [id, 1 + (index % 4)]))
-    const view = { x: 0, y: 0, scale: 2.78 }
+    // Jede Provinz traegt Gebaeude (bis zu sieben) — mehr, als eine Partie je hat —
+    // und die Anker kommen einmal je Karte (T-M30-02), nicht je Bild.
+    const kinds = ['barracks', 'fortress', 'factory', 'harbour', 'shipyard', 'airfield', 'railway']
+    const buildings = Object.fromEntries(
+      ids.map((id, index) => [id, Object.fromEntries(kinds.slice(0, 1 + (index % 7)).map((k, i) => [k, 1 + ((index + i) % 3)]))]),
+    )
+    const anchors = Object.fromEntries(world.provinces.map((p) => [p.id, anchorsFor(p.polygons, p.center)]))
+    // Mittlere Stufe (scale 1): erst hier erscheinen die Gebaeude ueberhaupt (D27.4).
+    const view = { x: 1200, y: 400, scale: 1 }
 
     const einBild = (): void => {
       prepareFrame(provinces, view, viewport, 'political')
-      markersFor(armies, buildings, centres, view, { capitalProvinceId: ids[0]!, battleProvinces: ids.slice(0, 10) })
+      markersFor(armies, buildings, centres, view, {
+        capitalProvinceId: ids[0]!,
+        battleProvinces: ids.slice(0, 10),
+        anchors,
+      })
     }
 
     for (let i = 0; i < 10; i++) einBild()
@@ -192,13 +205,14 @@ describe('T-M30-01 Stapel mit Zahl und Zustand im Bildbudget', () => {
     const report = JSON.parse(readFileSync(reportPath, 'utf8')) as Record<string, unknown>
     report.stacks = {
       task: 'T-M30-01',
-      how: 'Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus markersFor fuer 300 Stapel mit Zahl und Zustand und Gebaeude in jeder Provinz, 10 Bilder Einlauf, 120 gemessen.',
+      how: 'Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe (scale 1) plus markersFor fuer 300 Stapel mit Zahl und Zustand und bis zu sieben Gebaeude an Ankern in jeder der 237 Provinzen, 10 Bilder Einlauf, 120 gemessen.',
       measuredAt: [
         String(new Date().getFullYear()),
         String(new Date().getMonth() + 1).padStart(2, '0'),
         String(new Date().getDate()).padStart(2, '0'),
       ].join('-'),
       armies: armies.length,
+      buildings: Object.values(buildings).reduce((sum, b) => sum + Object.keys(b).length, 0),
       p95Ms: Number(p95.toFixed(2)),
       medianMs: Number(percentile(durations, 0.5).toFixed(2)),
       maxMs: Number(Math.max(...durations).toFixed(2)),
@@ -280,7 +294,7 @@ describe('R-ARCH-06 Was die Bewegung der Armeen kostet', () => {
         }
       : {}),
   }))
-  const buildings = Object.fromEntries(world.provinces.slice(0, 80).map((p) => [p.id, 2]))
+  const buildings = Object.fromEntries(world.provinces.slice(0, 80).map((p) => [p.id, { barracks: 1, factory: 1 }]))
   const view = { x: 0, y: 0, scale: 2.78 }
 
   const messe = (tick?: number): number => {

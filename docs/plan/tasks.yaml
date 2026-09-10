@@ -2106,7 +2106,7 @@ tasks:
   - id: T-M30-02
     milestone: M30
     title: Gebaeude stehen verteilt in der Provinz
-    status: todo
+    status: done
     deps: [T-M30-01]
     requirements: [R-MAP-05, R-UI-10, R-UI-12]
     design: [D-27]

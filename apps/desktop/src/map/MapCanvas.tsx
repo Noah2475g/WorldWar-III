@@ -15,7 +15,16 @@ import {
   type RenderProvince,
 } from './render.ts'
 import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
-import { ARMY_BOX, markersFor, pickArmy, type ArmyMarker, type MarkerTone } from './markers.ts'
+import {
+  ARMY_BOX,
+  BUILDING_BOX,
+  markersFor,
+  pickArmy,
+  type ArmyMarker,
+  type BuildingsByProvince,
+  type MarkerTone,
+} from './markers.ts'
+import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
@@ -97,12 +106,39 @@ function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, ico
   return canvas
 }
 
+/** Der Gebaeudestempel je Glyphe (T-M30-02, D27.2): Quadrat 14×14, Rahmen `building`. */
+function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName): HTMLCanvasElement | null {
+  const key = `building:${icon}`
+  const cached = cache.get(key)
+  if (cached) return cached
+  if (typeof document === 'undefined') return null
+
+  const canvas = document.createElement('canvas')
+  canvas.width = BUILDING_BOX + STAMP_PAD * 2
+  canvas.height = BUILDING_BOX + STAMP_PAD * 2
+  const context = canvas.getContext('2d')
+  if (!context) return null
+
+  context.fillStyle = TOKENS.ground
+  context.fillRect(STAMP_PAD, STAMP_PAD, BUILDING_BOX, BUILDING_BOX)
+  context.strokeStyle = TOKENS.building
+  context.lineWidth = 1
+  context.strokeRect(STAMP_PAD + 0.5, STAMP_PAD + 0.5, BUILDING_BOX - 1, BUILDING_BOX - 1)
+  context.lineWidth = 1.4
+  drawIcon(context, icon, STAMP_PAD + BUILDING_BOX / 2, STAMP_PAD + BUILDING_BOX / 2, 10)
+
+  cache.set(key, canvas)
+  return canvas
+}
+
 export interface MapCanvasProps {
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
-  /** Gebaeude je Provinz, als Anzahl — die Symbole darunter (R-MAP-05). */
-  buildings: Readonly<Record<string, number>>
+  /** Gebaeude je Provinz, Art → Stufe — als Marker an den Ankern (R-MAP-05, T-M30-02). */
+  buildings: BuildingsByProvince
+  /** Die Anker je Provinz, einmal je Karte gerechnet (`anchorsFor`). */
+  anchors?: Readonly<Record<string, readonly Anchor[]>>
   mode: MapMode
   width: number
   height: number
@@ -403,18 +439,37 @@ export function MapCanvas(props: MapCanvasProps) {
     for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
+      ...(props.anchors ? { anchors: props.anchors } : {}),
       // Ohne `tick` stehen marschierende Armeen in der Provinzmitte. Genau das ist
       // gewollt, wenn Bewegung abgeschaltet ist (T-M20-04).
       ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
     })) {
       if (marker.kind === 'building') {
-        // Ein Quadrat je Gebaeude, in einer Reihe unter der Provinzmitte.
-        const pip = 4
-        const gap = 2
-        const total = (marker.count ?? 1) * (pip + gap) - gap
-        context.fillStyle = TOKENS.inkSoft
-        for (let i = 0; i < (marker.count ?? 1); i++) {
-          context.fillRect(marker.x - total / 2 + i * (pip + gap), marker.y, pip, pip)
+        // Ein Quadrat je Gebaeude an seinem Anker (T-M30-02, D27.2): Rahmen in
+        // `building`, Glyphe aus demselben Pfad wie im Panel, Stufe ab 2 als Ziffer
+        // rechts oben. Gestempelt, nicht je Bild gezeichnet.
+        const left = marker.x - BUILDING_BOX / 2
+        const top = marker.y - BUILDING_BOX / 2
+        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning')
+        if (stamp) {
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+        } else {
+          context.fillStyle = TOKENS.ground
+          context.fillRect(left, top, BUILDING_BOX, BUILDING_BOX)
+          context.strokeStyle = TOKENS.building
+          context.lineWidth = 1
+          context.strokeRect(left + 0.5, top + 0.5, BUILDING_BOX - 1, BUILDING_BOX - 1)
+          context.lineWidth = 1.4
+          drawIcon(context, marker.icon ?? 'warning', marker.x, marker.y, 10)
+        }
+        if ((marker.level ?? 1) >= 2) {
+          context.fillStyle = TOKENS.building
+          context.font = `600 7px ${TYPE.num}`
+          context.textAlign = 'right'
+          context.textBaseline = 'top'
+          context.fillText(String(marker.level), left + BUILDING_BOX + 4, top - 3)
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
         }
         continue
       }
@@ -493,6 +548,7 @@ export function MapCanvas(props: MapCanvasProps) {
     fades,
     props.armies,
     props.buildings,
+    props.anchors,
     props.mode,
     props.selectedProvince,
     props.capitalProvinceId,

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { BuildingKey, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -10,6 +10,7 @@ import { amount, arrival, costs, duration, percent, population, rate, remaining,
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
+  BUILDING_ORDER,
   Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
@@ -89,9 +90,6 @@ export const TERRAIN_DEFENCE_PERMILLE: Record<Terrain, number> = {
   desert: 0,
   urban: 200,
 }
-
-/** Die Reihenfolge der Bauplaetze — die der Gebaeudetabelle, damit ein Bau die anderen nicht verschiebt. */
-export const BUILDING_ORDER = Object.keys(BUILDING_ICONS) as BuildingKey[]
 
 export function buildingItems(buildings: Partial<Record<string, number>>): IconItem[] {
   return Object.entries(buildings)

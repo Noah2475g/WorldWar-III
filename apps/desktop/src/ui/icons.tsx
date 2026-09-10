@@ -11,7 +11,7 @@
  * font setting without a second asset.
  */
 
-import type { DiplomaticState, Terrain } from '@worldwar/core'
+import type { BuildingKey, DiplomaticState, Terrain } from '@worldwar/core'
 
 export type IconName =
   | 'infantry'
@@ -217,6 +217,13 @@ export const RESOURCE_ICONS: Record<string, IconName> = {
   rare: 'rare',
   money: 'money',
 }
+
+/**
+ * Die Reihenfolge der Gebaeude — fuer die Bauplaetze im Panel (T-M29-03) und die Anker
+ * auf der Karte (T-M30-02). Eine Reihenfolge, zwei Ausgaben: ein Bau verschiebt die
+ * anderen nirgends.
+ */
+export const BUILDING_ORDER = Object.keys(BUILDING_ICONS) as BuildingKey[]
 
 /**
  * The raw drawings, for anything that is not React.

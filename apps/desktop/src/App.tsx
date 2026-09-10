@@ -35,7 +35,8 @@ import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
-import { dominantIcon, stackSummary } from './map/markers.ts'
+import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
+import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
@@ -500,15 +501,21 @@ export function App(props: AppProps) {
     [activeMap.provinces],
   )
 
-  /** Gebaeude je Provinz — nur die eigenen sind bekannt (R-DIP-04). */
+  /** Gebaeude je Provinz, Art → Stufe — nur die eigenen sind bekannt (R-DIP-04). */
   const buildings = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const byProvince: Record<string, Partial<Record<string, number>>> = {}
     for (const province of view?.provinces ?? []) {
-      const total = Object.values(province.buildings ?? {}).reduce((sum, level) => sum + (level ?? 0), 0)
-      if (total > 0) counts[province.id] = total
+      const known = Object.entries(province.buildings ?? {}).filter(([, level]) => (level ?? 0) > 0)
+      if (known.length > 0) byProvince[province.id] = Object.fromEntries(known)
     }
-    return counts
+    return byProvince as BuildingsByProvince
   }, [view])
+
+  /** Die Anker je Provinz (T-M30-02): aus der Geometrie, einmal je Karte. */
+  const anchors = useMemo(
+    () => Object.fromEntries(activeMap.provinces.map((p) => [p.id, anchorsFor(p.polygons, p.center)])),
+    [activeMap.provinces],
+  )
 
   const armies: ArmyMarker[] = useMemo(
     () =>
@@ -1338,6 +1345,7 @@ export function App(props: AppProps) {
             centres={centres}
             armies={armies}
             buildings={buildings}
+            anchors={anchors}
             mode={ui.mode}
             width={activeMap.width}
             height={activeMap.height}

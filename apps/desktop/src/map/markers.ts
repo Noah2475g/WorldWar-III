@@ -1,5 +1,6 @@
 import { toScreen, type Point, type View } from './picking.ts'
-import { UNIT_ICONS, type IconName } from '../ui/icons.tsx'
+import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
+import { placeBuildings, type Anchor } from './anchors.ts'
 
 /**
  * What sits on top of the map (R-MAP-05, T-M10-03b).
@@ -69,8 +70,10 @@ export interface Marker {
   y: number
   /** Armies only: drawn in the player's own colour or in the alarm colour. */
   own?: boolean
-  /** Buildings: how many stand there, capped for drawing. Armies: the unit count (T-M30-01). */
+  /** Armies: the unit count (T-M30-01). */
   count?: number
+  /** Buildings: the level, drawn as a digit from 2 upwards (T-M30-02). */
+  level?: number
   /** Armies: the share of hit points left, 0…1 — the condition bar (T-M30-01). */
   condition?: number
   /** Armies: whose stack, for the rim colour (T-M30-01, D27.2). */
@@ -128,11 +131,21 @@ export function dominantIcon(units: readonly { unitKey: string; hp: number }[]):
   return best?.icon
 }
 
-/** At most this many building pips per province — beyond it they become a smear. */
-export const MAX_BUILDING_PIPS = 4
+/** Der Gebaeudemarker in Bildpunkten (D27.2): Quadrat mit Glyphe, Stufe rechts oben. */
+export const BUILDING_BOX = 14
 
-/** Buildings sit below the army box so the two never overlap. */
+/**
+ * Ab hier (Kartenraum je Bildpunkt) sind Gebaeude zu klein, um sie zu zeigen (D27.4,
+ * Stufe "weit"). T-M30-03 macht daraus die drei Zoomstufen; bis dahin ist es die Grenze
+ * der mittleren Stufe.
+ */
+export const BUILDING_MAX_SCALE = 1.0
+
+/** Ohne Anker stehen Gebaeude unter der Provinzmitte — nur noch Rueckfall und Test. */
 export const BUILDING_OFFSET_Y = 12
+
+/** Gebaeude je Provinz, wie die Sicht sie kennt: Art → Stufe. */
+export type BuildingsByProvince = Readonly<Record<string, Readonly<Partial<Record<string, number>>>>>
 
 export interface MarkerExtras {
   /**
@@ -144,6 +157,8 @@ export interface MarkerExtras {
   capitalProvinceId?: string | null
   /** Provinces where fighting is going on, from the view — not from the armies. */
   battleProvinces?: readonly string[]
+  /** Die Anker je Provinz (T-M30-02, `anchorsFor`), einmal je Karte gerechnet. */
+  anchors?: Readonly<Record<string, readonly Anchor[]>>
 }
 
 /**
@@ -226,28 +241,46 @@ export function pickArmy(
   return bestId
 }
 
+/** Sieben Plaetze in einer Reihe unter der Provinzmitte, abwechselnd rechts und links. */
+function fallbackAnchors(centre: Point, scale: number): Anchor[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const step = Math.ceil(i / 2) * (i % 2 === 0 ? -1 : 1)
+    // Steigender Randabstand nach innen: die Mitte gilt als Landesinneres, die Enden der Reihe als Kueste.
+    return { x: centre.x + (step * (BUILDING_BOX + 2)) / scale, y: centre.y + BUILDING_OFFSET_Y / scale, edgeDistance: (7 - i) * 10 }
+  })
+}
+
 export function markersFor(
   armies: readonly ArmyMarker[],
-  buildings: Readonly<Record<string, number>>,
+  buildings: BuildingsByProvince,
   centres: Readonly<Record<string, Point>>,
   view: View,
   extras: MarkerExtras = {},
 ): Marker[] {
   const markers: Marker[] = []
 
-  for (const [provinceId, count] of Object.entries(buildings)) {
-    if (!count || count <= 0) continue
-    const centre = centres[provinceId]
-    if (!centre) continue
+  // Gebaeude erst ab der mittleren Stufe (D27.4): auf der Weltansicht waeren 1 700
+  // Quadrate ein Schleier und kosten das Bildbudget (KRIEGSRAT §6.1).
+  if (view.scale <= BUILDING_MAX_SCALE) {
+    for (const [provinceId, byKind] of Object.entries(buildings)) {
+      const centre = centres[provinceId]
+      if (!centre) continue
 
-    const point = toScreen(centre, view)
-    markers.push({
-      kind: 'building',
-      provinceId,
-      x: point.x,
-      y: point.y + BUILDING_OFFSET_Y,
-      count: Math.min(count, MAX_BUILDING_PIPS),
-    })
+      // An den Ankern der Provinz (T-M30-02); ohne Anker in einer Reihe unter der
+      // Mitte, das erste genau darunter — wie bisher, nur als Marker statt als Pip.
+      const anchors = extras.anchors?.[provinceId] ?? fallbackAnchors(centre, view.scale)
+      for (const placed of placeBuildings(byKind, anchors)) {
+        const point = toScreen(placed, view)
+        markers.push({
+          kind: 'building',
+          provinceId,
+          x: point.x,
+          y: point.y,
+          icon: BUILDING_ICONS[placed.building] ?? 'warning',
+          level: placed.level,
+        })
+      }
+    }
   }
 
   for (const army of armies) {
