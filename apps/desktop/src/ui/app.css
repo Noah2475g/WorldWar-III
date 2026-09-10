@@ -355,6 +355,45 @@ body {
   cursor: crosshair;
 }
 
+/* Zoomknoepfe oben rechts auf der Karte (T-M30-03, D27.4): 24-px-Ziele, benannt. */
+.map-controls {
+  position: absolute;
+  top: var(--sp-md);
+  right: var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-control {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  font: 600 14px var(--font-num);
+  line-height: 1;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--warn);
+  cursor: pointer;
+}
+
+.map-control:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+/* Die Uebersichtskarte unten rechts, ueber der Legende (T-M30-03). */
+.map-overview {
+  position: absolute;
+  right: var(--sp-lg);
+  bottom: 68px;
+  width: 132px;
+  height: 74px;
+  border: 1px solid var(--line);
+  background: var(--water);
+  cursor: pointer;
+}
+
 .side {
   border-left: 1px solid var(--line);
   background: var(--paper);

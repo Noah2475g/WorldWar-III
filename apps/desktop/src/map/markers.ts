@@ -1,4 +1,4 @@
-import { toScreen, type Point, type View } from './picking.ts'
+import { ZOOM_MID_MAX_SCALE, toScreen, zoomTier, type Point, type View } from './picking.ts'
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { placeBuildings, type Anchor } from './anchors.ts'
 
@@ -134,12 +134,8 @@ export function dominantIcon(units: readonly { unitKey: string; hp: number }[]):
 /** Der Gebaeudemarker in Bildpunkten (D27.2): Quadrat mit Glyphe, Stufe rechts oben. */
 export const BUILDING_BOX = 14
 
-/**
- * Ab hier (Kartenraum je Bildpunkt) sind Gebaeude zu klein, um sie zu zeigen (D27.4,
- * Stufe "weit"). T-M30-03 macht daraus die drei Zoomstufen; bis dahin ist es die Grenze
- * der mittleren Stufe.
- */
-export const BUILDING_MAX_SCALE = 1.0
+/** Gebaeude erscheinen ab der mittleren Stufe (D27.4, `zoomTier`); auf "weit" nicht. */
+export const BUILDING_MAX_SCALE = ZOOM_MID_MAX_SCALE
 
 /** Ohne Anker stehen Gebaeude unter der Provinzmitte — nur noch Rueckfall und Test. */
 export const BUILDING_OFFSET_Y = 12
@@ -261,7 +257,7 @@ export function markersFor(
 
   // Gebaeude erst ab der mittleren Stufe (D27.4): auf der Weltansicht waeren 1 700
   // Quadrate ein Schleier und kosten das Bildbudget (KRIEGSRAT §6.1).
-  if (view.scale <= BUILDING_MAX_SCALE) {
+  if (zoomTier(view.scale) !== 'far') {
     for (const [provinceId, byKind] of Object.entries(buildings)) {
       const centre = centres[provinceId]
       if (!centre) continue

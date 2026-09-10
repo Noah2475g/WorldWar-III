@@ -38,7 +38,7 @@ import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView } from './map/picking.ts'
+import { boundsOf, centreOn, clampView, zoomAt } from './map/picking.ts'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
@@ -65,7 +65,7 @@ import {
   type DebugInfo,
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
-import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
+import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
@@ -898,6 +898,21 @@ export function App(props: AppProps) {
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           } else dispatch({ type: 'closePanel' })
+          break
+        case 'zoom':
+          // Um die Mitte des Ausschnitts, wie die Knoepfe auf der Karte (T-M30-03).
+          dispatch({
+            type: 'setView',
+            view: zoomAt(
+              ui.view,
+              { x: VIEWPORT.viewportWidth / 2, y: VIEWPORT.viewportHeight / 2 },
+              shortcut.direction > 0 ? 1 / ZOOM_STEP : ZOOM_STEP,
+              { width: activeMap.width, height: activeMap.height, ...VIEWPORT },
+            ),
+          })
+          break
+        case 'centreCapital':
+          if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
         case 'pan':
           dispatch({

@@ -2116,7 +2116,7 @@ tasks:
   - id: T-M30-03
     milestone: M30
     title: Drei Zoomstufen, Knoepfe und Uebersichtskarte
-    status: todo
+    status: done
     deps: [T-M30-02]
     requirements: [R-UI-12, R-UI-15, R-ARCH-06]
     design: [D-27]

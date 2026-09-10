@@ -529,6 +529,13 @@ export const de = {
     keyboardHelp: 'Tastaturkürzel anzeigen',
   },
 
+  map: {
+    zoomIn: 'Hineinzoomen',
+    zoomOut: 'Herauszoomen',
+    centreCapital: 'Hauptstadt zentrieren',
+    overview: 'Übersichtskarte',
+  },
+
   keys: {
     title: 'Tastatur',
     pause: 'Leertaste — Pause',
@@ -543,6 +550,9 @@ export const de = {
     standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
     help: 'F1 — diese Übersicht',
+    zoomIn: 'Bild↑ — hineinzoomen',
+    zoomOut: 'Bild↓ — herauszoomen',
+    home: 'Pos1 — Hauptstadt zentrieren',
   },
 
   tutorial: {

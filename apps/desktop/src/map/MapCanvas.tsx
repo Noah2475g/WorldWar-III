@@ -14,7 +14,18 @@ import {
   prepareFrame,
   type RenderProvince,
 } from './render.ts'
-import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
+import {
+  boundsOf,
+  centreOn,
+  clampView,
+  pickProvince,
+  toMap,
+  toScreen,
+  zoomAt,
+  type View,
+  type ViewLimits,
+} from './picking.ts'
+import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
   BUILDING_BOX,
@@ -74,6 +85,9 @@ const TONE_COLORS: Record<MarkerTone, string> = {
 
 /** Rand um den Stempel, damit der Rahmenstrich nicht angeschnitten wird. */
 const STAMP_PAD = 2
+
+/** Die Uebersichtskarte in Bildpunkten (D27.4). */
+const OVERVIEW = { width: 132, height: 74 } as const
 
 /**
  * Vorgezeichnete Stapel je (Ton, Glyphe) — gestempelt statt je Bild als Path2D gefuellt
@@ -182,6 +196,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
+  /** Die Uebersichtskarte (T-M30-03): die ganze Welt klein, Ausschnitt in Bernstein. */
+  const overviewRef = useRef<HTMLCanvasElement>(null)
 
   /**
    * Laufende Farbwellen eines Besitzwechsels (T-M26-02, D25.4).
@@ -617,6 +633,63 @@ export function MapCanvas(props: MapCanvasProps) {
     dragRef.current = null
   }
 
+  // Die Knoepfe zoomen um die Mitte des Ausschnitts — wie die Bildtasten (T-M30-03).
+  const zoomBy = useCallback(
+    (factor: number) => props.onViewChange(zoomAt(props.view, { x: size.width / 2, y: size.height / 2 }, factor, limits)),
+    [props, size, limits],
+  )
+  const centreCapital = useCallback(() => {
+    const centre = props.capitalProvinceId ? props.centres[props.capitalProvinceId] : undefined
+    if (centre) props.onViewChange(centreOn(centre, props.view, limits))
+  }, [props, limits])
+
+  /*
+   * Die Uebersichtskarte (T-M30-03, D27.4): 132 x 74, die Flaechenebene der ganzen Welt
+   * verkleinert, darueber der Ausschnitt als Bernstein-Rahmen. Die Flaechen kommen aus
+   * demselben prepareFrame wie die grosse Karte, nur mit einem Massstab, bei dem fast
+   * jeder Punkt der Ausduennung zum Opfer faellt — darum ist sie billig.
+   */
+  const overviewScale = Math.max(props.width / OVERVIEW.width, props.height / OVERVIEW.height)
+  useEffect(() => {
+    const canvas = overviewRef.current
+    const context = canvas?.getContext('2d')
+    if (!canvas || !context) return
+
+    const worldView = { x: 0, y: 0, scale: overviewScale }
+    context.fillStyle = MAP_COLORS.sea
+    context.fillRect(0, 0, OVERVIEW.width, OVERVIEW.height)
+    for (const shape of prepareFrame(withBounds, worldView, OVERVIEW, props.mode)) {
+      // Ein Zug je vorbereiteter Form — dieselbe Schleife wie die grosse Ebene.
+      if (shape.points.length === 0) continue
+      context.fillStyle = shape.fill
+      context.beginPath()
+      context.moveTo(shape.points[0]![0], shape.points[0]![1])
+      for (const [x, y] of shape.points.slice(1)) context.lineTo(x, y)
+      context.closePath()
+      context.fill()
+    }
+
+    const left = props.view.x / overviewScale
+    const top = props.view.y / overviewScale
+    context.strokeStyle = TOKENS.warn
+    context.lineWidth = 1
+    context.strokeRect(
+      left + 0.5,
+      top + 0.5,
+      Math.max(2, (size.width * props.view.scale) / overviewScale),
+      Math.max(2, (size.height * props.view.scale) / overviewScale),
+    )
+  }, [withBounds, props.mode, props.ownershipVersion, props.view, size, overviewScale])
+
+  const handleOverviewClick = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const point = toMap({ x: event.clientX - rect.left, y: event.clientY - rect.top }, { x: 0, y: 0, scale: overviewScale })
+      props.onViewChange(centreOn(point, props.view, limits))
+    },
+    [props, limits, overviewScale],
+  )
+
   return (
     <div ref={wrapperRef} className="map-wrapper">
       <canvas ref={shapesRef} width={size.width} height={size.height} className="map-layer" aria-hidden="true" />
@@ -633,6 +706,38 @@ export function MapCanvas(props: MapCanvasProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+      />
+
+      {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}
+      <div className="map-controls" role="group" aria-label={t('map.zoomIn')}>
+        <button type="button" className="map-control" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomBy(1 / ZOOM_STEP)}>
+          +
+        </button>
+        <button type="button" className="map-control" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomBy(ZOOM_STEP)}>
+          −
+        </button>
+        <button
+          type="button"
+          className="map-control"
+          aria-label={t('map.centreCapital')}
+          title={t('map.centreCapital')}
+          onClick={centreCapital}
+          disabled={!props.capitalProvinceId}
+        >
+          ◎
+        </button>
+      </div>
+
+      <canvas
+        ref={overviewRef}
+        width={OVERVIEW.width}
+        height={OVERVIEW.height}
+        className="map-overview"
+        role="button"
+        tabIndex={0}
+        aria-label={t('map.overview')}
+        title={t('map.overview')}
+        onClick={handleOverviewClick}
       />
     </div>
   )

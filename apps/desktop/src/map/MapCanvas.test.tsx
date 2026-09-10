@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
@@ -236,5 +236,50 @@ describe('T-M30-02 Gebaeude stehen als Stempel an ihren Ankern', () => {
     // fuer Grund, Spuren und Balken, nicht 4-px-Quadrate je Gebaeude).
     expect(recorder.calls.drawImage ?? 0).toBeGreaterThanOrEqual(2)
     expect((recorder.calls.drawImage ?? 0) % 2).toBe(0)
+  })
+})
+
+describe('T-M30-03 Zoomknoepfe und Uebersichtskarte', () => {
+  it('bietet drei Knoepfe mit Namen, die den Ausschnitt aendern', () => {
+    const changes: { x: number; y: number; scale: number }[] = []
+    const capital = world.provinces[3]!
+    zeichne({
+      speed: 100,
+      view: { x: 500, y: 300, scale: 2 },
+      capitalProvinceId: capital.id,
+      onViewChange: (next) => changes.push(next),
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hineinzoomen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Herauszoomen' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Hauptstadt zentrieren' }))
+
+    expect(changes.length).toBe(3)
+    expect(changes[0]!.scale).toBeLessThan(2)
+    expect(changes[1]!.scale).toBeGreaterThan(2)
+    // Zentrieren: die Hauptstadt liegt danach in der Mitte des Ausschnitts. jsdom
+    // rechnet kein Layout — der Huellen-Mindestwert (320 x 240) ist der Ausschnitt.
+    const centred = changes[2]!
+    // `centres` dieser Datei zeigt auf den ersten Umrisspunkt — zentriert wird, was
+    // die Karte als Mitte kennt, nicht was die Kartendatei sagt.
+    expect(centred.x + (320 * centred.scale) / 2).toBeCloseTo(centres[capital.id]!.x, 0)
+  })
+
+  it('zeichnet die Uebersichtskarte und zentriert bei Klick dort', () => {
+    const changes: { x: number; y: number; scale: number }[] = []
+    zeichne({ speed: 100, view: { x: 0, y: 0, scale: 2 }, onViewChange: (next) => changes.push(next) })
+
+    const overview = screen.getByRole('button', { name: 'Übersichtskarte' }) as HTMLCanvasElement
+    expect(overview.width).toBe(132)
+    expect(overview.height).toBe(74)
+
+    // Ein Klick in die Mitte der Uebersicht zentriert die Kartenmitte.
+    overview.getBoundingClientRect = () => ({ left: 0, top: 0, width: 132, height: 74 }) as DOMRect
+    fireEvent.click(overview, { clientX: 66, clientY: 37 })
+    expect(changes.length).toBe(1)
+    // Die Uebersicht ist nicht verzerrt: ein Massstab fuer beide Achsen, die Welt
+    // sitzt links oben — der Klickpunkt ist der Kartenpunkt mal diesem Massstab.
+    const overviewScale = Math.max(world.width / 132, world.height / 74)
+    expect(changes[0]!.x + (320 * changes[0]!.scale) / 2).toBeCloseTo(66 * overviewScale, 0)
   })
 })

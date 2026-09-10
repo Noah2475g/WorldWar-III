@@ -20,6 +20,10 @@ export type Shortcut =
   | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' }
   | { type: 'close' }
   | { type: 'pan'; dx: number; dy: number }
+  /** Bild-auf/-ab: eine Zoomstufe hinein (1) oder heraus (-1) (T-M30-03). */
+  | { type: 'zoom'; direction: 1 | -1 }
+  /** Pos1: die eigene Hauptstadt in die Mitte (T-M30-03). */
+  | { type: 'centreCapital' }
 
 export interface KeyContext {
   speed: number
@@ -92,6 +96,13 @@ export function resolveKey(
       return { type: 'pan', dx: 0, dy: -1 }
     case 'ArrowDown':
       return { type: 'pan', dx: 0, dy: 1 }
+    // Plus und Minus gehoeren dem Tempo (oben); der Zoom nimmt die Bildtasten.
+    case 'PageUp':
+      return { type: 'zoom', direction: 1 }
+    case 'PageDown':
+      return { type: 'zoom', direction: -1 }
+    case 'Home':
+      return { type: 'centreCapital' }
     default:
       return null
   }
@@ -106,3 +117,6 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   const tag = target.tagName.toLowerCase()
   return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
 }
+
+/** Ein Zoomschritt der Knoepfe und Tasten — derselbe wie ein Mausrad-Rasten. */
+export const ZOOM_STEP = 1.2
