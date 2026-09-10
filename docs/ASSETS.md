@@ -125,6 +125,7 @@ stehen hier trotzdem, damit niemand sie für zugekaufte Grafik hält.
 |---|---|---|
 | `docs/reports/map-nordamerika.svg` | `node scripts/map-figure.mjs` | Nordamerika vor und nach T-M19-02 |
 | `docs/reports/map-groenland.svg` | `node scripts/map-figure.mjs` | Grönland vor und nach dem Beschnitt (T-M19-03) |
+| `docs/design/kriegsrat-icons.svg` | von Hand gezeichnet (Entwurf Kriegsrat, 2026-09-10) | Symbolsatz des Kriegsrat-Entwurfs: NATO-Marker, Gebäude, Rohstoffe — eigene Strichzeichnungen, keine Fremdquelle |
 
 Beide sind SVG und damit Text: sie lassen sich versionieren und vergleichen, was ein
 Bildschirmfoto nicht kann. Die Farben stammen aus `apps/desktop/src/ui/tokens.ts`.

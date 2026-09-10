@@ -111,7 +111,8 @@ describe('R-UI-13 LineChart zeichnet Reihen, Legende und Beschreibung', () => {
     // Auf der Hoehe des letzten Punkts: 260 in der Skala −26…286 liegt bei 8.3 %.
     expect(endwert.style.top).toBe('8.3%')
     // jsdom normalisiert Hex zu rgb(): gebunden wird, DASS die Reihenfarbe ankommt.
-    expect(endwert.style.color).toBe('rgb(51, 97, 63)')
+    const rgb = (hex: string) => `rgb(${[1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ')})`
+    expect(endwert.style.color).toBe(rgb(TOKENS.good))
   })
 
   it('nennt die Reihe in der Legende und beschreibt das Bild fuers Ohr', () => {
