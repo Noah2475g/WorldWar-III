@@ -1,0 +1,399 @@
+<title>Kriegsrat Finalentwurf</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{--g:#0d1117;--p:#161c25;--p2:#1e2632;--p3:#243040;--ink:#e6e1d3;--soft:#9aa0a8;--ln:#2f3944;--amber:#e0a220;--amber-d:#8a6412;--own:#7ec57e;--foe:#e2503a;--ally:#6fa8dc;--sea:#0a0e14;--bld:#c9b98a;--unit-bg:#0d1117;--legend:#161c25;
+    --t1:#2c4a3a;--t2:#3a3a52;--t3:#4c3a2a;--t4:#243c4c;--t5:#3d2f3f;--t6:#2f4a55;--own-t:#3c6e44;--foe-t:#7a2e22;--ally-t:#2f4a6a;
+    --fc:'IBM Plex Sans Condensed',sans-serif;--fu:'IBM Plex Sans',system-ui,sans-serif;--fm:'IBM Plex Mono',ui-monospace,monospace}
+  body{background:var(--g);color:var(--ink);font-family:var(--fu);padding:24px 20px 56px;max-width:1240px;margin:0 auto;font-size:14px;line-height:1.5}
+  h1{font:600 26px/1.2 var(--fc);margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}
+  h2{font:600 18px/1.2 var(--fc);margin:36px 0 10px;text-transform:uppercase;letter-spacing:.05em;color:var(--amber)}
+  h3{font:600 15px/1.2 var(--fc);margin:22px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+  .lead{color:var(--soft);max-width:70ch;margin:0 0 16px}
+  code{font-family:var(--fm);font-size:12.5px;color:var(--amber)}
+  a{color:var(--amber)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin:14px 0 18px}
+  .tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--soft);padding:9px 12px;font:600 13px var(--fc);text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+  .tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--amber)}
+  .tabs button:focus-visible,.mock button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  [hidden]{display:none!important}
+
+  /* ---------- Spielbildschirm ---------- */
+  .mock{border:1px solid var(--ln);display:grid;grid-template-rows:auto auto 1fr auto;grid-template-columns:1fr 316px;height:860px;font-size:12px;line-height:1.35;overflow:hidden;background:var(--sea)}
+  .top{grid-column:1/3;background:var(--p);border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:16px;padding:6px 12px;font-family:var(--fc);text-transform:uppercase;letter-spacing:.04em;font-size:13px}
+  .top .clock{font-family:var(--fm);color:var(--amber);text-transform:none;letter-spacing:0;font-weight:600}
+  .top .speed{display:flex;gap:2px}
+  .top .speed button{background:var(--p2);border:1px solid var(--ln);color:var(--ink);width:26px;height:22px;display:grid;place-items:center;cursor:pointer;padding:0}
+  .top .speed button[aria-pressed="true"]{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+  .top .alarm{margin-left:auto;color:var(--foe);border:1px solid var(--foe);padding:2px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px}
+  .res{grid-column:1/3;background:var(--p2);border-bottom:1px solid var(--ln);display:flex;gap:0;padding:0 8px}
+  .res div{display:flex;align-items:center;gap:5px;padding:5px 9px;border-right:1px solid var(--ln);font-family:var(--fm);font-size:11px;white-space:nowrap}
+  .res div:first-child{padding-left:4px}.res div:last-child{border:0}
+  .res b{font-weight:600;color:var(--ink)}.res i{font-style:normal;font-size:10.5px}.res .up{color:var(--own)}.res .dn{color:var(--foe)}
+  .res .name{font-family:var(--fu);color:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  .map{position:relative;overflow:hidden;grid-column:1;grid-row:3}
+  .map>svg{width:100%;height:100%;display:block}
+  .modes{position:absolute;top:8px;left:8px;display:flex;gap:2px;background:var(--p);border:1px solid var(--ln);padding:2px}
+  .modes button{background:none;border:0;color:var(--soft);font:600 10.5px var(--fc);text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;cursor:pointer}
+  .modes button[aria-pressed="true"]{background:var(--amber);color:#1a1200}
+  .zoom{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:2px}
+  .zoom button{width:24px;height:24px;background:var(--p);border:1px solid var(--ln);color:var(--ink);font:600 14px var(--fm);cursor:pointer;padding:0}
+  .mini{position:absolute;right:8px;bottom:8px;width:132px;height:74px;background:var(--p);border:1px solid var(--ln);opacity:.95}
+  .mini svg{width:100%;height:100%}
+  .tip{position:absolute;left:30%;top:56%;background:var(--p);border:1px solid var(--amber);padding:6px 8px;font-size:10.5px;width:168px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .tip b{font-family:var(--fc);text-transform:uppercase;letter-spacing:.05em;color:var(--amber);display:block;margin-bottom:2px}
+  .tip .r{display:flex;justify-content:space-between;font-family:var(--fm)}
+  .side{grid-row:3/5;grid-column:2;background:var(--p);border-left:1px solid var(--ln);overflow:hidden;display:flex;flex-direction:column}
+  .side section{padding:8px 12px;border-bottom:1px solid var(--ln);display:flex;flex-direction:column;gap:6px}
+  .side h4{margin:0;font:600 12.5px var(--fc);text-transform:uppercase;letter-spacing:.06em;color:var(--amber);display:flex;align-items:center;gap:6px}
+  .side h4 .fl{margin-left:auto;color:var(--soft);font-family:var(--fm);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .row span:first-child{display:inline-flex;align-items:center;gap:5px}
+  .num{font-family:var(--fm);font-variant-numeric:tabular-nums}
+  .soft{color:var(--soft)}
+  .ic{width:13px;height:13px;flex:none}
+  .bar{height:6px;background:var(--p3);display:flex;overflow:hidden}.bar i{display:block;height:100%}.bar .o{background:var(--own)}.bar .f{background:var(--foe)}
+  .seg{display:flex;gap:2px}.seg i{flex:1;height:5px;background:currentColor;opacity:.18}.seg i.on{opacity:1}
+  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .slot{border:1px solid var(--ln);background:var(--p2);padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--soft);min-height:44px;justify-content:center}
+  .slot svg{width:18px;height:18px;color:var(--bld)}
+  .slot.empty{border-style:dashed;color:var(--amber-d)}
+  .slot.q{border-color:var(--amber)}.slot.q .pb{width:100%;height:3px;background:var(--p3)}.slot.q .pb i{display:block;height:100%;background:var(--amber);width:60%}
+  .units{display:flex;gap:8px;flex-wrap:wrap}.units span{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm)}.units svg{width:24px;height:14px}
+  .stance{display:flex;gap:2px}.stance button,.orders button{background:var(--p2);border:1px solid var(--ln);color:var(--ink);font:600 10.5px var(--fc);text-transform:uppercase;letter-spacing:.04em;padding:5px 6px;cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+  .stance button[aria-pressed="true"]{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+  .orders{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+  .orders .pri{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+  .side .quit{font-size:10.5px;color:var(--own);font-family:var(--fm)}
+  .curve{height:40px;width:100%}
+  .foot{grid-column:1;grid-row:4;background:var(--p);border-top:1px solid var(--ln);display:flex;align-items:stretch;font-size:11px;min-height:64px}
+  .foot .log{flex:1;padding:6px 10px;display:flex;flex-direction:column;gap:2px;font-family:var(--fm);font-size:10.5px;overflow:hidden}
+  .foot .log div{display:flex;gap:6px;align-items:center;white-space:nowrap}
+  .foot .log .t{color:var(--soft);width:44px}
+  .foot .btns{display:flex;flex-direction:column;border-left:1px solid var(--ln)}
+  .foot .btns button{flex:1;background:none;border:0;border-bottom:1px solid var(--ln);color:var(--ink);font:600 10.5px var(--fc);text-transform:uppercase;letter-spacing:.05em;padding:4px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;text-align:left}
+  .foot .btns button:last-child{border-bottom:0}
+  .foot .btns .badge{margin-left:auto;background:var(--foe);color:#fff;font-family:var(--fm);font-size:9.5px;padding:0 5px;border-radius:8px}
+  .rank{display:flex;flex-direction:column;border-left:1px solid var(--ln);padding:4px 10px;min-width:150px;font-family:var(--fm);font-size:10.5px;gap:1px}
+  .rank div{display:flex;gap:8px}.rank .me{color:var(--amber)}.rank .w{flex:1}
+  @media (max-width:900px){.mock{grid-template-columns:1fr;height:auto;grid-template-rows:auto auto 520px auto auto}.map{grid-row:3}.side{grid-row:5;grid-column:1}.foot{grid-row:4;grid-column:1}.res{overflow-x:auto}}
+</style>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sword" viewBox="0 0 16 16"><path d="M2 14l3-3M4 12l7-7 3-3-1 3-7 7M9 11l2 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.5l5.5 2v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7v-4z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 16 16"><path d="M2 14V7l4 3V7l4 3V7l4 3v4zM3 6V2h2v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wheat" viewBox="0 0 16 16"><path d="M8 15V5M8 5c-2 0-3-1.5-3-3 2 0 3 1.5 3 3zm0 0c2 0 3-1.5 3-3-2 0-3 1.5-3 3zM8 9c-2 0-3-1.5-3-3 2 0 3 1.5 3 3zm0 0c2 0 3-1.5 3-3-2 0-3 1.5-3 3z" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 16 16"><path d="M3 15V2h9l-2 3 2 3H3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 16 16"><path d="M8 1.5l2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.8 3.8 14.1l1-4.6L1.3 6.3 6 5.8z" fill="currentColor"/></symbol>
+  <symbol id="i-anchor" viewBox="0 0 16 16"><path d="M8 5v10M8 5a2 2 0 100-4 2 2 0 000 4zM3 10c0 3 2.5 5 5 5s5-2 5-5M2 9l1 1 1-1M12 9l1 1 1-1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z" fill="currentColor"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4v4l3 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 16 16"><path d="M8 2l6.5 12h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 7v3.5M8 12.5v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-moral" viewBox="0 0 16 16"><path d="M8 14s-5.5-3.3-5.5-7.5a3 3 0 015.5-1.7 3 3 0 015.5 1.7C13.5 10.7 8 14 8 14z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-inf" viewBox="0 0 20 12"><rect x="1" y="1" width="18" height="10" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M1 1l18 10M19 1L1 11" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="i-arm" viewBox="0 0 20 12"><rect x="1" y="1" width="18" height="10" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><ellipse cx="10" cy="6" rx="5.5" ry="3" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="i-air" viewBox="0 0 20 12"><rect x="1" y="1" width="18" height="10" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M4 6h12M10 3v6" stroke="currentColor" stroke-width="1.2"/></symbol>
+  <symbol id="b-fac" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M3 11V6l3 2V6l3 2V6l2 1.5V11z" fill="currentColor"/><path d="M4 6V3h1.5v3" fill="currentColor"/></symbol>
+  <symbol id="b-farm" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M7 11V5M7 5c-1.6 0-2.4-1.2-2.4-2.4C6.2 2.6 7 3.8 7 5zm0 0c1.6 0 2.4-1.2 2.4-2.4C7.8 2.6 7 3.8 7 5zM7 8C5.4 8 4.6 6.8 4.6 5.6 6.2 5.6 7 6.8 7 8zm0 0c1.6 0 2.4-1.2 2.4-2.4C7.8 5.6 7 6.8 7 8z" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="b-port" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.5v7M7 4.5a1.3 1.3 0 100-2.6 1.3 1.3 0 000 2.6zM3.5 8.5c0 2 1.7 3 3.5 3s3.5-1 3.5-3M3 7.7l.7.8.8-.8M9.5 7.7l.7.8.8-.8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></symbol>
+  <symbol id="b-airf" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M7 3v8M3.5 6.5h7M5 10.5h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+  <symbol id="b-fort" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 11V5h1.5v1.5h1.5V5h1v1.5H9V5h1.5v6z" fill="currentColor"/></symbol>
+  <symbol id="b-bar" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M3.5 10.5V6.5L7 4l3.5 2.5v4z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M6 10.5V8h2v2.5" fill="currentColor"/></symbol>
+  <symbol id="b-mkt" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M3 6h8l-.6 5H3.6zM3 6l1-2.5h6L11 6" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M5 6v-1M7 6v-1M9 6v-1" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="worldmap" viewBox="0 0 640 520" preserveAspectRatio="xMidYMid slice">
+    <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="var(--ink)" stroke-width=".4" opacity=".12"/></pattern>
+      <marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3 0 6z" fill="var(--foe)"/></marker>
+      <marker id="ah-own" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3 0 6z" fill="var(--own)"/></marker></defs>
+    <rect width="640" height="520" fill="url(#grid)"/>
+    <g transform="translate(-6 66) scale(1.05)">
+    <g fill="none" stroke="var(--ink)" stroke-width=".8" opacity=".18"><path d="M20 380q20-8 40 0t40 0 40 0"/><path d="M540 40q20-8 40 0t40 0"/><path d="M60 430q20-8 40 0t40 0"/></g>
+    <path fill="var(--t1)" stroke="var(--ink)" stroke-opacity=".35" d="M40 60 L150 40 L210 80 L190 150 L120 170 L60 130Z"/>
+    <path fill="var(--own-t)" stroke="var(--ink)" stroke-opacity=".35" d="M150 40 L260 30 L300 90 L250 140 L190 150 L210 80Z"/>
+    <path fill="var(--t2)" stroke="var(--ink)" stroke-opacity=".35" d="M300 90 L400 60 L470 110 L430 180 L340 170 L250 140Z"/>
+    <path fill="var(--foe-t)" stroke="var(--ink)" stroke-opacity=".35" d="M400 60 L520 40 L600 90 L560 160 L470 110Z"/>
+    <path fill="var(--t3)" stroke="var(--ink)" stroke-opacity=".35" d="M120 170 L190 150 L250 140 L240 230 L160 260 L90 220Z"/>
+    <path fill="var(--t4)" stroke="var(--ink)" stroke-opacity=".35" d="M340 170 L430 180 L450 260 L370 300 L300 250Z"/>
+    <path fill="var(--t5)" stroke="var(--ink)" stroke-opacity=".35" d="M470 200 L560 160 L610 230 L560 310 L480 290Z"/>
+    <path d="M300 90 L250 140" stroke="var(--foe)" stroke-width="2" stroke-dasharray="5 3" opacity=".9"/>
+    <!-- Feindmarsch Minsk -> Warschau: 3 von 5 Tagen -->
+    <path d="M512 92 Q470 96 448 126" fill="none" stroke="var(--foe)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M448 126 Q440 132 434 137" fill="none" stroke="var(--foe)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ah)"/>
+    <circle cx="448" cy="126" r="3.5" fill="var(--foe)" stroke="var(--unit-bg)" stroke-width="1"/>
+    <text x="474" y="88" font-size="7" fill="var(--foe)" font-family="IBM Plex Mono, monospace">3/5 T</text>
+    <!-- Feindmarsch Süd: 1 von 4 Tagen -->
+    <path d="M540 140 Q520 158 508 168" fill="none" stroke="var(--foe)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M508 168 Q490 180 470 186" fill="none" stroke="var(--foe)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ah)"/>
+    <circle cx="508" cy="168" r="3.5" fill="var(--foe)" stroke="var(--unit-bg)" stroke-width="1"/>
+    <text x="514" y="184" font-size="7" fill="var(--foe)" font-family="IBM Plex Mono, monospace">1/4 T</text>
+    <!-- eigener Marsch Berlin -> Grenze: 4 von 5 Tagen -->
+    <path d="M238 62 Q262 66 280 84" fill="none" stroke="var(--own)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M280 84 Q288 92 294 99" fill="none" stroke="var(--own)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ah-own)"/>
+    <circle cx="280" cy="84" r="3.5" fill="var(--own)" stroke="var(--unit-bg)" stroke-width="1"/>
+    <text x="254" y="60" font-size="7" fill="var(--own)" font-family="IBM Plex Mono, monospace">4/5 T</text>
+    <!-- Nachschublinie -->
+    <path stroke="var(--own)" stroke-width="1.2" fill="none" stroke-dasharray="2 3" d="M230 90 Q215 150 200 200 T170 240"/>
+    <circle cx="420" cy="135" r="22" fill="none" stroke="var(--foe)" stroke-width="1" opacity=".45"/>
+    <circle cx="420" cy="135" r="14" fill="none" stroke="var(--foe)" stroke-width="2" opacity=".85"/>
+    <circle cx="420" cy="135" r="7" fill="var(--foe)"/>
+    <g color="var(--bld)">
+      <!-- Westprovinz -->
+      <use href="#b-farm" x="72" y="78" width="12" height="12"/><use href="#b-farm" x="128" y="60" width="12" height="12"/><use href="#b-port" x="58" y="112" width="12" height="12"/><use href="#b-mkt" x="150" y="118" width="12" height="12"/><use href="#b-farm" x="112" y="140" width="12" height="12"/>
+      <!-- Deutsches Reich (eigen) -->
+      <use href="#b-fac" x="190" y="58" width="12" height="12"/><use href="#b-fac" x="258" y="48" width="12" height="12"/><use href="#b-bar" x="212" y="96" width="12" height="12"/><use href="#b-airf" x="278" y="78" width="12" height="12"/><use href="#b-fort" x="266" y="112" width="12" height="12"/><use href="#b-mkt" x="240" y="112" width="12" height="12"/>
+      <!-- Polen -->
+      <use href="#b-farm" x="284" y="124" width="12" height="12"/><use href="#b-fac" x="362" y="84" width="12" height="12"/><use href="#b-farm" x="326" y="150" width="12" height="12"/><use href="#b-fort" x="404" y="152" width="12" height="12"/>
+      <!-- Sowjetunion (Feind) -->
+      <use href="#b-fac" x="428" y="76" width="12" height="12"/><use href="#b-bar" x="500" y="56" width="12" height="12"/><use href="#b-fac" x="562" y="72" width="12" height="12"/><use href="#b-farm" x="582" y="102" width="12" height="12"/><use href="#b-airf" x="536" y="142" width="12" height="12"/>
+      <!-- Südwest -->
+      <use href="#b-farm" x="128" y="186" width="12" height="12"/><use href="#b-fac" x="198" y="172" width="12" height="12"/><use href="#b-port" x="226" y="212" width="12" height="12"/><use href="#b-farm" x="156" y="228" width="12" height="12"/><use href="#b-mkt" x="108" y="212" width="12" height="12"/>
+      <!-- Süd -->
+      <use href="#b-farm" x="348" y="198" width="12" height="12"/><use href="#b-mkt" x="410" y="208" width="12" height="12"/><use href="#b-farm" x="378" y="250" width="12" height="12"/><use href="#b-fort" x="322" y="238" width="12" height="12"/>
+      <!-- Südost -->
+      <use href="#b-farm" x="498" y="218" width="12" height="12"/><use href="#b-farm" x="560" y="200" width="12" height="12"/><use href="#b-fac" x="578" y="246" width="12" height="12"/><use href="#b-port" x="556" y="286" width="12" height="12"/><use href="#b-farm" x="516" y="268" width="12" height="12"/>
+    </g>
+    <g color="var(--own)"><use href="#i-inf" x="222" y="66" width="24" height="14"/><use href="#i-arm" x="250" y="100" width="24" height="14"/><use href="#i-air" x="180" y="100" width="24" height="14"/></g>
+    <g color="var(--foe)"><use href="#i-inf" x="470" y="70" width="24" height="14"/><use href="#i-inf" x="500" y="110" width="24" height="14"/><use href="#i-arm" x="540" y="120" width="24" height="14"/></g>
+    <g color="var(--ink)"><use href="#i-star" x="226" y="42" width="12" height="12"/><use href="#i-star" x="540" y="86" width="12" height="12"/><use href="#i-star" x="96" y="94" width="10" height="10"/><use href="#i-star" x="376" y="122" width="10" height="10"/></g>
+    <text x="205" y="128" font-size="11" fill="var(--ink)" font-family="IBM Plex Sans Condensed, sans-serif" opacity=".9">Deutsches Reich</text>
+    <text x="470" y="62" font-size="11" fill="var(--ink)" font-family="IBM Plex Sans Condensed, sans-serif" opacity=".9">Sowjetunion</text>
+    <text x="330" y="120" font-size="10" fill="var(--ink)" font-family="IBM Plex Sans Condensed, sans-serif" opacity=".7">Polen</text>
+    <text x="405" y="170" font-size="10" fill="var(--foe)" font-family="IBM Plex Mono, monospace">Warschau · Gefecht</text>
+    <text x="220" y="55" font-size="8" fill="var(--ink)" font-family="IBM Plex Mono, monospace" opacity=".8">Berlin</text>
+    </g>
+    <g transform="translate(14 458)" font-family="IBM Plex Mono, monospace" font-size="8" fill="var(--ink)" opacity=".85">
+      <rect x="0" y="0" width="252" height="46" fill="var(--legend)" stroke="var(--ink)" stroke-opacity=".3"/>
+      <rect x="6" y="6" width="10" height="7" fill="var(--own-t)"/><text x="20" y="12.5">eigen</text>
+      <rect x="6" y="18" width="10" height="7" fill="var(--foe-t)"/><text x="20" y="24.5">Feind</text>
+      <path d="M6 33h10" stroke="var(--foe)" stroke-width="2"/><text x="20" y="36.5">Marsch / Front</text>
+      <path d="M100 12h10" stroke="var(--own)" stroke-dasharray="2 2"/><text x="114" y="14.5">Nachschub</text>
+      <use href="#i-star" x="100" y="20" width="8" height="8" color="var(--ink)"/><text x="114" y="27">Hauptstadt</text>
+      <circle cx="105" cy="36" r="2.5" fill="var(--foe)"/><text x="114" y="38.5">Stand / Rest ···</text>
+      <g color="var(--bld)"><use href="#b-fac" x="190" y="5" width="9" height="9"/><use href="#b-farm" x="201" y="5" width="9" height="9"/><use href="#b-port" x="212" y="5" width="9" height="9"/><use href="#b-airf" x="223" y="5" width="9" height="9"/><use href="#b-fort" x="234" y="5" width="9" height="9"/></g>
+      <text x="190" y="23">Fabrik Hof Hafen</text><text x="190" y="32">Flugfeld Festung</text>
+      <g color="var(--own)"><use href="#i-inf" x="190" y="35" width="14" height="8"/><use href="#i-arm" x="206" y="35" width="14" height="8"/><use href="#i-air" x="222" y="35" width="14" height="8"/></g>
+    </g>
+    <g transform="translate(600 470)" fill="none" stroke="var(--ink)" opacity=".6"><circle r="12"/><path d="M0-12V12M-12 0H12" stroke-width=".6"/><path d="M0-9L3 0H-3z" fill="var(--ink)" stroke="none"/><text y="-15" text-anchor="middle" font-size="7" fill="var(--ink)" stroke="none">N</text></g>
+  </symbol>
+</svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pause" viewBox="0 0 16 16"><path d="M4 2h3v12H4zM9 2h3v12H9z" fill="currentColor"/></symbol>
+  <symbol id="i-ff" viewBox="0 0 16 16"><path d="M2 2l6 6-6 6zM8 2l6 6-6 6z" fill="currentColor"/></symbol>
+  <symbol id="i-split" viewBox="0 0 16 16"><path d="M8 2v5M8 7l-4 5M8 7l4 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="4" cy="13" r="1.6" fill="currentColor"/><circle cx="12" cy="13" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 16 16"><path d="M4 3l4 5M12 3l4 5M8 8v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" transform="translate(-2 0)"/><circle cx="8" cy="14" r="1.6" fill="currentColor" transform="translate(-2 0)"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 16 16"><path d="M8 14c-3 0-4.5-2-4.5-4 0-2 1.5-3 2-4.5.5 1 1 1.5 1.5 1.5 0-2 1-3.5 2.5-5 0 2 3 3 3 6.5 0 3-2 5.5-4.5 5.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-move" viewBox="0 0 16 16"><path d="M2 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-news" viewBox="0 0 16 16"><path d="M2 3h10v10H3.5A1.5 1.5 0 012 11.5zM12 5h2v6.5a1.5 1.5 0 01-1.5 1.5H12M4 5h6M4 7.5h6M4 10h4" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="i-rank" viewBox="0 0 16 16"><path d="M2 14V8h3v6zM6.5 14V3h3v11zM11 14V6h3v8z" fill="currentColor"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 16 16"><path d="M2 9l3-3 3 3M8 6v7M8 9l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-terrain" viewBox="0 0 16 16"><path d="M1 13l4-7 3 4 2-3 5 6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="r-food" viewBox="0 0 16 16"><path d="M8 15V5M8 5c-2 0-3-1.5-3-3 2 0 3 1.5 3 3zm0 0c2 0 3-1.5 3-3-2 0-3 1.5-3 3zM8 9c-2 0-3-1.5-3-3 2 0 3 1.5 3 3zm0 0c2 0 3-1.5 3-3-2 0-3 1.5-3 3z" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="r-wood" viewBox="0 0 16 16"><path d="M3 5h10v7H3z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3 8.5h10M8 5v7" stroke="currentColor" stroke-width="1"/><circle cx="8" cy="3.2" r="1.4" fill="none" stroke="currentColor"/></symbol>
+  <symbol id="r-iron" viewBox="0 0 16 16"><path d="M2 12l3-6h6l3 6zM5 6l1.5-3h3L11 6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></symbol>
+  <symbol id="r-coal" viewBox="0 0 16 16"><path d="M4 4l5-1 4 3-1 5-5 2-4-3z" fill="currentColor"/></symbol>
+  <symbol id="r-oil" viewBox="0 0 16 16"><path d="M8 2s4 4.5 4 7.5a4 4 0 01-8 0C4 6.5 8 2 8 2z" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+  <symbol id="r-rare" viewBox="0 0 16 16"><path d="M4 6l2-3h4l2 3-4 8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 6h8M6 3l2 3 2-3" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="r-money" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5v7M6 6.5c0-.8.8-1.3 2-1.3s2 .5 2 1.3-1 1.2-2 1.5-2 .7-2 1.5.8 1.3 2 1.3 2-.5 2-1.3" fill="none" stroke="currentColor" stroke-width="1.1"/></symbol>
+  <symbol id="i-art" viewBox="0 0 20 12"><rect x="1" y="1" width="18" height="10" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="6" r="2" fill="currentColor"/></symbol>
+  <symbol id="i-nav" viewBox="0 0 20 12"><rect x="1" y="1" width="18" height="10" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M10 3v6M7 6.5c0 1.5 1.3 2.5 3 2.5s3-1 3-2.5" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="b-rail" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M4 11L7 3l3 8M4.8 8.5h4.4M5.6 6.2h2.8" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+  <symbol id="b-ship" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.2"/><path d="M3 8h8l-1.5 3h-5zM7 8V4M5 6h4" fill="none" stroke="currentColor" stroke-width="1"/></symbol>
+  <!-- Armeestapel: Kreis mit Zahl, Farbe = Besitzer -->
+  <symbol id="stack" viewBox="0 0 30 18"><rect x="1" y="1" width="28" height="16" rx="2" fill="var(--unit-bg)" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="14" width="28" height="3" fill="currentColor" opacity=".9"/></symbol>
+</svg>
+<h1>Kriegsrat · Finalentwurf</h1>
+<p class="lead">Der Spielbildschirm von WorldWar in Richtung A, jetzt mit allen Elementen, die das Spiel wirklich hat: Ressourcenleiste mit Tagesbilanz, Kartenmodi, Provinz- und Armeepanel mit unseren echten Befehlen, Gefechtsbericht, Ereignisprotokoll, Rangliste und Depesche. Darunter der Abgleich mit Supremacy WW3 und der Umsetzungsplan.</p>
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-t="screen">Spielbildschirm</button>
+  <button role="tab" aria-selected="false" data-t="cmp">Abgleich Supremacy WW3</button>
+  <button role="tab" aria-selected="false" data-t="plan">Umsetzungsplan</button>
+</div>
+
+<section id="screen" class="mock" aria-label="Spielbildschirm Kriegsrat">
+  <div class="top">
+    <span>WorldWar</span>
+    <span class="clock"><svg class="ic" style="vertical-align:-2px"><use href="#i-clock"/></svg> Tag 214 · 06:00</span>
+    <span class="speed" role="group" aria-label="Geschwindigkeit"><button aria-label="Pause"><svg class="ic"><use href="#i-pause"/></svg></button><button aria-pressed="true" aria-label="Läuft, 1 Tag je Sekunde"><svg class="ic"><use href="#i-play"/></svg></button><button aria-label="Vorspulen"><svg class="ic"><use href="#i-ff"/></svg></button></span>
+    <span class="soft" style="display:inline-flex;align-items:center;gap:5px"><svg class="ic"><use href="#i-flag"/></svg>Deutsches Reich · Hauptstadt Berlin</span>
+    <span class="alarm"><svg class="ic"><use href="#i-alert"/></svg>Einmarsch bei Warschau · 3 Armeen</span>
+  </div>
+  <div class="res" aria-label="Ressourcen mit Tagesbilanz">
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-food"/></svg><span class="name">Nahrung</span><b>1 240</b><i class="dn">−6/T</i></div>
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-wood"/></svg><span class="name">Holz</span><b>860</b><i class="up">+22/T</i></div>
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-iron"/></svg><span class="name">Eisen</span><b>412</b><i class="up">+15/T</i></div>
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-coal"/></svg><span class="name">Kohle</span><b>530</b><i class="up">+18/T</i></div>
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-oil"/></svg><span class="name">Öl</span><b>96</b><i class="dn">−4/T</i></div>
+    <div><svg class="ic" style="color:var(--bld)"><use href="#r-rare"/></svg><span class="name">Selten</span><b>31</b><i class="up">+1/T</i></div>
+    <div><svg class="ic" style="color:var(--amber)"><use href="#r-money"/></svg><span class="name">Geld</span><b>18 400</b><i class="up">+610/T</i></div>
+    <div style="margin-left:auto;border:0"><svg class="ic" style="color:var(--own)"><use href="#i-moral"/></svg><span class="name">Moral Ø</span><b>71 %</b></div>
+    <div style="border:0"><svg class="ic" style="color:var(--own)"><use href="#i-inf"/></svg><span class="name">Armeen</span><b>7</b><span class="soft">· 19 Einh.</span></div>
+  </div>
+
+  <div class="map">
+    <svg viewBox="0 0 640 458" preserveAspectRatio="xMidYMid slice"><g transform="translate(0 -60)"><use href="#worldmap" width="640" height="520"/></g>
+      <!-- Armeestapel mit Zahl (Supremacy-Stil), im selben Koordinatenraum wie die Karte: translate(-6 66) scale(1.05) -->
+      <g transform="translate(-6 6) scale(1.05)" font-family="IBM Plex Mono, monospace" font-size="8.5" font-weight="600">
+        <g color="var(--own)"><use href="#stack" x="216" y="58" width="30" height="18"/><text x="231" y="69.5" text-anchor="middle" fill="var(--ink)">6</text></g>
+        <g color="var(--own)"><use href="#stack" x="246" y="96" width="30" height="18"/><text x="261" y="107.5" text-anchor="middle" fill="var(--ink)">4</text></g>
+        <g color="var(--own)"><use href="#stack" x="176" y="96" width="30" height="18"/><text x="191" y="107.5" text-anchor="middle" fill="var(--ink)">2</text></g>
+        <g color="var(--foe)"><use href="#stack" x="466" y="66" width="30" height="18"/><text x="481" y="77.5" text-anchor="middle" fill="var(--ink)">5</text></g>
+        <g color="var(--foe)"><use href="#stack" x="536" y="116" width="30" height="18"/><text x="551" y="127.5" text-anchor="middle" fill="var(--ink)">3</text></g>
+        <g color="var(--foe)"><use href="#stack" x="406" y="118" width="30" height="18"/><text x="421" y="129.5" text-anchor="middle" fill="var(--ink)">3</text></g>
+        <!-- Moralringe je Provinz -->
+        <g fill="none" stroke-width="2"><circle cx="232" cy="49" r="7" stroke="var(--p3)"/><path d="M232 42a7 7 0 016.6 9.2" stroke="var(--own)"/><circle cx="546" cy="93" r="7" stroke="var(--p3)"/><path d="M546 86a7 7 0 01-4 12.7" stroke="var(--foe)"/><circle cx="382" cy="128" r="7" stroke="var(--p3)"/><path d="M382 121a7 7 0 010 14" stroke="var(--amber)"/></g>
+        <!-- Verbündeter -->
+        <path fill="var(--ally-t)" stroke="var(--ink)" stroke-opacity=".35" d="M250 330 L330 315 L392 335 L386 398 L300 412 L244 382Z"/>
+        <text x="268" y="352" font-size="11" fill="var(--ink)" font-family="IBM Plex Sans Condensed, sans-serif" opacity=".9">Italien · Bündnis</text>
+        <g color="var(--ally)"><use href="#stack" x="300" y="372" width="30" height="18"/><text x="315" y="383.5" text-anchor="middle" fill="var(--ink)">2</text></g>
+        <g color="var(--bld)"><use href="#b-farm" x="262" y="366" width="12" height="12"/><use href="#b-ship" x="356" y="386" width="12" height="12"/><use href="#b-rail" x="344" y="334" width="12" height="12"/></g>
+        <!-- Explosionsmarker im Gefecht -->
+        <g transform="translate(420 135)" fill="var(--amber)"><path d="M0-16l3 8 8-5-5 8 8 3-8 3 5 8-8-5-3 8-3-8-8 5 5-8-8-3 8-3-5-8 8 5z" opacity=".9"/><circle r="4" fill="#fff4d6"/></g>
+      </g>
+    </svg>
+    <div class="modes" role="group" aria-label="Kartenmodus"><button aria-pressed="true">Politisch</button><button>Stärke</button><button>Moral</button><button>Rohstoffe</button><button>Beziehungen</button></div>
+    <div class="zoom"><button aria-label="Vergrößern">+</button><button aria-label="Verkleinern">−</button><button aria-label="Auf Hauptstadt zentrieren">◎</button></div>
+    <div class="tip" role="tooltip"><b>Warschau · Polen</b><div class="r"><span>Moral</span><span>44 %</span></div><div class="r"><span>Gelände</span><span>Stadt</span></div><div class="r"><span>Verteidiger</span><span style="color:var(--foe)">3 · 9 100</span></div><div class="r"><span>Gefecht</span><span>Runde 3</span></div><div class="soft" style="margin-top:3px">Klick: Provinz · Rechtsklick: Marsch</div></div>
+    <div class="mini" aria-label="Übersichtskarte"><svg viewBox="0 0 640 520"><rect width="640" height="520" fill="var(--sea)"/><g opacity=".85"><use href="#worldmap"/></g><rect x="110" y="70" width="420" height="330" fill="none" stroke="var(--amber)" stroke-width="6"/></svg></div>
+  </div>
+
+  <aside class="side">
+    <section aria-label="Provinz">
+      <h4><svg class="ic"><use href="#i-star"/></svg>Warschau<span class="fl">Polen · Stadt</span></h4>
+      <div class="row"><span><svg class="ic"><use href="#i-terrain"/></svg>Gelände</span><span class="num">Stadt · Verteidigung +25 %</span></div>
+      <div class="row"><span><svg class="ic"><use href="#i-moral"/></svg>Moral</span><span class="num" style="color:var(--amber)">44 % · fällt</span></div>
+      <div class="seg" style="color:var(--amber)"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="row"><span><svg class="ic"><use href="#i-factory"/></svg>Erzeugt</span><span class="num">Eisen +8 · Nahrung +5</span></div>
+      <div class="row soft"><span>Bauplätze 3 / 4</span><span class="num">Im Bau: Festung II · 3 T</span></div>
+      <div class="slots">
+        <div class="slot"><svg><use href="#b-fac"/></svg>Fabrik</div>
+        <div class="slot"><svg><use href="#b-bar"/></svg>Kaserne</div>
+        <div class="slot q"><svg><use href="#b-fort"/></svg>Festung II<div class="pb"><i></i></div></div>
+        <div class="slot empty">+ Bauen</div>
+      </div>
+    </section>
+    <section aria-label="Armee">
+      <h4><svg class="ic"><use href="#i-sword"/></svg>3. Armee<span class="fl">bei Warschau</span></h4>
+      <div class="units"><span><svg style="color:var(--own)"><use href="#i-inf"/></svg>8</span><span><svg style="color:var(--own)"><use href="#i-arm"/></svg>3</span><span><svg style="color:var(--own)"><use href="#i-art"/></svg>2</span><span><svg style="color:var(--own)"><use href="#i-air"/></svg>1</span><span><svg style="color:var(--own)"><use href="#i-nav"/></svg>0</span></div>
+      <div class="row"><span>Kampfkraft</span><span class="num">12 400 <span class="soft">· Zustand 86 %</span></span></div>
+      <div class="bar"><i class="o" style="width:86%"></i></div>
+      <div class="row soft"><span>Haltung</span><span class="num">seit Tag 211</span></div>
+      <div class="stance" role="group" aria-label="Haltung"><button aria-pressed="true"><svg class="ic"><use href="#i-sword"/></svg>Angriff</button><button><svg class="ic"><use href="#i-shield"/></svg>Verteidigung</button><button><svg class="ic"><use href="#i-move"/></svg>Rückzug</button></div>
+      <div class="orders"><button class="pri"><svg class="ic"><use href="#i-move"/></svg>Marschieren</button><button><svg class="ic"><use href="#i-fire"/></svg>Feuer halten</button><button><svg class="ic"><use href="#i-split"/></svg>Teilen</button><button><svg class="ic"><use href="#i-merge"/></svg>Zusammenlegen</button></div>
+      <div class="quit">✓ Marsch befohlen — wirkt beim Weiterlaufen.</div>
+    </section>
+    <section aria-label="Gefecht">
+      <h4><svg class="ic"><use href="#i-alert"/></svg>Gefecht Warschau<span class="fl">Runde 3</span></h4>
+      <div class="row num"><span style="color:var(--own)">3. Armee · 12 400</span><span style="color:var(--foe)">9 100 · 7. Armee</span></div>
+      <div class="bar"><i class="o" style="width:58%"></i><i class="f" style="width:42%"></i></div>
+      <div class="row soft num"><span>−1 250 (Festung −30 %)</span><span>−2 300</span></div>
+      <div class="row soft"><span>Warum</span><span>Stadt + Festung II gegen Angriff ohne Artillerie</span></div>
+    </section>
+    <section aria-label="Lage">
+      <h4><svg class="ic"><use href="#i-rank"/></svg>Machtverlauf<span class="fl">30 Tage</span></h4>
+      <svg class="curve" viewBox="0 0 100 40" preserveAspectRatio="none"><g stroke="var(--ink)" stroke-opacity=".1" stroke-width=".5"><path d="M0 10H100M0 20H100M0 30H100"/></g><path d="M0 28L15 27L30 24L45 22L60 19L75 15L100 12L100 40L0 40Z" fill="rgba(126,197,126,.12)"/><path d="M0 28L15 27L30 24L45 22L60 19L75 15L100 12" fill="none" stroke="var(--own)" stroke-width="1.6"/><path d="M0 16L15 18L30 17L45 20L60 23L75 24L100 25" fill="none" stroke="var(--foe)" stroke-width="1.6"/><path d="M0 30L15 30L30 29L45 29L60 28L75 28L100 27" fill="none" stroke="var(--ally)" stroke-width="1.2"/><circle cx="100" cy="12" r="2" fill="var(--own)"/></svg>
+      <div class="row soft" style="font-size:10.5px"><span style="color:var(--own)">— Deutsches Reich</span><span style="color:var(--foe)">— Sowjetunion</span><span style="color:var(--ally)">— Italien</span></div>
+    </section>
+  </aside>
+
+  <div class="foot">
+    <div class="log" aria-label="Ereignisse">
+      <div><span class="t">06:00</span><svg class="ic" style="color:var(--foe)"><use href="#i-alert"/></svg><span>Sowjetunion marschiert auf Warschau · 3 Armeen · Ankunft in 2 Tagen</span></div>
+      <div><span class="t">05:40</span><svg class="ic" style="color:var(--amber)"><use href="#i-sword"/></svg><span>Gefecht Warschau Runde 3: Verteidiger halten, −1 250 / −2 300</span></div>
+      <div><span class="t">Tag 213</span><svg class="ic" style="color:var(--bld)"><use href="#i-factory"/></svg><span>Fabrik in Breslau fertig · Eisen +8/T</span></div>
+      <div><span class="t">Tag 213</span><svg class="ic" style="color:var(--ally)"><use href="#i-hand"/></svg><span>Italien nimmt das Bündnis an</span></div>
+    </div>
+    <div class="rank" aria-label="Rangliste">
+      <div class="soft"><span>#</span><span class="w">Macht</span><span>Pkt</span></div>
+      <div><span>1</span><span class="w">Sowjetunion</span><span>418</span></div>
+      <div><span>2</span><span class="w">Ver. Staaten</span><span>402</span></div>
+      <div class="me"><span>3</span><span class="w">Deutsches Reich</span><span>371</span></div>
+      <div><span>4</span><span class="w">Brit. Empire</span><span>344</span></div>
+    </div>
+    <div class="btns">
+      <button><svg class="ic"><use href="#i-news"/></svg>Depesche Tag 214<span class="badge">neu</span></button>
+      <button><svg class="ic"><use href="#i-hand"/></svg>Diplomatie · Markt<span class="badge">2</span></button>
+      <button><svg class="ic"><use href="#i-rank"/></svg>Rangliste · Siegbedingung</button>
+    </div>
+  </div>
+</section>
+<style>
+  .doc{max-width:980px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0 4px}
+  th,td{border:1px solid var(--ln);padding:6px 8px;vertical-align:top;text-align:left}
+  th{background:var(--p2);font:600 11px var(--fc);text-transform:uppercase;letter-spacing:.06em;color:var(--soft)}
+  td:first-child{font-weight:600;white-space:nowrap}
+  .tw{overflow-x:auto}
+  .v{font-family:var(--fm);font-size:11px;padding:1px 6px;border:1px solid;white-space:nowrap}
+  .v.ok{color:var(--own);border-color:var(--own)}.v.gap{color:var(--foe);border-color:var(--foe)}.v.plus{color:var(--amber);border-color:var(--amber)}.v.part{color:var(--soft);border-color:var(--soft)}
+  .ms{border:1px solid var(--ln);background:var(--p);padding:12px 14px;margin:10px 0}
+  .ms h3{margin:0 0 6px;color:var(--ink)}
+  .ms .meta{font-family:var(--fm);font-size:11px;color:var(--soft);margin-bottom:6px}
+  .ms ol{margin:0;padding-left:20px}.ms li{margin:3px 0}
+  .ms li b{color:var(--amber);font-family:var(--fm);font-weight:600}
+  .crit{border-left:3px solid var(--foe);padding:6px 12px;background:var(--p);margin:10px 0}
+  .crit b{color:var(--foe)}
+  .note{color:var(--soft);font-size:12.5px}
+</style>
+
+<section id="cmp" class="doc" hidden>
+  <h2>Abgleich mit Supremacy WW3</h2>
+  <p class="lead">Grundlage: das offizielle Handbuch und die Einsteiger-Guides zu Supremacy 1914 / WW3 (Bytro), dazu unser Code-Stand (Panels, Kartenmodi, Befehle, i18n). Ehrlich bewertet: <span class="v ok">gleichwertig</span> <span class="v plus">besser</span> <span class="v part">teilweise</span> <span class="v gap">Lücke</span>. Jede Lücke hat eine Aufgabe im Plan.</p>
+  <div class="tw"><table>
+    <tr><th>Element</th><th>Supremacy WW3</th><th>WorldWar heute</th><th>Kriegsrat-Entwurf</th><th>Urteil</th></tr>
+    <tr><td>Ressourcenleiste</td><td>Oben, alle Rohstoffe mit Bestand; Tooltip zeigt Produktion und Verbrauch; roter Pfeil bei Defizit</td><td>Wirtschaftspanel in der Seitenleiste mit Sparklines, keine Dauerleiste</td><td>Dauerleiste mit Bestand <em>und</em> Tagesbilanz je Rohstoff, direkt sichtbar statt im Tooltip</td><td><span class="v plus">besser</span> nach P-01</td></tr>
+    <tr><td>Tageszähler, Uhr</td><td>Tag oben rechts, Echtzeit, keine Pause</td><td>Tag und Uhr, Pause, Vorspulen, Befehlsquittung</td><td>Dazu Geschwindigkeitsschalter mit drei Stufen als Icon-Gruppe</td><td><span class="v plus">besser</span></td></tr>
+    <tr><td>Provinzpanel</td><td>Unten: Gebäude mit Pausieren, Moral, Produktion, Ausbau</td><td>Provinz mit Gebäuden, Vorkommen, Bauplätzen, Bauschlange</td><td>Bauplatz-Raster mit Fortschrittsbalken, Moralsegmente mit Tendenz, Geländebonus benannt</td><td><span class="v ok">gleichwertig</span>, Raster in P-03</td></tr>
+    <tr><td>Armeepanel und Befehle</td><td>Einheitenliste, Bewegen, Angriff, Teilen, Zusammenlegen, Feuerkontrolle, Verzögerung</td><td>Marschieren, Teilen, Zusammenlegen, Feuer halten, drei Haltungen, Begründungen</td><td>Gleiche Befehle als Icon-Knöpfe, Kampfkraft mit Zustand, Haltung mit „seit Tag"</td><td><span class="v ok">gleichwertig</span> — verzögerter Marsch fehlt uns, P-07</td></tr>
+    <tr><td>Einheiten auf der Karte</td><td>Stapel mit Zahl, Gesundheitsleiste; Symbole je Einheitenart</td><td>Armeepunkte mit Stärkering, Marschpfeile mit Fortschritt</td><td>Stapel-Marker mit Zahl und Besitzerfarbe, NATO-Marker je Klasse, Zustandsbalken im Marker</td><td><span class="v gap">Lücke</span> heute, geschlossen in P-04</td></tr>
+    <tr><td>Gebäude auf der Karte</td><td>Symbole je Provinz bei Zoom, Fabriken und Festungen sichtbar</td><td>Nur im Panel</td><td>Gebäude als verteilte Marker in der Provinzfläche</td><td><span class="v gap">Lücke</span>, P-05</td></tr>
+    <tr><td>Kartenmodi</td><td>Ein Kartenbild, Rohstoffe per Zoom, keine Modi</td><td>Fünf Modi: Politisch, Stärke, Moral, Rohstoffe, Beziehungen</td><td>Modi als Umschaltleiste auf der Karte</td><td><span class="v plus">besser</span></td></tr>
+    <tr><td>Zoom und Übersicht</td><td>Stufenloser Zoom, Symbole ab Zoomstufe</td><td>Feste Ansicht</td><td>Zoomknöpfe, Zentrieren, Übersichtskarte mit Ausschnitt</td><td><span class="v gap">Lücke</span>, P-06</td></tr>
+    <tr><td>Tooltips</td><td>Überall, Provinz zeigt Moral und Besitzer</td><td>Erklärungen per Panel („Explain"), Tooltips nur an Metern</td><td>Provinz-Tooltip mit Moral, Gelände, Verteidiger, Gefecht, Bedienhinweis</td><td><span class="v part">teilweise</span>, P-08</td></tr>
+    <tr><td>Gefechtsdarstellung</td><td>Explosionsanimation, Verluste im Bericht</td><td>Kampfringe skaliert, Gefechtsbericht mit Stärkebalken</td><td>Explosionsmarker plus Ring, Bericht mit Verlustursache („Festung −30 %")</td><td><span class="v plus">besser</span> nach P-09</td></tr>
+    <tr><td>Zeitung / Tagesbericht</td><td>„Daily European": Meldungen, Verluste, Regierungserklärungen</td><td>Tagesbericht mit Bilanz, Moral, Aufträgen, „Morgen neu"</td><td>Als „Depesche" mit Neu-Marke im Fuß, Ereignisprotokoll mit Icons</td><td><span class="v ok">gleichwertig</span></td></tr>
+    <tr><td>Diplomatie</td><td>Krieg, Waffenstillstand, Frieden, Durchmarsch, Kartenfreigabe, Koalitionen, Provinzhandel</td><td>Krieg, Waffenstillstand, Frieden, Bündnis, Handel</td><td>Unverändert, nur als Leiste erreichbar</td><td><span class="v part">teilweise</span> — Durchmarsch und Provinzhandel fehlen, bewusst nicht in V1</td></tr>
+    <tr><td>Markt</td><td>Börse mit Kauf- und Verkaufsaufträgen, Preisverlauf</td><td>Markt mit Handel</td><td>Unverändert</td><td><span class="v part">teilweise</span>, Preisverlauf P-10</td></tr>
+    <tr><td>Rangliste</td><td>Punkte, Siegpunkte, Koalitionsziel</td><td>Standings mit Siegbedingung</td><td>Ständig sichtbar im Fuß, eigene Zeile hervorgehoben</td><td><span class="v ok">gleichwertig</span></td></tr>
+    <tr><td>Benachrichtigungen</td><td>Frontberichte, Push</td><td>Alarme, Einmarsch-Alarm (T-M28-06)</td><td>Alarmchip oben rechts mit Zahl, Ereignisprotokoll im Fuß</td><td><span class="v ok">gleichwertig</span></td></tr>
+    <tr><td>Forschung</td><td>Forschungsbaum (WW3)</td><td>Keine</td><td>Keine</td><td><span class="v gap">Lücke</span> — Designfrage, nicht UI; außerhalb dieses Plans</td></tr>
+    <tr><td>Barrierefreiheit, Tastatur</td><td>Maus und Touch, keine Tastaturbedienung</td><td>A11y-Namen, 24-px-Ziele, Fokusring, Tastatur</td><td>Beibehalten, Icon-Knöpfe mit Namen</td><td><span class="v plus">besser</span></td></tr>
+  </table></div>
+  <p class="note">Quellen: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=1749425523">Supremacy 1914 Official Game Manual (Steam)</a>, <a href="https://www.levelwinner.com/supremacy-1914-beginners-guide-tips-tricks-strategies-to-conquer-the-world/">Level Winner Beginner's Guide 2024</a>, <a href="https://bytro.helpshift.com/hc/en/3-supremacy-1914/section/1-the-basics/">Bytro Help Center</a>, <a href="https://www.playsupremacy.com/en/academy">Supremacy Academy</a>.</p>
+</section>
+
+<section id="plan" class="doc" hidden>
+  <h2>Umsetzungsplan „Kriegsrat"</h2>
+  <p class="lead">Vier Meilensteine, jede Aufgabe mit Test-zuerst und Abnahmekriterium, so wie das Projekt es verlangt. Reihenfolge nach Nutzen je Aufwand: erst das Aussehen (ein Token-Wechsel), dann die Karte, dann die Panels, dann die Supremacy-Lücken. Vor dem Bauen: Noahs Freigabe dieses Plans, dann Übertrag nach <code>tasks.yaml</code> als M29–M32.</p>
+
+  <div class="ms"><h3>M29 · Das Aussehen: Kriegsrat als Token-Satz</h3><div class="meta">Aufwand klein · kein Verhaltenswechsel · Abnahme: Kontrasttest grün, Golden-Master unberührt</div><ol>
+    <li><b>P-01</b> Tokens tauschen in <code>tokens.ts</code> und <code>app.css</code>: ground/paper/ink/line/water/accent/good/warn plus neue Tokens <code>own</code>, <code>foe</code>, <code>ally</code>, <code>building</code>, <code>amber</code>. Der Kontrasttest bekommt die neuen Paare. Ressourcenleiste mit Tagesbilanz als eigene Komponente.</li>
+    <li><b>P-02</b> Kopfzeile: Uhr in Mono-Bernstein, Geschwindigkeit als Icon-Gruppe mit <code>aria-pressed</code>, Alarmchip mit Anzahl. Bestehende Header-Tests erweitern.</li>
+    <li><b>P-03</b> Provinzpanel: Bauplatz-Raster mit Fortschrittsbalken, Moralsegmente mit Tendenz, Geländebonus als Text. Test: Raster zeigt genau <code>buildSlots</code> Felder.</li>
+  </ol></div>
+
+  <div class="ms"><h3>M30 · Die Karte zeigt den Zustand</h3><div class="meta">Aufwand mittel · Zeichenbudget messen (p95 heute 5,39 ms, Grenze 16,7 ms)</div><ol>
+    <li><b>P-04</b> Markerset: NATO-Marker für fünf Einheitenklassen und Stapel-Marker mit Zahl und Zustandsbalken, als SVG-Sprite in <code>render.ts</code>. Test: Marker je Klasse, Zahl = Einheiten im Stapel.</li>
+    <li><b>P-05</b> Gebäude in der Provinz: je Provinz feste Ankerpunkte aus <code>mapgen</code> (Poisson-Streuung in der Fläche, Hafen an der Küste), Marker je <code>BuildingKey</code>. Test: kein Marker außerhalb der Provinzfläche, kein Überlappen.</li>
+    <li><b>P-06</b> Zoom und Übersicht: drei Zoomstufen mit Symbolschwellen (weit: nur Stapel, nah: Gebäude), Zentrieren auf Hauptstadt, Übersichtskarte mit Ausschnitt. Test: Sichtbarkeit je Stufe, Benchmark nach Regel „Maschine allein".</li>
+    <li><b>P-09</b> Gefecht: Explosionsmarker über dem Kampfring, Gefechtsbericht nennt die Ursache der Verluste (Gelände, Festung, Haltung) aus dem <code>why</code>-Feld. Test: Ursache erscheint, wenn der Kern sie liefert.</li>
+  </ol></div>
+
+  <div class="ms"><h3>M31 · Panels, Protokoll, Fuß</h3><div class="meta">Aufwand mittel</div><ol>
+    <li><b>P-08</b> Provinz-Tooltip auf der Karte: Moral, Gelände, Verteidiger, laufendes Gefecht, Bedienhinweis; per Tastatur erreichbar (Fokus auf Provinz). Test: Inhalt und <code>role="tooltip"</code>.</li>
+    <li><b>P-11</b> Fußleiste: Ereignisprotokoll mit Icons und Zeitspalte, Rangliste dauerhaft mit eigener Zeile, drei Knöpfe Depesche / Diplomatie und Markt / Rangliste mit Neu-Marke. Test: Protokoll zeigt die letzten vier Ereignisse aus dem Eventstrom.</li>
+    <li><b>P-12</b> Machtverlauf als Dreilinien-Kurve mit Legende im Lagepanel (eigen, stärkster Feind, Verbündeter). Test: Reihen aus der Zeitreihe je Spieltag.</li>
+  </ol></div>
+
+  <div class="ms"><h3>M32 · Supremacy-Lücken mit Spielwirkung</h3><div class="meta">Aufwand mittel bis groß · Kernänderungen, jede mit Lauf über eine ganze Partie</div><ol>
+    <li><b>P-07</b> Verzögerter Marsch: <code>MOVE_ARMY</code> bekommt <code>departAt</code>; Armeepanel mit „Abmarsch in n Tagen". Test: Ankunft verschiebt sich exakt um n.</li>
+    <li><b>P-10</b> Markt mit Preisverlauf: Sparkline je Rohstoff aus <code>TRADE_EXECUTED</code>. Test: Kurve folgt den Ausführungen.</li>
+    <li><b>P-13</b> Reopened-Prüfung: Durchmarschrecht und Provinzhandel bleiben <code>todo</code> mit Begründung (nicht V1), Forschung als Designfrage in <code>DECISIONS.md</code>.</li>
+  </ol></div>
+
+  <div class="crit"><b>Selbstkritik.</b> Erstens: M30 ist der Risikoblock, weil Gebäude- und Stapelmarker das Zeichenbudget treffen; darum Benchmark vor und nach P-04/P-05, nicht nur danach. Zweitens: die Tagesbilanz in der Ressourcenleiste braucht eine belastbare Zahl aus dem Kern (Produktion minus Verbrauch je Tag); gibt es sie nicht als Ereignis, ist P-01 größer als „klein". Drittens: der Entwurf zeigt einen Verbündeten und einen Explosionsmarker, die es heute nicht als Ereignis gibt; beides ist Darstellung, nicht Mechanik, und darf den Golden-Master nicht berühren. Viertens: Zoom (P-06) ist der einzige Punkt, der die Bedienung ändert; ohne ihn bleibt der Entwurf trotzdem stimmig, er kann als letzter fallen.</div>
+</section>
+
+<script>
+  const tabs=[...document.querySelectorAll('.tabs button')];
+  function show(t){tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));['screen','cmp','plan'].forEach(k=>{document.getElementById(k).hidden=k!==t;});}
+  tabs.forEach(b=>b.addEventListener('click',()=>show(b.dataset.t)));
+  show('screen');
+</script>

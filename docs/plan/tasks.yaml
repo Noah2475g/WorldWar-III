@@ -62,6 +62,12 @@ milestones:
   # LEVEL-UP 3 vom 2026-09-08 (docs/plan/LEVEL-UP-3.md): der Feinschliff nach dem
   # Spielen - Ausfuehrung erst nach Noahs Feedback (Haltepunkt, siehe Plan).
   - { id: M28, title: Der Feinschliff nach dem Spielen }
+  # KRIEGSRAT vom 2026-09-10 (docs/plan/KRIEGSRAT.md): Noahs Wahl der Designrichtung A
+  # "Kriegsrat" plus Abgleich mit Supremacy WW3. M32 nur nach Noahs Freigabe.
+  - { id: M29, title: "Kriegsrat: das Aussehen" }
+  - { id: M30, title: "Kriegsrat: die Karte zeigt den Zustand" }
+  - { id: M31, title: "Kriegsrat: Panels, Protokoll, Fuss" }
+  - { id: M32, title: "Kriegsrat: Luecken zu Supremacy (Freigabe vor Bau)" }
 
 tasks:
   - id: T-M0-01
@@ -2026,7 +2032,7 @@ tasks:
     milestone: M28
     title: Der Einmarsch schlaegt Alarm
     status: todo
-    deps: []
+    deps: [T-M29-01]
     requirements: [R-TIME-06, R-UI-05]
     design: [D-26]
     files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx]
@@ -2048,9 +2054,152 @@ tasks:
     milestone: M28
     title: Kaempfe werden ein Ereignis
     status: todo
-    deps: []
+    deps: [T-M29-01]
     requirements: [R-MAP-05, R-UI-17]
     design: [D-26]
     files: [apps/desktop/src/map/render.ts, apps/desktop/src/ui/sound.ts]
     tests: [apps/desktop/src/map/render.test.ts]
     dod: "Noahs Spiel-Feedback 2026-09-08: die Kaempfe sind noch zu unspektakulaer. Fertig, wenn ein laufendes Gefecht auf der Karte unuebersehbar ist (kraeftigere, groessere Kampfzone; Aufblitzen je Gefechtsrunde; Einschlag-/Rauchzeichen nach Gefechtsgroesse), eigene Gefechte einen Ton ausloesen (bestehendes Tonmuster, prefers-reduced-motion respektiert die Bewegung) und das Zeichenbudget die Erweiterung uebersteht (render.bench nachgemessen, p95 gegen 16,7 ms). Der Massstab: im Vorspulen faellt ein Krieg auf, ohne dass man das Protokoll liest"
+
+  # KRIEGSRAT vom 2026-09-10 (docs/plan/KRIEGSRAT.md): Noahs Wahl der Designrichtung A
+  # "Kriegsrat" plus Abgleich mit Supremacy WW3. Entwurf D27. M32 erst nach Freigabe.
+  - id: T-M29-01
+    milestone: M29
+    title: Die dunkle Token-Ebene mit Spiegel-Waechter
+    status: todo
+    deps: []
+    requirements: [R-UI-02, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/tokens.ts, apps/desktop/src/ui/app.css, apps/desktop/src/map/render.ts, apps/desktop/src/map/modes.ts, test/guards/css-mirrors-tokens.test.ts]
+    tests: [apps/desktop/src/ui/tokens.contrast.test.ts, test/guards/css-mirrors-tokens.test.ts, apps/desktop/src/map/modes.test.ts]
+    dod: "KRIEGSRAT.md D27.1. Zuerst der Waechter test/guards/css-mirrors-tokens.test.ts: jeder Hex in app.css :root steht in tokens.ts und jeder Token in app.css - faellt heute nicht, muss also mit einer absichtlich verstimmten Fixture bewiesen werden. Dann die Werte aus D27.1 in tokens.ts UND app.css, neue Tokens onWarn und building, PLAYER_COLORS als dunkle Flaechen (11 Kandidaten in D27.1, Ersatz bei DeltaE-Verstoss), RELATION_COLORS self=good/war=accent/ally=#6FA8DC, MAP_COLORS in render.ts folgt. Fertig, wenn tokens.contrast.test.ts mit den neuen CONTRAST_PAIRS (onWarn auf warn, ink auf paper/paperSunk/ground, building auf ground, Nicht-Text 3:1 fuer line auf paper) gruen ist, kein Aufrufer sich aendert und das Spiel im Browser dunkel ist."
+  - id: T-M29-02
+    milestone: M29
+    title: Kopf- und Ressourcenleiste im Kriegsrat-Stil
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-UI-03, R-TIME-04, R-UI-10]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/icons.tsx]
+    tests: [apps/desktop/src/ui/Header.test.tsx]
+    dod: "KRIEGSRAT.md D27.1/D27.2 Kopf. Uhr in TYPE.num und warn; Tempo als Knopfgruppe (Pause, Laufen, Vorspulen) mit role=group und aria-pressed statt Rasten-Liste, Taste bleibt; Ressourcenleiste mit Symbol (RESOURCE_ICONS in building, Geld in warn), Bestand, Tagesbilanz mit Vorzeichen UND Farbe (good/accent, nie Farbe allein), Reichweite im title; ein leerer Alarmchip-Slot (hidden) oben rechts fuer T-M28-06; Kartenmodus als Knopfgruppe mit aria-pressed, Taste M bleibt. Test zuerst: Tempo-Gruppe traegt genau einen aria-pressed=true und schaltet per Klick; Bilanz traegt Vorzeichen im Text."
+  - id: T-M29-03
+    milestone: M29
+    title: Das Provinzpanel bekommt das Bauplatz-Raster
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-UI-09, R-UI-10, R-UI-11]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "KRIEGSRAT.md D27.6 Provinz. Raster in vier Spalten ueber alle BuildingKeys: gebaut (Glyphe, Name, Stufe), im Bau (warn-Rahmen, Fortschrittsbalken aus startedTick/completesAtTick, Resttage), frei (gestrichelt, Bauen = bestehende Aktion). Moral als Prozent mit Tendenz aus morale gegen moraleTarget und zehn Segmenten; Gelaende mit Bonus-Text aus den Regeln. Test zuerst: Raster zeigt je BuildingKey genau ein Feld; ein Bau in der Schlange traegt den Fortschritt als Breite und als aria-valuenow."
+  - id: T-M30-01
+    milestone: M30
+    title: Armeen sind Stapel mit Zahl und Zustand
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-MAP-05, R-UI-10, R-UI-12]
+    design: [D-27]
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/markers.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/icons.tsx]
+    tests: [apps/desktop/src/map/markers.test.ts, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "KRIEGSRAT.md D27.2 Stapel. ERST MESSEN: render.bench p95 vorher notieren (Maschine allein). ArmyMarker bekommt count (Summe unitCount aus packages/core/src/state/army.ts) und condition (0..1); die Karte zeichnet Rechteck 30x18 mit Rahmen in Besitzerfarbe, Zahl in TYPE.num, Glyphe der dominanten Klasse aus UNIT_ICONS, Zustandsbalken 3 px; Trefferflaeche mindestens 24 px. Marker als Offscreen-Stempel je (Klasse, Farbe), nicht je Frame als Path2D. Test zuerst: count und condition je Marker aus einer Sicht mit zwei Klassen; Bench danach mit 8 Spielern auf der Weltkarte, p95 gegen 16.7 ms, Wert in docs/reports/render-bench.json."
+  - id: T-M30-02
+    milestone: M30
+    title: Gebaeude stehen verteilt in der Provinz
+    status: todo
+    deps: [T-M30-01]
+    requirements: [R-MAP-05, R-UI-10, R-UI-12]
+    design: [D-27]
+    files: [apps/desktop/src/map/anchors.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/markers.ts, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/anchors.test.ts, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "KRIEGSRAT.md D27.3. Neues reines Modul map/anchors.ts: Ankerpunkte je Provinz deterministisch aus polygons und center (Gitter ueber dem groessten Ring, Punkt-in-Polygon, Randabstand 12, Mindestabstand 14, sortiert nach Abstand zum Zentrum; Hafen und Werft am randnaechsten Kandidaten), einmal je Karte berechnet und gecacht. Die Karte zeichnet je Gebaeude ein 14x14-Quadrat mit Glyphe aus BUILDING_ICONS in building, Stufe >= 2 als Ziffer; die 4-px-Pips entfallen. Test zuerst: kein Anker ausserhalb des Polygons, keine zwei Anker naeher als 14, gleiche Eingabe gleiche Anker; Bench vorher/nachher."
+  - id: T-M30-03
+    milestone: M30
+    title: Drei Zoomstufen, Knoepfe und Uebersichtskarte
+    status: todo
+    deps: [T-M30-02]
+    requirements: [R-UI-12, R-UI-15, R-ARCH-06]
+    design: [D-27]
+    files: [apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/map/picking.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/keyboard.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/map/picking.test.ts, apps/desktop/src/map/MapCanvas.test.tsx, apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "KRIEGSRAT.md D27.4. Reine Funktion zoomTier(scale) in picking.ts mit den Schwellen 0.5 und 1.0; Gebaeude ab mittel, Namen und Moralringe ab nah, Stapel immer. Knoepfe +, -, Hauptstadt zentrieren mit aria-label; Tasten + - Pos1 in keyboard.ts. Uebersichtskarte 132x74 aus der gecachten Flaechenebene mit Ausschnitt-Rahmen in warn, Klick zentriert. Test zuerst: zoomTier an den Schwellen; Knoepfe rufen zoomAt/centreOn; Bench: Weltansicht (weit) darf nicht teurer werden als vor T-M30-01. Faellt der Zeitplan, faellt zuerst die Uebersichtskarte, nie die Schwellen."
+  - id: T-M30-04
+    milestone: M30
+    title: Der Marschweg zeigt Stand und Rest
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-MAP-05, R-UI-12]
+    design: [D-27]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/render.test.ts]
+    dod: "KRIEGSRAT.md D27.5. marchArrow liefert zwei Segmente: gelaufen (3 px, Besitzerfarbe, rund) und Rest (1.6 px, gestrichelt 3/3, Pfeilspitze); Standpunkt als Kreis r 3.5 mit ground-Rand; Tagesangabe n/m T aus departureTick/arrivalTick in TYPE.num, ab Stufe mittel. Test zuerst: Segmentgrenze liegt bei marchProgress; Tagesangabe rundet auf; reduced-motion aendert nichts (kein Atmen am Pfeil)."
+  - id: T-M31-01
+    milestone: M31
+    title: Die Provinz erklaert sich im Tooltip
+    status: todo
+    deps: [T-M30-03]
+    requirements: [R-UI-11, R-UI-15, R-UI-12]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Tooltip.tsx, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Tooltip.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "KRIEGSRAT.md D27.6 Tooltip. DOM-Element role=tooltip ueber der Karte, gespeist aus pickProvince beim Zeigen (entprellt, 120 ms) UND aus der Tastaturauswahl (ProvincePicker), Inhalt: Name, Land, Moral, Gelaende, Besitzer, Armeen/Verteidiger, laufendes Gefecht mit Runde, Bedienhinweis. Verschwindet bei Escape und beim Verlassen. Test zuerst: Tooltip erscheint fuer die per Tastatur gewaehlte Provinz ohne Maus; sein Inhalt kommt aus der Sicht, nicht aus dem Zustand."
+  - id: T-M31-02
+    milestone: M31
+    title: Das Armeepanel traegt Marker, Zustand und Haltungsgruppe
+    status: todo
+    deps: [T-M30-01]
+    requirements: [R-UI-05, R-UI-10, R-UI-17]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/icons.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "KRIEGSRAT.md D27.6 Armee. Einheitenzeile aus NATO-Markern (SVG, dieselben Pfade wie auf der Karte) mit Stueckzahl je Klasse; Kampfkraft mit Zustand-Prozent und Balken; Haltung als Dreiergruppe role=group mit aria-pressed; Befehle zweispaltig als Icon-Knoepfe, Hauptaktion in warn mit onWarn; bestehende Quittung bleibt. Test zuerst: genau ein aria-pressed=true in der Haltungsgruppe; Marker je Klasse mit Zahl; kein Querscrollen der Seitenleiste (Waechter T-M22-02 bleibt gruen)."
+  - id: T-M31-03
+    milestone: M31
+    title: Der Fuss - Protokoll, Rangliste, drei Knoepfe
+    status: todo
+    deps: [T-M29-02]
+    requirements: [R-UI-13, R-UI-14, R-UI-03]
+    design: [D-27]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "KRIEGSRAT.md D27.6 Fuss. Dreiteilig: Protokoll (Zeitspalte, Kategorie-Icon, Text; bestehende Filter bleiben), Rangliste dauerhaft (vier Zeilen um die eigene Macht, eigene in warn, aus denselben Daten wie Standings), drei Knoepfe Depesche (oeffnet den Tagesbericht), Diplomatie/Markt, Rangliste/Sieg mit Neu-Marke (Zahl der ungelesenen Eintraege seit dem letzten Oeffnen). Test zuerst: Neu-Marke zaehlt und wird beim Oeffnen null; Rangliste zeigt die eigene Zeile immer."
+  - id: T-M31-04
+    milestone: M31
+    title: Der Machtverlauf zeigt drei Linien mit Legende
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-UI-13]
+    design: [D-27]
+    files: [apps/desktop/src/ui/charts/LineChart.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/charts/LineChart.test.tsx, apps/desktop/src/ui/Standings.test.tsx]
+    dod: "KRIEGSRAT.md D27.6 Lage. Drei hervorgehobene Reihen: eigen (good, mit Flaeche darunter 12 %), staerkster Feind (accent), staerkster Verbuendeter (ally); uebrige Maechte in inkSoft duenn; Legende mit Namen unter der Kurve; Endpunkt der eigenen Linie markiert. Test zuerst: Auswahl der drei Reihen aus einer Sicht mit acht Maechten; Legende nennt genau drei Namen."
+  - id: T-M32-01
+    milestone: M32
+    title: Der Abmarsch laesst sich verzoegern
+    status: todo
+    deps: [T-M31-02]
+    requirements: [R-ARCH-02, R-UI-05]
+    design: [D-27]
+    files: [packages/core/src/commands/types.ts, packages/core/src/commands/move.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/phases/movement.test.ts, packages/core/test/determinism.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "FREIGABE DURCH NOAH VOR BAU (Kernaenderung). MOVE_ARMY bekommt das optionale Feld departInTicks; move.ts setzt departureTick entsprechend spaeter, die Bewegungsphase startet erst dann, die halbe Kampfkraft beim Abmarsch (moveHint) gilt ab dem tatsaechlichen Abmarsch. Alte Kommandologs ohne das Feld verhalten sich identisch (Golden-Master, determinism.test). Panel: Stepper Abmarsch in n Tagen neben Marschieren. Test zuerst: Ankunft verschiebt sich exakt um n Tage; ein Lauf ueber eine ganze Partie (ai-integration.slow) bleibt gruen."
+  - id: T-M32-02
+    milestone: M32
+    title: Der Markt zeigt den Preisverlauf
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-UI-09, R-UI-13]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/charts/Sparkline.tsx]
+    tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Aus TRADE_EXECUTED (give/giveAmount/want/wantAmount) je Rohstoff eine Preisreihe (wantAmount/giveAmount gegen Geld, je Spieltag gemittelt) in game/events.ts; MarketPanel zeigt je Rohstoff eine Sparkline mit letztem Wert. Keine Kernaenderung. Test zuerst: Reihe aus drei Ausfuehrungen an zwei Tagen ergibt zwei Punkte mit dem Tagesmittel."
+  - id: T-M32-03
+    milestone: M32
+    title: Entscheid zu Durchmarsch, Provinzhandel und Forschung
+    status: todo
+    deps: []
+    requirements: []
+    design: [D-27]
+    files: [docs/plan/DECISIONS.md]
+    tests: []
+    dod: "Kein Bau. Ein Eintrag in DECISIONS.md mit Noahs Entscheid je Punkt: Durchmarschrecht (neuer DiplomaticState oder Flag am Buendnis), Provinzhandel (Kommando + Diplomatie-UI), Forschung (eigene Achse, vgl. Supremacy WW3). Fertig, wenn jeder Punkt entweder als Aufgabe mit Meilenstein vorgemerkt oder mit Begruendung gestrichen ist."

@@ -1978,3 +1978,20 @@ Kurzform in `docs/plan/LEVEL-UP-3.md` §3 (D26.1–D26.5): Kurvenskala ab min st
 mit Endwert-Beschriftung · Zielwahl-Quittung in der Armee-Statuszeile · frisches
 Tauri-Bündel mit AK-8-Messung · Debug-Texte mit Macht- und Rohstoffnamen ·
 Ausgaben-Spalte der Wirtschaft aus den Zahlen des Tagesberichts.
+
+
+## D27. Kriegsrat — die Oberfläche als dunkler Kartentisch (M29–M32 — KRIEGSRAT.md)
+
+Kurzform in `docs/plan/KRIEGSRAT.md` §3 (D27.1–D27.6), Bild in `docs/design/kriegsrat.html`,
+Symbole in `docs/design/kriegsrat-icons.svg`. **D27.1** dunkle Token-Ebene mit gleichen
+Namen und Rollen (`accent` bleibt exklusiv Kampf/Alarm/Feind, `warn` wird Handlungsfarbe,
+`good` Eigen-Farbe; neu `onWarn`, `building`) plus Spiegel-Wächter zwischen `tokens.ts`
+und `app.css` · **D27.2** ein Markerset im NATO-Stil für Einheiten, Stapel (Zahl und
+Zustandsbalken) und Gebäude, Glyphen aus den vorhandenen Icon-Pfaden · **D27.3** Gebäude an
+deterministischen Ankern in der Provinzfläche (Gitter über dem größten Polygonring, Hafen
+und Werft am Rand) · **D27.4** drei Zoomstufen mit Symbolschwellen, Knöpfe, Übersichtskarte
+· **D27.5** Marschweg mit gelaufenem und offenem Teil plus Tagesangabe · **D27.6**
+Bauplatz-Raster, Armeepanel mit Markern und Haltungsgruppe, Provinz-Tooltip auch per
+Tastatur, dreiteiliger Fuß mit Protokoll, Rangliste und Depesche. Referenzanforderungen:
+R-UI-02, R-UI-03, R-UI-04, R-UI-05, R-UI-09, R-UI-10, R-UI-11, R-UI-12, R-UI-13, R-UI-14,
+R-UI-15, R-UI-17, R-MAP-05, R-TIME-04, R-ARCH-02, R-ARCH-06.

@@ -1434,3 +1434,39 @@ Laufs** (`docs/reports/acceptance-timing.json`) statt einer Schätzung — nachd
 
 **Kippbar:** Wer die alte Vollprüfung je Abnahme zurück will, ersetzt die drei
 Aufrufe wieder durch `pnpm test:slow`.
+
+## 2026-09-10 · KRIEGSRAT · Richtung A „Kriegsrat" ersetzt „Lagekarte"; ein Markerstil für alles
+
+**Entscheidung (Noah, 2026-09-10):** Aus drei Designrichtungen (A Kriegsrat, B Depesche,
+C Glasbrücke — Skizzen und Finalentwurf in `docs/design/kriegsrat.html`) wählt Noah **A**.
+Die Oberfläche wird ein dunkler Kartentisch: Bernstein für Zeit und Befehle, Phosphor-Grün
+für Eigenes, Zinnober für Feind und Kampf. Die vom 2026-09-03 freigegebene helle Richtung
+„Lagekarte" (T-M10-01, `docs/design/tokens.md`) ist damit abgelöst — die **Token-Namen und
+Rollen bleiben**, nur die Werte wechseln, damit kein Aufrufer sich ändert und Kontrast- wie
+Farbwächter weiter greifen.
+
+**Dazu drei Festlegungen aus Noahs Feedback zum Entwurf:**
+
+1. **Marker im NATO-Stil sind der einzige Symbolstil auf der Karte** — Rechteck mit Glyphe
+   für Einheiten und Stapel, Quadrat mit Glyphe für Gebäude. Kein zweiter Stil daneben, keine
+   Emoji, keine Rasterbilder. Die Glyphen kommen aus den vorhandenen Icon-Pfaden
+   (`ui/icons.tsx`), damit Panel und Karte dasselbe Strichbild zeigen.
+2. **Gebäude stehen in der Provinzfläche**, verteilt an geometrisch abgeleiteten Ankern —
+   nicht am Mittelpunkt, nicht in Reihen („quetsche nicht so stark").
+3. **Supremacy WW3 ist der Maßstab, nicht das Vorbild.** Wo wir gleich gut oder besser sind
+   (Zeit, Modi, Tastatur, Ressourcenleiste), bleibt es; jede Lücke (Stapelzahl, Gebäude auf
+   der Karte, Zoomstufen, Tooltip, verzögerter Abmarsch, Preisverlauf) ist eine Aufgabe in
+   M29–M32. Durchmarschrecht, Provinzhandel und Forschung sind Mechanik und werden in
+   T-M32-03 entschieden, nicht stillschweigend gebaut.
+
+**Begründung:** Der Entwurf wurde am Code gegengeprüft (KRIEGSRAT.md §1): drei Annahmen
+des ersten Planentwurfs waren falsch — Ressourcenbilanz, Zoom und Gefechtsursache gibt es
+schon. Der Plan ist entsprechend kleiner und berührt den Kern nur in T-M32-01, additiv und
+erst nach Freigabe.
+
+**Auswirkung:** M29–M32 in `tasks.yaml`/`03-TASKS.md`; T-M28-06 und T-M28-08 hängen jetzt
+an T-M29-01, damit sie im neuen Schema gebaut werden. `docs/design/tokens.md` bleibt als
+Geschichte stehen; die gültigen Werte stehen in KRIEGSRAT.md D27.1 und nach T-M29-01 in
+`tokens.ts`.
+
+---
