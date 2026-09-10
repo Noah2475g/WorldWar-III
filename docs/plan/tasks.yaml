@@ -2076,7 +2076,7 @@ tasks:
   - id: T-M29-02
     milestone: M29
     title: Kopf- und Ressourcenleiste im Kriegsrat-Stil
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-03, R-TIME-04, R-UI-10]
     design: [D-27]

@@ -30,6 +30,7 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    speedStop: '{{stop}} Stunden je Sekunde',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit

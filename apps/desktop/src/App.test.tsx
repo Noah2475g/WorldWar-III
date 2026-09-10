@@ -103,24 +103,31 @@ describe('R-UI-06 Bedienung ohne Maus', () => {
     const pressed = () =>
       within(speeds)
         .getAllByRole('button')
-        .find((button) => button.getAttribute('aria-pressed') === 'true')?.textContent
+        .find((button) => button.getAttribute('aria-pressed') === 'true')
+        ?.getAttribute('aria-label')
 
-    expect(pressed()).toBe('‖')
+    // Seit T-M29-02 traegt die Pause ein Symbol und ihren Namen als aria-label.
+    expect(pressed()).toBe('Pause')
 
     fireEvent.keyDown(window, { key: ' ' })
-    expect(pressed()).not.toBe('‖')
+    expect(pressed()).not.toBe('Pause')
 
     fireEvent.keyDown(window, { key: ' ' })
-    expect(pressed()).toBe('‖')
+    expect(pressed()).toBe('Pause')
   })
 
   it('wechselt den Kartenmodus mit M', () => {
     startGame()
-    const select = screen.getByRole('combobox', { name: 'Kartenmodus' }) as HTMLSelectElement
+    // Seit T-M29-02 eine Knopfgruppe: der gedrueckte Knopf ist der Modus.
+    const pressed = () =>
+      within(screen.getByRole('group', { name: 'Kartenmodus' }))
+        .getAllByRole('button')
+        .filter((b) => b.getAttribute('aria-pressed') === 'true')
+        .map((b) => b.textContent)
 
-    expect(select.value).toBe('political')
+    expect(pressed()).toEqual(['Besitz'])
     fireEvent.keyDown(window, { key: 'm' })
-    expect(select.value).toBe('resources')
+    expect(pressed()).toEqual(['Rohstoffe'])
   })
 
   it('oeffnet die Tastaturuebersicht mit F1 und schliesst sie mit Escape', () => {

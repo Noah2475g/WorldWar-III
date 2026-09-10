@@ -115,35 +115,78 @@ body {
 
 /* ---------------------------------------------------------------- header */
 
+/* Zwei Zeilen seit dem Kriegsrat (T-M29-02, D27.6): oben Uhr, Tempo, Modus, Knoepfe
+   und der Alarmchip; darunter die Rohstoffleiste mit Tagesbilanz. */
 .header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+.header__top {
   display: flex;
   align-items: center;
-  gap: var(--sp-xl);
-  padding: var(--sp-md) var(--sp-lg);
-  background: var(--ground);
-  border-bottom: 1px solid var(--line);
+  gap: var(--sp-lg);
+  padding: var(--sp-sm) var(--sp-lg);
   flex-wrap: wrap;
+  font-family: var(--font-map);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.header__title {
+  color: var(--ink);
+}
+
+.header__panels {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-left: auto;
+}
+
+/* Der Alarmchip (D27.6): Zinnober-Rahmen, sitzt rechts. Leer und verborgen, bis
+   T-M28-06 ihn fuellt. */
+.header__alarm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
 }
 
 .resources {
   display: flex;
-  gap: var(--sp-lg);
+  gap: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 var(--sp-md);
   list-style: none;
+  background: var(--paper-sunk);
+  border-top: 1px solid var(--line);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 11px;
+  overflow-x: auto;
 }
 
 .resource {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-right: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.resource:last-child {
+  border-right: 0;
 }
 
 .resource b {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .resource span {
@@ -154,25 +197,44 @@ body {
   color: var(--ink-soft);
 }
 
+/* Die Tagesbilanz: Vorzeichen im Text, Richtung in der Farbe (D27.1: Ueberschuss
+   eigen-gruen, Verlust Zinnober, null im Nebentext). */
 .resource em {
   font-style: normal;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--ink-soft);
 }
 
-.resource--short b,
-.resource--short em {
+.resource__balance--plus {
+  color: var(--good);
+}
+
+.resource__balance--minus {
+  color: var(--accent);
+}
+
+.resource--short b {
   color: var(--warn);
 }
 
 .clock {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--sp-md);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Die Uhr in Bernstein — die Farbe der Zeit (D27.1). */
+.clock__time {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  color: var(--warn);
+  font-weight: 600;
 }
 
 .speeds {
@@ -183,18 +245,56 @@ body {
 .speed {
   font: inherit;
   font-size: 11px;
-  padding: 2px 7px;
-  border: 1px solid transparent;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--paper-sunk);
   color: var(--ink);
   cursor: pointer;
 }
 
-.speed--active {
+.speed--active,
+.speed--running {
   background: var(--warn);
   color: var(--on-warn);
   border-color: var(--warn);
+}
+
+.speed--fast {
+  font-family: var(--font-ui);
+  padding: 0 9px;
+}
+
+/* Der Kartenmodus als Knopfgruppe (D27.6): Versalien in Condensed, der gewaehlte in
+   Bernstein — dieselbe Sprache wie das Tempo. */
+.modes {
+  display: flex;
+  gap: var(--sp-xs);
+  padding: 2px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.mode {
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.mode--active {
+  background: var(--warn);
+  color: var(--on-warn);
 }
 
 .button {
@@ -861,8 +961,13 @@ body {
   gap: var(--sp-sm);
 }
 
+/* Rohstoffsymbole in der Gebaeudefarbe, Geld in Bernstein (D27.2). */
 .resource svg {
-  color: var(--ink-soft);
+  color: var(--building);
+}
+
+.resource--money svg {
+  color: var(--warn);
 }
 
 .resource--short svg {
@@ -1249,13 +1354,6 @@ body {
   display: flex;
   gap: var(--sp-xs);
   margin-bottom: var(--sp-sm);
-}
-
-/* Die Reichweite steht nur da, wenn der Vorrat schrumpft — sonst waere sie Rauschen. */
-.resource__reach {
-  font-style: normal;
-  font-size: 10px;
-  color: var(--warn);
 }
 
 /* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer
