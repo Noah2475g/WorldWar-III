@@ -1018,6 +1018,100 @@ body {
   font-weight: 600;
 }
 
+/* Das Armeepanel im Kriegsrat (T-M31-02, D27.6). */
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin: var(--sp-sm) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unit-marker {
+  display: block;
+  color: var(--good);
+}
+
+.unit-marker--ally {
+  color: var(--ally);
+}
+
+.unit-marker--enemy {
+  color: var(--accent);
+}
+
+.unit-marker--other {
+  color: var(--ink-soft);
+}
+
+.unit-marker__box {
+  fill: var(--ground);
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.unit-marker__glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.unit-marker__count {
+  fill: var(--ink);
+  font: 600 9px var(--font-num);
+}
+
+.stances {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-xs);
+  margin-top: var(--sp-md);
+}
+
+.stances .action {
+  min-width: 0;
+}
+
+.stances .button {
+  width: 100%;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stances .button[aria-pressed='true'] {
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
+}
+
+/* Befehle zweispaltig mit Zeichen; der Marsch ist die Hauptaktion in Bernstein. */
+.actions--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-sm);
+}
+
+.actions--grid .action {
+  min-width: 0;
+}
+
+.actions--grid .button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------- symbols */
 
 /* Eine Reihe gleichartiger Dinge: Symbol und Anzahl statt eines Satzes (R-UI-10).

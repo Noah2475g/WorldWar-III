@@ -2146,7 +2146,7 @@ tasks:
   - id: T-M31-02
     milestone: M31
     title: Das Armeepanel traegt Marker, Zustand und Haltungsgruppe
-    status: todo
+    status: done
     deps: [T-M30-01]
     requirements: [R-UI-05, R-UI-10, R-UI-17]
     design: [D-27]

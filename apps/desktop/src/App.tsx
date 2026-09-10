@@ -1458,6 +1458,7 @@ export function App(props: AppProps) {
               actions={armyActionList}
               targeting={armyTargeting}
               pendingNotice={armyPendingNotice}
+              condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
               ticksPerDay={ticksPerDay}
               currentTick={state.tick}
             />

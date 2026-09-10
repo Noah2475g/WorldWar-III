@@ -19,6 +19,7 @@ import {
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
+import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
@@ -136,11 +137,17 @@ function ActionButton({
   action,
   showReason,
   compact = false,
+  primary = false,
+  pressed,
 }: {
   action: Action
   showReason: boolean
   /** Nur das Zeichen und ein Plus — fuer den Ausbau-Knopf im gebauten Bauplatz (T-M29-03). */
   compact?: boolean
+  /** Die eine Hauptaktion je Panel, in Bernstein (D27.1). */
+  primary?: boolean
+  /** Fuer Zustandsknoepfe in einer Gruppe: gedrueckt = gilt gerade (T-M31-02). */
+  pressed?: boolean
 }) {
   const reasonId = `${action.id}-reason`
   return (
@@ -151,7 +158,8 @@ function ActionButton({
       <span className="action__head">
         <button
           type="button"
-          className="button"
+          className={primary ? 'button button--primary' : 'button'}
+          aria-pressed={pressed}
           disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
           title={buttonTitle(action)}
           // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
@@ -510,23 +518,57 @@ export interface ArmyPanelProps {
    * Statuszeile der Armee, gespeist aus derselben `pendingCommands`-Sammlung der App.
    */
   pendingNotice?: string | null | undefined
+  /** Zustand der Armee, 0…1 — Trefferpunkte am Vollstand (T-M31-02, nur eigene). */
+  condition?: number | undefined
   ticksPerDay: number
   currentTick: number
 }
+
+/** Das Zeichen je Armeebefehl (T-M31-02, R-UI-10) — aus dem vorhandenen Satz. */
+const ARMY_ACTION_ICONS: Record<string, IconName> = {
+  march: 'rightOfWay',
+  stop: 'entrenched',
+  merge: 'alliance',
+  split: 'queue',
+  bombard: 'artillery',
+  holdFire: 'battle',
+}
+
+const STANCES = ['aggressive', 'defensive', 'retreat'] as const
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
   if (!army) return null
   const targeting = props.targeting ?? null
 
+  // Die Haltung als Dreiergruppe, die uebrigen Befehle zweispaltig (D27.6).
+  const stanceActions = STANCES.map((value) => props.actions.find((action) => action.id === `stance-${value}`)).filter(
+    (action): action is Action => action !== undefined,
+  )
+  const commands = props.actions
+    .filter((action) => !action.id.startsWith('stance-'))
+    .map((action) => (action.icon || !ARMY_ACTION_ICONS[action.id] ? action : { ...action, icon: ARMY_ACTION_ICONS[action.id]! }))
+
   return (
     <section className="panel" aria-label={t('army.title')}>
       <header className="panel__head">
         <h2>{props.name ?? t('army.title')}</h2>
         <p className="panel__sub">
-          {t('army.strength')}: {amount(army.strength)}
+          {t('army.power')} {amount(army.strength)}
+          {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
         </p>
       </header>
+
+      {/* Der Zustand als Balken: Trefferpunkte am Vollstand (T-M31-02, R-UI-09). */}
+      {props.condition !== undefined && (
+        <Meter
+          label={t('army.condition')}
+          value={Math.round(props.condition * 100)}
+          max={100}
+          text={percent(Math.round(props.condition * 100))}
+          tone={toneForShare(props.condition)}
+        />
+      )}
 
       {/* Die Zielwahl-Quittung in der Statuszeile (T-M28-02): abgeschickt, noch nicht
           angewendet — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
@@ -561,11 +603,31 @@ export function ArmyPanel(props: ArmyPanelProps) {
         />
       )}
 
+      {/* Die Einheiten als NATO-Stapel — dieselben Marker wie auf der Karte (T-M31-02). */}
       {props.units && props.units.length > 0 && (
         <>
           <h3>{t('army.units')}</h3>
-          <IconRow items={props.units} />
+          <ul className="units" aria-label={t('army.units')}>
+            {props.units.map((item) => (
+              <li key={`${item.icon}-${item.label}`}>
+                <UnitMarker icon={item.icon} label={item.label} count={item.count ?? 1} />
+              </li>
+            ))}
+          </ul>
         </>
+      )}
+
+      {stanceActions.length > 0 && !targeting && (
+        <div className="stances" role="group" aria-label={t('army.stance')}>
+          {stanceActions.map((action) => (
+            <ActionButton
+              key={action.id}
+              action={action}
+              showReason={false}
+              pressed={army.stance !== undefined && action.id === `stance-${army.stance}`}
+            />
+          ))}
+        </div>
       )}
 
       {targeting ? (
@@ -601,7 +663,13 @@ export function ArmyPanel(props: ArmyPanelProps) {
           </div>
         </section>
       ) : (
-        <ActionRow actions={props.actions} />
+        commands.length > 0 && (
+          <div className="actions actions--grid" role="group" aria-label={t('army.commands')}>
+            {commands.map((action) => (
+              <ActionButton key={action.id} action={action} showReason primary={action.id === 'march'} />
+            ))}
+          </div>
+        )
       )}
     </section>
   )

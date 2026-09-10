@@ -2,10 +2,11 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
-import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleProvince } from '@worldwar/core'
+import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
+  ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
   EventLog,
@@ -1130,6 +1131,100 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
       const bare = { terrain, buildings: {} } as unknown as Province
       const multiplier = defenceMultiplier(bare, false, TEST_RULES)
       expect(multiplier - 1000, `Gelaende ${terrain}`).toBe(TERRAIN_DEFENCE_PERMILLE[terrain])
+    }
+  })
+})
+
+/**
+ * Das Armeepanel im Kriegsrat (T-M31-02, D27.6, R-UI-05/R-UI-10/R-UI-17).
+ *
+ * Dieselben Marker wie auf der Karte, dieselbe Sprache im Panel: Einheiten als
+ * NATO-Stapel mit Zahl, Kampfkraft mit Zustand, die Haltung als Dreiergruppe mit
+ * genau einem gedrueckten Knopf, Befehle zweispaltig mit Zeichen.
+ */
+describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', () => {
+  const army = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const act = (id: string, label: string, aria?: string): Action => ({
+    id,
+    label,
+    ...(aria ? { aria } : {}),
+    disabledReason: null,
+    onRun: () => undefined,
+  })
+  const actions = [
+    act('march', 'Marschieren'),
+    act('stop', 'Anhalten'),
+    act('stance-aggressive', 'Angriff', 'Haltung Angriff einnehmen'),
+    { ...act('stance-defensive', 'Verteidigung', 'Haltung Verteidigung einnehmen'), disabledReason: 'Die Armee hat diese Haltung schon.' },
+    act('stance-retreat', 'Rückzug', 'Haltung Rückzug einnehmen'),
+    act('merge', 'Zusammenlegen'),
+    act('split', 'Teilen'),
+    act('bombard', 'Beschießen'),
+    act('holdFire', 'Feuer halten'),
+  ]
+  const units = [
+    { icon: 'infantry', label: 'Infanterie', count: 8 },
+    { icon: 'armour', label: 'Kampfpanzer', count: 3 },
+  ] as const
+
+  const panel = () =>
+    render(<ArmyPanel army={army} name="3. Armee" units={units} condition={0.86} actions={actions} ticksPerDay={24} currentTick={0} />)
+
+  it('traegt in der Haltungsgruppe genau einen gedrueckten Knopf — die aktuelle Haltung', () => {
+    panel()
+    const group = screen.getByRole('group', { name: 'Haltung' })
+    const buttons = within(group).getAllByRole('button')
+
+    expect(buttons.length).toBe(3)
+    const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')
+    expect(pressed.map((b) => b.textContent)).toEqual(['Verteidigung'])
+  })
+
+  it('zeichnet je Gattung einen NATO-Marker mit Zahl, hoerbar als "8 Infanterie"', () => {
+    const { container } = panel()
+
+    expect(container.querySelectorAll('.unit-marker').length).toBe(2)
+    expect(screen.getByRole('img', { name: '8 Infanterie' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: '3 Kampfpanzer' }).textContent).toContain('3')
+  })
+
+  it('nennt die Kampfkraft mit Zustand-Prozent und zeichnet den Balken', () => {
+    panel()
+
+    // `amount` rechnet Festkomma heraus — gebunden wird die Zeile, nicht die Schreibweise.
+    expect(screen.getByText(/Kampfkraft/).textContent).toContain('Zustand 86 %')
+    const meter = screen.getByRole('meter', { name: 'Zustand' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('86')
+    expect(meter.textContent).toContain('86 %')
+  })
+
+  it('setzt die Befehle zweispaltig mit Zeichen und macht den Marsch zur Hauptaktion', () => {
+    const { container } = panel()
+    const grid = container.querySelector('.actions--grid') as HTMLElement
+
+    expect(grid).toBeTruthy()
+    const march = within(grid).getByRole('button', { name: 'Marschieren' })
+    expect(march.className).toContain('button--primary')
+    expect(march.querySelector('svg')).toBeTruthy()
+    // Die Haltung steht nicht noch einmal unter den Befehlen.
+    expect(within(grid).queryByRole('button', { name: /Haltung/ })).toBeNull()
+  })
+
+  it('R-UI-05 Waechter: auch mit Markern und Raster kriecht die Leiste nicht seitwaerts', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const { container } = render(
+        <aside className="side">
+          <ArmyPanel army={army} units={units} condition={0.5} actions={actions} ticksPerDay={24} currentTick={0} />
+        </aside>,
+      )
+      const side = container.querySelector('.side') as HTMLElement
+      expect(window.getComputedStyle(side).getPropertyValue('overflow-x')).toBe('hidden')
+      expect(side.scrollWidth).toBeLessThanOrEqual(side.clientWidth)
+    } finally {
+      style.remove()
     }
   })
 })
