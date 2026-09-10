@@ -1086,6 +1086,146 @@ body {
   color: var(--warn);
 }
 
+/* Die Moral in zehn Segmenten (T-M29-03, D27.6). */
+.meter__segments {
+  display: flex;
+  gap: 2px;
+  min-width: 60px;
+}
+
+.meter__segment {
+  flex: 1;
+  height: 5px;
+  background: currentColor;
+  opacity: 0.18;
+}
+
+.meter__segment--on {
+  opacity: 1;
+}
+
+.meter__segments--good {
+  color: var(--good);
+}
+
+.meter__segments--warn {
+  color: var(--warn);
+}
+
+.meter__segments--alert {
+  color: var(--accent);
+}
+
+.meter__segments--neutral {
+  color: var(--ink-soft);
+}
+
+/* Das Bauplatz-Raster (T-M29-03, D27.6): vier Spalten, je Gebaeudeart ein Feld. */
+.slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: var(--sp-sm) 0;
+}
+
+.slot {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--paper-sunk);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.slot > svg {
+  color: var(--building);
+}
+
+.slot__name {
+  line-height: 1.2;
+}
+
+.slot__level {
+  font-family: var(--font-num);
+  font-size: 9px;
+  color: var(--warn);
+  margin-left: 2px;
+}
+
+.slot--free {
+  border-style: dashed;
+}
+
+.slot--free .button {
+  background: none;
+  border: 0;
+  color: var(--warn);
+  font-size: 10px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.slot--free .button:disabled {
+  color: var(--ink-soft);
+}
+
+.slot--queued {
+  border-color: var(--warn);
+}
+
+.slot--queued .meter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  width: 100%;
+  margin: 0;
+  font-size: 9px;
+}
+
+.slot--queued .meter__track {
+  height: 3px;
+  min-width: 0;
+  border: 0;
+  background: var(--paper);
+}
+
+.slot--queued .meter__value {
+  text-align: center;
+  color: var(--warn);
+}
+
+/* Der Ausbau-Knopf im gebauten Feld: nur ein Plus, oben rechts (T-M29-03). */
+.action--compact {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+}
+
+.action--compact .button {
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  background: none;
+  border: 0;
+  color: var(--warn);
+}
+
+.action--compact .button:disabled {
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+}
+
 /* ------------------------------------------------------------- diagramme */
 
 /* Die Diagramm-Bausteine (T-M25-02/-03, D25.2): eigene SVG-Komponenten im Stil der

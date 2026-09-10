@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { PublicView, VisibleProvince } from '@worldwar/core'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { TEST_RULES } from '@worldwar/testkit'
+import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleProvince } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
@@ -10,13 +11,15 @@ import {
   EventLog,
   MarketPanel,
   ProvincePanel,
+  TERRAIN_DEFENCE_PERMILLE,
   buildingItems,
   buttonTitle,
   depositItems,
   type Action,
+  type ActionGroupSpec,
   type EventEntry,
 } from './Panels.tsx'
-import { ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
+import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 
@@ -1037,5 +1040,96 @@ describe('R-UI-05 Der Markt zeigt das Zeichen des gewaehlten Rohstoffs', () => {
     fireEvent.change(container.querySelector('#market-give')!, { target: { value: 'oil' } })
 
     expect(zeichnung(container, 'give')).toBe(ICON_PATHS[RESOURCE_ICONS.oil!])
+  })
+})
+
+/**
+ * Das Bauplatz-Raster (T-M29-03, D27.6, R-UI-09/R-UI-10/R-UI-11).
+ *
+ * Eine Liste der gebauten Gebaeude sagt nicht, was frei ist und was wann fertig wird.
+ * Das Raster hat je Gebaeudeart genau ein Feld: gebaut (Zeichen und Name), im Bau
+ * (Bernstein-Rahmen und Fortschritt) oder frei (die bestehende Bau-Aktion).
+ */
+describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
+  const buildGroup = (): ActionGroupSpec => ({
+    id: 'build',
+    title: 'Bauen',
+    actions: Object.keys(BUILDING_ICONS).map((key) => action(`build-${key}`, BUILDING_ICONS[key], `${key}-label`)),
+  })
+
+  it('hat je Gebaeudeart genau ein Feld: gebaut, im Bau oder frei', () => {
+    const queued: VisibleProvince = {
+      ...province,
+      buildQueue: [{ id: 'b1', building: 'fortress', startedTick: 0, completesAtTick: 48 }],
+      buildQueueLength: 1,
+    }
+    const { container } = render(
+      <ProvincePanel province={queued} ownerName="Nordland" actions={[]} groups={[buildGroup()]} ticksPerDay={24} currentTick={12} />,
+    )
+
+    const slots = [...container.querySelectorAll('.slot')]
+    expect(slots.length).toBe(Object.keys(BUILDING_ICONS).length)
+    expect(slots.filter((slot) => slot.classList.contains('slot--built')).length).toBe(2)
+    expect(slots.filter((slot) => slot.classList.contains('slot--queued')).length).toBe(1)
+    expect(slots.filter((slot) => slot.classList.contains('slot--free')).length).toBe(4)
+    // Die Bau-Aktion sitzt im freien Feld — es ist derselbe Knopf wie zuvor.
+    expect(within(slots.find((slot) => slot.classList.contains('slot--free')) as HTMLElement).getByRole('button')).toBeTruthy()
+  })
+
+  it('zeigt einen Bau in der Schlange mit Fortschritt als Breite und aria-valuenow', () => {
+    const queued: VisibleProvince = {
+      ...province,
+      buildQueue: [{ id: 'b1', building: 'fortress', startedTick: 0, completesAtTick: 48 }],
+      buildQueueLength: 1,
+    }
+    const { container } = render(
+      <ProvincePanel province={queued} ownerName="Nordland" actions={[]} groups={[buildGroup()]} ticksPerDay={24} currentTick={12} />,
+    )
+
+    const slot = container.querySelector('.slot--queued') as HTMLElement
+    const meter = within(slot).getByRole('meter', { name: 'Festung' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('12')
+    expect(meter.getAttribute('aria-valuemax')).toBe('48')
+    expect((slot.querySelector('.meter__fill') as HTMLElement).style.width).toBe('25%')
+    expect(slot.textContent).toContain('noch 1,5 Tage')
+  })
+
+  it('zeichnet die Moral in zehn Segmenten mit dem Prozentwert und der Tendenz', () => {
+    const { container } = render(
+      <ProvincePanel
+        province={{ ...province, morale: 44_000, moraleTarget: 20_000 }}
+        ownerName="Nordland"
+        actions={[]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    const segments = [...container.querySelectorAll('.meter__segment')]
+    expect(segments.length).toBe(10)
+    expect(segments.filter((seg) => seg.classList.contains('meter__segment--on')).length).toBe(4)
+    expect(screen.getByRole('meter', { name: 'Moral' }).textContent).toContain('44 %')
+    expect(screen.getByRole('meter', { name: 'Moral' }).textContent).toContain('fallend')
+  })
+
+  it('nennt den Verteidigungsbonus des Gelaendes, wo es einen gibt', () => {
+    const { unmount } = render(
+      <ProvincePanel province={{ ...province, terrain: 'mountain' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+    expect(screen.getByText(/Verteidigung \+30 %/)).toBeTruthy()
+    unmount()
+
+    render(<ProvincePanel province={{ ...province, terrain: 'plains' }} ownerName="Nordland" actions={[]} ticksPerDay={24} currentTick={0} />)
+    expect(screen.queryByText(/Verteidigung/)).toBeNull()
+  })
+
+  it('haelt die Bonus-Tabelle deckungsgleich mit dem Kern', () => {
+    // Der Kern schreibt die Gelaendeboni als Literale in defenceMultiplier (combat.ts);
+    // die Oberflaeche darf sie nennen, aber nicht erfinden. Bewiesen am Kern selbst.
+    for (const terrain of Object.keys(TERRAIN_DEFENCE_PERMILLE) as Terrain[]) {
+      const bare = { terrain, buildings: {} } as unknown as Province
+      const multiplier = defenceMultiplier(bare, false, TEST_RULES)
+      expect(multiplier - 1000, `Gelaende ${terrain}`).toBe(TERRAIN_DEFENCE_PERMILLE[terrain])
+    }
   })
 })

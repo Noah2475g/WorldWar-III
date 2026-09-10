@@ -192,6 +192,7 @@ export const de = {
     buildings: 'Gebäude',
     buildQueue: 'Im Bau',
     buildSlots: 'Bauplätze',
+    defenceBonus: 'Verteidigung +{{percent}} %',
     noBuildings: 'Keine Gebäude',
     unknown: 'Nicht aufgeklärt',
     lastSeen: 'Stand von Tag {{day}}',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { PublicView, ResourceKey, VisibleArmy, VisibleProvince } from '@worldwar/core'
+import type { BuildingKey, PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
@@ -74,6 +74,25 @@ export function depositItems(deposits: Partial<Record<string, number>>): IconIte
     }))
 }
 
+/**
+ * Der Verteidigungsbonus je Gelaende, in Promille (T-M29-03, R-UI-11).
+ *
+ * Der Kern schreibt diese Zahlen als Literale in `defenceMultiplier` (combat.ts) —
+ * es gibt keine Regel-Datei, aus der die Oberflaeche sie lesen koennte, und der Kern
+ * bleibt in M29 unangetastet. Darum stehen sie hier ein zweites Mal, und ein Test in
+ * Panels.test.tsx haelt beide Tabellen am Kern selbst deckungsgleich.
+ */
+export const TERRAIN_DEFENCE_PERMILLE: Record<Terrain, number> = {
+  plains: 0,
+  forest: 150,
+  mountain: 300,
+  desert: 0,
+  urban: 200,
+}
+
+/** Die Reihenfolge der Bauplaetze — die der Gebaeudetabelle, damit ein Bau die anderen nicht verschiebt. */
+export const BUILDING_ORDER = Object.keys(BUILDING_ICONS) as BuildingKey[]
+
 export function buildingItems(buildings: Partial<Record<string, number>>): IconItem[] {
   return Object.entries(buildings)
     .filter(([, level]) => (level ?? 0) > 0)
@@ -115,10 +134,19 @@ export function buttonTitle(action: Pick<Action, 'disabledReason' | 'hint'>): st
   return [reason, ...parts].filter(Boolean).join(' · ') || undefined
 }
 
-function ActionButton({ action, showReason }: { action: Action; showReason: boolean }) {
+function ActionButton({
+  action,
+  showReason,
+  compact = false,
+}: {
+  action: Action
+  showReason: boolean
+  /** Nur das Zeichen und ein Plus — fuer den Ausbau-Knopf im gebauten Bauplatz (T-M29-03). */
+  compact?: boolean
+}) {
   const reasonId = `${action.id}-reason`
   return (
-    <div className="action">
+    <div className={compact ? 'action action--compact' : 'action'}>
       {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
@@ -129,12 +157,12 @@ function ActionButton({ action, showReason }: { action: Action; showReason: bool
           disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
           title={buttonTitle(action)}
           // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-          aria-label={action.aria}
+          aria-label={compact ? (action.aria ?? action.label) : action.aria}
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
         >
           {action.icon && <Icon name={action.icon} size={13} />}
-          {action.label}
+          {compact ? '+' : action.label}
         </button>
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
@@ -272,22 +300,34 @@ export function ProvincePanel(props: ProvincePanelProps) {
   const province = props.province
   if (!province) return null
 
-  const built = Object.entries(province.buildings ?? {}).filter(([, level]) => (level ?? 0) > 0)
+  const buildGroup = props.groups?.find((group) => group.id === 'build')
+  const buildActions = buildGroup?.actions ?? []
+  // Was die Bau-Gruppe sonst noch traegt (kein Bauplatz), bleibt eine Gruppe.
+  const leftoverBuild = buildActions.filter((entry) => !BUILDING_ORDER.some((key) => entry.id === `build-${key}`))
+  const otherGroups = [
+    ...(buildGroup && leftoverBuild.length > 0 ? [{ ...buildGroup, actions: leftoverBuild }] : []),
+    ...(props.groups?.filter((group) => group.id !== 'build') ?? []),
+  ]
+  const defence = TERRAIN_DEFENCE_PERMILLE[province.terrain]
 
   return (
     <section className="panel" aria-label={province.name}>
       <header className="panel__head">
         <h2>
+          {/* Der Stern der Hauptstadt als Zeichen vor dem Namen (D27.6). */}
+          {props.isCapital && <Icon name="capital" size={14} title={t('province.capital')} />}
+          {props.isCapital ? ' ' : ''}
           {province.name}
-          {props.isCapital ? ` · ${t('province.capital')}` : ''}
         </h2>
         <p className="panel__sub">
           {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
           {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
               und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
-              (T-M20-01). */}
+              (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
+              gibt — die Zahl, die der Angreifer wissen will. */}
           <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
           {t(`terrain.${province.terrain}`)}
+          {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
           <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
           {province.coastal ? t('province.coastal') : t('province.landlocked')}
         </p>
@@ -328,6 +368,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
           text={percent(unfix(province.morale))}
           tone={toneForShare(province.morale / MORALE_SCALE)}
           trend={trendOf(province.morale, province.moraleTarget, MORALE_SCALE)}
+          segments={10}
         />
       )}
 
@@ -338,28 +379,64 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </>
       )}
 
-      {/* Nur wenn etwas steht: eine Überschrift über einem "Keine Gebäude" sagt zweimal
-          dasselbe Nichts, und die Bauknöpfe darunter sagen es ein drittes Mal. */}
-      {built.length > 0 && (
-        <>
-          <h3>{t('province.buildings')}</h3>
-          <IconRow items={buildingItems(province.buildings ?? {})} />
-        </>
-      )}
+      {/* Das Bauplatz-Raster (T-M29-03, D27.6): je Gebaeudeart genau ein Feld —
+          gebaut, im Bau mit Fortschritt und Restzeit, oder frei mit der Bau-Aktion.
+          Eine Liste der gebauten Gebaeude sagte nicht, was frei ist und was wann
+          fertig wird; das Raster sagt beides, ohne ein Wort mehr. */}
+      <h3>{t('province.buildSlots')}</h3>
+      <div className="slots">
+        {BUILDING_ORDER.map((key) => {
+          const level = province.buildings?.[key] ?? 0
+          const order = province.buildQueue?.find((entry) => entry.building === key)
+          const build = buildActions.find((entry) => entry.id === `build-${key}`)
+          const name = t(`buildings.${key}`)
 
-      {/* Was gerade entsteht, mit Fortschritt und Restzeit (R-UI-09). Vorher stand hier
-          allein die Anzahl der Vorhaben — eine Zahl, die nichts darueber sagt, ob sich
-          das Warten noch lohnt. */}
-      {(province.buildQueue ?? []).map((order) => (
-        <Meter
-          key={`build-${order.building}-${order.completesAtTick}`}
-          label={t(`buildings.${order.building}`)}
-          value={props.currentTick - order.startedTick}
-          max={Math.max(1, order.completesAtTick - order.startedTick)}
-          text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
-          tone="good"
-        />
-      ))}
+          if (order) {
+            return (
+              <div key={key} className="slot slot--queued">
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={18} title={name} />
+                <span className="slot__name">
+                  {name}
+                  {level > 0 && <sup className="slot__level">{level + 1}</sup>}
+                </span>
+                <Meter
+                  label={name}
+                  labelHidden
+                  value={props.currentTick - order.startedTick}
+                  max={Math.max(1, order.completesAtTick - order.startedTick)}
+                  text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
+                  tone="warn"
+                />
+              </div>
+            )
+          }
+
+          if (level > 0) {
+            return (
+              <div key={key} className="slot slot--built">
+                {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
+                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={18} title={level > 1 ? `${level} ${name}` : name} />
+                <span className="slot__name">
+                  {name}
+                  {level > 1 && <sup className="slot__level">{level}</sup>}
+                </span>
+                {/* Die Ausbau-Aktion bleibt erreichbar — als Knopf im gebauten Feld. */}
+                {build && <ActionButton action={build} showReason={false} compact />}
+              </div>
+            )
+          }
+
+          return (
+            <div key={key} className="slot slot--free">
+              {build ? (
+                <ActionButton action={build} showReason={false} />
+              ) : (
+                <span className="slot__name">{name}</span>
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       {(province.recruitQueue ?? []).map((order) => (
         <Meter
@@ -401,7 +478,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
       )}
 
       <ActionRow actions={props.actions} />
-      {props.groups?.map((group) => (
+      {otherGroups.map((group) => (
         <ActionGroup key={group.id} group={group} />
       ))}
     </section>

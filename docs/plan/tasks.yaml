@@ -2086,7 +2086,7 @@ tasks:
   - id: T-M29-03
     milestone: M29
     title: Das Provinzpanel bekommt das Bauplatz-Raster
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-09, R-UI-10, R-UI-11]
     design: [D-27]

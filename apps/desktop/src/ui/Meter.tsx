@@ -56,6 +56,12 @@ export interface MeterProps {
    * noetig, sonst ist der Balken ein namenloser Wert.
    */
   labelHidden?: boolean
+  /**
+   * Zeichnet die Spur als n Segmente statt als Fuellung (T-M29-03, D27.6): die Moral
+   * in zehn Stufen liest sich auf einen Blick als "vier von zehn", wo ein glatter
+   * Balken nur "etwas unter der Haelfte" sagt. Wert und Rolle bleiben dieselben.
+   */
+  segments?: number
 }
 
 const TREND_TEXT: Record<'up' | 'down', string> = {
@@ -68,7 +74,16 @@ const TREND_MARK: Record<'up' | 'down', string> = {
   down: '▼',
 }
 
-export function Meter({ label, value, max, text, tone = 'neutral', trend = null, labelHidden = false }: MeterProps) {
+export function Meter({
+  label,
+  value,
+  max,
+  text,
+  tone = 'neutral',
+  trend = null,
+  labelHidden = false,
+  segments,
+}: MeterProps) {
   const fraction = fillFraction(value, max)
   const spoken = trend ? `${label}: ${text}, ${TREND_TEXT[trend]}` : `${label}: ${text}`
 
@@ -88,9 +103,20 @@ export function Meter({ label, value, max, text, tone = 'neutral', trend = null,
           dazu liess Vorleseprogramme und Textauszuege den Namen doppelt lesen
           („Indien Indien 6148"). */}
       {!labelHidden && <span className="meter__label">{label}</span>}
-      <span className="meter__track">
-        <span className={`meter__fill meter__fill--${tone}`} style={{ width: `${Math.round(fraction * 100)}%` }} />
-      </span>
+      {segments ? (
+        <span className={`meter__segments meter__segments--${tone}`}>
+          {Array.from({ length: segments }, (_, index) => (
+            <i
+              key={index}
+              className={index < Math.round(fraction * segments) ? 'meter__segment meter__segment--on' : 'meter__segment'}
+            />
+          ))}
+        </span>
+      ) : (
+        <span className="meter__track">
+          <span className={`meter__fill meter__fill--${tone}`} style={{ width: `${Math.round(fraction * 100)}%` }} />
+        </span>
+      )}
       <span className="meter__value">
         {text}
         {trend && (
