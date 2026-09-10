@@ -1,4 +1,13 @@
 import { describe, expect, it } from 'vitest'
+
+/**
+ * Der erste ESLint-Aufruf eines Arbeiters laedt die Konfiguration samt typbewusstem
+ * Parser: allein 1,5 s, unter der ganzen Suite (136 Dateien parallel) am 2026-09-11
+ * 5,3 s — und damit ueber der 5-s-Vorgabe von vitest. Das ist eine Ladezeit, kein
+ * Budget des Spiels; die Vorgabe hier gilt nur diesen Wächtern.
+ */
+const COLD_ESLINT_MS = 30_000
+
 import { fixture, lintAs } from './scan'
 
 /**
@@ -7,7 +16,7 @@ import { fixture, lintAs } from './scan'
  * hex value is outside that guarantee — and that is exactly how a readable design
  * drifts into an unreadable one, one commit at a time (Lesson `ui-needs-design-gate`).
  */
-describe('R-UI-02 Keine Farbliterale in Komponenten', () => {
+describe('R-UI-02 Keine Farbliterale in Komponenten', { timeout: COLD_ESLINT_MS }, () => {
   it('schlaegt bei der hinterlegten Verstoss-Fixture an', async () => {
     const messages = await lintAs(fixture('color-literals'), 'apps/desktop/src/map/__guard__.ts')
 
