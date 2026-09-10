@@ -361,34 +361,15 @@
 
 <section id="plan" class="doc" hidden>
   <h2>Umsetzungsplan „Kriegsrat"</h2>
-  <p class="lead">Vier Meilensteine, jede Aufgabe mit Test-zuerst und Abnahmekriterium, so wie das Projekt es verlangt. Reihenfolge nach Nutzen je Aufwand: erst das Aussehen (ein Token-Wechsel), dann die Karte, dann die Panels, dann die Supremacy-Lücken. Vor dem Bauen: Noahs Freigabe dieses Plans, dann Übertrag nach <code>tasks.yaml</code> als M29–M32.</p>
-
-  <div class="ms"><h3>M29 · Das Aussehen: Kriegsrat als Token-Satz</h3><div class="meta">Aufwand klein · kein Verhaltenswechsel · Abnahme: Kontrasttest grün, Golden-Master unberührt</div><ol>
-    <li><b>P-01</b> Tokens tauschen in <code>tokens.ts</code> und <code>app.css</code>: ground/paper/ink/line/water/accent/good/warn plus neue Tokens <code>own</code>, <code>foe</code>, <code>ally</code>, <code>building</code>, <code>amber</code>. Der Kontrasttest bekommt die neuen Paare. Ressourcenleiste mit Tagesbilanz als eigene Komponente.</li>
-    <li><b>P-02</b> Kopfzeile: Uhr in Mono-Bernstein, Geschwindigkeit als Icon-Gruppe mit <code>aria-pressed</code>, Alarmchip mit Anzahl. Bestehende Header-Tests erweitern.</li>
-    <li><b>P-03</b> Provinzpanel: Bauplatz-Raster mit Fortschrittsbalken, Moralsegmente mit Tendenz, Geländebonus als Text. Test: Raster zeigt genau <code>buildSlots</code> Felder.</li>
-  </ol></div>
-
-  <div class="ms"><h3>M30 · Die Karte zeigt den Zustand</h3><div class="meta">Aufwand mittel · Zeichenbudget messen (p95 heute 5,39 ms, Grenze 16,7 ms)</div><ol>
-    <li><b>P-04</b> Markerset: NATO-Marker für fünf Einheitenklassen und Stapel-Marker mit Zahl und Zustandsbalken, als SVG-Sprite in <code>render.ts</code>. Test: Marker je Klasse, Zahl = Einheiten im Stapel.</li>
-    <li><b>P-05</b> Gebäude in der Provinz: je Provinz feste Ankerpunkte aus <code>mapgen</code> (Poisson-Streuung in der Fläche, Hafen an der Küste), Marker je <code>BuildingKey</code>. Test: kein Marker außerhalb der Provinzfläche, kein Überlappen.</li>
-    <li><b>P-06</b> Zoom und Übersicht: drei Zoomstufen mit Symbolschwellen (weit: nur Stapel, nah: Gebäude), Zentrieren auf Hauptstadt, Übersichtskarte mit Ausschnitt. Test: Sichtbarkeit je Stufe, Benchmark nach Regel „Maschine allein".</li>
-    <li><b>P-09</b> Gefecht: Explosionsmarker über dem Kampfring, Gefechtsbericht nennt die Ursache der Verluste (Gelände, Festung, Haltung) aus dem <code>why</code>-Feld. Test: Ursache erscheint, wenn der Kern sie liefert.</li>
-  </ol></div>
-
-  <div class="ms"><h3>M31 · Panels, Protokoll, Fuß</h3><div class="meta">Aufwand mittel</div><ol>
-    <li><b>P-08</b> Provinz-Tooltip auf der Karte: Moral, Gelände, Verteidiger, laufendes Gefecht, Bedienhinweis; per Tastatur erreichbar (Fokus auf Provinz). Test: Inhalt und <code>role="tooltip"</code>.</li>
-    <li><b>P-11</b> Fußleiste: Ereignisprotokoll mit Icons und Zeitspalte, Rangliste dauerhaft mit eigener Zeile, drei Knöpfe Depesche / Diplomatie und Markt / Rangliste mit Neu-Marke. Test: Protokoll zeigt die letzten vier Ereignisse aus dem Eventstrom.</li>
-    <li><b>P-12</b> Machtverlauf als Dreilinien-Kurve mit Legende im Lagepanel (eigen, stärkster Feind, Verbündeter). Test: Reihen aus der Zeitreihe je Spieltag.</li>
-  </ol></div>
-
-  <div class="ms"><h3>M32 · Supremacy-Lücken mit Spielwirkung</h3><div class="meta">Aufwand mittel bis groß · Kernänderungen, jede mit Lauf über eine ganze Partie</div><ol>
-    <li><b>P-07</b> Verzögerter Marsch: <code>MOVE_ARMY</code> bekommt <code>departAt</code>; Armeepanel mit „Abmarsch in n Tagen". Test: Ankunft verschiebt sich exakt um n.</li>
-    <li><b>P-10</b> Markt mit Preisverlauf: Sparkline je Rohstoff aus <code>TRADE_EXECUTED</code>. Test: Kurve folgt den Ausführungen.</li>
-    <li><b>P-13</b> Reopened-Prüfung: Durchmarschrecht und Provinzhandel bleiben <code>todo</code> mit Begründung (nicht V1), Forschung als Designfrage in <code>DECISIONS.md</code>.</li>
-  </ol></div>
-
-  <div class="crit"><b>Selbstkritik.</b> Erstens: M30 ist der Risikoblock, weil Gebäude- und Stapelmarker das Zeichenbudget treffen; darum Benchmark vor und nach P-04/P-05, nicht nur danach. Zweitens: die Tagesbilanz in der Ressourcenleiste braucht eine belastbare Zahl aus dem Kern (Produktion minus Verbrauch je Tag); gibt es sie nicht als Ereignis, ist P-01 größer als „klein". Drittens: der Entwurf zeigt einen Verbündeten und einen Explosionsmarker, die es heute nicht als Ereignis gibt; beides ist Darstellung, nicht Mechanik, und darf den Golden-Master nicht berühren. Viertens: Zoom (P-06) ist der einzige Punkt, der die Bedienung ändert; ohne ihn bleibt der Entwurf trotzdem stimmig, er kann als letzter fallen.</div>
+  <p class="lead">Der verbindliche Plan steht im Repo: <code>docs/plan/KRIEGSRAT.md</code> (Analyse mit Fundstellen, Entwurf D27, Aufgaben, Selbstkritik) mit Zwillingen in <code>tasks.yaml</code> und <code>03-TASKS.md</code>. Diese Seite ist nur das Bild. Der erste Planentwurf hier wurde am Code gegengeprüft: Ressourcenbilanz, Zoom und Gefechtsursache gibt es schon, der Plan ist entsprechend kleiner.</p>
+  <div class="tw"><table>
+    <tr><th>Meilenstein</th><th>Aufgaben</th><th>Kern?</th></tr>
+    <tr><td>M29 · Das Aussehen</td><td>T-M29-01 dunkle Token-Ebene mit Spiegel-Wächter · T-M29-02 Kopf- und Ressourcenleiste · T-M29-03 Bauplatz-Raster</td><td>nein</td></tr>
+    <tr><td>M30 · Die Karte zeigt den Zustand</td><td>T-M30-01 Stapel mit Zahl und Zustand · T-M30-02 Gebäude verteilt in der Provinz · T-M30-03 Zoomstufen, Knöpfe, Übersicht · T-M30-04 Marschweg mit Stand und Rest</td><td>nein</td></tr>
+    <tr><td>M31 · Panels, Protokoll, Fuß</td><td>T-M31-01 Provinz-Tooltip · T-M31-02 Armeepanel mit Markern · T-M31-03 Fuß mit Protokoll, Rangliste, Depesche · T-M31-04 Machtverlauf dreilinig</td><td>nein</td></tr>
+    <tr><td>M32 · Lücken zu Supremacy</td><td>T-M32-01 verzögerter Abmarsch · T-M32-02 Preisverlauf im Markt · T-M32-03 Entscheid Durchmarsch/Provinzhandel/Forschung</td><td>T-M32-01 additiv, <b>Freigabe vor Bau</b></td></tr>
+  </table></div>
+  <p class="note">T-M28-06 (Einmarsch-Alarm) und T-M28-08 (Kämpfe als Ereignis) hängen jetzt an T-M29-01 und werden im Kriegsrat-Stil gebaut.</p>
 </section>
 
 <script>
