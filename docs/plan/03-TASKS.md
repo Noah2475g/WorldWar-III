@@ -3884,7 +3884,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ### T-M28-06 · Der Einmarsch schlägt Alarm *(vorgemerkt)*
 - **Ziel:** Noahs Spiel-Feedback 2026-09-08 — man kriegt es kaum mit, wenn feindliche
   Truppen in eigene Gebiete einlaufen.
-- **Anforderungen:** R-TIME-06, R-UI-05 · **Entwurf:** D26 · **Abhängigkeiten:** keine
+- **Anforderungen:** R-TIME-06, R-UI-05 · **Entwurf:** D26
+- **Abhängigkeiten:** T-M29-01
 - **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/App.tsx`
 - **Tests zuerst:** das Einmarsch-Ereignis löst Banner, Hervorhebung und
   Vorspul-Stopp aus — je Art, nicht je Beispiel.
@@ -3907,7 +3908,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 
 ### T-M28-08 · Kämpfe werden ein Ereignis *(vorgemerkt)*
 - **Ziel:** Noahs Spiel-Feedback 2026-09-08 — die Kämpfe sind noch zu unspektakulär.
-- **Anforderungen:** R-MAP-05, R-UI-17 · **Entwurf:** D26 · **Abhängigkeiten:** keine
+- **Anforderungen:** R-MAP-05, R-UI-17 · **Entwurf:** D26
+- **Abhängigkeiten:** T-M29-01
 - **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/ui/sound.ts`
 - **Tests zuerst:** Kampfdarstellung skaliert mit der Gefechtsgröße; der
   reduced-motion-Pfad bleibt ruhig.
@@ -3915,3 +3917,190 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Kampfzone, Aufblitzen je Runde, Einschlagzeichen), eigene Gefechte einen Ton
   auslösen und das Zeichenbudget hält. **Maßstab: im Vorspulen fällt ein Krieg auf,
   ohne dass man das Protokoll liest.**
+
+
+---
+
+## Meilenstein M29 — Kriegsrat: das Aussehen
+
+> **Herkunft:** KRIEGSRAT (`docs/plan/KRIEGSRAT.md`), 2026-09-10 — Noahs Wahl der
+> Designrichtung A „Kriegsrat" aus drei Entwürfen, plus Abgleich mit Supremacy WW3.
+> Entwurf: **D27**, Bild in `docs/design/kriegsrat.html`, Symbole in
+> `docs/design/kriegsrat-icons.svg`. **Der bauende Agent liest KRIEGSRAT.md §0 zuerst.**
+
+### T-M29-01 · Die dunkle Token-Ebene mit Spiegel-Wächter
+- **Ziel:** Kriegsrat ist zuerst ein Token-Wechsel — aber die Farben stehen doppelt
+  (`tokens.ts:13-38` und `app.css:51-73`), und nichts hält sie zusammen.
+- **Anforderungen:** R-UI-02, R-UI-04 · **Entwurf:** D27.1 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/modes.ts`,
+  `test/guards/css-mirrors-tokens.test.ts`
+- **Tests zuerst:** der Spiegel-Wächter (jeder Hex in `app.css :root` ↔ `tokens.ts`),
+  bewiesen an einer verstimmten Fixture; dann `tokens.contrast.test.ts` mit den neuen
+  Paaren (`onWarn` auf `warn`, `building` auf `ground`, `line` auf `paper` 3 : 1).
+- **Fertig wenn:** die Werte aus D27.1 an beiden Orten stehen, `onWarn` und `building`
+  existieren, die elf Spielerfarben dunkel sind und ΔE > 10 halten, `RELATION_COLORS`
+  `self = good`, `war = accent`, `ally = #6FA8DC`, `MAP_COLORS` folgt, kein Aufrufer
+  sich ändert und das Spiel im Browser dunkel ist.
+
+### T-M29-02 · Kopf- und Ressourcenleiste im Kriegsrat-Stil
+- **Ziel:** Uhr, Tempo und Ressourcen tragen das neue Bild; ein Alarmchip-Slot wartet
+  auf T-M28-06.
+- **Anforderungen:** R-UI-03, R-TIME-04, R-UI-10 · **Entwurf:** D27.1, D27.2
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/icons.tsx`
+- **Tests zuerst:** Tempo-Gruppe trägt genau ein `aria-pressed="true"` und schaltet per
+  Klick; die Tagesbilanz trägt ihr Vorzeichen im Text (`Header.test.tsx`).
+- **Fertig wenn:** Uhr in `TYPE.num`/`warn`, Tempo als Knopfgruppe (Pause · Laufen ·
+  Vorspulen), Ressourcen mit Symbol, Bestand, Bilanz (Vorzeichen **und** Farbe),
+  Reichweite im `title`, leerer Alarmchip-Slot (`hidden`), Kartenmodus als Knopfgruppe;
+  Tasten unverändert.
+
+### T-M29-03 · Das Provinzpanel bekommt das Bauplatz-Raster
+- **Ziel:** Gebäude als Liste sagen nicht, was frei ist und was wann fertig wird.
+- **Anforderungen:** R-UI-09, R-UI-10, R-UI-11 · **Entwurf:** D27.6
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** je `BuildingKey` genau ein Feld; ein Bau in der Schlange trägt den
+  Fortschritt als Breite und `aria-valuenow` (`Panels.test.tsx`).
+- **Fertig wenn:** Raster in vier Spalten (gebaut · im Bau mit Fortschritt und Resttagen ·
+  frei mit Bau-Aktion), Moral mit Tendenz aus `morale` gegen `moraleTarget` und zehn
+  Segmenten, Gelände mit Bonus-Text.
+
+## Meilenstein M30 — Kriegsrat: die Karte zeigt den Zustand
+
+> **Erst messen, dann ändern.** Vor jeder Aufgabe `render.bench` p95 notieren (Stand
+> 2026-09-08: 5,39 ms), nach jeder Aufgabe wieder — Maschine allein.
+
+### T-M30-01 · Armeen sind Stapel mit Zahl und Zustand
+- **Ziel:** Noahs Lob galt den NATO-Markern; die Karte zeigt heute Kasten ohne Zahl.
+- **Anforderungen:** R-MAP-05, R-UI-10, R-UI-12 · **Entwurf:** D27.2
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/markers.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/icons.tsx`
+- **Tests zuerst:** `count` und `condition` je Marker aus einer Sicht mit zwei Klassen
+  (`markers.test.ts`); Bench danach (`render.bench.slow.test.ts`).
+- **Fertig wenn:** Rechteck 30×18 mit Rahmen in Besitzerfarbe, Zahl (Σ `unitCount`),
+  Glyphe der dominanten Klasse, 3-px-Zustandsbalken, Trefferfläche ≥ 24 px, Marker als
+  Offscreen-Stempel; p95 < 16,7 ms mit 8 Spielern auf der Weltkarte.
+
+### T-M30-02 · Gebäude stehen verteilt in der Provinz
+- **Ziel:** Gebäude gehören auf die Karte, „so als wären sie in der Provinz verteilt".
+- **Anforderungen:** R-MAP-05, R-UI-10, R-UI-12 · **Entwurf:** D27.3
+- **Abhängigkeiten:** T-M30-01
+- **Dateien:** `apps/desktop/src/map/anchors.ts`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/map/markers.ts`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** kein Anker außerhalb des Polygons, keine zwei näher als 14, gleiche
+  Eingabe → gleiche Anker (`anchors.test.ts`); Bench vorher/nachher.
+- **Fertig wenn:** Anker deterministisch aus `polygons`/`center`, Hafen und Werft am
+  Rand, je Gebäude ein 14×14-Quadrat mit Glyphe in `building`, Stufe ≥ 2 als Ziffer, die
+  Pips entfallen.
+
+### T-M30-03 · Drei Zoomstufen, Knöpfe und Übersichtskarte
+- **Ziel:** Zoom gibt es, aber ohne Knöpfe, ohne Schwellen und ohne Überblick.
+- **Anforderungen:** R-UI-12, R-UI-15, R-ARCH-06 · **Entwurf:** D27.4
+- **Abhängigkeiten:** T-M30-02
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/map/picking.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/keyboard.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `zoomTier(scale)` an den Schwellen 0,5 und 1,0; Knöpfe rufen
+  `zoomAt`/`centreOn` (`picking.test.ts`, `MapCanvas.test.tsx`).
+- **Fertig wenn:** Gebäude ab mittel, Namen und Moralringe ab nah, Stapel immer; Knöpfe
+  `+ − ◎` mit `aria-label` und Tasten; Übersichtskarte 132×74 mit Ausschnitt in `warn`;
+  Weltansicht nicht teurer als vor T-M30-01. Fällt der Zeitplan, fällt die Übersichtskarte.
+
+### T-M30-04 · Der Marschweg zeigt Stand und Rest
+- **Ziel:** ein Pfeil sagt nicht, wie weit die Armee ist und wann sie ankommt.
+- **Anforderungen:** R-MAP-05, R-UI-12 · **Entwurf:** D27.5
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/map/render.ts`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** Segmentgrenze bei `marchProgress`; Tagesangabe rundet auf;
+  reduced-motion ändert nichts (`render.test.ts`).
+- **Fertig wenn:** gelaufen 3 px rund, Rest 1,6 px gestrichelt mit Spitze, Standpunkt
+  r 3,5, „n/m T" in `TYPE.num` ab Stufe mittel.
+
+## Meilenstein M31 — Kriegsrat: Panels, Protokoll, Fuß
+
+### T-M31-01 · Die Provinz erklärt sich im Tooltip
+- **Ziel:** Supremacy erklärt jede Provinz beim Zeigen; wir nur im Panel.
+- **Anforderungen:** R-UI-11, R-UI-15, R-UI-12 · **Entwurf:** D27.6
+- **Abhängigkeiten:** T-M30-03
+- **Dateien:** `apps/desktop/src/ui/Tooltip.tsx`, `apps/desktop/src/map/MapCanvas.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Tooltip erscheint für die per Tastatur gewählte Provinz ohne Maus;
+  Inhalt aus der Sicht, nicht aus dem Zustand (`Tooltip.test.tsx`, `MapCanvas.test.tsx`).
+- **Fertig wenn:** `role="tooltip"` mit Name, Land, Moral, Gelände, Besitzer,
+  Armeen/Verteidiger, Gefechtsrunde, Bedienhinweis; entprellt 120 ms; Escape schließt.
+
+### T-M31-02 · Das Armeepanel trägt Marker, Zustand und Haltungsgruppe
+- **Ziel:** dieselben Marker wie auf der Karte, dieselbe Sprache im Panel.
+- **Anforderungen:** R-UI-05, R-UI-10, R-UI-17 · **Entwurf:** D27.6
+- **Abhängigkeiten:** T-M30-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/ui/icons.tsx`
+- **Tests zuerst:** genau ein `aria-pressed="true"` in der Haltungsgruppe; Marker je
+  Klasse mit Zahl; Seitenleiste scrollt nicht quer (`Panels.test.tsx`).
+- **Fertig wenn:** Einheitenzeile aus NATO-Markern, Kampfkraft mit Zustand-Prozent und
+  Balken, Haltung als Dreiergruppe, Befehle zweispaltig mit Icon, Hauptaktion in `warn`.
+
+### T-M31-03 · Der Fuß: Protokoll, Rangliste, drei Knöpfe
+- **Ziel:** die Rangliste ist nur ein Panel, die Depesche hat keinen festen Platz.
+- **Anforderungen:** R-UI-13, R-UI-14, R-UI-03 · **Entwurf:** D27.6
+- **Abhängigkeiten:** T-M29-02
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Neu-Marke zählt und wird beim Öffnen null; Rangliste zeigt die eigene
+  Zeile immer (`Panels.test.tsx`, `App.test.tsx`).
+- **Fertig wenn:** dreiteiliger Fuß — Protokoll mit Zeitspalte und Icon, Rangliste
+  dauerhaft (eigene Zeile in `warn`), Knöpfe Depesche · Diplomatie/Markt · Rangliste/Sieg.
+
+### T-M31-04 · Der Machtverlauf zeigt drei Linien mit Legende
+- **Ziel:** acht gleichwertige Linien sagen weniger als drei benannte.
+- **Anforderungen:** R-UI-13 · **Entwurf:** D27.6
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/charts/LineChart.tsx`, `apps/desktop/src/ui/Standings.tsx`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** Auswahl der drei Reihen aus einer Sicht mit acht Mächten; Legende
+  nennt genau drei Namen (`LineChart.test.tsx`, `Standings.test.tsx`).
+- **Fertig wenn:** eigen in `good` mit Fläche, stärkster Feind in `accent`, stärkster
+  Verbündeter in `ally`, übrige dünn in `inkSoft`, Endpunkt markiert.
+
+## Meilenstein M32 — Kriegsrat: Lücken zu Supremacy *(Freigabe durch Noah vor Bau)*
+
+> M32 ist der einzige Meilenstein dieses Plans, der den Kern berührt (T-M32-01). Er wird
+> erst nach Noahs ausdrücklicher Freigabe gebaut; T-M32-02 und T-M32-03 sind kernfrei.
+
+### T-M32-01 · Der Abmarsch lässt sich verzögern *(Freigabe vor Bau)*
+- **Ziel:** Supremacy kennt den verzögerten Abmarsch; bei uns marschiert jede Armee sofort.
+- **Anforderungen:** R-ARCH-02, R-UI-05 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M31-02
+- **Dateien:** `packages/core/src/commands/types.ts`, `packages/core/src/commands/move.ts`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Ankunft verschiebt sich exakt um n Tage (`movement.test.ts`); alte
+  Kommandologs ohne das Feld verhalten sich identisch (`determinism.test.ts`).
+- **Fertig wenn:** `MOVE_ARMY.departInTicks` optional und additiv, Bewegungsphase startet
+  erst dann, halbe Kampfkraft ab tatsächlichem Abmarsch, Stepper im Panel, ein Lauf über
+  eine ganze Partie bleibt grün.
+
+### T-M32-02 · Der Markt zeigt den Preisverlauf
+- **Ziel:** Supremacys Börse zeigt Kurse; unser Markt nur den Moment.
+- **Anforderungen:** R-UI-09, R-UI-13 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/events.ts`,
+  `apps/desktop/src/ui/charts/Sparkline.tsx`
+- **Tests zuerst:** drei Ausführungen an zwei Tagen ergeben zwei Punkte mit dem
+  Tagesmittel (`events.test.ts`).
+- **Fertig wenn:** je Rohstoff eine Sparkline aus `TRADE_EXECUTED` mit letztem Wert im
+  Marktpanel; keine Kernänderung.
+
+### T-M32-03 · Entscheid zu Durchmarsch, Provinzhandel und Forschung
+- **Ziel:** drei Supremacy-Elemente sind Mechanik, nicht Oberfläche — sie brauchen einen
+  Entscheid, keinen Bau.
+- **Anforderungen:** keine · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `docs/plan/DECISIONS.md`
+- **Tests zuerst:** keine (Entscheid).
+- **Fertig wenn:** je Punkt entweder Aufgabe mit Meilenstein vorgemerkt oder mit
+  Begründung gestrichen.

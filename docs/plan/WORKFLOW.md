@@ -3,7 +3,12 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-08 (spät) · **V1 ist abgenommen (7 von 7); LEVEL-UP M22–M24 und
+> **Stand:** 2026-09-10 · **Neu: der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
+> Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
+> (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
+> sonst nichts** — er ist so geschrieben, dass keine Recherche mehr nötig ist.
+>
+> **Stand davor:** 2026-09-08 (spät) · **V1 ist abgenommen (7 von 7); LEVEL-UP M22–M24 und
 > LEVEL-UP 2 „Grafik statt Text" M25–M27 sind vollständig gebaut.**
 >
 > **Neu am 2026-09-08 (LEVEL-UP 2, Noahs Wahl: alle fünf Vorschläge A–E,
@@ -36,14 +41,14 @@
 git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:short)'
 ```
 
-**Der Spitzenstand liegt auf `claude/playtest-levelplan-bbacfc`** (baut auf
-`claude/bauplan-m19-m21-ec7e6a` auf und ist ~15 Commits weiter). `main` steht auf M8 und
+**Der Spitzenstand liegt auf `claude/ui-ux-pro-max-bit-ba5d44`** (baut auf
+`claude/playtest-levelplan-bbacfc` auf: Kriegsrat-Plan vom 2026-09-10). `main` steht auf M8 und
 ist **weit über hundert Commits alt** — ein frischer Worktree landet dort und sieht ein
 anderes Projekt. Diese Falle hat **fünf** Sitzungen in Folge erwischt. Zeigt dein `HEAD`
 nicht auf die Spitze:
 
 ```bash
-git reset --hard claude/playtest-levelplan-bbacfc && pnpm install
+git reset --hard claude/ui-ux-pro-max-bit-ba5d44 && pnpm install
 ```
 
 ---
@@ -78,6 +83,9 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
+0. **Der Kriegsrat-Umbau (M29–M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen, dann Aufgabe
+   für Aufgabe ab T-M29-01. M32 erst nach Noahs Freigabe. T-M28-06 und T-M28-08 werden
+   danach im neuen Schema gebaut (sie hängen jetzt an T-M29-01).
 1. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
    nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
    mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
