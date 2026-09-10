@@ -529,6 +529,17 @@ export const de = {
     keyboardHelp: 'Tastaturkürzel anzeigen',
   },
 
+  tooltip: {
+    armies: 'Armeen',
+    armiesNone: 'keine',
+    armyHere: '1 Armee · Stärke {{strength}}',
+    armiesHere: '{{count}} Armeen · Stärke {{strength}}',
+    battle: 'Gefecht',
+    battleRound: 'Runde {{round}}',
+    stale: 'Sicht',
+    hint: 'Klicken: auswählen · Escape: schließen',
+  },
+
   map: {
     zoomIn: 'Hineinzoomen',
     zoomOut: 'Herauszoomen',

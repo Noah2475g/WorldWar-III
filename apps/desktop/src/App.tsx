@@ -38,7 +38,8 @@ import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView, zoomAt } from './map/picking.ts'
+import { boundsOf, centreOn, clampView, toScreen, zoomAt } from './map/picking.ts'
+import { Tooltip, tooltipFor } from './ui/Tooltip.tsx'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
@@ -888,6 +889,8 @@ export function App(props: AppProps) {
           setDialog('keys')
           break
         case 'close':
+          // Der Tooltip geht zuerst (T-M31-01); die Kaskade darunter bleibt, wie sie war.
+          setTooltipHidden(true)
           // Bis T-M12-07 stand hier eine Ausnahme: vor der ersten Partie lag hinter dem
           // Dialog nichts, zu dem man haette zurueckkehren koennen, also durfte Escape
           // ihn nicht schliessen. Jetzt liegt der Weg zurueck dahinter, und Escape
@@ -1065,6 +1068,7 @@ export function App(props: AppProps) {
 
   const selected = view?.provinces.find((p) => p.id === ui.selectedProvince) ?? null
 
+
   /**
    * Der Tagesabfluss für die Wirtschaftstabelle (T-M28-05, D26.5): Bau + Aushebung +
    * Markt des laufenden Spieltags, gerechnet von `dayExpenses` aus denselben Quellen
@@ -1087,6 +1091,30 @@ export function App(props: AppProps) {
     },
     [state],
   )
+
+  /**
+   * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —
+   * dieselbe Auskunft fuer Maus und Tastatur. Escape blendet ihn aus, bis sich
+   * Auswahl oder Zeiger aendern.
+   */
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [tooltipHidden, setTooltipHidden] = useState(false)
+  const tooltipId = hover?.id ?? ui.selectedProvince
+  const tooltip = useMemo(
+    () =>
+      tooltipHidden
+        ? null
+        : tooltipFor(tooltipId, view, { nameOf: nameOfProvince, playerName: nameOf, ticksPerDay }),
+    [tooltipHidden, tooltipId, view, nameOfProvince, nameOf, ticksPerDay],
+  )
+  const tooltipAt = useMemo(() => {
+    if (hover) return { x: hover.x, y: hover.y }
+    const centre = ui.selectedProvince ? centres[ui.selectedProvince] : undefined
+    return centre ? toScreen(centre, ui.view) : null
+  }, [hover, ui.selectedProvince, centres, ui.view])
+  useEffect(() => {
+    setTooltipHidden(false)
+  }, [tooltipId])
   /** Die Farbe einer Macht — dieselbe, mit der die Karte ihren Besitz fuellt (T-M20-02). */
   const colorOf = useCallback(
     (playerId: string): string | null => state?.players[playerId]?.color ?? null,
@@ -1372,6 +1400,7 @@ export function App(props: AppProps) {
             speed={speed}
             tick={state.tick}
             ticksPerDay={ticksPerDay}
+            onHover={(id, at) => setHover(id && at ? { id, x: at.x, y: at.y } : null)}
             onSelect={selectOnMap}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
@@ -1387,6 +1416,7 @@ export function App(props: AppProps) {
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} />
+          {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
         </div>
 
         <aside className="side">

@@ -96,6 +96,9 @@ const STAMP_PAD = 2
 /** Die Uebersichtskarte in Bildpunkten (D27.4). */
 const OVERVIEW = { width: 132, height: 74 } as const
 
+/** Entprellung des Zeigens (T-M31-01, D27.6): ein Tooltip, der jedem Pixel folgt, flackert. */
+export const HOVER_DELAY_MS = 120
+
 /**
  * Vorgezeichnete Stapel je (Ton, Glyphe) — gestempelt statt je Bild als Path2D gefuellt
  * (T-M30-01, KRIEGSRAT §6.1). Zahl und Zustandsbalken aendern sich je Armee und werden
@@ -190,6 +193,11 @@ export interface MapCanvasProps {
    * Armeewahl gerade Sinn ergibt (in der Zielwahl z. B. nicht).
    */
   onSelectArmy?: (armyId: string) => void
+  /**
+   * Worauf der Zeiger ruht (T-M31-01): die Provinz und die Stelle auf der Karte, nach
+   * HOVER_DELAY_MS Ruhe — oder null, sobald der Zeiger die Karte verlaesst.
+   */
+  onHover?: (provinceId: string | null, at: { x: number; y: number } | null) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
 }
@@ -207,6 +215,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
   /** Die Uebersichtskarte (T-M30-03): die ganze Welt klein, Ausschnitt in Bernstein. */
   const overviewRef = useRef<HTMLCanvasElement>(null)
+  /** Der laufende Entprell-Zeitgeber des Zeigens (T-M31-01). */
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /**
    * Laufende Farbwellen eines Besitzwechsels (T-M26-02, D25.4).
@@ -655,7 +665,19 @@ export function MapCanvas(props: MapCanvasProps) {
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const drag = dragRef.current
-    if (!drag) return
+    if (!drag) {
+      // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
+      if (props.onHover) {
+        const rect = event.currentTarget.getBoundingClientRect()
+        const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+        if (hoverTimer.current) clearTimeout(hoverTimer.current)
+        hoverTimer.current = setTimeout(() => {
+          hoverTimer.current = null
+          props.onHover?.(pickProvince(screen, props.view, withBounds), screen)
+        }, HOVER_DELAY_MS)
+      }
+      return
+    }
     props.onViewChange(
       clampView(
         {
@@ -670,6 +692,12 @@ export function MapCanvas(props: MapCanvasProps) {
 
   const handlePointerUp = () => {
     dragRef.current = null
+  }
+
+  const handlePointerLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+    props.onHover?.(null, null)
   }
 
   // Die Knoepfe zoomen um die Mitte des Ausschnitts — wie die Bildtasten (T-M30-03).
@@ -745,6 +773,7 @@ export function MapCanvas(props: MapCanvasProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
       />
 
       {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}

@@ -382,6 +382,64 @@ body {
   cursor: default;
 }
 
+/* Der Provinz-Tooltip (T-M31-01, D27.6): neben dem Anker, nie unter dem Zeiger. */
+.tooltip {
+  position: absolute;
+  z-index: 3;
+  max-width: 230px;
+  padding: var(--sp-sm) var(--sp-md);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--warn);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.tooltip__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  margin: 0 0 2px;
+  font-family: var(--font-map);
+  font-size: 12px;
+}
+
+.tooltip__owner {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.tooltip__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px var(--sp-md);
+  margin: 0;
+}
+
+.tooltip__facts dt {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.tooltip__facts dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip__alarm {
+  color: var(--accent);
+}
+
+.tooltip__hint {
+  margin: 3px 0 0;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
 /* Die Uebersichtskarte unten rechts, ueber der Legende (T-M30-03). */
 .map-overview {
   position: absolute;

@@ -2136,7 +2136,7 @@ tasks:
   - id: T-M31-01
     milestone: M31
     title: Die Provinz erklaert sich im Tooltip
-    status: todo
+    status: done
     deps: [T-M30-03]
     requirements: [R-UI-11, R-UI-15, R-UI-12]
     design: [D-27]

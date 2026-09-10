@@ -1366,3 +1366,25 @@ describe('R-AI-05 Die Debug-Ansicht zeigt etwas', () => {
     })
   })
 })
+
+/**
+ * Die Provinz erklaert sich im Tooltip (T-M31-01, R-UI-11/R-UI-15).
+ *
+ * Ohne Maus: die per Tastatur gewaehlte Provinz bekommt dieselbe Auskunft am selben
+ * Ort — sonst waere der Tooltip ein Mausrecht. Escape schliesst ihn.
+ */
+describe('T-M31-01 Der Tooltip folgt auch der Tastaturauswahl', () => {
+  it('zeigt fuer die per Auswahlliste gewaehlte Provinz einen Tooltip und schliesst ihn mit Escape', () => {
+    startGame()
+    const capital = world.startPositions[0]!.capital
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    const tip = screen.getByRole('tooltip')
+    expect(tip.textContent).toContain(world.provinces.find((p) => p.id === capital)!.name)
+    expect(tip.textContent).toMatch(/Moral/)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+})

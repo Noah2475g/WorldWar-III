@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { MapCanvas } from './MapCanvas.tsx'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { HOVER_DELAY_MS, MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
@@ -313,5 +313,35 @@ describe('T-M30-04 Der Marschweg zeigt Stand und Rest', () => {
     expect(recorder.calls.arc ?? 0).toBeGreaterThanOrEqual(1)
     // Die Tagesangabe steht als Text da (die Stapelzahl auch: beide sind fillText).
     expect(recorder.calls.fillText ?? 0).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('T-M31-01 Die Karte meldet, worauf der Zeiger liegt', () => {
+  it('meldet die Provinz unter dem Zeiger entprellt und beim Verlassen nichts', () => {
+    vi.useFakeTimers()
+    try {
+      const hovers: (string | null)[] = []
+      const wo = world.provinces[0]!
+      zeichne({
+        speed: 100,
+        view: { x: centres[wo.id]!.x - 160, y: centres[wo.id]!.y - 120, scale: 1 },
+        onHover: (id) => hovers.push(id),
+      })
+      const map = screen.getByRole('application') as HTMLCanvasElement
+      map.getBoundingClientRect = () => ({ left: 0, top: 0, width: 320, height: 240 }) as DOMRect
+
+      // Zwei Bewegungen kurz nacheinander: erst nach der Entprellzeit faellt EINE Meldung.
+      fireEvent.pointerMove(map, { clientX: 160, clientY: 120 })
+      fireEvent.pointerMove(map, { clientX: 161, clientY: 121 })
+      expect(hovers).toEqual([])
+      vi.advanceTimersByTime(HOVER_DELAY_MS + 5)
+      expect(hovers.length).toBe(1)
+      expect(typeof hovers[0]).toBe('string')
+
+      fireEvent.pointerLeave(map)
+      expect(hovers[hovers.length - 1]).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
