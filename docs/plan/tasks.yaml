@@ -2042,7 +2042,7 @@ tasks:
   - id: T-M28-07
     milestone: M28
     title: Angriff und Verteidigung fuehren sich selbst aus
-    status: todo
+    status: done
     deps: [T-M28-06]
     requirements: [R-BAT-03, R-UI-05]
     design: [D-26]
