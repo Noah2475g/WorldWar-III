@@ -82,7 +82,7 @@ import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import { Alerts, alertsFor } from './ui/Alerts.tsx'
-import { cueForEvents, play } from './ui/sound.ts'
+import { cueForOwnEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
   TUTORIAL_STORAGE_KEY,
@@ -322,7 +322,9 @@ export function App(props: AppProps) {
     soundedUpTo.current = own.length
     if (fresh.length === 0) return
 
-    const cue = cueForEvents(fresh)
+    // Nur die eigenen Gefechte klingen (T-M28-08): oeffentliche Ereignisse sind lesbar,
+    // aber nicht deshalb meine Sache.
+    const cue = cueForOwnEvents(fresh, 'p1')
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
   }, [state, ui.settings.sound, speed, props.audio])
 

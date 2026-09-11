@@ -2053,12 +2053,12 @@ tasks:
   - id: T-M28-08
     milestone: M28
     title: Kaempfe werden ein Ereignis
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-MAP-05, R-UI-17]
     design: [D-26]
-    files: [apps/desktop/src/map/render.ts, apps/desktop/src/ui/sound.ts]
-    tests: [apps/desktop/src/map/render.test.ts]
+    files: [apps/desktop/src/map/render.ts, apps/desktop/src/ui/sound.ts, apps/desktop/src/ui/motion.ts, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/map/render.test.ts, apps/desktop/src/ui/motion.test.ts, apps/desktop/src/ui/sound.test.ts, apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "Noahs Spiel-Feedback 2026-09-08: die Kaempfe sind noch zu unspektakulaer. Fertig, wenn ein laufendes Gefecht auf der Karte unuebersehbar ist (kraeftigere, groessere Kampfzone; Aufblitzen je Gefechtsrunde; Einschlag-/Rauchzeichen nach Gefechtsgroesse), eigene Gefechte einen Ton ausloesen (bestehendes Tonmuster, prefers-reduced-motion respektiert die Bewegung) und das Zeichenbudget die Erweiterung uebersteht (render.bench nachgemessen, p95 gegen 16,7 ms). Der Massstab: im Vorspulen faellt ein Krieg auf, ohne dass man das Protokoll liest"
 
   # KRIEGSRAT vom 2026-09-10 (docs/plan/KRIEGSRAT.md): Noahs Wahl der Designrichtung A

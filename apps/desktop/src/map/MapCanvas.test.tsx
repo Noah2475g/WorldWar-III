@@ -372,3 +372,36 @@ describe('T-M28-06 Der Einmarsch ist auf der Karte zu sehen', () => {
     expect(recorder.seen.strokeStyle ?? []).not.toContain(zinnober)
   })
 })
+
+/**
+ * T-M28-08 · Kämpfe werden ein Ereignis.
+ *
+ * Gebunden wird, dass das Gefecht mehr ist als ein Strichkreis: ein Schein darunter
+ * (gefüllt, durchscheinend) und Einschlagzeichen daneben. Wie es aussieht, sagt der
+ * Blick ins Fenster — dass es gezeichnet wird, sagt dieser Test.
+ */
+describe('T-M28-08 Das Gefecht bekommt Schein und Einschlaege', () => {
+  it('zeichnet ohne Gefecht keinen Ring', () => {
+    zeichne()
+
+    expect(recorder.calls.arc ?? 0).toBe(0)
+  })
+
+  it('zeichnet mit Gefecht Schein, Ring und Einschlaege', () => {
+    // `speed` ueber der Bewegungsgrenze: die Bildschleife dieses Testaufbaus ruft rAF
+    // synchron auf und liefe sonst endlos rekursiv. Der Blitz faellt damit weg — der
+    // Schein, der Ring und die Einschlaege bleiben, denn sie sind Zustand.
+    zeichne({ battleProvinces: [provinces[5]!.id], speed: 100 })
+
+    // Schein und Ring sind zwei Boegen; jedes Einschlagzeichen zwei Striche.
+    expect(recorder.calls.arc ?? 0).toBeGreaterThanOrEqual(2)
+    expect(recorder.calls.fill ?? 0).toBeGreaterThan(0)
+    expect(recorder.calls.stroke ?? 0).toBeGreaterThan(0)
+    // Der Schein deckt nie: irgendwann stand die Deckkraft unter eins.
+    const alphas = (recorder.seen.globalAlpha ?? []) as number[]
+    expect(alphas.some((value) => value > 0 && value < 1)).toBe(true)
+    // Und Bernstein ist im Spiel — die Farbe der Einschlaege (D27.2).
+    expect(recorder.seen.strokeStyle ?? []).toContain(TOKENS.warn)
+  })
+})
+

@@ -4,7 +4,15 @@ import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import { markersFor } from './markers.ts'
 import { anchorsFor } from './anchors.ts'
-import { marchArrow, marchProgress, prepareFrame, type RenderProvince } from './render.ts'
+import {
+  battleGlow,
+  battleImpacts,
+  battleIntensity,
+  marchArrow,
+  marchProgress,
+  prepareFrame,
+  type RenderProvince,
+} from './render.ts'
 import { labelsFor } from './labels.ts'
 
 /**
@@ -338,5 +346,70 @@ describe('R-ARCH-06 Was die Bewegung der Armeen kostet', () => {
 
     const p95 = percentile(durations, 0.95)
     expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+  })
+})
+
+/**
+ * T-M28-08 · Was die spektakuläreren Gefechte kosten.
+ *
+ * **Was dieser Fall misst, und was nicht.** Gemessen wird die *Rechnung* je Bild —
+ * `prepareFrame`, `markersFor` mit sechzig gleichzeitigen Gefechten und die neuen reinen
+ * Funktionen (`battleIntensity`, `battleGlow`, `battleImpacts`) für jedes davon. Die
+ * Zeichenarbeit selbst (zwei Bögen und bis zu fünf Einschlagzeichen je Gefecht) liegt in
+ * `MapCanvas` an einem echten 2D-Kontext und lässt sich unter Node nicht messen — das
+ * sagt die Zahl hier ausdrücklich nicht. Sechzig gleichzeitige Gefechte sind dabei weit
+ * mehr, als eine Partie je zeigt: der Abnahmelauf zählt über eine ganze Partie tausende,
+ * aber nie mehr als eine Handvoll im selben Tick.
+ */
+describe('T-M28-08 Gefechte im Bildbudget', () => {
+  it('haelt das Budget mit sechzig Gefechten und schreibt die Zahl in den Bericht', () => {
+    const ids = world.provinces.map((p) => p.id)
+    const centres = Object.fromEntries(
+      world.provinces.map((p) => [p.id, { x: p.polygons[0]![0]![0], y: p.polygons[0]![0]![1] }]),
+    )
+    const battles = ids.slice(0, 60)
+    const view = { x: 1200, y: 400, scale: 1 }
+
+    const einBild = (): void => {
+      prepareFrame(provinces, view, viewport, 'political')
+      const marker = markersFor([], {}, centres, view, { capitalProvinceId: ids[0]!, battleProvinces: battles })
+      for (const m of marker) {
+        if (m.kind !== 'battle') continue
+        const intensity = battleIntensity(12_000)
+        battleGlow(intensity)
+        battleImpacts(m.provinceId, intensity)
+      }
+    }
+
+    for (let i = 0; i < 10; i++) einBild()
+    const durations: number[] = []
+    for (let frame = 0; frame < 120; frame++) {
+      const started = performance.now()
+      einBild()
+      durations.push(performance.now() - started)
+    }
+
+    const p95 = percentile(durations, 0.95)
+    expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+
+    const reportPath = `${ROOT}/docs/reports/render-bench.json`
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as Record<string, unknown>
+    report.battles = {
+      task: 'T-M28-08',
+      how: 'Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe plus markersFor mit 60 gleichzeitigen Gefechten und den reinen Funktionen battleIntensity/battleGlow/battleImpacts je Gefecht. 10 Bilder Einlauf, 120 gemessen.',
+      measuresNot:
+        'NICHT die Zeichenarbeit der Gefechte (zwei Boegen und bis zu fuenf Einschlagzeichen je Gefecht) - die liegt an einem echten 2D-Kontext in MapCanvas und ist unter Node nicht messbar.',
+      measuredAt: [
+        String(new Date().getFullYear()),
+        String(new Date().getMonth() + 1).padStart(2, '0'),
+        String(new Date().getDate()).padStart(2, '0'),
+      ].join('-'),
+      battles: battles.length,
+      p95Ms: Number(p95.toFixed(2)),
+      medianMs: Number(percentile(durations, 0.5).toFixed(2)),
+      maxMs: Number(Math.max(...durations).toFixed(2)),
+      frameBudgetMs: 16.7,
+    }
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`)
   })
 })

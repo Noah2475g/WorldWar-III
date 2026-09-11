@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { OWNERSHIP_FADE_MS, PULSE_PERIOD_MS, fadeProgress, motionAllowed, pulse, ringRadius } from './motion.ts'
+import {
+  BATTLE_FLASH_MS,
+  OWNERSHIP_FADE_MS,
+  PULSE_PERIOD_MS,
+  battleFlash,
+  fadeProgress,
+  motionAllowed,
+  pulse,
+  ringRadius,
+} from './motion.ts'
 import { CUE_SPEED_LIMIT } from './sound.ts'
 
 /**
@@ -96,5 +105,26 @@ describe('R-UI-17 Die Blendkurve des Besitzwechsels', () => {
       expect(value).toBeGreaterThanOrEqual(previous)
       previous = value
     }
+  })
+})
+
+/**
+ * T-M28-08 · Das Aufblitzen je Gefechtsrunde.
+ *
+ * Der Puls atmet in eigenem Takt und sagt nichts über das Spiel; das Blitzen hängt am
+ * Tick — eine Gefechtsrunde, ein Blitz. Wie alles Bewegte hört es auf, wenn weniger
+ * Bewegung verlangt ist oder das Spiel schneller läuft, als ein Mensch zusieht.
+ */
+describe('T-M28-08 Das Aufblitzen je Gefechtsrunde', () => {
+  it('beginnt hell und ist nach der Blitzdauer vorbei', () => {
+    expect(battleFlash(0, { reduced: false })).toBe(1)
+    expect(battleFlash(BATTLE_FLASH_MS / 2, { reduced: false })).toBeCloseTo(0.5, 6)
+    expect(battleFlash(BATTLE_FLASH_MS, { reduced: false })).toBe(0)
+    expect(battleFlash(BATTLE_FLASH_MS * 3, { reduced: false })).toBe(0)
+  })
+
+  it('bleibt dunkel, wenn weniger Bewegung verlangt ist oder das Spiel rennt', () => {
+    expect(battleFlash(0, { reduced: true })).toBe(0)
+    expect(battleFlash(0, { reduced: false, speed: 100 })).toBe(0)
   })
 })

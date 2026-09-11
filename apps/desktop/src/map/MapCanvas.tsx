@@ -9,6 +9,8 @@ import {
   MARCH_LABEL_PX,
   MARCH_STANDPOINT_RADIUS,
   battleIntensity,
+  battleGlow,
+  battleImpacts,
   battleRingBase,
   battleRingWidth,
   marchArrow,
@@ -45,7 +47,7 @@ import {
 import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
-import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
+import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 
 /**
@@ -208,6 +210,9 @@ export interface MapCanvasProps {
 }
 
 export function MapCanvas(props: MapCanvasProps) {
+  // Wann die laufende Gefechtsrunde begann (T-M28-08). Die Runden sind die Spielticks;
+  // der Blitz haengt daran, nicht an der Bildschirmuhr.
+  const roundStartedMs = useRef(0)
   const shapesRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -215,6 +220,15 @@ export function MapCanvas(props: MapCanvasProps) {
   // Die Bildschirmuhr fuer alles, was sich von selbst bewegt. Sie laeuft nur, solange es
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
+
+  // Jeder Spieltick ist eine Gefechtsrunde. Der Effekt merkt sich den Uhrstand, an dem
+  // sie begann; `battleFlash` rechnet daraus die Helligkeit (T-M28-08).
+  useEffect(() => {
+    roundStartedMs.current = clock
+    // `clock` bewusst NICHT in den Abhaengigkeiten: der Blitz soll beim Tick beginnen,
+    // nicht bei jedem Bild neu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.tick])
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
@@ -618,8 +632,21 @@ export function MapCanvas(props: MapCanvasProps) {
       // der Ring die Groesse des Gefechts: Radius und Strich wachsen mit der sichtbaren
       // Gesamtstaerke der Provinz — ein Scharmuetzel fluestert, eine Feldschlacht ruft.
       const intensity = battleIntensity(strengthOf[marker.provinceId] ?? 0)
+      const glow = battleGlow(intensity)
+      // Ein Blitz je Gefechtsrunde (T-M28-08): die Runden sind die Ticks, und der Ref
+      // haelt fest, wann der letzte kam. Ohne Bewegung bleibt er aus — der Ring bleibt
+      // trotzdem gross, denn die Groesse ist Zustand und keine Bewegung.
+      const flash = battleFlash(clock - roundStartedMs.current, { speed: props.speed ?? 0 })
+
+      context.globalAlpha = Math.min(0.6, glow.alpha + flash * 0.25)
+      context.fillStyle = MAP_COLORS.battle
+      context.beginPath()
+      context.arc(marker.x, marker.y, glow.radius, 0, Math.PI * 2)
+      context.fill()
+      context.globalAlpha = 1
+
       context.strokeStyle = MAP_COLORS.battle
-      context.lineWidth = battleRingWidth(intensity)
+      context.lineWidth = battleRingWidth(intensity) + flash * 1.5
       context.beginPath()
       context.arc(
         marker.x,
@@ -629,6 +656,31 @@ export function MapCanvas(props: MapCanvasProps) {
         Math.PI * 2,
       )
       context.stroke()
+
+      // Einschlagzeichen: Bernstein mit hellem Kern (D27.2), Zahl und Groesse nach dem
+      // Gefecht, Lage aus der Provinzkennung — je Bild dieselben, damit nichts flimmert.
+      for (const mark of battleImpacts(marker.provinceId, intensity)) {
+        const ix = marker.x + Math.cos(mark.angle) * mark.distance
+        const iy = marker.y + Math.sin(mark.angle) * mark.distance
+        context.strokeStyle = TOKENS.warn
+        context.lineWidth = 1.4
+        context.beginPath()
+        context.moveTo(ix - mark.size, iy - mark.size)
+        context.lineTo(ix + mark.size, iy + mark.size)
+        context.moveTo(ix + mark.size, iy - mark.size)
+        context.lineTo(ix - mark.size, iy + mark.size)
+        context.stroke()
+        if (flash > 0) {
+          context.globalAlpha = flash
+          context.fillStyle = TOKENS.ink
+          context.beginPath()
+          context.arc(ix, iy, mark.size * 0.5, 0, Math.PI * 2)
+          context.fill()
+          context.globalAlpha = 1
+        }
+      }
+
+      context.strokeStyle = MAP_COLORS.battle
       context.lineWidth = 1.6
       drawIcon(context, 'battle', marker.x, marker.y, 14)
     }

@@ -287,7 +287,8 @@ describe('R-UNIT-04 Verzoegerter Abmarsch (T-M32-01)', () => {
  * geht an den Marschierenden, nicht an den Bestohlenen.
  */
 describe('R-TIME-06 Einmarsch in eigenes Gebiet (T-M28-06)', () => {
-  const intrusions = (events: readonly { type: string }[]) => events.filter((e) => e.type === 'ARMY_INTRUDED')
+  const intrusions = (events: readonly { type: string; tick: number }[]) =>
+    events.filter((e) => e.type === 'ARMY_INTRUDED')
 
   beforeEach(() => {
     state.provinces['m1']!.owner = 'p2'
