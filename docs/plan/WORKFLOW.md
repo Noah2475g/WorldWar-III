@@ -14,9 +14,13 @@
 > **Nicht mehr „alles gebaut": eine zweite Durchsicht hat den bereits auf `main` liegenden
 > Kriegsrat-Umbau M29–M31 geprüft — 13 Befunde gemeldet, 11 überlebten die Widerlegung,
 > vier davon schwer.** Sie sind in `PROBLEME.md` festgehalten und in acht Aufgaben
-> geschnitten (T-M28-09…16); **drei sind gebaut**, fünf stehen offen. Der schwerste war,
-> dass die Leertaste auf einem fokussierten Knopf das Spiel pausierte statt den Knopf
-> auszulösen — **ohne Maus war kein einziger Knopf zu betätigen.**
+> geschnitten (T-M28-09…16) und **alle acht gebaut**. Der schwerste war, dass die
+> Leertaste auf einem fokussierten Knopf das Spiel pausierte statt den Knopf auszulösen —
+> **ohne Maus war kein einziger Knopf zu betätigen.** Noahs Entscheid zu den Farben
+> (2026-09-11): **mehr Farben statt weniger Mächte**; `PLAYER_COLORS` hat jetzt 24, und
+> die Zuordnung geht über die Nummer der Kennung statt über einen Streuwert, der bei
+> `p1`…`p24` auf nur dreizehn Fächer fiel. `pnpm verify` 1822/1825 (drei Zeitlimits unter
+> Fremdlast, einzeln grün).
 >
 > **Offen sonst: das Zeitbudget-Tor auf freier Maschine** (`pnpm acceptance`
 > zuletzt 10 von 11; AK-1 unverändert an Tag 798).
@@ -123,12 +127,6 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    ```bash
    powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
    ```
-0a. **Die fünf offenen Aufgaben aus der Durchsicht** — T-M28-12 (Gebäudeanker: zwei
-   Küstenplätze werden immer reserviert, Landgebäude fallen weg), T-M28-13 (der Klick
-   wählt die verdeckte Armee), T-M28-14 (**Entscheid durch Noah:** elf Farben für mehr
-   Mächte), T-M28-15 (der Spiegel-Wächter sieht nur sechsstellige Hex-Werte im ersten
-   `:root`), T-M28-16 (zwei Bauaufträge derselben Art, nur einer sichtbar). Fehlerfälle
-   stehen je Befund in `PROBLEME.md`.
 0b. **Noahs Freigabe für M33** — T-M28-07 hat vier Teilaufgaben geschnitten
    (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
    wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
@@ -235,11 +233,11 @@ rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
 | | |
 |---|---|
-| Aufgaben | **172, davon 171 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
+| Aufgaben | **180, davon 179 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
 | Abnahme | **7 von 7**, `docs/reports/acceptance.md`, gegen den Endstand |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | **1794 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
+| Tests | **1825 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |
