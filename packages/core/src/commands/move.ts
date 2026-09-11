@@ -20,6 +20,7 @@ export const MAX_DEPART_DELAY_DAYS = 14
 function departDelay(command: MoveArmyCommand, ticksPerDay: number): number {
   const raw = command.departInTicks
   if (raw === undefined || !Number.isFinite(raw) || raw <= 0) return 0
+  // eslint-disable-next-line no-restricted-syntax -- Tage mal Ticks je Tag, ganze Zahlen ohne Festkomma
   return Math.min(Math.trunc(raw), MAX_DEPART_DELAY_DAYS * ticksPerDay)
 }
 

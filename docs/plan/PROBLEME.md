@@ -1728,3 +1728,31 @@ AK-8 danach vollständig neu gemessen: `docs/reports/packaging.md`.
    durchsetzt, gilt erst nach einer Messung am gebauten Erzeugnis** — genau die
    AK-8-Messung, die diesen Fehler gefunden hat. Sie gehört nach jedem Umbau am
    Speicherweg wiederholt.
+
+## 2026-09-11 · T-M32-02 · CRLF im Arbeitsbaum macht den Prosa-Wächter blind für Kommentare
+
+**Befund:** `pnpm verify` meldete am M32-Tor einen Prosa-Fund in einer Zeile, die seit
+T-M25-03 unverändert ist — einem **Kommentar** in `Panels.tsx`. Ursache ist nicht die
+Zeile, sondern das Zeilenende: `ohneKommentare()` in
+`test/guards/prose-in-code.test.ts` streift Zeilenkommentare mit `/(^|[^:])\/\/.*$/`.
+In JavaScript ist `` ein Zeilenende, `.` trifft es also nicht, und `$` steht ohne
+`m`-Flag am Ende der Zeichenkette — **hinter** dem ``. Auf einer CRLF-Zeile greift der
+Ausdruck nie, der Kommentar bleibt stehen, und sein Inhalt wird als Spielertext gemeldet.
+
+**Kleinster reproduzierbarer Fall:**
+`"  // Text".replace(/(^|[^:])\/\/.*$/, "$1")` gibt die Zeile unverändert zurück;
+ohne `` gibt sie `"  "`.
+
+**Wie es entstand:** ein Bearbeitungsskript schrieb mehrere Dateien mit Pythons
+Standard-Zeilenendeumsetzung und machte aus LF im Arbeitsbaum CRLF. Die **Commits waren
+nie betroffen** — `.gitattributes` trägt `* text=auto eol=lf`, git normalisiert beim
+Einchecken. Sichtbar wurde es erst im Wächter.
+
+**Status: umgangen, nicht behoben.** Die 20 Dateien sind zurück auf LF, `pnpm verify`
+ist grün. Die Fehlerrichtung ist die sichere — der Wächter wird zu streng, nicht zu
+lax —, und ein `?$` im Ausdruck wäre die Reparatur. Sie steht aus, weil sie einen
+eigenen Test verlangt (eine CRLF-Fixture), und weil die eigentliche Regel lautet:
+**Dateien im Arbeitsbaum bleiben LF.**
+
+---
+
