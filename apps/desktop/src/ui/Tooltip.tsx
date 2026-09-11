@@ -7,7 +7,7 @@ import { TERRAIN_DEFENCE_PERMILLE } from './Panels.tsx'
 /**
  * Die Provinz erklaert sich beim Zeigen (T-M31-01, D27.6, R-UI-11/R-UI-12/R-UI-15).
  *
- * Supremacy erklaert jede Provinz, sobald der Zeiger darauf liegt; wir taten es nur im
+ * Das Vorbild erklaert jede Provinz, sobald der Zeiger darauf liegt; wir taten es nur im
  * Panel. Der Tooltip hier folgt der Maus UND der Tastaturauswahl — wer ohne Maus
  * spielt, bekommt dieselbe Auskunft am selben Ort. Der Inhalt kommt aus der Sicht
  * (`PublicView`), nie aus dem Zustand: was der Spieler nicht sehen darf, steht auch
