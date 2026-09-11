@@ -14,6 +14,16 @@
 > **Der eine offene Punkt: ein Abnahmelauf auf freier Maschine.**
 > Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
 >
+> **Danach eine Durchsicht des Diffs durch vier Prüfer mit adversarischer Gegenprobe:
+> zehn Befunde, alle zehn haben die Widerlegung überlebt, drei davon schwer — und alle
+> drei in T-M32-01.** Die Ausnahme, die ich in `deploymentFactor` gebaut hatte, kannte die
+> Herkunft der laufenden Strafe nicht: ein verzögerter Befehl löschte jede Aufstellungs-
+> und Rückzugsstrafe, ein abbestellter erzeugte eine, die nie verdient war. Repariert:
+> die Bewegungsphase setzt die Strafe am **tatsächlichen** Abmarsch, `deploymentFactor`
+> ist wieder, was es war. Dazu `alarmSeenTick` über den Partiewechsel hinweg und ein
+> Gefechtsblitz von einem Bild Dauer. `pnpm verify` grün mit **1794 Tests**; Einzelheiten
+> im Block „Durchsicht" von `PROGRESS.md`.
+>
 > **Stand davor:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
 > `done`; `pnpm verify` grün an den Toren M29/M30). **M32 wartete auf Noahs Freigabe.**
 >
@@ -201,6 +211,6 @@ rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | **1786 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
+| Tests | **1794 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |
