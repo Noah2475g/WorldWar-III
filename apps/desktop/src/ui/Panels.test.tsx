@@ -1287,3 +1287,46 @@ describe('T-M32-01 Die Zielwahl kennt den verzoegerten Abmarsch', () => {
     expect(screen.queryByRole('group', { name: 'Abmarsch' })).toBeNull()
   })
 })
+
+/**
+ * T-M32-02 · Der Markt zeigt den Preisverlauf.
+ *
+ * Die Reihe kommt aus `priceSeries` (game/events.ts); hier zählt nur, dass das
+ * Marktpanel sie zeigt — je Rohstoff eine Linie mit dem letzten Kurs als Zahl, und
+ * nichts, wo es keinen Verlauf gibt.
+ */
+describe('T-M32-02 Der Markt zeigt den Preisverlauf', () => {
+  const preview = () => ({
+    text: 'Vorschau',
+    action: { id: 'trade', label: 'Tauschen', disabledReason: null, onRun: () => undefined } as Action,
+  })
+
+  const market = (prices?: Partial<Record<string, { day: number; price: number }[]>>) =>
+    render(
+      <MarketPanel
+        resources={['wood', 'iron']}
+        stock={{ wood: 10_000, iron: 5000 }}
+        preview={preview}
+        {...(prices ? { prices } : {})}
+      />,
+    )
+
+  it('zeichnet je Rohstoff mit Verlauf eine Linie und nennt den letzten Kurs', () => {
+    const { container } = market({ wood: [{ day: 0, price: 3 }, { day: 1, price: 5 }] })
+    const list = screen.getByRole('list', { name: 'Kursverlauf' })
+
+    expect(within(list).getAllByRole('listitem').length).toBe(1)
+    expect(within(list).getByRole('listitem').textContent).toContain('5')
+    expect(container.querySelectorAll('.sparkline').length).toBe(1)
+  })
+
+  it('zeigt den Abschnitt gar nicht, solange nichts gehandelt wurde', () => {
+    market()
+    expect(screen.queryByRole('list', { name: 'Kursverlauf' })).toBeNull()
+  })
+
+  it('laesst einen einzelnen Punkt weg — eine Linie aus einem Wert ist keine', () => {
+    market({ wood: [{ day: 0, price: 3 }] })
+    expect(screen.queryByRole('list', { name: 'Kursverlauf' })).toBeNull()
+  })
+})

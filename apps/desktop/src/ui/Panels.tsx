@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
-import type { BattleReportData } from '../game/events.ts'
+import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
-import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
+import { amount, arrival, costs, duration, percent, population, price, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
@@ -1128,10 +1128,16 @@ export function MarketPanel({
   resources,
   stock,
   preview,
+  prices = {},
 }: {
   resources: readonly ResourceKey[]
   stock: Partial<Record<ResourceKey, number>>
   preview: (give: ResourceKey, giveAmount: number, want: ResourceKey) => { text: string; action: Action }
+  /**
+   * Der Kursverlauf je Rohstoff (T-M32-02, `priceSeries` in game/events.ts): Geld je
+   * Einheit, je Spieltag gemittelt. Ohne Handel ist er leer, und dann steht hier nichts.
+   */
+  prices?: Partial<Record<string, readonly PricePoint[]>>
 }) {
   const [give, setGive] = useState<ResourceKey>(resources[0] ?? 'wood')
   const [want, setWant] = useState<ResourceKey>(resources[1] ?? 'iron')
@@ -1139,6 +1145,10 @@ export function MarketPanel({
   // The interface counts whole units; the core counts thousandths.
   const giveAmount = Math.max(0, Math.round(units)) * 1000
   const result = preview(give, giveAmount, want)
+  // Eine Linie aus einem Wert ist keine (Sparkline gibt dafuer ohnehin nichts zurueck).
+  const trends = resources
+    .map((key) => [key, prices[key] ?? []] as const)
+    .filter((entry): entry is readonly [ResourceKey, readonly PricePoint[]] => entry[1].length > 1)
 
   return (
     <section className="panel" aria-label={t('market.title')}>
@@ -1181,6 +1191,18 @@ export function MarketPanel({
       </div>
       <p className="facts__inline">{result.text}</p>
       <ActionRow actions={[result.action]} />
+      {trends.length > 0 && (
+        <ul className="prices" aria-label={t('market.trend')}>
+          {trends.map(([key, series]) => (
+            <li key={key} className="prices__row">
+              <Icon name={RESOURCE_ICONS[key as ResourceKey] ?? 'money'} size={13} />
+              <span className="prices__name">{t(`resources.${key}`)}</span>
+              <Sparkline values={series.map((point) => point.price)} />
+              <span className="prices__last">{price(series[series.length - 1]!.price)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="panel__sub">{t('market.hint')}</p>
     </section>
   )

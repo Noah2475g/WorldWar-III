@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { battleReport, dayExpenses, dayReportBody, dayReportDeltas, describeEvent, provinceOf } from './events.ts'
+import { battleReport, dayExpenses, dayReportBody, dayReportDeltas, describeEvent, priceSeries, provinceOf } from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -754,5 +754,56 @@ describe('R-UI-05 dayExpenses rechnet den Tagesabfluss je Rohstoff', () => {
     const leer = { tick: 24, playerId: 'p1', self: {}, provinces: [] } as unknown as PublicView
 
     expect(dayExpenses(leer, regeln(), [])).toEqual({})
+  })
+})
+
+/**
+ * T-M32-02 · Der Markt zeigt den Preisverlauf.
+ *
+ * Der Kurs eines Rohstoffs ist das, was er in Geld gekostet oder eingebracht hat —
+ * ein Tauschgeschäft ohne Geld hat keinen Kurs und darf keinen erfinden.
+ */
+describe('T-M32-02 Preisreihe aus TRADE_EXECUTED', () => {
+  const kauf = (tick: number, want: string, money: number, menge: number): GameEvent =>
+    event({ type: 'TRADE_EXECUTED', tick, playerId: 'p1', give: 'money', giveAmount: money, want, wantAmount: menge })
+
+  it('mittelt je Spieltag: drei Ausfuehrungen an zwei Tagen ergeben zwei Punkte', () => {
+    const reihe = priceSeries(
+      [kauf(0, 'wood', 2000, 1000), kauf(10, 'wood', 4000, 1000), kauf(30, 'wood', 5000, 1000)],
+      24,
+    )
+
+    expect(reihe['wood']).toEqual([
+      { day: 0, price: 3 },
+      { day: 1, price: 5 },
+    ])
+  })
+
+  it('nimmt den Verkauf gegen Geld mit demselben Kurs auf', () => {
+    const verkauf = event({
+      type: 'TRADE_EXECUTED',
+      tick: 0,
+      playerId: 'p1',
+      give: 'iron',
+      giveAmount: 1000,
+      want: 'money',
+      wantAmount: 7000,
+    })
+
+    expect(priceSeries([verkauf], 24)['iron']).toEqual([{ day: 0, price: 7 }])
+  })
+
+  it('laesst ein Tauschgeschaeft ohne Geld ganz weg', () => {
+    const tausch = event({
+      type: 'TRADE_EXECUTED',
+      tick: 0,
+      playerId: 'p1',
+      give: 'wood',
+      giveAmount: 1000,
+      want: 'iron',
+      wantAmount: 500,
+    })
+
+    expect(priceSeries([tausch], 24)).toEqual({})
   })
 })

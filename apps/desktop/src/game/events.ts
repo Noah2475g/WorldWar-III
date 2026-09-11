@@ -293,6 +293,59 @@ export function dayExpenses(
   return spent
 }
 
+/** Ein Punkt der Preisreihe: der mittlere Kurs eines Spieltags (T-M32-02). */
+export interface PricePoint {
+  day: number
+  /** Geld je Einheit — Festkomma kürzt sich heraus, weil beide Seiten Festkomma sind. */
+  price: number
+}
+
+/**
+ * Der Preisverlauf je Rohstoff aus dem Ereignisstrom (T-M32-02, R-UI-09/13, D27).
+ *
+ * Einen Kurs hat nur, was gegen **Geld** getauscht wurde: `money → X` ist ein Kauf,
+ * `X → money` ein Verkauf, und beide ergeben denselben Wert „Geld je Einheit". Ein
+ * Tausch Holz gegen Erz hat zwei Preise oder keinen — er bleibt draußen, statt eine
+ * Zahl zu erfinden. Je Spieltag wird gemittelt: der Markt setzt den Kurs je Tick neu,
+ * und eine Linie mit einem Punkt je Tick zeigt Rauschen statt Richtung.
+ *
+ * Kernfrei: `TRADE_EXECUTED` bleibt, wie es ist.
+ */
+export function priceSeries(
+  events: readonly GameEvent[],
+  ticksPerDay: number,
+): Partial<Record<string, PricePoint[]>> {
+  const sums = new Map<string, Map<number, { total: number; count: number }>>()
+
+  for (const event of events) {
+    if (event.type !== 'TRADE_EXECUTED') continue
+    const kauf = event.give === 'money' && event.want !== 'money'
+    const verkauf = event.want === 'money' && event.give !== 'money'
+    if (!kauf && !verkauf) continue
+
+    const key = kauf ? event.want : event.give
+    const menge = kauf ? event.wantAmount : event.giveAmount
+    if (menge <= 0) continue
+    const geld = kauf ? event.giveAmount : event.wantAmount
+
+    const day = Math.trunc(event.tick / ticksPerDay)
+    const perResource = sums.get(key) ?? new Map<number, { total: number; count: number }>()
+    const cell = perResource.get(day) ?? { total: 0, count: 0 }
+    cell.total += geld / menge
+    cell.count += 1
+    perResource.set(day, cell)
+    sums.set(key, perResource)
+  }
+
+  const out: Partial<Record<string, PricePoint[]>> = {}
+  for (const [key, perResource] of sums) {
+    out[key] = [...perResource.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([day, cell]) => ({ day, price: cell.total / cell.count }))
+  }
+  return out
+}
+
 export function dayReportBody(
   view: PublicView,
   rules: Rules,

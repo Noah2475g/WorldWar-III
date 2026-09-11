@@ -23,6 +23,16 @@ export function amount(fixed: number): string {
 }
 
 /**
+ * Ein Kurs: Geld je Einheit (T-M32-02).
+ *
+ * Kein Festkomma — der Kurs ist ein Verhaeltnis zweier Festkommazahlen, und das
+ * Tausendstel kuerzt sich heraus. Zwei Nachkommastellen, weil die Kurse nahe 1 liegen.
+ */
+export function price(value: number): string {
+  return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/**
  * A rate, always signed.
  *
  * The sign is the point: "+42" and "−17" are read at a glance, "42" needs a moment to

@@ -426,6 +426,8 @@ export const de = {
     preview: 'Ergibt etwa {{amount}} {{resource}}.',
     previewNone: 'Dafür gibt es nichts.',
     trade: 'Handeln',
+    // Der Kursverlauf je Rohstoff (T-M32-02): Geld je Einheit, je Spieltag gemittelt.
+    trend: 'Kursverlauf',
     hint: 'Der Kurs gilt für den ganzen Spielstunden-Tick und für alle Mächte gleich; Nachfrage bewegt ihn danach.',
   },
 

@@ -72,7 +72,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
+import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, priceSeries } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -1092,6 +1092,16 @@ export function App(props: AppProps) {
     return dayExpenses(view, props.rules, own)
   }, [state, view, ticksPerDay, props.rules])
 
+  /**
+   * Der Kursverlauf des Marktes (T-M32-02): aus den eigenen `TRADE_EXECUTED` im
+   * Ereignisprotokoll, je Spieltag gemittelt. Das Protokoll ist ein Ringpuffer — die
+   * Reihe reicht so weit zurück wie er, und das ist für eine Richtung genug.
+   */
+  const prices = useMemo(() => {
+    if (!state) return {}
+    return priceSeries(eventsFor(state.eventLog, 'p1'), ticksPerDay)
+  }, [state, ticksPerDay])
+
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
     (playerId: string): string => {
@@ -1491,6 +1501,7 @@ export function App(props: AppProps) {
             <MarketPanel
               resources={RESOURCE_KEYS}
               stock={view.self.resources}
+              prices={prices}
               preview={(give, giveAmount, want) => {
                 const result = tradePreview(ctx, give, giveAmount, want)
                 return { text: result.text, action: toAction(result.action) }

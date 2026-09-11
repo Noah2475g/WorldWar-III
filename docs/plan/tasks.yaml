@@ -2186,11 +2186,11 @@ tasks:
   - id: T-M32-02
     milestone: M32
     title: Der Markt zeigt den Preisverlauf
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-09, R-UI-13]
     design: [D-27]
-    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/charts/Sparkline.tsx]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/events.ts, apps/desktop/src/ui/charts/Sparkline.tsx, apps/desktop/src/ui/format.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/game/events.test.ts, apps/desktop/src/ui/Panels.test.tsx]
     dod: "Aus TRADE_EXECUTED (give/giveAmount/want/wantAmount) je Rohstoff eine Preisreihe (wantAmount/giveAmount gegen Geld, je Spieltag gemittelt) in game/events.ts; MarketPanel zeigt je Rohstoff eine Sparkline mit letztem Wert. Keine Kernaenderung. Test zuerst: Reihe aus drei Ausfuehrungen an zwei Tagen ergibt zwei Punkte mit dem Tagesmittel."
   - id: T-M32-03
