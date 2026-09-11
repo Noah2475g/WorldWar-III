@@ -135,12 +135,21 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
    braucht ein großes Fenster und seinen Blick.
 
-1. **Merge auf `main`** — **PR #3 ist gemerged** (`main` = `7881f8a`), aber der Branch
-   ist seither weitergelaufen: M32, T-M28-06/07/08 und die Doku-Commits liegen darüber.
-   `main` kann per fast-forward nachziehen. Die alte Streuänderung an
-   `packages/core/src/persistence/migrate.ts` im Hauptcheckout ist weg; dort liegt nur
-   noch ein ungetrackter Ordner `remote/`. Danach die alten Worktrees aufräumen
-   (`git worktree list` zeigt acht; nur `design-plan-execution-8b4296` ist aktuell).
+1. **Merge auf `main` — und er ist KEIN fast-forward, anders als hier bis zum 2026-09-11
+   stand.** Gemessen: `git merge-base --is-ancestor main claude/design-plan-execution-8b4296`
+   schlägt fehl. PR #3 wurde als **Merge-Commit** nach `main` gebracht (`7881f8a`), der
+   Branch lief von `c372ba4` aus weiter — beide Linien haben seither je einen Commit, den
+   die andere nicht kennt. **Inhaltlich ist der Branch trotzdem ein echter Obermenge:**
+   `git diff claude/design-plan-execution-8b4296..main` ist exakt die Umkehrung von
+   `git diff main..claude/…` (46 Dateien, 1775/100 Zeilen in beide Richtungen), `main`
+   trägt also keine Zeile, die der Branch nicht hätte. Der Merge ist damit trivial, aber er
+   erzeugt einen Merge-Commit. **Das ist Noahs Entscheidung, so wie PR #3 es war** — die
+   Wahl zwischen Merge-Commit, `rebase` auf `main` und einem zweiten PR gehört ihm.
+   Die alte Streuänderung an `packages/core/src/persistence/migrate.ts` im Hauptcheckout
+   ist weg; dort liegt nur noch ein ungetrackter Ordner `remote/`. Danach die alten
+   Worktrees aufräumen (`git worktree list` zeigt acht; nur
+   `design-plan-execution-8b4296` ist aktuell, und `offene-punkte-vault-7d88d5` enthält
+   uncommittete Dateien und bleibt bewusst stehen).
 2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
