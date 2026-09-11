@@ -1,6 +1,6 @@
 {
   "provinces": 12,
   "armies": 12,
-  "tickMedianMs": 0.03999999999996362,
-  "tickP99Ms": 0.16289999999997917
+  "tickMedianMs": 0.06729999999993197,
+  "tickP99Ms": 0.494199999999978
 }
