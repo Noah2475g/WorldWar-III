@@ -1492,3 +1492,61 @@ weiter `RELATION_COLORS`. Wer den Beziehungsmodus später leuchtender will, änd
 fünf Werte und lässt den Kontrasttest entscheiden.
 
 ---
+
+## 2026-09-11 · T-M32-01 · Der verzögerte Abmarsch braucht keine Zeile in der Bewegungsphase
+
+**Entscheidung:** `MOVE_ARMY.departInTicks` verschiebt in `commands/move.ts` nur
+`departureTick`, `arrivalTick`, `deployDelayUntil` und die im Ereignis gemeldete
+Ankunft um denselben Betrag. Die Bewegungsphase bleibt unangetastet. Die halbe
+Kampfkraft beginnt am tatsächlichen Abmarsch, umgesetzt als eine Bedingung in
+`deploymentFactor` (`tick < departureTick` → volle Kraft), **nicht** als neues Feld am
+Armee-Zustand.
+
+**Begründung:** Die Bewegungsphase wartet ohnehin auf `arrivalTick` — ein verschobener
+Abmarsch ist für sie ein späterer erster Schritt und sonst nichts. Ein zweites
+Zeitfeld am `Army` hätte Zustandsformat, Klonen, Migration und Golden-Master berührt,
+und zwar für eine Information, die `departureTick` schon trägt. Für jeden Befehl ohne
+Verzögerung ist `departureTick` der Tick des Befehls selbst, die neue Bedingung also
+nie wahr: das alte Verhalten bleibt tickgenau erhalten.
+
+**Auswirkung:** Golden-Master unberührt. Kommandologs ohne das Feld spielen identisch
+ab (`determinism.test.ts` bindet es). Die Zielwahl schickt das Feld bei „sofort" gar
+nicht erst mit. Obergrenze 14 Tage (`MAX_DEPART_DELAY_DAYS`).
+
+---
+
+## 2026-09-11 · T-M32-03 · Durchmarsch und Provinzhandel wandern nach M17, die Forschung wird gestrichen
+
+**Entscheidung (Noah, 2026-09-11):** Die drei Supremacy-Elemente aus KRIEGSRAT §5, die
+Mechanik sind und nicht Oberfläche, sind entschieden:
+
+1. **Durchmarschrecht — Antrag als M17-Aufgabe vorgemerkt (T-M17-01).** Gewähren und
+   Widerrufen gibt es seit M5 (`commands/diplomacy.ts`, `grantRightOfWay`), und die
+   Bewegungsphase liest das Recht. Was fehlt, ist die andere Richtung: **darum bitten.**
+2. **Provinzhandel — als M17-Aufgabe vorgemerkt (T-M17-02).** Existiert nirgends.
+3. **Forschung — gestrichen.** Es wird keinen Forschungsbaum geben.
+
+**Begründung:** Zu 1: die einseitige Gewährung deckt den Fall „ich lasse dich durch"
+ab, aber nicht „lässt du mich durch" — und genau den braucht die KI, damit
+Durchmarschrecht überhaupt zwischen zwei KI-Mächten entstehen kann. Klein und additiv,
+aber eine Verhandlung, und Verhandlungen sind die Achse M17. Zu 2: ein Abtreten ohne
+KI-Bewertung wäre ein Knopf, den nur der Spieler drückt — ein Geschenk an sich selbst.
+Der Wert einer Provinz für eine fremde Macht ist die eigentliche Arbeit, und sie gehört
+zu „Tiefe zwischen den Kriegen". Zu 3: **die Freischaltungsachse existiert bereits** —
+`rules/availability.ts` gibt jeder Sache einen Tag, ab dem sie baubar ist, und lehnt
+vorher mit dem Tag im Text ab (T-M15-02, R-TECH-01). Ein Punktebaum wäre eine zweite
+Wirtschaft mit eigenem Zustandsfeld, eigener Migration, eigener Oberfläche und eigener
+KI-Bewertung — und er ersetzte eine Achse, die im Playtest funktioniert hat, durch eine
+teurere mit demselben Zweck.
+
+**Auswirkung:** Beide Vormerkungen stehen im Vorspann von **M17** in `03-TASKS.md` und
+bewusst **nicht** als Aufgaben in `tasks.yaml`. Der erste Versuch tat genau das und
+machte den Plan-Wächter rot: ein Meilenstein gilt ihm als *geplant*, sobald er eine
+einzige Aufgabe trägt, und verlangt dann für **alle** seine Anforderungen Aufgabe und
+Entwurfstext — hier also für R-SPY-01…06 und R-DIP-05/07. Das ist kein Fehler des
+Wächters, sondern seine Absicht (Kommentar in `test/plan-consistency.test.ts`): M17
+wird als Ganzes geplant oder gar nicht. Wer ihn aufmacht, nimmt diese beiden Punkte mit.
+Die Forschung erscheint in keinem Meilenstein mehr; KRIEGSRAT §5 nennt sie als bewusst
+nicht geschlossene Lücke.
+
+---

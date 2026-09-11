@@ -284,10 +284,10 @@ ein Lauf `apps/headless/test/ai-integration.slow.test.ts` unverändert grün (Ke
 | Tooltips | teilweise | Provinz-Tooltip → T-M31-01 |
 | Gefecht | besser nach T-M28-08 | Ursache aus dem Ereignis, Explosionsmarker |
 | Tagesbericht | gleich | Depesche im Fuß mit Neu-Marke → T-M31-03 |
-| Diplomatie | teilweise | Durchmarsch, Provinzhandel: Entscheid T-M32-03 |
+| Diplomatie | teilweise | Durchmarsch-Antrag und Provinzhandel: **entschieden am 2026-09-11** (T-M32-03) — beide nach M17 vorgemerkt |
 | Markt | teilweise | Preisverlauf → T-M32-02 |
 | Rangliste, Alarme | gleich | dauerhaft im Fuß; Einmarsch-Alarm T-M28-06 |
-| Forschung | Lücke | Mechanik, kein UI-Thema → T-M32-03 |
+| Forschung | Lücke, bewusst offen | **gestrichen am 2026-09-11** (T-M32-03): die Freischaltungsachse ist die Spielzeit (`rules/availability.ts`), ein Punktebaum wäre eine zweite Wirtschaft |
 | Tastatur, Kontrast | besser | Supremacy ist Maus/Touch |
 
 ---

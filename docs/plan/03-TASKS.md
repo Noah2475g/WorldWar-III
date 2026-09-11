@@ -3064,6 +3064,15 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > Handelssystem über einem ersten gebaut, den die KI nachweislich nie benutzt. Die Zeitung
 > gehört nicht mehr hierher: sie ist in M15 durch den Filter „Weltgeschehen" ersetzt und
 > gestrichen.
+>
+> **Zwei Punkte aus dem Entscheid T-M32-03 (DECISIONS.md, 2026-09-11) kommen hinzu:** der
+> **Antrag auf Durchmarschrecht** (gewähren und widerrufen gibt es seit M5, die Gegenrichtung
+> fehlt — und nur sie lässt Durchmarschrecht zwischen zwei KI-Mächten entstehen) und der
+> **Provinzhandel** (eine Provinz kann heute nur durch Eroberung den Besitzer wechseln; die
+> eigentliche Arbeit ist, was eine fremde Provinz der KI wert ist). Beide stehen bewusst
+> **nicht** in `tasks.yaml`: ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine
+> einzige Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Entwurf und Aufgabe.
+> M17 wird als Ganzes geplant oder gar nicht — wer ihn aufmacht, nimmt diese beiden mit.
 
 ## Meilenstein M18 — Später
 

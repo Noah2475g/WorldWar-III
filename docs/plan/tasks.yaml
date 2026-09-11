@@ -2196,7 +2196,7 @@ tasks:
   - id: T-M32-03
     milestone: M32
     title: Entscheid zu Durchmarsch, Provinzhandel und Forschung
-    status: todo
+    status: done
     deps: []
     requirements: []
     design: [D-27]
