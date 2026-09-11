@@ -1573,6 +1573,23 @@ body {
   stroke-linecap: round;
 }
 
+.chart__line--thin {
+  stroke-width: 0.8;
+  opacity: 0.7;
+}
+
+/* Die Flaeche unter der eigenen Kurve (T-M31-04) — leise, damit die Linie bleibt. */
+.chart__area {
+  opacity: 0.18;
+  stroke: none;
+}
+
+.chart__end {
+  stroke: var(--paper-sunk);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
 .chart__legend {
   display: flex;
   flex-wrap: wrap;

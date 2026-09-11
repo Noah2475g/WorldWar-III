@@ -3,7 +3,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TimelineEntry } from '../game/saves.ts'
-import { StandingsPanel, VictoryDialog, standingsRows } from './Standings.tsx'
+import { StandingsPanel, VictoryDialog, scoreSeries, standingsRows } from './Standings.tsx'
+import { TOKENS } from './tokens.ts'
 
 /**
  * Where everyone stands, and how the game ends (T-M13-12, R-UI-13, R-GAME-02).
@@ -142,8 +143,10 @@ describe('R-UI-13 Der Machtverlauf als Kurve', () => {
     // Y-Skala läuft seit T-M28-01 von min−Rand bis max+Rand statt ab 0: Werte 0…260,
     // Rand 26, Skala −26…286 — also 0 → y 91.7 und 260 → y 8.3. Gegen die alte
     // 0-Basis ('M0,100 L50,50 L100,0') fällt dieser Test.
-    const eigene = container.querySelector('path[data-series="p1"]')
-    const fremde = container.querySelector('path[data-series="p2"]')
+    // Seit T-M31-04 traegt auch die Flaeche unter der eigenen Kurve `data-series`;
+    // gebunden wird die Linie.
+    const eigene = container.querySelector('path.chart__line[data-series="p1"]')
+    const fremde = container.querySelector('path.chart__line[data-series="p2"]')
     expect(eigene, 'keine Kurve der eigenen Macht').toBeTruthy()
     expect(eigene!.getAttribute('d')).toBe('M0,91.7 L50,50 L100,8.3')
     expect(fremde!.getAttribute('d')).toBe('M0,8.3 L50,50 L100,8.3')
@@ -156,15 +159,14 @@ describe('R-UI-13 Der Machtverlauf als Kurve', () => {
     expect(endwerte).toEqual(['260', '260'])
   })
 
-  it('zeichnet jede Kurve in der Farbe ihrer Macht', () => {
+  it('zeichnet die eigene Kurve in Phosphorgruen und den Kriegsgegner in Zinnober (T-M31-04)', () => {
+    // Bis T-M31-04 trug jede Kurve ihre Spielerfarbe; acht gleichwertige Linien sagten
+    // weniger als drei benannte. p2 liegt im Krieg (Fixture) — also der Feind.
     const { container } = lage()
+    const rgb = (hex: string) => `rgb(${[1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ')})`
 
-    expect((container.querySelector('path[data-series="p2"]') as SVGPathElement).style.stroke).toBe(
-      'rebeccapurple',
-    )
-    expect((container.querySelector('path[data-series="p1"]') as SVGPathElement).style.stroke).toBe(
-      'darkslategray',
-    )
+    expect((container.querySelector('path.chart__line[data-series="p2"]') as SVGPathElement).style.stroke).toBe(rgb(TOKENS.accent))
+    expect((container.querySelector('path.chart__line[data-series="p1"]') as SVGPathElement).style.stroke).toBe(rgb(TOKENS.good))
   })
 
   it('traegt eine Legende und nennt dem Ohr die Endwerte', () => {
@@ -350,5 +352,74 @@ describe('R-UI-16 Jede Macht hat ein Gesicht', () => {
       expect(swatch.getAttribute('aria-hidden'), 'das Farbfeld spricht mit').toBe('true')
       expect(swatch.textContent, 'das Farbfeld traegt Text').toBe('')
     }
+  })
+})
+
+/**
+ * Drei Linien mit Legende (T-M31-04, D27.6, R-UI-13): eigen, staerkster Feind,
+ * staerkster Verbuendeter — die uebrigen duenn und ohne Namen. Acht gleichwertige
+ * Linien sagen weniger als drei benannte.
+ */
+describe('T-M31-04 Der Machtverlauf zeigt drei Linien mit Legende', () => {
+  const acht = (): PublicView => {
+    const base = view({
+      self: 500,
+      others: [
+        { id: 'p2', score: 900 },
+        { id: 'p3', score: 800 },
+        { id: 'p4', score: 700 },
+        { id: 'p5', score: 600 },
+        { id: 'p6', score: 400 },
+        { id: 'p7', score: 300 },
+        { id: 'p8', score: 200 },
+      ],
+    })
+    return {
+      ...base,
+      relations: {
+        p2: { state: 'war' },
+        p3: { state: 'alliance' },
+        p4: { state: 'war' },
+        p5: { state: 'peace' },
+        p6: { state: 'alliance' },
+        p7: { state: 'truce' },
+        p8: { state: 'peace' },
+      },
+    } as unknown as PublicView
+  }
+  const tage: TimelineEntry[] = [1, 2, 3].map((day) => ({
+    day,
+    scores: Object.fromEntries(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].map((id, i) => [id, day * (i + 1)])),
+    stock: {},
+    balance: {},
+  }))
+
+  it('waehlt aus acht Maechten die eigene, den staerksten Feind und den staerksten Verbuendeten', () => {
+    const rows = standingsRows(acht(), nameOf)
+    const series = scoreSeries(rows, tage)
+
+    const roles = Object.fromEntries(series.map((line) => [line.id, line.role]))
+    expect(roles.p1).toBe('own')
+    expect(roles.p2).toBe('enemy') // 900, staerkster Kriegsgegner (p4 mit 700 nicht)
+    expect(roles.p3).toBe('ally') // 800, staerkster Verbuendeter (p6 mit 400 nicht)
+    for (const id of ['p4', 'p5', 'p6', 'p7', 'p8']) expect(roles[id], id).toBe('other')
+    expect(series.find((line) => line.id === 'p1')!.color).toBe(TOKENS.good)
+    expect(series.find((line) => line.id === 'p2')!.color).toBe(TOKENS.accent)
+    expect(series.find((line) => line.id === 'p3')!.color).toBe(TOKENS.ally)
+    expect(series.find((line) => line.id === 'p5')!.color).toBe(TOKENS.inkSoft)
+  })
+
+  it('nennt in der Legende genau drei Namen und zeichnet die uebrigen duenn', () => {
+    const { container } = render(<StandingsPanel view={acht()} nameOf={nameOf} timeline={tage} />)
+
+    const legende = [...container.querySelectorAll('.chart__legend > *')].map((el) => el.textContent)
+    expect(legende.length).toBe(3)
+    expect(legende.join(' ')).toContain('Nordland')
+    expect(legende.join(' ')).toContain('Ostmark')
+    expect(container.querySelectorAll('path.chart__line').length).toBe(8)
+    expect(container.querySelectorAll('path.chart__line--thin').length).toBe(5)
+    // Die eigene Kurve traegt eine Flaeche, und jede der drei benannten einen Endpunkt.
+    expect(container.querySelector('path.chart__area[data-series="p1"]')).toBeTruthy()
+    expect(container.querySelectorAll('.chart__end').length).toBe(3)
   })
 })

@@ -122,3 +122,30 @@ describe('R-UI-13 LineChart zeichnet Reihen, Legende und Beschreibung', () => {
     expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('Punkteverlauf: Nordland 260')
   })
 })
+
+describe('T-M31-04 Rollen im Diagramm: Flaeche, duenne Linien, Endpunkte', () => {
+  const reihen = [
+    { id: 'p1', label: 'Eigen', color: TOKENS.good, role: 'own' as const, points: [{ day: 1, value: 0 }, { day: 3, value: 100 }] },
+    { id: 'p2', label: 'Feind', color: TOKENS.accent, role: 'enemy' as const, points: [{ day: 1, value: 50 }, { day: 3, value: 60 }] },
+    { id: 'p9', label: 'Rest', color: TOKENS.inkSoft, role: 'other' as const, points: [{ day: 1, value: 20 }, { day: 3, value: 30 }] },
+  ]
+
+  it('fuellt unter der eigenen Kurve eine Flaeche bis zum unteren Rand', () => {
+    const { container } = render(<LineChart series={reihen} ariaLabel="Punkteverlauf" />)
+    const area = container.querySelector('path.chart__area[data-series="p1"]') as SVGPathElement
+
+    expect(area).toBeTruthy()
+    // Die Flaeche ist der Linienpfad, unten geschlossen: … L100,100 L0,100 Z
+    expect(area.getAttribute('d')).toMatch(/^M0,.* L100,100 L0,100 Z$/)
+    expect(container.querySelector('path.chart__area[data-series="p2"]')).toBeNull()
+  })
+
+  it('zeichnet "other" duenn, ohne Legende und ohne Endpunkt', () => {
+    const { container } = render(<LineChart series={reihen} ariaLabel="Punkteverlauf" />)
+
+    expect(container.querySelector('path[data-series="p9"]')?.classList.contains('chart__line--thin')).toBe(true)
+    expect(container.querySelector('.chart__legend')?.textContent).not.toContain('Rest')
+    expect(container.querySelectorAll('.chart__end').length).toBe(2)
+    expect(container.querySelectorAll('.chart__endvalue').length).toBe(2)
+  })
+})

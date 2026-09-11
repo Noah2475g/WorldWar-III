@@ -2166,7 +2166,7 @@ tasks:
   - id: T-M31-04
     milestone: M31
     title: Der Machtverlauf zeigt drei Linien mit Legende
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-13]
     design: [D-27]

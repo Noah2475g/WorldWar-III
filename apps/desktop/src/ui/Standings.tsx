@@ -1,8 +1,9 @@
-import type { PublicView } from '@worldwar/core'
+import type { DiplomaticState, PublicView } from '@worldwar/core'
 import type { TimelineEntry } from '../game/saves.ts'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { plural, t } from '../i18n/text.ts'
-import { LineChart, type ChartSeries } from './charts/LineChart.tsx'
+import { LineChart, type ChartRole, type ChartSeries } from './charts/LineChart.tsx'
+import { TOKENS } from './tokens.ts'
 import { amount } from './format.ts'
 import { Meter } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
@@ -30,6 +31,8 @@ export interface StandingsRow {
   /** Strength of that power's armies the player can currently see. */
   seenStrength: number
   own: boolean
+  /** Die Beziehung als Zustand, nicht als Wort — fuer die Rollen im Diagramm (T-M31-04). */
+  state?: DiplomaticState
 }
 
 /** The table's rows, strongest first, own power included. */
@@ -59,6 +62,7 @@ export function standingsRows(view: PublicView | null, nameOf: (id: string) => s
         relation: t(`diplomacy.${view.relations[other.id]?.state ?? 'peace'}`),
         seenStrength: seen.get(other.id) ?? 0,
         own: false,
+        ...(view.relations[other.id]?.state ? { state: view.relations[other.id]!.state } : {}),
       })),
   ]
 
@@ -71,11 +75,40 @@ export function standingsRows(view: PublicView | null, nameOf: (id: string) => s
  * Tag fehlt (noch nicht getroffen, ausgeschieden), fehlt dort einfach — die Kurve
  * beginnt und endet, wo das Wissen beginnt und endet.
  */
+/**
+ * Die Rolle jeder Macht im Diagramm (T-M31-04, D27.6): eigen, der staerkste
+ * Kriegsgegner, der staerkste Verbuendete — alle anderen "other". `rows` sind nach
+ * Punkten sortiert, also ist der erste Treffer je Zustand der staerkste.
+ */
+export function chartRoles(rows: readonly StandingsRow[]): Record<string, ChartRole> {
+  const roles: Record<string, ChartRole> = {}
+  let enemy: string | null = null
+  let ally: string | null = null
+  for (const row of rows) {
+    if (row.own) roles[row.id] = 'own'
+    else if (row.state === 'war' && enemy === null) roles[(enemy = row.id)] = 'enemy'
+    else if (row.state === 'alliance' && ally === null) roles[(ally = row.id)] = 'ally'
+    else roles[row.id] = 'other'
+  }
+  return roles
+}
+
+const ROLE_COLORS: Record<ChartRole, string> = {
+  own: TOKENS.good,
+  enemy: TOKENS.accent,
+  ally: TOKENS.ally,
+  other: TOKENS.inkSoft,
+}
+
 export function scoreSeries(rows: readonly StandingsRow[], timeline: readonly TimelineEntry[]): ChartSeries[] {
+  const roles = chartRoles(rows)
   return rows.map((row) => ({
     id: row.id,
     label: row.nation,
-    color: row.color,
+    // Seit T-M31-04 sagt die Farbe die Rolle (eigen, Feind, Verbuendeter), nicht die
+    // Macht — die Spielerfarbe steht weiter in der Tabelle darunter.
+    color: ROLE_COLORS[roles[row.id] ?? 'other'],
+    role: roles[row.id] ?? 'other',
     points: timeline
       .filter((entry) => row.id in entry.scores)
       .map((entry) => ({ day: entry.day, value: entry.scores[row.id]! })),
