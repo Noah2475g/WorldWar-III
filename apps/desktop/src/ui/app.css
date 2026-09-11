@@ -198,21 +198,12 @@ body {
 }
 
 /* Die Richtung der Tagesbilanz: ein Pfeil statt einer Zahl (T-M36-02, D36.2). Die Zahl
-   steht im Tooltip und fuers Ohr; sichtbar bleibt, wohin es geht — Ueberschuss
-   eigen-gruen, Verlust Zinnober, Stillstand im Nebentext (D27.1). */
+   steht im Tooltip und fuers Ohr; sichtbar bleibt nur, wohin es geht. */
 .resource em {
   font-style: normal;
   font-size: 9px;
   line-height: 1;
   color: var(--ink-soft);
-}
-
-.resource__balance--plus {
-  color: var(--good);
-}
-
-.resource__balance--minus {
-  color: var(--accent);
 }
 
 /* Die Reichweite in Tagen — nur an der Zelle, die draengt (D36.2). */
@@ -221,7 +212,35 @@ body {
   color: var(--warn);
 }
 
+/*
+  Zwei Toene statt sieben gleich lauten Zellen (T-M36-03, D36.2).
+
+  Wer laeuft oder steht, ist ruhig: Bestand und Zeichen im Nebentext, halbe
+  Schriftstaerke. Laut wird allein, wer draengt — Bernstein und volle Staerke. Das
+  loest den letzten Teil des Befunds: der Rohstoff, der in sechs Tagen leer ist, sah
+  aus wie der, der seit Tagen ueberlaeuft.
+
+  Die Richtungsfarben von D27.1 (Ueberschuss gruen, Verlust zinnober) sind hier
+  bewusst aufgegeben: ein Pfeil nach unten an einem Vorrat, der noch fuenfzig Tage
+  haelt, ist kein Alarm, und eine Signalfarbe, die an einem ruhigen Tag siebenmal
+  leuchtet, ist keine mehr. Die Richtung traegt die Form, die Dringlichkeit die Farbe.
+*/
+.resource--calm b {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.resource--calm svg,
+.resource--calm em {
+  color: var(--ink-soft);
+}
+
 .resource--short b {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.resource--short em {
   color: var(--warn);
 }
 
@@ -1408,13 +1427,17 @@ body {
   gap: var(--sp-sm);
 }
 
-/* Rohstoffsymbole in der Gebaeudefarbe, Geld in Bernstein (D27.2). */
+/*
+  Rohstoffsymbole in der Gebaeudefarbe (D27.2).
+
+  Das Geld trug hier bis T-M36-03 dauerhaft Bernstein. Das geht nicht mehr zusammen mit
+  D36.2: Bernstein heisst jetzt „dieser Vorrat draengt", und eine Farbe, die an einer
+  Zelle immer leuchtet, nimmt dem Signal an den anderen sechs die Bedeutung. Das Geld
+  steht deshalb im selben Sand wie die uebrigen — und in Bernstein genau dann, wenn es
+  knapp wird.
+*/
 .resource svg {
   color: var(--building);
-}
-
-.resource--money svg {
-  color: var(--warn);
 }
 
 .resource--short svg {

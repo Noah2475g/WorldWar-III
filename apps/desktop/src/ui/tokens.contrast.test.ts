@@ -147,3 +147,31 @@ describe('R-UI-02 Anzeigen ohne Schrift', () => {
     expect(contrastRatio(TOKENS.line, TOKENS.paper)).toBeGreaterThanOrEqual(NON_TEXT)
   })
 })
+
+/**
+ * Die zwei Töne der Rohstoffleiste (T-M36-03, ROHSTOFFE.md Risiko 3).
+ *
+ * Der Entwurf sagt „ruhiges Grau" und „Bernstein" — und beides sitzt auf `paperSunk`,
+ * dem Grund der Leiste, nicht auf `paper`. Genau dieses Paar stand für keine der beiden
+ * Farben in `CONTRAST_PAIRS`. Die Regel aus D27.1 gilt unverändert: über die gedämpfte
+ * Fassung entscheidet der Kontrasttest und nicht der Entwurf.
+ */
+describe('T-M36-03 Die Rohstoffleiste steht unter dem Kontrasttest', () => {
+  const paar = (foreground: string, background: string) =>
+    CONTRAST_PAIRS.find((p) => p.foreground === foreground && p.background === background)
+
+  it('fuehrt den gedaempften Bestand und den Bernstein der Leiste als benanntes Paar', () => {
+    // Ein Wert, den niemand nennt, wird auch von niemandem geprueft, wenn er sich
+    // spaeter verschiebt.
+    expect(paar('inkSoft', 'paperSunk'), 'gedaempfter Bestand fehlt in CONTRAST_PAIRS').toBeTruthy()
+    expect(paar('warn', 'paperSunk'), 'Bernstein auf der Leiste fehlt in CONTRAST_PAIRS').toBeTruthy()
+  })
+
+  it('haelt beide ueber der Schwelle fuer Schrift', () => {
+    // Beide faerben Ziffern, nicht nur Striche — also 4,5:1 und nicht 3:1.
+    expect(paar('inkSoft', 'paperSunk')?.large, 'der Bestand ist Schrift').toBeFalsy()
+    expect(paar('warn', 'paperSunk')?.large, 'die Reichweite ist Schrift').toBeFalsy()
+    expect(contrastRatio(TOKENS.inkSoft, TOKENS.paperSunk)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(TOKENS.warn, TOKENS.paperSunk)).toBeGreaterThanOrEqual(4.5)
+  })
+})

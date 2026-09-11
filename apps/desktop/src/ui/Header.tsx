@@ -239,8 +239,12 @@ export function Header(props: HeaderProps) {
           const running = days !== null && days < SHORT_REACH_DAYS
           const short = shortages.has(key) || running
           const tone = flow ? balanceTone(flow.balance) : 'zero'
+          // Zwei Toene, nicht sieben (T-M36-03, D36.2): wer laeuft oder steht, ist
+          // ruhig; laut ist nur, wer draengt. An einem ruhigen Tag traegt die Leiste
+          // damit keine einzige Farbe — und eine einzige Farbe darin heisst dann etwas.
+          const toneClass = short ? ' resource--short' : ' resource--calm'
           return (
-            <li key={key} className={`resource resource--${key}${short ? ' resource--short' : ''}`} title={t(`resources.${key}`)}>
+            <li key={key} className={`resource resource--${key}${toneClass}`} title={t(`resources.${key}`)}>
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
                   beides zugleich sichtbar waere derselbe Begriff zweimal. */}
               <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />
@@ -254,7 +258,7 @@ export function Header(props: HeaderProps) {
                 // Angaben. Die vier Groessen bleiben vollstaendig in der
                 // Wirtschaftsuebersicht sichtbar (R-ECON-06, R-UI-09).
                 <em
-                  className={`resource__dir resource__balance--${tone} resource__dir--${tone}`}
+                  className={`resource__dir resource__dir--${tone}`}
                   title={[
                     `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`,
                     days === null ? null : reachText(days),

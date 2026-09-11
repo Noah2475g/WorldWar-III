@@ -2481,7 +2481,7 @@ tasks:
   - id: T-M36-03
     milestone: M36
     title: Nur Knappes ist laut
-    status: todo
+    status: done
     deps: [T-M36-02]
     requirements: [R-UI-04]
     design: [D-27]

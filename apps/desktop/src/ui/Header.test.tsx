@@ -243,12 +243,12 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
     // Festkomma: −6000 sind −6 je Tag (`rate` rechnet das Tausendstel heraus). Seit
     // T-M36-02 steht diese Zahl im Tooltip und nicht mehr als 21. Angabe in der Leiste.
     expect(balance?.getAttribute('title')).toContain('Bilanz −6')
-    expect(balance?.className).toContain('resource__balance--minus')
+    expect(balance?.className).toContain('resource__dir--minus')
 
     cleanup()
     const plus = renderHeader(withBalance(2200)).container.querySelector('.resource--food em')
     expect(plus?.getAttribute('title')).toContain('Bilanz +2')
-    expect(plus?.className).toContain('resource__balance--plus')
+    expect(plus?.className).toContain('resource__dir--plus')
   })
 
   it('macht den Kartenmodus zur Knopfgruppe mit genau einem gedrueckten Knopf', () => {
@@ -431,5 +431,63 @@ describe('T-M36-02 Reichweite statt Bilanz', () => {
     expect(zelle(container).querySelector('.resource__reach .visually-hidden')?.textContent).toBe(
       'noch 2,5 Tage',
     )
+  })
+})
+
+/**
+ * Nur Knappes ist laut (T-M36-03, ROHSTOFFE.md D36.2 und Risiko 3).
+ *
+ * Der letzte Teil des Befunds: alles war gleich laut. Der Rohstoff, der in sechs Tagen
+ * leer ist, sah aus wie der, der seit Tagen überläuft. Jetzt steht, wer läuft oder
+ * steht, in ruhigem Grau mit halber Schriftstärke — und nur, wer drängt, bekommt
+ * Bernstein und volle Stärke. An einem ruhigen Tag trägt die Leiste keine Farbe.
+ */
+describe('T-M36-03 Nur Knappes ist laut', () => {
+  const mitVorraeten = (food: { stock: number; balance: number }): PublicView => {
+    const base = view(100, [100], 900)
+    const ruhig = { stock: 5000, production: 100, consumption: 0, balance: 100 }
+    return {
+      ...base,
+      self: {
+        ...base.self,
+        economy: {
+          food: {
+            stock: food.stock,
+            production: Math.max(0, food.balance),
+            consumption: Math.max(0, -food.balance),
+            balance: food.balance,
+          },
+          wood: ruhig,
+          iron: ruhig,
+          coal: ruhig,
+          oil: ruhig,
+          rare: ruhig,
+          money: ruhig,
+        },
+      },
+    } as PublicView
+  }
+
+  it('zeichnet an einem ruhigen Tag keine einzige Zelle aus', () => {
+    const { container } = renderHeader(mitVorraeten({ stock: 5000, balance: 100 }))
+
+    expect(container.querySelectorAll('.resource--short').length).toBe(0)
+    expect(container.querySelectorAll('.resource--calm').length).toBe(7)
+  })
+
+  it('zeichnet genau die eine Zelle aus, die draengt', () => {
+    const { container } = renderHeader(mitVorraeten({ stock: 5000, balance: -2000 }))
+
+    expect(container.querySelectorAll('.resource--short').length).toBe(1)
+    expect(container.querySelector('.resource--short')?.className).toContain('resource--food')
+    // Und die uebrigen sechs bleiben ruhig — sonst waere „genau eine" auch dann wahr,
+    // wenn alle sieben laut waeren und nur eine davon anders heisst.
+    expect(container.querySelectorAll('.resource--calm').length).toBe(6)
+  })
+
+  it('gibt keiner Zelle beide Toene zugleich', () => {
+    const { container } = renderHeader(mitVorraeten({ stock: 5000, balance: -2000 }))
+
+    expect(container.querySelectorAll('.resource--calm.resource--short').length).toBe(0)
   })
 })

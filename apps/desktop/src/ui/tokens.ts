@@ -162,6 +162,12 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   // `paperSunk` und nicht auf `paper`, und genau dieses Paar stand bisher in keiner
   // Zeile: gemessen 7,38 (good), 6,03 (ally) und 4,28 (accent) — alle drei ueber der
   // 3:1-Schwelle fuer Nicht-Text, `accent` unter 4,5 und damit fuer Schrift zu wenig.
+  // Die zwei Töne der Rohstoffleiste (T-M36-03, D36.2). Sie sitzen auf `paperSunk`,
+  // dem Grund der Leiste: der gedämpfte Bestand („wer läuft, ist ruhig") bei 5,78 und
+  // der Bernstein der knappen Zelle samt ihrer Reichweite bei 6,79 — beides Schrift,
+  // also gegen 4,5 und nicht gegen 3.
+  { foreground: 'inkSoft', background: 'paperSunk', use: 'gedämpfter Bestand in der Rohstoffleiste' },
+  { foreground: 'warn', background: 'paperSunk', use: 'knapper Rohstoff und seine Reichweite' },
   { foreground: 'good', background: 'paperSunk', use: 'eigener Schattenriss im Plättchen', large: true },
   { foreground: 'ally', background: 'paperSunk', use: 'verbündeter Schattenriss', large: true },
   { foreground: 'accent', background: 'paperSunk', use: 'feindlicher Schattenriss', large: true },
