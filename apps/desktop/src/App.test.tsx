@@ -904,7 +904,7 @@ describe('R-UI-13 Die Lageuebersicht ist erreichbar', () => {
   it('oeffnet sich auch aus der Kopfleiste', () => {
     startGame()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lage' }))
+    fireEvent.click(screen.getByRole('button', { name: /Rangliste/ }))
 
     expect(screen.getByRole('region', { name: 'Lage' })).toBeTruthy()
   })
@@ -1386,5 +1386,29 @@ describe('T-M31-01 Der Tooltip folgt auch der Tastaturauswahl', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+})
+
+/**
+ * Der Fuss in der App (T-M31-03): die Neu-Marke zaehlt, was seit dem letzten Oeffnen
+ * der Lage dazukam, und wird beim Oeffnen null; die Depesche oeffnet den juengsten
+ * Tagesbericht.
+ */
+describe('T-M31-03 Der Fuss: Neu-Marke und Depesche', () => {
+  it('zaehlt neue Zeilen, setzt die Marke beim Oeffnen der Lage auf null und oeffnet die Depesche', () => {
+    startGame()
+    // Der Start schreibt schon Zeilen ins Protokoll — sie zaehlen als neu.
+    const lage = () => screen.getByRole('button', { name: /Rangliste/ })
+    expect(lage().querySelector('.foot__badge')).not.toBeNull()
+
+    fireEvent.click(lage())
+    expect(lage().querySelector('.foot__badge')).toBeNull()
+
+    // Ein Tageswechsel bringt den Tagesbericht — und die Depesche.
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    const depesche = screen.getByRole('button', { name: 'Depesche' }) as HTMLButtonElement
+    expect(depesche.disabled).toBe(false)
+    fireEvent.click(depesche)
+    expect(screen.getByRole('dialog', { name: 'Depesche' })).toBeTruthy()
   })
 })

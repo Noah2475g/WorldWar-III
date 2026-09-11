@@ -543,6 +543,14 @@ export const de = {
     hint: 'Klicken: auswählen · Escape: schließen',
   },
 
+  foot: {
+    standings: 'Rangliste',
+    standingsOpen: 'Rangliste / Sieg',
+    dispatch: 'Depesche',
+    unread: '{{count}} neu',
+    none: 'Noch keine Depesche.',
+  },
+
   map: {
     zoomIn: 'Hineinzoomen',
     zoomOut: 'Herauszoomen',

@@ -4049,11 +4049,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Ziel:** die Rangliste ist nur ein Panel, die Depesche hat keinen festen Platz.
 - **Anforderungen:** R-UI-13, R-UI-14, R-UI-03 · **Entwurf:** D27.6
 - **Abhängigkeiten:** T-M29-02
-- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`,
-  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/app.css`,
-  `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Foot.tsx`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Standings.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
 - **Tests zuerst:** Neu-Marke zählt und wird beim Öffnen null; Rangliste zeigt die eigene
-  Zeile immer (`Panels.test.tsx`, `App.test.tsx`).
+  Zeile immer (`Foot.test.tsx`, `Panels.test.tsx`, `App.test.tsx`).
 - **Fertig wenn:** dreiteiliger Fuß — Protokoll mit Zeitspalte und Icon, Rangliste
   dauerhaft (eigene Zeile in `warn`), Knöpfe Depesche · Diplomatie/Markt · Rangliste/Sieg.
 

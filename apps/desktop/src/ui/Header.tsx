@@ -164,16 +164,9 @@ export function Header(props: HeaderProps) {
           ))}
         </div>
 
+        {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
+            bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
         <div className="header__panels">
-          <button type="button" className="button" onClick={() => props.onPanel('diplomacy')}>
-            {t('header.diplomacy')}
-          </button>
-          <button type="button" className="button" onClick={() => props.onPanel('market')}>
-            {t('header.market')}
-          </button>
-          <button type="button" className="button" onClick={() => props.onPanel('standings')}>
-            {t('standings.open')}
-          </button>
           <button type="button" className="button" onClick={props.onSaves}>
             {t('saves.title')}
           </button>

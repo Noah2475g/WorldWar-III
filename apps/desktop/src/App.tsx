@@ -40,12 +40,16 @@ import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
 import { boundsOf, centreOn, clampView, toScreen, zoomAt } from './map/picking.ts'
 import { Tooltip, tooltipFor } from './ui/Tooltip.tsx'
+import { Foot, latestReport } from './ui/Foot.tsx'
+import { standingsRows } from './ui/Standings.tsx'
+import { Dialog } from './ui/Dialogs.tsx'
+import { DeltaBar } from './ui/charts/DeltaBar.tsx'
+import { rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
-  EventLog,
   MarketPanel,
   ProvincePanel,
   ProvincePicker,
@@ -226,7 +230,9 @@ export function App(props: AppProps) {
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
-  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | null>('new')
+  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
+  /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
+  const [seenTick, setSeenTick] = useState(-1)
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -1491,7 +1497,20 @@ export function App(props: AppProps) {
         </aside>
       </main>
 
-      <EventLog entries={events} ticksPerDay={ticksPerDay} onJump={jumpTo} />
+      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, drei Knoepfe. */}
+      <Foot
+        entries={events}
+        ticksPerDay={ticksPerDay}
+        rows={standingsRows(view, nameOf)}
+        seenTick={seenTick}
+        onJump={jumpTo}
+        onDispatch={() => setDialog('report')}
+        onPanel={(panel) => {
+          // Die Lage oeffnen heisst: gesehen. Die Marke faellt auf null.
+          if (panel === 'standings') setSeenTick(state.tick)
+          dispatch({ type: 'openPanel', panel })
+        }}
+      />
 
       <Tutorial
         state={tutorial}
@@ -1543,6 +1562,42 @@ export function App(props: AppProps) {
         />
       )}
       {dialog === 'keys' && <KeyboardHelp onClose={() => setDialog(null)} />}
+      {/* Die Depesche (T-M31-03): der juengste Tagesbericht, wie er im Protokoll steht. */}
+      {dialog === 'report' &&
+        (() => {
+          const report = latestReport(events)
+          return (
+            <Dialog title={t('foot.dispatch')} onClose={() => setDialog(null)}>
+              {report ? (
+                <div className="dispatch">
+                  <p className="dispatch__head">{report.text}</p>
+                  {report.deltas && report.deltas.length > 0 && (
+                    <ul className="log__deltas" aria-label={t('dayReport.balance')}>
+                      {report.deltas.map((delta) => (
+                        <li key={delta.label}>
+                          <span>{delta.label}</span>
+                          <span className="log__delta-value">
+                            {rate(delta.balance)}
+                            <DeltaBar value={delta.balance} max={Math.max(...report.deltas!.map((d) => Math.abs(d.balance)), 1)} />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {report.body && report.body.length > 0 && (
+                    <ul className="dispatch__lines">
+                      {report.body.map((line, index) => (
+                        <li key={index}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <p className="muted">{t('foot.none')}</p>
+              )}
+            </Dialog>
+          )
+        })()}
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}

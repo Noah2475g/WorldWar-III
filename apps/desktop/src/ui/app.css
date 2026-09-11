@@ -1112,6 +1112,116 @@ body {
   white-space: nowrap;
 }
 
+/* Der Fuss (T-M31-03, D27.6): Protokoll | Rangliste | drei Knoepfe. */
+.foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px auto;
+  border-top: 1px solid var(--line);
+  background: var(--ground);
+  max-height: 168px;
+}
+
+.foot .log {
+  border-top: 0;
+  max-height: 168px;
+}
+
+.foot__standings {
+  border-left: 1px solid var(--line);
+  padding: var(--sp-sm) var(--sp-md);
+  overflow: hidden;
+}
+
+.foot__title {
+  margin: 0 0 var(--sp-xs);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warn);
+}
+
+.foot__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+.foot__row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: var(--sp-sm);
+  padding: 1px 0;
+  color: var(--ink-soft);
+}
+
+.foot__row--own {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.foot__rank,
+.foot__score {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot__nation {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foot__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-sm) var(--sp-md);
+  border-left: 1px solid var(--line);
+  min-width: 150px;
+}
+
+.foot__pair {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.foot__pair .foot__button {
+  flex: 1;
+}
+
+.foot__button {
+  position: relative;
+  text-align: left;
+}
+
+/* Die Neu-Marke (R-UI-14): Bernstein-Kreis mit Zahl, rechts oben am Knopf. */
+.foot__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--warn);
+  color: var(--on-warn);
+  font: 600 10px var(--font-num);
+  line-height: 16px;
+  text-align: center;
+}
+
+.dispatch__head {
+  margin: 0 0 var(--sp-sm);
+  font-weight: 600;
+}
+
+.dispatch__lines {
+  margin: var(--sp-sm) 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
 /* ---------------------------------------------------------------- symbols */
 
 /* Eine Reihe gleichartiger Dinge: Symbol und Anzahl statt eines Satzes (R-UI-10).
