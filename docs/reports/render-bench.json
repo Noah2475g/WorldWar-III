@@ -51,9 +51,9 @@
     "task": "T-M26-01",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.",
     "measuredAt": "2026-09-11",
-    "p95Ms": 2.33,
-    "medianMs": 1.98,
-    "maxMs": 5.17,
+    "p95Ms": 2.51,
+    "medianMs": 1.93,
+    "maxMs": 5.67,
     "frameBudgetMs": 16.7
   },
   "stacks": {
@@ -62,9 +62,9 @@
     "measuredAt": "2026-09-11",
     "armies": 300,
     "buildings": 945,
-    "p95Ms": 3.64,
-    "medianMs": 2.4,
-    "maxMs": 7.41,
+    "p95Ms": 3.36,
+    "medianMs": 2.26,
+    "maxMs": 6.03,
     "frameBudgetMs": 16.7
   }
 }

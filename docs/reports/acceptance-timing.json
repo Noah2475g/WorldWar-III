@@ -1,17 +1,17 @@
 {
-  "totalSeconds": 426,
-  "measuredAt": "2026-09-11T01:36:35.438Z",
-  "commit": "dd6087a",
+  "totalSeconds": 422,
+  "measuredAt": "2026-09-11T01:44:47.636Z",
+  "commit": "7969f3b",
   "steps": [
     {
       "id": "AK-2/3/4",
       "description": "pnpm verify (Lint, Typen, Tests inkl. Determinismus/Speichern/Kampf, Guards, Abdeckung)",
-      "seconds": 56
+      "seconds": 53
     },
     {
       "id": "AK-1",
       "description": "Vollständige Partie (pnpm sim:fullgame)",
-      "seconds": 277
+      "seconds": 278
     },
     {
       "id": "AK-6",
@@ -21,7 +21,7 @@
     {
       "id": "AK-6",
       "description": "Zeitbudgets seriell auf ruhiger Maschine (Tick, Weltkarte, Zeichnen)",
-      "seconds": 21
+      "seconds": 20
     },
     {
       "id": "AK-2",
