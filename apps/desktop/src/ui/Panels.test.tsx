@@ -6,6 +6,7 @@ import { defenceMultiplier, type Province, type PublicView, type Terrain, type V
 import { afterEach, describe, expect, it } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
+  ActionGroup,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
@@ -21,7 +22,8 @@ import {
   type EventEntry,
   type Targeting,
 } from './Panels.tsx'
-import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
+import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { ART, UNIT_ART } from './art.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 
@@ -1409,5 +1411,94 @@ describe('T-M28-16 Zwei Auftraege derselben Art', () => {
     const texte = [...container.querySelectorAll('.slot--queued [role="meter"]')].map((m) => m.textContent)
 
     expect(new Set(texte).size).toBe(2)
+  })
+})
+
+/**
+ * Bilder in der Rekrutierungsliste (T-M33-02, EINHEITSBILDER.md D33.3, R-UI-03/R-UI-04).
+ *
+ * Die Liste ist der eine Ort, an dem eine Einheit gross genug steht, um mehr zu zeigen
+ * als ein Rechteck mit Oval: 34 px statt der elf auf der Karte. Geprueft wird deshalb
+ * beides — dass das Bild da ist, und dass es nichts kostet, was vorher da war: den
+ * A11y-Namen mit Verb (T-M22-06) und das Klickziel (R-UI-03).
+ */
+describe('R-UI-04 Die Rekrutierungsliste zeigt Bilder', () => {
+  const EINHEITEN = ['infantry', 'tank', 'artillery'] as const
+  const NAMEN: Record<(typeof EINHEITEN)[number], string> = {
+    infantry: 'Infanterie',
+    tank: 'Kampfpanzer',
+    artillery: 'Artillerie',
+  }
+
+  const gruppe = (): ActionGroupSpec => ({
+    id: 'recruit',
+    title: 'Ausheben',
+    actions: EINHEITEN.map((key) => ({
+      id: `recruit-${key}`,
+      label: NAMEN[key],
+      aria: `${NAMEN[key]} ausheben`,
+      icon: UNIT_ICONS[key]!,
+      art: UNIT_ART[key]!,
+      disabledReason: null,
+      onRun: () => undefined,
+    })),
+  })
+
+  it('zeigt je Einheit genau ein Bild', () => {
+    const { container } = render(<ActionGroup group={gruppe()} />)
+
+    expect(container.querySelectorAll('.unit-art')).toHaveLength(EINHEITEN.length)
+  })
+
+  it('zeichnet zu jeder Einheit ihr eigenes Bild, Flaeche und Innenlinien', () => {
+    const { container } = render(<ActionGroup group={gruppe()} />)
+    const bilder = [...container.querySelectorAll('.unit-art')]
+
+    EINHEITEN.forEach((key, index) => {
+      const pfade = bilder[index]!.querySelectorAll('path')
+      expect(pfade, key).toHaveLength(2)
+      expect(pfade[0]!.getAttribute('d'), key).toBe(ART[UNIT_ART[key]!]!.body)
+      expect(pfade[1]!.getAttribute('d'), key).toBe(ART[UNIT_ART[key]!]!.cut)
+    })
+  })
+
+  it('setzt das Bild auf die 34 px des Bauplans', () => {
+    const { container } = render(<ActionGroup group={gruppe()} />)
+    const bild = container.querySelector('.unit-art')
+
+    expect(bild?.getAttribute('width')).toBe('34')
+    expect(bild?.getAttribute('viewBox')).toBe('0 0 48 30')
+  })
+
+  it('laesst den A11y-Namen woertlich stehen', () => {
+    // T-M22-06/V2-13: sichtbar "Infanterie", hoerbar "Infanterie ausheben". Ein Bild mit
+    // eigenem Namen daneben wuerde den Knopf doppelt vorlesen — es bleibt Schmuck.
+    render(<ActionGroup group={gruppe()} />)
+
+    expect(screen.getByRole('button', { name: 'Infanterie ausheben' })).toBeTruthy()
+    expect(screen.queryAllByRole('img')).toHaveLength(0)
+  })
+
+  it('zeigt das Bild IM Knopf, damit das Klickziel waechst statt zu schrumpfen', () => {
+    const { container } = render(<ActionGroup group={gruppe()} />)
+
+    for (const bild of container.querySelectorAll('.unit-art')) {
+      expect(bild.closest('button'), 'Bild ausserhalb des Knopfes').toBeTruthy()
+    }
+  })
+
+  it('R-UI-03 Waechter: der Knopf bleibt mindestens 24 px hoch', () => {
+    // jsdom rechnet kein Layout — gebunden wird die Kaskade, nicht die Messung.
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      render(<ActionGroup group={gruppe()} />)
+      const knopf = screen.getByRole('button', { name: 'Infanterie ausheben' })
+
+      expect(window.getComputedStyle(knopf).getPropertyValue('min-height')).toBe('24px')
+    } finally {
+      style.remove()
+    }
   })
 })

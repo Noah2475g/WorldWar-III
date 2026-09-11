@@ -20,6 +20,7 @@ import {
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
+import { UnitArt, type ArtName } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 
@@ -45,6 +46,12 @@ export interface Action {
   aria?: string
   /** The symbol of the thing being ordered, drawn on the button (R-UI-10). */
   icon?: IconName
+  /**
+   * Das Bild derselben Sache (T-M33-02, D33.3). Ist es da, zeichnet der Knopf den
+   * Schattenriss statt der Glyphe — im Knopf, nicht daneben, damit das Klickziel
+   * waechst statt zu schrumpfen (R-UI-03).
+   */
+  art?: ArtName
   /** Where the explanation of the thing being ordered lives (R-UI-11). */
   explainKey?: string
   /** Null when the action is available; otherwise the reason it is not. */
@@ -140,9 +147,12 @@ function ActionButton({
   compact = false,
   primary = false,
   pressed,
+  artWidth = 34,
 }: {
   action: Action
   showReason: boolean
+  /** Breite des Schattenrisses, falls die Aktion einen fuehrt (D33.3). */
+  artWidth?: number
   /** Nur das Zeichen und ein Plus — fuer den Ausbau-Knopf im gebauten Bauplatz (T-M29-03). */
   compact?: boolean
   /** Die eine Hauptaktion je Panel, in Bernstein (D27.1). */
@@ -168,7 +178,14 @@ function ActionButton({
           aria-describedby={action.disabledReason ? reasonId : undefined}
           onClick={action.onRun}
         >
-          {action.icon && <Icon name={action.icon} size={13} />}
+          {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
+              Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
+              eine Zumutung (T-M22-06). */}
+          {action.art ? (
+            <UnitArt name={action.art} width={artWidth} />
+          ) : (
+            action.icon && <Icon name={action.icon} size={13} />
+          )}
           {compact ? '+' : action.label}
         </button>
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}

@@ -15,6 +15,8 @@ import {
   unitLines,
   type ActionContext,
 } from './actions.ts'
+import { UNIT_ART } from '../ui/art.tsx'
+import { UNIT_ICONS } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 import { DEFAULT_NEW_GAME, toConfig } from './newGame.ts'
 
@@ -114,6 +116,21 @@ describe('R-UNIT-02 Ausheben braucht das Gebaeude und nennt die Anfangsstaerke',
 
     expect(infantry.disabledReason).toContain('Kaserne')
     expect(infantry.disabledReason).not.toMatch(RAW_KEY)
+  })
+
+  it('haengt jeder Einheit ihr Bild an, ohne das Zeichen anzutasten (T-M33-02)', () => {
+    // Zwei Saetze nebeneinander: die Glyphe bleibt, weil Alarme und Tagesbericht sie
+    // weiter lesen; das Bild kommt dazu, weil die Liste es zeigen kann und die Karte nicht.
+    const { ctx, capital } = fresh()
+    const actions = recruitActions(ctx, capital)
+
+    expect(actions.length).toBe(Object.keys(rules.units).length)
+    for (const action of actions) {
+      const key = action.id.replace('recruit-', '')
+      expect(action.art, `${key} ohne Bild`).toBe(UNIT_ART[key])
+      expect(action.icon, `${key} hat sein Zeichen verloren`).toBe(UNIT_ICONS[key])
+    }
+    expect(new Set(actions.map((action) => action.art)).size).toBe(actions.length)
   })
 
   it('bietet Infanterie an, sobald die Kaserne steht — mit Dauer und Anfangsstaerke', () => {

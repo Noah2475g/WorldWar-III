@@ -816,6 +816,9 @@ export function App(props: AppProps) {
       disabledReason: spec.disabledReason,
       ...(spec.aria ? { aria: spec.aria } : {}),
       ...(spec.icon ? { icon: spec.icon } : {}),
+      // Das Bild, wo die Aktion eines fuehrt (T-M33-02): der Knopf zeichnet dann den
+      // Schattenriss statt der Glyphe.
+      ...(spec.art ? { art: spec.art } : {}),
       ...(spec.explainKey ? { explainKey: spec.explainKey } : {}),
       ...(spec.hint ? { hint: spec.hint } : {}),
       // Die Quittung am ausloesenden Knopf (T-M22-05, D24.5): abgeschickt, noch nicht

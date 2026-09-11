@@ -2328,11 +2328,11 @@ tasks:
   - id: T-M33-02
     milestone: M33
     title: Die Rekrutierungsliste zeigt Bilder
-    status: todo
+    status: done
     deps: [T-M33-01]
     requirements: [R-UI-03, R-UI-04]
     design: [D-27]
-    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx]
     tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
     dod: "EINHEITSBILDER.md D33.3, Breite 34 px. ActionSpec bekommt ein optionales Feld art; recruitActions setzt es aus UNIT_ART, das Feld icon bleibt unberuehrt (die Alarme und der Tagesbericht nutzen es weiter). Test zuerst: die Liste zeigt je Einheit genau ein Bild, der A11y-Name bleibt wortgleich (Infanterie ausheben, T-M22-06), das Klickziel bleibt mindestens 24 px (R-UI-03). Keine Kernaenderung."
   - id: T-M33-03

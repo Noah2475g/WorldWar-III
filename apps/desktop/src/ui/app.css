@@ -306,6 +306,14 @@ body {
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
+  /* R-UI-03: das Klickziel ist mindestens 24 px hoch. Aus Schriftgroesse und Polsterung
+     kam es bisher ungefaehr dorthin — seit T-M33-02 steht es da, statt sich zu ergeben,
+     und ein Waechter in Panels.test.tsx haelt die Zusage fest. */
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
 }
 
 .button:disabled {

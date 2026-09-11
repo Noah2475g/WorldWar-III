@@ -19,6 +19,7 @@ import {
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
+import { UNIT_ART, type ArtName } from '../ui/art.tsx'
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 import { dominantIcon } from '../map/markers.ts'
@@ -56,6 +57,12 @@ export interface ActionSpec {
   aria?: string
   /** The symbol of the thing being ordered — a building, an arm of service (R-UI-10). */
   icon?: IconName
+  /**
+   * Das Bild derselben Sache (T-M33-02, D33.3): der Schattenriss fuer die Liste, wo 34
+   * px Platz sind. Es TRITT NICHT AN DIE STELLE von `icon` — die Alarme und der
+   * Tagesbericht lesen die Glyphe weiter, und die Karte kann gar nichts anderes.
+   */
+  art?: ArtName
   /** Where the one-sentence explanation of this thing lives (R-UI-11). */
   explainKey?: string
   /** What it costs and how long it takes, for the tooltip. */
@@ -192,6 +199,8 @@ export function recruitActions(ctx: ActionContext, provinceId: string): ActionSp
       ),
       // Sichtbar "Infanterie", hoerbar "Infanterie ausheben" (T-M22-06, V2-13).
       aria: t('actions.recruitAria', { thing: t(`units.${key}`) }),
+      // Das Bild fuer die Liste (T-M33-02); die Glyphe oben bleibt unberuehrt.
+      ...(UNIT_ART[key] ? { art: UNIT_ART[key] } : {}),
     }
   })
 }
