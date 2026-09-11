@@ -30,6 +30,9 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    // Der Einmarsch-Alarm im Kopf (T-M28-06): kurz im Chip, vollständig fürs Ohr.
+    alarm: 'Einmarsch: {{province}}',
+    alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
     speedStop: '{{stop}} Stunden je Sekunde',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
@@ -236,6 +239,13 @@ export const de = {
     chooseTarget: 'Ziel auf der Karte anklicken — oder hier wählen:',
     targetLabel: 'Ziel',
     arrivalPreview: '{{target}}: {{arrival}}',
+    // Verzoegerter Abmarsch (T-M32-01): der Waehler zaehlt in Tagen, der Kern in Ticks.
+    departLabel: 'Abmarsch',
+    departNow: 'sofort',
+    departInDay: 'in 1 Tag',
+    departInDays: 'in {{days}} Tagen',
+    departEarlier: 'Früher abmarschieren',
+    departLater: 'Später abmarschieren',
     confirmMove: 'Marsch befehlen',
     confirmBombard: 'Beschuss befehlen',
     cancel: 'Abbrechen',
@@ -270,6 +280,8 @@ export const de = {
     buildAria: '{{thing}} bauen',
     recruitAria: '{{thing}} ausheben',
     cancelBuild: '{{building}} abbrechen',
+    // Zwei Auftraege derselben Art unterscheiden sich am Fertigstellungstag (T-M28-16).
+    cancelBuildDay: '{{building}} abbrechen (fertig Tag {{day}})',
     recruit: 'Rekrutieren',
     setCapital: 'Hauptstadt verlegen',
     trade: 'Handeln',
@@ -336,6 +348,10 @@ export const de = {
     UNIT_RECRUITED: '{{province}}: {{count}} {{unit}} ausgehoben.',
     ARMY_DEPARTED: '{{army}} marschiert nach {{province}}.',
     ARMY_ARRIVED: '{{army}} hat {{province}} erreicht.',
+    // Der Einmarsch (T-M28-06). Satzgegenstand ist der Eindringling, darum greift die
+    // Mehrzahlfassung aus T-M23-02 hier wie bei WAR_DECLARED.
+    ARMY_INTRUDED: '{{player}} ist in {{province}} eingemarschiert.',
+    ARMY_INTRUDED_PLURAL: '{{player}} sind in {{province}} eingemarschiert.',
     ARMY_DESTROYED: '{{army}} ist vernichtet.',
     ARMY_RETREATED: '{{army}} hat sich nach {{province}} zurückgezogen.',
     BATTLE_STARTED: 'Gefecht bei {{province}}.',
@@ -419,6 +435,8 @@ export const de = {
     preview: 'Ergibt etwa {{amount}} {{resource}}.',
     previewNone: 'Dafür gibt es nichts.',
     trade: 'Handeln',
+    // Der Kursverlauf je Rohstoff (T-M32-02): Geld je Einheit, je Spieltag gemittelt.
+    trend: 'Kursverlauf',
     hint: 'Der Kurs gilt für den ganzen Spielstunden-Tick und für alle Mächte gleich; Nachfrage bewegt ihn danach.',
   },
 

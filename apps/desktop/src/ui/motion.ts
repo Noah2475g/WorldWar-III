@@ -43,6 +43,30 @@ export function ringRadius(timeMs: number, base: number, options: Parameters<typ
   return base + pulse(timeMs, options) * 3
 }
 
+/** Wie lange ein Gefechtsblitz nachleuchtet (T-M28-08). Eine Runde, ein Blitz. */
+export const BATTLE_FLASH_MS = 260
+
+/**
+ * Die Helligkeit des Gefechtsblitzes, 1 im Augenblick der Runde und 0 am Ende (T-M28-08).
+ *
+ * Der Puls daneben atmet in eigenem Takt und sagt nichts ueber das Spiel; dieser Wert
+ * haengt am Spieltick — er ist die einzige Bewegung auf dieser Karte, die etwas meldet
+ * statt nur zu leben. Und wie jede: wer weniger Bewegung verlangt oder schneller spielt,
+ * als ein Mensch zusieht, bekommt sie gar nicht. Der Ring bleibt dann trotzdem gross —
+ * die Groesse ist Zustand, nicht Bewegung.
+ */
+export function battleFlash(
+  sinceRoundMs: number,
+  options: { speed?: number; reduced?: boolean; duration?: number } = {},
+): number {
+  const reduced = options.reduced ?? prefersReducedMotion()
+  if (reduced || (options.speed ?? 0) > CUE_SPEED_LIMIT) return 0
+
+  const duration = options.duration ?? BATTLE_FLASH_MS
+  if (!(sinceRoundMs >= 0) || sinceRoundMs >= duration) return 0
+  return 1 - sinceRoundMs / duration
+}
+
 /** Wie lange die Farbwelle eines Besitzwechsels laeuft (T-M26-02, D25.4). */
 export const OWNERSHIP_FADE_MS = 600
 

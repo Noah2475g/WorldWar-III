@@ -1,12 +1,13 @@
 import { useState } from 'react'
+import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
-import type { BattleReportData } from '../game/events.ts'
+import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
-import { amount, arrival, costs, duration, percent, population, rate, remaining, unfix } from './format.ts'
+import { amount, arrival, costs, duration, percent, population, price, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
@@ -388,12 +389,24 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {/* Das Bauplatz-Raster (T-M29-03, D27.6): je Gebaeudeart genau ein Feld —
           gebaut, im Bau mit Fortschritt und Restzeit, oder frei mit der Bau-Aktion.
           Eine Liste der gebauten Gebaeude sagte nicht, was frei ist und was wann
-          fertig wird; das Raster sagt beides, ohne ein Wort mehr. */}
+          fertig wird; das Raster sagt beides, ohne ein Wort mehr.
+
+          **Nur wo die Sicht Gebaeude fuehrt** (T-M28-11, R-DIP-04): bei einer fremden
+          oder erinnerten Provinz kennt `publicView` weder `buildings` noch `buildQueue`,
+          und sieben freie Felder behaupteten dort „hier steht nichts" — eine Auskunft,
+          die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
+      {province.buildings !== undefined && (
+      <>
       <h3>{t('province.buildSlots')}</h3>
       <div className="slots">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
-          const order = province.buildQueue?.find((entry) => entry.building === key)
+          // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
+          // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
+          // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
+          // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
+          const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
+          const order = orders[0]
           const build = buildActions.find((entry) => entry.id === `build-${key}`)
           const name = t(`buildings.${key}`)
 
@@ -405,14 +418,17 @@ export function ProvincePanel(props: ProvincePanelProps) {
                   {name}
                   {level > 0 && <sup className="slot__level">{level + 1}</sup>}
                 </span>
-                <Meter
-                  label={name}
-                  labelHidden
-                  value={props.currentTick - order.startedTick}
-                  max={Math.max(1, order.completesAtTick - order.startedTick)}
-                  text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
-                  tone="warn"
-                />
+                {orders.map((entry, index) => (
+                  <Meter
+                    key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
+                    label={orders.length > 1 ? `${name} ${index + 1}` : name}
+                    labelHidden
+                    value={props.currentTick - entry.startedTick}
+                    max={Math.max(1, entry.completesAtTick - entry.startedTick)}
+                    text={remaining(props.currentTick, entry.completesAtTick, props.ticksPerDay)}
+                    tone="warn"
+                  />
+                ))}
               </div>
             )
           }
@@ -443,6 +459,8 @@ export function ProvincePanel(props: ProvincePanelProps) {
           )
         })}
       </div>
+      </>
+      )}
 
       {(province.recruitQueue ?? []).map((order) => (
         <Meter
@@ -500,6 +518,45 @@ export interface Targeting {
   confirm: Action | null
   onChoose: (id: string | null) => void
   onCancel: () => void
+  /**
+   * Tage, die der Abmarsch wartet (T-M32-01, `MOVE_ARMY.departInTicks`).
+   *
+   * Nur für den Marsch: der Beschuss marschiert nicht. Fehlt `onDelay`, zeigt die
+   * Zielwahl den Wähler gar nicht — so bleibt die alte Zielwahl unverändert nutzbar.
+   */
+  delayDays?: number
+  onDelay?: ((days: number) => void) | undefined
+}
+
+/** Der Schrittwähler für den verzögerten Abmarsch (T-M32-01, D27). */
+function DepartStepper(props: { days: number; onDelay: (days: number) => void }) {
+  const { days } = props
+  const text = days === 0 ? t('army.departNow') : days === 1 ? t('army.departInDay') : t('army.departInDays', { days })
+
+  return (
+    <div className="stepper" role="group" aria-label={t('army.departLabel')}>
+      <span className="stepper__label">{t('army.departLabel')}</span>
+      <button
+        type="button"
+        className="button button--icon"
+        aria-label={t('army.departEarlier')}
+        disabled={days <= 0}
+        onClick={() => props.onDelay(days - 1)}
+      >
+        −
+      </button>
+      <output className="stepper__value">{text}</output>
+      <button
+        type="button"
+        className="button button--icon"
+        aria-label={t('army.departLater')}
+        disabled={days >= MAX_DEPART_DELAY_DAYS}
+        onClick={() => props.onDelay(days + 1)}
+      >
+        +
+      </button>
+    </div>
+  )
 }
 
 export interface ArmyPanelProps {
@@ -647,6 +704,9 @@ export function ArmyPanel(props: ArmyPanelProps) {
               ))}
             </select>
           </label>
+          {targeting.kind === 'move' && targeting.onDelay && (
+            <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
+          )}
           {targeting.target && (
             <p className="facts__inline">
               {t('army.arrivalPreview', {
@@ -1085,10 +1145,16 @@ export function MarketPanel({
   resources,
   stock,
   preview,
+  prices = {},
 }: {
   resources: readonly ResourceKey[]
   stock: Partial<Record<ResourceKey, number>>
   preview: (give: ResourceKey, giveAmount: number, want: ResourceKey) => { text: string; action: Action }
+  /**
+   * Der Kursverlauf je Rohstoff (T-M32-02, `priceSeries` in game/events.ts): Geld je
+   * Einheit, je Spieltag gemittelt. Ohne Handel ist er leer, und dann steht hier nichts.
+   */
+  prices?: Partial<Record<string, readonly PricePoint[]>>
 }) {
   const [give, setGive] = useState<ResourceKey>(resources[0] ?? 'wood')
   const [want, setWant] = useState<ResourceKey>(resources[1] ?? 'iron')
@@ -1096,6 +1162,10 @@ export function MarketPanel({
   // The interface counts whole units; the core counts thousandths.
   const giveAmount = Math.max(0, Math.round(units)) * 1000
   const result = preview(give, giveAmount, want)
+  // Eine Linie aus einem Wert ist keine (Sparkline gibt dafuer ohnehin nichts zurueck).
+  const trends = resources
+    .map((key) => [key, prices[key] ?? []] as const)
+    .filter((entry): entry is readonly [ResourceKey, readonly PricePoint[]] => entry[1].length > 1)
 
   return (
     <section className="panel" aria-label={t('market.title')}>
@@ -1138,6 +1208,18 @@ export function MarketPanel({
       </div>
       <p className="facts__inline">{result.text}</p>
       <ActionRow actions={[result.action]} />
+      {trends.length > 0 && (
+        <ul className="prices" aria-label={t('market.trend')}>
+          {trends.map(([key, series]) => (
+            <li key={key} className="prices__row">
+              <Icon name={RESOURCE_ICONS[key as ResourceKey] ?? 'money'} size={13} />
+              <span className="prices__name">{t(`resources.${key}`)}</span>
+              <Sparkline values={series.map((point) => point.price)} />
+              <span className="prices__last">{price(series[series.length - 1]!.price)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="panel__sub">{t('market.hint')}</p>
     </section>
   )

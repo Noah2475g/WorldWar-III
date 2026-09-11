@@ -13,6 +13,17 @@ function firstLegTicks(state: GameState, army: Army, next: ProvinceId, ctx: Phas
   return edgeTravelTicks(state, army, edge, army.locationProvinceId, next, ctx.rules)
 }
 
+/** Days an order may wait before it starts — long enough to plan, short enough to stay legible. */
+export const MAX_DEPART_DELAY_DAYS = 14
+
+/** The requested hold, normalised: absent, negative and fractional values all mean "leave now". */
+function departDelay(command: MoveArmyCommand, ticksPerDay: number): number {
+  const raw = command.departInTicks
+  if (raw === undefined || !Number.isFinite(raw) || raw <= 0) return 0
+  // eslint-disable-next-line no-restricted-syntax -- Tage mal Ticks je Tag, ganze Zahlen ohne Festkomma
+  return Math.min(Math.trunc(raw), MAX_DEPART_DELAY_DAYS * ticksPerDay)
+}
+
 /**
  * Ordering an army to march (R-UNIT-04, T-M4-02).
  *
@@ -48,21 +59,34 @@ registerCommand<MoveArmyCommand>('MOVE_ARMY', {
   apply: (draft, command, ctx) => {
     const army = draft.armies[command.armyId]!
     const route = planRoute(draft, army, command.targetProvinceId, ctx.map, ctx.rules)!
+    // A delayed order shifts every tick of the march by the same amount — nothing else
+    // about it changes, which is why the movement phase needs no knowledge of it.
+    const delay = departDelay(command, ctx.rules.constants.ticksPerDay)
+    const departAt = draft.tick + delay
 
     army.path = route.path
-    army.departureTick = draft.tick
+    army.departureTick = departAt
     // `arrivalTick` tracks the *next leg*; the event reports the arrival at the
     // destination, which is what the player asked about.
-    army.arrivalTick = draft.tick + firstLegTicks(draft, army, route.path[0]!, ctx)
+    army.arrivalTick = departAt + firstLegTicks(draft, army, route.path[0]!, ctx)
     // Leaving costs order: the army fights at reduced strength while it forms up.
-    army.deployDelayUntil = draft.tick + ctx.rules.constants.deployDelayTicks
+    //
+    // Bei sofortigem Abmarsch faellt sie hier an — unveraendert seit M4, einschliesslich
+    // des Falls, dass sie eine laengere laufende Strafe verkuerzt. Ein VERZOEGERTER
+    // Befehl fasst sie nicht an: die Armee marschiert ja noch nicht, und die Strafe
+    // setzt die Bewegungsphase am tatsaechlichen Abmarsch (T-M32-01). Haette der Befehl
+    // sie im Voraus gesetzt, stuende eine abbestellte Armee vierzehn Tage lang auf
+    // halber Kraft, ohne je marschiert zu sein (Durchsicht vom 2026-09-11).
+    if (delay === 0) {
+      army.deployDelayUntil = draft.tick + ctx.rules.constants.deployDelayTicks
+    }
 
     emit(ctx.events, draft.tick, 'ARMY_DEPARTED', {
       playerId: army.owner,
       armyId: army.id,
       fromProvinceId: army.locationProvinceId,
       toProvinceId: command.targetProvinceId,
-      arrivalTick: route.arrivalTick,
+      arrivalTick: route.arrivalTick + delay,
       audience: [army.owner],
     })
   },

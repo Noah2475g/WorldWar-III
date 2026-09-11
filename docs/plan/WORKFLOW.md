@@ -3,10 +3,45 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
-> `done`, je Aufgabe ein Commit und eine Zeile in `PROGRESS.md`; `pnpm verify` grün an den
-> Toren M29/M30, Abschlussprüfung im M31-Block von PROGRESS.md). **M32 wartet auf Noahs
-> Freigabe.** Danach T-M28-06/T-M28-08. Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+> **Stand:** 2026-09-11 (abends) · **Alles ist gebaut.** Noah hat „alles, in Planreihenfolge"
+> freigegeben; seither sind **M32 vollständig** (verzögerter Abmarsch, Markt-Kursverlauf,
+> Entscheid zu Durchmarsch/Provinzhandel/Forschung), **T-M28-06** (Einmarsch-Alarm mit dem
+> neuen Kernereignis `ARMY_INTRUDED`), **T-M28-08** (Gefechte mit Schein, Einschlagzeichen
+> und Blitz je Runde) und **T-M28-07** (Analyse + Entwurf D28, kein Bau) fertig. Von 172
+> Aufgaben ist **nur noch T-M10-02 offen — zurückgenommen, keine Arbeit.** `pnpm verify`
+> grün (1786 Tests). `pnpm acceptance` **8 von 10 unter Fremdlast** — beide Ausfälle
+> nachgewiesen als Maschinenlast, nicht als Code (PROGRESS.md, Block „Tor M28/M32").
+> **Nicht mehr „alles gebaut": eine zweite Durchsicht hat den bereits auf `main` liegenden
+> Kriegsrat-Umbau M29–M31 geprüft — 13 Befunde gemeldet, 11 überlebten die Widerlegung,
+> vier davon schwer.** Sie sind in `PROBLEME.md` festgehalten und in acht Aufgaben
+> geschnitten (T-M28-09…16) und **alle acht gebaut**. Der schwerste war, dass die
+> Leertaste auf einem fokussierten Knopf das Spiel pausierte statt den Knopf auszulösen —
+> **ohne Maus war kein einziger Knopf zu betätigen.** Noahs Entscheid zu den Farben
+> (2026-09-11): **mehr Farben statt weniger Mächte**; `PLAYER_COLORS` hat jetzt 24, und
+> die Zuordnung geht über die Nummer der Kennung statt über einen Streuwert, der bei
+> `p1`…`p24` auf nur dreizehn Fächer fiel. `pnpm verify` 1822/1825 (drei Zeitlimits unter
+> Fremdlast, einzeln grün).
+>
+> **Abnahme auf freier Maschine am 2026-09-11: `pnpm acceptance` 11 von 11, Exit 0,
+> 6 min 2 s.** Das Zeitbudget-Tor, das den ganzen Abend riss, ist bestanden — Tickmedian
+> **2,65 ms** gegen 3,5 gefordert (unter Fremdlast waren es 4,03 und 4,11). AK-1
+> unverändert an Tag 798. **Alles ist auf `main` gemerged** (`4466503`, ein Merge-Commit,
+> kein fast-forward — siehe §2.1). Von **205 Aufgaben sind 204 erledigt**; offen ist allein
+> die zurückgenommene T-M10-02.
+> Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+>
+> **Danach eine Durchsicht des Diffs durch vier Prüfer mit adversarischer Gegenprobe:
+> zehn Befunde, alle zehn haben die Widerlegung überlebt, drei davon schwer — und alle
+> drei in T-M32-01.** Die Ausnahme, die ich in `deploymentFactor` gebaut hatte, kannte die
+> Herkunft der laufenden Strafe nicht: ein verzögerter Befehl löschte jede Aufstellungs-
+> und Rückzugsstrafe, ein abbestellter erzeugte eine, die nie verdient war. Repariert:
+> die Bewegungsphase setzt die Strafe am **tatsächlichen** Abmarsch, `deploymentFactor`
+> ist wieder, was es war. Dazu `alarmSeenTick` über den Partiewechsel hinweg und ein
+> Gefechtsblitz von einem Bild Dauer. `pnpm verify` grün mit **1794 Tests**; Einzelheiten
+> im Block „Durchsicht" von `PROGRESS.md`.
+>
+> **Stand davor:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
+> `done`; `pnpm verify` grün an den Toren M29/M30). **M32 wartete auf Noahs Freigabe.**
 >
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
@@ -88,14 +123,47 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **Der Kriegsrat-Umbau (M29–M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen, dann Aufgabe
-   für Aufgabe ab T-M29-01. M32 erst nach Noahs Freigabe. T-M28-06 und T-M28-08 werden
-   danach im neuen Schema gebaut (sie hängen jetzt an T-M29-01).
-1. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
-   nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
-   mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
-   seit dem 2026-09-03 eine uncommittete, überholte Änderung an
-   `packages/core/src/persistence/migrate.ts` — vor dem Merge verwerfen.
+0. **Nichts Dringendes mehr.** Der Abnahmelauf steht bei 11 von 11 auf freier Maschine,
+   alles ist auf `main`, und von 205 Aufgaben ist nur die zurückgenommene T-M10-02 offen.
+   Vor jedem künftigen Abnahmelauf die Last prüfen — unter einem laufenden Spiel reisst
+   das Zeitbudget-Tor, und zwar am Code vorbei:
+   ```bash
+   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
+   ```
+0b. **Noahs Freigabe für M33** — T-M28-07 hat vier Teilaufgaben geschnitten
+   (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
+   wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
+   `garrison` oder `defensive` die Vorgabehaltung wird. Die Teilaufgaben stehen bewusst
+   noch **nicht** in `tasks.yaml`.
+0c. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
+   Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
+   `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
+   Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
+   M17 wird als Ganzes geplant oder gar nicht.
+0d. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
+   im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
+   24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
+   Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen. Fünf
+   Anläufe über drei Partien, Einzelheiten in `PROBLEME.md` (2026-09-11). **Allgemein:
+   alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht prüfbar.**
+   Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
+   braucht ein großes Fenster und seinen Blick.
+
+1. **Merge auf `main` — erledigt am 2026-09-11** (`4466503`). Er war **kein fast-forward**,
+   anders als hier bis dahin stand. Gemessen: `git merge-base --is-ancestor main claude/design-plan-execution-8b4296`
+   schlägt fehl. PR #3 wurde als **Merge-Commit** nach `main` gebracht (`7881f8a`), der
+   Branch lief von `c372ba4` aus weiter — beide Linien haben seither je einen Commit, den
+   die andere nicht kennt. **Inhaltlich ist der Branch trotzdem ein echter Obermenge:**
+   `git diff claude/design-plan-execution-8b4296..main` ist exakt die Umkehrung von
+   `git diff main..claude/…` (46 Dateien, 1775/100 Zeilen in beide Richtungen), `main`
+   trägt also keine Zeile, die der Branch nicht hätte. Der Merge ist damit trivial, aber er
+   erzeugt einen Merge-Commit. **Das ist Noahs Entscheidung, so wie PR #3 es war** — die
+   Wahl zwischen Merge-Commit, `rebase` auf `main` und einem zweiten PR gehört ihm.
+   Die alte Streuänderung an `packages/core/src/persistence/migrate.ts` im Hauptcheckout
+   ist weg; dort liegt nur noch ein ungetrackter Ordner `remote/`. Danach die alten
+   Worktrees aufräumen (`git worktree list` zeigt acht; nur
+   `design-plan-execution-8b4296` ist aktuell, und `offene-punkte-vault-7d88d5` enthält
+   uncommittete Dateien und bleibt bewusst stehen).
 2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
@@ -112,7 +180,7 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 3 · Was gilt (nicht neu herleiten)
 
-- **Kein Remote, nichts gemerged.** Es gibt keinen Push, kein GitHub, keine CI.
+- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III, PRs #1–#3); weiterhin keine CI — `pnpm verify` ist die Prüfkette.
 - **Der Plan-Wächter ist scharf.** `npx vitest run test/plan-consistency.test.ts`
   prüft in einer Sekunde tasks.yaml ↔ 03-TASKS.md und jeden `files:`/`tests:`-Pfad.
 - **Anforderungstor:** `pnpm coverage:requirements` meldet `V1 offen: 0`.
@@ -123,7 +191,7 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
   ohne dass die Reparatur drin ist, belegt gar nichts — Reparatur rausnehmen, fallen
   sehen.
 
-## 4 · Sieben Fallen, die schon jemanden gekostet haben
+## 4 · Zehn Fallen, die schon jemanden gekostet haben
 
 1. **Der Worktree landet auf `main`.** Abschnitt 0. Fünf Sitzungen in Folge.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
@@ -148,20 +216,37 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 7. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` —
    lieber ein WIP-Commit.
 
+8. **Die Browser-Vorschau startet den Dev-Server im HAUPTORDNER, nie im Worktree.** Sie
+   serviert dann den Stand von `main`, und kein Neustart hilft. Erkennbar im Browser an
+   `await (await fetch('/src/<geänderte Datei>')).text()` ohne den neuen Bezeichner.
+   Abhilfe: im `.claude/launch.json` **des Hauptordners** eine zweite Konfiguration mit
+   `pnpm -C <absoluter Worktree-Pfad>` und eigenem Port anlegen — und danach wieder
+   entfernen. Eigener Port heißt eigener Ursprung: keine Spielstände, keine Autosaves.
+9. **Dateien im Arbeitsbaum bleiben LF.** Ein Bearbeitungsskript, das CRLF schreibt, macht
+   `pnpm verify` rot an Stellen, die seit Monaten unverändert sind: der Prosa-Wächter
+   streift Zeilenkommentare mit einem Ausdruck, dem `` im Weg steht, und meldet dann
+   Kommentartext als Spielertext (PROBLEME.md, 2026-09-11). Die Commits sind nie betroffen.
+
+10. **`pnpm verify` im HAUPTCHECKOUT liest die Worktrees mit.** Jeder Baum unter
+   `.claude/worktrees/` ist eine vollständige Kopie; ESLint meldete daraus 1684 Probleme,
+   keines aus dem Quellcode dieses Baums. Seit dem 2026-09-11 steht `.claude/**` in den
+   `ignores` von `eslint.config.js`. Aufgefallen ist es erst, als nach Monaten wieder auf
+   `main` geprüft wurde — **ein Prüflauf ist nur dort belegt, wo er gelaufen ist.**
+
 Dazu aus dem Bau von M22: **jsdom rechnet kein Layout** (`scrollWidth`/`clientWidth`
 sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), und
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
 rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
-## 5 · Der Stand in Zahlen (2026-09-08)
+## 5 · Der Stand in Zahlen (Aufgaben und Tests: 2026-09-11 abends; übrige Zeilen 2026-09-08)
 
 | | |
 |---|---|
-| Aufgaben | 166, davon **165 erledigt** (T-M10-02 zurückgenommen) |
-| Abnahme | **7 von 7**, `docs/reports/acceptance.md`, gegen den Endstand |
+| Aufgaben | **205, davon 204 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
+| Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | ~1650 schnell · Kern 96,8 % · gesamt 95,4 % |
+| Tests | **1825 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |

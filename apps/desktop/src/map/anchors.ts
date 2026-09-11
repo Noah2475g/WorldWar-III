@@ -135,6 +135,12 @@ export function anchorsFor(polygons: readonly Ring[], center: Point): Anchor[] {
     if (!tooClose) chosen.push(candidate)
   }
 
+  // Der Rueckfall: kein Gitterpunkt haelt Randabstand, die Provinz ist zu klein. Dann
+  // ist der Mittelpunkt der eine Anker — er liegt sicher im Land, und das ist die
+  // Zusage, die der Waechter ueber alle 237 Provinzen bindet. Dass dort auch der
+  // Armeekasten steht, loest `markersFor` beim Zeichnen mit BUILDING_OFFSET_Y
+  // (T-M28-12, Befund 2 der Durchsicht vom 2026-09-11); ein Versatz schon am Anker
+  // schoebe ihn in kleinen Provinzen wie Bahrain aus der Flaeche heraus.
   return chosen.length > 0 ? chosen : [{ ...center, edgeDistance: edgeDistanceOf(center, ring) }]
 }
 
@@ -181,8 +187,14 @@ export function placeBuildings(
   for (const building of BUILDING_ORDER) {
     const level = buildings[building] ?? 0
     if (level <= 0) continue
-    const anchor = slotFor(building)
-    if (!anchor || taken.has(anchor)) continue
+    const wunsch = slotFor(building)
+    // Ist der feste Platz vergeben oder gibt es ihn nicht, nimmt das Gebaeude den
+    // ersten freien Anker — NICHT den Modulo-Platz (T-M28-12, Befund 1 der Durchsicht
+    // vom 2026-09-11). Der landete auf einem belegten Anker, das Gebaeude fiel weg, und
+    // die fuer Hafen und Werft reservierten blieben leer: in einer Binnenprovinz mit
+    // fuenf Ankern verschwanden Flugplatz und Eisenbahn von der Karte, obwohl Platz war.
+    const anchor = wunsch && !taken.has(wunsch) ? wunsch : anchors.find((a) => !taken.has(a))
+    if (!anchor) continue
     taken.add(anchor)
     placed.push({ building, level, x: anchor.x, y: anchor.y })
   }

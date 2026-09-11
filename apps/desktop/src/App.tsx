@@ -5,6 +5,7 @@ import {
   eventsFor,
   worldEventsIn,
   publicView,
+  MAX_DEPART_DELAY_DAYS,
   type Command,
   type GameState,
   type MapData,
@@ -15,6 +16,7 @@ import {
   type StoragePort,
 } from '@worldwar/core'
 import { advance } from './game/advance.ts'
+import { RESUME_SPEED } from './game/speed.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
 import {
   armyActions,
@@ -71,7 +73,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
+import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, openIntrusion, priceSeries } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -81,7 +83,7 @@ import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import { Alerts, alertsFor } from './ui/Alerts.tsx'
-import { cueForEvents, play } from './ui/sound.ts'
+import { cueForOwnEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
   TUTORIAL_STORAGE_KEY,
@@ -145,6 +147,8 @@ interface PendingTarget {
   armyId: string
   kind: 'move' | 'bombard'
   target: string | null
+  /** Tage, die der Abmarsch wartet (T-M32-01); 0 ist der alte Befehl ohne das Feld. */
+  delayDays: number
 }
 
 const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
@@ -233,6 +237,8 @@ export function App(props: AppProps) {
   const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
+  /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
+  const [alarmSeenTick, setAlarmSeenTick] = useState(-1)
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -317,7 +323,9 @@ export function App(props: AppProps) {
     soundedUpTo.current = own.length
     if (fresh.length === 0) return
 
-    const cue = cueForEvents(fresh)
+    // Nur die eigenen Gefechte klingen (T-M28-08): oeffentliche Ereignisse sind lesbar,
+    // aber nicht deshalb meine Sache.
+    const cue = cueForOwnEvents(fresh, 'p1')
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
   }, [state, ui.settings.sound, speed, props.audio])
 
@@ -819,7 +827,7 @@ export function App(props: AppProps) {
         if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
           // The army panel itself says "choose a target" — one notice, not two.
-          setTargeting({ armyId, kind: spec.targetKind, target: null })
+          setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
           send(spec.command, spec.id)
@@ -871,7 +879,9 @@ export function App(props: AppProps) {
 
       switch (shortcut.type) {
         case 'togglePause':
-          setSpeed((current) => (current === 0 ? 10 : 0))
+          // Fortsetzen achtet die eingestellte Hoechstgeschwindigkeit (T-M28-09,
+          // Befund 11): fest 10 lief bei einem Maximum von 2 fuenffach zu schnell.
+          setSpeed((current) => (current === 0 ? Math.min(RESUME_SPEED, ui.settings.maxSpeed) : 0))
           break
         case 'speed':
           if (shortcut.hoursPerSecond > 0) tutor('setSpeed')
@@ -983,6 +993,12 @@ export function App(props: AppProps) {
           // Die Zeitreihe des Slots — oder ehrlich leer: ein alter Stand ohne
           // Aufzeichnung beginnt die Kurve am Ladetag (T-M25-01, D25.1).
           setTimeline(await loadTimeline(storage, name))
+          // Quittierte Alarme und gelesene Protokollzeilen gehoeren zur alten Partie.
+          // Ohne das Zuruecksetzen vergleicht die Oberflaeche Ticks aus zwei Partien:
+          // ein Einmarsch an Tag 5 des geladenen Standes bliebe stumm, weil in der
+          // vorigen Partie schon Tag 30 quittiert war (Durchsicht vom 2026-09-11).
+          setAlarmSeenTick(-1)
+          setSeenTick(-1)
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1013,6 +1029,10 @@ export function App(props: AppProps) {
     setPendingCommands([])
     // Die Aufzeichnung auch: eine neue Partie beginnt ohne Vergangenheit (T-M25-01).
     setTimeline([])
+    // Und die Merker der Oberflaeche: quittierte Alarme und gelesene Protokollzeilen
+    // zaehlen in Ticks, und die beginnen in der neuen Partie wieder vorne.
+    setAlarmSeenTick(-1)
+    setSeenTick(-1)
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1088,6 +1108,34 @@ export function App(props: AppProps) {
     )
     return dayExpenses(view, props.rules, own)
   }, [state, view, ticksPerDay, props.rules])
+
+  /**
+   * Der Kursverlauf des Marktes (T-M32-02): aus den eigenen `TRADE_EXECUTED` im
+   * Ereignisprotokoll, je Spieltag gemittelt. Das Protokoll ist ein Ringpuffer — die
+   * Reihe reicht so weit zurück wie er, und das ist für eine Richtung genug.
+   */
+  const prices = useMemo(() => {
+    if (!state) return {}
+    return priceSeries(eventsFor(state.eventLog, 'p1'), ticksPerDay)
+  }, [state, ticksPerDay])
+
+  /**
+   * Der offene Einmarsch-Alarm (T-M28-06, R-TIME-06): der jüngste `ARMY_INTRUDED`,
+   * den der Spieler noch nicht quittiert hat.
+   *
+   * Der Kern hält das Vorspulen dort ohnehin an (`severity: 'alert'` plus `concerns`);
+   * die Oberfläche sagt dazu, **wo** — Chip im Kopf, Zinnober-Ring auf der Karte.
+   */
+  const alarm = useMemo(() => {
+    if (!state) return null
+    const offen = openIntrusion(eventsFor(state.eventLog, 'p1'), alarmSeenTick, state.tick)
+    if (!offen) return null
+    return {
+      provinceId: offen.provinceId,
+      provinceName: activeMap.provinces.find((p) => p.id === offen.provinceId)?.name ?? offen.provinceId,
+      intruder: state.players[offen.intruderId]?.nation ?? offen.intruderId,
+    }
+  }, [state, alarmSeenTick, activeMap.provinces])
 
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
@@ -1283,14 +1331,18 @@ export function App(props: AppProps) {
       .filter((p) => p.id !== army.locationProvinceId)
       .map((p) => ({ id: p.id, name: p.name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    const delayTicks = targeting.kind === 'move' ? targeting.delayDays * ticksPerDay : 0
     const target = targeting.target
       ? {
           id: targeting.target,
           name: nameOfProvince(targeting.target),
-          arrivalText: targeting.kind === 'move' ? (planArrival(ctx, army.id, targeting.target)?.text ?? null) : null,
+          arrivalText:
+            targeting.kind === 'move' ? (planArrival(ctx, army.id, targeting.target, delayTicks)?.text ?? null) : null,
         }
       : null
-    const confirmSpec = targeting.target ? targetAction(ctx, army.id, targeting.kind, targeting.target) : null
+    const confirmSpec = targeting.target
+      ? targetAction(ctx, army.id, targeting.kind, targeting.target, delayTicks)
+      : null
     const confirm: Action | null = confirmSpec
       ? {
           ...toAction(confirmSpec),
@@ -1307,12 +1359,15 @@ export function App(props: AppProps) {
       options,
       confirm,
       onChoose: (id) => setTargeting({ ...targeting, target: id }),
+      delayDays: targeting.delayDays,
+      onDelay: (days: number) =>
+        setTargeting({ ...targeting, delayDays: Math.min(Math.max(0, days), MAX_DEPART_DELAY_DAYS) }),
       onCancel: () => {
         setTargeting(null)
         dispatch({ type: 'clearNotice' })
       },
     }
-  }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send])
+  }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send, ticksPerDay])
 
   if (!state || !view || !ctx) {
     return (
@@ -1381,6 +1436,12 @@ export function App(props: AppProps) {
           setSpeed(0)
         }}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
+        alarm={alarm}
+        onAlarm={(provinceId) => {
+          // Quittieren heisst hinsehen: die Provinz kommt in die Mitte, der Chip geht.
+          jumpTo(provinceId)
+          setAlarmSeenTick(state.tick)
+        }}
         // Das Menue mit Wegen statt eines Sprungs in die Einstellungen (T-M22-04, V2-05).
         onMenu={() => setDialog('menu')}
         onSaves={() => setDialog('saves')}
@@ -1401,6 +1462,7 @@ export function App(props: AppProps) {
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
+            alarmProvince={alarm?.provinceId ?? null}
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
             speed={speed}
@@ -1481,6 +1543,7 @@ export function App(props: AppProps) {
             <MarketPanel
               resources={RESOURCE_KEYS}
               stock={view.self.resources}
+              prices={prices}
               preview={(give, giveAmount, want) => {
                 const result = tradePreview(ctx, give, giveAmount, want)
                 return { text: result.text, action: toAction(result.action) }

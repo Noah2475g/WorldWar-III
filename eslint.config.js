@@ -19,6 +19,12 @@ export default tseslint.config(
       '**/src-tauri/target/**',
       'test/guards/fixtures/**',
       'docs/**',
+      // Die git-Worktrees sind vollstaendige Kopien des Projekts. Wer `pnpm verify` im
+      // HAUPTCHECKOUT laeuft, liess ESLint sonst jede Kopie mitlesen — 1684 Meldungen aus
+      // acht Baeumen, keine davon aus dem Quellcode dieses Baums (Fund vom 2026-09-11,
+      // beim ersten verify auf `main` nach dem Merge). Im Worktree selbst faellt es nicht
+      // auf, weil dort keine weiteren Baeume liegen.
+      '.claude/**',
     ],
   },
   js.configs.recommended,

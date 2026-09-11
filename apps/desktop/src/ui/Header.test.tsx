@@ -49,7 +49,15 @@ const noop = () => undefined
 
 const renderHeader = (
   v: PublicView | null,
-  extra: { stalled?: boolean; speed?: number; onSpeed?: (s: number) => void; onMode?: (m: string) => void } = {},
+  extra: {
+    stalled?: boolean
+    speed?: number
+    onSpeed?: (s: number) => void
+    onMode?: (m: string) => void
+    alarm?: { provinceId: string; provinceName: string; intruder: string } | null
+    onAlarm?: () => void
+    fastForwarding?: boolean
+  } = {},
 ) =>
   render(
     <Header
@@ -57,7 +65,7 @@ const renderHeader = (
       ticksPerDay={24}
       speed={extra.speed ?? 0}
       stalled={extra.stalled ?? false}
-      fastForwarding={false}
+      fastForwarding={extra.fastForwarding ?? false}
       fastForwardNotice={null}
       mode="political"
       onSpeed={extra.onSpeed ?? noop}
@@ -67,6 +75,8 @@ const renderHeader = (
       onMenu={noop}
       onSaves={noop}
       onPanel={noop}
+      alarm={extra.alarm ?? null}
+      onAlarm={extra.onAlarm ?? noop}
     />,
   )
 
@@ -251,6 +261,22 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
     expect(onMode).toHaveBeenCalledWith('morale')
   })
 
+  it('fuellt den Alarmchip mit dem Provinznamen und fuehrt zur Provinz (T-M28-06)', () => {
+    let getroffen: number = 0
+    const { container } = renderHeader(view(100, [100], 900), {
+      alarm: { provinceId: 'USA-MW', provinceName: 'Mittlerer Westen', intruder: 'Russland' },
+      onAlarm: () => (getroffen += 1),
+    })
+    const slot = container.querySelector('.header__alarm') as HTMLElement
+
+    expect(slot.hidden).toBe(false)
+    const knopf = within(slot).getByRole('button')
+    expect(knopf.textContent).toContain('Mittlerer Westen')
+    expect(knopf.getAttribute('aria-label')).toContain('Russland')
+    fireEvent.click(knopf)
+    expect(getroffen).toBe(1)
+  })
+
   it('haelt einen leeren, verborgenen Platz fuer den Einmarsch-Alarm bereit (T-M28-06)', () => {
     const { container } = renderHeader(view(100, [100], 900))
     const slot = container.querySelector('.header__alarm') as HTMLElement | null
@@ -258,5 +284,40 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
     expect(slot).not.toBeNull()
     expect(slot?.hidden).toBe(true)
     expect(slot?.textContent).toBe('')
+  })
+})
+
+/**
+ * T-M28-10 · Die Tempo-Gruppe zeigt immer genau eine Stufe.
+ *
+ * Zwei Befunde der Durchsicht vom 2026-09-11. Der Kommentar im Quelltext versprach
+ * „genau ein Knopf ist gedrückt" — die Umsetzung verglich aber auf Gleichheit mit einer
+ * Raste, und beim Vorspulen trug ein zweiter Knopf derselben Gruppe `aria-pressed`.
+ */
+describe('T-M28-10 Genau eine gedrueckte Stufe', () => {
+  const gedrueckte = (container: HTMLElement) =>
+    [...container.querySelectorAll('.speeds [aria-pressed="true"]')]
+
+  it('markiert die groesste Raste, die die laufende Geschwindigkeit nicht ueberschreitet', () => {
+    // Höchstgeschwindigkeit 30: der Klick auf 50 ergibt 30, und 30 ist keine Raste.
+    const { container } = renderHeader(view(100, [100], 900), { speed: 30 })
+    const aktiv = gedrueckte(container)
+
+    expect(aktiv.length).toBe(1)
+    expect(aktiv[0]!.textContent).toBe('25')
+  })
+
+  it('markiert die Pause, solange die Uhr steht', () => {
+    const { container } = renderHeader(view(100, [100], 900), { speed: 0 })
+    const aktiv = gedrueckte(container)
+
+    expect(aktiv.length).toBe(1)
+    expect(aktiv[0]!.getAttribute('aria-label')).toBe('Pause')
+  })
+
+  it('traegt auch waehrend des Vorspulens genau einen gedrueckten Knopf', () => {
+    const { container } = renderHeader(view(100, [100], 900), { speed: 0, fastForwarding: true })
+
+    expect(gedrueckte(container).length).toBe(1)
   })
 })

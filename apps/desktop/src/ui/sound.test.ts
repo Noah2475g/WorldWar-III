@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CUE_SPEED_LIMIT, animationMs, cueFor, cueForEvents, play, shouldPlay } from './sound.ts'
+import { CUE_SPEED_LIMIT, animationMs, cueFor, cueForEvents, cueForOwnEvents, play, shouldPlay } from './sound.ts'
 
 /**
  * Sound and motion (T-M11-02, R-UI-04).
@@ -95,5 +95,29 @@ describe('R-UI-04 Ein Tick, ein Ton', () => {
   it('nimmt den Kampf vor dem Mangel und den Mangel vor der Fertigstellung', () => {
     expect(cueForEvents([{ type: 'RESOURCE_SHORTAGE' }, { type: 'BATTLE_STARTED' }])).toBe('battle')
     expect(cueForEvents([{ type: 'BUILD_COMPLETED' }, { type: 'RESOURCE_SHORTAGE' }])).toBe('shortage')
+  })
+})
+
+/**
+ * T-M28-08 · Der Ton gehört dem eigenen Gefecht.
+ *
+ * `BATTLE_STARTED` ist öffentlich: bis hierher spielte ein Gefecht zwischen China und
+ * Indien dem amerikanischen Spieler einen Kampfton vor. `concerns` beantwortet dieselbe
+ * Frage, die es für das Vorspulen schon beantwortet (T-M15-01) — wen es angeht.
+ */
+describe('T-M28-08 Nur was mich angeht, klingt', () => {
+  const fremd = { type: 'BATTLE_STARTED', concerns: ['p2', 'p3'] }
+  const eigen = { type: 'BATTLE_STARTED', concerns: ['p1', 'p2'] }
+
+  it('schweigt beim Gefecht zweier fremder Maechte', () => {
+    expect(cueForOwnEvents([fremd], 'p1')).toBeNull()
+  })
+
+  it('spielt den Kampfton beim eigenen Gefecht', () => {
+    expect(cueForOwnEvents([eigen, fremd], 'p1')).toBe('battle')
+  })
+
+  it('waehlt weiterhin den dringlichsten unter den eigenen', () => {
+    expect(cueForOwnEvents([eigen, { type: 'WAR_DECLARED', concerns: ['p1'] }], 'p1')).toBe('war')
   })
 })

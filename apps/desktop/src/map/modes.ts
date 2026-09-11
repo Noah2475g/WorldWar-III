@@ -103,8 +103,21 @@ export function strengthByProvince(
   return out
 }
 
-/** Stable colour per player, so a nation keeps its colour across sessions and saves. */
+/**
+ * Stable colour per player, so a nation keeps its colour across sessions and saves.
+ *
+ * **Die Nummer, nicht der Streuwert** (T-M28-14). Der Streuwert war stabil, aber nicht
+ * injektiv: `p1` bis `p24` fielen auf nur dreizehn verschiedene Faecher, und zwei
+ * Maechte teilten sich eine Fuellung — mit elf Farben ohnehin, mit vierundzwanzig
+ * immer noch. Die Kennungen sind `p1`, `p2`, … und damit selbst schon eine luecken-
+ * lose Nummerierung; sie direkt zu nehmen ist ebenso stabil und kann nicht kollidieren,
+ * solange es nicht mehr Maechte als Farben gibt. Alles, was nicht dieser Form folgt,
+ * faellt auf den alten Streuwert zurueck.
+ */
 export function colorForPlayer(playerId: string): string {
+  const nummer = /^p(\d+)$/.exec(playerId)
+  if (nummer) return PLAYER_FILL[(Number(nummer[1]) - 1) % PLAYER_FILL.length]!
+
   let hash = 0
   for (const char of playerId) hash = (hash * 31 + char.charCodeAt(0)) % 9973
   return PLAYER_FILL[hash % PLAYER_FILL.length]!

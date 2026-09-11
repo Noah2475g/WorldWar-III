@@ -729,7 +729,8 @@ body {
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(31 36 32 / 45%);
+  /* Abdunklung aus `ground` statt aus einer Altfarbe (T-M28-15). */
+  background: color-mix(in srgb, var(--ground) 45%, transparent);
   display: grid;
   place-items: center;
   padding: var(--sp-xl);
@@ -976,6 +977,81 @@ body {
   background: var(--paper);
   color: var(--ink);
   max-width: 100%;
+}
+
+/* Der Einmarsch-Alarm im Kopf (T-M28-06, D27.6): Zinnober auf dunklem Grund, damit
+   er neben den Bernstein-Knoepfen der Zeile nicht untergeht. */
+.alarm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-height: 24px;
+  padding: 2px var(--sp-sm);
+  border: 1px solid var(--accent);
+  background: var(--paper-sunk);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.alarm-chip:hover,
+.alarm-chip:focus-visible {
+  background: var(--accent);
+  color: var(--ground);
+}
+
+/* Der Kursverlauf im Marktpanel (T-M32-02, D27). */
+.prices {
+  list-style: none;
+  margin: var(--sp-sm) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.prices__row {
+  display: grid;
+  grid-template-columns: 13px 1fr 44px auto;
+  gap: var(--sp-sm);
+  align-items: center;
+}
+
+.prices__name {
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prices__last {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Der Schrittwaehler des verzoegerten Abmarsches (T-M32-01, D27). */
+.stepper {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.stepper__label {
+  color: var(--ink-soft);
+}
+
+.stepper__value {
+  min-width: 6ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.button--icon {
+  min-width: 24px;
+  padding: 2px 6px;
+  line-height: 1;
 }
 
 .market {
@@ -1289,7 +1365,8 @@ body {
   border: 1px solid var(--line);
   border-left: 3px solid var(--ink);
   border-radius: 2px;
-  box-shadow: 0 2px 8px rgb(31 36 32 / 18%);
+  /* Schatten aus `ground` statt aus einer Altfarbe (T-M28-15). */
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ground) 18%, transparent);
 }
 
 .tutorial__progress {

@@ -4,6 +4,11 @@ import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import {
   battleIntensity,
+  battleRingBase,
+  battleRingWidth,
+  battleGlow,
+  battleImpacts,
+  BATTLE_IMPACTS_MAX,
   cacheKey,
   isVisible,
   marchArrow,
@@ -355,5 +360,48 @@ describe('T-M30-04 Der Marschweg zeigt Stand und Rest', () => {
     const b = marchArrow([[0, 0], [100, 0]], marchProgress(timing, 20))!
     expect(a).toEqual(b)
     expect(a.standpoint).toEqual([50, 0])
+  })
+})
+
+/**
+ * T-M28-08 · Kämpfe werden ein Ereignis.
+ *
+ * Noahs Maßstab vom 2026-09-08: im Vorspulen soll ein Krieg auffallen, ohne dass man
+ * das Protokoll liest. Der Ring von T-M26-02 sagte das Wo; er sagte es nur leise.
+ */
+describe('T-M28-08 Das Gefecht ist nicht zu uebersehen', () => {
+  it('gibt der Feldschlacht einen deutlich groesseren Ring als vor der Aufgabe', () => {
+    // Gegen den alten Stand gebunden: 9 + 7·i ergab 16 px Radius und 3,0 px Strich.
+    expect(battleRingBase(1)).toBeGreaterThanOrEqual(20)
+    expect(battleRingWidth(1)).toBeGreaterThanOrEqual(4)
+    // Das Scharmuetzel bleibt klein — sonst sagt die Groesse wieder nichts.
+    expect(battleRingBase(0)).toBeLessThan(battleRingBase(1) / 1.5)
+  })
+
+  it('legt einen Schein unter den Ring, der mit dem Gefecht waechst und nie deckt', () => {
+    const klein = battleGlow(0.2)
+    const gross = battleGlow(1)
+
+    expect(gross.radius).toBeGreaterThan(battleRingBase(1))
+    expect(gross.radius).toBeGreaterThan(klein.radius)
+    expect(gross.alpha).toBeGreaterThan(klein.alpha)
+    expect(gross.alpha).toBeLessThanOrEqual(0.35)
+  })
+
+  it('setzt Einschlagzeichen nach Gefechtsgroesse — und immer dieselben', () => {
+    const klein = battleImpacts('USA-MW', 0)
+    const gross = battleImpacts('USA-MW', 1)
+
+    expect(klein.length).toBe(1)
+    expect(gross.length).toBe(BATTLE_IMPACTS_MAX)
+    expect(gross.length).toBeGreaterThan(klein.length)
+    // Dieselbe Provinz ergibt dasselbe Bild: sonst tanzen die Einschlaege je Frame.
+    expect(battleImpacts('USA-MW', 1)).toEqual(gross)
+    expect(battleImpacts('CAN-EAST', 1)).not.toEqual(gross)
+    // Sie liegen am Ring, nicht irgendwo.
+    for (const mark of gross) {
+      expect(mark.distance).toBeGreaterThan(battleRingBase(1) * 0.5)
+      expect(mark.distance).toBeLessThanOrEqual(battleGlow(1).radius)
+    }
   })
 })

@@ -3064,6 +3064,15 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > Handelssystem über einem ersten gebaut, den die KI nachweislich nie benutzt. Die Zeitung
 > gehört nicht mehr hierher: sie ist in M15 durch den Filter „Weltgeschehen" ersetzt und
 > gestrichen.
+>
+> **Zwei Punkte aus dem Entscheid T-M32-03 (DECISIONS.md, 2026-09-11) kommen hinzu:** der
+> **Antrag auf Durchmarschrecht** (gewähren und widerrufen gibt es seit M5, die Gegenrichtung
+> fehlt — und nur sie lässt Durchmarschrecht zwischen zwei KI-Mächten entstehen) und der
+> **Provinzhandel** (eine Provinz kann heute nur durch Eroberung den Besitzer wechseln; die
+> eigentliche Arbeit ist, was eine fremde Provinz der KI wert ist). Beide stehen bewusst
+> **nicht** in `tasks.yaml`: ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine
+> einzige Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Entwurf und Aufgabe.
+> M17 wird als Ganzes geplant oder gar nicht — wer ihn aufmacht, nimmt diese beiden mit.
 
 ## Meilenstein M18 — Später
 
@@ -3918,6 +3927,90 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   auslösen und das Zeichenbudget hält. **Maßstab: im Vorspulen fällt ein Krieg auf,
   ohne dass man das Protokoll liest.**
 
+
+
+> **Nachtrag 2026-09-11: sieben Aufgaben aus der Durchsicht von M29–M31.** Vier Prüfer über
+> `git diff ec36bef..c372ba4`, je Befund ein Skeptiker mit dem Auftrag zu widerlegen: 13
+> gemeldet, **11 überlebten, vier davon schwer** — in Code, der bereits auf `main` liegt und
+> `pnpm verify`, `pnpm acceptance` 11/11 und Sichtprüfungen bestanden hatte. Die Tabelle mit
+> allen elf Befunden und ihren Fehlerfällen steht in `PROBLEME.md` (2026-09-11).
+> **Reihenfolge:** zuerst T-M28-09 und T-M28-10 (Bedienung ohne Maus), dann T-M28-11
+> (Nebelregel), dann der Rest. T-M28-14 braucht Noahs Entscheid.
+
+### T-M28-09 · Die Bedienung ohne Maus bekommt ihre Tasten zurück *(Durchsicht 2026-09-11)*
+- **Ziel:** Die Leertaste auf einem fokussierten Knopf pausiert das Spiel, statt den Knopf
+  auszulösen — wer ohne Maus bedient, kann heute keinen Knopf betätigen.
+- **Anforderungen:** R-UI-05 · **Entwurf:** D26 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/keyboard.ts`
+- **Tests zuerst:** ein fokussierter Knopf schluckt die Leertaste nicht mehr; bei
+  Höchstgeschwindigkeit 2 ergibt die Leertaste höchstens 2.
+- **Fertig wenn:** die Taste nur greift, wenn der Fokus auf keinem Bedienelement liegt, und
+  das Fortsetzen die eingestellte Höchstgeschwindigkeit achtet.
+
+### T-M28-10 · Die Tempo-Gruppe zeigt immer genau eine Stufe *(Durchsicht 2026-09-11)*
+- **Ziel:** Zwischen zwei Rasten ist kein Knopf gedrückt, während des Vorspulens sind es zwei.
+- **Anforderungen:** R-TIME-04, R-UI-05 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`
+- **Tests zuerst:** genau ein `aria-pressed` bei Geschwindigkeit 30 mit Rasten 25/50, und
+  genau eines während des Vorspulens.
+- **Fertig wenn:** gedrückt ist die größte Raste, die die laufende Geschwindigkeit nicht
+  überschreitet, und der Abbrechen-Knopf gehört nicht mehr derselben Gruppe an.
+
+### T-M28-11 · Das Bauplatz-Raster sagt nur, was die Sicht weiß *(Durchsicht 2026-09-11)*
+- **Ziel:** Bei einer fremden Provinz zeigt das Raster sieben freie Plätze und behauptet
+  damit „hier steht nichts" — die Sicht weiß es schlicht nicht.
+- **Anforderungen:** R-DIP-04, R-UI-10 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** eine fremde Provinz zeichnet kein Raster.
+- **Fertig wenn:** das Raster nur erscheint, wenn die Sicht Gebäude führt. Befund 5
+  derselben Durchsicht ist **bewusst abgetrennt** und liegt bei T-M28-16.
+
+### T-M28-16 · Mehrere Bauaufträge derselben Art sind einzeln sichtbar *(aus T-M28-11 abgetrennt)*
+- **Ziel:** Der Kern erlaubt zwei gleichzeitige Aufträge derselben Gebäudeart; das Raster
+  hat je Art ein Feld und zeigt nur den ersten.
+- **Anforderungen:** R-UI-10 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M28-11
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`
+- **Tests zuerst:** zwei Kaserne-Aufträge ergeben zwei Fortschrittsanzeigen mit
+  verschiedenen Restzeiten.
+- **Fertig wenn:** jeder laufende Auftrag seinen eigenen Fortschritt trägt und die beiden
+  Abbrechen-Knöpfe unterscheidbar sind.
+
+### T-M28-12 · Gebäude finden ihren Platz auch in kleinen und in Binnenprovinzen *(Durchsicht 2026-09-11)*
+- **Ziel:** Zwei Ankerplätze sind immer für Hafen und Werft reserviert, auch im Binnenland;
+  Landgebäude fallen deshalb weg, während die reservierten leer bleiben.
+- **Anforderungen:** R-MAP-05 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/anchors.ts`, `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** Binnenprovinz mit fünf Ankern zeigt alle fünf Landgebäude; ein
+  Mittelpunkt-Rückfall kollidiert nicht mit dem Armeekasten.
+- **Fertig wenn:** nur reserviert wird, was gebraucht wird, der Rückfall die vorhandenen
+  Anker der Reihe nach teilt, und der Mittelpunkt-Rückfall den Versatz wiederbekommt.
+
+### T-M28-13 · Ein Klick wählt die Armee, die man sieht *(Durchsicht 2026-09-11)*
+- **Ziel:** Bei zwei eigenen Armeen in einer Provinz wählt der Klick die verdeckte.
+- **Anforderungen:** R-UI-05, R-MAP-05 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/markers.ts`
+- **Tests zuerst:** zwei Armeen an derselben Stelle, der Klick liefert die obenauf liegende.
+- **Fertig wenn:** bei gleichem Abstand die zuletzt gezeichnete gewinnt.
+
+### T-M28-14 · Jede Macht bekommt eine eigene Farbe *(Durchsicht 2026-09-11, Entscheid durch Noah)*
+- **Ziel:** `colorForPlayer` hat elf Farben und rechnet modulo; der Startdialog erlaubt mehr.
+- **Anforderungen:** R-UI-02, R-MAP-01 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** keine zwei Mächte einer Höchstbesetzung teilen eine Farbe.
+- **Fertig wenn:** entweder der Farbsatz auf die höchste erlaubte Machtzahl wächst — dann
+  gilt der ΔE-Wächter für alle — oder der Dialog begrenzt die Machtzahl. **Die Wahl gehört
+  Noah, weil sie die Partiegröße betrifft.**
+
+### T-M28-15 · Der Spiegel-Wächter sieht jede Farbe *(Durchsicht 2026-09-11)*
+- **Ziel:** Er liest nur sechsstellige Hex-Werte im ersten `:root`-Block; zwei Farben der
+  abgelösten hellen Richtung stehen dadurch unbemerkt in `app.css`.
+- **Anforderungen:** R-UI-02 · **Entwurf:** D27 · **Abhängigkeiten:** keine
+- **Dateien:** `test/guards/css-mirrors-tokens.test.ts`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** eine verstimmte Fixture mit `rgb()` und mit einer Farbe im zweiten
+  `:root`-Block fällt.
+- **Fertig wenn:** jede Farbschreibweise und jeder `:root`-Block abgedeckt sind und die
+  beiden Altfarben auf der Kriegsrat-Ebene stehen.
 
 ---
 

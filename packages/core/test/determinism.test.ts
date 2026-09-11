@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { hashValue } from '@worldwar/shared'
-import { TEST_RULES, tinyMap } from '@worldwar/testkit'
+import { TEST_RULES, smallWorld, tinyMap } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { createInitialState, type GameConfig } from '../src/state/create'
 import { HASH_OMIT_KEYS, type GameState } from '../src/state/types'
@@ -94,5 +94,65 @@ describe('R-ARCH-03 Golden-Master', () => {
     expect(existsSync(file), 'Golden-Datei fehlt — mit UPDATE_GOLDEN=1 erzeugen').toBe(true)
     const stored = JSON.parse(readFileSync(file, 'utf8')) as { checkpoints: Record<string, string> }
     expect(checkpoints).toEqual(stored.checkpoints)
+  })
+})
+
+/**
+ * T-M32-01 made `MOVE_ARMY` carry an optional `departInTicks`. The field is additive:
+ * a command log recorded before it existed must replay to the same hash, tick for tick.
+ */
+describe('R-ARCH-02 Additive Kommandofelder', () => {
+  const world = { map: smallWorld(), rules: TEST_RULES }
+
+  function replay(command: Record<string, unknown>): string[] {
+    let current = createInitialState(
+      {
+        ...CONFIG,
+        mapId: 'testworld',
+        players: [
+          { name: 'A', kind: 'human', nation: 'Nordland', color: '#0f62bc' },
+          { name: 'B', kind: 'ai', nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' },
+        ],
+      },
+      world,
+    )
+    current.armies['a1'] = {
+      id: 'a1',
+      owner: 'p1',
+      name: 'a1',
+      locationProvinceId: 'n1',
+      units: [{ unitKey: 'infantry', hpTotal: 10_000 }],
+      path: [],
+      arrivalTick: null,
+      departureTick: null,
+      deployDelayUntil: 0,
+      stance: 'aggressive',
+      embarked: false,
+      cannotAttackUntil: 0,
+      bombardTarget: null,
+      holdFire: false,
+    }
+    current.armyOrder = ['a1']
+
+    const hashes: string[] = []
+    for (let i = 0; i < 40; i++) {
+      current = step(current, i === 3 ? [command as never] : [], world).state
+      hashes.push(hashOf(current))
+    }
+    return hashes
+  }
+
+  it('ein Marschbefehl ohne das Feld liefert dieselben Hashes wie mit dem Wert 0', () => {
+    const alt = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2' })
+    const neu = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2', departInTicks: 0 })
+
+    expect(neu).toEqual(alt)
+  })
+
+  it('und unterscheidet sich, sobald wirklich verzoegert wird', () => {
+    const alt = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2' })
+    const spaet = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2', departInTicks: 8 })
+
+    expect(spaet).not.toEqual(alt)
   })
 })
