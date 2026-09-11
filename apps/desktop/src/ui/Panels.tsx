@@ -20,9 +20,12 @@ import {
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
-import { UnitArt, type ArtName } from './art.tsx'
+import { BUILDING_ART, UnitArt, type ArtName } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
+
+/** Die Breite eines Gebaeudebildes im Bauplatzraster (T-M33-03, D33.3). */
+const SLOT_ART_WIDTH = 30
 
 /** Morale in the core: fixed-point, 0…100 000 for 0…100 %. */
 const MORALE_SCALE = 100_000
@@ -430,7 +433,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
           if (order) {
             return (
               <div key={key} className="slot slot--queued">
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={18} title={name} />
+                <UnitArt name={BUILDING_ART[key]} width={SLOT_ART_WIDTH} tone="building" label={name} />
                 <span className="slot__name">
                   {name}
                   {level > 0 && <sup className="slot__level">{level + 1}</sup>}
@@ -454,7 +457,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
             return (
               <div key={key} className="slot slot--built">
                 {/* Die Textfassung wie in der alten Symbolzeile: "2 Fabrik" fuers Ohr. */}
-                <Icon name={BUILDING_ICONS[key] ?? 'warning'} size={18} title={level > 1 ? `${level} ${name}` : name} />
+                <UnitArt
+                  name={BUILDING_ART[key]}
+                  width={SLOT_ART_WIDTH}
+                  tone="building"
+                  label={level > 1 ? `${level} ${name}` : name}
+                />
                 <span className="slot__name">
                   {name}
                   {level > 1 && <sup className="slot__level">{level}</sup>}
@@ -467,8 +475,15 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
           return (
             <div key={key} className="slot slot--free">
+              {/* Dasselbe Bild wie im gebauten und im laufenden Feld (T-M33-03) — es
+                  steht IM Knopf, damit das Feld genau ein Klickziel hat und nicht ein
+                  Bild neben einem. */}
               {build ? (
-                <ActionButton action={build} showReason={false} />
+                <ActionButton
+                  action={{ ...build, art: BUILDING_ART[key] }}
+                  artWidth={SLOT_ART_WIDTH}
+                  showReason={false}
+                />
               ) : (
                 <span className="slot__name">{name}</span>
               )}

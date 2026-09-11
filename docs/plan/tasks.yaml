@@ -2338,7 +2338,7 @@ tasks:
   - id: T-M33-03
     milestone: M33
     title: Das Bauplatzraster zeigt Gebaeudebilder
-    status: todo
+    status: done
     deps: [T-M33-01]
     requirements: [R-UI-03, R-UI-04]
     design: [D-27]

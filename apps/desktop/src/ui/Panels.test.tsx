@@ -22,8 +22,8 @@ import {
   type EventEntry,
   type Targeting,
 } from './Panels.tsx'
-import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
-import { ART, UNIT_ART } from './art.tsx'
+import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
+import { ART, BUILDING_ART, UNIT_ART } from './art.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 
@@ -1096,6 +1096,85 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(meter.getAttribute('aria-valuemax')).toBe('48')
     expect((slot.querySelector('.meter__fill') as HTMLElement).style.width).toBe('25%')
     expect(slot.textContent).toContain('noch 1,5 Tage')
+  })
+
+  /**
+   * Bilder im Bauplatzraster (T-M33-03, D33.3, Breite 30 px).
+   *
+   * Die Zusage ist nicht „es ist ein Bild da", sondern „es ist in jedem Feldzustand
+   * DASSELBE Bild": frei, im Bau und gebaut unterscheiden sich in Rahmen, Fortschritt
+   * und Knopf — das Gebaeude bleibt dasselbe Gebaeude.
+   */
+  const gerastert = (zustand: 'frei' | 'bau' | 'gebaut') => {
+    const gebaut = Object.fromEntries(Object.keys(BUILDING_ICONS).map((key) => [key, 2]))
+    const prov: VisibleProvince = {
+      ...province,
+      buildings: zustand === 'gebaut' ? gebaut : {},
+      ...(zustand === 'bau'
+        ? {
+            buildQueue: Object.keys(BUILDING_ICONS).map((key, index) => ({
+              id: `b${index}`,
+              building: key as never,
+              startedTick: 0,
+              completesAtTick: 48,
+            })),
+            buildQueueLength: 7,
+          }
+        : { buildQueue: [], buildQueueLength: 0 }),
+    }
+    return render(
+      <ProvincePanel province={prov} ownerName="Nordland" actions={[]} groups={[buildGroup()]} ticksPerDay={24} currentTick={12} />,
+    )
+  }
+
+  /** Die Flaeche je Feld, in der Reihenfolge des Rasters. */
+  const bilderImRaster = (container: HTMLElement): (string | null)[] =>
+    [...container.querySelectorAll('.slot')].map(
+      (slot) => slot.querySelector('.unit-art .unit-art__body')?.getAttribute('d') ?? null,
+    )
+
+  it('zeigt sieben Felder mit sieben verschiedenen Gebaeudebildern', () => {
+    const { container } = gerastert('gebaut')
+    const bilder = bilderImRaster(container)
+
+    expect(bilder).toHaveLength(Object.keys(BUILDING_ART).length)
+    expect(bilder.filter(Boolean)).toHaveLength(bilder.length)
+    expect(new Set(bilder).size).toBe(bilder.length)
+    for (const [index, key] of BUILDING_ORDER.entries()) {
+      expect(bilder[index], key).toBe(ART[BUILDING_ART[key]]!.body)
+    }
+  })
+
+  it('aendert das Bild nicht, wenn das Feld seinen Zustand wechselt', () => {
+    const frei = gerastert('frei')
+    const imBau = gerastert('bau')
+    const gebaut = gerastert('gebaut')
+
+    // Ohne diese Zeile verglichen die naechsten beiden siebenmal nichts mit nichts.
+    expect(bilderImRaster(frei.container).filter(Boolean)).toHaveLength(BUILDING_ORDER.length)
+    expect(bilderImRaster(imBau.container)).toEqual(bilderImRaster(frei.container))
+    expect(bilderImRaster(gebaut.container)).toEqual(bilderImRaster(frei.container))
+  })
+
+  it('setzt die Bilder auf die 30 px des Bauplans', () => {
+    const { container } = gerastert('gebaut')
+    const bilder = [...container.querySelectorAll('.slot .unit-art')]
+
+    expect(bilder).toHaveLength(BUILDING_ORDER.length)
+    for (const bild of bilder) {
+      expect(bild.getAttribute('width')).toBe('30')
+    }
+  })
+
+  it('behaelt die Stufenzahl sichtbar und im Namen fuers Ohr', () => {
+    // "2 Fabrik" war die Zusage von T-M29-03 und bleibt sie: die Ziffer steht
+    // hochgestellt im Feld und im zugaenglichen Namen des Bildes.
+    const { container } = gerastert('gebaut')
+    const feld = container.querySelectorAll('.slot')[BUILDING_ORDER.indexOf('factory')] as HTMLElement
+
+    expect(feld.querySelector('.slot__level')?.textContent).toBe('2')
+    const benannt = within(feld).getByRole('img', { name: '2 Fabrik' })
+    expect(benannt.classList.contains('unit-art'), 'Der Name haengt noch an der Glyphe').toBe(true)
   })
 
   it('zeichnet die Moral in zehn Segmenten mit dem Prozentwert und der Tendenz', () => {
