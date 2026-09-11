@@ -3,10 +3,19 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
-> `done`, je Aufgabe ein Commit und eine Zeile in `PROGRESS.md`; `pnpm verify` grün an den
-> Toren M29/M30, Abschlussprüfung im M31-Block von PROGRESS.md). **M32 wartet auf Noahs
-> Freigabe.** Danach T-M28-06/T-M28-08. Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+> **Stand:** 2026-09-11 (abends) · **Alles ist gebaut.** Noah hat „alles, in Planreihenfolge"
+> freigegeben; seither sind **M32 vollständig** (verzögerter Abmarsch, Markt-Kursverlauf,
+> Entscheid zu Durchmarsch/Provinzhandel/Forschung), **T-M28-06** (Einmarsch-Alarm mit dem
+> neuen Kernereignis `ARMY_INTRUDED`), **T-M28-08** (Gefechte mit Schein, Einschlagzeichen
+> und Blitz je Runde) und **T-M28-07** (Analyse + Entwurf D28, kein Bau) fertig. Von 172
+> Aufgaben ist **nur noch T-M10-02 offen — zurückgenommen, keine Arbeit.** `pnpm verify`
+> grün (1786 Tests). `pnpm acceptance` **8 von 10 unter Fremdlast** — beide Ausfälle
+> nachgewiesen als Maschinenlast, nicht als Code (PROGRESS.md, Block „Tor M28/M32").
+> **Der eine offene Punkt: ein Abnahmelauf auf freier Maschine.**
+> Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+>
+> **Stand davor:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
+> `done`; `pnpm verify` grün an den Toren M29/M30). **M32 wartete auf Noahs Freigabe.**
 >
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
@@ -88,18 +97,33 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **Kriegsrat M29–M31 sind gebaut und abgenommen** (`pnpm acceptance` 11/11, 2026-09-11; PR #3
-   gegen `main` offen: https://github.com/Noah2475g/WorldWar-III/pull/3). **Nächste Aufgabe: M32 —
-   nur nach Noahs Freigabe.** Dann T-M32-01 (Kern additiv: `MOVE_ARMY.departInTicks`), T-M32-02
-   (Markt-Sparkline, kernfrei), T-M32-03 (Entscheid in DECISIONS.md). Danach T-M28-06 (füllt den
-   leeren Chip `.header__alarm` in `Header.tsx`) und T-M28-08 (Explosionsmarker über dem Kampfring).
-   Bewusste Abweichungen vom Entwurf stehen im M31-Block von `PROGRESS.md` — nicht neu herleiten.
-   Prüfregel: gezielte Tests je Aufgabe, `pnpm verify` je Meilenstein-Tor.
-1. **Merge auf `main`** — über PR #3 (Noahs Entscheidung); `main` kann danach per fast-forward
-   nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
-   mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
-   seit dem 2026-09-03 eine uncommittete, überholte Änderung an
-   `packages/core/src/persistence/migrate.ts` — vor dem Merge verwerfen.
+0. **`pnpm acceptance` auf freier Maschine** — der Lauf vom 2026-09-11 abends kam auf
+   8 von 10, beide Ausfälle nachweislich Fremdlast (ein Spiel des Nutzers band mehrere
+   Kerne; Gegenprobe mit neutralisierter Kernänderung war *langsamer*). Vorher prüfen:
+   ```bash
+   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
+   ```
+0b. **Noahs Freigabe für M33** — T-M28-07 hat vier Teilaufgaben geschnitten
+   (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
+   wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
+   `garrison` oder `defensive` die Vorgabehaltung wird. Die Teilaufgaben stehen bewusst
+   noch **nicht** in `tasks.yaml`.
+0c. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
+   Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
+   `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
+   Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
+   M17 wird als Ganzes geplant oder gar nicht.
+0d. **Die Sichtprüfung zu T-M28-08 ist unvollständig** — im 420×240-Kartenfeld der
+   Vorschau ließ sich kein laufendes Gefecht sauber einfangen. Noahs Maßstab („im
+   Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest") braucht ein großes
+   Fenster und seinen Blick.
+
+1. **Merge auf `main`** — **PR #3 ist gemerged** (`main` = `7881f8a`), aber der Branch
+   ist seither weitergelaufen: M32, T-M28-06/07/08 und die Doku-Commits liegen darüber.
+   `main` kann per fast-forward nachziehen. Die alte Streuänderung an
+   `packages/core/src/persistence/migrate.ts` im Hauptcheckout ist weg; dort liegt nur
+   noch ein ungetrackter Ordner `remote/`. Danach die alten Worktrees aufräumen
+   (`git worktree list` zeigt acht; nur `design-plan-execution-8b4296` ist aktuell).
 2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
@@ -127,7 +151,7 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
   ohne dass die Reparatur drin ist, belegt gar nichts — Reparatur rausnehmen, fallen
   sehen.
 
-## 4 · Sieben Fallen, die schon jemanden gekostet haben
+## 4 · Neun Fallen, die schon jemanden gekostet haben
 
 1. **Der Worktree landet auf `main`.** Abschnitt 0. Fünf Sitzungen in Folge.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
@@ -152,20 +176,31 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 7. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` —
    lieber ein WIP-Commit.
 
+8. **Die Browser-Vorschau startet den Dev-Server im HAUPTORDNER, nie im Worktree.** Sie
+   serviert dann den Stand von `main`, und kein Neustart hilft. Erkennbar im Browser an
+   `await (await fetch('/src/<geänderte Datei>')).text()` ohne den neuen Bezeichner.
+   Abhilfe: im `.claude/launch.json` **des Hauptordners** eine zweite Konfiguration mit
+   `pnpm -C <absoluter Worktree-Pfad>` und eigenem Port anlegen — und danach wieder
+   entfernen. Eigener Port heißt eigener Ursprung: keine Spielstände, keine Autosaves.
+9. **Dateien im Arbeitsbaum bleiben LF.** Ein Bearbeitungsskript, das CRLF schreibt, macht
+   `pnpm verify` rot an Stellen, die seit Monaten unverändert sind: der Prosa-Wächter
+   streift Zeilenkommentare mit einem Ausdruck, dem `` im Weg steht, und meldet dann
+   Kommentartext als Spielertext (PROBLEME.md, 2026-09-11). Die Commits sind nie betroffen.
+
 Dazu aus dem Bau von M22: **jsdom rechnet kein Layout** (`scrollWidth`/`clientWidth`
 sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), und
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
 rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
-## 5 · Der Stand in Zahlen (2026-09-08)
+## 5 · Der Stand in Zahlen (Aufgaben und Tests: 2026-09-11 abends; übrige Zeilen 2026-09-08)
 
 | | |
 |---|---|
-| Aufgaben | 166, davon **165 erledigt** (T-M10-02 zurückgenommen) |
+| Aufgaben | **172, davon 171 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
 | Abnahme | **7 von 7**, `docs/reports/acceptance.md`, gegen den Endstand |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | ~1650 schnell · Kern 96,8 % · gesamt 95,4 % |
+| Tests | **1786 schnell** · Kern 96,8 % · gesamt 95,7 % (`pnpm verify` grün, 2026-09-11 abends) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |
