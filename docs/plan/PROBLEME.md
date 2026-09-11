@@ -1833,3 +1833,27 @@ Meilensteins, nicht ans Ende des Projekts.
 
 ---
 
+## 2026-09-11 · Abschlussprüfung · `pnpm verify` konnte im Hauptcheckout nie grün sein
+
+**Befund:** Der erste `pnpm verify` auf `main` nach dem Merge meldete **1684 Lint-Probleme**
+(1188 Fehler). Keines davon stammt aus dem Quellcode dieses Baums: ESLint las die **acht
+git-Worktrees** unter `.claude/worktrees/` mit — jeder eine vollständige Kopie des
+Projekts, samt eigener `node_modules`-freier Quellen und alter Stände.
+
+**Kleinster reproduzierbarer Fall:** `pnpm lint` im Hauptordner, solange ein Worktree
+existiert. Die Pfadverteilung der Meldungen sagt es selbst: 294 aus `.claude`, 37–38 je
+Baum, null aus `apps/`, `packages/` oder `test/`.
+
+**Warum es niemandem auffiel:** Seit Monaten wurde ausschließlich **in** einem Worktree
+gearbeitet, und dort liegen keine weiteren Bäume — `pnpm verify` war dort immer grün. Der
+Hauptcheckout kam erst mit dem Merge wieder an die Reihe, und damit zum ersten Mal die
+Konstellation, in der der Lauf nicht bestehen kann.
+
+**Behoben:** `.claude/**` steht jetzt in den `ignores` von `eslint.config.js`, mit der
+Begründung im Kommentar. `pnpm verify` auf `main`: **1825 Tests, Exit 0.**
+
+**Die Lehre:** Ein Prüflauf, der nur an einem Ort ausgeführt wird, ist nur an diesem Ort
+belegt. Die Prüfkette gehört mindestens einmal dorthin, wo am Ende gemerged wird.
+
+---
+

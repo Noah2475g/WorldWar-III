@@ -191,7 +191,7 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
   ohne dass die Reparatur drin ist, belegt gar nichts — Reparatur rausnehmen, fallen
   sehen.
 
-## 4 · Neun Fallen, die schon jemanden gekostet haben
+## 4 · Zehn Fallen, die schon jemanden gekostet haben
 
 1. **Der Worktree landet auf `main`.** Abschnitt 0. Fünf Sitzungen in Folge.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
@@ -226,6 +226,12 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    `pnpm verify` rot an Stellen, die seit Monaten unverändert sind: der Prosa-Wächter
    streift Zeilenkommentare mit einem Ausdruck, dem `` im Weg steht, und meldet dann
    Kommentartext als Spielertext (PROBLEME.md, 2026-09-11). Die Commits sind nie betroffen.
+
+10. **`pnpm verify` im HAUPTCHECKOUT liest die Worktrees mit.** Jeder Baum unter
+   `.claude/worktrees/` ist eine vollständige Kopie; ESLint meldete daraus 1684 Probleme,
+   keines aus dem Quellcode dieses Baums. Seit dem 2026-09-11 steht `.claude/**` in den
+   `ignores` von `eslint.config.js`. Aufgefallen ist es erst, als nach Monaten wieder auf
+   `main` geprüft wurde — **ein Prüflauf ist nur dort belegt, wo er gelaufen ist.**
 
 Dazu aus dem Bau von M22: **jsdom rechnet kein Layout** (`scrollWidth`/`clientWidth`
 sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), und
