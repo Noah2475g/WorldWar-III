@@ -6,8 +6,13 @@
 > Erklär-Fenster bleiben vorerst ohne Bild. **Infanterie:** der marschierende Mann, nicht das
 > Emblem aus Helm und Gewehr (Noahs Wahl, zweite Runde).
 >
-> **Status:** freigegeben. Die siebzehn Zeichnungen liegen fertig im Entwurfsblatt; M33 trägt
-> sie in den Code. Zwillinge in `tasks.yaml` und `03-TASKS.md` angelegt.
+> **Status: gebaut und abgenommen am 2026-09-11** (T-M33-01 bis T-M33-05, `pnpm verify`
+> Exit 0, 1859 Tests). Die siebzehn Zeichnungen stehen in `apps/desktop/src/ui/art.tsx`
+> und sind per Test zeichengleich an das Entwurfsblatt gebunden. Zwei Korrekturen gegen
+> diesen Plan, beide in `PROGRESS.md` begründet: die **Kette des schweren Panzers** ragte
+> im Entwurfsblatt 1,5 px links und rechts aus dem Kasten (gefunden von der neuen
+> Pfadabfahrt, in Blatt und Code korrigiert), und die **Rangliste** aus T-M33-04 führt
+> überhaupt kein Einheitenzeichen — dort war nichts umzustellen.
 
 ---
 
@@ -125,8 +130,10 @@ Unter 22 px wird nicht gezeichnet — dann gilt die Glyphe. Das betrifft heute n
    ist die richtige Reaktion. Er wird angepasst, nicht gelockert.
 4. **Mehr SVG-Knoten je Zeile.** Die Armeeliste kann lang werden; je Zeile steigt die Zahl
    der Pfade von zwei auf vier. Das ist wahrscheinlich belanglos, aber „wahrscheinlich" ist
-   in diesem Projekt kein Befund. T-M33-06 misst das Zeichenbudget nach, bei freier Maschine,
-   gegen den Ausgangswert p95 5,39 ms.
+   in diesem Projekt kein Befund. **T-M33-05** misst das Zeichenbudget nach (die Aufgabe
+   T-M33-06 gibt es nicht; der Plan schrieb sich hier vertippt), gegen den Ausgangswert
+   p95 5,39 ms. Ergebnis am 2026-09-11: 2,37 / 2,89 / 2,46 ms — und der Node-Benchmark
+   misst die **Karte**, nicht die Panel-Zeile; die Zahl dazu steht in `PROGRESS.md`.
 5. **Die Infanterie ist die eine Ausnahme.** Neun Einheiten zeigen ihr Gerät, die zehnte
    zeigt einen Menschen. Die Regel hat damit einen Sonderfall, und das ist bewusst: die
    Infanterie *ist* das Gerät, und ein Helm auf einem Gewehr wurde in der ersten Runde nicht
