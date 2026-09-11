@@ -5,12 +5,15 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-06): **V1 gebaut, und seit heute gibt es ein Programm.**
+Status (2026-09-11): **abgenommen.** `pnpm acceptance` lief auf freier Maschine
+**11 von 11, Exit 0, in 6 Minuten 2 Sekunden**; das Spiel wird an Spieltag 798
+entschieden. Von 225 Aufgaben sind 204 gebaut. Die 20 offenen sind geplant und
+freigegeben, aber nicht angefangen — Einheitenbilder, Fortschrittsachse, Zwischenziele
+und Rohstoffleiste (M33–M36).
 
-`pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup — der
-Auslieferungsweg ist zum ersten Mal wirklich gelaufen und nicht nur beschrieben. Offen
-sind noch **ein vollständiger Abnahmelauf** (`pnpm acceptance`, ~90 Minuten) und **Noahs
-Playtest** ([`docs/PLAYTEST.md`](docs/PLAYTEST.md)).
+`pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup; der
+Auslieferungsweg ist gelaufen und nicht nur beschrieben. Noahs Playtest liegt in zwei
+Berichten vor ([`docs/PLAYTEST.md`](docs/PLAYTEST.md) beschreibt den Ablauf).
 
 **Arbeitest du an diesem Projekt, lies genau eine Datei:**
 [`docs/plan/WORKFLOW.md`](docs/plan/WORKFLOW.md). Sie sagt, wo der Stand liegt, was gilt,
@@ -29,6 +32,13 @@ AK-1 ist erstmals belegt. **M15** machte die KI zu einem Gegner; die Lehre steck
 ihrem Integrationstor: eine Mechanik war in zwölf Einzeltests belegt und **im Spiel tot**.
 **M16** verpackt das Ganze als Programm.
 
+Danach ging es nicht mehr um Fehlendes, sondern um Qualität: **M22–M24** brachten die
+Oberfläche auf den Stand des Kerns und die Sprache auf echtes Deutsch, **M25–M27**
+ersetzten Text durch Bilder (Kurven, Marschpfeile, Gefechtsbild), **M29–M32** bauten den
+Kriegsrat um. Zwei adversarische Durchsichten des Diffs fanden dabei einundzwanzig
+Befunde, die die Widerlegung überlebten; der schwerste war, dass ohne Maus kein einziger
+Knopf zu betätigen war.
+
 
 ## Für Noah
 
@@ -38,13 +48,14 @@ ihrem Integrationstor: eine Mechanik war in zwölf Einzeltests belegt und **im S
 | Wie es gebaut wird (Architektur, Formeln) | [`docs/plan/02-DESIGN.md`](docs/plan/02-DESIGN.md) |
 | In welcher Reihenfolge (Aufgabenplan) | [`docs/plan/03-TASKS.md`](docs/plan/03-TASKS.md) |
 | Mechanik-Referenz des Originals | [`docs/research/SUPREMACY-MECHANICS.md`](docs/research/SUPREMACY-MECHANICS.md) |
-
 | Wo es steht (Fortschritt, Entscheidungen, Befunde) | [`docs/plan/PROGRESS.md`](docs/plan/PROGRESS.md) · [`docs/plan/DECISIONS.md`](docs/plan/DECISIONS.md) · [`docs/plan/PROBLEME.md`](docs/plan/PROBLEME.md) |
 | Jede Zahl mit Status und gemessenem Ausschlag | [`docs/plan/BALANCING.md`](docs/plan/BALANCING.md) |
 | Berichte (Abnahme, Karte, Parameterlauf, Budgets) | [`docs/reports/`](docs/reports/) |
 
-Von den drei Stellen, die dich brauchten — Geodaten-Freigabe (T-M9-01), Design-Freigabe
-(T-M10-01), Abnahme-Playtest (T-M12-03) — ist nur noch der Playtest offen.
+Alle drei Stellen, die dich brauchten, sind erledigt: Geodaten-Freigabe (T-M9-01),
+Design-Freigabe (T-M10-01) und der Abnahme-Playtest (T-M12-03), den du am 2026-09-07
+ausdrücklich an den Agenten delegiert hast. Was jetzt auf dich wartet, ist kein Tor mehr,
+sondern die Frage, die kein Agent beantworten kann: *wolltest du weiterspielen?*
 
 ## Für den umsetzenden Agenten
 

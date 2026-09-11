@@ -7,19 +7,21 @@ wo du bist, was gilt, welche Fallen es gibt, und den Ablauf bis zu dem Punkt, an
 spielt. Fang dort an, nicht bei den Plandateien.
 
 **Lies nicht** `01-REQUIREMENTS.md`, `02-DESIGN.md` und `03-TASKS.md` am Stück — das sind
-5400 Zeilen, und du brauchst pro Aufgabe **einen Abschnitt**. `WORKFLOW.md` §1 sagt, was
+7400 Zeilen, und du brauchst pro Aufgabe **einen Abschnitt**. `WORKFLOW.md` §1 sagt, was
 wann zu lesen ist.
 
 ## Zwei Dinge, an denen schon Sitzungen verloren gingen
 
-1. **`main` steht auf M8 und ist sechzig Commits alt.** Der Spitzenstand liegt auf einem
-   `claude/*`-Branch. Erster Befehl in einem frischen Worktree:
+1. **Die Spitze liegt auf `main`** — seit dem Merge vom 2026-09-11, und die alten
+   `claude/*`-Zweige sind abgeraeumt. Bis dahin galt das Gegenteil, und das hat fuenf
+   Sitzungen in Folge erwischt. Erster Befehl in einem frischen Worktree:
 
    ```bash
-   git log --oneline -1
+   git log --oneline -1 && git status --short
    ```
 
-   Ist es nicht die Spitze, sagt `WORKFLOW.md` §0, was zu tun ist.
+   **Wer merged, richtet `WORKFLOW.md` §0 im selben Zug** — eine Einstiegsdatei, die auf
+   den falschen Zweig zeigt, schadet in beide Richtungen.
 
 2. **Benchmarks brauchen die Maschine allein.** Alles unter `packages/core/test/perf`
    misst sonst die Auslastung statt den Code. Nie parallel zu einem Bau oder einer
@@ -39,12 +41,13 @@ wann zu lesen ist.
   `pnpm coverage:requirements` (muss `V1 offen: 0` melden) laufen in Sekunden — nutze sie
   nach jeder Planänderung.
 - **Sprache:** Dokumente Deutsch, Code und Bezeichner Englisch, `tasks.yaml` ohne Umlaute.
-- **Kein Remote.** Es gibt keinen Push und keine CI; `pnpm verify` ist die Prüfkette.
+- **Remote ja, CI nein.** `origin` ist github.com/Noah2475g/WorldWar-III (seit 2026-09-11);
+  es laeuft dort nichts automatisch. `pnpm verify` ist die Pruefkette.
 
 ## Befehle, die du brauchst
 
 ```bash
-pnpm verify        # Lint, Typen, Tests, Guards, Abdeckung  (~4 min)
-pnpm acceptance    # der ganze Abnahmelauf, enthält verify und test:slow (~90 min)
+pnpm verify        # Lint, Typen, Tests, Guards, Abdeckung  (~1 min, gemessen)
+pnpm acceptance    # der ganze Abnahmelauf, enthaelt verify  (~6 min, gemessen)
 pnpm dev           # das Spiel im Browser
 ```

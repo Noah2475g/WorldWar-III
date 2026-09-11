@@ -3,148 +3,64 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-11 (abends) · **Alles ist gebaut.** Noah hat „alles, in Planreihenfolge"
-> freigegeben; seither sind **M32 vollständig** (verzögerter Abmarsch, Markt-Kursverlauf,
-> Entscheid zu Durchmarsch/Provinzhandel/Forschung), **T-M28-06** (Einmarsch-Alarm mit dem
-> neuen Kernereignis `ARMY_INTRUDED`), **T-M28-08** (Gefechte mit Schein, Einschlagzeichen
-> und Blitz je Runde) und **T-M28-07** (Analyse + Entwurf D28, kein Bau) fertig. Von 172
-> Aufgaben ist **nur noch T-M10-02 offen — zurückgenommen, keine Arbeit.** `pnpm verify`
-> grün (1786 Tests). `pnpm acceptance` **8 von 10 unter Fremdlast** — beide Ausfälle
-> nachgewiesen als Maschinenlast, nicht als Code (PROGRESS.md, Block „Tor M28/M32").
-> **Nicht mehr „alles gebaut": eine zweite Durchsicht hat den bereits auf `main` liegenden
-> Kriegsrat-Umbau M29–M31 geprüft — 13 Befunde gemeldet, 11 überlebten die Widerlegung,
-> vier davon schwer.** Sie sind in `PROBLEME.md` festgehalten und in acht Aufgaben
-> geschnitten (T-M28-09…16) und **alle acht gebaut**. Der schwerste war, dass die
-> Leertaste auf einem fokussierten Knopf das Spiel pausierte statt den Knopf auszulösen —
-> **ohne Maus war kein einziger Knopf zu betätigen.** Noahs Entscheid zu den Farben
-> (2026-09-11): **mehr Farben statt weniger Mächte**; `PLAYER_COLORS` hat jetzt 24, und
-> die Zuordnung geht über die Nummer der Kennung statt über einen Streuwert, der bei
-> `p1`…`p24` auf nur dreizehn Fächer fiel. `pnpm verify` 1822/1825 (drei Zeitlimits unter
-> Fremdlast, einzeln grün).
+> **Stand: 2026-09-11.** Alles bis einschließlich M32 ist gebaut, abgenommen und liegt
+> auf **`main`**. `pnpm acceptance` lief auf freier Maschine **11 von 11, Exit 0, 6 min 2 s**
+> — das Zeitbudget-Tor bestanden mit Tickmedian **2,65 ms** gegen 3,5 gefordert. AK-1 wird
+> an Spieltag 798 entschieden. Von **225 Aufgaben sind 204 erledigt**; von den 21 offenen
+> ist eine zurückgenommen (T-M10-02, keine Arbeit) und **zwanzig sind geplant, freigegeben
+> und ungebaut** — M33, M34, M35, M36. Sie stehen in §2.
 >
-> **Abnahme auf freier Maschine am 2026-09-11: `pnpm acceptance` 11 von 11, Exit 0,
-> 6 min 2 s.** Das Zeitbudget-Tor, das den ganzen Abend riss, ist bestanden — Tickmedian
-> **2,65 ms** gegen 3,5 gefordert (unter Fremdlast waren es 4,03 und 4,11). AK-1
-> unverändert an Tag 798. **Alles ist auf `main` gemerged** (`4466503`, ein Merge-Commit,
-> kein fast-forward — siehe §2.1). Von **205 Aufgaben sind 204 erledigt**; offen ist allein
-> die zurückgenommene T-M10-02.
-> Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+> **Es gibt keinen aktuelleren Zweig als `main`.** Wer eine ältere Fassung dieser Datei
+> gelesen hat, kennt die umgekehrte Anweisung; sie galt bis zum Merge vom 2026-09-11 und
+> ist seither falsch. §0 sagt, was zu prüfen ist.
 >
-> **Danach eine Durchsicht des Diffs durch vier Prüfer mit adversarischer Gegenprobe:
-> zehn Befunde, alle zehn haben die Widerlegung überlebt, drei davon schwer — und alle
-> drei in T-M32-01.** Die Ausnahme, die ich in `deploymentFactor` gebaut hatte, kannte die
-> Herkunft der laufenden Strafe nicht: ein verzögerter Befehl löschte jede Aufstellungs-
-> und Rückzugsstrafe, ein abbestellter erzeugte eine, die nie verdient war. Repariert:
-> die Bewegungsphase setzt die Strafe am **tatsächlichen** Abmarsch, `deploymentFactor`
-> ist wieder, was es war. Dazu `alarmSeenTick` über den Partiewechsel hinweg und ein
-> Gefechtsblitz von einem Bild Dauer. `pnpm verify` grün mit **1794 Tests**; Einzelheiten
-> im Block „Durchsicht" von `PROGRESS.md`.
->
-> **Stand davor:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
-> `done`; `pnpm verify` grün an den Toren M29/M30). **M32 wartete auf Noahs Freigabe.**
->
-> **Neu am 2026-09-11: M33 „Einheiten und Gebäude bekommen Bilder" ist geplant und
-> freigegeben** (`docs/plan/EINHEITSBILDER.md`, fünf Aufgaben, alle `todo`, kernfrei).
-> Noah hat nach zwei Entwurfsrunden Richtung B „Schattenriss" gewählt, für Einheiten und
-> Gebäude, eingefärbt nach Besitzerfarbe, Infanterie als Mann. Die siebzehn Zeichnungen
-> liegen fertig in `docs/design/einheiten-bilder.html` — wer M33 baut, überträgt, er
-> entwirft nicht mehr. **Fund am Rand:** der Koordinatentest in `icons.test.tsx` ist seit
-> Monaten leer grün (sein Ausdruck sucht den Buchstaben `d` statt einer Ziffer und findet
-> in keinem Pfad etwas); T-M33-01 ersetzt ihn.
->
-> **Ebenfalls neu am 2026-09-11: M34 „Der Fortschritt bekommt eine Strecke" und M35**
-> (`docs/plan/FORTSCHRITT.md`, neun Aufgaben, alle `todo`). Der Befund: die Uhr läuft mit
-> einem Tick je Sekunde, ein Spieltag hat 24 Ticks, die letzte Freischaltung liegt auf
-> Spieltag 16 — die ganze Fortschrittsachse ist nach **6,4 Minuten Echtzeit** vorbei,
-> während die Partie bis Spieltag 798 läuft. Dazu zwei weitere: Gebäudestufen kosten auf
-> jeder Stufe dasselbe, und der Startvorrat trägt die Eröffnung allein. **M34 ist teuer**,
-> nicht im Code, sondern in Messungen: vier Änderungen an `data/rules`, jede macht die
-> Abnahme rot bis Parameterlauf und Turnier neu eingecheckt sind, und T-M34-04 verschiebt
-> den Golden-Master.
->
-> **Und M36 „Die Rohstoffleiste wird lesbar"** (`docs/plan/ROHSTOFFE.md`, sechs Aufgaben,
-> kernfrei, Entwurf `docs/design/rohstoffleiste.html`). Aus der Sichtprüfung am laufenden
-> Spiel: dieselben Zahlen stehen doppelt auf dem Bildschirm, der Rohstoffname ist in der
-> Leiste `visually-hidden`, und vier der sieben Zeichen tragen ihre Bedeutung nicht —
-> **Material wird bis heute durch einen Nadelbaum dargestellt**, obwohl der Rohstoff seit
-> T-M23-01 nicht mehr Holz heißt. Zeichensatz und Gruppierung sind entschieden.
->
-> **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
-> Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
-> (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
-> sonst nichts** — er ist so geschrieben, dass keine Recherche mehr nötig ist.
->
-> **Stand davor:** 2026-09-08 (spät) · **V1 ist abgenommen (7 von 7); LEVEL-UP M22–M24 und
-> LEVEL-UP 2 „Grafik statt Text" M25–M27 sind vollständig gebaut.**
->
-> **Neu am 2026-09-08 (LEVEL-UP 2, Noahs Wahl: alle fünf Vorschläge A–E,
-> `docs/plan/LEVEL-UP-2-GRAFIK.md`):** Zeitreihe je Spieltag · Machtverlauf-Kurve im
-> Lage-Panel · Wirtschafts-Sparklines und Bilanzbalken (auch im Tagesbericht) ·
-> Marschpfeile mit Fortschritt · Eroberungs-Farbwelle und skalierte Kampfringe ·
-> fünfter Kartenmodus „Beziehungen" · Gefechtsbericht mit Stärkebalken und Zeichen
-> (BATTLE_RESOLVED additiv um fünf Anzeigefelder ergänzt, Golden-Master unberührt).
-> Zeichenbudget nachgemessen: p95 5,39 ms gegen 16,7 ms.
->
-> **Dazu ein schwerer Fund aus der Sichtprüfung** (PROBLEME.md, 2026-09-08): die
-> setState-Updater der App rechneten mit Seiteneffekten — unter `<StrictMode>` (so
-> rendert main.tsx!) verlor das Vorspulen die gesammelten Befehle **spurlos**, und
-> die Stoppmeldung zählte doppelt („nach 2 Tagen" bei einem). Kein Test sah es, weil
-> alle ohne StrictMode renderten. Repariert (Rechnung außerhalb des Updaters,
-> `stateRef`), ein Test rendert jetzt im Harness der echten App. **Regel:** Updater
-> sind pur; mindestens ein Test rendert im selben Wrapper wie der Einstiegspunkt.
->
-> `pnpm acceptance` dauert seit dem Umbau vom 2026-09-08 **~6,5 min** (gemessen; das
-> Skript nennt die erwartete Dauer vorab selbst) und lief gegen den Endstand
-> **11 von 11 grün** — inklusive des reparierten AK-6-Langlaufs, der jetzt wirklich
-> die Weltkarte mit 8 Spielern fährt (vorher: Testkarte, 3 Spieler — eine Attrappe,
-> sichtbar geworden durch den Umbau).
+> **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
+> Text" M25–M27 und der Kriegsrat-Umbau M29–M32 sind je Aufgabe in `PROGRESS.md`
+> festgehalten, die Entscheide in `DECISIONS.md`, die Befunde samt Lehren in
+> `PROBLEME.md`. Was davon beim Arbeiten wirklich gebraucht wird, steht verdichtet in
+> §3 und §4 — dort und nicht in diesem Kopf.
 
 ---
 
 ## 0 · Ankommen (ein Befehl, keine Suche)
 
 ```bash
-git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:short)'
+git log --oneline -1 && git status --short
 ```
 
-**Der Spitzenstand liegt auf `claude/design-plan-execution-8b4296`** (Kriegsrat M29–M31 gebaut,
-2026-09-11; baut auf `claude/ui-ux-pro-max-bit-ba5d44` auf). `main` steht auf M8 und
-ist **weit über hundert Commits alt** — ein frischer Worktree landet dort und sieht ein
-anderes Projekt. Diese Falle hat **fünf** Sitzungen in Folge erwischt. Zeigt dein `HEAD`
-nicht auf die Spitze:
+**Der Spitzenstand liegt auf `main`** (seit dem Merge vom 2026-09-11). Es gibt keinen
+`claude/*`-Zweig mehr, der etwas trägt, das `main` nicht hat — die alten sind am
+2026-09-11 abgeräumt worden, lokal und auf `origin`. Ein frischer Worktree landet
+richtig; wer einen anlegt, zweigt von `main` ab.
+
+Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
+irgendetwas gebaut wird. Nach einem Wechsel des Standes:
 
 ```bash
-git reset --hard claude/design-plan-execution-8b4296 && pnpm install
+pnpm install
 ```
 
 ---
 
 ## 1 · Der Stand in einem Absatz
 
-Von **166 Aufgaben sind 165 erledigt** (offen bleibt nur T-M10-02 — zurückgenommen,
-keine Arbeit). **`pnpm acceptance` lief am 2026-09-08 gegen den Endstand: 7 von 7,
-Exit 0** — AK-1 wird an Spieltag 798 entschieden (2717 Eroberungen, 15
-Kriegserklärungen), das Anforderungstor meldet „V1 offen: 0", Abdeckung 95,4 %
-(~1650 schnelle Tests). **AK-7 ist abgenommen:** Noah hat den Playtest per
-/goal-Auftrag vom 2026-09-07 ausdrücklich an den Agenten delegiert (Entscheid in
-`DECISIONS.md`); beide Berichte liegen vor (`docs/reports/playtest-v1.md`, 62/62,
-und `playtest-2026-09-07-v2.md`, 17 Befunde).
+Das Spiel ist **fertig und abgenommen**. V1 lief am 2026-09-08 mit 7 von 7 durch, der
+Endstand nach dem Kriegsrat-Umbau am 2026-09-11 mit **11 von 11 auf freier Maschine**
+(`docs/reports/acceptance.md`). Das Anforderungstor meldet „V1 offen: 0", die Abdeckung
+liegt im Kern bei 96,8 %. **AK-7 ist abgenommen:** Noah hat den Playtest per /goal-Auftrag
+vom 2026-09-07 ausdrücklich an den Agenten delegiert (Entscheid in `DECISIONS.md`); beide
+Berichte liegen vor (`docs/reports/playtest-v1.md`, 62/62, und
+`playtest-2026-09-07-v2.md`, 17 Befunde).
 
-**Neu seit dem 2026-09-07 abends: der LEVEL-UP-Plan ist gebaut** — zwölf Aufgaben in
-drei Meilensteinen, alle mit Test-zuerst und grünem `pnpm verify`:
+Was seither dazukam, war kein Bau mehr, sondern **Planung**: vier Meilensteine mit
+zwanzig Aufgaben, alle freigegeben, keine davon angefangen. Drei sind kernfrei, einer
+(M34) ist teuer, weil er `data/rules` anfasst und damit Messungen erzwingt. Die
+Reihenfolge und die Begründungen stehen in §2, die Baupläne je Meilenstein in
+`docs/plan/EINHEITSBILDER.md`, `FORTSCHRITT.md` und `ROHSTOFFE.md`.
 
-| | | Ergebnis |
-|---|---|---|
-| **M22** | Die Oberfläche hält, was der Kern rechnet | Protokoll in voller Breite · Seitenleiste ohne Querscrollen · eigene Rückschläge rot markiert · Startbildschirm mit Titel und **Weiterspielen-Knopf** · Befehls-Quittung + „Pausiert"-Anzeige · A11y-Namen und 24-px-Klickziele |
-| **M23** | Die Sprache wird fertig | echte Umlaute mit Wortregel-Wächter · Genus/Dativ/Numerus-Tabelle („Sie können **sie** jetzt bauen", „Vereinigte Staaten **erklären**") · `AUS-SE` heißt ehrlich „Australisches Hauptstadtterritorium" · Marktsymbol |
-| **M24** | Die Tage bekommen Inhalt | Tagesbericht mit Körper (Bilanz, Moral, Aufträge, „Morgen neu") · `why`-Feld je Führungsschritt plus zwei neue Schritte (Punktequellen, Moralstrafe) · **Kriegsmarschfaktor 0,35 → 0,5**, gemessen an drei Varianten (`docs/reports/warmarch.json`) |
-
-Die Achse und die Begründungen: `docs/plan/LEVEL-UP.md`. Je Aufgabe: `PROGRESS.md`.
-
-**Wichtig für T-M22-05:** Befehle werden jetzt **gesammelt** und im ersten Tick des
-nächsten Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen
-Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
-
+**Wichtig für T-M22-05:** Befehle werden **gesammelt** und im ersten Tick des nächsten
+Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen Tick, samt
+KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 ---
 
 ## 2 · Was als Nächstes dran ist
@@ -219,7 +135,12 @@ Dazu, ohne Aufgabe in `tasks.yaml`:
 
 ## 4 · Zehn Fallen, die schon jemanden gekostet haben
 
-1. **Der Worktree landet auf `main`.** Abschnitt 0. Fünf Sitzungen in Folge.
+1. **Die Einstiegsdatei zeigt auf den falschen Zweig.** Bis zum 2026-09-11 stand hier,
+   `main` sei alt und die Spitze liege auf einem `claude/*`-Zweig — das hat fünf Sitzungen
+   in Folge erwischt. Nach dem Merge stimmte die Anweisung nicht mehr und hätte in die
+   andere Richtung geschadet: wer ihr folgte, warf sich per `git reset --hard` auf einen
+   **älteren** Stand. **Die Lehre gilt über diesen Fall hinaus: wer merged, richtet §0
+   im selben Zug.** Heute liegt die Spitze auf `main`.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
 3. **Benchmarks brauchen die Maschine allein** — und „allein" heißt *jeder* Prozess:
    ```bash
@@ -264,11 +185,11 @@ sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), 
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
 rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
-## 5 · Der Stand in Zahlen (Aufgaben und Tests: 2026-09-11 abends; übrige Zeilen 2026-09-08)
+## 5 · Der Stand in Zahlen (2026-09-11; die Zeilen zu Programm und Benchmark-Vorbehalt: 2026-09-08)
 
 | | |
 |---|---|
-| Aufgaben | **205, davon 204 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
+| Aufgaben | **225, davon 204 erledigt** (2026-09-11); offen: 20 geplante und ungebaute aus M33–M36, dazu T-M10-02 — zurückgenommen |
 | Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
