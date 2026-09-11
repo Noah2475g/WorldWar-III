@@ -20,7 +20,7 @@ import {
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
-import { BUILDING_ART, UnitArt, type ArtName } from './art.tsx'
+import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 
@@ -699,7 +699,14 @@ export function ArmyPanel(props: ArmyPanelProps) {
           <ul className="units" aria-label={t('army.units')}>
             {props.units.map((item) => (
               <li key={`${item.icon}-${item.label}`}>
-                <UnitMarker icon={item.icon} label={item.label} count={item.count ?? 1} />
+                {/* Bildfassung, wo es ein Bild gibt (T-M33-04); die Karte bleibt bei
+                    der Glyphe, das Plaettchen hier hat 44 px Platz. */}
+                <UnitMarker
+                  icon={item.icon}
+                  {...(ART_FOR_ICON[item.icon] ? { art: ART_FOR_ICON[item.icon] } : {})}
+                  label={item.label}
+                  count={item.count ?? 1}
+                />
               </li>
             ))}
           </ul>

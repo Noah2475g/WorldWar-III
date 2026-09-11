@@ -7,6 +7,8 @@ import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
 import { TOKENS } from '../ui/tokens.ts'
+import { ICON_PATHS } from '../ui/icons.tsx'
+import { ART } from '../ui/art.tsx'
 
 /**
  * Die Karte, die wirklich zeichnet (T-M16-06, R-ARCH-06/AK2, R-UI-12).
@@ -370,6 +372,57 @@ describe('T-M28-06 Der Einmarsch ist auf der Karte zu sehen', () => {
     zeichne()
 
     expect(recorder.seen.strokeStyle ?? []).not.toContain(zinnober)
+  })
+})
+
+/**
+ * Was auf der Karte bleibt (T-M33-04, EINHEITSBILDER.md D33-a).
+ *
+ * M33 gibt den Panels einen zweiten Bildsatz — Schattenrisse im Kasten 48 x 30. Die
+ * Karte bekommt ihn ausdruecklich NICHT: sie stempelt die Glyphe bei 11 px Kantenlaenge,
+ * und ein gefuellter Panzer ist dort ein Fleck. Der Entscheid ist eine Zusage, also steht
+ * hier ein Test und nicht nur ein Satz im Bauplan.
+ */
+describe('T-M33-04 Die Karte stempelt weiter die NATO-Glyphe', () => {
+  /** Jedes `d`, aus dem die Karte einen Path2D baut. */
+  const gestempelt = (zeichnen: () => void): string[] => {
+    const gesehen: string[] = []
+    const vorher = globalThis.Path2D
+    globalThis.Path2D = class {
+      constructor(d?: string) {
+        if (typeof d === 'string') gesehen.push(d)
+      }
+    } as never
+    try {
+      zeichnen()
+    } finally {
+      if (vorher) globalThis.Path2D = vorher
+      else delete (globalThis as { Path2D?: unknown }).Path2D
+    }
+    return gesehen
+  }
+
+  it('baut jeden Stempel aus ICON_PATHS und keinen aus dem Bildsatz', () => {
+    const wo = world.provinces[0]!
+    const pfade = gestempelt(() =>
+      zeichne({
+        speed: 100,
+        view: { x: wo.center.x - 400, y: wo.center.y - 300, scale: 1 },
+        armies: [{ id: 'a1', provinceId: wo.id, owner: 'p1', strength: 5000, own: true, icon: 'armour', count: 7 }],
+        buildings: { [wo.id]: { barracks: 1 } },
+        anchors: { [wo.id]: anchorsFor(wo.polygons, wo.center) },
+      }),
+    )
+
+    // Ohne diese Zeile prueft der Rest sieben Stempel, die es nicht gibt.
+    expect(pfade.length, 'Die Karte hat keinen einzigen Stempel gebaut').toBeGreaterThan(0)
+
+    const glyphen = new Set(Object.values(ICON_PATHS))
+    const risse = new Set(Object.values(ART).flatMap((bild) => [bild.body, bild.cut]))
+    for (const d of pfade) {
+      expect(risse.has(d), `Die Karte stempelt einen Schattenriss: ${d.slice(0, 30)}`).toBe(false)
+      expect(glyphen.has(d), `Unbekannter Stempel: ${d.slice(0, 30)}`).toBe(true)
+    }
   })
 })
 

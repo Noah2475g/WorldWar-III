@@ -2348,12 +2348,15 @@ tasks:
   - id: T-M33-04
     milestone: M33
     title: Das Plaettchen bekommt eine Bildfassung
-    status: todo
+    status: done
     deps: [T-M33-01, T-M31-02]
     requirements: [R-UI-04, R-UI-10]
     design: [D-27]
-    files: [apps/desktop/src/ui/UnitMarker.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css]
-    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
+    # Standings.tsx steht nicht mehr in der Liste: die Rangliste fuehrt ueberhaupt kein
+    # Einheitenzeichen (kein Icon, kein UnitMarker) - es gibt dort nichts umzustellen.
+    # Befund beim Bau am 2026-09-11, festgehalten in PROGRESS.md.
+    files: [apps/desktop/src/ui/UnitMarker.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "EINHEITSBILDER.md D33.2/D33.3, Breite 44 px. UnitMarker nimmt wahlweise Glyphe oder Bild; Rahmen, Besitzerfarbe und die Zahl rechts bleiben unveraendert, damit Karte und Liste dieselbe Sprache sprechen (Risiko 1). Armee- und Rangliste schalten auf Bild. Die Karte bleibt auf der Glyphe - ein Test haelt fest, dass MapCanvas weiter ICON_PATHS stempelt (D33-a: 11 px tragen keinen Schattenriss). Test zuerst: eigenes Plaettchen good, verbuendetes ally, feindliches accent; MapCanvas unveraendert."
   - id: T-M33-05
     milestone: M33

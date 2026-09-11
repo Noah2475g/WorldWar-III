@@ -1143,6 +1143,20 @@ body {
   stroke-linejoin: round;
 }
 
+/* Die Bildfassung des Plaettchens (T-M33-04): dieselbe Platte, andere Fuellung. Die
+   Innenlinien nehmen den Grund DES PLAETTCHENS, nicht den der Panels — der Kasten ist
+   mit `--ground` gefuellt. */
+.unit-marker__art {
+  fill: currentColor;
+}
+
+.unit-marker__art-cut {
+  fill: none;
+  stroke: var(--ground);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
 .unit-marker__count {
   fill: var(--ink);
   font: 600 9px var(--font-num);

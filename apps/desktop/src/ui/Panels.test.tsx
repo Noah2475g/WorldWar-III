@@ -23,7 +23,8 @@ import {
   type Targeting,
 } from './Panels.tsx'
 import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
-import { ART, BUILDING_ART, UNIT_ART } from './art.tsx'
+import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
+import { UnitMarker, type MarkerTone } from './UnitMarker.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
 
@@ -1268,6 +1269,67 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     expect(container.querySelectorAll('.unit-marker').length).toBe(2)
     expect(screen.getByRole('img', { name: '8 Infanterie' })).toBeTruthy()
     expect(screen.getByRole('img', { name: '3 Kampfpanzer' }).textContent).toContain('3')
+  })
+
+  /**
+   * Die Bildfassung des Plaettchens (T-M33-04, D33.2/D33.3, Breite 44 px).
+   *
+   * Rahmen, Besitzerfarbe und die Zahl rechts bleiben, wo sie sind — nur die Fuellung
+   * wechselt von der Glyphe zum Schattenriss. Das ist das Gegenmittel gegen Risiko 1:
+   * zwei Bildsprachen im selben Spiel halten nur zusammen, solange alles andere gleich
+   * bleibt.
+   */
+  it('zeigt in der Armeeliste den Schattenriss statt der Glyphe', () => {
+    const { container } = panel()
+    const marker = [...container.querySelectorAll('.unit-marker')]
+
+    expect(marker).toHaveLength(2)
+    expect(container.querySelector('.unit-marker__glyph'), 'Die Liste stempelt noch Glyphen').toBeNull()
+    marker.forEach((platte, index) => {
+      const bild = ART_FOR_ICON[units[index]!.icon]!
+      expect(platte.querySelector('.unit-marker__art')?.getAttribute('d')).toBe(ART[bild]!.body)
+      expect(platte.querySelector('.unit-marker__art-cut')?.getAttribute('d')).toBe(ART[bild]!.cut)
+    })
+  })
+
+  it('nimmt fuer die Bildfassung die 44 px des Bauplans, ohne das Seitenverhaeltnis zu drehen', () => {
+    const { container } = panel()
+    const platte = container.querySelector('.unit-marker')!
+
+    expect(platte.getAttribute('width')).toBe('44')
+    expect(platte.getAttribute('height')).toBe('26.4')
+    expect(platte.getAttribute('viewBox')).toBe('0 0 30 18')
+  })
+
+  it('behaelt Zahl und Name am Plaettchen — "8 Infanterie" bleibt hoerbar', () => {
+    panel()
+
+    expect(screen.getByRole('img', { name: '8 Infanterie' }).textContent).toContain('8')
+    expect(screen.getByRole('img', { name: '3 Kampfpanzer' }).textContent).toContain('3')
+  })
+
+  it('faerbt eigen, verbuendet und feindlich nach denselben Tokens wie die Karte', () => {
+    // R-UI-10: die Besitzerfarbe bedeutet in der Liste dasselbe wie auf der Karte.
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      // jsdom loest keine Custom Properties auf — gebunden wird deshalb die Kaskade
+      // (welcher Ton welchen Token nimmt); dass der Token seinen Wert hat, haelt
+      // css-mirrors-tokens fest.
+      const erwartet = { own: 'good', ally: 'ally', enemy: 'accent', other: 'ink-soft' } as const
+      for (const [ton, token] of Object.entries(erwartet)) {
+        const { container, unmount } = render(
+          <UnitMarker icon="infantry" art="infantry" label="Infanterie" count={4} tone={ton as MarkerTone} />,
+        )
+        const platte = container.querySelector('.unit-marker') as SVGElement
+
+        expect(window.getComputedStyle(platte).color, ton).toBe(`var(--${token})`)
+        unmount()
+      }
+    } finally {
+      style.remove()
+    }
   })
 
   it('nennt die Kampfkraft mit Zustand-Prozent und zeichnet den Balken', () => {
