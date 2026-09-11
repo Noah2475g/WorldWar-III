@@ -11,7 +11,14 @@
 > Aufgaben ist **nur noch T-M10-02 offen — zurückgenommen, keine Arbeit.** `pnpm verify`
 > grün (1786 Tests). `pnpm acceptance` **8 von 10 unter Fremdlast** — beide Ausfälle
 > nachgewiesen als Maschinenlast, nicht als Code (PROGRESS.md, Block „Tor M28/M32").
-> **Der eine offene Punkt: das Zeitbudget-Tor auf freier Maschine** (`pnpm acceptance`
+> **Nicht mehr „alles gebaut": eine zweite Durchsicht hat den bereits auf `main` liegenden
+> Kriegsrat-Umbau M29–M31 geprüft — 13 Befunde gemeldet, 11 überlebten die Widerlegung,
+> vier davon schwer.** Sie sind in `PROBLEME.md` festgehalten und in acht Aufgaben
+> geschnitten (T-M28-09…16); **drei sind gebaut**, fünf stehen offen. Der schwerste war,
+> dass die Leertaste auf einem fokussierten Knopf das Spiel pausierte statt den Knopf
+> auszulösen — **ohne Maus war kein einziger Knopf zu betätigen.**
+>
+> **Offen sonst: das Zeitbudget-Tor auf freier Maschine** (`pnpm acceptance`
 > zuletzt 10 von 11; AK-1 unverändert an Tag 798).
 > Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
 >
@@ -116,6 +123,12 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    ```bash
    powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
    ```
+0a. **Die fünf offenen Aufgaben aus der Durchsicht** — T-M28-12 (Gebäudeanker: zwei
+   Küstenplätze werden immer reserviert, Landgebäude fallen weg), T-M28-13 (der Klick
+   wählt die verdeckte Armee), T-M28-14 (**Entscheid durch Noah:** elf Farben für mehr
+   Mächte), T-M28-15 (der Spiegel-Wächter sieht nur sechsstellige Hex-Werte im ersten
+   `:root`), T-M28-16 (zwei Bauaufträge derselben Art, nur einer sichtbar). Fehlerfälle
+   stehen je Befund in `PROBLEME.md`.
 0b. **Noahs Freigabe für M33** — T-M28-07 hat vier Teilaufgaben geschnitten
    (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
    wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
