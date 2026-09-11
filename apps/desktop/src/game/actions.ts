@@ -332,12 +332,29 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   ]
 }
 
-/** The order for a chosen target, checked like any other. */
-export function targetAction(ctx: ActionContext, armyId: string, kind: 'move' | 'bombard', target: string): ActionSpec {
+/**
+ * The order for a chosen target, checked like any other.
+ *
+ * `departInTicks` bleibt bei „sofort" ganz weg — ein Kommandolog ohne das Feld ist
+ * genau das, was der Kern seit jeher liest (T-M32-01).
+ */
+export function targetAction(
+  ctx: ActionContext,
+  armyId: string,
+  kind: 'move' | 'bombard',
+  target: string,
+  departInTicks = 0,
+): ActionSpec {
   return kind === 'move'
     ? checked(
         ctx,
-        { type: 'MOVE_ARMY', playerId: ctx.playerId, armyId, targetProvinceId: target },
+        {
+          type: 'MOVE_ARMY',
+          playerId: ctx.playerId,
+          armyId,
+          targetProvinceId: target,
+          ...(departInTicks > 0 ? { departInTicks } : {}),
+        },
         'confirm-move',
         t('army.confirmMove'),
       )
@@ -359,12 +376,16 @@ export function planArrival(
   ctx: ActionContext,
   armyId: string,
   target: string,
+  departInTicks = 0,
 ): { arrivalTick: number; text: string } | null {
   const army = ctx.state.armies[armyId]
   if (!army) return null
   const route = planRoute(ctx.state, army, target, ctx.map, ctx.rules)
   if (!route) return null
-  return { arrivalTick: route.arrivalTick, text: arrival(ctx.state.tick, route.arrivalTick, ctx.ticksPerDay) }
+  // Ein verzoegerter Abmarsch verschiebt jeden Tick des Marsches um denselben Betrag
+  // (T-M32-01) — die Vorschau muss dieselbe Rechnung machen wie der Kern.
+  const arrivalTick = route.arrivalTick + Math.max(0, departInTicks)
+  return { arrivalTick, text: arrival(ctx.state.tick, arrivalTick, ctx.ticksPerDay) }
 }
 
 const DIPLOMACY: readonly { action: DiplomacyAction; label: string }[] = [

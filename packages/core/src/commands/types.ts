@@ -45,6 +45,12 @@ export interface MoveArmyCommand {
   playerId: PlayerId
   armyId: ArmyId
   targetProvinceId: ProvinceId
+  /**
+   * Optional: hold the army in place for this many ticks before the march begins
+   * (T-M32-01). Absent or `0` is the old behaviour to the tick — the field is purely
+   * additive, so command logs recorded before it exist replay unchanged.
+   */
+  departInTicks?: number
 }
 
 export interface StopArmyCommand {

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData } from '../game/events.ts'
@@ -500,6 +501,45 @@ export interface Targeting {
   confirm: Action | null
   onChoose: (id: string | null) => void
   onCancel: () => void
+  /**
+   * Tage, die der Abmarsch wartet (T-M32-01, `MOVE_ARMY.departInTicks`).
+   *
+   * Nur für den Marsch: der Beschuss marschiert nicht. Fehlt `onDelay`, zeigt die
+   * Zielwahl den Wähler gar nicht — so bleibt die alte Zielwahl unverändert nutzbar.
+   */
+  delayDays?: number
+  onDelay?: ((days: number) => void) | undefined
+}
+
+/** Der Schrittwähler für den verzögerten Abmarsch (T-M32-01, D27). */
+function DepartStepper(props: { days: number; onDelay: (days: number) => void }) {
+  const { days } = props
+  const text = days === 0 ? t('army.departNow') : days === 1 ? t('army.departInDay') : t('army.departInDays', { days })
+
+  return (
+    <div className="stepper" role="group" aria-label={t('army.departLabel')}>
+      <span className="stepper__label">{t('army.departLabel')}</span>
+      <button
+        type="button"
+        className="button button--icon"
+        aria-label={t('army.departEarlier')}
+        disabled={days <= 0}
+        onClick={() => props.onDelay(days - 1)}
+      >
+        −
+      </button>
+      <output className="stepper__value">{text}</output>
+      <button
+        type="button"
+        className="button button--icon"
+        aria-label={t('army.departLater')}
+        disabled={days >= MAX_DEPART_DELAY_DAYS}
+        onClick={() => props.onDelay(days + 1)}
+      >
+        +
+      </button>
+    </div>
+  )
 }
 
 export interface ArmyPanelProps {
@@ -647,6 +687,9 @@ export function ArmyPanel(props: ArmyPanelProps) {
               ))}
             </select>
           </label>
+          {targeting.kind === 'move' && targeting.onDelay && (
+            <DepartStepper days={targeting.delayDays ?? 0} onDelay={targeting.onDelay} />
+          )}
           {targeting.target && (
             <p className="facts__inline">
               {t('army.arrivalPreview', {

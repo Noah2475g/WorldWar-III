@@ -19,6 +19,7 @@ import {
   type Action,
   type ActionGroupSpec,
   type EventEntry,
+  type Targeting,
 } from './Panels.tsx'
 import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
 import type { BattleReportData } from '../game/events.ts'
@@ -1226,5 +1227,63 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     } finally {
       style.remove()
     }
+  })
+})
+
+/**
+ * T-M32-01 · Der Abmarsch lässt sich verzögern.
+ *
+ * Der Kern kennt seit T-M32-01 `MOVE_ARMY.departInTicks`; hier wird nur geprüft, dass
+ * die Zielwahl ihn erreichbar macht — Schrittwahl in Tagen, Vorschau der verschobenen
+ * Ankunft, und bei Beschuss gibt es sie nicht (der Beschuss marschiert nicht).
+ */
+describe('T-M32-01 Die Zielwahl kennt den verzoegerten Abmarsch', () => {
+  const army = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const noop = (): void => undefined
+
+  const targeting = (over: Partial<Targeting> = {}): Targeting => ({
+    kind: 'move',
+    target: { id: 'USA-NE', name: 'Nordosten', arrivalText: 'Ankunft Tag 9' },
+    options: [{ id: 'USA-NE', name: 'Nordosten' }],
+    confirm: { id: 'confirm-move', label: 'Marsch bestätigen', disabledReason: null, onRun: noop },
+    onChoose: noop,
+    onCancel: noop,
+    delayDays: 0,
+    onDelay: noop,
+    ...over,
+  })
+
+  const panel = (t: Targeting) =>
+    render(<ArmyPanel army={army} actions={[]} targeting={t} ticksPerDay={24} currentTick={0} />)
+
+  it('bietet einen Schrittwaehler, der bei "sofort" steht', () => {
+    panel(targeting())
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    expect(within(group).getByRole('status').textContent).toContain('sofort')
+    expect(within(group).getByRole('button', { name: 'Früher abmarschieren' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('zaehlt in Tagen hoch und meldet jeden Schritt weiter', () => {
+    const seen: number[] = []
+    panel(targeting({ onDelay: (days) => seen.push(days) }))
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Später abmarschieren' }))
+    expect(seen).toEqual([1])
+  })
+
+  it('nennt bei gesetzter Verzoegerung den Tag im Waehler', () => {
+    panel(targeting({ delayDays: 3 }))
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    expect(within(group).getByRole('status').textContent).toContain('3 Tagen')
+    expect(within(group).getByRole('button', { name: 'Früher abmarschieren' }).hasAttribute('disabled')).toBe(false)
+  })
+
+  it('bietet ihn beim Beschuss nicht an', () => {
+    panel(targeting({ kind: 'bombard' }))
+
+    expect(screen.queryByRole('group', { name: 'Abmarsch' })).toBeNull()
   })
 })

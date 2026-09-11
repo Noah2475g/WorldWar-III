@@ -5,6 +5,7 @@ import {
   eventsFor,
   worldEventsIn,
   publicView,
+  MAX_DEPART_DELAY_DAYS,
   type Command,
   type GameState,
   type MapData,
@@ -145,6 +146,8 @@ interface PendingTarget {
   armyId: string
   kind: 'move' | 'bombard'
   target: string | null
+  /** Tage, die der Abmarsch wartet (T-M32-01); 0 ist der alte Befehl ohne das Feld. */
+  delayDays: number
 }
 
 const VIEWPORT = { viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
@@ -819,7 +822,7 @@ export function App(props: AppProps) {
         if (spec.id.startsWith('build-')) tutor('openBuild')
         if (spec.targetKind && armyId) {
           // The army panel itself says "choose a target" — one notice, not two.
-          setTargeting({ armyId, kind: spec.targetKind, target: null })
+          setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
           send(spec.command, spec.id)
@@ -1283,14 +1286,18 @@ export function App(props: AppProps) {
       .filter((p) => p.id !== army.locationProvinceId)
       .map((p) => ({ id: p.id, name: p.name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    const delayTicks = targeting.kind === 'move' ? targeting.delayDays * ticksPerDay : 0
     const target = targeting.target
       ? {
           id: targeting.target,
           name: nameOfProvince(targeting.target),
-          arrivalText: targeting.kind === 'move' ? (planArrival(ctx, army.id, targeting.target)?.text ?? null) : null,
+          arrivalText:
+            targeting.kind === 'move' ? (planArrival(ctx, army.id, targeting.target, delayTicks)?.text ?? null) : null,
         }
       : null
-    const confirmSpec = targeting.target ? targetAction(ctx, army.id, targeting.kind, targeting.target) : null
+    const confirmSpec = targeting.target
+      ? targetAction(ctx, army.id, targeting.kind, targeting.target, delayTicks)
+      : null
     const confirm: Action | null = confirmSpec
       ? {
           ...toAction(confirmSpec),
@@ -1307,12 +1314,15 @@ export function App(props: AppProps) {
       options,
       confirm,
       onChoose: (id) => setTargeting({ ...targeting, target: id }),
+      delayDays: targeting.delayDays,
+      onDelay: (days: number) =>
+        setTargeting({ ...targeting, delayDays: Math.min(Math.max(0, days), MAX_DEPART_DELAY_DAYS) }),
       onCancel: () => {
         setTargeting(null)
         dispatch({ type: 'clearNotice' })
       },
     }
-  }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send])
+  }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send, ticksPerDay])
 
   if (!state || !view || !ctx) {
     return (

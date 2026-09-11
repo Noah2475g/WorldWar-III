@@ -236,6 +236,13 @@ export const de = {
     chooseTarget: 'Ziel auf der Karte anklicken — oder hier wählen:',
     targetLabel: 'Ziel',
     arrivalPreview: '{{target}}: {{arrival}}',
+    // Verzoegerter Abmarsch (T-M32-01): der Waehler zaehlt in Tagen, der Kern in Ticks.
+    departLabel: 'Abmarsch',
+    departNow: 'sofort',
+    departInDay: 'in 1 Tag',
+    departInDays: 'in {{days}} Tagen',
+    departEarlier: 'Früher abmarschieren',
+    departLater: 'Später abmarschieren',
     confirmMove: 'Marsch befehlen',
     confirmBombard: 'Beschuss befehlen',
     cancel: 'Abbrechen',

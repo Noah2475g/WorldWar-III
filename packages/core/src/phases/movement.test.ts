@@ -1,6 +1,8 @@
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Command } from '../commands/types'
+import { ONE } from '@worldwar/shared'
+import { deploymentFactor } from '../rules/combat'
 import { armySpeed, canUseSea, railwayFactor, territoryFactor } from '../rules/movement'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { Army, GameState } from '../state/types'
@@ -46,8 +48,8 @@ beforeEach(() => {
   state.armyOrder = ['a1']
 })
 
-const move = (armyId: string, target: string, playerId = 'p1'): Command =>
-  ({ type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: target }) as Command
+const move = (armyId: string, target: string, playerId = 'p1', departInTicks?: number): Command =>
+  ({ type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: target, ...(departInTicks === undefined ? {} : { departInTicks }) }) as Command
 
 /** Runs until the army stops moving, or the limit is hit. */
 function runUntilArrived(from: GameState, armyId: string, limit = 400) {
@@ -220,5 +222,58 @@ describe('R-UNIT-04 Kein Durchmarsch an Verteidigern vorbei', () => {
     const started = step(state, [move('a1', 'm2')], ctx).state
     const { state: arrived } = runUntilArrived(started, 'a1')
     expect(arrived.armies['a1']!.locationProvinceId).toBe('m2')
+  })
+})
+
+describe('R-UNIT-04 Verzoegerter Abmarsch (T-M32-01)', () => {
+  it('verschiebt Abmarsch und Ankunft um genau die verlangten Ticks', () => {
+    const sofort = step(state, [move('a1', 'n2')], ctx).state.armies['a1']!
+    const spaeter = step(state, [move('a1', 'n2', 'p1', 6)], ctx).state.armies['a1']!
+
+    expect(spaeter.departureTick).toBe(sofort.departureTick! + 6)
+    expect(spaeter.arrivalTick).toBe(sofort.arrivalTick! + 6)
+    expect(spaeter.path).toEqual(sofort.path)
+  })
+
+  it('meldet die verschobene Ankunft auch im Ereignis', () => {
+    const sofort = step(state, [move('a1', 'n2')], ctx).events.find((e) => e.type === 'ARMY_DEPARTED')
+    const spaeter = step(state, [move('a1', 'n2', 'p1', 6)], ctx).events.find((e) => e.type === 'ARMY_DEPARTED')
+
+    const tickOf = (e: unknown) => (e as { arrivalTick: number }).arrivalTick
+    expect(tickOf(spaeter)).toBe(tickOf(sofort) + 6)
+  })
+
+  it('steht noch, wenn dieselbe Armee ohne Verzoegerung laengst angekommen waere', () => {
+    const sofort = runUntilArrived(step(state, [move('a1', 'n2')], ctx).state, 'a1')
+    expect(sofort.state.armies['a1']!.locationProvinceId).toBe('n2')
+    const gebraucht = sofort.state.tick - state.tick
+
+    let wartend = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    while (wartend.tick - state.tick < gebraucht) wartend = step(wartend, [], ctx).state
+
+    expect(wartend.armies['a1']!.locationProvinceId).toBe('n1')
+    expect(wartend.armies['a1']!.path).toEqual(['n2'])
+  })
+
+  it('kommt trotz Wartezeit am Ziel an', () => {
+    const started = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    const { state: arrived } = runUntilArrived(started, 'a1')
+    expect(arrived.armies['a1']!.locationProvinceId).toBe('n2')
+  })
+
+  it('haelt bis zum Abmarsch die volle Kampfkraft', () => {
+    // Half strength is the price of *marching*, not of standing in place and waiting.
+    const after = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    const army = after.armies['a1']!
+
+    expect(deploymentFactor(army, after.tick, TEST_RULES)).toBe(ONE)
+    expect(deploymentFactor(army, army.departureTick!, TEST_RULES)).toBe(TEST_RULES.constants.deployDelayFactor)
+  })
+
+  it('verhaelt sich ohne das Feld wie mit dem Wert 0', () => {
+    const ohne = step(state, [move('a1', 'n2')], ctx).state.armies['a1']!
+    const mitNull = step(state, [move('a1', 'n2', 'p1', 0)], ctx).state.armies['a1']!
+
+    expect(mitNull).toEqual(ohne)
   })
 })

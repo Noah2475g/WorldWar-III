@@ -978,6 +978,30 @@ body {
   max-width: 100%;
 }
 
+/* Der Schrittwaehler des verzoegerten Abmarsches (T-M32-01, D27). */
+.stepper {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.stepper__label {
+  color: var(--ink-soft);
+}
+
+.stepper__value {
+  min-width: 6ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.button--icon {
+  min-width: 24px;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
 .market {
   display: grid;
   grid-template-columns: auto 1fr;

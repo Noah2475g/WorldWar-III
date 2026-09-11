@@ -78,6 +78,11 @@ export function effectiveUnits(units: number, rules: Rules): Fixed {
 
 /** Reduced strength while an army is still forming up after a march (R-UNIT-05). */
 export function deploymentFactor(army: Army, tick: number, rules: Rules): Fixed {
+  // An order with a delayed departure (T-M32-01) sets `departureTick` in the future.
+  // Until that tick the army has not moved, so it fights at full strength; for every
+  // order without a delay `departureTick` is the tick of the order itself and this
+  // condition is never true.
+  if (army.departureTick !== null && tick < army.departureTick) return ONE
   return tick < army.deployDelayUntil ? rules.constants.deployDelayFactor : ONE
 }
 

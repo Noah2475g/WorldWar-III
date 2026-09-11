@@ -13,6 +13,16 @@ function firstLegTicks(state: GameState, army: Army, next: ProvinceId, ctx: Phas
   return edgeTravelTicks(state, army, edge, army.locationProvinceId, next, ctx.rules)
 }
 
+/** Days an order may wait before it starts — long enough to plan, short enough to stay legible. */
+export const MAX_DEPART_DELAY_DAYS = 14
+
+/** The requested hold, normalised: absent, negative and fractional values all mean "leave now". */
+function departDelay(command: MoveArmyCommand, ticksPerDay: number): number {
+  const raw = command.departInTicks
+  if (raw === undefined || !Number.isFinite(raw) || raw <= 0) return 0
+  return Math.min(Math.trunc(raw), MAX_DEPART_DELAY_DAYS * ticksPerDay)
+}
+
 /**
  * Ordering an army to march (R-UNIT-04, T-M4-02).
  *
@@ -48,21 +58,26 @@ registerCommand<MoveArmyCommand>('MOVE_ARMY', {
   apply: (draft, command, ctx) => {
     const army = draft.armies[command.armyId]!
     const route = planRoute(draft, army, command.targetProvinceId, ctx.map, ctx.rules)!
+    // A delayed order shifts every tick of the march by the same amount — nothing else
+    // about it changes, which is why the movement phase needs no knowledge of it.
+    const delay = departDelay(command, ctx.rules.constants.ticksPerDay)
+    const departAt = draft.tick + delay
 
     army.path = route.path
-    army.departureTick = draft.tick
+    army.departureTick = departAt
     // `arrivalTick` tracks the *next leg*; the event reports the arrival at the
     // destination, which is what the player asked about.
-    army.arrivalTick = draft.tick + firstLegTicks(draft, army, route.path[0]!, ctx)
+    army.arrivalTick = departAt + firstLegTicks(draft, army, route.path[0]!, ctx)
     // Leaving costs order: the army fights at reduced strength while it forms up.
-    army.deployDelayUntil = draft.tick + ctx.rules.constants.deployDelayTicks
+    // While it is still waiting it stands its ground at full strength (deploymentFactor).
+    army.deployDelayUntil = departAt + ctx.rules.constants.deployDelayTicks
 
     emit(ctx.events, draft.tick, 'ARMY_DEPARTED', {
       playerId: army.owner,
       armyId: army.id,
       fromProvinceId: army.locationProvinceId,
       toProvinceId: command.targetProvinceId,
-      arrivalTick: route.arrivalTick,
+      arrivalTick: route.arrivalTick + delay,
       audience: [army.owner],
     })
   },
