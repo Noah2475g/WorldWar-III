@@ -11,7 +11,8 @@
 > Aufgaben ist **nur noch T-M10-02 offen — zurückgenommen, keine Arbeit.** `pnpm verify`
 > grün (1786 Tests). `pnpm acceptance` **8 von 10 unter Fremdlast** — beide Ausfälle
 > nachgewiesen als Maschinenlast, nicht als Code (PROGRESS.md, Block „Tor M28/M32").
-> **Der eine offene Punkt: ein Abnahmelauf auf freier Maschine.**
+> **Der eine offene Punkt: das Zeitbudget-Tor auf freier Maschine** (`pnpm acceptance`
+> zuletzt 10 von 11; AK-1 unverändert an Tag 798).
 > Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
 >
 > **Danach eine Durchsicht des Diffs durch vier Prüfer mit adversarischer Gegenprobe:
@@ -107,9 +108,11 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **`pnpm acceptance` auf freier Maschine** — der Lauf vom 2026-09-11 abends kam auf
-   8 von 10, beide Ausfälle nachweislich Fremdlast (ein Spiel des Nutzers band mehrere
-   Kerne; Gegenprobe mit neutralisierter Kernänderung war *langsamer*). Vorher prüfen:
+0. **`pnpm acceptance` auf freier Maschine** — der letzte Lauf (2026-09-11 abends, gegen
+   den reparierten Kern) kam auf **10 von 11**; offen ist allein das Zeitbudget-Tor, dessen
+   Name schon sagt, was ihm fehlte: „auf ruhiger Maschine" (Grundlast 62–76 % durch ein
+   Spiel des Nutzers; Gegenprobe mit neutralisierter Kernänderung war *langsamer*).
+   **AK-1 ist unverändert an Tag 798 entschieden.** Vorher prüfen:
    ```bash
    powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
    ```
