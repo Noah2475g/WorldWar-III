@@ -126,10 +126,14 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
    Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
    M17 wird als Ganzes geplant oder gar nicht.
-0d. **Die Sichtprüfung zu T-M28-08 ist unvollständig** — im 420×240-Kartenfeld der
-   Vorschau ließ sich kein laufendes Gefecht sauber einfangen. Noahs Maßstab („im
-   Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest") braucht ein großes
-   Fenster und seinen Blick.
+0d. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
+   im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
+   24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
+   Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen. Fünf
+   Anläufe über drei Partien, Einzelheiten in `PROBLEME.md` (2026-09-11). **Allgemein:
+   alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht prüfbar.**
+   Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
+   braucht ein großes Fenster und seinen Blick.
 
 1. **Merge auf `main`** — **PR #3 ist gemerged** (`main` = `7881f8a`), aber der Branch
    ist seither weitergelaufen: M32, T-M28-06/07/08 und die Doku-Commits liegen darüber.

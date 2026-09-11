@@ -1756,3 +1756,43 @@ eigenen Test verlangt (eine CRLF-Fixture), und weil die eigentliche Regel lautet
 
 ---
 
+## 2026-09-11 · T-M28-08 · Im Vorschaufenster ist kein tickgenaues Bild zu fangen
+
+**Befund:** Die Sichtprüfung der Gefechtsdarstellung scheiterte in **fünf** Anläufen über
+drei Partien, und der Grund ist keiner der vermuteten. Er ist strukturell: **im
+Browser-Vorschaufenster läuft die Spieluhr nicht.** `requestAnimationFrame` wird dort
+gedrosselt, und die Tempostufen hängen an der Bildschleife — auf Stufe 10 blieb die Uhr
+über sechzig Messungen in vierundzwanzig Sekunden auf **Tag 106 · 00:00** stehen. Die
+einzige Möglichkeit, Zeit zu bewegen, ist der Knopf „Vorspulen", und der springt einen
+**ganzen Spieltag**.
+
+Ein Gefecht dauert wenige Ticks; `view.battles` trägt nur die des laufenden Ticks. Ein
+Tagessprung landet deshalb fast immer **zwischen** zwei Gefechten. Gemessen: bei Tag 106
+lagen Gefechte bei 105 · 19:00 und 104 · 18:00 im Protokoll, und die Überzugsebene
+enthielt in diesem Augenblick **null** Pixel in Gefechts- oder Bernsteinfarbe.
+
+**Kleinster reproduzierbarer Fall:** Partie starten, Tempo 10 wählen, vierundzwanzig
+Sekunden lang die Uhr lesen — sie steht. Danach „Vorspulen" drücken: die Uhr springt um
+einen Tag.
+
+**Was nicht hilft, und warum:**
+- *Auf ein eigenes Gefecht warten.* Der Vorspul-Stopp greift beim Alarm — er hält aber am
+  Tick **nach** dem Gefecht an, und bei einer kleinen Armee ist es da schon entschieden.
+- *Die Farbe auf der Leinwand zählen.* Feindliche Stapel tragen seit T-M30-01 denselben
+  Zinnober im Rahmen, die Auswahl denselben Bernstein wie die Einschlagzeichen. Ohne
+  Auswahl und ohne Alarm bleibt die Probe trotzdem mehrdeutig, solange Feindmarker im Bild
+  sind — und im Krieg sind sie das.
+- *Den Tooltip lesen* („Gefechtsrunde n" aus `view.battles`). Er braucht eine **gewählte**
+  Provinz, und die Auswahlliste führt nur die dreizehn sichtbaren — die Gefechte der KI
+  lagen außerhalb.
+
+**Status: offen, und es ist kein Produktfehler.** Gebunden ist die Zeichenarbeit durch
+`MapCanvas.test.tsx` (Schein als gefüllter Bogen, Ring, Bernstein der Einschläge,
+Deckkraft unter eins) und die Geometrie durch `render.test.ts`/`motion.test.ts`. Was fehlt,
+ist Noahs Urteil an seinem eigenen Maßstab: **fällt ein Krieg im Vorspulen auf, ohne dass
+man das Protokoll liest?** Das beantwortet ein großes Fenster und ein Mensch, keine
+Pixelprobe. Für künftige Sichtprüfungen gilt derselbe Befund allgemein: **alles, was nur
+einen Tick lang sichtbar ist, ist im Vorschaufenster nicht prüfbar.**
+
+---
+
