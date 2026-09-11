@@ -4172,3 +4172,121 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** `pnpm verify` grün, Zeichenbudget festgehalten, Sichtprüfung im
   laufenden Spiel, PROGRESS/WORKFLOW fortgeschrieben und D33-a bis D33-c in
   `DECISIONS.md`.
+
+## Meilenstein M34 — Der Fortschritt bekommt eine Strecke
+
+> **Der Befund in einem Satz:** die Uhr läuft mit einem Tick je Sekunde, ein Spieltag hat
+> vierundzwanzig Ticks, und die letzte Freischaltung liegt auf Spieltag 16 — die ganze
+> Fortschrittsachse ist nach **6,4 Minuten Echtzeit** vorbei, während die Partie bis
+> Spieltag 798 läuft. Die Tage stammen aus dem Vorbild, wo ein Spieltag ein echter Tag ist.
+>
+> Noahs Wahl vom 2026-09-11: strecken, an Gebäudestufen binden, Stufen teurer machen,
+> Startvorrat senken, nächste Freischaltung sichtbar machen. Der Bauplan mit Zahlen,
+> Selbstkritik und dem Verworfenen: `docs/plan/FORTSCHRITT.md`.
+>
+> **M34 ändert `data/rules` viermal.** Jede dieser Änderungen macht die Abnahme rot, bis
+> Parameterlauf und Turnier neu gelaufen **und eingecheckt** sind. Und der Golden-Master
+> wird sich verschieben — das ist erwartet, aber nur als bewusster Akt.
+
+### T-M34-01 · Der Ausgangswert wird gemessen
+- **Ziel:** „Erst messen, dann ändern" — ohne Ausgangswert ist jede spätere Verbesserung
+  eine Behauptung.
+- **Anforderungen:** keine · **Abhängigkeiten:** keine
+- **Dateien:** `docs/reports/progress-baseline.md`
+- **Tests zuerst:** keine neuen; `sweep.slow.test.ts` und `tournament.slow.test.ts` laufen
+  auf dem heutigen Regelstand, Maschine allein.
+- **Fertig wenn:** die vier Kennzahlen der Analyse und der Wirtschafts-Ist-Stand
+  (wann erreicht eine mittlere Macht Fabrik Stufe 3) im Bericht stehen.
+
+### T-M34-02 · R-TECH-01 wird begründet geändert
+- **Ziel:** die Tage des Vorbilds sind als *belegt* festgeschrieben; sie zu strecken ist
+  eine Abweichung und braucht eine Begründung, keine stille Zahlenänderung.
+- **Anforderungen:** R-TECH-01
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/BALANCING.md`
+- **Tests zuerst:** keine (Entscheid).
+- **Fertig wenn:** die Anforderung die neue Zeitrechnung trägt, BALANCING.md die Tage von
+  *belegt* auf *abgeleitet* umstuft und `pnpm coverage:requirements` weiter
+  `V1 offen: 0` meldet.
+
+### T-M34-03 · Die Freischaltungsleiter wird gestreckt
+- **Ziel:** die letzte Freischaltung liegt bei etwa Spieltag 80 statt 16.
+- **Anforderungen:** R-TECH-01
+- **Abhängigkeiten:** T-M34-02
+- **Dateien:** `data/rules/default/units.json`, `data/rules/default/buildings.json`,
+  `docs/plan/BALANCING.md`
+- **Tests zuerst:** die Leiter ist je Klasse monoton; kein Gebäude wird später frei als die
+  Einheit, die es verlangt (`availability.test.ts`).
+- **Fertig wenn:** Reihenfolge unverändert, Abstände gewachsen, Kaserne und Infanterie auf
+  Tag 1 geblieben, Golden-Master bewusst neu erzeugt.
+
+### T-M34-04 · Gebäudestufen kosten und dauern mehr
+- **Ziel:** die zweite Fortschrittsachse ist heute keine — `build.ts` zieht denselben Preis
+  für Stufe 3 wie für Stufe 1 ab.
+- **Anforderungen:** R-PROV-01, R-PROV-02
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `packages/core/src/commands/build.ts`,
+  `packages/core/src/phases/construction.ts`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `data/rules/default/constants.json`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Stufe 1 unverändert, Stufe 3 kostet das 3,24-fache und dauert das
+  2,25-fache; ein Auftrag, der für Stufe 1 reicht, wird für Stufe 3 abgelehnt
+  (`construction.test.ts`).
+- **Fertig wenn:** zwei neue Konstanten greifen, das Bauplatz-Raster den Preis der
+  **nächsten** Stufe zeigt und der Golden-Master begründet neu steht.
+
+### T-M34-05 · Starke Einheiten verlangen höhere Gebäudestufen
+- **Ziel:** Fortschritt, den man baut, statt Fortschritt, der vergeht.
+- **Anforderungen:** R-UNIT-02, R-TECH-01
+- **Abhängigkeiten:** T-M34-03, T-M34-04
+- **Dateien:** `data/rules/default/units.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** die Ablehnung nennt Gebäude **und** Stufe; mit der Stufe darunter wird
+  derselbe Auftrag abgelehnt (`validate.test.ts`).
+- **Fertig wenn:** genau drei Einträge geändert sind — mehr wäre eine Sperre, keine Achse.
+
+### T-M34-06 · Der Startvorrat schrumpft
+- **Ziel:** die ersten Tage sollen von der Produktion handeln, nicht vom Lagerabbau.
+- **Anforderungen:** R-ECON-01
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `data/rules/default/resources.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** eine frische Partie trägt die neuen Werte und bleibt in den ersten zehn
+  Tagen handlungsfähig (`create.test.ts`, `economy-scale.test.ts`).
+- **Fertig wenn:** `startAmount` je Rohstoff auf zwei Dritteln steht — nicht darunter.
+
+### T-M34-07 · Nachmessen und nachjustieren
+- **Ziel:** vier Zahlenänderungen auf einmal lassen sich hinterher nicht auseinanderhalten.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M34-03, T-M34-04, T-M34-05, T-M34-06
+- **Dateien:** `docs/reports/progress-baseline.md`, `docs/reports/balance-sweep.md`,
+  `docs/reports/ai-tournament-run.md`
+- **Tests zuerst:** keine neuen; die drei Langläufe **nach jeder** der vier Zahlenaufgaben.
+- **Fertig wenn:** der Vergleich gegen T-M34-01 steht und der Siegtag zwischen 300 und 1500
+  liegt — sonst nachjustieren und erneut messen.
+
+### T-M34-08 · Die nächste Freischaltung wird sichtbar
+- **Ziel:** Fortschritt, den man nicht sieht, motiviert nicht.
+- **Anforderungen:** R-TECH-02, R-UI-13 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-02, T-M34-03
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** an Tag 20 nennt die Zeile die nächste Sache und die richtige Zahl von
+  Tagen; am Tag der Freischaltung wechselt sie; nach der letzten verschwindet sie
+  (`Panels.test.tsx`).
+- **Fertig wenn:** die Zeile am Kopf der Rekrutierungsliste steht, mit Bild aus M33.
+
+## Meilenstein M35 — Der lange Mittelteil bekommt Ziele *(Entwurf zuerst)*
+
+> Zwischen Spieltag 20 und Spieltag 700 sagt dem Spieler niemand, ob er vorankommt. Es gibt
+> genau eine Schwelle, und die liegt bei siebzig Prozent Punktanteil.
+
+### T-M35-01 · Entwurf der Zwischenziele zum Sieg
+- **Ziel:** der Punkt braucht neue Mechanik und berührt eine V1-Zusage — also erst ein
+  Entwurf, dann der Schnitt in Aufgaben. Muster: T-M28-07.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M34-07
+- **Dateien:** `docs/plan/FORTSCHRITT.md`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** keine (Entwurf).
+- **Fertig wenn:** feststeht, welche Ziele der Zustand schon trägt, was ein neues Feld
+  bräuchte, und die Teilaufgaben geschnitten sind — mit Umgang für Golden-Master und
+  R-GAME-02.

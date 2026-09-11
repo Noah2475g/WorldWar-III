@@ -17,6 +17,16 @@
 > Monaten leer grün (sein Ausdruck sucht den Buchstaben `d` statt einer Ziffer und findet
 > in keinem Pfad etwas); T-M33-01 ersetzt ihn.
 >
+> **Ebenfalls neu am 2026-09-11: M34 „Der Fortschritt bekommt eine Strecke" und M35**
+> (`docs/plan/FORTSCHRITT.md`, neun Aufgaben, alle `todo`). Der Befund: die Uhr läuft mit
+> einem Tick je Sekunde, ein Spieltag hat 24 Ticks, die letzte Freischaltung liegt auf
+> Spieltag 16 — die ganze Fortschrittsachse ist nach **6,4 Minuten Echtzeit** vorbei,
+> während die Partie bis Spieltag 798 läuft. Dazu zwei weitere: Gebäudestufen kosten auf
+> jeder Stufe dasselbe, und der Startvorrat trägt die Eröffnung allein. **M34 ist teuer**,
+> nicht im Code, sondern in Messungen: vier Änderungen an `data/rules`, jede macht die
+> Abnahme rot bis Parameterlauf und Turnier neu eingecheckt sind, und T-M34-04 verschiebt
+> den Golden-Master.
+>
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
 > (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
@@ -102,27 +112,35 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    siebzehn Zeichnungen liegen fertig in `docs/design/einheiten-bilder.html`; es ist kein
    Entwurf mehr zu machen, nur noch zu übertragen. **Achtung:** T-M33-01 repariert
    nebenbei einen Wächter, der seit Monaten leer grün ist (Risiko 7 im Bauplan).
-1. **Der Kriegsrat-Umbau, Rest (M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen. T-M32-01
+1. **Der Fortschritt bekommt eine Strecke (M34)** — freigegeben am 2026-09-11, acht
+   Aufgaben. `docs/plan/FORTSCHRITT.md` §0 lesen. **Das ist der teuerste Meilenstein des
+   Plans**, nicht wegen des Codes, sondern wegen der Messungen: vier Änderungen an
+   `data/rules`, und jede macht die Abnahme rot, bis Parameterlauf und Turnier neu
+   gelaufen **und eingecheckt** sind. T-M34-01 misst zuerst den Ausgangswert; T-M34-04 ist
+   die einzige Kernänderung und verschiebt den Golden-Master.
+2. **Der lange Mittelteil bekommt Ziele (M35)** — eine Aufgabe, und die ist ein **Entwurf,
+   kein Bau** (Muster T-M28-07). Erst nach M34.
+3. **Der Kriegsrat-Umbau, Rest (M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen. T-M32-01
    berührt den Kern und wartet auf Noahs Freigabe; T-M32-02 und T-M32-03 sind kernfrei und
    könnten jederzeit laufen.
-2. **Noahs Spiel-Feedback (T-M28-06, T-M28-07, T-M28-08)** — vorgemerkt, nicht gebaut.
+4. **Noahs Spiel-Feedback (T-M28-06, T-M28-07, T-M28-08)** — vorgemerkt, nicht gebaut.
    T-M28-07 verlangt zuerst eine Analyse und einen Entwurf in `LEVEL-UP-3.md`, keinen Bau.
-3. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
-4. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
+5. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
+6. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
    nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
    mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
    seit dem 2026-09-03 eine uncommittete, überholte Änderung an
    `packages/core/src/persistence/migrate.ts` — vor dem Merge verwerfen.
-5. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+7. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
    neuen Bündel (starten, speichern, schließen, neu starten, laden —
    `docs/reports/packaging.md` dokumentiert noch den Lauf gegen `1c33ec7`). Zählt
    nicht gegen V1.
-6. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
+8. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
    nächste Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich
    weiterspielen?*
-7. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
+9. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.
 
 ---
