@@ -22,8 +22,12 @@
 > `p1`…`p24` auf nur dreizehn Fächer fiel. `pnpm verify` 1822/1825 (drei Zeitlimits unter
 > Fremdlast, einzeln grün).
 >
-> **Offen sonst: das Zeitbudget-Tor auf freier Maschine** (`pnpm acceptance`
-> zuletzt 10 von 11; AK-1 unverändert an Tag 798).
+> **Abnahme auf freier Maschine am 2026-09-11: `pnpm acceptance` 11 von 11, Exit 0,
+> 6 min 2 s.** Das Zeitbudget-Tor, das den ganzen Abend riss, ist bestanden — Tickmedian
+> **2,65 ms** gegen 3,5 gefordert (unter Fremdlast waren es 4,03 und 4,11). AK-1
+> unverändert an Tag 798. **Alles ist auf `main` gemerged** (`4466503`, ein Merge-Commit,
+> kein fast-forward — siehe §2.1). Von **205 Aufgaben sind 204 erledigt**; offen ist allein
+> die zurückgenommene T-M10-02.
 > Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
 >
 > **Danach eine Durchsicht des Diffs durch vier Prüfer mit adversarischer Gegenprobe:
@@ -119,11 +123,10 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **`pnpm acceptance` auf freier Maschine** — der letzte Lauf (2026-09-11 abends, gegen
-   den reparierten Kern) kam auf **10 von 11**; offen ist allein das Zeitbudget-Tor, dessen
-   Name schon sagt, was ihm fehlte: „auf ruhiger Maschine" (Grundlast 62–76 % durch ein
-   Spiel des Nutzers; Gegenprobe mit neutralisierter Kernänderung war *langsamer*).
-   **AK-1 ist unverändert an Tag 798 entschieden.** Vorher prüfen:
+0. **Nichts Dringendes mehr.** Der Abnahmelauf steht bei 11 von 11 auf freier Maschine,
+   alles ist auf `main`, und von 205 Aufgaben ist nur die zurückgenommene T-M10-02 offen.
+   Vor jedem künftigen Abnahmelauf die Last prüfen — unter einem laufenden Spiel reisst
+   das Zeitbudget-Tor, und zwar am Code vorbei:
    ```bash
    powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
    ```
@@ -146,8 +149,8 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
    braucht ein großes Fenster und seinen Blick.
 
-1. **Merge auf `main` — und er ist KEIN fast-forward, anders als hier bis zum 2026-09-11
-   stand.** Gemessen: `git merge-base --is-ancestor main claude/design-plan-execution-8b4296`
+1. **Merge auf `main` — erledigt am 2026-09-11** (`4466503`). Er war **kein fast-forward**,
+   anders als hier bis dahin stand. Gemessen: `git merge-base --is-ancestor main claude/design-plan-execution-8b4296`
    schlägt fehl. PR #3 wurde als **Merge-Commit** nach `main` gebracht (`7881f8a`), der
    Branch lief von `c372ba4` aus weiter — beide Linien haben seither je einen Commit, den
    die andere nicht kennt. **Inhaltlich ist der Branch trotzdem ein echter Obermenge:**
@@ -233,8 +236,8 @@ rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
 | | |
 |---|---|
-| Aufgaben | **180, davon 179 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
-| Abnahme | **7 von 7**, `docs/reports/acceptance.md`, gegen den Endstand |
+| Aufgaben | **205, davon 204 erledigt** (2026-09-11 abends; offen nur T-M10-02 — zurückgenommen) |
+| Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
