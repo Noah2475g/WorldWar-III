@@ -1550,3 +1550,37 @@ Die Forschung erscheint in keinem Meilenstein mehr; KRIEGSRAT §5 nennt sie als 
 nicht geschlossene Lücke.
 
 ---
+
+## 2026-09-11 · M33 · Ein zweiter Bildsatz neben den Glyphen — und die Karte behält ihre
+
+**Entscheidung:** Drei Entscheide aus `EINHEITSBILDER.md` Abschnitt 6, beim Bau von M33
+bestätigt und hier festgehalten.
+
+- **D33-a — Die Karte behält die NATO-Glyphe.** Begründung: elf Pixel. `MapCanvas`
+  stempelt `ICON_PATHS[name]` als einzelnen `Path2D` bei 11 px Kantenlänge; ein
+  gefüllter Schattenriss ist dort ein Fleck, ein Rechteck mit Oval noch eine Auskunft.
+  Seit T-M33-04 ist das kein Satz mehr, sondern ein Test: er fängt jedes `d`, aus dem
+  die Karte einen `Path2D` baut, und verlangt, dass jedes aus `ICON_PATHS` stammt und
+  keines aus `ART`.
+- **D33-b — Der Bildsatz liegt in einer eigenen Datei, nicht in `icons.tsx`.**
+  Begründung: `ICON_PATHS` ist ein `Record<…, string>`, an dem `Path2D` und drei Tests
+  hängen. Zwei Pfade je Zeichnung (`body` gefüllt, `cut` als Innenlinien darüber) passen
+  dort nicht hinein, ohne die Kartenschnittstelle zu verbiegen. Die Brücke zwischen
+  beiden Sätzen ist `ART_FOR_ICON` — aus `UNIT_ICONS`/`UNIT_ART` gebaut und damit keine
+  dritte Liste, die veralten könnte.
+- **D33-c — Gefechtsbericht und Erklär-Fenster bekommen kein Bild.** Noahs Wahl vom
+  2026-09-11; wieder aufnehmbar, ohne etwas zurückzubauen.
+
+**Begründung:** Zwei Bildsprachen im selben Spiel sind ein Preis, kein Gewinn — wer
+beides zum ersten Mal sieht, muss den Zusammenhang selbst herstellen (Risiko 1 des
+Bauplans). Bezahlt wird er dafür, dass die Panels 30 bis 44 px Platz haben und die Karte
+elf. Das Gegenmittel ist, dass alles **außer der Füllung** gleich bleibt: derselbe
+Rahmen, dieselbe Besitzerfarbe (`good`/`ally`/`accent`/`inkSoft`), dieselbe Stellung der
+Zahl. Das Restrisiko bleibt und ist bewusst getragen.
+
+**Auswirkung:** `apps/desktop/src/ui/art.tsx` trägt siebzehn Zeichnungen im Kasten
+48 × 30; `icons.tsx` bleibt unverändert der Satz für Karte, Alarme und Tagesbericht.
+`no-foreign-assets.test.ts` nennt keinen Bildsatz mehr namentlich, sondern sucht jede
+Quelldatei mit Pfaddaten — ein dritter Satz wäre ab dem ersten Tag mitgeprüft.
+
+---

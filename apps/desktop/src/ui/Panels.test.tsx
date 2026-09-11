@@ -1157,6 +1157,22 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
     expect(bilderImRaster(gebaut.container)).toEqual(bilderImRaster(frei.container))
   })
 
+  it('faerbt das Gebaeude in jedem Zustand in `building` und nicht in `ink` (D33.2)', () => {
+    // Im Raster gibt es keinen fremden Besitzer; die Gebaeudefarbe ist die Auskunft.
+    // Befund der Sichtpruefung vom 2026-09-11: im FREIEN Feld stand der Riss in `ink`,
+    // weil das Bild dort im Knopf sitzt und `.slot > svg` es nicht mehr erwischt.
+    for (const zustand of ['frei', 'bau', 'gebaut'] as const) {
+      const { container, unmount } = gerastert(zustand)
+      const bilder = [...container.querySelectorAll('.slot .unit-art')]
+
+      expect(bilder, zustand).toHaveLength(BUILDING_ORDER.length)
+      for (const bild of bilder) {
+        expect(bild.getAttribute('class'), zustand).toContain('unit-art--building')
+      }
+      unmount()
+    }
+  })
+
   it('setzt die Bilder auf die 30 px des Bauplans', () => {
     const { container } = gerastert('gebaut')
     const bilder = [...container.querySelectorAll('.slot .unit-art')]

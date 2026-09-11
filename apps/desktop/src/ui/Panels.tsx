@@ -20,7 +20,7 @@ import {
 } from './icons.tsx'
 import { Meter, toneForShare, trendOf } from './Meter.tsx'
 import { NationName } from './Nation.tsx'
-import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName } from './art.tsx'
+import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
 
@@ -151,11 +151,14 @@ function ActionButton({
   primary = false,
   pressed,
   artWidth = 34,
+  artTone = 'ink',
 }: {
   action: Action
   showReason: boolean
   /** Breite des Schattenrisses, falls die Aktion einen fuehrt (D33.3). */
   artWidth?: number
+  /** Seine Farbe: in der Rekrutierungsliste `ink`, im Bauplatzraster `building` (D33.2). */
+  artTone?: ArtTone
   /** Nur das Zeichen und ein Plus — fuer den Ausbau-Knopf im gebauten Bauplatz (T-M29-03). */
   compact?: boolean
   /** Die eine Hauptaktion je Panel, in Bernstein (D27.1). */
@@ -185,7 +188,7 @@ function ActionButton({
               Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
               eine Zumutung (T-M22-06). */}
           {action.art ? (
-            <UnitArt name={action.art} width={artWidth} />
+            <UnitArt name={action.art} width={artWidth} tone={artTone} />
           ) : (
             action.icon && <Icon name={action.icon} size={13} />
           )}
@@ -482,6 +485,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
                 <ActionButton
                   action={{ ...build, art: BUILDING_ART[key] }}
                   artWidth={SLOT_ART_WIDTH}
+                  artTone="building"
                   showReason={false}
                 />
               ) : (
