@@ -10,7 +10,9 @@
 > - **Gruppierung (Vorschlag 5): ja.** Vier Blöcke — Versorgung, Baustoffe, Kriegsstoffe,
 >   Geld. T-M36-04 ist damit kein Haltepunkt mehr.
 >
-> **Status:** vollständig freigegeben. Zwillinge in `tasks.yaml` und `03-TASKS.md` angelegt.
+> **Status:** **gebaut und abgenommen am 2026-09-11** (T-M36-01 bis T-M36-06, sechs von
+> sechs, kernfrei). Was beim Bau anders entschieden wurde, steht in Abschnitt 6 — dort
+> auch die zwei Stellen, an denen dieser Plan sich geirrt hat.
 
 ---
 
@@ -170,3 +172,38 @@ ist die Ersparnis, die zulässig ist.
   bequeme Lösung und macht die Leiste doppelt so breit; sieben Wörter neben sieben Zahlen
   sind kein Gewinn gegenüber einundzwanzig Zahlen. Die Zeichen zu reparieren ist die Arbeit,
   die wirklich ansteht.
+
+---
+
+## 6 · Was der Bau ergeben hat (2026-09-11)
+
+Sechs Aufgaben, sechs Commits, `pnpm verify` grün. Drei Dinge stehen hier, weil sie von
+diesem Plan abweichen oder ihn widerlegen.
+
+1. **Risiko 4 nennt zwei Orte, die es nicht gibt.** Der Plan sagt, `RESOURCE_ICONS`
+   erscheine in der Leiste, den Vorkommen einer Provinz, den **Baukosten-Hinweisen** und
+   im **Tagesbericht**. Am laufenden Spiel nachgesehen: die Baukosten stehen als Wörter
+   im Tooltip („333 Material, 250 Geld · 1 Tag", aus `costs()`), und der Tagesbericht
+   führt Namen mit Bilanzbalken — **null Rohstoffzeichen in beiden.** Die vier Orte, an
+   denen der Satz wirklich erscheint, sind: **Leiste**, **Vorkommen einer Provinz**,
+   **Wirtschaftstabelle** und **Markt** (Auswahl und Preisliste); dazu als fünfter das
+   Mangel-Zeichen in `Alerts.tsx`. Alle vier sind im laufenden Spiel geprüft, jedes
+   einzelne Zeichen über seinen Pfad dem neuen Satz zugeordnet und kein einziges altes
+   mehr gefunden.
+2. **Ein Befund, den nur die Sichtprüfung finden konnte.** In `app.css` stand seit dem
+   Kriegsrat `.resource span`, eine Regel für den Rohstoffnamen — der seit demselben
+   Umbau `visually-hidden` ist, für ihn also folgenlos. Gegriffen hat sie auf die Spans,
+   die T-M36-02 dazustellte: **Pfeil und Reichweite standen in Nebentextfarbe statt in
+   Bernstein**, weil ein Element weiter innen eine Stelle mehr Spezifität hat als
+   `.resource--short em`. Kein Test hat das gesehen; gemessen wurde es am laufenden
+   Spiel (`rgb(154,160,168)` statt `rgb(224,162,32)`). Die Regel ist weg, und ein
+   Kaskaden-Wächter in `Header.test.tsx` hält den Ton jetzt fest — vorgeführt, dass er
+   rot wird, indem die alte Regel für einen Lauf zurückgestellt wurde.
+3. **Zwei Farben sind bewusst aufgegeben** (T-M36-03, in `DECISIONS.md` begründet): die
+   Richtungsfarben aus D27.1 und das dauerhafte Bernstein des Geldzeichens aus D27.2.
+   Eine Signalfarbe, die an einem ruhigen Tag siebenmal leuchtet, ist keine mehr.
+
+**Die Messung des Zeichensatzes ist bei der Abnahme im Browser nachgerechnet** worden —
+`Path2D` auf eine 14 × 14-Fläche, dieselbe Strichstärke wie im Spiel: engstes Paar
+Kohle / Öl **0,127**, Mittel **0,191**, gegen 0,104 und 0,157 für den alten Satz. Dieselben
+Zahlen wie in Abschnitt 2, auf einem zweiten Weg und an den ausgelieferten Pfaden.

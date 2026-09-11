@@ -199,13 +199,17 @@ body {
   color: var(--ink);
 }
 
-.resource span {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
+/*
+  Hier stand bis zur Sichtpruefung zu T-M36-06 eine Regel `.resource span`, die den
+  Rohstoffnamen setzte — Schriftart, Groesse, Versalien, Nebentextfarbe. Der Name ist
+  seit dem Kriegsrat `visually-hidden`, die Regel fuer ihn also folgenlos; gegriffen hat
+  sie auf die SPANS, die T-M36-02 dazugestellt hat: den Pfeil und die Reichweite. Beide
+  standen dadurch in Nebentextfarbe statt in Bernstein, obwohl `.resource--short em` und
+  `.resource__reach` es anders sagten — ein Element weiter innen, mit einer Stelle mehr
+  Spezifitaet. Am laufenden Spiel gemessen: die Reichweite kam als rgb(154,160,168)
+  heraus, nicht als rgb(224,162,32). Die Regel ist ersatzlos weg; der verborgene Name
+  braucht kein Aussehen. Gebunden ist das jetzt in Header.test.tsx (T-M36-06).
+*/
 
 /* Die Richtung der Tagesbilanz: ein Pfeil statt einer Zahl (T-M36-02, D36.2). Die Zahl
    steht im Tooltip und fuers Ohr; sichtbar bleibt nur, wohin es geht. */

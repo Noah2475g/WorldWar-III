@@ -3,16 +3,19 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand: 2026-09-11.** Alles bis einschließlich **M33** ist gebaut und liegt auf
-> **`main`**. `pnpm acceptance` lief (gegen den Stand nach M32) auf freier Maschine
+> **Stand: 2026-09-11.** Alles bis einschließlich **M33 und M36** ist gebaut und liegt
+> auf **`main`**. `pnpm acceptance` lief (gegen den Stand nach M32) auf freier Maschine
 > **11 von 11, Exit 0, 6 min 2 s** — das Zeitbudget-Tor bestanden mit Tickmedian
 > **2,65 ms** gegen 3,5 gefordert. AK-1 wird an Spieltag 798 entschieden. **M33 hat
 > Einheiten und Gebäuden Bilder gegeben** (siebzehn Schattenrisse in `ui/art.tsx`,
 > Rekrutierungsliste, Bauplatzraster und Armeeliste; die Karte behält ihre NATO-Glyphe)
-> und dabei einen Wächter repariert, der seit Monaten leer grün war. Von **225 Aufgaben
-> sind 209 erledigt**; von den 16 offenen ist eine zurückgenommen (T-M10-02, keine
-> Arbeit) und **fünfzehn sind geplant, freigegeben und ungebaut** — M34, M35, M36. Sie
-> stehen in §2.
+> und dabei einen Wächter repariert, der seit Monaten leer grün war. **M36 hat die
+> Rohstoffleiste lesbar gemacht:** sieben neu gezeichnete Zeichen (Material trägt keinen
+> Nadelbaum mehr), Reichweite statt Bilanz, zwei Töne statt sieben gleich lauter Zellen,
+> vier Gruppen — und eine ruhigere Wirtschaftstabelle, die trotzdem alle vier Spalten
+> behält, weil R-ECON-06 sie wörtlich verlangt. Von **225 Aufgaben sind 215 erledigt**;
+> von den 10 offenen ist eine zurückgenommen (T-M10-02, keine Arbeit) und **neun sind
+> geplant, freigegeben und ungebaut** — M34 und M35. Sie stehen in §2.
 >
 > **Es gibt keinen aktuelleren Zweig als `main`.** Wer eine ältere Fassung dieser Datei
 > gelesen hat, kennt die umgekehrte Anweisung; sie galt bis zum Merge vom 2026-09-11 und
@@ -56,11 +59,13 @@ vom 2026-09-07 ausdrücklich an den Agenten delegiert (Entscheid in `DECISIONS.m
 Berichte liegen vor (`docs/reports/playtest-v1.md`, 62/62, und
 `playtest-2026-09-07-v2.md`, 17 Befunde).
 
-Was seither dazukam, war kein Bau mehr, sondern **Planung**: vier Meilensteine mit
-zwanzig Aufgaben, alle freigegeben, keine davon angefangen. Drei sind kernfrei, einer
-(M34) ist teuer, weil er `data/rules` anfasst und damit Messungen erzwingt. Die
-Reihenfolge und die Begründungen stehen in §2, die Baupläne je Meilenstein in
-`docs/plan/EINHEITSBILDER.md`, `FORTSCHRITT.md` und `ROHSTOFFE.md`.
+Was seither dazukam, war zuerst **Planung** — vier Meilensteine mit zwanzig Aufgaben,
+alle freigegeben — und dann Bau: **M33** (Bilder für Einheiten und Gebäude) und **M36**
+(die Rohstoffleiste) sind fertig, beide kernfrei. Offen bleiben **M34** — der teuerste
+des Plans, weil er `data/rules` anfasst und damit Parameterlauf und Turnier erzwingt —
+und **M35**, das ein Entwurf ist und kein Bau. Die Reihenfolge und die Begründungen
+stehen in §2, die Baupläne je Meilenstein in `docs/plan/EINHEITSBILDER.md`,
+`FORTSCHRITT.md` und `ROHSTOFFE.md`.
 
 **Wichtig für T-M22-05:** Befehle werden **gesammelt** und im ersten Tick des nächsten
 Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen Tick, samt
@@ -69,8 +74,9 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
 ## 2 · Was als Nächstes dran ist
 
-Alles bis einschließlich **M33** ist gebaut und auf `main`. Was hier steht, ist geplant
-und freigegeben, aber **nicht gebaut** — fünfzehn Aufgaben in drei Meilensteinen.
+Alles bis einschließlich **M33** ist gebaut und auf `main`, **M36 seit dem 2026-09-11
+ebenfalls**. Was hier als offen steht, ist geplant und freigegeben, aber **nicht
+gebaut** — neun Aufgaben in zwei Meilensteinen.
 
 0. **M33 ist fertig** (2026-09-11, fünf Aufgaben, kernfrei). `ui/art.tsx` trägt siebzehn
    Schattenrisse, zeichengleich aus `docs/design/einheiten-bilder.html` und von einem Test
@@ -84,13 +90,19 @@ und freigegeben, aber **nicht gebaut** — fünfzehn Aufgaben in drei Meilenstei
    `data/rules`, und jede macht die Abnahme rot, bis Parameterlauf und Turnier neu
    gelaufen **und eingecheckt** sind. T-M34-01 misst zuerst den Ausgangswert; T-M34-04 ist
    die einzige Kernänderung und verschiebt den Golden-Master.
-2. **Die Rohstoffleiste wird lesbar (M36)** — freigegeben am 2026-09-11, sechs Aufgaben,
-   kernfrei. `docs/plan/ROHSTOFFE.md` §0 lesen. T-M36-01 hing an T-M33-01: **die
-   Abhängigkeit ist eingelöst**, der Wächter für die neuen Pfade steht seit dem
-   2026-09-11 (`test/path-bounds.ts`, benutzt von `icons.test.tsx` und `art.test.tsx`).
-   Zeichensatz und Gruppierung sind entschieden; es ist nichts mehr zu entwerfen.
+2. **M36 ist fertig** (2026-09-11, sechs Aufgaben, kernfrei). Die Rohstoffleiste zeigt
+   Bestand, Pfeil und — nur wo es drängt — die Reichweite in Tagen; die Bilanzzahl steht
+   im Tooltip. Sieben neu gezeichnete Zeichen, vier Gruppen, zwei Töne. Was daraus für
+   alle gilt, steht in `ROHSTOFFE.md` §6: **zwei Farben sind aufgegeben** (die
+   Richtungsfarben aus D27.1 und das dauerhafte Bernstein des Geldes aus D27.2 — eine
+   Signalfarbe, die an einem ruhigen Tag siebenmal leuchtet, ist keine mehr), und die
+   Sichtprüfung fand eine Regel, die kein Test sehen konnte: `.resource span` färbte
+   Pfeil und Reichweite um, weil ein Element weiter innen eine Stelle mehr Spezifität
+   hat. **Wer an der Leiste arbeitet, prüft die Kaskade am laufenden Spiel und nicht nur
+   im Test.**
 3. **Der lange Mittelteil bekommt Ziele (M35)** — eine Aufgabe, und die ist ein **Entwurf,
-   kein Bau** (Muster T-M28-07). Erst nach M34.
+   kein Bau** (Muster T-M28-07). Erst nach M34. **Damit sind M34 und M35 alles, was der
+   Plan noch offen hat.**
 
 Dazu, ohne Aufgabe in `tasks.yaml`:
 
@@ -195,11 +207,11 @@ rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
 | | |
 |---|---|
-| Aufgaben | **225, davon 209 erledigt** (2026-09-11, nach M33); offen: 15 geplante und ungebaute aus M34–M36, dazu T-M10-02 — zurückgenommen |
-| Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine — gegen den Stand nach M32; M33 ist kernfrei und hat `pnpm verify` durchlaufen, keinen vollen Abnahmelauf |
+| Aufgaben | **225, davon 215 erledigt** (2026-09-11, nach M33 und M36); offen: 9 geplante und ungebaute aus M34 und M35, dazu T-M10-02 — zurückgenommen |
+| Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine — gegen den Stand nach M32; M33 und M36 sind kernfrei und haben `pnpm verify` durchlaufen, keinen vollen Abnahmelauf |
 | AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | **1859 schnell** · Kern 96,8 % · gesamt 95,8 % (`pnpm verify` grün, Exit 0, 2026-09-11 nach M33; davor 1825) |
+| Tests | **1889 schnell**, 140 Dateien · Kern 96,8 % · gesamt 95,9 % (`pnpm verify` grün, Exit 0, 2026-09-11 nach M36; davor 1859 nach M33 und 1825 davor) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |

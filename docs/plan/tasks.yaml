@@ -2511,7 +2511,7 @@ tasks:
   - id: T-M36-06
     milestone: M36
     title: Abnahme M36
-    status: todo
+    status: done
     deps: [T-M36-02, T-M36-03, T-M36-04, T-M36-05]
     requirements: []
     design: [D-27]

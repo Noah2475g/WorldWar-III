@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -545,5 +546,60 @@ describe('T-M36-04 Vier Gruppen', () => {
     expect(container.querySelectorAll('ul').length).toBe(1)
     expect(leiste.querySelectorAll('li').length).toBe(7)
     expect(leiste.querySelectorAll('[role="group"]').length).toBe(0)
+  })
+})
+
+/**
+ * Was die Sichtprüfung zu T-M36-06 gefunden hat — als Kaskaden-Wächter.
+ *
+ * In `app.css` stand seit dem Kriegsrat eine Regel `.resource span`, die den
+ * Rohstoffnamen setzte. Der Name ist `visually-hidden`, die Regel für ihn also
+ * folgenlos — gegriffen hat sie auf die Spans, die T-M36-02 dazugestellt hat: den Pfeil
+ * und die Reichweite. Beide standen dadurch in Nebentextfarbe statt in Bernstein,
+ * obwohl `.resource--short em` und `.resource__reach` es anders sagten: ein Element
+ * weiter innen, mit einer Stelle mehr Spezifität. Am laufenden Spiel gemessen, nicht in
+ * einem Test gefunden — deshalb steht hier jetzt einer.
+ *
+ * jsdom rechnet kein Layout, löst aber die Kaskade auf und gibt `var(--…)` unaufgelöst
+ * zurück. Genau das reicht: die Frage ist, WELCHE Regel gewinnt.
+ */
+describe('T-M36-06 Der Ton der knappen Zelle kommt auch wirklich an', () => {
+  const mitStylesheet = (pruefen: (container: HTMLElement) => void): void => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const base = view(100, [100], 900)
+      const ruhig = { stock: 5000, production: 100, consumption: 0, balance: 100 }
+      const knapp = { stock: 5000, production: 0, consumption: 2000, balance: -2000 }
+      const { container } = renderHeader({
+        ...base,
+        self: {
+          ...base.self,
+          economy: { food: knapp, wood: ruhig, iron: ruhig, coal: ruhig, oil: ruhig, rare: ruhig, money: ruhig },
+        },
+      } as PublicView)
+      pruefen(container)
+    } finally {
+      style.remove()
+    }
+  }
+
+  it('faerbt Pfeil und Reichweite der knappen Zelle in Bernstein', () => {
+    mitStylesheet((container) => {
+      const reach = container.querySelector('.resource--food .resource__reach') as HTMLElement
+      const pfeil = container.querySelector('.resource--food em') as HTMLElement
+
+      expect(window.getComputedStyle(reach).color).toBe('var(--warn)')
+      expect(window.getComputedStyle(pfeil).color).toBe('var(--warn)')
+    })
+  })
+
+  it('laesst die ruhigen Zellen im Nebentext', () => {
+    mitStylesheet((container) => {
+      const pfeil = container.querySelector('.resource--wood em') as HTMLElement
+
+      expect(window.getComputedStyle(pfeil).color).toBe('var(--ink-soft)')
+    })
   })
 })

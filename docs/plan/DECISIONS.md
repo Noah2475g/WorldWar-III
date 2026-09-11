@@ -1611,3 +1611,44 @@ wo es sieben Zahlen zu lesen gibt; die Gruppe ist eine Linie fürs Auge und kein
 fürs Ohr.
 
 ---
+
+## 2026-09-11 · M36 · Der gemischte Zeichensatz der Rohstoffe — und die Zahl, die ihn trägt
+
+**Entscheidung:** Noahs Wahl vom 2026-09-11, zweite Runde (`ROHSTOFFE.md` D36.1,
+Entwurfsblatt Abschnitt 1b): **Fassung 1 als Grundlage, aber Eisen, Kohle, Öl und
+Seltene Erden aus Fassung 2.** Nahrung wird eine Ähre, Material ein Balkenstapel, Geld
+ein Münzstapel; Eisen sind zwei versetzte Barren, Kohle ein kantiger Brocken, Öl bleibt
+der Tropfen, Seltene Erden werden zwei Kristalle.
+
+**Begründung, gemessen statt behauptet:** jedes Zeichen bei **vierzehn Pixeln** gerastert
+— der einzigen Größe, in der es vorkommt —, jedes Paar mit jedem verglichen, der Wert ist
+der mittlere Unterschied je Bildpunkt, und das **engste Paar entscheidet**, weil es das
+ist, das verwechselt wird:
+
+| Satz | engstes Paar | Wert | Mittel über 21 Paare |
+|---|---|---|---|
+| heute | Kohle / Öl | 0,104 | 0,157 |
+| Fassung 1 | Eisen / Kohle | 0,119 | 0,201 |
+| Fassung 2 | Kohle / Öl | 0,127 | 0,197 |
+| **beschlossen** | Kohle / Öl | **0,127** | 0,191 |
+
+Der gemischte Satz ist auf der Zahl, die zählt, der beste. Und er widerlegt eine
+Behauptung aus der Besprechung: Fassung 1 sollte Eisen und Kohle über den Umriss
+besonders gut trennen — gemessen ist genau dieses Paar das engste des ganzen Satzes.
+**Bei der Abnahme im Browser nachgerechnet** (`Path2D` auf eine 14 × 14-Fläche, dieselbe
+Strichstärke wie im Spiel): 0,127 für Kohle / Öl und 0,191 im Mittel, gegen 0,104 und
+0,157 für den alten Satz — die Zahlen des Bauplans, auf einem zweiten Weg und an den
+tatsächlich ausgelieferten Pfaden.
+
+**Was die Zahl nicht sagt:** sie misst, wie verschieden die Tinte liegt, nicht ob jemand
+das Ding benennen kann. „Unterscheidbar" ist belegt, „erkennbar" bleibt Sache der
+Sichtprüfung.
+
+**Auswirkung:** sieben Einträge in `ICON_PATHS`; der Bildsatz aus `art.tsx` bleibt
+unberührt, denn Rohstoffe haben Zeichen und keine Bilder. `icons.test.tsx` führt den
+Auswahl-Ausschnitt des Entwurfsblatts aus und vergleicht alle sieben wortgleich — das
+Blatt und der Code können nicht mehr auseinanderlaufen. **Material trägt keinen
+Nadelbaum mehr**; der Wald im Geländesatz behält seine Bäume, und genau deshalb durfte
+der Rohstoff keine mehr haben.
+
+---
