@@ -75,6 +75,35 @@ die zwei Vorschläge. Wer das Blatt liest: <b>die mittlere Spalte bei 14 px ents
 die Großaufnahme. Genau daran ist der heutige Satz gescheitert.</p>
 <table class="cmp" id="symbols"></table>
 
+<h2>1b · Der beschlossene Satz</h2>
+<p class="sub"><b style="color:var(--warn)">Noahs Wahl vom 2026-09-11:</b> Fassung 1 als Grundlage,
+aber <b>Eisen, Kohle, Öl und Seltene Erden aus Fassung 2</b>. Das ist der Satz, der gebaut wird —
+hier noch einmal zusammen, damit man ihn als Reihe sieht statt als vier Spalten.</p>
+<table class="cmp" id="chosen"></table>
+
+<p class="sub" style="margin-top:18px"><b>Nachgemessen statt behauptet.</b> Jedes Zeichen wurde bei
+14 px auf eine Fläche gerastert und jedes Paar mit jedem verglichen; der Wert ist der mittlere
+Unterschied je Bildpunkt, größer ist besser. Das engste Paar entscheidet, denn es ist das, das
+verwechselt wird.</p>
+<table class="cmp">
+<tr><th>Satz</th><th>engstes Paar</th><th>Wert</th><th>Mittel über alle 21 Paare</th></tr>
+<tr><td>heute</td><td>Kohle / Öl</td><td>0,104</td><td>0,157</td></tr>
+<tr><td>Fassung 1</td><td>Eisen / Kohle</td><td>0,119</td><td><b>0,201</b></td></tr>
+<tr><td>Fassung 2</td><td>Kohle / Öl</td><td>0,127</td><td>0,197</td></tr>
+<tr><td><b>beschlossen</b></td><td>Kohle / Öl</td><td><b>0,127</b></td><td>0,191</td></tr>
+</table>
+<div class="note">
+<b>Der Mischsatz ist auf der Zahl, die zählt, der beste.</b> Und er widerlegt eine Behauptung, die
+ich weiter unten in D36.1 aufgestellt hatte: Fassung 1 sollte Eisen und Kohle besonders gut
+trennen — gemessen ist genau dieses Paar das engste des ganzen Satzes (0,119). Der beschlossene
+Satz schiebt die engste Stelle auf Kohle / Öl (0,127) und liegt damit über allen anderen.
+<br><br>
+<b>Was die Zahl nicht sagt:</b> sie misst, wie verschieden die Tinte liegt, nicht ob jemand das
+Ding benennen kann. „Unterscheidbar" ist belegt, „erkennbar" nicht. Dafür bleibt die
+Sichtprüfung in T-M36-01 zuständig — besonders bei Seltenen Erden, deren zwei Kristalle bei 14 px
+zu einem Klumpen zusammenlaufen könnten.
+</div>
+
 <h2>2 · Die Leiste in Originalgröße</h2>
 <p class="sub">Dieselben Zahlen wie im Spiel am ersten Tag, dazu Öl künstlich knapp gesetzt, damit
 man sieht, was passiert, wenn etwas drängt.</p>
@@ -154,9 +183,18 @@ function ico(d, size){
 }
 function pair(d){ return `<span class="glyph"><span class="real">${ico(d,14)}</span>${ico(d,44)}</span>`; }
 
+/* Der beschlossene Satz: Fassung 1, mit Eisen, Kohle, Oel und Seltene Erden aus Fassung 2. */
+const AUS_B = ['iron','coal','oil','rare'];
+const C = Object.fromEntries(KEYS.map((k)=>[k, AUS_B.includes(k) ? B[k] : A[k]]));
+
 document.getElementById('symbols').innerHTML =
   '<tr><th>Rohstoff</th><th>heute</th><th>Fassung 1</th><th>Fassung 2</th></tr>' +
   KEYS.map((k)=>`<tr><td>${NAMES[k]}</td><td>${pair(ALT[k])}</td><td>${pair(A[k])}</td><td>${pair(B[k])}</td></tr>`).join('');
+
+document.getElementById('chosen').innerHTML =
+  '<tr><th>Rohstoff</th><th>14 px — hier wird entschieden</th><th>Vergrößerung</th><th>Herkunft</th></tr>' +
+  KEYS.map((k)=>`<tr><td>${NAMES[k]}</td><td><span class="real">${ico(C[k],14)}</span></td>
+    <td>${ico(C[k],44)}</td><td style="color:var(--inkSoft)">${AUS_B.includes(k)?'Fassung 2':'Fassung 1'}</td></tr>`).join('');
 
 /* Die Zahlen des ersten Spieltags, Oel kuenstlich knapp. */
 const DATA = [
@@ -198,13 +236,13 @@ document.getElementById('bars').innerHTML =
    ${bar(DATA.map((e)=>cellAmpel(e,A)).join(''))}
    <p class="caption">Vorschläge 2, 3 und 4: die Bilanzzahl wird ein Pfeil und wandert in den Tooltip; wer läuft, steht ruhig grau; wer drängt, bekommt Bernstein und die Reichweite in Tagen. Öl sagt „6 T“ — die Zahl, nach der man handelt.</p>
 
-   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 2 — Ampel mit vier Gruppen <span style="color:var(--inkSoft);text-transform:none;letter-spacing:0">(Vorschlag 5, zu entscheiden)</span></h3>
+   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 2 — Ampel mit vier Gruppen <span style="color:var(--good);text-transform:none;letter-spacing:0">(beschlossen)</span></h3>
    ${barGrouped(A)}
    <p class="caption">Versorgung · Baustoffe · Kriegsstoffe · Geld. Die Trennlinien tragen die Bedeutung, die einzelnen Zellen verlieren ihre. Der Preis: die Leiste wird unruhiger, weil zwei Strichstärken nebeneinander liegen.</p>
 
-   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 1 mit den Symbolen der Fassung 2</h3>
-   ${bar(DATA.map((e)=>cellAmpel(e,B)).join(''))}
-   <p class="caption">Dieselbe Anordnung, anderer Zeichensatz — damit die Entscheidung über die Symbole von der über die Anordnung getrennt bleibt.</p>`;
+   <h3 style="font-size:13px;color:var(--good);letter-spacing:.07em;text-transform:uppercase;margin:22px 0 2px">So wird es gebaut — Gruppen und beschlossener Zeichensatz</h3>
+   ${barGrouped(C)}
+   <p class="caption">Vier Gruppen, dazu Fassung 1 mit Eisen, Kohle, Öl und Seltenen Erden aus Fassung 2. Das ist die Leiste, die M36 herstellt.</p>`;
 
 function ecoTable(ruhig){
   const rows = DATA.map((e)=>{

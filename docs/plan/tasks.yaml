@@ -2372,7 +2372,7 @@ tasks:
     design: [D-27]
     files: [apps/desktop/src/ui/icons.tsx]
     tests: [apps/desktop/src/ui/icons.test.tsx]
-    dod: "ROHSTOFFE.md D36.1. Sieben Eintraege in ICON_PATHS ersetzt (food, wood, iron, coal, oil, rare, money), Strichzeichnung im 24er-Kasten wie der ganze Satz - KEINE Schattenrisse, Rohstoffe haben Zeichen und keine Bilder. Die Fassung aus docs/design/rohstoffleiste.html, die Noah gewaehlt hat. Kern der Sache: Eisen und Kohle werden durch den UMRISS unterschieden (flacher Barren gegen hohen Haufen), nicht durch Binnenzeichnung - die verschwindet bei 14 px. Material bekommt einen Balkenstapel statt eines Nadelbaums; der Rohstoff heisst seit T-M23-01 nicht mehr Holz. Haengt an T-M33-01, weil dort der leer gruene Koordinatenwaechter durch eine echte Pfadabfahrt ersetzt wird - neue Pfade ohne ihn waeren ungeprueft eingecheckt. Abnahme ist eine Sichtpruefung der sieben bei 14 px nebeneinander, nicht in Grossaufnahme."
+    dod: "ROHSTOFFE.md D36.1. Sieben Eintraege in ICON_PATHS ersetzt (food, wood, iron, coal, oil, rare, money), Strichzeichnung im 24er-Kasten wie der ganze Satz - KEINE Schattenrisse, Rohstoffe haben Zeichen und keine Bilder. Der BESCHLOSSENE Satz aus docs/design/rohstoffleiste.html Abschnitt 1b: Nahrung, Material und Geld aus Fassung 1, Eisen, Kohle, Oel und Seltene Erden aus Fassung 2 (Noahs Wahl, zweite Runde). Nachgemessen bei 14 px, mittlerer Unterschied je Bildpunkt ueber alle 21 Paare: engstes Paar Kohle/Oel 0,127 gegen 0,104 heute und 0,119 bei reiner Fassung 1. Die Messung belegt unterscheidbar, nicht erkennbar - dafuer ist die Sichtpruefung da, besonders bei Seltenen Erden, deren zwei Kristalle zusammenlaufen koennten. Material bekommt einen Balkenstapel statt eines Nadelbaums; der Rohstoff heisst seit T-M23-01 nicht mehr Holz. Haengt an T-M33-01, weil dort der leer gruene Koordinatenwaechter durch eine echte Pfadabfahrt ersetzt wird - neue Pfade ohne ihn waeren ungeprueft eingecheckt. Abnahme ist eine Sichtpruefung der sieben bei 14 px nebeneinander, nicht in Grossaufnahme."
   - id: T-M36-02
     milestone: M36
     title: Die Leiste zeigt Reichweite statt Bilanz
@@ -2395,14 +2395,14 @@ tasks:
     dod: "ROHSTOFFE.md D36.2 und Risiko 3. Wer laeuft, steht in ruhigem Grau mit halber Schriftstaerke; wer draengt, bekommt Bernstein und volle Staerke. An einem ruhigen Tag traegt die Leiste keine einzige Farbe. Die gedaempfte Fassung des Bestands MUSS 4,5:1 gegen paperSunk halten - haelt sie es nicht, entscheidet der Kontrasttest und nicht der Entwurf (wie bei line in D27.1); das Paar wird in CONTRAST_PAIRS aufgenommen. Test zuerst: sieben laufende Rohstoffe ergeben keine Auszeichnung, ein knapper genau eine."
   - id: T-M36-04
     milestone: M36
-    title: Entscheid und Bau der Gruppierung
+    title: Die Leiste bekommt vier Gruppen
     status: todo
     deps: [T-M36-03]
     requirements: [R-UI-04]
     design: [D-27]
     files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, docs/plan/DECISIONS.md]
     tests: [apps/desktop/src/ui/Header.test.tsx]
-    dod: "ENTSCHEID DURCH NOAH VOR BAU. ROHSTOFFE.md D36.3, Anordnung 2 im Entwurfsblatt: vier Bloecke - Versorgung, Baustoffe, Kriegsstoffe, Geld - mit Trennlinien statt sieben gleichwertiger Zellen. Der Preis steht dabei: zwei Strichstaerken nebeneinander koennen die Leiste unruhiger machen statt ruhiger. Faellt der Entscheid gegen die Gruppierung, wird die Aufgabe NICHT geloescht, sondern auf todo mit einem reopened-Text gesetzt, der den Grund nennt. Faellt er dafuer: Test zuerst, dass jede Gruppe ihre Rohstoffe traegt und die Reihenfolge der sieben unveraendert bleibt."
+    dod: "BESCHLOSSEN am 2026-09-11, kein Haltepunkt mehr. ROHSTOFFE.md D36.3, Anordnung 2 im Entwurfsblatt: vier Bloecke - Versorgung (Nahrung), Baustoffe (Material, Eisen, Kohle), Kriegsstoffe (Oel, Seltene Erden), Geld - mit Trennlinien statt sieben gleichwertiger Zellen. Der Preis steht dabei und wurde mitgekauft: zwei Strichstaerken nebeneinander koennen die Leiste unruhiger machen statt ruhiger; bestaetigt sich das im Spiel, ist es ein Befund fuer den naechsten Playtest und kein Grund, jetzt anders zu bauen. Test zuerst: jede Gruppe traegt ihre Rohstoffe, die Reihenfolge der sieben bleibt unveraendert, und die Gruppentrennung ist im Vorlesetext keine zusaetzliche Ebene."
   - id: T-M36-05
     milestone: M36
     title: Die Wirtschaftstabelle wird ruhiger, nicht kuerzer
@@ -2417,9 +2417,9 @@ tasks:
     milestone: M36
     title: Abnahme M36
     status: todo
-    deps: [T-M36-02, T-M36-03, T-M36-05]
+    deps: [T-M36-02, T-M36-03, T-M36-04, T-M36-05]
     requirements: []
     design: [D-27]
     files: [docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/ROHSTOFFE.md]
     tests: []
-    dod: "pnpm verify gruen. Sichtpruefung im laufenden Spiel an ALLEN VIER Orten, an denen RESOURCE_ICONS erscheint (Risiko 4): Leiste, Vorkommen einer Provinz, Baukosten-Hinweise, Tagesbericht - nicht nur in der Leiste. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und der Entscheid zu D36.3 in DECISIONS.md, gleich wie er ausfaellt. T-M36-04 ist bewusst KEINE Abhaengigkeit: der Meilenstein soll nicht an einer offenen Entscheidung haengen bleiben - dieselbe Regelung wie bei M32."
+    dod: "pnpm verify gruen. Sichtpruefung im laufenden Spiel an ALLEN VIER Orten, an denen RESOURCE_ICONS erscheint (Risiko 4): Leiste, Vorkommen einer Provinz, Baukosten-Hinweise, Tagesbericht - nicht nur in der Leiste. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und in DECISIONS.md zwei Eintraege: der gemischte Zeichensatz mit der Messung, die ihn traegt, und die Gruppierung samt ihrem Preis."

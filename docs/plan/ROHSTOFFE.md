@@ -1,13 +1,16 @@
 # ROHSTOFFE — Bauplan M36
 
 > **Stand:** 2026-09-11 · **Entwurf:** `docs/design/rohstoffleiste.html` · **Noahs Wahl:**
-> die Vorschläge 1, 2, 3, 4 und 6. **Vorschlag 5** (Gruppierung in vier Blöcke) liegt als
-> Anordnung 2 im Entwurfsblatt und wird dort entschieden — T-M36-04 wartet darauf.
-> **Vorschlag 7** (Wirtschaftstabelle nur auf Abruf) ist zurückgestellt, mit Grund in
-> Abschnitt 5.
+> die Vorschläge 1, 2, 3, 4, 5 und 6. **Vorschlag 7** (Wirtschaftstabelle nur auf Abruf) ist
+> zurückgestellt, mit Grund in Abschnitt 5.
 >
-> **Status:** freigegeben bis auf T-M36-04. Zwillinge in `tasks.yaml` und `03-TASKS.md`
-> angelegt.
+> **Zwei Entscheide aus der zweiten Runde, 2026-09-11:**
+> - **Zeichensatz:** Fassung 1 als Grundlage, aber **Eisen, Kohle, Öl und Seltene Erden aus
+>   Fassung 2**. Nachgemessen, siehe Abschnitt 2.
+> - **Gruppierung (Vorschlag 5): ja.** Vier Blöcke — Versorgung, Baustoffe, Kriegsstoffe,
+>   Geld. T-M36-04 ist damit kein Haltepunkt mehr.
+>
+> **Status:** vollständig freigegeben. Zwillinge in `tasks.yaml` und `03-TASKS.md` angelegt.
 
 ---
 
@@ -68,9 +71,30 @@ vierzehn Pixeln.** Die Leitlinie der Fassung 1:
 | Seltene Erden | Kristall | Kristall mit Mittelkante | war schon richtig |
 | Geld | Scheibe mit Balken | Münzstapel | eine Scheibe sah aus wie ein Knopf |
 
-Eisen und Kohle sind der eigentliche Punkt: sie werden nicht durch Binnenzeichnung
-unterschieden, sondern durch den **Umriss** — flach gegen hoch. Binnenzeichnung verschwindet
-bei vierzehn Pixeln, der Umriss nicht.
+**Der beschlossene Satz** (Noahs Wahl, zweite Runde): Nahrung, Material und Geld aus
+Fassung 1; **Eisen, Kohle, Öl und Seltene Erden aus Fassung 2**. Er steht in Abschnitt 1b
+des Entwurfsblatts als Reihe, mit Herkunft je Zeichen.
+
+**Nachgemessen statt behauptet.** Jedes Zeichen bei vierzehn Pixeln gerastert, jedes Paar mit
+jedem verglichen; der Wert ist der mittlere Unterschied je Bildpunkt, größer ist besser. Das
+engste Paar entscheidet, weil es das ist, das verwechselt wird:
+
+| Satz | engstes Paar | Wert | Mittel über 21 Paare |
+|---|---|---|---|
+| heute | Kohle / Öl | 0,104 | 0,157 |
+| Fassung 1 | Eisen / Kohle | 0,119 | 0,201 |
+| Fassung 2 | Kohle / Öl | 0,127 | 0,197 |
+| **beschlossen** | Kohle / Öl | **0,127** | 0,191 |
+
+Das widerlegt eine Behauptung, die ich in der Besprechung aufgestellt hatte: Fassung 1 sollte
+Eisen und Kohle über den Umriss besonders gut trennen — flach gegen hoch. Gemessen ist genau
+dieses Paar das engste des ganzen Satzes. Der beschlossene Satz schiebt die engste Stelle auf
+Kohle / Öl und liegt damit über allen anderen Sätzen.
+
+**Was die Zahl nicht sagt:** sie misst, wie verschieden die Tinte liegt, nicht ob jemand das
+Ding benennen kann. „Unterscheidbar" ist damit belegt, „erkennbar" nicht. Dafür bleibt die
+Sichtprüfung in T-M36-01 zuständig, besonders bei den Seltenen Erden, deren zwei Kristalle
+bei vierzehn Pixeln zu einem Klumpen zusammenlaufen könnten.
 
 ### D36.2 Die Leiste zeigt, was drängt (Vorschläge 2, 3, 4)
 
@@ -86,12 +110,13 @@ Aus einundzwanzig gleich lauten Angaben werden sieben Bestände, sieben Pfeile u
 einem ruhigen Tag — keine einzige Farbe. Die Schwelle für „drängt" ist die vorhandene
 `SHORT_REACH_DAYS`, nicht eine neue Zahl.
 
-### D36.3 Die Gruppierung (Vorschlag 5, zu entscheiden)
+### D36.3 Die Gruppierung (Vorschlag 5, **beschlossen**)
 
 Vier Blöcke: Versorgung (Nahrung) · Baustoffe (Material, Eisen, Kohle) · Kriegsstoffe (Öl,
-Seltene Erden) · Geld. Anordnung 2 im Entwurfsblatt. **Der Preis:** zwei Strichstärken
-nebeneinander, die Leiste wird unruhiger statt ruhiger. Deshalb steht sie zur Entscheidung
-am Bild und nicht im Beschluss.
+Seltene Erden) · Geld. Anordnung 2 im Entwurfsblatt, dort auch mit dem beschlossenen
+Zeichensatz gezeigt. **Der Preis, den Noah mitgekauft hat:** zwei Strichstärken nebeneinander
+können die Leiste unruhiger machen statt ruhiger. Wenn sich das im Spiel bestätigt, ist das
+ein Befund für den nächsten Playtest und kein Grund, jetzt anders zu bauen.
 
 ---
 

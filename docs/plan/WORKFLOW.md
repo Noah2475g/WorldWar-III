@@ -32,7 +32,7 @@
 > Spiel: dieselben Zahlen stehen doppelt auf dem Bildschirm, der Rohstoffname ist in der
 > Leiste `visually-hidden`, und vier der sieben Zeichen tragen ihre Bedeutung nicht —
 > **Material wird bis heute durch einen Nadelbaum dargestellt**, obwohl der Rohstoff seit
-> T-M23-01 nicht mehr Holz heißt. T-M36-04 (Gruppierung) wartet auf Noahs Entscheid.
+> T-M23-01 nicht mehr Holz heißt. Zeichensatz und Gruppierung sind entschieden.
 >
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
@@ -127,8 +127,8 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    die einzige Kernänderung und verschiebt den Golden-Master.
 2. **Die Rohstoffleiste wird lesbar (M36)** — freigegeben am 2026-09-11, sechs Aufgaben,
    kernfrei. `docs/plan/ROHSTOFFE.md` §0 lesen. T-M36-01 hängt an T-M33-01, weil dort der
-   Wächter entsteht, der die neuen Pfade prüft. **T-M36-04 (Gruppierung) wartet auf Noahs
-   Entscheid am Entwurfsblatt** und ist bewusst keine Abhängigkeit der Abnahme.
+   Wächter entsteht, der die neuen Pfade prüft. Zeichensatz und
+   Gruppierung sind entschieden; es ist nichts mehr zu entwerfen.
 3. **Der lange Mittelteil bekommt Ziele (M35)** — eine Aufgabe, und die ist ein **Entwurf,
    kein Bau** (Muster T-M28-07). Erst nach M34.
 4. **Der Kriegsrat-Umbau, Rest (M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen. T-M32-01

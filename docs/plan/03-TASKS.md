@@ -4311,9 +4311,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/desktop/src/ui/icons.tsx`
 - **Tests zuerst:** die Pfadabfahrt aus T-M33-01 greift auch für die sieben neuen Pfade
   (`icons.test.tsx`).
-- **Fertig wenn:** Eisen und Kohle sich am **Umriss** unterscheiden (flach gegen hoch,
-  nicht an Binnenzeichnung — die verschwindet bei 14 px), Material einen Balkenstapel trägt
-  und die Sichtprüfung bei 14 px nebeneinander bestanden ist.
+- **Fertig wenn:** der **beschlossene Satz** steht — Nahrung, Material und Geld aus
+  Fassung 1, Eisen, Kohle, Öl und Seltene Erden aus Fassung 2 —, Material einen Balkenstapel
+  statt eines Nadelbaums trägt und die Sichtprüfung bei 14 px nebeneinander bestanden ist.
+  Nachgemessen: engstes Paar 0,127 gegen 0,104 heute. Die Zahl belegt *unterscheidbar*,
+  nicht *erkennbar* — dafür ist die Sichtprüfung da.
 
 ### T-M36-02 · Die Leiste zeigt Reichweite statt Bilanz
 - **Ziel:** „reicht sechs Tage" ist die Auskunft, nach der man handelt; „+155" ist es nicht.
@@ -4338,17 +4340,18 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (`tokens.contrast.test.ts`).
 - **Fertig wenn:** der Kontrasttest über das neue Paar entschieden hat, nicht der Entwurf.
 
-### T-M36-04 · Entscheid und Bau der Gruppierung *(Entscheid vor Bau)*
+### T-M36-04 · Die Leiste bekommt vier Gruppen
 - **Ziel:** vier Blöcke statt sieben gleichwertiger Zellen — Versorgung, Baustoffe,
   Kriegsstoffe, Geld.
 - **Anforderungen:** R-UI-04 · **Entwurf:** D27
 - **Abhängigkeiten:** T-M36-03
 - **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
   `docs/plan/DECISIONS.md`
-- **Tests zuerst:** jede Gruppe trägt ihre Rohstoffe, die Reihenfolge der sieben bleibt
-  (`Header.test.tsx`) — erst nach dem Entscheid.
-- **Fertig wenn:** entweder gebaut, oder auf `todo` mit einem `reopened`-Text, der den Grund
-  nennt. Gelöscht wird sie nicht.
+- **Tests zuerst:** jede Gruppe trägt ihre Rohstoffe, die Reihenfolge der sieben bleibt, und
+  die Gruppentrennung ist im Vorlesetext keine zusätzliche Ebene (`Header.test.tsx`).
+- **Fertig wenn:** die vier Blöcke stehen. **Beschlossen am 2026-09-11**, samt Preis: zwei
+  Strichstärken nebeneinander können die Leiste unruhiger machen. Bestätigt sich das im
+  Spiel, ist es ein Befund für den nächsten Playtest, kein Grund, jetzt anders zu bauen.
 
 ### T-M36-05 · Die Wirtschaftstabelle wird ruhiger, nicht kürzer
 - **Ziel:** die Korrektur eines eigenen Vorschlags — eine Spalte zu streichen bricht
@@ -4364,10 +4367,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ### T-M36-06 · Abnahme M36
 - **Ziel:** die Zeichen wandern weiter als die Leiste — die Sichtprüfung muss ihnen folgen.
 - **Anforderungen:** keine · **Entwurf:** D27
-- **Abhängigkeiten:** T-M36-02, T-M36-03, T-M36-05
+- **Abhängigkeiten:** T-M36-02, T-M36-03, T-M36-04, T-M36-05
 - **Dateien:** `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`, `docs/plan/ROHSTOFFE.md`
 - **Tests zuerst:** keine neuen.
 - **Fertig wenn:** `pnpm verify` grün, alle vier Orte mit `RESOURCE_ICONS` angesehen
-  (Leiste, Vorkommen, Baukosten, Tagesbericht) und der Entscheid zu D36.3 in `DECISIONS.md`
-  steht, gleich wie er ausfällt. T-M36-04 ist bewusst keine Abhängigkeit — wie bei M32 soll
-  der Meilenstein nicht an einer offenen Entscheidung hängen bleiben.
+  (Leiste, Vorkommen, Baukosten, Tagesbericht) und in `DECISIONS.md` zwei Einträge stehen:
+  der gemischte Zeichensatz mit der Messung, die ihn trägt, und die Gruppierung samt ihrem
+  Preis.
