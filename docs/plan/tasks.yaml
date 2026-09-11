@@ -2501,7 +2501,7 @@ tasks:
   - id: T-M36-05
     milestone: M36
     title: Die Wirtschaftstabelle wird ruhiger, nicht kuerzer
-    status: todo
+    status: done
     deps: [T-M36-01]
     requirements: [R-ECON-06]
     design: [D-27]

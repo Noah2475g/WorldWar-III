@@ -1659,3 +1659,86 @@ describe('R-UI-04 Die Rekrutierungsliste zeigt Bilder', () => {
     }
   })
 })
+
+/**
+ * Die Wirtschaftstabelle wird ruhiger, nicht kürzer (T-M36-05, ROHSTOFFE.md Abschnitt 3).
+ *
+ * Der Bauplan schlug zuerst vor, **eine Spalte zu streichen**. Das geht nicht: R-ECON-06
+ * verlangt wörtlich, dass Bestand, Produktion je Tag, Verbrauch je Tag **und** Bilanz je
+ * Ressource sichtbar sind — eine V1-Zusage. Eine Anforderung zu brechen, um eine Tabelle
+ * hübscher zu machen, ist keine Ersparnis. Alle vier bleiben; ruhiger wird die Tabelle
+ * über Gewicht und Farbe: nur Bestand und Bilanz tragen Gewicht, die Nullen der
+ * Unterhaltsspalte werden zu Strichen, und die Farbe gehört allein der Bilanz.
+ */
+describe('T-M36-05 Ruhiger, nicht kuerzer', () => {
+  const wirtschaftMit = (balance: number, consumption = 0): PublicView =>
+    ({
+      self: {
+        shortages: [],
+        economy: {
+          food: { stock: 1_000_000, production: Math.max(0, balance), consumption, balance, committed: 0 },
+        },
+      },
+    }) as unknown as PublicView
+
+  it('behaelt alle vier Groessen im Baum — R-ECON-06 bleibt belegt', () => {
+    const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
+    const kopf = [...container.querySelectorAll('thead th')].map((th) => th.textContent)
+
+    expect(kopf).toEqual(['Rohstoff', 'Bestand', 'Produktion', 'Unterhalt', 'Bilanz'])
+    expect(container.querySelectorAll('tbody tr td')).toHaveLength(5)
+  })
+
+  it('schreibt eine Null als Strich, ohne sie dem Vorlesetext zu nehmen', () => {
+    const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
+    const unterhalt = container.querySelectorAll('tbody td')[3] as HTMLElement
+
+    // Sichtbar ein Strich in Linienfarbe …
+    const sichtbar = unterhalt.cloneNode(true) as HTMLElement
+    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden')) versteckt.remove()
+    expect(sichtbar.textContent?.trim()).toBe('–')
+    // … fuers Ohr weiterhin die Null. Sonst hoerte ein Vorleseprogramm einen
+    // Gedankenstrich, wo eine Zahl stehen soll.
+    expect(unterhalt.querySelector('.visually-hidden')?.textContent).toBe('±0')
+  })
+
+  it('laesst eine Zahl Zahl bleiben — der Strich steht nur fuer die Null', () => {
+    const { container } = render(<EconomyPanel view={wirtschaftMit(-120_000, 120_000)} />)
+    const unterhalt = container.querySelectorAll('tbody td')[3] as HTMLElement
+
+    expect(unterhalt.textContent).toContain('−120')
+    expect(unterhalt.querySelector('.zero')).toBeNull()
+  })
+
+  it('gibt Gewicht nur dem Bestand und der Bilanz (Kaskaden-Waechter)', () => {
+    // jsdom rechnet kein Layout, aber die Kaskade rechnet es: das echte Stylesheet
+    // entscheidet, welche Zelle Gewicht traegt. Ohne diesen Test bindet nichts die
+    // Zusage „nur zwei der vier Spalten tragen Gewicht".
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
+      const zellen = [...container.querySelectorAll('tbody td')] as HTMLElement[]
+      const gewicht = (index: number) => window.getComputedStyle(zellen[index]!).fontWeight
+
+      expect(gewicht(1), 'Bestand ohne Gewicht').toBe('600')
+      expect(gewicht(4), 'Bilanz ohne Gewicht').toBe('600')
+      expect(gewicht(2), 'Produktion traegt Gewicht').not.toBe('600')
+      expect(gewicht(3), 'Unterhalt traegt Gewicht').not.toBe('600')
+    } finally {
+      style.remove()
+    }
+  })
+
+  it('gibt die Farbe allein der Bilanz', () => {
+    const { container } = render(<EconomyPanel view={wirtschaftMit(349_000)} />)
+    const zellen = [...container.querySelectorAll('tbody td')] as HTMLElement[]
+
+    expect(zellen[4]!.className).toContain('eco__balance--plus')
+    // Und die beiden Flussspalten tragen keinen Ton — sie sind Herkunft, nicht Urteil.
+    for (const index of [2, 3]) {
+      expect(zellen[index]!.className, `Spalte ${index} traegt einen Ton`).not.toMatch(/--plus|--minus/)
+    }
+  })
+})

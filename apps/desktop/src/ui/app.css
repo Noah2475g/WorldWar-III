@@ -938,6 +938,39 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  Die Wirtschaftstabelle wird ruhiger, nicht kuerzer (T-M36-05, ROHSTOFFE.md Abschnitt 3).
+
+  Alle vier Groessen bleiben — R-ECON-06 verlangt sie woertlich, und eine Anforderung zu
+  brechen, um eine Tabelle huebscher zu machen, ist keine Ersparnis. Ruhiger wird sie
+  ueber Gewicht und Farbe: Bestand und Bilanz tragen Gewicht, Produktion und Unterhalt
+  stehen im Nebentext, die Nullen der Unterhaltsspalte werden zu Strichen in Linienfarbe,
+  und die Farbe gehoert allein der Bilanz.
+*/
+.eco__stock,
+.eco__balance {
+  font-weight: 600;
+}
+
+.eco__flow {
+  color: var(--ink-soft);
+}
+
+.eco__balance--plus {
+  color: var(--good);
+}
+
+.eco__balance--minus {
+  color: var(--accent);
+}
+
+/* Der Strich steht fuer eine Null, die fuers Ohr daneben steht — er ist ein Platzhalter
+   und keine Auskunft, also gilt die 3:1-Schwelle fuer Nicht-Text. Gemessen 3,09 gegen
+   `paper`, und seit T-M36-05 steht das Paar in CONTRAST_PAIRS statt in diesem Satz. */
+.zero {
+  color: var(--line);
+}
+
 .state--war {
   color: var(--accent);
   font-weight: 500;

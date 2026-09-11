@@ -167,6 +167,10 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   // der Bernstein der knappen Zelle samt ihrer Reichweite bei 6,79 — beides Schrift,
   // also gegen 4,5 und nicht gegen 3.
   { foreground: 'inkSoft', background: 'paperSunk', use: 'gedämpfter Bestand in der Rohstoffleiste' },
+  // Der Strich, der in der Wirtschaftstabelle für eine Null steht (T-M36-05). Die Null
+  // selbst steht fürs Ohr daneben; der Strich ist ein Platzhalter und kein Text, also
+  // gilt die 3:1-Schwelle. Gemessen 3,09.
+  { foreground: 'line', background: 'paper', use: 'Strich statt Null in der Wirtschaftstabelle', large: true },
   { foreground: 'warn', background: 'paperSunk', use: 'knapper Rohstoff und seine Reichweite' },
   { foreground: 'good', background: 'paperSunk', use: 'eigener Schattenriss im Plättchen', large: true },
   { foreground: 'ally', background: 'paperSunk', use: 'verbündeter Schattenriss', large: true },

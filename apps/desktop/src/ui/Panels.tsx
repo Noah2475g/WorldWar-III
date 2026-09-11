@@ -23,6 +23,10 @@ import { NationName } from './Nation.tsx'
 import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
+// Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
+// Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
+// waeren zwei Aussagen ueber denselben Vorrat.
+import { balanceTone } from './Header.tsx'
 
 /** Die Breite eines Gebaeudebildes im Bauplatzraster (T-M33-03, D33.3). */
 const SLOT_ART_WIDTH = 30
@@ -1269,6 +1273,26 @@ export function MarketPanel({
 }
 
 /**
+ * Eine Rate, deren Null ein Strich ist (T-M36-05, ROHSTOFFE.md Abschnitt 3).
+ *
+ * In der Unterhaltsspalte stehen an einem normalen Tag sieben „±0" untereinander —
+ * sieben Zeichenfolgen, die nichts sagen und trotzdem gelesen werden. Sichtbar wird
+ * daraus ein Strich in Linienfarbe; fuers Ohr bleibt die Null, denn ein
+ * Vorleseprogramm, das hier einen Gedankenstrich hoert, hat die Auskunft verloren,
+ * die R-ECON-06 zusagt.
+ */
+function QuietRate({ value }: { value: number }) {
+  const text = rate(value)
+  if (text !== '±0') return <>{text}</>
+  return (
+    <span className="zero">
+      <span aria-hidden="true">–</span>
+      <span className="visually-hidden">{text}</span>
+    </span>
+  )
+}
+
+/**
  * The economy overview (R-ECON-06).
  *
  * Four columns per resource: what is in store, what comes in over a game day, what
@@ -1276,6 +1300,12 @@ export function MarketPanel({
  * bar with four numbers per resource is unreadable — but the balance alone does not
  * say whether a shortage comes from a lost mine or from a new army, and that is the
  * question a player asks the moment a figure turns red.
+ *
+ * Seit T-M36-05 ist sie ruhiger, aber nicht kuerzer: der Bauplan schlug vor, eine
+ * Spalte zu streichen, und das geht nicht — R-ECON-06 verlangt woertlich alle vier.
+ * Ruhiger wird sie deshalb ueber Gewicht und Farbe: nur Bestand und Bilanz tragen
+ * Gewicht, die Nullen der Unterhaltsspalte werden zu Strichen, und die Farbe gehoert
+ * allein der Bilanz.
  */
 export function EconomyPanel({
   view,
@@ -1330,7 +1360,7 @@ export function EconomyPanel({
                 {t(`resources.${key}`)}
                 <Explain textKey={`explain.resources.${key}`} subject={t(`resources.${key}`)} />
               </td>
-              <td>
+              <td className="eco__stock">
                 {amount(flow.stock)}
                 {/* Bezahlt und noch nicht geliefert — keine Rate, deshalb ohne
                     Vorzeichen und ausserhalb der Bilanz (T-M12-10). Als sechste Spalte
@@ -1350,9 +1380,11 @@ export function EconomyPanel({
                     in der Zelle — keine sechste Spalte, die Leiste bleibt stehen. */}
                 <Sparkline values={stockHistory(key)} />
               </td>
-              <td>{rate(flow.production)}</td>
-              <td>
-                {rate(-flow.consumption)}
+              <td className="eco__flow">
+                <QuietRate value={flow.production} />
+              </td>
+              <td className="eco__flow">
+                <QuietRate value={-flow.consumption} />
                 {/* Die Ausgaben des Tages hinter dem Unterhalt (T-M28-05): Bau,
                     Aushebung und Markt — die Antwort auf „wohin geht mein Bestand,
                     obwohl die Bilanz stimmt". Nur wenn es sie gibt: eine Null ist
@@ -1366,7 +1398,7 @@ export function EconomyPanel({
                   </span>
                 )}
               </td>
-              <td>
+              <td className={`eco__balance eco__balance--${balanceTone(flow.balance)}`}>
                 {rate(flow.balance)}
                 <DeltaBar value={flow.balance} max={maxBalance} />
               </td>
