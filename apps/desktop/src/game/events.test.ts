@@ -271,6 +271,7 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     UNIT_RECRUITED: { playerId: 'p1', provinceId, unitKey: 'infantry', count: 1, armyId: 'a1' },
     ARMY_DEPARTED: { playerId: 'p1', armyId: 'a1', fromProvinceId: provinceId, toProvinceId: provinceId, arrivalTick: 5 },
     ARMY_ARRIVED: { playerId: 'p1', armyId: 'a1', provinceId },
+    ARMY_INTRUDED: { playerId: 'p1', intruderId: 'p2', armyId: 'a2', provinceId },
     ARMY_DESTROYED: { playerId: 'p1', armyId: 'a1', provinceId },
     ARMY_RETREATED: { playerId: 'p1', armyId: 'a1', fromProvinceId: provinceId, toProvinceId: provinceId, hpLost: 100 },
     BATTLE_STARTED: { battleId: 'b1', provinceId, sides: [['p1'], ['p2']] },
@@ -296,6 +297,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     'PROVINCE_REVOLTED',
     'CAPITAL_LOST',
     'PLAYER_ELIMINATED',
+    // Der fuenfte seit T-M28-06: fremde Truppen auf eigenem Boden.
+    'ARMY_INTRUDED',
   ])
 
   const beschreibe = (type: EventType, over: Record<string, unknown>) =>

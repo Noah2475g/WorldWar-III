@@ -236,6 +236,8 @@ export function App(props: AppProps) {
   const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
+  /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
+  const [alarmSeenTick, setAlarmSeenTick] = useState(-1)
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -1102,6 +1104,28 @@ export function App(props: AppProps) {
     return priceSeries(eventsFor(state.eventLog, 'p1'), ticksPerDay)
   }, [state, ticksPerDay])
 
+  /**
+   * Der offene Einmarsch-Alarm (T-M28-06, R-TIME-06): der jüngste `ARMY_INTRUDED`,
+   * den der Spieler noch nicht quittiert hat.
+   *
+   * Der Kern hält das Vorspulen dort ohnehin an (`severity: 'alert'` plus `concerns`);
+   * die Oberfläche sagt dazu, **wo** — Chip im Kopf, Zinnober-Ring auf der Karte.
+   */
+  const alarm = useMemo(() => {
+    if (!state) return null
+    const own = eventsFor(state.eventLog, 'p1')
+    for (let i = own.length - 1; i >= 0; i--) {
+      const event = own[i]!
+      if (event.type !== 'ARMY_INTRUDED' || event.tick <= alarmSeenTick) continue
+      return {
+        provinceId: event.provinceId,
+        provinceName: activeMap.provinces.find((p) => p.id === event.provinceId)?.name ?? event.provinceId,
+        intruder: state.players[event.intruderId]?.nation ?? event.intruderId,
+      }
+    }
+    return null
+  }, [state, alarmSeenTick, activeMap.provinces])
+
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
     (playerId: string): string => {
@@ -1401,6 +1425,12 @@ export function App(props: AppProps) {
           setSpeed(0)
         }}
         onMode={(mode) => dispatch({ type: 'setMode', mode })}
+        alarm={alarm}
+        onAlarm={(provinceId) => {
+          // Quittieren heisst hinsehen: die Provinz kommt in die Mitte, der Chip geht.
+          jumpTo(provinceId)
+          setAlarmSeenTick(state.tick)
+        }}
         // Das Menue mit Wegen statt eines Sprungs in die Einstellungen (T-M22-04, V2-05).
         onMenu={() => setDialog('menu')}
         onSaves={() => setDialog('saves')}
@@ -1421,6 +1451,7 @@ export function App(props: AppProps) {
             view={ui.view}
             ownershipVersion={ui.ownershipVersion}
             selectedProvince={ui.selectedProvince}
+            alarmProvince={alarm?.provinceId ?? null}
             capitalProvinceId={view.self.capitalProvinceId}
             battleProvinces={battleProvinces}
             speed={speed}

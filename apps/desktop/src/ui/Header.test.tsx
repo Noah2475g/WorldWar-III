@@ -49,7 +49,14 @@ const noop = () => undefined
 
 const renderHeader = (
   v: PublicView | null,
-  extra: { stalled?: boolean; speed?: number; onSpeed?: (s: number) => void; onMode?: (m: string) => void } = {},
+  extra: {
+    stalled?: boolean
+    speed?: number
+    onSpeed?: (s: number) => void
+    onMode?: (m: string) => void
+    alarm?: { provinceId: string; provinceName: string; intruder: string } | null
+    onAlarm?: () => void
+  } = {},
 ) =>
   render(
     <Header
@@ -67,6 +74,8 @@ const renderHeader = (
       onMenu={noop}
       onSaves={noop}
       onPanel={noop}
+      alarm={extra.alarm ?? null}
+      onAlarm={extra.onAlarm ?? noop}
     />,
   )
 
@@ -249,6 +258,22 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
 
     fireEvent.click(within(group).getByRole('button', { name: 'Moral' }))
     expect(onMode).toHaveBeenCalledWith('morale')
+  })
+
+  it('fuellt den Alarmchip mit dem Provinznamen und fuehrt zur Provinz (T-M28-06)', () => {
+    let getroffen: number = 0
+    const { container } = renderHeader(view(100, [100], 900), {
+      alarm: { provinceId: 'USA-MW', provinceName: 'Mittlerer Westen', intruder: 'Russland' },
+      onAlarm: () => (getroffen += 1),
+    })
+    const slot = container.querySelector('.header__alarm') as HTMLElement
+
+    expect(slot.hidden).toBe(false)
+    const knopf = within(slot).getByRole('button')
+    expect(knopf.textContent).toContain('Mittlerer Westen')
+    expect(knopf.getAttribute('aria-label')).toContain('Russland')
+    fireEvent.click(knopf)
+    expect(getroffen).toBe(1)
   })
 
   it('haelt einen leeren, verborgenen Platz fuer den Einmarsch-Alarm bereit (T-M28-06)', () => {

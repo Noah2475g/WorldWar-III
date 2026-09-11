@@ -76,6 +76,13 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
 
   const actor = record.newOwner ?? record.playerId
   if (typeof actor === 'string') values.player = playerName(actor)
+  // Beim Einmarsch ist der Satzgegenstand der EINDRINGLING, nicht der Besitzer — sonst
+  // stuende die Mehrzahlfassung (T-M23-02) an der falschen Macht (T-M28-06).
+  if (typeof record.intruderId === 'string') {
+    values.intruder = playerName(record.intruderId)
+    values.player = values.intruder
+    values.owner = playerName(record.playerId)
+  }
   if (typeof record.targetPlayerId === 'string') values.target = playerName(record.targetPlayerId)
   if ('victor' in record || 'winner' in record) values.winner = playerName(record.victor ?? record.winner)
 
@@ -138,6 +145,9 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
       return event.previousOwner === viewer
     case 'CAPITAL_LOST':
     case 'PLAYER_ELIMINATED':
+    // Fremde Truppen auf eigenem Boden sind der fuenfte Rueckschlag (T-M28-06):
+    // `playerId` ist hier der Besitzer der Provinz, nicht der Eindringling.
+    case 'ARMY_INTRUDED':
       return event.playerId === viewer
     default:
       return false

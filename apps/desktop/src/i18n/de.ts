@@ -30,6 +30,9 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    // Der Einmarsch-Alarm im Kopf (T-M28-06): kurz im Chip, vollständig fürs Ohr.
+    alarm: 'Einmarsch: {{province}}',
+    alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
     speedStop: '{{stop}} Stunden je Sekunde',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
@@ -343,6 +346,10 @@ export const de = {
     UNIT_RECRUITED: '{{province}}: {{count}} {{unit}} ausgehoben.',
     ARMY_DEPARTED: '{{army}} marschiert nach {{province}}.',
     ARMY_ARRIVED: '{{army}} hat {{province}} erreicht.',
+    // Der Einmarsch (T-M28-06). Satzgegenstand ist der Eindringling, darum greift die
+    // Mehrzahlfassung aus T-M23-02 hier wie bei WAR_DECLARED.
+    ARMY_INTRUDED: '{{player}} ist in {{province}} eingemarschiert.',
+    ARMY_INTRUDED_PLURAL: '{{player}} sind in {{province}} eingemarschiert.',
     ARMY_DESTROYED: '{{army}} ist vernichtet.',
     ARMY_RETREATED: '{{army}} hat sich nach {{province}} zurückgezogen.',
     BATTLE_STARTED: 'Gefecht bei {{province}}.',

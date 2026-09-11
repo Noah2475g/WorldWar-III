@@ -118,6 +118,26 @@ export interface ArmyArrivedEvent extends BaseEvent {
   provinceId: ProvinceId
 }
 
+/**
+ * Eine kriegführende fremde Armee hat eine Provinz betreten, die mir gehört
+ * (T-M28-06, R-TIME-06).
+ *
+ * `ARMY_ARRIVED` konnte das nie tragen: es geht an den Marschierenden, und für den
+ * Bestohlenen gab es bis hierher überhaupt kein Ereignis — der Einmarsch war nur als
+ * Marker auf der Karte sichtbar, und beim Vorspulen gar nicht. Eigenes Ereignis statt
+ * erweitertem `ARMY_ARRIVED`, weil beide verschiedene Sätze sagen und verschiedene
+ * Leser haben.
+ */
+export interface ArmyIntrudedEvent extends BaseEvent {
+  type: 'ARMY_INTRUDED'
+  /** Der Besitzer der Provinz — der, den es angeht. */
+  playerId: PlayerId
+  /** Wer eingedrungen ist. */
+  intruderId: PlayerId
+  armyId: ArmyId
+  provinceId: ProvinceId
+}
+
 export interface ArmyDestroyedEvent extends BaseEvent {
   type: 'ARMY_DESTROYED'
   playerId: PlayerId
@@ -280,6 +300,7 @@ export type GameEvent =
   | UnitRecruitedEvent
   | ArmyDepartedEvent
   | ArmyArrivedEvent
+  | ArmyIntrudedEvent
   | ArmyDestroyedEvent
   | ArmyRetreatedEvent
   | BattleStartedEvent
@@ -310,6 +331,7 @@ export const EVENT_TYPES = [
   'UNIT_RECRUITED',
   'ARMY_DEPARTED',
   'ARMY_ARRIVED',
+  'ARMY_INTRUDED',
   'ARMY_DESTROYED',
   'ARMY_RETREATED',
   'BATTLE_STARTED',
@@ -340,6 +362,7 @@ void _exhaustive
  */
 export const ALERT_TYPES = [
   'ARMY_DESTROYED',
+  'ARMY_INTRUDED',
   'BATTLE_STARTED',
   'PROVINCE_CAPTURED',
   'PROVINCE_REVOLTED',

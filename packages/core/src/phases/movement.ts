@@ -1,5 +1,6 @@
 import { emit } from '../events/emit'
 import { findPath } from '../map/pathfinding'
+import { atWar } from './combat'
 import { canUseSea, edgeBetween, edgeTravelTicks } from '../rules/movement'
 import type { Army, GameState, ProvinceId, Tick } from '../state/types'
 import type { PhaseContext } from './index'
@@ -79,6 +80,21 @@ export const movement: Phase = (draft: GameState, ctx: PhaseContext) => {
 
     // A sea leg means the army is afloat; it disembarks on reaching its destination.
     army.embarked = travelled?.kind === 'sea' && army.path.length > 0
+
+    // Der Einmarsch (T-M28-06, R-TIME-06). Er haengt am Betreten, nicht am Anhalten:
+    // eine Armee, die ungehindert durchmarschiert, ist derselbe Vorfall. Ein Alarm mit
+    // `concerns` nur beim Besitzer — sonst hielte jeder fremde Vormarsch auf der
+    // Weltkarte das Vorspulen aller an (der Befund hinter `firstAlertFor`).
+    const invaded = draft.provinces[next]
+    if (invaded && invaded.owner && invaded.owner !== army.owner && !army.embarked && atWar(draft, invaded.owner, army.owner)) {
+      emit(ctx.events, draft.tick, 'ARMY_INTRUDED', {
+        playerId: invaded.owner,
+        intruderId: army.owner,
+        armyId: army.id,
+        provinceId: next,
+        audience: [invaded.owner],
+      })
+    }
 
     const blocked = hasHostileLandForces(draft, next, army.owner, rules)
     if (blocked || army.path.length === 0) {

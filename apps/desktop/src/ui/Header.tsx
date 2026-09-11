@@ -50,6 +50,16 @@ export interface HeaderProps {
   onSaves: () => void
   /** Diplomacy, market and standings live in the side panel; the header only opens them. */
   onPanel: (panel: 'diplomacy' | 'market' | 'standings') => void
+  /**
+   * Der jüngste Einmarsch in eigenes Gebiet (T-M28-06, R-TIME-06, D27.6).
+   *
+   * Der Chip sitzt seit T-M29-02 an seinem Platz und war bis hierher leer. `null`
+   * heißt: kein offener Alarm — dann bleibt der Platz verborgen und die Zeile so
+   * breit wie zuvor.
+   */
+  alarm?: { provinceId: string; provinceName: string; intruder: string } | null
+  /** Klick auf den Chip: zur Provinz springen und den Alarm quittieren. */
+  onAlarm?: (provinceId: string) => void
 }
 
 /**
@@ -175,10 +185,24 @@ export function Header(props: HeaderProps) {
           </button>
         </div>
 
-        {/* Der Platz des Einmarsch-Alarms (D27.6). Leer und verborgen, bis T-M28-06 ihn
-            fuellt — der Chip sitzt schon dort, wo er hingehoert, damit die Zeile beim
-            ersten Alarm nicht umbricht. */}
-        <div className="header__alarm" hidden />
+        {/* Der Einmarsch-Alarm (T-M28-06, D27.6). Der Platz sitzt seit T-M29-02 dort,
+            wo er hingehoert, damit die Zeile beim ersten Alarm nicht umbricht. */}
+        <div className="header__alarm" hidden={!props.alarm}>
+          {props.alarm && (
+            <button
+              type="button"
+              className="alarm-chip"
+              aria-label={t('header.alarmAria', {
+                province: props.alarm.provinceName,
+                intruder: props.alarm.intruder,
+              })}
+              onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
+            >
+              <Icon name="battle" size={13} />
+              {t('header.alarm', { province: props.alarm.provinceName })}
+            </button>
+          )}
+        </div>
       </div>
 
       <ul className="resources" aria-label="Rohstoffe">

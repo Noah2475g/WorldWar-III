@@ -7,6 +7,7 @@ import { armySpeed, canUseSea, railwayFactor, territoryFactor } from '../rules/m
 import { createInitialState, type GameConfig } from '../state/create'
 import type { Army, GameState } from '../state/types'
 import { step } from '../step'
+import { firstAlertFor } from '../clock'
 import { planRoute } from './movement'
 
 const map = smallWorld()
@@ -275,5 +276,72 @@ describe('R-UNIT-04 Verzoegerter Abmarsch (T-M32-01)', () => {
     const mitNull = step(state, [move('a1', 'n2', 'p1', 0)], ctx).state.armies['a1']!
 
     expect(mitNull).toEqual(ohne)
+  })
+})
+
+/**
+ * T-M28-06 · Der Einmarsch schlägt Alarm.
+ *
+ * Noahs Befund vom 2026-09-08: man kriegt es kaum mit, wenn feindliche Truppen in
+ * eigene Gebiete einlaufen. Der Kern trug den Einmarsch bisher gar nicht — `ARMY_ARRIVED`
+ * geht an den Marschierenden, nicht an den Bestohlenen.
+ */
+describe('R-TIME-06 Einmarsch in eigenes Gebiet (T-M28-06)', () => {
+  const intrusions = (events: readonly { type: string }[]) => events.filter((e) => e.type === 'ARMY_INTRUDED')
+
+  beforeEach(() => {
+    state.provinces['m1']!.owner = 'p2'
+  })
+
+  it('meldet dem Besitzer, wenn eine kriegfuehrende fremde Armee seine Provinz betritt', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    const started = step(state, [move('a1', 'm1')], ctx).state
+    const { events } = runUntilArrived(started, 'a1')
+
+    const alarm = intrusions(events)[0] as unknown as {
+      playerId: string
+      intruderId: string
+      provinceId: string
+      severity: string
+      audience: string[]
+      concerns: string[]
+    }
+    expect(alarm).toBeTruthy()
+    expect(alarm.playerId).toBe('p2')
+    expect(alarm.intruderId).toBe('p1')
+    expect(alarm.provinceId).toBe('m1')
+    // Alarm und `concerns` zusammen sind das, was das Vorspulen anhaelt (firstAlertFor).
+    expect(alarm.severity).toBe('alert')
+    expect(alarm.audience).toEqual(['p2'])
+    expect(alarm.concerns).toEqual(['p2'])
+  })
+
+  it('haelt das Vorspulen des Besitzers an, das eines Unbeteiligten nicht', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    const started = step(state, [move('a1', 'm1')], ctx).state
+    const { events } = runUntilArrived(started, 'a1')
+    const tickOfAlarm = intrusions(events)[0]!.tick
+    const desTicks = events.filter((e) => e.tick === tickOfAlarm)
+
+    expect(firstAlertFor(desTicks, 'p2')?.type).toBe('ARMY_INTRUDED')
+    // Der Eindringling selbst wird davon nicht angehalten — und ein Dritter erst recht nicht.
+    expect(firstAlertFor(desTicks, 'p1')?.type).not.toBe('ARMY_INTRUDED')
+  })
+
+  it('schweigt im Frieden — auch mit Durchmarschrecht', () => {
+    state.diplomacy.relations['p1|p2']!.rightOfWay = true
+    const started = step(state, [move('a1', 'm1')], ctx).state
+    const { events } = runUntilArrived(started, 'a1')
+
+    expect(intrusions(events)).toEqual([])
+  })
+
+  it('schweigt, wenn die Armee eigenes Gebiet betritt', () => {
+    state.provinces['m1']!.owner = 'p1'
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    const started = step(state, [move('a1', 'm1')], ctx).state
+    const { events } = runUntilArrived(started, 'a1')
+
+    expect(intrusions(events)).toEqual([])
   })
 })

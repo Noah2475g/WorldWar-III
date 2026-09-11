@@ -978,6 +978,28 @@ body {
   max-width: 100%;
 }
 
+/* Der Einmarsch-Alarm im Kopf (T-M28-06, D27.6): Zinnober auf dunklem Grund, damit
+   er neben den Bernstein-Knoepfen der Zeile nicht untergeht. */
+.alarm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-height: 24px;
+  padding: 2px var(--sp-sm);
+  border: 1px solid var(--accent);
+  background: var(--paper-sunk);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.alarm-chip:hover,
+.alarm-chip:focus-visible {
+  background: var(--accent);
+  color: var(--ground);
+}
+
 /* Der Kursverlauf im Marktpanel (T-M32-02, D27). */
 .prices {
   list-style: none;

@@ -169,6 +169,11 @@ export interface MapCanvasProps {
   view: View
   ownershipVersion: number
   selectedProvince: string | null
+  /**
+   * Die Provinz des offenen Einmarsch-Alarms (T-M28-06, D27.2) — ein Zinnober-Ring,
+   * damit der Chip im Kopf eine Stelle auf der Karte hat. `null`: kein Ring.
+   */
+  alarmProvince?: string | null
   /** Die eigene Hauptstadt — der Ort, den der Spieler am haeufigsten sucht. */
   capitalProvinceId?: string | null
   /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
@@ -478,6 +483,25 @@ export function MapCanvas(props: MapCanvasProps) {
       }
     }
 
+    // Der Einmarsch-Ring liegt UNTER der Auswahl: wer die gemeldete Provinz anklickt,
+    // soll den Auswahlring sehen und den Alarm nicht darunter verlieren (T-M28-06).
+    if (props.alarmProvince) {
+      const province = withBounds.find((p) => p.id === props.alarmProvince)
+      if (province) {
+        context.strokeStyle = TOKENS.accent
+        context.lineWidth = 3
+        for (const ring of province.polygons) {
+          const points = ring.map(([x, y]) => toScreen({ x, y }, props.view))
+          if (points.length === 0) continue
+          context.beginPath()
+          context.moveTo(points[0]!.x, points[0]!.y)
+          for (const point of points.slice(1)) context.lineTo(point.x, point.y)
+          context.closePath()
+          context.stroke()
+        }
+      }
+    }
+
     if (props.selectedProvince) {
       const province = withBounds.find((p) => p.id === props.selectedProvince)
       if (province) {
@@ -615,6 +639,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.anchors,
     props.mode,
     props.selectedProvince,
+    props.alarmProvince,
     props.capitalProvinceId,
     props.battleProvinces,
     props.tick,

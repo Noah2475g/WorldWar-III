@@ -2031,12 +2031,12 @@ tasks:
   - id: T-M28-06
     milestone: M28
     title: Der Einmarsch schlaegt Alarm
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-TIME-06, R-UI-05]
     design: [D-26]
-    files: [apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx]
-    tests: [apps/desktop/src/game/events.test.ts]
+    files: [packages/core/src/events/types.ts, packages/core/src/phases/movement.ts, apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/ui/sound.ts, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/events.test.ts, packages/core/src/phases/movement.test.ts, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
     dod: "Noahs Spiel-Feedback 2026-09-08: man kriegt es kaum mit, wenn feindliche Truppen in eigene Gebiete einlaufen. Fertig, wenn das Betreten eigenen Gebiets durch eine kriegsfuehrende fremde Armee ein DEUTLICHES Signal ausloest (Alarmbanner mit Provinznamen, Karten-Hervorhebung der Provinz, Ton nach dem bestehenden Muster, Eintrag mit log--self-Auszeichnung) und das Vorspulen dort anhaelt (Ereignis-Stopp wie bei M21). Entwurfsfrage vorab klaeren: welches Kern-Ereignis den Einmarsch traegt (ARMY_ARRIVED beim Gegner? additiv ergaenzen wie bei T-M27-01), ohne Golden-Master-Bruch"
 
   - id: T-M28-07

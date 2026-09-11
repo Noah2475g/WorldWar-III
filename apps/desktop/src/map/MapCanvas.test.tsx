@@ -6,6 +6,7 @@ import { HOVER_DELAY_MS, MapCanvas } from './MapCanvas.tsx'
 import { anchorsFor } from './anchors.ts'
 import { boundsOf } from './picking.ts'
 import type { RenderProvince } from './render.ts'
+import { TOKENS } from '../ui/tokens.ts'
 
 /**
  * Die Karte, die wirklich zeichnet (T-M16-06, R-ARCH-06/AK2, R-UI-12).
@@ -39,10 +40,12 @@ const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) a
 interface Recorder {
   calls: Record<string, number>
   props: Record<string, unknown>
+  /** Jede je gesetzte Fassung einer Eigenschaft — `props` haelt nur die letzte. */
+  seen: Record<string, unknown[]>
 }
 
 function recordingContext(): { context: CanvasRenderingContext2D; recorder: Recorder } {
-  const recorder: Recorder = { calls: {}, props: {} }
+  const recorder: Recorder = { calls: {}, props: {}, seen: {} }
   const context = new Proxy(
     {},
     {
@@ -62,6 +65,7 @@ function recordingContext(): { context: CanvasRenderingContext2D; recorder: Reco
       },
       set(_target, key: string, value: unknown) {
         recorder.props[key] = value
+        ;(recorder.seen[key] ??= []).push(value)
         return true
       },
     },
@@ -343,5 +347,28 @@ describe('T-M31-01 Die Karte meldet, worauf der Zeiger liegt', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+/**
+ * T-M28-06 · Die Karte hebt die eingenommene Provinz hervor.
+ *
+ * Der Alarm im Kopf sagt, *dass* etwas ist; der Ring sagt, *wo*. Gebunden wird die
+ * Farbe, nicht die Strichstaerke: Zinnober ist die Farbe des Feindes (D27.1), und ein
+ * Ring in Bernstein waere von der Auswahl nicht zu unterscheiden.
+ */
+describe('T-M28-06 Der Einmarsch ist auf der Karte zu sehen', () => {
+  const zinnober = TOKENS.accent
+
+  it('zieht den Zinnober-Ring um die gemeldete Provinz', () => {
+    zeichne({ alarmProvince: provinces[3]!.id })
+
+    expect(recorder.seen.strokeStyle ?? []).toContain(zinnober)
+  })
+
+  it('zieht ihn nicht, solange kein Alarm offen ist', () => {
+    zeichne()
+
+    expect(recorder.seen.strokeStyle ?? []).not.toContain(zinnober)
   })
 })
