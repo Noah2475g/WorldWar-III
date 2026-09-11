@@ -76,6 +76,13 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
 
   const actor = record.newOwner ?? record.playerId
   if (typeof actor === 'string') values.player = playerName(actor)
+  // Beim Einmarsch ist der Satzgegenstand der EINDRINGLING, nicht der Besitzer — sonst
+  // stuende die Mehrzahlfassung (T-M23-02) an der falschen Macht (T-M28-06).
+  if (typeof record.intruderId === 'string') {
+    values.intruder = playerName(record.intruderId)
+    values.player = values.intruder
+    values.owner = playerName(record.playerId)
+  }
   if (typeof record.targetPlayerId === 'string') values.target = playerName(record.targetPlayerId)
   if ('victor' in record || 'winner' in record) values.winner = playerName(record.victor ?? record.winner)
 
@@ -136,8 +143,12 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
     case 'PROVINCE_CAPTURED':
     case 'PROVINCE_REVOLTED':
       return event.previousOwner === viewer
+    // `ARMY_INTRUDED` ist der fuenfte Rueckschlag (T-M28-06): fremde Truppen auf
+    // eigenem Boden. `playerId` ist dort der Besitzer der Provinz, nicht der
+    // Eindringling — dieselbe Bedeutung wie in den drei Faellen darueber.
     case 'CAPITAL_LOST':
     case 'PLAYER_ELIMINATED':
+    case 'ARMY_INTRUDED':
       return event.playerId === viewer
     default:
       return false
@@ -291,6 +302,84 @@ export function dayExpenses(
   }
 
   return spent
+}
+
+/**
+ * Der offene Einmarsch-Alarm (T-M28-06): der jüngste `ARMY_INTRUDED`, den der Spieler
+ * noch nicht quittiert hat — oder `null`.
+ *
+ * `seenTick` ist ein Tick **dieser** Partie. Liegt er über dem aktuellen, gehört er zu
+ * einer anderen: eine neue Partie beginnt wieder bei null, ein geladener Stand springt
+ * zurück. Ohne diese Zeile blieb ein Einmarsch an Tag 5 der neuen Partie stumm, weil in
+ * der alten schon Tag 30 quittiert war (Durchsicht vom 2026-09-11). Die Oberfläche setzt
+ * den Merker beim Partiewechsel zusätzlich zurück; diese Ableitung hält auch dann,
+ * wenn jemand das eines Tages vergisst.
+ */
+export function openIntrusion(
+  events: readonly GameEvent[],
+  seenTick: number,
+  tick: number,
+): { provinceId: string; intruderId: string; tick: number } | null {
+  const seen = seenTick > tick ? -1 : seenTick
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!
+    if (event.type !== 'ARMY_INTRUDED' || event.tick <= seen) continue
+    return { provinceId: event.provinceId, intruderId: event.intruderId, tick: event.tick }
+  }
+  return null
+}
+
+/** Ein Punkt der Preisreihe: der mittlere Kurs eines Spieltags (T-M32-02). */
+export interface PricePoint {
+  day: number
+  /** Geld je Einheit — Festkomma kürzt sich heraus, weil beide Seiten Festkomma sind. */
+  price: number
+}
+
+/**
+ * Der Preisverlauf je Rohstoff aus dem Ereignisstrom (T-M32-02, R-UI-09/13, D27).
+ *
+ * Einen Kurs hat nur, was gegen **Geld** getauscht wurde: `money → X` ist ein Kauf,
+ * `X → money` ein Verkauf, und beide ergeben denselben Wert „Geld je Einheit". Ein
+ * Tausch Holz gegen Erz hat zwei Preise oder keinen — er bleibt draußen, statt eine
+ * Zahl zu erfinden. Je Spieltag wird gemittelt: der Markt setzt den Kurs je Tick neu,
+ * und eine Linie mit einem Punkt je Tick zeigt Rauschen statt Richtung.
+ *
+ * Kernfrei: `TRADE_EXECUTED` bleibt, wie es ist.
+ */
+export function priceSeries(
+  events: readonly GameEvent[],
+  ticksPerDay: number,
+): Partial<Record<string, PricePoint[]>> {
+  const sums = new Map<string, Map<number, { total: number; count: number }>>()
+
+  for (const event of events) {
+    if (event.type !== 'TRADE_EXECUTED') continue
+    const kauf = event.give === 'money' && event.want !== 'money'
+    const verkauf = event.want === 'money' && event.give !== 'money'
+    if (!kauf && !verkauf) continue
+
+    const key = kauf ? event.want : event.give
+    const menge = kauf ? event.wantAmount : event.giveAmount
+    if (menge <= 0) continue
+    const geld = kauf ? event.giveAmount : event.wantAmount
+
+    const day = Math.trunc(event.tick / ticksPerDay)
+    const perResource = sums.get(key) ?? new Map<number, { total: number; count: number }>()
+    const cell = perResource.get(day) ?? { total: 0, count: 0 }
+    cell.total += geld / menge
+    cell.count += 1
+    perResource.set(day, cell)
+    sums.set(key, perResource)
+  }
+
+  const out: Partial<Record<string, PricePoint[]>> = {}
+  for (const [key, perResource] of sums) {
+    out[key] = [...perResource.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([day, cell]) => ({ day, price: cell.total / cell.count }))
+  }
+  return out
 }
 
 export function dayReportBody(

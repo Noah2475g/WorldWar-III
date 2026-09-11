@@ -5,6 +5,7 @@ import { zoomAt, type View, type ViewLimits } from './picking.ts'
 import {
   ARMY_BOX,
   ARMY_HIT_BOX,
+  BUILDING_BOX,
   BUILDING_MAX_SCALE,
   BUILDING_OFFSET_Y,
   dominantIcon,
@@ -403,5 +404,97 @@ describe('T-M30-01 Armeen sind Stapel mit Zahl und Zustand', () => {
     expect(pickArmy({ x: 100 + ARMY_BOX.width / 2 - 1, y: 100 }, armies, centres, view)).toBe('a1')
     expect(pickArmy({ x: 100 + ARMY_BOX.width / 2 + 2, y: 100 }, armies, centres, view)).toBeNull()
     expect(pickArmy({ x: 100, y: 100 + ARMY_HIT_BOX / 2 - 1 }, armies, centres, view)).toBe('a1')
+  })
+})
+
+/**
+ * T-M28-13 · Ein Klick wählt die Armee, die man sieht.
+ *
+ * Befund 3 der Durchsicht vom 2026-09-11: Stehen zwei eigene Armeen in derselben Provinz,
+ * liegen ihre Marker übereinander. Gezeichnet wird die **letzte** der Liste — ihren Kasten
+ * samt Zahl und Zustandsbalken sieht der Spieler. `pickArmy` nahm bei gleichem Abstand
+ * aber die **erste**: der Klick wählte die verdeckte, und die sichtbare war per Karte
+ * überhaupt nicht anwählbar.
+ */
+describe('T-M28-13 Deckungsgleiche Stapel', () => {
+  const beide = [army('a1', 'alpha'), army('a2', 'alpha')]
+
+  it('liefert die zuletzt gezeichnete — die, die obenauf liegt', () => {
+    expect(pickArmy({ x: 100, y: 100 }, beide, centres, view)).toBe('a2')
+  })
+
+  it('bleibt bei ungleichem Abstand bei der naeheren', () => {
+    const centresVersetzt = { ...centres, beta: { x: 120, y: 100 } }
+    const versetzt = [army('a1', 'alpha'), army('a2', 'beta')]
+
+    expect(pickArmy({ x: 101, y: 100 }, versetzt, centresVersetzt, view)).toBe('a1')
+  })
+})
+
+/**
+ * T-M28-12 · Das Gebäudequadrat verschwindet nicht unter dem Armeekasten.
+ *
+ * Befund 2 der Durchsicht vom 2026-09-11: Ist die Provinz für das Ankergitter zu klein,
+ * liefert `anchorsFor` genau einen Anker — den Mittelpunkt, weil nur er sicher im Land
+ * liegt. Genau dorthin setzt `markersFor` aber auch den Armeekasten, und der ist mit
+ * 30×18 und deckendem Grund größer als das 14×14-Quadrat: es verschwand restlos.
+ * **92 von 237 Provinzen der Weltkarte laufen in diesen Rückfall.**
+ */
+describe('T-M28-12 Gebaeude auf dem Mittelpunkt-Anker', () => {
+  const mitte = { x: 100, y: 100 }
+  const nurMitte = [{ ...mitte, edgeDistance: 5 }]
+
+  const gebaeude = () =>
+    markersFor([army('a1', 'alpha')], { alpha: { barracks: 1 } }, centres, { x: 0, y: 0, scale: 1 }, {
+      anchors: { alpha: nurMitte },
+    })
+
+  it('setzt das Quadrat unter den Kasten, nicht darauf', () => {
+    const marker = gebaeude()
+    const bau = marker.find((m) => m.kind === 'building')!
+    const armee = marker.find((m) => m.kind === 'army')!
+
+    expect(bau.y).toBeGreaterThan(armee.y)
+    expect(bau.y - armee.y).toBeGreaterThanOrEqual(ARMY_BOX.height / 2 + BUILDING_BOX / 2)
+  })
+
+  it('laesst einen echten Gitteranker unveraendert', () => {
+    const versetzt = [{ x: 130, y: 140, edgeDistance: 20 }]
+    const marker = markersFor([], { alpha: { barracks: 1 } }, centres, { x: 0, y: 0, scale: 1 }, {
+      anchors: { alpha: versetzt },
+    })
+    const bau = marker.find((m) => m.kind === 'building')!
+
+    expect(bau.y).toBe(140)
+  })
+})
+
+/**
+ * T-M28-14 · Jede Macht bekommt eine eigene Farbe.
+ *
+ * Befund 6 der Durchsicht vom 2026-09-11 (schwer): `colorForPlayer` hatte elf Farben und
+ * rechnete modulo, der Startdialog erlaubt aber so viele Gegner, wie die Karte
+ * Startaufstellungen hat — auf der Weltkarte 24. Ab der zwölften Macht wiederholte sich
+ * eine Farbe, und zwei Länder waren im Besitzmodus nicht zu unterscheiden. Noahs
+ * Entscheid vom 2026-09-11: **mehr Farben**, nicht weniger Mächte.
+ */
+describe('T-M28-14 Eine Farbe je Macht, auch in der groessten Partie', () => {
+  const MAECHTE = 24
+  const alle = Array.from({ length: MAECHTE }, (_, i) => `p${i + 1}`)
+
+  it('gibt es mindestens so viele Farben wie Startaufstellungen auf der Weltkarte', () => {
+    expect(Object.keys(PLAYER_COLORS).length).toBeGreaterThanOrEqual(MAECHTE)
+  })
+
+  it('vergibt in einer Hoechstbesetzung keine Farbe zweimal', () => {
+    const farben = alle.map((id) => colorForPlayer(id))
+
+    expect(new Set(farben).size).toBe(MAECHTE)
+  })
+
+  it('haelt die Farbe einer Macht ueber Sitzungen hinweg fest', () => {
+    // Sie haengt allein an der Kennung — ein geladener Stand faerbt die Welt wie zuvor.
+    expect(colorForPlayer('p7')).toBe(colorForPlayer('p7'))
+    expect(colorForPlayer('p7')).not.toBe(colorForPlayer('p8'))
   })
 })

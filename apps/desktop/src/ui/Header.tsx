@@ -50,6 +50,16 @@ export interface HeaderProps {
   onSaves: () => void
   /** Diplomacy, market and standings live in the side panel; the header only opens them. */
   onPanel: (panel: 'diplomacy' | 'market' | 'standings') => void
+  /**
+   * Der jüngste Einmarsch in eigenes Gebiet (T-M28-06, R-TIME-06, D27.6).
+   *
+   * Der Chip sitzt seit T-M29-02 an seinem Platz und war bis hierher leer. `null`
+   * heißt: kein offener Alarm — dann bleibt der Platz verborgen und die Zeile so
+   * breit wie zuvor.
+   */
+  alarm?: { provinceId: string; provinceName: string; intruder: string } | null
+  /** Klick auf den Chip: zur Provinz springen und den Alarm quittieren. */
+  onAlarm?: (provinceId: string) => void
 }
 
 /**
@@ -78,7 +88,22 @@ export function balanceTone(balance: number): 'plus' | 'minus' | 'zero' {
   return 'zero'
 }
 
+/**
+ * Die Raste, die als gedrueckt gilt (T-M28-10): die groesste, die die laufende
+ * Geschwindigkeit nicht ueberschreitet. Bei 30 mit den Rasten 25 und 50 ist das die 25 —
+ * so meldet die Gruppe immer genau eine Stufe, auch wenn die Hoechstgeschwindigkeit
+ * einen Wert zwischen den Rasten erzwingt.
+ */
+export function activeSpeedStop(speed: number, stops: readonly number[] = SPEED_STOPS): number {
+  let best = stops[0] ?? 0
+  for (const stop of stops) {
+    if (stop <= speed && stop >= best) best = stop
+  }
+  return best
+}
+
 export function Header(props: HeaderProps) {
+  const activeStop = activeSpeedStop(props.speed)
   const resources = props.view?.self.resources
   const shortages = new Set(props.view?.self.shortages ?? [])
   const victory = victoryProgress(props.view)
@@ -102,14 +127,20 @@ export function Header(props: HeaderProps) {
             </span>
           )}
 
-          {/* Genau ein Knopf ist gedrueckt: die Pause oder die laufende Stufe (D27.6). */}
+          {/*
+            Genau ein Knopf ist gedrueckt: die Pause oder die laufende Stufe (D27.6).
+            Seit T-M28-10 stimmt das auch dann, wenn die Geschwindigkeit ZWISCHEN zwei
+            Rasten liegt — das passiert, sobald die eingestellte Hoechstgeschwindigkeit
+            sie kappt. Vorher war dann gar keiner gedrueckt, der Klick sah folgenlos aus,
+            und ein Screenreader meldete keine aktive Stufe.
+          */}
           <div className="speeds" role="group" aria-label={t('header.speed')}>
             {SPEED_STOPS.map((stop) => (
               <button
                 key={stop}
                 type="button"
-                className={props.speed === stop ? 'speed speed--active' : 'speed'}
-                aria-pressed={props.speed === stop}
+                className={activeStop === stop ? 'speed speed--active' : 'speed'}
+                aria-pressed={activeStop === stop}
                 aria-label={stop === 0 ? t('header.pause') : undefined}
                 title={stop === 0 ? t('header.pause') : t('header.speedStop', { stop })}
                 onClick={() => props.onSpeed(stop)}
@@ -118,13 +149,18 @@ export function Header(props: HeaderProps) {
               </button>
             ))}
 
+            {/*
+              Das Vorspulen ist keine Tempostufe, sondern ein Lauf mit Ziel — es traegt
+              deshalb kein `aria-pressed` mehr (T-M28-10). Vorher waren waehrend des Laufs
+              zwei Knoepfe derselben Gruppe gedrueckt: die Pause und das Abbrechen.
+            */}
             {props.fastForwarding ? (
-              <button type="button" className="speed speed--fast speed--running" aria-pressed="true" onClick={props.onAbort}>
+              <button type="button" className="speed speed--fast speed--running" onClick={props.onAbort}>
                 <Icon name="fastForward" size={11} />
                 {t('header.abort')}
               </button>
             ) : (
-              <button type="button" className="speed speed--fast" aria-pressed="false" onClick={props.onFastForward}>
+              <button type="button" className="speed speed--fast" onClick={props.onFastForward}>
                 <Icon name="fastForward" size={11} />
                 {t('header.fastForward')}
               </button>
@@ -175,10 +211,24 @@ export function Header(props: HeaderProps) {
           </button>
         </div>
 
-        {/* Der Platz des Einmarsch-Alarms (D27.6). Leer und verborgen, bis T-M28-06 ihn
-            fuellt — der Chip sitzt schon dort, wo er hingehoert, damit die Zeile beim
-            ersten Alarm nicht umbricht. */}
-        <div className="header__alarm" hidden />
+        {/* Der Einmarsch-Alarm (T-M28-06, D27.6). Der Platz sitzt seit T-M29-02 dort,
+            wo er hingehoert, damit die Zeile beim ersten Alarm nicht umbricht. */}
+        <div className="header__alarm" hidden={!props.alarm}>
+          {props.alarm && (
+            <button
+              type="button"
+              className="alarm-chip"
+              aria-label={t('header.alarmAria', {
+                province: props.alarm.provinceName,
+                intruder: props.alarm.intruder,
+              })}
+              onClick={() => props.onAlarm?.(props.alarm!.provinceId)}
+            >
+              <Icon name="battle" size={13} />
+              {t('header.alarm', { province: props.alarm.provinceName })}
+            </button>
+          )}
+        </div>
       </div>
 
       <ul className="resources" aria-label="Rohstoffe">

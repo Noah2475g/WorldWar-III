@@ -1728,3 +1728,108 @@ AK-8 danach vollständig neu gemessen: `docs/reports/packaging.md`.
    durchsetzt, gilt erst nach einer Messung am gebauten Erzeugnis** — genau die
    AK-8-Messung, die diesen Fehler gefunden hat. Sie gehört nach jedem Umbau am
    Speicherweg wiederholt.
+
+## 2026-09-11 · T-M32-02 · CRLF im Arbeitsbaum macht den Prosa-Wächter blind für Kommentare
+
+**Befund:** `pnpm verify` meldete am M32-Tor einen Prosa-Fund in einer Zeile, die seit
+T-M25-03 unverändert ist — einem **Kommentar** in `Panels.tsx`. Ursache ist nicht die
+Zeile, sondern das Zeilenende: `ohneKommentare()` in
+`test/guards/prose-in-code.test.ts` streift Zeilenkommentare mit `/(^|[^:])\/\/.*$/`.
+In JavaScript ist `` ein Zeilenende, `.` trifft es also nicht, und `$` steht ohne
+`m`-Flag am Ende der Zeichenkette — **hinter** dem ``. Auf einer CRLF-Zeile greift der
+Ausdruck nie, der Kommentar bleibt stehen, und sein Inhalt wird als Spielertext gemeldet.
+
+**Kleinster reproduzierbarer Fall:**
+`"  // Text".replace(/(^|[^:])\/\/.*$/, "$1")` gibt die Zeile unverändert zurück;
+ohne `` gibt sie `"  "`.
+
+**Wie es entstand:** ein Bearbeitungsskript schrieb mehrere Dateien mit Pythons
+Standard-Zeilenendeumsetzung und machte aus LF im Arbeitsbaum CRLF. Die **Commits waren
+nie betroffen** — `.gitattributes` trägt `* text=auto eol=lf`, git normalisiert beim
+Einchecken. Sichtbar wurde es erst im Wächter.
+
+**Status: umgangen, nicht behoben.** Die 20 Dateien sind zurück auf LF, `pnpm verify`
+ist grün. Die Fehlerrichtung ist die sichere — der Wächter wird zu streng, nicht zu
+lax —, und ein `?$` im Ausdruck wäre die Reparatur. Sie steht aus, weil sie einen
+eigenen Test verlangt (eine CRLF-Fixture), und weil die eigentliche Regel lautet:
+**Dateien im Arbeitsbaum bleiben LF.**
+
+---
+
+## 2026-09-11 · T-M28-08 · Im Vorschaufenster ist kein tickgenaues Bild zu fangen
+
+**Befund:** Die Sichtprüfung der Gefechtsdarstellung scheiterte in **fünf** Anläufen über
+drei Partien, und der Grund ist keiner der vermuteten. Er ist strukturell: **im
+Browser-Vorschaufenster läuft die Spieluhr nicht.** `requestAnimationFrame` wird dort
+gedrosselt, und die Tempostufen hängen an der Bildschleife — auf Stufe 10 blieb die Uhr
+über sechzig Messungen in vierundzwanzig Sekunden auf **Tag 106 · 00:00** stehen. Die
+einzige Möglichkeit, Zeit zu bewegen, ist der Knopf „Vorspulen", und der springt einen
+**ganzen Spieltag**.
+
+Ein Gefecht dauert wenige Ticks; `view.battles` trägt nur die des laufenden Ticks. Ein
+Tagessprung landet deshalb fast immer **zwischen** zwei Gefechten. Gemessen: bei Tag 106
+lagen Gefechte bei 105 · 19:00 und 104 · 18:00 im Protokoll, und die Überzugsebene
+enthielt in diesem Augenblick **null** Pixel in Gefechts- oder Bernsteinfarbe.
+
+**Kleinster reproduzierbarer Fall:** Partie starten, Tempo 10 wählen, vierundzwanzig
+Sekunden lang die Uhr lesen — sie steht. Danach „Vorspulen" drücken: die Uhr springt um
+einen Tag.
+
+**Was nicht hilft, und warum:**
+- *Auf ein eigenes Gefecht warten.* Der Vorspul-Stopp greift beim Alarm — er hält aber am
+  Tick **nach** dem Gefecht an, und bei einer kleinen Armee ist es da schon entschieden.
+- *Die Farbe auf der Leinwand zählen.* Feindliche Stapel tragen seit T-M30-01 denselben
+  Zinnober im Rahmen, die Auswahl denselben Bernstein wie die Einschlagzeichen. Ohne
+  Auswahl und ohne Alarm bleibt die Probe trotzdem mehrdeutig, solange Feindmarker im Bild
+  sind — und im Krieg sind sie das.
+- *Den Tooltip lesen* („Gefechtsrunde n" aus `view.battles`). Er braucht eine **gewählte**
+  Provinz, und die Auswahlliste führt nur die dreizehn sichtbaren — die Gefechte der KI
+  lagen außerhalb.
+
+**Status: offen, und es ist kein Produktfehler.** Gebunden ist die Zeichenarbeit durch
+`MapCanvas.test.tsx` (Schein als gefüllter Bogen, Ring, Bernstein der Einschläge,
+Deckkraft unter eins) und die Geometrie durch `render.test.ts`/`motion.test.ts`. Was fehlt,
+ist Noahs Urteil an seinem eigenen Maßstab: **fällt ein Krieg im Vorspulen auf, ohne dass
+man das Protokoll liest?** Das beantwortet ein großes Fenster und ein Mensch, keine
+Pixelprobe. Für künftige Sichtprüfungen gilt derselbe Befund allgemein: **alles, was nur
+einen Tick lang sichtbar ist, ist im Vorschaufenster nicht prüfbar.**
+
+---
+
+## 2026-09-11 · Durchsicht M29–M31 · Elf Befunde in Code, der schon auf `main` liegt
+
+**Befund:** Nachdem eine adversarische Durchsicht drei schwere Fehler in der frischen
+M32-Arbeit gefunden hatte, bekam der **bereits gemergte** Kriegsrat-Umbau dieselbe
+Behandlung: vier Prüfer über `git diff ec36bef..c372ba4`, je Befund ein Skeptiker mit dem
+Auftrag zu widerlegen. **13 gemeldet, 11 überlebten, vier davon schwer.** Der Stand hatte
+`pnpm verify`, `pnpm acceptance` 11/11 und Sichtprüfungen am laufenden Spiel bestanden.
+
+| # | Schwere | Ort | Befund |
+|---|---|---|---|
+| 1 | hoch | `map/anchors.ts` | `placeBuildings` reserviert **immer** zwei Küstenplätze, auch in Binnenprovinzen. Reichen die übrigen nicht für die fünf Landarten, fällt der Modulo-Rückfall auf belegte Anker und das Gebäude wird **verworfen** — während die reservierten leer bleiben. 32 Provinzen der Weltkarte liefern 3–6 Anker und sind betroffen |
+| 2 | mittel | `map/anchors.ts` | Der Rückfall-Anker ist der Provinzmittelpunkt — genau der Punkt, auf den auch der Armeekasten kommt. Der 30×18-Kasten deckt das 14×14-Quadrat restlos. **92 von 237 Provinzen** laufen in diesen Rückfall. Der alte `BUILDING_OFFSET_Y` verhinderte genau das und ist auf dem Ankerpfad weg |
+| 3 | mittel | `map/markers.ts` | `pickArmy` nimmt bei gleichem Abstand die **erste** Armee, gezeichnet wird die **letzte**. Bei zwei eigenen Stapeln in einer Provinz wählt der Klick die verdeckte; die sichtbare ist per Karte nie anwählbar |
+| 4 | hoch | `ui/Panels.tsx` | Das Bauplatz-Raster wird **bedingungslos** gezeichnet. Bei einer fremden Provinz kennt die Sicht keine `buildings` — das Raster zeigt sieben freie Plätze und behauptet damit „hier steht nichts". Die alte Fassung zeichnete die Zeile nur bei vorhandenen Gebäuden und brach die Nebelregel nicht |
+| 5 | mittel | `ui/Panels.tsx` | Je Gebäudeart **ein** Feld, aber der Kern erlaubt mehrere gleichzeitige Aufträge derselben Art (`buildSlots` 2). Der zweite bezahlte Auftrag hat im Panel weder Fortschritt noch Fertigstellung; beide Abbrechen-Knöpfe heißen gleich |
+| 6 | hoch | `map/modes.ts` | `colorForPlayer` hat elf Farben; der Startdialog erlaubt bis zu **zwölf** Mächte. Ab der zwölften wiederholt sich eine Farbe, und zwei Mächte sind im Besitzmodus nicht unterscheidbar |
+| 7 | niedrig | `test/guards/css-mirrors-tokens.test.ts` | Der Spiegel-Wächter sieht nur sechsstellige Hex-Werte im **ersten** `:root`-Block. Zwei Farben der abgelösten hellen Richtung stehen unbemerkt in `app.css`, und ein `rgb(...)` im `:root` bliebe unentdeckt |
+| 8 | hoch | `App.tsx` | **Die Leertaste auf einem fokussierten Knopf pausiert das Spiel, statt den Knopf auszulösen.** Wer ohne Maus bedient, kann keinen Knopf mit der Leertaste betätigen — auch „Vorspulen" nicht |
+| 9 | hoch | `ui/Header.tsx` | Ist die Geschwindigkeit keine Raste aus `SPEED_STOPS` (etwa durch die eingestellte Höchstgeschwindigkeit), ist in der Tempo-Gruppe **kein** Knopf gedrückt — der Klick sieht folgenlos aus |
+| 10 | mittel | `ui/Header.tsx` | Während des Vorspulens sind **zwei** Knöpfe derselben Gruppe gedrückt (Pause und Abbrechen); erwartet ist genau einer |
+| 11 | mittel | `App.tsx` | Die Leertaste setzt beim Fortsetzen `speed = 10` und **umgeht damit die eingestellte Höchstgeschwindigkeit** (bei Maximum 2 läuft das Spiel danach fünffach zu schnell) |
+
+**Zwei Befunde wurden widerlegt** und sind hier nur der Vollständigkeit halber genannt:
+ein behaupteter Versatz zwischen Standpunkt und Armeekasten beim Vorspulen, und
+ungeprüfte Schrift/Marker in den Verlaufsmodi.
+
+**Status: als Aufgaben geschnitten** (T-M28-09 … T-M28-15), nicht sofort alle gebaut. Die
+Reihenfolge steht in `03-TASKS.md`; angefangen wird bei denen, die die Bedienung ohne Maus
+betreffen.
+
+**Die Lehre steht über den elf Befunden:** ein Stand mit grünen Tests, grüner Abnahme und
+bestätigter Sichtprüfung hatte elf echte Fehler, und keiner davon war teuer zu finden —
+nur hatte niemand gesucht. Eine adversarische Durchsicht gehört ans Ende jedes
+Meilensteins, nicht ans Ende des Projekts.
+
+---
+

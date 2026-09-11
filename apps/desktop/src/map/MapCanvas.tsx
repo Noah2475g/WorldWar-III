@@ -9,6 +9,8 @@ import {
   MARCH_LABEL_PX,
   MARCH_STANDPOINT_RADIUS,
   battleIntensity,
+  battleGlow,
+  battleImpacts,
   battleRingBase,
   battleRingWidth,
   marchArrow,
@@ -45,7 +47,7 @@ import {
 import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
-import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
+import { OWNERSHIP_FADE_MS, battleFlash, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
 import { fillFor, mixColors, strengthByProvince, type MapMode } from './modes.ts'
 
 /**
@@ -169,6 +171,11 @@ export interface MapCanvasProps {
   view: View
   ownershipVersion: number
   selectedProvince: string | null
+  /**
+   * Die Provinz des offenen Einmarsch-Alarms (T-M28-06, D27.2) — ein Zinnober-Ring,
+   * damit der Chip im Kopf eine Stelle auf der Karte hat. `null`: kein Ring.
+   */
+  alarmProvince?: string | null
   /** Die eigene Hauptstadt — der Ort, den der Spieler am haeufigsten sucht. */
   capitalProvinceId?: string | null
   /** Provinzen, in denen gerade gekaempft wird (aus der Sicht, nicht aus den Armeen). */
@@ -203,6 +210,11 @@ export interface MapCanvasProps {
 }
 
 export function MapCanvas(props: MapCanvasProps) {
+  // Wann die laufende Gefechtsrunde begann (T-M28-08). Die Runden sind die Spielticks;
+  // der Blitz haengt daran, nicht an der Bildschirmuhr.
+  const roundStartedMs = useRef(0)
+  /** Eine begonnene, noch nicht gestempelte Gefechtsrunde (T-M28-08). */
+  const roundPending = useRef(false)
   const shapesRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -210,6 +222,16 @@ export function MapCanvas(props: MapCanvasProps) {
   // Die Bildschirmuhr fuer alles, was sich von selbst bewegt. Sie laeuft nur, solange es
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
+
+  // Jeder Spieltick ist eine Gefechtsrunde. Der Effekt merkt sich den Uhrstand, an dem
+  // sie begann; `battleFlash` rechnet daraus die Helligkeit (T-M28-08).
+  useEffect(() => {
+    // Nicht `clock` nehmen: die Bildschleife steht, solange es nichts zu bewegen gibt,
+    // und `clock` traegt dann einen alten Stempel — beim ersten Gefecht waere der Blitz
+    // nach einem Bild vorbei statt nach 260 ms (Durchsicht vom 2026-09-11). Der Merker
+    // sagt nur „eine Runde hat begonnen"; ihren Zeitpunkt stempelt das naechste Bild.
+    roundPending.current = true
+  }, [props.tick])
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
@@ -340,6 +362,10 @@ export function MapCanvas(props: MapCanvasProps) {
     let running = true
     const step = (time: number): void => {
       if (!running) return
+      if (roundPending.current) {
+        roundPending.current = false
+        roundStartedMs.current = time
+      }
       setClock(time)
       // Wellen bekommen ihren Start vom ersten Bild und enden nach der Blenddauer;
       // sind alle vorbei, endet mit ihnen der Anlass, und die Schleife steht wieder.
@@ -478,6 +504,25 @@ export function MapCanvas(props: MapCanvasProps) {
       }
     }
 
+    // Der Einmarsch-Ring liegt UNTER der Auswahl: wer die gemeldete Provinz anklickt,
+    // soll den Auswahlring sehen und den Alarm nicht darunter verlieren (T-M28-06).
+    if (props.alarmProvince) {
+      const province = withBounds.find((p) => p.id === props.alarmProvince)
+      if (province) {
+        context.strokeStyle = TOKENS.accent
+        context.lineWidth = 3
+        for (const ring of province.polygons) {
+          const points = ring.map(([x, y]) => toScreen({ x, y }, props.view))
+          if (points.length === 0) continue
+          context.beginPath()
+          context.moveTo(points[0]!.x, points[0]!.y)
+          for (const point of points.slice(1)) context.lineTo(point.x, point.y)
+          context.closePath()
+          context.stroke()
+        }
+      }
+    }
+
     if (props.selectedProvince) {
       const province = withBounds.find((p) => p.id === props.selectedProvince)
       if (province) {
@@ -594,8 +639,23 @@ export function MapCanvas(props: MapCanvasProps) {
       // der Ring die Groesse des Gefechts: Radius und Strich wachsen mit der sichtbaren
       // Gesamtstaerke der Provinz — ein Scharmuetzel fluestert, eine Feldschlacht ruft.
       const intensity = battleIntensity(strengthOf[marker.provinceId] ?? 0)
+      const glow = battleGlow(intensity)
+      // Ein Blitz je Gefechtsrunde (T-M28-08): die Runden sind die Ticks, und der Ref
+      // haelt fest, wann der letzte kam. Ohne Bewegung bleibt er aus — der Ring bleibt
+      // trotzdem gross, denn die Groesse ist Zustand und keine Bewegung.
+      // Solange die Runde noch keinen Stempel hat, leuchtet sie voll — das erste Bild
+      // danach setzt ihn, und von dort klingt sie ueber BATTLE_FLASH_MS ab.
+      const flash = roundPending.current ? 1 : battleFlash(clock - roundStartedMs.current, { speed: props.speed ?? 0 })
+
+      context.globalAlpha = Math.min(0.6, glow.alpha + flash * 0.25)
+      context.fillStyle = MAP_COLORS.battle
+      context.beginPath()
+      context.arc(marker.x, marker.y, glow.radius, 0, Math.PI * 2)
+      context.fill()
+      context.globalAlpha = 1
+
       context.strokeStyle = MAP_COLORS.battle
-      context.lineWidth = battleRingWidth(intensity)
+      context.lineWidth = battleRingWidth(intensity) + flash * 1.5
       context.beginPath()
       context.arc(
         marker.x,
@@ -605,6 +665,31 @@ export function MapCanvas(props: MapCanvasProps) {
         Math.PI * 2,
       )
       context.stroke()
+
+      // Einschlagzeichen: Bernstein mit hellem Kern (D27.2), Zahl und Groesse nach dem
+      // Gefecht, Lage aus der Provinzkennung — je Bild dieselben, damit nichts flimmert.
+      for (const mark of battleImpacts(marker.provinceId, intensity)) {
+        const ix = marker.x + Math.cos(mark.angle) * mark.distance
+        const iy = marker.y + Math.sin(mark.angle) * mark.distance
+        context.strokeStyle = TOKENS.warn
+        context.lineWidth = 1.4
+        context.beginPath()
+        context.moveTo(ix - mark.size, iy - mark.size)
+        context.lineTo(ix + mark.size, iy + mark.size)
+        context.moveTo(ix + mark.size, iy - mark.size)
+        context.lineTo(ix - mark.size, iy + mark.size)
+        context.stroke()
+        if (flash > 0) {
+          context.globalAlpha = flash
+          context.fillStyle = TOKENS.ink
+          context.beginPath()
+          context.arc(ix, iy, mark.size * 0.5, 0, Math.PI * 2)
+          context.fill()
+          context.globalAlpha = 1
+        }
+      }
+
+      context.strokeStyle = MAP_COLORS.battle
       context.lineWidth = 1.6
       drawIcon(context, 'battle', marker.x, marker.y, 14)
     }
@@ -615,6 +700,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.anchors,
     props.mode,
     props.selectedProvince,
+    props.alarmProvince,
     props.capitalProvinceId,
     props.battleProvinces,
     props.tick,

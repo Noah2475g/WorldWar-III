@@ -81,6 +81,27 @@ export const PLAYER_COLORS = {
   taupe: '#6C5C60',
   fern: '#346034',
   pine: '#20281C',
+  // Dreizehn weitere seit T-M28-14 (Noahs Entscheid vom 2026-09-11: mehr Farben statt
+  // weniger Maechte). Die Weltkarte hat 24 Startaufstellungen, und der Startdialog
+  // erlaubt so viele Gegner, wie sie hergibt — mit elf Farben teilten sich ab der
+  // zwoelften Macht zwei Laender eine Fuellung. Gesucht mit derselben Greedy-Methode wie
+  // in T-M29-01, unter denselben vier Bedingungen: Kontrast gegen `onPlayer` ueber 4,5,
+  // ΔE ueber 10 gegen jede andere Spielerfarbe, gegen die Grenze, die Neutralfuellung
+  // und die Auswahlfarbe — und Buntheit hoechstens so hoch wie die bunteste bestehende,
+  // damit der gedeckte Kriegsrat-Ton erhalten bleibt. Kleinster Abstand im Satz: 13,3.
+  midnight: '#141428',
+  oxblood: '#401414',
+  bracken: '#303C14',
+  thistle: '#645C7C',
+  verdigris: '#406C68',
+  peat: '#241414',
+  brick: '#704444',
+  walnut: '#745C48',
+  sage: '#5C6450',
+  mulberry: '#401430',
+  indigo: '#483C68',
+  mauve: '#785064',
+  juniper: '#144020',
 } as const
 /**
  * Die Farben des Beziehungsmodus (T-M26-03, T-M29-01, R-MAP-06, D25.5, D27.1).

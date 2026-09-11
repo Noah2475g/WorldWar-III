@@ -137,8 +137,15 @@ export const BUILDING_BOX = 14
 /** Gebaeude erscheinen ab der mittleren Stufe (D27.4, `zoomTier`); auf "weit" nicht. */
 export const BUILDING_MAX_SCALE = ZOOM_MID_MAX_SCALE
 
-/** Ohne Anker stehen Gebaeude unter der Provinzmitte — nur noch Rueckfall und Test. */
-export const BUILDING_OFFSET_Y = 12
+/**
+ * Wie weit unter der Provinzmitte ein Gebaeude sitzt, wenn es dort sitzen muss.
+ *
+ * Gerechnet statt geraten (T-M28-12): halbe Hoehe des Armeekastens plus halbe Hoehe des
+ * Gebaeudequadrats plus ein Bildpunkt Luft. Die feste 12 davor war schon fuer den alten
+ * 20x14-Kasten zu knapp und deckte nach dem Wachstum auf 30x18 das Quadrat vollstaendig.
+ * Als Rechnung waechst der Abstand mit, wenn eine der beiden Groessen sich aendert.
+ */
+export const BUILDING_OFFSET_Y = ARMY_BOX.height / 2 + BUILDING_BOX / 2 + 1
 
 /** Gebaeude je Provinz, wie die Sicht sie kennt: Art → Stufe. */
 export type BuildingsByProvince = Readonly<Record<string, Readonly<Partial<Record<string, number>>>>>
@@ -229,7 +236,11 @@ export function pickArmy(
     const dy = screen.y - marker.y
     if (Math.abs(dx) > reachX || Math.abs(dy) > reachY) continue
     const distance = dx * dx + dy * dy
-    if (distance < bestDistance) {
+    // `<=` statt `<`: bei gleichem Abstand gewinnt die ZULETZT gezeichnete, und genau die
+    // sieht der Spieler (T-M28-13). Zwei eigene Armeen in derselben Provinz bekommen
+    // denselben Punkt; mit `<` waehlte der Klick die verdeckte, und die obenauf liegende
+    // war per Karte ueberhaupt nicht anwaehlbar.
+    if (distance <= bestDistance) {
       bestDistance = distance
       bestId = marker.armyId
     }
@@ -267,11 +278,17 @@ export function markersFor(
       const anchors = extras.anchors?.[provinceId] ?? fallbackAnchors(centre, view.scale)
       for (const placed of placeBuildings(byKind, anchors)) {
         const point = toScreen(placed, view)
+        // Sitzt der Anker auf der Provinzmitte, sitzt dort auch der Armeekasten — und
+        // der deckt mit 30x18 das 14x14-Quadrat restlos (T-M28-12, Befund 2 der
+        // Durchsicht vom 2026-09-11). `anchorsFor` faellt bei zu kleinen Provinzen
+        // genau darauf zurueck, weil nur die Mitte sicher im Land liegt; der Versatz
+        // gehoert deshalb hierher, in Bildpunkte, und nicht an den Anker.
+        const aufDerMitte = placed.x === centre.x && placed.y === centre.y
         markers.push({
           kind: 'building',
           provinceId,
           x: point.x,
-          y: point.y,
+          y: aufDerMitte ? point.y + BUILDING_OFFSET_Y : point.y,
           icon: BUILDING_ICONS[placed.building] ?? 'warning',
           level: placed.level,
         })

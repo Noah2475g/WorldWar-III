@@ -129,6 +129,22 @@ export function cueForEvents(events: readonly { type: string }[]): Cue | null {
   return CUE_URGENCY.find((cue) => cues.has(cue)) ?? null
 }
 
+/**
+ * Der Ton der Ereignisse, die MICH angehen (T-M28-08).
+ *
+ * `cueForEvents` sieht jedes lesbare Ereignis an — und lesbar ist auch ein oeffentliches
+ * (`audience: []`). Ein Gefecht zwischen China und Indien spielte dem amerikanischen
+ * Spieler deshalb einen Kampfton vor, eine Kriegserklaerung zweier Fremder den
+ * Kriegston. `concerns` beantwortet dieselbe Frage, die es fuer das Vorspulen schon
+ * beantwortet (T-M15-01, `firstAlertFor`): wen es angeht.
+ */
+export function cueForOwnEvents(
+  events: readonly { type: string; concerns?: readonly string[] }[],
+  viewer: string,
+): Cue | null {
+  return cueForEvents(events.filter((event) => (event.concerns ?? []).includes(viewer)))
+}
+
 /** The cue an event deserves, or null for the ones that are merely bookkeeping. */
 export function cueFor(eventType: string): Cue | null {
   switch (eventType) {
@@ -141,7 +157,10 @@ export function cueFor(eventType: string): Cue | null {
       return 'complete'
     case 'RESOURCE_SHORTAGE':
       return 'shortage'
+    // Der Einmarsch bekommt den Kriegston (T-M28-06) — kein neuer Klang, sondern der
+    // dringlichste vorhandene, denn genau so dringlich ist er.
     case 'WAR_DECLARED':
+    case 'ARMY_INTRUDED':
       return 'war'
     default:
       return null

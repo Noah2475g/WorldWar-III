@@ -1,6 +1,6 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-09-11 gegen `7969f3b`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-09-11 gegen `e6ddb06`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).

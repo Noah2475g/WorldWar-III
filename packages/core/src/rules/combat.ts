@@ -76,7 +76,16 @@ export function effectiveUnits(units: number, rules: Rules): Fixed {
  * Documented in DECISIONS.md, 2026-09-03.
  */
 
-/** Reduced strength while an army is still forming up after a march (R-UNIT-05). */
+/**
+ * Reduced strength while an army is still forming up after a march (R-UNIT-05).
+ *
+ * Die Frage „marschiert sie gerade los" wird hier bewusst NICHT gestellt. T-M32-01 hatte
+ * dafuer eine Ausnahme auf `departureTick` — und die loeschte jede laufende Strafe mit,
+ * auch die doppelte aus dem Rueckzug: ein Befehl mit einem Tick Verzoegerung genuegte,
+ * um wieder bei voller Kraft dazustehen (Durchsicht vom 2026-09-11). Der verzoegerte
+ * Abmarsch setzt `deployDelayUntil` stattdessen erst beim tatsaechlichen Abmarsch
+ * (`phases/movement.ts`), und diese Funktion bleibt, was sie war.
+ */
 export function deploymentFactor(army: Army, tick: number, rules: Rules): Fixed {
   return tick < army.deployDelayUntil ? rules.constants.deployDelayFactor : ONE
 }

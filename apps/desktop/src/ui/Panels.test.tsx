@@ -19,6 +19,7 @@ import {
   type Action,
   type ActionGroupSpec,
   type EventEntry,
+  type Targeting,
 } from './Panels.tsx'
 import { BUILDING_ICONS, ICON_PATHS, RESOURCE_ICONS } from './icons.tsx'
 import type { BattleReportData } from '../game/events.ts'
@@ -1226,5 +1227,187 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     } finally {
       style.remove()
     }
+  })
+})
+
+/**
+ * T-M32-01 · Der Abmarsch lässt sich verzögern.
+ *
+ * Der Kern kennt seit T-M32-01 `MOVE_ARMY.departInTicks`; hier wird nur geprüft, dass
+ * die Zielwahl ihn erreichbar macht — Schrittwahl in Tagen, Vorschau der verschobenen
+ * Ankunft, und bei Beschuss gibt es sie nicht (der Beschuss marschiert nicht).
+ */
+describe('T-M32-01 Die Zielwahl kennt den verzoegerten Abmarsch', () => {
+  const army = { id: 'a1', owner: 'p1', provinceId: 'USA-MW', strength: 12_400, stance: 'defensive' } as VisibleArmy
+  const noop = (): void => undefined
+
+  const targeting = (over: Partial<Targeting> = {}): Targeting => ({
+    kind: 'move',
+    target: { id: 'USA-NE', name: 'Nordosten', arrivalText: 'Ankunft Tag 9' },
+    options: [{ id: 'USA-NE', name: 'Nordosten' }],
+    confirm: { id: 'confirm-move', label: 'Marsch bestätigen', disabledReason: null, onRun: noop },
+    onChoose: noop,
+    onCancel: noop,
+    delayDays: 0,
+    onDelay: noop,
+    ...over,
+  })
+
+  const panel = (t: Targeting) =>
+    render(<ArmyPanel army={army} actions={[]} targeting={t} ticksPerDay={24} currentTick={0} />)
+
+  it('bietet einen Schrittwaehler, der bei "sofort" steht', () => {
+    panel(targeting())
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    expect(within(group).getByRole('status').textContent).toContain('sofort')
+    expect(within(group).getByRole('button', { name: 'Früher abmarschieren' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('zaehlt in Tagen hoch und meldet jeden Schritt weiter', () => {
+    const seen: number[] = []
+    panel(targeting({ onDelay: (days) => seen.push(days) }))
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Später abmarschieren' }))
+    expect(seen).toEqual([1])
+  })
+
+  it('nennt bei gesetzter Verzoegerung den Tag im Waehler', () => {
+    panel(targeting({ delayDays: 3 }))
+    const group = screen.getByRole('group', { name: 'Abmarsch' })
+
+    expect(within(group).getByRole('status').textContent).toContain('3 Tagen')
+    expect(within(group).getByRole('button', { name: 'Früher abmarschieren' }).hasAttribute('disabled')).toBe(false)
+  })
+
+  it('bietet ihn beim Beschuss nicht an', () => {
+    panel(targeting({ kind: 'bombard' }))
+
+    expect(screen.queryByRole('group', { name: 'Abmarsch' })).toBeNull()
+  })
+})
+
+/**
+ * T-M32-02 · Der Markt zeigt den Preisverlauf.
+ *
+ * Die Reihe kommt aus `priceSeries` (game/events.ts); hier zählt nur, dass das
+ * Marktpanel sie zeigt — je Rohstoff eine Linie mit dem letzten Kurs als Zahl, und
+ * nichts, wo es keinen Verlauf gibt.
+ */
+describe('T-M32-02 Der Markt zeigt den Preisverlauf', () => {
+  const preview = () => ({
+    text: 'Vorschau',
+    action: { id: 'trade', label: 'Tauschen', disabledReason: null, onRun: () => undefined } as Action,
+  })
+
+  const market = (prices?: Partial<Record<string, { day: number; price: number }[]>>) =>
+    render(
+      <MarketPanel
+        resources={['wood', 'iron']}
+        stock={{ wood: 10_000, iron: 5000 }}
+        preview={preview}
+        {...(prices ? { prices } : {})}
+      />,
+    )
+
+  it('zeichnet je Rohstoff mit Verlauf eine Linie und nennt den letzten Kurs', () => {
+    const { container } = market({ wood: [{ day: 0, price: 3 }, { day: 1, price: 5 }] })
+    const list = screen.getByRole('list', { name: 'Kursverlauf' })
+
+    expect(within(list).getAllByRole('listitem').length).toBe(1)
+    expect(within(list).getByRole('listitem').textContent).toContain('5')
+    expect(container.querySelectorAll('.sparkline').length).toBe(1)
+  })
+
+  it('zeigt den Abschnitt gar nicht, solange nichts gehandelt wurde', () => {
+    market()
+    expect(screen.queryByRole('list', { name: 'Kursverlauf' })).toBeNull()
+  })
+
+  it('laesst einen einzelnen Punkt weg — eine Linie aus einem Wert ist keine', () => {
+    market({ wood: [{ day: 0, price: 3 }] })
+    expect(screen.queryByRole('list', { name: 'Kursverlauf' })).toBeNull()
+  })
+})
+
+/**
+ * T-M28-11 · Das Bauplatz-Raster sagt nur, was die Sicht weiß.
+ *
+ * Befund 4 der Durchsicht vom 2026-09-11 (schwer): Bei einer fremden Provinz führt die
+ * Sicht keine `buildings` — das Raster zeichnete trotzdem sieben freie Plätze und
+ * behauptete damit „hier steht nichts". Die Fassung vor dem Kriegsrat-Umbau zeichnete die
+ * Gebäudezeile nur bei vorhandenen Gebäuden und brach die Nebelregel nicht.
+ */
+describe('T-M28-11 Das Raster bricht die Nebelregel nicht', () => {
+  const fremd = {
+    id: 'RUS-CENTRAL',
+    name: 'Zentralrussland',
+    owner: 'p2',
+    terrain: 'plains',
+    population: 900_000,
+  } as unknown as VisibleProvince
+
+  const eigen = {
+    ...fremd,
+    owner: 'p1',
+    buildings: { barracks: 1 },
+    buildQueue: [],
+    morale: 70_000,
+  } as unknown as VisibleProvince
+
+  it('zeichnet fuer eine fremde Provinz gar kein Raster', () => {
+    const { container } = render(<ProvincePanel province={fremd} ownerName="Russland" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(container.querySelector('.slots')).toBeNull()
+    expect(screen.queryByText('Bauplätze')).toBeNull()
+  })
+
+  it('zeichnet es fuer die eigene Provinz weiterhin', () => {
+    const { container } = render(<ProvincePanel province={eigen} ownerName="Vereinigte Staaten" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(container.querySelector('.slots')).not.toBeNull()
+  })
+})
+
+/**
+ * T-M28-16 · Mehrere Bauaufträge derselben Art sind einzeln sichtbar.
+ *
+ * Befund 5 der Durchsicht vom 2026-09-11: Der Kern erlaubt zwei gleichzeitige Aufträge
+ * derselben Gebäudeart, und jeder trägt sein eigenes `completesAtTick`. Das Raster hat je
+ * Art **ein** Feld und fand mit `find()` nur den ersten — der zweite bezahlte Auftrag
+ * hatte weder Fortschritt noch Fertigstellung, und nach Abschluss des ersten sprang der
+ * Balken ohne Erklärung zurück.
+ */
+describe('T-M28-16 Zwei Auftraege derselben Art', () => {
+  const zweimalKaserne = {
+    id: 'USA-MW',
+    name: 'Mittlerer Westen',
+    owner: 'p1',
+    terrain: 'plains',
+    population: 900_000,
+    morale: 70_000,
+    buildings: {},
+    buildQueue: [
+      { building: 'barracks', startedTick: 0, completesAtTick: 48 },
+      { building: 'barracks', startedTick: 12, completesAtTick: 96 },
+    ],
+  } as unknown as VisibleProvince
+
+  const panel = () =>
+    render(<ProvincePanel province={zweimalKaserne} ownerName="Vereinigte Staaten" actions={[]} ticksPerDay={24} currentTick={24} />)
+
+  it('zeigt beide Fortschritte, nicht nur den ersten', () => {
+    const { container } = panel()
+    const meter = container.querySelectorAll('.slot--queued [role="meter"]')
+
+    expect(meter.length).toBe(2)
+  })
+
+  it('nennt je Auftrag seine eigene Restzeit', () => {
+    const { container } = panel()
+    const texte = [...container.querySelectorAll('.slot--queued [role="meter"]')].map((m) => m.textContent)
+
+    expect(new Set(texte).size).toBe(2)
   })
 })

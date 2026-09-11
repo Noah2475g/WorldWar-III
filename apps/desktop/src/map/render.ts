@@ -332,14 +332,77 @@ export function battleIntensity(strength: number): number {
   return Math.min(1, Math.sqrt(strength / STRENGTH_FULL))
 }
 
-/** Grundradius des Gefechtsrings zu einer Intensitaet — das Atmen kommt oben drauf. */
+/**
+ * Grundradius des Gefechtsrings zu einer Intensitaet — das Atmen kommt oben drauf.
+ *
+ * T-M28-08 hat beide Formeln angehoben (vorher 9 + 7·i und 1,4 + 1,6·i): Noahs Maszstab
+ * ist, dass im Vorspulen ein Krieg auffaellt, ohne dass man das Protokoll liest, und
+ * ein 16-px-Ring mit 3-px-Strich tat das auf einer Karte mit 237 Provinzen nicht. Das
+ * Scharmuetzel bleibt klein — sonst sagt die Groesse wieder nichts.
+ */
 export function battleRingBase(intensity: number): number {
-  return 9 + 7 * intensity
+  return 11 + 11 * intensity
 }
 
 /** Strichbreite des Gefechtsrings zu einer Intensitaet. */
 export function battleRingWidth(intensity: number): number {
-  return 1.4 + 1.6 * intensity
+  return 1.8 + 2.4 * intensity
+}
+
+/**
+ * Der Schein unter dem Ring (T-M28-08): eine gefuellte Scheibe in der Gefechtsfarbe,
+ * die mit dem Gefecht waechst.
+ *
+ * Er deckt nie — die Flaeche darunter traegt den Besitz, und ein Gefecht, das die
+ * Provinzfarbe verschluckt, nimmt der Karte genau die Auskunft, wegen der man hinsieht.
+ */
+export function battleGlow(intensity: number): { radius: number; alpha: number } {
+  const clamped = Math.min(1, Math.max(0, intensity))
+  return { radius: battleRingBase(clamped) * 1.45, alpha: 0.1 + 0.25 * clamped }
+}
+
+/** Hoechstzahl der Einschlagzeichen um einen Ring (T-M28-08). */
+export const BATTLE_IMPACTS_MAX = 5
+
+/** Ein Einschlagzeichen: wo am Ring es sitzt und wie gross es ist. */
+export interface BattleImpact {
+  angle: number
+  distance: number
+  size: number
+}
+
+/**
+ * Die Einschlagzeichen eines Gefechts (T-M28-08), rein und je Provinz immer gleich.
+ *
+ * Die Zahl waechst mit der Gefechtsgroesse, die Lage kommt aus der Provinzkennung —
+ * nicht aus dem Zufall und nicht aus der Uhr: Zeichen, die je Bild anderswo sitzen,
+ * flimmern, und Flimmern ist das, was `prefers-reduced-motion` verbietet.
+ *
+ * **Bewusste Abweichung vom Bauplan:** KRIEGSRAT §4 nennt einen Explosionsmarker aus
+ * `docs/design/kriegsrat-icons.svg`. Den gibt es dort nicht — die 43 Symbole enthalten
+ * kein solches. Statt einen Verweis auf eine nicht vorhandene Datei zu bauen, sind die
+ * Einschlaege Striche mit hellem Kern, gezeichnet aus diesen Zahlen.
+ */
+export function battleImpacts(provinceId: string, intensity: number): BattleImpact[] {
+  const clamped = Math.min(1, Math.max(0, intensity))
+  const count = 1 + Math.round((BATTLE_IMPACTS_MAX - 1) * clamped)
+  const base = battleRingBase(clamped)
+  const outer = battleGlow(clamped).radius
+
+  // Ein kleiner ganzzahliger Streuwert je Kennung: gleiche Provinz, gleiches Bild.
+  let seed = 0
+  for (let i = 0; i < provinceId.length; i++) seed = (seed * 31 + provinceId.charCodeAt(i)) % 9973
+
+  const out: BattleImpact[] = []
+  for (let i = 0; i < count; i++) {
+    const spin = ((seed + i * 2777) % 1000) / 1000
+    out.push({
+      angle: ((i / count) + spin / count) * Math.PI * 2,
+      distance: base * 0.75 + (outer - base * 0.75) * (((seed + i * 613) % 100) / 100),
+      size: 2.5 + 2.5 * clamped,
+    })
+  }
+  return out
 }
 
 /** Border and label colours are the same in every mode — the map stays legible. */
