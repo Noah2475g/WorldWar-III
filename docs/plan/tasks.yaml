@@ -2461,7 +2461,7 @@ tasks:
   - id: T-M36-01
     milestone: M36
     title: Die sieben Rohstoffzeichen werden neu gezeichnet
-    status: todo
+    status: done
     deps: [T-M33-01]
     requirements: [R-ASSET-01, R-UI-04]
     design: [D-27]

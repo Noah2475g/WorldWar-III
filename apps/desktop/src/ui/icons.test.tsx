@@ -177,6 +177,77 @@ it('gibt Gebaeuden und Einheiten nicht dasselbe Zeichen', () => {
  * ausgelieferte Karte, die Beziehungen gegen die Schluessel, unter denen die Sprachdatei
  * sie erklaert.
  */
+/**
+ * Die sieben Rohstoffzeichen (T-M36-01, ROHSTOFFE.md D36.1, R-ASSET-01/R-UI-04).
+ *
+ * Der Befund, der sie ausgeloest hat: bei vierzehn Pixeln trugen vier von sieben ihre
+ * Bedeutung nicht, und `wood` war ein Nadelbaum, obwohl der Rohstoff seit T-M23-01
+ * „Material" heisst. Der beschlossene Satz steht in `docs/design/rohstoffleiste.html`
+ * Abschnitt 1b — Fassung 1, mit Eisen, Kohle, Oel und Seltenen Erden aus Fassung 2.
+ *
+ * Geprueft wird wie beim Bildsatz in `art.test.tsx`: das Entwurfsblatt waehlt seinen
+ * Satz selbst aus (`AUS_B`/`C`), dieser Ausschnitt wird ausgefuehrt und wortgleich
+ * verglichen. „Uebertragen, nicht neu gezeichnet" ist sonst eine Behauptung, die
+ * niemand nachrechnet.
+ */
+function entwurfsblatt(): { C: Record<string, string>; ALT: Record<string, string>; KEYS: string[] } {
+  const blatt = readFileSync(`${ROOT}/docs/design/rohstoffleiste.html`, 'utf8')
+  const stueck = (von: string, bis: string): string => {
+    const anfang = blatt.indexOf(von)
+    const ende = blatt.indexOf(bis)
+    expect(anfang, `"${von}" fehlt im Entwurfsblatt`).toBeGreaterThan(0)
+    expect(ende, `"${bis}" fehlt im Entwurfsblatt`).toBeGreaterThan(anfang)
+    return blatt.slice(anfang, ende)
+  }
+  // Die drei Saetze, die Schluesselliste und die Auswahl — genau das, was der Browser
+  // ausfuehrt, und nichts davon hier noch einmal aufgeschrieben.
+  const quelle =
+    stueck('const ALT', 'const NAMES') +
+    stueck('const KEYS', 'function ico') +
+    stueck('const AUS_B', "document.getElementById('symbols')")
+  return new Function(`${quelle}; return { C, ALT, KEYS }`)() as {
+    C: Record<string, string>
+    ALT: Record<string, string>
+    KEYS: string[]
+  }
+}
+
+describe('T-M36-01 Die Rohstoffzeichen stammen aus dem Entwurfsblatt', () => {
+  const entwurf = entwurfsblatt()
+
+  it('kennt im Blatt genau die sieben Rohstoffe des Spiels', () => {
+    // Sonst prueft der Vergleich unten nur die Schnittmenge — und eine leere Schnittmenge
+    // ist immer gruen.
+    expect(entwurf.KEYS.length).toBe(7)
+    expect([...entwurf.KEYS].sort()).toEqual(Object.keys(RESOURCE_ICONS).sort())
+  })
+
+  it('uebernimmt jedes der sieben Zeichen wortgleich', () => {
+    for (const key of entwurf.KEYS) {
+      const icon = RESOURCE_ICONS[key]!
+      expect(entwurf.C[key], `${key} steht nicht im beschlossenen Satz`).toBeTruthy()
+      expect(ICON_PATHS[icon], `${key} weicht vom Entwurf ab`).toBe(entwurf.C[key])
+    }
+  })
+
+  it('traegt keines der vier gescholtenen Zeichen von heute weiter', () => {
+    // Vier der sieben trugen ihre Bedeutung nicht (ROHSTOFFE.md Abschnitt 1): Nahrung
+    // las als „Y", Eisen und Kohle waren zwei aehnliche Klumpen, und Material war ein
+    // Nadelbaum. Oel und Seltene Erden durften bleiben, deshalb stehen sie hier nicht.
+    for (const key of ['food', 'wood', 'iron', 'coal', 'money']) {
+      expect(ICON_PATHS[RESOURCE_ICONS[key]!], `${key} ist das alte Zeichen`).not.toBe(entwurf.ALT[key])
+    }
+  })
+
+  it('gibt dem Material keinen Baum mehr', () => {
+    // Der Rohstoff heisst seit T-M23-01 „Material" und nicht mehr „Holz"; das Zeichen
+    // war beim Baum geblieben. Der Wald im Gelaendesatz behaelt seine Baeume — genau
+    // deshalb darf das Material keine mehr haben.
+    expect(ICON_PATHS.wood).not.toBe('M12 3l4.5 6H14l4 6H6l4-6H7.5z M12 15v5')
+    expect(de.resources.wood).toBe('Material')
+  })
+})
+
 describe('R-UI-10/R-UI-11 Beziehung und Gelaende haben ein Zeichen', () => {
   it('hat ein Symbol fuer jede Gelaendeart der Weltkarte', () => {
     const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) as {

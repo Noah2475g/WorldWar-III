@@ -109,13 +109,31 @@ const PATHS: Record<IconName, string> = {
   warning: 'M12 4l9 16H3z M12 10v5 M12 17.4a.6.6 0 1 0 0 .01',
   // The seven resources. Drawn as things, not as letters: a row of symbols is only
   // faster to read than a row of words if it is not itself a word.
-  food: 'M12 20v-9 M12 11c-3 0-4.5-1.5-4.5-4.5C10.5 6.5 12 8 12 11z M12 11c3 0 4.5-1.5 4.5-4.5C13.5 6.5 12 8 12 11z',
-  wood: 'M12 3l4.5 6H14l4 6H6l4-6H7.5z M12 15v5',
-  iron: 'M4 17h16l-2.5-6h-11z M7 11l1.5-4h7L17 11',
-  coal: 'M5 15l1.5-4L11 8l5 1.5 3 4-2 5H7z',
+  //
+  // Neu gezeichnet in T-M36-01 (ROHSTOFFE.md D36.1), wortgleich aus
+  // `docs/design/rohstoffleiste.html` Abschnitt 1b. Der alte Satz scheiterte an der
+  // einzigen Groesse, in der er vorkommt: bei vierzehn Pixeln las die Nahrung als „Y",
+  // Eisen und Kohle waren zwei aehnlich grosse Klumpen, und das Material trug einen
+  // Nadelbaum, obwohl es seit T-M23-01 nicht mehr Holz heisst. Der beschlossene Satz
+  // ist Fassung 1 mit Eisen, Kohle, Oel und Seltenen Erden aus Fassung 2; nachgemessen
+  // bei 14 px ueber alle 21 Paare liegt sein engstes Paar (Kohle/Oel) bei 0,127 gegen
+  // 0,104 heute. Die Zahl belegt unterscheidbar, nicht erkennbar — dafuer war die
+  // Sichtpruefung da.
+  //
+  // Aehre: ein Halm, sechs Koerner. Schmal und hoch — nichts sonst im Satz sieht so aus.
+  food: 'M12 21v-9 M12 12.5l3.6-2.6 M12 12.5L8.4 9.9 M12 16l3.6-2.6 M12 16l-3.6-2.6 M12 9l3-2.4 M12 9L9 6.6',
+  // Balkenstapel: drei Lagen, unten breit. Ein Stapel, kein Baum.
+  wood: 'M3 16.5h18v4.5H3z M5 12h14v4.5H5z M8 7.5h8V12H8z',
+  // Zwei gestapelte Barren, versetzt — flach gegen den kantigen Brocken der Kohle.
+  iron: 'M6 19.5h14l-2.5-5.5h-9z M3 13h14l-2.5-5.5h-9z',
+  // Brocken mit Facetten, kantig statt rund.
+  coal: 'M4.5 14.5l3.5-6 5-2 6 4.5-2 8H7z M12.5 6.5l1.5 6 5.5-.5 M12.5 12.5L7 20.5',
+  // Der Tropfen. Er war schon richtig und bleibt deshalb, wie er war.
   oil: 'M12 4c3.5 5 5.5 7.5 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 11.5 8.5 9 12 4z',
-  rare: 'M12 3l6 5.5-6 12.5-6-12.5z M6 8.5h12',
-  money: 'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16 M9.5 9.5h5 M9.5 14.5h5 M12 7v10',
+  // Zwei Kristalle nebeneinander, verschieden hoch — der einzelne war zu nah am Barren.
+  rare: 'M8 9l3.5 3-3.5 9-3.5-9z M4.5 12h7 M16 6l4 3.5-4 11.5-4-11.5z M12 9.5h8',
+  // Muenzstapel: drei Lagen. Eine einzelne Scheibe sah aus wie ein Knopf.
+  money: 'M5 7.5a7 2.6 0 1 0 14 0a7 2.6 0 1 0-14 0 M5 7.5v4.2a7 2.6 0 0 0 14 0V7.5 M5 11.7v4.2a7 2.6 0 0 0 14 0v-4.2',
   // Die sechs Beziehungen (T-M20-01, R-UI-10). Sie erzaehlen eine Reihe: eine Grenze,
   // die haelt — eine, die gebrochen ist — die Fahne, die das Feuer einstellt — der
   // gemeinsame Ring — der Durchgang — das geteilte Auge.
