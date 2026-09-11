@@ -4290,3 +4290,84 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** feststeht, welche Ziele der Zustand schon trägt, was ein neues Feld
   bräuchte, und die Teilaufgaben geschnitten sind — mit Umgang für Golden-Master und
   R-GAME-02.
+
+## Meilenstein M36 — Die Rohstoffleiste wird lesbar
+
+> **Aus der Sichtprüfung am laufenden Spiel (2026-09-11):** dieselbe Auskunft steht zweimal
+> gleichzeitig auf dem Bildschirm — einundzwanzig Angaben in der Leiste, fünfunddreißig
+> Zellen in der Wirtschaftstabelle. In der Leiste ist der Name `visually-hidden`, die Glyphe
+> trägt also die ganze Last, und vier von sieben tragen sie nicht: Nahrung liest als „Y",
+> Eisen und Kohle sind zwei ähnliche Klumpen, und **Material wird durch einen Nadelbaum
+> dargestellt**, obwohl der Rohstoff seit T-M23-01 nicht mehr Holz heißt.
+>
+> Bauplan: `docs/plan/ROHSTOFFE.md`. Entwurf mit allen Zeichen und drei Anordnungen in
+> Originalgröße: `docs/design/rohstoffleiste.html`. Kernfrei.
+
+### T-M36-01 · Die sieben Rohstoffzeichen werden neu gezeichnet
+- **Ziel:** die Glyphe trägt in der Leiste die ganze Bedeutung — dann muss sie sie auch
+  tragen können.
+- **Anforderungen:** R-ASSET-01, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/ui/icons.tsx`
+- **Tests zuerst:** die Pfadabfahrt aus T-M33-01 greift auch für die sieben neuen Pfade
+  (`icons.test.tsx`).
+- **Fertig wenn:** Eisen und Kohle sich am **Umriss** unterscheiden (flach gegen hoch,
+  nicht an Binnenzeichnung — die verschwindet bei 14 px), Material einen Balkenstapel trägt
+  und die Sichtprüfung bei 14 px nebeneinander bestanden ist.
+
+### T-M36-02 · Die Leiste zeigt Reichweite statt Bilanz
+- **Ziel:** „reicht sechs Tage" ist die Auskunft, nach der man handelt; „+155" ist es nicht.
+- **Anforderungen:** R-ECON-06, R-UI-11 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-01
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/format.ts`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein schrumpfender Vorrat zeigt Tage und Abwärtspfeil, ein wachsender nur
+  den Pfeil; der Tooltip nennt weiterhin Produktion, Verbrauch und Bilanz
+  (`Header.test.tsx`).
+- **Fertig wenn:** die Bilanzzahl im Tooltip steht, die Schwelle die vorhandene
+  `SHORT_REACH_DAYS` ist und R-ECON-06 weiter durch die Tabelle erfüllt wird.
+
+### T-M36-03 · Nur Knappes ist laut
+- **Ziel:** an einem ruhigen Tag soll die Leiste keine einzige Farbe tragen.
+- **Anforderungen:** R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-02
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** sieben laufende Rohstoffe ergeben keine Auszeichnung, ein knapper genau
+  eine (`Header.test.tsx`); das gedämpfte Grau hält 4,5:1 gegen `paperSunk`
+  (`tokens.contrast.test.ts`).
+- **Fertig wenn:** der Kontrasttest über das neue Paar entschieden hat, nicht der Entwurf.
+
+### T-M36-04 · Entscheid und Bau der Gruppierung *(Entscheid vor Bau)*
+- **Ziel:** vier Blöcke statt sieben gleichwertiger Zellen — Versorgung, Baustoffe,
+  Kriegsstoffe, Geld.
+- **Anforderungen:** R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-03
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** jede Gruppe trägt ihre Rohstoffe, die Reihenfolge der sieben bleibt
+  (`Header.test.tsx`) — erst nach dem Entscheid.
+- **Fertig wenn:** entweder gebaut, oder auf `todo` mit einem `reopened`-Text, der den Grund
+  nennt. Gelöscht wird sie nicht.
+
+### T-M36-05 · Die Wirtschaftstabelle wird ruhiger, nicht kürzer
+- **Ziel:** die Korrektur eines eigenen Vorschlags — eine Spalte zu streichen bricht
+  R-ECON-06, das „Bestand, Produktion/Tag, Verbrauch/Tag **und** Bilanz" verlangt.
+- **Anforderungen:** R-ECON-06 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** alle vier Spalten bleiben im Baum, und eine Null wird als Strich
+  ausgegeben, ohne dass der Vorlesetext sie verliert (`Panels.test.tsx`).
+- **Fertig wenn:** nur Bestand und Bilanz Gewicht tragen und die Farbe allein der Bilanz
+  gehört.
+
+### T-M36-06 · Abnahme M36
+- **Ziel:** die Zeichen wandern weiter als die Leiste — die Sichtprüfung muss ihnen folgen.
+- **Anforderungen:** keine · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-02, T-M36-03, T-M36-05
+- **Dateien:** `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`, `docs/plan/ROHSTOFFE.md`
+- **Tests zuerst:** keine neuen.
+- **Fertig wenn:** `pnpm verify` grün, alle vier Orte mit `RESOURCE_ICONS` angesehen
+  (Leiste, Vorkommen, Baukosten, Tagesbericht) und der Entscheid zu D36.3 in `DECISIONS.md`
+  steht, gleich wie er ausfällt. T-M36-04 ist bewusst keine Abhängigkeit — wie bei M32 soll
+  der Meilenstein nicht an einer offenen Entscheidung hängen bleiben.

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Rohstoffleiste — Entscheidungsrunde</title>
+<style>
+  :root{
+    --ground:#0D1117; --paper:#161C25; --paperSunk:#1E2632; --ink:#E6E1D3;
+    --inkSoft:#9AA0A8; --line:#5C6A78; --accent:#E8583F; --good:#7EC57E;
+    --warn:#E0A220; --building:#C9B98A; --ally:#6FA8DC; --onWarn:#1A1200;
+  }
+  body{margin:0;padding:26px 30px 70px;background:var(--ground);color:var(--ink);
+       font:14px/1.55 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:17px;margin:34px 0 6px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  p{max-width:78ch}
+  .sub{color:var(--inkSoft);max-width:80ch;margin:0 0 10px}
+  code{background:var(--paperSunk);padding:1px 5px;border-radius:2px;font-size:12.5px;
+       font-family:"IBM Plex Mono",ui-monospace,monospace}
+  table.cmp{border-collapse:collapse;margin:10px 0}
+  table.cmp th,table.cmp td{padding:8px 16px;border-bottom:1px solid #2A333F;text-align:left;vertical-align:middle}
+  table.cmp th{color:var(--inkSoft);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+  .glyph{display:inline-flex;align-items:center;gap:14px}
+  .glyph svg{color:var(--building)}
+  .real{background:var(--paperSunk);border:1px solid var(--line);border-radius:2px;
+        padding:3px 6px;display:inline-flex;align-items:center;gap:6px}
+
+  /* ---- Die Leiste, in Originalgroesse ---- */
+  .bar{display:flex;background:var(--paperSunk);border-top:1px solid var(--line);
+       border-bottom:1px solid var(--line);font-family:"IBM Plex Mono",ui-monospace,monospace;
+       font-variant-numeric:tabular-nums;font-size:11px;padding:0 8px;margin:8px 0 4px;
+       max-width:980px;overflow-x:auto}
+  .cell{display:flex;align-items:center;gap:5px;padding:5px 9px;border-right:1px solid var(--line);white-space:nowrap}
+  .cell:last-child{border-right:0}
+  .cell b{font-weight:600;color:var(--ink)}
+  .cell svg{color:var(--building);flex:none}
+  .cell .dir{font-size:9px;line-height:1}
+  .up{color:var(--good)} .down{color:var(--accent)} .flat{color:var(--inkSoft)}
+  .cell--short b{color:var(--warn)}
+  .cell--short svg{color:var(--warn)}
+  .cell .reach{color:var(--warn);font-size:10px}
+  .cell--quiet b{color:var(--inkSoft);font-weight:500}
+  .cell--quiet svg{color:#6E7A86}
+  .grp{border-right:1px solid var(--line);display:flex}
+  .grp:last-child{border-right:0}
+  .grp .cell{border-right:0;padding-right:6px}
+  .grp .cell + .cell{padding-left:6px}
+  .caption{color:var(--inkSoft);font-size:12px;margin:0 0 16px}
+
+  /* ---- Tabelle ---- */
+  .eco{background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:12px 14px;
+       display:inline-block;vertical-align:top;margin-right:20px}
+  .eco h4{margin:0 0 8px;font-size:13px;color:var(--inkSoft);text-transform:uppercase;letter-spacing:.07em;font-weight:500}
+  .eco table{border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+  .eco th{color:var(--inkSoft);font-weight:500;text-align:right;padding:4px 9px;font-size:11px}
+  .eco th:first-child{text-align:left}
+  .eco td{padding:4px 9px;text-align:right;border-top:1px solid #232C38}
+  .eco td:first-child{text-align:left;color:var(--ink)}
+  .eco td svg{color:var(--building);vertical-align:-3px;margin-right:5px}
+  .note{background:var(--paper);border-left:3px solid var(--warn);padding:10px 14px;max-width:80ch;margin:14px 0}
+  .note b{color:var(--warn)}
+</style>
+</head>
+<body>
+
+<h1>Rohstoffleiste</h1>
+<p class="sub">Entwürfe für die Entscheidungsrunde · 2026-09-11 · gezeichnet nach der Sichtprüfung
+am laufenden Spiel. Alle Symbole selbst gesetzt (R-ASSET-01), alle Farben aus <code>tokens.ts</code>.
+Noahs Wahl aus der Besprechung: Vorschläge 1, 2, 3, 4 und 6. Vorschlag 5 (Gruppierung) wird hier
+gezeigt und dann entschieden, Vorschlag 7 ist zurückgestellt.</p>
+
+<h2>1 · Die sieben Symbole, zweimal neu</h2>
+<p class="sub">Links das heutige Zeichen in Originalgröße (14 px) neben der Vergrößerung, rechts
+die zwei Vorschläge. Wer das Blatt liest: <b>die mittlere Spalte bei 14 px entscheidet</b>, nicht
+die Großaufnahme. Genau daran ist der heutige Satz gescheitert.</p>
+<table class="cmp" id="symbols"></table>
+
+<h2>2 · Die Leiste in Originalgröße</h2>
+<p class="sub">Dieselben Zahlen wie im Spiel am ersten Tag, dazu Öl künstlich knapp gesetzt, damit
+man sieht, was passiert, wenn etwas drängt.</p>
+<div id="bars"></div>
+
+<h2>3 · Die Wirtschaftstabelle, mit und ohne die dritte Spalte</h2>
+<p class="sub">Vorschlag 6, <b style="color:var(--warn)">korrigiert</b>. Ich hatte vorgeschlagen, eine
+Spalte zu streichen. Das geht nicht: <b>R-ECON-06 verlangt ausdrücklich
+„Bestand, Produktion/Tag, Verbrauch/Tag <i>und</i> Bilanz je Ressource sind sichtbar“</b> — eine
+V1-Zusage. Die Tabelle wird deshalb nicht kürzer, sondern ruhiger: alle vier Größen bleiben, aber
+nur Bestand und Bilanz tragen Gewicht, die Nullen werden zu Strichen, und die Farbe gehört allein
+der Bilanz.</p>
+<div id="tables"></div>
+
+<h2>4 · Was hier nicht vorgeschlagen wird</h2>
+<div class="note">
+<b>Die Tabelle bleibt offen.</b> Vorschlag 7 (Wirtschaft nur auf Abruf) ist zurückgestellt, bis
+die Leiste wirklich trägt. Etwas wegzunehmen, bevor der Ersatz sich bewährt hat, ist die falsche
+Reihenfolge — und die Doppelung ist erträglich, solange die Leiste die kurze und die Tabelle die
+lange Auskunft ist.
+</div>
+
+<script>
+/* Der heutige Satz, woertlich aus icons.tsx. */
+const ALT = {
+  food:'M12 20v-9 M12 11c-3 0-4.5-1.5-4.5-4.5C10.5 6.5 12 8 12 11z M12 11c3 0 4.5-1.5 4.5-4.5C13.5 6.5 12 8 12 11z',
+  wood:'M12 3l4.5 6H14l4 6H6l4-6H7.5z M12 15v5',
+  iron:'M4 17h16l-2.5-6h-11z M7 11l1.5-4h7L17 11',
+  coal:'M5 15l1.5-4L11 8l5 1.5 3 4-2 5H7z',
+  oil:'M12 4c3.5 5 5.5 7.5 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 11.5 8.5 9 12 4z',
+  rare:'M12 3l6 5.5-6 12.5-6-12.5z M6 8.5h12',
+  money:'M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16 M9.5 9.5h5 M9.5 14.5h5 M12 7v10',
+};
+
+/* Fassung 1 und 2. Beide im 24er-Kasten, Strichzeichnung wie der ganze Satz. */
+const A = {
+  // Aehre: ein Halm, sechs Koerner. Die Silhouette ist schmal und hoch - nichts sonst
+  // im Satz sieht so aus.
+  food:'M12 21v-9 M12 12.5l3.6-2.6 M12 12.5L8.4 9.9 M12 16l3.6-2.6 M12 16l-3.6-2.6 M12 9l3-2.4 M12 9L9 6.6',
+  // Balkenstapel: drei Lagen, unten breit. Ein Stapel, kein Baum.
+  wood:'M3 16.5h18v4.5H3z M5 12h14v4.5H5z M8 7.5h8V12H8z',
+  // Barren: flach und breit, mit Deckflaeche. Gegenstueck zum Haufen der Kohle.
+  iron:'M4 18.5h16l-3-6.5H7z M7.5 15h9',
+  // Haufen: rund und hoch. Neben dem flachen Barren auf den ersten Blick unterscheidbar.
+  coal:'M3 20h18 M4.5 20c0-4.5 3.4-7.5 7.5-7.5s7.5 3 7.5 7.5 M9.5 14.6l1.6 3.2 M15 14.6l-1.8 3',
+  // Fass mit zwei Reifen. Der Tropfen war gut - das Fass ist eindeutig.
+  oil:'M7 4.5h10 M7 19.5h10 M7 4.5c-1.4 4.4-1.4 10.6 0 15 M17 4.5c1.4 4.4 1.4 10.6 0 15 M6.2 9h11.6 M6.2 15h11.6',
+  // Der heutige Kristall - er war schon richtig, nur die Schulter wird klarer.
+  rare:'M12 3l6 5.5-6 12.5-6-12.5z M6 8.5h12 M12 3v18',
+  // Muenzstapel: drei Lagen. Eine einzelne Scheibe sah aus wie ein Knopf.
+  money:'M5 7.5a7 2.6 0 1 0 14 0a7 2.6 0 1 0-14 0 M5 7.5v4.2a7 2.6 0 0 0 14 0V7.5 M5 11.7v4.2a7 2.6 0 0 0 14 0v-4.2',
+};
+const B = {
+  // Laib mit zwei Einschnitten - noch groebere Flaeche als die Aehre.
+  food:'M3.5 18.5v-2.5a8.5 6.5 0 0 1 17 0v2.5z M9.5 12.5l-2.2 5 M14.5 12.5l-2.2 5',
+  // Zwei Bretter mit Maserung, von der Seite.
+  wood:'M3 8h18v4H3z M3 14h18v4H3z M6.5 10h3.5 M14 10h3.5 M8 16h3.5 M15.5 16H19',
+  // Zwei gestapelte Barren, versetzt.
+  iron:'M6 19.5h14l-2.5-5.5h-9z M3 13h14l-2.5-5.5h-9z',
+  // Brocken mit Facetten, kantig statt rund.
+  coal:'M4.5 14.5l3.5-6 5-2 6 4.5-2 8H7z M12.5 6.5l1.5 6 5.5-.5 M12.5 12.5L7 20.5',
+  // Der heutige Tropfen, zum Vergleich stehen gelassen.
+  oil:'M12 4c3.5 5 5.5 7.5 5.5 10.5a5.5 5.5 0 0 1-11 0C6.5 11.5 8.5 9 12 4z',
+  // Drei Kristalle nebeneinander.
+  rare:'M8 9l3.5 3-3.5 9-3.5-9z M4.5 12h7 M16 6l4 3.5-4 11.5-4-11.5z M12 9.5h8',
+  // Muenze mit Praegung, ruhiger als heute.
+  money:'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17 M12 7.5v9 M9.6 9.6h4.8 M9.6 14.4h4.8',
+};
+
+const NAMES = {food:'Nahrung', wood:'Material', iron:'Eisen', coal:'Kohle',
+               oil:'Öl', rare:'Seltene Erden', money:'Geld'};
+const KEYS = ['food','wood','iron','coal','oil','rare','money'];
+
+function ico(d, size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+function pair(d){ return `<span class="glyph"><span class="real">${ico(d,14)}</span>${ico(d,44)}</span>`; }
+
+document.getElementById('symbols').innerHTML =
+  '<tr><th>Rohstoff</th><th>heute</th><th>Fassung 1</th><th>Fassung 2</th></tr>' +
+  KEYS.map((k)=>`<tr><td>${NAMES[k]}</td><td>${pair(ALT[k])}</td><td>${pair(A[k])}</td><td>${pair(B[k])}</td></tr>`).join('');
+
+/* Die Zahlen des ersten Spieltags, Oel kuenstlich knapp. */
+const DATA = [
+  {k:'food',  stock:'1.000', bal:'+349', dir:1},
+  {k:'wood',  stock:'1.000', bal:'+138', dir:1},
+  {k:'iron',  stock:'500',   bal:'+20',  dir:1},
+  {k:'coal',  stock:'500',   bal:'+52',  dir:1},
+  {k:'oil',   stock:'250',   bal:'-41',  dir:-1, reach:'6 T'},
+  {k:'rare',  stock:'100',   bal:'±0',   dir:0},
+  {k:'money', stock:'2.500', bal:'+155', dir:1},
+];
+const ARROW = {1:'<span class="dir up">▲</span>', '-1':'<span class="dir down">▼</span>', 0:'<span class="dir flat">–</span>'};
+
+function cellHeute(e, set){
+  return `<div class="cell">${ico(set[e.k],14)}<b>${e.stock}</b>
+    <em style="font-style:normal;font-size:10.5px" class="${e.dir>0?'up':e.dir<0?'down':'flat'}">${e.bal}</em></div>`;
+}
+function cellAmpel(e, set){
+  const knapp = !!e.reach;
+  const klass = knapp ? 'cell cell--short' : (e.dir>0 ? 'cell cell--quiet' : 'cell');
+  return `<div class="${klass}">${ico(set[e.k],14)}<b>${e.stock}</b>${ARROW[e.dir]}
+    ${knapp ? `<span class="reach">${e.reach}</span>` : ''}</div>`;
+}
+
+const GROUPS = [['food'],['wood','iron','coal'],['oil','rare'],['money']];
+
+function bar(cells){ return `<div class="bar">${cells}</div>`; }
+function barGrouped(set){
+  return `<div class="bar">${GROUPS.map((g)=>
+    `<div class="grp">${g.map((k)=>cellAmpel(DATA.find((e)=>e.k===k), set)).join('')}</div>`).join('')}</div>`;
+}
+
+document.getElementById('bars').innerHTML =
+  `<h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Heute</h3>
+   ${bar(DATA.map((e)=>cellHeute(e,ALT)).join(''))}
+   <p class="caption">Sieben Symbole, sieben Bestände, sieben Bilanzen — einundzwanzig Angaben, alle gleich laut. Der Name steht nur im Vorlesetext.</p>
+
+   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 1 — Ampel, ohne Gruppen</h3>
+   ${bar(DATA.map((e)=>cellAmpel(e,A)).join(''))}
+   <p class="caption">Vorschläge 2, 3 und 4: die Bilanzzahl wird ein Pfeil und wandert in den Tooltip; wer läuft, steht ruhig grau; wer drängt, bekommt Bernstein und die Reichweite in Tagen. Öl sagt „6 T“ — die Zahl, nach der man handelt.</p>
+
+   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 2 — Ampel mit vier Gruppen <span style="color:var(--inkSoft);text-transform:none;letter-spacing:0">(Vorschlag 5, zu entscheiden)</span></h3>
+   ${barGrouped(A)}
+   <p class="caption">Versorgung · Baustoffe · Kriegsstoffe · Geld. Die Trennlinien tragen die Bedeutung, die einzelnen Zellen verlieren ihre. Der Preis: die Leiste wird unruhiger, weil zwei Strichstärken nebeneinander liegen.</p>
+
+   <h3 style="font-size:13px;color:var(--warn);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 2px">Anordnung 1 mit den Symbolen der Fassung 2</h3>
+   ${bar(DATA.map((e)=>cellAmpel(e,B)).join(''))}
+   <p class="caption">Dieselbe Anordnung, anderer Zeichensatz — damit die Entscheidung über die Symbole von der über die Anordnung getrennt bleibt.</p>`;
+
+function ecoTable(ruhig){
+  const rows = DATA.map((e)=>{
+    const prod = e.dir<0 ? '±0' : e.bal;
+    const unt  = e.dir<0 ? e.bal.replace('-','−') : '±0';
+    const null0 = (v)=> ruhig && v==='±0' ? '<span style="color:#5C6A78">–</span>' : v;
+    const bilKlasse = ruhig ? (e.dir>0?'up':e.dir<0?'down':'flat')
+                            : (e.dir>0?'up':e.dir<0?'down':'flat');
+    return `<tr><td>${ico(A[e.k],13)}${NAMES[e.k]}</td>
+      <td${ruhig?' style="font-weight:600"':''}>${e.stock}</td>
+      <td${ruhig?' style="color:var(--inkSoft)"':''}>${null0(prod)}</td>
+      <td${ruhig?' style="color:var(--inkSoft)"':''}>${null0(unt)}</td>
+      <td class="${bilKlasse}"${ruhig?' style="font-weight:600"':''}>${e.bal}</td></tr>`;
+  }).join('');
+  return `<div class="eco"><h4>${ruhig?'Vorschlag 6 neu — ruhiger, nicht kürzer':'Heute'}</h4>
+    <table><tr><th>Rohstoff</th><th>Bestand</th><th>Produktion</th><th>Unterhalt</th><th>Bilanz</th></tr>${rows}</table></div>`;
+}
+document.getElementById('tables').innerHTML = ecoTable(false) + ecoTable(true);
+</script>
+</body>
+</html>

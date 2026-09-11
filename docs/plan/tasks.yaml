@@ -78,6 +78,11 @@ milestones:
   # naechste Freischaltung sichtbar machen. Nicht gewaehlt: die ruhige Eroeffnung.
   - { id: M34, title: "Der Fortschritt bekommt eine Strecke" }
   - { id: M35, title: "Der lange Mittelteil bekommt Ziele (Entwurf zuerst)" }
+  # ROHSTOFFE vom 2026-09-11 (docs/plan/ROHSTOFFE.md): die Leiste sagt dieselben Zahlen
+  # wie die Wirtschaftstabelle, der Name ist in ihr unsichtbar, und vier der sieben
+  # Zeichen tragen ihre Bedeutung nicht. Noahs Wahl: neue Zeichen, Ampel statt Tabelle,
+  # Reichweite statt Bilanz. Gruppierung entscheidet er am Bild (T-M36-04).
+  - { id: M36, title: "Die Rohstoffleiste wird lesbar" }
 
 tasks:
   - id: T-M0-01
@@ -2355,3 +2360,66 @@ tasks:
     files: [docs/plan/FORTSCHRITT.md, docs/plan/DECISIONS.md]
     tests: []
     dod: "VORMERKUNG, NICHT DER BAU - dasselbe Muster wie T-M28-07. Heute gibt es eine Schwelle (700 Promille Punktanteil) und zwischen Spieltag 20 und 700 keine Rueckmeldung, ob man vorankommt. Zuerst eine kleine Analyse: welche Zwischenziele traegt der Zustand schon (Punkte, Provinzzahl, Bevoelkerungsanteil, besiegte Maechte - alles ueber victory.ts und scoreOf erreichbar), was braeuchte ein neues Feld, und was kostet die Anzeige. Dann Entwurf in FORTSCHRITT.md Abschnitt 3 nachtragen und in konkrete Teilaufgaben schneiden, mit Umgang fuer Golden-Master und R-GAME-02 (V1-Zusage). Erst nach dem Entwurf bauen."
+
+  # ROHSTOFFE vom 2026-09-11 (docs/plan/ROHSTOFFE.md). Reihenfolge = Baureihenfolge.
+  # Kernfrei, reine Oberflaeche. Entwurf und alle Zeichen: docs/design/rohstoffleiste.html
+  - id: T-M36-01
+    milestone: M36
+    title: Die sieben Rohstoffzeichen werden neu gezeichnet
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-ASSET-01, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/icons.tsx]
+    tests: [apps/desktop/src/ui/icons.test.tsx]
+    dod: "ROHSTOFFE.md D36.1. Sieben Eintraege in ICON_PATHS ersetzt (food, wood, iron, coal, oil, rare, money), Strichzeichnung im 24er-Kasten wie der ganze Satz - KEINE Schattenrisse, Rohstoffe haben Zeichen und keine Bilder. Die Fassung aus docs/design/rohstoffleiste.html, die Noah gewaehlt hat. Kern der Sache: Eisen und Kohle werden durch den UMRISS unterschieden (flacher Barren gegen hohen Haufen), nicht durch Binnenzeichnung - die verschwindet bei 14 px. Material bekommt einen Balkenstapel statt eines Nadelbaums; der Rohstoff heisst seit T-M23-01 nicht mehr Holz. Haengt an T-M33-01, weil dort der leer gruene Koordinatenwaechter durch eine echte Pfadabfahrt ersetzt wird - neue Pfade ohne ihn waeren ungeprueft eingecheckt. Abnahme ist eine Sichtpruefung der sieben bei 14 px nebeneinander, nicht in Grossaufnahme."
+  - id: T-M36-02
+    milestone: M36
+    title: Die Leiste zeigt Reichweite statt Bilanz
+    status: todo
+    deps: [T-M36-01]
+    requirements: [R-ECON-06, R-UI-11]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/format.ts, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/format.test.ts]
+    dod: "ROHSTOFFE.md D36.2. Je Rohstoff Zeichen, Bestand und ein Pfeil fuer die Richtung; die Bilanzzahl wandert in den Tooltip zu Produktion und Verbrauch, die dort schon stehen. Draengt ein Rohstoff, steht die Reichweite in Tagen als sichtbare Zahl (6 T) - das ist die Auskunft, nach der man handelt, und reachInDays rechnet sie laengst aus. Die Schwelle ist die vorhandene SHORT_REACH_DAYS, keine neue Zahl. R-ECON-06 bleibt erfuellt: die vier Groessen stehen weiter sichtbar in der Wirtschaftstabelle, die Leiste ist nicht die Uebersicht. Test zuerst: ein schrumpfender Vorrat zeigt Tage und Abwaertspfeil, ein wachsender nur den Pfeil, der Tooltip nennt weiterhin Produktion, Verbrauch und Bilanz."
+  - id: T-M36-03
+    milestone: M36
+    title: Nur Knappes ist laut
+    status: todo
+    deps: [T-M36-02]
+    requirements: [R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "ROHSTOFFE.md D36.2 und Risiko 3. Wer laeuft, steht in ruhigem Grau mit halber Schriftstaerke; wer draengt, bekommt Bernstein und volle Staerke. An einem ruhigen Tag traegt die Leiste keine einzige Farbe. Die gedaempfte Fassung des Bestands MUSS 4,5:1 gegen paperSunk halten - haelt sie es nicht, entscheidet der Kontrasttest und nicht der Entwurf (wie bei line in D27.1); das Paar wird in CONTRAST_PAIRS aufgenommen. Test zuerst: sieben laufende Rohstoffe ergeben keine Auszeichnung, ein knapper genau eine."
+  - id: T-M36-04
+    milestone: M36
+    title: Entscheid und Bau der Gruppierung
+    status: todo
+    deps: [T-M36-03]
+    requirements: [R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, docs/plan/DECISIONS.md]
+    tests: [apps/desktop/src/ui/Header.test.tsx]
+    dod: "ENTSCHEID DURCH NOAH VOR BAU. ROHSTOFFE.md D36.3, Anordnung 2 im Entwurfsblatt: vier Bloecke - Versorgung, Baustoffe, Kriegsstoffe, Geld - mit Trennlinien statt sieben gleichwertiger Zellen. Der Preis steht dabei: zwei Strichstaerken nebeneinander koennen die Leiste unruhiger machen statt ruhiger. Faellt der Entscheid gegen die Gruppierung, wird die Aufgabe NICHT geloescht, sondern auf todo mit einem reopened-Text gesetzt, der den Grund nennt. Faellt er dafuer: Test zuerst, dass jede Gruppe ihre Rohstoffe traegt und die Reihenfolge der sieben unveraendert bleibt."
+  - id: T-M36-05
+    milestone: M36
+    title: Die Wirtschaftstabelle wird ruhiger, nicht kuerzer
+    status: todo
+    deps: [T-M36-01]
+    requirements: [R-ECON-06]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "ROHSTOFFE.md Abschnitt 3 - die Korrektur eines eigenen Vorschlags. Der Vorschlag lautete eine Spalte streichen; das geht nicht, weil R-ECON-06 woertlich verlangt, dass Bestand, Produktion je Tag, Verbrauch je Tag UND Bilanz je Ressource sichtbar sind. Alle vier bleiben. Stattdessen: nur Bestand und Bilanz tragen Gewicht, die sieben Nullen der Unterhaltsspalte werden zu Strichen in Linienfarbe, und die Farbe gehoert allein der Bilanz. Test zuerst: alle vier Spalten sind weiter im Baum vorhanden (R-ECON-06 bleibt belegt) und eine Null wird als Strich ausgegeben, ohne dass der Vorlesetext sie verliert."
+  - id: T-M36-06
+    milestone: M36
+    title: Abnahme M36
+    status: todo
+    deps: [T-M36-02, T-M36-03, T-M36-05]
+    requirements: []
+    design: [D-27]
+    files: [docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/ROHSTOFFE.md]
+    tests: []
+    dod: "pnpm verify gruen. Sichtpruefung im laufenden Spiel an ALLEN VIER Orten, an denen RESOURCE_ICONS erscheint (Risiko 4): Leiste, Vorkommen einer Provinz, Baukosten-Hinweise, Tagesbericht - nicht nur in der Leiste. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und der Entscheid zu D36.3 in DECISIONS.md, gleich wie er ausfaellt. T-M36-04 ist bewusst KEINE Abhaengigkeit: der Meilenstein soll nicht an einer offenen Entscheidung haengen bleiben - dieselbe Regelung wie bei M32."
