@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import type { PublicView } from '@worldwar/core'
+import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Header, victoryProgress } from './Header.tsx'
+import { Header, RESOURCE_GROUPS, victoryProgress } from './Header.tsx'
 import { reachInDays } from './format.ts'
 
 /**
@@ -489,5 +489,61 @@ describe('T-M36-03 Nur Knappes ist laut', () => {
     const { container } = renderHeader(mitVorraeten({ stock: 5000, balance: -2000 }))
 
     expect(container.querySelectorAll('.resource--calm.resource--short').length).toBe(0)
+  })
+})
+
+/**
+ * Die Leiste bekommt vier Gruppen (T-M36-04, ROHSTOFFE.md D36.3, Anordnung 2).
+ *
+ * Versorgung · Baustoffe · Kriegsstoffe · Geld. Die Trennlinien tragen die Bedeutung,
+ * die einzelnen Zellen verlieren ihre. **Der Preis steht im Bauplan und ist
+ * mitgekauft:** zwei Strichstärken nebeneinander können die Leiste unruhiger machen
+ * statt ruhiger — bestätigt sich das im Spiel, ist es ein Befund für den nächsten
+ * Playtest und kein Grund, jetzt anders zu bauen.
+ *
+ * Die Gruppen sind bewusst **keine** zusätzliche Ebene im Vorlesetext: sie sind eine
+ * Trennlinie fürs Auge, keine Struktur fürs Ohr. Eine verschachtelte Liste mit vier
+ * Untergruppen würde einem Screenreader vier Ebenen vorsprechen, wo es sieben Zahlen
+ * zu lesen gibt.
+ */
+describe('T-M36-04 Vier Gruppen', () => {
+  it('teilt genau die sieben Rohstoffe auf vier Gruppen auf', () => {
+    expect(RESOURCE_GROUPS.map((gruppe) => gruppe.keys)).toEqual([
+      ['food'],
+      ['wood', 'iron', 'coal'],
+      ['oil', 'rare'],
+      ['money'],
+    ])
+    // Jeder genau einmal, und keiner, den es nicht gibt.
+    const flach = RESOURCE_GROUPS.flatMap((gruppe) => gruppe.keys)
+    expect([...new Set(flach)].length).toBe(7)
+  })
+
+  it('laesst die Reihenfolge der sieben unveraendert', () => {
+    // Die Gruppierung ordnet nicht um — wer die Leiste kennt, findet sein Zeichen an
+    // derselben Stelle wie gestern.
+    expect(RESOURCE_GROUPS.flatMap((gruppe) => gruppe.keys)).toEqual([...RESOURCE_KEYS])
+  })
+
+  it('zieht drei Trennlinien: eine je Gruppenende ausser der letzten', () => {
+    const { container } = renderHeader(view(100, [100], 900))
+    const enden = [...container.querySelectorAll('.resource--groupEnd')]
+
+    expect(enden.length).toBe(3)
+    expect(enden.map((li) => [...li.classList].find((c) => c.startsWith('resource--') && c !== 'resource--groupEnd'))).toEqual([
+      'resource--food',
+      'resource--coal',
+      'resource--rare',
+    ])
+  })
+
+  it('macht aus der Trennung keine zweite Ebene fuers Ohr', () => {
+    const { container } = renderHeader(view(100, [100], 900))
+    const leiste = container.querySelector('.resources') as HTMLElement
+
+    // Genau eine Liste, genau sieben Einträge, keine Untergruppe.
+    expect(container.querySelectorAll('ul').length).toBe(1)
+    expect(leiste.querySelectorAll('li').length).toBe(7)
+    expect(leiste.querySelectorAll('[role="group"]').length).toBe(0)
   })
 })

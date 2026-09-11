@@ -2491,7 +2491,7 @@ tasks:
   - id: T-M36-04
     milestone: M36
     title: Die Leiste bekommt vier Gruppen
-    status: todo
+    status: done
     deps: [T-M36-03]
     requirements: [R-UI-04]
     design: [D-27]

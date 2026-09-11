@@ -81,6 +81,41 @@ export function victoryProgress(view: PublicView | null): { share: number; goal:
   }
 }
 
+/**
+ * Die vier Bloecke der Rohstoffleiste (T-M36-04, ROHSTOFFE.md D36.3, Anordnung 2).
+ *
+ * Versorgung · Baustoffe · Kriegsstoffe · Geld. Die Trennlinien tragen die Bedeutung,
+ * die einzelnen Zellen verlieren ihre — sieben gleichwertige Kaesten sagen nicht, dass
+ * Eisen und Kohle dasselbe Problem sind und Oel ein anderes.
+ *
+ * Die Gruppen ordnen NICHT um: hintereinandergelegt ergeben sie genau `RESOURCE_KEYS`,
+ * und ein Test haelt das fest. Wer die Leiste kennt, findet sein Zeichen an derselben
+ * Stelle wie gestern.
+ */
+export interface ResourceGroup {
+  /** Englischer Bezeichner; die Gruppe traegt bewusst keinen sichtbaren Namen. */
+  id: string
+  keys: readonly (typeof RESOURCE_KEYS)[number][]
+}
+
+export const RESOURCE_GROUPS: readonly ResourceGroup[] = [
+  { id: 'supply', keys: ['food'] },
+  { id: 'materials', keys: ['wood', 'iron', 'coal'] },
+  { id: 'war', keys: ['oil', 'rare'] },
+  { id: 'treasury', keys: ['money'] },
+]
+
+/**
+ * Wo eine Trennlinie steht: am letzten Rohstoff jeder Gruppe ausser der letzten.
+ *
+ * Eine Trennlinie hinter dem Geld waere ein Rand und keine Trennung — genau der Fehler,
+ * den `.resource:last-child { border-right: 0 }` vorher fuer jede Zelle ausgleichen
+ * musste.
+ */
+const GROUP_ENDS = new Set(
+  RESOURCE_GROUPS.slice(0, -1).map((group) => group.keys[group.keys.length - 1]),
+)
+
 /** The direction of a balance, as a class suffix — the sign itself comes from `rate()`. */
 export function balanceTone(balance: number): 'plus' | 'minus' | 'zero' {
   if (balance > 0) return 'plus'
@@ -243,8 +278,17 @@ export function Header(props: HeaderProps) {
           // ruhig; laut ist nur, wer draengt. An einem ruhigen Tag traegt die Leiste
           // damit keine einzige Farbe — und eine einzige Farbe darin heisst dann etwas.
           const toneClass = short ? ' resource--short' : ' resource--calm'
+          // Die Gruppe ist eine Linie fuers Auge und keine Ebene fuers Ohr (T-M36-04):
+          // eine verschachtelte Liste spraeche einem Vorleseprogramm vier Untergruppen
+          // vor, wo es sieben Zahlen zu lesen gibt. Deshalb bleibt die Liste flach, und
+          // die Gruppe zeigt sich als Strich an ihrem letzten Rohstoff.
+          const groupClass = GROUP_ENDS.has(key) ? ' resource--groupEnd' : ''
           return (
-            <li key={key} className={`resource resource--${key}${toneClass}`} title={t(`resources.${key}`)}>
+            <li
+              key={key}
+              className={`resource resource--${key}${toneClass}${groupClass}`}
+              title={t(`resources.${key}`)}
+            >
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
                   beides zugleich sichtbar waere derselbe Begriff zweimal. */}
               <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />

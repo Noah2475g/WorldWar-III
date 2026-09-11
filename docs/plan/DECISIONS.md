@@ -1584,3 +1584,30 @@ Zahl. Das Restrisiko bleibt und ist bewusst getragen.
 Quelldatei mit Pfaddaten — ein dritter Satz wäre ab dem ersten Tag mitgeprüft.
 
 ---
+
+## 2026-09-11 · T-M36-04 · Die Rohstoffleiste bekommt vier Gruppen — und was das kostet
+
+**Entscheidung:** Noahs Wahl vom 2026-09-11, zweite Runde (`ROHSTOFFE.md` D36.3,
+Anordnung 2 im Entwurfsblatt). Die sieben Zellen stehen in vier Blöcken —
+**Versorgung** (Nahrung) · **Baustoffe** (Material, Eisen, Kohle) · **Kriegsstoffe**
+(Öl, Seltene Erden) · **Geld** —, getrennt durch drei Striche statt durch sieben
+gleich starke.
+
+**Begründung:** Sieben gleichwertige Kästen sagen nicht, dass Eisen und Kohle dasselbe
+Problem sind und Öl ein anderes. Bis hierher trug *jede* Zelle denselben Strich; sieben
+gleich starke Trennungen trennen nichts.
+
+**Der Preis, und er ist mitgekauft:** zwei Strichstärken nebeneinander — die Gruppenlinie
+und der ruhige Grund — können die Leiste unruhiger machen statt ruhiger. Bestätigt sich
+das im Spiel, ist es ein Befund für den nächsten Playtest und kein Grund, jetzt anders zu
+bauen. Der Bauplan sagt das ausdrücklich, und hier steht es, damit es später niemand als
+Überraschung liest.
+
+**Auswirkung:** `RESOURCE_GROUPS` in `Header.tsx` ist die einzige Liste; hintereinander
+gelegt ergibt sie genau `RESOURCE_KEYS`, und ein Test hält das fest — die Gruppierung
+ordnet nicht um. Die Liste im DOM bleibt **flach**: sieben `li`, eine `ul`, keine
+Untergruppe. Eine verschachtelte Liste spräche einem Vorleseprogramm vier Ebenen vor,
+wo es sieben Zahlen zu lesen gibt; die Gruppe ist eine Linie fürs Auge und keine Ebene
+fürs Ohr.
+
+---

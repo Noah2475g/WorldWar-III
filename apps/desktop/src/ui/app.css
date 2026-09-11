@@ -175,13 +175,23 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 9px;
-  border-right: 1px solid var(--line);
+  padding: 5px 6px;
   white-space: nowrap;
 }
 
-.resource:last-child {
-  border-right: 0;
+/*
+  Vier Bloecke statt sieben gleichwertiger Zellen (T-M36-04, D36.3, Anordnung 2):
+  Versorgung · Baustoffe · Kriegsstoffe · Geld. Der Strich steht nur zwischen den
+  Gruppen; innerhalb einer Gruppe ruecken die Zellen zusammen. Vorher trug jede Zelle
+  denselben Strich, und sieben gleich starke Trennungen trennen nichts.
+*/
+.resource--groupEnd {
+  border-right: 1px solid var(--line);
+  padding-right: 10px;
+}
+
+.resource--groupEnd + .resource {
+  padding-left: 10px;
 }
 
 .resource b {
