@@ -197,11 +197,13 @@ body {
   color: var(--ink-soft);
 }
 
-/* Die Tagesbilanz: Vorzeichen im Text, Richtung in der Farbe (D27.1: Ueberschuss
-   eigen-gruen, Verlust Zinnober, null im Nebentext). */
+/* Die Richtung der Tagesbilanz: ein Pfeil statt einer Zahl (T-M36-02, D36.2). Die Zahl
+   steht im Tooltip und fuers Ohr; sichtbar bleibt, wohin es geht — Ueberschuss
+   eigen-gruen, Verlust Zinnober, Stillstand im Nebentext (D27.1). */
 .resource em {
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 9px;
+  line-height: 1;
   color: var(--ink-soft);
 }
 
@@ -211,6 +213,12 @@ body {
 
 .resource__balance--minus {
   color: var(--accent);
+}
+
+/* Die Reichweite in Tagen — nur an der Zelle, die draengt (D36.2). */
+.resource__reach {
+  font-size: 10px;
+  color: var(--warn);
 }
 
 .resource--short b {

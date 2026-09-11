@@ -251,12 +251,20 @@ describe('R-ECON-06 Die Wirtschaft steht vollstaendig auf dem Bildschirm', () =>
     }
   })
 
-  it('nennt in der Kopfleiste die Bilanz, nicht nur den Bestand', () => {
+  it('nennt in der Kopfleiste die Richtung, nicht nur den Bestand (T-M36-02)', () => {
     startGame()
     const resources = screen.getByRole('list', { name: 'Rohstoffe' })
 
-    // Vorzeichenbehaftet, damit die Richtung auf einen Blick lesbar ist.
-    expect(resources.textContent).toMatch(/[+−±]\d/)
+    // Bis T-M36-02 stand hier die Bilanz als Zahl in jeder der sieben Zellen. Sichtbar
+    // ist jetzt ein Pfeil je Rohstoff; die Zahl selbst steht im Tooltip und fuers Ohr,
+    // und vollstaendig in der Wirtschaftstabelle (R-ECON-06). Geprueft wird beides —
+    // sonst waere „keine Zahl mehr sichtbar" auch dann gruen, wenn die Leiste leer ist.
+    expect(resources.querySelectorAll('.resource__dir').length).toBe(7)
+    expect(resources.textContent).toMatch(/Bilanz [+−±]\d/)
+
+    const sichtbar = resources.cloneNode(true) as HTMLElement
+    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden')) versteckt.remove()
+    expect(sichtbar.textContent).not.toMatch(/[+−]\d/)
   })
 })
 

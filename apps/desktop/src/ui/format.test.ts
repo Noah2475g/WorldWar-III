@@ -11,6 +11,9 @@ import {
   percent,
   population,
   rate,
+  reachInDays,
+  reachShort,
+  reachText,
   unfix,
 } from './format.ts'
 
@@ -127,5 +130,33 @@ describe('R-UI-05 Kosten und Fehlbetrag', () => {
 
   it('meldet nichts, wenn alles da ist', () => {
     expect(missing({ iron: 100_000 }, { iron: 200_000 })).toBe('')
+  })
+})
+
+/**
+ * Die Reichweite in der Leiste (T-M36-02, ROHSTOFFE.md D36.2).
+ *
+ * „6 T" ist die Auskunft, nach der man handelt — sie stand bisher nur im Tooltip,
+ * waehrend sichtbar die Tagesbilanz lag, die an einem normalen Tag keine Entscheidung
+ * traegt. Die Kurzfassung rundet wie die lange, damit Leiste und Tooltip nie
+ * verschiedene Zahlen nennen: unter zehn Tagen eine Nachkommastelle, darueber ganze.
+ */
+describe('R-UI-09 Die Reichweite, kurz und lang', () => {
+  it('kuerzt die Reichweite auf Zahl und Tageszeichen', () => {
+    expect(reachShort(6)).toBe('6 T')
+    expect(reachShort(2.44)).toBe('2,4 T')
+    expect(reachShort(41.2)).toBe('41 T')
+  })
+
+  it('rundet kurz und lang gleich — sonst widersprechen sich Leiste und Tooltip', () => {
+    for (const days of [0.44, 2.44, 6, 9.96, 41.2]) {
+      const kurz = reachShort(days).replace(' T', '')
+      expect(reachText(days), `${days} Tage`).toContain(kurz)
+    }
+  })
+
+  it('rechnet die Reichweite nur aus einem schrumpfenden Vorrat', () => {
+    expect(reachInDays(1000, -100)).toBe(10)
+    expect(reachInDays(1000, 0)).toBeNull()
   })
 })

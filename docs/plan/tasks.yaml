@@ -2471,7 +2471,7 @@ tasks:
   - id: T-M36-02
     milestone: M36
     title: Die Leiste zeigt Reichweite statt Bilanz
-    status: todo
+    status: done
     deps: [T-M36-01]
     requirements: [R-ECON-06, R-UI-11]
     design: [D-27]

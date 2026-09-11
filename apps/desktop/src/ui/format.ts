@@ -148,10 +148,32 @@ export function reachInDays(stock: number, balancePerDay: number): number | null
 /** Below this many days of stock left, a resource is a shortage rather than a figure. */
 export const SHORT_REACH_DAYS = 3
 
+/**
+ * Wie die Reichweite gerundet wird — einmal, fuer die kurze und die lange Fassung.
+ *
+ * Beide nennen dieselbe Zahl, weil sie gleichzeitig auf dem Bildschirm stehen: die
+ * Kurzfassung in der Leiste, die lange im Tooltip derselben Zelle. Zwei Rundungen
+ * hiessen zwei Zahlen fuer denselben Vorrat.
+ */
+function roundedDays(days: number): string {
+  const rounded = days < 10 ? Math.round(days * 10) / 10 : Math.round(days)
+  return rounded.toLocaleString('de-DE')
+}
+
 /** "noch 2 Tage" — the range of a stock, rounded the way a player thinks about it. */
 export function reachText(days: number): string {
-  const rounded = days < 10 ? Math.round(days * 10) / 10 : Math.round(days)
-  return t('meter.remaining', { time: t('time.days', { days: rounded.toLocaleString('de-DE') }) })
+  return t('meter.remaining', { time: t('time.days', { days: roundedDays(days) }) })
+}
+
+/**
+ * Dieselbe Reichweite in Leistenbreite: „6 T" (T-M36-02, ROHSTOFFE.md D36.2).
+ *
+ * Sichtbar ist sie nur, solange ein Vorrat draengt — dann ist sie die Auskunft, nach
+ * der gehandelt wird. Vorher stand dort die Tagesbilanz, die an einem ruhigen Tag
+ * keine Entscheidung traegt und den Blick trotzdem kostet.
+ */
+export function reachShort(days: number): string {
+  return t('header.reachDays', { days: roundedDays(days) })
 }
 
 /** A list of costs: "750 Geld, 400 Eisen". */

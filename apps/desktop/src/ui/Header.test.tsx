@@ -160,10 +160,11 @@ describe('R-UI-09 Die Kopfleiste sagt, wie lange es reicht', () => {
   it('nennt die Reichweite im Titel, wenn der Vorrat schrumpft (T-M29-02)', () => {
     const { container } = renderHeader(withEconomy(10_000, -5000))
 
-    // Seit dem Kriegsrat steht die Reichweite im `title` der Bilanz, nicht als
-    // dritte Zahl in der Leiste — die Leiste bleibt eine Zeile (D27.6).
+    // Seit dem Kriegsrat steht die Reichweite im `title` der Bilanz (D27.6) — und seit
+    // T-M36-02 zusaetzlich sichtbar in der Zelle, sobald der Vorrat draengt, aber
+    // gekuerzt („2 T"). Die Leiste bleibt damit eine Zeile.
     expect(container.querySelector('.resource--food em')?.getAttribute('title')).toContain('noch 2 Tage')
-    expect(screen.queryByText('noch 2 Tage')).toBeNull()
+    expect(container.querySelector('.resource--food .resource__reach')?.textContent).toContain('2 T')
   })
 
   it('schweigt, solange der Vorrat waechst', () => {
@@ -235,17 +236,18 @@ describe('T-M29-02 Kopfleiste im Kriegsrat', () => {
     expect(pressed.map((b) => b.textContent)).toEqual(['25'])
   })
 
-  it('schreibt das Vorzeichen der Tagesbilanz in den Text und die Richtung in die Klasse', () => {
+  it('traegt die Richtung der Tagesbilanz in der Klasse — und die Zahl im Titel (T-M36-02)', () => {
     const { container } = renderHeader(withBalance(-6000))
     const balance = container.querySelector('.resource--food em')
 
-    // Festkomma: −6000 sind −6 je Tag (`rate` rechnet das Tausendstel heraus).
-    expect(balance?.textContent).toBe('−6')
+    // Festkomma: −6000 sind −6 je Tag (`rate` rechnet das Tausendstel heraus). Seit
+    // T-M36-02 steht diese Zahl im Tooltip und nicht mehr als 21. Angabe in der Leiste.
+    expect(balance?.getAttribute('title')).toContain('Bilanz −6')
     expect(balance?.className).toContain('resource__balance--minus')
 
     cleanup()
     const plus = renderHeader(withBalance(2200)).container.querySelector('.resource--food em')
-    expect(plus?.textContent).toBe('+2')
+    expect(plus?.getAttribute('title')).toContain('Bilanz +2')
     expect(plus?.className).toContain('resource__balance--plus')
   })
 
@@ -319,5 +321,115 @@ describe('T-M28-10 Genau eine gedrueckte Stufe', () => {
     const { container } = renderHeader(view(100, [100], 900), { speed: 0, fastForwarding: true })
 
     expect(gedrueckte(container).length).toBe(1)
+  })
+})
+
+/**
+ * Die Leiste zeigt Reichweite statt Bilanz (T-M36-02, ROHSTOFFE.md D36.2).
+ *
+ * Der Befund der Sichtprüfung: einundzwanzig gleich laute Angaben — sieben Zeichen,
+ * sieben Bestände, sieben Bilanzen —, und die Zahl, nach der man wirklich handelt
+ * („reicht sechs Tage"), war nur beim Überfahren zu sehen. Jetzt trägt die Zelle den
+ * Bestand und einen Pfeil; die Bilanzzahl steht im Tooltip neben Produktion und
+ * Unterhalt, und die Reichweite wird sichtbar, sobald ein Vorrat drängt.
+ */
+describe('T-M36-02 Reichweite statt Bilanz', () => {
+  const mitFluss = (stock: number, balance: number): PublicView => {
+    const base = view(100, [100], 900)
+    const ruhig = { stock: 5000, production: 100, consumption: 0, balance: 100 }
+    return {
+      ...base,
+      self: {
+        ...base.self,
+        economy: {
+          food: {
+            stock,
+            production: Math.max(0, balance),
+            consumption: Math.max(0, -balance),
+            balance,
+          },
+          wood: ruhig,
+          iron: ruhig,
+          coal: ruhig,
+          oil: ruhig,
+          rare: ruhig,
+          money: ruhig,
+        },
+      },
+    } as PublicView
+  }
+
+  const zelle = (container: HTMLElement) => container.querySelector('.resource--food') as HTMLElement
+
+  it('zeigt bei schrumpfendem Vorrat die Tage und einen Abwaertspfeil', () => {
+    // 5000 Festkomma-Einheiten bei −2000 je Tag: zweieinhalb Tage, unter der Schwelle
+    // SHORT_REACH_DAYS — und damit die Auskunft, nach der gehandelt wird.
+    const { container } = renderHeader(mitFluss(5000, -2000))
+    const food = zelle(container)
+
+    expect(food.querySelector('.resource__reach')?.textContent).toContain('2,5 T')
+    expect(food.querySelector('.resource__dir')?.className).toContain('resource__dir--minus')
+  })
+
+  it('zeigt bei wachsendem Vorrat nur den Pfeil, keine Tage', () => {
+    const { container } = renderHeader(mitFluss(5000, 2000))
+    const food = zelle(container)
+
+    expect(food.querySelector('.resource__reach')).toBeNull()
+    expect(food.querySelector('.resource__dir')?.className).toContain('resource__dir--plus')
+  })
+
+  it('zeigt bei schrumpfendem, aber reichlichem Vorrat keine Tage — nur wer draengt, sagt es', () => {
+    // 100 000 bei −2000: fünfzig Tage. Die Schwelle ist die vorhandene
+    // SHORT_REACH_DAYS und keine neue Zahl.
+    const { container } = renderHeader(mitFluss(100_000, -2000))
+
+    expect(zelle(container).querySelector('.resource__reach')).toBeNull()
+    expect(zelle(container).querySelector('.resource__dir--minus')).toBeTruthy()
+  })
+
+  it('nennt im Tooltip weiterhin Produktion, Unterhalt UND Bilanz', () => {
+    // R-ECON-06 bleibt an der Wirtschaftstabelle hängen; die Leiste ist die kurze
+    // Auskunft. Trotzdem darf beim Umbau nichts aus dem Tooltip verschwinden.
+    const { container } = renderHeader(mitFluss(5000, -2000))
+    const titel = zelle(container).querySelector('.resource__dir')?.getAttribute('title') ?? ''
+
+    expect(titel).toContain('Produktion')
+    expect(titel).toContain('Unterhalt')
+    expect(titel).toContain('Bilanz')
+    expect(titel).toContain('−2')
+    expect(titel).toContain('noch 2,5 Tage')
+  })
+
+  it('nimmt der Leiste die sieben sichtbaren Bilanzzahlen', () => {
+    // Der Kern des Befunds: dieselbe Auskunft stand doppelt auf dem Bildschirm. SICHTBAR
+    // sind jetzt sieben Bestände und sieben Pfeile — fürs Ohr bleibt die Bilanz, sonst
+    // hätte der Umbau einem Vorleseprogramm etwas weggenommen statt dem Auge.
+    const { container } = renderHeader(mitFluss(100_000, 2000))
+    const leiste = container.querySelector('.resources') as HTMLElement
+    const sichtbar = leiste.cloneNode(true) as HTMLElement
+    for (const versteckt of sichtbar.querySelectorAll('.visually-hidden')) versteckt.remove()
+
+    expect(leiste.querySelectorAll('.resource__dir').length).toBe(7)
+    expect(sichtbar.textContent).not.toMatch(/[+−]\d/)
+    // Und die Gegenprobe, damit der Vergleich nicht ueber dem Nichts steht: fuers Ohr
+    // steht die Bilanz weiterhin da.
+    expect(leiste.textContent).toContain('Bilanz +2 je Tag')
+  })
+
+  it('sagt zu einem stehenden Vorrat weder auf noch ab', () => {
+    const { container } = renderHeader(mitFluss(5000, 0))
+
+    expect(zelle(container).querySelector('.resource__dir')?.className).toContain('resource__dir--zero')
+    expect(zelle(container).querySelector('.resource__reach')).toBeNull()
+  })
+
+  it('laesst die Reichweite auch fuers Ohr lesbar', () => {
+    // „2,5 T" ist für das Auge gekürzt; ein Vorleseprogramm bekommt den ganzen Satz.
+    const { container } = renderHeader(mitFluss(5000, -2000))
+
+    expect(zelle(container).querySelector('.resource__reach .visually-hidden')?.textContent).toBe(
+      'noch 2,5 Tage',
+    )
   })
 })

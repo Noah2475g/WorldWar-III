@@ -50,6 +50,10 @@ export const de = {
     abort: 'Abbrechen',
     balance: 'Bilanz',
     perDay: 'je Tag',
+    // Die Reichweite in Leistenbreite (T-M36-02): „6 T". Nur sichtbar, solange ein
+    // Vorrat drängt — die lange Fassung („noch 6 Tage") steht daneben im Tooltip und
+    // für Vorleseprogramme in derselben Zelle.
+    reachDays: '{{days}} T',
     menu: 'Menü',
     diplomacy: 'Diplomatie',
     market: 'Markt',

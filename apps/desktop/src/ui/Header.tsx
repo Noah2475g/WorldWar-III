@@ -1,7 +1,7 @@
 import { RESOURCE_KEYS, type PublicView } from '@worldwar/core'
 import { SPEED_STOPS } from '../game/speed.ts'
 import { t } from '../i18n/text.ts'
-import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachText } from './format.ts'
+import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachShort, reachText } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
 import { Meter } from './Meter.tsx'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
@@ -238,6 +238,7 @@ export function Header(props: HeaderProps) {
           const days = flow ? reachInDays(flow.stock, flow.balance) : null
           const running = days !== null && days < SHORT_REACH_DAYS
           const short = shortages.has(key) || running
+          const tone = flow ? balanceTone(flow.balance) : 'zero'
           return (
             <li key={key} className={`resource resource--${key}${short ? ' resource--short' : ''}`} title={t(`resources.${key}`)}>
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
@@ -246,20 +247,37 @@ export function Header(props: HeaderProps) {
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
               <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (
-                // Der sichtbare Wert ist die Bilanz mit Vorzeichen; woraus sie sich
-                // ergibt und wie lange der Vorrat reicht, steht im Tooltip und
-                // vollstaendig in der Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
+                // Sichtbar ist nur noch die RICHTUNG (T-M36-02, D36.2): ein Pfeil auf,
+                // ab oder ein Strich. Die Bilanzzahl selbst steht im Tooltip, wo
+                // Produktion und Unterhalt schon standen — sie traegt an einem ruhigen
+                // Tag keine Entscheidung, kostete aber sieben von einundzwanzig
+                // Angaben. Die vier Groessen bleiben vollstaendig in der
+                // Wirtschaftsuebersicht sichtbar (R-ECON-06, R-UI-09).
                 <em
-                  className={`resource__balance resource__balance--${balanceTone(flow.balance)}`}
+                  className={`resource__dir resource__balance--${tone} resource__dir--${tone}`}
                   title={[
-                    `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${t('economy.perDay')}`,
+                    `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`,
                     days === null ? null : reachText(days),
                   ]
                     .filter((part) => part !== null)
                     .join(' · ')}
                 >
-                  {rate(flow.balance)}
+                  <span aria-hidden="true">{tone === 'plus' ? '▲' : tone === 'minus' ? '▼' : '–'}</span>
+                  {/* Ein Pfeil ist fuers Ohr nichts — ein Vorleseprogramm sagt
+                      bestenfalls „nach oben zeigendes Dreieck". Fuers Ohr steht deshalb
+                      die Bilanz da, wo das Auge den Pfeil sieht. */}
+                  <span className="visually-hidden">
+                    {`${t('economy.balance')} ${rate(flow.balance)} ${t('economy.perDay')}`}
+                  </span>
                 </em>
+              )}
+              {short && days !== null && (
+                // Die Zahl, nach der gehandelt wird — und nur dann, wenn gehandelt
+                // werden muss. Kurz fuers Auge, ganz fuers Ohr.
+                <span className="resource__reach">
+                  <span aria-hidden="true">{reachShort(days)}</span>
+                  <span className="visually-hidden">{reachText(days)}</span>
+                </span>
               )}
             </li>
           )
