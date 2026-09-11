@@ -157,9 +157,9 @@ export function cueFor(eventType: string): Cue | null {
       return 'complete'
     case 'RESOURCE_SHORTAGE':
       return 'shortage'
-    case 'WAR_DECLARED':
     // Der Einmarsch bekommt den Kriegston (T-M28-06) — kein neuer Klang, sondern der
     // dringlichste vorhandene, denn genau so dringlich ist er.
+    case 'WAR_DECLARED':
     case 'ARMY_INTRUDED':
       return 'war'
     default:

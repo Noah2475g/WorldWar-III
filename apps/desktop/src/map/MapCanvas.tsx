@@ -224,10 +224,9 @@ export function MapCanvas(props: MapCanvasProps) {
   // Jeder Spieltick ist eine Gefechtsrunde. Der Effekt merkt sich den Uhrstand, an dem
   // sie begann; `battleFlash` rechnet daraus die Helligkeit (T-M28-08).
   useEffect(() => {
+    // `clock` steht bewusst NICHT in den Abhaengigkeiten: der Blitz soll beim Tick
+    // beginnen, nicht bei jedem Bild neu.
     roundStartedMs.current = clock
-    // `clock` bewusst NICHT in den Abhaengigkeiten: der Blitz soll beim Tick beginnen,
-    // nicht bei jedem Bild neu.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.tick])
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */

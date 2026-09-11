@@ -143,10 +143,11 @@ export function isSelfSetback(event: GameEvent, viewer: string | undefined): boo
     case 'PROVINCE_CAPTURED':
     case 'PROVINCE_REVOLTED':
       return event.previousOwner === viewer
+    // `ARMY_INTRUDED` ist der fuenfte Rueckschlag (T-M28-06): fremde Truppen auf
+    // eigenem Boden. `playerId` ist dort der Besitzer der Provinz, nicht der
+    // Eindringling — dieselbe Bedeutung wie in den drei Faellen darueber.
     case 'CAPITAL_LOST':
     case 'PLAYER_ELIMINATED':
-    // Fremde Truppen auf eigenem Boden sind der fuenfte Rueckschlag (T-M28-06):
-    // `playerId` ist hier der Besitzer der Provinz, nicht der Eindringling.
     case 'ARMY_INTRUDED':
       return event.playerId === viewer
     default:
