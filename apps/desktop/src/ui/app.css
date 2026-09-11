@@ -1,8 +1,8 @@
 /*
  * The approved look, as stylesheet (T-M10-01b).
  *
- * Direction A "Lagekarte": a light linen map, ink for text, vermilion reserved for
- * combat and alarm. Every colour comes from a custom property mirroring tokens.ts —
+ * Direction A "Kriegsrat" (T-M29-01): a dark map table, amber for time and orders,
+ * phosphor green for what is ours, vermilion reserved for the enemy, combat and alarm. Every colour comes from a custom property mirroring tokens.ts —
  * a component may use var(--ink), never #1F2420, and a lint rule enforces it.
  */
 
@@ -49,18 +49,21 @@
 }
 
 :root {
-  --ground: #e4e0d2;
-  --paper: #f2eee3;
-  --paper-sunk: #dad5c6;
-  --ink: #1f2420;
-  --ink-soft: #54594f;
-  --line: #8c8676;
-  --water: #bfc9c6;
-  --accent: #b3341e;
-  --good: #33613f;
-  --warn: #7a5410;
+  --ground: #0d1117;
+  --paper: #161c25;
+  --paper-sunk: #1e2632;
+  --ink: #e6e1d3;
+  --ink-soft: #9aa0a8;
+  --line: #5c6a78;
+  --water: #0a0e14;
+  --accent: #e8583f;
+  --good: #7ec57e;
+  --warn: #e0a220;
   --on-dark: #f7f4ec;
-
+  --on-warn: #1a1200;
+  --on-player: #e6e1d3;
+  --building: #c9b98a;
+  --ally: #6fa8dc;
   --font-map: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
   --font-num: 'IBM Plex Mono', ui-monospace, monospace;
@@ -112,35 +115,78 @@ body {
 
 /* ---------------------------------------------------------------- header */
 
+/* Zwei Zeilen seit dem Kriegsrat (T-M29-02, D27.6): oben Uhr, Tempo, Modus, Knoepfe
+   und der Alarmchip; darunter die Rohstoffleiste mit Tagesbilanz. */
 .header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+.header__top {
   display: flex;
   align-items: center;
-  gap: var(--sp-xl);
-  padding: var(--sp-md) var(--sp-lg);
-  background: var(--ground);
-  border-bottom: 1px solid var(--line);
+  gap: var(--sp-lg);
+  padding: var(--sp-sm) var(--sp-lg);
   flex-wrap: wrap;
+  font-family: var(--font-map);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.header__title {
+  color: var(--ink);
+}
+
+.header__panels {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-left: auto;
+}
+
+/* Der Alarmchip (D27.6): Zinnober-Rahmen, sitzt rechts. Leer und verborgen, bis
+   T-M28-06 ihn fuellt. */
+.header__alarm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 11px;
 }
 
 .resources {
   display: flex;
-  gap: var(--sp-lg);
+  gap: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 var(--sp-md);
   list-style: none;
+  background: var(--paper-sunk);
+  border-top: 1px solid var(--line);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 11px;
+  overflow-x: auto;
 }
 
 .resource {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-right: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.resource:last-child {
+  border-right: 0;
 }
 
 .resource b {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .resource span {
@@ -151,25 +197,44 @@ body {
   color: var(--ink-soft);
 }
 
+/* Die Tagesbilanz: Vorzeichen im Text, Richtung in der Farbe (D27.1: Ueberschuss
+   eigen-gruen, Verlust Zinnober, null im Nebentext). */
 .resource em {
   font-style: normal;
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--ink-soft);
 }
 
-.resource--short b,
-.resource--short em {
+.resource__balance--plus {
+  color: var(--good);
+}
+
+.resource__balance--minus {
+  color: var(--accent);
+}
+
+.resource--short b {
   color: var(--warn);
 }
 
 .clock {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--sp-md);
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Die Uhr in Bernstein — die Farbe der Zeit (D27.1). */
+.clock__time {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  color: var(--warn);
+  font-weight: 600;
 }
 
 .speeds {
@@ -180,17 +245,56 @@ body {
 .speed {
   font: inherit;
   font-size: 11px;
-  padding: 2px 7px;
-  border: 1px solid transparent;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--paper-sunk);
   color: var(--ink);
   cursor: pointer;
 }
 
-.speed--active {
-  background: var(--ink);
-  color: var(--on-dark);
+.speed--active,
+.speed--running {
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
+}
+
+.speed--fast {
+  font-family: var(--font-ui);
+  padding: 0 9px;
+}
+
+/* Der Kartenmodus als Knopfgruppe (D27.6): Versalien in Condensed, der gewaehlte in
+   Bernstein — dieselbe Sprache wie das Tempo. */
+.modes {
+  display: flex;
+  gap: var(--sp-xs);
+  padding: 2px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.mode {
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.mode--active {
+  background: var(--warn);
+  color: var(--on-warn);
 }
 
 .button {
@@ -212,14 +316,14 @@ body {
 }
 
 .button--primary {
-  background: var(--ink);
-  color: var(--on-dark);
-  border-color: var(--ink);
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
 }
 
 .button--accent {
   background: var(--accent);
-  color: var(--on-dark);
+  color: var(--on-warn);
   border-color: var(--accent);
 }
 
@@ -249,6 +353,103 @@ body {
 
 .map-layer--overlay {
   cursor: crosshair;
+}
+
+/* Zoomknoepfe oben rechts auf der Karte (T-M30-03, D27.4): 24-px-Ziele, benannt. */
+.map-controls {
+  position: absolute;
+  top: var(--sp-md);
+  right: var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-control {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  font: 600 14px var(--font-num);
+  line-height: 1;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--warn);
+  cursor: pointer;
+}
+
+.map-control:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+/* Der Provinz-Tooltip (T-M31-01, D27.6): neben dem Anker, nie unter dem Zeiger. */
+.tooltip {
+  position: absolute;
+  z-index: 3;
+  max-width: 230px;
+  padding: var(--sp-sm) var(--sp-md);
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--warn);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.tooltip__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  margin: 0 0 2px;
+  font-family: var(--font-map);
+  font-size: 12px;
+}
+
+.tooltip__owner {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.tooltip__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px var(--sp-md);
+  margin: 0;
+}
+
+.tooltip__facts dt {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.tooltip__facts dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip__alarm {
+  color: var(--accent);
+}
+
+.tooltip__hint {
+  margin: 3px 0 0;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+/* Die Uebersichtskarte unten rechts, ueber der Legende (T-M30-03). */
+.map-overview {
+  position: absolute;
+  right: var(--sp-lg);
+  bottom: 68px;
+  width: 132px;
+  height: 74px;
+  border: 1px solid var(--line);
+  background: var(--water);
+  cursor: pointer;
 }
 
 .side {
@@ -817,6 +1018,210 @@ body {
   font-weight: 600;
 }
 
+/* Das Armeepanel im Kriegsrat (T-M31-02, D27.6). */
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin: var(--sp-sm) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unit-marker {
+  display: block;
+  color: var(--good);
+}
+
+.unit-marker--ally {
+  color: var(--ally);
+}
+
+.unit-marker--enemy {
+  color: var(--accent);
+}
+
+.unit-marker--other {
+  color: var(--ink-soft);
+}
+
+.unit-marker__box {
+  fill: var(--ground);
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.unit-marker__glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.unit-marker__count {
+  fill: var(--ink);
+  font: 600 9px var(--font-num);
+}
+
+.stances {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-xs);
+  margin-top: var(--sp-md);
+}
+
+.stances .action {
+  min-width: 0;
+}
+
+.stances .button {
+  width: 100%;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stances .button[aria-pressed='true'] {
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
+}
+
+/* Befehle zweispaltig mit Zeichen; der Marsch ist die Hauptaktion in Bernstein. */
+.actions--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-sm);
+}
+
+.actions--grid .action {
+  min-width: 0;
+}
+
+.actions--grid .button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Der Fuss (T-M31-03, D27.6): Protokoll | Rangliste | drei Knoepfe. */
+.foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px auto;
+  border-top: 1px solid var(--line);
+  background: var(--ground);
+  max-height: 168px;
+}
+
+.foot .log {
+  border-top: 0;
+  max-height: 168px;
+}
+
+.foot__standings {
+  border-left: 1px solid var(--line);
+  padding: var(--sp-sm) var(--sp-md);
+  overflow: hidden;
+}
+
+.foot__title {
+  margin: 0 0 var(--sp-xs);
+  font: 600 10.5px var(--font-map);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warn);
+}
+
+.foot__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+.foot__row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: var(--sp-sm);
+  padding: 1px 0;
+  color: var(--ink-soft);
+}
+
+.foot__row--own {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.foot__rank,
+.foot__score {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot__nation {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.foot__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: var(--sp-sm) var(--sp-md);
+  border-left: 1px solid var(--line);
+  min-width: 150px;
+}
+
+.foot__pair {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.foot__pair .foot__button {
+  flex: 1;
+}
+
+.foot__button {
+  position: relative;
+  text-align: left;
+}
+
+/* Die Neu-Marke (R-UI-14): Bernstein-Kreis mit Zahl, rechts oben am Knopf. */
+.foot__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--warn);
+  color: var(--on-warn);
+  font: 600 10px var(--font-num);
+  line-height: 16px;
+  text-align: center;
+}
+
+.dispatch__head {
+  margin: 0 0 var(--sp-sm);
+  font-weight: 600;
+}
+
+.dispatch__lines {
+  margin: var(--sp-sm) 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
 /* ---------------------------------------------------------------- symbols */
 
 /* Eine Reihe gleichartiger Dinge: Symbol und Anzahl statt eines Satzes (R-UI-10).
@@ -857,8 +1262,13 @@ body {
   gap: var(--sp-sm);
 }
 
+/* Rohstoffsymbole in der Gebaeudefarbe, Geld in Bernstein (D27.2). */
 .resource svg {
-  color: var(--ink-soft);
+  color: var(--building);
+}
+
+.resource--money svg {
+  color: var(--warn);
 }
 
 .resource--short svg {
@@ -977,6 +1387,146 @@ body {
   color: var(--warn);
 }
 
+/* Die Moral in zehn Segmenten (T-M29-03, D27.6). */
+.meter__segments {
+  display: flex;
+  gap: 2px;
+  min-width: 60px;
+}
+
+.meter__segment {
+  flex: 1;
+  height: 5px;
+  background: currentColor;
+  opacity: 0.18;
+}
+
+.meter__segment--on {
+  opacity: 1;
+}
+
+.meter__segments--good {
+  color: var(--good);
+}
+
+.meter__segments--warn {
+  color: var(--warn);
+}
+
+.meter__segments--alert {
+  color: var(--accent);
+}
+
+.meter__segments--neutral {
+  color: var(--ink-soft);
+}
+
+/* Das Bauplatz-Raster (T-M29-03, D27.6): vier Spalten, je Gebaeudeart ein Feld. */
+.slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: var(--sp-sm) 0;
+}
+
+.slot {
+  position: relative;
+  border: 1px solid var(--line);
+  background: var(--paper-sunk);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.slot > svg {
+  color: var(--building);
+}
+
+.slot__name {
+  line-height: 1.2;
+}
+
+.slot__level {
+  font-family: var(--font-num);
+  font-size: 9px;
+  color: var(--warn);
+  margin-left: 2px;
+}
+
+.slot--free {
+  border-style: dashed;
+}
+
+.slot--free .button {
+  background: none;
+  border: 0;
+  color: var(--warn);
+  font-size: 10px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.slot--free .button:disabled {
+  color: var(--ink-soft);
+}
+
+.slot--queued {
+  border-color: var(--warn);
+}
+
+.slot--queued .meter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  width: 100%;
+  margin: 0;
+  font-size: 9px;
+}
+
+.slot--queued .meter__track {
+  height: 3px;
+  min-width: 0;
+  border: 0;
+  background: var(--paper);
+}
+
+.slot--queued .meter__value {
+  text-align: center;
+  color: var(--warn);
+}
+
+/* Der Ausbau-Knopf im gebauten Feld: nur ein Plus, oben rechts (T-M29-03). */
+.action--compact {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+}
+
+.action--compact .button {
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1.3;
+  background: none;
+  border: 0;
+  color: var(--warn);
+}
+
+.action--compact .button:disabled {
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+}
+
 /* ------------------------------------------------------------- diagramme */
 
 /* Die Diagramm-Bausteine (T-M25-02/-03, D25.2): eigene SVG-Komponenten im Stil der
@@ -1021,6 +1571,23 @@ body {
   vector-effect: non-scaling-stroke;
   stroke-linejoin: round;
   stroke-linecap: round;
+}
+
+.chart__line--thin {
+  stroke-width: 0.8;
+  opacity: 0.7;
+}
+
+/* Die Flaeche unter der eigenen Kurve (T-M31-04) — leise, damit die Linie bleibt. */
+.chart__area {
+  opacity: 0.18;
+  stroke: none;
+}
+
+.chart__end {
+  stroke: var(--paper-sunk);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
 }
 
 .chart__legend {
@@ -1180,9 +1747,9 @@ body {
 }
 
 .explain__toggle[aria-expanded='true'] {
-  background: var(--ink);
-  color: var(--on-dark);
-  border-color: var(--ink);
+  background: var(--warn);
+  color: var(--on-warn);
+  border-color: var(--warn);
 }
 
 .explain__text {
@@ -1245,13 +1812,6 @@ body {
   display: flex;
   gap: var(--sp-xs);
   margin-bottom: var(--sp-sm);
-}
-
-/* Die Reichweite steht nur da, wenn der Vorrat schrumpft — sonst waere sie Rauschen. */
-.resource__reach {
-  font-style: normal;
-  font-size: 10px;
-  color: var(--warn);
 }
 
 /* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer

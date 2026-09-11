@@ -35,15 +35,21 @@ import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
 import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
-import { dominantIcon } from './map/markers.ts'
+import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
+import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView } from './map/picking.ts'
+import { boundsOf, centreOn, clampView, toScreen, zoomAt } from './map/picking.ts'
+import { Tooltip, tooltipFor } from './ui/Tooltip.tsx'
+import { Foot, latestReport } from './ui/Foot.tsx'
+import { standingsRows } from './ui/Standings.tsx'
+import { Dialog } from './ui/Dialogs.tsx'
+import { DeltaBar } from './ui/charts/DeltaBar.tsx'
+import { rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
-  EventLog,
   MarketPanel,
   ProvincePanel,
   ProvincePicker,
@@ -64,7 +70,7 @@ import {
   type DebugInfo,
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
-import { PAN_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
+import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
@@ -224,7 +230,9 @@ export function App(props: AppProps) {
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
-  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | null>('new')
+  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
+  /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
+  const [seenTick, setSeenTick] = useState(-1)
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -500,15 +508,21 @@ export function App(props: AppProps) {
     [activeMap.provinces],
   )
 
-  /** Gebaeude je Provinz — nur die eigenen sind bekannt (R-DIP-04). */
+  /** Gebaeude je Provinz, Art → Stufe — nur die eigenen sind bekannt (R-DIP-04). */
   const buildings = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const byProvince: Record<string, Partial<Record<string, number>>> = {}
     for (const province of view?.provinces ?? []) {
-      const total = Object.values(province.buildings ?? {}).reduce((sum, level) => sum + (level ?? 0), 0)
-      if (total > 0) counts[province.id] = total
+      const known = Object.entries(province.buildings ?? {}).filter(([, level]) => (level ?? 0) > 0)
+      if (known.length > 0) byProvince[province.id] = Object.fromEntries(known)
     }
-    return counts
+    return byProvince as BuildingsByProvince
   }, [view])
+
+  /** Die Anker je Provinz (T-M30-02): aus der Geometrie, einmal je Karte. */
+  const anchors = useMemo(
+    () => Object.fromEntries(activeMap.provinces.map((p) => [p.id, anchorsFor(p.polygons, p.center)])),
+    [activeMap.provinces],
+  )
 
   const armies: ArmyMarker[] = useMemo(
     () =>
@@ -522,6 +536,9 @@ export function App(props: AppProps) {
         // Abmarsch und Ankunft. Fehlt eines davon, bleibt der Marker in der Mitte
         // stehen — eine Armee an einem erfundenen Zwischenort waere schlimmer als eine,
         // die nicht wandert (T-M20-04).
+        // Zahl und Zustand des Stapels (T-M30-01) — nur, wo die Sicht die Einheiten kennt.
+        const summary = army.units ? stackSummary(army.units, props.rules) : null
+        const relation = view?.relations[army.owner]?.state
         const naechste = army.path?.[0]
         const march =
           naechste && army.departureTick != null && army.arrivalTick != null
@@ -540,10 +557,12 @@ export function App(props: AppProps) {
           strength: army.strength,
           own: army.owner === 'p1',
           ...(icon ? { icon } : {}),
+          ...(summary ? { count: summary.count, condition: summary.condition } : {}),
+          ...(relation ? { relation } : {}),
           ...(march ? { march } : {}),
         }
       }),
-    [view],
+    [view, props.rules],
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
@@ -876,6 +895,8 @@ export function App(props: AppProps) {
           setDialog('keys')
           break
         case 'close':
+          // Der Tooltip geht zuerst (T-M31-01); die Kaskade darunter bleibt, wie sie war.
+          setTooltipHidden(true)
           // Bis T-M12-07 stand hier eine Ausnahme: vor der ersten Partie lag hinter dem
           // Dialog nichts, zu dem man haette zurueckkehren koennen, also durfte Escape
           // ihn nicht schliessen. Jetzt liegt der Weg zurueck dahinter, und Escape
@@ -886,6 +907,21 @@ export function App(props: AppProps) {
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           } else dispatch({ type: 'closePanel' })
+          break
+        case 'zoom':
+          // Um die Mitte des Ausschnitts, wie die Knoepfe auf der Karte (T-M30-03).
+          dispatch({
+            type: 'setView',
+            view: zoomAt(
+              ui.view,
+              { x: VIEWPORT.viewportWidth / 2, y: VIEWPORT.viewportHeight / 2 },
+              shortcut.direction > 0 ? 1 / ZOOM_STEP : ZOOM_STEP,
+              { width: activeMap.width, height: activeMap.height, ...VIEWPORT },
+            ),
+          })
+          break
+        case 'centreCapital':
+          if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
         case 'pan':
           dispatch({
@@ -1038,6 +1074,7 @@ export function App(props: AppProps) {
 
   const selected = view?.provinces.find((p) => p.id === ui.selectedProvince) ?? null
 
+
   /**
    * Der Tagesabfluss für die Wirtschaftstabelle (T-M28-05, D26.5): Bau + Aushebung +
    * Markt des laufenden Spieltags, gerechnet von `dayExpenses` aus denselben Quellen
@@ -1060,6 +1097,30 @@ export function App(props: AppProps) {
     },
     [state],
   )
+
+  /**
+   * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —
+   * dieselbe Auskunft fuer Maus und Tastatur. Escape blendet ihn aus, bis sich
+   * Auswahl oder Zeiger aendern.
+   */
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [tooltipHidden, setTooltipHidden] = useState(false)
+  const tooltipId = hover?.id ?? ui.selectedProvince
+  const tooltip = useMemo(
+    () =>
+      tooltipHidden
+        ? null
+        : tooltipFor(tooltipId, view, { nameOf: nameOfProvince, playerName: nameOf, ticksPerDay }),
+    [tooltipHidden, tooltipId, view, nameOfProvince, nameOf, ticksPerDay],
+  )
+  const tooltipAt = useMemo(() => {
+    if (hover) return { x: hover.x, y: hover.y }
+    const centre = ui.selectedProvince ? centres[ui.selectedProvince] : undefined
+    return centre ? toScreen(centre, ui.view) : null
+  }, [hover, ui.selectedProvince, centres, ui.view])
+  useEffect(() => {
+    setTooltipHidden(false)
+  }, [tooltipId])
   /** Die Farbe einer Macht — dieselbe, mit der die Karte ihren Besitz fuellt (T-M20-02). */
   const colorOf = useCallback(
     (playerId: string): string | null => state?.players[playerId]?.color ?? null,
@@ -1333,6 +1394,7 @@ export function App(props: AppProps) {
             centres={centres}
             armies={armies}
             buildings={buildings}
+            anchors={anchors}
             mode={ui.mode}
             width={activeMap.width}
             height={activeMap.height}
@@ -1343,6 +1405,8 @@ export function App(props: AppProps) {
             battleProvinces={battleProvinces}
             speed={speed}
             tick={state.tick}
+            ticksPerDay={ticksPerDay}
+            onHover={(id, at) => setHover(id && at ? { id, x: at.x, y: at.y } : null)}
             onSelect={selectOnMap}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
@@ -1358,6 +1422,7 @@ export function App(props: AppProps) {
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} />
+          {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
         </div>
 
         <aside className="side">
@@ -1399,6 +1464,7 @@ export function App(props: AppProps) {
               actions={armyActionList}
               targeting={armyTargeting}
               pendingNotice={armyPendingNotice}
+              condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
               ticksPerDay={ticksPerDay}
               currentTick={state.tick}
             />
@@ -1431,7 +1497,20 @@ export function App(props: AppProps) {
         </aside>
       </main>
 
-      <EventLog entries={events} ticksPerDay={ticksPerDay} onJump={jumpTo} />
+      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, drei Knoepfe. */}
+      <Foot
+        entries={events}
+        ticksPerDay={ticksPerDay}
+        rows={standingsRows(view, nameOf)}
+        seenTick={seenTick}
+        onJump={jumpTo}
+        onDispatch={() => setDialog('report')}
+        onPanel={(panel) => {
+          // Die Lage oeffnen heisst: gesehen. Die Marke faellt auf null.
+          if (panel === 'standings') setSeenTick(state.tick)
+          dispatch({ type: 'openPanel', panel })
+        }}
+      />
 
       <Tutorial
         state={tutorial}
@@ -1483,6 +1562,42 @@ export function App(props: AppProps) {
         />
       )}
       {dialog === 'keys' && <KeyboardHelp onClose={() => setDialog(null)} />}
+      {/* Die Depesche (T-M31-03): der juengste Tagesbericht, wie er im Protokoll steht. */}
+      {dialog === 'report' &&
+        (() => {
+          const report = latestReport(events)
+          return (
+            <Dialog title={t('foot.dispatch')} onClose={() => setDialog(null)}>
+              {report ? (
+                <div className="dispatch">
+                  <p className="dispatch__head">{report.text}</p>
+                  {report.deltas && report.deltas.length > 0 && (
+                    <ul className="log__deltas" aria-label={t('dayReport.balance')}>
+                      {report.deltas.map((delta) => (
+                        <li key={delta.label}>
+                          <span>{delta.label}</span>
+                          <span className="log__delta-value">
+                            {rate(delta.balance)}
+                            <DeltaBar value={delta.balance} max={Math.max(...report.deltas!.map((d) => Math.abs(d.balance)), 1)} />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {report.body && report.body.length > 0 && (
+                    <ul className="dispatch__lines">
+                      {report.body.map((line, index) => (
+                        <li key={index}>{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <p className="muted">{t('foot.none')}</p>
+              )}
+            </Dialog>
+          )
+        })()}
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}

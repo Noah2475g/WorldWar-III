@@ -20,11 +20,19 @@ export interface ChartPoint {
   value: number
 }
 
+/**
+ * Die Rolle einer Reihe (T-M31-04, D27.6): eigen mit Flaeche, Feind und Verbuendeter
+ * als benannte Linien, alles andere duenn und ohne Namen. Ohne Rolle gilt die Reihe
+ * als benannt — so bleiben aeltere Aufrufer unveraendert.
+ */
+export type ChartRole = 'own' | 'enemy' | 'ally' | 'other'
+
 export interface ChartSeries {
   id: string
   label: string
-  /** Farbwert aus der Sicht (Spielerfarbe) — Daten, kein Literal. */
+  /** Farbwert — aus der Sicht oder aus den Tokens je Rolle; nie ein Literal. */
   color: string
+  role?: ChartRole
   points: readonly ChartPoint[]
 }
 
@@ -92,25 +100,54 @@ export function LineChart({ series, ariaLabel }: { series: readonly ChartSeries[
 
   const drawn = series.filter((line) => line.points.length >= 2)
   const valueSpan = domain.maxValue - domain.minValue
+  const featured = (line: ChartSeries): boolean => line.role !== 'other'
+  // Duenne Linien zuerst, damit die benannten obenauf liegen.
+  const ordered = [...drawn].sort((a, b) => Number(featured(a)) - Number(featured(b)))
+  const endX = (line: ChartSeries): string => round1(((line.points[line.points.length - 1]!.day - domain.minDay) / (domain.maxDay - domain.minDay)) * 100)
+  const endY = (line: ChartSeries): string => round1(100 - ((line.points[line.points.length - 1]!.value - domain.minValue) / valueSpan) * 100)
 
   return (
     <figure className="chart">
       <div className="chart__frame">
         <svg className="chart__plot" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={ariaLabel}>
-          {drawn.map((line) => (
+          {/* Die eigene Kurve traegt eine Flaeche bis zum unteren Rand (T-M31-04). */}
+          {ordered
+            .filter((line) => line.role === 'own')
+            .map((line) => (
+              <path
+                key={`area-${line.id}`}
+                className="chart__area"
+                data-series={line.id}
+                d={`${linePath(line.points, domain)} L${endX(line)},100 L0,100 Z`}
+                style={{ fill: line.color }}
+              />
+            ))}
+          {ordered.map((line) => (
             <path
               key={line.id}
-              className="chart__line"
+              className={featured(line) ? 'chart__line' : 'chart__line chart__line--thin'}
               data-series={line.id}
               d={linePath(line.points, domain)}
               style={{ stroke: line.color }}
             />
           ))}
+          {/* Der Endpunkt je benannter Linie — markiert, wo die Kurve heute steht. */}
+          {ordered.filter(featured).map((line) => (
+            <circle
+              key={`end-${line.id}`}
+              className="chart__end"
+              data-series={line.id}
+              cx={endX(line)}
+              cy={endY(line)}
+              r={1.6}
+              style={{ fill: line.color }}
+            />
+          ))}
         </svg>
-        {/* Der Endwert je Linie am rechten Rand (T-M28-01, D26.1): der Rand der Skala
-            (ein Zehntel je Seite) hält die Beschriftung im Bild. Stumm fürs Ohr — die
+        {/* Der Endwert je benannter Linie am rechten Rand (T-M28-01, D26.1): der Rand der
+            Skala (ein Zehntel je Seite) hält die Beschriftung im Bild. Stumm fürs Ohr — die
             aria-Beschreibung des Bildes nennt die Endwerte bereits mit Namen. */}
-        {drawn.map((line) => {
+        {drawn.filter(featured).map((line) => {
           const last = line.points[line.points.length - 1]!
           const top = round1(100 - ((last.value - domain.minValue) / valueSpan) * 100)
           return (
@@ -127,7 +164,7 @@ export function LineChart({ series, ariaLabel }: { series: readonly ChartSeries[
         })}
       </div>
       <figcaption className="chart__legend">
-        {series.map((line) => (
+        {series.filter(featured).map((line) => (
           <NationName key={line.id} color={line.color}>
             {line.label}
           </NationName>

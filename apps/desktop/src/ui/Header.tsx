@@ -7,11 +7,17 @@ import { Meter } from './Meter.tsx'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
- * The header (T-M10-04, R-UI-03/R-TIME-02).
+ * The header (T-M10-04, T-M29-02, R-UI-03/R-TIME-02/R-TIME-04).
  *
- * Resources on the left, time and speed on the right. The speed control shows the
- * detents rather than a bare slider, because "how fast am I actually running" is a
- * question the player asks constantly and a slider position does not answer.
+ * Two rows since the Kriegsrat (D27.6): the top row carries the clock in amber, the
+ * speed as a button group with exactly one pressed detent, the map mode as a button
+ * group, the panel buttons and — empty until T-M28-06 fills it — the alarm chip. The
+ * second row is the resource bar: glyph, stock and the day's balance with its sign in
+ * the text and its direction in the colour, the reach in the tooltip.
+ *
+ * The speed control shows the detents rather than a bare slider, because "how fast am
+ * I actually running" is a question the player asks constantly and a slider position
+ * does not answer.
  */
 
 export interface HeaderProps {
@@ -65,6 +71,13 @@ export function victoryProgress(view: PublicView | null): { share: number; goal:
   }
 }
 
+/** The direction of a balance, as a class suffix — the sign itself comes from `rate()`. */
+export function balanceTone(balance: number): 'plus' | 'minus' | 'zero' {
+  if (balance > 0) return 'plus'
+  if (balance < 0) return 'minus'
+  return 'zero'
+}
+
 export function Header(props: HeaderProps) {
   const resources = props.view?.self.resources
   const shortages = new Set(props.view?.self.shortages ?? [])
@@ -72,118 +85,136 @@ export function Header(props: HeaderProps) {
 
   return (
     <header className="header">
+      <div className="header__top">
+        <span className="header__title">WorldWar</span>
+
+        <div className="clock">
+          <span className="clock__time">
+            <Icon name="clock" size={13} />
+            {formatTime(props.view?.tick ?? 0, props.ticksPerDay)}
+          </span>
+
+          {/* Eine stehende Uhr sagt es (T-M22-05, V2-09) — als role="status", damit
+              auch ein Vorleseprogramm erfaehrt, dass die Zeit gerade nicht laeuft. */}
+          {props.stalled && (
+            <span className="clock__stalled" role="status">
+              {t('header.paused')}
+            </span>
+          )}
+
+          {/* Genau ein Knopf ist gedrueckt: die Pause oder die laufende Stufe (D27.6). */}
+          <div className="speeds" role="group" aria-label={t('header.speed')}>
+            {SPEED_STOPS.map((stop) => (
+              <button
+                key={stop}
+                type="button"
+                className={props.speed === stop ? 'speed speed--active' : 'speed'}
+                aria-pressed={props.speed === stop}
+                aria-label={stop === 0 ? t('header.pause') : undefined}
+                title={stop === 0 ? t('header.pause') : t('header.speedStop', { stop })}
+                onClick={() => props.onSpeed(stop)}
+              >
+                {stop === 0 ? <Icon name="pause" size={11} /> : stop}
+              </button>
+            ))}
+
+            {props.fastForwarding ? (
+              <button type="button" className="speed speed--fast speed--running" aria-pressed="true" onClick={props.onAbort}>
+                <Icon name="fastForward" size={11} />
+                {t('header.abort')}
+              </button>
+            ) : (
+              <button type="button" className="speed speed--fast" aria-pressed="false" onClick={props.onFastForward}>
+                <Icon name="fastForward" size={11} />
+                {t('header.fastForward')}
+              </button>
+            )}
+          </div>
+
+          {!props.fastForwarding && props.fastForwardNotice !== null && (
+            <span className="header__notice" role="status">
+              {props.fastForwardNotice}
+            </span>
+          )}
+        </div>
+
+        {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
+            gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). */}
+        {victory && (
+          <Meter
+            label={t('meter.victoryGoal')}
+            value={victory.share}
+            max={victory.goal}
+            text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
+            tone={victory.share >= victory.goal ? 'good' : 'neutral'}
+          />
+        )}
+
+        <div className="modes" role="group" aria-label={t('mapModes.title')}>
+          {MAP_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={props.mode === mode ? 'mode mode--active' : 'mode'}
+              aria-pressed={props.mode === mode}
+              onClick={() => props.onMode(mode)}
+            >
+              {MAP_MODE_NAMES[mode]}
+            </button>
+          ))}
+        </div>
+
+        {/* Diplomatie, Markt und Lage wohnen seit T-M31-03 im Fuss (D27.6); hier
+            bleiben nur Spielstaende und Menue. `onPanel` bleibt fuer die Tastatur. */}
+        <div className="header__panels">
+          <button type="button" className="button" onClick={props.onSaves}>
+            {t('saves.title')}
+          </button>
+          <button type="button" className="button" onClick={props.onMenu}>
+            {t('header.menu')}
+          </button>
+        </div>
+
+        {/* Der Platz des Einmarsch-Alarms (D27.6). Leer und verborgen, bis T-M28-06 ihn
+            fuellt — der Chip sitzt schon dort, wo er hingehoert, damit die Zeile beim
+            ersten Alarm nicht umbricht. */}
+        <div className="header__alarm" hidden />
+      </div>
+
       <ul className="resources" aria-label="Rohstoffe">
         {RESOURCE_KEYS.map((key) => {
           const flow = props.view?.self.economy?.[key]
           // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).
           const days = flow ? reachInDays(flow.stock, flow.balance) : null
           const running = days !== null && days < SHORT_REACH_DAYS
+          const short = shortages.has(key) || running
           return (
-            <li
-              key={key}
-              className={shortages.has(key) || running ? 'resource resource--short' : 'resource'}
-              title={t(`resources.${key}`)}
-            >
+            <li key={key} className={`resource resource--${key}${short ? ' resource--short' : ''}`} title={t(`resources.${key}`)}>
               {/* Das Symbol traegt die Bedeutung fuers Auge, der Name die fuers Ohr —
                   beides zugleich sichtbar waere derselbe Begriff zweimal. */}
               <Icon name={RESOURCE_ICONS[key] ?? 'warning'} size={14} />
               <b>{resources ? amount(resources[key] ?? 0) : '—'}</b>
               <span className="visually-hidden">{t(`resources.${key}`)}</span>
               {flow && (
-                // Der sichtbare Wert ist die Bilanz; woraus sie sich ergibt, steht im
-                // Tooltip und vollstaendig in der Wirtschaftsuebersicht (R-ECON-06).
+                // Der sichtbare Wert ist die Bilanz mit Vorzeichen; woraus sie sich
+                // ergibt und wie lange der Vorrat reicht, steht im Tooltip und
+                // vollstaendig in der Wirtschaftsuebersicht (R-ECON-06, R-UI-09).
                 <em
-                  title={`${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${t('economy.perDay')}`}
+                  className={`resource__balance resource__balance--${balanceTone(flow.balance)}`}
+                  title={[
+                    `${t('economy.production')} ${rate(flow.production)} · ${t('economy.consumption')} ${rate(-flow.consumption)} · ${t('economy.balance')} ${t('economy.perDay')}`,
+                    days === null ? null : reachText(days),
+                  ]
+                    .filter((part) => part !== null)
+                    .join(' · ')}
                 >
                   {rate(flow.balance)}
                 </em>
               )}
-              {days !== null && <i className="resource__reach">{reachText(days)}</i>}
             </li>
           )
         })}
       </ul>
-
-      {/* Wie weit ist der Sieg? Der Punkteanteil als Balken — eine Zahl, die man
-          gegen das Ziel vergleichen kann, ohne sie auszurechnen (R-UI-13). */}
-      {victory && (
-        <Meter
-          label={t('meter.victoryGoal')}
-          value={victory.share}
-          max={victory.goal}
-          text={t('meter.victoryShare', { percent: Math.round(victory.share), goal: Math.round(victory.goal) })}
-          tone={victory.share >= victory.goal ? 'good' : 'neutral'}
-        />
-      )}
-
-      <div className="clock">
-        <span className="clock__time">{formatTime(props.view?.tick ?? 0, props.ticksPerDay)}</span>
-
-        {/* Eine stehende Uhr sagt es (T-M22-05, V2-09) — als role="status", damit
-            auch ein Vorleseprogramm erfaehrt, dass die Zeit gerade nicht laeuft. */}
-        {props.stalled && (
-          <span className="clock__stalled" role="status">
-            {t('header.paused')}
-          </span>
-        )}
-
-        <div className="speeds" role="group" aria-label={t('header.speed')}>
-          {SPEED_STOPS.map((stop) => (
-            <button
-              key={stop}
-              type="button"
-              className={props.speed === stop ? 'speed speed--active' : 'speed'}
-              aria-pressed={props.speed === stop}
-              onClick={() => props.onSpeed(stop)}
-            >
-              {stop === 0 ? '‖' : stop}
-            </button>
-          ))}
-        </div>
-
-        {props.fastForwarding ? (
-          <button type="button" className="button button--accent" onClick={props.onAbort}>
-            {t('header.abort')}
-          </button>
-        ) : (
-          <button type="button" className="button" onClick={props.onFastForward}>
-            {t('header.fastForward')}
-          </button>
-        )}
-
-        {!props.fastForwarding && props.fastForwardNotice !== null && (
-          <span className="header__notice" role="status">
-            {props.fastForwardNotice}
-          </span>
-        )}
-
-        <label className="mode-picker">
-          <span className="visually-hidden">{t('mapModes.title')}</span>
-          <select value={props.mode} onChange={(event) => props.onMode(event.target.value as MapMode)}>
-            {MAP_MODES.map((mode) => (
-              <option key={mode} value={mode}>
-                {MAP_MODE_NAMES[mode]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <button type="button" className="button" onClick={() => props.onPanel('diplomacy')}>
-          {t('header.diplomacy')}
-        </button>
-        <button type="button" className="button" onClick={() => props.onPanel('market')}>
-          {t('header.market')}
-        </button>
-        <button type="button" className="button" onClick={() => props.onPanel('standings')}>
-          {t('standings.open')}
-        </button>
-        <button type="button" className="button" onClick={props.onSaves}>
-          {t('saves.title')}
-        </button>
-        <button type="button" className="button" onClick={props.onMenu}>
-          {t('header.menu')}
-        </button>
-      </div>
     </header>
   )
 }

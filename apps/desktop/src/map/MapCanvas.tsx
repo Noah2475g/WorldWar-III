@@ -3,19 +3,46 @@ import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
 import {
   MAP_COLORS,
-  MARCH_AHEAD_ALPHA,
+  MARCH_AHEAD_WIDTH,
+  MARCH_DASH,
+  MARCH_DONE_WIDTH,
+  MARCH_LABEL_PX,
+  MARCH_STANDPOINT_RADIUS,
   battleIntensity,
   battleRingBase,
   battleRingWidth,
   marchArrow,
+  marchDays,
+  marchLabel,
   marchProgress,
   marchStroke,
   ownershipChanges,
   prepareFrame,
   type RenderProvince,
 } from './render.ts'
-import { boundsOf, clampView, pickProvince, toScreen, zoomAt, type View, type ViewLimits } from './picking.ts'
-import { markersFor, pickArmy, type ArmyMarker } from './markers.ts'
+import {
+  boundsOf,
+  centreOn,
+  clampView,
+  pickProvince,
+  toMap,
+  toScreen,
+  zoomAt,
+  zoomTier,
+  type View,
+  type ViewLimits,
+} from './picking.ts'
+import { ZOOM_STEP } from '../keyboard.ts'
+import {
+  ARMY_BOX,
+  BUILDING_BOX,
+  markersFor,
+  pickArmy,
+  type ArmyMarker,
+  type BuildingsByProvince,
+  type MarkerTone,
+} from './markers.ts'
+import type { Anchor } from './anchors.ts'
 import { ICON_PATHS, type IconName } from '../ui/icons.tsx'
 import { labelsFor } from './labels.ts'
 import { OWNERSHIP_FADE_MS, fadeProgress, motionAllowed, ringRadius } from '../ui/motion.ts'
@@ -55,12 +82,87 @@ function drawIcon(
   context.restore()
 }
 
+/** Die Rahmenfarbe eines Stapels je Ton (D27.2). */
+const TONE_COLORS: Record<MarkerTone, string> = {
+  own: TOKENS.good,
+  ally: TOKENS.ally,
+  enemy: TOKENS.accent,
+  other: TOKENS.inkSoft,
+}
+
+/** Rand um den Stempel, damit der Rahmenstrich nicht angeschnitten wird. */
+const STAMP_PAD = 2
+
+/** Die Uebersichtskarte in Bildpunkten (D27.4). */
+const OVERVIEW = { width: 132, height: 74 } as const
+
+/** Entprellung des Zeigens (T-M31-01, D27.6): ein Tooltip, der jedem Pixel folgt, flackert. */
+export const HOVER_DELAY_MS = 120
+
+/**
+ * Vorgezeichnete Stapel je (Ton, Glyphe) — gestempelt statt je Bild als Path2D gefuellt
+ * (T-M30-01, KRIEGSRAT §6.1). Zahl und Zustandsbalken aendern sich je Armee und werden
+ * darueber gezeichnet; Rahmen und Glyphe sind fuer alle gleich und kommen von hier.
+ */
+function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, icon: IconName): HTMLCanvasElement | null {
+  const key = `${tone}:${icon}`
+  const cached = cache.get(key)
+  if (cached) return cached
+  if (typeof document === 'undefined') return null
+
+  const canvas = document.createElement('canvas')
+  canvas.width = ARMY_BOX.width + STAMP_PAD * 2
+  canvas.height = ARMY_BOX.height + STAMP_PAD * 2
+  const context = canvas.getContext('2d')
+  if (!context) return null
+
+  const rim = TONE_COLORS[tone]
+  context.fillStyle = TOKENS.ground
+  context.fillRect(STAMP_PAD, STAMP_PAD, ARMY_BOX.width, ARMY_BOX.height)
+  context.strokeStyle = rim
+  context.lineWidth = 1.2
+  context.strokeRect(STAMP_PAD + 0.5, STAMP_PAD + 0.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+  // Die Glyphe links, damit rechts Platz fuer die Zahl bleibt.
+  context.lineWidth = 1.5
+  drawIcon(context, icon, STAMP_PAD + 9, STAMP_PAD + ARMY_BOX.height / 2 - 1, 11)
+
+  cache.set(key, canvas)
+  return canvas
+}
+
+/** Der Gebaeudestempel je Glyphe (T-M30-02, D27.2): Quadrat 14×14, Rahmen `building`. */
+function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName): HTMLCanvasElement | null {
+  const key = `building:${icon}`
+  const cached = cache.get(key)
+  if (cached) return cached
+  if (typeof document === 'undefined') return null
+
+  const canvas = document.createElement('canvas')
+  canvas.width = BUILDING_BOX + STAMP_PAD * 2
+  canvas.height = BUILDING_BOX + STAMP_PAD * 2
+  const context = canvas.getContext('2d')
+  if (!context) return null
+
+  context.fillStyle = TOKENS.ground
+  context.fillRect(STAMP_PAD, STAMP_PAD, BUILDING_BOX, BUILDING_BOX)
+  context.strokeStyle = TOKENS.building
+  context.lineWidth = 1
+  context.strokeRect(STAMP_PAD + 0.5, STAMP_PAD + 0.5, BUILDING_BOX - 1, BUILDING_BOX - 1)
+  context.lineWidth = 1.4
+  drawIcon(context, icon, STAMP_PAD + BUILDING_BOX / 2, STAMP_PAD + BUILDING_BOX / 2, 10)
+
+  cache.set(key, canvas)
+  return canvas
+}
+
 export interface MapCanvasProps {
   provinces: readonly RenderProvince[]
   centres: Readonly<Record<string, { x: number; y: number }>>
   armies: readonly ArmyMarker[]
-  /** Gebaeude je Provinz, als Anzahl — die Symbole darunter (R-MAP-05). */
-  buildings: Readonly<Record<string, number>>
+  /** Gebaeude je Provinz, Art → Stufe — als Marker an den Ankern (R-MAP-05, T-M30-02). */
+  buildings: BuildingsByProvince
+  /** Die Anker je Provinz, einmal je Karte gerechnet (`anchorsFor`). */
+  anchors?: Readonly<Record<string, readonly Anchor[]>>
   mode: MapMode
   width: number
   height: number
@@ -80,6 +182,8 @@ export interface MapCanvasProps {
    * genau das Richtige ist und was jeder Test bekommt, der sie nicht mitgibt.
    */
   tick?: number
+  /** Ticks je Spieltag, fuer die Tagesangabe am Marschweg (T-M30-04). Ohne: keine Angabe. */
+  ticksPerDay?: number
   onSelect: (provinceId: string | null) => void
   /**
    * Ein Klick nahe genug an einem EIGENEN Armee-Marker (T-M22-06, Befund V2-14):
@@ -89,6 +193,11 @@ export interface MapCanvasProps {
    * Armeewahl gerade Sinn ergibt (in der Zielwahl z. B. nicht).
    */
   onSelectArmy?: (armyId: string) => void
+  /**
+   * Worauf der Zeiger ruht (T-M31-01): die Provinz und die Stelle auf der Karte, nach
+   * HOVER_DELAY_MS Ruhe — oder null, sobald der Zeiger die Karte verlaesst.
+   */
+  onHover?: (provinceId: string | null, at: { x: number; y: number } | null) => void
   onViewChange: (view: View) => void
   labelFor: (provinceId: string) => string
 }
@@ -102,6 +211,12 @@ export function MapCanvas(props: MapCanvasProps) {
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
+  /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
+  const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
+  /** Die Uebersichtskarte (T-M30-03): die ganze Welt klein, Ausschnitt in Bernstein. */
+  const overviewRef = useRef<HTMLCanvasElement>(null)
+  /** Der laufende Entprell-Zeitgeber des Zeigens (T-M31-01). */
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /**
    * Laufende Farbwellen eines Besitzwechsels (T-M26-02, D25.4).
@@ -316,14 +431,21 @@ export function MapCanvas(props: MapCanvasProps) {
         context.stroke()
       }
 
+      // Der Marschweg im Kriegsrat (T-M30-04, D27.5): der Rest gestrichelt und duenn,
+      // das Gelaufene voll und rund, dazwischen der Standpunkt als Kreis mit dunklem
+      // Rand — und ab der mittleren Stufe die Tagesangabe "n/m T" daneben.
       context.strokeStyle = stroke
       context.save()
-      context.globalAlpha = MARCH_AHEAD_ALPHA
-      context.lineWidth = 2
+      context.setLineDash([...MARCH_DASH])
+      context.lineWidth = MARCH_AHEAD_WIDTH
       drawLine(arrow.ahead)
       context.restore()
-      context.lineWidth = 2.5
+      context.save()
+      context.lineCap = 'round'
+      context.lineJoin = 'round'
+      context.lineWidth = MARCH_DONE_WIDTH
       drawLine(arrow.done)
+      context.restore()
 
       // Die Spitze in voller Farbe: die Richtung ist die halbe Botschaft des Pfeils.
       context.fillStyle = stroke
@@ -332,6 +454,28 @@ export function MapCanvas(props: MapCanvasProps) {
       for (const [x, y] of arrow.head.slice(1)) context.lineTo(x, y)
       context.closePath()
       context.fill()
+
+      const [standX, standY] = arrow.standpoint
+      context.beginPath()
+      context.arc(standX, standY, MARCH_STANDPOINT_RADIUS, 0, Math.PI * 2)
+      context.fillStyle = stroke
+      context.fill()
+      context.strokeStyle = TOKENS.ground
+      context.lineWidth = 1.2
+      context.stroke()
+
+      if (props.tick !== undefined && props.ticksPerDay !== undefined && zoomTier(props.view.scale) !== 'far') {
+        const label = marchLabel(marchDays(army.march, props.tick, props.ticksPerDay))
+        context.font = `600 ${MARCH_LABEL_PX}px ${TYPE.num}`
+        context.textAlign = 'left'
+        context.textBaseline = 'bottom'
+        context.lineWidth = 2
+        context.strokeStyle = TOKENS.ground
+        context.strokeText(label, standX + MARCH_STANDPOINT_RADIUS + 2, standY - 2)
+        context.fillStyle = TOKENS.ink
+        context.fillText(label, standX + MARCH_STANDPOINT_RADIUS + 2, standY - 2)
+        context.textBaseline = 'alphabetic'
+      }
     }
 
     if (props.selectedProvince) {
@@ -359,32 +503,82 @@ export function MapCanvas(props: MapCanvasProps) {
     for (const marker of markersFor(props.armies, props.buildings, props.centres, props.view, {
       capitalProvinceId: props.capitalProvinceId ?? null,
       battleProvinces: props.battleProvinces ?? [],
+      ...(props.anchors ? { anchors: props.anchors } : {}),
       // Ohne `tick` stehen marschierende Armeen in der Provinzmitte. Genau das ist
       // gewollt, wenn Bewegung abgeschaltet ist (T-M20-04).
       ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
     })) {
       if (marker.kind === 'building') {
-        // Ein Quadrat je Gebaeude, in einer Reihe unter der Provinzmitte.
-        const pip = 4
-        const gap = 2
-        const total = (marker.count ?? 1) * (pip + gap) - gap
-        context.fillStyle = TOKENS.inkSoft
-        for (let i = 0; i < (marker.count ?? 1); i++) {
-          context.fillRect(marker.x - total / 2 + i * (pip + gap), marker.y, pip, pip)
+        // Ein Quadrat je Gebaeude an seinem Anker (T-M30-02, D27.2): Rahmen in
+        // `building`, Glyphe aus demselben Pfad wie im Panel, Stufe ab 2 als Ziffer
+        // rechts oben. Gestempelt, nicht je Bild gezeichnet.
+        const left = marker.x - BUILDING_BOX / 2
+        const top = marker.y - BUILDING_BOX / 2
+        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning')
+        if (stamp) {
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+        } else {
+          context.fillStyle = TOKENS.ground
+          context.fillRect(left, top, BUILDING_BOX, BUILDING_BOX)
+          context.strokeStyle = TOKENS.building
+          context.lineWidth = 1
+          context.strokeRect(left + 0.5, top + 0.5, BUILDING_BOX - 1, BUILDING_BOX - 1)
+          context.lineWidth = 1.4
+          drawIcon(context, marker.icon ?? 'warning', marker.x, marker.y, 10)
+        }
+        if ((marker.level ?? 1) >= 2) {
+          context.fillStyle = TOKENS.building
+          context.font = `600 7px ${TYPE.num}`
+          context.textAlign = 'right'
+          context.textBaseline = 'top'
+          context.fillText(String(marker.level), left + BUILDING_BOX + 4, top - 3)
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
         }
         continue
       }
 
       if (marker.kind === 'army') {
-        // The situation-map box, with the symbol of the strongest arm of service in it
-        // — the same symbol the panels use, drawn from the same paths (R-UI-10).
-        const w = 20
-        const h = 14
-        context.fillStyle = marker.own ? TOKENS.ink : TOKENS.accent
-        context.fillRect(marker.x - w / 2, marker.y - h / 2, w, h)
-        context.strokeStyle = TOKENS.onDark
-        context.lineWidth = 1.2
-        drawIcon(context, marker.icon ?? 'infantry', marker.x, marker.y, 13)
+        // Der Stapel im NATO-Stil (T-M30-01, D27.2): Rechteck 30×18, Rahmen in der
+        // Besitzerfarbe, Glyphe der staerksten Gattung — als Stempel aus dem
+        // Zwischenspeicher —, dazu die Stueckzahl in Ziffernschrift und der
+        // 3-px-Zustandsbalken am unteren Rand. Beides nur, wo die Sicht es kennt.
+        const tone = marker.tone ?? (marker.own ? 'own' : 'other')
+        const rim = TONE_COLORS[tone]
+        const left = marker.x - ARMY_BOX.width / 2
+        const top = marker.y - ARMY_BOX.height / 2
+        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry')
+        if (stamp) {
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+        } else {
+          context.fillStyle = TOKENS.ground
+          context.fillRect(left, top, ARMY_BOX.width, ARMY_BOX.height)
+          context.strokeStyle = rim
+          context.lineWidth = 1.2
+          context.strokeRect(left + 0.5, top + 0.5, ARMY_BOX.width - 1, ARMY_BOX.height - 1)
+          context.lineWidth = 1.5
+          drawIcon(context, marker.icon ?? 'infantry', left + 9, marker.y - 1, 11)
+        }
+
+        if (marker.count !== undefined) {
+          context.fillStyle = TOKENS.ink
+          context.font = `600 9px ${TYPE.num}`
+          context.textAlign = 'right'
+          context.textBaseline = 'middle'
+          context.fillText(String(marker.count), left + ARMY_BOX.width - 3, marker.y - 1)
+          context.textAlign = 'left'
+          context.textBaseline = 'alphabetic'
+        }
+
+        if (marker.condition !== undefined) {
+          const trackLeft = left + 2
+          const trackWidth = ARMY_BOX.width - 4
+          const barY = top + ARMY_BOX.height - 4
+          context.fillStyle = TOKENS.line
+          context.fillRect(trackLeft, barY, trackWidth, 3)
+          context.fillStyle = rim
+          context.fillRect(trackLeft, barY, Math.round(trackWidth * Math.max(0, Math.min(1, marker.condition))), 3)
+        }
         continue
       }
 
@@ -418,11 +612,13 @@ export function MapCanvas(props: MapCanvasProps) {
     fades,
     props.armies,
     props.buildings,
+    props.anchors,
     props.mode,
     props.selectedProvince,
     props.capitalProvinceId,
     props.battleProvinces,
     props.tick,
+    props.ticksPerDay,
     props.speed,
     clock,
     props.view,
@@ -469,7 +665,19 @@ export function MapCanvas(props: MapCanvasProps) {
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const drag = dragRef.current
-    if (!drag) return
+    if (!drag) {
+      // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
+      if (props.onHover) {
+        const rect = event.currentTarget.getBoundingClientRect()
+        const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+        if (hoverTimer.current) clearTimeout(hoverTimer.current)
+        hoverTimer.current = setTimeout(() => {
+          hoverTimer.current = null
+          props.onHover?.(pickProvince(screen, props.view, withBounds), screen)
+        }, HOVER_DELAY_MS)
+      }
+      return
+    }
     props.onViewChange(
       clampView(
         {
@@ -485,6 +693,69 @@ export function MapCanvas(props: MapCanvasProps) {
   const handlePointerUp = () => {
     dragRef.current = null
   }
+
+  const handlePointerLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+    props.onHover?.(null, null)
+  }
+
+  // Die Knoepfe zoomen um die Mitte des Ausschnitts — wie die Bildtasten (T-M30-03).
+  const zoomBy = useCallback(
+    (factor: number) => props.onViewChange(zoomAt(props.view, { x: size.width / 2, y: size.height / 2 }, factor, limits)),
+    [props, size, limits],
+  )
+  const centreCapital = useCallback(() => {
+    const centre = props.capitalProvinceId ? props.centres[props.capitalProvinceId] : undefined
+    if (centre) props.onViewChange(centreOn(centre, props.view, limits))
+  }, [props, limits])
+
+  /*
+   * Die Uebersichtskarte (T-M30-03, D27.4): 132 x 74, die Flaechenebene der ganzen Welt
+   * verkleinert, darueber der Ausschnitt als Bernstein-Rahmen. Die Flaechen kommen aus
+   * demselben prepareFrame wie die grosse Karte, nur mit einem Massstab, bei dem fast
+   * jeder Punkt der Ausduennung zum Opfer faellt — darum ist sie billig.
+   */
+  const overviewScale = Math.max(props.width / OVERVIEW.width, props.height / OVERVIEW.height)
+  useEffect(() => {
+    const canvas = overviewRef.current
+    const context = canvas?.getContext('2d')
+    if (!canvas || !context) return
+
+    const worldView = { x: 0, y: 0, scale: overviewScale }
+    context.fillStyle = MAP_COLORS.sea
+    context.fillRect(0, 0, OVERVIEW.width, OVERVIEW.height)
+    for (const shape of prepareFrame(withBounds, worldView, OVERVIEW, props.mode)) {
+      // Ein Zug je vorbereiteter Form — dieselbe Schleife wie die grosse Ebene.
+      if (shape.points.length === 0) continue
+      context.fillStyle = shape.fill
+      context.beginPath()
+      context.moveTo(shape.points[0]![0], shape.points[0]![1])
+      for (const [x, y] of shape.points.slice(1)) context.lineTo(x, y)
+      context.closePath()
+      context.fill()
+    }
+
+    const left = props.view.x / overviewScale
+    const top = props.view.y / overviewScale
+    context.strokeStyle = TOKENS.warn
+    context.lineWidth = 1
+    context.strokeRect(
+      left + 0.5,
+      top + 0.5,
+      Math.max(2, (size.width * props.view.scale) / overviewScale),
+      Math.max(2, (size.height * props.view.scale) / overviewScale),
+    )
+  }, [withBounds, props.mode, props.ownershipVersion, props.view, size, overviewScale])
+
+  const handleOverviewClick = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect()
+      const point = toMap({ x: event.clientX - rect.left, y: event.clientY - rect.top }, { x: 0, y: 0, scale: overviewScale })
+      props.onViewChange(centreOn(point, props.view, limits))
+    },
+    [props, limits, overviewScale],
+  )
 
   return (
     <div ref={wrapperRef} className="map-wrapper">
@@ -502,6 +773,39 @@ export function MapCanvas(props: MapCanvasProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
+      />
+
+      {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}
+      <div className="map-controls" role="group" aria-label={t('map.zoomIn')}>
+        <button type="button" className="map-control" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomBy(1 / ZOOM_STEP)}>
+          +
+        </button>
+        <button type="button" className="map-control" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomBy(ZOOM_STEP)}>
+          −
+        </button>
+        <button
+          type="button"
+          className="map-control"
+          aria-label={t('map.centreCapital')}
+          title={t('map.centreCapital')}
+          onClick={centreCapital}
+          disabled={!props.capitalProvinceId}
+        >
+          ◎
+        </button>
+      </div>
+
+      <canvas
+        ref={overviewRef}
+        width={OVERVIEW.width}
+        height={OVERVIEW.height}
+        className="map-overview"
+        role="button"
+        tabIndex={0}
+        aria-label={t('map.overview')}
+        title={t('map.overview')}
+        onClick={handleOverviewClick}
       />
     </div>
   )

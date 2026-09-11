@@ -2066,7 +2066,7 @@ tasks:
   - id: T-M29-01
     milestone: M29
     title: Die dunkle Token-Ebene mit Spiegel-Waechter
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-02, R-UI-04]
     design: [D-27]
@@ -2076,7 +2076,7 @@ tasks:
   - id: T-M29-02
     milestone: M29
     title: Kopf- und Ressourcenleiste im Kriegsrat-Stil
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-03, R-TIME-04, R-UI-10]
     design: [D-27]
@@ -2086,7 +2086,7 @@ tasks:
   - id: T-M29-03
     milestone: M29
     title: Das Provinzpanel bekommt das Bauplatz-Raster
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-09, R-UI-10, R-UI-11]
     design: [D-27]
@@ -2096,7 +2096,7 @@ tasks:
   - id: T-M30-01
     milestone: M30
     title: Armeen sind Stapel mit Zahl und Zustand
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-MAP-05, R-UI-10, R-UI-12]
     design: [D-27]
@@ -2106,7 +2106,7 @@ tasks:
   - id: T-M30-02
     milestone: M30
     title: Gebaeude stehen verteilt in der Provinz
-    status: todo
+    status: done
     deps: [T-M30-01]
     requirements: [R-MAP-05, R-UI-10, R-UI-12]
     design: [D-27]
@@ -2116,7 +2116,7 @@ tasks:
   - id: T-M30-03
     milestone: M30
     title: Drei Zoomstufen, Knoepfe und Uebersichtskarte
-    status: todo
+    status: done
     deps: [T-M30-02]
     requirements: [R-UI-12, R-UI-15, R-ARCH-06]
     design: [D-27]
@@ -2126,7 +2126,7 @@ tasks:
   - id: T-M30-04
     milestone: M30
     title: Der Marschweg zeigt Stand und Rest
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-MAP-05, R-UI-12]
     design: [D-27]
@@ -2136,7 +2136,7 @@ tasks:
   - id: T-M31-01
     milestone: M31
     title: Die Provinz erklaert sich im Tooltip
-    status: todo
+    status: done
     deps: [T-M30-03]
     requirements: [R-UI-11, R-UI-15, R-UI-12]
     design: [D-27]
@@ -2146,7 +2146,7 @@ tasks:
   - id: T-M31-02
     milestone: M31
     title: Das Armeepanel traegt Marker, Zustand und Haltungsgruppe
-    status: todo
+    status: done
     deps: [T-M30-01]
     requirements: [R-UI-05, R-UI-10, R-UI-17]
     design: [D-27]
@@ -2156,17 +2156,17 @@ tasks:
   - id: T-M31-03
     milestone: M31
     title: Der Fuss - Protokoll, Rangliste, drei Knoepfe
-    status: todo
+    status: done
     deps: [T-M29-02]
     requirements: [R-UI-13, R-UI-14, R-UI-03]
     design: [D-27]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Foot.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Foot.test.tsx, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "KRIEGSRAT.md D27.6 Fuss. Dreiteilig: Protokoll (Zeitspalte, Kategorie-Icon, Text; bestehende Filter bleiben), Rangliste dauerhaft (vier Zeilen um die eigene Macht, eigene in warn, aus denselben Daten wie Standings), drei Knoepfe Depesche (oeffnet den Tagesbericht), Diplomatie/Markt, Rangliste/Sieg mit Neu-Marke (Zahl der ungelesenen Eintraege seit dem letzten Oeffnen). Test zuerst: Neu-Marke zaehlt und wird beim Oeffnen null; Rangliste zeigt die eigene Zeile immer."
   - id: T-M31-04
     milestone: M31
     title: Der Machtverlauf zeigt drei Linien mit Legende
-    status: todo
+    status: done
     deps: [T-M29-01]
     requirements: [R-UI-13]
     design: [D-27]

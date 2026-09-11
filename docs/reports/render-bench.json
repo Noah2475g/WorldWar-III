@@ -50,10 +50,21 @@
   "nodeRemeasurements": {
     "task": "T-M26-01",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.",
-    "measuredAt": "2026-09-08",
-    "p95Ms": 3.01,
-    "medianMs": 2.05,
-    "maxMs": 6.61,
+    "measuredAt": "2026-09-11",
+    "p95Ms": 2.51,
+    "medianMs": 1.93,
+    "maxMs": 5.67,
+    "frameBudgetMs": 16.7
+  },
+  "stacks": {
+    "task": "T-M30-01",
+    "how": "Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe (scale 1) plus markersFor fuer 300 Stapel mit Zahl und Zustand und bis zu sieben Gebaeude an Ankern in jeder der 237 Provinzen, 10 Bilder Einlauf, 120 gemessen.",
+    "measuredAt": "2026-09-11",
+    "armies": 300,
+    "buildings": 945,
+    "p95Ms": 3.36,
+    "medianMs": 2.26,
+    "maxMs": 6.03,
     "frameBudgetMs": 16.7
   }
 }

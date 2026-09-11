@@ -1,5 +1,11 @@
 # Design-Tokens — Vorschlag zum Design-Gate (T-M10-01)
 
+> **Überholt am 2026-09-11 (T-M29-01):** Die Werte unten beschreiben die helle Richtung A
+> „Lagekarte" vom 2026-09-03 und bleiben als Geschichte stehen. Gültig sind die dunklen
+> Kriegsrat-Werte aus `docs/plan/KRIEGSRAT.md` D27.1, festgeschrieben in
+> `apps/desktop/src/ui/tokens.ts` und gespiegelt in `app.css :root` (Wächter
+> `test/guards/css-mirrors-tokens.test.ts`).
+
 Diese Datei ist die schriftliche Fassung des Mockups in `ui-mockup.html`. Nach der
 Freigabe wird sie eins zu eins zu `apps/desktop/src/ui/tokens.ts` (T-M10-01b); die
 Kontrastwerte werden dort automatisiert geprüft (R-UI-02).

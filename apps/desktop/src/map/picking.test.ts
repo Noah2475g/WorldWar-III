@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   LAYERS,
+  ZOOM_MID_MAX_SCALE,
+  ZOOM_NEAR_MAX_SCALE,
+  zoomTier,
   boundsOf,
   centreOn,
   clampView,
@@ -305,5 +308,21 @@ describe('R-MAP-08 Jede spielbare Provinz ist dort anklickbar, wo sie liegt', ()
     expect(pickProvince({ x: 50, y: 50 }, identity, [small, big])).toBe('klein')
     // Outside the enclave the larger one still answers.
     expect(pickProvince({ x: 10, y: 10 }, identity, [big, small])).toBe('gross')
+  })
+})
+
+/**
+ * Drei Zoomstufen (T-M30-03, D27.4): `scale` sind Kartenraum-Einheiten je Bildpunkt,
+ * klein heisst nah. Die Schwellen entscheiden, was die Karte zeigt — Gebaeude ab
+ * mittel, Namen ab mittel, Stapel immer — also stehen sie hier als Zahl fest.
+ */
+describe('T-M30-03 Drei Zoomstufen', () => {
+  it('teilt den Massstab an den Schwellen in nah, mittel und weit', () => {
+    expect(zoomTier(ZOOM_NEAR_MAX_SCALE)).toBe('near')
+    expect(zoomTier(ZOOM_NEAR_MAX_SCALE + 0.001)).toBe('mid')
+    expect(zoomTier(ZOOM_MID_MAX_SCALE)).toBe('mid')
+    expect(zoomTier(ZOOM_MID_MAX_SCALE + 0.001)).toBe('far')
+    expect(zoomTier(0.2)).toBe('near')
+    expect(zoomTier(8)).toBe('far')
   })
 })

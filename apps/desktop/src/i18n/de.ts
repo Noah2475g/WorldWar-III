@@ -30,6 +30,7 @@ export const de = {
     day: 'Tag',
     speed: 'Geschwindigkeit',
     pause: 'Pause',
+    speedStop: '{{stop}} Stunden je Sekunde',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
@@ -191,6 +192,7 @@ export const de = {
     buildings: 'Gebäude',
     buildQueue: 'Im Bau',
     buildSlots: 'Bauplätze',
+    defenceBonus: 'Verteidigung +{{percent}} %',
     noBuildings: 'Keine Gebäude',
     unknown: 'Nicht aufgeklärt',
     lastSeen: 'Stand von Tag {{day}}',
@@ -228,6 +230,9 @@ export const de = {
     select: 'Auswählen',
     units: 'Einheiten',
     unitCount: '{{count}} × {{unit}}',
+    power: 'Kampfkraft',
+    condition: 'Zustand',
+    commands: 'Befehle',
     chooseTarget: 'Ziel auf der Karte anklicken — oder hier wählen:',
     targetLabel: 'Ziel',
     arrivalPreview: '{{target}}: {{arrival}}',
@@ -527,6 +532,32 @@ export const de = {
     keyboardHelp: 'Tastaturkürzel anzeigen',
   },
 
+  tooltip: {
+    armies: 'Armeen',
+    armiesNone: 'keine',
+    armyHere: '1 Armee · Stärke {{strength}}',
+    armiesHere: '{{count}} Armeen · Stärke {{strength}}',
+    battle: 'Gefecht',
+    battleRound: 'Runde {{round}}',
+    stale: 'Sicht',
+    hint: 'Klicken: auswählen · Escape: schließen',
+  },
+
+  foot: {
+    standings: 'Rangliste',
+    standingsOpen: 'Rangliste / Sieg',
+    dispatch: 'Depesche',
+    unread: '{{count}} neu',
+    none: 'Noch keine Depesche.',
+  },
+
+  map: {
+    zoomIn: 'Hineinzoomen',
+    zoomOut: 'Herauszoomen',
+    centreCapital: 'Hauptstadt zentrieren',
+    overview: 'Übersichtskarte',
+  },
+
   keys: {
     title: 'Tastatur',
     pause: 'Leertaste — Pause',
@@ -541,6 +572,9 @@ export const de = {
     standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
     help: 'F1 — diese Übersicht',
+    zoomIn: 'Bild↑ — hineinzoomen',
+    zoomOut: 'Bild↓ — herauszoomen',
+    home: 'Pos1 — Hauptstadt zentrieren',
   },
 
   tutorial: {

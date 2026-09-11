@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundsOf } from './picking.ts'
 import { markersFor } from './markers.ts'
+import { anchorsFor } from './anchors.ts'
 import { marchArrow, marchProgress, prepareFrame, type RenderProvince } from './render.ts'
 import { labelsFor } from './labels.ts'
 
@@ -29,6 +30,7 @@ const world = JSON.parse(readFileSync(`${ROOT}/data/maps/world.json`, 'utf8')) a
   height: number
   provinces: {
     id: string
+    center: { x: number; y: number }
     polygons: [number, number][][]
     population: number
     deposits: Record<string, number>
@@ -145,6 +147,82 @@ describe('T-M26-01 Marschpfeile im Bildbudget', () => {
 })
 
 /**
+ * Die Stapel im Bildbudget (T-M30-01, KRIEGSRAT §6.1).
+ *
+ * Je Bild: die Flaechen der ganzen Welt plus `markersFor` fuer 300 Armeen mit Zahl und
+ * Zustand (8 Maechte, mehr als eine Partie je zeigt) und Gebaeude in jeder Provinz.
+ * Was hier NICHT gemessen wird, sagt der Bericht auch: das Stempeln auf die Leinwand
+ * laeuft nur im Browser — dort ist es je Stapel ein `drawImage` statt eines
+ * `Path2D`-Zugs, also billiger als vorher, nicht teurer.
+ */
+describe('T-M30-01 Stapel mit Zahl und Zustand im Bildbudget', () => {
+  it('haelt das Budget mit Flaechen und 300 Stapeln und schreibt die Zahl in den Bericht', () => {
+    const ids = world.provinces.map((p) => p.id)
+    const centres = Object.fromEntries(
+      world.provinces.map((p) => [p.id, { x: p.polygons[0]![0]![0], y: p.polygons[0]![0]![1] }]),
+    )
+    const armies = Array.from({ length: 300 }, (_, index) => ({
+      id: `a${index}`,
+      provinceId: ids[(index * 7) % ids.length]!,
+      owner: `p${(index % 8) + 1}`,
+      strength: 5000 + (index % 9) * 1000,
+      own: index % 8 === 0,
+      count: 1 + (index % 12),
+      condition: 0.3 + (index % 7) / 10,
+      relation: (['war', 'peace', 'alliance', 'truce'] as const)[index % 4]!,
+    }))
+    // Jede Provinz traegt Gebaeude (bis zu sieben) — mehr, als eine Partie je hat —
+    // und die Anker kommen einmal je Karte (T-M30-02), nicht je Bild.
+    const kinds = ['barracks', 'fortress', 'factory', 'harbour', 'shipyard', 'airfield', 'railway']
+    const buildings = Object.fromEntries(
+      ids.map((id, index) => [id, Object.fromEntries(kinds.slice(0, 1 + (index % 7)).map((k, i) => [k, 1 + ((index + i) % 3)]))]),
+    )
+    const anchors = Object.fromEntries(world.provinces.map((p) => [p.id, anchorsFor(p.polygons, p.center)]))
+    // Mittlere Stufe (scale 1): erst hier erscheinen die Gebaeude ueberhaupt (D27.4).
+    const view = { x: 1200, y: 400, scale: 1 }
+
+    const einBild = (): void => {
+      prepareFrame(provinces, view, viewport, 'political')
+      markersFor(armies, buildings, centres, view, {
+        capitalProvinceId: ids[0]!,
+        battleProvinces: ids.slice(0, 10),
+        anchors,
+      })
+    }
+
+    for (let i = 0; i < 10; i++) einBild()
+    const durations: number[] = []
+    for (let frame = 0; frame < 120; frame++) {
+      const started = performance.now()
+      einBild()
+      durations.push(performance.now() - started)
+    }
+
+    const p95 = percentile(durations, 0.95)
+    expect(p95, `95. Perzentil ${p95.toFixed(2)} ms`).toBeLessThan(16.7)
+
+    const reportPath = `${ROOT}/docs/reports/render-bench.json`
+    const report = JSON.parse(readFileSync(reportPath, 'utf8')) as Record<string, unknown>
+    report.stacks = {
+      task: 'T-M30-01',
+      how: 'Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe (scale 1) plus markersFor fuer 300 Stapel mit Zahl und Zustand und bis zu sieben Gebaeude an Ankern in jeder der 237 Provinzen, 10 Bilder Einlauf, 120 gemessen.',
+      measuredAt: [
+        String(new Date().getFullYear()),
+        String(new Date().getMonth() + 1).padStart(2, '0'),
+        String(new Date().getDate()).padStart(2, '0'),
+      ].join('-'),
+      armies: armies.length,
+      buildings: Object.values(buildings).reduce((sum, b) => sum + Object.keys(b).length, 0),
+      p95Ms: Number(p95.toFixed(2)),
+      medianMs: Number(percentile(durations, 0.5).toFixed(2)),
+      maxMs: Number(Math.max(...durations).toFixed(2)),
+      frameBudgetMs: 16.7,
+    }
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`)
+  })
+})
+
+/**
  * Die Beschriftung im selben Budget (T-M13-08, R-UI-12).
  *
  * Die Namen sitzen auf derselben teuren Ebene wie die Flaechen, also zaehlt ihre Zeit
@@ -216,7 +294,7 @@ describe('R-ARCH-06 Was die Bewegung der Armeen kostet', () => {
         }
       : {}),
   }))
-  const buildings = Object.fromEntries(world.provinces.slice(0, 80).map((p) => [p.id, 2]))
+  const buildings = Object.fromEntries(world.provinces.slice(0, 80).map((p) => [p.id, { barracks: 1, factory: 1 }]))
   const view = { x: 0, y: 0, scale: 2.78 }
 
   const messe = (tick?: number): number => {

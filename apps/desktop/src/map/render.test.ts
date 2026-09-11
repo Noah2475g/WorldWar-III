@@ -7,6 +7,8 @@ import {
   cacheKey,
   isVisible,
   marchArrow,
+  marchDays,
+  marchLabel,
   marchProgress,
   marchStroke,
   ownershipChanges,
@@ -175,8 +177,8 @@ describe('T-M26-01 Marschpfeile mit Fortschritt', () => {
     expect(marchArrow([], 0)).toBeNull()
   })
 
-  it('zeichnet eigene Maersche in Tinte, fremde in Spielerfarbe', () => {
-    expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.ink)
+  it('zeichnet eigene Maersche in Phosphorgruen, fremde in Spielerfarbe (D27.1)', () => {
+    expect(marchStroke({ own: true, owner: 'p1' })).toBe(TOKENS.good)
     expect(marchStroke({ own: false, owner: 'p4' })).toBe(colorForPlayer('p4'))
   })
 })
@@ -305,5 +307,53 @@ describe('T-M19-02 Was ein Umriss kostet, wenn er kleiner als ein Bildpunkt ist'
     const missing = provinces.filter((p) => !drawn.has(p.id)).map((p) => p.id)
 
     expect(missing, `auf der Weltkarte nicht gezeichnet: ${missing.join(', ')}`).toEqual([])
+  })
+})
+
+/**
+ * Der Marschweg zeigt Stand und Rest (T-M30-04, D27.5).
+ *
+ * Ein Pfeil sagte nicht, wie weit die Armee ist und wann sie ankommt. Jetzt traegt
+ * er den Standpunkt und "n/m T" — Tage aufgerundet, denn "noch 0 Tage" waere eine
+ * Luege ueber eine Armee, die noch marschiert.
+ */
+describe('T-M30-04 Der Marschweg zeigt Stand und Rest', () => {
+  const timing = { departureTick: 0, arrivalTick: 40 }
+
+  it('rundet die Tagesangabe auf und klemmt sie an die Spanne', () => {
+    // 40 Ticks bei 24 je Tag sind zwei Tage, nicht 1,67.
+    expect(marchDays(timing, 0, 24)).toEqual({ done: 0, total: 2 })
+    expect(marchDays(timing, 10, 24)).toEqual({ done: 1, total: 2 })
+    expect(marchDays(timing, 24, 24)).toEqual({ done: 1, total: 2 })
+    expect(marchDays(timing, 25, 24)).toEqual({ done: 2, total: 2 })
+    expect(marchDays(timing, 99, 24)).toEqual({ done: 2, total: 2 })
+    // Ein Marsch ohne Dauer ist angekommen: 0/0 waere Unsinn, 1/1 sagt "da".
+    expect(marchDays({ departureTick: 5, arrivalTick: 5 }, 5, 24)).toEqual({ done: 1, total: 1 })
+  })
+
+  it('schreibt die Tage als "n/m T"', () => {
+    expect(marchLabel({ done: 1, total: 3 })).toBe('1/3 T')
+  })
+
+  it('legt den Standpunkt genau an die Segmentgrenze des Fortschritts', () => {
+    const arrow = marchArrow(
+      [
+        [0, 0],
+        [100, 0],
+        [100, 50],
+      ],
+      0.25,
+    )!
+    expect(arrow.standpoint).toEqual([25, 0])
+    expect(arrow.done[arrow.done.length - 1]).toEqual(arrow.standpoint)
+    expect(arrow.ahead[0]).toEqual(arrow.standpoint)
+  })
+
+  it('haengt an der Spieluhr, nicht an der Bildschirmuhr — reduced-motion aendert nichts', () => {
+    // Die Geometrie kennt keine Bewegungseinstellung: gleicher Tick, gleicher Pfeil.
+    const a = marchArrow([[0, 0], [100, 0]], marchProgress(timing, 20))!
+    const b = marchArrow([[0, 0], [100, 0]], marchProgress(timing, 20))!
+    expect(a).toEqual(b)
+    expect(a.standpoint).toEqual([50, 0])
   })
 })

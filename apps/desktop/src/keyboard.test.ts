@@ -70,6 +70,13 @@ describe('R-UI-06 Tastaturkuerzel', () => {
   it('zeigt mit F1 die Uebersicht', () => {
     expect(resolveKey({ key: 'F1' }, context())).toEqual({ type: 'help' })
   })
+
+  it('zoomt mit Bild-auf/-ab und zentriert mit Pos1 die Hauptstadt (T-M30-03)', () => {
+    // Plus und Minus gehoeren seit T-M10-06 dem Tempo; der Zoom nimmt die Bildtasten.
+    expect(resolveKey({ key: 'PageUp' }, context())).toEqual({ type: 'zoom', direction: 1 })
+    expect(resolveKey({ key: 'PageDown' }, context())).toEqual({ type: 'zoom', direction: -1 })
+    expect(resolveKey({ key: 'Home' }, context())).toEqual({ type: 'centreCapital' })
+  })
 })
 
 describe('R-UI-06 Was Tastenkuerzel nicht duerfen', () => {

@@ -3,7 +3,12 @@
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand:** 2026-09-10 · **Neu: der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
+> **Stand:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
+> `done`, je Aufgabe ein Commit und eine Zeile in `PROGRESS.md`; `pnpm verify` grün an den
+> Toren M29/M30, Abschlussprüfung im M31-Block von PROGRESS.md). **M32 wartet auf Noahs
+> Freigabe.** Danach T-M28-06/T-M28-08. Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
+>
+> **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
 > (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
 > sonst nichts** — er ist so geschrieben, dass keine Recherche mehr nötig ist.
@@ -41,14 +46,14 @@
 git log --oneline -1 && git branch -a --format='%(refname:short) %(objectname:short)'
 ```
 
-**Der Spitzenstand liegt auf `claude/ui-ux-pro-max-bit-ba5d44`** (baut auf
-`claude/playtest-levelplan-bbacfc` auf: Kriegsrat-Plan vom 2026-09-10). `main` steht auf M8 und
+**Der Spitzenstand liegt auf `claude/design-plan-execution-8b4296`** (Kriegsrat M29–M31 gebaut,
+2026-09-11; baut auf `claude/ui-ux-pro-max-bit-ba5d44` auf). `main` steht auf M8 und
 ist **weit über hundert Commits alt** — ein frischer Worktree landet dort und sieht ein
 anderes Projekt. Diese Falle hat **fünf** Sitzungen in Folge erwischt. Zeigt dein `HEAD`
 nicht auf die Spitze:
 
 ```bash
-git reset --hard claude/ui-ux-pro-max-bit-ba5d44 && pnpm install
+git reset --hard claude/design-plan-execution-8b4296 && pnpm install
 ```
 
 ---

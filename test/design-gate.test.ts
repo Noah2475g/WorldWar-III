@@ -63,18 +63,26 @@ describe('R-UI-01 Vor dem UI-Bau lag ein Mockup zur Freigabe vor', () => {
     }
   })
 
+  it('haelt auch die zweite Freigabe fest: Kriegsrat vom 2026-09-10', () => {
+    // Die Lagekarte wurde am 2026-09-10 durch den Kriegsrat ersetzt (KRIEGSRAT.md D27.1).
+    // Auch das ist eine Wahl aus mehreren Richtungen und steht als Entscheid da.
+    expect(decisions).toMatch(/## 2026-09-10 · KRIEGSRAT · Richtung A .Kriegsrat. ersetzt .Lagekarte./)
+  })
+
   it('baut die freigegebene Richtung, nicht eine andere', () => {
-    // Richtung A ist die helle Lagekarte; B war die Nachtlage. Ein dunkler Grund waere
-    // also nicht eine Geschmacksfrage, sondern eine andere als die freigegebene
-    // Richtung — und genau das ist der Fehler, den dieses Tor verhindern soll.
-    expect(relativeLuminance(TOKENS.ground)).toBeGreaterThan(0.5)
-    expect(relativeLuminance(TOKENS.paper)).toBeGreaterThan(0.5)
-    expect(relativeLuminance(TOKENS.ink)).toBeLessThan(0.1)
+    // Seit dem 2026-09-10 ist die freigegebene Richtung der dunkle Kartentisch
+    // (Kriegsrat, T-M29-01): ein heller Grund waere jetzt nicht eine Geschmacksfrage,
+    // sondern die abgeloeste Richtung — und genau das ist der Fehler, den dieses Tor
+    // verhindern soll. Das Gegenteil des alten Tors, aus demselben Grund.
+    expect(relativeLuminance(TOKENS.ground)).toBeLessThan(0.05)
+    expect(relativeLuminance(TOKENS.paper)).toBeLessThan(0.05)
+    expect(relativeLuminance(TOKENS.ink)).toBeGreaterThan(0.6)
 
     // Und die Signalfarbe bleibt eine: kein Spielerfarbton darf so kraeftig sein wie
-    // der Akzent, sonst schreit die halbe Karte.
+    // der Akzent, sonst schreit die halbe Karte. Auf dem dunklen Tisch heisst das:
+    // jede Flaeche bleibt unter der Leuchtkraft des Zinnobers.
     for (const [name, color] of Object.entries(PLAYER_COLORS)) {
-      expect(relativeLuminance(color), `Spielerfarbe ${name} ist zu dunkel fuer Kartenschrift`).toBeGreaterThan(
+      expect(relativeLuminance(color), `Spielerfarbe ${name} ist so hell wie der Alarm`).toBeLessThan(
         relativeLuminance(TOKENS.accent),
       )
     }

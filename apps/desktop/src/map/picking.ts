@@ -235,3 +235,23 @@ export function layersToRedraw(change: 'frame' | 'selection' | 'ownership' | 'mo
       return [...LAYERS]
   }
 }
+
+/**
+ * Drei Zoomstufen (T-M30-03, D27.4).
+ *
+ * `scale` sind Kartenraum-Einheiten je Bildpunkt — klein heisst nah. Bis 1 (eine
+ * Einheit ist mindestens ein Bildpunkt) ist die Karte "nah", bis 2 "mittel", darueber
+ * "weit". Die Stufen entscheiden, was gezeichnet wird: Stapel und Hauptstaedte immer,
+ * Gebaeude und Namen ab mittel. Die Schwellen stehen hier als Zahl, damit ein Test sie
+ * festhalten kann und die Leinwand keine eigene Meinung dazu hat.
+ */
+export type ZoomTier = 'near' | 'mid' | 'far'
+
+export const ZOOM_NEAR_MAX_SCALE = 1
+export const ZOOM_MID_MAX_SCALE = 2
+
+export function zoomTier(scale: number): ZoomTier {
+  if (scale <= ZOOM_NEAR_MAX_SCALE) return 'near'
+  if (scale <= ZOOM_MID_MAX_SCALE) return 'mid'
+  return 'far'
+}

@@ -111,7 +111,8 @@ describe('R-UI-13 LineChart zeichnet Reihen, Legende und Beschreibung', () => {
     // Auf der Hoehe des letzten Punkts: 260 in der Skala −26…286 liegt bei 8.3 %.
     expect(endwert.style.top).toBe('8.3%')
     // jsdom normalisiert Hex zu rgb(): gebunden wird, DASS die Reihenfarbe ankommt.
-    expect(endwert.style.color).toBe('rgb(51, 97, 63)')
+    const rgb = (hex: string) => `rgb(${[1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16)).join(', ')})`
+    expect(endwert.style.color).toBe(rgb(TOKENS.good))
   })
 
   it('nennt die Reihe in der Legende und beschreibt das Bild fuers Ohr', () => {
@@ -119,5 +120,32 @@ describe('R-UI-13 LineChart zeichnet Reihen, Legende und Beschreibung', () => {
 
     expect(container.querySelector('.chart__legend')?.textContent).toContain('Nordland')
     expect(container.querySelector('svg')?.getAttribute('aria-label')).toBe('Punkteverlauf: Nordland 260')
+  })
+})
+
+describe('T-M31-04 Rollen im Diagramm: Flaeche, duenne Linien, Endpunkte', () => {
+  const reihen = [
+    { id: 'p1', label: 'Eigen', color: TOKENS.good, role: 'own' as const, points: [{ day: 1, value: 0 }, { day: 3, value: 100 }] },
+    { id: 'p2', label: 'Feind', color: TOKENS.accent, role: 'enemy' as const, points: [{ day: 1, value: 50 }, { day: 3, value: 60 }] },
+    { id: 'p9', label: 'Rest', color: TOKENS.inkSoft, role: 'other' as const, points: [{ day: 1, value: 20 }, { day: 3, value: 30 }] },
+  ]
+
+  it('fuellt unter der eigenen Kurve eine Flaeche bis zum unteren Rand', () => {
+    const { container } = render(<LineChart series={reihen} ariaLabel="Punkteverlauf" />)
+    const area = container.querySelector('path.chart__area[data-series="p1"]') as SVGPathElement
+
+    expect(area).toBeTruthy()
+    // Die Flaeche ist der Linienpfad, unten geschlossen: … L100,100 L0,100 Z
+    expect(area.getAttribute('d')).toMatch(/^M0,.* L100,100 L0,100 Z$/)
+    expect(container.querySelector('path.chart__area[data-series="p2"]')).toBeNull()
+  })
+
+  it('zeichnet "other" duenn, ohne Legende und ohne Endpunkt', () => {
+    const { container } = render(<LineChart series={reihen} ariaLabel="Punkteverlauf" />)
+
+    expect(container.querySelector('path[data-series="p9"]')?.classList.contains('chart__line--thin')).toBe(true)
+    expect(container.querySelector('.chart__legend')?.textContent).not.toContain('Rest')
+    expect(container.querySelectorAll('.chart__end').length).toBe(2)
+    expect(container.querySelectorAll('.chart__endvalue').length).toBe(2)
   })
 })

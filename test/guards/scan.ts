@@ -61,8 +61,12 @@ export function fixture(name: string): string {
  * `filePath`. This is how a guard proves the rule actually fires — not just that the
  * rule name appears somewhere in a config file.
  */
+let sharedEslint: ESLint | null = null
+
 export async function lintAs(code: string, filePath: string): Promise<string[]> {
-  const eslint = new ESLint({ cwd: ROOT })
+  // Eine Instanz je Arbeiter: die erste Pruefung laedt die Konfiguration samt
+  // typbewusstem Parser und ist der teure Teil — jede weitere ist Millisekunden.
+  const eslint = (sharedEslint ??= new ESLint({ cwd: ROOT }))
   const results = await eslint.lintText(code, { filePath: join(ROOT, filePath), warnIgnored: false })
   return results.flatMap((r) => r.messages.map((m) => `${m.ruleId ?? 'error'}: ${m.message}`))
 }

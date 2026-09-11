@@ -11,7 +11,7 @@
  * font setting without a second asset.
  */
 
-import type { DiplomaticState, Terrain } from '@worldwar/core'
+import type { BuildingKey, DiplomaticState, Terrain } from '@worldwar/core'
 
 export type IconName =
   | 'infantry'
@@ -55,6 +55,9 @@ export type IconName =
   | 'urban'
   | 'entrenched'
   | 'noRetreat'
+  | 'clock'
+  | 'pause'
+  | 'fastForward'
 
 export interface IconProps {
   name: IconName
@@ -145,6 +148,10 @@ const PATHS: Record<IconName, string> = {
   entrenched: 'M4 19v-4a8 8 0 0 1 16 0v4 M2.5 19h19',
   // Pfeil zurueck, der an der Sperre endet — die Rueckzugssperre nach D6.8.
   noRetreat: 'M6 4v16 M20 12H10 M13.5 8.5L10 12l3.5 3.5',
+  // Die Kopfleiste im Kriegsrat (T-M29-02): Uhr, Pause, Vorspulen.
+  clock: 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17 M12 7v5l3.5 2',
+  pause: 'M8 5v14 M16 5v14',
+  fastForward: 'M4 6l8 6-8 6z M12 6l8 6-8 6z',
 }
 
 export function Icon({ name, size = 16, title }: IconProps) {
@@ -210,6 +217,13 @@ export const RESOURCE_ICONS: Record<string, IconName> = {
   rare: 'rare',
   money: 'money',
 }
+
+/**
+ * Die Reihenfolge der Gebaeude — fuer die Bauplaetze im Panel (T-M29-03) und die Anker
+ * auf der Karte (T-M30-02). Eine Reihenfolge, zwei Ausgaben: ein Bau verschiebt die
+ * anderen nirgends.
+ */
+export const BUILDING_ORDER = Object.keys(BUILDING_ICONS) as BuildingKey[]
 
 /**
  * The raw drawings, for anything that is not React.
