@@ -136,3 +136,56 @@ describe('T-M30-02 Anker in der Provinzflaeche', () => {
     expect(inland).toBeGreaterThan(world.provinces.length * 3)
   })
 })
+
+/**
+ * T-M28-12 · Gebäude finden ihren Platz auch in kleinen und in Binnenprovinzen.
+ *
+ * Befund 1 der Durchsicht vom 2026-09-11 (schwer): `placeBuildings` reservierte **immer**
+ * zwei Anker für Hafen und Werft, auch mitten im Binnenland. Reichten die übrigen nicht
+ * für die fünf Landarten, fiel der Rückfall auf einen bereits belegten Anker und das
+ * Gebäude wurde **verworfen** — während die zwei reservierten leer blieben. Auf der
+ * Weltkarte liefern 32 Provinzen drei bis sechs Anker.
+ */
+describe('T-M28-12 Kein Gebaeude faellt weg, solange ein Anker frei ist', () => {
+  /** Fünf Anker, wie sie eine mittelgroße Binnenprovinz liefert. */
+  const fuenf = Array.from({ length: 5 }, (_, i) => ({ x: 10 + i * 20, y: 50, edgeDistance: 30 - i * 5 }))
+
+  it('setzt alle fuenf Landgebaeude, wenn es fuenf Anker gibt', () => {
+    const placed = placeBuildings({ barracks: 1, fortress: 1, factory: 1, airfield: 1, railway: 1 }, fuenf)
+
+    expect(placed.map((p) => p.building).sort()).toEqual(['airfield', 'barracks', 'factory', 'fortress', 'railway'])
+  })
+
+  it('setzt zwei Gebaeude nie auf denselben Anker', () => {
+    const placed = placeBuildings({ barracks: 1, fortress: 1, factory: 1, airfield: 1, railway: 1 }, fuenf)
+    const orte = new Set(placed.map((p) => `${p.x}/${p.y}`))
+
+    expect(orte.size).toBe(placed.length)
+  })
+
+  it('laesst keinen Anker leer, solange ein Gebaeude ohne Platz ist', () => {
+    const drei = fuenf.slice(0, 3)
+    const placed = placeBuildings({ barracks: 1, fortress: 1, factory: 1, airfield: 1, railway: 1 }, drei)
+
+    expect(placed.length).toBe(3)
+  })
+
+  it('gibt Hafen und Werft weiterhin die randnaechsten Anker', () => {
+    const placed = placeBuildings({ harbour: 1, shipyard: 1, barracks: 1 }, fuenf)
+    const hafen = placed.find((p) => p.building === 'harbour')!
+    const kaserne = placed.find((p) => p.building === 'barracks')!
+
+    // edgeDistance faellt von 30 auf 10; der Hafen nimmt den kleinsten.
+    expect(hafen.x).toBe(fuenf[4]!.x)
+    expect(kaserne.x).not.toBe(hafen.x)
+  })
+
+  it('verschiebt bestehende Gebaeude weiterhin nicht, wenn ein neues dazukommt', () => {
+    const vorher = placeBuildings({ barracks: 1, factory: 1 }, fuenf)
+    const nachher = placeBuildings({ barracks: 1, factory: 1, fortress: 1 }, fuenf)
+
+    for (const b of vorher) {
+      expect(nachher.find((a) => a.building === b.building)).toMatchObject({ x: b.x, y: b.y })
+    }
+  })
+})

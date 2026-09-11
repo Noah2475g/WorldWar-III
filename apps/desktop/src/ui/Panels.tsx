@@ -401,7 +401,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
       <div className="slots">
         {BUILDING_ORDER.map((key) => {
           const level = province.buildings?.[key] ?? 0
-          const order = province.buildQueue?.find((entry) => entry.building === key)
+          // ALLE Auftraege dieser Art, nicht nur der erste (T-M28-16): der Kern erlaubt
+          // mehrere gleichzeitig (buildSlots), jeder mit eigenem completesAtTick. Mit
+          // `find` hatte der zweite bezahlte Auftrag weder Fortschritt noch Restzeit,
+          // und nach Abschluss des ersten sprang der Balken ohne Erklaerung zurueck.
+          const orders = (province.buildQueue ?? []).filter((entry) => entry.building === key)
+          const order = orders[0]
           const build = buildActions.find((entry) => entry.id === `build-${key}`)
           const name = t(`buildings.${key}`)
 
@@ -413,14 +418,17 @@ export function ProvincePanel(props: ProvincePanelProps) {
                   {name}
                   {level > 0 && <sup className="slot__level">{level + 1}</sup>}
                 </span>
-                <Meter
-                  label={name}
-                  labelHidden
-                  value={props.currentTick - order.startedTick}
-                  max={Math.max(1, order.completesAtTick - order.startedTick)}
-                  text={remaining(props.currentTick, order.completesAtTick, props.ticksPerDay)}
-                  tone="warn"
-                />
+                {orders.map((entry, index) => (
+                  <Meter
+                    key={`${entry.startedTick}-${entry.completesAtTick}-${index}`}
+                    label={orders.length > 1 ? `${name} ${index + 1}` : name}
+                    labelHidden
+                    value={props.currentTick - entry.startedTick}
+                    max={Math.max(1, entry.completesAtTick - entry.startedTick)}
+                    text={remaining(props.currentTick, entry.completesAtTick, props.ticksPerDay)}
+                    tone="warn"
+                  />
+                ))}
               </div>
             )
           }

@@ -280,6 +280,8 @@ export const de = {
     buildAria: '{{thing}} bauen',
     recruitAria: '{{thing}} ausheben',
     cancelBuild: '{{building}} abbrechen',
+    // Zwei Auftraege derselben Art unterscheiden sich am Fertigstellungstag (T-M28-16).
+    cancelBuildDay: '{{building}} abbrechen (fertig Tag {{day}})',
     recruit: 'Rekrutieren',
     setCapital: 'Hauptstadt verlegen',
     trade: 'Handeln',

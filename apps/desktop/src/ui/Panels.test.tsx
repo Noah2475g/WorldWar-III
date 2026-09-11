@@ -1369,3 +1369,45 @@ describe('T-M28-11 Das Raster bricht die Nebelregel nicht', () => {
     expect(container.querySelector('.slots')).not.toBeNull()
   })
 })
+
+/**
+ * T-M28-16 · Mehrere Bauaufträge derselben Art sind einzeln sichtbar.
+ *
+ * Befund 5 der Durchsicht vom 2026-09-11: Der Kern erlaubt zwei gleichzeitige Aufträge
+ * derselben Gebäudeart, und jeder trägt sein eigenes `completesAtTick`. Das Raster hat je
+ * Art **ein** Feld und fand mit `find()` nur den ersten — der zweite bezahlte Auftrag
+ * hatte weder Fortschritt noch Fertigstellung, und nach Abschluss des ersten sprang der
+ * Balken ohne Erklärung zurück.
+ */
+describe('T-M28-16 Zwei Auftraege derselben Art', () => {
+  const zweimalKaserne = {
+    id: 'USA-MW',
+    name: 'Mittlerer Westen',
+    owner: 'p1',
+    terrain: 'plains',
+    population: 900_000,
+    morale: 70_000,
+    buildings: {},
+    buildQueue: [
+      { building: 'barracks', startedTick: 0, completesAtTick: 48 },
+      { building: 'barracks', startedTick: 12, completesAtTick: 96 },
+    ],
+  } as unknown as VisibleProvince
+
+  const panel = () =>
+    render(<ProvincePanel province={zweimalKaserne} ownerName="Vereinigte Staaten" actions={[]} ticksPerDay={24} currentTick={24} />)
+
+  it('zeigt beide Fortschritte, nicht nur den ersten', () => {
+    const { container } = panel()
+    const meter = container.querySelectorAll('.slot--queued [role="meter"]')
+
+    expect(meter.length).toBe(2)
+  })
+
+  it('nennt je Auftrag seine eigene Restzeit', () => {
+    const { container } = panel()
+    const texte = [...container.querySelectorAll('.slot--queued [role="meter"]')].map((m) => m.textContent)
+
+    expect(new Set(texte).size).toBe(2)
+  })
+})

@@ -2244,7 +2244,7 @@ tasks:
   - id: T-M28-12
     milestone: M28
     title: Gebaeude finden ihren Platz auch in kleinen und in Binnenprovinzen
-    status: todo
+    status: done
     deps: []
     requirements: [R-MAP-05]
     design: [D-27]
@@ -2255,7 +2255,7 @@ tasks:
   - id: T-M28-13
     milestone: M28
     title: Ein Klick waehlt die Armee, die man sieht
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-05, R-MAP-05]
     design: [D-27]
@@ -2266,18 +2266,18 @@ tasks:
   - id: T-M28-14
     milestone: M28
     title: Jede Macht bekommt eine eigene Farbe
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-02, R-MAP-01]
     design: [D-27]
     files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/tokens.ts]
     tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts]
-    dod: "Befund 6 (schwer) der Durchsicht. colorForPlayer hat elf Farben und rechnet modulo; der Startdialog erlaubt mehr Maechte, und ab der zwoelften sind zwei im Besitzmodus nicht unterscheidbar. Entweder der Satz waechst auf die hoechste im Dialog erlaubte Machtzahl - dann gilt der ΔE-Waechter aus T-M29-01 fuer alle -, oder der Dialog begrenzt die Machtzahl auf die Zahl der Farben. ENTSCHEIDUNG DURCH NOAH, weil es die Partiegroesse betrifft. Test zuerst: keine zwei Maechte einer Hoechstbesetzung teilen eine Farbe"
+    dod: "Befund 6 (schwer) der Durchsicht. colorForPlayer hat elf Farben und rechnet modulo; der Startdialog erlaubt mehr Maechte, und ab der zwoelften sind zwei im Besitzmodus nicht unterscheidbar. Entweder der Satz waechst auf die hoechste im Dialog erlaubte Machtzahl - dann gilt der ΔE-Waechter aus T-M29-01 fuer alle -, oder der Dialog begrenzt die Machtzahl auf die Zahl der Farben. NOAHS ENTSCHEID vom 2026-09-11: mehr Farben, nicht weniger Maechte. Test zuerst: keine zwei Maechte einer Hoechstbesetzung teilen eine Farbe"
 
   - id: T-M28-15
     milestone: M28
     title: Der Spiegel-Waechter sieht jede Farbe
-    status: todo
+    status: done
     deps: []
     requirements: [R-UI-02]
     design: [D-27]
@@ -2288,7 +2288,7 @@ tasks:
   - id: T-M28-16
     milestone: M28
     title: Mehrere Bauauftraege derselben Art sind einzeln sichtbar
-    status: todo
+    status: done
     deps: [T-M28-11]
     requirements: [R-UI-10]
     design: [D-27]

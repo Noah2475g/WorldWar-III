@@ -729,7 +729,8 @@ body {
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(31 36 32 / 45%);
+  /* Abdunklung aus `ground` statt aus einer Altfarbe (T-M28-15). */
+  background: color-mix(in srgb, var(--ground) 45%, transparent);
   display: grid;
   place-items: center;
   padding: var(--sp-xl);
@@ -1364,7 +1365,8 @@ body {
   border: 1px solid var(--line);
   border-left: 3px solid var(--ink);
   border-radius: 2px;
-  box-shadow: 0 2px 8px rgb(31 36 32 / 18%);
+  /* Schatten aus `ground` statt aus einer Altfarbe (T-M28-15). */
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ground) 18%, transparent);
 }
 
 .tutorial__progress {

@@ -14,14 +14,62 @@ import { ROOT, fixture } from './scan'
 
 const toKebab = (name: string): string => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 
-/** Alle `--name: #hex` innerhalb des `:root { … }`-Blocks. */
+/**
+ * Jede Farbschreibweise auf sechsstelliges Hex gebracht — oder `null`, wenn es keine ist.
+ *
+ * Seit T-M28-15: der Waechter kannte nur `#rrggbb` und sah `rgb(...)` und die Kurzform
+ * gar nicht. Was er nicht sieht, kann er nicht vergleichen, und zwei Farben der
+ * abgeloesten hellen Richtung standen dadurch unbemerkt in `app.css`.
+ */
+export function toHex(value: string): string | null {
+  const text = value.trim()
+  const kurz = /^#([0-9a-fA-F]{3})$/.exec(text)
+  if (kurz) return `#${[...kurz[1]!].map((c) => c + c).join('').toUpperCase()}`
+  const lang = /^#([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$/.exec(text)
+  if (lang) return `#${lang[1]!.toUpperCase()}`
+  const funktion = /^rgba?\(([^)]*)\)$/.exec(text)
+  if (funktion) {
+    const teile = funktion[1]!.split(/[\s,/]+/).filter(Boolean).slice(0, 3).map(Number)
+    if (teile.length !== 3 || teile.some((n) => !Number.isFinite(n))) return null
+    return `#${teile.map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')).join('').toUpperCase()}`
+  }
+  return null
+}
+
+/** Alle Farbvariablen aus JEDEM `:root { … }`-Block, in jeder Schreibweise. */
 export function rootColorVariables(css: string): Record<string, string> {
-  const block = /:root\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
   const out: Record<string, string> = {}
-  for (const match of block.matchAll(/--([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;/g)) {
-    out[match[1]!] = match[2]!.toUpperCase()
+  for (const block of css.matchAll(/:root[^{]*\{([^}]*)\}/g)) {
+    for (const match of block[1]!.matchAll(/--([a-z0-9-]+)\s*:\s*([^;]+);/g)) {
+      const hex = toHex(match[2]!)
+      if (hex) out[match[1]!] = hex
+    }
   }
   return out
+}
+
+/** Farbwoerter sind erlaubt: sie sind keine Farbwahl, sondern ein Zustand. */
+const ERLAUBT = new Set(['transparent', 'currentcolor', 'inherit', 'none', 'initial', 'unset'])
+
+/**
+ * Farben, die AUSSERHALB eines `:root`-Blocks stehen (T-M28-15).
+ *
+ * Das ist die Luecke, durch die die zwei Altfarben kamen: der Spiegel vergleicht nur,
+ * was in `:root` steht, und eine Farbe in einer Regel darunter wird von ihm nie
+ * angesehen. Ausserhalb von `:root` gehoert `var(--token)` hin und sonst nichts.
+ */
+export function strayColors(css: string): string[] {
+  const ohneRoot = css.replace(/:root[^{]*\{[^}]*\}/g, '')
+  const funde: string[] = []
+  for (const regel of ohneRoot.matchAll(/([^{}]*)\{([^}]*)\}/g)) {
+    const zeilen = regel[1]!.trim().split(/\r?\n/)
+    const wahl = zeilen[zeilen.length - 1]!.trim()
+    for (const farbe of regel[2]!.matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/g)) {
+      if (ERLAUBT.has(farbe[0].toLowerCase())) continue
+      funde.push(`${farbe[0]} in ${wahl}`)
+    }
+  }
+  return funde
 }
 
 /** Jede Abweichung zwischen Stylesheet und Tokentabelle, als lesbare Zeile. */
@@ -63,5 +111,46 @@ describe('R-UI-02 app.css spiegelt tokens.ts', () => {
     const css = readFileSync(join(ROOT, 'apps', 'desktop', 'src', 'ui', 'app.css'), 'utf8')
 
     expect(mirrorDiff(css, TOKENS)).toEqual([])
+  })
+})
+
+/**
+ * T-M28-15 · Der Wächter sieht jede Farbe, nicht nur die, die er kannte.
+ *
+ * Befund 7 der Durchsicht vom 2026-09-11: `rootColorVariables` las nur sechsstellige
+ * Hex-Werte, und nur im **ersten** `:root`-Block. Zwei Farben der abgelösten hellen
+ * Richtung standen dadurch unbemerkt in `app.css` — als `rgb(…)`, außerhalb von `:root`,
+ * in der Dialog-Abdunklung und im Tutorial-Schatten. Ein grüner Wächter über einer Menge,
+ * die er nicht vollständig sieht, ist genau das Muster, gegen das er gebaut wurde.
+ */
+describe('T-M28-15 Der Spiegel-Waechter sieht jede Farbe', () => {
+  it('liest auch rgb() und dreistellige Kurzform', () => {
+    const css = ':root { --a: #ABC; --b: rgb(17 34 51); --c: #11223344; }'
+
+    expect(rootColorVariables(css)).toEqual({ a: '#AABBCC', b: '#112233', c: '#112233' })
+  })
+
+  it('liest jeden :root-Block, nicht nur den ersten', () => {
+    const css = ':root { --a: #111111; }\n@media (prefers-reduced-motion) { p { margin: 0 } }\n:root { --b: #222222; }'
+
+    expect(rootColorVariables(css)).toEqual({ a: '#111111', b: '#222222' })
+  })
+
+  it('meldet eine Farbe, die ausserhalb von :root steht', () => {
+    const css = ':root { --ground: #0D1117; }\n.backdrop { background: rgb(31 36 32 / 45%); }'
+
+    expect(strayColors(css)).toEqual(['rgb(31 36 32 / 45%) in .backdrop'])
+  })
+
+  it('laesst var() und Farbwoerter in Ruhe', () => {
+    const css = ':root { --ground: #0D1117; }\n.x { color: var(--ground); outline-color: transparent; }'
+
+    expect(strayColors(css)).toEqual([])
+  })
+
+  it('findet in der echten app.css keine Farbe ausserhalb von :root', () => {
+    const css = readFileSync(join(ROOT, 'apps', 'desktop', 'src', 'ui', 'app.css'), 'utf8')
+
+    expect(strayColors(css)).toEqual([])
   })
 })

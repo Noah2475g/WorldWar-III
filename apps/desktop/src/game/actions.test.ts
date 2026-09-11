@@ -8,6 +8,7 @@ import {
   diplomacyActions,
   ownArmiesIn,
   planArrival,
+  cancelActions,
   recruitActions,
   targetAction,
   tradePreview,
@@ -360,5 +361,36 @@ describe('R-TECH-02/AK1 Ein gesperrter Knopf nennt seinen Tag', () => {
 
     const airfield = buildActions(ctx, capital).find((action) => action.id === 'build-airfield')
     expect(airfield?.disabledReason ?? '').not.toMatch(/Spieltag/)
+  })
+})
+
+/**
+ * T-M28-16 · Zwei Abbrechen-Knöpfe müssen unterscheidbar sein.
+ *
+ * Befund 5 der Durchsicht vom 2026-09-11, zweite Hälfte: Stehen zwei Aufträge derselben
+ * Gebäudeart in der Schlange, trugen beide Knöpfe denselben Text „Kaserne abbrechen".
+ * Wer den falschen drückt, verliert den falschen Bau — und merkt es erst hinterher.
+ */
+describe('T-M28-16 Abbrechen bei gleicher Gebaeudeart', () => {
+  it('nennt bei mehreren Auftraegen derselben Art den Fertigstellungstag', () => {
+    const { ctx, capital } = fresh()
+    ctx.state.provinces[capital]!.buildQueue = [
+      { id: 'o1', building: 'barracks', level: 1, startedTick: 0, completesAtTick: 48 },
+      { id: 'o2', building: 'barracks', level: 2, startedTick: 12, completesAtTick: 96 },
+    ] as never
+
+    const labels = cancelActions(ctx, capital).map((spec) => spec.label)
+
+    expect(new Set(labels).size).toBe(2)
+    for (const label of labels) expect(label).toContain('Kaserne')
+  })
+
+  it('laesst den Text bei einem einzelnen Auftrag schlicht', () => {
+    const { ctx, capital } = fresh()
+    ctx.state.provinces[capital]!.buildQueue = [
+      { id: 'o1', building: 'barracks', level: 1, startedTick: 0, completesAtTick: 48 },
+    ] as never
+
+    expect(cancelActions(ctx, capital).map((spec) => spec.label)).toEqual(['Kaserne abbrechen'])
   })
 })
