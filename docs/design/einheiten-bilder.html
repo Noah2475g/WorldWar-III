@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Einheiten- und Gebäudebilder — Entscheidungsrunde</title>
+<style>
+  :root{
+    --ground:#0D1117; --paper:#161C25; --paperSunk:#1E2632; --ink:#E6E1D3;
+    --inkSoft:#9AA0A8; --line:#5C6A78; --accent:#E8583F; --good:#7EC57E;
+    --warn:#E0A220; --building:#C9B98A; --ally:#6FA8DC; --onWarn:#1A1200;
+  }
+  body{margin:0;padding:28px 32px 80px;background:var(--ground);color:var(--ink);
+       font:14px/1.55 "IBM Plex Sans","Segoe UI",system-ui,sans-serif;}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:.01em}
+  h2{font-size:17px;margin:38px 0 6px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  h3{font-size:13px;margin:22px 0 8px;color:var(--warn);text-transform:uppercase;letter-spacing:.08em}
+  p{max-width:78ch;color:var(--ink)}
+  .sub{color:var(--inkSoft);max-width:78ch;margin:0 0 8px}
+  table{border-collapse:collapse;margin:10px 0 4px}
+  th,td{padding:7px 14px;text-align:left;vertical-align:middle;border-bottom:1px solid #2A333F}
+  th{color:var(--inkSoft);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  td.name{color:var(--ink);min-width:200px}
+  td.klass{color:var(--inkSoft);font-size:12px}
+
+  /* --- Richtung A: Stempel (heutiger NATO-Glyph, nur groesser) --- */
+  .stamp{display:inline-flex;align-items:center;gap:6px;background:var(--paperSunk);
+         border:1.5px solid var(--good);border-radius:2px;padding:3px 7px}
+  .stamp svg{display:block;color:var(--ink)}
+
+  /* --- Richtung B: Schattenriss --- */
+  .plate{width:72px;height:46px;background:var(--paperSunk);border:1px solid var(--line);
+         border-radius:2px;display:flex;align-items:center;justify-content:center}
+  .plate svg{display:block}
+  .silh{fill:var(--ink)}
+  .silh-cut{fill:none;stroke:var(--paperSunk);stroke-width:1.6;stroke-linecap:round}
+  .plate--own{border-color:var(--good)}
+  .plate--own .silh{fill:var(--good)}
+
+  /* --- Richtung C: Risszeichnung --- */
+  .blue{width:72px;height:46px;background:var(--paper);border:1px solid var(--line);
+        border-radius:2px;display:flex;align-items:center;justify-content:center;position:relative}
+  .blue::after{content:"";position:absolute;inset:3px;border:1px solid #273140;pointer-events:none}
+  .riss{fill:none;stroke:var(--building);stroke-width:1.25;stroke-linejoin:round;stroke-linecap:round}
+  .riss-cut{fill:none;stroke:var(--building);stroke-width:.9;opacity:.75}
+
+  /* --- Mockups --- */
+  .mock{display:flex;gap:26px;flex-wrap:wrap;margin-top:12px}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:3px;
+         padding:12px 14px;width:330px}
+  .panel h4{margin:0 0 10px;font-size:13px;color:var(--inkSoft);text-transform:uppercase;
+            letter-spacing:.07em;font-weight:500}
+  .row{display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid #232C38}
+  .row:last-child{border-bottom:0}
+  .row .t{flex:1;min-width:0}
+  .row .t b{display:block;font-weight:500;font-size:13px}
+  .row .t span{display:block;color:var(--inkSoft);font-size:11.5px}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:2px;
+       font:12px/1 "IBM Plex Sans",sans-serif;padding:6px 9px;cursor:default}
+  .btn--go{background:var(--warn);border-color:var(--warn);color:var(--onWarn)}
+  .mini{width:44px;height:30px;background:var(--paperSunk);border:1px solid var(--line);
+        border-radius:2px;display:flex;align-items:center;justify-content:center;flex:none}
+  .slots{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+  .slot{background:var(--paperSunk);border:1px solid #2A333F;border-radius:2px;padding:7px;
+        display:flex;align-items:center;gap:8px;font-size:12px}
+  .slot .mini{width:36px;height:26px}
+  .note{background:var(--paper);border-left:3px solid var(--warn);padding:10px 14px;
+        max-width:80ch;margin:14px 0}
+  .note b{color:var(--warn)}
+  code{background:var(--paperSunk);padding:1px 5px;border-radius:2px;font-size:12.5px;
+       font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .size-demo{display:flex;align-items:flex-end;gap:20px;margin-top:8px}
+  .size-demo figure{margin:0;text-align:center;color:var(--inkSoft);font-size:11px}
+  .size-demo figcaption{margin-top:5px}
+</style>
+</head>
+<body>
+
+<h1>Einheiten- und Gebäudebilder</h1>
+<p class="sub">Entwürfe für die Entscheidungsrunde · 2026-09-11 · alle Zeichnungen selbst gesetzt,
+keine Fremdquelle (R-ASSET-01). Farben ausschließlich aus <code>tokens.ts</code>.<br>
+<b style="color:var(--warn)">Zweite Fassung:</b> Richtung B ist gewählt; Infanterie, Hafen, Flugplatz,
+Artillerie und Jagdflugzeug sind neu gezeichnet, Zerstörer und Transporter haben eine sichtbare
+Wasserlinie bekommen. Die Spalten A und C bleiben als Vergleich stehen.</p>
+
+<h2>1 · Die zehn Einheiten in drei Richtungen</h2>
+<p class="sub">Dieselben zehn Einheiten, dreimal. Spalte A ist der heutige Zustand, nur vergrößert.
+B und C sind neu und teilen sich die Geometrie — sie unterscheiden sich darin, ob die Form
+gefüllt oder gerissen ist.</p>
+<table id="units"></table>
+
+<h2>2 · Die sieben Gebäude</h2>
+<table id="buildings"></table>
+
+<h2>2b · Infanterie — entschieden: der Mann</h2>
+<p class="sub"><b style="color:var(--warn)">Noahs Wahl vom 2026-09-11: Fassung 1, der Mann.</b>
+Sie wird schneller erkannt, weil Menschen Menschen erkennen. Fassung 2 bleibt hier stehen, damit
+die verworfene Möglichkeit nachvollziehbar ist, und geht nicht in den Code. Die Regel
+„jede Einheit ist ihr Gerät" gilt damit für die übrigen neun Einheiten — die Infanterie ist die
+eine Einheit, die selbst das Gerät ist.</p>
+<div class="size-demo" id="inf"></div>
+
+<h2>3 · Wie klein wird es noch gelesen?</h2>
+<p class="sub">Die Bauliste zeigt 44 px, das Kartenplättchen 30 px, die Marschspur 18 px.
+Unter etwa 28 px verliert die gerissene Fassung (C) ihre Innenlinien — die gefüllte (B) hält.</p>
+<div class="size-demo" id="sizes"></div>
+
+<h2>4 · Am Einsatzort</h2>
+<p class="sub">Dieselbe Provinzansicht, einmal mit Richtung B, einmal mit Richtung C.</p>
+<div class="mock" id="mock"></div>
+
+<h2>5 · Was auf der Karte bleibt</h2>
+<div class="note">
+<b>Die Karte behält den NATO-Stempel.</b> <code>MapCanvas</code> stempelt die Glyphe als
+einzelnen <code>Path2D</code> auf die Leinwand, bei 11 px Kantenlänge. Ein Schattenriss eines
+Panzers ist dort ein Fleck; das Rechteck mit Oval ist bei 11 px noch eine Auskunft. Die Bilder
+sind deshalb ein <b>zweiter</b> Satz für die Panels — nicht ein Ersatz des ersten.
+</div>
+
+<h2>6 · Die Rechtslage in drei Sätzen</h2>
+<div class="note">
+<b>Fremdbilder scheiden aus, auch freie.</b> Der Wächter
+<code>test/guards/no-foreign-assets.test.ts</code> lässt kein <code>&lt;img&gt;</code> im
+Produktcode zu und verlangt für <code>icons.tsx</code> ausdrücklich Inline-SVG ohne Dateibezug.
+Gemeinfreie Quellen (Public Domain Vectors, SVG Silh) und CC-BY-Sätze (game-icons.net) wären
+nach R-ASSET-02 zwar zulässig, kosteten aber eine Anforderungsänderung, Dateien im Repository
+und einen fremden Strichduktus neben IBM Plex. Selbst zeichnen ist hier der kürzere Weg,
+nicht der längere.
+</div>
+
+<script>
+const c = (x,y,r) => `M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0`;
+
+/* Der heutige Glyphensatz (24er-Kasten) — Spalte A, wörtlich aus icons.tsx. */
+const GLYPH = {
+  infantry:'M3 7h18v10H3z M3 7l18 10 M21 7L3 17',
+  motorized:'M3 5h18v9H3z M3 5l18 9 M21 5L3 14 M7 18.4a1.6 1.6 0 1 0 0 .01 M17 18.4a1.6 1.6 0 1 0 0 .01',
+  tank:'M3 12a9 5 0 1 0 18 0a9 5 0 1 0-18 0',
+  heavy_tank:'M3 12a9 5 0 1 0 18 0a9 5 0 1 0-18 0 M6 12h12',
+  artillery:'M3 17h18 M6 17l6-9 6 9 M12 5.5a1.2 1.2 0 1 0 0 .01',
+  rocket_artillery:'M3 19h18 M6 19l6-7 6 7 M12 3v6 M9.8 5.2L12 3l2.2 2.2',
+  fighter:'M12 3l3 8h6l-6 4 2 6-5-4-5 4 2-6-6-4h6z',
+  bomber:'M2 12h20 M12 4v16 M7 9.5v5 M17 9.5v5',
+  destroyer:'M3 16h18l-2 4H5z M12 4v10 M12 6l6 3-6 2z',
+  transport:'M3 16h18l-2 4H5z M7 8h10v6H7z M12 8v6',
+  barracks:'M4 20V9l8-5 8 5v11z M9 20v-6h6v6',
+  fortress:'M4 20V8h3V5h3v3h4V5h3v3h3v12z M10 20v-5h4v5',
+  factory:'M3 20V11l5 3V11l5 3V6l8 5v9z M7 16h2 M13 16h2',
+  harbour:'M12 4v14 M8 8h8 M5 14a7 7 0 0 0 14 0 M12 2.5a1.4 1.4 0 1 0 0 .01',
+  shipyard:'M4 20h16 M6 20V5h9 M15 5l3 6 M8 12h6',
+  airfield:'M3 20h18 M4 17h16 M6 17v-4h6l2 4 M7 13V9h4v4',
+  railway:'M4 8h16 M4 16h16 M8 4v16 M16 4v16',
+};
+
+/* Der neue Bildsatz: 48x30, Standlinie y=26. body wird gefuellt (B) oder gerissen (C),
+   cut sind die Innenlinien (Radnaben, Rippen, Fenster). */
+const ART = {
+  infantry:{ // Fassung 1: der marschierende Mann mit geschultertem Gewehr
+    body:'M19.6 8.4a4.6 4.4 0 0 1 9.2 0Z'
+        +'M18.2 8.2h12v2h-12Z'
+        +'M21.8 10.2h4.4v1.8h-4.4Z'
+        +'M19.8 11.8h7.4l1.6 8.8h-9Z'
+        +'M16.4 12.4h3.6v6.2h-3.6Z'
+        +'M29.6 4.8 L31.3 6.1 L19.8 22.3 L18.1 21Z'
+        +'M24.6 20.6h3.8l1.2 6h-3.6Z M25.2 24.9h5.2v1.9h-5.2Z'
+        +'M19.8 20.6h3.6l-1.6 6h-3.6Z M17 24.9h5.2v1.9H17Z',
+    cut:'M19.9 17.6h8.8 M23.7 20.9l-.9 5.7 M20.1 12.6v5.8'},
+  infantry_emblem:{ // Fassung 2: Helm und Gewehr - das Geraet statt des Menschen
+    body:'M9 24.5 L37 5.5 l1.8 2.6 L10.8 27.1 Z'
+        +'M13 20a11 8.5 0 0 1 22 0v.8H13Z'
+        +'M10 20.8h28v2.4H10Z',
+    cut:'M31 9.2l2 2.8 M17 20.6h14'},
+  motorized:{
+    body:'M6 12h9l3.4 5.4V21H6Z'
+        +'M18.4 9h21a3 3 0 0 1 3 3v9H18.4Z'
+        +'M5 21h38v2.2H5Z'
+        +c(12,24.2,3.3)+c(34,24.2,3.3)+c(40.5,24.2,3.3),
+    cut:c(12,24.2,1.2)+c(34,24.2,1.2)+c(40.5,24.2,1.2)+'M24 10v10.6 M30 10v10.6 M36 10v10.6 M8.5 13.5h5v3.5h-5z'},
+  tank:{
+    body:'M5 19h38l-2-5H9Z'
+        +'M18 14l2-5h9l2 5Z'
+        +'M29 10.4h17v1.9H29Z'
+        +'M4 19h40a4 4 0 0 1 0 8H4a4 4 0 0 1 0-8Z',
+    cut:c(8.5,23,2.2)+c(14.5,23,2.2)+c(20.5,23,2.2)+c(26.5,23,2.2)+c(32.5,23,2.2)+c(38.5,23,2.2)+'M20.5 11.5h8'},
+  heavy_tank:{
+    body:'M4 19h40l-2-6H8Z'
+        +'M16 13l2-6h12l3 6Z'
+        +'M32 8.6h16v2.1H32Z'
+        +'M3 19h42a4.5 4.5 0 0 1 0 9H3a4.5 4.5 0 0 1 0-9Z',
+    cut:c(7.5,23.5,2.4)+c(13.5,23.5,2.4)+c(19.5,23.5,2.4)+c(25.5,23.5,2.4)+c(31.5,23.5,2.4)+c(37.5,23.5,2.4)+c(43,23.5,2.4)+'M19 9.5h10 M30 9.2h3v2.2h-3z'},
+  artillery:{ // Rohr, Schild, Spornlafette, ein grosses Rad
+    body:'M16.4 16.6 L40.6 3.2 l2.3 3.3 L18.7 20 Z'
+        +'M39.4 2.2 L44.6 5.2 L43.2 7.6 L38 4.6 Z'
+        +'M8.6 12.2h8.2v9.8H8.6Z'
+        +'M16.8 21.2 L4.2 27 L3.3 24.8 L15.9 19 Z'
+        +c(17,20.6,6.4),
+    cut:c(17,20.6,2.2)+'M10.6 14.2h4.2v5.8h-4.2 M25 13l2.1 3'},
+  rocket_artillery:{
+    body:'M6 13h8l3 4.4V21H6Z'
+        +'M17 17h24v4H17Z'
+        +'M20 15.4 L42 5.6 l1 2.2 L21 17.6 Z'
+        +'M20 11.2 L42 1.4 l1 2.2 L21 13.4 Z'
+        +'M22.6 11.2h2v5.2h-2Z'
+        +'M5 21h38v2.2H5Z'
+        +c(12,24.2,3.3)+c(34,24.2,3.3)+c(40.5,24.2,3.3),
+    cut:c(12,24.2,1.2)+c(34,24.2,1.2)+c(40.5,24.2,1.2)+'M8.5 14.5h5v3.2h-5z'},
+  fighter:{
+    body:'M3 18.6 L10 13.6 L34 12.8 a7 3.2 0 0 1 8.4 2.8 a7 3.2 0 0 1 -8.4 2.8 L10 20.4 Z'
+        +'M3.4 18.6 V7.4 L11.6 14.2 Z'
+        +'M1.6 18.4h11.4v2.4H1.6Z'
+        +'M23 16.8h7.6l-3.2 8.6h-7Z'
+        +'M41.8 13.2 L45.2 14.6 L41.8 16 Z'
+        +'M44.8 7.6h1.9v14h-1.9Z',
+    cut:'M25.6 13.2l3.4-2.8h4.2l2 2.6 M13 16.4h17'},
+  bomber:{
+    body:'M22 1.6h4a2.4 2.4 0 0 1 2.4 2.4v22a2.4 2.4 0 0 1 -2.4 2.4h-4a2.4 2.4 0 0 1 -2.4-2.4V4a2.4 2.4 0 0 1 2.4-2.4Z'
+        +'M1.5 11.4h45l-3.4 4.4H4.9Z'
+        +'M12 23.2h24l-2.2 3.4H14.2Z'
+        +'M8.2 9.8h4.4v7.6H8.2Z M14.6 9.8h4.4v7.6h-4.4Z M29 9.8h4.4v7.6H29Z M35.4 9.8h4.4v7.6h-4.4Z',
+    cut:'M24 5.6v20 M6 13.4h36'},
+  destroyer:{
+    body:'M2 18h44l-6.5 7H8.5Z'
+        +'M18 12h9.5v6H18Z'
+        +'M21 7.6h4.6v4.4H21Z'
+        +'M28.4 2h1.6v10h-1.6Z'
+        +'M33 14.4h6.4v3.6H33Z M38.6 15.4h7v1.7h-7Z'
+        +'M8 14.8h5.6v3.2H8Z'
+        +'M5 27h7.4v1.8H5Z M15.4 27h7.4v1.8h-7.4Z M25.8 27h7.4v1.8h-7.4Z M36.2 27h7.4v1.8h-7.4Z',
+    cut:'M19.6 13.4h6.4v2.2h-6.4z M24 2.8l4.4 3'},
+  transport:{
+    body:'M2 18h44l-6.5 7H8.5Z'
+        +'M5.4 11h9v7h-9Z'
+        +'M7.8 6.6h3.6v4.4H7.8Z'
+        +'M18 11.6h9v6.4h-9Z M29 13h8.6v5H29Z'
+        +'M16 5.6h1.6v6.2H16Z M16.6 5.4 L27 9.6 l-.7 1.8 L15.9 7.2 Z'
+        +'M5 27h7.4v1.8H5Z M15.4 27h7.4v1.8h-7.4Z M25.8 27h7.4v1.8h-7.4Z M36.2 27h7.4v1.8h-7.4Z',
+    cut:'M18 14.8h9 M22.5 11.6v6.4 M29 15.5h8.6 M33.3 13v5'},
+
+  barracks:{
+    body:'M5 13.4 L24 4.6 L43 13.4 Z'
+        +'M8.6 13.4h30.8V26H8.6Z'
+        +'M23.2 4.6h1.6V0.8h-1.6Z M24.8 0.8h7.4v3.4h-7.4Z',
+    cut:'M20.4 18.6h7.2V26h-7.2z M11.6 16.4h5v4h-5z M31.4 16.4h5v4h-5z'},
+  fortress:{
+    body:'M4 26V11.4h4.4V7.6h4.4v3.8h6.4V7.6h4.4v3.8h6.4V7.6h4.4v3.8H40V26Z',
+    cut:'M18 26v-6.4a4.6 4.6 0 0 1 9.2 0V26 M4 15.4h36 M12.8 19h3.4v3.4h-3.4z M28.4 19h3.4v3.4h-3.4z'},
+  factory:{
+    body:'M4 26V15.2l9 4.6V15.2l9 4.6V15.2l9 4.6V12.4h13V26Z'
+        +'M35.4 12.4V3.4h4.6v9Z',
+    cut:'M8 21.6h3.6v3.2H8z M17 21.6h3.6v3.2H17z M26 21.6h3.6v3.2H26z M36.6 3.2q0-3 3-3'},
+  harbour:{ // Kai auf Pfaehlen, Poller mit Tau, Anker - kein Schiff (das hat die Werft)
+    body:'M2 17.4h26v4.4H2Z'
+        +'M4.6 21.8h2.6v4.8H4.6Z M11 21.8h2.6v4.8H11Z M17.4 21.8H20v4.8h-2.6Z M23.8 21.8h2.6v4.8h-2.6Z'
+        +'M9 11.2h5.2v6.2H9Z M7.6 8.6h8v2.8h-8Z'
+        +'M15.4 9.6q10.2 1.8 13.8 8.2l-2 1.1q-3.2-5.8-12.2-7.2Z'
+        +'M37.4 11.6h2v11.8h-2Z'
+        +'M33.2 13.6h10.4v2H33.2Z'
+        +c(38.4,8.4,2.9)
+        +'M32.6 17.8q0 5.9 5.8 6.8v-2.2q-3.7-.9-3.7-4.6Z'
+        +'M44.2 17.8q0 5.9-5.8 6.8v-2.2q3.7-.9 3.7-4.6Z',
+    cut:c(38.4,8.4,1.3)+'M2 20.2h26 M9.4 12.6h4.4'},
+  shipyard:{
+    body:'M2 23.8h44V26H2Z'
+        +'M6 3.6h32v3.2H6Z'
+        +'M7 6.8h3.2v17H7Z M33.8 6.8H37v17h-3.2Z'
+        +'M12.6 14h22l-4 8H16.4Z',
+    cut:'M22 6.8v5 M19.6 11.6h4.8v3h-4.8z M14.6 17h18'},
+  airfield:{ // Halle, Turm, und eine Bahn, die perspektivisch nach hinten schmaler wird
+    body:'M9 26h37l-5.4-4.6H14.4Z'
+        +'M2.6 21.4V14.8a9.2 8.2 0 0 1 18.4 0v6.6Z'
+        +'M31.6 21.4V10h4.4v11.4Z M29.4 5.6h8.8v4.4h-8.8Z',
+    cut:'M8.4 21.4v-5.2h7v5.2 M30.8 6.8h6v2.1h-6 M20 23.6h4.4 M28 23.6h4.4 M36 23.6h4.4'},
+  railway:{
+    body:'M4 7h11v14H4Z'
+        +'M15 11h17v10H15Z'
+        +'M27.6 5h4.6v6h-4.6Z'
+        +'M32 17l6.4 4H32Z'
+        +c(9,23.6,3.2)+c(19,23.6,3.2)+c(27,23.6,3.2)
+        +'M2 27.4h44v1.8H2Z',
+    cut:c(9,23.6,1.1)+c(19,23.6,1.1)+c(27,23.6,1.1)+'M6 9.6h7v4.4H6z M28.4 4.8q0-3 3-3 M5 27.4v1.8 M13 27.4v1.8 M21 27.4v1.8 M29 27.4v1.8 M37 27.4v1.8'},
+};
+
+const UNITS = [
+  ['infantry','Infanterie','Infanterie · ab Tag 1'],
+  ['motorized','Motorisierte Infanterie','Infanterie · ab Tag 4'],
+  ['tank','Kampfpanzer','Panzer · ab Tag 8'],
+  ['heavy_tank','Schwerer Kampfpanzer','Panzer · ab Tag 14'],
+  ['artillery','Artillerie','Artillerie · ab Tag 9'],
+  ['rocket_artillery','Raketenartillerie','Artillerie · ab Tag 16'],
+  ['fighter','Jagdflugzeug','Luft · ab Tag 10'],
+  ['bomber','Bomber','Luft · ab Tag 13'],
+  ['destroyer','Zerstörer','See · ab Tag 11'],
+  ['transport','Transportschiff','See · ab Tag 3'],
+];
+const BUILDINGS = [
+  ['barracks','Rekrutierungsbüro','bis Stufe 3'],
+  ['fortress','Festung','bis Stufe 5'],
+  ['factory','Fabrik','bis Stufe 3'],
+  ['harbour','Hafen','bis Stufe 2 · Küste'],
+  ['shipyard','Werft','bis Stufe 2 · Küste'],
+  ['airfield','Flugplatz','bis Stufe 2'],
+  ['railway','Eisenbahn','bis Stufe 3'],
+];
+
+function stamp(key){
+  return `<span class="stamp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${GLYPH[key]}"/></svg><b style="font:500 12px 'IBM Plex Mono',monospace">8</b></span>`;
+}
+function silh(key,w=58,own=false){
+  const a=ART[key];
+  return `<div class="plate${own?' plate--own':''}" style="width:${w+14}px"><svg width="${w}" height="${w*30/48}" viewBox="0 0 48 30">
+    <path class="silh" d="${a.body}"/><path class="silh-cut" d="${a.cut}"/></svg></div>`;
+}
+function riss(key,w=58){
+  const a=ART[key];
+  return `<div class="blue" style="width:${w+14}px"><svg width="${w}" height="${w*30/48}" viewBox="0 0 48 30">
+    <path class="riss" d="${a.body}"/><path class="riss-cut" d="${a.cut}"/></svg></div>`;
+}
+function mini(key,fn){ return fn(key,34); }
+
+function table(id,rows){
+  const el=document.getElementById(id);
+  el.innerHTML='<tr><th>Einheit</th><th>A · Stempel (heute)</th><th>B · Schattenriss</th><th>C · Risszeichnung</th></tr>'
+    + rows.map(([k,n,s])=>`<tr><td class="name">${n}<br><span class="klass" style="font-size:11.5px;color:var(--inkSoft)">${s}</span></td>
+      <td>${stamp(k)}</td><td>${silh(k)}</td><td>${riss(k)}</td></tr>`).join('');
+}
+table('units',UNITS); table('buildings',BUILDINGS);
+
+document.getElementById('inf').innerHTML =
+  [['Fassung 1 · 58 px',silh('infantry',58)],['Fassung 1 · 34 px',silh('infantry',34)],
+   ['Fassung 1 · 22 px',silh('infantry',22)],
+   ['Fassung 2 · 58 px',silh('infantry_emblem',58)],['Fassung 2 · 34 px',silh('infantry_emblem',34)],
+   ['Fassung 2 · 22 px',silh('infantry_emblem',22)]]
+  .map(([t,h])=>`<figure>${h}<figcaption>${t}</figcaption></figure>`).join('');
+
+document.getElementById('sizes').innerHTML =
+  [['B · 58 px',silh('tank',58)],['B · 34 px',silh('tank',34)],['B · 22 px',silh('tank',22)],
+   ['C · 58 px',riss('tank',58)],['C · 34 px',riss('tank',34)],['C · 22 px',riss('tank',22)]]
+  .map(([t,h])=>`<figure>${h}<figcaption>${t}</figcaption></figure>`).join('');
+
+function panel(fn,titel){
+  const rekrut=[['tank','Kampfpanzer','183 Tsd Eisen · 117 Tsd Öl · 36 Std'],
+                ['artillery','Artillerie','150 Tsd Eisen · 75 Tsd Holz · 30 Std'],
+                ['infantry','Infanterie','75 Tsd Nahrung · 50 Tsd Holz · 12 Std']];
+  const bau=[['barracks','Rekrutierungsbüro²'],['factory','Fabrik'],['fortress','Festung'],['railway','Eisenbahn']];
+  return `<div class="panel"><h4>${titel}</h4>
+    <div style="margin-bottom:14px">${rekrut.map(([k,n,p])=>
+      `<div class="row"><div class="mini">${fn(k,34).replace(/<div class="(plate|blue)[^>]*>/,'').replace(/<\/div>$/,'')}</div>
+       <div class="t"><b>${n}</b><span>${p}</span></div>
+       <button class="btn ${k==='tank'?'btn--go':''}">Ausheben</button></div>`).join('')}</div>
+    <h4>Bauplätze</h4>
+    <div class="slots">${bau.map(([k,n])=>
+      `<div class="slot"><div class="mini">${fn(k,30).replace(/<div class="(plate|blue)[^>]*>/,'').replace(/<\/div>$/,'')}</div>${n}</div>`).join('')}</div>
+  </div>`;
+}
+document.getElementById('mock').innerHTML = panel(silh,'Richtung B — Schattenriss') + panel(riss,'Richtung C — Risszeichnung');
+</script>
+</body>
+</html>

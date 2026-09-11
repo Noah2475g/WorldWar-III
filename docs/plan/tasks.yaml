@@ -68,6 +68,21 @@ milestones:
   - { id: M30, title: "Kriegsrat: die Karte zeigt den Zustand" }
   - { id: M31, title: "Kriegsrat: Panels, Protokoll, Fuss" }
   - { id: M32, title: "Kriegsrat: Luecken zu Supremacy (Freigabe vor Bau)" }
+  # EINHEITSBILDER vom 2026-09-11 (docs/plan/EINHEITSBILDER.md): Noahs Wahl der Richtung B
+  # "Schattenriss" fuer Einheiten UND Gebaeude, Einfaerbung nach Besitzerfarbe, Infanterie
+  # als Mann. Kernfrei. Die 17 Zeichnungen liegen fertig in docs/design/einheiten-bilder.html.
+  - { id: M33, title: "Einheiten und Gebaeude bekommen Bilder" }
+  # FORTSCHRITT vom 2026-09-11 (docs/plan/FORTSCHRITT.md): die Freischaltungsleiter ist
+  # nach 6,4 Minuten Echtzeit zu Ende, die Partie dauert 798 Spieltage. Noahs Wahl:
+  # Leiter strecken, Stufen als Bedingung, Stufenkosten steigern, Startvorrat senken,
+  # naechste Freischaltung sichtbar machen. Nicht gewaehlt: die ruhige Eroeffnung.
+  - { id: M34, title: "Der Fortschritt bekommt eine Strecke" }
+  - { id: M35, title: "Der lange Mittelteil bekommt Ziele (Entwurf zuerst)" }
+  # ROHSTOFFE vom 2026-09-11 (docs/plan/ROHSTOFFE.md): die Leiste sagt dieselben Zahlen
+  # wie die Wirtschaftstabelle, der Name ist in ihr unsichtbar, und vier der sieben
+  # Zeichen tragen ihre Bedeutung nicht. Noahs Wahl: neue Zeichen, Ampel statt Tabelle,
+  # Reichweite statt Bilanz. Gruppierung entscheidet er am Bild (T-M36-04).
+  - { id: M36, title: "Die Rohstoffleiste wird lesbar" }
 
 tasks:
   - id: T-M0-01
@@ -2296,3 +2311,207 @@ tasks:
     tests: [apps/desktop/src/ui/Panels.test.tsx]
     dod: "Befund 5 der Durchsicht vom 2026-09-11, aus T-M28-11 abgetrennt. Der Kern erlaubt mehrere gleichzeitige Auftraege derselben Gebaeudeart (buildSlots 2 in der Stadt, maxLevel 3 bei der Kaserne), und jeder traegt sein eigenes completesAtTick. Das Raster hat je Art genau EIN Feld und findet mit find() nur den ersten - der zweite bezahlte Auftrag hat weder Fortschritt noch Fertigstellung, und nach Abschluss des ersten springt der Balken ohne Erklaerung zurueck. Auch die beiden Abbrechen-Knoepfe heissen gleich (actions.ts:151) und sind nicht unterscheidbar. Fertig, wenn jeder laufende Auftrag seinen eigenen Fortschritt mit Restzeit hat und die Abbrechen-Knoepfe die Stufe oder die Fertigstellung nennen. Test zuerst: zwei Kaserne-Auftraege ergeben zwei Fortschrittsanzeigen mit verschiedenen Restzeiten"
 
+  # EINHEITSBILDER vom 2026-09-11 (docs/plan/EINHEITSBILDER.md). Reihenfolge = Baureihenfolge.
+  # M33 haengt an keiner offenen Aufgabe aus M28 oder M32 und blockiert keine davon: es
+  # beruehrt den Kern nicht, nur die Oberflaeche. Wer die Reihenfolge sucht, liest
+  # WORKFLOW.md Abschnitt 2.
+  - id: T-M33-01
+    milestone: M33
+    title: Der Bildsatz zieht in den Code ein
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-ASSET-01, R-ASSET-02, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/art.tsx, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/art.test.tsx, apps/desktop/src/ui/icons.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts, test/guards/no-foreign-assets.test.ts]
+    dod: "EINHEITSBILDER.md D33.1/D33.2. art.tsx traegt 17 Zeichnungen im Kasten 48x30 als {body, cut}, wortgleich aus docs/design/einheiten-bilder.html (Infanterie = der Mann, Fassung 1), dazu UNIT_ART, BUILDING_ART und die Komponente UnitArt. Test zuerst: jede Einheit aus units.json und jedes Gebaeude aus buildings.json hat genau ein Bild, keines doppelt vergeben, jede Zeichnung hat body UND cut. no-foreign-assets.test.ts prueft art.tsx wie icons.tsx (Inline-SVG, kein Dateibezug) und faellt gegen eine leere Menge. CONTRAST_PAIRS bekommt good, ally und accent gegen paperSunk; haelt ein Paar die 3:1-Schwelle nicht, entscheidet der Kontrasttest und nicht der Entwurf (wie bei line in D27.1). AUSSERDEM Risiko 7 aus EINHEITSBILDER.md: icons.test.tsx Zeile 48 prueft die Koordinaten mit dem Ausdruck -?d+(.d+)? - der trifft den Buchstaben d statt einer Ziffer, findet in keinem Pfad etwas und ist damit fuer alle 44 Symbole leer gruen (nachgewiesen 2026-09-11: 0 Treffer, max -Infinity, min Infinity). Ersetzen durch eine echte Pfadabfahrt, die den Stift mitfuehrt und Laengen von Koordinaten unterscheidet, fuer beide Bildsaetze - und zuerst vorfuehren, dass sie rot werden kann."
+  - id: T-M33-02
+    milestone: M33
+    title: Die Rekrutierungsliste zeigt Bilder
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-UI-03, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "EINHEITSBILDER.md D33.3, Breite 34 px. ActionSpec bekommt ein optionales Feld art; recruitActions setzt es aus UNIT_ART, das Feld icon bleibt unberuehrt (die Alarme und der Tagesbericht nutzen es weiter). Test zuerst: die Liste zeigt je Einheit genau ein Bild, der A11y-Name bleibt wortgleich (Infanterie ausheben, T-M22-06), das Klickziel bleibt mindestens 24 px (R-UI-03). Keine Kernaenderung."
+  - id: T-M33-03
+    milestone: M33
+    title: Das Bauplatzraster zeigt Gebaeudebilder
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-UI-03, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "EINHEITSBILDER.md D33.3, Breite 30 px. Alle drei Feldzustaende des Rasters aus T-M29-03 (frei, im Bau, gebaut) tragen dasselbe Bild; die Stufenzahl bleibt als hochgestellte Ziffer sichtbar und im Namen hoerbar (2 Fabrik). Test zuerst: sieben Felder zeigen sieben verschiedene Bilder, und der Wechsel des Zustands aendert das Bild nicht. Panels.test.tsx Zeile 1032 vergleicht heute gezeichnete Pfade mit ICON_PATHS - wo ein Panel auf Bilder umstellt, wird der Vergleich angepasst, nicht gelockert."
+  - id: T-M33-04
+    milestone: M33
+    title: Das Plaettchen bekommt eine Bildfassung
+    status: todo
+    deps: [T-M33-01, T-M31-02]
+    requirements: [R-UI-04, R-UI-10]
+    design: [D-27]
+    files: [apps/desktop/src/ui/UnitMarker.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "EINHEITSBILDER.md D33.2/D33.3, Breite 44 px. UnitMarker nimmt wahlweise Glyphe oder Bild; Rahmen, Besitzerfarbe und die Zahl rechts bleiben unveraendert, damit Karte und Liste dieselbe Sprache sprechen (Risiko 1). Armee- und Rangliste schalten auf Bild. Die Karte bleibt auf der Glyphe - ein Test haelt fest, dass MapCanvas weiter ICON_PATHS stempelt (D33-a: 11 px tragen keinen Schattenriss). Test zuerst: eigenes Plaettchen good, verbuendetes ally, feindliches accent; MapCanvas unveraendert."
+  - id: T-M33-05
+    milestone: M33
+    title: Abnahme M33
+    status: todo
+    deps: [T-M33-02, T-M33-03, T-M33-04]
+    requirements: []
+    design: [D-27]
+    files: [docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/EINHEITSBILDER.md]
+    tests: [apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "pnpm verify gruen (einmal am Ende des Meilensteins, nicht je Aufgabe). Zeichenbudget nachgemessen bei freier Maschine gegen den Ausgangswert p95 5,39 ms von 16,7 ms - die Armeeliste hat je Zeile zwei Pfade mehr (Risiko 4); die Zahl wird festgehalten, auch wenn sie unauffaellig ist. Sichtpruefung der 17 Bilder im laufenden Spiel, nicht nur im Entwurfsblatt. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und die drei Entscheide D33-a bis D33-c aus EINHEITSBILDER.md Abschnitt 6 in DECISIONS.md."
+
+  # FORTSCHRITT vom 2026-09-11 (docs/plan/FORTSCHRITT.md). Reihenfolge = Baureihenfolge.
+  # M34 beruehrt den Kern an genau einer Stelle (T-M34-04) und aendert data/rules mehrfach -
+  # jede dieser Aenderungen macht die Abnahme rot, bis Parameterlauf und Turnier neu
+  # gelaufen und eingecheckt sind (Frische-Waechter in scripts/acceptance.mjs).
+  - id: T-M34-01
+    milestone: M34
+    title: Der Ausgangswert wird gemessen
+    status: todo
+    deps: []
+    requirements: []
+    files: [docs/reports/progress-baseline.md]
+    tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "FORTSCHRITT.md Abschnitt 0, Punkt 1: erst messen, dann strecken. Parameterlauf und Turnier auf dem HEUTIGEN Regelstand, Maschine allein (WORKFLOW Falle 3), dazu die vier Kennzahlen der Analyse in einem Bericht: letzte Freischaltung Spieltag 16, 6,4 Minuten Echtzeit bei Tempo 1, Siegtag 798 im Abnahmelauf, 2 Prozent der Partie mit Freischaltungen. Ausserdem der Ist-Stand der Wirtschaft aus economy-scale: wann erreicht eine mittlere Macht Fabrik Stufe 3. Ohne diesen Bericht ist jede spaetere Aussage es sei besser geworden unbelegt."
+  - id: T-M34-02
+    milestone: M34
+    title: R-TECH-01 wird begruendet geaendert
+    status: todo
+    deps: [T-M34-01]
+    requirements: [R-TECH-01]
+    files: [docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/BALANCING.md]
+    tests: []
+    dod: "Kein Bau. R-TECH-01 nennt heute die Tage des Vorbilds als belegt (Kaserne 1, Hafen 2, Eisenbahn 5, Fabrik 8, Flugplatz 10). Sie bleiben genannt, bekommen aber die Gegenrede: im Vorbild ist ein Spieltag ein echter Tag, hier sind es 24 Sekunden bei Tempo 1 - dieselbe Leiter dauert dort 16 Tage und hier 6,4 Minuten. Fertig, wenn die Anforderung die neue Zeitrechnung traegt, DECISIONS.md den Entscheid mit dieser Begruendung fuehrt und BALANCING.md die Tage von belegt auf abgeleitet umstuft. coverage:requirements muss weiter V1 offen: 0 melden."
+  - id: T-M34-03
+    milestone: M34
+    title: Die Freischaltungsleiter wird gestreckt
+    status: todo
+    deps: [T-M34-02]
+    requirements: [R-TECH-01]
+    files: [data/rules/default/units.json, data/rules/default/buildings.json, docs/plan/BALANCING.md]
+    tests: [apps/headless/test/availability.test.ts, packages/core/src/rules/availability.test.ts, packages/core/test/determinism.test.ts]
+    dod: "FORTSCHRITT.md D34.1: availableFromDay so gesetzt, dass die letzte Freischaltung (Raketenartillerie) bei etwa Spieltag 80 statt 16 liegt; Reihenfolge bleibt, Abstaende wachsen. Rekrutierungsbuero und Infanterie bleiben auf Tag 1 - ohne sie steht der Spieler am ersten Tag ohne Handlung da. Test zuerst: die Leiter ist je Klasse monoton, und kein Gebaeude wird spaeter frei als die Einheit, die es verlangt. Golden-Master neu erzeugen (UPDATE_GOLDEN=1) und im Commit sagen warum."
+  - id: T-M34-04
+    milestone: M34
+    title: Gebaeudestufen kosten und dauern mehr
+    status: todo
+    deps: [T-M34-01]
+    requirements: [R-PROV-01, R-PROV-02]
+    files: [packages/core/src/commands/build.ts, packages/core/src/phases/construction.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/constants.json, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/phases/construction.test.ts, packages/core/test/determinism.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "FORTSCHRITT.md D34.3 - die EINZIGE Kernaenderung dieses Meilensteins. Befund: build.ts zieht rule.cost unveraendert ab und setzt completionTick aus rule.buildTicks, die Stufe ist reine Buchfuehrung; Fabrik Stufe 3 kostet so viel wie Stufe 1. Zwei neue Konstanten buildLevelCostPermille (1800) und buildLevelTimePermille (1500), angewandt als Faktor hoch Stufe minus eins. Das Bauplatz-Raster und der Ausbau-Knopf zeigen den Preis der NAECHSTEN Stufe, nicht den der ersten. Test zuerst: Stufe 1 kostet unveraendert, Stufe 3 kostet das 3,24-fache und dauert das 2,25-fache; ein Auftrag, der fuer Stufe 1 reicht, wird fuer Stufe 3 mit INSUFFICIENT_RESOURCES abgelehnt. Golden-Master neu erzeugen und begruenden."
+  - id: T-M34-05
+    milestone: M34
+    title: Starke Einheiten verlangen hoehere Gebaeudestufen
+    status: todo
+    deps: [T-M34-03, T-M34-04]
+    requirements: [R-UNIT-02, R-TECH-01]
+    files: [data/rules/default/units.json, docs/plan/BALANCING.md]
+    tests: [packages/core/src/commands/validate.test.ts, apps/headless/test/availability.test.ts]
+    dod: "FORTSCHRITT.md D34.2. Das Feld requiresBuildingLevel gibt es, recruit.ts wertet es aus - es wird nur benutzt: Raketenartillerie Fabrik 3 statt 2, Zerstoerer Werft 2 statt 1, Bomber bleibt Flugplatz 2. Mehr nicht: eine Bedingung, die niemand erfuellen kann, ist keine Fortschrittsachse, sondern eine Sperre. Test zuerst: die Ablehnung nennt Gebaeude UND Stufe (MISSING_BUILDING), und mit der Stufe darunter wird derselbe Auftrag abgelehnt."
+  - id: T-M34-06
+    milestone: M34
+    title: Der Startvorrat schrumpft
+    status: todo
+    deps: [T-M34-01]
+    requirements: [R-ECON-01]
+    files: [data/rules/default/resources.json, docs/plan/BALANCING.md]
+    tests: [packages/core/src/state/create.test.ts, apps/headless/test/economy-scale.test.ts]
+    dod: "FORTSCHRITT.md D34.4: startAmount je Rohstoff auf zwei Drittel. Begruendung: der heutige Vorrat traegt rund 13 Infanterie aus der Nahrung und 37 aus dem Geld, waehrend eine durchschnittliche Provinz am Tag etwa eine dreiviertel Infanterie an Nahrung erwirtschaftet - die ersten Tage sind ein Lagerabbau, keine Knappheit. Nicht weiter kuerzen: die Eroeffnung soll knapp werden, nicht handlungsunfaehig, und die Kuerzung trifft die KI genauso. Test zuerst: eine frische Partie hat die neuen Werte und bleibt in den ersten zehn Tagen handlungsfaehig (mindestens ein Gebaeude und eine Aushebung bezahlbar)."
+  - id: T-M34-07
+    milestone: M34
+    title: Nachmessen und nachjustieren
+    status: todo
+    deps: [T-M34-03, T-M34-04, T-M34-05, T-M34-06]
+    requirements: []
+    files: [docs/reports/progress-baseline.md, docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md]
+    tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/economy-scale.test.ts]
+    dod: "FORTSCHRITT.md Risiken 1 bis 3 und 5. Parameterlauf und Turnier NACH JEDER der vier Zahlenaufgaben, nicht nur am Ende - vier Nachtlaeufe statt einem, weil sich sonst nicht sagen laesst, welche der vier eine Verschlechterung verursacht hat. Verglichen wird gegen den Ausgangswert aus T-M34-01: Siegtag, Zahl der Eroberungen, Anteil des Staerksten, Siegverteilung ueber die drei Schwierigkeitsstufen, und der Pruefstein aus Risiko 5 (erreicht eine mittlere Macht Fabrik Stufe 3 bis Spieltag 200). Faellt der Siegtag unter 300 oder ueber 1500, wird nachjustiert und erneut gemessen, nicht behauptet. Berichte eingecheckt, sonst bleibt der Frische-Waechter rot."
+  - id: T-M34-08
+    milestone: M34
+    title: Die naechste Freischaltung wird sichtbar
+    status: todo
+    deps: [T-M33-02, T-M34-03]
+    requirements: [R-TECH-02, R-UI-13]
+    design: [D-27]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/actions.test.ts]
+    dod: "FORTSCHRITT.md D34.5. Heute steht an einem gesperrten Eintrag nur ab Tag 34; was fehlt, ist der Blick nach vorn. Eine Zeile am Kopf der Rekrutierungsliste nennt die naechste Freischaltung mit Bild (aus T-M33-02), Namen und Tagen bis dahin. Ist alles frei, verschwindet die Zeile, statt leer dazustehen. Test zuerst: an Tag 20 nennt die Zeile die naechste Sache und die richtige Zahl von Tagen; am Tag der Freischaltung wechselt sie auf die uebernaechste; nach der letzten ist sie weg."
+  - id: T-M35-01
+    milestone: M35
+    title: Entwurf der Zwischenziele zum Sieg
+    status: todo
+    deps: [T-M34-07]
+    requirements: []
+    files: [docs/plan/FORTSCHRITT.md, docs/plan/DECISIONS.md]
+    tests: []
+    dod: "VORMERKUNG, NICHT DER BAU - dasselbe Muster wie T-M28-07. Heute gibt es eine Schwelle (700 Promille Punktanteil) und zwischen Spieltag 20 und 700 keine Rueckmeldung, ob man vorankommt. Zuerst eine kleine Analyse: welche Zwischenziele traegt der Zustand schon (Punkte, Provinzzahl, Bevoelkerungsanteil, besiegte Maechte - alles ueber victory.ts und scoreOf erreichbar), was braeuchte ein neues Feld, und was kostet die Anzeige. Dann Entwurf in FORTSCHRITT.md Abschnitt 3 nachtragen und in konkrete Teilaufgaben schneiden, mit Umgang fuer Golden-Master und R-GAME-02 (V1-Zusage). Erst nach dem Entwurf bauen."
+
+  # ROHSTOFFE vom 2026-09-11 (docs/plan/ROHSTOFFE.md). Reihenfolge = Baureihenfolge.
+  # Kernfrei, reine Oberflaeche. Entwurf und alle Zeichen: docs/design/rohstoffleiste.html
+  - id: T-M36-01
+    milestone: M36
+    title: Die sieben Rohstoffzeichen werden neu gezeichnet
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-ASSET-01, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/icons.tsx]
+    tests: [apps/desktop/src/ui/icons.test.tsx]
+    dod: "ROHSTOFFE.md D36.1. Sieben Eintraege in ICON_PATHS ersetzt (food, wood, iron, coal, oil, rare, money), Strichzeichnung im 24er-Kasten wie der ganze Satz - KEINE Schattenrisse, Rohstoffe haben Zeichen und keine Bilder. Der BESCHLOSSENE Satz aus docs/design/rohstoffleiste.html Abschnitt 1b: Nahrung, Material und Geld aus Fassung 1, Eisen, Kohle, Oel und Seltene Erden aus Fassung 2 (Noahs Wahl, zweite Runde). Nachgemessen bei 14 px, mittlerer Unterschied je Bildpunkt ueber alle 21 Paare: engstes Paar Kohle/Oel 0,127 gegen 0,104 heute und 0,119 bei reiner Fassung 1. Die Messung belegt unterscheidbar, nicht erkennbar - dafuer ist die Sichtpruefung da, besonders bei Seltenen Erden, deren zwei Kristalle zusammenlaufen koennten. Material bekommt einen Balkenstapel statt eines Nadelbaums; der Rohstoff heisst seit T-M23-01 nicht mehr Holz. Haengt an T-M33-01, weil dort der leer gruene Koordinatenwaechter durch eine echte Pfadabfahrt ersetzt wird - neue Pfade ohne ihn waeren ungeprueft eingecheckt. Abnahme ist eine Sichtpruefung der sieben bei 14 px nebeneinander, nicht in Grossaufnahme."
+  - id: T-M36-02
+    milestone: M36
+    title: Die Leiste zeigt Reichweite statt Bilanz
+    status: todo
+    deps: [T-M36-01]
+    requirements: [R-ECON-06, R-UI-11]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/format.ts, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/format.test.ts]
+    dod: "ROHSTOFFE.md D36.2. Je Rohstoff Zeichen, Bestand und ein Pfeil fuer die Richtung; die Bilanzzahl wandert in den Tooltip zu Produktion und Verbrauch, die dort schon stehen. Draengt ein Rohstoff, steht die Reichweite in Tagen als sichtbare Zahl (6 T) - das ist die Auskunft, nach der man handelt, und reachInDays rechnet sie laengst aus. Die Schwelle ist die vorhandene SHORT_REACH_DAYS, keine neue Zahl. R-ECON-06 bleibt erfuellt: die vier Groessen stehen weiter sichtbar in der Wirtschaftstabelle, die Leiste ist nicht die Uebersicht. Test zuerst: ein schrumpfender Vorrat zeigt Tage und Abwaertspfeil, ein wachsender nur den Pfeil, der Tooltip nennt weiterhin Produktion, Verbrauch und Bilanz."
+  - id: T-M36-03
+    milestone: M36
+    title: Nur Knappes ist laut
+    status: todo
+    deps: [T-M36-02]
+    requirements: [R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "ROHSTOFFE.md D36.2 und Risiko 3. Wer laeuft, steht in ruhigem Grau mit halber Schriftstaerke; wer draengt, bekommt Bernstein und volle Staerke. An einem ruhigen Tag traegt die Leiste keine einzige Farbe. Die gedaempfte Fassung des Bestands MUSS 4,5:1 gegen paperSunk halten - haelt sie es nicht, entscheidet der Kontrasttest und nicht der Entwurf (wie bei line in D27.1); das Paar wird in CONTRAST_PAIRS aufgenommen. Test zuerst: sieben laufende Rohstoffe ergeben keine Auszeichnung, ein knapper genau eine."
+  - id: T-M36-04
+    milestone: M36
+    title: Die Leiste bekommt vier Gruppen
+    status: todo
+    deps: [T-M36-03]
+    requirements: [R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, docs/plan/DECISIONS.md]
+    tests: [apps/desktop/src/ui/Header.test.tsx]
+    dod: "BESCHLOSSEN am 2026-09-11, kein Haltepunkt mehr. ROHSTOFFE.md D36.3, Anordnung 2 im Entwurfsblatt: vier Bloecke - Versorgung (Nahrung), Baustoffe (Material, Eisen, Kohle), Kriegsstoffe (Oel, Seltene Erden), Geld - mit Trennlinien statt sieben gleichwertiger Zellen. Der Preis steht dabei und wurde mitgekauft: zwei Strichstaerken nebeneinander koennen die Leiste unruhiger machen statt ruhiger; bestaetigt sich das im Spiel, ist es ein Befund fuer den naechsten Playtest und kein Grund, jetzt anders zu bauen. Test zuerst: jede Gruppe traegt ihre Rohstoffe, die Reihenfolge der sieben bleibt unveraendert, und die Gruppentrennung ist im Vorlesetext keine zusaetzliche Ebene."
+  - id: T-M36-05
+    milestone: M36
+    title: Die Wirtschaftstabelle wird ruhiger, nicht kuerzer
+    status: todo
+    deps: [T-M36-01]
+    requirements: [R-ECON-06]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "ROHSTOFFE.md Abschnitt 3 - die Korrektur eines eigenen Vorschlags. Der Vorschlag lautete eine Spalte streichen; das geht nicht, weil R-ECON-06 woertlich verlangt, dass Bestand, Produktion je Tag, Verbrauch je Tag UND Bilanz je Ressource sichtbar sind. Alle vier bleiben. Stattdessen: nur Bestand und Bilanz tragen Gewicht, die sieben Nullen der Unterhaltsspalte werden zu Strichen in Linienfarbe, und die Farbe gehoert allein der Bilanz. Test zuerst: alle vier Spalten sind weiter im Baum vorhanden (R-ECON-06 bleibt belegt) und eine Null wird als Strich ausgegeben, ohne dass der Vorlesetext sie verliert."
+  - id: T-M36-06
+    milestone: M36
+    title: Abnahme M36
+    status: todo
+    deps: [T-M36-02, T-M36-03, T-M36-04, T-M36-05]
+    requirements: []
+    design: [D-27]
+    files: [docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/ROHSTOFFE.md]
+    tests: []
+    dod: "pnpm verify gruen. Sichtpruefung im laufenden Spiel an ALLEN VIER Orten, an denen RESOURCE_ICONS erscheint (Risiko 4): Leiste, Vorkommen einer Provinz, Baukosten-Hinweise, Tagesbericht - nicht nur in der Leiste. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und in DECISIONS.md zwei Eintraege: der gemischte Zeichensatz mit der Messung, die ihn traegt, und die Gruppierung samt ihrem Preis."

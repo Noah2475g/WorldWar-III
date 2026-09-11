@@ -43,6 +43,32 @@
 > **Stand davor:** 2026-09-11 · **Der Kriegsrat-Umbau ist bis M31 gebaut** (11 von 15 Aufgaben
 > `done`; `pnpm verify` grün an den Toren M29/M30). **M32 wartete auf Noahs Freigabe.**
 >
+> **Neu am 2026-09-11: M33 „Einheiten und Gebäude bekommen Bilder" ist geplant und
+> freigegeben** (`docs/plan/EINHEITSBILDER.md`, fünf Aufgaben, alle `todo`, kernfrei).
+> Noah hat nach zwei Entwurfsrunden Richtung B „Schattenriss" gewählt, für Einheiten und
+> Gebäude, eingefärbt nach Besitzerfarbe, Infanterie als Mann. Die siebzehn Zeichnungen
+> liegen fertig in `docs/design/einheiten-bilder.html` — wer M33 baut, überträgt, er
+> entwirft nicht mehr. **Fund am Rand:** der Koordinatentest in `icons.test.tsx` ist seit
+> Monaten leer grün (sein Ausdruck sucht den Buchstaben `d` statt einer Ziffer und findet
+> in keinem Pfad etwas); T-M33-01 ersetzt ihn.
+>
+> **Ebenfalls neu am 2026-09-11: M34 „Der Fortschritt bekommt eine Strecke" und M35**
+> (`docs/plan/FORTSCHRITT.md`, neun Aufgaben, alle `todo`). Der Befund: die Uhr läuft mit
+> einem Tick je Sekunde, ein Spieltag hat 24 Ticks, die letzte Freischaltung liegt auf
+> Spieltag 16 — die ganze Fortschrittsachse ist nach **6,4 Minuten Echtzeit** vorbei,
+> während die Partie bis Spieltag 798 läuft. Dazu zwei weitere: Gebäudestufen kosten auf
+> jeder Stufe dasselbe, und der Startvorrat trägt die Eröffnung allein. **M34 ist teuer**,
+> nicht im Code, sondern in Messungen: vier Änderungen an `data/rules`, jede macht die
+> Abnahme rot bis Parameterlauf und Turnier neu eingecheckt sind, und T-M34-04 verschiebt
+> den Golden-Master.
+>
+> **Und M36 „Die Rohstoffleiste wird lesbar"** (`docs/plan/ROHSTOFFE.md`, sechs Aufgaben,
+> kernfrei, Entwurf `docs/design/rohstoffleiste.html`). Aus der Sichtprüfung am laufenden
+> Spiel: dieselben Zahlen stehen doppelt auf dem Bildschirm, der Rohstoffname ist in der
+> Leiste `visually-hidden`, und vier der sieben Zeichen tragen ihre Bedeutung nicht —
+> **Material wird bis heute durch einen Nadelbaum dargestellt**, obwohl der Rohstoff seit
+> T-M23-01 nicht mehr Holz heißt. Zeichensatz und Gruppierung sind entschieden.
+>
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
 > (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
@@ -123,24 +149,40 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **Nichts Dringendes mehr.** Der Abnahmelauf steht bei 11 von 11 auf freier Maschine,
-   alles ist auf `main`, und von 205 Aufgaben ist nur die zurückgenommene T-M10-02 offen.
-   Vor jedem künftigen Abnahmelauf die Last prüfen — unter einem laufenden Spiel reisst
-   das Zeitbudget-Tor, und zwar am Code vorbei:
-   ```bash
-   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
-   ```
-0b. **Noahs Freigabe für M33** — T-M28-07 hat vier Teilaufgaben geschnitten
+Alles bis einschließlich M32 ist gebaut, abgenommen und auf `main`. Was hier steht, ist
+geplant und freigegeben, aber **nicht gebaut** — zwanzig Aufgaben in vier Meilensteinen.
+
+0. **Die Bilder für Einheiten und Gebäude (M33)** — freigegeben am 2026-09-11, kernfrei,
+   fünf Aufgaben. `docs/plan/EINHEITSBILDER.md` §0 lesen, dann T-M33-01 bis T-M33-05. Die
+   siebzehn Zeichnungen liegen fertig in `docs/design/einheiten-bilder.html`; es ist kein
+   Entwurf mehr zu machen, nur noch zu übertragen. **Achtung:** T-M33-01 repariert
+   nebenbei einen Wächter, der seit Monaten leer grün ist (Risiko 7 im Bauplan).
+1. **Der Fortschritt bekommt eine Strecke (M34)** — freigegeben am 2026-09-11, acht
+   Aufgaben. `docs/plan/FORTSCHRITT.md` §0 lesen. **Das ist der teuerste Meilenstein des
+   Plans**, nicht wegen des Codes, sondern wegen der Messungen: vier Änderungen an
+   `data/rules`, und jede macht die Abnahme rot, bis Parameterlauf und Turnier neu
+   gelaufen **und eingecheckt** sind. T-M34-01 misst zuerst den Ausgangswert; T-M34-04 ist
+   die einzige Kernänderung und verschiebt den Golden-Master.
+2. **Die Rohstoffleiste wird lesbar (M36)** — freigegeben am 2026-09-11, sechs Aufgaben,
+   kernfrei. `docs/plan/ROHSTOFFE.md` §0 lesen. T-M36-01 hängt an T-M33-01, weil dort der
+   Wächter entsteht, der die neuen Pfade prüft. Zeichensatz und Gruppierung sind
+   entschieden; es ist nichts mehr zu entwerfen.
+3. **Der lange Mittelteil bekommt Ziele (M35)** — eine Aufgabe, und die ist ein **Entwurf,
+   kein Bau** (Muster T-M28-07). Erst nach M34.
+
+Dazu, ohne Aufgabe in `tasks.yaml`:
+
+4. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
    (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
    wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
    `garrison` oder `defensive` die Vorgabehaltung wird. Die Teilaufgaben stehen bewusst
    noch **nicht** in `tasks.yaml`.
-0c. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
+5. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
    Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
    `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
    Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
    M17 wird als Ganzes geplant oder gar nicht.
-0d. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
+6. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
    im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
    24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
    Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen. Fünf
@@ -148,34 +190,18 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
    alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht prüfbar.**
    Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
    braucht ein großes Fenster und seinen Blick.
-
-1. **Merge auf `main` — erledigt am 2026-09-11** (`4466503`). Er war **kein fast-forward**,
-   anders als hier bis dahin stand. Gemessen: `git merge-base --is-ancestor main claude/design-plan-execution-8b4296`
-   schlägt fehl. PR #3 wurde als **Merge-Commit** nach `main` gebracht (`7881f8a`), der
-   Branch lief von `c372ba4` aus weiter — beide Linien haben seither je einen Commit, den
-   die andere nicht kennt. **Inhaltlich ist der Branch trotzdem ein echter Obermenge:**
-   `git diff claude/design-plan-execution-8b4296..main` ist exakt die Umkehrung von
-   `git diff main..claude/…` (46 Dateien, 1775/100 Zeilen in beide Richtungen), `main`
-   trägt also keine Zeile, die der Branch nicht hätte. Der Merge ist damit trivial, aber er
-   erzeugt einen Merge-Commit. **Das ist Noahs Entscheidung, so wie PR #3 es war** — die
-   Wahl zwischen Merge-Commit, `rebase` auf `main` und einem zweiten PR gehört ihm.
-   Die alte Streuänderung an `packages/core/src/persistence/migrate.ts` im Hauptcheckout
-   ist weg; dort liegt nur noch ein ungetrackter Ordner `remote/`. Danach die alten
-   Worktrees aufräumen (`git worktree list` zeigt acht; nur
-   `design-plan-execution-8b4296` ist aktuell, und `offene-punkte-vault-7d88d5` enthält
-   uncommittete Dateien und bleibt bewusst stehen).
-2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+7. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
+8. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
    neuen Bündel (starten, speichern, schließen, neu starten, laden —
    `docs/reports/packaging.md` dokumentiert noch den Lauf gegen `1c33ec7`). Zählt
    nicht gegen V1.
-3. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
+9. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
    nächste Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich
    weiterspielen?*
-4. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
+10. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.
-
 ---
 
 ## 3 · Was gilt (nicht neu herleiten)

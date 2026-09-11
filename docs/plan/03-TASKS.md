@@ -4197,3 +4197,273 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Tests zuerst:** keine (Entscheid).
 - **Fertig wenn:** je Punkt entweder Aufgabe mit Meilenstein vorgemerkt oder mit
   Begründung gestrichen.
+
+## Meilenstein M33 — Einheiten und Gebäude bekommen Bilder
+
+> Noahs Wahl vom 2026-09-11 nach zwei Entwurfsrunden: Richtung **B „Schattenriss"**, für
+> Einheiten **und** Gebäude, eingefärbt nach Besitzerfarbe, Infanterie als **Mann**.
+> Der Bauplan steht in `docs/plan/EINHEITSBILDER.md`, die siebzehn fertigen Zeichnungen in
+> `docs/design/einheiten-bilder.html`. **M33 berührt den Kern nicht** und hängt an keiner
+> offenen Aufgabe aus M28 oder M32 — es kann vor oder nach ihnen gebaut werden.
+
+### T-M33-01 · Der Bildsatz zieht in den Code ein
+- **Ziel:** siebzehn Zeichnungen als zweiter Satz neben `icons.tsx`, und ein Wächter, der
+  sie deckt — sonst entsteht das größte Asset-Loch des Projekts.
+- **Anforderungen:** R-ASSET-01, R-ASSET-02, R-UI-04 · **Entwurf:** D27 (Abschnitt D33 in
+  `EINHEITSBILDER.md`)
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/art.tsx`, `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** jede Einheit und jedes Gebäude hat genau ein Bild, keines doppelt
+  vergeben, jede Zeichnung hat `body` **und** `cut` (`art.test.tsx`); `art.tsx` wird wie
+  `icons.tsx` geprüft und fällt gegen eine leere Menge (`no-foreign-assets.test.ts`);
+  drei neue Kontrastpaare gegen `paperSunk` (`tokens.contrast.test.ts`).
+- **Fertig wenn:** `ART`, `UNIT_ART`, `BUILDING_ART` und `UnitArt` stehen; **und** der
+  vacuous gewordene Koordinatentest in `icons.test.tsx` ist durch eine echte Pfadabfahrt
+  ersetzt, die vorher rot werden konnte (Risiko 7).
+
+### T-M33-02 · Die Rekrutierungsliste zeigt Bilder
+- **Ziel:** die Liste, aus der ausgehoben wird, ist der Ort mit dem größten Gewinn.
+- **Anforderungen:** R-UI-03, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** je Einheit genau ein Bild; A11y-Name bleibt wortgleich; Klickziel
+  bleibt ≥ 24 px (`Panels.test.tsx`, `actions.test.ts`).
+- **Fertig wenn:** `ActionSpec.art` optional gesetzt, `icon` unberührt, keine
+  Kernänderung.
+
+### T-M33-03 · Das Bauplatzraster zeigt Gebäudebilder
+- **Ziel:** Rekrutierungsliste und Bauplatzraster stehen nebeneinander und sollen nicht
+  wie zwei Programme aussehen.
+- **Anforderungen:** R-UI-03, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** sieben Felder zeigen sieben verschiedene Bilder; der Zustandswechsel
+  ändert das Bild nicht (`Panels.test.tsx`).
+- **Fertig wenn:** alle drei Feldzustände tragen dasselbe Bild, die Stufenzahl bleibt
+  sichtbar und hörbar, und der Pfadvergleich gegen `ICON_PATHS` ist angepasst statt
+  gelockert.
+
+### T-M33-04 · Das Plättchen bekommt eine Bildfassung
+- **Ziel:** Armee- und Rangliste tragen Bilder, die Karte behält ihre Glyphe.
+- **Anforderungen:** R-UI-04, R-UI-10 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01, T-M31-02
+- **Dateien:** `apps/desktop/src/ui/UnitMarker.tsx`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** eigenes Plättchen `good`, verbündetes `ally`, feindliches `accent`;
+  `MapCanvas` stempelt weiter `ICON_PATHS` (`MapCanvas.test.tsx`).
+- **Fertig wenn:** Rahmen, Farbe und Zahlstellung unverändert — nur die Füllung wechselt.
+
+### T-M33-05 · Abnahme M33
+- **Ziel:** der Meilenstein wird geschlossen, nicht liegen gelassen.
+- **Anforderungen:** keine · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-02, T-M33-03, T-M33-04
+- **Dateien:** `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`,
+  `docs/plan/EINHEITSBILDER.md`
+- **Tests zuerst:** keine neuen; `render.bench.slow.test.ts` wird bei freier Maschine
+  nachgemessen.
+- **Fertig wenn:** `pnpm verify` grün, Zeichenbudget festgehalten, Sichtprüfung im
+  laufenden Spiel, PROGRESS/WORKFLOW fortgeschrieben und D33-a bis D33-c in
+  `DECISIONS.md`.
+
+## Meilenstein M34 — Der Fortschritt bekommt eine Strecke
+
+> **Der Befund in einem Satz:** die Uhr läuft mit einem Tick je Sekunde, ein Spieltag hat
+> vierundzwanzig Ticks, und die letzte Freischaltung liegt auf Spieltag 16 — die ganze
+> Fortschrittsachse ist nach **6,4 Minuten Echtzeit** vorbei, während die Partie bis
+> Spieltag 798 läuft. Die Tage stammen aus dem Vorbild, wo ein Spieltag ein echter Tag ist.
+>
+> Noahs Wahl vom 2026-09-11: strecken, an Gebäudestufen binden, Stufen teurer machen,
+> Startvorrat senken, nächste Freischaltung sichtbar machen. Der Bauplan mit Zahlen,
+> Selbstkritik und dem Verworfenen: `docs/plan/FORTSCHRITT.md`.
+>
+> **M34 ändert `data/rules` viermal.** Jede dieser Änderungen macht die Abnahme rot, bis
+> Parameterlauf und Turnier neu gelaufen **und eingecheckt** sind. Und der Golden-Master
+> wird sich verschieben — das ist erwartet, aber nur als bewusster Akt.
+
+### T-M34-01 · Der Ausgangswert wird gemessen
+- **Ziel:** „Erst messen, dann ändern" — ohne Ausgangswert ist jede spätere Verbesserung
+  eine Behauptung.
+- **Anforderungen:** keine · **Abhängigkeiten:** keine
+- **Dateien:** `docs/reports/progress-baseline.md`
+- **Tests zuerst:** keine neuen; `sweep.slow.test.ts` und `tournament.slow.test.ts` laufen
+  auf dem heutigen Regelstand, Maschine allein.
+- **Fertig wenn:** die vier Kennzahlen der Analyse und der Wirtschafts-Ist-Stand
+  (wann erreicht eine mittlere Macht Fabrik Stufe 3) im Bericht stehen.
+
+### T-M34-02 · R-TECH-01 wird begründet geändert
+- **Ziel:** die Tage des Vorbilds sind als *belegt* festgeschrieben; sie zu strecken ist
+  eine Abweichung und braucht eine Begründung, keine stille Zahlenänderung.
+- **Anforderungen:** R-TECH-01
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/BALANCING.md`
+- **Tests zuerst:** keine (Entscheid).
+- **Fertig wenn:** die Anforderung die neue Zeitrechnung trägt, BALANCING.md die Tage von
+  *belegt* auf *abgeleitet* umstuft und `pnpm coverage:requirements` weiter
+  `V1 offen: 0` meldet.
+
+### T-M34-03 · Die Freischaltungsleiter wird gestreckt
+- **Ziel:** die letzte Freischaltung liegt bei etwa Spieltag 80 statt 16.
+- **Anforderungen:** R-TECH-01
+- **Abhängigkeiten:** T-M34-02
+- **Dateien:** `data/rules/default/units.json`, `data/rules/default/buildings.json`,
+  `docs/plan/BALANCING.md`
+- **Tests zuerst:** die Leiter ist je Klasse monoton; kein Gebäude wird später frei als die
+  Einheit, die es verlangt (`availability.test.ts`).
+- **Fertig wenn:** Reihenfolge unverändert, Abstände gewachsen, Kaserne und Infanterie auf
+  Tag 1 geblieben, Golden-Master bewusst neu erzeugt.
+
+### T-M34-04 · Gebäudestufen kosten und dauern mehr
+- **Ziel:** die zweite Fortschrittsachse ist heute keine — `build.ts` zieht denselben Preis
+  für Stufe 3 wie für Stufe 1 ab.
+- **Anforderungen:** R-PROV-01, R-PROV-02
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `packages/core/src/commands/build.ts`,
+  `packages/core/src/phases/construction.ts`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `data/rules/default/constants.json`,
+  `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Stufe 1 unverändert, Stufe 3 kostet das 3,24-fache und dauert das
+  2,25-fache; ein Auftrag, der für Stufe 1 reicht, wird für Stufe 3 abgelehnt
+  (`construction.test.ts`).
+- **Fertig wenn:** zwei neue Konstanten greifen, das Bauplatz-Raster den Preis der
+  **nächsten** Stufe zeigt und der Golden-Master begründet neu steht.
+
+### T-M34-05 · Starke Einheiten verlangen höhere Gebäudestufen
+- **Ziel:** Fortschritt, den man baut, statt Fortschritt, der vergeht.
+- **Anforderungen:** R-UNIT-02, R-TECH-01
+- **Abhängigkeiten:** T-M34-03, T-M34-04
+- **Dateien:** `data/rules/default/units.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** die Ablehnung nennt Gebäude **und** Stufe; mit der Stufe darunter wird
+  derselbe Auftrag abgelehnt (`validate.test.ts`).
+- **Fertig wenn:** genau drei Einträge geändert sind — mehr wäre eine Sperre, keine Achse.
+
+### T-M34-06 · Der Startvorrat schrumpft
+- **Ziel:** die ersten Tage sollen von der Produktion handeln, nicht vom Lagerabbau.
+- **Anforderungen:** R-ECON-01
+- **Abhängigkeiten:** T-M34-01
+- **Dateien:** `data/rules/default/resources.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** eine frische Partie trägt die neuen Werte und bleibt in den ersten zehn
+  Tagen handlungsfähig (`create.test.ts`, `economy-scale.test.ts`).
+- **Fertig wenn:** `startAmount` je Rohstoff auf zwei Dritteln steht — nicht darunter.
+
+### T-M34-07 · Nachmessen und nachjustieren
+- **Ziel:** vier Zahlenänderungen auf einmal lassen sich hinterher nicht auseinanderhalten.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M34-03, T-M34-04, T-M34-05, T-M34-06
+- **Dateien:** `docs/reports/progress-baseline.md`, `docs/reports/balance-sweep.md`,
+  `docs/reports/ai-tournament-run.md`
+- **Tests zuerst:** keine neuen; die drei Langläufe **nach jeder** der vier Zahlenaufgaben.
+- **Fertig wenn:** der Vergleich gegen T-M34-01 steht und der Siegtag zwischen 300 und 1500
+  liegt — sonst nachjustieren und erneut messen.
+
+### T-M34-08 · Die nächste Freischaltung wird sichtbar
+- **Ziel:** Fortschritt, den man nicht sieht, motiviert nicht.
+- **Anforderungen:** R-TECH-02, R-UI-13 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-02, T-M34-03
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** an Tag 20 nennt die Zeile die nächste Sache und die richtige Zahl von
+  Tagen; am Tag der Freischaltung wechselt sie; nach der letzten verschwindet sie
+  (`Panels.test.tsx`).
+- **Fertig wenn:** die Zeile am Kopf der Rekrutierungsliste steht, mit Bild aus M33.
+
+## Meilenstein M35 — Der lange Mittelteil bekommt Ziele *(Entwurf zuerst)*
+
+> Zwischen Spieltag 20 und Spieltag 700 sagt dem Spieler niemand, ob er vorankommt. Es gibt
+> genau eine Schwelle, und die liegt bei siebzig Prozent Punktanteil.
+
+### T-M35-01 · Entwurf der Zwischenziele zum Sieg
+- **Ziel:** der Punkt braucht neue Mechanik und berührt eine V1-Zusage — also erst ein
+  Entwurf, dann der Schnitt in Aufgaben. Muster: T-M28-07.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M34-07
+- **Dateien:** `docs/plan/FORTSCHRITT.md`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** keine (Entwurf).
+- **Fertig wenn:** feststeht, welche Ziele der Zustand schon trägt, was ein neues Feld
+  bräuchte, und die Teilaufgaben geschnitten sind — mit Umgang für Golden-Master und
+  R-GAME-02.
+
+## Meilenstein M36 — Die Rohstoffleiste wird lesbar
+
+> **Aus der Sichtprüfung am laufenden Spiel (2026-09-11):** dieselbe Auskunft steht zweimal
+> gleichzeitig auf dem Bildschirm — einundzwanzig Angaben in der Leiste, fünfunddreißig
+> Zellen in der Wirtschaftstabelle. In der Leiste ist der Name `visually-hidden`, die Glyphe
+> trägt also die ganze Last, und vier von sieben tragen sie nicht: Nahrung liest als „Y",
+> Eisen und Kohle sind zwei ähnliche Klumpen, und **Material wird durch einen Nadelbaum
+> dargestellt**, obwohl der Rohstoff seit T-M23-01 nicht mehr Holz heißt.
+>
+> Bauplan: `docs/plan/ROHSTOFFE.md`. Entwurf mit allen Zeichen und drei Anordnungen in
+> Originalgröße: `docs/design/rohstoffleiste.html`. Kernfrei.
+
+### T-M36-01 · Die sieben Rohstoffzeichen werden neu gezeichnet
+- **Ziel:** die Glyphe trägt in der Leiste die ganze Bedeutung — dann muss sie sie auch
+  tragen können.
+- **Anforderungen:** R-ASSET-01, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/ui/icons.tsx`
+- **Tests zuerst:** die Pfadabfahrt aus T-M33-01 greift auch für die sieben neuen Pfade
+  (`icons.test.tsx`).
+- **Fertig wenn:** der **beschlossene Satz** steht — Nahrung, Material und Geld aus
+  Fassung 1, Eisen, Kohle, Öl und Seltene Erden aus Fassung 2 —, Material einen Balkenstapel
+  statt eines Nadelbaums trägt und die Sichtprüfung bei 14 px nebeneinander bestanden ist.
+  Nachgemessen: engstes Paar 0,127 gegen 0,104 heute. Die Zahl belegt *unterscheidbar*,
+  nicht *erkennbar* — dafür ist die Sichtprüfung da.
+
+### T-M36-02 · Die Leiste zeigt Reichweite statt Bilanz
+- **Ziel:** „reicht sechs Tage" ist die Auskunft, nach der man handelt; „+155" ist es nicht.
+- **Anforderungen:** R-ECON-06, R-UI-11 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-01
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/format.ts`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein schrumpfender Vorrat zeigt Tage und Abwärtspfeil, ein wachsender nur
+  den Pfeil; der Tooltip nennt weiterhin Produktion, Verbrauch und Bilanz
+  (`Header.test.tsx`).
+- **Fertig wenn:** die Bilanzzahl im Tooltip steht, die Schwelle die vorhandene
+  `SHORT_REACH_DAYS` ist und R-ECON-06 weiter durch die Tabelle erfüllt wird.
+
+### T-M36-03 · Nur Knappes ist laut
+- **Ziel:** an einem ruhigen Tag soll die Leiste keine einzige Farbe tragen.
+- **Anforderungen:** R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-02
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** sieben laufende Rohstoffe ergeben keine Auszeichnung, ein knapper genau
+  eine (`Header.test.tsx`); das gedämpfte Grau hält 4,5:1 gegen `paperSunk`
+  (`tokens.contrast.test.ts`).
+- **Fertig wenn:** der Kontrasttest über das neue Paar entschieden hat, nicht der Entwurf.
+
+### T-M36-04 · Die Leiste bekommt vier Gruppen
+- **Ziel:** vier Blöcke statt sieben gleichwertiger Zellen — Versorgung, Baustoffe,
+  Kriegsstoffe, Geld.
+- **Anforderungen:** R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-03
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** jede Gruppe trägt ihre Rohstoffe, die Reihenfolge der sieben bleibt, und
+  die Gruppentrennung ist im Vorlesetext keine zusätzliche Ebene (`Header.test.tsx`).
+- **Fertig wenn:** die vier Blöcke stehen. **Beschlossen am 2026-09-11**, samt Preis: zwei
+  Strichstärken nebeneinander können die Leiste unruhiger machen. Bestätigt sich das im
+  Spiel, ist es ein Befund für den nächsten Playtest, kein Grund, jetzt anders zu bauen.
+
+### T-M36-05 · Die Wirtschaftstabelle wird ruhiger, nicht kürzer
+- **Ziel:** die Korrektur eines eigenen Vorschlags — eine Spalte zu streichen bricht
+  R-ECON-06, das „Bestand, Produktion/Tag, Verbrauch/Tag **und** Bilanz" verlangt.
+- **Anforderungen:** R-ECON-06 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** alle vier Spalten bleiben im Baum, und eine Null wird als Strich
+  ausgegeben, ohne dass der Vorlesetext sie verliert (`Panels.test.tsx`).
+- **Fertig wenn:** nur Bestand und Bilanz Gewicht tragen und die Farbe allein der Bilanz
+  gehört.
+
+### T-M36-06 · Abnahme M36
+- **Ziel:** die Zeichen wandern weiter als die Leiste — die Sichtprüfung muss ihnen folgen.
+- **Anforderungen:** keine · **Entwurf:** D27
+- **Abhängigkeiten:** T-M36-02, T-M36-03, T-M36-04, T-M36-05
+- **Dateien:** `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`, `docs/plan/ROHSTOFFE.md`
+- **Tests zuerst:** keine neuen.
+- **Fertig wenn:** `pnpm verify` grün, alle vier Orte mit `RESOURCE_ICONS` angesehen
+  (Leiste, Vorkommen, Baukosten, Tagesbericht) und in `DECISIONS.md` zwei Einträge stehen:
+  der gemischte Zeichensatz mit der Messung, die ihn trägt, und die Gruppierung samt ihrem
+  Preis.
