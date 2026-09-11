@@ -70,8 +70,16 @@ registerCommand<MoveArmyCommand>('MOVE_ARMY', {
     // destination, which is what the player asked about.
     army.arrivalTick = departAt + firstLegTicks(draft, army, route.path[0]!, ctx)
     // Leaving costs order: the army fights at reduced strength while it forms up.
-    // While it is still waiting it stands its ground at full strength (deploymentFactor).
-    army.deployDelayUntil = departAt + ctx.rules.constants.deployDelayTicks
+    //
+    // Bei sofortigem Abmarsch faellt sie hier an — unveraendert seit M4, einschliesslich
+    // des Falls, dass sie eine laengere laufende Strafe verkuerzt. Ein VERZOEGERTER
+    // Befehl fasst sie nicht an: die Armee marschiert ja noch nicht, und die Strafe
+    // setzt die Bewegungsphase am tatsaechlichen Abmarsch (T-M32-01). Haette der Befehl
+    // sie im Voraus gesetzt, stuende eine abbestellte Armee vierzehn Tage lang auf
+    // halber Kraft, ohne je marschiert zu sein (Durchsicht vom 2026-09-11).
+    if (delay === 0) {
+      army.deployDelayUntil = draft.tick + ctx.rules.constants.deployDelayTicks
+    }
 
     emit(ctx.events, draft.tick, 'ARMY_DEPARTED', {
       playerId: army.owner,

@@ -2,7 +2,16 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
-import { battleReport, dayExpenses, dayReportBody, dayReportDeltas, describeEvent, priceSeries, provinceOf } from './events.ts'
+import {
+  battleReport,
+  dayExpenses,
+  dayReportBody,
+  dayReportDeltas,
+  describeEvent,
+  openIntrusion,
+  priceSeries,
+  provinceOf,
+} from './events.ts'
 
 /**
  * The event log in words (T-M10-06, R-UI-07).
@@ -808,5 +817,37 @@ describe('T-M32-02 Preisreihe aus TRADE_EXECUTED', () => {
     })
 
     expect(priceSeries([tausch], 24)).toEqual({})
+  })
+})
+
+/**
+ * T-M28-06 · Welcher Einmarsch-Alarm offen ist.
+ *
+ * Der Befund der Durchsicht vom 2026-09-11: der quittierte Tick überlebte den
+ * Partiewechsel, und ein Einmarsch an Tag 5 der neuen Partie blieb stumm, weil in der
+ * alten schon Tag 30 quittiert war. Die Ableitung erkennt das jetzt selbst.
+ */
+describe('T-M28-06 Der offene Einmarsch-Alarm', () => {
+  const einmarsch = (tick: number, provinceId = 'A') =>
+    event({ type: 'ARMY_INTRUDED', tick, playerId: 'p1', intruderId: 'p2', armyId: 'a2', provinceId })
+
+  it('meldet den juengsten Einmarsch oberhalb des quittierten Ticks', () => {
+    const offen = openIntrusion([einmarsch(10, 'A'), einmarsch(40, 'B')], 20, 50)
+    expect(offen?.provinceId).toBe('B')
+  })
+
+  it('schweigt, wenn alles quittiert ist', () => {
+    expect(openIntrusion([einmarsch(10), einmarsch(40)], 40, 50)).toBeNull()
+  })
+
+  it('verwirft eine Quittung, die juenger ist als die laufende Partie', () => {
+    // Genau der Fall aus der Durchsicht: Tag 30 der alten Partie quittiert, die neue
+    // steht bei Tick 6. Eine Quittung aus der Zukunft kann nicht zu dieser Partie
+    // gehoeren — sonst bliebe der Alarm bis Tick 721 stumm.
+    expect(openIntrusion([einmarsch(5)], 720, 6)?.provinceId).toBe('A')
+  })
+
+  it('sieht nur Einmaersche an, nichts anderes', () => {
+    expect(openIntrusion([event({ type: 'ARMY_ARRIVED', tick: 40, playerId: 'p1', armyId: 'a1' })], -1, 50)).toBeNull()
   })
 })

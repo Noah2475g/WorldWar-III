@@ -69,6 +69,16 @@ export const movement: Phase = (draft: GameState, ctx: PhaseContext) => {
   for (const armyId of draft.armyOrder) {
     const army = draft.armies[armyId]
     if (!army || army.path.length === 0 || army.arrivalTick === null) continue
+
+    // Der Abmarsch selbst (T-M32-01): die Aufstellungsstrafe beginnt hier, nicht beim
+    // Befehl. Bei einem Befehl ohne Verzoegerung ist `departureTick` der Tick des
+    // Befehls, und `commands/move.ts` hat denselben Wert schon gesetzt — `max` laesst
+    // ihn stehen, der Ablauf bleibt tickgenau der alte. Bei einem verzoegerten Befehl
+    // faellt die Strafe erst jetzt an, und eine laengere laufende wird nicht verkuerzt.
+    if (draft.tick === army.departureTick) {
+      army.deployDelayUntil = Math.max(army.deployDelayUntil, draft.tick + rules.constants.deployDelayTicks)
+    }
+
     if (draft.tick + 1 < army.arrivalTick) continue
 
     const from = army.locationProvinceId

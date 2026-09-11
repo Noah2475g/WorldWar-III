@@ -213,6 +213,8 @@ export function MapCanvas(props: MapCanvasProps) {
   // Wann die laufende Gefechtsrunde begann (T-M28-08). Die Runden sind die Spielticks;
   // der Blitz haengt daran, nicht an der Bildschirmuhr.
   const roundStartedMs = useRef(0)
+  /** Eine begonnene, noch nicht gestempelte Gefechtsrunde (T-M28-08). */
+  const roundPending = useRef(false)
   const shapesRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -224,9 +226,11 @@ export function MapCanvas(props: MapCanvasProps) {
   // Jeder Spieltick ist eine Gefechtsrunde. Der Effekt merkt sich den Uhrstand, an dem
   // sie begann; `battleFlash` rechnet daraus die Helligkeit (T-M28-08).
   useEffect(() => {
-    // `clock` steht bewusst NICHT in den Abhaengigkeiten: der Blitz soll beim Tick
-    // beginnen, nicht bei jedem Bild neu.
-    roundStartedMs.current = clock
+    // Nicht `clock` nehmen: die Bildschleife steht, solange es nichts zu bewegen gibt,
+    // und `clock` traegt dann einen alten Stempel — beim ersten Gefecht waere der Blitz
+    // nach einem Bild vorbei statt nach 260 ms (Durchsicht vom 2026-09-11). Der Merker
+    // sagt nur „eine Runde hat begonnen"; ihren Zeitpunkt stempelt das naechste Bild.
+    roundPending.current = true
   }, [props.tick])
   const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
@@ -358,6 +362,10 @@ export function MapCanvas(props: MapCanvasProps) {
     let running = true
     const step = (time: number): void => {
       if (!running) return
+      if (roundPending.current) {
+        roundPending.current = false
+        roundStartedMs.current = time
+      }
       setClock(time)
       // Wellen bekommen ihren Start vom ersten Bild und enden nach der Blenddauer;
       // sind alle vorbei, endet mit ihnen der Anlass, und die Schleife steht wieder.
@@ -635,7 +643,9 @@ export function MapCanvas(props: MapCanvasProps) {
       // Ein Blitz je Gefechtsrunde (T-M28-08): die Runden sind die Ticks, und der Ref
       // haelt fest, wann der letzte kam. Ohne Bewegung bleibt er aus — der Ring bleibt
       // trotzdem gross, denn die Groesse ist Zustand und keine Bewegung.
-      const flash = battleFlash(clock - roundStartedMs.current, { speed: props.speed ?? 0 })
+      // Solange die Runde noch keinen Stempel hat, leuchtet sie voll — das erste Bild
+      // danach setzt ihn, und von dort klingt sie ueber BATTLE_FLASH_MS ab.
+      const flash = roundPending.current ? 1 : battleFlash(clock - roundStartedMs.current, { speed: props.speed ?? 0 })
 
       context.globalAlpha = Math.min(0.6, glow.alpha + flash * 0.25)
       context.fillStyle = MAP_COLORS.battle

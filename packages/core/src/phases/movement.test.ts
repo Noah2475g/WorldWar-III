@@ -268,7 +268,51 @@ describe('R-UNIT-04 Verzoegerter Abmarsch (T-M32-01)', () => {
     const army = after.armies['a1']!
 
     expect(deploymentFactor(army, after.tick, TEST_RULES)).toBe(ONE)
-    expect(deploymentFactor(army, army.departureTick!, TEST_RULES)).toBe(TEST_RULES.constants.deployDelayFactor)
+  })
+
+  it('beginnt die Aufstellungsstrafe erst am tatsaechlichen Abmarsch', () => {
+    // Sie haengt am Abmarsch, nicht am Befehl — vorher stand sie schon beim Befehl im
+    // Zustand und liess sich mit einer einzigen Bedingung im Kampf wieder aushebeln.
+    let current = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    expect(current.armies['a1']!.deployDelayUntil).toBe(0)
+
+    const abmarsch = current.armies['a1']!.departureTick!
+    while (current.tick <= abmarsch) current = step(current, [], ctx).state
+
+    expect(current.armies['a1']!.deployDelayUntil).toBe(abmarsch + TEST_RULES.constants.deployDelayTicks)
+    expect(deploymentFactor(current.armies['a1']!, abmarsch, TEST_RULES)).toBe(TEST_RULES.constants.deployDelayFactor)
+  })
+
+  it('kauft sich mit einem verzoegerten Befehl NICHT aus einer laufenden Strafe frei', () => {
+    // Befund der Durchsicht vom 2026-09-11 (schwer): ein Waechter in deploymentFactor
+    // gab volle Kraft zurueck, solange `departureTick` in der Zukunft lag — egal, woher
+    // die laufende Strafe kam. `departInTicks: 1` loeschte damit jede Rueckzugsstrafe.
+    const after = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    const army = after.armies['a1']!
+    army.deployDelayUntil = after.tick + 99
+
+    expect(deploymentFactor(army, after.tick, TEST_RULES)).toBe(TEST_RULES.constants.deployDelayFactor)
+  })
+
+  it('laesst keine Strafe fuer einen Marsch zurueck, der nie begann', () => {
+    // Gegenstueck zum Befund darueber: Abbestellen vor dem Abmarsch darf die Armee nicht
+    // vierzehn Tage lang auf halber Kraft stehen lassen.
+    const bestellt = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    const abbestellt = step(bestellt, [{ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' } as Command], ctx).state
+    const army = abbestellt.armies['a1']!
+
+    expect(army.path).toEqual([])
+    expect(deploymentFactor(army, abbestellt.tick, TEST_RULES)).toBe(ONE)
+  })
+
+  it('vergisst eine laufende Strafe nicht, wenn der Marsch abbestellt wird', () => {
+    const bestellt = step(state, [move('a1', 'n2', 'p1', 20)], ctx).state
+    bestellt.armies['a1']!.deployDelayUntil = bestellt.tick + 99
+    const abbestellt = step(bestellt, [{ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' } as Command], ctx).state
+
+    expect(deploymentFactor(abbestellt.armies['a1']!, abbestellt.tick, TEST_RULES)).toBe(
+      TEST_RULES.constants.deployDelayFactor,
+    )
   })
 
   it('verhaelt sich ohne das Feld wie mit dem Wert 0', () => {

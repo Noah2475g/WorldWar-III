@@ -72,7 +72,7 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, priceSeries } from './game/events.ts'
+import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, openIntrusion, priceSeries } from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -990,6 +990,12 @@ export function App(props: AppProps) {
           // Die Zeitreihe des Slots — oder ehrlich leer: ein alter Stand ohne
           // Aufzeichnung beginnt die Kurve am Ladetag (T-M25-01, D25.1).
           setTimeline(await loadTimeline(storage, name))
+          // Quittierte Alarme und gelesene Protokollzeilen gehoeren zur alten Partie.
+          // Ohne das Zuruecksetzen vergleicht die Oberflaeche Ticks aus zwei Partien:
+          // ein Einmarsch an Tag 5 des geladenen Standes bliebe stumm, weil in der
+          // vorigen Partie schon Tag 30 quittiert war (Durchsicht vom 2026-09-11).
+          setAlarmSeenTick(-1)
+          setSeenTick(-1)
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1020,6 +1026,10 @@ export function App(props: AppProps) {
     setPendingCommands([])
     // Die Aufzeichnung auch: eine neue Partie beginnt ohne Vergangenheit (T-M25-01).
     setTimeline([])
+    // Und die Merker der Oberflaeche: quittierte Alarme und gelesene Protokollzeilen
+    // zaehlen in Ticks, und die beginnen in der neuen Partie wieder vorne.
+    setAlarmSeenTick(-1)
+    setSeenTick(-1)
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1115,17 +1125,13 @@ export function App(props: AppProps) {
    */
   const alarm = useMemo(() => {
     if (!state) return null
-    const own = eventsFor(state.eventLog, 'p1')
-    for (let i = own.length - 1; i >= 0; i--) {
-      const event = own[i]!
-      if (event.type !== 'ARMY_INTRUDED' || event.tick <= alarmSeenTick) continue
-      return {
-        provinceId: event.provinceId,
-        provinceName: activeMap.provinces.find((p) => p.id === event.provinceId)?.name ?? event.provinceId,
-        intruder: state.players[event.intruderId]?.nation ?? event.intruderId,
-      }
+    const offen = openIntrusion(eventsFor(state.eventLog, 'p1'), alarmSeenTick, state.tick)
+    if (!offen) return null
+    return {
+      provinceId: offen.provinceId,
+      provinceName: activeMap.provinces.find((p) => p.id === offen.provinceId)?.name ?? offen.provinceId,
+      intruder: state.players[offen.intruderId]?.nation ?? offen.intruderId,
     }
-    return null
   }, [state, alarmSeenTick, activeMap.provinces])
 
   /** Player ids never reach the screen: the player knows nations, not "p2". */

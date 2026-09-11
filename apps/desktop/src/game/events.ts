@@ -304,6 +304,31 @@ export function dayExpenses(
   return spent
 }
 
+/**
+ * Der offene Einmarsch-Alarm (T-M28-06): der jüngste `ARMY_INTRUDED`, den der Spieler
+ * noch nicht quittiert hat — oder `null`.
+ *
+ * `seenTick` ist ein Tick **dieser** Partie. Liegt er über dem aktuellen, gehört er zu
+ * einer anderen: eine neue Partie beginnt wieder bei null, ein geladener Stand springt
+ * zurück. Ohne diese Zeile blieb ein Einmarsch an Tag 5 der neuen Partie stumm, weil in
+ * der alten schon Tag 30 quittiert war (Durchsicht vom 2026-09-11). Die Oberfläche setzt
+ * den Merker beim Partiewechsel zusätzlich zurück; diese Ableitung hält auch dann,
+ * wenn jemand das eines Tages vergisst.
+ */
+export function openIntrusion(
+  events: readonly GameEvent[],
+  seenTick: number,
+  tick: number,
+): { provinceId: string; intruderId: string; tick: number } | null {
+  const seen = seenTick > tick ? -1 : seenTick
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!
+    if (event.type !== 'ARMY_INTRUDED' || event.tick <= seen) continue
+    return { provinceId: event.provinceId, intruderId: event.intruderId, tick: event.tick }
+  }
+  return null
+}
+
 /** Ein Punkt der Preisreihe: der mittlere Kurs eines Spieltags (T-M32-02). */
 export interface PricePoint {
   day: number
