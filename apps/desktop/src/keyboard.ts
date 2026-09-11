@@ -41,7 +41,7 @@ function neighbourSpeed(speed: number, direction: 1 | -1): number {
 }
 
 export function resolveKey(
-  event: { key: string; ctrlKey?: boolean; metaKey?: boolean },
+  event: { key: string; ctrlKey?: boolean; metaKey?: boolean; target?: EventTarget | null },
   context: KeyContext,
 ): Shortcut | null {
   const control = event.ctrlKey === true || event.metaKey === true
@@ -61,7 +61,8 @@ export function resolveKey(
 
   switch (event.key) {
     case ' ':
-      return { type: 'togglePause' }
+      // Die Leertaste gehoert dem Knopf, auf dem der Fokus liegt (T-M28-09).
+      return isInteractiveTarget(event.target ?? null) ? null : { type: 'togglePause' }
     case '+':
     case '=':
       return { type: 'speed', hoursPerSecond: neighbourSpeed(context.speed, 1) }
@@ -116,6 +117,25 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   const tag = target.tagName.toLowerCase()
   return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable
+}
+
+/**
+ * Liegt der Fokus auf etwas, das die Taste selbst braucht? (T-M28-09, R-UI-06)
+ *
+ * `isTypingTarget` kannte nur Textfelder — und deckte damit genau den Fall nicht ab, um
+ * den es bei der Bedienung ohne Maus geht: Wer tabbt, landet auf **Knoepfen**, und der
+ * Browser loest einen Knopf mit Leertaste und Eingabetaste aus. Das Spiel fing die
+ * Leertaste vorher ab und pausierte stattdessen, wodurch kein einziger Knopf ohne Maus zu
+ * betaetigen war (Durchsicht vom 2026-09-11, Befund 8).
+ *
+ * Die Karte ist bewusst NICHT dabei: dort gehoert die Taste dem Spiel.
+ */
+export function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (isTypingTarget(target)) return true
+  const tag = target.tagName.toLowerCase()
+  if (tag === 'button' || tag === 'a' || tag === 'summary' || tag === 'details') return true
+  return target.getAttribute('role') === 'button' || target.getAttribute('role') === 'link'
 }
 
 /** Ein Zoomschritt der Knoepfe und Tasten — derselbe wie ein Mausrad-Rasten. */

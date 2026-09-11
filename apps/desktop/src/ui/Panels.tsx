@@ -389,7 +389,14 @@ export function ProvincePanel(props: ProvincePanelProps) {
       {/* Das Bauplatz-Raster (T-M29-03, D27.6): je Gebaeudeart genau ein Feld —
           gebaut, im Bau mit Fortschritt und Restzeit, oder frei mit der Bau-Aktion.
           Eine Liste der gebauten Gebaeude sagte nicht, was frei ist und was wann
-          fertig wird; das Raster sagt beides, ohne ein Wort mehr. */}
+          fertig wird; das Raster sagt beides, ohne ein Wort mehr.
+
+          **Nur wo die Sicht Gebaeude fuehrt** (T-M28-11, R-DIP-04): bei einer fremden
+          oder erinnerten Provinz kennt `publicView` weder `buildings` noch `buildQueue`,
+          und sieben freie Felder behaupteten dort „hier steht nichts" — eine Auskunft,
+          die der Spieler gar nicht hat. Dann steht hier nichts, wie vor dem Umbau. */}
+      {province.buildings !== undefined && (
+      <>
       <h3>{t('province.buildSlots')}</h3>
       <div className="slots">
         {BUILDING_ORDER.map((key) => {
@@ -444,6 +451,8 @@ export function ProvincePanel(props: ProvincePanelProps) {
           )
         })}
       </div>
+      </>
+      )}
 
       {(province.recruitQueue ?? []).map((order) => (
         <Meter

@@ -16,6 +16,7 @@ import {
   type StoragePort,
 } from '@worldwar/core'
 import { advance } from './game/advance.ts'
+import { RESUME_SPEED } from './game/speed.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
 import {
   armyActions,
@@ -878,7 +879,9 @@ export function App(props: AppProps) {
 
       switch (shortcut.type) {
         case 'togglePause':
-          setSpeed((current) => (current === 0 ? 10 : 0))
+          // Fortsetzen achtet die eingestellte Hoechstgeschwindigkeit (T-M28-09,
+          // Befund 11): fest 10 lief bei einem Maximum von 2 fuenffach zu schnell.
+          setSpeed((current) => (current === 0 ? Math.min(RESUME_SPEED, ui.settings.maxSpeed) : 0))
           break
         case 'speed':
           if (shortcut.hoursPerSecond > 0) tutor('setSpeed')

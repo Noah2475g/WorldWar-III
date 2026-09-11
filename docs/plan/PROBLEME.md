@@ -1796,3 +1796,40 @@ einen Tick lang sichtbar ist, ist im Vorschaufenster nicht prüfbar.**
 
 ---
 
+## 2026-09-11 · Durchsicht M29–M31 · Elf Befunde in Code, der schon auf `main` liegt
+
+**Befund:** Nachdem eine adversarische Durchsicht drei schwere Fehler in der frischen
+M32-Arbeit gefunden hatte, bekam der **bereits gemergte** Kriegsrat-Umbau dieselbe
+Behandlung: vier Prüfer über `git diff ec36bef..c372ba4`, je Befund ein Skeptiker mit dem
+Auftrag zu widerlegen. **13 gemeldet, 11 überlebten, vier davon schwer.** Der Stand hatte
+`pnpm verify`, `pnpm acceptance` 11/11 und Sichtprüfungen am laufenden Spiel bestanden.
+
+| # | Schwere | Ort | Befund |
+|---|---|---|---|
+| 1 | hoch | `map/anchors.ts` | `placeBuildings` reserviert **immer** zwei Küstenplätze, auch in Binnenprovinzen. Reichen die übrigen nicht für die fünf Landarten, fällt der Modulo-Rückfall auf belegte Anker und das Gebäude wird **verworfen** — während die reservierten leer bleiben. 32 Provinzen der Weltkarte liefern 3–6 Anker und sind betroffen |
+| 2 | mittel | `map/anchors.ts` | Der Rückfall-Anker ist der Provinzmittelpunkt — genau der Punkt, auf den auch der Armeekasten kommt. Der 30×18-Kasten deckt das 14×14-Quadrat restlos. **92 von 237 Provinzen** laufen in diesen Rückfall. Der alte `BUILDING_OFFSET_Y` verhinderte genau das und ist auf dem Ankerpfad weg |
+| 3 | mittel | `map/markers.ts` | `pickArmy` nimmt bei gleichem Abstand die **erste** Armee, gezeichnet wird die **letzte**. Bei zwei eigenen Stapeln in einer Provinz wählt der Klick die verdeckte; die sichtbare ist per Karte nie anwählbar |
+| 4 | hoch | `ui/Panels.tsx` | Das Bauplatz-Raster wird **bedingungslos** gezeichnet. Bei einer fremden Provinz kennt die Sicht keine `buildings` — das Raster zeigt sieben freie Plätze und behauptet damit „hier steht nichts". Die alte Fassung zeichnete die Zeile nur bei vorhandenen Gebäuden und brach die Nebelregel nicht |
+| 5 | mittel | `ui/Panels.tsx` | Je Gebäudeart **ein** Feld, aber der Kern erlaubt mehrere gleichzeitige Aufträge derselben Art (`buildSlots` 2). Der zweite bezahlte Auftrag hat im Panel weder Fortschritt noch Fertigstellung; beide Abbrechen-Knöpfe heißen gleich |
+| 6 | hoch | `map/modes.ts` | `colorForPlayer` hat elf Farben; der Startdialog erlaubt bis zu **zwölf** Mächte. Ab der zwölften wiederholt sich eine Farbe, und zwei Mächte sind im Besitzmodus nicht unterscheidbar |
+| 7 | niedrig | `test/guards/css-mirrors-tokens.test.ts` | Der Spiegel-Wächter sieht nur sechsstellige Hex-Werte im **ersten** `:root`-Block. Zwei Farben der abgelösten hellen Richtung stehen unbemerkt in `app.css`, und ein `rgb(...)` im `:root` bliebe unentdeckt |
+| 8 | hoch | `App.tsx` | **Die Leertaste auf einem fokussierten Knopf pausiert das Spiel, statt den Knopf auszulösen.** Wer ohne Maus bedient, kann keinen Knopf mit der Leertaste betätigen — auch „Vorspulen" nicht |
+| 9 | hoch | `ui/Header.tsx` | Ist die Geschwindigkeit keine Raste aus `SPEED_STOPS` (etwa durch die eingestellte Höchstgeschwindigkeit), ist in der Tempo-Gruppe **kein** Knopf gedrückt — der Klick sieht folgenlos aus |
+| 10 | mittel | `ui/Header.tsx` | Während des Vorspulens sind **zwei** Knöpfe derselben Gruppe gedrückt (Pause und Abbrechen); erwartet ist genau einer |
+| 11 | mittel | `App.tsx` | Die Leertaste setzt beim Fortsetzen `speed = 10` und **umgeht damit die eingestellte Höchstgeschwindigkeit** (bei Maximum 2 läuft das Spiel danach fünffach zu schnell) |
+
+**Zwei Befunde wurden widerlegt** und sind hier nur der Vollständigkeit halber genannt:
+ein behaupteter Versatz zwischen Standpunkt und Armeekasten beim Vorspulen, und
+ungeprüfte Schrift/Marker in den Verlaufsmodi.
+
+**Status: als Aufgaben geschnitten** (T-M28-09 … T-M28-15), nicht sofort alle gebaut. Die
+Reihenfolge steht in `03-TASKS.md`; angefangen wird bei denen, die die Bedienung ohne Maus
+betreffen.
+
+**Die Lehre steht über den elf Befunden:** ein Stand mit grünen Tests, grüner Abnahme und
+bestätigter Sichtprüfung hatte elf echte Fehler, und keiner davon war teuer zu finden —
+nur hatte niemand gesucht. Eine adversarische Durchsicht gehört ans Ende jedes
+Meilensteins, nicht ans Ende des Projekts.
+
+---
+

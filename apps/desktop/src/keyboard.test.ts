@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { resolveKey, type KeyContext } from './keyboard.ts'
+import { isInteractiveTarget, resolveKey, type KeyContext } from './keyboard.ts'
 
 /**
  * Playing without a mouse (T-M10-12, R-UI-06).
@@ -119,5 +120,45 @@ describe('R-UI-06 Diplomatie und Markt per Taste', () => {
   it('laesst die Buchstaben in einem Textfeld in Ruhe', () => {
     expect(resolveKey({ key: 'd' }, context({ typing: true }))).toBeNull()
     expect(resolveKey({ key: 'h' }, context({ dialogOpen: true }))).toBeNull()
+  })
+})
+
+/**
+ * T-M28-09 · Die Leertaste gehört dem Knopf, auf dem der Fokus liegt.
+ *
+ * Befund 8 der Durchsicht vom 2026-09-11: `isTypingTarget` kannte nur Textfelder. Wer
+ * ohne Maus bedient, tabbt aber auf **Knöpfe** — und der Browser löst sie mit der
+ * Leertaste aus. Das Spiel fing sie vorher ab und pausierte stattdessen, wodurch kein
+ * einziger Knopf mit der Leertaste zu betätigen war.
+ */
+describe('T-M28-09 Die Leertaste auf einem Bedienelement', () => {
+  const element = (html: string): HTMLElement => {
+    const host = document.createElement('div')
+    host.innerHTML = html
+    return host.firstElementChild as HTMLElement
+  }
+
+  it('erkennt einen Knopf als Bedienelement', () => {
+    expect(isInteractiveTarget(element('<button>Rangliste</button>'))).toBe(true)
+  })
+
+  it('erkennt auch Verweise und alles mit der Rolle eines Knopfes', () => {
+    expect(isInteractiveTarget(element('<a href="#x">hin</a>'))).toBe(true)
+    expect(isInteractiveTarget(element('<div role="button">Übersichtskarte</div>'))).toBe(true)
+  })
+
+  it('laesst die Karte und den Rumpf in Ruhe — dort gehoert die Taste dem Spiel', () => {
+    expect(isInteractiveTarget(element('<canvas></canvas>'))).toBe(false)
+    expect(isInteractiveTarget(element('<div>nur Text</div>'))).toBe(false)
+  })
+
+  it('schluckt die Leertaste nicht mehr, wenn der Fokus auf einem Knopf liegt', () => {
+    const auf = { key: ' ', target: element('<button>Vorspulen</button>') } as unknown as KeyboardEvent
+    expect(resolveKey(auf, context())).toBeNull()
+  })
+
+  it('pausiert weiterhin, wenn der Fokus nirgends besonders liegt', () => {
+    const auf = { key: ' ', target: element('<canvas></canvas>') } as unknown as KeyboardEvent
+    expect(resolveKey(auf, context())).toEqual({ type: 'togglePause' })
   })
 })

@@ -2203,3 +2203,96 @@ tasks:
     files: [docs/plan/DECISIONS.md]
     tests: []
     dod: "Kein Bau. Ein Eintrag in DECISIONS.md mit Noahs Entscheid je Punkt: Durchmarschrecht (neuer DiplomaticState oder Flag am Buendnis), Provinzhandel (Kommando + Diplomatie-UI), Forschung (eigene Achse, vgl. Supremacy WW3). Fertig, wenn jeder Punkt entweder als Aufgabe mit Meilenstein vorgemerkt oder mit Begruendung gestrichen ist."
+
+  # Durchsicht M29-M31 vom 2026-09-11 (PROBLEME.md): vier Pruefer, je Befund ein
+  # Skeptiker mit dem Auftrag zu widerlegen - 13 gemeldet, 11 ueberlebten. Der Stand
+  # liegt bereits auf main und hatte verify, acceptance 11/11 und Sichtpruefungen.
+
+  - id: T-M28-09
+    milestone: M28
+    title: Die Bedienung ohne Maus bekommt ihre Tasten zurueck
+    status: done
+    deps: []
+    requirements: [R-UI-05]
+    design: [D-26]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/game/speed.ts]
+    tests: [apps/desktop/src/keyboard.test.ts, apps/desktop/src/App.test.tsx]
+    dod: "Befunde 8 und 11 der Durchsicht. (8, schwer) Die Leertaste auf einem FOKUSSIERTEN Knopf loest den Knopf aus, nicht die Pause - wer ohne Maus bedient, kann heute keinen Knopf mit der Leertaste betaetigen, auch Vorspulen nicht. Die Taste gilt nur, wenn der Fokus nicht auf einem Bedienelement liegt (button, a, input, select, textarea, contenteditable, role=button). (11) Das Fortsetzen per Leertaste achtet die eingestellte Hoechstgeschwindigkeit statt fest 10 zu setzen. Test zuerst: ein fokussierter Knopf schluckt die Leertaste nicht mehr in die Pause; bei maxSpeed 2 ergibt die Leertaste hoechstens 2"
+
+  - id: T-M28-10
+    milestone: M28
+    title: Die Tempo-Gruppe zeigt immer genau eine Stufe
+    status: done
+    deps: []
+    requirements: [R-TIME-04, R-UI-05]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Header.tsx]
+    tests: [apps/desktop/src/ui/Header.test.tsx]
+    dod: "Befunde 9 (schwer) und 10 der Durchsicht. (9) Liegt die Geschwindigkeit zwischen zwei Rasten - etwa weil die eingestellte Hoechstgeschwindigkeit sie kappt -, ist heute KEIN Knopf gedrueckt: der Klick sieht folgenlos aus und ein Screenreader meldet keine aktive Stufe. Gedrueckt ist kuenftig die groesste Raste, die die laufende Geschwindigkeit nicht ueberschreitet. (10) Waehrend des Vorspulens sind zwei Knoepfe derselben Gruppe gedrueckt (Pause und Abbrechen) - erwartet ist genau einer. Test zuerst: genau ein aria-pressed bei Geschwindigkeit 30 mit Rasten 25/50, und genau eines waehrend des Vorspulens"
+
+  - id: T-M28-11
+    milestone: M28
+    title: Das Bauplatz-Raster sagt nur, was die Sicht weiss
+    status: done
+    deps: []
+    requirements: [R-DIP-04, R-UI-10]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Befund 4 (schwer) der Durchsicht. Das Raster wurde bedingungslos gezeichnet; bei einer fremden oder erinnerten Provinz kennt die Sicht keine buildings, und sieben freie Plaetze behaupteten 'hier steht nichts'. Es erscheint jetzt nur, wenn die Sicht Gebaeude fuehrt - sonst gar nicht, wie vor dem Umbau. Test zuerst: eine fremde Provinz zeichnet kein Raster. Befund 5 derselben Durchsicht ist BEWUSST abgetrennt und liegt bei T-M28-16 - er verlangt ein Feld je Auftrag statt je Art und damit einen Umbau des Rasters"
+
+  - id: T-M28-12
+    milestone: M28
+    title: Gebaeude finden ihren Platz auch in kleinen und in Binnenprovinzen
+    status: todo
+    deps: []
+    requirements: [R-MAP-05]
+    design: [D-27]
+    files: [apps/desktop/src/map/anchors.ts, apps/desktop/src/map/markers.ts]
+    tests: [apps/desktop/src/map/anchors.test.ts, apps/desktop/src/map/markers.test.ts]
+    dod: "Befunde 1 (schwer) und 2 der Durchsicht. (1) placeBuildings reserviert IMMER zwei Kuestenplaetze, auch ohne Hafen und Werft; reichen die uebrigen Anker nicht fuer die fuenf Landarten, faellt der Modulo-Rueckfall auf belegte Anker und das Gebaeude wird verworfen, waehrend die reservierten leer bleiben - 32 Provinzen der Weltkarte liefern 3 bis 6 Anker. Kuenftig wird nur reserviert, was gebraucht wird, und der Rueckfall teilt die vorhandenen Anker der Reihe nach, wie der Kommentar es verspricht. (2) Der Rueckfall-Anker ist der Provinzmittelpunkt - genau der Punkt des Armeekastens, der ihn restlos deckt (92 von 237 Provinzen). Der alte BUILDING_OFFSET_Y verhinderte das und fehlt auf dem Ankerpfad. Test zuerst: Binnenprovinz mit fuenf Ankern zeigt alle fuenf Landgebaeude; ein Mittelpunkt-Rueckfall kollidiert nicht mit dem Armeekasten"
+
+  - id: T-M28-13
+    milestone: M28
+    title: Ein Klick waehlt die Armee, die man sieht
+    status: todo
+    deps: []
+    requirements: [R-UI-05, R-MAP-05]
+    design: [D-27]
+    files: [apps/desktop/src/map/markers.ts]
+    tests: [apps/desktop/src/map/markers.test.ts]
+    dod: "Befund 3 der Durchsicht. Stehen zwei eigene Armeen in derselben Provinz, liegen ihre Marker uebereinander; gezeichnet wird die LETZTE der Liste, pickArmy nimmt bei gleichem Abstand aber die ERSTE. Der Klick waehlt damit die verdeckte Armee, und die sichtbare ist per Karte nie anwaehlbar. Kuenftig gewinnt bei gleichem Abstand die zuletzt gezeichnete. Test zuerst: zwei Armeen an derselben Stelle, der Klick liefert die obenauf liegende"
+
+  - id: T-M28-14
+    milestone: M28
+    title: Jede Macht bekommt eine eigene Farbe
+    status: todo
+    deps: []
+    requirements: [R-UI-02, R-MAP-01]
+    design: [D-27]
+    files: [apps/desktop/src/map/modes.ts, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/map/modes.test.ts, apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "Befund 6 (schwer) der Durchsicht. colorForPlayer hat elf Farben und rechnet modulo; der Startdialog erlaubt mehr Maechte, und ab der zwoelften sind zwei im Besitzmodus nicht unterscheidbar. Entweder der Satz waechst auf die hoechste im Dialog erlaubte Machtzahl - dann gilt der ΔE-Waechter aus T-M29-01 fuer alle -, oder der Dialog begrenzt die Machtzahl auf die Zahl der Farben. ENTSCHEIDUNG DURCH NOAH, weil es die Partiegroesse betrifft. Test zuerst: keine zwei Maechte einer Hoechstbesetzung teilen eine Farbe"
+
+  - id: T-M28-15
+    milestone: M28
+    title: Der Spiegel-Waechter sieht jede Farbe
+    status: todo
+    deps: []
+    requirements: [R-UI-02]
+    design: [D-27]
+    files: [test/guards/css-mirrors-tokens.test.ts, apps/desktop/src/ui/app.css]
+    tests: [test/guards/css-mirrors-tokens.test.ts]
+    dod: "Befund 7 der Durchsicht. Der Waechter liest nur sechsstellige Hex-Werte im ERSTEN :root-Block; zwei Farben der abgeloesten hellen Richtung stehen dadurch unbemerkt in app.css, und ein rgb(...) im :root bliebe unentdeckt. Kuenftig deckt er jede Farbschreibweise und jeden :root-Block ab, und die beiden Altfarben sind auf die Kriegsrat-Ebene gebracht. Test zuerst: eine verstimmte Fixture mit rgb() und mit einer Farbe im zweiten :root-Block faellt"
+
+  - id: T-M28-16
+    milestone: M28
+    title: Mehrere Bauauftraege derselben Art sind einzeln sichtbar
+    status: todo
+    deps: [T-M28-11]
+    requirements: [R-UI-10]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Befund 5 der Durchsicht vom 2026-09-11, aus T-M28-11 abgetrennt. Der Kern erlaubt mehrere gleichzeitige Auftraege derselben Gebaeudeart (buildSlots 2 in der Stadt, maxLevel 3 bei der Kaserne), und jeder traegt sein eigenes completesAtTick. Das Raster hat je Art genau EIN Feld und findet mit find() nur den ersten - der zweite bezahlte Auftrag hat weder Fortschritt noch Fertigstellung, und nach Abschluss des ersten springt der Balken ohne Erklaerung zurueck. Auch die beiden Abbrechen-Knoepfe heissen gleich (actions.ts:151) und sind nicht unterscheidbar. Fertig, wenn jeder laufende Auftrag seinen eigenen Fortschritt mit Restzeit hat und die Abbrechen-Knoepfe die Stufe oder die Fertigstellung nennen. Test zuerst: zwei Kaserne-Auftraege ergeben zwei Fortschrittsanzeigen mit verschiedenen Restzeiten"
+

@@ -1330,3 +1330,42 @@ describe('T-M32-02 Der Markt zeigt den Preisverlauf', () => {
     expect(screen.queryByRole('list', { name: 'Kursverlauf' })).toBeNull()
   })
 })
+
+/**
+ * T-M28-11 · Das Bauplatz-Raster sagt nur, was die Sicht weiß.
+ *
+ * Befund 4 der Durchsicht vom 2026-09-11 (schwer): Bei einer fremden Provinz führt die
+ * Sicht keine `buildings` — das Raster zeichnete trotzdem sieben freie Plätze und
+ * behauptete damit „hier steht nichts". Die Fassung vor dem Kriegsrat-Umbau zeichnete die
+ * Gebäudezeile nur bei vorhandenen Gebäuden und brach die Nebelregel nicht.
+ */
+describe('T-M28-11 Das Raster bricht die Nebelregel nicht', () => {
+  const fremd = {
+    id: 'RUS-CENTRAL',
+    name: 'Zentralrussland',
+    owner: 'p2',
+    terrain: 'plains',
+    population: 900_000,
+  } as unknown as VisibleProvince
+
+  const eigen = {
+    ...fremd,
+    owner: 'p1',
+    buildings: { barracks: 1 },
+    buildQueue: [],
+    morale: 70_000,
+  } as unknown as VisibleProvince
+
+  it('zeichnet fuer eine fremde Provinz gar kein Raster', () => {
+    const { container } = render(<ProvincePanel province={fremd} ownerName="Russland" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(container.querySelector('.slots')).toBeNull()
+    expect(screen.queryByText('Bauplätze')).toBeNull()
+  })
+
+  it('zeichnet es fuer die eigene Provinz weiterhin', () => {
+    const { container } = render(<ProvincePanel province={eigen} ownerName="Vereinigte Staaten" actions={[]} ticksPerDay={24} currentTick={0} />)
+
+    expect(container.querySelector('.slots')).not.toBeNull()
+  })
+})
