@@ -71,6 +71,35 @@ function familiesWithoutEmbeddedFile(tracked: string[], css: string): string[] {
   })
 }
 
+/**
+ * Ein Bildsatz ist eine Datei, die SVG-Pfaddaten fuehrt: eine Zeichenkette, die mit
+ * einem Setzbefehl beginnt und mindestens einen weiteren Befehl hat.
+ *
+ * Die Signatur nimmt Dateiliste und Leser entgegen, damit die Zusicherung unten sich an
+ * erfundenen Saetzen beweisen kann — dieselbe Bauart wie `familiesWithoutEmbeddedFile`.
+ */
+const PATH_DATA = /(['"`])\s*[Mm]\s*-?[\d.]+[\s,][^'"`]*[HhVvLlCcSsQqTtAaZz][^'"`]*\1/
+
+export function drawingFiles(files: string[], read: (file: string) => string): string[] {
+  return files.filter((file) => PATH_DATA.test(read(file)))
+}
+
+/** Davon die, die nicht inline zeichnen oder doch eine Bilddatei anfassen. */
+export function withoutInlineDrawing(files: string[], read: (file: string) => string): string[] {
+  return files.filter((file) => {
+    const quelltext = read(file)
+    return !/<svg/.test(quelltext) || ASSET_FILE_ANYWHERE.test(quelltext)
+  })
+}
+
+/** Wie ASSET_FILE, aber auch mitten im Text — dort steht der Dateibezug, wenn es ihn gibt. */
+const ASSET_FILE_ANYWHERE = /\.(png|jpe?g|gif|webp|ico|bmp|svg|mp3|wav|ogg|flac|m4a|ttf|otf|woff2?|eot)\b/i
+
+const SOURCE_DIR = 'apps/desktop/src/'
+const sourceFiles = (): string[] =>
+  trackedFiles().filter((file) => file.startsWith(SOURCE_DIR) && /\.tsx?$/.test(file) && !/\.test\.tsx?$/.test(file))
+const readSource = (file: string): string => readFileSync(join(ROOT, file), 'utf8')
+
 describe('R-ASSET-01 Kein Asset ohne Herkunfts- und Lizenzeintrag', () => {
   it('nennt jede eingecheckte Bild-, Ton- und Schriftdatei in ASSETS.md', () => {
     const files = trackedFiles().filter((file) => ASSET_FILE.test(file))
@@ -106,17 +135,39 @@ describe('R-ASSET-01 Kein Asset ohne Herkunfts- und Lizenzeintrag', () => {
     expect(scan(/new\s+Audio\s*\(|<img\s|url\(\s*['"]?https?:/)).toEqual([])
   })
 
-  it('haelt fest, was ueber Icons und Klaenge behauptet wird', () => {
-    const icons = readFileSync(join(ROOT, 'apps/desktop/src/ui/icons.tsx'), 'utf8')
-    const sound = readFileSync(join(ROOT, 'apps/desktop/src/ui/sound.ts'), 'utf8')
+  it('findet jeden Bildsatz der Anwendung selbst, statt einen zu kennen', () => {
+    // Bis zum 2026-09-11 nannte dieser Waechter `icons.tsx` NAMENTLICH. Ein zweiter
+    // Bildsatz — `art.tsx` mit siebzehn Zeichnungen (T-M33-01) — waere damit genau das
+    // ungepruefte Loch gewesen, das R-ASSET-01 verhindern soll. Jetzt sucht der Waechter
+    // die Saetze, statt sie zu wissen: wer einen dritten anlegt, ist sofort mitgeprueft.
+    const gefunden = drawingFiles(sourceFiles(), readSource)
 
-    // Icons: selbst gezeichnetes Inline-SVG, keine Datei, kein Zeichensatz-Symbol.
-    expect(icons).toMatch(/<svg/)
-    expect(icons).not.toMatch(ASSET_FILE)
+    expect(gefunden.length, 'Kein einziger Bildsatz gefunden — der Waechter misst das Nichts').toBeGreaterThanOrEqual(2)
+    expect(gefunden).toContain('apps/desktop/src/ui/icons.tsx')
+    expect(gefunden).toContain('apps/desktop/src/ui/art.tsx')
+  })
+
+  it('haelt fest, was ueber Icons und Klaenge behauptet wird', () => {
+    // Jeder Bildsatz: selbst gezeichnetes Inline-SVG, keine Datei, kein Zeichensatz-Symbol.
+    expect(withoutInlineDrawing(drawingFiles(sourceFiles(), readSource), readSource)).toEqual([])
 
     // Klaenge: erzeugt, nicht aufgenommen.
+    const sound = readFileSync(join(ROOT, 'apps/desktop/src/ui/sound.ts'), 'utf8')
     expect(sound).toMatch(/createOscillator/)
     expect(sound).not.toMatch(ASSET_FILE)
+  })
+
+  it('faellt gegen eine leere Menge und gegen einen Satz ohne Inline-SVG', () => {
+    // Dieselbe kuenstliche Waise wie bei den Schriftdateien: ein Waechter, der nie rot
+    // werden kann, ist keiner.
+    expect(drawingFiles([], readSource)).toEqual([])
+    expect(withoutInlineDrawing(['zeichensatz.tsx'], () => "export const P = 'M3 7h18v10H3z'")).toEqual([
+      'zeichensatz.tsx',
+    ])
+    expect(
+      withoutInlineDrawing(['zeichensatz.tsx'], () => "<svg/> // aus panzer.png nachgezeichnet"),
+    ).toEqual(['zeichensatz.tsx'])
+    expect(withoutInlineDrawing(['zeichensatz.tsx'], () => "<svg><path d='M3 7h18v10H3z'/></svg>")).toEqual([])
   })
 
   it('uebernimmt nichts aus den Vorbildern', () => {

@@ -1140,6 +1140,46 @@ body {
   font: 600 9px var(--font-num);
 }
 
+/* Der Schattenriss (T-M33-01, D33.1/D33.2): eine gefuellte Flaeche, darueber die
+   Innenlinien in der Farbe der vertieften Flaeche. Zwei Pfade, weil ein einziger mit
+   evenodd zwar Loecher stanzen, aber keine Linie ziehen koennte. */
+.unit-art {
+  display: block;
+  flex: none;
+  color: var(--ink);
+}
+
+.unit-art--own {
+  color: var(--good);
+}
+
+.unit-art--ally {
+  color: var(--ally);
+}
+
+.unit-art--enemy {
+  color: var(--accent);
+}
+
+.unit-art--other {
+  color: var(--ink-soft);
+}
+
+.unit-art--building {
+  color: var(--building);
+}
+
+.unit-art__body {
+  fill: currentColor;
+}
+
+.unit-art__cut {
+  fill: none;
+  stroke: var(--paper-sunk);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
 .stances {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

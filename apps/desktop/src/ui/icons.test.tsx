@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { outsideBox } from '../../../../test/path-bounds.ts'
 import { de } from '../i18n/de.ts'
 import {
   BUILDING_ICONS,
@@ -41,17 +42,34 @@ describe('R-UI-04 Icons', () => {
 
   it('bleibt mit jedem Pfad im 24x24-Feld', () => {
     // Alle Zeichen liegen im selben Feld, sonst richten sie sich in einer Zeile nicht
-    // aneinander aus und eines haengt durch. Geprueft an den Zahlen des Pfades: die
-    // Bogenparameter (Radien und Flags) sind hier alle klein genug, um dieselbe Schranke
-    // zu vertragen, also braucht es keinen SVG-Parser fuer eine Frage dieser Groesse.
+    // aneinander aus und eines haengt durch.
+    //
+    // Bis zum 2026-09-11 stand hier ein Ausdruck (`/-?d+(.d+)?/g`), der den BUCHSTABEN
+    // `d` suchte statt der Ziffer `\d`. Er fand in keinem der 44 Pfade etwas; `Math.max()`
+    // ueber der leeren Liste ist `-Infinity`, `Math.min()` ist `Infinity`, und beide
+    // Zusicherungen waren damit fuer den ganzen Satz leer gruen. Und selbst richtig
+    // geschrieben waere er falsch gewesen: in `h-12` ist die −12 eine Laenge, in
+    // `a9 5 0 1 0 18 0` sind fuenf von sieben Zahlen Radien und Flags.
+    //
+    // Jetzt wird der Stift gefuehrt (T-M33-01, EINHEITSBILDER.md Risiko 7).
     for (const name of ICON_NAMES) {
-      const zahlen = (ICON_PATHS[name].match(/-?d+(.d+)?/g) ?? []).map(Number)
-      const groesste = Math.max(...zahlen)
-      const kleinste = Math.min(...zahlen)
-
-      expect(groesste, `${name} ragt bis ${groesste} und damit aus dem Feld`).toBeLessThanOrEqual(24)
-      expect(kleinste, `${name} beginnt bei ${kleinste} und damit vor dem Feld`).toBeGreaterThanOrEqual(0)
+      expect(outsideBox(ICON_PATHS[name], 24, 24), `${name} ragt aus dem Feld`).toEqual([])
     }
+  })
+
+  it('faellt, sobald ein Pfad das Feld verlaesst — die Abfahrt prueft nicht das Nichts', () => {
+    // Dieselbe Notwendigkeit wie bei den Schriftdateien in no-foreign-assets: ein
+    // Waechter, der nie rot werden kann, ist keiner. Geprueft wird an einem echten
+    // Pfad des Satzes, dem genau eine Zahl verschoben ist.
+    expect(outsideBox(`${ICON_PATHS.infantry} M0 0 L25 3`, 24, 24)).toEqual([
+      'rechts bis x = 25.00 (Kasten 24)',
+    ])
+    // Und in die andere Richtung, ueber eine Laenge statt einer Koordinate: `h-12` ab
+    // x = 3 endet bei −9. Die alte Zahlenfischerei haette hier nichts zu beanstanden
+    // gehabt, weil −12 als Zahl im Feld liegt.
+    expect(outsideBox('M3 7h-12', 24, 24)).toEqual(['links bis x = -9.00'])
+    // Und der Bogen, dessen Ausschlag in keiner seiner Zahlen steht.
+    expect(outsideBox('M3 12a9 13 0 1 0 18 0', 24, 24)).toEqual(['unten bis y = 25.00 (Kasten 24)'])
   })
 
   it('nimmt die Farbe des umgebenden Textes an', () => {

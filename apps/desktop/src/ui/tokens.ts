@@ -132,7 +132,10 @@ export interface ContrastPair {
   background: TokenName
   /** Where this combination appears — named so a failure says what breaks. */
   use: string
-  /** True for text at 24 px or above, where WCAG allows 3:1. */
+  /**
+   * True for text at 24 px or above, where WCAG allows 3:1 — und fuer alles, was gar
+   * keine Schrift ist: Balken, Umrisse, Schattenrisse (WCAG 1.4.11, dieselbe Schwelle).
+   */
   large?: boolean
 }
 
@@ -155,6 +158,13 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   { foreground: 'building', background: 'paper', use: 'Rohstoffsymbole in der Leiste' },
   { foreground: 'ally', background: 'paper', use: 'Verbündeter im Machtverlauf' },
   { foreground: 'ink', background: 'water', use: 'Beschriftung auf See' },
+  // Der Schattenriss auf der vertieften Plakette (T-M33-01, D33.2). Er sitzt auf
+  // `paperSunk` und nicht auf `paper`, und genau dieses Paar stand bisher in keiner
+  // Zeile: gemessen 7,38 (good), 6,03 (ally) und 4,28 (accent) — alle drei ueber der
+  // 3:1-Schwelle fuer Nicht-Text, `accent` unter 4,5 und damit fuer Schrift zu wenig.
+  { foreground: 'good', background: 'paperSunk', use: 'eigener Schattenriss im Plättchen', large: true },
+  { foreground: 'ally', background: 'paperSunk', use: 'verbündeter Schattenriss', large: true },
+  { foreground: 'accent', background: 'paperSunk', use: 'feindlicher Schattenriss', large: true },
 ]
 
 export const SPACING = { xs: 2, sm: 4, md: 8, lg: 12, xl: 20, xxl: 32 } as const
