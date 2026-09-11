@@ -68,6 +68,10 @@ milestones:
   - { id: M30, title: "Kriegsrat: die Karte zeigt den Zustand" }
   - { id: M31, title: "Kriegsrat: Panels, Protokoll, Fuss" }
   - { id: M32, title: "Kriegsrat: Luecken zu Supremacy (Freigabe vor Bau)" }
+  # EINHEITSBILDER vom 2026-09-11 (docs/plan/EINHEITSBILDER.md): Noahs Wahl der Richtung B
+  # "Schattenriss" fuer Einheiten UND Gebaeude, Einfaerbung nach Besitzerfarbe, Infanterie
+  # als Mann. Kernfrei. Die 17 Zeichnungen liegen fertig in docs/design/einheiten-bilder.html.
+  - { id: M33, title: "Einheiten und Gebaeude bekommen Bilder" }
 
 tasks:
   - id: T-M0-01
@@ -2203,3 +2207,58 @@ tasks:
     files: [docs/plan/DECISIONS.md]
     tests: []
     dod: "Kein Bau. Ein Eintrag in DECISIONS.md mit Noahs Entscheid je Punkt: Durchmarschrecht (neuer DiplomaticState oder Flag am Buendnis), Provinzhandel (Kommando + Diplomatie-UI), Forschung (eigene Achse, vgl. Supremacy WW3). Fertig, wenn jeder Punkt entweder als Aufgabe mit Meilenstein vorgemerkt oder mit Begruendung gestrichen ist."
+
+  # EINHEITSBILDER vom 2026-09-11 (docs/plan/EINHEITSBILDER.md). Reihenfolge = Baureihenfolge.
+  # M33 haengt an keiner offenen Aufgabe aus M28 oder M32 und blockiert keine davon: es
+  # beruehrt den Kern nicht, nur die Oberflaeche. Wer die Reihenfolge sucht, liest
+  # WORKFLOW.md Abschnitt 2.
+  - id: T-M33-01
+    milestone: M33
+    title: Der Bildsatz zieht in den Code ein
+    status: todo
+    deps: [T-M29-01]
+    requirements: [R-ASSET-01, R-ASSET-02, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/art.tsx, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/art.test.tsx, apps/desktop/src/ui/icons.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts, test/guards/no-foreign-assets.test.ts]
+    dod: "EINHEITSBILDER.md D33.1/D33.2. art.tsx traegt 17 Zeichnungen im Kasten 48x30 als {body, cut}, wortgleich aus docs/design/einheiten-bilder.html (Infanterie = der Mann, Fassung 1), dazu UNIT_ART, BUILDING_ART und die Komponente UnitArt. Test zuerst: jede Einheit aus units.json und jedes Gebaeude aus buildings.json hat genau ein Bild, keines doppelt vergeben, jede Zeichnung hat body UND cut. no-foreign-assets.test.ts prueft art.tsx wie icons.tsx (Inline-SVG, kein Dateibezug) und faellt gegen eine leere Menge. CONTRAST_PAIRS bekommt good, ally und accent gegen paperSunk; haelt ein Paar die 3:1-Schwelle nicht, entscheidet der Kontrasttest und nicht der Entwurf (wie bei line in D27.1). AUSSERDEM Risiko 7 aus EINHEITSBILDER.md: icons.test.tsx Zeile 48 prueft die Koordinaten mit dem Ausdruck -?d+(.d+)? - der trifft den Buchstaben d statt einer Ziffer, findet in keinem Pfad etwas und ist damit fuer alle 44 Symbole leer gruen (nachgewiesen 2026-09-11: 0 Treffer, max -Infinity, min Infinity). Ersetzen durch eine echte Pfadabfahrt, die den Stift mitfuehrt und Laengen von Koordinaten unterscheidet, fuer beide Bildsaetze - und zuerst vorfuehren, dass sie rot werden kann."
+  - id: T-M33-02
+    milestone: M33
+    title: Die Rekrutierungsliste zeigt Bilder
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-UI-03, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "EINHEITSBILDER.md D33.3, Breite 34 px. ActionSpec bekommt ein optionales Feld art; recruitActions setzt es aus UNIT_ART, das Feld icon bleibt unberuehrt (die Alarme und der Tagesbericht nutzen es weiter). Test zuerst: die Liste zeigt je Einheit genau ein Bild, der A11y-Name bleibt wortgleich (Infanterie ausheben, T-M22-06), das Klickziel bleibt mindestens 24 px (R-UI-03). Keine Kernaenderung."
+  - id: T-M33-03
+    milestone: M33
+    title: Das Bauplatzraster zeigt Gebaeudebilder
+    status: todo
+    deps: [T-M33-01]
+    requirements: [R-UI-03, R-UI-04]
+    design: [D-27]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "EINHEITSBILDER.md D33.3, Breite 30 px. Alle drei Feldzustaende des Rasters aus T-M29-03 (frei, im Bau, gebaut) tragen dasselbe Bild; die Stufenzahl bleibt als hochgestellte Ziffer sichtbar und im Namen hoerbar (2 Fabrik). Test zuerst: sieben Felder zeigen sieben verschiedene Bilder, und der Wechsel des Zustands aendert das Bild nicht. Panels.test.tsx Zeile 1032 vergleicht heute gezeichnete Pfade mit ICON_PATHS - wo ein Panel auf Bilder umstellt, wird der Vergleich angepasst, nicht gelockert."
+  - id: T-M33-04
+    milestone: M33
+    title: Das Plaettchen bekommt eine Bildfassung
+    status: todo
+    deps: [T-M33-01, T-M31-02]
+    requirements: [R-UI-04, R-UI-10]
+    design: [D-27]
+    files: [apps/desktop/src/ui/UnitMarker.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "EINHEITSBILDER.md D33.2/D33.3, Breite 44 px. UnitMarker nimmt wahlweise Glyphe oder Bild; Rahmen, Besitzerfarbe und die Zahl rechts bleiben unveraendert, damit Karte und Liste dieselbe Sprache sprechen (Risiko 1). Armee- und Rangliste schalten auf Bild. Die Karte bleibt auf der Glyphe - ein Test haelt fest, dass MapCanvas weiter ICON_PATHS stempelt (D33-a: 11 px tragen keinen Schattenriss). Test zuerst: eigenes Plaettchen good, verbuendetes ally, feindliches accent; MapCanvas unveraendert."
+  - id: T-M33-05
+    milestone: M33
+    title: Abnahme M33
+    status: todo
+    deps: [T-M33-02, T-M33-03, T-M33-04]
+    requirements: []
+    design: [D-27]
+    files: [docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/EINHEITSBILDER.md]
+    tests: [apps/desktop/src/map/render.bench.slow.test.ts]
+    dod: "pnpm verify gruen (einmal am Ende des Meilensteins, nicht je Aufgabe). Zeichenbudget nachgemessen bei freier Maschine gegen den Ausgangswert p95 5,39 ms von 16,7 ms - die Armeeliste hat je Zeile zwei Pfade mehr (Risiko 4); die Zahl wird festgehalten, auch wenn sie unauffaellig ist. Sichtpruefung der 17 Bilder im laufenden Spiel, nicht nur im Entwurfsblatt. Ein Absatz in PROGRESS.md, ein Satz im Kopf von WORKFLOW.md, und die drei Entscheide D33-a bis D33-c aus EINHEITSBILDER.md Abschnitt 6 in DECISIONS.md."

@@ -1728,3 +1728,34 @@ AK-8 danach vollständig neu gemessen: `docs/reports/packaging.md`.
    durchsetzt, gilt erst nach einer Messung am gebauten Erzeugnis** — genau die
    AK-8-Messung, die diesen Fehler gefunden hat. Sie gehört nach jedem Umbau am
    Speicherweg wiederholt.
+
+---
+
+## Ein Wächter, der seit Monaten nichts bewacht (2026-09-11, beim Planen von M33 gefunden)
+
+`apps/desktop/src/ui/icons.test.tsx:48` verspricht, dass jeder Symbolpfad im 24er-Feld
+bleibt. Der Ausdruck dafür lautet `/-?d+(.d+)?/g` — er sucht den **Buchstaben** `d`, nicht
+eine Ziffer. In SVG-Pfaden kommt kein kleines `d` vor, die Suche liefert also für jedes der
+44 Symbole nichts:
+
+```
+Treffer: 0   max: -Infinity   min: Infinity
+```
+
+`Math.max()` über einer leeren Liste ist `-Infinity`, `Math.min()` ist `Infinity`. Beide
+Zusicherungen — „höchstens 24" und „mindestens 0" — sind damit **immer** erfüllt. Der Test
+ist grün, seit er geschrieben wurde, und war es auch für ein Symbol, das quer aus dem Feld
+ragt.
+
+**Zwei Fehler, nicht einer.** Selbst mit `\d` wäre die Prüfung falsch: in `h-12` ist die
+−12 eine *Länge*, keine Koordinate, und die untere Schranke „mindestens 0" würde gegen
+jeden relativen Rückwärtsbefehl schlagen. Eine Feldprüfung braucht eine Pfadabfahrt, die
+den Stift mitführt.
+
+**Reparatur:** T-M33-01 (`docs/plan/EINHEITSBILDER.md`, Risiko 7) ersetzt sie durch eine
+echte Abfahrt für beide Bildsätze — und führt sie **zuerst am alten Satz vor**, damit
+belegt ist, dass sie rot werden kann.
+
+**Die Regel daraus, wieder einmal:** eine Zusicherung über einer leeren Menge ist immer
+grün. Jeder Wächter, der über eine Menge läuft, muss einmal gegen die leere Menge geprüft
+werden — so wie es `no-foreign-assets.test.ts` und `ui-reachability` schon tun.

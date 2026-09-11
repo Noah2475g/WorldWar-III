@@ -8,6 +8,15 @@
 > Toren M29/M30, Abschlussprüfung im M31-Block von PROGRESS.md). **M32 wartet auf Noahs
 > Freigabe.** Danach T-M28-06/T-M28-08. Die Spitze liegt auf `claude/design-plan-execution-8b4296`.
 >
+> **Neu am 2026-09-11: M33 „Einheiten und Gebäude bekommen Bilder" ist geplant und
+> freigegeben** (`docs/plan/EINHEITSBILDER.md`, fünf Aufgaben, alle `todo`, kernfrei).
+> Noah hat nach zwei Entwurfsrunden Richtung B „Schattenriss" gewählt, für Einheiten und
+> Gebäude, eingefärbt nach Besitzerfarbe, Infanterie als Mann. Die siebzehn Zeichnungen
+> liegen fertig in `docs/design/einheiten-bilder.html` — wer M33 baut, überträgt, er
+> entwirft nicht mehr. **Fund am Rand:** der Koordinatentest in `icons.test.tsx` ist seit
+> Monaten leer grün (sein Ausdruck sucht den Buchstaben `d` statt einer Ziffer und findet
+> in keinem Pfad etwas); T-M33-01 ersetzt ihn.
+>
 > **Stand davor:** 2026-09-10 · **der Kriegsrat-Umbau ist geplant** — Noahs Wahl der
 > Designrichtung A, Entwurf `docs/design/kriegsrat.html`, Bauplan **`docs/plan/KRIEGSRAT.md`**
 > (M29–M32, 15 Aufgaben, alle `todo`). **Wer den Umbau baut, liest KRIEGSRAT.md §0 und
@@ -88,24 +97,32 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **Der Kriegsrat-Umbau (M29–M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen, dann Aufgabe
-   für Aufgabe ab T-M29-01. M32 erst nach Noahs Freigabe. T-M28-06 und T-M28-08 werden
-   danach im neuen Schema gebaut (sie hängen jetzt an T-M29-01).
-1. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
+0. **Die Bilder für Einheiten und Gebäude (M33)** — freigegeben am 2026-09-11, kernfrei,
+   fünf Aufgaben. `docs/plan/EINHEITSBILDER.md` §0 lesen, dann T-M33-01 bis T-M33-05. Die
+   siebzehn Zeichnungen liegen fertig in `docs/design/einheiten-bilder.html`; es ist kein
+   Entwurf mehr zu machen, nur noch zu übertragen. **Achtung:** T-M33-01 repariert
+   nebenbei einen Wächter, der seit Monaten leer grün ist (Risiko 7 im Bauplan).
+1. **Der Kriegsrat-Umbau, Rest (M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen. T-M32-01
+   berührt den Kern und wartet auf Noahs Freigabe; T-M32-02 und T-M32-03 sind kernfrei und
+   könnten jederzeit laufen.
+2. **Noahs Spiel-Feedback (T-M28-06, T-M28-07, T-M28-08)** — vorgemerkt, nicht gebaut.
+   T-M28-07 verlangt zuerst eine Analyse und einen Entwurf in `LEVEL-UP-3.md`, keinen Bau.
+3. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
+4. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
    nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
    mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
    seit dem 2026-09-03 eine uncommittete, überholte Änderung an
    `packages/core/src/persistence/migrate.ts` — vor dem Merge verwerfen.
-2. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+5. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
    Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
    neuen Bündel (starten, speichern, schließen, neu starten, laden —
    `docs/reports/packaging.md` dokumentiert noch den Lauf gegen `1c33ec7`). Zählt
    nicht gegen V1.
-3. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
+6. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
    nächste Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich
    weiterspielen?*
-4. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
+7. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.
 
 ---

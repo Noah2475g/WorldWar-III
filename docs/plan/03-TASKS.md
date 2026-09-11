@@ -4104,3 +4104,71 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Tests zuerst:** keine (Entscheid).
 - **Fertig wenn:** je Punkt entweder Aufgabe mit Meilenstein vorgemerkt oder mit
   Begründung gestrichen.
+
+## Meilenstein M33 — Einheiten und Gebäude bekommen Bilder
+
+> Noahs Wahl vom 2026-09-11 nach zwei Entwurfsrunden: Richtung **B „Schattenriss"**, für
+> Einheiten **und** Gebäude, eingefärbt nach Besitzerfarbe, Infanterie als **Mann**.
+> Der Bauplan steht in `docs/plan/EINHEITSBILDER.md`, die siebzehn fertigen Zeichnungen in
+> `docs/design/einheiten-bilder.html`. **M33 berührt den Kern nicht** und hängt an keiner
+> offenen Aufgabe aus M28 oder M32 — es kann vor oder nach ihnen gebaut werden.
+
+### T-M33-01 · Der Bildsatz zieht in den Code ein
+- **Ziel:** siebzehn Zeichnungen als zweiter Satz neben `icons.tsx`, und ein Wächter, der
+  sie deckt — sonst entsteht das größte Asset-Loch des Projekts.
+- **Anforderungen:** R-ASSET-01, R-ASSET-02, R-UI-04 · **Entwurf:** D27 (Abschnitt D33 in
+  `EINHEITSBILDER.md`)
+- **Abhängigkeiten:** T-M29-01
+- **Dateien:** `apps/desktop/src/ui/art.tsx`, `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** jede Einheit und jedes Gebäude hat genau ein Bild, keines doppelt
+  vergeben, jede Zeichnung hat `body` **und** `cut` (`art.test.tsx`); `art.tsx` wird wie
+  `icons.tsx` geprüft und fällt gegen eine leere Menge (`no-foreign-assets.test.ts`);
+  drei neue Kontrastpaare gegen `paperSunk` (`tokens.contrast.test.ts`).
+- **Fertig wenn:** `ART`, `UNIT_ART`, `BUILDING_ART` und `UnitArt` stehen; **und** der
+  vacuous gewordene Koordinatentest in `icons.test.tsx` ist durch eine echte Pfadabfahrt
+  ersetzt, die vorher rot werden konnte (Risiko 7).
+
+### T-M33-02 · Die Rekrutierungsliste zeigt Bilder
+- **Ziel:** die Liste, aus der ausgehoben wird, ist der Ort mit dem größten Gewinn.
+- **Anforderungen:** R-UI-03, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** je Einheit genau ein Bild; A11y-Name bleibt wortgleich; Klickziel
+  bleibt ≥ 24 px (`Panels.test.tsx`, `actions.test.ts`).
+- **Fertig wenn:** `ActionSpec.art` optional gesetzt, `icon` unberührt, keine
+  Kernänderung.
+
+### T-M33-03 · Das Bauplatzraster zeigt Gebäudebilder
+- **Ziel:** Rekrutierungsliste und Bauplatzraster stehen nebeneinander und sollen nicht
+  wie zwei Programme aussehen.
+- **Anforderungen:** R-UI-03, R-UI-04 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** sieben Felder zeigen sieben verschiedene Bilder; der Zustandswechsel
+  ändert das Bild nicht (`Panels.test.tsx`).
+- **Fertig wenn:** alle drei Feldzustände tragen dasselbe Bild, die Stufenzahl bleibt
+  sichtbar und hörbar, und der Pfadvergleich gegen `ICON_PATHS` ist angepasst statt
+  gelockert.
+
+### T-M33-04 · Das Plättchen bekommt eine Bildfassung
+- **Ziel:** Armee- und Rangliste tragen Bilder, die Karte behält ihre Glyphe.
+- **Anforderungen:** R-UI-04, R-UI-10 · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-01, T-M31-02
+- **Dateien:** `apps/desktop/src/ui/UnitMarker.tsx`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** eigenes Plättchen `good`, verbündetes `ally`, feindliches `accent`;
+  `MapCanvas` stempelt weiter `ICON_PATHS` (`MapCanvas.test.tsx`).
+- **Fertig wenn:** Rahmen, Farbe und Zahlstellung unverändert — nur die Füllung wechselt.
+
+### T-M33-05 · Abnahme M33
+- **Ziel:** der Meilenstein wird geschlossen, nicht liegen gelassen.
+- **Anforderungen:** keine · **Entwurf:** D27
+- **Abhängigkeiten:** T-M33-02, T-M33-03, T-M33-04
+- **Dateien:** `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`,
+  `docs/plan/EINHEITSBILDER.md`
+- **Tests zuerst:** keine neuen; `render.bench.slow.test.ts` wird bei freier Maschine
+  nachgemessen.
+- **Fertig wenn:** `pnpm verify` grün, Zeichenbudget festgehalten, Sichtprüfung im
+  laufenden Spiel, PROGRESS/WORKFLOW fortgeschrieben und D33-a bis D33-c in
+  `DECISIONS.md`.
