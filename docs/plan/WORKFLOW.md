@@ -88,10 +88,14 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 2 · Was als Nächstes dran ist
 
-0. **Der Kriegsrat-Umbau (M29–M32)** — `docs/plan/KRIEGSRAT.md` §0 lesen, dann Aufgabe
-   für Aufgabe ab T-M29-01. M32 erst nach Noahs Freigabe. T-M28-06 und T-M28-08 werden
-   danach im neuen Schema gebaut (sie hängen jetzt an T-M29-01).
-1. **Merge auf `main`** — dieser Branch enthält alles; `main` kann per fast-forward
+0. **Kriegsrat M29–M31 sind gebaut und abgenommen** (`pnpm acceptance` 11/11, 2026-09-11; PR #3
+   gegen `main` offen: https://github.com/Noah2475g/WorldWar-III/pull/3). **Nächste Aufgabe: M32 —
+   nur nach Noahs Freigabe.** Dann T-M32-01 (Kern additiv: `MOVE_ARMY.departInTicks`), T-M32-02
+   (Markt-Sparkline, kernfrei), T-M32-03 (Entscheid in DECISIONS.md). Danach T-M28-06 (füllt den
+   leeren Chip `.header__alarm` in `Header.tsx`) und T-M28-08 (Explosionsmarker über dem Kampfring).
+   Bewusste Abweichungen vom Entwurf stehen im M31-Block von `PROGRESS.md` — nicht neu herleiten.
+   Prüfregel: gezielte Tests je Aufgabe, `pnpm verify` je Meilenstein-Tor.
+1. **Merge auf `main`** — über PR #3 (Noahs Entscheidung); `main` kann danach per fast-forward
    nachziehen. Danach die alten Worktrees aufräumen (`git worktree list` zeigt
    mehrere; nur `playtest-levelplan-bbacfc` ist aktuell). Im **Hauptcheckout** liegt
    seit dem 2026-09-03 eine uncommittete, überholte Änderung an
@@ -112,7 +116,7 @@ Tick, samt KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISI
 
 ## 3 · Was gilt (nicht neu herleiten)
 
-- **Kein Remote, nichts gemerged.** Es gibt keinen Push, kein GitHub, keine CI.
+- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III, PRs #1–#3); weiterhin keine CI — `pnpm verify` ist die Prüfkette.
 - **Der Plan-Wächter ist scharf.** `npx vitest run test/plan-consistency.test.ts`
   prüft in einer Sekunde tasks.yaml ↔ 03-TASKS.md und jeden `files:`/`tests:`-Pfad.
 - **Anforderungstor:** `pnpm coverage:requirements` meldet `V1 offen: 0`.
