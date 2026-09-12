@@ -615,9 +615,18 @@ Vier Regeln gelten für jede Anforderung dieses Abschnitts:
 
 - **R-TECH-01 — Gebäude und Einheiten werden nach Spieltag freigeschaltet.** Jedes Gebäude
   und jede Einheit trägt in den Regeln einen ersten Spieltag (`availableFromDay`); vorher
-  lehnt das Spiel den Auftrag ab. Die belegten Tage des Originals (Referenz 1.4: Kaserne
-  Tag 1, Hafen Tag 2, Eisenbahn Tag 5, Fabrik Tag 8, Flugplatz Tag 10) werden übernommen,
-  die Tage der Einheiten daraus abgeleitet.
+  lehnt das Spiel den Auftrag ab. Die Reihenfolge stammt aus dem Original (Referenz 1.4:
+  Kaserne vor Hafen vor Eisenbahn vor Fabrik vor Flugplatz), die Abstände nicht.
+  - **Die belegten Tage des Originals sind Tag 1, 2, 5, 8 und 10, und sie werden hier
+    bewusst nicht übernommen.** Der Grund ist die Zeitrechnung, nicht die Quelle: im
+    Original ist ein Spieltag ein echter Tag, sechzehn Tage sind also sechzehn Tage
+    Spielen. Hier dauert ein Spieltag 24 Ticks und ein Tick eine Sekunde bei Tempo 1 —
+    **dieselbe Leiter ist nach 6,4 Minuten Echtzeit durchlaufen**, während eine Partie bis
+    Spieltag 798 läuft (`docs/reports/fullgame.json`). Zwei Prozent der Partie trügen
+    dann die ganze Fortschrittsachse. Die Tage sind deshalb seit M34 **abgeleitet statt
+    belegt**: die Reihenfolge bleibt, die Abstände wachsen, die späteste Freischaltung
+    liegt bei etwa Spieltag 80. Wer die alten Zahlen für belegt hält, findet hier die
+    Gegenrede und in `BALANCING.md` die Tabelle mit Status je Sache.
   - AK1: WENN ein Bau- oder Aushebeauftrag vor dem ersten Spieltag der Sache erteilt wird,
     DANN SOLL der Kern ihn mit `NOT_YET_AVAILABLE` ablehnen und den Tag nennen, ab dem es
     geht — für Mensch und KI gleichermaßen.

@@ -102,13 +102,79 @@ describe('R-TECH-01 Jeder erste Spieltag ist begruendet', () => {
     expect(missing, `Freischaltungstage ohne vollstaendigen Eintrag:\n${missing.join('\n')}`).toEqual([])
   })
 
-  it('nennt genau die fuenf belegten Tage als belegt', () => {
-    // Die Gegenrichtung: waeren alle siebzehn als "belegt" eingetragen, bestuende der
-    // Test oben unveraendert — und die Tabelle behauptete Quellen, die es nicht gibt.
-    const proven = Object.entries(buildings)
+  it('fuehrt keinen Freischaltungstag mehr als belegt (T-M34-02)', () => {
+    // Bis zum 2026-09-12 stand hier die Gegenrichtung: genau fuenf Tage mussten "belegt"
+    // sein (Kaserne, Hafen, Eisenbahn, Fabrik, Flugplatz aus Referenz 1.4). Der Test war
+    // richtig gegen den Fehler, den er abwehren sollte — eine Tabelle, die Quellen
+    // behauptet, die es nicht gibt. Er war falsch in der Sache: **eine belegte Zahl ist
+    // nur in ihrer eigenen Zeitrechnung belegt.** Im Vorbild ist ein Spieltag ein echter
+    // Tag, hier sind es 24 Sekunden bei Tempo 1; dieselbe Leiter dauert dort sechzehn
+    // Tage und hier 6,4 Minuten. Entscheid in DECISIONS.md (2026-09-12, T-M34-02).
+    const stillProven = [...Object.entries(buildings), ...Object.entries(units)]
       .filter(([key]) => doc.split('\n').some((line) => line.startsWith(`| \`${key}\` |`) && line.includes('belegt')))
       .map(([key]) => key)
 
-    expect(proven.sort()).toEqual(['airfield', 'barracks', 'factory', 'harbour', 'railway'])
+    expect(stillProven.sort(), 'ein Freischaltungstag steht wieder als belegt').toEqual([])
+  })
+
+  it('haelt die Gegenrede fest, statt die Quelle stillschweigend fallen zu lassen', () => {
+    // Der Preis des Tests darueber: "keine Zeile sagt belegt" waere auch dann gruen, wenn
+    // jemand die Referenz einfach geloescht haette. Beides muss dastehen — die Tage des
+    // Vorbilds UND der Grund, warum sie hier nicht gelten.
+    const requirements = readFileSync(join(ROOT, 'docs/plan/01-REQUIREMENTS.md'), 'utf8')
+    const rTech = requirements.slice(requirements.indexOf('**R-TECH-01'), requirements.indexOf('**R-TECH-02'))
+
+    expect(rTech, 'R-TECH-01 nennt die Tage des Vorbilds nicht mehr').toMatch(/Tag 1, 2, 5, 8 und 10/)
+    expect(rTech, 'R-TECH-01 fuehrt keine Zeitrechnung als Grund').toMatch(/6,4 Minuten/)
+    expect(doc, 'BALANCING.md nennt den Grund der Umstufung nicht').toMatch(/T-M34-02/)
+  })
+})
+
+/**
+ * Die Stufenzahlen der KI stehen genauso in der Tabelle wie jede andere Zahl (T-M34-07).
+ *
+ * **Der Befund, der diesen Waechter erzwungen hat:** `BALANCING.md` fuehrte fuer
+ * `recruitShare` die Werte 80 / 120 / 500, `ai.json` seit dem 2026-09-06 15:47 die Werte
+ * 80 / 200 / 360 — die Tabelle war um einen Commit veraltet, sechs Tage lang, und
+ * niemandem fiel es auf. Der Waechter darueber liest ausschliesslich `constants.json`;
+ * die Stufenzahlen der KI lagen ausserhalb seines Blickfelds.
+ *
+ * Dieselbe Fehlerklasse wie am 2026-09-06 („der Waechter las nur constants.json, die 17
+ * Freischaltungstage waeren unbemerkt ohne Herkunft geblieben") — und dieselbe Lehre:
+ * eine Reparatur gehoert auf die **Fehlerklasse**, nicht auf den einen Fundort.
+ */
+describe('D17 Die Stufenzahlen der KI stehen in der Tabelle', () => {
+  const ai = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as {
+    difficulties: Record<string, Record<string, number>>
+  }
+  const NAMEN: Readonly<Record<string, string>> = { easy: 'leicht', normal: 'normal', hard: 'schwer' }
+  /** Die Spalten, die die Tabelle fuehrt — mehr verlangt der Waechter nicht. */
+  const SPALTEN = ['warThreshold', 'trustThreshold', 'recruitShare'] as const
+
+  const zeileFuer = (stufe: string): string[] => {
+    const zeile = doc.split('\n').find((line) => line.startsWith(`| ${NAMEN[stufe]} |`))
+    return (zeile ?? '').split('|').map((cell) => cell.trim().replace(/\*/g, ''))
+  }
+
+  it('fuehrt jede der drei Stufen mit einer Zeile', () => {
+    expect(Object.keys(ai.difficulties).sort()).toEqual(['easy', 'hard', 'normal'])
+    for (const stufe of Object.keys(ai.difficulties)) {
+      expect(zeileFuer(stufe).length, `keine Zeile fuer ${NAMEN[stufe]}`).toBeGreaterThan(4)
+    }
+  })
+
+  it('nennt dieselben Zahlen wie das Regelwerk', () => {
+    const falsch: string[] = []
+    for (const [stufe, werte] of Object.entries(ai.difficulties)) {
+      const zellen = zeileFuer(stufe)
+      SPALTEN.forEach((spalte, index) => {
+        const inTabelle = zellen[index + 2]
+        if (inTabelle !== String(werte[spalte])) {
+          falsch.push(`${NAMEN[stufe]}.${spalte}: Tabelle ${inTabelle}, Regelwerk ${werte[spalte]}`)
+        }
+      })
+    }
+
+    expect(falsch, `Tabelle und Regelwerk sagen Verschiedenes:\n${falsch.join('\n')}`).toEqual([])
   })
 })
