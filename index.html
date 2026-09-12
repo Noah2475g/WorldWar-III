@@ -19,9 +19,18 @@
   --accent: #e0a220;
   --accent-soft: rgba(224, 162, 32, 0.12);
   --on-accent: #1a1200;
-  --status-fertig: #7ec57e;
-  --status-in-arbeit: #e0a220;
-  --status-geplant: #6fa8dc;
+  /* Statusfarben: Knoten, Tönung, Rahmen. */
+  --status-fertig: #4caf50;
+  --status-in-arbeit: #f0a500;
+  --status-geplant: #888888;
+  /* Statustext: #888 und #4caf50 schaffen auf ihrer 20-%-Tönung keine 4,5:1 — leicht aufgehellt (≥ 4,6:1 auf allen Flächen). */
+  --status-fertig-text: #60b863;
+  --status-in-arbeit-text: #f0a500;
+  --status-geplant-text: #a1a1a1;
+  --status-fertig-bg: rgba(76, 175, 80, 0.2);
+  --status-in-arbeit-bg: rgba(240, 165, 0, 0.2);
+  --status-geplant-bg: rgba(136, 136, 136, 0.2);
+  --timeline-line: rgba(224, 162, 32, 0.5);
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "SF Mono", Menlo, monospace;
   --radius: 8px;
@@ -239,9 +248,9 @@ main > section { scroll-margin-top: calc(var(--nav-height) + 0.5rem); }
   line-height: 1.5;
   white-space: nowrap;
 }
-.badge[data-status="fertig"] { color: var(--status-fertig); }
-.badge[data-status="in-arbeit"] { color: var(--status-in-arbeit); }
-.badge[data-status="geplant"] { color: var(--status-geplant); }
+.badge[data-status="fertig"] { color: var(--status-fertig-text); }
+.badge[data-status="in-arbeit"] { color: var(--status-in-arbeit-text); }
+.badge[data-status="geplant"] { color: var(--status-geplant-text); }
 
 .status-summary {
   display: flex;
@@ -369,9 +378,118 @@ main:focus { outline: none; }
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ── Anleitung ──────────────────────────────── */
-.guide-grid { display: grid; gap: 2.5rem; }
-.guide-block h3 { font-size: 1.25rem; margin-bottom: 1rem; }
+/* ── Anleitung: Akkordeon ───────────────────── */
+.accordion { display: grid; gap: 0.75rem; }
+.acc-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  scroll-margin-top: calc(var(--nav-height) + 0.75rem);
+  transition: border-color var(--ease);
+}
+.acc-item[data-open="true"] { border-color: var(--border-strong); }
+.acc-heading { margin: 0; font-size: inherit; }
+.acc-button {
+  width: 100%;
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color var(--ease);
+}
+.acc-button:hover,
+.acc-button[aria-expanded="true"] { color: var(--accent); }
+.acc-chevron { flex: none; width: 1.1rem; color: var(--accent); text-align: center; }
+.acc-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.acc-panel {
+  position: relative;
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  transition: max-height 300ms ease, visibility 0s linear 300ms;
+}
+.acc-panel[data-open="true"] {
+  visibility: visible;
+  transition: max-height 300ms ease, visibility 0s linear 0s;
+}
+.acc-inner {
+  display: grid;
+  gap: 1.75rem;
+  padding: 1.25rem 1.1rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.acc-intro { font-size: 1.0625rem; max-width: 46rem; }
+.sub-label {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.field-list { margin: 0; display: grid; gap: 0.75rem; }
+.field-list div { display: grid; gap: 0.1rem; }
+.field-list dt { font-weight: 600; }
+.field-list dd { margin: 0; color: var(--text-muted); }
+.tag-list { margin: 0.75rem 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.tag-list li {
+  padding: 0.15rem 0.7rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+.note-plain { color: var(--text-muted); font-size: 0.9375rem; }
+
+/* position: relative, damit absolut positionierte Screenreader-Texte in der Tabelle mitgeclippt werden. */
+.table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.controls { width: 100%; min-width: 44rem; border-collapse: collapse; font-size: 0.9375rem; }
+.controls th, .controls td { padding: 0.65rem 0.85rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+.controls thead th { background: var(--surface-raised); font-weight: 700; white-space: nowrap; }
+.controls tbody th { font-weight: 600; }
+.controls tbody tr:last-child > * { border-bottom: 0; }
+.controls tbody tr:nth-child(even) { background: rgba(224, 224, 224, 0.025); }
+.controls td { color: var(--text-muted); }
+.col-icon { margin-right: 0.4rem; }
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0.05em 0.45em;
+  font-size: 0.85em;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.concepts { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
+.concept { padding: 1rem 1.1rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); display: grid; gap: 0.4rem; }
+.concept h4 { margin: 0; font-size: 1.0625rem; color: var(--accent); }
+.concept p { color: var(--text-muted); font-size: 0.9375rem; }
+
+.dev-block { margin-top: 3rem; }
+.dev-block h3 { font-size: 1.25rem; margin-bottom: 1rem; }
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 1rem; }
 .steps li {
   counter-increment: step;
@@ -421,42 +539,56 @@ main:focus { outline: none; }
 .next h3 { font-size: 1.125rem; margin-bottom: 0.9rem; }
 .next ol { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.6rem; }
 .next li::marker { font-family: var(--font-mono); color: var(--accent); }
-.timeline { margin: 0; padding: 0; list-style: none; position: relative; display: grid; gap: 1rem; }
+/* Vertikale Timeline: mobil Linie links, ab 768px mittig mit wechselnden Seiten. */
+.timeline { position: relative; margin: 0; padding: 0; list-style: none; display: grid; gap: 1.25rem; }
 .timeline::before {
   content: "";
   position: absolute;
-  left: 0.6rem; top: 0.5rem; bottom: 0.5rem;
+  top: 0; bottom: 0; left: 7px;
   width: 2px;
-  background: var(--border);
+  background: var(--timeline-line);
 }
-.phase { position: relative; padding-left: 2.25rem; }
-.phase-dot {
+.tl-item { position: relative; padding-left: 2rem; }
+.tl-node {
   position: absolute;
-  left: 0.1rem; top: 1.35rem;
-  width: 1.05rem; height: 1.05rem;
+  top: 1.35rem; left: 2px;
+  width: 12px; height: 12px;
   border-radius: 50%;
-  border: 2px solid var(--status-geplant);
-  background: var(--bg);
+  background: var(--status-geplant);
+  box-shadow: 0 0 0 3px var(--bg);
 }
-.phase[data-status="fertig"] .phase-dot { border-color: var(--status-fertig); background: var(--status-fertig); }
-.phase[data-status="in-arbeit"] .phase-dot { border-color: var(--status-in-arbeit); background: var(--status-in-arbeit); }
-.phase-card {
+.tl-item[data-status="fertig"] .tl-node { background: var(--status-fertig); }
+.tl-item[data-status="in-arbeit"] .tl-node { background: var(--status-in-arbeit); }
+.tl-card {
+  display: grid;
+  gap: 0.5rem;
   padding: 1rem 1.1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  display: grid;
-  gap: 0.6rem;
 }
-.phase-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
-.phase-range { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-muted); }
-.phase h3 { font-size: 1.125rem; flex: 1 1 14rem; }
-.phase-note { color: var(--text-muted); font-size: 0.9375rem; }
+.tl-card h3 { font-size: 1.125rem; }
+.tl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem; }
+.tl-time { font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-muted); }
+.pill {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.pill[data-status="fertig"] { background: var(--status-fertig-bg); color: var(--status-fertig-text); }
+.pill[data-status="in-arbeit"] { background: var(--status-in-arbeit-bg); color: var(--status-in-arbeit-text); }
+.pill[data-status="geplant"] { background: var(--status-geplant-bg); color: var(--status-geplant-text); }
+.tl-desc { color: var(--text-muted); font-size: 0.9375rem; }
 .bar { height: 6px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
 .bar span { display: block; height: 100%; background: var(--status-fertig); }
-.phase[data-status="geplant"] .bar span { background: var(--status-geplant); }
+.tl-item[data-status="in-arbeit"] .bar span { background: var(--status-in-arbeit); }
+.tl-item[data-status="geplant"] .bar span { background: var(--status-geplant); }
 .bar-label { font-size: 0.875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.phase details summary {
+.tl-card details summary {
   cursor: pointer;
   width: fit-content;
   font-size: 0.9375rem;
@@ -507,7 +639,17 @@ main:focus { outline: none; }
   .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .detail { padding: 2rem; }
   .detail-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .guide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .concepts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field-list div { grid-template-columns: 10rem 1fr; gap: 1rem; }
+  .acc-inner { padding: 1.5rem 1.5rem 1.75rem; }
+
+  .timeline::before { left: calc(50% - 1px); }
+  .tl-item { width: calc(50% - 2rem); padding-left: 0; }
+  .tl-item:nth-child(odd) { justify-self: start; }
+  .tl-item:nth-child(even) { justify-self: end; }
+  .tl-item:nth-child(odd) .tl-node { left: auto; right: calc(-2rem - 6px); }
+  .tl-item:nth-child(even) .tl-node { left: calc(-2rem - 6px); }
   .repo-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -577,8 +719,8 @@ const projectData = {
   abschnitte: [
     { id: "uebersicht", label: "Übersicht" },
     { id: "bereiche", label: "Bereiche", eyebrow: "Fachbereiche", titel: "Woraus das Projekt besteht", lead: "Neun Bausteine, abgeleitet aus der Ordnerstruktur des Monorepos. Eine Karte öffnet die Details darunter." },
-    { id: "anleitung", label: "Anleitung", eyebrow: "Anleitung", titel: "Spielen und Weiterbauen", lead: "Die ersten fünf Minuten im Spiel und die Befehle, die man zum Arbeiten am Repo braucht." },
-    { id: "roadmap", label: "Roadmap", eyebrow: "Roadmap", titel: "Vom Fundament bis zur Partie zu zweit", lead: "Die Meilensteine aus `docs/plan/tasks.yaml`, zu Bauabschnitten zusammengefasst." }
+    { id: "anleitung", label: "Anleitung", eyebrow: "Anleitung", titel: "Spielen und Weiterbauen", lead: "Wie eine Partie beginnt, wie man sie steuert und was sie entscheidet — darunter die Befehle fürs Repo." },
+    { id: "roadmap", label: "Roadmap", eyebrow: "Roadmap", titel: "Vom Fundament bis zur Partie zu zweit", lead: "Bauabschnitte aus `docs/plan/tasks.yaml`. Die Quartale folgen den Commit-Daten; was noch kein Datum hat, steht auf TBD." }
   ],
 
   kennzahlen: [
@@ -858,18 +1000,8 @@ const projectData = {
     }
   ],
 
+  // Die Spieler-Anleitung steht in onboardingData (unten); hier nur, was fürs Repo gebraucht wird.
   anleitung: {
-    spielen: {
-      titel: "Die ersten fünf Minuten",
-      schritte: [
-        { titel: "Partie beginnen", text: "Eine Macht wählen — für den Anfang eine mit Landgrenzen und Küste. Dieselbe Startzahl ergibt immer dieselbe Partie." },
-        { titel: "Provinzen ansehen", text: "Moral ist die wichtigste Zahl: sie bestimmt Produktion, Aufstände und die Stärke frischer Truppen. Unter 33 wird es gefährlich." },
-        { titel: "Etwas bauen", text: "Kaserne für Truppen, Fabrik für Produktion. Tooltips nennen Kosten und Dauer; was nicht geht, ist ausgegraut — mit Grund." },
-        { titel: "Die Zeit laufen lassen", text: "Leertaste startet und stoppt. „Vorspulen“ überspringt Strecken, bis etwas passiert, das man sehen muss." },
-        { titel: "Die Ereignisleiste lesen", text: "Rot heißt hinsehen. Ein Klick auf eine Zeile springt zur Provinz." }
-      ],
-      hinweis: { text: "Die vollständige Anleitung steht in", pfad: "docs/ANLEITUNG.md" }
-    },
     entwickeln: {
       titel: "Am Repo arbeiten",
       befehle: [
@@ -934,19 +1066,108 @@ const projectData = {
       "Nebenher: Noah spielt — was er findet, wird der nächste Plan.",
       "Die Marken für die Zwischenziele aus M35 festlegen.",
       "Freigabe für die Haltungen: `aggressive` wirkt im Kern bisher nirgends."
-    ],
-    phasen: [
-      { titel: "V1 — das Spiel entsteht", von: 0, bis: 12, notiz: "Abgenommen am 2026-09-08 mit 7 von 7 Kriterien." },
-      { titel: "Der Stand wird wahr", von: 13, bis: 16, notiz: "Nach einer Auswertung mit 68 Befunden: Spielstände, echte KI-Gegner, Verpackung als Programm." },
-      { titel: "Die Karte führt", von: 19, bis: 21, notiz: "Die Karte zeigt und erklärt; die ersten Spieltage leiten an." },
-      { titel: "Oberfläche, Sprache, Bilder", von: 22, bis: 27, notiz: "Die Oberfläche auf dem Stand des Kerns, echtes Deutsch, Grafik statt Text." },
-      { titel: "Feinschliff und Kriegsrat", von: 28, bis: 33, notiz: "Umbau zum dunklen Kartentisch, abgenommen am 2026-09-11 mit 11 von 11." },
-      { titel: "Fortschritt und Rohstoffleiste", von: 34, bis: 36, notiz: "Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s. M35 ist ein Entwurf." },
-      { titel: "Mehrspieler — eine Partie zu zweit", von: 37, bis: 39, notiz: "Geplant und freigegeben am 2026-09-12; Bauplan `docs/plan/MEHRSPIELER.md`." },
-      { titel: "Danach", ids: ["M17", "M18"], notiz: "Spionage und Handelsangebote; M17 wird als Ganzes geplant oder gar nicht." }
     ]
   }
 };
+
+// ═══════════════════════════════════════════
+// EDIT: Onboarding-Inhalte hier anpassen
+// ═══════════════════════════════════════════
+// Quellen: docs/ANLEITUNG.md, apps/desktop/src/keyboard.ts, apps/desktop/src/i18n/de.ts
+// (Startdialog, Einstiegshilfe, Knopfbeschriftungen), data/rules/default/*.json.
+// In Tastatur-Texten wird [Taste] als Taste gesetzt; "—" heißt: nicht belegt.
+const onboardingData = {
+  ersteSchritte: {
+    titel: "Erste Schritte",
+    inhalt: "Beim ersten Start öffnet sich der Dialog „Neue Partie“. Gibt es schon einen Spielstand, steht dort als erster Knopf „Weiterspielen“ mit dem erreichten Spieltag. Danach läuft eine Einstiegshilfe neben dem Spiel her: sie blockiert keine Eingabe, erscheint nur in der ersten Partie und bleibt nach „Nicht mehr zeigen“ aus.",
+    startdialogTitel: "Der Startdialog",
+    startdialog: [
+      { feld: "Macht", text: "Eine von 24 Startpositionen. Für den Anfang eignet sich eine mit Landgrenzen und Küste — Deutschland, die Türkei oder Brasilien." },
+      { feld: "Startzahl", text: "Vorgabe `1914`. Dieselbe Startzahl ergibt dieselbe Partie — praktisch, um etwas noch einmal auszuprobieren." },
+      { feld: "Schwierigkeit", text: "leicht, normal oder schwer. Die KI spielt auf jeder Stufe ohne Bonus; der Unterschied ist, wie weit sie vorausplant und an wie vielen Fronten sie kämpft." },
+      { feld: "Gegner", text: "Vorgabe sind 7 Computergegner, ausgewählt nach Nachbarschaft statt nach Kartenreihenfolge." },
+      { feld: "Siegbedingung", text: "„Punkte“: Sieg bei 70 % aller Siegpunkte. „Eroberung“: erst bei 100 %." },
+      { feld: "Karte", text: "Vorgabe ist die Weltkarte mit 237 Provinzen." }
+    ],
+    einstieg: {
+      titel: "Die Einstiegshilfe",
+      text: "Jeder Schritt sagt, worum es geht, was zu tun ist — und wozu. Weiter geht es, sobald der Spieler handelt, das Spiel etwas meldet oder ein Spieltag vergeht. Die Themen:",
+      themen: ["Ihre Provinzen", "Etwas bauen", "Die Zeit läuft", "Woher die Punkte kommen", "Jetzt heißt es warten", "Das erste Gebäude steht", "Ihre erste Einheit", "Vorspulen", "Was geschieht", "Ausdehnung kostet Moral"]
+    },
+    hinweis: { text: "Die vollständige Anleitung steht in", pfad: "docs/ANLEITUNG.md" }
+  },
+
+  steuerung: {
+    titel: "Steuerung",
+    spalten: [
+      { key: "aktion", label: "Aktion" },
+      { key: "tastatur", label: "Tastatur", icon: "⌨️" },
+      { key: "maus", label: "Maus", icon: "🖱️" },
+      { key: "gamepad", label: "Gamepad", icon: "🎮" }
+    ],
+    eintraege: [
+      { aktion: "Provinz oder Armee auswählen", tastatur: "Auswahl aus der Provinzliste oben in der Seitenleiste", maus: "Linksklick auf die Karte", gamepad: "—" },
+      { aktion: "Armee marschieren lassen", tastatur: "„Marschieren“, dann Ziel aus der Zielliste im Panel", maus: "„Marschieren“, dann Klick aufs Ziel", gamepad: "—" },
+      { aktion: "Pause an / aus", tastatur: "[Leertaste]", maus: "Pause-Knopf in der Kopfleiste", gamepad: "—" },
+      { aktion: "Tempo höher / niedriger", tastatur: "[+] / [−]", maus: "Tempostufen 1 bis 100 in der Kopfleiste", gamepad: "—" },
+      { aktion: "Vorspulen", tastatur: "[F]", maus: "„Vorspulen“ in der Kopfleiste", gamepad: "—" },
+      { aktion: "Karte verschieben", tastatur: "[←] [→] [↑] [↓]", maus: "Ziehen mit gedrückter Maustaste", gamepad: "—" },
+      { aktion: "Zoomen", tastatur: "[Bild ↑] / [Bild ↓]", maus: "Mausrad oder Zoomknöpfe an der Karte", gamepad: "—" },
+      { aktion: "Hauptstadt zentrieren", tastatur: "[Pos1]", maus: "„Hauptstadt zentrieren“; ein Klick in die Übersichtskarte springt dorthin", gamepad: "—" },
+      { aktion: "Kartenmodus wechseln", tastatur: "[M]", maus: "Modus-Knöpfe in der Kopfleiste", gamepad: "—" },
+      { aktion: "Diplomatie / Markt", tastatur: "[D] / [H]", maus: "„Diplomatie“ und „Markt“ im Fuß", gamepad: "—" },
+      { aktion: "Lage der Mächte", tastatur: "[L]", maus: "„Rangliste / Sieg“ im Fuß", gamepad: "—" },
+      { aktion: "Speichern / Laden", tastatur: "[Strg]+[S] / [Strg]+[L]", maus: "„Spielstände“ in der Kopfleiste", gamepad: "—" },
+      { aktion: "Dialog, Panel oder Zielwahl schließen", tastatur: "[Esc]", maus: "Schließen im Dialog", gamepad: "—" },
+      { aktion: "Hilfe", tastatur: "[F1] oder [?]", maus: "„?“ neben jedem Gebäude, jeder Einheit, jedem Rohstoff", gamepad: "—" }
+    ],
+    hinweis: { text: "Gamepads unterstützt das Spiel nicht — im Code gibt es keine Anbindung. Dafür ist alles ohne Maus erreichbar; die Tastenbelegung steht in", pfad: "apps/desktop/src/keyboard.ts" }
+  },
+
+  spielablauf: {
+    titel: "Spielablauf",
+    schritte: [
+      { titel: "Lage lesen", beschreibung: "Eine Provinz anklicken: rechts stehen Moral, Bevölkerung und was im Boden liegt. Die Kopfleiste zeigt je Rohstoff Bestand, Tagesbilanz und wie lange ein schrumpfender Vorrat noch reicht." },
+      { titel: "Bauen", beschreibung: "Gebäude kosten Rohstoffe und Zeit, jede höhere Stufe kostet und dauert mehr. Die Kaserne kommt zuerst — ohne Gebäude entsteht keine Einheit." },
+      { titel: "Ausheben", beschreibung: "Einheiten entstehen in Provinzen mit dem passenden Gebäude. Ihre Anfangsstärke hängt an der Provinzmoral: bei Moral 70 geben fünf bestellte Infanteristen die Kampfkraft von vier." },
+      { titel: "Zeit laufen lassen", beschreibung: "Die Leertaste startet die Uhr; Tempo und Vorspulen bestimmen, wie schnell die Spielstunden vergehen. Befehle wirken im nächsten Tick, nicht im Moment des Klicks." },
+      { titel: "Marschieren und kämpfen", beschreibung: "Armee wählen, Ziel wählen — die Ankunftszeit steht da, bevor Sie bestätigen. Ein Rückzug rettet Einheiten, kostet aber Stärke und für einige Tage das Recht anzugreifen." },
+      { titel: "Verhandeln und handeln", beschreibung: "In der Diplomatie Krieg erklären (wirkt nach einer Vorlaufzeit), Frieden, Bündnis, Durchmarsch oder Kartenaustausch anbieten. Der Markt tauscht Rohstoffe zu einem Kurs, der für alle Mächte gleich ist." },
+      { titel: "Erobern und gewinnen", beschreibung: "Eroberte Provinzen bringen Punkte, vor allem über ihre Bevölkerung. Wer 70 % aller Siegpunkte hält, gewinnt — mit der Siegbedingung „Eroberung“ erst bei 100 %." }
+    ]
+  },
+
+  konzepte: {
+    titel: "Wichtige Konzepte",
+    eintraege: [
+      { name: "Moral", beschreibung: "Die wichtigste Zahl im Spiel: sie bestimmt Produktion, Aufstände und die Stärke frischer Truppen; unter 33 wird es gefährlich. Nahrungsüberschuss und eigene Nachbarn heben sie, Besatzung und feindliche Nachbarn drücken sie. Jede Provinz über einer Freigrenze senkt die Zielmoral im ganzen Reich." },
+      { name: "Siegpunkte", beschreibung: "Punkte gibt es für Provinzen, Bevölkerung, Gebäudestufen und Einheiten, gerechnet einmal je Spieltag. Fast alle stecken in der Bevölkerung — eine eroberte Provinz bringt mehr als jeder Ausbau daheim. Die Lage der Mächte zeigt den Stand." },
+      { name: "Zeit und Vorspulen", beschreibung: "Ein Tick ist eine Spielstunde, das Tempo reicht von Pause bis 100 Stunden je Sekunde. Vorspulen läuft, bis etwas passiert, das Sie betrifft — höchstens 30 Spieltage — und nennt dann den Grund." },
+      { name: "Fortschrittsachse", beschreibung: "Gebäude und Einheiten werden über die ersten 80 Spieltage frei: Kaserne und Infanterie ab Tag 1, die Raketenartillerie als letzte an Tag 80 und nur mit einer Fabrik der Stufe 3. Über der Aushebeliste steht, was als Nächstes kommt." },
+      { name: "Nebel des Krieges", beschreibung: "Sie sehen nur, was Ihre Provinzen und Armeen aufklären; Grau heißt in jedem Kartenmodus „nicht aufgeklärt“. Die KI sieht dieselbe Karte mit demselben Nebel und spielt ohne Bonus." }
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════
+// EDIT: Roadmap-Einträge hier anpassen
+// ═══════════════════════════════════════════
+// status: "geplant" | "in-arbeit" | "fertig". Zeitraum: die Quartale folgen den Commit-Daten
+// (erster Commit 2026-09-02, M34–M36 am 2026-09-12); was noch kein Datum hat, steht auf "TBD".
+// Optional: beschreibung (`Backticks` = Code) und meilensteine ("M0–M12" oder "M17, M18") —
+// daraus rechnet die Seite Fortschritt und Liste aus projectData.meilensteine.
+const roadmapData = [
+  { titel: "V1 — das Spiel entsteht", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M0–M12", beschreibung: "Kern, Karte, KI, Oberfläche und Balancing. Abgenommen am 2026-09-08 mit 7 von 7 Kriterien." },
+  { titel: "Der Stand wird wahr", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M13–M16", beschreibung: "Oberfläche im Ausbau, dann die Antwort auf eine Auswertung mit 68 Befunden: Spielstände, echte KI-Gegner, Verpackung als Programm." },
+  { titel: "Die Karte führt", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M19–M21", beschreibung: "Die Karte zeigt und erklärt, die ersten Spieltage leiten an." },
+  { titel: "Oberfläche, Sprache, Bilder", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M22–M27", beschreibung: "Die Oberfläche auf dem Stand des Kerns, echtes Deutsch, Grafik statt Text." },
+  { titel: "Feinschliff und Kriegsrat", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M28–M33", beschreibung: "Umbau zum dunklen Kartentisch, abgenommen am 2026-09-11 mit 11 von 11." },
+  { titel: "Fortschritt und Rohstoffleiste", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M34–M36", beschreibung: "Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s. M35 ist ein Entwurf." },
+  { titel: "Mehrspieler — eine Partie zu zweit", zeitraum: "TBD", status: "geplant", meilensteine: "M37–M39", beschreibung: "Geplant und freigegeben am 2026-09-12, noch nichts gebaut. Bauplan `docs/plan/MEHRSPIELER.md`, Abnahme AK-9." },
+  { titel: "Zwischenziele zum Sieg", zeitraum: "TBD", status: "geplant", beschreibung: "Vier Teilaufgaben aus M35, entworfen und geschnitten, noch nicht in `tasks.yaml`. Welche Marken es werden, entscheidet Noah." },
+  { titel: "Tiefe zwischen den Kriegen", zeitraum: "TBD", status: "geplant", meilensteine: "M17, M18", beschreibung: "Spionage und Handelsangebote; Durchmarschrecht und Provinzhandel sind vorgemerkt. M17 wird als Ganzes geplant oder gar nicht." },
+  { titel: "WorldWar-Mobil — iPhone-App", zeitraum: "TBD", status: "geplant", beschreibung: "Eigenes Repo: offline, Einzelspieler, als Home-Bildschirm-App über GitHub Pages. Geplant am 2026-09-12 mit 52 Aufgaben, nicht gebaut." }
+];
 // ═══════════════════════════════════════════
 // Rendering — ab hier nichts Projektspezifisches
 // ═══════════════════════════════════════════
@@ -1010,8 +1231,6 @@ const projectData = {
   }));
   const sum = (list, key) => list.reduce((acc, m) => acc + m[key], 0);
   const countStatus = (list) => list.reduce((acc, x) => ((acc[x.status] = (acc[x.status] ?? 0) + 1), acc), {});
-  const aggregate = (list) =>
-    list.every((x) => x.status === "fertig") ? "fertig" : list.every((x) => x.status === "geplant") ? "geplant" : "in-arbeit";
 
   function sectionHead(id) {
     const s = projectData.abschnitte.find((a) => a.id === id) ?? { titel: id };
@@ -1100,7 +1319,7 @@ const projectData = {
           alt: `Raster der ${milestones.length} Meilensteine ${first} bis ${last}: ${countText}.`,
           width: 432, height: 262
         }),
-        h("figcaption", null, rich("Jedes Feld ist ein Meilenstein aus `docs/plan/tasks.yaml` — grün gefüllt: fertig, blau gestrichelt: geplant."))
+        h("figcaption", null, rich("Jedes Feld ist ein Meilenstein aus `docs/plan/tasks.yaml` — grün gefüllt: fertig, grau gestrichelt: geplant."))
       ])
     ]));
   })();
@@ -1246,83 +1465,257 @@ const projectData = {
   }
 
   function note(n) {
-    return n ? h("p", { class: "note" }, [n.text, " ", h("a", { href: n.pfad }, h("code", { text: n.pfad }))]) : null;
+    if (!n) return null;
+    return h("p", { class: "note" }, [
+      rich(n.text),
+      n.pfad ? [" ", h("a", { href: n.pfad }, h("code", { text: n.pfad }))] : null
+    ].flat());
+  }
+
+  /** "[Strg]+[S]" → <kbd>Strg</kbd>+<kbd>S</kbd>; "—" heißt nicht belegt und wird für Screenreader ausgeschrieben. */
+  function keyText(text) {
+    const value = String(text ?? "").trim();
+    if (value === "" || value === "—") {
+      return [h("span", { "aria-hidden": "true", text: "—" }), h("span", { class: "visually-hidden", text: "nicht belegt" })];
+    }
+    const frag = document.createDocumentFragment();
+    value.split(/(\[[^\]]+\])/).forEach((part) => {
+      if (part) frag.append(/^\[.+\]$/.test(part) ? h("kbd", { text: part.slice(1, -1) }) : rich(part));
+    });
+    return frag;
+  }
+
+  /**
+   * Akkordeon nach dem WAI-ARIA-Muster: Überschrift mit Button (aria-expanded, aria-controls),
+   * Panel als role="region". Höchstens ein Panel offen; Pfeiltasten, Pos1 und Ende wechseln den Kopf.
+   */
+  function accordion(id, panels) {
+    const root = h("div", { class: "accordion", id });
+    const items = [];
+
+    function setOpen(item, open, animate) {
+      clearTimeout(item.timer);
+      const { panel, button, chevron, wrapper } = item;
+      const smooth = animate && !reduceMotion.matches;
+      if (open) {
+        panel.dataset.open = wrapper.dataset.open = "true";
+        button.setAttribute("aria-expanded", "true");
+        chevron.textContent = "▾";
+        if (!smooth) { panel.style.maxHeight = "none"; return; }
+        panel.style.maxHeight = `${panel.scrollHeight}px`;
+        // Nach der Animation frei lassen, damit umbrechender Inhalt nicht abgeschnitten wird.
+        item.timer = setTimeout(() => { if (panel.dataset.open === "true") panel.style.maxHeight = "none"; }, 320);
+      } else {
+        if (smooth) {
+          panel.style.maxHeight = `${panel.scrollHeight}px`;
+          void panel.offsetHeight;
+        }
+        panel.style.maxHeight = "0px";
+        panel.dataset.open = wrapper.dataset.open = "false";
+        button.setAttribute("aria-expanded", "false");
+        chevron.textContent = "▸";
+      }
+    }
+
+    function toggle(item) {
+      const opening = item.panel.dataset.open !== "true";
+      for (const other of items) {
+        if (other !== item && other.panel.dataset.open === "true") setOpen(other, false, true);
+      }
+      setOpen(item, opening, true);
+      if (!opening) return;
+      // Schließt ein Panel darüber, rutscht der geöffnete Kopf nach oben — dann zurück ins Bild.
+      setTimeout(() => {
+        const navHeight = document.querySelector(".site-header").offsetHeight;
+        if (item.wrapper.getBoundingClientRect().top < navHeight) {
+          item.wrapper.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+        }
+      }, 330);
+    }
+
+    panels.forEach((p, index) => {
+      const buttonId = `${id}-${p.id}-kopf`;
+      const panelId = `${id}-${p.id}-panel`;
+      const chevron = h("span", { class: "acc-chevron", "aria-hidden": "true", text: "▸" });
+      const button = h("button", {
+        class: "acc-button", id: buttonId, type: "button",
+        "aria-expanded": "false", "aria-controls": panelId
+      }, [chevron, h("span", { text: p.titel }), p.meta ? h("span", { class: "acc-meta", text: p.meta }) : null]);
+      const panel = h("div", {
+        class: "acc-panel", id: panelId, role: "region",
+        "aria-labelledby": buttonId, "data-open": "false"
+      }, h("div", { class: "acc-inner" }, p.inhalt));
+      const wrapper = h("div", { class: "acc-item", "data-open": "false" }, [h("h3", { class: "acc-heading" }, button), panel]);
+      const item = { button, panel, chevron, wrapper, timer: 0 };
+      items.push(item);
+
+      button.addEventListener("click", () => toggle(item));
+      button.addEventListener("keydown", (e) => {
+        const target = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: panels.length - 1 }[e.key];
+        if (target === undefined) return;
+        e.preventDefault();
+        items[(target + items.length) % items.length].button.focus();
+      });
+      root.append(wrapper);
+    });
+
+    if (items.length) setOpen(items[0], true, false);
+    return root;
+  }
+
+  function renderErsteSchritte(d) {
+    return [
+      h("p", { class: "acc-intro" }, rich(d.inhalt)),
+      d.startdialog?.length
+        ? h("div", null, [
+            h("h4", { class: "sub-label", text: d.startdialogTitel || "Startdialog" }),
+            h("dl", { class: "field-list" }, d.startdialog.map((f) =>
+              h("div", null, [h("dt", { text: f.feld }), h("dd", null, rich(f.text))])))
+          ])
+        : null,
+      d.einstieg
+        ? h("div", null, [
+            h("h4", { class: "sub-label", text: d.einstieg.titel }),
+            h("p", null, rich(d.einstieg.text)),
+            d.einstieg.themen?.length ? h("ul", { class: "tag-list" }, d.einstieg.themen.map((t) => h("li", { text: t }))) : null
+          ])
+        : null,
+      note(d.hinweis)
+    ];
+  }
+
+  function renderSteuerung(d) {
+    const cols = d.spalten;
+    const table = h("table", { class: "controls" }, [
+      h("caption", { class: "visually-hidden", text: `${d.titel}: ${cols.map((c) => c.label).join(", ")}` }),
+      h("thead", null, h("tr", null, cols.map((c) => h("th", { scope: "col" }, [
+        c.icon ? h("span", { class: "col-icon", "aria-hidden": "true", text: c.icon }) : null,
+        c.label
+      ])))),
+      h("tbody", null, d.eintraege.map((row) => h("tr", null, cols.map((c, i) =>
+        i === 0 ? h("th", { scope: "row" }, rich(row[c.key])) : h("td", null, keyText(row[c.key]))))))
+    ]);
+    return [
+      h("div", { class: "table-wrap", role: "region", "aria-label": `${d.titel}, seitlich scrollbar`, tabindex: "0" }, table),
+      note(d.hinweis)
+    ];
+  }
+
+  function renderSpielablauf(d) {
+    return [
+      h("ol", { class: "steps" }, d.schritte.map((s) =>
+        h("li", null, h("div", null, [h("strong", { text: s.titel }), h("p", null, rich(s.beschreibung))]))))
+    ];
+  }
+
+  function renderKonzepte(d) {
+    return [
+      h("ul", { class: "concepts" }, d.eintraege.map((k) =>
+        h("li", { class: "concept" }, [h("h4", { text: k.name }), h("p", null, rich(k.beschreibung))])))
+    ];
   }
 
   (function renderAnleitung() {
-    const { spielen, entwickeln } = projectData.anleitung;
+    const entwickeln = projectData.anleitung?.entwickeln;
+    const panels = [
+      { key: "ersteSchritte", id: "erste-schritte", build: renderErsteSchritte },
+      { key: "steuerung", id: "steuerung", build: renderSteuerung, meta: (d) => plural(d.eintraege.length, "Aktion", "Aktionen") },
+      { key: "spielablauf", id: "spielablauf", build: renderSpielablauf, meta: (d) => plural(d.schritte.length, "Schritt", "Schritte") },
+      { key: "konzepte", id: "konzepte", build: renderKonzepte, meta: (d) => plural(d.eintraege.length, "Konzept", "Konzepte") }
+    ]
+      .filter((p) => onboardingData[p.key])
+      .map((p) => {
+        const d = onboardingData[p.key];
+        return { id: p.id, titel: d.titel, meta: p.meta ? p.meta(d) : null, inhalt: p.build(d) };
+      });
+
     $("anleitung").append(h("div", { class: "wrap" }, [
       sectionHead("anleitung"),
-      h("div", { class: "guide-grid" }, [
-        h("div", { class: "guide-block" }, [
-          h("h3", { text: spielen.titel }),
-          h("ol", { class: "steps" }, spielen.schritte.map((s) =>
-            h("li", null, h("div", null, [h("strong", { text: s.titel }), h("p", null, rich(s.text))])))),
-          note(spielen.hinweis)
-        ]),
-        h("div", { class: "guide-block" }, [
-          h("h3", { text: entwickeln.titel }),
-          h("ul", { class: "commands" }, entwickeln.befehle.map((c) => {
-            const copy = h("button", {
-              class: "btn copy-btn", type: "button",
-              "aria-label": `Kopieren: ${c.befehl}`, text: "Kopieren"
-            });
-            copy.addEventListener("click", () => copyCommand(c.befehl, copy));
-            return h("li", { class: "command" }, [h("code", { text: c.befehl }), copy, h("p", null, rich(c.text))]);
-          })),
-          note(entwickeln.hinweis)
-        ])
-      ])
+      accordion("anleitung-akkordeon", panels),
+      entwickeln
+        ? h("div", { class: "dev-block" }, [
+            h("h3", { text: entwickeln.titel }),
+            h("ul", { class: "commands" }, entwickeln.befehle.map((c) => {
+              const copy = h("button", {
+                class: "btn copy-btn", type: "button",
+                "aria-label": `Kopieren: ${c.befehl}`, text: "Kopieren"
+              });
+              copy.addEventListener("click", () => copyCommand(c.befehl, copy));
+              return h("li", { class: "command" }, [h("code", { text: c.befehl }), copy, h("p", null, rich(c.text))]);
+            })),
+            note(entwickeln.hinweis)
+          ])
+        : null
     ]));
   })();
 
   // ── Roadmap ─────────────────────────────────
+  /** "M0–M12" oder "M17, M18" → die passenden Einträge aus projectData.meilensteine. */
+  function milestonesFor(spec) {
+    if (!spec) return [];
+    const numbers = new Set();
+    for (const part of String(spec).split(",")) {
+      const [from, to = from] = part.split(/[–-]/).map((s) => Number(s.trim().replace(/^M/i, "")));
+      if (Number.isNaN(from) || Number.isNaN(to)) continue;
+      for (let n = from; n <= to; n++) numbers.add(n);
+    }
+    return milestones.filter((m) => numbers.has(m.nummer));
+  }
+
+  function pill(status) {
+    const s = STATUS[status] ?? STATUS.geplant;
+    return h("span", { class: "pill", "data-status": status }, [h("span", { class: "visually-hidden", text: "Status: " }), s.label]);
+  }
+
   (function renderRoadmap() {
-    const { naechsteSchritte, phasen } = projectData.roadmap;
+    const naechsteSchritte = projectData.roadmap?.naechsteSchritte ?? [];
     const timeline = h("ol", { class: "timeline" });
 
-    for (const p of phasen) {
-      const list = p.ids
-        ? milestones.filter((m) => p.ids.includes(m.id))
-        : milestones.filter((m) => m.nummer >= p.von && m.nummer <= p.bis);
-      if (!list.length) continue;
-      const status = aggregate(list);
+    roadmapData.forEach((entry, index) => {
+      const status = STATUS[entry.status] ? entry.status : "geplant";
+      const list = milestonesFor(entry.meilensteine);
       const done = sum(list, "erledigt");
       const total = sum(list, "gesamt");
-      const range = list.length > 1 ? `${list[0].id}–${list[list.length - 1].id}` : list[0].id;
-      const pct = total ? Math.round((done / total) * 100) : 0;
+      const range = list.length > 1 ? `${list[0].id}–${list[list.length - 1].id}` : list[0]?.id;
+      const titleId = `roadmap-${index}-titel`;
 
-      timeline.append(h("li", { class: "phase", "data-status": status }, [
-        h("span", { class: "phase-dot", "aria-hidden": "true" }),
-        h("div", { class: "phase-card" }, [
-          h("div", { class: "phase-head" }, [
-            h("span", { class: "phase-range", text: range }),
-            h("h3", { text: p.titel }),
-            badge(status)
+      timeline.append(h("li", { class: "tl-item", "data-status": status }, [
+        h("span", { class: "tl-node", "aria-hidden": "true" }),
+        h("article", { class: "tl-card", "aria-labelledby": titleId }, [
+          h("h3", { id: titleId, text: entry.titel }),
+          h("p", { class: "tl-meta" }, [
+            h("span", { class: "tl-time" }, [h("span", { class: "visually-hidden", text: "Zeitraum: " }), entry.zeitraum || "TBD"]),
+            pill(status)
           ]),
-          p.notiz ? h("p", { class: "phase-note" }, rich(p.notiz)) : null,
+          entry.beschreibung ? h("p", { class: "tl-desc" }, rich(entry.beschreibung)) : null,
           total
-            ? h("div", { class: "bar", "aria-hidden": "true" }, h("span", { style: `width:${pct}%` }))
+            ? h("div", { class: "bar", "aria-hidden": "true" }, h("span", { style: `width:${Math.round((done / total) * 100)}%` }))
             : null,
-          h("p", { class: "bar-label", text: total ? `${done} von ${total} Aufgaben erledigt` : "Noch ohne Aufgaben im Plan" }),
-          h("details", null, [
-            h("summary", { text: `${plural(list.length, "Meilenstein", "Meilensteine")} anzeigen` }),
-            h("ul", { class: "milestones" }, list.map((m) => h("li", null, [
-              h("span", { class: "ms-id", text: m.id }),
-              h("span", { text: m.notiz ? `${m.titel} (${m.notiz})` : m.titel }),
-              h("span", { class: "ms-count", text: m.gesamt ? `${m.erledigt}/${m.gesamt}` : "–" })
-            ])))
-          ])
+          list.length
+            ? h("p", { class: "bar-label", text: total ? `${range} · ${done} von ${total} Aufgaben erledigt` : `${range} · noch ohne Aufgaben im Plan` })
+            : null,
+          list.length
+            ? h("details", null, [
+                h("summary", { text: `${plural(list.length, "Meilenstein", "Meilensteine")} anzeigen` }),
+                h("ul", { class: "milestones" }, list.map((m) => h("li", null, [
+                  h("span", { class: "ms-id", text: m.id }),
+                  h("span", { text: m.notiz ? `${m.titel} (${m.notiz})` : m.titel }),
+                  h("span", { class: "ms-count", text: m.gesamt ? `${m.erledigt}/${m.gesamt}` : "–" })
+                ])))
+              ])
+            : null
         ])
       ]));
-    }
+    });
 
     $("roadmap").append(h("div", { class: "wrap" }, [
       sectionHead("roadmap"),
-      h("div", { class: "next" }, [
-        h("h3", { text: "Als Nächstes" }),
-        h("ol", null, naechsteSchritte.map((s) => h("li", null, rich(s))))
-      ]),
+      naechsteSchritte.length
+        ? h("div", { class: "next" }, [
+            h("h3", { text: "Als Nächstes" }),
+            h("ol", null, naechsteSchritte.map((s) => h("li", null, rich(s))))
+          ])
+        : null,
       timeline
     ]));
   })();
