@@ -47,6 +47,14 @@ beforeEach(() => {
   // Freischaltungstag. Ohne das schluege die neue Ablehnung zu, und die alte Zusicherung
   // waere gruen, ohne noch etwas zu belegen.
   state.tick = tickOfDay(LATEST_UNIT_DAY, TEST_RULES)
+  // Und volle Kasse, aus demselben Grund wie die Uhr: seit T-M34-06 der Startvorrat auf
+  // zwei Dritteln steht, reichte er fuer zwei Panzer nicht mehr — die Zusicherung
+  // "verlangt eine Fabrik" waere an INSUFFICIENT_RESOURCES gescheitert und haette damit
+  // etwas anderes geprueft als ihren Namen. Der eine Test, der die leere Kasse WILL,
+  // setzt sie sich selbst (unten, `resources.food = 0`).
+  for (const key of Object.keys(state.players['p1']!.resources)) {
+    state.players['p1']!.resources[key as 'food'] = 99_000_000
+  }
 })
 
 describe('R-UNIT-02 Rekrutierung beauftragen', () => {

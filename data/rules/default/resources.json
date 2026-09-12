@@ -3,43 +3,43 @@
   "resources": {
     "food": {
       "name": "Nahrung",
-      "startAmount": 1000000,
+      "startAmount": 667000,
       "storageLimit": 1000000000,
       "basePrice": 1000
     },
     "wood": {
       "name": "Material",
-      "startAmount": 1000000,
+      "startAmount": 667000,
       "storageLimit": 1000000000,
       "basePrice": 1000
     },
     "iron": {
       "name": "Eisen",
-      "startAmount": 500000,
+      "startAmount": 333000,
       "storageLimit": 1000000000,
       "basePrice": 1400
     },
     "coal": {
       "name": "Kohle",
-      "startAmount": 500000,
+      "startAmount": 333000,
       "storageLimit": 1000000000,
       "basePrice": 1200
     },
     "oil": {
       "name": "Oel",
-      "startAmount": 250000,
+      "startAmount": 167000,
       "storageLimit": 1000000000,
       "basePrice": 1800
     },
     "rare": {
       "name": "Seltene Rohstoffe",
-      "startAmount": 100000,
+      "startAmount": 67000,
       "storageLimit": 500000000,
       "basePrice": 2600
     },
     "money": {
       "name": "Geld",
-      "startAmount": 2500000,
+      "startAmount": 1667000,
       "storageLimit": null,
       "basePrice": 1000
     }

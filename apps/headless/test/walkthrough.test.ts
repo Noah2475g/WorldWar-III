@@ -41,6 +41,17 @@ function walkthrough() {
     ticks: 500,
     script,
     setup: (state) => {
+      // Nordland bekommt die Kasse fuer sein Drehbuch (T-M34-06). Seit der Startvorrat
+      // auf zwei Dritteln steht, reicht er fuer eine Kaserne UND zwoelf Infanterie am
+      // zweiten Spieltag nicht mehr — nach der Kaserne blieben 334.000 Material, und
+      // zwoelf Infanterie kosten 600.000. Der Durchstich prueft die Kette Bau →
+      // Aushebung → Marsch → Schlacht → Eroberung; ob die Eroeffnung knapp ist, pruefen
+      // `create.test.ts` und `economy-scale.test.ts`. Ein Drehbuch, das an der Kasse
+      // scheitert, prueft die Kette nicht mehr — es meldet nur noch, dass es sie nicht
+      // geprueft hat.
+      for (const key of Object.keys(state.players['p1']!.resources)) {
+        state.players['p1']!.resources[key as 'wood'] = 5_000_000
+      }
       // Ostmark holds the contested middle with a small garrison, and the two are at war.
       state.diplomacy.relations['p1|p2']!.state = 'war'
       state.provinces['m1']!.owner = 'p2'

@@ -216,3 +216,63 @@ describe('R-GAME-01 Fehlerhafte Konfiguration wird abgewiesen', () => {
     expect(() => createInitialState(wrong, ctx)).toThrow(/Atlantis/)
   })
 })
+
+/**
+ * Der Startvorrat traegt die Eroeffnung nicht mehr allein (T-M34-06, D34.4).
+ *
+ * Der Befund aus FORTSCHRITT.md Abschnitt 1: der alte Vorrat trug rund dreizehn
+ * Infanterie aus der Nahrung und siebenunddreissig aus dem Geld, waehrend eine
+ * durchschnittliche Provinz am Tag etwa eine dreiviertel Infanterie an Nahrung
+ * erwirtschaftet. **Die ersten Tage waren ein Abbau des Anfangslagers, keine Knappheit.**
+ *
+ * Gekuerzt wird auf zwei Drittel und nicht weiter: die Eroeffnung soll knapp werden,
+ * nicht handlungsunfaehig — und die Kuerzung trifft die KI genauso, die in der Fruehphase
+ * ohnehin am schwaechsten spielt.
+ */
+describe('R-ECON-01 Der Startvorrat ist auf zwei Drittel gekuerzt', () => {
+  /** Die Werte vor T-M34-06 — der Bezug, ohne den "zwei Drittel" nichts heisst. */
+  const FRUEHER: Readonly<Record<string, number>> = {
+    food: 1_000_000, wood: 1_000_000, iron: 500_000, coal: 500_000,
+    oil: 250_000, rare: 100_000, money: 2_500_000,
+  }
+
+  it('haelt jeden der sieben Vorraete bei zwei Dritteln des alten Werts', () => {
+    const abweichungen: string[] = []
+    for (const [key, frueher] of Object.entries(FRUEHER)) {
+      const heute = TEST_RULES.resources[key as 'food']!.startAmount
+      const anteil = heute / frueher
+      if (Math.abs(anteil - 2 / 3) > 0.01) {
+        abweichungen.push(`${key}: ${heute} von ${frueher} = ${(anteil * 100).toFixed(1)} %`)
+      }
+    }
+
+    expect(Object.keys(FRUEHER)).toHaveLength(7)
+    expect(abweichungen, `nicht zwei Drittel:\n${abweichungen.join('\n')}`).toEqual([])
+  })
+
+  it('gibt die gekuerzten Werte auch wirklich in die Partie', () => {
+    // Die Zusicherung oben liest das Regelwerk; diese liest den Zustand. Zwischen beiden
+    // liegt `createInitialState`, und genau dort koennte ein Vorrat haengen bleiben.
+    const state = createInitialState(CONFIG, ctx)
+    for (const key of Object.keys(FRUEHER)) {
+      expect(state.players['p1']!.resources[key as 'food'], key).toBe(TEST_RULES.resources[key as 'food']!.startAmount)
+    }
+  })
+
+  it('laesst die Eroeffnung knapp werden, aber nicht handlungsunfaehig', () => {
+    // Die Gegenrichtung zur Kuerzung: wer am ersten Spieltag weder bauen noch ausheben
+    // kann, hat keine knappe Eroeffnung, sondern gar keine. Kaserne und Infanterie sind
+    // die beiden Sachen, die es an Tag 1 gibt (T-M34-03).
+    const state = createInitialState(CONFIG, ctx)
+    const vorrat = state.players['p1']!.resources
+
+    for (const [was, kosten] of [
+      ['Kaserne', TEST_RULES.buildings.barracks.cost],
+      ['Infanterie', TEST_RULES.units.infantry!.cost],
+    ] as const) {
+      for (const [key, betrag] of Object.entries(kosten)) {
+        expect(vorrat[key as 'food'], `${was}: ${key}`).toBeGreaterThanOrEqual(betrag ?? 0)
+      }
+    }
+  })
+})
