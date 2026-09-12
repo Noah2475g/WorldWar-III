@@ -29,9 +29,11 @@ Drei Abweichungen vom Original sind **erklärte Produktziele**, keine Kompromiss
 |---|---|---|
 | Z1 | **Frei regelbare Spielgeschwindigkeit** inkl. Pause und Vorspulen-bis-Ereignis | Das Original erzwingt Echtzeit-Wartezeiten über Tage. Eine Partie soll in einer Sitzung spielbar sein. |
 | Z2 | **Keinerlei Monetarisierung** — kein Gold, keine Premiumwährung, keine Kaufvorteile, keine Werbung, keine Telemetrie | Pay-to-win ist ausdrücklich zu entfernen. Alle im Original kaufbaren Vorteile sind entweder frei verfügbar oder ersatzlos gestrichen. |
-| Z3 | **Offline und ohne Konto** spielbar | Kein Server, kein Login, keine Netzwerkverbindung nötig. |
+| Z3 | **Offline und ohne Konto** spielbar | Kein Server, kein Login, keine Netzwerkverbindung nötig. **Präzisiert am 2026-09-12 (Entscheidung Mehrspieler):** Das gilt unverändert für das **ausgelieferte Programm** — die Tauri-Anwendung behält `connect-src 'none'` und hat keine Netzberechtigung. Der Mehrspielermodus aus M37–M39 ist eine ausdrücklich gewählte Ausnahme im **Browserbau**: er verlangt weiterhin kein Konto, keinen fremden Dienst und kein Geld, und er läuft nur, solange ein Spieler ihn selbst startet. Z3 verbietet das Heimtelefonieren, nicht das absichtliche Einladen eines Freundes. |
 
 Nicht-Ziel für V1: Multiplayer. Die Architektur muss ihn aber **vorbereiten** (siehe R-ARCH-04).
+Seit dem 2026-09-12 ist er **geplant** und liegt als M37–M39 hinter der V1, so wie M16
+hinter ihr liegt: siehe Abschnitt 2.17, `docs/plan/MEHRSPIELER.md` und AK-9.
 Nicht-Ziel überhaupt: Veröffentlichung/Vertrieb. Das Projekt ist privat. Dennoch werden
 **keine Original-Assets** (Grafiken, Sounds, Texte, Code) von Bytro verwendet; alle Assets
 werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-01).
@@ -50,7 +52,7 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
 | C-08 | **Vorgehen:** strikt **TDD** — Test zuerst, dann Implementierung. Kein Produktionscode ohne vorher fehlschlagenden Test. |
 | C-09 | **Regelwerk:** Kernmechanik nach **Supremacy 1914 in der Fassung nach dem Umbau vom 10.01.2023** (deterministischer Kampf, Moral mit Ziel- und Istwert, Stapel-Deckel), **Setting und Einheiten modern (WW3)**. Grund: Für dieses Modell liegen belegte Formeln vor. *(Die verlinkte Steam-Anwendung 784950 ist das umbenannte „Conflict of Nations: World War 3“ — ein Schwesterspiel mit eigenem Modell und weitgehend unveröffentlichten Werten.)* |
 | C-10 | **Balancing:** belegte Zahlen aus `docs/research/SUPREMACY-MECHANICS.md` werden übernommen; Lücken werden begründet geschätzt und über automatisierte Testpartien abgestimmt. |
-| C-11 | **Mehrspieler (später, entschieden 2026-09-04):** Im Mehrspielermodus gibt es **keine dynamische Zeitsteuerung**. Die Spielgeschwindigkeit wird **beim Start der Partie fest gewählt** und gilt für alle Teilnehmer unverändert, damit in Online-Partien keine Synchronisationsprobleme entstehen. Pause, stufenloses Tempo und Vorspulen bleiben Einzelspieler-Funktionen. Folge für heute: die Zeitsteuerung liegt vollständig **außerhalb** des Simulationskerns und des Spielzustands (R-ARCH-04/AK2), damit sie später durch eine feste Rate ersetzt werden kann, ohne den Kern anzufassen. |
+| C-11 | **Mehrspieler (später, entschieden 2026-09-04):** Im Mehrspielermodus gibt es **keine dynamische Zeitsteuerung**. Die Spielgeschwindigkeit wird **beim Start der Partie fest gewählt** und gilt für alle Teilnehmer unverändert, damit in Online-Partien keine Synchronisationsprobleme entstehen. Stufenloses Tempo und Vorspulen bleiben Einzelspieler-Funktionen. Folge für heute: die Zeitsteuerung liegt vollständig **außerhalb** des Simulationskerns und des Spielzustands (R-ARCH-04/AK2), damit sie später durch eine feste Rate ersetzt werden kann, ohne den Kern anzufassen. **Präzisiert am 2026-09-12:** Eine **gemeinsame Pause** ist zugelassen, aber nur **auf Antrag und mit Zustimmung beider Spieler** und gebunden an einen festen Tick (R-MP-05). Sie ist keine Ausnahme von der festen Rate, sondern ein abgestimmtes Anhalten beider Uhren; einseitiges Pausieren bleibt ausgeschlossen. |
 
 ## 2. Anforderungen
 
@@ -140,9 +142,15 @@ werden selbst erzeugt oder stammen aus frei lizenzierten Quellen (siehe R-ASSET-
   `02-DESIGN.md`, jede Zeile begründet.
 - **R-FREE-03 — Sofortiges Fertigstellen ohne Kosten.** Falls „Bau beschleunigen“ existiert,
   ist es kostenlos — oder es entfällt, weil der Geschwindigkeitsregler dasselbe leistet.
-- **R-FREE-04 — Keine Werbung, keine Telemetrie, keine Netzwerkverbindung.**
-  - AK1: WENN die Anwendung läuft, DANN SOLL sie keine ausgehende Netzwerkverbindung öffnen
-    (per Tauri-Konfiguration eingeschränkt und im Test geprüft).
+- **R-FREE-04 — Keine Werbung, keine Telemetrie, keine unaufgeforderte Netzwerkverbindung.**
+  *(Wortlaut präzisiert am 2026-09-12, Entscheidung Mehrspieler. Verboten ist und bleibt
+  jede Verbindung, die das Spiel **von sich aus** aufbaut — nach Hause, zu einer Zählstelle,
+  zu einer Werbefläche. Eine Verbindung, die ein Spieler selbst startet, weil er einen
+  Freund eingeladen hat, ist keine solche. Die Grenze ist nicht „ob überhaupt", sondern
+  „wer hat sie veranlasst" — und sie ist maschinell bewacht, siehe R-MP-09.)*
+  - AK1: WENN das **ausgelieferte Programm** läuft, DANN SOLL es keine ausgehende
+    Netzwerkverbindung öffnen (per Tauri-Konfiguration eingeschränkt und im Test geprüft).
+    Das Programm kennt keinen Mehrspielermodus; `connect-src 'none'` bleibt unverändert.
 - **R-FREE-05 — Kein zeitbasierter Druck.** Keine Energie-/Ausdauer-/Wartebalken, die nur
   durch Warten oder Zahlung verschwinden.
 
@@ -469,6 +477,22 @@ scope:
     R-SPY-06:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-DIP-05:   "M17 — Handelsangebote mit Treuhand; erst braucht die bestehende Börse einen Nutzer"
     R-DIP-07:   "M17 — Handel in der Oberfläche; folgt R-DIP-05"
+    # Mehrspieler, aufgenommen am 2026-09-12 (Abschnitt 2.17, Bauplan MEHRSPIELER.md).
+    # Alle drei Meilensteine liegen hinter der V1, so wie M16; AK-9 ist ihr eigenes
+    # Abnahmekriterium und zaehlt nicht gegen die V1.
+    R-MP-01:    "M37 — die Oberflaeche bekommt einen Spieler statt der Annahme p1 (T-M37-01)"
+    R-MP-02:    "M37 — feste Geschwindigkeit statt Regler, die Einloesung von C-11 (T-M37-03)"
+    R-MP-03:    "M37 — der Gleichschritt, ohne eine Zeile Netzcode belegt (T-M37-06)"
+    R-MP-04:    "M37 — Auseinanderlaufen wird erkannt und haelt an (T-M37-09)"
+    R-MP-05:    "M37 — die Pause auf Antrag und Zustimmung (T-M37-10)"
+    R-MP-06:    "M38 — der Handschlag vor dem ersten Zug (T-M38-02)"
+    R-MP-07:    "M38 — Abbruch und Wiederaufnahme (T-M38-06)"
+    R-MP-08:    "M38 — der Ausweg ueber den Computergegner (T-M38-08)"
+    R-MP-09:    "M38 — Netz an genau zwei Stellen, bewacht (T-M38-09)"
+    R-MP-10:    "M39 — die Einladung ist ein Link (T-M39-01)"
+    R-MP-11:    "M39 — der Gast installiert nichts (T-M39-04)"
+    R-MP-12:    "M39 — der Beitritt zeigt, worauf man sich einlaesst (T-M39-02)"
+    R-MP-13:    "M39 — speichern und fortsetzen zu zweit (T-M39-06)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -885,6 +909,134 @@ prüfbar ist:
   - AK2: WENN ein Bedienelement keinen sichtbaren Text trägt, DANN SOLL es einen Namen für
     Hilfsmittel tragen (`aria-label` oder gleichwertig).
 
+### 2.17 Eine Partie zu zweit (M37–M39, aufgenommen 2026-09-12) — `R-MP`
+
+Der Mehrspieler war seit dem ersten Tag Nicht-Ziel und zugleich vorbereitet: R-ARCH-04
+hält seit M5 fest, dass „menschlich" nur ein Attribut am Spieler ist, und ein Hot-Seat-Test
+hält diese Zusage grün. C-11 hat am 2026-09-04 die Zeitsteuerung dafür aus dem Kern
+verbannt. Was fehlt, ist die Hülle: eine zweite Person, ein Link, eine Verbindung.
+
+Noah hat am 2026-09-12 vier Festlegungen getroffen, und dieser Abschnitt macht
+Anforderungen daraus. Der ganze Entwurf steht in `docs/plan/MEHRSPIELER.md`, die
+Begründungen in `02-DESIGN.md` D28.
+
+1. **Der Host ist der Server.** Der Gast öffnet einen Link und spielt im Browser, ohne
+   etwas zu installieren.
+2. **Die letzte Meile ist Tailscale** — ein privates Netz, kein öffentlicher Endpunkt,
+   kein Tunnelanbieter, keine Portfreigabe.
+3. **Das ausgelieferte Programm bleibt netzfrei.** Der Mehrspieler ist der Browserbau.
+4. **Die Pause wird beantragt und angenommen.**
+
+Was ausdrücklich **nicht** gebaut wird: mehr als zwei Menschen, eine Lobby, ein Konto,
+ein Chat, ein Schummelschutz. Begründungen in `MEHRSPIELER.md` §6.
+
+- **R-MP-01 — Die Oberfläche kennt ihren Spieler.** Wer der Mensch am Bildschirm ist,
+  ist ein Wert und keine Annahme. Heute steht an achtzehn Stellen in `App.tsx` die
+  Zeichenkette `'p1'`; im Mehrspieler ist der Gast `p2` und sieht sonst die Welt seines
+  Gegners.
+  - AK1: WENN die Oberfläche mit dem Spieler `p2` betrieben wird, DANN SOLLEN Sicht,
+    Auswahl, Protokoll, Alarme, Farben und erlaubte Aktionen sich auf `p2` beziehen und
+    an keiner Stelle mehr auf `p1`.
+  - AK2: WENN der Quelltext der Oberfläche nach dem Literal `'p1'` durchsucht wird, DANN
+    SOLL es ausserhalb des Anlegens einer neuen Partie keinen Treffer geben (Wächter mit
+    dokumentierter Ausnahmeliste).
+
+- **R-MP-02 — Feste Geschwindigkeit in der Mehrspielerpartie (C-11).** Die Rate wird beim
+  Anlegen gewählt und ändert sich danach nie.
+  - AK1: WENN eine Mehrspielerpartie angelegt wird, DANN SOLL genau eine Rate aus den
+    Rasten ohne Null gewählt werden, und sie SOLL Teil der Partieeinladung sein.
+  - AK2: WENN eine Mehrspielerpartie läuft, DANN SOLLEN Tempoknöpfe, Tempotasten und
+    Vorspulziele unwirksam sein und stattdessen sagen, warum.
+  - AK3: WENN eine Mehrspielerpartie läuft, DANN SOLL die Oberfläche die feste Rate
+    anzeigen statt eines Reglers.
+
+- **R-MP-03 — Gleichschritt: ein Tick läuft erst, wenn beide Seiten ihn freigegeben
+  haben.** Übertragen werden Befehle, nie Zustände.
+  - AK1: WENN für einen Tick die Befehlsliste einer Seite fehlt, DANN SOLL dieser Tick
+    nicht gerechnet werden, und die Oberfläche SOLL nach einer Wartezeit sagen, worauf
+    sie wartet.
+  - AK2: WENN beide Listen für einen Tick vorliegen, DANN SOLLEN die Befehle in einer
+    Reihenfolge angewendet werden, die sich allein aus `playerOrder` und der Reihenfolge
+    innerhalb eines Spielers ergibt — auf beiden Seiten dieselbe, ohne Absprache.
+  - AK3: WENN zwei Simulationen im selben Prozess über 200 Ticks mit Befehlen beider
+    Seiten gegeneinander laufen, DANN SOLL ihre Zustandsprüfsumme nach jedem Tick
+    identisch sein.
+
+- **R-MP-04 — Auseinanderlaufen wird erkannt, gemeldet und hält an.** Zwei verschiedene
+  Welten weiterzuspielen ist schlimmer als ein Abbruch.
+  - AK1: WENN die Prüfsumme eines Ticks von der der Gegenseite abweicht, DANN SOLL die
+    Partie anhalten und beiden Spielern sagen, ab welchem Tick sie auseinanderlaufen.
+  - AK2: WENN eine Partie wegen Auseinanderlaufens angehalten hat, DANN SOLL jede Seite
+    ihren Spielstand sichern können, damit der Fehler untersuchbar bleibt.
+
+- **R-MP-05 — Pause auf Antrag und Zustimmung (C-11, präzisiert).**
+  - AK1: WENN ein Spieler eine Pause beantragt, DANN SOLL die Partie weiterlaufen, bis
+    der andere zustimmt.
+  - AK2: WENN der andere zustimmt, DANN SOLLEN beide Uhren bei **demselben** Tick
+    anhalten.
+  - AK3: WENN ein Antrag dreissig Sekunden unbeantwortet bleibt, DANN SOLL er verfallen
+    und beide SOLLEN das erfahren.
+
+- **R-MP-06 — Der Handschlag prüft, dass beide dasselbe Spiel rechnen.** Vor dem ersten
+  Zug, nicht nach zwei Stunden.
+  - AK1: WENN Protokollfassung, Regelwerk oder Karte der beiden Seiten sich
+    unterscheiden, DANN SOLL die Partie nicht beginnen und der Grund benannt werden.
+  - AK2: WENN beide Seiten aus derselben Partiedefinition 24 Ticks ohne Befehle rechnen,
+    DANN SOLLEN ihre Prüfsummen übereinstimmen, sonst SOLL die Partie nicht beginnen.
+  - AK3: WENN eine Nachricht unbekannter Art oder Fassung eintrifft, DANN SOLL sie
+    verworfen und gemeldet werden, niemals geraten.
+
+- **R-MP-07 — Die Partie übersteht einen Verbindungsabbruch.**
+  - AK1: WENN die Verbindung abreisst und zurückkehrt, DANN SOLL die Partie an demselben
+    Tick weiterlaufen, ohne dass ein Befehl verloren geht.
+  - AK2: WENN die Verbindung länger als zehn Sekunden fehlt, DANN SOLL die Oberfläche das
+    sagen und die Wahl lassen zwischen Warten und Beenden.
+
+- **R-MP-08 — Ein Mitspieler, der nicht zurückkommt, wird zum Computergegner.** Eine
+  begonnene Partie darf nicht verloren sein, weil jemand ins Bett gegangen ist.
+  - AK1: WENN der verbleibende Spieler die Übernahme wählt, DANN SOLL die Partie als
+    Einzelspielerpartie weiterlaufen, der abwesende Spieler SOLL als Computergegner
+    weitergeführt werden und Tempo und Vorspulen SOLLEN wieder zur Verfügung stehen.
+  - AK2: WENN niemand die Übernahme wählt, DANN SOLL nichts davon von selbst geschehen.
+
+- **R-MP-09 — Der Netzcode liegt an genau zwei Stellen und ist bewacht (Z3, R-FREE-04).**
+  - AK1: WENN der Quelltext nach Netzzugriffen durchsucht wird, DANN SOLLEN Treffer
+    ausschliesslich in `apps/party/**` und `apps/desktop/src/net/**` liegen.
+  - AK2: WENN `packages/core`, `packages/ai`, `packages/shared` oder `packages/netplay`
+    durchsucht werden, DANN SOLL es keinen Treffer geben — das Protokoll selbst kennt
+    kein Netz.
+  - AK3: WENN die Tauri-Konfiguration geprüft wird, DANN SOLL sie unverändert
+    `connect-src 'none'` und keine Netzberechtigung führen.
+
+- **R-MP-10 — Eine Einladung ist ein Link.** Mehr muss Noah nicht verschicken.
+  - AK1: WENN der Host eine Partie eröffnet, DANN SOLL er einen Link erhalten, der Raum
+    und Geheimnis enthält, und das Geheimnis SOLL im Fragment stehen, damit es nicht an
+    den Server geht.
+  - AK2: WENN ein Link ohne gültiges Geheimnis benutzt wird, DANN SOLL kein Beitritt
+    möglich sein.
+
+- **R-MP-11 — Der Gast installiert nichts.** Der Hostdienst liefert das gebaute Spiel
+  selbst aus.
+  - AK1: WENN der Gast den Link öffnet, DANN SOLL er das vollständige Spiel erhalten,
+    ohne eine Datei herunterzuladen oder ein Programm zu starten.
+  - AK2: WENN Gast und Host spielen, DANN SOLLEN beide Seiten aus demselben Bau stammen,
+    nachgewiesen durch dieselbe Regel- und Kartenprüfsumme im Handschlag.
+
+- **R-MP-12 — Der Beitritt zeigt, worauf man sich einlässt.** Niemand tritt einer Partie
+  bei, deren Bedingungen er nicht kennt.
+  - AK1: WENN der Beitrittsbildschirm erscheint, DANN SOLL er Karte, eigene Nation,
+    gegnerische Nation, Zahl der Computergegner, Siegbedingung und die feste
+    Geschwindigkeit nennen, bevor irgendetwas beginnt.
+  - AK2: WENN der Gast beitritt, DANN SOLL der Host es sehen und die Partie SOLL erst auf
+    seinen Start hin beginnen.
+
+- **R-MP-13 — Eine Partie zu zweit lässt sich speichern und fortsetzen.**
+  - AK1: WENN eine Mehrspielerpartie gespeichert und später fortgesetzt wird, DANN SOLL
+    der Handschlag die Stände beider Seiten vergleichen und bei Abweichung den Stand des
+    Hosts übertragen.
+  - AK2: WENN ein Stand übertragen wurde, DANN SOLL die fortgesetzte Partie dieselbe
+    Prüfsumme führen wie der gespeicherte Stand.
+
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 
 V1 gilt als fertig, wenn **alle** Punkte gemessen erfüllt sind:
@@ -917,6 +1069,23 @@ der ausdrücklich hinter ihr liegt. Das wäre der Fehler des Nachtrags 2.15 in n
 — dort hatte eine später zugefügte Zeile AK-2 unerfüllbar gemacht. `pnpm acceptance` weist
 AK-8 als eigene Zeile mit dem Vermerk „M16, zählt nicht gegen V1" aus und lässt den
 Exit-Code unberührt, solange M16 nicht gebaut ist.
+
+### 3.2 Abnahmekriterium für M39 — nicht Teil der V1
+
+| ID | Abnahmekriterium |
+|---|---|
+| **AK-9** | Noah und ein zweiter Mensch in einem **anderen Netz** spielen eine Partie zu zweit: Einladung per Link, Beitritt ohne Installation, mindestens dreissig Spieltage am Stück, eine beantragte und angenommene Pause, ein absichtlich herbeigeführter Verbindungsabbruch mit Wiederaufnahme — und am Ende führen beide Seiten dieselbe Zustandsprüfsumme. |
+
+**Warum es hier steht und trotzdem nicht mitzählt.** Dieselbe Begründung wie bei AK-8, und
+sie ist inzwischen zweimal teuer bezahlt worden: eine Zusage ohne Ort wird nie geprüft, und
+ein Kriterium, das gegen die V1 zählt, kettet eine abgeschlossene Abnahme an einen Bau, der
+ausdrücklich hinter ihr liegt. AK-9 gehört zu M39, `scripts/acceptance-criteria.mjs` führt
+es mit `scope: 'M39'`, und `pnpm acceptance` weist es als eigene Zeile aus, ohne den
+Exit-Code zu berühren.
+
+**Und es ist das einzige Kriterium, das kein Agent erfüllen kann.** Ein zweiter Mensch in
+einem anderen Netz ist nicht simulierbar; der Rest von M37 bis M39 ist es vollständig.
+Deshalb ist T-M39-09 ein Haltepunkt.
 
 ## 4. Offene Punkte
 

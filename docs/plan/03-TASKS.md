@@ -4489,3 +4489,437 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (Leiste, Vorkommen, Baukosten, Tagesbericht) und in `DECISIONS.md` zwei Einträge stehen:
   der gemischte Zeichensatz mit der Messung, die ihn trägt, und die Gruppierung samt ihrem
   Preis.
+
+
+## Meilenstein M37 — Zwei Menschen, ein Spiel
+
+> **Keine Zeile Netzcode.** Elf Aufgaben, die alle im selben Prozess prüfbar sind. Wer
+> hier anfängt und nicht beim Netz, hat nach M37 die schwierige Hälfte belegt, ohne dass
+> je ein Paket über eine Leitung ging. Bauplan: `docs/plan/MEHRSPIELER.md`. Entwurf: D28.
+>
+> **Unabhängig von M34 und M35.** Der Kern wird nicht angefasst, `data/rules` auch nicht;
+> Parameterlauf und Turnier bleiben unberührt.
+
+### T-M37-01 · Die Oberfläche bekommt einen Spieler statt der Annahme p1
+- **Ziel:** achtzehn Stellen in `App.tsx` behaupten, der Mensch am Bildschirm sei `p1`.
+  Im Spiel zu zweit ist der Gast `p2` und sähe sonst die Welt seines Gegners — mit dessen
+  Rohstoffen, dessen Armeen, dessen Alarmen.
+- **Anforderungen:** R-MP-01 · **Entwurf:** D28.3
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/state/uiState.ts`
+- **Tests zuerst:** `App.test.tsx` betreibt die Oberfläche einmal als `p1` und einmal als
+  `p2` am selben Zustand und vergleicht: Rohstoffleiste, eigene Provinzen, Protokoll,
+  Alarme, Auswahlfarbe und die Liste der erlaubten Aktionen müssen sich unterscheiden und
+  je zum betriebenen Spieler passen (`R-MP-01/AK1`).
+- **Fertig wenn:** kein Pfad der Oberfläche mehr `'p1'` annimmt. **Vorsicht bei
+  `fastForwardRun`**: dort steht heute `const viewerId = 'p1'` gefolgt von
+  `if (!viewerId) return` — eine tote Prüfung, die nach dem Umbau lebendig wird.
+
+### T-M37-02 · Der Wächter gegen die Rückkehr von p1
+- **Ziel:** ein zurückkehrendes Literal fiele sonst erst im Spiel zu zweit auf, und dort
+  als Gespensterfehler. Muster: die bestehenden Wächter in `test/guards/`.
+- **Anforderungen:** R-MP-01 · **Entwurf:** D28.3
+- **Abhängigkeiten:** T-M37-01
+- **Dateien:** `test/guards/no-hardcoded-player.test.ts`,
+  `test/guards/fixtures/violating/player.txt`
+- **Tests zuerst:** der Wächter schlägt an der hinterlegten Verstoß-Fixture an und findet
+  im echten Quelltext nichts außer der dokumentierten Ausnahme im Anlegen einer neuen
+  Partie (`R-MP-01/AK2`).
+- **Fertig wenn:** `scan()` aus `test/guards/scan.ts` benutzt wird und die Ausnahmeliste
+  begründet ist. Ein Wächter ohne Gegenprobe ist leer grün — siehe der Koordinatenwächter
+  aus M33, der monatelang den Buchstaben `d` suchte.
+
+### T-M37-03 · Die Partieart und die feste Geschwindigkeit im Anlegedialog
+- **Ziel:** C-11 einlösen. Eine Mehrspielerpartie wählt ihre Rate einmal, beim Anlegen,
+  und nie wieder.
+- **Anforderungen:** R-MP-02 · **Entwurf:** D28.4
+- **Abhängigkeiten:** T-M37-01
+- **Dateien:** `apps/desktop/src/game/newGame.ts`, `apps/desktop/src/ui/Dialogs.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** eine Mehrspielerpartie trägt genau eine Rate aus `SPEED_STOPS` ohne
+  die Null, und diese Rate ist Teil dessen, was ein Gast vor dem Beitritt zu sehen
+  bekommt (`R-MP-02/AK1`, `newGame.test.ts`).
+- **Fertig wenn:** die Partieart im Zustand der Hülle steht und **nicht** im `GameState` —
+  R-ARCH-04/AK2 verlangt wörtlich, dass der Zustand keine Tempogröße kennt. Ein Wächter
+  hält das seit M5 grün und würde es sofort melden.
+
+### T-M37-04 · Im Mehrspieler sind Tempo, Tasten und Vorspulen aus
+- **Ziel:** ein Regler, der nichts tut, ist schlimmer als keiner. Wer drückt, bekommt den
+  Grund zu lesen.
+- **Anforderungen:** R-MP-02 · **Entwurf:** D28.4
+- **Abhängigkeiten:** T-M37-03
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/keyboard.ts`,
+  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** Plus, Minus und Leertaste ändern in einer Mehrspielerpartie das Tempo
+  nicht und setzen stattdessen einen Hinweis; die Vorspulziele sind nicht auslösbar
+  (`R-MP-02/AK2`, `keyboard.test.ts`). Die Kopfleiste zeigt die feste Rate als Text statt
+  einer Tempogruppe (`R-MP-02/AK3`, `Header.test.tsx`).
+- **Fertig wenn:** im Einzelspieler alles unverändert ist. Der Beleg dafür sind die
+  bestehenden Tests, die grün bleiben müssen, ohne angefasst zu werden.
+
+### T-M37-05 · Das Protokoll: die Nachrichtenarten als Daten
+- **Ziel:** sieben Arten, reines JSON, jede mit ihrer Fassung. Das Paket, das sie
+  beschreibt, kennt **kein Netz** — das ist der Grund, warum alles Weitere ohne Leitung
+  prüfbar ist.
+- **Anforderungen:** R-MP-03 · **Entwurf:** D28.9
+- **Abhängigkeiten:** keine
+- **Dateien:** `packages/netplay/package.json`, `packages/netplay/src/index.ts`,
+  `packages/netplay/src/protocol.ts`, `packages/netplay/src/transport.ts`
+- **Tests zuerst:** jede Art wird aus JSON gelesen und wieder geschrieben, ohne sich zu
+  verändern; eine unbekannte Art und eine fremde Fassung werden abgelehnt, nicht geraten
+  (`protocol.test.ts`).
+- **Fertig wenn:** das Paket in `pnpm-workspace.yaml` steht, `@worldwar/core` und
+  `@worldwar/shared` benutzt und in `packages/netplay/**` kein `fetch`, kein `WebSocket`
+  und kein `node:http` vorkommt. Vorlage für `package.json`: `apps/headless/package.json`.
+
+### T-M37-06 · Die Gleichschritt-Maschine
+- **Ziel:** ein Tick läuft, wenn beide Befehlslisten da sind, und sonst nicht. Das ist das
+  ganze Verfahren.
+- **Anforderungen:** R-MP-03 · **Entwurf:** D28.5
+- **Abhängigkeiten:** T-M37-05
+- **Dateien:** `packages/netplay/src/lockstep.ts`
+- **Tests zuerst:** fehlt die Liste einer Seite, wird der Tick nicht gerechnet; kommt sie
+  nach, läuft er; ein Befehl, der jetzt gegeben wird, erscheint bei `tick + 2`
+  (`R-MP-03/AK1`, `lockstep.test.ts`).
+- **Fertig wenn:** die Maschine `advanceTicks` mit `opts.scripted` benutzt und **nichts**
+  im Kern ändert. `opts.scripted` existiert seit T-M14-04 für die Wiedergabe und passt
+  genau: es fragt je Tick nach Befehlen.
+
+### T-M37-07 · Die Befehlsreihenfolge ist ohne Schiedsrichter eindeutig
+- **Ziel:** die Falle, an der Gleichschritt scheitert. Zwei Seiten, dieselben Befehle,
+  verschiedene Reihenfolge, zwei verschiedene Welten — und niemand hat einen Fehler
+  gemacht.
+- **Anforderungen:** R-MP-03 · **Entwurf:** D28.5
+- **Abhängigkeiten:** T-M37-06
+- **Dateien:** `packages/netplay/src/lockstep.ts`
+- **Tests zuerst:** dieselben Befehle in vertauschter Eingangsreihenfolge ergeben
+  dieselbe Anwendungsreihenfolge; sortiert wird nach `state.playerOrder`, innerhalb eines
+  Spielers bleibt seine eigene Folge erhalten; die Befehle der Computergegner hängen
+  hinten an (`R-MP-03/AK2`, `order.test.ts`).
+- **Fertig wenn:** die Regel nirgends von einer Schlüsselreihenfolge abhängt. `playerOrder`
+  ist ein ausdrückliches Feld, und genau dafür gibt es es (`state/types.ts`, Regel 3).
+
+### T-M37-08 · Zwei Simulationen, zweihundert Ticks, eine Prüfsumme
+- **Ziel:** der Beleg, der zählt. Ein grüner Einzeltest sagt nichts; hier laufen zwei
+  vollständige Spiele gegeneinander, mit Befehlen von beiden Seiten und Computergegnern
+  dazwischen.
+- **Anforderungen:** R-MP-03 · **Entwurf:** D28.2
+- **Abhängigkeiten:** T-M37-07
+- **Dateien:** `packages/netplay/src/loopback.ts`
+- **Tests zuerst:** zwei Gleichschritt-Maschinen über ein Schleifendoppel verbunden,
+  zweihundert Ticks, beide Seiten geben Befehle — nach **jedem** Tick ist `hashValue`
+  beider Zustände gleich (`R-MP-03/AK3`, `test/twoclients.test.ts`).
+- **Fertig wenn:** der Test ohne Befehle **fällt**, wenn man die Sortierung aus T-M37-07
+  entfernt. Ein Test, der grün ist, ohne dass die Reparatur drin ist, belegt gar nichts.
+
+### T-M37-09 · Auseinanderlaufen wird erkannt, gemeldet und hält an
+- **Ziel:** zwei Welten, die sich auseinanderentwickeln, sind schlimmer als ein Abbruch.
+  Hinterher kann niemand mehr sagen, welche die richtige war.
+- **Anforderungen:** R-MP-04 · **Entwurf:** D28.6
+- **Abhängigkeiten:** T-M37-08
+- **Dateien:** `packages/netplay/src/lockstep.ts`
+- **Tests zuerst:** eine Seite wird künstlich verfälscht; der nächste Prüfsummenvergleich
+  hält die Partie an und nennt den Tick (`R-MP-04/AK1`). Danach lässt sich der Stand
+  jeder Seite sichern (`R-MP-04/AK2`, `test/desync.test.ts`).
+- **Fertig wenn:** `canonicalText` als Werkzeug für die Untersuchung erreichbar ist —
+  lokal und freiwillig, nicht im Spielfluss. Es existiert seit M1 in
+  `packages/shared/src/hash.ts` und wurde nie gebraucht.
+
+### T-M37-10 · Die Pause auf Antrag und Zustimmung
+- **Ziel:** Noahs Regel vom 2026-09-12. Kein einseitiges Anhalten, aber auch kein
+  Einsperren.
+- **Anforderungen:** R-MP-05 · **Entwurf:** D28.7
+- **Abhängigkeiten:** T-M37-06
+- **Dateien:** `packages/netplay/src/pause.ts`, `packages/netplay/src/lockstep.ts`
+- **Tests zuerst:** ein Antrag allein hält nichts an (`R-MP-05/AK1`); nach der Zustimmung
+  stehen **beide** Uhren beim selben Tick (`R-MP-05/AK2`); ein Antrag ohne Antwort
+  verfällt nach dreißig Sekunden und beide erfahren es (`R-MP-05/AK3`, `pause.test.ts`).
+- **Fertig wenn:** das Fortsetzen einseitig möglich ist, mit drei Sekunden Vorlauf. Die
+  Asymmetrie ist Absicht und in D28.7 begründet.
+
+### T-M37-11 · Der Gleichschritt treibt die Uhr der Oberfläche
+- **Ziel:** die Maschine anschließen. Im Mehrspieler bestimmt nicht mehr
+  `requestAnimationFrame`, wann ein Tick läuft, sondern die Freigabe.
+- **Anforderungen:** R-MP-03, R-MP-04, R-MP-05 · **Entwurf:** D28.4
+- **Abhängigkeiten:** T-M37-04, T-M37-09, T-M37-10
+- **Dateien:** `apps/desktop/src/net/useNetplay.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** die Oberfläche rechnet keinen Tick ohne Freigabe und sagt nach zwei
+  Sekunden „warte auf Mitspieler"; ein Pausenantrag erscheint als Dialog mit zwei
+  Knöpfen; ein Auseinanderlaufen erscheint als Meldung, die nicht wegklickbar ist
+  (`useNetplay.test.ts`).
+- **Fertig wenn:** die Einzelspielerschleife unverändert ist. **jsdom hängt
+  `requestAnimationFrame` an `setInterval`** — unter `vi.useFakeTimers` muss rAF gestubbt
+  werden, sonst treibt `advanceTimersByTime` die ganze Spielschleife (Falle aus M22).
+
+## Meilenstein M38 — Die Verbindung
+
+> Zehn Aufgaben. Nach M38 ist eine Partie zu zweit im selben Netz spielbar. Die
+> Reihenfolge ist nicht beliebig: **der Netz-Wächter wird umgebaut, bevor der erste
+> `new WebSocket` entsteht.** Wer das umdreht, hat einen roten `pnpm verify` und hält
+> ihn für seinen eigenen Fehler.
+
+### T-M38-01 · Die Transportschnittstelle und ihr Schleifendoppel
+- **Ziel:** drei Funktionen — senden, empfangen, schließen. Dahinter steht im Test ein
+  Doppel im selben Prozess und im Spiel eine Leitung. Das ist die Naht, an der dieser
+  ganze Meilenstein prüfbar bleibt.
+- **Anforderungen:** keine · **Entwurf:** D28.9
+- **Abhängigkeiten:** T-M37-08
+- **Dateien:** `packages/netplay/src/transport.ts`, `packages/netplay/src/loopback.ts`
+- **Tests zuerst:** eine Vertragstestreihe, die jede Umsetzung erfüllen muss — Zustellung
+  in Reihenfolge, Schließen meldet sich, Senden nach dem Schließen wirft. Dieselbe Reihe
+  läuft später gegen den WebSocket-Transport (Muster: `StoragePort` aus M8).
+- **Fertig wenn:** die Reihe als wiederverwendbare Funktion vorliegt und nicht als
+  kopierter Block. T-M8-00 hat dieselbe Zusage gemacht und drei Jahre später eingelöst;
+  hier kostet sie eine Stunde.
+
+### T-M38-02 · Der Handschlag: Fassung, Regeln, Karte
+- **Ziel:** ein Gast mit anderen Zahlen rechnet ein anderes Spiel. Das muss vor dem
+  ersten Zug auffallen, nicht nach dem ersten Gefecht.
+- **Anforderungen:** R-MP-06 · **Entwurf:** D28.6
+- **Abhängigkeiten:** T-M38-01
+- **Dateien:** `packages/netplay/src/handshake.ts`
+- **Tests zuerst:** abweichende Protokollfassung, abweichende Regelprüfsumme und
+  abweichende Kartenprüfsumme verhindern je die Partie und nennen den Grund
+  (`R-MP-06/AK1`); eine Nachricht unbekannter Art wird verworfen und gemeldet, nie
+  geraten (`R-MP-06/AK3`, `handshake.test.ts`).
+- **Fertig wenn:** die Prüfsummen mit `hashValue` über das geladene Regelwerk und die
+  geladene Karte gebildet werden, nicht über Dateinamen oder Versionsnummern. Ein Name
+  belegt nichts.
+
+### T-M38-03 · Die Determinismus-Probe vor dem ersten Zug
+- **Ziel:** die Frage, die man sonst erst nach zwei Stunden stellt: rechnet die andere
+  Maschine wirklich bitgleich? Die Antwort kostet fünfzig Millisekunden.
+- **Anforderungen:** R-MP-06 · **Entwurf:** D28.6
+- **Abhängigkeiten:** T-M38-02
+- **Dateien:** `packages/netplay/src/handshake.ts`
+- **Tests zuerst:** beide Seiten erzeugen aus derselben Partiedefinition den Startzustand,
+  rechnen 24 Ticks ohne Befehle und vergleichen; bei Abweichung beginnt die Partie nicht
+  (`R-MP-06/AK2`, `test/probe.test.ts`).
+- **Fertig wenn:** die Probe gemessen unter hundert Millisekunden bleibt. Grundlage: ein
+  Tick kostet auf der Weltkarte 1,54 ms (gemessen 2026-09-12, sechs Mächte), also
+  24 Ticks rund 37 ms. Wird sie teurer, ist die Zahl der Probeticks der Stellknopf.
+
+### T-M38-04 · Der Netz-Wächter bekommt seine Grenze
+- **Ziel:** Z3 bleibt wahr, indem die Grenze benannt wird statt aufgegeben. **Diese
+  Aufgabe kommt vor jedem Netzcode**, sonst wird `pnpm verify` rot und der Grund ist
+  nicht der, den man vermutet.
+- **Anforderungen:** R-MP-09 · **Entwurf:** D28.9
+- **Abhängigkeiten:** keine
+- **Dateien:** `test/guards/no-network.test.ts`
+- **Tests zuerst:** Treffer in `apps/party/**` und `apps/desktop/src/net/**` sind erlaubt;
+  ein Treffer irgendwo sonst lässt den Wächter fallen (`R-MP-09/AK1`). In
+  `packages/core`, `packages/ai`, `packages/shared` und `packages/netplay` ist auch der
+  erlaubte Fall verboten (`R-MP-09/AK2`).
+- **Fertig wenn:** die Verstoß-Fixture weiterhin anschlägt und eine **zweite** Fixture
+  belegt, dass ein Netzzugriff im falschen Ordner gefunden wird. Ein Wächter, der nur
+  seine Ausnahme kennt, ist keiner.
+
+### T-M38-05 · Das ausgelieferte Programm bleibt netzfrei, geprüft am Erzeugnis
+- **Ziel:** Noahs dritte Festlegung. Die Tauri-Anwendung kennt keinen Mehrspieler und
+  darf ihn technisch nicht können.
+- **Anforderungen:** R-MP-09 · **Entwurf:** D28.9
+- **Abhängigkeiten:** T-M38-04
+- **Dateien:** `test/guards/packaging.test.ts`
+- **Tests zuerst:** die Tauri-Konfiguration führt unverändert `connect-src 'none'`, die
+  Berechtigungsliste enthält keine Netzberechtigung, und der Mehrspielereinstieg ist im
+  Tauri-Bau nicht erreichbar (`R-MP-09/AK3`).
+- **Fertig wenn:** der Wächter die **Konfiguration** liest und nicht eine Kopie davon.
+  Der alte Verpackungswächter hielt zwei JSON-Dateien gegeneinander und prüfte damit die
+  Konfiguration gegen sich selbst (Befunde 17, 20, 21).
+
+### T-M38-06 · Der WebSocket-Transport im Browser
+- **Ziel:** die einzige Stelle im Spiel, die `new WebSocket` sagt.
+- **Anforderungen:** R-MP-06 · **Entwurf:** D28.9
+- **Abhängigkeiten:** T-M38-04, T-M38-01
+- **Dateien:** `apps/desktop/src/net/websocketTransport.ts`
+- **Tests zuerst:** dieselbe Vertragsreihe aus T-M38-01, gegen ein Doppel der
+  WebSocket-Schnittstelle; dazu Wiederverbindung mit wachsendem Abstand und ein sauberes
+  Schließen (`websocketTransport.test.ts`).
+- **Fertig wenn:** **kein** Aufruf einer Schnittstelle drin ist, die einen sicheren
+  Kontext verlangt — kein `crypto.randomUUID`, kein `crypto.subtle`. Der Gast kommt über
+  `http` im privaten Netz (D28.10). Das ist die einzige echte technische Falle dieses
+  Meilensteins.
+
+### T-M38-07 · Der Hostdienst: Raum, Briefträger, Auslieferung
+- **Ziel:** ein kleines Node-Programm, das das gebaute Spiel ausliefert und Nachrichten
+  weiterreicht. Kein Schiedsrichter, keine Spiellogik, kein Zustand außer „wer sitzt auf
+  welchem Platz".
+- **Anforderungen:** R-MP-11 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M38-06
+- **Dateien:** `apps/party/package.json`, `apps/party/src/server.ts`,
+  `apps/party/src/room.ts`, `apps/party/src/index.ts`
+- **Tests zuerst:** ein Raum nimmt genau zwei Plätze; eine Nachricht von A kommt
+  unverändert bei B an; ein dritter Verbindungsversuch wird abgewiesen; die Auslieferung
+  liefert `index.html` und die Kartendatei (`apps/party/test/server.test.ts`).
+- **Fertig wenn:** der Dienst **keine** Abhängigkeit hat, die Geld kostet, ein Konto
+  verlangt oder nach außen funkt (AGENT-EXECUTION §2). `node:http` und `node:net` reichen;
+  eine WebSocket-Bibliothek ist erlaubt, wenn sie frei ist und keine Laufzeitnetzzugriffe
+  eigener Art macht.
+
+### T-M38-08 · Pufferung und Wiederaufnahme nach Abbruch
+- **Ziel:** WLAN, Standby, ein versehentlich geschlossener Deckel. Nichts davon darf eine
+  Partie kosten.
+- **Anforderungen:** R-MP-07 · **Entwurf:** D28.8
+- **Abhängigkeiten:** T-M38-07
+- **Dateien:** `packages/netplay/src/lockstep.ts`, `apps/desktop/src/net/useNetplay.ts`
+- **Tests zuerst:** die Verbindung wird mitten im Lauf getrennt und kehrt zurück; die
+  Partie läuft am selben Tick weiter, kein Befehl fehlt, die Prüfsummen bleiben gleich
+  (`R-MP-07/AK1`, über das Schleifendoppel).
+- **Fertig wenn:** gepuffert wird ab dem letzten **bestätigten** Tick und nicht ab dem
+  letzten gesendeten. Der Unterschied fällt erst auf, wenn die Trennung genau zwischen
+  Senden und Ankommen liegt — also im Betrieb und nicht im Test, wenn man ihn nicht
+  ausdrücklich schreibt.
+
+### T-M38-09 · Die Anzeige sagt, wenn es am anderen hängt
+- **Ziel:** eine stehende Uhr ohne Erklärung ist ein Absturz. Mit Erklärung ist sie ein
+  Hinweis.
+- **Anforderungen:** R-MP-07 · **Entwurf:** D28.8
+- **Abhängigkeiten:** T-M38-08
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/net/useNetplay.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** nach zehn Sekunden ohne Gegenseite erscheint der Hinweis mit zwei
+  Knöpfen, warten und beenden (`R-MP-07/AK2`, `Header.test.tsx`).
+- **Fertig wenn:** die „ehrliche Uhr" aus T-M22-05 nicht zweimal dasselbe sagt. Sie meldet
+  heute schon „Pausiert", wenn zwei Sekunden lang kein Tick lief; im Mehrspieler ist
+  dieselbe Lage eine andere Nachricht.
+
+### T-M38-10 · Ein Mitspieler, der nicht zurückkommt, wird zum Computergegner
+- **Ziel:** kein Abend geht verloren, weil jemand ins Bett gegangen ist.
+- **Anforderungen:** R-MP-08 · **Entwurf:** D28.8
+- **Abhängigkeiten:** T-M38-09
+- **Dateien:** `apps/desktop/src/net/useNetplay.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** nach der Übernahme ist der abwesende Spieler `kind: 'ai'`, die Partie
+  läuft ohne Verbindung weiter, und Tempo und Vorspulen sind wieder benutzbar
+  (`R-MP-08/AK1`). Ohne Klick geschieht nichts davon, auch nach Minuten nicht
+  (`R-MP-08/AK2`).
+- **Fertig wenn:** die übernommene Partie sich speichern und wie jede andere fortsetzen
+  lässt. Das ist der Beleg dafür, dass es wirklich derselbe Zustand ist — der greifbarste
+  Gewinn des Gleichschritts (D28.2).
+
+## Meilenstein M39 — Die Einladung
+
+> Neun Aufgaben, und am Ende steht das einzige Abnahmekriterium dieses Plans, das kein
+> Agent erfüllen kann: **AK-9**, Noah und ein zweiter Mensch in einem anderen Netz.
+
+### T-M39-01 · Der Raum, der Link und das Geheimnis
+- **Ziel:** eine Einladung ist ein Link, und mehr muss Noah nicht verschicken.
+- **Anforderungen:** R-MP-10 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M38-07
+- **Dateien:** `apps/party/src/room.ts`, `apps/desktop/src/net/useNetplay.ts`
+- **Tests zuerst:** der Link enthält Raum und Geheimnis, und das Geheimnis steht im
+  Fragment hinter dem Rautezeichen (`R-MP-10/AK1`); ein Beitritt ohne oder mit falschem
+  Geheimnis wird abgewiesen (`R-MP-10/AK2`).
+- **Fertig wenn:** das Geheimnis im **Node-Dienst** erzeugt wird. Im Browser gäbe es ohne
+  sicheren Kontext keine brauchbare Quelle dafür, und `Math.random` ist keine (D28.10).
+
+### T-M39-02 · Der Beitrittsbildschirm
+- **Ziel:** niemand tritt einer Partie bei, deren Bedingungen er nicht kennt. Besonders
+  nicht der festen Geschwindigkeit, die er nachher nicht ändern kann.
+- **Anforderungen:** R-MP-12 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M39-01
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** der Bildschirm nennt Karte, eigene Nation, gegnerische Nation, Zahl
+  der Computergegner, Siegbedingung und die feste Rate, bevor irgendetwas beginnt
+  (`R-MP-12/AK1`, `Dialogs.test.tsx`).
+- **Fertig wenn:** er ohne Spielstand auskommt — der Gast hat noch keinen. Der erste
+  Bildschirm der Anwendung ist heute der Anlegedialog; der Beitritt ist ein zweiter
+  Einstieg, kein Sonderfall des ersten.
+
+### T-M39-03 · Der Host sieht, wer wartet, und startet
+- **Ziel:** die Partie beginnt, wenn der Host es sagt, nicht wenn eine Verbindung steht.
+- **Anforderungen:** R-MP-12 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M39-02
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/net/useNetplay.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** tritt ein Gast bei, sieht der Host seinen Namen; erst der Start des
+  Hosts löst den Handschlag und den ersten Tick aus (`R-MP-12/AK2`).
+- **Fertig wenn:** ein Gast, der wieder geht, den Platz freigibt und der Host es sieht.
+
+### T-M39-04 · Ein Startbefehl für den Host
+- **Ziel:** `pnpm mp:host` baut das Bündel, startet den Dienst und druckt den Link. Ein
+  Befehl, keine Anleitung mit sieben Schritten.
+- **Anforderungen:** R-MP-11 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M39-01
+- **Dateien:** `package.json`, `apps/party/src/index.ts`
+- **Tests zuerst:** der Dienst liefert das gebaute Bündel aus, und der Gast bekommt das
+  vollständige Spiel, ohne eine Datei herunterzuladen (`R-MP-11/AK1`); Gast und Host
+  melden im Handschlag dieselbe Regel- und Kartenprüfsumme, weil beide Seiten aus
+  demselben Bau stammen (`R-MP-11/AK2`).
+- **Fertig wenn:** der Befehl auch beim zweiten Aufruf funktioniert und beim Beenden
+  keinen Prozess zurücklässt. **Falle aus M12:** einen langen Lauf abzubrechen beendet ihn
+  nicht — danach `tasklist //FI "IMAGENAME eq node.exe"`.
+
+### T-M39-05 · Die letzte Meile über Tailscale, geprüft und beschrieben
+- **Ziel:** Noahs zweite Festlegung. Kein öffentlicher Endpunkt, kein Tunnelanbieter,
+  keine Portfreigabe.
+- **Anforderungen:** R-MP-10 · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M39-04
+- **Dateien:** `docs/ANLEITUNG.md`, `apps/party/src/index.ts`
+- **Tests zuerst:** der Dienst horcht auf allen Schnittstellen und nicht nur auf
+  `localhost` — sonst ist er im Tailnet unerreichbar, und das fällt erst am Abend auf.
+- **Fertig wenn:** die Anleitung beide Seiten beschreibt: was Noah einmal tut (Gerät
+  freigeben, Einladung verschicken) und was der Gast einmal tut (Tailscale installieren,
+  Einladung annehmen). Dazu der Hinweis, dass der Link ohne Tailscale nicht funktioniert
+  und das keine Störung ist, sondern der Zweck.
+
+### T-M39-06 · Speichern und Fortsetzen zu zweit
+- **Ziel:** eine Partie über mehrere Abende. Sonst ist jeder Abbruch endgültig.
+- **Anforderungen:** R-MP-13 · **Entwurf:** D28.11
+- **Abhängigkeiten:** T-M39-03, T-M38-10
+- **Dateien:** `packages/netplay/src/handshake.ts`, `apps/desktop/src/game/saves.ts`,
+  `apps/desktop/src/net/useNetplay.ts`
+- **Tests zuerst:** stimmen die Stände beider Seiten überein, geht es weiter; stimmen sie
+  nicht, überträgt der Host seinen und beide prüfen erneut (`R-MP-13/AK1`); die
+  fortgesetzte Partie führt dieselbe Prüfsumme wie der gespeicherte Stand
+  (`R-MP-13/AK2`).
+- **Fertig wenn:** die Übertragung des Standes die einzige Stelle bleibt, an der ein
+  Zustand über die Leitung geht. Gemessen sind das 249 KB nach dreißig Spieltagen; wächst
+  eine lange Partie deutlich darüber hinaus, gehört die Zahl in den Bericht und nicht in
+  eine Schätzung.
+
+### T-M39-07 · Die Anleitung erklärt die Einladung
+- **Ziel:** das Spiel erklärt heute die Geschwindigkeitsregelung ausführlich, weil es
+  dafür existiert. Die Einladung braucht denselben Rang.
+- **Anforderungen:** keine · **Entwurf:** D28.10
+- **Abhängigkeiten:** T-M39-05
+- **Dateien:** `docs/ANLEITUNG.md`, `docs/PLAYTEST.md`
+- **Tests zuerst:** `test/docs.test.ts` bekommt eine Prüfung auf den neuen Abschnitt,
+  nach dem Muster der bestehenden Prüfung auf „Die Geschwindigkeitsregelung".
+- **Fertig wenn:** drei Dinge dort stehen, die sonst niemand erfährt: dass Tempo und
+  Vorspulen im Mehrspieler wegfallen, dass eine Pause beantragt und angenommen wird, und
+  dass jeder den vollen Zustand im Speicher hat (also kein Schummelschutz besteht, D28.2).
+
+### T-M39-08 · AK-9 bekommt seinen Ort, und der Haltepunkt-Wächter lernt den fünften
+- **Ziel:** zwei Wächter ziehen mit, bevor der Haltepunkt gesetzt wird. Beide sind heute
+  scharf und würden sonst rot.
+- **Anforderungen:** keine · **Entwurf:** D28.12
+- **Abhängigkeiten:** T-M39-07
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`,
+  `test/requirements.test.ts`, `test/plan-consistency.test.ts`, `docs/plan/03-TASKS.md`
+- **Tests zuerst:** `unhomedCriteria` findet AK-9 in Abschnitt 3.2 **und** in der Liste;
+  der Haltepunkt-Wächter erwartet fünf IDs statt vier; die Übersichtstabelle in
+  `03-TASKS.md` führt T-M39-09.
+- **Fertig wenn:** drei Dinge stimmen. **Erstens:** `CRITERIA` führt AK-9 mit
+  `scope: 'M39'` — nicht `'V1'`, sonst kettet ein späterer Bau die abgeschlossene
+  V1-Abnahme an sich (derselbe Fehler wie beim Nachtrag 2.15). **Zweitens:** der Testfall
+  in `requirements.test.ts`, der AK-9 heute als **erfundenes** Gegenbeispiel benutzt,
+  wird auf `AK-99` umgestellt, sonst prüft er nichts mehr. **Drittens:** erst danach wird
+  T-M39-09 in `tasks.yaml` auf `gate: true` gesetzt; vorher wäre der Plan rot.
+
+### T-M39-09 · Haltepunkt: Noah spielt eine Partie zu zweit
+- **Ziel:** AK-9. Das eine Kriterium, das kein Agent erfüllen kann, weil ein zweiter
+  Mensch in einem anderen Netz nicht simulierbar ist.
+- **Anforderungen:** keine · **Entwurf:** D28.12
+- **Abhängigkeiten:** T-M39-08
+- **Dateien:** `docs/reports/mehrspieler.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** keine (Abnahme durch Spielen).
+- **Fertig wenn:** der Bericht sechs Dinge festhält: dass die Einladung ankam, dass der
+  Gast nichts installieren musste, mindestens dreißig zusammenhängende Spieltage, eine
+  beantragte und angenommene Pause, ein absichtlich herbeigeführter Verbindungsabbruch mit
+  Wiederaufnahme, und am Ende dieselbe Zustandsprüfsumme auf beiden Seiten. **Setze diese
+  Aufgabe auf `gate: true`, sobald T-M39-08 erledigt ist** — vorher macht sie den
+  Plan-Wächter rot.

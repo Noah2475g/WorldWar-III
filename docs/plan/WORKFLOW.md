@@ -1,11 +1,15 @@
-# WORKFLOW — der Stand nach M34
+# WORKFLOW — der Stand nach M34, und der Mehrspieler ist geplant
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand: 2026-09-12.** **Der Plan ist leer.** Von 225 Aufgaben sind **224 erledigt**;
-> die eine offene ist T-M10-02, zurückgenommen und ohne Arbeit. M34 und M35 waren das
-> Letzte, was offen stand; sie sind an diesem Tag gebaut und abgenommen worden.
+> **Stand: 2026-09-12.** Von 255 Aufgaben sind **224 erledigt**; die eine alte offene ist
+> T-M10-02, zurückgenommen und ohne Arbeit. **Der Plan war an diesem Tag für wenige
+> Stunden leer und ist es nicht mehr:** M37 bis M39 bringen **dreißig geplante und
+> freigegebene Aufgaben** — eine Partie zu zweit, der Mitspieler tritt über einen Link
+> bei. Eine Datei genügt zum Anfangen, `docs/plan/MEHRSPIELER.md`; §2 Punkt 1 sagt das
+> Nötige. M34 und M35 waren das Letzte, was aus dem alten Plan offen stand; sie sind an
+> diesem Tag gebaut und abgenommen worden.
 > `pnpm acceptance` lief auf freier Maschine **11 von 11, Exit 0, 7 min 28 s**. Die Fortschrittsachse reicht
 > jetzt bis **Spieltag 80 statt bis 16** — in Echtzeit 32 Minuten statt 6,4 —,
 > **Gebäudestufen kosten und dauern mehr** (Stufe 3 das 3,24-fache bei 2,25-facher Zeit),
@@ -47,7 +51,9 @@ pnpm install
 
 ## 1 · Der Stand in einem Absatz
 
-Das Spiel ist **fertig und abgenommen**, und seit dem 2026-09-12 ist auch der Plan leer.
+Das Spiel ist **fertig und abgenommen**, und der alte Plan war am 2026-09-12 abgearbeitet.
+Am selben Tag ist ein neuer dazugekommen: **M37 bis M39, der Mehrspieler**, dreißig
+Aufgaben, geplant und freigegeben, keine davon gebaut.
 V1 lief am 2026-09-08 mit 7 von 7 durch, der Kriegsrat-Umbau am 2026-09-11 mit 11 von 11,
 und der Stand nach M34 am 2026-09-12 mit **11 von 11, Exit 0, 7 min 28 s** (`docs/reports/acceptance.md`). Das
 Anforderungstor meldet „V1 offen: 0". **AK-7 ist abgenommen:** Noah hat den Playtest per
@@ -66,36 +72,56 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
 ## 2 · Was als Nächstes dran ist
 
-**Der Aufgabenplan ist leer.** Was hier steht, ist nicht geplant, sondern vorgemerkt — und
-der erste Punkt ist kein Bau.
+**Genau eine Sache ist geplant, freigegeben und ungebaut: der Mehrspieler.** Alles
+Weitere in dieser Liste ist vorgemerkt und nicht geplant.
 
-1. **Noah spielt.** Zum Vergnügen, nicht zur Abnahme. Was er findet, wird der nächste
+1. **Eine Partie zu zweit (M37, M38, M39)** — geplant am 2026-09-12, **dreißig Aufgaben**.
+   Noahs Auftrag: ein Mitspieler tritt über einen Link bei, aus einem anderen Netz,
+   kostenlos, ohne öffentliche Webseite. **Lies `docs/plan/MEHRSPIELER.md`, sonst
+   nichts** — dort stehen Befund, Messung, elf Fallen und die Reihenfolge. Der Entwurf
+   ist D28, die Anforderungen sind `R-MP-01` bis `R-MP-13` in Abschnitt 2.17.
+
+   Vier Dinge, die hier gelten und anderswo nicht:
+
+   - **Der Kern wird nicht angefasst**, `data/rules` auch nicht. Golden-Master,
+     Parameterlauf und Turnier bleiben unberührt — sechs Minuten Abnahme statt eines
+     Nachtlaufs. Das ist der Unterschied zu M34, und er ist der Grund für den Zuschnitt.
+   - **Fang mit M37 an, nicht mit dem Netz.** Elf der dreißig Aufgaben kommen ohne eine
+     Zeile Netzcode aus und sind gegen zwei Simulationen im selben Prozess belegbar.
+   - **T-M38-04 kommt vor T-M38-06.** Der Netz-Wächter bekommt seine Grenze, bevor der
+     erste `new WebSocket` entsteht; andersherum ist `pnpm verify` rot, und der Grund ist
+     nicht der, den man vermutet.
+   - **Die Abnahme ist AK-9** (T-M39-09) und braucht Noah **und einen zweiten Menschen**
+     in einem anderen Netz. Das einzige Kriterium dieses Plans, das kein Agent erfüllen
+     kann. Sein Ort steht schon fest: Abschnitt 3.2 der Anforderungen und
+     `scripts/acceptance-criteria.mjs` mit `scope: 'M39'`.
+2. **Noah spielt.** Zum Vergnügen, nicht zur Abnahme. Was er findet, wird der nächste
    Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich weiterspielen?* Nach
    M34 hat sie zum ersten Mal eine ehrliche Chance — die ersten achtzig Spieltage tragen
    jetzt Entscheidungen statt einer Einkaufsliste.
-2. **Die vier Teilaufgaben aus M35** (`FORTSCHRITT.md` §3): Zwischenziele zum Sieg,
+3. **Die vier Teilaufgaben aus M35** (`FORTSCHRITT.md` §3): Zwischenziele zum Sieg,
    entworfen und geschnitten, **bewusst noch nicht in `tasks.yaml`**. Welche Marken es
    sind, ist eine Spielentscheidung und liegt bei Noah.
-3. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
+4. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
    (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
    wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
    `garrison` oder `defensive` die Vorgabehaltung wird.
-4. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
+5. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
    Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
    `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
    Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
    M17 wird als Ganzes geplant oder gar nicht.
-5. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
+6. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
    im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
    24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
    Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen.
    **Allgemein: alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht
    prüfbar.**
-6. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+7. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
    2026-09-08 frisch gebaut gegen `75a0128` (7,93 MB). Was aussteht, ist nur die
    **Messung** am neuen Bündel (starten, speichern, schließen, neu starten, laden).
    Zählt nicht gegen V1.
-7. **Drei offene Befunde aus `PROBLEME.md`, keiner davon ein Produktfehler:**
+8. **Drei offene Befunde aus `PROBLEME.md`, keiner davon ein Produktfehler:**
    - **Die KI klettert die neue Fortschrittsachse nicht.** `nextBuildingFor` fragt für
      Kaserne, Fabrik, Eisenbahn und Hafen `level(...) === 0` — sie baut jedes genau einmal.
      Gemessen über 200 Spieltage an allen fünf Messpunkten von M34: **keine Macht kommt je
@@ -107,8 +133,8 @@ der erste Punkt ist kein Bau.
    - **`03-TASKS.md` nennt 57 Dateien, die es nicht gibt**, bei Aufgaben auf `done`. Der
      Plan-Wächter prüft nur `tasks.yaml` (dort 0 tote Pfade), nicht die Prosafassung
      daneben. Die zweiteilige Reparatur steht in `PROBLEME.md`.
-8. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
-9. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
+9. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
+10. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.
 
 ---
@@ -213,7 +239,7 @@ zwischen zwei Partien.
 
 | | |
 |---|---|
-| Aufgaben | **225, davon 224 erledigt** (2026-09-12, nach M34 und M35). Die eine offene ist T-M10-02 — zurückgenommen, keine Arbeit. **Geplant und ungebaut: nichts.** |
+| Aufgaben | **255, davon 224 erledigt** (2026-09-12, nach M34, M35 und der Mehrspieler-Planung). Offen: **dreißig geplante und freigegebene** aus M37–M39, dazu T-M10-02 — zurückgenommen, keine Arbeit. |
 | Abnahme | **11 von 11, Exit 0, 7 min 28 s**, `docs/reports/acceptance.md`, 2026-09-12 auf freier Maschine, gegen den Stand nach M34 |
 | AK-1 | Sieg an Spieltag 471, 1827 Eroberungen, 12 Kriegserklärungen |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |

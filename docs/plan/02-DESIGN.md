@@ -1995,3 +1995,178 @@ Bauplatz-Raster, Armeepanel mit Markern und Haltungsgruppe, Provinz-Tooltip auch
 Tastatur, dreiteiliger Fuß mit Protokoll, Rangliste und Depesche. Referenzanforderungen:
 R-UI-02, R-UI-03, R-UI-04, R-UI-05, R-UI-09, R-UI-10, R-UI-11, R-UI-12, R-UI-13, R-UI-14,
 R-UI-15, R-UI-17, R-MAP-05, R-TIME-04, R-ARCH-02, R-ARCH-06.
+
+
+## D28. Eine Partie zu zweit (M37–M39 — MEHRSPIELER.md)
+
+Bauplan, Fallen und Reihenfolge stehen in `docs/plan/MEHRSPIELER.md`; hier steht, warum
+es so und nicht anders gebaut wird. Anforderungen: R-MP-01 bis R-MP-13, dazu C-11,
+R-ARCH-04, R-FREE-04 und Ziel Z3.
+
+### D28.1 Der Kern wird nicht angefasst — und das ist die ganze Entwurfsentscheidung
+
+D13 sagt seit dem ersten Tag, für den Mehrspieler genüge „ein schlanker Server, der
+Kommandos einsammelt, sie einem Tick zuordnet, an beide Klienten verteilt und die Hashes
+vergleicht. Kein Kernumbau nötig." Diese Zusage wird jetzt eingelöst, und sie hält:
+`step` ist rein, der Zufall liegt als vier Wörter im Zustand, gerechnet wird
+ausschließlich in Ganzzahlen, `hashValue` ist maschinenstabil, und `advanceTicks` nimmt
+über `opts.scripted` schon heute Befehle je Tick entgegen — gebaut für die Wiedergabe
+(R-ARCH-03), brauchbar für den Gleichschritt ohne eine Zeile Änderung.
+
+Der Preis dafür, das durchzuhalten, ist Disziplin an einer Stelle: **der Mehrspieler darf
+nichts brauchen, was im Zustand nicht schon steht.** Wer beim Bauen einen Kernumbau für
+nötig hält, hat mit hoher Wahrscheinlichkeit einen Entwurfsfehler gefunden. Der Gewinn
+ist groß: Golden-Master, Parameterlauf und Turnier bleiben unberührt, der Frische-Wächter
+in `scripts/acceptance.mjs` bleibt still, und die Abnahme kostet sechs Minuten statt
+einer Nacht.
+
+### D28.2 Warum Gleichschritt und nicht ein autoritativer Host
+
+Zwei Wege führen zum Ziel. **Autoritativer Host:** einer rechnet, der andere schickt
+Wünsche und bekommt Bilder. **Gleichschritt:** beide rechnen dasselbe, übertragen werden
+nur Befehle.
+
+Für den Gleichschritt sprechen drei Dinge, und alle drei sind hier schon bezahlt: der
+Determinismus ist vorhanden und getestet, die Bandbreite ist lächerlich klein (79 Byte je
+Befehl, gemessen am 2026-09-12), und ein Gleichschritt-Klient ist derselbe Klient wie der
+Einzelspieler — deshalb kann eine unterbrochene Partie ohne Umbau als Einzelspielerpartie
+weiterlaufen (R-MP-08).
+
+Dagegen spricht genau eines: **jeder hat den vollen Zustand** und kann ihn im Browser
+ansehen. Der Nebel des Krieges (R-DIP-04) bleibt eine Eigenschaft der Anzeige. Für zwei
+Freunde ist das hinnehmbar; ein autoritativer Host würde das Problem nicht lösen, sondern
+verschieben, denn dann könnte der Host schummeln statt des Gastes. **Entschieden:**
+Gleichschritt, und die Einschränkung steht in der Anleitung statt nirgends.
+
+### D28.3 Wer ich bin (R-MP-01)
+
+`App.tsx` nennt heute an achtzehn Stellen das Literal `'p1'` — in der Sicht, im
+Protokoll, in den Alarmen, beim Vorspulen, bei den Farben, bei der Frage, welche Provinz
+mir gehört. Das ist im Einzelspieler richtig und im Mehrspieler das erste, was falsch
+wird: der Gast sähe die Welt seines Gegners, mit dessen Rohstoffen und dessen Armeen.
+
+Der Umbau ist mechanisch und groß: ein `viewerId` aus dem Partiezustand ersetzt jedes
+Vorkommen. Ein Wächter mit Ausnahmeliste hält die Stelle danach sauber, denn ein
+zurückkehrendes `'p1'` fiele sonst erst im Spiel zu zweit auf, und dort als
+Gespensterfehler.
+
+### D28.4 Die Zeit gehört der Hülle (R-MP-02, C-11)
+
+C-11 verbannt die Geschwindigkeit seit dem 2026-09-04 aus Kern und Zustand, und
+R-ARCH-04/AK2 hält das grün. Deshalb kostet die feste Rate hier fast nichts: sie ist ein
+Wert in der Hülle, der sich nicht ändern lässt, plus drei abgeschaltete Bedienelemente.
+Die Rate ist Teil der Einladung, damit der Gast vor dem Beitritt weiß, worauf er sich
+einlässt (R-MP-12).
+
+Die Uhr wird im Mehrspieler nicht mehr von `requestAnimationFrame` getrieben, sondern von
+der Freigabe des Gleichschritts: ein Tick läuft, wenn beide Listen da sind, und sonst
+nicht. Damit synchronisiert sich das Tempo von selbst — der Langsamere gibt es vor — und
+die „ehrliche Uhr" aus T-M22-05 bekommt einen zweiten Grund, „warte" zu sagen.
+
+### D28.5 Die Reihenfolge ohne Schiedsrichter (R-MP-03)
+
+Die Falle, an der Gleichschritt scheitert: beide Seiten wenden dieselben Befehle in
+verschiedener Reihenfolge an. Deshalb wird innerhalb eines Ticks nach der Stellung in
+`state.playerOrder` sortiert und innerhalb eines Spielers seine eigene Reihenfolge
+behalten; die Befehle der Computergegner hängen hinten an, weil beide Seiten sie ohnehin
+selbst und identisch berechnen.
+
+Das ist stabil, weil `playerOrder` ein ausdrückliches Feld ist und keine
+Schlüsselreihenfolge — dieselbe Regel, die `state/types.ts` als Regel 3 für den ganzen
+Zustand aufstellt. Ein Schiedsrichter ist damit überflüssig, und der Hostdienst bleibt
+Briefträger.
+
+**Die Verzögerung beträgt zwei Ticks.** Ein Befehl, der jetzt gegeben wird, gilt für
+`tick + 2`. Das fällt niemandem auf, weil Befehle seit T-M22-05 ohnehin erst im nächsten
+Tick wirken; der Mehrspieler verdoppelt eine Verzögerung, die es schon gibt, statt eine
+neue einzuführen.
+
+### D28.6 Zwei Prüfungen gegen zwei verschiedene Welten (R-MP-04, R-MP-06)
+
+**Vorher:** der Handschlag. Protokollfassung, Prüfsumme über das Regelwerk, Prüfsumme
+über die Karte, und dann eine Determinismus-Probe — beide erzeugen den Startzustand aus
+der Partiedefinition, rechnen 24 Ticks ohne Befehle und vergleichen. Das kostet rund
+fünfzig Millisekunden und beantwortet vor dem ersten Zug die Frage, die man sonst erst
+nach zwei Stunden stellt.
+
+**Währenddessen:** jede Befehlsnachricht trägt die Prüfsumme des zuletzt gerechneten
+Ticks. Weichen sie ab, hält die Partie an und nennt den Tick. Sie spielt nicht weiter:
+zwei Welten, die sich auseinanderentwickeln, sind schlimmer als ein Abbruch, weil man
+hinterher nicht mehr sagen kann, welche die richtige war.
+
+`canonicalText` aus `packages/shared/src/hash.ts` gibt es bereits und liefert den Text,
+aus dem die Prüfsumme entsteht. Er ist das Werkzeug für die Untersuchung nach einem
+Auseinanderlaufen — lokal, freiwillig, nicht im Spielfluss.
+
+### D28.7 Die Pause als Vertrag (R-MP-05)
+
+Noahs Regel: beantragt und angenommen. Drei Einzelheiten machen daraus eine Mechanik, die
+hält.
+
+Die Pause hängt an einem **Tick**, nicht an einem Augenblick, sonst steht der eine bei
+Tick 500 und der andere bei 502. Ein Antrag **verfällt** nach dreißig Sekunden, sonst
+wartet einer auf etwas, das der andere längst weggeklickt hat. Und das **Fortsetzen darf
+jeder allein**, mit drei Sekunden Vorlauf: verlangte auch das Fortsetzen eine Zustimmung,
+könnte ein abgelenkter Mitspieler die Partie einsperren. Diese Asymmetrie ist Absicht.
+
+### D28.8 Abbruch, Rückkehr und der Ausweg (R-MP-07, R-MP-08)
+
+Drei Stufen: es hakt (unter zehn Sekunden, die Uhr wartet ohnehin), es ist weg (über zehn
+Sekunden, Hinweis und Wahl), er kommt nicht wieder (Übernahme auf Klick). Jede Seite
+puffert ihre gesendeten Nachrichten ab dem letzten bestätigten Tick; die Rückkehr ist
+dann ein Nachliefern und kein Neuanfang.
+
+Die Übernahme setzt `players[id].kind = 'ai'` und macht aus der Mehrspielerpartie eine
+Einzelspielerpartie mit Tempo und Vorspulen. Das geht nur, weil der Zustand derselbe ist
+— es ist der greifbarste Gewinn aus D28.2, und es sorgt dafür, dass kein Abend verloren
+geht, nur weil jemand ins Bett gegangen ist.
+
+### D28.9 Wo das Netz sein darf (R-MP-09, R-FREE-04, Z3)
+
+`packages/netplay` enthält Protokoll und Gleichschritt und **keinen Netzcode**. Der
+Transport ist eine Schnittstelle mit drei Funktionen; im Test steht dahinter ein
+Schleifendoppel, im Spiel eine WebSocket-Verbindung. Dadurch ist der schwierige Teil
+vollständig ohne Netz prüfbar, und der Wächter bekommt genau zwei benannte Ausnahmen
+statt einer Lücke: `apps/party/**` und `apps/desktop/src/net/**`.
+
+Das **ausgelieferte Programm** behält `connect-src 'none'` und seine leere
+Berechtigungsliste. Der Mehrspieler ist der Browserbau, gestartet vom Hostdienst. Damit
+bleibt Z3 für das Programm wörtlich wahr, und R-FREE-04 verschiebt nicht seine Grenze,
+sondern benennt sie genauer: verboten ist, was das Spiel von sich aus tut, nicht was ein
+Spieler ausdrücklich veranlasst.
+
+### D28.10 Die Einladung (R-MP-10, R-MP-11, R-MP-12)
+
+Der Hostdienst ist beides: Dateiserver für das gebaute Bündel und Briefträger für die
+Partie. Deshalb muss der Gast nichts installieren und kann auch nichts Falsches
+installieren — beide Seiten stammen zwangsläufig aus demselben Bau, und der Handschlag
+belegt es.
+
+Der Link trägt Raum und Geheimnis, das Geheimnis im Fragment hinter dem Rautezeichen:
+was dort steht, schickt der Browser nicht an den Server und es landet in keinem
+Zugriffsprotokoll. Die Partiedefinition reist nicht mit, weil der Host sie kennt.
+
+**Der Gast kommt über `http` im privaten Netz, also ohne sicheren Kontext.** Die
+Browserseite darf deshalb keine Schnittstelle benutzen, die einen verlangt — kein
+`crypto.randomUUID`, kein `crypto.subtle`. Das Geheimnis erzeugt der Hostdienst in Node.
+Diese Zeile ist die einzige echte technische Falle des ganzen Meilensteins.
+
+### D28.11 Speichern zu zweit (R-MP-13)
+
+Beide speichern lokal weiter, wie im Einzelspieler. Zum Fortsetzen eröffnet der Host
+einen neuen Raum; der Handschlag vergleicht die Prüfsummen der beiden Stände. Sind sie
+gleich, geht es weiter. Sind sie ungleich — der Gast hat einen älteren Stand oder gar
+keinen —, überträgt der Host seinen (gemessen 249 KB nach dreißig Spieltagen) und beide
+prüfen erneut. Das ist die einzige Stelle, an der ein Zustand über die Leitung geht, und
+sie ist ausdrücklich keine Ausnahme vom Gleichschritt, sondern sein Anfangswert.
+
+### D28.12 Die Reihenfolge und das Risiko
+
+M37 baut alles, was ohne Netz geht: Spieleridentität, feste Rate, Gleichschritt,
+Auseinanderlaufen, Pause. Belegt wird es gegen zwei Simulationen im selben Prozess. M38
+baut die Verbindung. M39 baut die Einladung und endet mit AK-9, dem einzigen Kriterium
+dieses Plans, das kein Agent erfüllen kann.
+
+Das größte Risiko ist nicht das Netz, sondern D28.3: achtzehn Stellen in einer Datei mit
+1700 Zeilen, und jede falsch umgestellte fällt erst im Spiel zu zweit auf. Deshalb steht
+sie zuerst, mit eigenem Wächter, und nicht nebenbei.

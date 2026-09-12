@@ -1835,3 +1835,62 @@ Ob vier stille Spieltage zu lang sind, ist eine Balancing-Frage und gehört Noah
 **Auswirkung:** `onboarding.slow.test.ts`, `docs/reports/onboarding.md` (neu erzeugt).
 
 ---
+
+## 2026-09-12 — Mehrspieler: vier Festlegungen und ein Plan, der den Kern nicht anfasst
+
+**Entschieden von Noah**, nach vier vorgelegten Fragen. Auftrag: ein Mitspieler soll über
+einen Link beitreten können, aus einem anderen Netz, kostenlos, ohne öffentliche Webseite,
+und keine Spielmechanik darf dabei verloren gehen außer der Zeitsteuerung.
+
+1. **Der Host ist der Server.** Der Gast öffnet einen Link und spielt im Browser; er
+   installiert nichts, lädt nichts, legt kein Konto an. Verworfen wurde die reine
+   Punkt-zu-Punkt-Verbindung über zwei ausgetauschte Textblöcke: sie kommt ohne jeden
+   Dienst aus, verlangt aber, dass der Gast das Spiel selbst besitzt, kostet zwei
+   Kopierschritte statt eines Links, und sie kommt bei manchen Anschlüssen gar nicht
+   zustande.
+2. **Die letzte Meile ist Tailscale.** Verworfen wurde ein Tunnel auf eine öffentliche
+   Adresse: bequemer für den Gast, aber die Adresse wäre aus dem Internet erreichbar, und
+   genau das wollte Noah nicht. Der Preis der Wahl ist eine einmalige Installation beim
+   Gast, etwa fünf Minuten.
+3. **Das ausgelieferte Programm bleibt netzfrei.** Die Tauri-Anwendung behält
+   `connect-src 'none'` und ihre leere Berechtigungsliste; der Mehrspieler ist der
+   Browserbau. Damit bleibt Ziel Z3 für das Programm **wörtlich** wahr, und R-FREE-04
+   wird präzisiert statt aufgeweicht: verboten ist, was das Spiel von sich aus tut, nicht
+   was ein Spieler ausdrücklich veranlasst. Verworfen wurde, dem Programm eine eng
+   gefasste Netzerlaubnis zu geben.
+4. **Die Pause wird beantragt und angenommen.** Nicht einseitig, wie ursprünglich
+   vorgeschlagen. C-11 ist entsprechend präzisiert: die feste Rate bleibt, das gemeinsame
+   Anhalten ist keine Ausnahme davon, sondern ein abgestimmtes Stehen beider Uhren an
+   **demselben Tick**.
+
+**Die Entwurfsentscheidung, die den Umfang bestimmt: der Kern wird nicht angefasst.**
+D13 sagt seit dem ersten Tag, für den Mehrspieler genüge ein Briefträger, der Kommandos
+einem Tick zuordnet und Prüfsummen vergleicht. Diese Zusage hält. Gemessen am 2026-09-12
+an der ausgelieferten Weltkarte: ein Befehl ist 79 Byte groß, die Partiedefinition
+645 Byte, ein Spielstand nach dreißig Spieltagen 249 KB, ein Tick kostet 1,54 ms.
+Bandbreite ist damit kein Thema; die Verbindung selbst ist das ganze Problem.
+
+Weil `packages/core` und `data/rules` unberührt bleiben, bleiben auch Golden-Master,
+Parameterlauf und Turnier unberührt — der Unterschied zwischen sechs Minuten Abnahme und
+einem Nachtlauf. Das ist der Grund für die Reihenfolge: M37 baut alles ohne Netz, M38 die
+Verbindung, M39 die Einladung.
+
+**Zwei Wächter wurden beim Planen gefunden und sind eingeplant, nicht überrascht worden.**
+Der Haltepunkt-Wächter in `plan-consistency.test.ts` kennt genau vier feste Aufgaben-IDs,
+ein fünfter Haltepunkt macht ihn rot. Und `requirements.test.ts` benutzt ausgerechnet die
+Nummer `AK-9` als erfundenes Gegenbeispiel für ein Kriterium ohne Anforderung. Beides
+räumt T-M39-08 auf, **bevor** T-M39-09 zum Haltepunkt wird.
+
+**Sofort erledigt statt später:** AK-9 steht seit heute in Abschnitt 3.2 der Anforderungen
+**und** in `scripts/acceptance-criteria.mjs` mit `scope: 'M39'`. Das ist die Lehre aus
+AK-8, das ein Jahr lang eine Zusage ohne Ort war und deshalb von keinem Skript geprüft
+wurde. Ein Kriterium, dessen Ort auf den Bau wartet, wird nicht geprüft, sondern vergessen.
+
+**Ausdrücklich nicht gebaut:** mehr als zwei Menschen, Lobby, Konto, Chat,
+Schummelschutz. Der letzte Punkt ist eine echte Einschränkung und keine Auslassung: im
+Gleichschritt hat jede Seite den vollen Zustand im Speicher, der Nebel des Krieges ist
+also eine Eigenschaft der Anzeige. Ein autoritativer Host würde das nicht lösen, sondern
+verschieben — dann könnte der Host schummeln statt des Gastes. Für zwei Freunde ist das
+die richtige Wahl, und sie steht in der Anleitung statt nirgends (T-M39-07).
+
+---

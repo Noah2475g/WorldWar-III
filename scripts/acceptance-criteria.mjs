@@ -36,6 +36,14 @@ export const CRITERIA = [
   { id: 'AK-6', scope: 'V1' },
   { id: 'AK-7', scope: 'V1' },
   { id: 'AK-8', scope: 'M16', report: 'docs/reports/packaging.md' },
+  // AK-9 (M39, aufgenommen 2026-09-12 mit dem Mehrspieler-Plan): eine Partie zu zweit
+  // ueber einen Link, gespielt von Noah und einem zweiten Menschen in einem anderen
+  // Netz. Der Eintrag entsteht zusammen mit Abschnitt 3.2 der Anforderungen und nicht
+  // erst beim Bau — genau das war die Lehre aus AK-8, das ein Jahr lang eine Zusage
+  // ohne Ort war. `scope: 'M39'` und nicht 'V1': M39 liegt hinter der abgeschlossenen
+  // V1-Abnahme, und ein Kriterium, das gegen sie zaehlte, wuerde sie an einen
+  // spaeteren Bau ketten.
+  { id: 'AK-9', scope: 'M39', report: 'docs/reports/mehrspieler.md' },
 ]
 
 /**
