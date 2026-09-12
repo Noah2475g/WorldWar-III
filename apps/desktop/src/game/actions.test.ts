@@ -9,6 +9,7 @@ import {
   ownArmiesIn,
   planArrival,
   cancelActions,
+  nextUnlock,
   recruitActions,
   targetAction,
   tradePreview,
@@ -343,8 +344,12 @@ describe('R-TECH-02/AK1 Ein gesperrter Knopf nennt seinen Tag', () => {
     }
 
     const airfield = buildActions(ctx, capital).find((action) => action.id === 'build-airfield')
+    // Der Tag kommt aus dem Regelwerk, nicht aus dem Test: seit T-M34-03 ist er 40 statt
+    // 10, und die Zusicherung gilt der Mechanik und nicht der Zahl.
+    const tag = rules.buildings.airfield.availableFromDay
+    expect(tag, 'der Flugplatz ist ab Tag 1 zu haben — dann belegt der Test nichts').toBeGreaterThan(1)
     expect(airfield?.disabledReason, 'kein Grund trotz leerer Kasse').not.toBeNull()
-    expect(mentionsDay(airfield?.hint, 10), `Tooltip ohne Tag 10: ${airfield?.hint}`).toBe(true)
+    expect(mentionsDay(airfield?.hint, tag), `Tooltip ohne Tag ${tag}: ${airfield?.hint}`).toBe(true)
   })
 
   it('laesst den Tag aus dem Tooltip, sobald er gekommen ist', () => {
@@ -409,5 +414,148 @@ describe('T-M28-16 Abbrechen bei gleicher Gebaeudeart', () => {
     ] as never
 
     expect(cancelActions(ctx, capital).map((spec) => spec.label)).toEqual(['Kaserne abbrechen'])
+  })
+})
+
+/**
+ * Der Blick nach vorn (T-M34-08, FORTSCHRITT.md D34.5, R-TECH-02).
+ *
+ * An einem gesperrten Eintrag steht heute „ab Tag 34" — die Auskunft, warum etwas nicht
+ * geht. Was fehlt, ist die Gegenrichtung: **was kommt als Naechstes, und wann.** Aus
+ * Warten wird damit ein Ziel. Seit T-M34-03 ist das keine Kleinigkeit mehr: die Leiter
+ * reicht bis Spieltag 80 statt bis 16, und zwischen zwei Freischaltungen liegen Tage.
+ *
+ * Die Zeile nennt Gebaeude UND Einheiten. Der Grund steht in DECISIONS.md: die Achse ist
+ * EINE Achse, und wer an Tag 25 auf die Fabrik wartet, wartet nicht auf eine Einheit.
+ */
+describe('R-TECH-02 Die naechste Freischaltung steht am Kopf der Liste', () => {
+  const amTag = (day: number): ActionContext => {
+    const { ctx } = fresh()
+    return { ...ctx, state: { ...ctx.state, tick: (day - 1) * rules.constants.ticksPerDay } }
+  }
+
+  /** Alle Tage des Regelwerks, aufsteigend und ohne Doppelte. */
+  const tage = [
+    ...new Set([
+      ...Object.values(rules.buildings).map((rule) => rule.availableFromDay),
+      ...Object.values(rules.units).map((rule) => rule.availableFromDay),
+    ]),
+  ].sort((a, b) => a - b)
+
+  it('nennt die naechste Sache und die richtige Zahl von Tagen', () => {
+    const zweiter = tage.find((tag) => tag > 1)!
+    const heute = Math.max(1, zweiter - 3)
+    const naechste = nextUnlock(amTag(heute))
+
+    expect(naechste, `an Tag ${heute} ist nichts mehr offen`).not.toBeNull()
+    expect(naechste!.days).toBe(zweiter - heute)
+    expect(naechste!.name, 'die Zeile nennt einen rohen Schluessel').not.toMatch(RAW_KEY)
+  })
+
+  it('wechselt am Tag der Freischaltung auf die uebernaechste', () => {
+    const zweiter = tage.find((tag) => tag > 1)!
+    const dritter = tage.find((tag) => tag > zweiter)!
+
+    const davor = nextUnlock(amTag(zweiter - 1))!
+    const amTagSelbst = nextUnlock(amTag(zweiter))!
+
+    expect(davor.days).toBe(1)
+    expect(amTagSelbst.key, 'am Tag der Freischaltung steht noch die alte Sache da').not.toBe(davor.key)
+    expect(amTagSelbst.days).toBe(dritter - zweiter)
+  })
+
+  it('verschwindet, wenn alles frei ist, statt leer dazustehen', () => {
+    expect(nextUnlock(amTag(tage[tage.length - 1]!))).toBeNull()
+    expect(nextUnlock(amTag(tage[tage.length - 1]! + 500))).toBeNull()
+  })
+
+  it('fuehrt zu jeder genannten Sache ein Bild', () => {
+    // Ohne Bild waere die Zeile ein Satz mehr; mit Bild zeigt sie, worauf man wartet.
+    // Geprueft ueber die ganze Leiter, nicht an einem Beispiel.
+    const ohneBild: string[] = []
+    for (const tag of tage) {
+      const naechste = nextUnlock(amTag(Math.max(1, tag - 1)))
+      if (naechste && !naechste.art) ohneBild.push(naechste.key)
+    }
+
+    expect(tage.length, 'die Leiter hat keine Stufen — der Test misst nichts').toBeGreaterThan(5)
+    expect(ohneBild, `ohne Bild: ${ohneBild.join(', ')}`).toEqual([])
+  })
+
+  it('nennt Gebaeude und Einheiten, nicht nur eine der beiden Arten', () => {
+    const arten = new Set(tage.map((tag) => nextUnlock(amTag(Math.max(1, tag - 1)))?.kind).filter(Boolean))
+
+    expect([...arten].sort()).toEqual(['buildings', 'units'])
+  })
+})
+
+/**
+ * Der Preis am Ausbau-Knopf ist der der naechsten Stufe (T-M34-04, D34.3).
+ *
+ * Vorher stand dort `rule.cost`, also der Preis der ERSTEN Stufe — an einer Fabrik der
+ * zweiten Stufe eine Falschauskunft mit Zahl daran: der Spieler las 667 Material, der
+ * Kern verlangte 1.201 und lehnte mit „es fehlen Rohstoffe" ab, was die Oberflaeche eben
+ * noch als bezahlbar angeboten hatte.
+ */
+describe('R-PROV-02 Der Bauknopf nennt den Preis der Stufe, die er baut', () => {
+  const hinweis = (level: number): string => {
+    const { ctx, capital } = fresh()
+    ctx.state.provinces[capital]!.buildings.factory = level - 1
+    ctx.state.tick = (rules.buildings.factory.availableFromDay - 1) * rules.constants.ticksPerDay
+    return buildActions(ctx, capital).find((entry) => entry.id === 'build-factory')!.hint!
+  }
+
+  it('nennt die Stufe erst, wenn sie etwas aendert', () => {
+    expect(hinweis(1)).not.toMatch(/Stufe/)
+    expect(hinweis(3)).toMatch(/Stufe 3/)
+  })
+
+  it('zeigt fuer die dritte Stufe eine groessere Zahl als fuer die erste', () => {
+    const ersteZahl = (text: string): number => Number(text.match(/([\d.]+)\s+Material/)![1]!.replace(/\./g, ''))
+
+    const erste = ersteZahl(hinweis(1))
+    const dritte = ersteZahl(hinweis(3))
+
+    expect(erste, 'der Hinweis nennt kein Material').toBeGreaterThan(0)
+    expect(dritte / erste, `${dritte} gegen ${erste}`).toBeCloseTo(3.24, 1)
+  })
+
+  it('zeigt fuer die dritte Stufe auch die laengere Bauzeit', () => {
+    const tage = (text: string): number => Number(text.match(/([\d,]+)\s+Tage/)![1]!.replace(',', '.'))
+
+    expect(tage(hinweis(3)) / tage(hinweis(1))).toBeCloseTo(2.25, 1)
+  })
+})
+
+/**
+ * Die Ablehnung nennt Gebaeude UND Stufe (T-M34-05, D34.2).
+ *
+ * „Dafuer fehlt das Gebaeude: Werft" an einer Provinz MIT Werft ist eine Auskunft, die
+ * dem Spieler widerspricht — er sieht das Gebaeude im Bauplatz-Raster stehen.
+ */
+describe('R-UNIT-02 Die Ablehnung nennt die verlangte Gebaeudestufe', () => {
+  it('sagt Werft Stufe 2, nicht nur Werft', () => {
+    const { ctx, capital } = fresh()
+    const province = ctx.state.provinces[capital]!
+    province.buildings.harbour = 1
+    province.buildings.shipyard = 1
+    ctx.state.tick = (rules.units.destroyer!.availableFromDay - 1) * rules.constants.ticksPerDay
+
+    const satz = buildActions(ctx, capital) && recruitActions(ctx, capital).find((e) => e.id === 'recruit-destroyer')!
+
+    expect(satz.disabledReason, 'der Zerstoerer ist gar nicht gesperrt').toMatch(/Werft/)
+    expect(satz.disabledReason).toMatch(/Stufe 2/)
+  })
+
+  it('nennt die Stufe nicht, wo sie eins ist', () => {
+    // Die Gegenprobe: "Stufe 1" an jeder Ablehnung waere Rauschen, und ohne sie waere die
+    // Zusicherung oben auch dann gruen, wenn ueberall eine Stufe stuende.
+    const { ctx, capital } = fresh()
+    ctx.state.tick = (rules.units.infantry!.availableFromDay - 1) * rules.constants.ticksPerDay
+
+    const satz = recruitActions(ctx, capital).find((e) => e.id === 'recruit-infantry')!
+
+    expect(satz.disabledReason, 'ohne Kaserne muss die Infanterie gesperrt sein').toMatch(/Kaserne/)
+    expect(satz.disabledReason).not.toMatch(/Stufe/)
   })
 })

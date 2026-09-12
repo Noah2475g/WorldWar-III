@@ -4,6 +4,7 @@ import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } f
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
+import type { NextUnlock } from '../game/actions.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
@@ -237,7 +238,30 @@ export function ActionRow({ actions }: { actions: readonly Action[] }) {
  * reason — ten units, one missing barracks — the reason is said once above the group
  * rather than ten times below it.
  */
-export function ActionGroup({ group }: { group: ActionGroupSpec }) {
+/**
+ * Der Blick nach vorn (T-M34-08, D34.5, R-TECH-02).
+ *
+ * Ein gesperrter Knopf sagt, warum er gesperrt ist. Diese Zeile sagt, was als Naechstes
+ * kommt — mit Bild, Namen und Tagen. Seit die Leiter bis Spieltag 80 reicht (T-M34-03),
+ * ist das der Unterschied zwischen Warten und einem Ziel.
+ */
+function NextUnlockLine({ next }: { next: NextUnlock }) {
+  const text =
+    next.days === 1
+      ? t('actions.nextUnlockTomorrow', { thing: next.name })
+      : t('actions.nextUnlockDays', { thing: next.name, count: next.days })
+
+  return (
+    <p className="next-unlock">
+      {/* Namenlos wie in der Aushebeliste: den Namen traegt der Satz daneben schon
+          (T-M22-06) — zweimal vorgelesen waere er eine Zumutung. */}
+      {next.art && <UnitArt name={next.art} width={26} tone="muted" />}
+      <span>{text}</span>
+    </p>
+  )
+}
+
+export function ActionGroup({ group, next }: { group: ActionGroupSpec; next?: NextUnlock | null | undefined }) {
   const reasons = new Set(group.actions.map((action) => action.disabledReason))
   const shared =
     group.actions.length > 0 && reasons.size === 1 && !reasons.has(null) ? group.actions[0]!.disabledReason : null
@@ -261,6 +285,7 @@ export function ActionGroup({ group }: { group: ActionGroupSpec }) {
   return (
     <section className="group" aria-label={group.title}>
       <h3 className="group__title">{group.title}</h3>
+      {next && <NextUnlockLine next={next} />}
       {shared && <p className="group__reason">{shared}</p>}
       <div className="actions">
         {group.actions.map((action) => (
@@ -321,6 +346,11 @@ export interface ProvincePanelProps {
   actions: readonly Action[]
   /** Build, recruit — the orders a province takes, grouped. */
   groups?: readonly ActionGroupSpec[]
+  /**
+   * Die naechste Freischaltung, fuer den Kopf der Aushebeliste (T-M34-08, D34.5).
+   * `null` heisst: alles frei — dann steht die Zeile gar nicht da.
+   */
+  nextUnlock?: NextUnlock | null
   /** The player's own armies standing here. */
   armies?: readonly { id: string; name: string; strength: number; icon?: IconName | undefined }[]
   selectedArmy?: string | null
@@ -543,7 +573,7 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
       <ActionRow actions={props.actions} />
       {otherGroups.map((group) => (
-        <ActionGroup key={group.id} group={group} />
+        <ActionGroup key={group.id} group={group} next={group.id === 'recruit' ? props.nextUnlock : undefined} />
       ))}
     </section>
   )

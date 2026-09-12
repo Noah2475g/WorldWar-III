@@ -27,6 +27,7 @@ import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
 import { UnitMarker, type MarkerTone } from './UnitMarker.tsx'
 import type { BattleReportData } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
+import type { NextUnlock } from '../game/actions.ts'
 
 /**
  * The side panels, once symbols carry what sentences used to (T-M13-01, R-UI-10).
@@ -1739,6 +1740,118 @@ describe('T-M36-05 Ruhiger, nicht kuerzer', () => {
     // Und die beiden Flussspalten tragen keinen Ton — sie sind Herkunft, nicht Urteil.
     for (const index of [2, 3]) {
       expect(zellen[index]!.className, `Spalte ${index} traegt einen Ton`).not.toMatch(/--plus|--minus/)
+    }
+  })
+})
+
+/**
+ * Der Blick nach vorn am Kopf der Aushebeliste (T-M34-08, D34.5, R-TECH-02).
+ *
+ * An einem gesperrten Knopf steht der Grund: „Das gibt es erst ab Spieltag 34." Diese
+ * Zeile sagt die Gegenrichtung — was als Naechstes kommt und wann. Sie steht im Kopf der
+ * Aushebeliste und nirgends sonst: zweimal dieselbe Auskunft auf einem Panel waere keine
+ * zweite Auskunft.
+ */
+describe('R-TECH-02 Die naechste Freischaltung steht ueber der Aushebeliste', () => {
+  const aushebeliste: ActionGroupSpec = {
+    id: 'recruit',
+    title: 'Ausheben',
+    actions: [action('recruit-infantry', 'infantry', 'Infanterie')],
+  }
+  const bauliste: ActionGroupSpec = {
+    id: 'build',
+    title: 'Bauen',
+    actions: [action('build-fortress', 'fortress', 'Festung')],
+  }
+
+  const panel = (next: NextUnlock | null, groups: ActionGroupSpec[] = [aushebeliste]) =>
+    render(
+      <ProvincePanel
+        province={province}
+        ownerName="Vereinigte Staaten"
+        actions={[]}
+        groups={groups}
+        nextUnlock={next}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+  const fabrik: NextUnlock = { key: 'factory', kind: 'buildings', name: 'Fabrik', art: BUILDING_ART.factory, days: 8 }
+
+  it('nennt Sache und Tage in einem Satz', () => {
+    panel(fabrik)
+
+    expect(screen.getByText(/Als Nächstes: Fabrik/)).toBeTruthy()
+    expect(screen.getByText(/8 Tagen/)).toBeTruthy()
+  })
+
+  it('sagt am Vortag morgen statt in 1 Tagen', () => {
+    panel({ ...fabrik, days: 1 })
+
+    expect(screen.getByText(/Als Nächstes: Fabrik — morgen/)).toBeTruthy()
+    expect(screen.queryByText(/1 Tagen/)).toBeNull()
+  })
+
+  it('zeigt das Bild der Sache, auf die gewartet wird', () => {
+    const { container } = panel(fabrik)
+    const bild = container.querySelector('.next-unlock .unit-art')
+
+    expect(bild, 'die Zeile fuehrt kein Bild').toBeTruthy()
+    expect(bild!.querySelectorAll('path')[0]!.getAttribute('d')).toBe(ART[BUILDING_ART.factory]!.body)
+  })
+
+  it('verschwindet, wenn alles frei ist, statt leer dazustehen', () => {
+    const { container } = panel(null)
+
+    expect(container.querySelector('.next-unlock')).toBeNull()
+    expect(screen.queryByText(/Als Nächstes/)).toBeNull()
+  })
+
+  it('steht an der Aushebeliste und nicht an der Bauliste', () => {
+    // Die Gegenprobe zur Zeile darueber: ohne sie waere "genau einmal" auch dann wahr,
+    // wenn die Zeile an der falschen Gruppe haengt.
+    const { container } = panel(fabrik, [bauliste, aushebeliste])
+    const gruppen = [...container.querySelectorAll('.group')]
+
+    expect(container.querySelectorAll('.next-unlock')).toHaveLength(1)
+    expect(gruppen.find((g) => g.querySelector('.next-unlock'))?.getAttribute('aria-label')).toBe('Ausheben')
+  })
+})
+
+/**
+ * Der Ton der Zeile, am Stylesheet gebunden (T-M34-08).
+ *
+ * jsdom rechnet kein Layout, aber die Kaskade rechnet es — dieselbe Bauart wie die
+ * Waechter aus T-M22-02 und T-M36-06. Ohne ihn bände nichts die Zusage, dass Bild und
+ * Satz gleich leise sind: in der Sichtprüfung am laufenden Spiel stand das Bild in
+ * `--ink` (230, 225, 211) neben Nebentext in `--ink-soft` (154, 160, 168).
+ */
+describe('R-UI-09 Die Zeile ist so leise wie ihr Satz', () => {
+  it('gibt Bild und Text dieselbe Farbe', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync('apps/desktop/src/ui/app.css', 'utf8')
+    document.head.append(style)
+    try {
+      const { container } = render(
+        <ProvincePanel
+          province={province}
+          ownerName="Vereinigte Staaten"
+          actions={[]}
+          groups={[{ id: 'recruit', title: 'Ausheben', actions: [action('recruit-infantry', 'infantry', 'Infanterie')] }]}
+          nextUnlock={{ key: 'factory', kind: 'buildings', name: 'Fabrik', art: BUILDING_ART.factory, days: 8 }}
+          ticksPerDay={24}
+          currentTick={0}
+        />,
+      )
+
+      const zeile = container.querySelector('.next-unlock') as HTMLElement
+      const bild = zeile.querySelector('.unit-art') as unknown as HTMLElement
+
+      expect(getComputedStyle(zeile).color).toBe('var(--ink-soft)')
+      expect(getComputedStyle(bild).color, 'das Bild ist lauter als sein Satz').toBe('var(--ink-soft)')
+    } finally {
+      style.remove()
     }
   })
 })

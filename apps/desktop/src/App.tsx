@@ -26,6 +26,7 @@ import {
   diplomacyActions,
   ownArmiesIn,
   planArrival,
+  nextUnlock,
   recruitActions,
   targetAction,
   tradePreview,
@@ -1281,6 +1282,15 @@ export function App(props: AppProps) {
     ]
   }, [ctx, selected, toAction])
 
+  /**
+   * Die naechste Freischaltung fuer den Kopf der Aushebeliste (T-M34-08, D34.5).
+   *
+   * Haengt am Spieltag und nicht an der gewaehlten Provinz — die Achse ist fuer das
+   * ganze Reich dieselbe. Deshalb auch nicht an `selected`: die Zeile duerfte sonst beim
+   * Provinzwechsel neu gerechnet werden, ohne sich je zu aendern.
+   */
+  const naechsteFreischaltung = useMemo(() => (ctx ? nextUnlock(ctx) : null), [ctx])
+
   const provinceActions: Action[] = useMemo(() => {
     if (!ctx || !selected || selected.owner !== 'p1') return []
     return [toAction(capitalAction(ctx, selected.id))]
@@ -1510,6 +1520,7 @@ export function App(props: AppProps) {
               ownerColor={selected?.owner ? colorOf(selected.owner) : null}
               actions={provinceActions}
               groups={provinceGroups}
+              nextUnlock={naechsteFreischaltung}
               armies={armiesHere}
               selectedArmy={ui.selectedArmy}
               onSelectArmy={(id) => {

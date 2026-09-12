@@ -1016,6 +1016,22 @@ body {
   margin: 0 0 var(--sp-sm);
 }
 
+/*
+ * Der Blick nach vorn ueber der Aushebeliste (T-M34-08, D34.5).
+ *
+ * Ruhig wie der Absagesatz darunter und aus demselben Grund: sie ist eine Auskunft und
+ * kein Alarm. Bernstein waere hier falsch — die Leiste hat die Signalfarbe fuer das,
+ * was draengt (D27.1, und was T-M36-03 davon aufgegeben hat).
+ */
+.next-unlock {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin: 0 0 var(--sp-sm);
+}
+
 .group__reason,
 .action__reason {
   font-size: 11px;
@@ -1263,6 +1279,12 @@ body {
 
 .unit-art--building {
   color: var(--building);
+}
+
+/* Die naechste Freischaltung (T-M34-08): eine Sache, die es noch nicht gibt, steht so
+   laut da wie der Satz daneben — und der ist Nebentext. */
+.unit-art--muted {
+  color: var(--ink-soft);
 }
 
 .unit-art__body {

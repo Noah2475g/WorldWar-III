@@ -278,7 +278,13 @@ export const ART_FOR_ICON: Partial<Record<IconName, ArtName>> = Object.fromEntri
  * gibt: in der Rekrutierungsliste steht der Riss in `ink`, im Bauplatzraster das
  * Gebaeude in `building`.
  */
-export type ArtTone = MarkerTone | 'ink' | 'building'
+/**
+ * `muted` ist der Ton fuer eine Sache, die es noch NICHT gibt (T-M34-08): die naechste
+ * Freischaltung ueber der Aushebeliste. Er traegt dasselbe Token wie `other` und meint
+ * etwas anderes — `other` ist eine fremde Macht auf der Karte. Zwei Namen fuer eine
+ * Farbe sind in Ordnung; ein Name fuer zwei Bedeutungen waere es nicht.
+ */
+export type ArtTone = MarkerTone | 'ink' | 'building' | 'muted'
 
 export interface UnitArtProps {
   name: ArtName
