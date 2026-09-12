@@ -5,9 +5,12 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-12): **abgenommen, und der Plan ist leer.** `pnpm acceptance` lief auf
-freier Maschine **11 von 11, Exit 0, 7 min 28 s**; das Spiel wird an Spieltag **471** entschieden. Von 225
-Aufgaben sind **224 gebaut**; die eine offene ist zurückgenommen und ohne Arbeit. Der
+Status (2026-09-12): **abgenommen, und der Mehrspieler ist geplant.** `pnpm acceptance` lief
+auf freier Maschine **11 von 11, Exit 0, 7 min 28 s**; das Spiel wird an Spieltag **471**
+entschieden. Von 255 Aufgaben sind **224 gebaut**. Offen sind **dreißig geplante und
+freigegebene** aus M37–M39 — eine Partie zu zweit, der Mitspieler tritt über einen Link bei
+([`docs/plan/MEHRSPIELER.md`](docs/plan/MEHRSPIELER.md)); keine davon ist gebaut. Dazu
+kommt T-M10-02, zurückgenommen und ohne Arbeit. Der
 letzte Bauabschnitt **M34** hat die Fortschrittsachse gestreckt: die letzte Freischaltung
 liegt bei Spieltag 80 statt 16, Gebäudestufen kosten und dauern mehr, und über der
 Aushebeliste steht, was als Nächstes kommt. **M35** ist ein Entwurf und kein Bau.
@@ -83,5 +86,8 @@ Lücken begründet geschätzt und über automatisierte Testpartien abgestimmt.
   dazu „Vorspulen bis Ereignis“.
 - **Vorgehen:** strikt testgetrieben; Kern ≥ 90 % Testabdeckung, Determinismus per Golden-Master
   abgesichert.
-- **Multiplayer:** nicht in V1, aber architektonisch vorbereitet (deterministischer Kern,
-  kommandobasiert) — ein späterer Zwei-Personen-Modus braucht keinen Kernumbau.
+- **Mehrspieler:** nicht in V1, aber architektonisch vorbereitet (deterministischer Kern,
+  kommandobasiert). **Geplant und freigegeben, noch nicht gebaut:** M37–M39, eine Partie zu
+  zweit im Gleichschritt — der Host ist der Server, der Gast tritt über einen Link und
+  Tailscale bei, das ausgelieferte Programm bleibt netzfrei, und der Kern wird nicht
+  angefasst. Die Abnahme AK-9 braucht Noah und einen zweiten Menschen in einem anderen Netz.
