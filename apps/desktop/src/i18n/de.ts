@@ -301,6 +301,12 @@ export const de = {
     expectedStrength: 'Erwartete Stärke: {{strength}} statt {{ordered}} — die Provinzmoral senkt sie.',
     startStrength: 'Anfangsstärke {{percent}} % (Provinzmoral)',
     availableFrom: 'ab Spieltag {{day}}',
+    // Die Stufe am Ausbau-Knopf (T-M34-08 / T-M34-04): der Preis gilt für DIESE Stufe.
+    buildLevel: 'Stufe {{level}}',
+    // Der Blick nach vorn am Kopf der Aushebeliste (T-M34-08, D34.5). „ab Spieltag 34"
+    // sagt, warum etwas nicht geht; diese Zeile sagt, was als Nächstes kommt.
+    nextUnlockTomorrow: 'Als Nächstes: {{thing}} — morgen',
+    nextUnlockDays: 'Als Nächstes: {{thing}} — in {{count}} Tagen',
     // Die Befehls-Quittung (T-M22-05, Befund V2-08): abgeschickt, noch nicht
     // angewendet — und bei stehender Uhr sagt der Satz dazu, wann es so weit ist.
     ordered: '✓ befohlen — wirkt im nächsten Tick.',

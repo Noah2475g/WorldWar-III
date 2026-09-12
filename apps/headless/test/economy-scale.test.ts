@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { createInitialState, economyOverview, parseRules, type GameConfig, type MapData, type Rules } from '@worldwar/core'
+import { buildingCostForLevel, createInitialState, economyOverview, parseRules, type GameConfig, type MapData, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 
 /**
@@ -114,5 +114,50 @@ describe('R-ECON-01 Die Weltkarte liegt auf der Skala der Regeln', () => {
     expect(typical).toBeLessThanOrEqual(900_000)
     const belowCap = populations.filter((p) => p < 450_000).length / populations.length
     expect(belowCap, 'fast jede Provinz haengt am Deckel des Bevoelkerungsfaktors').toBeGreaterThan(0.2)
+  })
+})
+
+/**
+ * Risiko 5 aus FORTSCHRITT.md, als Zahl statt als Sorge (T-M34-04, T-M34-06).
+ *
+ * Teurere Gebaeudestufen koennen die Wirtschaft kippen: wird die dritte Fabrikstufe
+ * unerreichbar, ist die neue Fortschrittsachse wieder keine — nur diesmal als Sperre
+ * statt als Buchfuehrung. Der Pruefstein ist derselbe wie bei der ersten Kaserne oben:
+ * **wie viele Tage eigener Produktion kostet die Sache**, gerechnet mit den echten Regeln
+ * auf der echten Karte.
+ *
+ * Was diese Zahl nicht ist: eine Partie. Sie sagt, ob das Geld reicht, nicht ob die KI es
+ * ausgibt — das misst der Parameterlauf in T-M34-07.
+ */
+describe('R-PROV-02 Die dritte Fabrikstufe bleibt erreichbar', () => {
+  const factory = rules.buildings.factory
+  const alleDreiStufen = (): Partial<Record<'wood' | 'iron' | 'money', number>> => {
+    const gesamt: Record<string, number> = {}
+    for (const level of [1, 2, 3]) {
+      for (const [key, betrag] of Object.entries(buildingCostForLevel(factory, level, rules.constants))) {
+        gesamt[key] = (gesamt[key] ?? 0) + (betrag ?? 0)
+      }
+    }
+    return gesamt
+  }
+
+  it('kostet die dritte Stufe ueberhaupt mehr als die erste', () => {
+    // Ohne diese Zeile waere die Zusicherung darunter auch dann gruen, wenn der Faktor
+    // gar nicht wirkt — und genau das war der Zustand vor T-M34-04.
+    expect(buildingCostForLevel(factory, 3, rules.constants).iron!).toBeGreaterThan(factory.cost.iron! * 3)
+  })
+
+  it('laesst die mittlere Macht alle drei Stufen binnen 200 Spieltagen erwirtschaften', () => {
+    const gesamt = alleDreiStufen()
+    const tage = (resource: 'wood' | 'iron' | 'money'): number[] =>
+      world.startPositions.map((s) => {
+        const perDay = dayOne(world, s.nation).perDay[resource]
+        return (gesamt[resource] ?? 0) / Math.max(1, perDay)
+      })
+
+    for (const resource of ['wood', 'iron', 'money'] as const) {
+      const typisch = median(tage(resource))
+      expect(typisch, `${resource}: ${typisch.toFixed(0)} Tage fuer Fabrik 1+2+3`).toBeLessThanOrEqual(200)
+    }
   })
 })

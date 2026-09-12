@@ -40,6 +40,8 @@
   "embarkTicks": 3,
   "disembarkTicks": 2,
   "hostileCoastFactor": 1500,
+  "buildLevelCostPermille": 1800,
+  "buildLevelTimePermille": 1500,
   "maxBuildSlotsCity": 2,
   "maxBuildSlotsRural": 1,
   "capitalMoveCooldownDays": 30,

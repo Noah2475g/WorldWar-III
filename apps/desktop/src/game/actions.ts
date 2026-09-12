@@ -6,6 +6,9 @@ import {
   currentDay,
   exchangeAmount,
   planRoute,
+  buildTicksForLevel,
+  buildingCostForLevel,
+  nextBuildLevel,
   recruitDuration,
   recruitStartCondition,
   type Army,
@@ -19,7 +22,7 @@ import {
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
-import { UNIT_ART, type ArtName } from '../ui/art.tsx'
+import { BUILDING_ART, UNIT_ART, type ArtName } from '../ui/art.tsx'
 import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 import { dominantIcon } from '../map/markers.ts'
@@ -123,21 +126,88 @@ export function availabilityHint(ctx: ActionContext, availableFromDay: number): 
   return day >= availableFromDay ? '' : ` · ${t('actions.availableFrom', { day: availableFromDay })}`
 }
 
-/** One button per building the rules know, in the order the rules list them. */
+/** Die naechste Sache, die freigeschaltet wird — mit Bild, Namen und Tagen bis dahin. */
+export interface NextUnlock {
+  key: string
+  kind: 'buildings' | 'units'
+  name: string
+  art: ArtName | undefined
+  /** Tage bis zur Freischaltung, immer mindestens 1. */
+  days: number
+}
+
+/**
+ * Der Blick nach vorn (T-M34-08, D34.5, R-TECH-02).
+ *
+ * `availabilityHint` sagt, warum etwas **nicht** geht. Diese Funktion sagt, was als
+ * Naechstes kommt — die Gegenrichtung, und seit der gestreckten Leiter (T-M34-03) die
+ * wichtigere: die Achse reicht bis Spieltag 80 statt bis 16, und zwischen zwei
+ * Freischaltungen liegen jetzt Tage statt Stunden. Aus Warten wird ein Ziel.
+ *
+ * **Gebaeude und Einheiten in einer Liste, und das ist Absicht.** Es ist eine Achse; wer
+ * an Spieltag 25 auf die Fabrik wartet, wartet nicht auf eine Einheit. Bei Gleichstand
+ * gewinnt das Gebaeude, weil `Array.prototype.sort` stabil ist und die Gebaeude zuerst
+ * stehen — die Fabrik vor dem Panzer, den sie erst moeglich macht.
+ *
+ * Ist alles frei, kommt `null` zurueck: eine Zeile, die dann „nichts mehr" meldet, waere
+ * ab Spieltag 80 eine Dauerzeile ohne Auskunft.
+ */
+export function nextUnlock(ctx: ActionContext): NextUnlock | null {
+  const day = currentDay(ctx.state, ctx.rules)
+  const offen: NextUnlock[] = [
+    ...Object.entries(ctx.rules.buildings).map(([key, rule]) => ({
+      key,
+      kind: 'buildings' as const,
+      name: t(`buildings.${key}`),
+      art: BUILDING_ART[key as keyof typeof BUILDING_ART],
+      days: rule.availableFromDay - day,
+    })),
+    ...Object.entries(ctx.rules.units).map(([key, rule]) => ({
+      key,
+      kind: 'units' as const,
+      name: t(`units.${key}`),
+      art: UNIT_ART[key],
+      days: rule.availableFromDay - day,
+    })),
+  ].filter((entry) => entry.days > 0)
+
+  return offen.sort((a, b) => a.days - b.days)[0] ?? null
+}
+
+/**
+ * One button per building the rules know, in the order the rules list them.
+ *
+ * **Der Preis ist der der naechsten Stufe, nicht der der ersten** (T-M34-04). Seit die
+ * Stufe kostet, was sie kostet, waere der Grundpreis am Ausbau-Knopf eine Falschauskunft:
+ * der Spieler laese 667 Material an einer Fabrik, die ihn 2161 kostet, und der Kern
+ * lehnte den Auftrag mit "es fehlen Rohstoffe" ab, den die Oberflaeche eben noch als
+ * bezahlbar angeboten hat.
+ */
 export function buildActions(ctx: ActionContext, provinceId: string): ActionSpec[] {
-  return Object.entries(ctx.rules.buildings).map(([key, rule]) => ({
-    ...checked(
-      ctx,
-      { type: 'BUILD', playerId: ctx.playerId, provinceId, building: key as never },
-      `build-${key}`,
-      t(`buildings.${key}`),
-      `${costHint(rule.cost, rule.buildTicks, ctx.ticksPerDay)}${availabilityHint(ctx, rule.availableFromDay)}`,
-      BUILDING_ICONS[key],
-      `explain.buildings.${key}`,
-    ),
-    // Sichtbar "Kaserne", hoerbar "Kaserne bauen" (T-M22-06, V2-13).
-    aria: t('actions.buildAria', { thing: t(`buildings.${key}`) }),
-  }))
+  const province = ctx.state.provinces[provinceId]
+
+  return Object.entries(ctx.rules.buildings).map(([key, rule]) => {
+    const level = province ? nextBuildLevel(province, key as never) : 1
+    const cost = buildingCostForLevel(rule, level, ctx.rules.constants)
+    const ticks = buildTicksForLevel(rule, level, ctx.rules.constants)
+    // Die Stufe steht nur dabei, wenn sie etwas aendert: "Stufe 1" an jedem freien
+    // Bauplatz waere Rauschen, "Stufe 3" am Ausbau-Knopf ist die halbe Auskunft.
+    const stufe = level > 1 ? `${t('actions.buildLevel', { level })} · ` : ''
+
+    return {
+      ...checked(
+        ctx,
+        { type: 'BUILD', playerId: ctx.playerId, provinceId, building: key as never },
+        `build-${key}`,
+        t(`buildings.${key}`),
+        `${stufe}${costHint(cost, ticks, ctx.ticksPerDay)}${availabilityHint(ctx, rule.availableFromDay)}`,
+        BUILDING_ICONS[key],
+        `explain.buildings.${key}`,
+      ),
+      // Sichtbar "Kaserne", hoerbar "Kaserne bauen" (T-M22-06, V2-13).
+      aria: t('actions.buildAria', { thing: t(`buildings.${key}`) }),
+    }
+  })
 }
 
 /**

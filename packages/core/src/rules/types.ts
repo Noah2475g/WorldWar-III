@@ -153,6 +153,16 @@ export interface RuleConstants {
   /** Distance from the capital is a penalty, not a bonus (belegt: up to -35). */
   capitalDistancePenalty: Fixed
   capitalDistanceRange: number
+  /**
+   * Der Aufschlag je Gebaeudestufe ueber der ersten, in Permille (T-M34-04, D34.3).
+   *
+   * 1800 heisst: Stufe n kostet 1,8^(n-1) der Grundkosten, Stufe 3 also das 3,24-fache.
+   * Ohne diese Zahl kostete Stufe 3 so viel wie Stufe 1 und die Gebaeudestufe war reine
+   * Buchfuehrung — die zweite Fortschrittsachse des Spiels gab es nur dem Namen nach.
+   */
+  buildLevelCostPermille: number
+  /** Dasselbe fuer die Bauzeit: 1500 heisst Stufe 3 dauert das 2,25-fache. */
+  buildLevelTimePermille: number
   /** Holding many provinces costs morale everywhere (belegt: up to -35). */
   expansionFreeProvinces: number
   expansionPenaltyPerProvince: Fixed

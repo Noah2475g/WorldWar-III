@@ -1,3 +1,4 @@
+import { buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ResourceKey } from '@worldwar/core'
 import type { AiContext, Explanation } from './types'
 
@@ -109,7 +110,12 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
     if (!building) continue
 
     const rule = context.rules.buildings[building]
-    if (!canAfford(context, rule.cost)) {
+    // Der Preis der Stufe, die sie bauen will (T-M34-04). Mit dem Grundpreis zu rechnen
+    // hiesse, jeden Ausbau zu befehlen und vom Kern mit INSUFFICIENT_RESOURCES abgelehnt
+    // zu bekommen — genau das Rauschen im Protokoll, das R-TECH-02/AK2 verbietet und das
+    // dieses Projekt mit 57 % abgelehnter Befehle schon einmal bezahlt hat (T-M14-11).
+    const kosten = buildingCostForLevel(rule, (province.buildings?.[building] ?? 0) + 1, context.rules.constants)
+    if (!canAfford(context, kosten)) {
       explanations.push({
         action: `Bau ${building} in ${province.id} aufgeschoben`,
         reason: 'Vorräte reichen nicht über die Rücklage hinaus',
@@ -318,7 +324,8 @@ function missingForNextBuilding(context: AiContext): ResourceKey | null {
     if (!building) continue
 
     const rule = context.rules.buildings[building]
-    for (const [key, amount] of Object.entries(rule.cost)) {
+    const kosten = buildingCostForLevel(rule, (province.buildings?.[building] ?? 0) + 1, context.rules.constants)
+    for (const [key, amount] of Object.entries(kosten)) {
       if (!amount) continue
       const resource = key as ResourceKey
       const stock = context.view.self.resources[resource]

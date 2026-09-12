@@ -2,7 +2,7 @@ import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Command } from '../commands/types'
 import { tickOfDay } from '../rules/availability'
-import { buildDuration, buildSpeedFactor } from '../rules/build'
+import { buildDuration, buildSpeedFactor, buildTicksForLevel, buildingCostForLevel } from '../rules/build'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { GameState } from '../state/types'
 import { step } from '../step'
@@ -136,6 +136,13 @@ describe('R-PROV-01 Voraussetzungen', () => {
     // Without a slot limit, parallel construction is capped only by resources —
     // and the promise "extra build slots are free here" would mean nothing (D6.9).
     const slots = TEST_RULES.constants.maxBuildSlotsCity
+    // Volle Kasse, damit **der Bauplatz** ablehnt und nicht das Geld. Seit T-M34-06 der
+    // Startvorrat auf zwei Drittel steht, reichte er fuer den zweiten Auftrag nicht mehr,
+    // und der Test meldete QUEUE_FULL, wo INSUFFICIENT_RESOURCES stand — er haette den
+    // Bauplatz-Deckel ab sofort gar nicht mehr geprueft.
+    for (const key of Object.keys(state.players['p1']!.resources)) {
+      state.players['p1']!.resources[key as 'wood'] = 99_000_000
+    }
     const orders = [build('n1', 'barracks'), build('n1', 'fortress'), build('n1', 'railway')]
     const result = step(state, orders, ctx)
 
@@ -201,5 +208,112 @@ describe('R-PROV-04 Moral beeinflusst die Bauzeit', () => {
 
   it('braucht immer mindestens eine Stunde', () => {
     expect(buildDuration(1, 100_000)).toBeGreaterThanOrEqual(1)
+  })
+})
+
+/**
+ * Die zweite Fortschrittsachse (T-M34-04, FORTSCHRITT.md D34.3).
+ *
+ * Der Befund: `build.ts` zog `rule.cost` unveraendert ab und setzte `completionTick` aus
+ * `rule.buildTicks` — **die Stufe war reine Buchfuehrung.** Eine Fabrik der dritten Stufe
+ * kostete so viel wie die erste und war genauso schnell fertig. Damit war die zweite
+ * Achse des Spiels so kurz wie die erste: wer die Fabrik einmal bezahlen kann, kann sie
+ * dreimal bezahlen.
+ *
+ * Zwei Konstanten, beide als Permille auf die Stufe ueber der ersten:
+ * `buildLevelCostPermille` (1800) und `buildLevelTimePermille` (1500). Stufe 3 kostet
+ * damit das 3,24-fache und dauert das 2,25-fache.
+ */
+describe('R-PROV-02 Gebaeudestufen kosten und dauern mehr', () => {
+  const factory = TEST_RULES.buildings.factory
+
+  it('laesst die erste Stufe unveraendert — die Streckung faengt bei der zweiten an', () => {
+    expect(buildingCostForLevel(factory, 1, TEST_RULES.constants)).toEqual(factory.cost)
+    expect(buildTicksForLevel(factory, 1, TEST_RULES.constants)).toBe(factory.buildTicks)
+  })
+
+  it('verlangt fuer die dritte Stufe das 3,24-fache und die 2,25-fache Zeit', () => {
+    const cost = buildingCostForLevel(factory, 3, TEST_RULES.constants)
+
+    // Alle drei Rohstoffe, nicht nur einer: ein Faktor, der auf Holz wirkt und auf Eisen
+    // nicht, waere ein halber Faktor und faellt in keinem Einzelwert auf.
+    for (const key of ['wood', 'iron', 'money'] as const) {
+      const base = factory.cost[key]!
+      expect(cost[key]! / base, `${key}`).toBeCloseTo(3.24, 3)
+    }
+    expect(buildTicksForLevel(factory, 3, TEST_RULES.constants) / factory.buildTicks).toBeCloseTo(2.25, 3)
+  })
+
+  it('lehnt eine dritte Stufe ab, die als erste bezahlbar gewesen waere', () => {
+    // Die eigentliche Zusicherung: nicht dass eine Zahl groesser ist, sondern dass der
+    // Kern danach handelt. Genau so viel Geld wie die erste Stufe kostet.
+    const province = state.provinces['n1']!
+    province.buildings.factory = 2
+    for (const key of Object.keys(factory.cost) as (keyof typeof factory.cost)[]) {
+      state.players['p1']!.resources[key as 'wood'] = factory.cost[key]!
+    }
+
+    const result = step(state, [build('n1', 'factory')], ctx)
+
+    expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toMatchObject({
+      code: 'INSUFFICIENT_RESOURCES',
+    })
+    expect(result.state.provinces['n1']!.buildQueue).toHaveLength(0)
+  })
+
+  it('zieht im laufenden Spiel den Preis der Stufe ab, die gebaut wird', () => {
+    const province = state.provinces['n1']!
+    province.buildings.factory = 2
+    for (const key of ['wood', 'iron', 'money'] as const) state.players['p1']!.resources[key] = 50_000_000
+
+    const idle = step(state, [], ctx).state.players['p1']!.resources.iron
+    const after = step(state, [build('n1', 'factory')], ctx)
+    const gezahlt = idle - after.state.players['p1']!.resources.iron
+
+    expect(after.state.provinces['n1']!.buildQueue).toHaveLength(1)
+    expect(after.state.provinces['n1']!.buildQueue[0]!.level).toBe(3)
+    expect(gezahlt).toBe(buildingCostForLevel(factory, 3, TEST_RULES.constants).iron)
+    expect(gezahlt).toBeGreaterThan(factory.cost.iron!)
+  })
+
+  it('laesst die dritte Stufe laenger dauern als die erste', () => {
+    for (const key of ['wood', 'iron', 'money'] as const) state.players['p1']!.resources[key] = 50_000_000
+
+    const ersteStufe = step(state, [build('n1', 'factory')], ctx).state.provinces['n1']!.buildQueue[0]!
+    const erste = ersteStufe.completesAtTick - ersteStufe.startedTick
+
+    const dritte = (() => {
+      state.provinces['n1']!.buildings.factory = 2
+      const order = step(state, [build('n1', 'factory')], ctx).state.provinces['n1']!.buildQueue[0]!
+      return order.completesAtTick - order.startedTick
+    })()
+
+    expect(dritte / erste).toBeCloseTo(2.25, 1)
+  })
+
+  it('erstattet beim Abbruch die Haelfte des tatsaechlich bezahlten Preises', () => {
+    // Sonst waere der Abbruch einer teuren Stufe ein Verlustgeschaeft mit Ansage: halb
+    // zurueck vom Preis der ERSTEN Stufe, waehrend die dritte bezahlt wurde.
+    const province = state.provinces['n1']!
+    province.buildings.factory = 2
+    for (const key of ['wood', 'iron', 'money'] as const) state.players['p1']!.resources[key] = 50_000_000
+
+    const started = step(state, [build('n1', 'factory')], ctx).state
+    const orderId = started.provinces['n1']!.buildQueue[0]!.id
+    const vorher = started.players['p1']!.resources.iron
+
+    const cancelled = step(
+      started,
+      [{ type: 'CANCEL_BUILD', playerId: 'p1', provinceId: 'n1', orderId } as Command],
+      ctx,
+    ).state
+
+    const idle = step(started, [], ctx).state.players['p1']!.resources.iron
+    const erstattet = cancelled.players['p1']!.resources.iron - idle
+    const dritteStufe = buildingCostForLevel(factory, 3, TEST_RULES.constants).iron!
+
+    expect(vorher).toBeGreaterThan(0)
+    expect(erstattet).toBe(Math.round(dritteStufe / 2))
+    expect(erstattet).toBeGreaterThan(Math.round(factory.cost.iron! / 2))
   })
 })

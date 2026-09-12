@@ -1,6 +1,6 @@
 import { emit } from '../events/emit'
 import { currentDay } from '../rules/availability'
-import { buildSlots, canAfford, completionTick, payCost, refundCost } from '../rules/build'
+import { buildSlots, buildTicksForLevel, buildingCostForLevel, canAfford, completionTick, nextBuildLevel, payCost, refundCost } from '../rules/build'
 import type { GameState } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type BuildCommand, type CancelBuildCommand } from './types'
@@ -45,8 +45,12 @@ registerCommand<BuildCommand>('BUILD', {
     }
 
     const player = state.players[command.playerId]!
-    if (!canAfford(player.resources, rule.cost)) {
-      return fail('INSUFFICIENT_RESOURCES', { building: command.building })
+    // Der Preis der Stufe, die dieser Auftrag baut — nicht der Grundpreis (T-M34-04).
+    // Geprueft wird mit derselben Zahl, die `apply` gleich abzieht; zwei Formeln fuer
+    // denselben Preis waeren die Bauart, an der dieses Projekt schon gescheitert ist.
+    const level = nextBuildLevel(province, command.building)
+    if (!canAfford(player.resources, buildingCostForLevel(rule, level, ctx.rules.constants))) {
+      return fail('INSUFFICIENT_RESOURCES', { building: command.building, level })
     }
     return ok
   },
@@ -56,11 +60,15 @@ registerCommand<BuildCommand>('BUILD', {
     const player = draft.players[command.playerId]!
     const rule = ctx.rules.buildings[command.building]!
 
-    payCost(player.resources, rule.cost)
+    const level = nextBuildLevel(province, command.building)
+    payCost(player.resources, buildingCostForLevel(rule, level, ctx.rules.constants))
 
-    const level = (province.buildings[command.building] ?? 0) + province.buildQueue.filter((o) => o.building === command.building).length + 1
     const orderId = `o${draft.nextIds.order++}`
-    const completesAtTick = completionTick(draft.tick, rule.buildTicks, province.morale)
+    const completesAtTick = completionTick(
+      draft.tick,
+      buildTicksForLevel(rule, level, ctx.rules.constants),
+      province.morale,
+    )
 
     province.buildQueue.push({
       id: orderId,
@@ -101,7 +109,13 @@ registerCommand<CancelBuildCommand>('CANCEL_BUILD', {
     if (!order) return
 
     // Half the outlay comes back — cancelling costs something, but not everything.
-    refundCost(player.resources, ctx.rules.buildings[order.building]!.cost)
+    // Die Haelfte des TATSAECHLICH bezahlten Preises (T-M34-04): der Auftrag traegt seine
+    // Stufe, und ohne sie waere der Abbruch einer dritten Stufe ein Verlustgeschaeft mit
+    // Ansage — halb zurueck vom Preis der ersten.
+    refundCost(
+      player.resources,
+      buildingCostForLevel(ctx.rules.buildings[order.building]!, order.level, ctx.rules.constants),
+    )
 
     emit(ctx.events, draft.tick, 'BUILD_CANCELLED', {
       playerId: command.playerId,

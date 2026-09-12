@@ -73,6 +73,8 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'disembarkTicks',
   'maxBuildSlotsCity',
   'maxBuildSlotsRural',
+  'buildLevelCostPermille',
+  'buildLevelTimePermille',
   'capitalMoveCooldownDays',
   'warDeclarationDelayTicks',
   'marketElasticity',
