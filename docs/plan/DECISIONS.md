@@ -1652,3 +1652,46 @@ Nadelbaum mehr**; der Wald im Geländesatz behält seine Bäume, und genau desha
 der Rohstoff keine mehr haben.
 
 ---
+
+## 2026-09-12 · M34 · Der Meilenstein wartet auf eine freie Maschine, und zwar ganz
+
+**Entscheidung:** M34 wird **nicht angefangen**, solange auf dem Rechner etwas anderes
+läuft. Nicht teilweise, nicht vorbereitend, nicht „die Doku schon mal". Der Meilenstein
+beginnt mit T-M34-01 auf einer gemessen freien Maschine oder gar nicht.
+
+**Begründung, in drei Schritten:**
+
+1. **Die Maschine war nicht frei.** Gemessen am 2026-09-12: Gesamtlast **26 %** bei zwölf
+   Kernen, die größten Verbraucher ein Editor, ein Chatprogramm und ein Browser. Das ist
+   keine Randbedingung, sondern der Kern der Sache: T-M34-01 misst den **Ausgangswert**,
+   an dem jede spätere Aussage „es ist besser geworden" hängt. Ein Ausgangswert unter
+   Fremdlast ist nicht bloß ungenau — er ist der Maßstab, und er ist falsch, ohne dass
+   man es ihm ansieht. Dieses Projekt hat den Fehler zweimal gemacht und beide Male
+   teuer bezahlt (Lessons Log, 2026-09-06 und 2026-09-07: ein Abnahmelauf überschrieb
+   Messdateien mit Werten, die unter seiner eigenen Last entstanden).
+
+2. **M34 lässt sich nicht in einen sicheren und einen unsicheren Teil schneiden.** Von
+   acht Aufgaben hängen sieben entweder am Ausgangswert (T-M34-01) oder an einer
+   Regeländerung. Vier ändern `data/rules` oder den Kern und machen die Abnahme rot, bis
+   Parameterlauf **und** Turnier neu gelaufen und ihre Berichte **eingecheckt** sind —
+   der Frische-Wächter in `scripts/acceptance.mjs` vergleicht Commit-Zeiten, nicht
+   Inhalte. T-M34-04 verschiebt zusätzlich den Golden-Master.
+
+3. **Die einzige isoliert baubare Aufgabe wäre die schlechteste Wahl.** T-M34-02 ändert
+   `R-TECH-01` begründet ab, also die Anforderung selbst. Sie ohne die Umsetzung zu
+   bauen hieße, eine Zusage in die Doku zu schreiben, die der Code nicht einlöst. Genau
+   diese Sorte Falschaussage ist am 2026-09-11 aus der Einstiegsdoku entfernt worden;
+   sie dort wieder einzuführen wäre ein Rückschritt.
+
+**Die Abwägung, die dagegen sprach:** M34 jetzt zu bauen und die Messläufe später
+nachzuholen. Verworfen — das Projekt stünde bis dahin mit **roter Abnahme** da, und der
+nächste Agent fände einen roten Zustand ohne sichtbaren Grund vor. Ein sauberer
+ungebauter Zustand ist besser als ein gebauter, dessen Belege fehlen.
+
+**Auswirkung:** M34 und M35 bleiben vollständig auf `todo`. Der Weg, wenn die Maschine
+frei ist, steht in `WORKFLOW.md` §2 als nummerierte Folge — er beginnt **nicht** mit
+T-M34-01, sondern mit einem frischen `pnpm acceptance`, weil der letzte Abnahmelauf
+(11/11 am 2026-09-11) gegen den Stand **vor** M33 und M36 lief und als Ausgangswert
+deshalb nicht mehr gilt.
+
+---

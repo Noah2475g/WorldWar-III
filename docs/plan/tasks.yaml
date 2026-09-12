@@ -1,10 +1,10 @@
 # WorldWar — maschinenlesbarer Aufgabenplan (Fassung 2, nach Architektur- und Plan-Review)
-# Zwilling zu 03-TASKS.md (gleiche IDs). Ausführungsregeln: AGENT-EXECUTION.md
-# Die Konsistenz beider Dateien prüft T-M0-05 automatisch.
+# Zwilling zu 03-TASKS.md (gleiche IDs). Ausfuehrungsregeln: AGENT-EXECUTION.md
+# Die Konsistenz beider Dateien prueft T-M0-05 automatisch.
 #
 # status:       todo | in_progress | done | blocked
-# gate: true => Haltepunkt, benötigt Freigabe durch Noah
-# reopened:     Begründung, warum eine bereits erledigte Aufgabe wieder auf todo steht (T-M14-02)
+# gate: true => Haltepunkt, benoetigt Freigabe durch Noah
+# reopened:     Begruendung, warum eine bereits erledigte Aufgabe wieder auf todo steht (T-M14-02)
 # requirements: nur R-IDs | constraints: nur C-IDs | design: nur D-IDs | acceptance: Abnahmekriterien
 
 meta:

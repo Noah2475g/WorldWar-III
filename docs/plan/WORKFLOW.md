@@ -85,11 +85,41 @@ gebaut** — neun Aufgaben in zwei Meilensteinen.
    echte Pfadabfahrt in `test/path-bounds.ts` — sie fand sofort einen Zeichenfehler im
    Entwurfsblatt. Wer neue Pfade einbaut, benutzt sie. Der Rest steht in `PROGRESS.md`.
 1. **Der Fortschritt bekommt eine Strecke (M34)** — freigegeben am 2026-09-11, acht
-   Aufgaben. `docs/plan/FORTSCHRITT.md` §0 lesen. **Das ist der teuerste Meilenstein des
-   Plans**, nicht wegen des Codes, sondern wegen der Messungen: vier Änderungen an
-   `data/rules`, und jede macht die Abnahme rot, bis Parameterlauf und Turnier neu
-   gelaufen **und eingecheckt** sind. T-M34-01 misst zuerst den Ausgangswert; T-M34-04 ist
-   die einzige Kernänderung und verschiebt den Golden-Master.
+   Aufgaben, **und am 2026-09-12 bewusst nicht angefangen.** Der Entscheid steht in
+   `DECISIONS.md`; hier das Nötige.
+
+   **Fang nicht an, bevor die Maschine frei ist.** Nicht teilweise, nicht „die Doku
+   schon mal". Gemessen am 2026-09-12 lagen 26 % Grundlast auf zwölf Kernen (Editor,
+   Chatprogramm, Browser). T-M34-01 misst den **Ausgangswert**, an dem jedes spätere
+   „es ist besser geworden" hängt — unter Fremdlast ist er falsch, ohne dass man es ihm
+   ansieht. Prüfe zuerst, und zwar die **Gesamtlast**, nicht nur die eigenen Prozesse:
+
+   ```bash
+   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
+   ```
+
+   **Dann in dieser Reihenfolge:**
+
+   1. `pnpm acceptance` als **frischer Ausgangswert**. Der 11/11-Lauf vom 2026-09-11 gilt
+      gegen den Stand *vor* M33 und M36 und taugt nicht mehr als Vergleich.
+   2. `docs/plan/FORTSCHRITT.md` §0 lesen, dann T-M34-01 bis T-M34-08 in Baureihenfolge.
+   3. Parameterlauf und Turnier neu, **und ihre Berichte einchecken** — der
+      Frische-Wächter in `scripts/acceptance.mjs` vergleicht Commit-Zeiten, nicht
+      Inhalte. Ein Lauf ohne Commit hilft nicht. Das ist der Nachtlauf, nicht die sechs
+      Minuten.
+   4. Der Golden-Master verschiebt sich bei T-M34-04, und das ist richtig. Neu erzeugen
+      mit `UPDATE_GOLDEN=1` und **im Commit sagen, warum**.
+
+   **Warum es nicht zu teilen ist:** von acht Aufgaben hängen sieben am Ausgangswert oder
+   an einer Regeländerung. Die einzige isoliert baubare, T-M34-02, ändert `R-TECH-01` —
+   also die Anforderung selbst. Sie ohne die Umsetzung zu bauen hieße, eine Zusage in die
+   Doku zu schreiben, die der Code nicht einlöst. Genau das ist am 2026-09-11 aus dieser
+   Datei entfernt worden.
+
+   **Der Befund, der die Arbeit lohnt:** die Uhr läuft mit einem Tick je Sekunde, ein
+   Spieltag hat 24 Ticks, die letzte Freischaltung liegt auf Spieltag 16 — **die ganze
+   Fortschrittsachse ist nach 6,4 Minuten Echtzeit vorbei**, während die Partie bis
+   Spieltag 798 läuft. Zwei Prozent der Partie.
 2. **M36 ist fertig** (2026-09-11, sechs Aufgaben, kernfrei). Die Rohstoffleiste zeigt
    Bestand, Pfeil und — nur wo es drängt — die Reichweite in Tagen; die Bilanzzahl steht
    im Tooltip. Sieben neu gezeichnete Zeichen, vier Gruppen, zwei Töne. Was daraus für

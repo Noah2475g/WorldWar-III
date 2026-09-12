@@ -1885,3 +1885,45 @@ belegt ist, dass sie rot werden kann.
 **Die Regel daraus, wieder einmal:** eine Zusicherung über einer leeren Menge ist immer
 grün. Jeder Wächter, der über eine Menge läuft, muss einmal gegen die leere Menge geprüft
 werden — so wie es `no-foreign-assets.test.ts` und `ui-reachability` schon tun.
+
+---
+
+## 2026-09-12 · Der Plan-Wächter prüft die Maschinenfassung, nicht die, die ein Mensch liest
+
+**Befund:** `03-TASKS.md` nennt **57 Dateien, die es nicht gibt** — in `- **Dateien:**`-Zeilen
+von Aufgaben, die als `done` gelten. Vier davon sind Umzüge (`MapCanvas.tsx` liegt heute
+unter `src/map/`, `constants.json` unter `data/rules/default/`, `registry.ts` unter
+`commands/`, `save-v1.json` unter `test/golden/`); der Rest wurde nie gebaut oder anders
+umgesetzt, darunter ein ganzer Worker-Strang (`sim/SimHost.ts`, `worker.ts`, `protocol.ts`),
+eine Zeile UI-Dateien, die am Ende anders geschnitten wurden, und drei Berichte
+(`ai-parity.md`, `ak1-full-game.md`, `progress-baseline.md`).
+
+**Warum es niemand sah:** `test/plan-consistency.test.ts` prüft `files:` und `tests:` in
+**`tasks.yaml`** — dort sind 0 von 336 Pfaden tot, sauber. Die Prosafassung daneben, die der
+Dateikopf ausdrücklich als „what a human reads" bezeichnet, ist **nie geprüft worden**. Die
+beiden Zwillinge sind an genau der Stelle auseinandergelaufen, an der kein Wächter steht.
+
+**Das ist dieselbe Fehlerklasse wie am 2026-09-05** („der Plan-Wächter liest die Dateilisten
+nicht — 79 von 289 Pfaden tot, alle bei `status: done"`). Die Reparatur von damals hat den
+Wächter auf `tasks.yaml` scharf gemacht und ist dort geblieben. Eine Reparatur, die auf
+**einen** Fundort angewandt wird statt auf die Fehlerklasse — auch das steht schon im
+Lessons Log.
+
+**Status: offen, kein Produktfehler.** Nichts davon beeinflusst das Spiel; die Wirkung
+trifft den, der im Plan nachschlägt, wo etwas steht, und an einen Pfad gerät, den es nicht
+gibt. **Die Reparatur ist zweiteilig:** den Wächter auf die `- **Dateien:**`- und
+`- **Tests:**`-Zeilen von `03-TASKS.md` ausdehnen (er fällt dann sofort mit 57 Fundstellen),
+und die Fundstellen abarbeiten — Umzüge korrigieren, nie Gebautes als solches kennzeichnen.
+Vorher **am eigenen Maßstab vorführen, dass der erweiterte Wächter rot werden kann.**
+
+**Gemessen mit:** einem Abgleich aller Backtick-Pfade in `docs/**/*.md` gegen das
+Dateisystem, Umzüge über den Basisnamen erkannt.
+
+**Eine Warnung zur Messung selbst:** Bei derselben Prüfung hat ein `grep -cU $''` in Git
+Bash behauptet, über vierhundert Dateien trügen CRLF — auch `.gitattributes` und
+Binärdateien. Das war **falsch**; das Muster traf nicht, was es sollte. Nachgemessen in
+Python (`s.count('
+')`) und am rohen Blob (`git cat-file`): **null**, im Arbeitsbaum wie
+im Repository, und `git add --renormalize .` ändert nichts. Die Regel „Dateien im
+Arbeitsbaum bleiben LF" ist eingehalten. Wer eine überraschende Messung bekommt, misst sie
+mit einem zweiten Werkzeug nach, bevor er sie meldet.
