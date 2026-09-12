@@ -1,0 +1,58 @@
+{
+  "gemessenAm": "2026-09-12",
+  "leiter": {
+    "letzteFreischaltungTag": 80,
+    "echtzeitMinutenTempo1": 32,
+    "echtzeitMinutenTempo10": 3.2,
+    "anteilDerPartieProzent": 10,
+    "partieTageAusAbnahmelauf": 798,
+    "tage": {
+      "barracks": 1,
+      "fortress": 12,
+      "factory": 28,
+      "shipyard": 36,
+      "airfield": 40,
+      "railway": 20,
+      "harbour": 6,
+      "infantry": 1,
+      "motorized": 16,
+      "tank": 30,
+      "heavy_tank": 70,
+      "artillery": 34,
+      "rocket_artillery": 80,
+      "fighter": 44,
+      "bomber": 62,
+      "destroyer": 48,
+      "transport": 10
+    }
+  },
+  "grundlauf": {
+    "maechte": 6,
+    "tage": 120,
+    "startzahlen": 12,
+    "anteilDesStaerksten": 0.4442,
+    "eroberungen": 302.3,
+    "ueberlebende": 5.17,
+    "endbestaende": 50613
+  },
+  "risiko5": {
+    "tage": 200,
+    "stufe": 3,
+    "hoechsteStufeJeMacht": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "erreichtAmTagJeMacht": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  }
+}
