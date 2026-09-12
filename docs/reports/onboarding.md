@@ -1,6 +1,6 @@
 # Der Durchgang durch die ersten Spieltage
 
-Gemessen am **2026-09-07** von `apps/desktop/src/game/onboarding.slow.test.ts`, über
+Gemessen am **2026-09-12** von `apps/desktop/src/game/onboarding.slow.test.ts`, über
 **16 Spieltage** (384 Ticks) auf der kleinen Karte, Startzahl 1914.
 
 > Dieser Bericht gilt für genau diesen Stand. Zeigt `git log --oneline -1` etwas anderes,
@@ -8,10 +8,10 @@ Gemessen am **2026-09-07** von `apps/desktop/src/game/onboarding.slow.test.ts`, 
 
 ## Die Zahl, die zählt
 
-| **Längste Pause ohne Anlass** | **72 Ticks** (Tag 5, 00:00 → Tag 8, 00:00) |
+| **Längste Pause ohne Anlass** | **96 Ticks** (Tag 6, 00:00 → Tag 10, 00:00) |
 |---|---|
 | Führungsschritte im Lauf | 4 |
-| Freischaltungsmeldungen | 17 |
+| Freischaltungsmeldungen | 6 |
 | Erste Einheit möglich ab | Tick 43 (Tag 2, 19:00) |
 | Führung am Ende | fastForward |
 
@@ -25,26 +25,15 @@ erklärt nur, warum sie so lang ist.
 | Tag 1, 00:00 | Schritt | select, build, speed, score (vier Klicks) |
 | Tag 1, 01:00 | Meldung | Neu ab heute: Kaserne. Sie können sie jetzt bauen. |
 | Tag 1, 01:00 | Meldung | Neu ab heute: Infanterie. Sie können sie jetzt ausheben. |
-| Tag 2, 00:00 | Meldung | Neu ab heute: Hafen. Sie können ihn jetzt bauen. |
 | Tag 2, 00:00 | Schritt | dayPassed beendet |
 | Tag 2, 03:00 | Fertig | BUILD_COMPLETED |
 | Tag 2, 03:00 | Schritt | buildCompleted beendet |
 | Tag 2, 19:00 | Fertig | UNIT_RECRUITED |
 | Tag 2, 19:00 | Schritt | unitRecruited beendet |
-| Tag 3, 00:00 | Meldung | Neu ab heute: Festung. Sie können sie jetzt bauen. |
-| Tag 3, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können es jetzt ausheben. |
-| Tag 4, 00:00 | Meldung | Neu ab heute: Motorisierte Infanterie. Sie können sie jetzt ausheben. |
-| Tag 5, 00:00 | Meldung | Neu ab heute: Eisenbahn. Sie können sie jetzt bauen. |
-| Tag 8, 00:00 | Meldung | Neu ab heute: Fabrik. Sie können sie jetzt bauen. |
-| Tag 8, 00:00 | Meldung | Neu ab heute: Kampfpanzer. Sie können ihn jetzt ausheben. |
-| Tag 9, 00:00 | Meldung | Neu ab heute: Werft. Sie können sie jetzt bauen. |
-| Tag 9, 00:00 | Meldung | Neu ab heute: Artillerie. Sie können sie jetzt ausheben. |
-| Tag 10, 00:00 | Meldung | Neu ab heute: Flugplatz. Sie können ihn jetzt bauen. |
-| Tag 10, 00:00 | Meldung | Neu ab heute: Jagdflugzeug. Sie können es jetzt ausheben. |
-| Tag 11, 00:00 | Meldung | Neu ab heute: Zerstörer. Sie können ihn jetzt ausheben. |
-| Tag 13, 00:00 | Meldung | Neu ab heute: Bomber. Sie können ihn jetzt ausheben. |
-| Tag 14, 00:00 | Meldung | Neu ab heute: Schwerer Kampfpanzer. Sie können ihn jetzt ausheben. |
-| Tag 16, 00:00 | Meldung | Neu ab heute: Raketenartillerie. Sie können sie jetzt ausheben. |
+| Tag 6, 00:00 | Meldung | Neu ab heute: Hafen. Sie können ihn jetzt bauen. |
+| Tag 10, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können es jetzt ausheben. |
+| Tag 12, 00:00 | Meldung | Neu ab heute: Festung. Sie können sie jetzt bauen. |
+| Tag 16, 00:00 | Meldung | Neu ab heute: Motorisierte Infanterie. Sie können sie jetzt ausheben. |
 
 ## Wie der Lauf gedacht ist
 

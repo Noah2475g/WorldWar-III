@@ -2376,80 +2376,80 @@ tasks:
   - id: T-M34-01
     milestone: M34
     title: Der Ausgangswert wird gemessen
-    status: todo
+    status: done
     deps: []
     requirements: []
-    files: [docs/reports/progress-baseline.md]
-    tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    files: [docs/reports/progress-baseline.md, docs/reports/progress-measured.json]
+    tests: [apps/headless/test/progress.slow.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
     dod: "FORTSCHRITT.md Abschnitt 0, Punkt 1: erst messen, dann strecken. Parameterlauf und Turnier auf dem HEUTIGEN Regelstand, Maschine allein (WORKFLOW Falle 3), dazu die vier Kennzahlen der Analyse in einem Bericht: letzte Freischaltung Spieltag 16, 6,4 Minuten Echtzeit bei Tempo 1, Siegtag 798 im Abnahmelauf, 2 Prozent der Partie mit Freischaltungen. Ausserdem der Ist-Stand der Wirtschaft aus economy-scale: wann erreicht eine mittlere Macht Fabrik Stufe 3. Ohne diesen Bericht ist jede spaetere Aussage es sei besser geworden unbelegt."
   - id: T-M34-02
     milestone: M34
     title: R-TECH-01 wird begruendet geaendert
-    status: todo
+    status: done
     deps: [T-M34-01]
     requirements: [R-TECH-01]
     files: [docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/BALANCING.md]
-    tests: []
+    tests: [test/balancing.test.ts]
     dod: "Kein Bau. R-TECH-01 nennt heute die Tage des Vorbilds als belegt (Kaserne 1, Hafen 2, Eisenbahn 5, Fabrik 8, Flugplatz 10). Sie bleiben genannt, bekommen aber die Gegenrede: im Vorbild ist ein Spieltag ein echter Tag, hier sind es 24 Sekunden bei Tempo 1 - dieselbe Leiter dauert dort 16 Tage und hier 6,4 Minuten. Fertig, wenn die Anforderung die neue Zeitrechnung traegt, DECISIONS.md den Entscheid mit dieser Begruendung fuehrt und BALANCING.md die Tage von belegt auf abgeleitet umstuft. coverage:requirements muss weiter V1 offen: 0 melden."
   - id: T-M34-03
     milestone: M34
     title: Die Freischaltungsleiter wird gestreckt
-    status: todo
+    status: done
     deps: [T-M34-02]
     requirements: [R-TECH-01]
-    files: [data/rules/default/units.json, data/rules/default/buildings.json, docs/plan/BALANCING.md]
-    tests: [apps/headless/test/availability.test.ts, packages/core/src/rules/availability.test.ts, packages/core/test/determinism.test.ts]
+    files: [data/rules/default/units.json, data/rules/default/buildings.json, docs/plan/BALANCING.md, docs/plan/FORTSCHRITT.md]
+    tests: [apps/headless/test/availability.test.ts, packages/core/src/rules/availability.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts, test/guards/unlocks-explained.test.ts]
     dod: "FORTSCHRITT.md D34.1: availableFromDay so gesetzt, dass die letzte Freischaltung (Raketenartillerie) bei etwa Spieltag 80 statt 16 liegt; Reihenfolge bleibt, Abstaende wachsen. Rekrutierungsbuero und Infanterie bleiben auf Tag 1 - ohne sie steht der Spieler am ersten Tag ohne Handlung da. Test zuerst: die Leiter ist je Klasse monoton, und kein Gebaeude wird spaeter frei als die Einheit, die es verlangt. Golden-Master neu erzeugen (UPDATE_GOLDEN=1) und im Commit sagen warum."
   - id: T-M34-04
     milestone: M34
     title: Gebaeudestufen kosten und dauern mehr
-    status: todo
+    status: done
     deps: [T-M34-01]
     requirements: [R-PROV-01, R-PROV-02]
-    files: [packages/core/src/commands/build.ts, packages/core/src/phases/construction.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/constants.json, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [packages/core/src/phases/construction.test.ts, packages/core/test/determinism.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    files: [packages/core/src/commands/build.ts, packages/core/src/rules/build.ts, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, data/rules/default/constants.json, packages/ai/src/economy.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, docs/plan/BALANCING.md]
+    tests: [packages/core/src/phases/construction.test.ts, packages/core/test/determinism.test.ts, apps/desktop/src/game/actions.test.ts, apps/headless/test/economy-scale.test.ts]
     dod: "FORTSCHRITT.md D34.3 - die EINZIGE Kernaenderung dieses Meilensteins. Befund: build.ts zieht rule.cost unveraendert ab und setzt completionTick aus rule.buildTicks, die Stufe ist reine Buchfuehrung; Fabrik Stufe 3 kostet so viel wie Stufe 1. Zwei neue Konstanten buildLevelCostPermille (1800) und buildLevelTimePermille (1500), angewandt als Faktor hoch Stufe minus eins. Das Bauplatz-Raster und der Ausbau-Knopf zeigen den Preis der NAECHSTEN Stufe, nicht den der ersten. Test zuerst: Stufe 1 kostet unveraendert, Stufe 3 kostet das 3,24-fache und dauert das 2,25-fache; ein Auftrag, der fuer Stufe 1 reicht, wird fuer Stufe 3 mit INSUFFICIENT_RESOURCES abgelehnt. Golden-Master neu erzeugen und begruenden."
   - id: T-M34-05
     milestone: M34
     title: Starke Einheiten verlangen hoehere Gebaeudestufen
-    status: todo
+    status: done
     deps: [T-M34-03, T-M34-04]
     requirements: [R-UNIT-02, R-TECH-01]
-    files: [data/rules/default/units.json, docs/plan/BALANCING.md]
-    tests: [packages/core/src/commands/validate.test.ts, apps/headless/test/availability.test.ts]
+    files: [data/rules/default/units.json, docs/plan/BALANCING.md, apps/desktop/src/game/rejections.ts, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/commands/validate.test.ts, apps/headless/test/availability.test.ts, apps/desktop/src/game/actions.test.ts]
     dod: "FORTSCHRITT.md D34.2. Das Feld requiresBuildingLevel gibt es, recruit.ts wertet es aus - es wird nur benutzt: Raketenartillerie Fabrik 3 statt 2, Zerstoerer Werft 2 statt 1, Bomber bleibt Flugplatz 2. Mehr nicht: eine Bedingung, die niemand erfuellen kann, ist keine Fortschrittsachse, sondern eine Sperre. Test zuerst: die Ablehnung nennt Gebaeude UND Stufe (MISSING_BUILDING), und mit der Stufe darunter wird derselbe Auftrag abgelehnt."
   - id: T-M34-06
     milestone: M34
     title: Der Startvorrat schrumpft
-    status: todo
+    status: done
     deps: [T-M34-01]
     requirements: [R-ECON-01]
     files: [data/rules/default/resources.json, docs/plan/BALANCING.md]
-    tests: [packages/core/src/state/create.test.ts, apps/headless/test/economy-scale.test.ts]
+    tests: [packages/core/src/state/create.test.ts, apps/headless/test/economy-scale.test.ts, packages/core/src/phases/recruitment.test.ts, packages/core/src/phases/construction.test.ts, apps/headless/test/walkthrough.test.ts]
     dod: "FORTSCHRITT.md D34.4: startAmount je Rohstoff auf zwei Drittel. Begruendung: der heutige Vorrat traegt rund 13 Infanterie aus der Nahrung und 37 aus dem Geld, waehrend eine durchschnittliche Provinz am Tag etwa eine dreiviertel Infanterie an Nahrung erwirtschaftet - die ersten Tage sind ein Lagerabbau, keine Knappheit. Nicht weiter kuerzen: die Eroeffnung soll knapp werden, nicht handlungsunfaehig, und die Kuerzung trifft die KI genauso. Test zuerst: eine frische Partie hat die neuen Werte und bleibt in den ersten zehn Tagen handlungsfaehig (mindestens ein Gebaeude und eine Aushebung bezahlbar)."
   - id: T-M34-07
     milestone: M34
     title: Nachmessen und nachjustieren
-    status: todo
+    status: done
     deps: [T-M34-03, T-M34-04, T-M34-05, T-M34-06]
     requirements: []
-    files: [docs/reports/progress-baseline.md, docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md]
-    tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/economy-scale.test.ts]
+    files: [docs/reports/progress-baseline.md, docs/reports/progress-measured.json, docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md, docs/reports/onboarding.md, data/rules/default/ai.json, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/PLAYTEST.md]
+    tests: [apps/headless/test/progress.slow.test.ts, apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/economy-scale.test.ts, apps/desktop/src/game/onboarding.slow.test.ts, test/balancing.test.ts]
     dod: "FORTSCHRITT.md Risiken 1 bis 3 und 5. Parameterlauf und Turnier NACH JEDER der vier Zahlenaufgaben, nicht nur am Ende - vier Nachtlaeufe statt einem, weil sich sonst nicht sagen laesst, welche der vier eine Verschlechterung verursacht hat. Verglichen wird gegen den Ausgangswert aus T-M34-01: Siegtag, Zahl der Eroberungen, Anteil des Staerksten, Siegverteilung ueber die drei Schwierigkeitsstufen, und der Pruefstein aus Risiko 5 (erreicht eine mittlere Macht Fabrik Stufe 3 bis Spieltag 200). Faellt der Siegtag unter 300 oder ueber 1500, wird nachjustiert und erneut gemessen, nicht behauptet. Berichte eingecheckt, sonst bleibt der Frische-Waechter rot."
   - id: T-M34-08
     milestone: M34
     title: Die naechste Freischaltung wird sichtbar
-    status: todo
+    status: done
     deps: [T-M33-02, T-M34-03]
     requirements: [R-TECH-02, R-UI-13]
     design: [D-27]
-    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/i18n/de.ts]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/art.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/game/actions.test.ts]
     dod: "FORTSCHRITT.md D34.5. Heute steht an einem gesperrten Eintrag nur ab Tag 34; was fehlt, ist der Blick nach vorn. Eine Zeile am Kopf der Rekrutierungsliste nennt die naechste Freischaltung mit Bild (aus T-M33-02), Namen und Tagen bis dahin. Ist alles frei, verschwindet die Zeile, statt leer dazustehen. Test zuerst: an Tag 20 nennt die Zeile die naechste Sache und die richtige Zahl von Tagen; am Tag der Freischaltung wechselt sie auf die uebernaechste; nach der letzten ist sie weg."
   - id: T-M35-01
     milestone: M35
     title: Entwurf der Zwischenziele zum Sieg
-    status: todo
+    status: done
     deps: [T-M34-07]
     requirements: []
     files: [docs/plan/FORTSCHRITT.md, docs/plan/DECISIONS.md]

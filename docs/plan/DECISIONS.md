@@ -1695,3 +1695,143 @@ T-M34-01, sondern mit einem frischen `pnpm acceptance`, weil der letzte Abnahmel
 deshalb nicht mehr gilt.
 
 ---
+
+## 2026-09-12 · T-M34-02 · Die fünf belegten Freischaltungstage gelten hier nicht mehr als belegt
+
+**Entscheidung:** R-TECH-01 nennt weiterhin die Tage des Originals (Kaserne 1, Hafen 2,
+Eisenbahn 5, Fabrik 8, Flugplatz 10, Referenz 1.4), übernimmt sie aber nicht mehr als
+Abstände. In `BALANCING.md` steht bei allen siebzehn Sachen **abgeleitet**; vorher war
+fünfmal **belegt** eingetragen. Die Reihenfolge des Originals bleibt bindend, die
+Abstände setzt T-M34-03 neu.
+
+**Begründung:** Eine belegte Zahl ist nur in ihrer eigenen Zeitrechnung belegt. Im
+Original ist ein Spieltag ein echter Tag — sechzehn Tage sind sechzehn Tage Spielen.
+Hier hat ein Spieltag 24 Ticks und ein Tick eine Sekunde bei Tempo 1: **dieselbe Leiter
+ist nach 6,4 Minuten Echtzeit durchlaufen**, während die Partie des Abnahmelaufs bis
+Spieltag 798 läuft. Zwei Prozent der Partie trügen die ganze Fortschrittsachse. Die
+Zahlen aus der Referenz abzuschreiben und „belegt" darüberzuschreiben, hat aus einer
+richtigen Quelle eine falsche Aussage gemacht — nicht weil jemand falsch gelesen hätte,
+sondern weil zwei Größen denselben Namen tragen.
+
+**Die Gegenrede steht im Dokument, nicht nur im Entscheid.** Wer die alten Zahlen später
+wieder für belegt hält, findet sie in R-TECH-01 selbst. Eine Zahl aus der Tabelle zu
+löschen, wäre der billigere Weg gewesen und der schlechtere: dann sähe es aus, als hätte
+die Frage nie jemand gestellt.
+
+**Auswirkung:** Kein Code. `test/balancing.test.ts` prüft weiterhin, dass Tabelle und
+Regelwerk dieselben Tage nennen — die Status-Spalte prüft es nicht, und deshalb ist sie
+eine Aussage von Menschen für Menschen und muss stimmen. `pnpm coverage:requirements`
+meldet unverändert „V1 offen: 0".
+
+---
+
+## 2026-09-12 · T-M34-08 · Die Zeile über der Aushebeliste nennt auch Gebäude
+
+**Entscheidung:** „Als Nächstes: Fabrik — in 8 Tagen" steht am Kopf der **Aushebe**liste,
+nennt aber die nächste Freischaltung der **ganzen** Leiter — Gebäude wie Einheiten. Bei
+Gleichstand gewinnt das Gebäude.
+
+**Begründung:** Es ist eine Achse. Nach der Streckung (T-M34-03) liegen Gebäude und
+Einheiten ineinander verschränkt: Hafen 6, Transportschiff 10, Festung 12, Motorisierte
+16, Eisenbahn 20. Eine Zeile, die nur Einheiten nennt, ließe den Spieler an Spieltag 4
+auf Tag 16 warten, während in Wahrheit an Tag 6 der Hafen kommt — sie wäre nicht kürzer,
+sondern falsch. Der Ort bleibt trotzdem die Aushebeliste, weil D34.5 ihn nennt und weil
+das Bauplatz-Raster darüber jedes gesperrte Gebäude ohnehin mit seinem Tag zeigt.
+
+**Der Gleichstand fällt zum Gebäude**, weil `Array.prototype.sort` stabil ist und die
+Gebäude zuerst in der Liste stehen: die Fabrik vor dem Panzer, den sie erst möglich
+macht. Eine Zeile, die den Panzer nennt und die Fabrik verschweigt, nennt die Wirkung und
+verschweigt die Ursache.
+
+**Auswirkung:** `nextUnlock` in `actions.ts`, eine Zeile in `ActionGroup`, ein Ton
+`muted` im Bildsatz. Ist alles frei, kommt `null` und die Zeile verschwindet — ab
+Spieltag 80 stünde dort sonst dauerhaft ein leerer Kasten.
+
+---
+
+## 2026-09-12 · T-M35-01 · Zwischenziele sind Rückmeldung, keine Siegbedingung
+
+**Entscheidung:** Der Entwurf in `FORTSCHRITT.md` §3 lässt `checkVictory` und die
+Siegschwelle von 700 ‰ unangetastet. Zwischenziele gewinnen keine Partie; sie sagen dem
+Spieler, ob er vorankommt. Von den fünf Kandidaten fällt **„stärkste Macht eines
+Kontinents" heraus** — die Karte kennt keinen Kontinent, das Ziel kostet ein Feld in
+`MapProvince`, einen neuen Kartenlauf und eine Wanderung durch `validateMap`.
+
+**Begründung:** R-GAME-02 ist eine V1-Zusage. Eine neue Siegbedingung wäre eine Änderung
+an einer abgenommenen Anforderung und bräuchte denselben Aufwand wie T-M34-02 bei
+R-TECH-01 — für einen Ertrag, den die Rückmeldung allein schon bringt. Und die vier
+übrigen Ziele brauchen **kein einziges neues Zustandsfeld**: Punktanteil, Provinzzahl,
+Bevölkerungsanteil und gefallene Großmächte stehen alle schon im Zustand. Das eine neue
+Feld ist `state.goals` — nicht für die Zahl, sondern dafür, dass ein einmal erreichtes
+Ziel erreicht bleibt.
+
+**Der Golden-Master wird neu erzeugt und nicht umgangen.** `goals` in `HASH_OMIT_KEYS` zu
+schieben wäre der billigere Weg und der falsche: ein Zustandsfeld, das aus dem Hash
+fällt, kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt.
+
+**Auswirkung:** Kein Bau. Vier Teilaufgaben stehen geschnitten in `FORTSCHRITT.md` §3 und
+**bewusst nicht** in `tasks.yaml` — dasselbe Muster wie T-M28-07: ein Meilenstein gilt
+dem Plan-Wächter als geplant, sobald er eine Aufgabe trägt. Welche Marken es sind, ist
+eine Spielentscheidung und liegt bei Noah.
+
+---
+
+## 2026-09-12 · T-M34-07 · `recruitShare` von `schwer` auf 280 — die Mauer war gemessen, die Reparatur auch
+
+**Entscheidung:** `data/rules/default/ai.json`, `difficulties.hard.recruitShare` von 360
+auf **280**. Die Schwellen des Turnierlaufs (0,55 bis 0,95) bleiben **unverändert**.
+
+**Der Befund.** Nach der Streckung der Freischaltungsleiter (T-M34-03) und der Kürzung des
+Startvorrats (T-M34-06) stand zwischen `normal` und `schwer` eine **Mauer**: Siegquote
+1,00 bei null Unentschieden. Genau dafür gibt es die Obergrenze — wer auf „normal"
+verliert, wechselt zu „schwer" und darf dort nicht gegen eine Wand laufen.
+
+**Warum nicht das Messfenster und nicht der Startvorrat.** Beides wurde zuerst
+ausgeschlossen, statt es zu vermuten: 40, 80, 120 und 200 Spieltage ergeben **alle 1,00**;
+ein Startvorrat von 667, 750, 833 oder 1000 Promille ergibt ebenfalls **alle 1,00**. Erst
+danach wurde am Rekrutierungsanteil gemessen, fünf Werte über zwei Fenster. Das Band wird
+im Bereich **260 bis 320** eingehalten, und zwar in beiden Fenstern; gesetzt ist mit 280
+die **Mitte dieses Bereichs** und nicht der erste Wert, der eine Zahl grün macht. Der Lauf
+danach steht bei 0,70.
+
+**Was die Änderung nicht berührt:** den Grundlauf, den Abnahmelauf AK-1 und den Langlauf —
+alle drei spielen ausschließlich `normal`. Betroffen sind das Turnier und der
+KI-Integrationslauf; beide sind nachgefahren und grün.
+
+**Was offen bleibt und im Bericht steht:** in der Paarung **im Krieg** bleibt es bei 1,00.
+Kein gemessener Wert hält beide Paarungen gleichzeitig im Band. Der Test sichert die
+Friedens-Paarung zu — dort hat die Wirtschaft Zeit, sich auszuwirken —, die Kriegs-Paarung
+steht im Bericht als Zahl und nicht als Zusicherung. Wer die Stufen wirklich trennen will,
+trennt sie an mehr als am Rekrutierungsanteil; das ist eine eigene Aufgabe.
+
+**Nebenbefund, mitrepariert:** `BALANCING.md` führte für `recruitShare` **120 / 500**,
+während `ai.json` seit dem 2026-09-06 15:47 (`0d551ac`) **200 / 360** trug — die Tabelle
+war um einen Commit veraltet, und `test/balancing.test.ts` las nur `constants.json`. Der
+Wächter liest jetzt auch `ai.json` und vergleicht Tabelle gegen Regelwerk Zahl für Zahl;
+vorgeführt, dass er rot wird.
+
+---
+
+## 2026-09-12 · T-M34-07 · Die Sperrklinke des Onboarding-Durchgangs wird einmal weitergestellt
+
+**Entscheidung:** Die längste Pause ohne Anlass in den ersten sechzehn Spieltagen darf
+statt 72 nun **96 Ticks** betragen. Gemessen: 96, vier stille Spieltage zwischen dem Hafen
+an Tag 6 und dem Transportschiff an Tag 10.
+
+**Begründung.** Die Schranke war von Anfang an als **Sperrklinke gegen unbeabsichtigtes
+Wachstum** gedacht — „die Schranke ist der heutige Wert, nicht ein gewünschter". M34 hat
+die Leiter absichtlich von sechzehn auf achtzig Spieltage gestreckt; dass ihre Lücken
+mitwachsen, ist dieselbe Entscheidung von hinten gesehen und kein unbemerktes Wachstum.
+Die Klinke wird deshalb **einmal** weitergestellt, mit genannter Ursache im Test selbst.
+
+**Was ausdrücklich nicht die Begründung ist:** dass eine Zahl passen soll. Wäre die Pause
+ohne Regeländerung gewachsen, wäre die richtige Antwort gewesen, den Grund zu suchen.
+
+**Was dagegen steht, und was die Messung davon nicht sieht:** T-M34-08 setzt über die
+Aushebeliste eine Zeile, die nennt, was als Nächstes kommt und in wie vielen Tagen — aus
+Warten wird ein Ziel. Der Durchgang zählt **Ereignisse**; eine stehende Zeile ist keines.
+Ob vier stille Spieltage zu lang sind, ist eine Balancing-Frage und gehört Noah.
+
+**Auswirkung:** `onboarding.slow.test.ts`, `docs/reports/onboarding.md` (neu erzeugt).
+
+---

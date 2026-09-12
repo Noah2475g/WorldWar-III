@@ -4298,7 +4298,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M34-01
 - **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `docs/plan/DECISIONS.md`,
   `docs/plan/BALANCING.md`
-- **Tests zuerst:** keine (Entscheid).
+- **Tests zuerst:** `test/balancing.test.ts` — der Wächter, der bisher *genau fünf*
+  belegte Tage verlangte, verlangt jetzt **keinen einzigen** und zusätzlich die Gegenrede
+  in R-TECH-01. Ohne ihn wäre die Umstufung eine stille Löschung einer Quelle.
 - **Fertig wenn:** die Anforderung die neue Zeitrechnung trägt, BALANCING.md die Tage von
   *belegt* auf *abgeleitet* umstuft und `pnpm coverage:requirements` weiter
   `V1 offen: 0` meldet.
@@ -4351,9 +4353,19 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Ziel:** vier Zahlenänderungen auf einmal lassen sich hinterher nicht auseinanderhalten.
 - **Anforderungen:** keine
 - **Abhängigkeiten:** T-M34-03, T-M34-04, T-M34-05, T-M34-06
-- **Dateien:** `docs/reports/progress-baseline.md`, `docs/reports/balance-sweep.md`,
-  `docs/reports/ai-tournament-run.md`
-- **Tests zuerst:** keine neuen; die drei Langläufe **nach jeder** der vier Zahlenaufgaben.
+- **Dateien:** `docs/reports/progress-baseline.md`, `docs/reports/progress-measured.json`,
+  `docs/reports/balance-sweep.md`, `docs/reports/ai-tournament-run.md`
+- **Tests zuerst:** ein neues Messwerkzeug, `apps/headless/test/progress.slow.test.ts` — es
+  fährt den **Grundlauf** des Parameterlaufs (dieselben sechs Nachbarn, 120 Tage, zwölf
+  Startzahlen) und misst Risiko 5 gespielt statt gerechnet.
+- **Ausgeführt am 2026-09-12:** Grundlauf und Turnier an **allen fünf** Messpunkten, der
+  volle Parameterlauf **einmal** (am Endstand) statt fünfmal — als Ausgangswert war er
+  bereits gefahren und eingecheckt, jünger als die Regeln, die er vermisst. Begründung im
+  Bericht, Abschnitt 2: der teure Teil des Parameterlaufs misst die Empfindlichkeit
+  einzelner Konstanten, und die vergleicht diese Aufgabe gar nicht — verglichen werden
+  Siegtag, Eroberungen, Anteil des Stärksten und Siegverteilung, und die stehen alle im
+  Grundlauf. Der Grundlauf reproduziert den Ausgangswert des Parameterlaufs auf die vierte
+  Stelle (0,4177 gegen 41,8 %), was die Gleichwertigkeit belegt statt sie zu behaupten.
 - **Fertig wenn:** der Vergleich gegen T-M34-01 steht und der Siegtag zwischen 300 und 1500
   liegt — sonst nachjustieren und erneut messen.
 
@@ -4365,8 +4377,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
 - **Tests zuerst:** an Tag 20 nennt die Zeile die nächste Sache und die richtige Zahl von
   Tagen; am Tag der Freischaltung wechselt sie; nach der letzten verschwindet sie
-  (`Panels.test.tsx`).
+  (`Panels.test.tsx`, `actions.test.ts`).
 - **Fertig wenn:** die Zeile am Kopf der Rekrutierungsliste steht, mit Bild aus M33.
+- **Erledigt am 2026-09-12:** Die Zeile nennt **Gebäude wie Einheiten** — nach der
+  gestreckten Leiter liegen beide ineinander, und eine Zeile, die nur Einheiten nennt,
+  ließe den Spieler an Tag 4 auf Tag 16 warten, während an Tag 6 der Hafen kommt.
+  Entscheid in `DECISIONS.md`.
 
 ## Meilenstein M35 — Der lange Mittelteil bekommt Ziele *(Entwurf zuerst)*
 
@@ -4383,6 +4399,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** feststeht, welche Ziele der Zustand schon trägt, was ein neues Feld
   bräuchte, und die Teilaufgaben geschnitten sind — mit Umgang für Golden-Master und
   R-GAME-02.
+- **Erledigt am 2026-09-12:** Der Entwurf steht in `FORTSCHRITT.md` §3 mit vier
+  geschnittenen Teilaufgaben. Ergebnis in einem Satz: **vier der fünf Kandidaten brauchen
+  kein neues Zustandsfeld**, der fünfte („stärkste Macht eines Kontinents") fällt heraus —
+  die Karte kennt keinen Kontinent, und `MapProvince` um ein Feld zu erweitern ist ein
+  eigener Bauabschnitt. Die Teilaufgaben stehen **bewusst nicht** in `tasks.yaml`, Muster
+  T-M28-07.
 
 ## Meilenstein M36 — Die Rohstoffleiste wird lesbar
 

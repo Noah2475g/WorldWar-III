@@ -1,26 +1,25 @@
 {
   "spieltage": 200,
   "maechte": 8,
-  "ereignisse": 28827,
-  "kriegserklaerungen": 11,
+  "ereignisse": 30205,
+  "kriegserklaerungen": 13,
   "friedensschluesse": 3,
-  "handel": 3451,
-  "fabriken": 48,
-  "artillerie": 13,
-  "beschussSelbsttaetig": 54,
-  "abgelehnt": 1237,
+  "handel": 3914,
+  "fabriken": 77,
+  "artillerie": 9,
+  "beschussSelbsttaetig": 121,
+  "abgelehnt": 1105,
   "abgelehntZuFrueh": 0,
   "rekrutiert": {
-    "infantry": 3173,
-    "tank": 1,
-    "artillery": 13
+    "infantry": 3581,
+    "artillery": 9
   },
   "ablehnungen": {
-    "MOVE_ARMY:ARMY_NOT_FOUND": 1082,
+    "RECRUIT:INSUFFICIENT_RESOURCES": 4,
+    "MOVE_ARMY:ARMY_NOT_FOUND": 890,
     "SET_STANCE:ARMY_NOT_FOUND": 22,
-    "RECRUIT:INSUFFICIENT_RESOURCES": 2,
-    "BUILD:NOT_OWNER": 70,
-    "RECRUIT:INVALID_TARGET": 7,
-    "SET_CAPITAL:ON_COOLDOWN": 54
+    "RECRUIT:INVALID_TARGET": 11,
+    "BUILD:NOT_OWNER": 155,
+    "SET_CAPITAL:ON_COOLDOWN": 23
   }
 }

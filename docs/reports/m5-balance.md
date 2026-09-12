@@ -7,13 +7,13 @@ Erzeugt vom Test `packages/core/test/balance/m5.test.ts`.
 
 | Ressource | Bestand am Ende | Zuwachs je Tag |
 |---|---|---|
-| food | 15311152 | 71556 |
-| wood | 10888300 | 49442 |
-| iron | 13510772 | 65054 |
-| coal | 6193520 | 28468 |
-| oil | 250000 | 0 |
-| rare | 100000 | 0 |
-| money | 18382529 | 79413 |
+| food | 14978152 | 71556 |
+| wood | 10555300 | 49442 |
+| iron | 13343772 | 65054 |
+| coal | 6026520 | 28468 |
+| oil | 167000 | 0 |
+| rare | 67000 | 0 |
+| money | 17549529 | 79413 |
 
 ## Moral je Provinz
 

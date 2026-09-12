@@ -277,12 +277,11 @@ export const ART_FOR_ICON: Partial<Record<IconName, ArtName>> = Object.fromEntri
  * dasselbe sagen (R-UI-10). Dazu die beiden Faelle, in denen es gar keinen Besitzer
  * gibt: in der Rekrutierungsliste steht der Riss in `ink`, im Bauplatzraster das
  * Gebaeude in `building`.
- */
-/**
- * `muted` ist der Ton fuer eine Sache, die es noch NICHT gibt (T-M34-08): die naechste
- * Freischaltung ueber der Aushebeliste. Er traegt dasselbe Token wie `other` und meint
- * etwas anderes — `other` ist eine fremde Macht auf der Karte. Zwei Namen fuer eine
- * Farbe sind in Ordnung; ein Name fuer zwei Bedeutungen waere es nicht.
+ *
+ * `muted` kam mit T-M34-08 dazu — der Ton fuer eine Sache, die es noch NICHT gibt: die
+ * naechste Freischaltung ueber der Aushebeliste. Er traegt dasselbe Token wie `other` und
+ * meint etwas anderes; `other` ist eine fremde Macht auf der Karte. Zwei Namen fuer eine
+ * Farbe sind in Ordnung, ein Name fuer zwei Bedeutungen waere es nicht.
  */
 export type ArtTone = MarkerTone | 'ink' | 'building' | 'muted'
 

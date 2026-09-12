@@ -131,6 +131,14 @@ pnpm --filter @worldwar/desktop dev
 
 Erwartet: **ja / nein / nein.**
 
+**Frage B hat seit M34 eine scharfe Stelle** (2026-09-12): die Freischaltungsleiter
+reicht jetzt bis Spieltag 80 statt bis 16, und mit ihr sind die Lücken gewachsen. Die
+längste Pause ohne Anlass liegt gemessen bei **vier Spieltagen** — zwischen dem Hafen an
+Tag 6 und dem Transportschiff an Tag 10. Über der Aushebeliste steht zwar, was als
+Nächstes kommt und in wie vielen Tagen; ob das reicht, kann keine Messung sagen. **Bitte
+in den ersten zwanzig Spieltagen darauf achten und die Stelle benennen, an der es zu
+lange still war.**
+
 ---
 
 ## Was dieser Bogen am 2026-09-06 dazubekommen hat

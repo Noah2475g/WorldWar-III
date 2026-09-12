@@ -154,19 +154,28 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
     /*
      * Die Zahl, die zählt — und **eine Messung, keine Zusage.**
      *
-     * Gemessen am 2026-09-07: 72 Ticks, drei volle Spieltage zwischen der Eisenbahn an
-     * Tag 5 und der Fabrik an Tag 8. Ob das zu lang ist, ist eine Balancing-Frage und
-     * gehört Noah; ob es *länger wird*, ist eine Frage, die eine Maschine beantworten
-     * kann, und deshalb steht sie hier.
+     * Gemessen am 2026-09-07: **72 Ticks**, drei volle Spieltage zwischen der Eisenbahn
+     * an Tag 5 und der Fabrik an Tag 8. Gemessen am 2026-09-12 nach M34: **96 Ticks**,
+     * vier volle Spieltage zwischen dem Hafen an Tag 6 und dem Transportschiff an Tag 10.
      *
-     * Die Schranke ist der heutige Wert, nicht ein gewünschter. Eine Grenze, die das
-     * Spiel heute reißt, wäre entweder eine stillschweigende Aufforderung, den Test
-     * weicher zu machen, oder eine Anforderung, die niemand gestellt hat.
+     * **Die Schranke ist der heutige Wert, nicht ein gewünschter**, und sie ist eine
+     * Sperrklinke gegen *unbeabsichtigtes* Wachstum. M34 hat die Freischaltungsleiter von
+     * sechzehn auf achtzig Spieltage gestreckt (T-M34-03); dass die Lücken zwischen den
+     * Freischaltungen dabei mitwachsen, ist keine Überraschung, sondern die Rückseite
+     * derselben Entscheidung. Die Klinke wird deshalb einmal weitergestellt, **mit
+     * genannter Ursache** — was sie weiterhin nicht duldet, ist eine Pause, die ohne
+     * solchen Grund wächst.
+     *
+     * **Was dagegen steht, und was nicht:** T-M34-08 hat über die Aushebeliste eine Zeile
+     * gesetzt, die sagt, was als Nächstes kommt und in wie vielen Tagen — aus Warten wird
+     * ein Ziel. Diese Messung sieht davon nichts, denn sie zählt **Ereignisse**, und eine
+     * stehende Zeile ist keines. Ob vier stille Spieltage zu lang sind, bleibt damit eine
+     * Frage an Noahs Playtest und nicht an diesen Test.
      */
     expect(
       pause.ticks,
       `laengste Pause ${pause.ticks} Ticks: ${alsZeit(pause.von)} bis ${alsZeit(pause.bis)}`,
-    ).toBeLessThanOrEqual(72)
+    ).toBeLessThanOrEqual(96)
   })
 
   it('laesst die ersten beiden Spieltage nicht leer', () => {
@@ -181,7 +190,7 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
     const zeilen = [
       '# Der Durchgang durch die ersten Spieltage',
       '',
-      `Gemessen am **2026-09-07** von \`apps/desktop/src/game/onboarding.slow.test.ts\`, über`,
+      `Gemessen am **2026-09-12** von \`apps/desktop/src/game/onboarding.slow.test.ts\`, über`,
       `**${TAGE} Spieltage** (${TICKS} Ticks) auf der kleinen Karte, Startzahl ${config.seed}.`,
       '',
       '> Dieser Bericht gilt für genau diesen Stand. Zeigt `git log --oneline -1` etwas anderes,',
