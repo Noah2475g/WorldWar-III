@@ -185,3 +185,69 @@ describe('R-ARCH-02 Kommandophase im Tick', () => {
     expect(state.armies['a1']!.stance).toBe('aggressive') // original untouched
   })
 })
+
+/**
+ * Starke Einheiten verlangen eine hoehere Gebaeudestufe (T-M34-05, D34.2).
+ *
+ * Das Feld `requiresBuildingLevel` gibt es seit M12 und `recruit.ts` wertet es aus — es
+ * wird hier nur **benutzt**: Raketenartillerie Fabrik 3 statt 2, Zerstoerer Werft 2 statt
+ * 1, Bomber bleibt Flugplatz 2. Mehr nicht: eine Bedingung, die niemand erfuellen kann,
+ * ist keine Fortschrittsachse, sondern eine Sperre — und die Hoechststufen sind niedrig
+ * (Fabrik 3, Werft 2).
+ */
+describe('R-UNIT-02 Die Stufe des Gebaeudes ist die zweite Bedingung', () => {
+  /** Eine Provinz, in der nur noch die Gebaeudestufe ablehnen kann. */
+  const bereit = (unitKey: string, level: number): GameState => {
+    const unit = TEST_RULES.units[unitKey]!
+    const province = state.provinces['alpha']!
+    province.owner = 'p1'
+    province.morale = 90_000
+    province.buildings[unit.requiresBuilding] = level
+    if (unit.requiresBuilding === 'shipyard') province.buildings.harbour = 1
+    state.tick = (unit.availableFromDay - 1) * TEST_RULES.constants.ticksPerDay
+    for (const key of Object.keys(state.players['p1']!.resources)) {
+      state.players['p1']!.resources[key as 'money'] = 99_000_000
+    }
+    return state
+  }
+
+  it('verlangt von der Raketenartillerie die dritte Fabrikstufe', () => {
+    expect(TEST_RULES.units.rocket_artillery!.requiresBuildingLevel).toBe(3)
+    expect(TEST_RULES.buildings.factory.maxLevel, 'eine Stufe, die es nicht gibt, ist eine Sperre').toBeGreaterThanOrEqual(3)
+  })
+
+  it('verlangt vom Zerstoerer die zweite Werftstufe, und der Bomber bleibt bei zwei', () => {
+    expect(TEST_RULES.units.destroyer!.requiresBuildingLevel).toBe(2)
+    expect(TEST_RULES.buildings.shipyard.maxLevel).toBeGreaterThanOrEqual(2)
+    expect(TEST_RULES.units.bomber!.requiresBuildingLevel, 'der Bomber war nicht Teil dieser Aufgabe').toBe(2)
+  })
+
+  it('lehnt mit der Stufe darunter ab und nennt Gebaeude UND Stufe', () => {
+    for (const [unitKey, verlangt] of [['rocket_artillery', 3], ['destroyer', 2]] as const) {
+      const rejected = canApply(
+        bereit(unitKey, verlangt - 1),
+        { type: 'RECRUIT', playerId: 'p1', provinceId: 'alpha', unitKey, count: 1 } as Command,
+        ctx,
+      )
+
+      expect(rejected, unitKey).toMatchObject({ ok: false, code: 'MISSING_BUILDING' })
+      expect(rejected.ok ? undefined : rejected.detail, unitKey).toMatchObject({
+        required: TEST_RULES.units[unitKey]!.requiresBuilding,
+        level: verlangt,
+      })
+    }
+  })
+
+  it('nimmt denselben Auftrag mit der verlangten Stufe an', () => {
+    // Die Gegenprobe: ohne sie belegte der Test oben nur, dass irgendetwas ablehnt.
+    for (const [unitKey, verlangt] of [['rocket_artillery', 3], ['destroyer', 2]] as const) {
+      const result = canApply(
+        bereit(unitKey, verlangt),
+        { type: 'RECRUIT', playerId: 'p1', provinceId: 'alpha', unitKey, count: 1 } as Command,
+        ctx,
+      )
+
+      expect(result.ok, `${unitKey}: ${JSON.stringify(result)}`).toBe(true)
+    }
+  })
+})

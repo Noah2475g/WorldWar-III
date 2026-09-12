@@ -48,7 +48,17 @@ export function describeRejection(rejection: Rejection, command: Command | null,
   const values: Record<string, string | number> = { ...detail }
 
   const buildingKey = detail.required ?? detail.building
-  if (typeof buildingKey === 'string') values.building = t(`buildings.${buildingKey}`)
+  if (typeof buildingKey === 'string') {
+    // Die Stufe gehoert in den Satz, nicht nur ins Detail (T-M34-05): seit Zerstoerer
+    // Werft 2 und Raketenartillerie Fabrik 3 verlangen, ist "Dafuer fehlt das Gebaeude:
+    // Werft" an einer Provinz MIT Werft eine Auskunft, die dem Spieler widerspricht.
+    // Stufe 1 bleibt ungenannt — sie ist der Normalfall und waere Rauschen.
+    const level = typeof detail.level === 'number' ? detail.level : 1
+    values.building =
+      level > 1
+        ? `${t(`buildings.${buildingKey}`)} ${t('actions.buildLevel', { level })}`
+        : t(`buildings.${buildingKey}`)
+  }
   if (typeof detail.unitKey === 'string') values.unit = t(`units.${detail.unitKey}`)
   if (typeof detail.resource === 'string') values.resource = t(`resources.${detail.resource}`)
 
