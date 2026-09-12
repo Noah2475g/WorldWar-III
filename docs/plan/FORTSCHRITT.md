@@ -83,9 +83,9 @@ die Messung, nicht als Festlegung:
 | Festung | 3 | 12 |
 | Motorisierte Infanterie | 4 | 16 |
 | Eisenbahn | 5 | 20 |
-| Artillerie | 9 | 28 |
-| Fabrik | 8 | 30 |
-| Kampfpanzer | 8 | 34 |
+| Fabrik | 8 | 28 |
+| Kampfpanzer | 8 | 30 |
+| Artillerie | 9 | 34 |
 | Werft | 9 | 36 |
 | Flugplatz | 10 | 40 |
 | Jagdflugzeug | 10 | 44 |
@@ -97,6 +97,18 @@ die Messung, nicht als Festlegung:
 Die Reihenfolge bleibt, die Abstände wachsen. Der erste Spieltag bleibt unangetastet: die
 Kaserne muss am ersten Tag baubar sein, sonst steht der Spieler ohne Handlung da (das war
 die ausdrückliche Begründung für die Eins-basierte Zählung in `availability.ts`).
+
+> **Korrigiert am 2026-09-12 beim Bau (T-M34-03).** Die Fassung vom 2026-09-11 gab der
+> **Artillerie Tag 28 und der Fabrik Tag 30** — die Einheit also zwei Tage vor dem
+> Gebäude, das sie verlangt. Das ist nicht bloß unschön: `rules/load.ts` weist ein
+> Regelwerk zurück, in dem eine Einheit früher zu haben ist als ihr Gebäude, und zwar aus
+> gutem Grund (der Auftrag scheiterte sonst an `MISSING_BUILDING` statt am Tag, und der
+> Spieler läse die falsche Begründung). Der Vorschlag widersprach damit seinem eigenen
+> Satz „die Reihenfolge bleibt": heute liegt die Artillerie **nach** dem Panzer, nicht vor
+> der Fabrik. Die drei Zahlen 28, 30 und 34 sind unverändert geblieben und nur in der
+> richtigen Reihenfolge vergeben. Gefunden hat es kein Mensch, sondern der Test aus der
+> Aufgabenbeschreibung — „kein Gebäude wird später frei als die Einheit, die es verlangt"
+> —, und das ist der Grund, warum er dort steht.
 
 ### D34.2 Stufen statt Kalender (Vorschlag 2)
 
@@ -158,6 +170,78 @@ Zustandsfeld je Ziel, eine Prüfung im Tagestick, eine Anzeige) und berührt die
 Siegbedingung — R-GAME-02 ist eine V1-Zusage. T-M35-01 ist die Vormerkung mit
 Entwurfspflicht, wie T-M28-07 es vormacht: erst der Entwurf hier in Abschnitt 3, dann der
 Schnitt in Aufgaben.
+
+### Der Entwurf (T-M35-01, 2026-09-12)
+
+**Was der Zustand heute schon trägt — am Code nachgesehen, nicht vermutet.**
+`victory.ts` rechnet `scoreOf` einmal je Spieltag über Provinzen, Bevölkerung, Gebäude
+und Einheiten; `pointShare` gibt daraus den Anteil. Vier der fünf Kandidaten brauchen
+**kein einziges neues Zustandsfeld**:
+
+| Zwischenziel | woraus | neues Feld? |
+|---|---|---|
+| Punktanteil über einer Marke (z. B. 250 ‰, 400 ‰) | `pointShare` | nein |
+| Eine Zahl eigener Provinzen (z. B. 25, 50, 100) | `state.provinces`, nach Besitzer gezählt | nein |
+| Ein Anteil der Weltbevölkerung | `province.population`, nach Besitzer summiert | nein |
+| Eine Großmacht ist gefallen | `player.alive`, `capitalProvinceId === null` | nein |
+| Stärkste Macht **eines Kontinents** | — | **ja, und zwar in der Karte** |
+
+Der fünfte ist der teure: **die Karte kennt keinen Kontinent.** `MapProvince` führt
+`id`, `name`, `kind`, `terrain`, `coastal`, `center` und `polygons` — kein Feld, aus dem
+sich „Europa" ergäbe. Dieses Ziel kostet ein Kartenfeld, einen neuen Durchlauf des
+Kartengenerators und eine Wanderung durch `validateMap`; es ist damit **kein Zwischenziel
+mehr, sondern ein eigener Bauabschnitt** und gehört nicht in diesen.
+
+**Was trotzdem ein neues Feld braucht: das Erreichen selbst.** Ein Ziel, das jeden Tag
+neu ausgerechnet wird, kann auch wieder verschwinden — wer fünfzig Provinzen hatte und
+auf achtundvierzig fällt, hätte sein Ziel nie erreicht. Gebraucht wird genau ein Feld:
+`state.goals: Record<GoalKey, { reachedOnDay: number | null }>`, einmal je Spieltag
+geprüft, nie zurückgesetzt. Das ist additiv (R-ARCH-02) und braucht eine Migration nach
+R-GAME-05 — ein Spielstand ohne das Feld bekommt es leer.
+
+**Was die Anzeige kostet.** Vier Zeilen in der Rangliste (`Standings.tsx`), je Ziel eine:
+Zeichen, Satz, erreicht oder nicht, und bei den drei zählbaren ein Balken mit dem Stand.
+Kein neues Panel; die Rangliste ist der Ort, an dem der Spieler ohnehin fragt, wie er
+steht. Dazu ein Ereignis `GOAL_REACHED` im Protokoll, weil ein Zwischenziel, das man nur
+beim Nachsehen bemerkt, kein Ziel ist.
+
+**R-GAME-02 bleibt unberührt, und das ist der Kern des Entwurfs.** Zwischenziele
+**gewinnen keine Partie**. Sie ändern weder `checkVictory` noch die Siegschwelle von
+700 ‰; sie sind Rückmeldung, keine Regel. Damit ist die V1-Zusage nicht angefasst und
+`coverage:requirements` muss nichts nachziehen. Wer sie später zu Siegbedingungen machen
+will, ändert R-GAME-02 begründet — so wie T-M34-02 es mit R-TECH-01 gemacht hat.
+
+**Umgang mit dem Golden-Master.** Ein neues Zustandsfeld verschiebt die Prüfsummen des
+500-Tick-Laufs, auch wenn sich am Spiel nichts ändert — `HASH_OMIT_KEYS` kennt es nicht.
+Zwei Wege, und der Entwurf wählt den zweiten: `goals` in `HASH_OMIT_KEYS` aufnehmen
+(dann prüft der Determinismus-Test das Feld gar nicht) **oder** den Golden-Master mit
+`UPDATE_GOLDEN=1` neu erzeugen und im Commit sagen, warum. Der zweite Weg ist richtig,
+weil das Feld Teil des Spielstands ist: ein Zustandsfeld, das aus dem Hash fällt, kann
+beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt.
+
+**Der Schnitt in Teilaufgaben.** Vier Stück, in dieser Reihenfolge — **bewusst noch nicht
+in `tasks.yaml`**, genau wie die vier Teilaufgaben aus T-M28-07 (`LEVEL-UP-3.md` §5): ein
+Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine* Aufgabe trägt, und M35
+wird als Ganzes geplant oder gar nicht.
+
+1. **Die vier Ziele als Regel-Daten.** Marken in `data/rules/default/constants.json` oder
+   einer eigenen `goals.json`, nicht im Code (D-08). Test zuerst: jede Marke hat eine
+   Zeile in `BALANCING.md` mit Status.
+2. **Das Feld und die Prüfung.** `state.goals`, einmal je Spieltag in der Tagesphase,
+   nie zurückgesetzt; Migration nach R-GAME-05; Golden-Master neu erzeugt und begründet.
+   Test zuerst: ein Ziel, das einmal erreicht war, bleibt erreicht, auch wenn die Zahl
+   darunter wieder fällt.
+3. **Das Ereignis.** `GOAL_REACHED` mit `audience: [playerId]` — ein Zwischenziel ist
+   keine Weltnachricht. Test zuerst: genau ein Ereignis je Ziel und Partie.
+4. **Die Anzeige.** Vier Zeilen in der Rangliste mit Stand und Zeichen. Test zuerst: das
+   noch offene Ziel nennt seinen Abstand, das erreichte seinen Tag, und nach dem letzten
+   steht dort kein leerer Kasten — dasselbe Muster wie die Zeile aus T-M34-08.
+
+**Was der Entwurf offen lässt, und wer es entscheidet.** *Welche* vier Marken es sind
+(25/50/100 Provinzen? 250/400 ‰?) ist eine Spielentscheidung und gehört zu Noah, nicht in
+diesen Entwurf. Der Parameterlauf kann sie nicht beantworten: er misst, was eine Zahl am
+Ausgang ändert, und diese Zahlen ändern am Ausgang nichts — sie ändern, wann der Spieler
+etwas erfährt.
 
 ---
 

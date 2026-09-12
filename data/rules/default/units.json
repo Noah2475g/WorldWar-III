@@ -67,7 +67,7 @@
         "air": 400,
         "navy": 200
       },
-      "availableFromDay": 4
+      "availableFromDay": 16
     },
     "tank": {
       "name": "Kampfpanzer",
@@ -100,7 +100,7 @@
         "air": 400,
         "navy": 300
       },
-      "availableFromDay": 8
+      "availableFromDay": 30
     },
     "heavy_tank": {
       "name": "Schwerer Kampfpanzer",
@@ -135,7 +135,7 @@
         "air": 500,
         "navy": 400
       },
-      "availableFromDay": 14
+      "availableFromDay": 70
     },
     "artillery": {
       "name": "Artillerie",
@@ -170,7 +170,7 @@
         "air": 200,
         "navy": 300
       },
-      "availableFromDay": 9
+      "availableFromDay": 34
     },
     "rocket_artillery": {
       "name": "Raketenartillerie",
@@ -183,7 +183,7 @@
       },
       "buildTicks": 48,
       "requiresBuilding": "factory",
-      "requiresBuildingLevel": 2,
+      "requiresBuildingLevel": 3,
       "hpPerUnit": 1600,
       "speedKmh": 16000,
       "rangeProvinces": 2,
@@ -207,7 +207,7 @@
         "air": 200,
         "navy": 300
       },
-      "availableFromDay": 16
+      "availableFromDay": 80
     },
     "fighter": {
       "name": "Jagdflugzeug",
@@ -243,7 +243,7 @@
         "air": 2800,
         "navy": 600
       },
-      "availableFromDay": 10
+      "availableFromDay": 44
     },
     "bomber": {
       "name": "Bomber",
@@ -280,7 +280,7 @@
         "air": 900,
         "navy": 500
       },
-      "availableFromDay": 13
+      "availableFromDay": 62
     },
     "destroyer": {
       "name": "Zerstoerer",
@@ -314,7 +314,8 @@
         "air": 1600,
         "navy": 2800
       },
-      "availableFromDay": 11
+      "availableFromDay": 48,
+      "requiresBuildingLevel": 2
     },
     "transport": {
       "name": "Transportschiff",
@@ -348,7 +349,7 @@
         "air": 500,
         "navy": 600
       },
-      "availableFromDay": 3
+      "availableFromDay": 10
     }
   }
 }

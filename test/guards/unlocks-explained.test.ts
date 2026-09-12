@@ -149,8 +149,16 @@ describe('R-TECH-02 Jede Freischaltung wird gemeldet und erklaert', () => {
     // `alertsFor` wird auch ohne Regeln gerufen (Tests, Vorschau) — dann faellt die
     // Freischaltungsmeldung weg statt zu raten. Die uebrigen Meldungen bleiben: sie
     // kommen aus der Sicht und brauchen die Regeln nicht.
-    expect(alertsFor(viewAtDay(2)).filter((alert) => alert.kind === 'unlock')).toEqual([])
-    expect(alertsFor(viewAtDay(2), rules).filter((alert) => alert.kind === 'unlock')).not.toEqual([])
+    // Der Tag kommt aus dem Regelwerk: bis T-M34-03 stand hier Tag 2 (der Hafen), und
+    // nach der Streckung faellt an Tag 2 nichts mehr an — die Gegenprobe waere leer
+    // gruen geworden und haette die Zusicherung darueber entwertet.
+    const mitFreischaltung = freischaltungen().find((eintrag) => eintrag.day > 1)!.day
+
+    expect(alertsFor(viewAtDay(mitFreischaltung)).filter((alert) => alert.kind === 'unlock')).toEqual([])
+    expect(
+      alertsFor(viewAtDay(mitFreischaltung), rules).filter((alert) => alert.kind === 'unlock'),
+      `an Tag ${mitFreischaltung} wird nichts freigeschaltet`,
+    ).not.toEqual([])
   })
 })
 

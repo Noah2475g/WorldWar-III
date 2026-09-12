@@ -1927,3 +1927,67 @@ Python (`s.count('
 im Repository, und `git add --renormalize .` ändert nichts. Die Regel „Dateien im
 Arbeitsbaum bleiben LF" ist eingehalten. Wer eine überraschende Messung bekommt, misst sie
 mit einem zweiten Werkzeug nach, bevor er sie meldet.
+
+---
+
+## 2026-09-12 · T-M34-03 · Der Bauplan setzte eine Einheit vor das Gebäude, das sie verlangt
+
+**Der Befund.** Die Tabelle in `FORTSCHRITT.md` D34.1, freigegeben am 2026-09-11, gab der
+**Artillerie Tag 28 und der Fabrik Tag 30**. Die Artillerie verlangt eine Fabrik. Ein
+Regelwerk mit dieser Reihenfolge wird vom Lader zurückgewiesen (`rules/load.ts`, seit
+T-M15-02), und zwar aus einem guten Grund, der dort auch steht: der Auftrag scheiterte
+sonst an `MISSING_BUILDING` statt am Spieltag, und der Spieler läse die falsche
+Begründung.
+
+**Warum es niemandem auffiel.** Die Tabelle war nach dem *Vorschlag* sortiert, nicht nach
+dem Ist-Zustand — und in dieser Sortierung stehen 28 und 30 brav untereinander. Erst der
+Blick auf die linke Spalte zeigt den Tausch: heute liegt die Artillerie mit Tag 9
+**hinter** der Fabrik mit Tag 8. Derselbe Absatz sagte zwei Zeilen tiefer „die
+Reihenfolge bleibt, die Abstände wachsen"; der Vorschlag widersprach seinem eigenen Satz.
+
+**Wer es gefunden hat.** Kein Mensch, sondern der Test, den die Aufgabenbeschreibung
+selbst verlangt: „kein Gebäude wird später frei als die Einheit, die es verlangt". Er
+wurde vor der Datenänderung geschrieben, war gegen den alten Stand grün — ein **Haltetest**
+— und wäre in dem Augenblick rot geworden, in dem die vorgeschlagenen Zahlen eingetragen
+worden wären. Das ist der Ertrag von „Test zuerst" an einer Stelle, an der er sonst wie
+Formalismus aussieht: der Test prüfte nicht die neue Zahl, sondern die Regel, die beim
+Ändern der Zahl zerbrechen kann.
+
+**Die Reparatur.** Die drei Zahlen 28, 30 und 34 bleiben, sie werden nur in der richtigen
+Reihenfolge vergeben: Fabrik 28, Kampfpanzer 30, Artillerie 34. Der Bauplan trägt die
+Korrektur mit Begründung (`FORTSCHRITT.md` D34.1), damit niemand die alte Tabelle für die
+gültige hält.
+
+**Die Lehre, über diesen Fall hinaus.** Eine Plantabelle, die nach der *neuen* Spalte
+sortiert ist, verbirgt jede Umsortierung gegenüber der alten. Wer eine Leiter umschreibt,
+sortiert die Tabelle nach dem **alten** Stand oder führt beide Ränge mit.
+
+---
+
+## 2026-09-12 · T-M34-04 · Die zweite Fortschrittsachse ist gebaut, und die KI klettert nicht
+
+**Der Befund.** `nextBuildingFor` in `packages/ai/src/economy.ts` fragt für Kaserne,
+Fabrik, Eisenbahn und Hafen `level(...) === 0` — sie baut jedes dieser Gebäude **genau
+einmal** und sieht es danach nie wieder an. Das einzige Gebäude, das sie ausbaut, ist die
+Festung (`level('fortress') < 2`). Gemessen über 200 Spieltage auf der Weltkarte, an allen
+fünf Messpunkten von M34: **keine Macht kommt je über Fabrikstufe 1 hinaus**, auch nicht
+am Ausgangswert, als eine Stufe noch nichts extra kostete.
+
+**Warum das jetzt auffällt.** T-M34-04 hat den Gebäudestufen einen Preis gegeben und damit
+aus der Buchführung eine Fortschrittsachse gemacht. Sie ist damit heute **eine Achse für
+den Menschen allein**. R-AI-01 sagt „die KI kann alles, was der Spieler kann" — *können*
+tut sie es (der Befehl steht ihr offen, der Kern kennt keinen Unterschied), sie *tut* es
+nur nicht. Das ist eine Verhaltenslücke, keine Fähigkeitslücke, und deshalb kein Bruch der
+Zusage; es ist trotzdem ein Spielervorteil, den niemand beschlossen hat.
+
+**Was es nicht ist.** Es ist **nicht** die Ursache von Risiko 5 („bleibt die dritte
+Fabrikstufe erreichbar"). Die dritte Stufe war schon unerreichbar, als sie so viel kostete
+wie die erste — der Preis war nie das Hindernis.
+
+**Die Reparatur, geschätzt klein.** Eine Zeile je Gebäude in `nextBuildingFor`, etwa
+`if (available('factory') && level('factory') < 2 && province.kind === 'city') return 'factory'`,
+und die Rücklage in `canAfford` entscheidet wie bisher, ob es dazu kommt. **Sie gehört
+nicht in M34**, weil sie das KI-Verhalten ändert und damit eine eigene Messung braucht —
+Grundlauf und Turnier, so wie jede der vier Zahlenaufgaben eine bekommen hat.
+
+**Status: offen, kein Produktfehler.** Für Noahs nächste Planung vorgemerkt.

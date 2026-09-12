@@ -32,7 +32,7 @@
       "effects": {
         "defenceBonusPermille": 200
       },
-      "availableFromDay": 3
+      "availableFromDay": 12
     },
     "factory": {
       "name": "Fabrik",
@@ -51,7 +51,7 @@
       "effects": {
         "productionBonusPermille": 250
       },
-      "availableFromDay": 8
+      "availableFromDay": 28
     },
     "harbour": {
       "name": "Hafen",
@@ -67,7 +67,7 @@
       "effects": {
         "embarkSpeedPermille": 500
       },
-      "availableFromDay": 2
+      "availableFromDay": 6
     },
     "shipyard": {
       "name": "Werft",
@@ -85,7 +85,7 @@
       ],
       "moraleBonus": 0,
       "effects": {},
-      "availableFromDay": 9
+      "availableFromDay": 36
     },
     "airfield": {
       "name": "Flugplatz",
@@ -103,7 +103,7 @@
       "effects": {
         "airRangeProvinces": 2
       },
-      "availableFromDay": 10
+      "availableFromDay": 40
     },
     "railway": {
       "name": "Eisenbahn",
@@ -119,7 +119,7 @@
       "effects": {
         "movementBonusPermille": 250
       },
-      "availableFromDay": 5
+      "availableFromDay": 20
     }
   }
 }

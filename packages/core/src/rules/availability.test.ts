@@ -66,17 +66,34 @@ function ready(atDay: number) {
 
 const reject = (state: ReturnType<typeof ready>, command: Command) => applyCommand(state, command, ctx)
 
+/**
+ * Die Tage stehen seit T-M34-03 nicht mehr als Zahl in diesen Tests.
+ *
+ * Vorher hiess es hier woertlich "an Tag 8" und "ab Tag 10" — und beim Strecken der
+ * Leiter fielen vier Tests, die ueber die Mechanik gar nichts sagen wollten. Gelesen wird
+ * der Tag jetzt aus dem Regelwerk; dass die Zusicherung dabei nicht leer wird, sichert
+ * die Zeile darunter: eine Sache, die ohnehin ab Tag 1 zu haben ist, koennte AK1 nicht
+ * belegen. Welche Tage gelten, haelt der Block am Ende der Datei fest.
+ */
+const TAG_FABRIK = (raw('buildings') as { buildings: Record<string, { availableFromDay: number }> }).buildings['factory']!.availableFromDay
+const TAG_JAEGER = (raw('units') as { units: Record<string, { availableFromDay: number }> }).units['fighter']!.availableFromDay
+
 describe('R-TECH-01/AK1 Vor ihrem Tag gibt es die Sache nicht', () => {
+  it('sperrt beide Sachen ueberhaupt erst — sonst belegt AK1 nichts', () => {
+    expect(TAG_FABRIK).toBeGreaterThan(1)
+    expect(TAG_JAEGER).toBeGreaterThan(1)
+  })
+
   it('lehnt eine Fabrik an Spieltag 1 ab und nennt den Tag', () => {
     const rejected = reject(ready(1), { type: 'BUILD', playerId: 'p1', provinceId: 'n1', building: 'factory' })
 
     expect(rejected).toMatchObject({ ok: false, code: 'NOT_YET_AVAILABLE' })
-    // Der Tag steht im Detail — die Ablehnung sagt "ab Tag 8", nicht "geht nicht".
-    expect(rejected.ok ? undefined : rejected.detail).toMatchObject({ availableFromDay: 8 })
+    // Der Tag steht im Detail — die Ablehnung sagt "ab Tag 28", nicht "geht nicht".
+    expect(rejected.ok ? undefined : rejected.detail).toMatchObject({ availableFromDay: TAG_FABRIK })
   })
 
-  it('lehnt einen Jaeger vor Tag 10 ab', () => {
-    const rejected = reject(ready(9), {
+  it('lehnt einen Jaeger am Tag vor seiner Freischaltung ab', () => {
+    const rejected = reject(ready(TAG_JAEGER - 1), {
       type: 'RECRUIT',
       playerId: 'p1',
       provinceId: 'n1',
@@ -100,8 +117,8 @@ describe('R-TECH-01/AK1 Vor ihrem Tag gibt es die Sache nicht', () => {
 })
 
 describe('R-TECH-01/AK2 Ab ihrem Tag gibt es sie', () => {
-  it('nimmt dieselbe Fabrik an Tag 8 an', () => {
-    const state = ready(8)
+  it('nimmt dieselbe Fabrik am Tag ihrer Freischaltung an', () => {
+    const state = ready(TAG_FABRIK)
     const before = state.provinces['n1']!.buildQueue.length
     const result = applyCommand(state, { type: 'BUILD', playerId: 'p1', provinceId: 'n1', building: 'factory' }, ctx)
 
@@ -109,9 +126,9 @@ describe('R-TECH-01/AK2 Ab ihrem Tag gibt es sie', () => {
     expect(state.provinces['n1']!.buildQueue.length).toBe(before + 1)
   })
 
-  it('nimmt den Jaeger an Tag 10 an', () => {
+  it('nimmt den Jaeger am Tag seiner Freischaltung an', () => {
     const result = applyCommand(
-      ready(10),
+      ready(TAG_JAEGER),
       { type: 'RECRUIT', playerId: 'p1', provinceId: 'n1', unitKey: 'fighter', count: 1 },
       ctx,
     )
@@ -151,15 +168,124 @@ describe('R-TECH-01/AK3 Ein fehlender Tag ist ein Fehler, keine Vorgabe', () => 
   })
 })
 
-describe('R-TECH-01 Die belegten Tage stehen im Regelwerk', () => {
-  it('traegt die fuenf belegten Tage woertlich', () => {
-    const buildings = (raw('buildings') as { buildings: Record<string, { availableFromDay?: number }> }).buildings
+/**
+ * Die gestreckte Leiter (T-M34-03, D34.1).
+ *
+ * Bis zum 2026-09-12 stand hier die Zusicherung "traegt die fuenf belegten Tage
+ * woertlich" — Kaserne 1, Hafen 2, Eisenbahn 5, Fabrik 8, Flugplatz 10 aus Referenz 1.4.
+ * Sie war richtig gegen stille Zahlenaenderungen und falsch in der Sache: im Vorbild ist
+ * ein Spieltag ein echter Tag, hier sind es 24 Sekunden bei Tempo 1. **Die ganze Achse
+ * war nach 6,4 Minuten Echtzeit durchlaufen**, waehrend die Partie bis Spieltag 798
+ * laeuft. Was die Referenz wirklich belegt, ist die REIHENFOLGE; die haelt der Test
+ * darunter fest, und zwar gegen die Tage von gestern statt gegen eine neue Behauptung.
+ * Entscheid in DECISIONS.md (2026-09-12, T-M34-02).
+ */
+describe('R-TECH-01 Die Freischaltungsleiter traegt bis in die Partie hinein', () => {
+  const buildingDays = () =>
+    (raw('buildings') as { buildings: Record<string, { availableFromDay: number }> }).buildings
+  const unitRules = () =>
+    (raw('units') as {
+      units: Record<string, { availableFromDay: number; class: string; requiresBuilding: string }>
+    }).units
 
-    expect(buildings['barracks']?.availableFromDay).toBe(1)
-    expect(buildings['harbour']?.availableFromDay).toBe(2)
-    expect(buildings['railway']?.availableFromDay).toBe(5)
-    expect(buildings['factory']?.availableFromDay).toBe(8)
-    expect(buildings['airfield']?.availableFromDay).toBe(10)
+  /** Die Leiter vor der Streckung — die Ordnung, die aus dem Vorbild stammt. */
+  const FRUEHER: Readonly<Record<string, number>> = {
+    barracks: 1, infantry: 1, harbour: 2, fortress: 3, transport: 3, motorized: 4, railway: 5,
+    factory: 8, tank: 8, artillery: 9, shipyard: 9, airfield: 10, fighter: 10, destroyer: 11,
+    bomber: 13, heavy_tank: 14, rocket_artillery: 16,
+  }
+
+  const alleTage = (): Record<string, number> => ({
+    ...Object.fromEntries(Object.entries(buildingDays()).map(([key, rule]) => [key, rule.availableFromDay])),
+    ...Object.fromEntries(Object.entries(unitRules()).map(([key, rule]) => [key, rule.availableFromDay])),
+  })
+
+  it('laesst die Kaserne und die Infanterie auf Tag 1', () => {
+    // Ohne sie steht der Spieler am ersten Spieltag ohne eine einzige Handlung da — das
+    // war die ausdrueckliche Begruendung fuer die Eins-basierte Zaehlung in currentDay().
+    expect(buildingDays()['barracks']?.availableFromDay).toBe(1)
+    expect(unitRules()['infantry']?.availableFromDay).toBe(1)
+  })
+
+  it('schaltet die letzte Sache erst weit in der Partie frei, nicht nach sechs Minuten', () => {
+    const tage = Object.values(alleTage())
+    const letzte = Math.max(...tage)
+
+    // 80 Spieltage sind bei Tempo 1 gut eine halbe Stunde und bei Tempo 10 drei Minuten.
+    // Die Marke ist eine Marke und keine Punktlandung: gemessen wird sie in T-M34-07.
+    expect(letzte, `spaeteste Freischaltung: Tag ${letzte}`).toBeGreaterThanOrEqual(70)
+    expect(letzte, `spaeteste Freischaltung: Tag ${letzte}`).toBeLessThanOrEqual(90)
+    expect(letzte / Math.max(...Object.values(FRUEHER))).toBeGreaterThanOrEqual(4)
+  })
+
+  it('behaelt die Reihenfolge des Vorbilds — nur die Abstaende wachsen', () => {
+    const heute = alleTage()
+    const falsch: string[] = []
+
+    for (const [a, tagA] of Object.entries(FRUEHER)) {
+      for (const [b, tagB] of Object.entries(FRUEHER)) {
+        // Nur echte Reihenfolgen pruefen: wo gestern Gleichstand herrschte, darf heute
+        // eine Seite vorn liegen (Fabrik vor Panzer statt am selben Tag).
+        if (tagA >= tagB) continue
+        if ((heute[a] ?? 0) >= (heute[b] ?? 0)) {
+          falsch.push(`${a} (${tagA}→${heute[a]}) liegt nicht mehr vor ${b} (${tagB}→${heute[b]})`)
+        }
+      }
+    }
+
+    expect(falsch, `Reihenfolge verletzt:\n${falsch.join('\n')}`).toEqual([])
+  })
+
+  it('haelt die Leiter je Klasse monoton: die staerkere Sache kommt spaeter', () => {
+    const units = unitRules()
+    const heute = alleTage()
+    const klassen = new Map<string, string[]>()
+    for (const [key, rule] of Object.entries(units)) {
+      klassen.set(rule.class, [...(klassen.get(rule.class) ?? []), key])
+    }
+
+    // Die Gegenprobe zuerst: eine Zaehlung ueber einer leeren Menge ist immer wahr.
+    expect([...klassen.values()].filter((keys) => keys.length > 1).length).toBeGreaterThanOrEqual(4)
+
+    const falsch: string[] = []
+    for (const keys of klassen.values()) {
+      const sortiertFrueher = [...keys].sort((a, b) => (FRUEHER[a] ?? 0) - (FRUEHER[b] ?? 0))
+      const sortiertHeute = [...keys].sort((a, b) => (heute[a] ?? 0) - (heute[b] ?? 0))
+      if (sortiertFrueher.join(',') !== sortiertHeute.join(',')) {
+        falsch.push(`${keys[0]}-Klasse: frueher ${sortiertFrueher.join(' < ')}, heute ${sortiertHeute.join(' < ')}`)
+      }
+    }
+
+    expect(falsch, `Klassenreihenfolge verletzt:\n${falsch.join('\n')}`).toEqual([])
+  })
+
+  it('schaltet kein Gebaeude spaeter frei als die Einheit, die es verlangt', () => {
+    // Der Lader wirft darauf schon (AK3 oben) — hier steht es als Zusicherung ueber das
+    // ausgelieferte Regelwerk und nicht ueber den Lader, denn die Streckung haette sie
+    // genau hier reissen koennen: Artillerie lag im Vorschlag des Bauplans zwei Tage VOR
+    // ihrer Fabrik.
+    const buildings = buildingDays()
+    const falsch: string[] = []
+    for (const [key, rule] of Object.entries(unitRules())) {
+      const gebaeude = buildings[rule.requiresBuilding]
+      if (gebaeude && rule.availableFromDay < gebaeude.availableFromDay) {
+        falsch.push(`${key} ab Tag ${rule.availableFromDay}, ${rule.requiresBuilding} erst ab ${gebaeude.availableFromDay}`)
+      }
+    }
+
+    expect(falsch, `Einheit vor ihrem Gebaeude:\n${falsch.join('\n')}`).toEqual([])
+  })
+
+  it('laesst die Abstaende in der zweiten Haelfte groesser sein als in der ersten', () => {
+    const sortiert = Object.values(alleTage()).sort((a, b) => a - b)
+    const mitte = Math.floor(sortiert.length / 2)
+    const abstaende = (werte: number[]) =>
+      werte.slice(1).map((tag, index) => tag - werte[index]!).reduce((a, b) => a + b, 0) / Math.max(1, werte.length - 1)
+
+    const vorn = abstaende(sortiert.slice(0, mitte + 1))
+    const hinten = abstaende(sortiert.slice(mitte))
+
+    expect(hinten, `Abstaende vorn ${vorn.toFixed(1)}, hinten ${hinten.toFixed(1)}`).toBeGreaterThan(vorn)
   })
 
   it('gibt jedem Gebaeude und jeder Einheit einen Tag', () => {

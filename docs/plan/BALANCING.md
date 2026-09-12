@@ -144,6 +144,8 @@ Ein Strich heißt: im Lauf nicht geprüft.
 | `embarkTicks` | 3 | belegt | — | Handbuch: feste Einschiffungszeit |
 | `disembarkTicks` | 2 | belegt | — | Handbuch: feste Ausschiffungszeit |
 | `hostileCoastFactor` | 1.500 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
+| `buildLevelCostPermille` | 1.800 | geschätzt | — | T-M34-04/D34.3: Stufe n kostet 1,8^(n−1), Stufe 3 also das 3,24-fache. Vorher kostete jede Stufe dasselbe und die Gebäudestufe war reine Buchführung |
+| `buildLevelTimePermille` | 1.500 | geschätzt | — | T-M34-04/D34.3: Stufe 3 dauert das 2,25-fache. Bewusst flacher als der Preis — eine Stufe, die lange dauert *und* viel kostet, bestraft zweimal |
 | `maxBuildSlotsCity` | 2 | belegt | — | Handbuch: Bauplätze je Großstadt |
 | `maxBuildSlotsRural` | 1 | belegt | — | Handbuch: Bauplätze je Landprovinz |
 | `capitalMoveCooldownDays` | 30 | geschätzt | — | begründet gesetzt, im Parameterlauf gemessen |
@@ -186,8 +188,8 @@ tragen, ist gemessen und steht in `docs/reports/ai-tournament.md`.
 | Stufe | `warThreshold` | `trustThreshold` | `recruitShare` |
 |---|---|---|---|
 | leicht | 300 | 500 | 80 |
-| normal | 450 | 650 | **120** |
-| schwer | 600 | 800 | **500** |
+| normal | 450 | 650 | 200 |
+| schwer | 600 | 800 | **280** |
 
 `warThreshold` ist **neu und ein eigener Wert**: bis zum 2026-09-06 leitete sich die
 Kriegsschwelle aus `maxFronts` ab (`maxFronts >= 3 ? 1200 : 1600`), und dieser eine Wert
@@ -206,6 +208,17 @@ keine einzige Partie. Eine Obergrenze dafür ist nicht einzuhalten, ohne „schw
 absichtlich schlechter zu machen; sie steht deshalb zwischen den *benachbarten* Stufen,
 wo eine Mauer dem Spieler wirklich schadet. Begründet in `PROBLEME.md`.
 
+**Zwei Korrekturen vom 2026-09-12 (T-M34-07).** Erstens stand in dieser Tabelle
+**120 / 500**, während `ai.json` seit dem 2026-09-06 15:47 (`0d551ac`, T-M15-08)
+**200 / 360** führte — die Tabelle war um einen Commit veraltet, und kein Wächter hat es
+gesehen, weil `test/balancing.test.ts` nur `constants.json` las. Er liest jetzt auch
+`ai.json`. Zweitens ist `recruitShare` von `schwer` auf **280** gesenkt worden, weil nach
+der Streckung der Leiter (T-M34-03) zwischen `normal` und `schwer` eine **Mauer** stand:
+Siegquote 1,00 bei null Unentschieden, und zwar über 40, 80, 120 und 200 Spieltage
+gleichermaßen. Gemessen wurden fünf Werte über zwei Fenster; das Band 0,55 bis 0,95 wird
+im Bereich **260 bis 320** eingehalten, 280 liegt in seiner Mitte. Der Lauf mit 280 steht
+bei **0,70**. Die Zahlen und der Grund stehen in `docs/reports/progress-baseline.md` §6.
+
 ## Feuerautomatik (R-BAT-08, T-M15-07)
 
 Die Automatik führt **keine eigene Zahl** ein: sie benutzt dieselbe Rechnung wie der
@@ -223,6 +236,24 @@ Kosten), also nie Artillerie. **R-BAT-08/AK3 ist damit offen** und an T-M15-08 z
 Die Zahl steht hier trotzdem, weil eine fehlende Zeile in dieser Tabelle so aussähe, als
 wäre die Frage nie gestellt worden.
 
+## Der Startvorrat
+
+T-M34-06 (2026-09-12, D34.4). **Auf zwei Drittel gekürzt**, je Rohstoff derselbe Faktor:
+Nahrung und Material 667.000 (vorher 1.000.000), Eisen und Kohle 333.000 (500.000), Öl
+167.000 (250.000), Seltene Erden 67.000 (100.000), Geld 1.667.000 (2.500.000). Alle
+**geschätzt**, wie die alten Werte auch.
+
+Der Befund, der die Kürzung trägt: der alte Vorrat bezahlte rund **dreizehn Infanterie
+aus der Nahrung und siebenunddreißig aus dem Geld**, während eine durchschnittliche
+Provinz am Tag etwa eine dreiviertel Infanterie an Nahrung erwirtschaftet. Die ersten
+Spieltage waren ein Abbau des Anfangslagers, keine Knappheit — und mit der gestreckten
+Leiter (T-M34-03) dauern sie jetzt länger.
+
+**Nicht weiter gekürzt**, und das ist die Gegenrichtung: die Eröffnung soll knapp werden,
+nicht handlungsunfähig. Ein Test in `create.test.ts` hält fest, dass Kaserne und
+Infanterie am ersten Spieltag bezahlbar bleiben; die Kürzung trifft die KI genauso, die in
+der Frühphase ohnehin am schwächsten spielt.
+
 ## Die Freischaltungsachse — erster Spieltag je Sache
 
 R-TECH-01 (T-M15-02, 2026-09-06). Der Befund war keine falsche Zahl, sondern eine fehlende
@@ -230,44 +261,57 @@ Achse: **Spieltag 1 unterschied sich von Spieltag 40 durch nichts als den Kontos
 Jede Sache trägt jetzt einen ersten Spieltag; davor lehnt der Kern mit
 `NOT_YET_AVAILABLE` ab und nennt den Tag.
 
-**Fünf Zahlen sind belegt** (Referenz 1.4, `docs/research/SUPREMACY-MECHANICS.md`), die
-übrigen zwölf abgeleitet. Die Ableitungsregel steht in der letzten Spalte und ist überall
-dieselbe Idee: eine Sache kommt nie vor dem Gebäude, das sie braucht, und der Abstand
-folgt dem Aufwand. `test/balancing.test.ts` verlangt für jedes der 7 Gebäude und jede der
-10 Einheiten eine Zeile hier — eine neue Sache ohne Eintrag lässt den Testlauf scheitern.
+**Seit T-M34-02 ist keine dieser siebzehn Zahlen mehr belegt, alle sind abgeleitet.**
+Bis dahin galten fünf als belegt (Referenz 1.4, `docs/research/SUPREMACY-MECHANICS.md`:
+Kaserne 1, Hafen 2, Eisenbahn 5, Fabrik 8, Flugplatz 10). Sie stehen weiter in der
+Begründungsspalte, aber als **Herkunft der Reihenfolge**, nicht als Maß für den Abstand:
+im Original ist ein Spieltag ein echter Tag, hier sind es 24 Sekunden bei Tempo 1.
+Dieselbe Leiter dauert dort sechzehn Tage und hier 6,4 Minuten — eine belegte Zahl aus
+einer anderen Zeitrechnung ist für diese hier keine. Die Gegenrede steht ausführlich in
+R-TECH-01; die neuen Abstände setzt T-M34-03.
+
+Die Ableitungsregel steht in der letzten Spalte und ist überall dieselbe Idee: eine Sache
+kommt nie vor dem Gebäude, das sie braucht, und der Abstand folgt dem Aufwand.
+`test/balancing.test.ts` verlangt für jedes der 7 Gebäude und jede der 10 Einheiten eine
+Zeile hier — eine neue Sache ohne Eintrag lässt den Testlauf scheitern.
 
 ### Gebäude
 
 | Sache | Tag | Status | Begründung |
 |---|---|---|---|
-| `barracks` | 1 | belegt | Referenz 1.4 — das Spiel beginnt mit der Möglichkeit zu rekrutieren |
-| `harbour` | 2 | belegt | Referenz 1.4 |
-| `fortress` | 3 | abgeleitet | zwischen Hafen und Eisenbahn: rein defensiv, deshalb früh, aber nicht am ersten Tag — sonst gräbt sich jeder ein, bevor überhaupt jemand marschiert |
-| `railway` | 5 | belegt | Referenz 1.4 |
-| `factory` | 8 | belegt | Referenz 1.4 |
-| `shipyard` | 9 | abgeleitet | einen Tag nach der Fabrik: Kriegsschiffe sind der Fabrik gleichrangig, brauchen aber zusätzlich einen Hafen |
-| `airfield` | 10 | belegt | Referenz 1.4 |
+| `barracks` | 1 | abgeleitet | Referenz 1.4, und der einzige Tag, der bleibt: ohne sie steht der Spieler am ersten Spieltag ohne eine einzige Handlung da |
+| `harbour` | 6 | abgeleitet | Referenz 1.4 gibt den Platz (zweite Sache der Leiter), T-M34-03 den Abstand |
+| `fortress` | 12 | abgeleitet | zwischen Hafen und Eisenbahn: rein defensiv, deshalb früh, aber nicht am ersten Tag — sonst gräbt sich jeder ein, bevor überhaupt jemand marschiert |
+| `railway` | 20 | abgeleitet | Referenz 1.4 gibt den Platz, T-M34-03 den Abstand |
+| `factory` | 28 | abgeleitet | Referenz 1.4 gibt den Platz; im Vorschlag des Bauplans stand hier Tag 30 hinter der Artillerie — korrigiert, weil eine Einheit nie vor ihrem Gebäude kommen darf |
+| `shipyard` | 36 | abgeleitet | nach der Artillerie: Kriegsschiffe sind der Fabrik gleichrangig, brauchen aber zusätzlich einen Hafen |
+| `airfield` | 40 | abgeleitet | Referenz 1.4 gibt den Platz, T-M34-03 den Abstand — die letzte Gebäudestufe der Leiter |
 
 ### Einheiten
 
 | Sache | Tag | Status | Begründung |
 |---|---|---|---|
 | `infantry` | 1 | abgeleitet | mit der Kaserne — die erste Partie muss am ersten Tag etwas zu tun haben |
-| `transport` | 3 | abgeleitet | einen Tag nach dem Hafen; Transport ist kein Kampfmittel und darf früh kommen |
-| `motorized` | 4 | abgeleitet | drei Tage nach der Infanterie: dieselbe Kaserne, spürbar mehr Tempo |
-| `tank` | 8 | abgeleitet | mit der Fabrik — sie hat sonst am Tag ihrer Freischaltung keinen Zweck |
-| `artillery` | 9 | abgeleitet | einen Tag nach dem Panzer; sie ist Vorbedingung der Feuerautomatik (R-BAT-08) und darf nicht ans Ende rutschen |
-| `fighter` | 10 | abgeleitet | mit dem Flugplatz |
-| `destroyer` | 11 | abgeleitet | zwei Tage nach der Werft: das erste Kriegsschiff |
-| `bomber` | 13 | abgeleitet | drei Tage nach dem Jäger — Luftüberlegenheit vor Bodenwirkung |
-| `heavy_tank` | 14 | abgeleitet | sechs Tage nach dem Panzer; er braucht ohnehin die zweite Fabrikstufe |
-| `rocket_artillery` | 16 | abgeleitet | die späteste Sache im Spiel: größte Reichweite, deshalb der Schlusspunkt der Achse |
+| `transport` | 10 | abgeleitet | vier Tage nach dem Hafen; Transport ist kein Kampfmittel und darf früh kommen |
+| `motorized` | 16 | abgeleitet | die zweite Sache aus der Kaserne: dieselbe Aushebung, spürbar mehr Tempo |
+| `tank` | 30 | abgeleitet | zwei Tage nach der Fabrik — vorher hat sie keinen Zweck, gleichzeitig wäre der Bauplatz noch leer |
+| `artillery` | 34 | abgeleitet | nach dem Panzer; sie ist Vorbedingung der Feuerautomatik (R-BAT-08) und darf nicht ans Ende rutschen |
+| `fighter` | 44 | abgeleitet | vier Tage nach dem Flugplatz |
+| `destroyer` | 48 | abgeleitet | zwölf Tage nach der Werft: das erste Kriegsschiff, und seit T-M34-05 mit Werft Stufe 2 |
+| `bomber` | 62 | abgeleitet | nach dem Jäger — Luftüberlegenheit vor Bodenwirkung |
+| `heavy_tank` | 70 | abgeleitet | weit nach dem Panzer; er braucht ohnehin die zweite Fabrikstufe |
+| `rocket_artillery` | 80 | abgeleitet | die späteste Sache im Spiel: größte Reichweite, dazu Fabrik Stufe 3 (T-M34-05) — der Schlusspunkt der Achse |
 
-**Was hier bewusst fehlt:** eine Zahl für „wie lange dauert eine Partie". Der Abnahmelauf
-misst 822 Spieltage (`docs/reports/fullgame.json`), die späteste Freischaltung liegt bei
-Tag 16 — die Achse prägt also die **Eröffnung**, nicht den Verlauf. Das ist beabsichtigt
-und die kleinste Fassung, die den Befund behebt; ob sie zu kurz greift, beantwortet der
-Playtest und nicht diese Tabelle.
+**Was hier bis zum 2026-09-12 stand, und warum es fiel.** Die Tabelle trug die Tage 1 bis
+16 und daneben den Satz, die Achse präge „die Eröffnung, nicht den Verlauf — das ist
+beabsichtigt". Beabsichtigt war es, richtig war es nicht: der Abnahmelauf entscheidet an
+**Spieltag 798**, die letzte Freischaltung lag bei Tag 16, und ein Spieltag dauert hier
+24 Sekunden statt eines Tages. **Die ganze Fortschrittsachse war nach 6,4 Minuten
+Echtzeit vorbei** — zwei Prozent der Partie. Der damalige Satz schloss mit „ob sie zu kurz
+greift, beantwortet der Playtest"; sie greift zu kurz, und T-M34-03 hat sie gestreckt.
+
+**Was weiterhin fehlt:** eine Zahl für „wie lange dauert eine Partie". Sie gehört nicht in
+diese Tabelle, sondern in `docs/reports/progress-baseline.md`, wo sie gemessen wird.
 
 ## Was der Parameterlauf ergeben hat
 
