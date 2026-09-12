@@ -1,0 +1,1394 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>WorldWar — Projektstand</title>
+<meta name="description" content="Stand des Projekts WorldWar: Fachbereiche, Anleitung, Roadmap und Repo-Status.">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #121212;
+  --surface: #1a1c20;
+  --surface-raised: #202329;
+  --border: #3a3f47;
+  --border-strong: #5c6a78;
+  --text: #e0e0e0;
+  --text-muted: #a9aeb6;
+  --accent: #e0a220;
+  --accent-soft: rgba(224, 162, 32, 0.12);
+  --on-accent: #1a1200;
+  --status-fertig: #7ec57e;
+  --status-in-arbeit: #e0a220;
+  --status-geplant: #6fa8dc;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "SF Mono", Menlo, monospace;
+  --radius: 8px;
+  --nav-height: 3.75rem;
+  --ease: 240ms ease;
+  --page-pad: 1.25rem;
+  --max: 72rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+h1, h2, h3 { line-height: 1.15; margin: 0; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+code, kbd { font-family: var(--font-mono); font-size: 0.9em; }
+code { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 4px; padding: 0.05em 0.35em; }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem; top: -10rem;
+  z-index: 100;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0.75rem; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+
+/* ── Navigation ─────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(18, 18, 18, 0.94);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: var(--nav-height);
+}
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.125rem;
+  letter-spacing: 0.01em;
+}
+.brand-version {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem; height: 2.75rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.nav-toggle:hover { border-color: var(--accent); }
+.nav-links {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  margin: 0;
+  padding: 0.5rem var(--page-pad) 1rem;
+  list-style: none;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.nav-links[data-open="false"] { display: none; }
+.nav-links a {
+  display: block;
+  padding: 0.75rem 0.25rem;
+  color: var(--text);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  padding-left: 0.75rem;
+}
+.nav-links a:hover { color: var(--accent); }
+.nav-links a[aria-current="true"] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Abschnitte ─────────────────────────────── */
+main > section { scroll-margin-top: calc(var(--nav-height) + 0.5rem); }
+.section { padding-block: 4rem; border-top: 1px solid var(--border); }
+.section-head { display: grid; gap: 0.75rem; margin-bottom: 2rem; max-width: 46rem; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.section h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.lead { color: var(--text-muted); font-size: 1.0625rem; }
+
+/* ── Hero ───────────────────────────────────── */
+.hero {
+  padding-block: 3.5rem 4.5rem;
+  background-image:
+    linear-gradient(rgba(224, 224, 224, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(224, 224, 224, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+}
+.hero-grid { display: grid; gap: 3rem; align-items: center; }
+.hero-text { display: grid; gap: 1.5rem; }
+.hero h1 {
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+.hero-desc { font-size: 1.125rem; max-width: 38rem; }
+.hero-desc + .hero-desc { color: var(--text-muted); }
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0.5rem 0 0;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.fact { background: var(--bg); padding: 0.85rem 1rem; display: grid; gap: 0.15rem; }
+.fact dt { font-size: 0.8125rem; color: var(--text-muted); }
+.fact dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hero-figure { margin: 0; display: grid; gap: 0.75rem; }
+.hero-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.hero-figure figcaption { font-size: 0.875rem; color: var(--text-muted); }
+
+/* ── Status-Badges ──────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.badge[data-status="fertig"] { color: var(--status-fertig); }
+.badge[data-status="in-arbeit"] { color: var(--status-in-arbeit); }
+.badge[data-status="geplant"] { color: var(--status-geplant); }
+
+.status-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ── Fachbereiche ───────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.card-grid > li { display: flex; }
+.card {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--ease), background-color var(--ease), transform var(--ease);
+}
+.card:hover { border-color: var(--border-strong); transform: scale(1.01); }
+.card[data-open="true"] {
+  border-color: var(--accent);
+  background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
+}
+/* Der Button sitzt im Titel; sein ::after spannt die Klickfläche über die ganze Karte. */
+.card-button {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.card-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+.card-button:focus-visible { outline: none; }
+.card-button:focus-visible::after { outline: 3px solid var(--accent); outline-offset: 3px; }
+.muted { color: var(--text-muted); }
+.commit-msg { display: block; font-size: 0.875rem; }
+main:focus { outline: none; }
+.card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.card-icon { font-size: 1.6rem; line-height: 1; }
+.card h3 { font-size: 1.1875rem; }
+.card-desc { color: var(--text-muted); font-size: 0.9375rem; }
+.card-path { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-muted); }
+
+.detail {
+  margin-top: 1.5rem;
+  padding: 1.5rem 1.25rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  scroll-margin-top: calc(var(--nav-height) + 1rem);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .detail:not([hidden]) { animation: detail-in 260ms ease; }
+}
+@keyframes detail-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+.detail-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.detail-title { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.detail h3 { font-size: clamp(1.4rem, 3vw, 1.875rem); }
+.detail h3:focus { outline: none; }
+.detail h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.detail h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.8125rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.detail-body { display: grid; gap: 2rem; }
+.detail-text { font-size: 1.0625rem; max-width: 46rem; }
+.detail-cols { display: grid; gap: 2rem; }
+.detail ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.4rem; }
+.detail li::marker { color: var(--accent); }
+.kv { margin: 0; display: grid; gap: 0.5rem; }
+.kv div { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dashed var(--border); padding-bottom: 0.4rem; }
+.kv dt { color: var(--text-muted); }
+.kv dd { margin: 0; font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.open-points li::marker { color: var(--status-geplant); }
+.file-list { list-style: none; padding-left: 0 !important; }
+.file-list a { font-family: var(--font-mono); font-size: 0.875rem; word-break: break-all; }
+.file-list span { display: block; color: var(--text-muted); font-size: 0.875rem; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color var(--ease), color var(--ease);
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Anleitung ──────────────────────────────── */
+.guide-grid { display: grid; gap: 2.5rem; }
+.guide-block h3 { font-size: 1.25rem; margin-bottom: 1rem; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 1rem; }
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.75rem;
+}
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--accent);
+  padding-top: 0.15rem;
+}
+.steps strong { display: block; }
+.steps p { color: var(--text-muted); }
+.commands { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
+.command {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.command code { background: none; border: 0; padding: 0; font-size: 0.9375rem; color: var(--text); }
+.command p { grid-column: 1 / -1; color: var(--text-muted); font-size: 0.9375rem; }
+.copy-btn { min-height: 2.25rem; padding: 0.25rem 0.7rem; font-size: 0.875rem; }
+.note {
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ── Roadmap ────────────────────────────────── */
+.next {
+  margin-bottom: 2.5rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.next h3 { font-size: 1.125rem; margin-bottom: 0.9rem; }
+.next ol { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.6rem; }
+.next li::marker { font-family: var(--font-mono); color: var(--accent); }
+.timeline { margin: 0; padding: 0; list-style: none; position: relative; display: grid; gap: 1rem; }
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.6rem; top: 0.5rem; bottom: 0.5rem;
+  width: 2px;
+  background: var(--border);
+}
+.phase { position: relative; padding-left: 2.25rem; }
+.phase-dot {
+  position: absolute;
+  left: 0.1rem; top: 1.35rem;
+  width: 1.05rem; height: 1.05rem;
+  border-radius: 50%;
+  border: 2px solid var(--status-geplant);
+  background: var(--bg);
+}
+.phase[data-status="fertig"] .phase-dot { border-color: var(--status-fertig); background: var(--status-fertig); }
+.phase[data-status="in-arbeit"] .phase-dot { border-color: var(--status-in-arbeit); background: var(--status-in-arbeit); }
+.phase-card {
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.6rem;
+}
+.phase-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+.phase-range { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-muted); }
+.phase h3 { font-size: 1.125rem; flex: 1 1 14rem; }
+.phase-note { color: var(--text-muted); font-size: 0.9375rem; }
+.bar { height: 6px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--status-fertig); }
+.phase[data-status="geplant"] .bar span { background: var(--status-geplant); }
+.bar-label { font-size: 0.875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.phase details summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: 0.9375rem;
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 0.2rem 0;
+}
+.milestones { margin: 0.6rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; }
+.milestones li { display: grid; grid-template-columns: 3.25rem 1fr auto; gap: 0.5rem; font-size: 0.9375rem; }
+.milestones .ms-id { font-family: var(--font-mono); color: var(--text-muted); }
+.milestones .ms-count { font-family: var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ── Footer / Repo-Status ───────────────────── */
+.site-footer { border-top: 1px solid var(--border); background: var(--surface); padding-block: 3rem 2.5rem; }
+.site-footer h2 { font-size: 1.375rem; margin-bottom: 1.25rem; }
+.repo-status { margin: 0; display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.repo-status div { background: var(--bg); padding: 0.9rem 1rem; display: grid; gap: 0.2rem; }
+.repo-status dt { font-size: 0.8125rem; color: var(--text-muted); }
+.repo-status dd { margin: 0; }
+.repo-status .mono { font-family: var(--font-mono); }
+.footer-note { margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-muted); }
+
+.noscript { padding: 2rem var(--page-pad); }
+
+/* ── Tablet ≥ 768px ─────────────────────────── */
+@media (min-width: 768px) {
+  :root { --page-pad: 2rem; }
+  .nav-toggle { display: none; }
+  .nav-links,
+  .nav-links[data-open="false"] {
+    position: static;
+    display: flex;
+    gap: 0.25rem;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+  .nav-links a {
+    padding: 0.4rem 0.75rem;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 4px 4px 0 0;
+  }
+  .nav-links a[aria-current="true"] { border-bottom-color: var(--accent); }
+  .section { padding-block: 5rem; }
+  .hero { padding-block: 5rem 6rem; }
+  .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .detail { padding: 2rem; }
+  .detail-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .repo-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Desktop ≥ 1024px ───────────────────────── */
+@media (min-width: 1024px) {
+  body { font-size: 1.0625rem; }
+  .hero-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 4rem; }
+  .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .detail-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .repo-status { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+
+<header class="site-header">
+  <nav class="wrap nav" aria-label="Hauptnavigation">
+    <a class="brand" id="brand" href="#uebersicht"></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Menü öffnen">☰</button>
+    <ul class="nav-links" id="nav-links" data-open="false"></ul>
+  </nav>
+</header>
+
+<main id="inhalt" tabindex="-1">
+  <section id="uebersicht" class="hero" aria-labelledby="uebersicht-titel"></section>
+  <section id="bereiche" class="section" aria-labelledby="bereiche-titel"></section>
+  <section id="anleitung" class="section" aria-labelledby="anleitung-titel"></section>
+  <section id="roadmap" class="section" aria-labelledby="roadmap-titel"></section>
+  <noscript><p class="noscript wrap">Diese Übersicht wird aus den Projektdaten im Skript erzeugt. Bitte JavaScript aktivieren.</p></noscript>
+</main>
+
+<footer class="site-footer" id="status" aria-labelledby="status-titel"></footer>
+
+<script>
+// ═══════════════════════════════════════════
+// EDIT: Projekt-Daten hier anpassen
+// ═══════════════════════════════════════════
+// Stand: 2026-09-13, abgeleitet aus README.md, docs/plan/WORKFLOW.md, docs/plan/tasks.yaml,
+// docs/plan/MEHRSPIELER.md, docs/ANLEITUNG.md und den package.json-Dateien.
+// Texte in `Backticks` werden als Code gesetzt.
+const projectData = {
+  name: "WorldWar",
+  description: "Ein privater, nicht-kommerzieller Nachbau von Supremacy: World War 3 als Einzelspieler gegen Computergegner — mit frei regelbarer Spielgeschwindigkeit und ohne jede Monetarisierung.",
+  descriptionZusatz: "V1 und der Ausbau bis M36 sind gebaut und abgenommen. Als Nächstes ist eine Partie zu zweit geplant, bei der der Mitspieler über einen Link beitritt.",
+  eyebrow: "Supremacy-Nachbau · TypeScript · React · Tauri",
+  version: "0.1.0",
+  versionQuelle: "package.json, tauri.conf.json, Cargo.toml",
+  license: "Keine Lizenzdatei — privat, nicht-kommerziell",
+  repo: {
+    zweig: "main",
+    remote: "https://github.com/Noah2475g/WorldWar-III",
+    letzterCommit: { hash: "af95a9e", datum: "2026-09-12T19:38:57+02:00", nachricht: "docs(plan): M37-M39 – eine Partie zu zweit über einen Link" },
+    pruefkette: "`pnpm verify` — lokal, keine CI"
+  },
+
+  abschnitte: [
+    { id: "uebersicht", label: "Übersicht" },
+    { id: "bereiche", label: "Bereiche", eyebrow: "Fachbereiche", titel: "Woraus das Projekt besteht", lead: "Neun Bausteine, abgeleitet aus der Ordnerstruktur des Monorepos. Eine Karte öffnet die Details darunter." },
+    { id: "anleitung", label: "Anleitung", eyebrow: "Anleitung", titel: "Spielen und Weiterbauen", lead: "Die ersten fünf Minuten im Spiel und die Befehle, die man zum Arbeiten am Repo braucht." },
+    { id: "roadmap", label: "Roadmap", eyebrow: "Roadmap", titel: "Vom Fundament bis zur Partie zu zweit", lead: "Die Meilensteine aus `docs/plan/tasks.yaml`, zu Bauabschnitten zusammengefasst." }
+  ],
+
+  kennzahlen: [
+    { label: "Tests (schnell)", wert: "1929" },
+    { label: "Abdeckung Kern", wert: "96,8 %" },
+    { label: "Abnahme", wert: "11 / 11" },
+    { label: "Provinzen", wert: "237" },
+    { label: "Mächte", wert: "24" }
+  ],
+
+  Bereiche: [
+    {
+      id: "simulationskern",
+      titel: "Simulationskern",
+      icon: "⚙️",
+      status: "fertig",
+      pfad: "packages/core · packages/shared",
+      kurzeBeschreibung: "Deterministischer Tick-Kern ohne UI-Abhängigkeit: jede Spielstunde aus Zustand und Befehlen gerechnet.",
+      detailBeschreibung: "`step(state, commands, ctx)` ist eine reine Funktion; ein Tick entspricht einer Spielstunde und durchläuft feste Phasen — Befehle, Produktion, Bau, Bewegung, Kampf, Moral und mehr. Der Zufall ist geseedet und liegt im Zustand, gerechnet wird in Ganzzahl-Festkomma; Gleitkomma-Mal und -Geteilt sind im Kern per ESLint verboten. Golden-Master-Prüfsummen halten fest, dass dieselbe Startzahl immer dieselbe Partie ergibt — das Fundament für den geplanten Mehrspieler.",
+      module: [
+        "Tick-Schritt und Phasen (Produktion, Bau, Rekrutierung, Bewegung, Kampf, Beschuss, Rückzug, Besetzung, Moral, Diplomatie, Unterhalt)",
+        "Befehle mit Validierung (Bauen, Ausheben, Marsch, Diplomatie, Handel, Beschuss)",
+        "Regeln laden, Verfügbarkeit, Markt, Siegbedingung",
+        "Spielstände speichern, prüfen und migrieren",
+        "Ereignisprotokoll und öffentliche Sicht / Aufklärung",
+        "Festkomma, geseedeter Zufall (xoshiro128), Prüfsumme"
+      ],
+      kennzahlen: [
+        { label: "Testabdeckung Kern", wert: "96,8 %" },
+        { label: "Rechenzeit je Tick", wert: "1,54 ms" },
+        { label: "Ein Befehl als JSON", wert: "79 Byte" }
+      ],
+      dateien: [
+        { pfad: "packages/core/src/step.ts", info: "der Tick als reine Funktion" },
+        { pfad: "packages/core/src/phases/", info: "eine Datei je Phase" },
+        { pfad: "packages/core/src/commands/", info: "Befehle und Validierung" },
+        { pfad: "packages/shared/src/", info: "Festkomma, Zufall, Prüfsumme" },
+        { pfad: "packages/core/test/golden/tiny-500.json", info: "Golden-Master" }
+      ]
+    },
+    {
+      id: "weltkarte",
+      titel: "Weltkarte",
+      icon: "🗺️",
+      status: "fertig",
+      pfad: "packages/mapgen · data/maps",
+      kurzeBeschreibung: "Echte Weltkarte mit 237 Provinzen, aus gemeinfreien Natural-Earth-Daten erzeugt und kuratiert.",
+      detailBeschreibung: "`packages/mapgen` projiziert und vereinfacht die Geodaten, teilt und verschmilzt Gebiete, berechnet Nachbarschaften und Seewege und schreibt das Ergebnis nach `data/maps/world.json`. Die Kuratierung liegt als CSV im Repo, damit jede Entscheidung über eine Provinz nachvollziehbar bleibt. Die Wegfindung auf dem fertigen Graphen gehört zum Kern.",
+      module: [
+        "Projektion und Umprojektion",
+        "Geometrie-Vereinfachung",
+        "Nachbarschaften (Adjazenz)",
+        "Seewege und Seeverbindungen",
+        "Teilen und Zusammenlegen von Gebieten",
+        "Kuratierung per CSV, Anreicherung der Provinzdaten",
+        "Wegfindung (`packages/core/src/map`)"
+      ],
+      kennzahlen: [
+        { label: "Provinzen", wert: "237" },
+        { label: "Nachbarschaften", wert: "658" },
+        { label: "Startpositionen", wert: "24" },
+        { label: "world.json", wert: "1,17 MB" }
+      ],
+      dateien: [
+        { pfad: "packages/mapgen/src/", info: "Kartenerzeugung" },
+        { pfad: "data/maps/", info: "Karte und Kuratierungslisten" },
+        { pfad: "scripts/build-map.mjs", info: "`pnpm map:build`" },
+        { pfad: "docs/reports/map.md", info: "Kartenbericht" }
+      ]
+    },
+    {
+      id: "computergegner",
+      titel: "Computergegner",
+      icon: "🤖",
+      status: "fertig",
+      pfad: "packages/ai",
+      kurzeBeschreibung: "KI-Mächte, die bauen, rüsten, Ziele wählen und Kriege erklären — aus demselben Zustand wie der Mensch.",
+      detailBeschreibung: "M7 legte die Computergegner an, M15 machte sie zu echten Gegnern. Die Lehre steckt im Integrationstor: eine Mechanik war in zwölf Einzeltests belegt und im Spiel tot. Seitdem braucht jede Mechanik eine Zahl aus einer ganzen Partie. Die KI liegt im Spielzustand (`state.ai`), sodass jede Seite dieselbe KI aus demselben Zustand rechnet.",
+      module: [
+        "Entscheidungsschleife und Runner",
+        "Wirtschaft und Bauplanung",
+        "Militär, Zielwahl und Bedrohungslage",
+        "Diplomatie und Beziehungen",
+        "Armeen zusammenlegen, Hauptstadt"
+      ],
+      kennzahlen: [
+        { label: "AK-1: Sieg an Spieltag", wert: "471" },
+        { label: "Eroberungen", wert: "1827" },
+        { label: "Kriegserklärungen", wert: "12" }
+      ],
+      offen: [
+        "Die KI klettert die Fortschrittsachse nicht: `nextBuildingFor` baut Kaserne, Fabrik, Eisenbahn und Hafen je nur einmal — keine Macht kommt über Fabrikstufe 1."
+      ],
+      dateien: [
+        { pfad: "packages/ai/src/", info: "KI-Module" },
+        { pfad: "data/rules/default/ai.json", info: "KI-Parameter" },
+        { pfad: "apps/headless/test/ai-integration.slow.test.ts", info: "Integrationstor über eine Partie" },
+        { pfad: "docs/reports/ai-tournament.md", info: "Turnierbericht" }
+      ]
+    },
+    {
+      id: "zeit",
+      titel: "Zeit & Spielablauf",
+      icon: "⏱️",
+      status: "fertig",
+      pfad: "apps/desktop/src/game",
+      kurzeBeschreibung: "Der Grund für dieses Spiel: regelbares Tempo statt Warten, dazu Vorspulen bis zum nächsten Ereignis.",
+      detailBeschreibung: "Ein Tick ist eine Spielstunde. Die Rastpunkte reichen von Pause bis 100 Spielstunden je Sekunde. „Vorspulen“ läuft, bis ein Bau fertig ist, eine Armee ankommt, ein Gefecht beginnt oder ein Alarm den Spieler selbst betrifft — in Häppchen, jederzeit abbrechbar, höchstens 30 Spieltage. Befehle werden gesammelt und im ersten Tick des nächsten Laufs angewendet. Spielstände überleben das Schließen des Fensters.",
+      module: [
+        "Geschwindigkeitsregler",
+        "Vorspulen bis Ereignis",
+        "Befehle sammeln und anwenden",
+        "Eröffnung und Tutorial",
+        "Spielstände (IndexedDB im Browser, Tauri im Programm)",
+        "Ereignisse und Ablehnungsgründe"
+      ],
+      kennzahlen: [
+        { label: "1 Tick", wert: "1 Spielstunde" },
+        { label: "Höchstes Tempo", wert: "100 h/s" },
+        { label: "Vorspulen maximal", wert: "30 Tage" }
+      ],
+      dateien: [
+        { pfad: "apps/desktop/src/game/", info: "Tempo, Vorspulen, Eröffnung, Spielstände" },
+        { pfad: "apps/desktop/src/storage/", info: "Speicheranbindungen" },
+        { pfad: "docs/ANLEITUNG.md", info: "Anleitung für Spieler" }
+      ]
+    },
+    {
+      id: "oberflaeche",
+      titel: "Oberfläche „Kriegsrat“",
+      icon: "🧭",
+      status: "fertig",
+      pfad: "apps/desktop/src/ui · src/map",
+      kurzeBeschreibung: "Dunkler Kartentisch in React und Canvas: Karte, Panels, Rohstoffleiste und Protokoll.",
+      detailBeschreibung: "Seit M29–M32 im Kriegsrat-Look: Bernstein für Zeit, Befehle und Auswahl, Grün für Eigenes, Zinnober ausschließlich für Feind, Gefecht und Alarm. Die Karte rendert auf Canvas; Kurven, Marschpfeile und Gefechtsbild ersetzen Text (M25–M27), Einheiten und Gebäude haben Bilder (M33), die Rohstoffleiste ist lesbar (M36). Jede Farbe steht unter einem Kontrasttest, jeder Knopf ist ohne Maus erreichbar, und alle Spielertexte sind echtes Deutsch.",
+      module: [
+        "Karten-Canvas: Rendern, Marker, Beschriftung, Auswahl, Kartenmodi",
+        "Panels für Provinz und Armee",
+        "Kopfleiste mit Rohstoffen",
+        "Rangliste und Machtkurven",
+        "Alarme, Ereignisleiste, Tooltips, Tutorial",
+        "Töne und Bewegung (gedämpft bei hohem Tempo)",
+        "Design-Tokens mit WCAG-Kontrasttest",
+        "Deutsche Texte mit Grammatik-Hilfen"
+      ],
+      kennzahlen: [
+        { label: "Schrift", wert: "IBM Plex (OFL)" },
+        { label: "Farben im Code", wert: "nur Tokens" }
+      ],
+      dateien: [
+        { pfad: "apps/desktop/src/ui/", info: "Komponenten und Stile" },
+        { pfad: "apps/desktop/src/map/", info: "Karten-Canvas" },
+        { pfad: "apps/desktop/src/ui/tokens.ts", info: "Farb-Tokens" },
+        { pfad: "apps/desktop/src/i18n/de.ts", info: "Spielertexte" },
+        { pfad: "docs/plan/KRIEGSRAT.md", info: "Entwurf des Umbaus" }
+      ]
+    },
+    {
+      id: "balancing",
+      titel: "Regeln & Balancing",
+      icon: "⚖️",
+      status: "fertig",
+      pfad: "data/rules · apps/headless",
+      kurzeBeschreibung: "Regeldaten als JSON und Simulationen über ganze Partien, die jede Zahl messen statt schätzen.",
+      detailBeschreibung: "Die Kernmechanik folgt Supremacy 1914 in der Fassung nach dem Umbau vom 10.01.2023, Setting und Einheiten sind modern. Belegte Zahlen sind übernommen, Lücken über automatisierte Testpartien abgestimmt. M34 hat die Fortschrittsachse gestreckt: die letzte Freischaltung liegt an Spieltag 80 statt 16 — 17 % der Partie statt 2 %. `apps/headless` fährt Parameterlauf, Turnier, Vollpartie und Langlauf ohne Oberfläche.",
+      module: [
+        "Regeldaten: Einheiten, Gebäude, Ressourcen, Konstanten, KI",
+        "Headless-Runner und Wiedergabe",
+        "Parameterlauf (rund 1 Stunde)",
+        "KI-Turnier (13 Sekunden)",
+        "Vollpartie und Langlauf",
+        "Frische-Wächter: Berichte müssen jünger sein als die Regeln"
+      ],
+      kennzahlen: [
+        { label: "Einheiten", wert: "10" },
+        { label: "Gebäude", wert: "7" },
+        { label: "Ressourcen", wert: "7" },
+        { label: "Letzte Freischaltung", wert: "Spieltag 80" }
+      ],
+      offen: [
+        "Vier stille Spieltage in der Eröffnung (Hafen Tag 6 → Transportschiff Tag 10) — eine Balancing-Frage.",
+        "M35: Zwischenziele zum Sieg sind entworfen; welche Marken es werden, entscheidet Noah."
+      ],
+      dateien: [
+        { pfad: "data/rules/default/", info: "Regeldaten" },
+        { pfad: "apps/headless/src/", info: "Runner, Parameterlauf, Turnier" },
+        { pfad: "docs/plan/BALANCING.md", info: "jede Zahl mit Status" },
+        { pfad: "docs/reports/progress-baseline.md", info: "Messung zu M34" },
+        { pfad: "docs/plan/FORTSCHRITT.md", info: "Bauplan M34/M35" }
+      ]
+    },
+    {
+      id: "pruefkette",
+      titel: "Prüfkette & Plan",
+      icon: "🛡️",
+      status: "fertig",
+      pfad: "test · scripts · docs/plan",
+      kurzeBeschreibung: "Tests, Wächter, ein maschinell geprüfter Plan und ein Abnahmelauf — lokal, ohne CI.",
+      detailBeschreibung: "`pnpm verify` bündelt Lint, Typen, die schnellen Tests, die Wächter und die Abdeckungsschwellen (Kern ≥ 90 %, gesamt ≥ 80 %). Die Wächter halten Zusagen fest, die kein Einzeltest sieht: kein Netz, keine Monetarisierung, keine Uhr im Kern, keine Farbliterale, keine fremden Assets. Der Plan ist maschinell geprüft — `tasks.yaml` gegen `03-TASKS.md` und jeder Dateipfad darin. `pnpm acceptance` fährt alle Abnahmekriterien.",
+      module: [
+        "Lint, Typprüfung, schnelle und langsame Testsuiten",
+        "18 Wächter unter `test/guards`",
+        "Plan-Wächter und Anforderungstor",
+        "Golden-Master für Kern und Durchlauf",
+        "Abnahmelauf mit Berichten",
+        "Plan: Anforderungen, Entwurf, Aufgaben, Entscheide, Befunde"
+      ],
+      kennzahlen: [
+        { label: "Tests / Dateien", wert: "1929 / 140" },
+        { label: "Abdeckung gesamt", wert: "95,9 %" },
+        { label: "Abnahme", wert: "11 / 11" },
+        { label: "Anforderungstor", wert: "V1 offen: 0" }
+      ],
+      offen: [
+        "`03-TASKS.md` nennt 57 Dateien, die es nicht gibt — der Plan-Wächter prüft nur `tasks.yaml`."
+      ],
+      dateien: [
+        { pfad: "scripts/verify.mjs", info: "`pnpm verify`" },
+        { pfad: "scripts/acceptance.mjs", info: "`pnpm acceptance`" },
+        { pfad: "test/guards/", info: "Wächter" },
+        { pfad: "docs/plan/WORKFLOW.md", info: "Einstieg für jede Sitzung" },
+        { pfad: "docs/reports/acceptance.md", info: "letzter Abnahmebericht" }
+      ]
+    },
+    {
+      id: "programm",
+      titel: "Desktop-Programm",
+      icon: "📦",
+      status: "fertig",
+      pfad: "apps/desktop/src-tauri",
+      kurzeBeschreibung: "Tauri verpackt das Spiel als Windows-Programm — MSI und NSIS-Setup, ohne jeden Netzzugriff.",
+      detailBeschreibung: "`pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup; der Auslieferungsweg ist gelaufen und nicht nur beschrieben. Das Programm ist netzfrei: `connect-src 'none'`, keine Netzberechtigung, der Wächter ist scharf. Die Schriften sind eingebettet, Spielstände laufen über eine eigene Tauri-Speicheranbindung.",
+      module: [
+        "Tauri-Konfiguration und Rust-Hülle",
+        "Installer: MSI und NSIS",
+        "Speicheranbindung für Spielstände",
+        "Programmsymbol aus eigenem Skript",
+        "Verpackungs-Wächter"
+      ],
+      kennzahlen: [
+        { label: "worldwar.exe", wert: "7,93 MB" },
+        { label: "Version", wert: "0.1.0" }
+      ],
+      offen: [
+        "AK-8 am frisch gebauten Bündel nachmessen (optional, zählt nicht gegen V1)."
+      ],
+      dateien: [
+        { pfad: "apps/desktop/src-tauri/tauri.conf.json", info: "Tauri-Konfiguration" },
+        { pfad: "docs/reports/packaging.md", info: "Verpackungsbericht" },
+        { pfad: "test/guards/packaging.test.ts", info: "Verpackungs-Wächter" }
+      ]
+    },
+    {
+      id: "mehrspieler",
+      titel: "Mehrspieler",
+      icon: "🤝",
+      status: "geplant",
+      pfad: "M37 – M39",
+      kurzeBeschreibung: "Eine Partie zu zweit: der Mitspieler tritt über einen Link bei — im Gleichschritt, ohne den Kern anzufassen.",
+      detailBeschreibung: "Geplant und freigegeben am 2026-09-12, noch nichts gebaut. Der Host ist der Server und liefert das Spiel an den Browser des Gastes aus; die letzte Meile läuft über Tailscale, ohne öffentlichen Endpunkt. Das ausgelieferte Programm bleibt netzfrei. Pausen werden beantragt und angenommen, Tempo und Vorspulen entfallen zu zweit. Das Fundament liegt seit M5: reiner Kern, geseedeter Zufall, Prüfsumme.",
+      module: [
+        "M37 · Zwei Menschen, ein Spiel — Gleichschritt-Maschine, Pause auf Antrag (11 Aufgaben, ohne Netzcode)",
+        "M38 · Die Verbindung — Handschlag, Determinismus-Probe, WebSocket, Hostdienst, Wiederaufnahme (10 Aufgaben)",
+        "M39 · Die Einladung — Raum und Link, Beitrittsbildschirm, Tailscale, Speichern zu zweit (9 Aufgaben)",
+        "Abnahme AK-9: Noah und ein zweiter Mensch in einem anderen Netz"
+      ],
+      kennzahlen: [
+        { label: "Aufgaben gebaut", wert: "0 / 30" },
+        { label: "Anforderungen", wert: "R-MP-01…13" },
+        { label: "Entwurf", wert: "D28" }
+      ],
+      dateien: [
+        { pfad: "docs/plan/MEHRSPIELER.md", info: "Bauplan — die eine Datei zum Anfangen" },
+        { pfad: "packages/core/test/hotseat.test.ts", info: "zwei Menschen, seit M5 grün" },
+        { pfad: "packages/ai/src/loop.ts", info: "Befehle je Tick" }
+      ]
+    }
+  ],
+
+  anleitung: {
+    spielen: {
+      titel: "Die ersten fünf Minuten",
+      schritte: [
+        { titel: "Partie beginnen", text: "Eine Macht wählen — für den Anfang eine mit Landgrenzen und Küste. Dieselbe Startzahl ergibt immer dieselbe Partie." },
+        { titel: "Provinzen ansehen", text: "Moral ist die wichtigste Zahl: sie bestimmt Produktion, Aufstände und die Stärke frischer Truppen. Unter 33 wird es gefährlich." },
+        { titel: "Etwas bauen", text: "Kaserne für Truppen, Fabrik für Produktion. Tooltips nennen Kosten und Dauer; was nicht geht, ist ausgegraut — mit Grund." },
+        { titel: "Die Zeit laufen lassen", text: "Leertaste startet und stoppt. „Vorspulen“ überspringt Strecken, bis etwas passiert, das man sehen muss." },
+        { titel: "Die Ereignisleiste lesen", text: "Rot heißt hinsehen. Ein Klick auf eine Zeile springt zur Provinz." }
+      ],
+      hinweis: { text: "Die vollständige Anleitung steht in", pfad: "docs/ANLEITUNG.md" }
+    },
+    entwickeln: {
+      titel: "Am Repo arbeiten",
+      befehle: [
+        { befehl: "pnpm install", text: "Abhängigkeiten nach jedem Wechsel des Standes." },
+        { befehl: "pnpm dev", text: "Das Spiel im Browser." },
+        { befehl: "pnpm verify", text: "Lint, Typen, Tests, Wächter, Abdeckung — rund 1 Minute." },
+        { befehl: "pnpm acceptance", text: "Der ganze Abnahmelauf inklusive verify — rund 6 bis 7 Minuten." },
+        { befehl: "pnpm tauri:build", text: "Das Windows-Programm als MSI und NSIS-Setup." }
+      ],
+      hinweis: { text: "Wer an diesem Projekt arbeitet, liest zuerst genau eine Datei:", pfad: "docs/plan/WORKFLOW.md" }
+    }
+  },
+
+  // Aufgaben je Meilenstein aus docs/plan/tasks.yaml (erledigt / gesamt).
+  meilensteine: [
+    { id: "M0", titel: "Fundament", erledigt: 5, gesamt: 5 },
+    { id: "M1", titel: "Simulationskern und Determinismus", erledigt: 9, gesamt: 9 },
+    { id: "M2", titel: "Karte, Graph, Wege", erledigt: 4, gesamt: 4 },
+    { id: "M3", titel: "Wirtschaft, Bau, Rekrutierung", erledigt: 6, gesamt: 6 },
+    { id: "M4", titel: "Bewegung, Kampf, Durchstich", erledigt: 8, gesamt: 8 },
+    { id: "M5", titel: "Moral, Eroberung, Sieg", erledigt: 6, gesamt: 6 },
+    { id: "M6", titel: "Diplomatie und Sichtbarkeit", erledigt: 3, gesamt: 3 },
+    { id: "M7", titel: "Computergegner", erledigt: 7, gesamt: 7 },
+    { id: "M8", titel: "Persistenz, Headless-Runner, Langlauf", erledigt: 4, gesamt: 4 },
+    { id: "M9", titel: "Weltkarte", erledigt: 7, gesamt: 7 },
+    { id: "M10", titel: "Oberfläche", erledigt: 14, gesamt: 15, status: "fertig", notiz: "T-M10-02 zurückgenommen" },
+    { id: "M11", titel: "Look, Ton, Verpackung", erledigt: 4, gesamt: 4 },
+    { id: "M12", titel: "Balancing und Abnahme", erledigt: 12, gesamt: 12 },
+    { id: "M13", titel: "Oberfläche im Ausbau", erledigt: 17, gesamt: 17 },
+    { id: "M14", titel: "Der Stand wird wieder wahr", erledigt: 16, gesamt: 16 },
+    { id: "M15", titel: "Die KI wird ein Gegner", erledigt: 9, gesamt: 9 },
+    { id: "M16", titel: "Verpackung als Programm", erledigt: 7, gesamt: 7 },
+    { id: "M17", titel: "Tiefe zwischen den Kriegen", erledigt: 0, gesamt: 0, status: "geplant", notiz: "vorgemerkt" },
+    { id: "M18", titel: "Später", erledigt: 0, gesamt: 0, status: "geplant", notiz: "vorgemerkt" },
+    { id: "M19", titel: "Die Karte zeigt, was da ist", erledigt: 5, gesamt: 5 },
+    { id: "M20", titel: "Die Karte spricht mit", erledigt: 4, gesamt: 4 },
+    { id: "M21", titel: "Die ersten Spieltage führen", erledigt: 6, gesamt: 6 },
+    { id: "M22", titel: "Die Oberfläche hält, was der Kern rechnet", erledigt: 6, gesamt: 6 },
+    { id: "M23", titel: "Die Sprache wird fertig", erledigt: 3, gesamt: 3 },
+    { id: "M24", titel: "Die Tage bekommen Inhalt", erledigt: 3, gesamt: 3 },
+    { id: "M25", titel: "Die Zahlen werden Bilder", erledigt: 4, gesamt: 4 },
+    { id: "M26", titel: "Die Karte lebt", erledigt: 3, gesamt: 3 },
+    { id: "M27", titel: "Das Gefecht zeigt sich", erledigt: 2, gesamt: 2 },
+    { id: "M28", titel: "Der Feinschliff nach dem Spielen", erledigt: 16, gesamt: 16 },
+    { id: "M29", titel: "Kriegsrat: das Aussehen", erledigt: 3, gesamt: 3 },
+    { id: "M30", titel: "Kriegsrat: die Karte zeigt den Zustand", erledigt: 4, gesamt: 4 },
+    { id: "M31", titel: "Kriegsrat: Panels, Protokoll, Fuß", erledigt: 4, gesamt: 4 },
+    { id: "M32", titel: "Kriegsrat: Lücken zu Supremacy", erledigt: 3, gesamt: 3 },
+    { id: "M33", titel: "Einheiten und Gebäude bekommen Bilder", erledigt: 5, gesamt: 5 },
+    { id: "M34", titel: "Der Fortschritt bekommt eine Strecke", erledigt: 8, gesamt: 8 },
+    { id: "M35", titel: "Der lange Mittelteil bekommt Ziele (Entwurf)", erledigt: 1, gesamt: 1 },
+    { id: "M36", titel: "Die Rohstoffleiste wird lesbar", erledigt: 6, gesamt: 6 },
+    { id: "M37", titel: "Zwei Menschen, ein Spiel", erledigt: 0, gesamt: 11 },
+    { id: "M38", titel: "Die Verbindung", erledigt: 0, gesamt: 10 },
+    { id: "M39", titel: "Die Einladung", erledigt: 0, gesamt: 9 }
+  ],
+
+  roadmap: {
+    naechsteSchritte: [
+      "M37 bauen — zuerst ohne Netzcode, belegt gegen zwei Simulationen im selben Prozess.",
+      "Danach M38 (die Verbindung) und M39 (die Einladung), Abnahme AK-9 zu zweit.",
+      "Nebenher: Noah spielt — was er findet, wird der nächste Plan.",
+      "Die Marken für die Zwischenziele aus M35 festlegen.",
+      "Freigabe für die Haltungen: `aggressive` wirkt im Kern bisher nirgends."
+    ],
+    phasen: [
+      { titel: "V1 — das Spiel entsteht", von: 0, bis: 12, notiz: "Abgenommen am 2026-09-08 mit 7 von 7 Kriterien." },
+      { titel: "Der Stand wird wahr", von: 13, bis: 16, notiz: "Nach einer Auswertung mit 68 Befunden: Spielstände, echte KI-Gegner, Verpackung als Programm." },
+      { titel: "Die Karte führt", von: 19, bis: 21, notiz: "Die Karte zeigt und erklärt; die ersten Spieltage leiten an." },
+      { titel: "Oberfläche, Sprache, Bilder", von: 22, bis: 27, notiz: "Die Oberfläche auf dem Stand des Kerns, echtes Deutsch, Grafik statt Text." },
+      { titel: "Feinschliff und Kriegsrat", von: 28, bis: 33, notiz: "Umbau zum dunklen Kartentisch, abgenommen am 2026-09-11 mit 11 von 11." },
+      { titel: "Fortschritt und Rohstoffleiste", von: 34, bis: 36, notiz: "Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s. M35 ist ein Entwurf." },
+      { titel: "Mehrspieler — eine Partie zu zweit", von: 37, bis: 39, notiz: "Geplant und freigegeben am 2026-09-12; Bauplan `docs/plan/MEHRSPIELER.md`." },
+      { titel: "Danach", ids: ["M17", "M18"], notiz: "Spionage und Handelsangebote; M17 wird als Ganzes geplant oder gar nicht." }
+    ]
+  }
+};
+// ═══════════════════════════════════════════
+// Rendering — ab hier nichts Projektspezifisches
+// ═══════════════════════════════════════════
+(function () {
+  "use strict";
+
+  const STATUS = {
+    "fertig": { label: "Fertig", symbol: "●" },
+    "in-arbeit": { label: "In Arbeit", symbol: "◐" },
+    "geplant": { label: "Geplant", symbol: "○" }
+  };
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const $ = (id) => document.getElementById(id);
+
+  function h(tag, attrs, children) {
+    const el = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs || {})) {
+      if (value === null || value === undefined || value === false) continue;
+      if (key === "text") el.textContent = value;
+      else if (key === "class") el.className = value;
+      else if (key.startsWith("on")) el.addEventListener(key.slice(2), value);
+      else el.setAttribute(key, value === true ? "" : String(value));
+    }
+    for (const child of [].concat(children ?? [])) {
+      if (child === null || child === undefined || child === false) continue;
+      el.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return el;
+  }
+
+  /** Text mit `Backticks` → Textknoten und <code>, ohne innerHTML. */
+  function rich(text) {
+    const frag = document.createDocumentFragment();
+    String(text ?? "").split("`").forEach((part, i) => {
+      if (part) frag.append(i % 2 ? h("code", { text: part }) : document.createTextNode(part));
+    });
+    return frag;
+  }
+
+  function badge(status, id) {
+    const s = STATUS[status] ?? STATUS.geplant;
+    return h("span", { class: "badge", "data-status": status, id }, [
+      h("span", { "aria-hidden": "true", text: s.symbol }),
+      h("span", { class: "visually-hidden", text: "Status: " }),
+      s.label
+    ]);
+  }
+
+  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+  const live = h("p", { class: "visually-hidden", "aria-live": "polite" });
+  document.body.append(live);
+  const announce = (msg) => { live.textContent = ""; setTimeout(() => { live.textContent = msg; }, 50); };
+
+  // ── Abgeleitete Werte ───────────────────────
+  const milestones = projectData.meilensteine.map((m) => ({
+    ...m,
+    nummer: Number(m.id.slice(1)),
+    status: m.status ?? (m.gesamt > 0 && m.erledigt === m.gesamt ? "fertig" : m.erledigt > 0 ? "in-arbeit" : "geplant")
+  }));
+  const sum = (list, key) => list.reduce((acc, m) => acc + m[key], 0);
+  const countStatus = (list) => list.reduce((acc, x) => ((acc[x.status] = (acc[x.status] ?? 0) + 1), acc), {});
+  const aggregate = (list) =>
+    list.every((x) => x.status === "fertig") ? "fertig" : list.every((x) => x.status === "geplant") ? "geplant" : "in-arbeit";
+
+  function sectionHead(id) {
+    const s = projectData.abschnitte.find((a) => a.id === id) ?? { titel: id };
+    return h("div", { class: "section-head" }, [
+      s.eyebrow ? h("p", { class: "eyebrow", text: s.eyebrow }) : null,
+      h("h2", { id: `${id}-titel` }, rich(s.titel)),
+      s.lead ? h("p", { class: "lead" }, rich(s.lead)) : null
+    ]);
+  }
+
+  document.title = `${projectData.name} — Projektstand`;
+
+  // ── Navigation ──────────────────────────────
+  $("brand").append(projectData.name, h("span", { class: "brand-version", text: `v${projectData.version}` }));
+
+  const toggle = $("nav-toggle");
+  const navList = $("nav-links");
+  const navAnchors = new Map();
+  for (const a of projectData.abschnitte) {
+    const link = h("a", { href: `#${a.id}`, text: a.label });
+    navAnchors.set(a.id, link);
+    navList.append(h("li", null, link));
+  }
+
+  const menuOpen = () => toggle.getAttribute("aria-expanded") === "true";
+  function setMenu(open, focusToggle) {
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
+    toggle.textContent = open ? "✕" : "☰";
+    navList.dataset.open = String(open);
+    if (!open && focusToggle) toggle.focus();
+  }
+  toggle.addEventListener("click", () => setMenu(!menuOpen()));
+  navList.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
+  window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => { if (e.matches) setMenu(false); });
+
+  // ── Hero ────────────────────────────────────
+  function milestoneImage(list) {
+    const cols = 8, cell = 46, gap = 8;
+    const rows = Math.ceil(list.length / cols);
+    const width = cols * cell + (cols - 1) * gap + 2;
+    const height = rows * cell + (rows - 1) * gap + 2;
+    const stroke = {
+      "fertig": cssVar("--status-fertig"),
+      "in-arbeit": cssVar("--status-in-arbeit"),
+      "geplant": cssVar("--status-geplant")
+    };
+    const text = cssVar("--text");
+    let body = "";
+    list.forEach((m, i) => {
+      const x = (i % cols) * (cell + gap) + 1;
+      const y = Math.floor(i / cols) * (cell + gap) + 1;
+      const planned = m.status === "geplant";
+      body += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="6" fill="${stroke[m.status]}" fill-opacity="${planned ? 0 : 0.16}" stroke="${stroke[m.status]}" stroke-width="2"${planned ? ' stroke-dasharray="5 4"' : ""}/>`;
+      body += `<text x="${x + cell / 2}" y="${y + cell / 2 + 5}" text-anchor="middle" font-family="Consolas, Menlo, monospace" font-size="14" fill="${planned ? stroke.geplant : text}">${m.id}</text>`;
+    });
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">${body}</svg>`;
+    return "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+
+  (function renderHero() {
+    const done = sum(milestones, "erledigt");
+    const total = sum(milestones, "gesamt");
+    const counts = countStatus(milestones);
+    const countText = Object.keys(STATUS)
+      .filter((s) => counts[s])
+      .map((s) => `${counts[s]} ${STATUS[s].label.toLowerCase()}`)
+      .join(", ");
+    const first = milestones[0].id;
+    const last = milestones[milestones.length - 1].id;
+    const facts = [{ label: "Aufgaben gebaut", wert: `${done} / ${total}` }, ...projectData.kennzahlen];
+
+    $("uebersicht").append(h("div", { class: "wrap hero-grid" }, [
+      h("div", { class: "hero-text" }, [
+        h("p", { class: "eyebrow", text: projectData.eyebrow }),
+        h("h1", { id: "uebersicht-titel", text: projectData.name }),
+        h("p", { class: "hero-desc" }, rich(projectData.description)),
+        projectData.descriptionZusatz ? h("p", { class: "hero-desc" }, rich(projectData.descriptionZusatz)) : null,
+        h("dl", { class: "facts" }, facts.map((f) =>
+          h("div", { class: "fact" }, [h("dt", { text: f.label }), h("dd", { text: f.wert })])
+        ))
+      ]),
+      h("figure", { class: "hero-figure" }, [
+        h("img", {
+          src: milestoneImage(milestones),
+          alt: `Raster der ${milestones.length} Meilensteine ${first} bis ${last}: ${countText}.`,
+          width: 432, height: 262
+        }),
+        h("figcaption", null, rich("Jedes Feld ist ein Meilenstein aus `docs/plan/tasks.yaml` — grün gefüllt: fertig, blau gestrichelt: geplant."))
+      ])
+    ]));
+  })();
+
+  // ── Fachbereiche ────────────────────────────
+  const cards = new Map();
+  const detail = h("section", { class: "detail", id: "bereich-detail", hidden: true, "aria-labelledby": "bereich-detail-titel" });
+  let openId = null;
+
+  function block(title, content) {
+    return h("div", null, [h("h4", { text: title }), content]);
+  }
+
+  function buildDetail(b) {
+    return [
+      h("div", { class: "detail-head" }, [
+        h("div", { class: "detail-title" }, [
+          h("span", { class: "card-icon", "aria-hidden": "true", text: b.icon }),
+          h("h3", { id: "bereich-detail-titel", tabindex: "-1", text: b.titel }),
+          badge(b.status)
+        ]),
+        h("button", {
+          class: "btn", type: "button",
+          "aria-label": `Zurück – Details zu ${b.titel} schließen`,
+          onclick: () => closeDetail(true)
+        }, [h("span", { "aria-hidden": "true", text: "←" }), "Zurück"])
+      ]),
+      h("div", { class: "detail-body" }, [
+        h("p", { class: "detail-text" }, rich(b.detailBeschreibung)),
+        h("div", { class: "detail-cols" }, [
+          block("Module & Features", h("ul", null, b.module.map((m) => h("li", null, rich(m))))),
+          b.kennzahlen?.length
+            ? block("Kennzahlen", h("dl", { class: "kv" }, b.kennzahlen.map((k) =>
+                h("div", null, [h("dt", { text: k.label }), h("dd", { text: k.wert })]))))
+            : null,
+          b.dateien?.length
+            ? block("Dateien im Repo", h("ul", { class: "file-list" }, b.dateien.map((d) =>
+                h("li", null, [h("a", { href: d.pfad, text: d.pfad }), d.info ? h("span", null, rich(d.info)) : null]))))
+            : null,
+          b.offen?.length
+            ? block("Offene Punkte", h("ul", { class: "open-points" }, b.offen.map((o) => h("li", null, rich(o)))))
+            : null
+        ])
+      ])
+    ];
+  }
+
+  function markCard(id, open) {
+    const card = cards.get(id);
+    if (!card) return;
+    card.article.dataset.open = String(open);
+    card.button.setAttribute("aria-expanded", String(open));
+  }
+
+  function openDetail(id) {
+    const b = projectData.Bereiche.find((x) => x.id === id);
+    if (!b) return;
+    if (openId) markCard(openId, false);
+    openId = id;
+    markCard(id, true);
+    detail.replaceChildren(...buildDetail(b));
+    detail.hidden = false;
+    // Einblend-Animation bei jedem Wechsel neu starten
+    detail.style.animation = "none";
+    void detail.offsetHeight;
+    detail.style.animation = "";
+
+    $("bereich-detail-titel").focus({ preventScroll: true });
+    const top = detail.getBoundingClientRect().top;
+    const navHeight = document.querySelector(".site-header").offsetHeight;
+    if (top < navHeight || top > window.innerHeight * 0.6) {
+      detail.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+    }
+  }
+
+  function closeDetail(returnFocus) {
+    if (!openId) return;
+    const card = cards.get(openId);
+    markCard(openId, false);
+    openId = null;
+    detail.hidden = true;
+    detail.replaceChildren();
+    if (returnFocus && card) card.button.focus();
+  }
+
+  (function renderBereiche() {
+    const bereiche = projectData.Bereiche;
+    const counts = countStatus(bereiche);
+    const grid = h("ul", { class: "card-grid", role: "list" });
+
+    for (const b of bereiche) {
+      const descId = `karte-${b.id}-beschreibung`;
+      const badgeId = `karte-${b.id}-status`;
+      const button = h("button", {
+        class: "card-button", type: "button",
+        "aria-expanded": "false", "aria-controls": "bereich-detail",
+        "aria-describedby": `${descId} ${badgeId}`,
+        onclick: () => (openId === b.id ? closeDetail(true) : openDetail(b.id))
+      }, b.titel);
+      const article = h("article", { class: "card", "data-open": "false" }, [
+        h("div", { class: "card-top" }, [
+          h("span", { class: "card-icon", "aria-hidden": "true", text: b.icon }),
+          badge(b.status, badgeId)
+        ]),
+        h("h3", null, button),
+        h("p", { class: "card-desc", id: descId }, rich(b.kurzeBeschreibung)),
+        b.pfad ? h("p", { class: "card-path", text: b.pfad }) : null
+      ]);
+      cards.set(b.id, { article, button });
+      grid.append(h("li", null, article));
+    }
+
+    $("bereiche").append(h("div", { class: "wrap" }, [
+      sectionHead("bereiche"),
+      h("ul", { class: "status-summary", "aria-label": "Bereiche nach Status" },
+        Object.keys(STATUS).map((s) => h("li", null, [badge(s), " ", plural(counts[s] ?? 0, "Bereich", "Bereiche")]))),
+      grid,
+      detail
+    ]));
+  })();
+
+  // ── Anleitung ───────────────────────────────
+  async function copyCommand(text, button) {
+    let ok = false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch (_) { /* Fallback unten */ }
+    if (!ok) {
+      const area = h("textarea", { readonly: true, style: "position:fixed;top:0;left:0;opacity:0" });
+      area.value = text;
+      document.body.append(area);
+      area.select();
+      try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
+      area.remove();
+      button.focus();
+    }
+    button.textContent = ok ? "Kopiert" : "Nicht kopiert";
+    announce(ok ? `${text} kopiert` : `${text} konnte nicht kopiert werden`);
+    setTimeout(() => { button.textContent = "Kopieren"; }, 1800);
+  }
+
+  function note(n) {
+    return n ? h("p", { class: "note" }, [n.text, " ", h("a", { href: n.pfad }, h("code", { text: n.pfad }))]) : null;
+  }
+
+  (function renderAnleitung() {
+    const { spielen, entwickeln } = projectData.anleitung;
+    $("anleitung").append(h("div", { class: "wrap" }, [
+      sectionHead("anleitung"),
+      h("div", { class: "guide-grid" }, [
+        h("div", { class: "guide-block" }, [
+          h("h3", { text: spielen.titel }),
+          h("ol", { class: "steps" }, spielen.schritte.map((s) =>
+            h("li", null, h("div", null, [h("strong", { text: s.titel }), h("p", null, rich(s.text))])))),
+          note(spielen.hinweis)
+        ]),
+        h("div", { class: "guide-block" }, [
+          h("h3", { text: entwickeln.titel }),
+          h("ul", { class: "commands" }, entwickeln.befehle.map((c) => {
+            const copy = h("button", {
+              class: "btn copy-btn", type: "button",
+              "aria-label": `Kopieren: ${c.befehl}`, text: "Kopieren"
+            });
+            copy.addEventListener("click", () => copyCommand(c.befehl, copy));
+            return h("li", { class: "command" }, [h("code", { text: c.befehl }), copy, h("p", null, rich(c.text))]);
+          })),
+          note(entwickeln.hinweis)
+        ])
+      ])
+    ]));
+  })();
+
+  // ── Roadmap ─────────────────────────────────
+  (function renderRoadmap() {
+    const { naechsteSchritte, phasen } = projectData.roadmap;
+    const timeline = h("ol", { class: "timeline" });
+
+    for (const p of phasen) {
+      const list = p.ids
+        ? milestones.filter((m) => p.ids.includes(m.id))
+        : milestones.filter((m) => m.nummer >= p.von && m.nummer <= p.bis);
+      if (!list.length) continue;
+      const status = aggregate(list);
+      const done = sum(list, "erledigt");
+      const total = sum(list, "gesamt");
+      const range = list.length > 1 ? `${list[0].id}–${list[list.length - 1].id}` : list[0].id;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+
+      timeline.append(h("li", { class: "phase", "data-status": status }, [
+        h("span", { class: "phase-dot", "aria-hidden": "true" }),
+        h("div", { class: "phase-card" }, [
+          h("div", { class: "phase-head" }, [
+            h("span", { class: "phase-range", text: range }),
+            h("h3", { text: p.titel }),
+            badge(status)
+          ]),
+          p.notiz ? h("p", { class: "phase-note" }, rich(p.notiz)) : null,
+          total
+            ? h("div", { class: "bar", "aria-hidden": "true" }, h("span", { style: `width:${pct}%` }))
+            : null,
+          h("p", { class: "bar-label", text: total ? `${done} von ${total} Aufgaben erledigt` : "Noch ohne Aufgaben im Plan" }),
+          h("details", null, [
+            h("summary", { text: `${plural(list.length, "Meilenstein", "Meilensteine")} anzeigen` }),
+            h("ul", { class: "milestones" }, list.map((m) => h("li", null, [
+              h("span", { class: "ms-id", text: m.id }),
+              h("span", { text: m.notiz ? `${m.titel} (${m.notiz})` : m.titel }),
+              h("span", { class: "ms-count", text: m.gesamt ? `${m.erledigt}/${m.gesamt}` : "–" })
+            ])))
+          ])
+        ])
+      ]));
+    }
+
+    $("roadmap").append(h("div", { class: "wrap" }, [
+      sectionHead("roadmap"),
+      h("div", { class: "next" }, [
+        h("h3", { text: "Als Nächstes" }),
+        h("ol", null, naechsteSchritte.map((s) => h("li", null, rich(s))))
+      ]),
+      timeline
+    ]));
+  })();
+
+  // ── Repo-Status ─────────────────────────────
+  (function renderStatus() {
+    const r = projectData.repo ?? {};
+    const c = r.letzterCommit ?? {};
+    const date = c.datum ? new Date(c.datum) : null;
+    const dateNode = date && !Number.isNaN(date.getTime())
+      ? h("time", { datetime: c.datum, text: date.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }) })
+      : "nicht ermittelt (Platzhalter)";
+    const item = (label, content) => h("div", null, [h("dt", { text: label }), h("dd", null, content)]);
+
+    $("status").append(h("div", { class: "wrap" }, [
+      h("h2", { id: "status-titel", text: "Repo-Status" }),
+      h("dl", { class: "repo-status" }, [
+        item("Version", [
+          h("span", { class: "mono", text: projectData.version || "TBD" }),
+          projectData.versionQuelle ? h("span", { class: "muted", text: ` · aus ${projectData.versionQuelle}` }) : null
+        ]),
+        item("Lizenz", projectData.license || "TBD"),
+        item("Letzter Commit", [
+          dateNode,
+          c.hash ? [" · ", h("code", { text: c.hash })] : null,
+          c.nachricht ? h("span", { class: "muted commit-msg", text: c.nachricht }) : null
+        ].flat()),
+        item("Zweig & Prüfkette", [r.zweig ? h("code", { text: r.zweig }) : null, r.pruefkette ? [" · ", rich(r.pruefkette)] : null].flat())
+      ]),
+      h("p", { class: "footer-note" }, [
+        r.remote ? ["Remote: ", h("a", { href: r.remote, text: r.remote.replace(/^https?:\/\//, "") }), " · "] : null,
+        rich("Momentaufnahme — alle Inhalte stammen aus dem Objekt `projectData` am Anfang des Skripts in dieser Datei.")
+      ].flat())
+    ]));
+  })();
+
+  // ── Scroll-Spy ──────────────────────────────
+  (function scrollSpy() {
+    const sections = projectData.abschnitte.map((a) => $(a.id)).filter(Boolean);
+    const setActive = (id) => navAnchors.forEach((link, key) => {
+      if (key === id) link.setAttribute("aria-current", "true");
+      else link.removeAttribute("aria-current");
+    });
+    setActive(sections[0]?.id);
+    if (!("IntersectionObserver" in window)) return;
+
+    const visible = new Set();
+    const navHeight = document.querySelector(".site-header").offsetHeight;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      }
+      const current = sections.filter((s) => visible.has(s.id)).pop();
+      if (current) setActive(current.id);
+    }, { rootMargin: `-${navHeight}px 0px -55% 0px`, threshold: 0 });
+    sections.forEach((s) => observer.observe(s));
+  })();
+
+  // ── Tastatur: Escape ────────────────────────
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (menuOpen()) { setMenu(false, true); return; }
+    if (openId) closeDetail(true);
+  });
+})();
+</script>
+</body>
+</html>
