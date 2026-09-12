@@ -1,6 +1,6 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-09-12 gegen `961ffd7`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-09-12 gegen `d82779d`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).
@@ -13,9 +13,9 @@ Erzeugt von `scripts/acceptance.mjs` am 2026-09-12 gegen `961ffd7`.
 | AK-6 | Zeitbudgets seriell auf ruhiger Maschine (Tick, Weltkarte, Zeichnen) | ✅ bestanden |
 | MESSGERAET | Parameterlauf ist frischer als die letzte Regeländerung (docs/reports/balance-sweep.md) | ✅ bestanden |
 | MESSGERAET | Turnier ist frischer als die letzte Regeländerung (docs/reports/ai-tournament-run.md) | ✅ bestanden |
-| AK-1 | Vollständige Partie: 7 KI-Gegner, entschieden an Tag 798 (2717 Eroberungen, 15 Kriegserklärungen) | ✅ bestanden |
+| AK-1 | Vollständige Partie: 7 KI-Gegner, entschieden an Tag 471 (1827 Eroberungen, 12 Kriegserklärungen) | ✅ bestanden |
 | AK-2 | pnpm coverage:requirements (Anforderungs-Tor) | ✅ bestanden |
-| AK-3 | Abdeckung gesamt 95.8 % (Schwelle 80 %) | ✅ bestanden |
+| AK-3 | Abdeckung gesamt 95.9 % (Schwelle 80 %) | ✅ bestanden |
 | AK-2 | V1-Anforderungen ohne Test: 0 | ✅ bestanden |
 | AK-5 | Guards für Monetarisierung und Netzwerk | ✅ bestanden |
 | AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ✅ beantwortet und abgenommen von Noah — Durchführung per /goal-Auftrag vom 2026-09-07 ausdrücklich an Claude delegiert („den Playtest sollst du eigenständig durchführen"); zweiter Durchgang auf Stand a007497 (nach M19–M21) in docs/reports/playtest-2026-09-07-v2.md, Delegationsentscheid in docs/plan/DECISIONS.md (62 Fragen) |

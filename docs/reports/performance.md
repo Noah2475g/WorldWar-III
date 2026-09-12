@@ -2,9 +2,9 @@
 
 Lauf: 1000 Spieltage (24000 Ticks), 8 KI-Spieler, Weltkarte (237 Provinzen) — die ausgelieferte Voreinstellung.
 
-- Dauer gesamt: 261350 ms
-- Zeit je Tick inkl. KI: 10.890 ms
+- Dauer gesamt: 319030 ms
+- Zeit je Tick inkl. KI: 13.293 ms
 - Ereignisprotokoll am Ende: 500 Einträge (Ringpuffer greift)
-- Partie entschieden bei Tick: 17952
+- Partie entschieden bei Tick: 19320
 
 Erzeugt von `apps/headless/test/longrun.slow.test.ts`.

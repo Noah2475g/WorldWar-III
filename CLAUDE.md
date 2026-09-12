@@ -24,8 +24,13 @@ wann zu lesen ist.
    den falschen Zweig zeigt, schadet in beide Richtungen.
 
 2. **Benchmarks brauchen die Maschine allein.** Alles unter `packages/core/test/perf`
-   misst sonst die Auslastung statt den Code. Nie parallel zu einem Bau oder einer
-   zweiten Testsuite.
+   und `render.bench.slow.test.ts` misst sonst die Auslastung statt den Code. Nie parallel
+   zu einem Bau oder einer zweiten Testsuite.
+
+   **Das gilt NICHT für die Simulationen** — Parameterlauf, Turnier, Vollpartie, Langlauf
+   und `progress.slow.test.ts` hängen an Karte, Regeln und Startzahl, nicht an der
+   Maschinenlast; nur ihre *Dauer* tut das. Wer während eines solchen Laufs Quelldateien
+   schreibt, stört ihn nicht: vitest lädt seine Module beim Start.
 
 ## Wie hier gearbeitet wird
 

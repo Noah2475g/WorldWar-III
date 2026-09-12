@@ -5,11 +5,12 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-11): **abgenommen.** `pnpm acceptance` lief auf freier Maschine
-**11 von 11, Exit 0, in 6 Minuten 2 Sekunden**; das Spiel wird an Spieltag 798
-entschieden. Von 225 Aufgaben sind 204 gebaut. Die 20 offenen sind geplant und
-freigegeben, aber nicht angefangen — Einheitenbilder, Fortschrittsachse, Zwischenziele
-und Rohstoffleiste (M33–M36).
+Status (2026-09-12): **abgenommen, und der Plan ist leer.** `pnpm acceptance` lief auf
+freier Maschine **11 von 11, Exit 0, 7 min 28 s**; das Spiel wird an Spieltag **471** entschieden. Von 225
+Aufgaben sind **224 gebaut**; die eine offene ist zurückgenommen und ohne Arbeit. Der
+letzte Bauabschnitt **M34** hat die Fortschrittsachse gestreckt: die letzte Freischaltung
+liegt bei Spieltag 80 statt 16, Gebäudestufen kosten und dauern mehr, und über der
+Aushebeliste steht, was als Nächstes kommt. **M35** ist ein Entwurf und kein Bau.
 
 `pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup; der
 Auslieferungsweg ist gelaufen und nicht nur beschrieben. Noahs Playtest liegt in zwei
@@ -37,7 +38,9 @@ Oberfläche auf den Stand des Kerns und die Sprache auf echtes Deutsch, **M25–
 ersetzten Text durch Bilder (Kurven, Marschpfeile, Gefechtsbild), **M29–M32** bauten den
 Kriegsrat um. Zwei adversarische Durchsichten des Diffs fanden dabei einundzwanzig
 Befunde, die die Widerlegung überlebten; der schwerste war, dass ohne Maus kein einziger
-Knopf zu betätigen war.
+Knopf zu betätigen war. **M33** gab Einheiten und Gebäuden Bilder, **M36** machte die
+Rohstoffleiste lesbar, und **M34** streckte die Fortschrittsachse — sie war nach 6,4
+Minuten Echtzeit durchlaufen, während die Partie über achthundert Spieltage lief.
 
 
 ## Für Noah

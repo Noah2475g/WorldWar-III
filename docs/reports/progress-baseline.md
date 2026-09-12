@@ -83,16 +83,19 @@ und dann misst man den Wechsel mit.
 | nach **T-M34-05** (Stufenbedingung) | Tag 80 | 0,501 | 264,4 | 4,17 | 50.047 | 3 von 6 | 54 % ✗ |
 | nach **T-M34-06** (Startvorrat) = **Endstand** | Tag 80 | 0,444 | **302,3** | **5,17** | 50.613 | 1 von 6 | **100 %** ✗ |
 
-**Die Rauschgrenze ist 0,063** (`balance-sweep.md`: Streuung des Führungsanteils allein
-durch die Startzahl, ohne jede Regeländerung). Wer die Spalte „Anteil des Stärksten" liest,
-liest sie gegen diese Grenze:
+**Die Rauschgrenze ist 0,063** (`balance-sweep.md` vom 2026-09-07: Streuung des
+Führungsanteils allein durch die Startzahl, ohne jede Regeländerung). **Der Lauf am
+Endstand misst sie neu mit 0,078** — die gestreckte Leiter macht die Partie also ein
+wenig launischer, und die Aussagen unten werden davon eher vorsichtiger als kühner. Wer
+die Spalte „Anteil des Stärksten" liest, liest sie gegen diese Grenze:
 
 - **Die Streckung allein hätte die Macht konzentriert:** +0,125 vom Ausgangswert, das
   Doppelte der Rauschgrenze. Mit weniger Gerät im Feld gewinnt der Größte leichter.
 - **Die teureren Stufen nehmen davon 0,042 zurück**, der Startvorrat weitere 0,057 —
   beide für sich **unterhalb** der Rauschgrenze und damit einzeln nicht belegbar.
 - **Zusammen heben sie die Streckung auf:** 0,418 gegen 0,444 am Ende, ein Unterschied
-  von 0,026 und damit **innerhalb des Rauschens.** Die Konzentration der Macht steht am
+  von 0,026 und damit **innerhalb des Rauschens** — gegen die alte Grenze wie gegen die
+  neue. Die Konzentration der Macht steht am
   Ende dort, wo sie vorher stand — und das ist das Ergebnis, nicht das Ausbleiben eines
   Ergebnisses.
 - **Was sich dabei sehr wohl bewegt hat:** 302 statt 247 Eroberungen (+22 %) und 5,2 statt

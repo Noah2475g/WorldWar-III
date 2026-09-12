@@ -1,31 +1,28 @@
-# WORKFLOW — der Stand nach der Abnahme
+# WORKFLOW — der Stand nach M34
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand: 2026-09-11.** Alles bis einschließlich **M33 und M36** ist gebaut und liegt
-> auf **`main`**. `pnpm acceptance` lief (gegen den Stand nach M32) auf freier Maschine
-> **11 von 11, Exit 0, 6 min 2 s** — das Zeitbudget-Tor bestanden mit Tickmedian
-> **2,65 ms** gegen 3,5 gefordert. AK-1 wird an Spieltag 798 entschieden. **M33 hat
-> Einheiten und Gebäuden Bilder gegeben** (siebzehn Schattenrisse in `ui/art.tsx`,
-> Rekrutierungsliste, Bauplatzraster und Armeeliste; die Karte behält ihre NATO-Glyphe)
-> und dabei einen Wächter repariert, der seit Monaten leer grün war. **M36 hat die
-> Rohstoffleiste lesbar gemacht:** sieben neu gezeichnete Zeichen (Material trägt keinen
-> Nadelbaum mehr), Reichweite statt Bilanz, zwei Töne statt sieben gleich lauter Zellen,
-> vier Gruppen — und eine ruhigere Wirtschaftstabelle, die trotzdem alle vier Spalten
-> behält, weil R-ECON-06 sie wörtlich verlangt. Von **225 Aufgaben sind 215 erledigt**;
-> von den 10 offenen ist eine zurückgenommen (T-M10-02, keine Arbeit) und **neun sind
-> geplant, freigegeben und ungebaut** — M34 und M35. Sie stehen in §2.
+> **Stand: 2026-09-12.** **Der Plan ist leer.** Von 225 Aufgaben sind **224 erledigt**;
+> die eine offene ist T-M10-02, zurückgenommen und ohne Arbeit. M34 und M35 waren das
+> Letzte, was offen stand; sie sind an diesem Tag gebaut und abgenommen worden.
+> `pnpm acceptance` lief auf freier Maschine **11 von 11, Exit 0, 7 min 28 s**. Die Fortschrittsachse reicht
+> jetzt bis **Spieltag 80 statt bis 16** — in Echtzeit 32 Minuten statt 6,4 —,
+> **Gebäudestufen kosten und dauern mehr** (Stufe 3 das 3,24-fache bei 2,25-facher Zeit),
+> zwei Einheiten verlangen eine höhere Gebäudestufe, der Startvorrat steht auf zwei
+> Dritteln, und über der Aushebeliste steht, was als Nächstes kommt. M35 ist ein
+> **Entwurf** und kein Bau: die Zwischenziele stehen samt vier geschnittenen Teilaufgaben
+> in `FORTSCHRITT.md` §3.
 >
 > **Es gibt keinen aktuelleren Zweig als `main`.** Wer eine ältere Fassung dieser Datei
 > gelesen hat, kennt die umgekehrte Anweisung; sie galt bis zum Merge vom 2026-09-11 und
 > ist seither falsch. §0 sagt, was zu prüfen ist.
 >
 > **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
-> Text" M25–M27 und der Kriegsrat-Umbau M29–M32 sind je Aufgabe in `PROGRESS.md`
-> festgehalten, die Entscheide in `DECISIONS.md`, die Befunde samt Lehren in
-> `PROBLEME.md`. Was davon beim Arbeiten wirklich gebraucht wird, steht verdichtet in
-> §3 und §4 — dort und nicht in diesem Kopf.
+> Text" M25–M27, der Kriegsrat-Umbau M29–M32, die Bilder M33, die Rohstoffleiste M36 und
+> der Fortschritt M34 sind je Aufgabe in `PROGRESS.md` festgehalten, die Entscheide in
+> `DECISIONS.md`, die Befunde samt Lehren in `PROBLEME.md`. Was davon beim Arbeiten
+> wirklich gebraucht wird, steht verdichtet in §3 und §4 — dort und nicht in diesem Kopf.
 
 ---
 
@@ -36,8 +33,7 @@ git log --oneline -1 && git status --short
 ```
 
 **Der Spitzenstand liegt auf `main`** (seit dem Merge vom 2026-09-11). Es gibt keinen
-`claude/*`-Zweig mehr, der etwas trägt, das `main` nicht hat — die alten sind am
-2026-09-11 abgeräumt worden, lokal und auf `origin`. Ein frischer Worktree landet
+`claude/*`-Zweig mehr, der etwas trägt, das `main` nicht hat. Ein frischer Worktree landet
 richtig; wer einen anlegt, zweigt von `main` ab.
 
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
@@ -51,121 +47,70 @@ pnpm install
 
 ## 1 · Der Stand in einem Absatz
 
-Das Spiel ist **fertig und abgenommen**. V1 lief am 2026-09-08 mit 7 von 7 durch, der
-Endstand nach dem Kriegsrat-Umbau am 2026-09-11 mit **11 von 11 auf freier Maschine**
-(`docs/reports/acceptance.md`). Das Anforderungstor meldet „V1 offen: 0", die Abdeckung
-liegt im Kern bei 96,8 %. **AK-7 ist abgenommen:** Noah hat den Playtest per /goal-Auftrag
-vom 2026-09-07 ausdrücklich an den Agenten delegiert (Entscheid in `DECISIONS.md`); beide
-Berichte liegen vor (`docs/reports/playtest-v1.md`, 62/62, und
-`playtest-2026-09-07-v2.md`, 17 Befunde).
+Das Spiel ist **fertig und abgenommen**, und seit dem 2026-09-12 ist auch der Plan leer.
+V1 lief am 2026-09-08 mit 7 von 7 durch, der Kriegsrat-Umbau am 2026-09-11 mit 11 von 11,
+und der Stand nach M34 am 2026-09-12 mit **11 von 11, Exit 0, 7 min 28 s** (`docs/reports/acceptance.md`). Das
+Anforderungstor meldet „V1 offen: 0". **AK-7 ist abgenommen:** Noah hat den Playtest per
+/goal-Auftrag vom 2026-09-07 ausdrücklich an den Agenten delegiert (Entscheid in
+`DECISIONS.md`); beide Berichte liegen vor.
 
-Was seither dazukam, war zuerst **Planung** — vier Meilensteine mit zwanzig Aufgaben,
-alle freigegeben — und dann Bau: **M33** (Bilder für Einheiten und Gebäude) und **M36**
-(die Rohstoffleiste) sind fertig, beide kernfrei. Offen bleiben **M34** — der teuerste
-des Plans, weil er `data/rules` anfasst und damit Parameterlauf und Turnier erzwingt —
-und **M35**, das ein Entwurf ist und kein Bau. Die Reihenfolge und die Begründungen
-stehen in §2, die Baupläne je Meilenstein in `docs/plan/EINHEITSBILDER.md`,
-`FORTSCHRITT.md` und `ROHSTOFFE.md`.
+**Was M34 geändert hat, in einem Satz:** die Fortschrittsachse war nach 6,4 Minuten
+Echtzeit vorbei, während die Partie über achthundert Spieltage lief — zwei Prozent. Jetzt
+sind es **siebzehn**, und die Partie entscheidet sich an Spieltag 471 statt 798. Die Zahlen und der Weg dorthin stehen in `docs/reports/progress-baseline.md`.
 
 **Wichtig für T-M22-05:** Befehle werden **gesammelt** und im ersten Tick des nächsten
 Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen Tick, samt
 KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
+
 ---
 
 ## 2 · Was als Nächstes dran ist
 
-Alles bis einschließlich **M33** ist gebaut und auf `main`, **M36 seit dem 2026-09-11
-ebenfalls**. Was hier als offen steht, ist geplant und freigegeben, aber **nicht
-gebaut** — neun Aufgaben in zwei Meilensteinen.
+**Der Aufgabenplan ist leer.** Was hier steht, ist nicht geplant, sondern vorgemerkt — und
+der erste Punkt ist kein Bau.
 
-0. **M33 ist fertig** (2026-09-11, fünf Aufgaben, kernfrei). `ui/art.tsx` trägt siebzehn
-   Schattenrisse, zeichengleich aus `docs/design/einheiten-bilder.html` und von einem Test
-   daran gebunden. Was daraus für alle gilt: der Koordinatenwächter der Symbole war seit
-   Monaten **leer grün** (`/-?d+(.d+)?/g` sucht den Buchstaben `d`) und ist jetzt eine
-   echte Pfadabfahrt in `test/path-bounds.ts` — sie fand sofort einen Zeichenfehler im
-   Entwurfsblatt. Wer neue Pfade einbaut, benutzt sie. Der Rest steht in `PROGRESS.md`.
-1. **Der Fortschritt bekommt eine Strecke (M34)** — freigegeben am 2026-09-11, acht
-   Aufgaben, **und am 2026-09-12 bewusst nicht angefangen.** Der Entscheid steht in
-   `DECISIONS.md`; hier das Nötige.
-
-   **Fang nicht an, bevor die Maschine frei ist.** Nicht teilweise, nicht „die Doku
-   schon mal". Gemessen am 2026-09-12 lagen 26 % Grundlast auf zwölf Kernen (Editor,
-   Chatprogramm, Browser). T-M34-01 misst den **Ausgangswert**, an dem jedes spätere
-   „es ist besser geworden" hängt — unter Fremdlast ist er falsch, ohne dass man es ihm
-   ansieht. Prüfe zuerst, und zwar die **Gesamtlast**, nicht nur die eigenen Prozesse:
-
-   ```bash
-   powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
-   ```
-
-   **Dann in dieser Reihenfolge:**
-
-   1. `pnpm acceptance` als **frischer Ausgangswert**. Der 11/11-Lauf vom 2026-09-11 gilt
-      gegen den Stand *vor* M33 und M36 und taugt nicht mehr als Vergleich.
-   2. `docs/plan/FORTSCHRITT.md` §0 lesen, dann T-M34-01 bis T-M34-08 in Baureihenfolge.
-   3. Parameterlauf und Turnier neu, **und ihre Berichte einchecken** — der
-      Frische-Wächter in `scripts/acceptance.mjs` vergleicht Commit-Zeiten, nicht
-      Inhalte. Ein Lauf ohne Commit hilft nicht. Das ist der Nachtlauf, nicht die sechs
-      Minuten.
-   4. Der Golden-Master verschiebt sich bei T-M34-04, und das ist richtig. Neu erzeugen
-      mit `UPDATE_GOLDEN=1` und **im Commit sagen, warum**.
-
-   **Warum es nicht zu teilen ist:** von acht Aufgaben hängen sieben am Ausgangswert oder
-   an einer Regeländerung. Die einzige isoliert baubare, T-M34-02, ändert `R-TECH-01` —
-   also die Anforderung selbst. Sie ohne die Umsetzung zu bauen hieße, eine Zusage in die
-   Doku zu schreiben, die der Code nicht einlöst. Genau das ist am 2026-09-11 aus dieser
-   Datei entfernt worden.
-
-   **Der Befund, der die Arbeit lohnt:** die Uhr läuft mit einem Tick je Sekunde, ein
-   Spieltag hat 24 Ticks, die letzte Freischaltung liegt auf Spieltag 16 — **die ganze
-   Fortschrittsachse ist nach 6,4 Minuten Echtzeit vorbei**, während die Partie bis
-   Spieltag 798 läuft. Zwei Prozent der Partie.
-2. **M36 ist fertig** (2026-09-11, sechs Aufgaben, kernfrei). Die Rohstoffleiste zeigt
-   Bestand, Pfeil und — nur wo es drängt — die Reichweite in Tagen; die Bilanzzahl steht
-   im Tooltip. Sieben neu gezeichnete Zeichen, vier Gruppen, zwei Töne. Was daraus für
-   alle gilt, steht in `ROHSTOFFE.md` §6: **zwei Farben sind aufgegeben** (die
-   Richtungsfarben aus D27.1 und das dauerhafte Bernstein des Geldes aus D27.2 — eine
-   Signalfarbe, die an einem ruhigen Tag siebenmal leuchtet, ist keine mehr), und die
-   Sichtprüfung fand eine Regel, die kein Test sehen konnte: `.resource span` färbte
-   Pfeil und Reichweite um, weil ein Element weiter innen eine Stelle mehr Spezifität
-   hat. **Wer an der Leiste arbeitet, prüft die Kaskade am laufenden Spiel und nicht nur
-   im Test.**
-3. **Der lange Mittelteil bekommt Ziele (M35)** — eine Aufgabe, und die ist ein **Entwurf,
-   kein Bau** (Muster T-M28-07). Erst nach M34. **Damit sind M34 und M35 alles, was der
-   Plan noch offen hat.**
-
-Dazu, ohne Aufgabe in `tasks.yaml`:
-
-4. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
+1. **Noah spielt.** Zum Vergnügen, nicht zur Abnahme. Was er findet, wird der nächste
+   Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich weiterspielen?* Nach
+   M34 hat sie zum ersten Mal eine ehrliche Chance — die ersten achtzig Spieltage tragen
+   jetzt Entscheidungen statt einer Einkaufsliste.
+2. **Die vier Teilaufgaben aus M35** (`FORTSCHRITT.md` §3): Zwischenziele zum Sieg,
+   entworfen und geschnitten, **bewusst noch nicht in `tasks.yaml`**. Welche Marken es
+   sind, ist eine Spielentscheidung und liegt bei Noah.
+3. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
    (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
    wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
-   `garrison` oder `defensive` die Vorgabehaltung wird. Die Teilaufgaben stehen bewusst
-   noch **nicht** in `tasks.yaml`.
-5. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
+   `garrison` oder `defensive` die Vorgabehaltung wird.
+4. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
    Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
    `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
    Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
    M17 wird als Ganzes geplant oder gar nicht.
-6. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
+5. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
    im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
    24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
-   Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen. Fünf
-   Anläufe über drei Partien, Einzelheiten in `PROBLEME.md` (2026-09-11). **Allgemein:
-   alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht prüfbar.**
-   Noahs Maßstab („im Vorspulen fällt ein Krieg auf, ohne dass man das Protokoll liest")
-   braucht ein großes Fenster und seinen Blick.
-7. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
-8. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
-   2026-09-08 **frisch gebaut** gegen `75a0128` (7,93 MB, Bau bei unangefasster
-   Quelle, `Finished release in 5m03s`). Was aussteht, ist nur die **Messung** am
-   neuen Bündel (starten, speichern, schließen, neu starten, laden —
-   `docs/reports/packaging.md` dokumentiert noch den Lauf gegen `1c33ec7`). Zählt
-   nicht gegen V1.
-9. **Noah spielt** — zum Vergnügen, nicht zur Abnahme. Was er findet, wird der
-   nächste Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich
-   weiterspielen?*
-10. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
+   Spieltag — ein Gefecht dauert wenige Ticks und liegt fast immer dazwischen.
+   **Allgemein: alles, was nur einen Tick lang sichtbar ist, ist in der Vorschau nicht
+   prüfbar.**
+6. **AK-8 nachmessen (optional, M16-Pflege):** die `worldwar.exe` ist seit dem
+   2026-09-08 frisch gebaut gegen `75a0128` (7,93 MB). Was aussteht, ist nur die
+   **Messung** am neuen Bündel (starten, speichern, schließen, neu starten, laden).
+   Zählt nicht gegen V1.
+7. **Drei offene Befunde aus `PROBLEME.md`, keiner davon ein Produktfehler:**
+   - **Die KI klettert die neue Fortschrittsachse nicht.** `nextBuildingFor` fragt für
+     Kaserne, Fabrik, Eisenbahn und Hafen `level(...) === 0` — sie baut jedes genau einmal.
+     Gemessen über 200 Spieltage an allen fünf Messpunkten von M34: **keine Macht kommt je
+     über Fabrikstufe 1.** Die zweite Achse ist damit eine für den Menschen allein. Die
+     Reparatur ist klein (eine Zeile je Gebäude) und braucht eine eigene Messung.
+   - **Vier stille Spieltage in der Eröffnung** (Hafen Tag 6 → Transportschiff Tag 10).
+     Die längste Pause ohne Anlass ist von 72 auf 96 Ticks gewachsen — die Rückseite der
+     Streckung. Ob das zu lang ist, ist eine Balancing-Frage.
+   - **`03-TASKS.md` nennt 57 Dateien, die es nicht gibt**, bei Aufgaben auf `done`. Der
+     Plan-Wächter prüft nur `tasks.yaml` (dort 0 tote Pfade), nicht die Prosafassung
+     daneben. Die zweiteilige Reparatur steht in `PROBLEME.md`.
+8. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
+9. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.
+
 ---
 
 ## 3 · Was gilt (nicht neu herleiten)
@@ -180,68 +125,100 @@ Dazu, ohne Aufgabe in `tasks.yaml`:
 - **Ein grüner Einzeltest sagt nichts über das Spiel.** Und: ein Test, der grün ist,
   ohne dass die Reparatur drin ist, belegt gar nichts — Reparatur rausnehmen, fallen
   sehen.
+- **Keine Zahl der Freischaltungsachse ist mehr „belegt"** (T-M34-02). Die Tage des
+  Vorbilds stehen weiter in R-TECH-01 und nennen die **Reihenfolge**; die Abstände sind
+  seit M34 abgeleitet, weil dort ein Spieltag ein Tag ist und hier 24 Sekunden.
+- **Der Golden-Master ändert sich nur mit Absicht.** `packages/core/test/golden/tiny-500.json`
+  und `apps/headless/test/golden/walkthrough.json` halten Prüfsummen fest; eine Regeländerung
+  verschiebt sie. Neu erzeugen mit `UPDATE_GOLDEN=1 pnpm test` — **und im Commit sagen, warum**.
+  Was nicht passieren darf: dass sie sich ändern, ohne dass jemand es beabsichtigt hat.
+- **Wer neue SVG-Pfade einbaut, benutzt `test/path-bounds.ts`** (aus M33). Der alte
+  Koordinatenwächter war seit Monaten **leer grün** — `/-?d+(.d+)?/g` sucht den Buchstaben
+  `d` —, der neue fährt den Pfad wirklich ab und fand sofort einen Zeichenfehler.
+- **Wer an der Kopfleiste oder an Panels arbeitet, prüft die Kaskade am laufenden Spiel**
+  (aus M36). `.resource span` färbte Pfeil und Reichweite um, weil ein Element weiter
+  innen eine Stelle mehr Spezifität hat; kein Test konnte das sehen. Für das, was jsdom
+  doch binden kann, gibt es den Kaskaden-Wächter (Muster T-M22-02).
 
-## 4 · Zehn Fallen, die schon jemanden gekostet haben
+## 4 · Zwölf Fallen, die schon jemanden gekostet haben
 
 1. **Die Einstiegsdatei zeigt auf den falschen Zweig.** Bis zum 2026-09-11 stand hier,
    `main` sei alt und die Spitze liege auf einem `claude/*`-Zweig — das hat fünf Sitzungen
-   in Folge erwischt. Nach dem Merge stimmte die Anweisung nicht mehr und hätte in die
-   andere Richtung geschadet: wer ihr folgte, warf sich per `git reset --hard` auf einen
-   **älteren** Stand. **Die Lehre gilt über diesen Fall hinaus: wer merged, richtet §0
+   in Folge erwischt. **Die Lehre gilt über diesen Fall hinaus: wer merged, richtet §0
    im selben Zug.** Heute liegt die Spitze auf `main`.
 2. **`cmd | tail` verschluckt den Exit-Code.** In eine Datei schreiben, `$?` fragen.
 3. **Benchmarks brauchen die Maschine allein** — und „allein" heißt *jeder* Prozess:
    ```bash
    powershell -c "(Get-CimInstance Win32_Processor).LoadPercentage; Get-Process | Sort-Object CPU -Descending | Select-Object -First 5 ProcessName, CPU"
    ```
+   **Was NICHT unter diese Regel fällt:** Parameterlauf, Turnier und der Grundlauf aus
+   `progress.slow.test.ts`. Das sind Simulationen; ihre *Ergebnisse* hängen an Karte,
+   Regeln und Startzahl, nicht an der Maschinenlast — nur ihre Dauer tut das. Zeit messen
+   allein die Läufe unter `packages/core/test/perf` und `render.bench.slow.test.ts`.
 4. **Einen langen Lauf abzubrechen beendet ihn nicht.** Nach jedem Abbruch
-   `tasklist //FI "IMAGENAME eq node.exe"` — und wissen: der Berechtigungs-Classifier
-   kann `taskkill`/`Stop-Process` **verweigern**; dann Noah bitten (so geschehen am
-   2026-09-08: zwei verwaiste Worker banden Stunden lang je einen Kern und machten den
-   Abnahmelauf um die Hälfte langsamer).
-5. **`scripts/acceptance.mjs` IST der ganze Abnahmelauf** (~6,5 min seit dem Umbau vom
-   2026-09-08; die Prognose druckt er selbst aus `acceptance-timing.json`) — und er
-   **schreibt** Berichte. Einzelne Aussagen prüft man an der Funktion, nie am Skript.
-   Parameterlauf und Turnier laufen NICHT mehr je Abnahme — sie stecken in
-   `pnpm test:slow` (Vollsuite, Maschine allein, für die Nacht) und hinter dem
-   Frische-Wächter: ändern sich `data/rules/**`, wird die Abnahme rot, bis
-   `pnpm balance:sweep` bzw. das Turnier neu gelaufen sind.
-6. **Ändere keine Quelldatei, während der Tauri-Bau läuft.** `beforeBuildCommand` liest
+   `powershell -c "Get-Process node | Select Id, CPU, StartTime"` — und wissen: der
+   Berechtigungs-Classifier verweigert `Stop-Process`, **`taskkill //PID <n> //F` geht**
+   (am 2026-09-12 so gemacht; ein verwaister Sweep-Worker rechnete nach dem Abbruch
+   weiter).
+5. **`scripts/acceptance.mjs` IST der ganze Abnahmelauf** (~6,5 min; die Prognose druckt
+   er selbst aus `acceptance-timing.json`) — und er **schreibt** Berichte. Einzelne
+   Aussagen prüft man an der Funktion, nie am Skript. Parameterlauf und Turnier laufen
+   NICHT je Abnahme; sie stecken in `pnpm test:slow` und hinter dem Frische-Wächter:
+   ändern sich `data/rules/**`, wird die Abnahme rot, bis `pnpm balance:sweep` bzw. das
+   Turnier neu gelaufen **und eingecheckt** sind.
+6. **Der Parameterlauf dauert rund eine Stunde**, das Turnier 13 Sekunden. Wer nur
+   wissen will, ob eine Regeländerung die Partie verschoben hat, nimmt
+   `apps/headless/test/progress.slow.test.ts` (2,5 min): er fährt **denselben Grundlauf**
+   wie der Parameterlauf und reproduziert dessen Ausgangswert auf die vierte Stelle. Der
+   volle Lauf misst etwas anderes — die Empfindlichkeit einzelner Konstanten.
+7. **Ändere keine Quelldatei, während der Tauri-Bau läuft.** `beforeBuildCommand` liest
    am Anfang; alles danach fehlt im Erzeugnis.
-7. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` —
+8. **Der git-stash ist zwischen allen Worktrees geteilt.** Nie blankes `git stash` —
    lieber ein WIP-Commit.
-
-8. **Die Browser-Vorschau startet den Dev-Server im HAUPTORDNER, nie im Worktree.** Sie
+9. **Die Browser-Vorschau startet den Dev-Server im HAUPTORDNER, nie im Worktree.** Sie
    serviert dann den Stand von `main`, und kein Neustart hilft. Erkennbar im Browser an
    `await (await fetch('/src/<geänderte Datei>')).text()` ohne den neuen Bezeichner.
    Abhilfe: im `.claude/launch.json` **des Hauptordners** eine zweite Konfiguration mit
    `pnpm -C <absoluter Worktree-Pfad>` und eigenem Port anlegen — und danach wieder
    entfernen. Eigener Port heißt eigener Ursprung: keine Spielstände, keine Autosaves.
-9. **Dateien im Arbeitsbaum bleiben LF.** Ein Bearbeitungsskript, das CRLF schreibt, macht
-   `pnpm verify` rot an Stellen, die seit Monaten unverändert sind: der Prosa-Wächter
-   streift Zeilenkommentare mit einem Ausdruck, dem `` im Weg steht, und meldet dann
-   Kommentartext als Spielertext (PROBLEME.md, 2026-09-11). Die Commits sind nie betroffen.
-
-10. **`pnpm verify` im HAUPTCHECKOUT liest die Worktrees mit.** Jeder Baum unter
-   `.claude/worktrees/` ist eine vollständige Kopie; ESLint meldete daraus 1684 Probleme,
-   keines aus dem Quellcode dieses Baums. Seit dem 2026-09-11 steht `.claude/**` in den
-   `ignores` von `eslint.config.js`. Aufgefallen ist es erst, als nach Monaten wieder auf
-   `main` geprüft wurde — **ein Prüflauf ist nur dort belegt, wo er gelaufen ist.**
+10. **Dateien im Arbeitsbaum bleiben LF.** Ein Bearbeitungsskript, das CRLF schreibt, macht
+   `pnpm verify` rot an Stellen, die seit Monaten unverändert sind.
+11. **`pnpm verify` im HAUPTCHECKOUT liest die Worktrees mit.** Seit dem 2026-09-11 steht
+   `.claude/**` in den `ignores` von `eslint.config.js`. **Ein Prüflauf ist nur dort
+   belegt, wo er gelaufen ist.**
+12. **Ein Ausgangswert, den es schon gibt, wird nicht neu gemessen.** Am 2026-09-12 lief
+   ein Parameterlauf 37 Minuten, bevor auffiel, dass er nichts Neues messen konnte: die
+   Regeln hatten sich seit dem letzten eingecheckten Bericht nicht geändert. Zwei Befehle
+   sagen es in zwei Sekunden — und es ist dieselbe Prüfung, die der Frische-Wächter der
+   Abnahme macht:
+   ```bash
+   git log -1 --format=%ct -- data/rules
+   git log -1 --format=%ct -- docs/reports/balance-sweep.md
+   ```
+   Ist der Bericht jünger, **ist** er der Ausgangswert. Die Läufe sind deterministisch
+   über feste Startzahlen; wer es belegt haben will, fährt den billigsten Verwandten
+   (das 13-Sekunden-Turnier) und zeigt, dass er zeilengleich herauskommt.
 
 Dazu aus dem Bau von M22: **jsdom rechnet kein Layout** (`scrollWidth`/`clientWidth`
 sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), und
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
 rAF stubben, sonst treibt `advanceTimersByTime` die ganze Spielschleife.
 
-## 5 · Der Stand in Zahlen (2026-09-11; die Zeilen zu Programm und Benchmark-Vorbehalt: 2026-09-08)
+Und aus dem Bau von M34: **ein langer synchroner Lauf im Test tötet den Worker.** Vitest
+meldet `Timeout calling "onTaskUpdate"`, obwohl jeder Test grün ist und der Bericht
+geschrieben wurde. Eine Zeile behebt es — `await new Promise((r) => setTimeout(r, 0))`
+zwischen zwei Partien.
+
+## 5 · Der Stand in Zahlen (2026-09-12; die Zeilen zu Programm und Benchmark-Vorbehalt: 2026-09-08)
 
 | | |
 |---|---|
-| Aufgaben | **225, davon 215 erledigt** (2026-09-11, nach M33 und M36); offen: 9 geplante und ungebaute aus M34 und M35, dazu T-M10-02 — zurückgenommen |
-| Abnahme | **11 von 11**, `docs/reports/acceptance.md`, 2026-09-11 auf freier Maschine — gegen den Stand nach M32; M33 und M36 sind kernfrei und haben `pnpm verify` durchlaufen, keinen vollen Abnahmelauf |
-| AK-1 | Sieg an Spieltag 798, 2717 Eroberungen, 15 Kriegserklärungen (mit Kriegsmarsch 0,5) |
+| Aufgaben | **225, davon 224 erledigt** (2026-09-12, nach M34 und M35). Die eine offene ist T-M10-02 — zurückgenommen, keine Arbeit. **Geplant und ungebaut: nichts.** |
+| Abnahme | **11 von 11, Exit 0, 7 min 28 s**, `docs/reports/acceptance.md`, 2026-09-12 auf freier Maschine, gegen den Stand nach M34 |
+| AK-1 | Sieg an Spieltag 471, 1827 Eroberungen, 12 Kriegserklärungen |
 | AK-7 | **abgenommen** (Delegation, DECISIONS.md) — 62/62 Fragen, 2 Berichte |
 | AK-8 | gemessen gegen `1c33ec7`; Erzeugnis 37 Dateien weiter — Neubau ausstehend, zählt nicht gegen V1 |
-| Tests | **1889 schnell**, 140 Dateien · Kern 96,8 % · gesamt 95,9 % (`pnpm verify` grün, Exit 0, 2026-09-11 nach M36; davor 1859 nach M33 und 1825 davor) |
+| Tests | **1929 schnell**, 140 Dateien · Kern 96,8 % · gesamt 95,9 % (`pnpm verify` grün, Exit 0, 2026-09-12 nach M34; davor 1889 nach M36) |
+| Fortschrittsachse | letzte Freischaltung **Spieltag 80** (vorher 16), **32 Minuten** Echtzeit bei Tempo 1 (vorher 6,4), **17 %** der Partie (vorher 2 %) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |
 | Programm | `worldwar.exe` 7,93 MB, **frisch gegen `75a0128`** (2026-09-08); die AK-8-Messung in `packaging.md` beschreibt noch das alte Bündel |

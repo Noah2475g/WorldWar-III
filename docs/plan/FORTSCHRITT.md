@@ -29,6 +29,10 @@
 
 ## 1 · Die Analyse, auf der das hier steht (2026-09-11)
 
+> **Diese Tabelle beschreibt den Zustand VOR M34.** Sie steht hier als Begründung, nicht
+> als Stand. Was nach dem Bau gemessen wurde — Spieltag 80, 32 Minuten, 17 % der Partie,
+> Siegtag 471 — steht in `docs/reports/progress-baseline.md`.
+
 Die Uhr der Anwendung läuft mit **einem Tick je Sekunde bei Tempo 1** (`App.tsx`, die
 Schleife mit `owed`), und ein Spieltag hat vierundzwanzig Ticks. Daraus folgt alles
 Weitere:
