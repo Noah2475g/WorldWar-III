@@ -3127,6 +3127,19 @@ tasks:
     files: [scripts/acceptance-criteria.mjs, scripts/acceptance.mjs, scripts/freshness.mjs, apps/headless/test/stance.slow.test.ts, docs/plan/WORKFLOW.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md]
     tests: [test/requirements.test.ts, apps/headless/test/stance.slow.test.ts]
     dod: "Befunde M-1, N-1, N-3 und N-7 der Durchsicht der zweiten Nacharbeit M40. M-1: die Frische-Waechter verglichen Commit-Zeiten (git log -1 --format=%ct); gleicht ein Merge fuer den Pfad dem Seitenzweig, nennt git den aelteren Seitencommit, und der Waechter meldete gruen, obwohl HEAD eine ungemessene Automatik traegt - dieselbe Luecke bei Parameterlauf und Turnier (gaugeStatus). Reparatur: Abstammung statt Uhrzeit. scripts/freshness.mjs fragt git rev-list -1 <bericht>..HEAD -- <quellen>; die reinen Funktionen gaugeStatus und stanceReportStatus in scripts/acceptance-criteria.mjs bekommen die gefundenen Commits als Eingabe. N-3 und N-7: stance.slow.test.ts schreibt measuredAtCommit (git rev-parse HEAD) und measuredDirty (git status --porcelain) beim Laden des Tests, der feste Text STAND entfaellt; der Waechter prueft measuredAtCommit..HEAD, verlangt, dass der Messcommit in der Geschichte von HEAD liegt, und lehnt einen an den Quellen schmutzig gemessenen Bericht ab. N-1: STANCE_SOURCES = packages/ai/src, packages/core/src, packages/shared, packages/testkit, data/rules, data/maps/world.json, apps/desktop/src/game/newGame.ts, apps/headless/test/stance.slow.test.ts. Parameterlauf und Turnier sehen zusaetzlich ihre Karte (data/maps/world.json bzw. data/maps/testworld.json, nachweislich gelesen); den Code sehen sie bewusst nicht (Entscheid 2026-09-08, offene Frage in PROBLEME.md). Test zuerst an den reinen Funktionen und an einem Wegwerf-Repo mit dem Merge aus M-1, rot mit der alten Zeitlogik. Am echten Stand meldet der Waechter des Haltungs-Messlaufs rot, weil stance.json noch keinen Messcommit hat - gewollt, der Lauf wird nach dem Merge neu gefahren."
+  - id: T-M40-18
+    milestone: M40
+    title: erfuellt enthaelt Kontrolle und Kartenfenster
+    status: done
+    # Beim Bau (2026-09-13): rot 3 von 49 in requirements ("expected true to be false": gefallene Kontrolle,
+    # verschobenes Fenster, Bericht ohne beide Felder); ak5 rot 3 ("expected undefined to deeply equal").
+    # Gruen: requirements 49, stance.slow Einheitsfaelle 10 (Simulation uebersprungen); tsc, eslint.
+    deps: [T-M40-17]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [scripts/acceptance-criteria.mjs, apps/headless/test/stance.slow.test.ts]
+    tests: [test/requirements.test.ts, apps/headless/test/stance.slow.test.ts]
+    dod: "Befund N-2 der Durchsicht der zweiten Nacharbeit M40: ak5() in stance.slow.test.ts prueft nur Provinz-Tage, Verluste ohne Gefecht, Ablehnungen und Kriege; die Kontrolle (Garnison A 1914) und das Kartenfenster standen in einem eigenen it, und der Bericht wird davor geschrieben. counting.ak5 zaehlt die Kontrolle zu AK5. In Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle erfuellt: true, und der Waechter waere gruen gewesen. Reparatur: ak5(laeufe, windowTicks) schreibt kontrolle { erwartet, gemessen, ok } und fensterOk in episoden.nachher.ak5, beide gehen in erfuellt und verletzt ein; stanceReportStatus verlangt ak5.kontrolle.ok und ak5.fensterOk selbst, nicht nur das Sammelfeld. Test zuerst: Einheitsfall im Waechter (Bericht mit gefallener Kontrolle und erfuellt true ist rot) und Einheitsfall ak5 mit zwoelf erfundenen Laeufen."
 
   # M41 "Pflege nach M34", geplant am 2026-09-13. Kein neuer Entwurf, keine neue
   # Anforderung: jede Aufgabe repariert einen gemessenen Befund. Baureihenfolge (deps):

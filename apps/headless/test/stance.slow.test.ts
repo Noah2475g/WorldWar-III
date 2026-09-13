@@ -561,6 +561,72 @@ describe('Einheitsfall T-M40-17: der Bericht nennt den Stand, auf dem gemessen w
   })
 })
 
+describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (Befund N-2)', () => {
+  /** Zwoelf erfundene Laeufe, die AK5 halten und die Kontrolle treffen; `anpassen` veraendert einzelne. */
+  const zwoelf = (anpassen: (lauf: Lauf) => Lauf = (lauf) => lauf): Lauf[] =>
+    SEEDS.flatMap((seed) =>
+      (Object.keys(SETUPS) as Aufbau[]).flatMap((setup) =>
+        STANCES.map((stance) =>
+          anpassen({
+            seed,
+            setup,
+            stance,
+            intrusions: KONTROLLE.intrusions,
+            answeredWithin24Ticks: 0,
+            answeredWithinWindow: 0,
+            departedWithin24Ticks: 0,
+            provincesLost: KONTROLLE.provincesLost,
+            rejectedCommands: 0,
+            episodes: 0,
+            coverOrdered: 0,
+            coverArrivedInTime: 0,
+            held: 0,
+            provinceDays: 800,
+            lostWithoutBattle: 0,
+            adjutantOrders: 0,
+            pendulums: 0,
+            undeclaredWarsByHuman: 0,
+            provincesAtEnd: 4,
+            armiesAtEnd: 4,
+            daysRun: DAYS,
+          }),
+        ),
+      ),
+    )
+
+  it('ist erfuellt, wenn AK5 haelt, die Garnison A 1914 die Kontrolle trifft und das Kartenfenster steht', () => {
+    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02)
+    expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: KONTROLLE, ok: true })
+    expect(ergebnis.fensterOk).toBe(true)
+    expect(ergebnis.verletzt).toEqual([])
+    expect(ergebnis.erfuellt).toBe(true)
+  })
+
+  it('ist nicht erfuellt, wenn die Kontrolle faellt - so in Schritt 0 der zweiten Nacharbeit geschehen', () => {
+    // Nur die Garnison A 1914 ist die Kontrolle: eine abweichende Verteidigung derselben Startzahl aendert nichts.
+    const verteidigungAnders = ak5(
+      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, intrusions: 99 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(verteidigungAnders.erfuellt).toBe(true)
+
+    const ergebnis = ak5(
+      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'garrison' ? { ...lauf, intrusions: 52 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: { intrusions: 52, provincesLost: KONTROLLE.provincesLost }, ok: false })
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('Kontrolle')
+  })
+
+  it('ist nicht erfuellt, wenn sich das Kartenfenster verschoben hat', () => {
+    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02 - 1)
+    expect(ergebnis.fensterOk).toBe(false)
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('Kartenfenster')
+  })
+})
+
 /** Deutschland mit `SETUPS[aufbau]` Armeen in jeder eigenen Provinz. */
 function aufstellen(seed: number, aufbau: Aufbau, stance: Stance): { state: GameState; human: PlayerId } {
   const config = toConfig({ ...DEFAULT_NEW_GAME, nation: NATION, seed }, map)
@@ -671,8 +737,14 @@ const finde = (laeufe: readonly Lauf[], seed: number, setup: Aufbau, stance: Sta
   return lauf
 }
 
-/** AK5 als Zahlen, ohne zu werfen — fuer den Bericht und fuer die Zusicherung. */
-function ak5(laeufe: readonly Lauf[]) {
+/**
+ * AK5 als Zahlen, ohne zu werfen — fuer den Bericht und fuer die Zusicherung.
+ *
+ * Seit T-M40-18 (Befund N-2) gehoeren die Kontrolle und das Kartenfenster dazu: `counting.ak5` zaehlte die
+ * Kontrolle schon immer zu AK5, `erfuellt` aber nicht, und in Schritt 0 der zweiten Nacharbeit trug ein
+ * Bericht mit gefallener Kontrolle `erfuellt: true`.
+ */
+function ak5(laeufe: readonly Lauf[], windowTicks: number) {
   const paare = SEEDS.flatMap((seed) =>
     (Object.keys(SETUPS) as Aufbau[]).map((setup) => ({
       seed,
@@ -701,9 +773,25 @@ function ak5(laeufe: readonly Lauf[]) {
       verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.undeclaredWarsByHuman} Kriege ohne Erklaerung`)
     }
   }
+  const garnison = finde(laeufe, 1914, 'A', 'garrison')
+  const gemessen = { intrusions: garnison.intrusions, provincesLost: garnison.provincesLost }
+  const kontrolle = {
+    erwartet: KONTROLLE,
+    gemessen,
+    ok: gemessen.intrusions === KONTROLLE.intrusions && gemessen.provincesLost === KONTROLLE.provincesLost,
+  }
+  if (!kontrolle.ok) {
+    verletzt.push(
+      `Kontrolle: Garnison A 1914 ${gemessen.intrusions} Einmaersche / ${gemessen.provincesLost} verloren statt ${KONTROLLE.intrusions} / ${KONTROLLE.provincesLost}`,
+    )
+  }
+  const fensterOk = windowTicks === WINDOW_TICKS_T_M40_02
+  if (!fensterOk) verletzt.push(`Kartenfenster ${windowTicks} Ticks statt ${WINDOW_TICKS_T_M40_02}`)
   return {
     provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
     lostWithoutBattle: { garrison: summe('garrison', 'lostWithoutBattle'), defensive: summe('defensive', 'lostWithoutBattle') },
+    kontrolle,
+    fensterOk,
     erfuellt: verletzt.length === 0,
     verletzt,
   }
@@ -726,13 +814,13 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2})`,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
       ...(MESSSTAND ?? messstand(gitImRepo)),
       measuredAt: new Date().toISOString(),
-      ak5: ak5(laeufe),
+      ak5: ak5(laeufe, windowTicks),
       laeufe,
     },
   }
@@ -778,7 +866,7 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
   // Gefecht gegen 0 mit Garnison — das stand hier als it.fails. Seit T-M40-10 gilt die Regel aus D30.4.
   // Faellt diese Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft (D30.9).
   it('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz', () => {
-    const ergebnis = ak5(laeufe)
+    const ergebnis = ak5(laeufe, windowTicks)
     expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
   })
 })

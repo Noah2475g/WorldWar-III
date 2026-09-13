@@ -5728,6 +5728,21 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
     Messcommit fehlt — gewollt, der Lauf wird nach dem Merge neu gefahren.
   - Befunde M-1, N-1, N-3, N-7.
 
+### T-M40-18 · „erfüllt" enthält Kontrolle und Kartenfenster
+- **Ziel:** ein eingecheckter Lauf mit gefallener Kontrolle macht den Frische-Wächter nicht grün.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-17
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `apps/headless/test/stance.slow.test.ts`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `stanceReportStatus` meldet rot bei einem Bericht mit gefallener Kontrolle,
+    auch wenn `erfuellt` true sagt; ebenso bei verschobenem Kartenfenster und bei einem Bericht, der eins von
+    beiden nicht nennt.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `ak5` mit zwölf erfundenen Läufen — erfüllt nur
+    mit getroffener Kontrolle (nur die Garnison A 1914 zählt) und unverschobenem Kartenfenster.
+- **Fertig wenn:** `ak5` die Felder `kontrolle: { erwartet, gemessen, ok }` und `fensterOk` in den Bericht
+  schreibt und beide in `erfuellt` und `verletzt` eingehen; der Wächter beide selbst verlangt. Befund N-2 —
+  in Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle `erfuellt: true`.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

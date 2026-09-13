@@ -534,6 +534,30 @@ describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16, T-M40
     expect(status.reason).toContain('AK5')
   })
 
+  it('meldet rot, wenn die Kontrolle im eingecheckten Lauf gefallen ist - auch wenn erfuellt true sagt (T-M40-18, Befund N-2)', () => {
+    // So in Schritt 0 der zweiten Nacharbeit wirklich geschehen: die Kontrolle war rot, AK5 gruen, und der Bericht
+    // trug `erfuellt: true`. Der Waechter liest die Kontrolle deshalb selbst, nicht nur das Sammelfeld.
+    const kontrolle = { erwartet: { intrusions: 52, provincesLost: 4 }, gemessen: { intrusions: 76, provincesLost: 4 }, ok: false }
+    const status = stanceReportStatus({ ...frisch, report: bericht({ ak5: { ...bericht().ak5, kontrolle } }) })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Kontrolle')
+  })
+
+  it('meldet rot, wenn sich das Kartenfenster im eingecheckten Lauf verschoben hat (T-M40-18)', () => {
+    const status = stanceReportStatus({ ...frisch, report: bericht({ ak5: { ...bericht().ak5, fensterOk: false } }) })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Kartenfenster')
+  })
+
+  it('meldet rot bei einem Bericht, der Kontrolle oder Kartenfenster nicht nennt (T-M40-18)', () => {
+    const ohneKontrolle: Partial<ReturnType<typeof bericht>['ak5']> = { ...bericht().ak5 }
+    delete ohneKontrolle.kontrolle
+    const ohneFenster: Partial<ReturnType<typeof bericht>['ak5']> = { ...bericht().ak5 }
+    delete ohneFenster.fensterOk
+    expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneKontrolle }) }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneFenster }) }).fresh).toBe(false)
+  })
+
   it('beobachtet jede Quelle, von der der Messlauf abhaengt - und jede davon gibt es (Befund N-1)', () => {
     const ROOT = fileURLToPath(new URL('..', import.meta.url))
     expect(STANCE_SOURCES).toEqual([

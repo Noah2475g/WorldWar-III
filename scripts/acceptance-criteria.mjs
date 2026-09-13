@@ -264,7 +264,8 @@ export function gaugeStatus({ sources = ['data/rules'], sourcesDirty, reportComm
  *    `rev-list <messcommit>..HEAD` die Commits eines anderen Zweigs nicht, die HEAD fehlen;
  *  - seit dem Messcommit liegt auf HEAD kein Commit an `sources` (`commitsSinceMeasurement`, Befund M-1
  *    und N-1);
- *  - der eingecheckte Lauf hat AK5 erfuellt — der Test schreibt den Bericht vor seinen Zusicherungen.
+ *  - der eingecheckte Lauf hat AK5 erfuellt — der Test schreibt den Bericht vor seinen Zusicherungen —,
+ *    und zwar samt Kontrolle (`ak5.kontrolle.ok`) und Kartenfenster (`ak5.fensterOk`, T-M40-18, Befund N-2).
  */
 export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor, commitsSinceMeasurement, sources = STANCE_SOURCES }) {
   const neu = `WORLDWAR_WRITE_REPORT=1 auf sauberem Arbeitsbaum neu messen`
@@ -301,8 +302,22 @@ export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor,
   if (report.ak5?.erfuellt !== true) {
     return { fresh: false, reason: `der eingecheckte Lauf in ${STANCE_REPORT} hat AK5 nicht erfuellt (episoden.nachher.ak5.erfuellt, Ruecknahmekriterium D30.9)` }
   }
+  // Kontrolle und Kartenfenster liest der Waechter selbst, nicht nur das Sammelfeld (T-M40-18, Befund N-2): in
+  // Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle `erfuellt: true`.
+  if (report.ak5?.kontrolle?.ok !== true) {
+    return {
+      fresh: false,
+      reason: `der eingecheckte Lauf in ${STANCE_REPORT} trifft die Kontrolle nicht oder nennt sie nicht (episoden.nachher.ak5.kontrolle.ok) - etwas anderes als die Automatik hat sich verschoben`,
+    }
+  }
+  if (report.ak5?.fensterOk !== true) {
+    return {
+      fresh: false,
+      reason: `im eingecheckten Lauf in ${STANCE_REPORT} hat sich das Kartenfenster verschoben, oder der Bericht nennt es nicht (episoden.nachher.ak5.fensterOk)`,
+    }
+  }
   return {
     fresh: true,
-    reason: `${STANCE_REPORT} ist auf ${kurz(commit)} sauber gemessen, seitdem kein Commit an den Quellen des Messlaufs, und AK5 ist erfuellt`,
+    reason: `${STANCE_REPORT} ist auf ${kurz(commit)} sauber gemessen, seitdem kein Commit an den Quellen des Messlaufs, und AK5 mit Kontrolle und Kartenfenster ist erfuellt`,
   }
 }
