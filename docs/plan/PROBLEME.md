@@ -2439,3 +2439,11 @@ einschaltet und dann F drückt, spult ohne Mitschrift vor, bis sich eine andere 
 Gelesen, nicht gemessen.
 
 **Status:** behoben (T-M41-13); Nebenbefund 1 und 2 offen.
+
+**Nebenbefund 1 behoben am 2026-09-13 (T-M41-15).** Die Anfrage an `fastForwardChunk` trägt jetzt
+`ticksRunBefore`, ein Zählziel (`ticks`, `days`) wird auf den Rest des Laufs umgerechnet, und
+`App.tsx` reicht den Stand weiter; Ereignisziele bleiben, wie sie sind. **Rot vorher:** ein Ziel von
+48 Ticks und eines von zwei Spieltagen, in Häppchen zu 24 aneinandergereiht wie in der Oberfläche,
+liefen beide bis zur Obergrenze (720 Ticks, `limit`); in der App stand die Uhr nach einem „Vorspulen
+um einen Tag" in Häppchen zu 4 Ticks auf „Tag 31 · 00:00" statt „Tag 2 · 00:00". **Grün:** Halt am
+Ziel nach 48 Ticks bzw. zwei Tagen, die App hält nach genau einem Tag.

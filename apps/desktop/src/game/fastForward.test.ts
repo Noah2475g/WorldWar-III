@@ -220,3 +220,40 @@ describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', (
     expect(hashValue(current, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(uhr.state, { omitKeys: HASH_OMIT_KEYS }))
   })
 })
+
+/**
+ * Das Ziel gilt fuer den ganzen Lauf, nicht je Haeppchen (T-M41-15, Nebenbefund 1 aus T-M41-13).
+ *
+ * `fastForwardChunk` ruft fuer jedes Haeppchen den Kern neu, und der zaehlt ein Tickziel ab dem
+ * Beginn DIESES Aufrufs. Die Oberflaeche reiht Haeppchen aneinander, solange eines am Deckel endet —
+ * ein Ziel ueber mehr als ein Haeppchen trat also nie ein, und der Lauf hielt erst an der Obergrenze
+ * von 30 Spieltagen. Heute verdeckt, weil ein Vorspulen um einen Tag genau ein Haeppchen ist.
+ */
+describe('R-TIME-06/AK4 Das Vorspulziel gilt fuer den ganzen Lauf (T-M41-15)', () => {
+  const MAX = 30 * TEST_RULES.constants.ticksPerDay
+
+  /** So reiht `App.tsx` die Haeppchen aneinander: weiter, solange eines am Deckel endet. */
+  function lauf(target: Parameters<typeof fastForwardChunk>[1]['target']): { gelaufen: number; halt: string } {
+    let state = createInitialState(CONFIG, ctx)
+    let gelaufen = 0
+    for (;;) {
+      const result = fastForwardChunk(
+        state,
+        { target, alertsFor: 'p1', maxTicks: MAX, chunkTicks: DEFAULT_CHUNK_TICKS, ticksRunBefore: gelaufen },
+        ctx,
+        MAX - gelaufen,
+      )
+      state = result.state
+      gelaufen += result.ticksRun
+      if (result.stoppedBy !== 'limit' || gelaufen >= MAX) return { gelaufen, halt: result.stoppedBy }
+    }
+  }
+
+  it('haelt ein Ziel von 48 Ticks nach 48 Ticks am Ziel, nicht an der Obergrenze von 720', () => {
+    expect(lauf({ kind: 'ticks', ticks: 48 })).toEqual({ gelaufen: 48, halt: 'target' })
+  })
+
+  it('haelt ein Ziel von zwei Spieltagen nach zwei Spieltagen am Ziel', () => {
+    expect(lauf({ kind: 'days', days: 2 })).toEqual({ gelaufen: 2 * TEST_RULES.constants.ticksPerDay, halt: 'target' })
+  })
+})

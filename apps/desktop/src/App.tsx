@@ -734,9 +734,10 @@ export function App(props: AppProps) {
           return
         }
 
+        // Der Stand reist mit (T-M41-15): ein Zählziel gilt für den ganzen Lauf, nicht je Häppchen.
         const result = fastForwardChunk(
           current,
-          { ...request, playerCommands },
+          { ...request, playerCommands, ticksRunBefore: ticksRun },
           { map: activeMap, rules: props.rules },
           MAX_FAST_FORWARD_TICKS - ticksRun,
           debugOn ? noteTrace : undefined,

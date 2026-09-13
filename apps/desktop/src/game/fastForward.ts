@@ -49,6 +49,26 @@ export interface FastForwardRequest {
    * Der Aufrufer reicht sie nur dem ersten Häppchen eines Laufs.
    */
   playerCommands?: readonly Command[]
+  /**
+   * Wie viele Ticks dieser Lauf in früheren Häppchen schon gerechnet hat (T-M41-15).
+   *
+   * Ein Zählziel — `ticks`, `days` — gilt für den ganzen Lauf. Der Kern zählt es ab dem Beginn
+   * seines Aufrufs, und jedes Häppchen ist ein neuer Aufruf: ohne diesen Stand trat ein Ziel über
+   * mehr als ein Häppchen nie ein, und der Lauf hielt erst an der Obergrenze von 30 Spieltagen.
+   */
+  ticksRunBefore?: number
+}
+
+/**
+ * Das Ziel für dieses Häppchen (T-M41-15): ein Zählziel auf den Rest des Laufs umgerechnet, jedes
+ * andere unverändert — ein Ereignisziel tritt ein, wann immer es eintritt.
+ */
+function targetForChunk(request: FastForwardRequest, ticksPerDay: number): FastForwardTarget {
+  const before = request.ticksRunBefore ?? 0
+  const { target } = request
+  if (target.kind === 'ticks') return { kind: 'ticks', ticks: Math.max(1, target.ticks - before) }
+  if (target.kind === 'days') return { kind: 'ticks', ticks: Math.max(1, target.days * ticksPerDay - before) }
+  return target
 }
 
 /** Wie viele Ticks ein Häppchen rechnet, bevor die Ereignisschleife wieder drankommt. */
@@ -86,7 +106,7 @@ export function fastForwardChunk(
   // (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
   let firstTick = true
 
-  return fastForward(state, request.target, ctx, {
+  return fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
     // Die Befehle eines Ticks kommen aus DERSELBEN Funktion wie in `advanceTicks` (T-M40-08,

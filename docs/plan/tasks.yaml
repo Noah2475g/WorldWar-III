@@ -3161,7 +3161,10 @@ tasks:
   - id: T-M41-15
     milestone: M41
     title: Das Vorspulziel wird nicht je Haeppchen gezaehlt
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): rot 3 - Ziel 48 Ticks und Ziel zwei Spieltage enden in Haeppchen zu 24
+    # bei 720, limit; die App steht nach Vorspulen um einen Tag in 4-Tick-Haeppchen auf Tag 31.
+    # Gruen mit ticksRunBefore; fastForward + App 96.
     deps: [T-M41-13, T-M40-08]
     requirements: []
     files: [apps/desktop/src/game/fastForward.ts, apps/desktop/src/App.tsx, docs/plan/PROBLEME.md]

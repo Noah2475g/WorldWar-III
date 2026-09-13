@@ -1669,3 +1669,41 @@ describe('T-M31-03 Der Fuss: Neu-Marke und Depesche', () => {
     expect(screen.getByRole('dialog', { name: 'Depesche' })).toBeTruthy()
   })
 })
+
+/**
+ * Das Vorspulziel wird nicht je Haeppchen gezaehlt (T-M41-15, Nebenbefund 1 aus T-M41-13).
+ *
+ * Ein Vorspulen um einen Tag sind 24 Ticks und passt heute genau in ein Haeppchen. Rechnet derselbe
+ * Weg in kleineren Haeppchen, begann der Kern die Zaehlung in jedem neu: jedes Haeppchen endete am
+ * Deckel, die Schleife rechnete weiter — bis zur Obergrenze von 30 Spieltagen.
+ */
+describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
+  const abbrechen = () => screen.queryByRole('button', { name: 'Abbrechen' })
+  const uhr = () => document.querySelector('.clock__time')?.textContent ?? ''
+
+  afterEach(() => {
+    haeppchen.ticks = 0
+    vi.useRealTimers()
+  })
+
+  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    startGame({ storage: new MemoryStorage() })
+    expect(uhr()).toMatch(/Tag 1 · 00:00/)
+
+    haeppchen.ticks = 4
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(abbrechen(), 'der Lauf endete im ersten Haeppchen - der Test misst nichts').not.toBeNull()
+
+    // 30 Spieltage in Haeppchen zu 4 Ticks sind 180 Haeppchen: genug Runden, um auch den Fehler zu Ende zu sehen.
+    for (let runde = 0; runde < 200 && abbrechen(); runde++) {
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+    }
+
+    expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
+    expect(uhr()).toMatch(/Tag 2 · 00:00/)
+    expect(screen.getByRole('status').textContent).toMatch(/ein Spieltag ist vorbei/)
+  }, 120_000)
+})
