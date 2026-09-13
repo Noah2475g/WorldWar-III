@@ -2519,7 +2519,7 @@ tasks:
   - id: T-M35-06
     milestone: M35
     title: Die Zieltage aus einer ganzen Partie
-    status: todo
+    status: done
     deps: [T-M35-05]
     requirements: [R-GAME-08]
     design: [D-31]

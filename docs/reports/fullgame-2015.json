@@ -93,6 +93,71 @@
       "fabrikOhneEisenbahn": 0
     }
   },
+  "goals": {
+    "marks": {
+      "provinces": 25,
+      "pointShareFirst": 400,
+      "populationShare": 350,
+      "pointShareSecond": 600
+    },
+    "winner": {
+      "provinces": 119,
+      "pointShareFirst": 237,
+      "populationShare": 337,
+      "pointShareSecond": 516
+    },
+    "perNation": {
+      "Vereinigte Staaten": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Kanada": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Mexiko": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Brasilien": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Argentinien": {
+        "provinces": 460,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Russland": {
+        "provinces": 119,
+        "pointShareFirst": 237,
+        "populationShare": 337,
+        "pointShareSecond": 516
+      },
+      "China": {
+        "provinces": 161,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      },
+      "Indien": {
+        "provinces": null,
+        "pointShareFirst": null,
+        "populationShare": null,
+        "pointShareSecond": null
+      }
+    },
+    "reachedEvents": 6
+  },
   "aiMemory": {
     "Kanada": {
       "eintraege": 1,
@@ -133,5 +198,5 @@
   "aiMemoryKB": 8,
   "stateKB": 334,
   "maxDays": 1500,
-  "measuredAt": "2026-09-13T15:34:08.868Z"
+  "measuredAt": "2026-09-13T19:46:21.225Z"
 }

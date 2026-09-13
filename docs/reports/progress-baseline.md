@@ -211,8 +211,38 @@ Stufe 1 — der Ausbau braucht die lange Partie.
 **Der Grundlauf verschiebt sich diesmal deutlich** (12 Startzahlen × 120 Tage): Anteil des Stärksten
 0,4462 → **0,3623**, Eroberungen 301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961.
 Der Ausgangswert in `balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand. Der
-Frische-Wächter sieht das nicht (er fragt nur `data/rules`); der eine Parameterlauf in T-M17-16 misst
-ihn neu.
+Frische-Wächter sieht das nicht (er fragt nur `data/rules`); der eine Parameterlauf im Schlussblock nach M35
+misst ihn neu (bis 2026-09-13 stand hier T-M17-16; M17 ist abgetrennt).
+
+### Nachtrag 2026-09-13 · Die Zieltage aus drei ganzen Partien (T-M35-06, R-GAME-08/AK6)
+
+Seit M35 hält der Spielstand je Macht den Spieltag, an dem sie ein Zwischenziel erreicht (D31). `fullgame.slow.test.ts`
+schreibt die Tage jeder Macht in die drei Berichte und sichert für die ausgelieferte Startzahl zu: beim Sieger steigen die
+Tage in der Reihenfolge der Marken, der erste liegt nicht vor Spieltag 20, der letzte nicht nach dem Siegtag. Gegengeprüft
+wird gegen `GOAL_REACHED` im Ereignisstrom, für jede Macht und jedes Ziel. Die Startzahlen 2015 und 1815 stehen als Zahl im
+Bericht, ohne Zusicherung.
+
+Marken: 25 Provinzen · 400 ‰ aller Punkte · **350 ‰** der Weltbevölkerung · 600 ‰ aller Punkte.
+
+| Startzahl | Sieger, Siegtag | 25 Provinzen | 400 ‰ Punkte | 350 ‰ Bevölkerung | 600 ‰ Punkte | Meldungen |
+|---|---|---|---|---|---|---|
+| **1914** (zugesichert) | China, 975 | 157 | 547 | 576 | 921 | 8 |
+| 2015 | Russland, 583 | 119 | 237 | 337 | 516 | 6 |
+| 1815 | Russland, 583 | 115 | 276 | 376 | 456 | 6 |
+
+**Die erste Messung ließ die Zusicherung fallen.** Mit der Planungsmarke **300 ‰** erreichte China die Bevölkerungsmarke
+an Tag 544, drei Tage vor der ersten Punktmarke (547). Die Marken stammten aus Partien mit Russland als Sieger, gemessen
+vor M41. Befund in `PROBLEME.md`, Entscheid mit Tagesverfolger-Daten in `DECISIONS.md` (2026-09-13, T-M35-06, kippbar):
+**350 ‰**. Die Tage oben sind nach dem Entscheid gemessen und treffen die Vorhersage des Verfolgers genau.
+
+**Wer außer dem Sieger ein Ziel erreicht.** 1914: Argentinien 25 Provinzen an Tag 364, Russland 25 Provinzen an 115 und
+400 ‰ Punkte an 274, Indien 25 Provinzen an 115. 2015: Argentinien 460, China 161 (je nur Provinzen). 1815: China 159 und
+Indien 310 (je nur Provinzen). Die erste Punktmarke erreicht außer dem Sieger nur Russland 1914. Die Provinzmarke ist
+absolut und fällt mit weniger Gegnern früher — hingenommen (D31.7).
+
+**Die Ziele entscheiden nichts, über ganze Partien belegt.** Die drei Berichte sind ohne `goals` und `measuredAt` gleich
+den Berichten vor M35. Einzige Ausnahme ist `stateKB` (270 → 271 und 403 → 404): der Zustand trägt jetzt das Feld. Siegtag,
+Sieger, Eroberungen, Kriegserklärungen, Gefechte, Fabriken und Städte sind gleich, und das Turnier ist zeilengleich.
 
 ## 6 · Was daraus folgt
 

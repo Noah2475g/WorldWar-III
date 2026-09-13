@@ -4871,6 +4871,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   werden die Marken nicht still verschoben: Befund in `PROBLEME.md`, Entscheid in
   `DECISIONS.md`. **Kein Parameterlauf hier** — er läuft einmal, im Schlussblock nach M35
   (M17 abgetrennt, Noah 2026-09-13; vorher stand hier T-M17-16).
+- **Erledigt am 2026-09-13:** Zieltage des Siegers 1914 (China, Siegtag 975): 157 / 547 / 576 / 921; 2015 (Russland,
+  583): 119 / 237 / 337 / 516; 1815 (Russland, 583): 115 / 276 / 376 / 456. Die erste Messung mit 300 ‰ Weltbevölkerung
+  **fiel** (China 544 vor 547); Befund in `PROBLEME.md`, Entscheid **350 ‰** in `DECISIONS.md` (kippbar), danach alle drei
+  Partien neu gemessen. Die dritte Startzahl 1815 ist mitgemessen (Auftrag), Tabelle in `progress-baseline.md`.
 
 ## Meilenstein M36 — Die Rohstoffleiste wird lesbar
 
