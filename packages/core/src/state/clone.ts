@@ -105,6 +105,12 @@ export function cloneState(state: GameState): GameState {
     grievances[key] = { ...state.diplomacy.grievances[key]! }
   }
 
+  // Dieselben zwei Ebenen bei den Zwischenzielen (T-M35-03): Macht -> Ziel -> Tag.
+  const goals: GameState['goals'] = {}
+  for (const key of Object.keys(state.goals)) {
+    goals[key] = { ...state.goals[key]! }
+  }
+
   const ai: GameState['ai'] = {}
   for (const key of Object.keys(state.ai)) {
     const memory = state.ai[key]!
@@ -140,6 +146,7 @@ export function cloneState(state: GameState): GameState {
     })),
     eventLog: state.eventLog.slice(),
     victory: { ...state.victory },
+    goals,
     nextIds: { ...state.nextIds },
   }
 }

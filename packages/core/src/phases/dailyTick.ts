@@ -1,4 +1,5 @@
 import { emit } from '../events/emit'
+import { settleGoals } from '../rules/goals'
 import { checkVictory, scoreOf } from '../rules/victory'
 import { settleMorale } from './morale'
 import type { GameState, PlayerId } from '../state/types'
@@ -8,8 +9,8 @@ import type { Phase, PhaseContext } from './index'
  * The daily settlement (design D3).
  *
  * Everything defined in units of days lives here: morale drift and revolts, scores,
- * elimination and the victory check. Running these hourly would be both twenty-four
- * times too strong and pure waste in the hottest path.
+ * intermediate goals, elimination and the victory check. Running these hourly would be
+ * both twenty-four times too strong and pure waste in the hottest path.
  */
 export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
   settleMorale(draft, ctx)
@@ -36,6 +37,13 @@ export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
     }
   }
 
+  // eslint-disable-next-line no-restricted-syntax -- tick divided by ticks-per-day, plain integers
+  const day = Math.trunc(draft.tick / ctx.rules.constants.ticksPerDay)
+
+  // Zwischenziele (R-GAME-08, D31.3): nach den Punkten, die sie lesen, und vor der
+  // Siegpruefung, die sie nicht liest. Rueckmeldung, keine Regel.
+  settleGoals(draft, ctx.rules, day)
+
   if (draft.victory.winner === null) {
     const verdict = checkVictory(draft, ctx.rules)
     if (verdict.winner || verdict.condition) {
@@ -51,7 +59,5 @@ export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
     }
   }
 
-  // eslint-disable-next-line no-restricted-syntax -- tick divided by ticks-per-day, plain integers
-  const day = Math.trunc(draft.tick / ctx.rules.constants.ticksPerDay)
   emit(ctx.events, draft.tick, 'DAY_REPORT', { day, scores })
 }

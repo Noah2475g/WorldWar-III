@@ -2489,7 +2489,7 @@ tasks:
   - id: T-M35-03
     milestone: M35
     title: Das Feld goals, die Tagespruefung und Schritt 2 nach 3
-    status: todo
+    status: done
     deps: [T-M35-02]
     requirements: [R-GAME-08]
     design: [D-31]

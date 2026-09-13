@@ -316,6 +316,16 @@ export interface VictoryState {
   endedAtTick: Tick | null
 }
 
+/**
+ * Die vier Zwischenziele (R-GAME-08, D31.1, T-M35-03).
+ *
+ * Die Reihenfolge ist die Reihenfolge der Marken; R-GAME-08/AK6 prüft, dass die Tage einer
+ * ganzen Partie in dieser Reihenfolge steigen.
+ */
+export type GoalKey = 'provinces' | 'pointShareFirst' | 'populationShare' | 'pointShareSecond'
+
+export const GOAL_KEYS: readonly GoalKey[] = ['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond']
+
 export interface GameState {
   schemaVersion: number
   seed: number
@@ -339,6 +349,16 @@ export interface GameState {
   /** Output, not simulation input: excluded from the hash on purpose. */
   eventLog: GameEvent[]
   victory: VictoryState
+  /**
+   * Spieltag, an dem eine Macht ein Zwischenziel erreicht hat; `null` = noch offen
+   * (T-M35-03, R-GAME-08, D31.1).
+   *
+   * Einmal gesetzt, nie zurückgesetzt: ein Ziel, das jeden Tag neu ausgerechnet würde, könnte
+   * wieder verschwinden. Rückmeldung, keine Regel — `checkVictory` liest es nicht. Bewusst
+   * **nicht** in `HASH_OMIT_KEYS` (DECISIONS.md, 2026-09-12): ein Feld außerhalb des Hashs
+   * kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt.
+   */
+  goals: Record<PlayerId, Record<GoalKey, number | null>>
   nextIds: { army: number; battle: number; order: number }
 }
 
@@ -353,5 +373,8 @@ export const HASH_OMIT_KEYS: readonly string[] = ['eventLog']
  * und die Feuerleitung jeder Armee. `test/format` sichert zu, dass diese Zahl genau um
  * eins groesser ist als die hoechste Stufe in `MIGRATIONS` — wer ein Zustandsfeld
  * hinzufuegt, ohne beides nachzuziehen, laesst den Testlauf scheitern.
+ *
+ * **3 seit dem 2026-09-13 (T-M35-03).** Der Schritt 2 → 3 legt `goals` fuer jede Macht mit
+ * vier offenen Zwischenzielen an (R-GAME-08/AK5, D31.5). M17 nimmt Stufe 4.
  */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
