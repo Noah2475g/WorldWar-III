@@ -848,8 +848,10 @@ tasks:
     status: done
     deps: [T-M10-09]
     requirements: [R-AI-05, R-AI-02]
-    files: [apps/desktop/src/ui/Panels.tsx]
-    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    # korrigiert 2026-09-13 (T-M41-06): files/tests nannten Panels.tsx; DebugPanel steht
+    # in Dialogs.tsx und wird in Dialogs.test.tsx geprueft.
+    files: [apps/desktop/src/ui/Dialogs.tsx]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "zeigt Ziel, Nutzen, Alternativen, Kommandolog und Hash je Tick; im Normalmodus unsichtbar"
 
   - id: T-M10-11
@@ -2024,7 +2026,7 @@ tasks:
     # 2026-09-08: Die Messung am frischen Buendel BRACH AK-8 (Schreiben ging, Wiederlesen
     # "forbidden path") und wurde zur Reparatur: tauri-plugin-fs kanonisiert existierende
     # Pfade in die \\?\-Form, auf die kein Scope-Muster passt (Falsifikationskette in
-    # PROBLEME.md). Der Speicherweg laeuft jetzt ueber sechs eigene, engere Kommandos der
+    # PROBLEME.md). Der Speicherweg laeuft jetzt ueber sechs (korrigiert 2026-09-13: fuenf) eigene, engere Kommandos der
     # Huelle; das fs-Plugin samt Berechtigungen ist entfernt. AK-8 danach vollstaendig
     # neu gemessen, inkl. Weiterspielen-Knopf am Programm: docs/reports/packaging.md.
     deps: []
@@ -2961,7 +2963,7 @@ tasks:
   - id: T-M41-06
     milestone: M41
     title: Planpflege und die fuenf Kommandos der Huelle
-    status: todo
+    status: done
     deps: []
     requirements: []
     files: [apps/desktop/src-tauri/src/main.rs, apps/desktop/src/storage/TauriStorage.test.ts, docs/plan/PROBLEME.md, docs/reports/packaging.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml, docs/plan/DECISIONS.md]

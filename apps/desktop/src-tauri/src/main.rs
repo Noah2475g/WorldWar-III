@@ -8,7 +8,9 @@
 /// ask for are the point — no http, no shell, no updater, so the promise that the game
 /// never phones home (R-FREE-04) is enforced by the platform rather than by us.
 ///
-/// The save files go through the app's OWN six commands below instead of
+/// The save files go through the app's OWN five commands below (corrected 2026-09-13:
+/// this line said six; `generate_handler!` has registered five since the first commit,
+/// and `TauriStorage.test.ts` now holds both sides equal) instead of
 /// `tauri-plugin-fs` (T-M28-03, 2026-09-08). Reason, established by falsification
 /// against the running binary over CDP: the plugin's scope check canonicalises paths
 /// that exist, which on Windows yields the `\\?\C:\...` verbatim form, and the glob

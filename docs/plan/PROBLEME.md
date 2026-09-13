@@ -1711,7 +1711,7 @@ Browserbau (IndexedDB) war derselbe Code gesund.
 Damit erklärt sich auch die Asymmetrie, die alles verschleierte: **Schreiben neuer
 Dateien ging immer** (nichts zu kanonisieren), das Wiederlesen nie.
 
-**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs eigene, engere
+**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs *(korrigiert 2026-09-13: fünf)* eigene, engere
 Kommandos** (`saves_list` … `saves_exists`, `src-tauri/src/main.rs`): Dateiname statt
 Pfad (Separatoren/`..` werden verweigert), fest auf `$APPDATA/saves`.
 `tauri-plugin-fs` samt Berechtigungen entfernt; `TauriStorage` ruft `invoke`, die
@@ -2068,3 +2068,45 @@ Aufgabe oder einen Meilenstein.
   nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
 
 **Status: offen**, je mit Aufgabe; B7 zweite Hälfte ohne Meilenstein.
+
+---
+
+## 2026-09-13 · T-M41-06 · T-M14-11 und T-M14-12 sagten 90-Tage-Läufe zu, und T-M15-08 löst sie nicht ab
+
+**Nachgesehen, nicht angenommen.** Beide Aufgaben stehen auf `done` und sagten je einen Lauf
+über **90 Spieltage** mit der ausgelieferten Voreinstellung zu, gezählt aus dem Ereignisstrom.
+Den Lauf gibt es nicht, und kein Test prüft eine seiner Zahlen.
+
+- **T-M14-11** versprach vier Zahlen: abgelehnte KI-Befehle unter 10 %, `NO_PATH`-Anteil an
+  `MOVE_ARMY` unter 2 %, keine Paarung Armee/Fehlercode öfter als dreimal, mindestens ein
+  `WAR_DECLARED`. `docs/reports/ai-reachability.md` misst **60** Spieltage und nennt zwei davon
+  (6 Kriegserklärungen, 6,3 % abgelehnt, 101 von 1597). `NO_PATH`-Anteil und Paarungen fehlen.
+- **T-M14-12** versprach sechs Aussagen: keine KI-Macht ohne Hauptstadt, solange sie eine Stadt
+  hält; je KI-Macht eine Armee mit `armyRange` > 0; höchstens drei Armeeobjekte je Macht und
+  Provinz; mindestens ein `TRADE_EXECUTED` **je** KI-Macht; abgewiesene `acceptPeace` unter 5 %;
+  ein Frieden zwischen zwei KI. Dazu gibt es weder Bericht noch Lauf.
+
+**T-M15-08 belegt etwas anderes.** `apps/headless/test/ai-integration.slow.test.ts` spielt acht
+KI aus `map.startPositions.slice(0, 8)` — nicht `DEFAULT_NEW_GAME` — über 200 Spieltage mit
+Startzahl 1815 und sichert zu: null `NOT_YET_AVAILABLE`, null diplomatische `INVALID_TARGET`,
+null Geldmangel, mehr als null Fabriken, Artillerie und selbsttätiger Beschuss. Die
+Überschneidung ist klein:
+
+| Zusage aus M14 | belegt durch | Stand |
+|---|---|---|
+| ≥ 1 Kriegserklärung | `fullgame.slow.test.ts` (ganze Partie, Voreinstellung) | belegt |
+| abgewiesene `acceptPeace` < 5 % | diplomatische `INVALID_TARGET` = 0 in T-M15-08 (andere Aufstellung) | sinngemäß belegt, strenger |
+| Handel je KI-Macht | `ai-integration.json` zählt 3914 Geschäfte **insgesamt**, nicht je Macht | nicht belegt |
+| Frieden zwischen zwei KI | `ai-integration.json` zählt 3 Waffenstillstände, ohne Zusicherung | gezählt, nicht zugesichert |
+| Ablehnungsquote < 10 % | 1105 Ablehnungen, aber keine Gesamtzahl der Befehle | nicht zu rechnen |
+| `NO_PATH` < 2 %, Paarungen ≤ 3, Hauptstadt, `armyRange` je Macht, ≤ 3 Armeeobjekte je Provinz | — | nicht belegt |
+
+**Nebenbei aufgefallen:** `ai-integration.json` meldet **890 `MOVE_ARMY:ARMY_NOT_FOUND`** in 200
+Spieltagen — Marschbefehle an Armeen, die es nicht mehr gibt. Ob darunter eine Armee öfter als
+dreimal vorkommt, sagt der Bericht nicht; er zählt nicht je Armee.
+
+**Warum kein Lauf in T-M41-06:** die Aufgabe richtet Text. Ein Lauf mit neun Zusicherungen misst
+KI-Verhalten und würde nach dem Fabrikausbau (T-M41-01) ohnehin neu gemessen. T-M14-11 und
+T-M14-12 bleiben `done`; die fehlenden Zusicherungen gehören in die nächste Planung.
+
+**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt.

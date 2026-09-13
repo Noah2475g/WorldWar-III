@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { storagePortContract } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { TauriStorage, decodeName, encodeName, type SavesApi } from './TauriStorage'
@@ -104,6 +106,60 @@ describe('R-PKG-02/AK2 Der Datei-Port fuehrt Dateien, nicht Namen', () => {
     await expect(store.write('a/b:c\\d', '{}')).resolves.toBeUndefined()
     expect(await store.read('a/b:c\\d')).toBe('{}')
     expect(await store.list()).toEqual(['a/b:c\\d'])
+  })
+})
+
+describe('T-M41-06 Die Huelle und der Port kennen dieselben Kommandos', () => {
+  // Der Plan nannte sechs Kommandos, wo seit dem ersten Commit fuenf registriert sind
+  // (DECISIONS.md, 2026-09-13). Eine Zahl im Text wird beim naechsten Lesen zur Zusage;
+  // dieser Waechter haelt stattdessen die NAMEN beider Seiten gegeneinander. Wer ein
+  // sechstes Kommando braucht, traegt es in main.rs UND TauriStorage.ts ein.
+  const HERE = fileURLToPath(new URL('.', import.meta.url))
+  const mainRs = readFileSync(`${HERE}../../src-tauri/src/main.rs`, 'utf8')
+  const port = readFileSync(`${HERE}TauriStorage.ts`, 'utf8')
+
+  /** Die Namen zwischen `generate_handler![` und `]` in main.rs. */
+  const registered = (rust: string): string[] => {
+    const block = /generate_handler!\[([^\]]*)\]/.exec(rust)?.[1] ?? ''
+    return block
+      .split(',')
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0)
+      .sort()
+  }
+
+  /** Die Namen, die der Port an `invoke` reicht. */
+  const invoked = (ts: string): string[] =>
+    [...new Set([...ts.matchAll(/invoke<[^>]*>\('([a-z_]+)'/g)].map((match) => match[1]!))].sort()
+
+  it('liest auf beiden Seiten ueberhaupt Namen', () => {
+    // Eine Mengengleichheit ueber zwei leeren Mengen ist immer wahr.
+    expect(registered(mainRs).length, 'generate_handler! nicht gefunden').toBeGreaterThan(0)
+    expect(invoked(port).length, 'kein invoke im Port gefunden').toBeGreaterThan(0)
+  })
+
+  it('registriert genau die Kommandos, die der Port aufruft', () => {
+    expect(registered(mainRs)).toEqual(invoked(port))
+  })
+
+  it('bildet in der Nachbildung genau diese Kommandos nach', async () => {
+    const saves = new FakeSaves()
+    for (const command of registered(mainRs)) {
+      // saves_read auf einen fehlenden Namen wirft "Keine solche Datei" — das ist ein
+      // bekanntes Kommando. Nur "unbekanntes Kommando" heisst: die Nachbildung fehlt.
+      const answer = await saves
+        .invoke<unknown>(command, { name: 'x', data: '{}' })
+        .then((value) => String(value), (error: Error) => error.message)
+      expect(answer, command).not.toMatch(/unbekanntes Kommando/)
+    }
+  })
+
+  it('wird rot, sobald eine Seite einen Namen mehr kennt', () => {
+    // Die Vorfuehrung aus dem Plan als bleibender Test: ein erfundener sechster Name in
+    // der Huelle bricht die Gleichheit.
+    const sechs = mainRs.replace('generate_handler![', 'generate_handler![\n            saves_rename,')
+    expect(registered(sechs)).toHaveLength(registered(mainRs).length + 1)
+    expect(registered(sechs)).not.toEqual(invoked(port))
   })
 })
 

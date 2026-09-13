@@ -2289,7 +2289,7 @@ standen 63 tote Pfade. Die Leseregeln:
   `data/rules/default/`), Karte: `data/maps/world.json`, Schleife: die gemeinsame aus T-M14-04.
 - **Anforderungen:** R-GAME-02 — dazu Abnahmekriterium AK-1
 - **Abhängigkeiten:** T-M14-01, T-M14-04, T-M14-05, T-M14-06, T-M14-07, T-M14-11, T-M14-12
-- **Dateien:** `apps/headless/test/fullgame.slow.test.ts` *(neu)*, `test/scripts.test.ts`,
+- **Dateien:** `apps/headless/test/fullgame.slow.test.ts`, `test/scripts.test.ts`,
   `scripts/acceptance.mjs`, `package.json`, `docs/plan/02-DESIGN.md` (D15),
   `docs/reports/ak1-full-game.md` *(nie gebaut — als neuer, vom Test geschriebener Bericht geplant; der
   Test schreibt `docs/reports/fullgame.json`)*, `docs/reports/acceptance.md`
@@ -4186,7 +4186,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   ging, Wiederlesen war „forbidden path". Ursache (Falsifikationskette in PROBLEME.md):
   die Scope-Prüfung von `tauri-plugin-fs` kanonisiert existierende Pfade zur
   `\\?\C:\…`-Form, auf die kein Scope-Muster passt. Der Speicherweg läuft jetzt über
-  **sechs eigene, engere Kommandos der Hülle** (Dateiname statt Pfad, fest auf
+  **sechs *(korrigiert 2026-09-13: fünf)* eigene, engere Kommandos der Hülle** (Dateiname statt Pfad, fest auf
   `$APPDATA/saves`); das fs-Plugin samt Berechtigungen ist entfernt. Danach alle
   sieben Schritte grün, erstmals einschließlich „Weiterspielen (Tag 1)" am Programm.
 

@@ -47,7 +47,7 @@ Der Beweis-Moment: `exists` auf eine **Geisterdatei** lieferte sauber `false`,
 derselbe Pfad **mit existierender Datei** „forbidden".
 
 **Die Reparatur:** Das Spiel spricht nicht mehr mit `tauri-plugin-fs`, sondern mit
-**sechs eigenen, engen Kommandos der Hülle** (`saves_list` … `saves_exists` in
+**sechs *(korrigiert 2026-09-13: fünf)* eigenen, engen Kommandos der Hülle** (`saves_list` … `saves_exists` in
 `src-tauri/src/main.rs`): sie nehmen einen Datei**namen** an, nie einen Pfad
 (Separatoren und `..` werden verweigert, nicht bereinigt), und berühren
 ausschließlich `$APPDATA/saves`. Das fs-Plugin und seine Berechtigungen sind
