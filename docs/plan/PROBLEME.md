@@ -2780,3 +2780,35 @@ nicht belegt**, weder im Turnier (0) noch in der Voreinstellung.
 der Weltkarte.
 
 **Status: offen, ohne Aufgabe** — Frage in `DECISIONS.md`, vorgemerkt für M18 zusammen mit Zusage 7 (T-M41-10).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, M3 · Der Handel arbeitet auf den teuersten Wunsch hin, gebaut wird der erste bezahlbare (plausibel, nicht gebaut)
+
+**Befund der Durchsicht, mit Zahlen aus dem eigenen Bericht** (`docs/reports/ai-integration.json`), **nicht gebaut**:
+
+- **Zwei Stellen, zwei Ziele.** `missingForNextBuilding` nimmt den **ersten** Wunsch einer Provinz
+  (`nextBuildingFor`) — seit T-M41-01 in einer Stadt mit Fabrik deren nächste Stufe, bis zum 3,24-fachen Preis —
+  und `tradeCommands` tauscht auf den Rohstoff hin, der dafür fehlt. Gebaut wird seit der Reparatur zu H1 aber der
+  **erste bezahlbare** Wunsch, oft Eisenbahn oder Festung. Die Nacharbeit zu H1 hat das bewusst so gelassen (eine
+  Größe geändert); dass Handel und Bau seither verschiedene Ziele verfolgen, ist die Folge.
+- **Getauscht wird fast in jedem Denkschritt.** `tradeCommands` verkauft ein Zehntel des größten Bestands, der selbst
+  nicht knapp ist, ohne auf eine Rücklage zu achten.
+
+| Lauf | Tauschgeschäfte | je Macht | je Macht und Tag |
+|---|---|---|---|
+| Weltkarte, 200 Tage, acht KI (Stand nach Block N2) | 4637 | 568–593 | ≈ 2,9 |
+| dasselbe, 2026-09-12 (vor M41) | 3914 | — | ≈ 2,4 |
+| Voreinstellung, 90 Tage, sieben KI | 2060 | 288–299 | ≈ 3,3 |
+
+Eine Macht denkt bei acht KI jeden achten Tick, also dreimal am Tag; fast jeder Denkschritt enthält einen Tausch.
+Durch Block N2 unverändert („schwer" 1179 → 1180 in der Summe beider Mächte).
+
+**Plausible Folge, nicht gemessen:** der Tausch kann genau den Rohstoff abgeben, den der tatsächlich gebaute Wunsch
+oder die Aushebung braucht — etwa Geld, das die Artillerie im Aushebebudget verlangt (Eintrag „Durchsicht Block N2, H1"
+oben). Ob das eine der Engstellen dort ist, sagt erst eine eigene Messung.
+
+**Mögliche Reparatur (für M18):** den Handel auf den Wunsch ausrichten, der wirklich verfolgt wird, oder nicht tauschen,
+wenn im selben Denkschritt gebaut wird — und gesondert messen (Handel, Bauten, Artillerie, Vollpartie, Turnier).
+
+**Status: offen, ohne Aufgabe** — vorgemerkt für M18.
