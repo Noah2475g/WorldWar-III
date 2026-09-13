@@ -31,11 +31,6 @@ export function accusativePronoun(kind: 'buildings' | 'units', key: string): str
   return de.grammar.pronoun[genusOf(kind, key)]
 }
 
-/** „Sie", „Er" oder „Es" — das Pronomen am Satzanfang, im Nominativ (T-M41-03). */
-export function nominativePronoun(kind: 'buildings' | 'units', key: string): string {
-  return de.grammar.nominative[genusOf(kind, key)]
-}
-
 /** „eine", „einen" oder „ein" — der unbestimmte Artikel im Akkusativ (T-M41-03). */
 export function indefiniteArticle(kind: 'buildings' | 'units', key: string): string {
   return de.grammar.indefinite[genusOf(kind, key)]

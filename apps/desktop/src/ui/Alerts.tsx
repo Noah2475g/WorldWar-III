@@ -1,5 +1,5 @@
 import type { PublicView } from '@worldwar/core'
-import { accusativePronoun, indefiniteArticle, nominativePronoun, noneOf } from '../i18n/grammar.ts'
+import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
 
@@ -128,8 +128,9 @@ function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
 
   const text = (kind: 'buildings' | 'units', key: string, rule: Prerequisites): string => {
     const thing = t(`${kind}.${key}`)
-    const subject = nominativePronoun(kind, key)
-    if (rule.requiresCoastal && !hasCoast) return t('alerts.upcomingNeedsCoast', { thing, subject })
+    // "Dafuer braucht es …" statt "Sie braucht … — Sie haben keine" (Nacharbeit T-M41-03,
+    // Durchsicht N6): das Pronomen der Sache und die Anrede des Spielers waren dasselbe Wort.
+    if (rule.requiresCoastal && !hasCoast) return t('alerts.upcomingNeedsCoast', { thing })
 
     const required = rule.requiresBuilding
     const level = rule.requiresBuildingLevel ?? 1
@@ -138,7 +139,6 @@ function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
 
     const needs = {
       thing,
-      subject,
       article: indefiniteArticle('buildings', required),
       required: t(`buildings.${required}`),
       none: noneOf('buildings', required),

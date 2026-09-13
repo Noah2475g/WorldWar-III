@@ -248,7 +248,7 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
       'Tag 16 (96 Ticks).',
       '',
       '**Seit T-M41-03 kündigt sich jede Freischaltung zwei Spieltage vorher an**, und die',
-      'Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Es braucht einen',
+      'Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Dafür braucht es einen',
       'Hafen — Sie haben keinen." Die Freischaltungstage selbst sind unverändert (Entscheid',
       '„Ankündigung statt Datenänderung", `DECISIONS.md`, 2026-09-13, kippbar). Die längste',
       `Pause im Fenster beträgt damit **${pause.ticks} Ticks**.`,

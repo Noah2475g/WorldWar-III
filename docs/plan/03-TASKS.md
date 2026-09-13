@@ -5546,7 +5546,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   statt Datenänderung": `DECISIONS.md`, 2026-09-13.
   *(Nacharbeit 2026-09-13 nach der Durchsicht, M1: steht die Voraussetzung auf einer niedrigeren
   Stufe, sagte der Text „Sie haben keine" — jetzt „Ihre beste steht auf Stufe N"; der Test, der den
-  Fehler festschrieb, ist berichtigt.)*
+  Fehler festschrieb, ist berichtigt. N6: „Sie braucht eine Kaserne — Sie haben keine" war richtig
+  gebeugt, aber doppeldeutig; die Ankündigung sagt jetzt „Dafür braucht es …", das an keinem Genus
+  hängt — die Nominativ-Tabelle fällt weg, Artikel und Verneinung richten sich weiter nach der
+  Voraussetzung.)*
 
 ### T-M41-01 · Die KI baut die Fabrik aus
 - **Ziel:** die zweite Fortschrittsachse ist heute eine für den Menschen allein.

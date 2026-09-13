@@ -134,9 +134,10 @@ export const de = {
   grammar: {
     /** Akkusativpronomen je Genus: „Sie können sie/ihn/es jetzt bauen." */
     pronoun: { f: 'sie', m: 'ihn', n: 'es' },
-    /** Nominativpronomen am Satzanfang: „Es braucht einen Hafen." (T-M41-03) */
-    nominative: { f: 'Sie', m: 'Er', n: 'Es' },
-    /** Unbestimmter Artikel im Akkusativ: „braucht einen Hafen / eine Werft / ein …". */
+    // Das Nominativpronomen am Satzanfang („Sie braucht eine Kaserne — Sie haben keine.")
+    // ist seit der Nacharbeit zu T-M41-03 weg: richtig gebeugt, aber doppeldeutig. Die
+    // Ankündigung sagt „Dafür braucht es …", das an keinem Genus hängt.
+    /** Unbestimmter Artikel im Akkusativ: „braucht es einen Hafen / eine Werft / ein …". */
     indefinite: { f: 'eine', m: 'einen', n: 'ein' },
     /** Allein stehende Verneinung im Akkusativ: „Sie haben keinen / keine / keines." */
     none: { f: 'keine', m: 'keinen', n: 'keines' },
@@ -777,13 +778,13 @@ export const de = {
     // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
     // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
     upcoming: 'In zwei Tagen: {{thing}}.',
-    upcomingNeeds: 'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} — Sie haben {{none}}.',
+    upcomingNeeds: 'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} — Sie haben {{none}}.',
     upcomingNeedsLevel:
-      'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} der Stufe {{level}} — Sie haben {{none}}.',
+      'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} der Stufe {{level}} — Sie haben {{none}}.',
     // Nacharbeit T-M41-03: steht das Gebäude schon, nur zu niedrig, wäre „Sie haben keine" falsch.
     upcomingNeedsHigherLevel:
-      'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} der Stufe {{level}} — Ihre beste steht auf Stufe {{have}}.',
-    upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. {{subject}} braucht eine Küstenprovinz — Sie haben keine.',
+      'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} der Stufe {{level}} — Ihre beste steht auf Stufe {{have}}.',
+    upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. Dafür braucht es eine Küstenprovinz — Sie haben keine.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).

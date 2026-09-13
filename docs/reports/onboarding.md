@@ -33,7 +33,7 @@ erklärt nur, warum sie so lang ist.
 | Tag 2, 19:00 | Schritt | unitRecruited beendet |
 | Tag 4, 00:00 | Ankündigung | In zwei Tagen: Hafen. |
 | Tag 6, 00:00 | Meldung | Neu ab heute: Hafen. Sie können ihn jetzt bauen. |
-| Tag 8, 00:00 | Ankündigung | In zwei Tagen: Transportschiff. Es braucht einen Hafen — Sie haben keinen. |
+| Tag 8, 00:00 | Ankündigung | In zwei Tagen: Transportschiff. Dafür braucht es einen Hafen — Sie haben keinen. |
 | Tag 10, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können es jetzt ausheben. |
 | Tag 10, 00:00 | Ankündigung | In zwei Tagen: Festung. |
 | Tag 12, 00:00 | Meldung | Neu ab heute: Festung. Sie können sie jetzt bauen. |
@@ -59,7 +59,7 @@ Transportschiff an Tag 10 und von der Festung an Tag 12 bis zur motorisierten In
 Tag 16 (96 Ticks).
 
 **Seit T-M41-03 kündigt sich jede Freischaltung zwei Spieltage vorher an**, und die
-Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Es braucht einen
+Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Dafür braucht es einen
 Hafen — Sie haben keinen." Die Freischaltungstage selbst sind unverändert (Entscheid
 „Ankündigung statt Datenänderung", `DECISIONS.md`, 2026-09-13, kippbar). Die längste
 Pause im Fenster beträgt damit **48 Ticks**.

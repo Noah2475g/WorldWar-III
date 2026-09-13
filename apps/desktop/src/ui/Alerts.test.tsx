@@ -174,6 +174,7 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
       transport: { availableFromDay: 10, requiresBuilding: 'harbour' },
       destroyer: { availableFromDay: 24, requiresBuilding: 'shipyard', requiresBuildingLevel: 2 },
       fighter: { availableFromDay: 12, requiresBuilding: 'airfield' },
+      artillery: { availableFromDay: 14, requiresBuilding: 'barracks' },
     },
   }
 
@@ -192,7 +193,7 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
 
     expect(rest).toEqual([])
     expect(ankuendigung?.id).toBe('upcoming:unit:transport')
-    expect(ankuendigung?.text).toBe('In zwei Tagen: Transportschiff. Es braucht einen Hafen — Sie haben keinen.')
+    expect(ankuendigung?.text).toBe('In zwei Tagen: Transportschiff. Dafür braucht es einen Hafen — Sie haben keinen.')
   })
 
   it('schweigt von der Voraussetzung, wenn sie steht', () => {
@@ -206,11 +207,11 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
     // falsch, der Spieler hat eine, nur eine Stufe zu niedrig. Der Test schrieb den
     // Fehler fest. Jetzt nennt die Ankuendigung die beste vorhandene Stufe.
     expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 1 } })).map((alert) => alert.text)).toEqual([
-      'In zwei Tagen: Zerstörer. Er braucht eine Werft der Stufe 2 — Ihre beste steht auf Stufe 1.',
+      'In zwei Tagen: Zerstörer. Dafür braucht es eine Werft der Stufe 2 — Ihre beste steht auf Stufe 1.',
     ])
     // Ohne jede Werft bleibt es beim "keine".
     expect(angekuendigt(sicht(22, { buildings: { harbour: 1 } })).map((alert) => alert.text)).toEqual([
-      'In zwei Tagen: Zerstörer. Er braucht eine Werft der Stufe 2 — Sie haben keine.',
+      'In zwei Tagen: Zerstörer. Dafür braucht es eine Werft der Stufe 2 — Sie haben keine.',
     ])
     expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 2 } })).map((alert) => alert.text)).toEqual([
       'In zwei Tagen: Zerstörer.',
@@ -219,7 +220,7 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
 
   it('nennt bei einem Gebaeude die fehlende Kueste', () => {
     expect(angekuendigt(sicht(4, { coastal: false })).map((alert) => alert.text)).toEqual([
-      'In zwei Tagen: Hafen. Er braucht eine Küstenprovinz — Sie haben keine.',
+      'In zwei Tagen: Hafen. Dafür braucht es eine Küstenprovinz — Sie haben keine.',
     ])
     expect(angekuendigt(sicht(4)).map((alert) => alert.text)).toEqual(['In zwei Tagen: Hafen.'])
   })
@@ -227,8 +228,23 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
   it('beugt nach dem Genus der Voraussetzung', () => {
     // Der Flugplatz ist maennlich, die Kaserne weiblich: "einen"/"keinen" gegen "eine"/"keine".
     expect(angekuendigt(sicht(10, { buildings: { harbour: 1 } })).map((alert) => alert.text)).toEqual([
-      'In zwei Tagen: Jagdflugzeug. Es braucht einen Flugplatz — Sie haben keinen.',
+      'In zwei Tagen: Jagdflugzeug. Dafür braucht es einen Flugplatz — Sie haben keinen.',
     ])
+  })
+
+  it('beginnt den zweiten Satz nie mit "Sie", "Er" oder "Es" (Nacharbeit T-M41-03, Durchsicht N6)', () => {
+    // "Artillerie. Sie braucht eine Kaserne — Sie haben keine." war richtig gebeugt und
+    // trotzdem doppeldeutig: das erste "Sie" meint die Artillerie, das zweite den Spieler.
+    // "Dafür braucht es" haengt an keinem Genus; nur Artikel und Verneinung richten sich
+    // nach der Voraussetzung.
+    expect(angekuendigt(sicht(12)).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Artillerie. Dafür braucht es eine Kaserne — Sie haben keine.',
+    ])
+    for (let tag = 1; tag <= 24; tag++) {
+      for (const alert of angekuendigt(sicht(tag, { coastal: tag % 2 === 0 }))) {
+        expect(alert.text, `Tag ${tag}`).not.toMatch(/\. (Sie|Er|Es) braucht/)
+      }
+    }
   })
 
   it('kuendigt nur zwei Tage vorher an, nicht am Vortag und nicht am Tag selbst', () => {

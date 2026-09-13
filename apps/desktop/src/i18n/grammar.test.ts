@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { de } from './de.ts'
-import { accusativePronoun, genusOf, indefiniteArticle, isPluralNation, nominativePronoun, noneOf } from './grammar.ts'
+import { accusativePronoun, genusOf, indefiniteArticle, isPluralNation, noneOf } from './grammar.ts'
 
 /**
  * Die Beugungstabellen bleiben vollstaendig (T-M23-02, R-UI-07, Befund V2-11).
@@ -33,14 +33,13 @@ describe('R-UI-07 Genus- und Numerus-Tabelle', () => {
     expect(accusativePronoun('units', 'fighter')).toBe('es')
   })
 
-  it('beugt Satzanfang, Artikel und Verneinung nach dem Genus (T-M41-03)', () => {
-    // "Es braucht einen Hafen — Sie haben keinen." / "Sie braucht eine Kaserne — Sie haben keine."
-    for (const tabelle of [de.grammar.nominative, de.grammar.indefinite, de.grammar.none]) {
+  it('beugt Artikel und Verneinung nach dem Genus (T-M41-03)', () => {
+    // "Dafür braucht es einen Hafen — Sie haben keinen." / "… eine Kaserne — Sie haben keine."
+    // Das Nominativpronomen am Satzanfang ist seit der Nacharbeit (Durchsicht N6) weg: das
+    // "Sie" der Sache war vom "Sie" des Spielers nicht zu unterscheiden.
+    for (const tabelle of [de.grammar.indefinite, de.grammar.none]) {
       expect(Object.keys(tabelle).sort()).toEqual(['f', 'm', 'n'])
     }
-    expect(nominativePronoun('units', 'transport')).toBe('Es')
-    expect(nominativePronoun('units', 'destroyer')).toBe('Er')
-    expect(nominativePronoun('units', 'motorized')).toBe('Sie')
     expect(indefiniteArticle('buildings', 'harbour')).toBe('einen')
     expect(indefiniteArticle('buildings', 'barracks')).toBe('eine')
     expect(noneOf('buildings', 'harbour')).toBe('keinen')
