@@ -114,23 +114,29 @@ Anhalten, Haltung (siehe unten), Teilen (halbiert jede Einheitenart),
 Zusammenlegen (alle eigenen Armeen am Ort) und Beschießen (nur mit Artillerie oder
 Bombern, nur im Krieg). Escape bricht die Zielwahl ab.
 
-**Haltung** (vier Knöpfe am Armeepanel): Die Haltung ist ein Auftrag, den eine stehende
-Armee von selbst ausführt — Sie müssen dafür nicht klicken.
+**Haltung** (vier Knöpfe am Armeepanel): Die Haltung bestimmt, wie eine Armee kämpft — und
+eine davon handelt in engen Grenzen von selbst.
 
-- **Verteidigung** ist die Haltung jeder neuen und jeder zurückgewichenen Armee. Marschiert
-  ein Kriegsgegner in eine eigene Nachbarprovinz ein und wird dort noch gekämpft, rückt sie
-  von selbst nach: höchstens eine Armee je Provinz, die am schnellsten dort ist, und nur aus
-  einer Provinz ohne Feind. Ihre eigene Provinz lässt sie dafür frei. Eine Provinz, die schon
-  gefallen ist, holt sie nicht zurück.
-- **Angriff:** Weicht ein Gegner in eine Nachbarprovinz zurück und ist, was dort steht, nicht
-  stärker als sie, folgt sie ihm von selbst.
+- **Verteidigung** ist die Haltung jeder neuen und jeder zurückgewichenen Armee. Sie bleibt
+  eingegraben stehen. Steht in ihrer Provinz noch eine weitere eigene Armee, rückt sie von
+  selbst in eine bedrohte eigene Nachbarprovinz nach — in eine, in der ein Kriegsgegner steht,
+  oder in eine leere, an die ein Kriegsgegner grenzt: höchstens eine Armee je Provinz, die am
+  schnellsten dort ist, und nur über eine einzige Grenze. Allein marschiert sie nie, damit ihre
+  eigene Provinz nicht leer fällt, und nach einem Marsch oder Rückzug bleibt sie fünf Tage lang
+  stehen. Eine Provinz, die schon gefallen ist, holt sie nicht zurück.
+- **Angriff** kämpft mit Angriffswerten statt eingegraben und marschiert nie von selbst. Sie
+  verzichtet damit auf den Vorteil des Verteidigers.
 - **Garnison** bleibt stehen, was auch geschieht, und kämpft wie die Verteidigung. Wählen Sie
-  sie für eine Armee, die ihren Posten halten soll.
+  sie für eine Armee, die ihren Posten halten soll. **Anhalten** stellt eine Armee auf
+  Verteidigung zugleich auf Garnison, damit sie nicht wieder von selbst losmarschiert.
 - **Rückzug** siehe unten; danach steht die Armee auf Verteidigung.
 
-Die Automatik gibt nur Befehle, die Sie auch selbst geben könnten, und ein eigener Befehl für
-dieselbe Armee geht vor. Sie entscheidet nur aus dem, was Sie sehen, und führt nur Ihre
-Armeen — eine Armee der Computergegner auf Verteidigung folgt deren eigener Planung.
+Die Automatik gibt nur Befehle, die Sie auch selbst geben könnten, marschiert nur in eigene
+Provinzen, und ein eigener Befehl für dieselbe Armee geht vor. Sie entscheidet nur aus dem, was
+Sie sehen, und führt nur Ihre Armeen — eine Armee der Computergegner auf Verteidigung folgt deren
+eigener Planung. Warum sie so schmal ist: ein Gefecht ist meist nach wenigen Stunden entschieden,
+ein Marsch in die Nachbarprovinz dauert ein bis vier Tage. Wer erst auf ein Gefecht hin losmarschiert,
+kommt zu spät — und lässt die eigene Provinz leer.
 
 **Rückzug** (Knopf am Armeepanel, nur im Gefecht): Die Armee löst sich aus dem Kampf
 und weicht in eine benachbarte eigene Provinz aus. Der Preis steht am Knopf — sie

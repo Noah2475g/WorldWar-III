@@ -2679,6 +2679,14 @@ Verteidigung „rückt in eine angegriffene eigene Nachbarprovinz nach", Garniso
 Der heutige Hinweis zu Angriff („greift von sich aus an, was in Reichweite kommt") beschreibt
 eine Wirkung, die es nie gab.
 
+*(Neu gefasst am 2026-09-13, T-M40-11, Befunde H2 und M3: die Hinweise sagen auch, was die Haltung
+kostet. Verteidigung „bleibt eingegraben stehen", rückt nur nach, wenn in ihrer Provinz eine weitere
+Armee steht, „allein marschiert sie nie", und nach Marsch oder Rückzug ruht sie — die Dauer aus
+`ADJUTANT_REST_TICKS`. Angriff „kämpft mit Angriffswerten statt eingegraben und marschiert nie von
+selbst". **Anhalten** einer Armee auf Verteidigung schickt `STOP_ARMY` und `SET_STANCE garrison` in
+denselben Tick (`ActionSpec.followUp`), sonst marschierte sie im nächsten wieder los; eine Armee in
+jeder anderen Haltung hält nur an.)*
+
 ### D30.8 Gegenrede und Risiko
 
 - **Dieselbe Haltung heißt bei Mensch und KI Verschiedenes.** Eine KI-Armee auf

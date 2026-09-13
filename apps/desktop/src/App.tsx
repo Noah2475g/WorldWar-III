@@ -855,6 +855,9 @@ export function App(props: AppProps) {
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
           send(spec.command, spec.id)
+          // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
+          // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs.
+          if (spec.followUp) send(spec.followUp, spec.id)
         }
       },
     }),

@@ -275,11 +275,15 @@ export const de = {
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
     stopHint: 'Die Armee hält an, wo sie gerade steht.',
+    // Anhalten einer Verteidigung stellt sie zugleich auf Garnison (T-M40-11, Befund H2).
+    stopHintGarrison: 'Hält an und stellt auf Garnison, damit sie nicht von selbst wieder losmarschiert.',
     // Jeder Hinweis sagt, was die Armee in dieser Haltung von selbst tut oder laesst
     // (T-M40-05, D30.7, R-UNIT-09/AK6). Der alte Satz zu „Angriff" — „greift von sich aus
-    // an, was in Reichweite kommt" — beschrieb eine Wirkung, die es nie gab.
-    stanceAggressiveHint: 'Folgt von selbst einem weichenden Gegner in die Nachbarprovinz, wenn das, was dort steht, nicht stärker ist als sie.',
-    stanceDefensiveHint: 'Rückt von selbst in eine angegriffene eigene Nachbarprovinz nach, solange dort noch gekämpft wird; sonst hält sie die Stellung.',
+    // an, was in Reichweite kommt" — beschrieb eine Wirkung, die es nie gab. Seit T-M40-10 und
+    // T-M40-11 sagen die Hinweise auch, was die Haltung kostet (Befund M3): die Verteidigung
+    // verfolgt nicht mehr „solange dort noch gekämpft wird", und der Angriff folgt niemandem.
+    stanceAggressiveHint: 'Kämpft mit Angriffswerten statt eingegraben und marschiert nie von selbst.',
+    stanceDefensiveHint: 'Bleibt eingegraben stehen. Steht in ihrer Provinz noch eine weitere Armee, rückt sie von selbst in eine bedrohte eigene Nachbarprovinz nach; allein marschiert sie nie. Nach einem Marsch oder Rückzug {{rest}} lang nicht.',
     stanceRetreatHint: 'Weicht von selbst in eine Nachbarprovinz aus und steht danach auf Verteidigung. Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
     stanceGarrisonHint: 'Bleibt stehen, was auch geschieht, und marschiert nie von selbst; kämpft wie die Verteidigung.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',

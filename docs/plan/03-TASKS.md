@@ -5542,6 +5542,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   „weitere Armee", „fünf Tage", „eingegraben" und „Garnison" (Befunde H2, M3).
 - **Fertig wenn:** die Anleitung dieselben Folgen nennt und kein Hinweis mehr „solange dort noch
   gekämpft wird" oder „folgt einem weichenden Gegner" verspricht.
+  *(Beim Bau 2026-09-13: ein Knopf trug genau einen Befehl — `ActionSpec.followUp` ist neu, und
+  `apps/desktop/src/App.tsx` schickt ihn mit; geprüft am Bildschirm in `apps/desktop/src/App.test.tsx`.
+  **Abweichung vom Entwurf:** nur eine Armee auf Verteidigung geht beim Anhalten auf Garnison — seit
+  T-M40-10 handelt keine andere Haltung von selbst, und eine Armee auf Angriff veränderte der Klick
+  sonst ungefragt im Kampf. Die Ruhe im Hinweis kommt aus `ADJUTANT_REST_TICKS`, nicht aus dem Text.)*
 
 ### T-M40-12 · Nachmessen und Abschluss der Nacharbeit
 - **Ziel:** die zwölf Läufe entscheiden, ob die Regel bleibt.

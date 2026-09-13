@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
-import { MemoryStorage, type MapData } from '@worldwar/core'
+import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
@@ -1731,4 +1731,62 @@ describe('T-M41-16 F spult mit eingeschalteter Debug-Ansicht mit Mitschrift', ()
 
     expect(zeilen(), 'F hat ohne Mitschrift vorgespult').toBeGreaterThan(0)
   })
+})
+
+/**
+ * Anhalten haelt fest (T-M40-11, Befund H2 der Durchsicht von M40, R-UNIT-09/AK6).
+ *
+ * Der Adjutant schickte eine Verteidigung los, der Spieler klickte „Anhalten" — und im naechsten Tick
+ * marschierte sie wieder (Beleg S2). Gemessen am Bildschirm aus einer geladenen Partie: eine Armee
+ * marschiert, der Spieler haelt sie an, ein Tag vergeht.
+ */
+describe('T-M40-11 Anhalten stellt eine marschierende Verteidigung auf Garnison', () => {
+  const ladeMarsch = async (stance: 'defensive' | 'aggressive') => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const mensch = state.playerOrder[0]!
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance })
+    const ziel = state.provinces[capital]!.neighbors.find((id) => planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1)!
+    const route = planRoute(state, armee, ziel, world, TEST_RULES)!
+    armee.path = route.path
+    armee.departureTick = state.tick
+    armee.arrivalTick = route.arrivalTick
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Marsch'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+  }
+
+  const armeePanel = () => screen.getByRole('region', { name: 'Armee' })
+  const gedrueckt = () =>
+    within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
+      .getAllByRole('button')
+      .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+      .map((knopf) => knopf.textContent)
+
+  it('haelt eine Verteidigung an und stellt sie auf Garnison', async () => {
+    await ladeMarsch('defensive')
+    expect(gedrueckt()).toEqual(['Verteidigung'])
+    const anhalten = within(armeePanel()).getByRole('button', { name: 'Anhalten' })
+    expect(anhalten.getAttribute('title')).toMatch(/Garnison/)
+
+    fireEvent.click(anhalten)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(gedrueckt()).toEqual(['Garnison'])
+    expect(within(armeePanel()).getByRole('button', { name: 'Anhalten' }).hasAttribute('disabled'), 'die Armee marschiert noch').toBe(true)
+  }, 30_000)
+
+  it('laesst eine Armee auf Angriff beim Anhalten auf Angriff', async () => {
+    await ladeMarsch('aggressive')
+    fireEvent.click(within(armeePanel()).getByRole('button', { name: 'Anhalten' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(gedrueckt()).toEqual(['Angriff'])
+    expect(within(armeePanel()).getByRole('button', { name: 'Anhalten' }).hasAttribute('disabled'), 'die Armee marschiert noch').toBe(true)
+  }, 30_000)
 })

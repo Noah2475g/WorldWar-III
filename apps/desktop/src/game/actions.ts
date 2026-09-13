@@ -1,4 +1,5 @@
 import { ONE } from '@worldwar/shared'
+import { ADJUTANT_REST_TICKS } from '@worldwar/ai'
 import {
   armyHp,
   armyRange,
@@ -74,6 +75,13 @@ export interface ActionSpec {
   disabledReason: string | null
   /** The order itself. Absent for orders that first need a target on the map. */
   command?: Command
+  /**
+   * Ein zweiter Befehl, der mit dem ersten geht, im selben Tick (T-M40-11).
+   *
+   * Bisher trug ein Knopf genau einen Befehl. „Anhalten" einer Verteidigung braucht zwei: halt an,
+   * und stell auf Garnison — sonst marschiert sie im naechsten Tick wieder von selbst los (Befund H2).
+   */
+  followUp?: Command
   /** Orders that need a province chosen next: the panel switches to target mode. */
   targetKind?: 'move' | 'bombard'
 }
@@ -329,12 +337,25 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     targetKind: 'move',
   }
 
-  const stop = checked(ctx, { type: 'STOP_ARMY', playerId, armyId }, 'stop', t('army.stop'), t('army.stopHint'))
+  // Anhalten haelt fest (T-M40-11, Befund H2 der Durchsicht von M40): eine Armee auf Verteidigung,
+  // die angehalten wird, marschierte im naechsten Tick wieder von selbst los. Sie geht deshalb mit dem
+  // Anhalten auf Garnison. Nur sie — seit T-M40-10 handelt keine andere Haltung von selbst, und eine
+  // Armee auf Angriff veraenderte der Klick sonst ungefragt im Kampf.
+  const haeltFest = army.stance === 'defensive'
+  const stop = checked(
+    ctx,
+    { type: 'STOP_ARMY', playerId, armyId },
+    'stop',
+    t('army.stop'),
+    t(haeltFest ? 'army.stopHintGarrison' : 'army.stopHint'),
+  )
   if (stop.disabledReason === null && army.path.length === 0) stop.disabledReason = t('army.notMoving')
+  if (haeltFest) stop.followUp = { type: 'SET_STANCE', playerId, armyId, stance: 'garrison' }
 
   const stanceHints: Record<Stance, string> = {
     aggressive: t('army.stanceAggressiveHint'),
-    defensive: t('army.stanceDefensiveHint'),
+    // Die Ruhe nach Marsch und Rueckzug kommt aus dem Adjutanten, nicht aus dem Text (T-M40-11).
+    defensive: t('army.stanceDefensiveHint', { rest: hinweisZeit(ADJUTANT_REST_TICKS) }),
     // Der Rueckzug ist der teuerste Befehl des Spiels und trug bis heute kein Wort dazu.
     retreat: t('army.stanceRetreatHint', {
       loss: Math.round(konstanten.retreatLossPermille / 10),

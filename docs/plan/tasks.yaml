@@ -3021,12 +3021,18 @@ tasks:
   - id: T-M40-11
     milestone: M40
     title: Anhalten haelt fest, und die Hinweise sagen die Folgen
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): ein Knopf trug genau einen Befehl - ActionSpec.followUp neu, App.tsx
+    # schickt ihn mit (App.tsx und App.test.tsx deshalb in files und tests). ABWEICHUNG vom Entwurf:
+    # nur defensive geht beim Anhalten auf Garnison - seit T-M40-10 handelt keine andere Haltung von
+    # selbst, und eine Armee auf Angriff aenderte der Klick sonst ungefragt im Kampf. Die Ruhe im
+    # Hinweis kommt aus ADJUTANT_REST_TICKS (5 Tage), nicht aus dem Text. Rot: actions 2 von 38,
+    # App am Hinweis, nach actions.ts nochmals am Klick (Verteidigung statt Garnison).
     deps: [T-M40-10]
     requirements: [R-UNIT-09]
     design: [D-30]
-    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md]
-    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, apps/desktop/src/App.tsx]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Befunde H2 und M3 der Durchsicht M40. H2: Anhalten einer Armee auf Verteidigung wird im naechsten Tick ueberstimmt (Beleg S2), und die Anleitung verspricht, ein eigener Befehl gehe vor. M3: die Hinweise verschweigen die Folgen. Reparatur reine Oberflaeche: Anhalten einer eigenen Armee mit selbsttaetiger Haltung (defensive, aggressive) schickt STOP_ARMY und SET_STANCE garrison; auf garrison und retreat nur STOP_ARMY. Hinweise: Verteidigung sagt, dass sie nur nachrueckt, wenn in ihrer Provinz eine weitere Armee stehen bleibt, allein nie, und nach einem Marsch oder Rueckzug fuenf Tage nicht; Angriff kaempft mit Angriffswerten statt eingegraben und marschiert nie von selbst; Anhalten nennt die Garnison; Rueckzug steht danach auf Verteidigung. Anleitung nachgezogen. Test zuerst: actions.test.ts (Anhalten auf defensive ergibt STOP_ARMY und SET_STANCE garrison, auf garrison nur STOP_ARMY; tragende Satzteile weitere Armee, fuenf Tage, eingegraben, Garnison). Vor dem Bau pruefen, ob eine Aktion zwei Befehle tragen kann. Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext."
   - id: T-M40-12
     milestone: M40

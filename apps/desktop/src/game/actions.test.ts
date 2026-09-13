@@ -184,14 +184,52 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
       expect(text, `${haltung}: der Hinweis nennt weder die Automatik noch ihr Fehlen`).toMatch(/von selbst/)
       expect(text, haltung).not.toMatch(RAW_KEY)
     }
-    // Was genau von selbst geschieht (D30.4).
-    expect(hinweis.aggressive).toMatch(/weichend/)
-    expect(hinweis.aggressive).toMatch(/nicht stärker/)
-    expect(hinweis.defensive).toMatch(/angegriffene eigene Nachbarprovinz/)
+    // Was genau von selbst geschieht, und was es kostet (D30.4 seit T-M40-10, Befund M3 der Durchsicht).
+    // Bis T-M40-10 stand hier „weichend", „nicht stärker" und „angegriffene eigene Nachbarprovinz" —
+    // die Verfolgung ist entfallen, und die Deckung rueckt nur noch nach, wenn eine Armee stehen bleibt.
+    expect(hinweis.defensive).toMatch(/eingegraben/)
+    expect(hinweis.defensive).toMatch(/weitere Armee/)
+    expect(hinweis.defensive).toMatch(/allein marschiert sie nie/)
+    // Die Ruhe nach Marsch und Rueckzug: fuenf Spieltage aus ADJUTANT_REST_TICKS, nicht aus dem Text.
+    expect(hinweis.defensive).toMatch(/5 Tage lang nicht/)
+    expect(hinweis.aggressive).toMatch(/Angriffswerten/)
+    expect(hinweis.aggressive).toMatch(/eingegraben/)
+    expect(hinweis.aggressive).toMatch(/nie von selbst/)
+    expect(hinweis.aggressive).not.toMatch(/weichend|folgt/)
+    expect(hinweis.defensive).not.toMatch(/solange dort noch gekämpft wird/)
     expect(hinweis.garrison).toMatch(/nie von selbst/)
-    // Nach dem Rueckzug steht die Armee auf Verteidigung (`phases/retreat.ts`) — und deckt damit.
+    // Nach dem Rueckzug steht die Armee auf Verteidigung (`phases/retreat.ts`).
     expect(hinweis.retreat).toMatch(/Verteidigung/)
     expect(hinweis.aggressive).not.toMatch(/greift von sich aus an/i)
+  })
+
+  it('stellt eine Armee auf Verteidigung beim Anhalten auf Garnison, jede andere haelt nur an (R-UNIT-09/AK6, T-M40-11)', () => {
+    // Befund H2 der Durchsicht: der Adjutant schickte eine Verteidigung los, der Spieler klickte
+    // „Anhalten" — und im naechsten Tick marschierte sie wieder (Beleg S2). Seit T-M40-10 handelt nur
+    // noch `defensive` von selbst; eine Armee auf Angriff oder Garnison haelt nur an, sonst aenderte
+    // der Klick ungefragt ihre Kampfwerte.
+    const marschiert = (stance: Army['stance']) => {
+      const { ctx, capital, neighbour } = fresh()
+      const army = withArmy(ctx.state, capital)
+      army.stance = stance
+      army.path = [neighbour]
+      army.departureTick = ctx.state.tick
+      army.arrivalTick = ctx.state.tick + 30
+      return armyActions(ctx, 'a1').find((a) => a.id === 'stop')!
+    }
+
+    const verteidigung = marschiert('defensive')
+    expect(verteidigung.disabledReason).toBeNull()
+    expect(verteidigung.command).toEqual({ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' })
+    expect(verteidigung.followUp).toEqual({ type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' })
+    expect(verteidigung.hint).toMatch(/Garnison/)
+
+    for (const stance of ['aggressive', 'garrison', 'retreat'] as const) {
+      const anhalten = marschiert(stance)
+      expect(anhalten.command, stance).toEqual({ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' })
+      expect(anhalten.followUp, stance).toBeUndefined()
+      expect(anhalten.hint, stance).not.toMatch(/Garnison/)
+    }
   })
 
   it('bietet Marsch, Haltung und Teilen an und begruendet den Rest', () => {
