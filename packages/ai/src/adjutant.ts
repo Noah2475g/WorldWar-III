@@ -1,4 +1,5 @@
 import {
+  armyHp,
   needsTransport,
   planRoute,
   publicView,
@@ -157,6 +158,34 @@ function ordersFor(
     )
     if (!army) continue
     taken.add(army.id)
+    heading.add(province.id)
+    commands.push({ type: 'MOVE_ARMY', playerId, armyId: army.id, targetProvinceId: province.id })
+  }
+
+  // Attack pursues (R-UNIT-09/AK2): a province bordering on land with a visible enemy that
+  // has just fallen back — its attack cooldown is running, which the view shows since
+  // T-M40-04 — gets at most one pursuer that is at least as strong. Measured against
+  // everything hostile visible there, not the retreating army alone: that is what she will
+  // fight on arrival.
+  for (const province of view.provinces) {
+    const there = hostile.get(province.id)
+    if (!there || !there.some((army) => army.retreating === true) || heading.has(province.id)) continue
+    const enemyStrength = there.reduce((sum, army) => sum + army.strength, 0)
+    const army = earliestArrival(
+      state,
+      ctx,
+      province.id,
+      eligible.filter(
+        (candidate) =>
+          candidate.stance === 'aggressive' &&
+          !taken.has(candidate.id) &&
+          bordersOnLand(candidate.locationProvinceId, province.id) &&
+          armyHp(candidate) >= enemyStrength,
+      ),
+    )
+    if (!army) continue
+    taken.add(army.id)
+    heading.add(province.id)
     commands.push({ type: 'MOVE_ARMY', playerId, armyId: army.id, targetProvinceId: province.id })
   }
 

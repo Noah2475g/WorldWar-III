@@ -2929,7 +2929,7 @@ tasks:
   - id: T-M40-04
     milestone: M40
     title: aggressive verfolgt den weichenden Gegner
-    status: todo
+    status: done
     deps: [T-M40-03]
     requirements: [R-UNIT-09]
     design: [D-30]

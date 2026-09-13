@@ -232,3 +232,99 @@ describe('Mehrspieler: die Befehle des Adjutanten entstehen in playerOrder-Reihe
     expect(adjutantCommands(bau(true).state, ctx)).toEqual(befehle)
   })
 })
+
+/**
+ * Der Angriff verfolgt den weichenden Gegner (T-M40-04, D30.4, R-UNIT-09/AK2).
+ *
+ * Nordland haelt n2; eine Ostmark-Armee ist nach m1 zurueckgewichen (neutral, ueber Land an
+ * n2, 160 km). „Eben zurueckgewichen" heisst: ihre Angriffssperre laeuft — und das zeigt die
+ * Sicht seit T-M40-04 fuer jede sichtbare fremde Armee (`retreating`).
+ */
+describe('R-UNIT-09/AK2 Der Angriff verfolgt den weichenden Gegner', () => {
+  function rueckzugNachM1(staerke: number): { state: GameState; weichend: Army } {
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.tick = 100
+    const weichend = placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie(staerke) })
+    weichend.cannotAttackUntil = state.tick + 20
+    return { state, weichend }
+  }
+
+  it('folgt einem gleich starken Weichenden', () => {
+    const { state } = rueckzugNachM1(5_000)
+    const jaeger = placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([zug(jaeger.id, 'm1')])
+  })
+
+  it('folgt einem staerkeren nicht', () => {
+    const { state } = rueckzugNachM1(5_001)
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([])
+  })
+
+  it('folgt keinem, dessen Angriffssperre abgelaufen ist', () => {
+    const { state, weichend } = rueckzugNachM1(5_000)
+    weichend.cannotAttackUntil = state.tick
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([])
+  })
+
+  it('folgt keinem, den die Sicht nicht zeigt (R-DIP-04)', () => {
+    // Wie bei der Verteidigung: m1 grenzt an eine eigene Provinz und ist im Spiel immer
+    // sichtbar. Geprueft wird die Quelle — eine Sicht ohne den Weichenden, Zustand unveraendert.
+    const { state, weichend } = rueckzugNachM1(5_000)
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+    const imNebel = (lage: GameState, playerId: PlayerId): PublicView => {
+      const view = publicView(lage, playerId)
+      return { ...view, armies: view.armies.filter((army) => army.id !== weichend.id) }
+    }
+
+    expect(adjutantCommands(state, ctx, { viewOf: imNebel })).toEqual([])
+    expect(adjutantCommands(state, ctx, { viewOf: publicView })).toHaveLength(1)
+  })
+
+  it('misst an allem, was dort sichtbar steht, nicht nur am Weichenden', () => {
+    // Ein schwacher Weichender neben einem frischen Verband ist kein Ziel: zusammen sind sie
+    // staerker als die Verfolgerin, und dort kaempft sie gegen beide.
+    const { state } = rueckzugNachM1(2_000)
+    placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie(4_000) })
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([])
+  })
+
+  it('schickt je Provinz hoechstens eine Verfolgerin, bei gleicher Ankunft die kleinste Kennung', () => {
+    const { state } = rueckzugNachM1(5_000)
+    const erste = placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([zug(erste.id, 'm1')])
+  })
+
+  it('schickt keine zweite, wenn schon eine eigene Armee dorthin unterwegs ist', () => {
+    const { state } = rueckzugNachM1(5_000)
+    const unterwegs = placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+    unterwegs.path = ['m1']
+    unterwegs.departureTick = state.tick
+    unterwegs.arrivalTick = state.tick + 40
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+
+    expect(adjutantCommands(state, ctx)).toEqual([])
+  })
+
+  it('verfolgt nicht aus Verteidigung, Garnison oder Rueckzug, und nicht aus einer umkaempften Provinz', () => {
+    for (const stance of ['defensive', 'garrison', 'retreat'] as const) {
+      const { state } = rueckzugNachM1(5_000)
+      placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance })
+      expect(adjutantCommands(state, ctx), stance).toEqual([])
+    }
+
+    const { state } = rueckzugNachM1(5_000)
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+    placeArmy(state, { owner: 'p2', at: 'n2', units: infanterie(1_000) })
+    expect(adjutantCommands(state, ctx), 'umkaempft').toEqual([])
+  })
+})
