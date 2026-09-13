@@ -228,6 +228,8 @@ function kennzahlen(m: Messung) {
     friedensannahmen: m.kiBefehle.filter((command) => command.type === 'DIPLOMACY' && command.action === 'acceptPeace')
       .length,
     diplomatieAbgelehnt: abgelehnt.filter((event) => event.command === 'DIPLOMACY').length,
+    /** Gefallene Hauptstaedte der KI-Maechte — ohne einen Verlust misst die Hauptstadt-Zusage nichts. */
+    hauptstadtVerluste: events.filter((event) => event.type === 'CAPITAL_LOST' && ki.has(event.playerId)).length,
     hauptstadt: {
       ohneHauptstadtMitStadtAmEnde: [...ki]
         .filter((id) => haeltStadt(id) && final.players[id]!.capitalProvinceId === null)
@@ -405,8 +407,16 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().kriegserklaerungen).toBeGreaterThanOrEqual(1)
   })
 
-  it('laesst keine KI-Macht ohne Hauptstadt enden, solange sie eine Stadt haelt (T-M14-12)', () => {
-    expect(zahlen().hauptstadt.ohneHauptstadtMitStadtAmEnde).toEqual([])
+  it('laesst keine KI-Macht ohne Hauptstadt enden, solange sie eine Stadt haelt (T-M14-12, im 200-Tage-Lauf)', () => {
+    // Durchsicht von Block N2, M1: in der Voreinstellung verliert in 90 Tagen keine Macht ihre
+    // Hauptstadt — dort lief diese Zusicherung ueber einer leeren Menge und konnte nicht fallen.
+    // Gezaehlt wird deshalb im 200-Tage-Lauf der Weltkarte, und zuerst, dass es dort Verluste gibt.
+    // Vorbehalt: nach einem Verlegen sperrt der Kern das naechste fuer 30 Spieltage; eine Macht, die
+    // ihre neue Hauptstadt in dieser Zeit verliert, bleibt legitim ohne (laengste Strecke gemessen:
+    // 31 Tage). Faellt die Zusicherung nach einer Aenderung, zuerst pruefen, ob die Sperre der Grund ist.
+    const z = kennzahlen(integration)
+    expect(z.hauptstadtVerluste, 'kein Hauptstadtverlust im Lauf - die Zusicherung haette nichts gemessen').toBeGreaterThan(0)
+    expect(z.hauptstadt.ohneHauptstadtMitStadtAmEnde).toEqual([])
   })
 
   it('handelt mit jeder KI-Macht mindestens einmal (T-M14-12)', () => {

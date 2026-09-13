@@ -2195,6 +2195,11 @@ standen 63 tote Pfade. Die Leseregeln:
   gemessen 0 von 7. „Höchstens drei Armeeobjekte je Provinz" — gemessen höchstens 86, stehend 8 —
   steht als Zahl im Bericht und geht an T-M41-10.)* *(T-M41-10 ist am 2026-09-13 nach seinem
   Rücknahmekriterium zurückgenommen; die Zusage ist mit der Messung nach M18 verschoben.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: „keine Macht ohne Hauptstadt, solange sie eine Stadt
+  hält" lief im 90-Tage-Lauf über einer leeren Menge — dort verliert keine Macht ihre Hauptstadt (0
+  Verluste), die Zusicherung konnte nicht fallen. Sie steht jetzt im 200-Tage-Lauf der Weltkarte, mit der
+  Vorbedingung „mindestens ein Hauptstadtverlust" (gemessen 10); am Ende ohne Hauptstadt: keine. Vorbehalt
+  im Test: die 30-Tage-Sperre des Verlegens kann eine Macht legitim ohne Hauptstadt lassen.)*
 
 ### T-M14-13 · Was der Kern kann, muss der Spieler erreichen
 - **Ziel:** Das Muster, das dieses Projekt dreimal getroffen hat — Symbolsatz, Ton,
@@ -5760,6 +5765,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   die Befehle nachträglich zu verwerfen, sieht die Taktikstufe die aufgegangenen Armeen gar nicht — das
   nimmt auch Begründungen und Gedächtnis mit, und es ist ebenso bitgleich gemessen. Beschuss im Turnier:
   0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3, `PROBLEME.md`.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: die Hauptstadt-Zusage lief im 90-Tage-Lauf über einer
+  leeren Menge (0 Verluste) und steht jetzt im 200-Tage-Lauf, mit der Vorbedingung „mindestens ein
+  Hauptstadtverlust" — gemessen 10.)*
 
 ### T-M41-09 · Die KI baut nicht in Provinzen, die sie nur erinnert
 - **Ziel:** ein Bauauftrag in eine Provinz, die längst ein Gegner hält, wird jeden Tag abgelehnt — und

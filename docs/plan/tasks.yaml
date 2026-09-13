@@ -3088,6 +3088,9 @@ tasks:
     milestone: M41
     title: Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
     status: done
+    # Berichtigt (Durchsicht N2, M1): die Hauptstadt-Zusage lief im 90-Tage-Lauf ueber einer leeren
+    # Menge (0 Verluste); sie steht jetzt im 200-Tage-Lauf mit der Vorbedingung mindestens ein
+    # Hauptstadtverlust (gemessen 10).
     deps: [T-M41-02, T-M41-07]
     requirements: []
     files: [packages/ai/src/decide.ts, apps/headless/src/tournament.ts, docs/reports/ai-integration.json, docs/reports/ai-tournament-run.md, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]

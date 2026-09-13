@@ -2419,7 +2419,7 @@ ausgelieferten Voreinstellung (`ai-integration.slow.test.ts`, Startzahl 1914, si
 | `NO_PATH` < 2 % der Marschbefehle | 0 von 2556 | zugesichert |
 | Paarung Armee/Fehlercode ≤ 3 | 0 | zugesichert |
 | ≥ 1 Kriegserklärung | 5 | zugesichert |
-| keine Macht ohne Hauptstadt, solange sie eine Stadt hält | 0 am Ende, 0 Tage | zugesichert |
+| keine Macht ohne Hauptstadt, solange sie eine Stadt hält | 0 am Ende, 0 Tage | zugesichert — *berichtigt nach der Durchsicht (M1): über einer leeren Menge, 0 Verluste in 90 Tagen; jetzt im 200-Tage-Lauf mit 10 Verlusten zugesichert* |
 | Handel je KI-Macht | alle 7, mindestens 288 | zugesichert |
 | abgewiesene `acceptPeace` < 5 % | keine diplomatische Ablehnung (1 Annahme) | zugesichert, strenger |
 | Frieden zwischen zwei KI | 1 | zugesichert |

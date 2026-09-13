@@ -36,6 +36,7 @@
   },
   "friedensannahmen": 7,
   "diplomatieAbgelehnt": 0,
+  "hauptstadtVerluste": 10,
   "hauptstadt": {
     "ohneHauptstadtMitStadtAmEnde": [],
     "tageOhne": {
@@ -141,6 +142,7 @@
     "paarungenErweitertHaeufigste": {},
     "friedensannahmen": 1,
     "diplomatieAbgelehnt": 0,
+    "hauptstadtVerluste": 0,
     "hauptstadt": {
       "ohneHauptstadtMitStadtAmEnde": [],
       "tageOhne": {
