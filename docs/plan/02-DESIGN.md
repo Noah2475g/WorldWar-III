@@ -2612,12 +2612,19 @@ Armee in jede eigene Provinz und gibt danach keinen Befehl. Aus dem Ereignisstro
 dem Ringpuffer:
 
 - **Einmärsche:** `ARMY_INTRUDED` in eine Provinz des Menschen;
-- **beantwortet:** eine eigene Armee erreicht diese Provinz binnen 24 Ticks;
+- **beantwortet:** eine eigene Armee erreicht diese Provinz binnen 24 Ticks; *(Korrektur
+  2026-09-13 beim Bau von T-M40-02: auf der Weltkarte unerreichbar — die kürzeste deutsche
+  Binnengrenze braucht für Infanterie 25 Ticks, und der Befehl fällt frühestens einen Tick nach
+  dem Einmarsch. Die 24-Tick-Zahl wird weiter gezählt; zugesichert wird über die Ankunft binnen
+  des **Kartenfensters** — 1 Tick plus die längste Marschzeit über eine eigene Binnengrenze für
+  die aufgestellte Armee, Deutschland 114 Ticks — und über den **Aufbruch** binnen 24 Ticks.
+  `PROBLEME.md`, 2026-09-13.)*
 - **verloren:** `PROVINCE_CAPTURED` aus dem Besitz des Menschen;
 - **abgelehnt:** `COMMAND_REJECTED` für den Menschen.
 
 Vorher (T-M40-02) und nachher (T-M40-06) in `docs/reports/stance.json`. Zugesichert wird
-nachher: beantwortete Einmärsche anteilig mehr als vorher, null Ablehnungen. Die verlorenen
+nachher: beantwortete Einmärsche (Kartenfenster und Aufbruch) anteilig mehr als vorher, null
+Ablehnungen. Die verlorenen
 Provinzen stehen als Zahl im Bericht und nicht als Zusicherung.
 
 ### D30.7 Die Oberfläche

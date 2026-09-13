@@ -2224,3 +2224,40 @@ für den Schlussblock, keine Aufgabe.
 
 **Status: Beobachtung, kein Produktfehler.** Plantext in `DECISIONS.md` (T-M41-01) und
 `03-TASKS.md`/`tasks.yaml` (T-M41-02) mit Vermerk; `WORKFLOW.md` §5 nennt Tag 582.
+
+---
+
+## 2026-09-13 · T-M40-02 · „Beantwortet binnen 24 Ticks" ist auf der Weltkarte nicht erreichbar — das Fenster folgt jetzt aus der Karte
+
+**Was der Plan sagte.** D30.6, T-M40-02 und T-M40-06: ein Einmarsch gilt als beantwortet, wenn
+„eine eigene Armee diese Provinz binnen 24 Ticks erreicht"; zugesichert wird nachher ein größerer
+Anteil beantworteter Einmärsche (R-UNIT-09/AK5).
+
+**Was vor dem Bau nachgerechnet wurde.** Infanterie marschiert 6 km/h (`units.json`), und
+`edgeTravelTicks` rundet auf und rechnet das Gelände ein. Die deutschen Binnengrenzen, mit der
+Funktion des Kerns für die aufgestellte Armee gerechnet (`docs/reports/stance.json`,
+`innerBorders`): 146 km = 25 bzw. 31 Ticks, 236 km = 50, 314 km = 53 bzw. 88, 359 km = 75 bzw.
+100, 404 km = 85 bzw. 113. Der Adjutant befiehlt frühestens im Tick nach dem Einmarsch (D30.4).
+**Die schnellste denkbare Antwort braucht also 26 Ticks** — mit 24 wäre die Zahl vorher und
+nachher null gewesen, und jede Automatik hätte AK5 verfehlt, ohne dass es an ihr lag.
+
+**Korrektur, festgelegt vor jeder Messung nachher.** Die Absicht bleibt: eine eigene Armee kommt
+dort an. Gezählt werden drei Zahlen, alle aus dem Ereignisstrom:
+
+1. **Ankunft binnen 24 Ticks** — die Zahl des Plans, weiter im Bericht, nicht zugesichert;
+2. **Ankunft binnen des Kartenfensters** — 1 Tick Verzug plus die längste Marschzeit über eine
+   eigene Binnengrenze für genau die aufgestellte Armee (Deutschland: **114 Ticks**);
+3. **Aufbruch binnen 24 Ticks** — die Reaktion selbst, unabhängig von der Marschzeit.
+
+Zugesichert wird in T-M40-06, dass die Anteile (2) und (3) nachher größer sind als vorher. Das
+Fenster ist aus der Karte abgeleitet und nicht aus einem Messergebnis, und es gilt für beide Läufe
+gleich.
+
+**Messung vorher** (Weltkarte, Startzahl 1914, 200 Spieltage, Deutschland mit je fünf Infanterie in
+seinen vier Provinzen, sieben KI-Nachbarn, kein Befehl; **gemessen vor der M41-Nacharbeit
+(KI-Bauordnung)**): 52 Einmärsche (Frankreich 47, Italien 5, der erste an Tag 20), beantwortet
+0 / 0 / 0, **alle vier Provinzen verloren**, 0 abgelehnte Befehle, 0 Befehle für den Menschen.
+Der Ringpuffer am Ende führt **0** Einmärsche — derselbe Unterschied wie in T-M14-05.
+
+**Status:** Plan korrigiert (D30.6, `03-TASKS.md` und `tasks.yaml` T-M40-02/06, mit Vermerk);
+kein Produktfehler.

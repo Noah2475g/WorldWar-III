@@ -2909,13 +2909,13 @@ tasks:
   - id: T-M40-02
     milestone: M40
     title: Der Messlauf vorher
-    status: todo
+    status: done
     deps: [T-M40-01]
     requirements: [R-UNIT-09]
     design: [D-30]
     files: [docs/reports/stance.json]
     tests: [apps/headless/test/stance.slow.test.ts]
-    dod: "D30.6, erst messen, dann aendern. Neuer Messlauf: Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber advanceTicks; der Mensch spielt eine Macht mit KI-Nachbarn, bekommt beim Aufsetzen eine Armee in jede eigene Provinz (Haltung defensive) und gibt danach keinen Befehl. Gezaehlt aus dem Ereignisstrom, nie aus dem Ringpuffer: Einmaersche in eigene Provinzen (ARMY_INTRUDED), davon beantwortete (eine eigene Armee erreicht die Provinz binnen 24 Ticks), verlorene Provinzen, abgelehnte Befehle des Menschen. Bericht docs/reports/stance.json, Abschnitt vorher. Zugesichert wird nur, dass etwas gemessen wurde (mindestens ein Einmarsch) - ist die Zahl null, wird die Nation gewechselt und das im Bericht begruendet, nicht die Zusicherung gelockert. Zwischen Abschnitten await setTimeout (WORKFLOW Abschnitt 4)."
+    dod: "D30.6, erst messen, dann aendern. Neuer Messlauf: Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber advanceTicks; der Mensch spielt eine Macht mit KI-Nachbarn, bekommt beim Aufsetzen eine Armee in jede eigene Provinz (Haltung defensive) und gibt danach keinen Befehl. Gezaehlt aus dem Ereignisstrom, nie aus dem Ringpuffer: Einmaersche in eigene Provinzen (ARMY_INTRUDED), davon beantwortete (eine eigene Armee erreicht die Provinz binnen 24 Ticks - KORREKTUR beim Bau 2026-09-13: auf der Weltkarte unerreichbar, die kuerzeste deutsche Binnengrenze braucht 25 Ticks plus 1 Tick Verzug; gezaehlt werden Ankunft binnen 24 Ticks, Ankunft binnen des Kartenfensters 1 plus laengste Binnenmarschzeit der aufgestellten Armee (Deutschland 114 Ticks) und Aufbruch binnen 24 Ticks, PROBLEME.md), verlorene Provinzen, abgelehnte Befehle des Menschen. Bericht docs/reports/stance.json, Abschnitt vorher. Zugesichert wird nur, dass etwas gemessen wurde (mindestens ein Einmarsch) - ist die Zahl null, wird die Nation gewechselt und das im Bericht begruendet, nicht die Zusicherung gelockert. Zwischen Abschnitten await setTimeout (WORKFLOW Abschnitt 4)."
   - id: T-M40-03
     milestone: M40
     title: defensive deckt die Nachbarprovinz
@@ -2955,7 +2955,7 @@ tasks:
     design: [D-30]
     files: [docs/reports/stance.json, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/LEVEL-UP-3.md]
     tests: [apps/headless/test/stance.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
-    dod: "D30.6. Derselbe Messlauf wie T-M40-02, jetzt mit Adjutant; stance.json fuehrt vorher und nachher nebeneinander. Zusicherung: der Anteil beantworteter Einmaersche ist groesser als vorher, und kein Befehl des Adjutanten wurde abgelehnt (R-UNIT-09/AK5). Verlorene Provinzen stehen als Zahl im Bericht, nicht als Zusicherung - sie haengen an mehr als der Haltung. Turnier einmal nachgefahren, zeilengleich. Ist die Wirkung null, ist der Meilenstein nicht fertig. LEVEL-UP-3.md Abschnitt 5 bekommt den Verweis auf das Ergebnis. pnpm verify am Ende des Meilensteins."
+    dod: "D30.6. Derselbe Messlauf wie T-M40-02, jetzt mit Adjutant; stance.json fuehrt vorher und nachher nebeneinander. Zusicherung: der Anteil beantworteter Einmaersche ist groesser als vorher (Ankunft binnen des Kartenfensters und Aufbruch binnen 24 Ticks, Korrektur bei T-M40-02), und kein Befehl des Adjutanten wurde abgelehnt (R-UNIT-09/AK5). Verlorene Provinzen stehen als Zahl im Bericht, nicht als Zusicherung - sie haengen an mehr als der Haltung. Turnier einmal nachgefahren, zeilengleich. Ist die Wirkung null, ist der Meilenstein nicht fertig. LEVEL-UP-3.md Abschnitt 5 bekommt den Verweis auf das Ergebnis. pnpm verify am Ende des Meilensteins."
 
   # M41 "Pflege nach M34", geplant am 2026-09-13. Kein neuer Entwurf, keine neue
   # Anforderung: jede Aufgabe repariert einen gemessenen Befund. Baureihenfolge (deps):

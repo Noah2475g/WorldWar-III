@@ -5392,6 +5392,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** der Bericht den Abschnitt „vorher" trägt und der Lauf mindestens einen
   Einmarsch gemessen hat. Ist die Zahl null, wird die Nation gewechselt und begründet — nicht
   die Zusicherung gelockert.
+- **Korrektur beim Bau (2026-09-13, vor jeder Messung nachher):** „binnen 24 Ticks" ist auf
+  der Weltkarte unerreichbar — die kürzeste deutsche Binnengrenze braucht 25 Ticks, und der
+  Befehl fällt einen Tick nach dem Einmarsch. Gezählt werden die Ankunft binnen 24 Ticks
+  (weiter im Bericht), die Ankunft binnen des Kartenfensters (1 plus längste
+  Binnenmarschzeit der aufgestellten Armee, Deutschland 114 Ticks) und der Aufbruch binnen
+  24 Ticks (`PROBLEME.md`).
 
 ### T-M40-03 · `defensive` deckt die Nachbarprovinz
 - **Ziel:** fällt eine eigene Nachbarprovinz, rückt eine Armee nach, ohne dass der Spieler
@@ -5443,7 +5449,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `docs/plan/PROGRESS.md`, `docs/plan/LEVEL-UP-3.md`
 - **Tests zuerst:** `apps/headless/test/stance.slow.test.ts` sichert jetzt zu: der Anteil
   beantworteter Einmärsche ist größer als vorher, kein Adjutantenbefehl wurde abgelehnt
-  (R-UNIT-09/AK5).
+  (R-UNIT-09/AK5). *(Beantwortet heißt seit der Korrektur bei T-M40-02: Ankunft binnen des
+  Kartenfensters und Aufbruch binnen 24 Ticks.)*
 - **Fertig wenn:** vorher und nachher nebeneinander im Bericht stehen, das Turnier zeilengleich
   nachgefahren ist und `pnpm verify` am Ende des Meilensteins grün ist. Ist die Wirkung null,
   ist der Meilenstein nicht fertig.

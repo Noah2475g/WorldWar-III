@@ -1,0 +1,113 @@
+{
+  "tasks": "T-M40-02 (vorher), T-M40-06 (nachher)",
+  "stand": "gemessen vor der M41-Nacharbeit (KI-Bauordnung)",
+  "map": "world",
+  "seed": 1914,
+  "days": 200,
+  "human": "Deutschland",
+  "opponents": [
+    "Polen",
+    "Frankreich",
+    "Russland",
+    "Italien",
+    "Ukraine",
+    "Spanien",
+    "China"
+  ],
+  "setup": {
+    "unitKey": "infantry",
+    "unitsPerProvince": 5,
+    "armies": 4
+  },
+  "counting": {
+    "source": "Ereignisstrom von advanceTicks, nicht state.eventLog",
+    "planWindowTicks": 24,
+    "windowTicks": 114,
+    "windowRule": "1 Tick Verzug (D30.4) + laengste Marschzeit ueber eine eigene Binnengrenze fuer die aufgestellte Armee"
+  },
+  "innerBorders": [
+    {
+      "from": "DEU-NE",
+      "to": "DEU-NW",
+      "km": 236,
+      "ticks": 50
+    },
+    {
+      "from": "DEU-NE",
+      "to": "DEU-SE",
+      "km": 404,
+      "ticks": 113
+    },
+    {
+      "from": "DEU-NW",
+      "to": "DEU-NE",
+      "km": 236,
+      "ticks": 50
+    },
+    {
+      "from": "DEU-NW",
+      "to": "DEU-SE",
+      "km": 359,
+      "ticks": 100
+    },
+    {
+      "from": "DEU-NW",
+      "to": "DEU-SW",
+      "km": 146,
+      "ticks": 25
+    },
+    {
+      "from": "DEU-SE",
+      "to": "DEU-NE",
+      "km": 404,
+      "ticks": 85
+    },
+    {
+      "from": "DEU-SE",
+      "to": "DEU-NW",
+      "km": 359,
+      "ticks": 75
+    },
+    {
+      "from": "DEU-SE",
+      "to": "DEU-SW",
+      "km": 314,
+      "ticks": 53
+    },
+    {
+      "from": "DEU-SW",
+      "to": "DEU-NW",
+      "km": 146,
+      "ticks": 31
+    },
+    {
+      "from": "DEU-SW",
+      "to": "DEU-SE",
+      "km": 314,
+      "ticks": 88
+    }
+  ],
+  "vorher": {
+    "stance": "defensive",
+    "adjutant": false,
+    "stand": "gemessen vor der M41-Nacharbeit (KI-Bauordnung)",
+    "intrusions": 52,
+    "answeredWithin24Ticks": 0,
+    "answeredWithinWindow": 0,
+    "departedWithin24Ticks": 0,
+    "provincesLost": 4,
+    "rejectedCommands": 0,
+    "intrudersByNation": {
+      "Frankreich": 47,
+      "Italien": 5
+    },
+    "firstIntrusionDay": 20,
+    "warsDeclaredOnHuman": 2,
+    "ringBufferIntrusions": 0,
+    "humanCommands": 0,
+    "provincesAtEnd": 0,
+    "armiesAtEnd": 0,
+    "daysRun": 200,
+    "measuredAt": "2026-09-13T12:04:36.993Z"
+  }
+}
