@@ -40,6 +40,10 @@ git log --oneline -1 && git status --short
 `claude/*`-Zweig mehr, der etwas trägt, das `main` nicht hat. Ein frischer Worktree landet
 richtig; wer einen anlegt, zweigt von `main` ab.
 
+**Während des Baus, seit T-M35-02 (2026-09-13): `pnpm acceptance` ist absichtlich rot**, bis
+der eine Parameterlauf im Schlussblock nach M35 eingecheckt ist (Frische-Wächter über
+`data/rules`; M17 abgetrennt, Noah 2026-09-13). Der Schlussblock entfernt diese Zeile.
+
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
 
@@ -128,7 +132,8 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
      nachgezählten toten Pfade sind korrigiert oder gekennzeichnet (`PROBLEME.md`, 2026-09-12).
 9. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
 10. **Danach:** nichts Geplantes mehr außer dem Mehrspieler — M17 ist seit dem 2026-09-13
-   geplant (Punkt 5); T-M17-16 trägt den einen Parameterlauf und die Abnahme.
+   geplant (Punkt 5). Den einen Parameterlauf und die Abnahme trägt seit Noahs Entscheid vom
+   2026-09-13 („M17 machen wir später") der Schlussblock nach M35, nicht mehr T-M17-16.
 
 ---
 

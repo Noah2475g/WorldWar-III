@@ -219,6 +219,23 @@ gleichermaßen. Gemessen wurden fünf Werte über zwei Fenster; das Band 0,55 bi
 im Bereich **260 bis 320** eingehalten, 280 liegt in seiner Mitte. Der Lauf mit 280 steht
 bei **0,70**. Die Zahlen und der Grund stehen in `docs/reports/progress-baseline.md` §6.
 
+## Zwischenziele (R-GAME-08, T-M35-02)
+
+Vier Marken, alle **abgeleitet** — nicht aus dem Vorbild, das keine Zwischenziele kennt, sondern
+aus dem ersten Spieltag, an dem eine Macht sie in drei ganzen Partien erreichte (acht Mächte,
+Weltkarte, gemessen am 2026-09-13 in der Planung, Stand vor M41; Entscheid, Tabelle und
+Gegenrede in `DECISIONS.md`, 2026-09-13, delegiert und kippbar). Sie entscheiden **nichts**:
+`checkVictory` liest keine davon, der Parameterlauf verändert sie nicht (`WATCHED` in
+`sweep.slow.test.ts`), und kein KI-Zug hängt an ihnen. Was sie ändern, ist, wann der Spieler
+etwas erfährt. T-M35-06 misst die Zieltage auf dem gebauten Stand neu.
+
+| Konstante | Wert | Status | Messung |
+|---|---|---|---|
+| `goalProvinces` | 25 | abgeleitet | Sieger an Tag 129 / 119 / 118 (Startzahl 1914, 2015, 1914 mit KI-Gebäudeausbau), der Zweite an Tag 140 — das erste Ziel erreicht mehr als eine Macht |
+| `goalPointShareFirstPermille` | 400 | abgeleitet | Sieger an Tag 221 / 222 / 220, der Zweite nie (Spitze 338 ‰); niedriger wäre geschenkt — China und Indien stehen an Tag 25 schon bei 237–292 ‰ |
+| `goalPopulationSharePermille` | 300 | abgeleitet | Sieger an Tag 274 / 329 / 369 |
+| `goalPointShareSecondPermille` | 600 | abgeleitet | Sieger an Tag 365 / 486 / 506 — ein Endspurt 50 bis 100 Tage vor dem Sieg (Siegtage damals 471 / 583 / 554) |
+
 ## Feuerautomatik (R-BAT-08, T-M15-07)
 
 Die Automatik führt **keine eigene Zahl** ein: sie benutzt dieselbe Rechnung wie der

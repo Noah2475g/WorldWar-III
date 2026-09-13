@@ -2470,7 +2470,10 @@ M35 nimmt Stufe 3 (D31.5); M17 nimmt **Stufe 4**.
   Kernregeln.
 - **`data/rules`:** Änderungen in T-M17-04, -05, -07, -08, -10 bis -12. Turnier nach jeder
   KI-Aufgabe, `progress.slow.test.ts` als Stellvertreter; **einmal** `pnpm balance:sweep` in
-  T-M17-16 — das ist der eine Parameterlauf der ganzen Delegation.
+  T-M17-16 — das ist der eine Parameterlauf der ganzen Delegation. *(Umgerichtet am
+  2026-09-13: M17 ist abgetrennt (Noah); der eine Parameterlauf der Delegation läuft im
+  Schlussblock nach M35. T-M17-16 misst für den späteren M17-Bau erneut, weil M17 `data/rules`
+  ändert.)*
 
 ### D29.12 Was M17 nicht behebt, und das Risiko
 

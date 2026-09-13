@@ -95,7 +95,8 @@ milestones:
   - { id: M39, title: "Die Einladung" }
   # DELEGATION per /goal vom 2026-09-13 (DECISIONS.md): alle offenen Punkte ausser
   # Mehrspieler (M37-M39) und iPhone-App. Baureihenfolge M41, M40, M35, M17 - die deps
-  # bilden sie ab. Ein Parameterlauf am Ende (T-M17-16), dazwischen ist die Abnahme
+  # bilden sie ab. Ein Parameterlauf am Ende (Schlussblock nach M35; M17 abgetrennt,
+  # Noah 2026-09-13, vorher T-M17-16), dazwischen ist die Abnahme
   # ab T-M35-02 absichtlich rot (Frische-Waechter).
   - { id: M40, title: "Die Haltung wird ein Auftrag" }
   - { id: M41, title: "Pflege nach M34" }
@@ -2478,13 +2479,13 @@ tasks:
   - id: T-M35-02
     milestone: M35
     title: Die vier Marken als Regeldaten
-    status: todo
+    status: done
     deps: [T-M35-01, T-M40-06]
     requirements: [R-GAME-08]
     design: [D-31]
     files: [data/rules/default/constants.json, packages/core/src/rules/load.ts, packages/core/src/rules/types.ts, docs/plan/BALANCING.md, docs/plan/WORKFLOW.md]
     tests: [packages/core/src/rules/load.test.ts, test/balancing.test.ts]
-    dod: "D31.2. Vier Konstanten in constants.json: goalProvinces 25, goalPointShareFirstPermille 400, goalPopulationSharePermille 300, goalPointShareSecondPermille 600 - Entscheid samt Messdaten in DECISIONS.md (2026-09-13, delegiert, kippbar). Alle vier in REQUIRED_CONSTANTS und RuleConstants; BALANCING.md fuehrt je eine Zeile mit Status abgeleitet und der Messung. Test zuerst: der Lader lehnt ein Regelwerk ohne eine der vier ab (load.test.ts, R-GAME-08/AK4), und test/balancing.test.ts faellt, solange eine Tabellenzeile fehlt. FALLE Frische-Waechter: ab diesem Commit ist pnpm acceptance rot, bis der EINE Parameterlauf in T-M17-16 eingecheckt ist - das ist Absicht (DECISIONS.md, Delegation 2026-09-13) und steht im selben Commit als eine Zeile in WORKFLOW.md Abschnitt 0. KEIN Parameterlauf hier."
+    dod: "D31.2. Vier Konstanten in constants.json: goalProvinces 25, goalPointShareFirstPermille 400, goalPopulationSharePermille 300, goalPointShareSecondPermille 600 - Entscheid samt Messdaten in DECISIONS.md (2026-09-13, delegiert, kippbar). Alle vier in REQUIRED_CONSTANTS und RuleConstants; BALANCING.md fuehrt je eine Zeile mit Status abgeleitet und der Messung. Test zuerst: der Lader lehnt ein Regelwerk ohne eine der vier ab (load.test.ts, R-GAME-08/AK4), und test/balancing.test.ts faellt, solange eine Tabellenzeile fehlt. FALLE Frische-Waechter: ab diesem Commit ist pnpm acceptance rot, bis der EINE Parameterlauf im Schlussblock nach M35 eingecheckt ist (M17 abgetrennt, Noah 2026-09-13; vorher T-M17-16) - das ist Absicht (DECISIONS.md, Delegation 2026-09-13) und steht im selben Commit als eine Zeile in WORKFLOW.md Abschnitt 0. KEIN Parameterlauf hier."
   - id: T-M35-03
     milestone: M35
     title: Das Feld goals, die Tagespruefung und Schritt 2 nach 3
@@ -2524,7 +2525,7 @@ tasks:
     design: [D-31]
     files: [docs/reports/fullgame.json, docs/reports/progress-baseline.md, docs/plan/PROGRESS.md]
     tests: [apps/headless/test/fullgame.slow.test.ts]
-    dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. fullgame.slow.test.ts schreibt die vier Zieltage des Siegers nach docs/reports/fullgame.json und sichert zu: die Tage steigen in der Reihenfolge der Marken, der erste liegt nicht vor Spieltag 20, der letzte nicht nach dem Siegtag (R-GAME-08/AK6); gegengeprueft gegen die GOAL_REACHED des Ereignisstroms, nie gegen den Ringpuffer. Dazu die Startzahl 2015 als Zahl im Bericht (progress-baseline.md), nicht als Zusicherung - die Marken stammen aus KI-Partien mit immer demselben Sieger (DECISIONS.md 2026-09-13). pnpm verify am Ende des Meilensteins. KEIN Parameterlauf hier (T-M17-16). Faellt eine Zusicherung, werden die Marken nicht still verschoben: Befund in PROBLEME.md, Entscheid in DECISIONS.md."
+    dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. fullgame.slow.test.ts schreibt die vier Zieltage des Siegers nach docs/reports/fullgame.json und sichert zu: die Tage steigen in der Reihenfolge der Marken, der erste liegt nicht vor Spieltag 20, der letzte nicht nach dem Siegtag (R-GAME-08/AK6); gegengeprueft gegen die GOAL_REACHED des Ereignisstroms, nie gegen den Ringpuffer. Dazu die Startzahl 2015 als Zahl im Bericht (progress-baseline.md), nicht als Zusicherung - die Marken stammen aus KI-Partien mit immer demselben Sieger (DECISIONS.md 2026-09-13). pnpm verify am Ende des Meilensteins. KEIN Parameterlauf hier (er laeuft im Schlussblock nach M35; M17 abgetrennt, Noah 2026-09-13). Faellt eine Zusicherung, werden die Marken nicht still verschoben: Befund in PROBLEME.md, Entscheid in DECISIONS.md."
 
   # ROHSTOFFE vom 2026-09-11 (docs/plan/ROHSTOFFE.md). Reihenfolge = Baureihenfolge.
   # Kernfrei, reine Oberflaeche. Entwurf und alle Zeichen: docs/design/rohstoffleiste.html
@@ -3192,7 +3193,7 @@ tasks:
     requirements: [R-PROV-02]
     files: [docs/reports/fullgame.json, docs/reports/fullgame-2015.json, docs/reports/fullgame-1815.json, docs/reports/progress-measured.json, docs/reports/progress-baseline.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/DECISIONS.md]
     tests: [apps/headless/test/fullgame.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
-    dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. fullgame.slow.test.ts meldet je Macht die hoechste Fabrikstufe in fullgame.json; Zusicherung: mindestens eine Macht besitzt am Ende eine Fabrik der Stufe 2. Vollpartie zusaetzlich mit Startzahl 2015 und einer dritten (im Bericht genannt), Turnier; progress-baseline.md Abschnitt 5 (Risiko 5) nachgetragen. Im Planungslauf (im Speicher gepatcht) gemessen: 31 begonnene Fabriken Stufe 2, keine Stufe 3, Siegtag 449 statt 471 - das liegt im Rauschen der Startzahl (2015 endet an Tag 583) und belegt nur keine Verschiebung. progress.slow.test.ts (200 Tage) sieht den Ausbau nicht und gilt nicht als Beleg. PROBLEME.md-Eintrag vom 2026-09-12 auf behoben mit Zahl; WORKFLOW.md Abschnitt 5 nennt den neuen Siegtag, docs/reports/acceptance.md schreibt erst der Schlusslauf in T-M17-16. Kein Parameterlauf: packages/ai liegt ausserhalb des Frische-Waechters. pnpm verify am Ende des Meilensteins."
+    dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. fullgame.slow.test.ts meldet je Macht die hoechste Fabrikstufe in fullgame.json; Zusicherung: mindestens eine Macht besitzt am Ende eine Fabrik der Stufe 2. Vollpartie zusaetzlich mit Startzahl 2015 und einer dritten (im Bericht genannt), Turnier; progress-baseline.md Abschnitt 5 (Risiko 5) nachgetragen. Im Planungslauf (im Speicher gepatcht) gemessen: 31 begonnene Fabriken Stufe 2, keine Stufe 3, Siegtag 449 statt 471 - das liegt im Rauschen der Startzahl (2015 endet an Tag 583) und belegt nur keine Verschiebung. progress.slow.test.ts (200 Tage) sieht den Ausbau nicht und gilt nicht als Beleg. PROBLEME.md-Eintrag vom 2026-09-12 auf behoben mit Zahl; WORKFLOW.md Abschnitt 5 nennt den neuen Siegtag, docs/reports/acceptance.md schreibt erst der Schlussblock nach M35 (umgerichtet 2026-09-13, M17 abgetrennt; vorher T-M17-16). Kein Parameterlauf: packages/ai liegt ausserhalb des Frische-Waechters. pnpm verify am Ende des Meilensteins."
   - id: T-M41-07
     milestone: M41
     title: Die zugesagte Eigenschaftspruefung des Nahkampfs
@@ -3318,7 +3319,9 @@ tasks:
   # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
   # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der
   # Ausgangswert (T-M17-02) erst nach dem KI-Fabrikausbau (T-M41-02) und nach M35.
-  # T-M17-16 traegt den EINEN Parameterlauf der ganzen Delegation.
+  # T-M17-16 trug den EINEN Parameterlauf der Delegation. Seit M17 abgetrennt ist (Noah
+  # 2026-09-13) laeuft er im Schlussblock nach M35; T-M17-16 behaelt die eigene
+  # Abschlussmessung des spaeteren M17-Baus.
   - id: T-M17-01
     milestone: M17
     title: M17 wird als Ganzes geplant
@@ -3478,4 +3481,4 @@ tasks:
     design: [D-29]
     files: [docs/plan/BALANCING.md, docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md, docs/reports/progress-measured.json, docs/reports/m17-baseline.json, docs/reports/acceptance.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
     tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts, apps/headless/test/fullgame.slow.test.ts]
-    dod: "D29.11, D29.12. Der EINE pnpm balance:sweep der Delegation (rund eine Stunde, nicht abbrechen), Turnier, progress.slow.test.ts und Vollpartie, alle Berichte eingecheckt - danach ist der Frische-Waechter wieder gruen, und die Zeile in WORKFLOW.md Abschnitt 0 ueber die absichtlich rote Abnahme wird entfernt. Vergleich gegen T-M17-02: Siegtag, Siegverteilung, Band 0,55 bis 0,95, Bestandssummen je Rohstoff vorher und nachher (Kohle, Vorratsaufbau - M18), SABOTAGE_SUFFERED je 100 Tage gegen eine Macht als Zahl. pnpm acceptance auf freier Maschine 11 von 11. Benchmarks nur auf freier Maschine und getrennt."
+    dod: "D29.11, D29.12. UMGERICHTET 2026-09-13: M17 ist abgetrennt; der EINE Parameterlauf der Delegation und das Entfernen der Zeile in WORKFLOW.md Abschnitt 0 laufen im Schlussblock nach M35. Diese Aufgabe bleibt die Abschlussmessung des spaeteren M17-Baus mit eigenem Parameterlauf nach dessen letzter Regelaenderung. Urspruenglicher Text: Der EINE pnpm balance:sweep der Delegation (rund eine Stunde, nicht abbrechen), Turnier, progress.slow.test.ts und Vollpartie, alle Berichte eingecheckt - danach ist der Frische-Waechter wieder gruen, und die Zeile in WORKFLOW.md Abschnitt 0 ueber die absichtlich rote Abnahme wird entfernt. Vergleich gegen T-M17-02: Siegtag, Siegverteilung, Band 0,55 bis 0,95, Bestandssummen je Rohstoff vorher und nachher (Kohle, Vorratsaufbau - M18), SABOTAGE_SUFFERED je 100 Tage gegen eine Macht als Zahl. pnpm acceptance auf freier Maschine 11 von 11. Benchmarks nur auf freier Maschine und getrennt."

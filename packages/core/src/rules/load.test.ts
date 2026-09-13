@@ -178,3 +178,34 @@ describe('R-ECON-01 Fehlerhafte Regelwerke werden abgewiesen', () => {
     expect(problems.length).toBeGreaterThanOrEqual(2)
   })
 })
+
+/**
+ * Die Marken der Zwischenziele sind Regeldaten (T-M35-02, D31.2).
+ *
+ * Eine Marke im Code waere eine Zahl ohne Status (D-08) — und genau die Zahl, die jemand
+ * spaeter verschieben will. Fehlt sie im Regelwerk, darf der Lader nicht still `undefined`
+ * einsetzen: `stand >= undefined` ist immer `false`, und das Ziel waere unerreichbar, ohne
+ * dass es jemand merkt.
+ */
+describe('R-GAME-08/AK4 Der Lader verlangt die vier Marken der Zwischenziele', () => {
+  const GOAL_CONSTANTS = [
+    'goalProvinces',
+    'goalPointShareFirstPermille',
+    'goalPopulationSharePermille',
+    'goalPointShareSecondPermille',
+  ] as const
+
+  it.each(GOAL_CONSTANTS)('lehnt ein Regelwerk ohne "%s" ab', (key) => {
+    const problems = problemsOf(
+      withBreak((raw) => {
+        delete (raw.constants as Record<string, unknown>)[key]
+      }),
+    )
+    expect(problems.join('\n')).toContain(`Konstante "${key}" fehlt`)
+  })
+
+  it('traegt die entschiedenen Werte 25, 400, 300 und 600 (DECISIONS.md, 2026-09-13)', () => {
+    const { constants } = defaultRules()
+    expect(GOAL_CONSTANTS.map((key) => constants[key])).toEqual([25, 400, 300, 600])
+  })
+})

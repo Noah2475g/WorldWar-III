@@ -3192,7 +3192,10 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > **4** mit eingefrorenem `save-v3.json`; der Ausgangswert (T-M17-02) wird erst nach dem
 > KI-Fabrikausbau (T-M41-02) und nach M35 gemessen. Nach T-M17-03 sind 04/05 und 07 unabhängig,
 > teilen aber `events/types.ts`, `publicView.ts`, `constants.json` — **nacheinander committen**.
-> T-M17-16 trägt den **einen** Parameterlauf der Delegation (`DECISIONS.md`, 2026-09-13).
+> T-M17-16 trug den **einen** Parameterlauf der Delegation (`DECISIONS.md`, 2026-09-13).
+> *(Umgerichtet am 2026-09-13: M17 ist abgetrennt (Noah, „M17 machen wir später"); der eine
+> Parameterlauf läuft im Schlussblock nach M35. T-M17-16 behält seine eigene Abschlussmessung
+> für den späteren M17-Bau, weil M17 `data/rules` erneut ändert.)*
 >
 > **Nicht in M17:** Kohle ohne Senke und der Vorratsaufbau (`PROBLEME.md`, 2026-09-06) sowie
 > die amphibische KI wandern begründet nach M18 — M17 misst die Bestandssummen trotzdem vorher
@@ -3429,6 +3432,10 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Frische-Wächter wieder grün ist und die Zeile über die absichtlich rote Abnahme aus
   `WORKFLOW.md` §0 verschwindet; Vergleich gegen T-M17-02 (Siegtag, Siegverteilung, Band,
   Bestandssummen je Rohstoff); `pnpm acceptance` auf freier Maschine 11 von 11.
+  *(Umgerichtet am 2026-09-13: M17 ist abgetrennt; den einen Parameterlauf der Delegation und
+  das Entfernen der Zeile in `WORKFLOW.md` §0 trägt der Schlussblock nach M35. Diese Aufgabe
+  bleibt die Abschlussmessung des späteren M17-Baus, mit eigenem Parameterlauf nach dessen
+  letzter Regeländerung.)*
 
 ## Meilenstein M18 — Später
 
@@ -4759,8 +4766,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 >
 > **Warum erst nach M41 und M40.** M35 ändert `data/rules` (T-M35-02) und den Zustand
 > (T-M35-03). Ab T-M35-02 ist `pnpm acceptance` wegen des Frische-Wächters **absichtlich rot**,
-> bis der eine Parameterlauf in T-M17-16 eingecheckt ist; alles, was ohne Regeländerung
-> auskommt, liegt deshalb davor. `save-v2.json` wird **vor** der ersten Zustandsänderung
+> bis der eine Parameterlauf im Schlussblock nach M35 eingecheckt ist (M17 abgetrennt, Noah
+> 2026-09-13; bis dahin stand hier T-M17-16); alles, was ohne Regeländerung auskommt, liegt
+> deshalb davor. `save-v2.json` wird **vor** der ersten Zustandsänderung
 > eingefroren (T-M35-03, Muster D19.5).
 
 ### T-M35-01 · Entwurf der Zwischenziele zum Sieg
@@ -4794,8 +4802,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `goalPopulationSharePermille` 300 und `goalPointShareSecondPermille` 600 in
   `REQUIRED_CONSTANTS` und `RuleConstants` stehen und `BALANCING.md` sie als *abgeleitet* mit
   der Messung führt (Entscheid und Daten: `DECISIONS.md`, 2026-09-13). **Falle
-  Frische-Wächter:** ab diesem Commit ist `pnpm acceptance` rot, bis T-M17-16 den einen
-  Parameterlauf eincheckt — Absicht, und im selben Commit als eine Zeile in `WORKFLOW.md` §0.
+  Frische-Wächter:** ab diesem Commit ist `pnpm acceptance` rot, bis der Schlussblock nach M35
+  den einen Parameterlauf eincheckt (M17 abgetrennt, Noah 2026-09-13; vorher stand hier
+  T-M17-16) — Absicht, und im selben Commit als eine Zeile in `WORKFLOW.md` §0.
   **Kein Parameterlauf hier.**
 
 ### T-M35-03 · Das Feld `goals`, die Tagesprüfung und Schritt 2 → 3
@@ -4860,7 +4869,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** die Zahlen im Bericht stehen, dazu Startzahl 2015 als Zahl ohne
   Zusicherung, und `pnpm verify` am Ende des Meilensteins grün ist. Fällt eine Zusicherung,
   werden die Marken nicht still verschoben: Befund in `PROBLEME.md`, Entscheid in
-  `DECISIONS.md`. **Kein Parameterlauf hier** — er läuft einmal, in T-M17-16.
+  `DECISIONS.md`. **Kein Parameterlauf hier** — er läuft einmal, im Schlussblock nach M35
+  (M17 abgetrennt, Noah 2026-09-13; vorher stand hier T-M17-16).
 
 ## Meilenstein M36 — Die Rohstoffleiste wird lesbar
 
@@ -5843,7 +5853,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   471 — das liegt im Rauschen der Startzahl und belegt nur „keine Verschiebung".
   `progress.slow.test.ts` sieht den Ausbau nicht und gilt nicht als Beleg. Der Befund vom
   2026-09-12 in `PROBLEME.md` steht auf behoben, `WORKFLOW.md` §5 nennt den neuen Siegtag;
-  `docs/reports/acceptance.md` schreibt erst T-M17-16. `pnpm verify` am Ende des Meilensteins.
+  `docs/reports/acceptance.md` schreibt erst der Schlussblock nach M35 (umgerichtet am
+  2026-09-13, M17 abgetrennt; vorher T-M17-16). `pnpm verify` am Ende des Meilensteins.
   *(korrigiert 2026-09-13 beim Bau: die Planungszahlen sind nicht reproduzierbar. Gemessen mit der
   gebauten Variante: Startzahl 1914 Tag 582 (vorher 471), 17 Ausbauten auf Stufe 3 begonnen;
   2015 Tag 868 (583); 1815 Tag 412 (774); Turnier zeilengleich, Grundlauf 0,4462 statt 0,4442.

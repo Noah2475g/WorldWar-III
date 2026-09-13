@@ -1926,6 +1926,11 @@ Frische-Wächters **rot, und das ist Absicht**; während des Baus sagt es eine Z
 `WORKFLOW.md` §0, damit ein unterbrochener Stand erklärt ist. Turnier (13 s),
 `progress.slow.test.ts` und die Vollpartie bleiben je Aufgabe erlaubt.
 
+*(Umgerichtet am 2026-09-13, Folge von Noahs Entscheid „M17 machen wir später": der eine
+Parameterlauf läuft im **Schlussblock nach M35**, nicht in T-M17-16 — sonst fände er nie
+statt, und die Abnahme bliebe dauerhaft rot. T-M17-16 behält seine eigene Abschlussmessung für
+den späteren M17-Bau.)*
+
 **Wie jede delegierte Entscheidung festgehalten wird:** mit Datum, Daten, Begründung und dem
 Satz „kippbar: …" — was man ändern müsste, wenn Noah anders entscheidet. Die fünf Einträge
 darunter sind die ersten.

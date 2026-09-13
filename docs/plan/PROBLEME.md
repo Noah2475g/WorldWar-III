@@ -2220,7 +2220,8 @@ hält in allen dreien. Die Kappe bei Stufe 2 wäre nicht besser belegt und hielt
 dritte Stufe verschlossen.
 
 **Was daraus folgt.** (1) Der Ausgangswert von M17 (T-M17-02) wird auf diesem Stand gemessen,
-nicht auf dem vor M41. (2) Der eine Parameterlauf der Delegation (T-M17-16) sieht die
+nicht auf dem vor M41. (2) Der eine Parameterlauf der Delegation (seit 2026-09-13 im Schlussblock nach M35, M17
+abgetrennt; vorher T-M17-16) sieht die
 Änderung im 120-Tage-Grundlauf nur schwach; die Wirkung liegt in der langen Partie. (3) Ob die
 blutigere Partie mit Startzahl 2015 ein Muster ist, sagen erst mehr Startzahlen — vorgemerkt
 für den Schlussblock, keine Aufgabe.
@@ -2684,7 +2685,7 @@ bleibt grün (0 Ablehnungen), sein Endzustand hat sich verschoben (`a177d1db875a
 301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961. Der Lauf vorher war gleich dem
 eingecheckten Bericht — T-M41-08 und M40 hatten ihn nicht verschoben. **Befund:** der Ausgangswert in
 `balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand; der Frische-Wächter der Abnahme sieht das
-nicht (er fragt nur `data/rules`), der eine Parameterlauf in T-M17-16 misst neu. Risiko 5 (200 Tage, sechs
+nicht (er fragt nur `data/rules`), der eine Parameterlauf im Schlussblock nach M35 misst neu (bis 2026-09-13: T-M17-16). Risiko 5 (200 Tage, sechs
 Europäer): höchste Stufe weiter 1.
 
 **Neu sichtbar, nicht in dieser Reparatur:** `SET_CAPITAL:ON_COOLDOWN` 72× auf der Weltkarte, und die längste
