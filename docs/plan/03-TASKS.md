@@ -2193,7 +2193,8 @@ standen 63 tote Pfade. Die Leseregeln:
   keine diplomatische Ablehnung (strenger als „unter 5 %"), ein Frieden zwischen zwei KI.
   **Zurückgenommen** mit Grund in `DECISIONS.md`: „je KI-Macht eine Armee mit `armyRange > 0`" —
   gemessen 0 von 7. „Höchstens drei Armeeobjekte je Provinz" — gemessen höchstens 86, stehend 8 —
-  steht als Zahl im Bericht und geht an T-M41-10.)*
+  steht als Zahl im Bericht und geht an T-M41-10.)* *(T-M41-10 ist am 2026-09-13 nach seinem
+  Rücknahmekriterium zurückgenommen; die Zusage ist mit der Messung nach M18 verschoben.)*
 
 ### T-M14-13 · Was der Kern kann, muss der Spieler erreichen
 - **Ziel:** Das Muster, das dieses Projekt dreimal getroffen hat — Symbolsatz, Ton,
@@ -3426,6 +3427,12 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > nicht der laufende Plan ist; wer etwas von hier bauen will, schreibt zuerst eine Anforderung
 > mit Akzeptanzkriterien und holt sie in einen echten Meilenstein. Ein Meilenstein ohne Aufgaben
 > ist unbedenklich — der Plan-Wächter prüft die Richtung Aufgabe → Meilenstein, nicht umgekehrt.
+>
+> **Vorgemerkt am 2026-09-13 (T-M41-10, zurückgenommen):** „keine KI-Macht hält mehr als drei stehende
+> Armeeobjekte in derselben Provinz" (Zusage 7 aus T-M14-12). Gebaut, gemessen und am Rücknahmekriterium
+> gerissen — das Artillerie-Tor fiel auf null. Vor einem neuen Anlauf: `TARGET_MIX` in
+> `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
+> verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
 
 ---
 
@@ -5770,3 +5777,32 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `SET_CAPITAL:ON_COOLDOWN`), Voreinstellung über 90 Tage bitgleich; Vollpartie 1914 Tag 430 → 975,
   2015 640 → 583, 1815 571 → 583 — AK-1 überall entschieden; Turnier zeilengleich; Grundlauf 0,3623 →
   0,3684. `PROBLEME.md`, T-M41-09.)*
+
+### T-M41-10 · Die KI legt wirklich zusammen
+- **Ziel:** „keine KI-Macht hält mehr als drei Armeeobjekte in derselben Provinz" (T-M14-12) war nie
+  erfüllt — `consolidateCommands` legte je Denkschritt nur eine Provinz zusammen, und sein Deckel zählte
+  Stapel statt Einheiten und griff nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/ai/src/consolidate.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — zwei Provinzen mit je drei Armeen ergeben zwei
+  `MERGE_ARMIES`; drei Armeen zu je fünfzehn Einheiten ergeben einen Merge über zwei davon.
+  `apps/headless/test/ai-integration.slow.test.ts` — im 90-Tage-Lauf der Voreinstellung nie mehr als drei
+  **stehende** Armeeobjekte einer Macht in einer Provinz, gezählt am Ende jedes Spieltags.
+- **Fertig wenn:** `consolidateCommands` alle Provinzen je Denkschritt zusammenlegt und der Deckel
+  Einheiten zählt (`unitCount`). Die Zusage 7 aus T-M14-12 gilt neu für stehende Armeeobjekte; den Durchzug
+  kann der Kern nicht zusammenlegen (`ARMY_BUSY`), er ist mit Grund zurückgenommen (`DECISIONS.md`).
+  **Rücknahmekriterium, vor dem Bau festgelegt:** Vollpartie 1914/2015/1815 mit Siegtag im Tor 300–1500
+  und AK-1 entschieden, **und** `ai-integration` 200 Tage grün, **und** das Turnier im Band von R-AI-06
+  (schwer gegen normal 0,55–0,95). Reißt eines davon, wird die Aufgabe zurückgenommen und Zusage 7 mit
+  der Messung nach M18 verschoben — keine Grenze bewegt. Entscheid „bauen" delegiert (Orchestrator,
+  Block N2), kippbar in `DECISIONS.md`.
+  *(**Zurückgenommen 2026-09-13**, gebaut und gemessen: das Kriterium ist gerissen — `ai-integration`
+  200 Tage rot, Artillerie 63 → 0, selbsttätiger Beschuss 231 → 0 (R-AI-08/AK3); Turnier und Vollpartie
+  1815 hielten. Die neu gefasste Zusage hielt auch mit der Reparatur nicht (stehend höchstens 5 in der
+  Voreinstellung). `consolidate.ts`, Tests und Berichte stehen wieder auf dem Stand nach T-M41-09; die
+  Aufgabe steht auf `todo`, Zusage 7 ist mit der Messung nach M18 verschoben. `DECISIONS.md` und
+  `PROBLEME.md`, 2026-09-13, T-M41-10.)*

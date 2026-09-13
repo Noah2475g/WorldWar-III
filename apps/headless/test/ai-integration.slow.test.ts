@@ -458,3 +458,11 @@ describe('T-M41-09 Die KI baut nicht in Provinzen, die sie nur erinnert', () => 
     expect(bauauftragHoechstens(voreinstellung), 'Voreinstellung, 90 Tage').toBeLessThanOrEqual(3)
   })
 })
+
+/*
+ * „Höchstens drei Armeeobjekte je Provinz" (Zusage 7 aus T-M14-12) steht hier bewusst **nicht** als
+ * Zusicherung, nur als Zahl im Bericht (`armeeobjekteJeProvinz`). T-M41-10 hat versucht, sie für
+ * stehende Verbände einzulösen, und ist nach seinem Rücknahmekriterium zurückgenommen: dieser Lauf
+ * fiel damit auf null Artillerie und null Beschuss, und die Zusage hielt trotzdem nicht. Die Zusage
+ * ist mit der Messung nach M18 verschoben (`DECISIONS.md`, `PROBLEME.md`, 2026-09-13).
+ */

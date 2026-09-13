@@ -2571,3 +2571,51 @@ Eroberungen statt 1022. Der Siegtag springt wie schon bei H1 je Änderung in bei
 Voreinstellung bleibt über 90 Tage bitgleich, weil erinnerte Bauten dort nicht vorkommen.
 
 **Status: behoben** (T-M41-09).
+
+---
+
+## 2026-09-13 · T-M41-10 · „Höchstens drei Armeeobjekte je Provinz" — gebaut, am Rücknahmekriterium gerissen, zurückgenommen
+
+**Befund** (Nebenbefund b zu T-M41-08). T-M14-12 sagte zu: „keine KI-Macht hält mehr als drei Armeeobjekte in
+derselben Provinz". Gemessen auf dem Stand nach T-M41-09: Voreinstellung (90 Tage) bis zu **65** Armeeobjekte
+einer Macht in einer Provinz, **stehend 5**; Weltkarte (200 Tage) bis zu **80**, **stehend 12**. Zwei Stellen in
+`consolidate.ts`: der `break` legt je Denkschritt nur **eine** Provinz zusammen, und der Deckel vergleicht die Zahl
+der **Stapel** (einer je Einheitenart) mit `stackFullContribution`, zwanzig **Einheiten** — er greift nie.
+Marschierende Armeen kann der Kern nicht zusammenlegen (`ARMY_BUSY`); fast alle 65 bzw. 80 sind Durchzug.
+
+**Gebaut und gemessen.** Beide Stellen repariert (alle Provinzen je Denkschritt, Deckel über `unitCount`), die
+Zusage neu gefasst auf **stehende** Armeeobjekte. Tests zuerst: `decide.test.ts` rot 2 von 42 („expected [ 'o1' ]
+to deeply equal [ 'o1', 'o2' ]", „expected [ 'a1', 'a2', 'a3' ] to have a length of 2 but got 3"), grün mit der
+Reparatur; `ai-integration.slow.test.ts` mit der Zusicherung „Voreinstellung stehend ≤ 3" rot mit der alten
+`consolidate.ts` („an 1 Tagen mehr als drei: expected 5 to be less than or equal to 3").
+
+**Rücknahmekriterium** (Vollpartie 1914/2015/1815 im Tor 300–1500 und entschieden, `ai-integration` 200 Tage grün,
+Turnier im Band von R-AI-06):
+
+| | vorher (nach T-M41-09) | mit T-M41-10 |
+|---|---|---|
+| **`ai-integration` 200 Tage** | grün | **rot 2 von 20** |
+| Artillerie ausgehoben / selbsttätiger Beschuss | 63 / 231 | **0 / 0** |
+| stehende Armeeobjekte je Provinz, höchstens (Weltkarte / Voreinstellung) | 12 / 5 | 11 / **5** (an 2 Tagen über drei) |
+| Ablehnungen Weltkarte | 75 | 44 (42 `SET_CAPITAL:ON_COOLDOWN`) |
+| Turnier | — | zeilengleich, Band hält |
+| Vollpartie 1914: Siegtag | 975 | 842, entschieden (Sieger p7 → p8) |
+| Vollpartie 2015: Siegtag | 583 | 1003, entschieden (Sieger p6 → p7) |
+| Vollpartie 1815: Siegtag | 583 | 456, entschieden |
+| Grundlauf (`progress.slow`) | 0,3684 | 0,3703 (Eroberungen 310,1 → 309,2) |
+
+**Das Kriterium ist gerissen** — am Integrationstor der Artilleriekette, R-AI-08/AK3. Und die neu gefasste Zusage
+hielt auch mit der Reparatur nicht. **T-M41-10 ist zurückgenommen**: `consolidate.ts` und die Tests stehen wieder
+auf dem Stand nach T-M41-09, die Berichte ebenso; die Aufgabe steht auf `todo` mit `reopened`, die Zusage 7 ist mit
+dieser Messung nach M18 verschoben (`DECISIONS.md`). Keine Grenze bewegt.
+
+**Zwei offene Fragen, nicht gemessen:**
+- **Warum verschwindet die Artillerie?** Naheliegend: `TARGET_MIX` in `economy.ts` zählt Stapel, nicht Einheiten.
+  Zusammenlegen verschmilzt die Infanteriestapel mehrerer Armeen zu einem; der Anteil der Infanterie sinkt
+  scheinbar, sie behält den größten Rückstand, und die Artillerie kommt nie an die Reihe. Dieselbe Kette hält
+  heute an einer einzigen Macht („schwer", China) — das Tor ist dünner, als die Zahl 231 aussieht.
+- **Warum hält „stehend ≤ 3" nicht?** Naheliegend: der Deckel in Einheiten legt zwei große Verbände zusammen und
+  lässt jeden weiteren stehen; dazu denkt jede Macht nur jeden siebten oder achten Tick, und Aushebungen erzeugen
+  dazwischen neue Armeen. Ob der Deckel und die Zusage überhaupt zusammenpassen, ist die erste Frage für M18.
+
+**Status: zurückgenommen** (T-M41-10 auf `todo`, Zusage 7 nach M18).

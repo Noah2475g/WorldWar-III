@@ -2265,3 +2265,44 @@ Weltkarte (`days` in `apps/headless/test/tournament.slow.test.ts`, kostet Laufze
 Handelsmarge als Regelgröße in `data/rules/default/ai.json`.
 
 ---
+
+## 2026-09-13 · T-M41-10 · Zurückgenommen nach seinem Rücknahmekriterium — „höchstens drei Armeeobjekte je Provinz" geht mit der Messung nach M18 (delegiert)
+
+**Entscheidung.** T-M41-10 („die KI legt wirklich zusammen": `consolidateCommands` legt je Denkschritt alle
+Provinzen zusammen, der Deckel zählt Einheiten statt Stapel) wird **nicht** übernommen. Die Aufgabe steht auf
+`todo` mit `reopened`; die Zusage 7 aus T-M14-12 („keine KI-Macht hält mehr als drei Armeeobjekte in derselben
+Provinz") ist mit der Messung nach **M18** verschoben. Keine Grenze ist bewegt, keine Zusicherung gelockert.
+
+**Das Kriterium, vor dem Bau festgelegt** (Orchestrierung, Block N2 §3d): Vollpartie 1914/2015/1815 mit Siegtag
+im Tor 300–1500 und AK-1 entschieden, **und** `ai-integration` 200 Tage grün, **und** das Turnier im Band von
+R-AI-06 (schwer gegen normal 0,55–0,95). Reißt eines davon, wird T-M41-10 zurückgenommen.
+
+**Ergebnis** (gebaut, gemessen, zurückgesetzt; vorher = Stand nach T-M41-09):
+
+| Kriterium | Ergebnis |
+|---|---|
+| `ai-integration` 200 Tage grün | **gerissen** — Artillerie 63 → **0**, selbsttätiger Beschuss 231 → **0**; R-AI-08/AK3 („führt Artillerie und lässt sie feuern") rot |
+| Turnier im Band R-AI-06 | gehalten — zeilengleich (0,70 / 1,00) |
+| Vollpartie 1815 | gehalten — Tag 583 → 456, entschieden |
+| Vollpartie 1914 | gehalten — Tag 975 → 842, entschieden |
+| Vollpartie 2015 | gehalten — Tag 583 → 1003, entschieden |
+
+Dazu: die neu gefasste Zusage selbst hielt **auch mit der Reparatur nicht** — stehend höchstens 5 Armeeobjekte
+einer Macht in einer Provinz in der Voreinstellung (vorher 5, an 2 statt 1 Tag), auf der Weltkarte 11 (vorher 12).
+
+**Begründung.** Das Kriterium ist gerissen, und zwar dort, wo es die Änderung sehen sollte: im Integrationstor der
+Artilleriekette. Eine Reparatur, die eine abgenommene Anforderung (R-AI-08/AK3) tot macht, um eine Zusage nicht
+einmal einzulösen, ist keine. Warum die Artillerie verschwindet, ist **nicht gemessen**; naheliegend ist
+`TARGET_MIX` in `packages/ai/src/economy.ts`, das Stapel zählt, nicht Einheiten — ein Zusammenlegen verschmilzt die
+Infanteriestapel mehrerer Armeen zu einem, der Rückstand der Infanterie wächst scheinbar, und die Artillerie kommt
+nie an die Reihe. Warum „stehend ≤ 3" trotzdem nicht hält, ebenso wenig; naheliegend: der Deckel in Einheiten legt
+zwei große Verbände zusammen und lässt jeden weiteren stehen, und jede Macht denkt nur jeden siebten oder achten Tick.
+
+**Daten:** `PROBLEME.md` (2026-09-13, T-M41-10), Rohdaten der Läufe im Bericht zu Block N2.
+
+**kippbar:** T-M41-10 erneut bauen, sobald `TARGET_MIX` Einheiten statt Stapel zählt (sonst reißt das Artillerie-Tor
+wieder) und geklärt ist, ob der Deckel in Einheiten mit „stehend ≤ 3" überhaupt verträglich ist — dieselben zwei
+Tests in `packages/ai/src/decide.test.ts` und die Zusicherung „stehende Armeeobjekte ≤ 3" in
+`apps/headless/test/ai-integration.slow.test.ts` (Fassung im Bericht zu Block N2), dasselbe Kriterium.
+
+---
