@@ -47,7 +47,9 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *    gehalten (Besitzer nach der Episode).
  *  - **Verloren ohne Gefecht:** `PROVINCE_CAPTURED` aus dem Besitz des Menschen in einem Tick
  *    ohne `BATTLE_RESOLVED` in dieser Provinz — die entbloesste Provinz.
- *  - **Pendelzug:** eine Armee marschiert von A nach B und binnen fuenf Spieltagen zurueck.
+ *  - **Pendelzug:** eine Armee kommt von A in B an und bricht binnen fuenf Spieltagen nach der Ankunft
+ *    wieder nach A auf. Seit T-M40-14 zaehlt die Frist ab `ARMY_ARRIVED`: ab dem Abmarsch gezaehlt
+ *    schloss die Ruhe der Automatik (fuenf Tage ab Abmarsch) jeden solchen Zug aus (Befund H-A).
  *
  * Gezaehlt wird aus dem **Ereignisstrom**, Tick fuer Tick, nie aus `state.eventLog`.
  *
@@ -199,7 +201,7 @@ interface EpisodenZahl {
   lostWithoutBattle: number
   /** Befehle fuer den Menschen — alle von der Automatik. */
   adjutantOrders: number
-  /** Eine Armee marschiert von A nach B und binnen fuenf Spieltagen zurueck. */
+  /** Eine Armee kommt von A in B an und bricht binnen fuenf Spieltagen nach der Ankunft nach A auf. */
   pendulums: number
   rejectedCommands: number
   /** `WAR_DECLARED` ohne Erklaerung, ausgeloest vom Menschen. */
@@ -270,7 +272,7 @@ function werteAus(
   let lostWithoutBattle = 0
   let rejectedCommands = 0
   let undeclaredWarsByHuman = 0
-  const aufbrueche: Extract<GameEvent, { type: 'ARMY_DEPARTED' }>[] = []
+  const bewegungen: Extract<GameEvent, { type: 'ARMY_DEPARTED' } | { type: 'ARMY_ARRIVED' }>[] = []
   frames.forEach((frame, index) => {
     for (const event of frame.events) {
       if (event.type === 'PROVINCE_CAPTURED' && event.previousOwner === human) {
@@ -280,26 +282,37 @@ function werteAus(
         rejectedCommands += 1
       } else if (event.type === 'WAR_DECLARED' && event.playerId === human && event.withoutDeclaration) {
         undeclaredWarsByHuman += 1
-      } else if (event.type === 'ARMY_DEPARTED' && event.playerId === human) {
-        aufbrueche.push(event)
+      } else if ((event.type === 'ARMY_DEPARTED' || event.type === 'ARMY_ARRIVED') && event.playerId === human) {
+        bewegungen.push(event)
       }
     }
   })
 
-  // Ein Pendelzug: dieselbe Armee bricht als Naechstes genau in die Gegenrichtung auf, binnen fuenf Tagen.
+  // Ein Pendelzug: dieselbe Armee kommt in B an und bricht als Naechstes genau in die Gegenrichtung
+  // auf, binnen fuenf Tagen nach der Ankunft. Bis T-M40-14 zaehlte die Frist ab dem Abmarsch — und die
+  // Ruhe der Automatik (fuenf Tage ab Abmarsch) schloss einen solchen Zug strukturell aus (Befund H-A).
   let pendulums = 0
-  const letzter = new Map<string, (typeof aufbrueche)[number]>()
-  for (const aufbruch of aufbrueche) {
-    const vorher = letzter.get(aufbruch.armyId)
+  const letzterAufbruch = new Map<string, Extract<GameEvent, { type: 'ARMY_DEPARTED' }>>()
+  const letzteAnkunft = new Map<string, Extract<GameEvent, { type: 'ARMY_ARRIVED' }>>()
+  for (const bewegung of bewegungen) {
+    if (bewegung.type === 'ARMY_ARRIVED') {
+      letzteAnkunft.set(bewegung.armyId, bewegung)
+      continue
+    }
+    const vorher = letzterAufbruch.get(bewegung.armyId)
+    const ankunft = letzteAnkunft.get(bewegung.armyId)
     if (
       vorher &&
-      vorher.fromProvinceId === aufbruch.toProvinceId &&
-      vorher.toProvinceId === aufbruch.fromProvinceId &&
-      aufbruch.tick - vorher.tick <= PENDULUM_DAYS * ticksPerDay
+      ankunft &&
+      ankunft.tick >= vorher.tick &&
+      ankunft.provinceId === vorher.toProvinceId &&
+      vorher.fromProvinceId === bewegung.toProvinceId &&
+      vorher.toProvinceId === bewegung.fromProvinceId &&
+      bewegung.tick - ankunft.tick <= PENDULUM_DAYS * ticksPerDay
     ) {
       pendulums += 1
     }
-    letzter.set(aufbruch.armyId, aufbruch)
+    letzterAufbruch.set(bewegung.armyId, bewegung)
   }
 
   return {
@@ -375,7 +388,8 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
         // Weiter statt zurueck: kein Pendelzug.
         ereignis({ type: 'ARMY_DEPARTED', tick: 2, playerId: 'p1', armyId: 'a2', fromProvinceId: 'Y', toProvinceId: 'Z', arrivalTick: 3 }),
       ],
-      3: [schlacht(3, 'P'), schlacht(3, 'S')],
+      // a1 kommt in Q an; der Pendelzug zaehlt ab dieser Ankunft (T-M40-14).
+      3: [schlacht(3, 'P'), schlacht(3, 'S'), ereignis({ type: 'ARMY_ARRIVED', tick: 3, playerId: 'p1', armyId: 'a1', provinceId: 'Q' })],
       4: [schlacht(4, 'P'), ereignis({ type: 'ARMY_ARRIVED', tick: 4, playerId: 'p1', armyId: 'a3', provinceId: 'P' })],
       // Zurueck binnen fuenf Tagen (20 Ticks): ein Pendelzug.
       5: [ereignis({ type: 'ARMY_DEPARTED', tick: 5, playerId: 'p1', armyId: 'a1', fromProvinceId: 'Q', toProvinceId: 'P', arrivalTick: 7 })],
@@ -438,6 +452,33 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
     const zahl = werteAus(ohneP, [], 'p1', 4)
     expect(zahl.episodes).toBe(2)
     expect(zahl.held).toBe(1)
+  })
+
+  it('zaehlt einen Pendelzug ab der Ankunft, nicht ab dem Abmarsch (T-M40-14, Befund H-A)', () => {
+    // Die Ruhe der Automatik zaehlt ab dem Abmarsch und dauert fuenf Spieltage; ein Pendelzug "binnen
+    // fuenf Spieltagen ab Abmarsch" war damit strukturell ausgeschlossen, und Szenario R1 der Durchsicht
+    // blieb ungezaehlt. Vier Ticks am Tag, fuenf Tage sind 20 Ticks. a1 marschiert 30 Ticks von P nach Q
+    // und bricht 10 Ticks nach der Ankunft zurueck auf; a2 ebenso, aber erst 25 Ticks nach der Ankunft.
+    const zug = (tick: number, armyId: string, fromProvinceId: string, toProvinceId: string) =>
+      ereignis({ type: 'ARMY_DEPARTED', tick, playerId: 'p1', armyId, fromProvinceId, toProvinceId, arrivalTick: tick + 30 })
+    const an = (tick: number, armyId: string, provinceId: string) =>
+      ereignis({ type: 'ARMY_ARRIVED', tick, playerId: 'p1', armyId, provinceId })
+    const events: Record<number, GameEvent[]> = {
+      0: [zug(0, 'a1', 'P', 'Q')],
+      1: [zug(1, 'a2', 'P', 'Q')],
+      30: [an(30, 'a1', 'Q')],
+      31: [an(31, 'a2', 'Q')],
+      40: [zug(40, 'a1', 'Q', 'P')],
+      56: [zug(56, 'a2', 'Q', 'P')],
+    }
+    const frames = Array.from({ length: 80 }, (_, tick) => ({
+      tick,
+      owned: ['P', 'Q'],
+      events: events[tick] ?? [],
+      orders: [] as Command[],
+    }))
+
+    expect(werteAus(frames, ['P', 'Q'], 'p1', 4).pendulums).toBe(1)
   })
 })
 
@@ -604,7 +645,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       episode:
         'groesste zusammenhaengende Folge von Ticks mit BATTLE_RESOLVED in einer Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; endet im ersten Tick ohne Gefecht dort',
       lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
-      pendulum: `eine Armee marschiert von A nach B und binnen ${PENDULUM_DAYS} Spieltagen zurueck`,
+      pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
       ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2})`,
     },

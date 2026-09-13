@@ -198,8 +198,10 @@ describe('R-UNIT-09/AK6 Vier Haltungen, ihre Hinweise und das Anhalten', () => {
     expect(hinweis.defensive).toMatch(/eingegraben/)
     expect(hinweis.defensive).toMatch(/weitere Armee/)
     expect(hinweis.defensive).toMatch(/allein marschiert sie nie/)
-    // Die Ruhe nach Marsch und Rueckzug: fuenf Spieltage aus ADJUTANT_REST_TICKS, nicht aus dem Text.
-    expect(hinweis.defensive).toMatch(/5 Tage lang nicht/)
+    // Die Ruhe nach Marsch und Rueckzug: fuenf Spieltage aus ADJUTANT_REST_TICKS, nicht aus dem Text —
+    // und seit T-M40-14 woertlich ab dem Abmarsch (Befund H-A), und was ein eigener Marschbefehl tut.
+    expect(hinweis.defensive).toMatch(/5 Tage ab dem Abmarsch/)
+    expect(hinweis.defensive).toMatch(/eigener Marschbefehl stellt sie auf Garnison/)
     expect(hinweis.aggressive).toMatch(/Angriffswerten/)
     expect(hinweis.aggressive).toMatch(/eingegraben/)
     expect(hinweis.aggressive).toMatch(/nie von selbst/)
@@ -237,6 +239,40 @@ describe('R-UNIT-09/AK6 Vier Haltungen, ihre Hinweise und das Anhalten', () => {
       expect(anhalten.command, stance).toEqual({ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' })
       expect(anhalten.followUp, stance).toBeUndefined()
       expect(anhalten.hint, stance).not.toMatch(/Garnison/)
+    }
+  })
+
+  it('stellt eine Armee auf Verteidigung mit dem eigenen Marschbefehl auf Garnison, jede andere marschiert nur (R-UNIT-09/AK7, T-M40-14)', () => {
+    // Befund H-A der Durchsicht der Nacharbeit: die Ruhe zaehlt ab dem Abmarsch, und nach einem langen
+    // Marsch schickte die Automatik die eben verlegte Armee weiter (Szenario R1).
+    const verlegen = (stance: Army['stance']) => {
+      const { ctx, capital, neighbour } = fresh()
+      const army = withArmy(ctx.state, capital)
+      army.stance = stance
+      return {
+        neighbour,
+        bestaetigen: targetAction(ctx, 'a1', 'move', neighbour),
+        marschieren: armyActions(ctx, 'a1').find((a) => a.id === 'march')!,
+      }
+    }
+
+    const verteidigung = verlegen('defensive')
+    expect(verteidigung.bestaetigen.disabledReason).toBeNull()
+    expect(verteidigung.bestaetigen.command).toEqual({
+      type: 'MOVE_ARMY',
+      playerId: 'p1',
+      armyId: 'a1',
+      targetProvinceId: verteidigung.neighbour,
+    })
+    expect(verteidigung.bestaetigen.followUp).toEqual({ type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' })
+    expect(verteidigung.bestaetigen.hint).toMatch(/Garnison/)
+    expect(verteidigung.marschieren.hint).toMatch(/Garnison/)
+
+    for (const stance of ['aggressive', 'garrison', 'retreat'] as const) {
+      const andere = verlegen(stance)
+      expect(andere.bestaetigen.followUp, stance).toBeUndefined()
+      expect(andere.bestaetigen.hint ?? '', stance).not.toMatch(/Garnison/)
+      expect(andere.marschieren.hint, stance).not.toMatch(/Garnison/)
     }
   })
 })

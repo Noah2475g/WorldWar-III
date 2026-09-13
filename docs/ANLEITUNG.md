@@ -123,12 +123,14 @@ eine davon handelt in engen Grenzen von selbst.
   oder in eine leere, an die ein Kriegsgegner grenzt: höchstens eine Armee je Provinz, die am
   schnellsten dort ist, und nur über eine einzige Grenze. Allein marschiert sie nie, damit ihre
   eigene Provinz nicht leer fällt, und nach einem Marsch oder Rückzug bleibt sie fünf Tage lang
-  stehen. Eine Provinz, die schon gefallen ist, holt sie nicht zurück.
+  stehen — gezählt ab dem Abmarsch, nicht ab der Ankunft. Eine Provinz, die schon gefallen ist, holt
+  sie nicht zurück.
 - **Angriff** kämpft mit Angriffswerten statt eingegraben und marschiert nie von selbst. Sie
   verzichtet damit auf den Vorteil des Verteidigers.
 - **Garnison** bleibt stehen, was auch geschieht, und kämpft wie die Verteidigung. Wählen Sie
-  sie für eine Armee, die ihren Posten halten soll. **Anhalten** stellt eine Armee auf
-  Verteidigung zugleich auf Garnison, damit sie nicht wieder von selbst losmarschiert.
+  sie für eine Armee, die ihren Posten halten soll. **Anhalten** und ein eigener **Marschbefehl**
+  stellen eine Armee auf Verteidigung zugleich auf Garnison, damit sie nicht von selbst weitermarschiert —
+  auch nicht nach einem langen Marsch, der die fünf Tage schon aufgebraucht hat.
 - **Rückzug** siehe unten; danach steht die Armee auf Verteidigung.
 
 Die Automatik gibt nur Befehle, die Sie auch selbst geben könnten, marschiert nur in eigene

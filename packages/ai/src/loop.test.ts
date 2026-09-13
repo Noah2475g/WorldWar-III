@@ -12,6 +12,7 @@ import {
 } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 import { describe, expect, it, vi } from 'vitest'
+import { garrisonFollowUp } from './adjutant'
 import { advanceTicks } from './loop'
 import type * as MilitaryModule from './military'
 import { runAi, storeMemories } from './runner'
@@ -78,7 +79,7 @@ const map = smallWorld()
 const stateHash = (state: GameState) => hashValue(state, { omitKeys: HASH_OMIT_KEYS })
 const ctx = { map, rules: TEST_RULES }
 
-function stateWith(aiCount: number): GameState {
+function stateWith(aiCount: number, context: typeof ctx = ctx): GameState {
   const nations = map.startPositions.slice(0, aiCount).map((s) => s.nation)
   const config: GameConfig = {
     seed: 7,
@@ -93,7 +94,7 @@ function stateWith(aiCount: number): GameState {
     })),
     victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
   }
-  const state = createInitialState(config, ctx)
+  const state = createInitialState(config, context)
   // Alle gegen alle: eine Welt im Frieden misst nichts.
   for (let i = 0; i < state.playerOrder.length; i++) {
     for (let j = i + 1; j < state.playerOrder.length; j++) {
@@ -381,5 +382,73 @@ describe('R-UNIT-09/AK7 Nach Marsch und Rueckzug ruht die Automatik fuenf Spielt
     expect(ankunft!.tick, 'die Armee kam erst nach der Ruhe an - der Test misst nichts').toBeLessThan(ruheEnde)
     const vonSelbst = maersche(lauf.applied, zieht.id, abmarsch!.tick)
     expect(vonSelbst.filter((entry) => entry.tick < ruheEnde), JSON.stringify(vonSelbst)).toEqual([])
+  })
+
+  /**
+   * Szenario R1 der Durchsicht der Nacharbeit (Befund H-A, T-M40-14).
+   *
+   * Nordland haelt n2 in einer Schlacht, die lange dauert; in n1 steht eine Garnison. Der Spieler
+   * schickt eine Verteidigung von n3 nach n1, ueber eine Kante, die der Test so lang macht, dass der
+   * Marsch die Ruhe fast oder ganz aufbraucht. Danach ist n3 leer und grenzt an die Schlacht. Die Ruhe
+   * zaehlt ab dem Abmarsch: nach der Ankunft blieben in R1 sechs Ticks, dann marschierte die Armee von
+   * selbst weiter (Beleg: Abmarsch 200, Ankunft 316, von selbst an Tick 322).
+   */
+  function langerMarsch(distanceKm: number) {
+    const karte = smallWorld()
+    for (const edge of karte.edges) {
+      const kante = [edge.a, edge.b].sort().join('-')
+      if (kante === 'n1-n3') edge.distanceKm = distanceKm
+      // Kein kuerzerer Weg von n3 nach n1 ueber n2 oder m2.
+      if (kante === 'n2-n3' || kante === 'm2-n3') edge.distanceKm = 5_000_000
+    }
+    const kontext = { map: karte, rules: TEST_RULES }
+    const state = stateWith(3, kontext)
+    state.tick = 200
+    for (const id of state.playerOrder) state.players[id]!.kind = 'human'
+    const mensch = state.playerOrder[0]!
+    const feind = state.playerOrder[1]!
+    const stark = [{ unitKey: 'infantry', hpTotal: 900_000 }]
+    placeArmy(state, { owner: mensch, at: 'n2', units: stark, stance: 'garrison' })
+    placeArmy(state, { owner: feind, at: 'n2', units: stark, stance: 'garrison' })
+    placeArmy(state, { owner: mensch, at: 'n1', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'garrison' })
+    const zieht = placeArmy(state, { owner: mensch, at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    expect(planRoute(state, zieht, 'n1', karte, TEST_RULES)!.path, 'Vorbedingung: eine Etappe').toEqual(['n1'])
+    const marsch: Command = { type: 'MOVE_ARMY', playerId: mensch, armyId: zieht.id, targetProvinceId: 'n1' }
+    return { state, kontext, zieht, marsch }
+  }
+
+  it('laesst eine Verteidigung, die der Spieler selbst verlegt, am Ziel stehen, auch wenn der Marsch die Ruhe aufbraucht (T-M40-14, Szenario R1)', () => {
+    const TICKS = 700
+    const tagesTicks = TEST_RULES.constants.ticksPerDay
+    for (const [fall, distanceKm] of [
+      ['R1, 117 Ticks Marsch', 700_000],
+      ['Marsch laenger als die Ruhe', 1_400_000],
+    ] as const) {
+      // Gegenprobe ohne Folgebefehl: die Lage loest die Automatik wirklich aus.
+      const ohne = langerMarsch(distanceKm)
+      const ohneLauf = advanceTicks(ohne.state, TICKS, ohne.kontext, { playerCommands: [ohne.marsch] })
+      const abmarsch = ohneLauf.events.find((event) => event.type === 'ARMY_DEPARTED' && event.armyId === ohne.zieht.id)
+      const ankunft = ohneLauf.events.find((event) => event.type === 'ARMY_ARRIVED' && event.armyId === ohne.zieht.id)
+      expect(abmarsch && ankunft, `${fall}: die Armee ist nicht in n1 angekommen - der Test misst nichts`).toBeTruthy()
+      const ruheEnde = abmarsch!.tick + TEST_RULES.constants.deployDelayTicks + RUHE
+      expect(ruheEnde - ankunft!.tick, `${fall}: nach der Ankunft bleibt ein Tag Ruhe oder mehr - der Test misst nichts`).toBeLessThan(tagesTicks)
+      const vonSelbst = ohneLauf.adjutant.filter(
+        (entry) => entry.command.type === 'MOVE_ARMY' && entry.command.armyId === ohne.zieht.id,
+      )
+      expect(vonSelbst.length, `${fall}: ohne Folgebefehl bleibt sie auch stehen - die Lage misst nichts`).toBeGreaterThan(0)
+      expect(vonSelbst[0]!.tick - ankunft!.tick, `${fall}: ${JSON.stringify(vonSelbst[0])}`).toBeLessThanOrEqual(tagesTicks)
+
+      // Mit dem, was die Oberflaeche seit T-M40-14 zum Marschbefehl schickt.
+      const mit = langerMarsch(distanceKm)
+      const folge = garrisonFollowUp(mit.state, mit.marsch)
+      const lauf = advanceTicks(mit.state, TICKS, mit.kontext, { playerCommands: folge ? [mit.marsch, folge] : [mit.marsch] })
+      expect(
+        lauf.events.some((event) => event.type === 'ARMY_ARRIVED' && event.armyId === mit.zieht.id && event.provinceId === 'n1'),
+        `${fall}: mit Folgebefehl nicht angekommen`,
+      ).toBe(true)
+      expect(lauf.state.armies[mit.zieht.id]?.stance, `${fall}: der Marschbefehl hat sie nicht auf Garnison gestellt`).toBe('garrison')
+      const fuerSie = lauf.adjutant.filter((entry) => 'armyId' in entry.command && entry.command.armyId === mit.zieht.id)
+      expect(fuerSie, fall).toEqual([])
+    }
   })
 })

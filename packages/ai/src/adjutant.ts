@@ -89,9 +89,32 @@ interface AdjutantContext {
  * the only thing that held a retreated army back, and it held it back for exactly one day.
  * Battles on the world map last a median of one to three ticks, the longest measured 27, so five
  * days means "not the same battle". The state has no arrival tick, so the rest is measured from
- * the departure, not from the arrival.
+ * the departure, not from the arrival: a march that uses up the five days leaves no rest after it.
+ * A march the player orders himself therefore takes the army out of the automatic (`garrisonFollowUp`,
+ * T-M40-14).
  */
 export const ADJUTANT_REST_TICKS = 120
+
+/**
+ * What a player's own order carries with it: an army that acts on its own goes to `garrison` in
+ * the same tick. The interface sends it with the order; the loop never calls this.
+ *
+ *  - **Stop** (T-M40-11, finding H2 of the M40 review): otherwise the adjutant marched the army
+ *    off again the next tick.
+ *  - **March** (T-M40-14, finding H-A of the second review): the rest counts from the departure,
+ *    and the state has no arrival tick. A march of 117 ticks left six ticks of rest after arrival,
+ *    one of 122 or more left none — and the adjutant sent on the army the player had just placed.
+ *    The player put it there; that is what `garrison` says. An arrival tick in the state would
+ *    have cost a schema step and new golden masters for the same case.
+ *
+ * Returns null for every other army and every other order.
+ */
+export function garrisonFollowUp(state: GameState, command: Command): Command | null {
+  if (command.type !== 'STOP_ARMY' && command.type !== 'MOVE_ARMY') return null
+  const army = state.armies[command.armyId]
+  if (!army || army.owner !== command.playerId || army.stance !== 'defensive') return null
+  return { type: 'SET_STANCE', playerId: command.playerId, armyId: command.armyId, stance: 'garrison' }
+}
 
 /**
  * The adjutant's orders for this tick: every living human power, in `playerOrder`.

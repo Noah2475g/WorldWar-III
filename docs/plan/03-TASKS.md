@@ -5617,6 +5617,37 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   bleibt: keine Alarmfarbe, kein Halt, kein Eintrag in der Meldungsleiste (M36). Entscheid
   (delegiert, kippbar) in `DECISIONS.md`; Befund M3, Vorschlag der Durchsicht.
 
+> **Zweite Nacharbeit nach der Durchsicht der Nacharbeit (2026-09-13).** Die Durchsicht fand die
+> Nacharbeit nah an der Abnahme, mit einem hohen und zwei mittleren Befunden. H-A: die Ruhe der
+> Automatik zählt ab dem Abmarsch, und eine vom Spieler verlegte Armee marschiert nach einem langen
+> Marsch wenige Ticks nach der Ankunft von selbst weiter. M-A: ein Klick auf „Rückzug" zählt nicht als
+> Ausrücken, und die Automatik leert die Provinz im selben Tick. M-B: kein Prüflauf merkt, wenn der
+> Haltungs-Messlauf veraltet. Die Entscheide stehen in `DECISIONS.md`.
+
+### T-M40-14 · Ein eigener Marschbefehl hält die Armee fest
+- **Ziel:** eine Armee, die der Spieler selbst verlegt, bleibt dort stehen, wohin er sie geschickt hat.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4, D30.7
+- **Abhängigkeiten:** T-M40-12
+- **Dateien:** `packages/ai/src/adjutant.ts`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`,
+  `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`,
+  `apps/headless/test/stance.slow.test.ts`
+- **Tests zuerst:**
+  - `packages/ai/src/loop.test.ts`: Szenario R1 (117 Ticks Marsch, 120 Ticks Ruhe ab Abmarsch) und ein
+    Marsch, der länger dauert als die Ruhe. Mit dem Folgebefehl steht die Armee auf Garnison, und kein
+    Befehl der Automatik nennt sie; ohne ihn marschiert sie binnen eines Spieltags nach der Ankunft von
+    selbst (R-UNIT-09/AK7).
+  - `adjutant.test.ts`: `garrisonFollowUp`.
+  - `actions.test.ts`: Folgebefehl am Marsch und die Hinweise.
+  - `App.test.tsx`: „Marsch befehlen" stellt eine Verteidigung auf Garnison; Angriff bleibt Angriff.
+  - `stance.slow.test.ts`: ein Pendelzug zählt ab `ARMY_ARRIVED` (Einheitsfall).
+- **Fertig wenn:** der Marschbefehl des Spielers für eine eigene Armee auf Verteidigung zugleich
+  `SET_STANCE garrison` schickt — Oberfläche wie beim Anhalten (T-M40-11), ohne Zustandsfeld — und
+  Hinweis, Anleitung, R-UNIT-09/AK7 und D30.4 wörtlich sagen: die Automatik ruht fünf Spieltage ab dem
+  Abmarsch, ein eigener Marschbefehl stellt auf Garnison. Befund H-A. Entscheid (delegiert, kippbar) in
+  `DECISIONS.md`: Option 1 (Ankunftstick als Zustandsfeld) verworfen, weil sie Schemastufe und
+  Golden-Master für eine Randlage kostet, die der Folgebefehl ohnehin abdeckt.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

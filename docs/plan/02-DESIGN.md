@@ -2567,10 +2567,19 @@ darunter als Geschichte; warum sie gefallen ist, steht in D30.9.)*
 
 **Verteidigung rückt nach, ohne zu entblößen.** Eine eigene Armee A kommt in Frage, wenn sie in
 Haltung `defensive` steht (`path` leer), nicht eingeschifft ist, Landeinheiten trägt, ihre
-Angriffssperre abgelaufen ist, seit ihrem letzten Marsch oder Rückzug fünf Spieltage vergangen sind
-(`tick >= deployDelayUntil + 120`, T-M40-09), ihre Provinz eigen und feindfrei ist — **und in ihrer
-Provinz mindestens eine weitere eigene stehende Armee bleibt**, die in diesem Tick nicht selbst
-ausrückt. Eine Armee, die allein steht, marschiert nie von selbst.
+Angriffssperre abgelaufen ist, seit dem Abmarsch ihres letzten Marsches oder seit ihrem letzten Rückzug
+fünf Spieltage vergangen sind (`tick >= deployDelayUntil + 120`, T-M40-09) — gezählt ab dem Abmarsch,
+nicht ab der Ankunft, ein Marsch, der die fünf Tage aufbraucht, lässt also keine Ruhe —, ihre Provinz
+eigen und feindfrei ist — **und in ihrer Provinz mindestens eine weitere eigene stehende Armee bleibt**,
+die in diesem Tick nicht selbst ausrückt. Eine Armee, die allein steht, marschiert nie von selbst.
+
+**Ein eigener Marschbefehl hält fest** (T-M40-14, Befund H-A der Durchsicht der Nacharbeit). Schickt der
+Spieler eine eigene Armee auf Verteidigung selbst los, geht mit `MOVE_ARMY` zugleich `SET_STANCE garrison`
+in denselben Tick, wie beim Anhalten (D30.7). Die Oberfläche schickt den Befehl, die Regel steht einmal
+in `garrisonFollowUp` (`packages/ai/src/adjutant.ts`); ein Zustandsfeld gibt es nicht. Ohne ihn schickte
+die Automatik nach einem Marsch von 117 Ticks die Armee sechs Ticks nach der Ankunft weiter (Szenario R1).
+Verworfen ist der Ankunftstick als Zustandsfeld, damit die Ruhe ab der Ankunft zählt: er kostet
+Schemastufe, Migration und neue Golden-Master für eine Randlage, die der Folgebefehl abdeckt.
 
 **Ziel** ist eine über `neighbors` (nicht `seaLinks`) angrenzende **eigene** Provinz P, in der eine
 sichtbare Armee eines Kriegsgegners steht — oder die leer ist und an eine Provinz mit einer solchen
@@ -2692,6 +2701,12 @@ eine leise Zeile „… rückt von selbst nach … nach." mit Sprung auf die Zie
 ohne Meldung in der Leiste, ohne Halt. Sie entsteht aus `AdvanceResult.adjutant` bzw.
 `FastForwardChunkResult.adjutant`, den Befehlen, die `commandsForTick` der Automatik zuschreibt;
 kein Ereignis des Kerns, kein Zustandsfeld, der Golden-Master sieht nichts davon.)*
+
+*(Ergänzt am 2026-09-13, T-M40-14, Befund H-A: auch „Marsch befehlen" schickt für eine Armee auf
+Verteidigung `MOVE_ARMY` und `SET_STANCE garrison` in denselben Tick. Der Marschknopf und die Bestätigung
+sagen es im Hinweis, der Hinweis zur Verteidigung sagt „ruht 5 Tage ab dem Abmarsch, nicht ab der
+Ankunft; ein eigener Marschbefehl stellt sie auf Garnison". Beide Knöpfe mit zwei Befehlen schicken den
+zweiten nur, wenn der Kern den ersten annimmt.)*
 
 ### D30.8 Gegenrede und Risiko
 

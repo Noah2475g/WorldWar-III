@@ -14,7 +14,7 @@ import {
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
-import { adjutantCommands } from './adjutant'
+import { adjutantCommands, garrisonFollowUp } from './adjutant'
 
 /**
  * Der Adjutant (T-M40-03, D30.2–D30.5, R-UNIT-09; seit T-M40-10 die Regel aus D30.4).
@@ -491,5 +491,42 @@ describe('R-UNIT-09/AK7 Die Automatik marschiert nur auf eigenes Land, in einer 
 
     const danach = lage(ruheEnde)
     expect(adjutantCommands(danach.state, ctx)).toEqual([zug(danach.weicht.id, 'n2')])
+  })
+})
+
+/**
+ * Ein eigener Befehl nimmt die Verteidigung aus der Automatik (T-M40-11, T-M40-14, Befund H-A der
+ * Durchsicht der Nacharbeit).
+ *
+ * Die Ruhe zaehlt ab dem Abmarsch; nach einem Marsch, der sie aufbraucht, schickte die Automatik eine
+ * Armee weiter, die der Spieler eben selbst verlegt hatte. Die Oberflaeche schickt deshalb mit dem
+ * Marsch- und dem Haltebefehl eine Garnison mit — die Regel dafuer steht hier, einmal.
+ */
+describe('R-UNIT-09/AK7 Ein eigener Marsch- oder Haltebefehl stellt eine Verteidigung auf Garnison', () => {
+  const garnisonFuer = (armyId: string): Command => ({ type: 'SET_STANCE', playerId: 'p1', armyId, stance: 'garrison' })
+
+  it('schickt mit Marsch und Anhalten einer eigenen Verteidigung SET_STANCE garrison (T-M40-14)', () => {
+    const { state } = angriffAufN2()
+    const armee = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'))).toEqual(garnisonFuer(armee.id))
+    const spaeter: Command = { type: 'MOVE_ARMY', playerId: 'p1', armyId: armee.id, targetProvinceId: 'n1', departInTicks: 48 }
+    expect(garrisonFollowUp(state, spaeter)).toEqual(garnisonFuer(armee.id))
+    expect(garrisonFollowUp(state, { type: 'STOP_ARMY', playerId: 'p1', armyId: armee.id })).toEqual(garnisonFuer(armee.id))
+  })
+
+  it('laesst jede andere Haltung, fremde und unbekannte Armeen und jeden anderen Befehl unberuehrt', () => {
+    const { state, feind } = angriffAufN2()
+    for (const stance of ['aggressive', 'garrison', 'retreat'] as const) {
+      const armee = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance })
+      expect(garrisonFollowUp(state, zug(armee.id, 'n1')), stance).toBeNull()
+    }
+    feind.stance = 'defensive'
+    expect(garrisonFollowUp(state, zug(feind.id, 'n1')), 'fremde Armee').toBeNull()
+    expect(garrisonFollowUp(state, zug('a999', 'n1')), 'unbekannte Armee').toBeNull()
+
+    const eigene = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+    expect(garrisonFollowUp(state, garnisonFuer(eigene.id)), 'SET_STANCE').toBeNull()
+    expect(garrisonFollowUp(state, { type: 'SPLIT_ARMY', playerId: 'p1', armyId: eigene.id, take: infanterie(1_000) }), 'SPLIT_ARMY').toBeNull()
   })
 })

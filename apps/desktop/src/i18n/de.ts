@@ -274,6 +274,9 @@ export const de = {
     // teuersten Entscheidungen des Spiels sind. Die Zahlen kommen aus den Regeln, nie
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
+    // Ein eigener Marsch einer Verteidigung stellt sie auf Garnison (T-M40-14, Befund H-A).
+    moveHintGarrison: 'Beim Abmarsch {{time}} lang halbe Kampfkraft. Stellt die Armee zugleich auf Garnison, damit sie am Ziel nicht von selbst weitermarschiert.',
+    confirmMoveHintGarrison: 'Stellt die Armee zugleich auf Garnison, damit sie am Ziel nicht von selbst weitermarschiert.',
     stopHint: 'Die Armee hält an, wo sie gerade steht.',
     // Anhalten einer Verteidigung stellt sie zugleich auf Garnison (T-M40-11, Befund H2).
     stopHintGarrison: 'Hält an und stellt auf Garnison, damit sie nicht von selbst wieder losmarschiert.',
@@ -283,7 +286,8 @@ export const de = {
     // T-M40-11 sagen die Hinweise auch, was die Haltung kostet (Befund M3): die Verteidigung
     // verfolgt nicht mehr „solange dort noch gekämpft wird", und der Angriff folgt niemandem.
     stanceAggressiveHint: 'Kämpft mit Angriffswerten statt eingegraben und marschiert nie von selbst.',
-    stanceDefensiveHint: 'Bleibt eingegraben stehen. Steht in ihrer Provinz noch eine weitere Armee, rückt sie von selbst in eine bedrohte eigene Nachbarprovinz nach; allein marschiert sie nie. Nach einem Marsch oder Rückzug {{rest}} lang nicht.',
+    // Die Ruhe zählt ab dem Abmarsch, nicht ab der Ankunft; ein eigener Marsch stellt auf Garnison (T-M40-14, Befund H-A).
+    stanceDefensiveHint: 'Bleibt eingegraben stehen. Steht in ihrer Provinz noch eine weitere Armee, rückt sie von selbst in eine bedrohte eigene Nachbarprovinz nach; allein marschiert sie nie. Nach einem Marsch oder Rückzug ruht sie {{rest}} ab dem Abmarsch, nicht ab der Ankunft; ein eigener Marschbefehl stellt sie auf Garnison.',
     stanceRetreatHint: 'Weicht von selbst in eine Nachbarprovinz aus und steht danach auf Verteidigung. Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
     stanceGarrisonHint: 'Bleibt stehen, was auch geschieht, und marschiert nie von selbst; kämpft wie die Verteidigung.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',

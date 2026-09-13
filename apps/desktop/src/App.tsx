@@ -826,8 +826,8 @@ export function App(props: AppProps) {
    * ausloesenden Knopf bis dahin die Quittung zeigen.
    */
   const send = useCallback(
-    (command: Command, actionId?: string) => {
-      if (!state || !ctx) return
+    (command: Command, actionId?: string): boolean => {
+      if (!state || !ctx) return false
       const result = canApply(state, command, {
         map: activeMap,
         rules: props.rules,
@@ -836,10 +836,11 @@ export function App(props: AppProps) {
       })
       if (!result.ok) {
         dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
-        return
+        return false
       }
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
+      return true
     },
     [state, ctx, activeMap, props.rules],
   )
@@ -872,10 +873,10 @@ export function App(props: AppProps) {
           setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
-          send(spec.command, spec.id)
           // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
-          // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs.
-          if (spec.followUp) send(spec.followUp, spec.id)
+          // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs — der zweite
+          // nur, wenn der erste angenommen wurde (T-M40-14).
+          if (send(spec.command, spec.id) && spec.followUp) send(spec.followUp, spec.id)
         }
       },
     }),
@@ -1448,7 +1449,11 @@ export function App(props: AppProps) {
       ? {
           ...toAction(confirmSpec),
           onRun: () => {
-            if (confirmSpec.command) send(confirmSpec.command, confirmSpec.id)
+            // Ein eigener Marschbefehl haelt fest (T-M40-14): eine Verteidigung geht mit dem Marsch auf
+            // Garnison — der zweite Befehl nur, wenn der Marsch angenommen wurde.
+            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id) && confirmSpec.followUp) {
+              send(confirmSpec.followUp, confirmSpec.id)
+            }
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           },

@@ -1,5 +1,5 @@
 import { ONE } from '@worldwar/shared'
-import { ADJUTANT_REST_TICKS } from '@worldwar/ai'
+import { ADJUTANT_REST_TICKS, garrisonFollowUp } from '@worldwar/ai'
 import {
   armyHp,
   armyRange,
@@ -329,10 +329,13 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   const konstanten = ctx.rules.constants
   const hinweisZeit = (ticks: number): string => duration(ticks, ctx.ticksPerDay)
 
+  // Ein eigener Marschbefehl haelt fest (T-M40-14): dieselbe Regel wie beim Bestaetigen des Ziels.
+  const marschHaeltFest =
+    garrisonFollowUp(ctx.state, { type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: army.locationProvinceId }) !== null
   const march: ActionSpec = {
     id: 'march',
     label: t('army.move'),
-    hint: t('army.moveHint', { time: hinweisZeit(konstanten.deployDelayTicks) }),
+    hint: t(marschHaeltFest ? 'army.moveHintGarrison' : 'army.moveHint', { time: hinweisZeit(konstanten.deployDelayTicks) }),
     disabledReason: army.units.length === 0 ? t('army.empty') : null,
     targetKind: 'move',
   }
@@ -341,16 +344,17 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   // die angehalten wird, marschierte im naechsten Tick wieder von selbst los. Sie geht deshalb mit dem
   // Anhalten auf Garnison. Nur sie — seit T-M40-10 handelt keine andere Haltung von selbst, und eine
   // Armee auf Angriff veraenderte der Klick sonst ungefragt im Kampf.
-  const haeltFest = army.stance === 'defensive'
+  const stopCommand: Command = { type: 'STOP_ARMY', playerId, armyId }
+  const stopFollowUp = garrisonFollowUp(ctx.state, stopCommand)
   const stop = checked(
     ctx,
-    { type: 'STOP_ARMY', playerId, armyId },
+    stopCommand,
     'stop',
     t('army.stop'),
-    t(haeltFest ? 'army.stopHintGarrison' : 'army.stopHint'),
+    t(stopFollowUp ? 'army.stopHintGarrison' : 'army.stopHint'),
   )
   if (stop.disabledReason === null && army.path.length === 0) stop.disabledReason = t('army.notMoving')
-  if (haeltFest) stop.followUp = { type: 'SET_STANCE', playerId, armyId, stance: 'garrison' }
+  if (stopFollowUp) stop.followUp = stopFollowUp
 
   const stanceHints: Record<Stance, string> = {
     aggressive: t('army.stanceAggressiveHint'),
@@ -463,25 +467,28 @@ export function targetAction(
   target: string,
   departInTicks = 0,
 ): ActionSpec {
-  return kind === 'move'
-    ? checked(
-        ctx,
-        {
-          type: 'MOVE_ARMY',
-          playerId: ctx.playerId,
-          armyId,
-          targetProvinceId: target,
-          ...(departInTicks > 0 ? { departInTicks } : {}),
-        },
-        'confirm-move',
-        t('army.confirmMove'),
-      )
-    : checked(
-        ctx,
-        { type: 'BOMBARD', playerId: ctx.playerId, armyId, targetProvinceId: target },
-        'confirm-bombard',
-        t('army.confirmBombard'),
-      )
+  if (kind === 'bombard') {
+    return checked(
+      ctx,
+      { type: 'BOMBARD', playerId: ctx.playerId, armyId, targetProvinceId: target },
+      'confirm-bombard',
+      t('army.confirmBombard'),
+    )
+  }
+  const command: Command = {
+    type: 'MOVE_ARMY',
+    playerId: ctx.playerId,
+    armyId,
+    targetProvinceId: target,
+    ...(departInTicks > 0 ? { departInTicks } : {}),
+  }
+  // Ein eigener Marschbefehl haelt fest (T-M40-14, Befund H-A der Durchsicht der Nacharbeit): die Ruhe
+  // der Automatik zaehlt ab dem Abmarsch, und nach einem langen Marsch schickte sie die eben verlegte
+  // Armee weiter. Eine Verteidigung geht deshalb mit dem Marsch auf Garnison, wie beim Anhalten.
+  const followUp = garrisonFollowUp(ctx.state, command)
+  const spec = checked(ctx, command, 'confirm-move', t('army.confirmMove'), followUp ? t('army.confirmMoveHintGarrison') : undefined)
+  if (followUp) spec.followUp = followUp
+  return spec
 }
 
 /**

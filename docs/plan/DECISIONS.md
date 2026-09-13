@@ -2444,3 +2444,37 @@ vielseitigsten Provinz fragen; (3) das Aushebebudget je Einheit an den Preis sta
 (`voreinstellung200`, `maechteMitArtillerie`, `jeStufe`) und fährt danach Vollpartie, Turnier und Grundlauf.
 
 ---
+
+## 2026-09-13 · T-M40-14 · Ein eigener Marschbefehl stellt eine Verteidigung auf Garnison, und die Ruhe zählt weiter ab dem Abmarsch (delegiert)
+
+**Entscheidung.**
+- Befiehlt der Spieler selbst einer eigenen Armee in Haltung Verteidigung einen Marsch, schickt die Oberfläche
+  mit `MOVE_ARMY` zugleich `SET_STANCE garrison` in denselben Tick, wie beim Anhalten (T-M40-11).
+- Die Regel steht einmal als `garrisonFollowUp` in `packages/ai/src/adjutant.ts`; Anhalten und „Marsch befehlen"
+  lesen sie.
+- Die Ruhe der Automatik zählt weiter ab dem Abmarsch (`deployDelayUntil + 120`). Hinweis, Anleitung,
+  R-UNIT-09/AK7 und D30.4 sagen das wörtlich.
+- Die Pendel-Kennzahl im Haltungs-Messlauf zählt ab `ARMY_ARRIVED`.
+
+Entschieden vom Orchestrator nach der Durchsicht der Nacharbeit, Optionen 2 und 3 aus Befund H-A.
+
+**Begründung.** Befund H-A: Nach einem Marsch von 117 Ticks blieben sechs Ticks Ruhe; dann schickte die
+Automatik die eben verlegte Armee weiter (Szenario R1). Ein Marsch ab 122 Ticks lässt gar keine Ruhe.
+„Der Spieler hat sie dorthin gestellt" drückt das Anhalten schon aus. Mit dem Folgebefehl gilt Befund H2 der
+ersten Durchsicht auch für eigene Märsche, ohne Zustandsfeld.
+
+**Verworfen.** Option 1 der Durchsicht: der Ankunftstick als Zustandsfeld (`phases/movement.ts`), damit die
+Ruhe ab der Ankunft zählt. Er kostet Schemastufe, Migration und neue Golden-Master für eine Randlage, die der
+Folgebefehl ohnehin abdeckt.
+
+**Gegenrede.**
+- Wer eine Armee verlegt und danach wieder Verteidigung wählt, bekommt die Ruhe ab dem Abmarsch, nach einem
+  langen Marsch also keine. Hingenommen; der Hinweis sagt es.
+- Ein Marsch, den der Kern ablehnt, stellt die Armee nicht um: Der zweite Befehl geht nur mit, wenn der erste
+  angenommen wurde. Das gilt seitdem auch für das Anhalten.
+
+**kippbar:** Ohne Folgebefehl beim Marsch behandelt `garrisonFollowUp` nur `STOP_ARMY`. Dann fallen Szenario R1
+in `packages/ai/src/loop.test.ts`, die Tests zum Marsch in `adjutant.test.ts` und `actions.test.ts` sowie
+T-M40-14 in `App.test.tsx`.
+
+---

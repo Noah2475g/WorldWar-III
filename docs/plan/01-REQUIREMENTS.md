@@ -1163,8 +1163,8 @@ Armeen weiter selbst (R-AI-01).
   die Verfolgung schadete in jedem Lauf mit Anlass. Verteidigung rückt seitdem nur nach, ohne zu
   entblößen, und Angriff marschiert nie von selbst — AK1, AK2, AK4 bis AK7 sind ersetzt oder
   erweitert, die erste Fassung und die Messung stehen in D30.9.)*
-  - AK1: WENN eine stehende Armee eines menschlichen Spielers in Haltung Verteidigung, die in den
-    letzten fünf Spieltagen weder marschiert noch zurückgewichen ist, in einer feindfreien eigenen
+  - AK1: WENN eine stehende Armee eines menschlichen Spielers in Haltung Verteidigung, deren letzter
+    Abmarsch oder Rückzug mindestens fünf Spieltage zurückliegt, in einer feindfreien eigenen
     Provinz steht, in der eine weitere eigene Armee stehen bleibt, und eine über Land angrenzende
     eigene Provinz eine sichtbare Armee eines Kriegsgegners enthält oder leer an eine solche
     grenzt, und keine eigene Armee dorthin unterwegs oder im selben Tick befohlen ist, DANN SOLL
@@ -1192,7 +1192,12 @@ Armeen weiter selbst (R-AI-01).
     eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.
   - AK7: WENN die Automatik einen Marsch befiehlt, DANN SOLL das Ziel eine eigene Provinz sein
     und die Route aus genau einer Landetappe bestehen; eine Armee SOLL binnen fünf Spieltagen
-    nach einem Marsch oder Rückzug nicht von selbst marschieren.
+    ab dem Abmarsch eines Marsches oder ab einem Rückzug nicht von selbst marschieren — gezählt ab
+    dem Abmarsch, nicht ab der Ankunft. WENN der Spieler einer eigenen Armee in Haltung Verteidigung
+    selbst einen Marsch befiehlt, DANN SOLL sie zugleich auf Garnison gestellt werden.
+    *(Ergänzt am 2026-09-13, T-M40-14, Befund H-A der Durchsicht der Nacharbeit: der Zustand kennt
+    keinen Ankunftstick; nach einem Marsch, der die fünf Tage aufbrauchte, schickte die Automatik die
+    eben verlegte Armee weiter.)*
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

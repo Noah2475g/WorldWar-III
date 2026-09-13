@@ -3062,6 +3062,25 @@ tasks:
     files: [packages/ai/src/loop.ts, apps/desktop/src/game/advance.ts, apps/desktop/src/game/fastForward.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/game/fastForward.test.ts, packages/ai/src/loop.test.ts]
     dod: "Befund M3 der Durchsicht M40, Vorschlag: der Adjutant laesst eine Armee marschieren, und der Spieler erfaehrt davon nichts. Entscheid (delegiert, kippbar, DECISIONS.md): eine leise Zeile im Protokoll - die Armee rueckt von selbst nach der Provinz nach - mit Sprung auf die Zielprovinz. Sie entsteht aus dem Ergebnis von commandsForTick, ueber die Uhr wie ueber das Vorspulen, und nicht aus einem neuen Kernereignis: kein Zustandsfeld, kein Ereignis im Kern, Golden-Master unberuehrt. Nicht laut (M36, nur Knappes ist laut): keine Alarmfarbe, kein Halt des Vorspulens, kein Eintrag in der Meldungsleiste. Test zuerst: App.test.tsx - eine geladene Lage, in der der Adjutant nachrueckt, zeigt nach dem Vorspulen die Zeile mit Armeename und Provinz, ohne Alarm-Klasse, und ein Klick springt auf die Provinz; ohne Adjutantenbefehl steht keine solche Zeile. Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext."
+  # Zweite Nacharbeit nach der Durchsicht der Nacharbeit M40 (2026-09-13, review-m40n.md: H-A, M-A,
+  # M-B, N-1 bis N-6). Entscheid des Orchestrators (delegiert, kippbar): H-A mit Option 2 und 3 - ein
+  # eigener Marschbefehl stellt auf Garnison, die Ruhe zaehlt weiter ab dem Abmarsch; Option 1
+  # (Ankunftstick als Zustandsfeld) verworfen. Reihenfolge -14, -15, Nachmessen, -16.
+  - id: T-M40-14
+    milestone: M40
+    title: Ein eigener Marschbefehl haelt die Armee fest
+    status: done
+    # Beim Bau (2026-09-13): garrisonFollowUp zuerst nur fuer STOP_ARMY (das Anhalten aus T-M40-11,
+    # unveraendert). Rot: adjutant 1, actions 2, loop 1 (R1: expected defensive to be garrison, die
+    # Gegenprobe ohne Folgebefehl griff), App 1 von 2 (kein Hinweis am Knopf), Pendel-Einheitsfall 1
+    # (0 statt 1). Gruen: 201 (adjutant, loop, actions, i18n, Panels), App 6, stance-Einheitsfaelle 4.
+    # Beide Knoepfe mit zwei Befehlen schicken den zweiten nur, wenn der erste angenommen wurde.
+    deps: [T-M40-12]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [packages/ai/src/adjutant.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, apps/headless/test/stance.slow.test.ts]
+    tests: [packages/ai/src/loop.test.ts, packages/ai/src/adjutant.test.ts, apps/desktop/src/game/actions.test.ts, apps/desktop/src/App.test.tsx, apps/headless/test/stance.slow.test.ts]
+    dod: "Befund H-A der Durchsicht der Nacharbeit M40: die Ruhe der Automatik zaehlt ab dem Abmarsch (deployDelayUntil + 120), einen Ankunftstick kennt der Zustand nicht. Ein Marsch von 117 Ticks liess nach der Ankunft 6 Ticks Ruhe, dann schickte die Automatik die vom Spieler verlegte Armee weiter (Szenario R1: Abmarsch 200, Ankunft 316, von selbst an Tick 322); ein Marsch ab 122 Ticks laesst gar keine. Hinweis, Anleitung, AK7 und D30.4 sagten fuenf Tage nach einem Marsch, und die Pendel-Kennzahl (Abmarsch bis Abmarsch binnen 120 Ticks) konnte den Fall strukturell nicht zaehlen. Entscheid (delegiert, kippbar): Option 2 und 3; Option 1 (Ankunftstick als Zustandsfeld, also Schemastufe, Migration und Golden) verworfen. Reparatur in der Oberflaeche nach dem Muster Anhalten (T-M40-11), kein Zustandsfeld: MOVE_ARMY des Spielers fuer eine eigene Armee in Haltung defensive schickt zugleich SET_STANCE garrison. Die Regel steht einmal als garrisonFollowUp in adjutant.ts; Anhalten und Marsch lesen sie. Hinweis, Anleitung, R-UNIT-09/AK7 und D30.4 sagen woertlich: die Automatik ruht fuenf Spieltage ab dem Abmarsch, ein eigener Marschbefehl stellt auf Garnison. Test zuerst: loop.test.ts mit Szenario R1 und einem Marsch laenger als die Ruhe - ohne Reparatur rot; mit Reparatur steht die Armee auf Garnison, und kein Befehl der Automatik nennt sie; Gegenprobe: ohne Folgebefehl marschiert sie binnen eines Spieltags nach der Ankunft von selbst. adjutant.test.ts prueft garrisonFollowUp, actions.test.ts Folgebefehl und Hinweise, App.test.tsx: Marsch befehlen stellt eine Verteidigung auf Garnison, Angriff bleibt Angriff. stance.slow.test.ts zaehlt einen Pendelzug ab ARMY_ARRIVED (Einheitsfall). Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext."
 
   # M41 "Pflege nach M34", geplant am 2026-09-13. Kein neuer Entwurf, keine neue
   # Anforderung: jede Aufgabe repariert einen gemessenen Befund. Baureihenfolge (deps):

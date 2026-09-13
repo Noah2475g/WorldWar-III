@@ -1854,3 +1854,72 @@ describe('T-M40-13 Eine leise Zeile, wenn eine Armee von selbst nachrueckt', () 
     expect(log().textContent).not.toMatch(/rückt von selbst/)
   }, 30_000)
 })
+
+/**
+ * Ein eigener Marschbefehl haelt die Armee fest (T-M40-14, Befund H-A der Durchsicht der Nacharbeit,
+ * R-UNIT-09/AK7).
+ *
+ * Die Ruhe der Automatik zaehlt ab dem Abmarsch. Nach einem langen Marsch schickte sie die Armee, die
+ * der Spieler eben verlegt hatte, wenige Ticks nach der Ankunft weiter (Szenario R1). Seitdem stellt
+ * „Marsch befehlen" eine Armee auf Verteidigung zugleich auf Garnison, wie das Anhalten. Gemessen am
+ * Bildschirm aus einer geladenen Partie: eine stehende Armee, Ziel waehlen, befehlen, ein Tag vergeht.
+ */
+describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garnison', () => {
+  const ladeStehend = async (stance: 'defensive' | 'aggressive') => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const mensch = state.playerOrder[0]!
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance })
+    const ziel = state.provinces[capital]!.neighbors.find(
+      (id) => state.provinces[id]?.owner === mensch && planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1,
+    )
+    expect(ziel, 'die Hauptstadt hat keine eigene Nachbarprovinz - die Lage misst nichts').toBeDefined()
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Verlegen'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+    return { ziel: ziel! }
+  }
+
+  const armeePanel = () => screen.getByRole('region', { name: 'Armee' })
+  const gedrueckt = () =>
+    within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
+      .getAllByRole('button')
+      .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+      .map((knopf) => knopf.textContent)
+  const befehle = (ziel: string) => {
+    fireEvent.click(within(armeePanel()).getByRole('button', { name: 'Marschieren' }))
+    fireEvent.change(within(armeePanel()).getByRole('combobox', { name: 'Ziel' }), { target: { value: ziel } })
+    return within(armeePanel()).getByRole('button', { name: 'Marsch befehlen' })
+  }
+  const protokoll = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  it('schickt eine Verteidigung los und stellt sie zugleich auf Garnison', async () => {
+    const { ziel } = await ladeStehend('defensive')
+    expect(gedrueckt()).toEqual(['Verteidigung'])
+    const knopf = befehle(ziel)
+    expect(knopf.getAttribute('title')).toMatch(/Garnison/)
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Garnison'])
+  }, 30_000)
+
+  it('laesst eine Armee auf Angriff beim Marschbefehl auf Angriff', async () => {
+    const { ziel } = await ladeStehend('aggressive')
+    const knopf = befehle(ziel)
+    expect(knopf.getAttribute('title') ?? '').not.toMatch(/Garnison/)
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Angriff'])
+  }, 30_000)
+})
