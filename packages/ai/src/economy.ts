@@ -145,8 +145,12 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
     if ((province.buildQueueLength ?? 0) > 0) continue
 
     // Der erste Wunsch dieser Provinz, den die Vorräte tragen (Nacharbeit zu T-M41-01, H1).
-    // Mehr als einen Wunsch hat nur eine Stadt, deren Fabrik schon steht — siehe
-    // `buildingCandidatesFor`; Kaserne und erste Fabrik bleiben allein, wie bisher.
+    // Allein bleiben nur die fehlende Kaserne und die erste Fabrik einer Stadt. **Jede andere
+    // Provinz** hat eine Ausweichliste — auch eine Landprovinz mit Kaserne und eine Stadt mit
+    // Fabrik 3: Eisenbahn, Festung, Hafen. Vorher ging eine solche Provinz leer aus, wenn die
+    // Eisenbahn zu teuer war, und die Suche lief zur nächsten Provinz; jetzt baut sie selbst die
+    // Festung (berichtigt nach der Durchsicht von Block N2, M2 — hier stand, nur eine Stadt mit
+    // Fabrik habe mehr als einen Wunsch; Haltetest in `economy.test.ts`).
     let building: BuildingKey | null = null
     for (const candidate of buildingCandidatesFor(context, province)) {
       const rule = context.rules.buildings[candidate]

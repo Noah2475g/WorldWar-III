@@ -2476,7 +2476,10 @@ bezahlbar — die KI baut die Eisenbahn **in einer Landprovinz** („expected 'r
 **Reparatur.** Der Ausbau ist nur noch der **erste** Wunsch einer Stadt, deren Fabrik steht; Eisenbahn,
 Festung und Hafen stehen dahinter, und `economyCommands` baut den ersten bezahlbaren. Kaserne und erste
 Fabrik bleiben allein wie bisher, der Handel (`missingForNextBuilding`) zielt weiter auf den ersten
-Wunsch — geändert ist genau eine Größe. Gewählt statt „Ausbau hinter die anderen einordnen", weil eine
+Wunsch — geändert ist genau eine Größe. *(Berichtigt nach der Durchsicht von Block N2, M2: nicht
+genau eine. Die Ausweichliste gilt für jede Provinz mit Kaserne, auch Landprovinzen und Städte mit
+Fabrik 3 — dort baut die KI jetzt die Festung, wenn die Eisenbahn zu teuer ist, statt zur nächsten
+Provinz zu gehen. Gemessen nur in der Summe der Läufe unten; Haltetest in `economy.test.ts`.)* Gewählt statt „Ausbau hinter die anderen einordnen", weil eine
 reiche Macht die Fabrik so weiter zuerst ausbaut (`DECISIONS.md`, Nachtrag zu T-M41-01).
 
 **Vollpartie, vorher → nachher** (vorher = Stand nach T-M41-08, Berichte mit denselben Feldern):

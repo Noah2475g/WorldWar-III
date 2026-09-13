@@ -247,6 +247,33 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     expect(tradeCommands(context, [])).toEqual([])
   })
 
+  it('weicht auch in einer Landprovinz mit Kaserne auf den naechsten Wunsch aus (Durchsicht M2)', () => {
+    // Haltetest fuer das heutige Verhalten, kein neues: die Ausweichliste aus der Nacharbeit zu H1
+    // gilt fuer jede Provinz mit Kaserne, nicht nur fuer Staedte mit Fabrik. Vorher ging eine
+    // Landprovinz leer aus, wenn die Eisenbahn zu teuer war, und die Suche lief zur naechsten
+    // Provinz. Gemessen ist das nur in der Summe der Laeufe zu H1 (PROBLEME.md, 2026-09-13).
+    const context = richContext(tag31)
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+      (province) => province.owner !== 'p2' || province.kind !== 'city',
+    )
+    stufe(context, 'railway', 0)
+    stufe(context, 'fortress', 0)
+    ;(context.view.self.resources as Record<string, number>).coal = 0
+
+    // Die Lage, die der Test braucht: die Eisenbahn kostet Kohle, die Festung nicht.
+    const eisenbahn = buildingCostForLevel(TEST_RULES.buildings.railway, 1, TEST_RULES.constants)
+    const festung = buildingCostForLevel(TEST_RULES.buildings.fortress, 1, TEST_RULES.constants)
+    expect((eisenbahn as Record<string, number>).coal ?? 0, 'die Eisenbahn waere ohne Kohle bezahlbar').toBeGreaterThan(0)
+    expect((festung as Record<string, number>).coal ?? 0, 'die Festung braucht Kohle').toBe(0)
+
+    const [bau] = bauten(context)
+    const provinz = context.view.provinces.find((province) => province.id === bau?.provinceId)
+
+    expect(`${bau?.building} in ${provinz?.kind}`).toBe('fortress in rural')
+    expect(provinz?.buildings?.barracks).toBe(1)
+    expect(provinz?.buildings?.railway).toBe(0)
+  })
+
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {
     // Gemessen an vier Varianten (DECISIONS.md, 2026-09-13, T-M41-01): die Kaserne Stufe 2
     // reisst R-AI-06 — schwer gegen normal im Frieden 1,00 statt 0,70 gegen die Obergrenze

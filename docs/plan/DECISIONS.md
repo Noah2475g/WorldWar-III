@@ -2047,6 +2047,13 @@ reiche Macht die Fabrik so weiter zuerst ausbaut — die Achse aus T-M41-01 blei
 nicht mehr. Gemessen, Vollpartie 1914: Siegtag 582 → 430, Städte mit Eisenbahn 18 → 43, mit
 Festung 13 → 41, Städte mit Fabrik und ohne Eisenbahn 39 → 2; Turnier-Siegquoten gleich. Alle drei
 Startzahlen in `PROBLEME.md` (2026-09-13, H1).
+*(Berichtigt 2026-09-13 nach der Durchsicht von Block N2, M2: die Ausweichliste gilt nicht nur für
+Städte mit Fabrik. **Jede Provinz mit Kaserne** — auch eine Landprovinz und eine Stadt mit Fabrik 3 —
+bekommt Eisenbahn, Festung, Hafen in dieser Reihenfolge und baut den ersten bezahlbaren. Vorher ging
+eine solche Provinz leer aus, wenn die Eisenbahn zu teuer war, und die Suche lief zur nächsten Provinz.
+Das ändert, wo zuerst gebaut wird, auch außerhalb der Fabrikstädte. Gemessen ist es nur in der Summe
+der Läufe zu H1; ein Haltetest in `packages/ai/src/economy.test.ts` hält das heutige Verhalten fest.
+Keine Verhaltensänderung in der Berichtigung.)*
 
 **kippbar:** eine Zeile je Gebäude in `nextBuildingFor` (seit H1 `buildingCandidatesFor`; wer den
 Ausbau wieder exklusiv will, gibt für Stufe ≥ 1 `['factory']` zurück — der Test „baut die Eisenbahn,

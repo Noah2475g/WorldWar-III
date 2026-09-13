@@ -3016,6 +3016,8 @@ tasks:
     # 1914: 39 Staedte mit Fabrik und ohne Eisenbahn). Jetzt ist der Ausbau nur der erste Wunsch,
     # gebaut wird der erste bezahlbare (economy.test.ts; Staedte je Macht in fullgame.slow.test.ts).
     # Das Turnier ist danach nicht mehr zeilengleich (Siegquoten gleich). PROBLEME.md, H1.
+    # Berichtigt (Durchsicht N2, M2): die Ausweichliste gilt fuer jede Provinz mit Kaserne, auch
+    # Landprovinzen und Staedte mit Fabrik 3; Haltetest fuer eine Landprovinz in economy.test.ts.
     deps: [T-M41-03]
     requirements: [R-PROV-02, R-AI-08]
     files: [packages/ai/src/economy.ts]

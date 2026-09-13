@@ -5614,6 +5614,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `apps/headless/test/fullgame.slow.test.ts`; H2 in `apps/headless/test/ai-integration.slow.test.ts`
   nachgemessen. Das Turnier ist danach **nicht** mehr zeilengleich (Siegquoten gleich, im Frieden
   146 → 145 Kriegserklärungen). Zahlen in `PROBLEME.md`, 2026-09-13, H1.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M2: die Ausweichliste Eisenbahn → Festung → Hafen gilt
+  für jede Provinz mit Kaserne, auch für Landprovinzen und Städte mit Fabrik 3 — nicht nur für Städte
+  mit Fabrik. Gemessen nur in der Summe der H1-Läufe; Haltetest für eine Landprovinz in
+  `packages/ai/src/economy.test.ts`, keine Verhaltensänderung.)*
 
 ### T-M41-02 · Nachmessen nach dem Fabrikausbau
 - **Ziel:** ein grüner Einzeltest belegt, dass die KI den Befehl gibt — nicht, dass sie in
