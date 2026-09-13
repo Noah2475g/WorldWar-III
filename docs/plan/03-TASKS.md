@@ -5647,6 +5647,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   vollem Tempo aber nicht lesbar. Der Gewinn liegt beim Vorspulen (danach steht die Uhr, und die
   Meldung bleibt stehen) und bei kleinem Tempo; der Rest steht als Befund mit Zahl in
   `PROBLEME.md`. R-UI-14 steht nur hier im Text (`name_level`).
+  *(Nachtrag 2026-09-13, gefunden von `pnpm verify` am Ende des Blocks: `test/guards/unlocks-explained.test.ts`
+  aus T-M21-04 sicherte „meldet nur am Anfang des Tages" zu — sonst verdränge die Meldung, was
+  gerade Aufmerksamkeit braucht. Die Zusage ist mit Grund zurückgenommen, der Einwand schärfer
+  geprüft: Freischaltung und Ankündigung stehen jetzt am Ende der Meldungsliste, hinter Kampf und
+  Mangel; vorher standen sie vorn. Die gezielten Tests hatten den Wächter nicht erfasst, weil die
+  Suche nach `alertsFor` nur über `apps/desktop/src` lief.)*
 
 ### T-M41-13 · Tempo während des Vorspulens verliert keine Befehle
 - **Ziel:** eine Uhr, die neben dem Vorspulen läuft, rechnet Stunden, die das nächste Häppchen

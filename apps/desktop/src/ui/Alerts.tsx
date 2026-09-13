@@ -187,7 +187,7 @@ export interface UnlockRules {
 
 export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[] {
   if (!view) return []
-  const alerts: Alert[] = rules ? [...unlockAlerts(view, rules), ...upcomingAlerts(view, rules)] : []
+  const alerts: Alert[] = []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
   const nameOf = (id: string): string => view.provinces.find((province) => province.id === id)?.name ?? id
 
@@ -295,6 +295,11 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[]
       })
     }
   }
+
+  // Freischaltung und Ankuendigung zuletzt (T-M41-12). Seit sie den ganzen Spieltag stehen,
+  // muessen sie hinter dem stehen, was gerade Aufmerksamkeit braucht — das war der Grund, aus
+  // dem T-M21-04 sie nur am Tagesanfang zeigte (`unlocks-explained.test.ts`).
+  if (rules) alerts.push(...unlockAlerts(view, rules), ...upcomingAlerts(view, rules))
 
   return alerts
 }

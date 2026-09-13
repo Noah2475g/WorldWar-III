@@ -133,16 +133,35 @@ describe('R-TECH-02 Jede Freischaltung wird gemeldet und erklaert', () => {
     }
   })
 
-  it('meldet nur am Anfang des Tages, nicht den ganzen Tag lang', () => {
-    // Sonst stuende die Meldung vierundzwanzig Stunden in der Liste und verdraengte, was
-    // gerade wirklich Aufmerksamkeit braucht.
+  it('meldet den ganzen Spieltag, aber hinter dem, was gerade Aufmerksamkeit braucht (T-M41-12)', () => {
+    // ZURUECKGENOMMEN mit T-M41-12 (Befund N8 der Durchsicht M41): hier stand "meldet nur am
+    // Anfang des Tages, nicht den ganzen Tag lang" — sonst stuende die Meldung vierundzwanzig
+    // Stunden in der Liste und verdraengte, was gerade wirklich Aufmerksamkeit braucht. Der
+    // Preis war, dass ein Vorspulen von 14:00 bis 14:00 die Freischaltung nie zeigte. Die
+    // Meldung steht jetzt den ganzen Tag (und ist wegklickbar); der Einwand ist nicht
+    // weggeworfen, sondern schaerfer geprueft: sie steht HINTER Kampf und Mangel.
     const day = alle[0]!.day
-    const spaeter = {
-      ...(viewAtDay(day) as { tick: number }),
-      tick: (day - 1) * rules.constants.ticksPerDay + 20,
-    } as never
+    const perDay = rules.constants.ticksPerDay
+    const lage = (tick: number) =>
+      ({
+        ...(viewAtDay(day) as object),
+        tick,
+        provinces: [{ id: 'A', name: 'Alpha', owner: 'p1' }],
+        battles: [{ provinceId: 'A', startedTick: tick }],
+        self: { shortages: ['iron'], capitalProvinceId: null, capitalLostUntil: null },
+      }) as never
 
-    expect(alertsFor(spaeter, rules).filter((alert) => alert.kind === 'unlock')).toEqual([])
+    const abends = alertsFor(lage((day - 1) * perDay + 20), rules).map((alert) => alert.kind)
+    expect(abends, 'um 20 Uhr steht die Freischaltung nicht mehr').toContain('unlock')
+    expect(abends).toContain('battle')
+    expect(abends).toContain('shortage')
+    expect(abends.indexOf('unlock'), `Reihenfolge ${abends.join(', ')}`).toBeGreaterThan(abends.indexOf('battle'))
+    expect(abends.indexOf('unlock'), `Reihenfolge ${abends.join(', ')}`).toBeGreaterThan(abends.indexOf('shortage'))
+
+    // Am naechsten Tag nicht mehr.
+    expect(alertsFor(lage(day * perDay), rules).map((alert) => alert.id)).not.toContain(
+      `unlock:${alle[0]!.art === 'buildings' ? 'building' : 'unit'}:${alle[0]!.key}`,
+    )
   })
 
   it('meldet keine Freischaltung, wenn die Regeln fehlen', () => {

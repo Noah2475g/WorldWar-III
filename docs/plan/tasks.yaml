@@ -3053,10 +3053,13 @@ tasks:
     # Beim Bau (2026-09-13): dazu app.css fuer den leisen Wegklick (.alert__dismiss, ohne
     # Alarmfarbe, Haltetest in Alerts.test.tsx). Rot vorher: Alerts 3 von 22, App 2 von 2
     # (Uhr Tag 6 14:00, Meldungsleiste leer); Onboarding-Pause bleibt 48 Ticks.
+    # Nachtrag (verify am Blockende): test/guards/unlocks-explained.test.ts aus T-M21-04 sicherte
+    # "nur am Anfang des Tages" zu - mit Grund zurueckgenommen; Freischaltung und Ankuendigung
+    # stehen jetzt am Ende der Meldungsliste, hinter Kampf und Mangel.
     deps: [T-M41-03]
     requirements: [R-TECH-02]
     files: [apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css, docs/plan/PROBLEME.md]
-    tests: [apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/game/onboarding.slow.test.ts]
+    tests: [apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/game/onboarding.slow.test.ts, test/guards/unlocks-explained.test.ts]
     dod: "Befund N8 der Durchsicht M41: Ankuendigung und Freischaltung stehen nur in den ersten 12 Ticks eines Spieltags (COMPLETION_ALERT_TICKS) - bei Tempo 100 etwa 0,12 s, und ein Vorspulen von einer Tagesmitte in die naechste ueberspringt sie ganz. Sie stehen jetzt bis zum Ende ihres Spieltags oder bis der Spieler sie wegklickt. Test zuerst: App.test.tsx - nach einem Tagessprung durch Vorspulen von 14:00 aus steht die Freischaltung des neuen Tages noch in den Meldungen; Alerts.test.tsx - den ganzen Spieltag, am naechsten nicht mehr, wegklickbar. Leise nach M36: keine Alarm- oder Warnfarbe, kein Sprung auf die Karte, kein Ton. Einloesbarkeit vor dem Bau geprueft: bei Tempo 100 dauert ein Spieltag 0,24 s; bis Tagesende verdoppelt die Anzeigezeit, macht sie bei vollem Tempo aber nicht lesbar - der Gewinn liegt beim Vorspulen (danach steht die Uhr) und bei kleinem Tempo, der Rest als Befund mit Zahl in PROBLEME.md. onboarding.slow.test.ts misst dieselbe laengste Pause. R-UI-14 nur im Text: es steht in name_level."
   - id: T-M41-13
     milestone: M41
