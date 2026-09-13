@@ -452,3 +452,38 @@ describe('R-UNIT-09/AK7 Nach Marsch und Rueckzug ruht die Automatik fuenf Spielt
     }
   })
 })
+
+/**
+ * Ein Rueckzug-Klick und die Automatik leeren im selben Tick keine Provinz (T-M40-15, Befund M-A der
+ * Durchsicht der Nacharbeit).
+ *
+ * `SET_STANCE` prueft kein Gefecht, und `phases/retreat.ts` laesst jede Armee auf Rueckzug ausweichen.
+ * Szenario R2: in n3 stehen eine Verteidigung und eine Garnison, eine Ostmark-Armee steht in n2. Der
+ * Spieler zieht die Garnison zurueck; die Automatik schickte im selben Tick die Verteidigung nach n2, und
+ * nach 25 Ticks stand keine eigene Armee mehr in n3. Gerechnet ueber die Spielschleife, alle Maechte
+ * Menschen, damit nichts anderes marschiert.
+ */
+describe('R-UNIT-09/AK1 Ein Rueckzug-Klick und die Automatik leeren im selben Tick keine Provinz', () => {
+  it('laesst die Verteidigung in n3 stehen, wenn der Spieler dort die Garnison zurueckzieht (T-M40-15, Szenario R2)', () => {
+    const state = stateWith(3)
+    state.tick = 200
+    for (const id of state.playerOrder) state.players[id]!.kind = 'human'
+    const mensch = state.playerOrder[0]!
+    const feind = state.playerOrder[1]!
+    expect(state.provinces['n3']!.owner).toBe(mensch)
+    placeArmy(state, { owner: feind, at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 8_000 }] })
+    const verteidigung = placeArmy(state, { owner: mensch, at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    const weicht = placeArmy(state, { owner: mensch, at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'garrison' })
+
+    const lauf = advanceTicks(state, 25, ctx, {
+      playerCommands: [{ type: 'SET_STANCE', playerId: mensch, armyId: weicht.id, stance: 'retreat' }],
+    })
+
+    const rueckzug = lauf.events.find((event) => event.type === 'ARMY_RETREATED' && event.armyId === weicht.id)
+    expect(rueckzug, 'die Garnison ist nicht ausgewichen - der Test misst nichts').toBeDefined()
+    const inN3 = lauf.state.armyOrder.filter(
+      (id) => lauf.state.armies[id]!.owner === mensch && lauf.state.armies[id]!.locationProvinceId === 'n3',
+    )
+    expect(inN3, JSON.stringify(lauf.adjutant)).toEqual([verteidigung.id])
+  })
+})

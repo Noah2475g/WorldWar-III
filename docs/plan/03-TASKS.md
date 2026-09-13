@@ -5648,6 +5648,23 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `DECISIONS.md`: Option 1 (Ankunftstick als Zustandsfeld) verworfen, weil sie Schemastufe und
   Golden-Master für eine Randlage kostet, die der Folgebefehl ohnehin abdeckt.
 
+### T-M40-15 · Ein Rückzug-Klick zählt als Ausrücken
+- **Ziel:** ein Rückzug, den der Spieler klickt, leert zusammen mit der Automatik im selben Tick keine
+  Provinz.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4
+- **Abhängigkeiten:** T-M40-14
+- **Dateien:** `packages/ai/src/adjutant.ts`, `docs/ANLEITUNG.md`, `docs/plan/02-DESIGN.md`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:**
+  - `adjutant.test.ts`: Szenario R2. In n3 stehen eine Verteidigung und eine Garnison, n2 ist
+    angegriffen, der Spieler zieht die Garnison zurück. Mit dem Klick in `given` befiehlt die Automatik
+    nichts; ohne ihn und mit einer anderen Haltung rückt die Verteidigung aus (R-UNIT-09/AK1).
+  - `loop.test.ts`: dieselbe Lage über die Schleife; nach 25 Ticks steht die Verteidigung noch in n3.
+- **Fertig wenn:** `adjutant.ts` einen Befehl `SET_STANCE` mit `retreat` in `given` als ausrückend
+  zählt (Befund M-A) und `ANLEITUNG.md` den Rückzug nicht mehr an ein Gefecht bindet. Der Knopf bleibt,
+  wie er ist: `SET_STANCE` prüft kein Gefecht, und `phases/retreat.ts` lässt jede Armee auf Rückzug
+  ausweichen. Entscheid (delegiert, kippbar) in `DECISIONS.md`.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

@@ -2571,7 +2571,9 @@ Angriffssperre abgelaufen ist, seit dem Abmarsch ihres letzten Marsches oder sei
 fünf Spieltage vergangen sind (`tick >= deployDelayUntil + 120`, T-M40-09) — gezählt ab dem Abmarsch,
 nicht ab der Ankunft, ein Marsch, der die fünf Tage aufbraucht, lässt also keine Ruhe —, ihre Provinz
 eigen und feindfrei ist — **und in ihrer Provinz mindestens eine weitere eigene stehende Armee bleibt**,
-die in diesem Tick nicht selbst ausrückt. Eine Armee, die allein steht, marschiert nie von selbst.
+die in diesem Tick nicht selbst ausrückt, weder per Marschbefehl noch per Rückzug (`SET_STANCE retreat`
+im selben Tick, T-M40-15: der Kern prüft beim Rückzug kein Gefecht, die Armee weicht auch so aus). Eine
+Armee, die allein steht, marschiert nie von selbst.
 
 **Ein eigener Marschbefehl hält fest** (T-M40-14, Befund H-A der Durchsicht der Nacharbeit). Schickt der
 Spieler eine eigene Armee auf Verteidigung selbst los, geht mit `MOVE_ARMY` zugleich `SET_STANCE garrison`

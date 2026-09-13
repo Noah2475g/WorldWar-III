@@ -140,8 +140,11 @@ eigener Planung. Warum sie so schmal ist: ein Gefecht ist meist nach wenigen Stu
 ein Marsch in die Nachbarprovinz dauert ein bis vier Tage. Wer erst auf ein Gefecht hin losmarschiert,
 kommt zu spät — und lässt die eigene Provinz leer.
 
-**Rückzug** (Knopf am Armeepanel, nur im Gefecht): Die Armee löst sich aus dem Kampf
-und weicht in eine benachbarte eigene Provinz aus. Der Preis steht am Knopf — sie
+**Rückzug** (Knopf am Armeepanel): Die Armee weicht in eine benachbarte Provinz aus — bevorzugt in
+eine eigene, sonst in eine, deren Besitzer nicht mit Ihnen im Krieg liegt — und löst sich dabei aus
+einem Kampf. Der Knopf wirkt auch ohne Gefecht, zum selben Preis; gibt es keine solche Provinz, bleibt
+sie stehen. Ein Rückzug zählt für die Automatik als Ausrücken: eine Verteidigung derselben Provinz
+rückt dann nicht von selbst aus, wenn sie sonst allein zurückbliebe. Der Preis steht am Knopf — sie
 verliert beim Absetzen Stärke und darf für eine Anzahl Tage **nicht angreifen**; getroffen
 werden kann sie in dieser Zeit sehr wohl. Ein Rückzug ist deshalb eine Entscheidung, keine
 Rücknahme: er rettet Einheiten und kostet die Gelegenheit.

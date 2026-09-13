@@ -302,6 +302,33 @@ describe('R-UNIT-09/AK4 Der Adjutant entscheidet aus dem Zustand, in der Sicht d
     expect(adjutantCommands(mit.state, ctx, { given: [zug(mit.marschiert.id, 'n2')] })).toEqual([])
   })
 
+  it('zaehlt einen Rueckzug-Klick im selben Tick als Ausruecken (T-M40-15, Szenario R2)', () => {
+    // Befund M-A der Durchsicht der Nacharbeit: in n3 stehen eine Verteidigung und eine Garnison, n2 ist
+    // angegriffen. Der Spieler klickt „Rueckzug" bei der Garnison. Der Kern prueft dafuer kein Gefecht,
+    // und die Garnison weicht im selben Tick aus. Die Automatik zaehlte nur MOVE_ARMY als ausrueckend und
+    // schickte die Verteidigung nach n2 — n3 war danach leer (R-UNIT-09/AK1).
+    const lage = () => {
+      const { state } = angriffAufN2()
+      const verteidigung = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+      const weicht = garnison(state, 'n3')
+      return { state, verteidigung, weicht }
+    }
+    const haltung = (armyId: string, stance: 'retreat' | 'aggressive'): Command => ({ type: 'SET_STANCE', playerId: 'p1', armyId, stance })
+
+    // Gegenprobe: ohne den Klick rueckt die Verteidigung aus, und die Garnison bleibt.
+    const ohne = lage()
+    expect(adjutantCommands(ohne.state, ctx)).toEqual([zug(ohne.verteidigung.id, 'n2')])
+
+    const mit = lage()
+    expect(adjutantCommands(mit.state, ctx, { given: [haltung(mit.weicht.id, 'retreat')] })).toEqual([])
+
+    // Eine andere Haltung im selben Tick raeumt die Provinz nicht: die Verteidigung darf weiter ausruecken.
+    const andere = lage()
+    expect(adjutantCommands(andere.state, ctx, { given: [haltung(andere.weicht.id, 'aggressive')] })).toEqual([
+      zug(andere.verteidigung.id, 'n2'),
+    ])
+  })
+
   it('laesst den Zustand unberuehrt', () => {
     const { state } = angriffAufN2()
     placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })

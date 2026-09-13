@@ -196,11 +196,17 @@ function ordersFor(
   const ready = own.filter((army) => canActOnItsOwn(state, army, ctx.rules, held))
   if (ready.length === 0 || !atWarWithAnyone(state, playerId)) return []
 
-  // How many own armies stay put in each province this tick — an army ordered to march by the
-  // player this tick does not. A defender may leave only while at least one other stays (D30.4).
+  // How many own armies stay put in each province this tick. An army the player orders to march this
+  // tick does not — and neither does one he orders to retreat: the core checks no battle for that, and
+  // `phases/retreat.ts` moves every army on `retreat` out in this very tick (T-M40-15, finding M-A of
+  // the second review; the adjutant sent the other army away and the province stood empty). A defender
+  // may leave only while at least one other stays (D30.4).
   const leaving = new Set<ArmyId>()
   for (const command of given) {
-    if (command.type === 'MOVE_ARMY' && command.playerId === playerId) leaving.add(command.armyId)
+    if (command.playerId !== playerId) continue
+    if (command.type === 'MOVE_ARMY' || (command.type === 'SET_STANCE' && command.stance === 'retreat')) {
+      leaving.add(command.armyId)
+    }
   }
   const staying = new Map<ProvinceId, number>()
   for (const army of own) {

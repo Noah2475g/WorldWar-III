@@ -121,7 +121,7 @@ const STAND = 'gemessen nach dem Merge von Block N2 der M41-Nacharbeit (c3ff8be)
  */
 const ABSCHNITT = 'nachher'
 const ADJUTANT =
-  'D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe'
+  'D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken'
 const REPORT = `${ROOT}/docs/reports/stance.json`
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
 
@@ -635,7 +635,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
   const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & { episoden?: Record<string, unknown> }
   const episoden = {
     ...(bericht.episoden ?? {}),
-    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4)',
+    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), nachgemessen nach dem Merge von N2 und nach T-M40-14/15',
     seeds: [...SEEDS],
     days: DAYS,
     setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },

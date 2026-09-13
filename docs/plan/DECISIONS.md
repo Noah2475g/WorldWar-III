@@ -2478,3 +2478,24 @@ in `packages/ai/src/loop.test.ts`, die Tests zum Marsch in `adjutant.test.ts` un
 T-M40-14 in `App.test.tsx`.
 
 ---
+
+## 2026-09-13 · T-M40-15 · Ein Rückzug-Klick zählt für die Automatik als Ausrücken, und der Knopf bleibt ohne Gefecht wirksam (delegiert)
+
+**Entscheidung.** Die Automatik zählt einen Befehl `SET_STANCE` mit `retreat` im selben Tick wie einen Marschbefehl:
+Die Armee rückt aus, und eine Verteidigung derselben Provinz darf nur ausrücken, wenn danach noch eine weitere Armee
+stehen bleibt (`packages/ai/src/adjutant.ts`). Den Rückzug-Knopf binden wir nicht an ein Gefecht. Stattdessen sagt
+die Anleitung nicht mehr „nur im Gefecht". Entschieden vom Orchestrator nach Befund M-A der Durchsicht der Nacharbeit.
+
+**Begründung.** Szenario R2: In n3 standen eine Verteidigung und eine Garnison, und n2 war angegriffen. Der Spieler
+zog die Garnison zurück. `SET_STANCE` prüft kein Gefecht, und `phases/retreat.ts` lässt jede Armee auf Rückzug
+ausweichen. Im selben Tick schickte die Automatik die Verteidigung nach n2; nach 25 Ticks stand keine eigene Armee
+mehr in n3 (R-UNIT-09/AK1). Die Automatik muss sehen, was der Klick tut, nicht was der Knopf verspricht.
+
+**Warum der Knopf bleibt.** Einen Rückzug an ein Gefecht zu binden, wäre eine neue Regel des Kerns: eine Prüfung in
+`commands/handlers.ts`, dazu eine Oberfläche, die das Gefecht kennt, und eine Frage an den Golden-Master. Das gehört
+nicht in eine Nacharbeit der Automatik. Die Anleitung stimmte schon länger nicht.
+
+**kippbar:** Soll der Rückzug nur im Gefecht wirken, prüft `SET_STANCE` mit `retreat` in `commands/handlers.ts` ein
+Gefecht in der Provinz; danach `pnpm test` ohne `UPDATE_GOLDEN`. Die Zählung in `adjutant.ts` darf trotzdem bleiben.
+
+---
