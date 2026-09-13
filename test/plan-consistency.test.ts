@@ -1,4 +1,4 @@
-import { globSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -12,6 +12,35 @@ import {
   type PlanTask,
   type ProseFileSystem,
 } from './plan-paths'
+
+/**
+ * How many files under `cwd` match a repo-relative glob (`*`, `**`, `?`)?
+ *
+ * `globSync` from `node:fs` only exists from Node 22, while `package.json` allows Node 20 —
+ * the plan guard would fail there for a reason that has nothing to do with the plan.
+ */
+function countGlobMatches(pattern: string, cwd: string): number {
+  const segments = pattern.split('/')
+  const firstWild = segments.findIndex((s) => /[*?]/.test(s))
+  const base = segments.slice(0, firstWild).join('/')
+  const wild = segments.slice(firstWild)
+  const source = wild
+    .map((segment, index) => {
+      // A trailing `**` matches everything below, a `**` in between any number of folders.
+      if (segment === '**') return index === wild.length - 1 ? '.*' : '(?:[^/]+/)*'
+      const literal = segment.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')
+      return index === wild.length - 1 ? literal : `${literal}/`
+    })
+    .join('')
+  const matcher = new RegExp(`^${source}$`)
+  let entries: string[]
+  try {
+    entries = readdirSync(join(cwd, base), { recursive: true, encoding: 'utf8' })
+  } catch {
+    return 0
+  }
+  return entries.map((entry) => entry.replace(/\\/g, '/')).filter((entry) => matcher.test(entry)).length
+}
 
 /**
  * The plan guards itself (T-M0-05).
@@ -448,7 +477,7 @@ describe('R-ARCH-05 Auch 03-TASKS.md beschreibt Dateien, die es gibt', () => {
 
   const echt = missingProsePaths(readProsePaths(md), plan.tasks as PlanTask[], {
     exists: onDisk,
-    glob: (pattern) => globSync(pattern, { cwd: root }).length,
+    glob: (pattern) => countGlobMatches(pattern, root),
   })
 
   it('liest in 03-TASKS.md wirklich Pfade — mindestens einen je erledigter Aufgabe', () => {
