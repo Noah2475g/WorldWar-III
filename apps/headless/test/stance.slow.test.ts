@@ -100,9 +100,13 @@ const PROVINCE_DAYS_PERCENT = 98
 const VORHER = { intrusions: 52, provincesLost: 4 }
 /** Der KI-Stand, auf dem gemessen wurde (Block N2 aendert die Gegner, danach neu messen). */
 const STAND = 'gemessen vor Block N2 der M41-Nacharbeit (KI-Verhalten)'
-/** Welcher Abschnitt von `episoden` geschrieben wird: T-M40-07 misst den heutigen Adjutanten. */
-const ABSCHNITT = 'vorher'
-const ADJUTANT = 'M40 wie gebaut: Deckung angegriffener Nachbarprovinzen und Verfolgung (D30.4 bis 2026-09-13)'
+/**
+ * Welcher Abschnitt von `episoden` geschrieben wird. `vorher` hat T-M40-07 mit dem Adjutanten aus M40
+ * geschrieben und bleibt stehen; seit T-M40-12 misst der Lauf die Regel aus D30.4.
+ */
+const ABSCHNITT = 'nachher'
+const ADJUTANT =
+  'D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe'
 const REPORT = `${ROOT}/docs/reports/stance.json`
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
 

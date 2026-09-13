@@ -2505,3 +2505,49 @@ nicht gebaut, weil der Kern dafür `players[].kind` lesen müsste (D30.2 hält M
 — kippbar in `phases/retreat.ts`, danach `pnpm test` ohne `UPDATE_GOLDEN`.
 
 **Status:** Plantext korrigiert (T-M40-09 in `tasks.yaml` und `03-TASKS.md`); kein Produktfehler.
+
+---
+
+## 2026-09-13 · T-M40-12 · Die Regel, die nicht entblößt, hält den Messlauf — sie schadet nicht, und dass sie hilft, ist nicht belegt
+
+**Gemessen** (`apps/headless/test/stance.slow.test.ts`, `docs/reports/stance.json`, Abschnitt
+`episoden.nachher`; Weltkarte, 200 Spieltage, Deutschland ohne Befehl, Startzahlen 1914, 2015, 1815,
+Aufstellung A mit einer und B mit zwei Armeen aus je fünf Infanterie je Provinz; gemessen vor Block N2
+der M41-Nacharbeit). Provinz-Tage = Provinzen des Menschen zu Beginn jedes Spieltags, summiert.
+
+| Startzahl · Aufstellung | Garnison: Provinz-Tage / verloren (ohne Gefecht) | Verteidigung M40 (T-M40-07) | **Verteidigung D30.4 neu** | Befehle neu | Episoden neu (Deckung befohlen / rechtzeitig / gehalten) |
+|---|---|---|---|---|---|
+| 1914 · A | 573 / 4 (0) | 366 / 3 (2) | **573 / 4 (0)** | 0 | 45 (0 / 0 / 41) |
+| 1914 · B | 733 / 1 (0) | 636 / 2 (2) | **800 / 0 (0)** | 6 | 83 (6 / 1 / 83) |
+| 2015 · A | 532 / 3 (0) | 341 / 3 (3) | **532 / 3 (0)** | 0 | 37 (0 / 0 / 34) |
+| 2015 · B | 800 / 0 (0) | 800 / 0 (0) | **800 / 0 (0)** | 9 | 41 (9 / 1 / 41) |
+| 1815 · A | 702 / 1 (0) | 362 / 3 (2) | **702 / 1 (0)** | 0 | 27 (0 / 0 / 26) |
+| 1815 · B | 800 / 0 (0) | 796 / 1 (1) | **774 / 2 (0)** | 10 | 73 (10 / 1 / 71) |
+| **Summe** | **4140 / 9 (0)** | 3301 (79,7 %) / 12 (10) | **4181 (101,0 %) / 10 (0)** | 25 | 306 |
+
+**AK5, vor dieser Messung festgelegt, hält:** Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
+Verluste ohne Gefecht als mit Garnison (überall 0); 0 Ablehnungen, 0 Kriege ohne Erklärung, 0
+Pendelzüge. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
+Regel N im Entwurf der Nacharbeit. **Rücknahmekriterium nicht ausgelöst — die Regel bleibt.**
+
+**Was die Zahlen nicht sagen.**
+
+- **Mit einer Armee je Provinz tut die Regel nichts** (Aufstellung A gleich Garnison, 0 Befehle). Das ist
+  die Regel, nicht ein Fehler: allein marschiert eine Verteidigung nie.
+- **1815 B liegt unter der Garnison** (774 gegen 800, zwei Provinzen verloren — beide mit Gefecht). Die
+  Schwelle gilt für die Summe; so steht es in D30.9, und sie wurde nach der Messung des Entwurfs
+  festgelegt, nicht nach dieser.
+- **Deckung kommt fast nie rechtzeitig:** 3 von 25 Befehlen erreichten ihre Provinz vor Gefechtsende.
+  Die Gewinne in 1914 B (800 statt 733) kommen also kaum aus rechtzeitig gedeckten Gefechten —
+  vermutlich aus Armeen, die schon standen, als der nächste Angriff kam (abgeleitet, nicht einzeln
+  gezählt). Belegt ist „schadet nicht", nicht „hilft" — die spürbare Entlastung, die
+  Noah wollte, ist als offene Frage in `DECISIONS.md` (2026-09-13, T-M40-10).
+- **Neu messen nach Block N2:** die Gegner ändern sich; fällt dann eine Zusicherung, greift das
+  Rücknahmekriterium (D30.9), und die Verteidigung kämpft wie die Garnison.
+
+**Unverändert, belegt:** Turnier zeilengleich (`docs/reports/ai-tournament-run.md`, `git diff` leer);
+Vollpartie Startzahl 1914 Siegtag **582**, Sieger p6, 12 Kriegserklärungen, 1615 Eroberungen, 5236
+Schlachten — der Bericht bis auf `measuredAt` gleich dem eingecheckten, zurückgesetzt; Golden-Master
+über `pnpm test` ohne `UPDATE_GOLDEN`; `data/rules` unberührt.
+
+**Status:** AK5 belegt; Beobachtung „hilft nicht belegbar" offen bei Noah.

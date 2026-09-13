@@ -3037,7 +3037,11 @@ tasks:
   - id: T-M40-12
     milestone: M40
     title: Nachmessen und Abschluss der Nacharbeit
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): AK5 haelt - Provinz-Tage 4181 von 4140 (101,0 Prozent), 0 Verluste ohne
+    # Gefecht, 0 abgelehnt, 0 Kriege ohne Erklaerung; Ruecknahmekriterium nicht ausgeloest. Turnier
+    # zeilengleich, Vollpartie 1914 Tag 582. Gegenproben: Paritaet, Etappe, fremdes Ziel, allein
+    # stehende Armee - je Reparatur heraus, Tests fallen. 03-TASKS.md blieb ohne Vermerk.
     deps: [T-M40-11, T-M40-13, T-M41-16]
     requirements: [R-UNIT-09]
     design: [D-30]
