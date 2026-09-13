@@ -5745,3 +5745,28 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   die Befehle nachträglich zu verwerfen, sieht die Taktikstufe die aufgegangenen Armeen gar nicht — das
   nimmt auch Begründungen und Gedächtnis mit, und es ist ebenso bitgleich gemessen. Beschuss im Turnier:
   0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3, `PROBLEME.md`.)*
+
+### T-M41-09 · Die KI baut nicht in Provinzen, die sie nur erinnert
+- **Ziel:** ein Bauauftrag in eine Provinz, die längst ein Gegner hält, wird jeden Tag abgelehnt — und
+  weil die KI nur einen Bau je Denkschritt befiehlt, verdrängt er den echten Bau des Tages.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-08
+- **Dateien:** `packages/ai/src/economy.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — eine erinnerte eigene Stadt vorn in der Sicht:
+  gebaut wird nicht dort, und für ihren Bau wird nicht gehandelt. `apps/headless/test/ai-integration.slow.test.ts`
+  — kein `BUILD:NOT_OWNER` auf der Weltkarte, kein abgelehnter Bauauftrag öfter als dreimal, in beiden Läufen.
+- **Fertig wenn:** Wirtschaft, Handel und Aushebung nur sichtbare eigene Provinzen sehen (`stale`
+  ausgenommen); Militär, Diplomatie und Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert
+  mein" Rückeroberung, und das wäre eine eigene Verhaltensänderung. Einzeln gemessen: Vollpartie mit drei
+  Startzahlen, Turnier, Grundlauf, Integrationslauf. Vorher (Stand nach der Reparatur zu H1): 59
+  `BUILD:NOT_OWNER`, eine Provinz 50× (China, PAK-CENTRAL).
+  *(Beim Bau 2026-09-13, Abweichung von der Untersuchung: der erweiterte Paarungsschlüssel über **alle**
+  Befehle, den sie hier zusichern wollte, fällt nach H1 an `SET_CAPITAL:ON_COOLDOWN` — bis 29× dieselbe
+  Sperre. Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel geht an T-M41-11.)*
+  *(Gemessen 2026-09-13, vorher = Stand nach H1: `BUILD:NOT_OWNER` 59 → 0, Ablehnungen 136 → 75 (Rest
+  `SET_CAPITAL:ON_COOLDOWN`), Voreinstellung über 90 Tage bitgleich; Vollpartie 1914 Tag 430 → 975,
+  2015 640 → 583, 1815 571 → 583 — AK-1 überall entschieden; Turnier zeilengleich; Grundlauf 0,3623 →
+  0,3684. `PROBLEME.md`, T-M41-09.)*

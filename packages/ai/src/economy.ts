@@ -127,7 +127,15 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
    * muss dieselbe Reihenfolge ergeben (R-ARCH-01). `filter` ist stabil, also bleibt die
    * Reihenfolge innerhalb beider Gruppen die der Sicht.
    */
-  const eigene = context.view.provinces.filter((province) => province.owner === context.view.playerId)
+  //
+  // **Nur, was sie sieht** (T-M41-09). Eine Provinz ausser Sicht fuehrt die Sicht mit dem
+  // Besitzer, den die Macht zuletzt gesehen hat (`stale`) — auch dann noch als eigene, wenn ein
+  // Gegner sie laengst haelt. Die Erinnerung zeigt keine Gebaeude, also wollte die KI dort eine
+  // Kaserne: 213 abgelehnte Bauauftraege in 200 Spieltagen, eine Provinz 94-mal, und wegen des
+  // einen Baus je Denkschritt verdraengte jeder davon den echten Bau des Tages.
+  const eigene = context.view.provinces.filter(
+    (province) => province.owner === context.view.playerId && !province.stale,
+  )
   const own = [
     ...eigene.filter((province) => province.kind === 'city'),
     ...eigene.filter((province) => province.kind !== 'city'),
@@ -267,7 +275,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
    * bei gleicher Zahl bleibt die Reihenfolge der Sicht, damit dieselbe Lage denselben
    * Befehl ergibt (R-ARCH-01).
    */
-  const eigene = context.view.provinces.filter((province) => province.owner === playerId)
+  // Nur sichtbare eigene Provinzen (T-M41-09) — eine erinnerte fuehrt keine Gebaeude und fiele
+  // unten ohnehin heraus; der Filter sagt es, statt sich darauf zu verlassen.
+  const eigene = context.view.provinces.filter((province) => province.owner === playerId && !province.stale)
   const arten = (province: (typeof eigene)[number]): number =>
     Object.values(province.buildings ?? {}).filter((level) => (level ?? 0) > 0).length
   const nachVielseitigkeit = eigene
@@ -352,7 +362,10 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
  * Überschuss, um sich die Fabrik leisten zu können — genau das fehlte.
  */
 function missingForNextBuilding(context: AiContext): ResourceKey | null {
-  const own = context.view.provinces.filter((province) => province.owner === context.view.playerId)
+  // Nur sichtbare eigene Provinzen (T-M41-09): sonst tauscht die KI fuer einen Bau, den der Kern ablehnt.
+  const own = context.view.provinces.filter(
+    (province) => province.owner === context.view.playerId && !province.stale,
+  )
 
   for (const province of own) {
     if ((province.buildQueueLength ?? 0) > 0) continue

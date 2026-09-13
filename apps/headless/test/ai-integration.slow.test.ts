@@ -425,3 +425,36 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
+
+/**
+ * Die KI baut nicht, was ihr nicht mehr gehört (T-M41-09).
+ *
+ * Befund der Untersuchung zu T-M41-08: jedes `BUILD:NOT_OWNER` auf der Weltkarte zielte auf eine
+ * Provinz, die die Sicht nur noch aus der Erinnerung als eigene führte — eine davon 94× in 200
+ * Tagen. Die Absicht von T-M14-11 („derselbe unmögliche Befehl bis zum Partieende") trifft genau das,
+ * sein Wortlaut (Armee, Fehlercode) sah es nicht. Zugesichert wird hier der Bauauftrag; der
+ * erweiterte Schlüssel über **alle** Befehle wartet auf T-M41-11 — nach der Reparatur zu H1 wiederholt
+ * sich `SET_CAPITAL:ON_COOLDOWN` bis zu 29× mit derselben Sperre.
+ */
+describe('T-M41-09 Die KI baut nicht in Provinzen, die sie nur erinnert', () => {
+  /** Wie oft sich derselbe abgelehnte Bauauftrag wiederholt: (Macht, Fehlercode, Einzelheiten). */
+  const bauauftragHoechstens = (m: Messung): number => {
+    const zaehler = zaehle(
+      m.events.filter(
+        (event): event is Rejected =>
+          event.type === 'COMMAND_REJECTED' && event.command === 'BUILD' && m.ki.has(event.playerId),
+      ),
+      (event) => `${event.playerId}|${event.code}|${JSON.stringify(event.detail ?? {})}`,
+    )
+    return Math.max(0, ...Object.values(zaehler))
+  }
+
+  it('bekommt auf der Weltkarte kein BUILD:NOT_OWNER', () => {
+    expect(rejected(integration, 'NOT_OWNER', 'BUILD').length).toBe(0)
+  })
+
+  it('wiederholt keinen abgelehnten Bauauftrag oefter als dreimal, in beiden Laeufen', () => {
+    expect(bauauftragHoechstens(integration), 'Weltkarte, 200 Tage').toBeLessThanOrEqual(3)
+    expect(bauauftragHoechstens(voreinstellung), 'Voreinstellung, 90 Tage').toBeLessThanOrEqual(3)
+  })
+})

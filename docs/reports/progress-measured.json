@@ -30,18 +30,18 @@
     "maechte": 6,
     "tage": 120,
     "startzahlen": 12,
-    "anteilDesStaerksten": 0.3623,
-    "eroberungen": 314.5,
-    "ueberlebende": 5.67,
-    "endbestaende": 41961
+    "anteilDesStaerksten": 0.3684,
+    "eroberungen": 310.1,
+    "ueberlebende": 5.42,
+    "endbestaende": 45357
   },
   "risiko5": {
     "tage": 200,
     "stufe": 3,
     "hoechsteStufeJeMacht": [
       0,
-      0,
       1,
+      0,
       0,
       0,
       0

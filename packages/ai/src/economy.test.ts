@@ -208,6 +208,45 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     expect(provinz?.buildings?.factory).toBe(1)
   })
 
+  it('baut nicht in einer Provinz, die sie nur noch erinnert (T-M41-09)', () => {
+    // Befund der Untersuchung zu T-M41-08: alle 213 BUILD:NOT_OWNER auf der Weltkarte zielten
+    // auf Provinzen, die die Sicht als `stale` mit dem eigenen Besitzer von damals fuehrte;
+    // tatsaechlich gehoerten sie laengst einem Gegner. Die Erinnerung zeigt keine Gebaeude, also
+    // wollte die KI dort eine Kaserne — und weil nur ein Bau je Denkschritt entsteht, verdraengte
+    // der Geisterbau den echten Bau des Tages.
+    const context = richContext(tag31)
+    const stadt = context.view.provinces.find((province) => province.owner === 'p2' && province.kind === 'city')!
+    const erinnert = { ...stadt, id: 'erinnert', stale: true }
+    // Die Erinnerung fuehrt weder Gebaeude noch Bauschlange (publicView, `stale`).
+    delete erinnert.buildings
+    delete erinnert.buildQueueLength
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = [erinnert, ...context.view.provinces]
+
+    const ziele = bauten(context).map((command) => command.provinceId)
+
+    expect(ziele, 'die KI baut gar nichts mehr - der Test saehe den Filter nicht').not.toEqual([])
+    expect(ziele).not.toContain('erinnert')
+  })
+
+  it('handelt nicht fuer einen Bau in einer erinnerten Provinz (T-M41-09)', () => {
+    // Dieselbe Liste speist `missingForNextBuilding`: ohne Filter tauschte die KI Rohstoffe fuer
+    // einen Bauauftrag, den der Kern ablehnen wird.
+    const context = richContext(tag31)
+    // Jede sichtbare eigene Provinz ist fertig — wie im Haltetest unten.
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(context, 'fortress', 2)
+    const stadt = context.view.provinces.find((province) => province.owner === 'p2' && province.kind === 'city')!
+    const erinnert = { ...stadt, id: 'erinnert', stale: true }
+    // Die Erinnerung fuehrt weder Gebaeude noch Bauschlange (publicView, `stale`).
+    delete erinnert.buildings
+    delete erinnert.buildQueueLength
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = [erinnert, ...context.view.provinces]
+    ;(context.view.self.resources as Record<string, number>).wood = 1000
+    expect(context.view.self.shortages.length, 'die Lage soll gerade keinen Mangel zeigen').toBe(0)
+
+    expect(tradeCommands(context, [])).toEqual([])
+  })
+
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {
     // Gemessen an vier Varianten (DECISIONS.md, 2026-09-13, T-M41-01): die Kaserne Stufe 2
     // reisst R-AI-06 — schwer gegen normal im Frieden 1,00 statt 0,70 gegen die Obergrenze

@@ -2527,3 +2527,47 @@ Verlust. Gehört zu T-M41-11.
 
 **Status: behoben** (Nacharbeit zu T-M41-01). Plantext bei T-M41-01 in `03-TASKS.md` und `tasks.yaml`,
 Nachtrag in `DECISIONS.md` und `progress-baseline.md` §5.
+
+---
+
+## 2026-09-13 · T-M41-09 · Die KI baute in Provinzen, die sie nur erinnerte — und jeder Geisterbau kostete den echten Bau des Tages
+
+**Befund** (Nebenbefund e zu T-M41-08). Eine Provinz außer Sicht führt `publicView` mit dem Besitzer, den die
+Macht zuletzt gesehen hat (`stale: true`) — auch dann noch als eigene, wenn ein Gegner sie längst hält. Die
+Erinnerung zeigt keine Gebäude, also wollte die KI dort eine Kaserne, und der Kern lehnte mit `NOT_OWNER`
+ab, jeden Tag neu. Weil `economyCommands` nur einen Bau je Denkschritt befiehlt, verdrängte der Geisterbau
+den echten; `missingForNextBuilding` handelte obendrein dafür. Stand nach der Reparatur zu H1: **59
+`BUILD:NOT_OWNER`** in 200 Tagen, eine Provinz **50×** (China, PAK-CENTRAL).
+
+**Reparatur.** Wirtschaft, Handel und Aushebung sehen nur sichtbare eigene Provinzen. Militär, Diplomatie und
+Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert mein" Rückeroberung, und das wäre eine eigene
+Verhaltensänderung. Tests zuerst: `economy.test.ts` rot 2 von 13 („expected [ 'erinnert' ] to not include
+'erinnert'", ein `TRADE` für den erinnerten Bau), `ai-integration.slow.test.ts` rot 2 von 19 („expected 59 to
+be +0", „Weltkarte, 200 Tage: expected 50 to be less than or equal to 3").
+
+**Abweichung von der Untersuchung.** Sie wollte hier den erweiterten Paarungsschlüssel (Macht, Befehl,
+Fehlercode, Einzelheiten) über **alle** Befehle zusichern. Das trägt nach H1 nicht: `SET_CAPITAL:ON_COOLDOWN`
+wiederholt dieselbe Sperre bis zu 29× (Italien). Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel
+geht an T-M41-11.
+
+**Vorher → nachher** (vorher = Stand nach H1):
+
+| Größe | vorher (Stand nach H1) | nachher |
+|---|---|---|
+| `BUILD:NOT_OWNER`, Weltkarte 200 Tage | 59 | **0** |
+| derselbe abgelehnte Bauauftrag, höchstens | 50 (China, PAK-CENTRAL) | 0 |
+| Ablehnungen gesamt | 136 (0,82 %) | 75 (0,45 %) — 72 `SET_CAPITAL:ON_COOLDOWN`, 3 `RECRUIT` |
+| begonnene Fabriken / Artillerie / selbsttätiger Beschuss | 76 / 69 / 303 | 71 / 63 / 231 |
+| Voreinstellung 90 Tage, Prüfsumme ohne Protokoll und KI | `41acc8a544184d8b` | **bitgleich** |
+| Vollpartie 1914: Siegtag, Sieger | 430, p6 | **975**, p7 (China) |
+| Vollpartie 2015: Siegtag, Sieger | 640, p7 | **583**, p6 |
+| Vollpartie 1815: Siegtag, Sieger | 571, p6 | **583**, p6 |
+| Turnier | — | zeilengleich |
+| Grundlauf (`progress.slow`) | Anteil des Stärksten 0,3623 | 0,3684; Eroberungen 314,5 → 310,1, Überlebende 5,67 → 5,42 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500. Mit Startzahl 1914
+endet die Partie jetzt mehr als doppelt so spät — China gewinnt mit Fabrikstufe 3 in 61 Provinzen, 2589
+Eroberungen statt 1022. Der Siegtag springt wie schon bei H1 je Änderung in beide Richtungen; die
+Voreinstellung bleibt über 90 Tage bitgleich, weil erinnerte Bauten dort nicht vorkommen.
+
+**Status: behoben** (T-M41-09).

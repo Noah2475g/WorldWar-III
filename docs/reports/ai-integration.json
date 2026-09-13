@@ -2,40 +2,40 @@
   "gemessenAm": "2026-09-13",
   "spieltage": 200,
   "maechte": 8,
-  "ereignisse": 30066,
+  "ereignisse": 30056,
   "kriegserklaerungen": 15,
   "friedensschluesse": 7,
   "friedenZwischenKi": 7,
-  "handel": 4638,
+  "handel": 4637,
   "handelJeMacht": {
     "Vereinigte Staaten": 568,
     "Russland": 588,
     "China": 593,
     "Indien": 568,
     "Deutschland": 583,
-    "Frankreich": 588,
+    "Frankreich": 587,
     "Vereinigtes Königreich": 572,
     "Italien": 578
   },
-  "fabriken": 76,
-  "artillerie": 69,
-  "beschussSelbsttaetig": 303,
-  "befehle": 16668,
-  "abgelehnt": 136,
-  "ablehnungsquoteProzent": 0.82,
+  "fabriken": 71,
+  "artillerie": 63,
+  "beschussSelbsttaetig": 231,
+  "befehle": 16722,
+  "abgelehnt": 75,
+  "ablehnungsquoteProzent": 0.45,
   "abgelehntZuFrueh": 0,
-  "marschbefehle": 6519,
+  "marschbefehle": 6589,
   "noPath": 0,
   "noPathAnteilProzent": 0,
   "paarungArmeeFehlercodeHoechstens": 0,
-  "paarungErweitertHoechstens": 50,
-  "paarungenErweitertUeberDrei": 6,
+  "paarungErweitertHoechstens": 29,
+  "paarungenErweitertUeberDrei": 3,
   "paarungenErweitertHaeufigste": {
-    "China|BUILD|NOT_OWNER|{\"provinceId\":\"PAK-CENTRAL\"}": 50,
     "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3607}": 29,
     "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":4327}": 28,
     "Indien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3915}": 15,
-    "Italien|BUILD|NOT_OWNER|{\"provinceId\":\"HUN\"}": 5
+    "China|RECRUIT|INSUFFICIENT_RESOURCES|{\"unitKey\":\"infantry\"}": 2,
+    "China|RECRUIT|INSUFFICIENT_RESOURCES|{\"unitKey\":\"artillery\"}": 1
   },
   "friedensannahmen": 7,
   "diplomatieAbgelehnt": 0,
@@ -66,12 +66,12 @@
     "hoechstens": 80,
     "tageUeberDrei": 197,
     "stehendHoechstens": 12,
-    "stehendTageUeberDrei": 14
+    "stehendTageUeberDrei": 12
   },
   "armeenMitReichweiteJeMacht": {
     "Vereinigte Staaten": 0,
     "Russland": 0,
-    "China": 51,
+    "China": 47,
     "Indien": 0,
     "Deutschland": 0,
     "Frankreich": 0,
@@ -97,21 +97,20 @@
     "hard": {
       "maechte": 2,
       "kriegserklaerungen": 8,
-      "artillerie": 69,
-      "beschussSelbsttaetig": 303,
-      "handel": 1181
+      "artillerie": 63,
+      "beschussSelbsttaetig": 231,
+      "handel": 1180
     }
   },
   "rekrutiert": {
-    "infantry": 3153,
-    "artillery": 69
+    "infantry": 3183,
+    "artillery": 63
   },
   "ablehnungen": {
-    "RECRUIT:INSUFFICIENT_RESOURCES": 5,
-    "BUILD:NOT_OWNER": 59,
+    "RECRUIT:INSUFFICIENT_RESOURCES": 3,
     "SET_CAPITAL:ON_COOLDOWN": 72
   },
-  "zustandOhneKi": "000fc5bd8129d753",
+  "zustandOhneKi": "e7b0627bff9f7b39",
   "voreinstellung90": {
     "startzahl": 1914,
     "spieltage": 90,
