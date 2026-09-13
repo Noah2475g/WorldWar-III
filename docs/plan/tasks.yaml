@@ -3005,7 +3005,13 @@ tasks:
   - id: T-M40-10
     milestone: M40
     title: Die Regel, die nicht entbloesst
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): rot 7 von 46 (allein stehende Armee, nie beide aus einer Provinz,
+    # vorbeugend, keine Sicht fuer allein stehende Verteidigung, Angriff marschiert nie, fremdes
+    # Ziel, retreating in der Sicht). Zwoelf Episodenlaeufe mit der Regel gruen, Zahl fuer Zahl wie
+    # Regel N im Entwurf: Provinz-Tage 4181 von 4140 (101 Prozent), 0 Verluste ohne Gefecht, 0
+    # abgelehnt, 0 Kriege ohne Erklaerung; das it.fails aus T-M40-07 ist ein it. Die Lagen der
+    # Einzeltests stellen der Verteidigung eine Garnison daneben. Bericht schreibt T-M40-12.
     deps: [T-M40-09]
     requirements: [R-UNIT-09]
     design: [D-30]

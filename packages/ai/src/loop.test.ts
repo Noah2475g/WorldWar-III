@@ -261,6 +261,9 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
     for (const id of state.provinceOrder) {
       if (state.provinces[id]!.owner !== mensch) continue
       placeArmy(state, { owner: mensch, at: id, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+      // Eine Garnison daneben: seit T-M40-10 rueckt eine Verteidigung nur aus, wenn in ihrer Provinz
+      // eine Armee stehen bleibt.
+      placeArmy(state, { owner: mensch, at: id, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'garrison' })
     }
     const angreifer = placeArmy(state, {
       owner: state.playerOrder[1]!,

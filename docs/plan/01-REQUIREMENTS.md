@@ -1146,29 +1146,46 @@ Armeen weiter selbst (R-AI-01).
     nicht vor Spieltag 20 und der letzte nicht nach dem Siegtag liegen — gezählt aus dem
     Spielstand und dem Ereignisstrom, nicht aus dem Protokollpuffer.
 - **R-UNIT-09 — Die Haltung führt sich selbst aus.** Die Haltung einer Armee eines
-  menschlichen Spielers ist ein Auftrag: „Verteidigung" deckt eine angegriffene eigene
-  Nachbarprovinz, „Angriff" verfolgt einen weichenden Gegner, „Garnison" bleibt stehen.
-  Die Automatik gibt dieselben Befehle, die der Spieler per Klick geben könnte.
-  - AK1: WENN eine stehende, nicht kämpfende Armee eines menschlichen Spielers in Haltung
-    Verteidigung ohne laufende Angriffssperre in einer feindfreien eigenen Provinz steht und in
-    einer über Land angrenzenden eigenen Provinz eine sichtbare Armee eines Kriegsgegners
-    steht, zu der keine eigene Armee unterwegs ist, DANN SOLL sie dorthin marschieren —
-    höchstens eine Armee je Provinz, die mit der frühesten Ankunft, bei Gleichstand die
-    kleinste Kennung.
-  - AK2: WENN eine stehende Armee in Haltung Angriff neben einer sichtbaren feindlichen Armee
-    steht, die eben zurückgewichen ist und höchstens die eigene Stärke hat, DANN SOLL sie ihr
-    folgen; einem Gegner außer Sicht oder einem stärkeren SOLL sie nicht folgen.
+  menschlichen Spielers ist ein Auftrag: „Verteidigung" rückt in eine bedrohte eigene
+  Nachbarprovinz nach, ohne ihre eigene Provinz zu entblößen, „Angriff" kämpft mit
+  Angriffswerten und marschiert nicht von selbst, „Garnison" bleibt stehen. Die Automatik
+  gibt dieselben Befehle, die der Spieler per Klick geben könnte.
+  *(Neu gefasst am 2026-09-13, T-M40-10, nach der Durchsicht von M40 und einer Messung über drei
+  Startzahlen und zwei Aufstellungen: die Deckung, wie M40 sie baute, hielt 79,7 % der
+  Provinz-Tage der Garnison und verlor zehn Provinzen ohne Gefecht, die sie selbst geleert hatte;
+  die Verfolgung schadete in jedem Lauf mit Anlass. Verteidigung rückt seitdem nur nach, ohne zu
+  entblößen, und Angriff marschiert nie von selbst — AK1, AK2, AK4 bis AK7 sind ersetzt oder
+  erweitert, die erste Fassung und die Messung stehen in D30.9.)*
+  - AK1: WENN eine stehende Armee eines menschlichen Spielers in Haltung Verteidigung, die in den
+    letzten fünf Spieltagen weder marschiert noch zurückgewichen ist, in einer feindfreien eigenen
+    Provinz steht, in der eine weitere eigene Armee stehen bleibt, und eine über Land angrenzende
+    eigene Provinz eine sichtbare Armee eines Kriegsgegners enthält oder leer an eine solche
+    grenzt, und keine eigene Armee dorthin unterwegs oder im selben Tick befohlen ist, DANN SOLL
+    sie in einer Etappe dorthin marschieren — höchstens eine Armee je Provinz, die mit der
+    frühesten Ankunft, bei Gleichstand die kleinste Kennung. Eine Armee, die allein in ihrer
+    Provinz steht, SOLL nie von selbst marschieren.
+  - AK2: WENN eine Armee in Haltung Angriff steht, DANN SOLL sie mit Angriffswerten kämpfen und
+    nie von selbst marschieren.
   - AK3: WENN eine Armee in Haltung Garnison steht, DANN SOLL sie wie in Haltung Verteidigung
     kämpfen und nie von selbst marschieren; WENN eine unbekannte Haltung befohlen wird, DANN
     SOLL der Kern den Befehl ablehnen.
   - AK4: WENN eine Partie gespeichert, geladen und fortgesetzt wird, DANN SOLL die Automatik
-    dieselben Befehle erzeugen wie ohne Unterbrechung; sie SOLL nur aus der Sicht des
-    Besitzers entscheiden (R-DIP-04) und für Armeen von KI-Mächten keinen Befehl erzeugen.
-  - AK5: WENN derselbe Messlauf über 200 Spieltage ohne und mit Automatik gefahren wird, DANN
-    SOLL der Anteil beantworteter Einmärsche mit Automatik größer sein, und kein Befehl der
-    Automatik SOLL abgelehnt worden sein — gezählt aus dem Ereignisstrom.
+    dieselben Befehle erzeugen wie ohne Unterbrechung, und über das Vorspulen dieselben wie über
+    die Uhr; sie SOLL nur aus der Sicht des Besitzers entscheiden (R-DIP-04) und für Armeen von
+    KI-Mächten keinen Befehl erzeugen.
+  - AK5: WENN derselbe Messlauf über 200 Spieltage mit Haltung Garnison und mit Haltung
+    Verteidigung über die Startzahlen 1914, 2015 und 1815 und je zwei Aufstellungen gefahren
+    wird, DANN SOLL die Summe der Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
+    erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen ohne Gefecht verloren gehen
+    als mit Garnison, und kein Befehl der Automatik SOLL abgelehnt worden sein oder einen Krieg
+    ohne Erklärung ausgelöst haben — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht,
+    wird die Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
   - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
-    und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt.
+    und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt; WENN er
+    eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.
+  - AK7: WENN die Automatik einen Marsch befiehlt, DANN SOLL das Ziel eine eigene Provinz sein
+    und die Route aus genau einer Landetappe bestehen; eine Armee SOLL binnen fünf Spieltagen
+    nach einem Marsch oder Rückzug nicht von selbst marschieren.
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

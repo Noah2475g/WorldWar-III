@@ -42,48 +42,24 @@ const ownProvince = (player: string): string =>
   state.provinceOrder.find((id) => state.provinces[id]!.owner === player)!
 
 /**
- * Ein Rueckzug geschieht vor den Augen des Gegners (T-M40-04, D30.4, R-DIP-04).
+ * Die Sicht verraet keine Rueckzugssperre fremder Armeen (T-M40-10, Befund M2 der Durchsicht von M40).
  *
- * „Angriff verfolgt den weichenden Gegner" braucht die Auskunft, wer eben zurueckgewichen
- * ist — und bis T-M40-04 trug eine fremde Armee in der Sicht nur Kennung, Besitzer, Provinz
- * und Staerke. Das neue Feld ist nur Sicht: kein Zustandsfeld, kein Hash, keine Migration.
- * Es steht nur bei SICHTBAREN fremden Armeen; was der Nebel verbirgt, erscheint gar nicht.
+ * T-M40-04 gab jeder sichtbaren fremden Armee `retreating`, damit „Angriff" einem weichenden Gegner
+ * folgen konnte. Die Verfolgung ist mit T-M40-10 entfallen — sie schadete in jedem gemessenen Lauf
+ * mit Anlass (D30.9) —, und das Feld war Wissen ohne sichtbare Quelle: der Kern meldet einen Rueckzug
+ * nur dem, der weicht (`ARMY_RETREATED` mit `audience` des Besitzers), und die Oberflaeche zeigte es
+ * nie. Ohne Leser fuehrt die Sicht es nicht mehr.
  */
-describe('R-UNIT-09/AK2 Die Sicht zeigt, wer eben zurueckgewichen ist', () => {
-  const infanterie = [{ unitKey: 'infantry', hpTotal: 5_000 }]
-
-  it('traegt bei einer sichtbaren fremden Armee, ob ihre Angriffssperre laeuft', () => {
+describe('R-DIP-04 Die Sicht verraet keine Rueckzugssperre fremder Armeen', () => {
+  it('fuehrt bei einer sichtbaren fremden Armee unter Angriffssperre kein Feld retreating', () => {
     state.tick = 100
     // m1 grenzt an n2, das Nordland gehoert — sichtbar.
-    const weicht = placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie })
+    const weicht = placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
     weicht.cannotAttackUntil = 110
-    const steht = placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie })
-    // Ab genau diesem Tick darf sie wieder angreifen (`combat.ts`: tick >= cannotAttackUntil).
-    steht.cannotAttackUntil = 100
 
     const view = publicView(state, 'p1')
-    expect(view.armies.find((army) => army.id === weicht.id)?.retreating).toBe(true)
-    expect(view.armies.find((army) => army.id === steht.id)?.retreating).toBe(false)
-  })
-
-  it('fuehrt das Feld fuer eine Armee ausser Sicht nicht — sie steht gar nicht in der Sicht', () => {
-    state.tick = 100
-    // o2 grenzt an keine Provinz Nordlands.
-    const fern = placeArmy(state, { owner: 'p2', at: 'o2', units: infanterie })
-    fern.cannotAttackUntil = 110
-
-    const view = publicView(state, 'p1')
-    expect(view.armies.some((army) => army.id === fern.id)).toBe(false)
+    expect(view.armies.some((army) => army.id === weicht.id), 'die Armee ist nicht sichtbar - der Test misst nichts').toBe(true)
     expect(JSON.stringify(view)).not.toContain('retreating')
-  })
-
-  it('fuehrt es bei eigenen Armeen nicht — die liest der Adjutant aus dem Zustand', () => {
-    state.tick = 100
-    const eigen = placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie })
-    eigen.cannotAttackUntil = 110
-
-    const view = publicView(state, 'p1')
-    expect(view.armies.find((army) => army.id === eigen.id)).not.toHaveProperty('retreating')
   })
 })
 

@@ -2201,4 +2201,81 @@ messen — in `packages/ai/src/adjutant.ts` die Summe `enemyStrength` durch die 
 Armee ersetzen; der Test „misst an allem, was dort sichtbar steht" kehrt sich um. (3) je Regel eine
 eigene `heading`-Menge. (4) das Raster `.stances` in `apps/desktop/src/ui/app.css`.
 
+*(Vermerk 2026-09-13, T-M40-07/T-M40-10: Festlegung (1) trägt die Abnahme nicht mehr — gezählt wird je
+umkämpfter Episode; (2) und (3) sind mit der Verfolgung entfallen. Siehe die zwei Einträge unten.)*
+
+---
+
+## 2026-09-13 · T-M40-10 · Die Verteidigung rückt nur nach, wenn eine Armee stehen bleibt — und der Angriff marschiert nie von selbst (delegiert)
+
+**Entscheidung.** D30.4 wird ersetzt, nicht verstärkt. Eine Armee auf Verteidigung rückt nur in eine
+bedrohte eigene Nachbarprovinz nach, wenn in ihrer Provinz eine weitere eigene Armee stehen bleibt;
+allein marschiert sie nie. Die Verfolgung aus Haltung Angriff entfällt, mit ihr `VisibleArmy.retreating`.
+Nach einem Marsch oder Rückzug ruht jede Armee fünf Spieltage (T-M40-09). Die Schwelle der Abnahme —
+Provinz-Tage mit Verteidigung mindestens 98 % der Garnison, summiert über sechs Paare — wurde **nach**
+der Messung des Entwurfs festgelegt.
+
+**Die Daten** (Entwurf der Nacharbeit; Weltkarte, 200 Spieltage, Deutschland ohne Befehl, Startzahlen
+1914, 2015 und 1815, Aufstellung A mit einer und B mit zwei Armeen je Provinz; die Zeilen Garnison und
+M40 in T-M40-07 Zahl für Zahl nachgemessen):
+
+| Regel | Provinz-Tage (Summe) | gegen Garnison | Verluste ohne Gefecht |
+|---|---|---|---|
+| Garnison | 4140 | 100 % | 0 |
+| Deckung, wie M40 sie baute | 3301 | 79,7 % | 10 |
+| c1: Deckung nur, wenn die Quelle unbedroht oder gedeckt bleibt | 3790 | 92 % | 9 |
+| **N: nur, wenn in der Quelle eine Armee stehen bleibt** | **4181** | **101 %** | **0** |
+
+Vorbeugend in leere bedrohte Provinzen (a) und Rückeroberung (b), je mit „Quelle unbedroht": in
+Aufstellung A 1914 alle Provinzen verloren — bei 73 bis 80 % „beantworteter" Einmärsche. Verfolgung
+(Aufstellung C, je Provinz eine Verteidigung und ein Angriff, mit N und Schutz vor fremdem Boden): am Ende
+13 Armeen gegen 24 ohne Automatik, 1914 vier Armeen binnen zehn Tagen nach einem Befehl vernichtet.
+
+**Begründung.** Gefechte auf der Weltkarte dauern im Median ein bis drei Ticks, eine Binnenetappe 25 bis
+113: wer auf ein Gefecht reagiert, kommt zu spät, und wer dafür seine Provinz räumt, verliert sie. N ist
+die einzige gemessene Regel ohne Schaden — sie „schadet nicht", sie „hilft" nicht belegbar. Die Schwelle
+steht bei 98 % statt 100 %, weil N in einem Einzellauf (1815 B) drei Prozent unter der Garnison lag; eine
+strengere Schwelle kippte die Regel an einer schwachen Startzahl. Die Verfolgung schadete in jedem Lauf,
+in dem sie einen Anlass hatte.
+
+**Gegenrede.** Mit einer Armee je Provinz tut N nie etwas. Sie ist ehrlich, aber Noahs Satz „Angriff und
+Verteidigung führen sich selbst aus" löst sie nicht spürbar ein — dazu die offene Frage unten.
+
+**Rücknahmekriterium.** Die Regel bleibt nur, solange der Episoden-Messlauf (`stance.slow.test.ts`,
+R-UNIT-09/AK5) hält: Provinz-Tage mindestens 98 %, je Paar keine zusätzlichen Verluste ohne Gefecht,
+keine Ablehnung, kein Krieg ohne Erklärung. Fällt eine Zusicherung — etwa weil M17 die KI verändert —,
+wird die Regel **zurückgenommen, nicht nachgeschärft**: `adjutantCommands` gibt für `defensive` nichts
+mehr zurück, die Verteidigung kämpft wie die Garnison, und die Hinweise sagen das.
+
+**kippbar:** die Bedingung „eine weitere Armee bleibt" in `packages/ai/src/adjutant.ts` (danach den
+Messlauf fahren); die Verfolgung aus der Geschichte von `adjutant.ts` samt `retreating` in
+`packages/core/src/view/publicView.ts`; die Ruhe `ADJUTANT_REST_TICKS`.
+
+---
+
+## 2026-09-13 · T-M40-10 · Offene Frage an Noah: Aufträge statt einer Automatik, die auf die Nachbarprovinz schaut (nicht entschieden, nicht gebaut)
+
+**Die Frage.** Noahs Wunsch „Angriff und Verteidigung führen sich selbst aus" ist mit einer Automatik,
+die auf die Nachbarprovinz schaut, auf der Weltkarte **nicht spürbar** einzulösen — gemessen, nicht
+vermutet: ein Gefecht ist etwa zehnmal kürzer als ein Marsch, und jede reagierende Regel kam zu spät oder
+entblößte (Tabelle im Eintrag darüber). Was gebaut ist, ist ehrlich und schadet nicht, entlastet aber
+kaum.
+
+**Was spürbar entlasten würde** — beides eine neue Entscheidung:
+
+1. **Ausdrückliche Aufträge** des Spielers: „halte Provinz X mit N Armeen, fülle nach", oder ein
+   Sammelbefehl („alle Armeen dieser Gegend nach X"). Der Spieler sagt einmal, was er will, und die
+   Automatik führt es über viele Stunden aus, statt aus der Nachbarschaft zu raten.
+2. **Rückeroberung** einer verlorenen Heimatprovinz mit höchstens gleich starkem Gegner. Die Datenquelle
+   ist ohne neues Zustandsfeld vorhanden — die Heimat aus `map.startPositions` und `player.nation`,
+   „kürzlich verloren" aus dem öffentlichen `occupiedSince`. Unter N gemessen: ein Anlass in drei
+   Partien, kein belegter Nutzen.
+
+**Was es kostet.** (1) braucht einen Auftrag im Zustand — Schemastufe, Migration, eine Oberfläche zum
+Setzen und Aufheben — und einen eigenen Messlauf; (2) nur Code in `packages/ai`, aber eine Messung, die
+einen Nutzen zeigt, bevor gebaut wird. Beides gehört in einen eigenen Meilenstein, nicht in die
+Nacharbeit von M40.
+
+**Status:** offen — wartet auf Noah.
+
 ---

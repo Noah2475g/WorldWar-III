@@ -1,5 +1,4 @@
 import {
-  armyHp,
   needsTransport,
   planRoute,
   publicView,
@@ -13,7 +12,6 @@ import {
   type ProvinceId,
   type PublicView,
   type Rules,
-  type Stance,
   type VisibleArmy,
 } from '@worldwar/core'
 
@@ -41,12 +39,22 @@ import {
  * `publicView` (R-DIP-04). Own armies are read from the state — own knowledge, and the
  * view does not carry the attack cooldown.
  *
+ * **The rule is the one that does not strip a province (T-M40-10, D30.4).** The first version
+ * covered an attacked neighbour from any province and pursued retreating enemies. Measured on
+ * the world map over three seeds and two set-ups it held 79.7 % of the province-days a garrison
+ * held and lost ten provinces without a battle — provinces it had emptied itself: battles there
+ * last one to three ticks, a march 25 to 113, so cover arrives after the fight and the province
+ * it left falls. The pursuit did harm in every run that gave it a chance. What is left: a
+ * defending army moves only when another own army stays behind in its province, and an army on
+ * `aggressive` never marches by itself. Measured without harm (D30.9); whether it helps is not
+ * shown — and if the measurement ever fails, the rule is withdrawn, not tightened.
+ *
  * A command the core accepts can still do harm, and the M40 review found two (T-M40-09):
  * a march into the province of a power at peace is a surprise attack — war without
  * declaration, reputation, grievance — even in passing, because `MOVE_ARMY` does not check
  * ownership and `planRoute` takes the cheapest way whoever owns it (finding K2); and an army
  * that had just retreated was sent back into the same battle the hour its cooldown ended
- * (finding H1). Hence: one land stage into own or enemy land, and a rest after every march.
+ * (finding H1). Hence: one land stage into own land, and a rest after every march.
  */
 
 export interface AdjutantOptions {
@@ -70,9 +78,6 @@ interface AdjutantContext {
   map: MapData
   rules: Rules
 }
-
-/** Stances that act on their own (D30.4). `garrison` is the opt-out, `retreat` a one-off order. */
-const AUTOMATIC_STANCES: ReadonlySet<Stance> = new Set<Stance>(['defensive', 'aggressive'])
 
 /**
  * How long an army does nothing on its own after a march or a retreat: five game days
@@ -120,18 +125,24 @@ function armiesNamedIn(commands: readonly Command[]): Set<ArmyId> {
   return ids
 }
 
-/** Standing, landed, free to attack, rested, with land units, and not commanded this tick. */
+/**
+ * Standing, landed and with land units: an army that holds its province.
+ *
+ * A pure air or naval formation does not hold a province — `occupation` counts land forces — and
+ * MOVE_ARMY refuses aircraft outside an airfield (R-UNIT-08).
+ */
+function holdsGround(army: Army, rules: Rules): boolean {
+  return army.path.length === 0 && !army.embarked && army.units.length > 0 && needsTransport(army, rules)
+}
+
+/** Holds its ground, defends, free to attack, rested, and not commanded this tick. */
 function canActOnItsOwn(state: GameState, army: Army, rules: Rules, held: ReadonlySet<ArmyId>): boolean {
   return (
-    army.path.length === 0 &&
-    !army.embarked &&
+    army.stance === 'defensive' &&
+    holdsGround(army, rules) &&
     state.tick >= army.cannotAttackUntil &&
     // Rested (T-M40-09, finding H1): not within five game days of its last march or retreat.
     state.tick >= army.deployDelayUntil + ADJUTANT_REST_TICKS &&
-    army.units.length > 0 &&
-    // A pure air or naval formation does not cover a province by marching there, and
-    // MOVE_ARMY refuses aircraft outside an airfield (R-UNIT-08) — no refused orders.
-    needsTransport(army, rules) &&
     !held.has(army.id)
   )
 }
@@ -159,11 +170,25 @@ function ordersFor(
     const army = state.armies[id]
     if (army && army.owner === playerId) own.push(army)
   }
-  const ready = own.filter((army) => AUTOMATIC_STANCES.has(army.stance) && canActOnItsOwn(state, army, ctx.rules, held))
-
-  // A view per tick per human is not cheap (T-M16-02). Without a war or without an army
-  // that acts on its own there is nothing to decide, so none is built (D30.3).
+  const ready = own.filter((army) => canActOnItsOwn(state, army, ctx.rules, held))
   if (ready.length === 0 || !atWarWithAnyone(state, playerId)) return []
+
+  // How many own armies stay put in each province this tick — an army ordered to march by the
+  // player this tick does not. A defender may leave only while at least one other stays (D30.4).
+  const leaving = new Set<ArmyId>()
+  for (const command of given) {
+    if (command.type === 'MOVE_ARMY' && command.playerId === playerId) leaving.add(command.armyId)
+  }
+  const staying = new Map<ProvinceId, number>()
+  for (const army of own) {
+    if (!holdsGround(army, ctx.rules) || leaving.has(army.id)) continue
+    staying.set(army.locationProvinceId, (staying.get(army.locationProvinceId) ?? 0) + 1)
+  }
+  const mayLeave = (army: Army): boolean => (staying.get(army.locationProvinceId) ?? 0) >= 2
+
+  // A view per tick per human is not cheap (T-M16-02). Without a war, without a defender that
+  // may act, or when every such defender stands alone, there is nothing to decide (D30.3).
+  if (!ready.some(mayLeave)) return []
 
   const view = tick.viewOf(state, playerId)
   const provinces = new Map(view.provinces.map((province) => [province.id, province]))
@@ -186,65 +211,41 @@ function ordersFor(
   }
 
   const isOwn = (provinceId: ProvinceId): boolean => provinces.get(provinceId)?.owner === playerId
-  // Own land or a war enemy's (finding K2). Neutral land is out too: taking it is the player's
-  // decision, and marching into a power at peace starts a war without declaration.
-  const mayEnter = (provinceId: ProvinceId): boolean => {
-    const owner = provinces.get(provinceId)?.owner
-    if (owner === undefined || owner === null) return false
-    return owner === playerId || view.relations[owner]?.state === 'war'
-  }
   // Over land only: `neighbors`, not `seaLinks` (D30.4).
   const bordersOnLand = (from: ProvinceId, to: ProvinceId): boolean => provinces.get(from)?.neighbors.includes(to) ?? false
   const eligible = ready.filter((army) => isOwn(army.locationProvinceId) && !hostile.has(army.locationProvinceId))
 
-  const commands: Command[] = []
-  const taken = new Set<ArmyId>()
-
-  // Defence covers (R-UNIT-09/AK1): an own province with a visible enemy in it, towards
-  // which no own army is marching, gets at most one army from a bordering own province.
+  // The targets, all of them own provinces (R-UNIT-09/AK1, AK7): first those with a visible enemy
+  // in them, then those with no own army that border a province with a visible enemy — before the
+  // enemy walks in, because `occupation` hands an empty province over in the tick of the entry.
+  const occupied = new Set(own.map((army) => army.locationProvinceId))
+  const attacked: ProvinceId[] = []
+  const exposed: ProvinceId[] = []
   for (const province of view.provinces) {
-    if (province.owner !== playerId || !hostile.has(province.id) || heading.has(province.id)) continue
-    const army = earliestArrival(
-      state,
-      ctx,
-      province.id,
-      eligible.filter(
-        (candidate) =>
-          candidate.stance === 'defensive' && !taken.has(candidate.id) && bordersOnLand(candidate.locationProvinceId, province.id),
-      ),
-    )
-    if (!army) continue
-    taken.add(army.id)
-    heading.add(province.id)
-    commands.push({ type: 'MOVE_ARMY', playerId, armyId: army.id, targetProvinceId: province.id })
+    if (province.owner !== playerId) continue
+    if (hostile.has(province.id)) attacked.push(province.id)
+    else if (!occupied.has(province.id) && province.neighbors.some((neighbour) => hostile.has(neighbour))) {
+      exposed.push(province.id)
+    }
   }
 
-  // Attack pursues (R-UNIT-09/AK2): a province bordering on land with a visible enemy that
-  // has just fallen back — its attack cooldown is running, which the view shows since
-  // T-M40-04 — gets at most one pursuer that is at least as strong. Measured against
-  // everything hostile visible there, not the retreating army alone: that is what she will
-  // fight on arrival. Only into own or enemy land (finding K2): a retreat into an ally's
-  // province of the enemy is not an invitation to attack the ally.
-  for (const province of view.provinces) {
-    const there = hostile.get(province.id)
-    if (!there || !mayEnter(province.id) || !there.some((army) => army.retreating === true) || heading.has(province.id)) continue
-    const enemyStrength = there.reduce((sum, army) => sum + army.strength, 0)
+  const commands: Command[] = []
+  const taken = new Set<ArmyId>()
+  for (const target of [...attacked, ...exposed]) {
+    if (heading.has(target)) continue
     const army = earliestArrival(
       state,
       ctx,
-      province.id,
+      target,
       eligible.filter(
-        (candidate) =>
-          candidate.stance === 'aggressive' &&
-          !taken.has(candidate.id) &&
-          bordersOnLand(candidate.locationProvinceId, province.id) &&
-          armyHp(candidate) >= enemyStrength,
+        (candidate) => !taken.has(candidate.id) && mayLeave(candidate) && bordersOnLand(candidate.locationProvinceId, target),
       ),
     )
     if (!army) continue
     taken.add(army.id)
-    heading.add(province.id)
-    commands.push({ type: 'MOVE_ARMY', playerId, armyId: army.id, targetProvinceId: province.id })
+    heading.add(target)
+    staying.set(army.locationProvinceId, (staying.get(army.locationProvinceId) ?? 0) - 1)
+    commands.push({ type: 'MOVE_ARMY', playerId, armyId: army.id, targetProvinceId: target })
   }
 
   return commands

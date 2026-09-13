@@ -2560,7 +2560,36 @@ Der Adjutant liest deshalb nur den Zustand, und zwar so, wie ihn der Besitzer ke
 berechnet, wenn die Macht mit jemandem im Krieg ist **und** eine stehende Armee in Haltung
 `defensive` oder `aggressive` besitzt; sonst gibt der Adjutant sofort nichts zurück.
 
-### D30.4 Die zwei Regeln
+### D30.4 Die Regel, die nicht entblößt
+
+*(Ersetzt am 2026-09-13, T-M40-10. Die erste Fassung — Verteidigung deckt, Angriff verfolgt — steht
+darunter als Geschichte; warum sie gefallen ist, steht in D30.9.)*
+
+**Verteidigung rückt nach, ohne zu entblößen.** Eine eigene Armee A kommt in Frage, wenn sie in
+Haltung `defensive` steht (`path` leer), nicht eingeschifft ist, Landeinheiten trägt, ihre
+Angriffssperre abgelaufen ist, seit ihrem letzten Marsch oder Rückzug fünf Spieltage vergangen sind
+(`tick >= deployDelayUntil + 120`, T-M40-09), ihre Provinz eigen und feindfrei ist — **und in ihrer
+Provinz mindestens eine weitere eigene stehende Armee bleibt**, die in diesem Tick nicht selbst
+ausrückt. Eine Armee, die allein steht, marschiert nie von selbst.
+
+**Ziel** ist eine über `neighbors` (nicht `seaLinks`) angrenzende **eigene** Provinz P, in der eine
+sichtbare Armee eines Kriegsgegners steht — oder die leer ist und an eine Provinz mit einer solchen
+Armee grenzt. Zuerst die angegriffenen Provinzen, danach die leeren bedrohten, je in der Reihenfolge
+der Sicht.
+
+**Ausschlüsse und Auswahl.** Zu P ist keine eigene Armee unterwegs, auch nicht per Befehl im selben
+Tick (T-M40-08); die Route ist genau **eine** Landetappe (T-M40-09); je P marschiert höchstens eine
+Armee — die mit der frühesten Ankunft nach derselben Routenplanung wie `MOVE_ARMY`, bei Gleichstand
+die kleinste Kennung. Befehl: `MOVE_ARMY` nach P.
+
+**Angriff marschiert nie von selbst.** Die Haltung wirkt nur im Kampf: die Armee gilt nicht als
+eingegrabener Verteidiger und kämpft mit Angriffswerten (`phases/combat.ts`). `VisibleArmy.retreating`,
+das nur die Verfolgung brauchte, entfällt.
+
+Kein Zustandsfeld, keine Migration. Ein Befehl entsteht frühestens im Tick nach der Lage — dieselbe
+Stunde Verzug hat jeder Klick (T-M22-05).
+
+#### D30.4 bis 2026-09-13: die zwei Regeln (ersetzt, siehe D30.9)
 
 **Verteidigung deckt.** Eine eigene Armee A kommt in Frage, wenn sie steht (`path` leer),
 nicht eingeschifft ist, ihre Angriffssperre abgelaufen ist, `stance === 'defensive'` und ihre
@@ -2655,11 +2684,72 @@ eine Wirkung, die es nie gab.
 - **Dieselbe Haltung heißt bei Mensch und KI Verschiedenes.** Eine KI-Armee auf
   `defensive` deckt nicht von selbst; sie folgt `military.ts`. Hingenommen und in der
   Anleitung nicht versteckt.
+- *(Berichtigt 2026-09-13, T-M40-10: der folgende Punkt hat sich als Kern des Schadens erwiesen —
+  zwei der drei Verluste im Messlauf nachher waren entblößte Provinzen, über drei Startzahlen zehn.
+  Seit der neuen D30.4 rückt eine Verteidigung nur aus, wenn in ihrer Provinz eine Armee stehen
+  bleibt; D30.9.)*
 - **Eine deckende Armee entblößt ihre eigene Provinz.** Gewollt: sie marschiert nur aus einer
   feindfreien Provinz; wer den Posten halten will, wählt `garrison`.
 - **Mehrspieler (M37).** Der Adjutant rechnet aus dem Zustand, also auf beiden Seiten
   identisch. Er gehört damit zu dem, was D28.5 für die Computergegner vorsieht: beide Seiten
   berechnen ihn selbst, übertragen werden nur die Befehle der Menschen.
+
+### D30.9 Nacharbeit nach der Durchsicht (2026-09-13)
+
+Die Durchsicht von M40 fand die Automatik nicht abnahmefähig. Hier stehen die Befunde, die Messung,
+die verworfenen Regeln und das Kriterium, unter dem die neue D30.4 bleibt. Bauplan: `03-TASKS.md`
+M40, T-M40-07 bis T-M40-13.
+
+| Befund | Kern | behoben mit |
+|---|---|---|
+| K1 | Beim Vorspulen lief kein Adjutant — Uhr und Vorspulen gaben zwei Partien | T-M40-08: `commandsForTick` ist die eine Befehlsquelle |
+| K2 | Die Verfolgung löste einen Krieg mit einer unbeteiligten Macht aus; Routen führten über fremdes Land | T-M40-09: nur eigenes oder feindliches Land, genau eine Etappe; T-M40-10: keine Verfolgung |
+| H1 | Ein Rückzug wurde bei Sperrende rückgängig gemacht | T-M40-09: fünf Spieltage Ruhe ab `deployDelayUntil` |
+| H2 | „Anhalten" wurde im nächsten Tick überstimmt | T-M40-11: Anhalten stellt auf Garnison |
+| H3 | Der Messlauf trug die Abnahme nicht; die Deckung entblößte | T-M40-07: Messung je Episode; T-M40-10: Regel N |
+| M1 | Doppelte Deckung im Tick eines Spielerbefehls | T-M40-08: die Befehle des Ticks gelten als unterwegs |
+| M2 | `retreating` war Wissen ohne sichtbare Quelle | T-M40-10: entfällt mit der Verfolgung |
+| M3 | Die Hinweise verschwiegen die Folgen, und ein Marsch der Automatik blieb stumm | T-M40-11, T-M40-13 |
+
+**Die Messung** (D30.6, seit T-M40-07): Weltkarte, 200 Spieltage, Deutschland ohne Befehl, die
+Startzahlen 1914, 2015 und 1815, Aufstellung A mit einer Armee aus fünf Infanterie je Provinz und B mit
+zwei, Garnison gegen Verteidigung. Gefechte dauern dort im Median ein bis drei Ticks, eine deutsche
+Binnenetappe 25 bis 113 — mit der Deckung aus M40 kam eine Armee in 9 von 1531 umkämpften Episoden vor
+Gefechtsende an.
+
+**Verworfen** (Entwurf der Nacharbeit, dieselbe Messung; Summen über sechs Paare):
+
+- **die Deckung, wie M40 sie baute:** 3301 von 4140 Provinz-Tagen (79,7 %), 10 Verluste ohne Gefecht —
+  in T-M40-07 Zahl für Zahl nachgemessen;
+- **c1**, Deckung nur bei unbedrohter oder gedeckter Quelle: 92 %, 9 Verluste ohne Gefecht, Pendelzüge;
+- **a**, vorbeugend in leere bedrohte Provinzen bei unbedrohter Quelle: in Aufstellung A 1914 alle
+  Provinzen verloren, zwölf Pendelzüge binnen fünf Tagen — „Quelle unbedroht" ist keine stabile
+  Bedingung, Feinde ziehen schneller heran, als ein Marsch dauert;
+- **b**, Rückeroberung einer Heimatprovinz: holt zurück und verliert wieder, netto schlechter als nichts;
+  unter N ein Anlass in drei Partien, kein belegter Nutzen. Die Datenquelle ohne Zustandsfeld bleibt
+  vorgemerkt — Heimat aus `map.startPositions` und `player.nation`, „kürzlich" aus `occupiedSince`;
+- **die Verfolgung:** in jedem Lauf mit Anlass schädlich (Aufstellung C mit je einer Verteidigung und
+  einem Angriff je Provinz: 13 Armeen am Ende gegen 24 ohne Automatik).
+
+**Gewählt: Regel N** (D30.4) — 4181 Provinz-Tage (101 %), 0 Verluste ohne Gefecht, keine Ablehnung,
+kein Krieg ohne Erklärung. Sie schadet nicht; dass sie hilft, ist nicht belegt. Die vorbeugende
+Teilregel feuerte in der Messung des Entwurfs nie. Die Kostenschranke aus D30.3 greift seitdem enger:
+eine Sicht entsteht nur, wenn eine bereite Verteidigung neben einer weiteren eigenen Armee steht.
+
+**Abnahme und Rücknahmekriterium** (R-UNIT-09/AK5). Die Regel bleibt nur, solange derselbe Messlauf
+zeigt: (1) die Summe der Provinz-Tage mit Verteidigung erreicht mindestens 98 % der Garnison; (2) in
+keinem Paar gehen mit Verteidigung mehr Provinzen ohne Gefecht verloren als mit Garnison; (3) kein
+Befehl wird abgelehnt, keiner löst einen Krieg ohne Erklärung aus. **Die Schwelle 98 % wurde nach der
+Messung des Entwurfs festgelegt** — N lag in einem Einzellauf (1815 B) drei Prozent unter der
+Garnison, deshalb gilt sie für die Summe; eine Schwelle von 100 % kippte die Regel an einer schwachen
+Startzahl. Fällt eine Zusicherung, wird die Regel **zurückgenommen, nicht nachgeschärft**:
+`adjutantCommands` gibt für `defensive` nichts mehr zurück, die Verteidigung kämpft wie die Garnison, und
+die Hinweise sagen das. Dasselbe Kriterium hätte die Deckung aus M40 (79,7 %, 10) und c1 (92 %, 9) rot
+gemeldet.
+
+**Nicht gebaut.** Ausdrückliche Aufträge („halte Provinz X mit N Armeen, fülle nach", Sammelbefehl)
+und die Rückeroberung — beides eine neue Entscheidung, als offene Frage an Noah in `DECISIONS.md`
+(2026-09-13, T-M40-10).
 
 ## D31. Zwischenziele (M35 — R-GAME-08)
 

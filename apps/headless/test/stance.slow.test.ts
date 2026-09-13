@@ -637,10 +637,10 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
     ).toEqual(VORHER)
   })
 
-  // T-M40-07: der heutige Adjutant (D30.4 bis 2026-09-13) haelt AK5 nicht. Gemessen: 3301 von 4140
-  // Provinz-Tagen (79,7 %), 10 Verluste ohne Gefecht gegen 0 mit Garnison, in fuenf von sechs Paaren
-  // mehr als mit Garnison. T-M40-10 ersetzt die Regel und macht daraus ein it.
-  it.fails('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz (heute nicht: 79,7 %, 10 Verluste ohne Gefecht)', () => {
+  // T-M40-07 mass den Adjutanten aus M40: 3301 von 4140 Provinz-Tagen (79,7 %), 10 Verluste ohne
+  // Gefecht gegen 0 mit Garnison — das stand hier als it.fails. Seit T-M40-10 gilt die Regel aus D30.4.
+  // Faellt diese Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft (D30.9).
+  it('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz', () => {
     const ergebnis = ak5(laeufe)
     expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
   })

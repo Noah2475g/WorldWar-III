@@ -99,16 +99,10 @@ export interface VisibleArmy {
   arrivalTick?: Tick | null
   /** When the march began — a progress bar needs both ends of the stretch (R-UI-09). */
   departureTick?: Tick | null
-  /**
-   * Has this foreign army just fallen back — is its attack cooldown running? (T-M40-04, D30.4)
-   *
-   * Only on visible foreign armies. A retreat happens before the eyes of the side it
-   * retreats from (R-DIP-04), and "attack pursues a retreating enemy" cannot be decided
-   * without it: until M40 a foreign army carried id, owner, province and strength, nothing
-   * more. View only — no state field, no hash, no migration. Own armies do not carry it;
-   * the adjutant reads their cooldown from the state.
-   */
-  retreating?: boolean
+  // `retreating` stood here from T-M40-04 to T-M40-10: the running attack cooldown of a visible
+  // foreign army, for the pursuit of a retreating enemy. The pursuit is gone (D30.4), and the field
+  // was knowledge without a visible source — the core reports a retreat only to the side that
+  // retreats (finding M2 of the M40 review).
 }
 
 export interface PublicView {
@@ -349,7 +343,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
             arrivalTick: army.arrivalTick,
             departureTick: army.departureTick,
           }
-        : { retreating: state.tick < army.cannotAttackUntil }),
+        : {}),
     })
   }
 
