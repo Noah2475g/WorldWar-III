@@ -2097,7 +2097,8 @@ standen 63 tote Pfade. Die Leseregeln:
   vorher/nachher in `docs/reports/ai-reachability.md`.
   *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
   `apps/headless/test/ai-integration.slow.test.ts`, alle vier Zahlen sind dort zugesichert — gemessen
-  0 % abgelehnt (vor T-M41-08 3,92 %), `NO_PATH` 0 von 2556, keine Paarung, 5 Kriegserklärungen.
+  0 % abgelehnt (vor T-M41-08 3,92 %), `NO_PATH` 0 von 2556, keine Paarung, 5 Kriegserklärungen
+  (Stand T-M41-08; nach H1 und T-M41-09: `NO_PATH` 0 von 2405, 6 Kriegserklärungen).
   Die Paarung nach dem Wortlaut (Armee, Fehlercode) sieht einen wiederholten Bauauftrag nicht; die
   Fassung (Macht, Befehl, Fehlercode, Einzelheiten) steht als Zahl im Bericht.)*
 
@@ -2888,7 +2889,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Aufgabe ist nicht fertig.
   *(Nachgeprüft 2026-09-13 mit T-M41-08 — die neun Zahlen standen nie in einem Test. Das Turnier
   zählte Beschuss und Kriegserklärungen je Partie für **beide** antretenden Stufen; jetzt auch nach
-  dem Handelnden. Gemessen: Kriegserklärungen leicht 0, normal 110, schwer 70; selbsttätiger Beschuss
+  dem Handelnden. Gemessen: Kriegserklärungen leicht 0, normal 110 (Stand T-M41-08; nach H1 109), schwer 70; selbsttätiger Beschuss
   **0 auf jeder Stufe**; eine Regelmarge für Handel gibt es nicht. Zugesichert sind die
   Kriegserklärungen von „schwer" und „normal" (`apps/headless/test/tournament.slow.test.ts`); die
   übrigen sieben sind mit Grund zurückgenommen (`DECISIONS.md`), und die Null beim Beschuss steht als

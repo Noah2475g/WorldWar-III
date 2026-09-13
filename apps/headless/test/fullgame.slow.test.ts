@@ -26,8 +26,11 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * **Andere Startzahlen** (T-M41-02): `WORLDWAR_FULLGAME_SEED=2015 pnpm sim:fullgame` spielt
  * dieselbe Voreinstellung mit anderer Startzahl und schreibt `fullgame-2015.json`. Ein
- * Siegtag aus einer einzigen Startzahl ist eine Zahl, kein Befund — 1914 endet an Tag
- * 471, 2015 an Tag 583, und was dazwischen liegt, ist Rauschen der Startzahl.
+ * Siegtag aus einer einzigen Startzahl ist eine Zahl, kein Befund: nach Block N2 der
+ * M41-Nacharbeit endet 1914 an Tag 975, 2015 und 1815 an Tag 583 (vor M41: 471, 583, 774).
+ * Die Startzahl variiert **nur den Zufall** — Aufstellung, Gegner und Hauptstädte sind in
+ * allen dreien gleich (Startzustand ohne `seed`/`rng` identisch, geprüft 2026-09-13); die
+ * Streuung ist also enger, als „drei Startzahlen" klingt.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))

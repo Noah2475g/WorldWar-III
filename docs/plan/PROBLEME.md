@@ -2701,3 +2701,34 @@ mehr. Der Frische-Wächter der Abnahme sieht das nicht, weil sich `data/rules` n
 im Schlussblock misst neu.
 
 **Status: Beobachtung** (Artillerie bei einer Macht, vorgemerkt für M18); T-M41-14 nicht nötig.
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, N3 · Die drei Startzahlen der Vollpartie variieren nur den Zufall, nicht die Aufstellung
+
+**Befund der Durchsicht, selbst nachgeprüft** (eigenes Skript gegen den Worktree, `scratchpad/n2/seed/`, nicht das Skript
+des Prüfers). `toConfig({ ...DEFAULT_NEW_GAME, seed }, map)` und `createInitialState` für 1914, 2015 und 1815:
+
+| | 1914 | 2015 | 1815 |
+|---|---|---|---|
+| `state.seed` | 1914 | 2015 | 1815 |
+| `state.rng` (erste Zustandszahl) | 2484121936 | 816126800 | 3993579382 |
+| Startzustand ohne `seed`/`rng`, sha256 über JSON | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` |
+| dasselbe, `hashValue` des Projekts | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` |
+| Spieler, Gegner, Stufen, Hauptstädte | gleich | gleich | gleich |
+
+Zwei Werkzeuge, dasselbe Ergebnis; der sha256-Wert trifft den der Durchsicht.
+
+**Was das für AK-1 heißt.** Die drei Vollpartien spielen **dieselbe Aufstellung** — Vereinigte Staaten gegen
+Kanada, Mexiko, Brasilien, Argentinien, Russland, China, Indien, alle „normal" — und unterscheiden sich nur im
+Zufallsstrom. „Drei Startzahlen" ist deshalb eine engere Streuung, als der Ausdruck nahelegt: sie misst, wie
+empfindlich **diese** Partie auf den Zufall ist, nicht, wie verschiedene Partien ausgehen. Dass 2015 und 1815 beide
+an Tag 583 enden, ist echt (die Berichte unterscheiden sich in allen anderen Feldern; die Durchsicht hat 1815
+unabhängig nachgefahren) und nicht ein kopierter Bericht.
+
+**Veraltete Zahlen (N4), berichtigt:** `03-TASKS.md` nennt bei T-M15-08 „normal 110" (heute 109) und bei T-M14-11
+„`NO_PATH` 0 von 2556, 5 Kriegserklärungen" (heute 0 von 2405, 6) — beide mit „(Stand T-M41-08)" versehen; der
+Kommentar in `fullgame.slow.test.ts` („1914 endet an Tag 471") ist nachgezogen und nennt die Einschränkung oben.
+
+**Status: Beobachtung** (keine Änderung am Messaufbau; wer verschiedene Partien messen will, braucht verschiedene
+Aufstellungen, nicht nur Startzahlen).
