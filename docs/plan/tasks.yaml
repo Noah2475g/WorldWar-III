@@ -2919,7 +2919,7 @@ tasks:
   - id: T-M40-03
     milestone: M40
     title: defensive deckt die Nachbarprovinz
-    status: todo
+    status: done
     deps: [T-M40-02]
     requirements: [R-UNIT-09]
     design: [D-30]

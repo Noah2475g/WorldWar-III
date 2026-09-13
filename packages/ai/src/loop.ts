@@ -1,6 +1,26 @@
-import { runTicks, type Command, type GameEvent, type GameState, type MapData, type PlayerId, type Rules } from '@worldwar/core'
+import {
+  runTicks,
+  type ArmyId,
+  type Command,
+  type GameEvent,
+  type GameState,
+  type MapData,
+  type PlayerId,
+  type Rules,
+} from '@worldwar/core'
 import type { Explanation } from './types'
+import { adjutantCommands } from './adjutant'
 import { runAi, storeMemories } from './runner'
+
+/** Armies a command names — the human's own orders take precedence over the adjutant (D30.2). */
+function armiesNamedIn(commands: readonly Command[]): Set<ArmyId> {
+  const ids = new Set<ArmyId>()
+  for (const command of commands) {
+    if ('armyId' in command) ids.add(command.armyId)
+    if ('armyIds' in command) for (const id of command.armyIds) ids.add(id)
+  }
+  return ids
+}
 
 /**
  * The one loop that moves the game forward (T-M14-04).
@@ -84,7 +104,11 @@ export function advanceTicks(
     const { commands, memories, explanations: reasons } = runAi(current, ctx, opts.explain ? { explain: true } : {})
     if (opts.explain) explanations = reasons
     const scripted = opts.scripted?.(current.tick) ?? []
-    const all = [...(i === 0 ? playerCommands : []), ...scripted, ...commands]
+    const given = [...(i === 0 ? playerCommands : []), ...scripted]
+    // The adjutant (T-M40-03, D30.2): a human's stance becomes an order, on the same rail as
+    // a click. Computed from this tick's state alone, so a loaded game gives the same orders.
+    const adjutant = adjutantCommands(current, ctx, { heldArmies: armiesNamedIn(given) })
+    const all = [...given, ...adjutant, ...commands]
 
     for (const command of all) applied.push({ tick: current.tick, command })
 

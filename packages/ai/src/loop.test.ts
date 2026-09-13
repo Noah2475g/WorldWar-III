@@ -1,8 +1,9 @@
-import { TEST_RULES, smallWorld } from '@worldwar/testkit'
+import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import {
   HASH_OMIT_KEYS,
   createInitialState,
   deserialise,
+  planRoute,
   runTicks,
   serialise,
   type Command,
@@ -183,5 +184,63 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
         expect(gekuerzt.state.armies[armyId]?.owner ?? 'gefallen', `${playerId} erinnert ${armyId}`).toBe(playerId)
       }
     }
+  })
+})
+
+/**
+ * Der Adjutant in der Spielschleife (T-M40-03, D30.2, D30.3, R-UNIT-09/AK4).
+ *
+ * Nordland ist ein Mensch mit einem Verteidiger in jeder Provinz; eine starke Ostmark-Armee
+ * marschiert von m1 auf n2. Kommt sie an, kaempft sie gegen den Verteidiger von n2 — und der
+ * Adjutant schickt eine Nachbararmee, ohne dass jemand klickt.
+ */
+describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
+  function lageMitMensch(): GameState {
+    const state = stateWith(3)
+    const mensch = state.playerOrder[0]!
+    state.players[mensch]!.kind = 'human'
+    for (const id of state.provinceOrder) {
+      if (state.provinces[id]!.owner !== mensch) continue
+      placeArmy(state, { owner: mensch, at: id, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    }
+    const angreifer = placeArmy(state, {
+      owner: state.playerOrder[1]!,
+      at: 'm1',
+      units: [{ unitKey: 'infantry', hpTotal: 30_000 }],
+    })
+    // Schon auf dem Marsch: eine KI laesst eine Armee mit Weg weitermarschieren (military.ts).
+    const route = planRoute(state, angreifer, 'n2', map, TEST_RULES)!
+    angreifer.path = route.path
+    angreifer.departureTick = state.tick
+    angreifer.arrivalTick = route.arrivalTick
+    return state
+  }
+
+  it('gibt nach Speichern, Laden und Weiterspielen dieselben Befehle wie ohne Unterbrechung', () => {
+    const TICKS = 150
+    const durchgehend = advanceTicks(lageMitMensch(), TICKS, ctx)
+    const mensch = durchgehend.state.playerOrder[0]!
+    const vomAdjutanten = durchgehend.applied.filter((entry) => entry.command.playerId === mensch)
+    expect(vomAdjutanten.length, 'der Adjutant hat in diesem Lauf nichts befohlen').toBeGreaterThan(0)
+
+    // Geteilt genau im Tick seines ersten Befehls: den muss der geladene Stand selbst finden.
+    // Ein Adjutant, der an den Ereignissen des Vorticks hinge, faende ihn hier nicht (D30.3).
+    const bruch = vomAdjutanten[0]!.tick
+    expect(bruch, 'der erste Befehl faellt in Tick 0 — dann prueft die Teilung nichts').toBeGreaterThan(0)
+    const erste = advanceTicks(lageMitMensch(), bruch, ctx)
+    const geladen = deserialise(serialise(erste.state))
+    const zweite = advanceTicks(geladen, TICKS - bruch, ctx)
+
+    expect([...erste.applied, ...zweite.applied]).toEqual(durchgehend.applied)
+    expect(stateHash(zweite.state)).toBe(stateHash(durchgehend.state))
+  })
+
+  it('erzeugt ueber einen Lauf keinen Befehl, den der Kern ablehnt (Muster R-AI-08/AK3)', () => {
+    const lauf = advanceTicks(lageMitMensch(), 400, ctx)
+    const mensch = lauf.state.playerOrder[0]!
+    expect(lauf.applied.filter((entry) => entry.command.playerId === mensch).length).toBeGreaterThan(0)
+
+    const abgelehnt = lauf.events.filter((event) => event.type === 'COMMAND_REJECTED' && event.playerId === mensch)
+    expect(abgelehnt, JSON.stringify(abgelehnt.slice(0, 3))).toEqual([])
   })
 })
