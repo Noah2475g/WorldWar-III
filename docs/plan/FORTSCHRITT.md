@@ -187,7 +187,7 @@ und Einheiten; `pointShare` gibt daraus den Anteil. Vier der fünf Kandidaten br
 | Punktanteil über einer Marke (z. B. 250 ‰, 400 ‰) | `pointShare` | nein |
 | Eine Zahl eigener Provinzen (z. B. 25, 50, 100) | `state.provinces`, nach Besitzer gezählt | nein |
 | Ein Anteil der Weltbevölkerung | `province.population`, nach Besitzer summiert | nein |
-| Eine Großmacht ist gefallen | `player.alive`, `capitalProvinceId === null` | nein |
+| Eine Großmacht ist gefallen *(verworfen am 2026-09-13, siehe Korrektur 2 unten)* | `player.alive`, `capitalProvinceId === null` | nein |
 | Stärkste Macht **eines Kontinents** | — | **ja, und zwar in der Karte** |
 
 Der fünfte ist der teure: **die Karte kennt keinen Kontinent.** `MapProvince` führt
@@ -201,7 +201,9 @@ neu ausgerechnet wird, kann auch wieder verschwinden — wer fünfzig Provinzen 
 auf achtundvierzig fällt, hätte sein Ziel nie erreicht. Gebraucht wird genau ein Feld:
 `state.goals: Record<GoalKey, { reachedOnDay: number | null }>`, einmal je Spieltag
 geprüft, nie zurückgesetzt. Das ist additiv (R-ARCH-02) und braucht eine Migration nach
-R-GAME-05 — ein Spielstand ohne das Feld bekommt es leer.
+R-GAME-05 — ein Spielstand ohne das Feld bekommt es leer. *(Korrigiert am 2026-09-13,
+Korrekturen 1 und 3 unten: das Feld braucht eine Spielerachse, und die Migration ist
+`SCHEMA_VERSION` 3.)*
 
 **Was die Anzeige kostet.** Vier Zeilen in der Rangliste (`Standings.tsx`), je Ziel eine:
 Zeichen, Satz, erreicht oder nicht, und bei den drei zählbaren ein Balken mit dem Stand.
@@ -246,6 +248,33 @@ wird als Ganzes geplant oder gar nicht.
 diesen Entwurf. Der Parameterlauf kann sie nicht beantworten: er misst, was eine Zahl am
 Ausgang ändert, und diese Zahlen ändern am Ausgang nichts — sie ändern, wann der Spieler
 etwas erfährt.
+
+### Korrektur am Entwurf (2026-09-13, Planung von M35 — `02-DESIGN.md` D31)
+
+Der Entwurf oben bleibt als Aussage stehen; drei seiner Sätze waren falsch oder zu
+ungenau, und die offene Entscheidung ist gefallen. Gebaut wird nach **D31**, geplant als
+T-M35-02 bis T-M35-06 mit der Anforderung **R-GAME-08**.
+
+1. **Das Feld braucht eine Spielerachse.** `state.goals: Record<GoalKey, { reachedOnDay }>`
+   hält ein Ziel für *die Partie*, nicht für eine Macht — wer es zuerst erreicht, hätte es
+   für alle erreicht. Richtig ist
+   `goals: Record<PlayerId, Record<GoalKey, number | null>>`: je Macht je Ziel der Spieltag
+   des Erreichens oder `null`.
+2. **„Eine Großmacht ist gefallen" ist verworfen.** Es ist ein Weltereignis, keine eigene
+   Leistung: das erste Ausscheiden kam in drei gemessenen Partien an Tag 215, 196 und 290,
+   gleich, wer der Spieler war und was er tat, und `CAPITAL_LOST` nennt den Eroberer nicht.
+   Ein Ziel, das man erreicht, während man schläft, sagt nicht, ob man vorankommt.
+3. **„Eine Migration nach R-GAME-05" heißt konkret `SCHEMA_VERSION` 3** — ein neuer Schritt
+   2 → 3, ein eingefrorener `packages/core/test/golden/save-v2.json` **vor** der ersten
+   Zustandsänderung, und der Formatwächter, der heute `highestMigration() === 1` als Literal
+   hält, wird begründet umgeschrieben.
+
+**Die Marken sind entschieden** — nicht von Noah, sondern per Delegation vom 2026-09-13,
+kippbar und mit Messdaten in `DECISIONS.md`: **25 Provinzen, 400 ‰ Punktanteil, 300 ‰
+Weltbevölkerung, 600 ‰ Punktanteil**. Der Satz oben, der Parameterlauf könne sie nicht
+beantworten, stimmt; beantwortet hat sie eine Messung der Tage, an denen Mächte die Marken in
+ganzen Partien erreichen. Und die Teilaufgaben stehen seit diesem Tag **in** `tasks.yaml`:
+aus vier sind fünf geworden, weil eine ganze Partie die Zahl liefern muss (T-M35-06).
 
 ---
 

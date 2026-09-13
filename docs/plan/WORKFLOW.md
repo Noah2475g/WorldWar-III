@@ -72,8 +72,9 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
 ## 2 · Was als Nächstes dran ist
 
-**Genau eine Sache ist geplant, freigegeben und ungebaut: der Mehrspieler.** Alles
-Weitere in dieser Liste ist vorgemerkt und nicht geplant.
+**Geplant, freigegeben und ungebaut sind der Mehrspieler (Noahs Freigabe vom 2026-09-12)
+und seit dem 2026-09-13 M41, M40 und M35 (Delegation per /goal, `DECISIONS.md`).** Was
+darunter nicht „geplant" heißt, ist vorgemerkt.
 
 1. **Eine Partie zu zweit (M37, M38, M39)** — geplant am 2026-09-12, **dreißig Aufgaben**.
    Noahs Auftrag: ein Mitspieler tritt über einen Link bei, aus einem anderen Netz,
@@ -99,13 +100,11 @@ Weitere in dieser Liste ist vorgemerkt und nicht geplant.
    Plan. Die eine Frage, die kein Agent beantworten kann: *wollte ich weiterspielen?* Nach
    M34 hat sie zum ersten Mal eine ehrliche Chance — die ersten achtzig Spieltage tragen
    jetzt Entscheidungen statt einer Einkaufsliste.
-3. **Die vier Teilaufgaben aus M35** (`FORTSCHRITT.md` §3): Zwischenziele zum Sieg,
-   entworfen und geschnitten, **bewusst noch nicht in `tasks.yaml`**. Welche Marken es
-   sind, ist eine Spielentscheidung und liegt bei Noah.
-4. **Noahs Freigabe für die Haltungen** — T-M28-07 hat vier Teilaufgaben geschnitten
-   (`LEVEL-UP-3.md` §5): die Haltungen sollen etwas tun. Befund dort: **`aggressive`
-   wirkt im ganzen Kern nirgends.** Eine Spielentscheidung liegt bei Noah — ob
-   `garrison` oder `defensive` die Vorgabehaltung wird.
+3. **Zwischenziele zum Sieg — geplant als M35** (2026-09-13): T-M35-02 bis -06, Entwurf
+   D31, R-GAME-08. Die Marken sind per Delegation entschieden (`DECISIONS.md`, kippbar).
+4. **Die Haltungen — geplant als M40** (2026-09-13): T-M40-01 bis -06, Entwurf D30,
+   R-UNIT-09. Vorgabe bleibt `defensive`, die Automatik führt nur menschliche Armeen
+   (`DECISIONS.md`, kippbar).
 5. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
    Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
    `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
@@ -121,15 +120,11 @@ Weitere in dieser Liste ist vorgemerkt und nicht geplant.
    2026-09-08 frisch gebaut gegen `75a0128` (7,93 MB). Was aussteht, ist nur die
    **Messung** am neuen Bündel (starten, speichern, schließen, neu starten, laden).
    Zählt nicht gegen V1.
-8. **Drei offene Befunde aus `PROBLEME.md`, keiner davon ein Produktfehler:**
-   - **Die KI klettert die neue Fortschrittsachse nicht.** `nextBuildingFor` fragt für
-     Kaserne, Fabrik, Eisenbahn und Hafen `level(...) === 0` — sie baut jedes genau einmal.
-     Gemessen über 200 Spieltage an allen fünf Messpunkten von M34: **keine Macht kommt je
-     über Fabrikstufe 1.** Die zweite Achse ist damit eine für den Menschen allein. Die
-     Reparatur ist klein (eine Zeile je Gebäude) und braucht eine eigene Messung.
-   - **Vier stille Spieltage in der Eröffnung** (Hafen Tag 6 → Transportschiff Tag 10).
-     Die längste Pause ohne Anlass ist von 72 auf 96 Ticks gewachsen — die Rückseite der
-     Streckung. Ob das zu lang ist, ist eine Balancing-Frage.
+8. **Die offenen Befunde aus `PROBLEME.md` — geplant als M41** (2026-09-13, zuerst zu
+   bauen): die KI baut die Fabrik aus (T-M41-01/02), die stillen Eröffnungstage bekommen
+   eine Ankündigung (T-M41-03), die Uhr verliert keine Ticks (T-M41-04), das KI-Gedächtnis
+   vergisst tote Armeen (T-M41-05), Planpflege samt „fünf statt sechs" Hüllen-Kommandos
+   (T-M41-06), die zugesagte Nahkampf-Eigenschaftsprüfung (T-M41-07).
    - ~~**`03-TASKS.md` nennt 57 Dateien, die es nicht gibt**~~ — **erledigt am 2026-09-13:**
      der Plan-Wächter liest jetzt auch `Dateien` und `Tests zuerst` in `03-TASKS.md`; die 63
      nachgezählten toten Pfade sind korrigiert oder gekennzeichnet (`PROBLEME.md`, 2026-09-12).

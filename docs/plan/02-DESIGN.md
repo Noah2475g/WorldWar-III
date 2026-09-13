@@ -2170,3 +2170,267 @@ dieses Plans, das kein Agent erfüllen kann.
 Das größte Risiko ist nicht das Netz, sondern D28.3: achtzehn Stellen in einer Datei mit
 1700 Zeilen, und jede falsch umgestellte fällt erst im Spiel zu zweit auf. Deshalb steht
 sie zuerst, mit eigenem Wächter, und nicht nebenbei.
+
+
+## D30. Die Haltung wird ein Auftrag (M40 — R-UNIT-09)
+
+Befund und erste Fassung stehen in `docs/plan/LEVEL-UP-3.md` §5 (T-M28-07, dort noch als
+„Entwurf D28" — die Nummer ist seit dem 2026-09-12 an den Mehrspieler vergeben). Hier steht, was davon gebaut wird und was nicht,
+mit drei Korrekturen, die beim Planen am 2026-09-13 am Code gefunden wurden. Anforderung:
+R-UNIT-09; dazu R-AI-01, R-DIP-04, R-ARCH-01. Bauplan: `03-TASKS.md` M40.
+
+**Ausgangslage, belegt.** `Stance` ist `'aggressive' | 'defensive' | 'retreat'`
+(`state/types.ts:47`). Gelesen wird im Kern nur `defensive`, und nur zusammen mit „steht
+still" (`phases/combat.ts:98`); `aggressive` kommt außer im Typ nirgends vor. Nach einem
+Rückzug setzt `phases/retreat.ts` die Armee auf `defensive` (Z. 39, 49), eine neue Armee
+steht ebenfalls auf `defensive` (`phases/recruitment.ts:67`), und die KI befiehlt nur
+`retreat` (`packages/ai/src/military.ts:59`) — **jede KI-Armee steht damit dauerhaft auf
+`defensive`**. `SET_STANCE` prüft den Wert nicht (`commands/handlers.ts:25-34`).
+
+### D30.1 Vier Haltungen, ein neuer Wert, keine Migration
+
+`Stance` bekommt `'garrison'`. Im Kampf gilt `garrison` wie `defensive`: eine stehende
+Armee in einer dieser beiden Haltungen ist eingegrabener Verteidiger. Die Haltung ist die
+**Abwahl** der Automatik — „bleibt stehen, was auch geschieht".
+
+`SET_STANCE` lehnt jeden Wert außerhalb der vier mit `INVALID_TARGET` und
+`{ reason: 'unbekannte Haltung' }` ab. Im Einzelspieler kann die Oberfläche keinen falschen
+Wert erzeugen; im Gleichschritt (D28) kommt ein Befehl aber von einem zweiten Rechner.
+
+Kein Zustandsfeld entsteht, nur ein Wertebereich wächst. `validateState` prüft die Haltung
+nicht, kein alter Stand trägt `garrison` — **`SCHEMA_VERSION` bleibt**, und die Golden-Master
+bleiben bitgleich (T-M40-01 belegt es, indem `pnpm test` ohne `UPDATE_GOLDEN` grün ist).
+
+### D30.2 Wo die Automatik lebt: ein Adjutant in `packages/ai`
+
+Der Kern darf die KI nicht kennen (Importrichtung shared ← core ← ai ← apps), und eine
+Automatik, die Befehle erzeugt, ist dieselbe Sorte Code wie die KI. Sie lebt deshalb als
+**`adjutantCommands(state, ctx)`** in `packages/ai/src/adjutant.ts` und wird in
+`advanceTicks` (`packages/ai/src/loop.ts`) gerufen — der einen Schleife, die Oberfläche und
+Kopflos-Läufe teilen.
+
+- **Für wen:** jede lebende Macht mit `kind === 'human'`, in `playerOrder`-Reihenfolge.
+  KI-Mächte führt weiter `military.ts`.
+- **Über welche Schiene:** die Befehle hängen in derselben Liste wie Spielerbefehle und
+  KI-Befehle (`playerCommands`, `scripted`, Adjutant, KI) und durchlaufen dieselbe
+  Kommandoprüfung. Was der Adjutant tut, könnte der Spieler per Klick tun — R-AI-01 gilt in
+  beide Richtungen.
+- **Vortritt:** gibt der Mensch im selben Tick einen Befehl mit derselben `armyId`, lässt
+  der Adjutant diese Armee in diesem Tick aus.
+
+**Warum nur menschliche Armeen (Korrektur 3).** Eine Automatik für jede `defensive`-Armee
+würde jede KI-Partie verändern — und damit Turnier, Parameterlauf und AK-1 —, weil nach
+dem Befund oben jede KI-Armee auf `defensive` steht. Die KI hat ihre eigene
+Bedrohungsrechnung; der Adjutant gibt dem Menschen, was die KI schon hat.
+
+### D30.3 Aus dem Zustand, nicht aus Ereignissen (Korrektur 1)
+
+Der erste Entwurf hängte die Automatik an `ARMY_RETREATED` und `ARMY_INTRUDED`. Das bricht
+Speichern und Laden: das Ereignisprotokoll liegt nicht im Hash (`HASH_OMIT_KEYS`), und ein
+geladener Stand beginnt `advanceTicks` ohne die Ereignisse des Vorticks. **Gleicher Zustand,
+andere Befehle** — genau das, was R-AI-07/AK1 für die KI ausschließt.
+
+Der Adjutant liest deshalb nur den Zustand, und zwar so, wie ihn der Besitzer kennen darf:
+
+- **fremde Armeen und Provinzen** ausschließlich über `publicView(state, owner)` — sonst
+  verriete die Automatik, was der Nebel verbirgt (R-DIP-04);
+- **eigene Armeen** direkt aus `state.armies` — eigenes Wissen; die Sicht zeigt sie ohnehin
+  vollständig, nur die Angriffssperre `cannotAttackUntil` führt sie nicht.
+
+**Kosten.** Eine Sicht je Tick je Mensch ist nicht billig (T-M16-02). Sie wird nur
+berechnet, wenn die Macht mit jemandem im Krieg ist **und** eine stehende Armee in Haltung
+`defensive` oder `aggressive` besitzt; sonst gibt der Adjutant sofort nichts zurück.
+
+### D30.4 Die zwei Regeln
+
+**Verteidigung deckt.** Eine eigene Armee A kommt in Frage, wenn sie steht (`path` leer),
+nicht eingeschifft ist, ihre Angriffssperre abgelaufen ist, `stance === 'defensive'` und ihre
+Provinz eigen und feindfrei ist. Ziel ist eine eigene Provinz P, die über `neighbors` (nicht
+über `seaLinks`) an As Provinz grenzt, in der eine **sichtbare** Armee eines Kriegsgegners
+steht und zu der keine eigene Armee unterwegs ist (kein eigener `path` endet in P). Je P marschiert
+**höchstens eine** Armee: die mit der frühesten Ankunft nach derselben Routenplanung wie
+`MOVE_ARMY`, bei Gleichstand die kleinste Kennung. Befehl: `MOVE_ARMY` nach P.
+
+**Angriff verfolgt.** Eine eigene Armee B kommt in Frage wie oben, nur mit
+`stance === 'aggressive'`. Ziel ist eine über `neighbors` angrenzende Provinz Q mit einer
+sichtbaren Armee eines Kriegsgegners, die **eben zurückgewichen** ist und höchstens Bs Stärke
+hat. Je Q höchstens eine Verfolgerin, bei Gleichstand die kleinste Kennung.
+
+**Korrektur am Planungsstand:** „eben zurückgewichen" ist heute nicht sichtbar — eine fremde
+`VisibleArmy` trägt nur Kennung, Besitzer, Provinz und Stärke (`view/publicView.ts`). Eine
+**sichtbare** fremde Armee bekommt deshalb das Feld `retreating: boolean` (ihre
+Angriffssperre läuft). Die Quelle nach R-DIP-04: ein Rückzug geschieht vor den Augen dessen,
+vor dem gewichen wird. Das Feld ist nur Sicht — kein Zustandsfeld, kein Hash, keine Migration.
+
+Beide Regeln erzeugen einen Befehl erst im Tick **nach** der Lage, weil die Bewegungsphase
+den Einmarsch erst im Tick erzeugt. Eine Stunde Verzug ist gewollt: dieselbe Verzögerung hat
+jeder Klick (T-M22-05).
+
+### D30.5 Was sich nicht ändert — belegt, nicht behauptet (Korrektur 2)
+
+Der erste Entwurf wollte `garrison` als Vorgabe, damit „jede alte Partie, jeder alte
+Kommandolog und der Golden-Master unverändert" bleiben. **Keiner der Golden-Master sieht eine
+Automatik in `packages/ai`:**
+
+| Lauf | warum unberührt |
+|---|---|
+| `tiny-500` | `step(state, [], ctx)` ohne Befehle und ohne KI (`packages/core/test/determinism.test.ts`) |
+| `walkthrough` | `runGame` ruft `runTicks` des Kerns, nicht `advanceTicks` (`apps/headless/src/run.ts`) |
+| AK-1 (Vollpartie) | `advanceTicks`, aber der Mensch gibt keinen Befehl und `createInitialState` legt keine Armee an |
+| Turnier, Parameterlauf, Grundlauf | nur Mächte mit `kind: 'ai'` (`apps/headless/src/tournament.ts`, `sweep.ts`) |
+
+**Entschieden (delegiert, kippbar, `DECISIONS.md`):** die Vorgabe bleibt `defensive`. Wer
+die Automatik abwählen will, wählt `garrison`. Mit `garrison` als Vorgabe fände ein neuer
+Spieler die Automatik nie. Der Preis: ein alter Spielstand mit menschlichen Armeen fängt nach
+dem Laden an zu decken — hingenommen, denn das ist das Verhalten, das der Knopf immer
+versprach.
+
+### D30.6 Die Messung
+
+`apps/headless/test/stance.slow.test.ts`: Weltkarte, ausgelieferte Regeln, 200 Spieltage über
+`advanceTicks`; der Mensch spielt eine Macht mit KI-Nachbarn, bekommt beim Aufsetzen eine
+Armee in jede eigene Provinz und gibt danach keinen Befehl. Aus dem Ereignisstrom, nie aus
+dem Ringpuffer:
+
+- **Einmärsche:** `ARMY_INTRUDED` in eine Provinz des Menschen;
+- **beantwortet:** eine eigene Armee erreicht diese Provinz binnen 24 Ticks;
+- **verloren:** `PROVINCE_CAPTURED` aus dem Besitz des Menschen;
+- **abgelehnt:** `COMMAND_REJECTED` für den Menschen.
+
+Vorher (T-M40-02) und nachher (T-M40-06) in `docs/reports/stance.json`. Zugesichert wird
+nachher: beantwortete Einmärsche anteilig mehr als vorher, null Ablehnungen. Die verlorenen
+Provinzen stehen als Zahl im Bericht und nicht als Zusicherung.
+
+### D30.7 Die Oberfläche
+
+Die Haltungsgruppe im Armeepanel (`STANCES` in `Panels.tsx`, Hinweise in `actions.ts`) führt
+vier Knöpfe: Angriff, Verteidigung, Rückzug, Garnison. Jeder Hinweis sagt, was die Armee **von
+selbst** tut — Angriff „folgt einem weichenden Gegner, der nicht stärker ist",
+Verteidigung „rückt in eine angegriffene eigene Nachbarprovinz nach", Garnison „bleibt stehen".
+Der heutige Hinweis zu Angriff („greift von sich aus an, was in Reichweite kommt") beschreibt
+eine Wirkung, die es nie gab.
+
+### D30.8 Gegenrede und Risiko
+
+- **Dieselbe Haltung heißt bei Mensch und KI Verschiedenes.** Eine KI-Armee auf
+  `defensive` deckt nicht von selbst; sie folgt `military.ts`. Hingenommen und in der
+  Anleitung nicht versteckt.
+- **Eine deckende Armee entblößt ihre eigene Provinz.** Gewollt: sie marschiert nur aus einer
+  feindfreien Provinz; wer den Posten halten will, wählt `garrison`.
+- **Mehrspieler (M37).** Der Adjutant rechnet aus dem Zustand, also auf beiden Seiten
+  identisch. Er gehört damit zu dem, was D28.5 für die Computergegner vorsieht: beide Seiten
+  berechnen ihn selbst, übertragen werden nur die Befehle der Menschen.
+
+## D31. Zwischenziele (M35 — R-GAME-08)
+
+Der Entwurf ist T-M35-01 (`docs/plan/FORTSCHRITT.md` §3, 2026-09-12): Zwischenziele sind
+**Rückmeldung, keine Siegbedingung**; `checkVictory` und die Siegschwelle bleiben unberührt,
+R-GAME-02 auch. Hier steht, was gebaut wird, mit drei Korrekturen am Entwurf (datiert in
+`FORTSCHRITT.md` §3) und den Marken, die per Delegation vom 2026-09-13 entschieden sind.
+Anforderung: R-GAME-08. Bauplan: `03-TASKS.md` M35.
+
+### D31.1 Der Zustand
+
+```ts
+export type GoalKey = 'provinces' | 'pointShareFirst' | 'populationShare' | 'pointShareSecond'
+/** Reihenfolge = Reihenfolge der Marken; R-GAME-08/AK6 prüft, dass die Tage so steigen. */
+export const GOAL_KEYS: readonly GoalKey[] = ['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond']
+
+// GameState:
+/** Spieltag, an dem die Macht das Ziel erreicht hat; null = noch offen. Nie zurückgesetzt. */
+goals: Record<PlayerId, Record<GoalKey, number | null>>
+```
+
+**Korrektur 1:** der Entwurf schrieb `state.goals: Record<GoalKey, { reachedOnDay }>` — ohne
+Spielerachse, also ein Ziel für die Partie statt für die Macht. `createInitialState` legt je
+Macht alle vier Schlüssel mit `null` an; `cloneState` kopiert Feld für Feld; `validateState`
+verlangt `goals` als Objekt.
+
+**Nicht in `HASH_OMIT_KEYS`.** Das Feld ist Teil des Spielstands; ein Feld außerhalb des Hashs
+kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt (Entscheid vom
+2026-09-12). Beide Golden-Master verschieben sich deshalb **einmal**, in T-M35-03, begründet.
+
+### D31.2 Die Marken
+
+| Ziel | Konstante | Wert | Status |
+|---|---|---|---|
+| eigene Provinzen | `goalProvinces` | 25 | abgeleitet |
+| Anteil an allen Punkten, erste Marke | `goalPointShareFirstPermille` | 400 | abgeleitet |
+| Anteil an der Weltbevölkerung | `goalPopulationSharePermille` | 300 | abgeleitet |
+| Anteil an allen Punkten, zweite Marke | `goalPointShareSecondPermille` | 600 | abgeleitet |
+
+*Abgeleitet* aus drei ganzen Partien (acht Mächte, Weltkarte): der Sieger erreichte 25
+Provinzen um Tag 120, 400 ‰ an Tag 220–222, 300 ‰ Weltbevölkerung an Tag 274–369 und 600 ‰
+an Tag 365–506; Tabelle und Gegenrede in `DECISIONS.md`, 2026-09-13. Alle vier stehen in
+`constants.json`, in `REQUIRED_CONSTANTS` und in `BALANCING.md`.
+
+**Korrektur 2: „Eine Großmacht ist gefallen" ist verworfen.** Es ist ein Weltereignis, keine
+eigene Leistung — das erste Ausscheiden kam in den drei Partien an Tag 215, 196 und 290,
+gleich, was der Spieler tat —, und `CAPITAL_LOST` trägt nur `playerId`, `provinceId` und
+`penaltyUntilTick`, keinen Eroberer. Der Kandidat „stärkste Macht eines Kontinents" war schon
+im Entwurf verworfen (die Karte kennt keinen Kontinent).
+
+### D31.3 Die Prüfung im Tagestick
+
+Eine reine Funktion in `packages/core/src/rules/goals.ts` rechnet je Macht die vier Stände:
+
+- **Provinzen:** Zahl der Provinzen mit `owner === playerId`;
+- **Punktanteil:** `player.score` gegen die Summe aller `player.score`, in Promille — dieselben
+  Zahlen, die `dailyTick` gerade gesetzt hat, kein zweiter Aufruf von `scoreOf`;
+- **Bevölkerungsanteil:** Summe `province.population` der eigenen Provinzen gegen die Summe
+  aller Provinzen, in Promille.
+
+`dailyTick` ruft sie **nach** der Punktberechnung und **vor** `checkVictory`, nur für lebende
+Mächte. Ein Ziel mit `null`, dessen Stand die Marke erreicht, bekommt den Spieltag
+(`Math.trunc(tick / ticksPerDay)`, derselbe Wert wie im `DAY_REPORT`). Ein gesetzter Tag wird
+nie zurückgesetzt. Zufall wird nicht verbraucht.
+
+### D31.4 Das Ereignis
+
+`GOAL_REACHED { playerId, goal: GoalKey, day }`, `audience: [playerId]` (damit auch
+`concerns`), Schwere `info`. **Nicht** in `ALERT_TYPES` — es hält das Vorspulen nicht an —
+und **nicht** in `WORLD_EVENT_TYPES`: ein Zwischenziel ist keine Weltnachricht. Die
+Oberfläche beschreibt es in `apps/desktop/src/game/events.ts` und `de.ts`.
+
+### D31.5 Die Migration 2 → 3 (Korrektur 3)
+
+Der Entwurf sagte „eine Migration nach R-GAME-05". Konkret:
+
+1. **Zuerst** `packages/core/test/golden/save-v2.json` einfrieren — ein echter Stand der
+   Stufe 2, mit dem heutigen `serialise` erzeugt, **bevor** sich irgendein Zustandsfeld
+   ändert, und danach nie wieder neu erzeugt (Muster `save-v1.json`, D19.5).
+2. `toVersion3` legt `goals` für jede Macht in `playerOrder` mit vier `null` an und setzt
+   `schemaVersion` in Umschlag und Zustand auf 3. `ADDED_IN_VERSION_3 = ['schemaVersion',
+   'goals']`.
+3. Der Formatwächter in `migration-v1.test.ts` hält heute `highestMigration() === 1` und
+   `SCHEMA_VERSION === 2` als Literale. Er wird **begründet** umgeschrieben: die Regel „ein
+   Schritt je Meilenstein" (Entscheid vom 2026-09-06) bleibt und wird als Liste Stufe →
+   Meilenstein geprüft; die eingefrorene Schlüsselliste bekommt `goals`.
+
+Ein alter Stand, der eine Marke schon überschritten hat, trägt beim ersten Tageswechsel nach
+dem Laden **diesen** Tag ein. Der Tag stimmt dann nicht, das Ziel schon — hingenommen; die
+Alternative wäre, Tage zu erfinden.
+
+**M17 nimmt danach Stufe 4** (D29.10): der eingefrorene Stand heißt dort `save-v3.json`.
+
+### D31.6 Sicht und Anzeige
+
+`publicView` führt `self.goals`: je Ziel Marke, eigener Stand und Tag des Erreichens — **nur
+die eigenen**. Quelle nach R-DIP-04: die Rangliste zeigt die Punkte aller Mächte ohnehin
+(`others[].score`), und die Weltbevölkerung ist eine Summe ohne Ort. Die Marken kommen aus den
+Regeln; `self.goals` entsteht deshalb wie `self.economy` nur, wenn `publicView` die `rules`
+bekommt.
+
+Die Rangliste (`Standings.tsx`) zeigt darunter vier Zeilen: Zeichen, Satz, bei offenem Ziel
+der Abstand zur Marke, bei erreichtem der Spieltag. Kein neues Panel, kein leerer Kasten.
+
+### D31.7 Risiko
+
+- **Die Marken stammen aus KI-Partien mit immer demselben Sieger.** Ein Mensch mit den USA
+  (vier Provinzen, 93 ‰ zu Beginn) steht anders da. T-M35-06 misst eine zweite Startzahl als
+  Zahl mit.
+- **Zwei der vier Ziele sind Punktanteile.** Sie sind dünn, aber die einzigen, die bei jeder
+  Aufstellung gleich weit tragen; eine absolute Provinzzahl erreicht man mit weniger Gegnern
+  früher — hingenommen.
+- **R-GAME-02 bleibt unberührt**, und wer Zwischenziele später zu Siegbedingungen machen will,
+  ändert die Anforderung begründet, wie T-M34-02 es mit R-TECH-01 tat.

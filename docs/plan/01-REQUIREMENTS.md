@@ -493,6 +493,10 @@ scope:
     R-MP-11:    "M39 — der Gast installiert nichts (T-M39-04)"
     R-MP-12:    "M39 — der Beitritt zeigt, worauf man sich einlaesst (T-M39-02)"
     R-MP-13:    "M39 — speichern und fortsetzen zu zweit (T-M39-06)"
+    # Aus der Delegation vom 2026-09-13 (Abschnitt 2.18, DECISIONS.md). Beide Meilensteine
+    # liegen hinter der abgenommenen V1; M41 bringt keine eigene Anforderung.
+    R-GAME-08:  "M35 — Zwischenziele als Rueckmeldung, keine Siegbedingung (T-M35-03)"
+    R-UNIT-09:  "M40 — die Haltung wird ein Auftrag (T-M40-03)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -1036,6 +1040,66 @@ ein Chat, ein Schummelschutz. Begründungen in `MEHRSPIELER.md` §6.
     Hosts übertragen.
   - AK2: WENN ein Stand übertragen wurde, DANN SOLL die fortgesetzte Partie dieselbe
     Prüfsumme führen wie der gespeicherte Stand.
+
+### 2.18 Rückmeldung im Mittelteil und Haltungen, die handeln (M35, M40, aufgenommen 2026-09-13)
+
+Zwei Punkte, die nach M34 offen standen und am 2026-09-13 per /goal-Auftrag an den Agenten
+delegiert wurden (`DECISIONS.md`, „Delegation per /goal vom 2026-09-13"). Beide waren
+entworfen, aber nicht als Anforderung geführt: die Zwischenziele in `FORTSCHRITT.md` §3
+(T-M35-01), die Haltungen in `LEVEL-UP-3.md` §5 (T-M28-07). Entwürfe: `02-DESIGN.md` D31 und
+D30.
+
+Was ausdrücklich **nicht** dazugehört: Zwischenziele sind keine Siegbedingung — R-GAME-02
+bleibt unberührt —, und die Automatik der Haltungen führt keine KI-Armee; die KI führt ihre
+Armeen weiter selbst (R-AI-01).
+
+- **R-GAME-08 — Zwischenziele zum Sieg.** Zwischen dem Ende der Freischaltungen und dem
+  Sieg erfährt der Spieler, ob er vorankommt: vier Marken — eine Zahl eigener Provinzen,
+  zwei Anteile an allen Punkten, ein Anteil an der Weltbevölkerung —, deren Erreichen im
+  Spielstand festgehalten, gemeldet und in der Rangliste gezeigt wird. Die Marken stehen in
+  den Regeldateien.
+  - AK1: WENN eine Macht an einem Tageswechsel eine Marke erreicht, DANN SOLL der Spielstand
+    diesen Spieltag festhalten, und er SOLL festgehalten bleiben, auch wenn die Zahl danach
+    wieder unter die Marke fällt.
+  - AK2: WENN ein Ziel erreicht wird, DANN SOLL genau diese Macht genau einmal ein Ereignis
+    erhalten; keine andere Macht SOLL es sehen, und es SOLL das Vorspulen nicht anhalten.
+  - AK3: WENN der Spieler die Rangliste öffnet, DANN SOLL sie je Ziel eine Zeile zeigen — ein
+    offenes mit seinem Abstand zur Marke, ein erreichtes mit seinem Spieltag — und nur die
+    eigenen Ziele.
+  - AK4: WENN eine Regeldatei eine der Marken nicht enthält, DANN SOLL der Lader sie ablehnen;
+    WENN Ziele erreicht werden, DANN SOLLEN Siegbedingung und Siegschwelle unverändert
+    bleiben.
+  - AK5: WENN ein Spielstand der Stufe 2 geladen wird, DANN SOLL er nach der Migration mit
+    leeren Zielen laufen und nach Speichern und Laden hashgleich sein; ein Stand der Stufe 1
+    SOLL über beide Schritte dasselbe Ergebnis liefern.
+  - AK6: WENN eine ganze Partie in der ausgelieferten Voreinstellung gespielt wird, DANN
+    SOLLEN die Zieltage des Siegers in der Reihenfolge der Marken steigen, der erste SOLL
+    nicht vor Spieltag 20 und der letzte nicht nach dem Siegtag liegen — gezählt aus dem
+    Spielstand und dem Ereignisstrom, nicht aus dem Protokollpuffer.
+- **R-UNIT-09 — Die Haltung führt sich selbst aus.** Die Haltung einer Armee eines
+  menschlichen Spielers ist ein Auftrag: „Verteidigung" deckt eine angegriffene eigene
+  Nachbarprovinz, „Angriff" verfolgt einen weichenden Gegner, „Garnison" bleibt stehen.
+  Die Automatik gibt dieselben Befehle, die der Spieler per Klick geben könnte.
+  - AK1: WENN eine stehende, nicht kämpfende Armee eines menschlichen Spielers in Haltung
+    Verteidigung ohne laufende Angriffssperre in einer feindfreien eigenen Provinz steht und in
+    einer über Land angrenzenden eigenen Provinz eine sichtbare Armee eines Kriegsgegners
+    steht, zu der keine eigene Armee unterwegs ist, DANN SOLL sie dorthin marschieren —
+    höchstens eine Armee je Provinz, die mit der frühesten Ankunft, bei Gleichstand die
+    kleinste Kennung.
+  - AK2: WENN eine stehende Armee in Haltung Angriff neben einer sichtbaren feindlichen Armee
+    steht, die eben zurückgewichen ist und höchstens die eigene Stärke hat, DANN SOLL sie ihr
+    folgen; einem Gegner außer Sicht oder einem stärkeren SOLL sie nicht folgen.
+  - AK3: WENN eine Armee in Haltung Garnison steht, DANN SOLL sie wie in Haltung Verteidigung
+    kämpfen und nie von selbst marschieren; WENN eine unbekannte Haltung befohlen wird, DANN
+    SOLL der Kern den Befehl ablehnen.
+  - AK4: WENN eine Partie gespeichert, geladen und fortgesetzt wird, DANN SOLL die Automatik
+    dieselben Befehle erzeugen wie ohne Unterbrechung; sie SOLL nur aus der Sicht des
+    Besitzers entscheiden (R-DIP-04) und für Armeen von KI-Mächten keinen Befehl erzeugen.
+  - AK5: WENN derselbe Messlauf über 200 Spieltage ohne und mit Automatik gefahren wird, DANN
+    SOLL der Anteil beantworteter Einmärsche mit Automatik größer sein, und kein Befehl der
+    Automatik SOLL abgelehnt worden sein — gezählt aus dem Ereignisstrom.
+  - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
+    und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt.
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

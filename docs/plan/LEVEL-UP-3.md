@@ -81,6 +81,14 @@ Handelsangebote) — bewusst erst nach Noahs Feedback-Runde planen.
 > **Stand 2026-09-11.** Diese Analyse ist der *Auftrag* von T-M28-07; gebaut wird hier
 > nichts. Sie beantwortet die Frage, die die Aufgabe stellt: die Haltungen existieren im
 > Kern — was fehlt konkret?
+>
+> **Abgelöst am 2026-09-13 (Planung von M40).** Die Nummern in 5.3 bis 5.5 gelten nicht
+> mehr: der Entwurf heißt **D30** statt D28, die Teilaufgaben heißen **T-M40-01 bis T-M40-06**
+> statt T-M33-01 bis -04. Grund: beide Nummern sind inzwischen anderweitig vergeben — M33
+> an die Einheitsbilder (`EINHEITSBILDER.md`, 2026-09-11), D28 an den Mehrspieler-Entwurf
+> (2026-09-12). Die Analyse in 5.1 und 5.2 gilt unverändert; **drei Sätze in 5.3 und 5.4
+> gelten nicht mehr** und sind dort vermerkt. Maßgeblich sind `02-DESIGN.md` D30 und
+> `03-TASKS.md` M40.
 
 ### 5.1 Der Befund, und er ist grösser als erwartet
 
@@ -113,6 +121,12 @@ daraus Marschbefehle) — **der Spieler hat dieselbe Rechnung nicht.**
 
 ### 5.3 Entwurf D28 — die Haltung wird ein Auftrag
 
+> *(Abgelöst am 2026-09-13: heute **D30**; D28.1–D28.3 hier entsprechen D30.4, D30.4 und
+> D30.1. **Korrektur:** die Automatik hängt nicht an den Ereignissen `ARMY_RETREATED` und
+> `ARMY_INTRUDED`, sondern liest den Zustand — das Ereignisprotokoll liegt nicht im Hash, und
+> ein geladener Stand beginnt ohne die Ereignisse des Vorticks, gäbe also bei gleichem
+> Zustand andere Befehle.)*
+
 Drei Bausteine, aufsteigend nach Kern-Beteiligung. Jeder ist für sich nützlich.
 
 - **D28.1 `aggressive` verfolgt.** Eine stehende Armee in Haltung „Angriff", deren
@@ -131,6 +145,13 @@ Drei Bausteine, aufsteigend nach Kern-Beteiligung. Jeder ist für sich nützlich
   Ohne sie nimmt D28.2 dem Spieler eine Wahl, die er heute hat.
 
 ### 5.4 Umgang mit dem Golden-Master — begründet, nicht umgangen
+
+> *(Abgelöst am 2026-09-13, D30.5 und `DECISIONS.md`: **die Vorgabe bleibt `defensive`**, es
+> gibt **keine** Migration. Der Grund für die `garrison`-Vorgabe unten entfällt, denn **kein
+> Golden-Master sieht eine Automatik in `packages/ai`**: `tiny-500` rechnet ohne Befehle und
+> ohne KI, der Durchstich läuft über `runTicks` ohne die Spielschleife, und in der Vollpartie
+> hat der Mensch keine Armee. Die Automatik führt nur Armeen menschlicher Spieler; KI-Partien
+> — Turnier, Parameterlauf, AK-1 — ändern sich damit nicht.)*
 
 D28.1 und D28.2 erzeugen **zusätzliche Kommandos** und ändern damit den Spielverlauf
 einer bestehenden Partie. Das ist **keine** hashneutrale Änderung, und sie lässt sich
@@ -153,6 +174,12 @@ Der Umgang ist deshalb:
    damit bitgleich. Belegt wird das, bevor eine Zeile Automatik entsteht.
 
 ### 5.5 Teilaufgaben (noch nicht in `tasks.yaml` — erst nach Noahs Freigabe)
+
+> *(Abgelöst am 2026-09-13 durch M40 in `tasks.yaml`: T-M33-01 → **T-M40-01** (`garrison`
+> ohne Migration, dazu die Prüfung des Werts in `SET_STANCE`), T-M33-02 → **T-M40-04**,
+> T-M33-03 → **T-M40-03**, T-M33-04 → **T-M40-05**; die „Vorbedingung" unten ist eigene
+> Aufgabe geworden: **T-M40-02** misst vorher, **T-M40-06** nachher. Die offene Frage an Noah
+> ist per Delegation entschieden — Vorgabe `defensive`, kippbar, `DECISIONS.md`.)*
 
 | ID | Titel | Kern? | Aufwand |
 |---|---|---|---|

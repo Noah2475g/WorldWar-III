@@ -1894,3 +1894,182 @@ verschieben — dann könnte der Host schummeln statt des Gastes. Für zwei Freu
 die richtige Wahl, und sie steht in der Anleitung statt nirgends (T-M39-07).
 
 ---
+
+## 2026-09-13 · Delegation per /goal vom 2026-09-13 · Alle offenen Punkte außer Mehrspieler und iPhone-App gehen an den Agenten
+
+**Entscheidung (Noah, per /goal):** Der Agent schließt alle offenen Punkte des Projekts ab —
+**außer dem Mehrspieler (M37–M39) und der iPhone-App** (`WorldWar-Mobil`). Damit sind die
+Spielentscheidungen delegiert, die `WORKFLOW.md` §2 bis heute „bei Noah" führte: die Marken
+der Zwischenziele, die Vorgabehaltung, und ob die stillen Eröffnungstage zu lang sind.
+Präzedenz ist die Playtest-Delegation vom 2026-09-07 (oben).
+
+**Umfang:** **M41** „Pflege nach M34" (T-M41-01 bis -07), **M40** „Die Haltung wird ein
+Auftrag" (D30, R-UNIT-09), **M35** Zwischenziele (D31, R-GAME-08) und **M17** „Tiefe zwischen
+den Kriegen" (Planung als T-M17-01). Baureihenfolge **M41 → M40 → M35 → M17**, in `tasks.yaml`
+als Abhängigkeiten eingetragen: M41 berührt weder `data/rules` noch Zustand noch Golden-Master,
+M40 nur die KI-Schleife, M35 und M17 beide.
+
+**Die Regel für den Bau: ein Parameterlauf am Ende, dazwischen ist die Abnahme absichtlich
+rot.** M35 und M17 ändern `data/rules` mehrfach. Nach jeder Änderung einen einstündigen
+`pnpm balance:sweep` zu fahren, misst Zwischenstände, die nie ausgeliefert werden; verglichen
+werden am Ende Siegtag, Eroberungen, Anteil des Stärksten und Siegverteilung, und die trägt
+schon der Grundlauf (Muster T-M34-07). Deshalb läuft der Parameterlauf **einmal**, in T-M17-16,
+nach der letzten Regeländerung. Von T-M35-02 bis dahin ist `pnpm acceptance` wegen des
+Frische-Wächters **rot, und das ist Absicht**; während des Baus sagt es eine Zeile in
+`WORKFLOW.md` §0, damit ein unterbrochener Stand erklärt ist. Turnier (13 s),
+`progress.slow.test.ts` und die Vollpartie bleiben je Aufgabe erlaubt.
+
+**Wie jede delegierte Entscheidung festgehalten wird:** mit Datum, Daten, Begründung und dem
+Satz „kippbar: …" — was man ändern müsste, wenn Noah anders entscheidet. Die fünf Einträge
+darunter sind die ersten.
+
+**Auswirkung:** zwei neue Meilensteine (M40, M41), zwei neue Anforderungen (R-GAME-08,
+R-UNIT-09, Abschnitt 2.18), zwei neue Entwürfe (D30, D31); `FORTSCHRITT.md` §3 und
+`LEVEL-UP-3.md` §5 tragen datierte Korrekturen.
+
+---
+
+## 2026-09-13 · T-M35-02 · Die vier Marken der Zwischenziele: 25 Provinzen, 400 ‰, 300 ‰ Weltbevölkerung, 600 ‰ (delegiert)
+
+**Entscheidung:** `goalProvinces` 25, `goalPointShareFirstPermille` 400,
+`goalPopulationSharePermille` 300, `goalPointShareSecondPermille` 600.
+
+**Die Daten.** Erster Spieltag, an dem eine Macht die Marke erreicht; drei ganze Partien, acht
+Mächte, Weltkarte, gemessen am 2026-09-13 in der Planung (Lauf mit Startzahl 1914 trifft den
+eingecheckten AK-1 genau: Tag 471, 1827 Eroberungen). Der Sieger war jedes Mal Russland. Die
+Messskripte sind nicht eingecheckt; T-M35-06 misst als Test neu.
+
+| Marke | Sieger 1914 (Sieg Tag 471) | Sieger 2015 (Sieg Tag 583) | Sieger 1914 mit KI-Gebäudeausbau (Sieg Tag 554) | Zweiter, China (1914) |
+|---|---|---|---|---|
+| 25 Provinzen | 129 | 119 | 118 | 140 |
+| 50 Provinzen | 187 | 170 | 176 | nie (Spitze 31) |
+| 80 / 100 Provinzen | 310 / 447 | 362 / 527 | 419 / 506 | nie |
+| Punktanteil 250 ‰ | 143 | 125 | 135 | **Tag 15** |
+| Punktanteil 400 ‰ | **221** | **222** | **220** | nie (Spitze 338) |
+| Punktanteil 500 / 600 ‰ | 315 / 365 | 358 / 486 | 424 / 506 | nie |
+| Weltbevölkerung 250 / 300 ‰ | 240 / 274 | 222 / 329 | 229 / 369 | 300 ‰ an Tag 290, nur im Lauf mit Gebäudeausbau |
+
+**Begründung.** **25 Provinzen** fallen beim Sieger um Tag 120 und sind auch für den Zweiten
+erreichbar — das erste Ziel soll mehr als eine Macht erreichen. **400 ‰** trifft in allen drei
+Läufen Tag 220–222, der Zweite erreicht es nie; niedriger wäre es geschenkt: China und Indien
+stehen an Tag 25 schon bei 237–292 ‰. **300 ‰ Weltbevölkerung** fällt an Tag 274–369, **600 ‰**
+an Tag 365–506 — ein Endspurt 50 bis 100 Tage vor dem Sieg. Die Reihenfolge der vier hält in
+allen drei Läufen. Die Provinzmarke ist absolut: mit weniger Gegnern fällt sie früher (im
+Grundlauf mit sechs Europäern erreichte Italien 25 Provinzen und 400 ‰ an Tag 91) —
+hingenommen.
+
+**Gegenrede:** die Marken stammen aus KI-Partien mit immer demselben Sieger. Ein Mensch mit
+den USA (vier Provinzen, 93 ‰ zu Beginn) steht anders da, und zwei der vier Ziele sind
+Punktanteile. T-M35-06 misst eine zweite Startzahl als Zahl mit.
+
+**kippbar:** vier Zahlen in `data/rules/default/constants.json` samt Zeilen in `BALANCING.md`;
+kein Code. Danach Frische-Wächter (Parameterlauf und Turnier neu einchecken) und T-M35-06 neu
+fahren — dessen Zusicherung „die Tage steigen in der Reihenfolge der Marken" kann dann fallen.
+
+---
+
+## 2026-09-13 · T-M40 · Die Vorgabehaltung bleibt `defensive`, und die Automatik führt nur menschliche Armeen (delegiert)
+
+**Entscheidung:** Neue und zurückgewichene Armeen stehen weiter auf `defensive`, und
+`defensive` deckt künftig selbsttätig (D30.4). Die neue Haltung `garrison` ist die Abwahl. Der
+Adjutant läuft nur für Mächte mit `kind: 'human'`.
+
+**Begründung.** Noahs Wunsch ist, dass Angriff und Verteidigung sich selbst ausführen — ohne
+eine Einstellung, die man erst finden muss. Mit `garrison` als Vorgabe fände ein neuer Spieler
+die Automatik nie. Der Grund, den `LEVEL-UP-3.md` §5.4 für `garrison` nannte — Golden-Master
+und alte Partien unverändert —, **entfällt**, weil kein Golden-Master eine Automatik in
+`packages/ai` sieht (D30.5): `tiny-500` rechnet ohne Befehle und KI, der Durchstich über
+`runTicks`, und in der Vollpartie hat der Mensch keine Armee. Nur menschliche Armeen, weil jede
+KI-Armee nach Rückzug und Aushebung auf `defensive` steht (`phases/retreat.ts`,
+`phases/recruitment.ts`): eine Automatik für alle würde Turnier, Parameterlauf und AK-1
+verschieben.
+
+**Kosten:** keine Migration, kein Feld, `SCHEMA_VERSION` bleibt. Ein alter Spielstand mit
+menschlichen Armeen fängt nach dem Laden an zu decken — hingenommen.
+
+**Gegenrede:** dieselbe Haltung bedeutet bei Mensch und KI Verschiedenes; eine KI-Armee auf
+`defensive` deckt nicht, sie folgt `military.ts`.
+
+**kippbar:** Vorgabe `garrison` — `phases/recruitment.ts` und `phases/retreat.ts` setzen
+`garrison` statt `defensive`; das verschiebt alle Läufe mit Rückzügen oder Aushebungen, also
+Golden-Master neu. Automatik auch für die KI — den `kind`-Filter in `adjutant.ts` entfernen,
+dann Turnier, Parameterlauf und AK-1 neu messen.
+
+---
+
+## 2026-09-13 · T-M41-01 · Die KI baut nur die Fabrik aus — die Kaserne Stufe 2 reißt R-AI-06 (delegiert)
+
+**Entscheidung:** `nextBuildingFor` baut die Fabrik in Städten bis zu ihrer `maxLevel`;
+Kaserne, Eisenbahn und Hafen bleiben bei „genau einmal".
+
+**Die Daten** (vier Reparaturen, am 2026-09-13 im Speicher gepatcht gemessen):
+
+| Variante | Turnier schwer:leicht / schwer:normal Frieden / schwer:normal Krieg | Grundlauf 12 × 120 Tage (Anteil, Eroberungen, Überlebende) | Vollpartie 1914 |
+|---|---|---|---|
+| heute | 1,00 / **0,70** / 1,00 | 0,4442 / 302,3 / 5,17 | Tag 471, keine Stufe 2 |
+| Fabrik + Eisenbahn + Kaserne | 1,00 / **1,00** / 0,58 | 0,4016 / 292,8 / 5,08 | Tag 554, Fabrik Stufe 2 in 44 Provinzen, Stufe 3 in 9 |
+| nur Kaserne | wie die Zeile darüber — **die Kaserne ist die Ursache** | – | – |
+| nur Eisenbahn | wie heute | – | – |
+| **nur Fabrik** (bis `maxLevel`, nur Städte) | **wie heute** | **wie heute, auf vier Stellen** | Tag 449, 31 Fabriken Stufe 2 begonnen, keine Stufe 3 |
+
+**Begründung:** die Kaserne Stufe 2 macht aus „schwer gegen normal im Frieden" wieder eine
+Mauer — 1,00 gegen die Obergrenze 0,95 in `tournament.slow.test.ts` (R-AI-06, Entscheid
+T-M34-07 oben). Die Eisenbahn bringt messbar nichts. Die Fabrik allein lässt Turnier und
+Grundlauf zeilengleich und gibt der KI die zweite Achse zumindest bis Stufe 2.
+
+**Was nicht geleistet ist:** Stufe 3 bleibt der KI in 449 Tagen unerreicht, und Tag 449 statt
+471 liegt im Rauschen der Startzahl (2015 endet an Tag 583) — belegt ist nur „keine
+Verschiebung".
+
+**kippbar:** eine Zeile je Gebäude in `nextBuildingFor`. Der Haltetest „nie Kaserne Stufe 2"
+(T-M41-01) nennt diesen Eintrag; wer ihn löscht, fährt danach das Turnier.
+
+---
+
+## 2026-09-13 · T-M41-03 · Die stillen Eröffnungstage: Ankündigung statt Datenänderung (delegiert)
+
+**Entscheidung:** Die Freischaltungstage bleiben. Zwei Spieltage vor jeder Freischaltung
+erscheint eine leise Ankündigung, die sagt, was kommt und was dafür fehlt.
+
+**Die Daten** (`onboarding.slow.test.ts`, ausgelieferte Regeln, 16 Spieltage): Ereignisse an
+Tick 43, 120 (Tag 6), 216 (Tag 10), 264 (Tag 12), 360 (Tag 16); **zwei Pausen von 96 Ticks**
+(Tag 6 → 10, Tag 12 → 16) und eine von 77 (Tick 43 → 120). Das Transportschiff allein
+vorzuziehen hilft nicht. Das Minimum für 77 Ticks sind zwei Datenänderungen (Transportschiff
+Tag 9, motorisierte Infanterie Tag 15), für höchstens 72 Ticks vier (Hafen 5, Transportschiff
+8, Festung 11, motorisierte Infanterie 14). Hinter dem Messfenster liegen größere Lücken
+(Tag 20 → 28, 48 → 62, 70 → 80).
+
+**Begründung:** vier geschobene Tage lösen drei Stellen im Messfenster und keine dahinter —
+genau das Stückwerk, das der Entscheid vom 2026-09-07 („Inhalt statt Freischaltungen
+verschieben") ausschließt. Die Ankündigung wirkt in jeder Lücke, ändert weder Regeln noch
+Golden-Master noch AK-1 und senkt die längste Pause im Messfenster gerechnet auf 48 Ticks
+(Ankündigungen an Tag 4, 8, 10, 14).
+
+**Gegenrede:** eine Ankündigung kann wie Kosmetik wirken, und die Meldungsleiste wird lauter
+— deshalb leise, ohne Alarmfarbe (M36: „nur Knappes ist laut").
+
+**kippbar:** `availableFromDay` in `units.json`/`buildings.json` nach den Zahlen oben; dann
+Frische-Wächter, Golden-Master und `BALANCING.md` nachziehen. Die Ankündigung kann bleiben.
+
+---
+
+## 2026-09-13 · T-M41-06 · Die Hülle hat fünf Kommandos, nicht sechs — korrigiert wird der Text, nicht die Hülle (delegiert)
+
+**Befund:** `generate_handler!` in `apps/desktop/src-tauri/src/main.rs` registriert
+**fünf** Kommandos — `saves_list`, `saves_read`, `saves_write`, `saves_remove`,
+`saves_exists` —, und `TauriStorage.ts` ruft genau diese fünf. „Sechs" steht im Kommentar
+`main.rs` Z. 11, in `PROBLEME.md` (AK-8, 2026-09-08), in `docs/reports/packaging.md`, in
+`PROGRESS.md` und `03-TASKS.md` bei T-M28-03 und im Kommentar dazu in `tasks.yaml`.
+
+**Entscheidung:** Die Hülle bleibt, wie sie ist; der Text wird an jeder Fundstelle mit
+„korrigiert 2026-09-13: fünf" berichtigt, ohne die Historie umzuschreiben. Dazu ein Wächter,
+der die Namen in `main.rs` gegen die Aufrufe in `TauriStorage.ts` hält (T-M41-06).
+
+**Begründung:** es fehlt kein Kommando — fünf Operationen decken den Speicher-Port
+vollständig ab (Liste, Lesen, Schreiben, Löschen, Existenz). Ein sechstes zu erfinden, damit
+der Text stimmt, wäre die Grenze angehoben, damit die Zahl passt.
+
+**kippbar:** wer ein sechstes Kommando braucht, trägt es in `main.rs` und `TauriStorage.ts`
+ein; der Wächter hält beide gleich.
+
+---
