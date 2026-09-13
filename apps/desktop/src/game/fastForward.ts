@@ -71,6 +71,12 @@ function targetForChunk(request: FastForwardRequest, ticksPerDay: number): FastF
   return target
 }
 
+/** Ein Häppchen: das Ergebnis des Kerns und die Befehle der Automatik darin (T-M40-13). */
+export interface FastForwardChunkResult extends FastForwardResult {
+  /** Die Marschbefehle, die die Haltung einer menschlichen Armee von selbst gab, mit ihrem Tick. */
+  adjutant: { tick: number; command: Command }[]
+}
+
 /** Wie viele Ticks ein Häppchen rechnet, bevor die Ereignisschleife wieder drankommt. */
 export const DEFAULT_CHUNK_TICKS = 24
 
@@ -95,7 +101,10 @@ export function fastForwardChunk(
    * geholt, wenn jemand zusieht: sie kosten Zeit und aendern die Befehle nicht.
    */
   trace?: (entry: { tick: number; commands: readonly Command[]; explanations: Record<PlayerId, Explanation[]> }) => void,
-): FastForwardResult {
+): FastForwardChunkResult {
+  // Was die Automatik in diesem Häppchen befohlen hat (T-M40-13) — die Oberfläche schreibt daraus
+  // eine leise Zeile, auch beim Vorspulen. Aus `commandsForTick`, nicht aus einem Ereignis des Kerns.
+  const adjutant: FastForwardChunkResult['adjutant'] = []
   // Das Gedächtnis, das zu den Befehlen dieses Ticks gehört. Es wird *einmal* gerechnet
   // und nach dem Tick abgelegt — ein zweiter Aufruf im Nachlauf wäre nicht nur doppelte
   // Arbeit, sondern falsch: er entschiede auf dem neuen Zustand und legte damit Absichten
@@ -106,7 +115,7 @@ export function fastForwardChunk(
   // (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
   let firstTick = true
 
-  return fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
+  const result = fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
     // Die Befehle eines Ticks kommen aus DERSELBEN Funktion wie in `advanceTicks` (T-M40-08,
@@ -120,6 +129,7 @@ export function fastForwardChunk(
       firstTick = false
       const tick = commandsForTick(current, ctx, { given, explain: trace !== undefined })
       pending = tick.memories
+      for (const command of tick.adjutant) adjutant.push({ tick: current.tick, command })
       trace?.({ tick: current.tick, commands: tick.ai, explanations: tick.explanations })
       return tick.commands
     },
@@ -128,4 +138,5 @@ export function fastForwardChunk(
       pending = null
     },
   })
+  return { ...result, adjutant }
 }

@@ -15,7 +15,7 @@ import {
   type StopReason,
   type StoragePort,
 } from '@worldwar/core'
-import { advance } from './game/advance.ts'
+import { advanceStep } from './game/advance.ts'
 import { RESUME_SPEED } from './game/speed.ts'
 import { clockStep } from './game/clock.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
@@ -247,6 +247,19 @@ export function App(props: AppProps) {
    * frueherer Stand, geladen oder neu, zeigt die Meldung wieder.
    */
   const [dismissedAlerts, setDismissedAlerts] = useState<ReadonlyMap<string, number>>(() => new Map())
+  /**
+   * Was die Automatik zuletzt von selbst marschieren liess (T-M40-13, Befund M3 der Durchsicht von M40).
+   *
+   * Aus den Befehlen, die `commandsForTick` der Automatik zuschreibt — ueber die Uhr wie ueber das
+   * Vorspulen —, nicht aus einem Ereignis des Kerns: der Zustand, sein Hash und die Golden-Master
+   * sehen davon nichts. Deshalb auch kein Teil des Spielstands; Laden und neue Partie leeren es.
+   */
+  const [adjutantMarches, setAdjutantMarches] = useState<readonly { tick: number; command: Command }[]>([])
+  const noteMarches = useCallback((entries: readonly { tick: number; command: Command }[]) => {
+    if (entries.length === 0) return
+    // So viele wie das Protokoll Zeilen vorhaelt (LOG_LINES) — aeltere fielen dort ohnehin heraus.
+    setAdjutantMarches((old) => [...old, ...entries].slice(-40))
+  }, [])
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -667,7 +680,9 @@ export function App(props: AppProps) {
       const current = stateRef.current
       if (!current) return
       if (!debugOn) {
-        setState(advance(current, ticks, { map: activeMap, rules: props.rules }, commands))
+        const result = advanceStep(current, ticks, { map: activeMap, rules: props.rules }, commands)
+        noteMarches(result.adjutant)
+        setState(result.state)
         return
       }
       const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
@@ -676,9 +691,10 @@ export function App(props: AppProps) {
         commands: result.applied.map((entry) => entry.command),
         explanations: result.explanations,
       })
+      noteMarches(result.adjutant)
       setState(result.state)
     },
-    [activeMap, props.rules, debugOn, noteTrace, takePending, now],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now],
   )
 
   /**
@@ -744,6 +760,8 @@ export function App(props: AppProps) {
         )
         playerCommands = []
         ticksRun += result.ticksRun
+        // Was die Automatik in diesem Häppchen befahl, ins Protokoll (T-M40-13).
+        noteMarches(result.adjutant)
         setState(result.state)
 
         // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
@@ -760,7 +778,7 @@ export function App(props: AppProps) {
       const start = stateRef.current
       if (start) chunk(start)
     },
-    [activeMap, props.rules, debugOn, noteTrace, takePending],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending],
   )
 
   // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
@@ -1045,6 +1063,8 @@ export function App(props: AppProps) {
           setAlarmSeenTick(-1)
           setSeenTick(-1)
           setDismissedAlerts(new Map())
+          // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
+          setAdjutantMarches([])
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1080,6 +1100,7 @@ export function App(props: AppProps) {
     setAlarmSeenTick(-1)
     setSeenTick(-1)
     setDismissedAlerts(new Map())
+    setAdjutantMarches([])
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1247,7 +1268,7 @@ export function App(props: AppProps) {
     const jüngste = new Set(alle.slice(-LOG_LINES))
     for (const event of worldEventsIn(alle).slice(-LOG_LINES)) jüngste.add(event)
 
-    return alle
+    const zeilen = alle
       .filter((event) => jüngste.has(event))
       .reverse()
       .map((event, index) => {
@@ -1260,7 +1281,31 @@ export function App(props: AppProps) {
           ? { ...entry, body: report.lines, deltas: report.deltas }
           : entry
       })
-  }, [state, activeMap, nameOf, ticksPerDay, dayBodies])
+
+    // Die Märsche der Automatik als leise Zeilen (T-M40-13, Befund M3): Rubrik Kampf, Sprung auf das
+    // Ziel, keine Alarmfarbe. Sie stammen aus den Befehlen der Schleife, nicht aus dem Protokoll des Kerns.
+    const maersche: EventEntry[] = adjutantMarches.flatMap(({ tick, command }, index) =>
+      command.type === 'MOVE_ARMY'
+        ? [
+            {
+              id: `${tick}-ADJUTANT_MARCH-${index}`,
+              tick,
+              text: t('events_ui.adjutantMarch', {
+                army: state.armies[command.armyId]?.name ?? command.armyId,
+                province:
+                  activeMap.provinces.find((province) => province.id === command.targetProvinceId)?.name ??
+                  command.targetProvinceId,
+              }),
+              provinceId: command.targetProvinceId,
+              severity: 'info' as const,
+              category: 'combat' as const,
+            },
+          ]
+        : [],
+    )
+    // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
+    return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
+  }, [state, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
    * Der Zustands-Hash der Debug-Ansicht (T-M12-10).

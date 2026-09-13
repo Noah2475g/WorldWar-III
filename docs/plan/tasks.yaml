@@ -3047,7 +3047,11 @@ tasks:
   - id: T-M40-13
     milestone: M40
     title: Eine leise Zeile, wenn eine Armee von selbst nachrueckt
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): AdvanceResult.adjutant und FastForwardChunkResult.adjutant aus
+    # commandsForTick; advance.ts bekommt advanceStep fuer den Uhrschritt; App.tsx fuehrt die Zeilen als
+    # Oberflaechenzustand (Laden und neue Partie leeren ihn), Rubrik Kampf, ohne Alarm. Rot: loop 1,
+    # fastForward 1, App 1 von 2 (Zeile fehlt); die Gegenprobe ohne Befehl war vorher schon gruen.
     deps: [T-M40-11]
     requirements: [R-UNIT-09]
     design: [D-30]

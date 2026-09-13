@@ -2279,3 +2279,26 @@ Nacharbeit von M40.
 **Status:** offen — wartet auf Noah.
 
 ---
+
+## 2026-09-13 · T-M40-13 · Ein Marsch der Automatik steht als leise Zeile im Protokoll (delegiert)
+
+**Entscheidung.** Befiehlt die Automatik einen Marsch, steht im Protokoll „Armee X rückt von selbst nach
+Y nach." mit Sprung auf die Zielprovinz — Rubrik Kampf, ohne Alarmfarbe, ohne Eintrag in der
+Meldungsleiste, ohne Halt des Vorspulens. Die Zeile entsteht aus den Befehlen, die `commandsForTick`
+der Automatik zuschreibt (`AdvanceResult.adjutant`, `FastForwardChunkResult.adjutant`), und lebt nur in
+der Oberfläche: kein Ereignis des Kerns, kein Zustandsfeld.
+
+**Begründung.** Befund M3 der Durchsicht: eine Armee marschierte, und der Spieler erfuhr nicht, warum —
+er sah eine Armee unterwegs, die er nie geschickt hatte. Ein Ereignis im Kern hätte Ereignistyp,
+Textkatalog, Zielgruppe und das Protokoll im Spielstand berührt; die Befehle der Automatik liegen in
+der Schleife ohnehin vor. Leise nach M36 („nur Knappes ist laut"): der Marsch ist eine Auskunft, keine
+Lage, die Handeln verlangt — und seit T-M40-10 selten.
+
+**Gegenrede.** Die Zeilen gehören nicht zum Spielstand; nach dem Laden fehlen die Märsche vor dem Laden
+im Protokoll. Hingenommen: die marschierende Armee zeigt die Karte weiter.
+
+**kippbar:** eine Meldung in der Leiste statt der Zeile — `alertsFor` in `apps/desktop/src/ui/Alerts.tsx`
+um eine Art erweitern, gespeist aus `adjutantMarches` in `App.tsx`; ganz ohne Zeile — `noteMarches` in
+`App.tsx` nicht mehr aufrufen.
+
+---

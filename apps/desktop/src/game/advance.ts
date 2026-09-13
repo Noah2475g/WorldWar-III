@@ -22,6 +22,22 @@ export function advance(
 }
 
 /**
+ * Ein Schritt der Uhr mit allem, was die Schleife zurückgibt (T-M40-13).
+ *
+ * `advance` gibt nur den Zustand; die Oberfläche braucht aus demselben Lauf auch die Befehle der
+ * Automatik, um „rückt von selbst nach" ins Protokoll zu schreiben. Ohne Begründungen der KI —
+ * die holt `advanceWithTrace`, wenn die Debug-Ansicht offen ist.
+ */
+export function advanceStep(
+  state: GameState,
+  ticks: number,
+  ctx: { map: MapData; rules: Rules },
+  playerCommands: readonly Command[] = [],
+): ReturnType<typeof advanceTicks> {
+  return advanceTicks(state, ticks, ctx, { playerCommands })
+}
+
+/**
  * Dasselbe, aber mit dem, was die Debug-Ansicht braucht (T-M12-10, R-AI-05).
  *
  * `advance` gibt nur den Zustand zurueck und wirft `applied` weg — die Kommandoliste

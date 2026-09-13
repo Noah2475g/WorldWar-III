@@ -79,6 +79,13 @@ export interface AdvanceResult {
   events: GameEvent[]
   /** Every command that was applied, with the tick it belonged to. */
   applied: { tick: number; command: Command }[]
+  /**
+   * The adjutant's share of `applied` — marches a human's stance ordered by itself (T-M40-13).
+   *
+   * The desktop writes a quiet line from it ("the army moves up by itself"). Not an event of the
+   * core: nothing in the state or the hash changes, and the golden masters do not see it.
+   */
+  adjutant: { tick: number; command: Command }[]
   /** How many ticks actually ran; fewer than asked when the game was decided. */
   ticks: number
   /**
@@ -122,6 +129,7 @@ export function advanceTicks(
   let current = state
   const events: GameEvent[] = []
   const applied: { tick: number; command: Command }[] = []
+  const adjutant: { tick: number; command: Command }[] = []
   let explanations: Record<PlayerId, Explanation[]> = {}
   let ran = 0
 
@@ -134,6 +142,7 @@ export function advanceTicks(
     if (opts.explain) explanations = tick.explanations
 
     for (const command of tick.commands) applied.push({ tick: current.tick, command })
+    for (const command of tick.adjutant) adjutant.push({ tick: current.tick, command })
 
     const result = runTicks(current, 1, ctx, () => tick.commands)
     current = result.state
@@ -143,5 +152,5 @@ export function advanceTicks(
     storeMemories(current, tick.memories)
   }
 
-  return { state: current, events, applied, ticks: ran, explanations }
+  return { state: current, events, applied, adjutant, ticks: ran, explanations }
 }

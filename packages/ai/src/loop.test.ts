@@ -298,6 +298,15 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
     expect(stateHash(zweite.state)).toBe(stateHash(durchgehend.state))
   })
 
+  it('nennt die Befehle der Automatik gesondert — genau die Befehle fuer den Menschen in applied (T-M40-13)', () => {
+    // Die Oberflaeche schreibt daraus eine leise Zeile; ein Ereignis des Kerns gibt es dafuer nicht.
+    const lauf = advanceTicks(lageMitMensch(), 150, ctx)
+    const mensch = lauf.state.playerOrder[0]!
+    const fuerDenMenschen = lauf.applied.filter((entry) => entry.command.playerId === mensch)
+    expect(fuerDenMenschen.length, 'der Adjutant hat in diesem Lauf nichts befohlen').toBeGreaterThan(0)
+    expect(lauf.adjutant).toEqual(fuerDenMenschen)
+  })
+
   it('erzeugt ueber einen Lauf keinen Befehl, den der Kern ablehnt (Muster R-AI-08/AK3)', () => {
     const lauf = advanceTicks(lageMitMensch(), 400, ctx)
     const mensch = lauf.state.playerOrder[0]!

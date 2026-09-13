@@ -553,6 +553,8 @@ export const de = {
     empty: 'Noch nichts geschehen.',
     noLosses: 'keine',
     jumpTo: 'Zur Provinz springen',
+    // Die Automatik lässt eine Armee marschieren (T-M40-13): eine leise Zeile, kein Alarm.
+    adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',

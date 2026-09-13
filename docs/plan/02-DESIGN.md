@@ -2687,6 +2687,12 @@ selbst". **Anhalten** einer Armee auf Verteidigung schickt `STOP_ARMY` und `SET_
 denselben Tick (`ActionSpec.followUp`), sonst marschierte sie im nächsten wieder los; eine Armee in
 jeder anderen Haltung hält nur an.)*
 
+*(Ergänzt am 2026-09-13, T-M40-13, Befund M3: befiehlt die Automatik einen Marsch, steht im Protokoll
+eine leise Zeile „… rückt von selbst nach … nach." mit Sprung auf die Zielprovinz — ohne Alarmfarbe,
+ohne Meldung in der Leiste, ohne Halt. Sie entsteht aus `AdvanceResult.adjutant` bzw.
+`FastForwardChunkResult.adjutant`, den Befehlen, die `commandsForTick` der Automatik zuschreibt;
+kein Ereignis des Kerns, kein Zustandsfeld, der Golden-Master sieht nichts davon.)*
+
 ### D30.8 Gegenrede und Risiko
 
 - **Dieselbe Haltung heißt bei Mensch und KI Verschiedenes.** Eine KI-Armee auf

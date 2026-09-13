@@ -1790,3 +1790,67 @@ describe('T-M40-11 Anhalten stellt eine marschierende Verteidigung auf Garnison'
     expect(within(armeePanel()).getByRole('button', { name: 'Anhalten' }).hasAttribute('disabled'), 'die Armee marschiert noch').toBe(true)
   }, 30_000)
 })
+
+/**
+ * Eine leise Zeile, wenn eine Armee von selbst nachrueckt (T-M40-13, Befund M3 der Durchsicht von M40).
+ *
+ * Die Automatik liess Armeen marschieren, und der Spieler erfuhr davon nichts — er sah eine Armee
+ * unterwegs, die er nie geschickt hatte. Die Zeile entsteht aus den Befehlen der Automatik
+ * (`commandsForTick`), nicht aus einem Ereignis des Kerns, und bleibt leise: keine Alarmfarbe, keine
+ * Meldung in der Leiste (M36). Gemessen am Bildschirm aus einer geladenen Partie.
+ */
+describe('T-M40-13 Eine leise Zeile, wenn eine Armee von selbst nachrueckt', () => {
+  const inf = (hpTotal: number) => [{ unitKey: 'infantry', hpTotal }]
+
+  /** Die Hauptstadt mit einer Verteidigung (und auf Wunsch einer Garnison), die Nachbarprovinz umkaempft. */
+  const ladeLage = async (mitGarnison: boolean) => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    // Mitten in der Partie: die Automatik ruht nach Marsch und Rueckzug fuenf Spieltage (T-M40-09).
+    state.tick = 200
+    const mensch = state.playerOrder[0]!
+    const feind = state.playerOrder[1]!
+    state.diplomacy.relations[[mensch, feind].sort().join('|')]!.state = 'war'
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: inf(6_000), stance: 'defensive' })
+    const ziel = state.provinces[capital]!.neighbors.find(
+      (id) => state.provinces[id]?.owner === mensch && planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1,
+    )
+    expect(ziel, 'die Hauptstadt hat keine eigene Nachbarprovinz - die Lage misst nichts').toBeDefined()
+    if (mitGarnison) placeArmy(state, { owner: mensch, at: capital, units: inf(6_000), stance: 'garrison' })
+    placeArmy(state, { owner: mensch, at: ziel!, units: inf(30_000), stance: 'garrison' })
+    placeArmy(state, { owner: feind, at: ziel!, units: inf(30_000) })
+
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Nachruecken'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    return { armee, ziel: ziel!, zielName: world.provinces.find((province) => province.id === ziel)!.name }
+  }
+
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' })
+  const meldungen = () => screen.queryByRole('region', { name: 'Meldungen' })?.textContent ?? ''
+
+  it('schreibt nach dem Vorspulen, welche Armee wohin nachrueckt — leise, mit Sprung auf die Provinz', async () => {
+    const { armee, ziel, zielName } = await ladeLage(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const zeile = within(log()).getByRole('button', { name: `${armee.name} rückt von selbst nach ${zielName} nach.` })
+    expect(zeile.closest('li')?.className, 'die Zeile ist laut').not.toMatch(/alert/)
+    expect(meldungen(), 'die Meldungsleiste nennt den Marsch').not.toMatch(/rückt von selbst/)
+
+    fireEvent.click(zeile)
+    expect((screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement).value).toBe(ziel)
+  }, 30_000)
+
+  it('schreibt nichts, wenn die Automatik nichts befiehlt', async () => {
+    // Allein in der Hauptstadt rueckt die Verteidigung nie aus (D30.4).
+    await ladeLage(false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(log().textContent).not.toMatch(/rückt von selbst/)
+  }, 30_000)
+})

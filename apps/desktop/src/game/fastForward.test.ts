@@ -219,6 +219,25 @@ describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', (
     expect(aufbrueche(events)).toEqual(ueberDieUhr)
     expect(hashValue(current, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(uhr.state, { omitKeys: HASH_OMIT_KEYS }))
   })
+
+  it('liefert aus jedem Haeppchen die Befehle der Automatik, dieselben wie die Uhr (T-M40-13)', () => {
+    // Daraus schreibt die Oberflaeche die leise Zeile „rueckt von selbst nach" — auch beim Vorspulen.
+    const uhr = advanceTicks(lage(), TICKS, ctx)
+
+    let current = lage()
+    let gelaufen = 0
+    const automatik: { tick: number; command: unknown }[] = []
+    while (gelaufen < TICKS) {
+      const rest = TICKS - gelaufen
+      const result = fastForwardChunk(current, { target: { kind: 'ticks', ticks: rest }, alertsFor: 'p1', maxTicks: TICKS }, ctx, rest)
+      current = result.state
+      gelaufen += result.ticksRun
+      automatik.push(...result.adjutant)
+    }
+
+    expect(uhr.adjutant.length, 'die Automatik hat ueber die Uhr nichts befohlen - der Vergleich misst nichts').toBeGreaterThan(0)
+    expect(automatik).toEqual(uhr.adjutant)
+  })
 })
 
 /**
