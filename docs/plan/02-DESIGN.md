@@ -2761,6 +2761,12 @@ Startzahl. Fällt eine Zusicherung, wird die Regel **zurückgenommen, nicht nach
 die Hinweise sagen das. Dasselbe Kriterium hätte die Deckung aus M40 (79,7 %, 10) und c1 (92 %, 9) rot
 gemeldet.
 
+*(Nachgemessen am 2026-09-13 nach dem Merge von Block N2, `c3ff8be`: 3146 von 3089 Provinz-Tagen
+(101,8 %), in keinem Paar ein Verlust ohne Gefecht, keine Ablehnung, kein Krieg ohne Erklärung — AK5
+hält, die Regel bleibt. Die Kontrolle des Messlaufs, die Garnison A 1914, steht seitdem auf 76
+Einmärschen und 4 verlorenen Provinzen statt auf 52 und 4. N2 hat die Gegner verändert; Karte, Regeln und
+Aufstellung sind unverändert. `PROBLEME.md`, 2026-09-13.)*
+
 **Nicht gebaut.** Ausdrückliche Aufträge („halte Provinz X mit N Armeen, fülle nach", Sammelbefehl)
 und die Rückeroberung — beides eine neue Entscheidung, als offene Frage an Noah in `DECISIONS.md`
 (2026-09-13, T-M40-10).

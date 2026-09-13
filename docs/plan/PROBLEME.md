@@ -2975,3 +2975,64 @@ oben). Ob das eine der Engstellen dort ist, sagt erst eine eigene Messung.
 wenn im selben Denkschritt gebaut wird — und gesondert messen (Handel, Bauten, Artillerie, Vollpartie, Turnier).
 
 **Status: offen, ohne Aufgabe** — vorgemerkt für M18.
+
+---
+
+## 2026-09-13 · Nach dem Merge von Block N2 · Die Kontrolle des Haltungs-Messlaufs hat sich mit den Gegnern verschoben — AK5 hält
+
+**Gemessen** nach dem Merge `c3ff8be` (Block N2 und Nacharbeit M40), gefahren vom Orchestrator:
+- zwölf Episodenläufe mit `WORLDWAR_WRITE_REPORT=1` (`apps/headless/test/stance.slow.test.ts`, 680 s),
+- Turnier,
+- Vollpartie 1914,
+- `pnpm verify`.
+
+Spaltenformat: Provinz-Tage / verloren (davon ohne Gefecht).
+
+| Startzahl · Aufstellung | Garnison vor N2 | **Garnison nach N2** | Verteidigung vor N2 | **Verteidigung nach N2** | Befehle nach N2 |
+|---|---|---|---|---|---|
+| 1914 · A | 573 / 4 (0) | **317 / 4 (0)** | 573 / 4 (0) | **317 / 4 (0)** | 0 |
+| 1914 · B | 733 / 1 (0) | **800 / 0 (0)** | 800 / 0 (0) | **800 / 0 (0)** | 8 |
+| 2015 · A | 532 / 3 (0) | **200 / 4 (0)** | 532 / 3 (0) | **200 / 4 (0)** | 0 |
+| 2015 · B | 800 / 0 (0) | **734 / 1 (0)** | 800 / 0 (0) | **800 / 0 (0)** | 4 |
+| 1815 · A | 702 / 1 (0) | **238 / 4 (0)** | 702 / 1 (0) | **238 / 4 (0)** | 0 |
+| 1815 · B | 800 / 0 (0) | **800 / 0 (0)** | 774 / 2 (0) | **791 / 1 (0)** | 9 |
+| **Summe** | 4140 / 9 (0) | **3089 / 13 (0)** | 4181 (101,0 %) / 10 (0) | **3146 (101,8 %) / 13 (0)** | 21 |
+
+**AK5 hält.**
+- Provinz-Tage: 3146 von 3089 (101,8 %, Schwelle 98 %).
+- Verluste ohne Gefecht: in keinem Paar, überall 0.
+- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge.
+
+Das Rücknahmekriterium ist nicht ausgelöst.
+
+**Was fiel: die Kontrolle.** „Die Garnison A 1914 bildet den Lauf vorher nach" erwartete 52 Einmärsche und
+4 verlorene Provinzen. Der Lauf ergab 76 und 4. Die 52 stammen vom KI-Stand vor N2.
+
+Geprüft, bevor etwas geändert wurde (`git diff --stat 74d7de0 c3ff8be`): Außerhalb von `packages/ai`, Tests
+und Berichten ändert der Merge nur zwei Dateien.
+- `packages/core/src/view/publicView.ts`, +10: das Sichtfeld `self.capitalMovedAtTick` (T-M41-11). Es ist
+  nur Sicht, und nur die KI liest es.
+- `packages/core/src/index.ts`, +1: dessen Export.
+
+Unberührt sind Karte, `data/rules`, `apps/desktop/src/game/newGame.ts`, `packages/testkit` und die
+Aufstellung im Test. Eine Garnison handelt nie von selbst.
+
+Die Gegner sind nach N2 stärker: In Aufstellung A hält die Garnison deutlich weniger Provinz-Tage (1914: 317
+statt 573).
+
+**Korrektur.** Die Kontrolle ist jetzt der Garnison-Lauf auf dem heutigen KI-Stand, `KONTROLLE =
+{ intrusions: 76, provincesLost: 4 }`. Die Geschichte steht im Kopf des Tests und im Bericht
+(`episoden.counting.ak5`); die 52 stehen weiter in `episoden.vorher`. Die Zusicherung prüft beide Zahlen wie
+bisher, abgeschwächt ist nichts.
+
+Dass die Regel hilft, bleibt unbelegt: Eine befohlene Deckung kam in 0 von 19 Episoden vor Gefechtsende an
+(vor N2: 3 von 25).
+
+**Unverändert, belegt:**
+- Turnier zeilengleich (`ai-tournament-run.md` ohne Diff).
+- Vollpartie 1914: Siegtag **975**, Sieger p7. `fullgame.json` weicht nur in `measuredAt` ab und ist
+  zurückgesetzt.
+- `pnpm verify`: Exit 0, 144 Dateien / 2059 Tests, Abdeckung Kern 96,8 %, gesamt 96,3 %.
+
+**Status:** Kontrolle begründet gesetzt, `stance.json` eingecheckt. Die nächste Messung, nach T-M40-14 und
+T-M40-15, bestätigt die Kontrolle am Lauf.

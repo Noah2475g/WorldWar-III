@@ -55,8 +55,8 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * Paare erreichen die Provinz-Tage mit Verteidigung mindestens 98 Prozent der Garnison; je Paar
  * gehen mit Verteidigung nicht mehr Provinzen ohne Gefecht verloren als mit Garnison; kein
  * Befehl wird abgelehnt, keiner loest einen Krieg ohne Erklaerung aus; und die Garnison A 1914
- * bildet den Lauf vorher aus T-M40-02 nach. Die Schwelle 98 Prozent stand erst nach der Messung
- * des Entwurfs fest (D30.9) — sie gilt fuer die Summe, weil die Regel des Entwurfs in einem
+ * trifft die Kontrolle (bis Block N2 der Lauf vorher aus T-M40-02, siehe `KONTROLLE`). Die Schwelle
+ * 98 Prozent stand erst nach der Messung des Entwurfs fest (D30.9) — sie gilt fuer die Summe, weil die Regel des Entwurfs in einem
  * Einzellauf (1815 B) drei Prozent unter der Garnison lag.
  *
  * **Der Bericht** `docs/reports/stance.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
@@ -96,10 +96,23 @@ const WINDOW_TICKS_T_M40_02 = 114
 const PENDULUM_DAYS = 5
 /** AK5: Provinz-Tage mit Verteidigung mindestens so viele Prozent der Garnison (D30.9). */
 const PROVINCE_DAYS_PERCENT = 98
-/** Der Lauf vorher (T-M40-02, Garnison A 1914), den die Garnison nachbilden muss. */
-const VORHER = { intrusions: 52, provincesLost: 4 }
-/** Der KI-Stand, auf dem gemessen wurde (Block N2 aendert die Gegner, danach neu messen). */
-const STAND = 'gemessen vor Block N2 der M41-Nacharbeit (KI-Verhalten)'
+/**
+ * Die Kontrolle: die Garnison A 1914 auf dem heutigen KI-Stand. Eine Garnison handelt nie von selbst;
+ * ihr Lauf aendert sich nur, wenn sich Gegner, Karte, Regeln oder Aufstellung aendern. Trifft sie die
+ * Kontrolle nicht, hat sich etwas anderes verschoben als die Automatik.
+ *
+ * **Die Geschichte.** Von T-M40-02 bis T-M40-12 war die Kontrolle der Lauf vorher: 52 Einmaersche,
+ * 4 verloren (steht weiter in `episoden.vorher`). Block N2 der M41-Nacharbeit hat das Verhalten der
+ * KI geaendert. Ausserhalb von `packages/ai` hat der Merge `c3ff8be` nur ein Feld der Sicht
+ * (`PublicView.self.capitalMovedAtTick`) und dessen Export hinzugefuegt, und dieses Feld liest nur die
+ * KI. Karte, Regeln, `newGame`, `testkit` und die Aufstellung sind unberuehrt. Nach dem Merge ergab
+ * derselbe Lauf 76 Einmaersche und 4 verlorene Provinzen. Die Kontrolle steht deshalb auf dem neuen
+ * Wert; abgeschwaecht ist die Zusicherung nicht.
+ */
+const KONTROLLE = { intrusions: 76, provincesLost: 4 }
+const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'
+/** Der KI-Stand, auf dem gemessen wurde. Aendert sich die KI, wird neu gemessen. */
+const STAND = 'gemessen nach dem Merge von Block N2 der M41-Nacharbeit (c3ff8be)'
 /**
  * Welcher Abschnitt von `episoden` geschrieben wird. `vorher` hat T-M40-07 mit dem Adjutanten aus M40
  * geschrieben und bleibt stehen; seit T-M40-12 misst der Lauf die Regel aus D30.4.
@@ -593,7 +606,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
       pendulum: `eine Armee marschiert von A nach B und binnen ${PENDULUM_DAYS} Spieltagen zurueck`,
       windowTicks,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = vorher (52 Einmaersche, 4 verloren)`,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2})`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
@@ -627,7 +640,7 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
     }, 1_800_000)
   }
 
-  it('hat alle zwoelf Laeufe, und die Garnison A 1914 bildet den Lauf vorher nach', () => {
+  it('hat alle zwoelf Laeufe, und die Garnison A 1914 trifft die Kontrolle', () => {
     // Der Bericht wird vor den Zusicherungen geschrieben: eine gescheiterte Messung ist die, die
     // man am dringendsten lesen will. Nur auf Wunsch (Befund N3).
     if (SCHREIBEN && laeufe.length === 12) schreibeBericht(laeufe, windowTicks)
@@ -637,8 +650,8 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
     const garnison = finde(laeufe, 1914, 'A', 'garrison')
     expect(
       { intrusions: garnison.intrusions, provincesLost: garnison.provincesLost },
-      'die Garnison bildet den Lauf vorher nicht nach - etwas anderes hat sich verschoben',
-    ).toEqual(VORHER)
+      'die Garnison trifft die Kontrolle nicht - etwas anderes als die Automatik hat sich verschoben',
+    ).toEqual(KONTROLLE)
   })
 
   // T-M40-07 mass den Adjutanten aus M40: 3301 von 4140 Provinz-Tagen (79,7 %), 10 Verluste ohne
