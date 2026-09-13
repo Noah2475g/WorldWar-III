@@ -2530,7 +2530,7 @@ der M41-Nacharbeit). Provinz-Tage = Provinzen des Menschen zu Beginn jedes Spiel
 
 **AK5 hält** (die Zusicherungen standen vor dieser Messung fest, die Schwelle 98 % aber erst nach der Messung des Entwurfs, der dieselbe Regel N mit denselben Zahlen maß — D30.9; berichtigt nach der Durchsicht der Nacharbeit, N-5): Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
 Verluste ohne Gefecht als mit Garnison (überall 0); 0 Ablehnungen, 0 Kriege ohne Erklärung, 0
-Pendelzüge. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
+Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)]. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
 Regel N im Entwurf der Nacharbeit. **Rücknahmekriterium nicht ausgelöst — die Regel bleibt.**
 
 **Was die Zahlen nicht sagen.**
@@ -3001,7 +3001,7 @@ Spaltenformat: Provinz-Tage / verloren (davon ohne Gefecht).
 **AK5 hält.**
 - Provinz-Tage: 3146 von 3089 (101,8 %, Schwelle 98 %).
 - Verluste ohne Gefecht: in keinem Paar, überall 0.
-- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge.
+- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)].
 
 Das Rücknahmekriterium ist nicht ausgelöst.
 
@@ -3124,10 +3124,18 @@ Der Zug ist die Folge davon, dass die Ruhe ab dem Abmarsch zählt. Es ist dersel
 mit einem Marsch der Automatik statt einem des Spielers. T-M40-14 hat den Fall für Spielermärsche gelöst, nicht für
 die Märsche der Automatik selbst.
 
+*(Berichtigt am 2026-09-13 nach Befund N-6 der Durchsicht der zweiten Nacharbeit, gerechnet, nicht gemessen: die
+Ursache ist nicht allein, dass die Ruhe ab dem Abmarsch zählt, sondern dass **Ruhe und Pendelfenster gleich lang
+sind** — beide fünf Spieltage, 120 Ticks. Zählte die Ruhe ab der Ankunft, wäre a3 frühestens an Tick 1853 + 120 =
+1973 frei, einen Tick nach dem gemessenen Rückzug und 120 Ticks nach der Ankunft; die Kennzahl
+(`bewegung.tick - ankunft.tick <= 5 · 24` in `werteAus`) zählte den Zug weiter.)*
+
 **Nicht zugesichert, nicht gebaut.** Pendelzüge gehören nicht zu AK5; die Zahl steht im Bericht. Wer sie verhindern
 will, hat zwei Wege, und beide sind eine neue Entscheidung, gemessen mit demselben Lauf:
-- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen),
-- die Ruhe nach Märschen der Automatik verlängern.
+- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen) — **verschiebt um einen Tick** und
+  verhindert den Zug nicht, weil Ruhe und Pendelfenster gleich lang sind (N-6, siehe oben),
+- die Ruhe nach Märschen der Automatik verlängern — wirksam nur, wenn sie länger ist als das Pendelfenster von
+  fünf Spieltagen.
 
 **Status:** offen, ohne Aufgabe. `stance.json` eingecheckt, Frische-Wächter grün.
 
