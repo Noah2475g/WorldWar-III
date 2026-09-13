@@ -1,9 +1,21 @@
-import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
-import { CRITERIA, criteriaOf, gaugeStatus, stanceReportStatus, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
+import {
+  CRITERIA,
+  GAUGES,
+  STANCE_SOURCES,
+  criteriaOf,
+  gaugeStatus,
+  stanceReportStatus,
+  unhomedCriteria,
+  v1Failures,
+} from '../scripts/acceptance-criteria.mjs'
+import { allFreshness, gaugeFreshness, stanceFreshness } from '../scripts/freshness.mjs'
 
 const DOC = `
 ### 2.1 Beispiel
@@ -392,84 +404,261 @@ describe('R-ARCH-05 Ein spaeteres Kriterium faerbt die V1-Abnahme nicht rot', ()
 /**
  * Die Abnahme faehrt seit dem 2026-09-08 nicht mehr die ganze langsame Suite
  * (75-130 min), sondern nur, was ihre Kriterien woertlich verlangen. Die Balancing-
- * Messgeraete (Parameterlauf, Turnier) ersetzt ein Frische-Waechter: sind die
- * Regeldateien juenger als der Bericht des Messgeraets, ist die Abnahme rot -
- * ein Messgeraet darf nicht still veralten. Entscheid in DECISIONS.md.
+ * Messgeraete (Parameterlauf, Turnier) ersetzt ein Frische-Waechter: liegt seit dem
+ * Bericht ein Commit an ihren Quellen, ist die Abnahme rot - ein Messgeraet darf nicht
+ * still veralten. Entscheid in DECISIONS.md.
+ *
+ * **Die Geschichte.** Bis T-M40-17 verglich der Waechter Commit-Zeiten. Nach dem Merge eines
+ * aelteren Seitencommits war das gruen, obwohl der Bericht die neuen Regeln nie gesehen hatte
+ * (Befund M-1 der Durchsicht der zweiten Nacharbeit M40). Seitdem entscheidet die Abstammung:
+ * `git rev-list -1 <berichtcommit>..HEAD -- <quellen>`. Die Commit-Kennungen hier sind erfunden.
  */
 describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
-  it('meldet frisch, wenn der Bericht juenger ist als die letzte Regelaenderung', () => {
-    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: 200, rulesDirty: false }).fresh).toBe(true)
+  const frisch = { sources: ['data/rules'], sourcesDirty: false, reportCommit: 'b'.repeat(40), commitsSinceReport: [] as string[] }
+
+  it('meldet frisch, wenn seit dem Bericht auf HEAD kein Commit an den Quellen liegt', () => {
+    expect(gaugeStatus(frisch)).toMatchObject({ fresh: true })
   })
 
-  it('meldet veraltet, wenn die Regeln juenger sind als der Bericht', () => {
-    const status = gaugeStatus({ rulesChangedAt: 300, gaugeChangedAt: 200, rulesDirty: false })
+  it('meldet veraltet, wenn seit dem Bericht ein Commit an den Quellen liegt - und nennt Commit und Quelle', () => {
+    const status = gaugeStatus({ ...frisch, commitsSinceReport: ['a56df6812aac57741823c120392f1a7ab18aedcb'] })
     expect(status.fresh).toBe(false)
-    expect(status.reason).toContain('Regeln')
+    expect(status.reason).toContain('a56df68')
+    expect(status.reason).toContain('data/rules')
   })
 
-  it('meldet veraltet bei uncommitteten Regelaenderungen - die sichere Richtung', () => {
-    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: 200, rulesDirty: true }).fresh).toBe(false)
+  it('meldet veraltet bei uncommitteten Aenderungen an den Quellen - die sichere Richtung', () => {
+    expect(gaugeStatus({ ...frisch, sourcesDirty: true }).fresh).toBe(false)
   })
 
   it('meldet veraltet, wenn der Bericht keinen Stand hat', () => {
-    expect(gaugeStatus({ rulesChangedAt: 100, gaugeChangedAt: null, rulesDirty: false }).fresh).toBe(false)
+    expect(gaugeStatus({ ...frisch, reportCommit: null }).fresh).toBe(false)
   })
 
-  it('meldet veraltet, wenn der Regelstand unbekannt ist - die sichere Richtung', () => {
-    expect(gaugeStatus({ rulesChangedAt: null, gaugeChangedAt: 200, rulesDirty: false }).fresh).toBe(false)
+  it('meldet veraltet, wenn git die Commits nicht nennen kann - die sichere Richtung', () => {
+    expect(gaugeStatus({ ...frisch, commitsSinceReport: null }).fresh).toBe(false)
+  })
+
+  it('beobachtet je Messgeraet die Quellen, die es nachweislich liest - und jede davon gibt es', () => {
+    // Parameterlauf: `sweep.slow.test.ts` liest data/rules und data/maps/world.json. Turnier: TEST_RULES und
+    // smallWorld aus packages/testkit, die data/rules und data/maps/testworld.json importieren (T-M40-17).
+    const ROOT = fileURLToPath(new URL('..', import.meta.url))
+    expect(GAUGES.map((gauge: { name: string; sources: string[] }) => [gauge.name, gauge.sources])).toEqual([
+      ['Parameterlauf', ['data/rules', 'data/maps/world.json']],
+      ['Turnier', ['data/rules', 'data/maps/testworld.json']],
+    ])
+    for (const gauge of GAUGES as { report: string; sources: string[] }[]) {
+      for (const path of [gauge.report, ...gauge.sources]) expect(existsSync(join(ROOT, path)), path).toBe(true)
+    }
   })
 })
 
 /**
- * Der Haltungs-Messlauf veraltet nicht still (T-M40-16, Befund M-B der Durchsicht der Nacharbeit M40).
+ * Der Haltungs-Messlauf veraltet nicht still (T-M40-16, Befund M-B; seit T-M40-17 nach Abstammung).
  *
  * `stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik (R-UNIT-09/AK5, D30.9), laeuft aber
- * in keiner Pruefkette: zwoelf Partien dauern gut elf Minuten. Nach dem Merge von Block N2 haette
- * `pnpm acceptance` gruen gemeldet, auch wenn AK5 gefallen waere. Die Abnahme faehrt den Lauf deshalb
- * nicht, sondern prueft wie beim Parameterlauf und Turnier: `docs/reports/stance.json` muss juenger sein
- * (Commit-Zeit, `<=`) als die letzte Aenderung unter `packages/ai/src` UND `packages/core/src` — die
- * Automatik und die Regeln, die sie vermisst. Und der eingecheckte Lauf muss AK5 erfuellt haben, denn
- * der Test schreibt den Bericht vor seinen Zusicherungen. Zeiten hier erfunden.
+ * in keiner Pruefkette: zwoelf Partien dauern gut elf Minuten. Die Abnahme faehrt den Lauf deshalb nicht,
+ * sondern prueft den eingecheckten Bericht:
+ *  - er nennt den Commit, auf dem gemessen wurde (`measuredAtCommit`), und der Arbeitsbaum war an den
+ *    Quellen sauber (`measuredDirty`) — sonst misst ein Textkommit am Bericht als Messung (Befund N-3);
+ *  - seit diesem Commit liegt auf HEAD kein Commit an einer Quelle des Laufs (`STANCE_SOURCES`, Befund N-1);
+ *    bis T-M40-17 verglich der Waechter Commit-Zeiten, und der Merge eines aelteren Seitencommits machte
+ *    ihn gruen (Befund M-1);
+ *  - der eingecheckte Lauf hat AK5 erfuellt, denn der Test schreibt den Bericht vor seinen Zusicherungen.
+ * Commit-Kennungen hier erfunden.
  */
-describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16)', () => {
-  const frisch = { aiChangedAt: 100, coreChangedAt: 150, reportChangedAt: 200, sourcesDirty: false, ak5Fulfilled: true }
+describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16, T-M40-17)', () => {
+  const MESSCOMMIT = 'c'.repeat(40)
+  const bericht = (felder: Record<string, unknown> = {}) => ({
+    measuredAtCommit: MESSCOMMIT,
+    measuredDirty: [] as string[],
+    ak5: { erfuellt: true, kontrolle: { erwartet: { intrusions: 76, provincesLost: 4 }, gemessen: { intrusions: 76, provincesLost: 4 }, ok: true }, fensterOk: true },
+    ...felder,
+  })
+  const frisch = { report: bericht(), sourcesDirty: false, measuredAtIsAncestor: true, commitsSinceMeasurement: [] as string[] }
 
-  it('meldet frisch, wenn der Bericht juenger ist als beide Quellen und AK5 erfuellt hat', () => {
+  it('meldet frisch, wenn seit dem Messcommit kein Commit an den Quellen liegt und AK5 erfuellt ist', () => {
     expect(stanceReportStatus(frisch)).toMatchObject({ fresh: true })
   })
 
-  it('meldet frisch bei gleicher Commit-Zeit - dieselbe Grenze wie beim Parameterlauf', () => {
-    expect(stanceReportStatus({ ...frisch, aiChangedAt: 200 }).fresh).toBe(true)
-    expect(stanceReportStatus({ ...frisch, coreChangedAt: 200 }).fresh).toBe(true)
-  })
-
-  it('meldet veraltet, wenn packages/ai/src juenger ist als der Bericht - und nennt die Quelle', () => {
-    const status = stanceReportStatus({ ...frisch, aiChangedAt: 201 })
+  it('meldet veraltet nach dem Merge eines aelteren Seitencommits - und nennt ihn (Befund M-1)', () => {
+    // Nachbau der Durchsicht: der Seitenzweig aendert packages/ai/src zur Zeit 2000, main checkt den Lauf zur
+    // Zeit 3000 ein, der Merge zur Zeit 4000 gleicht fuer den Pfad dem Seitenzweig. `git log -1` nennt den
+    // Seitencommit (2000 <= 3000, gruen); `git rev-list <messcommit>..HEAD` findet ihn.
+    const status = stanceReportStatus({ ...frisch, commitsSinceMeasurement: ['a56df6812aac57741823c120392f1a7ab18aedcb'] })
     expect(status.fresh).toBe(false)
-    expect(status.reason).toContain('packages/ai/src')
+    expect(status.reason).toContain('a56df68')
     expect(status.reason).toContain('stance.json')
   })
 
-  it('meldet veraltet, wenn packages/core/src juenger ist als der Bericht - auch wenn die KI aelter ist', () => {
-    const status = stanceReportStatus({ ...frisch, coreChangedAt: 300 })
+  it('meldet rot bei einem Bericht ohne Messcommit - so steht der eingecheckte Lauf bis zur naechsten Messung', () => {
+    const alt = { adjutant: 'D30.4', stand: 'gemessen nach dem Merge', measuredAt: '2026-09-13T18:05:53.565Z', ak5: bericht().ak5 }
+    const status = stanceReportStatus({ ...frisch, report: alt, measuredAtIsAncestor: null, commitsSinceMeasurement: null })
     expect(status.fresh).toBe(false)
-    expect(status.reason).toContain('packages/core/src')
+    expect(status.reason).toContain('ohne Messcommit')
+    expect(status.reason).toContain('neu messen')
   })
 
-  it('meldet veraltet bei uncommitteten Aenderungen an den Quellen - die sichere Richtung', () => {
+  it('meldet rot bei einem Bericht aus einem an den Quellen schmutzigen Arbeitsbaum (Befund N-3)', () => {
+    const schmutzig = stanceReportStatus({ ...frisch, report: bericht({ measuredDirty: ['docs/plan/PROBLEME.md', 'packages/ai/src/adjutant.ts'] }) })
+    expect(schmutzig.fresh).toBe(false)
+    expect(schmutzig.reason).toContain('packages/ai/src/adjutant.ts')
+    expect(schmutzig.reason).not.toContain('PROBLEME')
+    // Eine Notiz neben den Quellen aendert nichts, was der Lauf liest.
+    expect(stanceReportStatus({ ...frisch, report: bericht({ measuredDirty: ['docs/plan/PROBLEME.md'] }) }).fresh).toBe(true)
+    // Ohne Vermerk ist unbekannt, ob sauber gemessen wurde.
+    const ohne = bericht()
+    delete (ohne as Partial<typeof ohne>).measuredDirty
+    expect(stanceReportStatus({ ...frisch, report: ohne }).fresh).toBe(false)
+  })
+
+  it('meldet rot, wenn der Messcommit nicht in der Geschichte von HEAD liegt', () => {
+    // Ein Bericht, der aus einem anderen Zweig herueberkopiert wurde: rev-list <messcommit>..HEAD saehe die
+    // Commits des anderen Zweigs nicht, die HEAD fehlen.
+    const status = stanceReportStatus({ ...frisch, measuredAtIsAncestor: false })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Geschichte')
+  })
+
+  it('meldet veraltet bei uncommitteten Aenderungen, ohne Bericht und wenn git nicht antwortet', () => {
     expect(stanceReportStatus({ ...frisch, sourcesDirty: true }).fresh).toBe(false)
-  })
-
-  it('meldet veraltet ohne Bericht und bei unbekanntem Stand einer Quelle', () => {
-    expect(stanceReportStatus({ ...frisch, reportChangedAt: null }).fresh).toBe(false)
-    expect(stanceReportStatus({ ...frisch, aiChangedAt: null }).fresh).toBe(false)
-    expect(stanceReportStatus({ ...frisch, coreChangedAt: null }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, report: null }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, commitsSinceMeasurement: null }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, measuredAtIsAncestor: null }).fresh).toBe(false)
   })
 
   it('meldet rot, wenn der eingecheckte Lauf AK5 nicht erfuellt hat - auch wenn er frisch ist', () => {
     // Der Test schreibt den Bericht, bevor er zusichert: ein gescheiterter Lauf ist der, den man lesen will.
-    const status = stanceReportStatus({ ...frisch, ak5Fulfilled: false })
+    const status = stanceReportStatus({ ...frisch, report: bericht({ ak5: { ...bericht().ak5, erfuellt: false } }) })
     expect(status.fresh).toBe(false)
     expect(status.reason).toContain('AK5')
+  })
+
+  it('meldet rot, wenn die Kontrolle im eingecheckten Lauf gefallen ist - auch wenn erfuellt true sagt (T-M40-18, Befund N-2)', () => {
+    // So in Schritt 0 der zweiten Nacharbeit wirklich geschehen: die Kontrolle war rot, AK5 gruen, und der Bericht
+    // trug `erfuellt: true`. Der Waechter liest die Kontrolle deshalb selbst, nicht nur das Sammelfeld.
+    const kontrolle = { erwartet: { intrusions: 52, provincesLost: 4 }, gemessen: { intrusions: 76, provincesLost: 4 }, ok: false }
+    const status = stanceReportStatus({ ...frisch, report: bericht({ ak5: { ...bericht().ak5, kontrolle } }) })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Kontrolle')
+  })
+
+  it('meldet rot, wenn sich das Kartenfenster im eingecheckten Lauf verschoben hat (T-M40-18)', () => {
+    const status = stanceReportStatus({ ...frisch, report: bericht({ ak5: { ...bericht().ak5, fensterOk: false } }) })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Kartenfenster')
+  })
+
+  it('meldet rot bei einem Bericht, der Kontrolle oder Kartenfenster nicht nennt (T-M40-18)', () => {
+    const ohneKontrolle: Partial<ReturnType<typeof bericht>['ak5']> = { ...bericht().ak5 }
+    delete ohneKontrolle.kontrolle
+    const ohneFenster: Partial<ReturnType<typeof bericht>['ak5']> = { ...bericht().ak5 }
+    delete ohneFenster.fensterOk
+    expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneKontrolle }) }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneFenster }) }).fresh).toBe(false)
+  })
+
+  it('beobachtet jede Quelle, von der der Messlauf abhaengt - und jede davon gibt es (Befund N-1)', () => {
+    const ROOT = fileURLToPath(new URL('..', import.meta.url))
+    expect(STANCE_SOURCES).toEqual([
+      'packages/ai/src',
+      'packages/core/src',
+      'packages/shared',
+      'packages/testkit',
+      'data/rules',
+      'data/maps/world.json',
+      'apps/desktop/src/game/newGame.ts',
+      'apps/headless/test/stance.slow.test.ts',
+    ])
+    for (const path of STANCE_SOURCES as string[]) expect(existsSync(join(ROOT, path)), path).toBe(true)
+  })
+})
+
+/**
+ * Der Nachbau aus der Durchsicht (Befund M-1) als echtes Repo — die Seite der Waechter, die git fragt.
+ *
+ * Basis zur Zeit 1000; main checkt zur Zeit 3000 die Berichte ein, gemessen auf der Basis; ein Seitenzweig
+ * aendert zur Zeit 2000 die Automatik und die Regeln; der Merge zur Zeit 4000. Fuer beide Pfade gleicht der
+ * Merge dem Seitenzweig, git ueberspringt ihn, und `git log -1` nennt den aelteren Seitencommit.
+ */
+describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommits (Befund M-1)', () => {
+  let repo = ''
+  let haupt = ''
+
+  beforeAll(() => {
+    repo = mkdtempSync(join(tmpdir(), 'worldwar-frische-'))
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')))
+    const git = (zeit: number | null, ...args: string[]): string =>
+      execFileSync(
+        'git',
+        ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false', ...args],
+        { cwd: repo, encoding: 'utf8', env: { ...env, ...(zeit === null ? {} : { GIT_AUTHOR_DATE: `@${zeit} +0000`, GIT_COMMITTER_DATE: `@${zeit} +0000` }) } },
+      ).trim()
+    const schreibe = (pfad: string, inhalt: string) => {
+      mkdirSync(dirname(join(repo, pfad)), { recursive: true })
+      writeFileSync(join(repo, pfad), inhalt)
+    }
+    const laufAuf = (commit: string) =>
+      JSON.stringify({
+        episoden: {
+          nachher: {
+            measuredAtCommit: commit,
+            measuredDirty: [],
+            ak5: { erfuellt: true, kontrolle: { erwartet: {}, gemessen: {}, ok: true }, fensterOk: true },
+          },
+        },
+      })
+
+    git(null, 'init', '-q', '-b', 'main')
+    schreibe('packages/ai/src/adjutant.ts', 'v1\n')
+    schreibe('packages/core/src/step.ts', 'v1\n')
+    schreibe('data/rules/default/constants.json', '{"v":1}\n')
+    schreibe('docs/reports/stance.json', '{}\n')
+    schreibe('docs/reports/balance-sweep.md', 'alt\n')
+    git(null, 'add', '-A')
+    git(1000, 'commit', '-q', '-m', 'basis')
+    const basis = git(null, 'rev-parse', 'HEAD')
+    git(null, 'branch', 'seite')
+
+    schreibe('docs/reports/stance.json', laufAuf(basis))
+    schreibe('docs/reports/balance-sweep.md', 'gemessen auf der Basis\n')
+    git(null, 'add', '-A')
+    git(3000, 'commit', '-q', '-m', 'main: Messlaeufe auf der alten KI')
+    haupt = git(null, 'rev-parse', 'HEAD')
+
+    git(null, 'checkout', '-q', 'seite')
+    schreibe('packages/ai/src/adjutant.ts', 'v2\n')
+    schreibe('data/rules/default/constants.json', '{"v":2}\n')
+    git(null, 'add', '-A')
+    git(2000, 'commit', '-q', '-m', 'seite: Automatik und Regeln')
+
+    git(null, 'checkout', '-q', 'main')
+    git(4000, 'merge', '-q', '--no-ff', '-m', 'merge seite', 'seite')
+  }, 60_000)
+
+  afterAll(() => {
+    if (repo) rmSync(repo, { recursive: true, force: true, maxRetries: 3 })
+  })
+
+  it('meldet den Haltungs-Messlauf vor dem Merge frisch und danach veraltet', () => {
+    const vorher = stanceFreshness(repo, haupt)
+    expect(vorher.fresh, vorher.reason).toBe(true)
+    const nachher = stanceFreshness(repo)
+    expect(nachher.fresh, nachher.reason).toBe(false)
+    expect(nachher.reason).toContain('seit dem Messcommit')
+    // Alle drei Waechter in einem Aufruf, wie am echten Stand; im Wegwerf-Repo fehlt der Turnierbericht.
+    expect(allFreshness(repo).map((waechter: { name: string; fresh: boolean }) => [waechter.name, waechter.fresh])).toEqual([
+      ['Parameterlauf', false],
+      ['Turnier', false],
+      ['Haltungs-Messlauf', false],
+    ])
+  })
+
+  it('meldet den Parameterlauf vor dem Merge frisch und danach veraltet - dieselbe Luecke', () => {
+    const gauge = { name: 'Parameterlauf', report: 'docs/reports/balance-sweep.md', sources: ['data/rules'], command: 'pnpm balance:sweep' }
+    const vorher = gaugeFreshness(repo, gauge, haupt)
+    expect(vorher.fresh, vorher.reason).toBe(true)
+    const nachher = gaugeFreshness(repo, gauge)
+    expect(nachher.fresh, nachher.reason).toBe(false)
   })
 })

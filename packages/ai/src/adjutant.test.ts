@@ -556,4 +556,32 @@ describe('R-UNIT-09/AK7 Ein eigener Marsch- oder Haltebefehl stellt eine Verteid
     expect(garrisonFollowUp(state, garnisonFuer(eigene.id)), 'SET_STANCE').toBeNull()
     expect(garrisonFollowUp(state, { type: 'SPLIT_ARMY', playerId: 'p1', armyId: eigene.id, take: infanterie(1_000) }), 'SPLIT_ARMY').toBeNull()
   })
+
+  it('sieht die zuletzt gesammelte Haltung dieser Armee, nicht nur den Zustand (T-M40-19, Befund N-5)', () => {
+    // Szenario N-5 der Durchsicht der zweiten Nacharbeit: eine Garnison, die Uhr steht, der Spieler klickt
+    // „Verteidigung" (gesammelt, noch nicht angewandt) und dann „Marsch befehlen". Der naechste Tick wendet
+    // [Verteidigung, Marsch] an — ohne Folgebefehl marschiert die Armee auf Verteidigung, und R1 ist wieder offen.
+    const { state } = angriffAufN2()
+    const haltung = (armyId: string, stance: Army['stance'], playerId: PlayerId = 'p1'): Command => ({ type: 'SET_STANCE', playerId, armyId, stance })
+    const armee = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'garrison' })
+    const nachbar = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'garrison' })
+
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'), [haltung(armee.id, 'defensive')])).toEqual(garnisonFuer(armee.id))
+    expect(garrisonFollowUp(state, { type: 'STOP_ARMY', playerId: 'p1', armyId: armee.id }, [haltung(armee.id, 'defensive')])).toEqual(
+      garnisonFuer(armee.id),
+    )
+    // Die letzte gesammelte Haltung zaehlt, in der Reihenfolge, in der der Kern sie anwendet.
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'), [haltung(armee.id, 'defensive'), haltung(armee.id, 'aggressive')])).toBeNull()
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'), [haltung(armee.id, 'aggressive'), haltung(armee.id, 'defensive')])).toEqual(
+      garnisonFuer(armee.id),
+    )
+    // Eine gesammelte Haltung einer anderen Armee oder fuer einen anderen Spieler aendert nichts.
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'), [haltung(nachbar.id, 'defensive')]), 'andere Armee').toBeNull()
+    expect(garrisonFollowUp(state, zug(armee.id, 'n1'), [haltung(armee.id, 'defensive', 'p2')]), 'anderer Spieler').toBeNull()
+
+    // Die Gegenrichtung: eine Verteidigung, die eben auf Garnison gestellt wurde, braucht keinen zweiten Befehl.
+    const verteidigung = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+    expect(garrisonFollowUp(state, zug(verteidigung.id, 'n1'), [haltung(verteidigung.id, 'garrison')])).toBeNull()
+    expect(garrisonFollowUp(state, zug(verteidigung.id, 'n1'), [])).toEqual(garnisonFuer(verteidigung.id))
+  })
 })

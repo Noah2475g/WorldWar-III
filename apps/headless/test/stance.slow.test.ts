@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -63,7 +64,8 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * **Der Bericht** `docs/reports/stance.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
  * geschrieben (Befund N3: vorher schrieb jeder Lauf ihn neu, mit neuem Zeitstempel). Ohne die
- * Variable liest und schreibt der Test nichts.
+ * Variable liest und schreibt der Test nichts. Seit T-M40-17 nennt er den Commit, auf dem gemessen
+ * wurde, und die uncommitteten Dateien (`messstand`); der Frische-Waechter der Abnahme liest beides.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -113,8 +115,6 @@ const PROVINCE_DAYS_PERCENT = 98
  */
 const KONTROLLE = { intrusions: 76, provincesLost: 4 }
 const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'
-/** Der KI-Stand, auf dem gemessen wurde. Aendert sich die KI, wird neu gemessen. */
-const STAND = 'gemessen nach dem Merge von Block N2 der M41-Nacharbeit (c3ff8be)'
 /**
  * Welcher Abschnitt von `episoden` geschrieben wird. `vorher` hat T-M40-07 mit dem Adjutanten aus M40
  * geschrieben und bleibt stehen; seit T-M40-12 misst der Lauf die Regel aus D30.4.
@@ -124,6 +124,53 @@ const ADJUTANT =
   'D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken'
 const REPORT = `${ROOT}/docs/reports/stance.json`
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+
+/** Wie git im Repo antwortet — `null`, wenn es nicht antwortet. Fuer den Einheitsfall austauschbar. */
+type Git = (args: readonly string[]) => string | null
+
+/** git im Repo; das Ende wird gekuerzt, der Anfang nicht (die erste Statuszeile beginnt mit einem Leerzeichen). */
+const gitImRepo: Git = (args) => {
+  try {
+    return execFileSync('git', [...args], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).replace(/\s+$/, '')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Der Stand, auf dem gemessen wird (T-M40-17, Befunde N-3 und N-7 der Durchsicht der zweiten Nacharbeit).
+ *
+ * Bis T-M40-17 stand hier ein fester Satz — "gemessen nach dem Merge von Block N2 (c3ff8be)" —, und der
+ * eingecheckte Lauf `69b8ca9` war auf `bf3db75` gemessen. Und der Frische-Waechter hielt jeden Commit am
+ * Bericht fuer eine Messung, auch eine Textkorrektur. Jetzt schreibt der Lauf `measuredAtCommit`
+ * (`git rev-parse HEAD`) und `measuredDirty`, die uncommitteten Dateien; der Waechter
+ * (`stanceReportStatus`) prueft `measuredAtCommit..HEAD` und lehnt einen Bericht ab, dessen Quellen beim
+ * Messen uncommittet waren.
+ */
+function messstand(git: Git): { measuredAtCommit: string | null; measuredDirty: string[] | null; stand: string } {
+  const commit = git(['rev-parse', 'HEAD'])
+  const status = git(['status', '--porcelain', '--untracked-files=all'])
+  const measuredAtCommit = commit !== null && /^[0-9a-f]{40}$/.test(commit) ? commit : null
+  const measuredDirty =
+    status === null
+      ? null
+      : status
+          .split(/\r?\n/)
+          .filter((line) => line.trim().length > 0)
+          .flatMap((line) => line.slice(3).split(' -> '))
+          .map((path) => path.replace(/^"|"$/g, ''))
+  if (measuredAtCommit === null) return { measuredAtCommit, measuredDirty, stand: 'Messcommit unbekannt (git antwortet nicht)' }
+  const baum =
+    measuredDirty === null
+      ? 'Arbeitsbaum unbekannt'
+      : measuredDirty.length === 0
+        ? 'Arbeitsbaum sauber'
+        : `Arbeitsbaum nicht sauber (${measuredDirty.length} ${measuredDirty.length === 1 ? 'Datei' : 'Dateien'})`
+  return { measuredAtCommit, measuredDirty, stand: `gemessen auf ${measuredAtCommit.slice(0, 7)}, ${baum}` }
+}
+
+/** Beim Laden genommen: vitest laedt die Module beim Start, und was danach im Arbeitsbaum geschieht, misst der Lauf nicht. */
+const MESSSTAND = SCHREIBEN ? messstand(gitImRepo) : null
 
 interface StanceCount {
   /** `ARMY_INTRUDED` in eine Provinz des Menschen. */
@@ -482,6 +529,104 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
   })
 })
 
+describe('Einheitsfall T-M40-17: der Bericht nennt den Stand, auf dem gemessen wurde (Befunde N-3, N-7)', () => {
+  /** Ein git, das auf den ersten Befehlsteil mit einem festen Text antwortet. */
+  const antwortet =
+    (antworten: Record<string, string>): Git =>
+    (args) =>
+      antworten[args[0]!] ?? null
+
+  it('schreibt den Messcommit und einen leeren Vermerk bei sauberem Arbeitsbaum', () => {
+    expect(messstand(antwortet({ 'rev-parse': 'a'.repeat(40), status: '' }))).toEqual({
+      measuredAtCommit: 'a'.repeat(40),
+      measuredDirty: [],
+      stand: 'gemessen auf aaaaaaa, Arbeitsbaum sauber',
+    })
+  })
+
+  it('vermerkt jede uncommittete Datei - auch in der ersten Zeile und beide Namen einer Umbenennung', () => {
+    const stand = messstand(
+      antwortet({ 'rev-parse': 'b'.repeat(40), status: ' M packages/ai/src/adjutant.ts\n?? notiz.txt\nR  alt.ts -> neu.ts' }),
+    )
+    expect(stand.measuredDirty).toEqual(['packages/ai/src/adjutant.ts', 'notiz.txt', 'alt.ts', 'neu.ts'])
+    expect(stand.stand).toBe('gemessen auf bbbbbbb, Arbeitsbaum nicht sauber (4 Dateien)')
+  })
+
+  it('schreibt null, wenn git nicht antwortet - der Waechter liest das als ungemessen', () => {
+    expect(messstand(antwortet({}))).toEqual({
+      measuredAtCommit: null,
+      measuredDirty: null,
+      stand: 'Messcommit unbekannt (git antwortet nicht)',
+    })
+  })
+})
+
+describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (Befund N-2)', () => {
+  /** Zwoelf erfundene Laeufe, die AK5 halten und die Kontrolle treffen; `anpassen` veraendert einzelne. */
+  const zwoelf = (anpassen: (lauf: Lauf) => Lauf = (lauf) => lauf): Lauf[] =>
+    SEEDS.flatMap((seed) =>
+      (Object.keys(SETUPS) as Aufbau[]).flatMap((setup) =>
+        STANCES.map((stance) =>
+          anpassen({
+            seed,
+            setup,
+            stance,
+            intrusions: KONTROLLE.intrusions,
+            answeredWithin24Ticks: 0,
+            answeredWithinWindow: 0,
+            departedWithin24Ticks: 0,
+            provincesLost: KONTROLLE.provincesLost,
+            rejectedCommands: 0,
+            episodes: 0,
+            coverOrdered: 0,
+            coverArrivedInTime: 0,
+            held: 0,
+            provinceDays: 800,
+            lostWithoutBattle: 0,
+            adjutantOrders: 0,
+            pendulums: 0,
+            undeclaredWarsByHuman: 0,
+            provincesAtEnd: 4,
+            armiesAtEnd: 4,
+            daysRun: DAYS,
+          }),
+        ),
+      ),
+    )
+
+  it('ist erfuellt, wenn AK5 haelt, die Garnison A 1914 die Kontrolle trifft und das Kartenfenster steht', () => {
+    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02)
+    expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: KONTROLLE, ok: true })
+    expect(ergebnis.fensterOk).toBe(true)
+    expect(ergebnis.verletzt).toEqual([])
+    expect(ergebnis.erfuellt).toBe(true)
+  })
+
+  it('ist nicht erfuellt, wenn die Kontrolle faellt - so in Schritt 0 der zweiten Nacharbeit geschehen', () => {
+    // Nur die Garnison A 1914 ist die Kontrolle: eine abweichende Verteidigung derselben Startzahl aendert nichts.
+    const verteidigungAnders = ak5(
+      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, intrusions: 99 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(verteidigungAnders.erfuellt).toBe(true)
+
+    const ergebnis = ak5(
+      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'garrison' ? { ...lauf, intrusions: 52 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: { intrusions: 52, provincesLost: KONTROLLE.provincesLost }, ok: false })
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('Kontrolle')
+  })
+
+  it('ist nicht erfuellt, wenn sich das Kartenfenster verschoben hat', () => {
+    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02 - 1)
+    expect(ergebnis.fensterOk).toBe(false)
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('Kartenfenster')
+  })
+})
+
 /** Deutschland mit `SETUPS[aufbau]` Armeen in jeder eigenen Provinz. */
 function aufstellen(seed: number, aufbau: Aufbau, stance: Stance): { state: GameState; human: PlayerId } {
   const config = toConfig({ ...DEFAULT_NEW_GAME, nation: NATION, seed }, map)
@@ -592,8 +737,14 @@ const finde = (laeufe: readonly Lauf[], seed: number, setup: Aufbau, stance: Sta
   return lauf
 }
 
-/** AK5 als Zahlen, ohne zu werfen — fuer den Bericht und fuer die Zusicherung. */
-function ak5(laeufe: readonly Lauf[]) {
+/**
+ * AK5 als Zahlen, ohne zu werfen — fuer den Bericht und fuer die Zusicherung.
+ *
+ * Seit T-M40-18 (Befund N-2) gehoeren die Kontrolle und das Kartenfenster dazu: `counting.ak5` zaehlte die
+ * Kontrolle schon immer zu AK5, `erfuellt` aber nicht, und in Schritt 0 der zweiten Nacharbeit trug ein
+ * Bericht mit gefallener Kontrolle `erfuellt: true`.
+ */
+function ak5(laeufe: readonly Lauf[], windowTicks: number) {
   const paare = SEEDS.flatMap((seed) =>
     (Object.keys(SETUPS) as Aufbau[]).map((setup) => ({
       seed,
@@ -622,9 +773,25 @@ function ak5(laeufe: readonly Lauf[]) {
       verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.undeclaredWarsByHuman} Kriege ohne Erklaerung`)
     }
   }
+  const garnison = finde(laeufe, 1914, 'A', 'garrison')
+  const gemessen = { intrusions: garnison.intrusions, provincesLost: garnison.provincesLost }
+  const kontrolle = {
+    erwartet: KONTROLLE,
+    gemessen,
+    ok: gemessen.intrusions === KONTROLLE.intrusions && gemessen.provincesLost === KONTROLLE.provincesLost,
+  }
+  if (!kontrolle.ok) {
+    verletzt.push(
+      `Kontrolle: Garnison A 1914 ${gemessen.intrusions} Einmaersche / ${gemessen.provincesLost} verloren statt ${KONTROLLE.intrusions} / ${KONTROLLE.provincesLost}`,
+    )
+  }
+  const fensterOk = windowTicks === WINDOW_TICKS_T_M40_02
+  if (!fensterOk) verletzt.push(`Kartenfenster ${windowTicks} Ticks statt ${WINDOW_TICKS_T_M40_02}`)
   return {
     provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
     lostWithoutBattle: { garrison: summe('garrison', 'lostWithoutBattle'), defensive: summe('defensive', 'lostWithoutBattle') },
+    kontrolle,
+    fensterOk,
     erfuellt: verletzt.length === 0,
     verletzt,
   }
@@ -635,7 +802,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
   const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & { episoden?: Record<string, unknown> }
   const episoden = {
     ...(bericht.episoden ?? {}),
-    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), nachgemessen nach dem Merge von N2 und nach T-M40-14/15',
+    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17)',
     seeds: [...SEEDS],
     days: DAYS,
     setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },
@@ -647,13 +814,13 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2})`,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
-      stand: STAND,
+      ...(MESSSTAND ?? messstand(gitImRepo)),
       measuredAt: new Date().toISOString(),
-      ak5: ak5(laeufe),
+      ak5: ak5(laeufe, windowTicks),
       laeufe,
     },
   }
@@ -699,7 +866,7 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
   // Gefecht gegen 0 mit Garnison — das stand hier als it.fails. Seit T-M40-10 gilt die Regel aus D30.4.
   // Faellt diese Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft (D30.9).
   it('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz', () => {
-    const ergebnis = ak5(laeufe)
+    const ergebnis = ak5(laeufe, windowTicks)
     expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
   })
 })

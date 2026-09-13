@@ -193,7 +193,12 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
    Haltungs-Messlauf (`apps/headless/test/stance.slow.test.ts`, gut elf Minuten): ändert sich
    `packages/ai/src` oder `packages/core/src`, bleibt die Abnahme rot, bis der Lauf mit
    `WORLDWAR_WRITE_REPORT=1` neu geschrieben ist, AK5 hält und `docs/reports/stance.json`
-   eingecheckt ist.
+   eingecheckt ist. **Seit T-M40-17 urteilen die Wächter nach Abstammung, nicht nach Uhrzeit:**
+   rot, sobald auf HEAD seit dem Bericht ein Commit an einer Quelle liegt — beim Haltungs-Messlauf
+   seit dem Commit, auf dem gemessen wurde (`measuredAtCommit`). Die Quellen stehen in
+   `GAUGES` und `STANCE_SOURCES` (`scripts/acceptance-criteria.mjs`); der Haltungs-Messlauf
+   braucht dafür einen **an diesen Quellen sauberen Arbeitsbaum**. Am echten Stand, ohne Abnahme:
+   `node --input-type=module -e "const m = await import('./scripts/freshness.mjs'); console.log(m.allFreshness('.'))"`.
 6. **Der Parameterlauf dauert rund eine Stunde**, das Turnier 13 Sekunden. Wer nur
    wissen will, ob eine Regeländerung die Partie verschoben hat, nimmt
    `apps/headless/test/progress.slow.test.ts` (2,5 min): er fährt **denselben Grundlauf**
@@ -220,10 +225,11 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
    sagen es in zwei Sekunden — und es ist dieselbe Prüfung, die der Frische-Wächter der
    Abnahme macht:
    ```bash
-   git log -1 --format=%ct -- data/rules
-   git log -1 --format=%ct -- docs/reports/balance-sweep.md
+   git rev-list -1 $(git log -1 --format=%H -- docs/reports/balance-sweep.md)..HEAD -- data/rules data/maps/world.json
    ```
-   Ist der Bericht jünger, **ist** er der Ausgangswert. Die Läufe sind deterministisch
+   Ist die Ausgabe leer, **ist** der Bericht der Ausgangswert. (Bis T-M40-17 standen hier zwei
+   Commit-Zeiten; nach dem Merge eines älteren Seitencommits sagten sie „jünger", obwohl der
+   Bericht die Regeln des Seitenzweigs nie gesehen hatte — Befund M-1.) Die Läufe sind deterministisch
    über feste Startzahlen; wer es belegt haben will, fährt den billigsten Verwandten
    (das 13-Sekunden-Turnier) und zeigt, dass er zeilengleich herauskommt.
 

@@ -5707,6 +5707,76 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
     nach dem eingecheckten Lauf grün.
   - Befund M-B.
 
+> **Dritte Nacharbeit nach der Durchsicht der zweiten Nacharbeit (2026-09-13).** Kein kritischer und kein
+> hoher Befund. M-1: der Frische-Wächter vergleicht Commit-Zeiten und meldet nach dem Merge eines älteren
+> Seitencommits grün, obwohl die Automatik ungemessen ist — dieselbe Lücke bei Parameterlauf und Turnier.
+> N-1, N-3, N-7: der Wächter sieht zu wenige Quellen, jeder Commit am Bericht gilt als Messung, und der
+> Bericht nennt einen falschen Stand. N-2: „erfüllt" enthält weder Kontrolle noch Kartenfenster. N-4, N-5:
+> der Folgebefehl der Garnison sieht gesammelte Haltungswechsel nicht, und „angenommen" heißt nur
+> Vorprüfung. N-6: die Pendel-Doku. Die Entscheide stehen in `DECISIONS.md`.
+
+### T-M40-17 · Frische nach Abstammung statt nach Uhrzeit
+- **Ziel:** ein Frische-Wächter, der nach einem Merge nicht grün meldet, während ein Messgerät ungemessen ist.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-16
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `scripts/freshness.mjs`,
+  `apps/headless/test/stance.slow.test.ts`, `docs/plan/WORKFLOW.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `gaugeStatus` und `stanceReportStatus` bekommen die gefundenen Commits
+    als Eingabe — der Merge eines älteren Seitencommits ist rot, ebenso ein Bericht ohne Messcommit, einer
+    aus einem an den Quellen schmutzigen Arbeitsbaum und einer, dessen Messcommit nicht in der Geschichte
+    von HEAD liegt. Ein Wegwerf-Repo mit dem Merge aus Befund M-1 meldet vor dem Merge frisch und danach
+    veraltet; mit der alten Zeitlogik zuerst rot gesehen.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `messstand` (Messcommit, uncommittete Dateien,
+    git antwortet nicht).
+- **Fertig wenn:**
+  - beide Wächter `git rev-list -1 <bericht>..HEAD -- <quellen>` fragen statt Commit-Zeiten zu vergleichen
+    (`scripts/freshness.mjs`);
+  - der Haltungs-Messlauf `measuredAtCommit` und `measuredDirty` schreibt, `STAND` entfällt, und der Wächter
+    `measuredAtCommit..HEAD` über `STANCE_SOURCES` prüft (acht Quellen, Befund N-1) und einen schmutzig
+    gemessenen Bericht ablehnt (Befund N-3);
+  - Parameterlauf und Turnier zusätzlich ihre Karte sehen; der Code bleibt dort außen vor, begründet in
+    `acceptance-criteria.mjs` und als offene Frage in `PROBLEME.md`;
+  - der Wächter des Haltungs-Messlaufs am echten Stand rot meldet, weil dem eingecheckten Bericht der
+    Messcommit fehlt — gewollt, der Lauf wird nach dem Merge neu gefahren.
+  - Befunde M-1, N-1, N-3, N-7.
+
+### T-M40-18 · „erfüllt" enthält Kontrolle und Kartenfenster
+- **Ziel:** ein eingecheckter Lauf mit gefallener Kontrolle macht den Frische-Wächter nicht grün.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-17
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `apps/headless/test/stance.slow.test.ts`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `stanceReportStatus` meldet rot bei einem Bericht mit gefallener Kontrolle,
+    auch wenn `erfuellt` true sagt; ebenso bei verschobenem Kartenfenster und bei einem Bericht, der eins von
+    beiden nicht nennt.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `ak5` mit zwölf erfundenen Läufen — erfüllt nur
+    mit getroffener Kontrolle (nur die Garnison A 1914 zählt) und unverschobenem Kartenfenster.
+- **Fertig wenn:** `ak5` die Felder `kontrolle: { erwartet, gemessen, ok }` und `fensterOk` in den Bericht
+  schreibt und beide in `erfuellt` und `verletzt` eingehen; der Wächter beide selbst verlangt. Befund N-2 —
+  in Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle `erfuellt: true`.
+
+### T-M40-19 · Der Garnison-Folgebefehl sieht gesammelte Haltungswechsel
+- **Ziel:** eine Armee, die der Spieler bei stehender Uhr auf Verteidigung stellt und dann selbst verlegt,
+  marschiert nicht auf Verteidigung.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-14
+- **Dateien:** `packages/ai/src/adjutant.ts`, `apps/desktop/src/game/actions.ts`, `apps/desktop/src/App.tsx`,
+  `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `packages/ai/src/adjutant.test.ts`: `garrisonFollowUp` mit gesammelten Befehlen — die zuletzt gesammelte
+    Haltung dieser Armee zählt, andere Armeen und Spieler nicht; eine eben auf Garnison geklickte
+    Verteidigung bekommt keinen zweiten Befehl.
+  - `apps/desktop/src/game/actions.test.ts`: die Sammlung im Kontext wirkt an Bestätigung, Marschhinweis und
+    Anhalten.
+  - `apps/desktop/src/App.test.tsx`: Szenario N-5 — Garnison, Uhr steht, „Verteidigung" klicken, „Marsch
+    befehlen", vorspulen: die Armee steht auf Garnison.
+- **Fertig wenn:** der Folgebefehl Zustand und zuletzt gesammelte `SET_STANCE` der Armee auswertet, ohne
+  Zustandsfeld und ohne Eingriff in den Kern; R-UNIT-09/AK7 und der Verteidigungshinweis stimmen damit
+  unverändert. D30.7 sagt wörtlich „wenn die Vorprüfung ihn annimmt", und die Randlage steht in
+  `PROBLEME.md`. Befunde N-4, N-5.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

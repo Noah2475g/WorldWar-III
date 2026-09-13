@@ -108,11 +108,24 @@ export const ADJUTANT_REST_TICKS = 120
  *    have cost a schema step and new golden masters for the same case.
  *
  * Returns null for every other army and every other order.
+ *
+ * `pending` are the orders the interface has collected and not yet applied (T-M40-19, finding N-5 of the
+ * third review). The core applies them in order, in the same tick as this command, so the stance the army
+ * carries into that tick is the last collected `SET_STANCE` for it, or else the state's. Without it, a
+ * garrison the player had just switched to defence (clock stopped) marched off on defence: the next tick
+ * applied [defensive, march], and scenario R1 was open again.
  */
-export function garrisonFollowUp(state: GameState, command: Command): Command | null {
+export function garrisonFollowUp(state: GameState, command: Command, pending: readonly Command[] = []): Command | null {
   if (command.type !== 'STOP_ARMY' && command.type !== 'MOVE_ARMY') return null
   const army = state.armies[command.armyId]
-  if (!army || army.owner !== command.playerId || army.stance !== 'defensive') return null
+  if (!army || army.owner !== command.playerId) return null
+  let stance = army.stance
+  for (const earlier of pending) {
+    if (earlier.type === 'SET_STANCE' && earlier.armyId === command.armyId && earlier.playerId === command.playerId) {
+      stance = earlier.stance
+    }
+  }
+  if (stance !== 'defensive') return null
   return { type: 'SET_STANCE', playerId: command.playerId, armyId: command.armyId, stance: 'garrison' }
 }
 

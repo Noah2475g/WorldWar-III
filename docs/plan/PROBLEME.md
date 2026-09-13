@@ -2531,7 +2531,7 @@ der M41-Nacharbeit). Provinz-Tage = Provinzen des Menschen zu Beginn jedes Spiel
 
 **AK5 hält** (die Zusicherungen standen vor dieser Messung fest, die Schwelle 98 % aber erst nach der Messung des Entwurfs, der dieselbe Regel N mit denselben Zahlen maß — D30.9; berichtigt nach der Durchsicht der Nacharbeit, N-5): Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
 Verluste ohne Gefecht als mit Garnison (überall 0); 0 Ablehnungen, 0 Kriege ohne Erklärung, 0
-Pendelzüge. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
+Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)]. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
 Regel N im Entwurf der Nacharbeit. **Rücknahmekriterium nicht ausgelöst — die Regel bleibt.**
 
 **Was die Zahlen nicht sagen.**
@@ -3002,7 +3002,7 @@ Spaltenformat: Provinz-Tage / verloren (davon ohne Gefecht).
 **AK5 hält.**
 - Provinz-Tage: 3146 von 3089 (101,8 %, Schwelle 98 %).
 - Verluste ohne Gefecht: in keinem Paar, überall 0.
-- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge.
+- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)].
 
 Das Rücknahmekriterium ist nicht ausgelöst.
 
@@ -3125,10 +3125,18 @@ Der Zug ist die Folge davon, dass die Ruhe ab dem Abmarsch zählt. Es ist dersel
 mit einem Marsch der Automatik statt einem des Spielers. T-M40-14 hat den Fall für Spielermärsche gelöst, nicht für
 die Märsche der Automatik selbst.
 
+*(Berichtigt am 2026-09-13 nach Befund N-6 der Durchsicht der zweiten Nacharbeit, gerechnet, nicht gemessen: die
+Ursache ist nicht allein, dass die Ruhe ab dem Abmarsch zählt, sondern dass **Ruhe und Pendelfenster gleich lang
+sind** — beide fünf Spieltage, 120 Ticks. Zählte die Ruhe ab der Ankunft, wäre a3 frühestens an Tick 1853 + 120 =
+1973 frei, einen Tick nach dem gemessenen Rückzug und 120 Ticks nach der Ankunft; die Kennzahl
+(`bewegung.tick - ankunft.tick <= 5 · 24` in `werteAus`) zählte den Zug weiter.)*
+
 **Nicht zugesichert, nicht gebaut.** Pendelzüge gehören nicht zu AK5; die Zahl steht im Bericht. Wer sie verhindern
 will, hat zwei Wege, und beide sind eine neue Entscheidung, gemessen mit demselben Lauf:
-- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen),
-- die Ruhe nach Märschen der Automatik verlängern.
+- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen) — **verschiebt um einen Tick** und
+  verhindert den Zug nicht, weil Ruhe und Pendelfenster gleich lang sind (N-6, siehe oben),
+- die Ruhe nach Märschen der Automatik verlängern — wirksam nur, wenn sie länger ist als das Pendelfenster von
+  fünf Spieltagen.
 
 **Status:** offen, ohne Aufgabe. `stance.json` eingecheckt, Frische-Wächter grün.
 
@@ -3184,3 +3192,71 @@ und verworfene Wege stehen im Entscheid.
 337 / 376.
 
 **Status:** Entscheid getroffen; T-M35-06 misst die drei Vollpartien mit 350 ‰ nach.
+## 2026-09-13 · Beim Bau von T-M40-17 gefunden · Parameterlauf und Turnier folgen dem Code nicht, den sie vermessen (gezählt, offen)
+
+**Befund.** Der Frische-Wächter von Parameterlauf und Turnier sieht nur Daten. Seit T-M40-17 sind das
+`data/rules` und die jeweilige Karte: `data/maps/world.json` für den Parameterlauf, `data/maps/testworld.json`
+für das Turnier (über `smallWorld` aus `packages/testkit`). Beide Läufe spielen aber Partien mit KI und Kern:
+- der Parameterlauf über `apps/headless/src/sweep.ts`,
+- das Turnier über `apps/headless/src/tournament.ts`,
+- beide mit `advanceTicks` aus `packages/ai`.
+
+**Gezählt** mit `git rev-list --count <bericht>..HEAD -- <pfade>`, Worktree `m40n3` auf `72438d1`:
+
+| Messgerät | Bericht | Commits seitdem an KI, Kern und `apps/headless/src` | davon `packages/ai/src` | davon `packages/core/src` |
+|---|---|---|---|---|
+| Parameterlauf | `d82779d`, 2026-09-12 | 20 | 19 | 5 |
+| Turnier | `1edcb7b`, 2026-09-13 | 11 (mit `packages/testkit`) | 11 | 3 |
+
+Am echten Stand melden beide Wächter frisch:
+- „seit dem Bericht (d82779d) kein Commit an data/rules, data/maps/world.json auf HEAD"
+- „seit dem Bericht (1edcb7b) kein Commit an data/rules, data/maps/testworld.json auf HEAD"
+
+Dass eine Änderung der KI Partien verschiebt, ist gemessen: nach dem Merge von Block N2 ergab dieselbe
+Garnison im Haltungs-Messlauf 76 statt 52 Einmärsche, bei unveränderten Regeln und unveränderter Karte.
+
+**Warum nicht gebaut.** Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die Regeln. Mit den
+Codepfaden wäre die Abnahme heute rot, und der Parameterlauf dauert rund eine Stunde. Ob die Messgeräte jedem
+Codecommit folgen sollen, ist eine neue Entscheidung und nicht Teil der Nacharbeit.
+
+**Reparatur später, falls gewollt.** Die Codepfade in `GAUGES` aufnehmen (`scripts/acceptance-criteria.mjs`);
+die Einheitsfälle in `test/requirements.test.ts` nennen die Listen wörtlich. Billig wäre es beim Turnier, das
+rund 15 Sekunden läuft; teuer beim Parameterlauf.
+
+**Status:** offen, Frage an Noah.
+
+---
+
+## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison sieht gesammelte Haltungswechsel — zwei Randlagen bleiben
+
+**N-5, behoben.** Szenario der Durchsicht, am Bildschirm nachgestellt (`App.test.tsx`):
+1. Eine Armee steht auf Garnison, die Uhr steht.
+2. Der Spieler klickt „Verteidigung"; der Befehl wartet in der Sammlung, der Zustand sagt noch Garnison.
+3. Er befiehlt einen Marsch und spult vor.
+
+Bis T-M40-19 fragte `garrisonFollowUp` nur den Zustand, und der nächste Tick wandte [Verteidigung, Marsch] an.
+Die Armee marschierte auf Verteidigung, und Szenario R1 war wieder offen. Rot vorgeführt: „expected
+[ 'Verteidigung' ] to deeply equal [ 'Garnison' ]". Jetzt liest der Folgebefehl die zuletzt gesammelte
+`SET_STANCE` derselben Armee (`ActionContext.pending`), und die Armee steht nach dem Tick auf Garnison.
+
+**N-4, Randlage, nicht gebaut.** „Angenommen" heißt: die Vorprüfung beim Klick nimmt den Befehl an. Gemeint ist
+`send` in `App.tsx`, also `canApply` gegen den angewandten Zustand — nicht der Kern. Die Befehle warten in der
+Sammlung, und der Kern wendet sie im nächsten Tick an. Einen abgelehnten Befehl lehnt er ab, ohne den nächsten
+aufzuhalten (`phases/applyCommands.ts` im Kern).
+- **Szenario:** Ein Marsch wird während des Vorspulens befohlen und wartet (T-M41-13). Die Automatik verlegt
+  dieselbe Armee genau dorthin. Im Tick lehnt der Kern `MOVE_ARMY` mit „bereits dort" ab, `SET_STANCE garrison`
+  wird trotzdem angewandt.
+- **Folge, mild:** Die Armee steht dort, wohin der Spieler sie schicken wollte, auf Garnison — so wie nach dem
+  Marsch.
+- **Umgekehrt nicht erreichbar:** `SET_STANCE` prüft nur Armee, Besitzer und Wert.
+- **Warum nicht gebaut:** Den zweiten Befehl an den Ausgang des ersten zu binden, wäre eine neue Regel des Kerns
+  (Befehlsgruppen). D30.7 sagt jetzt wörtlich „wenn die Vorprüfung ihn annimmt".
+
+**Gesehen, nicht gebaut: „schon in dieser Haltung" sieht die Sammlung nicht.** `armyActions` sperrt den Knopf
+der Haltung, die der Zustand trägt (`army.stance === value`, Text `army.alreadyStance`). Nach einem gesammelten Klick auf „Verteidigung" bleibt
+„Garnison" bis zum nächsten Tick gesperrt, und „Verteidigung" trägt die Quittung und ist ebenfalls gesperrt. Der
+Spieler kann den Klick also vor dem Tick nicht zurücknehmen. Kein Befehl geht falsch; es kostet einen Klick
+nach dem Tick. Die Reparatur läge in `actions.ts` und verlangt eine Entscheidung, was der gesperrte Knopf dann
+sagt (ein Text in `de.ts`).
+
+**Status:** N-5 behoben (T-M40-19). N-4 und die Sperre offen, ohne Aufgabe.

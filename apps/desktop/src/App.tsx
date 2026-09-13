@@ -503,10 +503,16 @@ export function App(props: AppProps) {
       })
   }, [state, autosave, ui.settings.autosaveMinutes, ticksPerDay, storage, now, timeline])
 
+  /**
+   * Die gesammelten Befehle als Liste (T-M40-19, Befund N-5): der Folgebefehl der Garnison sieht einen Klick auf
+   * „Verteidigung", der bei stehender Uhr noch wartet.
+   */
+  const pendingOrders = useMemo(() => pendingCommands.map((entry) => entry.command), [pendingCommands])
+
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
-    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay } : null),
-    [state, activeMap, props.rules, ticksPerDay],
+    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay, pending: pendingOrders } : null),
+    [state, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
@@ -883,7 +889,8 @@ export function App(props: AppProps) {
         } else if (spec.command) {
           // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
           // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs — der zweite
-          // nur, wenn der erste angenommen wurde (T-M40-14).
+          // nur, wenn die Vorpruefung in `send` den ersten annimmt (T-M40-14). Der Kern kann den ersten im
+          // Tick trotzdem ablehnen; der zweite gilt dann allein (Befund N-4, PROBLEME.md).
           if (send(spec.command, spec.id) && spec.followUp) send(spec.followUp, spec.id)
         }
       },
@@ -1443,7 +1450,7 @@ export function App(props: AppProps) {
           ...toAction(confirmSpec),
           onRun: () => {
             // Ein eigener Marschbefehl haelt fest (T-M40-14): eine Verteidigung geht mit dem Marsch auf
-            // Garnison — der zweite Befehl nur, wenn der Marsch angenommen wurde.
+            // Garnison — der zweite Befehl nur, wenn die Vorpruefung in `send` den Marsch annimmt (Befund N-4).
             if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id) && confirmSpec.followUp) {
               send(confirmSpec.followUp, confirmSpec.id)
             }

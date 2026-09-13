@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { createInitialState, parseRules, type Army, type GameState, type MapData } from '@worldwar/core'
+import { createInitialState, parseRules, type Army, type Command, type GameState, type MapData } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import {
   armyActions,
@@ -274,6 +274,37 @@ describe('R-UNIT-09/AK6 Vier Haltungen, ihre Hinweise und das Anhalten', () => {
       expect(andere.bestaetigen.hint ?? '', stance).not.toMatch(/Garnison/)
       expect(andere.marschieren.hint, stance).not.toMatch(/Garnison/)
     }
+  })
+
+  it('sieht gesammelte Haltungswechsel: eine eben auf Verteidigung geklickte Garnison geht mit Marsch und Anhalten auf Garnison (T-M40-19, Befund N-5)', () => {
+    // Die Uhr steht, der Klick auf „Verteidigung" wartet in der Sammlung der Huelle (`pending`), und der Zustand
+    // sagt noch Garnison. Bis T-M40-19 fragte der Folgebefehl nur den Zustand.
+    const { ctx, capital, neighbour } = fresh()
+    const army = withArmy(ctx.state, capital)
+    army.stance = 'garrison'
+    const verteidigung: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'defensive' }
+    const garnison: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' }
+    const gesammelt: ActionContext = { ...ctx, pending: [verteidigung] }
+
+    expect(targetAction(ctx, 'a1', 'move', neighbour).followUp, 'ohne Sammlung').toBeUndefined()
+    const bestaetigen = targetAction(gesammelt, 'a1', 'move', neighbour)
+    expect(bestaetigen.followUp).toEqual(garnison)
+    expect(bestaetigen.hint).toMatch(/Garnison/)
+    expect(armyActions(gesammelt, 'a1').find((a) => a.id === 'march')!.hint).toMatch(/Garnison/)
+
+    army.path = [neighbour]
+    army.departureTick = ctx.state.tick
+    army.arrivalTick = ctx.state.tick + 30
+    expect(armyActions(gesammelt, 'a1').find((a) => a.id === 'stop')!.followUp).toEqual(garnison)
+
+    // Die Gegenrichtung: eine Verteidigung, die eben auf Garnison geklickt wurde, marschiert ohne zweiten Befehl.
+    army.stance = 'defensive'
+    army.path = []
+    army.departureTick = null
+    army.arrivalTick = null
+    const umgestellt: ActionContext = { ...ctx, pending: [garnison] }
+    expect(targetAction(umgestellt, 'a1', 'move', neighbour).followUp).toBeUndefined()
+    expect(armyActions(umgestellt, 'a1').find((a) => a.id === 'march')!.hint).not.toMatch(/Garnison/)
   })
 })
 

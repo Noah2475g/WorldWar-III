@@ -2588,5 +2588,82 @@ jüngeren Commit unter `data/rules`; ein nach diesem Commit eingecheckter Berich
 **kippbar:** eine Zahl in `data/rules/default/constants.json`, dazu die Zeile in `BALANCING.md` und die Erwartung in
 `packages/core/src/rules/load.test.ts`. Danach die Golden-Master mit `UPDATE_GOLDEN=1` (die Tage in `goals` verschieben
 sich) und T-M35-06 neu fahren.
+## 2026-09-13 · T-M40-17 · Die Frische-Wächter urteilen nach Abstammung, und der Haltungs-Messlauf nennt seinen Messcommit (delegiert)
+
+**Entscheidung.**
+- Parameterlauf, Turnier und Haltungs-Messlauf gelten als frisch, wenn auf HEAD seit ihrem Bericht kein
+  Commit an ihren Quellen liegt: `git rev-list -1 <bericht>..HEAD -- <quellen>` (`scripts/freshness.mjs`).
+  Die Commit-Zeit zählt nicht mehr.
+- Beim Haltungs-Messlauf zählt nicht der Commit am Bericht, sondern der Commit, auf dem gemessen wurde. Der
+  Lauf schreibt `measuredAtCommit` und die uncommitteten Dateien (`measuredDirty`). Der Wächter lehnt ab:
+  einen Bericht ohne Messcommit, einen an den Quellen schmutzig gemessenen und einen, dessen Messcommit nicht
+  in der Geschichte von HEAD liegt.
+- Die Quellen des Haltungs-Messlaufs sind `STANCE_SOURCES`, acht Pfade. Parameterlauf und Turnier sehen
+  neben `data/rules` ihre Karte (`GAUGES`, `scripts/acceptance-criteria.mjs`).
+
+Entschieden vom Orchestrator nach Befund M-1 der Durchsicht der zweiten Nacharbeit; Messcommit und Pfadliste
+nach N-1, N-3 und N-7.
+
+**Begründung.** Befund M-1, nachgebaut als Wegwerf-Repo in `test/requirements.test.ts`: Der Seitenzweig ändert
+Automatik und Regeln zur Zeit 2000, main checkt die Berichte zur Zeit 3000 ein, der Merge folgt zur Zeit 4000.
+Mit Commit-Zeiten meldeten Haltungs-Messlauf und Parameterlauf danach frisch, mit der Abstammung veraltet.
+Außerdem galt eine Textkorrektur am Bericht als Messung (N-3), und der feste Standtext nannte `c3ff8be` für
+einen Lauf auf `bf3db75` (N-7).
+
+**Warum auch die Geschichte von HEAD.** `rev-list <messcommit>..HEAD` sieht nur Commits, die HEAD hat und der
+Messcommit nicht. Ein Bericht, der aus einem anderen Zweig herüberkopiert wird, kann mit Commits gemessen
+sein, die HEAD fehlen. Das ist eine Ergänzung zum Auftrag.
+
+**Warum der Code bei Parameterlauf und Turnier außen vor bleibt.** Beide Läufe spielen mit der KI und dem
+Kern; seit ihren Berichten liegen dort 20 bzw. 11 Commits. Mit den Codepfaden wäre die Abnahme heute rot, und
+ein Parameterlauf dauert rund eine Stunde. Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die
+Regeln. Ob sie jedem Codecommit folgen sollen, ist eine neue Entscheidung und steht als offene Frage in
+`PROBLEME.md`.
+
+**Gegenrede.**
+- Ein Revert, der die Quellen auf den gemessenen Inhalt zurückstellt, zählt als Commit: rot, obwohl der
+  Inhalt gleich ist. Das ist die sichere Richtung. Die Alternative wäre, die Baum-Kennungen zu vergleichen
+  (`git rev-parse <messcommit>:<pfad>` gegen `HEAD:<pfad>`), also Inhalt statt Geschichte.
+- Jeder Commit an `stance.slow.test.ts` macht den Bericht alt, auch ein Kommentar. Hingenommen: der Test
+  trägt Kontrolle, Schwellen und Zählung.
+- Nach Rebase oder Squash liegt der Messcommit nicht mehr in der Geschichte. Dann ist die Abnahme rot, und
+  es wird neu gemessen.
+
+**kippbar:** In `scripts/freshness.mjs` die Baum-Kennungen statt `commitsSince` vergleichen, oder
+`STANCE_SOURCES` bzw. `GAUGES` enger fassen. Die Einheitsfälle in `test/requirements.test.ts` nennen beide
+Listen wörtlich und fallen mit.
+
+---
+
+## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison liest die gesammelten Befehle, AK7 bleibt unverändert (delegiert)
+
+**Entscheidung.**
+- `garrisonFollowUp(state, command, pending)` (`packages/ai/src/adjutant.ts`) nimmt als Haltung der Armee die
+  zuletzt gesammelte `SET_STANCE` derselben Armee und desselben Spielers, sonst die aus dem Zustand.
+- Die Oberfläche reicht die Sammlung als `ActionContext.pending` durch (`App.tsx`). Anhalten, Marschhinweis und
+  Bestätigung lesen sie.
+- R-UNIT-09/AK7 und der Hinweis zur Verteidigung bleiben unverändert: sie stimmen jetzt auch bei stehender Uhr.
+- D30.7 sagt wörtlich „wenn die Vorprüfung ihn annimmt" (Befund N-4).
+
+Entschieden vom Orchestrator nach Befund N-5 der Durchsicht der zweiten Nacharbeit, erster der zwei Wege.
+
+**Begründung.** Befund N-5: Eine Garnison wird bei stehender Uhr auf Verteidigung geklickt und dann verlegt. Der
+nächste Tick wandte [Verteidigung, Marsch] an, und die Armee marschierte auf Verteidigung. Am Bildschirm rot
+vorgeführt (`App.test.tsx`). Der Kern wendet die Befehle eines Spielers in der Reihenfolge der Sammlung an;
+die zuletzt gesammelte Haltung ist also die, mit der der Marsch im Tick ankommt. Das lässt sich ohne Kern und
+ohne Zustandsfeld lesen.
+
+**Verworfen.** AK7 und den Hinweis einzuschränken („die zum Zeitpunkt des Befehls auf Verteidigung steht"). Das
+hätte eine Lücke beschrieben, die sich mit einem optionalen Parameter schließen ließ.
+
+**Gegenrede.**
+- Eine gesammelte Haltung zählt, auch wenn der Kern sie im Tick ablehnen würde. Die Oberfläche erzeugt keinen
+  solchen Befehl, und schlimmstenfalls geht ein Garnisonsbefehl zu viel mit.
+- Mehrspieler (M37): Der Folgebefehl ist Oberfläche, die Schleife ruft ihn nie; gesammelt sind nur die eigenen
+  Befehle des Menschen.
+- Die Sperre „schon in dieser Haltung" sieht die Sammlung weiterhin nicht — offen in `PROBLEME.md`.
+
+**kippbar:** Ohne `pending` fallen `garrisonFollowUp` und `ActionContext.pending` auf den Zustand zurück. Dann
+fallen T-M40-19 in `adjutant.test.ts`, `actions.test.ts` und `App.test.tsx`, und AK7 braucht die Einschränkung.
 
 ---

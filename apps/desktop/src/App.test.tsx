@@ -1865,7 +1865,7 @@ describe('T-M40-13 Eine leise Zeile, wenn eine Armee von selbst nachrueckt', () 
  * Bildschirm aus einer geladenen Partie: eine stehende Armee, Ziel waehlen, befehlen, ein Tag vergeht.
  */
 describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garnison', () => {
-  const ladeStehend = async (stance: 'defensive' | 'aggressive') => {
+  const ladeStehend = async (stance: 'defensive' | 'aggressive' | 'garrison') => {
     const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
     const mensch = state.playerOrder[0]!
     const capital = state.players[mensch]!.capitalProvinceId!
@@ -1921,5 +1921,24 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
 
     expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
     expect(gedrueckt()).toEqual(['Angriff'])
+  }, 30_000)
+
+  it('stellt eine eben auf Verteidigung geklickte Garnison mit dem Marsch zugleich auf Garnison (T-M40-19, Befund N-5)', async () => {
+    // Die Uhr steht: der Klick auf „Verteidigung" wartet in der Sammlung, der Zustand sagt noch Garnison. Bis
+    // T-M40-19 fragte der Folgebefehl nur den Zustand, und der naechste Tick wandte [Verteidigung, Marsch] an —
+    // die Armee marschierte auf Verteidigung, und Szenario R1 war wieder offen.
+    const { ziel } = await ladeStehend('garrison')
+    expect(gedrueckt()).toEqual(['Garnison'])
+    const haltung = within(armeePanel()).getByRole('group', { name: 'Haltung' })
+    fireEvent.click(within(haltung).getAllByRole('button').find((knopf) => knopf.textContent === 'Verteidigung')!)
+    const knopf = befehle(ziel)
+    const titel = knopf.getAttribute('title') ?? ''
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Garnison'])
+    expect(titel).toMatch(/Garnison/)
   }, 30_000)
 })
