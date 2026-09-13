@@ -3,6 +3,8 @@
 Erzeugt von `pnpm test:slow` am 2026-09-13.
 Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.
 
+Gemessen auf: 5252d645816679a0f51ffb357d965d4eb0b6fb99 (Quellen sauber)
+
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |
 |---|---|---|---|---|---|---|
 | schwer gegen leicht, im Krieg | 25 | 0 | 0 | 100 % | 0 | 0 |
