@@ -1,6 +1,6 @@
 # KI-Turnier — letzter Lauf
 
-Erzeugt von `pnpm test:slow` am 2026-09-12.
+Erzeugt von `pnpm test:slow` am 2026-09-13.
 Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.
 
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |

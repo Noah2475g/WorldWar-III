@@ -131,3 +131,67 @@ describe('R-AI-08/AK3 Die KI handelt, bevor der Mangel da ist', () => {
     }
   })
 })
+
+/**
+ * Die KI baut die Fabrik aus (T-M41-01, R-PROV-02, R-AI-08).
+ *
+ * Befund aus T-M34-04: `nextBuildingFor` fragte fuer Kaserne, Fabrik, Eisenbahn und Hafen
+ * `level === 0` — keine Macht kam je ueber Fabrikstufe 1. Die zweite Fortschrittsachse war
+ * eine fuer den Menschen allein. Gebaut wird nur die Fabrik aus, und nur in Staedten
+ * (DECISIONS.md, 2026-09-13).
+ */
+describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
+  const tag31 = 30 * TEST_RULES.constants.ticksPerDay
+  const bauten = (context: ReturnType<typeof richContext>) =>
+    economyCommands(context, []).filter(
+      (command): command is Extract<Command, { type: 'BUILD' }> => command.type === 'BUILD',
+    )
+  /** Setzt eine Gebaeudestufe in allen eigenen Provinzen der Sicht. */
+  const stufe = (context: ReturnType<typeof richContext>, building: string, level: number) => {
+    for (const province of context.view.provinces) {
+      if (province.owner !== 'p2' || !province.buildings) continue
+      ;(province.buildings as Record<string, number>)[building] = level
+    }
+  }
+
+  it('befiehlt in einer Stadt mit Fabrik der Stufe 1 und genug Mitteln den Ausbau', () => {
+    const context = richContext(tag31)
+    const [bau] = bauten(context)
+    const provinz = context.view.provinces.find((province) => province.id === bau?.provinceId)
+
+    expect(bau?.building, 'kein Fabrikausbau trotz vollem Lager').toBe('factory')
+    expect(provinz?.kind).toBe('city')
+    expect(provinz?.buildings?.factory).toBe(1)
+  })
+
+  it('baut nicht ueber die hoechste Stufe der Regel hinaus', () => {
+    const context = richContext(tag31)
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    const gebaut = bauten(context).map((command) => command.building)
+
+    expect(gebaut, 'bei maxLevel wird nichts mehr gebaut - der Test saehe den Fabrikbau nicht').not.toEqual([])
+    expect(gebaut).not.toContain('factory')
+  })
+
+  it('baut die Fabrik nur in Staedten', () => {
+    const context = richContext(tag31)
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+      (province) => province.owner !== 'p2' || province.kind !== 'city',
+    )
+
+    expect(bauten(context).map((command) => command.building)).not.toContain('factory')
+  })
+
+  it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {
+    // Gemessen an vier Varianten (DECISIONS.md, 2026-09-13, T-M41-01): die Kaserne Stufe 2
+    // reisst R-AI-06 — schwer gegen normal im Frieden 1,00 statt 0,70 gegen die Obergrenze
+    // 0,95 in apps/headless/test/tournament.slow.test.ts —, die Eisenbahn aendert nichts.
+    // Wer diesen Test loescht, liest zuerst den Entscheid und faehrt danach das Turnier.
+    const context = richContext(tag31)
+    // Fabrik und Festung sind ausgebaut, sonst kaeme die KI an den anderen nie vorbei.
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(context, 'fortress', 2)
+
+    expect(bauten(context).map((command) => `${command.building} in ${command.provinceId}`)).toEqual([])
+  })
+})

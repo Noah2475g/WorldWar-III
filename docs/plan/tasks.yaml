@@ -2999,7 +2999,7 @@ tasks:
   - id: T-M41-01
     milestone: M41
     title: Die KI baut die Fabrik aus
-    status: todo
+    status: done
     deps: [T-M41-03]
     requirements: [R-PROV-02, R-AI-08]
     files: [packages/ai/src/economy.ts]

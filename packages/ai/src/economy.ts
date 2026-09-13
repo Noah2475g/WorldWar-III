@@ -71,7 +71,14 @@ function nextBuildingFor(
   // Ob die Fabrik bezahlbar ist, entscheidet ohnehin `canAfford` weiter unten, und das
   // haelt eine Ruecklage frei. Zwei Sperren fuer dieselbe Frage, von denen eine nie
   // aufgeht, sind eine zu viel.
-  if (available('factory') && level('factory') === 0 && province.kind === 'city') {
+  //
+  // **Und bis zu ihrer hoechsten Stufe** (T-M41-01). Bis zum 2026-09-13 stand hier
+  // `level === 0`: keine Macht kam je ueber Fabrikstufe 1, und die Gebaeudeachse aus
+  // T-M34-04 war eine fuer den Menschen allein. Nur die Fabrik wird ausgebaut — Kaserne,
+  // Eisenbahn und Hafen bleiben bei genau einmal: gemessen reisst die Kaserne Stufe 2
+  // R-AI-06 im Turnier (schwer gegen normal im Frieden 1,00 statt 0,70), die Eisenbahn
+  // aendert nichts (DECISIONS.md, 2026-09-13; Haltetest in economy.test.ts).
+  if (available('factory') && province.kind === 'city' && level('factory') < context.rules.buildings.factory.maxLevel) {
     return 'factory'
   }
   if (available('railway') && level('railway') === 0) return 'railway'
