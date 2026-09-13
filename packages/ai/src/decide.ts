@@ -27,6 +27,45 @@ export function emptyMemory(buildShare: number): AiMemory {
   }
 }
 
+/**
+ * Die Armeen, die ein Zusammenlegen auflöst (T-M41-08).
+ *
+ * Der Kern behält die kleinste Kennung nach `sort()` und löscht die übrigen
+ * (`commands/army.ts`). Dieselbe Sortierregel hier, nicht `localeCompare`: bei `a10` und
+ * `a9` hielten beide Seiten sonst verschiedene Armeen für die bleibende.
+ */
+function absorbedBy(commands: readonly Command[]): Set<string> {
+  const ids = new Set<string>()
+  for (const command of commands) {
+    if (command.type !== 'MERGE_ARMIES') continue
+    for (const id of [...command.armyIds].sort().slice(1)) ids.add(id)
+  }
+  return ids
+}
+
+/**
+ * Die Sicht der Taktikstufe ohne die Armeen, die in diesem Zug aufgehen (T-M41-08).
+ *
+ * Operativ- und Taktikstufe feuern praktisch immer im selben Tick — jede Macht denkt nur
+ * jeden n-ten Tick (`shouldThinkThisTick`) —, und beide lasen dieselbe Sicht. Die Taktik
+ * befahl also Armeen, die das Zusammenlegen davor auflöste, und der Kern lehnte jeden dieser
+ * Befehle mit `ARMY_NOT_FOUND` ab: auf der Weltkarte 961 von 1177 Ablehnungen in 200
+ * Spieltagen. Kein verlorener Zug — die bleibende Armee bekam ihren eigenen Befehl —, aber
+ * Rauschen, das jede andere Ablehnung verdeckt.
+ *
+ * Herausgenommen werden nur eigene Armeen, und nur aus `view.armies`. Bedrohung,
+ * Kräftevergleich und Zielbewertung zählen ausschließlich fremde Armeen; die Befehle aller
+ * anderen Armeen bleiben dieselben. Begründungen (R-AI-05) und `assignments` für die
+ * aufgegangenen Armeen entstehen damit gar nicht erst.
+ */
+function withoutAbsorbed(context: AiContext, absorbed: ReadonlySet<string>): AiContext {
+  if (absorbed.size === 0) return context
+  return {
+    ...context,
+    view: { ...context.view, armies: context.view.armies.filter((army) => !absorbed.has(army.id)) },
+  }
+}
+
 export interface DecideOptions {
   view: PublicView
   memory: AiMemory
@@ -67,9 +106,12 @@ export function decide(options: DecideOptions): AiDecision {
   }
 
   // Operations: raising troops and covering shortages. Every six hours.
+  let absorbed = new Set<string>()
   if (memory.lastOperationalTick < 0 || tick - memory.lastOperationalTick >= OPERATIONAL_INTERVAL) {
     memory.lastOperationalTick = tick
-    commands.push(...consolidateCommands(context, explanations))
+    const merges = consolidateCommands(context, explanations)
+    absorbed = absorbedBy(merges)
+    commands.push(...merges)
     commands.push(...tradeCommands(context, explanations))
     commands.push(...recruitCommands(context, explanations))
   }
@@ -79,7 +121,7 @@ export function decide(options: DecideOptions): AiDecision {
   const interval = Math.max(1, options.difficulty.tacticalInterval)
   if (memory.lastTacticalTick === undefined || tick - memory.lastTacticalTick >= interval) {
     memory.lastTacticalTick = tick
-    commands.push(...militaryCommands(context, explanations))
+    commands.push(...militaryCommands(withoutAbsorbed(context, absorbed), explanations))
   }
 
   return {

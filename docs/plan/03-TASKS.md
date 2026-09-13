@@ -2058,6 +2058,8 @@ standen 63 tote Pfade. Die Leseregeln:
   R-AI-01 bekommt eine zusätzliche AK für den Ablehnungsanteil — der heutige grüne Beleg prüft
   einen einzigen Aufruf im Tick 0 im Frieden und kann die Lage, die das Spiel dauernd
   herstellt, gar nicht sehen.
+  *(Nie gebaut und am 2026-09-13 mit T-M41-08 zurückgenommen: R-AI-01 steht in `name_level`, und
+  der Ablehnungsanteil ist im 90-Tage-Lauf der Voreinstellung zugesichert, `DECISIONS.md`.)*
 - **Anforderungen:** R-AI-01, R-AI-03, R-GAME-01
 - **Abhängigkeiten:** T-M14-02
 - **Dateien:** `packages/core/src/map/neighbourhood.ts` *(nie gebaut — als neue Datei geplant; die
@@ -2093,6 +2095,11 @@ standen 63 tote Pfade. Die Leseregeln:
   **dreimal** vor (vorher bis zum Partieende), und es fällt mindestens **eine** `WAR_DECLARED`
   (vorher 0 in 1000 Tagen). Das R-AI-04-Budget bleibt grün. Die vier Zahlen stehen
   vorher/nachher in `docs/reports/ai-reachability.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`, alle vier Zahlen sind dort zugesichert — gemessen
+  0 % abgelehnt (vor T-M41-08 3,92 %), `NO_PATH` 0 von 2556, keine Paarung, 5 Kriegserklärungen.
+  Die Paarung nach dem Wortlaut (Armee, Fehlercode) sieht einen wiederholten Bauauftrag nicht; die
+  Fassung (Macht, Befehl, Fehlercode, Einzelheiten) steht als Zahl im Bericht.)*
 
 ### T-M14-12 · Die KI benutzt, was sie hat
 - **Ziel:** Fünf Mechaniken, die der Kern kann und die KI nie anfasst, werden ihr zugänglich
@@ -2181,6 +2188,12 @@ standen 63 tote Pfade. Die Leseregeln:
   stehen in `BALANCING.md` mit Status; die Zahlen vorher/nachher stehen in
   `docs/reports/ai-parity.md`; der Verzicht auf Luftwaffe und Marine steht mit Begründung in
   `DECISIONS.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`. Zugesichert: Hauptstadt, Handel je KI-Macht,
+  keine diplomatische Ablehnung (strenger als „unter 5 %"), ein Frieden zwischen zwei KI.
+  **Zurückgenommen** mit Grund in `DECISIONS.md`: „je KI-Macht eine Armee mit `armyRange > 0`" —
+  gemessen 0 von 7. „Höchstens drei Armeeobjekte je Provinz" — gemessen höchstens 86, stehend 8 —
+  steht als Zahl im Bericht und geht an T-M41-10.)*
 
 ### T-M14-13 · Was der Kern kann, muss der Spieler erreichen
 - **Ziel:** Das Muster, das dieses Projekt dreimal getroffen hat — Symbolsatz, Ton,
@@ -2867,6 +2880,13 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   unterhalb der Marge zählt nicht, weil er nichts über die neue Entscheidung aussagt. Neun
   Zahlen, keine davon null: eine Null heißt, die Mechanik ist für diese Stufe tot, und die
   Aufgabe ist nicht fertig.
+  *(Nachgeprüft 2026-09-13 mit T-M41-08 — die neun Zahlen standen nie in einem Test. Das Turnier
+  zählte Beschuss und Kriegserklärungen je Partie für **beide** antretenden Stufen; jetzt auch nach
+  dem Handelnden. Gemessen: Kriegserklärungen leicht 0, normal 110, schwer 70; selbsttätiger Beschuss
+  **0 auf jeder Stufe**; eine Regelmarge für Handel gibt es nicht. Zugesichert sind die
+  Kriegserklärungen von „schwer" und „normal" (`apps/headless/test/tournament.slow.test.ts`); die
+  übrigen sieben sind mit Grund zurückgenommen (`DECISIONS.md`), und die Null beim Beschuss steht als
+  Befund in `PROBLEME.md` und als Vermerk bei R-BAT-08/AK3.)*
   *Buchführung* — die Tabelle steht mit Datum in `docs/reports/ai-tournament.md`; jede neue
   Regelzahl (Handelsmarge, Angebotsmarge, Rücklage) steht mit Status *belegt* oder *geschätzt*
   in `BALANCING.md`. **In `01-REQUIREMENTS.md` nennt R-AI-08 keinen Gegenspion und keine
@@ -5679,3 +5699,39 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   abzuwarten — das Ziel `days` zählt der Kern je Häppchen, und die Schleife in `App.tsx` trägt den
   Fortschritt nicht weiter; in Häppchen zu 4 Ticks liefe „ein Tag" bis zur Obergrenze von 30
   Spieltagen. Nebenbefund in `PROBLEME.md`, nicht in dieser Aufgabe gebaut.)*
+
+> **Nacharbeit nach der Durchsicht, Block N2 (2026-09-13): das Verhalten der KI.** Aus der Durchsicht
+> (H1, H2) und der Untersuchung der abgelehnten KI-Befehle. Jede Aufgabe verändert oder vermisst, was
+> die KI tut, und ist einzeln gemessen; die Reparatur zu H1 ist Nacharbeit zu T-M41-01 und steht dort.
+
+### T-M41-08 · Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
+- **Ziel:** 961 von 1177 abgelehnten KI-Befehlen auf der Weltkarte galten Armeen, die dieselbe Macht im
+  selben Tick unmittelbar vorher zusammengelegt hatte — und den 90-Tage-Lauf, den T-M14-11 und T-M14-12
+  zusagten, gab es nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-02, T-M41-07
+- **Dateien:** `packages/ai/src/decide.ts`, `apps/headless/src/tournament.ts`,
+  `docs/reports/ai-integration.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/01-REQUIREMENTS.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — vier eigene stehende Armeen in einer Provinz, ein
+  schwacher Kriegsgegner nebenan: genau ein `MERGE_ARMIES` über alle vier, kein Befehl, kein Eintrag in
+  `assignments` und keine Begründung nennt eine der drei aufgegangenen Armeen, die bleibende marschiert,
+  und der Kern lehnt nichts ab. `apps/headless/test/ai-integration.slow.test.ts` — `MOVE_ARMY` und
+  `SET_STANCE` mit `ARMY_NOT_FOUND` sind null, im 200-Tage-Lauf und in einem neuen 90-Tage-Lauf der
+  ausgelieferten Voreinstellung. `apps/headless/test/tournament.test.ts` — Kriegserklärung und Beschuss
+  je Stufe nach dem Handelnden, nicht je Partie.
+- **Fertig wenn:** die Taktikstufe die Armeen nicht mehr sieht, die das Zusammenlegen im selben Zug
+  auflöst (mit der Sortierregel des Kerns), und das **neutral** ist: der Endzustand ohne Protokoll und
+  KI-Gedächtnis bleibt bitgleich, jede Ereigniszahl außer den Ablehnungen gleich, das Turnier zeilengleich.
+  Im 90-Tage-Lauf sind die Zusagen von T-M14-11 und T-M14-12 zugesichert — Ablehnungsquote unter 10 %,
+  `NO_PATH` unter 2 %, keine Paarung Armee/Fehlercode öfter als dreimal, eine Kriegserklärung, keine Macht
+  ohne Hauptstadt bei gehaltener Stadt, Handel je Macht, keine diplomatische Ablehnung, ein Frieden
+  zwischen zwei KI. Mit Grund zurückgenommen (`DECISIONS.md`): `armyRange > 0` je Macht, die AK für den
+  Ablehnungsanteil bei R-AI-01 und von den „neun Zahlen je Stufe" aus T-M15-08 alles außer den
+  Kriegserklärungen von „schwer" und „normal"; „höchstens drei Armeeobjekte je Provinz" bleibt bis T-M41-10
+  eine Zahl im Bericht. Der Golden-Master bleibt unberührt (kein Lauf dort hat eine KI).
+  *(Gebaut 2026-09-13: Voreinstellung 267 → 0 Ablehnungen, Weltkarte 1177 → 216, Prüfsummen
+  `a177d1db875a10b1` und `dbf5fa3f49a96cd1` vorher wie nachher. Abweichung von der Untersuchung: statt
+  die Befehle nachträglich zu verwerfen, sieht die Taktikstufe die aufgegangenen Armeen gar nicht — das
+  nimmt auch Begründungen und Gedächtnis mit, und es ist ebenso bitgleich gemessen. Beschuss im Turnier:
+  0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3, `PROBLEME.md`.)*

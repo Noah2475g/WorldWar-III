@@ -130,9 +130,11 @@ describe('R-AI-07 Die KI merkt sich ihre Plaene', () => {
   it('vergisst eine Armee, die es nicht mehr gibt (T-M41-05)', () => {
     // Befund: `assignments` wurde geschrieben, kopiert und nie gelesen, und es wuchs ohne
     // Grenze — an Spieltag 471 fuehrte Russland 1235 Eintraege bei 217 lebenden Armeen.
-    const armee = { owner: 'p2', at: 'o3', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] }
-    const bleibt = placeArmy(state, armee)
-    const faellt = placeArmy(state, armee)
+    // Zwei Provinzen, nicht eine: stuenden beide in o3, legte die KI sie im selben Zug zusammen,
+    // und die aufgegangene bekaeme seit T-M41-08 gar keinen Eintrag mehr.
+    const armee = { owner: 'p2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] }
+    const bleibt = placeArmy(state, { ...armee, at: 'o3' })
+    const faellt = placeArmy(state, { ...armee, at: 'o2' })
     const vorher = decide(contextFor())
     expect(Object.keys(vorher.memory.assignments).sort()).toEqual([bleibt.id, faellt.id].sort())
 
@@ -407,6 +409,58 @@ describe('R-AI-01 Die KI legt Verbaende zusammen', () => {
     for (const command of consolidateCommands(contextFor('p2'), [])) {
       expect(canApply(state, command, phaseCtx)).toEqual({ ok: true })
     }
+  })
+})
+
+describe('R-AI-01 Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt (T-M41-08)', () => {
+  // Befund der Untersuchung zu T-M41-08: auf der Weltkarte waren in 200 Spieltagen 961 von
+  // 1177 abgelehnten KI-Befehlen MOVE_ARMY und SET_STANCE an Armeen, die dieselbe Macht im
+  // selben Tick unmittelbar vorher per MERGE_ARMIES aufgeloest hatte. Operativ- und
+  // Taktikstufe feuern praktisch immer zusammen und lasen dieselbe Sicht; der Kern legt
+  // zusammen, bevor er marschieren laesst, und behaelt die kleinste Kennung (`sort()`).
+  const lage = () => {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    const ids = [1, 2, 3, 4].map(
+      () => placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 2000 }] }).id,
+    )
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 1000 }] })
+    const [bleibt, ...aufgegangen] = [...ids].sort()
+    return { ids, bleibt: bleibt!, aufgegangen }
+  }
+
+  it('legt alle vier zusammen und nennt danach nur die Armee, die bleibt', () => {
+    const { ids, bleibt, aufgegangen } = lage()
+    const decision = decide({ ...contextFor('p2'), explain: true })
+
+    const merges = decision.commands.filter((command) => command.type === 'MERGE_ARMIES')
+    expect(merges).toHaveLength(1)
+    expect(merges[0]!.type === 'MERGE_ARMIES' && [...merges[0]!.armyIds].sort()).toEqual([...ids].sort())
+
+    const genannt = decision.commands.filter((command) => 'armyId' in command && aufgegangen.includes(command.armyId))
+    expect(genannt.map((command) => `${command.type} ${'armyId' in command ? command.armyId : ''}`)).toEqual([])
+    // Die Gegenrichtung: ein Filter, der alles verwirft, bestuende die Zeile oben auch.
+    expect(decision.commands.some((command) => command.type === 'MOVE_ARMY' && command.armyId === bleibt)).toBe(true)
+  })
+
+  it('fuehrt die aufgegangenen Armeen weder im Gedaechtnis noch in den Begruendungen', () => {
+    const { aufgegangen } = lage()
+    const decision = decide({ ...contextFor('p2'), explain: true })
+
+    expect(Object.keys(decision.memory.assignments).filter((id) => aufgegangen.includes(id))).toEqual([])
+    // R-AI-05: eine Begruendung fuer eine Armee, die es nach diesem Tick nicht mehr gibt, erklaert nichts.
+    const nennt = (text: string) => aufgegangen.some((id) => new RegExp(`\\b${id}\\b`).test(text))
+    expect(decision.explanations.filter((entry) => nennt(entry.action)).map((entry) => entry.action)).toEqual([])
+  })
+
+  it('bekommt vom Kern keine Ablehnung ARMY_NOT_FOUND', () => {
+    lage()
+    const decision = decide(contextFor('p2'))
+    const result = runTicks(state, 1, ctx, () => decision.commands)
+
+    const abgelehnt = result.events.filter((event) => event.type === 'COMMAND_REJECTED')
+    expect(abgelehnt.map((event) => event.type === 'COMMAND_REJECTED' && `${event.command}:${event.code}`)).toEqual([])
+    // Und das Zusammenlegen fand statt — sonst waere die leere Liste oben kein Beleg.
+    expect(result.state.armyOrder.filter((id) => result.state.armies[id]!.owner === 'p2')).toHaveLength(1)
   })
 })
 

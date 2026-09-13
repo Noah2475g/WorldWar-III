@@ -21,6 +21,28 @@ const zeile = (name: string, result: TournamentResult): string =>
   `| ${name} | ${result.winsA} | ${result.winsB} | ${result.draws} | ${(result.winRateA * 100).toFixed(0)} % |` +
   ` ${result.warDeclarations.hard} | ${result.peaceAgreements.hard} |`
 
+const STUFEN = [
+  ['easy', 'leicht'],
+  ['normal', 'normal'],
+  ['hard', 'schwer'],
+] as const
+
+/** Was jede Stufe selbst getan hat, summiert über mehrere Turniere (T-M41-08). */
+const jeStufe = (results: readonly TournamentResult[]): TournamentResult['byDifficulty'] => {
+  const summe = {
+    easy: { warDeclarations: 0, automaticBombardments: 0 },
+    normal: { warDeclarations: 0, automaticBombardments: 0 },
+    hard: { warDeclarations: 0, automaticBombardments: 0 },
+  }
+  for (const result of results) {
+    for (const [stufe] of STUFEN) {
+      summe[stufe].warDeclarations += result.byDifficulty[stufe].warDeclarations
+      summe[stufe].automaticBombardments += result.byDifficulty[stufe].automaticBombardments
+    }
+  }
+  return summe
+}
+
 describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
   it('schwer schlaegt leicht — aber nicht in jeder Partie', () => {
     const result = run(['hard', 'easy'])
@@ -66,6 +88,19 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
     expect(result.peaceAgreements.hard, 'kein einziger Frieden in 50 Partien').toBeGreaterThan(0)
   })
 
+  it('laesst schwer und normal selbst Kriege erklaeren (T-M15-08, nach dem Handelnden)', () => {
+    // T-M15-08 versprach neun Zahlen je Stufe: Beschuss, Kriegserklaerung aus dem Verhaeltnis,
+    // Handel ueber der Regelmarge. Nachgeprueft in T-M41-08 (DECISIONS.md, 2026-09-13): in einer
+    // Partie zu zweit kommt jede Erklaerung aus dem Verhaeltnis — einen Buendnisfall gibt es
+    // nicht —, und sie traegt fuer "schwer" und "normal". "Leicht" tritt nur im Krieg an und
+    // kann gar nicht erklaeren; Beschuss gibt es in 40 Tagen auf der Testkarte auf keiner Stufe;
+    // eine Handelsmarge gibt es nicht. Das steht mit Zahl im Bericht, nicht hier.
+    const result = run(['hard', 'normal'], false)
+
+    expect(result.byDifficulty.hard.warDeclarations, 'schwer erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
+    expect(result.byDifficulty.normal.warDeclarations, 'normal erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
+  })
+
   it('schreibt den Bericht', () => {
     const gegenLeicht = run(['hard', 'easy'])
     const gegenNormal = run(['hard', 'normal'], false)
@@ -86,6 +121,17 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
         zeile('schwer gegen leicht, im Krieg', gegenLeicht),
         zeile('schwer gegen normal, im Frieden', gegenNormal),
         zeile('schwer gegen normal, im Krieg', imKrieg),
+        '',
+        'Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt',
+        '(T-M15-08 versprach „neun Zahlen je Stufe"; nachgeprüft in T-M41-08, `DECISIONS.md`):',
+        '',
+        '| Stufe | Kriegserklärungen | Selbsttätiger Beschuss |',
+        '|---|---|---|',
+        ...STUFEN.map(
+          ([stufe, name]) =>
+            `| ${name} | ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].warDeclarations} |` +
+            ` ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].automaticBombardments} |`,
+        ),
         '',
         'Zusicherungen: Siegquote der höheren Stufe zwischen 70 % und 95 %; „schwer gegen',
         'normal" endet nicht 25:25; mindestens ein Friedensschluss. Der Grundlauf **vor**',

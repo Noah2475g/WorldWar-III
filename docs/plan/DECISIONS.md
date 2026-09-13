@@ -2202,3 +2202,53 @@ Armee ersetzen; der Test „misst an allem, was dort sichtbar steht" kehrt sich 
 eigene `heading`-Menge. (4) das Raster `.stances` in `apps/desktop/src/ui/app.css`.
 
 ---
+
+## 2026-09-13 · T-M41-08 · Drei Zusagen aus M14 und M15 werden zurückgenommen, nicht gelockert (delegiert)
+
+**Entscheidung.** Beim Einlösen der Zusagen von T-M14-11, T-M14-12 und T-M15-08 — jetzt im
+90-Tage-Lauf der ausgelieferten Voreinstellung in `apps/headless/test/ai-integration.slow.test.ts` —
+werden drei zurückgenommen:
+
+1. **„Je KI-Macht trägt am Ende mindestens eine Armee `armyRange > 0`"** (T-M14-12).
+2. **„R-AI-01 bekommt eine zusätzliche AK für den Ablehnungsanteil"** (T-M14-11). Sie wurde nie
+   gebaut und wird nicht gebaut.
+3. **Von den „neun Zahlen je Stufe" im Turnier** (T-M15-08) bleiben zwei: die Kriegserklärungen von
+   „schwer" und „normal", gezählt nach dem **Handelnden**. Zurückgenommen sind der selbsttätige
+   Beschuss je Stufe (alle drei), die Kriegserklärung von „leicht" und der Handel über der
+   Regelmarge (alle drei).
+
+Dazu eine Messfrage: das Turnier zählt Kriegserklärung und Beschuss jetzt auch nach dem Handelnden
+(`byDifficulty` in `apps/headless/src/tournament.ts`). Die alten Felder zählen jede Partie für beide
+antretenden Stufen und bleiben, weil der Bericht sie seit M15 führt.
+
+**Begründung.**
+(1) Die Zusage war Mittel zum Zweck: eine einzelne Artilleriearmee auf einer Stufe sollte R-BAT-08/AK3
+nicht unabnehmbar machen. R-BAT-08/AK3 ist bedingt („WENN eine KI-Macht Artillerie besitzt und im Krieg
+ist …") und in `packages/ai/src/decide.test.ts` gebucht; ob Artillerie im Spiel lebt, sichert der
+200-Tage-Lauf (Artillerie > 0, selbsttätiger Beschuss > 0). „Jede Macht" wäre eine Zusage über die
+Truppenmischung (`TARGET_MIX`, `recruitShare`), nicht über die Fähigkeit.
+(2) Eine neue AK zöge R-AI-01 aus `name_level` (`01-REQUIREMENTS.md` 2.14), und jedes seiner Kriterien
+müsste einzeln gebucht werden — für eine Zahl, die jetzt ohnehin im 90-Tage-Lauf zugesichert ist.
+(3) In einer Partie zu zweit stammt jede Kriegserklärung aus dem Verhältnis; einen Bündnisfall gibt es
+nicht. „Leicht" tritt im Turnier nur in einer Paarung an, und die beginnt im Krieg. Beschuss in 40
+Spieltagen auf der Testkarte setzt Fabrik und Artillerie ab Tag 34 voraus. Eine Regelmarge für den
+Handel gibt es nicht: `tradeCommands` tauscht ein Zehntel des größten Bestands gegen das, was fehlt;
+die Marge aus R-AI-08/AK1 gilt Angeboten. „Handel je KI-Macht" aus T-M14-12 ist im 90-Tage-Lauf
+zugesichert.
+
+**Daten** (Stand `4854465` mit T-M41-08): Voreinstellung 90 Tage — Armeen mit Reichweite **0 von 7
+Mächten**; Weltkarte 200 Tage — **1 von 8**. Turnier je Stufe nach dem Handelnden: Kriegserklärungen
+leicht **0**, normal **110**, schwer **70**; selbsttätiger Beschuss **0 / 0 / 0**
+(`docs/reports/ai-tournament-run.md`, `docs/reports/ai-integration.json`).
+
+**Gegenrede.** Der Beschuss im Turnier war die zweite Hälfte von R-BAT-08/AK3 („SOLL ihre Artillerie im
+Turnier Beschussereignisse erzeugen"). Er ist heute je Stufe nirgends belegt, nur als Summe im
+200-Tage-Lauf, und dort dünn (`PROBLEME.md`, T-M41-08, Nebenbefund a und d).
+
+**kippbar:** (1) eine Zusicherung über `armeenMitReichweiteJeMacht` in `ai-integration.slow.test.ts` —
+setzt eine KI voraus, die Artillerie je Macht aushebt. (2) ein Kriterium AK2 bei R-AI-01, dann R-AI-01
+aus `name_level` streichen und alle Kriterien buchen. (3) ein Turnier über mehr Spieltage oder auf der
+Weltkarte (`days` in `apps/headless/test/tournament.slow.test.ts`, kostet Laufzeit) und eine
+Handelsmarge als Regelgröße in `data/rules/default/ai.json`.
+
+---

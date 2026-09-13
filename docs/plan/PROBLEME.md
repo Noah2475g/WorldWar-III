@@ -2117,7 +2117,10 @@ dreimal vorkommt, sagt der Bericht nicht; er zählt nicht je Armee.
 KI-Verhalten und würde nach dem Fabrikausbau (T-M41-01) ohnehin neu gemessen. T-M14-11 und
 T-M14-12 bleiben `done`; die fehlenden Zusicherungen gehören in die nächste Planung.
 
-**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt.
+**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt. *(Eingelöst 2026-09-13 mit
+T-M41-08: der 90-Tage-Lauf der Voreinstellung steht in `apps/headless/test/ai-integration.slow.test.ts`;
+acht Aussagen sind zugesichert, `armyRange` je Macht und die AK bei R-AI-01 mit Grund zurückgenommen,
+„höchstens drei Armeeobjekte je Provinz" geht an T-M41-10 — Eintrag unten.)*
 
 ---
 
@@ -2387,3 +2390,71 @@ einschaltet und dann F drückt, spult ohne Mitschrift vor, bis sich eine andere 
 Gelesen, nicht gemessen.
 
 **Status:** behoben (T-M41-13); Nebenbefund 1 und 2 offen.
+
+---
+
+## 2026-09-13 · T-M41-08 · 961 Ablehnungen waren Rauschen aus dem Zusammenlegen — die Zusagen aus M14 sind eingelöst oder begründet zurückgenommen, und fünf Nebenbefunde bleiben
+
+**Der Befund, nachgemessen beim Bau.** Die Untersuchung zu `ai-integration.json` (890 `MOVE_ARMY:ARMY_NOT_FOUND`
+am 2026-09-12) fand eine einzige Ursache: Operativ- und Taktikstufe feuern praktisch immer im selben Tick
+und lasen dieselbe Sicht; `consolidateCommands` legte Armeen zusammen, `militaryCommands` befahl danach
+die aufgelösten, und der Kern lehnte jeden dieser Befehle ab. Nachgemessen auf dem Stand `4854465`, rot
+vor der Reparatur: **200 Tage Weltkarte 938 + 23** (`MOVE_ARMY`/`SET_STANCE`), **90 Tage Voreinstellung
+265 + 2**. Kein verlorener Zug — die bleibende Armee bekam ihren eigenen Befehl —, aber 961 von 1177
+Ablehnungen verdeckten jede andere.
+
+**Reparatur und Beleg.** `decide.ts` gibt der Taktikstufe eine Sicht ohne die Armeen, die das
+Zusammenlegen im selben Zug auflöst (Sortierregel des Kerns). Befehle, `assignments` und Begründungen
+für diese Armeen entstehen nicht mehr. **Neutral, gemessen:** die Prüfsumme des Endzustands ohne
+Protokoll und KI-Gedächtnis ist vorher wie nachher `dbf5fa3f49a96cd1` (200 Tage) und `a177d1db875a10b1`
+(90 Tage), jede Ereigniszahl außer den Ablehnungen ist gleich, das Turnier zeilengleich. Ablehnungen
+Weltkarte **1177 → 216** (6,32 % → 1,22 % der KI-Befehle), Voreinstellung **267 → 0**.
+
+**Die Zusagen von T-M14-11 und T-M14-12** (Eintrag „T-M41-06" oben) stehen jetzt im 90-Tage-Lauf der
+ausgelieferten Voreinstellung (`ai-integration.slow.test.ts`, Startzahl 1914, sieben KI):
+
+| Zusage | gemessen (90 Tage) | Stand |
+|---|---|---|
+| Ablehnungsquote < 10 % | 0 % (vorher 3,92 %) | zugesichert |
+| `NO_PATH` < 2 % der Marschbefehle | 0 von 2556 | zugesichert |
+| Paarung Armee/Fehlercode ≤ 3 | 0 | zugesichert |
+| ≥ 1 Kriegserklärung | 5 | zugesichert |
+| keine Macht ohne Hauptstadt, solange sie eine Stadt hält | 0 am Ende, 0 Tage | zugesichert |
+| Handel je KI-Macht | alle 7, mindestens 288 | zugesichert |
+| abgewiesene `acceptPeace` < 5 % | keine diplomatische Ablehnung (1 Annahme) | zugesichert, strenger |
+| Frieden zwischen zwei KI | 1 | zugesichert |
+| je Macht eine Armee mit `armyRange > 0` | 0 von 7 | **zurückgenommen** (`DECISIONS.md`) |
+| ≤ 3 Armeeobjekte je Macht und Provinz | höchstens 86, stehend 8 | Zahl im Bericht, Nebenbefund (b) |
+| zusätzliche AK für den Ablehnungsanteil bei R-AI-01 | nie gebaut | **zurückgenommen** (`DECISIONS.md`) |
+
+Im 200-Tage-Lauf stehen dieselben Zahlen im Bericht; zugesichert ist dort nur `ARMY_NOT_FOUND` = 0.
+
+**Die „neun Zahlen je Stufe" aus T-M15-08.** Das Turnier zählte Kriegserklärung und Beschuss je Partie für
+**beide** antretenden Stufen — der Beschuss von „schwer" stand auch bei „leicht". Jetzt nach dem
+Handelnden (`byDifficulty`): Kriegserklärungen leicht 0, normal 110, schwer 70; selbsttätiger Beschuss
+**0 auf jeder Stufe**. Zugesichert sind die Kriegserklärungen von „schwer" und „normal", der Rest ist
+zurückgenommen (`DECISIONS.md`).
+
+**Nebenbefunde (nicht in dieser Aufgabe gebaut):**
+
+- **(a) Das Artillerie-Tor ist dünn.** 200 Tage Weltkarte: **1 Artillerie, 10 selbsttätige Beschüsse**
+  (2026-09-12: 9 und 121); `ai-integration.slow.test.ts` sichert `> 0` und ist damit auf einer einzigen
+  Einheit grün. Naheliegende Ursache H1 der Durchsicht (Fabrikausbau sperrt die Stadt) → nach der
+  H1-Reparatur nachmessen, sonst T-M41-14.
+- **(b) Viele Armeeobjekte je Provinz.** Voreinstellung höchstens 86 (stehend 8), Weltkarte 101 (stehend 17),
+  fast nur Durchzug. `consolidate.ts` legt je Denkschritt nur **eine** Provinz zusammen (`break`), und der
+  Deckel vergleicht die Zahl der **Stapel** mit `stackFullContribution` = 20 **Einheiten** — er greift nie.
+  → T-M41-10.
+- **(c) Die Hauptstadt wird im Turnier täglich neu befohlen.** Nachbau der Untersuchung: 298×
+  `SET_CAPITAL:ON_COOLDOWN` in einem Lauf; `PublicView.self` führt die 30-Tage-Sperre des Verlegens nicht.
+  → T-M41-11.
+- **(d) Im Turnier schießt keine Stufe.** R-BAT-08/AK3 sagt „SOLL ihre Artillerie im Turnier
+  Beschussereignisse erzeugen" — gemessen 0 auf jeder Stufe (40 Spieltage, Testkarte, Artillerie ab Tag 34
+  hinter der Fabrik). Belegt ist der Beschuss nur als Summe im 200-Tage-Lauf (Befund a). Vermerk bei
+  R-BAT-08/AK3 in `01-REQUIREMENTS.md`; die Anforderung selbst bleibt gebucht, ihr Text wird nicht still
+  gelockert.
+- **(e) 213 `BUILD:NOT_OWNER` sind Geisterbauten** in Provinzen, die die KI nur noch erinnert (`stale`), eine
+  davon 94× (China, PAK-NORTH); wegen `break` verdrängt der Geisterbau den echten Bau des Tages. → T-M41-09.
+
+**Status:** behoben (`ARMY_NOT_FOUND`, T-M41-08); Zusagen aus M14 eingelöst oder zurückgenommen;
+Nebenbefunde (a)–(e) offen, mit Aufgabe in Block N2.
