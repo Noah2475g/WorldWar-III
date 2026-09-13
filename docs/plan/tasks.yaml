@@ -3037,6 +3037,8 @@ tasks:
     # 2026-09-13 beim Bau: der Testblock heisst R-BAT-07/AK1 und deckt das einzige Kriterium
     # von R-BAT-07; die ID ist deshalb aus name_level gestrichen und hier eingetragen, die
     # Sperrklinke in test/requirements.test.ts von 26 auf 25 nachgezogen.
+    # Nacharbeit 2026-09-13 (Durchsicht N2): Aufstellungsreihenfolge als fc.boolean() in der
+    # Eigenschaft, strengths fuer jede kaempfende Seite zugesichert statt still uebersprungen.
     requirements: [R-BAT-07]
     files: [packages/core/test/properties/combat-symmetry.test.ts, docs/plan/tasks.yaml, docs/plan/01-REQUIREMENTS.md, test/requirements.test.ts]
     tests: [packages/core/test/properties/combat-symmetry.test.ts]

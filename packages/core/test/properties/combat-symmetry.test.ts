@@ -55,6 +55,12 @@ interface Lage {
   /** Steht der Verteidiger (defensive, kein Marsch) und kaempft eingegraben? */
   eingegraben: boolean
   festung: number
+  /**
+   * Wird die Armee des Verteidigers zuerst aufgestellt? Das legt ihre Stelle in `armyOrder`
+   * fest. Bis zur Nacharbeit (Durchsicht N2) stand sie in beiden Laeufen des Seitentauschs
+   * vorn — eine Schieflage nach Armeereihenfolge waere unsichtbar geblieben.
+   */
+  verteidigerZuerst: boolean
 }
 
 /** Gleiche, reichliche Vorraete fuer alle: sonst misst `supplyFactor` die Startnation. */
@@ -89,8 +95,16 @@ function nahkampf(verteidiger: 'p1' | 'p2', lage: Lage, ticks: number) {
   state.provinces[PROVINZ]!.owner = verteidiger
   state.provinces[PROVINZ]!.buildings = { ...state.provinces[PROVINZ]!.buildings, fortress: lage.festung }
 
-  placeArmy(state, { owner: verteidiger, at: PROVINZ, units: lage.abwehr, stance: lage.eingegraben ? 'defensive' : 'aggressive' })
-  placeArmy(state, { owner: angreifer, at: PROVINZ, units: lage.angriff, stance: 'aggressive' })
+  const abwehr = () =>
+    placeArmy(state, { owner: verteidiger, at: PROVINZ, units: lage.abwehr, stance: lage.eingegraben ? 'defensive' : 'aggressive' })
+  const angriff = () => placeArmy(state, { owner: angreifer, at: PROVINZ, units: lage.angriff, stance: 'aggressive' })
+  if (lage.verteidigerZuerst) {
+    abwehr()
+    angriff()
+  } else {
+    angriff()
+    abwehr()
+  }
 
   const verlauf: { verteidiger: number; angreifer: number; staerke: [number, number, number, number]; sieger: string | null }[] = []
   for (let tick = 0; tick < ticks; tick++) {
@@ -99,15 +113,17 @@ function nahkampf(verteidiger: 'p1' | 'p2', lage: Lage, ticks: number) {
     const gefecht = gefechtIn(result.events)
     if (!gefecht) break
     const rolle = (player: string | null) => (player === verteidiger ? 'verteidiger' : player === angreifer ? 'angreifer' : null)
+    // Nacharbeit (Durchsicht N2): fehlte `strengths`, stand hier still -1 auf beiden Seiten,
+    // und der Vergleich blieb gleich. Beide Seiten kaempfen — beide muessen gemeldet sein.
+    const staerke = (player: string): [number, number] => {
+      const eintrag = gefecht.strengths?.[player]
+      expect(eintrag, `Tick ${tick}: BATTLE_RESOLVED ohne strengths fuer ${player}`).toBeDefined()
+      return [eintrag!.before, eintrag!.after]
+    }
     verlauf.push({
       verteidiger: gefecht.losses[verteidiger] ?? 0,
       angreifer: gefecht.losses[angreifer] ?? 0,
-      staerke: [
-        gefecht.strengths?.[verteidiger]?.before ?? -1,
-        gefecht.strengths?.[verteidiger]?.after ?? -1,
-        gefecht.strengths?.[angreifer]?.before ?? -1,
-        gefecht.strengths?.[angreifer]?.after ?? -1,
-      ],
+      staerke: [...staerke(verteidiger), ...staerke(angreifer)],
       sieger: rolle(gefecht.victor),
     })
   }
@@ -131,6 +147,7 @@ describe('T-M41-07 Der Seitentausch im Nahkampf spiegelt bei Streuung 0 exakt', 
       ],
       eingegraben: true,
       festung: 1,
+      verteidigerZuerst: true,
     }
     const alsP1 = nahkampf('p1', lage, 6)
     const alsP2 = nahkampf('p2', lage, 6)
@@ -138,9 +155,12 @@ describe('T-M41-07 Der Seitentausch im Nahkampf spiegelt bei Streuung 0 exakt', 
     expect(alsP1.verlauf.length, 'kein Gefecht - die Lage misst nichts').toBe(6)
     expect(alsP1.verlauf[0]!.verteidiger + alsP1.verlauf[0]!.angreifer).toBeGreaterThan(0)
     expect(alsP2).toEqual(alsP1)
+    // Und die Stelle in `armyOrder` spielt keine Rolle (Nacharbeit, Durchsicht N2).
+    expect(nahkampf('p1', { ...lage, verteidigerZuerst: false }, 6)).toEqual(alsP1)
+    expect(nahkampf('p2', { ...lage, verteidigerZuerst: false }, 6)).toEqual(alsP1)
   })
 
-  it('haelt fuer beliebige Verbaende, Festung und Haltung', () => {
+  it('haelt fuer beliebige Verbaende, Festung, Haltung und Aufstellungsreihenfolge', () => {
     const verbaende = fc
       .subarray([...LAND], { minLength: 1 })
       .chain((keys) =>
@@ -151,11 +171,22 @@ describe('T-M41-07 Der Seitentausch im Nahkampf spiegelt bei Streuung 0 exakt', 
 
     fc.assert(
       fc.property(
-        fc.record({ abwehr: verbaende, angriff: verbaende, eingegraben: fc.boolean(), festung: fc.integer({ min: 0, max: 3 }) }),
+        fc.record({
+          abwehr: verbaende,
+          angriff: verbaende,
+          eingegraben: fc.boolean(),
+          festung: fc.integer({ min: 0, max: 3 }),
+          verteidigerZuerst: fc.boolean(),
+        }),
         (lage) => {
           const alsP1 = nahkampf('p1', lage, 4)
           expect(alsP1.verlauf.length).toBeGreaterThan(0)
+          // Seitentausch: dieselbe Rolle, der andere Spieler.
           expect(nahkampf('p2', lage, 4)).toEqual(alsP1)
+          // Armeereihenfolge (Nacharbeit, Durchsicht N2): im Seitentausch steht die Rolle in
+          // beiden Laeufen an derselben Stelle von `armyOrder`; erst die andere Aufstellung
+          // sieht eine Schieflage nach Reihenfolge.
+          expect(nahkampf('p1', { ...lage, verteidigerZuerst: !lage.verteidigerZuerst }, 4)).toEqual(alsP1)
           return true
         },
       ),
@@ -194,6 +225,7 @@ describe('R-BAT-07/AK1 Verbleibende Staerke plus gemeldete Verluste ergeben die 
     let gemeldetGesamt = 0
     let gefechte = 0
     let dreiParteien = 0
+    let staerkenGeprueft = 0
 
     for (let tick = 0; tick < 50; tick++) {
       let vorher: Record<string, number> = {}
@@ -215,9 +247,14 @@ describe('R-BAT-07/AK1 Verbleibende Staerke plus gemeldete Verluste ergeben die 
         const abgezogen = vorher[p]! - nachher[p]!
         const gemeldet = gefecht.losses[p] ?? 0
         expect(abgezogen, `Tick ${state.tick}, ${p}: abgezogen gegen gemeldet`).toBe(gemeldet)
-        if (gefecht.strengths?.[p]) {
-          expect(gefecht.strengths[p]!.before, `Tick ${state.tick}, ${p}: Staerke vorher`).toBe(vorher[p])
-          expect(gefecht.strengths[p]!.after, `Tick ${state.tick}, ${p}: Staerke nachher`).toBe(nachher[p])
+        // Nacharbeit (Durchsicht N2): `if (strengths[p])` uebersprang eine fehlende Meldung
+        // still. Wer vor dem Kampf Truppen in der Provinz hat, kaempft — und wird gemeldet.
+        const staerke = gefecht.strengths?.[p]
+        if (vorher[p]! > 0) {
+          expect(staerke, `Tick ${state.tick}, ${p}: BATTLE_RESOLVED ohne strengths`).toBeDefined()
+          expect(staerke!.before, `Tick ${state.tick}, ${p}: Staerke vorher`).toBe(vorher[p])
+          expect(staerke!.after, `Tick ${state.tick}, ${p}: Staerke nachher`).toBe(nachher[p])
+          staerkenGeprueft += 1
         }
         abgezogenGesamt += abgezogen
         gemeldetGesamt += gemeldet
@@ -227,6 +264,8 @@ describe('R-BAT-07/AK1 Verbleibende Staerke plus gemeldete Verluste ergeben die 
     // Nicht leer gemessen: 50 Gefechtsticks mit drei Parteien und echten Verlusten.
     expect(gefechte, 'das Gefecht endete vor 50 Ticks').toBe(50)
     expect(dreiParteien, 'kein Tick mit drei Parteien').toBeGreaterThan(0)
+    // Mindestens zwei gemeldete Staerken je Gefechtstick: sonst prueft die Zusicherung oben nichts.
+    expect(staerkenGeprueft, 'strengths nie geprueft').toBeGreaterThanOrEqual(2 * gefechte)
     expect(gemeldetGesamt).toBeGreaterThan(0)
     expect(abgezogenGesamt).toBe(gemeldetGesamt)
   })

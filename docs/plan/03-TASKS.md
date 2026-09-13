@@ -5614,3 +5614,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   bevor eine Kampfregel geändert wird (Golden-Master). T-M14-06 bleibt `done` und bekommt einen
   Verweis. R-BAT-07 steht nur hier im Text (`name_level`) — wer den Block `R-BAT-07/AK1` nennt,
   darf die ID dort streichen und trägt sie dann hier ein.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N2: im Seitentausch stand die Armee des Verteidigers
+  in beiden Läufen vorn in `armyOrder` — eine Schieflage nach Armeereihenfolge war unsichtbar, und
+  eine fehlende `strengths`-Meldung wurde still übersprungen. Jetzt ist die Aufstellungsreihenfolge
+  Teil der Eigenschaft (`fc.boolean()`, dazu der Vergleich mit der anderen Reihenfolge), und
+  `strengths` wird für jede kämpfende Seite zugesichert. Gegen den Kern grün; mit einer Schieflage
+  nach Reihenfolge bzw. ohne `strengths` — nur im Test als Hülle um die Kampfphase — fällt die neue
+  Fassung, die alte blieb grün.)*
