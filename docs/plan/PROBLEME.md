@@ -2652,3 +2652,49 @@ Damit trägt auch der erweiterte Paarungsschlüssel aus T-M14-11 (Macht, Befehl,
 **alle** Befehle, den T-M41-09 noch nicht zusichern konnte — jetzt in beiden Läufen zugesichert.
 
 **Status: behoben** (T-M41-11).
+
+---
+
+## 2026-09-13 · Block N2, Schluss · T-M41-14 ist nicht nötig — aber das Artillerie-Tor hängt an einer einzigen Macht
+
+**Die Prüfung aus der Orchestrierung** (§3d, Punkt 6): liegt der selbsttätige Beschuss im Integrationslauf (Weltkarte,
+200 Tage, acht KI) nach allen Änderungen von Block N2 weiter unter einem Viertel des Werts vom 2026-09-12 (121, also
+30), wird die Ursache als T-M41-14 untersucht. **Gemessen auf dem Endstand (`55dcf23`): 231 Beschüsse, 63
+Artillerien.** Die Bedingung tritt nicht ein; T-M41-14 ist nicht angelegt.
+
+| Stand | Artillerie | selbsttätiger Beschuss |
+|---|---|---|
+| 2026-09-12 (vor T-M41-01) | 9 | 121 |
+| nach T-M41-08 | 1 | 10 |
+| nach H1 (Fabrikausbau sperrt keine Stadt) | 69 | 303 |
+| nach T-M41-09 und T-M41-11 (Endstand) | 63 | **231** |
+| mit T-M41-10 (zurückgenommen) | 0 | 0 |
+
+**Der Befund, der bleibt, und keine Aufgabe hat.** Alle 63 Artillerien und alle 231 Beschüsse gehören **einer**
+Macht: China, Stufe „schwer", 47 Armeen mit Reichweite am Ende. Die drei „leichten" und drei „normalen" Mächte heben
+keine einzige Artillerie aus. Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist damit grün, aber es steht
+auf einer einzigen Kette — T-M41-10 hat vorgeführt, dass eine Änderung am Zusammenlegen es auf null bringt.
+Naheliegend, nicht gemessen: `TARGET_MIX` in `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und
+`recruitShare` der Stufen (80 / 200 / 280) lässt die teure Artillerie nur bei „schwer" in den Haushalt. Vorgemerkt
+für M18 zusammen mit Zusage 7 (T-M41-10); die Zusicherung wird nicht auf „je Stufe" verschärft, solange das nicht
+gebaut ist.
+
+**Schlussmessung von Block N2** (Code `55dcf23`, alle Berichte eingecheckt):
+
+| Lauf | Ergebnis |
+|---|---|
+| Vollpartie 1914 | Tag **975**, Sieger p7 (China), 11 Kriegserklärungen, 2589 Eroberungen |
+| Vollpartie 2015 | Tag **583**, Sieger p6 (Russland), 13 Kriegserklärungen, 2185 Eroberungen |
+| Vollpartie 1815 | Tag **583**, Sieger p6 (Russland), 10 Kriegserklärungen, 1587 Eroberungen |
+| `progress.slow` (Grundlauf) | Anteil des Stärksten **0,3684** (vor Block N2: 0,4462), Eroberungen 310,1, Überlebende 5,42 |
+| Turnier | schwer:leicht 1,00, schwer:normal Frieden **0,70** (10:0:15), im Krieg 1,00 — R-AI-06 hält |
+| `ai-integration` 200 T / Voreinstellung 90 T | 21 grün; Ablehnungen **3** von 16 650 (vor Block N2: 1177 von 18 629), Voreinstellung 0 |
+
+Die Vollpartien vor und nach T-M41-11 sind zahlengleich (nur `measuredAt` verschieden) — auch über 975 Spieltage
+belegt, dass die Sicht auf die Hauptstadtsperre die Partie nicht ändert.
+
+**Folge für den Parameterlauf:** der Ausgangswert in `balance-sweep.md` (Grundlauf 0,4442) beschreibt den Stand nicht
+mehr. Der Frische-Wächter der Abnahme sieht das nicht, weil sich `data/rules` nicht geändert hat; der eine Parameterlauf
+im Schlussblock misst neu.
+
+**Status: Beobachtung** (Artillerie bei einer Macht, vorgemerkt für M18); T-M41-14 nicht nötig.

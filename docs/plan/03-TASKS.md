@@ -5720,6 +5720,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 > **Nacharbeit nach der Durchsicht, Block N2 (2026-09-13): das Verhalten der KI.** Aus der Durchsicht
 > (H1, H2) und der Untersuchung der abgelehnten KI-Befehle. Jede Aufgabe verändert oder vermisst, was
 > die KI tut, und ist einzeln gemessen; die Reparatur zu H1 ist Nacharbeit zu T-M41-01 und steht dort.
+> *(Abschluss 2026-09-13: T-M41-08, -09 und -11 gebaut, T-M41-10 nach seinem Rücknahmekriterium
+> zurückgenommen. **T-M41-14 ist nicht angelegt:** die Bedingung „selbsttätiger Beschuss im
+> Integrationslauf unter einem Viertel von 121" trat nicht ein — gemessen 231 nach der Reparatur zu H1
+> und T-M41-09. Der Befund dahinter, alle Artillerie bei einer einzigen Macht, steht in `PROBLEME.md`.)*
 
 ### T-M41-08 · Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
 - **Ziel:** 961 von 1177 abgelehnten KI-Befehlen auf der Weltkarte galten Armeen, die dieselbe Macht im
