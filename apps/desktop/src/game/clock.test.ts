@@ -54,6 +54,58 @@ describe('T-M41-04 Tempo heisst Spielstunden je Sekunde, bei jeder ueblichen Bil
   })
 })
 
+/** Ein fester Zufall (mulberry32): dieselbe Streuung in jedem Lauf. */
+function festerZufall(seed: number): () => number {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = a
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** Bildzeiten um `1000 / hz`, gleichverteilt um ±`jitterMs` gestreut, `seconds` Sekunden lang. */
+function gestreuteBilder(hz: number, jitterMs: number, seconds: number, seed: number): number[] {
+  const zufall = festerZufall(seed)
+  return Array.from({ length: hz * seconds }, () => 1000 / hz + (zufall() * 2 - 1) * jitterMs)
+}
+
+/** So viele Ticks laufen ueber diese Bildzeiten. */
+function ticksUeber(bilder: readonly number[], speed: number): number {
+  let owed = 0
+  let ticks = 0
+  for (const dtMs of bilder) {
+    const step = clockStep(owed, dtMs, speed)
+    ticks += step.due
+    owed = step.owed
+  }
+  return ticks
+}
+
+describe('T-M41-04 Nacharbeit: gestreute Bildzeiten verlieren nichts (Durchsicht N1)', () => {
+  /*
+   * Echte Bilder kommen nicht im Takt. Mit einer Kappe von genau einem 33-ms-Bild verlor
+   * bei 30 Hz jedes Bild, das etwas laenger dauerte, seinen Ueberhang — die Tests oben
+   * sahen es nicht, weil ihre Bildzeiten exakt sind. Das Soll wird aus der Summe der
+   * Bildzeiten abgeleitet: so viel Zeit verging, so viele Spielstunden muessen laufen
+   * (abgerundet, der Rest ist der Uebertrag unter einem Tick).
+   */
+  for (const hz of [30, 60]) {
+    it(`${hz} Bilder je Sekunde, gestreut um ±3 ms, laufen bei Tempo 100 so viele Ticks, wie Zeit verging`, () => {
+      const bilder = gestreuteBilder(hz, 3, 10, 1914 + hz)
+      const summeMs = bilder.reduce((summe, dtMs) => summe + dtMs, 0)
+      const soll = Math.floor((summeMs / 1000) * 100 + 1e-9)
+
+      // Nicht leer gemessen: die Streuung reicht wirklich um das Bild herum.
+      expect(Math.max(...bilder), 'kein Bild ueber dem Takt').toBeGreaterThan(1000 / hz + 2)
+      expect(Math.min(...bilder), 'kein Bild unter dem Takt').toBeLessThan(1000 / hz - 2)
+      expect(ticksUeber(bilder, 100), `Soll aus ${summeMs.toFixed(1)} ms`).toBe(soll)
+    })
+  }
+})
+
 describe('T-M41-04 Kein Rueckstau (D5): ein Stillstand wird nicht nachgeholt', () => {
   it('ein Bild nach fuenf Sekunden Stillstand holt hoechstens die Kappe nach', () => {
     for (const speed of [1, 10, 50, 100]) {
@@ -61,8 +113,11 @@ describe('T-M41-04 Kein Rueckstau (D5): ein Stillstand wird nicht nachgeholt', (
       expect(step.due, `Tempo ${speed}`).toBeLessThanOrEqual(clockCap(speed))
       expect(step.owed, `Tempo ${speed}: Uebertrag`).toBeLessThan(1)
     }
-    // Die Kappe ist ein 33-ms-Bild, bei kleinem Tempo mindestens zwei Ticks.
-    expect(clockCap(100)).toBeCloseTo(100 / 30)
+    // Die Kappe ist ein 50-ms-Bild, bei kleinem Tempo mindestens zwei Ticks. Bis zur
+    // Nacharbeit (Durchsicht N1) war es ein 33-ms-Bild — genau ein Bild bei 30 Hz, und
+    // jedes langsamere Bild verlor seinen Ueberhang.
+    expect(clockCap(100)).toBe(5)
+    expect(clockCap(40)).toBe(2)
     expect(clockCap(1)).toBe(2)
   })
 

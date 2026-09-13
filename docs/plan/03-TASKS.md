@@ -5514,6 +5514,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   als gerechnet — die Uhrschleife in `App.tsx` hing an `state`, begann nach jedem Tick neu und
   setzte den Übertrag auf null; 60 Bilder bei Tempo 100 liefen 60 statt 100 Spielstunden, 30 Bilder
   bei Tempo 50 liefen 30. `PROBLEME.md`, 2026-09-13.)*
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N1: die Kappe `max(2, speed / 30)` ist genau ein Bild
+  bei 30 Hz und schnitt jedes etwas spätere Bild — zehn Sekunden 30 Hz, gestreut um ±3 ms, liefen
+  bei Tempo 100 976 statt 998 Ticks. Die Kappe ist jetzt `max(2, speed / 20)`, ein 50-ms-Bild; D5
+  hält, der Übertrag bleibt unter einem Tick. Test mit gestreuten Bildzeiten in `clock.test.ts`.)*
   Befund: `owed = Math.min(2, …)` verliert gerechnet bei 60 Hz/Tempo 100 zehn Prozent, bei
   30 Hz/Tempo 100 vierzig Prozent. R-TIME-02 steht nur hier im Text (`name_level`). Vor M37 bauen:
   T-M37-11 treibt dieselbe Uhr aus dem Gleichschritt.

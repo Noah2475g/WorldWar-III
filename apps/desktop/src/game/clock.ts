@@ -12,9 +12,13 @@
  * still runs 90 at 30 frames, because every frame after the first is cut by the carry.
  *
  * So the cap sits on the frame's TIME CREDIT, not on the carry: a frame counts at most
- * one 33-ms frame of game time (at least two ticks at low speed, as before), and the
+ * one 50-ms frame of game time (at least two ticks at low speed, as before), and the
  * carry is always below one tick. That keeps D5 — no backlog that would freeze the game
- * later — and loses nothing at any frame rate of 30 or more.
+ * later — and loses nothing at 30 frames or more, even when real frames scatter.
+ *
+ * Until the rework after the M41 review (finding N1) the cap was one 33-ms frame. That is
+ * exactly one frame at 30 Hz, so every frame that came a little late lost its overhang:
+ * ten seconds of 30 Hz scattered by ±3 ms ran 976 ticks instead of 998 (`clock.test.ts`).
  */
 export interface ClockStep {
   /** Ticks to run in this frame. */
@@ -31,7 +35,7 @@ const EPSILON = 1e-9
 
 /** The most game time, in ticks, a single frame may credit. */
 export function clockCap(speed: number): number {
-  return Math.max(2, speed / 30)
+  return Math.max(2, speed / 20)
 }
 
 export function clockStep(owed: number, dtMs: number, speed: number): ClockStep {

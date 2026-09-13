@@ -2973,6 +2973,8 @@ tasks:
     milestone: M41
     title: Die Uhr verliert keine Ticks mehr
     status: done
+    # Nacharbeit 2026-09-13 (Durchsicht N1): Kappe max(2, speed / 20) statt speed / 30 -
+    # 30 Hz gestreut um 3 ms liefen 976 statt 998 Ticks in zehn Sekunden (clock.test.ts).
     deps: [T-M41-06]
     requirements: []
     files: [apps/desktop/src/game/clock.ts, apps/desktop/src/App.tsx]
