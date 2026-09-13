@@ -2315,6 +2315,58 @@ Haltungsgruppe (zwei mal zwei, T-M40-05) steht im Schlussblock aus.
 
 **Status:** Beobachtung; AK5 belegt.
 
+**Berichtigt am 2026-09-13 (T-M40-07, Befund H3 der Durchsicht von M40).** Drei Aussagen dieses
+Eintrags halten der Nachprüfung nicht stand.
+
+1. **„Am Ende eine Provinz und drei Armeen statt keiner" ist keine gelungene Deckung.** Zwei der
+   drei Verluste hat der Adjutant selbst verursacht: er schickte a2 aus DEU-NW (Tick 497) und a3 aus
+   DEU-SE (Tick 522) nach DEU-SW, und beide geleerten Provinzen fielen danach **ohne Gefecht**
+   (Tick 867 und 1018, Durchsicht H3). Dass DEU-SW hielt, lag an den drei Armeen, die dort
+   zusammenkamen.
+2. **Ursache 1 (Eroberung im Einmarschtick) erklärt den Lauf kaum.** Nur 2 der 136 Einmärsche fielen
+   mit einer Eroberung im selben Tick zusammen — genau die zwei entblößten Provinzen.
+3. **Der „Anteil beantworteter Einmärsche" misst die Dauer des Widerstands, nicht die Wirkung.**
+   Vorher ist er strukturell null, und die neun „beantworteten" Einmärsche stammen aus zwei
+   Ankünften. Eine Deckung kam in **1 von 132** umkämpften Episoden vor Gefechtsende an — Gefechte
+   dauern im Median einen Tick, die kürzeste deutsche Binnengrenze 25. Im Entwurf der Nacharbeit
+   verloren Regeln mit 73–80 % „beantwortet" alle Provinzen. Die Zahl bleibt im Bericht, zugesichert
+   wird sie seit T-M40-07 nicht mehr.
+
+**Neu gemessen je umkämpfter Episode** (`apps/headless/test/stance.slow.test.ts`,
+`docs/reports/stance.json`, Abschnitt `episoden.vorher`; Weltkarte, 200 Spieltage, Deutschland ohne
+Befehl, der Adjutant wie in M40 gebaut; gemessen vor Block N2 der M41-Nacharbeit). Provinz-Tage =
+Provinzen des Menschen zu Beginn jedes Spieltags, summiert. Aufstellung A: eine Armee aus fünf
+Infanterie je Provinz, B: zwei.
+
+| Startzahl · Aufstellung · Haltung | Provinz-Tage | verloren (davon ohne Gefecht) | Befehle | Episoden (Deckung befohlen / rechtzeitig / gehalten) | Ende Provinzen / Armeen |
+|---|---|---|---|---|---|
+| 1914 · A · Garnison | 573 | 4 (0) | 0 | 45 (0 / 0 / 41) | 0 / 0 |
+| 1914 · A · Verteidigung | 366 | 3 (**2**) | 2 | 132 (2 / 1 / 131) | 1 / 3 |
+| 1914 · B · Garnison | 733 | 1 (0) | 0 | 42 (0 / 0 / 41) | 3 / 6 |
+| 1914 · B · Verteidigung | 636 | 2 (**2**) | 4 | 286 (4 / 2 / 286) | 2 / 8 |
+| 2015 · A · Garnison | 532 | 3 (0) | 0 | 37 (0 / 0 / 34) | 1 / 1 |
+| 2015 · A · Verteidigung | 341 | 3 (**3**) | 2 | 108 (2 / 1 / 108) | 1 / 3 |
+| 2015 · B · Garnison | 800 | 0 (0) | 0 | 58 (0 / 0 / 58) | 4 / 8 |
+| 2015 · B · Verteidigung | 800 | 0 (0) | 6 | 509 (6 / 2 / 509) | 4 / 8 |
+| 1815 · A · Garnison | 702 | 1 (0) | 0 | 27 (0 / 0 / 26) | 3 / 3 |
+| 1815 · A · Verteidigung | 362 | 3 (**2**) | 2 | 92 (2 / 1 / 91) | 1 / 3 |
+| 1815 · B · Garnison | 800 | 0 (0) | 0 | 36 (0 / 0 / 36) | 4 / 8 |
+| 1815 · B · Verteidigung | 796 | 1 (**1**) | 4 | 404 (4 / 2 / 404) | 3 / 8 |
+
+**Summen über die sechs Paare:** Provinz-Tage mit Garnison 4140, mit Verteidigung **3301 (79,7 %)**;
+Verluste ohne Gefecht mit Garnison **0**, mit Verteidigung **10** — in fünf von sechs Paaren mehr als
+mit Garnison. Rechtzeitig vor Gefechtsende kam die Deckung in 9 von 1531 umkämpften Episoden an.
+Die Verteidigung aus M40 hält weniger als die Garnison und verliert fast nur Provinzen, die sie
+selbst geleert hat.
+
+Die Garnison A 1914 bildet den Lauf vorher aus T-M40-02 nach (52 Einmärsche, 4 verloren). Jede Zahl
+trifft den Entwurf der Nacharbeit, der dieselben Läufe im Speicher nachgebaut hatte — die
+Messung ist also dieselbe, auf der dort die Schwelle festgelegt wurde. In keinem Lauf gab es eine
+Ablehnung, einen Krieg ohne Erklärung oder einen Pendelzug.
+
+**Status:** berichtigt. Die Regel ersetzt T-M40-10; ob die neue Fassung bleibt, entscheidet derselbe
+Messlauf in T-M40-12.
+
 ## 2026-09-13 · T-M41-12 · Ankündigung und Freischaltung standen zwölf Spielstunden — nach einem Vorspulen gar nicht
 
 **Befund (Durchsicht M41, N8).** `unlockAlerts` und `upcomingAlerts` in `Alerts.tsx` meldeten nur,

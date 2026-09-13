@@ -2963,7 +2963,11 @@ tasks:
   - id: T-M40-07
     milestone: M40
     title: Der Messlauf je Episode, vorher
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): Provinz-Tage zu Beginn jedes Spieltags - die Zaehlweise des Entwurfs;
+    # der erste Lauf zaehlte am Tagesende und gab 569 statt 573. Die zwoelf Laeufe treffen den
+    # Entwurf Zahl fuer Zahl: Garnison 4140 Provinz-Tage und 0 Verluste ohne Gefecht, Verteidigung
+    # wie in M40 gebaut 3301 (79,7 Prozent) und 10; AK5 als it.fails. Einheitsfaelle rot 2 von 3.
     deps: [T-M40-06]
     requirements: [R-UNIT-09]
     design: [D-30]

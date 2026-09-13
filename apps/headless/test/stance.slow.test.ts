@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { advanceTicks } from '@worldwar/ai'
@@ -8,6 +8,7 @@ import {
   edgeTravelTicks,
   parseRules,
   type Army,
+  type Command,
   type GameEvent,
   type GameState,
   type MapData,
@@ -19,36 +20,48 @@ import { placeArmy } from '@worldwar/testkit'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
 /**
- * Der Haltungs-Messlauf (T-M40-02 vorher, T-M40-06 nachher; D30.6, R-UNIT-09/AK5).
+ * Der Haltungs-Messlauf (T-M40-02, T-M40-06; seit T-M40-07 je umkaempfter Episode;
+ * D30.6, R-UNIT-09/AK5).
  *
- * Erst messen, dann aendern. T-M40-02 hielt fest, was mit einem Einmarsch in eine Provinz des
- * Menschen geschieht, wenn er nicht klickt und es noch keine Automatik gibt: Weltkarte,
- * ausgelieferte Regeln, 200 Spieltage ueber `advanceTicks`; der Mensch spielt Deutschland
- * (Landgrenzen zu mehreren KI-Nachbarn), bekommt beim Aufsetzen eine Armee in jede eigene
- * Provinz und gibt danach keinen einzigen Befehl. Der Abschnitt `vorher` in
- * `docs/reports/stance.json` ist diese Messung und wird hier nicht neu geschrieben.
+ * **Die Geschichte.** T-M40-02 und T-M40-06 zaehlten Einmaersche in Provinzen des Menschen
+ * und fragten, ob danach eine eigene Armee dort ankam. Die Durchsicht von M40 (Befund H3)
+ * zeigte, dass diese Zahl die Abnahme nicht traegt: ohne Adjutant war sie strukturell null,
+ * "beantwortet" hiess "irgendwann angekommen" (neun beantwortete Einmaersche aus zwei
+ * Ankuenften), und zwei der drei Verluste im Lauf nachher hatte die Deckung selbst verursacht
+ * — sie hatte die Provinzen geleert, die danach ohne Gefecht fielen. Ein Entwurf mass fuenf
+ * Regeln: Varianten mit 73 bis 80 Prozent "beantwortet" verloren alles. Die Zahl steht weiter
+ * im Bericht; zugesichert wird sie nicht mehr.
  *
- * T-M40-06 faehrt dieselbe Aufstellung dreimal:
+ * **Was jetzt gemessen wird.** Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber
+ * `advanceTicks`, der Mensch spielt Deutschland mit KI-Nachbarn und gibt keinen Befehl. Drei
+ * Startzahlen (1914, 2015, 1815) mal zwei Aufstellungen — **A**: eine Armee aus fuenf
+ * Infanterie je Provinz, **B**: zwei — mal zwei Haltungen: `garrison` (kaempft wie die
+ * Verteidigung, handelt nie von selbst) und `defensive` (mit Adjutant). Zwoelf Laeufe.
  *
- *  - **Kontrolle, Garnison.** `garrison` kaempft wie `defensive` und handelt nie von selbst.
- *    Dieser Lauf muss `vorher` Zahl fuer Zahl nachbilden — sonst hat sich seit T-M40-02
- *    etwas anderes verschoben als die Automatik, und der Vergleich unten waere keiner.
- *  - **Nachher, Verteidigung.** Dieselbe Haltung wie vorher, jetzt mit Adjutant.
- *  - **Angriff.** Die Verfolgung braucht eine Zahl aus einem ganzen Lauf, nicht nur ihre
- *    Einzeltests. Zugesichert wird dort nur: keine Ablehnung.
+ *  - **Provinz-Tage:** zu Beginn jedes Spieltags die Zahl der Provinzen des Menschen, summiert
+ *    (dieselbe Zaehlweise wie im Entwurf, auf der die Schwelle steht). Ein Nenner, der nicht mit
+ *    dem Widerstand waechst.
+ *  - **Episode:** die groesste zusammenhaengende Folge von Ticks mit `BATTLE_RESOLVED` in einer
+ *    Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; sie endet im ersten Tick
+ *    ohne Gefecht dort. Je Episode: Deckung befohlen, Deckung vor Gefechtsende angekommen,
+ *    gehalten (Besitzer nach der Episode).
+ *  - **Verloren ohne Gefecht:** `PROVINCE_CAPTURED` aus dem Besitz des Menschen in einem Tick
+ *    ohne `BATTLE_RESOLVED` in dieser Provinz — die entbloesste Provinz.
+ *  - **Pendelzug:** eine Armee marschiert von A nach B und binnen fuenf Spieltagen zurueck.
  *
- * Gezaehlt wird aus dem **Ereignisstrom** des Laufs, nie aus `state.eventLog` — der ist ein
- * Ringpuffer und deckt nur die letzten Spieltage ab (T-M14-05). Der Bericht fuehrt die
- * Zahl aus dem Puffer daneben, damit der Unterschied sichtbar bleibt.
+ * Gezaehlt wird aus dem **Ereignisstrom**, Tick fuer Tick, nie aus `state.eventLog`.
  *
- * **Das Fenster.** D30.6 nannte „eine eigene Armee erreicht die Provinz binnen 24 Ticks".
- * Auf der Weltkarte ist das fuer Infanterie nicht erreichbar: die kuerzeste deutsche
- * Binnengrenze misst 146 km, bei 6 km/h sind das mindestens 25 Ticks, und der Befehl kann
- * fruehestens im Tick nach dem Einmarsch fallen (D30.4). Die Zahl mit 24 Ticks wird
- * weiter gezaehlt; zugesichert wird ueber ein Fenster, das **vor** jeder Messung aus der
- * Karte folgt — ein Tick Verzug plus die laengste Marschzeit ueber eine eigene
- * Binnengrenze fuer genau die aufgestellte Armee. Dazu der Aufbruch binnen 24 Ticks: er
- * misst die Reaktion unabhaengig von der Marschzeit (`PROBLEME.md`, 2026-09-13).
+ * **Die Zusicherungen (AK5), festgelegt vor der Messung der gebauten Regel:** ueber alle sechs
+ * Paare erreichen die Provinz-Tage mit Verteidigung mindestens 98 Prozent der Garnison; je Paar
+ * gehen mit Verteidigung nicht mehr Provinzen ohne Gefecht verloren als mit Garnison; kein
+ * Befehl wird abgelehnt, keiner loest einen Krieg ohne Erklaerung aus; und die Garnison A 1914
+ * bildet den Lauf vorher aus T-M40-02 nach. Die Schwelle 98 Prozent stand erst nach der Messung
+ * des Entwurfs fest (D30.9) — sie gilt fuer die Summe, weil die Regel des Entwurfs in einem
+ * Einzellauf (1815 B) drei Prozent unter der Garnison lag.
+ *
+ * **Der Bericht** `docs/reports/stance.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
+ * geschrieben (Befund N3: vorher schrieb jeder Lauf ihn neu, mit neuem Zeitstempel). Ohne die
+ * Variable liest und schreibt der Test nichts.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -67,16 +80,31 @@ const rules: Rules = parseRules(
 const map = load('data/maps/world.json') as MapData
 
 const NATION = 'Deutschland'
-const SEED = 1914
+const SEEDS = [1914, 2015, 1815] as const
 const DAYS = 200
-const CHUNK_DAYS = 25
 const UNIT_KEY = 'infantry'
-const UNITS_PER_PROVINCE = 5
-/** Das Fenster, das D30.6 nannte — mitgezaehlt, nicht zugesichert (siehe oben). */
+const UNITS_PER_ARMY = 5
+/** Armeen je Provinz in den zwei Aufstellungen. */
+const SETUPS = { A: 1, B: 2 } as const
+type Aufbau = keyof typeof SETUPS
+const STANCES = ['garrison', 'defensive'] as const
+/** Das Fenster, das D30.6 nannte — mitgezaehlt, nicht zugesichert. */
 const PLAN_WINDOW_TICKS = 24
-/** Der KI-Stand, auf dem gemessen wurde (Hinweis des Orchestrators vom 2026-09-13). */
-const STAND = 'gemessen vor der M41-Nacharbeit (KI-Bauordnung)'
+/** Das Kartenfenster aus T-M40-02; aendert es sich, hat sich die Karte geaendert. */
+const WINDOW_TICKS_T_M40_02 = 114
+/** Hin und zurueck binnen dieser Spieltage ist ein Pendelzug. */
+const PENDULUM_DAYS = 5
+/** AK5: Provinz-Tage mit Verteidigung mindestens so viele Prozent der Garnison (D30.9). */
+const PROVINCE_DAYS_PERCENT = 98
+/** Der Lauf vorher (T-M40-02, Garnison A 1914), den die Garnison nachbilden muss. */
+const VORHER = { intrusions: 52, provincesLost: 4 }
+/** Der KI-Stand, auf dem gemessen wurde (Block N2 aendert die Gegner, danach neu messen). */
+const STAND = 'gemessen vor Block N2 der M41-Nacharbeit (KI-Verhalten)'
+/** Welcher Abschnitt von `episoden` geschrieben wird: T-M40-07 misst den heutigen Adjutanten. */
+const ABSCHNITT = 'vorher'
+const ADJUTANT = 'M40 wie gebaut: Deckung angegriffener Nachbarprovinzen und Verfolgung (D30.4 bis 2026-09-13)'
 const REPORT = `${ROOT}/docs/reports/stance.json`
+const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
 
 interface StanceCount {
   /** `ARMY_INTRUDED` in eine Provinz des Menschen. */
@@ -128,12 +156,157 @@ function zaehle(events: readonly GameEvent[], human: PlayerId, windowTicks: numb
   }
 }
 
+/** Was ein Tick fuer die Zaehlung je Episode traegt. */
+interface Frame {
+  tick: number
+  /** Die Provinzen des Menschen zu BEGINN dieses Ticks. */
+  owned: readonly string[]
+  events: readonly GameEvent[]
+  /** Die Befehle, die in diesem Tick fuer den Menschen angewandt wurden — er selbst befiehlt nichts. */
+  orders: readonly Command[]
+}
+
+interface EpisodenZahl {
+  /** Umkaempfte Episoden in Provinzen, die zu Beginn der Episode dem Menschen gehoerten. */
+  episodes: number
+  /** Davon: waehrend der Episode ein Marschbefehl der Automatik in diese Provinz. */
+  coverOrdered: number
+  /** Davon: waehrend der Episode kam eine eigene Armee dort an. */
+  coverArrivedInTime: number
+  /** Davon: die Provinz gehoert dem Menschen nach der Episode noch. */
+  held: number
+  /** Summe der Provinzen des Menschen zu Beginn jedes Spieltags. */
+  provinceDays: number
+  provincesLost: number
+  /** Davon im Tick der Eroberung ohne Gefecht in dieser Provinz. */
+  lostWithoutBattle: number
+  /** Befehle fuer den Menschen — alle von der Automatik. */
+  adjutantOrders: number
+  /** Eine Armee marschiert von A nach B und binnen fuenf Spieltagen zurueck. */
+  pendulums: number
+  rejectedCommands: number
+  /** `WAR_DECLARED` ohne Erklaerung, ausgeloest vom Menschen. */
+  undeclaredWarsByHuman: number
+}
+
+/** Die Zaehlung je Episode — aus nichts als den Frames und dem Besitz am Ende. */
+function werteAus(
+  frames: readonly Frame[],
+  finalOwned: readonly string[],
+  human: PlayerId,
+  ticksPerDay: number,
+): EpisodenZahl {
+  const besitz = [...frames.map((frame) => new Set(frame.owned)), new Set(finalOwned)]
+  /** Der Besitz zu Beginn des Frames `index`; hinter dem letzten Frame der Besitz am Ende. */
+  const besitzBei = (index: number): ReadonlySet<string> => besitz[Math.min(index, frames.length)]!
+
+  // Je Provinz die Frames mit einer Schlacht dort.
+  const schlachten = new Map<string, Set<number>>()
+  frames.forEach((frame, index) => {
+    for (const event of frame.events) {
+      if (event.type !== 'BATTLE_RESOLVED') continue
+      const ticks = schlachten.get(event.provinceId) ?? new Set<number>()
+      ticks.add(index)
+      schlachten.set(event.provinceId, ticks)
+    }
+  })
+
+  let episodes = 0
+  let coverOrdered = 0
+  let coverArrivedInTime = 0
+  let held = 0
+  for (const [provinceId, ticks] of schlachten) {
+    const folge = [...ticks].sort((a, b) => a - b)
+    let k = 0
+    while (k < folge.length) {
+      const start = folge[k]!
+      let end = start + 1
+      k += 1
+      while (k < folge.length && folge[k] === end) {
+        end += 1
+        k += 1
+      }
+      if (!besitzBei(start).has(provinceId)) continue
+
+      episodes += 1
+      const waehrend = frames.slice(start, end)
+      if (waehrend.some((frame) => frame.orders.some((order) => order.type === 'MOVE_ARMY' && order.targetProvinceId === provinceId))) {
+        coverOrdered += 1
+      }
+      if (
+        waehrend.some((frame) =>
+          frame.events.some((event) => event.type === 'ARMY_ARRIVED' && event.playerId === human && event.provinceId === provinceId),
+        )
+      ) {
+        coverArrivedInTime += 1
+      }
+      if (besitzBei(end).has(provinceId)) held += 1
+    }
+  }
+
+  // Zu Beginn jedes Spieltags, wie im Entwurf gemessen: der erste Tag zaehlt mit, der Stand nach
+  // dem letzten Tick nicht. Die Schwelle aus D30.9 steht auf dieser Zaehlweise.
+  let provinceDays = 0
+  for (let index = 0; index < frames.length; index += ticksPerDay) provinceDays += besitzBei(index).size
+
+  let provincesLost = 0
+  let lostWithoutBattle = 0
+  let rejectedCommands = 0
+  let undeclaredWarsByHuman = 0
+  const aufbrueche: Extract<GameEvent, { type: 'ARMY_DEPARTED' }>[] = []
+  frames.forEach((frame, index) => {
+    for (const event of frame.events) {
+      if (event.type === 'PROVINCE_CAPTURED' && event.previousOwner === human) {
+        provincesLost += 1
+        if (!schlachten.get(event.provinceId)?.has(index)) lostWithoutBattle += 1
+      } else if (event.type === 'COMMAND_REJECTED' && event.playerId === human) {
+        rejectedCommands += 1
+      } else if (event.type === 'WAR_DECLARED' && event.playerId === human && event.withoutDeclaration) {
+        undeclaredWarsByHuman += 1
+      } else if (event.type === 'ARMY_DEPARTED' && event.playerId === human) {
+        aufbrueche.push(event)
+      }
+    }
+  })
+
+  // Ein Pendelzug: dieselbe Armee bricht als Naechstes genau in die Gegenrichtung auf, binnen fuenf Tagen.
+  let pendulums = 0
+  const letzter = new Map<string, (typeof aufbrueche)[number]>()
+  for (const aufbruch of aufbrueche) {
+    const vorher = letzter.get(aufbruch.armyId)
+    if (
+      vorher &&
+      vorher.fromProvinceId === aufbruch.toProvinceId &&
+      vorher.toProvinceId === aufbruch.fromProvinceId &&
+      aufbruch.tick - vorher.tick <= PENDULUM_DAYS * ticksPerDay
+    ) {
+      pendulums += 1
+    }
+    letzter.set(aufbruch.armyId, aufbruch)
+  }
+
+  return {
+    episodes,
+    coverOrdered,
+    coverArrivedInTime,
+    held,
+    provinceDays,
+    provincesLost,
+    lostWithoutBattle,
+    adjutantOrders: frames.reduce((total, frame) => total + frame.orders.length, 0),
+    pendulums,
+    rejectedCommands,
+    undeclaredWarsByHuman,
+  }
+}
+
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
-describe('D30.6 Die Zaehlung des Haltungs-Messlaufs', () => {
-  const ereignis = (fields: Record<string, unknown>): GameEvent =>
-    ({ severity: 'info', audience: [], concerns: [], ...fields }) as unknown as GameEvent
+/** Ein gebautes Ereignis: nur die Felder, die die Zaehlung liest. */
+const ereignis = (fields: Record<string, unknown>): GameEvent =>
+  ({ severity: 'info', audience: [], concerns: [], ...fields }) as unknown as GameEvent
 
+describe('D30.6 Die Zaehlung des Haltungs-Messlaufs', () => {
   it('zaehlt Einmaersche, Antworten, Verluste und Ablehnungen nur fuer den Menschen', () => {
     const events = [
       ereignis({ type: 'ARMY_INTRUDED', tick: 10, playerId: 'p1', intruderId: 'p2', armyId: 'a9', provinceId: 'P' }),
@@ -165,26 +338,114 @@ describe('D30.6 Die Zaehlung des Haltungs-Messlaufs', () => {
   })
 })
 
-/** Deutschland mit einer Armee in jeder eigenen Provinz. */
-function aufstellen(stance: Stance): { state: GameState; human: PlayerId; opponents: string[] } {
-  const config = toConfig({ ...DEFAULT_NEW_GAME, nation: NATION, seed: SEED }, map)
+describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
+  /**
+   * Zwoelf Ticks zu je vier Ticks am Tag. Der Mensch p1 besitzt P, Q und R; Q faellt im Gefecht
+   * (Tick 6), R ohne Gefecht (Tick 8). P hat zwei Episoden: Ticks 2–4 (gedeckt und rechtzeitig)
+   * und Tick 9 (ohne Deckung); die Schlacht in S an Tick 3 ist fremd.
+   */
+  function lage(): { frames: Frame[]; finalOwned: string[] } {
+    const zug = (armyId: string, targetProvinceId: string): Command => ({ type: 'MOVE_ARMY', playerId: 'p1', armyId, targetProvinceId })
+    const schlacht = (tick: number, provinceId: string) =>
+      ereignis({ type: 'BATTLE_RESOLVED', tick, battleId: `b${tick}${provinceId}`, provinceId, losses: {}, victor: null })
+    const besitz = (tick: number): string[] => (tick <= 6 ? ['P', 'Q', 'R'] : tick <= 8 ? ['P', 'R'] : ['P'])
+
+    const events: Record<number, GameEvent[]> = {
+      0: [ereignis({ type: 'ARMY_DEPARTED', tick: 0, playerId: 'p1', armyId: 'a2', fromProvinceId: 'X', toProvinceId: 'Y', arrivalTick: 1 })],
+      1: [ereignis({ type: 'ARMY_DEPARTED', tick: 1, playerId: 'p1', armyId: 'a1', fromProvinceId: 'P', toProvinceId: 'Q', arrivalTick: 3 })],
+      2: [
+        schlacht(2, 'P'),
+        // Weiter statt zurueck: kein Pendelzug.
+        ereignis({ type: 'ARMY_DEPARTED', tick: 2, playerId: 'p1', armyId: 'a2', fromProvinceId: 'Y', toProvinceId: 'Z', arrivalTick: 3 }),
+      ],
+      3: [schlacht(3, 'P'), schlacht(3, 'S')],
+      4: [schlacht(4, 'P'), ereignis({ type: 'ARMY_ARRIVED', tick: 4, playerId: 'p1', armyId: 'a3', provinceId: 'P' })],
+      // Zurueck binnen fuenf Tagen (20 Ticks): ein Pendelzug.
+      5: [ereignis({ type: 'ARMY_DEPARTED', tick: 5, playerId: 'p1', armyId: 'a1', fromProvinceId: 'Q', toProvinceId: 'P', arrivalTick: 7 })],
+      6: [schlacht(6, 'Q'), ereignis({ type: 'PROVINCE_CAPTURED', tick: 6, provinceId: 'Q', previousOwner: 'p1', newOwner: 'p2' })],
+      7: [
+        ereignis({ type: 'COMMAND_REJECTED', tick: 7, playerId: 'p1', command: 'MOVE_ARMY', code: 'NO_PATH' }),
+        ereignis({ type: 'COMMAND_REJECTED', tick: 7, playerId: 'p2', command: 'MOVE_ARMY', code: 'NO_PATH' }),
+        // Eine Ankunft in P ausserhalb jeder Episode zaehlt nicht als rechtzeitig.
+        ereignis({ type: 'ARMY_ARRIVED', tick: 7, playerId: 'p1', armyId: 'a1', provinceId: 'P' }),
+      ],
+      8: [ereignis({ type: 'PROVINCE_CAPTURED', tick: 8, provinceId: 'R', previousOwner: 'p1', newOwner: 'p2' })],
+      9: [schlacht(9, 'P')],
+      10: [
+        ereignis({ type: 'WAR_DECLARED', tick: 10, playerId: 'p1', targetPlayerId: 'p3', effectiveAtTick: 10, withoutDeclaration: true }),
+        // Wer den Menschen ueberfaellt, zaehlt nicht gegen ihn.
+        ereignis({ type: 'WAR_DECLARED', tick: 10, playerId: 'p2', targetPlayerId: 'p1', effectiveAtTick: 10, withoutDeclaration: true }),
+      ],
+    }
+    const orders: Record<number, Command[]> = { 1: [zug('a1', 'Q')], 2: [zug('a3', 'P')], 5: [zug('a1', 'P')] }
+
+    const frames = Array.from({ length: 12 }, (_, tick) => ({
+      tick,
+      owned: besitz(tick),
+      events: events[tick] ?? [],
+      orders: orders[tick] ?? [],
+    }))
+    return { frames, finalOwned: ['P'] }
+  }
+
+  it('zaehlt Episoden, rechtzeitige Deckung, Halten, Verluste ohne Gefecht und Pendelzuege', () => {
+    const { frames, finalOwned } = lage()
+
+    expect(werteAus(frames, finalOwned, 'p1', 4)).toEqual({
+      // P Ticks 2–4, Q Tick 6, P Tick 9; S gehoerte nie dem Menschen.
+      episodes: 3,
+      // Nur die erste Episode in P bekam waehrend ihrer Dauer einen Marschbefehl dorthin.
+      coverOrdered: 1,
+      // a3 kam an Tick 4 in P an, noch waehrend der Episode.
+      coverArrivedInTime: 1,
+      // Beide Episoden in P; Q ist nach Tick 6 fremd.
+      held: 2,
+      // Beginn Tag 1 (Tick 0): P, Q, R; Beginn Tag 2 (Tick 4): P, Q, R; Beginn Tag 3 (Tick 8): P, R.
+      // Der Besitz nach dem letzten Tick (nur P) zaehlt nicht mehr.
+      provinceDays: 8,
+      provincesLost: 2,
+      // R fiel an Tick 8 ohne Schlacht in R.
+      lostWithoutBattle: 1,
+      adjutantOrders: 3,
+      pendulums: 1,
+      rejectedCommands: 1,
+      undeclaredWarsByHuman: 1,
+    })
+  })
+
+  it('beginnt eine Episode nur in einer Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoert', () => {
+    const { frames } = lage()
+    // Dieselbe Schlacht in P, aber P gehoert zu Beginn von Tick 9 nicht mehr dem Menschen.
+    const ohneP = frames.map((frame) => (frame.tick >= 9 ? { ...frame, owned: [] } : frame))
+
+    const zahl = werteAus(ohneP, [], 'p1', 4)
+    expect(zahl.episodes).toBe(2)
+    expect(zahl.held).toBe(1)
+  })
+})
+
+/** Deutschland mit `SETUPS[aufbau]` Armeen in jeder eigenen Provinz. */
+function aufstellen(seed: number, aufbau: Aufbau, stance: Stance): { state: GameState; human: PlayerId } {
+  const config = toConfig({ ...DEFAULT_NEW_GAME, nation: NATION, seed }, map)
   const state = createInitialState(config, { map, rules })
   const human = state.playerOrder.find((id) => state.players[id]!.kind === 'human')!
   expect(state.players[human]!.nation).toBe(NATION)
 
-  const hp = UNITS_PER_PROVINCE * rules.units[UNIT_KEY]!.hpPerUnit
+  const hp = UNITS_PER_ARMY * rules.units[UNIT_KEY]!.hpPerUnit
   for (const id of state.provinceOrder) {
     if (state.provinces[id]!.owner !== human) continue
-    placeArmy(state, { owner: human, at: id, units: [{ unitKey: UNIT_KEY, hpTotal: hp }], stance })
+    for (let n = 0; n < SETUPS[aufbau]; n++) {
+      placeArmy(state, { owner: human, at: id, units: [{ unitKey: UNIT_KEY, hpTotal: hp }], stance })
+    }
   }
-  const opponents = config.players.filter((player) => player.kind === 'ai').map((player) => player.nation)
-  return { state, human, opponents }
+  return { state, human }
 }
 
-/** Marschzeit ueber jede eigene Binnengrenze (Landkante), in beide Richtungen. */
-function binnenMarschzeiten(state: GameState, human: PlayerId): { from: string; to: string; km: number; ticks: number }[] {
+/** Das Kartenfenster: ein Tick Verzug plus die laengste Marschzeit ueber eine eigene Binnengrenze. */
+function kartenfenster(): number {
+  const { state, human } = aufstellen(SEEDS[0], 'A', 'garrison')
   const probe = state.armies[state.armyOrder.find((id) => state.armies[id]!.owner === human)!]!
-  const zeiten: { from: string; to: string; km: number; ticks: number }[] = []
+  let laengste = 0
   for (const from of state.provinceOrder) {
     if (state.provinces[from]!.owner !== human) continue
     for (const to of state.provinces[from]!.neighbors) {
@@ -192,143 +453,195 @@ function binnenMarschzeiten(state: GameState, human: PlayerId): { from: string; 
       const edge = edgeBetween(map.edges, map.edgesByProvince[from], from, to)
       if (!edge || edge.kind !== 'land') continue
       const army: Army = { ...probe, locationProvinceId: from }
-      zeiten.push({ from, to, km: Math.round(edge.distanceKm / 1000), ticks: edgeTravelTicks(state, army, edge, from, to, rules) })
+      laengste = Math.max(laengste, edgeTravelTicks(state, army, edge, from, to, rules))
     }
   }
-  return zeiten
+  return 1 + laengste
 }
 
-async function fahre(stance: Stance): Promise<{
-  events: GameEvent[]
-  human: PlayerId
-  humanCommands: number
-  final: GameState
-  opponents: string[]
-}> {
-  const aufgestellt = aufstellen(stance)
+/** Ein Ereignis, das die Zaehlung braucht — alles andere bleibt nicht im Speicher. */
+function relevant(event: GameEvent, human: PlayerId, jeBesessen: ReadonlySet<string>): boolean {
+  switch (event.type) {
+    case 'BATTLE_RESOLVED':
+    case 'PROVINCE_CAPTURED':
+      return jeBesessen.has(event.provinceId)
+    case 'ARMY_ARRIVED':
+    case 'ARMY_DEPARTED':
+    case 'ARMY_INTRUDED':
+    case 'COMMAND_REJECTED':
+      return event.playerId === human
+    case 'WAR_DECLARED':
+      return event.playerId === human || event.targetPlayerId === human
+    default:
+      return false
+  }
+}
+
+interface Lauf extends EpisodenZahl, StanceCount {
+  seed: number
+  setup: Aufbau
+  stance: Stance
+  provincesAtEnd: number
+  armiesAtEnd: number
+  daysRun: number
+}
+
+/** Ein Lauf, Tick fuer Tick ueber `advanceTicks` — derselbe Weg wie in Haeppchen (R-UNIT-09/AK4). */
+async function miss(seed: number, aufbau: Aufbau, stance: Stance, windowTicks: number): Promise<Lauf> {
+  const aufgestellt = aufstellen(seed, aufbau, stance)
+  const { human } = aufgestellt
+  const ticksPerDay = rules.constants.ticksPerDay
+  const frames: Frame[] = []
+  const jeBesessen = new Set<string>()
   let current = aufgestellt.state
-  const events: GameEvent[] = []
-  let humanCommands = 0
-  const ticksPerDay = rules.constants.ticksPerDay
 
-  for (let day = 0; day < DAYS; day += CHUNK_DAYS) {
-    const chunk = advanceTicks(current, CHUNK_DAYS * ticksPerDay, { map, rules })
-    current = chunk.state
-    events.push(...chunk.events)
-    humanCommands += chunk.applied.filter((entry) => entry.command.playerId === aufgestellt.human).length
+  for (let tick = 0; tick < DAYS * ticksPerDay; tick++) {
     if (current.victory.winner !== null) break
-    await breathe()
-  }
-  return { events, human: aufgestellt.human, humanCommands, final: current, opponents: aufgestellt.opponents }
-}
+    const owned = current.provinceOrder.filter((id) => current.provinces[id]!.owner === human)
+    for (const id of owned) jeBesessen.add(id)
 
-/** Was ein Lauf ueber die Zaehlung hinaus erklaert: wer kam, wann, was blieb. */
-function umstaende(lauf: Awaited<ReturnType<typeof fahre>>) {
-  const { events, human, final } = lauf
-  const einmaersche = events.filter(
-    (event): event is Extract<GameEvent, { type: 'ARMY_INTRUDED' }> => event.type === 'ARMY_INTRUDED' && event.playerId === human,
-  )
-  const nachNation: Record<string, number> = {}
-  for (const event of einmaersche) {
-    const nation = final.players[event.intruderId]?.nation ?? event.intruderId
-    nachNation[nation] = (nachNation[nation] ?? 0) + 1
+    const schritt = advanceTicks(current, 1, { map, rules })
+    frames.push({
+      tick: current.tick,
+      owned,
+      events: schritt.events.filter((event) => relevant(event, human, jeBesessen)),
+      orders: schritt.applied.filter((entry) => entry.command.playerId === human).map((entry) => entry.command),
+    })
+    current = schritt.state
+    if ((tick + 1) % ticksPerDay === 0) await breathe()
   }
-  const ticksPerDay = rules.constants.ticksPerDay
+
+  const finalOwned = current.provinceOrder.filter((id) => current.provinces[id]!.owner === human)
   return {
-    intrudersByNation: nachNation,
-    firstIntrusionDay: einmaersche.length > 0 ? Math.floor(einmaersche[0]!.tick / ticksPerDay) : null,
-    warsDeclaredOnHuman: events.filter((event) => event.type === 'WAR_DECLARED' && event.targetPlayerId === human).length,
-    ringBufferIntrusions: final.eventLog.filter((event) => event.type === 'ARMY_INTRUDED' && event.playerId === human).length,
-    humanCommands: lauf.humanCommands,
-    provincesAtEnd: final.provinceOrder.filter((id) => final.provinces[id]!.owner === human).length,
-    armiesAtEnd: final.armyOrder.filter((id) => final.armies[id]!.owner === human).length,
-    daysRun: Math.floor(final.tick / ticksPerDay),
+    seed,
+    setup: aufbau,
+    stance,
+    ...zaehle(
+      frames.flatMap((frame) => frame.events),
+      human,
+      windowTicks,
+    ),
+    ...werteAus(frames, finalOwned, human, ticksPerDay),
+    provincesAtEnd: finalOwned.length,
+    armiesAtEnd: current.armyOrder.filter((id) => current.armies[id]!.owner === human).length,
+    daysRun: Math.floor(current.tick / ticksPerDay),
   }
 }
 
-type Messung = StanceCount & ReturnType<typeof umstaende> & { stance: Stance; adjutant: boolean; stand: string }
-
-async function miss(stance: Stance, windowTicks: number): Promise<Messung> {
-  const lauf = await fahre(stance)
-  // Der Adjutant laeuft seit T-M40-03 in jeder Partie; handeln kann er nur fuer selbsttaetige Haltungen.
-  return { stance, adjutant: stance !== 'garrison', stand: STAND, ...zaehle(lauf.events, lauf.human, windowTicks), ...umstaende(lauf) }
+const finde = (laeufe: readonly Lauf[], seed: number, setup: Aufbau, stance: Stance): Lauf => {
+  const lauf = laeufe.find((kandidat) => kandidat.seed === seed && kandidat.setup === setup && kandidat.stance === stance)
+  if (!lauf) throw new Error(`Lauf ${seed} ${setup} ${stance} fehlt`)
+  return lauf
 }
 
-/** Nur die gemessenen Zahlen — ohne Beschriftung und Zeitstempel. */
-function zahlen(messung: object): Record<string, unknown> {
-  const { stance, adjutant, stand, measuredAt, ...rest } = messung as Record<string, unknown>
-  void stance
-  void adjutant
-  void stand
-  void measuredAt
-  return rest
+/** AK5 als Zahlen, ohne zu werfen — fuer den Bericht und fuer die Zusicherung. */
+function ak5(laeufe: readonly Lauf[]) {
+  const paare = SEEDS.flatMap((seed) =>
+    (Object.keys(SETUPS) as Aufbau[]).map((setup) => ({
+      seed,
+      setup,
+      garrison: finde(laeufe, seed, setup, 'garrison'),
+      defensive: finde(laeufe, seed, setup, 'defensive'),
+    })),
+  )
+  const summe = (stance: (typeof STANCES)[number], feld: 'provinceDays' | 'lostWithoutBattle') =>
+    paare.reduce((total, paar) => total + paar[stance][feld], 0)
+  const provinceDays = { garrison: summe('garrison', 'provinceDays'), defensive: summe('defensive', 'provinceDays') }
+  const verletzt: string[] = []
+  if (provinceDays.defensive * 100 < provinceDays.garrison * PROVINCE_DAYS_PERCENT) {
+    verletzt.push(`Provinz-Tage ${provinceDays.defensive} von ${provinceDays.garrison} (unter ${PROVINCE_DAYS_PERCENT} %)`)
+  }
+  for (const paar of paare) {
+    if (paar.defensive.lostWithoutBattle > paar.garrison.lostWithoutBattle) {
+      verletzt.push(
+        `${paar.seed} ${paar.setup}: ${paar.defensive.lostWithoutBattle} ohne Gefecht verloren gegen ${paar.garrison.lostWithoutBattle} mit Garnison`,
+      )
+    }
+  }
+  for (const lauf of laeufe) {
+    if (lauf.rejectedCommands > 0) verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.rejectedCommands} abgelehnt`)
+    if (lauf.undeclaredWarsByHuman > 0) {
+      verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.undeclaredWarsByHuman} Kriege ohne Erklaerung`)
+    }
+  }
+  return {
+    provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
+    lostWithoutBattle: { garrison: summe('garrison', 'lostWithoutBattle'), defensive: summe('defensive', 'lostWithoutBattle') },
+    erfuellt: verletzt.length === 0,
+    verletzt,
+  }
 }
 
-const anteil = (teil: number, ganzes: number): number => (ganzes === 0 ? 0 : teil / ganzes)
+/** Schreibt `episoden[ABSCHNITT]` in den Bericht und laesst alles andere stehen. */
+function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
+  const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & { episoden?: Record<string, unknown> }
+  const episoden = {
+    ...(bericht.episoden ?? {}),
+    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4)',
+    seeds: [...SEEDS],
+    days: DAYS,
+    setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },
+    counting: {
+      source: 'Ereignisstrom von advanceTicks, Tick fuer Tick, nicht state.eventLog',
+      provinceDays: 'Provinzen des Menschen zu Beginn jedes Spieltags, summiert (Zaehlweise des Entwurfs)',
+      episode:
+        'groesste zusammenhaengende Folge von Ticks mit BATTLE_RESOLVED in einer Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; endet im ersten Tick ohne Gefecht dort',
+      lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
+      pendulum: `eine Armee marschiert von A nach B und binnen ${PENDULUM_DAYS} Spieltagen zurueck`,
+      windowTicks,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = vorher (52 Einmaersche, 4 verloren)`,
+    },
+    [ABSCHNITT]: {
+      adjutant: ADJUTANT,
+      stand: STAND,
+      measuredAt: new Date().toISOString(),
+      ak5: ak5(laeufe),
+      laeufe,
+    },
+  }
+  writeFileSync(REPORT, `${JSON.stringify({ ...bericht, episoden }, null, 2)}\n`)
+}
 
-describe('R-UNIT-09/AK5 Der Haltungs-Messlauf', () => {
-  it('misst nachher: der Adjutant beantwortet Einmaersche, und keiner seiner Befehle wird abgelehnt', async () => {
-    const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & {
-      vorher?: Messung
-      counting?: { windowTicks: number }
-    }
-    expect(bericht.vorher, 'stance.json fuehrt keinen Abschnitt vorher (T-M40-02)').toBeDefined()
-    const vorher = bericht.vorher!
+describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
+  const windowTicks = kartenfenster()
+  const laeufe: Lauf[] = []
 
-    const vorbereitung = aufstellen('defensive')
-    const binnen = binnenMarschzeiten(vorbereitung.state, vorbereitung.human)
-    const windowTicks = 1 + Math.max(...binnen.map((kante) => kante.ticks))
+  for (const seed of SEEDS) {
+    it(`faehrt Startzahl ${seed}: Aufstellung A und B, Garnison und Verteidigung`, async () => {
+      for (const setup of Object.keys(SETUPS) as Aufbau[]) {
+        for (const stance of STANCES) {
+          const started = Date.now()
+          const lauf = await miss(seed, setup, stance, windowTicks)
+          laeufe.push(lauf)
+          console.log(
+            `${seed} ${setup} ${stance}: ${Math.round((Date.now() - started) / 1000)} s, PT ${lauf.provinceDays}, verloren ${lauf.provincesLost} (ohne Gefecht ${lauf.lostWithoutBattle}), Befehle ${lauf.adjutantOrders}, Episoden ${lauf.episodes} (befohlen ${lauf.coverOrdered}, rechtzeitig ${lauf.coverArrivedInTime}, gehalten ${lauf.held}), Pendel ${lauf.pendulums}, Ende ${lauf.provincesAtEnd}/${lauf.armiesAtEnd}`,
+          )
+          await breathe()
+        }
+      }
+      expect(laeufe.filter((lauf) => lauf.seed === seed)).toHaveLength(4)
+    }, 1_800_000)
+  }
 
-    const kontrolle = await miss('garrison', windowTicks)
-    await breathe()
-    const nachher = await miss('defensive', windowTicks)
-    await breathe()
-    const angriff = await miss('aggressive', windowTicks)
+  it('hat alle zwoelf Laeufe, und die Garnison A 1914 bildet den Lauf vorher nach', () => {
+    // Der Bericht wird vor den Zusicherungen geschrieben: eine gescheiterte Messung ist die, die
+    // man am dringendsten lesen will. Nur auf Wunsch (Befund N3).
+    if (SCHREIBEN && laeufe.length === 12) schreibeBericht(laeufe, windowTicks)
 
-    const vergleich = {
-      shareAnsweredWithinWindow: { vorher: anteil(vorher.answeredWithinWindow, vorher.intrusions), nachher: anteil(nachher.answeredWithinWindow, nachher.intrusions) },
-      shareDepartedWithin24Ticks: { vorher: anteil(vorher.departedWithin24Ticks, vorher.intrusions), nachher: anteil(nachher.departedWithin24Ticks, nachher.intrusions) },
-      shareAnsweredWithin24Ticks: { vorher: anteil(vorher.answeredWithin24Ticks, vorher.intrusions), nachher: anteil(nachher.answeredWithin24Ticks, nachher.intrusions) },
-      provincesLost: { vorher: vorher.provincesLost, nachher: nachher.provincesLost },
-      controlReproducesVorher: JSON.stringify(zahlen(kontrolle)) === JSON.stringify(zahlen(vorher)),
-    }
-    const wirkung =
-      vergleich.shareAnsweredWithinWindow.nachher > vergleich.shareAnsweredWithinWindow.vorher &&
-      vergleich.shareDepartedWithin24Ticks.nachher > vergleich.shareDepartedWithin24Ticks.vorher
-        ? 'messbar: der Anteil beantworteter Einmaersche ist nachher groesser'
-        : 'KEINE messbare Wirkung: der Anteil beantworteter Einmaersche ist nachher nicht groesser'
+    expect(laeufe.length, 'nicht alle zwoelf Laeufe gefahren - der Messlauf misst nur als Ganzes').toBe(12)
+    expect(windowTicks, 'das Kartenfenster hat sich seit T-M40-02 verschoben').toBe(WINDOW_TICKS_T_M40_02)
+    const garnison = finde(laeufe, 1914, 'A', 'garrison')
+    expect(
+      { intrusions: garnison.intrusions, provincesLost: garnison.provincesLost },
+      'die Garnison bildet den Lauf vorher nicht nach - etwas anderes hat sich verschoben',
+    ).toEqual(VORHER)
+  })
 
-    // Der Bericht wird geschrieben, bevor zugesichert wird — eine gescheiterte Messung ist die,
-    // die man am dringendsten lesen will. `vorher` bleibt, wie T-M40-02 es gemessen hat.
-    mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
-    const stempel = new Date().toISOString()
-    writeFileSync(
-      REPORT,
-      `${JSON.stringify(
-        {
-          ...bericht,
-          vorher,
-          kontrolle: { ...kontrolle, measuredAt: stempel },
-          nachher: { ...nachher, measuredAt: stempel },
-          angriff: { ...angriff, measuredAt: stempel },
-          vergleich,
-          wirkung,
-        },
-        null,
-        2,
-      )}\n`,
-    )
-
-    // Das Fenster ist dasselbe wie vorher, und die Garnison bildet den Lauf vorher nach.
-    expect(windowTicks, 'das Fenster aus der Karte hat sich seit T-M40-02 verschoben').toBe(bericht.counting?.windowTicks)
-    expect(zahlen(kontrolle), 'die Garnison bildet den Lauf vorher nicht nach — etwas anderes hat sich verschoben').toEqual(zahlen(vorher))
-
-    // Zugesichert (R-UNIT-09/AK5): mehr beantwortet, und der Adjutant befiehlt nichts, was abgelehnt wird.
-    expect(nachher.intrusions, 'nachher kein Einmarsch — der Vergleich misst nichts').toBeGreaterThan(0)
-    expect(nachher.humanCommands, 'der Adjutant hat im ganzen Lauf nichts befohlen').toBeGreaterThan(0)
-    expect(vergleich.shareAnsweredWithinWindow.nachher, wirkung).toBeGreaterThan(vergleich.shareAnsweredWithinWindow.vorher)
-    expect(vergleich.shareDepartedWithin24Ticks.nachher, wirkung).toBeGreaterThan(vergleich.shareDepartedWithin24Ticks.vorher)
-    expect(nachher.rejectedCommands, 'abgelehnte Befehle des Adjutanten (Verteidigung)').toBe(0)
-    expect(angriff.rejectedCommands, 'abgelehnte Befehle des Adjutanten (Angriff)').toBe(0)
-  }, 1_800_000)
+  // T-M40-07: der heutige Adjutant (D30.4 bis 2026-09-13) haelt AK5 nicht. Gemessen: 3301 von 4140
+  // Provinz-Tagen (79,7 %), 10 Verluste ohne Gefecht gegen 0 mit Garnison, in fuenf von sechs Paaren
+  // mehr als mit Garnison. T-M40-10 ersetzt die Regel und macht daraus ein it.
+  it.fails('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz (heute nicht: 79,7 %, 10 Verluste ohne Gefecht)', () => {
+    const ergebnis = ak5(laeufe)
+    expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
+  })
 })

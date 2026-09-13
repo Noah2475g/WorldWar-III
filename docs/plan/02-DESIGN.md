@@ -2627,6 +2627,20 @@ nachher: beantwortete Einmärsche (Kartenfenster und Aufbruch) anteilig mehr als
 Ablehnungen. Die verlorenen
 Provinzen stehen als Zahl im Bericht und nicht als Zusicherung.
 
+*(Korrektur 2026-09-13, T-M40-07, Befund H3 der Durchsicht von M40: diese Messung trägt die
+Abnahme nicht. Ohne Adjutant ist „beantwortet" strukturell null; „beantwortet" heißt nur
+„irgendwann angekommen" — neun beantwortete Einmärsche kamen aus zwei Ankünften —, und im Lauf
+nachher hat die Deckung zwei der drei Verluste selbst verursacht: die Provinzen, die sie geleert
+hatte, fielen ohne Gefecht. Der Anteil beantworteter Einmärsche bleibt als Zahl im Bericht und
+wird **nicht mehr zugesichert** — im Entwurf der Nacharbeit verloren Regeln mit 73–80 %
+„beantwortet" alle Provinzen. Seit T-M40-07 misst `apps/headless/test/stance.slow.test.ts` je
+umkämpfter Episode: Provinz-Tage (Provinzen des Menschen zu Beginn jedes Spieltags, summiert),
+Verluste ohne Gefecht im Tick der Eroberung, Deckung befohlen und vor Gefechtsende angekommen,
+gehalten, Pendelzüge, Ablehnungen und Kriege ohne Erklärung — über die Startzahlen 1914, 2015
+und 1815, je mit einer und mit zwei Armeen je Provinz, Garnison gegen Verteidigung. Der Bericht
+führt den Abschnitt `episoden` und wird nur mit `WORLDWAR_WRITE_REPORT=1` geschrieben (Befund N3).
+Die Zusicherungen dazu kommen mit der neuen D30.4 in T-M40-10.)*
+
 ### D30.7 Die Oberfläche
 
 Die Haltungsgruppe im Armeepanel (`STANCES` in `Panels.tsx`, Hinweise in `actions.ts`) führt

@@ -95,6 +95,14 @@ Handelsangebote) — bewusst erst nach Noahs Feedback-Runde planen.
 > Befehle in 200 Spieltagen, keine Ablehnung; die Verfolgung gab drei Befehle ohne Ablehnung. Die
 > Garnison bildet den Lauf vorher Zahl für Zahl nach. Warum die Wirkung klein ist (Eroberung im
 > Einmarschtick, feindfreie Quelle, vier Provinzen): `PROBLEME.md`, 2026-09-13, T-M40-06.
+>
+> **Berichtigt am 2026-09-13 (T-M40-07, Befund H3 der Durchsicht von M40):** „messbar, aber
+> schwach" war zu freundlich. Zwei der drei Verluste im Lauf nachher hat die Deckung selbst
+> verursacht — sie leerte DEU-SE und DEU-NW, und beide fielen danach ohne Gefecht —, und die in
+> `PROBLEME.md` zuerst genannte Ursache (Eroberung im Einmarschtick) erklärt nur 2 der 136
+> Einmärsche. Deckung kam auf der Weltkarte praktisch nie vor Gefechtsende an: Gefechte dauern im
+> Median wenige Ticks, Märsche 25 bis 113. Der Messlauf zählt seit T-M40-07 je umkämpfter
+> Episode; die Regel selbst ersetzt T-M40-10 (maßgeblich wird D30.4 in dieser Fassung).
 
 ### 5.1 Der Befund, und er ist grösser als erwartet
 
