@@ -990,6 +990,9 @@ export function App(props: AppProps) {
     targeting,
     tutor,
     fastForwardState.running,
+    // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
+    // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
+    fastForwardRun,
   ])
 
   useEffect(() => {

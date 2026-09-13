@@ -1707,3 +1707,28 @@ describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
     expect(screen.getByRole('status').textContent).toMatch(/ein Spieltag ist vorbei/)
   }, 120_000)
 })
+
+/**
+ * F spult mit eingeschalteter Debug-Ansicht mit Mitschrift (T-M41-16, Nebenbefund 2 aus T-M41-13).
+ *
+ * Der Kuerzel-Effekt ruft `fastForwardRun`, nannte es aber nicht in seinen Abhaengigkeiten. Er
+ * benutzt dann die Fassung aus dem Render, in dem er zuletzt neu gebunden wurde — und
+ * `fastForwardRun` haengt an der Debug-Ansicht, weil nur mit ihr mitgeschrieben wird.
+ */
+describe('T-M41-16 F spult mit eingeschalteter Debug-Ansicht mit Mitschrift', () => {
+  it('fuellt die Kommandoliste, wenn die Debug-Ansicht waehrend der Partie eingeschaltet und dann F gedrueckt wird', () => {
+    globalThis.localStorage?.removeItem('worldwar.settings')
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Debug-Ansicht' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+
+    const zeilen = () => screen.getByRole('region', { name: 'Debug' }).querySelectorAll('.debug-list li').length
+    expect(zeilen(), 'vor dem Vorspulen steht schon etwas - der Vergleich misst nichts').toBe(0)
+
+    fireEvent.keyDown(window, { key: 'f' })
+
+    expect(zeilen(), 'F hat ohne Mitschrift vorgespult').toBeGreaterThan(0)
+  })
+})

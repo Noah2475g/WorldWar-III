@@ -2447,3 +2447,29 @@ Gelesen, nicht gemessen.
 liefen beide bis zur Obergrenze (720 Ticks, `limit`); in der App stand die Uhr nach einem „Vorspulen
 um einen Tag" in Häppchen zu 4 Ticks auf „Tag 31 · 00:00" statt „Tag 2 · 00:00". **Grün:** Halt am
 Ziel nach 48 Ticks bzw. zwei Tagen, die App hält nach genau einem Tag.
+
+**Nebenbefund 2 am 2026-09-13 gemessen und gehärtet (T-M41-16) — über die Oberfläche nicht
+herstellbar.** `App.test.tsx` schaltet die Debug-Ansicht während der Partie im Einstellungsdialog ein
+und drückt dann F: die Kommandoliste der Debug-Ansicht füllt sich — **auch ohne Reparatur grün**.
+Zwei Abhängigkeiten binden den Kürzel-Effekt beim Umschalten ohnehin neu: `step` hängt wie
+`fastForwardRun` an `debugOn`, und die Debug-Ansicht lässt sich nur im Einstellungsdialog umschalten,
+dessen Schließen `dialog` ändert. Gemessen, jeweils nur im Arbeitsbaum:
+
+1. unverändert: grün;
+2. `step` aus den Abhängigkeiten genommen: weiter grün — das Schließen des Dialogs bindet neu;
+3. `step` und `dialog` herausgenommen: **rot** („F hat ohne Mitschrift vorgespult: expected 0 to be
+   greater than 0");
+4. wie 3, dazu `fastForwardRun` in den Abhängigkeiten: **weiter rot** — der Handler liest dann ein
+   veraltetes `dialog` („settings") und verwirft F als „Dialog offen".
+
+Der Test sieht also einen veralteten Kürzel-Effekt. Einen Rotlauf, der allein das fehlende
+`fastForwardRun` zeigt, lässt die Oberfläche nicht zu, weil jeder Weg zur Debug-Ansicht über den Dialog
+führt. Die Zusicherung ist deshalb nicht umformuliert, und `fastForwardRun` steht trotzdem in den
+Abhängigkeiten: die Mitschrift hängt nicht mehr daran, dass zufällig eine andere Abhängigkeit den Effekt
+neu bindet. `step` und `dialog` stehen wieder drin.
+
+**Beobachtung, nicht gebaut:** `jumpTo` (Kürzel für die Hauptstadt) fehlt in denselben Abhängigkeiten
+ebenso — gelesen, nicht gemessen.
+
+**Status:** Nebenbefund 1 behoben (T-M41-15); Nebenbefund 2 gehärtet, als Fehler über die Oberfläche
+nicht herstellbar (T-M41-16).

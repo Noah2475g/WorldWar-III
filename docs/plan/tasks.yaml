@@ -3173,7 +3173,12 @@ tasks:
   - id: T-M41-16
     milestone: M41
     title: Der Kuerzel-Effekt kennt fastForwardRun
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): der Test ist ohne Reparatur gruen - step haengt wie fastForwardRun an
+    # debugOn, und das Schliessen des Einstellungsdialogs aendert dialog; beide binden neu. Mit step
+    # und dialog heraus rot, mit fastForwardRun dazu weiter rot (veraltetes dialog). Ein Rotlauf allein
+    # fuer fastForwardRun ist ueber die Oberflaeche nicht herstellbar; Reparatur als Haertung,
+    # PROBLEME.md. jumpTo fehlt dort ebenso (Beobachtung, nicht gebaut).
     deps: [T-M41-15]
     requirements: []
     files: [apps/desktop/src/App.tsx, docs/plan/PROBLEME.md]
