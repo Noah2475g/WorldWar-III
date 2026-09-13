@@ -3088,3 +3088,45 @@ Listenplatz. Zwei Punkte bleiben offen:
   Befehls ohne Gefecht und ohne feindliche Armee.
 
 **Status:** offen, ohne Aufgabe. N-1 braucht ein Sichtfeld und damit eine eigene Entscheidung.
+
+---
+
+## 2026-09-13 · Nach T-M40-14 und T-M40-15 · Die neue Pendel-Zählung findet einen Pendelzug der Automatik — AK5 hält unverändert
+
+**Gemessen** nach `bf3db75` (T-M40-15): zwölf Episodenläufe mit `WORLDWAR_WRITE_REPORT=1`, 730 s, 9 von 9 Tests grün.
+Grün sind damit auch die Kontrolle (Garnison A 1914: 76 Einmärsche, 4 verloren) und AK5.
+
+**Gleich dem Lauf nach dem Merge ist jede Zahl außer einer:**
+- Provinz-Tage 3146 von 3089 (101,8 %),
+- Verluste ohne Gefecht 0, Ablehnungen 0, Kriege ohne Erklärung 0,
+- 21 Befehle, 381 Episoden, 0 von 19 befohlenen Deckungen rechtzeitig.
+
+Das ist erwartet: der Mensch gibt im Messlauf keinen Befehl, und T-M40-14 und T-M40-15 greifen nur an Befehlen des
+Spielers. Der Diff des Berichts gegen den Lauf nach dem Merge zeigt außer Texten und `measuredAt` genau eine Zahl.
+
+**Geändert: ein Pendelzug in 1914 · B mit Verteidigung** (vorher 0). Seit T-M40-14 zählt die Frist ab der Ankunft
+statt ab dem Abmarsch, und die alte Zählung konnte diesen Zug nicht sehen. Nachgebaut in einem Scratch-Lauf mit
+demselben Aufbau (`scratchpad/n2x-pendel`). Ruhe heißt dabei `deployDelayUntil + 120`, in den ausgelieferten Regeln
+120 Ticks ab Befehlstick + 2.
+
+| Schritt | Tick | Lage |
+|---|---|---|
+| Befehl der Automatik: Armee a3 von Südostdeutschland nach Südwestdeutschland | 1801 | 4 Gefechte in Südwestdeutschland während des Marsches |
+| Ankunft in Südwestdeutschland | 1853 | 52 Ticks Marsch; die Ruhe endet an Tick 1923, also 70 Ticks nach der Ankunft |
+| Befehl der Automatik: a3 zurück nach Südostdeutschland | 1972 | 171 Ticks nach dem Abmarsch, **119 nach der Ankunft**; seit der Ankunft 2 Gefechte in Südostdeutschland |
+
+**Warum das kein Fehler der Regel ist.** Beide Befehle folgen D30.4:
+- das Ziel war jeweils eine angegriffene eigene Nachbarprovinz,
+- in der Quelle blieb eine weitere Armee stehen,
+- die Ruhe war abgelaufen.
+
+Der Zug ist die Folge davon, dass die Ruhe ab dem Abmarsch zählt. Es ist derselbe Mechanismus wie in Befund H-A, nur
+mit einem Marsch der Automatik statt einem des Spielers. T-M40-14 hat den Fall für Spielermärsche gelöst, nicht für
+die Märsche der Automatik selbst.
+
+**Nicht zugesichert, nicht gebaut.** Pendelzüge gehören nicht zu AK5; die Zahl steht im Bericht. Wer sie verhindern
+will, hat zwei Wege, und beide sind eine neue Entscheidung, gemessen mit demselben Lauf:
+- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen),
+- die Ruhe nach Märschen der Automatik verlängern.
+
+**Status:** offen, ohne Aufgabe. `stance.json` eingecheckt, Frische-Wächter grün.

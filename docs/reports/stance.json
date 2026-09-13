@@ -200,7 +200,7 @@
   },
   "wirkung": "messbar: der Anteil beantworteter Einmaersche ist nachher groesser",
   "episoden": {
-    "tasks": "T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4)",
+    "tasks": "T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), nachgemessen nach dem Merge von N2 und nach T-M40-14/15",
     "seeds": [
       1914,
       2015,
@@ -216,7 +216,7 @@
       "provinceDays": "Provinzen des Menschen zu Beginn jedes Spieltags, summiert (Zaehlweise des Entwurfs)",
       "episode": "groesste zusammenhaengende Folge von Ticks mit BATTLE_RESOLVED in einer Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; endet im ersten Tick ohne Gefecht dort",
       "lostWithoutBattle": "PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick",
-      "pendulum": "eine Armee marschiert von A nach B und binnen 5 Spieltagen zurueck",
+      "pendulum": "eine Armee kommt von A in B an und bricht binnen 5 Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)",
       "windowTicks": 114,
       "ak5": "Provinz-Tage defensive >= 98 % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (76 Einmaersche, 4 verloren; vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren)"
     },
@@ -524,9 +524,9 @@
       ]
     },
     "nachher": {
-      "adjutant": "D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe",
+      "adjutant": "D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken",
       "stand": "gemessen nach dem Merge von Block N2 der M41-Nacharbeit (c3ff8be)",
-      "measuredAt": "2026-09-13T17:18:16.434Z",
+      "measuredAt": "2026-09-13T18:05:53.565Z",
       "ak5": {
         "provinceDays": {
           "garrison": 3089,
@@ -627,7 +627,7 @@
           "provinceDays": 800,
           "lostWithoutBattle": 0,
           "adjutantOrders": 8,
-          "pendulums": 0,
+          "pendulums": 1,
           "undeclaredWarsByHuman": 0,
           "provincesAtEnd": 4,
           "armiesAtEnd": 8,
