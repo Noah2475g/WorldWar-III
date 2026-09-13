@@ -272,10 +272,13 @@ export const de = {
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
     stopHint: 'Die Armee hält an, wo sie gerade steht.',
-    stanceAggressiveHint: 'Greift von sich aus an, was in Reichweite kommt.',
-    stanceDefensiveHint: 'Hält die Stellung und greift nicht von sich aus an.',
-    stanceRetreatHint: 'Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
-    stanceGarrisonHint: 'Hält die Stellung wie die Verteidigung und bleibt stehen, was auch geschieht.',
+    // Jeder Hinweis sagt, was die Armee in dieser Haltung von selbst tut oder laesst
+    // (T-M40-05, D30.7, R-UNIT-09/AK6). Der alte Satz zu „Angriff" — „greift von sich aus
+    // an, was in Reichweite kommt" — beschrieb eine Wirkung, die es nie gab.
+    stanceAggressiveHint: 'Folgt von selbst einem weichenden Gegner in die Nachbarprovinz, wenn das, was dort steht, nicht stärker ist als sie.',
+    stanceDefensiveHint: 'Rückt von selbst in eine angegriffene eigene Nachbarprovinz nach, solange dort noch gekämpft wird; sonst hält sie die Stellung.',
+    stanceRetreatHint: 'Weicht von selbst in eine Nachbarprovinz aus und steht danach auf Verteidigung. Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    stanceGarrisonHint: 'Bleibt stehen, was auch geschieht, und marschiert nie von selbst; kämpft wie die Verteidigung.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',
     splitHint: 'Teilt die Hälfte ab: {{units}}.',
     splitHintNone: 'Teilt die Hälfte ab — dafür braucht es mindestens zwei Einheiten.',

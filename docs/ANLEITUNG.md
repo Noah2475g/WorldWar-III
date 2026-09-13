@@ -110,9 +110,27 @@ sind sie hier aufgeführt; **Auswählen** öffnet die Armee.
 **Armee:** **Marschieren** wartet auf ein Ziel — ein Klick auf die Karte oder die
 Zielliste im Panel. Bevor Sie bestätigen, steht dort, **wann die Armee ankommt**;
 die Zeit stammt aus derselben Rechnung, die die Simulation später ausführt. Außerdem:
-Anhalten, Haltung (Angriff/Verteidigung), Teilen (halbiert jede Einheitenart),
+Anhalten, Haltung (siehe unten), Teilen (halbiert jede Einheitenart),
 Zusammenlegen (alle eigenen Armeen am Ort) und Beschießen (nur mit Artillerie oder
 Bombern, nur im Krieg). Escape bricht die Zielwahl ab.
+
+**Haltung** (vier Knöpfe am Armeepanel): Die Haltung ist ein Auftrag, den eine stehende
+Armee von selbst ausführt — Sie müssen dafür nicht klicken.
+
+- **Verteidigung** ist die Haltung jeder neuen und jeder zurückgewichenen Armee. Marschiert
+  ein Kriegsgegner in eine eigene Nachbarprovinz ein und wird dort noch gekämpft, rückt sie
+  von selbst nach: höchstens eine Armee je Provinz, die am schnellsten dort ist, und nur aus
+  einer Provinz ohne Feind. Ihre eigene Provinz lässt sie dafür frei. Eine Provinz, die schon
+  gefallen ist, holt sie nicht zurück.
+- **Angriff:** Weicht ein Gegner in eine Nachbarprovinz zurück und ist, was dort steht, nicht
+  stärker als sie, folgt sie ihm von selbst.
+- **Garnison** bleibt stehen, was auch geschieht, und kämpft wie die Verteidigung. Wählen Sie
+  sie für eine Armee, die ihren Posten halten soll.
+- **Rückzug** siehe unten; danach steht die Armee auf Verteidigung.
+
+Die Automatik gibt nur Befehle, die Sie auch selbst geben könnten, und ein eigener Befehl für
+dieselbe Armee geht vor. Sie entscheidet nur aus dem, was Sie sehen, und führt nur Ihre
+Armeen — eine Armee der Computergegner auf Verteidigung folgt deren eigener Planung.
 
 **Rückzug** (Knopf am Armeepanel, nur im Gefecht): Die Armee löst sich aus dem Kampf
 und weicht in eine benachbarte eigene Provinz aus. Der Preis steht am Knopf — sie

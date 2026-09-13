@@ -5433,7 +5433,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UNIT-09, R-UI-13 · **Entwurf:** D30.7
 - **Abhängigkeiten:** T-M40-04
 - **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
-  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `apps/desktop/src/ui/app.css`
+  *(Nachtrag beim Bau: das Raster der Haltungsgruppe hatte drei Spalten — jetzt zwei mal zwei,
+  gebunden durch einen Kaskaden-Wächter; im echten Browser noch nicht angesehen)*
 - **Tests zuerst:** ein Knopf je Haltung, jeder Hinweis nennt die Automatik oder ihr Fehlen
   (`actions.test.ts`, `Panels.test.tsx`, R-UNIT-09/AK6).
 - **Fertig wenn:** der alte Hinweis zu „Angriff" („greift von sich aus an") ersetzt ist — er

@@ -1239,7 +1239,7 @@ describe('T-M29-03 Das Provinzpanel traegt das Bauplatz-Raster', () => {
  * Das Armeepanel im Kriegsrat (T-M31-02, D27.6, R-UI-05/R-UI-10/R-UI-17).
  *
  * Dieselben Marker wie auf der Karte, dieselbe Sprache im Panel: Einheiten als
- * NATO-Stapel mit Zahl, Kampfkraft mit Zustand, die Haltung als Dreiergruppe mit
+ * NATO-Stapel mit Zahl, Kampfkraft mit Zustand, die Haltung als Gruppe (seit T-M40-05 vier) mit
  * genau einem gedrueckten Knopf, Befehle zweispaltig mit Zeichen.
  */
 describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', () => {
@@ -1254,9 +1254,14 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
   const actions = [
     act('march', 'Marschieren'),
     act('stop', 'Anhalten'),
-    act('stance-aggressive', 'Angriff', 'Haltung Angriff einnehmen'),
-    { ...act('stance-defensive', 'Verteidigung', 'Haltung Verteidigung einnehmen'), disabledReason: 'Die Armee hat diese Haltung schon.' },
-    act('stance-retreat', 'Rückzug', 'Haltung Rückzug einnehmen'),
+    { ...act('stance-aggressive', 'Angriff', 'Haltung Angriff einnehmen'), hint: 'Hinweis zum Angriff' },
+    {
+      ...act('stance-defensive', 'Verteidigung', 'Haltung Verteidigung einnehmen'),
+      disabledReason: 'Die Armee hat diese Haltung schon.',
+      hint: 'Hinweis zur Verteidigung',
+    },
+    { ...act('stance-retreat', 'Rückzug', 'Haltung Rückzug einnehmen'), hint: 'Hinweis zum Rückzug' },
+    { ...act('stance-garrison', 'Garnison', 'Haltung Garnison einnehmen'), hint: 'Hinweis zur Garnison' },
     act('merge', 'Zusammenlegen'),
     act('split', 'Teilen'),
     act('bombard', 'Beschießen'),
@@ -1275,9 +1280,36 @@ describe('T-M31-02 Das Armeepanel traegt Marker, Zustand und Haltungsgruppe', ()
     const group = screen.getByRole('group', { name: 'Haltung' })
     const buttons = within(group).getAllByRole('button')
 
-    expect(buttons.length).toBe(3)
+    expect(buttons.length).toBe(4)
     const pressed = buttons.filter((b) => b.getAttribute('aria-pressed') === 'true')
     expect(pressed.map((b) => b.textContent)).toEqual(['Verteidigung'])
+  })
+
+  it('bietet vier Haltungen an, jede mit ihrem Hinweis im Tooltip (R-UNIT-09/AK6)', () => {
+    panel()
+    const group = screen.getByRole('group', { name: 'Haltung' })
+    const buttons = within(group).getAllByRole('button')
+
+    expect(buttons.map((b) => b.textContent)).toEqual(['Angriff', 'Verteidigung', 'Rückzug', 'Garnison'])
+    const haltungen = actions.filter((action) => action.id.startsWith('stance-'))
+    haltungen.forEach((action, index) => {
+      expect(buttons[index]!.getAttribute('title'), action.id).toContain(action.hint)
+    })
+  })
+
+  it('stellt die vier Haltungen zwei mal zwei (Kaskaden-Waechter)', () => {
+    // Im Raster zu drei Spalten brach der vierte Knopf allein in eine zweite Reihe um; vier
+    // Spalten schnitten „Verteidigung" ab. jsdom rechnet kein Layout, die Kaskade aber schon.
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      panel()
+      const group = screen.getByRole('group', { name: 'Haltung' })
+      expect(window.getComputedStyle(group).gridTemplateColumns).toBe('repeat(2, 1fr)')
+    } finally {
+      style.remove()
+    }
   })
 
   it('zeichnet je Gattung einen NATO-Marker mit Zahl, hoerbar als "8 Infanterie"', () => {

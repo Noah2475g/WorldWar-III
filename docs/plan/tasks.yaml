@@ -2939,13 +2939,13 @@ tasks:
   - id: T-M40-05
     milestone: M40
     title: Vier Haltungen mit Erklaertext
-    status: todo
+    status: done
     deps: [T-M40-04]
     requirements: [R-UNIT-09, R-UI-13]
     design: [D-30]
-    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, apps/desktop/src/ui/app.css]
     tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/i18n/text.test.ts]
-    dod: "D30.7. STANCES in Panels.tsx und die Hinweise in actions.ts fuehren vier Haltungen; jeder Hinweis sagt, was die Armee von selbst tut. Der heutige Hinweis zu Angriff (greift von sich aus an) beschreibt eine Wirkung, die es nie gab. Die Anleitung erklaert die vier Haltungen in einem Absatz. Test zuerst: ein Knopf je Haltung, jeder Hinweis nennt die Automatik oder ihr Fehlen (R-UNIT-09/AK6). Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext, nicht p1."
+    dod: "D30.7. STANCES in Panels.tsx und die Hinweise in actions.ts fuehren vier Haltungen; jeder Hinweis sagt, was die Armee von selbst tut. Der heutige Hinweis zu Angriff (greift von sich aus an) beschreibt eine Wirkung, die es nie gab. Die Anleitung erklaert die vier Haltungen in einem Absatz. Test zuerst: ein Knopf je Haltung, jeder Hinweis nennt die Automatik oder ihr Fehlen (R-UNIT-09/AK6). Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext, nicht p1. NACHTRAG beim Bau (2026-09-13): der Garnison-Knopf kam schon mit T-M40-01; hier dazu app.css, weil das Raster der Haltungsgruppe drei Spalten hatte und der vierte Knopf allein umbrach - jetzt zwei mal zwei, gebunden durch einen Kaskaden-Waechter in Panels.test.tsx. Im echten Browser noch nicht angesehen (Sichtpruefung im Schlussblock)."
   - id: T-M40-06
     milestone: M40
     title: Nachmessen

@@ -1300,7 +1300,9 @@ body {
 
 .stances {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Vier Haltungen seit T-M40-05, zwei mal zwei: in drei Spalten brach der vierte Knopf
+     allein um, in vier wurde "Verteidigung" abgeschnitten. */
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--sp-xs);
   margin-top: var(--sp-md);
 }

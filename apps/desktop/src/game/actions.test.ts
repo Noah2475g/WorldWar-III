@@ -169,6 +169,31 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
     expect(retreat.hint).toContain(`${Math.round(ctx.rules.constants.retreatLossPermille / 10)} %`)
   })
 
+  it('bietet vier Haltungen an, und jeder Hinweis sagt, was die Armee von selbst tut oder laesst (R-UNIT-09/AK6)', () => {
+    // Eine Automatik, die niemand erklaert, findet niemand (D30.7). Und der alte Hinweis zu
+    // „Angriff" — „greift von sich aus an, was in Reichweite kommt" — beschrieb eine Wirkung,
+    // die es nie gab: `aggressive` wurde bis M40 von keinem Rechenweg gelesen.
+    const { ctx, capital } = fresh()
+    withArmy(ctx.state, capital)
+
+    const haltungen = armyActions(ctx, 'a1').filter((a) => a.id.startsWith('stance-'))
+    expect(haltungen.map((a) => a.id)).toEqual(['stance-aggressive', 'stance-defensive', 'stance-retreat', 'stance-garrison'])
+
+    const hinweis = Object.fromEntries(haltungen.map((a) => [a.id.replace('stance-', ''), a.hint ?? '']))
+    for (const [haltung, text] of Object.entries(hinweis)) {
+      expect(text, `${haltung}: der Hinweis nennt weder die Automatik noch ihr Fehlen`).toMatch(/von selbst/)
+      expect(text, haltung).not.toMatch(RAW_KEY)
+    }
+    // Was genau von selbst geschieht (D30.4).
+    expect(hinweis.aggressive).toMatch(/weichend/)
+    expect(hinweis.aggressive).toMatch(/nicht stärker/)
+    expect(hinweis.defensive).toMatch(/angegriffene eigene Nachbarprovinz/)
+    expect(hinweis.garrison).toMatch(/nie von selbst/)
+    // Nach dem Rueckzug steht die Armee auf Verteidigung (`phases/retreat.ts`) — und deckt damit.
+    expect(hinweis.retreat).toMatch(/Verteidigung/)
+    expect(hinweis.aggressive).not.toMatch(/greift von sich aus an/i)
+  })
+
   it('bietet Marsch, Haltung und Teilen an und begruendet den Rest', () => {
     const { ctx, capital } = fresh()
     withArmy(ctx.state, capital)
