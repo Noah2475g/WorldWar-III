@@ -6,7 +6,7 @@ Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |
 |---|---|---|---|---|---|---|
 | schwer gegen leicht, im Krieg | 25 | 0 | 0 | 100 % | 0 | 0 |
-| schwer gegen normal, im Frieden | 10 | 0 | 15 | 70 % | 146 | 97 |
+| schwer gegen normal, im Frieden | 10 | 0 | 15 | 70 % | 145 | 96 |
 | schwer gegen normal, im Krieg | 25 | 0 | 0 | 100 % | 34 | 34 |
 
 Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt
@@ -15,7 +15,7 @@ Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antrit
 | Stufe | Kriegserklärungen | Selbsttätiger Beschuss |
 |---|---|---|
 | leicht | 0 | 0 |
-| normal | 110 | 0 |
+| normal | 109 | 0 |
 | schwer | 70 | 0 |
 
 Zusicherungen: Siegquote der höheren Stufe zwischen 70 % und 95 %; „schwer gegen

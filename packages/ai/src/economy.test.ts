@@ -1,4 +1,4 @@
-import { createInitialState, publicView, type Command, type GameConfig } from '@worldwar/core'
+import { buildingCostForLevel, createInitialState, publicView, type Command, type GameConfig } from '@worldwar/core'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
@@ -180,6 +180,32 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     )
 
     expect(bauten(context).map((command) => command.building)).not.toContain('factory')
+  })
+
+  it('baut in einer Stadt mit Fabrik 1 die Eisenbahn, wenn Stufe 2 zu teuer ist (Nacharbeit, H1)', () => {
+    // Befund H1 der Durchsicht M41: `nextBuildingFor` lieferte fuer jede Stadt mit einer Fabrik
+    // unter maxLevel nur noch "factory"; war diese Stufe zu teuer, sprang `economyCommands` zur
+    // naechsten Provinz — Eisenbahn, Festung und Hafen kamen in der Stadt erst nach Fabrikstufe 3,
+    // oft nie. Gemessen in der Vollpartie mit Startzahl 1815: Russland haelt am Ende 48 Staedte,
+    // 36 davon mit Fabrik und ohne Eisenbahn.
+    const context = richContext(tag31)
+    stufe(context, 'railway', 0)
+    const vorrat = context.view.self.resources as Record<string, number>
+    for (const key of Object.keys(vorrat)) vorrat[key] = 1_000_000
+
+    // Die Lage, die der Test braucht, und nicht nur behauptet: nach der Ruecklage sind 800.000
+    // frei — zu wenig fuer Fabrikstufe 2, genug fuer die Eisenbahn.
+    const frei = 800_000
+    const fabrik2 = buildingCostForLevel(TEST_RULES.buildings.factory, 2, TEST_RULES.constants)
+    const eisenbahn = buildingCostForLevel(TEST_RULES.buildings.railway, 1, TEST_RULES.constants)
+    expect(Object.values(fabrik2).some((menge) => (menge ?? 0) > frei), 'Fabrikstufe 2 waere bezahlbar').toBe(true)
+    expect(Object.values(eisenbahn).every((menge) => (menge ?? 0) <= frei), 'Eisenbahn waere zu teuer').toBe(true)
+
+    const [bau] = bauten(context)
+    const provinz = context.view.provinces.find((province) => province.id === bau?.provinceId)
+
+    expect(`${bau?.building} in ${provinz?.kind}`).toBe('railway in city')
+    expect(provinz?.buildings?.factory).toBe(1)
   })
 
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {

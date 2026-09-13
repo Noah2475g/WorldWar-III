@@ -43,11 +43,11 @@ function dayOf(context: AiContext): number {
  * Tick** ruft, ist das quadratisch. Der KI-Anteil an der Tickzeit stieg dadurch von 44 %
  * auf 52 % und riss R-AI-04.
  */
-function nextBuildingFor(
+function buildingCandidatesFor(
   context: AiContext,
   province: AiContext['view']['provinces'][number],
-): BuildingKey | null {
-  if (province.owner !== context.view.playerId) return null
+): BuildingKey[] {
+  if (province.owner !== context.view.playerId) return []
 
   const level = (key: BuildingKey) => province.buildings?.[key] ?? 0
 
@@ -59,7 +59,7 @@ function nextBuildingFor(
   const available = (key: BuildingKey) => context.rules.buildings[key].availableFromDay <= day
 
   // A nation that cannot raise infantry has no other problem worth solving.
-  if (available('barracks') && level('barracks') === 0) return 'barracks'
+  if (available('barracks') && level('barracks') === 0) return ['barracks']
   // Die Fabrik, sobald es sie gibt — und **nicht** erst, wenn kein Mangel mehr besteht.
   //
   // Die alte Bedingung `shortages.size === 0` war als "unter Druck befestigen statt
@@ -78,13 +78,36 @@ function nextBuildingFor(
   // Eisenbahn und Hafen bleiben bei genau einmal: gemessen reisst die Kaserne Stufe 2
   // R-AI-06 im Turnier (schwer gegen normal im Frieden 1,00 statt 0,70), die Eisenbahn
   // aendert nichts (DECISIONS.md, 2026-09-13; Haltetest in economy.test.ts).
+  //
+  // **Ein Ausbau sperrt die Stadt nicht** (Nacharbeit zu T-M41-01, H1 der Durchsicht). Die
+  // erste Fabrik bleibt der einzige Wunsch einer Stadt ohne Fabrik, wie bisher. Steht sie aber,
+  // ist ihr Ausbau nur der **erste** Wunsch: Eisenbahn, Festung und Hafen stehen dahinter, und
+  // `economyCommands` nimmt den ersten, der bezahlbar ist. Vorher lieferte diese Funktion fuer
+  // jede solche Stadt nur "factory"; war die Stufe zu teuer (Stufe 3 das 3,24-fache), kam in
+  // der Stadt nichts anderes an die Reihe — in der Vollpartie mit Startzahl 1815 hielt Russland
+  // am Ende 48 Staedte, 36 davon mit Fabrik und ohne Eisenbahn.
+  const candidates: BuildingKey[] = []
   if (available('factory') && province.kind === 'city' && level('factory') < context.rules.buildings.factory.maxLevel) {
-    return 'factory'
+    if (level('factory') === 0) return ['factory']
+    candidates.push('factory')
   }
-  if (available('railway') && level('railway') === 0) return 'railway'
-  if (available('fortress') && level('fortress') < 2) return 'fortress'
-  if (available('harbour') && province.coastal && level('harbour') === 0) return 'harbour'
-  return null
+  if (available('railway') && level('railway') === 0) candidates.push('railway')
+  if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
+  if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
+  return candidates
+}
+
+/**
+ * Der erste Wunsch einer Provinz — worauf der Handel hinarbeitet (T-M15-08).
+ *
+ * Bewusst der erste und nicht der erste bezahlbare: gehandelt wird fuer das, was fehlt.
+ * Die Nacharbeit zu H1 aendert nur, was gebaut wird, nicht, wofuer getauscht wird.
+ */
+function nextBuildingFor(
+  context: AiContext,
+  province: AiContext['view']['provinces'][number],
+): BuildingKey | null {
+  return buildingCandidatesFor(context, province)[0] ?? null
 }
 
 export function economyCommands(context: AiContext, explanations: Explanation[]): Command[] {
@@ -113,23 +136,28 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
   for (const province of own) {
     if ((province.buildQueueLength ?? 0) > 0) continue
 
-    const building = nextBuildingFor(context, province)
-    if (!building) continue
-
-    const rule = context.rules.buildings[building]
-    // Der Preis der Stufe, die sie bauen will (T-M34-04). Mit dem Grundpreis zu rechnen
-    // hiesse, jeden Ausbau zu befehlen und vom Kern mit INSUFFICIENT_RESOURCES abgelehnt
-    // zu bekommen — genau das Rauschen im Protokoll, das R-TECH-02/AK2 verbietet und das
-    // dieses Projekt mit 57 % abgelehnter Befehle schon einmal bezahlt hat (T-M14-11).
-    const kosten = buildingCostForLevel(rule, (province.buildings?.[building] ?? 0) + 1, context.rules.constants)
-    if (!canAfford(context, kosten)) {
+    // Der erste Wunsch dieser Provinz, den die Vorräte tragen (Nacharbeit zu T-M41-01, H1).
+    // Mehr als einen Wunsch hat nur eine Stadt, deren Fabrik schon steht — siehe
+    // `buildingCandidatesFor`; Kaserne und erste Fabrik bleiben allein, wie bisher.
+    let building: BuildingKey | null = null
+    for (const candidate of buildingCandidatesFor(context, province)) {
+      const rule = context.rules.buildings[candidate]
+      // Der Preis der Stufe, die sie bauen will (T-M34-04). Mit dem Grundpreis zu rechnen
+      // hiesse, jeden Ausbau zu befehlen und vom Kern mit INSUFFICIENT_RESOURCES abgelehnt
+      // zu bekommen — genau das Rauschen im Protokoll, das R-TECH-02/AK2 verbietet und das
+      // dieses Projekt mit 57 % abgelehnter Befehle schon einmal bezahlt hat (T-M14-11).
+      const kosten = buildingCostForLevel(rule, (province.buildings?.[candidate] ?? 0) + 1, context.rules.constants)
+      if (canAfford(context, kosten)) {
+        building = candidate
+        break
+      }
       explanations.push({
-        action: `Bau ${building} in ${province.id} aufgeschoben`,
+        action: `Bau ${candidate} in ${province.id} aufgeschoben`,
         reason: 'Vorräte reichen nicht über die Rücklage hinaus',
         score: 0,
       })
-      continue
     }
+    if (!building) continue
 
     commands.push({ type: 'BUILD', playerId: context.view.playerId, provinceId: province.id, building })
     explanations.push({

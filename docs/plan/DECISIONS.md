@@ -2037,7 +2037,20 @@ mit 1815 Tag 412 (vorher 774). Eine Gegenprobe mit Kappe bei Stufe 2 endet an Ta
 sie trifft 449 nicht. **Die Entscheidung bleibt:** ihr Kriterium war das Turnier, und das hält.
 Alle Zahlen in `PROBLEME.md` (2026-09-13, T-M41-02).
 
-**kippbar:** eine Zeile je Gebäude in `nextBuildingFor`. Der Haltetest „nie Kaserne Stufe 2"
+**Nachtrag 2026-09-13 (Nacharbeit H1 der Durchsicht, Block N2) — der Ausbau ist nur der erste
+Wunsch.** Die Entscheidung „nur die Fabrik wird ausgebaut" bleibt. Geändert ist, was geschieht,
+wenn der Ausbau zu teuer ist: vorher kam in der Stadt dann gar nichts, Eisenbahn, Festung und
+Hafen erst nach Fabrikstufe 3. Jetzt stehen sie hinter dem Ausbau, und gebaut wird der erste
+bezahlbare Wunsch; Kaserne und erste Fabrik bleiben allein, der Handel zielt weiter auf den
+ersten Wunsch. Gewählt statt „Ausbau hinter Eisenbahn, Festung und Hafen einordnen", weil eine
+reiche Macht die Fabrik so weiter zuerst ausbaut — die Achse aus T-M41-01 bleibt, sie sperrt nur
+nicht mehr. Gemessen, Vollpartie 1914: Siegtag 582 → 430, Städte mit Eisenbahn 18 → 43, mit
+Festung 13 → 41, Städte mit Fabrik und ohne Eisenbahn 39 → 2; Turnier-Siegquoten gleich. Alle drei
+Startzahlen in `PROBLEME.md` (2026-09-13, H1).
+
+**kippbar:** eine Zeile je Gebäude in `nextBuildingFor` (seit H1 `buildingCandidatesFor`; wer den
+Ausbau wieder exklusiv will, gibt für Stufe ≥ 1 `['factory']` zurück — der Test „baut die Eisenbahn,
+wenn Stufe 2 zu teuer ist" kehrt sich um). Der Haltetest „nie Kaserne Stufe 2"
 (T-M41-01) nennt diesen Eintrag; wer ihn löscht, fährt danach das Turnier.
 
 ---

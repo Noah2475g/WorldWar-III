@@ -2458,3 +2458,72 @@ zurückgenommen (`DECISIONS.md`).
 
 **Status:** behoben (`ARMY_NOT_FOUND`, T-M41-08); Zusagen aus M14 eingelöst oder zurückgenommen;
 Nebenbefunde (a)–(e) offen, mit Aufgabe in Block N2.
+
+---
+
+## 2026-09-13 · Nacharbeit T-M41-01 (H1, H2) · Der Fabrikausbau sperrte die Städte — repariert, und das Artillerie-Tor lebt wieder
+
+**Der Befund der Durchsicht, nachgemessen.** `nextBuildingFor` lieferte seit T-M41-01 für jede Stadt mit
+einer Fabrik unter `maxLevel` nur noch „factory"; war diese Stufe zu teuer, sprang `economyCommands` zur
+nächsten Provinz. Eisenbahn, Festung und Hafen kamen in der Stadt erst nach Fabrikstufe 3 — das
+3,24-fache des Grundpreises. Neu gezählt in `fullgame.slow.test.ts` (Städte je Macht am Ende), auf dem
+Stand nach T-M41-08: mit Startzahl 1914 halten die Mächte zusammen 71 Städte, **39 davon mit Fabrik und
+ohne Eisenbahn**; 2015 **66 von 82**; 1815 **40 von 71**. Russland allein, 1815: 48 Städte, 36 hängend.
+`economy.test.ts` zeigt den Mechanismus in einem Satz: Stadt mit Fabrik 1, Stufe 2 zu teuer, Eisenbahn
+bezahlbar — die KI baut die Eisenbahn **in einer Landprovinz** („expected 'railway in rural' to be
+'railway in city'").
+
+**Reparatur.** Der Ausbau ist nur noch der **erste** Wunsch einer Stadt, deren Fabrik steht; Eisenbahn,
+Festung und Hafen stehen dahinter, und `economyCommands` baut den ersten bezahlbaren. Kaserne und erste
+Fabrik bleiben allein wie bisher, der Handel (`missingForNextBuilding`) zielt weiter auf den ersten
+Wunsch — geändert ist genau eine Größe. Gewählt statt „Ausbau hinter die anderen einordnen", weil eine
+reiche Macht die Fabrik so weiter zuerst ausbaut (`DECISIONS.md`, Nachtrag zu T-M41-01).
+
+**Vollpartie, vorher → nachher** (vorher = Stand nach T-M41-08, Berichte mit denselben Feldern):
+
+| Startzahl | Siegtag | Kriege | Eroberungen | Schlachten | Städte mit Eisenbahn / Festung / Festung 2 | Fabrik ohne Eisenbahn | Fabrik ≥ 2 / = 3 (Provinzen) |
+|---|---|---|---|---|---|---|---|
+| 1914 vorher | 582 | 12 | 1615 | 5236 | 18 / 13 / 11 von 71 | 39 | 29 / 11 |
+| 1914 nachher | **430** | 11 | 1022 | 4009 | **43 / 41 / 32** von 72 | **2** | 25 / 3 |
+| 2015 vorher | 868 | 37 | 2923 | 11262 | 11 / 4 / 0 von 82 | 66 | 42 / 0 |
+| 2015 nachher | **640** | 11 | 1826 | 7128 | **69 / 67 / 62** von 80 | **0** | 56 / 13 |
+| 1815 vorher | 412 | 12 | 1172 | 5323 | 11 / 4 / 0 von 71 | 40 | 23 / 0 |
+| 1815 nachher | **571** | 8 | 1609 | 5811 | **66 / 62 / 59** von 81 | **1** | 51 / 4 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500 aus T-M34-07, und
+„mindestens eine Macht besitzt Fabrikstufe 2" hält. Der Siegtag springt wieder in beide Richtungen —
+die Partie wird eine andere, wie schon bei T-M41-02 beobachtet. Mit Startzahl 2015 gewinnt jetzt China
+(p7) statt Russland (p6), mit 11 statt 37 Kriegserklärungen, und China erreicht Fabrikstufe 3 in 13
+Provinzen.
+
+**H2 — das Integrationstor, gegen den Stand vom 2026-09-12** (`ai-integration.json`, Weltkarte, 200 Tage):
+
+| Größe | 2026-09-12 | nach T-M41-08 | nach H1 |
+|---|---|---|---|
+| Artillerie ausgehoben | 9 | 1 | **69** |
+| selbsttätiger Beschuss | 121 | 10 | **303** |
+| begonnene Fabriken | 77 | 71 | 76 |
+| Kriegserklärungen | 13 | 12 | 15 |
+| Ablehnungen | 1105 | 216 | 136 (59 `BUILD:NOT_OWNER`, 72 `SET_CAPITAL:ON_COOLDOWN`, 5 `RECRUIT`) |
+
+Das dünne Tor (Nebenbefund a zu T-M41-08) war Folge von H1: die Städte, die Artillerie ausheben
+könnten, bauten nichts mehr. **Aber:** alle 69 Artillerien und alle 303 Beschüsse gehören einer Stufe —
+„schwer" (China, 51 Armeen mit Reichweite); „leicht" und „normal" 0. Der 90-Tage-Lauf der Voreinstellung
+bleibt grün (0 Ablehnungen), sein Endzustand hat sich verschoben (`a177d1db875a10b1` → `41acc8a544184d8b`).
+
+**Turnier:** nicht mehr zeilengleich, R-AI-06 hält — Siegquoten 1,00 / 0,70 (10:0:15) / 1,00 wie vorher;
+„schwer gegen normal im Frieden" 146 → 145 Kriegserklärungen, 97 → 96 Frieden.
+
+**Grundlauf** (`progress.slow.test.ts`, 12 Startzahlen × 120 Tage): Anteil des Stärksten 0,4462 → **0,3623**, Eroberungen
+301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961. Der Lauf vorher war gleich dem
+eingecheckten Bericht — T-M41-08 und M40 hatten ihn nicht verschoben. **Befund:** der Ausgangswert in
+`balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand; der Frische-Wächter der Abnahme sieht das
+nicht (er fragt nur `data/rules`), der eine Parameterlauf in T-M17-16 misst neu. Risiko 5 (200 Tage, sechs
+Europäer): höchste Stufe weiter 1.
+
+**Neu sichtbar, nicht in dieser Reparatur:** `SET_CAPITAL:ON_COOLDOWN` 72× auf der Weltkarte, und die längste
+Strecke ohne Hauptstadt bei gehaltener Stadt ist 31 Tage (Italien) — die 30-Tage-Sperre nach einem zweiten
+Verlust. Gehört zu T-M41-11.
+
+**Status: behoben** (Nacharbeit zu T-M41-01). Plantext bei T-M41-01 in `03-TASKS.md` und `tasks.yaml`,
+Nachtrag in `DECISIONS.md` und `progress-baseline.md` §5.

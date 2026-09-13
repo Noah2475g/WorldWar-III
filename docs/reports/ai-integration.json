@@ -2,79 +2,77 @@
   "gemessenAm": "2026-09-13",
   "spieltage": 200,
   "maechte": 8,
-  "ereignisse": 30008,
-  "kriegserklaerungen": 12,
-  "friedensschluesse": 3,
-  "friedenZwischenKi": 3,
-  "handel": 4630,
+  "ereignisse": 30066,
+  "kriegserklaerungen": 15,
+  "friedensschluesse": 7,
+  "friedenZwischenKi": 7,
+  "handel": 4638,
   "handelJeMacht": {
-    "Vereinigte Staaten": 565,
-    "Russland": 589,
-    "China": 592,
-    "Indien": 570,
-    "Deutschland": 578,
-    "Frankreich": 587,
-    "Vereinigtes Königreich": 569,
-    "Italien": 580
+    "Vereinigte Staaten": 568,
+    "Russland": 588,
+    "China": 593,
+    "Indien": 568,
+    "Deutschland": 583,
+    "Frankreich": 588,
+    "Vereinigtes Königreich": 572,
+    "Italien": 578
   },
-  "fabriken": 71,
-  "artillerie": 1,
-  "beschussSelbsttaetig": 10,
-  "befehle": 17668,
-  "abgelehnt": 216,
-  "ablehnungsquoteProzent": 1.22,
+  "fabriken": 76,
+  "artillerie": 69,
+  "beschussSelbsttaetig": 303,
+  "befehle": 16668,
+  "abgelehnt": 136,
+  "ablehnungsquoteProzent": 0.82,
   "abgelehntZuFrueh": 0,
-  "marschbefehle": 6983,
+  "marschbefehle": 6519,
   "noPath": 0,
   "noPathAnteilProzent": 0,
   "paarungArmeeFehlercodeHoechstens": 0,
-  "paarungErweitertHoechstens": 94,
-  "paarungenErweitertUeberDrei": 9,
+  "paarungErweitertHoechstens": 50,
+  "paarungenErweitertUeberDrei": 6,
   "paarungenErweitertHaeufigste": {
-    "China|BUILD|NOT_OWNER|{\"provinceId\":\"PAK-NORTH\"}": 94,
-    "Russland|BUILD|NOT_OWNER|{\"provinceId\":\"TKM\"}": 38,
-    "Italien|BUILD|NOT_OWNER|{\"provinceId\":\"ITA-SOUTH\"}": 27,
-    "Deutschland|BUILD|NOT_OWNER|{\"provinceId\":\"BGR\"}": 17,
-    "Italien|BUILD|NOT_OWNER|{\"provinceId\":\"SVN\"}": 10
+    "China|BUILD|NOT_OWNER|{\"provinceId\":\"PAK-CENTRAL\"}": 50,
+    "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3607}": 29,
+    "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":4327}": 28,
+    "Indien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3915}": 15,
+    "Italien|BUILD|NOT_OWNER|{\"provinceId\":\"HUN\"}": 5
   },
-  "friedensannahmen": 3,
+  "friedensannahmen": 7,
   "diplomatieAbgelehnt": 0,
   "hauptstadt": {
-    "ohneHauptstadtMitStadtAmEnde": [
-      "Indien"
-    ],
+    "ohneHauptstadtMitStadtAmEnde": [],
     "tageOhne": {
       "Vereinigte Staaten": 0,
       "Russland": 0,
-      "China": 0,
-      "Indien": 1,
-      "Deutschland": 0,
-      "Frankreich": 1,
+      "China": 1,
+      "Indien": 17,
+      "Deutschland": 2,
+      "Frankreich": 2,
       "Vereinigtes Königreich": 0,
-      "Italien": 0
+      "Italien": 59
     },
     "laengsteStrecke": {
       "Vereinigte Staaten": 0,
       "Russland": 0,
-      "China": 0,
-      "Indien": 1,
-      "Deutschland": 0,
+      "China": 1,
+      "Indien": 16,
+      "Deutschland": 1,
       "Frankreich": 1,
       "Vereinigtes Königreich": 0,
-      "Italien": 0
+      "Italien": 31
     }
   },
   "armeeobjekteJeProvinz": {
-    "hoechstens": 101,
+    "hoechstens": 80,
     "tageUeberDrei": 197,
-    "stehendHoechstens": 17,
-    "stehendTageUeberDrei": 7
+    "stehendHoechstens": 12,
+    "stehendTageUeberDrei": 14
   },
   "armeenMitReichweiteJeMacht": {
     "Vereinigte Staaten": 0,
     "Russland": 0,
-    "China": 0,
-    "Indien": 1,
+    "China": 51,
+    "Indien": 0,
     "Deutschland": 0,
     "Frankreich": 0,
     "Vereinigtes Königreich": 0,
@@ -84,61 +82,62 @@
   "jeStufe": {
     "easy": {
       "maechte": 3,
-      "kriegserklaerungen": 2,
-      "artillerie": 1,
-      "beschussSelbsttaetig": 10,
-      "handel": 1704
+      "kriegserklaerungen": 1,
+      "artillerie": 0,
+      "beschussSelbsttaetig": 0,
+      "handel": 1708
     },
     "normal": {
       "maechte": 3,
-      "kriegserklaerungen": 5,
+      "kriegserklaerungen": 6,
       "artillerie": 0,
       "beschussSelbsttaetig": 0,
-      "handel": 1747
+      "handel": 1749
     },
     "hard": {
       "maechte": 2,
-      "kriegserklaerungen": 5,
-      "artillerie": 0,
-      "beschussSelbsttaetig": 0,
-      "handel": 1179
+      "kriegserklaerungen": 8,
+      "artillerie": 69,
+      "beschussSelbsttaetig": 303,
+      "handel": 1181
     }
   },
   "rekrutiert": {
-    "infantry": 3787,
-    "artillery": 1
+    "infantry": 3153,
+    "artillery": 69
   },
   "ablehnungen": {
-    "RECRUIT:INSUFFICIENT_RESOURCES": 3,
-    "BUILD:NOT_OWNER": 213
+    "RECRUIT:INSUFFICIENT_RESOURCES": 5,
+    "BUILD:NOT_OWNER": 59,
+    "SET_CAPITAL:ON_COOLDOWN": 72
   },
-  "zustandOhneKi": "dbf5fa3f49a96cd1",
+  "zustandOhneKi": "000fc5bd8129d753",
   "voreinstellung90": {
     "startzahl": 1914,
     "spieltage": 90,
     "maechte": 7,
-    "ereignisse": 9248,
-    "kriegserklaerungen": 5,
+    "ereignisse": 9058,
+    "kriegserklaerungen": 6,
     "friedensschluesse": 1,
     "friedenZwischenKi": 1,
-    "handel": 2051,
+    "handel": 2060,
     "handelJeMacht": {
       "Kanada": 288,
       "Mexiko": 296,
-      "Brasilien": 291,
+      "Brasilien": 297,
       "Argentinien": 299,
-      "Russland": 294,
-      "China": 293,
+      "Russland": 291,
+      "China": 299,
       "Indien": 290
     },
-    "fabriken": 4,
+    "fabriken": 2,
     "artillerie": 0,
     "beschussSelbsttaetig": 0,
-    "befehle": 6543,
+    "befehle": 6276,
     "abgelehnt": 0,
     "ablehnungsquoteProzent": 0,
     "abgelehntZuFrueh": 0,
-    "marschbefehle": 2556,
+    "marschbefehle": 2405,
     "noPath": 0,
     "noPathAnteilProzent": 0,
     "paarungArmeeFehlercodeHoechstens": 0,
@@ -169,10 +168,10 @@
       }
     },
     "armeeobjekteJeProvinz": {
-      "hoechstens": 86,
+      "hoechstens": 65,
       "tageUeberDrei": 88,
-      "stehendHoechstens": 8,
-      "stehendTageUeberDrei": 4
+      "stehendHoechstens": 5,
+      "stehendTageUeberDrei": 1
     },
     "armeenMitReichweiteJeMacht": {
       "Kanada": 0,
@@ -194,10 +193,10 @@
       },
       "normal": {
         "maechte": 7,
-        "kriegserklaerungen": 5,
+        "kriegserklaerungen": 6,
         "artillerie": 0,
         "beschussSelbsttaetig": 0,
-        "handel": 2051
+        "handel": 2060
       },
       "hard": {
         "maechte": 0,
@@ -208,9 +207,9 @@
       }
     },
     "rekrutiert": {
-      "infantry": 1504
+      "infantry": 1390
     },
     "ablehnungen": {},
-    "zustandOhneKi": "a177d1db875a10b1"
+    "zustandOhneKi": "41acc8a544184d8b"
   }
 }

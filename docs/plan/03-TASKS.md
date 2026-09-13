@@ -5597,6 +5597,16 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Turnier zeilengleich bleibt. Gemessen an vier Varianten (`DECISIONS.md`, 2026-09-13): die
   Kaserne Stufe 2 reißt R-AI-06 (schwer gegen normal im Frieden 1,00 statt 0,70), die
   Eisenbahn ändert nichts. R-AI-01 steht nur hier im Text (`name_level`).
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, H1: der Ausbau sperrte die Stadt. `nextBuildingFor`
+  lieferte für jede Stadt mit Fabrik unter `maxLevel` nur noch „factory"; war die Stufe zu teuer,
+  kam in dieser Stadt nichts anderes an die Reihe — Vollpartie 1914 am Ende 39 Städte mit Fabrik und
+  ohne Eisenbahn. Jetzt ist der Ausbau nur der **erste** Wunsch einer Stadt, deren Fabrik steht;
+  Eisenbahn, Festung und Hafen stehen dahinter, und gebaut wird der erste bezahlbare. Kaserne und
+  erste Fabrik bleiben allein, der Handel zielt weiter auf den ersten Wunsch. Test zuerst in
+  `packages/ai/src/economy.test.ts`; die Städte mit Eisenbahn und Festung je Macht zählt
+  `apps/headless/test/fullgame.slow.test.ts`; H2 in `apps/headless/test/ai-integration.slow.test.ts`
+  nachgemessen. Das Turnier ist danach **nicht** mehr zeilengleich (Siegquoten gleich, im Frieden
+  146 → 145 Kriegserklärungen). Zahlen in `PROBLEME.md`, 2026-09-13, H1.)*
 
 ### T-M41-02 · Nachmessen nach dem Fabrikausbau
 - **Ziel:** ein grüner Einzeltest belegt, dass die KI den Befehl gibt — nicht, dass sie in

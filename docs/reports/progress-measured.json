@@ -30,10 +30,10 @@
     "maechte": 6,
     "tage": 120,
     "startzahlen": 12,
-    "anteilDesStaerksten": 0.4462,
-    "eroberungen": 301.3,
-    "ueberlebende": 5.08,
-    "endbestaende": 50439
+    "anteilDesStaerksten": 0.3623,
+    "eroberungen": 314.5,
+    "ueberlebende": 5.67,
+    "endbestaende": 41961
   },
   "risiko5": {
     "tage": 200,

@@ -3011,6 +3011,11 @@ tasks:
     milestone: M41
     title: Die KI baut die Fabrik aus
     status: done
+    # Nacharbeit 2026-09-13 (Durchsicht H1, Block N2): der Ausbau sperrte die Stadt - war die
+    # Fabrikstufe zu teuer, kamen Eisenbahn, Festung und Hafen dort nie an die Reihe (Vollpartie
+    # 1914: 39 Staedte mit Fabrik und ohne Eisenbahn). Jetzt ist der Ausbau nur der erste Wunsch,
+    # gebaut wird der erste bezahlbare (economy.test.ts; Staedte je Macht in fullgame.slow.test.ts).
+    # Das Turnier ist danach nicht mehr zeilengleich (Siegquoten gleich). PROBLEME.md, H1.
     deps: [T-M41-03]
     requirements: [R-PROV-02, R-AI-08]
     files: [packages/ai/src/economy.ts]
