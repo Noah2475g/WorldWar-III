@@ -2678,7 +2678,10 @@ Macht: China, Stufe „schwer", 47 Armeen mit Reichweite am Ende. Die drei „le
 keine einzige Artillerie aus. Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist damit grün, aber es steht
 auf einer einzigen Kette — T-M41-10 hat vorgeführt, dass eine Änderung am Zusammenlegen es auf null bringt.
 Naheliegend, nicht gemessen: `TARGET_MIX` in `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und
-`recruitShare` der Stufen (80 / 200 / 280) lässt die teure Artillerie nur bei „schwer" in den Haushalt. Vorgemerkt
+`recruitShare` der Stufen (80 / 200 / 280) lässt die teure Artillerie nur bei „schwer" in den Haushalt. *(Berichtigt nach der Durchsicht von Block N2, H1: diese Erklärung widerspricht den eigenen Daten.
+Im Integrationslauf sind **zwei** Mächte „schwer" — China und Frankreich —, und Frankreich hebt keine
+Artillerie aus. Engstellen sind die Fabrik und das Geld im Aushebebudget, nicht die Stufe; Messung im
+Eintrag „Durchsicht Block N2, H1" unten.)* Vorgemerkt
 für M18 zusammen mit Zusage 7 (T-M41-10); die Zusicherung wird nicht auf „je Stufe" verschärft, solange das nicht
 gebaut ist.
 
@@ -2732,3 +2735,48 @@ Kommentar in `fullgame.slow.test.ts` („1914 endet an Tag 471") ist nachgezogen
 
 **Status: Beobachtung** (keine Änderung am Messaufbau; wer verschiedene Partien messen will, braucht verschiedene
 Aufstellungen, nicht nur Startzahlen).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, H1 · Die Feuerautomatik lebt in der ausgelieferten Partie nicht — das Tor hängt an einer Macht
+
+**Befund der Durchsicht, mit eigenem Lauf bestätigt** (`ai-integration.slow.test.ts` fährt die Voreinstellung jetzt
+200 Tage und hält Tag 90 als Zwischenstand fest; Prüfsummen der Weltkarte `e7b0627bff9f7b39` und der Voreinstellung
+an Tag 90 `41acc8a544184d8b` unverändert — dieselbe Partie, derselbe Code).
+
+**1 · Das Tor aus R-AI-08/AK3 steht auf einer einzigen Macht.** Weltkarte, 200 Tage, acht KI:
+
+| Macht | Stufe | Fabriken begonnen | Geld am Ende | Artillerie |
+|---|---|---|---|---|
+| Vereinigte Staaten | leicht | 37 | 963 217 | 0 |
+| Russland | normal | 0 | 363 452 | 0 |
+| China | **schwer** | 4 | 702 525 | **63** |
+| Indien | leicht | 27 | 1 043 552 | 0 |
+| Deutschland | normal | 0 | 305 017 | 0 |
+| Frankreich | **schwer** | 2 | 793 878 | **0** |
+| Vereinigtes Königreich | leicht | 1 | 841 505 | 0 |
+| Italien | normal | 0 | 304 900 | 0 |
+
+Mächte mit Artillerie: **China**. Selbsttätiger Beschuss 231, alle von China.
+
+**2 · Die Ursache war falsch benannt.** Der Schlusseintrag zu Block N2 schrieb, `recruitShare` lasse die Artillerie
+„nur bei schwer in den Haushalt" — Frankreich ist ebenfalls „schwer" und hebt nichts aus. Was die Zahlen tragen:
+- **Fabrik.** Drei der fünf Mächte ohne „leicht" beginnen in 200 Tagen keine einzige Fabrik, Frankreich zwei.
+- **Geld im Aushebebudget.** `recruitCommands` gibt je Einheit höchstens `recruitShare` ‰ des Vorrats aus; eine
+  Artillerie kostet 200 000 Geld. Bei „leicht" (80 ‰) braucht das 2,5 Mio. Geld auf Lager — die Vereinigten Staaten
+  bauen 37 Fabriken und enden mit 963 217. Bei „schwer" (280 ‰) sind es 715 000; Frankreich endet knapp darüber
+  (laut Durchsicht, `review-n2/why.json`, lag es unterwegs zwischen 211 000 und 794 000 — nicht selbst gemessen).
+- Dazu, laut Durchsicht und nicht selbst gemessen: gefragt wird zuerst die vielseitigste Provinz, und die trägt oft
+  keine Fabrik.
+
+**3 · In der Partie, die ein Spieler bekommt, schießt keine KI.** Voreinstellung (Startzahl 1914, sieben KI, alle
+„normal"), dieselbe Partie über 200 Tage: **3 Artillerien** (China), **0 selbsttätige Beschüsse**; Fabriken begonnen
+nur Russland 5, China 6, Indien 1; Kanada und Indien enden mit 0 Geld. An Tag 90: 0 und 0. Das bestätigt die Zahlen
+der Durchsicht (`review-n2/preset200.json`: 3 Artillerien, 0 Beschüsse). **R-BAT-08/AK3 ist für die Stufe „normal"
+nicht belegt**, weder im Turnier (0) noch in der Voreinstellung.
+
+**Was nicht geschieht:** keine Grenze geändert, kein Umbau des KI-Balancings. Das ist eine Frage an Noah bzw. M18
+(`DECISIONS.md`, 2026-09-13, R-BAT-08/AK3). Kein Rückschritt durch Block N2: vorher 1 Artillerie und 10 Beschüsse auf
+der Weltkarte.
+
+**Status: offen, ohne Aufgabe** — Frage in `DECISIONS.md`, vorgemerkt für M18 zusammen mit Zusage 7 (T-M41-10).

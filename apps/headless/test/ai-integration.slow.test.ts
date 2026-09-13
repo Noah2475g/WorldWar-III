@@ -90,7 +90,12 @@ interface Messung {
   armeeobjekte: { hoechstens: number; tageUeberDrei: number; stehendHoechstens: number; stehendTageUeberDrei: number }
 }
 
-async function spiele(config: GameConfig, tage: number): Promise<Messung> {
+/**
+ * Spielt `tage` Spieltage. Mit `stichtag` wird zusaetzlich der Stand an diesem Tag festgehalten —
+ * dieselbe Partie, nicht ein zweiter Lauf (Durchsicht Block N2, H1: die Voreinstellung laeuft 200
+ * Tage fuer die Zahlen zur Artillerie, die Zusagen aus M14 gelten weiter fuer Tag 90).
+ */
+async function spiele(config: GameConfig, tage: number, stichtag?: number): Promise<{ ende: Messung; stichtag?: Messung }> {
   let current = createInitialState(config, { map, rules })
   const ki = new Set(current.playerOrder.filter((id) => current.players[id]!.kind === 'ai'))
   const nation = (id: string): string => current.players[id]!.nation
@@ -106,6 +111,7 @@ async function spiele(config: GameConfig, tage: number): Promise<Messung> {
   }
   const armeeobjekte = { hoechstens: 0, tageUeberDrei: 0, stehendHoechstens: 0, stehendTageUeberDrei: 0 }
   let gelaufen = 0
+  let zwischenstand: Messung | undefined
 
   for (let tag = 0; tag < tage; tag++) {
     const chunk = advanceTicks(current, rules.constants.ticksPerDay, { map, rules })
@@ -146,11 +152,25 @@ async function spiele(config: GameConfig, tage: number): Promise<Messung> {
     if (heuteAlle > 3) armeeobjekte.tageUeberDrei += 1
     if (heuteStehend > 3) armeeobjekte.stehendTageUeberDrei += 1
 
+    if (gelaufen === stichtag) {
+      zwischenstand = {
+        tage: gelaufen,
+        events: events.slice(),
+        final: current,
+        ki,
+        kiBefehle: kiBefehle.slice(),
+        hauptstadtTage: { ...hauptstadtTage },
+        hauptstadtStrecke: { ...hauptstadtStrecke },
+        armeeobjekte: { ...armeeobjekte },
+      }
+    }
+
     if (current.victory.winner !== null) break
     await breathe()
   }
 
-  return { tage: gelaufen, events, final: current, ki, kiBefehle, hauptstadtTage, hauptstadtStrecke, armeeobjekte }
+  const ende = { tage: gelaufen, events, final: current, ki, kiBefehle, hauptstadtTage, hauptstadtStrecke, armeeobjekte }
+  return zwischenstand ? { ende, stichtag: zwischenstand } : { ende }
 }
 
 type Rejected = Extract<GameEvent, { type: 'COMMAND_REJECTED' }>
@@ -246,6 +266,18 @@ function kennzahlen(m: Messung) {
       ]),
     ),
     ausgeschieden: [...ki].filter((id) => !final.players[id]!.alive).map(nation),
+    // Die Artilleriekette je Macht (Durchsicht Block N2, H1) — Zahlen, keine Zusicherung. Das Tor aus
+    // R-AI-08/AK3 zaehlt die Summe; ob sie an einer einzigen Macht haengt, steht nur hier.
+    maechteMitArtillerie: [...ki]
+      .filter((id) => events.some((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery' && event.playerId === id))
+      .map(nation),
+    fabrikenBegonnenJeMacht: Object.fromEntries(
+      [...ki].map((id) => [
+        nation(id),
+        events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory' && event.playerId === id).length,
+      ]),
+    ),
+    geldAmEndeJeMacht: Object.fromEntries([...ki].map((id) => [nation(id), final.players[id]!.resources.money])),
     // Je Stufe nach dem **Handelnden** (T-M41-08): T-M15-08 versprach "neun Zahlen je Stufe"
     // im Turnier, wo es auf der Testkarte in 40 Tagen keinen Beschuss gibt. Hier, auf der
     // Weltkarte, stehen die Stufen reihum nebeneinander — eine Zahl, keine Zusicherung.
@@ -283,12 +315,17 @@ function kennzahlen(m: Messung) {
 }
 
 let integration: Messung
+/** Die Voreinstellung an Tag 90 — der Lauf, den T-M14-11 und T-M14-12 zusagten. */
 let voreinstellung: Messung
+/** Dieselbe Partie an Tag 200 — nur Zahlen (Durchsicht Block N2, H1). */
+let voreinstellungLang: Messung
 
 beforeAll(async () => {
-  integration = await spiele(integrationConfig(), DAYS)
+  integration = (await spiele(integrationConfig(), DAYS)).ende
   await breathe()
-  voreinstellung = await spiele(toConfig(DEFAULT_NEW_GAME, map), PRESET_DAYS)
+  const preset = await spiele(toConfig(DEFAULT_NEW_GAME, map), DAYS, PRESET_DAYS)
+  voreinstellung = preset.stichtag!
+  voreinstellungLang = preset.ende
 }, 1_800_000)
 
 const rejected = (m: Messung, code: string, command?: string): GameEvent[] =>
@@ -340,6 +377,9 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
       gemessenAm: new Date().toISOString().slice(0, 10),
       ...kennzahlen(integration),
       voreinstellung90: { startzahl: DEFAULT_NEW_GAME.seed, ...kennzahlen(voreinstellung) },
+      // Dieselbe Partie bis Tag 200 (Durchsicht Block N2, H1): ob die Feuerautomatik in der Partie lebt,
+      // die ein Spieler bekommt — alle Gegner auf "normal". Keine Zusicherung.
+      voreinstellung200: { startzahl: DEFAULT_NEW_GAME.seed, ...kennzahlen(voreinstellungLang) },
     }
 
     const dir = fileURLToPath(new URL('../../../docs/reports/', import.meta.url))

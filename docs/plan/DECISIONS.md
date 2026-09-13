@@ -2313,3 +2313,34 @@ Tests in `packages/ai/src/decide.test.ts` und die Zusicherung „stehende Armeeo
 `apps/headless/test/ai-integration.slow.test.ts` (Fassung im Bericht zu Block N2), dasselbe Kriterium.
 
 ---
+
+## 2026-09-13 · R-BAT-08/AK3 · Offene Frage: in der ausgelieferten Partie schießt keine KI — nicht entschieden, an Noah bzw. M18
+
+**Keine Entscheidung.** Dieser Eintrag hält eine Frage fest, die ein Agent nicht delegiert beantworten soll: Soll die
+KI auf der Stufe „normal" in den ersten 200 Spieltagen Artillerie führen und selbsttätig schießen? Heute tut sie es
+nicht. Keine Grenze wurde geändert, das KI-Balancing nicht umgebaut (Durchsicht von Block N2, H1).
+
+**Daten** (`docs/reports/ai-integration.json`, Stand nach Block N2 und seiner Nacharbeit):
+- **Voreinstellung** (Startzahl 1914, sieben KI „normal"), 200 Tage: 3 Artillerien (nur China), **0 selbsttätige
+  Beschüsse**; Fabriken begonnen Russland 5, China 6, Indien 1, sonst keine. An Tag 90: 0 / 0.
+- **Integrationslauf** (Weltkarte, acht KI gemischt), 200 Tage: 63 Artillerien und 231 Beschüsse — **alle von China**
+  („schwer"). Frankreich, ebenfalls „schwer", hebt keine aus; „normal" und „leicht" keine.
+- **Turnier** (Testkarte, 40 Tage): selbsttätiger Beschuss 0 auf jeder Stufe (T-M41-08).
+- **R-BAT-08/AK3 ist für „normal" nicht belegt.** Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist nach
+  Wortlaut grün, weil der Integrationslauf eine „schwere" Macht mit Fabriken enthält; T-M41-10 hat es schon einmal
+  auf null gebracht.
+
+**Warum nicht jetzt gebaut.** Die Engstellen — Fabrik und Geld im Aushebebudget (`recruitShare` 80 / 200 / 280 ‰ gegen
+200 000 Geld je Artillerie) — sind Balancing der KI-Stufen. Jede Stellschraube verschiebt die ganze Partie (Block N2
+hat den Siegtag mit Startzahl 1914 von 582 über 430 auf 975 bewegt) und R-AI-06 im Turnier. Das gehört in einen
+eigenen, gemessenen Plan, nicht in eine Nacharbeit.
+
+**Mögliche Wege, ohne Wertung:** (1) `TARGET_MIX` in `packages/ai/src/economy.ts` in Einheiten statt Stapeln zählen
+(T-M41-10 hat gezeigt, dass die Stapelzählung die Artillerie verdrängen kann); (2) die Aushebung nicht nur in der
+vielseitigsten Provinz fragen; (3) das Aushebebudget je Einheit an den Preis statt an einen festen Anteil binden;
+(4) die Zusicherung schärfen — Artillerie je Stufe oder in der Voreinstellung — erst, wenn einer der Wege gebaut ist.
+
+**kippbar / Ort:** keine Zeile ist geändert. Wer die Frage aufnimmt, misst in `apps/headless/test/ai-integration.slow.test.ts`
+(`voreinstellung200`, `maechteMitArtillerie`, `jeStufe`) und fährt danach Vollpartie, Turnier und Grundlauf.
+
+---

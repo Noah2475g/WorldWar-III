@@ -2894,6 +2894,11 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Kriegserklärungen von „schwer" und „normal" (`apps/headless/test/tournament.slow.test.ts`); die
   übrigen sieben sind mit Grund zurückgenommen (`DECISIONS.md`), und die Null beim Beschuss steht als
   Befund in `PROBLEME.md` und als Vermerk bei R-BAT-08/AK3.)*
+  *(Nachgemessen nach der Durchsicht von Block N2, H1: **R-BAT-08/AK3 ist für die Stufe „normal" nicht
+  belegt.** In der ausgelieferten Voreinstellung (sieben KI „normal") entstehen in 200 Spieltagen 3
+  Artillerien und **0 selbsttätige Beschüsse**; im Integrationslauf stammen alle 63 Artillerien und 231
+  Beschüsse von einer Macht (China, „schwer"), Frankreich („schwer") hebt keine aus. Engstellen: Fabrik
+  und Geld im Aushebebudget. Keine Grenze geändert; offene Frage an Noah bzw. M18 in `DECISIONS.md`.)*
   *Buchführung* — die Tabelle steht mit Datum in `docs/reports/ai-tournament.md`; jede neue
   Regelzahl (Handelsmarge, Angebotsmarge, Rücklage) steht mit Status *belegt* oder *geschätzt*
   in `BALANCING.md`. **In `01-REQUIREMENTS.md` nennt R-AI-08 keinen Gegenspion und keine

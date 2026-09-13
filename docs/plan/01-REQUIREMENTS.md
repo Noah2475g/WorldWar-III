@@ -647,6 +647,9 @@ Vier Regeln gelten für jede Anforderung dieses Abschnitts:
     Stufe selbsttätigen Beschuss; Artillerie gibt es erst ab Tag 34 hinter der Fabrik. Belegt ist
     der Beschuss nur als Summe im 200-Tage-Lauf von R-AI-08/AK3
     (`apps/headless/test/ai-integration.slow.test.ts`); `PROBLEME.md`, `DECISIONS.md`.)*
+    *(Nachgemessen nach der Durchsicht von Block N2: diese Summe stammt von einer einzigen Macht auf
+    „schwer"; für „normal" ist das Kriterium nicht belegt — in der ausgelieferten Voreinstellung 0
+    selbsttätige Beschüsse in 200 Spieltagen. Offene Frage in `DECISIONS.md`, keine Grenze geändert.)*
 
 #### Freischaltung (`R-TECH`)
 

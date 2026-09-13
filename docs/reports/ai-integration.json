@@ -77,6 +77,29 @@
     "Italien": 0
   },
   "ausgeschieden": [],
+  "maechteMitArtillerie": [
+    "China"
+  ],
+  "fabrikenBegonnenJeMacht": {
+    "Vereinigte Staaten": 37,
+    "Russland": 0,
+    "China": 4,
+    "Indien": 27,
+    "Deutschland": 0,
+    "Frankreich": 2,
+    "Vereinigtes Königreich": 1,
+    "Italien": 0
+  },
+  "geldAmEndeJeMacht": {
+    "Vereinigte Staaten": 963217,
+    "Russland": 363452,
+    "China": 702525,
+    "Indien": 1043552,
+    "Deutschland": 305017,
+    "Frankreich": 793878,
+    "Vereinigtes Königreich": 841505,
+    "Italien": 304900
+  },
   "jeStufe": {
     "easy": {
       "maechte": 3,
@@ -180,6 +203,25 @@
       "Indien": 0
     },
     "ausgeschieden": [],
+    "maechteMitArtillerie": [],
+    "fabrikenBegonnenJeMacht": {
+      "Kanada": 0,
+      "Mexiko": 0,
+      "Brasilien": 0,
+      "Argentinien": 0,
+      "Russland": 1,
+      "China": 0,
+      "Indien": 1
+    },
+    "geldAmEndeJeMacht": {
+      "Kanada": 257982,
+      "Mexiko": 329760,
+      "Brasilien": 341983,
+      "Argentinien": 382847,
+      "Russland": 674104,
+      "China": 644304,
+      "Indien": 333005
+    },
     "jeStufe": {
       "easy": {
         "maechte": 0,
@@ -208,5 +250,128 @@
     },
     "ablehnungen": {},
     "zustandOhneKi": "41acc8a544184d8b"
+  },
+  "voreinstellung200": {
+    "startzahl": 1914,
+    "spieltage": 200,
+    "maechte": 7,
+    "ereignisse": 25492,
+    "kriegserklaerungen": 8,
+    "friedensschluesse": 2,
+    "friedenZwischenKi": 2,
+    "handel": 4700,
+    "handelJeMacht": {
+      "Kanada": 665,
+      "Mexiko": 673,
+      "Brasilien": 674,
+      "Argentinien": 676,
+      "Russland": 669,
+      "China": 676,
+      "Indien": 667
+    },
+    "fabriken": 12,
+    "artillerie": 3,
+    "beschussSelbsttaetig": 0,
+    "befehle": 15226,
+    "abgelehnt": 0,
+    "ablehnungsquoteProzent": 0,
+    "abgelehntZuFrueh": 0,
+    "marschbefehle": 6040,
+    "noPath": 0,
+    "noPathAnteilProzent": 0,
+    "paarungArmeeFehlercodeHoechstens": 0,
+    "paarungErweitertHoechstens": 0,
+    "paarungenErweitertUeberDrei": 0,
+    "paarungenErweitertHaeufigste": {},
+    "friedensannahmen": 2,
+    "diplomatieAbgelehnt": 0,
+    "hauptstadtVerluste": 3,
+    "hauptstadt": {
+      "ohneHauptstadtMitStadtAmEnde": [],
+      "tageOhne": {
+        "Kanada": 0,
+        "Mexiko": 0,
+        "Brasilien": 0,
+        "Argentinien": 0,
+        "Russland": 0,
+        "China": 0,
+        "Indien": 40
+      },
+      "laengsteStrecke": {
+        "Kanada": 0,
+        "Mexiko": 0,
+        "Brasilien": 0,
+        "Argentinien": 0,
+        "Russland": 0,
+        "China": 0,
+        "Indien": 23
+      }
+    },
+    "armeeobjekteJeProvinz": {
+      "hoechstens": 100,
+      "tageUeberDrei": 198,
+      "stehendHoechstens": 25,
+      "stehendTageUeberDrei": 11
+    },
+    "armeenMitReichweiteJeMacht": {
+      "Kanada": 0,
+      "Mexiko": 0,
+      "Brasilien": 0,
+      "Argentinien": 0,
+      "Russland": 0,
+      "China": 3,
+      "Indien": 0
+    },
+    "ausgeschieden": [],
+    "maechteMitArtillerie": [
+      "China"
+    ],
+    "fabrikenBegonnenJeMacht": {
+      "Kanada": 0,
+      "Mexiko": 0,
+      "Brasilien": 0,
+      "Argentinien": 0,
+      "Russland": 5,
+      "China": 6,
+      "Indien": 1
+    },
+    "geldAmEndeJeMacht": {
+      "Kanada": 0,
+      "Mexiko": 321346,
+      "Brasilien": 304792,
+      "Argentinien": 451509,
+      "Russland": 600382,
+      "China": 223026,
+      "Indien": 0
+    },
+    "jeStufe": {
+      "easy": {
+        "maechte": 0,
+        "kriegserklaerungen": 0,
+        "artillerie": 0,
+        "beschussSelbsttaetig": 0,
+        "handel": 0
+      },
+      "normal": {
+        "maechte": 7,
+        "kriegserklaerungen": 8,
+        "artillerie": 3,
+        "beschussSelbsttaetig": 0,
+        "handel": 4700
+      },
+      "hard": {
+        "maechte": 0,
+        "kriegserklaerungen": 0,
+        "artillerie": 0,
+        "beschussSelbsttaetig": 0,
+        "handel": 0
+      }
+    },
+    "rekrutiert": {
+      "infantry": 3114,
+      "artillery": 3
+    },
+    "ablehnungen": {},
+    "zustandOhneKi": "5f710726fb8a3c84"
   }
 }
