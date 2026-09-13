@@ -186,3 +186,42 @@ export function gaugeStatus({ rulesChangedAt, gaugeChangedAt, rulesDirty }) {
     ? { fresh: true, reason: 'Bericht ist juenger als die letzte Regelaenderung' }
     : { fresh: false, reason: 'Regeln sind juenger als der Bericht des Messgeraets' }
 }
+
+/**
+ * Frische des Haltungs-Messlaufs (T-M40-16, Befund M-B der Durchsicht der Nacharbeit M40).
+ *
+ * `apps/headless/test/stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik
+ * (R-UNIT-09/AK5, D30.9): zwoelf Partien, gut elf Minuten, und darum in keiner Pruefkette. Nach
+ * dem Merge von Block N2 haette die Abnahme gruen gemeldet, auch wenn AK5 gefallen waere.
+ *
+ * Dasselbe Muster wie `gaugeStatus`, nur vermisst dieser Lauf nicht die Regeldateien, sondern die
+ * Automatik und den Kern: der Bericht muss juenger sein (Commit-Zeit, `<=`) als die letzte
+ * Aenderung unter `packages/ai/src` und unter `packages/core/src`. Und weil der Test den Bericht
+ * vor seinen Zusicherungen schreibt, muss der eingecheckte Lauf AK5 auch erfuellt haben - sonst
+ * machte ein eingecheckter, gescheiterter Lauf den Waechter gruen. Alle Unbekannten zaehlen als
+ * veraltet, die sichere Richtung.
+ */
+export function stanceReportStatus({ aiChangedAt, coreChangedAt, reportChangedAt, sourcesDirty, ak5Fulfilled }) {
+  const report = 'docs/reports/stance.json'
+  if (sourcesDirty) {
+    return { fresh: false, reason: 'uncommittete Aenderungen unter packages/ai/src oder packages/core/src - erst committen, dann messen' }
+  }
+  if (!reportChangedAt) return { fresh: false, reason: `kein eingecheckter Bericht ${report}` }
+  if (!aiChangedAt || !coreChangedAt) {
+    return { fresh: false, reason: 'Stand von packages/ai/src oder packages/core/src unbekannt (git antwortet nicht)' }
+  }
+  const juenger = [
+    ...(aiChangedAt > reportChangedAt ? ['packages/ai/src'] : []),
+    ...(coreChangedAt > reportChangedAt ? ['packages/core/src'] : []),
+  ]
+  if (juenger.length > 0) {
+    return {
+      fresh: false,
+      reason: `${juenger.join(' und ')} ${juenger.length > 1 ? 'sind' : 'ist'} juenger als ${report} - die Automatik ist seit dem letzten Haltungs-Messlauf ungemessen`,
+    }
+  }
+  if (ak5Fulfilled !== true) {
+    return { fresh: false, reason: `der eingecheckte Lauf in ${report} hat AK5 nicht erfuellt (episoden.nachher.ak5.erfuellt, Ruecknahmekriterium D30.9)` }
+  }
+  return { fresh: true, reason: `${report} ist juenger als die letzte Aenderung an packages/ai/src und packages/core/src, und AK5 ist erfuellt` }
+}

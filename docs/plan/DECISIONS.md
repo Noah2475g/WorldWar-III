@@ -2499,3 +2499,33 @@ nicht in eine Nacharbeit der Automatik. Die Anleitung stimmte schon länger nich
 Gefecht in der Provinz; danach `pnpm test` ohne `UPDATE_GOLDEN`. Die Zählung in `adjutant.ts` darf trotzdem bleiben.
 
 ---
+
+## 2026-09-13 · T-M40-16 · Der Haltungs-Messlauf läuft nicht je Abnahme, ein Frische-Wächter hält ihn aktuell (delegiert)
+
+**Entscheidung.** `pnpm acceptance` fährt `apps/headless/test/stance.slow.test.ts` nicht. Stattdessen prüft
+`stanceReportStatus` (`scripts/acceptance-criteria.mjs`) als Messgerät, ob der eingecheckte Lauf noch gilt:
+- `docs/reports/stance.json` ist nach Commit-Zeit jünger als die letzte Änderung unter `packages/ai/src` und
+  unter `packages/core/src`;
+- der eingecheckte Lauf hat AK5 erfüllt.
+
+Trifft eins davon nicht zu, ist die Abnahme rot, und die Meldung nennt den Befehl, der den Lauf neu fährt.
+Entschieden vom Orchestrator nach Befund M-B der Durchsicht der Nacharbeit.
+
+**Begründung.** Das Rücknahmekriterium der Automatik (R-UNIT-09/AK5, D30.9) lief in keiner Prüfkette. Nach dem
+Merge von Block N2 hätte die Abnahme grün gemeldet, auch wenn AK5 gefallen wäre. Zwölf Partien dauern gut elf
+Minuten, die Abnahme läuft rund sieben; mit dem Lauf dauerte sie fast dreimal so lang. Dasselbe Muster trägt seit
+dem 2026-09-08 Parameterlauf und Turnier.
+
+**Warum auch AK5 im Bericht.** Der Test schreibt den Bericht, bevor er zusichert. Ohne diese Prüfung machte schon
+ein eingecheckter, gescheiterter Lauf den Wächter grün. Das ist eine Ergänzung zum Auftrag, der nur die Frische
+nannte.
+
+**Gegenrede.** Jede Änderung unter `packages/core/src` färbt die Abnahme rot, auch eine, die die Automatik nicht
+berührt. Hingenommen: Das ist die sichere Richtung, und die Abnahme läuft ohnehin erst am Ende eines Blocks. Wer
+weiß, dass sich nichts verschoben hat, belegt es mit dem Lauf, nicht mit einem Satz. Für M35 heißt das: nach dem
+Bau den Haltungs-Messlauf neu fahren und einchecken, bevor die Abnahme gilt.
+
+**kippbar:** Engere Pfade in `scripts/acceptance.mjs`, etwa nur `packages/ai/src/adjutant.ts` und `packages/core/src/phases`.
+Oder der Lauf kommt doch in die Abnahme, mit `run(...)` wie AK-1.
+
+---

@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, artefactUnchangedSince, gaugeStatus, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, artefactUnchangedSince, gaugeStatus, measurementOf, stanceReportStatus, v1Failures } from './acceptance-criteria.mjs'
 
 const execAsync = promisify(exec)
 
@@ -170,6 +170,39 @@ for (const gauge of [
     status.fresh ? status.reason : `${status.reason} — bitte ${gauge.command} laufen lassen`,
   )
 }
+
+// Der Haltungs-Messlauf (T-M40-16, Befund M-B der Durchsicht der Nacharbeit M40): stance.slow faehrt
+// zwoelf Partien und laeuft deshalb nicht je Abnahme. Sein Bericht darf aber nicht aelter sein als die
+// Automatik und der Kern, die er vermisst, und der eingecheckte Lauf muss AK5 erfuellt haben
+// (Ruecknahmekriterium D30.9). Gelesen wird der eingecheckte Bericht, passend zu den Commit-Zeiten.
+const stanceStatus = stanceReportStatus({
+  aiChangedAt: commitTime('packages/ai/src'),
+  coreChangedAt: commitTime('packages/core/src'),
+  reportChangedAt: commitTime('docs/reports/stance.json'),
+  sourcesDirty: (() => {
+    try {
+      return execSync('git status --porcelain -- packages/ai/src packages/core/src', { cwd: ROOT, encoding: 'utf8' }).trim().length > 0
+    } catch {
+      return true
+    }
+  })(),
+  ak5Fulfilled: (() => {
+    try {
+      const committed = execSync('git show HEAD:docs/reports/stance.json', { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })
+      return JSON.parse(committed).episoden?.nachher?.ak5?.erfuellt === true
+    } catch {
+      return false
+    }
+  })(),
+})
+check(
+  'MESSGERAET',
+  'Haltungs-Messlauf ist frischer als die letzte Änderung an packages/ai/src und packages/core/src und erfüllt AK5 (docs/reports/stance.json)',
+  stanceStatus.fresh,
+  stanceStatus.fresh
+    ? stanceStatus.reason
+    : `${stanceStatus.reason} — bitte WORLDWAR_WRITE_REPORT=1 pnpm vitest run --config vitest.slow.config.ts apps/headless/test/stance.slow.test.ts laufen lassen und docs/reports/stance.json einchecken`,
+)
 
 // AK-1 hat seit T-M14-14 eine eigene Zeile — vorher stand es in der Sammelzeile oben und
 // wurde von keinem einzigen Test berührt: die einzigen `winner`-Zusicherungen im Bestand

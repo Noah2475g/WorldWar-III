@@ -3094,6 +3094,21 @@ tasks:
     files: [packages/ai/src/adjutant.ts, docs/ANLEITUNG.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md]
     tests: [packages/ai/src/adjutant.test.ts, packages/ai/src/loop.test.ts]
     dod: "Befund M-A der Durchsicht der Nacharbeit M40: der Adjutant zaehlt im selben Tick nur MOVE_ARMY des Menschen als ausrueckend. SET_STANCE prueft kein Gefecht (commands/handlers.ts), und phases/retreat.ts laesst jede Armee in Haltung retreat ausweichen, auch ohne Gefecht. Szenario R2: in n3 stehen eine Verteidigung und eine Garnison, n2 ist angegriffen. Der Spieler klickt Rueckzug bei der Garnison; die Automatik schickt im selben Tick die Verteidigung nach n2, die Garnison weicht nach n1 aus, und nach 25 Ticks steht keine eigene Armee mehr in n3 (verletzt R-UNIT-09/AK1). Reparatur nur in adjutant.ts: SET_STANCE mit stance retreat in given zaehlt als ausrueckend. Entscheid des Orchestrators (delegiert, kippbar): der Knopf wird nicht an ein Gefecht gebunden (das waere Verhalten des Kerns, ausserhalb der Nacharbeit); ANLEITUNG.md berichtigt den Satz Rueckzug nur im Gefecht. Test zuerst: adjutant.test.ts mit Szenario R2 und dem Klick in given - ohne Reparatur ein Befehl, mit Reparatur keiner; Gegenprobe: ohne Klick und mit einer anderen Haltung rueckt die Verteidigung aus. loop.test.ts faehrt R2 ueber die Schleife: nach 25 Ticks steht die Verteidigung noch in n3."
+  - id: T-M40-16
+    milestone: M40
+    title: Der Haltungs-Messlauf hat einen Frische-Waechter
+    status: done
+    # Beim Bau (2026-09-13): rot 7 von 7 (stanceReportStatus is not a function), gruen requirements und
+    # scripts 61. Am echten Stand vorgefuehrt: nach T-M40-15 (packages/ai/src bf3db75 19:52:39, stance.json
+    # 9e2c86b 19:35:03) rot "packages/ai/src ist juenger als docs/reports/stance.json"; nach dem eingecheckten
+    # Lauf gruen. ERGAENZUNG zum Auftrag: auch episoden.nachher.ak5.erfuellt des eingecheckten Laufs muss true
+    # sein, denn der Test schreibt den Bericht vor seinen Zusicherungen.
+    deps: [T-M40-15]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [scripts/acceptance-criteria.mjs, scripts/acceptance.mjs, docs/plan/WORKFLOW.md, docs/plan/DECISIONS.md]
+    tests: [test/requirements.test.ts]
+    dod: "Befund M-B der Durchsicht der Nacharbeit M40: das Ruecknahmekriterium der Automatik (R-UNIT-09/AK5, D30.9) laeuft in keiner Pruefkette - scripts/acceptance.mjs faehrt das Turnier nicht und stance.slow.test.ts ebenso nicht, verify auch nicht. Nach dem Merge von Block N2 haette pnpm acceptance gruen gemeldet, auch wenn AK5 gefallen waere. Reparatur nach dem Muster des Frische-Waechters fuer Parameterlauf und Turnier (gaugeStatus): scripts/acceptance-criteria.mjs bekommt die reine Funktion stanceReportStatus. docs/reports/stance.json muss juenger sein (Commit-Zeit, kleiner-gleich wie gaugeStatus) als die letzte Aenderung unter packages/ai/src und unter packages/core/src; uncommittete Aenderungen dort, fehlende Zeiten und ein eingecheckter Lauf, dessen episoden.nachher.ak5.erfuellt nicht true ist, gelten als rot (der Test schreibt den Bericht vor seinen Zusicherungen). acceptance.mjs meldet das als MESSGERAET und faerbt die Abnahme rot, mit dem Befehl, der den Lauf neu faehrt. stance.slow wird NICHT in die Abnahme aufgenommen (zwoelf Partien, gut elf Minuten). Test zuerst an der reinen Funktion mit erfundenen Zeiten in test/requirements.test.ts; vorfuehren, dass der Waechter am echten Stand rot werden kann (nach T-M40-14/15 und vor dem neuen Lauf) und nach dem eingecheckten Lauf gruen ist."
 
   # M41 "Pflege nach M34", geplant am 2026-09-13. Kein neuer Entwurf, keine neue
   # Anforderung: jede Aufgabe repariert einen gemessenen Befund. Baureihenfolge (deps):

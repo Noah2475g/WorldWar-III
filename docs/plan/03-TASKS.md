@@ -5665,6 +5665,28 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   wie er ist: `SET_STANCE` prüft kein Gefecht, und `phases/retreat.ts` lässt jede Armee auf Rückzug
   ausweichen. Entscheid (delegiert, kippbar) in `DECISIONS.md`.
 
+### T-M40-16 · Der Haltungs-Messlauf hat einen Frische-Wächter
+- **Ziel:** eine Abnahme, die nicht grün meldet, während das Rücknahmekriterium der Automatik
+  ungemessen ist.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-15
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `docs/plan/WORKFLOW.md`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** `test/requirements.test.ts` prüft die reine Funktion `stanceReportStatus` mit
+  erfundenen Zeiten:
+  - frisch, auch bei gleicher Commit-Zeit;
+  - veraltet, wenn `packages/ai/src` oder `packages/core/src` jünger ist (die Meldung nennt die Quelle);
+  - veraltet bei uncommitteten Änderungen und bei fehlender Zeit;
+  - rot, wenn der eingecheckte Lauf AK5 nicht erfüllt hat.
+- **Fertig wenn:**
+  - `scripts/acceptance.mjs` die Abnahme als `MESSGERAET` rot färbt, sobald `docs/reports/stance.json`
+    älter ist als die letzte Änderung unter `packages/ai/src` oder `packages/core/src`; die Meldung nennt
+    den Befehl, der den Lauf neu fährt.
+  - `stance.slow.test.ts` nicht Teil der Abnahme ist (zwölf Partien, gut elf Minuten).
+  - Der Wächter am echten Stand einmal rot vorgeführt ist (nach T-M40-14/15, vor dem neuen Lauf) und
+    nach dem eingecheckten Lauf grün.
+  - Befund M-B.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

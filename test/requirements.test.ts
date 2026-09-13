@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
-import { CRITERIA, criteriaOf, gaugeStatus, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
+import { CRITERIA, criteriaOf, gaugeStatus, stanceReportStatus, unhomedCriteria, v1Failures } from '../scripts/acceptance-criteria.mjs'
 
 const DOC = `
 ### 2.1 Beispiel
@@ -417,5 +417,59 @@ describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
 
   it('meldet veraltet, wenn der Regelstand unbekannt ist - die sichere Richtung', () => {
     expect(gaugeStatus({ rulesChangedAt: null, gaugeChangedAt: 200, rulesDirty: false }).fresh).toBe(false)
+  })
+})
+
+/**
+ * Der Haltungs-Messlauf veraltet nicht still (T-M40-16, Befund M-B der Durchsicht der Nacharbeit M40).
+ *
+ * `stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik (R-UNIT-09/AK5, D30.9), laeuft aber
+ * in keiner Pruefkette: zwoelf Partien dauern gut elf Minuten. Nach dem Merge von Block N2 haette
+ * `pnpm acceptance` gruen gemeldet, auch wenn AK5 gefallen waere. Die Abnahme faehrt den Lauf deshalb
+ * nicht, sondern prueft wie beim Parameterlauf und Turnier: `docs/reports/stance.json` muss juenger sein
+ * (Commit-Zeit, `<=`) als die letzte Aenderung unter `packages/ai/src` UND `packages/core/src` — die
+ * Automatik und die Regeln, die sie vermisst. Und der eingecheckte Lauf muss AK5 erfuellt haben, denn
+ * der Test schreibt den Bericht vor seinen Zusicherungen. Zeiten hier erfunden.
+ */
+describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16)', () => {
+  const frisch = { aiChangedAt: 100, coreChangedAt: 150, reportChangedAt: 200, sourcesDirty: false, ak5Fulfilled: true }
+
+  it('meldet frisch, wenn der Bericht juenger ist als beide Quellen und AK5 erfuellt hat', () => {
+    expect(stanceReportStatus(frisch)).toMatchObject({ fresh: true })
+  })
+
+  it('meldet frisch bei gleicher Commit-Zeit - dieselbe Grenze wie beim Parameterlauf', () => {
+    expect(stanceReportStatus({ ...frisch, aiChangedAt: 200 }).fresh).toBe(true)
+    expect(stanceReportStatus({ ...frisch, coreChangedAt: 200 }).fresh).toBe(true)
+  })
+
+  it('meldet veraltet, wenn packages/ai/src juenger ist als der Bericht - und nennt die Quelle', () => {
+    const status = stanceReportStatus({ ...frisch, aiChangedAt: 201 })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('packages/ai/src')
+    expect(status.reason).toContain('stance.json')
+  })
+
+  it('meldet veraltet, wenn packages/core/src juenger ist als der Bericht - auch wenn die KI aelter ist', () => {
+    const status = stanceReportStatus({ ...frisch, coreChangedAt: 300 })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('packages/core/src')
+  })
+
+  it('meldet veraltet bei uncommitteten Aenderungen an den Quellen - die sichere Richtung', () => {
+    expect(stanceReportStatus({ ...frisch, sourcesDirty: true }).fresh).toBe(false)
+  })
+
+  it('meldet veraltet ohne Bericht und bei unbekanntem Stand einer Quelle', () => {
+    expect(stanceReportStatus({ ...frisch, reportChangedAt: null }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, aiChangedAt: null }).fresh).toBe(false)
+    expect(stanceReportStatus({ ...frisch, coreChangedAt: null }).fresh).toBe(false)
+  })
+
+  it('meldet rot, wenn der eingecheckte Lauf AK5 nicht erfuellt hat - auch wenn er frisch ist', () => {
+    // Der Test schreibt den Bericht, bevor er zusichert: ein gescheiterter Lauf ist der, den man lesen will.
+    const status = stanceReportStatus({ ...frisch, ak5Fulfilled: false })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('AK5')
   })
 })

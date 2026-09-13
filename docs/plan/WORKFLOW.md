@@ -184,7 +184,11 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
    Aussagen prüft man an der Funktion, nie am Skript. Parameterlauf und Turnier laufen
    NICHT je Abnahme; sie stecken in `pnpm test:slow` und hinter dem Frische-Wächter:
    ändern sich `data/rules/**`, wird die Abnahme rot, bis `pnpm balance:sweep` bzw. das
-   Turnier neu gelaufen **und eingecheckt** sind.
+   Turnier neu gelaufen **und eingecheckt** sind. Seit T-M40-16 gilt dasselbe für den
+   Haltungs-Messlauf (`apps/headless/test/stance.slow.test.ts`, gut elf Minuten): ändert sich
+   `packages/ai/src` oder `packages/core/src`, bleibt die Abnahme rot, bis der Lauf mit
+   `WORLDWAR_WRITE_REPORT=1` neu geschrieben ist, AK5 hält und `docs/reports/stance.json`
+   eingecheckt ist.
 6. **Der Parameterlauf dauert rund eine Stunde**, das Turnier 13 Sekunden. Wer nur
    wissen will, ob eine Regeländerung die Partie verschoben hat, nimmt
    `apps/headless/test/progress.slow.test.ts` (2,5 min): er fährt **denselben Grundlauf**
