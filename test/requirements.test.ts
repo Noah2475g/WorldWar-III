@@ -263,9 +263,12 @@ scope:
   it('die Uebergangsliste darf nur schrumpfen', () => {
     // Eingefroren am 2026-09-06 bei 26 Eintraegen. Eine Schuld mit Namen ist nur so lange
     // eine Schuld, wie sie nicht wachsen darf — sonst ist sie eine Ausnahme ohne Ende.
+    // 2026-09-13 (T-M41-07): R-BAT-07 ist je Kriterium gebucht und gestrichen; die Klinke
+    // folgt, damit die frei gewordene Stelle nicht still wieder besetzt wird.
     const text = readFileSync(new URL('../docs/plan/01-REQUIREMENTS.md', import.meta.url), 'utf8')
     const { nameLevel, ids } = parseRequirements(text)
-    expect(nameLevel.size).toBeLessThanOrEqual(26)
+    expect(nameLevel).not.toContain('R-BAT-07')
+    expect(nameLevel.size).toBeLessThanOrEqual(25)
     const unbekannt = [...nameLevel].filter((id) => !ids.includes(id))
     expect(unbekannt, `nicht existierende IDs in name_level: ${unbekannt.join(', ')}`).toEqual([])
   })

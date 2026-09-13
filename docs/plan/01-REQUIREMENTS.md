@@ -508,6 +508,7 @@ scope:
     R-UNIT-08: "V1 nur Fernwirkung vom Flugplatz; Einsatzbefehle mit Rückflug sind M18"
   test_only: [R-ARCH-04]            # kein eigener Produktionscode, aber Test verpflichtend
   # Übergangsliste (T-M14-02b, eingefroren am 2026-09-06). Diese 26 Anforderungen tragen
+  # (seit 2026-09-13: 25 — R-BAT-07 gestrichen, sein Testblock heißt R-BAT-07/AK1, T-M41-07)
   # Akzeptanzkriterien, sind aber nur auf Namensebene gebucht: irgendwo steht ein
   # `describe('R-XX-nn …')` mit einer Zusicherung, und welches AK dabei geprüft wurde, hat
   # nie jemand gelesen. Sie sind eine **Schuld mit Namen**, keine Ausnahme ohne Ende: die
@@ -532,7 +533,6 @@ scope:
     - R-PROV-03
     - R-UNIT-04
     - R-UNIT-06
-    - R-BAT-07
     - R-DIP-04
     - R-AI-01
     - R-AI-07

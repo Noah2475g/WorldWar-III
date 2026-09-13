@@ -5561,7 +5561,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 
 ### T-M41-07 · Die zugesagte Eigenschaftsprüfung des Nahkampfs
 - **Ziel:** T-M14-06 steht auf `done` und sagte zwei Eigenschaften zu, die kein Test prüft.
-- **Anforderungen:** keine
+- **Anforderungen:** R-BAT-07 *(eingetragen 2026-09-13 beim Bau: der Testblock heißt
+  `R-BAT-07/AK1`, die ID ist aus `name_level` gestrichen)*
 - **Abhängigkeiten:** T-M41-06
 - **Dateien:** `packages/core/test/properties/combat-symmetry.test.ts`, `docs/plan/tasks.yaml`
 - **Tests zuerst:** Seitentausch im Nahkampf spiegelt bei `combatSpreadPermille` 0 exakt; über

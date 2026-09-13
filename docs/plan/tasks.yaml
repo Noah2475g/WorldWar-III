@@ -1217,7 +1217,7 @@ tasks:
     requirements: [R-BAT-01, R-BAT-07]
     files: [packages/core/src/rules/combat.ts, packages/core/test/golden/tiny-500.json, docs/plan/02-DESIGN.md, docs/plan/BALANCING.md, docs/plan/DECISIONS.md]
     tests: [packages/core/src/phases/combat.test.ts]
-    dod: "effectiveUnits(50) gleich effectiveUnits(80) gleich 35000 in Festkomma; der zugefuegte Schaden ist ueber n=1..80 monoton nicht fallend (Toleranz 0); eine Armee mit 60 Einheiten richtet Schaden groesser 0 an, bei 50 Einheiten mindestens das 1,4-fache des bisherigen Hoechstwerts bei 25 Einheiten statt 0; Seitentausch spiegelt bei Streuung 0 exakt (Regel-Override combatSpreadPermille 0, weil applySpread je Seite aus draft.rng zieht); die Summe der abgezogenen Trefferpunkte ist gleich der Summe der in BATTLE_RESOLVED.losses gemeldeten Werte; die Testgruppe zu stackContribution in combat.test.ts prueft Grenzbeitrag und Gesamtbeitrag getrennt und ersetzt den bisherigen Faktorvergleich - Anker ist die Testgruppe, keine Zeilennummer, denn dieselbe Aufgabe schreibt die Datei um; der Abschnitt D6.5 Punkt 2 in 02-DESIGN.md und die Zeile stackCap in BALANCING.md nennen beide Groessen mit Formel; DECISIONS.md haelt die Flaechenkonvention fest (kontinuierlich 35,0 oder diskret 34,5); die Zeilen stackFullContribution und stackZeroContribution in BALANCING.md sind als veraltet gekennzeichnet - neu GEMESSEN werden sie mit dem einen Neulauf in T-M14-07, nicht hier und nicht nur neu datiert; Golden-Master mit UPDATE_GOLDEN=1 neu erzeugt; pnpm verify gruen"
+    dod: "effectiveUnits(50) gleich effectiveUnits(80) gleich 35000 in Festkomma; der zugefuegte Schaden ist ueber n=1..80 monoton nicht fallend (Toleranz 0); eine Armee mit 60 Einheiten richtet Schaden groesser 0 an, bei 50 Einheiten mindestens das 1,4-fache des bisherigen Hoechstwerts bei 25 Einheiten statt 0; Seitentausch spiegelt bei Streuung 0 exakt (Regel-Override combatSpreadPermille 0, weil applySpread je Seite aus draft.rng zieht); die Summe der abgezogenen Trefferpunkte ist gleich der Summe der in BATTLE_RESOLVED.losses gemeldeten Werte; die Testgruppe zu stackContribution in combat.test.ts prueft Grenzbeitrag und Gesamtbeitrag getrennt und ersetzt den bisherigen Faktorvergleich - Anker ist die Testgruppe, keine Zeilennummer, denn dieselbe Aufgabe schreibt die Datei um; der Abschnitt D6.5 Punkt 2 in 02-DESIGN.md und die Zeile stackCap in BALANCING.md nennen beide Groessen mit Formel; DECISIONS.md haelt die Flaechenkonvention fest (kontinuierlich 35,0 oder diskret 34,5); die Zeilen stackFullContribution und stackZeroContribution in BALANCING.md sind als veraltet gekennzeichnet - neu GEMESSEN werden sie mit dem einen Neulauf in T-M14-07, nicht hier und nicht nur neu datiert; Golden-Master mit UPDATE_GOLDEN=1 neu erzeugt; pnpm verify gruen. Nachtrag 2026-09-13: Seitentausch bei Streuung 0 und Erhaltungssatz waren nie als Test geschrieben - eingeloest in T-M41-07 (packages/core/test/properties/combat-symmetry.test.ts)."
 
   - id: T-M14-07
     milestone: M14
@@ -3017,10 +3017,13 @@ tasks:
   - id: T-M41-07
     milestone: M41
     title: Die zugesagte Eigenschaftspruefung des Nahkampfs
-    status: todo
+    status: done
     deps: [T-M41-06]
-    requirements: []
-    files: [packages/core/test/properties/combat-symmetry.test.ts, docs/plan/tasks.yaml]
+    # 2026-09-13 beim Bau: der Testblock heisst R-BAT-07/AK1 und deckt das einzige Kriterium
+    # von R-BAT-07; die ID ist deshalb aus name_level gestrichen und hier eingetragen, die
+    # Sperrklinke in test/requirements.test.ts von 26 auf 25 nachgezogen.
+    requirements: [R-BAT-07]
+    files: [packages/core/test/properties/combat-symmetry.test.ts, docs/plan/tasks.yaml, docs/plan/01-REQUIREMENTS.md, test/requirements.test.ts]
     tests: [packages/core/test/properties/combat-symmetry.test.ts]
     dod: "Befund (Pfad-Waechter, 2026-09-13): T-M14-06 steht auf done und sagte zu, dass der Seitentausch im Nahkampf bei Streuung 0 exakt spiegelt und die Summe der abgezogenen Trefferpunkte gleich der Summe der in BATTLE_RESOLVED gemeldeten Verluste ist; geschrieben ist nur der Seitentausch beim Beschuss (bombardment.test.ts). Zuerst nachsehen, ob die Pruefung unter anderem Namen doch existiert. Dann der Test, der die Zusage einloest: Seitentausch mit Regel-Override combatSpreadPermille 0, dazu der Erhaltungssatz ueber 50 Ticks eines Dreiparteienkampfes (R-BAT-07/AK1). Faellt einer, ist das ein Befund und keine Formulierungsfrage: PROBLEME.md, dann Entscheid, bevor eine Kampfregel geaendert wird (Golden-Master). T-M14-06 bleibt done und bekommt in seinem dod einen Verweis auf diese Aufgabe. Anforderungen bewusst leer: R-BAT-07 steht in name_level; wer den Testblock R-BAT-07/AK1 nennt, darf die ID dort streichen und traegt sie dann hier ein. Kommt vor T-M40-01, das combat.ts anfasst."
 
