@@ -1,5 +1,11 @@
 # WORKFLOW — der Stand nach M34, und der Mehrspieler ist geplant
 
+> **⚠ STAND 2026-09-13 ABENDS — ZUERST `docs/plan/UEBERGABE.md` LESEN.** M41, M40 und M35 sind
+> gebaut, liegen aber auf dem Zweig **`claude/offene-punkte-abschliessen`** (PR gegen `main`), nicht auf
+> `main`. Offen ist nur noch der Schlussblock (Abnahme, Tauri-Bau + AK-8, Sichtprüfung im Chrome —
+> von Noah freigegeben —, Einstiegsdoku, Artefakt). Diese Datei ist ab hier **veraltet**, bis
+> Schritt 3.6 der Übergabe sie nachzieht.
+
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >

@@ -2,6 +2,11 @@
 
 ## Das Wichtigste zuerst
 
+> **⚠ Stand 2026-09-13 abends: Lies zuerst `docs/plan/UEBERGABE.md`.** Die neueste Arbeit (M41, M40,
+> M35) liegt auf dem Zweig `claude/offene-punkte-abschliessen` (PR gegen `main`), **nicht** auf `main`;
+> offen ist nur der Schlussblock. Dieser Hinweis und der Satz „Die Spitze liegt auf `main`" unten
+> gelten erst wieder, wenn der PR gemerged und `WORKFLOW.md` nachgezogen ist.
+
 **Lies `docs/plan/WORKFLOW.md`.** Eine Datei, absichtlich kurz, und sie enthält alles:
 wo du bist, was gilt, welche Fallen es gibt, und den Ablauf bis zu dem Punkt, an dem Noah
 spielt. Fang dort an, nicht bei den Plandateien.
