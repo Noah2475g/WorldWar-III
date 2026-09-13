@@ -2964,6 +2964,8 @@ tasks:
     milestone: M41
     title: Planpflege und die fuenf Kommandos der Huelle
     status: done
+    # Nacharbeit 2026-09-13 (Durchsicht N3): das invoke-Muster im Waechter findet jetzt auch
+    # Aufrufe ohne Typparameter und mit doppelten Anfuehrungszeichen (TauriStorage.test.ts).
     deps: []
     requirements: []
     files: [apps/desktop/src-tauri/src/main.rs, apps/desktop/src/storage/TauriStorage.test.ts, docs/plan/PROBLEME.md, docs/reports/packaging.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml, docs/plan/DECISIONS.md]

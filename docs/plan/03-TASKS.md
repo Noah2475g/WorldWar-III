@@ -5496,6 +5496,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   misst 60 Spieltage) ist nachgesehen, ob T-M15-08 dieselben Aussagen belegt — wenn ja, steht
   in `PROBLEME.md`, dass T-M15-08 die Zusage abgelöst hat; wenn nein, ist der fehlende Lauf
   ein Befund.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N3: das Muster des Wächters verlangte
+  `invoke<…>('name'` — ein neuer Aufruf ohne Typparameter oder mit doppelten Anführungszeichen
+  fehlte in beiden Mengen, und die Gleichheit blieb grün. Jetzt
+  `/\binvoke(?:<.*?>)?\(\s*['"]([a-z_]+)['"]/g`, mit drei erfundenen Aufrufen als bleibendem Test.)*
 
 ### T-M41-04 · Die Uhr verliert keine Ticks mehr
 - **Ziel:** Tempo 100 heißt hundert Spielstunden je Sekunde — bei 60 Bildern sind es heute 90.

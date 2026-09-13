@@ -128,9 +128,12 @@ describe('T-M41-06 Die Huelle und der Port kennen dieselben Kommandos', () => {
       .sort()
   }
 
-  /** Die Namen, die der Port an `invoke` reicht. */
+  /**
+   * Die Namen, die der Port an `invoke` reicht — mit und ohne Typparameter, in einfachen oder
+   * doppelten Anfuehrungszeichen, auch mit Umbruch vor dem Namen (Nacharbeit, Durchsicht N3).
+   */
   const invoked = (ts: string): string[] =>
-    [...new Set([...ts.matchAll(/invoke<[^>]*>\('([a-z_]+)'/g)].map((match) => match[1]!))].sort()
+    [...new Set([...ts.matchAll(/\binvoke(?:<.*?>)?\(\s*['"]([a-z_]+)['"]/g)].map((match) => match[1]!))].sort()
 
   it('liest auf beiden Seiten ueberhaupt Namen', () => {
     // Eine Mengengleichheit ueber zwei leeren Mengen ist immer wahr.
@@ -160,6 +163,21 @@ describe('T-M41-06 Die Huelle und der Port kennen dieselben Kommandos', () => {
     const sechs = mainRs.replace('generate_handler![', 'generate_handler![\n            saves_rename,')
     expect(registered(sechs)).toHaveLength(registered(mainRs).length + 1)
     expect(registered(sechs)).not.toEqual(invoked(port))
+  })
+
+  it('findet auch einen Aufruf ohne Typparameter oder mit doppelten Anfuehrungszeichen (Nacharbeit, Durchsicht N3)', () => {
+    // Das erste Muster verlangte `invoke<…>('name'`. Ein neuer Aufruf ohne Typparameter oder
+    // mit doppelten Anfuehrungszeichen fehlte damit in BEIDEN Mengen — die Gleichheit blieb
+    // gruen, obwohl die Huelle das Kommando nicht kennt. Drei erfundene Aufrufe, drei Formen.
+    const erfunden = [
+      port,
+      "    await api.invoke('saves_rename', { name })",
+      '    await api.invoke<void>("saves_copy", { name })',
+      "    await api.invoke<string[]>(\n      'saves_move',\n      { name },\n    )",
+    ].join('\n')
+
+    expect(invoked(erfunden)).toEqual([...invoked(port), 'saves_copy', 'saves_move', 'saves_rename'].sort())
+    expect(registered(mainRs)).not.toEqual(invoked(erfunden))
   })
 })
 
