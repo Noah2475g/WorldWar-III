@@ -428,6 +428,24 @@ export const de = {
       populationShare: 'Anteil an der Weltbevölkerung',
       pointShareSecond: 'zweiter Punktanteil',
     },
+    // Die vier Zeilen unter der Rangliste (T-M35-05, R-GAME-08/AK3): der Satz nennt die
+    // Marke, rechts steht der Abstand oder der Tag.
+    title: 'Zwischenziele',
+    rows: {
+      provinces: '{{mark}} eigene Provinzen',
+      pointShareFirst: '{{percent}} % aller Punkte',
+      populationShare: '{{percent}} % der Weltbevölkerung',
+      pointShareSecond: '{{percent}} % aller Punkte',
+    },
+    reached: 'erreicht an Tag {{day}}',
+    missingProvincesOne: 'noch 1 Provinz',
+    missingProvincesMany: 'noch {{count}} Provinzen',
+    missingShareOne: 'noch 1 Prozentpunkt',
+    missingShareMany: 'noch {{points}} Prozentpunkte',
+    // Der Stand liegt schon über der Marke, der Tag wird aber erst am Tageswechsel eingetragen.
+    dueNextDay: 'erreicht mit dem nächsten Tageswechsel',
+    markReached: '✓',
+    markOpen: '○',
   } as const,
 
   /**

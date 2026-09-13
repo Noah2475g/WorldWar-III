@@ -110,3 +110,32 @@ export function settleGoals(draft: GameState, rules: Rules, day: number): GoalRe
 
   return reached
 }
+
+/** Ein Ziel, wie die Sicht es dem Spieler zeigt (T-M35-05, D31.6). */
+export interface GoalView {
+  goal: GoalKey
+  /** Die Marke aus den Regeln. */
+  mark: number
+  /** Der eigene Stand jetzt — Provinzen gezählt, Anteile in Promille. */
+  value: number
+  /** Spieltag des Erreichens; `null` = offen. */
+  reachedOnDay: number | null
+}
+
+/**
+ * Die vier Ziele **einer** Macht, in der Reihenfolge der Marken.
+ *
+ * Nur die eigenen: die Sicht ruft das für `self` und nirgends sonst (R-DIP-04). Der Stand
+ * ist der von heute, der Tag der aus dem Zustand — steht der Stand über der Marke und der Tag
+ * noch auf `null`, trägt ihn der nächste Tageswechsel ein.
+ */
+export function goalViews(state: GameState, playerId: PlayerId, rules: Rules): GoalView[] {
+  const standing = goalStanding(state, playerId)
+  const days = state.goals[playerId]
+  return GOAL_KEYS.map((goal) => ({
+    goal,
+    mark: goalMark(goal, rules),
+    value: goalValue(goal, standing),
+    reachedOnDay: days?.[goal] ?? null,
+  }))
+}

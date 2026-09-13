@@ -276,3 +276,53 @@ describe('R-AI-01 Die Sicht nennt die Sperre beim Verlegen der Hauptstadt (T-M41
     expect(JSON.stringify(publicView(state, 'p2').others)).not.toContain('capitalMovedAtTick')
   })
 })
+
+/**
+ * Die eigenen Zwischenziele in der Sicht (T-M35-05, R-GAME-08/AK3, D31.6).
+ *
+ * Eigenes Wissen, also unter `self` — und nur dort. Wie weit eine fremde Macht auf dem Weg zum
+ * Sieg ist, verraet die Sicht nicht (R-DIP-04): die Rangliste zeigt fremde Punkte ohnehin,
+ * aber ob China die zweite Punktmarke schon an Tag 300 erreicht hat, ist fremdes Wissen.
+ * Wie `economy` nur mit Regeln — die Marken stehen dort.
+ */
+describe('R-GAME-08/AK3 Die Sicht fuehrt nur die eigenen Ziele', () => {
+  type GoalRow = { goal: string; mark: number; value: number; reachedOnDay: number | null }
+  const goalsIn = (view: unknown): GoalRow[] | undefined => (view as { self: { goals?: GoalRow[] } }).self.goals
+
+  it('nennt je Ziel Marke, eigenen Stand und Tag, in der Reihenfolge der Marken', () => {
+    state.players['p1']!.score = 300
+    state.players['p2']!.score = 100
+    ;(state as unknown as { goals: Record<string, Record<string, number | null>> }).goals['p1']!['pointShareFirst'] = 12
+
+    const rows = goalsIn(publicView(state, 'p1', TEST_RULES))!
+    const own = state.provinceOrder.filter((id) => state.provinces[id]!.owner === 'p1').length
+
+    expect(rows.map((row) => row.goal)).toEqual(['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond'])
+    expect(rows.map((row) => row.mark)).toEqual([
+      TEST_RULES.constants.goalProvinces,
+      TEST_RULES.constants.goalPointShareFirstPermille,
+      TEST_RULES.constants.goalPopulationSharePermille,
+      TEST_RULES.constants.goalPointShareSecondPermille,
+    ])
+    expect(rows[0]!.value).toBe(own)
+    expect(rows[1]!.value, '300 von 400 Punkten').toBe(750)
+    expect(rows[3]!.value).toBe(750)
+    expect(rows.map((row) => row.reachedOnDay)).toEqual([null, 12, null, null])
+  })
+
+  it('zeigt keiner Macht die Ziele einer anderen', () => {
+    const goals = (state as unknown as { goals: Record<string, Record<string, number | null>> }).goals
+    goals['p1'] = { provinces: 40, pointShareFirst: 41, populationShare: 42, pointShareSecond: 43 }
+
+    const view = publicView(state, 'p2', TEST_RULES)
+
+    expect(goalsIn(view)!.map((row) => row.reachedOnDay)).toEqual([null, null, null, null])
+    const text = JSON.stringify({ ...view, self: undefined })
+    expect(text, 'fremde Ziele ausserhalb von self').not.toMatch(/goals|reachedOnDay|pointShareFirst/)
+    for (const day of [40, 41, 42, 43]) expect(JSON.stringify(view.self)).not.toContain(`"reachedOnDay":${day}`)
+  })
+
+  it('rechnet ohne Regeln keine Ziele', () => {
+    expect(goalsIn(publicView(state, 'p1'))).toBeUndefined()
+  })
+})

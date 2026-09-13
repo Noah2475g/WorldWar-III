@@ -1846,6 +1846,44 @@ body {
   margin: 0 0 var(--sp-md);
 }
 
+/* Die Zwischenziele unter der Rangliste (T-M35-05, D31.6): vier ruhige Zeilen. Das Zeichen
+   traegt den Zustand, der Satz die Marke, rechts stehen Abstand oder Tag. Kein eigenes Panel. */
+.goals__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: var(--sp-md) 0 var(--sp-sm);
+}
+
+.goals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+.goal {
+  display: grid;
+  grid-template-columns: 1.2em 1fr auto;
+  gap: var(--sp-sm);
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.goal__mark {
+  color: var(--ink-soft);
+}
+
+.goal--reached .goal__mark {
+  color: var(--good);
+}
+
+.goal__state {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Die Sparkline in der Tabellenzelle: fest und schmal, damit die Leiste nicht wieder
    seitwaerts kriecht (T-M22-02) — der Punktraum 0…100 wird hierauf gestaucht. */
 .sparkline {

@@ -14,6 +14,7 @@ import type {
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
+import { goalViews, type GoalView } from '../rules/goals'
 import { economyOverview, type EconomyOverview } from './economy'
 
 /**
@@ -169,6 +170,15 @@ export interface PublicView {
      * computing it walks every province.
      */
     economy?: EconomyOverview
+    /**
+     * Die eigenen Zwischenziele (T-M35-05, R-GAME-08/AK3, D31.6): je Ziel Marke, eigener Stand
+     * und Tag des Erreichens.
+     *
+     * **Nur die eigenen**, und deshalb unter `self`: wie weit eine fremde Macht auf dem Weg zum
+     * Sieg ist, verrät die Sicht nicht (R-DIP-04). Wie `economy` nur mit Regeln — die Marken
+     * stehen dort, und die KI braucht das Feld nicht.
+     */
+    goals?: GoalView[]
   }
   /**
    * Die anderen Mächte — mit ihrem **öffentlichen Ansehen** (T-M15-05, R-DIP-06).
@@ -406,6 +416,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       grievances: { ...(state.diplomacy.grievances[playerId] ?? {}) },
       aiBonusMultiplier: player.aiBonusMultiplier,
       ...(rules ? { economy: economyOverview(state, playerId, rules) } : {}),
+      ...(rules ? { goals: goalViews(state, playerId, rules) } : {}),
     },
     others: state.playerOrder
       .filter((id) => id !== playerId)

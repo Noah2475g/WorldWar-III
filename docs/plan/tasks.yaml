@@ -2509,7 +2509,7 @@ tasks:
   - id: T-M35-05
     milestone: M35
     title: Vier Zeilen in der Rangliste
-    status: todo
+    status: done
     deps: [T-M35-04]
     requirements: [R-GAME-08, R-UI-13]
     design: [D-31]
