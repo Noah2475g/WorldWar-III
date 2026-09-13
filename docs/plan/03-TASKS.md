@@ -5602,6 +5602,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   **Rücknahmekriterium:** fällt eine Zusicherung, wird die Regel zurückgenommen, nicht
   nachgeschärft — die Verteidigung kämpft dann wie die Garnison, und die Hinweise sagen das.
   Die Schwelle 98 % wurde nach der Messung des Entwurfs festgelegt (D30.9).
+  *(Nachtrag nach der Durchsicht der Nacharbeit, 2026-09-13:
+  N-3 — die Grenze der Ruhe nach einem Rückzug (124 Ticks) steht in D30.4.
+  N-4 — die Protokollzeile der Automatik trägt eine Kennung ohne Listenplatz
+  (`adjutantMarchEntries` in `apps/desktop/src/game/events.ts`, Test in `events.test.ts`).
+  N-5 — D30.3 und die Angabe „AK5, vor dieser Messung festgelegt" sind berichtigt.
+  N-1, N-2, N-6 und der Rest von N-4 stehen als Befunde in `PROBLEME.md`.)*
 
 ### T-M40-13 · Eine leise Zeile, wenn eine Armee von selbst nachrückt
 - **Ziel:** wer eine Armee von selbst marschieren lässt, sagt es dem Spieler.

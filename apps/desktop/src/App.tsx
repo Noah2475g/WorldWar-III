@@ -75,7 +75,15 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, openIntrusion, priceSeries } from './game/events.ts'
+import {
+  adjutantMarchEntries,
+  dayExpenses,
+  dayReportBody,
+  dayReportDeltas,
+  describeEvent,
+  openIntrusion,
+  priceSeries,
+} from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -1285,25 +1293,10 @@ export function App(props: AppProps) {
 
     // Die Märsche der Automatik als leise Zeilen (T-M40-13, Befund M3): Rubrik Kampf, Sprung auf das
     // Ziel, keine Alarmfarbe. Sie stammen aus den Befehlen der Schleife, nicht aus dem Protokoll des Kerns.
-    const maersche: EventEntry[] = adjutantMarches.flatMap(({ tick, command }, index) =>
-      command.type === 'MOVE_ARMY'
-        ? [
-            {
-              id: `${tick}-ADJUTANT_MARCH-${index}`,
-              tick,
-              text: t('events_ui.adjutantMarch', {
-                army: state.armies[command.armyId]?.name ?? command.armyId,
-                province:
-                  activeMap.provinces.find((province) => province.id === command.targetProvinceId)?.name ??
-                  command.targetProvinceId,
-              }),
-              provinceId: command.targetProvinceId,
-              severity: 'info' as const,
-              category: 'combat' as const,
-            },
-          ]
-        : [],
-    )
+    const maersche: EventEntry[] = adjutantMarchEntries(adjutantMarches, {
+      army: (armyId) => state.armies[armyId]?.name ?? armyId,
+      province: (provinceId) => activeMap.provinces.find((province) => province.id === provinceId)?.name ?? provinceId,
+    })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
   }, [state, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])

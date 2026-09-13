@@ -3042,11 +3042,15 @@ tasks:
     # Gefecht, 0 abgelehnt, 0 Kriege ohne Erklaerung; Ruecknahmekriterium nicht ausgeloest. Turnier
     # zeilengleich, Vollpartie 1914 Tag 582. Gegenproben: Paritaet, Etappe, fremdes Ziel, allein
     # stehende Armee - je Reparatur heraus, Tests fallen. 03-TASKS.md blieb ohne Vermerk.
+    # Nachtrag nach der Durchsicht der Nacharbeit (2026-09-13): N-3 Grenze 124 Ticks nach Rueckzug in
+    # D30.4; N-4 React-Schluessel der Protokollzeile ohne Listenplatz (adjutantMarchEntries in events.ts,
+    # rot "expected 130-ADJUTANT_MARCH-0 to be 130-ADJUTANT_MARCH-1"); N-5 D30.3 und "AK5, vor dieser
+    # Messung festgelegt" berichtigt; N-1, N-2, N-6 und der Rest von N-4 als Befunde in PROBLEME.md.
     deps: [T-M40-11, T-M40-13, T-M41-16]
     requirements: [R-UNIT-09]
     design: [D-30]
-    files: [docs/reports/stance.json, docs/plan/PROGRESS.md, docs/plan/PROBLEME.md, docs/plan/DECISIONS.md, docs/plan/tasks.yaml]
-    tests: [apps/headless/test/stance.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    files: [docs/reports/stance.json, docs/plan/PROGRESS.md, docs/plan/PROBLEME.md, docs/plan/DECISIONS.md, docs/plan/tasks.yaml, docs/plan/02-DESIGN.md, apps/desktop/src/game/events.ts, apps/desktop/src/App.tsx]
+    tests: [apps/headless/test/stance.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/desktop/src/game/events.test.ts]
     dod: "Die zwoelf Episodenlaeufe aus T-M40-07 mit der neuen Regel. Zusicherungen AK5, vor dieser Messung festgelegt: Summe der Provinz-Tage mit defensive mindestens 98 Prozent der Garnison ueber alle sechs Paare; je Paar Verluste ohne Gefecht mit defensive hoechstens so viele wie mit garrison; 0 Ablehnungen und 0 Kriege ohne Erklaerung; die Garnison A 1914 bildet vorher nach. Die Schwelle 98 Prozent wurde nach der Messung des Entwurfs festgelegt, und so steht es in D30.9. RUECKNAHMEKRITERIUM: faellt eine Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft - adjutantCommands gibt fuer defensive nichts mehr zurueck, die Verteidigung kaempft wie die Garnison, und die Hinweise sagen das. stance.json mit WORLDWAR_WRITE_REPORT=1 geschrieben und eingecheckt. Turnier zeilengleich; pnpm test ohne UPDATE_GOLDEN gruen; Vollpartie 1914 Siegtag 582 unveraendert (der Mensch hat keine Armee); data/rules unberuehrt; rg R-UNIT-09/AK[1-7] findet je Kriterium einen Block mit expect; pnpm verify gruen."
   - id: T-M40-13
     milestone: M40

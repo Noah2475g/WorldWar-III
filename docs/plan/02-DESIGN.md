@@ -2557,8 +2557,11 @@ Der Adjutant liest deshalb nur den Zustand, und zwar so, wie ihn der Besitzer ke
   vollständig, nur die Angriffssperre `cannotAttackUntil` führt sie nicht.
 
 **Kosten.** Eine Sicht je Tick je Mensch ist nicht billig (T-M16-02). Sie wird nur
-berechnet, wenn die Macht mit jemandem im Krieg ist **und** eine stehende Armee in Haltung
-`defensive` oder `aggressive` besitzt; sonst gibt der Adjutant sofort nichts zurück.
+berechnet, wenn die Macht mit jemandem im Krieg ist **und** eine bereite Verteidigung besitzt (Haltung
+`defensive`, stehend, ausgeruht), neben der in ihrer Provinz eine weitere eigene Armee stehen bleibt;
+sonst gibt der Adjutant sofort nichts zurück. *(Berichtigt am 2026-09-13, Durchsicht der Nacharbeit,
+N-5: bis dahin stand hier „`defensive` oder `aggressive`". Seit T-M40-10 handelt `aggressive` nie von
+selbst, und die Schranke greift enger, D30.9.)*
 
 ### D30.4 Die Regel, die nicht entblößt
 
@@ -2582,6 +2585,12 @@ in `garrisonFollowUp` (`packages/ai/src/adjutant.ts`); ein Zustandsfeld gibt es 
 die Automatik nach einem Marsch von 117 Ticks die Armee sechs Ticks nach der Ankunft weiter (Szenario R1).
 Verworfen ist der Ankunftstick als Zustandsfeld, damit die Ruhe ab der Ankunft zählt: er kostet
 Schemastufe, Migration und neue Golden-Master für eine Randlage, die der Folgebefehl abdeckt.
+
+**Grenze der Ruhe nach einem Rückzug** (Durchsicht der Nacharbeit, N-3). Ein Rückzug setzt
+`deployDelayUntil` auf `tick + 2 · deployDelayTicks`. In den ausgelieferten Regeln endet die Ruhe damit
+124 Ticks nach dem Rückzug. Dauert die Schlacht, aus der die Armee wich, länger, ist nach 124 Ticks eine
+Rückkehr in dieselbe Schlacht möglich. Gemessen dauerte die längste Schlacht auf der Weltkarte 27 Ticks;
+dagegen wird nichts gebaut.
 
 **Ziel** ist eine über `neighbors` (nicht `seaLinks`) angrenzende **eigene** Provinz P, in der eine
 sichtbare Armee eines Kriegsgegners steht — oder die leer ist und an eine Provinz mit einer solchen

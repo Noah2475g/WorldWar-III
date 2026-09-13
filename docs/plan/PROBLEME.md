@@ -2528,7 +2528,7 @@ der M41-Nacharbeit). Provinz-Tage = Provinzen des Menschen zu Beginn jedes Spiel
 | 1815 · B | 800 / 0 (0) | 796 / 1 (1) | **774 / 2 (0)** | 10 | 73 (10 / 1 / 71) |
 | **Summe** | **4140 / 9 (0)** | 3301 (79,7 %) / 12 (10) | **4181 (101,0 %) / 10 (0)** | 25 | 306 |
 
-**AK5, vor dieser Messung festgelegt, hält:** Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
+**AK5 hält** (die Zusicherungen standen vor dieser Messung fest, die Schwelle 98 % aber erst nach der Messung des Entwurfs, der dieselbe Regel N mit denselben Zahlen maß — D30.9; berichtigt nach der Durchsicht der Nacharbeit, N-5): Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
 Verluste ohne Gefecht als mit Garnison (überall 0); 0 Ablehnungen, 0 Kriege ohne Erklärung, 0
 Pendelzüge. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
 Regel N im Entwurf der Nacharbeit. **Rücknahmekriterium nicht ausgelöst — die Regel bleibt.**
@@ -3036,3 +3036,55 @@ Dass die Regel hilft, bleibt unbelegt: Eine befohlene Deckung kam in 0 von 19 Ep
 
 **Status:** Kontrolle begründet gesetzt, `stance.json` eingecheckt. Die nächste Messung, nach T-M40-14 und
 T-M40-15, bestätigt die Kontrolle am Lauf.
+
+---
+
+## 2026-09-13 · Durchsicht der Nacharbeit M40, N-1, N-2, N-4, N-6 · Kleine Befunde an der Automatik — festgehalten, nicht gebaut
+
+Gefunden hat sie die Durchsicht der Nacharbeit M40 (`4854465..74d7de0`). Die zweite Nacharbeit (T-M40-14 bis
+T-M40-16, Nachtrag T-M40-12) baut davon nur N-3, N-5 und den React-Schlüssel aus N-4. Der Rest steht hier.
+
+**N-1 · „Angegriffen" und „leer" weichen vom Kern ab (plausibel, nicht gemessen).**
+- **Befund.** `packages/ai/src/adjutant.ts` zählt jede sichtbare Armee eines Kriegsgegners als Feind in
+  ihrer Provinz, auch eine eingeschiffte oder einen reinen Luft- oder Flottenverband. Der Kern prüft für
+  die Besetzung `hasHostileLandForces` (`packages/core/src/phases/movement.ts`) und schließt solche Armeen
+  aus. Die Automatik hält eine Küstenprovinz mit feindlicher Flotte deshalb für angegriffen, und eine
+  eigene Armee dort ist als Quelle gesperrt.
+- **Umgekehrt** zählt `occupied` jede eigene Armee als Besatzung, auch eine, die im selben Tick
+  abmarschiert, und einen reinen Luftverband. Eine solche Provinz gilt nicht als leer.
+- **Warum nicht gebaut.** `VisibleArmy` führt bei fremden Armeen weder `embarked` noch, ob sie
+  Landeinheiten tragen. Die Kernbedingung braucht also ein neues Sichtfeld; vorher ist nach R-DIP-04 zu
+  prüfen, ob der Besitzer das überhaupt sehen darf.
+- **Reparatur später.** Erst das Sichtfeld, dann dieselbe Bedingung wie `hasHostileLandForces`; `occupied`
+  nur noch aus `holdsGround`, ohne Armeen, die im selben Tick ausrücken.
+
+**N-2 · „Genau eine Landetappe" prüft die Kantenart nicht (plausibel, harmlos).**
+- **Befund.** Die Automatik wählt Ziele über `neighbors`, also Landnachbarn, und verlangt von `planRoute`
+  genau eine Etappe ins Ziel. Ob diese Etappe über Land oder über See führt, prüft sie nicht. Gibt es
+  zwischen denselben zwei Provinzen einen billigeren Seeweg, geht der Marsch über See; das Ziel bleibt
+  trotzdem eigenes Land.
+- **Folge.** Der Wortlaut von R-UNIT-09/AK7 („genau einer Landetappe") ist ungenau.
+- **Reparatur später.** Die Kante der Etappe (`edgeBetween`) auf `kind === 'land'` prüfen, oder den
+  Wortlaut auf „eine Etappe" setzen.
+
+**N-4, der Rest.** Der React-Schlüssel der Protokollzeile hängt seit dem Nachtrag zu T-M40-12 nicht mehr am
+Listenplatz. Zwei Punkte bleiben offen:
+- **Abgelehnter Befehl.** Lehnt der Kern einen Befehl der Automatik ab, entstünde trotzdem eine Zeile
+  „rückt von selbst nach". Gemessen kam das nicht vor: 0 Ablehnungen in allen Episodenläufen.
+- **Debug-Mitschrift.** Das Vorspulen mit eingeschalteter Debug-Ansicht gibt nur `tick.ai` an die
+  Mitschrift, die Uhr alle Befehle. Die Asymmetrie ist älter als M40, doch jetzt fehlen dort auch die
+  Befehle der Automatik.
+
+**N-6 · Die vorbeugende Teilregel ist auf der Weltkarte ungemessen (plausibel).**
+- **Befund.** D30.4 schickt eine Verteidigung auch in eine leere eigene Provinz, die an einen sichtbaren
+  Kriegsgegner grenzt. Der Haltungs-Messlauf zählt nicht, ob ein Befehl vorbeugend war.
+- **Zahlen.** In `docs/reports/stance.json` (`episoden.nachher`, Aufstellung B) liegen die Episoden mit
+  befohlener Deckung fast gleichauf mit den Befehlen; die Befehle gingen also in umkämpfte Provinzen.
+  - vor N2: 6 zu 6, 9 zu 9, 10 zu 10
+  - nach dem Merge: 7 zu 8, 4 zu 4, 8 zu 9
+- **Belegt nur durch Einzeltests.** D30.9 sagt, dass die Teilregel in der Messung des Entwurfs nie feuerte;
+  gezeigt ist sie nur in `adjutant.test.ts`.
+- **Reparatur später.** Eine eigene Zahl „vorbeugende Befehle" im Messlauf: das Ziel war im Tick des
+  Befehls ohne Gefecht und ohne feindliche Armee.
+
+**Status:** offen, ohne Aufgabe. N-1 braucht ein Sichtfeld und damit eine eigene Entscheidung.
