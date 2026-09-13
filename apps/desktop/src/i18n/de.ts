@@ -416,6 +416,18 @@ export const de = {
     GAME_ENDED: 'Die Partie ist entschieden: {{winner}} hat gewonnen.',
     GAME_ENDED_PLURAL: 'Die Partie ist entschieden: {{winner}} haben gewonnen.',
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
+    // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
+    GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+  } as const,
+
+  /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
+  goals: {
+    names: {
+      provinces: 'eigene Provinzen',
+      pointShareFirst: 'erster Punktanteil',
+      populationShare: 'Anteil an der Weltbevölkerung',
+      pointShareSecond: 'zweiter Punktanteil',
+    },
   } as const,
 
   /**

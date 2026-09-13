@@ -109,6 +109,8 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
   if (typeof record.armyId === 'string') values.army = naming.army?.(record.armyId) ?? record.armyId
   if (typeof record.newState === 'string') values.state = t(`diplomacy.${record.newState}`)
   if (event.type === 'COMMAND_REJECTED') values.reason = t(`rejections.${String(record.code)}`)
+  // Das Zwischenziel mit Namen statt Schluessel (T-M35-04): „pointShareFirst" sagt niemandem etwas.
+  if (event.type === 'GOAL_REACHED') values.goal = t(`goals.names.${String(record.goal)}`)
 
   if (typeof record.effectiveAtTick === 'number') {
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1

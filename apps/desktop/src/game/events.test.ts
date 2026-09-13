@@ -299,6 +299,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     PLAYER_ELIMINATED: { playerId: 'p1' },
     GAME_ENDED: { winner: 'p2', condition: 'points' },
     DAY_REPORT: { day: 3, scores: {} },
+    // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
+    GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -892,5 +894,34 @@ describe('T-M40-13 Die Zeilen der Automatik tragen eine Kennung, die nicht am Li
       severity: 'info',
       category: 'combat',
     })
+  })
+})
+
+/**
+ * Das Zwischenziel im Protokoll (T-M35-04, R-GAME-08/AK2, D31.4).
+ *
+ * Ein Zwischenziel, das man nur beim Nachsehen bemerkt, ist kein Ziel — es steht deshalb als
+ * Satz im Protokoll. Ohne Kennungen: „pointShareFirst" oder „p1" muesste der Spieler
+ * nachschlagen, und genau diese Arbeit soll das Protokoll ihm abnehmen.
+ */
+describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
+  const GOALS = ['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond'] as const
+
+  it('nennt jedes der vier Ziele mit eigenem Namen und ohne Kennung', () => {
+    const texts = GOALS.map(
+      (goal) =>
+        describeEvent(
+          event({ type: 'GOAL_REACHED', playerId: 'p1', audience: ['p1'], concerns: ['p1'], goal, day: 221 }),
+          0,
+          map,
+          { viewer: 'p1' },
+        ).text,
+    )
+
+    for (const text of texts) {
+      expect(text).toMatch(/Zwischenziel/)
+      expect(text).not.toMatch(/provinces|pointShare|populationShare|GOAL_REACHED|events\.|\bp1\b|\{\{/)
+    }
+    expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
   })
 })

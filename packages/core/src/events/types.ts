@@ -3,6 +3,7 @@ import type {
   ArmyId,
   BuildingKey,
   BattleId,
+  GoalKey,
   PlayerId,
   ProvinceId,
   ResourceKey,
@@ -291,6 +292,22 @@ export interface DayReportEvent extends BaseEvent {
   scores: Record<PlayerId, number>
 }
 
+/**
+ * Eine Macht hat ein Zwischenziel erreicht (T-M35-04, R-GAME-08/AK2, D31.4).
+ *
+ * `audience: [playerId]` — ein Zwischenziel ist keine Weltnachricht, und wie weit eine fremde
+ * Macht ist, verrät es nicht. Nicht in `ALERT_TYPES`: es ist Rückmeldung, kein Alarm, und hält
+ * das Vorspulen nicht an. Genau einmal je Macht und Ziel, weil der Tag im Zustand nie
+ * zurückgesetzt wird.
+ */
+export interface GoalReachedEvent extends BaseEvent {
+  type: 'GOAL_REACHED'
+  playerId: PlayerId
+  goal: GoalKey
+  /** Derselbe Spieltag wie in `state.goals` und im Tagesbericht. */
+  day: number
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -318,6 +335,7 @@ export type GameEvent =
   | PlayerEliminatedEvent
   | GameEndedEvent
   | DayReportEvent
+  | GoalReachedEvent
 
 export type EventType = GameEvent['type']
 
@@ -349,6 +367,7 @@ export const EVENT_TYPES = [
   'PLAYER_ELIMINATED',
   'GAME_ENDED',
   'DAY_REPORT',
+  'GOAL_REACHED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.

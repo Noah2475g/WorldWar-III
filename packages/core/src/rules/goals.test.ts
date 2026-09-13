@@ -1,7 +1,9 @@
 import { hashValue, quotFixed } from '@worldwar/shared'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
-import type { DayReportEvent } from '../events/types'
+import { alertsIn, eventsFor } from '../events/emit'
+import { ALERT_TYPES, EVENT_TYPES, type DayReportEvent, type GameEvent } from '../events/types'
+import { WORLD_EVENT_TYPES, worldEventsIn } from '../events/world'
 import { InvalidStateError, validateState } from '../persistence/validate'
 import { cloneState } from '../state/clone'
 import { createInitialState, type GameConfig } from '../state/create'
@@ -230,5 +232,89 @@ describe('R-GAME-08/AK1 Das Feld goals im Zustand', () => {
     delete goalsOf(state)['p2']
 
     expect(() => validateState(state)).toThrow(/goals.*p2/)
+  })
+})
+
+describe('R-GAME-08/AK2 Ein erreichtes Ziel meldet sich genau einmal und nur bei der eigenen Macht', () => {
+  type Reached = GameEvent & { playerId: string; goal: string; day: number }
+
+  /** Faehrt ganze Spieltage und sammelt den Ereignisstrom — nie den Ringpuffer. */
+  function stream(start: GameState, days: number, rules: Rules): { state: GameState; events: GameEvent[] } {
+    const ctx = { map: smallWorld(), rules }
+    let state = start
+    const events: GameEvent[] = []
+    for (let i = 0; i < days * rules.constants.ticksPerDay; i++) {
+      const result = step(state, [], ctx)
+      state = result.state
+      events.push(...result.events)
+    }
+    return { state, events }
+  }
+
+  const reachedIn = (events: readonly GameEvent[]): Reached[] =>
+    events.filter((event) => (event.type as string) === 'GOAL_REACHED') as Reached[]
+
+  const everything = rulesWith({
+    goalProvinces: 1,
+    goalPointShareFirstPermille: 1,
+    goalPopulationSharePermille: 1,
+    goalPointShareSecondPermille: 1,
+  })
+
+  it('meldet ueber einen Lauf je Macht und Ziel genau ein Ereignis, mit dem Tag aus dem Spielstand', () => {
+    const { state, events } = stream(fresh(everything), 6, everything)
+    const reached = reachedIn(events)
+
+    expect(reached).toHaveLength(state.playerOrder.length * KEYS.length)
+    for (const id of state.playerOrder) {
+      for (const key of KEYS) {
+        const mine = reached.filter((event) => event.playerId === id && event.goal === key)
+        expect(mine, `${id} ${key}`).toHaveLength(1)
+        expect(mine[0]!.day, `${id} ${key}`).toBe(goalsOf(state)[id]![key])
+      }
+    }
+  })
+
+  it('meldet ein wieder erreichtes Ziel kein zweites Mal', () => {
+    const rules = rulesWith({ goalProvinces: 4 })
+    const start = fresh(rules)
+    start.provinces['o1']!.owner = 'p1'
+    const first = stream(start, 1, rules)
+    first.state.provinces['o1']!.owner = 'p2'
+    const dropped = stream(first.state, 2, rules)
+    dropped.state.provinces['o1']!.owner = 'p1'
+    const regained = stream(dropped.state, 2, rules)
+
+    const all = [...first.events, ...dropped.events, ...regained.events]
+    expect(reachedIn(all).filter((event) => event.playerId === 'p1')).toHaveLength(1)
+  })
+
+  it('sieht keine andere Macht', () => {
+    const { state, events } = stream(fresh(everything), 2, everything)
+    const reached = reachedIn(events)
+    expect(reached.length, 'Vorbedingung: es gibt Meldungen').toBeGreaterThan(0)
+
+    for (const event of reached) {
+      expect(event.audience).toEqual([event.playerId])
+      expect(event.concerns).toEqual([event.playerId])
+    }
+    for (const viewer of state.playerOrder) {
+      const visible = reachedIn(eventsFor(events, viewer))
+      expect(visible.length, `${viewer} sieht seine eigenen`).toBe(KEYS.length)
+      expect(visible.every((event) => event.playerId === viewer), `${viewer} sieht fremde Ziele`).toBe(true)
+    }
+  })
+
+  it('haelt das Vorspulen nicht an: Rueckmeldung, kein Alarm, keine Weltnachricht', () => {
+    const { events } = stream(fresh(everything), 2, everything)
+    const reached = reachedIn(events)
+
+    expect(EVENT_TYPES as readonly string[]).toContain('GOAL_REACHED')
+    expect(reached.length).toBeGreaterThan(0)
+    expect(reached.every((event) => event.severity === 'info')).toBe(true)
+    expect(ALERT_TYPES as readonly string[]).not.toContain('GOAL_REACHED')
+    expect(WORLD_EVENT_TYPES as readonly string[]).not.toContain('GOAL_REACHED')
+    expect(reachedIn(alertsIn(events))).toEqual([])
+    expect(reachedIn(worldEventsIn(events))).toEqual([])
   })
 })

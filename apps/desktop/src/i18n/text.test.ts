@@ -78,6 +78,8 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'BATTLE_STARTED', 'BATTLE_RESOLVED', 'BOMBARDMENT', 'PROVINCE_CAPTURED', 'PROVINCE_REVOLTED',
       'RESOURCE_SHORTAGE', 'STORAGE_OVERFLOW', 'TRADE_EXECUTED', 'WAR_DECLARED', 'DIPLOMACY_CHANGED',
       'CAPITAL_LOST', 'CAPITAL_MOVED', 'PLAYER_ELIMINATED', 'GAME_ENDED', 'DAY_REPORT',
+      // Seit T-M35-04: das Zwischenziel (R-GAME-08/AK2).
+      'GOAL_REACHED',
     ] as const
 
     for (const type of types) {

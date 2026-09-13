@@ -42,7 +42,10 @@ export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
 
   // Zwischenziele (R-GAME-08, D31.3): nach den Punkten, die sie lesen, und vor der
   // Siegpruefung, die sie nicht liest. Rueckmeldung, keine Regel.
-  settleGoals(draft, ctx.rules, day)
+  for (const reached of settleGoals(draft, ctx.rules, day)) {
+    // Nur fuer die eigene Macht (D31.4): kein Alarm, keine Weltnachricht (T-M35-04).
+    emit(ctx.events, draft.tick, 'GOAL_REACHED', { ...reached, audience: [reached.playerId] })
+  }
 
   if (draft.victory.winner === null) {
     const verdict = checkVictory(draft, ctx.rules)
