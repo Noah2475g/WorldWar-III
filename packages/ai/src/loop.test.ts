@@ -248,8 +248,14 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
  * Adjutant schickt eine Nachbararmee, ohne dass jemand klickt.
  */
 describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
+  /** Der Tick, an dem die Lage beginnt (siehe `lageMitMensch`). */
+  const START = 200
+
   function lageMitMensch(): GameState {
     const state = stateWith(3)
+    // Mitten in der Partie: aufgestellte Armeen tragen deployDelayUntil 0, und seit T-M40-09 ruht die
+    // Automatik nach einem Marsch fuenf Spieltage — bei Tick 0 handelte sie noch gar nicht.
+    state.tick = START
     const mensch = state.playerOrder[0]!
     state.players[mensch]!.kind = 'human'
     for (const id of state.provinceOrder) {
@@ -278,8 +284,9 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
 
     // Geteilt genau im Tick seines ersten Befehls: den muss der geladene Stand selbst finden.
     // Ein Adjutant, der an den Ereignissen des Vorticks hinge, faende ihn hier nicht (D30.3).
-    const bruch = vomAdjutanten[0]!.tick
-    expect(bruch, 'der erste Befehl faellt in Tick 0 — dann prueft die Teilung nichts').toBeGreaterThan(0)
+    // Die Lage beginnt bei START, geteilt wird nach so vielen Ticks.
+    const bruch = vomAdjutanten[0]!.tick - START
+    expect(bruch, 'der erste Befehl faellt in den ersten Tick — dann prueft die Teilung nichts').toBeGreaterThan(0)
     const erste = advanceTicks(lageMitMensch(), bruch, ctx)
     const geladen = deserialise(serialise(erste.state))
     const zweite = advanceTicks(geladen, TICKS - bruch, ctx)
@@ -295,5 +302,72 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
 
     const abgelehnt = lauf.events.filter((event) => event.type === 'COMMAND_REJECTED' && event.playerId === mensch)
     expect(abgelehnt, JSON.stringify(abgelehnt.slice(0, 3))).toEqual([])
+  })
+})
+
+/**
+ * Nach Marsch und Rueckzug ruht die Automatik (T-M40-09, Befund H1 der Durchsicht von M40).
+ *
+ * Eine Armee, die sich aus einem Gefecht zurueckzieht, zahlt dafuer Staerke — und stand danach auf
+ * Verteidigung. Bei Ablauf der Angriffssperre schickte der Adjutant sie in dieselbe laufende
+ * Schlacht zurueck (Beleg S4c: Tick 24). Ebenso marschierte eine Armee, die der Spieler eben
+ * verlegt hatte, bei der Ankunft sofort weiter. Gerechnet ueber die Spielschleife, ohne KI: alle
+ * drei Maechte sind Menschen, damit nichts anderes marschiert als der Adjutant.
+ */
+describe('R-UNIT-09/AK7 Nach Marsch und Rueckzug ruht die Automatik fuenf Spieltage', () => {
+  /** Fuenf Spieltage (T-M40-09, D30.4). */
+  const RUHE = 120
+
+  /** Nordland haelt n2 mit einer starken Garnison gegen eine starke Ostmark-Armee: die Schlacht dauert. */
+  function langeSchlacht(): { state: GameState; mensch: string; feind: string } {
+    const state = stateWith(3)
+    state.tick = 200
+    for (const id of state.playerOrder) state.players[id]!.kind = 'human'
+    const mensch = state.playerOrder[0]!
+    const feind = state.playerOrder[1]!
+    expect(state.provinces['n2']!.owner).toBe(mensch)
+    placeArmy(state, { owner: mensch, at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 300_000 }], stance: 'garrison' })
+    placeArmy(state, { owner: feind, at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 300_000 }], stance: 'garrison' })
+    // Eine Garnison in n1 bleibt stehen, was auch geschieht.
+    placeArmy(state, { owner: mensch, at: 'n1', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'garrison' })
+    return { state, mensch, feind }
+  }
+
+  const maersche = (applied: readonly { tick: number; command: Command }[], armyId: string, nach: number) =>
+    applied.filter((entry) => entry.tick > nach && entry.command.type === 'MOVE_ARMY' && entry.command.armyId === armyId)
+
+  it('schickt eine zurueckgewichene Armee nicht in dieselbe Schlacht zurueck, solange sie ruht (Beleg S4c)', () => {
+    const { state, mensch } = langeSchlacht()
+    const weicht = placeArmy(state, { owner: mensch, at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+
+    const lauf = advanceTicks(state, 200, ctx, {
+      playerCommands: [{ type: 'SET_STANCE', playerId: mensch, armyId: weicht.id, stance: 'retreat' }],
+    })
+
+    const rueckzug = lauf.events.find((event) => event.type === 'ARMY_RETREATED' && event.armyId === weicht.id)
+    expect(rueckzug, 'die Armee ist nicht zurueckgewichen - der Test misst nichts').toBeDefined()
+    const ruheEnde = rueckzug!.tick + TEST_RULES.constants.deployDelayTicks * 2 + RUHE
+    const zurueck = maersche(lauf.applied, weicht.id, rueckzug!.tick)
+    expect(zurueck.filter((entry) => entry.tick < ruheEnde), JSON.stringify(zurueck)).toEqual([])
+  })
+
+  it('laesst eine vom Spieler verlegte Armee nach dem Abmarsch fuenf Spieltage stehen', () => {
+    // Nicht "nach der Ankunft": der Zustand kennt den Tick der Ankunft nicht, wohl aber
+    // `deployDelayUntil`, das Befehl und Abmarsch setzen — auch nach dem Laden.
+    const { state, mensch } = langeSchlacht()
+    const zieht = placeArmy(state, { owner: mensch, at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    expect(planRoute(state, zieht, 'n1', map, TEST_RULES)!.path, 'Vorbedingung: eine Etappe, nicht durch die Schlacht').toEqual(['n1'])
+
+    const lauf = advanceTicks(state, 250, ctx, {
+      playerCommands: [{ type: 'MOVE_ARMY', playerId: mensch, armyId: zieht.id, targetProvinceId: 'n1' }],
+    })
+
+    const abmarsch = lauf.events.find((event) => event.type === 'ARMY_DEPARTED' && event.armyId === zieht.id)
+    const ankunft = lauf.events.find((event) => event.type === 'ARMY_ARRIVED' && event.armyId === zieht.id)
+    expect(abmarsch && ankunft, 'die Armee ist nicht in n1 angekommen - der Test misst nichts').toBeTruthy()
+    const ruheEnde = abmarsch!.tick + TEST_RULES.constants.deployDelayTicks + RUHE
+    expect(ankunft!.tick, 'die Armee kam erst nach der Ruhe an - der Test misst nichts').toBeLessThan(ruheEnde)
+    const vonSelbst = maersche(lauf.applied, zieht.id, abmarsch!.tick)
+    expect(vonSelbst.filter((entry) => entry.tick < ruheEnde), JSON.stringify(vonSelbst)).toEqual([])
   })
 })

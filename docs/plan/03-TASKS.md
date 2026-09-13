@@ -5511,6 +5511,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Ticks kein Adjutantenbefehl (R-UNIT-09/AK7).
 - **Fertig wenn:** K2 und H1 ohne Kernänderung gelöst sind — Ziel eigene Provinz oder die eines
   Kriegsgegners, eine Etappe, fünf Spieltage Ruhe nach Marsch oder Rückzug.
+  *(Korrektur beim Bau 2026-09-13: die Ruhe zählt ab `deployDelayUntil`, also ab dem Abmarsch —
+  einen Tick der Ankunft kennt der Zustand nicht, und ein Feld dafür kostete eine Migration; der
+  Test prüft deshalb „nach dem Abmarsch". Die Lagen der Tests beginnen bei Tick 200, weil
+  aufgestellte Armeen `deployDelayUntil` 0 tragen. Messung in `PROBLEME.md`.)*
 
 ### T-M40-10 · Die Regel, die nicht entblößt
 - **Ziel:** eine Automatik, die messbar nicht schadet, statt einer, die messbar entblößt.

@@ -2990,7 +2990,12 @@ tasks:
   - id: T-M40-09
     milestone: M40
     title: Kein fremder Boden, keine Rueckkehr in die Schlacht
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): rot adjutant 5 von 27 (S5, neutral, Umweg ueber m2 und m1 der
+    # Friedensmacht, Eigenschaft eine Etappe, S4c), loop 2 von 11 (Rueckzug und Spielermarsch: von
+    # selbst an Tick 224). KORREKTUR: die Ruhe zaehlt ab deployDelayUntil, also ab dem Abmarsch -
+    # nach der Ankunft ist aus dem Zustand nicht pruefbar (kein Ankunftstick), PROBLEME.md. Die
+    # Pruefung der Angriffssperre bleibt stehen; die Lagen der Tests beginnen bei Tick 200.
     deps: [T-M40-08]
     requirements: [R-UNIT-09]
     design: [D-30]

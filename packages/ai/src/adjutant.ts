@@ -40,6 +40,13 @@ import {
  * What the owner may not know stays unknown: foreign armies and provinces come only from
  * `publicView` (R-DIP-04). Own armies are read from the state — own knowledge, and the
  * view does not carry the attack cooldown.
+ *
+ * A command the core accepts can still do harm, and the M40 review found two (T-M40-09):
+ * a march into the province of a power at peace is a surprise attack — war without
+ * declaration, reputation, grievance — even in passing, because `MOVE_ARMY` does not check
+ * ownership and `planRoute` takes the cheapest way whoever owns it (finding K2); and an army
+ * that had just retreated was sent back into the same battle the hour its cooldown ended
+ * (finding H1). Hence: one land stage into own or enemy land, and a rest after every march.
  */
 
 export interface AdjutantOptions {
@@ -66,6 +73,20 @@ interface AdjutantContext {
 
 /** Stances that act on their own (D30.4). `garrison` is the opt-out, `retreat` a one-off order. */
 const AUTOMATIC_STANCES: ReadonlySet<Stance> = new Set<Stance>(['defensive', 'aggressive'])
+
+/**
+ * How long an army does nothing on its own after a march or a retreat: five game days
+ * (T-M40-09, D30.4, R-UNIT-09/AK7).
+ *
+ * Counted from `deployDelayUntil`, which the core already sets when an order is given, when the
+ * army departs and — doubled — when it retreats: state, so a loaded game rests the same way. The
+ * attack cooldown of a retreat (24 ticks in the shipped rules) ends long before; it used to be
+ * the only thing that held a retreated army back, and it held it back for exactly one day.
+ * Battles on the world map last a median of one to three ticks, the longest measured 27, so five
+ * days means "not the same battle". The state has no arrival tick, so the rest is measured from
+ * the departure, not from the arrival.
+ */
+export const ADJUTANT_REST_TICKS = 120
 
 /**
  * The adjutant's orders for this tick: every living human power, in `playerOrder`.
@@ -99,12 +120,14 @@ function armiesNamedIn(commands: readonly Command[]): Set<ArmyId> {
   return ids
 }
 
-/** Standing, landed, free to attack, with land units, and not commanded by the human this tick. */
+/** Standing, landed, free to attack, rested, with land units, and not commanded this tick. */
 function canActOnItsOwn(state: GameState, army: Army, rules: Rules, held: ReadonlySet<ArmyId>): boolean {
   return (
     army.path.length === 0 &&
     !army.embarked &&
     state.tick >= army.cannotAttackUntil &&
+    // Rested (T-M40-09, finding H1): not within five game days of its last march or retreat.
+    state.tick >= army.deployDelayUntil + ADJUTANT_REST_TICKS &&
     army.units.length > 0 &&
     // A pure air or naval formation does not cover a province by marching there, and
     // MOVE_ARMY refuses aircraft outside an airfield (R-UNIT-08) — no refused orders.
@@ -163,6 +186,13 @@ function ordersFor(
   }
 
   const isOwn = (provinceId: ProvinceId): boolean => provinces.get(provinceId)?.owner === playerId
+  // Own land or a war enemy's (finding K2). Neutral land is out too: taking it is the player's
+  // decision, and marching into a power at peace starts a war without declaration.
+  const mayEnter = (provinceId: ProvinceId): boolean => {
+    const owner = provinces.get(provinceId)?.owner
+    if (owner === undefined || owner === null) return false
+    return owner === playerId || view.relations[owner]?.state === 'war'
+  }
   // Over land only: `neighbors`, not `seaLinks` (D30.4).
   const bordersOnLand = (from: ProvinceId, to: ProvinceId): boolean => provinces.get(from)?.neighbors.includes(to) ?? false
   const eligible = ready.filter((army) => isOwn(army.locationProvinceId) && !hostile.has(army.locationProvinceId))
@@ -193,10 +223,11 @@ function ordersFor(
   // has just fallen back — its attack cooldown is running, which the view shows since
   // T-M40-04 — gets at most one pursuer that is at least as strong. Measured against
   // everything hostile visible there, not the retreating army alone: that is what she will
-  // fight on arrival.
+  // fight on arrival. Only into own or enemy land (finding K2): a retreat into an ally's
+  // province of the enemy is not an invitation to attack the ally.
   for (const province of view.provinces) {
     const there = hostile.get(province.id)
-    if (!there || !there.some((army) => army.retreating === true) || heading.has(province.id)) continue
+    if (!there || !mayEnter(province.id) || !there.some((army) => army.retreating === true) || heading.has(province.id)) continue
     const enemyStrength = there.reduce((sum, army) => sum + army.strength, 0)
     const army = earliestArrival(
       state,
@@ -223,12 +254,17 @@ function ordersFor(
  * The candidate that arrives first, by the same route planning `MOVE_ARMY` uses; a tie
  * goes to the smaller id (string order, as in `armyOrder`). No route, no candidate — the
  * core would refuse the order with `NO_PATH`.
+ *
+ * And no route of more than one stage (T-M40-09, finding K2): the target borders the army's
+ * province, but `planRoute` takes the cheapest way whoever owns it, and a detour through a
+ * foreign province is a surprise attack on its owner. One land stage straight into the target
+ * or nothing — the core stays as it is.
  */
 function earliestArrival(state: GameState, ctx: AdjutantContext, target: ProvinceId, candidates: readonly Army[]): Army | null {
   let best: { army: Army; arrival: number } | null = null
   for (const army of candidates) {
     const route = planRoute(state, army, target, ctx.map, ctx.rules)
-    if (!route) continue
+    if (!route || route.path.length !== 1 || route.path[0] !== target) continue
     if (!best || route.arrivalTick < best.arrival || (route.arrivalTick === best.arrival && army.id < best.army.id)) {
       best = { army, arrival: route.arrivalTick }
     }

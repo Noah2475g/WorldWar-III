@@ -1,11 +1,13 @@
 import {
   HASH_OMIT_KEYS,
   createInitialState,
+  planRoute,
   publicView,
   type Army,
   type Command,
   type GameConfig,
   type GameState,
+  type MapData,
   type PlayerId,
   type PublicView,
 } from '@worldwar/core'
@@ -41,11 +43,21 @@ const CONFIG: GameConfig = {
   victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
 }
 
+/**
+ * Mitten in der Partie. Aufgestellte Armeen tragen `deployDelayUntil` 0, und seit T-M40-09 ruht
+ * die Automatik nach einem Marsch oder Rueckzug fuenf Spieltage — bei Tick 0 handelte sie also
+ * noch gar nicht, und jede Lage hier waere leer gruen.
+ */
+const MITTEN = 200
+/** Fuenf Spieltage Ruhe nach Marsch oder Rueckzug (T-M40-09, D30.4). */
+const RUHE = 120
+
 const infanterie = (hpTotal = 5_000) => [{ unitKey: 'infantry', hpTotal }]
 
 /** Nordland im Krieg mit Ostmark, und eine Ostmark-Armee steht in n2. */
 function angriffAufN2(): { state: GameState; feind: Army } {
   const state = createInitialState(CONFIG, ctx)
+  state.tick = MITTEN
   state.diplomacy.relations['p1|p2']!.state = 'war'
   const feind = placeArmy(state, { owner: 'p2', at: 'n2', units: infanterie(8_000) })
   return { state, feind }
@@ -117,6 +129,7 @@ describe('R-UNIT-09/AK1 Die Verteidigung deckt die angegriffene Nachbarprovinz',
   it('deckt ueber Land, nicht ueber See', () => {
     // n1 und i1 verbindet nur ein Seeweg (D30.4: `neighbors`, nicht `seaLinks`).
     const state = createInitialState(CONFIG, ctx)
+    state.tick = MITTEN
     state.diplomacy.relations['p1|p2']!.state = 'war'
     state.provinces['i1']!.owner = 'p1'
     placeArmy(state, { owner: 'p2', at: 'i1', units: infanterie(8_000) })
@@ -143,6 +156,7 @@ describe('R-UNIT-09/AK1 Die Verteidigung deckt die angegriffene Nachbarprovinz',
     // Jede KI-Armee steht nach Aushebung und Rueckzug auf `defensive`. Wuerde der Adjutant sie
     // fuehren, verschoben sich Turnier, Parameterlauf und AK-1.
     const state = createInitialState(CONFIG, ctx)
+    state.tick = MITTEN
     state.diplomacy.relations['p1|p2']!.state = 'war'
     placeArmy(state, { owner: 'p1', at: 'o2', units: infanterie(8_000) })
     placeArmy(state, { owner: 'p2', at: 'o1', units: infanterie(), stance: 'defensive' })
@@ -257,15 +271,17 @@ describe('Mehrspieler: die Befehle des Adjutanten entstehen in playerOrder-Reihe
 /**
  * Der Angriff verfolgt den weichenden Gegner (T-M40-04, D30.4, R-UNIT-09/AK2).
  *
- * Nordland haelt n2; eine Ostmark-Armee ist nach m1 zurueckgewichen (neutral, ueber Land an
- * n2, 160 km). „Eben zurueckgewichen" heisst: ihre Angriffssperre laeuft — und das zeigt die
- * Sicht seit T-M40-04 fuer jede sichtbare fremde Armee (`retreating`).
+ * Nordland haelt n2; eine Ostmark-Armee ist nach m1 zurueckgewichen (ueber Land an n2, 160 km).
+ * „Eben zurueckgewichen" heisst: ihre Angriffssperre laeuft — und das zeigt die Sicht seit
+ * T-M40-04 fuer jede sichtbare fremde Armee (`retreating`). m1 gehoert hier Ostmark selbst: seit
+ * T-M40-09 folgt die Verfolgung nur in eigenes Land oder das eines Kriegsgegners (AK7 unten).
  */
 describe('R-UNIT-09/AK2 Der Angriff verfolgt den weichenden Gegner', () => {
   function rueckzugNachM1(staerke: number): { state: GameState; weichend: Army } {
     const state = createInitialState(CONFIG, ctx)
     state.diplomacy.relations['p1|p2']!.state = 'war'
-    state.tick = 100
+    state.tick = MITTEN
+    state.provinces['m1']!.owner = 'p2'
     const weichend = placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie(staerke) })
     weichend.cannotAttackUntil = state.tick + 20
     return { state, weichend }
@@ -347,5 +363,133 @@ describe('R-UNIT-09/AK2 Der Angriff verfolgt den weichenden Gegner', () => {
     placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
     placeArmy(state, { owner: 'p2', at: 'n2', units: infanterie(1_000) })
     expect(adjutantCommands(state, ctx), 'umkaempft').toEqual([])
+  })
+})
+
+/**
+ * Kein fremder Boden, keine Rueckkehr in die Schlacht (T-M40-09, Befunde K2 und H1 der Durchsicht
+ * von M40, R-UNIT-09/AK7).
+ *
+ * Die Automatik gab Befehle, die der Kern annimmt und die trotzdem schaden. Eine Armee in der
+ * Provinz einer Macht, mit der Frieden herrscht, ist ein Ueberfall — `detectSurpriseAttacks` erklaert
+ * im selben Tick Krieg ohne Erklaerung, auch auf dem Durchmarsch; `MOVE_ARMY` prueft den Besitz nicht,
+ * und `planRoute` nimmt den billigsten Weg, wem immer er gehoert. Und eine Armee, die sich eben
+ * zurueckgezogen hatte, kehrte bei Sperrende in dieselbe Schlacht zurueck (Beleg S4c: Tick 24).
+ */
+describe('R-UNIT-09/AK7 Die Automatik marschiert nur auf eigenes oder feindliches Land, in einer Etappe, und ruht nach Marsch und Rueckzug', () => {
+  /** Ein Weichender von Ostmark in m1, eine Verfolgerin von Nordland in n2; m1 gehoert `besitzer`. */
+  function verfolgungNachM1(besitzer: PlayerId | null): GameState {
+    const state = createInitialState(CONFIG, ctx)
+    state.tick = MITTEN
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.provinces['m1']!.owner = besitzer
+    const weichend = placeArmy(state, { owner: 'p2', at: 'm1', units: infanterie(5_000) })
+    weichend.cannotAttackUntil = state.tick + 20
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(5_000), stance: 'aggressive' })
+    return state
+  }
+
+  it('folgt nicht in die Provinz einer Macht, mit der Frieden herrscht (Beleg S5)', () => {
+    // m1 gehoert Sueden, Sueden ist mit Ostmark verbuendet und mit Nordland im Frieden: die
+    // Verfolgerin loeste in m1 einen Krieg ohne Erklaerung aus (Ansehen 1000 auf 820).
+    const state = verfolgungNachM1('p3')
+    state.diplomacy.relations['p2|p3']!.state = 'alliance'
+    expect(state.diplomacy.relations['p1|p3']!.state).toBe('peace')
+
+    expect(adjutantCommands(state, ctx)).toEqual([])
+  })
+
+  it('folgt nicht in neutrales Land — das einzunehmen entscheidet der Spieler', () => {
+    expect(adjutantCommands(verfolgungNachM1(null), ctx)).toEqual([])
+  })
+
+  it('folgt in die Provinz eines Kriegsgegners (Gegenprobe)', () => {
+    expect(adjutantCommands(verfolgungNachM1('p2'), ctx)).toHaveLength(1)
+  })
+
+  /** Die Kleine Welt, in der der billigste Weg von n3 nach n2 ueber m2 und m1 fuehrt. */
+  function umwegKarte(): MapData {
+    const karte = smallWorld()
+    for (const kante of karte.edges) {
+      const enden = [kante.a, kante.b].sort().join('-')
+      if (enden === 'n1-n2' || enden === 'n2-n3') kante.distanceKm = 2_000_000
+    }
+    return karte
+  }
+
+  /** n2 angegriffen und von einer Garnison gehalten, Verteidigung und Garnison in n3; m1 gehoert Sueden. */
+  function angriffMitUmweg(karte: MapData) {
+    const { state } = angriffAufN2()
+    state.provinces['m1']!.owner = 'p3'
+    placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(30_000), stance: 'garrison' })
+    const ausN3 = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+    placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'garrison' })
+    return { state, ausN3, ctx: { map: karte, rules: TEST_RULES } }
+  }
+
+  it('verwirft eine Route mit mehr als einer Etappe — sonst fuehrte die Deckung ueber fremdes Land', () => {
+    const umweg = angriffMitUmweg(umwegKarte())
+    // Vorbedingung: der billigste Weg fuehrt wirklich durch m2 und die Provinz der Friedensmacht.
+    expect(planRoute(umweg.state, umweg.ausN3, 'n2', umweg.ctx.map, TEST_RULES)!.path).toEqual(['m2', 'm1', 'n2'])
+
+    expect(adjutantCommands(umweg.state, umweg.ctx)).toEqual([])
+
+    // Gegenprobe auf der unveraenderten Karte: dieselbe Lage deckt n2 in einer Etappe.
+    const normal = angriffMitUmweg(smallWorld())
+    expect(adjutantCommands(normal.state, normal.ctx)).toEqual([zug(normal.ausN3.id, 'n2')])
+  })
+
+  it('gibt in jeder Lage nur Befehle, deren Route genau die eine Etappe ins Ziel ist', () => {
+    const angriffAusN1 = () => {
+      const { state } = angriffAufN2()
+      placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'defensive' })
+      placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'garrison' })
+      return { state, ctx }
+    }
+    const lagen = [
+      angriffMitUmweg(umwegKarte()),
+      angriffMitUmweg(smallWorld()),
+      angriffAusN1(),
+      { state: verfolgungNachM1('p2'), ctx },
+    ]
+
+    let befehle = 0
+    for (const lage of lagen) {
+      for (const command of adjutantCommands(lage.state, lage.ctx)) {
+        expect(command.type).toBe('MOVE_ARMY')
+        if (command.type !== 'MOVE_ARMY') continue
+        befehle += 1
+        const army = lage.state.armies[command.armyId]!
+        expect(planRoute(lage.state, army, command.targetProvinceId, lage.ctx.map, TEST_RULES)?.path, command.armyId).toEqual([
+          command.targetProvinceId,
+        ])
+      }
+    }
+    expect(befehle, 'keine Lage erzeugte einen Befehl - die Eigenschaft misst nichts').toBeGreaterThan(0)
+  })
+
+  it('kehrt nach einem Rueckzug nicht vor Ablauf von fuenf Spieltagen in die Schlacht zurueck (Beleg S4c)', () => {
+    const T = 1_000
+    const constants = TEST_RULES.constants
+    const lage = (tick: number) => {
+      const { state } = angriffAufN2()
+      placeArmy(state, { owner: 'p1', at: 'n2', units: infanterie(30_000), stance: 'garrison' })
+      placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'garrison' })
+      const weicht = placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'defensive' })
+      // So hinterlaesst `phases/retreat.ts` eine Armee: Verteidigung, doppelte Aufstellungsstrafe, Angriffssperre.
+      weicht.deployDelayUntil = T + constants.deployDelayTicks * 2
+      weicht.cannotAttackUntil = T + constants.retreatCooldownTicks
+      state.tick = tick
+      return { state, weicht }
+    }
+    const ruheEnde = T + constants.deployDelayTicks * 2 + RUHE
+
+    const kurzVorher = lage(ruheEnde - 1)
+    // Die Angriffssperre ist lange vorbei — bis T-M40-09 kehrte die Armee genau dann zurueck.
+    expect(kurzVorher.state.tick).toBeGreaterThan(kurzVorher.weicht.cannotAttackUntil)
+    expect(adjutantCommands(kurzVorher.state, ctx)).toEqual([])
+
+    const danach = lage(ruheEnde)
+    expect(adjutantCommands(danach.state, ctx)).toEqual([zug(danach.weicht.id, 'n2')])
   })
 })

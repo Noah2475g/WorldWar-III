@@ -2473,3 +2473,35 @@ ebenso — gelesen, nicht gemessen.
 
 **Status:** Nebenbefund 1 behoben (T-M41-15); Nebenbefund 2 gehärtet, als Fehler über die Oberfläche
 nicht herstellbar (T-M41-16).
+
+---
+
+## 2026-09-13 · T-M40-09 · „Nach der Ankunft fünf Tage Ruhe" ist aus dem Zustand nicht prüfbar — die Ruhe zählt ab dem Abmarsch
+
+**Was der Plan sagte.** Der Entwurf der Nacharbeit (R3, R4) und `tasks.yaml` bei T-M40-09: nach einem
+Spielermarsch „nach Ankunft 120 Ticks ohne Adjutantenbefehl". Die Regel selbst lautet dort
+`tick >= deployDelayUntil + 120`.
+
+**Was vor dem Bau geprüft wurde.** `deployDelayUntil` setzen der Befehl (`commands/move.ts`), der
+Abmarsch (`phases/movement.ts`, nur im Tick von `departureTick`) und — verdoppelt — der Rückzug
+(`phases/retreat.ts`). Bei der Ankunft setzt der Kern nichts, `arrivalTick` und `departureTick` gehen
+auf `null`. Der Zustand kennt den Tick der Ankunft also nicht, und ein Feld dafür kostete Schemastufe,
+Migration und neue Golden-Master — genau das, was die Nacharbeit ausschließt. Die zwei Sätze des Plans
+widersprechen sich: die Regel misst ab dem Abmarsch.
+
+**Korrektur.** Zugesichert und getestet wird die Regel, wie sie gebaut ist: nach Abmarsch oder Rückzug
+handelt eine Armee vor `deployDelayUntil + 120` nicht von selbst (R-UNIT-09/AK7). Nach der Ankunft
+bleiben damit 120 Ticks abzüglich der Marschzeit — auf der Weltkarte dauert eine Binnenetappe für
+Infanterie 25 bis 113 Ticks, es bleiben also zwischen 7 Ticks und gut vier Spieltagen. Gemessen in
+`packages/ai/src/loop.test.ts` (Kleine Welt, Marsch n3 → n1 neben einer laufenden Schlacht in n2):
+ohne Ruhe marschierte die Armee an Tick 224 von selbst weiter, 24 Ticks nach dem Abmarsch an Tick
+200; mit Ruhe nicht vor Tick 322.
+
+**Nebenbei geprüft.** Die bisherige Bedingung „Angriffssperre abgelaufen" bleibt stehen. Nach einem
+Rückzug hält sie `retreatCooldownTicks` (24 Ticks) zurück, die Ruhe `2 · deployDelayTicks + 120`
+(124 Ticks) — die Ruhe ist also immer die spätere, auch nach dem Zusammenlegen, das beide Felder als
+Maximum übernimmt. Die Durchsicht nannte als zweite Lösung (a) „Rückzug setzt Menschen auf Garnison";
+nicht gebaut, weil der Kern dafür `players[].kind` lesen müsste (D30.2 hält Mensch und KI aus dem Kern)
+— kippbar in `phases/retreat.ts`, danach `pnpm test` ohne `UPDATE_GOLDEN`.
+
+**Status:** Plantext korrigiert (T-M40-09 in `tasks.yaml` und `03-TASKS.md`); kein Produktfehler.
