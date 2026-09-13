@@ -5558,6 +5558,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `progress.slow.test.ts` sieht den Ausbau nicht und gilt nicht als Beleg. Der Befund vom
   2026-09-12 in `PROBLEME.md` steht auf behoben, `WORKFLOW.md` §5 nennt den neuen Siegtag;
   `docs/reports/acceptance.md` schreibt erst T-M17-16. `pnpm verify` am Ende des Meilensteins.
+  *(korrigiert 2026-09-13 beim Bau: die Planungszahlen sind nicht reproduzierbar. Gemessen mit der
+  gebauten Variante: Startzahl 1914 Tag 582 (vorher 471), 17 Ausbauten auf Stufe 3 begonnen;
+  2015 Tag 868 (583); 1815 Tag 412 (774); Turnier zeilengleich, Grundlauf 0,4462 statt 0,4442.
+  Eine Gegenprobe mit Kappe bei Stufe 2 endet an Tag 591. `PROBLEME.md`, 2026-09-13.)*
 
 ### T-M41-07 · Die zugesagte Eigenschaftsprüfung des Nahkampfs
 - **Ziel:** T-M14-06 steht auf `done` und sagte zwei Eigenschaften zu, die kein Test prüft.

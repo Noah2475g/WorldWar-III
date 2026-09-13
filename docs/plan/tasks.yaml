@@ -3008,10 +3008,14 @@ tasks:
   - id: T-M41-02
     milestone: M41
     title: Nachmessen nach dem Fabrikausbau
-    status: todo
+    status: done
+    # Korrigiert 2026-09-13 beim Bau: die Planungszahlen im dod (Tag 449, keine Stufe 3) sind
+    # nicht reproduzierbar. Gemessen: 1914 Tag 582 (vorher 471), 17 Ausbauten auf Stufe 3;
+    # 2015 Tag 868 (583); 1815 Tag 412 (774); Turnier zeilengleich; Grundlauf 0,4462 statt
+    # 0,4442; Gegenprobe Kappe 2 Tag 591. PROBLEME.md 2026-09-13.
     deps: [T-M41-01]
     requirements: [R-PROV-02]
-    files: [docs/reports/fullgame.json, docs/reports/progress-baseline.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
+    files: [docs/reports/fullgame.json, docs/reports/fullgame-2015.json, docs/reports/fullgame-1815.json, docs/reports/progress-measured.json, docs/reports/progress-baseline.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md, docs/plan/DECISIONS.md]
     tests: [apps/headless/test/fullgame.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
     dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. fullgame.slow.test.ts meldet je Macht die hoechste Fabrikstufe in fullgame.json; Zusicherung: mindestens eine Macht besitzt am Ende eine Fabrik der Stufe 2. Vollpartie zusaetzlich mit Startzahl 2015 und einer dritten (im Bericht genannt), Turnier; progress-baseline.md Abschnitt 5 (Risiko 5) nachgetragen. Im Planungslauf (im Speicher gepatcht) gemessen: 31 begonnene Fabriken Stufe 2, keine Stufe 3, Siegtag 449 statt 471 - das liegt im Rauschen der Startzahl (2015 endet an Tag 583) und belegt nur keine Verschiebung. progress.slow.test.ts (200 Tage) sieht den Ausbau nicht und gilt nicht als Beleg. PROBLEME.md-Eintrag vom 2026-09-12 auf behoben mit Zahl; WORKFLOW.md Abschnitt 5 nennt den neuen Siegtag, docs/reports/acceptance.md schreibt erst der Schlusslauf in T-M17-16. Kein Parameterlauf: packages/ai liegt ausserhalb des Frische-Waechters. pnpm verify am Ende des Meilensteins."
   - id: T-M41-07

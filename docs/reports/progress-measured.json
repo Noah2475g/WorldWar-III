@@ -1,5 +1,5 @@
 {
-  "gemessenAm": "2026-09-12",
+  "gemessenAm": "2026-09-13",
   "leiter": {
     "letzteFreischaltungTag": 80,
     "echtzeitMinutenTempo1": 32,
@@ -30,10 +30,10 @@
     "maechte": 6,
     "tage": 120,
     "startzahlen": 12,
-    "anteilDesStaerksten": 0.4442,
-    "eroberungen": 302.3,
-    "ueberlebende": 5.17,
-    "endbestaende": 50613
+    "anteilDesStaerksten": 0.4462,
+    "eroberungen": 301.3,
+    "ueberlebende": 5.08,
+    "endbestaende": 50439
   },
   "risiko5": {
     "tage": 200,

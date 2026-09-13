@@ -1,6 +1,6 @@
 {
   "map": "world",
-  "seed": 1914,
+  "seed": 1815,
   "players": 8,
   "ai": 7,
   "nations": [
@@ -13,12 +13,12 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 582,
+  "decidedOnDay": 412,
   "winner": "p6",
   "condition": "points",
   "warDeclarations": 12,
-  "captures": 1615,
-  "battles": 5236,
+  "captures": 1172,
+  "battles": 5323,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
@@ -26,14 +26,14 @@
       "Mexiko": 0,
       "Brasilien": 0,
       "Argentinien": 0,
-      "Russland": 3,
+      "Russland": 2,
       "China": 2,
-      "Indien": 0
+      "Indien": 1
     },
-    "provincesAtLevel2OrMore": 29,
-    "provincesAtLevel3": 11,
-    "upgradesStartedToLevel2": 56,
-    "upgradesStartedToLevel3": 17
+    "provincesAtLevel2OrMore": 23,
+    "provincesAtLevel3": 0,
+    "upgradesStartedToLevel2": 50,
+    "upgradesStartedToLevel3": 0
   },
   "aiMemory": {
     "Kanada": {
@@ -42,38 +42,38 @@
       "veraltet": 0
     },
     "Mexiko": {
-      "eintraege": 0,
-      "armeen": 0,
+      "eintraege": 42,
+      "armeen": 42,
       "veraltet": 0
     },
     "Brasilien": {
-      "eintraege": 0,
-      "armeen": 0,
+      "eintraege": 7,
+      "armeen": 7,
       "veraltet": 0
     },
     "Argentinien": {
-      "eintraege": 2,
-      "armeen": 2,
+      "eintraege": 82,
+      "armeen": 82,
       "veraltet": 0
     },
     "Russland": {
-      "eintraege": 204,
-      "armeen": 204,
+      "eintraege": 260,
+      "armeen": 260,
       "veraltet": 1
     },
     "China": {
-      "eintraege": 176,
-      "armeen": 173,
-      "veraltet": 3
+      "eintraege": 35,
+      "armeen": 35,
+      "veraltet": 0
     },
     "Indien": {
-      "eintraege": 0,
-      "armeen": 0,
+      "eintraege": 87,
+      "armeen": 87,
       "veraltet": 0
     }
   },
-  "aiMemoryKB": 10,
-  "stateKB": 356,
+  "aiMemoryKB": 12,
+  "stateKB": 397,
   "maxDays": 1500,
-  "measuredAt": "2026-09-13T11:29:11.960Z"
+  "measuredAt": "2026-09-13T11:29:49.517Z"
 }

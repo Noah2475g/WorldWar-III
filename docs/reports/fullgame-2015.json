@@ -1,6 +1,6 @@
 {
   "map": "world",
-  "seed": 1914,
+  "seed": 2015,
   "players": 8,
   "ai": 7,
   "nations": [
@@ -13,27 +13,27 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 582,
+  "decidedOnDay": 868,
   "winner": "p6",
   "condition": "points",
-  "warDeclarations": 12,
-  "captures": 1615,
-  "battles": 5236,
+  "warDeclarations": 37,
+  "captures": 2923,
+  "battles": 11262,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
       "Kanada": 0,
       "Mexiko": 0,
       "Brasilien": 0,
-      "Argentinien": 0,
-      "Russland": 3,
-      "China": 2,
-      "Indien": 0
+      "Argentinien": 1,
+      "Russland": 2,
+      "China": 0,
+      "Indien": 2
     },
-    "provincesAtLevel2OrMore": 29,
-    "provincesAtLevel3": 11,
-    "upgradesStartedToLevel2": 56,
-    "upgradesStartedToLevel3": 17
+    "provincesAtLevel2OrMore": 42,
+    "provincesAtLevel3": 0,
+    "upgradesStartedToLevel2": 106,
+    "upgradesStartedToLevel3": 0
   },
   "aiMemory": {
     "Kanada": {
@@ -42,38 +42,38 @@
       "veraltet": 0
     },
     "Mexiko": {
-      "eintraege": 0,
-      "armeen": 0,
+      "eintraege": 86,
+      "armeen": 86,
       "veraltet": 0
     },
     "Brasilien": {
-      "eintraege": 0,
+      "eintraege": 7,
       "armeen": 0,
-      "veraltet": 0
+      "veraltet": 7
     },
     "Argentinien": {
-      "eintraege": 2,
-      "armeen": 2,
-      "veraltet": 0
+      "eintraege": 92,
+      "armeen": 92,
+      "veraltet": 1
     },
     "Russland": {
-      "eintraege": 204,
-      "armeen": 204,
+      "eintraege": 109,
+      "armeen": 108,
       "veraltet": 1
     },
     "China": {
-      "eintraege": 176,
-      "armeen": 173,
-      "veraltet": 3
-    },
-    "Indien": {
       "eintraege": 0,
       "armeen": 0,
       "veraltet": 0
+    },
+    "Indien": {
+      "eintraege": 179,
+      "armeen": 180,
+      "veraltet": 0
     }
   },
-  "aiMemoryKB": 10,
-  "stateKB": 356,
+  "aiMemoryKB": 12,
+  "stateKB": 389,
   "maxDays": 1500,
-  "measuredAt": "2026-09-13T11:29:11.960Z"
+  "measuredAt": "2026-09-13T11:32:30.028Z"
 }

@@ -167,6 +167,30 @@ Die Fabrik liegt jetzt auf Spieltag 28 statt 8, und der Startvorrat trägt sie n
 mit. Für den Spieler ist das die beabsichtigte Knappheit; für die Artilleriekette
 (R-BAT-08) ist es eine Verdünnung, die im Auge behalten gehört.
 
+### Nachtrag 2026-09-13 · Die KI baut die Fabrik aus (T-M41-01, T-M41-02)
+
+`nextBuildingFor` baut die Fabrik seit T-M41-01 in Städten bis `maxLevel`; Kaserne, Eisenbahn
+und Hafen bleiben bei genau einmal (`DECISIONS.md`, 2026-09-13). **Dieser Abschnitt misst das
+nicht mehr allein:** `progress.slow.test.ts` (200 Tage, sechs Europäer) zeigt vorher wie nachher
+höchste Stufe **1** — der Ausbau braucht die lange Partie. Gemessen ist deshalb die Vollpartie,
+jetzt mit drei Startzahlen (`fullgame.slow.test.ts`, Berichte `fullgame.json`,
+`fullgame-2015.json`, `fullgame-1815.json`):
+
+| Startzahl | Siegtag vorher → nachher | höchste Fabrikstufe | Provinzen mit Stufe ≥ 2 / = 3 | Ausbau begonnen auf 2 / 3 |
+|---|---|---|---|---|
+| 1914 | 471 → **582** | 1 → **3** (Russland; China 2) | 0 → 29 / 11 | 0 → 56 / 17 |
+| 2015 | 583 → **868** | 1 → 2 (Russland, Indien) | 0 → 42 / 0 | 0 → 106 / 0 |
+| 1815 | 774 → **412** | 1 → 2 (Russland, China) | 0 → 23 / 0 | 0 → 50 / 0 |
+
+**Risiko 5, neu beantwortet:** die dritte Fabrikstufe ist für die KI **erreichbar** — in einer
+von drei Partien, bei der Macht, die gewinnt. Vorher war sie es in keiner.
+
+**Was es an der Partie ändert:** mehr, als der Plan erwartet hat. Der Siegtag springt je
+Startzahl in beide Richtungen (Mittel 609 → 621); das Turnier bleibt zeilengleich, der
+Grundlauf aus Abschnitt 3 nicht ganz (Anteil des Stärksten 0,4442 → 0,4462, Eroberungen
+302,3 → 301,3, Überlebende 5,17 → 5,08). Die Planungszahl „Tag 449, keine Stufe 3" ist nicht
+reproduzierbar; die ganze Messung samt Gegenprobe steht in `PROBLEME.md` (2026-09-13, T-M41-02).
+
 ## 6 · Was daraus folgt
 
 **1. Der Meilenstein tut, was er sollte.** Die Fortschrittsachse trägt statt zwei jetzt

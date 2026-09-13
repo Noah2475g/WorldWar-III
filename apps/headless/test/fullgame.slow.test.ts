@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { advanceTicks } from '@worldwar/ai'
-import { createInitialState, parseRules, type MapData, type Rules } from '@worldwar/core'
+import { createInitialState, parseRules, type GameEvent, type MapData, type Rules } from '@worldwar/core'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
 /**
@@ -23,6 +23,11 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * Gespielt wird die **ausgelieferte** Voreinstellung: dieselbe Partie, die ein Spieler
  * beim ersten Start bekommt. Ein Abnahmetest auf einer eigens gebauten Aufstellung
  * bewiese etwas über die Aufstellung.
+ *
+ * **Andere Startzahlen** (T-M41-02): `WORLDWAR_FULLGAME_SEED=2015 pnpm sim:fullgame` spielt
+ * dieselbe Voreinstellung mit anderer Startzahl und schreibt `fullgame-2015.json`. Ein
+ * Siegtag aus einer einzigen Startzahl ist eine Zahl, kein Befund — 1914 endet an Tag
+ * 471, 2015 an Tag 583, und was dazwischen liegt, ist Rauschen der Startzahl.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -43,6 +48,10 @@ const map = load('data/maps/world.json') as MapData
 /** Obergrenze: ohne sie wäre ein hängendes Spiel ein ewig laufender Test. */
 const MAX_DAYS = 1500
 
+/** Die ausgelieferte Startzahl, oder die aus der Umgebung (T-M41-02). */
+const SEED = Number(process.env['WORLDWAR_FULLGAME_SEED'] ?? DEFAULT_NEW_GAME.seed)
+const REPORT = SEED === DEFAULT_NEW_GAME.seed ? 'fullgame.json' : `fullgame-${SEED}.json`
+
 /**
  * Gibt die Ereignisschleife frei.
  *
@@ -56,7 +65,8 @@ const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve
 
 describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () => {
   it('kommt zu einem Ausgang, und unterwegs geschieht etwas', async () => {
-    const config = toConfig(DEFAULT_NEW_GAME, map)
+    expect(Number.isSafeInteger(SEED), `WORLDWAR_FULLGAME_SEED ist keine Zahl`).toBe(true)
+    const config = toConfig({ ...DEFAULT_NEW_GAME, seed: SEED }, map)
     const ki = config.players.filter((player) => player.kind === 'ai').length
     expect(ki, 'AK-1 verlangt mindestens vier KI-Gegner').toBeGreaterThanOrEqual(4)
 
@@ -64,7 +74,7 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
     const ticksPerDay = rules.constants.ticksPerDay
 
     // In Abschnitten, mit einem Atemzug dazwischen — siehe `breathe` oben.
-    const events: { type: string }[] = []
+    const events: GameEvent[] = []
     const CHUNK_DAYS = 50
     for (let day = 0; day < MAX_DAYS; day += CHUNK_DAYS) {
       const chunk = advanceTicks(current, CHUNK_DAYS * ticksPerDay, { map, rules })
@@ -101,14 +111,37 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
     )
     const kb = (value: unknown) => Math.round(Buffer.byteLength(JSON.stringify(value)) / 1024)
 
+    // Die zweite Fortschrittsachse in der ganzen Partie (T-M41-02). Ein gruener Einzeltest
+    // belegt, dass die KI den Ausbau befiehlt — nicht, dass sie in einer Partie klettert.
+    // Gezaehlt wird zweimal: was am Ende steht (Besitz, auch erobert) und was je begonnen
+    // wurde (BUILD_STARTED traegt die Stufe, aus dem Ereignisstrom, nie aus dem Ringpuffer).
+    const hoechsteFabrikstufe = Object.fromEntries(
+      final.playerOrder.map((id) => [
+        final.players[id]!.nation,
+        final.provinceOrder.reduce(
+          (best, provinceId) =>
+            final.provinces[provinceId]!.owner === id
+              ? Math.max(best, final.provinces[provinceId]!.buildings.factory ?? 0)
+              : best,
+          0,
+        ),
+      ]),
+    )
+    const fabrikenAmEnde = (stufe: number) =>
+      final.provinceOrder.filter((provinceId) => (final.provinces[provinceId]!.buildings.factory ?? 0) >= stufe).length
+    const ausbauBegonnen = (stufe: number) =>
+      events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory' && event.level === stufe)
+        .length
+
     // Der Bericht wird immer geschrieben, auch wenn die Zusicherungen greifen — eine
     // gescheiterte Abnahme ist die Messung, die man dann am dringendsten braucht.
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
     writeFileSync(
-      `${ROOT}/docs/reports/fullgame.json`,
+      `${ROOT}/docs/reports/${REPORT}`,
       `${JSON.stringify(
         {
           map: map.id,
+          seed: SEED,
           players: config.players.length,
           ai: ki,
           nations: config.players.map((player) => player.nation),
@@ -118,6 +151,13 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
           warDeclarations: kriege,
           captures: eroberungen,
           battles: kaempfe,
+          factory: {
+            highestLevelPerNation: hoechsteFabrikstufe,
+            provincesAtLevel2OrMore: fabrikenAmEnde(2),
+            provincesAtLevel3: fabrikenAmEnde(3),
+            upgradesStartedToLevel2: ausbauBegonnen(2),
+            upgradesStartedToLevel3: ausbauBegonnen(3),
+          },
           aiMemory: kiGedaechtnis,
           aiMemoryKB: kb(final.ai),
           stateKB: kb(final),
@@ -140,5 +180,12 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
       result.state.victory.winner,
       `nach ${tag} Spieltagen unentschieden (${eroberungen} Eroberungen, ${kriege} Kriegserklaerungen)`,
     ).not.toBeNull()
+
+    // Die KI klettert die Gebaeudeachse (T-M41-02, R-PROV-02). Bis T-M41-01 kam keine Macht
+    // ueber Fabrikstufe 1 hinaus; die Stufe 3 bleibt ausdruecklich keine Zusicherung.
+    expect(
+      Math.max(0, ...Object.values(hoechsteFabrikstufe)),
+      `keine Macht besitzt am Ende eine Fabrik der Stufe 2 (${JSON.stringify(hoechsteFabrikstufe)})`,
+    ).toBeGreaterThanOrEqual(2)
   }, 1_800_000)
 })

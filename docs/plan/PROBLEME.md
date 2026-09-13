@@ -2026,6 +2026,14 @@ Grundlauf und Turnier, so wie jede der vier Zahlenaufgaben eine bekommen hat.
 
 **Status: offen, kein Produktfehler.** Für Noahs nächste Planung vorgemerkt.
 
+**Status seit 2026-09-13: behoben** (T-M41-01, T-M41-02). Die KI baut die Fabrik in Städten
+bis `maxLevel`. In der Vollpartie besitzt am Ende in jeder der drei gemessenen Startzahlen
+mindestens eine Macht eine Fabrik der Stufe 2 — vorher in keiner: 1914 Russland Stufe **3**
+(11 Provinzen auf Stufe 3, 29 auf mindestens 2), 2015 Stufe 2 (42 Provinzen), 1815 Stufe 2
+(23 Provinzen). `fullgame.slow.test.ts` sichert es zu. `progress.slow.test.ts` (200 Tage,
+sechs Europäer) sieht den Ausbau weiterhin nicht — höchste Stufe 1 vorher wie nachher. Was
+der Ausbau an der ganzen Partie ändert, steht im Eintrag vom 2026-09-13 zu T-M41-02 unten.
+
 ---
 
 ## 2026-09-13 · T-M17-01 · Acht Befunde beim Planen von M17
@@ -2158,3 +2166,61 @@ jsdom mit gestellter Zeit. Die Messung mit dem Leistungsbudget (R-TIME-02/AK4) b
 Schlussblock auf freier Maschine.
 
 **Status: behoben** (T-M41-04). Plantext in `03-TASKS.md`, `tasks.yaml` und D5 mit Vermerk.
+
+---
+
+## 2026-09-13 · T-M41-02 · Der Fabrikausbau verändert die ganze Partie — und die Planungszahl „Tag 449" ist nicht reproduzierbar
+
+**Was der Plan sagte.** Im Planungslauf, „im Speicher gepatcht" und nicht eingecheckt, ergab
+„nur Fabrik bis `maxLevel`, nur Städte": Turnier und Grundlauf zeilengleich, Vollpartie 1914
+**Tag 449**, 31 begonnene Fabriken Stufe 2, **keine Stufe 3** — „das liegt im Rauschen der
+Startzahl und belegt nur keine Verschiebung" (`DECISIONS.md` und `03-TASKS.md`, T-M41-01/02).
+
+**Was gebaut und gemessen ist** (`fullgame.slow.test.ts`, jetzt mit Startzahl über
+`WORLDWAR_FULLGAME_SEED`, Berichte `docs/reports/fullgame.json`, `fullgame-2015.json`,
+`fullgame-1815.json`; vorher = Stand `a2352b6` mit denselben Berichtsfeldern):
+
+| Startzahl | Siegtag | Kriegserklärungen | Eroberungen | Schlachten | höchste Fabrikstufe | Provinzen ≥ 2 / = 3 | Ausbau begonnen auf 2 / 3 |
+|---|---|---|---|---|---|---|---|
+| 1914 vorher | 471 | 12 | 1827 | 4040 | 1 | 0 / 0 | 0 / 0 |
+| 1914 nachher | **582** | 12 | 1615 | 5236 | **3** | 29 / 11 | 56 / **17** |
+| 2015 vorher | 583 | 10 | 1420 | 4985 | 1 | 0 / 0 | 0 / 0 |
+| 2015 nachher | **868** | **37** | 2923 | 11262 | 2 | 42 / 0 | 106 / 0 |
+| 1815 vorher | 774 | 13 | 1772 | 6379 | 1 | 0 / 0 | 0 / 0 |
+| 1815 nachher | **412** | 12 | 1172 | 5323 | 2 | 23 / 0 | 50 / 0 |
+
+- **Turnier:** zeilengleich vorher und nachher (1,00 / 0,70 bei 10:0:15 / 1,00). R-AI-06 hält.
+- **Grundlauf** (`progress.slow.test.ts`, 12 Startzahlen × 120 Tage): **nicht** auf vier Stellen
+  gleich — Anteil des Stärksten 0,4442 → 0,4462, Eroberungen 302,3 → 301,3, Überlebende
+  5,17 → 5,08, Endbestände 50613 → 50439.
+- **Gegenprobe** mit Kappe bei Stufe 2 (`level('factory') < 2`, sonst gleich; Startzahl 1914,
+  danach zurückgenommen): Tag **591**, 1904 Eroberungen, 68 begonnene Ausbauten auf Stufe 2,
+  keine Stufe 3. Auch sie trifft 449 nicht.
+
+**Die Planungszahl ist damit nicht reproduzierbar**, mit keiner der beiden naheliegenden
+Varianten. Welche Änderung der Planungslauf wirklich gemessen hat, lässt sich aus dem
+eingecheckten Stand nicht rekonstruieren; eine Ursache wird hier nicht behauptet. Die Lehre
+steht schon in den Regeln — eine nicht eingecheckte Messung ist erst Daten, wenn sie als Test
+neu entstanden ist —, und genau das hat den Unterschied aufgedeckt.
+
+**Was die Zahlen sagen.** Der Siegtag verschiebt sich je Startzahl stark und **in beide
+Richtungen** (+111, +285, −362 Tage; Mittel 609 → 621). Das ist keine systematische
+Verlängerung oder Verkürzung, sondern die Partie wird eine andere: jede Verhaltensänderung der
+KI lenkt eine 500-Tage-Partie in einen anderen Verlauf. „Keine Verschiebung" war mit einer
+einzigen Startzahl nie belegbar. Auffällig ist 2015: **37 statt 10 Kriegserklärungen** und
+mehr als doppelt so viele Schlachten.
+
+**Warum die Variante bleibt.** Das Rücknahmekriterium dieser Aufgabe war das Turnier (R-AI-06),
+und das ist zeilengleich. AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im
+Tor 300–1500 aus T-M34-07, und die Zusicherung „mindestens eine Macht besitzt Fabrikstufe 2"
+hält in allen dreien. Die Kappe bei Stufe 2 wäre nicht besser belegt und hielte der KI die
+dritte Stufe verschlossen.
+
+**Was daraus folgt.** (1) Der Ausgangswert von M17 (T-M17-02) wird auf diesem Stand gemessen,
+nicht auf dem vor M41. (2) Der eine Parameterlauf der Delegation (T-M17-16) sieht die
+Änderung im 120-Tage-Grundlauf nur schwach; die Wirkung liegt in der langen Partie. (3) Ob die
+blutigere Partie mit Startzahl 2015 ein Muster ist, sagen erst mehr Startzahlen — vorgemerkt
+für den Schlussblock, keine Aufgabe.
+
+**Status: Beobachtung, kein Produktfehler.** Plantext in `DECISIONS.md` (T-M41-01) und
+`03-TASKS.md`/`tasks.yaml` (T-M41-02) mit Vermerk; `WORKFLOW.md` §5 nennt Tag 582.

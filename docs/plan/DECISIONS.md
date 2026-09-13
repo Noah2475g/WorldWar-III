@@ -2028,6 +2028,15 @@ Grundlauf zeilengleich und gibt der KI die zweite Achse zumindest bis Stufe 2.
 471 liegt im Rauschen der Startzahl (2015 endet an Tag 583) — belegt ist nur „keine
 Verschiebung".
 
+**Nachgemessen beim Bau (2026-09-13, T-M41-01/02) — die Zahlen der letzten Tabellenzeile sind
+nicht reproduzierbar.** Mit der gebauten Variante (`level('factory') < maxLevel`, nur Städte):
+Turnier **zeilengleich** (1,00 / 0,70 / 1,00); Grundlauf **nicht** auf vier Stellen gleich
+(0,4442 / 302,3 / 5,17 → 0,4462 / 301,3 / 5,08); Vollpartie 1914 **Tag 582** statt 449, 56
+Ausbauten auf Stufe 2 und **17 auf Stufe 3** begonnen; mit Startzahl 2015 Tag 868 (vorher 583),
+mit 1815 Tag 412 (vorher 774). Eine Gegenprobe mit Kappe bei Stufe 2 endet an Tag 591 — auch
+sie trifft 449 nicht. **Die Entscheidung bleibt:** ihr Kriterium war das Turnier, und das hält.
+Alle Zahlen in `PROBLEME.md` (2026-09-13, T-M41-02).
+
 **kippbar:** eine Zeile je Gebäude in `nextBuildingFor`. Der Haltetest „nie Kaserne Stufe 2"
 (T-M41-01) nennt diesen Eintrag; wer ihn löscht, fährt danach das Turnier.
 
