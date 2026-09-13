@@ -3130,3 +3130,27 @@ will, hat zwei Wege, und beide sind eine neue Entscheidung, gemessen mit demselb
 - die Ruhe nach Märschen der Automatik verlängern.
 
 **Status:** offen, ohne Aufgabe. `stance.json` eingecheckt, Frische-Wächter grün.
+
+---
+
+## 2026-09-13 · Beim Nachtrag zu T-M40-12 (N-4) gefunden · Die Kennung jeder Protokollzeile hängt am Listenplatz (gelesen, nicht gemessen)
+
+**Befund.** `describeEvent(event, index, …)` in `apps/desktop/src/game/events.ts` baut die Kennung einer Protokollzeile
+als `${event.tick}-${event.type}-${index}`. Diese Kennung dient auch als React-Schlüssel. `index` ist der Platz in der
+Liste, die `App.tsx` vorher filtert und umdreht (neueste zuerst). Kommt oben eine Zeile hinzu oder fällt eine heraus,
+verschieben sich die Plätze, und zwei gleichartige Ereignisse im selben Tick tauschen ihre Schlüssel.
+
+Es ist dasselbe Muster, das N-4 der Durchsicht der Nacharbeit an den Zeilen der Automatik fand; dort ist es seit dem
+Nachtrag zu T-M40-12 behoben (`adjutantMarchEntries`).
+
+**Nicht gemessen.** Ob die Oberfläche dadurch sichtbar falsch zeichnet, ist nicht geprüft. Aufgeklappte Zeilen,
+etwa ein Gefechtsbericht, wären die Stelle, an der ein vertauschter Schlüssel auffiele.
+
+**Warum nicht gebaut.** Das Muster ist älter als M40 und liegt außerhalb der Nacharbeit. Eine stabile Kennung braucht
+etwas, das ein Ereignis eindeutig macht; `GameEvent` trägt keine laufende Nummer.
+
+**Reparatur später.** Kennung aus Tick, Typ und den Feldern, die das Ereignis bestimmen, oder eine laufende Nummer im
+Ereignisstrom. Test wie in `events.test.ts` (T-M40-13): dieselbe Zeile behält ihre Kennung, wenn davor eine andere
+herausfällt.
+
+**Status:** offen, ohne Aufgabe.
