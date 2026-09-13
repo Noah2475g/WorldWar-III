@@ -2619,3 +2619,36 @@ dieser Messung nach M18 verschoben (`DECISIONS.md`). Keine Grenze bewegt.
   dazwischen neue Armeen. Ob der Deckel und die Zusage überhaupt zusammenpassen, ist die erste Frage für M18.
 
 **Status: zurückgenommen** (T-M41-10 auf `todo`, Zusage 7 nach M18).
+
+---
+
+## 2026-09-13 · T-M41-11 · Die KI sah die Sperre beim Verlegen der Hauptstadt nicht — und befahl jeden Tag neu
+
+**Befund** (Nebenbefund c zu T-M41-08). `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen mit
+`ON_COOLDOWN` abgelehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`). `PublicView.self` führte nur `capitalLostUntil`, nicht die
+Sperre; `capitalCommands` befahl deshalb an jedem Strategietag neu. Im Turnier-Nachbau der Untersuchung 298×; auf
+der Weltkarte zeigte es sich erst nach der Reparatur zu H1: **72×** in 200 Tagen, dieselbe Sperre bis zu **29×**
+(Italien) — nach T-M41-09 die letzte große Ablehnungsklasse.
+
+**Reparatur.** `PublicView.self.capitalMovedAtTick` (eigenes Wissen, nur der `self`-Block — `retreating` aus M40 in
+derselben Datei bleibt unberührt), `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kernindex, `capitalCommands` wartet die Sperre
+ab und begründet es (R-AI-05). Tests zuerst: `publicView.test.ts` rot 3 von 19 („expected undefined to be 48"),
+`decide.test.ts` rot 1 von 42 (ein `SET_CAPITAL`, das der Kern mit `ON_COOLDOWN` ablehnen würde),
+`ai-integration.slow.test.ts` rot 2 von 21 mit der alten `capital.ts` („Weltkarte, 200 Tage: expected 72 to be +0",
+„expected 29 to be less than or equal to 3").
+
+**Neutral, gemessen.** Sicht ist kein Zustand, und eine abgelehnte `SET_CAPITAL` änderte nichts:
+
+| Größe | vorher (nach T-M41-10-Rücknahme) | nachher |
+|---|---|---|
+| Endzustand ohne Protokoll und KI, Weltkarte 200 Tage | `e7b0627bff9f7b39` | **bitgleich** |
+| dasselbe, Voreinstellung 90 Tage | `41acc8a544184d8b` | **bitgleich** |
+| Ablehnungen Weltkarte | 75 (0,45 %) | **3** (0,02 %, alle `RECRUIT:INSUFFICIENT_RESOURCES`) |
+| längste Wiederholung eines abgelehnten Befehls | 29 | **2** |
+| Golden-Master (`determinism`, `walkthrough`, `replay`, ohne `UPDATE_GOLDEN`) | — | 20 grün, Dateien unverändert |
+| Turnier | — | zeilengleich |
+
+Damit trägt auch der erweiterte Paarungsschlüssel aus T-M14-11 (Macht, Befehl, Fehlercode, Einzelheiten) über
+**alle** Befehle, den T-M41-09 noch nicht zusichern konnte — jetzt in beiden Läufen zugesichert.
+
+**Status: behoben** (T-M41-11).

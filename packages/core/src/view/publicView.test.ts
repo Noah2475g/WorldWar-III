@@ -278,3 +278,25 @@ describe('R-UI-13 Die Sicht sagt, ob man selbst noch im Spiel ist', () => {
     expect(publicView(state, 'p1').self.alive).toBe(true)
   })
 })
+
+describe('R-AI-01 Die Sicht nennt die Sperre beim Verlegen der Hauptstadt (T-M41-11)', () => {
+  // Befund der Untersuchung zu T-M41-08: `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen
+  // mit ON_COOLDOWN abgelehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`), aber die Sicht fuehrte nur
+  // `capitalLostUntil` — die KI konnte die Sperre nicht sehen und befahl taeglich neu (298-mal in
+  // einem Turnierlauf, nach der Reparatur zu H1 72-mal auf der Weltkarte). Eigenes Wissen, also
+  // unter `self`; nur Sicht, kein Zustandsfeld.
+  it('fuehrt, wann die eigene Hauptstadt zuletzt verlegt wurde', () => {
+    state.players['p2']!.capitalMovedAtTick = 48
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBe(48)
+  })
+
+  it('fuehrt null, solange nie verlegt wurde', () => {
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBeNull()
+  })
+
+  it('verraet die Sperre einer fremden Macht nicht', () => {
+    state.players['p1']!.capitalMovedAtTick = 48
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBeNull()
+    expect(JSON.stringify(publicView(state, 'p2').others)).not.toContain('capitalMovedAtTick')
+  })
+})

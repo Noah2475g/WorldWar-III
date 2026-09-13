@@ -362,6 +362,46 @@ describe('R-AI-01 Die KI verlegt ihre Hauptstadt', () => {
     expect(capitalCommands(contextFor('p2'), [])).toEqual([])
   })
 
+  /** Keine Hauptstadt, jede eigene Provinz eine Stadt, zuletzt verlegt vor `vorTagen` Spieltagen. */
+  const ohneHauptstadtVerlegtVor = (vorTagen: number) => {
+    const ticksPerDay = TEST_RULES.constants.ticksPerDay
+    state.tick = 40 * ticksPerDay
+    state.players['p2']!.capitalProvinceId = null
+    state.players['p2']!.capitalMovedAtTick = state.tick - vorTagen * ticksPerDay
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'city'
+    }
+  }
+  const phaseCtx = () => ({ map, rules: TEST_RULES, commands: [], events: [] })
+
+  it('befiehlt waehrend der Sperre des Verlegens keine neue Hauptstadt (T-M41-11)', () => {
+    // Befund der Untersuchung zu T-M41-08: der Kern lehnt SET_CAPITAL 30 Spieltage nach dem letzten
+    // Verlegen mit ON_COOLDOWN ab, aber die Sicht fuehrte die Sperre nicht — die KI befahl jeden
+    // Tag neu: 298-mal in einem Turnierlauf, nach der Reparatur zu H1 72-mal auf der Weltkarte.
+    ohneHauptstadtVerlegtVor(1)
+    const stadt = state.provinceOrder.find((id) => state.provinces[id]!.owner === 'p2')!
+    // Die Lage ist die, die der Test braucht: der Kern wuerde den Befehl wirklich ablehnen.
+    expect(canApply(state, { type: 'SET_CAPITAL', playerId: 'p2', provinceId: stadt }, phaseCtx())).toMatchObject({
+      ok: false,
+      code: 'ON_COOLDOWN',
+    })
+
+    const explanations: Explanation[] = []
+    expect(capitalCommands(contextFor('p2'), explanations)).toEqual([])
+    // R-AI-05: auch das Nichtstun ist begruendet.
+    expect(explanations.some((entry) => /Sperre/.test(entry.reason))).toBe(true)
+  })
+
+  it('verlegt nach Ablauf der Sperre wieder (T-M41-11)', () => {
+    // Die Gegenrichtung: ein Filter, der nie mehr verlegt, bestuende den Test oben auch.
+    ohneHauptstadtVerlegtVor(30)
+    const commands = capitalCommands(contextFor('p2'), [])
+
+    expect(commands).toHaveLength(1)
+    expect(canApply(state, commands[0]!, phaseCtx())).toEqual({ ok: true })
+  })
+
   it('waehlt bei gleicher Lage dieselbe Stadt', () => {
     state.players['p2']!.capitalProvinceId = null
     for (const id of state.provinceOrder) {

@@ -5806,3 +5806,24 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Voreinstellung). `consolidate.ts`, Tests und Berichte stehen wieder auf dem Stand nach T-M41-09; die
   Aufgabe steht auf `todo`, Zusage 7 ist mit der Messung nach M18 verschoben. `DECISIONS.md` und
   `PROBLEME.md`, 2026-09-13, T-M41-10.)*
+
+### T-M41-11 · Die Sicht nennt die Sperre beim Verlegen der Hauptstadt
+- **Ziel:** eine Sperre, die die KI nicht sieht, befiehlt sie jeden Tag neu — und jede Ablehnung
+  verdeckt eine andere.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/core/src/view/publicView.ts`, `packages/core/src/index.ts`,
+  `packages/ai/src/capital.ts`, `docs/reports/ai-integration.json`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/core/src/view/publicView.test.ts` — `self` führt, wann die eigene Hauptstadt
+  zuletzt verlegt wurde, `null` ohne Verlegen, und nichts über fremde Mächte. `packages/ai/src/decide.test.ts`
+  — während der Sperre kein `SET_CAPITAL` (der Kern hätte `ON_COOLDOWN` gesagt), mit Begründung; nach
+  Ablauf wieder eines, das die Prüfung besteht. `apps/headless/test/ai-integration.slow.test.ts` — kein
+  `SET_CAPITAL:ON_COOLDOWN` und keine abgelehnte Paarung (Macht, Befehl, Fehlercode, Einzelheiten) öfter
+  als dreimal, in beiden Läufen.
+- **Fertig wenn:** `PublicView.self.capitalMovedAtTick` die Sperre trägt, `capitalCommands` sie mit
+  `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kern beachtet und die Änderung **neutral** ist: Sicht ist kein Zustand
+  — Golden-Master ohne `UPDATE_GOLDEN` unverändert, der Endzustand ohne Protokoll und KI-Gedächtnis bitgleich
+  (eine abgelehnte `SET_CAPITAL` änderte nichts), Turnier zeilengleich. Nur der `self`-Block von
+  `publicView.ts` ist berührt (dieselbe Datei trägt `retreating` aus M40). Befund: Nebenbefund c zu
+  T-M41-08 — 298-mal im Turnier-Nachbau, 72-mal auf der Weltkarte nach der Reparatur zu H1.

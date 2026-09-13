@@ -459,6 +459,26 @@ describe('T-M41-09 Die KI baut nicht in Provinzen, die sie nur erinnert', () => 
   })
 })
 
+/**
+ * Die KI sieht die Sperre beim Verlegen der Hauptstadt (T-M41-11).
+ *
+ * `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen mit `ON_COOLDOWN` abgelehnt, und die Sicht
+ * führte die Sperre nicht: nach der Reparatur zu H1 72-mal in diesem Lauf, dieselbe Sperre bis zu 29-mal.
+ * Damit trägt jetzt auch der erweiterte Paarungsschlüssel aus T-M14-11 über **alle** Befehle, den
+ * T-M41-09 noch nicht zusichern konnte.
+ */
+describe('T-M41-11 Die KI befiehlt keine Hauptstadt waehrend der Sperre', () => {
+  it('bekommt kein SET_CAPITAL:ON_COOLDOWN, in beiden Laeufen', () => {
+    expect(rejected(integration, 'ON_COOLDOWN', 'SET_CAPITAL').length, 'Weltkarte, 200 Tage').toBe(0)
+    expect(rejected(voreinstellung, 'ON_COOLDOWN', 'SET_CAPITAL').length, 'Voreinstellung, 90 Tage').toBe(0)
+  })
+
+  it('wiederholt keinen abgelehnten Befehl oefter als dreimal, in beiden Laeufen (T-M14-11, Absicht)', () => {
+    expect(kennzahlen(integration).paarungErweitertHoechstens, 'Weltkarte, 200 Tage').toBeLessThanOrEqual(3)
+    expect(kennzahlen(voreinstellung).paarungErweitertHoechstens, 'Voreinstellung, 90 Tage').toBeLessThanOrEqual(3)
+  })
+})
+
 /*
  * „Höchstens drei Armeeobjekte je Provinz" (Zusage 7 aus T-M14-12) steht hier bewusst **nicht** als
  * Zusicherung, nur als Zahl im Bericht (`armeeobjekteJeProvinz`). T-M41-10 hat versucht, sie für

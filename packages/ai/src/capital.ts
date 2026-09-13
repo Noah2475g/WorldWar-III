@@ -1,4 +1,4 @@
-import type { Command } from '@worldwar/core'
+import { CAPITAL_MOVE_COOLDOWN_DAYS, type Command } from '@worldwar/core'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -28,6 +28,21 @@ export function capitalCommands(context: AiContext, explanations: Explanation[])
   // Nur Städte kommen in Frage — dieselbe Regel, die auch für den Menschen gilt.
   const candidates = own.filter((province) => province.kind === 'city')
   if (candidates.length === 0) return []
+
+  // **Die Sperre des Verlegens** (T-M41-11). Der Kern lehnt ein neues Verlegen bis
+  // `CAPITAL_MOVE_COOLDOWN_DAYS` nach dem letzten mit ON_COOLDOWN ab. Die Sicht führte die Sperre
+  // nicht, und die KI befahl jeden Tag neu — 298-mal in einem Turnierlauf, 72-mal auf der Weltkarte.
+  const movedAt = view.self.capitalMovedAtTick
+  const readyAt =
+    movedAt === null ? null : movedAt + CAPITAL_MOVE_COOLDOWN_DAYS * context.rules.constants.ticksPerDay
+  if (readyAt !== null && view.tick < readyAt) {
+    explanations.push({
+      action: 'Verlegt die Hauptstadt noch nicht',
+      reason: `Sperre des Verlegens bis Tick ${readyAt}`,
+      score: 0,
+    })
+    return []
+  }
 
   // Die volkreichste; bei Gleichstand die mit der kleineren Kennung, damit dieselbe Lage
   // denselben Befehl ergibt (R-ARCH-01).

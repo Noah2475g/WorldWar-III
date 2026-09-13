@@ -2,7 +2,7 @@
   "gemessenAm": "2026-09-13",
   "spieltage": 200,
   "maechte": 8,
-  "ereignisse": 30056,
+  "ereignisse": 29984,
   "kriegserklaerungen": 15,
   "friedensschluesse": 7,
   "friedenZwischenKi": 7,
@@ -20,20 +20,17 @@
   "fabriken": 71,
   "artillerie": 63,
   "beschussSelbsttaetig": 231,
-  "befehle": 16722,
-  "abgelehnt": 75,
-  "ablehnungsquoteProzent": 0.45,
+  "befehle": 16650,
+  "abgelehnt": 3,
+  "ablehnungsquoteProzent": 0.02,
   "abgelehntZuFrueh": 0,
   "marschbefehle": 6589,
   "noPath": 0,
   "noPathAnteilProzent": 0,
   "paarungArmeeFehlercodeHoechstens": 0,
-  "paarungErweitertHoechstens": 29,
-  "paarungenErweitertUeberDrei": 3,
+  "paarungErweitertHoechstens": 2,
+  "paarungenErweitertUeberDrei": 0,
   "paarungenErweitertHaeufigste": {
-    "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3607}": 29,
-    "Italien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":4327}": 28,
-    "Indien|SET_CAPITAL|ON_COOLDOWN|{\"readyAtTick\":3915}": 15,
     "China|RECRUIT|INSUFFICIENT_RESOURCES|{\"unitKey\":\"infantry\"}": 2,
     "China|RECRUIT|INSUFFICIENT_RESOURCES|{\"unitKey\":\"artillery\"}": 1
   },
@@ -107,8 +104,7 @@
     "artillery": 63
   },
   "ablehnungen": {
-    "RECRUIT:INSUFFICIENT_RESOURCES": 3,
-    "SET_CAPITAL:ON_COOLDOWN": 72
+    "RECRUIT:INSUFFICIENT_RESOURCES": 3
   },
   "zustandOhneKi": "e7b0627bff9f7b39",
   "voreinstellung90": {
