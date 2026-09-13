@@ -198,6 +198,14 @@ export const STANCE_SOURCES = [
  *
  * Kippbar (`DECISIONS.md`, 2026-09-13, "Der Turnier-Waechter sieht KI und Kern"); `test/requirements.test.ts`
  * nennt beide Listen woertlich.
+ *
+ * `judgedBy` sagt, wonach die Frische geht (Nacharbeit zu 8c8c8f6):
+ * - **Turnier: `measuredAtCommit`.** Das Turnier ist deterministisch, und ein Neulauf auf neuem Code ergab am
+ *   2026-09-13 einen zeilengleichen Bericht. Eine unveraenderte Datei laesst sich nicht neu committen, der Waechter
+ *   blieb deshalb nach dem Commit der Datei "nicht frisch", obwohl frisch gemessen war. Der Bericht traegt jetzt die
+ *   Messzeile (`measurementLine`), und das Urteil geht wie beim Haltungs-Messlauf nach dem Messcommit.
+ * - **Parameterlauf: `reportCommit`**, bewusst. Er dauert fast zwei Stunden, und bei einer Regelaenderung hat sein
+ *   Bericht einen echten Diff. Den Unterschied haelt ein Test in `test/requirements.test.ts` fest.
  */
 export const GAUGES = [
   {
@@ -205,12 +213,14 @@ export const GAUGES = [
     report: 'docs/reports/balance-sweep.md',
     sources: ['data/rules', 'data/maps/world.json'],
     command: 'pnpm balance:sweep',
+    judgedBy: 'reportCommit',
   },
   {
     name: 'Turnier',
     report: 'docs/reports/ai-tournament-run.md',
     sources: ['data/rules', 'data/maps/testworld.json', 'packages/ai/src', 'packages/core/src'],
     command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts',
+    judgedBy: 'measuredAtCommit',
   },
 ]
 
@@ -222,6 +232,75 @@ const kurz = (commit) => String(commit).slice(0, 7)
 
 /** Ob eine Datei unter einer der Quellen liegt — ein Ordner zaehlt mit allem darunter. */
 const unterQuellen = (file, sources) => sources.some((source) => file === source || file.startsWith(`${source}/`))
+
+/**
+ * Die Messzeile eines Markdown-Berichts: `Gemessen auf: <40 Zeichen> (Quellen sauber)`, oder
+ * `(Quellen nicht sauber: a, b)`, wenn beim Messen Dateien unter den Quellen uncommittet waren. Dasselbe wie
+ * `measuredAtCommit` und `measuredDirty` im Haltungs-Messlauf, nur als Zeile, die ein Mensch liest. Ohne git steht
+ * dort `unbekannt`, und der Waechter liest das als Bericht ohne Messcommit.
+ */
+export function measurementLine({ measuredAtCommit, measuredDirty }) {
+  if (typeof measuredAtCommit !== 'string' || !/^[0-9a-f]{40}$/.test(measuredAtCommit)) return 'Gemessen auf: unbekannt (git antwortet nicht)'
+  const vermerk = !Array.isArray(measuredDirty)
+    ? 'Quellen unbekannt'
+    : measuredDirty.length === 0
+      ? 'Quellen sauber'
+      : `Quellen nicht sauber: ${measuredDirty.join(', ')}`
+  return `Gemessen auf: ${measuredAtCommit} (${vermerk})`
+}
+
+/** Die Messzeile aus einem Bericht. Fehlt sie, sind beide Felder `null`; fehlt nur der Vermerk, ist `measuredDirty` `null`. */
+export function parseMeasurementLine(text) {
+  const zeile = /^Gemessen auf: ([0-9a-f]{40}) \((.*)\)\r?$/m.exec(String(text))
+  if (!zeile) return { measuredAtCommit: null, measuredDirty: null }
+  const [, measuredAtCommit, vermerk] = zeile
+  if (vermerk === 'Quellen sauber') return { measuredAtCommit, measuredDirty: [] }
+  const schmutzig = /^Quellen nicht sauber: (.+)$/.exec(vermerk)
+  return { measuredAtCommit, measuredDirty: schmutzig ? schmutzig[1].split(', ') : null }
+}
+
+/**
+ * Das Urteil nach Messcommit, gemeinsam fuer den Haltungs-Messlauf (T-M40-17) und das Turnier (Nacharbeit zu
+ * 8c8c8f6). `{ fresh: true }` heisst: die Messung selbst gilt. Was ein Bericht darueber hinaus erfuellen muss
+ * (beim Haltungs-Messlauf AK5), prueft der Aufrufer danach.
+ *
+ * `texte` traegt, was sich zwischen den Berichten unterscheidet: `label` (wessen Quellen), `quellen` (wie sie in
+ * der Meldung heissen), `commitField` und `dirtyField` (wo der Bericht die Angaben fuehrt), `rerun` und `stale`.
+ */
+function measuredReportStatus({ file, report, sourcesDirty, measuredAtIsAncestor, commitsSinceMeasurement, sources, texte }) {
+  const { label, quellen, commitField, dirtyField, rerun, stale } = texte
+  if (sourcesDirty !== false) {
+    return { fresh: false, reason: `uncommittete Aenderungen an den Quellen ${label} - erst committen, dann messen` }
+  }
+  if (!report || typeof report !== 'object') return { fresh: false, reason: `kein eingecheckter Bericht ${file}` }
+  const commit = report.measuredAtCommit
+  if (typeof commit !== 'string' || !/^[0-9a-f]{7,40}$/.test(commit)) {
+    return { fresh: false, reason: `${file}: Bericht ohne Messcommit (${commitField}) - ${rerun}` }
+  }
+  if (!Array.isArray(report.measuredDirty)) {
+    return { fresh: false, reason: `${file}: Bericht ohne Vermerk zum Arbeitsbaum (${dirtyField}) - ${rerun}` }
+  }
+  const schmutzig = report.measuredDirty.filter((path) => typeof path !== 'string' || unterQuellen(path, sources))
+  if (schmutzig.length > 0) {
+    return {
+      fresh: false,
+      reason: `${file} wurde auf ${kurz(commit)} mit uncommitteten Quellen gemessen (${schmutzig.join(', ')}) - erst committen, dann neu messen`,
+    }
+  }
+  if (measuredAtIsAncestor === false) {
+    return { fresh: false, reason: `der Messcommit ${kurz(commit)} aus ${file} liegt nicht in der Geschichte von HEAD - ${rerun}` }
+  }
+  if (measuredAtIsAncestor !== true || !Array.isArray(commitsSinceMeasurement)) {
+    return { fresh: false, reason: `Stand der Quellen seit dem Messcommit ${kurz(commit)} unbekannt (git antwortet nicht)` }
+  }
+  if (commitsSinceMeasurement.length > 0) {
+    return {
+      fresh: false,
+      reason: `seit dem Messcommit ${kurz(commit)} aus ${file} liegt auf HEAD mindestens ein Commit an ${quellen} (${kurz(commitsSinceMeasurement[0])}) - ${stale}`,
+    }
+  }
+  return { fresh: true, reason: `${file} ist auf ${kurz(commit)} sauber gemessen, seitdem kein Commit an ${quellen} auf HEAD` }
+}
 
 /**
  * Frische der Balancing-Messgeraete (2026-09-08, DECISIONS.md; seit T-M40-17 nach Abstammung).
@@ -256,6 +335,33 @@ export function gaugeStatus({ sources = ['data/rules'], sourcesDirty, reportComm
 }
 
 /**
+ * Frische eines Messgeraets mit `judgedBy: 'measuredAtCommit'` (das Turnier, Nacharbeit zu 8c8c8f6).
+ *
+ * `report` ist die gelesene Messzeile (`parseMeasurementLine`) des eingecheckten Berichts, `null` ohne Bericht.
+ * Gruen nur, wenn die Quellen jetzt sauber sind, der Bericht einen Messcommit nennt, beim Messen die Quellen sauber
+ * waren, der Messcommit in der Geschichte von HEAD liegt und seitdem kein Commit an `gauge.sources` liegt. Wann die
+ * Datei zuletzt committet wurde, zaehlt nicht: ein zeilengleicher Neulauf hat keinen Commit.
+ */
+export function gaugeMeasurementStatus({ gauge, report, sourcesDirty, measuredAtIsAncestor, commitsSinceMeasurement }) {
+  return measuredReportStatus({
+    file: gauge.report,
+    report,
+    sourcesDirty,
+    measuredAtIsAncestor,
+    commitsSinceMeasurement,
+    sources: gauge.sources,
+    texte: {
+      label: `des Messgeraets ${gauge.name}`,
+      quellen: gauge.sources.join(', '),
+      commitField: 'Zeile "Gemessen auf:"',
+      dirtyField: 'Vermerk zu den Quellen in der Zeile "Gemessen auf:"',
+      rerun: `${gauge.command} auf sauberem Arbeitsbaum neu messen`,
+      stale: 'die Quellen sind juenger als die Messung',
+    },
+  })
+}
+
+/**
  * Frische des Haltungs-Messlaufs (T-M40-16, Befund M-B; seit T-M40-17 nach Abstammung und Messcommit).
  *
  * `apps/headless/test/stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik
@@ -274,37 +380,25 @@ export function gaugeStatus({ sources = ['data/rules'], sourcesDirty, reportComm
  *    und zwar samt Kontrolle (`ak5.kontrolle.ok`) und Kartenfenster (`ak5.fensterOk`, T-M40-18, Befund N-2).
  */
 export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor, commitsSinceMeasurement, sources = STANCE_SOURCES }) {
-  const neu = `WORLDWAR_WRITE_REPORT=1 auf sauberem Arbeitsbaum neu messen`
-  if (sourcesDirty !== false) {
-    return { fresh: false, reason: 'uncommittete Aenderungen an den Quellen des Haltungs-Messlaufs - erst committen, dann messen' }
-  }
-  if (!report || typeof report !== 'object') return { fresh: false, reason: `kein eingecheckter Bericht ${STANCE_REPORT}` }
+  // Der Teil, den das Turnier teilt (`measuredReportStatus`); die Meldungen sind dieselben wie vor der Nacharbeit zu 8c8c8f6.
+  const messung = measuredReportStatus({
+    file: STANCE_REPORT,
+    report,
+    sourcesDirty,
+    measuredAtIsAncestor,
+    commitsSinceMeasurement,
+    sources,
+    texte: {
+      label: 'des Haltungs-Messlaufs',
+      quellen: 'den Quellen des Messlaufs',
+      commitField: 'episoden.nachher.measuredAtCommit',
+      dirtyField: 'episoden.nachher.measuredDirty',
+      rerun: 'WORLDWAR_WRITE_REPORT=1 auf sauberem Arbeitsbaum neu messen',
+      stale: 'die Automatik ist ungemessen',
+    },
+  })
+  if (!messung.fresh) return messung
   const commit = report.measuredAtCommit
-  if (typeof commit !== 'string' || !/^[0-9a-f]{7,40}$/.test(commit)) {
-    return { fresh: false, reason: `${STANCE_REPORT}: Bericht ohne Messcommit (episoden.nachher.measuredAtCommit) - ${neu}` }
-  }
-  if (!Array.isArray(report.measuredDirty)) {
-    return { fresh: false, reason: `${STANCE_REPORT}: Bericht ohne Vermerk zum Arbeitsbaum (episoden.nachher.measuredDirty) - ${neu}` }
-  }
-  const schmutzig = report.measuredDirty.filter((file) => typeof file !== 'string' || unterQuellen(file, sources))
-  if (schmutzig.length > 0) {
-    return {
-      fresh: false,
-      reason: `${STANCE_REPORT} wurde auf ${kurz(commit)} mit uncommitteten Quellen gemessen (${schmutzig.join(', ')}) - erst committen, dann neu messen`,
-    }
-  }
-  if (measuredAtIsAncestor === false) {
-    return { fresh: false, reason: `der Messcommit ${kurz(commit)} aus ${STANCE_REPORT} liegt nicht in der Geschichte von HEAD - ${neu}` }
-  }
-  if (measuredAtIsAncestor !== true || !Array.isArray(commitsSinceMeasurement)) {
-    return { fresh: false, reason: `Stand der Quellen seit dem Messcommit ${kurz(commit)} unbekannt (git antwortet nicht)` }
-  }
-  if (commitsSinceMeasurement.length > 0) {
-    return {
-      fresh: false,
-      reason: `seit dem Messcommit ${kurz(commit)} aus ${STANCE_REPORT} liegt auf HEAD mindestens ein Commit an den Quellen des Messlaufs (${kurz(commitsSinceMeasurement[0])}) - die Automatik ist ungemessen`,
-    }
-  }
   if (report.ak5?.erfuellt !== true) {
     return { fresh: false, reason: `der eingecheckte Lauf in ${STANCE_REPORT} hat AK5 nicht erfuellt (episoden.nachher.ak5.erfuellt, Ruecknahmekriterium D30.9)` }
   }

@@ -144,12 +144,15 @@ run(
 // Der Frische-Wächter: Parameterlauf und Turnier laufen nicht mehr je Abnahme — aber seit dem Commit
 // ihres Berichts darf auf HEAD kein Commit an ihren Quellen liegen (GAUGES; beim Turnier seit dem
 // 2026-09-13 auch KI und Kern). Seit T-M40-17 nach Abstammung statt nach Commit-Zeit (Befund M-1: der
-// Merge eines älteren Seitencommits machte ihn grün).
+// Merge eines älteren Seitencommits machte ihn grün). Das Turnier urteilt seit der Nacharbeit zu 8c8c8f6 nach
+// der Messzeile seines Berichts: ein zeilengleicher Neulauf hat keinen Commit (GAUGES, judgedBy).
 for (const gauge of GAUGES) {
   const status = gaugeFreshness(ROOT, gauge)
   check(
     'MESSGERAET',
-    `${gauge.name}: seit dem Bericht kein Commit an ${gauge.sources.join(', ')} (${gauge.report})`,
+    gauge.judgedBy === 'measuredAtCommit'
+      ? `${gauge.name}: sauber gemessen, seit dem Messcommit kein Commit an ${gauge.sources.join(', ')} (${gauge.report})`
+      : `${gauge.name}: seit dem Bericht kein Commit an ${gauge.sources.join(', ')} (${gauge.report})`,
     status.fresh,
     status.fresh ? status.reason : `${status.reason} — bitte ${gauge.command} laufen lassen und ${gauge.report} einchecken`,
   )

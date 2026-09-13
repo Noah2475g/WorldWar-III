@@ -3236,6 +3236,8 @@ auch mit der alten Liste, wegen `a64be03` unter `data/rules`.
 
 **Status:** entschieden; das Turnier ist rot, bis ein neuer Turnierlauf eingecheckt ist.
 
+**Nachtrag (2026-09-13, Messcommit).** Der Neulauf auf `bd4744c` ergab einen zeilengleichen Bericht, der sich nicht committen ließ, und der Wächter ging nach dem Commit der Datei (`1edcb7b`) und blieb deshalb rot. Seitdem schreibt das Turnier `Gemessen auf: <Commit> (Quellen sauber)` in seinen Bericht, und der Wächter urteilt wie beim Haltungs-Messlauf nach `<Messcommit>..HEAD`, verlangt einen Vorfahren von HEAD und saubere Quellen (`judgedBy: 'measuredAtCommit'` in `GAUGES`). Der Parameterlauf bleibt bewusst beim Commit seines Berichts (`judgedBy: 'reportCommit'`), und ein Haltetest in `test/requirements.test.ts` sichert diesen Unterschied.
+
 ---
 
 ## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison sieht gesammelte Haltungswechsel — zwei Randlagen bleiben

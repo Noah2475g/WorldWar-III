@@ -10,12 +10,15 @@ import {
   GAUGES,
   STANCE_SOURCES,
   criteriaOf,
+  gaugeMeasurementStatus,
   gaugeStatus,
+  measurementLine,
+  parseMeasurementLine,
   stanceReportStatus,
   unhomedCriteria,
   v1Failures,
 } from '../scripts/acceptance-criteria.mjs'
-import { allFreshness, gaugeFreshness, stanceFreshness } from '../scripts/freshness.mjs'
+import { allFreshness, commitsSince, gaugeFreshness, lastCommitOf, measurementStamp, stanceFreshness } from '../scripts/freshness.mjs'
 
 const DOC = `
 ### 2.1 Beispiel
@@ -672,8 +675,9 @@ describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommi
  * KI und Kern. Der Parameterlauf dauert rund eine Stunde und misst die Empfindlichkeit der Regelzahlen; er
  * bleibt bei Regeln und Karte. Gefahren werden die echten Eintraege aus `GAUGES`, nicht nachgebaute.
  *
- * Wegwerf-Repo: die Basis traegt beide Berichte, dann ein Commit an `packages/ai/src`, dann einer an
- * `packages/core/src`.
+ * Wegwerf-Repo: die Basis traegt den Parameterlauf, danach wird der Turnierbericht mit der Messzeile auf der Basis
+ * eingecheckt (seit der Nacharbeit zu 8c8c8f6 urteilt der Waechter des Turniers nach dem Messcommit), dann ein
+ * Commit an `packages/ai/src`, dann einer an `packages/core/src`.
  */
 describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Kern, der Parameterlauf nicht', () => {
   type Gauge = { name: string; report: string; sources: string[]; command: string }
@@ -683,7 +687,7 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
     return gauge
   }
   let repo = ''
-  let basis = ''
+  let berichtCommit = ''
   let kiCommit = ''
 
   beforeAll(() => {
@@ -707,10 +711,14 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
     schreibe('data/maps/world.json', '{}\n')
     schreibe('data/maps/testworld.json', '{}\n')
     schreibe('docs/reports/balance-sweep.md', 'gemessen auf der Basis\n')
-    schreibe('docs/reports/ai-tournament-run.md', 'gemessen auf der Basis\n')
     git('add', '-A')
-    git('commit', '-q', '-m', 'basis mit beiden Berichten')
-    basis = git('rev-parse', 'HEAD')
+    git('commit', '-q', '-m', 'basis mit dem Parameterlauf')
+    const basis = git('rev-parse', 'HEAD')
+
+    schreibe('docs/reports/ai-tournament-run.md', `# KI-Turnier\n\n${measurementLine({ measuredAtCommit: basis, measuredDirty: [] })}\n`)
+    git('add', '-A')
+    git('commit', '-q', '-m', 'Turnier auf der Basis')
+    berichtCommit = git('rev-parse', 'HEAD')
 
     schreibe('packages/ai/src/adjutant.ts', 'v2\n')
     git('add', '-A')
@@ -728,7 +736,7 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
 
   it('meldet das Turnier nach einem Commit an packages/ai/src nicht frisch - und nennt Commit und Pfad', () => {
     const turnier = messgeraet('Turnier')
-    const vorher = gaugeFreshness(repo, turnier, basis)
+    const vorher = gaugeFreshness(repo, turnier, berichtCommit)
     expect(vorher.fresh, vorher.reason).toBe(true)
     const nachKi = gaugeFreshness(repo, turnier, kiCommit)
     expect(nachKi.fresh, nachKi.reason).toBe(false)
@@ -752,5 +760,263 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
     expect(nachKi.fresh, nachKi.reason).toBe(true)
     const nachKern = gaugeFreshness(repo, parameterlauf)
     expect(nachKern.fresh, nachKern.reason).toBe(true)
+  })
+})
+
+/**
+ * Der Turnierbericht traegt seinen Messcommit (Nacharbeit zu 8c8c8f6, Muster T-M40-17).
+ *
+ * Das Turnier ist deterministisch. Am 2026-09-13 ergab ein Neulauf auf neuem Code einen zeilengleichen Bericht, und
+ * eine unveraenderte Datei laesst sich nicht neu committen: Der Waechter ging nach dem letzten Commit der Datei und
+ * blieb "nicht frisch", obwohl frisch gemessen war. Jetzt schreibt der Lauf eine Messzeile
+ * (`Gemessen auf: <commit> (Quellen sauber)`), und der Waechter urteilt wie beim Haltungs-Messlauf: Der Messcommit
+ * liegt in der Geschichte von HEAD, seitdem kein Commit an den Quellen, gemessen auf sauberen Quellen.
+ *
+ * Der Parameterlauf bleibt bewusst beim Commit seines Berichts: Er dauert fast zwei Stunden, und bei einer
+ * Regelaenderung hat sein Bericht einen echten Diff. Commit-Kennungen in den Einheitsfaellen erfunden.
+ */
+describe('Frische des Turniers nach Messcommit: Messzeile und Urteil', () => {
+  type Gauge = { name: string; report: string; sources: string[]; command: string; judgedBy: string }
+  const turnier = (GAUGES as Gauge[]).find((eintrag) => eintrag.name === 'Turnier') as Gauge
+  const MESSCOMMIT = 'd'.repeat(40)
+  const frisch = {
+    gauge: turnier,
+    report: { measuredAtCommit: MESSCOMMIT, measuredDirty: [] as string[] },
+    sourcesDirty: false,
+    measuredAtIsAncestor: true,
+    commitsSinceMeasurement: [] as string[],
+  }
+
+  it('schreibt die Messzeile und liest sie aus dem Bericht zurueck', () => {
+    const sauber = measurementLine({ measuredAtCommit: MESSCOMMIT, measuredDirty: [] })
+    expect(sauber).toBe(`Gemessen auf: ${MESSCOMMIT} (Quellen sauber)`)
+    const schmutzig = measurementLine({ measuredAtCommit: MESSCOMMIT, measuredDirty: ['packages/ai/src/decide.ts', 'data/rules/default/ai.json'] })
+    expect(schmutzig).toBe(`Gemessen auf: ${MESSCOMMIT} (Quellen nicht sauber: packages/ai/src/decide.ts, data/rules/default/ai.json)`)
+
+    expect(parseMeasurementLine(`# KI-Turnier\r\n\r\n${sauber}\r\n\r\n| Paarung |\r\n`)).toEqual({ measuredAtCommit: MESSCOMMIT, measuredDirty: [] })
+    expect(parseMeasurementLine(`# KI-Turnier\n\n${schmutzig}\n`)).toEqual({
+      measuredAtCommit: MESSCOMMIT,
+      measuredDirty: ['packages/ai/src/decide.ts', 'data/rules/default/ai.json'],
+    })
+    // Ohne git kein Messcommit, und ein Bericht ohne Zeile ist dasselbe.
+    expect(parseMeasurementLine(measurementLine({ measuredAtCommit: null, measuredDirty: null }))).toEqual({ measuredAtCommit: null, measuredDirty: null })
+    expect(parseMeasurementLine('# KI-Turnier\n\n| Paarung |\n')).toEqual({ measuredAtCommit: null, measuredDirty: null })
+    // Unbekannter Arbeitsbaum: der Messcommit steht, der Vermerk fehlt.
+    expect(parseMeasurementLine(measurementLine({ measuredAtCommit: MESSCOMMIT, measuredDirty: null }))).toEqual({ measuredAtCommit: MESSCOMMIT, measuredDirty: null })
+  })
+
+  it('meldet frisch, wenn der Messcommit in der Geschichte liegt und seitdem kein Commit an den Quellen', () => {
+    const status = gaugeMeasurementStatus(frisch)
+    expect(status.fresh, status.reason).toBe(true)
+    expect(status.reason).toContain('ddddddd')
+  })
+
+  it('meldet rot, wenn der Messcommit nicht in der Geschichte von HEAD liegt', () => {
+    const status = gaugeMeasurementStatus({ ...frisch, measuredAtIsAncestor: false })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Geschichte')
+  })
+
+  it('meldet rot, wenn nach dem Messcommit ein Commit an den Quellen liegt - und nennt Commit und Quellen', () => {
+    const status = gaugeMeasurementStatus({ ...frisch, commitsSinceMeasurement: ['a56df6812aac57741823c120392f1a7ab18aedcb'] })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('a56df68')
+    expect(status.reason).toContain('packages/core/src')
+  })
+
+  it('meldet rot bei einem Bericht, der auf schmutzigen Quellen gemessen wurde - eine Notiz daneben zaehlt nicht', () => {
+    const schmutzig = gaugeMeasurementStatus({ ...frisch, report: { measuredAtCommit: MESSCOMMIT, measuredDirty: ['docs/plan/PROBLEME.md', 'packages/ai/src/decide.ts'] } })
+    expect(schmutzig.fresh).toBe(false)
+    expect(schmutzig.reason).toContain('packages/ai/src/decide.ts')
+    expect(schmutzig.reason).not.toContain('PROBLEME')
+    expect(gaugeMeasurementStatus({ ...frisch, report: { measuredAtCommit: MESSCOMMIT, measuredDirty: ['docs/plan/PROBLEME.md'] } }).fresh).toBe(true)
+    expect(gaugeMeasurementStatus({ ...frisch, report: { measuredAtCommit: MESSCOMMIT, measuredDirty: null } }).fresh).toBe(false)
+  })
+
+  it('meldet rot bei einem Bericht ohne Messcommit - mit der Aufforderung, neu zu messen', () => {
+    const status = gaugeMeasurementStatus({ ...frisch, report: { measuredAtCommit: null, measuredDirty: null }, measuredAtIsAncestor: null, commitsSinceMeasurement: null })
+    expect(status.fresh).toBe(false)
+    expect(status.reason).toContain('Bericht ohne Messcommit')
+    expect(status.reason).toContain('neu messen')
+  })
+
+  it('meldet rot bei uncommitteten Quellen, ohne Bericht und wenn git nicht antwortet', () => {
+    expect(gaugeMeasurementStatus({ ...frisch, sourcesDirty: true }).fresh).toBe(false)
+    expect(gaugeMeasurementStatus({ ...frisch, sourcesDirty: null }).fresh).toBe(false)
+    expect(gaugeMeasurementStatus({ ...frisch, report: null }).fresh).toBe(false)
+    expect(gaugeMeasurementStatus({ ...frisch, measuredAtIsAncestor: null }).fresh).toBe(false)
+    expect(gaugeMeasurementStatus({ ...frisch, commitsSinceMeasurement: null }).fresh).toBe(false)
+  })
+
+  it('urteilt beim Turnier nach dem Messcommit, beim Parameterlauf nach dem Commit des Berichts (Haltetest)', () => {
+    expect((GAUGES as Gauge[]).map((gauge) => [gauge.name, gauge.judgedBy])).toEqual([
+      ['Parameterlauf', 'reportCommit'],
+      ['Turnier', 'measuredAtCommit'],
+    ])
+  })
+})
+
+/**
+ * Dieselben Faelle gegen ein echtes Repo, mit den echten Eintraegen aus `GAUGES` und `gaugeFreshness`.
+ *
+ * Der Frisch-Fall bildet die Lage von heute nach: Der Commit der Datei ist aelter als der Quellcommit und kein
+ * Nachfahre davon, gemessen wurde aber auf dem Quellcommit. Mit einer Messzeile kennt git diese Lage nur, wenn
+ * Messung und Einchecken auf verschiedenen Zweigen liegen. Deshalb wird auf `code` gemessen, der Bericht auf
+ * `bericht` zur Zeit 2000 eingecheckt und beides zur Zeit 4000 zusammengefuehrt. Jeder Gegenfall zweigt vom Merge ab.
+ */
+describe('Frische des Turniers nach Messcommit: im Wegwerf-Repo', () => {
+  type Gauge = { name: string; report: string; sources: string[]; command: string; judgedBy: string }
+  const messgeraet = (name: string): Gauge => {
+    const gauge = (GAUGES as Gauge[]).find((eintrag) => eintrag.name === name)
+    if (!gauge) throw new Error(`kein Messgeraet ${name} in GAUGES`)
+    return gauge
+  }
+  const REPORT = 'docs/reports/ai-tournament-run.md'
+  let repo = ''
+  const ref = { basis: '', code: '', bericht: '', merge: '', fremd: '', kopiert: '', kern: '', nachgezogen: '', schmutzig: '', ohne: '', regeln: '', sweep: '' }
+
+  beforeAll(() => {
+    repo = mkdtempSync(join(tmpdir(), 'worldwar-messzeile-'))
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')))
+    const git = (zeit: number | null, ...args: string[]): string =>
+      execFileSync(
+        'git',
+        ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false', ...args],
+        { cwd: repo, encoding: 'utf8', env: { ...env, ...(zeit === null ? {} : { GIT_AUTHOR_DATE: `@${zeit} +0000`, GIT_COMMITTER_DATE: `@${zeit} +0000` }) } },
+      ).trim()
+    const schreibe = (pfad: string, inhalt: string) => {
+      mkdirSync(dirname(join(repo, pfad)), { recursive: true })
+      writeFileSync(join(repo, pfad), inhalt)
+    }
+    const commit = (zeit: number, name: keyof typeof ref, nachricht: string) => {
+      git(null, 'add', '-A')
+      git(zeit, 'commit', '-q', '-m', nachricht)
+      ref[name] = git(null, 'rev-parse', 'HEAD')
+    }
+    const bericht = (zeile: string | null, tabelle = '| schwer gegen leicht, im Krieg | 25 | 0 |') =>
+      `# KI-Turnier - letzter Lauf\n\n${zeile === null ? '' : `${zeile}\n\n`}${tabelle}\n`
+    const gemessenAuf = (commitId: string, measuredDirty: string[] = []) => measurementLine({ measuredAtCommit: commitId, measuredDirty })
+
+    git(null, 'init', '-q', '-b', 'main')
+    schreibe('packages/ai/src/adjutant.ts', 'v1\n')
+    schreibe('packages/core/src/step.ts', 'v1\n')
+    schreibe('data/rules/default/constants.json', '{"v":1}\n')
+    schreibe('data/maps/world.json', '{}\n')
+    schreibe('data/maps/testworld.json', '{}\n')
+    schreibe('docs/reports/balance-sweep.md', 'Parameterlauf auf der Basis\n')
+    commit(1000, 'basis', 'basis mit dem Parameterlauf')
+    git(null, 'branch', 'bericht')
+
+    schreibe('packages/ai/src/adjutant.ts', 'v2\n')
+    commit(3000, 'code', 'code: KI geaendert')
+
+    git(null, 'checkout', '-q', 'bericht')
+    schreibe(REPORT, bericht(gemessenAuf(ref.code)))
+    commit(2000, 'bericht', 'bericht: Turnier, gemessen auf code')
+
+    git(null, 'checkout', '-q', 'main')
+    git(4000, 'merge', '-q', '--no-ff', '-m', 'merge bericht', 'bericht')
+    ref.merge = git(null, 'rev-parse', 'HEAD')
+
+    // Gegenfall 1: gemessen auf einem Zweig, den HEAD nicht enthaelt.
+    git(null, 'checkout', '-q', '-b', 'fremd', ref.merge)
+    schreibe('packages/core/src/step.ts', 'fremd\n')
+    commit(5000, 'fremd', 'fremd: Kern geaendert, nie zusammengefuehrt')
+    git(null, 'checkout', '-q', '-b', 'kopiert', ref.merge)
+    schreibe(REPORT, bericht(gemessenAuf(ref.fremd)))
+    commit(5100, 'kopiert', 'kopiert: Bericht aus fremd')
+
+    // Gegenfall 2: nach dem Messcommit ein Commit am Kern, danach nur eine Textkorrektur am Bericht.
+    git(null, 'checkout', '-q', '-b', 'nachgezogen', ref.merge)
+    schreibe('packages/core/src/step.ts', 'v2\n')
+    commit(5000, 'kern', 'nachgezogen: Kern geaendert')
+    schreibe(REPORT, bericht(gemessenAuf(ref.code), '| schwer gegen leicht, im Krieg (Tippfehler behoben) | 25 | 0 |'))
+    commit(5100, 'nachgezogen', 'nachgezogen: Textkorrektur am Bericht')
+
+    // Gegenfall 3: auf dem Merge gemessen, aber mit uncommitteter Automatik.
+    git(null, 'checkout', '-q', '-b', 'schmutzig', ref.merge)
+    schreibe(REPORT, bericht(gemessenAuf(ref.merge, ['packages/ai/src/adjutant.ts'])))
+    commit(5000, 'schmutzig', 'schmutzig: Bericht mit uncommitteten Quellen')
+
+    // Gegenfall 4: ein Bericht ohne Messzeile, eingecheckt nach allen Quellcommits.
+    git(null, 'checkout', '-q', '-b', 'ohne', ref.merge)
+    schreibe(REPORT, bericht(null))
+    commit(5000, 'ohne', 'ohne: Bericht ohne Messzeile')
+
+    // Haltetest: eine Regelaenderung, danach ein neuer Parameterlauf ohne Messzeile.
+    git(null, 'checkout', '-q', '-b', 'regeln', ref.merge)
+    schreibe('data/rules/default/constants.json', '{"v":2}\n')
+    commit(5000, 'regeln', 'regeln: Regeln geaendert')
+    schreibe('docs/reports/balance-sweep.md', 'Parameterlauf auf den neuen Regeln\n')
+    commit(5100, 'sweep', 'regeln: Parameterlauf neu')
+
+    git(null, 'checkout', '-q', 'main')
+  }, 60_000)
+
+  afterAll(() => {
+    if (repo) rmSync(repo, { recursive: true, force: true, maxRetries: 3 })
+  })
+
+  it('meldet das Turnier frisch, obwohl der Commit der Datei aelter ist als der Quellcommit', () => {
+    const turnier = messgeraet('Turnier')
+    // Die Lage, an der der alte Waechter haengen blieb: Der letzte Commit der Datei ist `bericht`, und seitdem liegt `code` an den Quellen.
+    expect(lastCommitOf(repo, REPORT, ref.merge)).toBe(ref.bericht)
+    expect(commitsSince(repo, ref.bericht, turnier.sources, ref.merge)).toEqual([ref.code])
+    const status = gaugeFreshness(repo, turnier, ref.merge)
+    expect(status.fresh, status.reason).toBe(true)
+    expect(status.reason).toContain(ref.code.slice(0, 7))
+  })
+
+  it('meldet das Turnier rot, wenn der Messcommit kein Vorfahr von HEAD ist', () => {
+    const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.kopiert)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('Geschichte')
+    expect(status.reason).toContain(ref.fremd.slice(0, 7))
+  })
+
+  it('meldet das Turnier rot bei einem Quellcommit nach dem Messcommit - auch wenn der Bericht danach noch einmal committet wurde', () => {
+    const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.nachgezogen)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain(ref.kern.slice(0, 7))
+  })
+
+  it('meldet das Turnier rot, wenn beim Messen Quellen uncommittet waren', () => {
+    const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.schmutzig)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('packages/ai/src/adjutant.ts')
+  })
+
+  it('meldet das Turnier rot bei einem Bericht ohne Messcommit', () => {
+    const status = gaugeFreshness(repo, messgeraet('Turnier'), ref.ohne)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('Bericht ohne Messcommit')
+    expect(status.reason).toContain('neu messen')
+  })
+
+  it('laesst den Parameterlauf beim Commit seines Berichts - ohne Messzeile frisch, sobald neu eingecheckt ist (Haltetest)', () => {
+    const parameterlauf = messgeraet('Parameterlauf')
+    expect(gaugeFreshness(repo, parameterlauf, ref.merge).fresh).toBe(true)
+    const nachRegeln = gaugeFreshness(repo, parameterlauf, ref.regeln)
+    expect(nachRegeln.fresh, nachRegeln.reason).toBe(false)
+    expect(nachRegeln.reason).toContain(ref.regeln.slice(0, 7))
+    const neu = gaugeFreshness(repo, parameterlauf, ref.sweep)
+    expect(neu.fresh, neu.reason).toBe(true)
+    // Auf demselben Stand bleibt das Turnier rot: sein Messcommit liegt vor der Regelaenderung.
+    expect(gaugeFreshness(repo, messgeraet('Turnier'), ref.sweep).fresh).toBe(false)
+  })
+
+  it('nimmt den Messstand wie der Haltungs-Messlauf: HEAD und die uncommitteten Dateien unter den Quellen', () => {
+    const turnier = messgeraet('Turnier')
+    expect(measurementStamp(repo, turnier.sources)).toEqual({ measuredAtCommit: ref.merge, measuredDirty: [] })
+    const neu = join(repo, 'packages/ai/src/neu.ts')
+    const notiz = join(repo, 'NOTIZ.md')
+    try {
+      writeFileSync(neu, 'neu\n')
+      writeFileSync(notiz, 'nicht unter den Quellen\n')
+      expect(measurementStamp(repo, turnier.sources)).toEqual({ measuredAtCommit: ref.merge, measuredDirty: ['packages/ai/src/neu.ts'] })
+    } finally {
+      rmSync(neu, { force: true })
+      rmSync(notiz, { force: true })
+    }
   })
 })

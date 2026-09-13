@@ -2,6 +2,8 @@ import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { GAUGES, measurementLine } from '../../../scripts/acceptance-criteria.mjs'
+import { measurementStamp } from '../../../scripts/freshness.mjs'
 import { playTournament, type TournamentResult } from '../src/tournament'
 
 /**
@@ -11,6 +13,17 @@ import { playTournament, type TournamentResult } from '../src/tournament'
  * in the normal suite would make the whole TDD loop unusable, and the next step after
  * that is someone starting to skip tests.
  */
+const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+const TURNIER = GAUGES.find((gauge) => gauge.name === 'Turnier')
+if (!TURNIER) throw new Error('kein Messgeraet Turnier in GAUGES')
+/**
+ * Der Stand, auf dem gemessen wird (Nacharbeit zu 8c8c8f6, Muster `messstand` im Haltungs-Messlauf): HEAD und die
+ * uncommitteten Dateien unter den Quellen des Turniers. Das Turnier ist deterministisch, und ein zeilengleicher Bericht
+ * laesst sich nicht neu committen. Der Frische-Waechter liest deshalb diese Zeile statt des letzten Commits der Datei.
+ * Beim Laden genommen: vitest laedt die Module beim Start, und was danach im Arbeitsbaum geschieht, misst der Lauf nicht.
+ */
+const MESSSTAND = measurementStamp(ROOT, TURNIER.sources)
+
 const map = smallWorld()
 const rules = TEST_RULES
 
@@ -115,6 +128,8 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
         '',
         `Erzeugt von \`pnpm test:slow\` am ${new Date().toISOString().slice(0, 10)}.`,
         'Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.',
+        '',
+        measurementLine(MESSSTAND),
         '',
         '| Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |',
         '|---|---|---|---|---|---|---|',
