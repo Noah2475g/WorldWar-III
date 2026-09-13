@@ -785,6 +785,9 @@ export const de = {
     upcomingNeedsHigherLevel:
       'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} der Stufe {{level}} — Ihre beste steht auf Stufe {{have}}.',
     upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. Dafür braucht es eine Küstenprovinz — Sie haben keine.',
+    // Wegklicken (T-M41-12): nur Ankündigung und Freischaltung — sie gehen am Tagesende ohnehin.
+    dismiss: 'Ausblenden: {{text}}',
+    dismissTitle: 'Bis zum Ende des Spieltags ausblenden',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).

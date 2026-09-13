@@ -2068,6 +2068,24 @@ body {
   }
 }
 
+/* Der Wegklick an Ankuendigung und Freischaltung (T-M41-12): leise wie die Meldung selbst —
+   keine Alarm- oder Warnfarbe, nur das Zeichen, blasser als der Text. */
+.alert__dismiss {
+  margin-left: auto;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0 var(--sp-sm);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.alert__dismiss:hover,
+.alert__dismiss:focus-visible {
+  opacity: 1;
+}
+
 .alert {
   animation: alert-in 220ms ease-out;
 }

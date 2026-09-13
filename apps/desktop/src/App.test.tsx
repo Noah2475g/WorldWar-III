@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { advanceTicks } from '@worldwar/ai'
 import { MemoryStorage, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
@@ -1373,6 +1374,52 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
     expect(meldungen.textContent).toContain('fertig')
   })
+})
+
+/**
+ * Ankuendigung und Freischaltung bleiben sichtbar (T-M41-12, Befund N8 der Durchsicht M41).
+ *
+ * Gemessen wird ueber einen Tagessprung, nicht ueber Ticks: eine Partie steht an Tag 5 um
+ * 14:00, der Spieler spult einen Tag vor — und landet an Tag 6 um 14:00, dem Tag, an dem der
+ * Hafen freikommt. Bis T-M41-12 stand die Freischaltung nur in den ersten 12 Stunden eines
+ * Tages; der Sprung ging darueber hinweg, und der Spieler erfuhr es nie.
+ */
+describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
+  const meldungen = () => screen.queryByRole('region', { name: 'Meldungen' })?.textContent ?? ''
+  const uhr = () => document.querySelector('.clock__time')?.textContent ?? ''
+
+  const ladeTag5Um14 = async () => {
+    const start = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const state = advanceTicks(start, 4 * 24 + 14, { map: world, rules: TEST_RULES }).state
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Tagesmitte'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(uhr()).toMatch(/Tag 5 · 14:00/))
+  }
+
+  it('zeigt die Freischaltung des neuen Tages nach einem Tagessprung durch Vorspulen', async () => {
+    await ladeTag5Um14()
+    expect(meldungen()).not.toContain('Hafen')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Ein Spieltag weiter, dieselbe Uhrzeit — 14:00 liegt hinter den ersten 12 Stunden.
+    expect(uhr()).toMatch(/Tag 6 · 14:00/)
+    expect(meldungen()).toContain('Neu ab heute: Hafen')
+  }, 30_000)
+
+  it('laesst sich wegklicken und bleibt dann weg', async () => {
+    await ladeTag5Um14()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(meldungen()).toContain('Neu ab heute: Hafen')
+
+    const region = screen.getByRole('region', { name: 'Meldungen' })
+    fireEvent.click(within(region).getByRole('button', { name: /^Ausblenden: Neu ab heute: Hafen/ }))
+
+    expect(meldungen()).not.toContain('Hafen')
+  }, 30_000)
 })
 
 /**

@@ -69,9 +69,9 @@ function justFinished(completesAtTick: number, tick: number): boolean {
  */
 function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
   const perDay = rules.constants.ticksPerDay
-  // Nur in den ersten Stunden des Tages — genauso lange wie eine Fertigstellung steht.
-  if (view.tick % perDay >= COMPLETION_ALERT_TICKS) return []
-
+  // Den ganzen Spieltag (T-M41-12). Bis dahin nur in den ersten 12 Stunden, so lange wie eine
+  // Fertigstellung: bei Tempo 100 etwa 0,12 s, und ein Vorspulen von 14:00 bis 14:00 am
+  // naechsten Tag sprang darueber. Wegklicken kann der Spieler sie selbst (`Alerts`).
   const today = Math.floor(view.tick / perDay) + 1
   const alerts: Alert[] = []
 
@@ -112,14 +112,13 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
  * Vorschau waere Kosmetik — deshalb nennt die Ankuendigung die Voraussetzung, die dem
  * Spieler fehlt, und schweigt davon, sobald sie steht. Aus Warten wird eine Handlung.
  *
- * Abgeleitet wie die Freischaltung: aus den Regeln und der eigenen Sicht, zu Tagesbeginn,
- * ohne Ereignis. Leise — kein Alarm, keine Farbe, kein Sprung auf die Karte (M36: laut
+ * Abgeleitet wie die Freischaltung: aus den Regeln und der eigenen Sicht, den ganzen
+ * Spieltag lang (seit T-M41-12; vorher nur zu Tagesbeginn), ohne Ereignis. Leise — kein Alarm, keine Farbe, kein Sprung auf die Karte (M36: laut
  * ist nur, was knapp oder umkaempft ist).
  */
 function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
   const perDay = rules.constants.ticksPerDay
-  if (view.tick % perDay >= COMPLETION_ALERT_TICKS) return []
-
+  // Den ganzen Spieltag, wie die Freischaltung (T-M41-12).
   const day = Math.floor(view.tick / perDay) + 1 + UPCOMING_LEAD_DAYS
   const own = view.provinces.filter((province) => province.owner === view.playerId)
   const bestLevel = (building: string): number =>
@@ -300,7 +299,25 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[]
   return alerts
 }
 
-export function Alerts({ alerts, onJump }: { alerts: readonly Alert[]; onJump: (provinceId: string) => void }) {
+/**
+ * Was der Spieler wegklicken kann (T-M41-12): Ankuendigung und Freischaltung — sie stehen
+ * einen ganzen Spieltag und gehen am Tagesende von selbst. Ein Kampf, ein Mangel oder eine
+ * gefallene Hauptstadt endet mit ihrer Lage, nicht mit einem Klick.
+ */
+export function isDismissible(alert: Alert): boolean {
+  return alert.kind === 'unlock' || alert.kind === 'upcoming'
+}
+
+export function Alerts({
+  alerts,
+  onJump,
+  onDismiss,
+}: {
+  alerts: readonly Alert[]
+  onJump: (provinceId: string) => void
+  /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
+  onDismiss?: (id: string) => void
+}) {
   if (alerts.length === 0) return null
 
   return (
@@ -315,6 +332,18 @@ export function Alerts({ alerts, onJump }: { alerts: readonly Alert[]; onJump: (
               </button>
             ) : (
               <span>{alert.text}</span>
+            )}
+            {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
+            {onDismiss && isDismissible(alert) && (
+              <button
+                type="button"
+                className="alert__dismiss"
+                aria-label={t('alerts.dismiss', { text: alert.text })}
+                title={t('alerts.dismissTitle')}
+                onClick={() => onDismiss(alert.id)}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
             )}
           </li>
         ))}

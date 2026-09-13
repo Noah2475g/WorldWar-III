@@ -258,9 +258,15 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
     expect(alertsFor(sicht(10), regeln).map((alert) => alert.id)).toContain('unlock:unit:transport')
   })
 
-  it('steht nur am Anfang des Tages, wie die Freischaltung', () => {
-    const spaet = { ...sicht(8), tick: 7 * 24 + 20 } as PublicView
-    expect(angekuendigt(spaet)).toEqual([])
+  it('steht den ganzen Spieltag, nicht nur in seinen ersten Stunden (T-M41-12)', () => {
+    // Bis T-M41-12 stand die Ankuendigung nur in den ersten 12 Ticks: bei Tempo 100 etwa
+    // 0,12 s, und ein Vorspulen aus einer Tagesmitte in die naechste sprang darueber.
+    for (const stunde of [0, 11, 12, 20, 23]) {
+      const spaet = { ...sicht(8), tick: 7 * 24 + stunde } as PublicView
+      expect(angekuendigt(spaet).map((alert) => alert.id), `Tag 8, ${stunde} Uhr`).toEqual(['upcoming:unit:transport'])
+    }
+    // Am naechsten Tag nicht mehr.
+    expect(angekuendigt(sicht(9)).map((alert) => alert.id)).not.toContain('upcoming:unit:transport')
   })
 
   it('ist leise: keine Alarmfarbe und kein Sprung auf die Karte', () => {
@@ -273,5 +279,55 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
     const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--(accent|warn)\)[^}]*\}/g)].map((match) => match[1]!)
     expect(laut.length, 'keine Alarmregel gefunden - der Waechter misst nichts').toBeGreaterThan(0)
     for (const selektor of laut) expect(selektor).not.toContain('alert--upcoming')
+  })
+})
+
+/**
+ * Ankuendigung und Freischaltung bleiben sichtbar (T-M41-12, Befund N8 der Durchsicht M41).
+ *
+ * Beide standen nur in den ersten 12 Ticks eines Spieltags — so lange wie eine
+ * Fertigstellung. Bei Tempo 100 sind das etwa 0,12 s, und ein Vorspulen von 14:00 bis 14:00
+ * am naechsten Tag sprang ganz darueber. Jetzt stehen sie bis zum Ende ihres Spieltags oder
+ * bis der Spieler sie wegklickt; leise wie bisher (M36).
+ */
+describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
+  const regeln = {
+    constants: { ticksPerDay: 24 },
+    buildings: { harbour: { availableFromDay: 6 } },
+    units: {},
+  }
+  const um = (tick: number) => ({ ...view({}), tick }) as PublicView
+
+  it('zeigt die Freischaltung bis zum Ende ihres Spieltags, am naechsten nicht mehr', () => {
+    for (const stunde of [0, 11, 12, 23]) {
+      expect(alertsFor(um(5 * 24 + stunde), regeln).map((alert) => alert.id), `Tag 6, ${stunde} Uhr`).toContain(
+        'unlock:building:harbour',
+      )
+    }
+    expect(alertsFor(um(6 * 24), regeln).map((alert) => alert.id)).not.toContain('unlock:building:harbour')
+  })
+
+  it('bietet nur bei Ankuendigung und Freischaltung einen Wegklick an und meldet die Kennung', () => {
+    const onDismiss = vi.fn()
+    const alerts = [...alertsFor(um(5 * 24 + 14), regeln), ...alertsFor(view({ battles: ['A'] }))]
+    expect(alerts.map((alert) => alert.kind).sort()).toEqual(['battle', 'unlock'])
+
+    render(<Alerts alerts={alerts} onJump={() => undefined} onDismiss={onDismiss} />)
+    const knoepfe = screen.getAllByRole('button', { name: /^Ausblenden/ })
+    expect(knoepfe, 'ein Kampf ist nicht wegzuklicken - er endet von selbst').toHaveLength(1)
+    expect(knoepfe[0]!.getAttribute('aria-label')).toBe('Ausblenden: Neu ab heute: Hafen. Sie können ihn jetzt bauen.')
+
+    fireEvent.click(knoepfe[0]!)
+    expect(onDismiss).toHaveBeenCalledWith('unlock:building:harbour')
+  })
+
+  it('bleibt leise: der Wegklick traegt keine Alarm- oder Warnfarbe (Haltetest, M36)', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--(accent|warn)\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.length, 'keine Alarmregel gefunden - der Waechter misst nichts').toBeGreaterThan(0)
+    for (const selektor of laut) {
+      expect(selektor).not.toContain('alert__dismiss')
+      expect(selektor).not.toContain('alert--unlock')
+    }
   })
 })

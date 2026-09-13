@@ -241,6 +241,12 @@ export function App(props: AppProps) {
   const [seenTick, setSeenTick] = useState(-1)
   /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
   const [alarmSeenTick, setAlarmSeenTick] = useState(-1)
+  /**
+   * Weggeklickte Ankuendigungen und Freischaltungen (T-M41-12): Kennung → Tick des Klicks.
+   * Ein Klick gilt bis zum Ende dieses Spieltags und nur ab dem Tick, an dem er fiel — ein
+   * frueherer Stand, geladen oder neu, zeigt die Meldung wieder.
+   */
+  const [dismissedAlerts, setDismissedAlerts] = useState<ReadonlyMap<string, number>>(() => new Map())
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -577,7 +583,12 @@ export function App(props: AppProps) {
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
-    const aus = alertsFor(view, props.rules)
+    const aus = alertsFor(view, props.rules).filter((alert) => {
+      const weggeklickt = dismissedAlerts.get(alert.id)
+      if (weggeklickt === undefined || !view) return true
+      // Nur am selben Spieltag und nicht vor dem Klick (T-M41-12).
+      return view.tick < weggeklickt || Math.floor(view.tick / ticksPerDay) !== Math.floor(weggeklickt / ticksPerDay)
+    })
     // Kein dauerhafter Speicher? Dann erfaehrt es der Spieler jetzt und nicht beim
     // naechsten Start (T-M14-08). Ein stiller Rueckfall auf den Arbeitsspeicher war
     // genau der Zustand, den diese Aufgabe behebt.
@@ -585,7 +596,7 @@ export function App(props: AppProps) {
       aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
     }
     return aus
-  }, [view, chosen])
+  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -1011,6 +1022,7 @@ export function App(props: AppProps) {
           // vorigen Partie schon Tag 30 quittiert war (Durchsicht vom 2026-09-11).
           setAlarmSeenTick(-1)
           setSeenTick(-1)
+          setDismissedAlerts(new Map())
           setState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1045,6 +1057,7 @@ export function App(props: AppProps) {
     // zaehlen in Ticks, und die beginnen in der neuen Partie wieder vorne.
     setAlarmSeenTick(-1)
     setSeenTick(-1)
+    setDismissedAlerts(new Map())
     setState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1519,7 +1532,11 @@ export function App(props: AppProps) {
               dispatch({ type: 'selectProvince', id })
             }}
           />
-          <Alerts alerts={alerts} onJump={jumpTo} />
+          <Alerts
+            alerts={alerts}
+            onJump={jumpTo}
+            onDismiss={(id) => setDismissedAlerts((old) => new Map(old).set(id, view.tick))}
+          />
           {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
             <ProvincePanel

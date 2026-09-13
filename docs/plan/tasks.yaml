@@ -3044,6 +3044,30 @@ tasks:
     tests: [packages/core/test/properties/combat-symmetry.test.ts]
     dod: "Befund (Pfad-Waechter, 2026-09-13): T-M14-06 steht auf done und sagte zu, dass der Seitentausch im Nahkampf bei Streuung 0 exakt spiegelt und die Summe der abgezogenen Trefferpunkte gleich der Summe der in BATTLE_RESOLVED gemeldeten Verluste ist; geschrieben ist nur der Seitentausch beim Beschuss (bombardment.test.ts). Zuerst nachsehen, ob die Pruefung unter anderem Namen doch existiert. Dann der Test, der die Zusage einloest: Seitentausch mit Regel-Override combatSpreadPermille 0, dazu der Erhaltungssatz ueber 50 Ticks eines Dreiparteienkampfes (R-BAT-07/AK1). Faellt einer, ist das ein Befund und keine Formulierungsfrage: PROBLEME.md, dann Entscheid, bevor eine Kampfregel geaendert wird (Golden-Master). T-M14-06 bleibt done und bekommt in seinem dod einen Verweis auf diese Aufgabe. Anforderungen bewusst leer: R-BAT-07 steht in name_level; wer den Testblock R-BAT-07/AK1 nennt, darf die ID dort streichen und traegt sie dann hier ein. Kommt vor T-M40-01, das combat.ts anfasst."
 
+  # Nacharbeit nach der Durchsicht von M41 (2026-09-13), Block N1: zwei Vorbestaende der
+  # Oberflaeche aus review-m41.md (N8, N7), ohne Wirkung auf die Partie.
+  - id: T-M41-12
+    milestone: M41
+    title: Ankuendigung und Freischaltung bleiben sichtbar
+    status: done
+    # Beim Bau (2026-09-13): dazu app.css fuer den leisen Wegklick (.alert__dismiss, ohne
+    # Alarmfarbe, Haltetest in Alerts.test.tsx). Rot vorher: Alerts 3 von 22, App 2 von 2
+    # (Uhr Tag 6 14:00, Meldungsleiste leer); Onboarding-Pause bleibt 48 Ticks.
+    deps: [T-M41-03]
+    requirements: [R-TECH-02]
+    files: [apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/App.test.tsx, apps/desktop/src/game/onboarding.slow.test.ts]
+    dod: "Befund N8 der Durchsicht M41: Ankuendigung und Freischaltung stehen nur in den ersten 12 Ticks eines Spieltags (COMPLETION_ALERT_TICKS) - bei Tempo 100 etwa 0,12 s, und ein Vorspulen von einer Tagesmitte in die naechste ueberspringt sie ganz. Sie stehen jetzt bis zum Ende ihres Spieltags oder bis der Spieler sie wegklickt. Test zuerst: App.test.tsx - nach einem Tagessprung durch Vorspulen von 14:00 aus steht die Freischaltung des neuen Tages noch in den Meldungen; Alerts.test.tsx - den ganzen Spieltag, am naechsten nicht mehr, wegklickbar. Leise nach M36: keine Alarm- oder Warnfarbe, kein Sprung auf die Karte, kein Ton. Einloesbarkeit vor dem Bau geprueft: bei Tempo 100 dauert ein Spieltag 0,24 s; bis Tagesende verdoppelt die Anzeigezeit, macht sie bei vollem Tempo aber nicht lesbar - der Gewinn liegt beim Vorspulen (danach steht die Uhr) und bei kleinem Tempo, der Rest als Befund mit Zahl in PROBLEME.md. onboarding.slow.test.ts misst dieselbe laengste Pause. R-UI-14 nur im Text: es steht in name_level."
+  - id: T-M41-13
+    milestone: M41
+    title: Tempo waehrend des Vorspulens verliert keine Befehle
+    status: todo
+    deps: [T-M41-12]
+    requirements: []
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/keyboard.test.ts]
+    dod: "Befund N7 der Durchsicht M41: Tempoknoepfe (Header.tsx) und die Kuerzel Leertaste, Plus, Minus (App.tsx) sind waehrend des Vorspulens nicht gesperrt; die Uhr laeuft dann neben den Haeppchen, chunk(result.state) ueberschreibt ihre Ticks, und mit takePending entnommene Befehle gehen verloren. Sperren statt uebergeben, konsistent mit T-M28-10: der Vorspulknopf wird zum Abbrechen, die Pause bleibt bedienbar; die gesperrten Stufen nennen den Grund im Tooltip, F startet keinen zweiten Lauf. Test zuerst: App.test.tsx - Befehl gesammelt, Vorspulen ueber mehrere Haeppchen, zweiter Befehl waehrend des Laufs, Tempo gedrueckt (Knopf und Taste): beide Befehle angewandt; Header.test.tsx und keyboard.test.ts fuer Sperre und Grund. Einloesbarkeit vor dem Bau geprueft: heute endet Vorspulen um einen Tag im ersten Haeppchen (days 1 = 24 Ticks = DEFAULT_CHUNK_TICKS, der Kern prueft das Ziel im Haeppchen), also synchron im Klick - ueber die Oberflaeche ist der Verlust heute nicht herstellbar. Der Test verkleinert deshalb die Haeppchen (derselbe Pfad wie jeder Lauf ueber mehr als ein Haeppchen); die Messung heute synchron steht in App.test.tsx und PROBLEME.md. R-TIME-02 und R-TIME-03 nur im Text: sie stehen in name_level."
+
   # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
   # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der
   # Ausgangswert (T-M17-02) erst nach dem KI-Fabrikausbau (T-M41-02) und nach M35.

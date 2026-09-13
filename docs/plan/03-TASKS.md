@@ -5621,3 +5621,51 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `strengths` wird für jede kämpfende Seite zugesichert. Gegen den Kern grün; mit einer Schieflage
   nach Reihenfolge bzw. ohne `strengths` — nur im Test als Hülle um die Kampfphase — fällt die neue
   Fassung, die alte blieb grün.)*
+
+> **Nacharbeit nach der Durchsicht (2026-09-13).** Die Durchsicht von M41 (`review-m41.md`) fand
+> zwei Vorbestände in der Oberfläche, die keiner Aufgabe gehörten: N8 (Ankündigung und
+> Freischaltung sind beim Vorspulen nie zu sehen) und N7 (Tempo während des Vorspulens). Sie
+> ändern die Partie nicht und kommen deshalb in Block N1 mit den Korrekturen an T-M41-03/-04/-05/
+> -06/-07; die KI-Aufgaben der Durchsicht (T-M41-08 bis -11, -14) gehören zu Block N2.
+
+### T-M41-12 · Ankündigung und Freischaltung bleiben sichtbar
+- **Ziel:** eine Meldung, die das Vorspulen überspringt, hat niemand gelesen.
+- **Anforderungen:** R-TECH-02
+- **Abhängigkeiten:** T-M41-03
+- **Dateien:** `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/app.css`, `docs/plan/PROBLEME.md` *(app.css beim Bau ergänzt: der leise Wegklick)*
+- **Tests zuerst:** `apps/desktop/src/App.test.tsx` — nach einem Tagessprung durch Vorspulen von
+  14:00 aus steht die Freischaltung des neuen Tages noch in den Meldungen (heute nicht: sie steht
+  nur in den ersten 12 Ticks eines Tages); `apps/desktop/src/ui/Alerts.test.tsx` — Ankündigung und
+  Freischaltung stehen den ganzen Spieltag, am nächsten nicht mehr, und lassen sich wegklicken;
+  `apps/desktop/src/game/onboarding.slow.test.ts` misst danach dieselbe längste Pause.
+- **Fertig wenn:** Ankündigung und Freischaltung bis zum Ende ihres Spieltags stehen oder bis der
+  Spieler sie wegklickt — geprüft über einen Tagessprung, nicht über Ticks. Leise nach M36: der
+  Wegklick trägt keine Alarm- oder Warnfarbe, springt nicht auf die Karte und macht keinen Ton.
+  Befund N8 der Durchsicht. **Vor dem Bau auf Einlösbarkeit geprüft:** bei Tempo 100 dauert ein
+  Spieltag 0,24 s — „bis Tagesende" verdoppelt die Anzeigezeit gegenüber 12 Ticks, macht sie bei
+  vollem Tempo aber nicht lesbar. Der Gewinn liegt beim Vorspulen (danach steht die Uhr, und die
+  Meldung bleibt stehen) und bei kleinem Tempo; der Rest steht als Befund mit Zahl in
+  `PROBLEME.md`. R-UI-14 steht nur hier im Text (`name_level`).
+
+### T-M41-13 · Tempo während des Vorspulens verliert keine Befehle
+- **Ziel:** eine Uhr, die neben dem Vorspulen läuft, rechnet Stunden, die das nächste Häppchen
+  überschreibt — samt der Befehle, die sie dabei angewandt hat.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-12
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/keyboard.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `apps/desktop/src/App.test.tsx` — ein Befehl gesammelt, Vorspulen über mehrere
+  Häppchen gestartet, ein zweiter Befehl während des Laufs, dann Tempo gedrückt (Knopf und Taste):
+  beide Befehle sind danach angewandt; `apps/desktop/src/ui/Header.test.tsx` — die Tempostufen über
+  0 sind während des Vorspulens gesperrt und nennen den Grund; `apps/desktop/src/keyboard.test.ts`
+  — Leertaste, Plus, Minus und F tun während des Vorspulens nichts.
+- **Fertig wenn:** Tempo und Kürzel während eines Laufs gesperrt sind, mit Grund im Tooltip —
+  konsistent mit T-M28-10: der Vorspulknopf wird zum Abbrechen, die Pause bleibt bedienbar.
+  Befund N7 der Durchsicht. **Vor dem Bau auf Einlösbarkeit geprüft:** heute endet ein Vorspulen
+  um einen Tag im ersten Häppchen (`days: 1` sind 24 Ticks, `DEFAULT_CHUNK_TICKS` ist 24, der Kern
+  prüft das Ziel im Häppchen) und damit synchron im Klick — über die Oberfläche ist der Verlust
+  heute nicht herstellbar. Der Test verkleinert deshalb die Häppchen (derselbe Pfad wie jeder Lauf
+  über mehr als ein Häppchen) und zeigt dort, dass der Befehl verloren geht; die Messung „heute
+  synchron" steht in `App.test.tsx` und `PROBLEME.md`. R-TIME-02 und R-TIME-03 stehen nur hier im
+  Text (`name_level`).

@@ -2314,3 +2314,32 @@ Verteidigung führen sich selbst aus" — vorgemerkt, nicht gebaut. Die Sichtpr�
 Haltungsgruppe (zwei mal zwei, T-M40-05) steht im Schlussblock aus.
 
 **Status:** Beobachtung; AK5 belegt.
+
+## 2026-09-13 · T-M41-12 · Ankündigung und Freischaltung standen zwölf Spielstunden — nach einem Vorspulen gar nicht
+
+**Befund (Durchsicht M41, N8).** `unlockAlerts` und `upcomingAlerts` in `Alerts.tsx` meldeten nur,
+solange `tick % ticksPerDay < COMPLETION_ALERT_TICKS` (12) galt — so lange wie eine Fertigstellung.
+Zwölf Spielstunden sind bei Tempo 100 rund 0,12 s. Ein Vorspulen um einen Tag landet zur selben
+Uhrzeit am nächsten Tag; von 14:00 aus sprang es über die ganze Anzeige hinweg.
+
+**Gemessen** (`App.test.tsx`, T-M41-12): Weltkarte, eine Partie mit `advanceTicks` auf Tag 5, 14:00
+gebracht und über den Ladeweg geöffnet, einmal Vorspulen. Die Uhr steht danach auf Tag 6, 14:00 —
+dem Freischaltungstag des Hafens —, und die Meldungsleiste war **leer** („expected '' to contain
+'Neu ab heute: Hafen'"). Die Zählung im Onboarding-Durchgang sah das nie: sie fragt jeden Tick ab
+und findet die Meldung deshalb in der ersten Stunde.
+
+**Reparatur.** Beide stehen den ganzen Spieltag und lassen sich wegklicken; ein Klick gilt bis zum
+Ende dieses Spieltags und nur ab seinem Tick, Laden und neue Partie setzen ihn zurück. Leise wie
+bisher (M36): der Wegklick trägt keine Alarm- oder Warnfarbe (Haltetest in `Alerts.test.tsx`),
+springt nicht auf die Karte und macht keinen Ton; Kampf, Mangel und Hauptstadt sind nicht
+wegzuklicken. Die längste Pause des Onboarding-Durchgangs bleibt 48 Ticks, `onboarding.md`
+unverändert.
+
+**Was nicht behoben ist (vor dem Bau gerechnet).** Ein Spieltag dauert bei Tempo 100 0,24 s, bei
+Tempo 10 2,4 s, bei Tempo 5 4,8 s. „Bis Tagesende" verdoppelt die Anzeigezeit, lesbar ist sie bei
+vollem Tempo trotzdem nicht. Der Gewinn liegt beim Vorspulen — danach steht die Uhr (`setSpeed(0)`
+beim Start des Laufs), und die Meldung bleibt, bis weitergespielt oder weggeklickt wird — und bei
+kleinem Tempo. Eine Meldung, die länger als ihren Tag steht, bräuchte einen anderen Text als
+„Neu ab heute" und ist nicht entschieden.
+
+**Status:** behoben (T-M41-12); die Anzeigezeit bei vollem Tempo als Beobachtung.
