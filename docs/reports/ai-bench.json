@@ -5,10 +5,10 @@
   "players": 8,
   "aiPlayers": 8,
   "ticks": 480,
-  "aiMedianMs": 0.2309,
-  "tickMedianMs": 2.5938,
-  "aiP99Ms": 0.8039,
-  "share": 0.082,
+  "aiMedianMs": 0.1873,
+  "tickMedianMs": 2.4245,
+  "aiP99Ms": 0.6484,
+  "share": 0.072,
   "requirement": {
     "id": "R-AI-04",
     "maxShare": 0.3,
@@ -18,5 +18,5 @@
   "meetsRequirement": true,
   "certifies": "R-AI-04 unter seinen eigenen Bedingungen: ausgelieferte Weltkarte, acht KI-Maechte.",
   "note": "Beide Mediane stehen einzeln, weil der Anteil allein nicht lesbar ist: updateIntel liegt im Nenner, ein schnellerer Tick hebt den gemeldeten Anteil.",
-  "measuredAt": "2026-09-12T17:31:47.436Z"
+  "measuredAt": "2026-09-13T21:58:16.821Z"
 }
