@@ -2529,3 +2529,50 @@ Bau den Haltungs-Messlauf neu fahren und einchecken, bevor die Abnahme gilt.
 Oder der Lauf kommt doch in die Abnahme, mit `run(...)` wie AK-1.
 
 ---
+
+## 2026-09-13 · T-M40-17 · Die Frische-Wächter urteilen nach Abstammung, und der Haltungs-Messlauf nennt seinen Messcommit (delegiert)
+
+**Entscheidung.**
+- Parameterlauf, Turnier und Haltungs-Messlauf gelten als frisch, wenn auf HEAD seit ihrem Bericht kein
+  Commit an ihren Quellen liegt: `git rev-list -1 <bericht>..HEAD -- <quellen>` (`scripts/freshness.mjs`).
+  Die Commit-Zeit zählt nicht mehr.
+- Beim Haltungs-Messlauf zählt nicht der Commit am Bericht, sondern der Commit, auf dem gemessen wurde. Der
+  Lauf schreibt `measuredAtCommit` und die uncommitteten Dateien (`measuredDirty`). Der Wächter lehnt ab:
+  einen Bericht ohne Messcommit, einen an den Quellen schmutzig gemessenen und einen, dessen Messcommit nicht
+  in der Geschichte von HEAD liegt.
+- Die Quellen des Haltungs-Messlaufs sind `STANCE_SOURCES`, acht Pfade. Parameterlauf und Turnier sehen
+  neben `data/rules` ihre Karte (`GAUGES`, `scripts/acceptance-criteria.mjs`).
+
+Entschieden vom Orchestrator nach Befund M-1 der Durchsicht der zweiten Nacharbeit; Messcommit und Pfadliste
+nach N-1, N-3 und N-7.
+
+**Begründung.** Befund M-1, nachgebaut als Wegwerf-Repo in `test/requirements.test.ts`: Der Seitenzweig ändert
+Automatik und Regeln zur Zeit 2000, main checkt die Berichte zur Zeit 3000 ein, der Merge folgt zur Zeit 4000.
+Mit Commit-Zeiten meldeten Haltungs-Messlauf und Parameterlauf danach frisch, mit der Abstammung veraltet.
+Außerdem galt eine Textkorrektur am Bericht als Messung (N-3), und der feste Standtext nannte `c3ff8be` für
+einen Lauf auf `bf3db75` (N-7).
+
+**Warum auch die Geschichte von HEAD.** `rev-list <messcommit>..HEAD` sieht nur Commits, die HEAD hat und der
+Messcommit nicht. Ein Bericht, der aus einem anderen Zweig herüberkopiert wird, kann mit Commits gemessen
+sein, die HEAD fehlen. Das ist eine Ergänzung zum Auftrag.
+
+**Warum der Code bei Parameterlauf und Turnier außen vor bleibt.** Beide Läufe spielen mit der KI und dem
+Kern; seit ihren Berichten liegen dort 20 bzw. 11 Commits. Mit den Codepfaden wäre die Abnahme heute rot, und
+ein Parameterlauf dauert rund eine Stunde. Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die
+Regeln. Ob sie jedem Codecommit folgen sollen, ist eine neue Entscheidung und steht als offene Frage in
+`PROBLEME.md`.
+
+**Gegenrede.**
+- Ein Revert, der die Quellen auf den gemessenen Inhalt zurückstellt, zählt als Commit: rot, obwohl der
+  Inhalt gleich ist. Das ist die sichere Richtung. Die Alternative wäre, die Baum-Kennungen zu vergleichen
+  (`git rev-parse <messcommit>:<pfad>` gegen `HEAD:<pfad>`), also Inhalt statt Geschichte.
+- Jeder Commit an `stance.slow.test.ts` macht den Bericht alt, auch ein Kommentar. Hingenommen: der Test
+  trägt Kontrolle, Schwellen und Zählung.
+- Nach Rebase oder Squash liegt der Messcommit nicht mehr in der Geschichte. Dann ist die Abnahme rot, und
+  es wird neu gemessen.
+
+**kippbar:** In `scripts/freshness.mjs` die Baum-Kennungen statt `commitsSince` vergleichen, oder
+`STANCE_SOURCES` bzw. `GAUGES` enger fassen. Die Einheitsfälle in `test/requirements.test.ts` nennen beide
+Listen wörtlich und fallen mit.
+
+---

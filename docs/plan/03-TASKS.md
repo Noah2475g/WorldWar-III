@@ -5693,6 +5693,41 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
     nach dem eingecheckten Lauf grün.
   - Befund M-B.
 
+> **Dritte Nacharbeit nach der Durchsicht der zweiten Nacharbeit (2026-09-13).** Kein kritischer und kein
+> hoher Befund. M-1: der Frische-Wächter vergleicht Commit-Zeiten und meldet nach dem Merge eines älteren
+> Seitencommits grün, obwohl die Automatik ungemessen ist — dieselbe Lücke bei Parameterlauf und Turnier.
+> N-1, N-3, N-7: der Wächter sieht zu wenige Quellen, jeder Commit am Bericht gilt als Messung, und der
+> Bericht nennt einen falschen Stand. N-2: „erfüllt" enthält weder Kontrolle noch Kartenfenster. N-4, N-5:
+> der Folgebefehl der Garnison sieht gesammelte Haltungswechsel nicht, und „angenommen" heißt nur
+> Vorprüfung. N-6: die Pendel-Doku. Die Entscheide stehen in `DECISIONS.md`.
+
+### T-M40-17 · Frische nach Abstammung statt nach Uhrzeit
+- **Ziel:** ein Frische-Wächter, der nach einem Merge nicht grün meldet, während ein Messgerät ungemessen ist.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-16
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `scripts/freshness.mjs`,
+  `apps/headless/test/stance.slow.test.ts`, `docs/plan/WORKFLOW.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `gaugeStatus` und `stanceReportStatus` bekommen die gefundenen Commits
+    als Eingabe — der Merge eines älteren Seitencommits ist rot, ebenso ein Bericht ohne Messcommit, einer
+    aus einem an den Quellen schmutzigen Arbeitsbaum und einer, dessen Messcommit nicht in der Geschichte
+    von HEAD liegt. Ein Wegwerf-Repo mit dem Merge aus Befund M-1 meldet vor dem Merge frisch und danach
+    veraltet; mit der alten Zeitlogik zuerst rot gesehen.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `messstand` (Messcommit, uncommittete Dateien,
+    git antwortet nicht).
+- **Fertig wenn:**
+  - beide Wächter `git rev-list -1 <bericht>..HEAD -- <quellen>` fragen statt Commit-Zeiten zu vergleichen
+    (`scripts/freshness.mjs`);
+  - der Haltungs-Messlauf `measuredAtCommit` und `measuredDirty` schreibt, `STAND` entfällt, und der Wächter
+    `measuredAtCommit..HEAD` über `STANCE_SOURCES` prüft (acht Quellen, Befund N-1) und einen schmutzig
+    gemessenen Bericht ablehnt (Befund N-3);
+  - Parameterlauf und Turnier zusätzlich ihre Karte sehen; der Code bleibt dort außen vor, begründet in
+    `acceptance-criteria.mjs` und als offene Frage in `PROBLEME.md`;
+  - der Wächter des Haltungs-Messlaufs am echten Stand rot meldet, weil dem eingecheckten Bericht der
+    Messcommit fehlt — gewollt, der Lauf wird nach dem Merge neu gefahren.
+  - Befunde M-1, N-1, N-3, N-7.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

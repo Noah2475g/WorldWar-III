@@ -3154,3 +3154,38 @@ Ereignisstrom. Test wie in `events.test.ts` (T-M40-13): dieselbe Zeile behält i
 herausfällt.
 
 **Status:** offen, ohne Aufgabe.
+
+---
+
+## 2026-09-13 · Beim Bau von T-M40-17 gefunden · Parameterlauf und Turnier folgen dem Code nicht, den sie vermessen (gezählt, offen)
+
+**Befund.** Der Frische-Wächter von Parameterlauf und Turnier sieht nur Daten. Seit T-M40-17 sind das
+`data/rules` und die jeweilige Karte: `data/maps/world.json` für den Parameterlauf, `data/maps/testworld.json`
+für das Turnier (über `smallWorld` aus `packages/testkit`). Beide Läufe spielen aber Partien mit KI und Kern:
+- der Parameterlauf über `apps/headless/src/sweep.ts`,
+- das Turnier über `apps/headless/src/tournament.ts`,
+- beide mit `advanceTicks` aus `packages/ai`.
+
+**Gezählt** mit `git rev-list --count <bericht>..HEAD -- <pfade>`, Worktree `m40n3` auf `72438d1`:
+
+| Messgerät | Bericht | Commits seitdem an KI, Kern und `apps/headless/src` | davon `packages/ai/src` | davon `packages/core/src` |
+|---|---|---|---|---|
+| Parameterlauf | `d82779d`, 2026-09-12 | 20 | 19 | 5 |
+| Turnier | `1edcb7b`, 2026-09-13 | 11 (mit `packages/testkit`) | 11 | 3 |
+
+Am echten Stand melden beide Wächter frisch:
+- „seit dem Bericht (d82779d) kein Commit an data/rules, data/maps/world.json auf HEAD"
+- „seit dem Bericht (1edcb7b) kein Commit an data/rules, data/maps/testworld.json auf HEAD"
+
+Dass eine Änderung der KI Partien verschiebt, ist gemessen: nach dem Merge von Block N2 ergab dieselbe
+Garnison im Haltungs-Messlauf 76 statt 52 Einmärsche, bei unveränderten Regeln und unveränderter Karte.
+
+**Warum nicht gebaut.** Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die Regeln. Mit den
+Codepfaden wäre die Abnahme heute rot, und der Parameterlauf dauert rund eine Stunde. Ob die Messgeräte jedem
+Codecommit folgen sollen, ist eine neue Entscheidung und nicht Teil der Nacharbeit.
+
+**Reparatur später, falls gewollt.** Die Codepfade in `GAUGES` aufnehmen (`scripts/acceptance-criteria.mjs`);
+die Einheitsfälle in `test/requirements.test.ts` nennen die Listen wörtlich. Billig wäre es beim Turnier, das
+rund 15 Sekunden läuft; teuer beim Parameterlauf.
+
+**Status:** offen, Frage an Noah.

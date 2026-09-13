@@ -167,61 +167,142 @@ export function artefactUnchangedSince(commit, changedFiles) {
 }
 
 /**
- * Frische der Balancing-Messgeraete (2026-09-08, DECISIONS.md).
- *
- * Die Abnahme faehrt Parameterlauf und Turnier nicht mehr mit - sie sind
- * Messgeraete, keine Kriterien, und kosteten den Loewenanteil der 75-130 Minuten.
- * Damit sie nicht still veralten, prueft die Abnahme stattdessen: ist der Bericht
- * des Messgeraets aelter als die letzte Aenderung an den Regeldateien, ist die
- * Abnahme rot. Alle Unbekannten zaehlen als veraltet - die sichere Richtung.
- *
- * Zeiten sind Commit-Zeitstempel (git log -1 --format=%ct -- <pfad>), keine
- * Datei-mtimes: ein checkout setzt mtimes neu und wuerde jedes Urteil verwischen.
+ * Die Quellen, von denen der Haltungs-Messlauf abhaengt (T-M40-17, Befund N-1). Nachgesehen an den
+ * Importen von `apps/headless/test/stance.slow.test.ts`: die Automatik, der Kern, `shared` (Festkomma)
+ * und `testkit` (`placeArmy`), die ausgelieferten Regeln (Ruhe und Kampf haengen an `ticksPerDay` und
+ * `deployDelayTicks`), die Weltkarte, die Aufstellung der neuen Partie und der Test selbst (Kontrolle,
+ * Schwellen, Zaehlung).
  */
-export function gaugeStatus({ rulesChangedAt, gaugeChangedAt, rulesDirty }) {
-  if (rulesDirty) return { fresh: false, reason: 'uncommittete Aenderungen unter data/rules - erst committen, dann messen' }
-  if (!gaugeChangedAt) return { fresh: false, reason: 'kein Bericht mit Stand gefunden' }
-  if (!rulesChangedAt) return { fresh: false, reason: 'Regelstand unbekannt (git antwortet nicht)' }
-  return rulesChangedAt <= gaugeChangedAt
-    ? { fresh: true, reason: 'Bericht ist juenger als die letzte Regelaenderung' }
-    : { fresh: false, reason: 'Regeln sind juenger als der Bericht des Messgeraets' }
+export const STANCE_SOURCES = [
+  'packages/ai/src',
+  'packages/core/src',
+  'packages/shared',
+  'packages/testkit',
+  'data/rules',
+  'data/maps/world.json',
+  'apps/desktop/src/game/newGame.ts',
+  'apps/headless/test/stance.slow.test.ts',
+]
+
+/**
+ * Die Balancing-Messgeraete und die Daten, die sie nachweislich lesen (T-M40-17).
+ *
+ * Bis T-M40-17 sahen beide nur `data/rules`. Der Parameterlauf liest ausserdem `data/maps/world.json`
+ * (`sweep.slow.test.ts`), das Turnier `data/maps/testworld.json` (ueber `smallWorld` aus `packages/testkit`).
+ * Den Code (`packages/ai/src`, `packages/core/src`, `apps/headless/src`) lesen beide auch — er steht bewusst
+ * NICHT hier: die Messgeraete vermessen die Regeln (Entscheid vom 2026-09-08), und die Frage, ob sie jeder
+ * Codeaenderung folgen sollen, ist offen (`PROBLEME.md`, 2026-09-13, T-M40-17).
+ */
+export const GAUGES = [
+  {
+    name: 'Parameterlauf',
+    report: 'docs/reports/balance-sweep.md',
+    sources: ['data/rules', 'data/maps/world.json'],
+    command: 'pnpm balance:sweep',
+  },
+  {
+    name: 'Turnier',
+    report: 'docs/reports/ai-tournament-run.md',
+    sources: ['data/rules', 'data/maps/testworld.json'],
+    command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts',
+  },
+]
+
+/** Der Bericht des Haltungs-Messlaufs. */
+export const STANCE_REPORT = 'docs/reports/stance.json'
+
+/** Die ersten sieben Zeichen einer Commit-Kennung, fuer Meldungen. */
+const kurz = (commit) => String(commit).slice(0, 7)
+
+/** Ob eine Datei unter einer der Quellen liegt — ein Ordner zaehlt mit allem darunter. */
+const unterQuellen = (file, sources) => sources.some((source) => file === source || file.startsWith(`${source}/`))
+
+/**
+ * Frische der Balancing-Messgeraete (2026-09-08, DECISIONS.md; seit T-M40-17 nach Abstammung).
+ *
+ * Die Abnahme faehrt Parameterlauf und Turnier nicht mehr mit - sie sind Messgeraete, keine
+ * Kriterien, und kosteten den Loewenanteil der 75-130 Minuten. Damit sie nicht still veralten,
+ * prueft die Abnahme stattdessen: liegt auf HEAD seit dem Commit des Berichts ein Commit an den
+ * Quellen des Messgeraets, ist die Abnahme rot. Alle Unbekannten zaehlen als veraltet - die sichere
+ * Richtung.
+ *
+ * **Abstammung, nicht Uhrzeit** (T-M40-17, Befund M-1). Bis dahin verglich der Waechter Commit-Zeiten
+ * (`git log -1 --format=%ct`). Nach dem Merge eines aelteren Seitencommits war das gruen: gleicht der
+ * Merge fuer den Pfad dem Seitenzweig, ueberspringt git ihn und nennt den aelteren Seitencommit. Die
+ * Frage ist nicht "was ist juenger", sondern "welche Commits an den Quellen hat der Bericht nicht
+ * gesehen" — `git rev-list -1 <berichtcommit>..HEAD -- <quellen>`. Die Commits bekommt diese Funktion
+ * als Eingabe (`scripts/freshness.mjs` fragt git).
+ */
+export function gaugeStatus({ sources = ['data/rules'], sourcesDirty, reportCommit, commitsSinceReport }) {
+  const quellen = sources.join(', ')
+  if (sourcesDirty !== false) return { fresh: false, reason: `uncommittete Aenderungen unter ${quellen} - erst committen, dann messen` }
+  if (!reportCommit) return { fresh: false, reason: 'kein Bericht mit Stand gefunden' }
+  if (!Array.isArray(commitsSinceReport)) {
+    return { fresh: false, reason: `Stand von ${quellen} seit dem Bericht unbekannt (git antwortet nicht)` }
+  }
+  if (commitsSinceReport.length > 0) {
+    return {
+      fresh: false,
+      reason: `seit dem Bericht (${kurz(reportCommit)}) liegt auf HEAD mindestens ein Commit an ${quellen} (${kurz(commitsSinceReport[0])}) - die Regeln sind juenger als der Bericht des Messgeraets`,
+    }
+  }
+  return { fresh: true, reason: `seit dem Bericht (${kurz(reportCommit)}) kein Commit an ${quellen} auf HEAD` }
 }
 
 /**
- * Frische des Haltungs-Messlaufs (T-M40-16, Befund M-B der Durchsicht der Nacharbeit M40).
+ * Frische des Haltungs-Messlaufs (T-M40-16, Befund M-B; seit T-M40-17 nach Abstammung und Messcommit).
  *
  * `apps/headless/test/stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik
- * (R-UNIT-09/AK5, D30.9): zwoelf Partien, gut elf Minuten, und darum in keiner Pruefkette. Nach
- * dem Merge von Block N2 haette die Abnahme gruen gemeldet, auch wenn AK5 gefallen waere.
+ * (R-UNIT-09/AK5, D30.9): zwoelf Partien, gut elf Minuten, und darum in keiner Pruefkette.
  *
- * Dasselbe Muster wie `gaugeStatus`, nur vermisst dieser Lauf nicht die Regeldateien, sondern die
- * Automatik und den Kern: der Bericht muss juenger sein (Commit-Zeit, `<=`) als die letzte
- * Aenderung unter `packages/ai/src` und unter `packages/core/src`. Und weil der Test den Bericht
- * vor seinen Zusicherungen schreibt, muss der eingecheckte Lauf AK5 auch erfuellt haben - sonst
- * machte ein eingecheckter, gescheiterter Lauf den Waechter gruen. Alle Unbekannten zaehlen als
- * veraltet, die sichere Richtung.
+ * `report` ist `episoden.nachher` des eingecheckten Berichts. Gruen nur, wenn alles zutrifft:
+ *  - an den Quellen ist nichts uncommittet;
+ *  - der Bericht nennt den Commit, auf dem gemessen wurde (`measuredAtCommit`, T-M40-17). Bis dahin galt
+ *    jeder Commit am Bericht als Messung, auch eine Textkorrektur (Befund N-3);
+ *  - beim Messen war der Arbeitsbaum an den Quellen sauber (`measuredDirty`);
+ *  - der Messcommit liegt in der Geschichte von HEAD (`measuredAtIsAncestor`) — sonst saehe
+ *    `rev-list <messcommit>..HEAD` die Commits eines anderen Zweigs nicht, die HEAD fehlen;
+ *  - seit dem Messcommit liegt auf HEAD kein Commit an `sources` (`commitsSinceMeasurement`, Befund M-1
+ *    und N-1);
+ *  - der eingecheckte Lauf hat AK5 erfuellt — der Test schreibt den Bericht vor seinen Zusicherungen.
  */
-export function stanceReportStatus({ aiChangedAt, coreChangedAt, reportChangedAt, sourcesDirty, ak5Fulfilled }) {
-  const report = 'docs/reports/stance.json'
-  if (sourcesDirty) {
-    return { fresh: false, reason: 'uncommittete Aenderungen unter packages/ai/src oder packages/core/src - erst committen, dann messen' }
+export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor, commitsSinceMeasurement, sources = STANCE_SOURCES }) {
+  const neu = `WORLDWAR_WRITE_REPORT=1 auf sauberem Arbeitsbaum neu messen`
+  if (sourcesDirty !== false) {
+    return { fresh: false, reason: 'uncommittete Aenderungen an den Quellen des Haltungs-Messlaufs - erst committen, dann messen' }
   }
-  if (!reportChangedAt) return { fresh: false, reason: `kein eingecheckter Bericht ${report}` }
-  if (!aiChangedAt || !coreChangedAt) {
-    return { fresh: false, reason: 'Stand von packages/ai/src oder packages/core/src unbekannt (git antwortet nicht)' }
+  if (!report || typeof report !== 'object') return { fresh: false, reason: `kein eingecheckter Bericht ${STANCE_REPORT}` }
+  const commit = report.measuredAtCommit
+  if (typeof commit !== 'string' || !/^[0-9a-f]{7,40}$/.test(commit)) {
+    return { fresh: false, reason: `${STANCE_REPORT}: Bericht ohne Messcommit (episoden.nachher.measuredAtCommit) - ${neu}` }
   }
-  const juenger = [
-    ...(aiChangedAt > reportChangedAt ? ['packages/ai/src'] : []),
-    ...(coreChangedAt > reportChangedAt ? ['packages/core/src'] : []),
-  ]
-  if (juenger.length > 0) {
+  if (!Array.isArray(report.measuredDirty)) {
+    return { fresh: false, reason: `${STANCE_REPORT}: Bericht ohne Vermerk zum Arbeitsbaum (episoden.nachher.measuredDirty) - ${neu}` }
+  }
+  const schmutzig = report.measuredDirty.filter((file) => typeof file !== 'string' || unterQuellen(file, sources))
+  if (schmutzig.length > 0) {
     return {
       fresh: false,
-      reason: `${juenger.join(' und ')} ${juenger.length > 1 ? 'sind' : 'ist'} juenger als ${report} - die Automatik ist seit dem letzten Haltungs-Messlauf ungemessen`,
+      reason: `${STANCE_REPORT} wurde auf ${kurz(commit)} mit uncommitteten Quellen gemessen (${schmutzig.join(', ')}) - erst committen, dann neu messen`,
     }
   }
-  if (ak5Fulfilled !== true) {
-    return { fresh: false, reason: `der eingecheckte Lauf in ${report} hat AK5 nicht erfuellt (episoden.nachher.ak5.erfuellt, Ruecknahmekriterium D30.9)` }
+  if (measuredAtIsAncestor === false) {
+    return { fresh: false, reason: `der Messcommit ${kurz(commit)} aus ${STANCE_REPORT} liegt nicht in der Geschichte von HEAD - ${neu}` }
   }
-  return { fresh: true, reason: `${report} ist juenger als die letzte Aenderung an packages/ai/src und packages/core/src, und AK5 ist erfuellt` }
+  if (measuredAtIsAncestor !== true || !Array.isArray(commitsSinceMeasurement)) {
+    return { fresh: false, reason: `Stand der Quellen seit dem Messcommit ${kurz(commit)} unbekannt (git antwortet nicht)` }
+  }
+  if (commitsSinceMeasurement.length > 0) {
+    return {
+      fresh: false,
+      reason: `seit dem Messcommit ${kurz(commit)} aus ${STANCE_REPORT} liegt auf HEAD mindestens ein Commit an den Quellen des Messlaufs (${kurz(commitsSinceMeasurement[0])}) - die Automatik ist ungemessen`,
+    }
+  }
+  if (report.ak5?.erfuellt !== true) {
+    return { fresh: false, reason: `der eingecheckte Lauf in ${STANCE_REPORT} hat AK5 nicht erfuellt (episoden.nachher.ak5.erfuellt, Ruecknahmekriterium D30.9)` }
+  }
+  return {
+    fresh: true,
+    reason: `${STANCE_REPORT} ist auf ${kurz(commit)} sauber gemessen, seitdem kein Commit an den Quellen des Messlaufs, und AK5 ist erfuellt`,
+  }
 }

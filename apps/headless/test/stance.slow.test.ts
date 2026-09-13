@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -63,7 +64,8 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * **Der Bericht** `docs/reports/stance.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
  * geschrieben (Befund N3: vorher schrieb jeder Lauf ihn neu, mit neuem Zeitstempel). Ohne die
- * Variable liest und schreibt der Test nichts.
+ * Variable liest und schreibt der Test nichts. Seit T-M40-17 nennt er den Commit, auf dem gemessen
+ * wurde, und die uncommitteten Dateien (`messstand`); der Frische-Waechter der Abnahme liest beides.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -113,8 +115,6 @@ const PROVINCE_DAYS_PERCENT = 98
  */
 const KONTROLLE = { intrusions: 76, provincesLost: 4 }
 const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'
-/** Der KI-Stand, auf dem gemessen wurde. Aendert sich die KI, wird neu gemessen. */
-const STAND = 'gemessen nach dem Merge von Block N2 der M41-Nacharbeit (c3ff8be)'
 /**
  * Welcher Abschnitt von `episoden` geschrieben wird. `vorher` hat T-M40-07 mit dem Adjutanten aus M40
  * geschrieben und bleibt stehen; seit T-M40-12 misst der Lauf die Regel aus D30.4.
@@ -124,6 +124,53 @@ const ADJUTANT =
   'D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken'
 const REPORT = `${ROOT}/docs/reports/stance.json`
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+
+/** Wie git im Repo antwortet — `null`, wenn es nicht antwortet. Fuer den Einheitsfall austauschbar. */
+type Git = (args: readonly string[]) => string | null
+
+/** git im Repo; das Ende wird gekuerzt, der Anfang nicht (die erste Statuszeile beginnt mit einem Leerzeichen). */
+const gitImRepo: Git = (args) => {
+  try {
+    return execFileSync('git', [...args], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).replace(/\s+$/, '')
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Der Stand, auf dem gemessen wird (T-M40-17, Befunde N-3 und N-7 der Durchsicht der zweiten Nacharbeit).
+ *
+ * Bis T-M40-17 stand hier ein fester Satz — "gemessen nach dem Merge von Block N2 (c3ff8be)" —, und der
+ * eingecheckte Lauf `69b8ca9` war auf `bf3db75` gemessen. Und der Frische-Waechter hielt jeden Commit am
+ * Bericht fuer eine Messung, auch eine Textkorrektur. Jetzt schreibt der Lauf `measuredAtCommit`
+ * (`git rev-parse HEAD`) und `measuredDirty`, die uncommitteten Dateien; der Waechter
+ * (`stanceReportStatus`) prueft `measuredAtCommit..HEAD` und lehnt einen Bericht ab, dessen Quellen beim
+ * Messen uncommittet waren.
+ */
+function messstand(git: Git): { measuredAtCommit: string | null; measuredDirty: string[] | null; stand: string } {
+  const commit = git(['rev-parse', 'HEAD'])
+  const status = git(['status', '--porcelain', '--untracked-files=all'])
+  const measuredAtCommit = commit !== null && /^[0-9a-f]{40}$/.test(commit) ? commit : null
+  const measuredDirty =
+    status === null
+      ? null
+      : status
+          .split(/\r?\n/)
+          .filter((line) => line.trim().length > 0)
+          .flatMap((line) => line.slice(3).split(' -> '))
+          .map((path) => path.replace(/^"|"$/g, ''))
+  if (measuredAtCommit === null) return { measuredAtCommit, measuredDirty, stand: 'Messcommit unbekannt (git antwortet nicht)' }
+  const baum =
+    measuredDirty === null
+      ? 'Arbeitsbaum unbekannt'
+      : measuredDirty.length === 0
+        ? 'Arbeitsbaum sauber'
+        : `Arbeitsbaum nicht sauber (${measuredDirty.length} ${measuredDirty.length === 1 ? 'Datei' : 'Dateien'})`
+  return { measuredAtCommit, measuredDirty, stand: `gemessen auf ${measuredAtCommit.slice(0, 7)}, ${baum}` }
+}
+
+/** Beim Laden genommen: vitest laedt die Module beim Start, und was danach im Arbeitsbaum geschieht, misst der Lauf nicht. */
+const MESSSTAND = SCHREIBEN ? messstand(gitImRepo) : null
 
 interface StanceCount {
   /** `ARMY_INTRUDED` in eine Provinz des Menschen. */
@@ -482,6 +529,38 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
   })
 })
 
+describe('Einheitsfall T-M40-17: der Bericht nennt den Stand, auf dem gemessen wurde (Befunde N-3, N-7)', () => {
+  /** Ein git, das auf den ersten Befehlsteil mit einem festen Text antwortet. */
+  const antwortet =
+    (antworten: Record<string, string>): Git =>
+    (args) =>
+      antworten[args[0]!] ?? null
+
+  it('schreibt den Messcommit und einen leeren Vermerk bei sauberem Arbeitsbaum', () => {
+    expect(messstand(antwortet({ 'rev-parse': 'a'.repeat(40), status: '' }))).toEqual({
+      measuredAtCommit: 'a'.repeat(40),
+      measuredDirty: [],
+      stand: 'gemessen auf aaaaaaa, Arbeitsbaum sauber',
+    })
+  })
+
+  it('vermerkt jede uncommittete Datei - auch in der ersten Zeile und beide Namen einer Umbenennung', () => {
+    const stand = messstand(
+      antwortet({ 'rev-parse': 'b'.repeat(40), status: ' M packages/ai/src/adjutant.ts\n?? notiz.txt\nR  alt.ts -> neu.ts' }),
+    )
+    expect(stand.measuredDirty).toEqual(['packages/ai/src/adjutant.ts', 'notiz.txt', 'alt.ts', 'neu.ts'])
+    expect(stand.stand).toBe('gemessen auf bbbbbbb, Arbeitsbaum nicht sauber (4 Dateien)')
+  })
+
+  it('schreibt null, wenn git nicht antwortet - der Waechter liest das als ungemessen', () => {
+    expect(messstand(antwortet({}))).toEqual({
+      measuredAtCommit: null,
+      measuredDirty: null,
+      stand: 'Messcommit unbekannt (git antwortet nicht)',
+    })
+  })
+})
+
 /** Deutschland mit `SETUPS[aufbau]` Armeen in jeder eigenen Provinz. */
 function aufstellen(seed: number, aufbau: Aufbau, stance: Stance): { state: GameState; human: PlayerId } {
   const config = toConfig({ ...DEFAULT_NEW_GAME, nation: NATION, seed }, map)
@@ -635,7 +714,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
   const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & { episoden?: Record<string, unknown> }
   const episoden = {
     ...(bericht.episoden ?? {}),
-    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), nachgemessen nach dem Merge von N2 und nach T-M40-14/15',
+    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17)',
     seeds: [...SEEDS],
     days: DAYS,
     setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },
@@ -651,7 +730,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
-      stand: STAND,
+      ...(MESSSTAND ?? messstand(gitImRepo)),
       measuredAt: new Date().toISOString(),
       ak5: ak5(laeufe),
       laeufe,
