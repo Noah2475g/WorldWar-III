@@ -2981,7 +2981,7 @@ tasks:
   - id: T-M41-05
     milestone: M41
     title: Das KI-Gedaechtnis vergisst tote Armeen
-    status: todo
+    status: done
     deps: [T-M41-04]
     requirements: []
     files: [packages/ai/src/military.ts]

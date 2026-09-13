@@ -126,6 +126,36 @@ describe('R-AI-07 Die KI merkt sich ihre Plaene', () => {
     const later = decide({ ...contextFor(), memory: { ...first.memory, lastStrategicTick: 0 } })
     expect(later.memory.lastStrategicTick).toBe(0) // no new strategic pass at tick 0
   })
+
+  it('vergisst eine Armee, die es nicht mehr gibt (T-M41-05)', () => {
+    // Befund: `assignments` wurde geschrieben, kopiert und nie gelesen, und es wuchs ohne
+    // Grenze — an Spieltag 471 fuehrte Russland 1235 Eintraege bei 217 lebenden Armeen.
+    const armee = { owner: 'p2', at: 'o3', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] }
+    const bleibt = placeArmy(state, armee)
+    const faellt = placeArmy(state, armee)
+    const vorher = decide(contextFor())
+    expect(Object.keys(vorher.memory.assignments).sort()).toEqual([bleibt.id, faellt.id].sort())
+
+    delete state.armies[faellt.id]
+    state.armyOrder = state.armyOrder.filter((id) => id !== faellt.id)
+    state.tick += 24
+    const nachher = decide({ ...contextFor(), memory: vorher.memory })
+
+    expect(Object.keys(nachher.memory.assignments)).toEqual([bleibt.id])
+  })
+
+  it('fuehrt ohne eigene Armee keinen Eintrag weiter (T-M41-05)', () => {
+    // Der fruehe Ausgang in militaryCommands: ohne Armee gab es nichts zu entscheiden, und
+    // deshalb auch nichts zu kuerzen.
+    for (const id of [...state.armyOrder]) {
+      if (state.armies[id]!.owner !== 'p2') continue
+      delete state.armies[id]
+      state.armyOrder = state.armyOrder.filter((other) => other !== id)
+    }
+    const memory = { ...emptyMemory(600), assignments: { a999: 'attack:o1' } }
+
+    expect(decide({ ...contextFor(), memory }).memory.assignments).toEqual({})
+  })
 })
 
 describe('R-AI-04 Rechenlast wird verteilt, nicht gemessen', () => {

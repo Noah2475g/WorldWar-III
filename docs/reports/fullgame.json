@@ -18,6 +18,45 @@
   "warDeclarations": 12,
   "captures": 1827,
   "battles": 4040,
+  "aiMemory": {
+    "Kanada": {
+      "eintraege": 1,
+      "armeen": 1,
+      "veraltet": 0
+    },
+    "Mexiko": {
+      "eintraege": 0,
+      "armeen": 0,
+      "veraltet": 0
+    },
+    "Brasilien": {
+      "eintraege": 0,
+      "armeen": 0,
+      "veraltet": 0
+    },
+    "Argentinien": {
+      "eintraege": 41,
+      "armeen": 41,
+      "veraltet": 0
+    },
+    "Russland": {
+      "eintraege": 216,
+      "armeen": 217,
+      "veraltet": 0
+    },
+    "China": {
+      "eintraege": 30,
+      "armeen": 30,
+      "veraltet": 0
+    },
+    "Indien": {
+      "eintraege": 143,
+      "armeen": 144,
+      "veraltet": 0
+    }
+  },
+  "aiMemoryKB": 10,
+  "stateKB": 379,
   "maxDays": 1500,
-  "measuredAt": "2026-09-12T17:28:42.122Z"
+  "measuredAt": "2026-09-13T01:40:39.098Z"
 }

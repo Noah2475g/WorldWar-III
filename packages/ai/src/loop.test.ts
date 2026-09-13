@@ -143,4 +143,45 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
 
     expect(stateHash(fortgesetzt)).toBe(stateHash(durchgehend))
   })
+
+  it('befiehlt mit und ohne gekuerztes KI-Gedaechtnis dasselbe (T-M41-05)', () => {
+    // `AiMemory.assignments` wird geschrieben und nirgends gelesen. Das wird hier nicht
+    // behauptet, sondern gefahren: Lauf B fuellt das Gedaechtnis vor jedem Tick mit jedem
+    // je geschriebenen Eintrag wieder auf — genau das Verhalten vor der Kuerzung — und muss
+    // ueber 200 Ticks dieselben Befehle geben wie der gekuerzte Lauf A.
+    const TICKS = 200
+    const gekuerzt = advanceTicks(stateWith(4), TICKS, ctx)
+
+    let current = stateWith(4)
+    const applied: { tick: number; command: Command }[] = []
+    const ungekuerzt: Record<string, Record<string, string>> = {}
+    for (let i = 0; i < TICKS; i++) {
+      if (current.victory.winner !== null) break
+      for (const [playerId, memory] of Object.entries(current.ai)) {
+        memory.assignments = { ...ungekuerzt[playerId], ...memory.assignments }
+      }
+      const { commands, memories } = runAi(current, ctx)
+      for (const command of commands) applied.push({ tick: current.tick, command })
+      current = runTicks(current, 1, ctx, () => commands).state
+      storeMemories(current, memories)
+      for (const [playerId, memory] of Object.entries(memories)) {
+        ungekuerzt[playerId] = { ...ungekuerzt[playerId], ...memory.assignments }
+      }
+    }
+
+    expect(applied.length, 'der Lauf hat nichts befohlen').toBeGreaterThan(0)
+    expect(applied).toEqual(gekuerzt.applied)
+
+    // Nicht leer verglichen, und die Kuerzung greift: der gekuerzte Lauf fuehrt am Ende
+    // weniger Eintraege, als Lauf B angesammelt hat. Ohne Kuerzung sind beide gleich.
+    const zaehle = (memories: Record<string, { assignments: Record<string, string> }>) =>
+      Object.values(memories).reduce((sum, memory) => sum + Object.keys(memory.assignments).length, 0)
+    const ohne = Object.values(ungekuerzt).reduce((sum, entries) => sum + Object.keys(entries).length, 0)
+    expect(zaehle(gekuerzt.state.ai), `gekuerzt gegen ${ohne} ohne Kuerzung`).toBeLessThan(ohne)
+    for (const [playerId, memory] of Object.entries(gekuerzt.state.ai)) {
+      for (const armyId of Object.keys(memory.assignments)) {
+        expect(gekuerzt.state.armies[armyId]?.owner ?? 'gefallen', `${playerId} erinnert ${armyId}`).toBe(playerId)
+      }
+    }
+  })
 })

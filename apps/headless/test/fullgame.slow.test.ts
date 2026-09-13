@@ -81,6 +81,26 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
     const eroberungen = events.filter((event) => event.type === 'PROVINCE_CAPTURED').length
     const kaempfe = events.filter((event) => event.type === 'BATTLE_RESOLVED').length
 
+    // Das KI-Gedaechtnis am Ende (T-M41-05): Eintraege in `assignments` je Macht gegen ihre
+    // lebenden Armeen. Das Feld wird nie gelesen und wuchs bis zum 2026-09-13 ohne Grenze;
+    // `veraltet` zaehlt Eintraege fuer Armeen, die es nicht mehr gibt. Eine Zusicherung
+    // steht hier bewusst nicht: zwischen zwei Denkschritten einer Macht darf eine Armee
+    // fallen, und wie viele das sind, haengt an der Partie, nicht an der Kuerzung.
+    const final = current
+    const kiGedaechtnis = Object.fromEntries(
+      final.playerOrder
+        .filter((id) => final.players[id]!.kind === 'ai')
+        .map((id) => {
+          const lebend = new Set(final.armyOrder.filter((armyId) => final.armies[armyId]?.owner === id))
+          const eintraege = Object.keys(final.ai[id]?.assignments ?? {})
+          return [
+            final.players[id]!.nation,
+            { eintraege: eintraege.length, armeen: lebend.size, veraltet: eintraege.filter((armyId) => !lebend.has(armyId)).length },
+          ]
+        }),
+    )
+    const kb = (value: unknown) => Math.round(Buffer.byteLength(JSON.stringify(value)) / 1024)
+
     // Der Bericht wird immer geschrieben, auch wenn die Zusicherungen greifen — eine
     // gescheiterte Abnahme ist die Messung, die man dann am dringendsten braucht.
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
@@ -98,6 +118,9 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
           warDeclarations: kriege,
           captures: eroberungen,
           battles: kaempfe,
+          aiMemory: kiGedaechtnis,
+          aiMemoryKB: kb(final.ai),
+          stateKB: kb(final),
           maxDays: MAX_DAYS,
           measuredAt: new Date().toISOString(),
         },
