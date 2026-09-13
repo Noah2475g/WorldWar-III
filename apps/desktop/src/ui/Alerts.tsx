@@ -133,7 +133,8 @@ function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
 
     const required = rule.requiresBuilding
     const level = rule.requiresBuildingLevel ?? 1
-    if (!required || bestLevel(required) >= level) return t('alerts.upcoming', { thing })
+    const have = required ? bestLevel(required) : 0
+    if (!required || have >= level) return t('alerts.upcoming', { thing })
 
     const needs = {
       thing,
@@ -142,6 +143,10 @@ function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
       required: t(`buildings.${required}`),
       none: noneOf('buildings', required),
     }
+    // Nacharbeit T-M41-03 (Durchsicht M1): steht das Gebaeude schon auf einer niedrigeren
+    // Stufe, hat der Spieler eines — "Sie haben keine" waere falsch. Genannt wird dann die
+    // beste vorhandene Stufe.
+    if (have > 0) return t('alerts.upcomingNeedsHigherLevel', { ...needs, level, have })
     return level > 1 ? t('alerts.upcomingNeedsLevel', { ...needs, level }) : t('alerts.upcomingNeeds', needs)
   }
 

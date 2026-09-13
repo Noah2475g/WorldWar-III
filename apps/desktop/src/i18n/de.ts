@@ -780,6 +780,9 @@ export const de = {
     upcomingNeeds: 'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} — Sie haben {{none}}.',
     upcomingNeedsLevel:
       'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} der Stufe {{level}} — Sie haben {{none}}.',
+    // Nacharbeit T-M41-03: steht das Gebäude schon, nur zu niedrig, wäre „Sie haben keine" falsch.
+    upcomingNeedsHigherLevel:
+      'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} der Stufe {{level}} — Ihre beste steht auf Stufe {{have}}.',
     upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. {{subject}} braucht eine Küstenprovinz — Sie haben keine.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den

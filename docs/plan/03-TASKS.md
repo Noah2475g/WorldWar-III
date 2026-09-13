@@ -5544,6 +5544,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   — gerechnet sind 48 Ticks (Ankündigungen an Tag 4, 8, 10, 14); liegt die Messung darüber,
   gilt sie mit Grund im Test. Die Ankündigung ist leise, kein Alarm. Entscheid „Ankündigung
   statt Datenänderung": `DECISIONS.md`, 2026-09-13.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, M1: steht die Voraussetzung auf einer niedrigeren
+  Stufe, sagte der Text „Sie haben keine" — jetzt „Ihre beste steht auf Stufe N"; der Test, der den
+  Fehler festschrieb, ist berichtigt.)*
 
 ### T-M41-01 · Die KI baut die Fabrik aus
 - **Ziel:** die zweite Fortschrittsachse ist heute eine für den Menschen allein.

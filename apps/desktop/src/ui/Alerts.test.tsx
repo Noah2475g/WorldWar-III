@@ -202,7 +202,14 @@ describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorh
   })
 
   it('nennt die fehlende Stufe, und schweigt, sobald sie erreicht ist', () => {
+    // Nacharbeit T-M41-03 (Durchsicht M1): mit Werft 1 stand hier "— Sie haben keine" —
+    // falsch, der Spieler hat eine, nur eine Stufe zu niedrig. Der Test schrieb den
+    // Fehler fest. Jetzt nennt die Ankuendigung die beste vorhandene Stufe.
     expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 1 } })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Zerstörer. Er braucht eine Werft der Stufe 2 — Ihre beste steht auf Stufe 1.',
+    ])
+    // Ohne jede Werft bleibt es beim "keine".
+    expect(angekuendigt(sicht(22, { buildings: { harbour: 1 } })).map((alert) => alert.text)).toEqual([
       'In zwei Tagen: Zerstörer. Er braucht eine Werft der Stufe 2 — Sie haben keine.',
     ])
     expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 2 } })).map((alert) => alert.text)).toEqual([
