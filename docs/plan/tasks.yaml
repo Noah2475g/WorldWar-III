@@ -2957,6 +2957,80 @@ tasks:
     tests: [apps/headless/test/stance.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
     dod: "D30.6. Derselbe Messlauf wie T-M40-02, jetzt mit Adjutant; stance.json fuehrt vorher und nachher nebeneinander. Zusicherung: der Anteil beantworteter Einmaersche ist groesser als vorher (Ankunft binnen des Kartenfensters und Aufbruch binnen 24 Ticks, Korrektur bei T-M40-02), und kein Befehl des Adjutanten wurde abgelehnt (R-UNIT-09/AK5). Verlorene Provinzen stehen als Zahl im Bericht, nicht als Zusicherung - sie haengen an mehr als der Haltung. Turnier einmal nachgefahren, zeilengleich. Ist die Wirkung null, ist der Meilenstein nicht fertig. LEVEL-UP-3.md Abschnitt 5 bekommt den Verweis auf das Ergebnis. pnpm verify am Ende des Meilensteins."
 
+  # Nacharbeit nach der Durchsicht von M40 (2026-09-13, review-m40.md: K1, K2, H1-H3, M1-M3).
+  # Entwurf m40-nacharbeit-entwurf.md Teil 4 und 5: D30.4 wird ersetzt (Regel ohne Entbloessen,
+  # keine Verfolgung). Reihenfolge -07, -08, -09, -10, -11, -12; -13 nach -11 und vor -12.
+  - id: T-M40-07
+    milestone: M40
+    title: Der Messlauf je Episode, vorher
+    status: todo
+    deps: [T-M40-06]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [apps/headless/test/stance.slow.test.ts, docs/reports/stance.json, docs/plan/02-DESIGN.md, docs/plan/PROBLEME.md, docs/plan/LEVEL-UP-3.md]
+    tests: [apps/headless/test/stance.slow.test.ts]
+    dod: "Befund H3 der Durchsicht M40: der Messlauf T-M40-06 traegt die Abnahme nicht - vorher war strukturell 0, beantwortet heisst irgendwann angekommen (9 beantwortete aus 2 Ankuenften), Deckung kommt auf der Weltkarte nie vor Gefechtsende an, und zwei von drei Verlusten hat der Adjutant durch Entbloessen verursacht. stance.slow.test.ts misst jetzt je umkaempfter Episode (Entwurf Teil 4.4): groesste zusammenhaengende Folge von Ticks mit BATTLE_RESOLVED in einer Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; je Episode Deckung befohlen, Deckung vor Gefechtsende angekommen, gehalten; je Lauf Provinz-Tage, verlorene Provinzen und davon ohne Gefecht im Tick der Eroberung, Adjutantenbefehle, Pendelzuege (A nach B, dann B nach A binnen 5 Spieltagen), Ablehnungen, Kriege ohne Erklaerung durch den Menschen, Provinzen und Armeen am Ende. Laeufe: Startzahlen 1914, 2015, 1815 mal Aufstellung A (eine Armee je Provinz) und B (zwei) mal garrison und defensive - zwoelf Laeufe mit dem HEUTIGEN Adjutanten, je Startzahl ein it. Test zuerst: die Zaehlung je Episode als Einheitsfall an einem gebauten Strom (Episode, rechtzeitig, gehalten, Verlust ohne Gefecht, Pendelzug). Fertig wenn: die Garnison A 1914 den alten Lauf vorher nachbildet (52 Einmaersche, 4 verloren); die AK5-Zusicherung fuer defensive als it.fails mit dem gemessenen Grund steht; der Bericht den Abschnitt episoden fuehrt, geschrieben nur mit WORLDWAR_WRITE_REPORT=1 (Befund N3: sonst schreibt der Test nichts); die Zusicherung Anteil beantworteter Einmaersche aus T-M40-06 mit Grund zurueckgenommen ist (73 bis 80 Prozent beantwortet bei totalem Verlust, Entwurf Teil 3; die Zahl bleibt im Bericht); PROBLEME.md T-M40-06 und LEVEL-UP-3.md Abschnitt 5 berichtigt sind (zwei von drei Verlusten verursachte der Adjutant, Ursache 1 erklaert 2 von 136 Einmaerschen); D30.6 einen datierten Vermerk traegt."
+  - id: T-M40-08
+    milestone: M40
+    title: Eine Befehlsquelle fuer Uhr und Vorspulen
+    status: todo
+    deps: [T-M40-07]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [packages/ai/src/loop.ts, packages/ai/src/adjutant.ts, packages/ai/src/index.ts, apps/desktop/src/game/fastForward.ts]
+    tests: [apps/desktop/src/game/fastForward.test.ts, packages/ai/src/adjutant.test.ts, packages/ai/src/loop.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "Befunde K1 und M1 der Durchsicht M40. K1: das Vorspulen ruft den Adjutanten nie - commandSource in fastForward.ts gibt nur runAi und die Spielerbefehle; dieselbe Lage ergibt ueber Uhr und Vorspulen zwei verschiedene Partien (Beleg S1: advanceTicks 48 Ticks ein Aufbruch, Vorspulen 0), und D30.2 (die eine Schleife) stimmt nicht. M1: im Tick eines Spielerbefehls sieht der Adjutant dessen Ziel nicht und schickt eine zweite Armee in dieselbe Provinz (Beleg S3). Reparatur: packages/ai/src/loop.ts exportiert commandsForTick(state, ctx, given, explain) mit den Befehlen in der Reihenfolge given, Adjutant, KI; advanceTicks und commandSource in fastForward.ts rufen nur noch diese Funktion. AdjutantOptions.given ersetzt heldArmies: die Armeen der Befehle desselben Ticks laesst der Adjutant aus, und die Ziele ihrer MOVE_ARMY gelten als unterwegs. Test zuerst: fastForward.test.ts - Vorspulen in Haeppchen und advanceTicks geben ueber 150 Ticks dieselben Aufbrueche des Menschen und denselben Hash (R-UNIT-09/AK4), nicht leer gemessen; adjutant.test.ts S3; loop.test.ts AK4 bleibt gruen. Fertig wenn commandsForTick die einzige Stelle ist, die KI und Adjutant zusammenfuehrt, der Waechter single-loop gruen ist und das Turnier zeilengleich bleibt (nur kind ai, Reihenfolge der Befehle unveraendert)."
+  - id: T-M40-09
+    milestone: M40
+    title: Kein fremder Boden, keine Rueckkehr in die Schlacht
+    status: todo
+    deps: [T-M40-08]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [packages/ai/src/adjutant.ts]
+    tests: [packages/ai/src/adjutant.test.ts, packages/ai/src/loop.test.ts]
+    dod: "Befunde K2 und H1 der Durchsicht M40. K2: die Verfolgung prueft den Besitzer der Zielprovinz nicht, und planRoute ignoriert Besitz - eine Armee auf Angriff folgt einem Weichenden in die Provinz seines Verbuendeten und loest einen Krieg ohne Erklaerung aus (Beleg S5: Ansehen 1000 auf 820, keine Ablehnung). H1: nach Ablauf der Rueckzugssperre schickt der Adjutant die Armee in dieselbe laufende Schlacht zurueck (Beleg S4c, Tick 24). Reparatur nur in adjutant.ts, ohne Kernaenderung (Entwurf R2, R3 mit der Korrektur aus Teil 4.1): ein Ziel nur in einer eigenen Provinz oder in der eines Kriegsgegners - neutral und Frieden ausgeschlossen, auch mit Wegerecht; eine Route mit mehr als einer Etappe wird verworfen; eine Armee handelt von selbst erst ab tick >= deployDelayUntil + 120 (fuenf Spieltage Ruhe; Rueckzug, Befehl und Abmarsch setzen deployDelayUntil schon heute, also speicherfest). Test zuerst (adjutant.test.ts): S5, neutrales Ziel, Eigenschaft genau eine Etappe mit dem Ziel als Pfad, S4c (kein Befehl bis deployDelayUntil + 120, danach einer), Spielermarsch (nach der Ankunft 120 Ticks kein Adjutantenbefehl). Die Verfolgung in das neutrale m1 kehrt sich gewollt um. Fertig wenn R-UNIT-09/AK7 als Block belegt ist und kein Kernquelltext sich aendert."
+  - id: T-M40-10
+    milestone: M40
+    title: Die Regel, die nicht entbloesst
+    status: todo
+    deps: [T-M40-09]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [packages/ai/src/adjutant.ts, packages/core/src/view/publicView.ts, docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md]
+    tests: [packages/ai/src/adjutant.test.ts, packages/core/src/view/publicView.test.ts, packages/ai/src/loop.test.ts, apps/headless/test/stance.slow.test.ts]
+    dod: "Durchsicht H3, Entwurf Teil 3 und 4: keine Nachbarschaftsregel hilft auf der Weltkarte netto - Gefechte dauern im Median 1 bis 3 Ticks, Maersche 25 bis 113; wer reagiert, kommt zu spaet, wer dafuer raeumt, verliert. Ohne Schaden gemessen nur Regel N. D30.4 wird ersetzt, nicht verstaerkt: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere eigene stehende Armee bleibt, die in diesem Tick nicht selbst ausrueckt; Ziel ist eine ueber Land angrenzende eigene Provinz mit sichtbarem Kriegsgegner oder eine leere, die an eine solche grenzt; je Ziel hoechstens eine Armee, frueheste Ankunft, kleinste Kennung. Angriff marschiert nie von selbst (die Verfolgung schadete in allen Laeufen mit Anlass, Entwurf 3.5); VisibleArmy.retreating hat damit keinen Leser und entfaellt samt Test (M2). Kein Zustandsfeld, keine Migration. Test zuerst (adjutant.test.ts): allein stehende Armee - nichts; zwei Armeen - eine rueckt aus; vorbeugend in eine leere bedrohte Provinz; nie beide aus derselben Provinz; Angriff marschiert nie (R-UNIT-09/AK1, AK2). Die Lagen in adjutant.test.ts und loop.test.ts bekommen die zweite Armee in der Quellprovinz. 01-REQUIREMENTS.md R-UNIT-09 AK1, AK2, AK4 bis AK7 neu gefasst; D30.4 neu, D30.9 Nacharbeit mit Ruecknahmekriterium; DECISIONS.md: Entscheid (delegiert, kippbar) und die offene Frage an Noah, ob ausdrueckliche Auftraege gebaut werden sollen. Fertig wenn das it.fails aus T-M40-07 ein it ist und gruen."
+  - id: T-M40-11
+    milestone: M40
+    title: Anhalten haelt fest, und die Hinweise sagen die Folgen
+    status: todo
+    deps: [T-M40-10]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Befunde H2 und M3 der Durchsicht M40. H2: Anhalten einer Armee auf Verteidigung wird im naechsten Tick ueberstimmt (Beleg S2), und die Anleitung verspricht, ein eigener Befehl gehe vor. M3: die Hinweise verschweigen die Folgen. Reparatur reine Oberflaeche: Anhalten einer eigenen Armee mit selbsttaetiger Haltung (defensive, aggressive) schickt STOP_ARMY und SET_STANCE garrison; auf garrison und retreat nur STOP_ARMY. Hinweise: Verteidigung sagt, dass sie nur nachrueckt, wenn in ihrer Provinz eine weitere Armee stehen bleibt, allein nie, und nach einem Marsch oder Rueckzug fuenf Tage nicht; Angriff kaempft mit Angriffswerten statt eingegraben und marschiert nie von selbst; Anhalten nennt die Garnison; Rueckzug steht danach auf Verteidigung. Anleitung nachgezogen. Test zuerst: actions.test.ts (Anhalten auf defensive ergibt STOP_ARMY und SET_STANCE garrison, auf garrison nur STOP_ARMY; tragende Satzteile weitere Armee, fuenf Tage, eingegraben, Garnison). Vor dem Bau pruefen, ob eine Aktion zwei Befehle tragen kann. Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext."
+  - id: T-M40-12
+    milestone: M40
+    title: Nachmessen und Abschluss der Nacharbeit
+    status: todo
+    deps: [T-M40-11, T-M40-13, T-M41-16]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [docs/reports/stance.json, docs/plan/PROGRESS.md, docs/plan/PROBLEME.md, docs/plan/DECISIONS.md, docs/plan/tasks.yaml]
+    tests: [apps/headless/test/stance.slow.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "Die zwoelf Episodenlaeufe aus T-M40-07 mit der neuen Regel. Zusicherungen AK5, vor dieser Messung festgelegt: Summe der Provinz-Tage mit defensive mindestens 98 Prozent der Garnison ueber alle sechs Paare; je Paar Verluste ohne Gefecht mit defensive hoechstens so viele wie mit garrison; 0 Ablehnungen und 0 Kriege ohne Erklaerung; die Garnison A 1914 bildet vorher nach. Die Schwelle 98 Prozent wurde nach der Messung des Entwurfs festgelegt, und so steht es in D30.9. RUECKNAHMEKRITERIUM: faellt eine Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft - adjutantCommands gibt fuer defensive nichts mehr zurueck, die Verteidigung kaempft wie die Garnison, und die Hinweise sagen das. stance.json mit WORLDWAR_WRITE_REPORT=1 geschrieben und eingecheckt. Turnier zeilengleich; pnpm test ohne UPDATE_GOLDEN gruen; Vollpartie 1914 Siegtag 582 unveraendert (der Mensch hat keine Armee); data/rules unberuehrt; rg R-UNIT-09/AK[1-7] findet je Kriterium einen Block mit expect; pnpm verify gruen."
+  - id: T-M40-13
+    milestone: M40
+    title: Eine leise Zeile, wenn eine Armee von selbst nachrueckt
+    status: todo
+    deps: [T-M40-11]
+    requirements: [R-UNIT-09]
+    design: [D-30]
+    files: [packages/ai/src/loop.ts, apps/desktop/src/game/advance.ts, apps/desktop/src/game/fastForward.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/game/fastForward.test.ts, packages/ai/src/loop.test.ts]
+    dod: "Befund M3 der Durchsicht M40, Vorschlag: der Adjutant laesst eine Armee marschieren, und der Spieler erfaehrt davon nichts. Entscheid (delegiert, kippbar, DECISIONS.md): eine leise Zeile im Protokoll - die Armee rueckt von selbst nach der Provinz nach - mit Sprung auf die Zielprovinz. Sie entsteht aus dem Ergebnis von commandsForTick, ueber die Uhr wie ueber das Vorspulen, und nicht aus einem neuen Kernereignis: kein Zustandsfeld, kein Ereignis im Kern, Golden-Master unberuehrt. Nicht laut (M36, nur Knappes ist laut): keine Alarmfarbe, kein Halt des Vorspulens, kein Eintrag in der Meldungsleiste. Test zuerst: App.test.tsx - eine geladene Lage, in der der Adjutant nachrueckt, zeigt nach dem Vorspulen die Zeile mit Armeename und Provinz, ohne Alarm-Klasse, und ein Klick springt auf die Provinz; ohne Adjutantenbefehl steht keine solche Zeile. Spielertexte mit echten Umlauten; Spieler-ID aus dem Kontext."
+
   # M41 "Pflege nach M34", geplant am 2026-09-13. Kein neuer Entwurf, keine neue
   # Anforderung: jede Aufgabe repariert einen gemessenen Befund. Baureihenfolge (deps):
   # T-M41-06, -04, -05, -03, -01, -02; T-M41-07 nach T-M41-06 und vor M40.
@@ -3074,6 +3148,27 @@ tasks:
     files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, docs/plan/PROBLEME.md]
     tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/keyboard.test.ts]
     dod: "Befund N7 der Durchsicht M41: Tempoknoepfe (Header.tsx) und die Kuerzel Leertaste, Plus, Minus (App.tsx) sind waehrend des Vorspulens nicht gesperrt; die Uhr laeuft dann neben den Haeppchen, chunk(result.state) ueberschreibt ihre Ticks, und mit takePending entnommene Befehle gehen verloren. Sperren statt uebergeben, konsistent mit T-M28-10: der Vorspulknopf wird zum Abbrechen, die Pause bleibt bedienbar; die gesperrten Stufen nennen den Grund im Tooltip, F startet keinen zweiten Lauf. Test zuerst: App.test.tsx - Befehl gesammelt, Vorspulen ueber mehrere Haeppchen, zweiter Befehl waehrend des Laufs, Tempo gedrueckt (Knopf und Taste): beide Befehle angewandt; Header.test.tsx und keyboard.test.ts fuer Sperre und Grund. Einloesbarkeit vor dem Bau geprueft: heute endet Vorspulen um einen Tag im ersten Haeppchen (days 1 = 24 Ticks = DEFAULT_CHUNK_TICKS, der Kern prueft das Ziel im Haeppchen), also synchron im Klick - ueber die Oberflaeche ist der Verlust heute nicht herstellbar. Der Test verkleinert deshalb die Haeppchen (derselbe Pfad wie jeder Lauf ueber mehr als ein Haeppchen); die Messung heute synchron steht in App.test.tsx und PROBLEME.md. R-TIME-02 und R-TIME-03 nur im Text: sie stehen in name_level."
+
+  # Zwei Nebenbefunde aus T-M41-13 (PROBLEME.md), gebaut mit der Nacharbeit M40, weil dieselben
+  # Dateien (fastForward.ts, App.tsx) dort ohnehin angefasst werden (T-M40-08, T-M40-13).
+  - id: T-M41-15
+    milestone: M41
+    title: Das Vorspulziel wird nicht je Haeppchen gezaehlt
+    status: todo
+    deps: [T-M41-13, T-M40-08]
+    requirements: []
+    files: [apps/desktop/src/game/fastForward.ts, apps/desktop/src/App.tsx, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/game/fastForward.test.ts, apps/desktop/src/App.test.tsx]
+    dod: "Nebenbefund 1 aus T-M41-13: fastForwardChunk ruft fuer jedes Haeppchen fastForward des Kerns neu, targetReached misst ticksRun dieses Aufrufs, und die Schleife in App.tsx traegt den Fortschritt zum Ziel nicht ueber Haeppchen hinweg. Jedes Ziel, das an einer Tickzahl haengt und mehr als ein Haeppchen braucht (days ab 2, ticks ueber 24), liefe bis zur Obergrenze von 30 Spieltagen (720 Ticks). Heute verdeckt, weil ein Vorspulen um einen Tag genau ein Haeppchen ist. Reparatur: die Anfrage traegt die schon gelaufenen Ticks, fastForwardChunk rechnet ein Zaehlziel auf den Rest um, App.tsx reicht den Stand weiter. Test zuerst: fastForward.test.ts - Ziel 48 Ticks in Haeppchen zu 24, wie die Oberflaeche sie aneinanderreiht, haelt nach 48 am Ziel, nicht nach 720; App.test.tsx - in Haeppchen zu 4 Ticks endet ein Vorspulen um einen Tag nach 24 Ticks am Ziel. R-TIME-02 nur im Text: sie steht in name_level."
+  - id: T-M41-16
+    milestone: M41
+    title: Der Kuerzel-Effekt kennt fastForwardRun
+    status: todo
+    deps: [T-M41-15]
+    requirements: []
+    files: [apps/desktop/src/App.tsx, docs/plan/PROBLEME.md]
+    tests: [apps/desktop/src/App.test.tsx]
+    dod: "Nebenbefund 2 aus T-M41-13 (gelesen, nicht gemessen): der Kuerzel-Effekt in App.tsx ruft fastForwardRun, nennt es aber nicht in seinen Abhaengigkeiten - mit eingeschalteter Debug-Ansicht spulte F ohne Mitschrift. Test zuerst: App.test.tsx - Debug-Ansicht waehrend der Partie eingeschaltet, dann F: die Kommandoliste der Debug-Ansicht fuellt sich. Vor dem Bau pruefen, ob der Fehler ueber die Oberflaeche herstellbar ist: step steht in denselben Abhaengigkeiten und haengt an denselben Werten wie fastForwardRun. Ist der Test ohne Reparatur gruen, wird das mit Grund in PROBLEME.md festgehalten und die Faehigkeit des Tests, den Fehler zu sehen, anders vorgefuehrt - nicht die Zusicherung umformuliert. Reparatur: fastForwardRun in die Abhaengigkeiten."
 
   # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
   # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der

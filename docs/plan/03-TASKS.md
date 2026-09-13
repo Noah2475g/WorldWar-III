@@ -5457,6 +5457,119 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   nachgefahren ist und `pnpm verify` am Ende des Meilensteins grün ist. Ist die Wirkung null,
   ist der Meilenstein nicht fertig.
 
+> **Nacharbeit nach der Durchsicht (2026-09-13).** Die Durchsicht von M40 fand zwei kritische,
+> drei hohe und drei mittlere Befunde: beim Vorspulen läuft kein Adjutant (K1), die Verfolgung
+> löst einen Krieg mit einer unbeteiligten Macht aus (K2), ein Rückzug wird nach der Sperre
+> rückgängig gemacht (H1), „Anhalten" wird überstimmt (H2), und der Messlauf trägt die Abnahme
+> nicht — zwei von drei Verlusten hat die Deckung selbst verursacht (H3). Ein Entwurf hat fünf
+> Regeln auf der Weltkarte über drei Startzahlen gemessen: **keine Nachbarschaftsregel hilft
+> netto**, weil Gefechte im Median 1–3 Ticks dauern und Märsche 25–113. D30.4 wird deshalb
+> **ersetzt, nicht verstärkt** — die Verteidigung rückt nur noch nach, wenn in ihrer Provinz eine
+> weitere Armee stehen bleibt, und der Angriff marschiert nie von selbst. Gemessen wird je
+> umkämpfter Episode; die Regel bleibt nur, solange dieser Messlauf sie trägt.
+
+### T-M40-07 · Der Messlauf je Episode, vorher
+- **Ziel:** eine Abnahme, die sieht, ob die Automatik Provinzen hält oder entblößt — nicht, ob
+  irgendwann eine Armee ankommt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6
+- **Abhängigkeiten:** T-M40-06
+- **Dateien:** `apps/headless/test/stance.slow.test.ts`, `docs/reports/stance.json`,
+  `docs/plan/02-DESIGN.md`, `docs/plan/PROBLEME.md`, `docs/plan/LEVEL-UP-3.md`
+- **Tests zuerst:** die Zählung je Episode als Einheitsfall an einem gebauten Strom (Episode,
+  Deckung rechtzeitig, gehalten, Verlust ohne Gefecht, Pendelzug); dann zwölf Läufe mit dem
+  **heutigen** Adjutanten — Startzahlen 1914, 2015, 1815 × Aufstellung A (eine Armee je
+  Provinz) und B (zwei) × `garrison` und `defensive`, je Startzahl ein `it`.
+- **Fertig wenn:** die Garnison A 1914 den alten Lauf vorher nachbildet (52 Einmärsche, 4
+  verloren); die AK5-Zusicherung für `defensive` als `it.fails` mit dem gemessenen Grund steht;
+  der Bericht den Abschnitt `episoden` führt — geschrieben nur mit `WORLDWAR_WRITE_REPORT=1`
+  (Befund N3); die Zusicherung „Anteil beantworteter Einmärsche" aus T-M40-06 mit Grund
+  zurückgenommen ist (die Zahl bleibt im Bericht); `PROBLEME.md` bei T-M40-06 und
+  `LEVEL-UP-3.md` §5 berichtigt sind (Befund H3).
+
+### T-M40-08 · Eine Befehlsquelle für Uhr und Vorspulen
+- **Ziel:** dieselbe Lage gibt über die Uhr und über das Vorspulen dieselbe Partie.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.2
+- **Abhängigkeiten:** T-M40-07
+- **Dateien:** `packages/ai/src/loop.ts`, `packages/ai/src/adjutant.ts`,
+  `packages/ai/src/index.ts`, `apps/desktop/src/game/fastForward.ts`
+- **Tests zuerst:** `fastForward.test.ts` — Vorspulen in Häppchen und `advanceTicks` geben über
+  150 Ticks dieselben Aufbrüche des Menschen und denselben Hash (R-UNIT-09/AK4, heute 0 gegen
+  mindestens 1); `adjutant.test.ts` — ein Spielerbefehl im selben Tick gilt als unterwegs (M1);
+  `loop.test.ts` AK4 bleibt grün.
+- **Fertig wenn:** `commandsForTick` in `packages/ai/src/loop.ts` die einzige Stelle ist, die KI
+  und Adjutant zusammenführt (Befunde K1, M1), `AdjutantOptions.given` `heldArmies` ersetzt und
+  das Turnier zeilengleich bleibt.
+
+### T-M40-09 · Kein fremder Boden, keine Rückkehr in die Schlacht
+- **Ziel:** die Automatik erklärt keinen Krieg und macht keinen Rückzug rückgängig.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4
+- **Abhängigkeiten:** T-M40-08
+- **Dateien:** `packages/ai/src/adjutant.ts`
+- **Tests zuerst:** `adjutant.test.ts` — kein Ziel in der Provinz einer Friedensmacht (S5) und
+  keines in neutralem Land; jede Route des Adjutanten hat genau eine Etappe; nach einem Rückzug
+  kein Befehl bis `deployDelayUntil + 120`, danach einer (S4c); nach einem Spielermarsch 120
+  Ticks kein Adjutantenbefehl (R-UNIT-09/AK7).
+- **Fertig wenn:** K2 und H1 ohne Kernänderung gelöst sind — Ziel eigene Provinz oder die eines
+  Kriegsgegners, eine Etappe, fünf Spieltage Ruhe nach Marsch oder Rückzug.
+
+### T-M40-10 · Die Regel, die nicht entblößt
+- **Ziel:** eine Automatik, die messbar nicht schadet, statt einer, die messbar entblößt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4, D30.9
+- **Abhängigkeiten:** T-M40-09
+- **Dateien:** `packages/ai/src/adjutant.ts`, `packages/core/src/view/publicView.ts`,
+  `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** `adjutant.test.ts` — eine allein stehende Armee marschiert nie; von zweien
+  rückt eine aus; vorbeugend in eine leere bedrohte eigene Provinz; nie beide aus derselben
+  Provinz (R-UNIT-09/AK1); der Angriff marschiert nie von selbst (AK2). `publicView.test.ts`
+  verliert den Fall zu `retreating`.
+- **Fertig wenn:** das `it.fails` aus T-M40-07 ein `it` ist und grün; R-UNIT-09 AK1, AK2, AK4–AK7
+  neu gefasst, D30.4 neu, D30.9 mit Rücknahmekriterium, und `DECISIONS.md` trägt Entscheid und
+  offene Frage an Noah. Die Lagen in `adjutant.test.ts` und `loop.test.ts` stellen je Provinz
+  eine Armee — sie bekommen in der Quellprovinz eine zweite.
+
+### T-M40-11 · Anhalten hält fest, und die Hinweise sagen die Folgen
+- **Ziel:** ein Klick auf „Anhalten" gilt, und kein Hinweis verschweigt, was die Haltung kostet.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-10
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/i18n/de.ts`,
+  `docs/ANLEITUNG.md`
+- **Tests zuerst:** `actions.test.ts` — Anhalten auf Verteidigung oder Angriff schickt
+  `STOP_ARMY` und `SET_STANCE garrison`, auf Garnison nur `STOP_ARMY`; die Hinweise tragen
+  „weitere Armee", „fünf Tage", „eingegraben" und „Garnison" (Befunde H2, M3).
+- **Fertig wenn:** die Anleitung dieselben Folgen nennt und kein Hinweis mehr „solange dort noch
+  gekämpft wird" oder „folgt einem weichenden Gegner" verspricht.
+
+### T-M40-12 · Nachmessen und Abschluss der Nacharbeit
+- **Ziel:** die zwölf Läufe entscheiden, ob die Regel bleibt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6, D30.9
+- **Abhängigkeiten:** T-M40-11, T-M40-13, T-M41-16
+- **Dateien:** `docs/reports/stance.json`, `docs/plan/PROGRESS.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `apps/headless/test/stance.slow.test.ts` mit den Zusicherungen aus AK5,
+  festgelegt vor dieser Messung: Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
+  über alle sechs Paare, je Paar keine zusätzlichen Verluste ohne Gefecht, keine Ablehnung,
+  kein Krieg ohne Erklärung.
+- **Fertig wenn:** die Läufe grün sind und der Bericht eingecheckt ist; Turnier zeilengleich,
+  `pnpm test` ohne `UPDATE_GOLDEN` grün, Vollpartie 1914 Siegtag 582 unverändert, `data/rules`
+  unberührt; je Kriterium R-UNIT-09/AK1–AK7 ein Block mit `expect`; `pnpm verify` grün.
+  **Rücknahmekriterium:** fällt eine Zusicherung, wird die Regel zurückgenommen, nicht
+  nachgeschärft — die Verteidigung kämpft dann wie die Garnison, und die Hinweise sagen das.
+  Die Schwelle 98 % wurde nach der Messung des Entwurfs festgelegt (D30.9).
+
+### T-M40-13 · Eine leise Zeile, wenn eine Armee von selbst nachrückt
+- **Ziel:** wer eine Armee von selbst marschieren lässt, sagt es dem Spieler.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-11
+- **Dateien:** `packages/ai/src/loop.ts`, `apps/desktop/src/game/advance.ts`,
+  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `App.test.tsx` — eine geladene Lage, in der die Automatik nachrückt, zeigt
+  nach dem Vorspulen im Protokoll die Zeile mit Armeename und Provinz, ohne Alarmklasse, und ein
+  Klick springt auf die Provinz; ohne Befehl der Automatik steht keine solche Zeile.
+- **Fertig wenn:** die Zeile aus dem Ergebnis von `commandsForTick` entsteht — über Uhr und
+  Vorspulen, ohne neues Kernereignis und ohne Zustandsfeld (Golden-Master unberührt) — und leise
+  bleibt: keine Alarmfarbe, kein Halt, kein Eintrag in der Meldungsleiste (M36). Entscheid
+  (delegiert, kippbar) in `DECISIONS.md`; Befund M3, Vorschlag der Durchsicht.
+
 
 ## Meilenstein M41 — Pflege nach M34
 
@@ -5679,3 +5792,31 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   abzuwarten — das Ziel `days` zählt der Kern je Häppchen, und die Schleife in `App.tsx` trägt den
   Fortschritt nicht weiter; in Häppchen zu 4 Ticks liefe „ein Tag" bis zur Obergrenze von 30
   Spieltagen. Nebenbefund in `PROBLEME.md`, nicht in dieser Aufgabe gebaut.)*
+
+> **Zwei Nebenbefunde aus T-M41-13, gebaut mit der Nacharbeit M40 (2026-09-13).** Beide liegen in
+> `fastForward.ts` und `App.tsx`, die T-M40-08 und T-M40-13 ohnehin anfassen.
+
+### T-M41-15 · Das Vorspulziel wird nicht je Häppchen gezählt
+- **Ziel:** „zwei Tage vorspulen" hält nach zwei Tagen, nicht nach dreißig.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-13, T-M40-08
+- **Dateien:** `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/App.tsx`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `fastForward.test.ts` — Ziel 48 Ticks in Häppchen zu 24, aneinandergereiht wie
+  in der Oberfläche, hält nach 48 Ticks am Ziel und nicht nach 720; `App.test.tsx` — in Häppchen
+  zu 4 Ticks endet ein Vorspulen um einen Tag nach 24 Ticks am Ziel.
+- **Fertig wenn:** die Anfrage die schon gelaufenen Ticks trägt und `fastForwardChunk` ein
+  Zählziel auf den Rest umrechnet. Nebenbefund 1 aus T-M41-13: heute verdeckt, weil ein Tag genau
+  ein Häppchen ist. R-TIME-02 steht nur hier im Text (`name_level`).
+
+### T-M41-16 · Der Kürzel-Effekt kennt `fastForwardRun`
+- **Ziel:** F spult mit eingeschalteter Debug-Ansicht so vor wie der Knopf.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-15
+- **Dateien:** `apps/desktop/src/App.tsx`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `App.test.tsx` — Debug-Ansicht während der Partie eingeschaltet, dann F: die
+  Kommandoliste der Debug-Ansicht füllt sich.
+- **Fertig wenn:** `fastForwardRun` in den Abhängigkeiten des Kürzel-Effekts steht. Nebenbefund 2
+  aus T-M41-13, gelesen und nicht gemessen — vor dem Bau geprüft, ob er über die Oberfläche
+  herstellbar ist (`step` steht in denselben Abhängigkeiten und hängt an denselben Werten); ist
+  der Test ohne Reparatur grün, steht das mit Grund in `PROBLEME.md`.
