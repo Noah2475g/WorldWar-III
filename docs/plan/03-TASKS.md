@@ -5369,11 +5369,16 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.1
 - **Abhängigkeiten:** T-M41-02, T-M41-07
 - **Dateien:** `packages/core/src/state/types.ts`, `packages/core/src/phases/combat.ts`,
-  `packages/core/src/commands/handlers.ts`
+  `packages/core/src/commands/handlers.ts`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/Panels.tsx`
 - **Tests zuerst:** eine `garrison`-Armee kämpft wie eine `defensive`, ein unbekannter Wert
   wird mit `INVALID_TARGET` abgelehnt (`combat.test.ts`, `validate.test.ts`, R-UNIT-09/AK3).
 - **Fertig wenn:** `pnpm test` **ohne** `UPDATE_GOLDEN` grün ist — der Beleg, dass der vierte
   Wert nichts verschiebt.
+- **Abweichung beim Bau (2026-09-13):** der vierte Wert macht `tsc` (`Record<Stance, string>`
+  in `actions.ts`) und den Wächter `ui-command-coverage` („Haltungen ohne Knopf: garrison")
+  rot. Der Garnison-Knopf mit Name und Hinweis kommt deshalb schon hier und nicht erst in
+  T-M40-05; die Erklärtexte aller vier Haltungen bleiben dort.
 
 ### T-M40-02 · Der Messlauf vorher
 - **Ziel:** erst messen, dann ändern — ohne Ausgangswert ist die Wirkung der Automatik ein
@@ -5427,6 +5432,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (`actions.test.ts`, `Panels.test.tsx`, R-UNIT-09/AK6).
 - **Fertig wenn:** der alte Hinweis zu „Angriff" („greift von sich aus an") ersetzt ist — er
   beschrieb eine Wirkung, die es nie gab — und die Anleitung die vier Haltungen erklärt.
+  *(Stand nach T-M40-01: der Knopf „Garnison" steht schon, weil `tsc` und
+  `ui-command-coverage` ihn mit dem vierten Wert verlangen; offen sind die Hinweise.)*
 
 ### T-M40-06 · Nachmessen
 - **Ziel:** dieselbe Zahl wie vorher, jetzt mit Adjutant.

@@ -7,7 +7,7 @@ import './bombard' // registers BOMBARD
 import './diplomacy' // registers DIPLOMACY
 import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'
-import type { GameState } from '../state/types'
+import { STANCE_VALUES, type GameState } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type SetCapitalCommand, type SetHoldFireCommand, type SetStanceCommand } from './types'
 
@@ -27,6 +27,9 @@ registerCommand<SetStanceCommand>('SET_STANCE', {
     const army = state.armies[command.armyId]
     if (!army) return fail('ARMY_NOT_FOUND', { armyId: command.armyId })
     if (army.owner !== command.playerId) return fail('NOT_OWNER', { armyId: command.armyId })
+    // The value is checked, not trusted (T-M40-01, D30.1): the interface cannot produce a
+    // wrong one, but a command in lockstep (D28) comes from another machine.
+    if (!STANCE_VALUES.includes(command.stance)) return fail('INVALID_TARGET', { reason: 'unbekannte Haltung' })
     return ok
   },
   apply: (draft, command) => {

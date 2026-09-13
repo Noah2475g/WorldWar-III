@@ -341,6 +341,7 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
       cooldown: hinweisZeit(konstanten.retreatCooldownTicks),
       deploy: hinweisZeit(konstanten.deployDelayTicks * 2),
     }),
+    garrison: t('army.stanceGarrisonHint'),
   }
 
   const stance = (value: Stance, label: string): ActionSpec => {
@@ -418,6 +419,9 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     // Spieler nicht (T-M14-13, Befund 8): die Hilfsfunktion ist ueber den vollen
     // Stance-Typ generisch, aufgerufen wurde sie mit zwei von drei Werten.
     stance('retreat', t('army.stanceRetreat')),
+    // Die Garnison (T-M40-01, D30.1): die Abwahl der Automatik. Ein Wert im Kern ohne
+    // Knopf ist genau der Fall, den `ui-command-coverage` bewacht.
+    stance('garrison', t('army.stanceGarrison')),
     merge,
     split,
     bombard,

@@ -44,7 +44,14 @@ export type BuildingKey =
 
 export type Terrain = 'plains' | 'forest' | 'mountain' | 'desert' | 'urban'
 export type ProvinceKind = 'city' | 'rural'
-export type Stance = 'aggressive' | 'defensive' | 'retreat'
+export type Stance = 'aggressive' | 'defensive' | 'retreat' | 'garrison'
+/**
+ * Every stance the core accepts (T-M40-01, D30.1). `garrison` fights like `defensive` and
+ * is the opt-out of the automatic orders a human's armies receive (D30.4) — it stays put
+ * whatever happens. `SET_STANCE` rejects anything outside this list: in lockstep (D28) a
+ * command can come from a second machine, and until M40 the handler wrote any value.
+ */
+export const STANCE_VALUES: readonly Stance[] = ['aggressive', 'defensive', 'retreat', 'garrison']
 export type DiplomaticState = 'peace' | 'war' | 'truce' | 'alliance'
 export type PlayerKind = 'human' | 'ai'
 export type Difficulty = 'easy' | 'normal' | 'hard'

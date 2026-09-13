@@ -2899,13 +2899,13 @@ tasks:
   - id: T-M40-01
     milestone: M40
     title: Die Haltung garrison, und SET_STANCE prueft den Wert
-    status: todo
+    status: done
     deps: [T-M41-02, T-M41-07]
     requirements: [R-UNIT-09]
     design: [D-30]
-    files: [packages/core/src/state/types.ts, packages/core/src/phases/combat.ts, packages/core/src/commands/handlers.ts]
-    tests: [packages/core/src/phases/combat.test.ts, packages/core/src/commands/validate.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
-    dod: "D30.1. Stance bekommt den vierten Wert garrison; combat.ts behandelt ihn wie defensive (stehend gilt als eingegrabener Verteidiger); SET_STANCE lehnt einen unbekannten Wert mit INVALID_TARGET ab - heute setzt der Handler jeden Wert ungeprueft, eine offene Stelle fuer den Mehrspieler. Keine Migration, kein neues Feld: validateState prueft die Haltung nicht, und kein alter Stand kennt garrison. Test zuerst: eine garrison-Armee kaempft wie eine defensive, ein unbekannter Wert wird abgelehnt (R-UNIT-09/AK3); pnpm test ist OHNE UPDATE_GOLDEN gruen - der Beleg, dass der vierte Wert nichts verschiebt."
+    files: [packages/core/src/state/types.ts, packages/core/src/phases/combat.ts, packages/core/src/commands/handlers.ts, apps/desktop/src/game/actions.ts, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/Panels.tsx]
+    tests: [packages/core/src/phases/combat.test.ts, packages/core/src/commands/validate.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts, test/guards/ui-command-coverage.test.ts]
+    dod: "D30.1. Stance bekommt den vierten Wert garrison; combat.ts behandelt ihn wie defensive (stehend gilt als eingegrabener Verteidiger); SET_STANCE lehnt einen unbekannten Wert mit INVALID_TARGET ab - heute setzt der Handler jeden Wert ungeprueft, eine offene Stelle fuer den Mehrspieler. Keine Migration, kein neues Feld: validateState prueft die Haltung nicht, und kein alter Stand kennt garrison. Test zuerst: eine garrison-Armee kaempft wie eine defensive, ein unbekannter Wert wird abgelehnt (R-UNIT-09/AK3); pnpm test ist OHNE UPDATE_GOLDEN gruen - der Beleg, dass der vierte Wert nichts verschiebt. ABWEICHUNG beim Bau (2026-09-13): der vierte Wert macht tsc (Record<Stance, string> in actions.ts) und den Waechter ui-command-coverage (Haltungen ohne Knopf: garrison) rot; der Garnison-Knopf mit Name und Hinweis kommt deshalb schon in T-M40-01 (actions.ts, de.ts, STANCES in Panels.tsx). Die Erklaertexte aller vier Haltungen bleiben T-M40-05."
   - id: T-M40-02
     milestone: M40
     title: Der Messlauf vorher

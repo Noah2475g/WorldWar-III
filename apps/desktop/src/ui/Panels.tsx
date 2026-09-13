@@ -661,7 +661,7 @@ const ARMY_ACTION_ICONS: Record<string, IconName> = {
   holdFire: 'battle',
 }
 
-const STANCES = ['aggressive', 'defensive', 'retreat'] as const
+const STANCES = ['aggressive', 'defensive', 'retreat', 'garrison'] as const
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
