@@ -2717,7 +2717,16 @@ kein Ereignis des Kerns, kein Zustandsfeld, der Golden-Master sieht nichts davon
 Verteidigung `MOVE_ARMY` und `SET_STANCE garrison` in denselben Tick. Der Marschknopf und die Bestätigung
 sagen es im Hinweis, der Hinweis zur Verteidigung sagt „ruht 5 Tage ab dem Abmarsch, nicht ab der
 Ankunft; ein eigener Marschbefehl stellt sie auf Garnison". Beide Knöpfe mit zwei Befehlen schicken den
-zweiten nur, wenn der Kern den ersten annimmt.)*
+zweiten nur, wenn die Vorprüfung ihn annimmt — den ersten, beim Klick, mit `canApply` gegen den angewandten
+Zustand. Der Kern kann den ersten im Tick trotzdem ablehnen; der zweite gilt dann allein (Randlage in
+`PROBLEME.md`; berichtigt am 2026-09-13, T-M40-19, Befund N-4 — hier stand „wenn der Kern den ersten
+annimmt").)*
+
+*(Ergänzt am 2026-09-13, T-M40-19, Befund N-5: der Folgebefehl sieht auch einen gesammelten, noch nicht
+angewandten Haltungswechsel. Klickt der Spieler bei stehender Uhr „Verteidigung" und danach „Marsch befehlen"
+oder „Anhalten", geht `SET_STANCE garrison` mit; hat er eine Verteidigung eben auf Garnison geklickt, geht
+keiner mit. `garrisonFollowUp` liest die zuletzt gesammelte `SET_STANCE` derselben Armee, und
+`ActionContext.pending` reicht die Sammlung durch — ohne Zustandsfeld und ohne Eingriff in den Kern.)*
 
 ### D30.8 Gegenrede und Risiko
 

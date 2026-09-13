@@ -47,6 +47,14 @@ export interface ActionContext {
   rules: Rules
   playerId: string
   ticksPerDay: number
+  /**
+   * Die Befehle, die die Huelle gesammelt und noch nicht angewandt hat (T-M40-19, Befund N-5).
+   *
+   * Bei stehender Uhr wartet ein Klick auf „Verteidigung" hier, und `state` sagt noch die alte Haltung. Der
+   * Folgebefehl der Garnison (`garrisonFollowUp`) liest beides, denn der Kern wendet die Sammlung im selben Tick
+   * vor dem neuen Befehl an. Fehlt das Feld, gilt nur der Zustand.
+   */
+  pending?: readonly Command[]
 }
 
 export interface ActionSpec {
@@ -329,9 +337,10 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   const konstanten = ctx.rules.constants
   const hinweisZeit = (ticks: number): string => duration(ticks, ctx.ticksPerDay)
 
-  // Ein eigener Marschbefehl haelt fest (T-M40-14): dieselbe Regel wie beim Bestaetigen des Ziels.
+  // Ein eigener Marschbefehl haelt fest (T-M40-14): dieselbe Regel wie beim Bestaetigen des Ziels — mit den
+  // gesammelten Haltungswechseln (T-M40-19).
   const marschHaeltFest =
-    garrisonFollowUp(ctx.state, { type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: army.locationProvinceId }) !== null
+    garrisonFollowUp(ctx.state, { type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: army.locationProvinceId }, ctx.pending) !== null
   const march: ActionSpec = {
     id: 'march',
     label: t('army.move'),
@@ -345,7 +354,7 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   // Anhalten auf Garnison. Nur sie — seit T-M40-10 handelt keine andere Haltung von selbst, und eine
   // Armee auf Angriff veraenderte der Klick sonst ungefragt im Kampf.
   const stopCommand: Command = { type: 'STOP_ARMY', playerId, armyId }
-  const stopFollowUp = garrisonFollowUp(ctx.state, stopCommand)
+  const stopFollowUp = garrisonFollowUp(ctx.state, stopCommand, ctx.pending)
   const stop = checked(
     ctx,
     stopCommand,
@@ -484,8 +493,9 @@ export function targetAction(
   }
   // Ein eigener Marschbefehl haelt fest (T-M40-14, Befund H-A der Durchsicht der Nacharbeit): die Ruhe
   // der Automatik zaehlt ab dem Abmarsch, und nach einem langen Marsch schickte sie die eben verlegte
-  // Armee weiter. Eine Verteidigung geht deshalb mit dem Marsch auf Garnison, wie beim Anhalten.
-  const followUp = garrisonFollowUp(ctx.state, command)
+  // Armee weiter. Eine Verteidigung geht deshalb mit dem Marsch auf Garnison, wie beim Anhalten. Seit T-M40-19 auch
+  // eine, die eben erst auf Verteidigung geklickt wurde und in der Sammlung wartet (Befund N-5).
+  const followUp = garrisonFollowUp(ctx.state, command, ctx.pending)
   const spec = checked(ctx, command, 'confirm-move', t('army.confirmMove'), followUp ? t('army.confirmMoveHintGarrison') : undefined)
   if (followUp) spec.followUp = followUp
   return spec

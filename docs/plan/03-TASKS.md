@@ -5743,6 +5743,26 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   schreibt und beide in `erfuellt` und `verletzt` eingehen; der Wächter beide selbst verlangt. Befund N-2 —
   in Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle `erfuellt: true`.
 
+### T-M40-19 · Der Garnison-Folgebefehl sieht gesammelte Haltungswechsel
+- **Ziel:** eine Armee, die der Spieler bei stehender Uhr auf Verteidigung stellt und dann selbst verlegt,
+  marschiert nicht auf Verteidigung.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-14
+- **Dateien:** `packages/ai/src/adjutant.ts`, `apps/desktop/src/game/actions.ts`, `apps/desktop/src/App.tsx`,
+  `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `packages/ai/src/adjutant.test.ts`: `garrisonFollowUp` mit gesammelten Befehlen — die zuletzt gesammelte
+    Haltung dieser Armee zählt, andere Armeen und Spieler nicht; eine eben auf Garnison geklickte
+    Verteidigung bekommt keinen zweiten Befehl.
+  - `apps/desktop/src/game/actions.test.ts`: die Sammlung im Kontext wirkt an Bestätigung, Marschhinweis und
+    Anhalten.
+  - `apps/desktop/src/App.test.tsx`: Szenario N-5 — Garnison, Uhr steht, „Verteidigung" klicken, „Marsch
+    befehlen", vorspulen: die Armee steht auf Garnison.
+- **Fertig wenn:** der Folgebefehl Zustand und zuletzt gesammelte `SET_STANCE` der Armee auswertet, ohne
+  Zustandsfeld und ohne Eingriff in den Kern; R-UNIT-09/AK7 und der Verteidigungshinweis stimmen damit
+  unverändert. D30.7 sagt wörtlich „wenn die Vorprüfung ihn annimmt", und die Randlage steht in
+  `PROBLEME.md`. Befunde N-4, N-5.
+
 
 ## Meilenstein M41 — Pflege nach M34
 

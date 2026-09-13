@@ -3189,3 +3189,39 @@ die Einheitsfälle in `test/requirements.test.ts` nennen die Listen wörtlich. B
 rund 15 Sekunden läuft; teuer beim Parameterlauf.
 
 **Status:** offen, Frage an Noah.
+
+---
+
+## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison sieht gesammelte Haltungswechsel — zwei Randlagen bleiben
+
+**N-5, behoben.** Szenario der Durchsicht, am Bildschirm nachgestellt (`App.test.tsx`):
+1. Eine Armee steht auf Garnison, die Uhr steht.
+2. Der Spieler klickt „Verteidigung"; der Befehl wartet in der Sammlung, der Zustand sagt noch Garnison.
+3. Er befiehlt einen Marsch und spult vor.
+
+Bis T-M40-19 fragte `garrisonFollowUp` nur den Zustand, und der nächste Tick wandte [Verteidigung, Marsch] an.
+Die Armee marschierte auf Verteidigung, und Szenario R1 war wieder offen. Rot vorgeführt: „expected
+[ 'Verteidigung' ] to deeply equal [ 'Garnison' ]". Jetzt liest der Folgebefehl die zuletzt gesammelte
+`SET_STANCE` derselben Armee (`ActionContext.pending`), und die Armee steht nach dem Tick auf Garnison.
+
+**N-4, Randlage, nicht gebaut.** „Angenommen" heißt: die Vorprüfung beim Klick nimmt den Befehl an. Gemeint ist
+`send` in `App.tsx`, also `canApply` gegen den angewandten Zustand — nicht der Kern. Die Befehle warten in der
+Sammlung, und der Kern wendet sie im nächsten Tick an. Einen abgelehnten Befehl lehnt er ab, ohne den nächsten
+aufzuhalten (`phases/applyCommands.ts` im Kern).
+- **Szenario:** Ein Marsch wird während des Vorspulens befohlen und wartet (T-M41-13). Die Automatik verlegt
+  dieselbe Armee genau dorthin. Im Tick lehnt der Kern `MOVE_ARMY` mit „bereits dort" ab, `SET_STANCE garrison`
+  wird trotzdem angewandt.
+- **Folge, mild:** Die Armee steht dort, wohin der Spieler sie schicken wollte, auf Garnison — so wie nach dem
+  Marsch.
+- **Umgekehrt nicht erreichbar:** `SET_STANCE` prüft nur Armee, Besitzer und Wert.
+- **Warum nicht gebaut:** Den zweiten Befehl an den Ausgang des ersten zu binden, wäre eine neue Regel des Kerns
+  (Befehlsgruppen). D30.7 sagt jetzt wörtlich „wenn die Vorprüfung ihn annimmt".
+
+**Gesehen, nicht gebaut: „schon in dieser Haltung" sieht die Sammlung nicht.** `armyActions` sperrt den Knopf
+der Haltung, die der Zustand trägt (`army.stance === value`, Text `army.alreadyStance`). Nach einem gesammelten Klick auf „Verteidigung" bleibt
+„Garnison" bis zum nächsten Tick gesperrt, und „Verteidigung" trägt die Quittung und ist ebenfalls gesperrt. Der
+Spieler kann den Klick also vor dem Tick nicht zurücknehmen. Kein Befehl geht falsch; es kostet einen Klick
+nach dem Tick. Die Reparatur läge in `actions.ts` und verlangt eine Entscheidung, was der gesperrte Knopf dann
+sagt (ein Text in `de.ts`).
+
+**Status:** N-5 behoben (T-M40-19). N-4 und die Sperre offen, ohne Aufgabe.

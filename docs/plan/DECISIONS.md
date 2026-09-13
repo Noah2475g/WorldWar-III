@@ -2576,3 +2576,36 @@ Regeln. Ob sie jedem Codecommit folgen sollen, ist eine neue Entscheidung und st
 Listen wörtlich und fallen mit.
 
 ---
+
+## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison liest die gesammelten Befehle, AK7 bleibt unverändert (delegiert)
+
+**Entscheidung.**
+- `garrisonFollowUp(state, command, pending)` (`packages/ai/src/adjutant.ts`) nimmt als Haltung der Armee die
+  zuletzt gesammelte `SET_STANCE` derselben Armee und desselben Spielers, sonst die aus dem Zustand.
+- Die Oberfläche reicht die Sammlung als `ActionContext.pending` durch (`App.tsx`). Anhalten, Marschhinweis und
+  Bestätigung lesen sie.
+- R-UNIT-09/AK7 und der Hinweis zur Verteidigung bleiben unverändert: sie stimmen jetzt auch bei stehender Uhr.
+- D30.7 sagt wörtlich „wenn die Vorprüfung ihn annimmt" (Befund N-4).
+
+Entschieden vom Orchestrator nach Befund N-5 der Durchsicht der zweiten Nacharbeit, erster der zwei Wege.
+
+**Begründung.** Befund N-5: Eine Garnison wird bei stehender Uhr auf Verteidigung geklickt und dann verlegt. Der
+nächste Tick wandte [Verteidigung, Marsch] an, und die Armee marschierte auf Verteidigung. Am Bildschirm rot
+vorgeführt (`App.test.tsx`). Der Kern wendet die Befehle eines Spielers in der Reihenfolge der Sammlung an;
+die zuletzt gesammelte Haltung ist also die, mit der der Marsch im Tick ankommt. Das lässt sich ohne Kern und
+ohne Zustandsfeld lesen.
+
+**Verworfen.** AK7 und den Hinweis einzuschränken („die zum Zeitpunkt des Befehls auf Verteidigung steht"). Das
+hätte eine Lücke beschrieben, die sich mit einem optionalen Parameter schließen ließ.
+
+**Gegenrede.**
+- Eine gesammelte Haltung zählt, auch wenn der Kern sie im Tick ablehnen würde. Die Oberfläche erzeugt keinen
+  solchen Befehl, und schlimmstenfalls geht ein Garnisonsbefehl zu viel mit.
+- Mehrspieler (M37): Der Folgebefehl ist Oberfläche, die Schleife ruft ihn nie; gesammelt sind nur die eigenen
+  Befehle des Menschen.
+- Die Sperre „schon in dieser Haltung" sieht die Sammlung weiterhin nicht — offen in `PROBLEME.md`.
+
+**kippbar:** Ohne `pending` fallen `garrisonFollowUp` und `ActionContext.pending` auf den Zustand zurück. Dann
+fallen T-M40-19 in `adjutant.test.ts`, `actions.test.ts` und `App.test.tsx`, und AK7 braucht die Einschränkung.
+
+---
