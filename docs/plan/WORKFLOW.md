@@ -73,7 +73,7 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 ## 2 · Was als Nächstes dran ist
 
 **Geplant, freigegeben und ungebaut sind der Mehrspieler (Noahs Freigabe vom 2026-09-12)
-und seit dem 2026-09-13 M41, M40 und M35 (Delegation per /goal, `DECISIONS.md`).** Was
+und seit dem 2026-09-13 M41, M40, M35 und M17 (Delegation per /goal, `DECISIONS.md`).** Was
 darunter nicht „geplant" heißt, ist vorgemerkt.
 
 1. **Eine Partie zu zweit (M37, M38, M39)** — geplant am 2026-09-12, **dreißig Aufgaben**.
@@ -105,11 +105,9 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
 4. **Die Haltungen — geplant als M40** (2026-09-13): T-M40-01 bis -06, Entwurf D30,
    R-UNIT-09. Vorgabe bleibt `defensive`, die Automatik führt nur menschliche Armeen
    (`DECISIONS.md`, kippbar).
-5. **Zwei Vormerkungen für M17** (Entscheid T-M32-03): Antrag auf Durchmarschrecht und
-   Provinzhandel. Sie stehen im **M17-Vorspann von `03-TASKS.md`** und nicht in
-   `tasks.yaml` — ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er *eine*
-   Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Aufgabe und Entwurf.
-   M17 wird als Ganzes geplant oder gar nicht.
+5. **M17 „Tiefe zwischen den Kriegen" — geplant als Ganzes** (2026-09-13, T-M17-01):
+   T-M17-02 bis -16, Entwurf D29, dazu R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09. Die beiden
+   Vormerkungen aus T-M32-03 sind darin (T-M17-04, T-M17-06). Kommt nach M35.
 6. **Die Sichtprüfung zu T-M28-08 bleibt offen, und zwar aus einem strukturellen Grund:
    im Vorschaufenster läuft die Spieluhr nicht** (rAF gedrosselt; Tempo 10 bewegte sie in
    24 s um null Ticks). Zeit bewegt dort nur „Vorspulen", und das springt einen ganzen
@@ -129,8 +127,8 @@ darunter nicht „geplant" heißt, ist vorgemerkt.
      der Plan-Wächter liest jetzt auch `Dateien` und `Tests zuerst` in `03-TASKS.md`; die 63
      nachgezählten toten Pfade sind korrigiert oder gekennzeichnet (`PROBLEME.md`, 2026-09-12).
 9. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
-10. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
-   nächste geplante Achse.
+10. **Danach:** nichts Geplantes mehr außer dem Mehrspieler — M17 ist seit dem 2026-09-13
+   geplant (Punkt 5); T-M17-16 trägt den einen Parameterlauf und die Abnahme.
 
 ---
 

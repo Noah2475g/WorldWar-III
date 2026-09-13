@@ -1524,6 +1524,13 @@ Mechanik sind und nicht Oberfläche, sind entschieden:
    Widerrufen gibt es seit M5 (`commands/diplomacy.ts`, `grantRightOfWay`), und die
    Bewegungsphase liest das Recht. Was fehlt, ist die andere Richtung: **darum bitten.**
 2. **Provinzhandel — als M17-Aufgabe vorgemerkt (T-M17-02).** Existiert nirgends.
+
+*(Berichtigt am 2026-09-13, T-M17-01: Zwei Aussagen in Punkt 1 waren falsch. **Einen eigenen
+Widerruf gibt es nicht** — das Recht endet nur mit Bündnisbruch oder Kriegserklärung —, und
+**die Bewegungsphase liest das Recht nicht**; gelesen wird es allein in der Überfall-Erkennung
+(`phases/diplomacy.ts`). Dazu ist das Recht symmetrisch, Befund B1 in `PROBLEME.md`. Die
+Platzhalter „T-M17-01" und „T-M17-02" heißen seit der Planung von M17 **T-M17-04**
+(Durchmarsch) und **T-M17-06** (Provinzhandel); T-M17-01 ist die Planung selbst.)*
 3. **Forschung — gestrichen.** Es wird keinen Forschungsbaum geben.
 
 **Begründung:** Zu 1: die einseitige Gewährung deckt den Fall „ich lasse dich durch"
@@ -2071,5 +2078,81 @@ der Text stimmt, wäre die Grenze angehoben, damit die Zahl passt.
 
 **kippbar:** wer ein sechstes Kommando braucht, trägt es in `main.rs` und `TauriStorage.ts`
 ein; der Wächter hält beide gleich.
+
+---
+
+## 2026-09-13 · T-M17-01 · M17 wird als Ganzes geplant — Nummern, Reihenfolge, Berichtigungen
+
+**Entscheidung:** M17 ist mit einem Doku-Commit vollständig geplant: Entwurf **D29**, neue
+Anforderungen **R-DIP-08**, **R-DIP-09**, **R-AI-09**, **R-GAME-09**, sechzehn Aufgaben. Die
+Nummern gelten vor dem Planungsentwurf: dessen „R-GAME-08" hat M35 genommen, M17 bekommt
+**R-GAME-09**; M35 nimmt `SCHEMA_VERSION` 3, M17 **4** mit eingefrorenem **`save-v3.json`**.
+
+**Reihenfolge:** der Ausgangswert T-M17-02 hängt an T-M35-06 und T-M41-02 — gemessen wird erst
+nach dem KI-Fabrikausbau und nach M35; T-M17-03 hängt an T-M35-03, weil beide den
+Formatwächter und die Migrationskette anfassen.
+
+**Berichtigungen und Vermerke:**
+
+- Der Eintrag vom 2026-09-11 (T-M32-03) ist datiert berichtigt: kein eigener Widerruf, die
+  Bewegungsphase liest das Recht nicht, und seine Platzhalter T-M17-01/02 heißen heute T-M17-04
+  und T-M17-06.
+- **R-DIP-06/AK3, zweite Hälfte** („Durchmarsch erwidern") ist **nicht eingelöst** (Befund B2)
+  und wird es erst mit R-DIP-08 (T-M17-04, T-M17-10). R-DIP-06 bleibt belegt, weil ihr Test
+  grün ist — er prüft den Befehl, nicht die Wirkung; T-M17-04 ersetzt ihn durch einen Test auf
+  den Zustand.
+- **Rückfall für T-M17-11:** zugesagt wird nur Annehmen und Ablehnen von Provinzangeboten; aktives
+  Kaufen und Verkaufen wird gebaut und im Integrationstor gezählt, nicht zugesichert.
+- **Zwei Reihenfolgefehler des Planungsentwurfs, im Plantext korrigiert:** T-M17-03 nahm
+  `rightOfWay` aus dem Typ, während die Leser erst in T-M17-04 umgestellt würden — jetzt stellt
+  T-M17-03 alle Leser auf Helfer um und lässt die Schreiber vorerst beide Richtungen setzen. Und
+  ab T-M17-05/07 kennt der Kern Befehle ohne Knopf; sie stehen bis T-M17-13/14 mit Verweis in
+  der Ausnahmeliste des UI-Wächters.
+- **Der Durchstich-Golden-Master verschiebt sich nicht durch KI-Regeln** (anders als der
+  Planungsentwurf sagte): `runGame` rechnet über `runTicks` ohne die KI-Schleife.
+
+**kippbar:** die Aufgabenschnitte; die Nummern nicht mehr, sobald T-M17-03 gebaut ist.
+
+---
+
+## 2026-09-13 · T-M17-04 · Die Kartenfreigabe wird ebenfalls gerichtet (delegiert)
+
+**Entscheidung:** `sharedMap` bekommt in T-M17-04 dieselbe Bauart wie der Durchmarsch —
+`aSharesMap`/`bSharesMap`, gelesen nur über `sharesMap(state, owner, viewer)` — und dieselbe
+Migrationsregel: ein alter Stand mit geteilter Karte teilt sie in **beide** Richtungen.
+`shareMap` setzt nur die eigene Richtung; Bündnis setzt, Bündnisbruch löscht beide.
+
+**Begründung:** Befund B1 hat zwei Hälften. Wer seine Karte „teilt", sieht heute auch die des
+anderen (`view/publicView.ts:224`) — ein Geschenk an sich selbst, einseitig auslösbar, dieselbe
+Fehlerklasse wie der Durchmarsch. Der Planungsentwurf wollte nur vermerken; da T-M17-03 die
+Beziehung ohnehin migriert, kostet die zweite Hälfte zwei Felder und einen Test
+(R-DIP-08/AK6), eine spätere eigene Migration dagegen einen ganzen Schritt.
+
+**Gegenrede:** R-DIP-08 wird breiter als der Entscheid T-M32-03, der nur den Durchmarsch nannte.
+
+**kippbar:** `aSharesMap`/`bSharesMap` aus D29.1 und `toVersion4` streichen, `sharedMap` bleibt
+symmetrisch, R-DIP-08/AK6 entfällt; B1 zweite Hälfte steht dann offen in `PROBLEME.md`.
+
+---
+
+## 2026-09-13 · T-M17-01 · Kohle-Senke, Vorratsaufbau und amphibische KI wandern nach M18
+
+**Entscheidung:** Die zwei Befunde aus `PROBLEME.md` vom 2026-09-06, die auf M17 zeigten — Kohle
+ohne Senke und der 350-fache Vorratsaufbau —, und die amphibische KI, auf die Kommentare in
+`packages/ai/src/targeting.ts` und `economy.ts` als „M17" verwiesen, gehören nach **M18**.
+
+**Begründung:** M17 gibt dem Frieden Handlungen, aber keine Ausgaben, die Güter vernichten:
+Spionagesold zieht nur Geld (Geld hat keine Lagergrenze), Handelsangebote und Provinzhandel
+verschieben Güter, die Summe bleibt; Wirtschaftssabotage vernichtet einen vernachlässigbaren
+Teil. Eine Senke ist Gebäudeunterhalt oder Kohle im Unterhalt — das Wirtschaftspaket aus dem
+Entscheid zu R-ECON-03 (2026-09-05), mit Zustand je Gebäude und eigener Migration. Die
+amphibische KI war nie Teil des M17-Umfangs (Spionage, Handel, Durchmarsch, Provinzhandel).
+
+**Zusage statt Behauptung:** M17 **misst** die Bestandssummen je Rohstoff an Tag 200 vorher
+(T-M17-02) und nachher (T-M17-16); die Zahlen stehen in den Berichten, auch wenn sie sich nicht
+bewegen.
+
+**kippbar:** eine Senke in M17 aufnehmen — dann braucht T-M17-03 ein weiteres Feld je Gebäude
+samt Migration und T-M17-16 einen Vergleich, der fallende Bestände zusichert.
 
 ---

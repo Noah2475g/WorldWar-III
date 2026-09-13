@@ -3021,3 +3021,168 @@ tasks:
     files: [packages/core/test/properties/combat-symmetry.test.ts, docs/plan/tasks.yaml]
     tests: [packages/core/test/properties/combat-symmetry.test.ts]
     dod: "Befund (Pfad-Waechter, 2026-09-13): T-M14-06 steht auf done und sagte zu, dass der Seitentausch im Nahkampf bei Streuung 0 exakt spiegelt und die Summe der abgezogenen Trefferpunkte gleich der Summe der in BATTLE_RESOLVED gemeldeten Verluste ist; geschrieben ist nur der Seitentausch beim Beschuss (bombardment.test.ts). Zuerst nachsehen, ob die Pruefung unter anderem Namen doch existiert. Dann der Test, der die Zusage einloest: Seitentausch mit Regel-Override combatSpreadPermille 0, dazu der Erhaltungssatz ueber 50 Ticks eines Dreiparteienkampfes (R-BAT-07/AK1). Faellt einer, ist das ein Befund und keine Formulierungsfrage: PROBLEME.md, dann Entscheid, bevor eine Kampfregel geaendert wird (Golden-Master). T-M14-06 bleibt done und bekommt in seinem dod einen Verweis auf diese Aufgabe. Anforderungen bewusst leer: R-BAT-07 steht in name_level; wer den Testblock R-BAT-07/AK1 nennt, darf die ID dort streichen und traegt sie dann hier ein. Kommt vor T-M40-01, das combat.ts anfasst."
+
+  # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
+  # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der
+  # Ausgangswert (T-M17-02) erst nach dem KI-Fabrikausbau (T-M41-02) und nach M35.
+  # T-M17-16 traegt den EINEN Parameterlauf der ganzen Delegation.
+  - id: T-M17-01
+    milestone: M17
+    title: M17 wird als Ganzes geplant
+    status: done
+    deps: []
+    requirements: []
+    design: [D-29]
+    files: [docs/plan/01-REQUIREMENTS.md, docs/plan/02-DESIGN.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/WORKFLOW.md, packages/ai/src/targeting.ts, packages/ai/src/economy.ts]
+    tests: [test/plan-consistency.test.ts, test/requirements.test.ts]
+    dod: "Erledigt am 2026-09-13 in einem Doku-Commit - ein Meilenstein gilt dem Plan-Waechter als geplant, sobald er eine Aufgabe traegt, und verlangt dann fuer alle M17-Anforderungen Aufgabe und Entwurfstext. Stand danach: D29 in 02-DESIGN.md; R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09 mit scope later M17; T-M17-02 bis -16; Befunde B1 bis B8 in PROBLEME.md; in DECISIONS.md die Platzhalter T-M17-01/02 aus dem Entscheid T-M32-03 aufgeloest (heute T-M17-04 und T-M17-06), die falsche Aussage die Bewegung lese das Recht datiert berichtigt, Kartenfreigabe gerichtet (delegiert, kippbar), Kohle-Senke, Vorratsaufbau und amphibische KI nach M18 umgehaengt (Kommentare in targeting.ts und economy.ts nur textlich). plan-consistency gruen, coverage V1 offen 0."
+  - id: T-M17-02
+    milestone: M17
+    title: Ausgangswert und eingefrorener Stand der Stufe 3
+    status: todo
+    deps: [T-M17-01, T-M35-06, T-M41-02]
+    requirements: []
+    design: [D-29]
+    files: [docs/reports/m17-baseline.json, packages/core/test/golden/save-v3.json]
+    tests: [apps/headless/test/m17-baseline.slow.test.ts]
+    dod: "D29.7, D29.10. Erst messen, dann aendern - und erst, wenn M41 (KI-Fabrikausbau) und M35 gebaut sind, sonst misst der Ausgangswert einen veralteten Stand. Neuer Messlauf: 200 Spieltage, acht KI-Maechte, Weltkarte, gezaehlt aus dem Ereignisstrom: Ueberfaelle ohne Kriegserklaerung, Durchmarsch- und Kartenfreigaben, Bestandssummen je Rohstoff an Tag 200 (Kohle und Vorratsaufbau, D29.12), Median des taeglichen Geldertrags einer mittleren Macht an Tag 30 (Anker des Spionagesolds), abgelehnte KI-Befehle je Code. Bericht docs/reports/m17-baseline.json. Dazu save-v3.json einfrieren: ein echter Stand vor jeder M17-Aenderung, 30 Spieltage Weltkarte, mindestens eine Beziehung mit rightOfWay true, eine mit sharedMap true, ein offenes Friedensangebot; danach nie wieder neu erzeugt. Ist die Zahl der Ueberfaelle ohne Erklaerung null, steht das so im Bericht: R-AI-09/AK3 hat dann nichts zu messen (Befund B6)."
+  - id: T-M17-03
+    milestone: M17
+    title: Zustand und Migration 3 nach 4
+    status: todo
+    deps: [T-M17-02, T-M35-03]
+    requirements: [R-GAME-09]
+    design: [D-29]
+    files: [packages/core/src/state/types.ts, packages/core/src/state/create.ts, packages/core/src/state/clone.ts, packages/core/src/persistence/migrate.ts, packages/core/src/persistence/validate.ts, packages/core/src/commands/diplomacy.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/view/publicView.ts, packages/ai/src/relationship.ts, packages/ai/src/diplomacy.ts, packages/core/test/golden/tiny-500.json, apps/headless/test/golden/walkthrough.json]
+    tests: [packages/core/src/persistence/migration-v3.test.ts, packages/core/src/persistence/migration-v1.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
+    dod: "D29.1, D29.10, D29.11. Neue Felder espionage, diplomacy.tradeOffers, nextIds.spy und nextIds.offer; Relation.rightOfWay und sharedMap werden zu aGrantsPassage, bGrantsPassage, aPassageEndsAtTick, bPassageEndsAtTick, aSharesMap, bSharesMap. KORREKTUR am Planungsstand: wer die alten Felder aus dem Typ nimmt, muss im selben Commit jeden Leser umstellen, sonst baut der Kern nicht - deshalb lesen hier ALLE Stellen ueber grantsPassage und sharesMap, und alle Schreiber setzen VORERST BEIDE Richtungen; das ist verhaltensgleich, die Richtung selbst kommt in T-M17-04. toVersion4 legt die Felder leer an und uebernimmt rightOfWay und sharedMap in beide Richtungen. Test zuerst (migration-v3.test.ts): save-v3.json laeuft nach der Migration, Differenz nur aus ADDED_IN_VERSION_4 und der Liste der entfernten Schluessel, nach Speichern und Laden hashgleich (R-GAME-09/AK1); save-v1.json und save-v2.json ueber alle Schritte (R-GAME-09/AK2); keine geteilten Referenzen in espionage und tradeOffers nach cloneState; validateState lehnt fehlende Felder ab. Formatwaechter: Liste Stufe zu Meilenstein bekommt 3 M17, Schluesselliste espionage. Golden-Master beide mit UPDATE_GOLDEN=1, begruendet: neue Felder, sonst nichts. Danach verschiebt sich tiny-500 in M17 nicht mehr."
+  - id: T-M17-04
+    milestone: M17
+    title: Durchmarsch gerichtet, Antrag, Widerruf, Frist - und die Kartenfreigabe gerichtet
+    status: todo
+    deps: [T-M17-03]
+    requirements: [R-DIP-08, R-DIP-06]
+    design: [D-29]
+    files: [packages/core/src/commands/diplomacy.ts, packages/core/src/commands/types.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/view/publicView.ts, packages/core/src/events/types.ts, packages/ai/src/relationship.ts, packages/ai/src/diplomacy.ts, data/rules/default/constants.json, packages/core/src/rules/load.ts, packages/core/src/rules/types.ts, docs/plan/BALANCING.md, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/phases/diplomacy.test.ts, packages/ai/src/diplomacy.test.ts, packages/core/src/view/publicView.test.ts, apps/desktop/src/i18n/text.test.ts]
+    dod: "D29.2 bis D29.6. grantRightOfWay und shareMap setzen nur noch die eigene Richtung; neue Aktionen requestRightOfWay, acceptRightOfWay, revokeRightOfWay (Frist rightOfWayNoticeTicks); Angebotsfrist offerLifetimeDays statt der Zahl 3 im Code (B3); Ereignis RIGHT_OF_WAY_CHANGED; Sichtfelder passageGranted, passageReceived, passageEndsAtTick, mapShared, mapReceived, alle Leser in apps/desktop mitgezogen. Test zuerst: A gewaehrt B, A betritt Bs Gebiet - Ueberfall (heute gruen fuer A, also B1 zuerst rot machen, R-DIP-08/AK1); Antrag in der Sicht, Annahme, Ablehnung im Krieg (AK2); Frist vor und nach Ende (AK3); alter Stand in beide Richtungen (AK4); Verfall (AK5); A gibt die Karte frei, B sieht As Gebiet und A nicht Bs (AK6); KI-Erwidern aendert nach dem Tick den ZUSTAND - Test auf die Zustandsaenderung, nicht auf den erzeugten Befehl, Reparatur herausnehmen und fallen sehen (B2, zweite Haelfte von R-DIP-06/AK3). Golden-Master unveraendert."
+  - id: T-M17-05
+    milestone: M17
+    title: Handelsangebote mit Treuhand
+    status: todo
+    deps: [T-M17-03]
+    requirements: [R-DIP-05]
+    design: [D-29]
+    files: [packages/core/src/commands/tradeOffer.ts, packages/core/src/commands/handlers.ts, packages/core/src/commands/types.ts, packages/core/src/phases/diplomacy.ts, packages/core/src/events/types.ts, packages/core/src/events/world.ts, packages/core/src/view/publicView.ts, data/rules/default/constants.json, packages/core/src/rules/load.ts, packages/core/src/rules/types.ts, docs/plan/BALANCING.md, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts, test/guards/ui-command-coverage.test.ts]
+    tests: [packages/core/src/commands/tradeOffer.test.ts, packages/core/src/phases/diplomacy.test.ts, packages/core/src/events/world.test.ts]
+    dod: "D29.2 bis D29.6. OFFER_TRADE, ACCEPT_TRADE, DECLINE_TRADE, WITHDRAW_TRADE; Treuhand beim Angebot, Rueckgabe bei Ablehnung, Rueckzug, Verfall und Krieg; TRADE_AGREED ohne Mengenfeld im Weltgeschehen; TRADE_OFFER_CLOSED. Handelsangebote erben NICHT das Loeschen aller Angebote an den Annehmenden (B4). Test zuerst: R-DIP-05/AK1 bis AK4; Eigenschaft ueber zufaellige Folgen aus Angebot, Rueckzug, Verfall, Annahme und Krieg: Summe aus Bestaenden und Treuhand bleibt konstant; Ueberfall und Verfall im selben Tick. KORREKTUR am Planungsstand: ab hier kennt der Kern Befehle, die die Oberflaeche erst in T-M17-14 erreicht - die neuen Typen stehen deshalb mit Verweis auf T-M17-14 in NICHT_FUER_DEN_SPIELER von ui-command-coverage.test.ts, sonst ist der Waechter bis dahin rot."
+  - id: T-M17-06
+    milestone: M17
+    title: Provinzhandel
+    status: todo
+    deps: [T-M17-05]
+    requirements: [R-DIP-09]
+    design: [D-29]
+    files: [packages/core/src/commands/tradeOffer.ts, packages/core/src/phases/occupation.ts, packages/core/src/events/types.ts, packages/core/src/events/world.ts, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/commands/tradeOffer.test.ts]
+    dod: "D29.2, D29.5. Provinzen in give und want; ein gemeinsamer Helfer fuer den Besitzerwechsel in occupation.ts, damit Auftraege wie bei jeder Eroberung ueber ownerAtStart enden. Test zuerst: R-DIP-09/AK1 - vier Ablehnungen beim Angebot UND bei der Annahme, Verfall mit Rueckgabe; AK2 - Besitzer im selben Tick, keine Verstimmung, keine Eroberungsmoral, PROVINCE_CEDED ohne Preis und kein Alarm; eine abgetretene Provinz fuehrt im Tick danach nie zu einem Ueberfall."
+  - id: T-M17-07
+    milestone: M17
+    title: Spione anwerben, ansetzen, entlassen
+    status: todo
+    deps: [T-M17-03]
+    requirements: [R-SPY-01]
+    design: [D-29]
+    files: [packages/core/src/commands/espionage.ts, packages/core/src/commands/handlers.ts, packages/core/src/commands/types.ts, packages/core/src/view/publicView.ts, data/rules/default/constants.json, packages/core/src/rules/load.ts, packages/core/src/rules/types.ts, docs/plan/BALANCING.md, test/guards/ui-command-coverage.test.ts]
+    tests: [packages/core/src/commands/espionage.test.ts]
+    dod: "D29.2, D29.7. RECRUIT_SPY, REASSIGN_SPY, DISMISS_SPY mit der Pruefreihenfolge Existenz, Eigentum, Zielbedingung, Obergrenze, Kosten; Sold und Anwerbepreis aus dem Anker von T-M17-02. Test zuerst: R-SPY-01/AK1 bis AK3, dazu die Pruefreihenfolge (bei zwei Fehlern gewinnt der fruehere). Die drei Befehlstypen stehen bis T-M17-13 mit Verweis in NICHT_FUER_DEN_SPIELER (siehe T-M17-05)."
+  - id: T-M17-08
+    milestone: M17
+    title: Sold, Tageslauf und Aufklaerung
+    status: todo
+    deps: [T-M17-07]
+    requirements: [R-SPY-02, R-SPY-03]
+    design: [D-29]
+    files: [packages/core/src/phases/espionage.ts, packages/core/src/phases/dailyTick.ts, packages/core/src/view/publicView.ts, packages/core/src/view/intel.ts, packages/core/src/events/types.ts, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/phases/espionage.test.ts, packages/core/test/determinism.test.ts]
+    dod: "D29.3, D29.4, D29.6. settleEspionage nach settleMorale; SPY_REPORT, SPY_LOST; reveals in visibleProvinces, updateIntel merkt den letzten Stand. Test zuerst: R-SPY-02/AK1 bis AK3, R-SPY-03/AK1 und AK2; OHNE Spione ist der Hash nach jedem von 500 Ticks gleich dem Lauf ohne settleEspionage (kein Zufallsverbrauch); MIT Spionen zwei Laeufe gleicher Startzahl hashgleich. tiny-500 bleibt unveraendert."
+  - id: T-M17-09
+    milestone: M17
+    title: Sabotage und Gegenspionage
+    status: todo
+    deps: [T-M17-08]
+    requirements: [R-SPY-04, R-SPY-05]
+    design: [D-29]
+    files: [packages/core/src/phases/espionage.ts, packages/core/src/events/types.ts, data/rules/default/constants.json, docs/plan/BALANCING.md, apps/desktop/src/game/events.ts, apps/desktop/src/i18n/de.ts]
+    tests: [packages/core/src/phases/espionage.test.ts, packages/core/test/properties/event-audience.test.ts]
+    dod: "D29.3, D29.5. SABOTAGE_SUFFERED ohne Urheberfeld und in ALERT_TYPES; SPY_DETECTED; Ansehensverlust und Verstimmung ueber die vorhandene Verstimmung (R-DIP-06, Befund B7). Test zuerst: R-SPY-04/AK1 bis AK4 - nie negativer Bestand, hoechstens eine Sabotage je Provinz und Tag, firstAlertFor haelt das Opfer an und einen Dritten nicht; R-SPY-05/AK1 und AK2; Eigenschaft ueber einen Lauf mit Spionen: kein Ereignis mit dem Opfer als Leser traegt eine Kennung des Urhebers, geprueft auch am gerenderten Text (describeEvent)."
+  - id: T-M17-10
+    milestone: M17
+    title: "KI: Durchmarsch und Handelsangebote"
+    status: todo
+    deps: [T-M17-04, T-M17-05]
+    requirements: [R-AI-09, R-DIP-08, R-DIP-05]
+    design: [D-29]
+    files: [packages/ai/src/passage.ts, packages/ai/src/trade.ts, packages/ai/src/decide.ts, packages/ai/src/military.ts, data/rules/default/ai.json, packages/core/src/rules/types.ts, packages/core/src/rules/load.ts, docs/plan/BALANCING.md, test/balancing.test.ts]
+    tests: [packages/ai/src/passage.test.ts, packages/ai/src/trade.test.ts, test/balancing.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "D29.8. Antrag statt Marsch, wenn der Weg eines Angriffs durch eine friedliche Macht ohne Recht fuehrt (B6); Antwort nach Vertrauensschwelle; echtes Erwidern; Widerruf unter der Kriegsschwelle; Gast zieht vor Fristende ab. Handel: Annahme und Ablehnung begruendet, Angebot nur bei Kurswirkung ueber tradeImpactPermille. Neue Zahlen oben in ai.json - der Waechter in balancing.test.ts wird auf sie erweitert (heute prueft er nur die Stufenspalten). Test zuerst: passage.test.ts und trade.test.ts je Regel, jede Handlung mit Erklaerung (R-AI-09/AK4). Turnier nach der Aufgabe im Band 0,55 bis 0,95."
+  - id: T-M17-11
+    milestone: M17
+    title: "KI: Provinzwert und Provinzhandel"
+    status: todo
+    deps: [T-M17-06, T-M17-10]
+    requirements: [R-DIP-09, R-AI-09]
+    design: [D-29]
+    files: [packages/ai/src/provinceValue.ts, packages/ai/src/trade.ts, data/rules/default/ai.json, docs/plan/BALANCING.md]
+    tests: [packages/ai/src/provinceValue.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "D29.8. Provinzwert aus Karte und Marktpreisen (B5: die Sicht fuehrt fuer fremde Provinzen keine deposits), Gebaeude nur wenn bekannt. ZUGESAGT ist nur Annehmen und Ablehnen (R-DIP-09/AK3, AK4) - Rueckfall aus der Selbstkritik des Plans, weil dieser Teil der teuerste und unsicherste ist. Aktives Kaufen und Verkaufen wird gebaut, aber nur GEZAEHLT (T-M17-15). Test zuerst: der Wert aendert sich nicht, wenn nicht aufgedeckte fremde Gebaeude sich aendern (Sicht-Schnappschuss, AK3); Annahme ueber, Ablehnung unter dem Aufschlag (AK4); nie Hauptstadt, nie eine Provinz mit eigenen Armeen. Turnier im Band."
+  - id: T-M17-12
+    milestone: M17
+    title: "KI: Spionage"
+    status: todo
+    deps: [T-M17-09]
+    requirements: [R-AI-09]
+    design: [D-29]
+    files: [packages/ai/src/espionage.ts, packages/ai/src/decide.ts, data/rules/default/ai.json, docs/plan/BALANCING.md]
+    tests: [packages/ai/src/espionage.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts]
+    dod: "D29.8, D29.12. Gegenspion bei Krieg oder Verstimmung, Aufklaerung auf den Kriegsgegner, Sabotage NIE gegen eine Macht im Frieden, Budget espionageBudgetPermille nie ueberschritten, Entlassen bei drohendem Geldmangel. Test zuerst: je Regel ein Fall, jede Handlung begruendet. Danach Turnier und progress.slow.test.ts: kippt das Band 0,55 bis 0,95 (Verstimmungsspirale), wird grievanceOnSpyDetected gesenkt, nicht der Waechter."
+  - id: T-M17-13
+    milestone: M17
+    title: Oberflaeche Spionage
+    status: todo
+    deps: [T-M17-09]
+    requirements: [R-SPY-06]
+    design: [D-29]
+    files: [apps/desktop/src/game/actions.ts, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/state/uiState.ts, apps/desktop/src/ui/icons.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, test/guards/ui-command-coverage.test.ts]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/keyboard.test.ts, apps/desktop/src/ui/Alerts.test.tsx, apps/desktop/src/ui/icons.test.tsx, apps/desktop/src/i18n/text.test.ts, test/guards/ui-command-coverage.test.ts]
+    dod: "D29.9. Anwerbe-Gruppe in der Provinzleiste, Spionageuebersicht auf Taste s (Strg+S bleibt Speichern), Meldung bei erlittener Sabotage aus dem Ereignisstrom mit Sprung zur Provinz, Symbole mit path-bounds. Test zuerst: R-SPY-06/AK1 (Anwerben je Auftrag, gesperrt mit Grund), AK2 (Meldung mit Sprungziel); die drei Spionage-Befehlstypen verschwinden aus NICHT_FUER_DEN_SPIELER, und der Waechter ist gruen. Nicht gleichzeitig mit T-M17-14 an Alerts.tsx: nacheinander committen. Spieler-ID aus dem Kontext."
+  - id: T-M17-14
+    milestone: M17
+    title: Oberflaeche Handel und Durchmarsch
+    status: todo
+    deps: [T-M17-04, T-M17-05, T-M17-06]
+    requirements: [R-DIP-07, R-DIP-08, R-DIP-09]
+    design: [D-29]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/i18n/de.ts, docs/ANLEITUNG.md, test/guards/ui-command-coverage.test.ts]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Alerts.test.tsx, test/guards/ui-command-coverage.test.ts]
+    dod: "D29.9. Diplomatiepanel: Ansehen als Balken, wer mit wem im Krieg, Antrag, Annahme und Widerruf des Durchmarschs, Angebotsformular mit Vorschau ueber exchangeAmount, eingehende und ausgehende Angebote. Meldung bei eingehendem Angebot mit Sprung ins Diplomatiepanel - onJump bekommt ein Panelziel (Schnittstellenaenderung, die Tests aus T-M31 und T-M36 ziehen mit). Test zuerst: R-DIP-07/AK1 (Meldung fuehrt zur Diplomatie, beide Seiten in Worten, keine Kennung); Vorschau gleich exchangeAmount; die vier Handelsbefehlstypen verschwinden aus NICHT_FUER_DEN_SPIELER."
+  - id: T-M17-15
+    milestone: M17
+    title: Das Integrationstor
+    status: todo
+    deps: [T-M17-10, T-M17-11, T-M17-12, T-M17-13, T-M17-14]
+    requirements: [R-AI-09]
+    design: [D-29]
+    files: [docs/reports/m17-integration.json]
+    tests: [apps/headless/test/m17-integration.slow.test.ts]
+    dod: "Ein gruener Einzeltest sagt nichts ueber das Spiel. 200 Spieltage, Weltkarte, acht KI, Muster ai-integration.slow.test.ts samt der Pruefung, dass ueberhaupt etwas gemessen wurde; alles aus dem Ereignisstrom. Zugesichert: SPY_REPORT mindestens einmal je Stufe, TRADE_AGREED mindestens einmal, RIGHT_OF_WAY_CHANGED mit granted true zwischen zwei KI mindestens einmal (R-AI-09/AK1); Ablehnungen von RECRUIT_SPY, OFFER_TRADE, ACCEPT_TRADE mit INVALID_TARGET oder QUEUE_FULL gleich 0 und RESOURCE_SHORTAGE Geld gleich 0 (AK2); Ueberfaelle ohne Erklaerung hoechstens der Ausgangswert aus T-M17-02 (AK3); Erklaerungen (AK4). PROVINCE_CEDED wird gezaehlt, nicht zugesichert - bleibt es in drei Startzahlen null, steht die Null im Bericht und die Verkaufsregel als zu streng in PROBLEME.md."
+  - id: T-M17-16
+    milestone: M17
+    title: Abschlussmessung, der eine Parameterlauf, Abnahme
+    status: todo
+    deps: [T-M17-15]
+    requirements: []
+    design: [D-29]
+    files: [docs/plan/BALANCING.md, docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md, docs/reports/progress-measured.json, docs/reports/m17-baseline.json, docs/reports/acceptance.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
+    tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts, apps/headless/test/fullgame.slow.test.ts]
+    dod: "D29.11, D29.12. Der EINE pnpm balance:sweep der Delegation (rund eine Stunde, nicht abbrechen), Turnier, progress.slow.test.ts und Vollpartie, alle Berichte eingecheckt - danach ist der Frische-Waechter wieder gruen, und die Zeile in WORKFLOW.md Abschnitt 0 ueber die absichtlich rote Abnahme wird entfernt. Vergleich gegen T-M17-02: Siegtag, Siegverteilung, Band 0,55 bis 0,95, Bestandssummen je Rohstoff vorher und nachher (Kohle, Vorratsaufbau - M18), SABOTAGE_SUFFERED je 100 Tage gegen eine Macht als Zahl. pnpm acceptance auf freier Maschine 11 von 11. Benchmarks nur auf freier Maschine und getrennt."

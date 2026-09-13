@@ -3145,6 +3145,258 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > **nicht** in `tasks.yaml`: ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine
 > einzige Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Entwurf und Aufgabe.
 > M17 wird als Ganzes geplant oder gar nicht — wer ihn aufmacht, nimmt diese beiden mit.
+>
+> **Berichtigt und geplant am 2026-09-13 (T-M17-01).** Zwei Sätze oben stimmen nicht:
+> einen eigenen **Widerruf** des Durchmarschrechts gibt es nicht — das Recht endet nur mit
+> Bündnisbruch oder Kriegserklärung —, und das Recht ist ein **symmetrisches** Feld je Paar,
+> sodass der Gewährende selbst folgenlos ins Land des anderen darf (Befund B1,
+> `PROBLEME.md`). Der Antrag ist erst sinnvoll, wenn das Recht eine Richtung hat. Seit diesem
+> Tag ist M17 **als Ganzes** geplant: Entwurf **D29**, neue Anforderungen **R-DIP-08**
+> (gerichteter Durchmarsch samt Antrag, gerichtete Kartenfreigabe), **R-DIP-09**
+> (Provinzhandel), **R-AI-09** (Integrationstor der KI), **R-GAME-09** (Migration auf Stufe 4),
+> sechzehn Aufgaben. Die beiden Vormerkungen sind T-M17-04 und T-M17-06.
+>
+> **Reihenfolge.** M17 kommt nach M41, M40 und M35: M35 nimmt `SCHEMA_VERSION` 3, M17 nimmt
+> **4** mit eingefrorenem `save-v3.json`; der Ausgangswert (T-M17-02) wird erst nach dem
+> KI-Fabrikausbau (T-M41-02) und nach M35 gemessen. Nach T-M17-03 sind 04/05 und 07 unabhängig,
+> teilen aber `events/types.ts`, `publicView.ts`, `constants.json` — **nacheinander committen**.
+> T-M17-16 trägt den **einen** Parameterlauf der Delegation (`DECISIONS.md`, 2026-09-13).
+>
+> **Nicht in M17:** Kohle ohne Senke und der Vorratsaufbau (`PROBLEME.md`, 2026-09-06) sowie
+> die amphibische KI wandern begründet nach M18 — M17 misst die Bestandssummen trotzdem vorher
+> und nachher (T-M17-02, T-M17-16).
+
+### T-M17-01 · M17 wird als Ganzes geplant
+- **Ziel:** ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine Aufgabe trägt —
+  dann verlangt er für alle seine Anforderungen Aufgabe und Entwurfstext. Also in einem Zug.
+- **Anforderungen:** keine · **Entwurf:** D29
+- **Abhängigkeiten:** keine
+- **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`,
+  `packages/ai/src/targeting.ts`, `packages/ai/src/economy.ts`
+- **Tests zuerst:** `test/plan-consistency.test.ts` und `test/requirements.test.ts` — rot mit der
+  ersten M17-Zeile in `tasks.yaml`, grün, wenn alles steht.
+- **Fertig wenn:** D29, R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09 und T-M17-02 bis -16 stehen, die
+  Befunde B1 bis B8 in `PROBLEME.md`, und `DECISIONS.md` die Platzhalter aus T-M32-03 auflöst,
+  die falsche Aussage zur Bewegungsphase datiert berichtigt, die gerichtete Kartenfreigabe
+  (delegiert, kippbar) und die Umhängung nach M18 festhält.
+- **Erledigt am 2026-09-13:** in einem Doku-Commit. Die Kommentare zur amphibischen KI in
+  `targeting.ts` und `economy.ts` nennen jetzt M18 — nur Text, kein Code.
+
+### T-M17-02 · Ausgangswert und eingefrorener Stand der Stufe 3
+- **Ziel:** erst messen, dann ändern — und zwar den Stand, auf dem M17 wirklich aufsetzt.
+- **Anforderungen:** keine · **Entwurf:** D29.7, D29.10
+- **Abhängigkeiten:** T-M17-01, T-M35-06, T-M41-02
+- **Dateien:** `docs/reports/m17-baseline.json`, `packages/core/test/golden/save-v3.json`
+- **Tests zuerst:** neu `apps/headless/test/m17-baseline.slow.test.ts` — 200 Spieltage, acht
+  KI, Weltkarte: Überfälle ohne Kriegserklärung, Durchmarsch- und Kartenfreigaben,
+  Bestandssummen je Rohstoff an Tag 200, Median des täglichen Geldertrags an Tag 30,
+  abgelehnte KI-Befehle je Code.
+- **Fertig wenn:** der Bericht steht und `save-v3.json` eingefroren ist — vor jeder
+  M17-Änderung, mit mindestens einer gewährten Durchmarsch-, einer geteilten Karte und einem
+  offenen Friedensangebot. Ist die Zahl der Überfälle null, steht das so im Bericht (B6).
+
+### T-M17-03 · Zustand und Migration 3 → 4
+- **Ziel:** alle neuen Felder in einem Schritt, damit sich `tiny-500` in M17 genau einmal
+  verschiebt.
+- **Anforderungen:** R-GAME-09 · **Entwurf:** D29.1, D29.10, D29.11
+- **Abhängigkeiten:** T-M17-02, T-M35-03
+- **Dateien:** `packages/core/src/state/types.ts`, `packages/core/src/state/create.ts`,
+  `packages/core/src/state/clone.ts`, `packages/core/src/persistence/migrate.ts`,
+  `packages/core/src/persistence/validate.ts`, `packages/core/src/commands/diplomacy.ts`,
+  `packages/core/src/phases/diplomacy.ts`, `packages/core/src/view/publicView.ts`,
+  `packages/ai/src/relationship.ts`, `packages/ai/src/diplomacy.ts`,
+  `packages/core/test/golden/tiny-500.json`, `apps/headless/test/golden/walkthrough.json`
+- **Tests zuerst:** `migration-v3.test.ts` — `save-v3.json` läuft nach der Migration, die
+  Differenz besteht nur aus `ADDED_IN_VERSION_4` und den entfernten Schlüsseln, hashgleich
+  nach Speichern und Laden (R-GAME-09/AK1); `save-v1.json` und `save-v2.json` über alle
+  Schritte (AK2); keine geteilten Referenzen nach `cloneState`.
+- **Fertig wenn:** `SCHEMA_VERSION` 4 ist, beide Golden-Master begründet neu stehen und der
+  Formatwächter die Stufe 3 → M17 kennt. **Korrektur am Planungsstand:** wer `rightOfWay` und
+  `sharedMap` aus dem Typ nimmt, muss jeden Leser im selben Commit umstellen — hier lesen alle
+  über `grantsPassage` und `sharesMap`, und alle Schreiber setzen **vorerst beide Richtungen**
+  (verhaltensgleich); die Richtung selbst kommt in T-M17-04.
+
+### T-M17-04 · Durchmarsch gerichtet, Antrag, Widerruf, Frist — und die Kartenfreigabe gerichtet
+- **Ziel:** wer gewährt, lässt durch — und darf nicht selbst hindurch.
+- **Anforderungen:** R-DIP-08, R-DIP-06 · **Entwurf:** D29.2–D29.6
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/diplomacy.ts`, `packages/core/src/commands/types.ts`,
+  `packages/core/src/phases/diplomacy.ts`, `packages/core/src/view/publicView.ts`,
+  `packages/core/src/events/types.ts`, `packages/ai/src/relationship.ts`,
+  `packages/ai/src/diplomacy.ts`, `data/rules/default/constants.json`,
+  `packages/core/src/rules/load.ts`, `packages/core/src/rules/types.ts`,
+  `docs/plan/BALANCING.md`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `phases/diplomacy.test.ts` R-DIP-08/AK1 (A gewährt B und betritt Bs Gebiet →
+  Überfall; heute grün für A, also zuerst rot machen), AK2 bis AK6; `ai/diplomacy.test.ts`:
+  das Erwidern ändert nach dem Tick den **Zustand** — Reparatur herausnehmen, fallen sehen (B2).
+- **Fertig wenn:** `grantRightOfWay` und `shareMap` nur die eigene Richtung setzen, Antrag,
+  Annahme und Widerruf mit Frist wirken, die Angebotsfrist aus `constants.json` kommt (B3), die
+  Sichtfelder `passageGranted`, `passageReceived`, `passageEndsAtTick`, `mapShared`,
+  `mapReceived` heißen und die Golden-Master unverändert sind.
+
+### T-M17-05 · Handelsangebote mit Treuhand
+- **Ziel:** ein zweiter Handelsweg neben der Börse, der Mengen zwischen zwei Mächten bindet.
+- **Anforderungen:** R-DIP-05 · **Entwurf:** D29.2–D29.6
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/commands/handlers.ts`,
+  `packages/core/src/commands/types.ts`, `packages/core/src/phases/diplomacy.ts`,
+  `packages/core/src/events/types.ts`, `packages/core/src/events/world.ts`,
+  `packages/core/src/view/publicView.ts`, `data/rules/default/constants.json`,
+  `packages/core/src/rules/load.ts`, `packages/core/src/rules/types.ts`,
+  `docs/plan/BALANCING.md`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`,
+  `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `tradeOffer.test.ts` R-DIP-05/AK1 bis AK4; Eigenschaft: Bestände plus
+  Treuhand bleiben über zufällige Folgen aus Angebot, Rückzug, Verfall, Annahme und Krieg
+  konstant; Überfall und Verfall im selben Tick; `TRADE_AGREED` ohne Mengenfeld.
+- **Fertig wenn:** Handelsangebote nicht das Löschen aller Angebote an den Annehmenden erben
+  (B4). **Korrektur am Planungsstand:** die vier neuen Befehlstypen erreicht die Oberfläche erst
+  in T-M17-14 — sie stehen bis dahin mit Verweis in `NICHT_FUER_DEN_SPIELER`, sonst ist der
+  Wächter dazwischen rot.
+
+### T-M17-06 · Provinzhandel
+- **Ziel:** eine Provinz wechselt den Besitzer, ohne dass jemand sie erobert.
+- **Anforderungen:** R-DIP-09 · **Entwurf:** D29.2, D29.5
+- **Abhängigkeiten:** T-M17-05
+- **Dateien:** `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/phases/occupation.ts`,
+  `packages/core/src/events/types.ts`, `packages/core/src/events/world.ts`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** R-DIP-09/AK1 (vier Ablehnungen, bei Angebot **und** Annahme, Verfall mit
+  Rückgabe), AK2 (Besitzer im selben Tick, Aufträge enden über `ownerAtStart`, keine
+  Verstimmung, kein Alarm); nie ein Überfall im Tick danach.
+- **Fertig wenn:** der Besitzerwechsel über einen gemeinsamen Helfer mit der Eroberung läuft und
+  `PROVINCE_CEDED` im Weltgeschehen steht.
+
+### T-M17-07 · Spione anwerben, ansetzen, entlassen
+- **Ziel:** Spione sind keine Einheiten, sondern Aufträge mit Sold.
+- **Anforderungen:** R-SPY-01 · **Entwurf:** D29.2, D29.7
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/espionage.ts`, `packages/core/src/commands/handlers.ts`,
+  `packages/core/src/commands/types.ts`, `packages/core/src/view/publicView.ts`,
+  `data/rules/default/constants.json`, `packages/core/src/rules/load.ts`,
+  `packages/core/src/rules/types.ts`, `docs/plan/BALANCING.md`,
+  `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `espionage.test.ts` R-SPY-01/AK1 bis AK3 samt Prüfreihenfolge.
+- **Fertig wenn:** Preis und Sold aus dem Anker von T-M17-02 stehen und die drei Befehlstypen bis
+  T-M17-13 mit Verweis in `NICHT_FUER_DEN_SPIELER` stehen.
+
+### T-M17-08 · Sold, Tageslauf und Aufklärung
+- **Ziel:** ein Spion tut einmal am Tag etwas, und nur, wenn er bezahlt ist.
+- **Anforderungen:** R-SPY-02, R-SPY-03 · **Entwurf:** D29.3, D29.4, D29.6
+- **Abhängigkeiten:** T-M17-07
+- **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/phases/dailyTick.ts`,
+  `packages/core/src/view/publicView.ts`, `packages/core/src/view/intel.ts`,
+  `packages/core/src/events/types.ts`, `apps/desktop/src/game/events.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `phases/espionage.test.ts` R-SPY-02/AK1 bis AK3, R-SPY-03/AK1 und AK2; ohne
+  Spione ist der Hash nach jedem von 500 Ticks gleich dem Lauf ohne `settleEspionage`; mit
+  Spionen zwei Läufe gleicher Startzahl hashgleich.
+- **Fertig wenn:** `tiny-500` unverändert ist.
+
+### T-M17-09 · Sabotage und Gegenspionage
+- **Ziel:** der Betroffene erfährt, dass etwas geschah — nicht, wer es war.
+- **Anforderungen:** R-SPY-04, R-SPY-05 · **Entwurf:** D29.3, D29.5
+- **Abhängigkeiten:** T-M17-08
+- **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/events/types.ts`,
+  `data/rules/default/constants.json`, `docs/plan/BALANCING.md`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** R-SPY-04/AK1 bis AK4 (nie negativer Bestand, eine Sabotage je Provinz und Tag,
+  `firstAlertFor` hält das Opfer an und keinen Dritten), R-SPY-05/AK1 und AK2;
+  `event-audience.test.ts` mit Spionen: kein Ereignis für das Opfer trägt den Urheber, auch nicht
+  im gerenderten Text.
+- **Fertig wenn:** `SABOTAGE_SUFFERED` ohne Urheberfeld in `ALERT_TYPES` steht.
+
+### T-M17-10 · KI: Durchmarsch und Handelsangebote
+- **Ziel:** ohne die KI ist jeder neue Weg ein Spielervorteil (R-AI-01).
+- **Anforderungen:** R-AI-09, R-DIP-08, R-DIP-05 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-04, T-M17-05
+- **Dateien:** `packages/ai/src/passage.ts`, `packages/ai/src/trade.ts`, `packages/ai/src/decide.ts`,
+  `packages/ai/src/military.ts`, `data/rules/default/ai.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`, `test/balancing.test.ts`
+- **Tests zuerst:** `passage.test.ts` (Weg durch eine friedliche Macht → Antrag statt Marsch,
+  Antwort nach Schwelle, Widerruf, Rückzug des Gasts), `trade.test.ts` (Annahme und Ablehnung
+  begründet, Angebot nur bei Kurswirkung); `test/balancing.test.ts` prüft die neuen Zahlen oben
+  in `ai.json`.
+- **Fertig wenn:** jede Handlung Grund und Alternative nennt (R-AI-09/AK4) und das Turnier im
+  Band 0,55 bis 0,95 bleibt.
+
+### T-M17-11 · KI: Provinzwert und Provinzhandel
+- **Ziel:** was eine fremde Provinz wert ist, ist die eigentliche Arbeit am Provinzhandel.
+- **Anforderungen:** R-DIP-09, R-AI-09 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-06, T-M17-10
+- **Dateien:** `packages/ai/src/provinceValue.ts`, `packages/ai/src/trade.ts`,
+  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `provinceValue.test.ts` R-DIP-09/AK3 (Wert unverändert, wenn nicht
+  aufgedeckte fremde Gebäude sich ändern), AK4; nie Hauptstadt, nie eine Provinz mit eigenen
+  Armeen.
+- **Fertig wenn:** Annehmen und Ablehnen zugesichert sind. **Rückfall:** aktives Kaufen und
+  Verkaufen wird gebaut, aber im Integrationstor nur gezählt — der teuerste und unsicherste Teil
+  von M17 bekommt keine Zusage, die an einer Zahl hängt, die niemand geschätzt hat.
+
+### T-M17-12 · KI: Spionage
+- **Ziel:** die Spionagepflichten, die R-AI-08 abgegeben hat.
+- **Anforderungen:** R-AI-09 · **Entwurf:** D29.8, D29.12
+- **Abhängigkeiten:** T-M17-09
+- **Dateien:** `packages/ai/src/espionage.ts`, `packages/ai/src/decide.ts`,
+  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `espionage.test.ts` (KI) — Gegenspion bei Krieg, Sabotage nie gegen eine
+  Friedensmacht, Budget nie überschritten, Entlassen bei drohendem Geldmangel, jede Handlung
+  begründet.
+- **Fertig wenn:** Turnier und `progress.slow.test.ts` nachgefahren sind; kippt das Band, wird
+  `grievanceOnSpyDetected` gesenkt, nicht der Wächter.
+
+### T-M17-13 · Oberfläche Spionage
+- **Ziel:** eine Mechanik ohne Knopf ist für den Spieler nicht vorhanden.
+- **Anforderungen:** R-SPY-06 · **Entwurf:** D29.9
+- **Abhängigkeiten:** T-M17-09
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/keyboard.ts`,
+  `apps/desktop/src/state/uiState.ts`, `apps/desktop/src/ui/icons.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `actions.test.ts` R-SPY-06/AK1, `keyboard.test.ts` (`s` öffnet die Übersicht,
+  Strg+S speichert weiter), `Alerts.test.tsx` R-SPY-06/AK2, Symbole mit `test/path-bounds.ts`,
+  `text.test.ts`.
+- **Fertig wenn:** die Spionagebefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind und der
+  Wächter grün ist. Nicht gleichzeitig mit T-M17-14 an `Alerts.tsx` — nacheinander committen.
+
+### T-M17-14 · Oberfläche Handel und Durchmarsch
+- **Ziel:** ein Angebot, das niemand bemerkt, wird nie angenommen.
+- **Anforderungen:** R-DIP-07, R-DIP-08, R-DIP-09 · **Entwurf:** D29.9
+- **Abhängigkeiten:** T-M17-04, T-M17-05, T-M17-06
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `Panels.test.tsx` R-DIP-07/AK1 (Meldung → Diplomatie, beide Seiten in Worten,
+  keine Kennung); Vorschau gleich `exchangeAmount`; Antrag, Annahme und Widerruf erreichbar.
+- **Fertig wenn:** `onJump` ein Panelziel kennt (die Tests aus T-M31 und T-M36 ziehen mit) und die
+  Handelsbefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind.
+
+### T-M17-15 · Das Integrationstor
+- **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel.
+- **Anforderungen:** R-AI-09 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-10, T-M17-11, T-M17-12, T-M17-13, T-M17-14
+- **Dateien:** `docs/reports/m17-integration.json`
+- **Tests zuerst:** neu `apps/headless/test/m17-integration.slow.test.ts` nach dem Muster von
+  `ai-integration.slow.test.ts` — 200 Spieltage, acht KI, Weltkarte, alles aus dem Ereignisstrom:
+  R-AI-09/AK1 bis AK4.
+- **Fertig wenn:** die Zahlen samt Nullen im Bericht stehen. `PROVINCE_CEDED` wird gezählt, nicht
+  zugesichert — bleibt es in drei Startzahlen null, führt `PROBLEME.md` die Verkaufsregel als zu
+  streng.
+
+### T-M17-16 · Abschlussmessung, der eine Parameterlauf, Abnahme
+- **Ziel:** alle Regeländerungen der Delegation einmal und zusammen vermessen.
+- **Anforderungen:** keine · **Entwurf:** D29.11, D29.12
+- **Abhängigkeiten:** T-M17-15
+- **Dateien:** `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
+  `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`,
+  `docs/reports/m17-baseline.json`, `docs/reports/acceptance.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** keine neuen; `sweep.slow.test.ts`, `tournament.slow.test.ts`,
+  `progress.slow.test.ts` und die Vollpartie laufen am Endstand.
+- **Fertig wenn:** der **eine** `pnpm balance:sweep` und das Turnier eingecheckt sind, der
+  Frische-Wächter wieder grün ist und die Zeile über die absichtlich rote Abnahme aus
+  `WORKFLOW.md` §0 verschwindet; Vergleich gegen T-M17-02 (Siegtag, Siegverteilung, Band,
+  Bestandssummen je Rohstoff); `pnpm acceptance` auf freier Maschine 11 von 11.
 
 ## Meilenstein M18 — Später
 

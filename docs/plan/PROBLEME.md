@@ -642,10 +642,10 @@ ist die Zusage, ihn nicht zu vergessen.
 | Befund | Beleg | Wohin |
 |---|---|---|
 | **`MapCanvas` läuft in keinem Test** — 141 von 249 Zeilen unausgeführt, weil `App.test.tsx` `getContext` als `null` liefert; R-ARCH-06/AK2 (60 FPS) misst damit niemand, der zeichnet | Befund 16, N11 | **M16** — zusammen mit dem echten Bau, wo ein Zeichenkontext existiert |
-| **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt |
+| **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01: M17 bringt keine Senke — Spionagesold zieht nur Geld, Handel verschiebt Güter. Und „bleibt nur der Armeeunterhalt" war ungenau: keine Einheit verbraucht Kohle, Befund B8 unten. M17 misst die Bestände vorher und nachher, T-M17-02/16.)* |
 | **R-AI-04 ist gemessen verletzt** — die KI hält 43,1 % statt der zugesagten 30 % Rücklage, und der Test ist trotzdem grün, weil er die Schwelle nicht prüft | Befund 46 | **M15**, mit T-M15-08 (Integrationstor) — dort wird die KI ohnehin gemessen |
 | **Hauptstadtverlegung kostet nichts** und löscht die Strafe für den Hauptstadtverlust; wer seine Hauptstadt verliert, verlegt sie sofort und ist die Folgen los | Befund 50 | **M15**, mit T-M15-05 — die KI lernt dort `SET_CAPITAL`, und der Preis gehört zur selben Regel |
-| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben |
+| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01, aus demselben Grund; gemessen wird in T-M17-02 und T-M17-16.)* |
 | **314 von 374 Regelzahlen ohne Belegstatus** — der Test prüft nur `constants.json`, die übrigen Dateien (Einheiten, Gebäude, Rohstoffe) tragen keinen Status „belegt/geschätzt" | Befund 59 | **M15**, mit T-M14-05s Nachfolge: sobald die Messgeräte stimmen, wird der Status messbar statt behauptet |
 | **Rückzug ist ein Teleport** — eine Armee ohne Gegner springt in einem Tick dorthin, wofür ein Marsch 15 Ticks braucht | Befund 66 | **M15**, mit T-M15-07 — die Feuerleitung fasst dieselbe Haltungslogik an |
 | **Barrierefreiheit jenseits des Kontrasts** — kein Test öffnet einen Dialog und schließt ihn mit Escape, keiner prüft Fokusfang, Tabreihenfolge oder `aria`; belegt ist nur die Tastenzuordnung als reine Funktion | Befund N12 | **M16** — zusammen mit dem Bau, in dem sich Fokus überhaupt beobachten lässt |
@@ -2025,3 +2025,46 @@ nicht in M34**, weil sie das KI-Verhalten ändert und damit eine eigene Messung 
 Grundlauf und Turnier, so wie jede der vier Zahlenaufgaben eine bekommen hat.
 
 **Status: offen, kein Produktfehler.** Für Noahs nächste Planung vorgemerkt.
+
+---
+
+## 2026-09-13 · T-M17-01 · Acht Befunde beim Planen von M17
+
+Beim Planen von M17 am Code gefunden. Keiner davon wird in T-M17-01 gebaut; jeder hat eine
+Aufgabe oder einen Meilenstein.
+
+- **B1 — Durchmarschrecht und Kartenfreigabe sind symmetrisch und damit ausnutzbar.**
+  `Relation.rightOfWay` und `sharedMap` sind je Paar ein Feld (`state/types.ts`, Schlüssel
+  `a|b`). Gewährt A dem B Durchmarsch, darf **A** unbehelligt in Bs Land:
+  `detectSurpriseAttacks` fragt nur `relation.rightOfWay` (`phases/diplomacy.ts:25`). Teilt A
+  seine Karte, sieht A auch Bs Gebiet (`view/publicView.ts:224`). Beides löst eine Seite allein
+  aus. → **T-M17-03/04**, R-DIP-08 (Kartenfreigabe: delegierter Entscheid, `DECISIONS.md`).
+- **B2 — Das KI-„Erwidern" des Durchmarschs ist leer.** `packages/ai/src/diplomacy.ts` schickt
+  `grantRightOfWay` nur, wenn `relation.rightOfWay` schon `true` ist — jeden Tag, ohne Wirkung.
+  Der Test „erwidert gewaehrten Durchmarsch" (`packages/ai/src/diplomacy.test.ts`) setzt das
+  Feld in der Sicht und prüft den erzeugten Befehl, nicht den Zustand; er ist grün und belegt
+  nichts. **Die zweite Hälfte von R-DIP-06/AK3 ist nicht eingelöst.** → T-M17-04 (Test auf den
+  Zustand), T-M17-10.
+- **B3 — Die Angebotsfrist steht als Zahl im Code:** `3 * ticksPerDay`
+  (`phases/diplomacy.ts:85`), gegen D-08. → T-M17-04, `offerLifetimeDays`.
+- **B4 — `acceptPeace` löscht alle Friedensangebote an den Annehmenden, von jedem Absender**
+  (`commands/diplomacy.ts:100`), `acceptAlliance` ebenso die Bündnisangebote (Z. 114).
+  Handelsangebote dürfen das nicht erben. → T-M17-05.
+- **B5 — Die KI bewertet jede fremde Provinz pauschal** mit 400 (Stadt) oder 200 (Land)
+  (`packages/ai/src/targeting.ts:77`), weil die Sicht `deposits` nur für eigene Provinzen führt.
+  Für den Provinzhandel untauglich. → T-M17-11, Wert aus der Karte.
+- **B6 — Wege durch fremdes Land sind ungeprüft.** `MOVE_ARMY` prüft beim Ziel Existenz, Eigentum
+  der Armee und einen Weg (`commands/move.ts`), `findPath` filtert nicht nach Eigentum. Ein
+  KI-Marsch zum Kriegsgegner kann über eine friedliche dritte Macht führen — ein Überfall.
+  **Nicht gemessen.** Genau diese Zahl misst T-M17-02 zuerst: ist sie null, fehlt der KI der
+  Anlass, um Durchmarsch zu bitten, und R-AI-09/AK3 hat nichts zu messen.
+- **B7 — R-DIP-06 nennt Verstimmungsquellen, die es nicht gibt:** „enttarnte Spione" (kommt mit
+  R-SPY-05, T-M17-09) und „gebrochene Bündnisse" — `breakAlliance` senkt nur das Ansehen
+  (`commands/diplomacy.ts:123-135`), eine Verstimmung entsteht nicht. Die zweite bleibt offen,
+  ohne Meilenstein; sie ist hier festgehalten, damit sie nicht als gebaut gilt.
+- **B8 — Kohle hat nicht einmal den Armeeunterhalt als Senke.** Keine Einheit in `units.json`
+  nennt Kohle; sie steht nur in `buildings.json` (Baukosten der Eisenbahn) und in `ai.json`. Die
+  einzigen Verbraucher sind dieser Bau und die Börse. Die Zeile im Eintrag vom 2026-09-06 („bleibt
+  nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
+
+**Status: offen**, je mit Aufgabe; B7 zweite Hälfte ohne Meilenstein.

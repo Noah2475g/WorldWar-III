@@ -477,6 +477,11 @@ scope:
     R-SPY-06:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-DIP-05:   "M17 — Handelsangebote mit Treuhand; erst braucht die bestehende Börse einen Nutzer"
     R-DIP-07:   "M17 — Handel in der Oberfläche; folgt R-DIP-05"
+    # Aufgenommen am 2026-09-13 mit T-M17-01 (M17 wird als Ganzes geplant, D29).
+    R-DIP-08:   "M17 — Durchmarsch und Kartenfreigabe werden gerichtet, der Durchmarsch laesst sich erbitten; Entscheid T-M32-03 (T-M17-04)"
+    R-DIP-09:   "M17 — Provinzen wechseln auch durch Vertrag den Besitzer; Entscheid T-M32-03 (T-M17-06)"
+    R-AI-09:    "M17 — die KI nutzt Spione, Angebote und Antraege; Integrationstor (T-M17-15)"
+    R-GAME-09:  "M17 — Spielstaende der Stufe 3 laufen weiter (T-M17-03)"
     # Mehrspieler, aufgenommen am 2026-09-12 (Abschnitt 2.17, Bauplan MEHRSPIELER.md).
     # Alle drei Meilensteine liegen hinter der V1, so wie M16; AK-9 ist ihr eigenes
     # Abnahmekriterium und zaehlt nicht gegen die V1.
@@ -805,6 +810,50 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK1: WENN ein Angebot eingeht, DANN SOLL eine Meldung erscheinen, die zur
     Diplomatieübersicht führt, und das Angebot dort mit beiden Seiten in Worten stehen.
 
+*Aufgenommen am 2026-09-13 mit T-M17-01, aus dem Entscheid T-M32-03 (Durchmarsch-Antrag und
+Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). Entwurf D29.*
+
+- **R-DIP-08 — Durchmarschrecht und Kartenfreigabe haben eine Richtung; der Durchmarsch
+  lässt sich erbitten und kündigen.** Nach Referenz 9.1 und 9.5: eine Macht gewährt einer
+  anderen den Marsch durch **ihr** Gebiet. Die Gegenrichtung entsteht nur durch eigene
+  Gewährung oder die Annahme eines Antrags; ein Widerruf wirkt nach einer Regelfrist. Die
+  Kartenfreigabe folgt derselben Bauart. Heute ist beides ein symmetrisches Feld je Paar —
+  wer gewährt, darf selbst folgenlos ins Land des anderen, und wer seine Karte teilt, sieht
+  die des anderen. Diese Anforderung löst auch die zweite Hälfte von R-DIP-06/AK3 (Durchmarsch
+  erwidern) erst ein.
+  - AK1: WENN A dem B Durchmarsch gewährt, DANN SOLL B durch As Gebiet marschieren können,
+    ohne dass es als Überfall gilt, und A SOLL im Gebiet von B **weiterhin** einen Überfall
+    begehen, wenn er es ohne eigenes Recht betritt.
+  - AK2: WENN B bei A Durchmarsch beantragt, DANN SOLL A den Antrag in seiner Sicht sehen;
+    WENN A annimmt, DANN SOLL B das Recht erhalten; WENN beide im Krieg sind oder eine
+    Erklärung läuft, DANN SOLL der Antrag mit `INVALID_TARGET` abgelehnt werden.
+  - AK3: WENN A das Recht widerruft, DANN SOLL es nach der Regelfrist enden; eine Armee von B
+    in As Gebiet SOLL vor Fristende nicht als Überfall gelten, danach schon; beide SOLLEN davon
+    ein Ereignis erhalten.
+  - AK4: WENN ein alter Spielstand mit gewährtem Durchmarsch geladen wird, DANN SOLL das Recht
+    in **beide** Richtungen bestehen — das bisherige Verhalten.
+  - AK5: WENN ein diplomatisches Angebot oder ein Antrag ohne Antwort bleibt, DANN SOLL er nach
+    der Regelfrist aus `constants.json` verfallen.
+  - AK6: WENN A dem B seine Karte freigibt, DANN SOLL B das Gebiet von A sehen und A das Gebiet
+    von B nicht; WENN ein alter Spielstand mit geteilter Karte geladen wird, DANN SOLL sie in
+    beide Richtungen geteilt bleiben.
+- **R-DIP-09 — Provinzhandel.** Nach Referenz 9.4: eine Provinz kann Teil eines
+  Handelsangebots sein, gebend und verlangt.
+  - AK1: WENN ein Angebot eine Provinz abtritt, die dem Anbieter nicht gehört, seine
+    Hauptstadt ist, umkämpft ist oder eigene Armeen enthält, DANN SOLL der Kern mit
+    `INVALID_TARGET` und Grund ablehnen — beim Angebot **und** erneut bei der Annahme; scheitert
+    die Prüfung erst bei der Annahme, DANN SOLL das Angebot mit Rückgabe verfallen.
+  - AK2: WENN ein Angebot mit Provinz angenommen wird, DANN SOLL die Provinz im selben Tick den
+    Besitzer wechseln, ihre laufenden Aufträge wie bei jedem Besitzerwechsel enden, **ohne**
+    Verstimmung und ohne Eroberungsmoral, und die Welt SOLL ein Ereignis ohne Preis erhalten,
+    das kein Alarm ist.
+  - AK3: WENN die KI eine Provinz bewertet, DANN SOLL sie nur öffentliche Angaben (Karte,
+    Marktpreise) und eigenes Wissen (eigene oder aufgedeckte Gebäude) verwenden, und ihre
+    Erklärung (R-AI-05) SOLL den Wert und seinen größten Anteil nennen.
+  - AK4: WENN die KI ein Angebot mit Provinz erhält, DANN SOLL sie annehmen, wenn der
+    Gegenwert den Wert der Provinz um den Regelaufschlag übersteigt und das Verhältnis nicht
+    schlecht ist, sonst ablehnen.
+
 #### Weltgeschehen statt Zeitung (`R-NEWS`)
 
 > **R-NEWS-01, R-NEWS-02 und R-NEWS-03 sind am 2026-09-06 gestrichen** — ersatzlos, mit
@@ -866,6 +915,26 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK2: WENN ein Spielstand geladen wird, DANN SOLL **kein Ladeweg ohne Prüfung** bleiben:
     nach einer Migration prüft `validateState` den Zustand, ohne Migration die Prüfsumme,
     und ein Stand ohne beides wird abgelehnt.
+- **R-AI-09 — Die KI nutzt die Mittel zwischen den Kriegen** *(aufgenommen am 2026-09-13 mit
+  T-M17-01)*. Die Spionagepflichten, die R-AI-08 am 2026-09-06 abgegeben hat, stehen hier;
+  R-AI-08 wird nicht wieder geöffnet.
+  - AK1: WENN acht KI-Mächte 200 Spieltage auf der Weltkarte spielen, DANN SOLL es mindestens
+    ein `SPY_REPORT` je Schwierigkeitsstufe, mindestens ein `TRADE_AGREED` und mindestens eine
+    Durchmarschgewährung zwischen zwei KI-Mächten geben — gezählt aus dem Ereignisstrom.
+  - AK2: WENN dieser Lauf endet, DANN SOLL kein neues Kommando mit `INVALID_TARGET` oder
+    `QUEUE_FULL` abgelehnt worden sein, und keine KI SOLL Geldmangel erleiden.
+  - AK3: WENN derselbe Lauf mit und ohne Durchmarsch-Anträge gefahren wird, DANN SOLL die Zahl
+    der Überfälle ohne Kriegserklärung mit Anträgen nicht größer sein.
+  - AK4: WENN die KI einen Spion anwirbt, ein Angebot macht, annimmt, ablehnt oder Durchmarsch
+    beantragt, DANN SOLL ihre Erklärung Grund und Alternative nennen.
+- **R-GAME-09 — Spielstände der Stufe 3 laufen weiter** *(aufgenommen am 2026-09-13 mit
+  T-M17-01)*. Die neuen Zustandsfelder von M17 — Spionage, Handelsangebote, gerichteter
+  Durchmarsch und gerichtete Kartenfreigabe — kommen mit **einem** Schritt von Stufe 3 auf 4.
+  - AK1: WENN ein eingefrorener Stand der Stufe 3 geladen wird, DANN SOLL er nach der Migration
+    laufen, mit leeren Spionage- und Handelsfeldern und in beide Richtungen übernommenem
+    Durchmarsch und Kartenfreigabe, und nach Speichern und Laden hashgleich sein.
+  - AK2: WENN ein Stand der Stufe 1 oder 2 geladen wird, DANN SOLL er alle Schritte bis Stufe 4
+    durchlaufen, danach laufen und nach Speichern und Laden hashgleich sein.
 
 ### 2.16 Verpackung als Programm (M16, aufgenommen 2026-09-06) — `R-PKG`
 

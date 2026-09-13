@@ -154,7 +154,8 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
  *
  * Die Anteile sind bewusst grob — es geht nicht um die beste Mischung, sondern darum,
  * dass die KI ueberhaupt eine hat. Luft und Marine bleiben aussen vor, solange sie mit
- * ihnen nichts anzufangen weiss (M17, amphibische KI).
+ * ihnen nichts anzufangen weiss (amphibische KI: M18, umgehaengt am 2026-09-13 mit
+ * T-M17-01).
  */
 const TARGET_MIX: readonly { unitKey: string; share: number }[] = [
   { unitKey: 'infantry', share: 0.5 },

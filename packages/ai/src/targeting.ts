@@ -22,7 +22,8 @@ import { threatMap } from './threat'
  * standen die ganze Partie still.
  *
  * Der Seetransport bleibt moeglich — er ist nur kein Marschbefehl, sondern ein eigener
- * Vorgang, den die KI heute nicht beherrscht (M17, amphibische KI).
+ * Vorgang, den die KI heute nicht beherrscht (amphibische KI: M18, umgehaengt am
+ * 2026-09-13 mit T-M17-01 - sie gehoerte nie zum Umfang von M17).
  */
 export function landReachable(view: PublicView, from: ProvinceId, limit = 8): Set<ProvinceId> {
   const seen = new Set([from])
