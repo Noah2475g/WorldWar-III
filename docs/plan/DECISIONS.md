@@ -1978,6 +1978,8 @@ Punktanteile. T-M35-06 misst eine zweite Startzahl als Zahl mit.
 kein Code. Danach Frische-Wächter (Parameterlauf und Turnier neu einchecken) und T-M35-06 neu
 fahren — dessen Zusicherung „die Tage steigen in der Reihenfolge der Marken" kann dann fallen.
 
+*(Nachtrag 2026-09-13: Sie ist gefallen. Die Bevölkerungsmarke steht seit T-M35-06 auf **350 ‰**; Eintrag unten.)*
+
 ---
 
 ## 2026-09-13 · T-M40 · Die Vorgabehaltung bleibt `defensive`, und die Automatik führt nur menschliche Armeen (delegiert)
@@ -2532,5 +2534,59 @@ Bau den Haltungs-Messlauf neu fahren und einchecken, bevor die Abnahme gilt.
 
 **kippbar:** Engere Pfade in `scripts/acceptance.mjs`, etwa nur `packages/ai/src/adjutant.ts` und `packages/core/src/phases`.
 Oder der Lauf kommt doch in die Abnahme, mit `run(...)` wie AK-1.
+
+---
+
+## 2026-09-13 · T-M35-06 · Die Bevölkerungsmarke steigt von 300 ‰ auf 350 ‰ (delegiert, Befund aus der Vollpartie)
+
+**Entscheidung:** `goalPopulationSharePermille` 350 statt 300. Die übrigen drei Marken bleiben: 25 Provinzen, 400 ‰ und
+600 ‰ aller Punkte.
+
+**Anlass.** T-M35-06 fuhr die ausgelieferte Voreinstellung auf dem Stand nach M35. Siegtag 975, Sieger China: beides
+unverändert gegenüber dem Stand vor M35. Die Zusicherung R-GAME-08/AK6 fiel: China erreichte 300 ‰ der Weltbevölkerung an
+Tag 544, **drei Tage vor** 400 ‰ aller Punkte (Tag 547). Die Marken aus der Planung stammten aus drei Partien mit
+Russland als Sieger, gemessen vor M41. Seit Block N2 gewinnt mit Startzahl 1914 China, und bei der bevölkerungsreichsten
+Macht der Karte wachsen Bevölkerungs- und Punktanteil fast gleich schnell. Das Risiko stand in D31.7.
+
+**Die Daten.** Erster Tag des Siegers je Marke. Gemessen hat sie ein vorübergehender Tagesverfolger über dieselben drei
+Partien; er traf dieselben Siegtage und Zieltage wie die Vollpartie:
+
+| Marke | 1914, China | 2015, Russland | 1815, Russland |
+|---|---|---|---|
+| 25 Provinzen | 157 | 119 | 115 |
+| Punkte 350 ‰ | 482 | 202 | 210 |
+| **Punkte 400 ‰** | **547** | **237** | **276** |
+| Bevölkerung 300 ‰ | **544** | 299 | 326 |
+| Bevölkerung 325 ‰ | 558 | 331 | 356 |
+| **Bevölkerung 350 ‰** | **576** | **337** | **376** |
+| Bevölkerung 375 ‰ | 587 | 374 | 382 |
+| **Punkte 600 ‰** | **921** | **516** | **456** |
+| Siegtag | 975 | 583 | 583 |
+
+**Begründung.** Mit 350 ‰ hält die Reihenfolge in allen drei Partien. Der knappste Abstand zu einer Nachbarmarke beträgt 29
+Tage (China: 547 → 576). 325 ‰ hielte auch, aber nur mit 11 Tagen Abstand, und die nächste Partie mit anderem Verlauf
+kippte sie wieder.
+
+**Verworfen:**
+- **Die erste Punktmarke auf 350 ‰ senken** (knappster Abstand 62 Tage). Dann erreichte der Zweite sie in zwei der drei
+  Partien (Russland 1914 an Tag 216, China 2015 an Tag 179), und genau das schloss die Begründung für 400 ‰ aus.
+- **Die Reihenfolge der Ziele umstellen.** Russland erreicht den Bevölkerungsanteil in beiden anderen Partien 62 und 50
+  Tage nach der ersten Punktmarke. Die Umstellung machte nur die zugesicherte Startzahl grün.
+- **Die Zusicherung auf „nicht fallend" lockern.** Drei Tage Vorsprung wären auch dann „fallend". Eine Grenze, die man
+  anhebt, damit eine Zahl passt, ist keine Lösung.
+
+**Gegenrede.** Drei Partien, zwei verschiedene Sieger, dieselbe Aufstellung. Die Marke ist so gewählt, dass die heutige
+Messung mit Abstand hält, nicht aus einem Modell. Ein Mensch mit einer bevölkerungsreichen Nation erreicht sie weiter früh.
+
+**Was die Änderung nicht berührt.** Keine Entscheidung im Spiel liest eine Marke. `checkVictory` nicht, die KI nicht,
+der Parameterlauf nicht (`WATCHED` in `sweep.slow.test.ts`). Belegt ist das zweifach. Erstens: dieselbe Partie mit Marken,
+die alles, und mit Marken, die nichts erreichen, ist ohne `goals` bitgleich (`goals.test.ts`, R-GAME-08/AK4). Zweitens
+sind die drei Vollpartien ohne `goals`, `measuredAt` und die Zustandsgröße gleich den Berichten vor M35. Ein Parameterlauf,
+der auf der Marke 300 ‰ gestartet ist, misst deshalb dasselbe wie auf 350 ‰. Der Frische-Wächter sieht trotzdem einen
+jüngeren Commit unter `data/rules`; ein nach diesem Commit eingecheckter Bericht gilt inhaltlich.
+
+**kippbar:** eine Zahl in `data/rules/default/constants.json`, dazu die Zeile in `BALANCING.md` und die Erwartung in
+`packages/core/src/rules/load.test.ts`. Danach die Golden-Master mit `UPDATE_GOLDEN=1` (die Tage in `goals` verschieben
+sich) und T-M35-06 neu fahren.
 
 ---

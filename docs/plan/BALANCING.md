@@ -233,7 +233,7 @@ etwas erfährt. T-M35-06 misst die Zieltage auf dem gebauten Stand neu.
 |---|---|---|---|
 | `goalProvinces` | 25 | abgeleitet | Sieger an Tag 129 / 119 / 118 (Startzahl 1914, 2015, 1914 mit KI-Gebäudeausbau), der Zweite an Tag 140 — das erste Ziel erreicht mehr als eine Macht |
 | `goalPointShareFirstPermille` | 400 | abgeleitet | Sieger an Tag 221 / 222 / 220, der Zweite nie (Spitze 338 ‰); niedriger wäre geschenkt — China und Indien stehen an Tag 25 schon bei 237–292 ‰ |
-| `goalPopulationSharePermille` | 300 | abgeleitet | Sieger an Tag 274 / 329 / 369 |
+| `goalPopulationSharePermille` | 350 | abgeleitet | **seit T-M35-06, vorher 300.** Mit 300 ‰ erreichte der Sieger der ausgelieferten Voreinstellung (Startzahl 1914, seit Block N2 China) die Marke an Tag 544, drei Tage vor 400 ‰ aller Punkte (547). Mit 350 ‰ erreicht er sie an Tag 576 / 337 / 376 (1914 China, 2015 und 1815 Russland, Stand nach M35), jeweils mindestens 29 Tage nach der ersten Punktmarke und vor der zweiten (`DECISIONS.md`, 2026-09-13, T-M35-06). Planungsmessung zu 300 ‰: Tag 274 / 329 / 369 |
 | `goalPointShareSecondPermille` | 600 | abgeleitet | Sieger an Tag 365 / 486 / 506 — ein Endspurt 50 bis 100 Tage vor dem Sieg (Siegtage damals 471 / 583 / 554) |
 
 ## Feuerautomatik (R-BAT-08, T-M15-07)

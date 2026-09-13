@@ -3155,3 +3155,32 @@ Ereignisstrom. Test wie in `events.test.ts` (T-M40-13): dieselbe Zeile behält i
 herausfällt.
 
 **Status:** offen, ohne Aufgabe.
+
+---
+
+## 2026-09-13 · T-M35-06 · Beim Sieger fiel die Bevölkerungsmarke vor der ersten Punktmarke (gemessen, Entscheid getroffen)
+
+**Befund.** Die Vollpartie in der ausgelieferten Voreinstellung (`fullgame.slow.test.ts`, Startzahl 1914) lief auf dem
+Stand nach T-M35-05. Siegtag 975, Sieger China, 2589 Eroberungen, 11 Kriegserklärungen: gleich wie vor M35. Die neue
+Zusicherung R-GAME-08/AK6 fiel:
+
+> populationShare (Tag 544) nicht nach pointShareFirst (Tag 547): expected 544 to be greater than 547
+
+Zieltage des Siegers: 25 Provinzen an Tag 157, 400 ‰ Punkte an 547, **300 ‰ Weltbevölkerung an 544**, 600 ‰ an 921.
+Erster Tag ≥ 20 und letzter Tag ≤ Siegtag hielten. Mit Startzahl 2015 (Sieger Russland: 119 / 237 / 299 / 516) und
+1815 (Russland: 115 / 276 / 326 / 456) hielt die Reihenfolge; dort gilt keine Zusicherung. Ereignisstrom und Spielstand
+stimmten in allen drei Partien für jede Macht und jedes Ziel überein.
+
+**Ursache.** Die Marken aus der Planung stammten aus Partien mit Russland als Sieger, gemessen vor M41 (Siegtag 471).
+Seit Block N2 gewinnt mit Startzahl 1914 China. Bei der bevölkerungsreichsten Macht wachsen Bevölkerungs- und Punktanteil
+fast gleich schnell. D31.7 hatte das Risiko genannt: „Die Marken stammen aus KI-Partien mit immer demselben Sieger.“
+
+**Messung statt Schätzung.** Ein vorübergehender Tagesverfolger (gelöscht) zeichnete je Tag und Macht Provinzen,
+Punktanteil und Bevölkerungsanteil auf. Er traf in allen drei Partien die Siegtage und Zieltage der Vollpartie. Tabelle
+und verworfene Wege stehen im Entscheid.
+
+**Nicht still verschoben.** Die Zusicherung bleibt streng (`>`). Die Marke ändert sich mit einem kippbaren Entscheid:
+`DECISIONS.md`, 2026-09-13, T-M35-06, **Bevölkerungsmarke 350 ‰**. Vorhersage aus dem Verfolger: Sieger an Tag 576 /
+337 / 376.
+
+**Status:** Entscheid getroffen; T-M35-06 misst die drei Vollpartien mit 350 ‰ nach.

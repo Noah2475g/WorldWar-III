@@ -2835,13 +2835,18 @@ kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt (En
 |---|---|---|---|
 | eigene Provinzen | `goalProvinces` | 25 | abgeleitet |
 | Anteil an allen Punkten, erste Marke | `goalPointShareFirstPermille` | 400 | abgeleitet |
-| Anteil an der Weltbevölkerung | `goalPopulationSharePermille` | 300 | abgeleitet |
+| Anteil an der Weltbevölkerung | `goalPopulationSharePermille` | 350 | abgeleitet |
 | Anteil an allen Punkten, zweite Marke | `goalPointShareSecondPermille` | 600 | abgeleitet |
 
 *Abgeleitet* aus drei ganzen Partien (acht Mächte, Weltkarte): der Sieger erreichte 25
 Provinzen um Tag 120, 400 ‰ an Tag 220–222, 300 ‰ Weltbevölkerung an Tag 274–369 und 600 ‰
 an Tag 365–506; Tabelle und Gegenrede in `DECISIONS.md`, 2026-09-13. Alle vier stehen in
 `constants.json`, in `REQUIRED_CONSTANTS` und in `BALANCING.md`.
+
+*(Korrigiert am 2026-09-13, T-M35-06: die Bevölkerungsmarke steht auf **350 ‰**, nicht 300 ‰. Auf dem Stand nach M35
+gewinnt die ausgelieferte Voreinstellung China, und China erreichte 300 ‰ der Weltbevölkerung drei Tage vor 400 ‰ aller
+Punkte — R-GAME-08/AK6 fiel. Mit 350 ‰ erreicht der Sieger sie an Tag 576 / 337 / 376, jeweils zwischen den beiden
+Punktmarken; Daten und verworfene Wege in `DECISIONS.md`, T-M35-06.)*
 
 **Korrektur 2: „Eine Großmacht ist gefallen" ist verworfen.** Es ist ein Weltereignis, keine
 eigene Leistung — das erste Ausscheiden kam in den drei Partien an Tag 215, 196 und 290,

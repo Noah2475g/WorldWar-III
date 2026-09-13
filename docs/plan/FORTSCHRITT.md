@@ -271,7 +271,8 @@ T-M35-02 bis T-M35-06 mit der Anforderung **R-GAME-08**.
 
 **Die Marken sind entschieden** — nicht von Noah, sondern per Delegation vom 2026-09-13,
 kippbar und mit Messdaten in `DECISIONS.md`: **25 Provinzen, 400 ‰ Punktanteil, 300 ‰
-Weltbevölkerung, 600 ‰ Punktanteil**. Der Satz oben, der Parameterlauf könne sie nicht
+Weltbevölkerung, 600 ‰ Punktanteil**. *(Am 2026-09-13 in T-M35-06 korrigiert: die Bevölkerungsmarke steht auf **350 ‰** —
+mit 300 ‰ erreichte sie der Sieger der Vollpartie vor der ersten Punktmarke.)* Der Satz oben, der Parameterlauf könne sie nicht
 beantworten, stimmt; beantwortet hat sie eine Messung der Tage, an denen Mächte die Marken in
 ganzen Partien erreichen. Und die Teilaufgaben stehen seit diesem Tag **in** `tasks.yaml`:
 aus vier sind fünf geworden, weil eine ganze Partie die Zahl liefern muss (T-M35-06).

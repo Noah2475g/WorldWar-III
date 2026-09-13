@@ -4799,7 +4799,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (`load.test.ts`, R-GAME-08/AK4); `test/balancing.test.ts` fällt, solange eine Tabellenzeile
   fehlt.
 - **Fertig wenn:** `goalProvinces` 25, `goalPointShareFirstPermille` 400,
-  `goalPopulationSharePermille` 300 und `goalPointShareSecondPermille` 600 in
+  `goalPopulationSharePermille` 300 *(seit T-M35-06: 350, `DECISIONS.md`)* und `goalPointShareSecondPermille` 600 in
   `REQUIRED_CONSTANTS` und `RuleConstants` stehen und `BALANCING.md` sie als *abgeleitet* mit
   der Messung führt (Entscheid und Daten: `DECISIONS.md`, 2026-09-13). **Falle
   Frische-Wächter:** ab diesem Commit ist `pnpm acceptance` rot, bis der Schlussblock nach M35
@@ -4860,8 +4860,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Partie in der richtigen Reihenfolge fallen.
 - **Anforderungen:** R-GAME-08 · **Entwurf:** D31
 - **Abhängigkeiten:** T-M35-05
-- **Dateien:** `docs/reports/fullgame.json`, `docs/reports/progress-baseline.md`,
-  `docs/plan/PROGRESS.md`
+- **Dateien:** `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`,
+  `docs/reports/fullgame-1815.json`, `docs/reports/progress-baseline.md`, `docs/plan/PROGRESS.md`
 - **Tests zuerst:** `apps/headless/test/fullgame.slow.test.ts` schreibt die vier Zieltage des
   Siegers und sichert zu: die Tage steigen, der erste liegt nicht vor Spieltag 20, der letzte
   nicht nach dem Siegtag (R-GAME-08/AK6) — gegengeprüft gegen `GOAL_REACHED` im

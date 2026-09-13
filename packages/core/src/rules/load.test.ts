@@ -204,8 +204,10 @@ describe('R-GAME-08/AK4 Der Lader verlangt die vier Marken der Zwischenziele', (
     expect(problems.join('\n')).toContain(`Konstante "${key}" fehlt`)
   })
 
-  it('traegt die entschiedenen Werte 25, 400, 300 und 600 (DECISIONS.md, 2026-09-13)', () => {
+  it('traegt die entschiedenen Werte 25, 400, 350 und 600 (DECISIONS.md, 2026-09-13)', () => {
+    // Die Bevoelkerungsmarke stand bis T-M35-06 auf 300: in der Vollpartie mit Startzahl 1914
+    // erreichte der Sieger sie drei Tage VOR der ersten Punktmarke (R-GAME-08/AK6).
     const { constants } = defaultRules()
-    expect(GOAL_CONSTANTS.map((key) => constants[key])).toEqual([25, 400, 300, 600])
+    expect(GOAL_CONSTANTS.map((key) => constants[key])).toEqual([25, 400, 350, 600])
   })
 })
