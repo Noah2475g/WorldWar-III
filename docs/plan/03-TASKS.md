@@ -5537,6 +5537,12 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Armeen kürzt. Befund: geschrieben in `military.ts`, kopiert in `decide.ts` und
   `state/clone.ts`, nirgends gelesen; an Tag 471 Russland 1235 Einträge bei 217 lebenden
   Armeen, `state.ai` 108 KB von 485 KB. R-AI-07 steht nur hier im Text (`name_level`).
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, M2: der Vergleich füllte das Gedächtnis vor jedem
+  Tick auf, aber `militaryCommands` kürzte gleich zu Beginn — auch Lauf B las nach der Kürzung nie
+  einen toten Eintrag (gemessen: 0). Jetzt schaltet `loop.test.ts` die Kürzung per Hülle wirklich
+  ab und zählt, was die Funktion danach sieht; dazu der Wächter
+  `test/guards/ai-memory-unread.test.ts`, der fällt, sobald `assignments` im Produktcode gelesen
+  wird.)*
 
 ### T-M41-03 · Die nächste Freischaltung kündigt sich an
 - **Ziel:** vier stille Spieltage sind kürzer, wenn am zweiten gesagt wird, was am vierten

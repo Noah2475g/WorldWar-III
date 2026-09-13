@@ -11,9 +11,56 @@ import {
   type GameState,
 } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { advanceTicks } from './loop'
+import type * as MilitaryModule from './military'
 import { runAi, storeMemories } from './runner'
+import type { AiContext, Explanation } from './types'
+
+/**
+ * Das Kuerzen des KI-Gedaechtnisses, im Test abschaltbar (Nacharbeit T-M41-05, Durchsicht M2).
+ *
+ * `militaryCommands` kuerzt `memory.assignments` mit genau einer Zuweisung, bevor es das Feld
+ * sonst anfasst. Die Huelle reicht der echten Funktion ein Gedaechtnis, das diese Zuweisung
+ * verschluckt, wenn `kuerzen.aus` gesetzt ist — dann arbeitet sie wirklich mit den Eintraegen
+ * toter Armeen. Ohne Schalter reicht sie alles unveraendert durch. Gezaehlt wird, wie viele
+ * Eintraege toter Armeen die Funktion NACH der Kuerzungszeile noch sieht: nur diese Zahl sagt,
+ * ob ein Lauf "ohne Kuerzen" gefahren ist.
+ */
+const kuerzen = vi.hoisted(() => ({ aus: false, verschluckt: 0, totBeimLesen: 0 }))
+
+vi.mock('./military', async (importOriginal) => {
+  const original = await importOriginal<typeof MilitaryModule>()
+  return {
+    ...original,
+    militaryCommands: (context: AiContext, explanations: Explanation[]) => {
+      const lebend = new Set(
+        context.view.armies.filter((army) => army.owner === context.view.playerId).map((army) => army.id),
+      )
+      let nachKuerzung = false
+      const memory = new Proxy(context.memory, {
+        set(target, property, value, receiver) {
+          if (property === 'assignments') {
+            nachKuerzung = true
+            if (kuerzen.aus) {
+              kuerzen.verschluckt += 1
+              return true
+            }
+          }
+          return Reflect.set(target, property, value, receiver)
+        },
+        get(target, property, receiver) {
+          const value: unknown = Reflect.get(target, property, receiver)
+          if (property === 'assignments' && nachKuerzung) {
+            kuerzen.totBeimLesen += Object.keys(value as Record<string, string>).filter((id) => !lebend.has(id)).length
+          }
+          return value
+        },
+      })
+      return original.militaryCommands({ ...context, memory }, explanations)
+    },
+  }
+})
 
 /**
  * Die eine Spielschleife (T-M14-04).
@@ -147,37 +194,43 @@ describe('R-AI-01 Eine Spielschleife fuer alle', () => {
 
   it('befiehlt mit und ohne gekuerztes KI-Gedaechtnis dasselbe (T-M41-05)', () => {
     // `AiMemory.assignments` wird geschrieben und nirgends gelesen. Das wird hier nicht
-    // behauptet, sondern gefahren: Lauf B fuellt das Gedaechtnis vor jedem Tick mit jedem
-    // je geschriebenen Eintrag wieder auf — genau das Verhalten vor der Kuerzung — und muss
-    // ueber 200 Ticks dieselben Befehle geben wie der gekuerzte Lauf A.
+    // behauptet, sondern gefahren: Lauf B schaltet die Kuerzung in `militaryCommands` ab
+    // (Huelle oben), die Funktion arbeitet also mit jedem je geschriebenen Eintrag — und
+    // muss ueber 200 Ticks dieselben Befehle geben wie der gekuerzte Lauf A.
+    //
+    // Nacharbeit (Durchsicht M2): bis dahin fuellte Lauf B das Gedaechtnis vor jedem Tick
+    // wieder auf, und `militaryCommands` kuerzte gleich zu Beginn — auch B las nach der
+    // Kuerzung nie einen toten Eintrag (gemessen: 0). Der Vergleich sah nur Leser VOR
+    // `militaryCommands`. Jetzt zaehlt die Huelle, was die Funktion nach der Kuerzung sieht.
     const TICKS = 200
-    const gekuerzt = advanceTicks(stateWith(4), TICKS, ctx)
-
-    let current = stateWith(4)
-    const applied: { tick: number; command: Command }[] = []
-    const ungekuerzt: Record<string, Record<string, string>> = {}
-    for (let i = 0; i < TICKS; i++) {
-      if (current.victory.winner !== null) break
-      for (const [playerId, memory] of Object.entries(current.ai)) {
-        memory.assignments = { ...ungekuerzt[playerId], ...memory.assignments }
-      }
-      const { commands, memories } = runAi(current, ctx)
-      for (const command of commands) applied.push({ tick: current.tick, command })
-      current = runTicks(current, 1, ctx, () => commands).state
-      storeMemories(current, memories)
-      for (const [playerId, memory] of Object.entries(memories)) {
-        ungekuerzt[playerId] = { ...ungekuerzt[playerId], ...memory.assignments }
+    const ohneKuerzen = <T,>(lauf: () => T): T => {
+      kuerzen.aus = true
+      try {
+        return lauf()
+      } finally {
+        kuerzen.aus = false
       }
     }
 
-    expect(applied.length, 'der Lauf hat nichts befohlen').toBeGreaterThan(0)
-    expect(applied).toEqual(gekuerzt.applied)
+    kuerzen.totBeimLesen = 0
+    const gekuerzt = advanceTicks(stateWith(4), TICKS, ctx)
+    expect(kuerzen.totBeimLesen, 'Lauf A sieht nach der Kuerzung tote Eintraege').toBe(0)
 
-    // Nicht leer verglichen, und die Kuerzung greift: der gekuerzte Lauf fuehrt am Ende
-    // weniger Eintraege, als Lauf B angesammelt hat. Ohne Kuerzung sind beide gleich.
+    kuerzen.verschluckt = 0
+    kuerzen.totBeimLesen = 0
+    const ungekuerzt = ohneKuerzen(() => advanceTicks(stateWith(4), TICKS, ctx))
+
+    // Nicht leer verglichen: B hat wirklich nicht gekuerzt und dabei tote Eintraege gesehen.
+    expect(kuerzen.verschluckt, 'keine Kuerzung verschluckt - der Schalter misst nichts').toBeGreaterThan(0)
+    expect(kuerzen.totBeimLesen, 'Lauf B hat nach der Kuerzung keinen toten Eintrag gesehen').toBeGreaterThan(0)
+    expect(gekuerzt.applied.length, 'der Lauf hat nichts befohlen').toBeGreaterThan(0)
+    expect(ungekuerzt.applied).toEqual(gekuerzt.applied)
+
+    // Und die Kuerzung greift: A fuehrt am Ende weniger Eintraege als B, und nur lebende
+    // eigene Armeen.
     const zaehle = (memories: Record<string, { assignments: Record<string, string> }>) =>
       Object.values(memories).reduce((sum, memory) => sum + Object.keys(memory.assignments).length, 0)
-    const ohne = Object.values(ungekuerzt).reduce((sum, entries) => sum + Object.keys(entries).length, 0)
+    const ohne = zaehle(ungekuerzt.state.ai)
     expect(zaehle(gekuerzt.state.ai), `gekuerzt gegen ${ohne} ohne Kuerzung`).toBeLessThan(ohne)
     for (const [playerId, memory] of Object.entries(gekuerzt.state.ai)) {
       for (const armyId of Object.keys(memory.assignments)) {

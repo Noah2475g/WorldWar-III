@@ -2987,9 +2987,12 @@ tasks:
     title: Das KI-Gedaechtnis vergisst tote Armeen
     status: done
     deps: [T-M41-04]
+    # Nacharbeit 2026-09-13 (Durchsicht M2): loop.test.ts schaltet die Kuerzung per Huelle
+    # wirklich ab (vorher las auch Lauf B nach der Kuerzung 0 tote Eintraege); dazu der
+    # Waechter test/guards/ai-memory-unread.test.ts gegen jeden Leser von assignments.
     requirements: []
     files: [packages/ai/src/military.ts]
-    tests: [packages/ai/src/decide.test.ts, packages/ai/src/loop.test.ts]
+    tests: [packages/ai/src/decide.test.ts, packages/ai/src/loop.test.ts, test/guards/ai-memory-unread.test.ts]
     dod: "Befund: AiMemory.assignments wird in military.ts geschrieben, in decide.ts und state/clone.ts kopiert und NIRGENDS gelesen; es waechst ohne Grenze. Gemessen an Tag 471 (Startzahl 1914): Russland 1235 Eintraege bei 217 lebenden Armeen, China 1156 bei 30, state.ai 108 KB von 485 KB. Reparatur: am Ende von militaryCommands auf die eigenen lebenden Armeen kuerzen. Test zuerst: verschwindet eine Armee, verschwindet ihr Eintrag (decide.test.ts); ueber 200 Ticks sind die Befehle mit und ohne Kuerzen dieselben (loop.test.ts) - das belegt, dass das Feld nie gelesen wurde. Golden-Master unberuehrt (kein Lauf dort mit KI), Format unberuehrt (das Feld bleibt). Anforderungen bewusst leer: R-AI-07 steht in name_level."
   - id: T-M41-03
     milestone: M41
