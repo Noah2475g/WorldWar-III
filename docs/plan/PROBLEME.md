@@ -1909,7 +1909,8 @@ Wächter auf `tasks.yaml` scharf gemacht und ist dort geblieben. Eine Reparatur,
 **einen** Fundort angewandt wird statt auf die Fehlerklasse — auch das steht schon im
 Lessons Log.
 
-**Status: offen, kein Produktfehler.** Nichts davon beeinflusst das Spiel; die Wirkung
+**Status: behoben am 2026-09-13** (Abschnitt am Ende; bis dahin offen, kein Produktfehler).
+Nichts davon beeinflusst das Spiel; die Wirkung
 trifft den, der im Plan nachschlägt, wo etwas steht, und an einen Pfad gerät, den es nicht
 gibt. **Die Reparatur ist zweiteilig:** den Wächter auf die `- **Dateien:**`- und
 `- **Tests:**`-Zeilen von `03-TASKS.md` ausdehnen (er fällt dann sofort mit 57 Fundstellen),
@@ -1927,6 +1928,39 @@ Python (`s.count('
 im Repository, und `git add --renormalize .` ändert nichts. Die Regel „Dateien im
 Arbeitsbaum bleiben LF" ist eingehalten. Wer eine überraschende Messung bekommt, misst sie
 mit einem zweiten Werkzeug nach, bevor er sie meldet.
+
+**Behoben am 2026-09-13.** Der Wächter liest jetzt auch die Fassung, die ein Mensch liest:
+`readProsePaths` und `missingProsePaths` in `test/plan-paths.ts` ziehen die Pfade aus den Zeilen
+`Dateien` und `Tests zuerst` jeder Aufgabe (samt Fortsetzungszeilen, ohne Anmerkungen in
+Klammern), und `test/plan-consistency.test.ts` prüft sie bei jeder Aufgabe auf `done`. Die
+Leseregeln und die Kennzeichnung stehen im Kopf von `03-TASKS.md`.
+
+- **Vorher, mit zwei Werkzeugen nachgezählt: 63 tote von 866 gelesenen Pfaden** — 55 in
+  `Dateien` (von 777), 8 in `Tests zuerst` (von 89; dort zählen nur Pfade ab der Wurzel des
+  Repos, weil die Prosa Kurznamen wie `App.test.tsx` benutzt). Ein Python-Abgleich und der neue
+  Wächter lieferten dieselbe Liste, Pfad für Pfad. **Die 57 oben ließen sich nicht nachstellen** —
+  sie stammen aus einer anderen Messung (alle Backticks in `docs/**/*.md`); eine Variante mit
+  Anmerkungen und ohne Globs ergibt 70. Es gilt 63.
+- **Umzüge, 5 Fundstellen, auf den heutigen Pfad korrigiert:** `ui/MapCanvas.tsx` →
+  `map/MapCanvas.tsx` (T-M16-06), `ui/Dialog.tsx` → `ui/Dialogs.tsx` (T-M16-07),
+  `full-game.slow.test.ts` → `fullgame.slow.test.ts` (T-M14-14, zweimal),
+  `perf/tick.bench.ts` → `perf/tick.bench.slow.test.ts` (T-M8-03).
+  **Zwei der vier Umzüge aus dem Befund waren keine:** `packages/core/src/commands/registry.ts`
+  ist die Registry der Befehls-Handler, keine Kartenregistry — die Kartensammlung steht in
+  `apps/desktop/src/main.tsx` —, und `save-v1.json` stand in `03-TASKS.md` schon richtig;
+  `data/rules/constants.json` steht dort nur in einer Anmerkung, die den alten Pfad absichtlich
+  nennt. Ein gleicher Dateiname ist kein Beleg für einen Umzug.
+- **Nie gebaut oder gelöscht, 58 Fundstellen, gekennzeichnet statt gestrichen:** 54 tragen
+  `(nie gebaut — …)`, 4 tragen `(gelöscht — …)` — die `sim/`-Dateien, die T-M15-06 selbst
+  entfernt hat. Jede Kennzeichnung sagt, wo das Gebaute heute steht, nachgesehen am Code und an
+  `git log --all`: außer den vier `sim/`-Dateien stand keiner dieser Pfade je im Repository.
+- **Nachher: 0 tote von 929 gelesenen Pfaden** — die 866 von vorher und 63 Pfade, die die
+  Kennzeichnungen als Ersatz nennen und die mitgeprüft werden. `tasks.yaml` ist unberührt.
+- **Gegenprobe:** in T-M16-06 testweise wieder `apps/desktop/src/ui/MapCanvas.tsx` — der Wächter
+  fällt mit „1 tote von 929 gelesenen Pfaden"; zurückgesetzt, grün. Dass er eine Kennzeichnung an
+  einer vorhandenen Datei meldet und aus einem leeren Dokument nichts liest, belegen die
+  Unit-Tests daneben; am echten Dokument sichert er zu, mindestens einen Pfad je erledigter
+  Aufgabe gelesen zu haben.
 
 ---
 

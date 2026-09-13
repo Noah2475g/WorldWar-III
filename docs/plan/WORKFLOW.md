@@ -130,9 +130,9 @@ Weitere in dieser Liste ist vorgemerkt und nicht geplant.
    - **Vier stille Spieltage in der Eröffnung** (Hafen Tag 6 → Transportschiff Tag 10).
      Die längste Pause ohne Anlass ist von 72 auf 96 Ticks gewachsen — die Rückseite der
      Streckung. Ob das zu lang ist, ist eine Balancing-Frage.
-   - **`03-TASKS.md` nennt 57 Dateien, die es nicht gibt**, bei Aufgaben auf `done`. Der
-     Plan-Wächter prüft nur `tasks.yaml` (dort 0 tote Pfade), nicht die Prosafassung
-     daneben. Die zweiteilige Reparatur steht in `PROBLEME.md`.
+   - ~~**`03-TASKS.md` nennt 57 Dateien, die es nicht gibt**~~ — **erledigt am 2026-09-13:**
+     der Plan-Wächter liest jetzt auch `Dateien` und `Tests zuerst` in `03-TASKS.md`; die 63
+     nachgezählten toten Pfade sind korrigiert oder gekennzeichnet (`PROBLEME.md`, 2026-09-12).
 9. **T-M10-02** — zurückgenommen, keine Arbeit. Steht nur der Vollständigkeit halber hier.
 10. **Danach:** M17 „Tiefe zwischen den Kriegen" (Spionage, Handelsangebote) ist die
    nächste geplante Achse.

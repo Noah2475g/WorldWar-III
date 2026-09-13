@@ -45,6 +45,22 @@ dort genannte Pfad existieren, und `test/plan-consistency.test.ts` prüft es. Am
 zeigten 79 von 289 Einträgen ins Leere — sämtlich bei `done`-Aufgaben, und niemand hat es
 bemerkt, weil kein Prüfer die Felder las.
 
+**Was die Pfade in diesem Dokument bedeuten (2026-09-13).** Die Zeilen `Dateien` und
+`Tests zuerst` sind dieselbe Zusage wie `files:` und `tests:`, und seit diesem Tag prüft
+`test/plan-consistency.test.ts` auch sie bei jeder Aufgabe auf `done` (`readProsePaths` und
+`missingProsePaths` in `test/plan-paths.ts`). Bis dahin las der Wächter nur `tasks.yaml`, und hier
+standen 63 tote Pfade. Die Leseregeln:
+- Gelesen werden Backtick-Pfade **außerhalb von Klammern** — eine Anmerkung darf alte Pfade nennen.
+- In `Dateien` ist alles ein Pfad ab der Wurzel des Repos, was einen Schrägstrich oder eine
+  Dateiendung trägt. In `Tests zuerst` nur, was mit einem Verzeichnis der Wurzel beginnt
+  (`apps/…`, `docs/…`); Kurznamen wie `App.test.tsx` sind dort Prosa.
+- `{a,b}` sind zwei Pfade, ein Glob muss mindestens eine Datei treffen, ein Schrägstrich am Ende
+  verlangt ein Verzeichnis.
+- **Was es mit Absicht nicht gibt, bleibt stehen und wird gekennzeichnet:** direkt hinter dem Pfad
+  eine Klammer, die mit `nie gebaut` oder `gelöscht` beginnt und sagt, was stattdessen gilt, etwa
+  *(nie gebaut — die Kopfleiste ist `apps/desktop/src/ui/Header.tsx`)*. Der Wächter prüft auch die
+  Kennzeichnung: gibt es den Pfad doch, ist sie falsch, und jeder Pfad in ihr muss existieren.
+
 ---
 
 ## Meilenstein M0 — Fundament
@@ -53,7 +69,9 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** Lauffähiges Monorepo mit pnpm-Workspaces, TypeScript (strict), Vitest, ESLint, Prettier.
 - **Anforderungen:** C-01, C-08
 - **Abhängigkeiten:** —
-- **Dateien:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.eslintrc.cjs`, `.gitignore`, `vitest.workspace.ts`
+- **Dateien:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.eslintrc.cjs`
+  *(nie gebaut — die Konfiguration ist `eslint.config.js`)*, `.gitignore`, `vitest.workspace.ts`
+  *(nie gebaut — die Testkette steht in `vitest.config.ts`)*
 - **Tests zuerst:** `test/smoke.test.ts` — prüft, dass die Testkette überhaupt läuft.
 - **Fertig wenn:** `pnpm install && pnpm test` läuft grün durch; `pnpm typecheck` fehlerfrei.
 
@@ -225,7 +243,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** JSON-Schema für Karten + Validator mit klaren Fehlermeldungen.
 - **Anforderungen:** R-MAP-02/AK1/AK2, R-MAP-03
 - **Abhängigkeiten:** T-M1-04
-- **Dateien:** `packages/core/src/map/schema.ts`, `packages/core/src/map/validate.ts`
+- **Dateien:** `packages/core/src/map/schema.ts` *(nie gebaut — das Kantenmodell steht als Typ in
+  `packages/core/src/state/types.ts`)*, `packages/core/src/map/validate.ts`
 - **Tests zuerst:** fehlerhafte Karten werden je mit eigenem Fehler abgelehnt — asymmetrische
   Nachbarschaft, unerreichbare Provinz, doppelte ID, fehlendes Feld sowie als fünfte Klasse
   `EDGE_ASYMMETRY`: `map.edges` und die abgeleiteten `Province.neighbors` stimmen nicht überein.
@@ -380,7 +399,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** Ohne dieses Stück bleibt jede Partie auf dem eigenen Kontinent gefangen.
 - **Anforderungen:** R-UNIT-06/AK1
 - **Abhängigkeiten:** T-M4-05
-- **Dateien:** `packages/core/src/phases/transport.ts`
+- **Dateien:** `packages/core/src/phases/transport.ts` *(nie gebaut — Ein- und Ausschiffung rechnet
+  `packages/core/src/phases/movement.ts`, geprüft in `packages/core/src/phases/naval-air.test.ts`)*
 - **Tests zuerst:** Kapazität begrenzt die Zuladung; Ein- und Ausschiffung dauern die belegten
   Zeiten (an feindlicher Küste das Anderthalbfache); eingeschiffte Verbände kämpfen nicht und
   gehen mit dem Schiff verloren; eine Landung an verteidigter Küste erhält den Angriffsmalus;
@@ -390,7 +410,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M4-05c · Luftstreitkräfte als Fernwaffe
 - **Anforderungen:** R-UNIT-08, R-BAT-06
 - **Abhängigkeiten:** T-M4-05b
-- **Dateien:** `packages/core/src/phases/air.ts`
+- **Dateien:** `packages/core/src/phases/air.ts` *(nie gebaut — die Flugplatzbindung prüfen
+  `packages/core/src/commands/move.ts` und `packages/core/src/commands/recruit.ts`, belegt in
+  `packages/core/src/phases/naval-air.test.ts`)*
 - **Tests zuerst:** Flugzeuge wirken nur im Umkreis ihres Flugplatzes, erobern nichts, stehen
   nach dem Einsatz die vorgesehene Zeit am Boden und verlegen nur zwischen eigenen Flugplätzen;
   ohne Flugplatz keine Rekrutierung.
@@ -433,7 +455,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M5-03 · Hauptstadt, Punkte, Sieg, Ausscheiden
 - **Anforderungen:** R-PROV-05, R-GAME-02, R-GAME-01
 - **Abhängigkeiten:** T-M5-02
-- **Dateien:** `packages/core/src/phases/scoring.ts`, `packages/core/src/rules/victory.ts`
+- **Dateien:** `packages/core/src/phases/scoring.ts` *(nie gebaut — Punkte und Sieg rechnet
+  `packages/core/src/rules/victory.ts`)*, `packages/core/src/rules/victory.ts`
 - **Tests zuerst:** alle drei Siegbedingungen lösen korrekt aus; Spieler ohne Provinzen scheidet
   aus; Hauptstadtverlust hat die definierte Folge.
 - **Fertig wenn:** grün.
@@ -506,7 +529,8 @@ bemerkt, weil kein Prüfer die Felder las.
   **Vor** T-M7-01, weil es sonst ein Umbau quer durch Kern, KI und Persistenz wird.
 - **Anforderungen:** R-AI-07/AK1, R-GAME-03
 - **Abhängigkeiten:** T-M6-03
-- **Dateien:** `packages/core/src/state/types.ts` (`AiMemory`), `packages/ai/src/memory.ts`
+- **Dateien:** `packages/core/src/state/types.ts` (`AiMemory`), `packages/ai/src/memory.ts` *(nie gebaut —
+  `decide` in `packages/ai/src/decide.ts` gibt das neue Gedächtnis selbst zurück)*
 - **Tests zuerst:** `decide(view, memory, difficulty)` gibt ein neues Gedächtnis zurück;
   nach Speichern und Laden trifft die KI über 50 Ticks dieselben Entscheidungen wie ohne
   Unterbrechung; das Gedächtnis ist JSON-fähig und geht in den Hash ein.
@@ -515,7 +539,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M7-01 · KI-Grundgerüst und Erklärbarkeit
 - **Anforderungen:** R-AI-01/AK1, R-AI-05
 - **Abhängigkeiten:** T-M7-00
-- **Dateien:** `packages/ai/src/decide.ts`, `packages/ai/src/explain.ts`
+- **Dateien:** `packages/ai/src/decide.ts`, `packages/ai/src/explain.ts` *(nie gebaut — die Begründungen
+  sammelt `packages/ai/src/decide.ts` selbst)*
 - **Tests zuerst:** `decide` erhält nur `publicView` (Typprüfung erzwingt es); jeder erzeugte
   Befehl besteht `canApply`; Debug-Ausgabe nennt Ziel, Nutzen und mindestens eine Alternative.
 - **Fertig wenn:** grün.
@@ -533,7 +558,8 @@ bemerkt, weil kein Prüfer die Felder las.
   abbrechen“ nicht umsetzbar sind — je einzeln testbar.
 - **Anforderungen:** R-AI-03
 - **Abhängigkeiten:** T-M7-02
-- **Dateien:** `packages/ai/src/threat.ts`, `packages/ai/src/strength.ts`
+- **Dateien:** `packages/ai/src/threat.ts`, `packages/ai/src/strength.ts` *(nie gebaut — der
+  Kräftevergleich `compareForces` steht in `packages/ai/src/threat.ts`)*
 - **Tests zuerst:** Die Bedrohung einer Provinz steigt mit feindlicher Stärke in Reichweite
   und fällt mit der Entfernung; der Kräftevergleich schätzt eine überlegene Verteidigung
   korrekt als aussichtslos ein; jeder Nutzenterm liefert einen Wert zwischen 0 und 1000.
@@ -558,7 +584,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M7-05 · Schwierigkeitsgrade und Rechenbudget
 - **Anforderungen:** R-AI-02, R-AI-04, R-AI-06
 - **Abhängigkeiten:** T-M7-04
-- **Dateien:** `packages/ai/src/difficulty.ts`, `packages/core/test/perf/ai.bench.ts`
+- **Dateien:** `packages/ai/src/difficulty.ts` *(nie gebaut — die Stufen sind Regeldaten,
+  `DifficultyRule` in `packages/core/src/rules/types.ts`)*, `packages/core/test/perf/ai.bench.ts`
+  *(nie gebaut — das KI-Budget misst `packages/core/test/perf/tick.bench.slow.test.ts`)*
 - **Tests zuerst:** Der Bench schreibt nach `docs/reports/ai-bench.json`, ein
   `ai.budget.test.ts` liest die Datei und schlägt bei Median ≥ 3 ms (8 KI-Spieler) fehl.
   Der Turnierlauf über 50 Partien trägt das Tag `@slow` (Kurzform für `verify`: 3 Partien) und
@@ -575,8 +603,10 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Anforderungen:** R-GAME-03, R-GAME-04, C-02
 - **Abhängigkeiten:** T-M5-04
 - **Dateien:** `packages/core/src/persistence/StoragePort.ts`,
-  `apps/desktop/src/storage/TauriStorage.ts`, `apps/headless/src/storage/NodeStorage.ts`,
-  `packages/testkit/src/MemoryStorage.ts`
+  `apps/desktop/src/storage/TauriStorage.ts`, `apps/headless/src/storage/NodeStorage.ts`
+  *(nie gebaut — die Zusage wurde am 2026-09-06 zurückgestuft und durch T-M14-08 und T-M16-04
+  geschlossen)*, `packages/testkit/src/MemoryStorage.ts` *(nie gebaut — `MemoryStorage` steht in
+  `packages/core/src/persistence/StoragePort.ts`)*
 - **Tests zuerst:** dieselbe Vertragstestreihe (`list`, `read`, `write`, `remove`, Fehler bei
   unbekanntem Namen) läuft gegen alle drei Umsetzungen.
 - **Fertig wenn:** grün.
@@ -584,7 +614,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-01 · Speichern und Laden
 - **Anforderungen:** R-GAME-03/AK1, R-GAME-05
 - **Abhängigkeiten:** T-M8-00
-- **Dateien:** `packages/core/src/persistence/{save,load,migrate}.ts`
+- **Dateien:** `packages/core/src/persistence/{save,migrate}.ts`, `packages/core/src/persistence/load.ts`
+  *(nie gebaut — `deserialise` steht in `packages/core/src/persistence/save.ts`)*
 - **Tests zuerst:** Hash-Gleichheit nach Speichern/Laden; unbekannte Version wird abgelehnt;
   Migration von einer künstlichen Vorversion funktioniert.
 - **Fertig wenn:** grün.
@@ -592,7 +623,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-02 · Headless-Runner
 - **Anforderungen:** R-ARCH-03, R-AI-06
 - **Abhängigkeiten:** T-M8-01, T-M7-05
-- **Dateien:** `apps/headless/src/{run,tournament,replay,bench}.ts`
+- **Dateien:** `apps/headless/src/{run,tournament,replay}.ts`, `apps/headless/src/bench.ts` *(nie gebaut —
+  `pnpm bench` startet die Benchmarks unter `packages/core/test/perf/` direkt)*
 - **Tests zuerst:** Replay aus Seed + Kommandolog erzeugt denselben Endzustand; Turnier liefert
   reproduzierbare Siegquoten.
 - **Fertig wenn:** `pnpm sim:long`, `pnpm sim:tournament`, `pnpm bench` laufen fehlerfrei.
@@ -600,7 +632,7 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-03 · Langlauf und Performancebudget
 - **Anforderungen:** R-ARCH-06/AK1, Abnahmekriterium 6
 - **Abhängigkeiten:** T-M8-02
-- **Dateien:** `packages/core/test/perf/tick.bench.ts`, `docs/reports/performance.md`
+- **Dateien:** `packages/core/test/perf/tick.bench.slow.test.ts`, `docs/reports/performance.md`
 - **Tests zuerst:** Der Bench schreibt nach `docs/reports/tick-bench.json`; er schlägt fehl,
   sobald der Median 0,5 ms oder das 99. Perzentil 2 ms überschreitet. *(Am 2026-09-06
   richtiggestellt: dieser Bench läuft an der Testkarte mit **12** Provinzen und belegt
@@ -630,7 +662,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M9-01 · Geodaten beschaffen und aufbereiten
 - **Anforderungen:** R-MAP-04, R-ASSET-02
 - **Abhängigkeiten:** T-M2-01
-- **Dateien:** `packages/mapgen/src/{fetch,simplify,project}.ts`, `docs/ASSETS.md`
+- **Dateien:** `packages/mapgen/src/{simplify,project}.ts`, `packages/mapgen/src/fetch.ts` *(nie gebaut —
+  die Beschaffung ist `scripts/fetch-geodata.mjs`, die Quellen stehen in `packages/mapgen/src/sources.ts`)*,
+  `docs/ASSETS.md`
 - **Tests zuerst:** Lizenz- und Herkunftseintrag vorhanden; Projektion ist umkehrbar
   (Hin- und Rückrechnung innerhalb Toleranz).
 - **Fertig wenn:** grün. **Achtung:** Datenbeschaffung erfordert einen Download — dafür ist
@@ -657,7 +691,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M9-02c · Seewege und Datumsgrenze
 - **Anforderungen:** R-MAP-01, R-UNIT-06
 - **Abhängigkeiten:** T-M9-02b
-- **Dateien:** `packages/mapgen/src/sealinks.ts`
+- **Dateien:** `packages/mapgen/src/sealinks.ts` *(nie gebaut — die Seewege baut
+  `packages/mapgen/src/sealanes.ts`)*
 - **Tests zuerst:** jede Küstenprovinz hat mindestens einen Seeweg; Seewege überspringen keine
   Landmasse; Provinzen beiderseits der Datumsgrenze sind korrekt verbunden (kein Sprung über
   die halbe Welt); Meerengen sind als `crossing: 'strait'` markiert.
@@ -716,7 +751,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-03a · Kartenansicht: Zeichnen und Auswahl
 - **Anforderungen:** R-MAP-05, R-UI-03
 - **Abhängigkeiten:** T-M10-01b, T-M10-02
-- **Dateien:** `apps/desktop/src/map/{MapCanvas.tsx,layers/*.ts,picking.ts}`
+- **Dateien:** `apps/desktop/src/map/{MapCanvas.tsx,picking.ts}`, `apps/desktop/src/map/layers/*.ts`
+  *(nie gebaut — die Ebenen zeichnet `apps/desktop/src/map/render.ts`)*
 - **Tests zuerst:** Klick trifft die richtige Provinz (Trefferprüfung gegen bekannte Punkte,
   rein geometrisch und damit ohne Browser testbar); Zoom und Verschieben bleiben in Grenzen;
   Ebenenreihenfolge entspricht Design D11.
@@ -725,7 +761,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-03b · Kartenmodi und Bildratenbudget
 - **Anforderungen:** R-MAP-06, R-ARCH-06/AK2
 - **Abhängigkeiten:** T-M10-03a
-- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/e2e/map-perf.spec.ts`
+- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/e2e/map-perf.spec.ts` *(nie gebaut — die
+  E2E-Stufe ist am 2026-09-05 zurückgenommen, `docs/plan/DECISIONS.md`; das Zeichnen misst
+  `apps/desktop/src/map/render.bench.slow.test.ts`)*
 - **Tests zuerst:** alle vier Kartenmodi färben nach Regel (Einfärbung als reine Funktion
   geprüft); Bildratenmessung als Playwright-Test gegen den Web-Build: 300 Bilder bei
   200 Provinzen, 95. Perzentil der Bildzeit ≤ 16,7 ms.
@@ -734,7 +772,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-04 · Kopfleiste: Ressourcen, Zeit, Geschwindigkeit
 - **Anforderungen:** R-TIME-02, R-TIME-04, R-ECON-06, R-UI-06
 - **Abhängigkeiten:** T-M10-03b
-- **Dateien:** `apps/desktop/src/ui/TopBar.tsx`, `apps/desktop/src/ui/SpeedControl.tsx`
+- **Dateien:** `apps/desktop/src/ui/TopBar.tsx` *(nie gebaut — die Kopfleiste ist
+  `apps/desktop/src/ui/Header.tsx`)*, `apps/desktop/src/ui/SpeedControl.tsx` *(nie gebaut — der Regler
+  steht in `apps/desktop/src/ui/Header.tsx`, seine Stufen in `apps/desktop/src/game/speed.ts`)*
 - **Tests zuerst:** Regler setzt die Rate; Tastaturkürzel wirken; Bilanzanzeige stimmt mit der
   Simulation überein; Vorspulen-Menü bietet alle Ziele aus R-TIME-03.
 - **Fertig wenn:** grün.
@@ -742,7 +782,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-05 · Provinz- und Armeepanel
 - **Anforderungen:** R-UI-03, R-UI-05, R-PROV-01, R-UNIT-02, R-UNIT-03, R-UNIT-04
 - **Abhängigkeiten:** T-M10-04
-- **Dateien:** `apps/desktop/src/ui/{ProvincePanel,ArmyPanel}.tsx`
+- **Dateien:** `apps/desktop/src/ui/{ProvincePanel,ArmyPanel}.tsx` *(nie gebaut — `ProvincePanel` und
+  `ArmyPanel` stehen in `apps/desktop/src/ui/Panels.tsx`)*
 - **Tests zuerst:** nicht bezahlbare Aktionen sind ausgegraut und nennen den Grund; Tooltip
   zeigt Kosten und Dauer; Marschbefehl zeigt vorab die Ankunftszeit; Bau- und Rekrutier-
   Warteschlangen sind bedienbar.
@@ -751,7 +792,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-06 · Ereignisleiste, Kampfberichte, Diplomatieübersicht
 - **Anforderungen:** R-GAME-06, R-BAT-07, R-DIP-01
 - **Abhängigkeiten:** T-M10-05
-- **Dateien:** `apps/desktop/src/ui/{EventLog,BattleReport,DiplomacyPanel}.tsx`
+- **Dateien:** `apps/desktop/src/ui/{EventLog,BattleReport,DiplomacyPanel}.tsx` *(nie gebaut — `EventLog`,
+  `battleSentence` und `DiplomacyPanel` stehen in `apps/desktop/src/ui/Panels.tsx`)*
 - **Tests zuerst:** Klick auf ein Ereignis springt zur Provinz; Kampfbericht zeigt beide Seiten;
   diplomatische Aktionen erzeugen die richtigen Kommandos.
 - **Fertig wenn:** grün.
@@ -759,7 +801,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-07a · Partie erstellen
 - **Anforderungen:** R-GAME-01, R-GAME-02, R-AI-02
 - **Abhängigkeiten:** T-M10-06
-- **Dateien:** `apps/desktop/src/ui/NewGame.tsx`
+- **Dateien:** `apps/desktop/src/ui/NewGame.tsx` *(nie gebaut — `NewGameDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Partie baut `apps/desktop/src/game/newGame.ts`)*
 - **Tests zuerst:** alle Parameter (Karte, Land, Zahl und Stufe der Gegner, Siegbedingung, Seed)
   landen unverändert im Anfangszustand; ein KI-Ressourcenbonus wird offen angezeigt;
   derselbe Seed erzeugt dieselbe Startaufstellung.
@@ -768,7 +811,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-07b · Speichern, Laden, automatisches Speichern
 - **Anforderungen:** R-GAME-03, R-GAME-04
 - **Abhängigkeiten:** T-M10-07a, T-M8-00
-- **Dateien:** `apps/desktop/src/ui/SaveLoad.tsx`
+- **Dateien:** `apps/desktop/src/ui/SaveLoad.tsx` *(nie gebaut — `SavesDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Plätze verwaltet `apps/desktop/src/game/saves.ts`)*
 - **Tests zuerst:** Speichern und Laden über die Oberfläche erhält den Zustands-Hash
   (im Test gegen `MemoryStorage`); automatisches Speichern rotiert über fünf Stände;
   ein beschädigter Stand wird mit verständlicher Meldung abgelehnt statt zum Absturz zu führen.
@@ -777,7 +821,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-08 · Fehlermeldungen und Rückmeldung bei abgelehnten Aktionen
 - **Anforderungen:** R-ARCH-02/AK1, R-GAME-05, R-UI-07
 - **Abhängigkeiten:** T-M10-05
-- **Dateien:** `apps/desktop/src/ui/errors.ts`, `apps/desktop/src/i18n/de.json`
+- **Dateien:** `apps/desktop/src/ui/errors.ts` *(nie gebaut — die Meldungen bildet heute
+  `apps/desktop/src/game/rejections.ts`)*, `apps/desktop/src/i18n/de.json` *(nie gebaut — die Sprachdatei
+  ist `apps/desktop/src/i18n/de.ts`)*
 - **Tests zuerst:** jeder Wert aus `CommandError` hat einen deutschen Meldungstext (Test
   schlägt bei fehlendem Schlüssel fehl); eine abgelehnte Aktion nennt im Tooltip den Grund.
 - **Fertig wenn:** grün.
@@ -785,7 +831,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-09 · Einstellungen
 - **Anforderungen:** R-GAME-04, R-UI-06, R-FREE-05
 - **Abhängigkeiten:** T-M10-07b
-- **Dateien:** `apps/desktop/src/ui/Settings.tsx`
+- **Dateien:** `apps/desktop/src/ui/Settings.tsx` *(nie gebaut — `SettingsDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Werte in `apps/desktop/src/state/uiState.ts`)*
 - **Tests zuerst:** Intervall des automatischen Speicherns ist einstellbar und wirkt auf die
   nächste Rotation; Ton, Tempogrenze und Debug-Modus sind schaltbar; Einstellungen überleben
   einen Neustart.
@@ -794,7 +841,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-10 · Debug- und KI-Erklärungsansicht
 - **Anforderungen:** R-AI-05, R-AI-02
 - **Abhängigkeiten:** T-M10-09
-- **Dateien:** `apps/desktop/src/ui/DebugPanel.tsx`
+- **Dateien:** `apps/desktop/src/ui/DebugPanel.tsx` *(nie gebaut — `DebugPanel` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`)*
 - **Tests zuerst:** die Ansicht zeigt je KI-Spieler das gewählte Ziel, den Nutzenwert und
   mindestens eine Alternative; zusätzlich Kommandolog und Zustands-Hash je Tick; im
   Normalmodus ist sie unsichtbar.
@@ -803,7 +851,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-11 · Kartenauswahl
 - **Anforderungen:** R-GAME-01, R-MAP-02/AK1, C-03
 - **Abhängigkeiten:** T-M10-07a
-- **Dateien:** `apps/desktop/src/ui/MapSelect.tsx`, `packages/core/src/map/registry.ts`
+- **Dateien:** `apps/desktop/src/ui/MapSelect.tsx` *(nie gebaut — die Kartenwahl ist Teil von
+  `NewGameDialog` in `apps/desktop/src/ui/Dialogs.tsx`)*, `packages/core/src/map/registry.ts` *(nie gebaut —
+  die Kartensammlung steht in `apps/desktop/src/main.tsx`)*
 - **Tests zuerst:** das Kartenregister listet alle Dateien aus `data/maps/`; eine ungültige
   Karte wird mit Meldung abgelehnt statt zum Absturz zu führen; die Auswahl wirkt auf die Partie.
 - **Fertig wenn:** grün.
@@ -811,7 +861,10 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-12 · Bedienbarkeit ohne Maus und Zugänglichkeit
 - **Anforderungen:** R-UI-02, R-UI-06, R-UI-05
 - **Abhängigkeiten:** T-M10-10, T-M10-11
-- **Dateien:** `apps/desktop/src/ui/focus.ts`, `apps/desktop/e2e/a11y.spec.ts`
+- **Dateien:** `apps/desktop/src/ui/focus.ts` *(nie gebaut — den Fokusfang hat heute
+  `apps/desktop/src/ui/Dialogs.tsx`, die Tastenzuordnung `apps/desktop/src/keyboard.ts`)*,
+  `apps/desktop/e2e/a11y.spec.ts` *(nie gebaut — die E2E-Stufe ist am 2026-09-05 zurückgenommen; die
+  Prüfung kam mit T-M16-07 als `apps/desktop/src/ui/a11y.test.tsx`)*
 - **Tests zuerst:** jede Aktion aus R-UI-05 ist per Tastatur erreichbar; sichtbarer Fokusring;
   Schriftgröße ist einstellbar; automatische Zugänglichkeitsprüfung ohne kritische Verstöße.
 - **Fertig wenn:** grün.
@@ -823,14 +876,17 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M11-01 · Icons und Kartengrafik
 - **Anforderungen:** R-UI-04, R-ASSET-01, R-ASSET-02
 - **Abhängigkeiten:** T-M10-12
-- **Dateien:** `apps/desktop/src/assets/**`, `docs/ASSETS.md`
+- **Dateien:** `apps/desktop/src/assets/**` *(nie gebaut — die Symbole sind Code in
+  `apps/desktop/src/ui/icons.tsx`)*, `docs/ASSETS.md`
 - **Tests zuerst:** jedes Asset hat einen Lizenzeintrag; keine Datei ohne Herkunftsnachweis.
 - **Fertig wenn:** grün; Einheiten-, Gebäude- und Ressourcen-Icons vollständig.
 
 ### T-M11-02 · Animationen und Ton
 - **Anforderungen:** R-UI-04
 - **Abhängigkeiten:** T-M11-01
-- **Dateien:** `apps/desktop/src/fx/*`, `apps/desktop/src/audio/*`
+- **Dateien:** `apps/desktop/src/fx/*` *(nie gebaut — die Bewegung kam mit T-M13-16 als
+  `apps/desktop/src/ui/motion.ts`)*, `apps/desktop/src/audio/*` *(nie gebaut — der Ton ist
+  `apps/desktop/src/ui/sound.ts`)*
 - **Tests zuerst:** Ton lässt sich abschalten und ist standardmäßig leise; Animationen laufen
   bei hoher Spielgeschwindigkeit nicht auf (Zeitraffer-Test).
 - **Fertig wenn:** grün.
@@ -846,7 +902,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M11-04 · Lokalisierung
 - **Anforderungen:** R-UI-07
 - **Abhängigkeiten:** T-M11-02
-- **Dateien:** `apps/desktop/src/i18n/de.json`
+- **Dateien:** `apps/desktop/src/i18n/de.json` *(nie gebaut — die Sprachdatei ist
+  `apps/desktop/src/i18n/de.ts`)*
 - **Tests zuerst:** keine fest verdrahteten Anzeigetexte in Komponenten; jeder Schlüssel ist
   belegt; fehlender Schlüssel schlägt im Test fehl.
 - **Fertig wenn:** grün.
@@ -884,7 +941,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M12-02b · Einstiegshilfe für die erste Partie
 - **Anforderungen:** R-UI-05
 - **Abhängigkeiten:** T-M12-02
-- **Dateien:** `apps/desktop/src/ui/Onboarding.tsx`
+- **Dateien:** `apps/desktop/src/ui/Onboarding.tsx` *(nie gebaut — die Schritte stehen in
+  `apps/desktop/src/game/tutorial.ts`, gezeigt werden sie seit T-M13-02 von
+  `apps/desktop/src/ui/Tutorial.tsx`)*
 - **Tests zuerst:** fünf geführte Schritte (Provinz wählen, Gebäude bauen, Einheit rekrutieren,
   Armee bewegen, Geschwindigkeit regeln) erscheinen nur in der ersten Partie, sind abschaltbar
   und blockieren keine Eingabe.
@@ -1683,7 +1742,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Anforderungen:** R-BAT-01, R-BAT-07
 - **Abhängigkeiten:** T-M14-05
 - **Dateien:** `packages/core/src/rules/combat.ts`,
-  `packages/core/test/properties/combat-conservation.test.ts` *(neu)*,
+  `packages/core/test/properties/combat-conservation.test.ts` *(nie gebaut — als neue Datei geplant;
+  die Stapelkurve prüft `packages/core/src/phases/combat.test.ts`)*,
   `packages/core/src/phases/combat.test.ts`, `packages/core/test/golden/tiny-500.json`,
   `docs/plan/02-DESIGN.md`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`
 - **Tests zuerst:** (alle fünf sind vor dem Umbau rot)
@@ -1751,7 +1811,7 @@ bemerkt, weil kein Prüfer die Felder las.
   `packages/core/src/commands/bombard.ts`, `packages/core/src/phases/applyCommands.ts`,
   `packages/core/src/commands/bombard.test.ts` *(neu)*,
   `packages/core/src/phases/combat.test.ts`, `packages/core/src/phases/retreat.test.ts`,
-  `packages/core/test/properties/combat-conservation.test.ts`,
+  `packages/core/test/properties/combat-conservation.test.ts` *(nie gebaut — siehe T-M14-06)*,
   `packages/core/test/golden/tiny-500.json`, `docs/plan/02-DESIGN.md`,
   `docs/plan/DECISIONS.md`, `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
   `docs/reports/balance-sweep.json`, `docs/reports/ai-tournament.md`
@@ -1843,7 +1903,8 @@ bemerkt, weil kein Prüfer die Felder las.
   3. `test/guards/persistence-contract.test.ts` schlägt fehl, solange nur **eine** Fabrik bei
      `storagePortContract` registriert ist, und meldet jeden Testblock unter
      `R-GAME-03/04/05`, der `MemoryStorage` als einzige Umsetzung nennt.
-  4. `apps/desktop/src/storage/createStorage.test.ts`: mit vorhandenem `indexedDB` kommt der
+  4. `apps/desktop/src/storage/createStorage.test.ts` *(nie gebaut — die Auswahl prüft
+     `apps/desktop/src/storage/IndexedDbStorage.test.ts`)*: mit vorhandenem `indexedDB` kommt der
      dauerhafte Port, ohne `indexedDB` der Speicher-Port **mit** `volatile: true`; ein Test in
      `App.test.tsx` sichert, dass die Oberfläche in diesem Fall den Satz „Stände gehen beim
      Schließen verloren" zeigt. Die Auswahl liegt in `createStorage.ts`, nicht in `main.tsx`.
@@ -1999,14 +2060,16 @@ bemerkt, weil kein Prüfer die Felder las.
   herstellt, gar nicht sehen.
 - **Anforderungen:** R-AI-01, R-AI-03, R-GAME-01
 - **Abhängigkeiten:** T-M14-02
-- **Dateien:** `packages/core/src/map/neighbourhood.ts` *(neu)*, `packages/core/src/index.ts`,
+- **Dateien:** `packages/core/src/map/neighbourhood.ts` *(nie gebaut — als neue Datei geplant; die
+  Gegnerwahl ist `opponentsNear` in `apps/desktop/src/game/newGame.ts`)*, `packages/core/src/index.ts`,
   `packages/ai/src/targeting.ts`, `packages/ai/src/military.ts`, `packages/ai/src/decide.ts`,
   `apps/desktop/src/game/newGame.ts`, `docs/plan/01-REQUIREMENTS.md`,
   `docs/reports/ai-reachability.md` *(neu)*
 - **Tests zuerst:** Der Ausgangswert wird **vor** dem Umbau gemessen und als Zahl mit Datum in
   den Test und in den Bericht geschrieben — ein „weniger als vorher" ohne Vorher-Zahl ist keine
   Messung. Danach, alle vor dem Code rot:
-  `packages/core/src/map/neighbourhood.test.ts` — auf der Weltkarte liefert `landNeighbourOrder`
+  `packages/core/src/map/neighbourhood.test.ts` *(nie gebaut — die Nachbarschaft der Gegner prüft
+  `apps/desktop/src/game/newGame.test.ts`)* — auf der Weltkarte liefert `landNeighbourOrder`
   für jede Startnation eine Reihenfolge, deren erster Eintrag über reine Landkanten erreichbar
   ist; eine Inselnation liefert eine leere Landnachbarschaft statt eines falschen ersten
   Eintrags; zweimal derselbe Aufruf liefert dieselbe Folge.
@@ -2018,7 +2081,8 @@ bemerkt, weil kein Prüfer die Felder las.
   `apps/desktop/src/game/newGame.test.ts` — für die ausgelieferte Voreinstellung hat jede
   teilnehmende Macht einen Landweg zu mindestens einer anderen teilnehmenden Macht; dieselben
   Optionen ergeben zweimal dieselbe Gegnerliste.
-  `apps/headless/test/ai-reachability.slow.test.ts` — 90 Spieltage auf der Weltkarte mit der
+  `apps/headless/test/ai-reachability.slow.test.ts` *(nie gebaut — gemessen wurde über 60 Spieltage, das
+  Ergebnis steht in `docs/reports/ai-reachability.md`)* — 90 Spieltage auf der Weltkarte mit der
   Voreinstellung, gefahren über die gemeinsame Schleife mit `runAi` je Tick (nicht über
   `sweep.ts`): Anteil der `COMMAND_REJECTED`-Ereignisse an allen KI-Befehlen, Anteil `NO_PATH`
   an allen `MOVE_ARMY`, Zahl der `WAR_DECLARED`, und die Häufigkeit jeder Paarung (Armee,
@@ -2081,10 +2145,12 @@ bemerkt, weil kein Prüfer die Felder las.
   `packages/core/src/view/publicView.ts`, `packages/core/src/rules/types.ts`,
   `packages/core/src/rules/load.ts`, `data/rules/default/ai.json`,
   `docs/plan/01-REQUIREMENTS.md`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`,
-  `docs/reports/ai-parity.md` *(neu)*
+  `docs/reports/ai-parity.md` *(nie gebaut — als neuer Bericht geplant; was gebaut und gemessen wurde,
+  steht in der Zeile T-M14-12 von `docs/plan/PROGRESS.md`)*
 - **Tests zuerst:** Fünf Fassungen, jede vor ihrem Code rot, jede gegen den Zustand **nach** dem
   Tageswechsel statt gegen die Formel:
-  `packages/ai/src/capital.test.ts` — eine KI ohne Hauptstadt mit eigener Stadtprovinz erzeugt
+  `packages/ai/src/capital.test.ts` *(nie gebaut — die Fälle stehen in `packages/ai/src/decide.test.ts`)*
+  — eine KI ohne Hauptstadt mit eigener Stadtprovinz erzeugt
   genau ein `SET_CAPITAL` auf die wertvollste; eine KI mit Hauptstadt erzeugt keines; eine KI
   ohne jede Stadtprovinz erzeugt keines und begründet das.
   `packages/ai/src/economy.test.ts` — `recruitCommands` erzeugt über hundert Denkschritte jede
@@ -2092,13 +2158,15 @@ bemerkt, weil kein Prüfer die Felder las.
   die dort nicht steht; `tradeCommands` erzeugt ohne jeden Mangel ein `TRADE`, sobald ein
   Bestand über Rücklage und Tagesbedarf liegt und ein Bauauftrag offen ist, und erzeugt keines,
   wenn der Verkauf die Rücklage anbrechen würde.
-  `packages/ai/src/military.test.ts` — bei vier eigenen Armeen in derselben Provinz entsteht
+  `packages/ai/src/military.test.ts` *(nie gebaut — das Zusammenlegen baut `packages/ai/src/consolidate.ts`,
+  geprüft in `packages/ai/src/decide.test.ts`)* — bei vier eigenen Armeen in derselben Provinz entsteht
   genau ein `MERGE_ARMIES` über alle vier, und im Folgeschritt keines mehr.
   `packages/core/src/view/publicView.test.ts` — `offers` enthält ein an mich gerichtetes Angebot
   und ein von mir gestelltes, und **kein** Angebot zwischen zwei Dritten.
   `packages/ai/src/diplomacy.test.ts` — ohne Angebot in der Sicht entsteht kein `acceptPeace`;
   mit Angebot entsteht genau eines; `offerPeace` bleibt unabhängig davon.
-  `apps/headless/test/ai-parity.slow.test.ts` *(neu)* — 90 Spieltage, Weltkarte, die
+  `apps/headless/test/ai-parity.slow.test.ts` *(nie gebaut — als neue Datei geplant; im Spiel gemessen
+  hat erst T-M15-08 mit `apps/headless/test/ai-integration.slow.test.ts`)* — 90 Spieltage, Weltkarte, die
   Voreinstellung aus T-M14-11, gezählt über die gesammelten Ereignisse, nicht über den
   500er-Ringpuffer.
 - **Fertig wenn:** grün; im 90-Tage-Lauf gilt: keine KI-Macht endet mit
@@ -2168,7 +2236,8 @@ bemerkt, weil kein Prüfer die Felder las.
   und `apps/desktop/src/i18n/de.ts` werden hier nicht angefasst.
 - **Anforderungen:** R-UI-05, R-UI-08, R-BAT-05, R-BAT-07, R-GAME-01, R-AI-05, R-DIP-04
 - **Abhängigkeiten:** T-M14-12
-- **Dateien:** `test/guards/ui-command-coverage.ts` *(neu)*, `apps/desktop/src/game/actions.ts`,
+- **Dateien:** `test/guards/ui-command-coverage.ts` *(nie gebaut — als neue Datei geplant; der Wächter
+  steht ganz in `test/guards/ui-command-coverage.test.ts`)*, `apps/desktop/src/game/actions.ts`,
   `apps/desktop/src/game/events.ts`, `apps/desktop/src/game/advance.ts`,
   `apps/desktop/src/game/newGame.ts`, `apps/desktop/src/ui/Panels.tsx`,
   `apps/desktop/src/App.tsx`, `apps/desktop/src/main.tsx`,
@@ -2220,11 +2289,12 @@ bemerkt, weil kein Prüfer die Felder las.
   `data/rules/default/`), Karte: `data/maps/world.json`, Schleife: die gemeinsame aus T-M14-04.
 - **Anforderungen:** R-GAME-02 — dazu Abnahmekriterium AK-1
 - **Abhängigkeiten:** T-M14-01, T-M14-04, T-M14-05, T-M14-06, T-M14-07, T-M14-11, T-M14-12
-- **Dateien:** `apps/headless/test/full-game.slow.test.ts` *(neu)*, `test/scripts.test.ts`,
+- **Dateien:** `apps/headless/test/fullgame.slow.test.ts` *(neu)*, `test/scripts.test.ts`,
   `scripts/acceptance.mjs`, `package.json`, `docs/plan/02-DESIGN.md` (D15),
-  `docs/reports/ak1-full-game.md` *(neu, vom Test geschrieben)*, `docs/reports/acceptance.md`
+  `docs/reports/ak1-full-game.md` *(nie gebaut — als neuer, vom Test geschriebener Bericht geplant; der
+  Test schreibt `docs/reports/fullgame.json`)*, `docs/reports/acceptance.md`
 - **Tests zuerst:**
-  1. `apps/headless/test/full-game.slow.test.ts` — `toConfig(DEFAULT_NEW_GAME, world)` liefert
+  1. `apps/headless/test/fullgame.slow.test.ts` — `toConfig(DEFAULT_NEW_GAME, world)` liefert
      mindestens vier Mächte mit `kind: 'ai'`; der Lauf endet mit `state.victory.winner !== null`
      spätestens am Spieltag 1500 (harter Deckel). *Heute rot:* in der Voreinstellung fällt in
      1000 Tagen keine einzige Kriegserklärung, und eine leere Armee-Hülle hielte den letzten
@@ -2635,9 +2705,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M14-04, T-M15-01
 - **Dateien:** `docs/plan/DECISIONS.md`, `apps/desktop/src/App.tsx`,
   `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/keyboard.ts`,
-  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/sim/SimEngine.ts`,
-  `apps/desktop/src/sim/SimHost.ts`, `apps/desktop/src/sim/worker.ts`,
-  `apps/desktop/src/sim/protocol.ts`, `packages/core/src/clock.ts`,
+  `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/sim/{SimEngine,SimHost,worker,protocol}.ts` *(gelöscht — Weg (b), mit dieser Aufgabe
+  am 2026-09-06, begründet in `docs/plan/DECISIONS.md`)*, `packages/core/src/clock.ts`,
   `test/guards/reachability.ts`, `docs/ANLEITUNG.md`, `docs/reports/performance.md`,
   `docs/plan/02-DESIGN.md`, `docs/plan/01-REQUIREMENTS.md`, `docs/plan/tasks.yaml`
   *(Die Dateien unter `apps/desktop/src/sim/` werden je nach Entscheidung verdrahtet oder
@@ -2766,7 +2836,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   heute prüft weder die eine noch die andere Stelle das. Weiter: `tradeCommands` erzeugt einen
   `TRADE`, **ohne** dass ein Mangel vorliegt, sobald ein Bestand über der Rücklage den teuersten
   offenen Bauauftrag zum Marktpreis bezahlen würde.
-  (b) `packages/ai/src/military.test.ts`: Eine untätige KI-Armee mit Fernwaffen in Reichweite
+  (b) `packages/ai/src/military.test.ts` *(nie gebaut — die KI befiehlt kein `BOMBARD`; ihre Fernwaffen
+  feuern über die Automatik aus T-M15-07 in `packages/core/src/phases/bombardment.ts`, gemessen in
+  `apps/headless/test/ai-integration.slow.test.ts`)*: Eine untätige KI-Armee mit Fernwaffen in Reichweite
   einer feindlichen Provinz erzeugt `BOMBARD`; dieselbe Armee erzeugt keinen gegen eine
   verbündete oder neutrale Macht; ohne Reichweite entsteht kein Befehl. Heute enthält
   `packages/ai/src/military.ts` das Wort `BOMBARD` kein einziges Mal.
@@ -3032,7 +3104,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Zeichenkontext, und damit wird die Zusicherung zum ersten Mal überhaupt prüfbar.
 - **Anforderungen:** R-ARCH-06, R-UI-12
 - **Abhängigkeiten:** T-M16-03
-- **Dateien:** `apps/desktop/src/ui/MapCanvas.tsx`, `docs/reports/render-bench.json`
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/render-bench.json`
 - **Fertig wenn:** die Zusicherung ist an einem Lauf belegt, der wirklich zeichnet, und die
   unausgeführten Zeilen von `MapCanvas` sind **gezählt statt geschätzt**. Fällt die Messung
   gegen die Anforderung aus, gilt dasselbe wie in T-M16-02: nachmessen und begründen, nicht
@@ -3045,7 +3117,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Funktion, sondern eines laufenden Baums.
 - **Anforderungen:** R-UI-15, R-UI-06
 - **Abhängigkeiten:** T-M16-03
-- **Dateien:** `apps/desktop/src/ui/Dialog.tsx`, `apps/desktop/src/ui/Panels.tsx`
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/ui/Panels.tsx`
 - **Tests zuerst:** `apps/desktop/src/ui/a11y.test.tsx` — Escape schließt jeden Dialog; der
   Fokus bleibt im offenen Dialog und kehrt beim Schließen an das auslösende Element zurück;
   die Tabreihenfolge folgt der Leserichtung; ein Wächter findet jedes Bedienelement ohne
