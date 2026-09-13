@@ -5781,6 +5781,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `SET_CAPITAL:ON_COOLDOWN`), Voreinstellung über 90 Tage bitgleich; Vollpartie 1914 Tag 430 → 975,
   2015 640 → 583, 1815 571 → 583 — AK-1 überall entschieden; Turnier zeilengleich; Grundlauf 0,3623 →
   0,3684. `PROBLEME.md`, T-M41-09.)*
+  *(Nacharbeit 2026-09-13 nach der Durchsicht von Block N2, N2: auch `capitalCommands` nahm erinnerte
+  Provinzen als eigene — alle sichtbaren Städte verloren, eine erinnerte in der Sicht, und die KI hätte
+  dorthin verlegt (NOT_OWNER, jeden Denkschritt neu). Jetzt `!province.stale` auch in `capital.ts`, Test
+  zuerst in `packages/ai/src/decide.test.ts`. In den Läufen kam der Fall nicht vor: `ai-integration`
+  bericht- und prüfsummengleich, Golden-Master ohne `UPDATE_GOLDEN` unverändert.)*
 
 ### T-M41-10 · Die KI legt wirklich zusammen
 - **Ziel:** „keine KI-Macht hält mehr als drei Armeeobjekte in derselben Provinz" (T-M14-12) war nie

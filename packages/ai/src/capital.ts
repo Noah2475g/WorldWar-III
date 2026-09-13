@@ -18,7 +18,10 @@ export function capitalCommands(context: AiContext, explanations: Explanation[])
   const { view } = context
   const playerId = view.playerId
 
-  const own = view.provinces.filter((province) => province.owner === playerId)
+  // Nur, was sie sieht (Durchsicht N2, wie T-M41-09 in `economy.ts`): eine erinnerte Provinz (`stale`)
+  // trägt den Besitzer von damals. Eigene Provinzen sind immer sichtbar — eine erinnerte „eigene"
+  // ist verloren, und ein Verlegen dorthin lehnte der Kern mit NOT_OWNER ab, jeden Denkschritt neu.
+  const own = view.provinces.filter((province) => province.owner === playerId && !province.stale)
   if (own.length === 0) return []
 
   const current = view.self.capitalProvinceId

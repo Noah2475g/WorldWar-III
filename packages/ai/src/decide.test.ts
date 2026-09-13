@@ -402,6 +402,25 @@ describe('R-AI-01 Die KI verlegt ihre Hauptstadt', () => {
     expect(canApply(state, commands[0]!, phaseCtx())).toEqual({ ok: true })
   })
 
+  it('verlegt nicht in eine Stadt, die sie nur noch erinnert (Durchsicht N2)', () => {
+    // Befund der Durchsicht zu Block N2: `capitalCommands` nahm erinnerte Provinzen (`stale`) als
+    // eigene — wie `economyCommands` vor T-M41-09. Sind alle sichtbaren Staedte verloren und fuehrt
+    // die Sicht eine erinnerte mit dem eigenen Besitzer von damals, befiehlt die KI dorthin; der
+    // Kern lehnt mit NOT_OWNER ab, jeden Denkschritt neu, und die Sperre des Verlegens greift nicht,
+    // weil eine Ablehnung `capitalMovedAtTick` nicht setzt.
+    state.players['p2']!.capitalProvinceId = null
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'rural'
+    }
+    const context = contextFor('p2')
+    const vorlage = context.view.provinces.find((province) => province.owner === 'p2')!
+    const erinnert = { ...vorlage, id: 'erinnert', kind: 'city' as const, stale: true }
+    const view = { ...context.view, provinces: [erinnert, ...context.view.provinces] }
+
+    expect(capitalCommands({ ...context, view }, [])).toEqual([])
+  })
+
   it('waehlt bei gleicher Lage dieselbe Stadt', () => {
     state.players['p2']!.capitalProvinceId = null
     for (const id of state.provinceOrder) {

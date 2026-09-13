@@ -3098,6 +3098,8 @@ tasks:
     # Gemessen 2026-09-13 (vorher = Stand nach H1): BUILD:NOT_OWNER 59 auf 0, Voreinstellung 90 Tage
     # bitgleich; Vollpartie 1914 Tag 430 auf 975, 2015 640 auf 583, 1815 571 auf 583; Turnier
     # zeilengleich; Grundlauf 0,3623 auf 0,3684. PROBLEME.md, T-M41-09.
+    # Nacharbeit 2026-09-13 (Durchsicht N2, Befund N2): auch capital.ts filtert !province.stale
+    # (decide.test.ts, rot 1 von 43); ai-integration bericht- und pruefsummengleich, Golden unveraendert.
     deps: [T-M41-08]
     requirements: []
     files: [packages/ai/src/economy.ts, docs/reports/ai-integration.json, docs/reports/fullgame.json, docs/reports/fullgame-2015.json, docs/reports/fullgame-1815.json, docs/reports/progress-measured.json, docs/reports/ai-tournament-run.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]
