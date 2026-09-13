@@ -288,6 +288,11 @@ aktualisieren sich, Ereignisse kommen einzeln an.
 - Akkumulator: `accumulator += verstricheneRealzeit × speed; while (accumulator ≥ 1) { step() }`,
   **gedeckelt auf 2 Ticks**. Reicht die Rechenleistung nicht, sinkt die Rate — es entsteht aber
   **kein wachsender Rückstand**, der das Spiel später einfrieren ließe.
+  *(korrigiert 2026-09-13, T-M41-04: der Deckel auf 2 Ticks warf den Bruchteil weg, und die
+  Schleife begann nach jedem Tick mit leerem Übertrag neu — im Spiel gemessen ergaben 60 Bilder bei
+  Tempo 100 nur 60 Spielstunden je Sekunde. Gedeckelt ist seither das
+  Zeitguthaben eines Bildes auf `max(2, Tempo / 30)` Ticks, und der Übertrag bleibt unter einem
+  Tick; `apps/desktop/src/game/clock.ts`.)*
 - Rechenbudget: ≤ 8 ms je 16-ms-Zeitscheibe im Worker.
 
 **(b) Vorspulen — beliebig schnell.** `fastForward(state, until, guards)` läuft ohne

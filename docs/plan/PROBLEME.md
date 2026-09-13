@@ -2110,3 +2110,51 @@ KI-Verhalten und würde nach dem Fabrikausbau (T-M41-01) ohnehin neu gemessen. T
 T-M14-12 bleiben `done`; die fehlenden Zusicherungen gehören in die nächste Planung.
 
 **Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt.
+
+---
+
+## 2026-09-13 · T-M41-04 · Die Uhr verlor mehr Ticks, als der Plan rechnete — und seine Kappe hätte es nicht behoben
+
+**Erstens: der Befund war richtig und ist rot belegt.** Die aus `App.tsx` unverändert
+herausgelöste Formel `owed = Math.min(2, owed + dt · speed)` ergibt in `clock.test.ts`: 60 Bilder
+bei Tempo 100 → **90** Ticks, 30 Bilder bei Tempo 100 → **60**, 30 Bilder bei Tempo 50 → **45**; bei
+50, 120 und 144 Bildern 100. Dazu zwei Dinge, die der Plan nicht nannte: über zehn Sekunden bei 60
+Bildern läuft Tempo 2 nur **19** statt 20 Ticks (Gleitkomma), und eine rückwärts laufende
+Zeitquelle liefert **−2** Ticks.
+
+**Zweitens: im Spiel war es schlimmer.** Die Uhrschleife in `App.tsx` war ein `useEffect` mit
+`state` in den Abhängigkeiten. Jeder Tick setzt einen neuen Zustand, der Effekt beginnt neu, und
+`owed` steht wieder auf null — der Bruchteil ging also nicht nur an der Kappe verloren, sondern
+nach **jedem** Tick. Gemessen in `App.test.tsx` (rAF als Warteschlange, `performance.now` gestellt,
+gezählt an der Kopfleiste), gegen den Stand vor dieser Aufgabe: 60 Bilder bei Tempo 100 → **„Tag 3 ·
+12:00", 60 Spielstunden** statt 100; 30 Bilder bei Tempo 50 → **„Tag 2 · 06:00", 30** statt 50.
+Allein mit der reparierten Formel blieb es bei denselben 60 und 30 — ein grüner `clock.test.ts`
+hätte die Uhr des Spielers nicht um einen Tick schneller gemacht.
+
+**Drittens: die Reparatur aus dem Plan war es nicht.** `min(max(2, speed / 30), owed + dt · speed)`,
+wörtlich nachgerechnet: 60 Bilder bei Tempo 100 → 100, aber 30 Bilder bei Tempo 100 → **90** und bei
+Tempo 50 → **45**. Nach dem ersten Bild trägt jedes Bild einen Rest; Guthaben plus Rest liegt über
+der Kappe, und die Kappe schneidet genau diesen Rest. Der Test aus dem Plan („30 Bilder zu 33,3 ms
+ebenso") wäre mit der Formel aus demselben Plan rot geblieben.
+
+**Absicht und Ersatz.** Gemeint war: bei üblichen Bildraten geht kein Tick verloren, und ein
+Hänger baut keinen Rückstand auf (D5). Gebaut ist:
+- die Kappe `max(2, speed / 30)` auf das **Zeitguthaben eines Bildes**, nicht auf die Summe mit
+  dem Übertrag; der Übertrag bleibt immer in [0, 1) — `clock.test.ts` fährt 1000 Bilder mit
+  eingestreuten Fünf-Sekunden-Hängern und sichert das in jedem Bild;
+- ein `EPSILON` von 10⁻⁹ Tick vor dem Abrunden — ohne ihn verliert auch die neue Formel bei 60
+  Bildern über zehn Sekunden Ticks (Tempo 2 → 19, Tempo 10 → 99);
+- die Uhrschleife hängt nur noch an Tempo und „Partie läuft" und erreicht `step` über einen Ref.
+
+Nachher, dieselben Messungen: 100 und 50 Spielstunden an der Kopfleiste, `clock.test.ts` 9 von 9.
+
+**Was sich für den Spieler ändert.** Tempo 100 heißt 100 Spielstunden je Sekunde — vorher waren es
+bei 60 Bildern 60. Nach einem Hänger holt ein Bild bei kleinem Tempo wie bisher höchstens 2 Ticks
+nach, bei Tempo 100 aus leerem Übertrag höchstens 3 (vorher 2).
+
+**Was nicht belegt ist:** ein echter Browser. Im Vorschaufenster läuft die Spieluhr nicht
+(`WORKFLOW.md` §2 Punkt 6); belegt sind die reine Funktion und die Schleife in `App.tsx` unter
+jsdom mit gestellter Zeit. Die Messung mit dem Leistungsbudget (R-TIME-02/AK4) bleibt dem
+Schlussblock auf freier Maschine.
+
+**Status: behoben** (T-M41-04). Plantext in `03-TASKS.md`, `tasks.yaml` und D5 mit Vermerk.

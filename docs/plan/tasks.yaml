@@ -2972,12 +2972,12 @@ tasks:
   - id: T-M41-04
     milestone: M41
     title: Die Uhr verliert keine Ticks mehr
-    status: todo
+    status: done
     deps: [T-M41-06]
     requirements: []
     files: [apps/desktop/src/game/clock.ts, apps/desktop/src/App.tsx]
     tests: [apps/desktop/src/game/clock.test.ts]
-    dod: "Befund: App.tsx rechnet owed = Math.min(2, owed + dt mal speed) und wirft beim Kappen den Bruchteil weg. Gerechnet: 60 Bilder je Sekunde bei Tempo 100 ergeben 90 Ticks je Sekunde, 30 Bilder bei Tempo 100 nur 60, 30 Bilder bei Tempo 50 nur 45; bei 50, 120 und 144 Bildern stimmt es. Reparatur: reine Funktion clockStep(owed, dtMs, speed) in apps/desktop/src/game/clock.ts mit der Kappe max(2, speed / 30) - hoechstens ein 33-ms-Bild wird nachgeholt, D5 (kein Rueckstau) bleibt. Test zuerst: 60 Bilder zu 16,67 ms bei Tempo 100 ergeben 100 Ticks (heute 90), 30 Bilder zu 33,3 ms ebenso; ein Bild nach 5 s Stillstand holt hoechstens die Kappe nach. Anforderungen bewusst leer: R-TIME-02 steht in name_level (01-REQUIREMENTS.md 2.14), wer sie eintraegt, bucht alle ihre Kriterien einzeln. Vor M37 bauen - T-M37-11 treibt dieselbe Uhr aus dem Gleichschritt."
+    dod: "Befund: App.tsx rechnet owed = Math.min(2, owed + dt mal speed) und wirft beim Kappen den Bruchteil weg. Gerechnet: 60 Bilder je Sekunde bei Tempo 100 ergeben 90 Ticks je Sekunde, 30 Bilder bei Tempo 100 nur 60, 30 Bilder bei Tempo 50 nur 45; bei 50, 120 und 144 Bildern stimmt es. Reparatur: reine Funktion clockStep(owed, dtMs, speed) in apps/desktop/src/game/clock.ts mit der Kappe max(2, speed / 30) - hoechstens ein 33-ms-Bild wird nachgeholt, D5 (kein Rueckstau) bleibt. (Korrigiert 2026-09-13 beim Bau: auf die Summe mit dem Uebertrag angewandt ergibt diese Kappe bei 30 Bildern und Tempo 100 weiterhin 90, bei Tempo 50 weiterhin 45 - sie gilt deshalb fuer das Zeitguthaben eines Bildes, der Uebertrag bleibt unter einem Tick. Im Spiel war der Verlust groesser als gerechnet: die Uhrschleife hing an state, begann nach jedem Tick neu und setzte den Uebertrag auf null - 60 Bilder bei Tempo 100 liefen 60 statt 100 Spielstunden, 30 Bilder bei Tempo 50 liefen 30; gemessen in App.test.tsx. PROBLEME.md 2026-09-13.) Test zuerst: 60 Bilder zu 16,67 ms bei Tempo 100 ergeben 100 Ticks (heute 90), 30 Bilder zu 33,3 ms ebenso; ein Bild nach 5 s Stillstand holt hoechstens die Kappe nach. Anforderungen bewusst leer: R-TIME-02 steht in name_level (01-REQUIREMENTS.md 2.14), wer sie eintraegt, bucht alle ihre Kriterien einzeln. Vor M37 bauen - T-M37-11 treibt dieselbe Uhr aus dem Gleichschritt."
   - id: T-M41-05
     milestone: M41
     title: Das KI-Gedaechtnis vergisst tote Armeen

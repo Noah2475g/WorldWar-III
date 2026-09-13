@@ -718,6 +718,68 @@ describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
   })
 })
 
+describe('T-M41-04 Die Uhrschleife im Spiel verliert keine Ticks', () => {
+  /**
+   * `clock.test.ts` prueft die reine Funktion. Hier laeuft die Schleife, die der Spieler
+   * ausfuehrt: `requestAnimationFrame` als Warteschlange, `performance.now` als gestellte
+   * Uhr, und jedes Bild ruft alle wartenden Rueckrufe mit derselben Zeit — wie ein
+   * Browser. Gezaehlt wird an der Kopfleiste, nicht an einer Variable.
+   */
+  let wartend: FrameRequestCallback[] = []
+  let jetzt = 0
+
+  const gestellteUhr = () => {
+    wartend = []
+    jetzt = 1000
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
+      wartend.push(rueckruf)
+      return wartend.length
+    })
+    vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+  }
+
+  const bilder = (anzahl: number, dtMs: number) => {
+    for (let bild = 0; bild < anzahl; bild++) {
+      jetzt += dtMs
+      const faellig = wartend
+      wartend = []
+      act(() => {
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      })
+    }
+  }
+
+  const tempo = (stufe: string) =>
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: stufe }))
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('laeuft bei Tempo 100 und 60 Bildern in einer Sekunde 100 Spielstunden', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+    expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
+
+    bilder(60, 1000 / 60)
+
+    // 100 Stunden nach Tag 1, 00:00 Uhr.
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
+  })
+
+  it('laeuft bei Tempo 50 und 30 Bildern in einer Sekunde 50 Spielstunden', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('50')
+
+    bilder(30, 1000 / 30)
+
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 3 · 02:00/)
+  })
+})
+
 /**
  * Sound and the guided start, wired to the running game (T-M13-02).
  *

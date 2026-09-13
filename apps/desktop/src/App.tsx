@@ -17,6 +17,7 @@ import {
 } from '@worldwar/core'
 import { advance } from './game/advance.ts'
 import { RESUME_SPEED } from './game/speed.ts'
+import { clockStep } from './game/clock.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
 import {
   armyActions,
@@ -750,11 +751,21 @@ export function App(props: AppProps) {
     [activeMap, props.rules, debugOn, noteTrace, takePending],
   )
 
-  // The clock. Deliberately capped at two ticks per frame: when the machine cannot
-  // keep up the rate drops, but no backlog builds that would freeze the game later
-  // (design D5).
+  // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
+  // when the machine cannot keep up the rate drops, but no backlog builds that would
+  // freeze the game later — and, unlike the old `Math.min(2, …)`, the fraction of a tick
+  // survives the cap: speed 100 is 100 ticks per second at 30, 60 or 144 frames.
+  //
+  // The loop must not restart on every tick. Until 2026-09-13 it depended on `state`:
+  // every step set a new state, the effect restarted, and `owed` began again at zero.
+  // Measured under jsdom (App.test.tsx, T-M41-04), speed 100 at 60 frames ran 60 game
+  // hours per second and speed 50 at 30 frames ran 30. It now depends only on the speed
+  // and on whether a game runs, and reaches the current `step` through a ref.
+  // `hasGame` is the same flag the stall display above uses.
+  const stepRef = useRef(step)
+  stepRef.current = step
   useEffect(() => {
-    if (speed === 0 || !state) return
+    if (speed === 0 || !hasGame) return
     let running = true
     let last = performance.now()
     let owed = 0
@@ -762,20 +773,17 @@ export function App(props: AppProps) {
     const frame = () => {
       if (!running) return
       const now = performance.now()
-      owed = Math.min(2, owed + ((now - last) / 1000) * speed)
+      const next = clockStep(owed, now - last, speed)
       last = now
-      const due = Math.floor(owed)
-      if (due > 0) {
-        owed -= due
-        step(due)
-      }
+      owed = next.owed
+      if (next.due > 0) stepRef.current(next.due)
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
     return () => {
       running = false
     }
-  }, [speed, state, step])
+  }, [speed, hasGame])
 
   /**
    * Einen Befehl abschicken (T-M22-05, Befund V2-08).
