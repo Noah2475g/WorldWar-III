@@ -195,9 +195,30 @@ describe('R-UNIT-09/AK4 Der Adjutant entscheidet aus dem Zustand, in der Sicht d
     const ausN1 = placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'defensive' })
     const ausN3 = placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
 
-    const befehle = adjutantCommands(state, ctx, { heldArmies: new Set([ausN3.id]) })
+    // Seit T-M40-08 bekommt der Adjutant die Befehle des Ticks selbst, nicht nur eine Menge von Armeen.
+    const befehle = adjutantCommands(state, ctx, { given: [{ type: 'STOP_ARMY', playerId: 'p1', armyId: ausN3.id }] })
     expect(befehle.some((command) => 'armyId' in command && command.armyId === ausN3.id)).toBe(false)
     expect(befehle).toEqual([zug(ausN1.id, 'n2')])
+  })
+
+  it('zaehlt einen Marschbefehl des Menschen im selben Tick als unterwegs (T-M40-08, Befund M1)', () => {
+    // Beleg S3 der Durchsicht: der Spieler schickt eine Garnison nach n2, und der Adjutant schickt im
+    // selben Tick eine zweite Armee hinterher — `heading` las nur die Wege im Zustand vor den Befehlen.
+    const lage = () => {
+      const { state } = angriffAufN2()
+      const garnison = placeArmy(state, { owner: 'p1', at: 'n1', units: infanterie(), stance: 'garrison' })
+      // Zwei Verteidiger in n3: auch eine Regel, die eine Armee stehen laesst, haette hier eine frei.
+      placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+      placeArmy(state, { owner: 'p1', at: 'n3', units: infanterie(), stance: 'defensive' })
+      return { state, garnison }
+    }
+
+    // Gegenprobe: ohne den Spielerbefehl rueckt eine Armee nach n2 nach.
+    const ohne = lage()
+    expect(adjutantCommands(ohne.state, ctx).filter((command) => command.type === 'MOVE_ARMY')).toHaveLength(1)
+
+    const mit = lage()
+    expect(adjutantCommands(mit.state, ctx, { given: [zug(mit.garnison.id, 'n2')] })).toEqual([])
   })
 
   it('laesst den Zustand unberuehrt', () => {

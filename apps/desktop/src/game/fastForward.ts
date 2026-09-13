@@ -1,4 +1,4 @@
-import { runAi, storeMemories } from '@worldwar/ai'
+import { commandsForTick, storeMemories, type Explanation } from '@worldwar/ai'
 import {
   fastForward,
   type Command,
@@ -74,32 +74,34 @@ export function fastForwardChunk(
    * ist der Weg, auf dem die meisten Spielstunden vergehen. Die Begruendungen werden nur
    * geholt, wenn jemand zusieht: sie kosten Zeit und aendern die Befehle nicht.
    */
-  trace?: (entry: { tick: number; commands: readonly Command[]; explanations: ReturnType<typeof runAi>['explanations'] }) => void,
+  trace?: (entry: { tick: number; commands: readonly Command[]; explanations: Record<PlayerId, Explanation[]> }) => void,
 ): FastForwardResult {
   // Das Gedächtnis, das zu den Befehlen dieses Ticks gehört. Es wird *einmal* gerechnet
-  // und nach dem Tick abgelegt — ein zweiter `runAi`-Aufruf im Nachlauf wäre nicht nur
-  // doppelte Arbeit, sondern falsch: er entschiede auf dem neuen Zustand und legte damit
-  // Absichten ab, die die KI nie gefasst hat.
-  let pending: ReturnType<typeof runAi>['memories'] | null = null
+  // und nach dem Tick abgelegt — ein zweiter Aufruf im Nachlauf wäre nicht nur doppelte
+  // Arbeit, sondern falsch: er entschiede auf dem neuen Zustand und legte damit Absichten
+  // ab, die die KI nie gefasst hat.
+  let pending: ReturnType<typeof commandsForTick>['memories'] | null = null
 
   // Nur der erste Tick bekommt die Spielerbefehle — dieselbe Regel wie in der Schleife
-  // des Kerns (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
+  // (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
   let firstTick = true
 
   return fastForward(state, request.target, ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
-    // Die KI entscheidet aus der Lage — deshalb bekommt `commandSource` seit T-M15-06 den
-    // Zustand und nicht nur die Tickzahl. Mit einer Tickzahl allein konnte die KI hier
-    // gar nicht aufgerufen werden, und *das* ist der Grund, warum die Oberfläche sich eine
-    // eigene Schleife gebaut hat.
+    // Die Befehle eines Ticks kommen aus DERSELBEN Funktion wie in `advanceTicks` (T-M40-08,
+    // Befund K1 der Durchsicht M40). Bis dahin fragte diese Stelle nur `runAi`: der Adjutant
+    // lief beim Vorspulen nie, und dieselbe Lage ergab über die Uhr und über das Vorspulen zwei
+    // verschiedene Partien — ausgerechnet auf dem Weg, auf dem die meisten Spielstunden vergehen.
+    // Den Zustand statt der Tickzahl bekommt `commandSource` seit T-M15-06, weil KI und Adjutant
+    // aus der Lage entscheiden.
     commandSource: (current: GameState): readonly Command[] => {
-      const { commands, memories, explanations } = runAi(current, ctx, trace ? { explain: true } : {})
-      pending = memories
-      trace?.({ tick: current.tick, commands, explanations })
-      const player = firstTick ? (request.playerCommands ?? []) : []
+      const given = firstTick ? (request.playerCommands ?? []) : []
       firstTick = false
-      return [...player, ...commands]
+      const tick = commandsForTick(current, ctx, { given, explain: trace !== undefined })
+      pending = tick.memories
+      trace?.({ tick: current.tick, commands: tick.ai, explanations: tick.explanations })
+      return tick.commands
     },
     afterTick: (next: GameState): void => {
       if (pending) storeMemories(next, pending)

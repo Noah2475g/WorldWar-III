@@ -2977,7 +2977,10 @@ tasks:
   - id: T-M40-08
     milestone: M40
     title: Eine Befehlsquelle fuer Uhr und Vorspulen
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): rot 3 von 31 - Paritaet Vorspulen gegen advanceTicks null Aufbrueche
+    # gegen einen, S3 und der Vortritt ueber given; gruen 129 mit single-loop, replay und App.
+    # index.ts blieb unberuehrt (export * aus loop.ts genuegt). Turnier zeilengleich.
     deps: [T-M40-07]
     requirements: [R-UNIT-09]
     design: [D-30]

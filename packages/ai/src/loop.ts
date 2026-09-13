@@ -1,6 +1,5 @@
 import {
   runTicks,
-  type ArmyId,
   type Command,
   type GameEvent,
   type GameState,
@@ -10,16 +9,44 @@ import {
 } from '@worldwar/core'
 import type { Explanation } from './types'
 import { adjutantCommands } from './adjutant'
-import { runAi, storeMemories } from './runner'
+import { runAi, storeMemories, type AiRunnerResult } from './runner'
 
-/** Armies a command names — the human's own orders take precedence over the adjutant (D30.2). */
-function armiesNamedIn(commands: readonly Command[]): Set<ArmyId> {
-  const ids = new Set<ArmyId>()
-  for (const command of commands) {
-    if ('armyId' in command) ids.add(command.armyId)
-    if ('armyIds' in command) for (const id of command.armyIds) ids.add(id)
-  }
-  return ids
+/** What one tick is ordered to do, and by whom (T-M40-08). */
+export interface TickCommands {
+  /** Every command of the tick, in the order the core applies them: given, adjutant, AI. */
+  commands: Command[]
+  /** The adjutant's share — the marches a human's stance ordered by itself. */
+  adjutant: Command[]
+  /** The AI's share. */
+  ai: Command[]
+  /** The AI memories that belong to these commands; store them after the tick. */
+  memories: AiRunnerResult['memories']
+  explanations: Record<PlayerId, Explanation[]>
+}
+
+/**
+ * The commands of one tick — the one place where orders, the adjutant and the AI meet (T-M40-08).
+ *
+ * Until then two places assembled them, and they disagreed: `advanceTicks` asked the AI and the
+ * adjutant, the desktop's fast-forward asked only the AI. The adjutant never ran on the path on
+ * which most game hours pass, and the same position gave two different games depending on
+ * whether the clock or the fast-forward moved it (finding K1 of the M40 review). Both paths now
+ * call this function; `fastForward.ts` feeds it to the core's `commandSource`.
+ *
+ * `given` are the orders a human or a script gave for this tick. The adjutant sees them: it leaves
+ * the armies they name alone, and a march among them counts as an army on its way (finding M1).
+ */
+export function commandsForTick(
+  state: GameState,
+  ctx: { map: MapData; rules: Rules },
+  options: { given?: readonly Command[]; explain?: boolean } = {},
+): TickCommands {
+  const given = options.given ?? []
+  const { commands: ai, memories, explanations } = runAi(state, ctx, options.explain ? { explain: true } : {})
+  // The adjutant (T-M40-03, D30.2): a human's stance becomes an order, on the same rail as a
+  // click. Computed from this tick's state alone, so a loaded game gives the same orders.
+  const adjutant = adjutantCommands(state, ctx, { given })
+  return { commands: [...given, ...adjutant, ...ai], adjutant, ai, memories, explanations }
 }
 
 /**
@@ -101,23 +128,19 @@ export function advanceTicks(
   for (let i = 0; i < ticks; i++) {
     if (current.victory.winner !== null) break
 
-    const { commands, memories, explanations: reasons } = runAi(current, ctx, opts.explain ? { explain: true } : {})
-    if (opts.explain) explanations = reasons
     const scripted = opts.scripted?.(current.tick) ?? []
     const given = [...(i === 0 ? playerCommands : []), ...scripted]
-    // The adjutant (T-M40-03, D30.2): a human's stance becomes an order, on the same rail as
-    // a click. Computed from this tick's state alone, so a loaded game gives the same orders.
-    const adjutant = adjutantCommands(current, ctx, { heldArmies: armiesNamedIn(given) })
-    const all = [...given, ...adjutant, ...commands]
+    const tick = commandsForTick(current, ctx, { given, explain: opts.explain === true })
+    if (opts.explain) explanations = tick.explanations
 
-    for (const command of all) applied.push({ tick: current.tick, command })
+    for (const command of tick.commands) applied.push({ tick: current.tick, command })
 
-    const result = runTicks(current, 1, ctx, () => all)
+    const result = runTicks(current, 1, ctx, () => tick.commands)
     current = result.state
     events.push(...result.events)
     ran += 1
 
-    storeMemories(current, memories)
+    storeMemories(current, tick.memories)
   }
 
   return { state: current, events, applied, ticks: ran, explanations }

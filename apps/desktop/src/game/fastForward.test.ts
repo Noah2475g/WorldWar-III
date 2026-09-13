@@ -1,4 +1,14 @@
-import { fastForward, createInitialState, type GameConfig } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
+import {
+  HASH_OMIT_KEYS,
+  fastForward,
+  createInitialState,
+  planRoute,
+  type GameConfig,
+  type GameEvent,
+  type GameState,
+} from '@worldwar/core'
+import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CHUNK_TICKS, fastForwardChunk } from './fastForward.ts'
@@ -152,5 +162,61 @@ describe('R-AI-07 Die KI behaelt ihr Gedaechtnis beim Vorspulen', () => {
 
     expect(Object.keys(result.state.ai), 'die KI hat kein Gedaechtnis im Zustand').toContain('p2')
     expect(result.state.ai['p2']).toBeDefined()
+  })
+})
+
+/**
+ * Vorspulen und Uhr geben dieselbe Partie (T-M40-08, Befund K1 der Durchsicht M40).
+ *
+ * Die Uhr rechnet ueber `advanceTicks`, das Vorspulen ueber den Kern mit `commandSource`. Bis
+ * T-M40-08 fragte `commandSource` nur die KI: der Adjutant lief beim Vorspulen nie, und dieselbe
+ * Lage ergab ueber die zwei Wege zwei Partien (Beleg S1 der Durchsicht: ein Aufbruch gegen
+ * keinen). Der Vergleich oben mit dem Kern ohne KI konnte das nicht sehen.
+ */
+describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', () => {
+  const TICKS = 150
+
+  /** Nordland (Mensch) haelt n1, n2 und n3 mit Verteidigern, zwei davon in n3; Ostmark marschiert von m1 auf n2. */
+  function lage(): GameState {
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    // Mitten in der Partie: eine Automatik, die nach einem Marsch ruht, darf hier schon handeln.
+    state.tick = 200
+    for (const at of ['n1', 'n2', 'n3', 'n3']) {
+      placeArmy(state, { owner: 'p1', at, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    }
+    const angreifer = placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 30_000 }] })
+    const route = planRoute(state, angreifer, 'n2', map, TEST_RULES)!
+    angreifer.path = route.path
+    angreifer.departureTick = state.tick
+    angreifer.arrivalTick = route.arrivalTick
+    return state
+  }
+
+  const aufbrueche = (events: readonly GameEvent[]): string[] =>
+    events.filter((event) => event.type === 'ARMY_DEPARTED' && event.playerId === 'p1').map((event) => JSON.stringify(event))
+
+  it('laeuft ueber jeden Halt weiter und endet mit denselben Aufbruechen und demselben Hash', () => {
+    const uhr = advanceTicks(lage(), TICKS, ctx)
+
+    // So reiht die Oberflaeche die Haeppchen aneinander: nach jedem Halt weiter bis zum Ziel.
+    let current = lage()
+    let gelaufen = 0
+    const events: GameEvent[] = []
+    const halte: string[] = []
+    while (gelaufen < TICKS) {
+      const rest = TICKS - gelaufen
+      const result = fastForwardChunk(current, { target: { kind: 'ticks', ticks: rest }, alertsFor: 'p1', maxTicks: TICKS }, ctx, rest)
+      current = result.state
+      gelaufen += result.ticksRun
+      events.push(...result.events)
+      halte.push(result.stoppedBy)
+    }
+
+    const ueberDieUhr = aufbrueche(uhr.events)
+    expect(ueberDieUhr.length, 'ueber die Uhr ist der Mensch nie aufgebrochen - der Vergleich misst nichts').toBeGreaterThan(0)
+    expect(halte, 'das Vorspulen hielt an keinem Alarm - der Weg ueber mehrere Haeppchen ist ungeprueft').toContain('alert')
+    expect(aufbrueche(events)).toEqual(ueberDieUhr)
+    expect(hashValue(current, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(uhr.state, { omitKeys: HASH_OMIT_KEYS }))
   })
 })

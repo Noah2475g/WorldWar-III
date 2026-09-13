@@ -43,8 +43,15 @@ import {
  */
 
 export interface AdjutantOptions {
-  /** Armies the human commands himself this tick: the adjutant leaves them alone (D30.2). */
-  heldArmies?: ReadonlySet<ArmyId>
+  /**
+   * The commands already given for this tick, by a human or a script (T-M40-08).
+   *
+   * Every army they name is left alone (D30.2). A march among them counts as an army on its
+   * way, so nobody else is sent to the same province: until T-M40-08 the adjutant was handed
+   * only the names of the armies, read `heading` from the state before the tick, and sent a
+   * second army after the one the player had just ordered there (finding M1 of the M40 review).
+   */
+  given?: readonly Command[]
   /**
    * Where the view comes from. In the game always `publicView`; a test hands in a view
    * with less in it, to show that the adjutant decides from nothing else (R-DIP-04).
@@ -71,13 +78,25 @@ export function adjutantCommands(
   ctx: AdjutantContext,
   options: AdjutantOptions = {},
 ): Command[] {
+  const given = options.given ?? []
+  const held = armiesNamedIn(given)
   const commands: Command[] = []
   for (const playerId of state.playerOrder) {
     const player = state.players[playerId]
     if (!player || player.kind !== 'human' || !player.alive) continue
-    commands.push(...ordersFor(state, playerId, ctx, options))
+    commands.push(...ordersFor(state, playerId, ctx, { given, held, viewOf: options.viewOf ?? publicView }))
   }
   return commands
+}
+
+/** Armies a command names — the orders given this tick take precedence over the adjutant (D30.2). */
+function armiesNamedIn(commands: readonly Command[]): Set<ArmyId> {
+  const ids = new Set<ArmyId>()
+  for (const command of commands) {
+    if ('armyId' in command) ids.add(command.armyId)
+    if ('armyIds' in command) for (const id of command.armyIds) ids.add(id)
+  }
+  return ids
 }
 
 /** Standing, landed, free to attack, with land units, and not commanded by the human this tick. */
@@ -104,9 +123,13 @@ function ordersFor(
   state: GameState,
   playerId: PlayerId,
   ctx: AdjutantContext,
-  options: AdjutantOptions,
+  tick: {
+    given: readonly Command[]
+    held: ReadonlySet<ArmyId>
+    viewOf: (state: GameState, playerId: PlayerId) => PublicView
+  },
 ): Command[] {
-  const held = options.heldArmies ?? new Set<ArmyId>()
+  const { given, held } = tick
 
   const own: Army[] = []
   for (const id of state.armyOrder) {
@@ -119,7 +142,7 @@ function ordersFor(
   // that acts on its own there is nothing to decide, so none is built (D30.3).
   if (ready.length === 0 || !atWarWithAnyone(state, playerId)) return []
 
-  const view = (options.viewOf ?? publicView)(state, playerId)
+  const view = tick.viewOf(state, playerId)
   const provinces = new Map(view.provinces.map((province) => [province.id, province]))
 
   const hostile = new Map<ProvinceId, VisibleArmy[]>()
@@ -128,11 +151,15 @@ function ordersFor(
     hostile.set(army.provinceId, [...(hostile.get(army.provinceId) ?? []), army])
   }
 
-  // Where an own army is already heading: nobody else is sent there.
+  // Where an own army is already heading — or was ordered to this very tick (finding M1): nobody
+  // else is sent there.
   const heading = new Set<ProvinceId>()
   for (const army of own) {
     const destination = army.path[army.path.length - 1]
     if (destination !== undefined) heading.add(destination)
+  }
+  for (const command of given) {
+    if (command.type === 'MOVE_ARMY' && command.playerId === playerId) heading.add(command.targetProvinceId)
   }
 
   const isOwn = (provinceId: ProvinceId): boolean => provinces.get(provinceId)?.owner === playerId
