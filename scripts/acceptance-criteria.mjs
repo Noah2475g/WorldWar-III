@@ -185,13 +185,19 @@ export const STANCE_SOURCES = [
 ]
 
 /**
- * Die Balancing-Messgeraete und die Daten, die sie nachweislich lesen (T-M40-17).
+ * Die Balancing-Messgeraete und die Quellen, denen ihre Frische folgt (T-M40-17; Entscheid vom 2026-09-13).
  *
  * Bis T-M40-17 sahen beide nur `data/rules`. Der Parameterlauf liest ausserdem `data/maps/world.json`
  * (`sweep.slow.test.ts`), das Turnier `data/maps/testworld.json` (ueber `smallWorld` aus `packages/testkit`).
- * Den Code (`packages/ai/src`, `packages/core/src`, `apps/headless/src`) lesen beide auch — er steht bewusst
- * NICHT hier: die Messgeraete vermessen die Regeln (Entscheid vom 2026-09-08), und die Frage, ob sie jeder
- * Codeaenderung folgen sollen, ist offen (`PROBLEME.md`, 2026-09-13, T-M40-17).
+ * Den Code (`packages/ai/src`, `packages/core/src`, `apps/headless/src`) spielen beide.
+ *
+ * - **Turnier** folgt ausserdem KI und Kern: ein Neulauf kostet 13 Sekunden, und das Turnier ist der billige
+ *   Beleg, dass eine Codeaenderung die KI-Staerke nicht verschiebt.
+ * - **Parameterlauf** bleibt bewusst bei Regeln und Karte: er dauert rund eine Stunde und misst die
+ *   Empfindlichkeit der Regelzahlen. Den Einfluss von Code decken das Turnier und `progress.slow` ab.
+ *
+ * Kippbar (`DECISIONS.md`, 2026-09-13, "Der Turnier-Waechter sieht KI und Kern"); `test/requirements.test.ts`
+ * nennt beide Listen woertlich.
  */
 export const GAUGES = [
   {
@@ -203,7 +209,7 @@ export const GAUGES = [
   {
     name: 'Turnier',
     report: 'docs/reports/ai-tournament-run.md',
-    sources: ['data/rules', 'data/maps/testworld.json'],
+    sources: ['data/rules', 'data/maps/testworld.json', 'packages/ai/src', 'packages/core/src'],
     command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts',
   },
 ]
@@ -243,7 +249,7 @@ export function gaugeStatus({ sources = ['data/rules'], sourcesDirty, reportComm
   if (commitsSinceReport.length > 0) {
     return {
       fresh: false,
-      reason: `seit dem Bericht (${kurz(reportCommit)}) liegt auf HEAD mindestens ein Commit an ${quellen} (${kurz(commitsSinceReport[0])}) - die Regeln sind juenger als der Bericht des Messgeraets`,
+      reason: `seit dem Bericht (${kurz(reportCommit)}) liegt auf HEAD mindestens ein Commit an ${quellen} (${kurz(commitsSinceReport[0])}) - die Quellen sind juenger als der Bericht des Messgeraets`,
     }
   }
   return { fresh: true, reason: `seit dem Bericht (${kurz(reportCommit)}) kein Commit an ${quellen} auf HEAD` }

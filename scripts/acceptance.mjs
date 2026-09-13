@@ -142,8 +142,9 @@ run(
 )
 
 // Der Frische-Wächter: Parameterlauf und Turnier laufen nicht mehr je Abnahme — aber seit dem Commit
-// ihres Berichts darf auf HEAD kein Commit an den Daten liegen, die sie vermessen. Seit T-M40-17 nach
-// Abstammung statt nach Commit-Zeit (Befund M-1: der Merge eines älteren Seitencommits machte ihn grün).
+// ihres Berichts darf auf HEAD kein Commit an ihren Quellen liegen (GAUGES; beim Turnier seit dem
+// 2026-09-13 auch KI und Kern). Seit T-M40-17 nach Abstammung statt nach Commit-Zeit (Befund M-1: der
+// Merge eines älteren Seitencommits machte ihn grün).
 for (const gauge of GAUGES) {
   const status = gaugeFreshness(ROOT, gauge)
   check(

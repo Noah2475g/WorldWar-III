@@ -2618,7 +2618,8 @@ sein, die HEAD fehlen. Das ist eine Ergänzung zum Auftrag.
 Kern; seit ihren Berichten liegen dort 20 bzw. 11 Commits. Mit den Codepfaden wäre die Abnahme heute rot, und
 ein Parameterlauf dauert rund eine Stunde. Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die
 Regeln. Ob sie jedem Codecommit folgen sollen, ist eine neue Entscheidung und steht als offene Frage in
-`PROBLEME.md`.
+`PROBLEME.md`. **Für das Turnier gekippt am 2026-09-13:** Es folgt KI und Kern, der Parameterlauf nicht (Entscheid
+„Das Turnier folgt auch KI und Kern" weiter unten).
 
 **Gegenrede.**
 - Ein Revert, der die Quellen auf den gemessenen Inhalt zurückstellt, zählt als Commit: rot, obwohl der
@@ -2665,5 +2666,45 @@ hätte eine Lücke beschrieben, die sich mit einem optionalen Parameter schließ
 
 **kippbar:** Ohne `pending` fallen `garrisonFollowUp` und `ActionContext.pending` auf den Zustand zurück. Dann
 fallen T-M40-19 in `adjutant.test.ts`, `actions.test.ts` und `App.test.tsx`, und AK7 braucht die Einschränkung.
+
+---
+
+## 2026-09-13 · Frische-Wächter · Das Turnier folgt auch KI und Kern, der Parameterlauf bleibt bei Regeln und Karte (Orchestrator)
+
+**Entscheidung.**
+- `GAUGES` (`scripts/acceptance-criteria.mjs`): Das Turnier sieht `data/rules`, `data/maps/testworld.json`,
+  `packages/ai/src` und `packages/core/src`.
+- Der Parameterlauf sieht weiter nur `data/rules` und `data/maps/world.json`.
+
+Entschieden vom Orchestrator auf die offene Frage aus dem Bau von T-M40-17 (`PROBLEME.md`, 2026-09-13). Für das
+Turnier löst das den Absatz „Warum der Code bei Parameterlauf und Turnier außen vor bleibt" im Entscheid zu
+T-M40-17 ab; für den Parameterlauf gilt er weiter.
+
+**Begründung.**
+- **Turnier:** Ein Neulauf kostet 13 Sekunden. Das Turnier ist der billige Beleg, dass eine Codeänderung die
+  KI-Stärke nicht verschiebt. Dass Code Partien verschiebt, ist gemessen: Nach dem Merge von Block N2 ergab
+  dieselbe Garnison im Haltungs-Messlauf 76 statt 52 Einmärsche, bei gleichen Regeln und gleicher Karte.
+- **Parameterlauf:** Er dauert rund eine Stunde und misst die Empfindlichkeit der Regelzahlen. Folgte er jedem
+  Codecommit, müsste er nach fast jeder Aufgabe neu laufen. Den Einfluss von Code decken das Turnier und
+  `progress.slow` ab (derselbe Grundlauf, 2,5 min).
+
+**Belegt.** In `test/requirements.test.ts` fährt ein Wegwerf-Repo die echten Einträge aus `GAUGES`. Nach einem
+Commit an `packages/ai/src` meldet das Turnier nicht frisch: vor der Änderung rot („expected true to be false").
+Der Parameterlauf bleibt frisch; dieser Haltetest war vorher und nachher grün. Am echten Stand (`bd4744c`) liegen
+seit dem Turnierbericht `1edcb7b` 18 Commits an KI und Kern, und der Wächter meldet das Turnier nicht frisch. Das
+tat er dort auch mit der alten Liste, wegen `a64be03` (T-M35-06) unter `data/rules`. Der Unterschied der Listen
+ist deshalb nur im Einheitsfall belegt, nicht am echten Stand.
+
+**Gegenrede.**
+- Das Turnier spielt auch `apps/headless/src/tournament.ts` und `packages/testkit`. Beide stehen nicht in der
+  Liste; ein Commit nur an der Turnierschleife bleibt unbemerkt. Hingenommen: Die Aufgaben der Meilensteine
+  ändern KI und Kern.
+- Das Turnier wird öfter rot, auch bei Commits am Kern, die die KI nicht berühren. Hingenommen: 13 Sekunden.
+- Ein Parameterlauf kann nach einer KI-Änderung andere Zahlen liefern, ohne dass der Wächter es meldet. Sein
+  Bericht gilt für die Regeln, nicht für eine bestimmte KI.
+
+**kippbar:** In `GAUGES` die beiden Codepfade beim Turnier streichen (dann gilt wieder der Stand von T-M40-17)
+oder beim Parameterlauf ergänzen. Mit fallen der Listentest in `test/requirements.test.ts` und der Block „der
+Turnier-Waechter sieht KI und Kern, der Parameterlauf nicht".
 
 ---

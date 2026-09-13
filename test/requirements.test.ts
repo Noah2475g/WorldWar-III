@@ -442,10 +442,11 @@ describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
   it('beobachtet je Messgeraet die Quellen, die es nachweislich liest - und jede davon gibt es', () => {
     // Parameterlauf: `sweep.slow.test.ts` liest data/rules und data/maps/world.json. Turnier: TEST_RULES und
     // smallWorld aus packages/testkit, die data/rules und data/maps/testworld.json importieren (T-M40-17).
+    // Das Turnier sieht seit dem Entscheid vom 2026-09-13 auch KI und Kern, der Parameterlauf bewusst nicht.
     const ROOT = fileURLToPath(new URL('..', import.meta.url))
     expect(GAUGES.map((gauge: { name: string; sources: string[] }) => [gauge.name, gauge.sources])).toEqual([
       ['Parameterlauf', ['data/rules', 'data/maps/world.json']],
-      ['Turnier', ['data/rules', 'data/maps/testworld.json']],
+      ['Turnier', ['data/rules', 'data/maps/testworld.json', 'packages/ai/src', 'packages/core/src']],
     ])
     for (const gauge of GAUGES as { report: string; sources: string[] }[]) {
       for (const path of [gauge.report, ...gauge.sources]) expect(existsSync(join(ROOT, path)), path).toBe(true)
@@ -660,5 +661,96 @@ describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommi
     expect(vorher.fresh, vorher.reason).toBe(true)
     const nachher = gaugeFreshness(repo, gauge)
     expect(nachher.fresh, nachher.reason).toBe(false)
+  })
+})
+
+/**
+ * Der Turnier-Waechter sieht KI und Kern, der Parameterlauf nicht (Entscheid vom 2026-09-13, DECISIONS.md).
+ *
+ * Beide Laeufe spielen Partien mit `packages/ai` und `packages/core`. Das Turnier laeuft 13 Sekunden und ist
+ * der billige Beleg, dass eine Codeaenderung die KI-Staerke nicht verschiebt; es folgt deshalb jedem Commit an
+ * KI und Kern. Der Parameterlauf dauert rund eine Stunde und misst die Empfindlichkeit der Regelzahlen; er
+ * bleibt bei Regeln und Karte. Gefahren werden die echten Eintraege aus `GAUGES`, nicht nachgebaute.
+ *
+ * Wegwerf-Repo: die Basis traegt beide Berichte, dann ein Commit an `packages/ai/src`, dann einer an
+ * `packages/core/src`.
+ */
+describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Kern, der Parameterlauf nicht', () => {
+  type Gauge = { name: string; report: string; sources: string[]; command: string }
+  const messgeraet = (name: string): Gauge => {
+    const gauge = (GAUGES as Gauge[]).find((eintrag) => eintrag.name === name)
+    if (!gauge) throw new Error(`kein Messgeraet ${name} in GAUGES`)
+    return gauge
+  }
+  let repo = ''
+  let basis = ''
+  let kiCommit = ''
+
+  beforeAll(() => {
+    repo = mkdtempSync(join(tmpdir(), 'worldwar-turnier-'))
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')))
+    const git = (...args: string[]): string =>
+      execFileSync(
+        'git',
+        ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false', ...args],
+        { cwd: repo, encoding: 'utf8', env },
+      ).trim()
+    const schreibe = (pfad: string, inhalt: string) => {
+      mkdirSync(dirname(join(repo, pfad)), { recursive: true })
+      writeFileSync(join(repo, pfad), inhalt)
+    }
+
+    git('init', '-q', '-b', 'main')
+    schreibe('packages/ai/src/adjutant.ts', 'v1\n')
+    schreibe('packages/core/src/step.ts', 'v1\n')
+    schreibe('data/rules/default/constants.json', '{"v":1}\n')
+    schreibe('data/maps/world.json', '{}\n')
+    schreibe('data/maps/testworld.json', '{}\n')
+    schreibe('docs/reports/balance-sweep.md', 'gemessen auf der Basis\n')
+    schreibe('docs/reports/ai-tournament-run.md', 'gemessen auf der Basis\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'basis mit beiden Berichten')
+    basis = git('rev-parse', 'HEAD')
+
+    schreibe('packages/ai/src/adjutant.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'KI geaendert')
+    kiCommit = git('rev-parse', 'HEAD')
+
+    schreibe('packages/core/src/step.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'Kern geaendert')
+  }, 60_000)
+
+  afterAll(() => {
+    if (repo) rmSync(repo, { recursive: true, force: true, maxRetries: 3 })
+  })
+
+  it('meldet das Turnier nach einem Commit an packages/ai/src nicht frisch - und nennt Commit und Pfad', () => {
+    const turnier = messgeraet('Turnier')
+    const vorher = gaugeFreshness(repo, turnier, basis)
+    expect(vorher.fresh, vorher.reason).toBe(true)
+    const nachKi = gaugeFreshness(repo, turnier, kiCommit)
+    expect(nachKi.fresh, nachKi.reason).toBe(false)
+    expect(nachKi.reason).toContain(kiCommit.slice(0, 7))
+    expect(nachKi.reason).toContain('packages/ai/src')
+    // Auch ein Commit nur am Kern macht das Turnier alt: HEAD nennt den juengsten Commit an den Quellen.
+    const nachKern = gaugeFreshness(repo, turnier)
+    expect(nachKern.fresh, nachKern.reason).toBe(false)
+    expect(nachKern.reason).toContain('packages/core/src')
+    // Alle drei Waechter in einem Aufruf, wie am echten Stand; im Wegwerf-Repo fehlt der Haltungsbericht.
+    expect(allFreshness(repo).map((waechter: { name: string; fresh: boolean }) => [waechter.name, waechter.fresh])).toEqual([
+      ['Parameterlauf', true],
+      ['Turnier', false],
+      ['Haltungs-Messlauf', false],
+    ])
+  })
+
+  it('haelt den Parameterlauf frisch, wenn sich nur KI und Kern aendern - der bewusste Unterschied', () => {
+    const parameterlauf = messgeraet('Parameterlauf')
+    const nachKi = gaugeFreshness(repo, parameterlauf, kiCommit)
+    expect(nachKi.fresh, nachKi.reason).toBe(true)
+    const nachKern = gaugeFreshness(repo, parameterlauf)
+    expect(nachKern.fresh, nachKern.reason).toBe(true)
   })
 })

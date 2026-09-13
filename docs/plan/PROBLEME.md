@@ -3192,7 +3192,7 @@ und verworfene Wege stehen im Entscheid.
 337 / 376.
 
 **Status:** Entscheid getroffen; T-M35-06 misst die drei Vollpartien mit 350 ‰ nach.
-## 2026-09-13 · Beim Bau von T-M40-17 gefunden · Parameterlauf und Turnier folgen dem Code nicht, den sie vermessen (gezählt, offen)
+## 2026-09-13 · Beim Bau von T-M40-17 gefunden · Parameterlauf und Turnier folgen dem Code nicht, den sie vermessen (gezählt, entschieden)
 
 **Befund.** Der Frische-Wächter von Parameterlauf und Turnier sieht nur Daten. Seit T-M40-17 sind das
 `data/rules` und die jeweilige Karte: `data/maps/world.json` für den Parameterlauf, `data/maps/testworld.json`
@@ -3223,7 +3223,18 @@ Codecommit folgen sollen, ist eine neue Entscheidung und nicht Teil der Nacharbe
 die Einheitsfälle in `test/requirements.test.ts` nennen die Listen wörtlich. Billig wäre es beim Turnier, das
 rund 15 Sekunden läuft; teuer beim Parameterlauf.
 
-**Status:** offen, Frage an Noah.
+**Entschieden (2026-09-13, Orchestrator, kippbar).**
+- Das Turnier sieht zusätzlich `packages/ai/src` und `packages/core/src`: 13 Sekunden, der billige Beleg für
+  die KI-Stärke.
+- Der Parameterlauf bleibt bei `data/rules` und `data/maps/world.json`: rund eine Stunde; den Code decken
+  Turnier und `progress.slow` ab.
+- `apps/headless/src` und `packages/testkit` sieht keiner der beiden, hingenommen.
+
+Entscheid in `DECISIONS.md`, 2026-09-13, „Das Turnier folgt auch KI und Kern". Einheitsfall mit Wegwerf-Repo in
+`test/requirements.test.ts`. Am echten Stand (`bd4744c`) meldet der Turnier-Wächter nicht frisch. Das täte er
+auch mit der alten Liste, wegen `a64be03` unter `data/rules`.
+
+**Status:** entschieden; das Turnier ist rot, bis ein neuer Turnierlauf eingecheckt ist.
 
 ---
 
