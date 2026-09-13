@@ -2990,7 +2990,7 @@ tasks:
   - id: T-M41-03
     milestone: M41
     title: Die naechste Freischaltung kuendigt sich an
-    status: todo
+    status: done
     deps: [T-M41-05]
     requirements: [R-TECH-02, R-UI-05]
     files: [apps/desktop/src/ui/Alerts.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/game/onboarding.slow.test.ts, docs/reports/onboarding.md]

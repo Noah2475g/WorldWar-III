@@ -134,6 +134,12 @@ export const de = {
   grammar: {
     /** Akkusativpronomen je Genus: „Sie können sie/ihn/es jetzt bauen." */
     pronoun: { f: 'sie', m: 'ihn', n: 'es' },
+    /** Nominativpronomen am Satzanfang: „Es braucht einen Hafen." (T-M41-03) */
+    nominative: { f: 'Sie', m: 'Er', n: 'Es' },
+    /** Unbestimmter Artikel im Akkusativ: „braucht einen Hafen / eine Werft / ein …". */
+    indefinite: { f: 'eine', m: 'einen', n: 'ein' },
+    /** Allein stehende Verneinung im Akkusativ: „Sie haben keinen / keine / keines." */
+    none: { f: 'keine', m: 'keinen', n: 'keines' },
     /** Die Kaserne, der Hafen — das Genus je Gebäude. */
     buildings: {
       barracks: 'f',
@@ -763,6 +769,13 @@ export const de = {
     // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
     unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
     unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
+    // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
+    // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
+    upcoming: 'In zwei Tagen: {{thing}}.',
+    upcomingNeeds: 'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} — Sie haben {{none}}.',
+    upcomingNeedsLevel:
+      'In zwei Tagen: {{thing}}. {{subject}} braucht {{article}} {{required}} der Stufe {{level}} — Sie haben {{none}}.',
+    upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. {{subject}} braucht eine Küstenprovinz — Sie haben keine.',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).

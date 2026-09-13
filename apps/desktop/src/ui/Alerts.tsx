@@ -1,5 +1,5 @@
 import type { PublicView } from '@worldwar/core'
-import { accusativePronoun } from '../i18n/grammar.ts'
+import { accusativePronoun, indefiniteArticle, nominativePronoun, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
 
@@ -24,6 +24,7 @@ export type AlertKind =
   | 'capital'
   | 'completion'
   | 'unlock'
+  | 'upcoming'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -45,6 +46,9 @@ export const UNREST_MORALE = 33_000
  * werden, und kurz genug, dass die Liste nicht zulaeuft.
  */
 export const COMPLETION_ALERT_TICKS = 12
+
+/** Wie viele Spieltage vorher sich eine Freischaltung ankuendigt (T-M41-03). */
+export const UPCOMING_LEAD_DAYS = 2
 
 function justFinished(completesAtTick: number, tick: number): boolean {
   return completesAtTick <= tick && tick - completesAtTick < COMPLETION_ALERT_TICKS
@@ -99,16 +103,87 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
   return alerts
 }
 
-/** Genau so viel von den Regeln, wie die Freischaltungsmeldung braucht. */
+/**
+ * Was in zwei Tagen kommt — und was dafuer fehlt (T-M41-03, R-TECH-02).
+ *
+ * Nach M34 hatte die Eroeffnung zwei Pausen von vier Spieltagen ohne jeden Anlass. Die
+ * Freischaltungstage bleiben (DECISIONS.md, 2026-09-13: Ankuendigung statt
+ * Datenaenderung); stattdessen sagt das Spiel zwei Tage vorher, was kommt. Eine blosse
+ * Vorschau waere Kosmetik — deshalb nennt die Ankuendigung die Voraussetzung, die dem
+ * Spieler fehlt, und schweigt davon, sobald sie steht. Aus Warten wird eine Handlung.
+ *
+ * Abgeleitet wie die Freischaltung: aus den Regeln und der eigenen Sicht, zu Tagesbeginn,
+ * ohne Ereignis. Leise — kein Alarm, keine Farbe, kein Sprung auf die Karte (M36: laut
+ * ist nur, was knapp oder umkaempft ist).
+ */
+function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
+  const perDay = rules.constants.ticksPerDay
+  if (view.tick % perDay >= COMPLETION_ALERT_TICKS) return []
+
+  const day = Math.floor(view.tick / perDay) + 1 + UPCOMING_LEAD_DAYS
+  const own = view.provinces.filter((province) => province.owner === view.playerId)
+  const bestLevel = (building: string): number =>
+    own.reduce((best, province) => Math.max(best, province.buildings?.[building as never] ?? 0), 0)
+  const hasCoast = own.some((province) => province.coastal)
+
+  const text = (kind: 'buildings' | 'units', key: string, rule: Prerequisites): string => {
+    const thing = t(`${kind}.${key}`)
+    const subject = nominativePronoun(kind, key)
+    if (rule.requiresCoastal && !hasCoast) return t('alerts.upcomingNeedsCoast', { thing, subject })
+
+    const required = rule.requiresBuilding
+    const level = rule.requiresBuildingLevel ?? 1
+    if (!required || bestLevel(required) >= level) return t('alerts.upcoming', { thing })
+
+    const needs = {
+      thing,
+      subject,
+      article: indefiniteArticle('buildings', required),
+      required: t(`buildings.${required}`),
+      none: noneOf('buildings', required),
+    }
+    return level > 1 ? t('alerts.upcomingNeedsLevel', { ...needs, level }) : t('alerts.upcomingNeeds', needs)
+  }
+
+  const alerts: Alert[] = []
+  for (const [key, rule] of Object.entries(rules.buildings)) {
+    if (rule.availableFromDay !== day) continue
+    alerts.push({
+      id: `upcoming:building:${key}`,
+      kind: 'upcoming',
+      icon: BUILDING_ICONS[key] ?? 'barracks',
+      text: text('buildings', key, rule),
+    })
+  }
+  for (const [key, rule] of Object.entries(rules.units)) {
+    if (rule.availableFromDay !== day) continue
+    alerts.push({
+      id: `upcoming:unit:${key}`,
+      kind: 'upcoming',
+      icon: UNIT_ICONS[key] ?? 'infantry',
+      text: text('units', key, rule),
+    })
+  }
+  return alerts
+}
+
+/** Was eine Sache voraussetzt — so viel, wie die Ankuendigung nennen kann. */
+interface Prerequisites {
+  requiresBuilding?: string
+  requiresBuildingLevel?: number
+  requiresCoastal?: boolean
+}
+
+/** Genau so viel von den Regeln, wie Freischaltung und Ankuendigung brauchen. */
 export interface UnlockRules {
   constants: { ticksPerDay: number }
-  buildings: Record<string, { availableFromDay: number }>
-  units: Record<string, { availableFromDay: number }>
+  buildings: Record<string, { availableFromDay: number } & Prerequisites>
+  units: Record<string, { availableFromDay: number } & Prerequisites>
 }
 
 export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[] {
   if (!view) return []
-  const alerts: Alert[] = rules ? unlockAlerts(view, rules) : []
+  const alerts: Alert[] = rules ? [...unlockAlerts(view, rules), ...upcomingAlerts(view, rules)] : []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
   const nameOf = (id: string): string => view.provinces.find((province) => province.id === id)?.name ?? id
 

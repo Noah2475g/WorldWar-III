@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -149,5 +150,105 @@ describe('R-UI-07 Die Freischaltungsmeldung beugt ihr Pronomen', () => {
     expect(texte['unlock:unit:infantry']).toBe('Neu ab heute: Infanterie. Sie können sie jetzt ausheben.')
     expect(texte['unlock:unit:tank']).toBe('Neu ab heute: Kampfpanzer. Sie können ihn jetzt ausheben.')
     expect(texte['unlock:unit:fighter']).toBe('Neu ab heute: Jagdflugzeug. Sie können es jetzt ausheben.')
+  })
+})
+
+/**
+ * Die nächste Freischaltung kündigt sich an (T-M41-03, R-TECH-02, R-UI-05).
+ *
+ * Die Eröffnung hatte zwei Pausen von vier Spieltagen ohne Anlass (Tag 6 → 10, Tag 12 →
+ * 16). Statt die Freischaltungstage zu schieben, sagt das Spiel zwei Tage vorher, was
+ * kommt — und was dafür fehlt, damit aus Warten eine Handlung wird (DECISIONS.md,
+ * 2026-09-13). Leise: kein Alarm, kein Sprung auf die Karte.
+ */
+describe('R-TECH-02 Die naechste Freischaltung kuendigt sich zwei Spieltage vorher an', () => {
+  const regeln = {
+    constants: { ticksPerDay: 24 },
+    buildings: {
+      barracks: { availableFromDay: 1 },
+      harbour: { availableFromDay: 6, requiresCoastal: true },
+      shipyard: { availableFromDay: 20, requiresBuilding: 'harbour', requiresCoastal: true },
+    },
+    units: {
+      infantry: { availableFromDay: 1, requiresBuilding: 'barracks' },
+      transport: { availableFromDay: 10, requiresBuilding: 'harbour' },
+      destroyer: { availableFromDay: 24, requiresBuilding: 'shipyard', requiresBuildingLevel: 2 },
+      fighter: { availableFromDay: 12, requiresBuilding: 'airfield' },
+    },
+  }
+
+  /** Eine Sicht zu Tagesbeginn eines Spieltags, mit einer eigenen Provinz. */
+  const sicht = (tag: number, provinz: { buildings?: Record<string, number>; coastal?: boolean } = {}) =>
+    ({
+      ...view({}),
+      tick: (tag - 1) * 24,
+      provinces: [{ id: 'A', name: 'Alpha', owner: 'p1', coastal: true, stale: false, asOfTick: 0, ...provinz }],
+    }) as unknown as PublicView
+
+  const angekuendigt = (v: PublicView) => alertsFor(v, regeln).filter((alert) => alert.kind === 'upcoming')
+
+  it('erscheint zwei Spieltage vor der Freischaltung und nennt, was fehlt', () => {
+    const [ankuendigung, ...rest] = angekuendigt(sicht(8))
+
+    expect(rest).toEqual([])
+    expect(ankuendigung?.id).toBe('upcoming:unit:transport')
+    expect(ankuendigung?.text).toBe('In zwei Tagen: Transportschiff. Es braucht einen Hafen — Sie haben keinen.')
+  })
+
+  it('schweigt von der Voraussetzung, wenn sie steht', () => {
+    expect(angekuendigt(sicht(8, { buildings: { harbour: 1 } })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Transportschiff.',
+    ])
+  })
+
+  it('nennt die fehlende Stufe, und schweigt, sobald sie erreicht ist', () => {
+    expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 1 } })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Zerstörer. Er braucht eine Werft der Stufe 2 — Sie haben keine.',
+    ])
+    expect(angekuendigt(sicht(22, { buildings: { harbour: 1, shipyard: 2 } })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Zerstörer.',
+    ])
+  })
+
+  it('nennt bei einem Gebaeude die fehlende Kueste', () => {
+    expect(angekuendigt(sicht(4, { coastal: false })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Hafen. Er braucht eine Küstenprovinz — Sie haben keine.',
+    ])
+    expect(angekuendigt(sicht(4)).map((alert) => alert.text)).toEqual(['In zwei Tagen: Hafen.'])
+  })
+
+  it('beugt nach dem Genus der Voraussetzung', () => {
+    // Der Flugplatz ist maennlich, die Kaserne weiblich: "einen"/"keinen" gegen "eine"/"keine".
+    expect(angekuendigt(sicht(10, { buildings: { harbour: 1 } })).map((alert) => alert.text)).toEqual([
+      'In zwei Tagen: Jagdflugzeug. Es braucht einen Flugplatz — Sie haben keinen.',
+    ])
+  })
+
+  it('kuendigt nur zwei Tage vorher an, nicht am Vortag und nicht am Tag selbst', () => {
+    // An Tag 10 kuendigt sich das Jagdflugzeug (Tag 12) an; gefragt ist nur das Transportschiff.
+    const transport = (tag: number) => angekuendigt(sicht(tag)).filter((alert) => alert.id === 'upcoming:unit:transport')
+    expect(transport(7)).toEqual([])
+    expect(transport(8)).toHaveLength(1)
+    expect(transport(9)).toEqual([])
+    expect(transport(10)).toEqual([])
+    // Und am Tag selbst steht die Freischaltung, keine Ankuendigung.
+    expect(alertsFor(sicht(10), regeln).map((alert) => alert.id)).toContain('unlock:unit:transport')
+  })
+
+  it('steht nur am Anfang des Tages, wie die Freischaltung', () => {
+    const spaet = { ...sicht(8), tick: 7 * 24 + 20 } as PublicView
+    expect(angekuendigt(spaet)).toEqual([])
+  })
+
+  it('ist leise: keine Alarmfarbe und kein Sprung auf die Karte', () => {
+    const [ankuendigung] = angekuendigt(sicht(8))
+    expect(ankuendigung?.provinceId).toBeUndefined()
+
+    // Laut ist nur, was knapp oder umkaempft ist (M36). Die Farbregeln fuer Alarm und
+    // Warnung duerfen die Ankuendigung nicht nennen.
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--(accent|warn)\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.length, 'keine Alarmregel gefunden - der Waechter misst nichts').toBeGreaterThan(0)
+    for (const selektor of laut) expect(selektor).not.toContain('alert--upcoming')
   })
 })

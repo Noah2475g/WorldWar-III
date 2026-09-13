@@ -45,7 +45,7 @@ const unlockRules: UnlockRules = {
 
 interface Ereignis {
   tick: number
-  art: 'Schritt' | 'Meldung' | 'Fertig'
+  art: 'Schritt' | 'Meldung' | 'Ankündigung' | 'Fertig'
   was: string
 }
 
@@ -95,11 +95,14 @@ function durchgang(): { ereignisse: Ereignis[]; ende: TutorialState } {
     const result = step(state, commands, ctx)
     state = result.state
 
-    // Was die Alarmleiste in diesem Tick zeigt — daraus entsteht die Freischaltungsmeldung.
+    // Was die Meldungsleiste in diesem Tick zeigt: Freischaltungen und, seit T-M41-03,
+    // die Ankündigung zwei Spieltage vorher. Beide zählen als Anlass — die Ankündigung
+    // sagt, was kommt und was dafür fehlt.
     for (const alert of alertsFor(publicView(state, 'p1', TEST_RULES), unlockRules)) {
-      if (alert.kind !== 'unlock') continue
-      if (ereignisse.some((e) => e.art === 'Meldung' && e.was === alert.text)) continue
-      ereignisse.push({ tick: state.tick, art: 'Meldung', was: alert.text })
+      const art = alert.kind === 'unlock' ? 'Meldung' : alert.kind === 'upcoming' ? 'Ankündigung' : null
+      if (!art) continue
+      if (ereignisse.some((e) => e.art === art && e.was === alert.text)) continue
+      ereignisse.push({ tick: state.tick, art, was: alert.text })
     }
     for (const event of result.events) {
       if (event.type === 'BUILD_COMPLETED' || event.type === 'UNIT_RECRUITED') {
@@ -125,7 +128,7 @@ function durchgang(): { ereignisse: Ereignis[]; ende: TutorialState } {
 function laengstePause(ereignisse: readonly Ereignis[]): { ticks: number; von: number; bis: number } {
   let best = { ticks: 0, von: 0, bis: 0 }
   let letzter = 0
-  for (const e of ereignisse) {
+  for (const e of [...ereignisse].sort((a, b) => a.tick - b.tick)) {
     if (e.tick - letzter > best.ticks) best = { ticks: e.tick - letzter, von: letzter, bis: e.tick }
     letzter = e.tick
   }
@@ -140,6 +143,7 @@ const alsZeit = (tick: number): string =>
 describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
   const { ereignisse, ende } = durchgang()
   const pause = laengstePause(ereignisse)
+  const ankuendigungen = ereignisse.filter((e) => e.art === 'Ankündigung')
 
   it('fuehrt den Spieler bis ans Ende der Fuehrung', () => {
     // Führen heißt ankommen. Bliebe die Führung auf einem Schritt stehen, wäre sie eine
@@ -150,6 +154,17 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
     expect(ereignisse.filter((e) => e.art === 'Schritt').length).toBeGreaterThanOrEqual(4)
   })
 
+  it('kuendigt jede Freischaltung im Fenster zwei Spieltage vorher an (T-M41-03)', () => {
+    // Die Zahl aus dem Lauf, nicht aus dem Einzeltest: in sechzehn Spieltagen fallen
+    // vier Freischaltungen nach Tag 2 an (Hafen 6, Transportschiff 10, Festung 12,
+    // motorisierte Infanterie 16), und jede muss zwei Tage vorher angekündigt sein.
+    for (const meldung of ereignisse.filter((e) => e.art === 'Meldung' && e.tick >= 3 * perDay)) {
+      const vorher = ankuendigungen.find((a) => a.tick === meldung.tick - 2 * perDay)
+      expect(vorher, `keine Ankündigung zwei Tage vor "${meldung.was}" (${alsZeit(meldung.tick)})`).toBeTruthy()
+    }
+    expect(ankuendigungen.length, 'keine einzige Ankündigung im Lauf').toBeGreaterThanOrEqual(4)
+  })
+
   it('haelt die laengste Pause fest, damit sie nicht unbemerkt waechst', () => {
     /*
      * Die Zahl, die zählt — und **eine Messung, keine Zusage.**
@@ -157,25 +172,24 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
      * Gemessen am 2026-09-07: **72 Ticks**, drei volle Spieltage zwischen der Eisenbahn
      * an Tag 5 und der Fabrik an Tag 8. Gemessen am 2026-09-12 nach M34: **96 Ticks**,
      * vier volle Spieltage zwischen dem Hafen an Tag 6 und dem Transportschiff an Tag 10.
+     * Gemessen am 2026-09-13 nach T-M41-03: **48 Ticks** — zwei Spieltage, weil jede
+     * Freischaltung zwei Tage vorher angekündigt wird (Tag 4, 8, 10, 14). Gerechnet war
+     * dieselbe Zahl; der Lauf hat sie bestätigt.
      *
      * **Die Schranke ist der heutige Wert, nicht ein gewünschter**, und sie ist eine
-     * Sperrklinke gegen *unbeabsichtigtes* Wachstum. M34 hat die Freischaltungsleiter von
-     * sechzehn auf achtzig Spieltage gestreckt (T-M34-03); dass die Lücken zwischen den
-     * Freischaltungen dabei mitwachsen, ist keine Überraschung, sondern die Rückseite
-     * derselben Entscheidung. Die Klinke wird deshalb einmal weitergestellt, **mit
-     * genannter Ursache** — was sie weiterhin nicht duldet, ist eine Pause, die ohne
-     * solchen Grund wächst.
+     * Sperrklinke gegen *unbeabsichtigtes* Wachstum. Die Klinke wurde nach M34 einmal
+     * weitergestellt, **mit genannter Ursache** (die Freischaltungsleiter reicht seither
+     * bis Tag 80), und nach T-M41-03 auf den gemessenen Wert zurückgenommen. Was sie
+     * weiterhin nicht duldet, ist eine Pause, die ohne solchen Grund wächst.
      *
-     * **Was dagegen steht, und was nicht:** T-M34-08 hat über die Aushebeliste eine Zeile
-     * gesetzt, die sagt, was als Nächstes kommt und in wie vielen Tagen — aus Warten wird
-     * ein Ziel. Diese Messung sieht davon nichts, denn sie zählt **Ereignisse**, und eine
-     * stehende Zeile ist keines. Ob vier stille Spieltage zu lang sind, bleibt damit eine
+     * **Was sie nicht misst:** ob eine Ankündigung als Anlass *empfunden* wird. Sie ist
+     * leise und kann wie Kosmetik wirken (DECISIONS.md, 2026-09-13) — das bleibt eine
      * Frage an Noahs Playtest und nicht an diesen Test.
      */
     expect(
       pause.ticks,
       `laengste Pause ${pause.ticks} Ticks: ${alsZeit(pause.von)} bis ${alsZeit(pause.bis)}`,
-    ).toBeLessThanOrEqual(96)
+    ).toBeLessThanOrEqual(48)
   })
 
   it('laesst die ersten beiden Spieltage nicht leer', () => {
@@ -190,7 +204,7 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
     const zeilen = [
       '# Der Durchgang durch die ersten Spieltage',
       '',
-      `Gemessen am **2026-09-12** von \`apps/desktop/src/game/onboarding.slow.test.ts\`, über`,
+      `Gemessen am **2026-09-13** von \`apps/desktop/src/game/onboarding.slow.test.ts\`, über`,
       `**${TAGE} Spieltage** (${TICKS} Ticks) auf der kleinen Karte, Startzahl ${config.seed}.`,
       '',
       '> Dieser Bericht gilt für genau diesen Stand. Zeigt `git log --oneline -1` etwas anderes,',
@@ -202,6 +216,7 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
       '|---|---|',
       `| Führungsschritte im Lauf | ${ereignisse.filter((e) => e.art === 'Schritt').length} |`,
       `| Freischaltungsmeldungen | ${ereignisse.filter((e) => e.art === 'Meldung').length} |`,
+      `| Ankündigungen (zwei Tage vorher) | ${ankuendigungen.length} |`,
       `| Erste Einheit möglich ab | Tick ${firstUnitAt(TEST_RULES)} (${alsZeit(firstUnitAt(TEST_RULES))}) |`,
       `| Führung am Ende | ${currentStep(ende)?.id ?? 'durchgelaufen'} |`,
       '',
@@ -212,7 +227,7 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
       '',
       '| Zeit | Art | Was |',
       '|---|---|---|',
-      ...ereignisse.map((e) => `| ${alsZeit(e.tick)} | ${e.art} | ${e.was} |`),
+      ...[...ereignisse].sort((a, b) => a.tick - b.tick).map((e) => `| ${alsZeit(e.tick)} | ${e.art} | ${e.was} |`),
       '',
       '## Wie der Lauf gedacht ist',
       '',
@@ -228,26 +243,26 @@ describe('R-UI-05 Der Durchgang durch die ersten sechzehn Spieltage', () => {
       '',
       '## Der Befund fuer Noah',
       '',
-      `**Zwischen Tag 5 und Tag 8 geschieht drei Spieltage lang nichts.** Die Eisenbahn kommt an`,
-      'Tag 5, die Fabrik an Tag 8, und dazwischen meldet das Spiel nichts, was den Spieler',
-      'anspräche. Die Führung ist da längst durchgelaufen.',
+      'Nach M34 lagen **zwei Pausen von vier Spieltagen** im Fenster: vom Hafen an Tag 6 bis zum',
+      'Transportschiff an Tag 10 und von der Festung an Tag 12 bis zur motorisierten Infanterie an',
+      'Tag 16 (96 Ticks).',
       '',
-      'Ob das zu lang ist, ist eine **Balancing-Frage** und gehört Noah — hier steht nur die',
-      'gemessene Zahl. Drei Wege wären denkbar, alle drei sind eigene Aufgaben:',
+      '**Seit T-M41-03 kündigt sich jede Freischaltung zwei Spieltage vorher an**, und die',
+      'Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Es braucht einen',
+      'Hafen — Sie haben keinen." Die Freischaltungstage selbst sind unverändert (Entscheid',
+      '„Ankündigung statt Datenänderung", `DECISIONS.md`, 2026-09-13, kippbar). Die längste',
+      `Pause im Fenster beträgt damit **${pause.ticks} Ticks**.`,
       '',
-      '1. **Die Achse verdichten** — eine Freischaltung an Tag 6 oder 7. Ändert die Partie.',
-      '2. **Anderes melden** — Bevölkerungswachstum, ein Lagerstand, eine Nachricht aus der',
-      '   Welt. Ändert die Partie nicht, füllt aber auch nur die Meldungsleiste.',
-      '3. **So lassen.** Wer bis Tag 5 gespielt hat, hat sich entschieden; die Lücke trifft',
-      '   nicht mehr den Einsteiger, für den diese Aufgabe gebaut wurde.',
-      '',
-      'Der Test hält die Zahl als Obergrenze fest: sie darf nicht unbemerkt wachsen.',
+      'Hinter dem Messfenster liegen größere Lücken zwischen den Freischaltungen (Tag 20 → 28,',
+      '48 → 62, 70 → 80). Die Ankündigung wirkt dort genauso, halbiert sie aber nicht: eine Lücke',
+      'von vierzehn Tagen bleibt eine Lücke von zwölf.',
       '',
       '## Was dieser Bericht nicht sagt',
       '',
-      'Ob die Führung **verständlich** ist. Er zählt, dass etwas geschieht und wann; ob der Satz',
-      'an der richtigen Stelle das Richtige sagt, findet nur ein Mensch heraus. Dafür stehen die',
-      'beiden Fragen am Ende von `docs/PLAYTEST.md`.',
+      'Ob die Führung **verständlich** ist, und ob eine leise Ankündigung als Anlass empfunden',
+      'wird. Er zählt, dass etwas geschieht und wann; ob der Satz an der richtigen Stelle das',
+      'Richtige sagt, findet nur ein Mensch heraus. Dafür stehen die beiden Fragen am Ende von',
+      '`docs/PLAYTEST.md`.',
       '',
     ]
     writeFileSync(`${ROOT}/docs/reports/onboarding.md`, zeilen.join('\n'))
