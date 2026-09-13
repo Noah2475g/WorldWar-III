@@ -168,7 +168,15 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
     const retreat = armyActions(ctx, 'a1').find((a) => a.id === 'stance-retreat')!
     expect(retreat.hint).toContain(`${Math.round(ctx.rules.constants.retreatLossPermille / 10)} %`)
   })
+})
 
+/**
+ * Vier Haltungen, ihre Hinweise und das Anhalten (T-M40-05, T-M40-11, R-UNIT-09/AK6).
+ *
+ * Eigener Block, damit das Anforderungstor das Kriterium findet: es zaehlt `describe`-Namen, und bis
+ * T-M40-12 stand AK6 nur in den Namen zweier `it` innerhalb von R-UNIT-03/04.
+ */
+describe('R-UNIT-09/AK6 Vier Haltungen, ihre Hinweise und das Anhalten', () => {
   it('bietet vier Haltungen an, und jeder Hinweis sagt, was die Armee von selbst tut oder laesst (R-UNIT-09/AK6)', () => {
     // Eine Automatik, die niemand erklaert, findet niemand (D30.7). Und der alte Hinweis zu
     // „Angriff" — „greift von sich aus an, was in Reichweite kommt" — beschrieb eine Wirkung,
@@ -231,7 +239,9 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
       expect(anhalten.hint, stance).not.toMatch(/Garnison/)
     }
   })
+})
 
+describe('R-UNIT-03/04 Armeebefehle (Fortsetzung)', () => {
   it('bietet Marsch, Haltung und Teilen an und begruendet den Rest', () => {
     const { ctx, capital } = fresh()
     withArmy(ctx.state, capital)
