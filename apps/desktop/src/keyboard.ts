@@ -31,7 +31,16 @@ export interface KeyContext {
   /** While typing in a field, letters belong to the field and not to the game. */
   typing: boolean
   dialogOpen: boolean
+  /**
+   * Laeuft gerade ein Vorspulen (T-M41-13, Befund N7)? Dann setzen Leertaste, Plus und Minus
+   * keine Uhr neben den Haeppchen in Gang, und F startet keinen zweiten Lauf — beides
+   * ueberschreibt Ticks und gesammelte Befehle. Karte, Panels, Speichern und Escape bleiben.
+   */
+  fastForwarding: boolean
 }
+
+/** Die Tasten, die Uhr oder Vorspulen bedienen — waehrend eines Laufs gesperrt (T-M41-13). */
+const CLOCK_KEYS = new Set([' ', '+', '=', '-', '−', 'f', 'F'])
 
 /** One step along the detents, so + and − move the way a player expects. */
 function neighbourSpeed(speed: number, direction: 1 | -1): number {
@@ -58,6 +67,7 @@ export function resolveKey(
   if (control) return null
 
   if (context.dialogOpen) return null
+  if (context.fastForwarding && CLOCK_KEYS.has(event.key)) return null
 
   switch (event.key) {
     case ' ':

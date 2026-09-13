@@ -896,6 +896,8 @@ export function App(props: AppProps) {
         mode: ui.mode,
         typing: isTypingTarget(event.target),
         dialogOpen: dialog !== null,
+        // Waehrend eines Laufs keine Uhr und kein zweiter Lauf (T-M41-13).
+        fastForwarding: fastForwardState.running,
       })
       if (!shortcut) return
       event.preventDefault()
@@ -974,7 +976,20 @@ export function App(props: AppProps) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, activeMap, state, targeting, tutor])
+  }, [
+    speed,
+    ui.mode,
+    ui.view,
+    ui.settings.maxSpeed,
+    dialog,
+    step,
+    ticksPerDay,
+    activeMap,
+    state,
+    targeting,
+    tutor,
+    fastForwardState.running,
+  ])
 
   useEffect(() => {
     if (dialog !== 'saves') return

@@ -5669,3 +5669,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   über mehr als ein Häppchen) und zeigt dort, dass der Befehl verloren geht; die Messung „heute
   synchron" steht in `App.test.tsx` und `PROBLEME.md`. R-TIME-02 und R-TIME-03 stehen nur hier im
   Text (`name_level`).
+  *(Beim Bau 2026-09-13: der App-Test bricht den Lauf nach einem weiteren Häppchen ab, statt ihn
+  abzuwarten — das Ziel `days` zählt der Kern je Häppchen, und die Schleife in `App.tsx` trägt den
+  Fortschritt nicht weiter; in Häppchen zu 4 Ticks liefe „ein Tag" bis zur Obergrenze von 30
+  Spieltagen. Nebenbefund in `PROBLEME.md`, nicht in dieser Aufgabe gebaut.)*

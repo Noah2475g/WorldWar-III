@@ -34,6 +34,8 @@ export const de = {
     alarm: 'Einmarsch: {{province}}',
     alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
     speedStop: '{{stop}} Stunden je Sekunde',
+    // Die Tempostufen während eines Laufs (T-M41-13): gesperrt, und der Grund steht daneben.
+    speedLockedFastForward: 'Während des Vorspulens gesperrt — erst abbrechen oder abwarten',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit

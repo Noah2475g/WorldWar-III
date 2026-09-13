@@ -16,7 +16,34 @@ const context = (over: Partial<KeyContext> = {}): KeyContext => ({
   mode: 'political',
   typing: false,
   dialogOpen: false,
+  fastForwarding: false,
   ...over,
+})
+
+/**
+ * Waehrend des Vorspulens (T-M41-13, Befund N7 der Durchsicht M41): Leertaste, Plus und Minus
+ * setzten die Uhr neben den Haeppchen in Gang, F startete einen zweiten Lauf. Beides
+ * ueberschreibt Ticks und Befehle. Karte, Panels, Speichern und Escape bleiben.
+ */
+describe('T-M41-13 Kuerzel waehrend des Vorspulens', () => {
+  it('tun Leertaste, Plus, Minus und F nichts', () => {
+    for (const key of [' ', '+', '=', '-', '−', 'f', 'F']) {
+      expect(resolveKey({ key }, context({ fastForwarding: true })), JSON.stringify(key)).toBeNull()
+    }
+  })
+
+  it('laesst die uebrigen Kuerzel bedienbar', () => {
+    const vorspulen = context({ fastForwarding: true })
+    expect(resolveKey({ key: 'd' }, vorspulen)).toEqual({ type: 'openPanel', panel: 'diplomacy' })
+    expect(resolveKey({ key: 'Escape' }, vorspulen)).toEqual({ type: 'close' })
+    expect(resolveKey({ key: 's', ctrlKey: true }, vorspulen)).toEqual({ type: 'save' })
+    expect(resolveKey({ key: 'm' }, vorspulen)?.type).toBe('cycleMode')
+  })
+
+  it('aendert ohne Vorspulen nichts', () => {
+    expect(resolveKey({ key: ' ' }, context())).toEqual({ type: 'togglePause' })
+    expect(resolveKey({ key: 'f' }, context())).toEqual({ type: 'fastForward' })
+  })
 })
 
 describe('R-UI-06 Tastaturkuerzel', () => {

@@ -177,7 +177,17 @@ export function Header(props: HeaderProps) {
                 className={activeStop === stop ? 'speed speed--active' : 'speed'}
                 aria-pressed={activeStop === stop}
                 aria-label={stop === 0 ? t('header.pause') : undefined}
-                title={stop === 0 ? t('header.pause') : t('header.speedStop', { stop })}
+                // Waehrend des Vorspulens gesperrt (T-M41-13, Befund N7): eine Uhr neben den
+                // Haeppchen rechnet Stunden und nimmt Befehle, die das naechste Haeppchen
+                // ueberschreibt. Die Pause bleibt; Abbrechen ist der Vorspulknopf (T-M28-10).
+                disabled={props.fastForwarding && stop > 0}
+                title={
+                  stop === 0
+                    ? t('header.pause')
+                    : props.fastForwarding
+                      ? t('header.speedLockedFastForward')
+                      : t('header.speedStop', { stop })
+                }
                 onClick={() => props.onSpeed(stop)}
               >
                 {stop === 0 ? <Icon name="pause" size={11} /> : stop}

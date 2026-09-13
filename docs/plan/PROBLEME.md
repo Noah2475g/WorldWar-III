@@ -2343,3 +2343,47 @@ kleinem Tempo. Eine Meldung, die länger als ihren Tag steht, bräuchte einen an
 „Neu ab heute" und ist nicht entschieden.
 
 **Status:** behoben (T-M41-12); die Anzeigezeit bei vollem Tempo als Beobachtung.
+
+## 2026-09-13 · T-M41-13 · Tempo während des Vorspulens verlor Befehle — und das Ziel des Vorspulens zählt je Häppchen
+
+**Befund (Durchsicht M41, N7).** Die Tempostufen (`Header.tsx`) und die Kürzel Leertaste, Plus und
+Minus waren während eines Vorspulens nicht gesperrt. Läuft der Lauf über mehrere Häppchen, setzt
+ein Druck die Uhr neben ihnen in Gang: sie nimmt gesammelte Befehle aus `takePending`, wendet sie
+auf ihren Zustand an, und `chunk(result.state)` überschreibt diesen Zustand im nächsten Häppchen.
+
+**Vor dem Bau gemessen: heute nicht herstellbar.** Knopf und Taste F fahren `{ kind: 'days', days: 1 }`,
+das sind 24 Ticks, `DEFAULT_CHUNK_TICKS` ist 24, und der Kern prüft das Ziel im Häppchen. Der Lauf
+endet im ersten Häppchen, synchron im Klick — `App.test.tsx` hält das fest (kein Abbrechen-Knopf,
+sofort „Angehalten nach …"). Einen Zeitpunkt, an dem der Spieler Tempo drücken könnte, gibt es
+heute nicht.
+
+**Mit kleineren Häppchen gezeigt.** `App.test.tsx` verkleinert die Häppchen per Hülle um
+`fastForwardChunk` auf 4 Ticks (derselbe Weg wie jeder Lauf über mehr als ein Häppchen): Kaserne
+gesammelt, Vorspulen gestartet (der Lauf steht nach dem ersten Häppchen noch, die Kaserne ist
+begonnen), Krieg während des Laufs erklärt, dann Tempo 100 geklickt bzw. Leertaste und Plus
+gedrückt, vier Bilder der Uhr, ein weiteres Häppchen, abgebrochen, erneut vorgespult. **Vor der
+Reparatur rot in beiden Fällen:** die Kriegserklärung steht nie im Protokoll.
+
+**Reparatur: gesperrt, nicht übergeben.** Die Stufen über 0 sind während eines Laufs `disabled` und
+nennen den Grund („Während des Vorspulens gesperrt — erst abbrechen oder abwarten"); die Pause
+bleibt bedienbar, der Vorspulknopf ist seit T-M28-10 der Abbrechen-Knopf. `resolveKey` gibt für
+Leertaste, Plus, Minus und F während eines Laufs nichts zurück (F hätte einen zweiten Lauf neben
+dem ersten gestartet); Karte, Panels, Speichern und Escape bleiben. Befehle, die während des Laufs
+gegeben werden, bleiben gesammelt und wirken im nächsten Tick danach.
+
+**Nebenbefund 1 (nicht gebaut): das Ziel „ein Tag" zählt je Häppchen.** `fastForwardChunk` ruft
+für jedes Häppchen `fastForward` neu auf, und `targetReached` misst `ticksRun` dieses Aufrufs.
+Die Schleife in `App.tsx` setzt fort, solange ein Häppchen an `limit` endet — sie trägt den
+Fortschritt zum Ziel nicht über Häppchen hinweg. Mit Häppchen zu 4 Ticks lief „ein Tag" nach 50
+Häppchen (200 Ticks) weiter und hätte erst an der Obergrenze von 30 Spieltagen gehalten (gesehen im
+ersten Entwurf des Tests; er bricht deshalb ab). Heute verdeckt: ein Tag ist genau ein Häppchen.
+Jedes Ziel über mehr als 24 Ticks, das nicht zustandsbasiert ist (`days` ab 2, `ticks` über 24),
+würde bis zur Obergrenze laufen. Gehört zu R-TIME-02/R-TIME-06 und keiner Aufgabe dieses Blocks.
+
+**Nebenbefund 2 (nicht gebaut): der Kürzel-Effekt in `App.tsx` nennt `fastForwardRun` nicht in
+seinen Abhängigkeiten.** Er ruft die Funktion aus dem Render, in dem er zuletzt neu gebunden wurde;
+`fastForwardRun` hängt an `debugOn` und `noteTrace`, der Effekt nicht. Wer die Debug-Ansicht
+einschaltet und dann F drückt, spult ohne Mitschrift vor, bis sich eine andere Abhängigkeit ändert.
+Gelesen, nicht gemessen.
+
+**Status:** behoben (T-M41-13); Nebenbefund 1 und 2 offen.

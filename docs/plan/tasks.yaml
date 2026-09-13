@@ -3061,7 +3061,11 @@ tasks:
   - id: T-M41-13
     milestone: M41
     title: Tempo waehrend des Vorspulens verliert keine Befehle
-    status: todo
+    status: done
+    # Beim Bau (2026-09-13): rot vorher Header 1, keyboard 1, App 2 von 3 (Kriegserklaerung
+    # aus dem Lauf verloren). Der App-Test bricht den Lauf ab, statt ihn abzuwarten: das Ziel
+    # days zaehlt je Haeppchen, in 4-Tick-Haeppchen liefe ein Tag bis zur Obergrenze von 30
+    # Tagen - Nebenbefund in PROBLEME.md, nicht gebaut.
     deps: [T-M41-12]
     requirements: []
     files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, docs/plan/PROBLEME.md]

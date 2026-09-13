@@ -10,6 +10,33 @@ import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
+import type * as FastForwardModule from './game/fastForward.ts'
+
+/**
+ * Die Haeppchengroesse des Vorspulens, im Test verkleinerbar (T-M41-13).
+ *
+ * Ein Vorspulen um einen Tag sind 24 Ticks und passt heute genau in ein Haeppchen: der Lauf
+ * endet synchron im Klick. Jeder Lauf ueber mehr als ein Haeppchen nimmt aber denselben Weg —
+ * zwischen zwei Haeppchen kommt die Ereignisschleife dran, und dort kann der Spieler klicken.
+ * Mit `haeppchen.ticks` rechnet derselbe Weg in kleineren Stuecken; ohne Wert reicht die Huelle
+ * alles unveraendert durch.
+ */
+const haeppchen = vi.hoisted(() => ({ ticks: 0 }))
+
+vi.mock('./game/fastForward.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof FastForwardModule>()
+  return {
+    ...original,
+    fastForwardChunk: (...args: Parameters<typeof original.fastForwardChunk>) => {
+      const [state, request, ...rest] = args
+      return original.fastForwardChunk(
+        state,
+        haeppchen.ticks > 0 ? { ...request, chunkTicks: haeppchen.ticks } : request,
+        ...rest,
+      )
+    },
+  }
+})
 
 /**
  * The assembled game (T-M10-03 … T-M10-12).
@@ -1419,6 +1446,119 @@ describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
     fireEvent.click(within(region).getByRole('button', { name: /^Ausblenden: Neu ab heute: Hafen/ }))
 
     expect(meldungen()).not.toContain('Hafen')
+  }, 30_000)
+})
+
+/**
+ * Tempo waehrend des Vorspulens verliert keine Befehle (T-M41-13, Befund N7 der Durchsicht M41).
+ *
+ * Laeuft das Vorspulen ueber mehrere Haeppchen und der Spieler drueckt Tempo, laeuft die Uhr
+ * daneben: sie nimmt die gesammelten Befehle (`takePending`), wendet sie auf ihren Zustand an —
+ * und das naechste Haeppchen ueberschreibt diesen Zustand mit seinem eigenen. Gezaehlt wird am
+ * Protokoll, nicht an einer Variable.
+ */
+describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => {
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const abbrechen = () => screen.queryByRole('button', { name: 'Abbrechen' })
+  let wartend: FrameRequestCallback[] = []
+  let jetzt = 0
+
+  const gestellteUhr = () => {
+    wartend = []
+    jetzt = 1000
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
+      wartend.push(rueckruf)
+      return wartend.length
+    })
+    vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+  }
+
+  const bilder = (anzahl: number, dtMs: number) => {
+    for (let bild = 0; bild < anzahl; bild++) {
+      jetzt += dtMs
+      const faellig = wartend
+      wartend = []
+      act(() => {
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      })
+    }
+  }
+
+  const haeppchenAbwarten = () => {
+    for (let runde = 0; runde < 50 && abbrechen(); runde++) {
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+    }
+    expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
+  }
+
+  afterEach(() => {
+    haeppchen.ticks = 0
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  /** Kaserne gesammelt, Vorspulen in Haeppchen zu 4 Ticks gestartet, Krieg waehrend des Laufs erklaert. */
+  const lageWaehrendDesLaufs = () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    const capital = world.startPositions[0]!.capital
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+
+    haeppchen.ticks = 4
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    // Nicht leer gemessen: der Lauf geht ueber mehrere Haeppchen und steht noch — und der vorher
+    // gesammelte Befehl gehoert seinem ersten Tick.
+    expect(abbrechen(), 'der Lauf endete im ersten Haeppchen - der Test misst nichts').not.toBeNull()
+    expect(log()).toContain('Bau von Kaserne begonnen')
+
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+  }
+
+  const beideAngewandt = () => {
+    // Die Uhr bekommt ein paar Bilder, dann rechnet das naechste Haeppchen weiter.
+    bilder(4, 100)
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    // Abgebrochen statt abgewartet: das Ziel "ein Tag" zaehlt der Kern je Haeppchen, in
+    // Haeppchen zu 4 Ticks liefe der Lauf bis zur Obergrenze von 30 Tagen (Befund, PROBLEME.md).
+    fireEvent.click(abbrechen()!)
+    haeppchenAbwarten()
+    // Was dann noch aussteht, wendet der naechste Lauf an — ausstehend ist nicht verloren.
+    haeppchen.ticks = 0
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(log(), 'die Kriegserklaerung aus dem Lauf ist verloren').toMatch(/erklären .* den Krieg/)
+  }
+
+  it('misst den Stand: ein Vorspulen um einen Tag endet heute im ersten Haeppchen, synchron im Klick', () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Deshalb ist der Verlust ueber die Oberflaeche heute nicht herstellbar (PROBLEME.md).
+    expect(abbrechen()).toBeNull()
+    expect(screen.getByRole('status').textContent).toMatch(/Angehalten nach/)
+  })
+
+  it('verliert keinen Befehl, wenn waehrend des Laufs eine Tempostufe geklickt wird', () => {
+    lageWaehrendDesLaufs()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '100' }))
+    beideAngewandt()
+  }, 30_000)
+
+  it('verliert keinen Befehl, wenn waehrend des Laufs Leertaste oder Plus gedrueckt wird', () => {
+    lageWaehrendDesLaufs()
+    fireEvent.keyDown(window, { key: ' ' })
+    fireEvent.keyDown(window, { key: '+' })
+    beideAngewandt()
   }, 30_000)
 })
 
