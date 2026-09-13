@@ -2261,3 +2261,56 @@ Der Ringpuffer am Ende führt **0** Einmärsche — derselbe Unterschied wie in 
 
 **Status:** Plan korrigiert (D30.6, `03-TASKS.md` und `tasks.yaml` T-M40-02/06, mit Vermerk);
 kein Produktfehler.
+
+---
+
+## 2026-09-13 · T-M40-06 · Die Haltungs-Automatik wirkt messbar, aber schwach — zwei Befehle in 200 Spieltagen
+
+**Gemessen** (`docs/reports/stance.json`; Weltkarte, Startzahl 1914, 200 Spieltage, Deutschland als
+Mensch mit je fünf Infanterie in seinen vier Provinzen, sieben KI-Nachbarn, kein Befehl des
+Menschen; alle absoluten Zahlen **gemessen vor der M41-Nacharbeit (KI-Bauordnung)** — der
+Vergleich bleibt gültig, weil alle Läufe auf demselben KI-Stand liefen):
+
+| Lauf | Einmärsche | Ankunft ≤ 24 Ticks | Ankunft im Kartenfenster (114) | Aufbruch ≤ 24 Ticks | verlorene Provinzen | Provinzen / Armeen am Ende | Befehle des Adjutanten | abgelehnt |
+|---|---|---|---|---|---|---|---|---|
+| vorher (T-M40-02, Verteidigung, noch ohne Automatik) | 52 | 0 | 0 | 0 | 4 | 0 / 0 | 0 | 0 |
+| Kontrolle (Garnison) | 52 | 0 | 0 | 0 | 4 | 0 / 0 | 0 | 0 |
+| **nachher (Verteidigung mit Adjutant)** | 136 | 4 | **9 (6,6 %)** | **4 (2,9 %)** | 3 | 1 / 3 | **2** | **0** |
+| Angriff (mit Verfolgung) | 51 | 0 | 0 | 0 | 5 | 0 / 0 | 3 | 0 |
+
+- **Die Kontrolle bildet „vorher" Zahl für Zahl nach.** Die Garnison ist die Verteidigung ohne
+  Automatik; zwischen T-M40-02 und T-M40-06 hat sich also nichts verschoben außer dem Adjutanten.
+- **R-UNIT-09/AK5 hält:** der Anteil im Kartenfenster steigt von 0 auf 6,6 %, der Aufbruch binnen
+  24 Ticks von 0 auf 2,9 %, und kein Befehl der Automatik wird abgelehnt — auch in der Verfolgung
+  nicht.
+- **Die 24-Tick-Ankunft ist nachher nicht null (4),** obwohl die schnellste Antwort 26 Ticks
+  braucht: mehrere Einmärsche fallen in dieselbe Provinz, und eine Armee, die für den ersten
+  aufbrach, kommt binnen 24 Ticks nach einem späteren an.
+- **Rot gesehen nur ohne Automatik:** mit herausgenommener Deckungsregel fällt der Messlauf („der
+  Adjutant hat im ganzen Lauf nichts befohlen"), mit herausgenommener Verfolgungsregel fallen drei
+  Einzeltests.
+
+**Der Befund: die Wirkung ist klein.** Zwei Befehle in 200 Spieltagen. Deutschland hält am Ende
+eine Provinz und drei Armeen statt keiner, und weil länger etwas zu erobern bleibt, steigen die
+Einmärsche auf 136 — der Anteil hängt am Nenner. Drei Ursachen, am Code belegt:
+
+1. **`occupation` läuft im Tick des Einmarschs** (`phases/index.ts`: movement → combat →
+   occupation). Eine Provinz ohne Verteidiger gehört dem Eindringling, bevor der Adjutant sie im
+   nächsten Tick sieht. Decken kann er nur, wo noch eine eigene Armee kämpft — gefallene Provinzen
+   holt keine Regel zurück.
+2. **Die Quelle muss feindfrei sein** (D30.4, R-UNIT-09/AK1). Frankreich greift mehrere deutsche
+   Provinzen zugleich an; eine Armee im eigenen Gefecht rückt nicht aus.
+3. **Vier Provinzen, fünf Binnengrenzen** — wenige Nachbarn, die nachrücken können.
+
+**Angriff:** drei Verfolgungen, keine Ablehnung. Die Haltung ändert auch den Kampf — `aggressive`
+gilt nicht als eingegrabener Verteidiger —, und dieser Lauf verliert fünf Provinzen bei vier
+Startprovinzen: eine wurde zwischendurch genommen, was ohne Befehl des Menschen nur ein Marsch der
+Verfolgung sein kann (abgeleitet, nicht einzeln gezählt).
+
+**Was daraus folgt.** Keine Aufgabe in M40 — die Zusage von R-UNIT-09 ist eingelöst. Eine
+stärkere Automatik (gefallene Nachbarprovinzen zurückerobern, aus einer umkämpften Provinz
+nachrücken) wäre eine neue Entscheidung über D30.4 und damit über Noahs Satz „Angriff und
+Verteidigung führen sich selbst aus" — vorgemerkt, nicht gebaut. Die Sichtprüfung der
+Haltungsgruppe (zwei mal zwei, T-M40-05) steht im Schlussblock aus.
+
+**Status:** Beobachtung; AK5 belegt.

@@ -109,5 +109,94 @@
     "armiesAtEnd": 0,
     "daysRun": 200,
     "measuredAt": "2026-09-13T12:04:36.993Z"
-  }
+  },
+  "kontrolle": {
+    "stance": "garrison",
+    "adjutant": false,
+    "stand": "gemessen vor der M41-Nacharbeit (KI-Bauordnung)",
+    "intrusions": 52,
+    "answeredWithin24Ticks": 0,
+    "answeredWithinWindow": 0,
+    "departedWithin24Ticks": 0,
+    "provincesLost": 4,
+    "rejectedCommands": 0,
+    "intrudersByNation": {
+      "Frankreich": 47,
+      "Italien": 5
+    },
+    "firstIntrusionDay": 20,
+    "warsDeclaredOnHuman": 2,
+    "ringBufferIntrusions": 0,
+    "humanCommands": 0,
+    "provincesAtEnd": 0,
+    "armiesAtEnd": 0,
+    "daysRun": 200,
+    "measuredAt": "2026-09-13T12:40:31.570Z"
+  },
+  "nachher": {
+    "stance": "defensive",
+    "adjutant": true,
+    "stand": "gemessen vor der M41-Nacharbeit (KI-Bauordnung)",
+    "intrusions": 136,
+    "answeredWithin24Ticks": 4,
+    "answeredWithinWindow": 9,
+    "departedWithin24Ticks": 4,
+    "provincesLost": 3,
+    "rejectedCommands": 0,
+    "intrudersByNation": {
+      "Frankreich": 115,
+      "Polen": 9,
+      "Italien": 12
+    },
+    "firstIntrusionDay": 20,
+    "warsDeclaredOnHuman": 3,
+    "ringBufferIntrusions": 6,
+    "humanCommands": 2,
+    "provincesAtEnd": 1,
+    "armiesAtEnd": 3,
+    "daysRun": 200,
+    "measuredAt": "2026-09-13T12:40:31.570Z"
+  },
+  "angriff": {
+    "stance": "aggressive",
+    "adjutant": true,
+    "stand": "gemessen vor der M41-Nacharbeit (KI-Bauordnung)",
+    "intrusions": 51,
+    "answeredWithin24Ticks": 0,
+    "answeredWithinWindow": 0,
+    "departedWithin24Ticks": 0,
+    "provincesLost": 5,
+    "rejectedCommands": 0,
+    "intrudersByNation": {
+      "Frankreich": 51
+    },
+    "firstIntrusionDay": 20,
+    "warsDeclaredOnHuman": 1,
+    "ringBufferIntrusions": 0,
+    "humanCommands": 3,
+    "provincesAtEnd": 0,
+    "armiesAtEnd": 0,
+    "daysRun": 200,
+    "measuredAt": "2026-09-13T12:40:31.570Z"
+  },
+  "vergleich": {
+    "shareAnsweredWithinWindow": {
+      "vorher": 0,
+      "nachher": 0.0661764705882353
+    },
+    "shareDepartedWithin24Ticks": {
+      "vorher": 0,
+      "nachher": 0.029411764705882353
+    },
+    "shareAnsweredWithin24Ticks": {
+      "vorher": 0,
+      "nachher": 0.029411764705882353
+    },
+    "provincesLost": {
+      "vorher": 4,
+      "nachher": 3
+    },
+    "controlReproducesVorher": true
+  },
+  "wirkung": "messbar: der Anteil beantworteter Einmaersche ist nachher groesser"
 }

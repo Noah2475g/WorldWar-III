@@ -19,13 +19,23 @@ import { placeArmy } from '@worldwar/testkit'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
 /**
- * Der Haltungs-Messlauf (T-M40-02, D30.6, R-UNIT-09/AK5).
+ * Der Haltungs-Messlauf (T-M40-02 vorher, T-M40-06 nachher; D30.6, R-UNIT-09/AK5).
  *
- * Erst messen, dann aendern. Bevor eine Zeile Automatik existiert, haelt dieser Lauf fest,
- * was mit einem Einmarsch in eine Provinz des Menschen geschieht, wenn er nicht klickt:
- * Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber `advanceTicks`; der Mensch spielt
- * Deutschland (Landgrenzen zu mehreren KI-Nachbarn), bekommt beim Aufsetzen eine Armee in
- * jede eigene Provinz und gibt danach keinen einzigen Befehl.
+ * Erst messen, dann aendern. T-M40-02 hielt fest, was mit einem Einmarsch in eine Provinz des
+ * Menschen geschieht, wenn er nicht klickt und es noch keine Automatik gibt: Weltkarte,
+ * ausgelieferte Regeln, 200 Spieltage ueber `advanceTicks`; der Mensch spielt Deutschland
+ * (Landgrenzen zu mehreren KI-Nachbarn), bekommt beim Aufsetzen eine Armee in jede eigene
+ * Provinz und gibt danach keinen einzigen Befehl. Der Abschnitt `vorher` in
+ * `docs/reports/stance.json` ist diese Messung und wird hier nicht neu geschrieben.
+ *
+ * T-M40-06 faehrt dieselbe Aufstellung dreimal:
+ *
+ *  - **Kontrolle, Garnison.** `garrison` kaempft wie `defensive` und handelt nie von selbst.
+ *    Dieser Lauf muss `vorher` Zahl fuer Zahl nachbilden — sonst hat sich seit T-M40-02
+ *    etwas anderes verschoben als die Automatik, und der Vergleich unten waere keiner.
+ *  - **Nachher, Verteidigung.** Dieselbe Haltung wie vorher, jetzt mit Adjutant.
+ *  - **Angriff.** Die Verfolgung braucht eine Zahl aus einem ganzen Lauf, nicht nur ihre
+ *    Einzeltests. Zugesichert wird dort nur: keine Ablehnung.
  *
  * Gezaehlt wird aus dem **Ereignisstrom** des Laufs, nie aus `state.eventLog` — der ist ein
  * Ringpuffer und deckt nur die letzten Spieltage ab (T-M14-05). Der Bericht fuehrt die
@@ -38,7 +48,7 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * weiter gezaehlt; zugesichert wird ueber ein Fenster, das **vor** jeder Messung aus der
  * Karte folgt — ein Tick Verzug plus die laengste Marschzeit ueber eine eigene
  * Binnengrenze fuer genau die aufgestellte Armee. Dazu der Aufbruch binnen 24 Ticks: er
- * misst die Reaktion unabhaengig von der Marschzeit.
+ * misst die Reaktion unabhaengig von der Marschzeit (`PROBLEME.md`, 2026-09-13).
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -236,47 +246,89 @@ function umstaende(lauf: Awaited<ReturnType<typeof fahre>>) {
   }
 }
 
+type Messung = StanceCount & ReturnType<typeof umstaende> & { stance: Stance; adjutant: boolean; stand: string }
+
+async function miss(stance: Stance, windowTicks: number): Promise<Messung> {
+  const lauf = await fahre(stance)
+  // Der Adjutant laeuft seit T-M40-03 in jeder Partie; handeln kann er nur fuer selbsttaetige Haltungen.
+  return { stance, adjutant: stance !== 'garrison', stand: STAND, ...zaehle(lauf.events, lauf.human, windowTicks), ...umstaende(lauf) }
+}
+
+/** Nur die gemessenen Zahlen — ohne Beschriftung und Zeitstempel. */
+function zahlen(messung: object): Record<string, unknown> {
+  const { stance, adjutant, stand, measuredAt, ...rest } = messung as Record<string, unknown>
+  void stance
+  void adjutant
+  void stand
+  void measuredAt
+  return rest
+}
+
+const anteil = (teil: number, ganzes: number): number => (ganzes === 0 ? 0 : teil / ganzes)
+
 describe('R-UNIT-09/AK5 Der Haltungs-Messlauf', () => {
-  it('misst vorher: Einmaersche in eine Provinz des Menschen, der nicht klickt', async () => {
+  it('misst nachher: der Adjutant beantwortet Einmaersche, und keiner seiner Befehle wird abgelehnt', async () => {
+    const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & {
+      vorher?: Messung
+      counting?: { windowTicks: number }
+    }
+    expect(bericht.vorher, 'stance.json fuehrt keinen Abschnitt vorher (T-M40-02)').toBeDefined()
+    const vorher = bericht.vorher!
+
     const vorbereitung = aufstellen('defensive')
     const binnen = binnenMarschzeiten(vorbereitung.state, vorbereitung.human)
-    expect(binnen.length, 'keine eigene Binnengrenze — das Fenster waere leer').toBeGreaterThan(0)
     const windowTicks = 1 + Math.max(...binnen.map((kante) => kante.ticks))
 
-    const lauf = await fahre('defensive')
-    const vorher = { stance: 'defensive', adjutant: false, stand: STAND, ...zaehle(lauf.events, lauf.human, windowTicks), ...umstaende(lauf) }
+    const kontrolle = await miss('garrison', windowTicks)
+    await breathe()
+    const nachher = await miss('defensive', windowTicks)
+    await breathe()
+    const angriff = await miss('aggressive', windowTicks)
 
+    const vergleich = {
+      shareAnsweredWithinWindow: { vorher: anteil(vorher.answeredWithinWindow, vorher.intrusions), nachher: anteil(nachher.answeredWithinWindow, nachher.intrusions) },
+      shareDepartedWithin24Ticks: { vorher: anteil(vorher.departedWithin24Ticks, vorher.intrusions), nachher: anteil(nachher.departedWithin24Ticks, nachher.intrusions) },
+      shareAnsweredWithin24Ticks: { vorher: anteil(vorher.answeredWithin24Ticks, vorher.intrusions), nachher: anteil(nachher.answeredWithin24Ticks, nachher.intrusions) },
+      provincesLost: { vorher: vorher.provincesLost, nachher: nachher.provincesLost },
+      controlReproducesVorher: JSON.stringify(zahlen(kontrolle)) === JSON.stringify(zahlen(vorher)),
+    }
+    const wirkung =
+      vergleich.shareAnsweredWithinWindow.nachher > vergleich.shareAnsweredWithinWindow.vorher &&
+      vergleich.shareDepartedWithin24Ticks.nachher > vergleich.shareDepartedWithin24Ticks.vorher
+        ? 'messbar: der Anteil beantworteter Einmaersche ist nachher groesser'
+        : 'KEINE messbare Wirkung: der Anteil beantworteter Einmaersche ist nachher nicht groesser'
+
+    // Der Bericht wird geschrieben, bevor zugesichert wird — eine gescheiterte Messung ist die,
+    // die man am dringendsten lesen will. `vorher` bleibt, wie T-M40-02 es gemessen hat.
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
+    const stempel = new Date().toISOString()
     writeFileSync(
       REPORT,
       `${JSON.stringify(
         {
-          tasks: 'T-M40-02 (vorher), T-M40-06 (nachher)',
-          stand: STAND,
-          map: map.id,
-          seed: SEED,
-          days: DAYS,
-          human: NATION,
-          opponents: lauf.opponents,
-          setup: { unitKey: UNIT_KEY, unitsPerProvince: UNITS_PER_PROVINCE, armies: vorbereitung.state.armyOrder.length },
-          counting: {
-            source: 'Ereignisstrom von advanceTicks, nicht state.eventLog',
-            planWindowTicks: PLAN_WINDOW_TICKS,
-            windowTicks,
-            windowRule: '1 Tick Verzug (D30.4) + laengste Marschzeit ueber eine eigene Binnengrenze fuer die aufgestellte Armee',
-          },
-          innerBorders: binnen,
-          vorher: { ...vorher, measuredAt: new Date().toISOString() },
+          ...bericht,
+          vorher,
+          kontrolle: { ...kontrolle, measuredAt: stempel },
+          nachher: { ...nachher, measuredAt: stempel },
+          angriff: { ...angriff, measuredAt: stempel },
+          vergleich,
+          wirkung,
         },
         null,
         2,
       )}\n`,
     )
 
-    // Vorher heisst: ohne Automatik. Der Mensch gibt keinen Befehl, also steht hier null.
-    expect(vorher.humanCommands, 'im Lauf vorher hat jemand fuer den Menschen befohlen').toBe(0)
-    // Zugesichert wird nur, dass etwas gemessen wurde. Ist es null, ist die Nation falsch
-    // gewaehlt — dann wird sie gewechselt und begruendet, nicht diese Zeile gelockert.
-    expect(vorher.intrusions, `kein einziger Einmarsch in ${DAYS} Spieltagen gegen ${NATION}`).toBeGreaterThan(0)
+    // Das Fenster ist dasselbe wie vorher, und die Garnison bildet den Lauf vorher nach.
+    expect(windowTicks, 'das Fenster aus der Karte hat sich seit T-M40-02 verschoben').toBe(bericht.counting?.windowTicks)
+    expect(zahlen(kontrolle), 'die Garnison bildet den Lauf vorher nicht nach — etwas anderes hat sich verschoben').toEqual(zahlen(vorher))
+
+    // Zugesichert (R-UNIT-09/AK5): mehr beantwortet, und der Adjutant befiehlt nichts, was abgelehnt wird.
+    expect(nachher.intrusions, 'nachher kein Einmarsch — der Vergleich misst nichts').toBeGreaterThan(0)
+    expect(nachher.humanCommands, 'der Adjutant hat im ganzen Lauf nichts befohlen').toBeGreaterThan(0)
+    expect(vergleich.shareAnsweredWithinWindow.nachher, wirkung).toBeGreaterThan(vergleich.shareAnsweredWithinWindow.vorher)
+    expect(vergleich.shareDepartedWithin24Ticks.nachher, wirkung).toBeGreaterThan(vergleich.shareDepartedWithin24Ticks.vorher)
+    expect(nachher.rejectedCommands, 'abgelehnte Befehle des Adjutanten (Verteidigung)').toBe(0)
+    expect(angriff.rejectedCommands, 'abgelehnte Befehle des Adjutanten (Angriff)').toBe(0)
   }, 1_800_000)
 })

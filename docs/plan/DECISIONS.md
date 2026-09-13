@@ -2165,3 +2165,40 @@ bewegen.
 samt Migration und T-M17-16 einen Vergleich, der fallende Bestände zusichert.
 
 ---
+
+## 2026-09-13 · T-M40-06 · „Beantwortet" misst im Kartenfenster, die Verfolgung misst an allem, was im Ziel steht (delegiert)
+
+**Entscheidung.** Vier Festlegungen beim Bau von M40, keine davon stand so im Entwurf:
+
+1. **Ein Einmarsch gilt als beantwortet**, wenn eine eigene Armee binnen des *Kartenfensters*
+   ankommt (1 Tick Verzug plus die längste Marschzeit über eine eigene Binnengrenze für die
+   aufgestellte Armee, Deutschland 114 Ticks) oder binnen 24 Ticks dorthin aufbricht. Die
+   24-Tick-Ankunft aus D30.6 bleibt als Zahl im Bericht.
+2. **„Höchstens Bs Stärke" (D30.4)** wird an der Summe aller sichtbaren Kriegsgegner in der
+   Zielprovinz gemessen, nicht am Weichenden allein.
+3. **Eine Provinz bekommt je Tick über beide Regeln höchstens einen Befehl** des Adjutanten.
+4. **Der Garnison-Knopf kam mit T-M40-01**, und die Haltungsgruppe steht zwei mal zwei.
+
+**Begründung.** (1) 24 Ticks sind auf der Weltkarte nicht erreichbar — die kürzeste deutsche
+Binnengrenze braucht für Infanterie 25 Ticks, der Befehl fällt einen Tick nach dem Einmarsch; mit
+24 hätte keine Automatik AK5 erfüllen können. Das Fenster ist **vor** der Messung nachher aus der
+Karte abgeleitet und gilt für beide Läufe gleich (`PROBLEME.md`, T-M40-02). (2) Eine Verfolgerin
+kämpft im Ziel gegen alle, die dort stehen. (3) Sonst schickt die Verfolgung eine zweite Armee in
+eine Provinz, die die Verteidigung im selben Tick schon deckt. (4) `tsc` (`Record<Stance,
+string>`) und der Wächter `ui-command-coverage` verlangen den Knopf im selben Commit wie den Wert;
+in drei Spalten brach der vierte Knopf allein um.
+
+**Daten** (`docs/reports/stance.json`, gemessen vor der M41-Nacharbeit (KI-Bauordnung)): Kontrolle
+mit Garnison = vorher, Zahl für Zahl; nachher Anteil im Kartenfenster 0 → 6,6 %, Aufbruch binnen
+24 Ticks 0 → 2,9 %, zwei Befehle, keine Ablehnung; Angriff drei Verfolgungen, keine Ablehnung.
+
+**Gegenrede.** Die Wirkung ist klein (`PROBLEME.md`, T-M40-06) — ein weiteres Fenster hätte daran
+nichts geändert, denn die Zahl der Befehle hängt nicht am Fenster.
+
+**kippbar:** (1) ein anderes Fenster — `windowTicks` in `apps/headless/test/stance.slow.test.ts`
+und D30.6 ändern; vorher bleibt über die Garnison-Kontrolle reproduzierbar. (2) nur den Weichenden
+messen — in `packages/ai/src/adjutant.ts` die Summe `enemyStrength` durch die Stärke der weichenden
+Armee ersetzen; der Test „misst an allem, was dort sichtbar steht" kehrt sich um. (3) je Regel eine
+eigene `heading`-Menge. (4) das Raster `.stances` in `apps/desktop/src/ui/app.css`.
+
+---

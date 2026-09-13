@@ -89,6 +89,12 @@ Handelsangebote) — bewusst erst nach Noahs Feedback-Runde planen.
 > (2026-09-12). Die Analyse in 5.1 und 5.2 gilt unverändert; **drei Sätze in 5.3 und 5.4
 > gelten nicht mehr** und sind dort vermerkt. Maßgeblich sind `02-DESIGN.md` D30 und
 > `03-TASKS.md` M40.
+>
+> **Ergebnis (2026-09-13, M40 gebaut):** `docs/reports/stance.json`. Die Verteidigung deckt
+> messbar, aber schwach — Anteil beantworteter Einmärsche im Kartenfenster 0 → 6,6 %, zwei
+> Befehle in 200 Spieltagen, keine Ablehnung; die Verfolgung gab drei Befehle ohne Ablehnung. Die
+> Garnison bildet den Lauf vorher Zahl für Zahl nach. Warum die Wirkung klein ist (Eroberung im
+> Einmarschtick, feindfreie Quelle, vier Provinzen): `PROBLEME.md`, 2026-09-13, T-M40-06.
 
 ### 5.1 Der Befund, und er ist grösser als erwartet
 

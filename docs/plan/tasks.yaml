@@ -2949,7 +2949,7 @@ tasks:
   - id: T-M40-06
     milestone: M40
     title: Nachmessen
-    status: todo
+    status: done
     deps: [T-M40-05]
     requirements: [R-UNIT-09]
     design: [D-30]
