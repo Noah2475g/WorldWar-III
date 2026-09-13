@@ -3273,3 +3273,77 @@ nach dem Tick. Die Reparatur läge in `actions.ts` und verlangt eine Entscheidun
 sagt (ein Text in `de.ts`).
 
 **Status:** N-5 behoben (T-M40-19). N-4 und die Sperre offen, ohne Aufgabe.
+
+## 2026-09-14 · Sichtprüfung §3.5, Punkt 1 · Die Uhr hält Tempo 100 im gebauten Bündel, im Dev-Server verliert sie ein Drittel
+
+**Befund.** Am Dev-Server (`pnpm --filter @worldwar/desktop dev`, Port 5174, Brave 1584×911, Weltkarte,
+Startzahl 20260914) läuft die Uhr bei Tempo 100 **nicht** mit 100 Spielstunden je Sekunde. Drei Läufe über
+zehn Sekunden Echtzeit, je zwei abgelesene Uhrzeiten und `performance.now()` dazwischen:
+
+| Lauf | von | bis | Echtzeit | Ticks | Ticks/s |
+|---|---|---|---|---|---|
+| 1 | Tag 4 · 11:00 | Tag 31 · 19:00 | 10,029 s | 656 | 65,4 |
+| 2 (8 s) | Tag 67 · 20:00 | Tag 87 · 01:00 | 8,085 s | 461 | 57,0 |
+| 3 | Tag 5 · 02:00 | Tag 24 · 19:00 | 10,009 s | 473 | 47,3 |
+
+Dieselbe Messung **am gebauten Bündel** (`vite build` + `vite preview`, Port 5175, gleiche Karte, gleiche
+Startzahl, dasselbe Fenster): **Tag 44 · 10:00 → Tag 84 · 15:00 in 10,011 s = 965 Ticks = 96,4 Ticks/s**,
+also 40,2 Spieltage in zehn Sekunden. Die Zusage aus T-M41-04 hält dort. Gegenprobe auf der Kleinen Welt
+(12 Provinzen) am Dev-Server: **999 Ticks in 10,02 s = 99,7 Ticks/s** — die Uhrformel ist nicht der Engpass.
+
+**Wo die Ticks bleiben (gemessen, nicht vermutet).** `requestAnimationFrame` wurde umhüllt, um die Bildzeiten
+zu sehen, die die Spielschleife selbst misst, und `clockStep` aus `game/clock.ts` wurde über genau diese
+Bildzeiten nachgerechnet. Dazu zählte ein `MutationObserver` auf `.clock__time` die React-Commits:
+
+- Lauf am Dev-Server: **127 Bilder der Spielschleife, `clockStep` verlangt 635 Ticks, die Uhr rückte 325 vor.**
+  **65 Commits** — also etwa jedes zweite Bild —, und **jeder Commit sprang genau 5 Ticks**, die Kappe
+  `clockCap(100) = 5`. Die anderen Bilder rechneten ihre fünf Ticks und warfen sie weg.
+- Lauf am gebauten Bündel: 343 Bilder, `clockStep` verlangt 987, die Uhr rückte 965 vor — deckungsgleich.
+
+**Ursache, gelesen:** `step` in `App.tsx` rechnet aus `stateRef.current`, und `stateRef.current = state` steht
+im Render. `setState(result.state)` ist die **Wertform**, kein Updater. Kommt ein Bild, bevor React das
+vorige Ergebnis eingespielt hat, rechnet es noch einmal vom selben Stand — und überschreibt das vorige.
+Im Dev-Bau ist ein Commit teuer (React-Entwicklungsbau, `StrictMode` rendert doppelt), deshalb passiert das
+dort etwa bei jedem zweiten Bild und im ausgelieferten Bau praktisch nie.
+
+**Kleinster reproduzierbarer Fall:** Dev-Server, Weltkarte, Tempo 100, zehn Sekunden — die Uhr rückt rund
+20 statt 41 Spieltage vor. Dieselbe Partie im `vite preview`-Bündel: 40 Spieltage.
+
+**Nicht gebaut (Sichtprüfung ändert keinen Produktivcode).** Zwei Dinge, die daraus folgen:
+1. **Die Zusage T-M41-04 ist am ausgelieferten Programm erfüllt** — Tauri lädt dasselbe Bündel wie
+   `vite preview`. Der Dev-Server ist die falsche Messstelle für die Uhr.
+2. Ob die Wertform von `setState` auch im ausgelieferten Bau unter Last (späte Partie, viele Armeen)
+   Ticks verliert, ist offen. Im Dev-Bau tut sie es messbar; ein Updater
+   (`setState((s) => advance(s, …))`) oder ein Ref, das der Schritt selbst fortschreibt, wäre die
+   Reparatur — sie gehört in eine eigene Aufgabe mit eigenem Rücknahmekriterium.
+
+**Status:** offen, ohne Aufgabe. Für Messungen gilt ab jetzt: **die Uhr wird am gebauten Bündel gemessen,
+nicht am Dev-Server.**
+
+---
+
+## 2026-09-14 · Sichtprüfung §3.5, Punkt 2 · Die Tempo-Sperre im Vorspulen lässt sich am Bildschirm nicht sehen
+
+**Befund.** T-M41-13 sperrt die Tempostufen während eines Vorspul-Laufs (`disabled`, Tooltip „Während des
+Vorspulens gesperrt — erst abbrechen oder abwarten"). Am laufenden Spiel ist dieser Zustand **nie sichtbar**:
+beide Auslöser — der Knopf (`App.tsx` Z. 1538) und die Taste F (Z. 955) — rufen
+`fastForwardRun({ kind: 'days', days: 1 })`, das sind 24 Ticks, und `DEFAULT_CHUNK_TICKS` ist ebenfalls 24.
+Der Lauf ist also **genau ein Häppchen** und endet synchron im Klick; `setFastForward({ running: true })` und
+`setFastForward({ running: false })` liegen im selben JS-Zug, React spielt nur den zweiten ein.
+
+**Gemessen (Brave, Dev-Server, Weltkarte, Tag 7 · 18:00):** Der Klick auf „Vorspulen" dauerte **31 ms**
+(an Tag 79 in derselben Partie 206 ms). Ein `MutationObserver` auf `.speeds` zählte über drei Sekunden
+**0 Mutationen**; ein Abtaster auf jedem Bild sah in **429 Abtastungen keinen einzigen gesperrten
+Tempoknopf**. Vor dem Klick, unmittelbar nach dem Klick (noch im selben Zug) und drei Sekunden später ist
+jeder Knopf frei und trägt seinen normalen Tooltip („100 Stunden je Sekunde").
+
+**Das ist kein neuer Fehler.** T-M41-13 hat es selbst notiert („heute nicht herstellbar"); der Test
+verkleinert die Häppchen per Hülle auf 4 Ticks. Neu ist nur, dass es jetzt **am laufenden Spiel gemessen**
+ist: die Zusage ist im Browser nicht prüfbar, und die Sichtprüfung führt Punkt 2 deshalb als
+**nicht geprüft**, nicht als erfüllt.
+
+**Was es prüfbar machen würde:** ein Vorspulziel über einen Spieltag hinaus (dann läuft der zweite
+Häppchen-Aufruf über `setTimeout`, und der gesperrte Zustand wird eingespielt) — oder ein Häppchen, das
+kleiner ist als ein Spieltag.
+
+**Status:** offen, ohne Aufgabe; die Zusage bleibt durch `App.test.tsx` gedeckt.

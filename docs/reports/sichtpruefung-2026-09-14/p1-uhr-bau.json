@@ -1,0 +1,31 @@
+{
+  "karte": "Welt (237)",
+  "startzahl": 20260914,
+  "macht": "Deutschland",
+  "tempo": 100,
+  "uhrVorDerMessung": "Tag 43 · 20:00",
+  "ablesung1": {
+    "uhr": "Tag 44 · 10:00",
+    "tick": 1042,
+    "performanceNow": 44608
+  },
+  "ablesung2": {
+    "uhr": "Tag 84 · 15:00",
+    "tick": 2007,
+    "performanceNow": 54619
+  },
+  "echtzeitSekunden": 10.011,
+  "ticks": 965,
+  "spieltage": 40.21,
+  "tickrate": 96.4,
+  "sollBeiTempo100": 1001,
+  "bilder": 343,
+  "bildrate": 34.3,
+  "bildzeitMs": {
+    "median": 27.8,
+    "p95": 48.6,
+    "max": 76.5
+  },
+  "ticksLautClockStep": 987,
+  "ticksOhneKappe": 996
+}
