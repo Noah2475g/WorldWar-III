@@ -33,13 +33,27 @@ function countGlobMatches(pattern: string, cwd: string): number {
     })
     .join('')
   const matcher = new RegExp(`^${source}$`)
-  let entries: string[]
-  try {
-    entries = readdirSync(join(cwd, base), { recursive: true, encoding: 'utf8' })
-  } catch {
-    return 0
+  // An own walk instead of readdirSync({ recursive }): that one follows pnpm's links into
+  // node_modules — measured 2026-09-13: `packages` and `apps` did not finish within 60 s,
+  // `packages/core/src` took 225 ms. A plan path starting at `packages/*` would hang the guard.
+  const skip = new Set(['node_modules', '.git', 'target'])
+  let matches = 0
+  const walk = (dir: string, rel: string): void => {
+    let list
+    try {
+      list = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of list) {
+      if (entry.isSymbolicLink() || skip.has(entry.name)) continue
+      const path = rel ? `${rel}/${entry.name}` : entry.name
+      if (matcher.test(path)) matches++
+      if (entry.isDirectory()) walk(join(dir, entry.name), path)
+    }
   }
-  return entries.map((entry) => entry.replace(/\\/g, '/')).filter((entry) => matcher.test(entry)).length
+  walk(join(cwd, base), '')
+  return matches
 }
 
 /**
