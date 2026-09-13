@@ -643,6 +643,13 @@ Vier Regeln gelten für jede Anforderung dieses Abschnitts:
     im Turnier Beschussereignisse erzeugen — die KI beschießt, ohne es lernen zu müssen —
     und ihre Fernwaffenverbände SOLLEN in Reichweite eines Ziels stehen bleiben, statt in
     den Nahkampf zu laufen.
+    *(Nachgemessen 2026-09-13, T-M41-08: im Turnier — Testkarte, 40 Spieltage — erzeugt keine
+    Stufe selbsttätigen Beschuss; Artillerie gibt es erst ab Tag 34 hinter der Fabrik. Belegt ist
+    der Beschuss nur als Summe im 200-Tage-Lauf von R-AI-08/AK3
+    (`apps/headless/test/ai-integration.slow.test.ts`); `PROBLEME.md`, `DECISIONS.md`.)*
+    *(Nachgemessen nach der Durchsicht von Block N2: diese Summe stammt von einer einzigen Macht auf
+    „schwer"; für „normal" ist das Kriterium nicht belegt — in der ausgelieferten Voreinstellung 0
+    selbsttätige Beschüsse in 200 Spieltagen. Offene Frage in `DECISIONS.md`, keine Grenze geändert.)*
 
 #### Freischaltung (`R-TECH`)
 

@@ -2058,6 +2058,8 @@ standen 63 tote Pfade. Die Leseregeln:
   R-AI-01 bekommt eine zusätzliche AK für den Ablehnungsanteil — der heutige grüne Beleg prüft
   einen einzigen Aufruf im Tick 0 im Frieden und kann die Lage, die das Spiel dauernd
   herstellt, gar nicht sehen.
+  *(Nie gebaut und am 2026-09-13 mit T-M41-08 zurückgenommen: R-AI-01 steht in `name_level`, und
+  der Ablehnungsanteil ist im 90-Tage-Lauf der Voreinstellung zugesichert, `DECISIONS.md`.)*
 - **Anforderungen:** R-AI-01, R-AI-03, R-GAME-01
 - **Abhängigkeiten:** T-M14-02
 - **Dateien:** `packages/core/src/map/neighbourhood.ts` *(nie gebaut — als neue Datei geplant; die
@@ -2093,6 +2095,12 @@ standen 63 tote Pfade. Die Leseregeln:
   **dreimal** vor (vorher bis zum Partieende), und es fällt mindestens **eine** `WAR_DECLARED`
   (vorher 0 in 1000 Tagen). Das R-AI-04-Budget bleibt grün. Die vier Zahlen stehen
   vorher/nachher in `docs/reports/ai-reachability.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`, alle vier Zahlen sind dort zugesichert — gemessen
+  0 % abgelehnt (vor T-M41-08 3,92 %), `NO_PATH` 0 von 2556, keine Paarung, 5 Kriegserklärungen
+  (Stand T-M41-08; nach H1 und T-M41-09: `NO_PATH` 0 von 2405, 6 Kriegserklärungen).
+  Die Paarung nach dem Wortlaut (Armee, Fehlercode) sieht einen wiederholten Bauauftrag nicht; die
+  Fassung (Macht, Befehl, Fehlercode, Einzelheiten) steht als Zahl im Bericht.)*
 
 ### T-M14-12 · Die KI benutzt, was sie hat
 - **Ziel:** Fünf Mechaniken, die der Kern kann und die KI nie anfasst, werden ihr zugänglich
@@ -2181,6 +2189,18 @@ standen 63 tote Pfade. Die Leseregeln:
   stehen in `BALANCING.md` mit Status; die Zahlen vorher/nachher stehen in
   `docs/reports/ai-parity.md`; der Verzicht auf Luftwaffe und Marine steht mit Begründung in
   `DECISIONS.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`. Zugesichert: Hauptstadt, Handel je KI-Macht,
+  keine diplomatische Ablehnung (strenger als „unter 5 %"), ein Frieden zwischen zwei KI.
+  **Zurückgenommen** mit Grund in `DECISIONS.md`: „je KI-Macht eine Armee mit `armyRange > 0`" —
+  gemessen 0 von 7. „Höchstens drei Armeeobjekte je Provinz" — gemessen höchstens 86, stehend 8 —
+  steht als Zahl im Bericht und geht an T-M41-10.)* *(T-M41-10 ist am 2026-09-13 nach seinem
+  Rücknahmekriterium zurückgenommen; die Zusage ist mit der Messung nach M18 verschoben.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: „keine Macht ohne Hauptstadt, solange sie eine Stadt
+  hält" lief im 90-Tage-Lauf über einer leeren Menge — dort verliert keine Macht ihre Hauptstadt (0
+  Verluste), die Zusicherung konnte nicht fallen. Sie steht jetzt im 200-Tage-Lauf der Weltkarte, mit der
+  Vorbedingung „mindestens ein Hauptstadtverlust" (gemessen 10); am Ende ohne Hauptstadt: keine. Vorbehalt
+  im Test: die 30-Tage-Sperre des Verlegens kann eine Macht legitim ohne Hauptstadt lassen.)*
 
 ### T-M14-13 · Was der Kern kann, muss der Spieler erreichen
 - **Ziel:** Das Muster, das dieses Projekt dreimal getroffen hat — Symbolsatz, Ton,
@@ -2867,6 +2887,18 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   unterhalb der Marge zählt nicht, weil er nichts über die neue Entscheidung aussagt. Neun
   Zahlen, keine davon null: eine Null heißt, die Mechanik ist für diese Stufe tot, und die
   Aufgabe ist nicht fertig.
+  *(Nachgeprüft 2026-09-13 mit T-M41-08 — die neun Zahlen standen nie in einem Test. Das Turnier
+  zählte Beschuss und Kriegserklärungen je Partie für **beide** antretenden Stufen; jetzt auch nach
+  dem Handelnden. Gemessen: Kriegserklärungen leicht 0, normal 110 (Stand T-M41-08; nach H1 109), schwer 70; selbsttätiger Beschuss
+  **0 auf jeder Stufe**; eine Regelmarge für Handel gibt es nicht. Zugesichert sind die
+  Kriegserklärungen von „schwer" und „normal" (`apps/headless/test/tournament.slow.test.ts`); die
+  übrigen sieben sind mit Grund zurückgenommen (`DECISIONS.md`), und die Null beim Beschuss steht als
+  Befund in `PROBLEME.md` und als Vermerk bei R-BAT-08/AK3.)*
+  *(Nachgemessen nach der Durchsicht von Block N2, H1: **R-BAT-08/AK3 ist für die Stufe „normal" nicht
+  belegt.** In der ausgelieferten Voreinstellung (sieben KI „normal") entstehen in 200 Spieltagen 3
+  Artillerien und **0 selbsttätige Beschüsse**; im Integrationslauf stammen alle 63 Artillerien und 231
+  Beschüsse von einer Macht (China, „schwer"), Frankreich („schwer") hebt keine aus. Engstellen: Fabrik
+  und Geld im Aushebebudget. Keine Grenze geändert; offene Frage an Noah bzw. M18 in `DECISIONS.md`.)*
   *Buchführung* — die Tabelle steht mit Datum in `docs/reports/ai-tournament.md`; jede neue
   Regelzahl (Handelsmarge, Angebotsmarge, Rücklage) steht mit Status *belegt* oder *geschätzt*
   in `BALANCING.md`. **In `01-REQUIREMENTS.md` nennt R-AI-08 keinen Gegenspion und keine
@@ -3406,6 +3438,12 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > nicht der laufende Plan ist; wer etwas von hier bauen will, schreibt zuerst eine Anforderung
 > mit Akzeptanzkriterien und holt sie in einen echten Meilenstein. Ein Meilenstein ohne Aufgaben
 > ist unbedenklich — der Plan-Wächter prüft die Richtung Aufgabe → Meilenstein, nicht umgekehrt.
+>
+> **Vorgemerkt am 2026-09-13 (T-M41-10, zurückgenommen):** „keine KI-Macht hält mehr als drei stehende
+> Armeeobjekte in derselben Provinz" (Zusage 7 aus T-M14-12). Gebaut, gemessen und am Rücknahmekriterium
+> gerissen — das Artillerie-Tor fiel auf null. Vor einem neuen Anlauf: `TARGET_MIX` in
+> `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
+> verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
 
 ---
 
@@ -5699,6 +5737,20 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Turnier zeilengleich bleibt. Gemessen an vier Varianten (`DECISIONS.md`, 2026-09-13): die
   Kaserne Stufe 2 reißt R-AI-06 (schwer gegen normal im Frieden 1,00 statt 0,70), die
   Eisenbahn ändert nichts. R-AI-01 steht nur hier im Text (`name_level`).
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, H1: der Ausbau sperrte die Stadt. `nextBuildingFor`
+  lieferte für jede Stadt mit Fabrik unter `maxLevel` nur noch „factory"; war die Stufe zu teuer,
+  kam in dieser Stadt nichts anderes an die Reihe — Vollpartie 1914 am Ende 39 Städte mit Fabrik und
+  ohne Eisenbahn. Jetzt ist der Ausbau nur der **erste** Wunsch einer Stadt, deren Fabrik steht;
+  Eisenbahn, Festung und Hafen stehen dahinter, und gebaut wird der erste bezahlbare. Kaserne und
+  erste Fabrik bleiben allein, der Handel zielt weiter auf den ersten Wunsch. Test zuerst in
+  `packages/ai/src/economy.test.ts`; die Städte mit Eisenbahn und Festung je Macht zählt
+  `apps/headless/test/fullgame.slow.test.ts`; H2 in `apps/headless/test/ai-integration.slow.test.ts`
+  nachgemessen. Das Turnier ist danach **nicht** mehr zeilengleich (Siegquoten gleich, im Frieden
+  146 → 145 Kriegserklärungen). Zahlen in `PROBLEME.md`, 2026-09-13, H1.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M2: die Ausweichliste Eisenbahn → Festung → Hafen gilt
+  für jede Provinz mit Kaserne, auch für Landprovinzen und Städte mit Fabrik 3 — nicht nur für Städte
+  mit Fabrik. Gemessen nur in der Summe der H1-Läufe; Haltetest für eine Landprovinz in
+  `packages/ai/src/economy.test.ts`, keine Verhaltensänderung.)*
 
 ### T-M41-02 · Nachmessen nach dem Fabrikausbau
 - **Ziel:** ein grüner Einzeltest belegt, dass die KI den Befehl gibt — nicht, dass sie in
@@ -5829,3 +5881,125 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   aus T-M41-13, gelesen und nicht gemessen — vor dem Bau geprüft, ob er über die Oberfläche
   herstellbar ist (`step` steht in denselben Abhängigkeiten und hängt an denselben Werten); ist
   der Test ohne Reparatur grün, steht das mit Grund in `PROBLEME.md`.
+> **Nacharbeit nach der Durchsicht, Block N2 (2026-09-13): das Verhalten der KI.** Aus der Durchsicht
+> (H1, H2) und der Untersuchung der abgelehnten KI-Befehle. Jede Aufgabe verändert oder vermisst, was
+> die KI tut, und ist einzeln gemessen; die Reparatur zu H1 ist Nacharbeit zu T-M41-01 und steht dort.
+> *(Abschluss 2026-09-13: T-M41-08, -09 und -11 gebaut, T-M41-10 nach seinem Rücknahmekriterium
+> zurückgenommen. **T-M41-14 ist nicht angelegt:** die Bedingung „selbsttätiger Beschuss im
+> Integrationslauf unter einem Viertel von 121" trat nicht ein — gemessen 231 nach der Reparatur zu H1
+> und T-M41-09. Der Befund dahinter, alle Artillerie bei einer einzigen Macht, steht in `PROBLEME.md`.)*
+
+### T-M41-08 · Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
+- **Ziel:** 961 von 1177 abgelehnten KI-Befehlen auf der Weltkarte galten Armeen, die dieselbe Macht im
+  selben Tick unmittelbar vorher zusammengelegt hatte — und den 90-Tage-Lauf, den T-M14-11 und T-M14-12
+  zusagten, gab es nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-02, T-M41-07
+- **Dateien:** `packages/ai/src/decide.ts`, `apps/headless/src/tournament.ts`,
+  `docs/reports/ai-integration.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/01-REQUIREMENTS.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — vier eigene stehende Armeen in einer Provinz, ein
+  schwacher Kriegsgegner nebenan: genau ein `MERGE_ARMIES` über alle vier, kein Befehl, kein Eintrag in
+  `assignments` und keine Begründung nennt eine der drei aufgegangenen Armeen, die bleibende marschiert,
+  und der Kern lehnt nichts ab. `apps/headless/test/ai-integration.slow.test.ts` — `MOVE_ARMY` und
+  `SET_STANCE` mit `ARMY_NOT_FOUND` sind null, im 200-Tage-Lauf und in einem neuen 90-Tage-Lauf der
+  ausgelieferten Voreinstellung. `apps/headless/test/tournament.test.ts` — Kriegserklärung und Beschuss
+  je Stufe nach dem Handelnden, nicht je Partie.
+- **Fertig wenn:** die Taktikstufe die Armeen nicht mehr sieht, die das Zusammenlegen im selben Zug
+  auflöst (mit der Sortierregel des Kerns), und das **neutral** ist: der Endzustand ohne Protokoll und
+  KI-Gedächtnis bleibt bitgleich, jede Ereigniszahl außer den Ablehnungen gleich, das Turnier zeilengleich.
+  Im 90-Tage-Lauf sind die Zusagen von T-M14-11 und T-M14-12 zugesichert — Ablehnungsquote unter 10 %,
+  `NO_PATH` unter 2 %, keine Paarung Armee/Fehlercode öfter als dreimal, eine Kriegserklärung, keine Macht
+  ohne Hauptstadt bei gehaltener Stadt, Handel je Macht, keine diplomatische Ablehnung, ein Frieden
+  zwischen zwei KI. Mit Grund zurückgenommen (`DECISIONS.md`): `armyRange > 0` je Macht, die AK für den
+  Ablehnungsanteil bei R-AI-01 und von den „neun Zahlen je Stufe" aus T-M15-08 alles außer den
+  Kriegserklärungen von „schwer" und „normal"; „höchstens drei Armeeobjekte je Provinz" bleibt bis T-M41-10
+  eine Zahl im Bericht. Der Golden-Master bleibt unberührt (kein Lauf dort hat eine KI).
+  *(Gebaut 2026-09-13: Voreinstellung 267 → 0 Ablehnungen, Weltkarte 1177 → 216, Prüfsummen
+  `a177d1db875a10b1` und `dbf5fa3f49a96cd1` vorher wie nachher. Abweichung von der Untersuchung: statt
+  die Befehle nachträglich zu verwerfen, sieht die Taktikstufe die aufgegangenen Armeen gar nicht — das
+  nimmt auch Begründungen und Gedächtnis mit, und es ist ebenso bitgleich gemessen. Beschuss im Turnier:
+  0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3, `PROBLEME.md`.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: die Hauptstadt-Zusage lief im 90-Tage-Lauf über einer
+  leeren Menge (0 Verluste) und steht jetzt im 200-Tage-Lauf, mit der Vorbedingung „mindestens ein
+  Hauptstadtverlust" — gemessen 10.)*
+
+### T-M41-09 · Die KI baut nicht in Provinzen, die sie nur erinnert
+- **Ziel:** ein Bauauftrag in eine Provinz, die längst ein Gegner hält, wird jeden Tag abgelehnt — und
+  weil die KI nur einen Bau je Denkschritt befiehlt, verdrängt er den echten Bau des Tages.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-08
+- **Dateien:** `packages/ai/src/economy.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — eine erinnerte eigene Stadt vorn in der Sicht:
+  gebaut wird nicht dort, und für ihren Bau wird nicht gehandelt. `apps/headless/test/ai-integration.slow.test.ts`
+  — kein `BUILD:NOT_OWNER` auf der Weltkarte, kein abgelehnter Bauauftrag öfter als dreimal, in beiden Läufen.
+- **Fertig wenn:** Wirtschaft, Handel und Aushebung nur sichtbare eigene Provinzen sehen (`stale`
+  ausgenommen); Militär, Diplomatie und Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert
+  mein" Rückeroberung, und das wäre eine eigene Verhaltensänderung. Einzeln gemessen: Vollpartie mit drei
+  Startzahlen, Turnier, Grundlauf, Integrationslauf. Vorher (Stand nach der Reparatur zu H1): 59
+  `BUILD:NOT_OWNER`, eine Provinz 50× (China, PAK-CENTRAL).
+  *(Beim Bau 2026-09-13, Abweichung von der Untersuchung: der erweiterte Paarungsschlüssel über **alle**
+  Befehle, den sie hier zusichern wollte, fällt nach H1 an `SET_CAPITAL:ON_COOLDOWN` — bis 29× dieselbe
+  Sperre. Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel geht an T-M41-11.)*
+  *(Gemessen 2026-09-13, vorher = Stand nach H1: `BUILD:NOT_OWNER` 59 → 0, Ablehnungen 136 → 75 (Rest
+  `SET_CAPITAL:ON_COOLDOWN`), Voreinstellung über 90 Tage bitgleich; Vollpartie 1914 Tag 430 → 975,
+  2015 640 → 583, 1815 571 → 583 — AK-1 überall entschieden; Turnier zeilengleich; Grundlauf 0,3623 →
+  0,3684. `PROBLEME.md`, T-M41-09.)*
+  *(Nacharbeit 2026-09-13 nach der Durchsicht von Block N2, N2: auch `capitalCommands` nahm erinnerte
+  Provinzen als eigene — alle sichtbaren Städte verloren, eine erinnerte in der Sicht, und die KI hätte
+  dorthin verlegt (NOT_OWNER, jeden Denkschritt neu). Jetzt `!province.stale` auch in `capital.ts`, Test
+  zuerst in `packages/ai/src/decide.test.ts`. In den Läufen kam der Fall nicht vor: `ai-integration`
+  bericht- und prüfsummengleich, Golden-Master ohne `UPDATE_GOLDEN` unverändert.)*
+
+### T-M41-10 · Die KI legt wirklich zusammen
+- **Ziel:** „keine KI-Macht hält mehr als drei Armeeobjekte in derselben Provinz" (T-M14-12) war nie
+  erfüllt — `consolidateCommands` legte je Denkschritt nur eine Provinz zusammen, und sein Deckel zählte
+  Stapel statt Einheiten und griff nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/ai/src/consolidate.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — zwei Provinzen mit je drei Armeen ergeben zwei
+  `MERGE_ARMIES`; drei Armeen zu je fünfzehn Einheiten ergeben einen Merge über zwei davon.
+  `apps/headless/test/ai-integration.slow.test.ts` — im 90-Tage-Lauf der Voreinstellung nie mehr als drei
+  **stehende** Armeeobjekte einer Macht in einer Provinz, gezählt am Ende jedes Spieltags.
+- **Fertig wenn:** `consolidateCommands` alle Provinzen je Denkschritt zusammenlegt und der Deckel
+  Einheiten zählt (`unitCount`). Die Zusage 7 aus T-M14-12 gilt neu für stehende Armeeobjekte; den Durchzug
+  kann der Kern nicht zusammenlegen (`ARMY_BUSY`), er ist mit Grund zurückgenommen (`DECISIONS.md`).
+  **Rücknahmekriterium, vor dem Bau festgelegt:** Vollpartie 1914/2015/1815 mit Siegtag im Tor 300–1500
+  und AK-1 entschieden, **und** `ai-integration` 200 Tage grün, **und** das Turnier im Band von R-AI-06
+  (schwer gegen normal 0,55–0,95). Reißt eines davon, wird die Aufgabe zurückgenommen und Zusage 7 mit
+  der Messung nach M18 verschoben — keine Grenze bewegt. Entscheid „bauen" delegiert (Orchestrator,
+  Block N2), kippbar in `DECISIONS.md`.
+  *(**Zurückgenommen 2026-09-13**, gebaut und gemessen: das Kriterium ist gerissen — `ai-integration`
+  200 Tage rot, Artillerie 63 → 0, selbsttätiger Beschuss 231 → 0 (R-AI-08/AK3); Turnier und Vollpartie
+  1815 hielten. Die neu gefasste Zusage hielt auch mit der Reparatur nicht (stehend höchstens 5 in der
+  Voreinstellung). `consolidate.ts`, Tests und Berichte stehen wieder auf dem Stand nach T-M41-09; die
+  Aufgabe steht auf `todo`, Zusage 7 ist mit der Messung nach M18 verschoben. `DECISIONS.md` und
+  `PROBLEME.md`, 2026-09-13, T-M41-10.)*
+
+### T-M41-11 · Die Sicht nennt die Sperre beim Verlegen der Hauptstadt
+- **Ziel:** eine Sperre, die die KI nicht sieht, befiehlt sie jeden Tag neu — und jede Ablehnung
+  verdeckt eine andere.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/core/src/view/publicView.ts`, `packages/core/src/index.ts`,
+  `packages/ai/src/capital.ts`, `docs/reports/ai-integration.json`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/core/src/view/publicView.test.ts` — `self` führt, wann die eigene Hauptstadt
+  zuletzt verlegt wurde, `null` ohne Verlegen, und nichts über fremde Mächte. `packages/ai/src/decide.test.ts`
+  — während der Sperre kein `SET_CAPITAL` (der Kern hätte `ON_COOLDOWN` gesagt), mit Begründung; nach
+  Ablauf wieder eines, das die Prüfung besteht. `apps/headless/test/ai-integration.slow.test.ts` — kein
+  `SET_CAPITAL:ON_COOLDOWN` und keine abgelehnte Paarung (Macht, Befehl, Fehlercode, Einzelheiten) öfter
+  als dreimal, in beiden Läufen.
+- **Fertig wenn:** `PublicView.self.capitalMovedAtTick` die Sperre trägt, `capitalCommands` sie mit
+  `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kern beachtet und die Änderung **neutral** ist: Sicht ist kein Zustand
+  — Golden-Master ohne `UPDATE_GOLDEN` unverändert, der Endzustand ohne Protokoll und KI-Gedächtnis bitgleich
+  (eine abgelehnte `SET_CAPITAL` änderte nichts), Turnier zeilengleich. Nur der `self`-Block von
+  `publicView.ts` ist berührt (dieselbe Datei trägt `retreating` aus M40). Befund: Nebenbefund c zu
+  T-M41-08 — 298-mal im Turnier-Nachbau, 72-mal auf der Weltkarte nach der Reparatur zu H1.

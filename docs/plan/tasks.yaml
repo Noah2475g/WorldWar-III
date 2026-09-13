@@ -3117,6 +3117,13 @@ tasks:
     milestone: M41
     title: Die KI baut die Fabrik aus
     status: done
+    # Nacharbeit 2026-09-13 (Durchsicht H1, Block N2): der Ausbau sperrte die Stadt - war die
+    # Fabrikstufe zu teuer, kamen Eisenbahn, Festung und Hafen dort nie an die Reihe (Vollpartie
+    # 1914: 39 Staedte mit Fabrik und ohne Eisenbahn). Jetzt ist der Ausbau nur der erste Wunsch,
+    # gebaut wird der erste bezahlbare (economy.test.ts; Staedte je Macht in fullgame.slow.test.ts).
+    # Das Turnier ist danach nicht mehr zeilengleich (Siegquoten gleich). PROBLEME.md, H1.
+    # Berichtigt (Durchsicht N2, M2): die Ausweichliste gilt fuer jede Provinz mit Kaserne, auch
+    # Landprovinzen und Staedte mit Fabrik 3; Haltetest fuer eine Landprovinz in economy.test.ts.
     deps: [T-M41-03]
     requirements: [R-PROV-02, R-AI-08]
     files: [packages/ai/src/economy.ts]
@@ -3209,6 +3216,53 @@ tasks:
     files: [apps/desktop/src/App.tsx, docs/plan/PROBLEME.md]
     tests: [apps/desktop/src/App.test.tsx]
     dod: "Nebenbefund 2 aus T-M41-13 (gelesen, nicht gemessen): der Kuerzel-Effekt in App.tsx ruft fastForwardRun, nennt es aber nicht in seinen Abhaengigkeiten - mit eingeschalteter Debug-Ansicht spulte F ohne Mitschrift. Test zuerst: App.test.tsx - Debug-Ansicht waehrend der Partie eingeschaltet, dann F: die Kommandoliste der Debug-Ansicht fuellt sich. Vor dem Bau pruefen, ob der Fehler ueber die Oberflaeche herstellbar ist: step steht in denselben Abhaengigkeiten und haengt an denselben Werten wie fastForwardRun. Ist der Test ohne Reparatur gruen, wird das mit Grund in PROBLEME.md festgehalten und die Faehigkeit des Tests, den Fehler zu sehen, anders vorgefuehrt - nicht die Zusicherung umformuliert. Reparatur: fastForwardRun in die Abhaengigkeiten."
+  # Nacharbeit nach der Durchsicht von M41 (2026-09-13), Block N2: das Verhalten der KI, jede
+  # Aenderung einzeln gemessen. Die Reparatur zu H1 ist Nacharbeit zu T-M41-01.
+  - id: T-M41-08
+    milestone: M41
+    title: Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
+    status: done
+    # Berichtigt (Durchsicht N2, M1): die Hauptstadt-Zusage lief im 90-Tage-Lauf ueber einer leeren
+    # Menge (0 Verluste); sie steht jetzt im 200-Tage-Lauf mit der Vorbedingung mindestens ein
+    # Hauptstadtverlust (gemessen 10).
+    deps: [T-M41-02, T-M41-07]
+    requirements: []
+    files: [packages/ai/src/decide.ts, apps/headless/src/tournament.ts, docs/reports/ai-integration.json, docs/reports/ai-tournament-run.md, docs/plan/01-REQUIREMENTS.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]
+    tests: [packages/ai/src/decide.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/tournament.test.ts, apps/headless/test/tournament.slow.test.ts]
+    dod: "Befund der Untersuchung (2026-09-13): 961 von 1177 abgelehnten KI-Befehlen auf der Weltkarte (200 Tage, Startzahl 1815) waren MOVE_ARMY und SET_STANCE an Armeen, die dieselbe Macht im selben Tick unmittelbar vorher per MERGE_ARMIES aufgeloest hatte - Operativ- und Taktikstufe feuern praktisch immer zusammen und lasen dieselbe Sicht. Kein verlorener Zug, aber Rauschen, das jede andere Ablehnung verdeckt. Reparatur in decide.ts: die Taktikstufe sieht die aufgegangenen Armeen nicht (Sortierregel des Kerns, sort()); fuer sie entstehen weder Befehle noch assignments noch Begruendungen. NEUTRAL: Endzustand ohne eventLog und state.ai bitgleich (200 Tage dbf5fa3f49a96cd1, Voreinstellung 90 Tage a177d1db875a10b1), alle Ereigniszahlen ausser COMMAND_REJECTED gleich, Turnier zeilengleich, Golden-Master unberuehrt. Test zuerst: decide.test.ts (vier Armeen, ein MERGE, keine Nennung der aufgegangenen, keine Ablehnung - rot 3 von 39) und ai-integration.slow.test.ts mit einem neuen 90-Tage-Lauf der ausgelieferten Voreinstellung, ARMY_NOT_FOUND gleich 0 in beiden Laeufen (rot 938 und 265). Dort zugesichert, was T-M14-11 und T-M14-12 zusagten: Ablehnungsquote unter 10 Prozent, NO_PATH unter 2 Prozent, Paarung Armee/Fehlercode hoechstens dreimal, eine Kriegserklaerung, keine Macht ohne Hauptstadt bei gehaltener Stadt, Handel je Macht, keine diplomatische Ablehnung, ein Frieden zwischen zwei KI. Zurueckgenommen mit Grund in DECISIONS.md: armyRange je Macht, die AK fuer den Ablehnungsanteil bei R-AI-01, und von den neun Zahlen je Stufe aus T-M15-08 alles ausser den Kriegserklaerungen von schwer und normal (tournament.ts zaehlt jetzt nach dem Handelnden, byDifficulty; Beschuss im Turnier 0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3). Hoechstens drei Armeeobjekte je Provinz bleibt bis T-M41-10 eine Zahl im Bericht. Gemessen: Voreinstellung 267 auf 0 Ablehnungen, Weltkarte 1177 auf 216 (6,32 auf 1,22 Prozent)."
+  - id: T-M41-09
+    milestone: M41
+    title: Die KI baut nicht in Provinzen, die sie nur erinnert
+    status: done
+    # Gemessen 2026-09-13 (vorher = Stand nach H1): BUILD:NOT_OWNER 59 auf 0, Voreinstellung 90 Tage
+    # bitgleich; Vollpartie 1914 Tag 430 auf 975, 2015 640 auf 583, 1815 571 auf 583; Turnier
+    # zeilengleich; Grundlauf 0,3623 auf 0,3684. PROBLEME.md, T-M41-09.
+    # Nacharbeit 2026-09-13 (Durchsicht N2, Befund N2): auch capital.ts filtert !province.stale
+    # (decide.test.ts, rot 1 von 43); ai-integration bericht- und pruefsummengleich, Golden unveraendert.
+    deps: [T-M41-08]
+    requirements: []
+    files: [packages/ai/src/economy.ts, docs/reports/ai-integration.json, docs/reports/fullgame.json, docs/reports/fullgame-2015.json, docs/reports/fullgame-1815.json, docs/reports/progress-measured.json, docs/reports/ai-tournament-run.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]
+    tests: [packages/ai/src/economy.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/fullgame.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts]
+    dod: "Befund der Untersuchung zu T-M41-08: alle BUILD:NOT_OWNER der Weltkarte zielten auf Provinzen, die die Sicht als stale mit dem eigenen Besitzer von damals fuehrte; weil die KI nur einen Bau je Denkschritt befiehlt, verdraengte der Geisterbau den echten Bau, und missingForNextBuilding handelte dafuer. Stand nach der Reparatur zu H1: 59 BUILD:NOT_OWNER, eine Provinz 50-mal (China, PAK-CENTRAL). Reparatur in economy.ts: economyCommands, missingForNextBuilding und recruitCommands sehen nur Provinzen ohne stale; Militaer, Diplomatie und Hauptstadt bleiben bei der vollen Sicht (erinnert mein heisst dort Rueckeroberung, eine eigene Verhaltensaenderung). Test zuerst: economy.test.ts (erinnerte Stadt vorn in der Sicht: kein Bau dort, kein Handel dafuer - rot 2 von 13) und ai-integration.slow.test.ts (kein BUILD:NOT_OWNER auf der Weltkarte, kein abgelehnter Bauauftrag oefter als dreimal in beiden Laeufen). Einzeln gemessen: Vollpartie 1914/2015/1815, Turnier, progress.slow, ai-integration. Abweichung von der Untersuchung: der erweiterte Paarungsschluessel ueber alle Befehle faellt nach H1 an SET_CAPITAL:ON_COOLDOWN (bis 29-mal dieselbe Sperre) und geht an T-M41-11."
+  - id: T-M41-10
+    milestone: M41
+    title: Die KI legt wirklich zusammen
+    status: todo
+    reopened: "am 2026-09-13 gebaut, gemessen und nach seinem Ruecknahmekriterium zurueckgenommen, nie committet. ai-integration 200 Tage rot: Artillerie 63 auf 0, selbsttaetiger Beschuss 231 auf 0 (R-AI-08/AK3); Turnier und Vollpartie 1815 hielten. Die neu gefasste Zusage hielt auch mit der Reparatur nicht (Voreinstellung stehend hoechstens 5). consolidate.ts, Tests und Berichte stehen auf dem Stand nach T-M41-09. Die Zusage 7 aus T-M14-12 ist mit dieser Messung nach M18 verschoben; wer sie wieder aufnimmt, klaert zuerst, ob TARGET_MIX Einheiten statt Stapel zaehlen muss und ob der Deckel in Einheiten mit stehend hoechstens drei vertraeglich ist (DECISIONS.md und PROBLEME.md, 2026-09-13, T-M41-10). Kein anderer Plan loest sie heute ab."
+    deps: [T-M41-09]
+    requirements: []
+    files: [packages/ai/src/consolidate.ts, docs/reports/ai-integration.json, docs/reports/fullgame.json, docs/reports/fullgame-2015.json, docs/reports/fullgame-1815.json, docs/reports/progress-measured.json, docs/reports/ai-tournament-run.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]
+    tests: [packages/ai/src/decide.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/fullgame.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts]
+    dod: "Befund der Untersuchung zu T-M41-08: die Zusage aus T-M14-12, keine KI-Macht halte mehr als drei Armeeobjekte in derselben Provinz, war nie erfuellt. consolidateCommands legte je Denkschritt nur eine Provinz zusammen (break), und der Deckel verglich die Zahl der Stapel mit stackFullContribution (zwanzig Einheiten) und griff nie. Reparatur in consolidate.ts: alle Provinzen je Denkschritt, Deckel in Einheiten (unitCount). Zusage 7 gilt neu fuer STEHENDE Armeeobjekte; den Durchzug kann der Kern nicht zusammenlegen (ARMY_BUSY), er ist mit Grund zurueckgenommen (DECISIONS.md). Test zuerst: decide.test.ts (zwei Provinzen je drei Armeen - zwei MERGE; drei Armeen je fuenfzehn Einheiten - Merge ueber zwei) und ai-integration.slow.test.ts (Voreinstellung 90 Tage: nie mehr als drei stehende Armeeobjekte einer Macht in einer Provinz, am Ende jedes Spieltags). RUECKNAHMEKRITERIUM, vor dem Bau festgelegt: Vollpartie 1914/2015/1815 mit Siegtag im Tor 300 bis 1500 und AK-1 entschieden, UND ai-integration 200 Tage gruen, UND Turnier im Band von R-AI-06 (schwer gegen normal 0,55 bis 0,95). Reisst eines davon, wird die Aufgabe zurueckgenommen und Zusage 7 mit der Messung nach M18 verschoben - keine Grenze bewegt. Entscheid bauen delegiert (Orchestrator, Block N2), kippbar in DECISIONS.md."
+  - id: T-M41-11
+    milestone: M41
+    title: Die Sicht nennt die Sperre beim Verlegen der Hauptstadt
+    status: done
+    deps: [T-M41-09]
+    requirements: []
+    files: [packages/core/src/view/publicView.ts, packages/core/src/index.ts, packages/ai/src/capital.ts, docs/reports/ai-integration.json, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/tasks.yaml]
+    tests: [packages/core/src/view/publicView.test.ts, packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/tournament.slow.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
+    dod: "Nebenbefund c zu T-M41-08: SET_CAPITAL wird 30 Spieltage nach dem letzten Verlegen mit ON_COOLDOWN abgelehnt (CAPITAL_MOVE_COOLDOWN_DAYS), aber PublicView.self fuehrte nur capitalLostUntil - die KI befahl taeglich neu, 298-mal im Turnier-Nachbau, nach der Reparatur zu H1 72-mal auf der Weltkarte, dieselbe Sperre bis zu 29-mal. Reparatur: PublicView.self.capitalMovedAtTick (nur der self-Block von publicView.ts; retreating aus M40 bleibt unberuehrt), CAPITAL_MOVE_COOLDOWN_DAYS aus dem Kern exportiert, capitalCommands beachtet die Sperre und begruendet das Warten (R-AI-05). Test zuerst: publicView.test.ts (Feld, null ohne Verlegen, nichts ueber Fremde - rot 3 von 19), decide.test.ts (keine Hauptstadt waehrend der Sperre, Gegenprobe nach Ablauf - rot 1 von 42), ai-integration.slow.test.ts (kein SET_CAPITAL:ON_COOLDOWN und erweiterter Paarungsschluessel ueber alle Befehle hoechstens drei, in beiden Laeufen - rot mit der alten capital.ts: 72 und 29). NEUTRAL: Sicht ist kein Zustand - Golden-Master ohne UPDATE_GOLDEN unveraendert, Endzustand ohne eventLog und state.ai bitgleich, Turnier zeilengleich."
 
   # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
   # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der

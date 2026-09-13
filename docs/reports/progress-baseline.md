@@ -191,6 +191,29 @@ Grundlauf aus Abschnitt 3 nicht ganz (Anteil des Stärksten 0,4442 → 0,4462, E
 302,3 → 301,3, Überlebende 5,17 → 5,08). Die Planungszahl „Tag 449, keine Stufe 3" ist nicht
 reproduzierbar; die ganze Messung samt Gegenprobe steht in `PROBLEME.md` (2026-09-13, T-M41-02).
 
+### Nachtrag 2026-09-13 · Der Ausbau sperrt die Stadt nicht mehr (Nacharbeit H1, Block N2)
+
+Der Ausbau aus T-M41-01 sperrte jede Stadt, deren nächste Fabrikstufe zu teuer war: Eisenbahn,
+Festung und Hafen kamen dort nicht mehr an die Reihe. Seit der Reparatur ist der Ausbau nur der erste
+Wunsch, und gebaut wird der erste bezahlbare (`DECISIONS.md`, Nachtrag zu T-M41-01; `PROBLEME.md`,
+H1). Gemessen gegen den Stand nach T-M41-08:
+
+| Startzahl | Siegtag vorher → nachher | höchste Fabrikstufe nachher | Fabrik ≥ 2 / = 3 (Provinzen) | Städte mit Eisenbahn / Festung, vorher → nachher |
+|---|---|---|---|---|
+| 1914 | 582 → **430** | 3 (Russland; Indien 2) | 25 / 3 | 18 / 13 → 43 / 41 |
+| 2015 | 868 → **640** | 3 (China; Indien 2) | 56 / 13 | 11 / 4 → 69 / 67 |
+| 1815 | 412 → **571** | 3 (Russland; Indien 2) | 51 / 4 | 11 / 4 → 66 / 62 |
+
+**Risiko 5, noch einmal:** die dritte Fabrikstufe erreicht die KI jetzt in **allen drei** Partien
+(vorher in einer). Der Risiko-5-Lauf dieses Berichts (200 Tage, sechs Europäer) zeigt weiter höchstens
+Stufe 1 — der Ausbau braucht die lange Partie.
+
+**Der Grundlauf verschiebt sich diesmal deutlich** (12 Startzahlen × 120 Tage): Anteil des Stärksten
+0,4462 → **0,3623**, Eroberungen 301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961.
+Der Ausgangswert in `balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand. Der
+Frische-Wächter sieht das nicht (er fragt nur `data/rules`); der eine Parameterlauf in T-M17-16 misst
+ihn neu.
+
 ## 6 · Was daraus folgt
 
 **1. Der Meilenstein tut, was er sollte.** Die Fortschrittsachse trägt statt zwei jetzt

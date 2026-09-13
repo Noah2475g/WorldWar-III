@@ -26,8 +26,11 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * **Andere Startzahlen** (T-M41-02): `WORLDWAR_FULLGAME_SEED=2015 pnpm sim:fullgame` spielt
  * dieselbe Voreinstellung mit anderer Startzahl und schreibt `fullgame-2015.json`. Ein
- * Siegtag aus einer einzigen Startzahl ist eine Zahl, kein Befund — 1914 endet an Tag
- * 471, 2015 an Tag 583, und was dazwischen liegt, ist Rauschen der Startzahl.
+ * Siegtag aus einer einzigen Startzahl ist eine Zahl, kein Befund: nach Block N2 der
+ * M41-Nacharbeit endet 1914 an Tag 975, 2015 und 1815 an Tag 583 (vor M41: 471, 583, 774).
+ * Die Startzahl variiert **nur den Zufall** — Aufstellung, Gegner und Hauptstädte sind in
+ * allen dreien gleich (Startzustand ohne `seed`/`rng` identisch, geprüft 2026-09-13); die
+ * Streuung ist also enger, als „drei Startzahlen" klingt.
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -133,6 +136,34 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
       events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory' && event.level === stufe)
         .length
 
+    // Die Staedte je Macht am Ende, mit Eisenbahn und Festung (Nacharbeit zu T-M41-01, H1 der
+    // Durchsicht M41). `nextBuildingFor` lieferte fuer jede Stadt mit einer Fabrik unter
+    // `maxLevel` nur noch "factory"; war diese Stufe zu teuer, kam in der Stadt nichts anderes
+    // an die Reihe — Eisenbahn und Festung erst nach Fabrikstufe 3. `fabrikOhneEisenbahn`
+    // zaehlt genau die Staedte, die so haengen koennen. Eine Zahl, keine Zusicherung: wie viele
+    // Staedte eine Macht am Ende haelt, haengt an der Partie, nicht an der Bauordnung.
+    const staedte = Object.fromEntries(
+      final.playerOrder.map((id) => {
+        const eigene = final.provinceOrder
+          .map((provinceId) => final.provinces[provinceId]!)
+          .filter((province) => province.owner === id && province.kind === 'city')
+        const mindestens = (building: 'railway' | 'fortress', stufe: number) =>
+          eigene.filter((province) => (province.buildings[building] ?? 0) >= stufe).length
+        return [
+          final.players[id]!.nation,
+          {
+            staedte: eigene.length,
+            eisenbahn: mindestens('railway', 1),
+            festung: mindestens('fortress', 1),
+            festung2: mindestens('fortress', 2),
+            fabrikOhneEisenbahn: eigene.filter(
+              (province) => (province.buildings.factory ?? 0) >= 1 && (province.buildings.railway ?? 0) === 0,
+            ).length,
+          },
+        ]
+      }),
+    )
+
     // Der Bericht wird immer geschrieben, auch wenn die Zusicherungen greifen — eine
     // gescheiterte Abnahme ist die Messung, die man dann am dringendsten braucht.
     mkdirSync(`${ROOT}/docs/reports`, { recursive: true })
@@ -158,6 +189,7 @@ describe('AK-1 Eine vollstaendige Partie gegen mindestens vier KI-Gegner', () =>
             upgradesStartedToLevel2: ausbauBegonnen(2),
             upgradesStartedToLevel3: ausbauBegonnen(3),
           },
+          cities: staedte,
           aiMemory: kiGedaechtnis,
           aiMemoryKB: kb(final.ai),
           stateKB: kb(final),

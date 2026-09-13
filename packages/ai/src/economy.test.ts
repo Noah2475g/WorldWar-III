@@ -1,4 +1,4 @@
-import { createInitialState, publicView, type Command, type GameConfig } from '@worldwar/core'
+import { buildingCostForLevel, createInitialState, publicView, type Command, type GameConfig } from '@worldwar/core'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
@@ -180,6 +180,98 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     )
 
     expect(bauten(context).map((command) => command.building)).not.toContain('factory')
+  })
+
+  it('baut in einer Stadt mit Fabrik 1 die Eisenbahn, wenn Stufe 2 zu teuer ist (Nacharbeit, H1)', () => {
+    // Befund H1 der Durchsicht M41: `nextBuildingFor` lieferte fuer jede Stadt mit einer Fabrik
+    // unter maxLevel nur noch "factory"; war diese Stufe zu teuer, sprang `economyCommands` zur
+    // naechsten Provinz — Eisenbahn, Festung und Hafen kamen in der Stadt erst nach Fabrikstufe 3,
+    // oft nie. Gemessen in der Vollpartie mit Startzahl 1815: Russland haelt am Ende 48 Staedte,
+    // 36 davon mit Fabrik und ohne Eisenbahn.
+    const context = richContext(tag31)
+    stufe(context, 'railway', 0)
+    const vorrat = context.view.self.resources as Record<string, number>
+    for (const key of Object.keys(vorrat)) vorrat[key] = 1_000_000
+
+    // Die Lage, die der Test braucht, und nicht nur behauptet: nach der Ruecklage sind 800.000
+    // frei — zu wenig fuer Fabrikstufe 2, genug fuer die Eisenbahn.
+    const frei = 800_000
+    const fabrik2 = buildingCostForLevel(TEST_RULES.buildings.factory, 2, TEST_RULES.constants)
+    const eisenbahn = buildingCostForLevel(TEST_RULES.buildings.railway, 1, TEST_RULES.constants)
+    expect(Object.values(fabrik2).some((menge) => (menge ?? 0) > frei), 'Fabrikstufe 2 waere bezahlbar').toBe(true)
+    expect(Object.values(eisenbahn).every((menge) => (menge ?? 0) <= frei), 'Eisenbahn waere zu teuer').toBe(true)
+
+    const [bau] = bauten(context)
+    const provinz = context.view.provinces.find((province) => province.id === bau?.provinceId)
+
+    expect(`${bau?.building} in ${provinz?.kind}`).toBe('railway in city')
+    expect(provinz?.buildings?.factory).toBe(1)
+  })
+
+  it('baut nicht in einer Provinz, die sie nur noch erinnert (T-M41-09)', () => {
+    // Befund der Untersuchung zu T-M41-08: alle 213 BUILD:NOT_OWNER auf der Weltkarte zielten
+    // auf Provinzen, die die Sicht als `stale` mit dem eigenen Besitzer von damals fuehrte;
+    // tatsaechlich gehoerten sie laengst einem Gegner. Die Erinnerung zeigt keine Gebaeude, also
+    // wollte die KI dort eine Kaserne — und weil nur ein Bau je Denkschritt entsteht, verdraengte
+    // der Geisterbau den echten Bau des Tages.
+    const context = richContext(tag31)
+    const stadt = context.view.provinces.find((province) => province.owner === 'p2' && province.kind === 'city')!
+    const erinnert = { ...stadt, id: 'erinnert', stale: true }
+    // Die Erinnerung fuehrt weder Gebaeude noch Bauschlange (publicView, `stale`).
+    delete erinnert.buildings
+    delete erinnert.buildQueueLength
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = [erinnert, ...context.view.provinces]
+
+    const ziele = bauten(context).map((command) => command.provinceId)
+
+    expect(ziele, 'die KI baut gar nichts mehr - der Test saehe den Filter nicht').not.toEqual([])
+    expect(ziele).not.toContain('erinnert')
+  })
+
+  it('handelt nicht fuer einen Bau in einer erinnerten Provinz (T-M41-09)', () => {
+    // Dieselbe Liste speist `missingForNextBuilding`: ohne Filter tauschte die KI Rohstoffe fuer
+    // einen Bauauftrag, den der Kern ablehnen wird.
+    const context = richContext(tag31)
+    // Jede sichtbare eigene Provinz ist fertig — wie im Haltetest unten.
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(context, 'fortress', 2)
+    const stadt = context.view.provinces.find((province) => province.owner === 'p2' && province.kind === 'city')!
+    const erinnert = { ...stadt, id: 'erinnert', stale: true }
+    // Die Erinnerung fuehrt weder Gebaeude noch Bauschlange (publicView, `stale`).
+    delete erinnert.buildings
+    delete erinnert.buildQueueLength
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = [erinnert, ...context.view.provinces]
+    ;(context.view.self.resources as Record<string, number>).wood = 1000
+    expect(context.view.self.shortages.length, 'die Lage soll gerade keinen Mangel zeigen').toBe(0)
+
+    expect(tradeCommands(context, [])).toEqual([])
+  })
+
+  it('weicht auch in einer Landprovinz mit Kaserne auf den naechsten Wunsch aus (Durchsicht M2)', () => {
+    // Haltetest fuer das heutige Verhalten, kein neues: die Ausweichliste aus der Nacharbeit zu H1
+    // gilt fuer jede Provinz mit Kaserne, nicht nur fuer Staedte mit Fabrik. Vorher ging eine
+    // Landprovinz leer aus, wenn die Eisenbahn zu teuer war, und die Suche lief zur naechsten
+    // Provinz. Gemessen ist das nur in der Summe der Laeufe zu H1 (PROBLEME.md, 2026-09-13).
+    const context = richContext(tag31)
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+      (province) => province.owner !== 'p2' || province.kind !== 'city',
+    )
+    stufe(context, 'railway', 0)
+    stufe(context, 'fortress', 0)
+    ;(context.view.self.resources as Record<string, number>).coal = 0
+
+    // Die Lage, die der Test braucht: die Eisenbahn kostet Kohle, die Festung nicht.
+    const eisenbahn = buildingCostForLevel(TEST_RULES.buildings.railway, 1, TEST_RULES.constants)
+    const festung = buildingCostForLevel(TEST_RULES.buildings.fortress, 1, TEST_RULES.constants)
+    expect((eisenbahn as Record<string, number>).coal ?? 0, 'die Eisenbahn waere ohne Kohle bezahlbar').toBeGreaterThan(0)
+    expect((festung as Record<string, number>).coal ?? 0, 'die Festung braucht Kohle').toBe(0)
+
+    const [bau] = bauten(context)
+    const provinz = context.view.provinces.find((province) => province.id === bau?.provinceId)
+
+    expect(`${bau?.building} in ${provinz?.kind}`).toBe('fortress in rural')
+    expect(provinz?.buildings?.barracks).toBe(1)
+    expect(provinz?.buildings?.railway).toBe(0)
   })
 
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {

@@ -57,6 +57,20 @@ export interface MatchResult {
    * geschossen wird. Erst der Turnierlauf sagt, ob sie ueberhaupt vorkommt.
    */
   automaticBombardments: number
+  /**
+   * Dieselben zwei Zahlen nach dem **Handelnden** (T-M41-08).
+   *
+   * Die Summen oben gehoeren der ganzen Partie. T-M15-08 versprach sie "je Stufe" — und wer das
+   * zusichern will, muss wissen, wer erklaert und wer geschossen hat. Sonst stuende der Beschuss
+   * von "schwer" in einer Partie gegen "leicht" auch bei "leicht".
+   */
+  byPlayer: Record<PlayerId, ActorCounts>
+}
+
+/** Was eine Macht selbst getan hat (T-M41-08). */
+export interface ActorCounts {
+  warDeclarations: number
+  automaticBombardments: number
 }
 
 export function playMatch(options: MatchOptions): MatchResult {
@@ -111,13 +125,24 @@ export function playMatch(options: MatchOptions): MatchResult {
     (event) => event.type === 'BOMBARDMENT' && event.automatic,
   ).length
 
+  const byPlayer: Record<PlayerId, ActorCounts> = {
+    p1: { warDeclarations: 0, automaticBombardments: 0 },
+    p2: { warDeclarations: 0, automaticBombardments: 0 },
+  }
+  for (const event of run.events) {
+    if (event.type === 'WAR_DECLARED' && byPlayer[event.playerId]) byPlayer[event.playerId]!.warDeclarations += 1
+    if (event.type === 'BOMBARDMENT' && event.automatic && byPlayer[event.playerId]) {
+      byPlayer[event.playerId]!.automaticBombardments += 1
+    }
+  }
+
   const scores = { p1: scoreOf(state, 'p1', options.rules), p2: scoreOf(state, 'p2', options.rules) }
   if (state.victory.winner !== null) {
-    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements, automaticBombardments }
+    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements, automaticBombardments, byPlayer }
   }
 
   const winner = scores.p1 === scores.p2 ? null : scores.p1 > scores.p2 ? 'p1' : 'p2'
-  return { winner, scores, ticks: state.tick, reason: 'timeLimit', warDeclarations, peaceAgreements, automaticBombardments }
+  return { winner, scores, ticks: state.tick, reason: 'timeLimit', warDeclarations, peaceAgreements, automaticBombardments, byPlayer }
 }
 
 export interface TournamentResult {
@@ -152,6 +177,13 @@ export interface TournamentResult {
   peaceAgreements: Record<Difficulty, number>
   /** Selbsttaetiger Beschuss je Stufe (R-BAT-08/AK3). */
   automaticBombardments: Record<Difficulty, number>
+  /**
+   * Kriegserklaerungen und Beschuss je Stufe **nach dem Handelnden** (T-M41-08).
+   *
+   * Die beiden Felder darueber zaehlen jede Partie fuer beide Stufen, die antreten; hier zaehlt
+   * nur, was die Stufe selbst getan hat.
+   */
+  byDifficulty: Record<Difficulty, ActorCounts>
 }
 
 /**
@@ -184,6 +216,16 @@ export function playTournament(options: {
   const wars = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   const peaces = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   const shells = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
+  const acted: Record<Difficulty, ActorCounts> = {
+    easy: { warDeclarations: 0, automaticBombardments: 0 },
+    normal: { warDeclarations: 0, automaticBombardments: 0 },
+    hard: { warDeclarations: 0, automaticBombardments: 0 },
+  }
+  const credit = (difficulty: Difficulty, counts: ActorCounts | undefined): void => {
+    if (!counts) return
+    acted[difficulty].warDeclarations += counts.warDeclarations
+    acted[difficulty].automaticBombardments += counts.automaticBombardments
+  }
   let matchWinsA = 0
   let matchWinsB = 0
 
@@ -213,6 +255,11 @@ export function playTournament(options: {
       peaces[difficulty] += hin.peaceAgreements + rueck.peaceAgreements
       shells[difficulty] += hin.automaticBombardments + rueck.automaticBombardments
     }
+    // Nach dem Handelnden: hin spielt die erste Stufe p1, rueck spielt sie p2.
+    credit(options.difficulties[0], hin.byPlayer['p1'])
+    credit(options.difficulties[1], hin.byPlayer['p2'])
+    credit(options.difficulties[1], rueck.byPlayer['p1'])
+    credit(options.difficulties[0], rueck.byPlayer['p2'])
 
     // A spielt hin als p1, rueck als p2.
     const punkteA = (hin.winner === 'p1' ? 1 : 0) + (rueck.winner === 'p2' ? 1 : 0)
@@ -235,5 +282,6 @@ export function playTournament(options: {
     warDeclarations: wars,
     peaceAgreements: peaces,
     automaticBombardments: shells,
+    byDifficulty: acted,
   }
 }

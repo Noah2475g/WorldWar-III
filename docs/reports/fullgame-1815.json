@@ -13,12 +13,12 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 412,
+  "decidedOnDay": 583,
   "winner": "p6",
   "condition": "points",
-  "warDeclarations": 12,
-  "captures": 1172,
-  "battles": 5323,
+  "warDeclarations": 10,
+  "captures": 1587,
+  "battles": 6101,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
@@ -26,14 +26,72 @@
       "Mexiko": 0,
       "Brasilien": 0,
       "Argentinien": 0,
-      "Russland": 2,
-      "China": 2,
+      "Russland": 3,
+      "China": 0,
       "Indien": 1
     },
-    "provincesAtLevel2OrMore": 23,
-    "provincesAtLevel3": 0,
-    "upgradesStartedToLevel2": 50,
-    "upgradesStartedToLevel3": 0
+    "provincesAtLevel2OrMore": 51,
+    "provincesAtLevel3": 8,
+    "upgradesStartedToLevel2": 57,
+    "upgradesStartedToLevel3": 10
+  },
+  "cities": {
+    "Vereinigte Staaten": {
+      "staedte": 3,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Kanada": {
+      "staedte": 0,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Mexiko": {
+      "staedte": 3,
+      "eisenbahn": 1,
+      "festung": 1,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Brasilien": {
+      "staedte": 0,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Argentinien": {
+      "staedte": 8,
+      "eisenbahn": 2,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Russland": {
+      "staedte": 56,
+      "eisenbahn": 51,
+      "festung": 51,
+      "festung2": 51,
+      "fabrikOhneEisenbahn": 2
+    },
+    "China": {
+      "staedte": 0,
+      "eisenbahn": 0,
+      "festung": 0,
+      "festung2": 0,
+      "fabrikOhneEisenbahn": 0
+    },
+    "Indien": {
+      "staedte": 11,
+      "eisenbahn": 6,
+      "festung": 6,
+      "festung2": 5,
+      "fabrikOhneEisenbahn": 0
+    }
   },
   "aiMemory": {
     "Kanada": {
@@ -42,38 +100,38 @@
       "veraltet": 0
     },
     "Mexiko": {
-      "eintraege": 42,
-      "armeen": 42,
+      "eintraege": 127,
+      "armeen": 127,
       "veraltet": 0
     },
     "Brasilien": {
-      "eintraege": 7,
-      "armeen": 7,
+      "eintraege": 0,
+      "armeen": 0,
       "veraltet": 0
     },
     "Argentinien": {
-      "eintraege": 82,
-      "armeen": 82,
+      "eintraege": 140,
+      "armeen": 140,
       "veraltet": 0
     },
     "Russland": {
-      "eintraege": 260,
-      "armeen": 260,
-      "veraltet": 1
+      "eintraege": 189,
+      "armeen": 189,
+      "veraltet": 0
     },
     "China": {
-      "eintraege": 35,
-      "armeen": 35,
+      "eintraege": 0,
+      "armeen": 0,
       "veraltet": 0
     },
     "Indien": {
-      "eintraege": 87,
-      "armeen": 87,
+      "eintraege": 53,
+      "armeen": 53,
       "veraltet": 0
     }
   },
   "aiMemoryKB": 12,
-  "stateKB": 397,
+  "stateKB": 403,
   "maxDays": 1500,
-  "measuredAt": "2026-09-13T11:29:49.517Z"
+  "measuredAt": "2026-09-13T15:40:52.839Z"
 }

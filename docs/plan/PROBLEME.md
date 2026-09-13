@@ -2117,7 +2117,10 @@ dreimal vorkommt, sagt der Bericht nicht; er zählt nicht je Armee.
 KI-Verhalten und würde nach dem Fabrikausbau (T-M41-01) ohnehin neu gemessen. T-M14-11 und
 T-M14-12 bleiben `done`; die fehlenden Zusicherungen gehören in die nächste Planung.
 
-**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt.
+**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt. *(Eingelöst 2026-09-13 mit
+T-M41-08: der 90-Tage-Lauf der Voreinstellung steht in `apps/headless/test/ai-integration.slow.test.ts`;
+acht Aussagen sind zugesichert, `armyRange` je Macht und die AK bei R-AI-01 mit Grund zurückgenommen,
+„höchstens drei Armeeobjekte je Provinz" geht an T-M41-10 — Eintrag unten.)*
 
 ---
 
@@ -2551,3 +2554,424 @@ Schlachten — der Bericht bis auf `measuredAt` gleich dem eingecheckten, zurüc
 über `pnpm test` ohne `UPDATE_GOLDEN`; `data/rules` unberührt.
 
 **Status:** AK5 belegt; Beobachtung „hilft nicht belegbar" offen bei Noah.
+---
+
+## 2026-09-13 · T-M41-08 · 961 Ablehnungen waren Rauschen aus dem Zusammenlegen — die Zusagen aus M14 sind eingelöst oder begründet zurückgenommen, und fünf Nebenbefunde bleiben
+
+**Der Befund, nachgemessen beim Bau.** Die Untersuchung zu `ai-integration.json` (890 `MOVE_ARMY:ARMY_NOT_FOUND`
+am 2026-09-12) fand eine einzige Ursache: Operativ- und Taktikstufe feuern praktisch immer im selben Tick
+und lasen dieselbe Sicht; `consolidateCommands` legte Armeen zusammen, `militaryCommands` befahl danach
+die aufgelösten, und der Kern lehnte jeden dieser Befehle ab. Nachgemessen auf dem Stand `4854465`, rot
+vor der Reparatur: **200 Tage Weltkarte 938 + 23** (`MOVE_ARMY`/`SET_STANCE`), **90 Tage Voreinstellung
+265 + 2**. Kein verlorener Zug — die bleibende Armee bekam ihren eigenen Befehl —, aber 961 von 1177
+Ablehnungen verdeckten jede andere.
+
+**Reparatur und Beleg.** `decide.ts` gibt der Taktikstufe eine Sicht ohne die Armeen, die das
+Zusammenlegen im selben Zug auflöst (Sortierregel des Kerns). Befehle, `assignments` und Begründungen
+für diese Armeen entstehen nicht mehr. **Neutral, gemessen:** die Prüfsumme des Endzustands ohne
+Protokoll und KI-Gedächtnis ist vorher wie nachher `dbf5fa3f49a96cd1` (200 Tage) und `a177d1db875a10b1`
+(90 Tage), jede Ereigniszahl außer den Ablehnungen ist gleich, das Turnier zeilengleich. Ablehnungen
+Weltkarte **1177 → 216** (6,32 % → 1,22 % der KI-Befehle), Voreinstellung **267 → 0**.
+
+**Die Zusagen von T-M14-11 und T-M14-12** (Eintrag „T-M41-06" oben) stehen jetzt im 90-Tage-Lauf der
+ausgelieferten Voreinstellung (`ai-integration.slow.test.ts`, Startzahl 1914, sieben KI):
+
+| Zusage | gemessen (90 Tage) | Stand |
+|---|---|---|
+| Ablehnungsquote < 10 % | 0 % (vorher 3,92 %) | zugesichert |
+| `NO_PATH` < 2 % der Marschbefehle | 0 von 2556 | zugesichert |
+| Paarung Armee/Fehlercode ≤ 3 | 0 | zugesichert |
+| ≥ 1 Kriegserklärung | 5 | zugesichert |
+| keine Macht ohne Hauptstadt, solange sie eine Stadt hält | 0 am Ende, 0 Tage | zugesichert — *berichtigt nach der Durchsicht (M1): über einer leeren Menge, 0 Verluste in 90 Tagen; jetzt im 200-Tage-Lauf mit 10 Verlusten zugesichert* |
+| Handel je KI-Macht | alle 7, mindestens 288 | zugesichert |
+| abgewiesene `acceptPeace` < 5 % | keine diplomatische Ablehnung (1 Annahme) | zugesichert, strenger |
+| Frieden zwischen zwei KI | 1 | zugesichert |
+| je Macht eine Armee mit `armyRange > 0` | 0 von 7 | **zurückgenommen** (`DECISIONS.md`) |
+| ≤ 3 Armeeobjekte je Macht und Provinz | höchstens 86, stehend 8 | Zahl im Bericht, Nebenbefund (b) |
+| zusätzliche AK für den Ablehnungsanteil bei R-AI-01 | nie gebaut | **zurückgenommen** (`DECISIONS.md`) |
+
+Im 200-Tage-Lauf stehen dieselben Zahlen im Bericht; zugesichert ist dort nur `ARMY_NOT_FOUND` = 0.
+
+**Die „neun Zahlen je Stufe" aus T-M15-08.** Das Turnier zählte Kriegserklärung und Beschuss je Partie für
+**beide** antretenden Stufen — der Beschuss von „schwer" stand auch bei „leicht". Jetzt nach dem
+Handelnden (`byDifficulty`): Kriegserklärungen leicht 0, normal 110, schwer 70; selbsttätiger Beschuss
+**0 auf jeder Stufe**. Zugesichert sind die Kriegserklärungen von „schwer" und „normal", der Rest ist
+zurückgenommen (`DECISIONS.md`).
+
+**Nebenbefunde (nicht in dieser Aufgabe gebaut):**
+
+- **(a) Das Artillerie-Tor ist dünn.** 200 Tage Weltkarte: **1 Artillerie, 10 selbsttätige Beschüsse**
+  (2026-09-12: 9 und 121); `ai-integration.slow.test.ts` sichert `> 0` und ist damit auf einer einzigen
+  Einheit grün. Naheliegende Ursache H1 der Durchsicht (Fabrikausbau sperrt die Stadt) → nach der
+  H1-Reparatur nachmessen, sonst T-M41-14.
+- **(b) Viele Armeeobjekte je Provinz.** Voreinstellung höchstens 86 (stehend 8), Weltkarte 101 (stehend 17),
+  fast nur Durchzug. `consolidate.ts` legt je Denkschritt nur **eine** Provinz zusammen (`break`), und der
+  Deckel vergleicht die Zahl der **Stapel** mit `stackFullContribution` = 20 **Einheiten** — er greift nie.
+  → T-M41-10.
+- **(c) Die Hauptstadt wird im Turnier täglich neu befohlen.** Nachbau der Untersuchung: 298×
+  `SET_CAPITAL:ON_COOLDOWN` in einem Lauf; `PublicView.self` führt die 30-Tage-Sperre des Verlegens nicht.
+  → T-M41-11.
+- **(d) Im Turnier schießt keine Stufe.** R-BAT-08/AK3 sagt „SOLL ihre Artillerie im Turnier
+  Beschussereignisse erzeugen" — gemessen 0 auf jeder Stufe (40 Spieltage, Testkarte, Artillerie ab Tag 34
+  hinter der Fabrik). Belegt ist der Beschuss nur als Summe im 200-Tage-Lauf (Befund a). Vermerk bei
+  R-BAT-08/AK3 in `01-REQUIREMENTS.md`; die Anforderung selbst bleibt gebucht, ihr Text wird nicht still
+  gelockert.
+- **(e) 213 `BUILD:NOT_OWNER` sind Geisterbauten** in Provinzen, die die KI nur noch erinnert (`stale`), eine
+  davon 94× (China, PAK-NORTH); wegen `break` verdrängt der Geisterbau den echten Bau des Tages. → T-M41-09.
+
+**Status:** behoben (`ARMY_NOT_FOUND`, T-M41-08); Zusagen aus M14 eingelöst oder zurückgenommen;
+Nebenbefunde (a)–(e) offen, mit Aufgabe in Block N2.
+
+---
+
+## 2026-09-13 · Nacharbeit T-M41-01 (H1, H2) · Der Fabrikausbau sperrte die Städte — repariert, und das Artillerie-Tor lebt wieder
+
+**Der Befund der Durchsicht, nachgemessen.** `nextBuildingFor` lieferte seit T-M41-01 für jede Stadt mit
+einer Fabrik unter `maxLevel` nur noch „factory"; war diese Stufe zu teuer, sprang `economyCommands` zur
+nächsten Provinz. Eisenbahn, Festung und Hafen kamen in der Stadt erst nach Fabrikstufe 3 — das
+3,24-fache des Grundpreises. Neu gezählt in `fullgame.slow.test.ts` (Städte je Macht am Ende), auf dem
+Stand nach T-M41-08: mit Startzahl 1914 halten die Mächte zusammen 71 Städte, **39 davon mit Fabrik und
+ohne Eisenbahn**; 2015 **66 von 82**; 1815 **40 von 71**. Russland allein, 1815: 48 Städte, 36 hängend.
+`economy.test.ts` zeigt den Mechanismus in einem Satz: Stadt mit Fabrik 1, Stufe 2 zu teuer, Eisenbahn
+bezahlbar — die KI baut die Eisenbahn **in einer Landprovinz** („expected 'railway in rural' to be
+'railway in city'").
+
+**Reparatur.** Der Ausbau ist nur noch der **erste** Wunsch einer Stadt, deren Fabrik steht; Eisenbahn,
+Festung und Hafen stehen dahinter, und `economyCommands` baut den ersten bezahlbaren. Kaserne und erste
+Fabrik bleiben allein wie bisher, der Handel (`missingForNextBuilding`) zielt weiter auf den ersten
+Wunsch — geändert ist genau eine Größe. *(Berichtigt nach der Durchsicht von Block N2, M2: nicht
+genau eine. Die Ausweichliste gilt für jede Provinz mit Kaserne, auch Landprovinzen und Städte mit
+Fabrik 3 — dort baut die KI jetzt die Festung, wenn die Eisenbahn zu teuer ist, statt zur nächsten
+Provinz zu gehen. Gemessen nur in der Summe der Läufe unten; Haltetest in `economy.test.ts`.)* Gewählt statt „Ausbau hinter die anderen einordnen", weil eine
+reiche Macht die Fabrik so weiter zuerst ausbaut (`DECISIONS.md`, Nachtrag zu T-M41-01).
+
+**Vollpartie, vorher → nachher** (vorher = Stand nach T-M41-08, Berichte mit denselben Feldern):
+
+| Startzahl | Siegtag | Kriege | Eroberungen | Schlachten | Städte mit Eisenbahn / Festung / Festung 2 | Fabrik ohne Eisenbahn | Fabrik ≥ 2 / = 3 (Provinzen) |
+|---|---|---|---|---|---|---|---|
+| 1914 vorher | 582 | 12 | 1615 | 5236 | 18 / 13 / 11 von 71 | 39 | 29 / 11 |
+| 1914 nachher | **430** | 11 | 1022 | 4009 | **43 / 41 / 32** von 72 | **2** | 25 / 3 |
+| 2015 vorher | 868 | 37 | 2923 | 11262 | 11 / 4 / 0 von 82 | 66 | 42 / 0 |
+| 2015 nachher | **640** | 11 | 1826 | 7128 | **69 / 67 / 62** von 80 | **0** | 56 / 13 |
+| 1815 vorher | 412 | 12 | 1172 | 5323 | 11 / 4 / 0 von 71 | 40 | 23 / 0 |
+| 1815 nachher | **571** | 8 | 1609 | 5811 | **66 / 62 / 59** von 81 | **1** | 51 / 4 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500 aus T-M34-07, und
+„mindestens eine Macht besitzt Fabrikstufe 2" hält. Der Siegtag springt wieder in beide Richtungen —
+die Partie wird eine andere, wie schon bei T-M41-02 beobachtet. Mit Startzahl 2015 gewinnt jetzt China
+(p7) statt Russland (p6), mit 11 statt 37 Kriegserklärungen, und China erreicht Fabrikstufe 3 in 13
+Provinzen.
+
+**H2 — das Integrationstor, gegen den Stand vom 2026-09-12** (`ai-integration.json`, Weltkarte, 200 Tage):
+
+| Größe | 2026-09-12 | nach T-M41-08 | nach H1 |
+|---|---|---|---|
+| Artillerie ausgehoben | 9 | 1 | **69** |
+| selbsttätiger Beschuss | 121 | 10 | **303** |
+| begonnene Fabriken | 77 | 71 | 76 |
+| Kriegserklärungen | 13 | 12 | 15 |
+| Ablehnungen | 1105 | 216 | 136 (59 `BUILD:NOT_OWNER`, 72 `SET_CAPITAL:ON_COOLDOWN`, 5 `RECRUIT`) |
+
+Das dünne Tor (Nebenbefund a zu T-M41-08) war Folge von H1: die Städte, die Artillerie ausheben
+könnten, bauten nichts mehr. **Aber:** alle 69 Artillerien und alle 303 Beschüsse gehören einer Stufe —
+„schwer" (China, 51 Armeen mit Reichweite); „leicht" und „normal" 0. Der 90-Tage-Lauf der Voreinstellung
+bleibt grün (0 Ablehnungen), sein Endzustand hat sich verschoben (`a177d1db875a10b1` → `41acc8a544184d8b`).
+
+**Turnier:** nicht mehr zeilengleich, R-AI-06 hält — Siegquoten 1,00 / 0,70 (10:0:15) / 1,00 wie vorher;
+„schwer gegen normal im Frieden" 146 → 145 Kriegserklärungen, 97 → 96 Frieden.
+
+**Grundlauf** (`progress.slow.test.ts`, 12 Startzahlen × 120 Tage): Anteil des Stärksten 0,4462 → **0,3623**, Eroberungen
+301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961. Der Lauf vorher war gleich dem
+eingecheckten Bericht — T-M41-08 und M40 hatten ihn nicht verschoben. **Befund:** der Ausgangswert in
+`balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand; der Frische-Wächter der Abnahme sieht das
+nicht (er fragt nur `data/rules`), der eine Parameterlauf in T-M17-16 misst neu. Risiko 5 (200 Tage, sechs
+Europäer): höchste Stufe weiter 1.
+
+**Neu sichtbar, nicht in dieser Reparatur:** `SET_CAPITAL:ON_COOLDOWN` 72× auf der Weltkarte, und die längste
+Strecke ohne Hauptstadt bei gehaltener Stadt ist 31 Tage (Italien) — die 30-Tage-Sperre nach einem zweiten
+Verlust. Gehört zu T-M41-11.
+
+**Status: behoben** (Nacharbeit zu T-M41-01). Plantext bei T-M41-01 in `03-TASKS.md` und `tasks.yaml`,
+Nachtrag in `DECISIONS.md` und `progress-baseline.md` §5.
+
+---
+
+## 2026-09-13 · T-M41-09 · Die KI baute in Provinzen, die sie nur erinnerte — und jeder Geisterbau kostete den echten Bau des Tages
+
+**Befund** (Nebenbefund e zu T-M41-08). Eine Provinz außer Sicht führt `publicView` mit dem Besitzer, den die
+Macht zuletzt gesehen hat (`stale: true`) — auch dann noch als eigene, wenn ein Gegner sie längst hält. Die
+Erinnerung zeigt keine Gebäude, also wollte die KI dort eine Kaserne, und der Kern lehnte mit `NOT_OWNER`
+ab, jeden Tag neu. Weil `economyCommands` nur einen Bau je Denkschritt befiehlt, verdrängte der Geisterbau
+den echten; `missingForNextBuilding` handelte obendrein dafür. Stand nach der Reparatur zu H1: **59
+`BUILD:NOT_OWNER`** in 200 Tagen, eine Provinz **50×** (China, PAK-CENTRAL).
+
+**Reparatur.** Wirtschaft, Handel und Aushebung sehen nur sichtbare eigene Provinzen. Militär, Diplomatie und
+Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert mein" Rückeroberung, und das wäre eine eigene
+Verhaltensänderung. Tests zuerst: `economy.test.ts` rot 2 von 13 („expected [ 'erinnert' ] to not include
+'erinnert'", ein `TRADE` für den erinnerten Bau), `ai-integration.slow.test.ts` rot 2 von 19 („expected 59 to
+be +0", „Weltkarte, 200 Tage: expected 50 to be less than or equal to 3").
+
+**Abweichung von der Untersuchung.** Sie wollte hier den erweiterten Paarungsschlüssel (Macht, Befehl,
+Fehlercode, Einzelheiten) über **alle** Befehle zusichern. Das trägt nach H1 nicht: `SET_CAPITAL:ON_COOLDOWN`
+wiederholt dieselbe Sperre bis zu 29× (Italien). Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel
+geht an T-M41-11.
+
+**Vorher → nachher** (vorher = Stand nach H1):
+
+| Größe | vorher (Stand nach H1) | nachher |
+|---|---|---|
+| `BUILD:NOT_OWNER`, Weltkarte 200 Tage | 59 | **0** |
+| derselbe abgelehnte Bauauftrag, höchstens | 50 (China, PAK-CENTRAL) | 0 |
+| Ablehnungen gesamt | 136 (0,82 %) | 75 (0,45 %) — 72 `SET_CAPITAL:ON_COOLDOWN`, 3 `RECRUIT` |
+| begonnene Fabriken / Artillerie / selbsttätiger Beschuss | 76 / 69 / 303 | 71 / 63 / 231 |
+| Voreinstellung 90 Tage, Prüfsumme ohne Protokoll und KI | `41acc8a544184d8b` | **bitgleich** |
+| Vollpartie 1914: Siegtag, Sieger | 430, p6 | **975**, p7 (China) |
+| Vollpartie 2015: Siegtag, Sieger | 640, p7 | **583**, p6 |
+| Vollpartie 1815: Siegtag, Sieger | 571, p6 | **583**, p6 |
+| Turnier | — | zeilengleich |
+| Grundlauf (`progress.slow`) | Anteil des Stärksten 0,3623 | 0,3684; Eroberungen 314,5 → 310,1, Überlebende 5,67 → 5,42 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500. Mit Startzahl 1914
+endet die Partie jetzt mehr als doppelt so spät — China gewinnt mit Fabrikstufe 3 in 61 Provinzen, 2589
+Eroberungen statt 1022. Der Siegtag springt wie schon bei H1 je Änderung in beide Richtungen; die
+Voreinstellung bleibt über 90 Tage bitgleich, weil erinnerte Bauten dort nicht vorkommen.
+
+**Status: behoben** (T-M41-09).
+
+---
+
+## 2026-09-13 · T-M41-10 · „Höchstens drei Armeeobjekte je Provinz" — gebaut, am Rücknahmekriterium gerissen, zurückgenommen
+
+**Befund** (Nebenbefund b zu T-M41-08). T-M14-12 sagte zu: „keine KI-Macht hält mehr als drei Armeeobjekte in
+derselben Provinz". Gemessen auf dem Stand nach T-M41-09: Voreinstellung (90 Tage) bis zu **65** Armeeobjekte
+einer Macht in einer Provinz, **stehend 5**; Weltkarte (200 Tage) bis zu **80**, **stehend 12**. Zwei Stellen in
+`consolidate.ts`: der `break` legt je Denkschritt nur **eine** Provinz zusammen, und der Deckel vergleicht die Zahl
+der **Stapel** (einer je Einheitenart) mit `stackFullContribution`, zwanzig **Einheiten** — er greift nie.
+Marschierende Armeen kann der Kern nicht zusammenlegen (`ARMY_BUSY`); fast alle 65 bzw. 80 sind Durchzug.
+
+**Gebaut und gemessen.** Beide Stellen repariert (alle Provinzen je Denkschritt, Deckel über `unitCount`), die
+Zusage neu gefasst auf **stehende** Armeeobjekte. Tests zuerst: `decide.test.ts` rot 2 von 42 („expected [ 'o1' ]
+to deeply equal [ 'o1', 'o2' ]", „expected [ 'a1', 'a2', 'a3' ] to have a length of 2 but got 3"), grün mit der
+Reparatur; `ai-integration.slow.test.ts` mit der Zusicherung „Voreinstellung stehend ≤ 3" rot mit der alten
+`consolidate.ts` („an 1 Tagen mehr als drei: expected 5 to be less than or equal to 3").
+
+**Rücknahmekriterium** (Vollpartie 1914/2015/1815 im Tor 300–1500 und entschieden, `ai-integration` 200 Tage grün,
+Turnier im Band von R-AI-06):
+
+| | vorher (nach T-M41-09) | mit T-M41-10 |
+|---|---|---|
+| **`ai-integration` 200 Tage** | grün | **rot 2 von 20** |
+| Artillerie ausgehoben / selbsttätiger Beschuss | 63 / 231 | **0 / 0** |
+| stehende Armeeobjekte je Provinz, höchstens (Weltkarte / Voreinstellung) | 12 / 5 | 11 / **5** (an 2 Tagen über drei) |
+| Ablehnungen Weltkarte | 75 | 44 (42 `SET_CAPITAL:ON_COOLDOWN`) |
+| Turnier | — | zeilengleich, Band hält |
+| Vollpartie 1914: Siegtag | 975 | 842, entschieden (Sieger p7 → p8) |
+| Vollpartie 2015: Siegtag | 583 | 1003, entschieden (Sieger p6 → p7) |
+| Vollpartie 1815: Siegtag | 583 | 456, entschieden |
+| Grundlauf (`progress.slow`) | 0,3684 | 0,3703 (Eroberungen 310,1 → 309,2) |
+
+**Das Kriterium ist gerissen** — am Integrationstor der Artilleriekette, R-AI-08/AK3. Und die neu gefasste Zusage
+hielt auch mit der Reparatur nicht. **T-M41-10 ist zurückgenommen**: `consolidate.ts` und die Tests stehen wieder
+auf dem Stand nach T-M41-09, die Berichte ebenso; die Aufgabe steht auf `todo` mit `reopened`, die Zusage 7 ist mit
+dieser Messung nach M18 verschoben (`DECISIONS.md`). Keine Grenze bewegt.
+
+**Zwei offene Fragen, nicht gemessen:**
+- **Warum verschwindet die Artillerie?** Naheliegend: `TARGET_MIX` in `economy.ts` zählt Stapel, nicht Einheiten.
+  Zusammenlegen verschmilzt die Infanteriestapel mehrerer Armeen zu einem; der Anteil der Infanterie sinkt
+  scheinbar, sie behält den größten Rückstand, und die Artillerie kommt nie an die Reihe. Dieselbe Kette hält
+  heute an einer einzigen Macht („schwer", China) — das Tor ist dünner, als die Zahl 231 aussieht.
+- **Warum hält „stehend ≤ 3" nicht?** Naheliegend: der Deckel in Einheiten legt zwei große Verbände zusammen und
+  lässt jeden weiteren stehen; dazu denkt jede Macht nur jeden siebten oder achten Tick, und Aushebungen erzeugen
+  dazwischen neue Armeen. Ob der Deckel und die Zusage überhaupt zusammenpassen, ist die erste Frage für M18.
+
+**Status: zurückgenommen** (T-M41-10 auf `todo`, Zusage 7 nach M18).
+
+---
+
+## 2026-09-13 · T-M41-11 · Die KI sah die Sperre beim Verlegen der Hauptstadt nicht — und befahl jeden Tag neu
+
+**Befund** (Nebenbefund c zu T-M41-08). `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen mit
+`ON_COOLDOWN` abgelehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`). `PublicView.self` führte nur `capitalLostUntil`, nicht die
+Sperre; `capitalCommands` befahl deshalb an jedem Strategietag neu. Im Turnier-Nachbau der Untersuchung 298×; auf
+der Weltkarte zeigte es sich erst nach der Reparatur zu H1: **72×** in 200 Tagen, dieselbe Sperre bis zu **29×**
+(Italien) — nach T-M41-09 die letzte große Ablehnungsklasse.
+
+**Reparatur.** `PublicView.self.capitalMovedAtTick` (eigenes Wissen, nur der `self`-Block — `retreating` aus M40 in
+derselben Datei bleibt unberührt), `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kernindex, `capitalCommands` wartet die Sperre
+ab und begründet es (R-AI-05). Tests zuerst: `publicView.test.ts` rot 3 von 19 („expected undefined to be 48"),
+`decide.test.ts` rot 1 von 42 (ein `SET_CAPITAL`, das der Kern mit `ON_COOLDOWN` ablehnen würde),
+`ai-integration.slow.test.ts` rot 2 von 21 mit der alten `capital.ts` („Weltkarte, 200 Tage: expected 72 to be +0",
+„expected 29 to be less than or equal to 3").
+
+**Neutral, gemessen.** Sicht ist kein Zustand, und eine abgelehnte `SET_CAPITAL` änderte nichts:
+
+| Größe | vorher (nach T-M41-10-Rücknahme) | nachher |
+|---|---|---|
+| Endzustand ohne Protokoll und KI, Weltkarte 200 Tage | `e7b0627bff9f7b39` | **bitgleich** |
+| dasselbe, Voreinstellung 90 Tage | `41acc8a544184d8b` | **bitgleich** |
+| Ablehnungen Weltkarte | 75 (0,45 %) | **3** (0,02 %, alle `RECRUIT:INSUFFICIENT_RESOURCES`) |
+| längste Wiederholung eines abgelehnten Befehls | 29 | **2** |
+| Golden-Master (`determinism`, `walkthrough`, `replay`, ohne `UPDATE_GOLDEN`) | — | 20 grün, Dateien unverändert |
+| Turnier | — | zeilengleich |
+
+Damit trägt auch der erweiterte Paarungsschlüssel aus T-M14-11 (Macht, Befehl, Fehlercode, Einzelheiten) über
+**alle** Befehle, den T-M41-09 noch nicht zusichern konnte — jetzt in beiden Läufen zugesichert.
+
+**Status: behoben** (T-M41-11).
+
+---
+
+## 2026-09-13 · Block N2, Schluss · T-M41-14 ist nicht nötig — aber das Artillerie-Tor hängt an einer einzigen Macht
+
+**Die Prüfung aus der Orchestrierung** (§3d, Punkt 6): liegt der selbsttätige Beschuss im Integrationslauf (Weltkarte,
+200 Tage, acht KI) nach allen Änderungen von Block N2 weiter unter einem Viertel des Werts vom 2026-09-12 (121, also
+30), wird die Ursache als T-M41-14 untersucht. **Gemessen auf dem Endstand (`55dcf23`): 231 Beschüsse, 63
+Artillerien.** Die Bedingung tritt nicht ein; T-M41-14 ist nicht angelegt.
+
+| Stand | Artillerie | selbsttätiger Beschuss |
+|---|---|---|
+| 2026-09-12 (vor T-M41-01) | 9 | 121 |
+| nach T-M41-08 | 1 | 10 |
+| nach H1 (Fabrikausbau sperrt keine Stadt) | 69 | 303 |
+| nach T-M41-09 und T-M41-11 (Endstand) | 63 | **231** |
+| mit T-M41-10 (zurückgenommen) | 0 | 0 |
+
+**Der Befund, der bleibt, und keine Aufgabe hat.** Alle 63 Artillerien und alle 231 Beschüsse gehören **einer**
+Macht: China, Stufe „schwer", 47 Armeen mit Reichweite am Ende. Die drei „leichten" und drei „normalen" Mächte heben
+keine einzige Artillerie aus. Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist damit grün, aber es steht
+auf einer einzigen Kette — T-M41-10 hat vorgeführt, dass eine Änderung am Zusammenlegen es auf null bringt.
+Naheliegend, nicht gemessen: `TARGET_MIX` in `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und
+`recruitShare` der Stufen (80 / 200 / 280) lässt die teure Artillerie nur bei „schwer" in den Haushalt. *(Berichtigt nach der Durchsicht von Block N2, H1: diese Erklärung widerspricht den eigenen Daten.
+Im Integrationslauf sind **zwei** Mächte „schwer" — China und Frankreich —, und Frankreich hebt keine
+Artillerie aus. Engstellen sind die Fabrik und das Geld im Aushebebudget, nicht die Stufe; Messung im
+Eintrag „Durchsicht Block N2, H1" unten.)* Vorgemerkt
+für M18 zusammen mit Zusage 7 (T-M41-10); die Zusicherung wird nicht auf „je Stufe" verschärft, solange das nicht
+gebaut ist.
+
+**Schlussmessung von Block N2** (Code `55dcf23`, alle Berichte eingecheckt):
+
+| Lauf | Ergebnis |
+|---|---|
+| Vollpartie 1914 | Tag **975**, Sieger p7 (China), 11 Kriegserklärungen, 2589 Eroberungen |
+| Vollpartie 2015 | Tag **583**, Sieger p6 (Russland), 13 Kriegserklärungen, 2185 Eroberungen |
+| Vollpartie 1815 | Tag **583**, Sieger p6 (Russland), 10 Kriegserklärungen, 1587 Eroberungen |
+| `progress.slow` (Grundlauf) | Anteil des Stärksten **0,3684** (vor Block N2: 0,4462), Eroberungen 310,1, Überlebende 5,42 |
+| Turnier | schwer:leicht 1,00, schwer:normal Frieden **0,70** (10:0:15), im Krieg 1,00 — R-AI-06 hält |
+| `ai-integration` 200 T / Voreinstellung 90 T | 21 grün; Ablehnungen **3** von 16 650 (vor Block N2: 1177 von 18 629), Voreinstellung 0 |
+
+Die Vollpartien vor und nach T-M41-11 sind zahlengleich (nur `measuredAt` verschieden) — auch über 975 Spieltage
+belegt, dass die Sicht auf die Hauptstadtsperre die Partie nicht ändert.
+
+**Folge für den Parameterlauf:** der Ausgangswert in `balance-sweep.md` (Grundlauf 0,4442) beschreibt den Stand nicht
+mehr. Der Frische-Wächter der Abnahme sieht das nicht, weil sich `data/rules` nicht geändert hat; der eine Parameterlauf
+im Schlussblock misst neu.
+
+**Status: Beobachtung** (Artillerie bei einer Macht, vorgemerkt für M18); T-M41-14 nicht nötig.
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, N3 · Die drei Startzahlen der Vollpartie variieren nur den Zufall, nicht die Aufstellung
+
+**Befund der Durchsicht, selbst nachgeprüft** (eigenes Skript gegen den Worktree, `scratchpad/n2/seed/`, nicht das Skript
+des Prüfers). `toConfig({ ...DEFAULT_NEW_GAME, seed }, map)` und `createInitialState` für 1914, 2015 und 1815:
+
+| | 1914 | 2015 | 1815 |
+|---|---|---|---|
+| `state.seed` | 1914 | 2015 | 1815 |
+| `state.rng` (erste Zustandszahl) | 2484121936 | 816126800 | 3993579382 |
+| Startzustand ohne `seed`/`rng`, sha256 über JSON | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` |
+| dasselbe, `hashValue` des Projekts | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` |
+| Spieler, Gegner, Stufen, Hauptstädte | gleich | gleich | gleich |
+
+Zwei Werkzeuge, dasselbe Ergebnis; der sha256-Wert trifft den der Durchsicht.
+
+**Was das für AK-1 heißt.** Die drei Vollpartien spielen **dieselbe Aufstellung** — Vereinigte Staaten gegen
+Kanada, Mexiko, Brasilien, Argentinien, Russland, China, Indien, alle „normal" — und unterscheiden sich nur im
+Zufallsstrom. „Drei Startzahlen" ist deshalb eine engere Streuung, als der Ausdruck nahelegt: sie misst, wie
+empfindlich **diese** Partie auf den Zufall ist, nicht, wie verschiedene Partien ausgehen. Dass 2015 und 1815 beide
+an Tag 583 enden, ist echt (die Berichte unterscheiden sich in allen anderen Feldern; die Durchsicht hat 1815
+unabhängig nachgefahren) und nicht ein kopierter Bericht.
+
+**Veraltete Zahlen (N4), berichtigt:** `03-TASKS.md` nennt bei T-M15-08 „normal 110" (heute 109) und bei T-M14-11
+„`NO_PATH` 0 von 2556, 5 Kriegserklärungen" (heute 0 von 2405, 6) — beide mit „(Stand T-M41-08)" versehen; der
+Kommentar in `fullgame.slow.test.ts` („1914 endet an Tag 471") ist nachgezogen und nennt die Einschränkung oben.
+
+**Status: Beobachtung** (keine Änderung am Messaufbau; wer verschiedene Partien messen will, braucht verschiedene
+Aufstellungen, nicht nur Startzahlen).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, H1 · Die Feuerautomatik lebt in der ausgelieferten Partie nicht — das Tor hängt an einer Macht
+
+**Befund der Durchsicht, mit eigenem Lauf bestätigt** (`ai-integration.slow.test.ts` fährt die Voreinstellung jetzt
+200 Tage und hält Tag 90 als Zwischenstand fest; Prüfsummen der Weltkarte `e7b0627bff9f7b39` und der Voreinstellung
+an Tag 90 `41acc8a544184d8b` unverändert — dieselbe Partie, derselbe Code).
+
+**1 · Das Tor aus R-AI-08/AK3 steht auf einer einzigen Macht.** Weltkarte, 200 Tage, acht KI:
+
+| Macht | Stufe | Fabriken begonnen | Geld am Ende | Artillerie |
+|---|---|---|---|---|
+| Vereinigte Staaten | leicht | 37 | 963 217 | 0 |
+| Russland | normal | 0 | 363 452 | 0 |
+| China | **schwer** | 4 | 702 525 | **63** |
+| Indien | leicht | 27 | 1 043 552 | 0 |
+| Deutschland | normal | 0 | 305 017 | 0 |
+| Frankreich | **schwer** | 2 | 793 878 | **0** |
+| Vereinigtes Königreich | leicht | 1 | 841 505 | 0 |
+| Italien | normal | 0 | 304 900 | 0 |
+
+Mächte mit Artillerie: **China**. Selbsttätiger Beschuss 231, alle von China.
+
+**2 · Die Ursache war falsch benannt.** Der Schlusseintrag zu Block N2 schrieb, `recruitShare` lasse die Artillerie
+„nur bei schwer in den Haushalt" — Frankreich ist ebenfalls „schwer" und hebt nichts aus. Was die Zahlen tragen:
+- **Fabrik.** Drei der fünf Mächte ohne „leicht" beginnen in 200 Tagen keine einzige Fabrik, Frankreich zwei.
+- **Geld im Aushebebudget.** `recruitCommands` gibt je Einheit höchstens `recruitShare` ‰ des Vorrats aus; eine
+  Artillerie kostet 200 000 Geld. Bei „leicht" (80 ‰) braucht das 2,5 Mio. Geld auf Lager — die Vereinigten Staaten
+  bauen 37 Fabriken und enden mit 963 217. Bei „schwer" (280 ‰) sind es 715 000; Frankreich endet knapp darüber
+  (laut Durchsicht, `review-n2/why.json`, lag es unterwegs zwischen 211 000 und 794 000 — nicht selbst gemessen).
+- Dazu, laut Durchsicht und nicht selbst gemessen: gefragt wird zuerst die vielseitigste Provinz, und die trägt oft
+  keine Fabrik.
+
+**3 · In der Partie, die ein Spieler bekommt, schießt keine KI.** Voreinstellung (Startzahl 1914, sieben KI, alle
+„normal"), dieselbe Partie über 200 Tage: **3 Artillerien** (China), **0 selbsttätige Beschüsse**; Fabriken begonnen
+nur Russland 5, China 6, Indien 1; Kanada und Indien enden mit 0 Geld. An Tag 90: 0 und 0. Das bestätigt die Zahlen
+der Durchsicht (`review-n2/preset200.json`: 3 Artillerien, 0 Beschüsse). **R-BAT-08/AK3 ist für die Stufe „normal"
+nicht belegt**, weder im Turnier (0) noch in der Voreinstellung.
+
+**Was nicht geschieht:** keine Grenze geändert, kein Umbau des KI-Balancings. Das ist eine Frage an Noah bzw. M18
+(`DECISIONS.md`, 2026-09-13, R-BAT-08/AK3). Kein Rückschritt durch Block N2: vorher 1 Artillerie und 10 Beschüsse auf
+der Weltkarte.
+
+**Status: offen, ohne Aufgabe** — Frage in `DECISIONS.md`, vorgemerkt für M18 zusammen mit Zusage 7 (T-M41-10).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, M3 · Der Handel arbeitet auf den teuersten Wunsch hin, gebaut wird der erste bezahlbare (plausibel, nicht gebaut)
+
+**Befund der Durchsicht, mit Zahlen aus dem eigenen Bericht** (`docs/reports/ai-integration.json`), **nicht gebaut**:
+
+- **Zwei Stellen, zwei Ziele.** `missingForNextBuilding` nimmt den **ersten** Wunsch einer Provinz
+  (`nextBuildingFor`) — seit T-M41-01 in einer Stadt mit Fabrik deren nächste Stufe, bis zum 3,24-fachen Preis —
+  und `tradeCommands` tauscht auf den Rohstoff hin, der dafür fehlt. Gebaut wird seit der Reparatur zu H1 aber der
+  **erste bezahlbare** Wunsch, oft Eisenbahn oder Festung. Die Nacharbeit zu H1 hat das bewusst so gelassen (eine
+  Größe geändert); dass Handel und Bau seither verschiedene Ziele verfolgen, ist die Folge.
+- **Getauscht wird fast in jedem Denkschritt.** `tradeCommands` verkauft ein Zehntel des größten Bestands, der selbst
+  nicht knapp ist, ohne auf eine Rücklage zu achten.
+
+| Lauf | Tauschgeschäfte | je Macht | je Macht und Tag |
+|---|---|---|---|
+| Weltkarte, 200 Tage, acht KI (Stand nach Block N2) | 4637 | 568–593 | ≈ 2,9 |
+| dasselbe, 2026-09-12 (vor M41) | 3914 | — | ≈ 2,4 |
+| Voreinstellung, 90 Tage, sieben KI | 2060 | 288–299 | ≈ 3,3 |
+
+Eine Macht denkt bei acht KI jeden achten Tick, also dreimal am Tag; fast jeder Denkschritt enthält einen Tausch.
+Durch Block N2 unverändert („schwer" 1179 → 1180 in der Summe beider Mächte).
+
+**Plausible Folge, nicht gemessen:** der Tausch kann genau den Rohstoff abgeben, den der tatsächlich gebaute Wunsch
+oder die Aushebung braucht — etwa Geld, das die Artillerie im Aushebebudget verlangt (Eintrag „Durchsicht Block N2, H1"
+oben). Ob das eine der Engstellen dort ist, sagt erst eine eigene Messung.
+
+**Mögliche Reparatur (für M18):** den Handel auf den Wunsch ausrichten, der wirklich verfolgt wird, oder nicht tauschen,
+wenn im selben Denkschritt gebaut wird — und gesondert messen (Handel, Bauten, Artillerie, Vollpartie, Turnier).
+
+**Status: offen, ohne Aufgabe** — vorgemerkt für M18.

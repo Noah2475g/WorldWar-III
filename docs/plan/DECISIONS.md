@@ -2037,7 +2037,27 @@ mit 1815 Tag 412 (vorher 774). Eine Gegenprobe mit Kappe bei Stufe 2 endet an Ta
 sie trifft 449 nicht. **Die Entscheidung bleibt:** ihr Kriterium war das Turnier, und das hält.
 Alle Zahlen in `PROBLEME.md` (2026-09-13, T-M41-02).
 
-**kippbar:** eine Zeile je Gebäude in `nextBuildingFor`. Der Haltetest „nie Kaserne Stufe 2"
+**Nachtrag 2026-09-13 (Nacharbeit H1 der Durchsicht, Block N2) — der Ausbau ist nur der erste
+Wunsch.** Die Entscheidung „nur die Fabrik wird ausgebaut" bleibt. Geändert ist, was geschieht,
+wenn der Ausbau zu teuer ist: vorher kam in der Stadt dann gar nichts, Eisenbahn, Festung und
+Hafen erst nach Fabrikstufe 3. Jetzt stehen sie hinter dem Ausbau, und gebaut wird der erste
+bezahlbare Wunsch; Kaserne und erste Fabrik bleiben allein, der Handel zielt weiter auf den
+ersten Wunsch. Gewählt statt „Ausbau hinter Eisenbahn, Festung und Hafen einordnen", weil eine
+reiche Macht die Fabrik so weiter zuerst ausbaut — die Achse aus T-M41-01 bleibt, sie sperrt nur
+nicht mehr. Gemessen, Vollpartie 1914: Siegtag 582 → 430, Städte mit Eisenbahn 18 → 43, mit
+Festung 13 → 41, Städte mit Fabrik und ohne Eisenbahn 39 → 2; Turnier-Siegquoten gleich. Alle drei
+Startzahlen in `PROBLEME.md` (2026-09-13, H1).
+*(Berichtigt 2026-09-13 nach der Durchsicht von Block N2, M2: die Ausweichliste gilt nicht nur für
+Städte mit Fabrik. **Jede Provinz mit Kaserne** — auch eine Landprovinz und eine Stadt mit Fabrik 3 —
+bekommt Eisenbahn, Festung, Hafen in dieser Reihenfolge und baut den ersten bezahlbaren. Vorher ging
+eine solche Provinz leer aus, wenn die Eisenbahn zu teuer war, und die Suche lief zur nächsten Provinz.
+Das ändert, wo zuerst gebaut wird, auch außerhalb der Fabrikstädte. Gemessen ist es nur in der Summe
+der Läufe zu H1; ein Haltetest in `packages/ai/src/economy.test.ts` hält das heutige Verhalten fest.
+Keine Verhaltensänderung in der Berichtigung.)*
+
+**kippbar:** eine Zeile je Gebäude in `nextBuildingFor` (seit H1 `buildingCandidatesFor`; wer den
+Ausbau wieder exklusiv will, gibt für Stufe ≥ 1 `['factory']` zurück — der Test „baut die Eisenbahn,
+wenn Stufe 2 zu teuer ist" kehrt sich um). Der Haltetest „nie Kaserne Stufe 2"
 (T-M41-01) nennt diesen Eintrag; wer ihn löscht, fährt danach das Turnier.
 
 ---
@@ -2300,5 +2320,127 @@ im Protokoll. Hingenommen: die marschierende Armee zeigt die Karte weiter.
 **kippbar:** eine Meldung in der Leiste statt der Zeile — `alertsFor` in `apps/desktop/src/ui/Alerts.tsx`
 um eine Art erweitern, gespeist aus `adjutantMarches` in `App.tsx`; ganz ohne Zeile — `noteMarches` in
 `App.tsx` nicht mehr aufrufen.
+
+---
+
+## 2026-09-13 · T-M41-08 · Drei Zusagen aus M14 und M15 werden zurückgenommen, nicht gelockert (delegiert)
+
+**Entscheidung.** Beim Einlösen der Zusagen von T-M14-11, T-M14-12 und T-M15-08 — jetzt im
+90-Tage-Lauf der ausgelieferten Voreinstellung in `apps/headless/test/ai-integration.slow.test.ts` —
+werden drei zurückgenommen:
+
+1. **„Je KI-Macht trägt am Ende mindestens eine Armee `armyRange > 0`"** (T-M14-12).
+2. **„R-AI-01 bekommt eine zusätzliche AK für den Ablehnungsanteil"** (T-M14-11). Sie wurde nie
+   gebaut und wird nicht gebaut.
+3. **Von den „neun Zahlen je Stufe" im Turnier** (T-M15-08) bleiben zwei: die Kriegserklärungen von
+   „schwer" und „normal", gezählt nach dem **Handelnden**. Zurückgenommen sind der selbsttätige
+   Beschuss je Stufe (alle drei), die Kriegserklärung von „leicht" und der Handel über der
+   Regelmarge (alle drei).
+
+Dazu eine Messfrage: das Turnier zählt Kriegserklärung und Beschuss jetzt auch nach dem Handelnden
+(`byDifficulty` in `apps/headless/src/tournament.ts`). Die alten Felder zählen jede Partie für beide
+antretenden Stufen und bleiben, weil der Bericht sie seit M15 führt.
+
+**Begründung.**
+(1) Die Zusage war Mittel zum Zweck: eine einzelne Artilleriearmee auf einer Stufe sollte R-BAT-08/AK3
+nicht unabnehmbar machen. R-BAT-08/AK3 ist bedingt („WENN eine KI-Macht Artillerie besitzt und im Krieg
+ist …") und in `packages/ai/src/decide.test.ts` gebucht; ob Artillerie im Spiel lebt, sichert der
+200-Tage-Lauf (Artillerie > 0, selbsttätiger Beschuss > 0). „Jede Macht" wäre eine Zusage über die
+Truppenmischung (`TARGET_MIX`, `recruitShare`), nicht über die Fähigkeit.
+(2) Eine neue AK zöge R-AI-01 aus `name_level` (`01-REQUIREMENTS.md` 2.14), und jedes seiner Kriterien
+müsste einzeln gebucht werden — für eine Zahl, die jetzt ohnehin im 90-Tage-Lauf zugesichert ist.
+(3) In einer Partie zu zweit stammt jede Kriegserklärung aus dem Verhältnis; einen Bündnisfall gibt es
+nicht. „Leicht" tritt im Turnier nur in einer Paarung an, und die beginnt im Krieg. Beschuss in 40
+Spieltagen auf der Testkarte setzt Fabrik und Artillerie ab Tag 34 voraus. Eine Regelmarge für den
+Handel gibt es nicht: `tradeCommands` tauscht ein Zehntel des größten Bestands gegen das, was fehlt;
+die Marge aus R-AI-08/AK1 gilt Angeboten. „Handel je KI-Macht" aus T-M14-12 ist im 90-Tage-Lauf
+zugesichert.
+
+**Daten** (Stand `4854465` mit T-M41-08): Voreinstellung 90 Tage — Armeen mit Reichweite **0 von 7
+Mächten**; Weltkarte 200 Tage — **1 von 8**. Turnier je Stufe nach dem Handelnden: Kriegserklärungen
+leicht **0**, normal **110**, schwer **70**; selbsttätiger Beschuss **0 / 0 / 0**
+(`docs/reports/ai-tournament-run.md`, `docs/reports/ai-integration.json`).
+
+**Gegenrede.** Der Beschuss im Turnier war die zweite Hälfte von R-BAT-08/AK3 („SOLL ihre Artillerie im
+Turnier Beschussereignisse erzeugen"). Er ist heute je Stufe nirgends belegt, nur als Summe im
+200-Tage-Lauf, und dort dünn (`PROBLEME.md`, T-M41-08, Nebenbefund a und d).
+
+**kippbar:** (1) eine Zusicherung über `armeenMitReichweiteJeMacht` in `ai-integration.slow.test.ts` —
+setzt eine KI voraus, die Artillerie je Macht aushebt. (2) ein Kriterium AK2 bei R-AI-01, dann R-AI-01
+aus `name_level` streichen und alle Kriterien buchen. (3) ein Turnier über mehr Spieltage oder auf der
+Weltkarte (`days` in `apps/headless/test/tournament.slow.test.ts`, kostet Laufzeit) und eine
+Handelsmarge als Regelgröße in `data/rules/default/ai.json`.
+
+---
+
+## 2026-09-13 · T-M41-10 · Zurückgenommen nach seinem Rücknahmekriterium — „höchstens drei Armeeobjekte je Provinz" geht mit der Messung nach M18 (delegiert)
+
+**Entscheidung.** T-M41-10 („die KI legt wirklich zusammen": `consolidateCommands` legt je Denkschritt alle
+Provinzen zusammen, der Deckel zählt Einheiten statt Stapel) wird **nicht** übernommen. Die Aufgabe steht auf
+`todo` mit `reopened`; die Zusage 7 aus T-M14-12 („keine KI-Macht hält mehr als drei Armeeobjekte in derselben
+Provinz") ist mit der Messung nach **M18** verschoben. Keine Grenze ist bewegt, keine Zusicherung gelockert.
+
+**Das Kriterium, vor dem Bau festgelegt** (Orchestrierung, Block N2 §3d): Vollpartie 1914/2015/1815 mit Siegtag
+im Tor 300–1500 und AK-1 entschieden, **und** `ai-integration` 200 Tage grün, **und** das Turnier im Band von
+R-AI-06 (schwer gegen normal 0,55–0,95). Reißt eines davon, wird T-M41-10 zurückgenommen.
+
+**Ergebnis** (gebaut, gemessen, zurückgesetzt; vorher = Stand nach T-M41-09):
+
+| Kriterium | Ergebnis |
+|---|---|
+| `ai-integration` 200 Tage grün | **gerissen** — Artillerie 63 → **0**, selbsttätiger Beschuss 231 → **0**; R-AI-08/AK3 („führt Artillerie und lässt sie feuern") rot |
+| Turnier im Band R-AI-06 | gehalten — zeilengleich (0,70 / 1,00) |
+| Vollpartie 1815 | gehalten — Tag 583 → 456, entschieden |
+| Vollpartie 1914 | gehalten — Tag 975 → 842, entschieden |
+| Vollpartie 2015 | gehalten — Tag 583 → 1003, entschieden |
+
+Dazu: die neu gefasste Zusage selbst hielt **auch mit der Reparatur nicht** — stehend höchstens 5 Armeeobjekte
+einer Macht in einer Provinz in der Voreinstellung (vorher 5, an 2 statt 1 Tag), auf der Weltkarte 11 (vorher 12).
+
+**Begründung.** Das Kriterium ist gerissen, und zwar dort, wo es die Änderung sehen sollte: im Integrationstor der
+Artilleriekette. Eine Reparatur, die eine abgenommene Anforderung (R-AI-08/AK3) tot macht, um eine Zusage nicht
+einmal einzulösen, ist keine. Warum die Artillerie verschwindet, ist **nicht gemessen**; naheliegend ist
+`TARGET_MIX` in `packages/ai/src/economy.ts`, das Stapel zählt, nicht Einheiten — ein Zusammenlegen verschmilzt die
+Infanteriestapel mehrerer Armeen zu einem, der Rückstand der Infanterie wächst scheinbar, und die Artillerie kommt
+nie an die Reihe. Warum „stehend ≤ 3" trotzdem nicht hält, ebenso wenig; naheliegend: der Deckel in Einheiten legt
+zwei große Verbände zusammen und lässt jeden weiteren stehen, und jede Macht denkt nur jeden siebten oder achten Tick.
+
+**Daten:** `PROBLEME.md` (2026-09-13, T-M41-10), Rohdaten der Läufe im Bericht zu Block N2.
+
+**kippbar:** T-M41-10 erneut bauen, sobald `TARGET_MIX` Einheiten statt Stapel zählt (sonst reißt das Artillerie-Tor
+wieder) und geklärt ist, ob der Deckel in Einheiten mit „stehend ≤ 3" überhaupt verträglich ist — dieselben zwei
+Tests in `packages/ai/src/decide.test.ts` und die Zusicherung „stehende Armeeobjekte ≤ 3" in
+`apps/headless/test/ai-integration.slow.test.ts` (Fassung im Bericht zu Block N2), dasselbe Kriterium.
+
+---
+
+## 2026-09-13 · R-BAT-08/AK3 · Offene Frage: in der ausgelieferten Partie schießt keine KI — nicht entschieden, an Noah bzw. M18
+
+**Keine Entscheidung.** Dieser Eintrag hält eine Frage fest, die ein Agent nicht delegiert beantworten soll: Soll die
+KI auf der Stufe „normal" in den ersten 200 Spieltagen Artillerie führen und selbsttätig schießen? Heute tut sie es
+nicht. Keine Grenze wurde geändert, das KI-Balancing nicht umgebaut (Durchsicht von Block N2, H1).
+
+**Daten** (`docs/reports/ai-integration.json`, Stand nach Block N2 und seiner Nacharbeit):
+- **Voreinstellung** (Startzahl 1914, sieben KI „normal"), 200 Tage: 3 Artillerien (nur China), **0 selbsttätige
+  Beschüsse**; Fabriken begonnen Russland 5, China 6, Indien 1, sonst keine. An Tag 90: 0 / 0.
+- **Integrationslauf** (Weltkarte, acht KI gemischt), 200 Tage: 63 Artillerien und 231 Beschüsse — **alle von China**
+  („schwer"). Frankreich, ebenfalls „schwer", hebt keine aus; „normal" und „leicht" keine.
+- **Turnier** (Testkarte, 40 Tage): selbsttätiger Beschuss 0 auf jeder Stufe (T-M41-08).
+- **R-BAT-08/AK3 ist für „normal" nicht belegt.** Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist nach
+  Wortlaut grün, weil der Integrationslauf eine „schwere" Macht mit Fabriken enthält; T-M41-10 hat es schon einmal
+  auf null gebracht.
+
+**Warum nicht jetzt gebaut.** Die Engstellen — Fabrik und Geld im Aushebebudget (`recruitShare` 80 / 200 / 280 ‰ gegen
+200 000 Geld je Artillerie) — sind Balancing der KI-Stufen. Jede Stellschraube verschiebt die ganze Partie (Block N2
+hat den Siegtag mit Startzahl 1914 von 582 über 430 auf 975 bewegt) und R-AI-06 im Turnier. Das gehört in einen
+eigenen, gemessenen Plan, nicht in eine Nacharbeit.
+
+**Mögliche Wege, ohne Wertung:** (1) `TARGET_MIX` in `packages/ai/src/economy.ts` in Einheiten statt Stapeln zählen
+(T-M41-10 hat gezeigt, dass die Stapelzählung die Artillerie verdrängen kann); (2) die Aushebung nicht nur in der
+vielseitigsten Provinz fragen; (3) das Aushebebudget je Einheit an den Preis statt an einen festen Anteil binden;
+(4) die Zusicherung schärfen — Artillerie je Stufe oder in der Voreinstellung — erst, wenn einer der Wege gebaut ist.
+
+**kippbar / Ort:** keine Zeile ist geändert. Wer die Frage aufnimmt, misst in `apps/headless/test/ai-integration.slow.test.ts`
+(`voreinstellung200`, `maechteMitArtillerie`, `jeStufe`) und fährt danach Vollpartie, Turnier und Grundlauf.
 
 ---
