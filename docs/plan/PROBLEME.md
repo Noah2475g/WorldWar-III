@@ -3483,3 +3483,36 @@ bei 99,77–99,95. Die Reparatur steckt im ausgelieferten Programm. Noahs Spiels
 unberuehrt (SHA-256 vor und nach der Gegenprobe gleich). Belege: `docs/reports/packaging.md`.
 
 **Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 ist gegen `1c64a6e` gemessen.
+
+---
+
+## 2026-09-14 · T-M37-07 / T-M37-08 · Befund M37-1: Die Sortierung war seit M1 schon da
+
+**Befund:** `03-TASKS.md` verlangt fuer T-M37-08 eine Gegenprobe in dieser Form — *„der Test
+ohne Befehle **faellt**, wenn man die Sortierung aus T-M37-07 entfernt"*. Sie faellt nicht,
+und sie kann nicht fallen: `packages/core/src/phases/applyCommands.ts` sortiert die Befehle
+eines Ticks **selbst** nach `state.playerOrder`, und zwar seit `75071b2` (M1, 2026-09-03).
+Nimmt man `orderCommands` aus dem Gleichschritt heraus, sortiert der Kern im naechsten
+Atemzug dasselbe Ergebnis — die Zusage aus D28.5 war ueber Machtgrenzen hinweg eingeloest,
+bevor der Mehrspieler geplant wurde.
+
+**Kleinster reproduzierbarer Fall:** dieselbe Lage, zwei Teilungen (`SPLIT_ARMY`) von zwei
+verschiedenen Maechten, einmal als `[p1, p2]` und einmal als `[p2, p1]` an
+`advanceTicks(..., { scripted })` gereicht. Beide Male dieselbe Pruefsumme, obwohl
+`nextIds.army` ein Zaehler ist, den sich alle Maechte teilen. Steht als Test in
+`packages/netplay/test/twoclients.test.ts`.
+
+**Was daraus folgt — und was nicht.** `orderCommands` ist damit nicht ueberfluessig, aber
+seine Zusage zeigt in die **andere Richtung**, und die ist scharf: innerhalb einer Macht
+bleibt die eigene Folge erhalten, und sie darf unter keinen Umstaenden „aufgeraeumt" werden
+(nach Armeekennung, nach Befehlsart). Zwei Teilungen **derselben** Macht in vertauschter
+Folge ergeben zwei verschiedene Welten — das ist gemessen, nicht vermutet, und es ist der
+Fehler, den ein gut gemeinter Aufraeumer einbauen wuerde. Zweitens haengt der Gleichschritt
+so nicht an einer Umsetzungseinzelheit des Kerns: stuende die Sortierung dort eines Tages
+nicht mehr, traegt ihn `orderCommands` weiter.
+
+**Was geaendert wurde:** die Zeile „Fertig wenn" von T-M37-08 nennt den Befund und die
+Gegenprobe, die wirklich greift. Die Zusage wurde nicht gestrichen, sondern berichtigt —
+der Beleg des Meilensteins (zwei Simulationen, 200 Ticks, eine Pruefsumme) steht unberuehrt.
+
+**Status:** geschlossen (2026-09-14). Kein Kern angefasst, keine Anforderung betroffen.

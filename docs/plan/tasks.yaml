@@ -2666,7 +2666,7 @@ tasks:
   - id: T-M37-08
     milestone: M37
     title: Zwei Simulationen, zweihundert Ticks, eine Pruefsumme
-    status: todo
+    status: done
     deps: [T-M37-07]
     requirements: [R-MP-03]
     design: [D-28]

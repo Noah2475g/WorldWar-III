@@ -5081,9 +5081,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `packages/netplay/src/loopback.ts`
 - **Tests zuerst:** zwei Gleichschritt-Maschinen über ein Schleifendoppel verbunden,
   zweihundert Ticks, beide Seiten geben Befehle — nach **jedem** Tick ist `hashValue`
-  beider Zustände gleich (`R-MP-03/AK3`, `test/twoclients.test.ts`).
+  beider Zustände gleich (`R-MP-03/AK3`, `packages/netplay/test/twoclients.test.ts`).
 - **Fertig wenn:** der Test ohne Befehle **fällt**, wenn man die Sortierung aus T-M37-07
   entfernt. Ein Test, der grün ist, ohne dass die Reparatur drin ist, belegt gar nichts.
+  **Berichtigt am 2026-09-14 (Befund M37-1, `PROBLEME.md`):** so kann die Gegenprobe nicht
+  greifen — `phases/applyCommands.ts` sortiert die Befehle eines Ticks seit M1 selbst nach
+  `playerOrder`, also ändert das Entfernen von `orderCommands` über Machtgrenzen hinweg
+  nichts. Gefahren wird sie deshalb dort, wo sie beißt: **innerhalb** einer Macht. Zwei
+  Teilungen desselben Spielers in vertauschter Folge ergeben zwei verschiedene Welten, und
+  genau diese Folge hält `orderCommands` fest.
 
 ### T-M37-09 · Auseinanderlaufen wird erkannt, gemeldet und hält an
 - **Ziel:** zwei Welten, die sich auseinanderentwickeln, sind schlimmer als ein Abbruch.
@@ -5093,7 +5099,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `packages/netplay/src/lockstep.ts`
 - **Tests zuerst:** eine Seite wird künstlich verfälscht; der nächste Prüfsummenvergleich
   hält die Partie an und nennt den Tick (`R-MP-04/AK1`). Danach lässt sich der Stand
-  jeder Seite sichern (`R-MP-04/AK2`, `test/desync.test.ts`).
+  jeder Seite sichern (`R-MP-04/AK2`, `packages/netplay/test/desync.test.ts`).
 - **Fertig wenn:** `canonicalText` als Werkzeug für die Untersuchung erreichbar ist —
   lokal und freiwillig, nicht im Spielfluss. Es existiert seit M1 in
   `packages/shared/src/hash.ts` und wurde nie gebraucht.
