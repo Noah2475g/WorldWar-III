@@ -13,6 +13,7 @@ import {
 } from '../../../../packages/netplay/src/transportContract'
 import {
   RECONNECT_BACKOFF_MS,
+  REFUSAL_CLOSE_CODE_FROM,
   createWebSocketTransport,
   type SocketLike,
 } from './websocketTransport'
@@ -271,6 +272,44 @@ describe('R-MP-07 Die Leitung kommt mit wachsendem Abstand zurueck', () => {
     drain(queue)
 
     expect(abstaende).toEqual([250, 250])
+  })
+
+  /**
+   * Befund MP-3 (Sichtpruefung 2026-09-14, an zwei Fenstern desselben Rechners).
+   *
+   * Der Dienst weist **nach** dem 101-Handschlag ab: der Browser feuert erst `open`, dann
+   * `close` mit `4001`. `open` setzte die Abstaende zurueck — also versuchte es der
+   * Transport ewig weiter, gemessen **77 Mal in 20 Sekunden**, und auf dem Bildschirm
+   * stand die ganze Zeit „Der Gastgeber legt die Partie gerade an."
+   */
+  it('gibt bei einer Abweisung sofort auf und nennt den Grund', () => {
+    const { transport, queue, sockets, abstaende } = reconnecting([250, 500, 1000])
+    drain(queue)
+    const gruende: string[] = []
+    transport.onClose((reason) => gruende.push(reason))
+
+    // Genau das, was der Hostdienst tut: erst 101, dann 4001 mit einem Satz.
+    sockets[0]!.close(4001, 'Dieser Platz ist besetzt.')
+    drain(queue)
+
+    expect(abstaende, 'eine Abweisung ist kein Netzfehler und wird nicht wiederholt').toEqual([])
+    expect(sockets, 'es wurde eine zweite Leitung aufgebaut').toHaveLength(1)
+    expect(gruende).toEqual(['Dieser Platz ist besetzt.'])
+    expect(transport.closed).toBe(true)
+  })
+
+  it('nennt auch eine Abweisung ohne Text', () => {
+    const { transport, queue, sockets } = reconnecting([250])
+    drain(queue)
+    const gruende: string[] = []
+    transport.onClose((reason) => gruende.push(reason))
+
+    sockets[0]!.close(REFUSAL_CLOSE_CODE_FROM, '')
+    drain(queue)
+
+    expect(gruende).toHaveLength(1)
+    expect(gruende[0], 'ein Ende ohne Grund ist fuer den Spieler ein Absturz').not.toBe('')
+    expect(transport.closed).toBe(true)
   })
 
   it('hat eine Vorgabeliste, die wirklich waechst', () => {

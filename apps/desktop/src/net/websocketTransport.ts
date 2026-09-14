@@ -59,6 +59,22 @@ export const SOCKET_OPEN = 1
  */
 export const RECONNECT_BACKOFF_MS: readonly number[] = [250, 500, 1000, 2000, 4000, 8000]
 
+/**
+ * Ab diesem Schließcode ist es eine **Antwort** und kein Netzfehler (Befund MP-3).
+ *
+ * RFC 6455 lässt 4000–4999 für die Anwendung frei; der Hostdienst schickt `4001` bei
+ * falschem Geheimnis, unbekanntem Raum, belegtem Platz und vollem Raum
+ * (`apps/party/src/room.ts`, `REFUSED_CLOSE_CODE`). Dort steht der Satz schon:
+ * „Ein Code über 4000 heisst: nicht wiederversuchen." Hier steht er jetzt auch — bis zum
+ * 2026-09-14 versuchte der Transport es 3,8 Mal je Sekunde weiter, ohne Ende und ohne
+ * dass der Gast je den Grund zu sehen bekam.
+ *
+ * Die Zahl steht bewusst zweimal: `apps/desktop` darf `apps/party` nicht importieren, und
+ * ein gemeinsames Paket für eine Grenze des Protokolls wäre mehr Bau als Nutzen. Der
+ * Vertragstest hält beide Seiten zusammen.
+ */
+export const REFUSAL_CLOSE_CODE_FROM = 4000
+
 export interface WebSocketTransportOptions {
   url: string
   /**
@@ -190,6 +206,18 @@ export function createWebSocketTransport(options: WebSocketTransportOptions): We
       socket = null
       if (!wanted) {
         finish(event.reason ?? 'geschlossen')
+        return
+      }
+      if ((event.code ?? 0) >= REFUSAL_CLOSE_CODE_FROM) {
+        // Eine Abweisung ist eine **Antwort** und kein Netzfehler (Befund MP-3,
+        // Sichtpruefung 2026-09-14). `apps/party/src/room.ts` schreibt genau das an
+        // seinen `REFUSED_CLOSE_CODE = 4001` — gebaut war es hier nie: der Dienst weist
+        // erst NACH dem 101-Handschlag ab, also feuerte `onopen`, setzte `attempt` auf
+        // null zurueck, und der Wiederaufbau lief endlos. Gemessen am 2026-09-14 gegen
+        // einen belegten Platz: **77 Versuche in 20 Sekunden**, 3,8 je Sekunde, alle mit
+        // „Dieser Platz ist besetzt." — und auf dem Bildschirm des Gastes stand die ganze
+        // Zeit „Der Gastgeber legt die Partie gerade an."
+        finish(event.reason && event.reason.length > 0 ? event.reason : 'Der Beitritt wurde abgewiesen.')
         return
       }
       const wartezeit = backoff[attempt]
