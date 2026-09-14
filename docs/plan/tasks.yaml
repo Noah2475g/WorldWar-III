@@ -2716,7 +2716,7 @@ tasks:
   - id: T-M38-02
     milestone: M38
     title: Der Handschlag - Fassung, Regeln, Karte
-    status: todo
+    status: done
     deps: [T-M38-01]
     requirements: [R-MP-06]
     design: [D-28]
