@@ -3462,6 +3462,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 | T-M10-01 | Design-Gate: Mockup-Freigabe vor dem UI-Bau |
 | T-M12-03 | Abnahme-Playtest |
 | T-M14-15 | Playtest-Bogen der V1: Noah spielt und füllt ihn aus (AK-7) |
+| T-M39-09 | Partie zu zweit: Noah und ein zweiter Mensch in einem anderen Netz (AK-9) |
 
 Alles dazwischen ist ohne Rückfrage ausführbar.
 
@@ -3475,6 +3476,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 > dieselben Haltepunkte nennen.** Die vierte Zeile stand hier einen Meilenstein lang, ohne dass
 > `tasks.yaml` etwas davon wusste — ein Haltepunkt, den nur eine der beiden Seiten kennt, hält
 > niemanden auf.
+>
+> **Zur fünften Zeile (2026-09-14, T-M39-08).** Sie folgt derselben Regel und ist in **einer**
+> Änderung eingetragen worden: `gate: true` samt Begründung in `tasks.yaml`, die Wächterliste in
+> `test/plan-consistency.test.ts` auf fünf IDs, und diese Zeile. Und sie ist von anderer Art als
+> die vier darüber: T-M39-09 ist kein Haltepunkt, an dem ein Agent auf eine Freigabe wartet,
+> sondern einer, den **kein Agent erfüllen kann** — ein zweiter Mensch in einem anderen Netz ist
+> nicht simulierbar. Alles, was davor liegt, ist gebaut und gemessen; was Noah tun muss, steht
+> Schritt für Schritt in `docs/ANLEITUNG.md` („Eine Partie zu zweit — die Einladung") und in
+> `docs/PLAYTEST.md`.
 
 ## Meilenstein M19 — Die Karte zeigt, was da ist
 
@@ -5516,17 +5526,26 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   scharf und würden sonst rot.
 - **Anforderungen:** keine · **Entwurf:** D28.12
 - **Abhängigkeiten:** T-M39-07
-- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`,
-  `test/requirements.test.ts`, `test/plan-consistency.test.ts`, `docs/plan/03-TASKS.md`
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `test/requirements.test.ts`,
+  `test/plan-consistency.test.ts`, `docs/plan/03-TASKS.md`, `docs/plan/tasks.yaml`
+  *(`scripts/acceptance.mjs` stand hier und brauchte keine Zeile: es liest `CRITERIA` und
+  druckt seit T-M41-18 jede spätere Zeile mit ihrer eigenen Beschreibung)*
 - **Tests zuerst:** `unhomedCriteria` findet AK-9 in Abschnitt 3.2 **und** in der Liste;
   der Haltepunkt-Wächter erwartet fünf IDs statt vier; die Übersichtstabelle in
-  `03-TASKS.md` führt T-M39-09.
+  `03-TASKS.md` führt T-M39-09. **Beide Gegenproben gefahren:** nimmt man `gate: true`
+  wieder heraus, fallen zwei Zusicherungen; streicht man nur die Tabellenzeile, fällt eine.
 - **Fertig wenn:** drei Dinge stimmen. **Erstens:** `CRITERIA` führt AK-9 mit
   `scope: 'M39'` — nicht `'V1'`, sonst kettet ein späterer Bau die abgeschlossene
-  V1-Abnahme an sich (derselbe Fehler wie beim Nachtrag 2.15). **Zweitens:** der Testfall
-  in `requirements.test.ts`, der AK-9 heute als **erfundenes** Gegenbeispiel benutzt,
-  wird auf `AK-99` umgestellt, sonst prüft er nichts mehr. **Drittens:** erst danach wird
-  T-M39-09 in `tasks.yaml` auf `gate: true` gesetzt; vorher wäre der Plan rot.
+  V1-Abnahme an sich (derselbe Fehler wie beim Nachtrag 2.15). Das stand seit dem
+  2026-09-12 schon da, zusammen mit Abschnitt 3.2 — die Lehre aus AK-8, das ein Jahr lang
+  eine Zusage ohne Ort war; hier war nur nachzuprüfen, dass es stimmt. **Zweitens:** der
+  Testfall in `requirements.test.ts`, der AK-9 als **erfundenes** Gegenbeispiel benutzte,
+  steht jetzt auf `AK-99`, und eine neue Zusicherung daneben hält fest, dass AK-9 **echt**
+  ist: es hat einen Ort und eine Liste, und wer es als Gegenbeispiel benutzte, behauptete
+  das Gegenteil. **Drittens:** erst danach — im selben Commit — trägt T-M39-09 `gate: true`
+  samt Begründung, steht der Wächter auf fünf IDs und führt die Übersicht die fünfte Zeile.
+  Damit ist der Haltepunkt gesetzt, und was Noah zu tun hat, steht Schritt für Schritt in
+  `docs/ANLEITUNG.md` und `docs/PLAYTEST.md`.
 
 ### T-M39-09 · Haltepunkt: Noah spielt eine Partie zu zweit
 - **Ziel:** AK-9. Das eine Kriterium, das kein Agent erfüllen kann, weil ein zweiter

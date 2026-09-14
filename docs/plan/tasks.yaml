@@ -2876,17 +2876,19 @@ tasks:
   - id: T-M39-08
     milestone: M39
     title: AK-9 bekommt seinen Ort, und der Haltepunkt-Waechter lernt den fuenften
-    status: todo
+    status: done
     deps: [T-M39-07]
     requirements: []
     design: [D-28]
-    files: [scripts/acceptance-criteria.mjs, scripts/acceptance.mjs, test/requirements.test.ts, test/plan-consistency.test.ts, docs/plan/03-TASKS.md]
+    files: [scripts/acceptance-criteria.mjs, test/requirements.test.ts, test/plan-consistency.test.ts, docs/plan/03-TASKS.md, docs/plan/tasks.yaml]
     tests: [test/requirements.test.ts, test/plan-consistency.test.ts]
     dod: "Zwei Waechter ziehen mit, BEVOR der Haltepunkt gesetzt wird; beide sind heute scharf und wuerden sonst rot. Erstens: CRITERIA fuehrt AK-9 mit scope M39 - nicht V1, sonst kettet ein spaeterer Bau die abgeschlossene V1-Abnahme an sich (derselbe Fehler wie beim Nachtrag 2.15), und acceptance.mjs weist es als eigene Zeile ohne Einfluss auf den Exit-Code aus. Zweitens: der Testfall in requirements.test.ts, der AK-9 heute als ERFUNDENES Gegenbeispiel benutzt, wird auf AK-99 umgestellt, sonst prueft er nichts mehr. Drittens: der Haltepunkt-Waechter in plan-consistency.test.ts erwartet fuenf IDs statt vier, und die Uebersichtstabelle am Ende von 03-TASKS.md fuehrt T-M39-09 - ein zweiter Test liest sie. ERST DANACH wird T-M39-09 auf gate true gesetzt."
   - id: T-M39-09
     milestone: M39
     title: Haltepunkt - Noah spielt eine Partie zu zweit
     status: todo
+    gate: true
+    gate_reason: "AK-9: Noah und ein zweiter Mensch in einem ANDEREN Netz spielen eine Partie zu zweit. Das einzige Kriterium dieses Plans, das kein Agent erfuellen kann - ein zweiter Mensch ist nicht simulierbar, und ein zweites Netz auch nicht. Alles davor ist gebaut und gemessen (T-M39-01 bis -08); was Noah zu tun hat, steht Schritt fuer Schritt in docs/ANLEITUNG.md (Abschnitt 'Eine Partie zu zweit - die Einladung') und in docs/PLAYTEST.md. Erfuellt, wenn docs/reports/mehrspieler.md die sechs Punkte festhaelt: Einladung kam an, Gast musste nichts installieren, dreissig zusammenhaengende Spieltage, eine beantragte und angenommene Pause, ein absichtlich herbeigefuehrter Verbindungsabbruch mit Wiederaufnahme, und am Ende dieselbe Zustandspruefsumme auf beiden Seiten."
     deps: [T-M39-08]
     requirements: []
     design: [D-28]

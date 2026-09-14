@@ -233,9 +233,15 @@ describe('R-ARCH-05 Plan-Konsistenz', () => {
     expect(wrong, `falsch einsortierte IDs: ${wrong.join(', ')}`).toEqual([])
   })
 
-  it('hält die vier Haltepunkte fest', () => {
+  it('hält die fünf Haltepunkte fest', () => {
+    // Der fünfte kam am 2026-09-14 dazu (T-M39-08): **T-M39-09**, AK-9 — Noah und ein
+    // zweiter Mensch in einem anderen Netz. Er ist das einzige Kriterium des
+    // Mehrspieler-Plans, das kein Agent erfüllen kann, und er wird hier und in der
+    // Übersicht von `03-TASKS.md` in **einer** Änderung eingetragen, zusammen mit
+    // `gate: true` in `tasks.yaml` — dieselbe Regel, die T-M14-15 sich selbst gegeben
+    // hat: ein Haltepunkt, den nur eine der beiden Seiten kennt, hält niemanden auf.
     const gates = plan.tasks.filter((t) => t.gate).map((t) => t.id)
-    expect(gates).toEqual(['T-M9-01', 'T-M10-01', 'T-M12-03', 'T-M14-15'])
+    expect(gates).toEqual(['T-M9-01', 'T-M10-01', 'T-M12-03', 'T-M14-15', 'T-M39-09'])
     for (const id of gates) {
       // A gate without a stated reason is just a blocked task.
       expect(byId.get(id)?.gate_reason, `${id} braucht eine Begründung`).toBeTruthy()
