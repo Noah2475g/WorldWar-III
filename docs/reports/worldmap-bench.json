@@ -4,8 +4,8 @@
   "edges": 658,
   "players": 12,
   "ticks": 480,
-  "medianMs": 2.523,
-  "p99Ms": 6.215,
+  "medianMs": 2.513,
+  "p99Ms": 4.885,
   "requirement": {
     "id": "R-ARCH-06/AK1",
     "medianMs": 3.5,
@@ -16,8 +16,8 @@
   "meetsRequirement": true,
   "headroom": {
     "median": 1.39,
-    "p99": 1.29
+    "p99": 1.64
   },
-  "note": "Eingehalten: 2.523 ms Median gegen 3.5 ms gefordert, 6.215 ms p99 gegen 8 ms.",
-  "measuredAt": "2026-09-13T21:58:00.829Z"
+  "note": "Eingehalten: 2.513 ms Median gegen 3.5 ms gefordert, 4.885 ms p99 gegen 8 ms.",
+  "measuredAt": "2026-09-14T01:11:31.894Z"
 }

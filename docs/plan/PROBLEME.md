@@ -3422,3 +3422,54 @@ Konsolenzeile uebernommen.
 sonst gibt es nichts zu pruefen.
 
 **Status:** behoben (T-M41-18, 2026-09-14).
+
+## 2026-09-14 · Abnahme auf dem Endstand · AK-8 ist ueberholt, weil die Uhr-Reparatur nach der Verpackungsmessung kam
+
+**Befund.** Der Abnahmelauf auf `03e4200` (2026-09-14, freie Maschine, Prozessorlast 2 %) meldet
+**12 von 12, Exit 0, 4 min 56 s** — und stempelt AK-8 trotzdem mit ⚠. Der Grund ist ein anderer als
+am Vortag: dort fehlte die Messung ganz („`docs/reports/packaging.md` nennt keinen Stand"), jetzt
+gibt es sie, und sie ist **ueberholt**:
+
+```
+AK-8  ⚠ gemessen am 2026-09-14 gegen `2c52356` - seither 1 Datei(en) am Erzeugnis geaendert
+```
+
+Die eine Datei ist `apps/desktop/src/App.tsx`, geändert von `0f1fce1` („die Uhr schreibt ihren Stand
+zurueck, bevor das naechste Bild rechnet"). Die Reihenfolge der Nacht sagt alles:
+
+| Zeit | Commit | Was |
+|---|---|---|
+| 00:05 | `2c52356` | der Stand, gegen den gebaut und gemessen wurde |
+| 00:41 | — | `worldwar.exe` gebaut, 6 780 416 Bytes |
+| 00:49 | `1759386` | der AK-8-Bericht: sieben von sieben Schritten |
+| 01:49 | `2a437b0` | Sichtprüfung im Browser |
+| **02:21** | **`0f1fce1`** | **die Uhr-Reparatur — ausgeliefertes Gut** |
+
+Das Programm, das die sieben Schritte bestanden hat, **enthält die Uhr-Reparatur nicht**. Der Wächter
+hat recht, und der Stempel hat recht.
+
+**Was der Befund nicht ist.** Keine maschinelle Prüfung ist gerissen: 12 von 12, Exit 0. AK-8 gehört
+zu M16 und zählt nicht gegen V1; die Zeile trägt den Vermerk selbst. Und die Simulation ist unberührt —
+`docs/reports/fullgame.json` unterscheidet sich gegen den Vorlauf **nur in `measuredAt`**, Siegtag 975,
+2589 Eroberungen, 11 Kriegserklärungen unverändert. Die Uhr-Reparatur hat wirklich nur die Oberfläche
+angefasst, genau wie ihr Commit sagt.
+
+**Was in der Doku jetzt zu weit geht.** Der Kopf von `WORKFLOW.md`, dort §1 und §5, dazu `CLAUDE.md`
+und `UEBERGABE.md` sagen „AK-8 ist seit dem 2026-09-14 erfüllt" — ohne den Zusatz **„auf dem Stand vor
+der Uhr-Reparatur"**. Gemessen ist AK-8 gegen `2c52356`, nicht gegen den Endstand.
+
+**Was es kostet, den Stempel gruen zu bekommen** (hier bewusst nicht getan — dieser Lauf misst, er
+repariert nicht): `pnpm tauri:build` auf dem Endstand, am Vortag 2 min 19 s, danach
+`node docs/plan/schlussblock/ak8-cdp.mjs <exe> <ausgabe>`, am Vortag 8 Sekunden. Beides braucht ein
+**sichtbares** Fenster (§4 Falle 17) und geht in einer Hintergrund-Sitzung nicht.
+
+**Die Lehre.** Eine Messung am gebauten Programm hält genau so lange, wie niemand `apps/`, `packages/`
+oder `data/` anfasst — das ist die Positivliste `LIEFERT` in `artefactUnchangedSince`
+(`scripts/acceptance-criteria.mjs`). **Wer AK-8 misst, misst es zuletzt**, nach der letzten Zeile
+ausgelieferten Codes; am 2026-09-14 lag zwischen Messung und Blockende noch eine Reparatur, und genau
+dafür ist der Wächter gebaut. Gegengeprüft wurde auch die andere Richtung: das seither ebenfalls
+geänderte `index.html` im Wurzelverzeichnis ist die Projektübersichtsseite, nicht der App-Einstieg
+(das ist `apps/desktop/index.html`), und geht nicht ins Erzeugnis — die Positivliste uebersieht hier
+nichts.
+
+**Status:** offen, gemeldet an Noah. Kein Kriterium gerissen.

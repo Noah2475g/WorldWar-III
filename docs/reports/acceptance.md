@@ -1,6 +1,6 @@
 # Abnahmelauf V1
 
-Erzeugt von `scripts/acceptance.mjs` am 2026-09-13 gegen `02c0bf9`.
+Erzeugt von `scripts/acceptance.mjs` am 2026-09-14 gegen `03e4200`.
 
 > Dieser Bericht gilt fuer genau diesen Stand. Zeigt `git log --oneline -1` etwas
 > anderes, ist er ueberholt und keine Aussage ueber das Projekt (T-M16-01a).
@@ -20,8 +20,8 @@ Erzeugt von `scripts/acceptance.mjs` am 2026-09-13 gegen `02c0bf9`.
 | AK-2 | V1-Anforderungen ohne Test: 0 | ✅ bestanden |
 | AK-5 | Guards für Monetarisierung und Netzwerk | ✅ bestanden |
 | AK-7 | Playtest durch Noah nach `docs/PLAYTEST.md`, Antworten in `docs/reports/playtest-v1.md` | ✅ beantwortet und abgenommen von Noah — Durchführung per /goal-Auftrag vom 2026-09-07 ausdrücklich an Claude delegiert („den Playtest sollst du eigenständig durchführen"); zweiter Durchgang auf Stand a007497 (nach M19–M21) in docs/reports/playtest-2026-09-07-v2.md, Delegationsentscheid in docs/plan/DECISIONS.md (62 Fragen) |
-| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ docs/reports/packaging.md nennt keinen Stand - keine Messung, zaehlt nicht gegen V1 |
-| AK-9 | Verpackung als Programm (T-M16-05) | ⏸ M39, noch nicht gemessen, zaehlt nicht gegen V1 |
+| AK-8 | Verpackung als Programm (T-M16-05) | ⚠ gemessen am 2026-09-14 gegen `2c52356` - seither 1 Datei(en) am Erzeugnis geaendert, siehe `docs/reports/packaging.md`, zaehlt nicht gegen V1 |
+| AK-9 | Eine Partie zu zweit ueber einen Link (T-M39-09) | ⏸ M39, noch nicht gemessen, zaehlt nicht gegen V1 |
 
 **12 von 12 maschinellen Prüfungen bestanden.**
 
