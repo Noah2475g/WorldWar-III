@@ -2726,7 +2726,7 @@ tasks:
   - id: T-M38-03
     milestone: M38
     title: Die Determinismus-Probe vor dem ersten Zug
-    status: todo
+    status: done
     deps: [T-M38-02]
     requirements: [R-MP-06]
     design: [D-28]

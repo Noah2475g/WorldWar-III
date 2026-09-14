@@ -1,11 +1,14 @@
-import type { GameConfig, MapData, PlayerId, Rules } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
+import { createInitialState, type GameConfig, type MapData, type PlayerId, type Rules } from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
+import { stateHash } from './lockstep'
 import {
   PROTOCOL_VERSION,
   envelope,
   parseMessage,
   type HelloMessage,
   type NetMessage,
+  type ProbeMessage,
   type WelcomeMessage,
 } from './protocol'
 
@@ -36,7 +39,7 @@ export interface Fingerprint {
 }
 
 /** Woran ein Handschlag scheitert. Der Grund wandert in die Meldung, mit der er endet. */
-export type HandshakeFault = 'version' | 'rules' | 'map' | 'message'
+export type HandshakeFault = 'version' | 'rules' | 'map' | 'probe' | 'message'
 
 export type HandshakeCheck =
   | { ok: true }
@@ -146,4 +149,114 @@ export function accept(raw: unknown): { ok: true; message: NetMessage } | { ok: 
   // Verbindung mit einer Erklaerung, das andere ist ein Fehler auf der Leitung.
   const fault: HandshakeFault = /Protokollfassung/.test(result.reason) ? 'version' : 'message'
   return { ok: false, fault, reason: result.reason }
+}
+
+/**
+ * Die Determinismus-Probe vor dem ersten Zug (T-M38-03, R-MP-06/AK2, D28.6).
+ *
+ * **Die riskanteste Aufgabe des ganzen Mehrspielers** (MEHRSPIELER.md §5), und ihr ganzer
+ * Inhalt ist eine Frage: rechnet die andere Maschine wirklich bitgleich? Die Antwort ist
+ * mit hoher Wahrscheinlichkeit ja — der Kern rechnet ausschließlich in Ganzzahlen, und
+ * deren Verhalten ist in JavaScript exakt festgelegt (`packages/shared/src/fixed.ts`, und
+ * ESLint verbietet `*` und `/` im Kern). Aber „mit hoher Wahrscheinlichkeit" ist keine
+ * Grundlage für einen Abend zu zweit, und die Frage stellt sich sonst erst nach zwei
+ * Stunden, wenn ein Gefecht verschieden ausgeht.
+ *
+ * **Die Probe rechnet dieselbe Partie wie das Spiel**, nicht eine vereinfachte: derselbe
+ * `createInitialState`, dasselbe `advanceTicks` samt Computergegnern. Eine Probe, die
+ * einen anderen Weg nimmt als das Spiel, belegt den anderen Weg.
+ *
+ * **Ohne Befehle.** Sie läuft vor dem ersten Zug; es gibt noch keine. Genau das macht sie
+ * vergleichbar: beide Seiten haben dieselbe Partiedefinition und sonst nichts.
+ */
+
+/**
+ * Wie viele Ticks die Probe rechnet — ein Spieltag.
+ *
+ * Der Stellknopf, wenn sie je zu teuer wird (D28.6). Grundlage: ein Tick kostet auf der
+ * Weltkarte 1,54 ms (gemessen 2026-09-12, sechs Mächte), 24 Ticks also rund 37 ms. Ein
+ * Spieltag ist die kleinste Zahl, nach der jede Phase des Kerns mindestens einmal gelaufen
+ * ist — Wirtschaft, Bau und Freischaltung hängen am Tageswechsel, nicht am Tick.
+ */
+export const PROBE_TICKS = 24
+
+/** Was eine Seite aus ihrer Probe mitbringt. */
+export interface ProbeOutcome {
+  ticks: number
+  hash: string
+  /** Wie lange sie gedauert hat. Für die Messung, nicht für den Vergleich. */
+  ms: number
+}
+
+/**
+ * Die Probe rechnen: Startzustand aus der Partiedefinition, `ticks` Ticks ohne Befehle.
+ *
+ * `now` wird hereingereicht, damit die Dauer messbar bleibt, ohne dass diese Funktion die
+ * Wanduhr liest — dieselbe Regel, nach der der Pausenvertrag gebaut ist (T-M37-10). Die
+ * **Prüfsumme** hängt nicht daran: sie kommt aus `stateHash`, und `HASH_OMIT_KEYS` hält
+ * alles heraus, was nur die Betrachtung betrifft.
+ */
+export function runProbe(
+  config: GameConfig,
+  ctx: { map: MapData; rules: Rules },
+  ticks: number = PROBE_TICKS,
+  now: () => number = () => Date.now(),
+): ProbeOutcome {
+  const begonnen = now()
+  const start = createInitialState(config, ctx)
+  const result = advanceTicks(start, ticks, ctx, { scripted: () => [] })
+  return { ticks: result.ticks, hash: stateHash(result.state), ms: now() - begonnen }
+}
+
+/** Das Ergebnis als Nachricht. */
+export function probeMessage(outcome: ProbeOutcome): ProbeMessage {
+  return { ...envelope('probe'), ticks: outcome.ticks, hash: outcome.hash }
+}
+
+/**
+ * Stimmen die beiden Proben überein? Bei Abweichung beginnt die Partie nicht.
+ *
+ * Auch die **Tickzahl** wird verglichen, nicht nur die Prüfsumme. Zwei Seiten, die
+ * verschieden weit gerechnet haben, hätten ohnehin verschiedene Prüfsummen — aber die
+ * Meldung „ihr rechnet verschieden" wäre dann falsch und schickte den Nächsten auf die
+ * Suche nach einem Fehler im Kern, den es nicht gibt.
+ */
+export function compareProbe(own: ProbeOutcome, other: ProbeMessage): HandshakeCheck {
+  if (own.ticks !== other.ticks) {
+    return {
+      ok: false,
+      fault: 'probe',
+      reason:
+        `Die Proben sind verschieden lang: ${own.ticks} Ticks gegen ${other.ticks}. ` +
+        'Verglichen wird nur, was gleich weit gerechnet ist.',
+    }
+  }
+  if (own.hash !== other.hash) {
+    return {
+      ok: false,
+      fault: 'probe',
+      reason:
+        `Nach ${own.ticks} Probeticks rechnen die beiden Rechner verschiedene Welten: ` +
+        `${own.hash} gegen ${other.hash}. Die Partie beginnt nicht.`,
+    }
+  }
+  return { ok: true }
+}
+
+/**
+ * Alle vier Prüfungen in einer — das Tor, durch das eine Partie beginnt (R-MP-06).
+ *
+ * Fassung, Regelwerk, Karte, Probe. Ein `ok: false` heißt: es wird nicht gespielt, und der
+ * Grund steht dabei. Ein einziger Ort dafür, weil eine Prüfung, die an drei Stellen
+ * aufgerufen wird, an einer davon vergessen wird.
+ */
+export function handshakeComplete(
+  own: Fingerprint,
+  welcome: WelcomeMessage,
+  ownProbe: ProbeOutcome,
+  otherProbe: ProbeMessage,
+): HandshakeCheck {
+  const abdruck = compareFingerprints(own, fingerprintOfWelcome(welcome))
+  if (!abdruck.ok) return abdruck
+  return compareProbe(ownProbe, otherProbe)
 }

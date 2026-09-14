@@ -5188,6 +5188,17 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** die Probe gemessen unter hundert Millisekunden bleibt. Grundlage: ein
   Tick kostet auf der Weltkarte 1,54 ms (gemessen 2026-09-12, sechs Mächte), also
   24 Ticks rund 37 ms. Wird sie teurer, ist die Zahl der Probeticks der Stellknopf.
+  **Gemessen am 2026-09-14** auf der ausgelieferten Weltkarte, sechs Mächte, Startzahl
+  1914: erster Lauf im frischen Prozess **26 ms**, danach 8–12 ms, warm 6–7 ms. Prüfsumme
+  nach 24 Ticks `b2f6fef971bbfc1b`, aus zwei getrennt geladenen Regelwerken gleich.
+  **Und die Zahl 24 ist knapp:** vier gemessene Konstanten der Tagesrechnung
+  (`moraleDriftDivisor`, `baseTargetMorale`, `foodSurplusBonus`, `ownNeighborBonus`)
+  werden genau bei Tick 24 sichtbar und bei 12 nicht — der Stellknopf geht nach oben und
+  nicht nach unten. Was die Probe **nicht** sieht, steht als eigene Zusicherung dabei:
+  `battleRate` und `minDamage` ändern die Prüfsumme auch nach 48 Ticks nicht, weil in den
+  ersten zwei Spieltagen kein Gefecht stattfindet. Sie ist ein billiger früher
+  Widerleger, kein Beweis der Bitgleichheit; dafür trägt danach jede Befehlsnachricht
+  ihre Prüfsumme (T-M37-09).
 
 ### T-M38-04 · Der Netz-Wächter bekommt seine Grenze
 - **Ziel:** Z3 bleibt wahr, indem die Grenze benannt wird statt aufgegeben. **Diese
