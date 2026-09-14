@@ -117,7 +117,7 @@ Dann:
 |---|---|---|---|
 | 1 | Die Einladung kam an | Der Gast öffnet den Link **in einem anderen Netz** — nicht in deinem WLAN. Sein Browser zeigt den Beitrittsbildschirm | — |
 | 2 | Der Gast musste nichts installieren | Keine Datei, kein Programm, kein Konto. Nur Tailscale, und das war Schritt 1 | — |
-| 3 | Mindestens dreissig Spieltage am Stück | Das Datum in der Kopfleiste. Bei 25 Spielstunden je Sekunde sind dreissig Tage rund zwölf Minuten | Kopfleiste |
+| 3 | Mindestens dreissig Spieltage am Stück | Das Datum in der Kopfleiste. Dreissig Spieltage sind 720 Ticks — bei 25 Spielstunden je Sekunde also **eine halbe Minute** (gemessen am 2026-09-14: 22,8 Ticks/s, 32 s), bei Rate 1 zwölf Minuten. Wähle die Rate danach, wie lange ihr spielen wollt | Kopfleiste |
 | 4 | Eine beantragte und angenommene Pause | Du drückst *Pause beantragen*; beim Gast erscheint ein Dialog mit zwei Knöpfen; er stimmt zu; **beide Uhren stehen bei derselben Spielstunde** | Kopfleiste beider Seiten |
 | 5 | Ein absichtlicher Abbruch mit Wiederaufnahme | Beim Gast WLAN aus, zwanzig Sekunden warten (nach zehn erscheint „Ihr Mitspieler ist seit zehn Sekunden nicht mehr da"), WLAN an. Die Partie läuft **von selbst** weiter, ohne dass ein Befehl verloren geht | Kopfleiste, dann die Karte |
 | 6 | Am Ende dieselbe Zustandsprüfsumme | Taste **`D`** auf beiden Rechnern, Zeile „Zustands-Hash" vergleichen. Beide müssen dieselben 16 Zeichen zeigen | Debug-Ansicht |
@@ -131,7 +131,7 @@ Läuft einer der sechs Punkte schief, gehört er als **Befund** in
 
 | Was du siehst | Was es heißt | Was zu tun ist |
 |---|---|---|
-| Der Gast sieht „Der Beitritt hat nicht geklappt" mit „Dieser Link passt zu keiner Partie" | Falsches oder fehlendes Geheimnis, oder der Dienst wurde zwischendurch neu gestartet (ein Neustart erzeugt einen **neuen** Raum) | Neuen Link aus der laufenden Ausgabe von `pnpm mp:host` schicken |
+| Der Gast sieht „Der Beitritt hat nicht geklappt" und darunter den Grund („Dieser Link passt zu keiner Partie", „Dieser Platz ist besetzt.") | Falsches oder fehlendes Geheimnis, oder der Dienst wurde zwischendurch neu gestartet (ein Neustart erzeugt einen **neuen** Raum), oder dieselbe Seite ist noch woanders offen | Neuen Link aus der laufenden Ausgabe von `pnpm mp:host` schicken; bei „besetzt" das alte Fenster schliessen |
 | Der Gast sieht gar nichts, der Browser lädt endlos | Kein Tailnet zwischen euch | `tailscale ip -4` auf **beiden** Rechnern; beide brauchen eine `100.`-Adresse |
 | Beide Seiten stehen bei „Warte auf Mitspieler …" | Eine Seite rechnet nicht mehr | Zehn Sekunden warten; dann erscheint der Hinweis mit *Weiter warten* und *Partie beenden* |
 | „Die beiden Spiele laufen auseinander" | Die Prüfsummen weichen ab. Die Partie hält an — mit Absicht | Auf beiden Seiten *Spielstand sichern*, dann Befund in `PROBLEME.md` mit beiden Prüfsummen und dem Tick |
@@ -159,7 +159,7 @@ Das ist die **einzige** Stelle, an der ein Spielstand über die Leitung geht.
 Der ehrliche Teil. Alles in der linken Spalte ist **gemessen** und steht als Zusicherung im
 Testlauf; alles in der rechten ist **nicht** gemessen und wartet auf dich.
 
-### Gemessen (2026-09-14, `pnpm verify` Exit 0, 163 Dateien / 2442 Tests)
+### Gemessen (2026-09-14, `pnpm verify` Exit 0, 163 Dateien / 2446 Tests — 2442 vor der Sichtprüfung, vier Fälle sind mit ihr dazugekommen)
 
 - **Der Link.** Raum und Geheimnis stehen hinter dem Rautezeichen, die Anfragezeile trägt
   keines von beiden. Das Format wird an einer Stelle gebaut und an einer gelesen; ein
@@ -190,12 +190,14 @@ Testlauf; alles in der rechten ist **nicht** gemessen und wartet auf dich.
   Es gibt kein Tailnet, also keine zweite Seite. Ich habe **nichts installiert und kein Konto
   angelegt** — das sind deine Schritte.
 - **Ein zweiter Mensch.** Nicht simulierbar, und genau deshalb ist T-M39-09 ein Haltepunkt.
-- **Die Sichtprüfung im Browser.** Diesem Lauf stand kein Browser zur Verfügung
-  (Hintergrund-Sitzung, `WORKFLOW.md` §4 Falle 17). Der Beitrittsbildschirm, die Lobby und
-  der Link zum Kopieren sind in jsdom geprüft — **niemand hat sie gesehen**. Wenn du
-  zuerst nur eines tun willst: öffne beide Links in zwei Fenstern desselben Rechners. Das
-  geht ohne Tailscale und zeigt in zwei Minuten, ob die Oberfläche stimmt; es erfüllt AK-9
-  nicht, aber es findet, was jsdom nicht sieht.
+- **Die Sichtprüfung im Browser** — **erledigt am 2026-09-14**, nachdem hier stand, niemand
+  habe den Beitrittsbildschirm je gesehen. Zwei sichtbare Fenster desselben Rechners, alle
+  sechs Punkte oben durchgespielt: `docs/reports/sichtpruefung-mehrspieler-2026-09-14.md`.
+  Sie hat vier Befunde gefunden (MP-1 bis MP-4 in `PROBLEME.md`), drei davon repariert — der
+  erste war, dass `pnpm mp:host` unter Windows **gar nichts** auslieferte. **AK-9 erfüllt sie
+  nicht**: eine Maschine, ein Netz, kein zweiter Mensch.
 - **Der Kopier-Knopf in der Lobby** markiert das Feld, statt in die Zwischenablage zu
   schreiben: ohne sicheren Kontext gibt es keine Zwischenablage-Schnittstelle. Strg+C danach
-  ist dein Schritt.
+  ist dein Schritt. **Am Bildschirm nachgemessen** (2026-09-14): `navigator.clipboard` ist
+  `undefined`, markiert wird der ganze Link (0–77 von 77 Zeichen), und der Knopf sagt danach
+  trotzdem „Kopiert.".

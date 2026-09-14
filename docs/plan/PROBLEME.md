@@ -3939,3 +3939,185 @@ verdächtig, solange nicht danebensteht, dass dieselbe Messung in einem anderen 
 null ist. Hier steht es: bei gleichen Ständen kein `zustand`, bei verschiedenen genau eines.
 
 **Status:** erledigt (2026-09-14).
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-1: `pnpm mp:host` liefert unter Windows auf **jede** Adresse 404
+
+**Befund:** Der Hostdienst startete, druckte beide Links und beantwortete danach jede Anfrage
+mit `404 Nicht gefunden.` — auch `/` und `/index.html`. Beide Browser blieben weiß; die
+Sichtprüfung des Mehrspielers konnte ohne diese Reparatur nicht einmal beginnen.
+
+**Ursache, gemessen:** `apps/party/src/index.ts` setzt die Wurzel als Zeichenkette zusammen —
+`fileURLToPath(...)` liefert unter Windows Rückstriche, der Rest steht mit Schrägstrichen da:
+
+```
+Ausgeliefert wird: C:\Users\noahh\Desktop\Claude-Projekte\WorldWar\apps/desktop/dist
+```
+
+In `resolveStatic` normalisiert `join(root, relativ)` die Trenner, der Vergleich davor nicht:
+
+```
+join(root, 'index.html')  = C:\Users\…\WorldWar\apps\desktop\dist\index.html
+`${root}${sep}`           = C:\Users\…\WorldWar\apps/desktop/dist\
+ziel.startsWith(…)        = false   ->  „zeigt aus dem Ordner hinaus"  ->  null  ->  404
+```
+
+**Kleinster reproduzierbarer Fall:**
+
+```js
+resolveStatic(`${fileURLToPath(new URL('./', import.meta.url))}apps/desktop/dist`, '/')  // null
+resolveStatic(join(ROOT, 'apps', 'desktop', 'dist'), '/')                                // …\index.html
+```
+
+**Warum kein Test das sah:** `apps/party/test/server.test.ts` legt die Wurzel mit
+`mkdtempSync(join(tmpdir(), …))` an — die ist immer normalisiert. Die Zusicherung „löst die
+Wurzel auf index.html auf" war grün und blieb es, während der Dienst im Spiel nichts
+auslieferte. Derselbe Fehlerkopf wie der leere Koordinatenwächter aus M33.
+
+**Wie es repariert ist:** `resolveStatic` löst die Wurzel zuerst auf (`resolve(root)`) und
+vergleicht gegen die aufgelöste Form. Damit trägt auch ein `--root` mit Schrägstrichen. Die
+Ausbruchsprüfung bleibt: `/../geheim` ist weiter `null`. Neuer Fall
+„liefert auch aus, wenn die Wurzel gemischte Trenner traegt"; **Gegenprobe gefahren** —
+ohne die Reparatur fällt er.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-2: Wer seinen Link zuerst öffnet, wartet für immer
+
+**Befund:** Öffnet der **Gast** seinen Link, bevor der Gastgeber seinen geöffnet hat, finden
+die beiden nie zusammen. Gemessen an zwei sichtbaren Fenstern desselben Rechners: Gast um
+`t=0`, Gastgeber um `t=10 s`, Partie angelegt um `t=17 s`.
+
+| Seite | Was auf dem Bildschirm steht — auch nach 30 weiteren Sekunden |
+|---|---|
+| Gastgeber | „Es wartet noch niemand. Der Link ist erst nützlich, wenn er angekommen ist." |
+| Gast | „Der Gastgeber legt die Partie gerade an. Gleich steht hier, worauf Sie sich einlassen." |
+
+Ein Neuladen beim Gast löst es **sofort** — danach steht beim Gastgeber „Jemand hat den Link
+geöffnet und trägt gerade seinen Namen ein."
+
+**Ursache:** Der Hostdienst ist Briefträger und kein Briefkasten — `Room.relay` schickt nur an
+Plätze, die **gerade** besetzt sind, und puffert nichts. Der Gast schickte sein `hallo` genau
+einmal, beim Verbindungsaufbau; saß da noch niemand, war es weg. Der Gastgeber schickte
+überhaupt keine Anmeldung, also fragte auch nie jemand nach.
+
+**Kleinster reproduzierbarer Fall:** Gast-Link öffnen, zehn Sekunden warten, Gastgeber-Link
+öffnen, Partie anlegen. Im Test: zwei Enden, die nur an *besetzte* Plätze zustellen
+(`RaumEnde` in `party.test.tsx`), Gast zuerst gerendert.
+
+**Warum kein Test das sah:** `createLoopback` **puffert**, was ankommt, bevor jemand zuhört
+(T-M37-11, dort mit Absicht eingebaut: „Eine echte Leitung puffert genauso"). Für die eine
+Leitung stimmt das — für den **Raum** dazwischen nicht. Das Doppel war freundlicher als die
+Wirklichkeit, und genau in dieser Lücke saß der Befund.
+
+**Wie es repariert ist:** Beide Seiten melden sich an, nicht nur der Gast; das `hallo` des
+Gastgebers ist die Nachfrage, und der Gast beantwortet sie mit seiner eigenen Anmeldung —
+mit Namen, wenn er schon einen eingetragen hat. Keine neue Nachrichtenart, keine Änderung am
+Dienst. **Gegenprobe gefahren**, im Test und am Bildschirm: nimmt man die Anmeldung des
+Gastgebers heraus, meldet der neue Fall wieder `expected null to be ''`; am reparierten
+Bündel steht der Wartende ohne Neuladen in der Lobby.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-3: Eine Abweisung wird endlos wiederholt und nie gezeigt
+
+**Befund:** Wird eine Verbindung abgewiesen — belegter Platz, voller Raum, falsches
+Geheimnis, unbekannter Raum —, versucht der Browser es ohne Ende weiter, und der Gast erfährt
+den Grund nie. Gemessen gegen einen von außen belegten Platz `p2`:
+
+```
+77 Verbindungsversuche in 20,0 s  = 3,8 je Sekunde
+Schließcode jedes Mal: 4001 „Dieser Platz ist besetzt."
+Auf dem Bildschirm:    „Der Gastgeber legt die Partie gerade an."
+```
+
+**Ursache:** Der Dienst weist **nach** dem 101-Handschlag ab (er muss erst Raum und Geheimnis
+lesen). Der Browser feuert deshalb erst `open` — und `open` setzt im Transport `attempt = 0`
+zurück („die nächste Störung ist eine neue Störung"). Der Wiederaufbau kam damit nie an das
+Ende seiner Abstandsliste.
+
+Der Satz, der gefehlt hat, stand schon im Haus — in `apps/party/src/room.ts` über
+`REFUSED_CLOSE_CODE = 4001`: *„Ein Code über 4000 heisst deshalb: **nicht wiederversuchen**,
+das ist kein Netzfehler, sondern eine Antwort."* Gebaut war er nur auf der Serverseite.
+
+**Kleinster reproduzierbarer Fall:** einen Sockel auf `ws://…/raum/<id>?s=<geheimnis>&platz=p2`
+offen halten und denselben Link im Browser öffnen. Im Test: `sockets[0].close(4001, 'Dieser
+Platz ist besetzt.')` nach einem gelungenen Aufbau.
+
+**Wie es repariert ist:** `websocketTransport.ts` behandelt jeden Schließcode ab **4000** als
+Antwort: kein Wiederversuch, `onClose` mit dem Satz des Dienstes. Damit greift der
+Beitrittsbildschirm, den es längst gibt. Gemessen am reparierten Bündel, dieselbe Lage:
+
+```
+1 Verbindungsversuch statt 77
+„Der Beitritt hat nicht geklappt — Dieser Platz ist besetzt.
+ Bitten Sie den Gastgeber um einen neuen Link."
+```
+
+**Gegenprobe gefahren:** ohne die Reparatur fallen beide neuen Fälle
+(`expected [ 250 ] to deeply equal []`).
+
+**Nebenbefund, nicht repariert:** in der Zeile aus `docs/reports/mehrspieler-anleitung.md` §4
+(„Der Gast sieht ‚Der Beitritt hat nicht geklappt'") stand damit bis heute etwas, das der
+Gast nicht sah. Die Anleitung selbst bleibt richtig — sie beschreibt jetzt den gebauten Stand.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-4: Fünf Spielertexte, die niemand je sieht
+
+**Befund:** In `apps/desktop/src/i18n/de.ts` stehen unter `netplay` fünf Texte, die im ganzen
+Quellbaum **nirgends** gerendert werden:
+
+| Schlüssel | Text | Wann er fehlt |
+|---|---|---|
+| `pauseSent` | „Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden." | nach dem Druck auf *Pause beantragen* |
+| `pauseDeclined` | „Ihr Mitspieler möchte weiterspielen." | wenn der andere ablehnt |
+| `pauseExpired` | „Der Pausenantrag ist verfallen." | nach dreißig Sekunden ohne Antwort |
+| `paused` | „Die Partie steht. Fortsetzen darf jeder allein." | während der Pause |
+| `resuming` | „Die Partie läuft in drei Sekunden weiter." | nach dem Druck auf *Fortsetzen* |
+
+**Gemessen am Bildschirm:** der Gastgeber stellt einen Pausenantrag — seine Kopfleiste ändert
+sich nicht. Der Gast lehnt mit *Weiterspielen* ab — beim Gastgeber ändert sich wieder nichts;
+der einzige Hinweis, der dort stand, war der alte („Vorspulen gibt es zu zweit nicht"). Wer
+den Antrag stellt, sieht also weder, dass er gestellt ist, noch dass er abgelehnt wurde.
+
+**Kleinster reproduzierbarer Fall:**
+
+```bash
+grep -rn "pauseSent\|pauseDeclined\|pauseExpired" apps/desktop/src --include=*.tsx
+# nur de.ts und Tests
+```
+
+**Nicht repariert, und warum:** wo die Sätze hingehören und ob sie überhaupt hingehören, ist
+eine Frage an den Maßstab — die Kopfleiste ist im Mehrspieler schon voll (Uhr, feste Rate,
+„Warte auf Mitspieler …", *Pause beantragen*, der Verlust-Hinweis mit zwei Knöpfen). Ein
+Agent, der hier Text einbaut, entscheidet über das Aussehen.
+
+**Status:** offen — Frage an Noah.
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-5: Ein Satz aus M37 steht noch im Anlegedialog
+
+**Befund:** Wer eine Partie zu zweit anlegt, liest unter der Einladungsvorschau
+
+> „Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst
+> lokal." (`newGame.multiplayerPending`)
+
+Das war in M37 richtig und ist seit M38/M39 falsch: die Verbindung ist gebaut, und die Partie
+beginnt sehr wohl zu zweit. Gemessen am 2026-09-14 im Anlegedialog des Gastgebers, unmittelbar
+über dem Knopf, der die Partie zu zweit eröffnet.
+
+**Kleinster reproduzierbarer Fall:** `pnpm mp:host`, den eigenen Link öffnen, Partieart steht
+auf „Zu zweit über einen Link" — der Satz steht als `<small>` unter den vier Einladungszeilen.
+
+**Nicht repariert, und warum:** ob dort **nichts** stehen soll oder ein anderer Satz, ist eine
+Frage an den Maßstab — der Kasten trägt sonst nur Angaben, keine Erklärungen. Spielertext ist
+Noahs Entscheidung.
+
+**Status:** offen — Frage an Noah.
