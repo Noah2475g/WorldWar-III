@@ -36,6 +36,15 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const TAURI = join(root, 'apps/desktop/src-tauri')
 const DEFAULT_EXE = join(TAURI, 'target/release/worldwar.exe')
 const DEFAULT_DIST = join(root, 'apps/desktop/dist')
+/**
+ * Derselbe Bau, aber mit `WORLDWAR_MULTIPLAYER=1` (T-M39-04).
+ *
+ * Er wird gemessen, damit die Zusage darueber nicht aus Unterlassung besteht: „kein
+ * WebSocket im ausgelieferten Buendel" ist nur dann eine Aussage ueber die BAUFLAGGE, wenn
+ * derselbe Quelltext mit Flagge einen enthaelt. Angelegt von
+ * `vite build --outDir dist-mp` mit gesetzter Flagge.
+ */
+const DEFAULT_DIST_MP = join(root, 'apps/desktop/dist-mp')
 
 /**
  * Woran ein Netzzugriff in einer **Berechtigungsliste** zu erkennen ist. Absichtlich die
@@ -108,6 +117,17 @@ export function measureBinary(path, csp, devUrl) {
      * nächsten Lesen eine harmlose Zeile für einen Befund.
      */
     devUrlOccurrences: count(data, String(devUrl ?? '')),
+    /**
+     * Wie oft der Bezeichner `WebSocket` woertlich im Programm steht. Erwartet: **0**.
+     *
+     * Das ist die Zusage am Erzeugnis und nicht am Quelltext (Befund M38-5): das gebaute
+     * Buendel liegt im Programm, also findet eine Suche darin auch, was `vite build`
+     * mitgenommen hat. Gross geschrieben und nicht klein: `WebSocket` ist der Bezeichner
+     * aus JavaScript. Kleingeschriebenes `websocket` kommt im Erzeugnis mehrfach vor
+     * (gemessen 2026-09-14: 5x) und stammt aus der eingebetteten Browserumgebung — wer
+     * danach suchte, faende einen Fehlalarm mit Ansage.
+     */
+    webSocketOccurrences: count(data, 'WebSocket'),
   }
 }
 
@@ -145,6 +165,7 @@ function main() {
 
   const binary = measureBinary(exeArg ?? DEFAULT_EXE, csp, config.build.devUrl)
   const bundle = measureBundle(distArg ?? DEFAULT_DIST)
+  const bundleWithMultiplayer = measureBundle(process.argv[4] ?? DEFAULT_DIST_MP)
 
   const report = {
     measuredAt: new Date().toISOString(),
@@ -158,6 +179,11 @@ function main() {
     ),
     binary,
     bundle,
+    /**
+     * Derselbe Quelltext, mit der Bauflagge gebaut — die Gegenprobe zur Zeile darueber.
+     * `null`, wenn niemand ihn gebaut hat; dann sagt der Waechter das, statt zu schweigen.
+     */
+    bundleWithMultiplayer,
   }
   writeFileSync(join(root, 'docs/reports/packaging-netfree.json'), `${JSON.stringify(report, null, 2)}\n`)
 
@@ -167,7 +193,9 @@ function main() {
       `Erzeugnis: ${binary.path}\n  ${binary.bytes} Bytes, gebaut ${binary.builtAt}\n` +
         `  Richtlinie woertlich im Programm: ${binary.cspOccurrences}x\n` +
         `  davon connect-src 'none':         ${binary.connectSrcNone}x\n` +
-        `  devUrl im Programm (kein Leck):   ${binary.devUrlOccurrences}x`,
+        `  devUrl im Programm (kein Leck):   ${binary.devUrlOccurrences}x
+` +
+        `  WebSocket im Programm:            ${binary.webSocketOccurrences}x`,
     )
   } else {
     console.log(`Erzeugnis: nicht vorhanden (${exeArg ?? DEFAULT_EXE}) — kein Bau gelaufen.`)
@@ -179,6 +207,15 @@ function main() {
     )
   } else {
     console.log('Buendel: nicht vorhanden — pnpm desktop:build lief nicht.')
+  }
+  if (bundleWithMultiplayer) {
+    console.log(
+      `Buendel MIT Flagge: ${bundleWithMultiplayer.files} Dateien, ${bundleWithMultiplayer.bytes} Zeichen
+` +
+        `  WebSocket darin: ${bundleWithMultiplayer.withWebSocket.length === 0 ? 'nein' : bundleWithMultiplayer.withWebSocket.join(', ')}`,
+    )
+  } else {
+    console.log('Buendel MIT Flagge: nicht vorhanden — die Gegenprobe fehlt.')
   }
 }
 

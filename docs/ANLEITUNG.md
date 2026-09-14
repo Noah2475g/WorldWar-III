@@ -74,6 +74,124 @@ während des Laufs zu **Abbrechen**, und die Zahl daneben zeigt, wie weit es gek
 ist. Am Ende steht der Grund in Worten — Ziel erreicht, angehalten, oder Obergrenze
 (30 Spieltage; ein Ziel, das nie eintritt, soll nicht ewig laufen).
 
+## Eine Partie zu zweit — die Einladung
+
+Dieses Spiel kann zu zweit gespielt werden: Sie laden einen Freund ein, er öffnet einen
+Link im Browser, und Sie spielen dieselbe Partie auf zwei Rechnern. Er installiert nichts,
+lädt keine Datei herunter und legt kein Konto an.
+
+**Wie es funktioniert, in fünf Sätzen.** Beide Rechner haben denselben Spielstand und
+rechnen **beide** die ganze Partie, Computergegner eingeschlossen. Übertragen werden nur
+**Befehle**, nie Spielstände: je Spielstunde schickt jede Seite genau eine Nachricht, auch
+wenn sie leer ist. Eine Spielstunde läuft erst, wenn **beide** Nachrichten da sind —
+dadurch stellt sich das Tempo von selbst ein, und der Langsamere gibt es vor. Jede
+Nachricht trägt die Prüfsumme des zuletzt gerechneten Ticks; weichen sie ab, hält die
+Partie an und sagt es, statt zwei verschiedene Welten weiterzuspielen. Auf Ihrem Rechner
+läuft dabei ein kleiner Dienst, der das Spiel ausliefert und die Nachrichten weiterreicht
+— mehr tut er nicht.
+
+### Drei Dinge, die anders sind als allein
+
+**Tempo und Vorspulen fallen weg.** Die Geschwindigkeit wird **einmal** beim Anlegen der
+Partie gewählt und steht danach fest. Die Tempotasten, der Regler und die Vorspulziele tun
+nichts und sagen, warum. Das ist keine Sparsamkeit: im Gleichschritt gibt ohnehin der
+Langsamere das Tempo vor, und ein Regler, den einer von beiden bewegt, hieße nur, dass der
+andere ihn nicht bewegt hat.
+
+**Eine Pause wird beantragt und angenommen.** Der Pausenknopf wird zum **Pausenantrag**.
+Die Partie läuft weiter, bis der andere zustimmt; dann halten beide Uhren bei derselben
+Spielstunde an. Ein Antrag, der dreißig Sekunden unbeantwortet bleibt, verfällt, und beide
+erfahren es. **Fortsetzen darf jeder allein**, mit drei Sekunden Vorlauf — sonst könnte ein
+abgelenkter Mitspieler die Partie einsperren.
+
+**Jeder hat den vollen Spielstand im Speicher — es gibt keinen Schummelschutz.** Der Nebel
+des Krieges ist eine Eigenschaft der Anzeige, nicht der Daten: wer die Entwicklerwerkzeuge
+seines Browsers öffnet, kann alles sehen. Das ist der Preis dafür, dass beide Seiten
+dieselbe Partie selbst rechnen — und genau dieser Umstand ist es auch, der eine
+unterbrochene Partie rettet (siehe unten). Unter Freunden ist das in Ordnung; für ein
+Spiel mit Fremden wäre es das nicht, und deshalb steht es hier und nicht im Kleingedruckten.
+
+### Was Sie einmal einrichten
+
+Die letzte Meile läuft über **Tailscale**: ein privates Netz zwischen Ihren beiden
+Rechnern. Kein öffentlicher Endpunkt, kein Tunnelanbieter, keine Portfreigabe am Router —
+Ihr Rechner ist aus dem Internet weiterhin nicht erreichbar.
+
+1. **Tailscale installieren** (einmalig, auf Ihrem Rechner): <https://tailscale.com/download>.
+   Anmelden, das Gerät erscheint in Ihrem Tailnet.
+2. **Ihren Mitspieler einladen** (einmalig, je Mitspieler): im Tailscale-Adminbereich unter
+   *Users → Invite external users* eine Einladung erzeugen und ihm schicken. Er installiert
+   Tailscale, nimmt die Einladung an, und ab da sind beide Rechner im selben privaten Netz.
+   Das kostet ihn etwa fünf Minuten und danach nie wieder etwas.
+3. **Prüfen, dass es steht:** `tailscale ip -4` nennt Ihre Adresse im Tailnet. Sie beginnt
+   mit **100.** (der Bereich 100.64.0.0/10). Steht dort stattdessen eine Meldung wie
+   `no current Tailscale IPs`, ist Tailscale noch nicht angemeldet — dann funktioniert der
+   Link nicht, und das ist kein Fehler des Spiels.
+
+### Und dann, jedes Mal
+
+1. **Den Hostdienst starten:**
+
+   ```bash
+   pnpm mp:host
+   ```
+
+   Der Befehl baut das Spiel, startet den Dienst auf Port **7749** und druckt zwei Links:
+   einen für Sie (`#/gastgeben…`) und einen für Ihren Gast (`#/beitreten…`). Beide tragen
+   dieselbe Raumkennung und dasselbe Geheimnis. Findet der Befehl keine Tailscale-Adresse,
+   sagt er es und druckt nur die Links des lokalen Netzes.
+
+2. **Den Gast-Link verschicken** — per Nachricht, Telefon, wie Sie mögen. Das Geheimnis
+   steht **hinter dem Rautezeichen**; was dort steht, schickt ein Browser beim Laden der
+   Seite nicht an den Server, und es landet in keinem Protokoll.
+
+3. **Ihren eigenen Link öffnen.** Der Anlegedialog steht sofort offen und ist schon auf
+   „Zu zweit über einen Link" gestellt. Wählen Sie Karte, Ihre Nation, die Zahl der
+   Gegner, die Siegbedingung und die **feste Geschwindigkeit** — und beginnen Sie die
+   Partie. Danach sehen Sie die Lobby: den Link zum Kopieren und den Stand der Dinge.
+
+4. **Der Gast öffnet seinen Link.** Er sieht zuerst, worauf er sich einlässt: Karte, seine
+   Nation, Ihre Nation, die Zahl der Computergegner, die Siegbedingung und die feste
+   Geschwindigkeit. Dann trägt er seinen Namen ein und tritt bei.
+
+5. **Sie starten.** In Ihrer Lobby steht jetzt sein Name. Erst Ihr Druck auf **Partie
+   starten** löst den Handschlag aus: beide Rechner vergleichen Protokollfassung,
+   Regelwerk, Karte und rechnen einen Spieltag zur Probe. Stimmen die Prüfsummen, beginnt
+   die Partie; stimmen sie nicht, beginnt sie **nicht**, und der Grund steht auf dem
+   Bildschirm.
+
+**Beenden:** Strg+C im Fenster des Hostdienstes. Der Dienst gibt den Port sofort wieder
+frei; ein zweiter Start auf demselben Port gelingt danach ohne Wartezeit.
+
+### Wenn die Verbindung abreißt
+
+Drei Stufen, in dieser Reihenfolge:
+
+1. **Es hakt** (unter zehn Sekunden): die Uhr steht, die Kopfleiste sagt „Warte auf
+   Mitspieler". Es geht nichts verloren — der Gleichschritt wartet ohnehin.
+2. **Es ist weg** (über zehn Sekunden): ein Hinweis mit zwei Knöpfen, *weiter warten* oder
+   *Partie beenden*. Jede Seite hat ihre Nachrichten ab der letzten bestätigten Spielstunde
+   gepuffert; kommt die Verbindung zurück, wird nachgeliefert und weitergespielt, als wäre
+   nichts gewesen.
+3. **Er kommt nicht wieder:** Sie können die Partie **allein weiterspielen**. Ihr
+   Mitspieler wird dabei zum Computergegner, und ab da ist es eine Einzelspielerpartie mit
+   allem, was dazugehört — Tempo und Vorspulen eingeschlossen. Das ist ein bewusster Klick
+   und passiert nie von selbst.
+
+### Über mehrere Abende
+
+Beide speichern lokal weiter, wie im Einzelspieler (Strg+S). Zum Fortsetzen starten Sie
+`pnpm mp:host` neu und verschicken den neuen Link; der Handschlag vergleicht die
+Prüfsummen der beiden gespeicherten Stände. Sind sie gleich, geht es weiter. Sind sie
+ungleich — Ihr Mitspieler hat einen älteren Stand oder gar keinen —, überträgt Ihr Rechner
+seinen Stand, und beide prüfen erneut. Das ist die **einzige** Stelle, an der ein
+Spielstand über die Leitung geht.
+
+### Was es ausdrücklich nicht gibt
+
+Mehr als zwei Menschen, eine Lobby, eine Freundesliste, ein Konto, einen Chat, einen
+Schummelschutz. Es gibt einen Link, und den verschicken Sie selbst.
+
 ---
 
 ## Was das Spiel entscheidet

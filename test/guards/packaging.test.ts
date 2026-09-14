@@ -213,8 +213,10 @@ interface NetfreeReport {
     cspOccurrences: number
     connectSrcNone: number
     devUrlOccurrences: number
+    webSocketOccurrences: number
   } | null
   bundle: { files: number; bytes: number; withWebSocket: string[] } | null
+  bundleWithMultiplayer: { files: number; bytes: number; withWebSocket: string[] } | null
 }
 
 const REPORT = join(ROOT, 'docs/reports/packaging-netfree.json')
@@ -280,6 +282,9 @@ describe('R-MP-09/AK3 Das ausgelieferte Programm bleibt netzfrei', () => {
     expect(data.length).toBe(gemessen.binary?.bytes)
     expect(data.includes(Buffer.from(config.app.security.csp, 'utf8'))).toBe(true)
     expect(data.includes(Buffer.from("connect-src 'self'", 'utf8'))).toBe(false)
+    // Und der Bezeichner selbst: das gebaute Buendel liegt IM Programm, also findet eine
+    // Suche darin auch, was `vite build` mitgenommen hat (T-M39-04).
+    expect(data.includes(Buffer.from('WebSocket', 'utf8')), 'WebSocket im Erzeugnis').toBe(false)
   })
 
   it('haelt den Mehrspielereinstieg aus dem gebauten Buendel heraus', () => {
@@ -294,5 +299,41 @@ describe('R-MP-09/AK3 Das ausgelieferte Programm bleibt netzfrei', () => {
       gemessen.bundle?.withWebSocket,
       `WebSocket im ausgelieferten Buendel: ${gemessen.bundle?.withWebSocket.join(', ')}`,
     ).toEqual([])
+  })
+
+  it('traegt den Einstieg im Erzeugnis auch nicht als Zeichenkette', () => {
+    // Die Zeile darueber prueft den dist-Ordner, diese das Programm. Beide braucht es:
+    // der Ordner sagt, was `vite build` zusammengelegt hat, das Programm sagt, was
+    // wirklich ausgeliefert wird. Zwischen beidem liegt ein zweiter Bau.
+    const gemessen = report()
+    expect(gemessen.binary?.webSocketOccurrences, 'WebSocket im ausgelieferten Programm').toBe(0)
+  })
+
+  /**
+   * Und die Gegenprobe zur Bauflagge (T-M39-04, Befund M38-5).
+   *
+   * **Ohne sie waere die Zusage darueber eine Zusage aus Unterlassung.** Bis M38 stand kein
+   * `WebSocket` im Buendel, weil kein Pfad von `main.tsx` dorthin fuehrte; seit T-M39-02
+   * fuehrt einer hin, und die Zeile blieb trotzdem wahr. Sie ist damit keine Aussage mehr
+   * ueber den Quelltext, sondern ueber die **Bauflagge** — und das laesst sich nur zeigen,
+   * indem derselbe Quelltext einmal MIT Flagge gebaut und gemessen wird.
+   *
+   * Gemessen am 2026-09-14: ohne Flagge 2 Dateien und kein Treffer, mit Flagge 3 Dateien
+   * (ein eigener Brocken `websocketTransport-*.js`) und ein Treffer.
+   */
+  it('nimmt den Einstieg MIT der Bauflagge sehr wohl mit', () => {
+    const gemessen = report()
+
+    expect(
+      gemessen.bundleWithMultiplayer,
+      'kein Bau mit Flagge im Bericht — dann ist „kein WebSocket" eine Zusage ohne Gegenprobe',
+    ).not.toBeNull()
+    expect(
+      gemessen.bundleWithMultiplayer?.withWebSocket.length,
+      'die Flagge aendert nichts — dann haelt nicht sie den Einstieg heraus, sondern ein Zufall',
+    ).toBeGreaterThan(0)
+    // Der Unterschied ist genau ein zusaetzlicher Brocken: der dynamische Import.
+    expect(gemessen.bundleWithMultiplayer!.files).toBeGreaterThan(gemessen.bundle!.files)
+    expect(gemessen.bundleWithMultiplayer!.bytes).toBeGreaterThan(gemessen.bundle!.bytes)
   })
 })

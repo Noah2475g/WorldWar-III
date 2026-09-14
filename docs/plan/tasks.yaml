@@ -2836,17 +2836,17 @@ tasks:
   - id: T-M39-04
     milestone: M39
     title: Ein Startbefehl fuer den Host
-    status: todo
+    status: done
     deps: [T-M39-01]
     requirements: [R-MP-11]
     design: [D-28]
-    files: [package.json, apps/party/src/index.ts]
-    tests: [apps/party/test/server.test.ts]
+    files: [package.json, apps/party/src/index.ts, apps/desktop/vite.config.ts, apps/desktop/src/globals.d.ts, scripts/measure-netfree.mjs]
+    tests: [apps/party/test/server.test.ts, test/guards/packaging.test.ts]
     dod: "D28.10. pnpm mp:host baut das Buendel, startet den Dienst und druckt den Link - ein Befehl, keine Anleitung mit sieben Schritten. Test zuerst: der Dienst liefert das gebaute Buendel aus und der Gast bekommt das vollstaendige Spiel, ohne eine Datei herunterzuladen (R-MP-11/AK1); Gast und Host melden im Handschlag dieselbe Regel- und Kartenpruefsumme, weil beide Seiten aus demselben Bau stammen (R-MP-11/AK2). Der Befehl funktioniert auch beim zweiten Aufruf und laesst beim Beenden keinen Prozess zurueck - FALLE aus M12: einen langen Lauf abzubrechen beendet ihn nicht, danach tasklist pruefen."
   - id: T-M39-05
     milestone: M39
     title: Die letzte Meile ueber Tailscale, geprueft und beschrieben
-    status: todo
+    status: done
     deps: [T-M39-04]
     requirements: [R-MP-10]
     design: [D-28]
@@ -2866,7 +2866,7 @@ tasks:
   - id: T-M39-07
     milestone: M39
     title: Die Anleitung erklaert die Einladung
-    status: todo
+    status: done
     deps: [T-M39-05]
     requirements: []
     design: [D-28]

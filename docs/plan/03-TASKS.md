@@ -5418,14 +5418,27 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Befehl, keine Anleitung mit sieben Schritten.
 - **Anforderungen:** R-MP-11 · **Entwurf:** D28.10
 - **Abhängigkeiten:** T-M39-01
-- **Dateien:** `package.json`, `apps/party/src/index.ts`
+- **Dateien:** `package.json`, `apps/party/src/index.ts`, `apps/desktop/vite.config.ts`,
+  `apps/desktop/src/globals.d.ts`, `scripts/measure-netfree.mjs`
 - **Tests zuerst:** der Dienst liefert das gebaute Bündel aus, und der Gast bekommt das
-  vollständige Spiel, ohne eine Datei herunterzuladen (`R-MP-11/AK1`); Gast und Host
-  melden im Handschlag dieselbe Regel- und Kartenprüfsumme, weil beide Seiten aus
-  demselben Bau stammen (`R-MP-11/AK2`).
+  vollständige Spiel, ohne eine Datei herunterzuladen (`R-MP-11/AK1` — gemessen am
+  **wirklich gebauten** `apps/desktop/dist`: die Seite und jede Datei, die sie nennt,
+  zusammen über ein Megabyte, kein einziger Verweis nach aussen); Gast und Host melden im
+  Handschlag dieselbe Regel- und Kartenprüfsumme, weil beide Seiten aus demselben Bau
+  stammen (`R-MP-11/AK2` — zwei getrennt geladene Regelwerke, derselbe Abdruck, und eine
+  geänderte Konstante verschiebt ihn).
 - **Fertig wenn:** der Befehl auch beim zweiten Aufruf funktioniert und beim Beenden
   keinen Prozess zurücklässt. **Falle aus M12:** einen langen Lauf abzubrechen beendet ihn
-  nicht — danach `tasklist //FI "IMAGENAME eq node.exe"`.
+  nicht — danach `tasklist //FI "IMAGENAME eq node.exe"`. Zwei Dinge kamen dazu:
+  **die Umgebungsvariable wird im Prozess gesetzt und nicht im Skripteintrag** (`VAR=1 pnpm …`
+  ist POSIX-Schale, `pnpm run` startet auf Windows `cmd.exe`, und dort ist dieselbe Zeile
+  ein Fehler); und **die Bauflagge `WORLDWAR_MULTIPLAYER`**, die Befund M38-5 einlöst.
+  Ohne sie ist `__MULTIPLAYER__` ein literales `false`, Rollup schneidet den dynamischen
+  Import heraus, und im Erzeugnis steht kein `WebSocket` — gemessen am 2026-09-14:
+  Programm 6 789 632 Bytes, `WebSocket` **0×**; Bündel ohne Flagge 2 Dateien, 0 Treffer;
+  Bündel **mit** Flagge 3 Dateien (ein eigener Brocken `websocketTransport-*.js`) und ein
+  Treffer. Die Zusage ist damit keine Zusage aus Unterlassung mehr, sondern eine über die
+  Flagge — und sie hat ihre Gegenprobe im selben Bericht.
 
 ### T-M39-05 · Die letzte Meile über Tailscale, geprüft und beschrieben
 - **Ziel:** Noahs zweite Festlegung. Kein öffentlicher Endpunkt, kein Tunnelanbieter,
@@ -5435,10 +5448,20 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `docs/ANLEITUNG.md`, `apps/party/src/index.ts`
 - **Tests zuerst:** der Dienst horcht auf allen Schnittstellen und nicht nur auf
   `localhost` — sonst ist er im Tailnet unerreichbar, und das fällt erst am Abend auf.
+  Gemessen am laufenden Dienst: erreichbar über `192.168.178.93`, nicht nur über die
+  Rückschleife.
 - **Fertig wenn:** die Anleitung beide Seiten beschreibt: was Noah einmal tut (Gerät
   freigeben, Einladung verschicken) und was der Gast einmal tut (Tailscale installieren,
   Einladung annehmen). Dazu der Hinweis, dass der Link ohne Tailscale nicht funktioniert
   und das keine Störung ist, sondern der Zweck.
+  **Was hier gemessen ist und was ausdrücklich nicht:** `isTailscaleAddress` erkennt
+  `100.64.0.0/10` (RFC 6598, der dokumentierte Bereich des Anbieters), stellt diese Adresse
+  im Ausdruck nach vorn und sagt es, wenn es keine gibt, statt einen Link ins Leere zu
+  drucken. **Nicht** gemessen ist, dass ein Gast in einem anderen Netz ankommt — dazu
+  braucht es ein angemeldetes Tailnet und einen zweiten Menschen. Auf dieser Maschine ist
+  Tailscale 1.102.2 installiert und **nicht angemeldet**: `tailscale ip -4` meldet
+  „no current Tailscale IPs; state: NoState", und die Schnittstelle trägt `169.254.83.107`.
+  Der Rest ist AK-9 und steht als ausdrücklicher Schritt in `docs/ANLEITUNG.md`.
 
 ### T-M39-06 · Speichern und Fortsetzen zu zweit
 - **Ziel:** eine Partie über mehrere Abende. Sonst ist jeder Abbruch endgültig.
@@ -5462,10 +5485,18 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M39-05
 - **Dateien:** `docs/ANLEITUNG.md`, `docs/PLAYTEST.md`
 - **Tests zuerst:** `test/docs.test.ts` bekommt eine Prüfung auf den neuen Abschnitt,
-  nach dem Muster der bestehenden Prüfung auf „Die Geschwindigkeitsregelung".
+  nach dem Muster der bestehenden Prüfung auf „Die Geschwindigkeitsregelung" — samt der
+  Zusicherung, dass der Abschnitt überhaupt gefunden wird, sonst prüfen die übrigen eine
+  leere Zeichenkette.
 - **Fertig wenn:** drei Dinge dort stehen, die sonst niemand erfährt: dass Tempo und
   Vorspulen im Mehrspieler wegfallen, dass eine Pause beantragt und angenommen wird, und
   dass jeder den vollen Zustand im Speicher hat (also kein Schummelschutz besteht, D28.2).
+  **Und eine Falle, die dabei auffiel:** `docs/PLAYTEST.md` bekommt **keine** neue
+  nummerierte Frage. Der Bogen ist die Abnahme der V1, `playtestStatus` zählt jede
+  unbeantwortete Frage als offen, und eine neue Zeile setzte AK-7 über Nacht zurück auf
+  „⏳ ausstehend" — dieselbe Fehlerklasse wie der Nachtrag 2.15. Der Abschnitt zu AK-9
+  steht deshalb als Prosa daneben, und ein Test hält fest, dass Bogen und Antwortbogen
+  deckungsgleich bleiben.
 
 ### T-M39-08 · AK-9 bekommt seinen Ort, und der Haltepunkt-Wächter lernt den fünften
 - **Ziel:** zwei Wächter ziehen mit, bevor der Haltepunkt gesetzt wird. Beide sind heute

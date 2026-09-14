@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -28,7 +28,22 @@ import {
   localAddresses,
   parseArgs,
 } from '../src/index.ts'
+import { parseRules } from '@worldwar/core'
+import { fingerprintOf } from '@worldwar/netplay'
 import { httpGet, maskedFrame, openClient, until } from './wsclient.ts'
+
+/** Das ausgelieferte Regelwerk, frisch von der Platte — fuer den Abdruck des Handschlags. */
+function regelwerk() {
+  const lies = (name: string) =>
+    JSON.parse(readFileSync(join(ROOT, `data/rules/default/${name}.json`), 'utf8')) as never
+  return {
+    constants: lies('constants'),
+    resources: lies('resources'),
+    buildings: lies('buildings'),
+    units: lies('units'),
+    ai: lies('ai'),
+  }
+}
 
 /** Die Wurzel des Repos — fuer die zwei Zusicherungen, die Quelltext lesen. */
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
@@ -449,4 +464,88 @@ describe('R-MP-10 Die letzte Meile: der Dienst horcht nicht nur auf localhost', 
       await dienst.close()
     }
   }, SERVER_TIMEOUT)
+})
+
+/**
+ * Der Gast bekommt das vollstaendige Spiel (T-M39-04, R-MP-11/AK1 und AK2, D28.10).
+ *
+ * **Gemessen am wirklich gebauten Buendel**, nicht an einem nachgestellten Ordner: der
+ * Dienst liefert `apps/desktop/dist` aus, und dieser Lauf holt sich von ihm, was ein
+ * Browser sich holen wuerde — die Seite und jede Datei, die sie nennt. Liegt kein Bau
+ * vor, sagt die Zusicherung das, statt ueber einem leeren Ordner gruen zu sein.
+ */
+describe('R-MP-11/AK1 Der Gast bekommt das vollstaendige Spiel', () => {
+  const dist = join(ROOT, 'apps/desktop/dist')
+  let dienst: PartyServer
+  let port = 0
+
+  beforeAll(async () => {
+    dienst = createPartyServer({ root: dist, host: '127.0.0.1' })
+    port = await dienst.listen()
+  }, SERVER_TIMEOUT)
+
+  afterAll(async () => {
+    await dienst.close()
+  })
+
+  it('liefert die Seite und JEDE Datei aus, die sie nennt', async () => {
+    if (!existsSync(join(dist, 'index.html'))) {
+      expect(existsSync(dist), 'kein Bau auf dieser Maschine — pnpm desktop:build lief nie').toBe(false)
+      return
+    }
+
+    const seite = await httpGet(port, '/')
+    expect(seite.status).toBe(200)
+
+    // Alles, was die Seite nachlaedt: Skripte, Stile, Symbole. Genau das holt ein Browser.
+    const verweise = [...seite.body.matchAll(/(?:src|href)="([^"]+)"/g)].map((treffer) => treffer[1]!)
+    expect(verweise.length, 'die Seite nennt keine einzige Datei — dann ist sie keine').toBeGreaterThan(1)
+
+    let bytes = seite.body.length
+    for (const verweis of verweise) {
+      // Ein Verweis nach aussen waere ein Download und damit ein gebrochenes Versprechen.
+      expect(verweis, `externer Verweis in index.html: ${verweis}`).not.toMatch(/^https?:\/\//)
+      const datei = await httpGet(port, verweis.replace(/^\.\//, '/'))
+      expect(datei.status, `nicht ausgeliefert: ${verweis}`).toBe(200)
+      bytes += datei.body.length
+    }
+
+    // Eine Weltkarte, ein Regelwerk und die ganze Oberflaeche sind kein halbes Megabyte.
+    expect(bytes, 'das Ausgelieferte ist zu klein fuer ein ganzes Spiel').toBeGreaterThan(1_000_000)
+  }, SERVER_TIMEOUT)
+
+  it('liefert zweimal dasselbe — beide Seiten stammen aus demselben Bau (AK2)', async () => {
+    if (!existsSync(join(dist, 'index.html'))) return
+    const seite = await httpGet(port, '/')
+    const skript = [...seite.body.matchAll(/src="([^"]+\.js)"/g)].map((t) => t[1]!)[0]
+    expect(skript, 'die Seite laedt kein Skript').toBeTruthy()
+
+    // Host und Gast holen dieselbe Datei vom selben Dienst. Dass sie byte-gleich ist, ist
+    // keine Selbstverstaendlichkeit: ein Zwischenspeicher, der eine alte Fassung
+    // ausliefert, machte aus einem Bau zwei — deshalb sagt der Dienst `no-store`.
+    const host = await httpGet(port, skript!.replace(/^\.\//, '/'))
+    const gast = await httpGet(port, skript!.replace(/^\.\//, '/'))
+
+    expect(gast.body).toBe(host.body)
+    expect(host.headers).toMatch(/cache-control: no-store/i)
+  }, SERVER_TIMEOUT)
+
+  it('rechnet ueber Regelwerk und Karte dieselbe Pruefsumme, aus zwei getrennten Laeufen', () => {
+    // Die andere Haelfte von AK2, und die zaehlt im Handschlag: `fingerprintOf` liest die
+    // WERTE und nicht den Dateinamen. Zwei getrennt geladene Regelwerke muessen dieselbe
+    // Zahl ergeben — sonst waere der Handschlag ein Vergleich desselben Objekts mit sich.
+    const regelnA = parseRules(regelwerk(), 'default')
+    const regelnB = parseRules(regelwerk(), 'default')
+    const karteA = JSON.parse(readFileSync(join(ROOT, 'data/maps/world.json'), 'utf8')) as never
+    const karteB = JSON.parse(readFileSync(join(ROOT, 'data/maps/world.json'), 'utf8')) as never
+
+    const a = fingerprintOf(regelnA, karteA)
+    const b = fingerprintOf(regelnB, karteB)
+
+    expect(a).toEqual(b)
+    expect(a.rulesHash).toHaveLength(16)
+    // Und die Gegenrichtung: eine geaenderte Zahl im Regelwerk verschiebt den Abdruck.
+    const veraendert = parseRules({ ...regelwerk(), constants: { ...regelwerk().constants, startMorale: 999 } } as never, 'default')
+    expect(fingerprintOf(veraendert, karteA).rulesHash).not.toBe(a.rulesHash)
+  })
 })
