@@ -42,19 +42,20 @@
 git log --oneline -1 && git status --short
 ```
 
-**Bis zum Merge von PR #7 liegt die Spitze auf dem Zweig
-`claude/offene-punkte-abschliessen`, nicht auf `main`.** Dort liegen M41, M40, M35, der
-Schlussblock und diese Datei; `main` ist über achtzig Commits älter. Wer einen Worktree
-anlegt, zweigt von diesem Zweig ab.
+**Die Spitze liegt auf `main`.** PR #7 (M41, M40, M35 und der Schlussblock) ist am
+2026-09-14 gemerged; der Merge-Commit ist `09c7078`, und der Zweig
+`claude/offene-punkte-abschliessen` ist damit abgegolten. Wer einen Worktree anlegt,
+zweigt von `main` ab.
 
 ```bash
-git switch claude/offene-punkte-abschliessen
+git switch main && git pull --ff-only
 ```
 
-**Wer den PR merged, richtet diesen Abschnitt im selben Commit** — danach gilt wieder „die
-Spitze liegt auf `main`", und dieser Kasten muss weg. Eine Einstiegsdatei, die auf den
-falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge gekostet (§4 Falle 1); sie
-schadet in beide Richtungen gleich viel.
+**Wer als Nächstes merged, richtet diesen Abschnitt im selben Zug.** Eine Einstiegsdatei,
+die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge gekostet
+(§4 Falle 1); sie schadet in beide Richtungen gleich viel. Deshalb steht hier immer genau
+**ein** Zweig und nie eine Bedingung — ein Satz der Form „bis zum Merge …, danach …“ ist
+ab dem Merge falsch und wird trotzdem gelesen.
 
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
@@ -157,7 +158,7 @@ und M17 (Delegation per /goal vom 2026-09-13, Bau auf Noahs Ansage).** Was darun
 
 ## 3 · Was gilt (nicht neu herleiten)
 
-- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 trägt M41, M40, M35 und den Schlussblock und ist offen — **Noah merged, kein Agent**); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Nie mit `--force` pushen.**
+- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 mit M41, M40, M35 und dem Schlussblock ist am 2026-09-14 gemerged, `main` = `09c7078`); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Noah merged, kein Agent. Nie mit `--force` pushen.**
 - **Der Plan-Wächter ist scharf, und er liest seit dem 2026-09-13 beide Aufgabendateien.**
   `npx vitest run test/plan-consistency.test.ts` prüft in einer Sekunde tasks.yaml ↔
   03-TASKS.md, jeden `files:`/`tests:`-Pfad **und** die Zeilen `Dateien` und `Tests zuerst`

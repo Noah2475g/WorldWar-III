@@ -1,5 +1,12 @@
 # ÜBERGABE — Schlussblock nach M41, M40 und M35 (Stand 2026-09-14, nach der Abnahme)
 
+> **ERLEDIGT UND ABGESCHLOSSEN — 2026-09-14.** Schritt 3.7 ist gelaufen, PR #7 ist
+> **gemerged** (Merge-Commit `09c7078`), und der Zweig `claude/offene-punkte-abschliessen`
+> ist abgegolten. **Die Spitze liegt auf `main`** — §0 dieser Datei sagt das Gegenteil und
+> ist ab hier historisch, nicht mehr eine Anweisung. Wer wissen will, wo er ist, liest
+> `docs/plan/WORKFLOW.md` §0. Diese Datei bleibt als **Beleg** stehen, weil eine
+> zurückgenommene oder erledigte Zusage begründet und nicht gelöscht wird.
+
 > **Für den nächsten Agenten: Diese Datei ist dein Auftrag.** Du musst nichts analysieren. Lies sie
 > ganz, dann `CLAUDE.md` und `docs/plan/WORKFLOW.md` §3–§4 (Regeln, Fallen), und arbeite §3 hier
 > **in dieser Reihenfolge** ab. Alles, was dafür nötig ist, steht hier oder in den genannten Dateien.
@@ -20,7 +27,7 @@
 
 ```bash
 git fetch origin
-git switch claude/offene-punkte-abschliessen   # NICHT main — main ist 80+ Commits älter
+git switch claude/offene-punkte-abschliessen   # historisch — seit 09c7078 gilt: git switch main
 git pull --ff-only
 git log --oneline -1 && git status --short && pnpm install
 ```
