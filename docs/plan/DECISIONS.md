@@ -2878,3 +2878,127 @@ tut, wäre freundlicher zur Umsetzung und härter zur Wirklichkeit.
 **Auswirkung:** Der Fehler kostete eine halbe Stunde Suche und wäre in M38 an einer echten Leitung
 nicht mehr reproduzierbar gewesen. Die Vertragstestreihe aus T-M38-01 muss dieselbe Zusage vom
 WebSocket-Transport verlangen.
+
+---
+
+## 2026-09-14 · T-M38-01 · Die Vertragsreihe liegt in `netplay` und geht nicht aus `index.ts` hinaus
+
+**Entscheidung:** `transportContract(name, factory)` steht in
+`packages/netplay/src/transportContract.ts` und wird **nicht** aus
+`packages/netplay/src/index.ts` re-exportiert. Wer sie braucht, nennt sie beim Pfad; die
+Browserseite tut das über einen relativen Import.
+
+**Begründung:** Die Reihe importiert `vitest`. Stünde sie im Sammelexport, zöge jedes
+`import … from '@worldwar/netplay'` der Anwendung den Testläufer in das ausgelieferte
+Bündel — also auch in das Tauri-Programm, dessen Netzfreiheit T-M38-05 am Erzeugnis misst.
+
+**Verworfen:** sie in `packages/testkit` zu legen, neben `storagePortContract` (das wäre
+das naheliegende Muster). Testkit müsste dafür von `netplay` abhängen, und `netplay` hängt
+als Testabhängigkeit schon an `testkit` — `pnpm install` meldete prompt einen
+Arbeitsbereichs-Zyklus, den es vorher nicht gab. Ein Zyklus für einen Import, der zur
+Laufzeit gar nicht stattfindet, ist ein schlechter Tausch.
+
+**Auswirkung:** Ein relativer Import in `websocketTransport.test.ts`
+(`../../../../packages/netplay/src/transportContract`), so wie `test/guards/text-keys.test.ts`
+seit M21 `de.ts` holt. Keine Änderung an `vitest.config.ts`, keine an einer `package.json`.
+
+---
+
+## 2026-09-14 · T-M38-04 · Die Verbotsliste sticht die Ausnahmeliste
+
+**Entscheidung:** Der Netz-Wächter führt zwei Listen: `NETWORK_ALLOWED` (`apps/party/`,
+`apps/desktop/src/net/`) und `NETWORK_NEVER` (`packages/core/`, `packages/ai/`,
+`packages/shared/`, `packages/netplay/`). Steht ein Treffer in einem Verzeichnis der
+zweiten Liste, wird er gemeldet — **auch wenn dasselbe Verzeichnis in der ersten steht**.
+
+**Begründung:** R-MP-09/AK2 verlangt, dass in den vier Paketen „auch der erlaubte Fall
+verboten" ist. Mit nur einer Ausnahmeliste wäre das ein Satz ohne Wirkung: die Pakete
+stehen ohnehin nicht darauf, und die Zusicherung prüfte nichts. Mit der Vorrangregel gibt
+es eine Gegenprobe, die wirklich beißt — sie reicht `packages/netplay/` als *erlaubt*
+herein, und der Treffer wird trotzdem gemeldet. Gemessen: ohne die Vorrangregel fallen
+genau diese zwei Zusicherungen.
+
+**Auswirkung:** Wer eines der vier Pakete eines Tages oben einträgt, hat den Wächter nicht
+überzeugt, sondern nur zweimal geschrieben.
+
+---
+
+## 2026-09-14 · T-M38-05 · Die zweite Seite der Verpackungsprüfung kommt aus dem kompilierten Programm
+
+**Entscheidung:** `scripts/measure-netfree.mjs` liest die Inhaltsrichtlinie aus
+`worldwar.exe` und schreibt sie nach `docs/reports/packaging-netfree.json`; der Wächter
+hält den **gemessenen** Text gegen die **heutige** Konfiguration. Sind sie ungleich, ist
+der Lauf rot, bis neu gebaut und neu gemessen ist.
+
+**Begründung:** Der bestehende Block prüft `tauri.conf.json` gegen
+`capabilities/local-only.json` — zwei JSON-Dateien derselben Hand. Er ist für das, was er
+prüft, richtig und wäre grün geblieben, wenn nie ein Bau gelaufen wäre (Befunde 17, 20,
+21). Die Gleichheit zweier Texte, von denen einer aus einem Compiler kommt, ist eine
+andere Aussage — und zugleich die Frischeprüfung, ohne dass jemand `git` befragen muss.
+
+**Verworfen:** die Berechtigungen im Erzeugnis zu suchen. Gemessen: sie stehen dort nicht
+als Text (`local-only` 0×, `allow-open` 0×, `dialog:` 0×, während `dialog` 13× vorkommt);
+Tauri backt die Zugriffsliste in eine eigene Darstellung. Eine Zusicherung darauf wäre eine
+Prüfung über dem Nichts. Ebenfalls verworfen: eine Suche nach `http:` in der Binärdatei —
+sie findet `build.devUrl` und wäre ein Fehlalarm mit Ansage. Beides steht im Wächter, statt
+verschwiegen zu werden.
+
+---
+
+## 2026-09-14 · T-M38-08 · „Wer wartet, wiederholt" — statt einen Abriss zu erkennen
+
+**Entscheidung:** Die Hülle schickt unbestätigte Befehlslisten noch einmal, solange die Uhr
+wartet (höchstens einmal je Sekunde, `RESEND_AFTER_MS`). Sie fragt den Transport **nicht**,
+ob es einen Abriss gab.
+
+**Begründung:** Drei Gründe, und der dritte ist der wichtigste. (1) Ein Schleifendoppel
+kann die Frage gar nicht beantworten, und der Haken soll gegen beide Umsetzungen gleich
+laufen. (2) Ein „reconnected"-Ereignis wäre eine zweite Wahrheit neben dem, was die
+Gegenseite tatsächlich hat — und die erste, die davon abweicht, merkt niemand. (3) Die
+Regel deckt mehr ab als der Abriss: eine einzelne verlorene Nachricht, eine langsame
+Gegenseite und den Fall, in dem die Verbindung genau **zwischen Senden und Ankommen**
+starb. Erneut zu senden kostet nichts, weil `put()` je Tick und Platz genau eine Nachricht
+ablegt; eine eigene Zusicherung hält das fest.
+
+**Auswirkung:** Der Transport braucht keine Rückmeldung über Wiederverbindungen, und
+`Lockstep.pending()` darf blind wiederholt werden. Gemessen: fünf Sekunden ohne Leitung,
+danach fängt sich die Partie **ohne Anstoß**, und ein Befehl aus der Lücke wirkt auf beiden
+Seiten.
+
+---
+
+## 2026-09-14 · T-M38-09 / T-M38-10 · Der zweite Knopf fragt nach, und die Übernahme ist ein Klick
+
+**Entscheidung:** Der Hinweis „Ihr Mitspieler ist fort" hat genau zwei Knöpfe — *Weiter
+warten* und *Partie beenden*. „Beenden" öffnet einen Dialog mit drei Antworten: allein
+weiterspielen (der abwesende Spieler wird zum Computergegner), beenden, doch weiterspielen.
+
+**Begründung:** R-MP-07/AK2 verlangt „die Wahl zwischen Warten und Beenden" — genau zwei
+Knöpfe in der Kopfleiste, und dabei bleibt es. Die Übernahme (R-MP-08) ist keine dritte
+Wahl auf derselben Ebene, sondern die Antwort auf die Frage „und was jetzt?": sie gehört
+hinter den Klick, nicht neben ihn. Und sie geschieht **nie von selbst** — ein Spiel, das
+nach einer Weile allein entscheidet, wem die Armeen gehören, ist kein Spiel zu zweit mehr.
+
+**Auswirkung:** „Weiter warten" gilt bis zum nächsten Tick, nicht für immer: kommt die
+Gegenseite zurück und steht die Uhr danach wieder, ist das eine neue Lage und verdient eine
+neue Meldung. Ein „Weiter warten", das für immer gälte, wäre ein Schalter zum Abschalten
+der einzigen Auskunft.
+
+---
+
+## 2026-09-14 · T-M38-10 · Die Übernahme setzt ein Feld und erfindet keine Schwierigkeit
+
+**Entscheidung:** `takeOverSeat(state, absent)` setzt `players[absent].kind = 'ai'` und
+lässt alles andere stehen — insbesondere `difficulty` (bei einem Menschen `null`) und
+`state.ai` (bei einem Menschen leer).
+
+**Begründung:** Ein Mensch hat keine Schwierigkeitsstufe, und `runAi` liest dann `normal`.
+Eine zu erfinden hieße, die Partie beim Übernehmen heimlich zu verändern — der
+verbleibende Spieler bekäme einen anderen Gegner, als bis eben am Tisch saß. Das Gedächtnis
+legt der Läufer sich beim ersten Denken selbst an (`emptyMemory`); gemessen über 240 Ticks:
+`state.ai['p2']` ist vorher `undefined` und danach da.
+
+**Auswirkung:** Kein Kern angefasst — „menschlich" ist seit M5 nur ein Attribut
+(`hotseat.test.ts`). Und die übernommene Partie geht durch denselben Spielstand wie jede
+andere: `saveTo`/`loadFrom` über einen `MemoryStorage`, danach dieselbe Prüfsumme und
+derselbe nächste Tick. Das ist der greifbarste Gewinn des Gleichschritts (D28.2).

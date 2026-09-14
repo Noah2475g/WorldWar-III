@@ -3565,3 +3565,140 @@ sieht es. Wo eine Falle eine Aufgabe meint, gehoert **ihr Titel** daneben — an
 die Verwechslung beim Lesen auf, an einer Nummer nie.
 
 **Status:** behoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-07 · Befund M38-2: Ein hochgestufter Sockel meldet `end`, aber nie `close`
+
+**Befund:** Der Hostdienst gab einen Platz nicht wieder frei, wenn ein Gast seine Verbindung
+einfach wegwarf. Der zweite Gast fand danach einen **vollen Raum, in dem niemand sass** — und die
+Partie liess sich nicht neu beginnen, ohne den Dienst neu zu starten.
+
+**Gemessen** (eigener Probelauf mit `node:http` und `node:net`, ohne den Dienst): ein Sockel, den
+`server.on('upgrade', …)` herausreicht, feuert nach dem Wegwerfen der Gegenseite
+
+```
+end   nach  65 ms
+close nie
+```
+
+Der Grund ist kein Fehler, sondern der Entwurf von Node: nach dem Hochstufen ist die HTTP-Schicht
+nicht mehr zustaendig und reicht den Sockel **halb offen** heraus. Die Leseseite ist zu, die
+Schreibseite bleibt stehen, bis jemand sie schliesst — und genau das tut niemand, wenn der Dienst
+nur auf `close` hoert.
+
+**Was daran gefaehrlich ist:** der Fehler sieht aus wie ein Fehler des Gastes. Der Raum ist voll,
+die Meldung lautet „Dieser Raum ist voll", und sie stimmt sogar — nur ist der Grund ein Sockel, der
+seit zehn Minuten niemandem mehr gehoert.
+
+**Was geaendert wurde:** der Dienst hoert auf `end` **und** `close` **und** `error`, und `abgang`
+schliesst den Sockel selbst (`socket.destroy()`), statt auf ein Ereignis zu warten, das nicht kommt.
+Eine eigene Zusicherung misst es am **Ergebnis** und nicht am Ereignis: ein dritter Gast bekommt den
+Platz des ersten. **Gegenprobe gefahren:** das `end`-Ohr herausgenommen, zwei Zusicherungen fallen.
+
+**Die Lehre.** Wer einen Sockel aus `upgrade` uebernimmt, uebernimmt auch seine Lebensdauer. Und
+allgemeiner: eine Aufraeumfunktion, die an **einem** Ereignis haengt, ist eine Wette darauf, dass
+dieses Ereignis kommt — belegen laesst sie sich nur an der Wirkung, hier am freien Platz.
+
+**Status:** behoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-03 · Befund M38-3: Die Determinismus-Probe sieht keine Gefechtskonstante
+
+**Befund:** Kein Fehler, sondern eine **Grenze der Zusage** — und sie gehoert aufgeschrieben, weil
+die Probe sonst mehr verspricht, als sie halten kann. Gemessen am 2026-09-14 auf der ausgelieferten
+Weltkarte (sechs Maechte, Startzahl 1914): ab wie vielen Probeticks eine geaenderte Regelzahl die
+Pruefsumme verschiebt.
+
+| Geaenderte Konstante | sichtbar ab Tick |
+|---|---|
+| `startMorale` | **0** (schon im Startzustand) |
+| `moraleDriftDivisor` | **24** |
+| `baseTargetMorale` | **24** |
+| `foodSurplusBonus` | **24** |
+| `ownNeighborBonus` | **24** |
+| `regenPermillePerTick` | **48** |
+| `battleRate` | auch nach 48 **nicht** |
+| `minDamage` | auch nach 48 **nicht** |
+
+**Zwei Dinge folgen daraus, und beide stehen jetzt im Test.**
+
+Erstens: **24 ist die kleinste Zahl, die ueberhaupt etwas sieht** ausser dem Startzustand. Vier der
+gemessenen Konstanten haengen an der Tagesrechnung und werden genau bei Tick 24 sichtbar; bei 12 ist
+die Probe fuer alle vier blind. `PROBE_TICKS` ist damit ein Stellknopf, der **nach oben** geht —
+wer ihn zum Sparen nach unten dreht, dreht die Probe ab. Eine eigene Zusicherung haelt das fest
+(12 gleich, 24 verschieden).
+
+Zweitens: die Probe kann **nicht** sagen, dass zwei Maschinen bitgleich rechnen. In den ersten zwei
+Spieltagen findet kein Gefecht statt, also beruehrt der Lauf die Gefechtskonstanten nie. Sie ist ein
+**billiger frueher Widerleger** und kein Beweis — und das ist genau die Rolle, die D28.6 ihr gibt
+(„die Antwort ist mit hoher Wahrscheinlichkeit ja … aber das ist keine Grundlage fuer einen Abend zu
+zweit"). Was danach wirklich alles sieht, ist die Pruefsumme in **jeder** Befehlsnachricht
+(T-M37-09): sie vergleicht den ganzen Zustand nach jedem Tick, Gefechte eingeschlossen.
+
+**Was geaendert wurde:** eine Zusicherung, die den gemessenen **Negativfall** festhaelt
+(`battleRate` und `minDamage` aendern nach 24 Ticks nichts) — damit der naechste Leser nicht
+annimmt, die Probe decke alles ab. Die Zeile „Fertig wenn" von T-M38-03 nennt die Zahlen.
+
+**Status:** geschlossen (2026-09-14). Keine Anforderung betroffen, kein Kern angefasst; die
+Regelaenderungen leben als Patch im Test, `data/rules` ist unberuehrt.
+
+---
+
+## 2026-09-14 · Beim Bau von M38 gefunden · Befund M38-4: `productionFiles()` liest `.test.tsx` mit
+
+**Befund:** `test/guards/scan.ts` sagt ueber `productionFiles()`: *„Product source only — plan
+documents, tests and fixtures are explicitly out of scope."* Der Filter dahinter lautet
+`!f.endsWith('.test.ts')` — und laesst damit **`.test.tsx` durch**. Gemessen am 2026-09-14: von
+**193** Dateien, die `productionFiles()` liefert, sind **21** `.test.tsx`.
+
+Betroffen ist jeder Waechter, der `productionFiles()` benutzt: der Netz-Waechter, die
+Farbliteral-Regel, der Steuerzeichen-Waechter, die Schluesselpruefung und weitere. Sie sind dadurch
+**strenger**, als ihr Kopf behauptet — keiner von ihnen ist heute rot, aber die Beschreibung stimmt
+nicht mit dem Verhalten ueberein, und das ist die Sorte Abweichung, die beim naechsten Mal Zeit
+kostet: wer einen Treffer in einer `.tsx`-Testdatei sieht, sucht ihn zuerst im Produktcode.
+
+**Nicht repariert, und warum.** Die Aenderung waere eine Zeile, aber ihre Reichweite sind zwoelf
+Waechter. Zwei davon zaehlen, was sie gelesen haben, und beide Zahlen wurden nachgemessen, bevor
+diese Entscheidung fiel: die Schluesselpruefung faende 315 statt 317 `t()`-Schluessel (Grenze 50),
+die Schleifenpruefung 160 statt 181 Dateien (Grenze 50) — es waere also nichts gerissen. Trotzdem
+gilt fuer M38 die Regel des Zuschnitts: **dieser Meilenstein weitet keine bestehende Pruefung aus
+und engt keine ein.** Der Befund gehoert nach M18.
+
+**Was es fuer heute heisst:** wer in `apps/desktop` eine `.test.tsx` schreibt, die ein verbotenes
+Muster nennt, braucht dieselbe Notbremse wie der Produktcode — `GUARD-ALLOW` in der Zeile. Genau so
+steht es in `websocketTransport.test.ts`, wo die Regel gegen `crypto.randomUUID` ihre eigene
+Gegenprobe braucht.
+
+**Status:** offen, gemessen, nach M18 verschoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-06 · Befund M38-5: Der Transport ist gebaut und absichtlich nicht verdrahtet
+
+**Befund:** `apps/desktop/src/net/websocketTransport.ts` ist die einzige Stelle im Spiel, die
+`new WebSocket` sagt — und **kein Pfad von `main.tsx` fuehrt dorthin**. Der Erreichbarkeits-Waechter
+(T-M13-04) hat das sofort gemeldet, und er hat recht: „gebaut, getestet, nie verdrahtet" ist genau
+die Fehlerklasse, fuer die er existiert (Symbole, Ton, Einstiegshilfe — dreimal in diesem Projekt).
+
+**Warum es hier trotzdem richtig ist.** Die Leitung wird vom **Beitrittsbildschirm** gebaut, und der
+ist T-M39-02/T-M39-03. In M38 gibt es keinen Weg, auf dem ein Mensch eine Verbindung anfordert; den
+Transport trotzdem irgendwo anzustoepseln hiesse, M39 vorwegzunehmen. Und die Unerreichbarkeit ist
+in M38 keine Luecke, sondern eine **gemessene Zusage**: `docs/reports/packaging-netfree.json` haelt
+fest, dass im gebauten Buendel (2 Dateien, 1 650 291 Zeichen) **kein `WebSocket`** steht — das ist
+die Haelfte von R-MP-09/AK3, und sie stimmt nur, weil niemand die Datei erreicht.
+
+**Was geaendert wurde:** ein Eintrag in `REACHABILITY_EXCEPTIONS` mit Begruendung, und die
+Begruendung nennt ihr eigenes Ablaufdatum: *„Diese Ausnahme ist eine Zusage auf Zeit und gehoert in
+T-M39-03 wieder heraus."*
+
+**Was in M39 zu tun ist, und es ist eine Warnung:** sobald der Beitrittsbildschirm den Transport
+erreicht, steht er im Tauri-Buendel, und die Zeile „kein WebSocket im Buendel" wird **falsch**. Sie
+darf dann nicht stillschweigend umgeschrieben werden. Die Zusage, die traegt, ist die andere:
+`connect-src 'none'` verbietet die Verbindung, **gleich wer sie versucht** — gemessen woertlich im
+Erzeugnis. Wer M39 baut, ersetzt die Buendelzusicherung durch eine Zusicherung am Verhalten (der
+Aufruf im Tauri-Bau scheitert) oder durch eine Bauflagge, die den Einstieg herausschneidet — aber
+nicht durch Streichen.
+
+**Status:** bewusst offen bis T-M39-03 (2026-09-14).
