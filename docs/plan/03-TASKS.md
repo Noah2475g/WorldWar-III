@@ -5479,6 +5479,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `VisibleArmy` trägt nur Kennung, Besitzer, Provinz und Stärke. Eine **sichtbare** fremde Armee
   bekommt deshalb das Feld `retreating` (ihre Angriffssperre läuft), begründet nach R-DIP-04:
   ein Rückzug geschieht vor den Augen des Gegners. Nur Sicht — kein Zustandsfeld, kein Hash.
+  *(**Zurückgenommen 2026-09-13**, gebaut und gemessen: **T-M40-10 löst diese Aufgabe ab** und
+  ersetzt D30.4, statt es zu verstärken. Die Verfolgung schadete in jedem Lauf, in dem sie einen
+  Anlass hatte — Aufstellung C mit je einer Verteidigung und einem Angriff je Provinz endete mit
+  **13 Armeen gegen 24** ohne Automatik, mit Startzahl 1914 waren vier Armeen binnen zehn Tagen
+  nach einem Befehl vernichtet. Der Angriff marschiert seither nie von selbst; `VisibleArmy.retreating`
+  hatte damit keinen Leser und ist samt Test entfallen (`publicView.ts`, `adjutant.ts`), und
+  R-UNIT-09/AK2 ist neu gefasst: „Der Angriff marschiert nie von selbst". Die Aufgabe steht
+  darum auf `todo` mit Begründung — `DECISIONS.md` und `02-DESIGN.md` D30.4/D30.9, 2026-09-13.)*
 
 ### T-M40-05 · Vier Haltungen mit Erklärtext
 - **Ziel:** eine Automatik, die niemand erklärt, findet niemand.

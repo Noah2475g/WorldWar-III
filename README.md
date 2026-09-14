@@ -5,18 +5,28 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-12): **abgenommen, und der Mehrspieler ist geplant.** `pnpm acceptance` lief
-auf freier Maschine **11 von 11, Exit 0, 7 min 28 s**; das Spiel wird an Spieltag **471**
-entschieden. Von 255 Aufgaben sind **224 gebaut**. Offen sind **dreißig geplante und
-freigegebene** aus M37–M39 — eine Partie zu zweit, der Mitspieler tritt über einen Link bei
+Status (2026-09-14): **abgenommen, und der Mehrspieler ist geplant.** `pnpm acceptance` lief
+am 2026-09-13 auf freier Maschine **12 von 12, Exit 0, 4 min 58 s**; das Spiel wird mit der
+Startzahl 1914 an Spieltag **975** entschieden (mit 2015 und 1815 je an Tag 583). Von
+**312 Aufgaben sind 264 gebaut**. Offen sind **dreißig geplante und freigegebene** aus
+M37–M39 — eine Partie zu zweit, der Mitspieler tritt über einen Link bei
 ([`docs/plan/MEHRSPIELER.md`](docs/plan/MEHRSPIELER.md)); keine davon ist gebaut. Dazu
-kommt T-M10-02, zurückgenommen und ohne Arbeit. Der
-letzte Bauabschnitt **M34** hat die Fortschrittsachse gestreckt: die letzte Freischaltung
-liegt bei Spieltag 80 statt 16, Gebäudestufen kosten und dauern mehr, und über der
-Aushebeliste steht, was als Nächstes kommt. **M35** ist ein Entwurf und kein Bau.
+**fünfzehn** aus M17 („Tiefe zwischen den Kriegen", als Ganzes geplant — gebaut wird es auf
+Noahs Ansage) und **drei zurückgenommene** Aufgaben, jede mit Begründung im Plan: T-M10-02,
+T-M40-04 und T-M41-10.
+
+Der letzte Bauabschnitt sind **M41, M40 und M35** (2026-09-13): die KI baut ihre Fabriken
+wirklich aus, die Uhr hält ihr Tempo, Armeen haben vier Haltungen mit Erklärtext — eine
+Verteidigung rückt nach, wenn eine zweite Armee stehen bleibt, der Angriff marschiert nie
+von selbst —, und die lange Mitte der Partie hat vier Zwischenziele in der Rangliste. Davor
+hatte **M34** die Fortschrittsachse gestreckt: die letzte Freischaltung liegt bei Spieltag 80
+statt 16, Gebäudestufen kosten und dauern mehr, und über der Aushebeliste steht, was als
+Nächstes kommt.
 
 `pnpm tauri:build` erzeugt `WorldWar_0.1.0_x64_en-US.msi` und ein NSIS-Setup; der
-Auslieferungsweg ist gelaufen und nicht nur beschrieben. Noahs Playtest liegt in zwei
+Auslieferungsweg ist gelaufen und nicht nur beschrieben. **AK-8 ist am 2026-09-14 am
+gebauten Programm gemessen und erfüllt** — starten, speichern, beenden, neu starten,
+weiterspielen ([`docs/reports/packaging.md`](docs/reports/packaging.md)). Noahs Playtest liegt in zwei
 Berichten vor ([`docs/PLAYTEST.md`](docs/PLAYTEST.md) beschreibt den Ablauf).
 
 **Arbeitest du an diesem Projekt, lies genau eine Datei:**
@@ -82,7 +92,7 @@ Lücken begründet geschätzt und über automatisierte Testpartien abgestimmt.
 - **Technik:** TypeScript-Monorepo (pnpm), Simulationskern ohne UI-Abhängigkeit, React-Oberfläche,
   Kartenrendering über Canvas, Desktop-Verpackung mit Tauri.
 - **Spielwelt:** echte Weltkarte, 150–250 Provinzen aus gemeinfreien Geodaten.
-- **Zeit:** 1 Tick = 1 Spielstunde; Regler von Pause bis 1000 Spielstunden pro Sekunde,
+- **Zeit:** 1 Tick = 1 Spielstunde; Regler von Pause bis 100 Spielstunden pro Sekunde,
   dazu „Vorspulen bis Ereignis“.
 - **Vorgehen:** strikt testgetrieben; Kern ≥ 90 % Testabdeckung, Determinismus per Golden-Master
   abgesichert.

@@ -2930,7 +2930,8 @@ tasks:
   - id: T-M40-04
     milestone: M40
     title: aggressive verfolgt den weichenden Gegner
-    status: done
+    status: todo
+    reopened: "am 2026-09-13 gebaut, gemessen und am selben Tag von T-M40-10 ersatzlos abgeloest - die Aufgabe steht deshalb wieder auf todo, obwohl sie einmal gebaut war. Gemessen in Aufstellung C (je Provinz eine Verteidigung und ein Angriff, mit Regel N und dem Schutz vor fremdem Boden): am Ende 13 Armeen gegen 24 ohne Automatik, mit Startzahl 1914 vier Armeen binnen zehn Tagen nach einem Befehl vernichtet. Die Verfolgung schadete in jedem Lauf, in dem sie einen Anlass hatte (DECISIONS.md 2026-09-13 zu T-M40-10, 02-DESIGN.md D30.4 und D30.9). Der Angriff marschiert seither nie von selbst; VisibleArmy.retreating hatte damit keinen Leser und ist samt Test entfallen - im Code steht an seiner Stelle der Vermerk in packages/core/src/view/publicView.ts, der Adjutant gibt fuer aggressive nichts zurueck (packages/ai/src/adjutant.ts), und adjutant.test.ts prueft heute das Gegenteil der Zusage (R-UNIT-09/AK2, neu gefasst in 01-REQUIREMENTS.md). Wer sie wieder aufnimmt, klaert zuerst, wie eine Reaktion auf ein Gefecht rechtzeitig ankommt: auf der Weltkarte dauert ein Gefecht im Median 1 bis 3 Ticks, eine Binnenetappe 25 bis 113. T-M40-10 loest diese Aufgabe ab."
     deps: [T-M40-03]
     requirements: [R-UNIT-09]
     design: [D-30]

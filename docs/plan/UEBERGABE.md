@@ -5,8 +5,14 @@
 > **in dieser Reihenfolge** ab. Alles, was dafür nötig ist, steht hier oder in den genannten Dateien.
 > `WORKFLOW.md` Kopf/§0–§2/§5 sind **veraltet** (Stand 2026-09-12) — sie nachzuziehen ist Schritt 3.6.
 >
-> **Neu gegenüber der Fassung vom 2026-09-13:** Schritt 3.1 (Frische-Wächter) und 3.2 (`pnpm
-> acceptance`) sind **erledigt und grün** — Einzelheiten in §1a. Offen sind 3.3 bis 3.7.
+> **Stand 2026-09-14, nach dem Doku-Block:** 3.1 (Frische-Wächter), 3.2 (`pnpm acceptance`), 3.3
+> (Tauri-Bau), 3.4 (AK-8), 3.5 (Sichtprüfung) und 3.6 (Einstiegsdoku) sind **erledigt**. Offen ist
+> nur noch **3.7** — Abschluss-`verify`, Push, Vault und das Artefakt für Noah. Die Zahlen für das
+> Artefakt stehen berichtigt in 3.7 Punkt 4; §4a ist abgeräumt (T-M41-18).
+>
+> **Und zwei Dinge, die 3.6 geändert hat, weil sie falsch waren:** `WORKFLOW.md` und `CLAUDE.md`
+> zeigen **nicht mehr** auf diese Datei — `WORKFLOW.md` ist ab dem 2026-09-14 selbst wieder wahr und
+> der Einstieg. Diese Übergabe bleibt als Beleg stehen, ist aber nicht mehr der Auftrag.
 
 ---
 
@@ -187,7 +193,36 @@ Nur Dokumentation, kein Code. **Jede Zahl aus einem Bericht oder Befehl, nie ges
 2. Push auf den Zweig, **ohne `--force`** (PR #7 aktualisiert sich). Push danach prüfen:
    `git fetch origin && git rev-list --left-right --count origin/claude/offene-punkte-abschliessen...HEAD` muss `0	0` melden.
 3. Vault: `C:\Users\noahh\Documents\Vaults\Claude\SESSION-STATE.md` (neuer oberster Block) und `99_Meta/Changelog.md`; Projektnotiz `01_Projects/` zu WorldWar.
-4. **Artefakt für Noah (sein ausdrücklicher Wunsch): „was gemacht wurde".** Skill `artifact-design` laden, dann eine Seite: Überblick (Blöcke, Aufgaben, Commits), Befunde der Durchsichten und was daraus wurde, Messzahlen vorher/nachher (Siegtag 471 → 975, KI-Ablehnungen 1177 → 216, Artillerie 1 → 69 / Beschuss 10 → 303, Uhr 60 → 100 Ticks/s, KI-Gedächtnis 106 → 10 KB, Provinz-Tage Haltungen 79,7 % → 101,8 %, Grundlauf 44,4 % → 36,8 %, Abnahme 11/11 → 12/12, Abdeckung 95,9 → 96,3 %, Langlauf 13,293 → 8,263 ms je Tick), Zurückgenommenes mit Grund (T-M41-10, Verfolgung), Entscheidungen (delegiert/kippbar, Noahs M17-Entscheid), offene Fragen §4, Ergebnisse von Abnahme/AK-8/Sichtprüfung. **Nur Zahlen aus Berichten und git.**
+4. **Artefakt für Noah (sein ausdrücklicher Wunsch): „was gemacht wurde".** Skill `artifact-design` laden, dann eine Seite: Überblick (Blöcke, Aufgaben, Commits), Befunde der Durchsichten und was daraus wurde, Messzahlen vorher/nachher (Liste unten), Zurückgenommenes mit Grund (T-M41-10; die Verfolgung aus T-M40-04, abgelöst von T-M40-10), Entscheidungen (delegiert/kippbar, Noahs M17-Entscheid), offene Fragen §4, Ergebnisse von Abnahme/AK-8/Sichtprüfung. **Nur Zahlen aus Berichten und git.**
+
+   **Die Zahlen, berichtigt am 2026-09-14** — die vorige Fassung dieser Liste nannte an vier Stellen
+   **Zwischenstände**, die in keinem eingecheckten Bericht mehr stehen. Jede Zeile hier ist am Bericht
+   nachgeprüft; wer sie übernimmt, schreibt keine Zahl ab, die es nicht mehr gibt.
+
+   | Größe | vorher | heute | Beleg |
+   |---|---|---|---|
+   | AK-1 Siegtag (Startzahl 1914) | 471 | **975** (2589 Eroberungen, 11 Kriegserklärungen) | `docs/reports/fullgame.json`, `acceptance.md` |
+   | KI-Artillerie (`ai-integration`, 200 Tage, „schwer") | 1 | **63** — *nicht 69; 69 war der Zwischenstand nach der H2-Nacharbeit, T-M41-09 maß danach 63* | `docs/reports/ai-integration.json` `artillerie` |
+   | Selbsttätiger Beschuss (ebd.) | 10 | **231** — *nicht 303; 303 war derselbe Zwischenstand* | ebd. `beschussSelbsttaetig` |
+   | Abgelehnte KI-Befehle (Weltkarte) | 1177 | **3 von 16 650** — *216 war der Stand direkt nach T-M41-08, danach 136 → 75 → 3* | ebd. `abgelehnt` / `befehle` |
+   | KI-Gedächtnis am Partieende | 106 KB | **3 KB** — *10 KB war der Stand aus T-M41-05, gemessen an der damals kürzeren Partie* | `fullgame.json` `aiMemoryKB` (2015: 8, 1815: 12) |
+   | Spielstand am Partieende | 474 KB | **271 KB** | `fullgame.json` `stateKB` |
+   | Uhr am gebauten Bündel | Median **95,76** Ticks/s (Min 92,98, fünf Läufe) | Median **99,88** (Min 99,77) — Streuung 5,42 → 0,18 | T-M41-17, `PROBLEME.md` 2026-09-14 |
+   | Uhr am Dev-Server | 61,75 / 62,64 / 57,93 Ticks/s | **99,57 / 99,61 / 99,73** | ebd. |
+   | Provinz-Tage der Haltungen | 79,7 % | **101,8 %**, Verluste ohne Gefecht 10 → **0** | `docs/reports/stance.json` `episoden` |
+   | Grundlauf, Anteil des Stärksten | 44,4 % | **36,8 %** | `docs/reports/balance-sweep.md` |
+   | Abnahme | 11 von 11, 7 min 28 s | **12 von 12, Exit 0, 4 min 58 s** (298 s) | `acceptance.md`, `acceptance-timing.json` |
+   | Abdeckung gesamt | 95,9 % | **96,3 %** (Kern 96,9 %) | `acceptance.md`, `pnpm verify` |
+   | Langlauf je Tick | 13,293 ms | **8,263 ms**; die Partie ist nach 1000 Spieltagen **nicht entschieden** (vorher Tick 19320) | `docs/reports/performance.md` |
+   | **AK-8** | seit 2026-09-08 ungemessen („⚠ nennt keinen Stand") | **erfüllt**, gemessen am 2026-09-14 gegen `2c52356` am gebauten Programm, sieben von sieben Schritten; `worldwar.exe` 6 780 416 B | `docs/reports/packaging.md` |
+   | Sichtprüfung der sieben Punkte | — | **5 erfüllt**, Punkt 2 **nicht prüfbar** (der Zustand wird nie gezeichnet), Punkt 7 **ohne Urteil** (Noahs Maßstab) | `docs/reports/sichtpruefung-2026-09-14.md` |
+   | Aufgaben | 255 / 224 gebaut | **312 / 264 gebaut**, 48 offen | `tasks.yaml`, gezählt |
+   | Tests (schnell) | 1929 in 140 Dateien | **siehe `WORKFLOW.md` §5** — zuletzt gemessen im Doku-Commit vom 2026-09-14 | `pnpm verify` |
+
+   **Wenn ein Zwischenstand erzählt werden soll**, dann als Schritt und nicht als Ergebnis:
+   „Artillerie 1 → 69 → 63", „Beschuss 10 → 303 → 231", „Ablehnungen 1177 → 216 → 3". Die mittlere
+   Zahl stammt aus `PROGRESS.md` (T-M41-01 Nacharbeit bzw. T-M41-08), die letzte aus dem
+   eingecheckten Bericht.
 
 ## 4 · Offene Fragen an Noah (ins Artefakt und in `DECISIONS.md`)
 
@@ -197,12 +232,38 @@ Nur Dokumentation, kein Code. **Jede Zahl aus einem Bericht oder Befehl, nie ges
 4. **Handel der KI** zielt auf den teuersten Bauwunsch → M18.
 5. **Kippbare delegierte Entscheidungen** bestätigen: Marken 25 Provinzen / 400 ‰ / Bevölkerung 350 ‰ / 600 ‰; Vorgabehaltung `defensive`; nur Fabrikausbau (Kaserne reißt R-AI-06); Ankündigung statt Datenänderung; 5 Tage Ruhe ab Abmarsch; eigener Marsch → Garnison; Turnier-Wächter mit Code-Pfaden, Parameterlauf ohne.
 6. **Der Langlauf entscheidet die Partie in 1000 Spieltagen nicht mehr** (`performance.md`: „nicht entschieden", vorher Tick 19320). AK-6 misst Zeit und ist bestanden; inhaltlich passt es zu AK-1 Tag 975 statt 471. Ist die längere Partie gewollt, oder gehört das in den Balancing-Block M18?
-7. **M17** — später (entschieden); **Mehrspieler** und **iPhone-App** unverändert offen.
+7. **Die Tempo-Sperre im Vorspulen ist am Bildschirm nie zu sehen — und das ist eine
+   Spielgefühl-Frage, kein Mangel.** Gemessen am 2026-09-14 (`PROBLEME.md`, Sichtprüfung Punkt 2):
+   ein Vorspul-Lauf ist **genau ein Häppchen von 24 Ticks** und endet synchron im Klick; ein
+   Abtaster sah in 429 Abtastungen keinen einzigen gesperrten Tempoknopf. Die Zusage aus T-M41-13
+   ist durch `App.test.tsx` gedeckt (dort sind die Häppchen auf 4 Ticks verkleinert). Sichtbar
+   würde die Sperre nur durch **ein Vorspulziel über einen Spieltag hinaus** oder **kleinere
+   Häppchen** — beides ändert, wie sich das Spiel anfühlt, und ist deshalb Noahs Entscheidung.
+8. **Gefechte im Vorspulen (T-M28-08) — reicht, was zu sehen ist?**
+   `docs/reports/sichtpruefung-2026-09-14.md` §7 beschreibt es bewusst **ohne Urteil**, weil der
+   Maßstab Noahs ist: bei angehaltener Uhr sind Gefechtsschein, Ring und Einschlagzeichen deutlich
+   sichtbar; bei Tempo 10 trafen 110 Aufnahmen über 135 Spieltage **zwei** Bilder mit laufendem
+   Gefecht in der gezeigten Provinz, ein zweiter Lauf mit 60 Aufnahmen **keines**. Durchgehend zu
+   sehen sind die roten Plättchenrahmen, die rot umrandete Provinz und das Alarmschild in der
+   Kopfleiste; im „Vorspulen" zeichnet der Browser gar nicht (ein Spieltag in einem synchronen
+   Zug, gemessen 206 ms).
+9. **M17** — später (entschieden); **Mehrspieler** und **iPhone-App** unverändert offen.
+
+*(Alle neun stehen seit dem 2026-09-14 auch in `DECISIONS.md`, Eintrag „Offene Fragen an Noah —
+gesammelt am Ende des Schlussblocks" — eine Frage, die nur in einer Übergabe steht, überlebt keinen
+Merge.)*
 
 ## 4a · Zwei kleine Befunde am Abnahmeskript (Produktivcode, unangetastet)
 
+> **Erledigt am 2026-09-14 (T-M41-18).** Beide Befunde stehen jetzt in `docs/plan/PROBLEME.md` —
+> vorher hatten sie nur diese Übergabe als Heimat und hätten keinen Merge überlebt — und beide sind
+> repariert: `describeCriterion` holt die Beschreibung vom Kriterium, `durationText` rundet mit
+> `Math.floor` ab. Acht neue Tests in `test/requirements.test.ts`, Gegenprobe **6 von 8 fallen** ohne
+> die Reparatur. Kein Spielverhalten berührt. Der eingecheckte `docs/reports/acceptance.md` trägt
+> den falschen Satz noch, bis der nächste `pnpm acceptance` ihn neu schreibt.
+
 Beide gefunden beim Abnahmelauf, beide **keine** gefallenen Kriterien, beide bewusst nicht nebenbei
-repariert. Wer 3.6 macht, entscheidet mit Noah, ob sie noch in diese Sitzung gehören:
+repariert — so stand es hier bis zum 2026-09-14:
 
 - `scripts/acceptance.mjs` **Z. 303** schreibt für *jedes* spätere Kriterium den festen Text
   „Verpackung als Programm (T-M16-05)". Die **AK-9-Zeile trägt darum die Beschreibung von AK-8**,

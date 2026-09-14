@@ -698,21 +698,24 @@ kbd {
 // ═══════════════════════════════════════════
 // EDIT: Projekt-Daten hier anpassen
 // ═══════════════════════════════════════════
-// Stand: 2026-09-13, abgeleitet aus README.md, docs/plan/WORKFLOW.md, docs/plan/tasks.yaml,
-// docs/plan/MEHRSPIELER.md, docs/ANLEITUNG.md und den package.json-Dateien.
+// Stand: 2026-09-14, abgeleitet aus dem Commit d618e87 des Zweigs
+// claude/offene-punkte-abschliessen: docs/plan/tasks.yaml (Aufgaben gezaehlt, nicht geschaetzt),
+// docs/reports/ (acceptance.md, acceptance-timing.json, fullgame*.json, packaging.md,
+// worldmap-bench.json, stance.json), README.md, docs/plan/WORKFLOW.md, docs/plan/MEHRSPIELER.md,
+// docs/ANLEITUNG.md und den package.json-Dateien. Jede Zahl hier hat eine Quelle.
 // Texte in `Backticks` werden als Code gesetzt.
 const projectData = {
   name: "WorldWar",
   description: "Ein privater, nicht-kommerzieller Nachbau von Supremacy: World War 3 als Einzelspieler gegen Computergegner — mit frei regelbarer Spielgeschwindigkeit und ohne jede Monetarisierung.",
-  descriptionZusatz: "V1 und der Ausbau bis M36 sind gebaut und abgenommen. Als Nächstes ist eine Partie zu zweit geplant, bei der der Mitspieler über einen Link beitritt.",
+  descriptionZusatz: "V1 und der Ausbau bis M41 sind gebaut und abgenommen — zuletzt die Pflege nach M34, die Haltungen und die Zwischenziele zum Sieg. Als Nächstes ist eine Partie zu zweit geplant, bei der der Mitspieler über einen Link beitritt.",
   eyebrow: "Supremacy-Nachbau · TypeScript · React · Tauri",
   version: "0.1.0",
   versionQuelle: "package.json, tauri.conf.json, Cargo.toml",
   license: "Keine Lizenzdatei — privat, nicht-kommerziell",
   repo: {
-    zweig: "main",
+    zweig: "claude/offene-punkte-abschliessen (PR gegen main)",
     remote: "https://github.com/Noah2475g/WorldWar-III",
-    letzterCommit: { hash: "af95a9e", datum: "2026-09-12T19:38:57+02:00", nachricht: "docs(plan): M37-M39 – eine Partie zu zweit über einen Link" },
+    letzterCommit: { hash: "d618e87", datum: "2026-09-14T01:47:53+02:00", nachricht: "docs(assets): die neun Bildschirmfotos der Sichtpruefung namentlich führen" },
     pruefkette: "`pnpm verify` — lokal, keine CI"
   },
 
@@ -724,9 +727,9 @@ const projectData = {
   ],
 
   kennzahlen: [
-    { label: "Tests (schnell)", wert: "1929" },
-    { label: "Abdeckung Kern", wert: "96,8 %" },
-    { label: "Abnahme", wert: "11 / 11" },
+    { label: "Tests (schnell)", wert: "2155" },
+    { label: "Abdeckung Kern", wert: "96,9 %" },
+    { label: "Abnahme", wert: "12 / 12" },
     { label: "Provinzen", wert: "237" },
     { label: "Mächte", wert: "24" }
   ],
@@ -749,8 +752,8 @@ const projectData = {
         "Festkomma, geseedeter Zufall (xoshiro128), Prüfsumme"
       ],
       kennzahlen: [
-        { label: "Testabdeckung Kern", wert: "96,8 %" },
-        { label: "Rechenzeit je Tick", wert: "1,54 ms" },
+        { label: "Testabdeckung Kern", wert: "96,9 %" },
+        { label: "Tick Weltkarte (Median)", wert: "2,523 ms" },
         { label: "Ein Befehl als JSON", wert: "79 Byte" }
       ],
       dateien: [
@@ -807,12 +810,13 @@ const projectData = {
         "Armeen zusammenlegen, Hauptstadt"
       ],
       kennzahlen: [
-        { label: "AK-1: Sieg an Spieltag", wert: "471" },
-        { label: "Eroberungen", wert: "1827" },
-        { label: "Kriegserklärungen", wert: "12" }
+        { label: "AK-1: Sieg an Spieltag", wert: "975" },
+        { label: "Eroberungen", wert: "2589" },
+        { label: "Kriegserklärungen", wert: "11" }
       ],
       offen: [
-        "Die KI klettert die Fortschrittsachse nicht: `nextBuildingFor` baut Kaserne, Fabrik, Eisenbahn und Hafen je nur einmal — keine Macht kommt über Fabrikstufe 1."
+        "In der ausgelieferten Voreinstellung ist die KI-Artillerie tot: sieben Gegner auf „normal“ bauen in 200 Spieltagen drei Artillerien und geben null selbsttätige Beschussbefehle — Engstelle sind Fabrik und Geld. Offene Frage an Noah: eigener Balancing-Block M18 oder so lassen?",
+        "Armeen zusammenlegen: der Deckel aus T-M14-12 zählt Stapel statt Einheiten und greift nie. Die Reparatur wurde gebaut, gemessen und zurückgenommen (T-M41-10) — sie tötete die Artillerie — und liegt jetzt bei M18."
       ],
       dateien: [
         { pfad: "packages/ai/src/", info: "KI-Module" },
@@ -840,6 +844,7 @@ const projectData = {
       kennzahlen: [
         { label: "1 Tick", wert: "1 Spielstunde" },
         { label: "Höchstes Tempo", wert: "100 h/s" },
+        { label: "Uhr bei Tempo 100", wert: "99,9 Ticks/s" },
         { label: "Vorspulen maximal", wert: "30 Tage" }
       ],
       dateien: [
@@ -885,7 +890,7 @@ const projectData = {
       status: "fertig",
       pfad: "data/rules · apps/headless",
       kurzeBeschreibung: "Regeldaten als JSON und Simulationen über ganze Partien, die jede Zahl messen statt schätzen.",
-      detailBeschreibung: "Die Kernmechanik folgt Supremacy 1914 in der Fassung nach dem Umbau vom 10.01.2023, Setting und Einheiten sind modern. Belegte Zahlen sind übernommen, Lücken über automatisierte Testpartien abgestimmt. M34 hat die Fortschrittsachse gestreckt: die letzte Freischaltung liegt an Spieltag 80 statt 16 — 17 % der Partie statt 2 %. `apps/headless` fährt Parameterlauf, Turnier, Vollpartie und Langlauf ohne Oberfläche.",
+      detailBeschreibung: "Die Kernmechanik folgt Supremacy 1914 in der Fassung nach dem Umbau vom 10.01.2023, Setting und Einheiten sind modern. Belegte Zahlen sind übernommen, Lücken über automatisierte Testpartien abgestimmt. M34 hat die Fortschrittsachse gestreckt: die letzte Freischaltung liegt an Spieltag 80 statt 16. Gegen den heutigen Siegtag 975 sind das 8 % der Partie (gegen die damaligen 471 Tage waren es 17 %, gegen die ursprünglichen 16 Tage 2 %). `apps/headless` fährt Parameterlauf, Turnier, Vollpartie und Langlauf ohne Oberfläche.",
       module: [
         "Regeldaten: Einheiten, Gebäude, Ressourcen, Konstanten, KI",
         "Headless-Runner und Wiedergabe",
@@ -901,8 +906,8 @@ const projectData = {
         { label: "Letzte Freischaltung", wert: "Spieltag 80" }
       ],
       offen: [
-        "Vier stille Spieltage in der Eröffnung (Hafen Tag 6 → Transportschiff Tag 10) — eine Balancing-Frage.",
-        "M35: Zwischenziele zum Sieg sind entworfen; welche Marken es werden, entscheidet Noah."
+        "Die vier stillen Spieltage in der Eröffnung (Hafen Tag 6 → Transportschiff Tag 10) bleiben — entschieden wurde ausdrücklich Ankündigung statt Datenänderung: seit T-M41-03 steht zwei Tage vorher „In zwei Tagen: …“ samt Voraussetzung im Spiel.",
+        "Der Langlauf entscheidet die Partie in 1000 Spieltagen nicht mehr (vorher Tick 19320). AK-6 misst Zeit und ist bestanden; ob die längere Partie gewollt ist, entscheidet Noah."
       ],
       dateien: [
         { pfad: "data/rules/default/", info: "Regeldaten" },
@@ -922,20 +927,20 @@ const projectData = {
       detailBeschreibung: "`pnpm verify` bündelt Lint, Typen, die schnellen Tests, die Wächter und die Abdeckungsschwellen (Kern ≥ 90 %, gesamt ≥ 80 %). Die Wächter halten Zusagen fest, die kein Einzeltest sieht: kein Netz, keine Monetarisierung, keine Uhr im Kern, keine Farbliterale, keine fremden Assets. Der Plan ist maschinell geprüft — `tasks.yaml` gegen `03-TASKS.md` und jeder Dateipfad darin. `pnpm acceptance` fährt alle Abnahmekriterien.",
       module: [
         "Lint, Typprüfung, schnelle und langsame Testsuiten",
-        "18 Wächter unter `test/guards`",
+        "19 Wächter unter `test/guards`",
         "Plan-Wächter und Anforderungstor",
         "Golden-Master für Kern und Durchlauf",
         "Abnahmelauf mit Berichten",
         "Plan: Anforderungen, Entwurf, Aufgaben, Entscheide, Befunde"
       ],
       kennzahlen: [
-        { label: "Tests / Dateien", wert: "1929 / 140" },
-        { label: "Abdeckung gesamt", wert: "95,9 %" },
-        { label: "Abnahme", wert: "11 / 11" },
+        { label: "Tests / Dateien", wert: "2155 / 146" },
+        { label: "Abdeckung gesamt", wert: "96,3 %" },
+        { label: "Abnahme", wert: "12 / 12" },
         { label: "Anforderungstor", wert: "V1 offen: 0" }
       ],
       offen: [
-        "`03-TASKS.md` nennt 57 Dateien, die es nicht gibt — der Plan-Wächter prüft nur `tasks.yaml`."
+        "Der eingecheckte `docs/reports/acceptance.md` stammt vom 2026-09-13 und gilt nach seiner eigenen Regel nur für den Stand, gegen den er gemessen wurde — der nächste `pnpm acceptance` schreibt ihn neu."
       ],
       dateien: [
         { pfad: "scripts/verify.mjs", info: "`pnpm verify`" },
@@ -961,11 +966,9 @@ const projectData = {
         "Verpackungs-Wächter"
       ],
       kennzahlen: [
-        { label: "worldwar.exe", wert: "7,93 MB" },
+        { label: "worldwar.exe", wert: "6 780 416 B" },
+        { label: "AK-8", wert: "erfüllt (2026-09-14)" },
         { label: "Version", wert: "0.1.0" }
-      ],
-      offen: [
-        "AK-8 am frisch gebauten Bündel nachmessen (optional, zählt nicht gegen V1)."
       ],
       dateien: [
         { pfad: "apps/desktop/src-tauri/tauri.conf.json", info: "Tauri-Konfiguration" },
@@ -1007,8 +1010,8 @@ const projectData = {
       befehle: [
         { befehl: "pnpm install", text: "Abhängigkeiten nach jedem Wechsel des Standes." },
         { befehl: "pnpm dev", text: "Das Spiel im Browser." },
-        { befehl: "pnpm verify", text: "Lint, Typen, Tests, Wächter, Abdeckung — rund 1 Minute." },
-        { befehl: "pnpm acceptance", text: "Der ganze Abnahmelauf inklusive verify — rund 6 bis 7 Minuten." },
+        { befehl: "pnpm verify", text: "Lint, Typen, Tests, Wächter, Abdeckung — gemessen 69 bis 73 Sekunden." },
+        { befehl: "pnpm acceptance", text: "Der ganze Abnahmelauf inklusive verify — gemessen 4 min 58 s auf freier Maschine." },
         { befehl: "pnpm tauri:build", text: "Das Windows-Programm als MSI und NSIS-Setup." }
       ],
       hinweis: { text: "Wer an diesem Projekt arbeitet, liest zuerst genau eine Datei:", pfad: "docs/plan/WORKFLOW.md" }
@@ -1034,8 +1037,8 @@ const projectData = {
     { id: "M14", titel: "Der Stand wird wieder wahr", erledigt: 16, gesamt: 16 },
     { id: "M15", titel: "Die KI wird ein Gegner", erledigt: 9, gesamt: 9 },
     { id: "M16", titel: "Verpackung als Programm", erledigt: 7, gesamt: 7 },
-    { id: "M17", titel: "Tiefe zwischen den Kriegen", erledigt: 0, gesamt: 0, status: "geplant", notiz: "vorgemerkt" },
-    { id: "M18", titel: "Später", erledigt: 0, gesamt: 0, status: "geplant", notiz: "vorgemerkt" },
+    { id: "M17", titel: "Tiefe zwischen den Kriegen", erledigt: 1, gesamt: 16, status: "geplant", notiz: "als Ganzes geplant; gebaut wird es auf Noahs Ansage" },
+    { id: "M18", titel: "Später", erledigt: 0, gesamt: 0, status: "geplant", notiz: "Sammelstelle für Gemessenes und Verschobenes — noch keine Aufgabe" },
     { id: "M19", titel: "Die Karte zeigt, was da ist", erledigt: 5, gesamt: 5 },
     { id: "M20", titel: "Die Karte spricht mit", erledigt: 4, gesamt: 4 },
     { id: "M21", titel: "Die ersten Spieltage führen", erledigt: 6, gesamt: 6 },
@@ -1052,20 +1055,23 @@ const projectData = {
     { id: "M32", titel: "Kriegsrat: Lücken zu Supremacy", erledigt: 3, gesamt: 3 },
     { id: "M33", titel: "Einheiten und Gebäude bekommen Bilder", erledigt: 5, gesamt: 5 },
     { id: "M34", titel: "Der Fortschritt bekommt eine Strecke", erledigt: 8, gesamt: 8 },
-    { id: "M35", titel: "Der lange Mittelteil bekommt Ziele (Entwurf)", erledigt: 1, gesamt: 1 },
+    { id: "M35", titel: "Der lange Mittelteil bekommt Ziele", erledigt: 6, gesamt: 6 },
     { id: "M36", titel: "Die Rohstoffleiste wird lesbar", erledigt: 6, gesamt: 6 },
     { id: "M37", titel: "Zwei Menschen, ein Spiel", erledigt: 0, gesamt: 11 },
     { id: "M38", titel: "Die Verbindung", erledigt: 0, gesamt: 10 },
-    { id: "M39", titel: "Die Einladung", erledigt: 0, gesamt: 9 }
+    { id: "M39", titel: "Die Einladung", erledigt: 0, gesamt: 9 },
+    { id: "M40", titel: "Die Haltung wird ein Auftrag", erledigt: 18, gesamt: 19, status: "fertig", notiz: "T-M40-04 zurückgenommen — die Verfolgung schadete in jedem Lauf" },
+    { id: "M41", titel: "Pflege nach M34", erledigt: 16, gesamt: 17, status: "fertig", notiz: "T-M41-10 zurückgenommen — am Rücknahmekriterium gerissen" }
   ],
 
   roadmap: {
     naechsteSchritte: [
+      "Neun offene Fragen an Noah beantworten (`docs/plan/DECISIONS.md`, 2026-09-14) — mehrere davon bestimmen, was überhaupt als Nächstes gebaut wird.",
       "M37 bauen — zuerst ohne Netzcode, belegt gegen zwei Simulationen im selben Prozess.",
       "Danach M38 (die Verbindung) und M39 (die Einladung), Abnahme AK-9 zu zweit.",
-      "Nebenher: Noah spielt — was er findet, wird der nächste Plan.",
-      "Die Marken für die Zwischenziele aus M35 festlegen.",
-      "Freigabe für die Haltungen: `aggressive` wirkt im Kern bisher nirgends."
+      "M17 „Tiefe zwischen den Kriegen“ ist als Ganzes geplant (1 von 16) und wartet auf Noahs Ansage.",
+      "M18 sammelt, was gemessen und verschoben wurde: Armeen zusammenlegen, KI-Handel, Kohle-Senke, Vorratsaufbau, amphibische KI, tote KI-Artillerie.",
+      "Nebenher: Noah spielt — was er findet, wird der nächste Plan."
     ]
   }
 };
@@ -1162,10 +1168,10 @@ const roadmapData = [
   { titel: "Die Karte führt", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M19–M21", beschreibung: "Die Karte zeigt und erklärt, die ersten Spieltage leiten an." },
   { titel: "Oberfläche, Sprache, Bilder", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M22–M27", beschreibung: "Die Oberfläche auf dem Stand des Kerns, echtes Deutsch, Grafik statt Text." },
   { titel: "Feinschliff und Kriegsrat", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M28–M33", beschreibung: "Umbau zum dunklen Kartentisch, abgenommen am 2026-09-11 mit 11 von 11." },
-  { titel: "Fortschritt und Rohstoffleiste", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M34–M36", beschreibung: "Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s. M35 ist ein Entwurf." },
+  { titel: "Fortschritt und Rohstoffleiste", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M34, M36", beschreibung: "Die Fortschrittsachse reicht bis Spieltag 80, die Rohstoffleiste ist lesbar. Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s." },
+  { titel: "Pflege, Haltungen und Zwischenziele", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M35, M40, M41", beschreibung: "Gebaut in der Nacht auf den 2026-09-14, jeder Block mit adversarischer Durchsicht und Nacharbeit: die KI baut ihre Fabriken aus, die Uhr hält ihr Tempo, vier Haltungen mit Erklärtext, vier Zwischenziele in der Rangliste. Abnahme am 2026-09-13: 12 von 12, Exit 0, 4 min 58 s. Zwei Aufgaben wurden nach ihrem Rücknahmekriterium zurückgenommen: T-M41-10 und T-M40-04." },
   { titel: "Mehrspieler — eine Partie zu zweit", zeitraum: "TBD", status: "geplant", meilensteine: "M37–M39", beschreibung: "Geplant und freigegeben am 2026-09-12, noch nichts gebaut. Bauplan `docs/plan/MEHRSPIELER.md`, Abnahme AK-9." },
-  { titel: "Zwischenziele zum Sieg", zeitraum: "TBD", status: "geplant", beschreibung: "Vier Teilaufgaben aus M35, entworfen und geschnitten, noch nicht in `tasks.yaml`. Welche Marken es werden, entscheidet Noah." },
-  { titel: "Tiefe zwischen den Kriegen", zeitraum: "TBD", status: "geplant", meilensteine: "M17, M18", beschreibung: "Spionage und Handelsangebote; Durchmarschrecht und Provinzhandel sind vorgemerkt. M17 wird als Ganzes geplant oder gar nicht." },
+  { titel: "Tiefe zwischen den Kriegen", zeitraum: "TBD", status: "geplant", meilensteine: "M17, M18", beschreibung: "Spionage und Handelsangebote; Durchmarschrecht und Provinzhandel sind darin. M17 ist seit dem 2026-09-13 als Ganzes geplant (16 Aufgaben, Entwurf D29) — Noah hat am selben Tag entschieden, dass es in einer späteren Sitzung gebaut wird. M18 ist die Sammelstelle für Gemessenes und Verschobenes." },
   { titel: "WorldWar-Mobil — iPhone-App", zeitraum: "TBD", status: "geplant", beschreibung: "Eigenes Repo: offline, Einzelspieler, als Home-Bildschirm-App über GitHub Pages. Geplant am 2026-09-12 mit 52 Aufgaben, nicht gebaut." }
 ];
 // ═══════════════════════════════════════════

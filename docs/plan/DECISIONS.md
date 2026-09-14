@@ -2708,3 +2708,79 @@ oder beim Parameterlauf ergänzen. Mit fallen der Listentest in `test/requiremen
 Turnier-Waechter sieht KI und Kern, der Parameterlauf nicht".
 
 ---
+
+## 2026-09-13 · Noah · M17 wird in einer späteren Sitzung gebaut
+
+**Entscheidung:** M17 „Tiefe zwischen den Kriegen" bleibt **geplant, aber ungebaut**. Noah hat das
+am 2026-09-13 um 17:10 entschieden, nachdem die hochgerechnete Dauer des /goal-Auftrags sichtbar
+wurde: „M17 machen wir später" — ausdrücklich **nicht** „weniger Messtiefe". Der Plan bleibt
+vollständig stehen: 16 Aufgaben, davon T-M17-01 (die Planung selbst) `done`, 15 auf `todo`.
+
+**Begründung:** Der Auftrag lautete, alle offenen Punkte außer Mehrspieler und iPhone-App zu
+schließen. M41, M40 und M35 waren zu diesem Zeitpunkt gebaut oder in Arbeit; M17 ist der größte
+verbliebene Block und hätte den Schlussblock (Abnahme, Tauri-Bau, AK-8, Sichtprüfung, Doku) in die
+nächste Sitzung geschoben. Lieber ein abgeschlossener, abgenommener Stand als ein halb gebauter
+Meilenstein ohne Abnahme.
+
+**Auswirkung:**
+- `tasks.yaml`: M17 = **1 von 16**, Status „geplant". Kein `reopened` — nichts ist zurückgenommen,
+  nur noch nicht gebaut.
+- **Der eine Parameterlauf der Delegation hängt seither am Schlussblock, nicht an T-M17-16.** Er lief
+  am 2026-09-13 (`5cdc611`); T-M17-16 behält die eigene Abschlussmessung des späteren M17-Baus.
+  T-M35-02 und T-M35-06 zeigen deshalb auf den Schlussblock.
+- `WORKFLOW.md` §2 führt M17 als geplant und wartend auf Noahs Ansage.
+
+**kippbar:** Noah sagt an, wann M17 gebaut wird. Der Entwurf D29 und die Anforderungen R-DIP-08,
+R-DIP-09, R-AI-09 und R-GAME-09 liegen unverändert vor.
+
+---
+
+## 2026-09-14 · Offene Fragen an Noah — gesammelt am Ende des Schlussblocks
+
+**Keine Entscheidung, sondern ein Eintrag mit Absicht:** eine Frage, die nur in einer Übergabe
+steht, überlebt keinen Merge. Hier steht, was **Noah** entscheiden muss — nicht, was noch zu bauen
+wäre. Jede Zeile nennt, was gemessen ist, und was die Antwort verändern würde. Dieselbe Liste steht
+in `docs/plan/UEBERGABE.md` §4 und gehört ins Artefakt.
+
+1. **Verteidigungs-Automatik behalten?** Sie hält ihr Rücknahmekriterium (Provinz-Tage 101,8 %,
+   0 ohne Gefecht verlorene Provinzen, `stance.json`), bringt aber nach Block N2 keinen messbaren
+   Nutzen: befohlene Deckung kam in **0 von 19** Fällen rechtzeitig an. Behalten, abschalten
+   (Verteidigung = Garnison) oder ersetzen durch **ausdrückliche Aufträge** („halte Provinz X mit
+   N Armeen, fülle nach")? Gemessen (D30.9): keine Nachbarschaftsautomatik hilft auf der Weltkarte —
+   Gefechte dauern 1–3 Ticks, Märsche 25–113.
+2. **KI-Artillerie in der Voreinstellung tot:** 7 KI auf „normal", 200 Tage → 3 Artillerien,
+   **0 selbsttätige Beschüsse** (`ai-integration.json` `voreinstellung200`); Engstelle sind Fabrik
+   und Geld. Eigener Balancing-Block (M18) oder so lassen?
+3. **Zusammenlegen der KI** (T-M41-10, zurückgenommen: der Deckel zählt Stapel statt Einheiten; die
+   echte Reparatur tötete die Artillerie) → M18, oder früher?
+4. **Handel der KI** zielt auf den teuersten Bauwunsch → M18, oder früher?
+5. **Kippbare delegierte Entscheidungen bestätigen:** Marken 25 Provinzen / 400 ‰ / Bevölkerung
+   350 ‰ / 600 ‰; Vorgabehaltung `defensive`; nur Fabrikausbau (Kaserne Stufe 2 reißt R-AI-06);
+   Ankündigung statt Datenänderung bei den stillen Eröffnungstagen; 5 Tage Ruhe ab Abmarsch; eigener
+   Marsch → Garnison; Turnier-Wächter mit Code-Pfaden, Parameterlauf ohne.
+6. **Der Langlauf entscheidet die Partie in 1000 Spieltagen nicht mehr** (`performance.md`: „nicht
+   entschieden", vorher Tick 19320). AK-6 misst Zeit und ist bestanden; inhaltlich passt es zu AK-1
+   Tag 975 statt 471. Ist die längere Partie gewollt, oder gehört das in den Balancing-Block M18?
+7. **Die Tempo-Sperre im Vorspulen ist am Bildschirm nie zu sehen** — und das ist eine
+   Spielgefühl-Frage, kein Mangel. Gemessen am 2026-09-14 (`PROBLEME.md`, Sichtprüfung Punkt 2):
+   ein Vorspul-Lauf ist **genau ein Häppchen von 24 Ticks** und endet synchron im Klick; ein
+   Abtaster sah in 429 Abtastungen keinen einzigen gesperrten Tempoknopf. Die Zusage selbst ist
+   durch `App.test.tsx` gedeckt (dort sind die Häppchen auf 4 Ticks verkleinert). Sichtbar würde
+   die Sperre nur durch **ein Vorspulziel über einen Spieltag hinaus** oder **kleinere Häppchen** —
+   und beides ändert, wie sich das Spiel anfühlt. Deshalb Noahs Entscheidung und keine Aufgabe.
+8. **Gefechte im Vorspulen (T-M28-08) — reicht, was zu sehen ist?**
+   `docs/reports/sichtpruefung-2026-09-14.md` §7 beschreibt es bewusst **ohne Urteil**, weil der
+   Maßstab Noahs ist: bei angehaltener Uhr sind Gefechtsschein, Ring und Einschlagzeichen deutlich
+   sichtbar; bei Tempo 10 trafen 110 Aufnahmen über 135 Spieltage **zwei** Bilder mit laufendem
+   Gefecht in der gezeigten Provinz, ein zweiter Lauf mit 60 Aufnahmen **keines**. Durchgehend zu
+   sehen sind die roten Plättchenrahmen, die rot umrandete Provinz und das Alarmschild in der
+   Kopfleiste. Im „Vorspulen" wird gar nichts gezeichnet — ein Spieltag läuft in einem synchronen
+   Zug (gemessen 206 ms). Genügt das, oder soll ein Gefecht länger stehen bleiben, als es dauert?
+9. **M17** — später (entschieden, Eintrag darüber); **Mehrspieler M37–M39** und die **iPhone-App**
+   unverändert offen.
+
+**Auswirkung:** Bis eine Antwort da ist, bleibt alles, wie es gemessen wurde. Keine dieser Fragen
+hat eine Aufgabe in `tasks.yaml` — das ist Absicht: ein Plan, der Fragen als Aufgaben führt, wird
+nie fertig.
+
+---
