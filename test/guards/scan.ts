@@ -23,7 +23,11 @@ function collect(dir: string, out: string[]): void {
     return
   }
   for (const entry of entries) {
-    if (['node_modules', 'dist', 'coverage', 'target', 'src-tauri'].includes(entry.name)) continue
+    // `dist-mp` ist der zweite Bau, mit der Mehrspielerflagge (T-M39-04) - erzeugter
+    // Code und kein Produktcode. Er heisst nicht `dist`, weil `vite build --outDir dist`
+    // ihn beim naechsten Lauf loeschen wuerde; das kostet ihn hier einen eigenen Eintrag,
+    // und ohne den meldet der Netz-Waechter das gebuendelte `new WebSocket` als Verstoss.
+    if (['node_modules', 'dist', 'dist-mp', 'coverage', 'target', 'src-tauri'].includes(entry.name)) continue
     const full = join(dir, entry.name)
     if (entry.isDirectory()) collect(full, out)
     else if (/\.(ts|tsx|js|mjs|json)$/.test(entry.name)) out.push(full)

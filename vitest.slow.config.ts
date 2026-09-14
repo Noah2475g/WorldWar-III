@@ -17,7 +17,7 @@ export default defineConfig({
   },
   test: {
     include: ['{packages,apps,test}/**/*.slow.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-mp/**'],
     environment: 'node',
     testTimeout: 1_800_000,
     hookTimeout: 1_800_000,

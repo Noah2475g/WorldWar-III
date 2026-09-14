@@ -15,6 +15,12 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      // Der zweite Bau, mit der Mehrspielerflagge (T-M39-04). Er ist die Gegenprobe zu
+      // "kein WebSocket im ausgelieferten Buendel" und heisst deshalb NICHT `dist` - was
+      // `vite build --outDir dist` sonst beim naechsten Lauf loeschen wuerde. Das kostet
+      // einen zweiten Eintrag hier, in `.gitignore`, in `tsconfig.json` und in beiden
+      // vitest-Konfigurationen; ohne ihn liest ESLint ein gebuendeltes Megabyte mit.
+      '**/dist-mp/**',
       '**/coverage/**',
       '**/src-tauri/target/**',
       'test/guards/fixtures/**',

@@ -36,7 +36,7 @@ export default defineConfig({
   },
   test: {
     include: ['{packages,apps,test}/**/*.test.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.slow.test.ts', '**/e2e/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-mp/**', '**/*.slow.test.ts', '**/e2e/**'],
     environment: 'node',
     coverage: {
       provider: 'v8',

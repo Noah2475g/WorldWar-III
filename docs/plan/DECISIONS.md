@@ -3002,3 +3002,149 @@ legt der Läufer sich beim ersten Denken selbst an (`emptyMemory`); gemessen üb
 (`hotseat.test.ts`). Und die übernommene Partie geht durch denselben Spielstand wie jede
 andere: `saveTo`/`loadFrom` über einen `MemoryStorage`, danach dieselbe Prüfsumme und
 derselbe nächste Tick. Das ist der greifbarste Gewinn des Gleichschritts (D28.2).
+
+---
+
+## 2026-09-14 · T-M39-02 · `willkommen` kommt vor dem benannten `hallo`
+
+**Entscheidung:** Die Anmeldung (`hallo` **ohne** Namen) kommt beim Verbinden, die
+Bedingungen (`willkommen`) als Antwort darauf, und der Name in einem **zweiten** `hallo`,
+wenn der Gast beitritt. Danach `probe` in beide Richtungen.
+
+**Warum nicht anders.** `MEHRSPIELER.md` §3.2 führt `hallo` als erste Art auf — das bleibt
+so, denn die Anmeldung trägt die Protokollfassung, und ohne sie beginnt nichts
+(R-MP-06/AK1). §3.7 verlangt aber: „der Beitrittsbildschirm zeigt, worauf man sich
+einlässt, bevor irgendetwas passiert. **Dann** Name eintragen und beitreten." Die
+Bedingungen kennt nur der Host. Also muss `willkommen` vor dem Namen liegen, und der Name
+braucht eine zweite Nachricht.
+
+**Die verworfene Alternative:** die Einladung im Hostdienst ablegen, damit der Gast sie per
+HTTP holt, bevor er die Leitung baut. Das kostet zwei Dinge, die beide zu teuer sind: der
+Dienst wäre nicht mehr Briefträger, sondern hielte Partiedaten — die dritte Meinung darüber,
+was gerade gilt, die D28.2 ausschließt; und das Geheimnis müsste für die Abfrage in eine
+Anfragezeile, obwohl es genau deshalb hinter dem Rautezeichen steht (D28.10).
+
+**Auswirkung:** keine achte Nachrichtenart. Und eine Auskunft mehr, die es sonst nicht
+gäbe: zwischen den beiden `hallo` sieht der Gastgeber einen Gast **ohne Namen** — „jemand
+hat den Link geöffnet und trägt gerade seinen Namen ein". Ohne sie klebt er den Link ein
+zweites Mal in den Chat. Befund M39-1.
+
+---
+
+## 2026-09-14 · T-M39-04 · Die Bauflagge statt der gestrichenen Zusicherung
+
+**Entscheidung:** Der Mehrspielereinstieg hängt in `main.tsx` an einem **dynamischen**
+Import hinter `__MULTIPLAYER__`; die Flagge ist im gewöhnlichen Bau ein literales `false`,
+und `pnpm mp:host` setzt sie. Die Zusicherung „kein `WebSocket` im ausgelieferten Bündel"
+bleibt — sie ist jetzt eine Aussage über die **Flagge** statt über eine Unterlassung.
+
+**Warum überhaupt eine Entscheidung nötig war.** Befund M38-5 hat es vorhergesagt: bis M38
+war die Zusicherung wahr, weil kein Pfad von `main.tsx` zum Transport führte. T-M39-02 baut
+diesen Pfad. Die drei Wege waren: (a) die Zusicherung streichen, (b) sie durch eine
+Zusicherung am **Verhalten** ersetzen (der Aufruf im Tauri-Bau scheitert an
+`connect-src 'none'`), (c) eine **Bauflagge**, die den Einstieg herausschneidet.
+
+(a) fällt aus — M38-5 verbietet es ausdrücklich, und mit Recht: eine Zusage, die beim ersten
+Widerspruch weicht, ist keine. (b) wäre am stärksten, verlangt aber, das gebaute Programm zu
+starten und eine fehlgeschlagene Verbindung zu messen — jedes Mal, in jedem `pnpm verify`.
+(c) ist billig, deterministisch und **an der Sache**: Noahs dritte Festlegung lautet nicht
+„die Verbindung scheitert", sondern „das ausgelieferte Programm bleibt netzfrei". Ein
+Programm, das den Einstieg gar nicht enthält, erfüllt das strenger als eines, in dem er
+scheitert.
+
+**Gemessen, und die zweite Zeile ist die eigentliche Aussage:** ohne Flagge 2 Dateien und
+**0** Treffer, mit Flagge 3 Dateien (ein eigener Brocken `websocketTransport-*.js`) und 1
+Treffer; das neu gebaute `worldwar.exe` (6 789 632 B) trägt `WebSocket` **0×** und
+`connect-src 'none'` 1×. Ohne die zweite Messung wäre die erste kein Beleg für die Flagge,
+sondern ein Zufall.
+
+**Der Preis, gemessen:** ein zweiter Bauordner muss an sechs Stellen bekannt gemacht werden
+(`.gitignore`, `eslint.config.js`, `tsconfig.json`, beide vitest-Konfigurationen,
+`test/guards/scan.ts`). Zwei davon sind erst aufgefallen, als `pnpm verify` rot wurde —
+einmal mit Hunderten Lint-Fehlern aus erzeugtem Code, einmal mit dem Netz-Wächter, der das
+**gebündelte** `new WebSocket` als Verstoß meldete. Beides steht als Befund M39-5.
+
+---
+
+## 2026-09-14 · T-M39-01 · Der Platz kommt aus der Rolle, nicht aus der Ankunft
+
+**Entscheidung:** Der Link trägt die Rolle im Weg hinter dem Rautezeichen — `#/gastgeben`
+für den Gastgeber, `#/beitreten` für den Gast —, und die Verbindung verlangt danach einen
+**bestimmten** Platz (`p1` bzw. `p2`). Der Raum weist ab, wenn er besetzt ist, statt den
+anderen zu vergeben.
+
+**Begründung:** Bis M38 bekam der erste Ankommende `p1`. Der Platz ist aber die Kennung, mit
+der die Oberfläche alles betrachtet (`viewerId`, T-M37-01), und er steht in `playerOrder`,
+nach der beide Seiten die Befehle sortieren (T-M37-07). Nach Ankunftsreihenfolge zu vergeben
+hieße: wer schneller klickt, spielt die Nation des Gastgebers. Das fällt nicht als Fehler
+auf, sondern als „komisches Spiel".
+
+**Auswirkung:** `seatsOfRole` gibt **beide** Kennungen zurück, den eigenen Platz und den des
+anderen. Eine zweite Rechnung („wenn ich `p1` bin, ist der andere `p2`") wäre genau die
+Annahme, die T-M37-01 aus der Oberfläche entfernt hat; deshalb steht sie an **einer** Stelle,
+und der Wächter `no-hardcoded-player` führt genau diese eine als begründete Ausnahme.
+
+---
+
+## 2026-09-14 · T-M39-01 · Eine Abweisung schließt mit 4001 und nicht mit 1000
+
+**Entscheidung:** Wer wegen eines falschen Geheimnisses, einer unbekannten Raumkennung, eines
+vollen Raumes oder eines besetzten Platzes abgewiesen wird, bekommt einen Schließrahmen mit
+Code **4001** (privater Bereich von RFC 6455) statt `1000`.
+
+**Begründung:** Der Transport im Browser baut eine abgerissene Leitung mit wachsendem Abstand
+wieder auf — 250, 500, 1000, 2000, 4000, 8000 ms (T-M38-06). Bei einer **Abweisung** wären
+das sechsmal dieselbe verschlossene Tür und sechzehn Sekunden, in denen der Gast nicht
+erfährt, was los ist. Ein Code über 4000 heißt: das ist kein Netzfehler, sondern eine
+Antwort.
+
+**Was dabei geändert wurde:** `Connection.close` nimmt einen Code; der Test aus M38, der für
+einen vollen Raum `1000` erwartete, erwartet jetzt `4001` — mit einem Satz daneben, warum.
+
+---
+
+## 2026-09-14 · T-M39-01 · Die Einladung überlebt den leeren Raum
+
+**Entscheidung:** `Rooms` trennt **Einladung** (Kennung und Geheimnis) von **Raum** (wer
+gerade sitzt). Der Raum verschwindet weiterhin, sobald niemand mehr darin sitzt; die
+Einladung bleibt, solange der Dienst läuft.
+
+**Begründung:** T-M38-07 hat „ein leerer Raum verschwindet" gebaut, und das bleibt richtig —
+§6 schließt Zustand über die Partie hinaus aus. Aber der Link zeigt auf die **Kennung**.
+Verlören beide Seiten für zehn Sekunden die Verbindung, wäre der Link tot, und der Abend mit
+ihm. Was die Einladung hält, ist eine Adresse und ein Geheimnis; beides stirbt mit dem
+Prozess.
+
+---
+
+## 2026-09-14 · T-M39-06 · Die Probe nennt ihren Startstand, statt immer zu übertragen
+
+**Entscheidung:** `ProbeMessage` trägt zusätzlich `fromHash` — die Prüfsumme des Standes, von
+dem die Probe losgerechnet hat.
+
+**Die Alternative war „bei einer Wiederaufnahme immer übertragen".** Sie ist sicher und
+falsch: dann ginge bei *jeder* fortgesetzten Partie ein Viertelmegabyte über die Leitung
+(gemessen 263 KB nach dreißig Spieltagen), und „übertragen werden Befehle, nie Zustände"
+(D28.2) hätte eine stille Ausnahme. Mit dem Startabdruck sind die beiden Fälle exakt
+trennbar: gleicher Start und anderes Ergebnis heißt **Abbruch** (ein Rechenfehler), anderer
+Start heißt **übertragen** (verschiedene Stände).
+
+**Auswirkung:** ein Feld mehr im Protokoll, und eine Zusicherung mehr, die es verlangt —
+eine `probe` ohne `fromHash` wird verworfen. Befund M39-3.
+
+---
+
+## 2026-09-14 · T-M39-07 · Der Playtest-Bogen bekommt Prosa, keine nummerierte Frage
+
+**Entscheidung:** Der Abschnitt zu AK-9 in `docs/PLAYTEST.md` trägt **keine** nummerierte
+Frage.
+
+**Begründung:** `playtestStatus` zählt jede unbeantwortete Frage als offen. Eine neue Zeile
+hätte `docs/reports/playtest-v1.md` unvollständig gemacht und **AK-7 wieder auf „⏳"**
+gesetzt — ein abgenommenes V1-Kriterium, zurückgeworfen durch eine Dokumentationsaufgabe
+eines Meilensteins, der ausdrücklich hinter der V1 liegt. Das ist die Fehlerklasse des
+Nachtrags 2.15.
+
+**Auswirkung:** AK-9 hat seinen eigenen Ort (Abschnitt 3.2) und seinen eigenen Bericht
+(`docs/reports/mehrspieler.md`); der Bogen beschreibt den Durchgang in Prosa und sagt im
+ersten Satz, warum er keine Frage daraus macht. Zwei Tests halten beides fest. Befund M39-4.

@@ -18,9 +18,17 @@
  * Aufruf:
  *
  * ```bash
+ * # Beide Buendel bauen — ohne Flagge und mit ihr (T-M39-04):
+ * pnpm -C apps/desktop build
+ * WORLDWAR_MULTIPLAYER=1 pnpm -C apps/desktop exec vite build --outDir dist-mp
+ * pnpm tauri:build                                       # fuer das Erzeugnis selbst
+ *
  * node scripts/measure-netfree.mjs                       # Vorgabepfade
- * node scripts/measure-netfree.mjs <exe> <dist-Ordner>
+ * node scripts/measure-netfree.mjs <exe> <dist> <dist-mp>
  * ```
+ *
+ * Auf Windows ohne POSIX-Schale setzt `pnpm mp:host` die Flagge selbst; der Ordner heisst
+ * dann `dist` und nicht `dist-mp`. Wer nur messen will, setzt die Variable von Hand.
  *
  * Schreibt `docs/reports/packaging-netfree.json`. Der Wächter `test/guards/packaging.test.ts`
  * hält den dort festgehaltenen Text gegen die **heutige** Konfiguration: wer die Sperre
