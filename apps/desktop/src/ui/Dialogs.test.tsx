@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DebugPanel, NewGameDialog, localizeDebugText } from './Dialogs.tsx'
+import { DebugPanel, LobbyDialog, NewGameDialog, localizeDebugText } from './Dialogs.tsx'
 import {
   DEFAULT_NEW_GAME,
   MULTIPLAYER_SPEEDS,
@@ -250,5 +250,85 @@ describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
     zeigeMit({ mode: 'single' }, einladung)
 
     expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+})
+
+/**
+ * Der Gastgeber sieht, wer wartet — und startet (T-M39-03, R-MP-12/AK2, D28.10).
+ *
+ * Drei Zustaende, und der mittlere ist der, den man leicht vergisst: niemand da, jemand da
+ * OHNE Namen, jemand da mit Namen. Der Gastgeber soll sehen, dass sein Link angekommen
+ * ist, bevor der andere getippt hat — sonst klebt er ihn ein zweites Mal in den Chat.
+ */
+describe('R-MP-12/AK2 Der Gastgeber sieht, wer wartet, und startet', () => {
+  const zeigeLobby = (extra: Partial<Parameters<typeof LobbyDialog>[0]> = {}) => {
+    const onBegin = vi.fn()
+    render(
+      <LobbyDialog
+        guestLink="http://100.101.102.103:7749/#/beitreten?raum=r&s=g"
+        guestName={null}
+        offered
+        phase="lobby"
+        reason={null}
+        onBegin={onBegin}
+        onLeave={vi.fn()}
+        {...extra}
+      />,
+    )
+    return onBegin
+  }
+
+  it('zeigt den Link, den Noah verschickt — den fuer den GAST, nicht den eigenen', () => {
+    zeigeLobby()
+    const feld = screen.getByLabelText(/Link verschicken/i) as HTMLInputElement
+
+    expect(feld.value).toContain('#/beitreten')
+    expect(feld.value, 'der eigene Weg steht im Link fuer den Gast').not.toContain('gastgeben')
+  })
+
+  it('unterscheidet „niemand da" von „da, aber noch ohne Namen"', () => {
+    zeigeLobby({ guestName: null })
+    expect(screen.getByText(/Es wartet noch niemand/)).toBeTruthy()
+    cleanup()
+
+    zeigeLobby({ guestName: '' })
+    expect(screen.getByText(/Jemand hat den Link geöffnet/)).toBeTruthy()
+    cleanup()
+
+    zeigeLobby({ guestName: 'Jonas' })
+    expect(screen.getByText(/Jonas wartet auf den Start/)).toBeTruthy()
+  })
+
+  it('laesst erst starten, wenn die Partie angelegt ist UND ein Gast mit Namen wartet', () => {
+    const knopf = () => screen.getByRole('button', { name: 'Partie starten' }) as HTMLButtonElement
+
+    zeigeLobby({ offered: false, guestName: 'Jonas' })
+    expect(knopf().disabled, 'ohne angelegte Partie gaebe es nichts zu starten').toBe(true)
+    cleanup()
+
+    zeigeLobby({ offered: true, guestName: null })
+    expect(knopf().disabled, 'ohne Gast waere der Start ein Alleingang').toBe(true)
+    cleanup()
+
+    zeigeLobby({ offered: true, guestName: '' })
+    expect(knopf().disabled, 'ein Gast ohne Namen hat noch nicht beigetreten').toBe(true)
+    cleanup()
+
+    const onBegin = zeigeLobby({ offered: true, guestName: 'Jonas' })
+    expect(knopf().disabled).toBe(false)
+    fireEvent.click(knopf())
+    expect(onBegin).toHaveBeenCalledTimes(1)
+  })
+
+  it('sagt, dass zuerst die Partie angelegt werden muss', () => {
+    zeigeLobby({ offered: false })
+    expect(screen.getByText(/Legen Sie zuerst die Partie an/)).toBeTruthy()
+  })
+
+  it('nennt den Grund, wenn der Beitritt abgewiesen wurde', () => {
+    // Ein Ende ohne Grund ist fuer den Spieler ein Absturz.
+    zeigeLobby({ phase: 'refused', reason: 'Dieser Link passt zu keiner Partie auf diesem Rechner.' })
+    expect(screen.getByText(/passt zu keiner Partie/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Partie starten' }) as HTMLButtonElement).disabled).toBe(true)
   })
 })

@@ -5377,23 +5377,41 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MP-12 · **Entwurf:** D28.10
 - **Abhängigkeiten:** T-M39-01
 - **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`,
-  `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/net/party.ts`,
+  `apps/desktop/src/main.tsx`, `packages/netplay/src/protocol.ts`
 - **Tests zuerst:** der Bildschirm nennt Karte, eigene Nation, gegnerische Nation, Zahl
   der Computergegner, Siegbedingung und die feste Rate, bevor irgendetwas beginnt
-  (`R-MP-12/AK1`, `Dialogs.test.tsx`).
+  (`R-MP-12/AK1`, `apps/desktop/src/net/party.test.tsx` — an der **ganzen Anwendung** in
+  der Rolle des Gastes, mit einem Gastgeber am anderen Ende der Leitung).
 - **Fertig wenn:** er ohne Spielstand auskommt — der Gast hat noch keinen. Der erste
   Bildschirm der Anwendung ist heute der Anlegedialog; der Beitritt ist ein zweiter
-  Einstieg, kein Sonderfall des ersten.
+  Einstieg, kein Sonderfall des ersten. Drei Dinge, die dabei entschieden wurden:
+  **die feste Rate reist in `willkommen` mit** (ein neues Feld; weder Kern noch Zustand
+  kennen eine Geschwindigkeit, C-11 — sie ist aber das Einzige, was der Gast hinterher
+  nicht mehr ändern kann, R-MP-02/AK1); **die Bedingungen stehen im Baum vor dem
+  Namensfeld**, und der Beitrittsknopf ist ohne Namen gesperrt („dann Name eintragen und
+  beitreten", §3.7); und **`willkommen` kommt vor dem benannten `hallo`** — die Anmeldung
+  ohne Namen steht zuerst und trägt die Fassung, die Bedingungen folgen, der Name zuletzt
+  (Entscheid in `DECISIONS.md`, Befund M39-1).
 
 ### T-M39-03 · Der Host sieht, wer wartet, und startet
 - **Ziel:** die Partie beginnt, wenn der Host es sagt, nicht wenn eine Verbindung steht.
 - **Anforderungen:** R-MP-12 · **Entwurf:** D28.10
 - **Abhängigkeiten:** T-M39-02
-- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/net/useNetplay.ts`,
-  `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/net/party.ts`,
+  `apps/desktop/src/i18n/de.ts`, `test/guards/reachability.ts`
 - **Tests zuerst:** tritt ein Gast bei, sieht der Host seinen Namen; erst der Start des
-  Hosts löst den Handschlag und den ersten Tick aus (`R-MP-12/AK2`).
+  Hosts löst den Handschlag und den ersten Tick aus (`R-MP-12/AK2`). **Gegenprobe
+  gefahren:** lässt man den Host von selbst starten, sobald ein benanntes `hallo` kommt,
+  fällt genau diese Zusicherung.
 - **Fertig wenn:** ein Gast, der wieder geht, den Platz freigibt und der Host es sieht.
+  Beides ist gemessen: der Platz am laufenden Dienst (`server.test.ts`, der dritte Gast
+  bekommt den Platz des ersten), und der Bildschirm des Hosts unterscheidet drei Lagen —
+  **niemand da**, **da ohne Namen**, **da mit Namen**. Die mittlere ist die, die man leicht
+  vergisst, und ohne sie klebt der Gastgeber den Link ein zweites Mal in den Chat. Mit
+  dieser Aufgabe fällt auch die Ausnahme in `REACHABILITY_EXCEPTIONS` weg: `main.tsx`
+  erreicht den WebSocket-Transport jetzt — hinter der Bauflagge, mit einem dynamischen
+  Import (Befund M38-5, „gehört in T-M39-03 wieder heraus").
 
 ### T-M39-04 · Ein Startbefehl für den Host
 - **Ziel:** `pnpm mp:host` baut das Bündel, startet den Dienst und druckt den Link. Ein

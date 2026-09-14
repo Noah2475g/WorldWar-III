@@ -117,6 +117,7 @@ export function welcome(
   seat: PlayerId,
   own: Fingerprint,
   probeTicks: number,
+  fixedSpeed: number,
 ): WelcomeMessage {
   return {
     ...envelope('willkommen'),
@@ -125,6 +126,9 @@ export function welcome(
     rulesHash: own.rulesHash,
     mapHash: own.mapHash,
     probeTicks,
+    // Die feste Rate reist mit, obwohl weder Kern noch Zustand sie kennen (C-11): sie ist
+    // das Einzige, was der Gast hinterher nicht mehr aendern kann (R-MP-02/AK1).
+    fixedSpeed,
   }
 }
 

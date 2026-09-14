@@ -2816,22 +2816,22 @@ tasks:
   - id: T-M39-02
     milestone: M39
     title: Der Beitrittsbildschirm
-    status: todo
+    status: done
     deps: [T-M39-01]
     requirements: [R-MP-12]
     design: [D-28]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/net/party.ts, apps/desktop/src/main.tsx, packages/netplay/src/protocol.ts]
+    tests: [apps/desktop/src/net/party.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "D28.10. Niemand tritt einer Partie bei, deren Bedingungen er nicht kennt - besonders nicht der festen Geschwindigkeit, die er nachher nicht aendern kann. Test zuerst: der Bildschirm nennt Karte, eigene Nation, gegnerische Nation, Zahl der Computergegner, Siegbedingung und die feste Rate, bevor irgendetwas beginnt (R-MP-12/AK1). Er kommt ohne Spielstand aus - der Gast hat noch keinen. Der erste Bildschirm der Anwendung ist heute der Anlegedialog; der Beitritt ist ein zweiter Einstieg, kein Sonderfall des ersten."
   - id: T-M39-03
     milestone: M39
     title: Der Host sieht, wer wartet, und startet
-    status: todo
+    status: done
     deps: [T-M39-02]
     requirements: [R-MP-12]
     design: [D-28]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/net/useNetplay.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/net/party.ts, apps/desktop/src/i18n/de.ts, test/guards/reachability.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/net/party.test.tsx]
     dod: "D28.10. Die Partie beginnt, wenn der Host es sagt, nicht wenn eine Verbindung steht. Test zuerst: tritt ein Gast bei, sieht der Host seinen Namen; erst der Start des Hosts loest den Handschlag und den ersten Tick aus (R-MP-12/AK2). Ein Gast, der wieder geht, gibt den Platz frei, und der Host sieht es."
   - id: T-M39-04
     milestone: M39

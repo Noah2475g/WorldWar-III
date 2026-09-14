@@ -61,6 +61,16 @@ export interface WelcomeMessage extends Envelope {
   mapHash: string
   /** Wie viele Ticks die Determinismus-Probe rechnet (M38, T-M38-03). */
   probeTicks: number
+  /**
+   * Die feste Rate in Spielstunden je Sekunde (T-M39-02, R-MP-02/AK1, C-11).
+   *
+   * Sie steht **hier** und nicht in der Partiedefinition, weil weder Kern noch Zustand
+   * eine Geschwindigkeit kennen — C-11 hat sie am 2026-09-04 dort verbannt, und
+   * R-ARCH-04/AK2 haelt das gruen. Sie muss trotzdem mitreisen: sie ist das Einzige an
+   * einer Partie zu zweit, was der Gast hinterher nicht mehr aendern kann, und
+   * R-MP-02/AK1 verlangt, dass sie Teil der Einladung ist.
+   */
+  fixedSpeed: number
 }
 
 /** Beide: die Prüfsumme nach den Probeticks. */
@@ -193,6 +203,11 @@ export function parseMessage(raw: unknown): ParseResult {
         return fail('willkommen braucht die Pruefsummen von Regelwerk und Karte.')
       }
       if (!isTick(raw['probeTicks'])) return fail('willkommen braucht die Zahl der Probeticks.')
+      // Eine Rate, die keine ist, waere schlimmer als keine: der Gast saehe eine Zahl,
+      // an die er sich nicht halten kann.
+      if (typeof raw['fixedSpeed'] !== 'number' || !Number.isFinite(raw['fixedSpeed']) || raw['fixedSpeed'] <= 0) {
+        return fail('willkommen braucht die feste Geschwindigkeit der Partie.')
+      }
       return { ok: true, message: raw as unknown as WelcomeMessage }
 
     case 'probe':

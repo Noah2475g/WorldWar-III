@@ -116,12 +116,12 @@ describe('R-MP-06/AK2 Zwei Seiten rechnen 24 Ticks und vergleichen', () => {
   it('laesst die Partie erst durch, wenn alle vier Pruefungen stimmen', () => {
     // Das Tor selbst: Fassung, Regelwerk, Karte, Probe. Ein einziger Ort dafuer.
     const abdruck = fingerprintOf(rules, map)
-    const gruss = welcome(config, 'p2', abdruck, PROBE_TICKS)
+    const gruss = welcome(config, 'p2', abdruck, PROBE_TICKS, 10)
     const host = runProbe(config, ctx)
 
     expect(handshakeComplete(abdruck, gruss, host, probeMessage(host))).toEqual({ ok: true })
 
-    const andereKarte = welcome(config, 'p2', { ...abdruck, mapHash: 'anders' }, PROBE_TICKS)
+    const andereKarte = welcome(config, 'p2', { ...abdruck, mapHash: 'anders' }, PROBE_TICKS, 10)
     expect(handshakeComplete(abdruck, andereKarte, host, probeMessage(host)).ok).toBe(false)
 
     const andereProbe = probeMessage({ ...host, hash: 'anders' })

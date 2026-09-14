@@ -570,6 +570,49 @@ export const de = {
   },
 
   /**
+   * Der Beitritt und die Lobby (T-M39-02, T-M39-03, R-MP-10, R-MP-12, D28.10).
+   *
+   * Niemand tritt einer Partie bei, deren Bedingungen er nicht kennt — besonders nicht
+   * der festen Geschwindigkeit, die er nachher nicht mehr ändern kann. Deshalb steht auf
+   * dem Beitrittsbildschirm alles, bevor der Gast seinen Namen einträgt, und nicht danach.
+   */
+  party: {
+    joinTitle: 'Einladung zu einer Partie zu zweit',
+    hostTitle: 'Partie zu zweit eröffnen',
+    connecting: 'Verbindung zum Gastgeber wird aufgebaut …',
+    waitingForOffer: 'Der Gastgeber legt die Partie gerade an. Gleich steht hier, worauf Sie sich einlassen.',
+    terms: 'Diese Partie:',
+    termsMap: 'Karte: {{map}}',
+    termsNations: 'Sie spielen {{own}}, Ihr Gastgeber {{host}}',
+    termsAi: 'Computergegner: {{count}}',
+    termsVictory: 'Siegbedingung: {{victory}}',
+    termsSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
+    fixedSpeedWarning:
+      'Die Geschwindigkeit steht für die ganze Partie fest, und Vorspulen gibt es zu zweit nicht.',
+    openState:
+      'Beide Rechner rechnen die ganze Partie selbst. Jeder hat damit den vollen Spielstand im Speicher — unter Freunden ist das in Ordnung, einen Schummelschutz gibt es nicht.',
+    nameLabel: 'Ihr Name',
+    namePlaceholder: 'Wie sollen Sie heißen?',
+    joinButton: 'Beitreten',
+    joined: 'Sie sind dabei. Die Partie beginnt, sobald der Gastgeber sie startet.',
+    // Die Lobby des Gastgebers.
+    inviteHint: 'Diesen Link verschicken Sie an Ihren Mitspieler:',
+    copyLink: 'Link kopieren',
+    copied: 'Kopiert.',
+    waitingForGuest: 'Es wartet noch niemand. Der Link ist erst nützlich, wenn er angekommen ist.',
+    guestArrived: 'Jemand hat den Link geöffnet und trägt gerade seinen Namen ein.',
+    guestReady: '{{name}} wartet auf den Start.',
+    setUpFirst: 'Legen Sie zuerst die Partie an — erst dann sieht Ihr Gast, worauf er sich einlässt.',
+    beginButton: 'Partie starten',
+    checking: 'Beide Rechner prüfen, dass sie dasselbe Spiel rechnen …',
+    refusedTitle: 'Der Beitritt hat nicht geklappt',
+    leave: 'Abbrechen',
+    // Was der Gast tut, wenn der Link nicht mehr passt.
+    refusedHint:
+      'Bitten Sie den Gastgeber um einen neuen Link. Ein Link gilt für eine Partie und für einen Rechner.',
+  },
+
+  /**
    * Die Partie zu zweit (T-M37-10, T-M37-11, R-MP-04, R-MP-05, D28.6, D28.7).
    *
    * Zwei Sätze tragen den ganzen Abschnitt: eine Pause wird beantragt und angenommen,

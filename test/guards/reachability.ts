@@ -79,7 +79,15 @@ export function reachableFrom(
   return seen
 }
 
-/** Source files of the application: no tests, no benchmarks, no stylesheets. */
+/**
+ * Source files of the application: no tests, no benchmarks, no stylesheets — **and keine
+ * Typdeklarationen**.
+ *
+ * `*.d.ts` ist zur Laufzeit nichts: die Datei beschreibt einen Wert, den der Bau einsetzt
+ * (`globals.d.ts` erklaert `__MULTIPLAYER__`, T-M39-04), und kein Modul importiert sie.
+ * Sie als Waise zu melden hiesse, den Waechter dazu zu bringen, auf einer Datei zu
+ * bestehen, die es zur Laufzeit gar nicht geben kann.
+ */
 export function applicationModules(dir: string): string[] {
   const out: string[] = []
   const walk = (current: string): void => {
@@ -87,7 +95,7 @@ export function applicationModules(dir: string): string[] {
       if (['node_modules', 'dist', 'coverage'].includes(entry.name)) continue
       const full = join(current, entry.name)
       if (entry.isDirectory()) walk(full)
-      else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|bench)\./.test(entry.name)) out.push(full)
+      else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|bench|d)\./.test(entry.name)) out.push(full)
     }
   }
   walk(dir)
@@ -104,12 +112,13 @@ export function applicationModules(dir: string): string[] {
 export const REACHABILITY_EXCEPTIONS: Readonly<Record<string, string>> = {
   'apps/desktop/src/index.ts':
     'Paketeinstieg (package.json "main") fuer andere Pakete, nicht Teil der laufenden Anwendung.',
-  'apps/desktop/src/net/websocketTransport.ts':
-    'T-M38-06: die Leitung wird erst vom Beitrittsbildschirm gebaut, und der ist T-M39-02/T-M39-03. ' +
-    'Bis dahin ist sie ABSICHTLICH unerreichbar - genau das misst T-M38-05 am Erzeugnis: im Tauri-Buendel ' +
-    'steht kein WebSocket. Sie ist trotzdem kein totes Modul: useNetplay nimmt jeden Transport, und die ' +
-    'Vertragsreihe aus T-M38-01 laeuft gegen sie wie gegen das Schleifendoppel. Diese Ausnahme ist eine ' +
-    'Zusage auf Zeit und gehoert in T-M39-03 wieder heraus.',
+  // T-M38-06 stand hier mit einer Ausnahme fuer `net/websocketTransport.ts`: die Leitung
+  // war gebaut und ABSICHTLICH nicht verdrahtet, weil der Beitrittsbildschirm erst in M39
+  // kam (Befund M38-5). Die Ausnahme nannte ihr eigenes Ablaufdatum - "gehoert in T-M39-03
+  // wieder heraus" -, und genau das ist am 2026-09-14 geschehen: `main.tsx` erreicht den
+  // Transport ueber einen dynamischen Import hinter der Bauflagge `__MULTIPLAYER__`. Die
+  // Zusage "kein WebSocket im ausgelieferten Buendel" ist damit nicht gestrichen, sondern
+  // haengt jetzt an der Flagge und wird am Erzeugnis gemessen (T-M38-05).
 }
 
 export function unreachableModules(entryFiles: readonly string[], directory: string): string[] {

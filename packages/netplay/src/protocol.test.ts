@@ -51,6 +51,7 @@ const beispiele: Record<(typeof MESSAGE_KINDS)[number], NetMessage> = {
     rulesHash: '0123456789abcdef',
     mapHash: 'fedcba9876543210',
     probeTicks: 24,
+    fixedSpeed: 10,
   },
   probe: { ...envelope('probe'), ticks: 24, hash: '0123456789abcdef' },
   befehle: { ...envelope('befehle'), tick: 12, commands: [befehl], hash: '0123456789abcdef' },
@@ -107,6 +108,11 @@ describe('R-MP-03 Das Protokoll: sieben Arten, reines JSON, jede mit ihrer Fassu
       { ...beispiele.hallo, name: 42 },
       { ...beispiele.willkommen, seat: null },
       { ...beispiele.willkommen, probeTicks: -1 },
+      // Eine Rate, die keine ist, waere schlimmer als keine: der Gast saehe eine Zahl, an
+      // die er sich nicht halten kann (T-M39-02, R-MP-02/AK1).
+      { ...beispiele.willkommen, fixedSpeed: 0 },
+      { ...beispiele.willkommen, fixedSpeed: -5 },
+      { ...beispiele.willkommen, fixedSpeed: 'schnell' },
       { ...beispiele.probe, hash: 5 },
       { ...beispiele.befehle, tick: 1.5 },
       { ...beispiele.befehle, commands: [{ type: 'MOVE_ARMY' }] },

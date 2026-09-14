@@ -44,6 +44,15 @@ const AUSNAHMEN: readonly { datei: string; grund: string }[] = [
       'die Gegner die folgenden. Hier entsteht die Kennung, statt angenommen zu werden — ' +
       'R-MP-01/AK2 nimmt das Anlegen ausdruecklich aus.',
   },
+  {
+    datei: 'apps/desktop/src/net/link.ts',
+    grund:
+      'Der Link vergibt die Plaetze: wer ueber #/gastgeben kommt, bekommt den ersten, wer ' +
+      'ueber #/beitreten kommt, den zweiten (T-M39-01). Dieselbe Sorte Stelle wie das ' +
+      'Anlegen — hier ENTSTEHT die Kennung aus der Rolle, statt angenommen zu werden, und ' +
+      'sie steht genau einmal da, damit die Gegenseite nirgends durch eine zweite Rechnung ' +
+      'entsteht.',
+  },
 ]
 
 /** Die Dateien der Oberflaeche; Tests gehoeren nicht dazu. */

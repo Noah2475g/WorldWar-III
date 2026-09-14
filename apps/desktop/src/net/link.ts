@@ -95,3 +95,27 @@ export function socketUrlOf(origin: string, room: string, secret: string, seat?:
 export function seatOfRole(role: PartyRole): 'p1' | 'p2' {
   return role === 'host' ? 'p1' : 'p2'
 }
+
+/**
+ * Der eigene Platz und der des anderen, aus einer Rolle.
+ *
+ * Beide zusammen und nicht getrennt, damit die Gegenseite nirgends durch eine zweite
+ * Rechnung entsteht: „wenn ich p1 bin, ist der andere p2" ist genau die Annahme, die
+ * T-M37-01 aus der Oberfläche entfernt hat. Die Kennungen stehen deshalb an dieser
+ * **einen** Stelle, die sie vergibt.
+ */
+export function seatsOfRole(role: PartyRole): { seat: 'p1' | 'p2'; peer: 'p1' | 'p2' } {
+  return role === 'host' ? { seat: 'p1', peer: 'p2' } : { seat: 'p2', peer: 'p1' }
+}
+
+/**
+ * Der Link, den der Gastgeber verschickt, aus dem Link, den er selbst geöffnet hat.
+ *
+ * Eine Ersetzung und keine zweite Umsetzung des Formats: gebaut wird der Link **einmal**,
+ * im Hostdienst (`inviteLink`). Hier wird nur der Weg hinter dem Rautezeichen ausgetauscht
+ * — dieselbe Adresse, derselbe Raum, dasselbe Geheimnis, eine andere Rolle. Wer das Format
+ * hier noch einmal zusammensetzte, hätte eine dritte Stelle, die auseinanderlaufen kann.
+ */
+export function guestLinkOf(href: string): string {
+  return href.replace(`#${ROLE_PATHS.host}`, `#${ROLE_PATHS.guest}`)
+}

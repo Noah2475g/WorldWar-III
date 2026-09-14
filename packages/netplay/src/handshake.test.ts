@@ -108,18 +108,21 @@ describe('R-MP-06 Die Nachrichten des Handschlags', () => {
   })
 
   it('antwortet mit Partiedefinition, Platz, Pruefsummen und Probeauftrag', () => {
-    const message = welcome(config, 'p2', own, 24)
+    const message = welcome(config, 'p2', own, 24, 10)
 
     expect(message.seat).toBe('p2')
     expect(message.config).toBe(config)
     expect(message.probeTicks).toBe(24)
+    // Die feste Rate reist mit (T-M39-02, R-MP-02/AK1): sie ist das Einzige an einer
+    // Partie zu zweit, was der Gast hinterher nicht mehr aendern kann.
+    expect(message.fixedSpeed).toBe(10)
     expect(fingerprintOfWelcome(message)).toEqual(own)
   })
 
   it('reicht den Abdruck so weiter, dass die Gegenseite ihn vergleichen kann', () => {
     // Der ganze Weg in einer Zeile: Host baut, Gast liest, Gast vergleicht.
     const gast = fingerprintOf(TEST_RULES, map)
-    expect(compareFingerprints(gast, fingerprintOfWelcome(welcome(config, 'p2', own, 24)))).toEqual({
+    expect(compareFingerprints(gast, fingerprintOfWelcome(welcome(config, 'p2', own, 24, 10)))).toEqual({
       ok: true,
     })
   })
