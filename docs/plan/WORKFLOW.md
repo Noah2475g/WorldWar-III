@@ -34,8 +34,8 @@
 > und §4 — dort und nicht in diesem Kopf.
 >
 > **Was gerade auf Noah wartet:** neun offene Fragen in `DECISIONS.md` unter „Offene Fragen
-> an Noah" (2026-09-14), dazu **AK-9** (§2) und zwei Spielertext-Fragen aus der
-> Sichtprüfung (MP-4, MP-5). Keine davon hat eine Aufgabe, und das ist Absicht.
+> an Noah" (2026-09-14), dazu **AK-9** (§2) und drei Fragen aus den
+> Prüfungen am laufenden Programm (MP-4, MP-5, V-1). Keine davon hat eine Aufgabe, und das ist Absicht.
 
 ---
 
@@ -115,9 +115,12 @@ entweder Noah oder seine Ansage.
    **Billiger Zwischenschritt, der AK-9 nicht erfüllt, aber viel findet:** zwei Fenster auf
    demselben Rechner. Genau das ist am 2026-09-14 gelaufen und hat fünf Befunde ergeben
    (`docs/reports/sichtpruefung-mehrspieler-2026-09-14.md`).
-2. **Elf offene Fragen an Noah** — neun in `DECISIONS.md` unter „Offene Fragen an Noah"
-   (2026-09-14), dazu **MP-4** (fünf `netplay`-Spielertexte werden nirgends gerendert) und
-   **MP-5** (ein veralteter M37-Satz im Anlegedialog) aus der Sichtprüfung. Sie sind die
+2. **Zwölf offene Fragen an Noah** — neun in `DECISIONS.md` unter „Offene Fragen an Noah"
+   (2026-09-14), dazu **MP-4** (fünf `netplay`-Spielertexte werden nirgends gerendert),
+   **MP-5** (ein veralteter M37-Satz im Anlegedialog) und **V-1**: der Wähler „Partieart"
+   bietet **auch im netzfreien Bau** „Zu zweit über einen Link" an, weil die Bauflagge nur
+   `main.tsx` deckt und nicht `ui/Dialogs.tsx`. Gemessen, nicht vermutet: die Partie läuft
+   dann lokal mit fester Rate, ohne Fehler und ohne Verbindungsversuch. Sie sind die
    einzige Sorte Arbeit, die kein Agent erledigen kann, und mehrere bestimmen, was als
    Nächstes überhaupt gebaut wird. **Nichts davon hat eine Aufgabe** — ein Plan, der
    Fragen als Aufgaben führt, wird nie fertig.
