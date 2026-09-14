@@ -78,8 +78,11 @@ function befehleFuer(state: GameState, owner: PlayerId, tick: number): Command[]
     }
   }
   if (tick % 31 === 0 && zweite) {
+    // Die Nachbarn stehen im ZUSTAND, nicht in der Kartendatei: `MapProvince` kennt sie
+    // nicht, und ein `?.neighbors` darauf ist stumm undefined — ein Marsch, den niemand
+    // befiehlt, waere hier ein stiller Loch im Beleg.
     const heim = state.armies[zweite]!.locationProvinceId
-    const nachbar = map.provinces.find((province) => province.id === heim)?.neighbors?.[0]
+    const nachbar = state.provinces[heim]?.neighbors[0]
     if (nachbar) out.push({ type: 'MOVE_ARMY', playerId: owner, armyId: zweite, targetProvinceId: nachbar })
   }
   if (tick % 37 === 0) {
