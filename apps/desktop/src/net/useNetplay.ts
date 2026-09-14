@@ -98,6 +98,33 @@ export const RESEND_AFTER_MS = 1000
  */
 export const PEER_LOST_AFTER_MS = 10_000
 
+/**
+ * Der abwesende Mitspieler wird zum Computergegner (T-M38-10, R-MP-08/AK1, D28.8).
+ *
+ * **Der greifbarste Gewinn des Gleichschritts** (D28.2): beide Rechner haben denselben
+ * vollständigen Zustand, also braucht es zum Alleinweiterspielen nichts weiter als ein
+ * geändertes Feld. Kein Übertragen, kein Umrechnen, kein zweiter Spielstandstyp — und
+ * **keine Zeile im Kern**: `kind` ist ein Attribut des Spielers, seit M5 („menschlich" ist
+ * nur ein Attribut, `hotseat.test.ts`).
+ *
+ * `difficulty` bleibt, wie es war. Ein Mensch hat keine, und `runAi` liest dann `normal`
+ * — eine Schwierigkeit zu erfinden hieße, die Partie beim Übernehmen heimlich zu
+ * verändern. Auch `state.ai` bleibt leer: der Läufer legt sich beim ersten Denken selbst
+ * ein Gedächtnis an (`emptyMemory`).
+ *
+ * Reine Funktion mit neuem Objekt statt einer Zuweisung am Zustand: die Hülle hält einen
+ * Spiegel (`stateRef`) neben dem Zustand, und ein Feld, das nur an einem von beiden
+ * geändert wird, ist der Fehler aus T-M41-17.
+ */
+export function takeOverSeat(state: GameState, absent: PlayerId): GameState {
+  const player = state.players[absent]
+  if (!player || player.kind === 'ai') return state
+  return {
+    ...state,
+    players: { ...state.players, [absent]: { ...player, kind: 'ai' } },
+  }
+}
+
 /** Wie oft der Takt nachsieht, wenn keine Rate gesetzt ist. */
 const DEFAULT_BEAT_MS = 100
 

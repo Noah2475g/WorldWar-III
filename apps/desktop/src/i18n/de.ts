@@ -602,6 +602,9 @@ export const de = {
       'Die Verbindung wird getrennt und die Partie geschlossen. Ein gespeicherter Stand bleibt erhalten.',
     endLeave: 'Beenden',
     endStay: 'Doch weiterspielen',
+    takeOverBody:
+      'Sie können die Partie auch allein weiterspielen. Ihr Mitspieler wird dann zum Computergegner, und Tempo und Vorspulen stehen wieder zur Verfügung.',
+    takeOver: 'Allein weiterspielen',
   },
 
   saves: {

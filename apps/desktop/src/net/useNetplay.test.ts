@@ -2,10 +2,18 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { createElement, type ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createInitialState, type Command, type GameConfig, type GameState } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
+import { MemoryStorage, createInitialState, type Command, type GameConfig, type GameState } from '@worldwar/core'
 import { createLockstep, createLoopback, stateHash, type Lockstep, type Transport } from '@worldwar/netplay'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
-import { RESEND_AFTER_MS, WAIT_NOTICE_AFTER_MS, useNetplay, type NetplayView } from './useNetplay.ts'
+import { loadFrom, saveTo } from '../game/saves.ts'
+import {
+  RESEND_AFTER_MS,
+  WAIT_NOTICE_AFTER_MS,
+  takeOverSeat,
+  useNetplay,
+  type NetplayView,
+} from './useNetplay.ts'
 
 /**
  * Der Gleichschritt treibt die Uhr der Oberfläche (T-M37-11, R-MP-03/04/05, D28.4).
@@ -411,5 +419,112 @@ describe('R-MP-07/AK1 Die Huelle liefert nach, was nicht bestaetigt ist', () => 
     // Nachricht plus hoechstens eine Wiederholung je Sekunde - und nicht je Schlag.
     const schlaege = 4000 / 20
     expect(p.verloren.a).toBeLessThan(schlaege)
+  })
+})
+
+/**
+ * Ein Mitspieler, der nicht zurückkommt, wird zum Computergegner (T-M38-10, R-MP-08, D28.8).
+ *
+ * Kein Abend geht verloren, weil jemand ins Bett gegangen ist. Das geht **nur**, weil der
+ * Zustand derselbe ist (D28.2): beide Rechner haben die ganze Welt im Speicher, also
+ * braucht es zum Alleinweiterspielen ein geändertes Feld und sonst nichts — kein
+ * Übertragen, kein Umrechnen, kein zweiter Spielstandstyp, **keine Zeile im Kern**.
+ */
+describe('R-MP-08/AK1 Der abwesende Spieler wird zum Computergegner', () => {
+  it('setzt genau ein Feld und laesst alles andere stehen', () => {
+    const vorher = frisch()
+    const nachher = takeOverSeat(vorher, 'p2')
+
+    expect(nachher.players['p2']!.kind).toBe('ai')
+    expect(nachher.players['p1']!.kind, 'der verbleibende Spieler bleibt Mensch').toBe('human')
+    // Alles ausser `kind` ist unveraendert - Name, Nation, Farbe, Rohstoffe, und vor allem
+    // `difficulty`: ein Mensch hat keine, und `runAi` liest dann `normal`. Eine
+    // Schwierigkeit zu erfinden hiesse, die Partie beim Uebernehmen heimlich zu aendern.
+    expect({ ...nachher.players['p2'], kind: 'human' }).toEqual(vorher.players['p2'])
+    expect(nachher.players['p2']!.difficulty).toBe(vorher.players['p2']!.difficulty)
+  })
+
+  it('gibt ein neues Objekt zurueck, statt am Zustand zu schrauben', () => {
+    // Die Huelle haelt einen Spiegel neben dem Zustand; ein Feld, das nur an einem von
+    // beiden geaendert wird, ist der Fehler aus T-M41-17.
+    const vorher = frisch()
+    const nachher = takeOverSeat(vorher, 'p2')
+
+    expect(nachher).not.toBe(vorher)
+    expect(vorher.players['p2']!.kind, 'der Ausgangszustand wurde veraendert').toBe('human')
+  })
+
+  it('laesst einen Platz in Ruhe, der schon ein Computergegner ist', () => {
+    const einmal = takeOverSeat(frisch(), 'p3')
+    expect(einmal.players['p3']!.kind).toBe('ai')
+    expect(takeOverSeat(einmal, 'p3')).toBe(einmal)
+  })
+
+  it('laesst die uebernommene Macht wirklich handeln', () => {
+    // Der Beleg, der zaehlt: nicht dass ein Feld steht, sondern dass die KI danach
+    // Befehle gibt. `state.ai` hat fuer einen Menschen keinen Eintrag - der Laeufer legt
+    // sich beim ersten Denken selbst ein Gedaechtnis an.
+    const uebernommen = takeOverSeat(frisch(), 'p2')
+    expect(uebernommen.ai['p2'], 'der Mensch hatte ein KI-Gedaechtnis').toBeUndefined()
+
+    const lauf = advanceTicks(uebernommen, 240, ctx, {})
+
+    expect(lauf.ticks).toBe(240)
+    expect(lauf.state.ai['p2'], 'die uebernommene Macht hat nie gedacht').toBeDefined()
+  })
+
+  it('laeuft ohne Verbindung weiter — dieselbe Partie, ein Spieler weniger', () => {
+    const zuZweit = frisch()
+    const allein = takeOverSeat(zuZweit, 'p2')
+
+    // Derselbe Ausgangspunkt: die Uebernahme aendert den Lauf nicht rueckwirkend.
+    expect(allein.tick).toBe(zuZweit.tick)
+    const lauf = advanceTicks(allein, 48, ctx, {})
+    expect(lauf.state.tick).toBe(48)
+    expect(stateHash(lauf.state)).not.toBe(stateHash(allein))
+  })
+
+  it('laesst sich speichern und fortsetzen wie jede andere Partie', async () => {
+    // Der greifbarste Gewinn des Gleichschritts (D28.2): es ist wirklich derselbe
+    // Zustand, und deshalb geht er durch denselben Spielstand wie jeder andere.
+    const uebernommen = advanceTicks(takeOverSeat(frisch(), 'p2'), 24, ctx, {}).state
+    const speicher = new MemoryStorage()
+    await saveTo(speicher, 'stand', uebernommen, 'Uebernommen')
+    const geladen = await loadFrom(speicher, 'stand')
+
+    expect(geladen.ok).toBe(true)
+    if (!geladen.ok) return
+    expect(geladen.state.players['p2']!.kind, 'die Uebernahme hat den Spielstand nicht ueberlebt').toBe('ai')
+    expect(stateHash(geladen.state)).toBe(stateHash(uebernommen))
+
+    // Und sie laeuft weiter wie jede andere: derselbe Stand, derselbe naechste Tick.
+    const weiter = advanceTicks(geladen.state, 24, ctx, {})
+    expect(stateHash(weiter.state)).toBe(stateHash(advanceTicks(uebernommen, 24, ctx, {}).state))
+  })
+})
+
+describe('R-MP-08/AK2 Ohne Klick geschieht nichts davon', () => {
+  it('macht aus keinem Mitspieler von selbst einen Computergegner', () => {
+    // Fuenf Minuten ohne Gegenseite: die Uhr steht, und der Platz bleibt menschlich. Die
+    // Uebernahme ist ein bewusster Klick und passiert nie von selbst - auch nicht, wenn es
+    // noch so bequem waere. Ein Spiel, das nach einer Weile allein entscheidet, wem die
+    // Armeen gehoeren, ist kein Spiel zu zweit mehr.
+    const leitung = createLoopback()
+    const lockstep = createLockstep({ seat: 'p1', seats: ['p1', 'p2'], state: frisch(), ctx })
+    const sicht = { value: null as NetplayView | null }
+    render(
+      createElement(Traeger, {
+        session: { lockstep, transport: leitung.a, seat: 'p1', peer: 'p2' },
+        speed: 50,
+        sicht,
+        getickt: { staende: [], befehle: [], hashes: [] },
+      }),
+    )
+
+    warte(300_000)
+
+    expect(sicht.value?.lost, 'der Hinweis ist nicht einmal erschienen').toBe(true)
+    expect(lockstep.state.players['p2']!.kind, 'der Mitspieler wurde von selbst ersetzt').toBe('human')
+    expect(lockstep.tick, 'die Uhr lief ohne den Mitspieler').toBe(0)
   })
 })

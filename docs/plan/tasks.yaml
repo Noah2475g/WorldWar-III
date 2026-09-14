@@ -2796,7 +2796,7 @@ tasks:
   - id: T-M38-10
     milestone: M38
     title: Ein Mitspieler, der nicht zurueckkommt, wird zum Computergegner
-    status: todo
+    status: done
     deps: [T-M38-09]
     requirements: [R-MP-08]
     design: [D-28]

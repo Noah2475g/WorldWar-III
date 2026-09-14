@@ -2341,4 +2341,58 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(leitung.a.closed).toBe(true)
     expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
   })
+
+  it('macht aus dem Mitspieler auf Klick einen Computergegner und gibt die Zeit frei', () => {
+    // R-MP-08/AK1 an der ganzen Anwendung. Vorher: feste Rate als Text, kein Vorspulen,
+    // keine Tempogruppe. Nachher: alles wieder da, und der Platz p2 ist eine KI.
+    const { meine, leitung } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' }), 'die Tempogruppe war zu zweit sichtbar').toBeNull()
+    expect(meine.state.players['p2']!.kind).toBe('human')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Allein weiterspielen' }))
+    warte(200)
+
+    // Der abwesende Spieler ist jetzt ein Computergegner — im Stand, den die Huelle haelt.
+    expect(screen.queryByRole('dialog', { name: 'Partie zu zweit beenden?' })).toBeNull()
+    expect(leitung.a.closed, 'die Verbindung blieb nach der Uebernahme offen').toBe(true)
+
+    // Und die Zeit gehoert wieder dem Spieler: Tempogruppe, Vorspulen, kein fester Text.
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
+    expect(screen.queryByText(/\(fest\)/)).toBeNull()
+    expect(screen.queryByRole('alert'), 'der Hinweis stand nach der Uebernahme noch da').toBeNull()
+  })
+
+  it('laeuft nach der Uebernahme ohne Verbindung weiter', () => {
+    // Die Partie ist danach eine Einzelspielerpartie mit allem, was dazugehoert - und das
+    // geht nur, weil es derselbe Zustand ist (D28.2).
+    const { meine } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Allein weiterspielen' }))
+    warte(200)
+
+    const vorher = meine.tick
+    // Die Uhr des Einzelspielers haengt an rAF, und rAF ist in diesem Test gestubbt -
+    // gemessen wird deshalb, dass die Zeit wieder BEDIENBAR ist und die Sperre weg.
+    fireEvent.click(screen.getByTitle('25 Stunden je Sekunde'))
+    warte(100)
+
+    expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
+    expect(meine.tick, 'der Gleichschritt rechnete nach der Uebernahme weiter').toBe(vorher)
+  })
+
+  it('uebernimmt nichts von selbst, auch nach Minuten nicht', () => {
+    // R-MP-08/AK2 an der ganzen Anwendung.
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(300_000)
+
+    expect(meine.state.players['p2']!.kind).toBe('human')
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
+    expect(screen.getByRole('alert')).toBeTruthy()
+  })
 })

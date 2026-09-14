@@ -83,7 +83,7 @@ import {
   type NewGameOptions,
 } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { useNetplay, type NetplaySession } from './net/useNetplay.ts'
+import { takeOverSeat, useNetplay, type NetplaySession } from './net/useNetplay.ts'
 import {
   adjutantMarchEntries,
   dayExpenses,
@@ -313,7 +313,16 @@ export function App(props: AppProps) {
    * Frueh und aus den Eigenschaften gelesen, nicht aus dem Haken: die ehrliche Uhr und
    * die Bildschleife weiter unten muessen es wissen, und beide stehen vor ihm.
    */
-  const netplayActive = props.netplay != null
+  /**
+   * Die Partie zu zweit ist vorbei — abgebrochen oder übernommen (T-M38-10, R-MP-08).
+   *
+   * Eine Eigenschaft lässt sich nicht zurücknehmen, ein Zustand schon. Ab hier läuft alles
+   * wieder wie im Einzelspieler: die Bildschleife, das Tempo, das Vorspulen — und der
+   * Gleichschritt bekommt `session: null`, hört auf zu senden und lässt die Uhr los.
+   */
+  const [netplayOver, setNetplayOver] = useState(false)
+  const netplaySession = netplayOver ? null : (props.netplay ?? null)
+  const netplayActive = netplaySession != null
 
   const [speed, setSpeed] = useState(0)
   /**
@@ -934,7 +943,7 @@ export function App(props: AppProps) {
   const [peerLostDismissed, setPeerLostDismissed] = useState(false)
 
   const netplay = useNetplay({
-    session: props.netplay ?? null,
+    session: netplaySession,
     speed: party.fixedSpeed ?? 0,
     now,
     onTick: (next, applied) => {
@@ -2005,12 +2014,39 @@ export function App(props: AppProps) {
       {dialog === 'netplayEnd' && (
         <Dialog title={t('netplay.endTitle')} onClose={() => setDialog(null)}>
           <p>{t('netplay.endBody')}</p>
+          {/*
+            Der Ausweg (T-M38-10, R-MP-08/AK1, D28.8 Stufe 3): kein Abend geht verloren,
+            weil jemand ins Bett gegangen ist. Die Partie laeuft als Einzelspielerpartie
+            weiter, der abwesende Mitspieler als Computergegner — und das geht nur, weil
+            der Zustand derselbe ist (D28.2). Es ist ein bewusster Klick und geschieht nie
+            von selbst (AK2).
+          */}
+          <p>{t('netplay.takeOverBody')}</p>
           <p className="dialog__actions">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                const session = props.netplay
+                const stand = stateRef.current
+                if (session && stand) commitState(takeOverSeat(stand, session.peer))
+                session?.transport.close('Der Mitspieler wurde uebernommen.')
+                // Ab hier ist es eine Einzelspielerpartie, mit allem, was dazugehoert:
+                // Tempo, Vorspulen, Tastenkuerzel (R-MP-08/AK1).
+                setNetplayOver(true)
+                setParty({ mode: 'single', fixedSpeed: null })
+                setPeerLostDismissed(true)
+                setDialog(null)
+              }}
+            >
+              {t('netplay.takeOver')}
+            </button>
             <button
               type="button"
               className="button"
               onClick={() => {
                 props.netplay?.transport.close('Die Partie wurde beendet.')
+                setNetplayOver(true)
                 setDialog('new')
                 commitState(null)
               }}

@@ -5333,7 +5333,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (`R-MP-08/AK2`).
 - **Fertig wenn:** die übernommene Partie sich speichern und wie jede andere fortsetzen
   lässt. Das ist der Beleg dafür, dass es wirklich derselbe Zustand ist — der greifbarste
-  Gewinn des Gleichschritts (D28.2).
+  Gewinn des Gleichschritts (D28.2). Gemessen: `saveTo`/`loadFrom` über einen
+  `MemoryStorage`, danach dieselbe Prüfsumme und derselbe nächste Tick wie ohne den Umweg.
+  Die Übernahme setzt **ein einziges Feld** (`kind`) und lässt `difficulty` stehen — ein
+  Mensch hat keine, und `runAi` liest dann `normal`; eine Schwierigkeit zu erfinden hieße,
+  die Partie beim Übernehmen heimlich zu verändern. Dass die übernommene Macht wirklich
+  handelt, belegt ein Lauf über 240 Ticks: `state.ai['p2']` ist vorher `undefined` und
+  danach da. **Keine Zeile im Kern** — „menschlich" ist seit M5 nur ein Attribut
+  (`hotseat.test.ts`).
 
 ## Meilenstein M39 — Die Einladung
 
