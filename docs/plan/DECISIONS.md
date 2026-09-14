@@ -2784,3 +2784,97 @@ hat eine Aufgabe in `tasks.yaml` — das ist Absicht: ein Plan, der Fragen als A
 nie fertig.
 
 ---
+
+---
+
+## 2026-09-14 · T-M37-01 · Der Platz kommt aus dem Zustand, nicht aus einer Kennung
+
+**Entscheidung:** `defaultViewer(state)` liefert die erste **menschliche** Macht aus
+`state.playerOrder`; `UiState.viewerId` ist `null`, solange niemand ausdrücklich einen Platz
+gesetzt hat, und `App` nimmt ihn optional als Eigenschaft entgegen (`props.viewerId`).
+
+**Begründung:** D28.3 verlangt „ein `viewerId` aus dem Partiezustand". Die naheliegende Fassung —
+ein Vorgabewert `'p1'` in der Hülle — wäre dasselbe Literal an einer neuen Stelle und hätte den
+Wächter aus T-M37-02 sofort ausgelöst. `playerOrder` ist ein ausdrückliches Feld des Zustands und
+keine Schlüsselreihenfolge (`state/types.ts`, Regel 3), also ist die Antwort auf beiden Rechnern
+dieselbe. `null` heißt dabei nicht „niemand", sondern „die erste menschliche Macht dieses Standes".
+
+**Auswirkung:** Der Einzelspieler verhält sich unverändert. Der Gast einer Partie zu zweit bekommt
+seinen Platz über `props.viewerId` (M39: aus dem Link) oder über die Aktion `setViewer` (M38: aus
+der `willkommen`-Nachricht). `legendFor` nimmt seither die Farbe des Zusehenden als Erstes.
+
+---
+
+## 2026-09-14 · T-M37-03 · Eine Mehrspielerpartie beginnt vorerst lokal
+
+**Entscheidung:** Der Anlegedialog bietet die Partieart und die feste Rate schon jetzt an. Ohne
+Hostdienst (M38) beginnt eine so angelegte Partie **lokal**: zwei menschliche Mächte am selben
+Bildschirm, wie der Hot-Seat, den der Kern seit M5 kann. Der Dialog sagt das ausdrücklich
+(`newGame.multiplayerPending`).
+
+**Begründung:** Die Alternative wäre, die Wahl bis M38 zu verstecken. Dann hätte T-M37-04 („zu
+zweit sind Tempo, Tasten und Vorspulen aus") keinen Weg, auf dem ein Mensch ihn auslöst, und die
+Zusage wäre nur im Test belegt — genau die Art Zusage, die im Browser tot ist und im Test grün
+(Lehre vom 2026-09-14, `MEMORY`: „Zusage grün im Test, tot im Browser"). Ein Hinweis, der sagt, was
+noch fehlt, ist ehrlicher als ein Schalter, den es nicht gibt.
+
+**Auswirkung:** Wer heute „zu zweit" wählt, bekommt eine Partie mit zwei menschlichen Mächten,
+fester Rate, ohne Tempoknöpfe und ohne Vorspulen. M38 setzt die Verbindung dahinter; die Naht ist
+`App`s Eigenschaft `netplay` und sonst nichts.
+
+---
+
+## 2026-09-14 · T-M37-10 · Der Zustimmende legt den Tick der Pause fest, nicht der Antragsteller
+
+**Entscheidung:** Die `ja`-Nachricht trägt `abTick = max(beantragter Tick, eigener Tick + 2)` —
+gerechnet vom **Zustimmenden**, nicht vom Antragsteller.
+
+**Begründung:** D28.7 sagt „beide halten ab Tick T+2 an", mit T aus dem Antrag. Beim Anschließen
+(T-M37-11) riss genau das: zwischen Antrag und Zustimmung vergeht Bedenkzeit, und in der Zeit läuft
+die Partie weiter. Gemessen im Haken-Test — der Antragsteller stand bei Tick 13, der verabredete
+Halt lag bei 12. Die schnellere Seite hätte rückwärts anhalten müssen, und R-MP-05/AK2 („beide
+Uhren beim **demselben** Tick") wäre gerissen. Der Zustimmende ist der Spätere von beiden: der
+Gleichschritt hält die zwei Uhren höchstens einen Tick auseinander, und `+ 2` deckt diesen Tick und
+den Weg der Nachricht ab.
+
+**Auswirkung:** `pauseAnswer(state, art, { tick, delayTicks })`. Ein Test in `pause.test.ts` hält
+den Fall fest („verschiebt den Halt, wenn die Zustimmung später kommt als der Antrag galt"): sechs
+Ticks Bedenkzeit, und beide stehen danach bei demselben, neu gerechneten Tick.
+
+---
+
+## 2026-09-14 · T-M37-11 · Wer ein Auseinanderlaufen merkt, sagt es — mit beiden Prüfsummen
+
+**Entscheidung:** `EndMessage` bekommt ein optionales Feld `hashes: Record<PlayerId, string>`. Wer
+ein Auseinanderlaufen zuerst bemerkt, schickt genau **eine** `ende`-Nachricht mit beiden
+Prüfsummen, je Platz benannt; `Lockstep.receiveEnd` baut daraus denselben Befund auf der Gegenseite.
+
+**Begründung:** R-MP-04/AK1 verlangt, dass die Partie anhält **und beiden Spielern sagt**, ab
+welchem Tick sie auseinanderlaufen. Wer es zuerst merkt, hört auf zu rechnen und damit auch auf zu
+senden — die Gegenseite blieb bei „warte auf Mitspieler" stehen und erfuhr nie, was geschehen ist.
+Das fiel erst im Haken-Test auf, nicht in der Maschine: dort verfälscht der Test **beide** Seiten
+symmetrisch, im Anschluss an die Oberfläche nur eine. Benannt nach Platz und nicht als
+„eigene/fremde", weil dieselbe Nachricht auf beiden Rechnern gelesen wird und sich die Bedeutung von
+„eigen" dabei umdreht.
+
+**Auswirkung:** Eine Ergänzung am Protokoll, keine Änderung: das Feld ist optional, und eine
+Nachricht ohne es wird weiter angenommen (der Empfänger nimmt dann seine eigene Prüfsumme und lässt
+die fremde leer). Der Haken schickt sie genau einmal je Partie.
+
+---
+
+## 2026-09-14 · T-M37-11 · Das Schleifendoppel puffert, was vor dem ersten Hörer ankommt
+
+**Entscheidung:** `createLoopback()` legt Nachrichten beiseite, solange kein Hörer angemeldet ist,
+und liefert sie dem ersten Hörer nach — in der Reihenfolge, in der sie ankamen.
+
+**Begründung:** Ohne den Puffer ging die **erste** Nachricht verloren, sobald eine Seite eher
+sendete als die andere ihren Hörer anmeldete. Genau das passiert, wenn zwei React-Komponenten
+nacheinander eingehängt werden. Im Gleichschritt ist eine verlorene Nachricht kein Schluckauf,
+sondern ein Stillstand: die Gegenseite wartet auf eine Liste für Tick 0, die nie wieder kommt, und
+die Partie steht nach genau einem Tick. Eine echte Leitung puffert genauso; ein Doppel, das es nicht
+tut, wäre freundlicher zur Umsetzung und härter zur Wirklichkeit.
+
+**Auswirkung:** Der Fehler kostete eine halbe Stunde Suche und wäre in M38 an einer echten Leitung
+nicht mehr reproduzierbar gewesen. Die Vertragstestreihe aus T-M38-01 muss dieselbe Zusage vom
+WebSocket-Transport verlangen.
