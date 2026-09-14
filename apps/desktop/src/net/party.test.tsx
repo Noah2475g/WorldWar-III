@@ -4,7 +4,7 @@ import { createElement, useEffect } from 'react'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
 import { createInitialState } from '@worldwar/core'
-import { createLoopback, stateHash, type Transport } from '@worldwar/netplay'
+import { createLoopback, stateHash, type NetMessage, type Transport } from '@worldwar/netplay'
 import { TEST_RULES } from '@worldwar/testkit'
 import type { GameConfig, GameState, MapData } from '@worldwar/core'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -76,6 +76,59 @@ function Traeger({
   })
   sicht.value = view
   return null
+}
+
+/**
+ * Ein Ende, wie der Hostdienst es wirklich bedient (Befund MP-2).
+ *
+ * Der Unterschied zu `createLoopback` ist genau einer, und er ist der ganze Befund:
+ * **hier wird nichts gepuffert.** `Room.relay` schickt an die Plaetze, die GERADE besetzt
+ * sind; wer in einen leeren Raum spricht, spricht ins Leere. `verhallt` zaehlt mit, damit
+ * ein Test belegen kann, dass die Lage wirklich hergestellt war.
+ */
+class RaumEnde implements Transport {
+  closed = false
+  /** Wie viele eigene Nachrichten niemanden erreicht haben. */
+  verhallt = 0
+  private readonly listeners = new Set<(message: NetMessage) => void>()
+  private readonly closeListeners = new Set<(reason: string) => void>()
+
+  constructor(private readonly raum: Set<RaumEnde>) {
+    raum.add(this)
+  }
+
+  send(message: NetMessage): void {
+    let erreicht = 0
+    for (const ende of this.raum) {
+      if (ende === this || ende.closed) continue
+      erreicht += 1
+      for (const listener of [...ende.listeners]) listener(message)
+    }
+    if (erreicht === 0) this.verhallt += 1
+  }
+
+  onMessage(listener: (message: NetMessage) => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  onClose(listener: (reason: string) => void): () => void {
+    this.closeListeners.add(listener)
+    return () => this.closeListeners.delete(listener)
+  }
+
+  close(reason = 'geschlossen'): void {
+    if (this.closed) return
+    this.closed = true
+    this.raum.delete(this)
+    for (const listener of this.closeListeners) listener(reason)
+  }
+
+  /** Den Platz raeumen, ohne die eigene Seite zu benachrichtigen — der Browser ist weg. */
+  verlassen(): void {
+    this.closed = true
+    this.raum.delete(this)
+  }
 }
 
 const partieOptionen = {
@@ -216,6 +269,45 @@ describe('R-MP-12/AK2 Vom Link zur Partie: fuenf Nachrichten, dann rechnet es', 
     expect(gast.value?.phase).toBe('refused')
     expect(gast.value?.reason).toMatch(/Regelwerk/)
     expect(gast.value?.terms, 'abgewiesen und trotzdem Bedingungen gezeigt').toBeNull()
+  })
+
+  /**
+   * Befund MP-2 (Sichtpruefung 2026-09-14, am laufenden Programm in zwei Fenstern).
+   *
+   * Oeffnet der GAST seinen Link zuerst, verhallt seine Anmeldung: der Hostdienst ist
+   * Brieftraeger und kein Briefkasten, `Room.relay` schickt nur an Plaetze, die GERADE
+   * besetzt sind. Danach warteten beide endlos — „Es wartet noch niemand" gegen „Der
+   * Gastgeber legt die Partie gerade an" —, und nur ein Neuladen beim Gast half.
+   *
+   * **Kein Test konnte das sehen**, weil `createLoopback` puffert, was ankommt, bevor
+   * jemand zuhoert. Deshalb steht hier ein zweites Doppel, das den Raum nachbildet.
+   */
+  it('findet zusammen, auch wenn der Gast seinen Link ZUERST oeffnet', () => {
+    const raum = new Set<RaumEnde>()
+
+    // Der Gast ist zuerst da und redet in einen leeren Raum.
+    const gast = { value: null as PartyView | null }
+    const gastEnde = new RaumEnde(raum)
+    render(createElement(Traeger, { role: 'guest', transport: gastEnde, sicht: gast }))
+    expect(gastEnde.verhallt, 'die erste Anmeldung muss ins Leere gehen').toBe(1)
+
+    // Erst danach kommt der Gastgeber.
+    const gastgeber = { value: null as PartyView | null }
+    render(createElement(Traeger, { role: 'host', transport: new RaumEnde(raum), sicht: gastgeber }))
+
+    expect(gastgeber.value?.guestName, 'der Gastgeber sieht nicht, dass jemand wartet').toBe('')
+
+    // Und die Bedingungen erreichen den Gast, ohne dass er neu geladen hat.
+    act(() => gastgeber.value!.offer(toConfig(partieOptionen, testworld), 25))
+    expect(gast.value?.terms, 'der Gast wartet weiter auf Bedingungen, die nie kommen').not.toBeNull()
+
+    // Und der Name kommt mit, wenn der Gastgeber sich spaeter noch einmal anmeldet
+    // (er hat neu geladen): die zweite Anmeldung ist keine leere.
+    act(() => gast.value!.join('Mitspieler Max'))
+    for (const ende of [...raum]) if (ende !== gastEnde) ende.verlassen()
+    const spaeter = { value: null as PartyView | null }
+    render(createElement(Traeger, { role: 'host', transport: new RaumEnde(raum), sicht: spaeter }))
+    expect(spaeter.value?.guestName).toBe('Mitspieler Max')
   })
 })
 

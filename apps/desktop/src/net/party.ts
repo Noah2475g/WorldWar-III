@@ -254,6 +254,13 @@ export function useParty(options: PartyOptions): PartyView {
   const otherProbeRef = useRef<ProbeMessage | null>(null)
   const savedRef = useRef<GameState | null>(options.savedState ?? null)
   savedRef.current = options.savedState ?? null
+  /**
+   * Der Name, den der Gast eingetragen hat — für eine **zweite** Anmeldung (Befund MP-2).
+   *
+   * Er steht ohnehin im Schnappschuss; ein Merker daneben ist trotzdem nötig, weil der
+   * Nachrichtenhörer im Effekt hängt und den Schnappschuss von damals sähe.
+   */
+  const nameRef = useRef('')
   /** Die eigene Probe — erst nach ihr darf verglichen werden. */
   const probeRef = useRef<ProbeOutcome | null>(null)
   /** Sitzt die Gegenseite im Raum? Beim Host: hat schon jemand `hallo` gesagt? */
@@ -383,6 +390,18 @@ export function useParty(options: PartyOptions): PartyView {
         return
       }
 
+      if (message.kind === 'hallo') {
+        // Die Anmeldung des Gastgebers — und damit die Frage „ist da jemand?" (Befund
+        // MP-2, Sichtpruefung 2026-09-14). Sie kommt, wenn er die Seite spaeter geoeffnet
+        // oder neu geladen hat; das eigene `hallo` von vorhin ist dann im leeren Raum
+        // verhallt, denn der Hostdienst puffert nichts. Die Antwort ist dieselbe
+        // Anmeldung noch einmal — mit dem Namen, falls es schon einen gibt.
+        const willkommen = welcomeRef.current
+        const eigene = willkommen?.config.players.find((_, index) => `p${index + 1}` === willkommen.seat)
+        send(hello(nameRef.current, eigene?.nation ?? ''))
+        return
+      }
+
       if (message.kind === 'willkommen') {
         const abdruck = fingerprintOf(rulesRef.current, mapByIdRef.current(message.config.mapId))
         const vergleich = compareFingerprints(abdruck, fingerprintOfWelcome(message))
@@ -448,7 +467,16 @@ export function useParty(options: PartyOptions): PartyView {
     // Die Anmeldung, und sie steht vor allem anderen: sie traegt die Protokollfassung, und
     // verschiedene Fassungen reden nicht miteinander (R-MP-06/AK1). Der Name folgt beim
     // Beitritt - vorher weiss der Gast nicht, worauf er sich einliesse.
-    if (linkRole === 'guest') leitung.send(hello('', ''))
+    //
+    // **Beide Seiten melden sich an, nicht nur der Gast** (Befund MP-2, Sichtpruefung
+    // 2026-09-14). Der Hostdienst ist Brieftraeger und kein Briefkasten: `Room.relay`
+    // schickt nur an Plaetze, die GERADE besetzt sind. Wer den Link zuerst oeffnet, redet
+    // deshalb in einen leeren Raum - und da niemand je nachfragte, warteten beide Seiten
+    // danach endlos ("Es wartet noch niemand" gegen "Der Gastgeber legt die Partie gerade
+    // an"). Das `hallo` des Gastgebers ist die Nachfrage; der Gast beantwortet sie oben
+    // mit seiner eigenen Anmeldung. Das Schleifendoppel der Tests puffert, die Leitung
+    // nicht - deshalb hat es kein Test gesehen.
+    leitung.send(hello(linkRole === 'guest' ? nameRef.current : '', ''))
 
     return () => {
       abmelden()
@@ -476,6 +504,9 @@ export function useParty(options: PartyOptions): PartyView {
       const willkommen = welcomeRef.current
       if (!willkommen) return
       const eigene = willkommen.config.players.find((_, index) => `p${index + 1}` === willkommen.seat)
+      // Auch im Merker: eine zweite Anmeldung nach einem `hallo` des Gastgebers soll den
+      // Namen mitbringen und nicht einen leeren Platz melden (Befund MP-2).
+      nameRef.current = name
       send(hello(name, eigene?.nation ?? ''))
       // Auch beim Gast steht der Name jetzt auf dem Gastplatz: er ist zugleich die
       // Antwort auf „bin ich schon beigetreten?" und ersetzt ein zweites Merkfeld.
