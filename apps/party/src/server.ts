@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { join, normalize, sep } from 'node:path'
+import { join, normalize, resolve, sep } from 'node:path'
 import type { Duplex } from 'node:stream'
 import {
   REFUSED_CLOSE_CODE,
@@ -203,15 +203,24 @@ export function contentTypeOf(path: string): string {
  * Der Dienst liegt im privaten Netz und wird von einem Freund benutzt; trotzdem wird der
  * Pfad geprüft. `/../../.ssh/id_rsa` ist keine theoretische Adresse, sondern die erste,
  * die jeder ausprobiert — und ein Dienst, der sie beantwortet, verschenkt den Rechner.
+ *
+ * **Die Wurzel wird zuerst aufgelöst, und daran hing der ganze Dienst** (Befund MP-1,
+ * Sichtprüfung 2026-09-14). `join` normalisiert die Trenner, der Vergleich davor nicht:
+ * unter Windows ergab die Wurzel `…\WorldWar\apps/desktop/dist` (so setzt `index.ts` sie
+ * aus `fileURLToPath` und einem Schrägstrich-Rest zusammen) ein `ziel` mit lauter
+ * Rückstrichen — und `startsWith` sagte „zeigt hinaus". `pnpm mp:host` antwortete deshalb
+ * auf **jede** Adresse mit 404, auch auf `/index.html`. Der Test sah es nicht, weil
+ * `mkdtempSync(join(tmpdir(), …))` immer eine normalisierte Wurzel liefert.
  */
 export function resolveStatic(root: string, urlPath: string): string | null {
+  const basis = resolve(root)
   const ohneQuery = urlPath.split('?')[0]!.split('#')[0]!
   const entschluesselt = decodeURIComponent(ohneQuery)
   const relativ = normalize(entschluesselt === '/' ? '/index.html' : entschluesselt).replace(/^[/\\]+/, '')
   if (relativ.split(/[/\\]/).includes('..')) return null
 
-  const ziel = join(root, relativ)
-  if (!ziel.startsWith(root.endsWith(sep) ? root : `${root}${sep}`)) return null
+  const ziel = join(basis, relativ)
+  if (!ziel.startsWith(basis.endsWith(sep) ? basis : `${basis}${sep}`)) return null
   if (!existsSync(ziel) || !statSync(ziel).isFile()) return null
   return ziel
 }

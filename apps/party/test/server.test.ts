@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
@@ -196,6 +196,22 @@ describe('R-MP-11 Die Auslieferung', () => {
     writeFileSync(join(wurzel, 'index.html'), '<!doctype html>')
     expect(resolveStatic(wurzel, '/')).toBe(join(wurzel, 'index.html'))
     expect(resolveStatic(wurzel, '/index.html')).toBe(join(wurzel, 'index.html'))
+  })
+
+  /**
+   * Befund MP-1 (Sichtpruefung 2026-09-14): `pnpm mp:host` antwortete unter Windows auf
+   * JEDE Adresse mit 404. Die Wurzel, die `index.ts` zusammensetzt, traegt gemischte
+   * Trenner (`…\WorldWar\apps/desktop/dist`); `join` normalisiert sie, der Vergleich
+   * davor nicht — `startsWith` sagte „zeigt hinaus". Die alten Faelle sahen es nicht,
+   * weil `mkdtempSync(join(tmpdir(), …))` immer normalisiert ist.
+   */
+  it('liefert auch aus, wenn die Wurzel gemischte Trenner traegt', () => {
+    writeFileSync(join(wurzel, 'index.html'), '<!doctype html>')
+    const schraegstriche = wurzel.replaceAll(sep, '/')
+    expect(resolveStatic(schraegstriche, '/')).toBe(join(wurzel, 'index.html'))
+    expect(resolveStatic(`${wurzel}${sep}.`, '/index.html')).toBe(join(wurzel, 'index.html'))
+    // Und die Grenze haelt weiter: eine normalisierte Wurzel weist denselben Ausbruch ab.
+    expect(resolveStatic(schraegstriche, '/../geheim')).toBeNull()
   })
 
   it('beantwortet keinen Pfad, der aus dem Ordner hinauszeigt', () => {
