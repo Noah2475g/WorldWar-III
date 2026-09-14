@@ -242,3 +242,73 @@ entfernt — weniger Oberfläche als vorher.
 > Die alten Messdaten vom 2026-09-08 lagen geparkt in
 > `%APPDATA%/de.noahhaumersen.worldwar/saves.geparkt-2026-09-08` (nichts gelöscht); dieser
 > Ordner war am 2026-09-14 nicht mehr vorhanden.
+
+
+---
+
+## Netzfrei, gemessen am Erzeugnis (T-M38-05, R-MP-09/AK3, 2026-09-14)
+
+Noahs dritte Festlegung vom 2026-09-12: **die Tauri-Anwendung kennt keinen Mehrspieler und
+darf ihn technisch nicht können.** Der Mehrspieler ist der Browserbau, gestartet vom
+Hostdienst; damit bleibt Ziel Z3 für das Programm wörtlich wahr, das Noah weitergibt.
+
+Bis hierher wurde das an der **Konfiguration** geprüft — `tauri.conf.json` gegen
+`capabilities/local-only.json`, zwei JSON-Dateien derselben Hand. Der Block ist für das,
+was er prüft, richtig, und er prüft die Absicht gegen sich selbst (Befunde 17, 20, 21).
+Seit T-M38-05 kommt die zweite Seite aus dem **kompilierten Programm**:
+`scripts/measure-netfree.mjs` liest die Inhaltsrichtlinie dort heraus, und
+`test/guards/packaging.test.ts` hält den gemessenen Text gegen die heutige Konfiguration.
+Wer die Sperre lockert, bekommt einen roten Lauf, bis neu gebaut und neu gemessen ist.
+
+### Der Bau
+
+| | |
+|---|---|
+| `worldwar.exe` | **6 784 512 Bytes**, geschrieben am **2026-09-14 15:30:41** |
+| `WorldWar_0.1.0_x64_en-US.msi` | 2 818 048 Bytes |
+| `WorldWar_0.1.0_x64-setup.exe` (NSIS) | 2 144 550 Bytes |
+| Bau | `pnpm tauri:build`; `vite build` in 1,98 s, Rust `release` in **1 min 42 s** |
+| Quelle | `a4ed758`, Arbeitsbaum sauber |
+
+Gegen den Bau vom 2026-09-14 03:22 (`1c64a6e`, 6 780 416 B) sind das **+4096 Bytes** — eine
+Seite. Das gebaute Bündel wuchs um 13 528 Zeichen; das ist M38 an der Oberfläche
+(Hinweis, Knöpfe, Dialog, Texte).
+
+### Was im Programm steht
+
+| Gemessen | Wert |
+|---|---|
+| Inhaltsrichtlinie **wörtlich** in der Binärdatei | **1×** |
+| davon `connect-src 'none'` | **1×** |
+| `build.devUrl` (`http://localhost:5173/`) in der Binärdatei | 1× |
+| Netzberechtigungen in der Konfiguration | **keine** |
+| `WebSocket` im gebauten Bündel (2 Dateien, 1 650 291 Zeichen) | **keiner** |
+
+Die Richtlinie steht direkt hinter der Bündelkennung `de.noahhaumersen.worldwar`, im
+Klartext und genau einmal.
+
+**Die letzte Zeile ist die eigentliche Nachricht.** `apps/desktop/src/net/websocketTransport.ts`
+gibt es seit T-M38-06 und es ist die einzige Stelle im Spiel, die `new WebSocket` sagt —
+im ausgelieferten Bündel steht davon **nichts**, weil kein Pfad von `main.tsx` dorthin
+führt (der Beitrittsbildschirm ist T-M39-02). `test/guards/ui-reachability.test.ts` führt
+die Datei deshalb mit Begründung als Ausnahme, und die Ausnahme ist eine Zusage auf Zeit:
+in T-M39-03 wird sie verdrahtet, und dann steht der Transport im Bündel. **Netzfrei bleibt
+das Programm auch dann**, denn `connect-src 'none'` verbietet die Verbindung, gleich wer
+sie versucht — das ist die Zusage, die trägt, und sie ist oben gemessen.
+
+### Was diese Messung nicht kann, und das gehört dazu
+
+Die **Berechtigungen** sind im Erzeugnis nicht als Text zu finden: `local-only` 0×,
+`allow-open` 0×, `dialog:` 0× — während das Wort `dialog` 13× vorkommt, weil das Plugin
+gelinkt ist. Tauri backt die Zugriffsliste in eine eigene Darstellung. Sie bleiben deshalb
+eine Aussage über die Konfiguration, und das steht im Wächter, statt verschwiegen zu
+werden. Umgekehrt findet eine Suche nach `http:` im Programm genau einen Treffer, und der
+ist **kein Leck**: es ist `build.devUrl`, das direkt hinter der Richtlinie steht und im
+Release-Bau nie benutzt wird. Ein Wächter, der daraus „Netzzugriff im Erzeugnis" machte,
+wäre ein Fehlalarm mit Ansage.
+
+**AK-8 ist von diesem Bau nicht berührt** und auch nicht neu gemessen: die sieben Schritte
+vom 2026-09-14 03:24 gelten gegen `1c64a6e`. Der Frische-Wächter der Abnahme wird sie
+deshalb wieder auf ⚠ stellen, sobald M38 auf `main` liegt — zu Recht, denn zwischen der
+Messung und diesem Stand liegen Änderungen unter `apps/`. Wer AK-8 grün haben will, misst
+es **zuletzt**, nach der letzten Zeile ausgelieferten Codes (die Lehre vom 2026-09-14).

@@ -1,6 +1,6 @@
 {
-  "measuredAt": "2026-09-14T12:35:15.576Z",
-  "measuredAtCommit": "0d27367d72e75283742aefbac74b60ef258d0460",
+  "measuredAt": "2026-09-14T13:30:48.227Z",
+  "measuredAtCommit": "a4ed75869aebd444fbf4f6b2e4343d7eafa2b986",
   "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'",
   "permissions": [
     "core:default",
@@ -11,15 +11,15 @@
   "networkPermissions": [],
   "binary": {
     "path": "apps/desktop/src-tauri/target/release/worldwar.exe",
-    "bytes": 6780416,
-    "builtAt": "2026-09-14T01:22:44.636Z",
+    "bytes": 6784512,
+    "builtAt": "2026-09-14T13:30:41.951Z",
     "cspOccurrences": 1,
     "connectSrcNone": 1,
     "devUrlOccurrences": 1
   },
   "bundle": {
     "files": 2,
-    "bytes": 1636763,
+    "bytes": 1650291,
     "withWebSocket": []
   }
 }
