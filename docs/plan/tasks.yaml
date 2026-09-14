@@ -2646,7 +2646,7 @@ tasks:
   - id: T-M37-06
     milestone: M37
     title: Die Gleichschritt-Maschine
-    status: todo
+    status: done
     deps: [T-M37-05]
     requirements: [R-MP-03]
     design: [D-28]
@@ -2656,7 +2656,7 @@ tasks:
   - id: T-M37-07
     milestone: M37
     title: Die Befehlsreihenfolge ist ohne Schiedsrichter eindeutig
-    status: todo
+    status: done
     deps: [T-M37-06]
     requirements: [R-MP-03]
     design: [D-28]
