@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Was in dieser Nacht gemacht wurde</title>
+<meta name="description" content="Der Schlussblock vom 13./14. September 2026: M41, M40, M35, die Befunde der Durchsichten und die neun Fragen, die Noah entscheiden muss.">
+<style>
+/* ------------------------------------------------------------------
+   Schlussblock 2026-09-14 — eine Seite, die ohne Netz und ohne Bau
+   laedt. Keine externe Schrift, kein CDN, kein Bild.
+
+   Farben liegen ausschliesslich als Token in :root. Kein Bauteil
+   unten setzt je eine Farbe direkt in einem @media- oder
+   [data-theme]-Block — sonst faellt genau der Fall aus, in dem der
+   Leser gar nichts gestempelt hat.
+   ------------------------------------------------------------------ */
+
+:root {
+  /* Helles Bild: Kartenpapier, leicht ins Olivgraue gezogen — dieselbe
+     Familie wie das Ocker des Signals, nur entsaettigt. */
+  --grund: #e7e9e3;
+  --flaeche: #f4f5f1;
+  --flaeche-tief: #dcdfd7;
+  --linie: #c6cabe;
+  --linie-stark: #9aa093;
+  --tinte: #14171a;
+  --leise: #565d55;
+  --signal: #7f4d00;
+  --signal-marke: #b8801a;
+  --signal-flaeche: rgba(184, 128, 26, 0.14);
+  --gut: #2a6a3a;
+  --gut-flaeche: rgba(42, 106, 58, 0.13);
+  --rueck: #93331f;
+  --rueck-flaeche: rgba(147, 51, 31, 0.12);
+  --offen-flaeche: rgba(86, 93, 85, 0.12);
+  --schatten: 0 1px 0 rgba(20, 23, 26, 0.05);
+
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --spalte: 44rem;
+  --rand: 1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --grund: #0f1215;
+    --flaeche: #171b1f;
+    --flaeche-tief: #1e2328;
+    --linie: #2b3138;
+    --linie-stark: #4a525b;
+    --tinte: #dfe3e2;
+    --leise: #98a09c;
+    --signal: #e0a220;
+    --signal-marke: #c08319;
+    --signal-flaeche: rgba(224, 162, 32, 0.12);
+    --gut: #64b478;
+    --gut-flaeche: rgba(100, 180, 120, 0.13);
+    --rueck: #e08878;
+    --rueck-flaeche: rgba(224, 136, 120, 0.12);
+    --offen-flaeche: rgba(152, 160, 156, 0.12);
+    --schatten: 0 1px 0 rgba(0, 0, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  --grund: #0f1215;
+  --flaeche: #171b1f;
+  --flaeche-tief: #1e2328;
+  --linie: #2b3138;
+  --linie-stark: #4a525b;
+  --tinte: #dfe3e2;
+  --leise: #98a09c;
+  --signal: #e0a220;
+  --signal-marke: #c08319;
+  --signal-flaeche: rgba(224, 162, 32, 0.12);
+  --gut: #64b478;
+  --gut-flaeche: rgba(100, 180, 120, 0.13);
+  --rueck: #e08878;
+  --rueck-flaeche: rgba(224, 136, 120, 0.12);
+  --offen-flaeche: rgba(152, 160, 156, 0.12);
+  --schatten: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--grund);
+  color: var(--tinte);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.62;
+  font-synthesis-weight: none;
+}
+
+h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.18; margin: 0; text-wrap: balance; }
+p, ul, ol, dl { margin: 0; }
+a { color: var(--signal); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+code, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+code {
+  font-size: 0.86em;
+  background: var(--flaeche-tief);
+  border: 1px solid var(--linie);
+  border-radius: 3px;
+  padding: 0.05em 0.32em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal-marke);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* --- Geruest ------------------------------------------------------ */
+
+.blatt {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding: 0 var(--rand) 5rem;
+}
+
+.abschnitt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem 0;
+  padding-block: 2.75rem;
+  border-top: 1px solid var(--linie);
+}
+
+.abschnitt > .inhalt { max-width: var(--spalte); display: flex; flex-direction: column; gap: 1.1rem; }
+.abschnitt > .inhalt.weit { max-width: none; }
+
+.leiste { display: flex; flex-direction: column; gap: 0.55rem; padding-top: 0.25rem; }
+
+.marke {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--signal);
+  font-weight: 700;
+}
+
+.quellen {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.75;
+  color: var(--leise);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  word-break: break-word;
+}
+.quellen li::before { content: "\2014\00a0"; color: var(--linie-stark); }
+
+@media (min-width: 62rem) {
+  .abschnitt { grid-template-columns: 9.5rem minmax(0, 1fr); column-gap: 2.75rem; }
+  .leiste { position: sticky; top: 2rem; align-self: start; }
+}
+
+/* --- Kopf --------------------------------------------------------- */
+
+.kopf { padding-block: 3.25rem 2.25rem; }
+.kopf .augenbraue {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--leise);
+  margin-bottom: 1rem;
+}
+.kopf h1 { font-size: clamp(2.1rem, 1.3rem + 3.4vw, 3.4rem); letter-spacing: -0.015em; }
+.lede {
+  max-width: var(--spalte);
+  margin-top: 1.15rem;
+  font-family: var(--serif);
+  font-size: clamp(1.06rem, 1rem + 0.35vw, 1.2rem);
+  line-height: 1.58;
+  color: var(--tinte);
+}
+.lede + .lede { margin-top: 0.85rem; font-size: 1rem; color: var(--leise); }
+
+/* Die Nachtstrecke: eine Haarlinie mit zwei Enden. Der einzige
+   Schmuck auf dieser Seite, und er traegt eine gemessene Zahl. */
+.strecke {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 46rem;
+}
+.strecke .ende {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--leise);
+  white-space: nowrap;
+}
+.strecke .spur {
+  position: relative;
+  height: 1px;
+  background: var(--linie-stark);
+}
+.strecke .spur::before,
+.strecke .spur::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 9px;
+  background: var(--linie-stark);
+}
+.strecke .spur::before { left: 0; }
+.strecke .spur::after { right: 0; }
+.strecke .zahl {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--grund);
+  padding: 0 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--signal);
+  white-space: nowrap;
+}
+
+/* --- Kennzahlen im Kopf ------------------------------------------- */
+
+.kennzahlen {
+  list-style: none;
+  padding: 0;
+  margin: 2.25rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1px;
+  background: var(--linie);
+  border: 1px solid var(--linie);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.kennzahlen li { background: var(--flaeche); padding: 0.95rem 1.05rem; }
+.kennzahlen .wert {
+  display: block;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.kennzahlen .was {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--leise);
+}
+
+/* --- Ueberschriften ----------------------------------------------- */
+
+h2 { font-size: clamp(1.45rem, 1.2rem + 1vw, 1.85rem); letter-spacing: -0.01em; }
+h3 { font-size: 1.08rem; letter-spacing: -0.005em; }
+.unterzeile { color: var(--leise); font-size: 0.95rem; }
+
+/* --- Karten ------------------------------------------------------- */
+
+.bloecke { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.karte {
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 5px;
+  padding: 1.05rem 1.15rem 1.15rem;
+  box-shadow: var(--schatten);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.karte .kopfzeile { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.karte h3 { font-family: var(--serif); }
+.karte p { font-size: 0.92rem; }
+.karte .fuss { font-family: var(--mono); font-size: 0.74rem; color: var(--leise); margin-top: auto; padding-top: 0.35rem; }
+
+.zaehler {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--signal);
+  white-space: nowrap;
+}
+
+/* --- Chips -------------------------------------------------------- */
+
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.16em 0.5em;
+  border-radius: 3px;
+  white-space: nowrap;
+  background: var(--offen-flaeche);
+  color: var(--leise);
+  border: 1px solid var(--linie);
+}
+.chip.gut { background: var(--gut-flaeche); color: var(--gut); border-color: currentColor; }
+.chip.rueck { background: var(--rueck-flaeche); color: var(--rueck); border-color: currentColor; }
+.chip.signal { background: var(--signal-flaeche); color: var(--signal); border-color: currentColor; }
+
+/* --- Tabellen ----------------------------------------------------- */
+
+.rahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: 5px; background: var(--flaeche); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0.85rem 1rem 0.7rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--leise);
+  border-bottom: 1px solid var(--linie);
+}
+th, td { padding: 0.6rem 1rem; text-align: left; vertical-align: top; border-top: 1px solid var(--linie); }
+thead th {
+  border-top: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--leise);
+  font-weight: 700;
+  background: var(--flaeche-tief);
+  white-space: nowrap;
+}
+tbody tr:first-child th, tbody tr:first-child td { border-top: 1px solid var(--linie); }
+td.zahl, th.zahl { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.vorher { color: var(--leise); }
+td.heute { font-weight: 700; }
+td.quelle { font-family: var(--mono); font-size: 0.72rem; color: var(--leise); }
+td.note { font-size: 0.84rem; color: var(--leise); }
+tbody th { font-weight: 400; }
+
+/* --- Befunde ------------------------------------------------------ */
+
+.befund {
+  border-left: 2px solid var(--linie-stark);
+  padding-left: 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.befund.schwer { border-left-color: var(--rueck); }
+.befund.geloest { border-left-color: var(--gut); }
+.befund h3 { font-family: var(--serif); }
+.befund p { font-size: 0.95rem; }
+.befund .beleg { font-family: var(--mono); font-size: 0.74rem; color: var(--leise); }
+
+.stapel { display: flex; flex-direction: column; gap: 1.6rem; }
+
+/* --- Fragen ------------------------------------------------------- */
+
+.fragen { list-style: none; counter-reset: frage; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.15rem; }
+.fragen > li {
+  counter-increment: frage;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.2rem 0.75rem;
+  align-items: baseline;
+}
+.fragen > li::before {
+  content: counter(frage);
+  grid-row: span 2;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--signal);
+  text-align: right;
+}
+.fragen .frage { font-weight: 700; }
+.fragen .grundlage { grid-column: 2; font-size: 0.9rem; color: var(--leise); }
+
+/* --- Nicht gebaut ------------------------------------------------- */
+
+.offen { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+.offen li {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 0.15rem 1rem;
+  align-items: baseline;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--linie);
+}
+.offen li:last-child { border-bottom: 0; padding-bottom: 0; }
+.offen .anzahl { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.95rem; text-align: right; }
+.offen .titel { font-weight: 700; }
+.offen .warum { grid-column: 2; font-size: 0.9rem; color: var(--leise); }
+
+/* --- Hinweiskasten ------------------------------------------------ */
+
+.kasten {
+  background: var(--signal-flaeche);
+  border: 1px solid var(--signal-marke);
+  border-radius: 5px;
+  padding: 0.95rem 1.1rem;
+  font-size: 0.92rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.kasten .titel { font-weight: 700; font-family: var(--serif); font-size: 1rem; }
+
+/* --- Fuss und Schalter -------------------------------------------- */
+
+.fussleiste {
+  border-top: 1px solid var(--linie);
+  padding-top: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--leise);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.75rem;
+  font-family: var(--mono);
+}
+
+.schalter {
+  position: fixed;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 10;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.4em 0.75em;
+  background: var(--flaeche);
+  color: var(--leise);
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.schalter:hover { color: var(--tinte); border-color: var(--linie-stark); }
+
+@media print {
+  .schalter { display: none; }
+  .abschnitt { break-inside: avoid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<button type="button" class="schalter" id="schalter" aria-live="polite">hell / dunkel</button>
+
+<div class="blatt">
+<header class="kopf">
+  <p class="augenbraue">WorldWar &middot; Schlussblock &middot; 13./14. September 2026</p>
+  <h1>Was in dieser Nacht gemacht wurde</h1>
+  <p class="lede">Der Auftrag vom 13. September lautete: <strong>alle offenen Punkte abschlie&szlig;en, au&szlig;er Mehrspieler (M37&ndash;M39) und der iPhone-App.</strong> Gebaut wurden drei Meilensteine &mdash; M41, M40 und M35 &mdash;, zwei davon erst nach einer Durchsicht, die sie nicht freigegeben hat. Danach Abnahme, Programmbau, AK-8 und eine Sichtpr&uuml;fung im echten Browser.</p>
+  <p class="lede">Jede Zahl auf dieser Seite stammt aus einem eingecheckten Bericht oder aus <code>git</code>. Wo etwas nicht belegt ist, steht es nicht da. &bdquo;Vorher&ldquo; hei&szlig;t durchweg: der Stand auf <code>main</code> (Spitze <code>6bd7ab7</code>, 13.09. um 01:21), also der Stand, den du kennst.</p>
+
+  <div class="strecke">
+    <span class="ende">13.09. &middot; 02:08</span>
+    <span class="spur"><span class="zahl">92 Commits &middot; 26 h 52 min</span></span>
+    <span class="ende">14.09. &middot; 05:00</span>
+  </div>
+
+  <ul class="kennzahlen">
+    <li><span class="wert">312</span><span class="was">Aufgaben im Plan, <strong>264 erledigt</strong>, 48 offen &mdash; in <code>tasks.yaml</code> gez&auml;hlt</span></li>
+    <li><span class="wert">12 / 12</span><span class="was">Pr&uuml;fungen der Abnahme bestanden, Exit&nbsp;0 (vorher 11 von 11)</span></li>
+    <li><span class="wert">2155</span><span class="was">schnelle Tests in 146 Dateien (vorher 1929 in 140)</span></li>
+    <li><span class="wert">7 / 7</span><span class="was">Schritte von AK-8 am gebauten Programm, erstmals seit dem 8.&nbsp;September</span></li>
+  </ul>
+</header>
+
+<section class="abschnitt" aria-labelledby="t1">
+  <div class="leiste">
+    <p class="marke">&sect;1</p>
+    <ul class="quellen">
+      <li>tasks.yaml</li>
+      <li>PROGRESS.md</li>
+      <li>DECISIONS.md</li>
+      <li>git log</li>
+    </ul>
+  </div>
+  <div class="inhalt">
+    <h2 id="t1">&Uuml;berblick: vier Bl&ouml;cke und ein Entscheid</h2>
+    <p>Die Nacht lief in vier Bl&ouml;cken. Drei davon sind Meilensteine, der vierte ist der Abschluss &mdash; Abnahme, Bau, Messung, Doku. Dazu kam ganz am Anfang eine Reparatur am Plan-W&auml;chter selbst: er liest seit <code>fac654b</code> auch <code>03-TASKS.md</code>, und damit fielen <strong>63 tote Dateipfade</strong> auf, die in Aufgaben auf <em>erledigt</em> standen.</p>
+
+    <div class="bloecke">
+      <article class="karte">
+        <div class="kopfzeile"><h3>M41 &mdash; Pflege nach M34</h3><span class="zaehler">16/17</span></div>
+        <p>Die KI baut Fabriken aus. Die Uhr verlor im laufenden Spiel Ticks. Das KI-Ged&auml;chtnis vergisst tote Armeen. Freischaltungen k&uuml;ndigen sich zwei Spieltage vorher an. Dazu ein Eigenschaftstest f&uuml;r den Nahkampf.</p>
+        <p class="fuss">danach Nacharbeit N1 (Oberfl&auml;che, Uhr, Tests) und Block N2 (Verhalten der KI)</p>
+      </article>
+      <article class="karte">
+        <div class="kopfzeile"><h3>M40 &mdash; Die Haltung wird ein Auftrag</h3><span class="zaehler">18/19</span></div>
+        <p>Ein Adjutant f&uuml;hrt menschliche Armeen mit. Nach <strong>drei</strong> Nacharbeiten sieht die Regel grundlegend anders aus als beim ersten Bau: sie r&uuml;ckt nur nach, wenn in der Provinz eine zweite Armee bleibt, sie betritt kein fremdes Gebiet, und ein eigener Marschbefehl stellt die Armee auf Garnison.</p>
+        <p class="fuss">Messlauf je Episode, 12 L&auml;ufe, Frische-W&auml;chter mit <code>measuredAtCommit</code></p>
+      </article>
+      <article class="karte">
+        <div class="kopfzeile"><h3>M35 &mdash; Zwischenziele</h3><span class="zaehler">6/6</span></div>
+        <p>Neues Zustandsfeld <code>goals</code>, Speicherformat Stufe&nbsp;3, Ereignis <code>GOAL_REACHED</code>, vier Zeilen unter der Rangliste. Die Marke Bev&ouml;lkerung steht auf <strong>350&nbsp;&permil;</strong> statt 300 &mdash; ein Befund aus der Vollpartie, kein Geschmack.</p>
+        <p class="fuss">Golden-Master neu erzeugt, nicht umgangen</p>
+      </article>
+      <article class="karte">
+        <div class="kopfzeile"><h3>Schlussblock</h3><span class="zaehler">7 Schritte</span></div>
+        <p>Frische-W&auml;chter, Abnahme, Tauri-Bau (zweimal), AK-8 am gebauten Programm, Sichtpr&uuml;fung im sichtbaren Browser, Einstiegsdoku, Abschluss. <strong>Kein Spielverhalten ge&auml;ndert, keine Grenze angefasst.</strong></p>
+        <p class="fuss">einzige Code&auml;nderung: T-M41-18 am Abnahmeskript</p>
+      </article>
+    </div>
+
+    <div class="kasten">
+      <p class="titel">Dein Entscheid um 17:10 Uhr</p>
+      <p>Als die hochgerechnete Dauer sichtbar wurde, hast du <strong>M17 auf sp&auml;ter verschoben</strong> &mdash; ausdr&uuml;cklich nicht &bdquo;weniger Messtiefe&ldquo;. Der Plan steht vollst&auml;ndig: 16 Aufgaben, davon die Planung selbst erledigt, 15 auf <code>todo</code>. Lieber ein abgeschlossener, abgenommener Stand als ein halb gebauter Meilenstein ohne Abnahme.</p>
+    </div>
+  </div>
+</section>
+<section class="abschnitt" aria-labelledby="t2">
+  <div class="leiste">
+    <p class="marke">&sect;2</p>
+    <ul class="quellen">
+      <li>fullgame.json</li>
+      <li>ai-integration.json</li>
+      <li>stance.json</li>
+      <li>performance.md</li>
+      <li>packaging.md</li>
+      <li>balance-sweep.md</li>
+      <li>acceptance.md</li>
+    </ul>
+  </div>
+  <div class="inhalt weit">
+    <h2 id="t2">Was sich messen l&auml;sst</h2>
+    <p class="unterzeile" style="max-width: 44rem;">Links steht der Stand auf <code>main</code>, rechts der Endstand dieses Zweigs. Beide Seiten kommen aus eingecheckten Berichtsdateien, nicht aus einem Ged&auml;chtnisprotokoll.</p>
+
+    <div class="rahmen">
+      <table>
+        <caption>Vorher = <code>main</code> (<code>6bd7ab7</code>, 13.09. 01:21) &middot; Heute = <code>64c829e</code>, 14.09. 05:00</caption>
+        <thead>
+          <tr><th scope="col">Gr&ouml;&szlig;e</th><th scope="col" class="zahl">vorher</th><th scope="col" class="zahl">heute</th><th scope="col">Beleg</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">AK-1, Siegtag der Vollpartie (Startzahl 1914)</th><td class="zahl vorher">Tag 471</td><td class="zahl heute">Tag 975</td><td class="quelle">fullgame.json &mdash; 2589 Eroberungen, 11 Kriegserkl&auml;rungen</td></tr>
+          <tr><th scope="row">Abnahme</th><td class="zahl vorher">11 von 11<br>7 min 28 s</td><td class="zahl heute">12 von 12<br>5 min 05 s</td><td class="quelle">acceptance.md, acceptance-timing.json (305 s)</td></tr>
+          <tr><th scope="row">Tests, schnell</th><td class="zahl vorher">1929 / 140 Dateien</td><td class="zahl heute">2155 / 146 Dateien</td><td class="quelle">pnpm verify, Exit 0</td></tr>
+          <tr><th scope="row">Abdeckung gesamt</th><td class="zahl vorher">95,9 %</td><td class="zahl heute">96,3 %</td><td class="quelle">acceptance.md &mdash; Kern 96,9 %</td></tr>
+          <tr><th scope="row">Langlauf, Zeit je Tick inkl. KI</th><td class="zahl vorher">13,293 ms</td><td class="zahl heute">7,977 ms</td><td class="quelle">performance.md &mdash; 1000 Spieltage, 24 000 Ticks</td></tr>
+          <tr><th scope="row">Uhr im ausgelieferten Programm, Tempo 100</th><td class="zahl vorher">92,98&ndash;98,40&nbsp;Ticks/s</td><td class="zahl heute">99,85&ndash;99,98&nbsp;Ticks/s</td><td class="quelle">packaging.md &mdash; in der exe selbst gemessen</td></tr>
+          <tr><th scope="row">KI-Artillerie (200 Tage, Stufe &bdquo;schwer&ldquo;)</th><td class="zahl vorher">1</td><td class="zahl heute">63</td><td class="quelle">ai-integration.json <code>artillerie</code></td></tr>
+          <tr><th scope="row">Selbstt&auml;tiger Beschuss (ebd.)</th><td class="zahl vorher">10</td><td class="zahl heute">231</td><td class="quelle">ai-integration.json <code>beschussSelbsttaetig</code></td></tr>
+          <tr><th scope="row">Abgelehnte KI-Befehle (Weltkarte, 200 Tage)</th><td class="zahl vorher">1177</td><td class="zahl heute">3 von 16 650</td><td class="quelle">ai-integration.json &mdash; Quote 0,02 %</td></tr>
+          <tr><th scope="row">KI-Ged&auml;chtnis am Partieende</th><td class="zahl vorher">106 KB</td><td class="zahl heute">3 KB</td><td class="quelle">fullgame.json <code>aiMemoryKB</code></td></tr>
+          <tr><th scope="row">Spielstand am Partieende</th><td class="zahl vorher">474 KB</td><td class="zahl heute">271 KB</td><td class="quelle">fullgame.json <code>stateKB</code></td></tr>
+          <tr><th scope="row">Provinz-Tage der Haltung gegen Garnison</th><td class="zahl vorher">79,7 %</td><td class="zahl heute">101,8 %</td><td class="quelle">stance.json &mdash; Verluste ohne Gefecht 10 &rarr; 0</td></tr>
+          <tr><th scope="row">Grundlauf, Anteil des St&auml;rksten</th><td class="zahl vorher">44,4 %</td><td class="zahl heute">36,8 %</td><td class="quelle">balance-sweep.md &mdash; 6 M&auml;chte, 120 Tage</td></tr>
+          <tr><th scope="row">Aufgaben im Plan, davon gebaut</th><td class="zahl vorher">255 / 224</td><td class="zahl heute">312 / 264</td><td class="quelle">tasks.yaml, gez&auml;hlt</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="max-width: 44rem;">Zwei Zeilen brauchen einen Satz dazu. Die <strong>Provinz-Tage</strong> vergleichen nicht <code>main</code> mit heute &mdash; diesen Messlauf gibt es auf <code>main</code> noch gar nicht. 79,7 % ist die Haltung, wie M40 sie <em>zuerst</em> gebaut hat; 101,8 % ist sie nach der dritten Nacharbeit. Und der <strong>Siegtag 975</strong> ist kein Erfolgswert, sondern eine Folge: die KI baut jetzt aus, kl&uuml;ger und l&auml;nger. Ob die l&auml;ngere Partie gewollt ist, ist Frage 6 unten.</p>
+  </div>
+</section>
+<section class="abschnitt" aria-labelledby="t3">
+  <div class="leiste">
+    <p class="marke">&sect;3</p>
+    <ul class="quellen">
+      <li>PROBLEME.md</li>
+      <li>PROGRESS.md</li>
+      <li>sichtpruefung-2026-09-14.md</li>
+      <li>stance.json</li>
+    </ul>
+  </div>
+  <div class="inhalt">
+    <h2 id="t3">Was die Durchsichten gefunden haben</h2>
+    <p>Das ist der unangenehme Teil, und er wird hier nicht gegl&auml;ttet. Zwei von drei Meilensteinen waren nach ihrem ersten Bau <strong>nicht freigabef&auml;hig</strong>, und zwei Fehlerklassen h&auml;tte kein Test dieser Welt gefunden &mdash; einen fand erst das Auge im laufenden Spiel, den anderen erst eine zweite, unabh&auml;ngige Lesung des Plans.</p>
+
+    <div class="stapel">
+      <article class="befund schwer">
+        <h3>M41 und M40 wurden nach der ersten Durchsicht nicht freigegeben</h3>
+        <p>M41 bekam <strong>zwei</strong> Nacharbeitsbl&ouml;cke, M40 <strong>drei</strong>. Die schwersten drei Befunde:</p>
+        <p>Die Uhr-Kappe, die der Bauplan vorgesehen hatte, h&auml;tte den Tickverlust <em>nicht</em> behoben &mdash; nachgerechnet ergab sie bei 30&nbsp;Hz und Tempo 100 weiterhin 90 statt 100 Ticks. Der Fehler sa&szlig; eine Ebene tiefer, in der Schleife selbst.</p>
+        <p>Der Adjutant lief beim <strong>Vorspulen</strong> nie. Dieselbe Lage ergab &uuml;ber die Uhr und &uuml;ber das Vorspulen zwei verschiedene Partien &mdash; ausgerechnet auf dem Weg, auf dem die meisten Spielstunden vergehen. Seither kommen die Befehle eines Ticks aus genau einer Funktion.</p>
+        <p>Und die Deckungsregel aus M40 <strong>entbl&ouml;&szlig;te</strong> die Provinz, aus der sie loszog: 79,7 % Provinz-Tage gegen die Garnison, 10 Provinzen ohne ein einziges Gefecht verloren. Sie wurde nicht verst&auml;rkt, sondern ersetzt.</p>
+        <p class="beleg">T-M41-04 Nacharbeit N1 &middot; T-M40-08 (Befund K1) &middot; T-M40-07 (Befund H3) &middot; T-M40-10</p>
+      </article>
+
+      <article class="befund schwer">
+        <h3>Die Sichtpr&uuml;fung im echten Browser fand einen Fehler, den die Tests nicht sehen konnten</h3>
+        <p>Bei Tempo 100 soll die Uhr 100 Ticks je Sekunde machen. Gemessen am sichtbaren Fenster: <strong>57,93 / 61,75 / 62,64</strong> am Dev-Server, <strong>92,98&ndash;98,40</strong> im gebauten B&uuml;ndel. Die Ursache: die Uhr rechnete aus einem Spiegel und schrieb erst beim Zeichnen zur&uuml;ck &mdash; ein Bild, das vor dem R&uuml;ckschreiben lief, rechnete aus demselben Stand noch einmal und &uuml;berschrieb das vorige.</p>
+        <p>Warum kein Test das sah: die bestehenden Zusicherungen legten <em>jedes</em> Bild in ein eigenes <code>act()</code>. Der neue Test legt zwei Bilder in eines &mdash; und f&auml;llt ohne die Reparatur.</p>
+        <p>Danach: Dev-Server 99,57 / 99,61 / 99,73, gebautes B&uuml;ndel 99,77&ndash;99,95, die Streuung von 5,42 auf 0,18. Das Programm musste daf&uuml;r ein zweites Mal gebaut werden. Beide <code>worldwar.exe</code> sind auf das Byte gleich gro&szlig; (6&nbsp;780&nbsp;416&nbsp;B) &mdash; also belegt nicht die Dateigr&ouml;&szlig;e, dass die Reparatur drin ist, sondern die Tickrate der laufenden exe: <strong>99,85&ndash;99,98</strong>.</p>
+        <p class="beleg">T-M41-17, Commit <code>0f1fce1</code> &middot; docs/reports/packaging.md, Abschnitt &bdquo;Gegenprobe&ldquo;</p>
+      </article>
+
+      <article class="befund schwer">
+        <h3>Die unabh&auml;ngige Verifikation fand eine Zusage, die auf &bdquo;erledigt&ldquo; stand, obwohl sie entfernt war</h3>
+        <p><code>T-M40-04</code> versprach im Plan weiterhin die Verfolgung des weichenden Gegners samt Sichtfeld <code>VisibleArmy.retreating</code> &mdash; beides war seit T-M40-10 <strong>ersatzlos aus dem Code entfernt</strong>, und der zugeh&ouml;rige Test pr&uuml;ft heute das Gegenteil. Begr&uuml;ndet war die R&uuml;cknahme an drei Stellen; nur die betroffene Aufgabe selbst schwieg. Jetzt steht sie auf <code>todo</code> mit Begr&uuml;ndung.</p>
+        <p>Dazu zwei Befunde am Abnahmeskript, die bis dahin nur eine &Uuml;bergabedatei als Heimat hatten und deshalb keinen Merge &uuml;berlebt h&auml;tten: die <strong>AK-9-Zeile trug die Beschreibung von AK-8</strong>, und die gedruckte Gesamtdauer wurde gerundet statt abgerundet (bei 298&nbsp;s stand da &bdquo;5 min 58 s&ldquo;). Beides repariert, acht neue Tests, Gegenprobe: <strong>6 von 8 fallen</strong> ohne die Reparatur.</p>
+        <p class="beleg">Befund H-1 &rarr; T-M40-04 zur&uuml;ckgenommen &middot; Befunde M-1 und M-2 &rarr; T-M41-18, Commit <code>868c9e8</code></p>
+      </article>
+
+      <article class="befund geloest">
+        <h3>Und sie fand vier Zahlen, die sonst auf dieser Seite gestanden h&auml;tten</h3>
+        <p>Die erste Fassung der Zahlenliste f&uuml;r dieses Artefakt nannte an vier Stellen <strong>Zwischenst&auml;nde</strong> aus der Nacht &mdash; Werte, die in keinem eingecheckten Bericht mehr stehen. Sie sind berichtigt, bevor du sie gelesen hast:</p>
+        <div class="rahmen">
+          <table>
+            <thead><tr><th scope="col">Gr&ouml;&szlig;e</th><th scope="col">der Weg durch die Nacht</th><th scope="col" class="zahl">stand da</th><th scope="col" class="zahl">stimmt</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">KI-Artillerie</th><td class="zahl note">1 &rarr; 69 &rarr; 63</td><td class="zahl vorher">69</td><td class="zahl heute">63</td></tr>
+              <tr><th scope="row">Selbstt&auml;tiger Beschuss</th><td class="zahl note">10 &rarr; 303 &rarr; 231</td><td class="zahl vorher">303</td><td class="zahl heute">231</td></tr>
+              <tr><th scope="row">Abgelehnte KI-Befehle</th><td class="zahl note">1177 &rarr; 216 &rarr; 136 &rarr; 75 &rarr; 3</td><td class="zahl vorher">216</td><td class="zahl heute">3</td></tr>
+              <tr><th scope="row">KI-Ged&auml;chtnis</th><td class="zahl note">106 KB &rarr; 10 KB &rarr; 3 KB</td><td class="zahl vorher">10 KB</td><td class="zahl heute">3 KB</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Der Grund f&uuml;r die Verwechslung ist harmlos und lehrreich: jede dieser Gr&ouml;&szlig;en wurde in der Nacht mehrfach gemessen, weil mehrere Reparaturen nacheinander auf dieselbe Zahl wirkten. Wer den Zwischenstand abschreibt, erz&auml;hlt einen Schritt als Ergebnis.</p>
+        <p class="beleg">Zwischenst&auml;nde aus PROGRESS.md (T-M41-01 Nacharbeit, T-M41-08) &middot; Endst&auml;nde aus docs/reports/ai-integration.json und fullgame.json</p>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="abschnitt" aria-labelledby="t4">
+  <div class="leiste">
+    <p class="marke">&sect;4</p>
+    <ul class="quellen">
+      <li>tasks.yaml (reopened)</li>
+      <li>DECISIONS.md</li>
+      <li>PROBLEME.md</li>
+    </ul>
+  </div>
+  <div class="inhalt">
+    <h2 id="t4">Zwei Zusagen wurden zur&uuml;ckgenommen &mdash; mit Grund, nicht gel&ouml;scht</h2>
+    <p>Beide stehen wieder auf <code>todo</code> und tragen einen <code>reopened</code>-Text, der sagt, was gemessen wurde und wer sie abl&ouml;st. Eine Aufgabe verschwinden zu lassen w&auml;re der bequemere Weg gewesen und der falsche.</p>
+
+    <div class="stapel">
+      <article class="befund rueck" style="border-left-color: var(--rueck);">
+        <div class="kopfzeile" style="display:flex;align-items:baseline;justify-content:space-between;gap:0.75rem;">
+          <h3>T-M41-10 &mdash; &bdquo;Die KI legt wirklich zusammen&ldquo;</h3>
+          <span class="chip rueck">zur&uuml;ckgenommen</span>
+        </div>
+        <p>Der Befund war richtig: der Deckel, der KI-Armeen in einer Provinz begrenzen sollte, verglich die Zahl der <strong>Stapel</strong> mit zwanzig <strong>Einheiten</strong> &mdash; er griff nie. Die Aufgabe wurde gebaut und gemessen.</p>
+        <p>Die echte Reparatur hat die Artillerie get&ouml;tet: <strong>63 &rarr; 0</strong> Artillerien, <strong>231 &rarr; 0</strong> selbstt&auml;tige Besch&uuml;sse. Und die neu gefasste Zusage hielt selbst mit ihr nicht (stehend h&ouml;chstens f&uuml;nf statt drei). Das Rücknahmekriterium war vorher festgeschrieben, also wurde zur&uuml;ckgenommen und nicht die Grenze verschoben: <code>consolidate.ts</code>, Tests und Berichte stehen auf dem Stand davor, nie committet.</p>
+        <p class="beleg">vorgemerkt f&uuml;r M18 &middot; offene Frage 3</p>
+      </article>
+
+      <article class="befund rueck" style="border-left-color: var(--rueck);">
+        <div class="kopfzeile" style="display:flex;align-items:baseline;justify-content:space-between;gap:0.75rem;">
+          <h3>T-M40-04 &mdash; &bdquo;aggressive verfolgt den weichenden Gegner&ldquo;</h3>
+          <span class="chip rueck">zur&uuml;ckgenommen</span>
+        </div>
+        <p>Gebaut und am selben Tag von T-M40-10 <strong>ersatzlos</strong> abgel&ouml;st. In der Messaufstellung endete die Verfolgung mit <strong>13 Armeen gegen 24</strong> ohne Automatik; mit Startzahl 1914 wurden vier Armeen binnen zehn Tagen nach einem Befehl vernichtet. Sie schadete in jedem Lauf, in dem sie &uuml;berhaupt einen Anlass hatte.</p>
+        <p>Dahinter steht eine Messung, die auch f&uuml;r die Zukunft gilt: auf der Weltkarte dauert ein Gefecht 1 bis 3 Ticks, eine Binnenetappe 25 bis 113. Eine Automatik, die auf ein Gefecht reagiert, kommt strukturell zu sp&auml;t.</p>
+        <p class="beleg">abgel&ouml;st von T-M40-10 &middot; das Sichtfeld <code>VisibleArmy.retreating</code> ist mit ihr entfallen</p>
+      </article>
+    </div>
+
+    <p class="unterzeile">Damit f&uuml;hrt der Plan <strong>drei</strong> zur&uuml;ckgenommene Aufgaben, jede mit Begr&uuml;ndung: T-M10-02 (Simulations-Host im Worker, 6. September), T-M40-04 und T-M41-10.</p>
+  </div>
+</section>
+
+<section class="abschnitt" aria-labelledby="t5">
+  <div class="leiste">
+    <p class="marke">&sect;5</p>
+    <ul class="quellen">
+      <li>acceptance.md</li>
+      <li>acceptance-timing.json</li>
+      <li>packaging.md</li>
+      <li>sichtpruefung-2026-09-14.md</li>
+    </ul>
+  </div>
+  <div class="inhalt weit">
+    <h2 id="t5">Abnahme, AK-8 und die Sichtpr&uuml;fung</h2>
+
+    <div class="bloecke">
+      <article class="karte">
+        <div class="kopfzeile"><h3>Abnahme</h3><span class="chip gut">12 / 12, Exit 0</span></div>
+        <p>Gemessen am 14.09. gegen <code>3fff35c</code>, Wanduhr <strong>5 min 05 s</strong> (305 s). Zw&ouml;lf statt elf Pr&uuml;fungen, weil eine <em>dazugekommen</em> ist: der dritte Frische-W&auml;chter f&uuml;r den Haltungs-Messlauf. Die alten elf sind alle da und alle gr&uuml;n.</p>
+        <p class="fuss">AK-7 abgenommen &middot; AK-9 ausgesetzt (M39) &middot; V1-Anforderungen ohne Test: 0</p>
+      </article>
+      <article class="karte">
+        <div class="kopfzeile"><h3>AK-8 am gebauten Programm</h3><span class="chip gut">7 von 7</span></div>
+        <p>Erstmals seit dem 8.&nbsp;September wieder gemessen, gegen <code>1c64a6e</code>: starten &rarr; kein &bdquo;Weiterspielen&ldquo; &rarr; Partie beginnen &rarr; Strg+S &rarr; &bdquo;Stand 1 &mdash; Tag 1&ldquo; &rarr; beenden &rarr; neu starten &rarr; &bdquo;Weiterspielen (Tag 1)&ldquo; &rarr; Partie l&auml;uft. Nicht von Hand, sondern &uuml;ber die Knopftexte, die ein Spieler auch sieht.</p>
+        <p class="fuss">Deine Spielst&auml;nde waren geparkt, nie gel&ouml;scht &mdash; Liste und SHA-256 vorher und nachher gleich</p>
+      </article>
+      <article class="karte">
+        <div class="kopfzeile"><h3>Programm</h3><span class="chip signal">zweimal gebaut</span></div>
+        <p><code>worldwar.exe</code> <strong>6 780 416 B</strong>, gebaut am 14.09. um 03:22:44, gemessen um 03:24:36. MSI 2 813 952 B, NSIS-Setup 2 140 999 B. Der zweite Bau war n&ouml;tig, weil die Uhr-Reparatur nach dem ersten kam &mdash; der Frische-W&auml;chter hat das selbst erkannt und AK-8 zu Recht auf Warnung gesetzt.</p>
+        <p class="fuss">Rust <code>release</code> in 1 min 51 s</p>
+      </article>
+    </div>
+
+    <h3 style="margin-top:1.4rem;">Die sieben Punkte der Sichtpr&uuml;fung</h3>
+    <p class="unterzeile" style="max-width:44rem;">Sieben Punkte an einem <strong>sichtbaren</strong> Browserfenster, gesteuert &uuml;ber das Debug-Protokoll. Sichtbar deshalb, weil in einem Vorschaufenster und in einem Hintergrundtab die Spieluhr gar nicht l&auml;uft &mdash; dort h&auml;tte man gemessen, was man sehen will.</p>
+
+    <div class="rahmen">
+      <table>
+        <caption>docs/reports/sichtpruefung-2026-09-14.md &middot; 9 Bildschirmfotos als Beleg</caption>
+        <thead><tr><th scope="col" class="zahl">#</th><th scope="col">Punkt</th><th scope="col">Urteil</th></tr></thead>
+        <tbody>
+          <tr><td class="zahl">1</td><th scope="row">Die Uhr bei Tempo 100</th><td><span class="chip gut">erf&uuml;llt</span> &mdash; das ausgelieferte B&uuml;ndel h&auml;lt die Zusage; der Befund am Dev-Server wurde zu T-M41-17</td></tr>
+          <tr><td class="zahl">2</td><th scope="row">Tempo im Vorspulen gesperrt</th><td><span class="chip">nicht pr&uuml;fbar</span> &mdash; der Zustand wird nie gezeichnet: ein Vorspul-Lauf ist genau <em>ein</em> H&auml;ppchen von 24 Ticks und endet synchron im Klick. 429 Abtastungen, kein gesperrter Knopf</td></tr>
+          <tr><td class="zahl">3</td><th scope="row">Die Ank&uuml;ndigung zwei Tage vorher</th><td><span class="chip gut">erf&uuml;llt</span> &mdash; alle drei Teile, auch &bdquo;Ihre beste steht auf Stufe N&ldquo;</td></tr>
+          <tr><td class="zahl">4</td><th scope="row">Die Haltungsgruppe 2 &times; 2</th><td><span class="chip gut">erf&uuml;llt</span> &mdash; vier Haltungen mit Erkl&auml;rtext; Anhalten und eigener Marsch stellen auf Garnison</td></tr>
+          <tr><td class="zahl">5</td><th scope="row">Die leise Meldung &bdquo;r&uuml;ckt nach&ldquo;</th><td><span class="chip gut">erf&uuml;llt</span> &mdash; Protokollzeile ohne Alarmfarbe, ein Klick springt auf die Provinz</td></tr>
+          <tr><td class="zahl">6</td><th scope="row">Die Zwischenziele in der Rangliste</th><td><span class="chip gut">erf&uuml;llt</span> &mdash; vier Zeilen mit Abstand bzw. erreichtem Tag, kein leerer Kasten</td></tr>
+          <tr><td class="zahl">7</td><th scope="row">Gefechte im Vorspulen</th><td><span class="chip signal">bewusst ohne Urteil</span> &mdash; beschrieben statt bewertet, weil der Ma&szlig;stab hier deiner ist. Siehe Frage 8</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<section class="abschnitt" aria-labelledby="t6">
+  <div class="leiste">
+    <p class="marke">&sect;6</p>
+    <ul class="quellen">
+      <li>DECISIONS.md</li>
+      <li>&bdquo;Offene Fragen an Noah&ldquo;</li>
+      <li>2026-09-14</li>
+    </ul>
+  </div>
+  <div class="inhalt">
+    <h2 id="t6">Neun Fragen, die nur du entscheiden kannst</h2>
+    <p>Keine davon ist eine Aufgabe in <code>tasks.yaml</code>, und das ist Absicht &mdash; ein Plan, der Fragen als Aufgaben f&uuml;hrt, wird nie fertig. Jede nennt die Zahl, die sie ausl&ouml;st. Sie stehen auch in <code>DECISIONS.md</code>, damit sie einen Merge &uuml;berleben.</p>
+
+    <ol class="fragen">
+      <li>
+        <p class="frage">Bleibt die Verteidigungs-Automatik?</p>
+        <p class="grundlage">Sie h&auml;lt ihr R&uuml;cknahmekriterium (101,8 % Provinz-Tage, 0 ohne Gefecht verlorene Provinzen), aber ein <em>Nutzen</em> ist nicht belegt: befohlene Deckung kam in <strong>0 von 19</strong> F&auml;llen rechtzeitig an. Behalten, abschalten (Verteidigung = Garnison) oder durch ausdr&uuml;ckliche Auftr&auml;ge ersetzen (&bdquo;halte Provinz X mit N Armeen, f&uuml;lle nach&ldquo;)?</p>
+      </li>
+      <li>
+        <p class="frage">Die KI-Artillerie ist in der Voreinstellung tot &mdash; so lassen?</p>
+        <p class="grundlage">7 KI auf &bdquo;normal&ldquo;, 200 Tage: <strong>3 Artillerien, 0 selbstt&auml;tige Besch&uuml;sse</strong>. Engstelle sind Fabrik und Geld, nicht die Schwierigkeitsstufe. Eigener Balancing-Block (M18) oder bewusst so belassen?</p>
+      </li>
+      <li>
+        <p class="frage">Das Zusammenlegen der KI &mdash; M18 oder fr&uuml;her?</p>
+        <p class="grundlage">T-M41-10 ist zur&uuml;ckgenommen: der Deckel z&auml;hlt Stapel statt Einheiten, und die echte Reparatur senkte Artillerie und Beschuss auf <strong>0</strong>. Ungekl&auml;rt bleibt, ob <code>TARGET_MIX</code> ebenfalls Einheiten z&auml;hlen muss.</p>
+      </li>
+      <li>
+        <p class="frage">Der Handel der KI zielt auf den teuersten Bauwunsch &mdash; M18 oder fr&uuml;her?</p>
+        <p class="grundlage">Gebaut wird seit der Nacharbeit der erste <em>bezahlbare</em> Wunsch, gehandelt wird weiter auf den ersten. Gemessen: 4637 Tauschgesch&auml;fte in 200 Tagen, 568&ndash;593 je Macht. Plausible Folge, nicht gemessen: der Tausch gibt ab, was Bau oder Aushebung br&auml;uchten.</p>
+      </li>
+      <li>
+        <p class="frage">Best&auml;tigst du die delegierten Entscheidungen?</p>
+        <p class="grundlage">Alle sind als <em>kippbar</em> vermerkt: die Marken 25 Provinzen / 400 &permil; / Bev&ouml;lkerung 350 &permil; / 600 &permil;; Vorgabehaltung <code>defensive</code>; nur Fabrikausbau (Kaserne Stufe 2 ri&szlig;e R-AI-06); Ank&uuml;ndigung statt Daten&auml;nderung bei den stillen Er&ouml;ffnungstagen; 5 Tage Ruhe ab Abmarsch; eigener Marsch &rarr; Garnison; Turnier-W&auml;chter mit Code-Pfaden, Parameterlauf ohne.</p>
+      </li>
+      <li>
+        <p class="frage">Der Langlauf entscheidet die Partie in 1000 Spieltagen nicht mehr &mdash; ist das gewollt?</p>
+        <p class="grundlage">Vorher fiel sie an Tick <strong>19320</strong>, heute steht am Ende &bdquo;nicht entschieden&ldquo;. AK-6 misst Zeit und ist bestanden; inhaltlich passt es zum Siegtag 975 statt 471. L&auml;ngere Partie behalten, oder geh&ouml;rt das nach M18?</p>
+      </li>
+      <li>
+        <p class="frage">Soll die Tempo-Sperre im Vorspulen &uuml;berhaupt sichtbar sein?</p>
+        <p class="grundlage">Sie ist am Bildschirm nie zu sehen, und das ist kein Mangel, sondern eine Spielgef&uuml;hl-Frage: ein Vorspul-Lauf ist genau <strong>ein H&auml;ppchen von 24 Ticks</strong> und endet synchron im Klick. Sichtbar w&uuml;rde sie nur durch ein Vorspulziel &uuml;ber einen Spieltag hinaus oder durch kleinere H&auml;ppchen &mdash; beides &auml;ndert, wie sich das Spiel anf&uuml;hlt. Die Zusage selbst ist durch Tests gedeckt.</p>
+      </li>
+      <li>
+        <p class="frage">Gefechte im Vorspulen &mdash; reicht, was zu sehen ist?</p>
+        <p class="grundlage">Bei angehaltener Uhr sind Gefechtsschein, Ring und Einschlagzeichen deutlich sichtbar. Bei Tempo 10 trafen <strong>110 Aufnahmen &uuml;ber 135 Spieltage zwei</strong> Bilder mit laufendem Gefecht in der gezeigten Provinz, ein zweiter Lauf mit 60 Aufnahmen <strong>keines</strong>. Durchgehend zu sehen sind die roten Pl&auml;ttchenrahmen, die rot umrandete Provinz und das Alarmschild. Im &bdquo;Vorspulen&ldquo; zeichnet der Browser gar nicht &mdash; ein Spieltag l&auml;uft in einem synchronen Zug (gemessen 206 ms). Soll ein Gefecht l&auml;nger stehen bleiben, als es dauert?</p>
+      </li>
+      <li>
+        <p class="frage">Wann wird M17 gebaut?</p>
+        <p class="grundlage">Entschieden ist nur &bdquo;sp&auml;ter&ldquo;. Der Entwurf D29 und die Anforderungen R-DIP-08, R-DIP-09, R-AI-09 und R-GAME-09 liegen unver&auml;ndert vor. Mehrspieler und iPhone-App sind unver&auml;ndert offen.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="abschnitt" aria-labelledby="t7">
+  <div class="leiste">
+    <p class="marke">&sect;7</p>
+    <ul class="quellen">
+      <li>tasks.yaml, gez&auml;hlt</li>
+      <li>WORKFLOW.md &sect;5</li>
+    </ul>
+  </div>
+  <div class="inhalt">
+    <h2 id="t7">Was ausdr&uuml;cklich nicht gebaut wurde</h2>
+    <p>Damit kein falscher Eindruck von Vollst&auml;ndigkeit entsteht: <strong>48 Aufgaben stehen offen</strong>, und sie verteilen sich restlos auf diese vier Zeilen.</p>
+
+    <ul class="offen">
+      <li>
+        <span class="anzahl">30</span>
+        <span class="titel">Mehrspieler M37&ndash;M39</span>
+        <span class="warum">Geplant und freigegeben am 12. September, <strong>keine davon gebaut</strong> &mdash; ausdr&uuml;cklich vom Auftrag ausgenommen. Elf der drei&szlig;ig kommen ohne eine Zeile Netzwerk aus; dort f&auml;ngt man an. AK-9 (eine Partie zu zweit &uuml;ber einen Link) ist deshalb noch nie gemessen worden und z&auml;hlt nicht gegen V1.</span>
+      </li>
+      <li>
+        <span class="anzahl">15</span>
+        <span class="titel">M17 &mdash; Tiefe zwischen den Kriegen</span>
+        <span class="warum">Vollst&auml;ndig geplant (16 Aufgaben, die Planung selbst erledigt), Bau auf deine Ansage. Dein Entscheid vom 13.09. um 17:10, wegen der Dauer.</span>
+      </li>
+      <li>
+        <span class="anzahl">3</span>
+        <span class="titel">Zur&uuml;ckgenommen, mit Begr&uuml;ndung</span>
+        <span class="warum">T-M10-02, T-M40-04, T-M41-10 &mdash; siehe &sect;4. Keine davon ist offene Arbeit, alle drei sind bewusst nicht gebaut.</span>
+      </li>
+      <li>
+        <span class="anzahl">&mdash;</span>
+        <span class="titel">Die iPhone-App</span>
+        <span class="warum">Nicht Teil dieses Auftrags, kein Plan in diesem Repo ber&uuml;hrt. Sie liegt als eigenes Vorhaben daneben.</span>
+      </li>
+    </ul>
+
+    <p class="unterzeile">Je Meilenstein: M35 <strong>6/6</strong>, M40 <strong>18/19</strong>, M41 <strong>16/17</strong>, M17 <strong>1/16</strong>, M37&ndash;M39 <strong>0/30</strong>. Die je eine offene Aufgabe in M40 und M41 ist jeweils die zur&uuml;ckgenommene.</p>
+  </div>
+</section>
+
+<footer class="fussleiste">
+  <span>Zweig <code>claude/offene-punkte-abschliessen</code>, PR #7 gegen <code>main</code></span>
+  <span>Spitze <code>64c829e</code></span>
+  <span>Belege unter <code>docs/reports/</code> und <code>docs/plan/</code></span>
+</footer>
+</div>
+
+<script>
+(function () {
+  var wurzel = document.documentElement
+  var knopf = document.getElementById('schalter')
+  var gespeichert = null
+  try { gespeichert = localStorage.getItem('schlussblock-bild') } catch (e) { gespeichert = null }
+  if (gespeichert === 'hell' || gespeichert === 'dunkel') {
+    wurzel.setAttribute('data-theme', gespeichert === 'hell' ? 'light' : 'dark')
+  }
+  function systemIstDunkel() {
+    // matchMedia fehlt in manchen Umgebungen — dann gilt die Voreinstellung hell.
+    if (typeof window.matchMedia !== 'function') return false
+    var frage = window.matchMedia('(prefers-color-scheme: dark)')
+    return !!(frage && frage.matches)
+  }
+  knopf.addEventListener('click', function () {
+    var gestempelt = wurzel.getAttribute('data-theme')
+    var dunkelJetzt = gestempelt ? gestempelt === 'dark' : systemIstDunkel()
+    var neu = dunkelJetzt ? 'hell' : 'dunkel'
+    wurzel.setAttribute('data-theme', neu === 'hell' ? 'light' : 'dark')
+    try { localStorage.setItem('schlussblock-bild', neu) } catch (e) { /* file:// ohne Speicher */ }
+  })
+})()
+</script>
+</body>
+</html>
