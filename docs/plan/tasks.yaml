@@ -2736,7 +2736,7 @@ tasks:
   - id: T-M38-04
     milestone: M38
     title: Der Netz-Waechter bekommt seine Grenze
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-09]
     design: [D-28]
@@ -2746,7 +2746,7 @@ tasks:
   - id: T-M38-05
     milestone: M38
     title: Das ausgelieferte Programm bleibt netzfrei, geprueft am Erzeugnis
-    status: todo
+    status: done
     deps: [T-M38-04]
     requirements: [R-MP-09]
     design: [D-28]
@@ -2756,7 +2756,7 @@ tasks:
   - id: T-M38-06
     milestone: M38
     title: Der WebSocket-Transport im Browser
-    status: todo
+    status: done
     deps: [T-M38-01, T-M38-04]
     requirements: [R-MP-06]
     design: [D-28]
@@ -2766,7 +2766,7 @@ tasks:
   - id: T-M38-07
     milestone: M38
     title: Der Hostdienst - Raum, Brieftraeger, Auslieferung
-    status: todo
+    status: done
     deps: [T-M38-06]
     requirements: [R-MP-11]
     design: [D-28]

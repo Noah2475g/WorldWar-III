@@ -134,6 +134,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/testkit
 
+  apps/party: {}
+
   packages/ai:
     dependencies:
       '@worldwar/core':

@@ -5269,7 +5269,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** der Dienst **keine** Abhängigkeit hat, die Geld kostet, ein Konto
   verlangt oder nach außen funkt (AGENT-EXECUTION §2). `node:http` und `node:net` reichen;
   eine WebSocket-Bibliothek ist erlaubt, wenn sie frei ist und keine Laufzeitnetzzugriffe
-  eigener Art macht.
+  eigener Art macht. **Gebaut ohne eine einzige Abhängigkeit:** `apps/party/package.json`
+  hat keinen `dependencies`-Block, der Handschlag ist ein SHA-1 über einen festen Text aus
+  RFC 6455, und die Rahmen sind zwei Dutzend Zeilen (`node:http`, `node:crypto`,
+  `node:fs`). Belegt an einem **wirklich laufenden** Dienst auf einem freien Port, mit
+  einem von Hand geschriebenen WebSocket-Client über `node:net` — 23 Zusicherungen.
+  **Der teuerste Befund:** ein Sockel aus `server.on('upgrade')` meldet `end` nach rund
+  65 ms und `close` **nie**; die HTTP-Schicht reicht ihn halb offen heraus. Ein Dienst, der
+  nur auf `close` hört, behält den Platz für immer besetzt — gemessen, und die Gegenprobe
+  (das `end`-Ohr herausnehmen) lässt genau zwei Zusicherungen fallen.
 
 ### T-M38-08 · Pufferung und Wiederaufnahme nach Abbruch
 - **Ziel:** WLAN, Standby, ein versehentlich geschlossener Deckel. Nichts davon darf eine
