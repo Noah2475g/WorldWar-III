@@ -3482,7 +3482,11 @@ gemessen — **99,85–99,98 Ticks/s**. Vor der Reparatur lag dieselbe Messung b
 bei 99,77–99,95. Die Reparatur steckt im ausgelieferten Programm. Noahs Spielstaende blieben
 unberuehrt (SHA-256 vor und nach der Gegenprobe gleich). Belege: `docs/reports/packaging.md`.
 
-**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 ist gegen `1c64a6e` gemessen.
+**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 war gegen `1c64a6e` gemessen — und
+**dieselbe Lehre traf am selben Tag ein zweites Mal zu**: M37, M38 und M39 haben `apps/` erneut
+angefasst, der Wächter stellte AK-8 wieder auf ⚠ („seither 32 Datei(en) am Erzeugnis geändert“),
+und die Antwort war wieder neu bauen (18:40:02, `e82c2bc`) und neu messen (18:40:53, sieben von
+sieben Schritten). Belege: `docs/reports/packaging.md`.
 
 ---
 
@@ -4121,3 +4125,48 @@ Frage an den Maßstab — der Kasten trägt sonst nur Angaben, keine Erklärunge
 Noahs Entscheidung.
 
 **Status:** offen — Frage an Noah.
+---
+
+## 2026-09-14 · Verpackungslauf AK-8 (`e82c2bc`) · Befund V-1: Der netzfreie Bau bietet eine Partieart an, die er nicht herstellen kann
+
+**Befund:** Der Startdialog des **ausgelieferten Tauri-Programms** trägt seit M37 den Wähler
+„Partieart“, und er bietet dort **beide** Werte an: „Allein gegen den Rechner“ *und* „Zu zweit über
+einen Link“. Dieses Programm kann die zweite Art technisch nicht — `__MULTIPLAYER__` ist beim
+gewöhnlichen Bau ein literales `false` (T-M39-04), der Rollup-Baum schneidet den Transport heraus, und
+`connect-src 'none'` verböte die Verbindung ohnehin. Der Wähler ist von der Bauflagge **nicht** gedeckt:
+sie steht in `main.tsx` und entscheidet über den Beitrittsweg, nicht über die Auswahl in
+`ui/Dialogs.tsx`.
+
+**Gemessen, nicht erschlossen** (exe vom 2026-09-14 18:40 gegen `e82c2bc`, über CDP am sichtbaren
+Fenster, nur lesen und einmal klicken):
+
+| Gemessen | Beobachtung |
+|---|---|
+| Werte des Wählers „Partieart“ | „Allein gegen den Rechner“, „Zu zweit über einen Link“ |
+| nach dem Umstellen auf „Zu zweit“ | Die Einladungsvorschau erscheint: Karte, „Sie spielen Vereinigte Staaten, Ihr Mitspieler Kanada“, „Computergegner: 6“, „Feste Geschwindigkeit: 10 Spielstunden je Sekunde“ |
+| nach „Partie beginnen“ | Die Partie läuft **lokal**, Kopfleiste „10 Stunden je Sekunde (fest)“, das Mitspielerland ist eine KI, **kein Fehler**, kein Verbindungsversuch |
+| `WebSocket` im gebauten Bündel (2 Dateien, 1 668 947 Zeichen) | **0×** |
+| `connect-src 'none'` in `worldwar.exe` | **1×** |
+
+Es entsteht also **kein Netzzugriff** und kein hängender Zustand — der Spieler bekommt eine
+Einzelspielerpartie mit fester Rate und ohne Vorspulen, und der Hinweis darunter sagt es sogar:
+„Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.“
+Genau dieser Satz ist seit M38/M39 falsch — im **Hostbau** ist die Verbindung gebaut (Befund MP-5).
+Im **Tauri-Bau** ist er sachlich noch richtig und trotzdem irreführend: er verspricht einen Ausbau,
+den dieses Programm dem Vorsatz nach nie bekommt.
+
+**Kleinster reproduzierbarer Fall:** `pnpm tauri:build`, `worldwar.exe` starten, im Startdialog die
+Partieart auf „Zu zweit über einen Link“ stellen — es erscheint die Einladungsvorschau samt fester
+Rate, obwohl es in diesem Bau keinen Link gibt und keinen geben soll.
+
+**Nicht repariert, und warum:** Der Verpackungslauf misst, er ändert keinen Produktivcode — und die
+Reparatur ist eine Frage an den Maßstab, keine technische. Drei Wege stehen offen, und welcher
+richtig ist, entscheidet Noah: den Wähler im netzfreien Bau **hinter dieselbe Bauflagge** legen
+(`__MULTIPLAYER__`, dann hat das Programm nur eine Partieart und der Wähler verschwindet), ihn
+stehen lassen und den Hinweis auf das umschreiben, was hier wahr ist („Dieses Programm spielt allein;
+zu zweit geht es über den Hostdienst“), oder ihn bewusst als Vorschau behalten. Der erste Weg ist der
+einzige, nach dem die Zusage „die Tauri-Anwendung kennt keinen Mehrspieler“ **auch an der Oberfläche**
+wahr ist; die Zusage „darf ihn technisch nicht können“ ist schon heute gemessen wahr.
+
+**Status:** offen — Frage an Noah. **AK-8 ist davon nicht betroffen**: die sieben Schritte fahren
+„Allein gegen den Rechner“, so wie ein Spieler das ausgelieferte Programm fährt (`docs/reports/packaging.md`).
