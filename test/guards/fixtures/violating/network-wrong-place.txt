@@ -1,0 +1,17 @@
+// Violation fixture: the allowed call in a forbidden place (R-MP-09/AK1, AK2).
+//
+// Nothing here is wrong in itself — `new WebSocket` is exactly what the multiplayer
+// transport needs, and `apps/desktop/src/net/websocketTransport.ts` is allowed to say it.
+// The violation is the address: this file pretends to live in `apps/desktop/src/game/`,
+// two folders away from the border. A guard that only knows its own exception would wave
+// it through, and the network would be in the game instead of at its edge.
+import type { NetMessage } from '@worldwar/netplay'
+
+export function connectToPeer(url: string): WebSocket {
+  const socket = new WebSocket(url)
+  socket.addEventListener('message', (event) => {
+    const message = JSON.parse(String(event.data)) as NetMessage
+    void message
+  })
+  return socket
+}

@@ -5189,14 +5189,19 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   nicht der, den man vermutet.
 - **Anforderungen:** R-MP-09 · **Entwurf:** D28.9
 - **Abhängigkeiten:** keine
-- **Dateien:** `test/guards/no-network.test.ts`
+- **Dateien:** `test/guards/no-network.test.ts`,
+  `test/guards/fixtures/violating/network-wrong-place.txt`
 - **Tests zuerst:** Treffer in `apps/party/**` und `apps/desktop/src/net/**` sind erlaubt;
   ein Treffer irgendwo sonst lässt den Wächter fallen (`R-MP-09/AK1`). In
   `packages/core`, `packages/ai`, `packages/shared` und `packages/netplay` ist auch der
   erlaubte Fall verboten (`R-MP-09/AK2`).
 - **Fertig wenn:** die Verstoß-Fixture weiterhin anschlägt und eine **zweite** Fixture
   belegt, dass ein Netzzugriff im falschen Ordner gefunden wird. Ein Wächter, der nur
-  seine Ausnahme kennt, ist keiner.
+  seine Ausnahme kennt, ist keiner. Gebaut als zwei Listen und eine reine Funktion:
+  `NETWORK_ALLOWED` nennt die beiden erlaubten Orte, `NETWORK_NEVER` die vier Pakete —
+  und die zweite Liste **sticht** die erste. Nur dadurch beisst die Gegenprobe zu AK2:
+  sie reicht `packages/netplay/` als *erlaubt* herein, und der Treffer wird trotzdem
+  gemeldet (gemessen: ohne die Vorrangregel fallen genau diese zwei Zusicherungen).
 
 ### T-M38-05 · Das ausgelieferte Programm bleibt netzfrei, geprüft am Erzeugnis
 - **Ziel:** Noahs dritte Festlegung. Die Tauri-Anwendung kennt keinen Mehrspieler und
