@@ -2750,7 +2750,7 @@ tasks:
     deps: [T-M38-04]
     requirements: [R-MP-09]
     design: [D-28]
-    files: [test/guards/packaging.test.ts]
+    files: [test/guards/packaging.test.ts, scripts/measure-netfree.mjs, docs/reports/packaging-netfree.json]
     tests: [test/guards/packaging.test.ts]
     dod: "Noahs dritte Festlegung vom 2026-09-12, D28.9. Die Tauri-Anwendung kennt keinen Mehrspieler und darf ihn technisch nicht koennen. Test zuerst: die Tauri-Konfiguration fuehrt unveraendert connect-src none, die Berechtigungsliste enthaelt keine Netzberechtigung, und der Mehrspielereinstieg ist im Tauri-Bau nicht erreichbar (R-MP-09/AK3). Der Waechter liest die KONFIGURATION und nicht eine Kopie davon - der alte Verpackungswaechter hielt zwei JSON-Dateien gegeneinander und pruefte damit die Konfiguration gegen sich selbst (Befunde 17, 20, 21)."
   - id: T-M38-06

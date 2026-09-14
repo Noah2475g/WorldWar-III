@@ -5208,13 +5208,22 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   darf ihn technisch nicht können.
 - **Anforderungen:** R-MP-09 · **Entwurf:** D28.9
 - **Abhängigkeiten:** T-M38-04
-- **Dateien:** `test/guards/packaging.test.ts`
+- **Dateien:** `test/guards/packaging.test.ts`, `scripts/measure-netfree.mjs`,
+  `docs/reports/packaging-netfree.json`
 - **Tests zuerst:** die Tauri-Konfiguration führt unverändert `connect-src 'none'`, die
   Berechtigungsliste enthält keine Netzberechtigung, und der Mehrspielereinstieg ist im
   Tauri-Bau nicht erreichbar (`R-MP-09/AK3`).
 - **Fertig wenn:** der Wächter die **Konfiguration** liest und nicht eine Kopie davon.
   Der alte Verpackungswächter hielt zwei JSON-Dateien gegeneinander und prüfte damit die
-  Konfiguration gegen sich selbst (Befunde 17, 20, 21).
+  Konfiguration gegen sich selbst (Befunde 17, 20, 21). Die zweite Seite kommt deshalb aus
+  dem **kompilierten Programm**: `tauri-build` legt die Inhaltsrichtlinie wörtlich in die
+  Binärdatei, `scripts/measure-netfree.mjs` liest sie dort heraus, und der Wächter hält
+  den gemessenen Text gegen die heutige Konfiguration — wer die Sperre lockert, bleibt rot,
+  bis neu gebaut und neu gemessen ist (gemessen: Gegenprobe mit `connect-src 'self'` im
+  Bericht lässt genau diese Zusicherung fallen). **Was er nicht kann, steht dabei:** die
+  Berechtigungen stehen im Erzeugnis nicht als Text (`local-only` 0×, `dialog:` 0×, während
+  `dialog` 13× vorkommt), und `http:` findet dort `build.devUrl` — beides gemessen, keins
+  davon ein Leck.
 
 ### T-M38-06 · Der WebSocket-Transport im Browser
 - **Ziel:** die einzige Stelle im Spiel, die `new WebSocket` sagt.
