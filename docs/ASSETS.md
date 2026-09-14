@@ -126,6 +126,19 @@ stehen hier trotzdem, damit niemand sie für zugekaufte Grafik hält.
 | `docs/reports/map-nordamerika.svg` | `node scripts/map-figure.mjs` | Nordamerika vor und nach T-M19-02 |
 | `docs/reports/map-groenland.svg` | `node scripts/map-figure.mjs` | Grönland vor und nach dem Beschnitt (T-M19-03) |
 | `docs/design/kriegsrat-icons.svg` | von Hand gezeichnet (Entwurf Kriegsrat, 2026-09-10) | Symbolsatz des Kriegsrat-Entwurfs: NATO-Marker, Gebäude, Rohstoffe — eigene Strichzeichnungen, keine Fremdquelle |
+| `docs/reports/sichtpruefung-2026-09-14/p1-uhr-vorher.png` | Bildschirmfoto des eigenen Spiels (Brave über CDP, Sichtprüfung 2026-09-14) | die Uhr vor dem Zehn-Sekunden-Fenster bei Tempo 100 |
+| `docs/reports/sichtpruefung-2026-09-14/p1-uhr-nachher.png` | dito | dieselbe Uhr danach |
+| `docs/reports/sichtpruefung-2026-09-14/p3-tag8.png` | dito | das Transportschiff an Spieltag 8 |
+| `docs/reports/sichtpruefung-2026-09-14/p3c-tag68.png` | dito | derselbe Punkt an Spieltag 68 |
+| `docs/reports/sichtpruefung-2026-09-14/p4-haltungen.png` | dito | die Haltungen einer Armee im Kriegsrat |
+| `docs/reports/sichtpruefung-2026-09-14/p4b-garnison.png` | dito | der Folgebefehl der Garnison |
+| `docs/reports/sichtpruefung-2026-09-14/p5-rueckt-nach.png` | dito | die leise Zeile „rückt von selbst nach" |
+| `docs/reports/sichtpruefung-2026-09-14/p6-zwischenziele.png` | dito | die Zwischenziele zum Sieg |
+| `docs/reports/sichtpruefung-2026-09-14/p7-gefecht-nah.png` | dito | ein Gefecht in der Nahansicht |
 
-Beide sind SVG und damit Text: sie lassen sich versionieren und vergleichen, was ein
-Bildschirmfoto nicht kann. Die Farben stammen aus `apps/desktop/src/ui/tokens.ts`.
+Die drei Zeichnungen sind SVG und damit Text: sie lassen sich versionieren und vergleichen, was
+ein Bildschirmfoto nicht kann. Die Farben stammen aus `apps/desktop/src/ui/tokens.ts`. Die neun
+Bildschirmfotos der Sichtprüfung zeigen ausschließlich das eigene Spiel und sind deshalb ebenso
+ohne Lizenzfrage; sie stehen hier, weil `test/guards/no-foreign-assets.test.ts` jede eingecheckte
+Bilddatei namentlich verlangt (nachgetragen am 2026-09-14 mit T-M41-17 — der Wächter war seit
+`2a437b0` rot).
