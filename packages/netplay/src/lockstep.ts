@@ -241,7 +241,10 @@ export class Lockstep {
 
   /** Zustimmen oder ablehnen. Die Antwort trägt den Tick des Antrags weiter (AK2). */
   answerPause(accept: boolean, at: number): PauseMessage {
-    const message = pauseAnswer(this.pauseState, accept ? 'ja' : 'nein')
+    const message = pauseAnswer(this.pauseState, accept ? 'ja' : 'nein', {
+      tick: this.tick,
+      delayTicks: this.delayTicks,
+    })
     this.pauseState = applyPause(this.pauseState, message, { by: this.seat, at })
     return message
   }
@@ -291,7 +294,33 @@ export class Lockstep {
    * Auskunft, die hinterher noch etwas wert ist.
    */
   endMessage(reason: EndMessage['reason'] = 'auseinandergelaufen'): EndMessage {
-    return { ...envelope('ende'), reason, tick: this.divergence?.tick ?? this.tick }
+    const befund = this.divergence
+    return {
+      ...envelope('ende'),
+      reason,
+      tick: befund?.tick ?? this.tick,
+      // Die beiden Zahlen reisen mit: wer es zuerst merkt, weiss sie, und die Gegenseite
+      // bekaeme sonst nur „es ist vorbei" (R-MP-04/AK1).
+      ...(befund ? { hashes: { [this.seat]: befund.own, [befund.seat]: befund.other } } : {}),
+    }
+  }
+
+  /**
+   * Das Ende, das die Gegenseite ansagt (T-M37-11, R-MP-04/AK1).
+   *
+   * Wer ein Auseinanderlaufen zuerst bemerkt, hört auf zu rechnen — und damit auch auf zu
+   * senden. Ohne diese Nachricht bliebe der andere bei „warte auf Mitspieler" stehen und
+   * erführe nie, was wirklich geschehen ist. Ein schon vorhandener eigener Befund bleibt
+   * stehen: der erste ist der genauere.
+   */
+  receiveEnd(from: PlayerId, message: EndMessage): void {
+    if (message.reason !== 'auseinandergelaufen' || this.divergence) return
+    this.divergence = {
+      tick: message.tick,
+      seat: from,
+      own: message.hashes?.[this.seat] ?? this.hash,
+      other: message.hashes?.[from] ?? '',
+    }
   }
 
   /**

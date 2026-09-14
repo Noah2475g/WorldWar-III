@@ -2696,12 +2696,12 @@ tasks:
   - id: T-M37-11
     milestone: M37
     title: Der Gleichschritt treibt die Uhr der Oberflaeche
-    status: todo
+    status: done
     deps: [T-M37-04, T-M37-09, T-M37-10]
     requirements: [R-MP-03, R-MP-04, R-MP-05]
     design: [D-28]
-    files: [apps/desktop/src/net/useNetplay.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/net/useNetplay.test.ts]
+    files: [apps/desktop/src/net/useNetplay.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css, packages/netplay/src/lockstep.ts, packages/netplay/src/loopback.ts, packages/netplay/src/protocol.ts]
+    tests: [apps/desktop/src/net/useNetplay.test.ts, apps/desktop/src/App.test.tsx]
     dod: "D28.4 - die Maschine anschliessen. Im Mehrspieler bestimmt nicht mehr requestAnimationFrame, wann ein Tick laeuft, sondern die Freigabe des Gleichschritts. Test zuerst: die Oberflaeche rechnet keinen Tick ohne Freigabe und sagt nach zwei Sekunden warte auf Mitspieler; ein Pausenantrag erscheint als Dialog mit zwei Knoepfen; ein Auseinanderlaufen erscheint als Meldung, die nicht wegklickbar ist. Die Einzelspielerschleife bleibt unveraendert. FALLE aus M22: jsdom haengt requestAnimationFrame an setInterval - unter vi.useFakeTimers muss rAF gestubbt werden, sonst treibt advanceTimersByTime die ganze Spielschleife."
   - id: T-M38-01
     milestone: M38

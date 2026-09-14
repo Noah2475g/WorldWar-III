@@ -69,9 +69,25 @@ export function pauseRequest(tick: number, delayTicks: number): PauseMessage {
   return { ...envelope('pause'), art: 'antrag', abTick: tick + delayTicks }
 }
 
-/** Die Antwort auf einen Antrag — sie trägt dessen Tick weiter, nicht einen neuen. */
-export function pauseAnswer(state: PauseState, art: Extract<PauseKind, 'ja' | 'nein'>): PauseMessage {
-  return { ...envelope('pause'), art, abTick: state.request?.fromTick ?? 0 }
+/**
+ * Die Antwort auf einen Antrag (R-MP-05/AK2).
+ *
+ * Sie trägt den Tick des Antrags weiter — **oder einen späteren, wenn der schon vorbei
+ * wäre.** Genau daran wäre die Zusage sonst gerissen: zwischen Antrag und Zustimmung
+ * vergeht Bedenkzeit, und in der Zeit läuft die Partie weiter. Wer bei Tick 10 einen Halt
+ * ab 12 beantragt und bei Tick 14 eine Zustimmung bekommt, müsste rückwärts anhalten.
+ *
+ * Der Zustimmende rechnet den Tick, weil er der Spätere von beiden ist: der Gleichschritt
+ * hält die zwei Uhren höchstens einen Tick auseinander, und `+ delay` deckt diesen Tick
+ * und den Weg der Nachricht ab.
+ */
+export function pauseAnswer(
+  state: PauseState,
+  art: Extract<PauseKind, 'ja' | 'nein'>,
+  at: { tick: number; delayTicks: number },
+): PauseMessage {
+  const beantragt = state.request?.fromTick ?? 0
+  return { ...envelope('pause'), art, abTick: Math.max(beantragt, at.tick + at.delayTicks) }
 }
 
 /** Das Fortsetzen, als Nachricht. `abTick` ist der Tick, bei dem die Partie steht. */

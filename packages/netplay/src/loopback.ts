@@ -30,6 +30,16 @@ class LoopbackEnd implements Transport {
 
   private readonly listeners = new Set<(message: NetMessage) => void>()
   private readonly closeListeners = new Set<(reason: string) => void>()
+  /**
+   * Was ankam, bevor jemand zuhörte (T-M37-11).
+   *
+   * Ohne diesen Puffer ging die **erste** Nachricht verloren, sobald eine Seite eher
+   * sendete als die andere ihren Hörer anmeldete — und im Gleichschritt ist eine verlorene
+   * Nachricht kein Schluckauf, sondern ein Stillstand: die Gegenseite wartet auf eine
+   * Liste, die nie wieder kommt. Eine echte Leitung puffert genauso; ein Doppel, das es
+   * nicht tut, wäre freundlicher zur Umsetzung und härter zur Wirklichkeit.
+   */
+  private readonly pending: NetMessage[] = []
   private shut = false
 
   constructor(private readonly options: LoopbackOptions) {}
@@ -47,6 +57,9 @@ class LoopbackEnd implements Transport {
 
   onMessage(listener: (message: NetMessage) => void): () => void {
     this.listeners.add(listener)
+    // Was wartete, bekommt der erste Hörer — in der Reihenfolge, in der es ankam.
+    const nachzureichen = this.pending.splice(0, this.pending.length)
+    for (const message of nachzureichen) listener(message)
     return () => {
       this.listeners.delete(listener)
     }
@@ -70,6 +83,10 @@ class LoopbackEnd implements Transport {
 
   private deliver(message: NetMessage): void {
     if (this.shut) return
+    if (this.listeners.size === 0) {
+      this.pending.push(message)
+      return
+    }
     for (const listener of this.listeners) listener(message)
   }
 }

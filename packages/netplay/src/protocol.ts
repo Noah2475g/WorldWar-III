@@ -104,6 +104,16 @@ export interface EndMessage extends Envelope {
   reason: EndReason
   /** Der Tick, an dem es endete — bei einem Auseinanderlaufen der erste strittige. */
   tick: number
+  /**
+   * Bei `auseinandergelaufen`: die Prüfsummen beider Plätze, **je Platz benannt**.
+   *
+   * R-MP-04/AK1 verlangt, dass die Partie anhält **und beiden Spielern sagt**, ab welchem
+   * Tick sie auseinanderlaufen. Wer es zuerst merkt, weiß beide Zahlen; ohne sie bekäme
+   * die Gegenseite nur „es ist vorbei" und müsste raten. Benannt nach Platz und nicht als
+   * „eigene/fremde", weil dieselbe Nachricht auf beiden Rechnern gelesen wird und sich die
+   * Bedeutung von „eigen" dabei umdreht.
+   */
+  hashes?: Record<PlayerId, string>
 }
 
 export type NetMessage =
@@ -213,6 +223,12 @@ export function parseMessage(raw: unknown): ParseResult {
         return fail(`Unbekannter Grund fuer das Ende: ${JSON.stringify(raw['reason'])}.`)
       }
       if (!isTick(raw['tick'])) return fail('ende braucht den Tick, an dem es endete.')
+      if (raw['hashes'] !== undefined) {
+        const hashes = raw['hashes']
+        if (!isRecord(hashes) || !Object.values(hashes).every(isString)) {
+          return fail('ende traegt Pruefsummen, die keine sind.')
+        }
+      }
       return { ok: true, message: raw as unknown as EndMessage }
   }
 }

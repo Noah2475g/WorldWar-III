@@ -47,6 +47,10 @@ export const de = {
     fastForwardLockedMultiplayer:
       'Vorspulen gibt es zu zweit nicht: Ihr Mitspieler säße vor einem Spiel, das ohne ihn weiterläuft.',
     pauseNeedsConsent: 'Zu zweit wird eine Pause beantragt und angenommen — niemand hält die Partie allein an.',
+    // Die ehrliche Uhr des Gleichschritts (T-M37-11, R-MP-03/AK1): der Tick wartet auf
+    // die Liste der Gegenseite. Erst nach zwei Sekunden Stille, sonst flackert die Zeile
+    // bei jedem Tick auf.
+    waitingForPeer: 'Warte auf Mitspieler …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
     // M15 mit und gab ihn zurueck; die Oberflaeche hat ihn weggeworfen, und der Spieler
     // sah die Uhr stehenbleiben, ohne zu erfahren warum.
@@ -563,6 +567,32 @@ export const de = {
     // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf
     // einen Knopf warten, den es noch nicht gibt.
     multiplayerPending: 'Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.',
+  },
+
+  /**
+   * Die Partie zu zweit (T-M37-10, T-M37-11, R-MP-04, R-MP-05, D28.6, D28.7).
+   *
+   * Zwei Sätze tragen den ganzen Abschnitt: eine Pause wird beantragt und angenommen,
+   * und zwei Welten, die auseinanderlaufen, halten an — denn hinterher kann niemand mehr
+   * sagen, welche die richtige war.
+   */
+  netplay: {
+    title: 'Partie zu zweit',
+    pauseRequestButton: 'Pause beantragen',
+    pauseAsked: '{{player}} möchte pausieren.',
+    pauseAccept: 'Pause zulassen',
+    pauseDecline: 'Weiterspielen',
+    pauseSent: 'Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden.',
+    pauseDeclined: 'Ihr Mitspieler möchte weiterspielen.',
+    pauseExpired: 'Der Pausenantrag ist verfallen.',
+    paused: 'Die Partie steht. Fortsetzen darf jeder allein.',
+    resumeButton: 'Fortsetzen',
+    resuming: 'Die Partie läuft in drei Sekunden weiter.',
+    desyncTitle: 'Die beiden Spiele laufen auseinander',
+    desync:
+      'Ab Spielstunde {{tick}} rechnen die beiden Rechner verschiedene Welten. Die Partie hält an: weiterzuspielen hieße, zwei Spiele nebeneinander zu führen, und hinterher könnte niemand mehr sagen, welches das richtige war.',
+    desyncHashes: 'Eigene Prüfsumme {{own}}, die des Mitspielers {{other}}.',
+    desyncSave: 'Spielstand sichern',
   },
 
   saves: {

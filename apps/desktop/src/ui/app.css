@@ -785,6 +785,17 @@ body {
   padding: var(--sp-xl);
 }
 
+/* Der Vorhang, den man nicht wegklicken kann (T-M37-11, R-MP-04/AK1): zwei Welten, die
+   auseinanderlaufen, sind schlimmer als ein Abbruch — eine Meldung mit Kreuz waere eine
+   Einladung, sie wegzuklicken und weiterzuspielen. Dichter als die uebrigen Dialoge. */
+.dialog-backdrop--locked {
+  background: color-mix(in srgb, var(--ground) 80%, transparent);
+}
+
+.dialog-backdrop--locked .dialog {
+  border-color: var(--accent);
+}
+
 .dialog {
   background: var(--paper);
   border: 1px solid var(--line);

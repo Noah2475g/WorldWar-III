@@ -131,6 +131,29 @@ describe('R-MP-05/AK2 Nach der Zustimmung stehen beide Uhren beim selben Tick', 
     expect(a.pause.pausedFrom).toBe(1 + 2)
   })
 
+  it('verschiebt den Halt, wenn die Zustimmung spaeter kommt als der Antrag galt', () => {
+    // Zwischen Antrag und Zustimmung vergeht Bedenkzeit, und in der Zeit laeuft die
+    // Partie weiter. Wer bei Tick 0 einen Halt ab 2 beantragt und erst bei Tick 6 eine
+    // Zustimmung bekommt, muesste rueckwaerts anhalten — die Zusage AK2 waere gerissen.
+    const { a, b } = paar()
+    const antrag = a.requestPause(0)
+    b.receivePause('p1', antrag, 0)
+    expect(b.pause.request?.fromTick).toBe(2)
+
+    // Sechs Ticks Bedenkzeit.
+    for (let i = 0; i < 6; i += 1) expect(tick(a, b)).toBe(true)
+    const ja = b.answerPause(true, 1_000)
+    a.receivePause('p2', ja, 1_000)
+
+    expect(ja.abTick, 'der Halt liegt in der Vergangenheit').toBeGreaterThan(a.tick)
+    expect(a.pause.pausedFrom).toBe(b.pause.pausedFrom)
+    while (tick(a, b)) {
+      /* bis zum Halt */
+    }
+    expect(a.tick).toBe(b.tick)
+    expect(a.tick).toBe(ja.abTick)
+  })
+
   it('setzt einseitig fort, mit drei Sekunden Vorlauf', () => {
     // Die Asymmetrie ist Absicht: verlangte auch das Fortsetzen eine Zustimmung, koennte
     // ein abgelenkter Mitspieler die Partie einsperren (D28.7).

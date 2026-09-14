@@ -69,6 +69,19 @@ export interface HeaderProps {
    * andere ihn nicht bewegt hat.
    */
   fixedSpeed?: number | null
+  /**
+   * Die Uhr wartet auf die Liste der Gegenseite (T-M37-11, R-MP-03/AK1).
+   *
+   * Erst nach zwei Sekunden Stille — dieselbe Frist wie bei `stalled`, und aus demselben
+   * Grund: zwischen zwei Ticks fehlt die Liste immer kurz, und eine Zeile, die bei jedem
+   * Tick aufblitzt, ist Flackern und keine Auskunft.
+   */
+  waitingForPeer?: boolean
+  /** Der Pausenknopf einer Partie zu zweit — er beantragt, er hält nicht an (D28.7). */
+  onPauseRequest?: () => void
+  /** Steht die Partie? Dann heißt der Knopf „Fortsetzen" und darf einseitig gedrückt werden. */
+  paused?: boolean
+  onResume?: () => void
 }
 
 /**
@@ -182,6 +195,28 @@ export function Header(props: HeaderProps) {
               <Icon name="clock" size={11} />
               {t('header.fixedSpeed', { speed: props.fixedSpeed })}
             </span>
+          )}
+
+          {/* Die ehrliche Uhr des Gleichschritts (T-M37-11): sie sagt, worauf sie wartet,
+              statt ein Tempo zu zeigen, das nicht laeuft. */}
+          {props.waitingForPeer && (
+            <span className="clock__stalled" role="status">
+              {t('header.waitingForPeer')}
+            </span>
+          )}
+
+          {/* Der Pausenknopf wird zum Pausenantrag (D28.7, MEHRSPIELER.md §3.8) — und
+              beim Fortsetzen wieder zum Knopf, den einer allein druecken darf. */}
+          {props.paused && props.onResume ? (
+            <button type="button" className="button" onClick={props.onResume}>
+              {t('netplay.resumeButton')}
+            </button>
+          ) : (
+            props.onPauseRequest && (
+              <button type="button" className="button" onClick={props.onPauseRequest}>
+                {t('netplay.pauseRequestButton')}
+              </button>
+            )
           )}
 
           {/*

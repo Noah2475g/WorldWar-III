@@ -83,6 +83,7 @@ import {
   type NewGameOptions,
 } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
+import { useNetplay, type NetplaySession } from './net/useNetplay.ts'
 import {
   adjutantMarchEntries,
   dayExpenses,
@@ -167,6 +168,15 @@ export interface AppProps {
   viewerId?: string
   /** The wall clock, for the real-time half of the autosave rule. Injectable for tests. */
   now?: () => number
+  /**
+   * Die laufende Partie zu zweit (T-M37-11, D28.4).
+   *
+   * Ohne Angabe läuft alles wie bisher: die Uhr hängt an `requestAnimationFrame`, das
+   * Tempo am Regler. Mit einer Sitzung treibt der **Gleichschritt** die Uhr — ein Tick
+   * läuft, wenn beide Befehlslisten da sind, und sonst nicht. Den Transport dahinter baut
+   * M38; die Naht liegt hier, damit sie schon jetzt gemessen werden kann.
+   */
+  netplay?: NetplaySession
 }
 
 interface PendingTarget {
@@ -297,6 +307,13 @@ export function App(props: AppProps) {
     fixedSpeed: null,
   })
   const multiplayer = party.mode === 'multiplayer'
+  /**
+   * Laeuft eine Partie zu zweit ueber den Gleichschritt (T-M37-11)?
+   *
+   * Frueh und aus den Eigenschaften gelesen, nicht aus dem Haken: die ehrliche Uhr und
+   * die Bildschleife weiter unten muessen es wissen, und beide stehen vor ihm.
+   */
+  const netplayActive = props.netplay != null
 
   const [speed, setSpeed] = useState(0)
   /**
@@ -804,7 +821,10 @@ export function App(props: AppProps) {
    */
   const hasGame = state !== null
   useEffect(() => {
-    if (speed === 0 || !hasGame) {
+    // Zu zweit sagt der Gleichschritt, warum die Uhr steht (T-M37-11): „warte auf
+    // Mitspieler" ist die genauere Auskunft als „Pausiert", und zwei Meldungen
+    // nebeneinander waeren eine zu viel.
+    if (speed === 0 || !hasGame || netplayActive) {
       setStalled(false)
       return
     }
@@ -813,7 +833,7 @@ export function App(props: AppProps) {
       setStalled(now() - lastTickAt.current > STALL_AFTER_MS)
     }, STALL_CHECK_MS)
     return () => clearInterval(id)
-  }, [speed, hasGame, now])
+  }, [speed, hasGame, netplayActive, now])
 
   /**
    * Vorspulen bis zum naechsten Ereignis (T-M15-06, R-TIME-02/AK2, R-TIME-03).
@@ -896,10 +916,33 @@ export function App(props: AppProps) {
   // hours per second and speed 50 at 30 frames ran 30. It now depends only on the speed
   // and on whether a game runs, and reaches the current `step` through a ref.
   // `hasGame` is the same flag the stall display above uses.
+  /**
+   * Der Gleichschritt treibt die Uhr, sobald eine Partie zu zweit läuft (T-M37-11, D28.4).
+   *
+   * Im Einzelspieler ist `session` null, der Haken tut nichts, und die Schleife darunter
+   * bleibt Zeile für Zeile, wie sie war.
+   */
+  const netplay = useNetplay({
+    session: props.netplay ?? null,
+    speed: party.fixedSpeed ?? 0,
+    now,
+    onTick: (next, applied) => {
+      commitState(next)
+      // Die Quittung am Knopf endet, wenn der Befehl wirklich gewirkt hat (T-M22-05) —
+      // nicht schon beim naechsten Tick: zu zweit liegen zwei Ticks dazwischen.
+      if (applied.length > 0) {
+        pendingRef.current = pendingRef.current.filter((entry) => !applied.includes(entry.command))
+        setPendingCommands(pendingRef.current)
+      }
+    },
+  })
+
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
-    if (speed === 0 || !hasGame) return
+    // Zu zweit gibt es keine zweite Uhr daneben (T-M37-11): der Gleichschritt gibt den
+    // Takt, und ein rAF-Lauf darueber rechnete Ticks, die niemand freigegeben hat.
+    if (speed === 0 || !hasGame || netplay.active) return
     let running = true
     let last = performance.now()
     let owed = 0
@@ -917,7 +960,7 @@ export function App(props: AppProps) {
     return () => {
       running = false
     }
-  }, [speed, hasGame])
+  }, [speed, hasGame, netplay.active])
 
   /**
    * Einen Befehl abschicken (T-M22-05, Befund V2-08).
@@ -942,11 +985,15 @@ export function App(props: AppProps) {
         dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
         return false
       }
+      // Zu zweit geht der Befehl in den Gleichschritt und gilt fuer tick + 2 (T-M37-11).
+      // Die Quittung am Knopf funktioniert unveraendert — sie endet, wenn der Befehl
+      // wirklich gewirkt hat, statt nach dem naechsten Tick.
+      if (netplay.active) netplay.give(command)
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
       return true
     },
-    [state, ctx, activeMap, props.rules],
+    [state, ctx, activeMap, props.rules, netplay],
   )
 
   /** Welche Knoepfe gerade eine Quittung tragen (T-M22-05): ihr Befehl steht noch aus. */
@@ -1089,6 +1136,12 @@ export function App(props: AppProps) {
           if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
         case 'multiplayerLocked':
+          // Die Leertaste wird zum Pausenantrag, sobald wirklich ein Mitspieler da ist
+          // (T-M37-11, D28.7). Ohne Sitzung bleibt es beim Hinweis.
+          if (shortcut.control === 'pause' && netplay.active) {
+            netplay.requestPause()
+            break
+          }
           // Die Taste tut nichts — aber sie verschwindet nicht stillschweigend
           // (T-M37-04, R-MP-02/AK2). Wer drueckt, bekommt den Grund zu lesen.
           dispatch({
@@ -1134,6 +1187,7 @@ export function App(props: AppProps) {
     tutor,
     fastForwardState.running,
     multiplayer,
+    netplay,
     // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
     // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
     fastForwardRun,
@@ -1656,6 +1710,10 @@ export function App(props: AppProps) {
         // Zu zweit zeigt die Kopfleiste die feste Rate als Text statt einer Tempogruppe
         // (T-M37-04, R-MP-02/AK3); im Einzelspieler bleibt alles, wie es war.
         fixedSpeed={party.fixedSpeed}
+        // Die ehrliche Uhr des Gleichschritts und der Pausenvertrag (T-M37-11).
+        waitingForPeer={netplay.waiting}
+        paused={netplay.status === 'paused'}
+        {...(netplay.active ? { onPauseRequest: netplay.requestPause, onResume: netplay.resume } : {})}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
           setSpeed(Math.min(value, ui.settings.maxSpeed))
@@ -1899,6 +1957,52 @@ export function App(props: AppProps) {
             </Dialog>
           )
         })()}
+
+      {/* Der Pausenantrag des Mitspielers (T-M37-11, R-MP-05/AK1, D28.7): zwei Knoepfe,
+          und bis einer gedrueckt ist, laeuft die Partie weiter. Ein Antrag, den man
+          selbst gestellt hat, bekommt keinen Dialog — er wartet auf die andere Seite. */}
+      {netplay.pause.request && netplay.pause.request.by !== viewerId && (
+        <Dialog title={t('netplay.title')} onClose={() => netplay.answerPause(false)}>
+          <p>{t('netplay.pauseAsked', { player: nameOf(netplay.pause.request.by) })}</p>
+          <p className="dialog__actions">
+            <button type="button" className="button button--primary" onClick={() => netplay.answerPause(true)}>
+              {t('netplay.pauseAccept')}
+            </button>
+            <button type="button" className="button" onClick={() => netplay.answerPause(false)}>
+              {t('netplay.pauseDecline')}
+            </button>
+          </p>
+        </Dialog>
+      )}
+
+      {/*
+        Das Auseinanderlaufen (T-M37-11, R-MP-04/AK1, D28.6).
+
+        **Kein Dialog, kein Kreuz, kein Escape.** Zwei Welten, die sich trennen, sind
+        schlimmer als ein Abbruch; eine Meldung, die man wegklicken kann, waere eine
+        Einladung, genau das zu tun und weiterzuspielen. Der einzige Knopf sichert den
+        Stand, damit der Fehler untersuchbar bleibt (R-MP-04/AK2).
+      */}
+      {netplay.desync && (
+        <div className="dialog-backdrop dialog-backdrop--locked">
+          <div className="dialog" role="alertdialog" aria-label={t('netplay.desyncTitle')}>
+            <header className="dialog__head">
+              <h2>{t('netplay.desyncTitle')}</h2>
+            </header>
+            <div className="dialog__body">
+              <p>{t('netplay.desync', { tick: netplay.desync.tick })}</p>
+              <p className="muted">
+                {t('netplay.desyncHashes', { own: netplay.desync.own, other: netplay.desync.other })}
+              </p>
+              <p className="dialog__actions">
+                <button type="button" className="button" onClick={() => setDialog('saves')}>
+                  {t('netplay.desyncSave')}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}

@@ -5122,7 +5122,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MP-03, R-MP-04, R-MP-05 · **Entwurf:** D28.4
 - **Abhängigkeiten:** T-M37-04, T-M37-09, T-M37-10
 - **Dateien:** `apps/desktop/src/net/useNetplay.ts`, `apps/desktop/src/App.tsx`,
-  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/app.css`, dazu in `packages/netplay/src/lockstep.ts`,
+  `packages/netplay/src/loopback.ts` und `packages/netplay/src/protocol.ts` das, was das
+  Anschliessen gezeigt hat: die Ansage des Auseinanderlaufens an die Gegenseite, der
+  Puffer im Schleifendoppel und der spaeter gelegte Halt einer Pause
 - **Tests zuerst:** die Oberfläche rechnet keinen Tick ohne Freigabe und sagt nach zwei
   Sekunden „warte auf Mitspieler"; ein Pausenantrag erscheint als Dialog mit zwei
   Knöpfen; ein Auseinanderlaufen erscheint als Meldung, die nicht wegklickbar ist

@@ -7,9 +7,10 @@ import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
+import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import type * as FastForwardModule from './game/fastForward.ts'
 
@@ -2143,5 +2144,152 @@ describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspul
     expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
     expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})
+
+/**
+ * Der Gleichschritt treibt die Uhr der Oberflaeche (T-M37-11, R-MP-03/04/05, D28.4).
+ *
+ * `useNetplay.test.ts` prueft den Haken an zwei nackten Simulationen. Hier haengt die
+ * ganze Anwendung daran: der Spieler sieht die Kopfleiste, den Dialog und die Meldung,
+ * und die Uhr tut, was der Mitspieler zulaesst — oder eben nichts.
+ *
+ * **FALLE aus M22:** jsdom haengt `requestAnimationFrame` an `setInterval`. Ohne den Stub
+ * triebe `advanceTimersByTime` die Bildschleife des Einzelspielers mit, und der Test
+ * maesse die falsche Uhr.
+ */
+describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mitspielers', () => {
+  let uhr = 0
+  const jetzt = () => uhr
+  const warte = (ms: number) => {
+    act(() => {
+      uhr += ms
+      vi.advanceTimersByTime(ms)
+    })
+  }
+
+  beforeEach(() => {
+    uhr = 0
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', () => 0)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  const optionen = {
+    ...DEFAULT_NEW_GAME,
+    nation: world.startPositions[0]!.nation,
+    mode: 'multiplayer' as const,
+    opponents: 3,
+    fixedSpeed: 25,
+  }
+
+  /** Die Anwendung auf dem Platz p1, der Mitspieler p2 als zweite Maschine daneben. */
+  const zuZweit = (opts: { peerLaeuft?: boolean } = {}) => {
+    const start = neueGameState(optionen, world, TEST_RULES)
+    const ctx = { map: world, rules: TEST_RULES }
+    const leitung = createLoopback()
+    const meine = createLockstep({ seat: 'p1', seats: ['p1', 'p2'], state: start, ctx })
+    const peer = createLockstep({ seat: 'p2', seats: ['p1', 'p2'], state: neueGameState(optionen, world, TEST_RULES), ctx })
+    leitung.b.onMessage((message) => {
+      if (message.kind === 'befehle') peer.receive('p1', message)
+      else if (message.kind === 'pause') peer.receivePause('p1', message, uhr)
+    })
+
+    render(
+      <App
+        map={world}
+        rules={TEST_RULES}
+        maps={maps}
+        skipTutorial
+        now={jetzt}
+        netplay={{ lockstep: meine, transport: leitung.a, seat: 'p1', peer: 'p2' }}
+      />,
+    )
+    fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: '25' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    // Der Mitspieler als zweite Maschine — derselbe Takt, den der Haken fuehrt.
+    let abgeschickt: number | null = null
+    if (opts.peerLaeuft !== false) {
+      const schlag = () => {
+        if (peer.status === 'desynced' || peer.status === 'finished') return
+        if (abgeschickt !== peer.tick) {
+          abgeschickt = peer.tick
+          leitung.b.send(peer.emit())
+        }
+        if (peer.canStep() && peer.step().ran) {
+          abgeschickt = peer.tick
+          leitung.b.send(peer.emit())
+        }
+      }
+      setInterval(schlag, 20)
+    }
+    return { meine, peer, leitung }
+  }
+
+  it('laesst die Uhr stehen und sagt nach zwei Sekunden, worauf sie wartet', () => {
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(4000)
+
+    expect(meine.tick, 'die Uhr lief ohne den Mitspieler').toBe(0)
+    expect(screen.getByText('Warte auf Mitspieler …')).toBeTruthy()
+    // Und nicht auch noch „Pausiert": zwei Meldungen nebeneinander waeren eine zu viel.
+    expect(screen.queryByText('Pausiert')).toBeNull()
+  })
+
+  it('laeuft, sobald der Mitspieler mitmacht', () => {
+    const { meine, peer } = zuZweit()
+
+    warte(1000)
+
+    expect(meine.tick, 'kein einziger Tick gelaufen').toBeGreaterThan(10)
+    expect(Math.abs(meine.tick - peer.tick)).toBeLessThanOrEqual(1)
+    expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
+  })
+
+  it('zeigt den Pausenantrag des Mitspielers als Dialog mit zwei Knoepfen', () => {
+    const { leitung, peer } = zuZweit()
+    warte(400)
+
+    act(() => {
+      leitung.b.send(peer.requestPause(uhr))
+    })
+    warte(100)
+
+    const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit' })
+    expect(within(dialog).getByRole('button', { name: 'Pause zulassen' })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Weiterspielen' })).toBeTruthy()
+  })
+
+  it('zeigt ein Auseinanderlaufen als Meldung, die nicht wegklickbar ist', () => {
+    const { meine } = zuZweit()
+    warte(400)
+    const bisher = meine.tick
+    expect(bisher).toBeGreaterThan(3)
+
+    // Eine Seite wird kuenstlich verfaelscht.
+    act(() => {
+      meine.state.players['p1']!.resources.food += 1000
+    })
+    warte(500)
+
+    const meldung = screen.getByRole('alertdialog', { name: 'Die beiden Spiele laufen auseinander' })
+    expect(meldung.textContent).toMatch(new RegExp(`ab Spielstunde ${bisher}`, 'i'))
+    // Kein Kreuz, kein Escape — eine Meldung, die man wegklicken kann, waere eine
+    // Einladung, weiterzuspielen (R-MP-04/AK1, D28.6).
+    expect(within(meldung).queryByRole('button', { name: 'Schließen' })).toBeNull()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByRole('alertdialog', { name: 'Die beiden Spiele laufen auseinander' })).toBeTruthy()
+
+    // Und die Uhr steht wirklich still.
+    warte(3000)
+    expect(meine.tick).toBe(bisher)
   })
 })
