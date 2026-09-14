@@ -5312,7 +5312,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Knöpfen, warten und beenden (`R-MP-07/AK2`, `Header.test.tsx`).
 - **Fertig wenn:** die „ehrliche Uhr" aus T-M22-05 nicht zweimal dasselbe sagt. Sie meldet
   heute schon „Pausiert", wenn zwei Sekunden lang kein Tick lief; im Mehrspieler ist
-  dieselbe Lage eine andere Nachricht.
+  dieselbe Lage eine andere Nachricht. Die Hülle schaltet `stalled` dafür ab, sobald eine
+  Partie zu zweit läuft (seit T-M37-11), und zwei Zusicherungen halten es fest — an der
+  Kopfleiste und an der ganzen Anwendung. Die **Dringlichkeit** unterscheidet die beiden
+  Stufen auch für ein Vorleseprogramm: `role="status"` für „es hakt", `role="alert"` für
+  „es ist weg". Der zweite Knopf beendet nicht sofort, sondern fragt nach — „beenden" ist
+  die Entscheidung, die man nicht aus Versehen trifft, während man auf jemanden wartet.
+  „Weiter warten" gilt **bis zum nächsten Tick**: kommt die Gegenseite zurück und steht
+  die Uhr danach wieder, ist das eine neue Lage.
 
 ### T-M38-10 · Ein Mitspieler, der nicht zurückkommt, wird zum Computergegner
 - **Ziel:** kein Abend geht verloren, weil jemand ins Bett gegangen ist.

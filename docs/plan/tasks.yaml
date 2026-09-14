@@ -2786,7 +2786,7 @@ tasks:
   - id: T-M38-09
     milestone: M38
     title: Die Anzeige sagt, wenn es am anderen haengt
-    status: todo
+    status: done
     deps: [T-M38-08]
     requirements: [R-MP-07]
     design: [D-28]

@@ -327,7 +327,9 @@ export function App(props: AppProps) {
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
-  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
+  const [dialog, setDialog] = useState<
+    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | 'netplayEnd' | null
+  >('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
   /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
@@ -922,12 +924,22 @@ export function App(props: AppProps) {
    * Im Einzelspieler ist `session` null, der Haken tut nichts, und die Schleife darunter
    * bleibt Zeile für Zeile, wie sie war.
    */
+  /**
+   * Der Hinweis „Ihr Mitspieler ist fort" wurde weggeklickt (T-M38-09, R-MP-07/AK2).
+   *
+   * Nur bis zum nächsten Tick: kommt die Gegenseite zurück und steht die Uhr danach
+   * wieder, ist das eine neue Lage und verdient eine neue Meldung. Ein „Weiter warten",
+   * das für immer gilt, wäre ein Schalter zum Abschalten der einzigen Auskunft.
+   */
+  const [peerLostDismissed, setPeerLostDismissed] = useState(false)
+
   const netplay = useNetplay({
     session: props.netplay ?? null,
     speed: party.fixedSpeed ?? 0,
     now,
     onTick: (next, applied) => {
       commitState(next)
+      setPeerLostDismissed(false)
       // Die Quittung am Knopf endet, wenn der Befehl wirklich gewirkt hat (T-M22-05) —
       // nicht schon beim naechsten Tick: zu zweit liegen zwei Ticks dazwischen.
       if (applied.length > 0) {
@@ -1712,8 +1724,16 @@ export function App(props: AppProps) {
         fixedSpeed={party.fixedSpeed}
         // Die ehrliche Uhr des Gleichschritts und der Pausenvertrag (T-M37-11).
         waitingForPeer={netplay.waiting}
+        peerLost={netplay.lost && !peerLostDismissed}
         paused={netplay.status === 'paused'}
-        {...(netplay.active ? { onPauseRequest: netplay.requestPause, onResume: netplay.resume } : {})}
+        {...(netplay.active
+          ? {
+              onPauseRequest: netplay.requestPause,
+              onResume: netplay.resume,
+              onKeepWaiting: () => setPeerLostDismissed(true),
+              onEndGame: () => setDialog('netplayEnd'),
+            }
+          : {})}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
           setSpeed(Math.min(value, ui.settings.maxSpeed))
@@ -1970,6 +1990,35 @@ export function App(props: AppProps) {
             </button>
             <button type="button" className="button" onClick={() => netplay.answerPause(false)}>
               {t('netplay.pauseDecline')}
+            </button>
+          </p>
+        </Dialog>
+      )}
+
+      {/*
+        Die Partie zu zweit beenden (T-M38-09, R-MP-07/AK2, D28.8 Stufe 2).
+
+        Der zweite Knopf des Hinweises fuehrt hierher. Bewusst ein eigener Schritt und
+        kein sofortiges Ende: „beenden" ist die Entscheidung, die man nicht aus Versehen
+        trifft, waehrend man auf jemanden wartet.
+      */}
+      {dialog === 'netplayEnd' && (
+        <Dialog title={t('netplay.endTitle')} onClose={() => setDialog(null)}>
+          <p>{t('netplay.endBody')}</p>
+          <p className="dialog__actions">
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                props.netplay?.transport.close('Die Partie wurde beendet.')
+                setDialog('new')
+                commitState(null)
+              }}
+            >
+              {t('netplay.endLeave')}
+            </button>
+            <button type="button" className="button" onClick={() => setDialog(null)}>
+              {t('netplay.endStay')}
             </button>
           </p>
         </Dialog>

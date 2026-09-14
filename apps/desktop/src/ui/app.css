@@ -1063,6 +1063,24 @@ body {
   font-weight: 600;
 }
 
+/* Die Gegenseite ist fort (T-M38-09, R-MP-07/AK2): eine stehende Uhr ohne Erklärung ist
+   ein Absturz, mit Erklärung ein Hinweis. Deshalb steht hier Text UND Handlung —
+   weiter warten oder Schluss. */
+.clock__lost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Ein Knopf, der in eine Zeile der Kopfleiste passt, ohne sie höher zu machen. */
+.button--small {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
 /* Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK3): Text an der Stelle,
    an der im Einzelspieler die Tempogruppe sitzt — ruhig, nicht anklickbar. */
 .clock__fixed {

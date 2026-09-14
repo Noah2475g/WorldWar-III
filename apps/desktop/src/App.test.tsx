@@ -2292,4 +2292,53 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     warte(3000)
     expect(meine.tick).toBe(bisher)
   })
+
+  it('sagt nach zehn Sekunden, dass der Mitspieler fort ist — mit zwei Knoepfen', () => {
+    // R-MP-07/AK2 an der ganzen Anwendung. `Header.test.tsx` zeigt, dass die Kopfleiste
+    // den Hinweis zeichnen KANN; hier steht, dass ein Spieler ihn wirklich zu sehen
+    // bekommt, wenn sein Mitspieler verschwindet.
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(9000)
+    expect(screen.queryByRole('alert'), 'der Hinweis kam vor den zehn Sekunden').toBeNull()
+    expect(screen.getByText('Warte auf Mitspieler …'), 'die erste Stufe fehlt').toBeTruthy()
+
+    warte(2000)
+    const hinweis = screen.getByRole('alert')
+
+    expect(hinweis.textContent).toMatch(/zehn Sekunden/)
+    expect(within(hinweis).getByRole('button', { name: 'Weiter warten' })).toBeTruthy()
+    expect(within(hinweis).getByRole('button', { name: 'Partie beenden' })).toBeTruthy()
+    expect(meine.tick, 'die Uhr lief ohne den Mitspieler').toBe(0)
+  })
+
+  it('nimmt „Weiter warten" hin, ohne die Uhr anzuruehren', () => {
+    zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Weiter warten' }))
+    warte(500)
+
+    expect(screen.queryByRole('alert'), 'der Hinweis blieb trotz Weiterwartens stehen').toBeNull()
+    // Die erste Stufe bleibt: die Uhr wartet ja wirklich, und das darf sie sagen.
+    expect(screen.getByText('Warte auf Mitspieler …')).toBeTruthy()
+  })
+
+  it('fragt beim Beenden nach, statt es sofort zu tun', () => {
+    // „Beenden" ist die Entscheidung, die man nicht aus Versehen trifft, waehrend man
+    // auf jemanden wartet.
+    const { leitung } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit beenden?' })
+    expect(within(dialog).getByRole('button', { name: 'Doch weiterspielen' })).toBeTruthy()
+    expect(leitung.a.closed, 'die Verbindung war schon zu, bevor jemand zugestimmt hat').toBe(false)
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Beenden' }))
+    warte(100)
+
+    expect(leitung.a.closed).toBe(true)
+    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+  })
 })

@@ -59,6 +59,10 @@ const renderHeader = (
     onAlarm?: () => void
     fastForwarding?: boolean
     fixedSpeed?: number | null
+    waitingForPeer?: boolean
+    peerLost?: boolean
+    onKeepWaiting?: () => void
+    onEndGame?: () => void
   } = {},
 ) =>
   render(
@@ -80,6 +84,10 @@ const renderHeader = (
       alarm={extra.alarm ?? null}
       onAlarm={extra.onAlarm ?? noop}
       fixedSpeed={extra.fixedSpeed ?? null}
+      waitingForPeer={extra.waitingForPeer ?? false}
+      peerLost={extra.peerLost ?? false}
+      {...(extra.onKeepWaiting ? { onKeepWaiting: extra.onKeepWaiting } : {})}
+      {...(extra.onEndGame ? { onEndGame: extra.onEndGame } : {})}
     />,
   )
 
@@ -680,5 +688,98 @@ describe('R-MP-02/AK3 Die Kopfleiste zeigt die feste Rate als Text', () => {
   it('zeigt die Uhrzeit weiterhin — die feste Rate ersetzt das Tempo, nicht die Zeit', () => {
     renderHeader(view(100, [100], 900), { fixedSpeed: 5 })
     expect(screen.getByRole('list', { name: 'Rohstoffe' })).toBeTruthy()
+  })
+})
+
+/**
+ * Die Anzeige sagt, wenn es am anderen hängt (T-M38-09, R-MP-07/AK2, D28.8).
+ *
+ * Drei Stufen, und die mittlere steht hier: **es hakt** (unter zehn Sekunden — die Uhr
+ * steht, die Kopfleiste sagt, worauf sie wartet, es geht nichts verloren), **es ist weg**
+ * (darüber — Hinweis mit zwei Knöpfen), **er kommt nicht wieder** (die Übernahme,
+ * T-M38-10). Eine stehende Uhr ohne Erklärung ist ein Absturz, mit Erklärung ein Hinweis.
+ */
+describe('R-MP-07/AK2 Nach zehn Sekunden erscheint der Hinweis mit zwei Knoepfen', () => {
+  it('zeigt den Hinweis und beide Knoepfe', () => {
+    renderHeader(view(100, [100], 900), {
+      fixedSpeed: 10,
+      waitingForPeer: true,
+      peerLost: true,
+      onKeepWaiting: noop,
+      onEndGame: noop,
+    })
+
+    expect(screen.getByRole('alert').textContent).toMatch(/zehn Sekunden/)
+    expect(screen.getByRole('button', { name: 'Weiter warten' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Partie beenden' })).toBeTruthy()
+  })
+
+  it('gibt jedem Knopf seine eigene Wirkung', () => {
+    const warten = vi.fn()
+    const beenden = vi.fn()
+    renderHeader(view(100, [100], 900), {
+      fixedSpeed: 10,
+      peerLost: true,
+      onKeepWaiting: warten,
+      onEndGame: beenden,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Weiter warten' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+
+    expect(warten).toHaveBeenCalledTimes(1)
+    expect(beenden).toHaveBeenCalledTimes(1)
+  })
+
+  it('schweigt, solange es nur hakt — die Gegenprobe', () => {
+    // Ohne diese Zeile belegte der Block nur, dass eine Flagge etwas einblendet. Bis zehn
+    // Sekunden bleibt es bei „warte auf Mitspieler": der Gleichschritt wartet ohnehin.
+    renderHeader(view(100, [100], 900), { fixedSpeed: 10, waitingForPeer: true, peerLost: false })
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Weiter warten' })).toBeNull()
+    expect(screen.getByText(/Warte auf Mitspieler/)).toBeTruthy()
+  })
+
+  it('sagt nicht zweimal dasselbe: kein Pausiert neben dem Hinweis', () => {
+    // Die ehrliche Uhr aus T-M22-05 meldet „Pausiert", wenn zwei Sekunden kein Tick lief.
+    // Im Mehrspieler ist dieselbe Lage eine ANDERE Nachricht - deshalb schaltet die Huelle
+    // `stalled` ab, sobald eine Partie zu zweit laeuft (App.tsx, T-M37-11). Hier steht der
+    // Beleg dafuer, dass die beiden Meldungen sich nicht ins Gehege kommen.
+    renderHeader(view(100, [100], 900), {
+      fixedSpeed: 10,
+      stalled: false,
+      waitingForPeer: true,
+      peerLost: true,
+      onKeepWaiting: noop,
+      onEndGame: noop,
+    })
+
+    expect(screen.queryByText('Pausiert')).toBeNull()
+    expect(screen.getAllByRole('status').map((element) => element.textContent)).toEqual([
+      'Warte auf Mitspieler …',
+    ])
+  })
+
+  it('unterscheidet die Dringlichkeit auch fuer ein Vorleseprogramm', () => {
+    // `status` fuer „es hakt", `alert` fuer „es ist weg". Ein Vorleseprogramm liest das
+    // eine beilaeufig und das andere sofort - genau der Unterschied, um den es geht.
+    renderHeader(view(100, [100], 900), {
+      fixedSpeed: 10,
+      waitingForPeer: true,
+      peerLost: true,
+      onKeepWaiting: noop,
+      onEndGame: noop,
+    })
+
+    expect(screen.getByRole('status').textContent).toMatch(/Warte auf Mitspieler/)
+    expect(screen.getByRole('alert').textContent).toMatch(/Mitspieler ist seit zehn Sekunden/)
+  })
+
+  it('bleibt im Einzelspieler ganz weg', () => {
+    renderHeader(view(100, [100], 900), { fixedSpeed: null, stalled: true })
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByText('Pausiert')).toBeTruthy()
   })
 })

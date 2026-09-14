@@ -53,6 +53,14 @@ export interface NetplayView {
    * die bei jedem Tick aufblitzt, ist keine Auskunft, sondern Flackern.
    */
   waiting: boolean
+  /**
+   * Steht die Uhr seit mehr als zehn Sekunden? (T-M38-09, R-MP-07/AK2, D28.8, Stufe 2.)
+   *
+   * Der Unterschied zu `waiting` ist nicht die Dauer, sondern die **Sorte Auskunft**: bis
+   * zehn Sekunden ist es ein Haken, und der Gleichschritt wartet ohnehin; danach ist es
+   * ein Zustand, über den der Spieler entscheiden muss — weiter warten oder Schluss.
+   */
+  lost: boolean
   pause: PauseState
   desync: DesyncReport | null
   requestPause: () => void
@@ -79,6 +87,17 @@ export const WAIT_NOTICE_AFTER_MS = 2000
  */
 export const RESEND_AFTER_MS = 1000
 
+/**
+ * Nach so langer Stille ist die Gegenseite nicht mehr langsam, sondern fort
+ * (T-M38-09, R-MP-07/AK2, D28.8).
+ *
+ * Die drei Stufen aus MEHRSPIELER.md §3.6: **es hakt** (unter zehn Sekunden — die Uhr
+ * steht, die Kopfleiste sagt, worauf sie wartet, nichts geht verloren), **es ist weg**
+ * (darüber — Hinweis mit zwei Knöpfen), **er kommt nicht wieder** (die Übernahme, und die
+ * ist ein bewusster Klick, T-M38-10).
+ */
+export const PEER_LOST_AFTER_MS = 10_000
+
 /** Wie oft der Takt nachsieht, wenn keine Rate gesetzt ist. */
 const DEFAULT_BEAT_MS = 100
 
@@ -87,6 +106,7 @@ const IDLE: NetplayView = {
   status: 'waiting',
   tick: 0,
   waiting: false,
+  lost: false,
   pause: NO_PAUSE,
   desync: null,
   requestPause: () => undefined,
@@ -99,6 +119,7 @@ interface Snapshot {
   status: LockstepStatus
   tick: number
   waiting: boolean
+  lost: boolean
   pause: PauseState
   desync: DesyncReport | null
 }
@@ -128,6 +149,7 @@ export function useNetplay(options: NetplayOptions): NetplayView {
     status: 'waiting',
     tick: session?.lockstep.tick ?? 0,
     waiting: false,
+    lost: false,
     pause: NO_PAUSE,
     desync: null,
   })
@@ -233,10 +255,13 @@ export function useNetplay(options: NetplayOptions): NetplayView {
       }
 
       setSnapshot((alt) => {
+        const stille = jetzt - lastTickAt.current
         const neu: Snapshot = {
           status: lockstep.status,
           tick: lockstep.tick,
-          waiting: lockstep.status === 'waiting' && jetzt - lastTickAt.current > WAIT_NOTICE_AFTER_MS,
+          waiting: lockstep.status === 'waiting' && stille > WAIT_NOTICE_AFTER_MS,
+          // „Es ist weg" statt „es hakt" (T-M38-09): dieselbe Lage, eine andere Auskunft.
+          lost: lockstep.status === 'waiting' && stille > PEER_LOST_AFTER_MS,
           pause: lockstep.pause,
           desync: lockstep.desync,
         }
@@ -244,6 +269,7 @@ export function useNetplay(options: NetplayOptions): NetplayView {
           alt.status === neu.status &&
           alt.tick === neu.tick &&
           alt.waiting === neu.waiting &&
+          alt.lost === neu.lost &&
           alt.pause === neu.pause &&
           alt.desync === neu.desync
         return gleich ? alt : neu
@@ -287,6 +313,7 @@ export function useNetplay(options: NetplayOptions): NetplayView {
     status: snapshot.status,
     tick: snapshot.tick,
     waiting: snapshot.waiting,
+    lost: snapshot.lost,
     pause: snapshot.pause,
     desync: snapshot.desync,
     requestPause,

@@ -593,6 +593,15 @@ export const de = {
       'Ab Spielstunde {{tick}} rechnen die beiden Rechner verschiedene Welten. Die Partie hält an: weiterzuspielen hieße, zwei Spiele nebeneinander zu führen, und hinterher könnte niemand mehr sagen, welches das richtige war.',
     desyncHashes: 'Eigene Prüfsumme {{own}}, die des Mitspielers {{other}}.',
     desyncSave: 'Spielstand sichern',
+    peerLost:
+      'Ihr Mitspieler ist seit zehn Sekunden nicht mehr da. Die Partie wartet; es geht nichts verloren.',
+    keepWaiting: 'Weiter warten',
+    endGame: 'Partie beenden',
+    endTitle: 'Partie zu zweit beenden?',
+    endBody:
+      'Die Verbindung wird getrennt und die Partie geschlossen. Ein gespeicherter Stand bleibt erhalten.',
+    endLeave: 'Beenden',
+    endStay: 'Doch weiterspielen',
   },
 
   saves: {

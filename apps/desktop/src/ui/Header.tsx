@@ -82,6 +82,20 @@ export interface HeaderProps {
   /** Steht die Partie? Dann heißt der Knopf „Fortsetzen" und darf einseitig gedrückt werden. */
   paused?: boolean
   onResume?: () => void
+  /**
+   * Die Gegenseite fehlt seit über zehn Sekunden (T-M38-09, R-MP-07/AK2, D28.8).
+   *
+   * Der Unterschied zu `waitingForPeer` ist keine längere Wartezeit, sondern eine andere
+   * Sorte Auskunft: bis zehn Sekunden hakt es und der Gleichschritt wartet ohnehin;
+   * darüber ist es eine Lage, über die der Spieler entscheiden muss. Deshalb zwei
+   * Knöpfe — **eine stehende Uhr ohne Erklärung ist ein Absturz, mit Erklärung ein
+   * Hinweis.**
+   */
+  peerLost?: boolean
+  /** Weiter warten: der Hinweis verschwindet, die Uhr wartet unverändert. */
+  onKeepWaiting?: () => void
+  /** Die Partie beenden. Was danach kommt, entscheidet die Hülle (T-M38-10). */
+  onEndGame?: () => void
 }
 
 /**
@@ -217,6 +231,30 @@ export function Header(props: HeaderProps) {
                 {t('netplay.pauseRequestButton')}
               </button>
             )
+          )}
+
+          {/*
+            Es ist nicht mehr ein Haken, sondern weg (T-M38-09, R-MP-07/AK2).
+
+            `role="alert"` und nicht `status`: nach zehn Sekunden ist das keine
+            Randbemerkung mehr, sondern eine Lage, in der jemand etwas entscheiden soll.
+            Die Zeile „warte auf Mitspieler" daneben bleibt stehen — sie sagt, WORAUF
+            gewartet wird, und dieser Hinweis sagt, was man dagegen tun kann.
+          */}
+          {props.peerLost && (
+            <span className="clock__lost" role="alert">
+              {t('netplay.peerLost')}
+              {props.onKeepWaiting && (
+                <button type="button" className="button button--small" onClick={props.onKeepWaiting}>
+                  {t('netplay.keepWaiting')}
+                </button>
+              )}
+              {props.onEndGame && (
+                <button type="button" className="button button--small" onClick={props.onEndGame}>
+                  {t('netplay.endGame')}
+                </button>
+              )}
+            </span>
           )}
 
           {/*
