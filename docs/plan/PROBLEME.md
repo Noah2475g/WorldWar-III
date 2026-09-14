@@ -3359,3 +3359,66 @@ Häppchen-Aufruf über `setTimeout`, und der gesperrte Zustand wird eingespielt)
 kleiner ist als ein Spieltag.
 
 **Status:** offen, ohne Aufgabe; die Zusage bleibt durch `App.test.tsx` gedeckt.
+
+---
+
+## 2026-09-14 · Abnahmeskript · Die AK-9-Zeile traegt die Beschreibung von AK-8
+
+**Befund.** `scripts/acceptance.mjs` schreibt die Zeilen der Kriterien ausserhalb der V1 mit einem
+fest verdrahteten Text:
+
+```js
+...spaetere.map((c) => `| ${c.id} | Verpackung als Programm (T-M16-05) | ${spaetereZeile(c)} |`)
+```
+
+`spaetere` ist `CRITERIA.filter((c) => c.scope !== 'V1')` und enthaelt seit dem 2026-09-12 **zwei**
+Eintraege: AK-8 (M16, Verpackung) und AK-9 (M39, die Partie zu zweit). Beide bekommen denselben Satz.
+In `docs/reports/acceptance.md` steht darum in der AK-9-Zeile „Verpackung als Programm (T-M16-05)",
+obwohl AK-9 nach `01-REQUIREMENTS.md` Abschnitt 3.2 die Zweispieler-Abnahme ist: „Noah und ein zweiter
+Mensch in einem anderen Netz spielen eine Partie zu zweit". Der Bericht sagt an dieser Stelle etwas
+Falsches ueber das Projekt — dieselbe Fehlerklasse wie eine Zusage ohne Ort, nur eine Ebene weiter:
+eine Zusage mit **fremdem** Ort.
+
+Gefunden beim Abnahmelauf vom 2026-09-13 (`UEBERGABE.md` §4a), zuerst ohne Heimat in `PROBLEME.md`
+notiert; die unabhaengige Verifikation vom 2026-09-14 hat genau das als Befund M-1 gemeldet („der
+Befund hat keinen Besitzer").
+
+**Warum es kein gefallenes Kriterium ist.** AK-9 zaehlt mit `scope: 'M39'` nicht gegen die V1, und der
+Zustandsteil der Zeile (`spaetereZeile`) ist richtig: „⏸ M39, noch nicht gemessen, zaehlt nicht gegen
+V1". Falsch ist nur die Beschreibung.
+
+**Reparatur (T-M41-18).** Die Beschreibung wandert als Feld `description` zu den Eintraegen in
+`scripts/acceptance-criteria.mjs` — dorthin, wo `scope` und `report` schon stehen —, und
+`acceptance.mjs` druckt `c.description`. Damit kann ein spaeteres Kriterium nicht mehr die
+Beschreibung seines Vorgaengers erben.
+
+**Status:** behoben (T-M41-18, 2026-09-14). Der eingecheckte `docs/reports/acceptance.md` traegt den
+alten Satz noch, bis der naechste `pnpm acceptance` ihn neu schreibt — der Bericht gilt ohnehin nur
+fuer den Stand, gegen den er gemessen wurde.
+
+---
+
+## 2026-09-14 · Abnahmeskript · Die gedruckte Gesamtdauer wird gerundet statt abgerundet
+
+**Befund.** `scripts/acceptance.mjs` schloss mit
+
+```js
+console.log(`
+${passed} von ${results.length} Pruefungen bestanden — Gesamtdauer ${Math.round(totalSeconds / 60)} min ${totalSeconds % 60} s.`)
+```
+
+`Math.round` auf den Minuten, `%` auf den Sekunden: bei `totalSeconds` 298 druckt die Konsole
+**„5 min 58 s"** statt 4 min 58 s. Der Fehler tritt fuer jede Dauer ab 30 Sekunden Rest auf und macht
+den Lauf um bis zu 59 Sekunden aelter oder juenger, als er war. Gemessen am Abnahmelauf vom
+2026-09-13: `docs/reports/acceptance-timing.json` haelt `totalSeconds: 298` fest — die **JSON-Zahl war
+immer richtig**, nur die Konsolenzeile war es nicht.
+
+Der Befund ist klein und trotzdem eingetragen, weil diese Zahl in Uebergaben und Berichte abgeschrieben
+wird: `UEBERGABE.md` §1a nennt die Wanduhr 4 min 58 s aus der JSON, andere Stellen haetten die
+Konsolenzeile uebernommen.
+
+**Reparatur (T-M41-18).** `durationText(totalSeconds)` in `scripts/acceptance-criteria.mjs`, mit
+`Math.floor`; `acceptance.mjs` ruft sie. Eine reine Funktion statt einer Rechnung im Konsolenaufruf —
+sonst gibt es nichts zu pruefen.
+
+**Status:** behoben (T-M41-18, 2026-09-14).

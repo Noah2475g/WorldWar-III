@@ -35,7 +35,7 @@ export const CRITERIA = [
   { id: 'AK-5', scope: 'V1' },
   { id: 'AK-6', scope: 'V1' },
   { id: 'AK-7', scope: 'V1' },
-  { id: 'AK-8', scope: 'M16', report: 'docs/reports/packaging.md' },
+  { id: 'AK-8', scope: 'M16', description: 'Verpackung als Programm (T-M16-05)', report: 'docs/reports/packaging.md' },
   // AK-9 (M39, aufgenommen 2026-09-12 mit dem Mehrspieler-Plan): eine Partie zu zweit
   // ueber einen Link, gespielt von Noah und einem zweiten Menschen in einem anderen
   // Netz. Der Eintrag entsteht zusammen mit Abschnitt 3.2 der Anforderungen und nicht
@@ -43,8 +43,33 @@ export const CRITERIA = [
   // ohne Ort war. `scope: 'M39'` und nicht 'V1': M39 liegt hinter der abgeschlossenen
   // V1-Abnahme, und ein Kriterium, das gegen sie zaehlte, wuerde sie an einen
   // spaeteren Bau ketten.
-  { id: 'AK-9', scope: 'M39', report: 'docs/reports/mehrspieler.md' },
+  { id: 'AK-9', scope: 'M39', description: 'Eine Partie zu zweit ueber einen Link (T-M39-09)', report: 'docs/reports/mehrspieler.md' },
 ]
+
+/**
+ * Wie ein Kriterium ausserhalb der V1 im Bericht heisst (T-M41-18).
+ *
+ * Bis zum 2026-09-14 schrieb `acceptance.mjs` fuer *jedes* spaetere Kriterium den festen
+ * Text "Verpackung als Programm (T-M16-05)". Solange AK-8 allein dastand, fiel das nicht
+ * auf; seit AK-9 dazukam (2026-09-12), trug die Zweispieler-Abnahme aus M39 die
+ * Beschreibung der Tauri-Verpackung — ein falscher Satz in `docs/reports/acceptance.md`.
+ * Die Beschreibung gehoert deshalb zum Kriterium, nicht zur Schleife, die es druckt.
+ */
+export function describeCriterion(criterion) {
+  return criterion.description ?? criterion.id
+}
+
+/**
+ * Eine Dauer in Minuten und Sekunden — abgerundet, nie aufgerundet (T-M41-18).
+ *
+ * `Math.round(totalSeconds / 60)` druckte bei 298 Sekunden "5 min 58 s" statt 4 min 58 s:
+ * die Minuten rundeten auf, die Sekunden blieben der Rest. Die Zahl in
+ * `acceptance-timing.json` war immer richtig, nur die Konsolenzeile nicht — und genau die
+ * wird in Uebergaben abgeschrieben.
+ */
+export function durationText(totalSeconds) {
+  return `${Math.floor(totalSeconds / 60)} min ${totalSeconds % 60} s`
+}
 
 /**
  * The criteria a requirements document defines — the rows of its acceptance tables,

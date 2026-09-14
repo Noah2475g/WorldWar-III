@@ -6184,3 +6184,26 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (eine abgelehnte `SET_CAPITAL` änderte nichts), Turnier zeilengleich. Nur der `self`-Block von
   `publicView.ts` ist berührt (dieselbe Datei trägt `retreating` aus M40). Befund: Nebenbefund c zu
   T-M41-08 — 298-mal im Turnier-Nachbau, 72-mal auf der Weltkarte nach der Reparatur zu H1.
+
+> **Zwei Befunde am Abnahmeskript (2026-09-14).** Gefunden beim Abnahmelauf vom 2026-09-13, von der
+> unabhängigen Verifikation desselben Tages als M-1 und M-2 bestätigt und erst danach mit einer
+> Aufgabe versehen — vorher hatten sie nur eine Übergabe als Heimat. Kein Spielverhalten.
+
+### T-M41-18 · Ein späteres Abnahmekriterium beschreibt sich selbst, und die Dauer wird abgerundet
+- **Ziel:** die AK-9-Zeile in `docs/reports/acceptance.md` trug die Beschreibung von AK-8, und die
+  Konsole druckte bei 298 Sekunden „5 min 58 s".
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-17
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `test/requirements.test.ts` — keine zwei Kriterien außerhalb der V1 teilen eine
+  Beschreibung; AK-9 nennt die Partie zu zweit und nicht die Verpackung; der Quelltext von
+  `acceptance.mjs` trägt den festen Satz nicht mehr; `durationText(298)` ist „4 min 58 s", samt der
+  Ränder 0, 59 und 60 Sekunden.
+- **Fertig wenn:** die Beschreibung als Feld `description` beim Kriterium steht (`describeCriterion`
+  mit Rückfall auf die Kennung, damit kein `undefined` in den Bericht rutscht) und `durationText`
+  mit `Math.floor` rechnet. **Gegenprobe gemessen (2026-09-14):** mit dem alten festen Text und
+  `Math.round` fallen **6 der 8** neuen Tests; die beiden übrigen binden die Voraussetzung (es gibt
+  zwei spätere Kriterien) und den Rückfallwert. Der eingecheckte `acceptance.md` trägt den alten
+  Satz, bis der nächste `pnpm acceptance` ihn neu schreibt — er gilt ohnehin nur für den Stand,
+  gegen den er gemessen wurde.

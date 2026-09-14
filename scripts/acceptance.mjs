@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, GAUGES, STANCE_SOURCES, artefactUnchangedSince, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, GAUGES, STANCE_SOURCES, artefactUnchangedSince, describeCriterion, durationText, measurementOf, v1Failures } from './acceptance-criteria.mjs'
 import { gaugeFreshness, stanceFreshness } from './freshness.mjs'
 
 const execAsync = promisify(exec)
@@ -300,7 +300,7 @@ const report = [
   '|---|---|---|',
   ...results.map((r) => `| ${r.id} | ${r.description} | ${r.ok ? '✅ bestanden' : '❌ fehlgeschlagen'} |`),
   `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\`, Antworten in \`docs/reports/playtest-v1.md\` | ${playtestLine} |`,
-  ...spaetere.map((c) => `| ${c.id} | Verpackung als Programm (T-M16-05) | ${spaetereZeile(c)} |`),
+  ...spaetere.map((c) => `| ${c.id} | ${describeCriterion(c)} | ${spaetereZeile(c)} |`),
   '',
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
@@ -331,7 +331,7 @@ writeFileSync(
   ) + String.fromCharCode(10),
 )
 
-console.log(`\n${passed} von ${results.length} Prüfungen bestanden — Gesamtdauer ${Math.round(totalSeconds / 60)} min ${totalSeconds % 60} s.`)
+console.log(`\n${passed} von ${results.length} Prüfungen bestanden — Gesamtdauer ${durationText(totalSeconds)}.`)
 console.log('docs/reports/acceptance.md geschrieben.')
 console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 

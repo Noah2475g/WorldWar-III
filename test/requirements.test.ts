@@ -10,6 +10,8 @@ import {
   GAUGES,
   STANCE_SOURCES,
   criteriaOf,
+  describeCriterion,
+  durationText,
   gaugeMeasurementStatus,
   gaugeStatus,
   measurementLine,
@@ -401,6 +403,75 @@ describe('R-ARCH-05 Ein spaeteres Kriterium faerbt die V1-Abnahme nicht rot', ()
       'AK-6',
       'AK-7',
     ])
+  })
+})
+
+/**
+ * T-M41-18: Die Beschreibung gehoert zum Kriterium, nicht zur Schleife, die es druckt.
+ *
+ * `acceptance.mjs` schrieb fuer *jedes* Kriterium ausserhalb der V1 den festen Text
+ * "Verpackung als Programm (T-M16-05)". Solange AK-8 allein dastand, fiel das nicht auf;
+ * seit AK-9 dazukam, trug die Zweispieler-Abnahme aus M39 die Beschreibung der
+ * Tauri-Verpackung. Der Fehler war nur im Bericht sichtbar und in keinem Test.
+ */
+describe('T-M41-18 Jedes spaetere Kriterium beschreibt sich selbst', () => {
+  const spaetere = CRITERIA.filter((c) => c.scope !== 'V1')
+
+  it('kennt mehr als ein Kriterium ausserhalb der V1 — sonst hat die Pruefung nichts zu sehen', () => {
+    expect(spaetere.map((c) => c.id)).toEqual(['AK-8', 'AK-9'])
+  })
+
+  it('gibt keinem zweiten Kriterium die Beschreibung des ersten', () => {
+    const texte = spaetere.map((c) => describeCriterion(c))
+    expect(new Set(texte).size, `doppelte Beschreibung: ${texte.join(' | ')}`).toBe(texte.length)
+  })
+
+  it('nennt bei AK-9 die Partie zu zweit und nicht die Verpackung', () => {
+    const ak9 = CRITERIA.find((c) => c.id === 'AK-9')!
+    expect(describeCriterion(ak9)).toMatch(/zu zweit/)
+    expect(describeCriterion(ak9)).not.toMatch(/Verpackung|T-M16-05/)
+  })
+
+  it('faellt zurueck auf die Kennung, wenn ein Kriterium keine Beschreibung traegt', () => {
+    // Ohne Rueckfallwert stuende `undefined` im Bericht — stiller als ein falscher Satz.
+    expect(describeCriterion({ id: 'AK-42', scope: 'M99' })).toBe('AK-42')
+  })
+
+  it('das Abnahmeskript druckt keinen festen Text mehr fuer spaetere Kriterien', () => {
+    // Die Zeile selbst laesst sich nicht importieren: `acceptance.mjs` faehrt beim Laden
+    // den ganzen Abnahmelauf. Gebunden wird deshalb der Quelltext — genau die Stelle,
+    // an der der feste Satz stand.
+    const quelle = readFileSync(new URL('../scripts/acceptance.mjs', import.meta.url), 'utf8')
+    expect(quelle).toMatch(/spaetere\.map\(\(c\) => `\| \$\{c\.id\} \| \$\{describeCriterion\(c\)\}/)
+    expect(quelle).not.toMatch(/\| Verpackung als Programm \(T-M16-05\) \|/)
+  })
+})
+
+/**
+ * T-M41-18: Die gedruckte Gesamtdauer wird abgerundet, nicht gerundet.
+ *
+ * `Math.round(totalSeconds / 60)` machte aus 298 Sekunden "5 min 58 s". Die Zahl in
+ * `acceptance-timing.json` war immer richtig — abgeschrieben wird aber die Konsolenzeile.
+ */
+describe('T-M41-18 Die Gesamtdauer der Abnahme', () => {
+  it('rundet die Minuten ab', () => {
+    // 298 s ist die gemessene Wanduhr des Abnahmelaufs vom 2026-09-13.
+    expect(durationText(298)).toBe('4 min 58 s')
+    expect(durationText(448)).toBe('7 min 28 s')
+  })
+
+  it('haelt auch die Raender', () => {
+    expect(durationText(0)).toBe('0 min 0 s')
+    expect(durationText(59)).toBe('0 min 59 s')
+    expect(durationText(60)).toBe('1 min 0 s')
+  })
+
+  it('nennt nie mehr Sekunden, als die Dauer hat', () => {
+    for (const sekunden of [1, 29, 30, 31, 89, 90, 91, 298, 448, 3599, 3600]) {
+      const [minuten, rest] = [Math.floor(sekunden / 60), sekunden % 60]
+      expect(durationText(sekunden)).toBe(`${minuten} min ${rest} s`)
+      expect(minuten * 60 + rest).toBe(sekunden)
+    }
   })
 })
 

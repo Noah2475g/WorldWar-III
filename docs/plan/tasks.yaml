@@ -3367,6 +3367,18 @@ tasks:
     tests: [packages/core/src/view/publicView.test.ts, packages/ai/src/decide.test.ts, packages/ai/src/diplomacy.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/tournament.slow.test.ts, packages/core/test/determinism.test.ts, apps/headless/test/walkthrough.test.ts]
     dod: "Nebenbefund c zu T-M41-08: SET_CAPITAL wird 30 Spieltage nach dem letzten Verlegen mit ON_COOLDOWN abgelehnt (CAPITAL_MOVE_COOLDOWN_DAYS), aber PublicView.self fuehrte nur capitalLostUntil - die KI befahl taeglich neu, 298-mal im Turnier-Nachbau, nach der Reparatur zu H1 72-mal auf der Weltkarte, dieselbe Sperre bis zu 29-mal. Reparatur: PublicView.self.capitalMovedAtTick (nur der self-Block von publicView.ts; retreating aus M40 bleibt unberuehrt), CAPITAL_MOVE_COOLDOWN_DAYS aus dem Kern exportiert, capitalCommands beachtet die Sperre und begruendet das Warten (R-AI-05). Test zuerst: publicView.test.ts (Feld, null ohne Verlegen, nichts ueber Fremde - rot 3 von 19), decide.test.ts (keine Hauptstadt waehrend der Sperre, Gegenprobe nach Ablauf - rot 1 von 42), ai-integration.slow.test.ts (kein SET_CAPITAL:ON_COOLDOWN und erweiterter Paarungsschluessel ueber alle Befehle hoechstens drei, in beiden Laeufen - rot mit der alten capital.ts: 72 und 29). NEUTRAL: Sicht ist kein Zustand - Golden-Master ohne UPDATE_GOLDEN unveraendert, Endzustand ohne eventLog und state.ai bitgleich, Turnier zeilengleich."
 
+  # Zwei Befunde am Abnahmeskript, gefunden beim Abnahmelauf vom 2026-09-13 und von der
+  # unabhaengigen Verifikation vom 2026-09-14 bestaetigt (M-1, M-2). Kein Spielverhalten.
+  - id: T-M41-18
+    milestone: M41
+    title: Ein spaeteres Abnahmekriterium beschreibt sich selbst, und die Dauer wird abgerundet
+    status: done
+    deps: [T-M41-17]
+    requirements: []
+    files: [scripts/acceptance-criteria.mjs, scripts/acceptance.mjs, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md]
+    tests: [test/requirements.test.ts]
+    dod: "Zwei Befunde in PROBLEME.md (2026-09-14, Abnahmeskript). (1) acceptance.mjs schrieb fuer JEDES Kriterium ausserhalb der V1 den festen Text Verpackung als Programm (T-M16-05); seit AK-9 dazukam (2026-09-12) trug die Zweispieler-Abnahme aus M39 damit die Beschreibung der Tauri-Verpackung - ein falscher Satz in docs/reports/acceptance.md. Reparatur: Feld description an den Eintraegen in acceptance-criteria.mjs, dazu describeCriterion mit Rueckfall auf die Kennung; acceptance.mjs druckt describeCriterion(c). (2) acceptance.mjs rundete die gedruckte Gesamtdauer mit Math.round(totalSeconds / 60) und machte aus 298 Sekunden 5 min 58 s statt 4 min 58 s; die Zahl in acceptance-timing.json war immer richtig. Reparatur: durationText(totalSeconds) mit Math.floor. Test zuerst in test/requirements.test.ts: keine zwei spaeteren Kriterien teilen eine Beschreibung, AK-9 nennt die Partie zu zweit und nicht die Verpackung, der Quelltext von acceptance.mjs traegt den festen Satz nicht mehr, durationText(298) ist 4 min 58 s samt Raendern 0/59/60. Gegenprobe gemessen am 2026-09-14: mit dem alten Text und Math.round fallen 6 der 8 neuen Tests; die beiden uebrigen binden die Voraussetzung (zwei spaetere Kriterien) und den Rueckfallwert. Kein Spielverhalten, kein Kern, keine Regeldaten - Golden-Master und Frische-Waechter unberuehrt. Der eingecheckte acceptance.md traegt den alten Satz, bis der naechste pnpm acceptance ihn neu schreibt."
+
   # M17 "Tiefe zwischen den Kriegen", als GANZES geplant am 2026-09-13 (T-M17-01, D29).
   # Kommt nach M35: SCHEMA_VERSION 4 (nicht 3), eingefrorener Stand save-v3.json, und der
   # Ausgangswert (T-M17-02) erst nach dem KI-Fabrikausbau (T-M41-02) und nach M35.
