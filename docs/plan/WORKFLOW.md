@@ -78,7 +78,7 @@ der Stand nach M34 am 2026-09-12 mit 11 von 11, und der Stand nach **M41, M40 un
 gegen `02c0bf9`). Das Anforderungstor meldet „V1 offen: 0". **AK-7 ist abgenommen:** Noah
 hat den Playtest per /goal-Auftrag vom 2026-09-07 ausdrücklich an den Agenten delegiert
 (Entscheid in `DECISIONS.md`); beide Berichte liegen vor. **AK-8 ist seit dem 2026-09-14
-erfüllt** — gemessen am gebauten Programm gegen `2c52356`, sieben von sieben Schritten.
+erfüllt** — gemessen am gebauten Programm gegen `1c64a6e`, sieben von sieben Schritten.
 
 **Was M41, M40 und M35 geändert haben, in drei Sätzen:** die KI baut ihre Fabriken jetzt
 wirklich aus (61 Provinzen auf Stufe 3 statt keiner einzigen Macht über Stufe 1), und die
@@ -346,10 +346,10 @@ zwischen zwei Partien.
 | Tests | **2155 schnell**, **146 Dateien** · Abdeckung Kern **96,9 %**, gesamt **96,3 %** (`pnpm verify` **Exit 0**, Wanduhr 69 und 73 s in zwei Läufen, gemessen am 2026-09-14 auf dem Stand dieses Doku-Commits; davor 2147 vor T-M41-18, 2118 nach M35, 1929 nach M34) |
 | AK-1 | Sieg an Spieltag **975**, 2589 Eroberungen, 11 Kriegserklärungen, Sieger China (Startzahl 1914). Dieselbe Voreinstellung mit Startzahl 2015: Tag 583, mit 1815: Tag 583 (`docs/reports/fullgame*.json`). Der Siegtag springt je KI-Änderung in beide Richtungen; das Tor ist 300–1500. Die drei Startzahlen variieren nur den Zufall — Aufstellung, Gegner und Hauptstädte sind identisch |
 | AK-7 | **abgenommen** (Delegation, `DECISIONS.md`) — 62/62 Fragen, 2 Berichte |
-| AK-8 | **erfüllt**, gemessen am 2026-09-14 gegen `2c52356` am gebauten Programm: starten, Partie beginnen, Strg+S, speichern, beenden, neu starten, „Weiterspielen (Tag 1)" — sieben von sieben Schritten (`docs/reports/packaging.md`). Zählt nicht gegen V1 (M16) |
+| AK-8 | **erfüllt**, gemessen am 2026-09-14 gegen `1c64a6e` am gebauten Programm: starten, Partie beginnen, Strg+S, speichern, beenden, neu starten, „Weiterspielen (Tag 1)" — sieben von sieben Schritten (`docs/reports/packaging.md`). Die exe wurde dafür ein zweites Mal gebaut, weil die Uhr-Reparatur nach dem ersten Bau kam; dass sie wirklich drin ist, zeigt die Tickrate der exe (**99,85–99,98 Ticks/s** bei Tempo 100), nicht die Dateigröße. Zählt nicht gegen V1 (M16) |
 | AK-9 | ⏸ M39, noch nicht gemessen — braucht Noah und einen zweiten Menschen in einem anderen Netz |
 | Anforderungstor | `pnpm coverage:requirements` meldet **V1 offen: 0** |
-| Programm | `worldwar.exe` **6 780 416 Bytes** (6,47 MiB), gebaut am 2026-09-14 00:41, `pnpm tauri:build` Exit 0 in 2 min 19 s; dazu MSI 2 813 952 B und NSIS-Setup 2 141 188 B. Der Sprung gegen die 7 933 952 B vom 2026-09-08 stammt aus T-M28-03 (`tauri-plugin-fs` entfernt) |
+| Programm | `worldwar.exe` **6 780 416 Bytes** (6,47 MiB), gebaut am **2026-09-14 03:22:44** gegen `1c64a6e`, `pnpm tauri:build` mit Rust `release` in 1 min 51 s; dazu MSI 2 813 952 B und NSIS-Setup 2 140 999 B. Der Bau vom selben Tag um 00:41 war auf das Byte gleich groß — die Uhr-Reparatur kostet kein Byte, deshalb belegt sie die Tickrate und nicht die Größe. Der Sprung gegen die 7 933 952 B vom 2026-09-08 stammt aus T-M28-03 (`tauri-plugin-fs` entfernt) |
 | Uhr | **99,88 Ticks/s im Median** am gebauten Bündel bei Tempo 100 (Minimum 99,77, fünf Läufe), am Dev-Server 99,57 / 99,61 / 99,73. Vorher: Bündel Median 95,76 bei Streuung 5,42, Dev-Server 57,9 bis 62,6 (T-M41-17, gemessen über CDP am sichtbaren Fenster) |
 | Langlauf | 1000 Spieltage in **198 321 ms**, **8,263 ms je Tick** inkl. KI (vorher 319 030 ms / 13,293 ms). **Die Partie ist nach 1000 Spieltagen nicht entschieden** — vorher an Tick 19320; das ist eine offene Frage an Noah, kein gerissenes Kriterium (AK-6 misst Zeit) |
 | Zeitbudgets | Weltkarte Median **2,523 ms** / p99 **6,215 ms** (gefordert 3,5 / 8, `worldmap-bench.json`); Zeichnen p95 2,29 ms bei 16,7 ms Bildbudget; Anteil der KI am Tick 0,072 (Grenze 0,3) |

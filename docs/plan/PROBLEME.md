@@ -3472,4 +3472,14 @@ geänderte `index.html` im Wurzelverzeichnis ist die Projektübersichtsseite, ni
 (das ist `apps/desktop/index.html`), und geht nicht ins Erzeugnis — die Positivliste uebersieht hier
 nichts.
 
-**Status:** offen, gemeldet an Noah. Kein Kriterium gerissen.
+**Erledigt am 2026-09-14, 03:22–04:42.** Genau der Weg oben wurde gegangen, nichts abgekuerzt:
+`pnpm tauri:build` auf dem Endstand `1c64a6e` (fertig 03:22:44, Rust `release` in 1 min 51 s),
+danach `ak8-cdp.mjs` (Lauf endet 03:24:36, **sieben von sieben Schritten**, `AK-8 ERFÜLLT`).
+Die neue exe ist **auf das Byte genau so gross** wie die vom 00:41 — 6 780 416 B beide Male —, und
+eine gleiche Dateigroesse ist kein Beleg. Deshalb eine Gegenprobe **am laufenden Programm**: exe mit
+`--remote-debugging-port=9222` gestartet, Weltkarte, Tempo 100, drei Mal zehn Sekunden Echtzeit
+gemessen — **99,85–99,98 Ticks/s**. Vor der Reparatur lag dieselbe Messung bei 92,98–98,40, nach ihr
+bei 99,77–99,95. Die Reparatur steckt im ausgelieferten Programm. Noahs Spielstaende blieben
+unberuehrt (SHA-256 vor und nach der Gegenprobe gleich). Belege: `docs/reports/packaging.md`.
+
+**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 ist gegen `1c64a6e` gemessen.

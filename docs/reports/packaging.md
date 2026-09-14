@@ -1,6 +1,6 @@
 # AK-8 — der Spielstand überlebt den Programmneustart
 
-Gemessen am **2026-09-14** gegen `2c52356`, am gebauten Programm und nicht im Browser.
+Gemessen am **2026-09-14** gegen `1c64a6e`, am gebauten Programm und nicht im Browser.
 Der Bericht gilt für genau diesen Stand.
 
 > **Warum diese Datei existiert:** AK-8 stand seit dem 2026-09-05 in C-02 und hatte bis
@@ -8,20 +8,33 @@ Der Bericht gilt für genau diesen Stand.
 > die Fehlerklasse, die dieses Projekt schon mehrfach Sitzungen gekostet hat. Hier
 > steht, was tatsächlich gelaufen ist — nicht, was gelten soll.
 
+> **Warum am selben Tag ein zweites Mal gemessen wurde:** Der erste Bau des 2026-09-14
+> entstand um 00:41 gegen `2c52356`. Danach kam mit `0f1fce1` die Uhr-Reparatur
+> (T-M41-17) in `apps/desktop/src/App.tsx` — also **in das ausgelieferte Gut**. Der
+> Frische-Wächter des Abnahmelaufs hat genau das erkannt: `artefactUnchangedSince` sah
+> zwischen dem Stempel und `HEAD` eine Datei unter `apps/`, und AK-8 stand zu Recht auf
+> ⚠ („seither N Datei(en) am Erzeugnis geändert"). Nicht der Wächter war zu streng — die
+> exe war alt. Deshalb: neu bauen, neu messen, und **zusätzlich am laufenden Programm
+> nachweisen, dass die Reparatur wirklich darin steckt** (Abschnitt „Gegenprobe" unten).
+> Die alte Messung steht vollständig unter „Geschichte", sie wird nicht gelöscht.
+
 ## Das Erzeugnis
 
 | | |
 |---|---|
-| `worldwar.exe` | **6 780 416 Bytes** (6,47 MiB), geschrieben am **2026-09-14 00:41:25** |
-| `WorldWar_0.1.0_x64_en-US.msi` | 2 813 952 Bytes |
-| `WorldWar_0.1.0_x64-setup.exe` (NSIS) | 2 141 188 Bytes |
-| Bau | `pnpm tauri:build`, **Exit 0**, Wanduhr 2 min 19 s (00:39:07–00:41:26); Rust `release`-Profil in 2 min 01 s |
-| Quelle | während des Baus unangefasst (`git status` sauber bei Baubeginn, erste Schreiboperation nach 00:41:26) |
+| `worldwar.exe` | **6 780 416 Bytes** (6,47 MiB), geschrieben am **2026-09-14 03:22:44** |
+| `WorldWar_0.1.0_x64_en-US.msi` | 2 813 952 Bytes (2026-09-14 03:22:34) |
+| `WorldWar_0.1.0_x64-setup.exe` (NSIS) | 2 140 999 Bytes (2026-09-14 03:22:44) |
+| Bau | `pnpm tauri:build`, fertig um **03:22:44**; `vite build` in 1,53 s, Rust `release`-Profil in 1 min 51 s, danach beide Bündel („Finished 2 bundles at") |
+| Quelle | `1c64a6e` (03:17:17), Arbeitsbaum sauber; seither kein Commit und keine uncommittete Datei unter `apps/`, `packages/`, `data/` |
 
-Zum Vergleich: das Bündel vom 2026-09-13 00:28 war 6 776 832 Bytes groß, das vom
-2026-09-08 noch 7 933 952 Bytes. Die 3 584 Bytes Unterschied zum Vortag sind der
-Schlussstand von M41, M40 und M35; der große Sprung gegen den 2026-09-08 stammt aus
-T-M28-03, das `tauri-plugin-fs` samt Berechtigungen aus dem Programm entfernt hat.
+Zum Vergleich: der Bau vom selben Tag um 00:41 war **auf das Byte gleich groß**
+(6 780 416 B) — die Uhr-Reparatur verschiebt nur zwei Zuweisungen in `App.tsx` und
+kostet kein Byte. Genau deshalb reicht die Dateigröße hier nicht als Beleg, und genau
+deshalb gibt es die Gegenprobe am laufenden Programm. Das Bündel vom 2026-09-13 00:28
+war 6 776 832 Bytes groß, das vom 2026-09-08 noch 7 933 952 Bytes; der große Sprung
+gegen den 2026-09-08 stammt aus T-M28-03, das `tauri-plugin-fs` samt Berechtigungen aus
+dem Programm entfernt hat.
 
 ## Wie gemessen wurde
 
@@ -35,16 +48,19 @@ auch sieht.
 node docs/plan/schlussblock/ak8-cdp.mjs apps/desktop/src-tauri/target/release/worldwar.exe <ausgabe>
 ```
 
-Der Lauf dauerte **8 Sekunden** (00:45:26–00:45:34) und hinterließ `ak8-ergebnis.json`
-und sechs Bildschirmfotos. Das Skript bricht ab, wenn `saves` nicht leer ist, und es
-beendet nur die Prozesse, die es selbst gestartet hat — **gelöscht wird nichts**.
+Der Lauf endete um **03:24:36** (`measuredAt` in `ak8-ergebnis.json`); Schritt 3 schrieb
+`stand-1.json` um 03:24:30. Er hinterließ `ak8-ergebnis.json` und sechs Bildschirmfotos.
+Das Skript bricht ab, wenn `saves` nicht leer ist, und es beendet nur die Prozesse, die
+es selbst gestartet hat — **gelöscht wird nichts**.
 
-**Noahs Spielstände waren währenddessen geparkt, nicht gelöscht:** `saves` hieß für die
-Dauer der Messung `saves.geparkt-2026-09-14`, danach wieder `saves`; die Dateien der
-Messung liegen unter `saves.messung-2026-09-14`. Beide Listen — vorher und nachher —
-nennen dieselben zwei Dateien mit derselben Größe, derselben Uhrzeit und derselben
-SHA-256-Summe (`autosave-0.json.json` 334 237 B, `zeitreihe.autosave-0.json.json`
-8 784 B, beide 2026-09-09 23:08).
+**Noahs Spielstände waren währenddessen geparkt, nicht gelöscht:** `saves` war für die
+Dauer der Messung umbenannt und steht seither wieder an seinem Platz; die Dateien dieses
+zweiten Laufs liegen unter `saves.messung-2026-09-14b` (die des ersten unter
+`saves.messung-2026-09-14`). Die Listen vorher und nachher nennen dieselben zwei Dateien
+mit derselben Größe, derselben Uhrzeit und derselben SHA-256-Summe
+(`autosave-0.json.json` 334 237 B, `EC0A17D3…A21C`; `zeitreihe.autosave-0.json.json`
+8 784 B, `B2E5390E…FEB4`; beide 2026-09-09 23:08). Dieselben Summen wurden nach der
+Gegenprobe ein drittes Mal gezogen und waren wieder gleich.
 
 ## Der Ablauf, Schritt für Schritt (Ausgangspunkt: `saves/` leer)
 
@@ -60,7 +76,51 @@ SHA-256-Summe (`autosave-0.json.json` 334 237 B, `zeitreihe.autosave-0.json.json
 
 **AK-8 ist erfüllt** — sieben von sieben Schritten, Exit 0 (`AK-8 ERFÜLLT`).
 
+## Gegenprobe: steckt die Uhr-Reparatur wirklich in dieser exe?
+
+Die neue exe ist **auf das Byte genau so groß** wie die vom selben Tag um 00:41. Das ist
+plausibel — die Reparatur aus T-M41-17 verschiebt in `App.tsx` nur, *wann* die Uhr ihren
+Stand zurückschreibt — aber als Beleg ist es zu dünn, und ein Dateidatum ist erst recht
+keiner. Also wurde nicht die Datei befragt, sondern **das laufende Programm**.
+
+Verfahren, dasselbe wie bei der Reparatur selbst: `worldwar.exe` mit
+`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222` gestartet, über CDP
+eine Partie auf der **Weltkarte** (237 Provinzen, Vereinigte Staaten, Startzahl
+20260914) begonnen, **Tempo 100** gedrückt und über **10 Sekunden Echtzeit** gemessen:
+zwei abgelesene Uhrzeiten der Kopfleiste und `performance.now()` dazwischen, dazu die
+Bildzeiten aus `requestAnimationFrame`. Drei Läufe, jeder mit frischer Partie.
+
+| Lauf | Uhr von → bis | Echtzeit | Ticks | **Ticks/s** | Bilder | Soll laut `clockStep` |
+|---|---|---|---|---|---|---|
+| 1 | Tag 7 · 14:00 → Tag 49 · 08:00 | 10,022 s | 1 002 | **99,98** | 849 | 998 |
+| 2 | Tag 9 · 10:00 → Tag 51 · 02:00 | 10,015 s | 1 000 | **99,85** | 948 | 997 |
+| 3 | Tag 9 · 10:00 → Tag 51 · 02:00 | 10,012 s | 1 000 | **99,88** | 936 | 997 |
+
+**99,85–99,98 Ticks/s**, gemessen am 2026-09-14 um 04:42. Zum Vergleich dieselbe Messung
+an den `vite preview`-Bündeln der Reparatur:
+
+| Stand | Ticks/s bei Tempo 100 |
+|---|---|
+| **vor** der Reparatur (8 Läufe) | 92,98 – 98,40, mit großer Streuung |
+| **nach** der Reparatur (5 Läufe) | 99,77 – 99,95 |
+| **diese exe** (3 Läufe) | **99,85 – 99,98** |
+
+Die exe liegt im Band *nach* der Reparatur und deutlich über allem, was *vor* ihr gemessen
+wurde — **die Reparatur ist im ausgelieferten Programm enthalten.** Ein zweiter Bau war
+damit nicht nötig. Nebenbelege desselben Laufs: Tempo 100 blieb während aller drei
+Messungen gedrückt (`aria-pressed`), keine Macht schied aus, und die Bildrate lag bei
+85–95 Bildern/s (Median der Bildzeit 7 ms, p95 21 ms).
+
+Diese Gegenprobe hat **nicht gespeichert** und `saves` nicht angefasst; stattdessen
+wurden Größe, Zeitstempel und SHA-256-Summe von Noahs beiden Dateien vor und nach dem
+Lauf gezogen — beide Male gleich. Die Autosave-Automatik konnte nicht dazwischenfunken:
+`shouldAutosave` verlangt **beides**, einen Tagessprung *und* fünf Minuten Echtzeit seit
+dem Partiebeginn, und keine der drei Partien lebte auch nur eine Minute.
+
 ## Zwei Befunde am Steuerskript (beim ersten Lauf überhaupt)
+
+Das gilt für den Lauf um **00:45**; der Lauf um 03:24 fuhr dasselbe, bereits korrigierte
+Skript unverändert.
 
 Das Skript war am 2026-09-13 geschrieben und **noch nie gelaufen**. Eine Vorabprobe am
 DOM — starten, Partie beginnen, Strg+S, nur lesen, nichts speichern — zeigte zwei Stellen,
@@ -104,6 +164,34 @@ die Liste nach dem Neustart — ist wieder Teil des Laufs, statt übersprungen z
 ---
 
 # Geschichte
+
+## Die Messung vom 2026-09-14, 00:45 (gegen `2c52356`) — vom Uhr-Commit überholt
+
+Diese Messung war in der Sache **richtig und bestanden**: sieben von sieben Schritten,
+Exit 0, derselbe Ablauf und dieselben Beobachtungen wie oben. Überholt ist sie nicht
+durch einen Fehler, sondern durch die Reihenfolge des Tages.
+
+| | |
+|---|---|
+| `worldwar.exe` | 6 780 416 Bytes (6,47 MiB), geschrieben am 2026-09-14 **00:41:25** |
+| `WorldWar_0.1.0_x64_en-US.msi` | 2 813 952 Bytes |
+| `WorldWar_0.1.0_x64-setup.exe` (NSIS) | 2 141 188 Bytes |
+| Bau | `pnpm tauri:build`, Exit 0, Wanduhr 2 min 19 s (00:39:07–00:41:26); Rust `release`-Profil in 2 min 01 s |
+| Quelle | während des Baus unangefasst (`git status` sauber bei Baubeginn, erste Schreiboperation nach 00:41:26) |
+| AK-8-Lauf | 8 Sekunden (00:45:26–00:45:34), `AK-8 ERFÜLLT`, Messdateien unter `saves.messung-2026-09-14` |
+
+**Warum sie nicht mehr zählt:** Um 02:21 landete `0f1fce1` — die Uhr schreibt ihren Stand
+zurück, bevor das nächste Bild rechnet (T-M41-17) — und das ist eine Änderung an
+`apps/desktop/src/App.tsx`, also am ausgelieferten Gut. Der Frische-Wächter des
+Abnahmelaufs vergleicht den Stempel dieses Berichts mit `HEAD` und sieht über
+`artefactUnchangedSince` nach, ob dazwischen nur Dokumente und Tests liegen. Hier lag
+mehr, und AK-8 stand folgerichtig auf **⚠ „seither N Datei(en) am Erzeugnis geändert"**.
+
+Das ist der Wächter, der seine Arbeit tut: die 00:41-exe hätte in Noahs Hand die alte,
+stockende Uhr gehabt, und der Bericht hätte trotzdem ✅ gemeldet, wäre der Stempel bloß
+mitgeschrieben worden. Die Antwort war deshalb nicht, die Grenze zu verschieben, sondern
+neu zu bauen (03:22:44), neu zu messen (03:24:36) — und die Reparatur am laufenden
+Programm nachzuweisen, statt sie aus Dateigröße und Datum zu erschließen.
 
 ## Die Messung vom 2026-09-08 (gegen den M28-Stand, T-M28-03)
 

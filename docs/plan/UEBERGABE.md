@@ -103,17 +103,24 @@ Zuletzt gemessen davor: `pnpm verify` **Exit 0, 2118 Tests** (nach M35, Kern 96,
 
 ## 3 · Was du tust — in dieser Reihenfolge
 
-> 3.1 und 3.2 sind erledigt (§1a). Fang bei 3.3 an.
+> **Stand 2026-09-14, 04:45:** 3.1 bis 3.6 sind erledigt — 3.3 und 3.4 sogar zweimal, weil die
+> Uhr-Reparatur `0f1fce1` nach dem ersten Bau kam (Belege unten in den Schritten selbst, dazu
+> `docs/reports/packaging.md` und `PROGRESS.md`). Offen ist nur noch 3.7.
 
 ### 3.3 Programm bauen (~10–20 min)
 ```bash
 pnpm tauri:build > tauri-build.log 2>&1; echo "exit $?"
 ```
 - **Während des Baus keine Quelldatei ändern** (WORKFLOW Falle 7).
-- Erzeugnis: `apps/desktop/src-tauri/target/release/worldwar.exe` (vorher 13.09. 00:28, 6 776 832 B —
-  Größe und Datum danach notieren).
+- **Erledigt, zweimal.** Erster Bau 2026-09-14 **00:41:25** gegen `2c52356`, Exit 0, 2 min 19 s;
+  zweiter Bau **03:22:44** gegen `1c64a6e` (die Uhr-Reparatur kam dazwischen), Rust `release` in
+  1 min 51 s. `worldwar.exe` beide Male **6 780 416 B** — auf das Byte gleich, die Reparatur kostet
+  kein Byte —, MSI 2 813 952 B, NSIS 2 140 999 B. Zum Vergleich: 13.09. 00:28 waren es 6 776 832 B.
 
 ### 3.4 AK-8 am gebauten Programm (~10 min, Fenster sichtbar)
+- **Erledigt, zweimal** (00:45:34 gegen `2c52356`, dann 03:24:36 gegen `1c64a6e`): sieben von sieben
+  Schritten, `AK-8 ERFÜLLT`. **Noahs Spielstände stehen wieder an ihrem Platz und sind unversehrt**
+  (SHA-256 gegen den Erstlauf geprüft) — nicht noch einmal parken, nicht noch einmal anfassen.
 Ablauf wie `docs/reports/packaging.md`: Start → Startdialog **ohne** „Weiterspielen" → „Partie
 beginnen" → Strg+S → „Speichern" für Stand 1 → „Gespeichert." und Zeile „Stand 1 — Tag N" → Programm
 beenden → neu starten → erster Knopf „Weiterspielen (Tag N)" → klicken → Partie läuft.
@@ -214,7 +221,7 @@ Nur Dokumentation, kein Code. **Jede Zahl aus einem Bericht oder Befehl, nie ges
    | Abnahme | 11 von 11, 7 min 28 s | **12 von 12, Exit 0, 4 min 58 s** (298 s) | `acceptance.md`, `acceptance-timing.json` |
    | Abdeckung gesamt | 95,9 % | **96,3 %** (Kern 96,9 %) | `acceptance.md`, `pnpm verify` |
    | Langlauf je Tick | 13,293 ms | **8,263 ms**; die Partie ist nach 1000 Spieltagen **nicht entschieden** (vorher Tick 19320) | `docs/reports/performance.md` |
-   | **AK-8** | seit 2026-09-08 ungemessen („⚠ nennt keinen Stand") | **erfüllt**, gemessen am 2026-09-14 gegen `2c52356` am gebauten Programm, sieben von sieben Schritten; `worldwar.exe` 6 780 416 B | `docs/reports/packaging.md` |
+   | **AK-8** | seit 2026-09-08 ungemessen („⚠ nennt keinen Stand") | **erfüllt**, gemessen am 2026-09-14 gegen `1c64a6e` am gebauten Programm (03:22:44 gebaut, 03:24:36 gemessen), sieben von sieben Schritten; `worldwar.exe` 6 780 416 B. Gegenprobe am laufenden Programm, weil die Dateigröße unverändert blieb: Weltkarte, Tempo 100, **99,85–99,98 Ticks/s** — die Uhr-Reparatur ist drin | `docs/reports/packaging.md` |
    | Sichtprüfung der sieben Punkte | — | **5 erfüllt**, Punkt 2 **nicht prüfbar** (der Zustand wird nie gezeichnet), Punkt 7 **ohne Urteil** (Noahs Maßstab) | `docs/reports/sichtpruefung-2026-09-14.md` |
    | Aufgaben | 255 / 224 gebaut | **312 / 264 gebaut**, 48 offen | `tasks.yaml`, gezählt |
    | Tests (schnell) | 1929 in 140 Dateien | **siehe `WORKFLOW.md` §5** — zuletzt gemessen im Doku-Commit vom 2026-09-14 | `pnpm verify` |
