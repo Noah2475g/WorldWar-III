@@ -4,6 +4,7 @@ import {
   FONT_SCALES,
   INITIAL_UI,
   SETTINGS_STORAGE_KEY,
+  defaultViewer,
   loadSettings,
   parseSettings,
   saveSettings,
@@ -189,5 +190,58 @@ describe('R-GAME-05 Einstellungen ueberleben den Neustart', () => {
     // Privates Fenster, verweigerter Zugriff, Node: kein Grund, das Spiel zu stoeren.
     expect(loadSettings(undefined)).toEqual(DEFAULT_SETTINGS)
     expect(() => saveSettings(DEFAULT_SETTINGS, undefined)).not.toThrow()
+  })
+})
+
+/**
+ * Der Platz, auf dem dieser Bildschirm spielt (T-M37-01, R-MP-01, D28.3).
+ *
+ * `defaultViewer` ist die Antwort auf „wer bin ich", die nirgends eine Kennung fest
+ * verdrahtet. Sie nimmt die erste MENSCHLICHE Macht in `playerOrder` — ein ausdrueckliches
+ * Feld des Zustands und keine Schluesselreihenfolge, also auf beiden Rechnern dieselbe.
+ */
+describe('R-MP-01/AK1 Der Platz kommt aus dem Zustand, nicht aus einer Annahme', () => {
+  const stand = (order: string[], kinds: Record<string, 'human' | 'ai'>) =>
+    ({
+      playerOrder: order,
+      players: Object.fromEntries(order.map((id) => [id, { kind: kinds[id] ?? 'ai' }])),
+    }) as unknown as Parameters<typeof defaultViewer>[0]
+
+  it('nimmt die erste menschliche Macht', () => {
+    expect(defaultViewer(stand(['p1', 'p2', 'p3'], { p1: 'human', p2: 'ai', p3: 'human' }))).toBe('p1')
+    // Im Spiel zu zweit ist der Gastgeber der erste Mensch — der Gast bekommt seinen
+    // Platz ausdruecklich gesagt und faellt nicht auf diese Antwort zurueck.
+    expect(defaultViewer(stand(['p1', 'p2'], { p1: 'human', p2: 'human' }))).toBe('p1')
+  })
+
+  it('faellt auf die erste Macht zurueck, wenn keine menschlich ist', () => {
+    // Ein Zuschauerstand (nur Computergegner) darf die Oberflaeche nicht leer lassen.
+    expect(defaultViewer(stand(['p4', 'p7'], { p4: 'ai', p7: 'ai' }))).toBe('p4')
+  })
+
+  it('sagt bei einem Stand ohne Maechte ehrlich nichts', () => {
+    expect(defaultViewer(stand([], {}))).toBeNull()
+  })
+
+  it('legt beim Platzwechsel die Auswahl des alten Platzes ab', () => {
+    // Provinz und Armee des Gastgebers gehoeren nicht dem Gast: ein Panel, das nach dem
+    // Wechsel eine fremde Armee zeigt, ist die Vorstufe eines Befehls an die falsche.
+    const vorher: UiState = {
+      ...INITIAL_UI,
+      selectedProvince: 'alpha',
+      selectedArmy: 'a1',
+      notice: { text: 'alt', kind: 'error' },
+    }
+    const nachher = uiReducer(vorher, { type: 'setViewer', id: 'p2' })
+
+    expect(nachher.viewerId).toBe('p2')
+    expect(nachher.selectedProvince).toBeNull()
+    expect(nachher.selectedArmy).toBeNull()
+    expect(nachher.notice).toBeNull()
+  })
+
+  it('beginnt ohne Platz — und das heisst nicht niemand', () => {
+    expect(INITIAL_UI.viewerId).toBeNull()
+    expect(uiReducer(INITIAL_UI, { type: 'setViewer', id: null }).viewerId).toBeNull()
   })
 })

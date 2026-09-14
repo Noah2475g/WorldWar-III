@@ -1,0 +1,24 @@
+// Die Oberflaeche, wie sie bis zum 2026-09-14 aussah (T-M37-01, Befund R-MP-01).
+//
+// Neunzehn Stellen in App.tsx behaupteten, der Mensch am Bildschirm sei die erste Macht.
+// Im Einzelspieler stimmt das; im Spiel zu zweit sieht der Gast damit die Welt seines
+// Gegners — mit dessen Rohstoffen, dessen Armeen, dessen Alarmen. Diese Datei ist die
+// Gegenprobe des Waechters: faellt sie nicht mehr auf, sucht er nichts mehr.
+
+const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
+
+const own = eventsFor(state.eventLog, 'p1')
+
+const ctx = { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay }
+
+const ownProvinces = view.provinces.filter((p) => p.owner === 'p1')
+
+const eigen = { label: 'eigen', color: colorForPlayer("p1") }
+
+const gast = `p2`
+
+const capital = fresh.players.p1?.capitalProvinceId
+
+// Und das, was KEIN Verstoss ist — erzeugte Kennungen und Prosa ueber sie:
+const farbe = colorForPlayer(`p${index + 2}`)
+const provinz = 'p22-nord'

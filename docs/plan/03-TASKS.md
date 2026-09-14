@@ -4976,7 +4976,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Rohstoffen, dessen Armeen, dessen Alarmen.
 - **Anforderungen:** R-MP-01 · **Entwurf:** D28.3
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/state/uiState.ts`
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/state/uiState.ts`,
+  `apps/desktop/src/map/modes.ts`, `apps/desktop/src/ui/Legend.tsx`
 - **Tests zuerst:** `App.test.tsx` betreibt die Oberfläche einmal als `p1` und einmal als
   `p2` am selben Zustand und vergleicht: Rohstoffleiste, eigene Provinzen, Protokoll,
   Alarme, Auswahlfarbe und die Liste der erlaubten Aktionen müssen sich unterscheiden und

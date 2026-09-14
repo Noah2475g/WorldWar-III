@@ -6,6 +6,7 @@ import { advanceTicks } from '@worldwar/ai'
 import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
+import { colorForPlayer } from './map/modes.ts'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -1997,5 +1998,104 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
     expect(gedrueckt()).toEqual(['Garnison'])
     expect(titel).toMatch(/Garnison/)
+  }, 30_000)
+})
+
+/**
+ * Die Oberflaeche kennt ihren Spieler (T-M37-01, R-MP-01, D28.3).
+ *
+ * Bis zum 2026-09-14 stand an neunzehn Stellen in `App.tsx` das Literal fuer die erste
+ * Macht — in der Sicht, im Protokoll, bei den Farben, bei der Frage, welche Provinz mir
+ * gehoert. Der Gast einer Partie zu zweit saehe damit die Welt seines Gegners, mit dessen
+ * Rohstoffen und dessen Armeen. Geprueft wird deshalb dieselbe Oberflaeche am
+ * DEMSELBEN Zustand, einmal fuer den ersten und einmal fuer den zweiten Platz: die
+ * Startzahl steht fest, also erzeugen beide Laeufe Zug um Zug dieselbe Partie.
+ */
+describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betreibt', () => {
+  const stand = () =>
+    neueGameState({ ...DEFAULT_NEW_GAME, nation: world.startPositions[0]!.nation }, world, TEST_RULES)
+
+  /** Die Kennungen in der Gruppe „Eigene Provinzen" des Waehlers. */
+  const eigeneProvinzen = (): string[] => {
+    const select = screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement
+    const gruppe = [...select.querySelectorAll('optgroup')].find((g) => g.label === 'Eigene Provinzen')
+    return [...(gruppe?.querySelectorAll('option') ?? [])].map((option) => option.value).sort()
+  }
+
+  const rohstoffe = () => screen.getByRole('list', { name: 'Rohstoffe' }).textContent ?? ''
+
+  /** Die Fuellung, die der Kartenschluessel „eigen" nennt. */
+  const eigeneFarbe = (): string =>
+    ([...document.querySelectorAll('.legend__item')].find((item) => item.textContent?.includes('eigen'))
+      ?.querySelector('.legend__swatch') as HTMLElement | null)?.style.background ?? ''
+
+  const besitzLaut = (playerId: string): string[] => {
+    const s = stand()
+    return s.provinceOrder.filter((id) => s.provinces[id]?.owner === playerId).sort()
+  }
+
+  it('zeigt jedem Platz seine eigenen Provinzen und seine eigenen Rohstoffe', () => {
+    startGame()
+    const ersterBesitz = eigeneProvinzen()
+    const ersteLeiste = rohstoffe()
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    const zweiterBesitz = eigeneProvinzen()
+
+    // Nicht bloss „anders", sondern genau das, was dem zweiten Platz im Zustand gehoert.
+    expect(zweiterBesitz).toEqual(besitzLaut('p2'))
+    expect(ersterBesitz).toEqual(besitzLaut('p1'))
+    expect(zweiterBesitz).not.toEqual(ersterBesitz)
+    expect(rohstoffe()).not.toEqual(ersteLeiste)
+  })
+
+  it('faerbt den Kartenschluessel mit der Farbe des betriebenen Spielers', () => {
+    startGame()
+    const erste = eigeneFarbe()
+    expect(erste, 'der Schluessel nennt keine eigene Farbe — der Test misst nichts').not.toBe('')
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    const zweite = eigeneFarbe()
+
+    expect(zweite).not.toBe(erste)
+    // Die Farbe kommt aus derselben Tabelle wie die Fuellung der Karte. Der Umweg ueber
+    // ein Probe-Element ist noetig, weil jsdom jeden Farbwert als rgb() zurueckgibt.
+    const probe = document.createElement('span')
+    probe.style.background = colorForPlayer('p2')
+    expect(zweite).toBe(probe.style.background)
+  })
+
+  it('erlaubt Befehle nur in den Provinzen des betriebenen Spielers', () => {
+    const hauptstadtVonP2 = stand().players['p2']!.capitalProvinceId!
+
+    startGame()
+    // Fuer den ersten Platz ist das fremdes Gebiet: die Provinz steht hoechstens unter
+    // „Aufgeklaerte Provinzen", und Ausheben gibt es dort nicht.
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: hauptstadtVonP2 } })
+    expect(screen.queryByRole('region', { name: 'Ausheben' })).toBeNull()
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: hauptstadtVonP2 } })
+
+    expect(eigeneProvinzen()).toContain(hauptstadtVonP2)
+    expect(screen.queryByRole('region', { name: 'Ausheben' })).not.toBeNull()
+  })
+
+  it('liest das Protokoll mit den Augen des betriebenen Spielers', () => {
+    startGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    const erstesProtokoll = screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+    expect(erstesProtokoll.length, 'das Protokoll ist leer — der Test misst nichts').toBeGreaterThan(20)
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Derselbe Spieltag, dieselbe Partie, ein anderer Leser: der Tagesbericht traegt die
+    // Bilanzen der eigenen Macht, und die beiden Maechte wirtschaften verschieden.
+    expect(screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? '').not.toEqual(erstesProtokoll)
   }, 30_000)
 })

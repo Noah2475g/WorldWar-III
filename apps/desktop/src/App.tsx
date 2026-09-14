@@ -37,7 +37,7 @@ import {
 } from './game/actions.ts'
 import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
-import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
+import { INITIAL_UI, defaultViewer, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
@@ -149,6 +149,14 @@ export interface AppProps {
   audio?: () => AudioContext | null
   /** Starts with the guided introduction off — for tests and for a returning player. */
   skipTutorial?: boolean
+  /**
+   * Wer an diesem Bildschirm spielt (T-M37-01, R-MP-01, D28.3).
+   *
+   * Ohne Angabe die erste menschliche Macht des Standes — im Einzelspieler also der
+   * Spieler, wie bisher. Im Spiel zu zweit bekommt der Gast hier seinen Platz; ohne
+   * diesen Wert sähe er die Welt seines Gegners, mit dessen Rohstoffen und dessen Armeen.
+   */
+  viewerId?: string
   /** The wall clock, for the real-time half of the autosave rule. Injectable for tests. */
   now?: () => number
 }
@@ -198,6 +206,9 @@ export function App(props: AppProps) {
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI, (start) => ({
     ...start,
     settings: loadSettings(),
+    // Der Platz kommt von aussen oder bleibt offen (T-M37-01): offen heisst „die erste
+    // menschliche Macht dieses Standes", nicht „niemand".
+    viewerId: props.viewerId ?? null,
   }))
 
   // Und zurueckgeschrieben wird, sobald sich etwas aendert.
@@ -360,8 +371,20 @@ export function App(props: AppProps) {
   const chosen = useMemo(() => (props.storage ? null : createStorage()), [props.storage])
   const storage = props.storage ?? chosen!.storage
 
+  /**
+   * Wer am Bildschirm sitzt (T-M37-01, R-MP-01, D28.3).
+   *
+   * Der eine Wert, der die neunzehn festen p1 dieser Datei abgeloest hat. Ohne ausdrueckliche
+   * Wahl die erste menschliche Macht des Standes — im Einzelspieler dasselbe wie frueher,
+   * im Spiel zu zweit fuer den Gast das Gegenteil von falsch.
+   */
+  const viewerId = useMemo(() => (state ? (ui.viewerId ?? defaultViewer(state)) : null), [state, ui.viewerId])
+
   // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
-  const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
+  const view = useMemo(
+    () => (state && viewerId ? publicView(state, viewerId, props.rules) : null),
+    [state, viewerId, props.rules],
+  )
 
   /**
    * Sound for what happened since the last look (T-M13-02, R-UI-04).
@@ -371,8 +394,8 @@ export function App(props: AppProps) {
    * one. Above ten game hours a second `play` stays silent by itself.
    */
   useEffect(() => {
-    if (!state) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Eine neue Partie faengt mit einem leeren Protokoll an, und ein geladener Stand
     // kann kuerzer sein als der laufende. Ohne diese Zeile bleibt der Merker stehen und
     // die naechste Partie ist stumm, bis sie den alten Stand ueberholt hat (T-M21-02).
@@ -383,9 +406,9 @@ export function App(props: AppProps) {
 
     // Nur die eigenen Gefechte klingen (T-M28-08): oeffentliche Ereignisse sind lesbar,
     // aber nicht deshalb meine Sache.
-    const cue = cueForOwnEvents(fresh, 'p1')
+    const cue = cueForOwnEvents(fresh, viewerId)
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
-  }, [state, ui.settings.sound, speed, props.audio])
+  }, [state, viewerId, ui.settings.sound, speed, props.audio])
 
   /**
    * Die Körper der Tagesberichte, je Ereignis-Tick (T-M24-01, D24.4, Befund V2-06).
@@ -413,8 +436,8 @@ export function App(props: AppProps) {
   const [timeline, setTimeline] = useState<readonly TimelineEntry[]>([])
 
   useEffect(() => {
-    if (!state || !view) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !view || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Dieselbe Rücksetzung wie beim Ton: eine neue Partie beginnt mit leerem Protokoll.
     if (own.length < reportedUpTo.current) {
       reportedUpTo.current = 0
@@ -448,7 +471,7 @@ export function App(props: AppProps) {
       }
       return next
     })
-  }, [state, view, ticksPerDay, props.rules])
+  }, [state, view, viewerId, ticksPerDay, props.rules])
 
   /** A step of the guided start ends because the player did the thing it asked for. */
   const tutor = useCallback((action: TutorialTrigger) => {
@@ -476,8 +499,8 @@ export function App(props: AppProps) {
    * Fuehrung und kein Zaehlwerk.
    */
   useEffect(() => {
-    if (!state) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Dieselbe Ruecksetzung wie beim Ton: sonst wuerde die Fuehrung in einer zweiten
     // Partie genau die Schritte ueberspringen, fuer die sie gebaut ist.
     if (own.length < tutoredUpTo.current) tutoredUpTo.current = 0
@@ -490,7 +513,7 @@ export function App(props: AppProps) {
     if (next !== tutorial) setTutorial(next)
     // `tutorial` steht in den Abhaengigkeiten: hat ein Ereignis einen Schritt beendet,
     // laeuft dieser Effekt erneut und bietet den Rest des Stroms dem naechsten Schritt an.
-  }, [state, tutorial])
+  }, [state, viewerId, tutorial])
 
   // Eine entschiedene Partie laeuft nicht weiter: die Uhr haelt an, sobald ein Sieger
   // feststeht (R-UI-13). Das Fenster darf man schliessen, die Uhr bleibt stehen.
@@ -540,8 +563,11 @@ export function App(props: AppProps) {
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
-    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay, pending: pendingOrders } : null),
-    [state, activeMap, props.rules, ticksPerDay, pendingOrders],
+    () =>
+      state && viewerId
+        ? { state, map: activeMap, rules: props.rules, playerId: viewerId, ticksPerDay, pending: pendingOrders }
+        : null,
+    [state, viewerId, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
@@ -562,12 +588,15 @@ export function App(props: AppProps) {
           // Der Beziehungsmodus (T-M26-03): aus dem gemerkten Eigentuemer und der
           // EIGENEN Beziehungslage — auch ein veralteter Eigentuemer traegt die
           // heutige Beziehung, denn die kennt man von sich selbst.
-          relation: seen === undefined ? undefined : relationKindFor(seen.owner, 'p1', view?.relations ?? {}),
+          relation:
+            seen === undefined || !viewerId
+              ? undefined
+              : relationKindFor(seen.owner, viewerId, view?.relations ?? {}),
           polygons: province.polygons,
           bounds: boundsOf(province.polygons),
         }
       }),
-    [activeMap.provinces, view, strengths],
+    [activeMap.provinces, view, viewerId, strengths],
   )
 
   const centres = useMemo(
@@ -627,14 +656,14 @@ export function App(props: AppProps) {
           provinceId: army.provinceId,
           owner: army.owner,
           strength: army.strength,
-          own: army.owner === 'p1',
+          own: army.owner === viewerId,
           ...(icon ? { icon } : {}),
           ...(summary ? { count: summary.count, condition: summary.condition } : {}),
           ...(relation ? { relation } : {}),
           ...(march ? { march } : {}),
         }
       }),
-    [view, props.rules],
+    [view, viewerId, props.rules],
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
@@ -771,7 +800,8 @@ export function App(props: AppProps) {
   const abortFastForward = useRef(false)
   const fastForwardRun = useCallback(
     (target: FastForwardTarget) => {
-      const viewerId = 'p1'
+      // Bis zum 2026-09-14 stand hier ein fest verdrahteter Platz samt einer toten
+      // Pruefung darunter (T-M37-01). Jetzt kommt er von oben, und die Pruefung lebt.
       if (!viewerId) return
       abortFastForward.current = false
       setSpeed(0)
@@ -826,7 +856,7 @@ export function App(props: AppProps) {
       const start = stateRef.current
       if (start) chunk(start)
     },
-    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
+    [viewerId, activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
   )
 
   // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
@@ -1160,7 +1190,10 @@ export function App(props: AppProps) {
     // the world — the first thing they look for is where they are.
     // Die Mitten kommen aus der gewaehlten Karte: der Merker `centres` haelt
     // auf diesem Durchlauf noch die alten und faende die neue Hauptstadt nicht.
-    const capital = fresh.players.p1?.capitalProvinceId
+    // Die eigene Hauptstadt — ueber `defaultViewer` und nicht ueber `players.p1`
+    // (T-M37-01): im Spiel zu zweit wuerde der Gast sonst auf den Gegner blicken.
+    const host = defaultViewer(fresh)
+    const capital = host ? fresh.players[host]?.capitalProvinceId : undefined
     const centre = capital ? chosenMap.provinces.find((province) => province.id === capital)?.center : undefined
     if (centre) {
       dispatch({
@@ -1220,12 +1253,12 @@ export function App(props: AppProps) {
    * frischen Aufträge der Sicht.
    */
   const expenses = useMemo(() => {
-    if (!state || !view) return {}
-    const own = eventsFor(state.eventLog, 'p1').filter(
+    if (!state || !view || !viewerId) return {}
+    const own = eventsFor(state.eventLog, viewerId).filter(
       (event) => event.tick > view.tick - ticksPerDay && event.tick <= view.tick,
     )
     return dayExpenses(view, props.rules, own)
-  }, [state, view, ticksPerDay, props.rules])
+  }, [state, view, viewerId, ticksPerDay, props.rules])
 
   /**
    * Der Kursverlauf des Marktes (T-M32-02): aus den eigenen `TRADE_EXECUTED` im
@@ -1233,9 +1266,9 @@ export function App(props: AppProps) {
    * Reihe reicht so weit zurück wie er, und das ist für eine Richtung genug.
    */
   const prices = useMemo(() => {
-    if (!state) return {}
-    return priceSeries(eventsFor(state.eventLog, 'p1'), ticksPerDay)
-  }, [state, ticksPerDay])
+    if (!state || !viewerId) return {}
+    return priceSeries(eventsFor(state.eventLog, viewerId), ticksPerDay)
+  }, [state, viewerId, ticksPerDay])
 
   /**
    * Der offene Einmarsch-Alarm (T-M28-06, R-TIME-06): der jüngste `ARMY_INTRUDED`,
@@ -1245,15 +1278,15 @@ export function App(props: AppProps) {
    * die Oberfläche sagt dazu, **wo** — Chip im Kopf, Zinnober-Ring auf der Karte.
    */
   const alarm = useMemo(() => {
-    if (!state) return null
-    const offen = openIntrusion(eventsFor(state.eventLog, 'p1'), alarmSeenTick, state.tick)
+    if (!state || !viewerId) return null
+    const offen = openIntrusion(eventsFor(state.eventLog, viewerId), alarmSeenTick, state.tick)
     if (!offen) return null
     return {
       provinceId: offen.provinceId,
       provinceName: activeMap.provinces.find((p) => p.id === offen.provinceId)?.name ?? offen.provinceId,
       intruder: state.players[offen.intruderId]?.nation ?? offen.intruderId,
     }
-  }, [state, alarmSeenTick, activeMap.provinces])
+  }, [state, viewerId, alarmSeenTick, activeMap.provinces])
 
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
@@ -1299,12 +1332,12 @@ export function App(props: AppProps) {
    * in a line is swapped for the name it stands for (R-UI-07).
    */
   const events: EventEntry[] = useMemo(() => {
-    if (!state) return []
+    if (!state || !viewerId) return []
     const naming = {
       player: nameOf,
       army: (id: string) => state.armies[id]?.name ?? id,
       ticksPerDay,
-      viewer: 'p1',
+      viewer: viewerId,
     }
     // **Erst deuten, dann zuschneiden** (T-M15-09). Bis zum 2026-09-06 stand hier
     // `.slice(-40)` *vor* allem anderen: das Protokoll wurde auf die letzten vierzig
@@ -1314,7 +1347,7 @@ export function App(props: AppProps) {
     //
     // Gekürzt wird deshalb auf eine Menge, in der jede Rubrik noch etwas zu zeigen hat:
     // die letzten vierzig Zeilen **und** die letzten vierzig Weltereignisse.
-    const alle = eventsFor(state.eventLog, 'p1')
+    const alle = eventsFor(state.eventLog, viewerId)
     const jüngste = new Set(alle.slice(-LOG_LINES))
     for (const event of worldEventsIn(alle).slice(-LOG_LINES)) jüngste.add(event)
 
@@ -1340,7 +1373,7 @@ export function App(props: AppProps) {
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
-  }, [state, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
+  }, [state, viewerId, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
    * Der Zustands-Hash der Debug-Ansicht (T-M12-10).
@@ -1371,19 +1404,19 @@ export function App(props: AppProps) {
     if (reason === 'aborted') return t('header.stoppedAborted', { time })
     if (reason === 'limit') return t('header.stoppedLimit', { time })
     if (reason === 'target') return t('header.stoppedTarget', { time })
-    if (!trigger || !state) return t('header.stoppedAlertPlain', { time })
+    if (!trigger || !state || !viewerId) return t('header.stoppedAlertPlain', { time })
     const beschrieben = describeEvent(trigger, 0, activeMap, {
       player: nameOf,
       army: (id: string) => state.armies[id]?.name ?? id,
       ticksPerDay,
-      viewer: 'p1',
+      viewer: viewerId,
     })
     return t('header.stoppedAlert', { time, event: beschrieben.text })
-  }, [fastForwardState, ticksPerDay, state, activeMap, nameOf])
+  }, [fastForwardState, ticksPerDay, state, viewerId, activeMap, nameOf])
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== 'p1') return []
+    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
     return [
       { id: 'build', title: t('actions.buildGroup'), actions: buildActions(ctx, selected.id).map((spec) => toAction(spec)) },
       {
@@ -1415,7 +1448,7 @@ export function App(props: AppProps) {
   const naechsteFreischaltung = useMemo(() => (ctx ? nextUnlock(ctx) : null), [ctx])
 
   const provinceActions: Action[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== 'p1') return []
+    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
     return [toAction(capitalAction(ctx, selected.id))]
   }, [ctx, selected, toAction])
 
@@ -1509,7 +1542,7 @@ export function App(props: AppProps) {
     }
   }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send, ticksPerDay])
 
-  if (!state || !view || !ctx) {
+  if (!state || !view || !ctx || !viewerId) {
     return (
       <div className="app app--empty" style={fontScaleStyle(ui.settings)}>
         <p>{t('app.loading')}</p>
@@ -1550,8 +1583,8 @@ export function App(props: AppProps) {
     )
   }
 
-  const ownProvinces = view.provinces.filter((p) => p.owner === 'p1').map((p) => ({ id: p.id, name: p.name }))
-  const knownProvinces = view.provinces.filter((p) => p.owner !== 'p1').map((p) => ({ id: p.id, name: p.name }))
+  const ownProvinces = view.provinces.filter((p) => p.owner === viewerId).map((p) => ({ id: p.id, name: p.name }))
+  const knownProvinces = view.provinces.filter((p) => p.owner !== viewerId).map((p) => ({ id: p.id, name: p.name }))
 
   return (
     <div className="app" style={fontScaleStyle(ui.settings)}>
@@ -1623,7 +1656,7 @@ export function App(props: AppProps) {
             labelFor={nameOfProvince}
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
-          <Legend mode={ui.mode} />
+          <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
         </div>
 

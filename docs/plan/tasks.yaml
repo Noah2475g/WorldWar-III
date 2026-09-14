@@ -2596,17 +2596,17 @@ tasks:
   - id: T-M37-01
     milestone: M37
     title: Die Oberflaeche bekommt einen Spieler statt der Annahme p1
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-01]
     design: [D-28]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/state/uiState.ts]
-    tests: [apps/desktop/src/App.test.tsx]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/state/uiState.ts, apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx]
+    tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/state/uiState.test.ts]
     dod: "MEHRSPIELER.md und D28.3. App.tsx nennt an achtzehn Stellen das Literal 'p1' - Sicht, Protokoll, Alarme, Vorspulen, Farben, eigene Provinzen. Im Spiel zu zweit ist der Gast p2 und saehe sonst die Welt seines Gegners. Ein viewerId aus dem Zustand der Huelle ersetzt jedes Vorkommen. Test zuerst: dieselbe Oberflaeche einmal als p1 und einmal als p2 am selben Zustand betrieben, und Rohstoffleiste, eigene Provinzen, Protokoll, Alarme, Auswahlfarbe und erlaubte Aktionen unterscheiden sich je passend (R-MP-01/AK1). Vorsicht in fastForwardRun: dort steht heute const viewerId = 'p1' gefolgt von einer toten Pruefung, die nach dem Umbau lebendig wird."
   - id: T-M37-02
     milestone: M37
     title: Der Waechter gegen die Rueckkehr von p1
-    status: todo
+    status: done
     deps: [T-M37-01]
     requirements: [R-MP-01]
     design: [D-28]
