@@ -104,6 +104,12 @@ export function applicationModules(dir: string): string[] {
 export const REACHABILITY_EXCEPTIONS: Readonly<Record<string, string>> = {
   'apps/desktop/src/index.ts':
     'Paketeinstieg (package.json "main") fuer andere Pakete, nicht Teil der laufenden Anwendung.',
+  'apps/desktop/src/net/websocketTransport.ts':
+    'T-M38-06: die Leitung wird erst vom Beitrittsbildschirm gebaut, und der ist T-M39-02/T-M39-03. ' +
+    'Bis dahin ist sie ABSICHTLICH unerreichbar - genau das misst T-M38-05 am Erzeugnis: im Tauri-Buendel ' +
+    'steht kein WebSocket. Sie ist trotzdem kein totes Modul: useNetplay nimmt jeden Transport, und die ' +
+    'Vertragsreihe aus T-M38-01 laeuft gegen sie wie gegen das Schleifendoppel. Diese Ausnahme ist eine ' +
+    'Zusage auf Zeit und gehoert in T-M39-03 wieder heraus.',
 }
 
 export function unreachableModules(entryFiles: readonly string[], directory: string): string[] {
