@@ -1,7 +1,7 @@
 import { advanceTicks } from '@worldwar/ai'
 import { HASH_OMIT_KEYS, type Command, type GameEvent, type GameState, type MapData, type PlayerId, type Rules } from '@worldwar/core'
-import { hashValue } from '@worldwar/shared'
-import { envelope, type CommandsMessage } from './protocol'
+import { canonicalText, hashValue } from '@worldwar/shared'
+import { envelope, type CommandsMessage, type EndMessage } from './protocol'
 
 /**
  * Der Gleichschritt (T-M37-06, T-M37-07, R-MP-03, D28.5, MEHRSPIELER.md §2).
@@ -115,6 +115,46 @@ export function stateHash(state: GameState): string {
 }
 
 /**
+ * Der Text, aus dem die Prüfsumme entsteht (T-M37-09, R-MP-04/AK2, D28.6).
+ *
+ * Das Werkzeug für die Untersuchung **nach** einem Auseinanderlaufen: zwei dieser Texte
+ * nebeneinander sagen, an welchem Feld die Welten sich trennen — die Prüfsumme sagt nur,
+ * *dass* sie es tun. `canonicalText` gibt es seit M1 in `packages/shared/src/hash.ts` und
+ * wurde nie gebraucht.
+ *
+ * **Lokal und freiwillig, nicht im Spielfluss.** Der Text ist um ein Vielfaches größer als
+ * der Spielstand; ihn je Tick zu erzeugen wäre ein Preis für etwas, das an 999 von 1000
+ * Ticks niemand liest.
+ */
+export function canonicalOf(state: GameState): string {
+  return canonicalText(state, { omitKeys: HASH_OMIT_KEYS })
+}
+
+/**
+ * Was festgehalten wird, wenn zwei Welten sich trennen (T-M37-09, R-MP-04/AK1).
+ *
+ * Der Tick ist der **erste nicht mehr gerechnete** — vor ihm waren beide Seiten gleich,
+ * ab ihm ist die Frage offen, und niemand kann hinterher mehr sagen, welche Welt die
+ * richtige war. Genau deshalb hält die Partie an, statt weiterzuspielen.
+ */
+export interface DesyncReport {
+  tick: number
+  /** Der Platz, dessen Prüfsumme abweicht. */
+  seat: PlayerId
+  /** Die eigene Prüfsumme des zuletzt gerechneten Ticks. */
+  own: string
+  /** Die der Gegenseite. */
+  other: string
+}
+
+/** Ein Spielstand, so wie ihn eine Seite nach dem Anhalten sichern kann (R-MP-04/AK2). */
+export interface LockstepSnapshot {
+  tick: number
+  hash: string
+  state: GameState
+}
+
+/**
  * Die Zustandsmaschine: sammeln, freigeben, rechnen.
  *
  * Bewusst eine Klasse und keine Kette reiner Funktionen: sie hält vier veränderliche
@@ -133,6 +173,7 @@ export class Lockstep {
   /** Was für einen Tick schon eingetroffen ist, je Platz. */
   protected readonly inbox = new Map<number, Map<PlayerId, CommandsMessage>>()
   protected finished = false
+  protected divergence: DesyncReport | null = null
 
   constructor(options: LockstepOptions) {
     this.seat = options.seat
@@ -157,8 +198,37 @@ export class Lockstep {
   }
 
   get status(): LockstepStatus {
+    // Das Auseinanderlaufen steht vorn: eine Partie, die sich getrennt hat, ist weder
+    // „bereit" noch „wartend" — sie ist vorbei, bis jemand hinsieht.
+    if (this.divergence) return 'desynced'
     if (this.finished) return 'finished'
     return this.waitingFor().length === 0 ? 'ready' : 'waiting'
+  }
+
+  /** Der Befund, wenn die Welten sich getrennt haben — sonst `null` (T-M37-09). */
+  get desync(): DesyncReport | null {
+    return this.divergence
+  }
+
+  /**
+   * Den eigenen Stand sichern, damit der Fehler untersuchbar bleibt (R-MP-04/AK2).
+   *
+   * Der Zustand selbst, nicht eine Zusammenfassung: er geht durch dieselbe Serialisierung
+   * wie ein Spielstand, und erst dann lässt sich fragen, welche der beiden Welten die
+   * richtige war. `canonicalOf` daneben sagt, **wo** sie sich unterscheiden.
+   */
+  snapshot(): LockstepSnapshot {
+    return { tick: this.tick, hash: this.hash, state: this.current }
+  }
+
+  /**
+   * Die Nachricht, mit der eine Seite das Ende ansagt.
+   *
+   * Bei einem Auseinanderlaufen nennt sie den strittigen Tick — „ab wann" ist die einzige
+   * Auskunft, die hinterher noch etwas wert ist.
+   */
+  endMessage(reason: EndMessage['reason'] = 'auseinandergelaufen'): EndMessage {
+    return { ...envelope('ende'), reason, tick: this.divergence?.tick ?? this.tick }
   }
 
   /**
@@ -224,6 +294,15 @@ export class Lockstep {
       return { ran: false, tick, waitingFor: this.waitingFor(), applied: [], events: [] }
     }
 
+    // Zuerst die Pruefsumme, dann die Rechnung (T-M37-09, R-MP-04/AK1, D28.6): jede
+    // Nachricht traegt den Hash des zuletzt gerechneten Ticks. Weicht er ab, sind die
+    // Welten schon getrennt, und ein weiterer Tick machte die Frage nur unbeantwortbarer.
+    const abweichung = this.checkHashes(tick)
+    if (abweichung) {
+      this.divergence = abweichung
+      return { ran: false, tick, waitingFor: [], applied: [], events: [] }
+    }
+
     const applied = this.commandsFor(tick)
     const result = advanceTicks(this.current, 1, this.ctx, {
       scripted: (at) => (at === tick ? applied : []),
@@ -239,6 +318,22 @@ export class Lockstep {
     this.inbox.delete(tick)
     this.outbox.delete(tick)
     return { ran: true, tick, waitingFor: [], applied, events: result.events }
+  }
+
+  /**
+   * Trägt eine der Nachrichten dieses Ticks eine andere Prüfsumme als der eigene Stand?
+   *
+   * Verglichen wird gegen den **eigenen** Hash: alle Seiten haben `tick - 1` hinter sich,
+   * wenn sie die Nachricht für `tick` schreiben, also beschreiben alle Zahlen denselben
+   * Augenblick. Die eigene Nachricht ist dabei egal — sie trägt den eigenen Hash.
+   */
+  protected checkHashes(tick: number): DesyncReport | null {
+    const eigener = this.hash
+    for (const [seat, message] of this.inbox.get(tick) ?? []) {
+      if (seat === this.seat) continue
+      if (message.hash !== eigener) return { tick, seat, own: eigener, other: message.hash }
+    }
+    return null
   }
 
   /** Die Befehle eines Ticks, aus allen eingetroffenen Listen, in der Reihenfolge der Regel. */

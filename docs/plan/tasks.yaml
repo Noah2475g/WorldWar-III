@@ -2676,7 +2676,7 @@ tasks:
   - id: T-M37-09
     milestone: M37
     title: Auseinanderlaufen wird erkannt, gemeldet und haelt an
-    status: todo
+    status: done
     deps: [T-M37-08]
     requirements: [R-MP-04]
     design: [D-28]
