@@ -5148,13 +5148,19 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   ganze Meilenstein prüfbar bleibt.
 - **Anforderungen:** keine · **Entwurf:** D28.9
 - **Abhängigkeiten:** T-M37-08
-- **Dateien:** `packages/netplay/src/transport.ts`, `packages/netplay/src/loopback.ts`
+- **Dateien:** `packages/netplay/src/transport.ts`, `packages/netplay/src/loopback.ts`,
+  `packages/netplay/src/transportContract.ts`
 - **Tests zuerst:** eine Vertragstestreihe, die jede Umsetzung erfüllen muss — Zustellung
   in Reihenfolge, Schließen meldet sich, Senden nach dem Schließen wirft. Dieselbe Reihe
   läuft später gegen den WebSocket-Transport (Muster: `StoragePort` aus M8).
 - **Fertig wenn:** die Reihe als wiederverwendbare Funktion vorliegt und nicht als
   kopierter Block. T-M8-00 hat dieselbe Zusage gemacht und drei Jahre später eingelöst;
-  hier kostet sie eine Stunde.
+  hier kostet sie eine Stunde. Neun Zusicherungen, darunter die teuer gelernte aus
+  T-M37-11: **was vor dem ersten Hörer ankam, wird nachgereicht** — eine verlorene erste
+  Nachricht ist im Gleichschritt kein Schluckauf, sondern ein Stillstand. Gegenprobe
+  gemessen: nimmt man dem Schleifendoppel seinen Puffer, fällt genau diese Zusicherung.
+  Die Datei steht **nicht** im Sammelexport von `packages/netplay/src/index.ts`, weil sie
+  `vitest` importiert und sonst im ausgelieferten Bündel landete.
 
 ### T-M38-02 · Der Handschlag: Fassung, Regeln, Karte
 - **Ziel:** ein Gast mit anderen Zahlen rechnet ein anderes Spiel. Das muss vor dem

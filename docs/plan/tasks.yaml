@@ -2706,11 +2706,11 @@ tasks:
   - id: T-M38-01
     milestone: M38
     title: Die Transportschnittstelle und ihr Schleifendoppel
-    status: todo
+    status: done
     deps: [T-M37-08]
     requirements: []
     design: [D-28]
-    files: [packages/netplay/src/transport.ts, packages/netplay/src/loopback.ts]
+    files: [packages/netplay/src/transport.ts, packages/netplay/src/loopback.ts, packages/netplay/src/transportContract.ts]
     tests: [packages/netplay/src/transport.test.ts]
     dod: "D28.9. Drei Funktionen - senden, empfangen, schliessen. Dahinter steht im Test ein Doppel im selben Prozess und im Spiel eine Leitung; das ist die Naht, an der dieser Meilenstein pruefbar bleibt. Test zuerst: eine VERTRAGSTESTREIHE, die jede Umsetzung erfuellen muss (Zustellung in Reihenfolge, Schliessen meldet sich, Senden nach dem Schliessen wirft) - als wiederverwendbare Funktion, nicht als kopierter Block. Dieselbe Reihe laeuft spaeter gegen den WebSocket-Transport. Muster: StoragePort aus M8, dessen gleiche Zusage erst in M16 eingeloest wurde."
   - id: T-M38-02
