@@ -642,10 +642,10 @@ ist die Zusage, ihn nicht zu vergessen.
 | Befund | Beleg | Wohin |
 |---|---|---|
 | **`MapCanvas` läuft in keinem Test** — 141 von 249 Zeilen unausgeführt, weil `App.test.tsx` `getContext` als `null` liefert; R-ARCH-06/AK2 (60 FPS) misst damit niemand, der zeichnet | Befund 16, N11 | **M16** — zusammen mit dem echten Bau, wo ein Zeichenkontext existiert |
-| **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt |
+| **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01: M17 bringt keine Senke — Spionagesold zieht nur Geld, Handel verschiebt Güter. Und „bleibt nur der Armeeunterhalt" war ungenau: keine Einheit verbraucht Kohle, Befund B8 unten. M17 misst die Bestände vorher und nachher, T-M17-02/16.)* |
 | **R-AI-04 ist gemessen verletzt** — die KI hält 43,1 % statt der zugesagten 30 % Rücklage, und der Test ist trotzdem grün, weil er die Schwelle nicht prüft | Befund 46 | **M15**, mit T-M15-08 (Integrationstor) — dort wird die KI ohnehin gemessen |
 | **Hauptstadtverlegung kostet nichts** und löscht die Strafe für den Hauptstadtverlust; wer seine Hauptstadt verliert, verlegt sie sofort und ist die Folgen los | Befund 50 | **M15**, mit T-M15-05 — die KI lernt dort `SET_CAPITAL`, und der Preis gehört zur selben Regel |
-| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben |
+| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01, aus demselben Grund; gemessen wird in T-M17-02 und T-M17-16.)* |
 | **314 von 374 Regelzahlen ohne Belegstatus** — der Test prüft nur `constants.json`, die übrigen Dateien (Einheiten, Gebäude, Rohstoffe) tragen keinen Status „belegt/geschätzt" | Befund 59 | **M15**, mit T-M14-05s Nachfolge: sobald die Messgeräte stimmen, wird der Status messbar statt behauptet |
 | **Rückzug ist ein Teleport** — eine Armee ohne Gegner springt in einem Tick dorthin, wofür ein Marsch 15 Ticks braucht | Befund 66 | **M15**, mit T-M15-07 — die Feuerleitung fasst dieselbe Haltungslogik an |
 | **Barrierefreiheit jenseits des Kontrasts** — kein Test öffnet einen Dialog und schließt ihn mit Escape, keiner prüft Fokusfang, Tabreihenfolge oder `aria`; belegt ist nur die Tastenzuordnung als reine Funktion | Befund N12 | **M16** — zusammen mit dem Bau, in dem sich Fokus überhaupt beobachten lässt |
@@ -1711,7 +1711,7 @@ Browserbau (IndexedDB) war derselbe Code gesund.
 Damit erklärt sich auch die Asymmetrie, die alles verschleierte: **Schreiben neuer
 Dateien ging immer** (nichts zu kanonisieren), das Wiederlesen nie.
 
-**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs eigene, engere
+**Reparatur:** kein Kampf mehr gegen das ACL — die Hülle hat **sechs *(korrigiert 2026-09-13: fünf)* eigene, engere
 Kommandos** (`saves_list` … `saves_exists`, `src-tauri/src/main.rs`): Dateiname statt
 Pfad (Separatoren/`..` werden verweigert), fest auf `$APPDATA/saves`.
 `tauri-plugin-fs` samt Berechtigungen entfernt; `TauriStorage` ruft `invoke`, die
@@ -1909,7 +1909,8 @@ Wächter auf `tasks.yaml` scharf gemacht und ist dort geblieben. Eine Reparatur,
 **einen** Fundort angewandt wird statt auf die Fehlerklasse — auch das steht schon im
 Lessons Log.
 
-**Status: offen, kein Produktfehler.** Nichts davon beeinflusst das Spiel; die Wirkung
+**Status: behoben am 2026-09-13** (Abschnitt am Ende; bis dahin offen, kein Produktfehler).
+Nichts davon beeinflusst das Spiel; die Wirkung
 trifft den, der im Plan nachschlägt, wo etwas steht, und an einen Pfad gerät, den es nicht
 gibt. **Die Reparatur ist zweiteilig:** den Wächter auf die `- **Dateien:**`- und
 `- **Tests:**`-Zeilen von `03-TASKS.md` ausdehnen (er fällt dann sofort mit 57 Fundstellen),
@@ -1927,6 +1928,39 @@ Python (`s.count('
 im Repository, und `git add --renormalize .` ändert nichts. Die Regel „Dateien im
 Arbeitsbaum bleiben LF" ist eingehalten. Wer eine überraschende Messung bekommt, misst sie
 mit einem zweiten Werkzeug nach, bevor er sie meldet.
+
+**Behoben am 2026-09-13.** Der Wächter liest jetzt auch die Fassung, die ein Mensch liest:
+`readProsePaths` und `missingProsePaths` in `test/plan-paths.ts` ziehen die Pfade aus den Zeilen
+`Dateien` und `Tests zuerst` jeder Aufgabe (samt Fortsetzungszeilen, ohne Anmerkungen in
+Klammern), und `test/plan-consistency.test.ts` prüft sie bei jeder Aufgabe auf `done`. Die
+Leseregeln und die Kennzeichnung stehen im Kopf von `03-TASKS.md`.
+
+- **Vorher, mit zwei Werkzeugen nachgezählt: 63 tote von 866 gelesenen Pfaden** — 55 in
+  `Dateien` (von 777), 8 in `Tests zuerst` (von 89; dort zählen nur Pfade ab der Wurzel des
+  Repos, weil die Prosa Kurznamen wie `App.test.tsx` benutzt). Ein Python-Abgleich und der neue
+  Wächter lieferten dieselbe Liste, Pfad für Pfad. **Die 57 oben ließen sich nicht nachstellen** —
+  sie stammen aus einer anderen Messung (alle Backticks in `docs/**/*.md`); eine Variante mit
+  Anmerkungen und ohne Globs ergibt 70. Es gilt 63.
+- **Umzüge, 5 Fundstellen, auf den heutigen Pfad korrigiert:** `ui/MapCanvas.tsx` →
+  `map/MapCanvas.tsx` (T-M16-06), `ui/Dialog.tsx` → `ui/Dialogs.tsx` (T-M16-07),
+  `full-game.slow.test.ts` → `fullgame.slow.test.ts` (T-M14-14, zweimal),
+  `perf/tick.bench.ts` → `perf/tick.bench.slow.test.ts` (T-M8-03).
+  **Zwei der vier Umzüge aus dem Befund waren keine:** `packages/core/src/commands/registry.ts`
+  ist die Registry der Befehls-Handler, keine Kartenregistry — die Kartensammlung steht in
+  `apps/desktop/src/main.tsx` —, und `save-v1.json` stand in `03-TASKS.md` schon richtig;
+  `data/rules/constants.json` steht dort nur in einer Anmerkung, die den alten Pfad absichtlich
+  nennt. Ein gleicher Dateiname ist kein Beleg für einen Umzug.
+- **Nie gebaut oder gelöscht, 58 Fundstellen, gekennzeichnet statt gestrichen:** 54 tragen
+  `(nie gebaut — …)`, 4 tragen `(gelöscht — …)` — die `sim/`-Dateien, die T-M15-06 selbst
+  entfernt hat. Jede Kennzeichnung sagt, wo das Gebaute heute steht, nachgesehen am Code und an
+  `git log --all`: außer den vier `sim/`-Dateien stand keiner dieser Pfade je im Repository.
+- **Nachher: 0 tote von 929 gelesenen Pfaden** — die 866 von vorher und 63 Pfade, die die
+  Kennzeichnungen als Ersatz nennen und die mitgeprüft werden. `tasks.yaml` ist unberührt.
+- **Gegenprobe:** in T-M16-06 testweise wieder `apps/desktop/src/ui/MapCanvas.tsx` — der Wächter
+  fällt mit „1 tote von 929 gelesenen Pfaden"; zurückgesetzt, grün. Dass er eine Kennzeichnung an
+  einer vorhandenen Datei meldet und aus einem leeren Dokument nichts liest, belegen die
+  Unit-Tests daneben; am echten Dokument sichert er zu, mindestens einen Pfad je erledigter
+  Aufgabe gelesen zu haben.
 
 ---
 
@@ -1991,3 +2025,1461 @@ nicht in M34**, weil sie das KI-Verhalten ändert und damit eine eigene Messung 
 Grundlauf und Turnier, so wie jede der vier Zahlenaufgaben eine bekommen hat.
 
 **Status: offen, kein Produktfehler.** Für Noahs nächste Planung vorgemerkt.
+
+**Status seit 2026-09-13: behoben** (T-M41-01, T-M41-02). Die KI baut die Fabrik in Städten
+bis `maxLevel`. In der Vollpartie besitzt am Ende in jeder der drei gemessenen Startzahlen
+mindestens eine Macht eine Fabrik der Stufe 2 — vorher in keiner: 1914 Russland Stufe **3**
+(11 Provinzen auf Stufe 3, 29 auf mindestens 2), 2015 Stufe 2 (42 Provinzen), 1815 Stufe 2
+(23 Provinzen). `fullgame.slow.test.ts` sichert es zu. `progress.slow.test.ts` (200 Tage,
+sechs Europäer) sieht den Ausbau weiterhin nicht — höchste Stufe 1 vorher wie nachher. Was
+der Ausbau an der ganzen Partie ändert, steht im Eintrag vom 2026-09-13 zu T-M41-02 unten.
+
+---
+
+## 2026-09-13 · T-M17-01 · Acht Befunde beim Planen von M17
+
+Beim Planen von M17 am Code gefunden. Keiner davon wird in T-M17-01 gebaut; jeder hat eine
+Aufgabe oder einen Meilenstein.
+
+- **B1 — Durchmarschrecht und Kartenfreigabe sind symmetrisch und damit ausnutzbar.**
+  `Relation.rightOfWay` und `sharedMap` sind je Paar ein Feld (`state/types.ts`, Schlüssel
+  `a|b`). Gewährt A dem B Durchmarsch, darf **A** unbehelligt in Bs Land:
+  `detectSurpriseAttacks` fragt nur `relation.rightOfWay` (`phases/diplomacy.ts:25`). Teilt A
+  seine Karte, sieht A auch Bs Gebiet (`view/publicView.ts:224`). Beides löst eine Seite allein
+  aus. → **T-M17-03/04**, R-DIP-08 (Kartenfreigabe: delegierter Entscheid, `DECISIONS.md`).
+- **B2 — Das KI-„Erwidern" des Durchmarschs ist leer.** `packages/ai/src/diplomacy.ts` schickt
+  `grantRightOfWay` nur, wenn `relation.rightOfWay` schon `true` ist — jeden Tag, ohne Wirkung.
+  Der Test „erwidert gewaehrten Durchmarsch" (`packages/ai/src/diplomacy.test.ts`) setzt das
+  Feld in der Sicht und prüft den erzeugten Befehl, nicht den Zustand; er ist grün und belegt
+  nichts. **Die zweite Hälfte von R-DIP-06/AK3 ist nicht eingelöst.** → T-M17-04 (Test auf den
+  Zustand), T-M17-10.
+- **B3 — Die Angebotsfrist steht als Zahl im Code:** `3 * ticksPerDay`
+  (`phases/diplomacy.ts:85`), gegen D-08. → T-M17-04, `offerLifetimeDays`.
+- **B4 — `acceptPeace` löscht alle Friedensangebote an den Annehmenden, von jedem Absender**
+  (`commands/diplomacy.ts:100`), `acceptAlliance` ebenso die Bündnisangebote (Z. 114).
+  Handelsangebote dürfen das nicht erben. → T-M17-05.
+- **B5 — Die KI bewertet jede fremde Provinz pauschal** mit 400 (Stadt) oder 200 (Land)
+  (`packages/ai/src/targeting.ts:77`), weil die Sicht `deposits` nur für eigene Provinzen führt.
+  Für den Provinzhandel untauglich. → T-M17-11, Wert aus der Karte.
+- **B6 — Wege durch fremdes Land sind ungeprüft.** `MOVE_ARMY` prüft beim Ziel Existenz, Eigentum
+  der Armee und einen Weg (`commands/move.ts`), `findPath` filtert nicht nach Eigentum. Ein
+  KI-Marsch zum Kriegsgegner kann über eine friedliche dritte Macht führen — ein Überfall.
+  **Nicht gemessen.** Genau diese Zahl misst T-M17-02 zuerst: ist sie null, fehlt der KI der
+  Anlass, um Durchmarsch zu bitten, und R-AI-09/AK3 hat nichts zu messen.
+- **B7 — R-DIP-06 nennt Verstimmungsquellen, die es nicht gibt:** „enttarnte Spione" (kommt mit
+  R-SPY-05, T-M17-09) und „gebrochene Bündnisse" — `breakAlliance` senkt nur das Ansehen
+  (`commands/diplomacy.ts:123-135`), eine Verstimmung entsteht nicht. Die zweite bleibt offen,
+  ohne Meilenstein; sie ist hier festgehalten, damit sie nicht als gebaut gilt.
+- **B8 — Kohle hat nicht einmal den Armeeunterhalt als Senke.** Keine Einheit in `units.json`
+  nennt Kohle; sie steht nur in `buildings.json` (Baukosten der Eisenbahn) und in `ai.json`. Die
+  einzigen Verbraucher sind dieser Bau und die Börse. Die Zeile im Eintrag vom 2026-09-06 („bleibt
+  nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
+
+**Status: offen**, je mit Aufgabe; B7 zweite Hälfte ohne Meilenstein.
+
+---
+
+## 2026-09-13 · T-M41-06 · T-M14-11 und T-M14-12 sagten 90-Tage-Läufe zu, und T-M15-08 löst sie nicht ab
+
+**Nachgesehen, nicht angenommen.** Beide Aufgaben stehen auf `done` und sagten je einen Lauf
+über **90 Spieltage** mit der ausgelieferten Voreinstellung zu, gezählt aus dem Ereignisstrom.
+Den Lauf gibt es nicht, und kein Test prüft eine seiner Zahlen.
+
+- **T-M14-11** versprach vier Zahlen: abgelehnte KI-Befehle unter 10 %, `NO_PATH`-Anteil an
+  `MOVE_ARMY` unter 2 %, keine Paarung Armee/Fehlercode öfter als dreimal, mindestens ein
+  `WAR_DECLARED`. `docs/reports/ai-reachability.md` misst **60** Spieltage und nennt zwei davon
+  (6 Kriegserklärungen, 6,3 % abgelehnt, 101 von 1597). `NO_PATH`-Anteil und Paarungen fehlen.
+- **T-M14-12** versprach sechs Aussagen: keine KI-Macht ohne Hauptstadt, solange sie eine Stadt
+  hält; je KI-Macht eine Armee mit `armyRange` > 0; höchstens drei Armeeobjekte je Macht und
+  Provinz; mindestens ein `TRADE_EXECUTED` **je** KI-Macht; abgewiesene `acceptPeace` unter 5 %;
+  ein Frieden zwischen zwei KI. Dazu gibt es weder Bericht noch Lauf.
+
+**T-M15-08 belegt etwas anderes.** `apps/headless/test/ai-integration.slow.test.ts` spielt acht
+KI aus `map.startPositions.slice(0, 8)` — nicht `DEFAULT_NEW_GAME` — über 200 Spieltage mit
+Startzahl 1815 und sichert zu: null `NOT_YET_AVAILABLE`, null diplomatische `INVALID_TARGET`,
+null Geldmangel, mehr als null Fabriken, Artillerie und selbsttätiger Beschuss. Die
+Überschneidung ist klein:
+
+| Zusage aus M14 | belegt durch | Stand |
+|---|---|---|
+| ≥ 1 Kriegserklärung | `fullgame.slow.test.ts` (ganze Partie, Voreinstellung) | belegt |
+| abgewiesene `acceptPeace` < 5 % | diplomatische `INVALID_TARGET` = 0 in T-M15-08 (andere Aufstellung) | sinngemäß belegt, strenger |
+| Handel je KI-Macht | `ai-integration.json` zählt 3914 Geschäfte **insgesamt**, nicht je Macht | nicht belegt |
+| Frieden zwischen zwei KI | `ai-integration.json` zählt 3 Waffenstillstände, ohne Zusicherung | gezählt, nicht zugesichert |
+| Ablehnungsquote < 10 % | 1105 Ablehnungen, aber keine Gesamtzahl der Befehle | nicht zu rechnen |
+| `NO_PATH` < 2 %, Paarungen ≤ 3, Hauptstadt, `armyRange` je Macht, ≤ 3 Armeeobjekte je Provinz | — | nicht belegt |
+
+**Nebenbei aufgefallen:** `ai-integration.json` meldet **890 `MOVE_ARMY:ARMY_NOT_FOUND`** in 200
+Spieltagen — Marschbefehle an Armeen, die es nicht mehr gibt. Ob darunter eine Armee öfter als
+dreimal vorkommt, sagt der Bericht nicht; er zählt nicht je Armee.
+
+**Warum kein Lauf in T-M41-06:** die Aufgabe richtet Text. Ein Lauf mit neun Zusicherungen misst
+KI-Verhalten und würde nach dem Fabrikausbau (T-M41-01) ohnehin neu gemessen. T-M14-11 und
+T-M14-12 bleiben `done`; die fehlenden Zusicherungen gehören in die nächste Planung.
+
+**Status: offen, ohne Aufgabe** — für die nächste Planung vorgemerkt. *(Eingelöst 2026-09-13 mit
+T-M41-08: der 90-Tage-Lauf der Voreinstellung steht in `apps/headless/test/ai-integration.slow.test.ts`;
+acht Aussagen sind zugesichert, `armyRange` je Macht und die AK bei R-AI-01 mit Grund zurückgenommen,
+„höchstens drei Armeeobjekte je Provinz" geht an T-M41-10 — Eintrag unten.)*
+
+---
+
+## 2026-09-13 · T-M41-04 · Die Uhr verlor mehr Ticks, als der Plan rechnete — und seine Kappe hätte es nicht behoben
+
+**Erstens: der Befund war richtig und ist rot belegt.** Die aus `App.tsx` unverändert
+herausgelöste Formel `owed = Math.min(2, owed + dt · speed)` ergibt in `clock.test.ts`: 60 Bilder
+bei Tempo 100 → **90** Ticks, 30 Bilder bei Tempo 100 → **60**, 30 Bilder bei Tempo 50 → **45**; bei
+50, 120 und 144 Bildern 100. Dazu zwei Dinge, die der Plan nicht nannte: über zehn Sekunden bei 60
+Bildern läuft Tempo 2 nur **19** statt 20 Ticks (Gleitkomma), und eine rückwärts laufende
+Zeitquelle liefert **−2** Ticks.
+
+**Zweitens: im Spiel war es schlimmer.** Die Uhrschleife in `App.tsx` war ein `useEffect` mit
+`state` in den Abhängigkeiten. Jeder Tick setzt einen neuen Zustand, der Effekt beginnt neu, und
+`owed` steht wieder auf null — der Bruchteil ging also nicht nur an der Kappe verloren, sondern
+nach **jedem** Tick. Gemessen in `App.test.tsx` (rAF als Warteschlange, `performance.now` gestellt,
+gezählt an der Kopfleiste), gegen den Stand vor dieser Aufgabe: 60 Bilder bei Tempo 100 → **„Tag 3 ·
+12:00", 60 Spielstunden** statt 100; 30 Bilder bei Tempo 50 → **„Tag 2 · 06:00", 30** statt 50.
+Allein mit der reparierten Formel blieb es bei denselben 60 und 30 — ein grüner `clock.test.ts`
+hätte die Uhr des Spielers nicht um einen Tick schneller gemacht.
+
+**Drittens: die Reparatur aus dem Plan war es nicht.** `min(max(2, speed / 30), owed + dt · speed)`,
+wörtlich nachgerechnet: 60 Bilder bei Tempo 100 → 100, aber 30 Bilder bei Tempo 100 → **90** und bei
+Tempo 50 → **45**. Nach dem ersten Bild trägt jedes Bild einen Rest; Guthaben plus Rest liegt über
+der Kappe, und die Kappe schneidet genau diesen Rest. Der Test aus dem Plan („30 Bilder zu 33,3 ms
+ebenso") wäre mit der Formel aus demselben Plan rot geblieben.
+
+**Absicht und Ersatz.** Gemeint war: bei üblichen Bildraten geht kein Tick verloren, und ein
+Hänger baut keinen Rückstand auf (D5). Gebaut ist:
+- die Kappe `max(2, speed / 30)` auf das **Zeitguthaben eines Bildes**, nicht auf die Summe mit
+  dem Übertrag; der Übertrag bleibt immer in [0, 1) — `clock.test.ts` fährt 1000 Bilder mit
+  eingestreuten Fünf-Sekunden-Hängern und sichert das in jedem Bild;
+- ein `EPSILON` von 10⁻⁹ Tick vor dem Abrunden — ohne ihn verliert auch die neue Formel bei 60
+  Bildern über zehn Sekunden Ticks (Tempo 2 → 19, Tempo 10 → 99);
+- die Uhrschleife hängt nur noch an Tempo und „Partie läuft" und erreicht `step` über einen Ref.
+
+Nachher, dieselben Messungen: 100 und 50 Spielstunden an der Kopfleiste, `clock.test.ts` 9 von 9.
+
+**Was sich für den Spieler ändert.** Tempo 100 heißt 100 Spielstunden je Sekunde — vorher waren es
+bei 60 Bildern 60. Nach einem Hänger holt ein Bild bei kleinem Tempo wie bisher höchstens 2 Ticks
+nach, bei Tempo 100 aus leerem Übertrag höchstens 3 (vorher 2).
+
+**Was nicht belegt ist:** ein echter Browser. Im Vorschaufenster läuft die Spieluhr nicht
+(`WORKFLOW.md` §2 Punkt 6); belegt sind die reine Funktion und die Schleife in `App.tsx` unter
+jsdom mit gestellter Zeit. Die Messung mit dem Leistungsbudget (R-TIME-02/AK4) bleibt dem
+Schlussblock auf freier Maschine.
+
+**Status: behoben** (T-M41-04). Plantext in `03-TASKS.md`, `tasks.yaml` und D5 mit Vermerk.
+
+---
+
+## 2026-09-13 · T-M41-02 · Der Fabrikausbau verändert die ganze Partie — und die Planungszahl „Tag 449" ist nicht reproduzierbar
+
+**Was der Plan sagte.** Im Planungslauf, „im Speicher gepatcht" und nicht eingecheckt, ergab
+„nur Fabrik bis `maxLevel`, nur Städte": Turnier und Grundlauf zeilengleich, Vollpartie 1914
+**Tag 449**, 31 begonnene Fabriken Stufe 2, **keine Stufe 3** — „das liegt im Rauschen der
+Startzahl und belegt nur keine Verschiebung" (`DECISIONS.md` und `03-TASKS.md`, T-M41-01/02).
+
+**Was gebaut und gemessen ist** (`fullgame.slow.test.ts`, jetzt mit Startzahl über
+`WORLDWAR_FULLGAME_SEED`, Berichte `docs/reports/fullgame.json`, `fullgame-2015.json`,
+`fullgame-1815.json`; vorher = Stand `a2352b6` mit denselben Berichtsfeldern):
+
+| Startzahl | Siegtag | Kriegserklärungen | Eroberungen | Schlachten | höchste Fabrikstufe | Provinzen ≥ 2 / = 3 | Ausbau begonnen auf 2 / 3 |
+|---|---|---|---|---|---|---|---|
+| 1914 vorher | 471 | 12 | 1827 | 4040 | 1 | 0 / 0 | 0 / 0 |
+| 1914 nachher | **582** | 12 | 1615 | 5236 | **3** | 29 / 11 | 56 / **17** |
+| 2015 vorher | 583 | 10 | 1420 | 4985 | 1 | 0 / 0 | 0 / 0 |
+| 2015 nachher | **868** | **37** | 2923 | 11262 | 2 | 42 / 0 | 106 / 0 |
+| 1815 vorher | 774 | 13 | 1772 | 6379 | 1 | 0 / 0 | 0 / 0 |
+| 1815 nachher | **412** | 12 | 1172 | 5323 | 2 | 23 / 0 | 50 / 0 |
+
+- **Turnier:** zeilengleich vorher und nachher (1,00 / 0,70 bei 10:0:15 / 1,00). R-AI-06 hält.
+- **Grundlauf** (`progress.slow.test.ts`, 12 Startzahlen × 120 Tage): **nicht** auf vier Stellen
+  gleich — Anteil des Stärksten 0,4442 → 0,4462, Eroberungen 302,3 → 301,3, Überlebende
+  5,17 → 5,08, Endbestände 50613 → 50439.
+- **Gegenprobe** mit Kappe bei Stufe 2 (`level('factory') < 2`, sonst gleich; Startzahl 1914,
+  danach zurückgenommen): Tag **591**, 1904 Eroberungen, 68 begonnene Ausbauten auf Stufe 2,
+  keine Stufe 3. Auch sie trifft 449 nicht.
+
+**Die Planungszahl ist damit nicht reproduzierbar**, mit keiner der beiden naheliegenden
+Varianten. Welche Änderung der Planungslauf wirklich gemessen hat, lässt sich aus dem
+eingecheckten Stand nicht rekonstruieren; eine Ursache wird hier nicht behauptet. Die Lehre
+steht schon in den Regeln — eine nicht eingecheckte Messung ist erst Daten, wenn sie als Test
+neu entstanden ist —, und genau das hat den Unterschied aufgedeckt.
+
+**Was die Zahlen sagen.** Der Siegtag verschiebt sich je Startzahl stark und **in beide
+Richtungen** (+111, +285, −362 Tage; Mittel 609 → 621). Das ist keine systematische
+Verlängerung oder Verkürzung, sondern die Partie wird eine andere: jede Verhaltensänderung der
+KI lenkt eine 500-Tage-Partie in einen anderen Verlauf. „Keine Verschiebung" war mit einer
+einzigen Startzahl nie belegbar. Auffällig ist 2015: **37 statt 10 Kriegserklärungen** und
+mehr als doppelt so viele Schlachten.
+
+**Warum die Variante bleibt.** Das Rücknahmekriterium dieser Aufgabe war das Turnier (R-AI-06),
+und das ist zeilengleich. AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im
+Tor 300–1500 aus T-M34-07, und die Zusicherung „mindestens eine Macht besitzt Fabrikstufe 2"
+hält in allen dreien. Die Kappe bei Stufe 2 wäre nicht besser belegt und hielte der KI die
+dritte Stufe verschlossen.
+
+**Was daraus folgt.** (1) Der Ausgangswert von M17 (T-M17-02) wird auf diesem Stand gemessen,
+nicht auf dem vor M41. (2) Der eine Parameterlauf der Delegation (seit 2026-09-13 im Schlussblock nach M35, M17
+abgetrennt; vorher T-M17-16) sieht die
+Änderung im 120-Tage-Grundlauf nur schwach; die Wirkung liegt in der langen Partie. (3) Ob die
+blutigere Partie mit Startzahl 2015 ein Muster ist, sagen erst mehr Startzahlen — vorgemerkt
+für den Schlussblock, keine Aufgabe.
+
+**Status: Beobachtung, kein Produktfehler.** Plantext in `DECISIONS.md` (T-M41-01) und
+`03-TASKS.md`/`tasks.yaml` (T-M41-02) mit Vermerk; `WORKFLOW.md` §5 nennt Tag 582.
+
+---
+
+## 2026-09-13 · T-M40-02 · „Beantwortet binnen 24 Ticks" ist auf der Weltkarte nicht erreichbar — das Fenster folgt jetzt aus der Karte
+
+**Was der Plan sagte.** D30.6, T-M40-02 und T-M40-06: ein Einmarsch gilt als beantwortet, wenn
+„eine eigene Armee diese Provinz binnen 24 Ticks erreicht"; zugesichert wird nachher ein größerer
+Anteil beantworteter Einmärsche (R-UNIT-09/AK5).
+
+**Was vor dem Bau nachgerechnet wurde.** Infanterie marschiert 6 km/h (`units.json`), und
+`edgeTravelTicks` rundet auf und rechnet das Gelände ein. Die deutschen Binnengrenzen, mit der
+Funktion des Kerns für die aufgestellte Armee gerechnet (`docs/reports/stance.json`,
+`innerBorders`): 146 km = 25 bzw. 31 Ticks, 236 km = 50, 314 km = 53 bzw. 88, 359 km = 75 bzw.
+100, 404 km = 85 bzw. 113. Der Adjutant befiehlt frühestens im Tick nach dem Einmarsch (D30.4).
+**Die schnellste denkbare Antwort braucht also 26 Ticks** — mit 24 wäre die Zahl vorher und
+nachher null gewesen, und jede Automatik hätte AK5 verfehlt, ohne dass es an ihr lag.
+
+**Korrektur, festgelegt vor jeder Messung nachher.** Die Absicht bleibt: eine eigene Armee kommt
+dort an. Gezählt werden drei Zahlen, alle aus dem Ereignisstrom:
+
+1. **Ankunft binnen 24 Ticks** — die Zahl des Plans, weiter im Bericht, nicht zugesichert;
+2. **Ankunft binnen des Kartenfensters** — 1 Tick Verzug plus die längste Marschzeit über eine
+   eigene Binnengrenze für genau die aufgestellte Armee (Deutschland: **114 Ticks**);
+3. **Aufbruch binnen 24 Ticks** — die Reaktion selbst, unabhängig von der Marschzeit.
+
+Zugesichert wird in T-M40-06, dass die Anteile (2) und (3) nachher größer sind als vorher. Das
+Fenster ist aus der Karte abgeleitet und nicht aus einem Messergebnis, und es gilt für beide Läufe
+gleich.
+
+**Messung vorher** (Weltkarte, Startzahl 1914, 200 Spieltage, Deutschland mit je fünf Infanterie in
+seinen vier Provinzen, sieben KI-Nachbarn, kein Befehl; **gemessen vor der M41-Nacharbeit
+(KI-Bauordnung)**): 52 Einmärsche (Frankreich 47, Italien 5, der erste an Tag 20), beantwortet
+0 / 0 / 0, **alle vier Provinzen verloren**, 0 abgelehnte Befehle, 0 Befehle für den Menschen.
+Der Ringpuffer am Ende führt **0** Einmärsche — derselbe Unterschied wie in T-M14-05.
+
+**Status:** Plan korrigiert (D30.6, `03-TASKS.md` und `tasks.yaml` T-M40-02/06, mit Vermerk);
+kein Produktfehler.
+
+---
+
+## 2026-09-13 · T-M40-06 · Die Haltungs-Automatik wirkt messbar, aber schwach — zwei Befehle in 200 Spieltagen
+
+**Gemessen** (`docs/reports/stance.json`; Weltkarte, Startzahl 1914, 200 Spieltage, Deutschland als
+Mensch mit je fünf Infanterie in seinen vier Provinzen, sieben KI-Nachbarn, kein Befehl des
+Menschen; alle absoluten Zahlen **gemessen vor der M41-Nacharbeit (KI-Bauordnung)** — der
+Vergleich bleibt gültig, weil alle Läufe auf demselben KI-Stand liefen):
+
+| Lauf | Einmärsche | Ankunft ≤ 24 Ticks | Ankunft im Kartenfenster (114) | Aufbruch ≤ 24 Ticks | verlorene Provinzen | Provinzen / Armeen am Ende | Befehle des Adjutanten | abgelehnt |
+|---|---|---|---|---|---|---|---|---|
+| vorher (T-M40-02, Verteidigung, noch ohne Automatik) | 52 | 0 | 0 | 0 | 4 | 0 / 0 | 0 | 0 |
+| Kontrolle (Garnison) | 52 | 0 | 0 | 0 | 4 | 0 / 0 | 0 | 0 |
+| **nachher (Verteidigung mit Adjutant)** | 136 | 4 | **9 (6,6 %)** | **4 (2,9 %)** | 3 | 1 / 3 | **2** | **0** |
+| Angriff (mit Verfolgung) | 51 | 0 | 0 | 0 | 5 | 0 / 0 | 3 | 0 |
+
+- **Die Kontrolle bildet „vorher" Zahl für Zahl nach.** Die Garnison ist die Verteidigung ohne
+  Automatik; zwischen T-M40-02 und T-M40-06 hat sich also nichts verschoben außer dem Adjutanten.
+- **R-UNIT-09/AK5 hält:** der Anteil im Kartenfenster steigt von 0 auf 6,6 %, der Aufbruch binnen
+  24 Ticks von 0 auf 2,9 %, und kein Befehl der Automatik wird abgelehnt — auch in der Verfolgung
+  nicht.
+- **Die 24-Tick-Ankunft ist nachher nicht null (4),** obwohl die schnellste Antwort 26 Ticks
+  braucht: mehrere Einmärsche fallen in dieselbe Provinz, und eine Armee, die für den ersten
+  aufbrach, kommt binnen 24 Ticks nach einem späteren an.
+- **Rot gesehen nur ohne Automatik:** mit herausgenommener Deckungsregel fällt der Messlauf („der
+  Adjutant hat im ganzen Lauf nichts befohlen"), mit herausgenommener Verfolgungsregel fallen drei
+  Einzeltests.
+
+**Der Befund: die Wirkung ist klein.** Zwei Befehle in 200 Spieltagen. Deutschland hält am Ende
+eine Provinz und drei Armeen statt keiner, und weil länger etwas zu erobern bleibt, steigen die
+Einmärsche auf 136 — der Anteil hängt am Nenner. Drei Ursachen, am Code belegt:
+
+1. **`occupation` läuft im Tick des Einmarschs** (`phases/index.ts`: movement → combat →
+   occupation). Eine Provinz ohne Verteidiger gehört dem Eindringling, bevor der Adjutant sie im
+   nächsten Tick sieht. Decken kann er nur, wo noch eine eigene Armee kämpft — gefallene Provinzen
+   holt keine Regel zurück.
+2. **Die Quelle muss feindfrei sein** (D30.4, R-UNIT-09/AK1). Frankreich greift mehrere deutsche
+   Provinzen zugleich an; eine Armee im eigenen Gefecht rückt nicht aus.
+3. **Vier Provinzen, fünf Binnengrenzen** — wenige Nachbarn, die nachrücken können.
+
+**Angriff:** drei Verfolgungen, keine Ablehnung. Die Haltung ändert auch den Kampf — `aggressive`
+gilt nicht als eingegrabener Verteidiger —, und dieser Lauf verliert fünf Provinzen bei vier
+Startprovinzen: eine wurde zwischendurch genommen, was ohne Befehl des Menschen nur ein Marsch der
+Verfolgung sein kann (abgeleitet, nicht einzeln gezählt).
+
+**Was daraus folgt.** Keine Aufgabe in M40 — die Zusage von R-UNIT-09 ist eingelöst. Eine
+stärkere Automatik (gefallene Nachbarprovinzen zurückerobern, aus einer umkämpften Provinz
+nachrücken) wäre eine neue Entscheidung über D30.4 und damit über Noahs Satz „Angriff und
+Verteidigung führen sich selbst aus" — vorgemerkt, nicht gebaut. Die Sichtprüfung der
+Haltungsgruppe (zwei mal zwei, T-M40-05) steht im Schlussblock aus.
+
+**Status:** Beobachtung; AK5 belegt.
+
+**Berichtigt am 2026-09-13 (T-M40-07, Befund H3 der Durchsicht von M40).** Drei Aussagen dieses
+Eintrags halten der Nachprüfung nicht stand.
+
+1. **„Am Ende eine Provinz und drei Armeen statt keiner" ist keine gelungene Deckung.** Zwei der
+   drei Verluste hat der Adjutant selbst verursacht: er schickte a2 aus DEU-NW (Tick 497) und a3 aus
+   DEU-SE (Tick 522) nach DEU-SW, und beide geleerten Provinzen fielen danach **ohne Gefecht**
+   (Tick 867 und 1018, Durchsicht H3). Dass DEU-SW hielt, lag an den drei Armeen, die dort
+   zusammenkamen.
+2. **Ursache 1 (Eroberung im Einmarschtick) erklärt den Lauf kaum.** Nur 2 der 136 Einmärsche fielen
+   mit einer Eroberung im selben Tick zusammen — genau die zwei entblößten Provinzen.
+3. **Der „Anteil beantworteter Einmärsche" misst die Dauer des Widerstands, nicht die Wirkung.**
+   Vorher ist er strukturell null, und die neun „beantworteten" Einmärsche stammen aus zwei
+   Ankünften. Eine Deckung kam in **1 von 132** umkämpften Episoden vor Gefechtsende an — Gefechte
+   dauern im Median einen Tick, die kürzeste deutsche Binnengrenze 25. Im Entwurf der Nacharbeit
+   verloren Regeln mit 73–80 % „beantwortet" alle Provinzen. Die Zahl bleibt im Bericht, zugesichert
+   wird sie seit T-M40-07 nicht mehr.
+
+**Neu gemessen je umkämpfter Episode** (`apps/headless/test/stance.slow.test.ts`,
+`docs/reports/stance.json`, Abschnitt `episoden.vorher`; Weltkarte, 200 Spieltage, Deutschland ohne
+Befehl, der Adjutant wie in M40 gebaut; gemessen vor Block N2 der M41-Nacharbeit). Provinz-Tage =
+Provinzen des Menschen zu Beginn jedes Spieltags, summiert. Aufstellung A: eine Armee aus fünf
+Infanterie je Provinz, B: zwei.
+
+| Startzahl · Aufstellung · Haltung | Provinz-Tage | verloren (davon ohne Gefecht) | Befehle | Episoden (Deckung befohlen / rechtzeitig / gehalten) | Ende Provinzen / Armeen |
+|---|---|---|---|---|---|
+| 1914 · A · Garnison | 573 | 4 (0) | 0 | 45 (0 / 0 / 41) | 0 / 0 |
+| 1914 · A · Verteidigung | 366 | 3 (**2**) | 2 | 132 (2 / 1 / 131) | 1 / 3 |
+| 1914 · B · Garnison | 733 | 1 (0) | 0 | 42 (0 / 0 / 41) | 3 / 6 |
+| 1914 · B · Verteidigung | 636 | 2 (**2**) | 4 | 286 (4 / 2 / 286) | 2 / 8 |
+| 2015 · A · Garnison | 532 | 3 (0) | 0 | 37 (0 / 0 / 34) | 1 / 1 |
+| 2015 · A · Verteidigung | 341 | 3 (**3**) | 2 | 108 (2 / 1 / 108) | 1 / 3 |
+| 2015 · B · Garnison | 800 | 0 (0) | 0 | 58 (0 / 0 / 58) | 4 / 8 |
+| 2015 · B · Verteidigung | 800 | 0 (0) | 6 | 509 (6 / 2 / 509) | 4 / 8 |
+| 1815 · A · Garnison | 702 | 1 (0) | 0 | 27 (0 / 0 / 26) | 3 / 3 |
+| 1815 · A · Verteidigung | 362 | 3 (**2**) | 2 | 92 (2 / 1 / 91) | 1 / 3 |
+| 1815 · B · Garnison | 800 | 0 (0) | 0 | 36 (0 / 0 / 36) | 4 / 8 |
+| 1815 · B · Verteidigung | 796 | 1 (**1**) | 4 | 404 (4 / 2 / 404) | 3 / 8 |
+
+**Summen über die sechs Paare:** Provinz-Tage mit Garnison 4140, mit Verteidigung **3301 (79,7 %)**;
+Verluste ohne Gefecht mit Garnison **0**, mit Verteidigung **10** — in fünf von sechs Paaren mehr als
+mit Garnison. Rechtzeitig vor Gefechtsende kam die Deckung in 9 von 1531 umkämpften Episoden an.
+Die Verteidigung aus M40 hält weniger als die Garnison und verliert fast nur Provinzen, die sie
+selbst geleert hat.
+
+Die Garnison A 1914 bildet den Lauf vorher aus T-M40-02 nach (52 Einmärsche, 4 verloren). Jede Zahl
+trifft den Entwurf der Nacharbeit, der dieselben Läufe im Speicher nachgebaut hatte — die
+Messung ist also dieselbe, auf der dort die Schwelle festgelegt wurde. In keinem Lauf gab es eine
+Ablehnung, einen Krieg ohne Erklärung oder einen Pendelzug.
+
+**Status:** berichtigt. Die Regel ersetzt T-M40-10; ob die neue Fassung bleibt, entscheidet derselbe
+Messlauf in T-M40-12.
+
+## 2026-09-13 · T-M41-12 · Ankündigung und Freischaltung standen zwölf Spielstunden — nach einem Vorspulen gar nicht
+
+**Befund (Durchsicht M41, N8).** `unlockAlerts` und `upcomingAlerts` in `Alerts.tsx` meldeten nur,
+solange `tick % ticksPerDay < COMPLETION_ALERT_TICKS` (12) galt — so lange wie eine Fertigstellung.
+Zwölf Spielstunden sind bei Tempo 100 rund 0,12 s. Ein Vorspulen um einen Tag landet zur selben
+Uhrzeit am nächsten Tag; von 14:00 aus sprang es über die ganze Anzeige hinweg.
+
+**Gemessen** (`App.test.tsx`, T-M41-12): Weltkarte, eine Partie mit `advanceTicks` auf Tag 5, 14:00
+gebracht und über den Ladeweg geöffnet, einmal Vorspulen. Die Uhr steht danach auf Tag 6, 14:00 —
+dem Freischaltungstag des Hafens —, und die Meldungsleiste war **leer** („expected '' to contain
+'Neu ab heute: Hafen'"). Die Zählung im Onboarding-Durchgang sah das nie: sie fragt jeden Tick ab
+und findet die Meldung deshalb in der ersten Stunde.
+
+**Reparatur.** Beide stehen den ganzen Spieltag und lassen sich wegklicken; ein Klick gilt bis zum
+Ende dieses Spieltags und nur ab seinem Tick, Laden und neue Partie setzen ihn zurück. Leise wie
+bisher (M36): der Wegklick trägt keine Alarm- oder Warnfarbe (Haltetest in `Alerts.test.tsx`),
+springt nicht auf die Karte und macht keinen Ton; Kampf, Mangel und Hauptstadt sind nicht
+wegzuklicken. Die längste Pause des Onboarding-Durchgangs bleibt 48 Ticks, `onboarding.md`
+unverändert.
+
+**Was nicht behoben ist (vor dem Bau gerechnet).** Ein Spieltag dauert bei Tempo 100 0,24 s, bei
+Tempo 10 2,4 s, bei Tempo 5 4,8 s. „Bis Tagesende" verdoppelt die Anzeigezeit, lesbar ist sie bei
+vollem Tempo trotzdem nicht. Der Gewinn liegt beim Vorspulen — danach steht die Uhr (`setSpeed(0)`
+beim Start des Laufs), und die Meldung bleibt, bis weitergespielt oder weggeklickt wird — und bei
+kleinem Tempo. Eine Meldung, die länger als ihren Tag steht, bräuchte einen anderen Text als
+„Neu ab heute" und ist nicht entschieden.
+
+**Status:** behoben (T-M41-12); die Anzeigezeit bei vollem Tempo als Beobachtung.
+
+## 2026-09-13 · T-M41-13 · Tempo während des Vorspulens verlor Befehle — und das Ziel des Vorspulens zählt je Häppchen
+
+**Befund (Durchsicht M41, N7).** Die Tempostufen (`Header.tsx`) und die Kürzel Leertaste, Plus und
+Minus waren während eines Vorspulens nicht gesperrt. Läuft der Lauf über mehrere Häppchen, setzt
+ein Druck die Uhr neben ihnen in Gang: sie nimmt gesammelte Befehle aus `takePending`, wendet sie
+auf ihren Zustand an, und `chunk(result.state)` überschreibt diesen Zustand im nächsten Häppchen.
+
+**Vor dem Bau gemessen: heute nicht herstellbar.** Knopf und Taste F fahren `{ kind: 'days', days: 1 }`,
+das sind 24 Ticks, `DEFAULT_CHUNK_TICKS` ist 24, und der Kern prüft das Ziel im Häppchen. Der Lauf
+endet im ersten Häppchen, synchron im Klick — `App.test.tsx` hält das fest (kein Abbrechen-Knopf,
+sofort „Angehalten nach …"). Einen Zeitpunkt, an dem der Spieler Tempo drücken könnte, gibt es
+heute nicht.
+
+**Mit kleineren Häppchen gezeigt.** `App.test.tsx` verkleinert die Häppchen per Hülle um
+`fastForwardChunk` auf 4 Ticks (derselbe Weg wie jeder Lauf über mehr als ein Häppchen): Kaserne
+gesammelt, Vorspulen gestartet (der Lauf steht nach dem ersten Häppchen noch, die Kaserne ist
+begonnen), Krieg während des Laufs erklärt, dann Tempo 100 geklickt bzw. Leertaste und Plus
+gedrückt, vier Bilder der Uhr, ein weiteres Häppchen, abgebrochen, erneut vorgespult. **Vor der
+Reparatur rot in beiden Fällen:** die Kriegserklärung steht nie im Protokoll.
+
+**Reparatur: gesperrt, nicht übergeben.** Die Stufen über 0 sind während eines Laufs `disabled` und
+nennen den Grund („Während des Vorspulens gesperrt — erst abbrechen oder abwarten"); die Pause
+bleibt bedienbar, der Vorspulknopf ist seit T-M28-10 der Abbrechen-Knopf. `resolveKey` gibt für
+Leertaste, Plus, Minus und F während eines Laufs nichts zurück (F hätte einen zweiten Lauf neben
+dem ersten gestartet); Karte, Panels, Speichern und Escape bleiben. Befehle, die während des Laufs
+gegeben werden, bleiben gesammelt und wirken im nächsten Tick danach.
+
+**Nebenbefund 1 (nicht gebaut): das Ziel „ein Tag" zählt je Häppchen.** `fastForwardChunk` ruft
+für jedes Häppchen `fastForward` neu auf, und `targetReached` misst `ticksRun` dieses Aufrufs.
+Die Schleife in `App.tsx` setzt fort, solange ein Häppchen an `limit` endet — sie trägt den
+Fortschritt zum Ziel nicht über Häppchen hinweg. Mit Häppchen zu 4 Ticks lief „ein Tag" nach 50
+Häppchen (200 Ticks) weiter und hätte erst an der Obergrenze von 30 Spieltagen gehalten (gesehen im
+ersten Entwurf des Tests; er bricht deshalb ab). Heute verdeckt: ein Tag ist genau ein Häppchen.
+Jedes Ziel über mehr als 24 Ticks, das nicht zustandsbasiert ist (`days` ab 2, `ticks` über 24),
+würde bis zur Obergrenze laufen. Gehört zu R-TIME-02/R-TIME-06 und keiner Aufgabe dieses Blocks.
+
+**Nebenbefund 2 (nicht gebaut): der Kürzel-Effekt in `App.tsx` nennt `fastForwardRun` nicht in
+seinen Abhängigkeiten.** Er ruft die Funktion aus dem Render, in dem er zuletzt neu gebunden wurde;
+`fastForwardRun` hängt an `debugOn` und `noteTrace`, der Effekt nicht. Wer die Debug-Ansicht
+einschaltet und dann F drückt, spult ohne Mitschrift vor, bis sich eine andere Abhängigkeit ändert.
+Gelesen, nicht gemessen.
+
+**Status:** behoben (T-M41-13); Nebenbefund 1 und 2 offen.
+
+**Nebenbefund 1 behoben am 2026-09-13 (T-M41-15).** Die Anfrage an `fastForwardChunk` trägt jetzt
+`ticksRunBefore`, ein Zählziel (`ticks`, `days`) wird auf den Rest des Laufs umgerechnet, und
+`App.tsx` reicht den Stand weiter; Ereignisziele bleiben, wie sie sind. **Rot vorher:** ein Ziel von
+48 Ticks und eines von zwei Spieltagen, in Häppchen zu 24 aneinandergereiht wie in der Oberfläche,
+liefen beide bis zur Obergrenze (720 Ticks, `limit`); in der App stand die Uhr nach einem „Vorspulen
+um einen Tag" in Häppchen zu 4 Ticks auf „Tag 31 · 00:00" statt „Tag 2 · 00:00". **Grün:** Halt am
+Ziel nach 48 Ticks bzw. zwei Tagen, die App hält nach genau einem Tag.
+
+**Nebenbefund 2 am 2026-09-13 gemessen und gehärtet (T-M41-16) — über die Oberfläche nicht
+herstellbar.** `App.test.tsx` schaltet die Debug-Ansicht während der Partie im Einstellungsdialog ein
+und drückt dann F: die Kommandoliste der Debug-Ansicht füllt sich — **auch ohne Reparatur grün**.
+Zwei Abhängigkeiten binden den Kürzel-Effekt beim Umschalten ohnehin neu: `step` hängt wie
+`fastForwardRun` an `debugOn`, und die Debug-Ansicht lässt sich nur im Einstellungsdialog umschalten,
+dessen Schließen `dialog` ändert. Gemessen, jeweils nur im Arbeitsbaum:
+
+1. unverändert: grün;
+2. `step` aus den Abhängigkeiten genommen: weiter grün — das Schließen des Dialogs bindet neu;
+3. `step` und `dialog` herausgenommen: **rot** („F hat ohne Mitschrift vorgespult: expected 0 to be
+   greater than 0");
+4. wie 3, dazu `fastForwardRun` in den Abhängigkeiten: **weiter rot** — der Handler liest dann ein
+   veraltetes `dialog` („settings") und verwirft F als „Dialog offen".
+
+Der Test sieht also einen veralteten Kürzel-Effekt. Einen Rotlauf, der allein das fehlende
+`fastForwardRun` zeigt, lässt die Oberfläche nicht zu, weil jeder Weg zur Debug-Ansicht über den Dialog
+führt. Die Zusicherung ist deshalb nicht umformuliert, und `fastForwardRun` steht trotzdem in den
+Abhängigkeiten: die Mitschrift hängt nicht mehr daran, dass zufällig eine andere Abhängigkeit den Effekt
+neu bindet. `step` und `dialog` stehen wieder drin.
+
+**Beobachtung, nicht gebaut:** `jumpTo` (Kürzel für die Hauptstadt) fehlt in denselben Abhängigkeiten
+ebenso — gelesen, nicht gemessen.
+
+**Status:** Nebenbefund 1 behoben (T-M41-15); Nebenbefund 2 gehärtet, als Fehler über die Oberfläche
+nicht herstellbar (T-M41-16).
+
+---
+
+## 2026-09-13 · T-M40-09 · „Nach der Ankunft fünf Tage Ruhe" ist aus dem Zustand nicht prüfbar — die Ruhe zählt ab dem Abmarsch
+
+**Was der Plan sagte.** Der Entwurf der Nacharbeit (R3, R4) und `tasks.yaml` bei T-M40-09: nach einem
+Spielermarsch „nach Ankunft 120 Ticks ohne Adjutantenbefehl". Die Regel selbst lautet dort
+`tick >= deployDelayUntil + 120`.
+
+**Was vor dem Bau geprüft wurde.** `deployDelayUntil` setzen der Befehl (`commands/move.ts`), der
+Abmarsch (`phases/movement.ts`, nur im Tick von `departureTick`) und — verdoppelt — der Rückzug
+(`phases/retreat.ts`). Bei der Ankunft setzt der Kern nichts, `arrivalTick` und `departureTick` gehen
+auf `null`. Der Zustand kennt den Tick der Ankunft also nicht, und ein Feld dafür kostete Schemastufe,
+Migration und neue Golden-Master — genau das, was die Nacharbeit ausschließt. Die zwei Sätze des Plans
+widersprechen sich: die Regel misst ab dem Abmarsch.
+
+**Korrektur.** Zugesichert und getestet wird die Regel, wie sie gebaut ist: nach Abmarsch oder Rückzug
+handelt eine Armee vor `deployDelayUntil + 120` nicht von selbst (R-UNIT-09/AK7). Nach der Ankunft
+bleiben damit 120 Ticks abzüglich der Marschzeit — auf der Weltkarte dauert eine Binnenetappe für
+Infanterie 25 bis 113 Ticks, es bleiben also zwischen 7 Ticks und gut vier Spieltagen. Gemessen in
+`packages/ai/src/loop.test.ts` (Kleine Welt, Marsch n3 → n1 neben einer laufenden Schlacht in n2):
+ohne Ruhe marschierte die Armee an Tick 224 von selbst weiter, 24 Ticks nach dem Abmarsch an Tick
+200; mit Ruhe nicht vor Tick 322.
+
+**Nebenbei geprüft.** Die bisherige Bedingung „Angriffssperre abgelaufen" bleibt stehen. Nach einem
+Rückzug hält sie `retreatCooldownTicks` (24 Ticks) zurück, die Ruhe `2 · deployDelayTicks + 120`
+(124 Ticks) — die Ruhe ist also immer die spätere, auch nach dem Zusammenlegen, das beide Felder als
+Maximum übernimmt. Die Durchsicht nannte als zweite Lösung (a) „Rückzug setzt Menschen auf Garnison";
+nicht gebaut, weil der Kern dafür `players[].kind` lesen müsste (D30.2 hält Mensch und KI aus dem Kern)
+— kippbar in `phases/retreat.ts`, danach `pnpm test` ohne `UPDATE_GOLDEN`.
+
+**Status:** Plantext korrigiert (T-M40-09 in `tasks.yaml` und `03-TASKS.md`); kein Produktfehler.
+
+---
+
+## 2026-09-13 · T-M40-12 · Die Regel, die nicht entblößt, hält den Messlauf — sie schadet nicht, und dass sie hilft, ist nicht belegt
+
+**Gemessen** (`apps/headless/test/stance.slow.test.ts`, `docs/reports/stance.json`, Abschnitt
+`episoden.nachher`; Weltkarte, 200 Spieltage, Deutschland ohne Befehl, Startzahlen 1914, 2015, 1815,
+Aufstellung A mit einer und B mit zwei Armeen aus je fünf Infanterie je Provinz; gemessen vor Block N2
+der M41-Nacharbeit). Provinz-Tage = Provinzen des Menschen zu Beginn jedes Spieltags, summiert.
+
+| Startzahl · Aufstellung | Garnison: Provinz-Tage / verloren (ohne Gefecht) | Verteidigung M40 (T-M40-07) | **Verteidigung D30.4 neu** | Befehle neu | Episoden neu (Deckung befohlen / rechtzeitig / gehalten) |
+|---|---|---|---|---|---|
+| 1914 · A | 573 / 4 (0) | 366 / 3 (2) | **573 / 4 (0)** | 0 | 45 (0 / 0 / 41) |
+| 1914 · B | 733 / 1 (0) | 636 / 2 (2) | **800 / 0 (0)** | 6 | 83 (6 / 1 / 83) |
+| 2015 · A | 532 / 3 (0) | 341 / 3 (3) | **532 / 3 (0)** | 0 | 37 (0 / 0 / 34) |
+| 2015 · B | 800 / 0 (0) | 800 / 0 (0) | **800 / 0 (0)** | 9 | 41 (9 / 1 / 41) |
+| 1815 · A | 702 / 1 (0) | 362 / 3 (2) | **702 / 1 (0)** | 0 | 27 (0 / 0 / 26) |
+| 1815 · B | 800 / 0 (0) | 796 / 1 (1) | **774 / 2 (0)** | 10 | 73 (10 / 1 / 71) |
+| **Summe** | **4140 / 9 (0)** | 3301 (79,7 %) / 12 (10) | **4181 (101,0 %) / 10 (0)** | 25 | 306 |
+
+**AK5 hält** (die Zusicherungen standen vor dieser Messung fest, die Schwelle 98 % aber erst nach der Messung des Entwurfs, der dieselbe Regel N mit denselben Zahlen maß — D30.9; berichtigt nach der Durchsicht der Nacharbeit, N-5): Provinz-Tage 4181 von 4140 (≥ 98 %); in keinem Paar mehr
+Verluste ohne Gefecht als mit Garnison (überall 0); 0 Ablehnungen, 0 Kriege ohne Erklärung, 0
+Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)]. Die Garnison A 1914 bildet vorher nach (52 Einmärsche, 4 verloren). Jede Zahl trifft die
+Regel N im Entwurf der Nacharbeit. **Rücknahmekriterium nicht ausgelöst — die Regel bleibt.**
+
+**Was die Zahlen nicht sagen.**
+
+- **Mit einer Armee je Provinz tut die Regel nichts** (Aufstellung A gleich Garnison, 0 Befehle). Das ist
+  die Regel, nicht ein Fehler: allein marschiert eine Verteidigung nie.
+- **1815 B liegt unter der Garnison** (774 gegen 800, zwei Provinzen verloren — beide mit Gefecht). Die
+  Schwelle gilt für die Summe; so steht es in D30.9, und sie wurde nach der Messung des Entwurfs
+  festgelegt, nicht nach dieser.
+- **Deckung kommt fast nie rechtzeitig:** 3 von 25 Befehlen erreichten ihre Provinz vor Gefechtsende.
+  Die Gewinne in 1914 B (800 statt 733) kommen also kaum aus rechtzeitig gedeckten Gefechten —
+  vermutlich aus Armeen, die schon standen, als der nächste Angriff kam (abgeleitet, nicht einzeln
+  gezählt). Belegt ist „schadet nicht", nicht „hilft" — die spürbare Entlastung, die
+  Noah wollte, ist als offene Frage in `DECISIONS.md` (2026-09-13, T-M40-10).
+- **Neu messen nach Block N2:** die Gegner ändern sich; fällt dann eine Zusicherung, greift das
+  Rücknahmekriterium (D30.9), und die Verteidigung kämpft wie die Garnison.
+
+**Unverändert, belegt:** Turnier zeilengleich (`docs/reports/ai-tournament-run.md`, `git diff` leer);
+Vollpartie Startzahl 1914 Siegtag **582**, Sieger p6, 12 Kriegserklärungen, 1615 Eroberungen, 5236
+Schlachten — der Bericht bis auf `measuredAt` gleich dem eingecheckten, zurückgesetzt; Golden-Master
+über `pnpm test` ohne `UPDATE_GOLDEN`; `data/rules` unberührt.
+
+**Status:** AK5 belegt; Beobachtung „hilft nicht belegbar" offen bei Noah.
+---
+
+## 2026-09-13 · T-M41-08 · 961 Ablehnungen waren Rauschen aus dem Zusammenlegen — die Zusagen aus M14 sind eingelöst oder begründet zurückgenommen, und fünf Nebenbefunde bleiben
+
+**Der Befund, nachgemessen beim Bau.** Die Untersuchung zu `ai-integration.json` (890 `MOVE_ARMY:ARMY_NOT_FOUND`
+am 2026-09-12) fand eine einzige Ursache: Operativ- und Taktikstufe feuern praktisch immer im selben Tick
+und lasen dieselbe Sicht; `consolidateCommands` legte Armeen zusammen, `militaryCommands` befahl danach
+die aufgelösten, und der Kern lehnte jeden dieser Befehle ab. Nachgemessen auf dem Stand `4854465`, rot
+vor der Reparatur: **200 Tage Weltkarte 938 + 23** (`MOVE_ARMY`/`SET_STANCE`), **90 Tage Voreinstellung
+265 + 2**. Kein verlorener Zug — die bleibende Armee bekam ihren eigenen Befehl —, aber 961 von 1177
+Ablehnungen verdeckten jede andere.
+
+**Reparatur und Beleg.** `decide.ts` gibt der Taktikstufe eine Sicht ohne die Armeen, die das
+Zusammenlegen im selben Zug auflöst (Sortierregel des Kerns). Befehle, `assignments` und Begründungen
+für diese Armeen entstehen nicht mehr. **Neutral, gemessen:** die Prüfsumme des Endzustands ohne
+Protokoll und KI-Gedächtnis ist vorher wie nachher `dbf5fa3f49a96cd1` (200 Tage) und `a177d1db875a10b1`
+(90 Tage), jede Ereigniszahl außer den Ablehnungen ist gleich, das Turnier zeilengleich. Ablehnungen
+Weltkarte **1177 → 216** (6,32 % → 1,22 % der KI-Befehle), Voreinstellung **267 → 0**.
+
+**Die Zusagen von T-M14-11 und T-M14-12** (Eintrag „T-M41-06" oben) stehen jetzt im 90-Tage-Lauf der
+ausgelieferten Voreinstellung (`ai-integration.slow.test.ts`, Startzahl 1914, sieben KI):
+
+| Zusage | gemessen (90 Tage) | Stand |
+|---|---|---|
+| Ablehnungsquote < 10 % | 0 % (vorher 3,92 %) | zugesichert |
+| `NO_PATH` < 2 % der Marschbefehle | 0 von 2556 | zugesichert |
+| Paarung Armee/Fehlercode ≤ 3 | 0 | zugesichert |
+| ≥ 1 Kriegserklärung | 5 | zugesichert |
+| keine Macht ohne Hauptstadt, solange sie eine Stadt hält | 0 am Ende, 0 Tage | zugesichert — *berichtigt nach der Durchsicht (M1): über einer leeren Menge, 0 Verluste in 90 Tagen; jetzt im 200-Tage-Lauf mit 10 Verlusten zugesichert* |
+| Handel je KI-Macht | alle 7, mindestens 288 | zugesichert |
+| abgewiesene `acceptPeace` < 5 % | keine diplomatische Ablehnung (1 Annahme) | zugesichert, strenger |
+| Frieden zwischen zwei KI | 1 | zugesichert |
+| je Macht eine Armee mit `armyRange > 0` | 0 von 7 | **zurückgenommen** (`DECISIONS.md`) |
+| ≤ 3 Armeeobjekte je Macht und Provinz | höchstens 86, stehend 8 | Zahl im Bericht, Nebenbefund (b) |
+| zusätzliche AK für den Ablehnungsanteil bei R-AI-01 | nie gebaut | **zurückgenommen** (`DECISIONS.md`) |
+
+Im 200-Tage-Lauf stehen dieselben Zahlen im Bericht; zugesichert ist dort nur `ARMY_NOT_FOUND` = 0.
+
+**Die „neun Zahlen je Stufe" aus T-M15-08.** Das Turnier zählte Kriegserklärung und Beschuss je Partie für
+**beide** antretenden Stufen — der Beschuss von „schwer" stand auch bei „leicht". Jetzt nach dem
+Handelnden (`byDifficulty`): Kriegserklärungen leicht 0, normal 110, schwer 70; selbsttätiger Beschuss
+**0 auf jeder Stufe**. Zugesichert sind die Kriegserklärungen von „schwer" und „normal", der Rest ist
+zurückgenommen (`DECISIONS.md`).
+
+**Nebenbefunde (nicht in dieser Aufgabe gebaut):**
+
+- **(a) Das Artillerie-Tor ist dünn.** 200 Tage Weltkarte: **1 Artillerie, 10 selbsttätige Beschüsse**
+  (2026-09-12: 9 und 121); `ai-integration.slow.test.ts` sichert `> 0` und ist damit auf einer einzigen
+  Einheit grün. Naheliegende Ursache H1 der Durchsicht (Fabrikausbau sperrt die Stadt) → nach der
+  H1-Reparatur nachmessen, sonst T-M41-14.
+- **(b) Viele Armeeobjekte je Provinz.** Voreinstellung höchstens 86 (stehend 8), Weltkarte 101 (stehend 17),
+  fast nur Durchzug. `consolidate.ts` legt je Denkschritt nur **eine** Provinz zusammen (`break`), und der
+  Deckel vergleicht die Zahl der **Stapel** mit `stackFullContribution` = 20 **Einheiten** — er greift nie.
+  → T-M41-10.
+- **(c) Die Hauptstadt wird im Turnier täglich neu befohlen.** Nachbau der Untersuchung: 298×
+  `SET_CAPITAL:ON_COOLDOWN` in einem Lauf; `PublicView.self` führt die 30-Tage-Sperre des Verlegens nicht.
+  → T-M41-11.
+- **(d) Im Turnier schießt keine Stufe.** R-BAT-08/AK3 sagt „SOLL ihre Artillerie im Turnier
+  Beschussereignisse erzeugen" — gemessen 0 auf jeder Stufe (40 Spieltage, Testkarte, Artillerie ab Tag 34
+  hinter der Fabrik). Belegt ist der Beschuss nur als Summe im 200-Tage-Lauf (Befund a). Vermerk bei
+  R-BAT-08/AK3 in `01-REQUIREMENTS.md`; die Anforderung selbst bleibt gebucht, ihr Text wird nicht still
+  gelockert.
+- **(e) 213 `BUILD:NOT_OWNER` sind Geisterbauten** in Provinzen, die die KI nur noch erinnert (`stale`), eine
+  davon 94× (China, PAK-NORTH); wegen `break` verdrängt der Geisterbau den echten Bau des Tages. → T-M41-09.
+
+**Status:** behoben (`ARMY_NOT_FOUND`, T-M41-08); Zusagen aus M14 eingelöst oder zurückgenommen;
+Nebenbefunde (a)–(e) offen, mit Aufgabe in Block N2.
+
+---
+
+## 2026-09-13 · Nacharbeit T-M41-01 (H1, H2) · Der Fabrikausbau sperrte die Städte — repariert, und das Artillerie-Tor lebt wieder
+
+**Der Befund der Durchsicht, nachgemessen.** `nextBuildingFor` lieferte seit T-M41-01 für jede Stadt mit
+einer Fabrik unter `maxLevel` nur noch „factory"; war diese Stufe zu teuer, sprang `economyCommands` zur
+nächsten Provinz. Eisenbahn, Festung und Hafen kamen in der Stadt erst nach Fabrikstufe 3 — das
+3,24-fache des Grundpreises. Neu gezählt in `fullgame.slow.test.ts` (Städte je Macht am Ende), auf dem
+Stand nach T-M41-08: mit Startzahl 1914 halten die Mächte zusammen 71 Städte, **39 davon mit Fabrik und
+ohne Eisenbahn**; 2015 **66 von 82**; 1815 **40 von 71**. Russland allein, 1815: 48 Städte, 36 hängend.
+`economy.test.ts` zeigt den Mechanismus in einem Satz: Stadt mit Fabrik 1, Stufe 2 zu teuer, Eisenbahn
+bezahlbar — die KI baut die Eisenbahn **in einer Landprovinz** („expected 'railway in rural' to be
+'railway in city'").
+
+**Reparatur.** Der Ausbau ist nur noch der **erste** Wunsch einer Stadt, deren Fabrik steht; Eisenbahn,
+Festung und Hafen stehen dahinter, und `economyCommands` baut den ersten bezahlbaren. Kaserne und erste
+Fabrik bleiben allein wie bisher, der Handel (`missingForNextBuilding`) zielt weiter auf den ersten
+Wunsch — geändert ist genau eine Größe. *(Berichtigt nach der Durchsicht von Block N2, M2: nicht
+genau eine. Die Ausweichliste gilt für jede Provinz mit Kaserne, auch Landprovinzen und Städte mit
+Fabrik 3 — dort baut die KI jetzt die Festung, wenn die Eisenbahn zu teuer ist, statt zur nächsten
+Provinz zu gehen. Gemessen nur in der Summe der Läufe unten; Haltetest in `economy.test.ts`.)* Gewählt statt „Ausbau hinter die anderen einordnen", weil eine
+reiche Macht die Fabrik so weiter zuerst ausbaut (`DECISIONS.md`, Nachtrag zu T-M41-01).
+
+**Vollpartie, vorher → nachher** (vorher = Stand nach T-M41-08, Berichte mit denselben Feldern):
+
+| Startzahl | Siegtag | Kriege | Eroberungen | Schlachten | Städte mit Eisenbahn / Festung / Festung 2 | Fabrik ohne Eisenbahn | Fabrik ≥ 2 / = 3 (Provinzen) |
+|---|---|---|---|---|---|---|---|
+| 1914 vorher | 582 | 12 | 1615 | 5236 | 18 / 13 / 11 von 71 | 39 | 29 / 11 |
+| 1914 nachher | **430** | 11 | 1022 | 4009 | **43 / 41 / 32** von 72 | **2** | 25 / 3 |
+| 2015 vorher | 868 | 37 | 2923 | 11262 | 11 / 4 / 0 von 82 | 66 | 42 / 0 |
+| 2015 nachher | **640** | 11 | 1826 | 7128 | **69 / 67 / 62** von 80 | **0** | 56 / 13 |
+| 1815 vorher | 412 | 12 | 1172 | 5323 | 11 / 4 / 0 von 71 | 40 | 23 / 0 |
+| 1815 nachher | **571** | 8 | 1609 | 5811 | **66 / 62 / 59** von 81 | **1** | 51 / 4 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500 aus T-M34-07, und
+„mindestens eine Macht besitzt Fabrikstufe 2" hält. Der Siegtag springt wieder in beide Richtungen —
+die Partie wird eine andere, wie schon bei T-M41-02 beobachtet. Mit Startzahl 2015 gewinnt jetzt China
+(p7) statt Russland (p6), mit 11 statt 37 Kriegserklärungen, und China erreicht Fabrikstufe 3 in 13
+Provinzen.
+
+**H2 — das Integrationstor, gegen den Stand vom 2026-09-12** (`ai-integration.json`, Weltkarte, 200 Tage):
+
+| Größe | 2026-09-12 | nach T-M41-08 | nach H1 |
+|---|---|---|---|
+| Artillerie ausgehoben | 9 | 1 | **69** |
+| selbsttätiger Beschuss | 121 | 10 | **303** |
+| begonnene Fabriken | 77 | 71 | 76 |
+| Kriegserklärungen | 13 | 12 | 15 |
+| Ablehnungen | 1105 | 216 | 136 (59 `BUILD:NOT_OWNER`, 72 `SET_CAPITAL:ON_COOLDOWN`, 5 `RECRUIT`) |
+
+Das dünne Tor (Nebenbefund a zu T-M41-08) war Folge von H1: die Städte, die Artillerie ausheben
+könnten, bauten nichts mehr. **Aber:** alle 69 Artillerien und alle 303 Beschüsse gehören einer Stufe —
+„schwer" (China, 51 Armeen mit Reichweite); „leicht" und „normal" 0. Der 90-Tage-Lauf der Voreinstellung
+bleibt grün (0 Ablehnungen), sein Endzustand hat sich verschoben (`a177d1db875a10b1` → `41acc8a544184d8b`).
+
+**Turnier:** nicht mehr zeilengleich, R-AI-06 hält — Siegquoten 1,00 / 0,70 (10:0:15) / 1,00 wie vorher;
+„schwer gegen normal im Frieden" 146 → 145 Kriegserklärungen, 97 → 96 Frieden.
+
+**Grundlauf** (`progress.slow.test.ts`, 12 Startzahlen × 120 Tage): Anteil des Stärksten 0,4462 → **0,3623**, Eroberungen
+301,3 → 314,5, Überlebende 5,08 → 5,67, Endbestände 50439 → 41961. Der Lauf vorher war gleich dem
+eingecheckten Bericht — T-M41-08 und M40 hatten ihn nicht verschoben. **Befund:** der Ausgangswert in
+`balance-sweep.md` beschreibt damit nicht mehr den heutigen Stand; der Frische-Wächter der Abnahme sieht das
+nicht (er fragt nur `data/rules`), der eine Parameterlauf im Schlussblock nach M35 misst neu (bis 2026-09-13: T-M17-16). Risiko 5 (200 Tage, sechs
+Europäer): höchste Stufe weiter 1.
+
+**Neu sichtbar, nicht in dieser Reparatur:** `SET_CAPITAL:ON_COOLDOWN` 72× auf der Weltkarte, und die längste
+Strecke ohne Hauptstadt bei gehaltener Stadt ist 31 Tage (Italien) — die 30-Tage-Sperre nach einem zweiten
+Verlust. Gehört zu T-M41-11.
+
+**Status: behoben** (Nacharbeit zu T-M41-01). Plantext bei T-M41-01 in `03-TASKS.md` und `tasks.yaml`,
+Nachtrag in `DECISIONS.md` und `progress-baseline.md` §5.
+
+---
+
+## 2026-09-13 · T-M41-09 · Die KI baute in Provinzen, die sie nur erinnerte — und jeder Geisterbau kostete den echten Bau des Tages
+
+**Befund** (Nebenbefund e zu T-M41-08). Eine Provinz außer Sicht führt `publicView` mit dem Besitzer, den die
+Macht zuletzt gesehen hat (`stale: true`) — auch dann noch als eigene, wenn ein Gegner sie längst hält. Die
+Erinnerung zeigt keine Gebäude, also wollte die KI dort eine Kaserne, und der Kern lehnte mit `NOT_OWNER`
+ab, jeden Tag neu. Weil `economyCommands` nur einen Bau je Denkschritt befiehlt, verdrängte der Geisterbau
+den echten; `missingForNextBuilding` handelte obendrein dafür. Stand nach der Reparatur zu H1: **59
+`BUILD:NOT_OWNER`** in 200 Tagen, eine Provinz **50×** (China, PAK-CENTRAL).
+
+**Reparatur.** Wirtschaft, Handel und Aushebung sehen nur sichtbare eigene Provinzen. Militär, Diplomatie und
+Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert mein" Rückeroberung, und das wäre eine eigene
+Verhaltensänderung. Tests zuerst: `economy.test.ts` rot 2 von 13 („expected [ 'erinnert' ] to not include
+'erinnert'", ein `TRADE` für den erinnerten Bau), `ai-integration.slow.test.ts` rot 2 von 19 („expected 59 to
+be +0", „Weltkarte, 200 Tage: expected 50 to be less than or equal to 3").
+
+**Abweichung von der Untersuchung.** Sie wollte hier den erweiterten Paarungsschlüssel (Macht, Befehl,
+Fehlercode, Einzelheiten) über **alle** Befehle zusichern. Das trägt nach H1 nicht: `SET_CAPITAL:ON_COOLDOWN`
+wiederholt dieselbe Sperre bis zu 29× (Italien). Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel
+geht an T-M41-11.
+
+**Vorher → nachher** (vorher = Stand nach H1):
+
+| Größe | vorher (Stand nach H1) | nachher |
+|---|---|---|
+| `BUILD:NOT_OWNER`, Weltkarte 200 Tage | 59 | **0** |
+| derselbe abgelehnte Bauauftrag, höchstens | 50 (China, PAK-CENTRAL) | 0 |
+| Ablehnungen gesamt | 136 (0,82 %) | 75 (0,45 %) — 72 `SET_CAPITAL:ON_COOLDOWN`, 3 `RECRUIT` |
+| begonnene Fabriken / Artillerie / selbsttätiger Beschuss | 76 / 69 / 303 | 71 / 63 / 231 |
+| Voreinstellung 90 Tage, Prüfsumme ohne Protokoll und KI | `41acc8a544184d8b` | **bitgleich** |
+| Vollpartie 1914: Siegtag, Sieger | 430, p6 | **975**, p7 (China) |
+| Vollpartie 2015: Siegtag, Sieger | 640, p7 | **583**, p6 |
+| Vollpartie 1815: Siegtag, Sieger | 571, p6 | **583**, p6 |
+| Turnier | — | zeilengleich |
+| Grundlauf (`progress.slow`) | Anteil des Stärksten 0,3623 | 0,3684; Eroberungen 314,5 → 310,1, Überlebende 5,67 → 5,42 |
+
+AK-1 ist in allen drei Startzahlen entschieden, jeder Siegtag liegt im Tor 300–1500. Mit Startzahl 1914
+endet die Partie jetzt mehr als doppelt so spät — China gewinnt mit Fabrikstufe 3 in 61 Provinzen, 2589
+Eroberungen statt 1022. Der Siegtag springt wie schon bei H1 je Änderung in beide Richtungen; die
+Voreinstellung bleibt über 90 Tage bitgleich, weil erinnerte Bauten dort nicht vorkommen.
+
+**Status: behoben** (T-M41-09).
+
+---
+
+## 2026-09-13 · T-M41-10 · „Höchstens drei Armeeobjekte je Provinz" — gebaut, am Rücknahmekriterium gerissen, zurückgenommen
+
+**Befund** (Nebenbefund b zu T-M41-08). T-M14-12 sagte zu: „keine KI-Macht hält mehr als drei Armeeobjekte in
+derselben Provinz". Gemessen auf dem Stand nach T-M41-09: Voreinstellung (90 Tage) bis zu **65** Armeeobjekte
+einer Macht in einer Provinz, **stehend 5**; Weltkarte (200 Tage) bis zu **80**, **stehend 12**. Zwei Stellen in
+`consolidate.ts`: der `break` legt je Denkschritt nur **eine** Provinz zusammen, und der Deckel vergleicht die Zahl
+der **Stapel** (einer je Einheitenart) mit `stackFullContribution`, zwanzig **Einheiten** — er greift nie.
+Marschierende Armeen kann der Kern nicht zusammenlegen (`ARMY_BUSY`); fast alle 65 bzw. 80 sind Durchzug.
+
+**Gebaut und gemessen.** Beide Stellen repariert (alle Provinzen je Denkschritt, Deckel über `unitCount`), die
+Zusage neu gefasst auf **stehende** Armeeobjekte. Tests zuerst: `decide.test.ts` rot 2 von 42 („expected [ 'o1' ]
+to deeply equal [ 'o1', 'o2' ]", „expected [ 'a1', 'a2', 'a3' ] to have a length of 2 but got 3"), grün mit der
+Reparatur; `ai-integration.slow.test.ts` mit der Zusicherung „Voreinstellung stehend ≤ 3" rot mit der alten
+`consolidate.ts` („an 1 Tagen mehr als drei: expected 5 to be less than or equal to 3").
+
+**Rücknahmekriterium** (Vollpartie 1914/2015/1815 im Tor 300–1500 und entschieden, `ai-integration` 200 Tage grün,
+Turnier im Band von R-AI-06):
+
+| | vorher (nach T-M41-09) | mit T-M41-10 |
+|---|---|---|
+| **`ai-integration` 200 Tage** | grün | **rot 2 von 20** |
+| Artillerie ausgehoben / selbsttätiger Beschuss | 63 / 231 | **0 / 0** |
+| stehende Armeeobjekte je Provinz, höchstens (Weltkarte / Voreinstellung) | 12 / 5 | 11 / **5** (an 2 Tagen über drei) |
+| Ablehnungen Weltkarte | 75 | 44 (42 `SET_CAPITAL:ON_COOLDOWN`) |
+| Turnier | — | zeilengleich, Band hält |
+| Vollpartie 1914: Siegtag | 975 | 842, entschieden (Sieger p7 → p8) |
+| Vollpartie 2015: Siegtag | 583 | 1003, entschieden (Sieger p6 → p7) |
+| Vollpartie 1815: Siegtag | 583 | 456, entschieden |
+| Grundlauf (`progress.slow`) | 0,3684 | 0,3703 (Eroberungen 310,1 → 309,2) |
+
+**Das Kriterium ist gerissen** — am Integrationstor der Artilleriekette, R-AI-08/AK3. Und die neu gefasste Zusage
+hielt auch mit der Reparatur nicht. **T-M41-10 ist zurückgenommen**: `consolidate.ts` und die Tests stehen wieder
+auf dem Stand nach T-M41-09, die Berichte ebenso; die Aufgabe steht auf `todo` mit `reopened`, die Zusage 7 ist mit
+dieser Messung nach M18 verschoben (`DECISIONS.md`). Keine Grenze bewegt.
+
+**Zwei offene Fragen, nicht gemessen:**
+- **Warum verschwindet die Artillerie?** Naheliegend: `TARGET_MIX` in `economy.ts` zählt Stapel, nicht Einheiten.
+  Zusammenlegen verschmilzt die Infanteriestapel mehrerer Armeen zu einem; der Anteil der Infanterie sinkt
+  scheinbar, sie behält den größten Rückstand, und die Artillerie kommt nie an die Reihe. Dieselbe Kette hält
+  heute an einer einzigen Macht („schwer", China) — das Tor ist dünner, als die Zahl 231 aussieht.
+- **Warum hält „stehend ≤ 3" nicht?** Naheliegend: der Deckel in Einheiten legt zwei große Verbände zusammen und
+  lässt jeden weiteren stehen; dazu denkt jede Macht nur jeden siebten oder achten Tick, und Aushebungen erzeugen
+  dazwischen neue Armeen. Ob der Deckel und die Zusage überhaupt zusammenpassen, ist die erste Frage für M18.
+
+**Status: zurückgenommen** (T-M41-10 auf `todo`, Zusage 7 nach M18).
+
+---
+
+## 2026-09-13 · T-M41-11 · Die KI sah die Sperre beim Verlegen der Hauptstadt nicht — und befahl jeden Tag neu
+
+**Befund** (Nebenbefund c zu T-M41-08). `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen mit
+`ON_COOLDOWN` abgelehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`). `PublicView.self` führte nur `capitalLostUntil`, nicht die
+Sperre; `capitalCommands` befahl deshalb an jedem Strategietag neu. Im Turnier-Nachbau der Untersuchung 298×; auf
+der Weltkarte zeigte es sich erst nach der Reparatur zu H1: **72×** in 200 Tagen, dieselbe Sperre bis zu **29×**
+(Italien) — nach T-M41-09 die letzte große Ablehnungsklasse.
+
+**Reparatur.** `PublicView.self.capitalMovedAtTick` (eigenes Wissen, nur der `self`-Block — `retreating` aus M40 in
+derselben Datei bleibt unberührt), `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kernindex, `capitalCommands` wartet die Sperre
+ab und begründet es (R-AI-05). Tests zuerst: `publicView.test.ts` rot 3 von 19 („expected undefined to be 48"),
+`decide.test.ts` rot 1 von 42 (ein `SET_CAPITAL`, das der Kern mit `ON_COOLDOWN` ablehnen würde),
+`ai-integration.slow.test.ts` rot 2 von 21 mit der alten `capital.ts` („Weltkarte, 200 Tage: expected 72 to be +0",
+„expected 29 to be less than or equal to 3").
+
+**Neutral, gemessen.** Sicht ist kein Zustand, und eine abgelehnte `SET_CAPITAL` änderte nichts:
+
+| Größe | vorher (nach T-M41-10-Rücknahme) | nachher |
+|---|---|---|
+| Endzustand ohne Protokoll und KI, Weltkarte 200 Tage | `e7b0627bff9f7b39` | **bitgleich** |
+| dasselbe, Voreinstellung 90 Tage | `41acc8a544184d8b` | **bitgleich** |
+| Ablehnungen Weltkarte | 75 (0,45 %) | **3** (0,02 %, alle `RECRUIT:INSUFFICIENT_RESOURCES`) |
+| längste Wiederholung eines abgelehnten Befehls | 29 | **2** |
+| Golden-Master (`determinism`, `walkthrough`, `replay`, ohne `UPDATE_GOLDEN`) | — | 20 grün, Dateien unverändert |
+| Turnier | — | zeilengleich |
+
+Damit trägt auch der erweiterte Paarungsschlüssel aus T-M14-11 (Macht, Befehl, Fehlercode, Einzelheiten) über
+**alle** Befehle, den T-M41-09 noch nicht zusichern konnte — jetzt in beiden Läufen zugesichert.
+
+**Status: behoben** (T-M41-11).
+
+---
+
+## 2026-09-13 · Block N2, Schluss · T-M41-14 ist nicht nötig — aber das Artillerie-Tor hängt an einer einzigen Macht
+
+**Die Prüfung aus der Orchestrierung** (§3d, Punkt 6): liegt der selbsttätige Beschuss im Integrationslauf (Weltkarte,
+200 Tage, acht KI) nach allen Änderungen von Block N2 weiter unter einem Viertel des Werts vom 2026-09-12 (121, also
+30), wird die Ursache als T-M41-14 untersucht. **Gemessen auf dem Endstand (`55dcf23`): 231 Beschüsse, 63
+Artillerien.** Die Bedingung tritt nicht ein; T-M41-14 ist nicht angelegt.
+
+| Stand | Artillerie | selbsttätiger Beschuss |
+|---|---|---|
+| 2026-09-12 (vor T-M41-01) | 9 | 121 |
+| nach T-M41-08 | 1 | 10 |
+| nach H1 (Fabrikausbau sperrt keine Stadt) | 69 | 303 |
+| nach T-M41-09 und T-M41-11 (Endstand) | 63 | **231** |
+| mit T-M41-10 (zurückgenommen) | 0 | 0 |
+
+**Der Befund, der bleibt, und keine Aufgabe hat.** Alle 63 Artillerien und alle 231 Beschüsse gehören **einer**
+Macht: China, Stufe „schwer", 47 Armeen mit Reichweite am Ende. Die drei „leichten" und drei „normalen" Mächte heben
+keine einzige Artillerie aus. Das Tor aus R-AI-08/AK3 („Artillerie > 0, Beschuss > 0") ist damit grün, aber es steht
+auf einer einzigen Kette — T-M41-10 hat vorgeführt, dass eine Änderung am Zusammenlegen es auf null bringt.
+Naheliegend, nicht gemessen: `TARGET_MIX` in `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und
+`recruitShare` der Stufen (80 / 200 / 280) lässt die teure Artillerie nur bei „schwer" in den Haushalt. *(Berichtigt nach der Durchsicht von Block N2, H1: diese Erklärung widerspricht den eigenen Daten.
+Im Integrationslauf sind **zwei** Mächte „schwer" — China und Frankreich —, und Frankreich hebt keine
+Artillerie aus. Engstellen sind die Fabrik und das Geld im Aushebebudget, nicht die Stufe; Messung im
+Eintrag „Durchsicht Block N2, H1" unten.)* Vorgemerkt
+für M18 zusammen mit Zusage 7 (T-M41-10); die Zusicherung wird nicht auf „je Stufe" verschärft, solange das nicht
+gebaut ist.
+
+**Schlussmessung von Block N2** (Code `55dcf23`, alle Berichte eingecheckt):
+
+| Lauf | Ergebnis |
+|---|---|
+| Vollpartie 1914 | Tag **975**, Sieger p7 (China), 11 Kriegserklärungen, 2589 Eroberungen |
+| Vollpartie 2015 | Tag **583**, Sieger p6 (Russland), 13 Kriegserklärungen, 2185 Eroberungen |
+| Vollpartie 1815 | Tag **583**, Sieger p6 (Russland), 10 Kriegserklärungen, 1587 Eroberungen |
+| `progress.slow` (Grundlauf) | Anteil des Stärksten **0,3684** (vor Block N2: 0,4462), Eroberungen 310,1, Überlebende 5,42 |
+| Turnier | schwer:leicht 1,00, schwer:normal Frieden **0,70** (10:0:15), im Krieg 1,00 — R-AI-06 hält |
+| `ai-integration` 200 T / Voreinstellung 90 T | 21 grün; Ablehnungen **3** von 16 650 (vor Block N2: 1177 von 18 629), Voreinstellung 0 |
+
+Die Vollpartien vor und nach T-M41-11 sind zahlengleich (nur `measuredAt` verschieden) — auch über 975 Spieltage
+belegt, dass die Sicht auf die Hauptstadtsperre die Partie nicht ändert.
+
+**Folge für den Parameterlauf:** der Ausgangswert in `balance-sweep.md` (Grundlauf 0,4442) beschreibt den Stand nicht
+mehr. Der Frische-Wächter der Abnahme sieht das nicht, weil sich `data/rules` nicht geändert hat; der eine Parameterlauf
+im Schlussblock misst neu.
+
+**Status: Beobachtung** (Artillerie bei einer Macht, vorgemerkt für M18); T-M41-14 nicht nötig.
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, N3 · Die drei Startzahlen der Vollpartie variieren nur den Zufall, nicht die Aufstellung
+
+**Befund der Durchsicht, selbst nachgeprüft** (eigenes Skript gegen den Worktree, `scratchpad/n2/seed/`, nicht das Skript
+des Prüfers). `toConfig({ ...DEFAULT_NEW_GAME, seed }, map)` und `createInitialState` für 1914, 2015 und 1815:
+
+| | 1914 | 2015 | 1815 |
+|---|---|---|---|
+| `state.seed` | 1914 | 2015 | 1815 |
+| `state.rng` (erste Zustandszahl) | 2484121936 | 816126800 | 3993579382 |
+| Startzustand ohne `seed`/`rng`, sha256 über JSON | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` | `fb9f284dabb1bd40` |
+| dasselbe, `hashValue` des Projekts | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` | `bebb7f75a2e09d7f` |
+| Spieler, Gegner, Stufen, Hauptstädte | gleich | gleich | gleich |
+
+Zwei Werkzeuge, dasselbe Ergebnis; der sha256-Wert trifft den der Durchsicht.
+
+**Was das für AK-1 heißt.** Die drei Vollpartien spielen **dieselbe Aufstellung** — Vereinigte Staaten gegen
+Kanada, Mexiko, Brasilien, Argentinien, Russland, China, Indien, alle „normal" — und unterscheiden sich nur im
+Zufallsstrom. „Drei Startzahlen" ist deshalb eine engere Streuung, als der Ausdruck nahelegt: sie misst, wie
+empfindlich **diese** Partie auf den Zufall ist, nicht, wie verschiedene Partien ausgehen. Dass 2015 und 1815 beide
+an Tag 583 enden, ist echt (die Berichte unterscheiden sich in allen anderen Feldern; die Durchsicht hat 1815
+unabhängig nachgefahren) und nicht ein kopierter Bericht.
+
+**Veraltete Zahlen (N4), berichtigt:** `03-TASKS.md` nennt bei T-M15-08 „normal 110" (heute 109) und bei T-M14-11
+„`NO_PATH` 0 von 2556, 5 Kriegserklärungen" (heute 0 von 2405, 6) — beide mit „(Stand T-M41-08)" versehen; der
+Kommentar in `fullgame.slow.test.ts` („1914 endet an Tag 471") ist nachgezogen und nennt die Einschränkung oben.
+
+**Status: Beobachtung** (keine Änderung am Messaufbau; wer verschiedene Partien messen will, braucht verschiedene
+Aufstellungen, nicht nur Startzahlen).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, H1 · Die Feuerautomatik lebt in der ausgelieferten Partie nicht — das Tor hängt an einer Macht
+
+**Befund der Durchsicht, mit eigenem Lauf bestätigt** (`ai-integration.slow.test.ts` fährt die Voreinstellung jetzt
+200 Tage und hält Tag 90 als Zwischenstand fest; Prüfsummen der Weltkarte `e7b0627bff9f7b39` und der Voreinstellung
+an Tag 90 `41acc8a544184d8b` unverändert — dieselbe Partie, derselbe Code).
+
+**1 · Das Tor aus R-AI-08/AK3 steht auf einer einzigen Macht.** Weltkarte, 200 Tage, acht KI:
+
+| Macht | Stufe | Fabriken begonnen | Geld am Ende | Artillerie |
+|---|---|---|---|---|
+| Vereinigte Staaten | leicht | 37 | 963 217 | 0 |
+| Russland | normal | 0 | 363 452 | 0 |
+| China | **schwer** | 4 | 702 525 | **63** |
+| Indien | leicht | 27 | 1 043 552 | 0 |
+| Deutschland | normal | 0 | 305 017 | 0 |
+| Frankreich | **schwer** | 2 | 793 878 | **0** |
+| Vereinigtes Königreich | leicht | 1 | 841 505 | 0 |
+| Italien | normal | 0 | 304 900 | 0 |
+
+Mächte mit Artillerie: **China**. Selbsttätiger Beschuss 231, alle von China.
+
+**2 · Die Ursache war falsch benannt.** Der Schlusseintrag zu Block N2 schrieb, `recruitShare` lasse die Artillerie
+„nur bei schwer in den Haushalt" — Frankreich ist ebenfalls „schwer" und hebt nichts aus. Was die Zahlen tragen:
+- **Fabrik.** Drei der fünf Mächte ohne „leicht" beginnen in 200 Tagen keine einzige Fabrik, Frankreich zwei.
+- **Geld im Aushebebudget.** `recruitCommands` gibt je Einheit höchstens `recruitShare` ‰ des Vorrats aus; eine
+  Artillerie kostet 200 000 Geld. Bei „leicht" (80 ‰) braucht das 2,5 Mio. Geld auf Lager — die Vereinigten Staaten
+  bauen 37 Fabriken und enden mit 963 217. Bei „schwer" (280 ‰) sind es 715 000; Frankreich endet knapp darüber
+  (laut Durchsicht, `review-n2/why.json`, lag es unterwegs zwischen 211 000 und 794 000 — nicht selbst gemessen).
+- Dazu, laut Durchsicht und nicht selbst gemessen: gefragt wird zuerst die vielseitigste Provinz, und die trägt oft
+  keine Fabrik.
+
+**3 · In der Partie, die ein Spieler bekommt, schießt keine KI.** Voreinstellung (Startzahl 1914, sieben KI, alle
+„normal"), dieselbe Partie über 200 Tage: **3 Artillerien** (China), **0 selbsttätige Beschüsse**; Fabriken begonnen
+nur Russland 5, China 6, Indien 1; Kanada und Indien enden mit 0 Geld. An Tag 90: 0 und 0. Das bestätigt die Zahlen
+der Durchsicht (`review-n2/preset200.json`: 3 Artillerien, 0 Beschüsse). **R-BAT-08/AK3 ist für die Stufe „normal"
+nicht belegt**, weder im Turnier (0) noch in der Voreinstellung.
+
+**Was nicht geschieht:** keine Grenze geändert, kein Umbau des KI-Balancings. Das ist eine Frage an Noah bzw. M18
+(`DECISIONS.md`, 2026-09-13, R-BAT-08/AK3). Kein Rückschritt durch Block N2: vorher 1 Artillerie und 10 Beschüsse auf
+der Weltkarte.
+
+**Status: offen, ohne Aufgabe** — Frage in `DECISIONS.md`, vorgemerkt für M18 zusammen mit Zusage 7 (T-M41-10).
+
+---
+
+## 2026-09-13 · Durchsicht Block N2, M3 · Der Handel arbeitet auf den teuersten Wunsch hin, gebaut wird der erste bezahlbare (plausibel, nicht gebaut)
+
+**Befund der Durchsicht, mit Zahlen aus dem eigenen Bericht** (`docs/reports/ai-integration.json`), **nicht gebaut**:
+
+- **Zwei Stellen, zwei Ziele.** `missingForNextBuilding` nimmt den **ersten** Wunsch einer Provinz
+  (`nextBuildingFor`) — seit T-M41-01 in einer Stadt mit Fabrik deren nächste Stufe, bis zum 3,24-fachen Preis —
+  und `tradeCommands` tauscht auf den Rohstoff hin, der dafür fehlt. Gebaut wird seit der Reparatur zu H1 aber der
+  **erste bezahlbare** Wunsch, oft Eisenbahn oder Festung. Die Nacharbeit zu H1 hat das bewusst so gelassen (eine
+  Größe geändert); dass Handel und Bau seither verschiedene Ziele verfolgen, ist die Folge.
+- **Getauscht wird fast in jedem Denkschritt.** `tradeCommands` verkauft ein Zehntel des größten Bestands, der selbst
+  nicht knapp ist, ohne auf eine Rücklage zu achten.
+
+| Lauf | Tauschgeschäfte | je Macht | je Macht und Tag |
+|---|---|---|---|
+| Weltkarte, 200 Tage, acht KI (Stand nach Block N2) | 4637 | 568–593 | ≈ 2,9 |
+| dasselbe, 2026-09-12 (vor M41) | 3914 | — | ≈ 2,4 |
+| Voreinstellung, 90 Tage, sieben KI | 2060 | 288–299 | ≈ 3,3 |
+
+Eine Macht denkt bei acht KI jeden achten Tick, also dreimal am Tag; fast jeder Denkschritt enthält einen Tausch.
+Durch Block N2 unverändert („schwer" 1179 → 1180 in der Summe beider Mächte).
+
+**Plausible Folge, nicht gemessen:** der Tausch kann genau den Rohstoff abgeben, den der tatsächlich gebaute Wunsch
+oder die Aushebung braucht — etwa Geld, das die Artillerie im Aushebebudget verlangt (Eintrag „Durchsicht Block N2, H1"
+oben). Ob das eine der Engstellen dort ist, sagt erst eine eigene Messung.
+
+**Mögliche Reparatur (für M18):** den Handel auf den Wunsch ausrichten, der wirklich verfolgt wird, oder nicht tauschen,
+wenn im selben Denkschritt gebaut wird — und gesondert messen (Handel, Bauten, Artillerie, Vollpartie, Turnier).
+
+**Status: offen, ohne Aufgabe** — vorgemerkt für M18.
+
+---
+
+## 2026-09-13 · Nach dem Merge von Block N2 · Die Kontrolle des Haltungs-Messlaufs hat sich mit den Gegnern verschoben — AK5 hält
+
+**Gemessen** nach dem Merge `c3ff8be` (Block N2 und Nacharbeit M40), gefahren vom Orchestrator:
+- zwölf Episodenläufe mit `WORLDWAR_WRITE_REPORT=1` (`apps/headless/test/stance.slow.test.ts`, 680 s),
+- Turnier,
+- Vollpartie 1914,
+- `pnpm verify`.
+
+Spaltenformat: Provinz-Tage / verloren (davon ohne Gefecht).
+
+| Startzahl · Aufstellung | Garnison vor N2 | **Garnison nach N2** | Verteidigung vor N2 | **Verteidigung nach N2** | Befehle nach N2 |
+|---|---|---|---|---|---|
+| 1914 · A | 573 / 4 (0) | **317 / 4 (0)** | 573 / 4 (0) | **317 / 4 (0)** | 0 |
+| 1914 · B | 733 / 1 (0) | **800 / 0 (0)** | 800 / 0 (0) | **800 / 0 (0)** | 8 |
+| 2015 · A | 532 / 3 (0) | **200 / 4 (0)** | 532 / 3 (0) | **200 / 4 (0)** | 0 |
+| 2015 · B | 800 / 0 (0) | **734 / 1 (0)** | 800 / 0 (0) | **800 / 0 (0)** | 4 |
+| 1815 · A | 702 / 1 (0) | **238 / 4 (0)** | 702 / 1 (0) | **238 / 4 (0)** | 0 |
+| 1815 · B | 800 / 0 (0) | **800 / 0 (0)** | 774 / 2 (0) | **791 / 1 (0)** | 9 |
+| **Summe** | 4140 / 9 (0) | **3089 / 13 (0)** | 4181 (101,0 %) / 10 (0) | **3146 (101,8 %) / 13 (0)** | 21 |
+
+**AK5 hält.**
+- Provinz-Tage: 3146 von 3089 (101,8 %, Schwelle 98 %).
+- Verluste ohne Gefecht: in keinem Paar, überall 0.
+- 0 Ablehnungen, 0 Kriege ohne Erklärung, 0 Pendelzüge [gezählt ab Abmarsch, strukturell 0 (H-A)].
+
+Das Rücknahmekriterium ist nicht ausgelöst.
+
+**Was fiel: die Kontrolle.** „Die Garnison A 1914 bildet den Lauf vorher nach" erwartete 52 Einmärsche und
+4 verlorene Provinzen. Der Lauf ergab 76 und 4. Die 52 stammen vom KI-Stand vor N2.
+
+Geprüft, bevor etwas geändert wurde (`git diff --stat 74d7de0 c3ff8be`): Außerhalb von `packages/ai`, Tests
+und Berichten ändert der Merge nur zwei Dateien.
+- `packages/core/src/view/publicView.ts`, +10: das Sichtfeld `self.capitalMovedAtTick` (T-M41-11). Es ist
+  nur Sicht, und nur die KI liest es.
+- `packages/core/src/index.ts`, +1: dessen Export.
+
+Unberührt sind Karte, `data/rules`, `apps/desktop/src/game/newGame.ts`, `packages/testkit` und die
+Aufstellung im Test. Eine Garnison handelt nie von selbst.
+
+Die Gegner sind nach N2 stärker: In Aufstellung A hält die Garnison deutlich weniger Provinz-Tage (1914: 317
+statt 573).
+
+**Korrektur.** Die Kontrolle ist jetzt der Garnison-Lauf auf dem heutigen KI-Stand, `KONTROLLE =
+{ intrusions: 76, provincesLost: 4 }`. Die Geschichte steht im Kopf des Tests und im Bericht
+(`episoden.counting.ak5`); die 52 stehen weiter in `episoden.vorher`. Die Zusicherung prüft beide Zahlen wie
+bisher, abgeschwächt ist nichts.
+
+Dass die Regel hilft, bleibt unbelegt: Eine befohlene Deckung kam in 0 von 19 Episoden vor Gefechtsende an
+(vor N2: 3 von 25).
+
+**Unverändert, belegt:**
+- Turnier zeilengleich (`ai-tournament-run.md` ohne Diff).
+- Vollpartie 1914: Siegtag **975**, Sieger p7. `fullgame.json` weicht nur in `measuredAt` ab und ist
+  zurückgesetzt.
+- `pnpm verify`: Exit 0, 144 Dateien / 2059 Tests, Abdeckung Kern 96,8 %, gesamt 96,3 %.
+
+**Status:** Kontrolle begründet gesetzt, `stance.json` eingecheckt. Die nächste Messung, nach T-M40-14 und
+T-M40-15, bestätigt die Kontrolle am Lauf.
+
+---
+
+## 2026-09-13 · Durchsicht der Nacharbeit M40, N-1, N-2, N-4, N-6 · Kleine Befunde an der Automatik — festgehalten, nicht gebaut
+
+Gefunden hat sie die Durchsicht der Nacharbeit M40 (`4854465..74d7de0`). Die zweite Nacharbeit (T-M40-14 bis
+T-M40-16, Nachtrag T-M40-12) baut davon nur N-3, N-5 und den React-Schlüssel aus N-4. Der Rest steht hier.
+
+**N-1 · „Angegriffen" und „leer" weichen vom Kern ab (plausibel, nicht gemessen).**
+- **Befund.** `packages/ai/src/adjutant.ts` zählt jede sichtbare Armee eines Kriegsgegners als Feind in
+  ihrer Provinz, auch eine eingeschiffte oder einen reinen Luft- oder Flottenverband. Der Kern prüft für
+  die Besetzung `hasHostileLandForces` (`packages/core/src/phases/movement.ts`) und schließt solche Armeen
+  aus. Die Automatik hält eine Küstenprovinz mit feindlicher Flotte deshalb für angegriffen, und eine
+  eigene Armee dort ist als Quelle gesperrt.
+- **Umgekehrt** zählt `occupied` jede eigene Armee als Besatzung, auch eine, die im selben Tick
+  abmarschiert, und einen reinen Luftverband. Eine solche Provinz gilt nicht als leer.
+- **Warum nicht gebaut.** `VisibleArmy` führt bei fremden Armeen weder `embarked` noch, ob sie
+  Landeinheiten tragen. Die Kernbedingung braucht also ein neues Sichtfeld; vorher ist nach R-DIP-04 zu
+  prüfen, ob der Besitzer das überhaupt sehen darf.
+- **Reparatur später.** Erst das Sichtfeld, dann dieselbe Bedingung wie `hasHostileLandForces`; `occupied`
+  nur noch aus `holdsGround`, ohne Armeen, die im selben Tick ausrücken.
+
+**N-2 · „Genau eine Landetappe" prüft die Kantenart nicht (plausibel, harmlos).**
+- **Befund.** Die Automatik wählt Ziele über `neighbors`, also Landnachbarn, und verlangt von `planRoute`
+  genau eine Etappe ins Ziel. Ob diese Etappe über Land oder über See führt, prüft sie nicht. Gibt es
+  zwischen denselben zwei Provinzen einen billigeren Seeweg, geht der Marsch über See; das Ziel bleibt
+  trotzdem eigenes Land.
+- **Folge.** Der Wortlaut von R-UNIT-09/AK7 („genau einer Landetappe") ist ungenau.
+- **Reparatur später.** Die Kante der Etappe (`edgeBetween`) auf `kind === 'land'` prüfen, oder den
+  Wortlaut auf „eine Etappe" setzen.
+
+**N-4, der Rest.** Der React-Schlüssel der Protokollzeile hängt seit dem Nachtrag zu T-M40-12 nicht mehr am
+Listenplatz. Zwei Punkte bleiben offen:
+- **Abgelehnter Befehl.** Lehnt der Kern einen Befehl der Automatik ab, entstünde trotzdem eine Zeile
+  „rückt von selbst nach". Gemessen kam das nicht vor: 0 Ablehnungen in allen Episodenläufen.
+- **Debug-Mitschrift.** Das Vorspulen mit eingeschalteter Debug-Ansicht gibt nur `tick.ai` an die
+  Mitschrift, die Uhr alle Befehle. Die Asymmetrie ist älter als M40, doch jetzt fehlen dort auch die
+  Befehle der Automatik.
+
+**N-6 · Die vorbeugende Teilregel ist auf der Weltkarte ungemessen (plausibel).**
+- **Befund.** D30.4 schickt eine Verteidigung auch in eine leere eigene Provinz, die an einen sichtbaren
+  Kriegsgegner grenzt. Der Haltungs-Messlauf zählt nicht, ob ein Befehl vorbeugend war.
+- **Zahlen.** In `docs/reports/stance.json` (`episoden.nachher`, Aufstellung B) liegen die Episoden mit
+  befohlener Deckung fast gleichauf mit den Befehlen; die Befehle gingen also in umkämpfte Provinzen.
+  - vor N2: 6 zu 6, 9 zu 9, 10 zu 10
+  - nach dem Merge: 7 zu 8, 4 zu 4, 8 zu 9
+- **Belegt nur durch Einzeltests.** D30.9 sagt, dass die Teilregel in der Messung des Entwurfs nie feuerte;
+  gezeigt ist sie nur in `adjutant.test.ts`.
+- **Reparatur später.** Eine eigene Zahl „vorbeugende Befehle" im Messlauf: das Ziel war im Tick des
+  Befehls ohne Gefecht und ohne feindliche Armee.
+
+**Status:** offen, ohne Aufgabe. N-1 braucht ein Sichtfeld und damit eine eigene Entscheidung.
+
+---
+
+## 2026-09-13 · Nach T-M40-14 und T-M40-15 · Die neue Pendel-Zählung findet einen Pendelzug der Automatik — AK5 hält unverändert
+
+**Gemessen** nach `bf3db75` (T-M40-15): zwölf Episodenläufe mit `WORLDWAR_WRITE_REPORT=1`, 730 s, 9 von 9 Tests grün.
+Grün sind damit auch die Kontrolle (Garnison A 1914: 76 Einmärsche, 4 verloren) und AK5.
+
+**Gleich dem Lauf nach dem Merge ist jede Zahl außer einer:**
+- Provinz-Tage 3146 von 3089 (101,8 %),
+- Verluste ohne Gefecht 0, Ablehnungen 0, Kriege ohne Erklärung 0,
+- 21 Befehle, 381 Episoden, 0 von 19 befohlenen Deckungen rechtzeitig.
+
+Das ist erwartet: der Mensch gibt im Messlauf keinen Befehl, und T-M40-14 und T-M40-15 greifen nur an Befehlen des
+Spielers. Der Diff des Berichts gegen den Lauf nach dem Merge zeigt außer Texten und `measuredAt` genau eine Zahl.
+
+**Geändert: ein Pendelzug in 1914 · B mit Verteidigung** (vorher 0). Seit T-M40-14 zählt die Frist ab der Ankunft
+statt ab dem Abmarsch, und die alte Zählung konnte diesen Zug nicht sehen. Nachgebaut in einem Scratch-Lauf mit
+demselben Aufbau (`scratchpad/n2x-pendel`). Ruhe heißt dabei `deployDelayUntil + 120`, in den ausgelieferten Regeln
+120 Ticks ab Befehlstick + 2.
+
+| Schritt | Tick | Lage |
+|---|---|---|
+| Befehl der Automatik: Armee a3 von Südostdeutschland nach Südwestdeutschland | 1801 | 4 Gefechte in Südwestdeutschland während des Marsches |
+| Ankunft in Südwestdeutschland | 1853 | 52 Ticks Marsch; die Ruhe endet an Tick 1923, also 70 Ticks nach der Ankunft |
+| Befehl der Automatik: a3 zurück nach Südostdeutschland | 1972 | 171 Ticks nach dem Abmarsch, **119 nach der Ankunft**; seit der Ankunft 2 Gefechte in Südostdeutschland |
+
+**Warum das kein Fehler der Regel ist.** Beide Befehle folgen D30.4:
+- das Ziel war jeweils eine angegriffene eigene Nachbarprovinz,
+- in der Quelle blieb eine weitere Armee stehen,
+- die Ruhe war abgelaufen.
+
+Der Zug ist die Folge davon, dass die Ruhe ab dem Abmarsch zählt. Es ist derselbe Mechanismus wie in Befund H-A, nur
+mit einem Marsch der Automatik statt einem des Spielers. T-M40-14 hat den Fall für Spielermärsche gelöst, nicht für
+die Märsche der Automatik selbst.
+
+*(Berichtigt am 2026-09-13 nach Befund N-6 der Durchsicht der zweiten Nacharbeit, gerechnet, nicht gemessen: die
+Ursache ist nicht allein, dass die Ruhe ab dem Abmarsch zählt, sondern dass **Ruhe und Pendelfenster gleich lang
+sind** — beide fünf Spieltage, 120 Ticks. Zählte die Ruhe ab der Ankunft, wäre a3 frühestens an Tick 1853 + 120 =
+1973 frei, einen Tick nach dem gemessenen Rückzug und 120 Ticks nach der Ankunft; die Kennzahl
+(`bewegung.tick - ankunft.tick <= 5 · 24` in `werteAus`) zählte den Zug weiter.)*
+
+**Nicht zugesichert, nicht gebaut.** Pendelzüge gehören nicht zu AK5; die Zahl steht im Bericht. Wer sie verhindern
+will, hat zwei Wege, und beide sind eine neue Entscheidung, gemessen mit demselben Lauf:
+- die Ruhe ab der Ankunft zählen (Zustandsfeld, in T-M40-14 verworfen) — **verschiebt um einen Tick** und
+  verhindert den Zug nicht, weil Ruhe und Pendelfenster gleich lang sind (N-6, siehe oben),
+- die Ruhe nach Märschen der Automatik verlängern — wirksam nur, wenn sie länger ist als das Pendelfenster von
+  fünf Spieltagen.
+
+**Status:** offen, ohne Aufgabe. `stance.json` eingecheckt, Frische-Wächter grün.
+
+---
+
+## 2026-09-13 · Beim Nachtrag zu T-M40-12 (N-4) gefunden · Die Kennung jeder Protokollzeile hängt am Listenplatz (gelesen, nicht gemessen)
+
+**Befund.** `describeEvent(event, index, …)` in `apps/desktop/src/game/events.ts` baut die Kennung einer Protokollzeile
+als `${event.tick}-${event.type}-${index}`. Diese Kennung dient auch als React-Schlüssel. `index` ist der Platz in der
+Liste, die `App.tsx` vorher filtert und umdreht (neueste zuerst). Kommt oben eine Zeile hinzu oder fällt eine heraus,
+verschieben sich die Plätze, und zwei gleichartige Ereignisse im selben Tick tauschen ihre Schlüssel.
+
+Es ist dasselbe Muster, das N-4 der Durchsicht der Nacharbeit an den Zeilen der Automatik fand; dort ist es seit dem
+Nachtrag zu T-M40-12 behoben (`adjutantMarchEntries`).
+
+**Nicht gemessen.** Ob die Oberfläche dadurch sichtbar falsch zeichnet, ist nicht geprüft. Aufgeklappte Zeilen,
+etwa ein Gefechtsbericht, wären die Stelle, an der ein vertauschter Schlüssel auffiele.
+
+**Warum nicht gebaut.** Das Muster ist älter als M40 und liegt außerhalb der Nacharbeit. Eine stabile Kennung braucht
+etwas, das ein Ereignis eindeutig macht; `GameEvent` trägt keine laufende Nummer.
+
+**Reparatur später.** Kennung aus Tick, Typ und den Feldern, die das Ereignis bestimmen, oder eine laufende Nummer im
+Ereignisstrom. Test wie in `events.test.ts` (T-M40-13): dieselbe Zeile behält ihre Kennung, wenn davor eine andere
+herausfällt.
+
+**Status:** offen, ohne Aufgabe.
+
+---
+
+## 2026-09-13 · T-M35-06 · Beim Sieger fiel die Bevölkerungsmarke vor der ersten Punktmarke (gemessen, Entscheid getroffen)
+
+**Befund.** Die Vollpartie in der ausgelieferten Voreinstellung (`fullgame.slow.test.ts`, Startzahl 1914) lief auf dem
+Stand nach T-M35-05. Siegtag 975, Sieger China, 2589 Eroberungen, 11 Kriegserklärungen: gleich wie vor M35. Die neue
+Zusicherung R-GAME-08/AK6 fiel:
+
+> populationShare (Tag 544) nicht nach pointShareFirst (Tag 547): expected 544 to be greater than 547
+
+Zieltage des Siegers: 25 Provinzen an Tag 157, 400 ‰ Punkte an 547, **300 ‰ Weltbevölkerung an 544**, 600 ‰ an 921.
+Erster Tag ≥ 20 und letzter Tag ≤ Siegtag hielten. Mit Startzahl 2015 (Sieger Russland: 119 / 237 / 299 / 516) und
+1815 (Russland: 115 / 276 / 326 / 456) hielt die Reihenfolge; dort gilt keine Zusicherung. Ereignisstrom und Spielstand
+stimmten in allen drei Partien für jede Macht und jedes Ziel überein.
+
+**Ursache.** Die Marken aus der Planung stammten aus Partien mit Russland als Sieger, gemessen vor M41 (Siegtag 471).
+Seit Block N2 gewinnt mit Startzahl 1914 China. Bei der bevölkerungsreichsten Macht wachsen Bevölkerungs- und Punktanteil
+fast gleich schnell. D31.7 hatte das Risiko genannt: „Die Marken stammen aus KI-Partien mit immer demselben Sieger.“
+
+**Messung statt Schätzung.** Ein vorübergehender Tagesverfolger (gelöscht) zeichnete je Tag und Macht Provinzen,
+Punktanteil und Bevölkerungsanteil auf. Er traf in allen drei Partien die Siegtage und Zieltage der Vollpartie. Tabelle
+und verworfene Wege stehen im Entscheid.
+
+**Nicht still verschoben.** Die Zusicherung bleibt streng (`>`). Die Marke ändert sich mit einem kippbaren Entscheid:
+`DECISIONS.md`, 2026-09-13, T-M35-06, **Bevölkerungsmarke 350 ‰**. Vorhersage aus dem Verfolger: Sieger an Tag 576 /
+337 / 376.
+
+**Status:** Entscheid getroffen; T-M35-06 misst die drei Vollpartien mit 350 ‰ nach.
+## 2026-09-13 · Beim Bau von T-M40-17 gefunden · Parameterlauf und Turnier folgen dem Code nicht, den sie vermessen (gezählt, entschieden)
+
+**Befund.** Der Frische-Wächter von Parameterlauf und Turnier sieht nur Daten. Seit T-M40-17 sind das
+`data/rules` und die jeweilige Karte: `data/maps/world.json` für den Parameterlauf, `data/maps/testworld.json`
+für das Turnier (über `smallWorld` aus `packages/testkit`). Beide Läufe spielen aber Partien mit KI und Kern:
+- der Parameterlauf über `apps/headless/src/sweep.ts`,
+- das Turnier über `apps/headless/src/tournament.ts`,
+- beide mit `advanceTicks` aus `packages/ai`.
+
+**Gezählt** mit `git rev-list --count <bericht>..HEAD -- <pfade>`, Worktree `m40n3` auf `72438d1`:
+
+| Messgerät | Bericht | Commits seitdem an KI, Kern und `apps/headless/src` | davon `packages/ai/src` | davon `packages/core/src` |
+|---|---|---|---|---|
+| Parameterlauf | `d82779d`, 2026-09-12 | 20 | 19 | 5 |
+| Turnier | `1edcb7b`, 2026-09-13 | 11 (mit `packages/testkit`) | 11 | 3 |
+
+Am echten Stand melden beide Wächter frisch:
+- „seit dem Bericht (d82779d) kein Commit an data/rules, data/maps/world.json auf HEAD"
+- „seit dem Bericht (1edcb7b) kein Commit an data/rules, data/maps/testworld.json auf HEAD"
+
+Dass eine Änderung der KI Partien verschiebt, ist gemessen: nach dem Merge von Block N2 ergab dieselbe
+Garnison im Haltungs-Messlauf 76 statt 52 Einmärsche, bei unveränderten Regeln und unveränderter Karte.
+
+**Warum nicht gebaut.** Die Messgeräte vermessen nach dem Entscheid vom 2026-09-08 die Regeln. Mit den
+Codepfaden wäre die Abnahme heute rot, und der Parameterlauf dauert rund eine Stunde. Ob die Messgeräte jedem
+Codecommit folgen sollen, ist eine neue Entscheidung und nicht Teil der Nacharbeit.
+
+**Reparatur später, falls gewollt.** Die Codepfade in `GAUGES` aufnehmen (`scripts/acceptance-criteria.mjs`);
+die Einheitsfälle in `test/requirements.test.ts` nennen die Listen wörtlich. Billig wäre es beim Turnier, das
+rund 15 Sekunden läuft; teuer beim Parameterlauf.
+
+**Entschieden (2026-09-13, Orchestrator, kippbar).**
+- Das Turnier sieht zusätzlich `packages/ai/src` und `packages/core/src`: 13 Sekunden, der billige Beleg für
+  die KI-Stärke.
+- Der Parameterlauf bleibt bei `data/rules` und `data/maps/world.json`: rund eine Stunde; den Code decken
+  Turnier und `progress.slow` ab.
+- `apps/headless/src` und `packages/testkit` sieht keiner der beiden, hingenommen.
+
+Entscheid in `DECISIONS.md`, 2026-09-13, „Das Turnier folgt auch KI und Kern". Einheitsfall mit Wegwerf-Repo in
+`test/requirements.test.ts`. Am echten Stand (`bd4744c`) meldet der Turnier-Wächter nicht frisch. Das täte er
+auch mit der alten Liste, wegen `a64be03` unter `data/rules`.
+
+**Status:** entschieden; das Turnier ist rot, bis ein neuer Turnierlauf eingecheckt ist.
+
+**Nachtrag (2026-09-13, Messcommit).** Der Neulauf auf `bd4744c` ergab einen zeilengleichen Bericht, der sich nicht committen ließ, und der Wächter ging nach dem Commit der Datei (`1edcb7b`) und blieb deshalb rot. Seitdem schreibt das Turnier `Gemessen auf: <Commit> (Quellen sauber)` in seinen Bericht, und der Wächter urteilt wie beim Haltungs-Messlauf nach `<Messcommit>..HEAD`, verlangt einen Vorfahren von HEAD und saubere Quellen (`judgedBy: 'measuredAtCommit'` in `GAUGES`). Der Parameterlauf bleibt bewusst beim Commit seines Berichts (`judgedBy: 'reportCommit'`), und ein Haltetest in `test/requirements.test.ts` sichert diesen Unterschied.
+
+---
+
+## 2026-09-13 · T-M40-19 · Der Folgebefehl der Garnison sieht gesammelte Haltungswechsel — zwei Randlagen bleiben
+
+**N-5, behoben.** Szenario der Durchsicht, am Bildschirm nachgestellt (`App.test.tsx`):
+1. Eine Armee steht auf Garnison, die Uhr steht.
+2. Der Spieler klickt „Verteidigung"; der Befehl wartet in der Sammlung, der Zustand sagt noch Garnison.
+3. Er befiehlt einen Marsch und spult vor.
+
+Bis T-M40-19 fragte `garrisonFollowUp` nur den Zustand, und der nächste Tick wandte [Verteidigung, Marsch] an.
+Die Armee marschierte auf Verteidigung, und Szenario R1 war wieder offen. Rot vorgeführt: „expected
+[ 'Verteidigung' ] to deeply equal [ 'Garnison' ]". Jetzt liest der Folgebefehl die zuletzt gesammelte
+`SET_STANCE` derselben Armee (`ActionContext.pending`), und die Armee steht nach dem Tick auf Garnison.
+
+**N-4, Randlage, nicht gebaut.** „Angenommen" heißt: die Vorprüfung beim Klick nimmt den Befehl an. Gemeint ist
+`send` in `App.tsx`, also `canApply` gegen den angewandten Zustand — nicht der Kern. Die Befehle warten in der
+Sammlung, und der Kern wendet sie im nächsten Tick an. Einen abgelehnten Befehl lehnt er ab, ohne den nächsten
+aufzuhalten (`phases/applyCommands.ts` im Kern).
+- **Szenario:** Ein Marsch wird während des Vorspulens befohlen und wartet (T-M41-13). Die Automatik verlegt
+  dieselbe Armee genau dorthin. Im Tick lehnt der Kern `MOVE_ARMY` mit „bereits dort" ab, `SET_STANCE garrison`
+  wird trotzdem angewandt.
+- **Folge, mild:** Die Armee steht dort, wohin der Spieler sie schicken wollte, auf Garnison — so wie nach dem
+  Marsch.
+- **Umgekehrt nicht erreichbar:** `SET_STANCE` prüft nur Armee, Besitzer und Wert.
+- **Warum nicht gebaut:** Den zweiten Befehl an den Ausgang des ersten zu binden, wäre eine neue Regel des Kerns
+  (Befehlsgruppen). D30.7 sagt jetzt wörtlich „wenn die Vorprüfung ihn annimmt".
+
+**Gesehen, nicht gebaut: „schon in dieser Haltung" sieht die Sammlung nicht.** `armyActions` sperrt den Knopf
+der Haltung, die der Zustand trägt (`army.stance === value`, Text `army.alreadyStance`). Nach einem gesammelten Klick auf „Verteidigung" bleibt
+„Garnison" bis zum nächsten Tick gesperrt, und „Verteidigung" trägt die Quittung und ist ebenfalls gesperrt. Der
+Spieler kann den Klick also vor dem Tick nicht zurücknehmen. Kein Befehl geht falsch; es kostet einen Klick
+nach dem Tick. Die Reparatur läge in `actions.ts` und verlangt eine Entscheidung, was der gesperrte Knopf dann
+sagt (ein Text in `de.ts`).
+
+**Status:** N-5 behoben (T-M40-19). N-4 und die Sperre offen, ohne Aufgabe.
+
+## 2026-09-14 · Sichtprüfung §3.5, Punkt 1 · Die Uhr hält Tempo 100 im gebauten Bündel, im Dev-Server verliert sie ein Drittel
+
+**Befund.** Am Dev-Server (`pnpm --filter @worldwar/desktop dev`, Port 5174, Brave 1584×911, Weltkarte,
+Startzahl 20260914) läuft die Uhr bei Tempo 100 **nicht** mit 100 Spielstunden je Sekunde. Drei Läufe über
+zehn Sekunden Echtzeit, je zwei abgelesene Uhrzeiten und `performance.now()` dazwischen:
+
+| Lauf | von | bis | Echtzeit | Ticks | Ticks/s |
+|---|---|---|---|---|---|
+| 1 | Tag 4 · 11:00 | Tag 31 · 19:00 | 10,029 s | 656 | 65,4 |
+| 2 (8 s) | Tag 67 · 20:00 | Tag 87 · 01:00 | 8,085 s | 461 | 57,0 |
+| 3 | Tag 5 · 02:00 | Tag 24 · 19:00 | 10,009 s | 473 | 47,3 |
+
+Dieselbe Messung **am gebauten Bündel** (`vite build` + `vite preview`, Port 5175, gleiche Karte, gleiche
+Startzahl, dasselbe Fenster): **Tag 44 · 10:00 → Tag 84 · 15:00 in 10,011 s = 965 Ticks = 96,4 Ticks/s**,
+also 40,2 Spieltage in zehn Sekunden. Die Zusage aus T-M41-04 hält dort. Gegenprobe auf der Kleinen Welt
+(12 Provinzen) am Dev-Server: **999 Ticks in 10,02 s = 99,7 Ticks/s** — die Uhrformel ist nicht der Engpass.
+
+**Wo die Ticks bleiben (gemessen, nicht vermutet).** `requestAnimationFrame` wurde umhüllt, um die Bildzeiten
+zu sehen, die die Spielschleife selbst misst, und `clockStep` aus `game/clock.ts` wurde über genau diese
+Bildzeiten nachgerechnet. Dazu zählte ein `MutationObserver` auf `.clock__time` die React-Commits:
+
+- Lauf am Dev-Server: **127 Bilder der Spielschleife, `clockStep` verlangt 635 Ticks, die Uhr rückte 325 vor.**
+  **65 Commits** — also etwa jedes zweite Bild —, und **jeder Commit sprang genau 5 Ticks**, die Kappe
+  `clockCap(100) = 5`. Die anderen Bilder rechneten ihre fünf Ticks und warfen sie weg.
+- Lauf am gebauten Bündel: 343 Bilder, `clockStep` verlangt 987, die Uhr rückte 965 vor — deckungsgleich.
+
+**Ursache, gelesen:** `step` in `App.tsx` rechnet aus `stateRef.current`, und `stateRef.current = state` steht
+im Render. `setState(result.state)` ist die **Wertform**, kein Updater. Kommt ein Bild, bevor React das
+vorige Ergebnis eingespielt hat, rechnet es noch einmal vom selben Stand — und überschreibt das vorige.
+Im Dev-Bau ist ein Commit teuer (React-Entwicklungsbau, `StrictMode` rendert doppelt), deshalb passiert das
+dort etwa bei jedem zweiten Bild und im ausgelieferten Bau praktisch nie.
+
+**Kleinster reproduzierbarer Fall:** Dev-Server, Weltkarte, Tempo 100, zehn Sekunden — die Uhr rückt rund
+20 statt 41 Spieltage vor. Dieselbe Partie im `vite preview`-Bündel: 40 Spieltage.
+
+**Nicht gebaut (Sichtprüfung ändert keinen Produktivcode).** Zwei Dinge, die daraus folgen:
+1. **Die Zusage T-M41-04 ist am ausgelieferten Programm erfüllt** — Tauri lädt dasselbe Bündel wie
+   `vite preview`. Der Dev-Server ist die falsche Messstelle für die Uhr.
+2. Ob die Wertform von `setState` auch im ausgelieferten Bau unter Last (späte Partie, viele Armeen)
+   Ticks verliert, ist offen. Im Dev-Bau tut sie es messbar; ein Updater
+   (`setState((s) => advance(s, …))`) oder ein Ref, das der Schritt selbst fortschreibt, wäre die
+   Reparatur — sie gehört in eine eigene Aufgabe mit eigenem Rücknahmekriterium.
+
+**Behoben am 2026-09-14 (T-M41-17).** `commitState(next)` schreibt den Spiegel `stateRef.current` **und**
+den Zustand; `step`, das Vorspul-Häppchen, Laden, neue Partie und das Leeren gehen darüber. Die Updaterform
+ist bewusst nicht gewählt — dieses Haus hat die Rechnung zweimal absichtlich aus dem Updater geholt
+(T-M22-05 und der Befund vom 2026-09-08 im Vorspulen), und an derselben Rechnung hängen `noteTrace`,
+`noteMarches` und die eingesammelten Befehle. Eigener Ausgangswert desselben Tages, gleiches Verfahren
+(Brave über CDP, Fenster vorn, Weltkarte, Vereinigte Staaten, Startzahl 20260914, Tempo 100, je zehn
+Sekunden, frische Partie je Lauf): **Dev-Server 61,7 / 62,6 / 57,9 Ticks/s → 99,6 / 99,6 / 99,7**;
+**gebautes Bündel über fünf Läufe 93,0–98,4 (Minimum 93,0, Median 95,8) → 99,8–100,0 (Minimum 99,8,
+Median 99,9)**. Der Regressionstest steht in `App.test.tsx` („addiert zwei Bilder desselben JS-Zugs auf")
+und ist ohne die Reparatur rot: Tag 1 · 05:00 statt Tag 1 · 10:00.
+
+**Status:** behoben (T-M41-17). **Die Lehre bleibt: die Uhr wird am gebauten Bündel gemessen, nicht am
+Dev-Server** — der Dev-Bau hat dieselbe Schwäche nur früher sichtbar gemacht, und das Bündel misst, was
+ausgeliefert wird.
+
+---
+
+## 2026-09-14 · Sichtprüfung §3.5, Punkt 2 · Die Tempo-Sperre im Vorspulen lässt sich am Bildschirm nicht sehen
+
+**Befund.** T-M41-13 sperrt die Tempostufen während eines Vorspul-Laufs (`disabled`, Tooltip „Während des
+Vorspulens gesperrt — erst abbrechen oder abwarten"). Am laufenden Spiel ist dieser Zustand **nie sichtbar**:
+beide Auslöser — der Knopf (`App.tsx` Z. 1538) und die Taste F (Z. 955) — rufen
+`fastForwardRun({ kind: 'days', days: 1 })`, das sind 24 Ticks, und `DEFAULT_CHUNK_TICKS` ist ebenfalls 24.
+Der Lauf ist also **genau ein Häppchen** und endet synchron im Klick; `setFastForward({ running: true })` und
+`setFastForward({ running: false })` liegen im selben JS-Zug, React spielt nur den zweiten ein.
+
+**Gemessen (Brave, Dev-Server, Weltkarte, Tag 7 · 18:00):** Der Klick auf „Vorspulen" dauerte **31 ms**
+(an Tag 79 in derselben Partie 206 ms). Ein `MutationObserver` auf `.speeds` zählte über drei Sekunden
+**0 Mutationen**; ein Abtaster auf jedem Bild sah in **429 Abtastungen keinen einzigen gesperrten
+Tempoknopf**. Vor dem Klick, unmittelbar nach dem Klick (noch im selben Zug) und drei Sekunden später ist
+jeder Knopf frei und trägt seinen normalen Tooltip („100 Stunden je Sekunde").
+
+**Das ist kein neuer Fehler.** T-M41-13 hat es selbst notiert („heute nicht herstellbar"); der Test
+verkleinert die Häppchen per Hülle auf 4 Ticks. Neu ist nur, dass es jetzt **am laufenden Spiel gemessen**
+ist: die Zusage ist im Browser nicht prüfbar, und die Sichtprüfung führt Punkt 2 deshalb als
+**nicht geprüft**, nicht als erfüllt.
+
+**Was es prüfbar machen würde:** ein Vorspulziel über einen Spieltag hinaus (dann läuft der zweite
+Häppchen-Aufruf über `setTimeout`, und der gesperrte Zustand wird eingespielt) — oder ein Häppchen, das
+kleiner ist als ein Spieltag.
+
+**Status:** offen, ohne Aufgabe; die Zusage bleibt durch `App.test.tsx` gedeckt.
+
+---
+
+## 2026-09-14 · Abnahmeskript · Die AK-9-Zeile traegt die Beschreibung von AK-8
+
+**Befund.** `scripts/acceptance.mjs` schreibt die Zeilen der Kriterien ausserhalb der V1 mit einem
+fest verdrahteten Text:
+
+```js
+...spaetere.map((c) => `| ${c.id} | Verpackung als Programm (T-M16-05) | ${spaetereZeile(c)} |`)
+```
+
+`spaetere` ist `CRITERIA.filter((c) => c.scope !== 'V1')` und enthaelt seit dem 2026-09-12 **zwei**
+Eintraege: AK-8 (M16, Verpackung) und AK-9 (M39, die Partie zu zweit). Beide bekommen denselben Satz.
+In `docs/reports/acceptance.md` steht darum in der AK-9-Zeile „Verpackung als Programm (T-M16-05)",
+obwohl AK-9 nach `01-REQUIREMENTS.md` Abschnitt 3.2 die Zweispieler-Abnahme ist: „Noah und ein zweiter
+Mensch in einem anderen Netz spielen eine Partie zu zweit". Der Bericht sagt an dieser Stelle etwas
+Falsches ueber das Projekt — dieselbe Fehlerklasse wie eine Zusage ohne Ort, nur eine Ebene weiter:
+eine Zusage mit **fremdem** Ort.
+
+Gefunden beim Abnahmelauf vom 2026-09-13 (`UEBERGABE.md` §4a), zuerst ohne Heimat in `PROBLEME.md`
+notiert; die unabhaengige Verifikation vom 2026-09-14 hat genau das als Befund M-1 gemeldet („der
+Befund hat keinen Besitzer").
+
+**Warum es kein gefallenes Kriterium ist.** AK-9 zaehlt mit `scope: 'M39'` nicht gegen die V1, und der
+Zustandsteil der Zeile (`spaetereZeile`) ist richtig: „⏸ M39, noch nicht gemessen, zaehlt nicht gegen
+V1". Falsch ist nur die Beschreibung.
+
+**Reparatur (T-M41-18).** Die Beschreibung wandert als Feld `description` zu den Eintraegen in
+`scripts/acceptance-criteria.mjs` — dorthin, wo `scope` und `report` schon stehen —, und
+`acceptance.mjs` druckt `c.description`. Damit kann ein spaeteres Kriterium nicht mehr die
+Beschreibung seines Vorgaengers erben.
+
+**Status:** behoben (T-M41-18, 2026-09-14). Der eingecheckte `docs/reports/acceptance.md` traegt den
+alten Satz noch, bis der naechste `pnpm acceptance` ihn neu schreibt — der Bericht gilt ohnehin nur
+fuer den Stand, gegen den er gemessen wurde.
+
+---
+
+## 2026-09-14 · Abnahmeskript · Die gedruckte Gesamtdauer wird gerundet statt abgerundet
+
+**Befund.** `scripts/acceptance.mjs` schloss mit
+
+```js
+console.log(`
+${passed} von ${results.length} Pruefungen bestanden — Gesamtdauer ${Math.round(totalSeconds / 60)} min ${totalSeconds % 60} s.`)
+```
+
+`Math.round` auf den Minuten, `%` auf den Sekunden: bei `totalSeconds` 298 druckt die Konsole
+**„5 min 58 s"** statt 4 min 58 s. Der Fehler tritt fuer jede Dauer ab 30 Sekunden Rest auf und macht
+den Lauf um bis zu 59 Sekunden aelter oder juenger, als er war. Gemessen am Abnahmelauf vom
+2026-09-13: `docs/reports/acceptance-timing.json` haelt `totalSeconds: 298` fest — die **JSON-Zahl war
+immer richtig**, nur die Konsolenzeile war es nicht.
+
+Der Befund ist klein und trotzdem eingetragen, weil diese Zahl in Uebergaben und Berichte abgeschrieben
+wird: `UEBERGABE.md` §1a nennt die Wanduhr 4 min 58 s aus der JSON, andere Stellen haetten die
+Konsolenzeile uebernommen.
+
+**Reparatur (T-M41-18).** `durationText(totalSeconds)` in `scripts/acceptance-criteria.mjs`, mit
+`Math.floor`; `acceptance.mjs` ruft sie. Eine reine Funktion statt einer Rechnung im Konsolenaufruf —
+sonst gibt es nichts zu pruefen.
+
+**Status:** behoben (T-M41-18, 2026-09-14).
+
+## 2026-09-14 · Abnahme auf dem Endstand · AK-8 ist ueberholt, weil die Uhr-Reparatur nach der Verpackungsmessung kam
+
+**Befund.** Der Abnahmelauf auf `03e4200` (2026-09-14, freie Maschine, Prozessorlast 2 %) meldet
+**12 von 12, Exit 0, 4 min 56 s** — und stempelt AK-8 trotzdem mit ⚠. Der Grund ist ein anderer als
+am Vortag: dort fehlte die Messung ganz („`docs/reports/packaging.md` nennt keinen Stand"), jetzt
+gibt es sie, und sie ist **ueberholt**:
+
+```
+AK-8  ⚠ gemessen am 2026-09-14 gegen `2c52356` - seither 1 Datei(en) am Erzeugnis geaendert
+```
+
+Die eine Datei ist `apps/desktop/src/App.tsx`, geändert von `0f1fce1` („die Uhr schreibt ihren Stand
+zurueck, bevor das naechste Bild rechnet"). Die Reihenfolge der Nacht sagt alles:
+
+| Zeit | Commit | Was |
+|---|---|---|
+| 00:05 | `2c52356` | der Stand, gegen den gebaut und gemessen wurde |
+| 00:41 | — | `worldwar.exe` gebaut, 6 780 416 Bytes |
+| 00:49 | `1759386` | der AK-8-Bericht: sieben von sieben Schritten |
+| 01:49 | `2a437b0` | Sichtprüfung im Browser |
+| **02:21** | **`0f1fce1`** | **die Uhr-Reparatur — ausgeliefertes Gut** |
+
+Das Programm, das die sieben Schritte bestanden hat, **enthält die Uhr-Reparatur nicht**. Der Wächter
+hat recht, und der Stempel hat recht.
+
+**Was der Befund nicht ist.** Keine maschinelle Prüfung ist gerissen: 12 von 12, Exit 0. AK-8 gehört
+zu M16 und zählt nicht gegen V1; die Zeile trägt den Vermerk selbst. Und die Simulation ist unberührt —
+`docs/reports/fullgame.json` unterscheidet sich gegen den Vorlauf **nur in `measuredAt`**, Siegtag 975,
+2589 Eroberungen, 11 Kriegserklärungen unverändert. Die Uhr-Reparatur hat wirklich nur die Oberfläche
+angefasst, genau wie ihr Commit sagt.
+
+**Was in der Doku jetzt zu weit geht.** Der Kopf von `WORKFLOW.md`, dort §1 und §5, dazu `CLAUDE.md`
+und `UEBERGABE.md` sagen „AK-8 ist seit dem 2026-09-14 erfüllt" — ohne den Zusatz **„auf dem Stand vor
+der Uhr-Reparatur"**. Gemessen ist AK-8 gegen `2c52356`, nicht gegen den Endstand.
+
+**Was es kostet, den Stempel gruen zu bekommen** (hier bewusst nicht getan — dieser Lauf misst, er
+repariert nicht): `pnpm tauri:build` auf dem Endstand, am Vortag 2 min 19 s, danach
+`node docs/plan/schlussblock/ak8-cdp.mjs <exe> <ausgabe>`, am Vortag 8 Sekunden. Beides braucht ein
+**sichtbares** Fenster (§4 Falle 17) und geht in einer Hintergrund-Sitzung nicht.
+
+**Die Lehre.** Eine Messung am gebauten Programm hält genau so lange, wie niemand `apps/`, `packages/`
+oder `data/` anfasst — das ist die Positivliste `LIEFERT` in `artefactUnchangedSince`
+(`scripts/acceptance-criteria.mjs`). **Wer AK-8 misst, misst es zuletzt**, nach der letzten Zeile
+ausgelieferten Codes; am 2026-09-14 lag zwischen Messung und Blockende noch eine Reparatur, und genau
+dafür ist der Wächter gebaut. Gegengeprüft wurde auch die andere Richtung: das seither ebenfalls
+geänderte `index.html` im Wurzelverzeichnis ist die Projektübersichtsseite, nicht der App-Einstieg
+(das ist `apps/desktop/index.html`), und geht nicht ins Erzeugnis — die Positivliste uebersieht hier
+nichts.
+
+**Erledigt am 2026-09-14, 03:22–04:42.** Genau der Weg oben wurde gegangen, nichts abgekuerzt:
+`pnpm tauri:build` auf dem Endstand `1c64a6e` (fertig 03:22:44, Rust `release` in 1 min 51 s),
+danach `ak8-cdp.mjs` (Lauf endet 03:24:36, **sieben von sieben Schritten**, `AK-8 ERFÜLLT`).
+Die neue exe ist **auf das Byte genau so gross** wie die vom 00:41 — 6 780 416 B beide Male —, und
+eine gleiche Dateigroesse ist kein Beleg. Deshalb eine Gegenprobe **am laufenden Programm**: exe mit
+`--remote-debugging-port=9222` gestartet, Weltkarte, Tempo 100, drei Mal zehn Sekunden Echtzeit
+gemessen — **99,85–99,98 Ticks/s**. Vor der Reparatur lag dieselbe Messung bei 92,98–98,40, nach ihr
+bei 99,77–99,95. Die Reparatur steckt im ausgelieferten Programm. Noahs Spielstaende blieben
+unberuehrt (SHA-256 vor und nach der Gegenprobe gleich). Belege: `docs/reports/packaging.md`.
+
+**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 ist gegen `1c64a6e` gemessen.

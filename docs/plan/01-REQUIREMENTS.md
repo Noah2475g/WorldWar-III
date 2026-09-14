@@ -477,6 +477,11 @@ scope:
     R-SPY-06:   "M17 — Spionage; verschoben am 2026-09-05, Entscheidung 3"
     R-DIP-05:   "M17 — Handelsangebote mit Treuhand; erst braucht die bestehende Börse einen Nutzer"
     R-DIP-07:   "M17 — Handel in der Oberfläche; folgt R-DIP-05"
+    # Aufgenommen am 2026-09-13 mit T-M17-01 (M17 wird als Ganzes geplant, D29).
+    R-DIP-08:   "M17 — Durchmarsch und Kartenfreigabe werden gerichtet, der Durchmarsch laesst sich erbitten; Entscheid T-M32-03 (T-M17-04)"
+    R-DIP-09:   "M17 — Provinzen wechseln auch durch Vertrag den Besitzer; Entscheid T-M32-03 (T-M17-06)"
+    R-AI-09:    "M17 — die KI nutzt Spione, Angebote und Antraege; Integrationstor (T-M17-15)"
+    R-GAME-09:  "M17 — Spielstaende der Stufe 3 laufen weiter (T-M17-03)"
     # Mehrspieler, aufgenommen am 2026-09-12 (Abschnitt 2.17, Bauplan MEHRSPIELER.md).
     # Alle drei Meilensteine liegen hinter der V1, so wie M16; AK-9 ist ihr eigenes
     # Abnahmekriterium und zaehlt nicht gegen die V1.
@@ -493,12 +498,17 @@ scope:
     R-MP-11:    "M39 — der Gast installiert nichts (T-M39-04)"
     R-MP-12:    "M39 — der Beitritt zeigt, worauf man sich einlaesst (T-M39-02)"
     R-MP-13:    "M39 — speichern und fortsetzen zu zweit (T-M39-06)"
+    # Aus der Delegation vom 2026-09-13 (Abschnitt 2.18, DECISIONS.md). Beide Meilensteine
+    # liegen hinter der abgenommenen V1; M41 bringt keine eigene Anforderung.
+    R-GAME-08:  "M35 — Zwischenziele als Rueckmeldung, keine Siegbedingung (T-M35-03)"
+    R-UNIT-09:  "M40 — die Haltung wird ein Auftrag (T-M40-03)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
     R-UNIT-08: "V1 nur Fernwirkung vom Flugplatz; Einsatzbefehle mit Rückflug sind M18"
   test_only: [R-ARCH-04]            # kein eigener Produktionscode, aber Test verpflichtend
   # Übergangsliste (T-M14-02b, eingefroren am 2026-09-06). Diese 26 Anforderungen tragen
+  # (seit 2026-09-13: 25 — R-BAT-07 gestrichen, sein Testblock heißt R-BAT-07/AK1, T-M41-07)
   # Akzeptanzkriterien, sind aber nur auf Namensebene gebucht: irgendwo steht ein
   # `describe('R-XX-nn …')` mit einer Zusicherung, und welches AK dabei geprüft wurde, hat
   # nie jemand gelesen. Sie sind eine **Schuld mit Namen**, keine Ausnahme ohne Ende: die
@@ -523,7 +533,6 @@ scope:
     - R-PROV-03
     - R-UNIT-04
     - R-UNIT-06
-    - R-BAT-07
     - R-DIP-04
     - R-AI-01
     - R-AI-07
@@ -634,6 +643,13 @@ Vier Regeln gelten für jede Anforderung dieses Abschnitts:
     im Turnier Beschussereignisse erzeugen — die KI beschießt, ohne es lernen zu müssen —
     und ihre Fernwaffenverbände SOLLEN in Reichweite eines Ziels stehen bleiben, statt in
     den Nahkampf zu laufen.
+    *(Nachgemessen 2026-09-13, T-M41-08: im Turnier — Testkarte, 40 Spieltage — erzeugt keine
+    Stufe selbsttätigen Beschuss; Artillerie gibt es erst ab Tag 34 hinter der Fabrik. Belegt ist
+    der Beschuss nur als Summe im 200-Tage-Lauf von R-AI-08/AK3
+    (`apps/headless/test/ai-integration.slow.test.ts`); `PROBLEME.md`, `DECISIONS.md`.)*
+    *(Nachgemessen nach der Durchsicht von Block N2: diese Summe stammt von einer einzigen Macht auf
+    „schwer"; für „normal" ist das Kriterium nicht belegt — in der ausgelieferten Voreinstellung 0
+    selbsttätige Beschüsse in 200 Spieltagen. Offene Frage in `DECISIONS.md`, keine Grenze geändert.)*
 
 #### Freischaltung (`R-TECH`)
 
@@ -801,6 +817,50 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK1: WENN ein Angebot eingeht, DANN SOLL eine Meldung erscheinen, die zur
     Diplomatieübersicht führt, und das Angebot dort mit beiden Seiten in Worten stehen.
 
+*Aufgenommen am 2026-09-13 mit T-M17-01, aus dem Entscheid T-M32-03 (Durchmarsch-Antrag und
+Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). Entwurf D29.*
+
+- **R-DIP-08 — Durchmarschrecht und Kartenfreigabe haben eine Richtung; der Durchmarsch
+  lässt sich erbitten und kündigen.** Nach Referenz 9.1 und 9.5: eine Macht gewährt einer
+  anderen den Marsch durch **ihr** Gebiet. Die Gegenrichtung entsteht nur durch eigene
+  Gewährung oder die Annahme eines Antrags; ein Widerruf wirkt nach einer Regelfrist. Die
+  Kartenfreigabe folgt derselben Bauart. Heute ist beides ein symmetrisches Feld je Paar —
+  wer gewährt, darf selbst folgenlos ins Land des anderen, und wer seine Karte teilt, sieht
+  die des anderen. Diese Anforderung löst auch die zweite Hälfte von R-DIP-06/AK3 (Durchmarsch
+  erwidern) erst ein.
+  - AK1: WENN A dem B Durchmarsch gewährt, DANN SOLL B durch As Gebiet marschieren können,
+    ohne dass es als Überfall gilt, und A SOLL im Gebiet von B **weiterhin** einen Überfall
+    begehen, wenn er es ohne eigenes Recht betritt.
+  - AK2: WENN B bei A Durchmarsch beantragt, DANN SOLL A den Antrag in seiner Sicht sehen;
+    WENN A annimmt, DANN SOLL B das Recht erhalten; WENN beide im Krieg sind oder eine
+    Erklärung läuft, DANN SOLL der Antrag mit `INVALID_TARGET` abgelehnt werden.
+  - AK3: WENN A das Recht widerruft, DANN SOLL es nach der Regelfrist enden; eine Armee von B
+    in As Gebiet SOLL vor Fristende nicht als Überfall gelten, danach schon; beide SOLLEN davon
+    ein Ereignis erhalten.
+  - AK4: WENN ein alter Spielstand mit gewährtem Durchmarsch geladen wird, DANN SOLL das Recht
+    in **beide** Richtungen bestehen — das bisherige Verhalten.
+  - AK5: WENN ein diplomatisches Angebot oder ein Antrag ohne Antwort bleibt, DANN SOLL er nach
+    der Regelfrist aus `constants.json` verfallen.
+  - AK6: WENN A dem B seine Karte freigibt, DANN SOLL B das Gebiet von A sehen und A das Gebiet
+    von B nicht; WENN ein alter Spielstand mit geteilter Karte geladen wird, DANN SOLL sie in
+    beide Richtungen geteilt bleiben.
+- **R-DIP-09 — Provinzhandel.** Nach Referenz 9.4: eine Provinz kann Teil eines
+  Handelsangebots sein, gebend und verlangt.
+  - AK1: WENN ein Angebot eine Provinz abtritt, die dem Anbieter nicht gehört, seine
+    Hauptstadt ist, umkämpft ist oder eigene Armeen enthält, DANN SOLL der Kern mit
+    `INVALID_TARGET` und Grund ablehnen — beim Angebot **und** erneut bei der Annahme; scheitert
+    die Prüfung erst bei der Annahme, DANN SOLL das Angebot mit Rückgabe verfallen.
+  - AK2: WENN ein Angebot mit Provinz angenommen wird, DANN SOLL die Provinz im selben Tick den
+    Besitzer wechseln, ihre laufenden Aufträge wie bei jedem Besitzerwechsel enden, **ohne**
+    Verstimmung und ohne Eroberungsmoral, und die Welt SOLL ein Ereignis ohne Preis erhalten,
+    das kein Alarm ist.
+  - AK3: WENN die KI eine Provinz bewertet, DANN SOLL sie nur öffentliche Angaben (Karte,
+    Marktpreise) und eigenes Wissen (eigene oder aufgedeckte Gebäude) verwenden, und ihre
+    Erklärung (R-AI-05) SOLL den Wert und seinen größten Anteil nennen.
+  - AK4: WENN die KI ein Angebot mit Provinz erhält, DANN SOLL sie annehmen, wenn der
+    Gegenwert den Wert der Provinz um den Regelaufschlag übersteigt und das Verhältnis nicht
+    schlecht ist, sonst ablehnen.
+
 #### Weltgeschehen statt Zeitung (`R-NEWS`)
 
 > **R-NEWS-01, R-NEWS-02 und R-NEWS-03 sind am 2026-09-06 gestrichen** — ersatzlos, mit
@@ -862,6 +922,26 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
   - AK2: WENN ein Spielstand geladen wird, DANN SOLL **kein Ladeweg ohne Prüfung** bleiben:
     nach einer Migration prüft `validateState` den Zustand, ohne Migration die Prüfsumme,
     und ein Stand ohne beides wird abgelehnt.
+- **R-AI-09 — Die KI nutzt die Mittel zwischen den Kriegen** *(aufgenommen am 2026-09-13 mit
+  T-M17-01)*. Die Spionagepflichten, die R-AI-08 am 2026-09-06 abgegeben hat, stehen hier;
+  R-AI-08 wird nicht wieder geöffnet.
+  - AK1: WENN acht KI-Mächte 200 Spieltage auf der Weltkarte spielen, DANN SOLL es mindestens
+    ein `SPY_REPORT` je Schwierigkeitsstufe, mindestens ein `TRADE_AGREED` und mindestens eine
+    Durchmarschgewährung zwischen zwei KI-Mächten geben — gezählt aus dem Ereignisstrom.
+  - AK2: WENN dieser Lauf endet, DANN SOLL kein neues Kommando mit `INVALID_TARGET` oder
+    `QUEUE_FULL` abgelehnt worden sein, und keine KI SOLL Geldmangel erleiden.
+  - AK3: WENN derselbe Lauf mit und ohne Durchmarsch-Anträge gefahren wird, DANN SOLL die Zahl
+    der Überfälle ohne Kriegserklärung mit Anträgen nicht größer sein.
+  - AK4: WENN die KI einen Spion anwirbt, ein Angebot macht, annimmt, ablehnt oder Durchmarsch
+    beantragt, DANN SOLL ihre Erklärung Grund und Alternative nennen.
+- **R-GAME-09 — Spielstände der Stufe 3 laufen weiter** *(aufgenommen am 2026-09-13 mit
+  T-M17-01)*. Die neuen Zustandsfelder von M17 — Spionage, Handelsangebote, gerichteter
+  Durchmarsch und gerichtete Kartenfreigabe — kommen mit **einem** Schritt von Stufe 3 auf 4.
+  - AK1: WENN ein eingefrorener Stand der Stufe 3 geladen wird, DANN SOLL er nach der Migration
+    laufen, mit leeren Spionage- und Handelsfeldern und in beide Richtungen übernommenem
+    Durchmarsch und Kartenfreigabe, und nach Speichern und Laden hashgleich sein.
+  - AK2: WENN ein Stand der Stufe 1 oder 2 geladen wird, DANN SOLL er alle Schritte bis Stufe 4
+    durchlaufen, danach laufen und nach Speichern und Laden hashgleich sein.
 
 ### 2.16 Verpackung als Programm (M16, aufgenommen 2026-09-06) — `R-PKG`
 
@@ -1036,6 +1116,88 @@ ein Chat, ein Schummelschutz. Begründungen in `MEHRSPIELER.md` §6.
     Hosts übertragen.
   - AK2: WENN ein Stand übertragen wurde, DANN SOLL die fortgesetzte Partie dieselbe
     Prüfsumme führen wie der gespeicherte Stand.
+
+### 2.18 Rückmeldung im Mittelteil und Haltungen, die handeln (M35, M40, aufgenommen 2026-09-13)
+
+Zwei Punkte, die nach M34 offen standen und am 2026-09-13 per /goal-Auftrag an den Agenten
+delegiert wurden (`DECISIONS.md`, „Delegation per /goal vom 2026-09-13"). Beide waren
+entworfen, aber nicht als Anforderung geführt: die Zwischenziele in `FORTSCHRITT.md` §3
+(T-M35-01), die Haltungen in `LEVEL-UP-3.md` §5 (T-M28-07). Entwürfe: `02-DESIGN.md` D31 und
+D30.
+
+Was ausdrücklich **nicht** dazugehört: Zwischenziele sind keine Siegbedingung — R-GAME-02
+bleibt unberührt —, und die Automatik der Haltungen führt keine KI-Armee; die KI führt ihre
+Armeen weiter selbst (R-AI-01).
+
+- **R-GAME-08 — Zwischenziele zum Sieg.** Zwischen dem Ende der Freischaltungen und dem
+  Sieg erfährt der Spieler, ob er vorankommt: vier Marken — eine Zahl eigener Provinzen,
+  zwei Anteile an allen Punkten, ein Anteil an der Weltbevölkerung —, deren Erreichen im
+  Spielstand festgehalten, gemeldet und in der Rangliste gezeigt wird. Die Marken stehen in
+  den Regeldateien.
+  - AK1: WENN eine Macht an einem Tageswechsel eine Marke erreicht, DANN SOLL der Spielstand
+    diesen Spieltag festhalten, und er SOLL festgehalten bleiben, auch wenn die Zahl danach
+    wieder unter die Marke fällt.
+  - AK2: WENN ein Ziel erreicht wird, DANN SOLL genau diese Macht genau einmal ein Ereignis
+    erhalten; keine andere Macht SOLL es sehen, und es SOLL das Vorspulen nicht anhalten.
+  - AK3: WENN der Spieler die Rangliste öffnet, DANN SOLL sie je Ziel eine Zeile zeigen — ein
+    offenes mit seinem Abstand zur Marke, ein erreichtes mit seinem Spieltag — und nur die
+    eigenen Ziele.
+  - AK4: WENN eine Regeldatei eine der Marken nicht enthält, DANN SOLL der Lader sie ablehnen;
+    WENN Ziele erreicht werden, DANN SOLLEN Siegbedingung und Siegschwelle unverändert
+    bleiben.
+  - AK5: WENN ein Spielstand der Stufe 2 geladen wird, DANN SOLL er nach der Migration mit
+    leeren Zielen laufen und nach Speichern und Laden hashgleich sein; ein Stand der Stufe 1
+    SOLL über beide Schritte dasselbe Ergebnis liefern.
+  - AK6: WENN eine ganze Partie in der ausgelieferten Voreinstellung gespielt wird, DANN
+    SOLLEN die Zieltage des Siegers in der Reihenfolge der Marken steigen, der erste SOLL
+    nicht vor Spieltag 20 und der letzte nicht nach dem Siegtag liegen — gezählt aus dem
+    Spielstand und dem Ereignisstrom, nicht aus dem Protokollpuffer.
+- **R-UNIT-09 — Die Haltung führt sich selbst aus.** Die Haltung einer Armee eines
+  menschlichen Spielers ist ein Auftrag: „Verteidigung" rückt in eine bedrohte eigene
+  Nachbarprovinz nach, ohne ihre eigene Provinz zu entblößen, „Angriff" kämpft mit
+  Angriffswerten und marschiert nicht von selbst, „Garnison" bleibt stehen. Die Automatik
+  gibt dieselben Befehle, die der Spieler per Klick geben könnte.
+  *(Neu gefasst am 2026-09-13, T-M40-10, nach der Durchsicht von M40 und einer Messung über drei
+  Startzahlen und zwei Aufstellungen: die Deckung, wie M40 sie baute, hielt 79,7 % der
+  Provinz-Tage der Garnison und verlor zehn Provinzen ohne Gefecht, die sie selbst geleert hatte;
+  die Verfolgung schadete in jedem Lauf mit Anlass. Verteidigung rückt seitdem nur nach, ohne zu
+  entblößen, und Angriff marschiert nie von selbst — AK1, AK2, AK4 bis AK7 sind ersetzt oder
+  erweitert, die erste Fassung und die Messung stehen in D30.9.)*
+  - AK1: WENN eine stehende Armee eines menschlichen Spielers in Haltung Verteidigung, deren letzter
+    Abmarsch oder Rückzug mindestens fünf Spieltage zurückliegt, in einer feindfreien eigenen
+    Provinz steht, in der eine weitere eigene Armee stehen bleibt, und eine über Land angrenzende
+    eigene Provinz eine sichtbare Armee eines Kriegsgegners enthält oder leer an eine solche
+    grenzt, und keine eigene Armee dorthin unterwegs oder im selben Tick befohlen ist, DANN SOLL
+    sie in einer Etappe dorthin marschieren — höchstens eine Armee je Provinz, die mit der
+    frühesten Ankunft, bei Gleichstand die kleinste Kennung. Eine Armee, die allein in ihrer
+    Provinz steht, SOLL nie von selbst marschieren.
+  - AK2: WENN eine Armee in Haltung Angriff steht, DANN SOLL sie mit Angriffswerten kämpfen und
+    nie von selbst marschieren.
+  - AK3: WENN eine Armee in Haltung Garnison steht, DANN SOLL sie wie in Haltung Verteidigung
+    kämpfen und nie von selbst marschieren; WENN eine unbekannte Haltung befohlen wird, DANN
+    SOLL der Kern den Befehl ablehnen.
+  - AK4: WENN eine Partie gespeichert, geladen und fortgesetzt wird, DANN SOLL die Automatik
+    dieselben Befehle erzeugen wie ohne Unterbrechung, und über das Vorspulen dieselben wie über
+    die Uhr; sie SOLL nur aus der Sicht des Besitzers entscheiden (R-DIP-04) und für Armeen von
+    KI-Mächten keinen Befehl erzeugen.
+  - AK5: WENN derselbe Messlauf über 200 Spieltage mit Haltung Garnison und mit Haltung
+    Verteidigung über die Startzahlen 1914, 2015 und 1815 und je zwei Aufstellungen gefahren
+    wird, DANN SOLL die Summe der Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
+    erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen ohne Gefecht verloren gehen
+    als mit Garnison, und kein Befehl der Automatik SOLL abgelehnt worden sein oder einen Krieg
+    ohne Erklärung ausgelöst haben — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht,
+    wird die Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
+  - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
+    und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt; WENN er
+    eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.
+  - AK7: WENN die Automatik einen Marsch befiehlt, DANN SOLL das Ziel eine eigene Provinz sein
+    und die Route aus genau einer Landetappe bestehen; eine Armee SOLL binnen fünf Spieltagen
+    ab dem Abmarsch eines Marsches oder ab einem Rückzug nicht von selbst marschieren — gezählt ab
+    dem Abmarsch, nicht ab der Ankunft. WENN der Spieler einer eigenen Armee in Haltung Verteidigung
+    selbst einen Marsch befiehlt, DANN SOLL sie zugleich auf Garnison gestellt werden.
+    *(Ergänzt am 2026-09-13, T-M40-14, Befund H-A der Durchsicht der Nacharbeit: der Zustand kennt
+    keinen Ankunftstick; nach einem Marsch, der die fünf Tage aufbrauchte, schickte die Automatik die
+    eben verlegte Armee weiter.)*
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

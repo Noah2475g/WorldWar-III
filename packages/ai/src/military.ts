@@ -42,6 +42,17 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
   const threat = threatMap(view, context.rules.ai.threatRange)
 
   const ownArmies = view.armies.filter((army) => army.owner === view.playerId)
+
+  // Das Gedaechtnis vergisst tote Armeen (T-M41-05). `assignments` wird geschrieben und
+  // nirgends gelesen, und es wuchs ohne Grenze: an Spieltag 471 fuehrte Russland 1235
+  // Eintraege bei 217 lebenden Armeen. Gekuerzt wird VOR dem fruehen Ausgang, damit auch
+  // eine Macht ohne Armee nichts weiterfuehrt. Die Befehle aendert das nicht
+  // (loop.test.ts faehrt es mit und ohne Kuerzung ueber 200 Ticks).
+  const alive = new Set<string>(ownArmies.map((army) => army.id))
+  memory.assignments = Object.fromEntries(
+    Object.entries(memory.assignments).filter(([armyId]) => alive.has(armyId)),
+  )
+
   if (ownArmies.length === 0) return commands
 
   // The province under the most pressure, if any is under real pressure at all.

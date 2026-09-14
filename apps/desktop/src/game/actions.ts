@@ -1,4 +1,5 @@
 import { ONE } from '@worldwar/shared'
+import { ADJUTANT_REST_TICKS, garrisonFollowUp } from '@worldwar/ai'
 import {
   armyHp,
   armyRange,
@@ -46,6 +47,14 @@ export interface ActionContext {
   rules: Rules
   playerId: string
   ticksPerDay: number
+  /**
+   * Die Befehle, die die Huelle gesammelt und noch nicht angewandt hat (T-M40-19, Befund N-5).
+   *
+   * Bei stehender Uhr wartet ein Klick auf „Verteidigung" hier, und `state` sagt noch die alte Haltung. Der
+   * Folgebefehl der Garnison (`garrisonFollowUp`) liest beides, denn der Kern wendet die Sammlung im selben Tick
+   * vor dem neuen Befehl an. Fehlt das Feld, gilt nur der Zustand.
+   */
+  pending?: readonly Command[]
 }
 
 export interface ActionSpec {
@@ -74,6 +83,13 @@ export interface ActionSpec {
   disabledReason: string | null
   /** The order itself. Absent for orders that first need a target on the map. */
   command?: Command
+  /**
+   * Ein zweiter Befehl, der mit dem ersten geht, im selben Tick (T-M40-11).
+   *
+   * Bisher trug ein Knopf genau einen Befehl. „Anhalten" einer Verteidigung braucht zwei: halt an,
+   * und stell auf Garnison — sonst marschiert sie im naechsten Tick wieder von selbst los (Befund H2).
+   */
+  followUp?: Command
   /** Orders that need a province chosen next: the panel switches to target mode. */
   targetKind?: 'move' | 'bombard'
 }
@@ -321,26 +337,45 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
   const konstanten = ctx.rules.constants
   const hinweisZeit = (ticks: number): string => duration(ticks, ctx.ticksPerDay)
 
+  // Ein eigener Marschbefehl haelt fest (T-M40-14): dieselbe Regel wie beim Bestaetigen des Ziels — mit den
+  // gesammelten Haltungswechseln (T-M40-19).
+  const marschHaeltFest =
+    garrisonFollowUp(ctx.state, { type: 'MOVE_ARMY', playerId, armyId, targetProvinceId: army.locationProvinceId }, ctx.pending) !== null
   const march: ActionSpec = {
     id: 'march',
     label: t('army.move'),
-    hint: t('army.moveHint', { time: hinweisZeit(konstanten.deployDelayTicks) }),
+    hint: t(marschHaeltFest ? 'army.moveHintGarrison' : 'army.moveHint', { time: hinweisZeit(konstanten.deployDelayTicks) }),
     disabledReason: army.units.length === 0 ? t('army.empty') : null,
     targetKind: 'move',
   }
 
-  const stop = checked(ctx, { type: 'STOP_ARMY', playerId, armyId }, 'stop', t('army.stop'), t('army.stopHint'))
+  // Anhalten haelt fest (T-M40-11, Befund H2 der Durchsicht von M40): eine Armee auf Verteidigung,
+  // die angehalten wird, marschierte im naechsten Tick wieder von selbst los. Sie geht deshalb mit dem
+  // Anhalten auf Garnison. Nur sie — seit T-M40-10 handelt keine andere Haltung von selbst, und eine
+  // Armee auf Angriff veraenderte der Klick sonst ungefragt im Kampf.
+  const stopCommand: Command = { type: 'STOP_ARMY', playerId, armyId }
+  const stopFollowUp = garrisonFollowUp(ctx.state, stopCommand, ctx.pending)
+  const stop = checked(
+    ctx,
+    stopCommand,
+    'stop',
+    t('army.stop'),
+    t(stopFollowUp ? 'army.stopHintGarrison' : 'army.stopHint'),
+  )
   if (stop.disabledReason === null && army.path.length === 0) stop.disabledReason = t('army.notMoving')
+  if (stopFollowUp) stop.followUp = stopFollowUp
 
   const stanceHints: Record<Stance, string> = {
     aggressive: t('army.stanceAggressiveHint'),
-    defensive: t('army.stanceDefensiveHint'),
+    // Die Ruhe nach Marsch und Rueckzug kommt aus dem Adjutanten, nicht aus dem Text (T-M40-11).
+    defensive: t('army.stanceDefensiveHint', { rest: hinweisZeit(ADJUTANT_REST_TICKS) }),
     // Der Rueckzug ist der teuerste Befehl des Spiels und trug bis heute kein Wort dazu.
     retreat: t('army.stanceRetreatHint', {
       loss: Math.round(konstanten.retreatLossPermille / 10),
       cooldown: hinweisZeit(konstanten.retreatCooldownTicks),
       deploy: hinweisZeit(konstanten.deployDelayTicks * 2),
     }),
+    garrison: t('army.stanceGarrisonHint'),
   }
 
   const stance = (value: Stance, label: string): ActionSpec => {
@@ -418,6 +453,9 @@ export function armyActions(ctx: ActionContext, armyId: string): ActionSpec[] {
     // Spieler nicht (T-M14-13, Befund 8): die Hilfsfunktion ist ueber den vollen
     // Stance-Typ generisch, aufgerufen wurde sie mit zwei von drei Werten.
     stance('retreat', t('army.stanceRetreat')),
+    // Die Garnison (T-M40-01, D30.1): die Abwahl der Automatik. Ein Wert im Kern ohne
+    // Knopf ist genau der Fall, den `ui-command-coverage` bewacht.
+    stance('garrison', t('army.stanceGarrison')),
     merge,
     split,
     bombard,
@@ -438,25 +476,29 @@ export function targetAction(
   target: string,
   departInTicks = 0,
 ): ActionSpec {
-  return kind === 'move'
-    ? checked(
-        ctx,
-        {
-          type: 'MOVE_ARMY',
-          playerId: ctx.playerId,
-          armyId,
-          targetProvinceId: target,
-          ...(departInTicks > 0 ? { departInTicks } : {}),
-        },
-        'confirm-move',
-        t('army.confirmMove'),
-      )
-    : checked(
-        ctx,
-        { type: 'BOMBARD', playerId: ctx.playerId, armyId, targetProvinceId: target },
-        'confirm-bombard',
-        t('army.confirmBombard'),
-      )
+  if (kind === 'bombard') {
+    return checked(
+      ctx,
+      { type: 'BOMBARD', playerId: ctx.playerId, armyId, targetProvinceId: target },
+      'confirm-bombard',
+      t('army.confirmBombard'),
+    )
+  }
+  const command: Command = {
+    type: 'MOVE_ARMY',
+    playerId: ctx.playerId,
+    armyId,
+    targetProvinceId: target,
+    ...(departInTicks > 0 ? { departInTicks } : {}),
+  }
+  // Ein eigener Marschbefehl haelt fest (T-M40-14, Befund H-A der Durchsicht der Nacharbeit): die Ruhe
+  // der Automatik zaehlt ab dem Abmarsch, und nach einem langen Marsch schickte sie die eben verlegte
+  // Armee weiter. Eine Verteidigung geht deshalb mit dem Marsch auf Garnison, wie beim Anhalten. Seit T-M40-19 auch
+  // eine, die eben erst auf Verteidigung geklickt wurde und in der Sammlung wartet (Befund N-5).
+  const followUp = garrisonFollowUp(ctx.state, command, ctx.pending)
+  const spec = checked(ctx, command, 'confirm-move', t('army.confirmMove'), followUp ? t('army.confirmMoveHintGarrison') : undefined)
+  if (followUp) spec.followUp = followUp
+  return spec
 }
 
 /**

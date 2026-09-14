@@ -288,6 +288,11 @@ aktualisieren sich, Ereignisse kommen einzeln an.
 - Akkumulator: `accumulator += verstricheneRealzeit × speed; while (accumulator ≥ 1) { step() }`,
   **gedeckelt auf 2 Ticks**. Reicht die Rechenleistung nicht, sinkt die Rate — es entsteht aber
   **kein wachsender Rückstand**, der das Spiel später einfrieren ließe.
+  *(korrigiert 2026-09-13, T-M41-04: der Deckel auf 2 Ticks warf den Bruchteil weg, und die
+  Schleife begann nach jedem Tick mit leerem Übertrag neu — im Spiel gemessen ergaben 60 Bilder bei
+  Tempo 100 nur 60 Spielstunden je Sekunde. Gedeckelt ist seither das
+  Zeitguthaben eines Bildes auf `max(2, Tempo / 30)` Ticks, und der Übertrag bleibt unter einem
+  Tick; `apps/desktop/src/game/clock.ts`.)*
 - Rechenbudget: ≤ 8 ms je 16-ms-Zeitscheibe im Worker.
 
 **(b) Vorspulen — beliebig schnell.** `fastForward(state, until, guards)` läuft ohne
@@ -2170,3 +2175,755 @@ dieses Plans, das kein Agent erfüllen kann.
 Das größte Risiko ist nicht das Netz, sondern D28.3: achtzehn Stellen in einer Datei mit
 1700 Zeilen, und jede falsch umgestellte fällt erst im Spiel zu zweit auf. Deshalb steht
 sie zuerst, mit eigenem Wächter, und nicht nebenbei.
+
+
+## D29. Tiefe zwischen den Kriegen (M17 — R-SPY-01…06, R-DIP-05, R-DIP-07, R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09)
+
+Geplant am 2026-09-13 als T-M17-01, aus der Delegation vom selben Tag (`DECISIONS.md`).
+M17 bringt, was M15 bewusst weggelassen hat — Spionage (R-SPY-01 bis -06) und
+Handelsangebote mit Treuhand (R-DIP-05, R-DIP-07) —, dazu die zwei Vormerkungen aus dem
+Entscheid T-M32-03: den **Antrag auf Durchmarschrecht** (R-DIP-08) und den **Provinzhandel**
+(R-DIP-09). R-AI-09 ist das Integrationstor der KI, R-GAME-09 die Migration. Die vier Regeln
+aus 2.15 gelten: die KI kann alles, was der Spieler kann; kein Wissen ohne Quelle; jede Zahl
+steht in den Regeldateien; ein alter Spielstand läuft weiter.
+
+**Drei Befunde vorweg, weil sie den Zuschnitt ändern** (ausführlich in `PROBLEME.md`,
+2026-09-13, B1–B8):
+
+- **Ein eigener Widerruf des Durchmarschrechts existiert nicht.** `grantRightOfWay` setzt nur
+  `relation.rightOfWay = true` (`commands/diplomacy.ts`); das Recht endet heute nur mit einem
+  Bündnisbruch oder einer Kriegserklärung.
+- **Das Recht ist ein symmetrisches Feld je Paar** (`Relation.rightOfWay` unter dem Schlüssel
+  `a|b`). Wer „gewährt", darf damit selbst folgenlos ins Land des anderen:
+  `detectSurpriseAttacks` fragt nur `relation.rightOfWay` (`phases/diplomacy.ts:25`). Dieselbe
+  Bauart hat `sharedMap`: wer seine Karte „teilt", sieht auch die des anderen
+  (`view/publicView.ts:224`). Die Bewegungsphase liest das Recht **nicht** — die Aussage in
+  `DECISIONS.md` vom 2026-09-11 war falsch und ist dort berichtigt.
+- **Die KI-Regel „Durchmarsch erwidern" ist wirkungslos.** `packages/ai/src/diplomacy.ts`
+  schickt `grantRightOfWay` nur, wenn `relation.rightOfWay` schon `true` ist. Die zweite Hälfte
+  von R-DIP-06/AK3 ist damit nicht eingelöst und wird es erst mit R-DIP-08.
+
+Der Antrag ist deshalb erst sinnvoll, wenn das Recht **gerichtet** wird — und die
+Kartenfreigabe bekommt dieselbe Bauart (delegiert, kippbar, `DECISIONS.md`).
+
+### D29.1 Zustand (`state/types.ts`)
+
+```ts
+export type SpyId = string
+export type SpyMission = 'intel' | 'economicSabotage' | 'militarySabotage' | 'counter'
+export interface Spy {
+  id: SpyId; owner: PlayerId; provinceId: ProvinceId; mission: SpyMission
+  recruitedTick: Tick
+  /** Zuletzt angesetzt; führt frühestens am Tag danach aus (R-SPY-02/AK3, auch beim Umsetzen). */
+  assignedTick: Tick
+  lastRunTick: Tick | null
+  lastOutcome: 'success' | 'failure' | 'targetChanged' | null
+}
+export interface Reveal { player: PlayerId; provinceId: ProvinceId; kind: 'intel' | 'armies'; untilTick: Tick }
+/** Arrays: die Reihenfolge ist die Ausführungsreihenfolge. */
+export interface EspionageState { spies: Spy[]; reveals: Reveal[] }
+
+export interface TradeBundle { resources: Partial<Record<ResourceKey, Fixed>>; provinces: ProvinceId[] }
+export interface TradeOffer {
+  id: string; from: PlayerId; to: PlayerId
+  /** give.resources IST die Treuhand: beim Angebot vom Bestand abgezogen. */
+  give: TradeBundle
+  want: TradeBundle
+  createdTick: Tick; expiresAtTick: Tick
+}
+
+// Relation: rightOfWay und sharedMap ENTFALLEN, beide werden gerichtet (a < b wie der Schlüssel):
+//   aGrantsPassage: boolean; bGrantsPassage: boolean
+//   aPassageEndsAtTick: Tick | null; bPassageEndsAtTick: Tick | null   // Kündigungsfrist
+//   aSharesMap: boolean; bSharesMap: boolean
+// DiplomaticOffer.kind: 'peace' | 'alliance' | 'rightOfWay'
+// DiplomacyState: + tradeOffers: TradeOffer[]
+// GameState: + espionage: EspionageState
+// nextIds: + spy: number; offer: number
+```
+
+- `grantsPassage(state, grantor, guest)` und `sharesMap(state, owner, viewer)` in
+  `state/create.ts` neben `relationKey` sind die **einzigen Leserinnen** der gerichteten Felder.
+- **Kartenfreigabe gerichtet (delegiert, 2026-09-13):** `shareMap` setzt nur die eigene
+  Richtung; `publicView` nimmt `other` in die Verbündeten-Sicht auf, wenn
+  `sharesMap(state, other, playerId)` gilt oder ein Bündnis besteht. `acceptAlliance` setzt
+  beide Richtungen beider Felder, `breakAlliance` löscht sie, eine wirksame Kriegserklärung
+  löscht wie heute nur den Durchmarsch.
+- `clone.ts`: `espionage.spies` und `reveals` elementweise, `tradeOffers` tief (Bündel samt
+  `resources` und `provinces.slice()`). `validate.ts`: `espionage` (Objekt),
+  `diplomacy.tradeOffers` (Array).
+
+### D29.2 Kommandos
+
+Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → Obergrenze → Kosten
+(Muster D19.2b). Alle Ablehnungscodes gibt es schon (`commands/types.ts`).
+
+| Kommando | Felder | Ablehnungen |
+|---|---|---|
+| `RECRUIT_SPY` | `provinceId, mission` | `PROVINCE_NOT_FOUND`; `INVALID_TARGET{reason:'unbekannt'}` wenn weder sichtbar noch in `player.intel` (R-SPY-01/AK3); `INVALID_TARGET{reason}` bei eigener Provinz mit Sabotage oder Aufklärung, fremder mit Gegenspionage, herrenloser mit Sabotage; `QUEUE_FULL` bei `maxSpiesPerPlayer`; `INSUFFICIENT_RESOURCES{resource:'money'}` |
+| `REASSIGN_SPY` | `spyId, provinceId, mission` | `INVALID_TARGET{reason:'kein Spion'}`; `NOT_OWNER`; Zielregeln wie oben; kostenlos; setzt `assignedTick` |
+| `DISMISS_SPY` | `spyId` | `INVALID_TARGET`, `NOT_OWNER` |
+| `DIPLOMACY` `grantRightOfWay` | bleibt (alte Kommandologs laufen weiter) | setzt **nur** die eigene Richtung |
+| `DIPLOMACY` `requestRightOfWay` | Angebot `kind:'rightOfWay'` | `INVALID_TARGET` im Krieg, bei laufender Erklärung oder wenn schon gewährt |
+| `DIPLOMACY` `acceptRightOfWay` | ein Antrag des Ziels an mich muss existieren | `INVALID_TARGET{reason:'kein Angebot'}`; setzt meine Richtung zum Antragsteller |
+| `DIPLOMACY` `revokeRightOfWay` | `PassageEndsAtTick = tick + rightOfWayNoticeTicks` | `INVALID_TARGET`, wenn nicht gewährt |
+| `DIPLOMACY` `shareMap` | bleibt | setzt **nur** die eigene Richtung |
+| `OFFER_TRADE` | `targetPlayerId, give, want` | `INVALID_TARGET` bei sich selbst, Krieg oder `warEffectiveAtTick !== null` (R-DIP-05/AK3), leerem `give`, nicht ganzzahligen Mengen, über `tradeMax*`, fremder, Hauptstadt- oder umkämpfter Provinz, eigenen Armeen in einer abgetretenen Provinz, `want.provinces` nicht im Besitz des Ziels; `QUEUE_FULL` bei `maxOpenTradeOffers`; `INSUFFICIENT_RESOURCES` |
+| `ACCEPT_TRADE` | `offerId` (nur `to`) | `INVALID_TARGET`; Provinzprüfung beider Seiten erneut; `INSUFFICIENT_RESOURCES` → **das Angebot bleibt** (R-DIP-05/AK2) |
+| `DECLINE_TRADE`, `WITHDRAW_TRADE` | `offerId` | `INVALID_TARGET`, `NOT_OWNER`; Rückgabe der Treuhand |
+
+- `handlers.ts` registriert `commands/espionage.ts` und `commands/tradeOffer.ts`.
+- **Befund B4:** `acceptPeace` und `acceptAlliance` löschen **alle** Angebote ihrer Art an den
+  Annehmenden, von jedem Absender. Handelsangebote erben das nicht: sie werden je `offerId`
+  geschlossen.
+- `test/guards/ui-command-coverage.test.ts` verlangt jeden neuen Befehlstyp in `actions.ts`
+  oder `App.tsx`.
+
+### D29.3 Reihenfolge im Tick
+
+- **`applyCommands`:** alle Kommandos; eine Annahme tauscht sofort, im selben Tick. Nur `to`
+  darf annehmen; die Reihenfolge ist die von `playerOrder`.
+- **Phase `diplomacy`**, neu geordnet:
+  1. Kriegserklärungen treten in Kraft (setzen beide Durchmarsch-Richtungen zurück);
+  2. abgelaufene Kündigungsfristen setzen ihre Richtung auf `false`;
+  3. `detectSurpriseAttacks` fragt `grantsPassage(state, province.owner, army.owner)`;
+  4. **danach** verfallen Angebote: diplomatische nach `offerLifetimeDays` (heute die Zahl
+     `3` im Code, Befund B3), Handelsangebote nach `expiresAtTick` **oder** bei Krieg im selben
+     Tick, jeweils mit Rückgabe.
+  Pflichttest: Überfall und Verfall im selben Tick.
+- **`dailyTick`:** `settleMorale` → **`settleEspionage`** → Punkte → Zwischenziele (D31) →
+  Sieg → Tagesbericht. Nach der Moral, damit Sabotage nicht vom Moraldrift desselben Tages zur
+  Hälfte zurückgenommen wird.
+- **`settleEspionage`** in Array-Reihenfolge: (a) abgelaufene `reveals` entfernen; (b) Sold je
+  Spion, wer nicht zahlen kann, verliert ihn (`SPY_LOST`); (c) Gegenspionage (R-SPY-05): jeder
+  Gegenspion würfelt je fremdem Spion in derselben Provinz; (d) übrige Aufträge mit
+  `assignedTick` vor Tagesbeginn würfeln ihren Erfolg — hat die Zielprovinz den Besitzer
+  gewechselt und passt der Auftrag nicht mehr, kein Wurf (`targetChanged`). „Heute sabotiert"
+  ist eine lokale Menge je Durchlauf, **kein Zustand** (R-SPY-04/AK4).
+
+### D29.4 Zufall
+
+Nur `chance(draft.rng, promille)`, und nur, wenn Spione existieren. Ohne Spione wird kein
+Zufall verbraucht — belegt durch einen Lauf mit der Mechanik und ohne Spione, dessen Hash nach
+jedem Tick gleich dem Lauf ohne `settleEspionage` ist (auf migriertem Stand). Dazu ein eigener
+Determinismustest **mit** Spionen: zwei Läufe, gleiche Startzahl, gleicher Hash.
+
+### D29.5 Ereignisse
+
+| Art | audience | concerns | Schwere | Weltgeschehen |
+|---|---|---|---|---|
+| `SPY_REPORT {playerId, spyId, provinceId, mission, outcome}` | [Besitzer] | [Besitzer] | info | nein |
+| `SPY_LOST {playerId, spyId, reason:'unpaid'}` | [Besitzer] | [Besitzer] | info | nein |
+| `SABOTAGE_SUFFERED {playerId, provinceId, kind, moraleLoss, destroyed, delayTicks}` **ohne Urheber** | [Opfer] | [Opfer] | **alert** | nein |
+| `SPY_DETECTED {playerId: Urheber, targetPlayerId: Entdecker, provinceId, mission}` | beide | beide | info | nein |
+| `RIGHT_OF_WAY_CHANGED {playerId: Gewährer, targetPlayerId: Gast, granted, effectiveAtTick}` | beide | beide | info | nein |
+| `TRADE_OFFER_CLOSED {offerId, playerId: from, targetPlayerId: to, reason}` | beide | beide | info | nein |
+| `TRADE_AGREED {playerId, targetPlayerId}` **ohne Mengen** (R-DIP-05/AK4) | [] | beide | info | **ja** |
+| `PROVINCE_CEDED {provinceId, previousOwner, newOwner}` | [] | beide | info, keine Eroberung | **ja** |
+
+- `reason` ist `'accepted' | 'declined' | 'withdrawn' | 'expired' | 'war' | 'invalid'`.
+- Angebote melden sich über die Sicht (`incomingOffers`, `tradeOffers.incoming`), nicht per
+  Ereignis. `ALERT_TYPES` bekommt `SABOTAGE_SUFFERED`; `WORLD_EVENT_TYPES` bekommt
+  `TRADE_AGREED` und `PROVINCE_CEDED`.
+- **Falle Anonymität:** `describeEvent` übernimmt jedes flache Ereignisfeld in die Werte
+  (`apps/desktop/src/game/events.ts`, `valuesFor`). `SABOTAGE_SUFFERED` darf deshalb **kein**
+  Urheberfeld tragen, und die Eigenschaft wird am gerenderten Opfertext geprüft, nicht nur an
+  den Feldern. `packages/core/test/properties/event-audience.test.ts` bekommt einen Lauf mit
+  Spionen.
+- `FOREIGN_TEXTS` (`game/events.ts`) um `PROVINCE_CEDED` und `TRADE_AGREED`, wo ein Satz ein
+  „ich" trägt.
+
+### D29.6 Sicht und Nebel (R-DIP-04)
+
+- `self.spies`: eigenes Wissen. `tradeOffers: { incoming; outgoing }` nach dem Muster von
+  `incomingOffers`; `incomingOffers.kind` bekommt `'rightOfWay'`.
+- `relations[other]`: `rightOfWay` und `sharedMap` werden zu `passageGranted` (ich lasse dich
+  durch), `passageReceived` (du mich), `passageEndsAtTick`, `mapShared`, `mapReceived`.
+- `visibleProvinces(state, id)` nimmt die eigenen `reveals` auf, `updateIntel` merkt sich damit
+  den letzten Stand (R-SPY-03/AK2); die Feuerautomatik zielt auf Gesehenes (gewollt, D19.4).
+  Eine `VisibleProvince` bekommt bei `kind === 'intel'` `buildings` und `revealedUntilTick`, eine
+  fremde `VisibleArmy` bekommt `units` bei `intel` **oder** `armies`.
+- **Entschieden:** `IntelEntry` bleibt unverändert (Besitzer und Stärke). Gebäude im Gedächtnis
+  zu behalten wäre ein weiteres Feld mit Migration; aufgedeckte Gebäude gelten für den Tag.
+- Provinzwert für die KI aus `AiContext.map` (`deposits`, `population`, `kind`) — öffentlich,
+  weil die Karte eine Datei ist (Befund B5: fremde Provinzen tragen in der Sicht keine
+  `deposits`, die KI bewertet sie heute pauschal 400 oder 200).
+
+### D29.7 Regelzahlen
+
+Verhältnisse belegt (Referenz 10.2: Anwerben 20.000 = zehnmal Aufklärung 2.000, Sabotage
+4.000, Gegenspionage 1.000). Der **absolute Anker** kommt aus T-M17-02: Aufklärungssold =
+5 % des Medians des täglichen Geldertrags einer mittleren Macht an Tag 30.
+
+**`constants.json`**
+
+| Schlüssel | Vorschlag | Status |
+|---|---|---|
+| `spyRecruitCost` | 10 × `spySalaryIntel` | Verhältnis belegt, Anker abgeleitet |
+| `spySalaryIntel` | Anker aus T-M17-02 | abgeleitet |
+| `spySalaryEconomicSabotage`, `spySalaryMilitarySabotage` | 2 × Anker | Verhältnis belegt |
+| `spySalaryCounter` | 0,5 × Anker | Verhältnis belegt |
+| `maxSpiesPerPlayer` | 5 | geschätzt |
+| `spySuccessIntelPermille` | 800 | geschätzt |
+| `spySuccessSabotagePermille` | 500 | geschätzt |
+| `spyDetectionPermille` | 250 je Tag und fremdem Spion | geschätzt |
+| `sabotageMoraleLoss` | 10000 | **belegt** (Referenz 4.6: −10) |
+| `sabotageYieldDestroyedPermille` | 500 des Tagesertrags (`provinceYieldScaled`) | geschätzt |
+| `militarySabotageDelayTicks` | 12 | geschätzt |
+| `spyRevealDays` | 1 | abgeleitet |
+| `spyDetectedReputationLoss` | 100, doppelt ohne Krieg | geschätzt |
+| `grievanceOnSpyDetected` | 300 | geschätzt (zwischen Provinzverlust 250 und Überfall 400) |
+| `offerLifetimeDays` | 3 | abgeleitet (bisher Zahl im Code, B3) |
+| `tradeOfferLifetimeDays` | 3 | geschätzt |
+| `maxOpenTradeOffers` | 5 | geschätzt |
+| `tradeMaxMoney`, `tradeMaxResource` | Verhältnis 100.000 : 30.000 | Verhältnis belegt (Referenz 9.4), Skala am Startvorrat |
+| `rightOfWayNoticeTicks` | 24 | geschätzt |
+
+**`ai.json`, oberste Ebene** — der Wächter in `test/balancing.test.ts` prüft heute nur die
+Stufenspalten und wird erweitert:
+
+| Schlüssel | Vorschlag | Status |
+|---|---|---|
+| `tradeAcceptMarginPermille` | 1050 | geschätzt |
+| `tradeImpactPermille` | 50 (ab dieser Kursbewegung direkt anbieten statt Börse) | geschätzt |
+| `provinceValueHorizonDays` | 60 | geschätzt |
+| `provinceSalePremiumPermille` | 1300 | geschätzt |
+| `espionageBudgetPermille` | 150 des täglichen Geldertrags | geschätzt |
+
+Alle neuen Konstanten in `REQUIRED_CONSTANTS` und `RuleConstants`; `BALANCING.md` bekommt den
+Abschnitt „Spionage und Handel (D29)" im Format des Abschnitts zum Verhältnis.
+
+### D29.8 KI-Verhalten (R-AI-09), im Strategietakt einmal je Spieltag
+
+- **Durchmarsch** (`packages/ai/src/passage.ts`). *Antrag:* führt der Weg eines geplanten
+  Angriffs (`findPath` ohne Seeweg) über eine Provinz einer Macht im Frieden, die mir nicht
+  gewährt, wird **beantragt, nicht marschiert** (Befund B6). *Antwort:* gewähren, wenn das
+  Verhältnis die Vertrauensschwelle erreicht und der Antragsteller nicht mit einem eigenen
+  Verbündeten im Krieg ist; sonst nichts. *Erwidern* (echt, behebt B2): Durchmarsch erhalten,
+  selbst nicht gewährt, Verhältnis gut → gewähren. *Widerruf:* Verhältnis unter der
+  Kriegsschwelle. *Gast nach Widerruf:* eigene Armeen vor Fristende zurückziehen.
+- **Handel** (`packages/ai/src/trade.ts`). *Annahme:* Wert des Erhaltenen ≥ Wert des Gegebenen
+  × Marge zu `view.marketPrices` und Verhältnis nicht unter der Kriegsschwelle; sonst
+  ablehnen; beides begründet. *Angebot:* würde die Beschaffung für das nächste Bauvorhaben
+  (`missingForNextBuilding`) den Börsenkurs um mehr als `tradeImpactPermille` bewegen, bietet
+  sie der Macht mit dem besten Verhältnis im Frieden Überschuss gegen Bedarf zum Marktwert
+  × 1,02.
+- **Provinzhandel** (`packages/ai/src/provinceValue.ts`). *Wert:* Vorkommen × Marktpreis ×
+  Gewicht plus Steuer aus der Bevölkerung, mal Horizont, plus Lage; Quelle Karte, Gebäude nur,
+  wenn bekannt. *Annahme* nach diesen Werten und dem Aufschlag. **Zugesagt ist nur Annehmen
+  und Ablehnen** (R-DIP-09/AK3, AK4); aktives Kaufen und Verkaufen wird gebaut, aber im
+  Integrationstor nur **gezählt** — Rückfall aus der Selbstkritik des Plans, weil der
+  Provinzwert der teuerste und unsicherste Teil ist.
+- **Spionage** (`packages/ai/src/espionage.ts`), Budget `espionageBudgetPermille`: Gegenspion
+  in der Hauptstadt bei Krieg, Verstimmung oder erlittener Enttarnung; Aufklärung auf die
+  wertvollste bekannte Provinz eines Kriegsgegners; Wirtschaftssabotage **nur** gegen
+  Kriegsgegner; entlassen bei Kriegsende oder drohendem Geldmangel.
+- **Verhältnis:** `relationship()` liest `passageGranted` und `passageReceived` statt
+  `rightOfWay`; enttarnte Spione wirken über die vorhandene Verstimmung.
+
+### D29.9 Oberfläche
+
+Spionage in der Oberfläche ist R-SPY-06, Handel R-DIP-07; Antrag und Widerruf des Durchmarschs
+gehören zu R-DIP-08, das Angebotsformular mit Provinzen zu R-DIP-09.
+
+- **Provinzleiste** (`ProvincePanel`): Gruppe „Spionage" — fremde Provinz: drei Anwerbe-Knöpfe,
+  eigene: Gegenspionage; über `checked()` mit Sperrgrund, Kosten und Sold im Hinweis. Neue
+  Aktionsliste `spyActions`, in `App.tsx` benutzt.
+- **Spionageübersicht:** `EspionagePanel`, `Panel` bekommt `'espionage'`
+  (`state/uiState.ts`), Taste `s`/`S` (`keyboard.ts` kennt `s` nur mit Strg). Liste mit Auftrag,
+  Ziel (anspringbar), Tagessold, letztem Ergebnis; Umsetzen und Entlassen.
+- **Diplomatie** (`DiplomacyPanel`): Ansehen je Macht als Balken, Liste „wer mit wem im Krieg";
+  Antrag, Annahme, Widerruf des Durchmarschs; Angebotsformular je Macht mit Vorschau über
+  `exchangeAmount`; eingehende Angebote mit Annehmen/Ablehnen, ausgehende mit Zurückziehen.
+- **Meldungen** (`Alerts.tsx`): Art `offer` aus der Sicht mit Sprung ins Diplomatiepanel —
+  `onJump` braucht dafür ein Panelziel (**Schnittstellenänderung**); Art `sabotage` aus dem
+  Ereignisstrom nach dem Muster `openIntrusion`, Sprung zur Provinz.
+- **Symbole:** `spyIntel`, `spyEconomic`, `spyMilitary`, `spyCounter`, `trade`, geprüft mit
+  `test/path-bounds.ts`. **Texte** mit echten Umlauten; `docs/ANLEITUNG.md` erklärt Spionage,
+  Angebote und Durchmarsch. Spieler-ID aus dem Kontext, nicht `p1`.
+
+### D29.10 Migration 3 → 4 und `SCHEMA_VERSION` 4
+
+M35 nimmt Stufe 3 (D31.5); M17 nimmt **Stufe 4**.
+
+- **Zuerst** `packages/core/test/golden/save-v3.json` einfrieren (T-M17-02) — ein echter Stand
+  nach M35 und **vor** jeder M17-Änderung: 30 Spieltage Weltkarte, mindestens eine Beziehung mit
+  `rightOfWay: true`, eine mit `sharedMap: true`, ein offenes Friedensangebot.
+- `toVersion4`: `espionage = { spies: [], reveals: [] }`; `diplomacy.tradeOffers = []`;
+  `nextIds.spy = 1`, `nextIds.offer = 1`; je Beziehung
+  `aGrantsPassage = bGrantsPassage = rightOfWay` und `aSharesMap = bSharesMap = sharedMap`
+  (**verhaltensgleich**), `aPassageEndsAtTick = bPassageEndsAtTick = null`, `rightOfWay` und
+  `sharedMap` entfernen; `schemaVersion = 4` in Zustand und Umschlag.
+- `ADDED_IN_VERSION_4` samt einer Liste der entfernten Schlüssel, damit der Differenztest die
+  Umbenennung als solche erkennt. Kette ab `save-v1.json` und `save-v2.json` über alle Schritte.
+- Der Formatwächter prüft die Liste Stufe → Meilenstein (1 M15, 2 M35, 3 M17).
+- Offene diplomatische Angebote brauchen keine Migration.
+
+### D29.11 Golden-Master und Frische-Wächter
+
+- **`tiny-500`:** neu in genau einem Commit (T-M17-03, neue Felder); danach unverändert über
+  alle weiteren Kernaufgaben — der Beleg, dass Spionage ohne Spione nichts verschiebt.
+- **`walkthrough`:** ebenfalls neu in T-M17-03. **Korrektur am Planungsstand:** der Plan sagte,
+  jede neue KI-Regel verschiebe ihn. Das stimmt nicht — `runGame` ruft `runTicks` des Kerns,
+  nicht die Spielschleife mit KI (`apps/headless/src/run.ts`); die Macht `Ostmark` hat
+  `kind: 'ai'`, gibt aber keinen Befehl. Er verschiebt sich nur durch Zustandsfelder und
+  Kernregeln.
+- **`data/rules`:** Änderungen in T-M17-04, -05, -07, -08, -10 bis -12. Turnier nach jeder
+  KI-Aufgabe, `progress.slow.test.ts` als Stellvertreter; **einmal** `pnpm balance:sweep` in
+  T-M17-16 — das ist der eine Parameterlauf der ganzen Delegation. *(Umgerichtet am
+  2026-09-13: M17 ist abgetrennt (Noah); der eine Parameterlauf der Delegation läuft im
+  Schlussblock nach M35. T-M17-16 misst für den späteren M17-Bau erneut, weil M17 `data/rules`
+  ändert.)*
+
+### D29.12 Was M17 nicht behebt, und das Risiko
+
+- **Kohle ohne Senke und der Vorratsaufbau** (`PROBLEME.md`, 2026-09-06) wandern nach **M18**:
+  Spionagesold zieht nur Geld, Handel verschiebt Güter, ohne sie zu verbrauchen. Eine Senke ist
+  Gebäudeunterhalt oder Kohle im Unterhalt — das Wirtschaftspaket aus dem Entscheid zu R-ECON-03.
+  M17 **misst** trotzdem die Bestandssummen je Rohstoff an Tag 200 vorher (T-M17-02) und nachher
+  (T-M17-16).
+- **Die amphibische KI** (Kommentare in `packages/ai/src/targeting.ts` und `economy.ts`)
+  wandert nach **M18**; sie gehörte nie zum Umfang von M17.
+- **Verstimmungsspirale:** Enttarnung → Verstimmung → Krieg → mehr Spionage kann das Turnierband
+  0,55–0,95 kippen. Gegenmittel: Turnier und `progress.slow.test.ts` nach T-M17-12; bei Kippen
+  `grievanceOnSpyDetected` senken, nicht den Wächter.
+- **Tickbudget (R-AI-04):** `findPath` je Angriffsplan ist teuer — nur im Strategietakt; messen
+  nur auf freier Maschine.
+- **Umfang:** der Umbau von `rightOfWay` zieht durch Oberfläche, KI und Tests
+  (`movement.test.ts`, `Standings.test.tsx`, `Explain.test.tsx`, `packages/ai/src/diplomacy.test.ts`).
+- **Mehrspieler:** `MEHRSPIELER.md` sagt „kein Eingriff in `packages/core` und `data/rules`".
+  Verträglich, wenn M17 vollständig vor M37 gemergt ist; die neuen Kommandos sind reines JSON.
+
+## D30. Die Haltung wird ein Auftrag (M40 — R-UNIT-09)
+
+Befund und erste Fassung stehen in `docs/plan/LEVEL-UP-3.md` §5 (T-M28-07, dort noch als
+„Entwurf D28" — die Nummer ist seit dem 2026-09-12 an den Mehrspieler vergeben). Hier steht, was davon gebaut wird und was nicht,
+mit drei Korrekturen, die beim Planen am 2026-09-13 am Code gefunden wurden. Anforderung:
+R-UNIT-09; dazu R-AI-01, R-DIP-04, R-ARCH-01. Bauplan: `03-TASKS.md` M40.
+
+**Ausgangslage, belegt.** `Stance` ist `'aggressive' | 'defensive' | 'retreat'`
+(`state/types.ts:47`). Gelesen wird im Kern nur `defensive`, und nur zusammen mit „steht
+still" (`phases/combat.ts:98`); `aggressive` kommt außer im Typ nirgends vor. Nach einem
+Rückzug setzt `phases/retreat.ts` die Armee auf `defensive` (Z. 39, 49), eine neue Armee
+steht ebenfalls auf `defensive` (`phases/recruitment.ts:67`), und die KI befiehlt nur
+`retreat` (`packages/ai/src/military.ts:59`) — **jede KI-Armee steht damit dauerhaft auf
+`defensive`**. `SET_STANCE` prüft den Wert nicht (`commands/handlers.ts:25-34`).
+
+### D30.1 Vier Haltungen, ein neuer Wert, keine Migration
+
+`Stance` bekommt `'garrison'`. Im Kampf gilt `garrison` wie `defensive`: eine stehende
+Armee in einer dieser beiden Haltungen ist eingegrabener Verteidiger. Die Haltung ist die
+**Abwahl** der Automatik — „bleibt stehen, was auch geschieht".
+
+`SET_STANCE` lehnt jeden Wert außerhalb der vier mit `INVALID_TARGET` und
+`{ reason: 'unbekannte Haltung' }` ab. Im Einzelspieler kann die Oberfläche keinen falschen
+Wert erzeugen; im Gleichschritt (D28) kommt ein Befehl aber von einem zweiten Rechner.
+
+Kein Zustandsfeld entsteht, nur ein Wertebereich wächst. `validateState` prüft die Haltung
+nicht, kein alter Stand trägt `garrison` — **`SCHEMA_VERSION` bleibt**, und die Golden-Master
+bleiben bitgleich (T-M40-01 belegt es, indem `pnpm test` ohne `UPDATE_GOLDEN` grün ist).
+
+### D30.2 Wo die Automatik lebt: ein Adjutant in `packages/ai`
+
+Der Kern darf die KI nicht kennen (Importrichtung shared ← core ← ai ← apps), und eine
+Automatik, die Befehle erzeugt, ist dieselbe Sorte Code wie die KI. Sie lebt deshalb als
+**`adjutantCommands(state, ctx)`** in `packages/ai/src/adjutant.ts` und wird in
+`advanceTicks` (`packages/ai/src/loop.ts`) gerufen — der einen Schleife, die Oberfläche und
+Kopflos-Läufe teilen.
+
+- **Für wen:** jede lebende Macht mit `kind === 'human'`, in `playerOrder`-Reihenfolge.
+  KI-Mächte führt weiter `military.ts`.
+- **Über welche Schiene:** die Befehle hängen in derselben Liste wie Spielerbefehle und
+  KI-Befehle (`playerCommands`, `scripted`, Adjutant, KI) und durchlaufen dieselbe
+  Kommandoprüfung. Was der Adjutant tut, könnte der Spieler per Klick tun — R-AI-01 gilt in
+  beide Richtungen.
+- **Vortritt:** gibt der Mensch im selben Tick einen Befehl mit derselben `armyId`, lässt
+  der Adjutant diese Armee in diesem Tick aus.
+
+**Warum nur menschliche Armeen (Korrektur 3).** Eine Automatik für jede `defensive`-Armee
+würde jede KI-Partie verändern — und damit Turnier, Parameterlauf und AK-1 —, weil nach
+dem Befund oben jede KI-Armee auf `defensive` steht. Die KI hat ihre eigene
+Bedrohungsrechnung; der Adjutant gibt dem Menschen, was die KI schon hat.
+
+### D30.3 Aus dem Zustand, nicht aus Ereignissen (Korrektur 1)
+
+Der erste Entwurf hängte die Automatik an `ARMY_RETREATED` und `ARMY_INTRUDED`. Das bricht
+Speichern und Laden: das Ereignisprotokoll liegt nicht im Hash (`HASH_OMIT_KEYS`), und ein
+geladener Stand beginnt `advanceTicks` ohne die Ereignisse des Vorticks. **Gleicher Zustand,
+andere Befehle** — genau das, was R-AI-07/AK1 für die KI ausschließt.
+
+Der Adjutant liest deshalb nur den Zustand, und zwar so, wie ihn der Besitzer kennen darf:
+
+- **fremde Armeen und Provinzen** ausschließlich über `publicView(state, owner)` — sonst
+  verriete die Automatik, was der Nebel verbirgt (R-DIP-04);
+- **eigene Armeen** direkt aus `state.armies` — eigenes Wissen; die Sicht zeigt sie ohnehin
+  vollständig, nur die Angriffssperre `cannotAttackUntil` führt sie nicht.
+
+**Kosten.** Eine Sicht je Tick je Mensch ist nicht billig (T-M16-02). Sie wird nur
+berechnet, wenn die Macht mit jemandem im Krieg ist **und** eine bereite Verteidigung besitzt (Haltung
+`defensive`, stehend, ausgeruht), neben der in ihrer Provinz eine weitere eigene Armee stehen bleibt;
+sonst gibt der Adjutant sofort nichts zurück. *(Berichtigt am 2026-09-13, Durchsicht der Nacharbeit,
+N-5: bis dahin stand hier „`defensive` oder `aggressive`". Seit T-M40-10 handelt `aggressive` nie von
+selbst, und die Schranke greift enger, D30.9.)*
+
+### D30.4 Die Regel, die nicht entblößt
+
+*(Ersetzt am 2026-09-13, T-M40-10. Die erste Fassung — Verteidigung deckt, Angriff verfolgt — steht
+darunter als Geschichte; warum sie gefallen ist, steht in D30.9.)*
+
+**Verteidigung rückt nach, ohne zu entblößen.** Eine eigene Armee A kommt in Frage, wenn sie in
+Haltung `defensive` steht (`path` leer), nicht eingeschifft ist, Landeinheiten trägt, ihre
+Angriffssperre abgelaufen ist, seit dem Abmarsch ihres letzten Marsches oder seit ihrem letzten Rückzug
+fünf Spieltage vergangen sind (`tick >= deployDelayUntil + 120`, T-M40-09) — gezählt ab dem Abmarsch,
+nicht ab der Ankunft, ein Marsch, der die fünf Tage aufbraucht, lässt also keine Ruhe —, ihre Provinz
+eigen und feindfrei ist — **und in ihrer Provinz mindestens eine weitere eigene stehende Armee bleibt**,
+die in diesem Tick nicht selbst ausrückt, weder per Marschbefehl noch per Rückzug (`SET_STANCE retreat`
+im selben Tick, T-M40-15: der Kern prüft beim Rückzug kein Gefecht, die Armee weicht auch so aus). Eine
+Armee, die allein steht, marschiert nie von selbst.
+
+**Ein eigener Marschbefehl hält fest** (T-M40-14, Befund H-A der Durchsicht der Nacharbeit). Schickt der
+Spieler eine eigene Armee auf Verteidigung selbst los, geht mit `MOVE_ARMY` zugleich `SET_STANCE garrison`
+in denselben Tick, wie beim Anhalten (D30.7). Die Oberfläche schickt den Befehl, die Regel steht einmal
+in `garrisonFollowUp` (`packages/ai/src/adjutant.ts`); ein Zustandsfeld gibt es nicht. Ohne ihn schickte
+die Automatik nach einem Marsch von 117 Ticks die Armee sechs Ticks nach der Ankunft weiter (Szenario R1).
+Verworfen ist der Ankunftstick als Zustandsfeld, damit die Ruhe ab der Ankunft zählt: er kostet
+Schemastufe, Migration und neue Golden-Master für eine Randlage, die der Folgebefehl abdeckt.
+
+**Grenze der Ruhe nach einem Rückzug** (Durchsicht der Nacharbeit, N-3). Ein Rückzug setzt
+`deployDelayUntil` auf `tick + 2 · deployDelayTicks`. In den ausgelieferten Regeln endet die Ruhe damit
+124 Ticks nach dem Rückzug. Dauert die Schlacht, aus der die Armee wich, länger, ist nach 124 Ticks eine
+Rückkehr in dieselbe Schlacht möglich. Gemessen dauerte die längste Schlacht auf der Weltkarte 27 Ticks;
+dagegen wird nichts gebaut.
+
+**Ziel** ist eine über `neighbors` (nicht `seaLinks`) angrenzende **eigene** Provinz P, in der eine
+sichtbare Armee eines Kriegsgegners steht — oder die leer ist und an eine Provinz mit einer solchen
+Armee grenzt. Zuerst die angegriffenen Provinzen, danach die leeren bedrohten, je in der Reihenfolge
+der Sicht.
+
+**Ausschlüsse und Auswahl.** Zu P ist keine eigene Armee unterwegs, auch nicht per Befehl im selben
+Tick (T-M40-08); die Route ist genau **eine** Landetappe (T-M40-09); je P marschiert höchstens eine
+Armee — die mit der frühesten Ankunft nach derselben Routenplanung wie `MOVE_ARMY`, bei Gleichstand
+die kleinste Kennung. Befehl: `MOVE_ARMY` nach P.
+
+**Angriff marschiert nie von selbst.** Die Haltung wirkt nur im Kampf: die Armee gilt nicht als
+eingegrabener Verteidiger und kämpft mit Angriffswerten (`phases/combat.ts`). `VisibleArmy.retreating`,
+das nur die Verfolgung brauchte, entfällt.
+
+Kein Zustandsfeld, keine Migration. Ein Befehl entsteht frühestens im Tick nach der Lage — dieselbe
+Stunde Verzug hat jeder Klick (T-M22-05).
+
+#### D30.4 bis 2026-09-13: die zwei Regeln (ersetzt, siehe D30.9)
+
+**Verteidigung deckt.** Eine eigene Armee A kommt in Frage, wenn sie steht (`path` leer),
+nicht eingeschifft ist, ihre Angriffssperre abgelaufen ist, `stance === 'defensive'` und ihre
+Provinz eigen und feindfrei ist. Ziel ist eine eigene Provinz P, die über `neighbors` (nicht
+über `seaLinks`) an As Provinz grenzt, in der eine **sichtbare** Armee eines Kriegsgegners
+steht und zu der keine eigene Armee unterwegs ist (kein eigener `path` endet in P). Je P marschiert
+**höchstens eine** Armee: die mit der frühesten Ankunft nach derselben Routenplanung wie
+`MOVE_ARMY`, bei Gleichstand die kleinste Kennung. Befehl: `MOVE_ARMY` nach P.
+
+**Angriff verfolgt.** Eine eigene Armee B kommt in Frage wie oben, nur mit
+`stance === 'aggressive'`. Ziel ist eine über `neighbors` angrenzende Provinz Q mit einer
+sichtbaren Armee eines Kriegsgegners, die **eben zurückgewichen** ist und höchstens Bs Stärke
+hat. Je Q höchstens eine Verfolgerin, bei Gleichstand die kleinste Kennung.
+
+**Korrektur am Planungsstand:** „eben zurückgewichen" ist heute nicht sichtbar — eine fremde
+`VisibleArmy` trägt nur Kennung, Besitzer, Provinz und Stärke (`view/publicView.ts`). Eine
+**sichtbare** fremde Armee bekommt deshalb das Feld `retreating: boolean` (ihre
+Angriffssperre läuft). Die Quelle nach R-DIP-04: ein Rückzug geschieht vor den Augen dessen,
+vor dem gewichen wird. Das Feld ist nur Sicht — kein Zustandsfeld, kein Hash, keine Migration.
+
+Beide Regeln erzeugen einen Befehl erst im Tick **nach** der Lage, weil die Bewegungsphase
+den Einmarsch erst im Tick erzeugt. Eine Stunde Verzug ist gewollt: dieselbe Verzögerung hat
+jeder Klick (T-M22-05).
+
+### D30.5 Was sich nicht ändert — belegt, nicht behauptet (Korrektur 2)
+
+Der erste Entwurf wollte `garrison` als Vorgabe, damit „jede alte Partie, jeder alte
+Kommandolog und der Golden-Master unverändert" bleiben. **Keiner der Golden-Master sieht eine
+Automatik in `packages/ai`:**
+
+| Lauf | warum unberührt |
+|---|---|
+| `tiny-500` | `step(state, [], ctx)` ohne Befehle und ohne KI (`packages/core/test/determinism.test.ts`) |
+| `walkthrough` | `runGame` ruft `runTicks` des Kerns, nicht `advanceTicks` (`apps/headless/src/run.ts`) |
+| AK-1 (Vollpartie) | `advanceTicks`, aber der Mensch gibt keinen Befehl und `createInitialState` legt keine Armee an |
+| Turnier, Parameterlauf, Grundlauf | nur Mächte mit `kind: 'ai'` (`apps/headless/src/tournament.ts`, `sweep.ts`) |
+
+**Entschieden (delegiert, kippbar, `DECISIONS.md`):** die Vorgabe bleibt `defensive`. Wer
+die Automatik abwählen will, wählt `garrison`. Mit `garrison` als Vorgabe fände ein neuer
+Spieler die Automatik nie. Der Preis: ein alter Spielstand mit menschlichen Armeen fängt nach
+dem Laden an zu decken — hingenommen, denn das ist das Verhalten, das der Knopf immer
+versprach.
+
+### D30.6 Die Messung
+
+`apps/headless/test/stance.slow.test.ts`: Weltkarte, ausgelieferte Regeln, 200 Spieltage über
+`advanceTicks`; der Mensch spielt eine Macht mit KI-Nachbarn, bekommt beim Aufsetzen eine
+Armee in jede eigene Provinz und gibt danach keinen Befehl. Aus dem Ereignisstrom, nie aus
+dem Ringpuffer:
+
+- **Einmärsche:** `ARMY_INTRUDED` in eine Provinz des Menschen;
+- **beantwortet:** eine eigene Armee erreicht diese Provinz binnen 24 Ticks; *(Korrektur
+  2026-09-13 beim Bau von T-M40-02: auf der Weltkarte unerreichbar — die kürzeste deutsche
+  Binnengrenze braucht für Infanterie 25 Ticks, und der Befehl fällt frühestens einen Tick nach
+  dem Einmarsch. Die 24-Tick-Zahl wird weiter gezählt; zugesichert wird über die Ankunft binnen
+  des **Kartenfensters** — 1 Tick plus die längste Marschzeit über eine eigene Binnengrenze für
+  die aufgestellte Armee, Deutschland 114 Ticks — und über den **Aufbruch** binnen 24 Ticks.
+  `PROBLEME.md`, 2026-09-13.)*
+- **verloren:** `PROVINCE_CAPTURED` aus dem Besitz des Menschen;
+- **abgelehnt:** `COMMAND_REJECTED` für den Menschen.
+
+Vorher (T-M40-02) und nachher (T-M40-06) in `docs/reports/stance.json`. Zugesichert wird
+nachher: beantwortete Einmärsche (Kartenfenster und Aufbruch) anteilig mehr als vorher, null
+Ablehnungen. Die verlorenen
+Provinzen stehen als Zahl im Bericht und nicht als Zusicherung.
+
+*(Korrektur 2026-09-13, T-M40-07, Befund H3 der Durchsicht von M40: diese Messung trägt die
+Abnahme nicht. Ohne Adjutant ist „beantwortet" strukturell null; „beantwortet" heißt nur
+„irgendwann angekommen" — neun beantwortete Einmärsche kamen aus zwei Ankünften —, und im Lauf
+nachher hat die Deckung zwei der drei Verluste selbst verursacht: die Provinzen, die sie geleert
+hatte, fielen ohne Gefecht. Der Anteil beantworteter Einmärsche bleibt als Zahl im Bericht und
+wird **nicht mehr zugesichert** — im Entwurf der Nacharbeit verloren Regeln mit 73–80 %
+„beantwortet" alle Provinzen. Seit T-M40-07 misst `apps/headless/test/stance.slow.test.ts` je
+umkämpfter Episode: Provinz-Tage (Provinzen des Menschen zu Beginn jedes Spieltags, summiert),
+Verluste ohne Gefecht im Tick der Eroberung, Deckung befohlen und vor Gefechtsende angekommen,
+gehalten, Pendelzüge, Ablehnungen und Kriege ohne Erklärung — über die Startzahlen 1914, 2015
+und 1815, je mit einer und mit zwei Armeen je Provinz, Garnison gegen Verteidigung. Der Bericht
+führt den Abschnitt `episoden` und wird nur mit `WORLDWAR_WRITE_REPORT=1` geschrieben (Befund N3).
+Die Zusicherungen dazu kommen mit der neuen D30.4 in T-M40-10.)*
+
+### D30.7 Die Oberfläche
+
+Die Haltungsgruppe im Armeepanel (`STANCES` in `Panels.tsx`, Hinweise in `actions.ts`) führt
+vier Knöpfe: Angriff, Verteidigung, Rückzug, Garnison. Jeder Hinweis sagt, was die Armee **von
+selbst** tut — Angriff „folgt einem weichenden Gegner, der nicht stärker ist",
+Verteidigung „rückt in eine angegriffene eigene Nachbarprovinz nach", Garnison „bleibt stehen".
+Der heutige Hinweis zu Angriff („greift von sich aus an, was in Reichweite kommt") beschreibt
+eine Wirkung, die es nie gab.
+
+*(Neu gefasst am 2026-09-13, T-M40-11, Befunde H2 und M3: die Hinweise sagen auch, was die Haltung
+kostet. Verteidigung „bleibt eingegraben stehen", rückt nur nach, wenn in ihrer Provinz eine weitere
+Armee steht, „allein marschiert sie nie", und nach Marsch oder Rückzug ruht sie — die Dauer aus
+`ADJUTANT_REST_TICKS`. Angriff „kämpft mit Angriffswerten statt eingegraben und marschiert nie von
+selbst". **Anhalten** einer Armee auf Verteidigung schickt `STOP_ARMY` und `SET_STANCE garrison` in
+denselben Tick (`ActionSpec.followUp`), sonst marschierte sie im nächsten wieder los; eine Armee in
+jeder anderen Haltung hält nur an.)*
+
+*(Ergänzt am 2026-09-13, T-M40-13, Befund M3: befiehlt die Automatik einen Marsch, steht im Protokoll
+eine leise Zeile „… rückt von selbst nach … nach." mit Sprung auf die Zielprovinz — ohne Alarmfarbe,
+ohne Meldung in der Leiste, ohne Halt. Sie entsteht aus `AdvanceResult.adjutant` bzw.
+`FastForwardChunkResult.adjutant`, den Befehlen, die `commandsForTick` der Automatik zuschreibt;
+kein Ereignis des Kerns, kein Zustandsfeld, der Golden-Master sieht nichts davon.)*
+
+*(Ergänzt am 2026-09-13, T-M40-14, Befund H-A: auch „Marsch befehlen" schickt für eine Armee auf
+Verteidigung `MOVE_ARMY` und `SET_STANCE garrison` in denselben Tick. Der Marschknopf und die Bestätigung
+sagen es im Hinweis, der Hinweis zur Verteidigung sagt „ruht 5 Tage ab dem Abmarsch, nicht ab der
+Ankunft; ein eigener Marschbefehl stellt sie auf Garnison". Beide Knöpfe mit zwei Befehlen schicken den
+zweiten nur, wenn die Vorprüfung ihn annimmt — den ersten, beim Klick, mit `canApply` gegen den angewandten
+Zustand. Der Kern kann den ersten im Tick trotzdem ablehnen; der zweite gilt dann allein (Randlage in
+`PROBLEME.md`; berichtigt am 2026-09-13, T-M40-19, Befund N-4 — hier stand „wenn der Kern den ersten
+annimmt").)*
+
+*(Ergänzt am 2026-09-13, T-M40-19, Befund N-5: der Folgebefehl sieht auch einen gesammelten, noch nicht
+angewandten Haltungswechsel. Klickt der Spieler bei stehender Uhr „Verteidigung" und danach „Marsch befehlen"
+oder „Anhalten", geht `SET_STANCE garrison` mit; hat er eine Verteidigung eben auf Garnison geklickt, geht
+keiner mit. `garrisonFollowUp` liest die zuletzt gesammelte `SET_STANCE` derselben Armee, und
+`ActionContext.pending` reicht die Sammlung durch — ohne Zustandsfeld und ohne Eingriff in den Kern.)*
+
+### D30.8 Gegenrede und Risiko
+
+- **Dieselbe Haltung heißt bei Mensch und KI Verschiedenes.** Eine KI-Armee auf
+  `defensive` deckt nicht von selbst; sie folgt `military.ts`. Hingenommen und in der
+  Anleitung nicht versteckt.
+- *(Berichtigt 2026-09-13, T-M40-10: der folgende Punkt hat sich als Kern des Schadens erwiesen —
+  zwei der drei Verluste im Messlauf nachher waren entblößte Provinzen, über drei Startzahlen zehn.
+  Seit der neuen D30.4 rückt eine Verteidigung nur aus, wenn in ihrer Provinz eine Armee stehen
+  bleibt; D30.9.)*
+- **Eine deckende Armee entblößt ihre eigene Provinz.** Gewollt: sie marschiert nur aus einer
+  feindfreien Provinz; wer den Posten halten will, wählt `garrison`.
+- **Mehrspieler (M37).** Der Adjutant rechnet aus dem Zustand, also auf beiden Seiten
+  identisch. Er gehört damit zu dem, was D28.5 für die Computergegner vorsieht: beide Seiten
+  berechnen ihn selbst, übertragen werden nur die Befehle der Menschen.
+
+### D30.9 Nacharbeit nach der Durchsicht (2026-09-13)
+
+Die Durchsicht von M40 fand die Automatik nicht abnahmefähig. Hier stehen die Befunde, die Messung,
+die verworfenen Regeln und das Kriterium, unter dem die neue D30.4 bleibt. Bauplan: `03-TASKS.md`
+M40, T-M40-07 bis T-M40-13.
+
+| Befund | Kern | behoben mit |
+|---|---|---|
+| K1 | Beim Vorspulen lief kein Adjutant — Uhr und Vorspulen gaben zwei Partien | T-M40-08: `commandsForTick` ist die eine Befehlsquelle |
+| K2 | Die Verfolgung löste einen Krieg mit einer unbeteiligten Macht aus; Routen führten über fremdes Land | T-M40-09: nur eigenes oder feindliches Land, genau eine Etappe; T-M40-10: keine Verfolgung |
+| H1 | Ein Rückzug wurde bei Sperrende rückgängig gemacht | T-M40-09: fünf Spieltage Ruhe ab `deployDelayUntil` |
+| H2 | „Anhalten" wurde im nächsten Tick überstimmt | T-M40-11: Anhalten stellt auf Garnison |
+| H3 | Der Messlauf trug die Abnahme nicht; die Deckung entblößte | T-M40-07: Messung je Episode; T-M40-10: Regel N |
+| M1 | Doppelte Deckung im Tick eines Spielerbefehls | T-M40-08: die Befehle des Ticks gelten als unterwegs |
+| M2 | `retreating` war Wissen ohne sichtbare Quelle | T-M40-10: entfällt mit der Verfolgung |
+| M3 | Die Hinweise verschwiegen die Folgen, und ein Marsch der Automatik blieb stumm | T-M40-11, T-M40-13 |
+
+**Die Messung** (D30.6, seit T-M40-07): Weltkarte, 200 Spieltage, Deutschland ohne Befehl, die
+Startzahlen 1914, 2015 und 1815, Aufstellung A mit einer Armee aus fünf Infanterie je Provinz und B mit
+zwei, Garnison gegen Verteidigung. Gefechte dauern dort im Median ein bis drei Ticks, eine deutsche
+Binnenetappe 25 bis 113 — mit der Deckung aus M40 kam eine Armee in 9 von 1531 umkämpften Episoden vor
+Gefechtsende an.
+
+**Verworfen** (Entwurf der Nacharbeit, dieselbe Messung; Summen über sechs Paare):
+
+- **die Deckung, wie M40 sie baute:** 3301 von 4140 Provinz-Tagen (79,7 %), 10 Verluste ohne Gefecht —
+  in T-M40-07 Zahl für Zahl nachgemessen;
+- **c1**, Deckung nur bei unbedrohter oder gedeckter Quelle: 92 %, 9 Verluste ohne Gefecht, Pendelzüge;
+- **a**, vorbeugend in leere bedrohte Provinzen bei unbedrohter Quelle: in Aufstellung A 1914 alle
+  Provinzen verloren, zwölf Pendelzüge binnen fünf Tagen — „Quelle unbedroht" ist keine stabile
+  Bedingung, Feinde ziehen schneller heran, als ein Marsch dauert;
+- **b**, Rückeroberung einer Heimatprovinz: holt zurück und verliert wieder, netto schlechter als nichts;
+  unter N ein Anlass in drei Partien, kein belegter Nutzen. Die Datenquelle ohne Zustandsfeld bleibt
+  vorgemerkt — Heimat aus `map.startPositions` und `player.nation`, „kürzlich" aus `occupiedSince`;
+- **die Verfolgung:** in jedem Lauf mit Anlass schädlich (Aufstellung C mit je einer Verteidigung und
+  einem Angriff je Provinz: 13 Armeen am Ende gegen 24 ohne Automatik).
+
+**Gewählt: Regel N** (D30.4) — 4181 Provinz-Tage (101 %), 0 Verluste ohne Gefecht, keine Ablehnung,
+kein Krieg ohne Erklärung. Sie schadet nicht; dass sie hilft, ist nicht belegt. Die vorbeugende
+Teilregel feuerte in der Messung des Entwurfs nie. Die Kostenschranke aus D30.3 greift seitdem enger:
+eine Sicht entsteht nur, wenn eine bereite Verteidigung neben einer weiteren eigenen Armee steht.
+
+**Abnahme und Rücknahmekriterium** (R-UNIT-09/AK5). Die Regel bleibt nur, solange derselbe Messlauf
+zeigt: (1) die Summe der Provinz-Tage mit Verteidigung erreicht mindestens 98 % der Garnison; (2) in
+keinem Paar gehen mit Verteidigung mehr Provinzen ohne Gefecht verloren als mit Garnison; (3) kein
+Befehl wird abgelehnt, keiner löst einen Krieg ohne Erklärung aus. **Die Schwelle 98 % wurde nach der
+Messung des Entwurfs festgelegt** — N lag in einem Einzellauf (1815 B) drei Prozent unter der
+Garnison, deshalb gilt sie für die Summe; eine Schwelle von 100 % kippte die Regel an einer schwachen
+Startzahl. Fällt eine Zusicherung, wird die Regel **zurückgenommen, nicht nachgeschärft**:
+`adjutantCommands` gibt für `defensive` nichts mehr zurück, die Verteidigung kämpft wie die Garnison, und
+die Hinweise sagen das. Dasselbe Kriterium hätte die Deckung aus M40 (79,7 %, 10) und c1 (92 %, 9) rot
+gemeldet.
+
+*(Nachgemessen am 2026-09-13 nach dem Merge von Block N2, `c3ff8be`: 3146 von 3089 Provinz-Tagen
+(101,8 %), in keinem Paar ein Verlust ohne Gefecht, keine Ablehnung, kein Krieg ohne Erklärung — AK5
+hält, die Regel bleibt. Die Kontrolle des Messlaufs, die Garnison A 1914, steht seitdem auf 76
+Einmärschen und 4 verlorenen Provinzen statt auf 52 und 4. N2 hat die Gegner verändert; Karte, Regeln und
+Aufstellung sind unverändert. `PROBLEME.md`, 2026-09-13.)*
+
+**Nicht gebaut.** Ausdrückliche Aufträge („halte Provinz X mit N Armeen, fülle nach", Sammelbefehl)
+und die Rückeroberung — beides eine neue Entscheidung, als offene Frage an Noah in `DECISIONS.md`
+(2026-09-13, T-M40-10).
+
+## D31. Zwischenziele (M35 — R-GAME-08)
+
+Der Entwurf ist T-M35-01 (`docs/plan/FORTSCHRITT.md` §3, 2026-09-12): Zwischenziele sind
+**Rückmeldung, keine Siegbedingung**; `checkVictory` und die Siegschwelle bleiben unberührt,
+R-GAME-02 auch. Hier steht, was gebaut wird, mit drei Korrekturen am Entwurf (datiert in
+`FORTSCHRITT.md` §3) und den Marken, die per Delegation vom 2026-09-13 entschieden sind.
+Anforderung: R-GAME-08. Bauplan: `03-TASKS.md` M35.
+
+### D31.1 Der Zustand
+
+```ts
+export type GoalKey = 'provinces' | 'pointShareFirst' | 'populationShare' | 'pointShareSecond'
+/** Reihenfolge = Reihenfolge der Marken; R-GAME-08/AK6 prüft, dass die Tage so steigen. */
+export const GOAL_KEYS: readonly GoalKey[] = ['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond']
+
+// GameState:
+/** Spieltag, an dem die Macht das Ziel erreicht hat; null = noch offen. Nie zurückgesetzt. */
+goals: Record<PlayerId, Record<GoalKey, number | null>>
+```
+
+**Korrektur 1:** der Entwurf schrieb `state.goals: Record<GoalKey, { reachedOnDay }>` — ohne
+Spielerachse, also ein Ziel für die Partie statt für die Macht. `createInitialState` legt je
+Macht alle vier Schlüssel mit `null` an; `cloneState` kopiert Feld für Feld; `validateState`
+verlangt `goals` als Objekt.
+
+**Nicht in `HASH_OMIT_KEYS`.** Das Feld ist Teil des Spielstands; ein Feld außerhalb des Hashs
+kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt (Entscheid vom
+2026-09-12). Beide Golden-Master verschieben sich deshalb **einmal**, in T-M35-03, begründet.
+
+### D31.2 Die Marken
+
+| Ziel | Konstante | Wert | Status |
+|---|---|---|---|
+| eigene Provinzen | `goalProvinces` | 25 | abgeleitet |
+| Anteil an allen Punkten, erste Marke | `goalPointShareFirstPermille` | 400 | abgeleitet |
+| Anteil an der Weltbevölkerung | `goalPopulationSharePermille` | 350 | abgeleitet |
+| Anteil an allen Punkten, zweite Marke | `goalPointShareSecondPermille` | 600 | abgeleitet |
+
+*Abgeleitet* aus drei ganzen Partien (acht Mächte, Weltkarte): der Sieger erreichte 25
+Provinzen um Tag 120, 400 ‰ an Tag 220–222, 300 ‰ Weltbevölkerung an Tag 274–369 und 600 ‰
+an Tag 365–506; Tabelle und Gegenrede in `DECISIONS.md`, 2026-09-13. Alle vier stehen in
+`constants.json`, in `REQUIRED_CONSTANTS` und in `BALANCING.md`.
+
+*(Korrigiert am 2026-09-13, T-M35-06: die Bevölkerungsmarke steht auf **350 ‰**, nicht 300 ‰. Auf dem Stand nach M35
+gewinnt die ausgelieferte Voreinstellung China, und China erreichte 300 ‰ der Weltbevölkerung drei Tage vor 400 ‰ aller
+Punkte — R-GAME-08/AK6 fiel. Mit 350 ‰ erreicht der Sieger sie an Tag 576 / 337 / 376, jeweils zwischen den beiden
+Punktmarken; Daten und verworfene Wege in `DECISIONS.md`, T-M35-06.)*
+
+**Korrektur 2: „Eine Großmacht ist gefallen" ist verworfen.** Es ist ein Weltereignis, keine
+eigene Leistung — das erste Ausscheiden kam in den drei Partien an Tag 215, 196 und 290,
+gleich, was der Spieler tat —, und `CAPITAL_LOST` trägt nur `playerId`, `provinceId` und
+`penaltyUntilTick`, keinen Eroberer. Der Kandidat „stärkste Macht eines Kontinents" war schon
+im Entwurf verworfen (die Karte kennt keinen Kontinent).
+
+### D31.3 Die Prüfung im Tagestick
+
+Eine reine Funktion in `packages/core/src/rules/goals.ts` rechnet je Macht die vier Stände:
+
+- **Provinzen:** Zahl der Provinzen mit `owner === playerId`;
+- **Punktanteil:** `player.score` gegen die Summe aller `player.score`, in Promille — dieselben
+  Zahlen, die `dailyTick` gerade gesetzt hat, kein zweiter Aufruf von `scoreOf`;
+- **Bevölkerungsanteil:** Summe `province.population` der eigenen Provinzen gegen die Summe
+  aller Provinzen, in Promille.
+
+`dailyTick` ruft sie **nach** der Punktberechnung und **vor** `checkVictory`, nur für lebende
+Mächte. Ein Ziel mit `null`, dessen Stand die Marke erreicht, bekommt den Spieltag
+(`Math.trunc(tick / ticksPerDay)`, derselbe Wert wie im `DAY_REPORT`). Ein gesetzter Tag wird
+nie zurückgesetzt. Zufall wird nicht verbraucht.
+
+### D31.4 Das Ereignis
+
+`GOAL_REACHED { playerId, goal: GoalKey, day }`, `audience: [playerId]` (damit auch
+`concerns`), Schwere `info`. **Nicht** in `ALERT_TYPES` — es hält das Vorspulen nicht an —
+und **nicht** in `WORLD_EVENT_TYPES`: ein Zwischenziel ist keine Weltnachricht. Die
+Oberfläche beschreibt es in `apps/desktop/src/game/events.ts` und `de.ts`.
+
+### D31.5 Die Migration 2 → 3 (Korrektur 3)
+
+Der Entwurf sagte „eine Migration nach R-GAME-05". Konkret:
+
+1. **Zuerst** `packages/core/test/golden/save-v2.json` einfrieren — ein echter Stand der
+   Stufe 2, mit dem heutigen `serialise` erzeugt, **bevor** sich irgendein Zustandsfeld
+   ändert, und danach nie wieder neu erzeugt (Muster `save-v1.json`, D19.5).
+2. `toVersion3` legt `goals` für jede Macht in `playerOrder` mit vier `null` an und setzt
+   `schemaVersion` in Umschlag und Zustand auf 3. `ADDED_IN_VERSION_3 = ['schemaVersion',
+   'goals']`.
+3. Der Formatwächter in `migration-v1.test.ts` hält heute `highestMigration() === 1` und
+   `SCHEMA_VERSION === 2` als Literale. Er wird **begründet** umgeschrieben: die Regel „ein
+   Schritt je Meilenstein" (Entscheid vom 2026-09-06) bleibt und wird als Liste Stufe →
+   Meilenstein geprüft; die eingefrorene Schlüsselliste bekommt `goals`.
+
+Ein alter Stand, der eine Marke schon überschritten hat, trägt beim ersten Tageswechsel nach
+dem Laden **diesen** Tag ein. Der Tag stimmt dann nicht, das Ziel schon — hingenommen; die
+Alternative wäre, Tage zu erfinden.
+
+**M17 nimmt danach Stufe 4** (D29.10): der eingefrorene Stand heißt dort `save-v3.json`.
+
+### D31.6 Sicht und Anzeige
+
+`publicView` führt `self.goals`: je Ziel Marke, eigener Stand und Tag des Erreichens — **nur
+die eigenen**. Quelle nach R-DIP-04: die Rangliste zeigt die Punkte aller Mächte ohnehin
+(`others[].score`), und die Weltbevölkerung ist eine Summe ohne Ort. Die Marken kommen aus den
+Regeln; `self.goals` entsteht deshalb wie `self.economy` nur, wenn `publicView` die `rules`
+bekommt.
+
+Die Rangliste (`Standings.tsx`) zeigt darunter vier Zeilen: Zeichen, Satz, bei offenem Ziel
+der Abstand zur Marke, bei erreichtem der Spieltag. Kein neues Panel, kein leerer Kasten.
+
+### D31.7 Risiko
+
+- **Die Marken stammen aus KI-Partien mit immer demselben Sieger.** Ein Mensch mit den USA
+  (vier Provinzen, 93 ‰ zu Beginn) steht anders da. T-M35-06 misst eine zweite Startzahl als
+  Zahl mit.
+- **Zwei der vier Ziele sind Punktanteile.** Sie sind dünn, aber die einzigen, die bei jeder
+  Aufstellung gleich weit tragen; eine absolute Provinzzahl erreicht man mit weniger Gegnern
+  früher — hingenommen.
+- **R-GAME-02 bleibt unberührt**, und wer Zwischenziele später zu Siegbedingungen machen will,
+  ändert die Anforderung begründet, wie T-M34-02 es mit R-TECH-01 tat.

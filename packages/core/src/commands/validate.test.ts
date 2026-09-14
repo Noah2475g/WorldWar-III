@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { GameEvent } from '../events/types'
 import type { PhaseContext } from '../phases/index'
 import { createInitialState, type GameConfig } from '../state/create'
-import { HASH_OMIT_KEYS, type GameState } from '../state/types'
+import { HASH_OMIT_KEYS, STANCE_VALUES, type GameState } from '../state/types'
 import { step } from '../step'
 import '../commands/handlers'
 import { applyCommand, canApply } from './registry'
@@ -111,6 +111,31 @@ describe('R-ARCH-02 Haltung einer Armee setzen', () => {
     const command: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'defensive' }
     expect(applyCommand(state, command, ctx).ok).toBe(true)
     expect(state.armies['a1']!.stance).toBe('defensive')
+  })
+
+  it('kennt vier Haltungen und nimmt jede an, auch die Garnison (R-UNIT-09/AK3)', () => {
+    expect(STANCE_VALUES).toEqual(['aggressive', 'defensive', 'retreat', 'garrison'])
+    for (const stance of STANCE_VALUES) {
+      const command: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance }
+      expect(applyCommand(state, command, ctx), stance).toEqual({ ok: true })
+      expect(state.armies['a1']!.stance).toBe(stance)
+    }
+  })
+
+  it('lehnt eine unbekannte Haltung ab, statt sie in den Zustand zu schreiben (R-UNIT-09/AK3)', () => {
+    // Im Einzelspieler erzeugt die Oberflaeche keinen falschen Wert. Im Gleichschritt (D28)
+    // kommt ein Befehl aber von einem zweiten Rechner, und bis T-M40-01 setzte der Handler
+    // jeden Wert ungeprueft.
+    const before = hashOf(state)
+    const command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'kavallerie' } as unknown as Command
+
+    expect(applyCommand(state, command, ctx)).toEqual({
+      ok: false,
+      code: 'INVALID_TARGET',
+      detail: { reason: 'unbekannte Haltung' },
+    })
+    expect(state.armies['a1']!.stance).toBe('aggressive')
+    expect(hashOf(state)).toBe(before)
   })
 })
 

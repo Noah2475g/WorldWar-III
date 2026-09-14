@@ -1,4 +1,14 @@
-import { fastForward, createInitialState, type GameConfig } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
+import {
+  HASH_OMIT_KEYS,
+  fastForward,
+  createInitialState,
+  planRoute,
+  type GameConfig,
+  type GameEvent,
+  type GameState,
+} from '@worldwar/core'
+import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CHUNK_TICKS, fastForwardChunk } from './fastForward.ts'
@@ -152,5 +162,117 @@ describe('R-AI-07 Die KI behaelt ihr Gedaechtnis beim Vorspulen', () => {
 
     expect(Object.keys(result.state.ai), 'die KI hat kein Gedaechtnis im Zustand').toContain('p2')
     expect(result.state.ai['p2']).toBeDefined()
+  })
+})
+
+/**
+ * Vorspulen und Uhr geben dieselbe Partie (T-M40-08, Befund K1 der Durchsicht M40).
+ *
+ * Die Uhr rechnet ueber `advanceTicks`, das Vorspulen ueber den Kern mit `commandSource`. Bis
+ * T-M40-08 fragte `commandSource` nur die KI: der Adjutant lief beim Vorspulen nie, und dieselbe
+ * Lage ergab ueber die zwei Wege zwei Partien (Beleg S1 der Durchsicht: ein Aufbruch gegen
+ * keinen). Der Vergleich oben mit dem Kern ohne KI konnte das nicht sehen.
+ */
+describe('R-UNIT-09/AK4 Vorspulen und Uhr geben dieselben Befehle (T-M40-08)', () => {
+  const TICKS = 150
+
+  /** Nordland (Mensch) haelt n1, n2 und n3 mit Verteidigern, zwei davon in n3; Ostmark marschiert von m1 auf n2. */
+  function lage(): GameState {
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    // Mitten in der Partie: eine Automatik, die nach einem Marsch ruht, darf hier schon handeln.
+    state.tick = 200
+    for (const at of ['n1', 'n2', 'n3', 'n3']) {
+      placeArmy(state, { owner: 'p1', at, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+    }
+    const angreifer = placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 30_000 }] })
+    const route = planRoute(state, angreifer, 'n2', map, TEST_RULES)!
+    angreifer.path = route.path
+    angreifer.departureTick = state.tick
+    angreifer.arrivalTick = route.arrivalTick
+    return state
+  }
+
+  const aufbrueche = (events: readonly GameEvent[]): string[] =>
+    events.filter((event) => event.type === 'ARMY_DEPARTED' && event.playerId === 'p1').map((event) => JSON.stringify(event))
+
+  it('laeuft ueber jeden Halt weiter und endet mit denselben Aufbruechen und demselben Hash', () => {
+    const uhr = advanceTicks(lage(), TICKS, ctx)
+
+    // So reiht die Oberflaeche die Haeppchen aneinander: nach jedem Halt weiter bis zum Ziel.
+    let current = lage()
+    let gelaufen = 0
+    const events: GameEvent[] = []
+    const halte: string[] = []
+    while (gelaufen < TICKS) {
+      const rest = TICKS - gelaufen
+      const result = fastForwardChunk(current, { target: { kind: 'ticks', ticks: rest }, alertsFor: 'p1', maxTicks: TICKS }, ctx, rest)
+      current = result.state
+      gelaufen += result.ticksRun
+      events.push(...result.events)
+      halte.push(result.stoppedBy)
+    }
+
+    const ueberDieUhr = aufbrueche(uhr.events)
+    expect(ueberDieUhr.length, 'ueber die Uhr ist der Mensch nie aufgebrochen - der Vergleich misst nichts').toBeGreaterThan(0)
+    expect(halte, 'das Vorspulen hielt an keinem Alarm - der Weg ueber mehrere Haeppchen ist ungeprueft').toContain('alert')
+    expect(aufbrueche(events)).toEqual(ueberDieUhr)
+    expect(hashValue(current, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(uhr.state, { omitKeys: HASH_OMIT_KEYS }))
+  })
+
+  it('liefert aus jedem Haeppchen die Befehle der Automatik, dieselben wie die Uhr (T-M40-13)', () => {
+    // Daraus schreibt die Oberflaeche die leise Zeile „rueckt von selbst nach" — auch beim Vorspulen.
+    const uhr = advanceTicks(lage(), TICKS, ctx)
+
+    let current = lage()
+    let gelaufen = 0
+    const automatik: { tick: number; command: unknown }[] = []
+    while (gelaufen < TICKS) {
+      const rest = TICKS - gelaufen
+      const result = fastForwardChunk(current, { target: { kind: 'ticks', ticks: rest }, alertsFor: 'p1', maxTicks: TICKS }, ctx, rest)
+      current = result.state
+      gelaufen += result.ticksRun
+      automatik.push(...result.adjutant)
+    }
+
+    expect(uhr.adjutant.length, 'die Automatik hat ueber die Uhr nichts befohlen - der Vergleich misst nichts').toBeGreaterThan(0)
+    expect(automatik).toEqual(uhr.adjutant)
+  })
+})
+
+/**
+ * Das Ziel gilt fuer den ganzen Lauf, nicht je Haeppchen (T-M41-15, Nebenbefund 1 aus T-M41-13).
+ *
+ * `fastForwardChunk` ruft fuer jedes Haeppchen den Kern neu, und der zaehlt ein Tickziel ab dem
+ * Beginn DIESES Aufrufs. Die Oberflaeche reiht Haeppchen aneinander, solange eines am Deckel endet —
+ * ein Ziel ueber mehr als ein Haeppchen trat also nie ein, und der Lauf hielt erst an der Obergrenze
+ * von 30 Spieltagen. Heute verdeckt, weil ein Vorspulen um einen Tag genau ein Haeppchen ist.
+ */
+describe('R-TIME-06/AK4 Das Vorspulziel gilt fuer den ganzen Lauf (T-M41-15)', () => {
+  const MAX = 30 * TEST_RULES.constants.ticksPerDay
+
+  /** So reiht `App.tsx` die Haeppchen aneinander: weiter, solange eines am Deckel endet. */
+  function lauf(target: Parameters<typeof fastForwardChunk>[1]['target']): { gelaufen: number; halt: string } {
+    let state = createInitialState(CONFIG, ctx)
+    let gelaufen = 0
+    for (;;) {
+      const result = fastForwardChunk(
+        state,
+        { target, alertsFor: 'p1', maxTicks: MAX, chunkTicks: DEFAULT_CHUNK_TICKS, ticksRunBefore: gelaufen },
+        ctx,
+        MAX - gelaufen,
+      )
+      state = result.state
+      gelaufen += result.ticksRun
+      if (result.stoppedBy !== 'limit' || gelaufen >= MAX) return { gelaufen, halt: result.stoppedBy }
+    }
+  }
+
+  it('haelt ein Ziel von 48 Ticks nach 48 Ticks am Ziel, nicht an der Obergrenze von 720', () => {
+    expect(lauf({ kind: 'ticks', ticks: 48 })).toEqual({ gelaufen: 48, halt: 'target' })
+  })
+
+  it('haelt ein Ziel von zwei Spieltagen nach zwei Spieltagen am Ziel', () => {
+    expect(lauf({ kind: 'days', days: 2 })).toEqual({ gelaufen: 2 * TEST_RULES.constants.ticksPerDay, halt: 'target' })
   })
 })

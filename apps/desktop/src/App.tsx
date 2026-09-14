@@ -15,8 +15,9 @@ import {
   type StopReason,
   type StoragePort,
 } from '@worldwar/core'
-import { advance } from './game/advance.ts'
+import { advanceStep } from './game/advance.ts'
 import { RESUME_SPEED } from './game/speed.ts'
+import { clockStep } from './game/clock.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
 import {
   armyActions,
@@ -74,7 +75,15 @@ import {
 } from './ui/Dialogs.tsx'
 import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
-import { dayExpenses, dayReportBody, dayReportDeltas, describeEvent, openIntrusion, priceSeries } from './game/events.ts'
+import {
+  adjutantMarchEntries,
+  dayExpenses,
+  dayReportBody,
+  dayReportDeltas,
+  describeEvent,
+  openIntrusion,
+  priceSeries,
+} from './game/events.ts'
 import { advanceWithTrace } from './game/advance.ts'
 import { durationDative } from './ui/format.ts'
 import { createStorage } from './storage/createStorage'
@@ -206,6 +215,35 @@ export function App(props: AppProps) {
   stateRef.current = state
 
   /**
+   * Einen gerechneten Stand zurueckschreiben — Spiegel UND Zustand (T-M41-17).
+   *
+   * Bis zum 2026-09-14 schrieb `step` nur `setState(result.state)`. `stateRef.current`
+   * wurde ausschliesslich im Render nachgezogen, also erst nach dem naechsten Commit von
+   * React. Kam das naechste Bild vorher — im Entwicklungsbau der Regelfall, weil ein
+   * Commit dort teuer ist und `StrictMode` doppelt rendert —, rechnete es noch einmal aus
+   * demselben Stand und ueberschrieb das Ergebnis des vorigen, statt es fortzusetzen.
+   * Gemessen am Dev-Server (Sichtpruefung vom 2026-09-14, Punkt 1): 127 Bilder,
+   * `clockStep` verlangte 635 Ticks, angekommen sind 325; 65 Commits, jeder genau 5 Ticks
+   * — die Kappe eines einzigen Bildes. Dieselbe Partie im gebauten Buendel verlor nichts.
+   *
+   * Der Updater `setState((s) => advance(s, …))` waere die andere Reparatur und ist hier
+   * die falsche: dieses Haus hat die Rechnung zweimal ABSICHTLICH aus dem Updater geholt
+   * (T-M22-05 und der Befund vom 2026-09-08 im Vorspulen). Ein Updater muss pur sein,
+   * StrictMode ruft ihn doppelt, und an derselben Rechnung haengen `noteTrace`,
+   * `noteMarches` und die eingesammelten Befehle. Der Spiegel, den der Schritt selbst
+   * fortschreibt, ist dagegen genau das Muster, das die Huelle schon zweimal fuehrt:
+   * `pendingRef` neben `pendingCommands`, und das Vorspulen, das seinen Stand von
+   * Haeppchen zu Haeppchen von Hand weiterreicht.
+   *
+   * Die Zuweisung im Render bleibt: sie ist der Abgleich mit dem, was React wirklich
+   * haelt, und schreibt denselben Wert noch einmal.
+   */
+  const commitState = useCallback((next: GameState | null) => {
+    stateRef.current = next
+    setState(next)
+  }, [])
+
+  /**
    * Die Karte der laufenden Partie (T-M12-08).
    *
    * Vorher gab es sie nicht: alles las die feste `props.map`, waehrend der Dialog
@@ -240,6 +278,25 @@ export function App(props: AppProps) {
   const [seenTick, setSeenTick] = useState(-1)
   /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
   const [alarmSeenTick, setAlarmSeenTick] = useState(-1)
+  /**
+   * Weggeklickte Ankuendigungen und Freischaltungen (T-M41-12): Kennung → Tick des Klicks.
+   * Ein Klick gilt bis zum Ende dieses Spieltags und nur ab dem Tick, an dem er fiel — ein
+   * frueherer Stand, geladen oder neu, zeigt die Meldung wieder.
+   */
+  const [dismissedAlerts, setDismissedAlerts] = useState<ReadonlyMap<string, number>>(() => new Map())
+  /**
+   * Was die Automatik zuletzt von selbst marschieren liess (T-M40-13, Befund M3 der Durchsicht von M40).
+   *
+   * Aus den Befehlen, die `commandsForTick` der Automatik zuschreibt — ueber die Uhr wie ueber das
+   * Vorspulen —, nicht aus einem Ereignis des Kerns: der Zustand, sein Hash und die Golden-Master
+   * sehen davon nichts. Deshalb auch kein Teil des Spielstands; Laden und neue Partie leeren es.
+   */
+  const [adjutantMarches, setAdjutantMarches] = useState<readonly { tick: number; command: Command }[]>([])
+  const noteMarches = useCallback((entries: readonly { tick: number; command: Command }[]) => {
+    if (entries.length === 0) return
+    // So viele wie das Protokoll Zeilen vorhaelt (LOG_LINES) — aeltere fielen dort ohnehin heraus.
+    setAdjutantMarches((old) => [...old, ...entries].slice(-40))
+  }, [])
   const [slots, setSlots] = useState<readonly SlotInfo[]>([])
   /** Der juengste Stand fuer "Weiterspielen (Tag N)" (T-M22-04, Befund V2-04). */
   const [resume, setResume] = useState<LatestSave | null>(null)
@@ -475,10 +532,16 @@ export function App(props: AppProps) {
       })
   }, [state, autosave, ui.settings.autosaveMinutes, ticksPerDay, storage, now, timeline])
 
+  /**
+   * Die gesammelten Befehle als Liste (T-M40-19, Befund N-5): der Folgebefehl der Garnison sieht einen Klick auf
+   * „Verteidigung", der bei stehender Uhr noch wartet.
+   */
+  const pendingOrders = useMemo(() => pendingCommands.map((entry) => entry.command), [pendingCommands])
+
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
-    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay } : null),
-    [state, activeMap, props.rules, ticksPerDay],
+    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay, pending: pendingOrders } : null),
+    [state, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
@@ -576,7 +639,12 @@ export function App(props: AppProps) {
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
-    const aus = alertsFor(view, props.rules)
+    const aus = alertsFor(view, props.rules).filter((alert) => {
+      const weggeklickt = dismissedAlerts.get(alert.id)
+      if (weggeklickt === undefined || !view) return true
+      // Nur am selben Spieltag und nicht vor dem Klick (T-M41-12).
+      return view.tick < weggeklickt || Math.floor(view.tick / ticksPerDay) !== Math.floor(weggeklickt / ticksPerDay)
+    })
     // Kein dauerhafter Speicher? Dann erfaehrt es der Spieler jetzt und nicht beim
     // naechsten Start (T-M14-08). Ein stiller Rueckfall auf den Arbeitsspeicher war
     // genau der Zustand, den diese Aufgabe behebt.
@@ -584,7 +652,7 @@ export function App(props: AppProps) {
       aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
     }
     return aus
-  }, [view, chosen])
+  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -655,7 +723,11 @@ export function App(props: AppProps) {
       const current = stateRef.current
       if (!current) return
       if (!debugOn) {
-        setState(advance(current, ticks, { map: activeMap, rules: props.rules }, commands))
+        const result = advanceStep(current, ticks, { map: activeMap, rules: props.rules }, commands)
+        noteMarches(result.adjutant)
+        // Ueber `commitState`, nicht `setState`: das naechste Bild kann kommen, bevor React
+        // eingespielt hat, und muss auf DIESEM Stand weiterrechnen (T-M41-17).
+        commitState(result.state)
         return
       }
       const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
@@ -664,9 +736,10 @@ export function App(props: AppProps) {
         commands: result.applied.map((entry) => entry.command),
         explanations: result.explanations,
       })
-      setState(result.state)
+      noteMarches(result.adjutant)
+      commitState(result.state)
     },
-    [activeMap, props.rules, debugOn, noteTrace, takePending, now],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now, commitState],
   )
 
   /**
@@ -722,16 +795,22 @@ export function App(props: AppProps) {
           return
         }
 
+        // Der Stand reist mit (T-M41-15): ein Zählziel gilt für den ganzen Lauf, nicht je Häppchen.
         const result = fastForwardChunk(
           current,
-          { ...request, playerCommands },
+          { ...request, playerCommands, ticksRunBefore: ticksRun },
           { map: activeMap, rules: props.rules },
           MAX_FAST_FORWARD_TICKS - ticksRun,
           debugOn ? noteTrace : undefined,
         )
         playerCommands = []
         ticksRun += result.ticksRun
-        setState(result.state)
+        // Was die Automatik in diesem Häppchen befahl, ins Protokoll (T-M40-13).
+        noteMarches(result.adjutant)
+        // Der Spiegel zieht mit (T-M41-17). Das naechste Haeppchen bekommt seinen Stand
+        // ohnehin von Hand; aber ein Vorspulen, das mitten im Lauf endet, darf `stateRef`
+        // nicht auf dem Stand vor dem letzten Haeppchen zuruecklassen.
+        commitState(result.state)
 
         // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
         // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
@@ -747,14 +826,24 @@ export function App(props: AppProps) {
       const start = stateRef.current
       if (start) chunk(start)
     },
-    [activeMap, props.rules, debugOn, noteTrace, takePending],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
   )
 
-  // The clock. Deliberately capped at two ticks per frame: when the machine cannot
-  // keep up the rate drops, but no backlog builds that would freeze the game later
-  // (design D5).
+  // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
+  // when the machine cannot keep up the rate drops, but no backlog builds that would
+  // freeze the game later — and, unlike the old `Math.min(2, …)`, the fraction of a tick
+  // survives the cap: speed 100 is 100 ticks per second at 30, 60 or 144 frames.
+  //
+  // The loop must not restart on every tick. Until 2026-09-13 it depended on `state`:
+  // every step set a new state, the effect restarted, and `owed` began again at zero.
+  // Measured under jsdom (App.test.tsx, T-M41-04), speed 100 at 60 frames ran 60 game
+  // hours per second and speed 50 at 30 frames ran 30. It now depends only on the speed
+  // and on whether a game runs, and reaches the current `step` through a ref.
+  // `hasGame` is the same flag the stall display above uses.
+  const stepRef = useRef(step)
+  stepRef.current = step
   useEffect(() => {
-    if (speed === 0 || !state) return
+    if (speed === 0 || !hasGame) return
     let running = true
     let last = performance.now()
     let owed = 0
@@ -762,20 +851,17 @@ export function App(props: AppProps) {
     const frame = () => {
       if (!running) return
       const now = performance.now()
-      owed = Math.min(2, owed + ((now - last) / 1000) * speed)
+      const next = clockStep(owed, now - last, speed)
       last = now
-      const due = Math.floor(owed)
-      if (due > 0) {
-        owed -= due
-        step(due)
-      }
+      owed = next.owed
+      if (next.due > 0) stepRef.current(next.due)
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
     return () => {
       running = false
     }
-  }, [speed, state, step])
+  }, [speed, hasGame])
 
   /**
    * Einen Befehl abschicken (T-M22-05, Befund V2-08).
@@ -788,8 +874,8 @@ export function App(props: AppProps) {
    * ausloesenden Knopf bis dahin die Quittung zeigen.
    */
   const send = useCallback(
-    (command: Command, actionId?: string) => {
-      if (!state || !ctx) return
+    (command: Command, actionId?: string): boolean => {
+      if (!state || !ctx) return false
       const result = canApply(state, command, {
         map: activeMap,
         rules: props.rules,
@@ -798,10 +884,11 @@ export function App(props: AppProps) {
       })
       if (!result.ok) {
         dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
-        return
+        return false
       }
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
+      return true
     },
     [state, ctx, activeMap, props.rules],
   )
@@ -834,7 +921,11 @@ export function App(props: AppProps) {
           setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
-          send(spec.command, spec.id)
+          // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
+          // Garnison. Beide gehen in denselben naechsten Tick, in der Reihenfolge des Knopfs — der zweite
+          // nur, wenn die Vorpruefung in `send` den ersten annimmt (T-M40-14). Der Kern kann den ersten im
+          // Tick trotzdem ablehnen; der zweite gilt dann allein (Befund N-4, PROBLEME.md).
+          if (send(spec.command, spec.id) && spec.followUp) send(spec.followUp, spec.id)
         }
       },
     }),
@@ -877,6 +968,8 @@ export function App(props: AppProps) {
         mode: ui.mode,
         typing: isTypingTarget(event.target),
         dialogOpen: dialog !== null,
+        // Waehrend eines Laufs keine Uhr und kein zweiter Lauf (T-M41-13).
+        fastForwarding: fastForwardState.running,
       })
       if (!shortcut) return
       event.preventDefault()
@@ -955,7 +1048,23 @@ export function App(props: AppProps) {
 
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [speed, ui.mode, ui.view, ui.settings.maxSpeed, dialog, step, ticksPerDay, activeMap, state, targeting, tutor])
+  }, [
+    speed,
+    ui.mode,
+    ui.view,
+    ui.settings.maxSpeed,
+    dialog,
+    step,
+    ticksPerDay,
+    activeMap,
+    state,
+    targeting,
+    tutor,
+    fastForwardState.running,
+    // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
+    // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
+    fastForwardRun,
+  ])
 
   useEffect(() => {
     if (dialog !== 'saves') return
@@ -1003,7 +1112,10 @@ export function App(props: AppProps) {
           // vorigen Partie schon Tag 30 quittiert war (Durchsicht vom 2026-09-11).
           setAlarmSeenTick(-1)
           setSeenTick(-1)
-          setState(result.state)
+          setDismissedAlerts(new Map())
+          // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
+          setAdjutantMarches([])
+          commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
           setDialog(null)
@@ -1015,7 +1127,7 @@ export function App(props: AppProps) {
         setSlots(await listSlots(storage, ticksPerDay))
       })
     },
-    [storage, ticksPerDay, mapById, now],
+    [storage, ticksPerDay, mapById, now, commitState],
   )
 
   /**
@@ -1037,7 +1149,9 @@ export function App(props: AppProps) {
     // zaehlen in Ticks, und die beginnen in der neuen Partie wieder vorne.
     setAlarmSeenTick(-1)
     setSeenTick(-1)
-    setState(fresh)
+    setDismissedAlerts(new Map())
+    setAdjutantMarches([])
+    commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
     // and the chosen interval never applies.
@@ -1055,7 +1169,7 @@ export function App(props: AppProps) {
       })
     }
     setDialog(null)
-  }, [options, mapById, props.rules, now])
+  }, [options, mapById, props.rules, now, commitState])
 
   /**
    * Der Startdialog, EINMAL beschrieben: vor der ersten Partie steht er hinter dem
@@ -1204,7 +1318,7 @@ export function App(props: AppProps) {
     const jüngste = new Set(alle.slice(-LOG_LINES))
     for (const event of worldEventsIn(alle).slice(-LOG_LINES)) jüngste.add(event)
 
-    return alle
+    const zeilen = alle
       .filter((event) => jüngste.has(event))
       .reverse()
       .map((event, index) => {
@@ -1217,7 +1331,16 @@ export function App(props: AppProps) {
           ? { ...entry, body: report.lines, deltas: report.deltas }
           : entry
       })
-  }, [state, activeMap, nameOf, ticksPerDay, dayBodies])
+
+    // Die Märsche der Automatik als leise Zeilen (T-M40-13, Befund M3): Rubrik Kampf, Sprung auf das
+    // Ziel, keine Alarmfarbe. Sie stammen aus den Befehlen der Schleife, nicht aus dem Protokoll des Kerns.
+    const maersche: EventEntry[] = adjutantMarchEntries(adjutantMarches, {
+      army: (armyId) => state.armies[armyId]?.name ?? armyId,
+      province: (provinceId) => activeMap.provinces.find((province) => province.id === provinceId)?.name ?? provinceId,
+    })
+    // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
+    return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
+  }, [state, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
    * Der Zustands-Hash der Debug-Ansicht (T-M12-10).
@@ -1360,7 +1483,11 @@ export function App(props: AppProps) {
       ? {
           ...toAction(confirmSpec),
           onRun: () => {
-            if (confirmSpec.command) send(confirmSpec.command, confirmSpec.id)
+            // Ein eigener Marschbefehl haelt fest (T-M40-14): eine Verteidigung geht mit dem Marsch auf
+            // Garnison — der zweite Befehl nur, wenn die Vorpruefung in `send` den Marsch annimmt (Befund N-4).
+            if (confirmSpec.command && send(confirmSpec.command, confirmSpec.id) && confirmSpec.followUp) {
+              send(confirmSpec.followUp, confirmSpec.id)
+            }
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
           },
@@ -1511,7 +1638,11 @@ export function App(props: AppProps) {
               dispatch({ type: 'selectProvince', id })
             }}
           />
-          <Alerts alerts={alerts} onJump={jumpTo} />
+          <Alerts
+            alerts={alerts}
+            onJump={jumpTo}
+            onDismiss={(id) => setDismissedAlerts((old) => new Map(old).set(id, view.tick))}
+          />
           {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
             <ProvincePanel
@@ -1688,7 +1819,7 @@ export function App(props: AppProps) {
             // Der Weg zurueck zum Startdialog (T-M14-10, Befund 37; berichtigt T-M12-04
             // nach dem Playtest vom 2026-09-06).
             //
-            // `setState(null)` ist der Kern der Sache, nicht Aufraeumen: den
+            // `commitState(null)` ist der Kern der Sache, nicht Aufraeumen: den
             // NewGameDialog zeichnet genau EINE Stelle, und die liegt hinter dem
             // Fruehausstieg `if (!state || !view || !ctx)` weiter oben. Der Hauptbaum
             // kennt nur 'settings', 'saves' und 'keys'. Ohne diese Zeile war
@@ -1699,7 +1830,7 @@ export function App(props: AppProps) {
             // Die Flagge muss zurueck auf false, sonst meldet die ZWEITE Partie ihr
             // eigenes Ende nie: sie wird sonst nirgends zurueckgesetzt.
             setVictoryAcknowledged(false)
-            setState(null)
+            commitState(null)
             setDialog('new')
           }}
         />

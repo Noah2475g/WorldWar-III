@@ -221,6 +221,20 @@ export interface RuleConstants {
   scorePopulationPer1000: number
   scoreBuildingLevel: number
   scoreUnit: number
+
+  // Die vier Marken der Zwischenziele (R-GAME-08, D31.2, T-M35-02).
+  //
+  // Rückmeldung, keine Siegbedingung: `checkVictory` liest keine davon. Die Reihenfolge der
+  // Felder ist die Reihenfolge, in der eine Macht sie in einer ganzen Partie erreichen soll
+  // (R-GAME-08/AK6). Alle vier *abgeleitet* aus drei ganzen Partien (DECISIONS.md, 2026-09-13).
+  /** Zahl eigener Provinzen. */
+  goalProvinces: number
+  /** Anteil an allen Punkten, erste Marke, in Promille. */
+  goalPointShareFirstPermille: number
+  /** Anteil an der Weltbevölkerung, in Promille. */
+  goalPopulationSharePermille: number
+  /** Anteil an allen Punkten, zweite Marke, in Promille. */
+  goalPointShareSecondPermille: number
 }
 
 export interface Rules {

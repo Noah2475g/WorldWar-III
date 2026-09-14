@@ -5,7 +5,8 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { playtestStatus } from './playtest-sheet.mjs'
-import { CRITERIA, artefactUnchangedSince, gaugeStatus, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { CRITERIA, GAUGES, STANCE_SOURCES, artefactUnchangedSince, describeCriterion, durationText, measurementOf, v1Failures } from './acceptance-criteria.mjs'
+import { gaugeFreshness, stanceFreshness } from './freshness.mjs'
 
 const execAsync = promisify(exec)
 
@@ -140,36 +141,36 @@ run(
   'pnpm vitest run --config vitest.slow.config.ts packages/core/test/perf apps/desktop/src/map/render.bench.slow.test.ts',
 )
 
-// Der Frische-Wächter: Parameterlauf und Turnier laufen nicht mehr je Abnahme —
-// aber ihre Berichte dürfen nicht älter sein als die Regeln, die sie vermessen.
-const commitTime = (path) => {
-  try {
-    const out = execSync(`git log -1 --format=%ct -- ${path}`, { cwd: ROOT, encoding: 'utf8' }).trim()
-    return out ? Number(out) : null
-  } catch {
-    return null
-  }
-}
-const rulesDirty = (() => {
-  try {
-    return execSync('git status --porcelain -- data/rules', { cwd: ROOT, encoding: 'utf8' }).trim().length > 0
-  } catch {
-    return true
-  }
-})()
-const rulesChangedAt = commitTime('data/rules')
-for (const gauge of [
-  { name: 'Parameterlauf', report: 'docs/reports/balance-sweep.md', command: 'pnpm balance:sweep' },
-  { name: 'Turnier', report: 'docs/reports/ai-tournament-run.md', command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts' },
-]) {
-  const status = gaugeStatus({ rulesChangedAt, gaugeChangedAt: commitTime(gauge.report), rulesDirty })
+// Der Frische-Wächter: Parameterlauf und Turnier laufen nicht mehr je Abnahme — aber seit dem Commit
+// ihres Berichts darf auf HEAD kein Commit an ihren Quellen liegen (GAUGES; beim Turnier seit dem
+// 2026-09-13 auch KI und Kern). Seit T-M40-17 nach Abstammung statt nach Commit-Zeit (Befund M-1: der
+// Merge eines älteren Seitencommits machte ihn grün). Das Turnier urteilt seit der Nacharbeit zu 8c8c8f6 nach
+// der Messzeile seines Berichts: ein zeilengleicher Neulauf hat keinen Commit (GAUGES, judgedBy).
+for (const gauge of GAUGES) {
+  const status = gaugeFreshness(ROOT, gauge)
   check(
     'MESSGERAET',
-    `${gauge.name} ist frischer als die letzte Regeländerung (${gauge.report})`,
+    gauge.judgedBy === 'measuredAtCommit'
+      ? `${gauge.name}: sauber gemessen, seit dem Messcommit kein Commit an ${gauge.sources.join(', ')} (${gauge.report})`
+      : `${gauge.name}: seit dem Bericht kein Commit an ${gauge.sources.join(', ')} (${gauge.report})`,
     status.fresh,
-    status.fresh ? status.reason : `${status.reason} — bitte ${gauge.command} laufen lassen`,
+    status.fresh ? status.reason : `${status.reason} — bitte ${gauge.command} laufen lassen und ${gauge.report} einchecken`,
   )
 }
+
+// Der Haltungs-Messlauf (T-M40-16, Befund M-B; T-M40-17): stance.slow faehrt zwoelf Partien und laeuft
+// deshalb nicht je Abnahme. Der eingecheckte Bericht nennt seinen Messcommit; seitdem darf auf HEAD kein
+// Commit an einer Quelle des Laufs liegen (STANCE_SOURCES), gemessen sein muss auf sauberem Arbeitsbaum,
+// und der Lauf muss AK5 erfuellt haben (Ruecknahmekriterium D30.9).
+const stanceStatus = stanceFreshness(ROOT)
+check(
+  'MESSGERAET',
+  `Haltungs-Messlauf: sauber gemessen, seit dem Messcommit kein Commit an ${STANCE_SOURCES.length} Quellen, AK5 erfüllt (docs/reports/stance.json)`,
+  stanceStatus.fresh,
+  stanceStatus.fresh
+    ? stanceStatus.reason
+    : `${stanceStatus.reason} — bitte WORLDWAR_WRITE_REPORT=1 pnpm vitest run --config vitest.slow.config.ts apps/headless/test/stance.slow.test.ts auf sauberem Arbeitsbaum laufen lassen und docs/reports/stance.json einchecken`,
+)
 
 // AK-1 hat seit T-M14-14 eine eigene Zeile — vorher stand es in der Sammelzeile oben und
 // wurde von keinem einzigen Test berührt: die einzigen `winner`-Zusicherungen im Bestand
@@ -299,7 +300,7 @@ const report = [
   '|---|---|---|',
   ...results.map((r) => `| ${r.id} | ${r.description} | ${r.ok ? '✅ bestanden' : '❌ fehlgeschlagen'} |`),
   `| AK-7 | Playtest durch Noah nach \`docs/PLAYTEST.md\`, Antworten in \`docs/reports/playtest-v1.md\` | ${playtestLine} |`,
-  ...spaetere.map((c) => `| ${c.id} | Verpackung als Programm (T-M16-05) | ${spaetereZeile(c)} |`),
+  ...spaetere.map((c) => `| ${c.id} | ${describeCriterion(c)} | ${spaetereZeile(c)} |`),
   '',
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
@@ -330,7 +331,7 @@ writeFileSync(
   ) + String.fromCharCode(10),
 )
 
-console.log(`\n${passed} von ${results.length} Prüfungen bestanden — Gesamtdauer ${Math.round(totalSeconds / 60)} min ${totalSeconds % 60} s.`)
+console.log(`\n${passed} von ${results.length} Prüfungen bestanden — Gesamtdauer ${durationText(totalSeconds)}.`)
 console.log('docs/reports/acceptance.md geschrieben.')
 console.log(`\nAK-7: ${playtestLine} — Bogen docs/PLAYTEST.md, Antworten docs/reports/playtest-v1.md`)
 

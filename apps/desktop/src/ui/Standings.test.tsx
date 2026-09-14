@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { PublicView } from '@worldwar/core'
+import { createInitialState, parseRules, publicView, type MapData, type PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TimelineEntry } from '../game/saves.ts'
 import { StandingsPanel, VictoryDialog, scoreSeries, standingsRows } from './Standings.tsx'
@@ -421,5 +422,143 @@ describe('T-M31-04 Der Machtverlauf zeigt drei Linien mit Legende', () => {
     // Die eigene Kurve traegt eine Flaeche, und jede der drei benannten einen Endpunkt.
     expect(container.querySelector('path.chart__area[data-series="p1"]')).toBeTruthy()
     expect(container.querySelectorAll('.chart__end').length).toBe(3)
+  })
+})
+
+/**
+ * Die Zwischenziele unter der Tabelle (T-M35-05, R-GAME-08/AK3, D31.6).
+ *
+ * Die Rangliste ist der Ort, an dem der Spieler ohnehin fragt, wie er steht. Vier Zeilen,
+ * je Ziel eine: Zeichen, Satz, bei offenem Ziel der Abstand zur Marke, bei erreichtem der
+ * Spieltag — kein neues Panel, und ohne Ziele kein leerer Kasten. Quelle ist `self.goals`,
+ * also nur die eigenen (die Sicht prueft das in `publicView.test.ts`).
+ */
+describe('R-GAME-08/AK3 Die Rangliste zeigt die eigenen Zwischenziele', () => {
+  type GoalRow = { goal: string; mark: number; value: number; reachedOnDay: number | null }
+
+  const mitZielen = (goals: GoalRow[] | undefined): PublicView => {
+    const base = view({ self: 100, others: [{ id: 'p2', score: 300 }] })
+    return { ...base, self: { ...base.self, ...(goals ? { goals } : {}) } } as unknown as PublicView
+  }
+
+  const VIER: GoalRow[] = [
+    { goal: 'provinces', mark: 25, value: 18, reachedOnDay: null },
+    { goal: 'pointShareFirst', mark: 400, value: 450, reachedOnDay: 221 },
+    { goal: 'populationShare', mark: 300, value: 177, reachedOnDay: null },
+    { goal: 'pointShareSecond', mark: 600, value: 600, reachedOnDay: null },
+  ]
+
+  const zeilen = (container: HTMLElement) => [...container.querySelectorAll('.goals > li')].map((li) => li.textContent ?? '')
+
+  it('zeigt vier Zeilen in der Reihenfolge der Marken, jede mit ihrem Satz', () => {
+    const { container } = render(<StandingsPanel view={mitZielen(VIER)} nameOf={nameOf} />)
+    const texte = zeilen(container)
+
+    expect(texte).toHaveLength(4)
+    expect(texte[0]).toContain('25 eigene Provinzen')
+    expect(texte[1]).toContain('40 % aller Punkte')
+    expect(texte[2]).toContain('30 % der Weltbevölkerung')
+    expect(texte[3]).toContain('60 % aller Punkte')
+  })
+
+  it('nennt bei einem offenen Ziel den Abstand zur Marke', () => {
+    const { container } = render(<StandingsPanel view={mitZielen(VIER)} nameOf={nameOf} />)
+    const texte = zeilen(container)
+
+    expect(texte[0]).toContain('noch 7 Provinzen')
+    expect(texte[2]).toContain('noch 12,3 Prozentpunkte')
+    expect(texte[0]).not.toMatch(/Tag/)
+  })
+
+  it('nennt bei einem erreichten Ziel den Spieltag und keinen Abstand', () => {
+    const { container } = render(<StandingsPanel view={mitZielen(VIER)} nameOf={nameOf} />)
+    const erreicht = zeilen(container)[1]!
+
+    expect(erreicht).toContain('erreicht an Tag 221')
+    expect(erreicht).not.toContain('noch')
+    expect(container.querySelectorAll('.goal--reached')).toHaveLength(1)
+  })
+
+  it('verspricht nichts, was der Tageswechsel noch eintragen muss', () => {
+    // Der Stand ist jetzt ueber der Marke, der Tag wird erst am Tageswechsel gesetzt — die
+    // Zeile sagt das, statt „noch 0 Prozentpunkte" oder einen erfundenen Tag.
+    const { container } = render(<StandingsPanel view={mitZielen(VIER)} nameOf={nameOf} />)
+    const faellig = zeilen(container)[3]!
+
+    expect(faellig).toContain('nächsten Tageswechsel')
+    expect(faellig).not.toMatch(/noch \d|Tag \d/)
+  })
+
+  it('schreibt die Einzahl, wo eine Provinz fehlt', () => {
+    const { container } = render(
+      <StandingsPanel view={mitZielen([{ goal: 'provinces', mark: 25, value: 24, reachedOnDay: null }, ...VIER.slice(1)])} nameOf={nameOf} />,
+    )
+
+    expect(zeilen(container)[0]).toContain('noch 1 Provinz')
+    expect(zeilen(container)[0]).not.toContain('Provinzen fehlen')
+    expect(zeilen(container)[0]).not.toMatch(/noch 1 Provinzen/)
+  })
+
+  it('zeigt ohne Ziele keinen leeren Kasten', () => {
+    const { container } = render(<StandingsPanel view={mitZielen(undefined)} nameOf={nameOf} />)
+
+    expect(container.querySelector('.goals')).toBeNull()
+    expect(container.textContent).not.toContain('Zwischenziele')
+  })
+
+  it('traegt das Zeichen stumm und faerbt es ueber Tokens (Kaskaden-Waechter)', () => {
+    const style = document.createElement('style')
+    style.textContent = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    document.head.appendChild(style)
+    try {
+      const { container } = render(<StandingsPanel view={mitZielen(VIER)} nameOf={nameOf} />)
+      const zeichen = [...container.querySelectorAll('.goal__mark')] as HTMLElement[]
+
+      expect(zeichen).toHaveLength(4)
+      for (const mark of zeichen) expect(mark.getAttribute('aria-hidden')).toBe('true')
+      expect(window.getComputedStyle(zeichen[1]!).color, 'erreicht').toBe('var(--good)')
+      expect(window.getComputedStyle(zeichen[0]!).color, 'offen').toBe('var(--ink-soft)')
+    } finally {
+      style.remove()
+    }
+  })
+
+  it('bindet sich an eine echte Sicht aus Karte und ausgelieferten Regeln — fuer die zweite Macht', () => {
+    // Bindungstest, kein Rot-zuerst: die Zeilen oben stehen auf einer ausgedachten Sicht. Hier
+    // kommt sie aus dem Kern, fuer p2, damit nichts an der ersten Macht haengt.
+    const read = (name: string): unknown => JSON.parse(readFileSync(`${process.cwd()}/data/rules/default/${name}.json`, 'utf8'))
+    const rules = parseRules(
+      { constants: read('constants'), resources: read('resources'), buildings: read('buildings'), units: read('units'), ai: read('ai') },
+      'default',
+    )
+    const world = JSON.parse(readFileSync(`${process.cwd()}/data/maps/world.json`, 'utf8')) as MapData
+    const state = createInitialState(
+      {
+        seed: 1914,
+        mapId: 'world',
+        rulesId: 'default',
+        players: [
+          { name: 'A', kind: 'ai', nation: world.startPositions[0]!.nation, color: 'darkslategray', difficulty: 'normal' },
+          { name: 'B', kind: 'human', nation: world.startPositions[1]!.nation, color: 'rebeccapurple' },
+        ],
+        victory: { condition: 'points', pointsShareToWin: 700, dayLimit: null },
+      },
+      { map: world, rules },
+    )
+
+    const { container } = render(<StandingsPanel view={publicView(state, 'p2', rules)} nameOf={nameOf} />)
+    const texte = zeilen(container)
+    const eigene = world.startPositions[1]!.provinces.length
+
+    expect(texte).toHaveLength(4)
+    expect(texte[0]).toContain(`${rules.constants.goalProvinces} eigene Provinzen`)
+    expect(texte[0]).toContain(`noch ${rules.constants.goalProvinces - eigene} Provinzen`)
+    expect(container.querySelectorAll('.goal--reached')).toHaveLength(0)
+  })
+
+  it('liest die eigene Macht aus der Sicht, nicht aus einer festen Kennung', () => {
+    const quelle = readFileSync(`${process.cwd()}/apps/desktop/src/ui/Standings.tsx`, 'utf8')
+
+    expect(quelle).not.toMatch(/['"]p1['"]/)
   })
 })

@@ -95,7 +95,11 @@ export const combat: Phase = (draft: GameState, ctx: PhaseContext) => {
 
       // Entrenched defenders fight with defence values and do not counter-attack;
       // a meeting engagement lets both sides use their attack values (belegt).
-      const stationary = angriffsfaehig.every((army) => army.path.length === 0 && army.stance === 'defensive')
+      // `garrison` is `defensive` without the automatic orders (T-M40-01, D30.1): in the
+      // fight the two must be the same, or opting out would change the combat as well.
+      const stationary = angriffsfaehig.every(
+        (army) => army.path.length === 0 && (army.stance === 'defensive' || army.stance === 'garrison'),
+      )
       const isDefender = stationary && province.owner === side.player
 
       const value = sideAttackValue(draft, angriffsfaehig, shares, isDefender, rules)

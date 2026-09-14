@@ -1,6 +1,6 @@
 # Der Durchgang durch die ersten Spieltage
 
-Gemessen am **2026-09-12** von `apps/desktop/src/game/onboarding.slow.test.ts`, über
+Gemessen am **2026-09-13** von `apps/desktop/src/game/onboarding.slow.test.ts`, über
 **16 Spieltage** (384 Ticks) auf der kleinen Karte, Startzahl 1914.
 
 > Dieser Bericht gilt für genau diesen Stand. Zeigt `git log --oneline -1` etwas anderes,
@@ -8,10 +8,11 @@ Gemessen am **2026-09-12** von `apps/desktop/src/game/onboarding.slow.test.ts`, 
 
 ## Die Zahl, die zählt
 
-| **Längste Pause ohne Anlass** | **96 Ticks** (Tag 6, 00:00 → Tag 10, 00:00) |
+| **Längste Pause ohne Anlass** | **48 Ticks** (Tag 4, 00:00 → Tag 6, 00:00) |
 |---|---|
 | Führungsschritte im Lauf | 4 |
 | Freischaltungsmeldungen | 6 |
+| Ankündigungen (zwei Tage vorher) | 4 |
 | Erste Einheit möglich ab | Tick 43 (Tag 2, 19:00) |
 | Führung am Ende | fastForward |
 
@@ -30,9 +31,13 @@ erklärt nur, warum sie so lang ist.
 | Tag 2, 03:00 | Schritt | buildCompleted beendet |
 | Tag 2, 19:00 | Fertig | UNIT_RECRUITED |
 | Tag 2, 19:00 | Schritt | unitRecruited beendet |
+| Tag 4, 00:00 | Ankündigung | In zwei Tagen: Hafen. |
 | Tag 6, 00:00 | Meldung | Neu ab heute: Hafen. Sie können ihn jetzt bauen. |
+| Tag 8, 00:00 | Ankündigung | In zwei Tagen: Transportschiff. Dafür braucht es einen Hafen — Sie haben keinen. |
 | Tag 10, 00:00 | Meldung | Neu ab heute: Transportschiff. Sie können es jetzt ausheben. |
+| Tag 10, 00:00 | Ankündigung | In zwei Tagen: Festung. |
 | Tag 12, 00:00 | Meldung | Neu ab heute: Festung. Sie können sie jetzt bauen. |
+| Tag 14, 00:00 | Ankündigung | In zwei Tagen: Motorisierte Infanterie. |
 | Tag 16, 00:00 | Meldung | Neu ab heute: Motorisierte Infanterie. Sie können sie jetzt ausheben. |
 
 ## Wie der Lauf gedacht ist
@@ -49,23 +54,23 @@ Weltkarte kosten das Zwanzigfache an Rechenzeit für dieselbe Aussage.
 
 ## Der Befund fuer Noah
 
-**Zwischen Tag 5 und Tag 8 geschieht drei Spieltage lang nichts.** Die Eisenbahn kommt an
-Tag 5, die Fabrik an Tag 8, und dazwischen meldet das Spiel nichts, was den Spieler
-anspräche. Die Führung ist da längst durchgelaufen.
+Nach M34 lagen **zwei Pausen von vier Spieltagen** im Fenster: vom Hafen an Tag 6 bis zum
+Transportschiff an Tag 10 und von der Festung an Tag 12 bis zur motorisierten Infanterie an
+Tag 16 (96 Ticks).
 
-Ob das zu lang ist, ist eine **Balancing-Frage** und gehört Noah — hier steht nur die
-gemessene Zahl. Drei Wege wären denkbar, alle drei sind eigene Aufgaben:
+**Seit T-M41-03 kündigt sich jede Freischaltung zwei Spieltage vorher an**, und die
+Ankündigung sagt, was dafür fehlt — „In zwei Tagen: Transportschiff. Dafür braucht es einen
+Hafen — Sie haben keinen." Die Freischaltungstage selbst sind unverändert (Entscheid
+„Ankündigung statt Datenänderung", `DECISIONS.md`, 2026-09-13, kippbar). Die längste
+Pause im Fenster beträgt damit **48 Ticks**.
 
-1. **Die Achse verdichten** — eine Freischaltung an Tag 6 oder 7. Ändert die Partie.
-2. **Anderes melden** — Bevölkerungswachstum, ein Lagerstand, eine Nachricht aus der
-   Welt. Ändert die Partie nicht, füllt aber auch nur die Meldungsleiste.
-3. **So lassen.** Wer bis Tag 5 gespielt hat, hat sich entschieden; die Lücke trifft
-   nicht mehr den Einsteiger, für den diese Aufgabe gebaut wurde.
-
-Der Test hält die Zahl als Obergrenze fest: sie darf nicht unbemerkt wachsen.
+Hinter dem Messfenster liegen größere Lücken zwischen den Freischaltungen (Tag 20 → 28,
+48 → 62, 70 → 80). Die Ankündigung wirkt dort genauso, halbiert sie aber nicht: eine Lücke
+von vierzehn Tagen bleibt eine Lücke von zwölf.
 
 ## Was dieser Bericht nicht sagt
 
-Ob die Führung **verständlich** ist. Er zählt, dass etwas geschieht und wann; ob der Satz
-an der richtigen Stelle das Richtige sagt, findet nur ein Mensch heraus. Dafür stehen die
-beiden Fragen am Ende von `docs/PLAYTEST.md`.
+Ob die Führung **verständlich** ist, und ob eine leise Ankündigung als Anlass empfunden
+wird. Er zählt, dass etwas geschieht und wann; ob der Satz an der richtigen Stelle das
+Richtige sagt, findet nur ein Mensch heraus. Dafür stehen die beiden Fragen am Ende von
+`docs/PLAYTEST.md`.

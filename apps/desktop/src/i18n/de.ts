@@ -34,6 +34,8 @@ export const de = {
     alarm: 'Einmarsch: {{province}}',
     alarmAria: 'Einmarsch in {{province}} durch {{intruder}} — anzeigen',
     speedStop: '{{stop}} Stunden je Sekunde',
+    // Die Tempostufen während eines Laufs (T-M41-13): gesperrt, und der Grund steht daneben.
+    speedLockedFastForward: 'Während des Vorspulens gesperrt — erst abbrechen oder abwarten',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
@@ -134,6 +136,13 @@ export const de = {
   grammar: {
     /** Akkusativpronomen je Genus: „Sie können sie/ihn/es jetzt bauen." */
     pronoun: { f: 'sie', m: 'ihn', n: 'es' },
+    // Das Nominativpronomen am Satzanfang („Sie braucht eine Kaserne — Sie haben keine.")
+    // ist seit der Nacharbeit zu T-M41-03 weg: richtig gebeugt, aber doppeldeutig. Die
+    // Ankündigung sagt „Dafür braucht es …", das an keinem Genus hängt.
+    /** Unbestimmter Artikel im Akkusativ: „braucht es einen Hafen / eine Werft / ein …". */
+    indefinite: { f: 'eine', m: 'einen', n: 'ein' },
+    /** Allein stehende Verneinung im Akkusativ: „Sie haben keinen / keine / keines." */
+    none: { f: 'keine', m: 'keinen', n: 'keines' },
     /** Die Kaserne, der Hafen — das Genus je Gebäude. */
     buildings: {
       barracks: 'f',
@@ -218,6 +227,7 @@ export const de = {
     stanceAggressive: 'Angriff',
     stanceDefensive: 'Verteidigung',
     stanceRetreat: 'Rückzug',
+    stanceGarrison: 'Garnison',
     moving: 'Auf dem Marsch',
     arrivesIn: 'Ankunft in {{hours}} h',
     arrivesAt: 'Ankunft Tag {{day}}, {{hour}}:00',
@@ -264,10 +274,22 @@ export const de = {
     // teuersten Entscheidungen des Spiels sind. Die Zahlen kommen aus den Regeln, nie
     // aus dem Text — sonst hat das Spiel zwei Wahrheiten.
     moveHint: 'Beim Abmarsch {{time}} lang halbe Kampfkraft.',
+    // Ein eigener Marsch einer Verteidigung stellt sie auf Garnison (T-M40-14, Befund H-A).
+    moveHintGarrison: 'Beim Abmarsch {{time}} lang halbe Kampfkraft. Stellt die Armee zugleich auf Garnison, damit sie am Ziel nicht von selbst weitermarschiert.',
+    confirmMoveHintGarrison: 'Stellt die Armee zugleich auf Garnison, damit sie am Ziel nicht von selbst weitermarschiert.',
     stopHint: 'Die Armee hält an, wo sie gerade steht.',
-    stanceAggressiveHint: 'Greift von sich aus an, was in Reichweite kommt.',
-    stanceDefensiveHint: 'Hält die Stellung und greift nicht von sich aus an.',
-    stanceRetreatHint: 'Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    // Anhalten einer Verteidigung stellt sie zugleich auf Garnison (T-M40-11, Befund H2).
+    stopHintGarrison: 'Hält an und stellt auf Garnison, damit sie nicht von selbst wieder losmarschiert.',
+    // Jeder Hinweis sagt, was die Armee in dieser Haltung von selbst tut oder laesst
+    // (T-M40-05, D30.7, R-UNIT-09/AK6). Der alte Satz zu „Angriff" — „greift von sich aus
+    // an, was in Reichweite kommt" — beschrieb eine Wirkung, die es nie gab. Seit T-M40-10 und
+    // T-M40-11 sagen die Hinweise auch, was die Haltung kostet (Befund M3): die Verteidigung
+    // verfolgt nicht mehr „solange dort noch gekämpft wird", und der Angriff folgt niemandem.
+    stanceAggressiveHint: 'Kämpft mit Angriffswerten statt eingegraben und marschiert nie von selbst.',
+    // Die Ruhe zählt ab dem Abmarsch, nicht ab der Ankunft; ein eigener Marsch stellt auf Garnison (T-M40-14, Befund H-A).
+    stanceDefensiveHint: 'Bleibt eingegraben stehen. Steht in ihrer Provinz noch eine weitere Armee, rückt sie von selbst in eine bedrohte eigene Nachbarprovinz nach; allein marschiert sie nie. Nach einem Marsch oder Rückzug ruht sie {{rest}} ab dem Abmarsch, nicht ab der Ankunft; ein eigener Marschbefehl stellt sie auf Garnison.',
+    stanceRetreatHint: 'Weicht von selbst in eine Nachbarprovinz aus und steht danach auf Verteidigung. Kostet {{loss}} % der Stärke, danach {{cooldown}} kein Angriff und {{deploy}} halbe Kampfkraft.',
+    stanceGarrisonHint: 'Bleibt stehen, was auch geschieht, und marschiert nie von selbst; kämpft wie die Verteidigung.',
     mergeHint: 'Fasst alle eigenen Armeen an diesem Ort zu einer zusammen.',
     splitHint: 'Teilt die Hälfte ab: {{units}}.',
     splitHintNone: 'Teilt die Hälfte ab — dafür braucht es mindestens zwei Einheiten.',
@@ -394,6 +416,36 @@ export const de = {
     GAME_ENDED: 'Die Partie ist entschieden: {{winner}} hat gewonnen.',
     GAME_ENDED_PLURAL: 'Die Partie ist entschieden: {{winner}} haben gewonnen.',
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
+    // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
+    GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+  } as const,
+
+  /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
+  goals: {
+    names: {
+      provinces: 'eigene Provinzen',
+      pointShareFirst: 'erster Punktanteil',
+      populationShare: 'Anteil an der Weltbevölkerung',
+      pointShareSecond: 'zweiter Punktanteil',
+    },
+    // Die vier Zeilen unter der Rangliste (T-M35-05, R-GAME-08/AK3): der Satz nennt die
+    // Marke, rechts steht der Abstand oder der Tag.
+    title: 'Zwischenziele',
+    rows: {
+      provinces: '{{mark}} eigene Provinzen',
+      pointShareFirst: '{{percent}} % aller Punkte',
+      populationShare: '{{percent}} % der Weltbevölkerung',
+      pointShareSecond: '{{percent}} % aller Punkte',
+    },
+    reached: 'erreicht an Tag {{day}}',
+    missingProvincesOne: 'noch 1 Provinz',
+    missingProvincesMany: 'noch {{count}} Provinzen',
+    missingShareOne: 'noch 1 Prozentpunkt',
+    missingShareMany: 'noch {{points}} Prozentpunkte',
+    // Der Stand liegt schon über der Marke, der Tag wird aber erst am Tageswechsel eingetragen.
+    dueNextDay: 'erreicht mit dem nächsten Tageswechsel',
+    markReached: '✓',
+    markOpen: '○',
   } as const,
 
   /**
@@ -535,6 +587,8 @@ export const de = {
     empty: 'Noch nichts geschehen.',
     noLosses: 'keine',
     jumpTo: 'Zur Provinz springen',
+    // Die Automatik lässt eine Armee marschieren (T-M40-13): eine leise Zeile, kein Alarm.
+    adjutantMarch: '{{army}} rückt von selbst nach {{province}} nach.',
     battleReport: 'Kampfbericht',
     attacker: 'Angreifer',
     defender: 'Verteidiger',
@@ -763,6 +817,19 @@ export const de = {
     // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
     unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
     unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
+    // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
+    // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
+    upcoming: 'In zwei Tagen: {{thing}}.',
+    upcomingNeeds: 'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} — Sie haben {{none}}.',
+    upcomingNeedsLevel:
+      'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} der Stufe {{level}} — Sie haben {{none}}.',
+    // Nacharbeit T-M41-03: steht das Gebäude schon, nur zu niedrig, wäre „Sie haben keine" falsch.
+    upcomingNeedsHigherLevel:
+      'In zwei Tagen: {{thing}}. Dafür braucht es {{article}} {{required}} der Stufe {{level}} — Ihre beste steht auf Stufe {{have}}.',
+    upcomingNeedsCoast: 'In zwei Tagen: {{thing}}. Dafür braucht es eine Küstenprovinz — Sie haben keine.',
+    // Wegklicken (T-M41-12): nur Ankündigung und Freischaltung — sie gehen am Tagesende ohnehin.
+    dismiss: 'Ausblenden: {{text}}',
+    dismissTitle: 'Bis zum Ende des Spieltags ausblenden',
     battle: 'Kampf in {{province}}',
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).

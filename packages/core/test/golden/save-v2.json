@@ -1,0 +1,1064 @@
+{
+  "schemaVersion": 2,
+  "savedAtTick": 240,
+  "hash": "ecdade9b9964f0bd",
+  "label": "Eingefroren am 2026-09-13 als Beleg für den Migrationsschritt 2 → 3 (T-M35-03)",
+  "state": {
+    "schemaVersion": 2,
+    "seed": 1914,
+    "rng": {
+      "s0": 975113562,
+      "s1": 402846805,
+      "s2": 2480265117,
+      "s3": 953402807
+    },
+    "tick": 240,
+    "mapId": "testworld",
+    "rulesId": "default",
+    "players": {
+      "p1": {
+        "id": "p1",
+        "name": "A",
+        "nation": "Nordland",
+        "color": "#0f62bc",
+        "kind": "human",
+        "difficulty": null,
+        "aiBonusMultiplier": 1000,
+        "resources": {
+          "food": 180568,
+          "wood": 575800,
+          "iron": 1064154,
+          "coal": 579480,
+          "oil": 0,
+          "rare": 67000,
+          "money": 1017633
+        },
+        "capitalProvinceId": "n1",
+        "capitalLostUntil": null,
+        "capitalMovedAtTick": null,
+        "shortages": [
+          "oil"
+        ],
+        "alive": true,
+        "score": 2295,
+        "reputation": 1000,
+        "intel": {
+          "n1": {
+            "tick": 239,
+            "owner": "p1",
+            "strength": 0
+          },
+          "n2": {
+            "tick": 239,
+            "owner": "p1",
+            "strength": 0
+          },
+          "n3": {
+            "tick": 239,
+            "owner": "p1",
+            "strength": 0
+          },
+          "i1": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          },
+          "s1": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          },
+          "m1": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          },
+          "m2": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          },
+          "o1": {
+            "tick": 239,
+            "owner": "p1",
+            "strength": 0
+          },
+          "o2": {
+            "tick": 239,
+            "owner": "p2",
+            "strength": 0
+          },
+          "o3": {
+            "tick": 239,
+            "owner": "p2",
+            "strength": 0
+          },
+          "i2": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          }
+        }
+      },
+      "p2": {
+        "id": "p2",
+        "name": "B",
+        "nation": "Ostmark",
+        "color": "#b03a2e",
+        "kind": "ai",
+        "difficulty": "normal",
+        "aiBonusMultiplier": 1000,
+        "resources": {
+          "food": 950879,
+          "wood": 666670,
+          "iron": 346320,
+          "coal": 333000,
+          "oil": 336338,
+          "rare": 67000,
+          "money": 1770114
+        },
+        "capitalProvinceId": null,
+        "capitalLostUntil": 341,
+        "capitalMovedAtTick": null,
+        "shortages": [],
+        "alive": true,
+        "score": 440,
+        "reputation": 1000,
+        "intel": {
+          "o1": {
+            "tick": 239,
+            "owner": "p1",
+            "strength": 58000
+          },
+          "m1": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          },
+          "o2": {
+            "tick": 239,
+            "owner": "p2",
+            "strength": 0
+          },
+          "o3": {
+            "tick": 239,
+            "owner": "p2",
+            "strength": 0
+          },
+          "i2": {
+            "tick": 4,
+            "owner": null,
+            "strength": 0
+          },
+          "s2": {
+            "tick": 239,
+            "owner": null,
+            "strength": 0
+          }
+        }
+      }
+    },
+    "playerOrder": [
+      "p1",
+      "p2"
+    ],
+    "provinces": {
+      "i1": {
+        "id": "i1",
+        "name": "Nordinsel",
+        "owner": null,
+        "kind": "rural",
+        "terrain": "plains",
+        "coastal": true,
+        "neighbors": [],
+        "seaLinks": [
+          "n1",
+          "s1"
+        ],
+        "population": 90000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "food": 1200,
+          "rare": 600
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      },
+      "i2": {
+        "id": "i2",
+        "name": "Ostinsel",
+        "owner": null,
+        "kind": "rural",
+        "terrain": "forest",
+        "coastal": true,
+        "neighbors": [],
+        "seaLinks": [
+          "o1",
+          "s2"
+        ],
+        "population": 70000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "wood": 1400,
+          "oil": 700
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      },
+      "m1": {
+        "id": "m1",
+        "name": "Mittstadt",
+        "owner": null,
+        "kind": "city",
+        "terrain": "plains",
+        "coastal": false,
+        "neighbors": [
+          "m2",
+          "n2",
+          "o1",
+          "o3"
+        ],
+        "seaLinks": [],
+        "population": 700000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "food": 2500,
+          "money": 1200
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      },
+      "m2": {
+        "id": "m2",
+        "name": "Auenland",
+        "owner": null,
+        "kind": "rural",
+        "terrain": "forest",
+        "coastal": false,
+        "neighbors": [
+          "m1",
+          "n3",
+          "s1",
+          "s2"
+        ],
+        "seaLinks": [],
+        "population": 220000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "wood": 1800,
+          "food": 900
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      },
+      "n1": {
+        "id": "n1",
+        "name": "Hafen",
+        "owner": "p1",
+        "kind": "city",
+        "terrain": "urban",
+        "coastal": true,
+        "neighbors": [
+          "n2",
+          "n3"
+        ],
+        "seaLinks": [
+          "i1",
+          "s1"
+        ],
+        "population": 900000,
+        "morale": 94364,
+        "targetMorale": 101000,
+        "deposits": {
+          "food": 2000,
+          "iron": 1500
+        },
+        "buildings": {
+          "barracks": 1
+        },
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {
+          "money": 200,
+          "food": 0,
+          "iron": 0
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "name": "Waldland",
+        "owner": "p1",
+        "kind": "rural",
+        "terrain": "forest",
+        "coastal": false,
+        "neighbors": [
+          "m1",
+          "n1",
+          "n3"
+        ],
+        "seaLinks": [],
+        "population": 250000,
+        "morale": 90925,
+        "targetMorale": 96625,
+        "deposits": {
+          "wood": 2500
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {
+          "money": 0,
+          "wood": 0
+        }
+      },
+      "n3": {
+        "id": "n3",
+        "name": "Bergland",
+        "owner": "p1",
+        "kind": "rural",
+        "terrain": "mountain",
+        "coastal": false,
+        "neighbors": [
+          "m2",
+          "n1",
+          "n2"
+        ],
+        "seaLinks": [],
+        "population": 180000,
+        "morale": 90925,
+        "targetMorale": 96625,
+        "deposits": {
+          "coal": 2000,
+          "iron": 800
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {
+          "money": 400,
+          "coal": 0,
+          "iron": 0
+        }
+      },
+      "o1": {
+        "id": "o1",
+        "name": "Ostburg",
+        "owner": "p1",
+        "kind": "city",
+        "terrain": "urban",
+        "coastal": true,
+        "neighbors": [
+          "m1",
+          "o2",
+          "o3"
+        ],
+        "seaLinks": [
+          "i2"
+        ],
+        "population": 850000,
+        "morale": 57624,
+        "targetMorale": 72350,
+        "deposits": {
+          "iron": 2000,
+          "money": 1000
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": 5,
+        "productionRemainder": {
+          "money": 100,
+          "iron": 0
+        }
+      },
+      "o2": {
+        "id": "o2",
+        "name": "Sandmark",
+        "owner": "p2",
+        "kind": "rural",
+        "terrain": "desert",
+        "coastal": false,
+        "neighbors": [
+          "o1",
+          "o3",
+          "s2"
+        ],
+        "seaLinks": [],
+        "population": 120000,
+        "morale": 60569,
+        "targetMorale": 58000,
+        "deposits": {
+          "oil": 2600
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {
+          "money": 200,
+          "oil": 0
+        }
+      },
+      "o3": {
+        "id": "o3",
+        "name": "Ostfeld",
+        "owner": "p2",
+        "kind": "rural",
+        "terrain": "plains",
+        "coastal": false,
+        "neighbors": [
+          "m1",
+          "o1",
+          "o2"
+        ],
+        "seaLinks": [],
+        "population": 300000,
+        "morale": 60569,
+        "targetMorale": 58000,
+        "deposits": {
+          "food": 2200
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {
+          "money": 600,
+          "food": 200
+        }
+      },
+      "s1": {
+        "id": "s1",
+        "name": "Suedhafen",
+        "owner": null,
+        "kind": "city",
+        "terrain": "plains",
+        "coastal": true,
+        "neighbors": [
+          "m2",
+          "s2"
+        ],
+        "seaLinks": [
+          "i1",
+          "n1"
+        ],
+        "population": 600000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "food": 1800,
+          "money": 800
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      },
+      "s2": {
+        "id": "s2",
+        "name": "Suedberg",
+        "owner": null,
+        "kind": "rural",
+        "terrain": "mountain",
+        "coastal": false,
+        "neighbors": [
+          "m2",
+          "o2",
+          "s1"
+        ],
+        "seaLinks": [
+          "i2"
+        ],
+        "population": 160000,
+        "morale": 95151,
+        "targetMorale": 102000,
+        "deposits": {
+          "rare": 900,
+          "coal": 1200
+        },
+        "buildings": {},
+        "buildQueue": [],
+        "recruitQueue": [],
+        "occupiedSince": null,
+        "productionRemainder": {}
+      }
+    },
+    "provinceOrder": [
+      "i1",
+      "i2",
+      "m1",
+      "m2",
+      "n1",
+      "n2",
+      "n3",
+      "o1",
+      "o2",
+      "o3",
+      "s1",
+      "s2"
+    ],
+    "armies": {
+      "a1": {
+        "id": "a1",
+        "owner": "p1",
+        "name": "Armee 1",
+        "locationProvinceId": "o1",
+        "units": [
+          {
+            "unitKey": "infantry",
+            "hpTotal": 58000
+          }
+        ],
+        "path": [],
+        "arrivalTick": null,
+        "departureTick": null,
+        "deployDelayUntil": 0,
+        "stance": "aggressive",
+        "embarked": false,
+        "cannotAttackUntil": 0,
+        "bombardTarget": null,
+        "holdFire": false
+      },
+      "a3": {
+        "id": "a3",
+        "owner": "p1",
+        "name": "Armee 3",
+        "locationProvinceId": "n1",
+        "units": [
+          {
+            "unitKey": "artillery",
+            "hpTotal": 21000
+          }
+        ],
+        "path": [],
+        "arrivalTick": null,
+        "departureTick": null,
+        "deployDelayUntil": 0,
+        "stance": "aggressive",
+        "embarked": false,
+        "cannotAttackUntil": 0,
+        "bombardTarget": null,
+        "holdFire": true
+      }
+    },
+    "armyOrder": [
+      "a1",
+      "a3"
+    ],
+    "diplomacy": {
+      "relations": {
+        "p1|p2": {
+          "state": "war",
+          "sinceTick": 0,
+          "warEffectiveAtTick": null,
+          "rightOfWay": false,
+          "sharedMap": false
+        }
+      },
+      "offers": [],
+      "grievances": {
+        "p2": {
+          "p1": 194
+        }
+      }
+    },
+    "market": {
+      "prices": {
+        "food": 1000,
+        "wood": 1000,
+        "iron": 1400,
+        "coal": 1200,
+        "oil": 1800,
+        "rare": 2600,
+        "money": 1000
+      },
+      "tickDemand": {
+        "food": 0,
+        "wood": 0,
+        "iron": 0,
+        "coal": 0,
+        "oil": 0,
+        "rare": 0,
+        "money": 0
+      }
+    },
+    "ai": {
+      "p2": {
+        "lastStrategicTick": -1,
+        "lastOperationalTick": -1,
+        "targetPriority": {},
+        "assignments": {},
+        "buildShare": 600
+      }
+    },
+    "battles": [],
+    "eventLog": [
+      {
+        "type": "GAME_STARTED",
+        "tick": 0,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "mapId": "testworld",
+        "playerCount": 2
+      },
+      {
+        "type": "BUILD_STARTED",
+        "tick": 0,
+        "severity": "info",
+        "audience": [
+          "p1"
+        ],
+        "concerns": [
+          "p1"
+        ],
+        "playerId": "p1",
+        "provinceId": "n1",
+        "building": "barracks",
+        "level": 1,
+        "completesAtTick": 27
+      },
+      {
+        "type": "BATTLE_STARTED",
+        "tick": 0,
+        "severity": "alert",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b1",
+        "provinceId": "o1",
+        "sides": [
+          [
+            "p1"
+          ],
+          [
+            "p2"
+          ]
+        ]
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 0,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b1",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 2122,
+          "p1": 803
+        },
+        "victor": null,
+        "strengths": {
+          "p1": {
+            "before": 60000,
+            "after": 59197
+          },
+          "p2": {
+            "before": 10000,
+            "after": 7878
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 1,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b2",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 1840,
+          "p1": 586
+        },
+        "victor": null,
+        "strengths": {
+          "p1": {
+            "before": 59197,
+            "after": 58611
+          },
+          "p2": {
+            "before": 7878,
+            "after": 6038
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 2,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b3",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 2103,
+          "p1": 477
+        },
+        "victor": null,
+        "strengths": {
+          "p1": {
+            "before": 58611,
+            "after": 58134
+          },
+          "p2": {
+            "before": 6038,
+            "after": 3935
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 3,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b4",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 1852,
+          "p1": 322
+        },
+        "victor": null,
+        "strengths": {
+          "p1": {
+            "before": 58134,
+            "after": 57812
+          },
+          "p2": {
+            "before": 3935,
+            "after": 2083
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 4,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b5",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 1746,
+          "p1": 221
+        },
+        "victor": null,
+        "strengths": {
+          "p1": {
+            "before": 57812,
+            "after": 57591
+          },
+          "p2": {
+            "before": 2083,
+            "after": 337
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "BATTLE_RESOLVED",
+        "tick": 5,
+        "severity": "info",
+        "audience": [],
+        "concerns": [
+          "p1",
+          "p2"
+        ],
+        "battleId": "b6",
+        "provinceId": "o1",
+        "losses": {
+          "p2": 337,
+          "p1": 100
+        },
+        "victor": "p1",
+        "strengths": {
+          "p1": {
+            "before": 57591,
+            "after": 57491
+          },
+          "p2": {
+            "before": 337,
+            "after": 0
+          }
+        },
+        "terrain": "urban",
+        "fortressLevel": 0,
+        "entrenched": [
+          "p2"
+        ],
+        "attackBlocked": []
+      },
+      {
+        "type": "ARMY_DESTROYED",
+        "tick": 5,
+        "severity": "alert",
+        "audience": [
+          "p2"
+        ],
+        "concerns": [
+          "p2"
+        ],
+        "playerId": "p2",
+        "armyId": "a2",
+        "provinceId": "o1"
+      },
+      {
+        "type": "PROVINCE_CAPTURED",
+        "tick": 5,
+        "severity": "alert",
+        "audience": [],
+        "concerns": [
+          "p2",
+          "p1"
+        ],
+        "provinceId": "o1",
+        "previousOwner": "p2",
+        "newOwner": "p1"
+      },
+      {
+        "type": "CAPITAL_LOST",
+        "tick": 5,
+        "severity": "alert",
+        "audience": [],
+        "concerns": [
+          "p2",
+          "p1"
+        ],
+        "playerId": "p2",
+        "provinceId": "o1",
+        "penaltyUntilTick": 341
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 24,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 1,
+        "scores": {
+          "p1": 2293,
+          "p2": 440
+        }
+      },
+      {
+        "type": "BUILD_COMPLETED",
+        "tick": 26,
+        "severity": "info",
+        "audience": [
+          "p1"
+        ],
+        "concerns": [
+          "p1"
+        ],
+        "playerId": "p1",
+        "provinceId": "n1",
+        "building": "barracks",
+        "level": 1
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 48,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 2,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 72,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 3,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 96,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 4,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 120,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 5,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 144,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 6,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 168,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 7,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "RESOURCE_SHORTAGE",
+        "tick": 185,
+        "severity": "info",
+        "audience": [
+          "p1"
+        ],
+        "concerns": [
+          "p1"
+        ],
+        "playerId": "p1",
+        "resource": "oil"
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 192,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 8,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 216,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 9,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      },
+      {
+        "type": "DAY_REPORT",
+        "tick": 240,
+        "severity": "info",
+        "audience": [],
+        "concerns": [],
+        "day": 10,
+        "scores": {
+          "p1": 2295,
+          "p2": 440
+        }
+      }
+    ],
+    "victory": {
+      "condition": "points",
+      "pointsShareToWin": 900,
+      "dayLimit": null,
+      "winner": null,
+      "endedAtTick": null
+    },
+    "nextIds": {
+      "army": 4,
+      "battle": 7,
+      "order": 2
+    }
+  }
+}

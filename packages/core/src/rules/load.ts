@@ -79,6 +79,12 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'warDeclarationDelayTicks',
   'marketElasticity',
   'scoreProvince',
+  // Die Marken der Zwischenziele (R-GAME-08/AK4, T-M35-02). Fehlte eine, waere
+  // `stand >= undefined` immer falsch und das Ziel still unerreichbar.
+  'goalProvinces',
+  'goalPointShareFirstPermille',
+  'goalPopulationSharePermille',
+  'goalPointShareSecondPermille',
 ]
 
 function record(value: unknown): Record<string, unknown> {

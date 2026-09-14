@@ -1,7 +1,7 @@
 {
-  "aiMedianMs": 0.08150000000000546,
-  "tickMedianMs": 0.06929999999999836,
-  "share": 0.54,
+  "aiMedianMs": 0.08089999999998554,
+  "tickMedianMs": 0.06700000000000728,
+  "share": 0.547,
   "provinces": 12,
   "players": 3,
   "certifies": "nichts - Gelaender gegen Rueckschritte. R-AI-04 wird in docs/reports/ai-bench.json belegt (Weltkarte, acht KI-Maechte, T-M16-02)."

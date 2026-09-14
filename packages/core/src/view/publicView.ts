@@ -14,6 +14,7 @@ import type {
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
+import { goalViews, type GoalView } from '../rules/goals'
 import { economyOverview, type EconomyOverview } from './economy'
 
 /**
@@ -99,6 +100,10 @@ export interface VisibleArmy {
   arrivalTick?: Tick | null
   /** When the march began — a progress bar needs both ends of the stretch (R-UI-09). */
   departureTick?: Tick | null
+  // `retreating` stood here from T-M40-04 to T-M40-10: the running attack cooldown of a visible
+  // foreign army, for the pursuit of a retreating enemy. The pursuit is gone (D30.4), and the field
+  // was knowledge without a visible source — the core reports a retreat only to the side that
+  // retreats (finding M2 of the M40 review).
 }
 
 export interface PublicView {
@@ -137,6 +142,15 @@ export interface PublicView {
      * auslösen, wo der Eigentuemer wegfaellt und die Kennung stehen bleibt.
      */
     capitalLostUntil: Tick | null
+    /**
+     * Wann die eigene Hauptstadt zuletzt verlegt wurde (T-M41-11) — und damit, bis wann der Kern
+     * ein neues Verlegen mit `ON_COOLDOWN` ablehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`).
+     *
+     * Eigenes Wissen, also unter `self`, nicht bei `others`. Die Sicht führte die Sperre nicht,
+     * und die KI befahl jeden Tag neu: 298-mal in einem Turnierlauf, 72-mal in 200 Spieltagen auf
+     * der Weltkarte. Nur Sicht — das Feld steht seit M5 im Zustand.
+     */
+    capitalMovedAtTick: Tick | null
     score: number
     reputation: Fixed
     aiBonusMultiplier: Fixed
@@ -156,6 +170,15 @@ export interface PublicView {
      * computing it walks every province.
      */
     economy?: EconomyOverview
+    /**
+     * Die eigenen Zwischenziele (T-M35-05, R-GAME-08/AK3, D31.6): je Ziel Marke, eigener Stand
+     * und Tag des Erreichens.
+     *
+     * **Nur die eigenen**, und deshalb unter `self`: wie weit eine fremde Macht auf dem Weg zum
+     * Sieg ist, verrät die Sicht nicht (R-DIP-04). Wie `economy` nur mit Regeln — die Marken
+     * stehen dort, und die KI braucht das Feld nicht.
+     */
+    goals?: GoalView[]
   }
   /**
    * Die anderen Mächte — mit ihrem **öffentlichen Ansehen** (T-M15-05, R-DIP-06).
@@ -387,11 +410,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       shortages: [...player.shortages],
       capitalProvinceId: player.capitalProvinceId,
       capitalLostUntil: player.capitalLostUntil,
+      capitalMovedAtTick: player.capitalMovedAtTick,
       score: player.score,
       reputation: player.reputation,
       grievances: { ...(state.diplomacy.grievances[playerId] ?? {}) },
       aiBonusMultiplier: player.aiBonusMultiplier,
       ...(rules ? { economy: economyOverview(state, playerId, rules) } : {}),
+      ...(rules ? { goals: goalViews(state, playerId, rules) } : {}),
     },
     others: state.playerOrder
       .filter((id) => id !== playerId)

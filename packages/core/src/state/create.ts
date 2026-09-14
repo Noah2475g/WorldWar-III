@@ -2,10 +2,12 @@ import { createRng } from '@worldwar/shared'
 import { createMarket } from '../rules/market'
 import type { Rules } from '../rules/types'
 import {
+  GOAL_KEYS,
   SCHEMA_VERSION,
   type AiMemory,
   type Difficulty,
   type GameState,
+  type GoalKey,
   type MapData,
   type Player,
   type PlayerId,
@@ -72,6 +74,8 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
   const playerOrder: PlayerId[] = []
   const ownerByProvince = new Map<ProvinceId, PlayerId>()
   const ai: Record<PlayerId, AiMemory> = {}
+  // Jede Macht beginnt mit vier offenen Zwischenzielen (R-GAME-08, D31.1).
+  const goals: GameState['goals'] = {}
 
   config.players.forEach((entry, index) => {
     const id = `p${index + 1}`
@@ -106,6 +110,10 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       intel: {},
     }
     playerOrder.push(id)
+
+    const open = {} as Record<GoalKey, number | null>
+    for (const goal of GOAL_KEYS) open[goal] = null
+    goals[id] = open
 
     if (entry.kind === 'ai') {
       ai[id] = {
@@ -206,6 +214,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       winner: null,
       endedAtTick: null,
     },
+    goals,
     nextIds: { army: 1, battle: 1, order: 1 },
   }
 }

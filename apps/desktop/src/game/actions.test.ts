@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { createInitialState, parseRules, type Army, type GameState, type MapData } from '@worldwar/core'
+import { createInitialState, parseRules, type Army, type Command, type GameState, type MapData } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import {
   armyActions,
@@ -168,7 +168,147 @@ describe('R-UNIT-03/04 Armeebefehle', () => {
     const retreat = armyActions(ctx, 'a1').find((a) => a.id === 'stance-retreat')!
     expect(retreat.hint).toContain(`${Math.round(ctx.rules.constants.retreatLossPermille / 10)} %`)
   })
+})
 
+/**
+ * Vier Haltungen, ihre Hinweise und das Anhalten (T-M40-05, T-M40-11, R-UNIT-09/AK6).
+ *
+ * Eigener Block, damit das Anforderungstor das Kriterium findet: es zaehlt `describe`-Namen, und bis
+ * T-M40-12 stand AK6 nur in den Namen zweier `it` innerhalb von R-UNIT-03/04.
+ */
+describe('R-UNIT-09/AK6 Vier Haltungen, ihre Hinweise und das Anhalten', () => {
+  it('bietet vier Haltungen an, und jeder Hinweis sagt, was die Armee von selbst tut oder laesst (R-UNIT-09/AK6)', () => {
+    // Eine Automatik, die niemand erklaert, findet niemand (D30.7). Und der alte Hinweis zu
+    // „Angriff" — „greift von sich aus an, was in Reichweite kommt" — beschrieb eine Wirkung,
+    // die es nie gab: `aggressive` wurde bis M40 von keinem Rechenweg gelesen.
+    const { ctx, capital } = fresh()
+    withArmy(ctx.state, capital)
+
+    const haltungen = armyActions(ctx, 'a1').filter((a) => a.id.startsWith('stance-'))
+    expect(haltungen.map((a) => a.id)).toEqual(['stance-aggressive', 'stance-defensive', 'stance-retreat', 'stance-garrison'])
+
+    const hinweis = Object.fromEntries(haltungen.map((a) => [a.id.replace('stance-', ''), a.hint ?? '']))
+    for (const [haltung, text] of Object.entries(hinweis)) {
+      expect(text, `${haltung}: der Hinweis nennt weder die Automatik noch ihr Fehlen`).toMatch(/von selbst/)
+      expect(text, haltung).not.toMatch(RAW_KEY)
+    }
+    // Was genau von selbst geschieht, und was es kostet (D30.4 seit T-M40-10, Befund M3 der Durchsicht).
+    // Bis T-M40-10 stand hier „weichend", „nicht stärker" und „angegriffene eigene Nachbarprovinz" —
+    // die Verfolgung ist entfallen, und die Deckung rueckt nur noch nach, wenn eine Armee stehen bleibt.
+    expect(hinweis.defensive).toMatch(/eingegraben/)
+    expect(hinweis.defensive).toMatch(/weitere Armee/)
+    expect(hinweis.defensive).toMatch(/allein marschiert sie nie/)
+    // Die Ruhe nach Marsch und Rueckzug: fuenf Spieltage aus ADJUTANT_REST_TICKS, nicht aus dem Text —
+    // und seit T-M40-14 woertlich ab dem Abmarsch (Befund H-A), und was ein eigener Marschbefehl tut.
+    expect(hinweis.defensive).toMatch(/5 Tage ab dem Abmarsch/)
+    expect(hinweis.defensive).toMatch(/eigener Marschbefehl stellt sie auf Garnison/)
+    expect(hinweis.aggressive).toMatch(/Angriffswerten/)
+    expect(hinweis.aggressive).toMatch(/eingegraben/)
+    expect(hinweis.aggressive).toMatch(/nie von selbst/)
+    expect(hinweis.aggressive).not.toMatch(/weichend|folgt/)
+    expect(hinweis.defensive).not.toMatch(/solange dort noch gekämpft wird/)
+    expect(hinweis.garrison).toMatch(/nie von selbst/)
+    // Nach dem Rueckzug steht die Armee auf Verteidigung (`phases/retreat.ts`).
+    expect(hinweis.retreat).toMatch(/Verteidigung/)
+    expect(hinweis.aggressive).not.toMatch(/greift von sich aus an/i)
+  })
+
+  it('stellt eine Armee auf Verteidigung beim Anhalten auf Garnison, jede andere haelt nur an (R-UNIT-09/AK6, T-M40-11)', () => {
+    // Befund H2 der Durchsicht: der Adjutant schickte eine Verteidigung los, der Spieler klickte
+    // „Anhalten" — und im naechsten Tick marschierte sie wieder (Beleg S2). Seit T-M40-10 handelt nur
+    // noch `defensive` von selbst; eine Armee auf Angriff oder Garnison haelt nur an, sonst aenderte
+    // der Klick ungefragt ihre Kampfwerte.
+    const marschiert = (stance: Army['stance']) => {
+      const { ctx, capital, neighbour } = fresh()
+      const army = withArmy(ctx.state, capital)
+      army.stance = stance
+      army.path = [neighbour]
+      army.departureTick = ctx.state.tick
+      army.arrivalTick = ctx.state.tick + 30
+      return armyActions(ctx, 'a1').find((a) => a.id === 'stop')!
+    }
+
+    const verteidigung = marschiert('defensive')
+    expect(verteidigung.disabledReason).toBeNull()
+    expect(verteidigung.command).toEqual({ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' })
+    expect(verteidigung.followUp).toEqual({ type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' })
+    expect(verteidigung.hint).toMatch(/Garnison/)
+
+    for (const stance of ['aggressive', 'garrison', 'retreat'] as const) {
+      const anhalten = marschiert(stance)
+      expect(anhalten.command, stance).toEqual({ type: 'STOP_ARMY', playerId: 'p1', armyId: 'a1' })
+      expect(anhalten.followUp, stance).toBeUndefined()
+      expect(anhalten.hint, stance).not.toMatch(/Garnison/)
+    }
+  })
+
+  it('stellt eine Armee auf Verteidigung mit dem eigenen Marschbefehl auf Garnison, jede andere marschiert nur (R-UNIT-09/AK7, T-M40-14)', () => {
+    // Befund H-A der Durchsicht der Nacharbeit: die Ruhe zaehlt ab dem Abmarsch, und nach einem langen
+    // Marsch schickte die Automatik die eben verlegte Armee weiter (Szenario R1).
+    const verlegen = (stance: Army['stance']) => {
+      const { ctx, capital, neighbour } = fresh()
+      const army = withArmy(ctx.state, capital)
+      army.stance = stance
+      return {
+        neighbour,
+        bestaetigen: targetAction(ctx, 'a1', 'move', neighbour),
+        marschieren: armyActions(ctx, 'a1').find((a) => a.id === 'march')!,
+      }
+    }
+
+    const verteidigung = verlegen('defensive')
+    expect(verteidigung.bestaetigen.disabledReason).toBeNull()
+    expect(verteidigung.bestaetigen.command).toEqual({
+      type: 'MOVE_ARMY',
+      playerId: 'p1',
+      armyId: 'a1',
+      targetProvinceId: verteidigung.neighbour,
+    })
+    expect(verteidigung.bestaetigen.followUp).toEqual({ type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' })
+    expect(verteidigung.bestaetigen.hint).toMatch(/Garnison/)
+    expect(verteidigung.marschieren.hint).toMatch(/Garnison/)
+
+    for (const stance of ['aggressive', 'garrison', 'retreat'] as const) {
+      const andere = verlegen(stance)
+      expect(andere.bestaetigen.followUp, stance).toBeUndefined()
+      expect(andere.bestaetigen.hint ?? '', stance).not.toMatch(/Garnison/)
+      expect(andere.marschieren.hint, stance).not.toMatch(/Garnison/)
+    }
+  })
+
+  it('sieht gesammelte Haltungswechsel: eine eben auf Verteidigung geklickte Garnison geht mit Marsch und Anhalten auf Garnison (T-M40-19, Befund N-5)', () => {
+    // Die Uhr steht, der Klick auf „Verteidigung" wartet in der Sammlung der Huelle (`pending`), und der Zustand
+    // sagt noch Garnison. Bis T-M40-19 fragte der Folgebefehl nur den Zustand.
+    const { ctx, capital, neighbour } = fresh()
+    const army = withArmy(ctx.state, capital)
+    army.stance = 'garrison'
+    const verteidigung: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'defensive' }
+    const garnison: Command = { type: 'SET_STANCE', playerId: 'p1', armyId: 'a1', stance: 'garrison' }
+    const gesammelt: ActionContext = { ...ctx, pending: [verteidigung] }
+
+    expect(targetAction(ctx, 'a1', 'move', neighbour).followUp, 'ohne Sammlung').toBeUndefined()
+    const bestaetigen = targetAction(gesammelt, 'a1', 'move', neighbour)
+    expect(bestaetigen.followUp).toEqual(garnison)
+    expect(bestaetigen.hint).toMatch(/Garnison/)
+    expect(armyActions(gesammelt, 'a1').find((a) => a.id === 'march')!.hint).toMatch(/Garnison/)
+
+    army.path = [neighbour]
+    army.departureTick = ctx.state.tick
+    army.arrivalTick = ctx.state.tick + 30
+    expect(armyActions(gesammelt, 'a1').find((a) => a.id === 'stop')!.followUp).toEqual(garnison)
+
+    // Die Gegenrichtung: eine Verteidigung, die eben auf Garnison geklickt wurde, marschiert ohne zweiten Befehl.
+    army.stance = 'defensive'
+    army.path = []
+    army.departureTick = null
+    army.arrivalTick = null
+    const umgestellt: ActionContext = { ...ctx, pending: [garnison] }
+    expect(targetAction(umgestellt, 'a1', 'move', neighbour).followUp).toBeUndefined()
+    expect(armyActions(umgestellt, 'a1').find((a) => a.id === 'march')!.hint).not.toMatch(/Garnison/)
+  })
+})
+
+describe('R-UNIT-03/04 Armeebefehle (Fortsetzung)', () => {
   it('bietet Marsch, Haltung und Teilen an und begruendet den Rest', () => {
     const { ctx, capital } = fresh()
     withArmy(ctx.state, capital)

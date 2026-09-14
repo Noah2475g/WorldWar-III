@@ -1,10 +1,60 @@
-import { readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parse as parseYaml } from 'yaml'
 import { checkScope, parseRequirements } from '../scripts/requirements-coverage.mjs'
-import { missingPaths, reopenedWithoutReason, type PlanTask } from './plan-paths'
+import {
+  missingPaths,
+  missingProsePaths,
+  readProsePaths,
+  reopenedWithoutReason,
+  type PlanTask,
+  type ProseFileSystem,
+} from './plan-paths'
+
+/**
+ * How many files under `cwd` match a repo-relative glob (`*`, `**`, `?`)?
+ *
+ * `globSync` from `node:fs` only exists from Node 22, while `package.json` allows Node 20 —
+ * the plan guard would fail there for a reason that has nothing to do with the plan.
+ */
+function countGlobMatches(pattern: string, cwd: string): number {
+  const segments = pattern.split('/')
+  const firstWild = segments.findIndex((s) => /[*?]/.test(s))
+  const base = segments.slice(0, firstWild).join('/')
+  const wild = segments.slice(firstWild)
+  const source = wild
+    .map((segment, index) => {
+      // A trailing `**` matches everything below, a `**` in between any number of folders.
+      if (segment === '**') return index === wild.length - 1 ? '.*' : '(?:[^/]+/)*'
+      const literal = segment.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*').replace(/\?/g, '[^/]')
+      return index === wild.length - 1 ? literal : `${literal}/`
+    })
+    .join('')
+  const matcher = new RegExp(`^${source}$`)
+  // An own walk instead of readdirSync({ recursive }): that one follows pnpm's links into
+  // node_modules — measured 2026-09-13: `packages` and `apps` did not finish within 60 s,
+  // `packages/core/src` took 225 ms. A plan path starting at `packages/*` would hang the guard.
+  const skip = new Set(['node_modules', '.git', 'target'])
+  let matches = 0
+  const walk = (dir: string, rel: string): void => {
+    let list
+    try {
+      list = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of list) {
+      if (entry.isSymbolicLink() || skip.has(entry.name)) continue
+      const path = rel ? `${rel}/${entry.name}` : entry.name
+      if (matcher.test(path)) matches++
+      if (entry.isDirectory()) walk(join(dir, entry.name), path)
+    }
+  }
+  walk(join(cwd, base), '')
+  return matches
+}
 
 /**
  * The plan guards itself (T-M0-05).
@@ -63,6 +113,16 @@ function parseMarkdown(): Map<string, { deps: string[]; requirements: string[] }
 
 const fromMarkdown = parseMarkdown()
 const byId = new Map(plan.tasks.map((t) => [t.id, t]))
+
+/** Das echte Dateisystem, von der Wurzel des Repos aus gesehen. */
+const root = fileURLToPath(new URL('..', import.meta.url))
+const onDisk = (path: string): 'file' | 'dir' | null => {
+  try {
+    return statSync(join(root, path)).isDirectory() ? 'dir' : 'file'
+  } catch {
+    return null
+  }
+}
 
 describe('R-ARCH-05 Plan-Konsistenz', () => {
   it('beide Aufgabendateien enthalten dieselben IDs', () => {
@@ -257,14 +317,6 @@ describe('R-ARCH-05 Der Plan beschreibt Dateien, die es gibt', () => {
   })
 
   it('jede erledigte Aufgabe nennt nur Pfade, die es gibt', () => {
-    const root = fileURLToPath(new URL('..', import.meta.url))
-    const onDisk = (path: string): 'file' | 'dir' | null => {
-      try {
-        return statSync(join(root, path)).isDirectory() ? 'dir' : 'file'
-      } catch {
-        return null
-      }
-    }
     const result = missingPaths(plan.tasks as PlanTask[], onDisk)
     const lines = result.map((m) => `${m.task} ${m.field}: ${m.path} (${m.reason})`)
     expect(result, `${result.length} tote Pfade:\n${lines.join('\n')}`).toEqual([])
@@ -315,5 +367,142 @@ describe('R-ARCH-05 Der Plan beschreibt Dateien, die es gibt', () => {
       .map(([id]) => id)
       .filter((id) => !design.includes(id))
     expect(ohneEntwurf, `zu bauen, aber ohne Entwurfstext: ${ohneEntwurf.join(', ')}`).toEqual([])
+  })
+})
+
+// 2026-09-13: Der Wächter liest auch die Fassung, die ein Mensch liest.
+//
+// Bis hierher prüfte er `files:` und `tests:` in `tasks.yaml`. Die `Dateien`- und
+// `Tests zuerst`-Zeilen in `03-TASKS.md` daneben nannten zur selben Zeit Dutzende Pfade,
+// die es nicht gibt, alle bei erledigten Aufgaben (PROBLEME.md, 2026-09-12) — dieselbe
+// Fehlerklasse wie am 2026-09-05, nur am Zwilling. Die Leseregeln stehen an
+// `readProsePaths` und im Kopf von `03-TASKS.md`.
+describe('R-ARCH-05 Auch 03-TASKS.md beschreibt Dateien, die es gibt', () => {
+  const erfunden = (entries: Record<string, 'file' | 'dir'>, globs: Record<string, number> = {}): ProseFileSystem => ({
+    exists: (path) => entries[path] ?? null,
+    glob: (pattern) => globs[pattern] ?? 0,
+  })
+  const erledigt: PlanTask[] = [{ id: 'T-X-01', status: 'done' }]
+  const doc = (...lines: string[]) => ['### T-X-01 · Erfunden', ...lines].join('\n')
+  const tote = (markdown: string, fs: ProseFileSystem) =>
+    missingProsePaths(readProsePaths(markdown), erledigt, fs).problems.map((p) => `${p.path} (${p.reason})`)
+
+  it('meldet einen toten Pfad in der Dateien-Zeile einer erledigten Aufgabe', () => {
+    const md = doc('- **Dateien:** `da.ts`, `weg.ts`')
+    expect(missingProsePaths(readProsePaths(md), erledigt, erfunden({ 'da.ts': 'file' })).problems).toEqual([
+      { task: 'T-X-01', field: 'Dateien', path: 'weg.ts', reason: 'fehlt' },
+    ])
+  })
+
+  it('liest Fortsetzungszeilen bis zur nächsten Feldzeile und nicht darüber hinaus', () => {
+    const md = [
+      '### T-X-01 · Erfunden',
+      '- **Dateien:** `a/eins.ts`,',
+      '  `a/zwei.ts`',
+      '- **Fertig wenn:** `a/drei.ts` ist nur erwähnt',
+      '',
+      '### T-X-02 · Die nächste',
+      '- **Ziel:** `a/vier.ts`',
+    ].join('\n')
+    expect(readProsePaths(md).map((e) => e.written)).toEqual(['a/eins.ts', 'a/zwei.ts'])
+  })
+
+  it('überliest Anmerkungen in Klammern, auch über mehrere Zeilen', () => {
+    // Anmerkungen nennen alte Pfade mit Absicht — „der Pfad hieß im Plan …".
+    const md = doc(
+      '- **Dateien:** `neu.ts` *(der Pfad hieß im Plan `alt/weg.ts` — die Regeln liegen unter',
+      '  `data/`)*, `auch.ts` (`Bezeichner.feld`)',
+    )
+    expect(readProsePaths(md).map((e) => e.written)).toEqual(['neu.ts', 'auch.ts'])
+  })
+
+  it('wertet in Dateien nur, was einen Schrägstrich oder eine Endung trägt', () => {
+    const md = doc('- **Dateien:** `package.json` (scripts), `AiMemory`, `pnpm verify`, `.gitignore`')
+    const result = missingProsePaths(readProsePaths(md), erledigt, erfunden({}))
+    expect(result.problems.map((p) => p.path)).toEqual(['package.json', '.gitignore'])
+    expect(result.checked.Dateien).toBe(2)
+  })
+
+  it('liest in Tests zuerst nur Pfade, die an der Wurzel des Repos beginnen', () => {
+    // Die Prosa nennt Dateien beim Kurznamen; `App.test.tsx` lässt sich nicht auflösen,
+    // ohne zu raten, und `map.edges` sieht nur aus wie ein Dateiname.
+    const md = doc(
+      '- **Tests zuerst:** `apps/x.test.ts` — `App.test.tsx` zeigt `map.edges`;',
+      '  `game/advance.test.ts` und `R-GAME-03/04/05` bleiben Prosa',
+    )
+    const result = missingProsePaths(readProsePaths(md), erledigt, erfunden({ apps: 'dir' }))
+    expect(result.problems).toEqual([{ task: 'T-X-01', field: 'Tests zuerst', path: 'apps/x.test.ts', reason: 'fehlt' }])
+    expect(result.checked['Tests zuerst']).toBe(1)
+  })
+
+  it('löst Klammergruppen in einzelne Pfade auf', () => {
+    const md = doc('- **Dateien:** `src/{eins,zwei}.ts`')
+    expect(tote(md, erfunden({ 'src/eins.ts': 'file' }))).toEqual(['src/zwei.ts (fehlt)'])
+  })
+
+  it('verlangt von einem Glob mindestens einen Treffer', () => {
+    const md = doc('- **Dateien:** `src/fx/*`, `src/ui/*.ts`')
+    expect(tote(md, erfunden({}, { 'src/ui/*.ts': 3 }))).toEqual(['src/fx/* (Glob ohne Treffer)'])
+  })
+
+  it('unterscheidet Verzeichnis, Datei und Pfad ohne Endung', () => {
+    const md = doc('- **Dateien:** `ordner/`, `datei.ts`, `apps/desktop/src`')
+    const fs = erfunden({ ordner: 'file', 'datei.ts': 'dir', 'apps/desktop/src': 'dir' })
+    expect(tote(md, fs)).toEqual(['ordner/ (kein Verzeichnis)', 'datei.ts (keine Datei)'])
+  })
+
+  it('erkennt die Kennzeichnung für nie Gebautes und prüft, worauf sie verweist', () => {
+    const md = doc(
+      '- **Dateien:** `ui/TopBar.tsx` *(nie gebaut — die Kopfleiste ist `ui/Header.tsx`)*,',
+      '  `sim/{Host,worker}.ts` *(gelöscht — Weg (b), siehe `docs/DECISIONS.md`)*',
+    )
+    const beide = { 'ui/Header.tsx': 'file', 'docs/DECISIONS.md': 'file' } as const
+    expect(tote(md, erfunden(beide))).toEqual([])
+    expect(tote(md, erfunden({ 'docs/DECISIONS.md': 'file' }))).toEqual(['ui/Header.tsx (fehlt)'])
+  })
+
+  it('meldet eine Kennzeichnung an einem Pfad, den es gibt', () => {
+    // Wer eine gekennzeichnete Datei später baut, muss die Kennzeichnung entfernen —
+    // sonst lügt der Plan in die andere Richtung.
+    const md = doc('- **Dateien:** `da.ts` (nie gebaut — doch)')
+    expect(tote(md, erfunden({ 'da.ts': 'file' }))).toEqual(['da.ts (gekennzeichnet, aber vorhanden)'])
+  })
+
+  it('lässt eine Kennzeichnung nur direkt hinter ihrem Pfad gelten', () => {
+    const md = doc('- **Dateien:** `weg.ts`, dazu *(nie gebaut — steht zu weit weg)*')
+    expect(tote(md, erfunden({}))).toEqual(['weg.ts (fehlt)'])
+  })
+
+  it('lässt offenen und unbekannten Aufgaben ihre künftigen Dateien', () => {
+    const md = doc('- **Dateien:** `kommtnoch.ts`')
+    const offen = missingProsePaths(readProsePaths(md), [{ id: 'T-X-01', status: 'todo' }], erfunden({}))
+    const unbekannt = missingProsePaths(readProsePaths(md), [], erfunden({}))
+    expect([offen.problems, unbekannt.problems]).toEqual([[], []])
+    expect(offen.checked).toEqual({ Dateien: 0, 'Tests zuerst': 0 })
+  })
+
+  it('liest aus einem leeren Dokument nichts — und ist dabei grün', () => {
+    // Genau deshalb sichert der Lauf am echten Dokument unten zu, wie viel er gelesen hat.
+    expect(missingProsePaths(readProsePaths(''), erledigt, erfunden({}))).toEqual({
+      checked: { Dateien: 0, 'Tests zuerst': 0 },
+      problems: [],
+    })
+  })
+
+  const echt = missingProsePaths(readProsePaths(md), plan.tasks as PlanTask[], {
+    exists: onDisk,
+    glob: (pattern) => countGlobMatches(pattern, root),
+  })
+
+  it('liest in 03-TASKS.md wirklich Pfade — mindestens einen je erledigter Aufgabe', () => {
+    const fertig = plan.tasks.filter((t) => t.status === 'done').length
+    expect(echt.checked.Dateien, 'Dateien-Zeilen gelesen').toBeGreaterThanOrEqual(fertig)
+    expect(echt.checked['Tests zuerst'], 'Tests-zuerst-Zeilen gelesen').toBeGreaterThan(0)
+  })
+
+  it('jede erledigte Aufgabe nennt in 03-TASKS.md nur Pfade, die es gibt', () => {
+    const gelesen = echt.checked.Dateien + echt.checked['Tests zuerst']
+    const lines = echt.problems.map((p) => `${p.task} ${p.field}: ${p.path} (${p.reason})`)
+    expect(echt.problems, `${echt.problems.length} tote von ${gelesen} gelesenen Pfaden:\n${lines.join('\n')}`).toEqual([])
   })
 })

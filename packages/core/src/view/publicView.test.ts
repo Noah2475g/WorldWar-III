@@ -41,6 +41,28 @@ beforeEach(() => {
 const ownProvince = (player: string): string =>
   state.provinceOrder.find((id) => state.provinces[id]!.owner === player)!
 
+/**
+ * Die Sicht verraet keine Rueckzugssperre fremder Armeen (T-M40-10, Befund M2 der Durchsicht von M40).
+ *
+ * T-M40-04 gab jeder sichtbaren fremden Armee `retreating`, damit „Angriff" einem weichenden Gegner
+ * folgen konnte. Die Verfolgung ist mit T-M40-10 entfallen — sie schadete in jedem gemessenen Lauf
+ * mit Anlass (D30.9) —, und das Feld war Wissen ohne sichtbare Quelle: der Kern meldet einen Rueckzug
+ * nur dem, der weicht (`ARMY_RETREATED` mit `audience` des Besitzers), und die Oberflaeche zeigte es
+ * nie. Ohne Leser fuehrt die Sicht es nicht mehr.
+ */
+describe('R-DIP-04 Die Sicht verraet keine Rueckzugssperre fremder Armeen', () => {
+  it('fuehrt bei einer sichtbaren fremden Armee unter Angriffssperre kein Feld retreating', () => {
+    state.tick = 100
+    // m1 grenzt an n2, das Nordland gehoert — sichtbar.
+    const weicht = placeArmy(state, { owner: 'p2', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    weicht.cannotAttackUntil = 110
+
+    const view = publicView(state, 'p1')
+    expect(view.armies.some((army) => army.id === weicht.id), 'die Armee ist nicht sichtbar - der Test misst nichts').toBe(true)
+    expect(JSON.stringify(view)).not.toContain('retreating')
+  })
+})
+
 describe('R-UI-09 Die Sicht nennt, was gerade laeuft', () => {
   it('gibt Bauvorhaben mit ihrem Fertigstellungszeitpunkt heraus', () => {
     const id = ownProvince('p1')
@@ -230,5 +252,77 @@ describe('R-UI-13 Die Sicht sagt, ob man selbst noch im Spiel ist', () => {
   it('meldet, solange man lebt, dass man lebt', () => {
     const state = createInitialState(CONFIG, ctx)
     expect(publicView(state, 'p1').self.alive).toBe(true)
+  })
+})
+
+describe('R-AI-01 Die Sicht nennt die Sperre beim Verlegen der Hauptstadt (T-M41-11)', () => {
+  // Befund der Untersuchung zu T-M41-08: `SET_CAPITAL` wird 30 Spieltage nach dem letzten Verlegen
+  // mit ON_COOLDOWN abgelehnt (`CAPITAL_MOVE_COOLDOWN_DAYS`), aber die Sicht fuehrte nur
+  // `capitalLostUntil` — die KI konnte die Sperre nicht sehen und befahl taeglich neu (298-mal in
+  // einem Turnierlauf, nach der Reparatur zu H1 72-mal auf der Weltkarte). Eigenes Wissen, also
+  // unter `self`; nur Sicht, kein Zustandsfeld.
+  it('fuehrt, wann die eigene Hauptstadt zuletzt verlegt wurde', () => {
+    state.players['p2']!.capitalMovedAtTick = 48
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBe(48)
+  })
+
+  it('fuehrt null, solange nie verlegt wurde', () => {
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBeNull()
+  })
+
+  it('verraet die Sperre einer fremden Macht nicht', () => {
+    state.players['p1']!.capitalMovedAtTick = 48
+    expect(publicView(state, 'p2').self.capitalMovedAtTick).toBeNull()
+    expect(JSON.stringify(publicView(state, 'p2').others)).not.toContain('capitalMovedAtTick')
+  })
+})
+
+/**
+ * Die eigenen Zwischenziele in der Sicht (T-M35-05, R-GAME-08/AK3, D31.6).
+ *
+ * Eigenes Wissen, also unter `self` — und nur dort. Wie weit eine fremde Macht auf dem Weg zum
+ * Sieg ist, verraet die Sicht nicht (R-DIP-04): die Rangliste zeigt fremde Punkte ohnehin,
+ * aber ob China die zweite Punktmarke schon an Tag 300 erreicht hat, ist fremdes Wissen.
+ * Wie `economy` nur mit Regeln — die Marken stehen dort.
+ */
+describe('R-GAME-08/AK3 Die Sicht fuehrt nur die eigenen Ziele', () => {
+  type GoalRow = { goal: string; mark: number; value: number; reachedOnDay: number | null }
+  const goalsIn = (view: unknown): GoalRow[] | undefined => (view as { self: { goals?: GoalRow[] } }).self.goals
+
+  it('nennt je Ziel Marke, eigenen Stand und Tag, in der Reihenfolge der Marken', () => {
+    state.players['p1']!.score = 300
+    state.players['p2']!.score = 100
+    ;(state as unknown as { goals: Record<string, Record<string, number | null>> }).goals['p1']!['pointShareFirst'] = 12
+
+    const rows = goalsIn(publicView(state, 'p1', TEST_RULES))!
+    const own = state.provinceOrder.filter((id) => state.provinces[id]!.owner === 'p1').length
+
+    expect(rows.map((row) => row.goal)).toEqual(['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond'])
+    expect(rows.map((row) => row.mark)).toEqual([
+      TEST_RULES.constants.goalProvinces,
+      TEST_RULES.constants.goalPointShareFirstPermille,
+      TEST_RULES.constants.goalPopulationSharePermille,
+      TEST_RULES.constants.goalPointShareSecondPermille,
+    ])
+    expect(rows[0]!.value).toBe(own)
+    expect(rows[1]!.value, '300 von 400 Punkten').toBe(750)
+    expect(rows[3]!.value).toBe(750)
+    expect(rows.map((row) => row.reachedOnDay)).toEqual([null, 12, null, null])
+  })
+
+  it('zeigt keiner Macht die Ziele einer anderen', () => {
+    const goals = (state as unknown as { goals: Record<string, Record<string, number | null>> }).goals
+    goals['p1'] = { provinces: 40, pointShareFirst: 41, populationShare: 42, pointShareSecond: 43 }
+
+    const view = publicView(state, 'p2', TEST_RULES)
+
+    expect(goalsIn(view)!.map((row) => row.reachedOnDay)).toEqual([null, null, null, null])
+    const text = JSON.stringify({ ...view, self: undefined })
+    expect(text, 'fremde Ziele ausserhalb von self').not.toMatch(/goals|reachedOnDay|pointShareFirst/)
+    for (const day of [40, 41, 42, 43]) expect(JSON.stringify(view.self)).not.toContain(`"reachedOnDay":${day}`)
+  })
+
+  it('rechnet ohne Regeln keine Ziele', () => {
+    expect(goalsIn(publicView(state, 'p1'))).toBeUndefined()
   })
 })

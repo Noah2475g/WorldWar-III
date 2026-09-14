@@ -1,5 +1,5 @@
 import type { PublicView } from '@worldwar/core'
-import { accusativePronoun } from '../i18n/grammar.ts'
+import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
 import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
 
@@ -24,6 +24,7 @@ export type AlertKind =
   | 'capital'
   | 'completion'
   | 'unlock'
+  | 'upcoming'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -46,6 +47,9 @@ export const UNREST_MORALE = 33_000
  */
 export const COMPLETION_ALERT_TICKS = 12
 
+/** Wie viele Spieltage vorher sich eine Freischaltung ankuendigt (T-M41-03). */
+export const UPCOMING_LEAD_DAYS = 2
+
 function justFinished(completesAtTick: number, tick: number): boolean {
   return completesAtTick <= tick && tick - completesAtTick < COMPLETION_ALERT_TICKS
 }
@@ -65,9 +69,9 @@ function justFinished(completesAtTick: number, tick: number): boolean {
  */
 function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
   const perDay = rules.constants.ticksPerDay
-  // Nur in den ersten Stunden des Tages — genauso lange wie eine Fertigstellung steht.
-  if (view.tick % perDay >= COMPLETION_ALERT_TICKS) return []
-
+  // Den ganzen Spieltag (T-M41-12). Bis dahin nur in den ersten 12 Stunden, so lange wie eine
+  // Fertigstellung: bei Tempo 100 etwa 0,12 s, und ein Vorspulen von 14:00 bis 14:00 am
+  // naechsten Tag sprang darueber. Wegklicken kann der Spieler sie selbst (`Alerts`).
   const today = Math.floor(view.tick / perDay) + 1
   const alerts: Alert[] = []
 
@@ -99,16 +103,91 @@ function unlockAlerts(view: PublicView, rules: UnlockRules): Alert[] {
   return alerts
 }
 
-/** Genau so viel von den Regeln, wie die Freischaltungsmeldung braucht. */
+/**
+ * Was in zwei Tagen kommt — und was dafuer fehlt (T-M41-03, R-TECH-02).
+ *
+ * Nach M34 hatte die Eroeffnung zwei Pausen von vier Spieltagen ohne jeden Anlass. Die
+ * Freischaltungstage bleiben (DECISIONS.md, 2026-09-13: Ankuendigung statt
+ * Datenaenderung); stattdessen sagt das Spiel zwei Tage vorher, was kommt. Eine blosse
+ * Vorschau waere Kosmetik — deshalb nennt die Ankuendigung die Voraussetzung, die dem
+ * Spieler fehlt, und schweigt davon, sobald sie steht. Aus Warten wird eine Handlung.
+ *
+ * Abgeleitet wie die Freischaltung: aus den Regeln und der eigenen Sicht, den ganzen
+ * Spieltag lang (seit T-M41-12; vorher nur zu Tagesbeginn), ohne Ereignis. Leise — kein Alarm, keine Farbe, kein Sprung auf die Karte (M36: laut
+ * ist nur, was knapp oder umkaempft ist).
+ */
+function upcomingAlerts(view: PublicView, rules: UnlockRules): Alert[] {
+  const perDay = rules.constants.ticksPerDay
+  // Den ganzen Spieltag, wie die Freischaltung (T-M41-12).
+  const day = Math.floor(view.tick / perDay) + 1 + UPCOMING_LEAD_DAYS
+  const own = view.provinces.filter((province) => province.owner === view.playerId)
+  const bestLevel = (building: string): number =>
+    own.reduce((best, province) => Math.max(best, province.buildings?.[building as never] ?? 0), 0)
+  const hasCoast = own.some((province) => province.coastal)
+
+  const text = (kind: 'buildings' | 'units', key: string, rule: Prerequisites): string => {
+    const thing = t(`${kind}.${key}`)
+    // "Dafuer braucht es …" statt "Sie braucht … — Sie haben keine" (Nacharbeit T-M41-03,
+    // Durchsicht N6): das Pronomen der Sache und die Anrede des Spielers waren dasselbe Wort.
+    if (rule.requiresCoastal && !hasCoast) return t('alerts.upcomingNeedsCoast', { thing })
+
+    const required = rule.requiresBuilding
+    const level = rule.requiresBuildingLevel ?? 1
+    const have = required ? bestLevel(required) : 0
+    if (!required || have >= level) return t('alerts.upcoming', { thing })
+
+    const needs = {
+      thing,
+      article: indefiniteArticle('buildings', required),
+      required: t(`buildings.${required}`),
+      none: noneOf('buildings', required),
+    }
+    // Nacharbeit T-M41-03 (Durchsicht M1): steht das Gebaeude schon auf einer niedrigeren
+    // Stufe, hat der Spieler eines — "Sie haben keine" waere falsch. Genannt wird dann die
+    // beste vorhandene Stufe.
+    if (have > 0) return t('alerts.upcomingNeedsHigherLevel', { ...needs, level, have })
+    return level > 1 ? t('alerts.upcomingNeedsLevel', { ...needs, level }) : t('alerts.upcomingNeeds', needs)
+  }
+
+  const alerts: Alert[] = []
+  for (const [key, rule] of Object.entries(rules.buildings)) {
+    if (rule.availableFromDay !== day) continue
+    alerts.push({
+      id: `upcoming:building:${key}`,
+      kind: 'upcoming',
+      icon: BUILDING_ICONS[key] ?? 'barracks',
+      text: text('buildings', key, rule),
+    })
+  }
+  for (const [key, rule] of Object.entries(rules.units)) {
+    if (rule.availableFromDay !== day) continue
+    alerts.push({
+      id: `upcoming:unit:${key}`,
+      kind: 'upcoming',
+      icon: UNIT_ICONS[key] ?? 'infantry',
+      text: text('units', key, rule),
+    })
+  }
+  return alerts
+}
+
+/** Was eine Sache voraussetzt — so viel, wie die Ankuendigung nennen kann. */
+interface Prerequisites {
+  requiresBuilding?: string
+  requiresBuildingLevel?: number
+  requiresCoastal?: boolean
+}
+
+/** Genau so viel von den Regeln, wie Freischaltung und Ankuendigung brauchen. */
 export interface UnlockRules {
   constants: { ticksPerDay: number }
-  buildings: Record<string, { availableFromDay: number }>
-  units: Record<string, { availableFromDay: number }>
+  buildings: Record<string, { availableFromDay: number } & Prerequisites>
+  units: Record<string, { availableFromDay: number } & Prerequisites>
 }
 
 export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[] {
   if (!view) return []
-  const alerts: Alert[] = rules ? unlockAlerts(view, rules) : []
+  const alerts: Alert[] = []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
   const nameOf = (id: string): string => view.provinces.find((province) => province.id === id)?.name ?? id
 
@@ -217,10 +296,33 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[]
     }
   }
 
+  // Freischaltung und Ankuendigung zuletzt (T-M41-12). Seit sie den ganzen Spieltag stehen,
+  // muessen sie hinter dem stehen, was gerade Aufmerksamkeit braucht — das war der Grund, aus
+  // dem T-M21-04 sie nur am Tagesanfang zeigte (`unlocks-explained.test.ts`).
+  if (rules) alerts.push(...unlockAlerts(view, rules), ...upcomingAlerts(view, rules))
+
   return alerts
 }
 
-export function Alerts({ alerts, onJump }: { alerts: readonly Alert[]; onJump: (provinceId: string) => void }) {
+/**
+ * Was der Spieler wegklicken kann (T-M41-12): Ankuendigung und Freischaltung — sie stehen
+ * einen ganzen Spieltag und gehen am Tagesende von selbst. Ein Kampf, ein Mangel oder eine
+ * gefallene Hauptstadt endet mit ihrer Lage, nicht mit einem Klick.
+ */
+export function isDismissible(alert: Alert): boolean {
+  return alert.kind === 'unlock' || alert.kind === 'upcoming'
+}
+
+export function Alerts({
+  alerts,
+  onJump,
+  onDismiss,
+}: {
+  alerts: readonly Alert[]
+  onJump: (provinceId: string) => void
+  /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
+  onDismiss?: (id: string) => void
+}) {
   if (alerts.length === 0) return null
 
   return (
@@ -235,6 +337,18 @@ export function Alerts({ alerts, onJump }: { alerts: readonly Alert[]; onJump: (
               </button>
             ) : (
               <span>{alert.text}</span>
+            )}
+            {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
+            {onDismiss && isDismissible(alert) && (
+              <button
+                type="button"
+                className="alert__dismiss"
+                aria-label={t('alerts.dismiss', { text: alert.text })}
+                title={t('alerts.dismissTitle')}
+                onClick={() => onDismiss(alert.id)}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
             )}
           </li>
         ))}

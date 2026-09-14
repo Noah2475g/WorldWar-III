@@ -1,4 +1,4 @@
-import type { GameEvent, MapData, PublicView, Rules, Terrain } from '@worldwar/core'
+import type { Command, GameEvent, MapData, PublicView, Rules, Terrain } from '@worldwar/core'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { hasKey, t } from '../i18n/text.ts'
 import { amount, unfix } from '../ui/format.ts'
@@ -109,6 +109,8 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
   if (typeof record.armyId === 'string') values.army = naming.army?.(record.armyId) ?? record.armyId
   if (typeof record.newState === 'string') values.state = t(`diplomacy.${record.newState}`)
   if (event.type === 'COMMAND_REJECTED') values.reason = t(`rejections.${String(record.code)}`)
+  // Das Zwischenziel mit Namen statt Schluessel (T-M35-04): „pointShareFirst" sagt niemandem etwas.
+  if (event.type === 'GOAL_REACHED') values.goal = t(`goals.names.${String(record.goal)}`)
 
   if (typeof record.effectiveAtTick === 'number') {
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1
@@ -473,6 +475,39 @@ export function dayReportBody(
   // bleibt die Textfassung einfach leer statt fälschlich still.
   if (lines.length > 0) return lines
   return dayReportDeltas(view).length > 0 ? [] : [t('dayReport.quiet')]
+}
+
+/**
+ * Die leisen Zeilen der Automatik im Protokoll (T-M40-13, Befund M3 der Durchsicht von M40).
+ *
+ * Aus den Befehlen, die `commandsForTick` der Automatik zuschreibt, nicht aus einem Ereignis des Kerns:
+ * Rubrik Kampf, Sprung auf das Ziel, keine Alarmfarbe. Nur Märsche ergeben eine Zeile.
+ *
+ * Die Kennung ist zugleich der React-Schlüssel und hängt am Marsch, nicht am Listenplatz (Nachtrag
+ * T-M40-12, N-4): `App.tsx` hält höchstens 40 Märsche, und fiel vorn einer heraus, rückte bis dahin jede
+ * Kennung um eins. Die Automatik gibt je Tick höchstens einen Befehl je Armee.
+ */
+export function adjutantMarchEntries(
+  marches: readonly { tick: number; command: Command }[],
+  naming: { army: (armyId: string) => string; province: (provinceId: string) => string },
+): EventEntry[] {
+  return marches.flatMap(({ tick, command }) =>
+    command.type === 'MOVE_ARMY'
+      ? [
+          {
+            id: `${tick}-ADJUTANT_MARCH-${command.armyId}-${command.targetProvinceId}`,
+            tick,
+            text: t('events_ui.adjutantMarch', {
+              army: naming.army(command.armyId),
+              province: naming.province(command.targetProvinceId),
+            }),
+            provinceId: command.targetProvinceId,
+            severity: 'info' as const,
+            category: 'combat' as const,
+          },
+        ]
+      : [],
+  )
 }
 
 export function describeEvent(event: GameEvent, index: number, map: MapData, naming: EventNaming = {}): EventEntry {

@@ -1300,7 +1300,9 @@ body {
 
 .stances {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Vier Haltungen seit T-M40-05, zwei mal zwei: in drei Spalten brach der vierte Knopf
+     allein um, in vier wurde "Verteidigung" abgeschnitten. */
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--sp-xs);
   margin-top: var(--sp-md);
 }
@@ -1844,6 +1846,44 @@ body {
   margin: 0 0 var(--sp-md);
 }
 
+/* Die Zwischenziele unter der Rangliste (T-M35-05, D31.6): vier ruhige Zeilen. Das Zeichen
+   traegt den Zustand, der Satz die Marke, rechts stehen Abstand oder Tag. Kein eigenes Panel. */
+.goals__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: var(--sp-md) 0 var(--sp-sm);
+}
+
+.goals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-sm);
+}
+
+.goal {
+  display: grid;
+  grid-template-columns: 1.2em 1fr auto;
+  gap: var(--sp-sm);
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.goal__mark {
+  color: var(--ink-soft);
+}
+
+.goal--reached .goal__mark {
+  color: var(--good);
+}
+
+.goal__state {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Die Sparkline in der Tabellenzelle: fest und schmal, damit die Leiste nicht wieder
    seitwaerts kriecht (T-M22-02) — der Punktraum 0…100 wird hierauf gestaucht. */
 .sparkline {
@@ -2064,6 +2104,24 @@ body {
     opacity: 1;
     transform: none;
   }
+}
+
+/* Der Wegklick an Ankuendigung und Freischaltung (T-M41-12): leise wie die Meldung selbst —
+   keine Alarm- oder Warnfarbe, nur das Zeichen, blasser als der Text. */
+.alert__dismiss {
+  margin-left: auto;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0 var(--sp-sm);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.alert__dismiss:hover,
+.alert__dismiss:focus-visible {
+  opacity: 1;
 }
 
 .alert {

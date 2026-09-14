@@ -68,5 +68,9 @@
   "grievanceOnSurpriseAttack": 400,
   "grievanceDecayPermillePerDay": 30,
   "grievanceMax": 1000,
-  "stalemateDaysBeforePeace": 20
+  "stalemateDaysBeforePeace": 20,
+  "goalProvinces": 25,
+  "goalPointShareFirstPermille": 400,
+  "goalPopulationSharePermille": 350,
+  "goalPointShareSecondPermille": 600
 }

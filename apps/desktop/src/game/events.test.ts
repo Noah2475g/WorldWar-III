@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { EVENT_TYPES, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
+import { EVENT_TYPES, type Command, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import {
+  adjutantMarchEntries,
   battleReport,
   dayExpenses,
   dayReportBody,
@@ -298,6 +299,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     PLAYER_ELIMINATED: { playerId: 'p1' },
     GAME_ENDED: { winner: 'p2', condition: 'points' },
     DAY_REPORT: { day: 3, scores: {} },
+    // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
+    GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -849,5 +852,76 @@ describe('T-M28-06 Der offene Einmarsch-Alarm', () => {
 
   it('sieht nur Einmaersche an, nichts anderes', () => {
     expect(openIntrusion([event({ type: 'ARMY_ARRIVED', tick: 40, playerId: 'p1', armyId: 'a1' })], -1, 50)).toBeNull()
+  })
+})
+
+/**
+ * Die leisen Zeilen der Automatik (T-M40-13; Nachtrag T-M40-12, N-4 der Durchsicht der Nacharbeit).
+ *
+ * `App.tsx` haelt hoechstens 40 Maersche (`slice(-40)`). Die Kennung einer Zeile war ihr Listenplatz:
+ * fiel vorn ein Marsch heraus, rueckte jede Kennung um eins, und React verwechselte die Zeilen. Die
+ * Kennung haengt jetzt am Marsch selbst — die Automatik gibt je Tick hoechstens einen Befehl je Armee.
+ */
+describe('T-M40-13 Die Zeilen der Automatik tragen eine Kennung, die nicht am Listenplatz haengt', () => {
+  const naming = { army: (armyId: string) => `Armee ${armyId}`, province: (provinceId: string) => `Provinz ${provinceId}` }
+  const marsch = (tick: number, armyId: string, targetProvinceId: string): { tick: number; command: Command } => ({
+    tick,
+    command: { type: 'MOVE_ARMY', playerId: 'p1', armyId, targetProvinceId },
+  })
+
+  it('behaelt die Kennung einer Zeile, wenn aeltere Zeilen herausfallen (N-4)', () => {
+    const erster = marsch(100, 'a1', 'n2')
+    const zweiter = marsch(130, 'a2', 'n3')
+
+    const vorher = adjutantMarchEntries([erster, zweiter], naming)
+    const nachher = adjutantMarchEntries([zweiter], naming)
+
+    expect(nachher[0]!.id).toBe(vorher[1]!.id)
+  })
+
+  it('unterscheidet zwei Maersche im selben Tick, schreibt Namen und laesst andere Befehle aus', () => {
+    const zeilen = adjutantMarchEntries(
+      [marsch(100, 'a1', 'n2'), marsch(100, 'a2', 'n3'), { tick: 100, command: { type: 'STOP_ARMY', playerId: 'p1', armyId: 'a3' } }],
+      naming,
+    )
+
+    expect(zeilen).toHaveLength(2)
+    expect(new Set(zeilen.map((zeile) => zeile.id)).size).toBe(2)
+    expect(zeilen[0]).toMatchObject({
+      tick: 100,
+      text: 'Armee a1 rückt von selbst nach Provinz n2 nach.',
+      provinceId: 'n2',
+      severity: 'info',
+      category: 'combat',
+    })
+  })
+})
+
+/**
+ * Das Zwischenziel im Protokoll (T-M35-04, R-GAME-08/AK2, D31.4).
+ *
+ * Ein Zwischenziel, das man nur beim Nachsehen bemerkt, ist kein Ziel — es steht deshalb als
+ * Satz im Protokoll. Ohne Kennungen: „pointShareFirst" oder „p1" muesste der Spieler
+ * nachschlagen, und genau diese Arbeit soll das Protokoll ihm abnehmen.
+ */
+describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
+  const GOALS = ['provinces', 'pointShareFirst', 'populationShare', 'pointShareSecond'] as const
+
+  it('nennt jedes der vier Ziele mit eigenem Namen und ohne Kennung', () => {
+    const texts = GOALS.map(
+      (goal) =>
+        describeEvent(
+          event({ type: 'GOAL_REACHED', playerId: 'p1', audience: ['p1'], concerns: ['p1'], goal, day: 221 }),
+          0,
+          map,
+          { viewer: 'p1' },
+        ).text,
+    )
+
+    for (const text of texts) {
+      expect(text).toMatch(/Zwischenziel/)
+      expect(text).not.toMatch(/provinces|pointShare|populationShare|GOAL_REACHED|events\.|\bp1\b|\{\{/)
+    }
+    expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
   })
 })

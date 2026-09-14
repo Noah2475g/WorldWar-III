@@ -42,6 +42,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
       shortages: [],
       capitalProvinceId: 'home',
       capitalLostUntil: null,
+      capitalMovedAtTick: null,
       score: ownScore,
       reputation: 1000,
       grievances: Object.fromEntries(powers.filter((p) => p.grievance).map((p) => [p.id, p.grievance!])),

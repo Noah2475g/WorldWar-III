@@ -45,6 +45,22 @@ dort genannte Pfad existieren, und `test/plan-consistency.test.ts` prüft es. Am
 zeigten 79 von 289 Einträgen ins Leere — sämtlich bei `done`-Aufgaben, und niemand hat es
 bemerkt, weil kein Prüfer die Felder las.
 
+**Was die Pfade in diesem Dokument bedeuten (2026-09-13).** Die Zeilen `Dateien` und
+`Tests zuerst` sind dieselbe Zusage wie `files:` und `tests:`, und seit diesem Tag prüft
+`test/plan-consistency.test.ts` auch sie bei jeder Aufgabe auf `done` (`readProsePaths` und
+`missingProsePaths` in `test/plan-paths.ts`). Bis dahin las der Wächter nur `tasks.yaml`, und hier
+standen 63 tote Pfade. Die Leseregeln:
+- Gelesen werden Backtick-Pfade **außerhalb von Klammern** — eine Anmerkung darf alte Pfade nennen.
+- In `Dateien` ist alles ein Pfad ab der Wurzel des Repos, was einen Schrägstrich oder eine
+  Dateiendung trägt. In `Tests zuerst` nur, was mit einem Verzeichnis der Wurzel beginnt
+  (`apps/…`, `docs/…`); Kurznamen wie `App.test.tsx` sind dort Prosa.
+- `{a,b}` sind zwei Pfade, ein Glob muss mindestens eine Datei treffen, ein Schrägstrich am Ende
+  verlangt ein Verzeichnis.
+- **Was es mit Absicht nicht gibt, bleibt stehen und wird gekennzeichnet:** direkt hinter dem Pfad
+  eine Klammer, die mit `nie gebaut` oder `gelöscht` beginnt und sagt, was stattdessen gilt, etwa
+  *(nie gebaut — die Kopfleiste ist `apps/desktop/src/ui/Header.tsx`)*. Der Wächter prüft auch die
+  Kennzeichnung: gibt es den Pfad doch, ist sie falsch, und jeder Pfad in ihr muss existieren.
+
 ---
 
 ## Meilenstein M0 — Fundament
@@ -53,7 +69,9 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** Lauffähiges Monorepo mit pnpm-Workspaces, TypeScript (strict), Vitest, ESLint, Prettier.
 - **Anforderungen:** C-01, C-08
 - **Abhängigkeiten:** —
-- **Dateien:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.eslintrc.cjs`, `.gitignore`, `vitest.workspace.ts`
+- **Dateien:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.eslintrc.cjs`
+  *(nie gebaut — die Konfiguration ist `eslint.config.js`)*, `.gitignore`, `vitest.workspace.ts`
+  *(nie gebaut — die Testkette steht in `vitest.config.ts`)*
 - **Tests zuerst:** `test/smoke.test.ts` — prüft, dass die Testkette überhaupt läuft.
 - **Fertig wenn:** `pnpm install && pnpm test` läuft grün durch; `pnpm typecheck` fehlerfrei.
 
@@ -225,7 +243,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** JSON-Schema für Karten + Validator mit klaren Fehlermeldungen.
 - **Anforderungen:** R-MAP-02/AK1/AK2, R-MAP-03
 - **Abhängigkeiten:** T-M1-04
-- **Dateien:** `packages/core/src/map/schema.ts`, `packages/core/src/map/validate.ts`
+- **Dateien:** `packages/core/src/map/schema.ts` *(nie gebaut — das Kantenmodell steht als Typ in
+  `packages/core/src/state/types.ts`)*, `packages/core/src/map/validate.ts`
 - **Tests zuerst:** fehlerhafte Karten werden je mit eigenem Fehler abgelehnt — asymmetrische
   Nachbarschaft, unerreichbare Provinz, doppelte ID, fehlendes Feld sowie als fünfte Klasse
   `EDGE_ASYMMETRY`: `map.edges` und die abgeleiteten `Province.neighbors` stimmen nicht überein.
@@ -380,7 +399,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Ziel:** Ohne dieses Stück bleibt jede Partie auf dem eigenen Kontinent gefangen.
 - **Anforderungen:** R-UNIT-06/AK1
 - **Abhängigkeiten:** T-M4-05
-- **Dateien:** `packages/core/src/phases/transport.ts`
+- **Dateien:** `packages/core/src/phases/transport.ts` *(nie gebaut — Ein- und Ausschiffung rechnet
+  `packages/core/src/phases/movement.ts`, geprüft in `packages/core/src/phases/naval-air.test.ts`)*
 - **Tests zuerst:** Kapazität begrenzt die Zuladung; Ein- und Ausschiffung dauern die belegten
   Zeiten (an feindlicher Küste das Anderthalbfache); eingeschiffte Verbände kämpfen nicht und
   gehen mit dem Schiff verloren; eine Landung an verteidigter Küste erhält den Angriffsmalus;
@@ -390,7 +410,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M4-05c · Luftstreitkräfte als Fernwaffe
 - **Anforderungen:** R-UNIT-08, R-BAT-06
 - **Abhängigkeiten:** T-M4-05b
-- **Dateien:** `packages/core/src/phases/air.ts`
+- **Dateien:** `packages/core/src/phases/air.ts` *(nie gebaut — die Flugplatzbindung prüfen
+  `packages/core/src/commands/move.ts` und `packages/core/src/commands/recruit.ts`, belegt in
+  `packages/core/src/phases/naval-air.test.ts`)*
 - **Tests zuerst:** Flugzeuge wirken nur im Umkreis ihres Flugplatzes, erobern nichts, stehen
   nach dem Einsatz die vorgesehene Zeit am Boden und verlegen nur zwischen eigenen Flugplätzen;
   ohne Flugplatz keine Rekrutierung.
@@ -433,7 +455,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M5-03 · Hauptstadt, Punkte, Sieg, Ausscheiden
 - **Anforderungen:** R-PROV-05, R-GAME-02, R-GAME-01
 - **Abhängigkeiten:** T-M5-02
-- **Dateien:** `packages/core/src/phases/scoring.ts`, `packages/core/src/rules/victory.ts`
+- **Dateien:** `packages/core/src/phases/scoring.ts` *(nie gebaut — Punkte und Sieg rechnet
+  `packages/core/src/rules/victory.ts`)*, `packages/core/src/rules/victory.ts`
 - **Tests zuerst:** alle drei Siegbedingungen lösen korrekt aus; Spieler ohne Provinzen scheidet
   aus; Hauptstadtverlust hat die definierte Folge.
 - **Fertig wenn:** grün.
@@ -506,7 +529,8 @@ bemerkt, weil kein Prüfer die Felder las.
   **Vor** T-M7-01, weil es sonst ein Umbau quer durch Kern, KI und Persistenz wird.
 - **Anforderungen:** R-AI-07/AK1, R-GAME-03
 - **Abhängigkeiten:** T-M6-03
-- **Dateien:** `packages/core/src/state/types.ts` (`AiMemory`), `packages/ai/src/memory.ts`
+- **Dateien:** `packages/core/src/state/types.ts` (`AiMemory`), `packages/ai/src/memory.ts` *(nie gebaut —
+  `decide` in `packages/ai/src/decide.ts` gibt das neue Gedächtnis selbst zurück)*
 - **Tests zuerst:** `decide(view, memory, difficulty)` gibt ein neues Gedächtnis zurück;
   nach Speichern und Laden trifft die KI über 50 Ticks dieselben Entscheidungen wie ohne
   Unterbrechung; das Gedächtnis ist JSON-fähig und geht in den Hash ein.
@@ -515,7 +539,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M7-01 · KI-Grundgerüst und Erklärbarkeit
 - **Anforderungen:** R-AI-01/AK1, R-AI-05
 - **Abhängigkeiten:** T-M7-00
-- **Dateien:** `packages/ai/src/decide.ts`, `packages/ai/src/explain.ts`
+- **Dateien:** `packages/ai/src/decide.ts`, `packages/ai/src/explain.ts` *(nie gebaut — die Begründungen
+  sammelt `packages/ai/src/decide.ts` selbst)*
 - **Tests zuerst:** `decide` erhält nur `publicView` (Typprüfung erzwingt es); jeder erzeugte
   Befehl besteht `canApply`; Debug-Ausgabe nennt Ziel, Nutzen und mindestens eine Alternative.
 - **Fertig wenn:** grün.
@@ -533,7 +558,8 @@ bemerkt, weil kein Prüfer die Felder las.
   abbrechen“ nicht umsetzbar sind — je einzeln testbar.
 - **Anforderungen:** R-AI-03
 - **Abhängigkeiten:** T-M7-02
-- **Dateien:** `packages/ai/src/threat.ts`, `packages/ai/src/strength.ts`
+- **Dateien:** `packages/ai/src/threat.ts`, `packages/ai/src/strength.ts` *(nie gebaut — der
+  Kräftevergleich `compareForces` steht in `packages/ai/src/threat.ts`)*
 - **Tests zuerst:** Die Bedrohung einer Provinz steigt mit feindlicher Stärke in Reichweite
   und fällt mit der Entfernung; der Kräftevergleich schätzt eine überlegene Verteidigung
   korrekt als aussichtslos ein; jeder Nutzenterm liefert einen Wert zwischen 0 und 1000.
@@ -558,7 +584,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M7-05 · Schwierigkeitsgrade und Rechenbudget
 - **Anforderungen:** R-AI-02, R-AI-04, R-AI-06
 - **Abhängigkeiten:** T-M7-04
-- **Dateien:** `packages/ai/src/difficulty.ts`, `packages/core/test/perf/ai.bench.ts`
+- **Dateien:** `packages/ai/src/difficulty.ts` *(nie gebaut — die Stufen sind Regeldaten,
+  `DifficultyRule` in `packages/core/src/rules/types.ts`)*, `packages/core/test/perf/ai.bench.ts`
+  *(nie gebaut — das KI-Budget misst `packages/core/test/perf/tick.bench.slow.test.ts`)*
 - **Tests zuerst:** Der Bench schreibt nach `docs/reports/ai-bench.json`, ein
   `ai.budget.test.ts` liest die Datei und schlägt bei Median ≥ 3 ms (8 KI-Spieler) fehl.
   Der Turnierlauf über 50 Partien trägt das Tag `@slow` (Kurzform für `verify`: 3 Partien) und
@@ -575,8 +603,10 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Anforderungen:** R-GAME-03, R-GAME-04, C-02
 - **Abhängigkeiten:** T-M5-04
 - **Dateien:** `packages/core/src/persistence/StoragePort.ts`,
-  `apps/desktop/src/storage/TauriStorage.ts`, `apps/headless/src/storage/NodeStorage.ts`,
-  `packages/testkit/src/MemoryStorage.ts`
+  `apps/desktop/src/storage/TauriStorage.ts`, `apps/headless/src/storage/NodeStorage.ts`
+  *(nie gebaut — die Zusage wurde am 2026-09-06 zurückgestuft und durch T-M14-08 und T-M16-04
+  geschlossen)*, `packages/testkit/src/MemoryStorage.ts` *(nie gebaut — `MemoryStorage` steht in
+  `packages/core/src/persistence/StoragePort.ts`)*
 - **Tests zuerst:** dieselbe Vertragstestreihe (`list`, `read`, `write`, `remove`, Fehler bei
   unbekanntem Namen) läuft gegen alle drei Umsetzungen.
 - **Fertig wenn:** grün.
@@ -584,7 +614,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-01 · Speichern und Laden
 - **Anforderungen:** R-GAME-03/AK1, R-GAME-05
 - **Abhängigkeiten:** T-M8-00
-- **Dateien:** `packages/core/src/persistence/{save,load,migrate}.ts`
+- **Dateien:** `packages/core/src/persistence/{save,migrate}.ts`, `packages/core/src/persistence/load.ts`
+  *(nie gebaut — `deserialise` steht in `packages/core/src/persistence/save.ts`)*
 - **Tests zuerst:** Hash-Gleichheit nach Speichern/Laden; unbekannte Version wird abgelehnt;
   Migration von einer künstlichen Vorversion funktioniert.
 - **Fertig wenn:** grün.
@@ -592,7 +623,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-02 · Headless-Runner
 - **Anforderungen:** R-ARCH-03, R-AI-06
 - **Abhängigkeiten:** T-M8-01, T-M7-05
-- **Dateien:** `apps/headless/src/{run,tournament,replay,bench}.ts`
+- **Dateien:** `apps/headless/src/{run,tournament,replay}.ts`, `apps/headless/src/bench.ts` *(nie gebaut —
+  `pnpm bench` startet die Benchmarks unter `packages/core/test/perf/` direkt)*
 - **Tests zuerst:** Replay aus Seed + Kommandolog erzeugt denselben Endzustand; Turnier liefert
   reproduzierbare Siegquoten.
 - **Fertig wenn:** `pnpm sim:long`, `pnpm sim:tournament`, `pnpm bench` laufen fehlerfrei.
@@ -600,7 +632,7 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M8-03 · Langlauf und Performancebudget
 - **Anforderungen:** R-ARCH-06/AK1, Abnahmekriterium 6
 - **Abhängigkeiten:** T-M8-02
-- **Dateien:** `packages/core/test/perf/tick.bench.ts`, `docs/reports/performance.md`
+- **Dateien:** `packages/core/test/perf/tick.bench.slow.test.ts`, `docs/reports/performance.md`
 - **Tests zuerst:** Der Bench schreibt nach `docs/reports/tick-bench.json`; er schlägt fehl,
   sobald der Median 0,5 ms oder das 99. Perzentil 2 ms überschreitet. *(Am 2026-09-06
   richtiggestellt: dieser Bench läuft an der Testkarte mit **12** Provinzen und belegt
@@ -630,7 +662,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M9-01 · Geodaten beschaffen und aufbereiten
 - **Anforderungen:** R-MAP-04, R-ASSET-02
 - **Abhängigkeiten:** T-M2-01
-- **Dateien:** `packages/mapgen/src/{fetch,simplify,project}.ts`, `docs/ASSETS.md`
+- **Dateien:** `packages/mapgen/src/{simplify,project}.ts`, `packages/mapgen/src/fetch.ts` *(nie gebaut —
+  die Beschaffung ist `scripts/fetch-geodata.mjs`, die Quellen stehen in `packages/mapgen/src/sources.ts`)*,
+  `docs/ASSETS.md`
 - **Tests zuerst:** Lizenz- und Herkunftseintrag vorhanden; Projektion ist umkehrbar
   (Hin- und Rückrechnung innerhalb Toleranz).
 - **Fertig wenn:** grün. **Achtung:** Datenbeschaffung erfordert einen Download — dafür ist
@@ -657,7 +691,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M9-02c · Seewege und Datumsgrenze
 - **Anforderungen:** R-MAP-01, R-UNIT-06
 - **Abhängigkeiten:** T-M9-02b
-- **Dateien:** `packages/mapgen/src/sealinks.ts`
+- **Dateien:** `packages/mapgen/src/sealinks.ts` *(nie gebaut — die Seewege baut
+  `packages/mapgen/src/sealanes.ts`)*
 - **Tests zuerst:** jede Küstenprovinz hat mindestens einen Seeweg; Seewege überspringen keine
   Landmasse; Provinzen beiderseits der Datumsgrenze sind korrekt verbunden (kein Sprung über
   die halbe Welt); Meerengen sind als `crossing: 'strait'` markiert.
@@ -716,7 +751,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-03a · Kartenansicht: Zeichnen und Auswahl
 - **Anforderungen:** R-MAP-05, R-UI-03
 - **Abhängigkeiten:** T-M10-01b, T-M10-02
-- **Dateien:** `apps/desktop/src/map/{MapCanvas.tsx,layers/*.ts,picking.ts}`
+- **Dateien:** `apps/desktop/src/map/{MapCanvas.tsx,picking.ts}`, `apps/desktop/src/map/layers/*.ts`
+  *(nie gebaut — die Ebenen zeichnet `apps/desktop/src/map/render.ts`)*
 - **Tests zuerst:** Klick trifft die richtige Provinz (Trefferprüfung gegen bekannte Punkte,
   rein geometrisch und damit ohne Browser testbar); Zoom und Verschieben bleiben in Grenzen;
   Ebenenreihenfolge entspricht Design D11.
@@ -725,7 +761,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-03b · Kartenmodi und Bildratenbudget
 - **Anforderungen:** R-MAP-06, R-ARCH-06/AK2
 - **Abhängigkeiten:** T-M10-03a
-- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/e2e/map-perf.spec.ts`
+- **Dateien:** `apps/desktop/src/map/modes.ts`, `apps/desktop/e2e/map-perf.spec.ts` *(nie gebaut — die
+  E2E-Stufe ist am 2026-09-05 zurückgenommen, `docs/plan/DECISIONS.md`; das Zeichnen misst
+  `apps/desktop/src/map/render.bench.slow.test.ts`)*
 - **Tests zuerst:** alle vier Kartenmodi färben nach Regel (Einfärbung als reine Funktion
   geprüft); Bildratenmessung als Playwright-Test gegen den Web-Build: 300 Bilder bei
   200 Provinzen, 95. Perzentil der Bildzeit ≤ 16,7 ms.
@@ -734,7 +772,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-04 · Kopfleiste: Ressourcen, Zeit, Geschwindigkeit
 - **Anforderungen:** R-TIME-02, R-TIME-04, R-ECON-06, R-UI-06
 - **Abhängigkeiten:** T-M10-03b
-- **Dateien:** `apps/desktop/src/ui/TopBar.tsx`, `apps/desktop/src/ui/SpeedControl.tsx`
+- **Dateien:** `apps/desktop/src/ui/TopBar.tsx` *(nie gebaut — die Kopfleiste ist
+  `apps/desktop/src/ui/Header.tsx`)*, `apps/desktop/src/ui/SpeedControl.tsx` *(nie gebaut — der Regler
+  steht in `apps/desktop/src/ui/Header.tsx`, seine Stufen in `apps/desktop/src/game/speed.ts`)*
 - **Tests zuerst:** Regler setzt die Rate; Tastaturkürzel wirken; Bilanzanzeige stimmt mit der
   Simulation überein; Vorspulen-Menü bietet alle Ziele aus R-TIME-03.
 - **Fertig wenn:** grün.
@@ -742,7 +782,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-05 · Provinz- und Armeepanel
 - **Anforderungen:** R-UI-03, R-UI-05, R-PROV-01, R-UNIT-02, R-UNIT-03, R-UNIT-04
 - **Abhängigkeiten:** T-M10-04
-- **Dateien:** `apps/desktop/src/ui/{ProvincePanel,ArmyPanel}.tsx`
+- **Dateien:** `apps/desktop/src/ui/{ProvincePanel,ArmyPanel}.tsx` *(nie gebaut — `ProvincePanel` und
+  `ArmyPanel` stehen in `apps/desktop/src/ui/Panels.tsx`)*
 - **Tests zuerst:** nicht bezahlbare Aktionen sind ausgegraut und nennen den Grund; Tooltip
   zeigt Kosten und Dauer; Marschbefehl zeigt vorab die Ankunftszeit; Bau- und Rekrutier-
   Warteschlangen sind bedienbar.
@@ -751,7 +792,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-06 · Ereignisleiste, Kampfberichte, Diplomatieübersicht
 - **Anforderungen:** R-GAME-06, R-BAT-07, R-DIP-01
 - **Abhängigkeiten:** T-M10-05
-- **Dateien:** `apps/desktop/src/ui/{EventLog,BattleReport,DiplomacyPanel}.tsx`
+- **Dateien:** `apps/desktop/src/ui/{EventLog,BattleReport,DiplomacyPanel}.tsx` *(nie gebaut — `EventLog`,
+  `battleSentence` und `DiplomacyPanel` stehen in `apps/desktop/src/ui/Panels.tsx`)*
 - **Tests zuerst:** Klick auf ein Ereignis springt zur Provinz; Kampfbericht zeigt beide Seiten;
   diplomatische Aktionen erzeugen die richtigen Kommandos.
 - **Fertig wenn:** grün.
@@ -759,7 +801,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-07a · Partie erstellen
 - **Anforderungen:** R-GAME-01, R-GAME-02, R-AI-02
 - **Abhängigkeiten:** T-M10-06
-- **Dateien:** `apps/desktop/src/ui/NewGame.tsx`
+- **Dateien:** `apps/desktop/src/ui/NewGame.tsx` *(nie gebaut — `NewGameDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Partie baut `apps/desktop/src/game/newGame.ts`)*
 - **Tests zuerst:** alle Parameter (Karte, Land, Zahl und Stufe der Gegner, Siegbedingung, Seed)
   landen unverändert im Anfangszustand; ein KI-Ressourcenbonus wird offen angezeigt;
   derselbe Seed erzeugt dieselbe Startaufstellung.
@@ -768,7 +811,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-07b · Speichern, Laden, automatisches Speichern
 - **Anforderungen:** R-GAME-03, R-GAME-04
 - **Abhängigkeiten:** T-M10-07a, T-M8-00
-- **Dateien:** `apps/desktop/src/ui/SaveLoad.tsx`
+- **Dateien:** `apps/desktop/src/ui/SaveLoad.tsx` *(nie gebaut — `SavesDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Plätze verwaltet `apps/desktop/src/game/saves.ts`)*
 - **Tests zuerst:** Speichern und Laden über die Oberfläche erhält den Zustands-Hash
   (im Test gegen `MemoryStorage`); automatisches Speichern rotiert über fünf Stände;
   ein beschädigter Stand wird mit verständlicher Meldung abgelehnt statt zum Absturz zu führen.
@@ -777,7 +821,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-08 · Fehlermeldungen und Rückmeldung bei abgelehnten Aktionen
 - **Anforderungen:** R-ARCH-02/AK1, R-GAME-05, R-UI-07
 - **Abhängigkeiten:** T-M10-05
-- **Dateien:** `apps/desktop/src/ui/errors.ts`, `apps/desktop/src/i18n/de.json`
+- **Dateien:** `apps/desktop/src/ui/errors.ts` *(nie gebaut — die Meldungen bildet heute
+  `apps/desktop/src/game/rejections.ts`)*, `apps/desktop/src/i18n/de.json` *(nie gebaut — die Sprachdatei
+  ist `apps/desktop/src/i18n/de.ts`)*
 - **Tests zuerst:** jeder Wert aus `CommandError` hat einen deutschen Meldungstext (Test
   schlägt bei fehlendem Schlüssel fehl); eine abgelehnte Aktion nennt im Tooltip den Grund.
 - **Fertig wenn:** grün.
@@ -785,7 +831,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-09 · Einstellungen
 - **Anforderungen:** R-GAME-04, R-UI-06, R-FREE-05
 - **Abhängigkeiten:** T-M10-07b
-- **Dateien:** `apps/desktop/src/ui/Settings.tsx`
+- **Dateien:** `apps/desktop/src/ui/Settings.tsx` *(nie gebaut — `SettingsDialog` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`, die Werte in `apps/desktop/src/state/uiState.ts`)*
 - **Tests zuerst:** Intervall des automatischen Speicherns ist einstellbar und wirkt auf die
   nächste Rotation; Ton, Tempogrenze und Debug-Modus sind schaltbar; Einstellungen überleben
   einen Neustart.
@@ -794,7 +841,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-10 · Debug- und KI-Erklärungsansicht
 - **Anforderungen:** R-AI-05, R-AI-02
 - **Abhängigkeiten:** T-M10-09
-- **Dateien:** `apps/desktop/src/ui/DebugPanel.tsx`
+- **Dateien:** `apps/desktop/src/ui/DebugPanel.tsx` *(nie gebaut — `DebugPanel` steht in
+  `apps/desktop/src/ui/Dialogs.tsx`)*
 - **Tests zuerst:** die Ansicht zeigt je KI-Spieler das gewählte Ziel, den Nutzenwert und
   mindestens eine Alternative; zusätzlich Kommandolog und Zustands-Hash je Tick; im
   Normalmodus ist sie unsichtbar.
@@ -803,7 +851,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-11 · Kartenauswahl
 - **Anforderungen:** R-GAME-01, R-MAP-02/AK1, C-03
 - **Abhängigkeiten:** T-M10-07a
-- **Dateien:** `apps/desktop/src/ui/MapSelect.tsx`, `packages/core/src/map/registry.ts`
+- **Dateien:** `apps/desktop/src/ui/MapSelect.tsx` *(nie gebaut — die Kartenwahl ist Teil von
+  `NewGameDialog` in `apps/desktop/src/ui/Dialogs.tsx`)*, `packages/core/src/map/registry.ts` *(nie gebaut —
+  die Kartensammlung steht in `apps/desktop/src/main.tsx`)*
 - **Tests zuerst:** das Kartenregister listet alle Dateien aus `data/maps/`; eine ungültige
   Karte wird mit Meldung abgelehnt statt zum Absturz zu führen; die Auswahl wirkt auf die Partie.
 - **Fertig wenn:** grün.
@@ -811,7 +861,10 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M10-12 · Bedienbarkeit ohne Maus und Zugänglichkeit
 - **Anforderungen:** R-UI-02, R-UI-06, R-UI-05
 - **Abhängigkeiten:** T-M10-10, T-M10-11
-- **Dateien:** `apps/desktop/src/ui/focus.ts`, `apps/desktop/e2e/a11y.spec.ts`
+- **Dateien:** `apps/desktop/src/ui/focus.ts` *(nie gebaut — den Fokusfang hat heute
+  `apps/desktop/src/ui/Dialogs.tsx`, die Tastenzuordnung `apps/desktop/src/keyboard.ts`)*,
+  `apps/desktop/e2e/a11y.spec.ts` *(nie gebaut — die E2E-Stufe ist am 2026-09-05 zurückgenommen; die
+  Prüfung kam mit T-M16-07 als `apps/desktop/src/ui/a11y.test.tsx`)*
 - **Tests zuerst:** jede Aktion aus R-UI-05 ist per Tastatur erreichbar; sichtbarer Fokusring;
   Schriftgröße ist einstellbar; automatische Zugänglichkeitsprüfung ohne kritische Verstöße.
 - **Fertig wenn:** grün.
@@ -823,14 +876,17 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M11-01 · Icons und Kartengrafik
 - **Anforderungen:** R-UI-04, R-ASSET-01, R-ASSET-02
 - **Abhängigkeiten:** T-M10-12
-- **Dateien:** `apps/desktop/src/assets/**`, `docs/ASSETS.md`
+- **Dateien:** `apps/desktop/src/assets/**` *(nie gebaut — die Symbole sind Code in
+  `apps/desktop/src/ui/icons.tsx`)*, `docs/ASSETS.md`
 - **Tests zuerst:** jedes Asset hat einen Lizenzeintrag; keine Datei ohne Herkunftsnachweis.
 - **Fertig wenn:** grün; Einheiten-, Gebäude- und Ressourcen-Icons vollständig.
 
 ### T-M11-02 · Animationen und Ton
 - **Anforderungen:** R-UI-04
 - **Abhängigkeiten:** T-M11-01
-- **Dateien:** `apps/desktop/src/fx/*`, `apps/desktop/src/audio/*`
+- **Dateien:** `apps/desktop/src/fx/*` *(nie gebaut — die Bewegung kam mit T-M13-16 als
+  `apps/desktop/src/ui/motion.ts`)*, `apps/desktop/src/audio/*` *(nie gebaut — der Ton ist
+  `apps/desktop/src/ui/sound.ts`)*
 - **Tests zuerst:** Ton lässt sich abschalten und ist standardmäßig leise; Animationen laufen
   bei hoher Spielgeschwindigkeit nicht auf (Zeitraffer-Test).
 - **Fertig wenn:** grün.
@@ -846,7 +902,8 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M11-04 · Lokalisierung
 - **Anforderungen:** R-UI-07
 - **Abhängigkeiten:** T-M11-02
-- **Dateien:** `apps/desktop/src/i18n/de.json`
+- **Dateien:** `apps/desktop/src/i18n/de.json` *(nie gebaut — die Sprachdatei ist
+  `apps/desktop/src/i18n/de.ts`)*
 - **Tests zuerst:** keine fest verdrahteten Anzeigetexte in Komponenten; jeder Schlüssel ist
   belegt; fehlender Schlüssel schlägt im Test fehl.
 - **Fertig wenn:** grün.
@@ -884,7 +941,9 @@ bemerkt, weil kein Prüfer die Felder las.
 ### T-M12-02b · Einstiegshilfe für die erste Partie
 - **Anforderungen:** R-UI-05
 - **Abhängigkeiten:** T-M12-02
-- **Dateien:** `apps/desktop/src/ui/Onboarding.tsx`
+- **Dateien:** `apps/desktop/src/ui/Onboarding.tsx` *(nie gebaut — die Schritte stehen in
+  `apps/desktop/src/game/tutorial.ts`, gezeigt werden sie seit T-M13-02 von
+  `apps/desktop/src/ui/Tutorial.tsx`)*
 - **Tests zuerst:** fünf geführte Schritte (Provinz wählen, Gebäude bauen, Einheit rekrutieren,
   Armee bewegen, Geschwindigkeit regeln) erscheinen nur in der ersten Partie, sind abschaltbar
   und blockieren keine Eingabe.
@@ -1683,7 +1742,8 @@ bemerkt, weil kein Prüfer die Felder las.
 - **Anforderungen:** R-BAT-01, R-BAT-07
 - **Abhängigkeiten:** T-M14-05
 - **Dateien:** `packages/core/src/rules/combat.ts`,
-  `packages/core/test/properties/combat-conservation.test.ts` *(neu)*,
+  `packages/core/test/properties/combat-conservation.test.ts` *(nie gebaut — als neue Datei geplant;
+  die Stapelkurve prüft `packages/core/src/phases/combat.test.ts`)*,
   `packages/core/src/phases/combat.test.ts`, `packages/core/test/golden/tiny-500.json`,
   `docs/plan/02-DESIGN.md`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`
 - **Tests zuerst:** (alle fünf sind vor dem Umbau rot)
@@ -1751,7 +1811,7 @@ bemerkt, weil kein Prüfer die Felder las.
   `packages/core/src/commands/bombard.ts`, `packages/core/src/phases/applyCommands.ts`,
   `packages/core/src/commands/bombard.test.ts` *(neu)*,
   `packages/core/src/phases/combat.test.ts`, `packages/core/src/phases/retreat.test.ts`,
-  `packages/core/test/properties/combat-conservation.test.ts`,
+  `packages/core/test/properties/combat-conservation.test.ts` *(nie gebaut — siehe T-M14-06)*,
   `packages/core/test/golden/tiny-500.json`, `docs/plan/02-DESIGN.md`,
   `docs/plan/DECISIONS.md`, `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
   `docs/reports/balance-sweep.json`, `docs/reports/ai-tournament.md`
@@ -1843,7 +1903,8 @@ bemerkt, weil kein Prüfer die Felder las.
   3. `test/guards/persistence-contract.test.ts` schlägt fehl, solange nur **eine** Fabrik bei
      `storagePortContract` registriert ist, und meldet jeden Testblock unter
      `R-GAME-03/04/05`, der `MemoryStorage` als einzige Umsetzung nennt.
-  4. `apps/desktop/src/storage/createStorage.test.ts`: mit vorhandenem `indexedDB` kommt der
+  4. `apps/desktop/src/storage/createStorage.test.ts` *(nie gebaut — die Auswahl prüft
+     `apps/desktop/src/storage/IndexedDbStorage.test.ts`)*: mit vorhandenem `indexedDB` kommt der
      dauerhafte Port, ohne `indexedDB` der Speicher-Port **mit** `volatile: true`; ein Test in
      `App.test.tsx` sichert, dass die Oberfläche in diesem Fall den Satz „Stände gehen beim
      Schließen verloren" zeigt. Die Auswahl liegt in `createStorage.ts`, nicht in `main.tsx`.
@@ -1997,16 +2058,20 @@ bemerkt, weil kein Prüfer die Felder las.
   R-AI-01 bekommt eine zusätzliche AK für den Ablehnungsanteil — der heutige grüne Beleg prüft
   einen einzigen Aufruf im Tick 0 im Frieden und kann die Lage, die das Spiel dauernd
   herstellt, gar nicht sehen.
+  *(Nie gebaut und am 2026-09-13 mit T-M41-08 zurückgenommen: R-AI-01 steht in `name_level`, und
+  der Ablehnungsanteil ist im 90-Tage-Lauf der Voreinstellung zugesichert, `DECISIONS.md`.)*
 - **Anforderungen:** R-AI-01, R-AI-03, R-GAME-01
 - **Abhängigkeiten:** T-M14-02
-- **Dateien:** `packages/core/src/map/neighbourhood.ts` *(neu)*, `packages/core/src/index.ts`,
+- **Dateien:** `packages/core/src/map/neighbourhood.ts` *(nie gebaut — als neue Datei geplant; die
+  Gegnerwahl ist `opponentsNear` in `apps/desktop/src/game/newGame.ts`)*, `packages/core/src/index.ts`,
   `packages/ai/src/targeting.ts`, `packages/ai/src/military.ts`, `packages/ai/src/decide.ts`,
   `apps/desktop/src/game/newGame.ts`, `docs/plan/01-REQUIREMENTS.md`,
   `docs/reports/ai-reachability.md` *(neu)*
 - **Tests zuerst:** Der Ausgangswert wird **vor** dem Umbau gemessen und als Zahl mit Datum in
   den Test und in den Bericht geschrieben — ein „weniger als vorher" ohne Vorher-Zahl ist keine
   Messung. Danach, alle vor dem Code rot:
-  `packages/core/src/map/neighbourhood.test.ts` — auf der Weltkarte liefert `landNeighbourOrder`
+  `packages/core/src/map/neighbourhood.test.ts` *(nie gebaut — die Nachbarschaft der Gegner prüft
+  `apps/desktop/src/game/newGame.test.ts`)* — auf der Weltkarte liefert `landNeighbourOrder`
   für jede Startnation eine Reihenfolge, deren erster Eintrag über reine Landkanten erreichbar
   ist; eine Inselnation liefert eine leere Landnachbarschaft statt eines falschen ersten
   Eintrags; zweimal derselbe Aufruf liefert dieselbe Folge.
@@ -2018,7 +2083,8 @@ bemerkt, weil kein Prüfer die Felder las.
   `apps/desktop/src/game/newGame.test.ts` — für die ausgelieferte Voreinstellung hat jede
   teilnehmende Macht einen Landweg zu mindestens einer anderen teilnehmenden Macht; dieselben
   Optionen ergeben zweimal dieselbe Gegnerliste.
-  `apps/headless/test/ai-reachability.slow.test.ts` — 90 Spieltage auf der Weltkarte mit der
+  `apps/headless/test/ai-reachability.slow.test.ts` *(nie gebaut — gemessen wurde über 60 Spieltage, das
+  Ergebnis steht in `docs/reports/ai-reachability.md`)* — 90 Spieltage auf der Weltkarte mit der
   Voreinstellung, gefahren über die gemeinsame Schleife mit `runAi` je Tick (nicht über
   `sweep.ts`): Anteil der `COMMAND_REJECTED`-Ereignisse an allen KI-Befehlen, Anteil `NO_PATH`
   an allen `MOVE_ARMY`, Zahl der `WAR_DECLARED`, und die Häufigkeit jeder Paarung (Armee,
@@ -2029,6 +2095,12 @@ bemerkt, weil kein Prüfer die Felder las.
   **dreimal** vor (vorher bis zum Partieende), und es fällt mindestens **eine** `WAR_DECLARED`
   (vorher 0 in 1000 Tagen). Das R-AI-04-Budget bleibt grün. Die vier Zahlen stehen
   vorher/nachher in `docs/reports/ai-reachability.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`, alle vier Zahlen sind dort zugesichert — gemessen
+  0 % abgelehnt (vor T-M41-08 3,92 %), `NO_PATH` 0 von 2556, keine Paarung, 5 Kriegserklärungen
+  (Stand T-M41-08; nach H1 und T-M41-09: `NO_PATH` 0 von 2405, 6 Kriegserklärungen).
+  Die Paarung nach dem Wortlaut (Armee, Fehlercode) sieht einen wiederholten Bauauftrag nicht; die
+  Fassung (Macht, Befehl, Fehlercode, Einzelheiten) steht als Zahl im Bericht.)*
 
 ### T-M14-12 · Die KI benutzt, was sie hat
 - **Ziel:** Fünf Mechaniken, die der Kern kann und die KI nie anfasst, werden ihr zugänglich
@@ -2081,10 +2153,12 @@ bemerkt, weil kein Prüfer die Felder las.
   `packages/core/src/view/publicView.ts`, `packages/core/src/rules/types.ts`,
   `packages/core/src/rules/load.ts`, `data/rules/default/ai.json`,
   `docs/plan/01-REQUIREMENTS.md`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`,
-  `docs/reports/ai-parity.md` *(neu)*
+  `docs/reports/ai-parity.md` *(nie gebaut — als neuer Bericht geplant; was gebaut und gemessen wurde,
+  steht in der Zeile T-M14-12 von `docs/plan/PROGRESS.md`)*
 - **Tests zuerst:** Fünf Fassungen, jede vor ihrem Code rot, jede gegen den Zustand **nach** dem
   Tageswechsel statt gegen die Formel:
-  `packages/ai/src/capital.test.ts` — eine KI ohne Hauptstadt mit eigener Stadtprovinz erzeugt
+  `packages/ai/src/capital.test.ts` *(nie gebaut — die Fälle stehen in `packages/ai/src/decide.test.ts`)*
+  — eine KI ohne Hauptstadt mit eigener Stadtprovinz erzeugt
   genau ein `SET_CAPITAL` auf die wertvollste; eine KI mit Hauptstadt erzeugt keines; eine KI
   ohne jede Stadtprovinz erzeugt keines und begründet das.
   `packages/ai/src/economy.test.ts` — `recruitCommands` erzeugt über hundert Denkschritte jede
@@ -2092,13 +2166,15 @@ bemerkt, weil kein Prüfer die Felder las.
   die dort nicht steht; `tradeCommands` erzeugt ohne jeden Mangel ein `TRADE`, sobald ein
   Bestand über Rücklage und Tagesbedarf liegt und ein Bauauftrag offen ist, und erzeugt keines,
   wenn der Verkauf die Rücklage anbrechen würde.
-  `packages/ai/src/military.test.ts` — bei vier eigenen Armeen in derselben Provinz entsteht
+  `packages/ai/src/military.test.ts` *(nie gebaut — das Zusammenlegen baut `packages/ai/src/consolidate.ts`,
+  geprüft in `packages/ai/src/decide.test.ts`)* — bei vier eigenen Armeen in derselben Provinz entsteht
   genau ein `MERGE_ARMIES` über alle vier, und im Folgeschritt keines mehr.
   `packages/core/src/view/publicView.test.ts` — `offers` enthält ein an mich gerichtetes Angebot
   und ein von mir gestelltes, und **kein** Angebot zwischen zwei Dritten.
   `packages/ai/src/diplomacy.test.ts` — ohne Angebot in der Sicht entsteht kein `acceptPeace`;
   mit Angebot entsteht genau eines; `offerPeace` bleibt unabhängig davon.
-  `apps/headless/test/ai-parity.slow.test.ts` *(neu)* — 90 Spieltage, Weltkarte, die
+  `apps/headless/test/ai-parity.slow.test.ts` *(nie gebaut — als neue Datei geplant; im Spiel gemessen
+  hat erst T-M15-08 mit `apps/headless/test/ai-integration.slow.test.ts`)* — 90 Spieltage, Weltkarte, die
   Voreinstellung aus T-M14-11, gezählt über die gesammelten Ereignisse, nicht über den
   500er-Ringpuffer.
 - **Fertig wenn:** grün; im 90-Tage-Lauf gilt: keine KI-Macht endet mit
@@ -2113,6 +2189,18 @@ bemerkt, weil kein Prüfer die Felder las.
   stehen in `BALANCING.md` mit Status; die Zahlen vorher/nachher stehen in
   `docs/reports/ai-parity.md`; der Verzicht auf Luftwaffe und Marine steht mit Begründung in
   `DECISIONS.md`.
+  *(Nachgeholt 2026-09-13 mit T-M41-08: der 90-Tage-Lauf steht in
+  `apps/headless/test/ai-integration.slow.test.ts`. Zugesichert: Hauptstadt, Handel je KI-Macht,
+  keine diplomatische Ablehnung (strenger als „unter 5 %"), ein Frieden zwischen zwei KI.
+  **Zurückgenommen** mit Grund in `DECISIONS.md`: „je KI-Macht eine Armee mit `armyRange > 0`" —
+  gemessen 0 von 7. „Höchstens drei Armeeobjekte je Provinz" — gemessen höchstens 86, stehend 8 —
+  steht als Zahl im Bericht und geht an T-M41-10.)* *(T-M41-10 ist am 2026-09-13 nach seinem
+  Rücknahmekriterium zurückgenommen; die Zusage ist mit der Messung nach M18 verschoben.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: „keine Macht ohne Hauptstadt, solange sie eine Stadt
+  hält" lief im 90-Tage-Lauf über einer leeren Menge — dort verliert keine Macht ihre Hauptstadt (0
+  Verluste), die Zusicherung konnte nicht fallen. Sie steht jetzt im 200-Tage-Lauf der Weltkarte, mit der
+  Vorbedingung „mindestens ein Hauptstadtverlust" (gemessen 10); am Ende ohne Hauptstadt: keine. Vorbehalt
+  im Test: die 30-Tage-Sperre des Verlegens kann eine Macht legitim ohne Hauptstadt lassen.)*
 
 ### T-M14-13 · Was der Kern kann, muss der Spieler erreichen
 - **Ziel:** Das Muster, das dieses Projekt dreimal getroffen hat — Symbolsatz, Ton,
@@ -2168,7 +2256,8 @@ bemerkt, weil kein Prüfer die Felder las.
   und `apps/desktop/src/i18n/de.ts` werden hier nicht angefasst.
 - **Anforderungen:** R-UI-05, R-UI-08, R-BAT-05, R-BAT-07, R-GAME-01, R-AI-05, R-DIP-04
 - **Abhängigkeiten:** T-M14-12
-- **Dateien:** `test/guards/ui-command-coverage.ts` *(neu)*, `apps/desktop/src/game/actions.ts`,
+- **Dateien:** `test/guards/ui-command-coverage.ts` *(nie gebaut — als neue Datei geplant; der Wächter
+  steht ganz in `test/guards/ui-command-coverage.test.ts`)*, `apps/desktop/src/game/actions.ts`,
   `apps/desktop/src/game/events.ts`, `apps/desktop/src/game/advance.ts`,
   `apps/desktop/src/game/newGame.ts`, `apps/desktop/src/ui/Panels.tsx`,
   `apps/desktop/src/App.tsx`, `apps/desktop/src/main.tsx`,
@@ -2220,11 +2309,12 @@ bemerkt, weil kein Prüfer die Felder las.
   `data/rules/default/`), Karte: `data/maps/world.json`, Schleife: die gemeinsame aus T-M14-04.
 - **Anforderungen:** R-GAME-02 — dazu Abnahmekriterium AK-1
 - **Abhängigkeiten:** T-M14-01, T-M14-04, T-M14-05, T-M14-06, T-M14-07, T-M14-11, T-M14-12
-- **Dateien:** `apps/headless/test/full-game.slow.test.ts` *(neu)*, `test/scripts.test.ts`,
+- **Dateien:** `apps/headless/test/fullgame.slow.test.ts`, `test/scripts.test.ts`,
   `scripts/acceptance.mjs`, `package.json`, `docs/plan/02-DESIGN.md` (D15),
-  `docs/reports/ak1-full-game.md` *(neu, vom Test geschrieben)*, `docs/reports/acceptance.md`
+  `docs/reports/ak1-full-game.md` *(nie gebaut — als neuer, vom Test geschriebener Bericht geplant; der
+  Test schreibt `docs/reports/fullgame.json`)*, `docs/reports/acceptance.md`
 - **Tests zuerst:**
-  1. `apps/headless/test/full-game.slow.test.ts` — `toConfig(DEFAULT_NEW_GAME, world)` liefert
+  1. `apps/headless/test/fullgame.slow.test.ts` — `toConfig(DEFAULT_NEW_GAME, world)` liefert
      mindestens vier Mächte mit `kind: 'ai'`; der Lauf endet mit `state.victory.winner !== null`
      spätestens am Spieltag 1500 (harter Deckel). *Heute rot:* in der Voreinstellung fällt in
      1000 Tagen keine einzige Kriegserklärung, und eine leere Armee-Hülle hielte den letzten
@@ -2635,9 +2725,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M14-04, T-M15-01
 - **Dateien:** `docs/plan/DECISIONS.md`, `apps/desktop/src/App.tsx`,
   `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/keyboard.ts`,
-  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/sim/SimEngine.ts`,
-  `apps/desktop/src/sim/SimHost.ts`, `apps/desktop/src/sim/worker.ts`,
-  `apps/desktop/src/sim/protocol.ts`, `packages/core/src/clock.ts`,
+  `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/sim/{SimEngine,SimHost,worker,protocol}.ts` *(gelöscht — Weg (b), mit dieser Aufgabe
+  am 2026-09-06, begründet in `docs/plan/DECISIONS.md`)*, `packages/core/src/clock.ts`,
   `test/guards/reachability.ts`, `docs/ANLEITUNG.md`, `docs/reports/performance.md`,
   `docs/plan/02-DESIGN.md`, `docs/plan/01-REQUIREMENTS.md`, `docs/plan/tasks.yaml`
   *(Die Dateien unter `apps/desktop/src/sim/` werden je nach Entscheidung verdrahtet oder
@@ -2766,7 +2856,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   heute prüft weder die eine noch die andere Stelle das. Weiter: `tradeCommands` erzeugt einen
   `TRADE`, **ohne** dass ein Mangel vorliegt, sobald ein Bestand über der Rücklage den teuersten
   offenen Bauauftrag zum Marktpreis bezahlen würde.
-  (b) `packages/ai/src/military.test.ts`: Eine untätige KI-Armee mit Fernwaffen in Reichweite
+  (b) `packages/ai/src/military.test.ts` *(nie gebaut — die KI befiehlt kein `BOMBARD`; ihre Fernwaffen
+  feuern über die Automatik aus T-M15-07 in `packages/core/src/phases/bombardment.ts`, gemessen in
+  `apps/headless/test/ai-integration.slow.test.ts`)*: Eine untätige KI-Armee mit Fernwaffen in Reichweite
   einer feindlichen Provinz erzeugt `BOMBARD`; dieselbe Armee erzeugt keinen gegen eine
   verbündete oder neutrale Macht; ohne Reichweite entsteht kein Befehl. Heute enthält
   `packages/ai/src/military.ts` das Wort `BOMBARD` kein einziges Mal.
@@ -2795,6 +2887,18 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   unterhalb der Marge zählt nicht, weil er nichts über die neue Entscheidung aussagt. Neun
   Zahlen, keine davon null: eine Null heißt, die Mechanik ist für diese Stufe tot, und die
   Aufgabe ist nicht fertig.
+  *(Nachgeprüft 2026-09-13 mit T-M41-08 — die neun Zahlen standen nie in einem Test. Das Turnier
+  zählte Beschuss und Kriegserklärungen je Partie für **beide** antretenden Stufen; jetzt auch nach
+  dem Handelnden. Gemessen: Kriegserklärungen leicht 0, normal 110 (Stand T-M41-08; nach H1 109), schwer 70; selbsttätiger Beschuss
+  **0 auf jeder Stufe**; eine Regelmarge für Handel gibt es nicht. Zugesichert sind die
+  Kriegserklärungen von „schwer" und „normal" (`apps/headless/test/tournament.slow.test.ts`); die
+  übrigen sieben sind mit Grund zurückgenommen (`DECISIONS.md`), und die Null beim Beschuss steht als
+  Befund in `PROBLEME.md` und als Vermerk bei R-BAT-08/AK3.)*
+  *(Nachgemessen nach der Durchsicht von Block N2, H1: **R-BAT-08/AK3 ist für die Stufe „normal" nicht
+  belegt.** In der ausgelieferten Voreinstellung (sieben KI „normal") entstehen in 200 Spieltagen 3
+  Artillerien und **0 selbsttätige Beschüsse**; im Integrationslauf stammen alle 63 Artillerien und 231
+  Beschüsse von einer Macht (China, „schwer"), Frankreich („schwer") hebt keine aus. Engstellen: Fabrik
+  und Geld im Aushebebudget. Keine Grenze geändert; offene Frage an Noah bzw. M18 in `DECISIONS.md`.)*
   *Buchführung* — die Tabelle steht mit Datum in `docs/reports/ai-tournament.md`; jede neue
   Regelzahl (Handelsmarge, Angebotsmarge, Rücklage) steht mit Status *belegt* oder *geschätzt*
   in `BALANCING.md`. **In `01-REQUIREMENTS.md` nennt R-AI-08 keinen Gegenspion und keine
@@ -3032,7 +3136,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Zeichenkontext, und damit wird die Zusicherung zum ersten Mal überhaupt prüfbar.
 - **Anforderungen:** R-ARCH-06, R-UI-12
 - **Abhängigkeiten:** T-M16-03
-- **Dateien:** `apps/desktop/src/ui/MapCanvas.tsx`, `docs/reports/render-bench.json`
+- **Dateien:** `apps/desktop/src/map/MapCanvas.tsx`, `docs/reports/render-bench.json`
 - **Fertig wenn:** die Zusicherung ist an einem Lauf belegt, der wirklich zeichnet, und die
   unausgeführten Zeilen von `MapCanvas` sind **gezählt statt geschätzt**. Fällt die Messung
   gegen die Anforderung aus, gilt dasselbe wie in T-M16-02: nachmessen und begründen, nicht
@@ -3045,7 +3149,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Funktion, sondern eines laufenden Baums.
 - **Anforderungen:** R-UI-15, R-UI-06
 - **Abhängigkeiten:** T-M16-03
-- **Dateien:** `apps/desktop/src/ui/Dialog.tsx`, `apps/desktop/src/ui/Panels.tsx`
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/ui/Panels.tsx`
 - **Tests zuerst:** `apps/desktop/src/ui/a11y.test.tsx` — Escape schließt jeden Dialog; der
   Fokus bleibt im offenen Dialog und kehrt beim Schließen an das auslösende Element zurück;
   die Tabreihenfolge folgt der Leserichtung; ein Wächter findet jedes Bedienelement ohne
@@ -3073,6 +3177,265 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > **nicht** in `tasks.yaml`: ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine
 > einzige Aufgabe trägt, und verlangt dann für alle acht M17-Anforderungen Entwurf und Aufgabe.
 > M17 wird als Ganzes geplant oder gar nicht — wer ihn aufmacht, nimmt diese beiden mit.
+>
+> **Berichtigt und geplant am 2026-09-13 (T-M17-01).** Zwei Sätze oben stimmen nicht:
+> einen eigenen **Widerruf** des Durchmarschrechts gibt es nicht — das Recht endet nur mit
+> Bündnisbruch oder Kriegserklärung —, und das Recht ist ein **symmetrisches** Feld je Paar,
+> sodass der Gewährende selbst folgenlos ins Land des anderen darf (Befund B1,
+> `PROBLEME.md`). Der Antrag ist erst sinnvoll, wenn das Recht eine Richtung hat. Seit diesem
+> Tag ist M17 **als Ganzes** geplant: Entwurf **D29**, neue Anforderungen **R-DIP-08**
+> (gerichteter Durchmarsch samt Antrag, gerichtete Kartenfreigabe), **R-DIP-09**
+> (Provinzhandel), **R-AI-09** (Integrationstor der KI), **R-GAME-09** (Migration auf Stufe 4),
+> sechzehn Aufgaben. Die beiden Vormerkungen sind T-M17-04 und T-M17-06.
+>
+> **Reihenfolge.** M17 kommt nach M41, M40 und M35: M35 nimmt `SCHEMA_VERSION` 3, M17 nimmt
+> **4** mit eingefrorenem `save-v3.json`; der Ausgangswert (T-M17-02) wird erst nach dem
+> KI-Fabrikausbau (T-M41-02) und nach M35 gemessen. Nach T-M17-03 sind 04/05 und 07 unabhängig,
+> teilen aber `events/types.ts`, `publicView.ts`, `constants.json` — **nacheinander committen**.
+> T-M17-16 trug den **einen** Parameterlauf der Delegation (`DECISIONS.md`, 2026-09-13).
+> *(Umgerichtet am 2026-09-13: M17 ist abgetrennt (Noah, „M17 machen wir später"); der eine
+> Parameterlauf läuft im Schlussblock nach M35. T-M17-16 behält seine eigene Abschlussmessung
+> für den späteren M17-Bau, weil M17 `data/rules` erneut ändert.)*
+>
+> **Nicht in M17:** Kohle ohne Senke und der Vorratsaufbau (`PROBLEME.md`, 2026-09-06) sowie
+> die amphibische KI wandern begründet nach M18 — M17 misst die Bestandssummen trotzdem vorher
+> und nachher (T-M17-02, T-M17-16).
+
+### T-M17-01 · M17 wird als Ganzes geplant
+- **Ziel:** ein Meilenstein gilt dem Plan-Wächter als geplant, sobald er eine Aufgabe trägt —
+  dann verlangt er für alle seine Anforderungen Aufgabe und Entwurfstext. Also in einem Zug.
+- **Anforderungen:** keine · **Entwurf:** D29
+- **Abhängigkeiten:** keine
+- **Dateien:** `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`,
+  `packages/ai/src/targeting.ts`, `packages/ai/src/economy.ts`
+- **Tests zuerst:** `test/plan-consistency.test.ts` und `test/requirements.test.ts` — rot mit der
+  ersten M17-Zeile in `tasks.yaml`, grün, wenn alles steht.
+- **Fertig wenn:** D29, R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09 und T-M17-02 bis -16 stehen, die
+  Befunde B1 bis B8 in `PROBLEME.md`, und `DECISIONS.md` die Platzhalter aus T-M32-03 auflöst,
+  die falsche Aussage zur Bewegungsphase datiert berichtigt, die gerichtete Kartenfreigabe
+  (delegiert, kippbar) und die Umhängung nach M18 festhält.
+- **Erledigt am 2026-09-13:** in einem Doku-Commit. Die Kommentare zur amphibischen KI in
+  `targeting.ts` und `economy.ts` nennen jetzt M18 — nur Text, kein Code.
+
+### T-M17-02 · Ausgangswert und eingefrorener Stand der Stufe 3
+- **Ziel:** erst messen, dann ändern — und zwar den Stand, auf dem M17 wirklich aufsetzt.
+- **Anforderungen:** keine · **Entwurf:** D29.7, D29.10
+- **Abhängigkeiten:** T-M17-01, T-M35-06, T-M41-02
+- **Dateien:** `docs/reports/m17-baseline.json`, `packages/core/test/golden/save-v3.json`
+- **Tests zuerst:** neu `apps/headless/test/m17-baseline.slow.test.ts` — 200 Spieltage, acht
+  KI, Weltkarte: Überfälle ohne Kriegserklärung, Durchmarsch- und Kartenfreigaben,
+  Bestandssummen je Rohstoff an Tag 200, Median des täglichen Geldertrags an Tag 30,
+  abgelehnte KI-Befehle je Code.
+- **Fertig wenn:** der Bericht steht und `save-v3.json` eingefroren ist — vor jeder
+  M17-Änderung, mit mindestens einer gewährten Durchmarsch-, einer geteilten Karte und einem
+  offenen Friedensangebot. Ist die Zahl der Überfälle null, steht das so im Bericht (B6).
+
+### T-M17-03 · Zustand und Migration 3 → 4
+- **Ziel:** alle neuen Felder in einem Schritt, damit sich `tiny-500` in M17 genau einmal
+  verschiebt.
+- **Anforderungen:** R-GAME-09 · **Entwurf:** D29.1, D29.10, D29.11
+- **Abhängigkeiten:** T-M17-02, T-M35-03
+- **Dateien:** `packages/core/src/state/types.ts`, `packages/core/src/state/create.ts`,
+  `packages/core/src/state/clone.ts`, `packages/core/src/persistence/migrate.ts`,
+  `packages/core/src/persistence/validate.ts`, `packages/core/src/commands/diplomacy.ts`,
+  `packages/core/src/phases/diplomacy.ts`, `packages/core/src/view/publicView.ts`,
+  `packages/ai/src/relationship.ts`, `packages/ai/src/diplomacy.ts`,
+  `packages/core/test/golden/tiny-500.json`, `apps/headless/test/golden/walkthrough.json`
+- **Tests zuerst:** `migration-v3.test.ts` — `save-v3.json` läuft nach der Migration, die
+  Differenz besteht nur aus `ADDED_IN_VERSION_4` und den entfernten Schlüsseln, hashgleich
+  nach Speichern und Laden (R-GAME-09/AK1); `save-v1.json` und `save-v2.json` über alle
+  Schritte (AK2); keine geteilten Referenzen nach `cloneState`.
+- **Fertig wenn:** `SCHEMA_VERSION` 4 ist, beide Golden-Master begründet neu stehen und der
+  Formatwächter die Stufe 3 → M17 kennt. **Korrektur am Planungsstand:** wer `rightOfWay` und
+  `sharedMap` aus dem Typ nimmt, muss jeden Leser im selben Commit umstellen — hier lesen alle
+  über `grantsPassage` und `sharesMap`, und alle Schreiber setzen **vorerst beide Richtungen**
+  (verhaltensgleich); die Richtung selbst kommt in T-M17-04.
+
+### T-M17-04 · Durchmarsch gerichtet, Antrag, Widerruf, Frist — und die Kartenfreigabe gerichtet
+- **Ziel:** wer gewährt, lässt durch — und darf nicht selbst hindurch.
+- **Anforderungen:** R-DIP-08, R-DIP-06 · **Entwurf:** D29.2–D29.6
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/diplomacy.ts`, `packages/core/src/commands/types.ts`,
+  `packages/core/src/phases/diplomacy.ts`, `packages/core/src/view/publicView.ts`,
+  `packages/core/src/events/types.ts`, `packages/ai/src/relationship.ts`,
+  `packages/ai/src/diplomacy.ts`, `data/rules/default/constants.json`,
+  `packages/core/src/rules/load.ts`, `packages/core/src/rules/types.ts`,
+  `docs/plan/BALANCING.md`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `phases/diplomacy.test.ts` R-DIP-08/AK1 (A gewährt B und betritt Bs Gebiet →
+  Überfall; heute grün für A, also zuerst rot machen), AK2 bis AK6; `ai/diplomacy.test.ts`:
+  das Erwidern ändert nach dem Tick den **Zustand** — Reparatur herausnehmen, fallen sehen (B2).
+- **Fertig wenn:** `grantRightOfWay` und `shareMap` nur die eigene Richtung setzen, Antrag,
+  Annahme und Widerruf mit Frist wirken, die Angebotsfrist aus `constants.json` kommt (B3), die
+  Sichtfelder `passageGranted`, `passageReceived`, `passageEndsAtTick`, `mapShared`,
+  `mapReceived` heißen und die Golden-Master unverändert sind.
+
+### T-M17-05 · Handelsangebote mit Treuhand
+- **Ziel:** ein zweiter Handelsweg neben der Börse, der Mengen zwischen zwei Mächten bindet.
+- **Anforderungen:** R-DIP-05 · **Entwurf:** D29.2–D29.6
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/commands/handlers.ts`,
+  `packages/core/src/commands/types.ts`, `packages/core/src/phases/diplomacy.ts`,
+  `packages/core/src/events/types.ts`, `packages/core/src/events/world.ts`,
+  `packages/core/src/view/publicView.ts`, `data/rules/default/constants.json`,
+  `packages/core/src/rules/load.ts`, `packages/core/src/rules/types.ts`,
+  `docs/plan/BALANCING.md`, `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`,
+  `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `tradeOffer.test.ts` R-DIP-05/AK1 bis AK4; Eigenschaft: Bestände plus
+  Treuhand bleiben über zufällige Folgen aus Angebot, Rückzug, Verfall, Annahme und Krieg
+  konstant; Überfall und Verfall im selben Tick; `TRADE_AGREED` ohne Mengenfeld.
+- **Fertig wenn:** Handelsangebote nicht das Löschen aller Angebote an den Annehmenden erben
+  (B4). **Korrektur am Planungsstand:** die vier neuen Befehlstypen erreicht die Oberfläche erst
+  in T-M17-14 — sie stehen bis dahin mit Verweis in `NICHT_FUER_DEN_SPIELER`, sonst ist der
+  Wächter dazwischen rot.
+
+### T-M17-06 · Provinzhandel
+- **Ziel:** eine Provinz wechselt den Besitzer, ohne dass jemand sie erobert.
+- **Anforderungen:** R-DIP-09 · **Entwurf:** D29.2, D29.5
+- **Abhängigkeiten:** T-M17-05
+- **Dateien:** `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/phases/occupation.ts`,
+  `packages/core/src/events/types.ts`, `packages/core/src/events/world.ts`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** R-DIP-09/AK1 (vier Ablehnungen, bei Angebot **und** Annahme, Verfall mit
+  Rückgabe), AK2 (Besitzer im selben Tick, Aufträge enden über `ownerAtStart`, keine
+  Verstimmung, kein Alarm); nie ein Überfall im Tick danach.
+- **Fertig wenn:** der Besitzerwechsel über einen gemeinsamen Helfer mit der Eroberung läuft und
+  `PROVINCE_CEDED` im Weltgeschehen steht.
+
+### T-M17-07 · Spione anwerben, ansetzen, entlassen
+- **Ziel:** Spione sind keine Einheiten, sondern Aufträge mit Sold.
+- **Anforderungen:** R-SPY-01 · **Entwurf:** D29.2, D29.7
+- **Abhängigkeiten:** T-M17-03
+- **Dateien:** `packages/core/src/commands/espionage.ts`, `packages/core/src/commands/handlers.ts`,
+  `packages/core/src/commands/types.ts`, `packages/core/src/view/publicView.ts`,
+  `data/rules/default/constants.json`, `packages/core/src/rules/load.ts`,
+  `packages/core/src/rules/types.ts`, `docs/plan/BALANCING.md`,
+  `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `espionage.test.ts` R-SPY-01/AK1 bis AK3 samt Prüfreihenfolge.
+- **Fertig wenn:** Preis und Sold aus dem Anker von T-M17-02 stehen und die drei Befehlstypen bis
+  T-M17-13 mit Verweis in `NICHT_FUER_DEN_SPIELER` stehen.
+
+### T-M17-08 · Sold, Tageslauf und Aufklärung
+- **Ziel:** ein Spion tut einmal am Tag etwas, und nur, wenn er bezahlt ist.
+- **Anforderungen:** R-SPY-02, R-SPY-03 · **Entwurf:** D29.3, D29.4, D29.6
+- **Abhängigkeiten:** T-M17-07
+- **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/phases/dailyTick.ts`,
+  `packages/core/src/view/publicView.ts`, `packages/core/src/view/intel.ts`,
+  `packages/core/src/events/types.ts`, `apps/desktop/src/game/events.ts`,
+  `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `phases/espionage.test.ts` R-SPY-02/AK1 bis AK3, R-SPY-03/AK1 und AK2; ohne
+  Spione ist der Hash nach jedem von 500 Ticks gleich dem Lauf ohne `settleEspionage`; mit
+  Spionen zwei Läufe gleicher Startzahl hashgleich.
+- **Fertig wenn:** `tiny-500` unverändert ist.
+
+### T-M17-09 · Sabotage und Gegenspionage
+- **Ziel:** der Betroffene erfährt, dass etwas geschah — nicht, wer es war.
+- **Anforderungen:** R-SPY-04, R-SPY-05 · **Entwurf:** D29.3, D29.5
+- **Abhängigkeiten:** T-M17-08
+- **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/events/types.ts`,
+  `data/rules/default/constants.json`, `docs/plan/BALANCING.md`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** R-SPY-04/AK1 bis AK4 (nie negativer Bestand, eine Sabotage je Provinz und Tag,
+  `firstAlertFor` hält das Opfer an und keinen Dritten), R-SPY-05/AK1 und AK2;
+  `event-audience.test.ts` mit Spionen: kein Ereignis für das Opfer trägt den Urheber, auch nicht
+  im gerenderten Text.
+- **Fertig wenn:** `SABOTAGE_SUFFERED` ohne Urheberfeld in `ALERT_TYPES` steht.
+
+### T-M17-10 · KI: Durchmarsch und Handelsangebote
+- **Ziel:** ohne die KI ist jeder neue Weg ein Spielervorteil (R-AI-01).
+- **Anforderungen:** R-AI-09, R-DIP-08, R-DIP-05 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-04, T-M17-05
+- **Dateien:** `packages/ai/src/passage.ts`, `packages/ai/src/trade.ts`, `packages/ai/src/decide.ts`,
+  `packages/ai/src/military.ts`, `data/rules/default/ai.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`, `test/balancing.test.ts`
+- **Tests zuerst:** `passage.test.ts` (Weg durch eine friedliche Macht → Antrag statt Marsch,
+  Antwort nach Schwelle, Widerruf, Rückzug des Gasts), `trade.test.ts` (Annahme und Ablehnung
+  begründet, Angebot nur bei Kurswirkung); `test/balancing.test.ts` prüft die neuen Zahlen oben
+  in `ai.json`.
+- **Fertig wenn:** jede Handlung Grund und Alternative nennt (R-AI-09/AK4) und das Turnier im
+  Band 0,55 bis 0,95 bleibt.
+
+### T-M17-11 · KI: Provinzwert und Provinzhandel
+- **Ziel:** was eine fremde Provinz wert ist, ist die eigentliche Arbeit am Provinzhandel.
+- **Anforderungen:** R-DIP-09, R-AI-09 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-06, T-M17-10
+- **Dateien:** `packages/ai/src/provinceValue.ts`, `packages/ai/src/trade.ts`,
+  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `provinceValue.test.ts` R-DIP-09/AK3 (Wert unverändert, wenn nicht
+  aufgedeckte fremde Gebäude sich ändern), AK4; nie Hauptstadt, nie eine Provinz mit eigenen
+  Armeen.
+- **Fertig wenn:** Annehmen und Ablehnen zugesichert sind. **Rückfall:** aktives Kaufen und
+  Verkaufen wird gebaut, aber im Integrationstor nur gezählt — der teuerste und unsicherste Teil
+  von M17 bekommt keine Zusage, die an einer Zahl hängt, die niemand geschätzt hat.
+
+### T-M17-12 · KI: Spionage
+- **Ziel:** die Spionagepflichten, die R-AI-08 abgegeben hat.
+- **Anforderungen:** R-AI-09 · **Entwurf:** D29.8, D29.12
+- **Abhängigkeiten:** T-M17-09
+- **Dateien:** `packages/ai/src/espionage.ts`, `packages/ai/src/decide.ts`,
+  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `espionage.test.ts` (KI) — Gegenspion bei Krieg, Sabotage nie gegen eine
+  Friedensmacht, Budget nie überschritten, Entlassen bei drohendem Geldmangel, jede Handlung
+  begründet.
+- **Fertig wenn:** Turnier und `progress.slow.test.ts` nachgefahren sind; kippt das Band, wird
+  `grievanceOnSpyDetected` gesenkt, nicht der Wächter.
+
+### T-M17-13 · Oberfläche Spionage
+- **Ziel:** eine Mechanik ohne Knopf ist für den Spieler nicht vorhanden.
+- **Anforderungen:** R-SPY-06 · **Entwurf:** D29.9
+- **Abhängigkeiten:** T-M17-09
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/keyboard.ts`,
+  `apps/desktop/src/state/uiState.ts`, `apps/desktop/src/ui/icons.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `actions.test.ts` R-SPY-06/AK1, `keyboard.test.ts` (`s` öffnet die Übersicht,
+  Strg+S speichert weiter), `Alerts.test.tsx` R-SPY-06/AK2, Symbole mit `test/path-bounds.ts`,
+  `text.test.ts`.
+- **Fertig wenn:** die Spionagebefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind und der
+  Wächter grün ist. Nicht gleichzeitig mit T-M17-14 an `Alerts.tsx` — nacheinander committen.
+
+### T-M17-14 · Oberfläche Handel und Durchmarsch
+- **Ziel:** ein Angebot, das niemand bemerkt, wird nie angenommen.
+- **Anforderungen:** R-DIP-07, R-DIP-08, R-DIP-09 · **Entwurf:** D29.9
+- **Abhängigkeiten:** T-M17-04, T-M17-05, T-M17-06
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+- **Tests zuerst:** `Panels.test.tsx` R-DIP-07/AK1 (Meldung → Diplomatie, beide Seiten in Worten,
+  keine Kennung); Vorschau gleich `exchangeAmount`; Antrag, Annahme und Widerruf erreichbar.
+- **Fertig wenn:** `onJump` ein Panelziel kennt (die Tests aus T-M31 und T-M36 ziehen mit) und die
+  Handelsbefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind.
+
+### T-M17-15 · Das Integrationstor
+- **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel.
+- **Anforderungen:** R-AI-09 · **Entwurf:** D29.8
+- **Abhängigkeiten:** T-M17-10, T-M17-11, T-M17-12, T-M17-13, T-M17-14
+- **Dateien:** `docs/reports/m17-integration.json`
+- **Tests zuerst:** neu `apps/headless/test/m17-integration.slow.test.ts` nach dem Muster von
+  `ai-integration.slow.test.ts` — 200 Spieltage, acht KI, Weltkarte, alles aus dem Ereignisstrom:
+  R-AI-09/AK1 bis AK4.
+- **Fertig wenn:** die Zahlen samt Nullen im Bericht stehen. `PROVINCE_CEDED` wird gezählt, nicht
+  zugesichert — bleibt es in drei Startzahlen null, führt `PROBLEME.md` die Verkaufsregel als zu
+  streng.
+
+### T-M17-16 · Abschlussmessung, der eine Parameterlauf, Abnahme
+- **Ziel:** alle Regeländerungen der Delegation einmal und zusammen vermessen.
+- **Anforderungen:** keine · **Entwurf:** D29.11, D29.12
+- **Abhängigkeiten:** T-M17-15
+- **Dateien:** `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
+  `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`,
+  `docs/reports/m17-baseline.json`, `docs/reports/acceptance.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** keine neuen; `sweep.slow.test.ts`, `tournament.slow.test.ts`,
+  `progress.slow.test.ts` und die Vollpartie laufen am Endstand.
+- **Fertig wenn:** der **eine** `pnpm balance:sweep` und das Turnier eingecheckt sind, der
+  Frische-Wächter wieder grün ist und die Zeile über die absichtlich rote Abnahme aus
+  `WORKFLOW.md` §0 verschwindet; Vergleich gegen T-M17-02 (Siegtag, Siegverteilung, Band,
+  Bestandssummen je Rohstoff); `pnpm acceptance` auf freier Maschine 11 von 11.
+  *(Umgerichtet am 2026-09-13: M17 ist abgetrennt; den einen Parameterlauf der Delegation und
+  das Entfernen der Zeile in `WORKFLOW.md` §0 trägt der Schlussblock nach M35. Diese Aufgabe
+  bleibt die Abschlussmessung des späteren M17-Baus, mit eigenem Parameterlauf nach dessen
+  letzter Regeländerung.)*
 
 ## Meilenstein M18 — Später
 
@@ -3082,6 +3445,12 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > nicht der laufende Plan ist; wer etwas von hier bauen will, schreibt zuerst eine Anforderung
 > mit Akzeptanzkriterien und holt sie in einen echten Meilenstein. Ein Meilenstein ohne Aufgaben
 > ist unbedenklich — der Plan-Wächter prüft die Richtung Aufgabe → Meilenstein, nicht umgekehrt.
+>
+> **Vorgemerkt am 2026-09-13 (T-M41-10, zurückgenommen):** „keine KI-Macht hält mehr als drei stehende
+> Armeeobjekte in derselben Provinz" (Zusage 7 aus T-M14-12). Gebaut, gemessen und am Rücknahmekriterium
+> gerissen — das Artillerie-Tor fiel auf null. Vor einem neuen Anlauf: `TARGET_MIX` in
+> `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
+> verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
 
 ---
 
@@ -3862,7 +4231,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   ging, Wiederlesen war „forbidden path". Ursache (Falsifikationskette in PROBLEME.md):
   die Scope-Prüfung von `tauri-plugin-fs` kanonisiert existierende Pfade zur
   `\\?\C:\…`-Form, auf die kein Scope-Muster passt. Der Speicherweg läuft jetzt über
-  **sechs eigene, engere Kommandos der Hülle** (Dateiname statt Pfad, fest auf
+  **sechs *(korrigiert 2026-09-13: fünf)* eigene, engere Kommandos der Hülle** (Dateiname statt Pfad, fest auf
   `$APPDATA/saves`); das fs-Plugin samt Berechtigungen ist entfernt. Danach alle
   sieben Schritte grün, erstmals einschließlich „Weiterspielen (Tag 1)" am Programm.
 
@@ -4384,10 +4753,23 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   ließe den Spieler an Tag 4 auf Tag 16 warten, während an Tag 6 der Hafen kommt.
   Entscheid in `DECISIONS.md`.
 
-## Meilenstein M35 — Der lange Mittelteil bekommt Ziele *(Entwurf zuerst)*
+## Meilenstein M35 — Der lange Mittelteil bekommt Ziele
 
 > Zwischen Spieltag 20 und Spieltag 700 sagt dem Spieler niemand, ob er vorankommt. Es gibt
 > genau eine Schwelle, und die liegt bei siebzig Prozent Punktanteil.
+>
+> **Bis zum 2026-09-13 stand hier „(Entwurf zuerst)".** Der Entwurf ist T-M35-01; seit der
+> Delegation vom 2026-09-13 (`DECISIONS.md`) ist auch der Bau geplant: **D31**, Anforderung
+> **R-GAME-08**, fünf Aufgaben T-M35-02 bis T-M35-06. Drei Korrekturen am Entwurf stehen
+> datiert in `FORTSCHRITT.md` §3 — die Ziele brauchen eine Spielerachse, „eine Großmacht ist
+> gefallen" ist verworfen, und die Migration heißt konkret `SCHEMA_VERSION` 3.
+>
+> **Warum erst nach M41 und M40.** M35 ändert `data/rules` (T-M35-02) und den Zustand
+> (T-M35-03). Ab T-M35-02 ist `pnpm acceptance` wegen des Frische-Wächters **absichtlich rot**,
+> bis der eine Parameterlauf im Schlussblock nach M35 eingecheckt ist (M17 abgetrennt, Noah
+> 2026-09-13; bis dahin stand hier T-M17-16); alles, was ohne Regeländerung auskommt, liegt
+> deshalb davor. `save-v2.json` wird **vor** der ersten Zustandsänderung
+> eingefroren (T-M35-03, Muster D19.5).
 
 ### T-M35-01 · Entwurf der Zwischenziele zum Sieg
 - **Ziel:** der Punkt braucht neue Mechanik und berührt eine V1-Zusage — also erst ein
@@ -4404,7 +4786,95 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   kein neues Zustandsfeld**, der fünfte („stärkste Macht eines Kontinents") fällt heraus —
   die Karte kennt keinen Kontinent, und `MapProvince` um ein Feld zu erweitern ist ein
   eigener Bauabschnitt. Die Teilaufgaben stehen **bewusst nicht** in `tasks.yaml`, Muster
-  T-M28-07.
+  T-M28-07. *(Stand bis 2026-09-13; seither als T-M35-02 bis T-M35-06 geplant, D31.)*
+
+### T-M35-02 · Die vier Marken als Regeldaten
+- **Ziel:** eine Marke im Code wäre eine Zahl ohne Status (D-08) — und genau die Zahl, die
+  jemand später verschieben will.
+- **Anforderungen:** R-GAME-08 · **Entwurf:** D31.2
+- **Abhängigkeiten:** T-M35-01, T-M40-06
+- **Dateien:** `data/rules/default/constants.json`, `packages/core/src/rules/load.ts`,
+  `packages/core/src/rules/types.ts`, `docs/plan/BALANCING.md`, `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** der Lader lehnt ein Regelwerk ab, dem eine der vier Konstanten fehlt
+  (`load.test.ts`, R-GAME-08/AK4); `test/balancing.test.ts` fällt, solange eine Tabellenzeile
+  fehlt.
+- **Fertig wenn:** `goalProvinces` 25, `goalPointShareFirstPermille` 400,
+  `goalPopulationSharePermille` 300 *(seit T-M35-06: 350, `DECISIONS.md`)* und `goalPointShareSecondPermille` 600 in
+  `REQUIRED_CONSTANTS` und `RuleConstants` stehen und `BALANCING.md` sie als *abgeleitet* mit
+  der Messung führt (Entscheid und Daten: `DECISIONS.md`, 2026-09-13). **Falle
+  Frische-Wächter:** ab diesem Commit ist `pnpm acceptance` rot, bis der Schlussblock nach M35
+  den einen Parameterlauf eincheckt (M17 abgetrennt, Noah 2026-09-13; vorher stand hier
+  T-M17-16) — Absicht, und im selben Commit als eine Zeile in `WORKFLOW.md` §0.
+  **Kein Parameterlauf hier.**
+
+### T-M35-03 · Das Feld `goals`, die Tagesprüfung und Schritt 2 → 3
+- **Ziel:** ein Ziel, das jeden Tag neu ausgerechnet wird, kann wieder verschwinden — das
+  Erreichen muss im Zustand stehen.
+- **Anforderungen:** R-GAME-08 · **Entwurf:** D31.1, D31.3, D31.5
+- **Abhängigkeiten:** T-M35-02
+- **Dateien:** `packages/core/test/golden/save-v2.json`, `packages/core/src/rules/goals.ts`,
+  `packages/core/src/state/types.ts`, `packages/core/src/state/create.ts`,
+  `packages/core/src/state/clone.ts`, `packages/core/src/persistence/validate.ts`,
+  `packages/core/src/persistence/migrate.ts`, `packages/core/src/phases/dailyTick.ts`,
+  `packages/core/test/golden/tiny-500.json`, `apps/headless/test/golden/walkthrough.json`
+- **Tests zuerst:** `goals.test.ts` — ein erreichtes Ziel bleibt erreicht, auch wenn die Zahl
+  wieder fällt (R-GAME-08/AK1); `migration-v2.test.ts` — `save-v2.json` läuft nach der
+  Migration, die Differenz besteht nur aus `ADDED_IN_VERSION_3`, nach Speichern und Laden
+  hashgleich, und die Kette ab `save-v1.json` liefert dasselbe (R-GAME-08/AK5).
+- **Fertig wenn:** **zuerst** `save-v2.json` eingefroren ist — ein echter Stand der Stufe 2
+  nach Muster `save-v1.json`, danach nie wieder neu erzeugt —, dann
+  `state.goals: Record<PlayerId, Record<GoalKey, number | null>>` angelegt, geklont, geprüft
+  und einmal je Spieltag nach der Punktberechnung und vor `checkVictory` gesetzt wird, nie
+  zurück. Der Formatwächter in `migration-v1.test.ts`, der `highestMigration() === 1` und
+  `SCHEMA_VERSION === 2` als Literale hält, wird **begründet** umgeschrieben: die Regel bleibt
+  „ein Schritt je Meilenstein", geprüft als Liste Stufe → Meilenstein. Golden-Master beide mit
+  `UPDATE_GOLDEN=1`, im Commit begründet (neues Zustandsfeld, sonst nichts); `goals` kommt
+  **nicht** in `HASH_OMIT_KEYS`.
+
+### T-M35-04 · Das Ereignis `GOAL_REACHED`
+- **Ziel:** ein Zwischenziel, das man nur beim Nachsehen bemerkt, ist kein Ziel.
+- **Anforderungen:** R-GAME-08 · **Entwurf:** D31.4
+- **Abhängigkeiten:** T-M35-03
+- **Dateien:** `packages/core/src/events/types.ts`, `packages/core/src/phases/dailyTick.ts`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** über einen Lauf genau ein Ereignis je Macht und Ziel, für keine andere
+  Macht sichtbar (R-GAME-08/AK2); `events.test.ts` („ordnet JEDE Ereignisart zu") und
+  `text.test.ts` fallen, bis Beschreibung und `events.GOAL_REACHED` stehen.
+- **Fertig wenn:** das Ereignis `audience: [playerId]` trägt und weder in `ALERT_TYPES` noch in
+  `WORLD_EVENT_TYPES` steht — Rückmeldung, kein Alarm, keine Weltnachricht.
+
+### T-M35-05 · Vier Zeilen in der Rangliste
+- **Ziel:** die Rangliste ist der Ort, an dem der Spieler ohnehin fragt, wie er steht.
+- **Anforderungen:** R-GAME-08, R-UI-13 · **Entwurf:** D31.6
+- **Abhängigkeiten:** T-M35-04
+- **Dateien:** `packages/core/src/view/publicView.ts`, `apps/desktop/src/ui/Standings.tsx`,
+  `apps/desktop/src/ui/app.css`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** ein offenes Ziel nennt seinen Abstand, ein erreichtes seinen Tag, kein
+  leerer Kasten (`Standings.test.tsx`, R-GAME-08/AK3); die Sicht eines Spielers enthält keine
+  Ziele einer anderen Macht (`publicView.test.ts`).
+- **Fertig wenn:** `self.goals` nur die eigenen Ziele trägt, die Zeilen am laufenden Spiel
+  angesehen sind und die Spieler-ID aus dem Kontext kommt, nicht aus `p1`.
+
+### T-M35-06 · Die Zieltage aus einer ganzen Partie
+- **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel — die Marken müssen in einer
+  Partie in der richtigen Reihenfolge fallen.
+- **Anforderungen:** R-GAME-08 · **Entwurf:** D31
+- **Abhängigkeiten:** T-M35-05
+- **Dateien:** `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`,
+  `docs/reports/fullgame-1815.json`, `docs/reports/progress-baseline.md`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `apps/headless/test/fullgame.slow.test.ts` schreibt die vier Zieltage des
+  Siegers und sichert zu: die Tage steigen, der erste liegt nicht vor Spieltag 20, der letzte
+  nicht nach dem Siegtag (R-GAME-08/AK6) — gegengeprüft gegen `GOAL_REACHED` im
+  Ereignisstrom, nie gegen den Ringpuffer.
+- **Fertig wenn:** die Zahlen im Bericht stehen, dazu Startzahl 2015 als Zahl ohne
+  Zusicherung, und `pnpm verify` am Ende des Meilensteins grün ist. Fällt eine Zusicherung,
+  werden die Marken nicht still verschoben: Befund in `PROBLEME.md`, Entscheid in
+  `DECISIONS.md`. **Kein Parameterlauf hier** — er läuft einmal, im Schlussblock nach M35
+  (M17 abgetrennt, Noah 2026-09-13; vorher stand hier T-M17-16).
+- **Erledigt am 2026-09-13:** Zieltage des Siegers 1914 (China, Siegtag 975): 157 / 547 / 576 / 921; 2015 (Russland,
+  583): 119 / 237 / 337 / 516; 1815 (Russland, 583): 115 / 276 / 376 / 456. Die erste Messung mit 300 ‰ Weltbevölkerung
+  **fiel** (China 544 vor 547); Befund in `PROBLEME.md`, Entscheid **350 ‰** in `DECISIONS.md` (kippbar), danach alle drei
+  Partien neu gemessen. Die dritte Startzahl 1815 ist mitgemessen (Auftrag), Tabelle in `progress-baseline.md`.
 
 ## Meilenstein M36 — Die Rohstoffleiste wird lesbar
 
@@ -4923,3 +5393,825 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Wiederaufnahme, und am Ende dieselbe Zustandsprüfsumme auf beiden Seiten. **Setze diese
   Aufgabe auf `gate: true`, sobald T-M39-08 erledigt ist** — vorher macht sie den
   Plan-Wächter rot.
+
+
+## Meilenstein M40 — Die Haltung wird ein Auftrag
+
+> **Der Befund (T-M28-07, `LEVEL-UP-3.md` §5):** von drei Haltungen wirkt eine. `aggressive`
+> wird im ganzen Kern nirgends gelesen, `defensive` nur in `phases/combat.ts`, und die KI
+> setzt ausschließlich `retreat` — danach fällt jede ihrer Armeen auf `defensive` zurück.
+> Noahs Satz „Angriff und Verteidigung führen sich selbst aus" meint Bewegung, nicht Kampf:
+> fällt eine Nachbarprovinz, marschiert niemand hin.
+>
+> **Geplant am 2026-09-13 aus der Delegation** (`DECISIONS.md`), Entwurf **D30**, Anforderung
+> **R-UNIT-09**. Die vier Teilaufgaben aus `LEVEL-UP-3.md` §5.5 hießen dort T-M33-01 bis -04
+> und der Entwurf D28 — beide Nummern sind inzwischen anderweitig vergeben (M33 an die
+> Einheitsbilder, D28 an den Mehrspieler). Neu gegenüber §5: **ein Messlauf vorher und nachher** als eigene Aufgaben.
+>
+> **Drei Korrekturen am Entwurf von §5, und sie bestimmen den Zuschnitt.** Die Automatik
+> entscheidet aus dem **Zustand**, nicht aus Ereignissen (sonst gibt ein geladener Stand
+> andere Befehle). Sie führt **nur Armeen menschlicher Spieler** — KI-Mächte führt weiter
+> `military.ts`, und Turnier, Parameterlauf und AK-1 bleiben damit unberührt. Und weil kein
+> Golden-Master eine Automatik in `packages/ai` sieht, bleibt die Vorgabehaltung
+> **`defensive`**; `garrison` ist die Abwahl. Keine Migration, kein neues Zustandsfeld.
+
+### T-M40-01 · Die Haltung `garrison`, und `SET_STANCE` prüft den Wert
+- **Ziel:** wer die Automatik nicht will, braucht eine Haltung, die bleibt — und der Kern
+  darf keinen erfundenen Wert annehmen.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.1
+- **Abhängigkeiten:** T-M41-02, T-M41-07
+- **Dateien:** `packages/core/src/state/types.ts`, `packages/core/src/phases/combat.ts`,
+  `packages/core/src/commands/handlers.ts`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/Panels.tsx`
+- **Tests zuerst:** eine `garrison`-Armee kämpft wie eine `defensive`, ein unbekannter Wert
+  wird mit `INVALID_TARGET` abgelehnt (`combat.test.ts`, `validate.test.ts`, R-UNIT-09/AK3).
+- **Fertig wenn:** `pnpm test` **ohne** `UPDATE_GOLDEN` grün ist — der Beleg, dass der vierte
+  Wert nichts verschiebt.
+- **Abweichung beim Bau (2026-09-13):** der vierte Wert macht `tsc` (`Record<Stance, string>`
+  in `actions.ts`) und den Wächter `ui-command-coverage` („Haltungen ohne Knopf: garrison")
+  rot. Der Garnison-Knopf mit Name und Hinweis kommt deshalb schon hier und nicht erst in
+  T-M40-05; die Erklärtexte aller vier Haltungen bleiben dort.
+
+### T-M40-02 · Der Messlauf vorher
+- **Ziel:** erst messen, dann ändern — ohne Ausgangswert ist die Wirkung der Automatik ein
+  Eindruck.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6
+- **Abhängigkeiten:** T-M40-01
+- **Dateien:** `docs/reports/stance.json`
+- **Tests zuerst:** neu `apps/headless/test/stance.slow.test.ts` — Weltkarte, 200 Spieltage,
+  der Mensch mit einer Armee in jeder eigenen Provinz und ohne Befehle; gezählt aus dem
+  Ereignisstrom: Einmärsche, beantwortete Einmärsche, verlorene Provinzen, abgelehnte Befehle.
+- **Fertig wenn:** der Bericht den Abschnitt „vorher" trägt und der Lauf mindestens einen
+  Einmarsch gemessen hat. Ist die Zahl null, wird die Nation gewechselt und begründet — nicht
+  die Zusicherung gelockert.
+- **Korrektur beim Bau (2026-09-13, vor jeder Messung nachher):** „binnen 24 Ticks" ist auf
+  der Weltkarte unerreichbar — die kürzeste deutsche Binnengrenze braucht 25 Ticks, und der
+  Befehl fällt einen Tick nach dem Einmarsch. Gezählt werden die Ankunft binnen 24 Ticks
+  (weiter im Bericht), die Ankunft binnen des Kartenfensters (1 plus längste
+  Binnenmarschzeit der aufgestellten Armee, Deutschland 114 Ticks) und der Aufbruch binnen
+  24 Ticks (`PROBLEME.md`).
+
+### T-M40-03 · `defensive` deckt die Nachbarprovinz
+- **Ziel:** fällt eine eigene Nachbarprovinz, rückt eine Armee nach, ohne dass der Spieler
+  klickt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.2, D30.3, D30.5
+- **Abhängigkeiten:** T-M40-02
+- **Dateien:** `packages/ai/src/adjutant.ts`, `packages/ai/src/loop.ts`,
+  `packages/ai/src/index.ts`
+- **Tests zuerst:** `adjutant.test.ts` fällt ohne Regel (R-UNIT-09/AK1); `loop.test.ts`:
+  speichern, laden, weiter liefert **dieselben** Befehle wie ohne Unterbrechung
+  (R-UNIT-09/AK4); über einen Lauf wird kein Adjutantenbefehl abgelehnt.
+- **Fertig wenn:** der Adjutant nur für lebende menschliche Mächte in `advanceTicks` läuft,
+  aus der Sicht des Besitzers entscheidet, einem Befehl des Menschen für dieselbe Armee
+  den Vortritt lässt, ohne Krieg und ohne selbsttätige Haltung keine Sicht berechnet — und
+  Turnier sowie Golden-Master nachweislich unverändert sind.
+
+### T-M40-04 · `aggressive` verfolgt den weichenden Gegner
+- **Ziel:** der Knopf „Angriff" schaltet heute einen Wert, den kein Rechenweg ansieht.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4
+- **Abhängigkeiten:** T-M40-03
+- **Dateien:** `packages/ai/src/adjutant.ts`, `packages/core/src/view/publicView.ts`
+- **Tests zuerst:** ein gleich starker Weichender wird verfolgt, ein stärkerer nicht, einer im
+  Nebel nicht (R-UNIT-09/AK2); das neue Sichtfeld fehlt für Armeen außer Sicht
+  (`publicView.test.ts`).
+- **Fertig wenn:** die Verfolgung nur liest, was die Sicht zeigt. **Korrektur am
+  Planungsstand:** „frisch zurückgewichen" ist heute nicht sichtbar — eine fremde
+  `VisibleArmy` trägt nur Kennung, Besitzer, Provinz und Stärke. Eine **sichtbare** fremde Armee
+  bekommt deshalb das Feld `retreating` (ihre Angriffssperre läuft), begründet nach R-DIP-04:
+  ein Rückzug geschieht vor den Augen des Gegners. Nur Sicht — kein Zustandsfeld, kein Hash.
+  *(**Zurückgenommen 2026-09-13**, gebaut und gemessen: **T-M40-10 löst diese Aufgabe ab** und
+  ersetzt D30.4, statt es zu verstärken. Die Verfolgung schadete in jedem Lauf, in dem sie einen
+  Anlass hatte — Aufstellung C mit je einer Verteidigung und einem Angriff je Provinz endete mit
+  **13 Armeen gegen 24** ohne Automatik, mit Startzahl 1914 waren vier Armeen binnen zehn Tagen
+  nach einem Befehl vernichtet. Der Angriff marschiert seither nie von selbst; `VisibleArmy.retreating`
+  hatte damit keinen Leser und ist samt Test entfallen (`publicView.ts`, `adjutant.ts`), und
+  R-UNIT-09/AK2 ist neu gefasst: „Der Angriff marschiert nie von selbst". Die Aufgabe steht
+  darum auf `todo` mit Begründung — `DECISIONS.md` und `02-DESIGN.md` D30.4/D30.9, 2026-09-13.)*
+
+### T-M40-05 · Vier Haltungen mit Erklärtext
+- **Ziel:** eine Automatik, die niemand erklärt, findet niemand.
+- **Anforderungen:** R-UNIT-09, R-UI-13 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-04
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `apps/desktop/src/ui/app.css`
+  *(Nachtrag beim Bau: das Raster der Haltungsgruppe hatte drei Spalten — jetzt zwei mal zwei,
+  gebunden durch einen Kaskaden-Wächter; im echten Browser noch nicht angesehen)*
+- **Tests zuerst:** ein Knopf je Haltung, jeder Hinweis nennt die Automatik oder ihr Fehlen
+  (`actions.test.ts`, `Panels.test.tsx`, R-UNIT-09/AK6).
+- **Fertig wenn:** der alte Hinweis zu „Angriff" („greift von sich aus an") ersetzt ist — er
+  beschrieb eine Wirkung, die es nie gab — und die Anleitung die vier Haltungen erklärt.
+  *(Stand nach T-M40-01: der Knopf „Garnison" steht schon, weil `tsc` und
+  `ui-command-coverage` ihn mit dem vierten Wert verlangen; offen sind die Hinweise.)*
+
+### T-M40-06 · Nachmessen
+- **Ziel:** dieselbe Zahl wie vorher, jetzt mit Adjutant.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6
+- **Abhängigkeiten:** T-M40-05
+- **Dateien:** `docs/reports/stance.json`, `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/LEVEL-UP-3.md`
+- **Tests zuerst:** `apps/headless/test/stance.slow.test.ts` sichert jetzt zu: der Anteil
+  beantworteter Einmärsche ist größer als vorher, kein Adjutantenbefehl wurde abgelehnt
+  (R-UNIT-09/AK5). *(Beantwortet heißt seit der Korrektur bei T-M40-02: Ankunft binnen des
+  Kartenfensters und Aufbruch binnen 24 Ticks.)*
+- **Fertig wenn:** vorher und nachher nebeneinander im Bericht stehen, das Turnier zeilengleich
+  nachgefahren ist und `pnpm verify` am Ende des Meilensteins grün ist. Ist die Wirkung null,
+  ist der Meilenstein nicht fertig.
+
+> **Nacharbeit nach der Durchsicht (2026-09-13).** Die Durchsicht von M40 fand zwei kritische,
+> drei hohe und drei mittlere Befunde: beim Vorspulen läuft kein Adjutant (K1), die Verfolgung
+> löst einen Krieg mit einer unbeteiligten Macht aus (K2), ein Rückzug wird nach der Sperre
+> rückgängig gemacht (H1), „Anhalten" wird überstimmt (H2), und der Messlauf trägt die Abnahme
+> nicht — zwei von drei Verlusten hat die Deckung selbst verursacht (H3). Ein Entwurf hat fünf
+> Regeln auf der Weltkarte über drei Startzahlen gemessen: **keine Nachbarschaftsregel hilft
+> netto**, weil Gefechte im Median 1–3 Ticks dauern und Märsche 25–113. D30.4 wird deshalb
+> **ersetzt, nicht verstärkt** — die Verteidigung rückt nur noch nach, wenn in ihrer Provinz eine
+> weitere Armee stehen bleibt, und der Angriff marschiert nie von selbst. Gemessen wird je
+> umkämpfter Episode; die Regel bleibt nur, solange dieser Messlauf sie trägt.
+
+### T-M40-07 · Der Messlauf je Episode, vorher
+- **Ziel:** eine Abnahme, die sieht, ob die Automatik Provinzen hält oder entblößt — nicht, ob
+  irgendwann eine Armee ankommt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6
+- **Abhängigkeiten:** T-M40-06
+- **Dateien:** `apps/headless/test/stance.slow.test.ts`, `docs/reports/stance.json`,
+  `docs/plan/02-DESIGN.md`, `docs/plan/PROBLEME.md`, `docs/plan/LEVEL-UP-3.md`
+- **Tests zuerst:** die Zählung je Episode als Einheitsfall an einem gebauten Strom (Episode,
+  Deckung rechtzeitig, gehalten, Verlust ohne Gefecht, Pendelzug); dann zwölf Läufe mit dem
+  **heutigen** Adjutanten — Startzahlen 1914, 2015, 1815 × Aufstellung A (eine Armee je
+  Provinz) und B (zwei) × `garrison` und `defensive`, je Startzahl ein `it`.
+- **Fertig wenn:** die Garnison A 1914 den alten Lauf vorher nachbildet (52 Einmärsche, 4
+  verloren); die AK5-Zusicherung für `defensive` als `it.fails` mit dem gemessenen Grund steht;
+  der Bericht den Abschnitt `episoden` führt — geschrieben nur mit `WORLDWAR_WRITE_REPORT=1`
+  (Befund N3); die Zusicherung „Anteil beantworteter Einmärsche" aus T-M40-06 mit Grund
+  zurückgenommen ist (die Zahl bleibt im Bericht); `PROBLEME.md` bei T-M40-06 und
+  `LEVEL-UP-3.md` §5 berichtigt sind (Befund H3).
+
+### T-M40-08 · Eine Befehlsquelle für Uhr und Vorspulen
+- **Ziel:** dieselbe Lage gibt über die Uhr und über das Vorspulen dieselbe Partie.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.2
+- **Abhängigkeiten:** T-M40-07
+- **Dateien:** `packages/ai/src/loop.ts`, `packages/ai/src/adjutant.ts`,
+  `packages/ai/src/index.ts`, `apps/desktop/src/game/fastForward.ts`
+- **Tests zuerst:** `fastForward.test.ts` — Vorspulen in Häppchen und `advanceTicks` geben über
+  150 Ticks dieselben Aufbrüche des Menschen und denselben Hash (R-UNIT-09/AK4, heute 0 gegen
+  mindestens 1); `adjutant.test.ts` — ein Spielerbefehl im selben Tick gilt als unterwegs (M1);
+  `loop.test.ts` AK4 bleibt grün.
+- **Fertig wenn:** `commandsForTick` in `packages/ai/src/loop.ts` die einzige Stelle ist, die KI
+  und Adjutant zusammenführt (Befunde K1, M1), `AdjutantOptions.given` `heldArmies` ersetzt und
+  das Turnier zeilengleich bleibt.
+
+### T-M40-09 · Kein fremder Boden, keine Rückkehr in die Schlacht
+- **Ziel:** die Automatik erklärt keinen Krieg und macht keinen Rückzug rückgängig.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4
+- **Abhängigkeiten:** T-M40-08
+- **Dateien:** `packages/ai/src/adjutant.ts`
+- **Tests zuerst:** `adjutant.test.ts` — kein Ziel in der Provinz einer Friedensmacht (S5) und
+  keines in neutralem Land; jede Route des Adjutanten hat genau eine Etappe; nach einem Rückzug
+  kein Befehl bis `deployDelayUntil + 120`, danach einer (S4c); nach einem Spielermarsch 120
+  Ticks kein Adjutantenbefehl (R-UNIT-09/AK7).
+- **Fertig wenn:** K2 und H1 ohne Kernänderung gelöst sind — Ziel eigene Provinz oder die eines
+  Kriegsgegners, eine Etappe, fünf Spieltage Ruhe nach Marsch oder Rückzug.
+  *(Korrektur beim Bau 2026-09-13: die Ruhe zählt ab `deployDelayUntil`, also ab dem Abmarsch —
+  einen Tick der Ankunft kennt der Zustand nicht, und ein Feld dafür kostete eine Migration; der
+  Test prüft deshalb „nach dem Abmarsch". Die Lagen der Tests beginnen bei Tick 200, weil
+  aufgestellte Armeen `deployDelayUntil` 0 tragen. Messung in `PROBLEME.md`.)*
+
+### T-M40-10 · Die Regel, die nicht entblößt
+- **Ziel:** eine Automatik, die messbar nicht schadet, statt einer, die messbar entblößt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4, D30.9
+- **Abhängigkeiten:** T-M40-09
+- **Dateien:** `packages/ai/src/adjutant.ts`, `packages/core/src/view/publicView.ts`,
+  `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** `adjutant.test.ts` — eine allein stehende Armee marschiert nie; von zweien
+  rückt eine aus; vorbeugend in eine leere bedrohte eigene Provinz; nie beide aus derselben
+  Provinz (R-UNIT-09/AK1); der Angriff marschiert nie von selbst (AK2). `publicView.test.ts`
+  verliert den Fall zu `retreating`.
+- **Fertig wenn:** das `it.fails` aus T-M40-07 ein `it` ist und grün; R-UNIT-09 AK1, AK2, AK4–AK7
+  neu gefasst, D30.4 neu, D30.9 mit Rücknahmekriterium, und `DECISIONS.md` trägt Entscheid und
+  offene Frage an Noah. Die Lagen in `adjutant.test.ts` und `loop.test.ts` stellen je Provinz
+  eine Armee — sie bekommen in der Quellprovinz eine zweite.
+
+### T-M40-11 · Anhalten hält fest, und die Hinweise sagen die Folgen
+- **Ziel:** ein Klick auf „Anhalten" gilt, und kein Hinweis verschweigt, was die Haltung kostet.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-10
+- **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/i18n/de.ts`,
+  `docs/ANLEITUNG.md`
+- **Tests zuerst:** `actions.test.ts` — Anhalten auf Verteidigung oder Angriff schickt
+  `STOP_ARMY` und `SET_STANCE garrison`, auf Garnison nur `STOP_ARMY`; die Hinweise tragen
+  „weitere Armee", „fünf Tage", „eingegraben" und „Garnison" (Befunde H2, M3).
+- **Fertig wenn:** die Anleitung dieselben Folgen nennt und kein Hinweis mehr „solange dort noch
+  gekämpft wird" oder „folgt einem weichenden Gegner" verspricht.
+  *(Beim Bau 2026-09-13: ein Knopf trug genau einen Befehl — `ActionSpec.followUp` ist neu, und
+  `apps/desktop/src/App.tsx` schickt ihn mit; geprüft am Bildschirm in `apps/desktop/src/App.test.tsx`.
+  **Abweichung vom Entwurf:** nur eine Armee auf Verteidigung geht beim Anhalten auf Garnison — seit
+  T-M40-10 handelt keine andere Haltung von selbst, und eine Armee auf Angriff veränderte der Klick
+  sonst ungefragt im Kampf. Die Ruhe im Hinweis kommt aus `ADJUTANT_REST_TICKS`, nicht aus dem Text.)*
+
+### T-M40-12 · Nachmessen und Abschluss der Nacharbeit
+- **Ziel:** die zwölf Läufe entscheiden, ob die Regel bleibt.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.6, D30.9
+- **Abhängigkeiten:** T-M40-11, T-M40-13, T-M41-16
+- **Dateien:** `docs/reports/stance.json`, `docs/plan/PROGRESS.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `apps/headless/test/stance.slow.test.ts` mit den Zusicherungen aus AK5,
+  festgelegt vor dieser Messung: Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
+  über alle sechs Paare, je Paar keine zusätzlichen Verluste ohne Gefecht, keine Ablehnung,
+  kein Krieg ohne Erklärung.
+- **Fertig wenn:** die Läufe grün sind und der Bericht eingecheckt ist; Turnier zeilengleich,
+  `pnpm test` ohne `UPDATE_GOLDEN` grün, Vollpartie 1914 Siegtag 582 unverändert, `data/rules`
+  unberührt; je Kriterium R-UNIT-09/AK1–AK7 ein Block mit `expect`; `pnpm verify` grün.
+  **Rücknahmekriterium:** fällt eine Zusicherung, wird die Regel zurückgenommen, nicht
+  nachgeschärft — die Verteidigung kämpft dann wie die Garnison, und die Hinweise sagen das.
+  Die Schwelle 98 % wurde nach der Messung des Entwurfs festgelegt (D30.9).
+  *(Nachtrag nach der Durchsicht der Nacharbeit, 2026-09-13:
+  N-3 — die Grenze der Ruhe nach einem Rückzug (124 Ticks) steht in D30.4.
+  N-4 — die Protokollzeile der Automatik trägt eine Kennung ohne Listenplatz
+  (`adjutantMarchEntries` in `apps/desktop/src/game/events.ts`, Test in `events.test.ts`).
+  N-5 — D30.3 und die Angabe „AK5, vor dieser Messung festgelegt" sind berichtigt.
+  N-1, N-2, N-6 und der Rest von N-4 stehen als Befunde in `PROBLEME.md`.)*
+
+### T-M40-13 · Eine leise Zeile, wenn eine Armee von selbst nachrückt
+- **Ziel:** wer eine Armee von selbst marschieren lässt, sagt es dem Spieler.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-11
+- **Dateien:** `packages/ai/src/loop.ts`, `apps/desktop/src/game/advance.ts`,
+  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `App.test.tsx` — eine geladene Lage, in der die Automatik nachrückt, zeigt
+  nach dem Vorspulen im Protokoll die Zeile mit Armeename und Provinz, ohne Alarmklasse, und ein
+  Klick springt auf die Provinz; ohne Befehl der Automatik steht keine solche Zeile.
+- **Fertig wenn:** die Zeile aus dem Ergebnis von `commandsForTick` entsteht — über Uhr und
+  Vorspulen, ohne neues Kernereignis und ohne Zustandsfeld (Golden-Master unberührt) — und leise
+  bleibt: keine Alarmfarbe, kein Halt, kein Eintrag in der Meldungsleiste (M36). Entscheid
+  (delegiert, kippbar) in `DECISIONS.md`; Befund M3, Vorschlag der Durchsicht.
+
+> **Zweite Nacharbeit nach der Durchsicht der Nacharbeit (2026-09-13).** Die Durchsicht fand die
+> Nacharbeit nah an der Abnahme, mit einem hohen und zwei mittleren Befunden. H-A: die Ruhe der
+> Automatik zählt ab dem Abmarsch, und eine vom Spieler verlegte Armee marschiert nach einem langen
+> Marsch wenige Ticks nach der Ankunft von selbst weiter. M-A: ein Klick auf „Rückzug" zählt nicht als
+> Ausrücken, und die Automatik leert die Provinz im selben Tick. M-B: kein Prüflauf merkt, wenn der
+> Haltungs-Messlauf veraltet. Die Entscheide stehen in `DECISIONS.md`.
+
+### T-M40-14 · Ein eigener Marschbefehl hält die Armee fest
+- **Ziel:** eine Armee, die der Spieler selbst verlegt, bleibt dort stehen, wohin er sie geschickt hat.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4, D30.7
+- **Abhängigkeiten:** T-M40-12
+- **Dateien:** `packages/ai/src/adjutant.ts`, `apps/desktop/src/game/actions.ts`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`,
+  `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`,
+  `apps/headless/test/stance.slow.test.ts`
+- **Tests zuerst:**
+  - `packages/ai/src/loop.test.ts`: Szenario R1 (117 Ticks Marsch, 120 Ticks Ruhe ab Abmarsch) und ein
+    Marsch, der länger dauert als die Ruhe. Mit dem Folgebefehl steht die Armee auf Garnison, und kein
+    Befehl der Automatik nennt sie; ohne ihn marschiert sie binnen eines Spieltags nach der Ankunft von
+    selbst (R-UNIT-09/AK7).
+  - `adjutant.test.ts`: `garrisonFollowUp`.
+  - `actions.test.ts`: Folgebefehl am Marsch und die Hinweise.
+  - `App.test.tsx`: „Marsch befehlen" stellt eine Verteidigung auf Garnison; Angriff bleibt Angriff.
+  - `stance.slow.test.ts`: ein Pendelzug zählt ab `ARMY_ARRIVED` (Einheitsfall).
+- **Fertig wenn:** der Marschbefehl des Spielers für eine eigene Armee auf Verteidigung zugleich
+  `SET_STANCE garrison` schickt — Oberfläche wie beim Anhalten (T-M40-11), ohne Zustandsfeld — und
+  Hinweis, Anleitung, R-UNIT-09/AK7 und D30.4 wörtlich sagen: die Automatik ruht fünf Spieltage ab dem
+  Abmarsch, ein eigener Marschbefehl stellt auf Garnison. Befund H-A. Entscheid (delegiert, kippbar) in
+  `DECISIONS.md`: Option 1 (Ankunftstick als Zustandsfeld) verworfen, weil sie Schemastufe und
+  Golden-Master für eine Randlage kostet, die der Folgebefehl ohnehin abdeckt.
+
+### T-M40-15 · Ein Rückzug-Klick zählt als Ausrücken
+- **Ziel:** ein Rückzug, den der Spieler klickt, leert zusammen mit der Automatik im selben Tick keine
+  Provinz.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.4
+- **Abhängigkeiten:** T-M40-14
+- **Dateien:** `packages/ai/src/adjutant.ts`, `docs/ANLEITUNG.md`, `docs/plan/02-DESIGN.md`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:**
+  - `adjutant.test.ts`: Szenario R2. In n3 stehen eine Verteidigung und eine Garnison, n2 ist
+    angegriffen, der Spieler zieht die Garnison zurück. Mit dem Klick in `given` befiehlt die Automatik
+    nichts; ohne ihn und mit einer anderen Haltung rückt die Verteidigung aus (R-UNIT-09/AK1).
+  - `loop.test.ts`: dieselbe Lage über die Schleife; nach 25 Ticks steht die Verteidigung noch in n3.
+- **Fertig wenn:** `adjutant.ts` einen Befehl `SET_STANCE` mit `retreat` in `given` als ausrückend
+  zählt (Befund M-A) und `ANLEITUNG.md` den Rückzug nicht mehr an ein Gefecht bindet. Der Knopf bleibt,
+  wie er ist: `SET_STANCE` prüft kein Gefecht, und `phases/retreat.ts` lässt jede Armee auf Rückzug
+  ausweichen. Entscheid (delegiert, kippbar) in `DECISIONS.md`.
+
+### T-M40-16 · Der Haltungs-Messlauf hat einen Frische-Wächter
+- **Ziel:** eine Abnahme, die nicht grün meldet, während das Rücknahmekriterium der Automatik
+  ungemessen ist.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-15
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `docs/plan/WORKFLOW.md`,
+  `docs/plan/DECISIONS.md`
+- **Tests zuerst:** `test/requirements.test.ts` prüft die reine Funktion `stanceReportStatus` mit
+  erfundenen Zeiten:
+  - frisch, auch bei gleicher Commit-Zeit;
+  - veraltet, wenn `packages/ai/src` oder `packages/core/src` jünger ist (die Meldung nennt die Quelle);
+  - veraltet bei uncommitteten Änderungen und bei fehlender Zeit;
+  - rot, wenn der eingecheckte Lauf AK5 nicht erfüllt hat.
+- **Fertig wenn:**
+  - `scripts/acceptance.mjs` die Abnahme als `MESSGERAET` rot färbt, sobald `docs/reports/stance.json`
+    älter ist als die letzte Änderung unter `packages/ai/src` oder `packages/core/src`; die Meldung nennt
+    den Befehl, der den Lauf neu fährt.
+  - `stance.slow.test.ts` nicht Teil der Abnahme ist (zwölf Partien, gut elf Minuten).
+  - Der Wächter am echten Stand einmal rot vorgeführt ist (nach T-M40-14/15, vor dem neuen Lauf) und
+    nach dem eingecheckten Lauf grün.
+  - Befund M-B.
+
+> **Dritte Nacharbeit nach der Durchsicht der zweiten Nacharbeit (2026-09-13).** Kein kritischer und kein
+> hoher Befund. M-1: der Frische-Wächter vergleicht Commit-Zeiten und meldet nach dem Merge eines älteren
+> Seitencommits grün, obwohl die Automatik ungemessen ist — dieselbe Lücke bei Parameterlauf und Turnier.
+> N-1, N-3, N-7: der Wächter sieht zu wenige Quellen, jeder Commit am Bericht gilt als Messung, und der
+> Bericht nennt einen falschen Stand. N-2: „erfüllt" enthält weder Kontrolle noch Kartenfenster. N-4, N-5:
+> der Folgebefehl der Garnison sieht gesammelte Haltungswechsel nicht, und „angenommen" heißt nur
+> Vorprüfung. N-6: die Pendel-Doku. Die Entscheide stehen in `DECISIONS.md`.
+
+### T-M40-17 · Frische nach Abstammung statt nach Uhrzeit
+- **Ziel:** ein Frische-Wächter, der nach einem Merge nicht grün meldet, während ein Messgerät ungemessen ist.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-16
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `scripts/freshness.mjs`,
+  `apps/headless/test/stance.slow.test.ts`, `docs/plan/WORKFLOW.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `gaugeStatus` und `stanceReportStatus` bekommen die gefundenen Commits
+    als Eingabe — der Merge eines älteren Seitencommits ist rot, ebenso ein Bericht ohne Messcommit, einer
+    aus einem an den Quellen schmutzigen Arbeitsbaum und einer, dessen Messcommit nicht in der Geschichte
+    von HEAD liegt. Ein Wegwerf-Repo mit dem Merge aus Befund M-1 meldet vor dem Merge frisch und danach
+    veraltet; mit der alten Zeitlogik zuerst rot gesehen.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `messstand` (Messcommit, uncommittete Dateien,
+    git antwortet nicht).
+- **Fertig wenn:**
+  - beide Wächter `git rev-list -1 <bericht>..HEAD -- <quellen>` fragen statt Commit-Zeiten zu vergleichen
+    (`scripts/freshness.mjs`);
+  - der Haltungs-Messlauf `measuredAtCommit` und `measuredDirty` schreibt, `STAND` entfällt, und der Wächter
+    `measuredAtCommit..HEAD` über `STANCE_SOURCES` prüft (acht Quellen, Befund N-1) und einen schmutzig
+    gemessenen Bericht ablehnt (Befund N-3);
+  - Parameterlauf und Turnier zusätzlich ihre Karte sehen; der Code bleibt dort außen vor, begründet in
+    `acceptance-criteria.mjs` und als offene Frage in `PROBLEME.md`;
+  - der Wächter des Haltungs-Messlaufs am echten Stand rot meldet, weil dem eingecheckten Bericht der
+    Messcommit fehlt — gewollt, der Lauf wird nach dem Merge neu gefahren.
+  - Befunde M-1, N-1, N-3, N-7.
+
+### T-M40-18 · „erfüllt" enthält Kontrolle und Kartenfenster
+- **Ziel:** ein eingecheckter Lauf mit gefallener Kontrolle macht den Frische-Wächter nicht grün.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.9
+- **Abhängigkeiten:** T-M40-17
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `apps/headless/test/stance.slow.test.ts`
+- **Tests zuerst:**
+  - `test/requirements.test.ts`: `stanceReportStatus` meldet rot bei einem Bericht mit gefallener Kontrolle,
+    auch wenn `erfuellt` true sagt; ebenso bei verschobenem Kartenfenster und bei einem Bericht, der eins von
+    beiden nicht nennt.
+  - `apps/headless/test/stance.slow.test.ts`: Einheitsfall `ak5` mit zwölf erfundenen Läufen — erfüllt nur
+    mit getroffener Kontrolle (nur die Garnison A 1914 zählt) und unverschobenem Kartenfenster.
+- **Fertig wenn:** `ak5` die Felder `kontrolle: { erwartet, gemessen, ok }` und `fensterOk` in den Bericht
+  schreibt und beide in `erfuellt` und `verletzt` eingehen; der Wächter beide selbst verlangt. Befund N-2 —
+  in Schritt 0 der zweiten Nacharbeit trug ein Bericht mit gefallener Kontrolle `erfuellt: true`.
+
+### T-M40-19 · Der Garnison-Folgebefehl sieht gesammelte Haltungswechsel
+- **Ziel:** eine Armee, die der Spieler bei stehender Uhr auf Verteidigung stellt und dann selbst verlegt,
+  marschiert nicht auf Verteidigung.
+- **Anforderungen:** R-UNIT-09 · **Entwurf:** D30.7
+- **Abhängigkeiten:** T-M40-14
+- **Dateien:** `packages/ai/src/adjutant.ts`, `apps/desktop/src/game/actions.ts`, `apps/desktop/src/App.tsx`,
+  `docs/plan/02-DESIGN.md`, `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:**
+  - `packages/ai/src/adjutant.test.ts`: `garrisonFollowUp` mit gesammelten Befehlen — die zuletzt gesammelte
+    Haltung dieser Armee zählt, andere Armeen und Spieler nicht; eine eben auf Garnison geklickte
+    Verteidigung bekommt keinen zweiten Befehl.
+  - `apps/desktop/src/game/actions.test.ts`: die Sammlung im Kontext wirkt an Bestätigung, Marschhinweis und
+    Anhalten.
+  - `apps/desktop/src/App.test.tsx`: Szenario N-5 — Garnison, Uhr steht, „Verteidigung" klicken, „Marsch
+    befehlen", vorspulen: die Armee steht auf Garnison.
+- **Fertig wenn:** der Folgebefehl Zustand und zuletzt gesammelte `SET_STANCE` der Armee auswertet, ohne
+  Zustandsfeld und ohne Eingriff in den Kern; R-UNIT-09/AK7 und der Verteidigungshinweis stimmen damit
+  unverändert. D30.7 sagt wörtlich „wenn die Vorprüfung ihn annimmt", und die Randlage steht in
+  `PROBLEME.md`. Befunde N-4, N-5.
+
+
+## Meilenstein M41 — Pflege nach M34
+
+> **Warum es diesen Meilenstein gibt.** Nach M34 standen gemessene Befunde offen, die keinem
+> Meilenstein gehörten: die KI klettert die neue Gebäudeachse nicht, die Eröffnung hat zwei
+> Pausen von vier Spieltagen, die Uhr verliert bei 60 Bildern je Sekunde ein Zehntel der Ticks,
+> ein KI-Gedächtnis wächst ohne Grenze, der Plan zählt sechs Hüllen-Kommandos, wo fünf sind,
+> und eine zugesagte Eigenschaftsprüfung des Nahkampfs wurde nie geschrieben. Geplant am
+> 2026-09-13 aus der Delegation (`DECISIONS.md`).
+>
+> **Kein neuer Entwurf und keine neue Anforderung** — geprüft: jede Aufgabe repariert einen
+> Befund an vorhandenem Verhalten. Drei Aufgaben tragen ihre Anforderung bewusst **nicht** im
+> Feld, weil sie in `name_level` steht (R-TIME-02, R-AI-07, R-BAT-07): wer eine dieser IDs
+> einträgt, muss alle ihre Kriterien einzeln buchen (`01-REQUIREMENTS.md` 2.14).
+>
+> **Warum zuerst.** Nichts hier berührt `data/rules`, den Zustand oder die Golden-Master. Der
+> KI-Fabrikausbau ändert aber die Wirtschaft, und der Ausgangswert von M17 (T-M17-02) muss
+> danach gemessen werden. Die Abhängigkeiten bilden die Baureihenfolge ab: T-M41-06, -04, -05,
+> -03, -01, -02; T-M41-07 nach T-M41-06 und vor T-M40-01, das `combat.ts` anfasst.
+
+### T-M41-06 · Planpflege und die fünf Kommandos der Hülle
+- **Ziel:** ein Plan, der eine Zahl falsch nennt, wird beim nächsten Lesen zur Zusage.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/desktop/src-tauri/src/main.rs`, `apps/desktop/src/storage/TauriStorage.test.ts`,
+  `docs/plan/PROBLEME.md`, `docs/reports/packaging.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/tasks.yaml`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** ein Wächter in `TauriStorage.test.ts` vergleicht die Namen in
+  `generate_handler!` mit den Namen, die `TauriStorage.ts` aufruft — vorgeführt, dass er mit
+  einem erfundenen sechsten Namen rot wird.
+- **Fertig wenn:** vier Dinge stimmen. **(1)** „sechs" ist an allen Fundstellen mit
+  „korrigiert 2026-09-13: fünf" vermerkt — Kommentar `main.rs` Z. 11, `PROBLEME.md` (AK-8,
+  2026-09-08), `packaging.md`, `PROGRESS.md` und `03-TASKS.md` bei T-M28-03, Kommentar bei
+  T-M28-03 in `tasks.yaml`; die Historie wird nicht umgeschrieben. **(2)** T-M10-10 nennt in
+  `tasks.yaml` `Dialogs.tsx` statt `Panels.tsx`. **(3)** T-M14-14 führt `fullgame.slow.test.ts`
+  nicht mehr als „neu". **(4)** Zu T-M14-11/12 (zugesagt: 90-Tage-Läufe; `ai-reachability.md`
+  misst 60 Spieltage) ist nachgesehen, ob T-M15-08 dieselben Aussagen belegt — wenn ja, steht
+  in `PROBLEME.md`, dass T-M15-08 die Zusage abgelöst hat; wenn nein, ist der fehlende Lauf
+  ein Befund.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N3: das Muster des Wächters verlangte
+  `invoke<…>('name'` — ein neuer Aufruf ohne Typparameter oder mit doppelten Anführungszeichen
+  fehlte in beiden Mengen, und die Gleichheit blieb grün. Jetzt
+  `/\binvoke(?:<.*?>)?\(\s*['"]([a-z_]+)['"]/g`, mit drei erfundenen Aufrufen als bleibendem Test.)*
+
+### T-M41-04 · Die Uhr verliert keine Ticks mehr
+- **Ziel:** Tempo 100 heißt hundert Spielstunden je Sekunde — bei 60 Bildern sind es heute 90.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-06
+- **Dateien:** `apps/desktop/src/game/clock.ts`, `apps/desktop/src/App.tsx`
+- **Tests zuerst:** `clock.test.ts` — 60 Bilder zu 16,67 ms bei Tempo 100 ergeben 100 Ticks
+  (heute 90), 30 Bilder zu 33,3 ms ebenso; ein Bild nach fünf Sekunden Stillstand holt
+  höchstens die Kappe nach.
+- **Fertig wenn:** `App.tsx` eine reine Funktion `clockStep(owed, dtMs, speed)` benutzt, deren
+  Kappe `max(2, speed / 30)` den Bruchteil nicht mehr wegwirft und D5 („kein Rückstau") hält.
+  *(korrigiert 2026-09-13 beim Bau: wörtlich als `min(max(2, speed / 30), owed + dt · speed)`
+  gerechnet, ergibt diese Kappe bei 30 Bildern und Tempo 100 weiterhin 90 Ticks und bei Tempo 50
+  weiterhin 45 — sie schneidet den Übertrag. Die Kappe gilt deshalb für das Zeitguthaben eines
+  Bildes, und der Übertrag bleibt unter einem Tick. Dazu im Spiel gemessen: der Verlust war größer
+  als gerechnet — die Uhrschleife in `App.tsx` hing an `state`, begann nach jedem Tick neu und
+  setzte den Übertrag auf null; 60 Bilder bei Tempo 100 liefen 60 statt 100 Spielstunden, 30 Bilder
+  bei Tempo 50 liefen 30. `PROBLEME.md`, 2026-09-13.)*
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N1: die Kappe `max(2, speed / 30)` ist genau ein Bild
+  bei 30 Hz und schnitt jedes etwas spätere Bild — zehn Sekunden 30 Hz, gestreut um ±3 ms, liefen
+  bei Tempo 100 976 statt 998 Ticks. Die Kappe ist jetzt `max(2, speed / 20)`, ein 50-ms-Bild; D5
+  hält, der Übertrag bleibt unter einem Tick. Test mit gestreuten Bildzeiten in `clock.test.ts`.)*
+  Befund: `owed = Math.min(2, …)` verliert gerechnet bei 60 Hz/Tempo 100 zehn Prozent, bei
+  30 Hz/Tempo 100 vierzig Prozent. R-TIME-02 steht nur hier im Text (`name_level`). Vor M37 bauen:
+  T-M37-11 treibt dieselbe Uhr aus dem Gleichschritt.
+
+### T-M41-05 · Das KI-Gedächtnis vergisst tote Armeen
+- **Ziel:** ein Feld, das nur wächst und nie gelesen wird, ist ein Fünftel jedes Spielstands.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-04
+- **Dateien:** `packages/ai/src/military.ts`
+- **Tests zuerst:** verschwindet eine Armee, verschwindet ihr Eintrag (`decide.test.ts`);
+  über 200 Ticks sind die Befehle mit und ohne Kürzen dieselben (`loop.test.ts`).
+- **Fertig wenn:** `militaryCommands` `AiMemory.assignments` am Ende auf die eigenen lebenden
+  Armeen kürzt. Befund: geschrieben in `military.ts`, kopiert in `decide.ts` und
+  `state/clone.ts`, nirgends gelesen; an Tag 471 Russland 1235 Einträge bei 217 lebenden
+  Armeen, `state.ai` 108 KB von 485 KB. R-AI-07 steht nur hier im Text (`name_level`).
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, M2: der Vergleich füllte das Gedächtnis vor jedem
+  Tick auf, aber `militaryCommands` kürzte gleich zu Beginn — auch Lauf B las nach der Kürzung nie
+  einen toten Eintrag (gemessen: 0). Jetzt schaltet `loop.test.ts` die Kürzung per Hülle wirklich
+  ab und zählt, was die Funktion danach sieht; dazu der Wächter
+  `test/guards/ai-memory-unread.test.ts`, der fällt, sobald `assignments` im Produktcode gelesen
+  wird.)*
+
+### T-M41-03 · Die nächste Freischaltung kündigt sich an
+- **Ziel:** vier stille Spieltage sind kürzer, wenn am zweiten gesagt wird, was am vierten
+  kommt und was dafür fehlt.
+- **Anforderungen:** R-TECH-02, R-UI-05
+- **Abhängigkeiten:** T-M41-05
+- **Dateien:** `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/game/onboarding.slow.test.ts`, `docs/reports/onboarding.md`
+- **Tests zuerst:** die Ankündigung erscheint zwei Spieltage vor der Freischaltung, nennt das
+  fehlende Gebäude und schweigt davon, wenn es steht (`Alerts.test.tsx`);
+  `onboarding.slow.test.ts` zählt die Art `upcoming` mit.
+- **Fertig wenn:** die Sperrklinke des Onboarding-Durchgangs auf dem **gemessenen** Wert steht
+  — gerechnet sind 48 Ticks (Ankündigungen an Tag 4, 8, 10, 14); liegt die Messung darüber,
+  gilt sie mit Grund im Test. Die Ankündigung ist leise, kein Alarm. Entscheid „Ankündigung
+  statt Datenänderung": `DECISIONS.md`, 2026-09-13.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, M1: steht die Voraussetzung auf einer niedrigeren
+  Stufe, sagte der Text „Sie haben keine" — jetzt „Ihre beste steht auf Stufe N"; der Test, der den
+  Fehler festschrieb, ist berichtigt. N6: „Sie braucht eine Kaserne — Sie haben keine" war richtig
+  gebeugt, aber doppeldeutig; die Ankündigung sagt jetzt „Dafür braucht es …", das an keinem Genus
+  hängt — die Nominativ-Tabelle fällt weg, Artikel und Verneinung richten sich weiter nach der
+  Voraussetzung.)*
+
+### T-M41-01 · Die KI baut die Fabrik aus
+- **Ziel:** die zweite Fortschrittsachse ist heute eine für den Menschen allein.
+- **Anforderungen:** R-PROV-02, R-AI-08
+- **Abhängigkeiten:** T-M41-03
+- **Dateien:** `packages/ai/src/economy.ts`
+- **Tests zuerst:** Stadt mit Fabrik 1 und genug Mitteln ergibt `BUILD factory`, bei
+  `maxLevel` nicht (`economy.test.ts`); **Haltetest:** nie Kaserne Stufe 2, mit Verweis auf
+  das Turnier.
+- **Fertig wenn:** nur die Fabrik bis `maxLevel` und nur in Städten ausgebaut wird und das
+  Turnier zeilengleich bleibt. Gemessen an vier Varianten (`DECISIONS.md`, 2026-09-13): die
+  Kaserne Stufe 2 reißt R-AI-06 (schwer gegen normal im Frieden 1,00 statt 0,70), die
+  Eisenbahn ändert nichts. R-AI-01 steht nur hier im Text (`name_level`).
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, H1: der Ausbau sperrte die Stadt. `nextBuildingFor`
+  lieferte für jede Stadt mit Fabrik unter `maxLevel` nur noch „factory"; war die Stufe zu teuer,
+  kam in dieser Stadt nichts anderes an die Reihe — Vollpartie 1914 am Ende 39 Städte mit Fabrik und
+  ohne Eisenbahn. Jetzt ist der Ausbau nur der **erste** Wunsch einer Stadt, deren Fabrik steht;
+  Eisenbahn, Festung und Hafen stehen dahinter, und gebaut wird der erste bezahlbare. Kaserne und
+  erste Fabrik bleiben allein, der Handel zielt weiter auf den ersten Wunsch. Test zuerst in
+  `packages/ai/src/economy.test.ts`; die Städte mit Eisenbahn und Festung je Macht zählt
+  `apps/headless/test/fullgame.slow.test.ts`; H2 in `apps/headless/test/ai-integration.slow.test.ts`
+  nachgemessen. Das Turnier ist danach **nicht** mehr zeilengleich (Siegquoten gleich, im Frieden
+  146 → 145 Kriegserklärungen). Zahlen in `PROBLEME.md`, 2026-09-13, H1.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M2: die Ausweichliste Eisenbahn → Festung → Hafen gilt
+  für jede Provinz mit Kaserne, auch für Landprovinzen und Städte mit Fabrik 3 — nicht nur für Städte
+  mit Fabrik. Gemessen nur in der Summe der H1-Läufe; Haltetest für eine Landprovinz in
+  `packages/ai/src/economy.test.ts`, keine Verhaltensänderung.)*
+
+### T-M41-02 · Nachmessen nach dem Fabrikausbau
+- **Ziel:** ein grüner Einzeltest belegt, dass die KI den Befehl gibt — nicht, dass sie in
+  einer Partie klettert.
+- **Anforderungen:** R-PROV-02
+- **Abhängigkeiten:** T-M41-01
+- **Dateien:** `docs/reports/fullgame.json`, `docs/reports/progress-baseline.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** `apps/headless/test/fullgame.slow.test.ts` meldet je Macht die höchste
+  Fabrikstufe und sichert zu, dass mindestens eine Macht eine Fabrik der Stufe 2 besitzt.
+- **Fertig wenn:** die Vollpartie dazu mit Startzahl 2015 und einer dritten gemessen, das
+  Turnier nachgefahren und `progress-baseline.md` §5 nachgetragen ist. Im Planungslauf (im
+  Speicher gepatcht) gemessen: 31 begonnene Fabriken Stufe 2, keine Stufe 3, Siegtag 449 statt
+  471 — das liegt im Rauschen der Startzahl und belegt nur „keine Verschiebung".
+  `progress.slow.test.ts` sieht den Ausbau nicht und gilt nicht als Beleg. Der Befund vom
+  2026-09-12 in `PROBLEME.md` steht auf behoben, `WORKFLOW.md` §5 nennt den neuen Siegtag;
+  `docs/reports/acceptance.md` schreibt erst der Schlussblock nach M35 (umgerichtet am
+  2026-09-13, M17 abgetrennt; vorher T-M17-16). `pnpm verify` am Ende des Meilensteins.
+  *(korrigiert 2026-09-13 beim Bau: die Planungszahlen sind nicht reproduzierbar. Gemessen mit der
+  gebauten Variante: Startzahl 1914 Tag 582 (vorher 471), 17 Ausbauten auf Stufe 3 begonnen;
+  2015 Tag 868 (583); 1815 Tag 412 (774); Turnier zeilengleich, Grundlauf 0,4462 statt 0,4442.
+  Eine Gegenprobe mit Kappe bei Stufe 2 endet an Tag 591. `PROBLEME.md`, 2026-09-13.)*
+
+### T-M41-07 · Die zugesagte Eigenschaftsprüfung des Nahkampfs
+- **Ziel:** T-M14-06 steht auf `done` und sagte zwei Eigenschaften zu, die kein Test prüft.
+- **Anforderungen:** R-BAT-07 *(eingetragen 2026-09-13 beim Bau: der Testblock heißt
+  `R-BAT-07/AK1`, die ID ist aus `name_level` gestrichen)*
+- **Abhängigkeiten:** T-M41-06
+- **Dateien:** `packages/core/test/properties/combat-symmetry.test.ts`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** Seitentausch im Nahkampf spiegelt bei `combatSpreadPermille` 0 exakt; über
+  50 Ticks eines Dreiparteienkampfes ist die Summe der abgezogenen Trefferpunkte gleich der
+  Summe der gemeldeten Verluste in `BATTLE_RESOLVED` (R-BAT-07/AK1).
+- **Fertig wenn:** beide Prüfungen stehen — zuerst nachgesehen, ob es sie unter anderem Namen
+  doch gibt; geschrieben ist heute nur der Seitentausch beim Beschuss
+  (`bombardment.test.ts`). Fällt eine, ist das ein Befund: `PROBLEME.md`, dann Entscheid,
+  bevor eine Kampfregel geändert wird (Golden-Master). T-M14-06 bleibt `done` und bekommt einen
+  Verweis. R-BAT-07 steht nur hier im Text (`name_level`) — wer den Block `R-BAT-07/AK1` nennt,
+  darf die ID dort streichen und trägt sie dann hier ein.
+  *(Nacharbeit 2026-09-13 nach der Durchsicht, N2: im Seitentausch stand die Armee des Verteidigers
+  in beiden Läufen vorn in `armyOrder` — eine Schieflage nach Armeereihenfolge war unsichtbar, und
+  eine fehlende `strengths`-Meldung wurde still übersprungen. Jetzt ist die Aufstellungsreihenfolge
+  Teil der Eigenschaft (`fc.boolean()`, dazu der Vergleich mit der anderen Reihenfolge), und
+  `strengths` wird für jede kämpfende Seite zugesichert. Gegen den Kern grün; mit einer Schieflage
+  nach Reihenfolge bzw. ohne `strengths` — nur im Test als Hülle um die Kampfphase — fällt die neue
+  Fassung, die alte blieb grün.)*
+
+> **Nacharbeit nach der Durchsicht (2026-09-13).** Die Durchsicht von M41 (`review-m41.md`) fand
+> zwei Vorbestände in der Oberfläche, die keiner Aufgabe gehörten: N8 (Ankündigung und
+> Freischaltung sind beim Vorspulen nie zu sehen) und N7 (Tempo während des Vorspulens). Sie
+> ändern die Partie nicht und kommen deshalb in Block N1 mit den Korrekturen an T-M41-03/-04/-05/
+> -06/-07; die KI-Aufgaben der Durchsicht (T-M41-08 bis -11, -14) gehören zu Block N2.
+
+### T-M41-12 · Ankündigung und Freischaltung bleiben sichtbar
+- **Ziel:** eine Meldung, die das Vorspulen überspringt, hat niemand gelesen.
+- **Anforderungen:** R-TECH-02
+- **Abhängigkeiten:** T-M41-03
+- **Dateien:** `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/app.css`, `docs/plan/PROBLEME.md` *(app.css beim Bau ergänzt: der leise Wegklick)*
+- **Tests zuerst:** `apps/desktop/src/App.test.tsx` — nach einem Tagessprung durch Vorspulen von
+  14:00 aus steht die Freischaltung des neuen Tages noch in den Meldungen (heute nicht: sie steht
+  nur in den ersten 12 Ticks eines Tages); `apps/desktop/src/ui/Alerts.test.tsx` — Ankündigung und
+  Freischaltung stehen den ganzen Spieltag, am nächsten nicht mehr, und lassen sich wegklicken;
+  `apps/desktop/src/game/onboarding.slow.test.ts` misst danach dieselbe längste Pause.
+- **Fertig wenn:** Ankündigung und Freischaltung bis zum Ende ihres Spieltags stehen oder bis der
+  Spieler sie wegklickt — geprüft über einen Tagessprung, nicht über Ticks. Leise nach M36: der
+  Wegklick trägt keine Alarm- oder Warnfarbe, springt nicht auf die Karte und macht keinen Ton.
+  Befund N8 der Durchsicht. **Vor dem Bau auf Einlösbarkeit geprüft:** bei Tempo 100 dauert ein
+  Spieltag 0,24 s — „bis Tagesende" verdoppelt die Anzeigezeit gegenüber 12 Ticks, macht sie bei
+  vollem Tempo aber nicht lesbar. Der Gewinn liegt beim Vorspulen (danach steht die Uhr, und die
+  Meldung bleibt stehen) und bei kleinem Tempo; der Rest steht als Befund mit Zahl in
+  `PROBLEME.md`. R-UI-14 steht nur hier im Text (`name_level`).
+  *(Nachtrag 2026-09-13, gefunden von `pnpm verify` am Ende des Blocks: `test/guards/unlocks-explained.test.ts`
+  aus T-M21-04 sicherte „meldet nur am Anfang des Tages" zu — sonst verdränge die Meldung, was
+  gerade Aufmerksamkeit braucht. Die Zusage ist mit Grund zurückgenommen, der Einwand schärfer
+  geprüft: Freischaltung und Ankündigung stehen jetzt am Ende der Meldungsliste, hinter Kampf und
+  Mangel; vorher standen sie vorn. Die gezielten Tests hatten den Wächter nicht erfasst, weil die
+  Suche nach `alertsFor` nur über `apps/desktop/src` lief.)*
+
+### T-M41-13 · Tempo während des Vorspulens verliert keine Befehle
+- **Ziel:** eine Uhr, die neben dem Vorspulen läuft, rechnet Stunden, die das nächste Häppchen
+  überschreibt — samt der Befehle, die sie dabei angewandt hat.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-12
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/keyboard.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/i18n/de.ts`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `apps/desktop/src/App.test.tsx` — ein Befehl gesammelt, Vorspulen über mehrere
+  Häppchen gestartet, ein zweiter Befehl während des Laufs, dann Tempo gedrückt (Knopf und Taste):
+  beide Befehle sind danach angewandt; `apps/desktop/src/ui/Header.test.tsx` — die Tempostufen über
+  0 sind während des Vorspulens gesperrt und nennen den Grund; `apps/desktop/src/keyboard.test.ts`
+  — Leertaste, Plus, Minus und F tun während des Vorspulens nichts.
+- **Fertig wenn:** Tempo und Kürzel während eines Laufs gesperrt sind, mit Grund im Tooltip —
+  konsistent mit T-M28-10: der Vorspulknopf wird zum Abbrechen, die Pause bleibt bedienbar.
+  Befund N7 der Durchsicht. **Vor dem Bau auf Einlösbarkeit geprüft:** heute endet ein Vorspulen
+  um einen Tag im ersten Häppchen (`days: 1` sind 24 Ticks, `DEFAULT_CHUNK_TICKS` ist 24, der Kern
+  prüft das Ziel im Häppchen) und damit synchron im Klick — über die Oberfläche ist der Verlust
+  heute nicht herstellbar. Der Test verkleinert deshalb die Häppchen (derselbe Pfad wie jeder Lauf
+  über mehr als ein Häppchen) und zeigt dort, dass der Befehl verloren geht; die Messung „heute
+  synchron" steht in `App.test.tsx` und `PROBLEME.md`. R-TIME-02 und R-TIME-03 stehen nur hier im
+  Text (`name_level`).
+  *(Beim Bau 2026-09-13: der App-Test bricht den Lauf nach einem weiteren Häppchen ab, statt ihn
+  abzuwarten — das Ziel `days` zählt der Kern je Häppchen, und die Schleife in `App.tsx` trägt den
+  Fortschritt nicht weiter; in Häppchen zu 4 Ticks liefe „ein Tag" bis zur Obergrenze von 30
+  Spieltagen. Nebenbefund in `PROBLEME.md`, nicht in dieser Aufgabe gebaut.)*
+
+> **Zwei Nebenbefunde aus T-M41-13, gebaut mit der Nacharbeit M40 (2026-09-13).** Beide liegen in
+> `fastForward.ts` und `App.tsx`, die T-M40-08 und T-M40-13 ohnehin anfassen.
+
+### T-M41-15 · Das Vorspulziel wird nicht je Häppchen gezählt
+- **Ziel:** „zwei Tage vorspulen" hält nach zwei Tagen, nicht nach dreißig.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-13, T-M40-08
+- **Dateien:** `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/App.tsx`,
+  `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `fastForward.test.ts` — Ziel 48 Ticks in Häppchen zu 24, aneinandergereiht wie
+  in der Oberfläche, hält nach 48 Ticks am Ziel und nicht nach 720; `App.test.tsx` — in Häppchen
+  zu 4 Ticks endet ein Vorspulen um einen Tag nach 24 Ticks am Ziel.
+- **Fertig wenn:** die Anfrage die schon gelaufenen Ticks trägt und `fastForwardChunk` ein
+  Zählziel auf den Rest umrechnet. Nebenbefund 1 aus T-M41-13: heute verdeckt, weil ein Tag genau
+  ein Häppchen ist. R-TIME-02 steht nur hier im Text (`name_level`).
+
+### T-M41-16 · Der Kürzel-Effekt kennt `fastForwardRun`
+- **Ziel:** F spult mit eingeschalteter Debug-Ansicht so vor wie der Knopf.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-15
+- **Dateien:** `apps/desktop/src/App.tsx`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `App.test.tsx` — Debug-Ansicht während der Partie eingeschaltet, dann F: die
+  Kommandoliste der Debug-Ansicht füllt sich.
+- **Fertig wenn:** `fastForwardRun` in den Abhängigkeiten des Kürzel-Effekts steht. Nebenbefund 2
+  aus T-M41-13, gelesen und nicht gemessen — vor dem Bau geprüft, ob er über die Oberfläche
+  herstellbar ist (`step` steht in denselben Abhängigkeiten und hängt an denselben Werten); ist
+  der Test ohne Reparatur grün, steht das mit Grund in `PROBLEME.md`.
+### T-M41-17 · Die Uhr schreibt ihren Stand zurück, bevor das nächste Bild rechnet
+- **Ziel:** Tempo 100 sind hundert Spielstunden je Sekunde — auch dann, wenn React zwischen zwei
+  Bildern nicht dazwischenkommt.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-04, T-M41-16
+- **Dateien:** `apps/desktop/src/App.tsx`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `App.test.tsx` — zwei Bilder in **einem** `act()`, also in einem JS-Zug, müssen
+  sich aufaddieren: zwei Bilder zu 100 ms bei Tempo 100 ergeben 10 Ticks, dreißig Bilder in einem Zug
+  ergeben 100. Ohne die Reparatur rot mit „Tag 1 · 05:00" statt „Tag 1 · 10:00" — genau ein Bild
+  überlebt.
+- **Fertig wenn:** `commitState(next)` den Spiegel `stateRef.current` **und** den Zustand schreibt und
+  `step`, das Vorspul-Häppchen, Laden, neue Partie und das Leeren darüber gehen. Befund 1 der
+  Sichtprüfung vom 2026-09-14: `step` rechnete aus `stateRef.current`, schrieb mit der Wertform
+  zurück, und ein Bild vor dem Commit rechnete noch einmal aus demselben Stand. Die Updaterform ist
+  bewusst **nicht** gewählt — dieses Haus hat die Rechnung zweimal absichtlich aus dem Updater geholt
+  (T-M22-05 und der Befund vom 2026-09-08 im Vorspulen). **Rücknahmekriterium**, vorher
+  festgeschrieben: Dev-Server ≥ 95 Ticks/s, gebautes Bündel nicht schlechter als der eigene
+  Ausgangswert desselben Tages, Golden-Master und `pnpm verify` unverändert grün, und ein
+  Regressionstest, der ohne die Reparatur fällt. R-TIME-02 steht nur hier im Text (`name_level`).
+
+> **Nacharbeit nach der Durchsicht, Block N2 (2026-09-13): das Verhalten der KI.** Aus der Durchsicht
+> (H1, H2) und der Untersuchung der abgelehnten KI-Befehle. Jede Aufgabe verändert oder vermisst, was
+> die KI tut, und ist einzeln gemessen; die Reparatur zu H1 ist Nacharbeit zu T-M41-01 und steht dort.
+> *(Abschluss 2026-09-13: T-M41-08, -09 und -11 gebaut, T-M41-10 nach seinem Rücknahmekriterium
+> zurückgenommen. **T-M41-14 ist nicht angelegt:** die Bedingung „selbsttätiger Beschuss im
+> Integrationslauf unter einem Viertel von 121" trat nicht ein — gemessen 231 nach der Reparatur zu H1
+> und T-M41-09. Der Befund dahinter, alle Artillerie bei einer einzigen Macht, steht in `PROBLEME.md`.)*
+
+### T-M41-08 · Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt
+- **Ziel:** 961 von 1177 abgelehnten KI-Befehlen auf der Weltkarte galten Armeen, die dieselbe Macht im
+  selben Tick unmittelbar vorher zusammengelegt hatte — und den 90-Tage-Lauf, den T-M14-11 und T-M14-12
+  zusagten, gab es nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-02, T-M41-07
+- **Dateien:** `packages/ai/src/decide.ts`, `apps/headless/src/tournament.ts`,
+  `docs/reports/ai-integration.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/01-REQUIREMENTS.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — vier eigene stehende Armeen in einer Provinz, ein
+  schwacher Kriegsgegner nebenan: genau ein `MERGE_ARMIES` über alle vier, kein Befehl, kein Eintrag in
+  `assignments` und keine Begründung nennt eine der drei aufgegangenen Armeen, die bleibende marschiert,
+  und der Kern lehnt nichts ab. `apps/headless/test/ai-integration.slow.test.ts` — `MOVE_ARMY` und
+  `SET_STANCE` mit `ARMY_NOT_FOUND` sind null, im 200-Tage-Lauf und in einem neuen 90-Tage-Lauf der
+  ausgelieferten Voreinstellung. `apps/headless/test/tournament.test.ts` — Kriegserklärung und Beschuss
+  je Stufe nach dem Handelnden, nicht je Partie.
+- **Fertig wenn:** die Taktikstufe die Armeen nicht mehr sieht, die das Zusammenlegen im selben Zug
+  auflöst (mit der Sortierregel des Kerns), und das **neutral** ist: der Endzustand ohne Protokoll und
+  KI-Gedächtnis bleibt bitgleich, jede Ereigniszahl außer den Ablehnungen gleich, das Turnier zeilengleich.
+  Im 90-Tage-Lauf sind die Zusagen von T-M14-11 und T-M14-12 zugesichert — Ablehnungsquote unter 10 %,
+  `NO_PATH` unter 2 %, keine Paarung Armee/Fehlercode öfter als dreimal, eine Kriegserklärung, keine Macht
+  ohne Hauptstadt bei gehaltener Stadt, Handel je Macht, keine diplomatische Ablehnung, ein Frieden
+  zwischen zwei KI. Mit Grund zurückgenommen (`DECISIONS.md`): `armyRange > 0` je Macht, die AK für den
+  Ablehnungsanteil bei R-AI-01 und von den „neun Zahlen je Stufe" aus T-M15-08 alles außer den
+  Kriegserklärungen von „schwer" und „normal"; „höchstens drei Armeeobjekte je Provinz" bleibt bis T-M41-10
+  eine Zahl im Bericht. Der Golden-Master bleibt unberührt (kein Lauf dort hat eine KI).
+  *(Gebaut 2026-09-13: Voreinstellung 267 → 0 Ablehnungen, Weltkarte 1177 → 216, Prüfsummen
+  `a177d1db875a10b1` und `dbf5fa3f49a96cd1` vorher wie nachher. Abweichung von der Untersuchung: statt
+  die Befehle nachträglich zu verwerfen, sieht die Taktikstufe die aufgegangenen Armeen gar nicht — das
+  nimmt auch Begründungen und Gedächtnis mit, und es ist ebenso bitgleich gemessen. Beschuss im Turnier:
+  0 auf jeder Stufe, Vermerk bei R-BAT-08/AK3, `PROBLEME.md`.)*
+  *(Berichtigt nach der Durchsicht von Block N2, M1: die Hauptstadt-Zusage lief im 90-Tage-Lauf über einer
+  leeren Menge (0 Verluste) und steht jetzt im 200-Tage-Lauf, mit der Vorbedingung „mindestens ein
+  Hauptstadtverlust" — gemessen 10.)*
+
+### T-M41-09 · Die KI baut nicht in Provinzen, die sie nur erinnert
+- **Ziel:** ein Bauauftrag in eine Provinz, die längst ein Gegner hält, wird jeden Tag abgelehnt — und
+  weil die KI nur einen Bau je Denkschritt befiehlt, verdrängt er den echten Bau des Tages.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-08
+- **Dateien:** `packages/ai/src/economy.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — eine erinnerte eigene Stadt vorn in der Sicht:
+  gebaut wird nicht dort, und für ihren Bau wird nicht gehandelt. `apps/headless/test/ai-integration.slow.test.ts`
+  — kein `BUILD:NOT_OWNER` auf der Weltkarte, kein abgelehnter Bauauftrag öfter als dreimal, in beiden Läufen.
+- **Fertig wenn:** Wirtschaft, Handel und Aushebung nur sichtbare eigene Provinzen sehen (`stale`
+  ausgenommen); Militär, Diplomatie und Hauptstadt bleiben bei der vollen Sicht — dort heißt „erinnert
+  mein" Rückeroberung, und das wäre eine eigene Verhaltensänderung. Einzeln gemessen: Vollpartie mit drei
+  Startzahlen, Turnier, Grundlauf, Integrationslauf. Vorher (Stand nach der Reparatur zu H1): 59
+  `BUILD:NOT_OWNER`, eine Provinz 50× (China, PAK-CENTRAL).
+  *(Beim Bau 2026-09-13, Abweichung von der Untersuchung: der erweiterte Paarungsschlüssel über **alle**
+  Befehle, den sie hier zusichern wollte, fällt nach H1 an `SET_CAPITAL:ON_COOLDOWN` — bis 29× dieselbe
+  Sperre. Zugesichert ist deshalb der Bauauftrag; der volle Schlüssel geht an T-M41-11.)*
+  *(Gemessen 2026-09-13, vorher = Stand nach H1: `BUILD:NOT_OWNER` 59 → 0, Ablehnungen 136 → 75 (Rest
+  `SET_CAPITAL:ON_COOLDOWN`), Voreinstellung über 90 Tage bitgleich; Vollpartie 1914 Tag 430 → 975,
+  2015 640 → 583, 1815 571 → 583 — AK-1 überall entschieden; Turnier zeilengleich; Grundlauf 0,3623 →
+  0,3684. `PROBLEME.md`, T-M41-09.)*
+  *(Nacharbeit 2026-09-13 nach der Durchsicht von Block N2, N2: auch `capitalCommands` nahm erinnerte
+  Provinzen als eigene — alle sichtbaren Städte verloren, eine erinnerte in der Sicht, und die KI hätte
+  dorthin verlegt (NOT_OWNER, jeden Denkschritt neu). Jetzt `!province.stale` auch in `capital.ts`, Test
+  zuerst in `packages/ai/src/decide.test.ts`. In den Läufen kam der Fall nicht vor: `ai-integration`
+  bericht- und prüfsummengleich, Golden-Master ohne `UPDATE_GOLDEN` unverändert.)*
+
+### T-M41-10 · Die KI legt wirklich zusammen
+- **Ziel:** „keine KI-Macht hält mehr als drei Armeeobjekte in derselben Provinz" (T-M14-12) war nie
+  erfüllt — `consolidateCommands` legte je Denkschritt nur eine Provinz zusammen, und sein Deckel zählte
+  Stapel statt Einheiten und griff nie.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/ai/src/consolidate.ts`, `docs/reports/ai-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-2015.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/progress-measured.json`, `docs/reports/ai-tournament-run.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/ai/src/decide.test.ts` — zwei Provinzen mit je drei Armeen ergeben zwei
+  `MERGE_ARMIES`; drei Armeen zu je fünfzehn Einheiten ergeben einen Merge über zwei davon.
+  `apps/headless/test/ai-integration.slow.test.ts` — im 90-Tage-Lauf der Voreinstellung nie mehr als drei
+  **stehende** Armeeobjekte einer Macht in einer Provinz, gezählt am Ende jedes Spieltags.
+- **Fertig wenn:** `consolidateCommands` alle Provinzen je Denkschritt zusammenlegt und der Deckel
+  Einheiten zählt (`unitCount`). Die Zusage 7 aus T-M14-12 gilt neu für stehende Armeeobjekte; den Durchzug
+  kann der Kern nicht zusammenlegen (`ARMY_BUSY`), er ist mit Grund zurückgenommen (`DECISIONS.md`).
+  **Rücknahmekriterium, vor dem Bau festgelegt:** Vollpartie 1914/2015/1815 mit Siegtag im Tor 300–1500
+  und AK-1 entschieden, **und** `ai-integration` 200 Tage grün, **und** das Turnier im Band von R-AI-06
+  (schwer gegen normal 0,55–0,95). Reißt eines davon, wird die Aufgabe zurückgenommen und Zusage 7 mit
+  der Messung nach M18 verschoben — keine Grenze bewegt. Entscheid „bauen" delegiert (Orchestrator,
+  Block N2), kippbar in `DECISIONS.md`.
+  *(**Zurückgenommen 2026-09-13**, gebaut und gemessen: das Kriterium ist gerissen — `ai-integration`
+  200 Tage rot, Artillerie 63 → 0, selbsttätiger Beschuss 231 → 0 (R-AI-08/AK3); Turnier und Vollpartie
+  1815 hielten. Die neu gefasste Zusage hielt auch mit der Reparatur nicht (stehend höchstens 5 in der
+  Voreinstellung). `consolidate.ts`, Tests und Berichte stehen wieder auf dem Stand nach T-M41-09; die
+  Aufgabe steht auf `todo`, Zusage 7 ist mit der Messung nach M18 verschoben. `DECISIONS.md` und
+  `PROBLEME.md`, 2026-09-13, T-M41-10.)*
+
+### T-M41-11 · Die Sicht nennt die Sperre beim Verlegen der Hauptstadt
+- **Ziel:** eine Sperre, die die KI nicht sieht, befiehlt sie jeden Tag neu — und jede Ablehnung
+  verdeckt eine andere.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-09
+- **Dateien:** `packages/core/src/view/publicView.ts`, `packages/core/src/index.ts`,
+  `packages/ai/src/capital.ts`, `docs/reports/ai-integration.json`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`, `docs/plan/tasks.yaml`
+- **Tests zuerst:** `packages/core/src/view/publicView.test.ts` — `self` führt, wann die eigene Hauptstadt
+  zuletzt verlegt wurde, `null` ohne Verlegen, und nichts über fremde Mächte. `packages/ai/src/decide.test.ts`
+  — während der Sperre kein `SET_CAPITAL` (der Kern hätte `ON_COOLDOWN` gesagt), mit Begründung; nach
+  Ablauf wieder eines, das die Prüfung besteht. `apps/headless/test/ai-integration.slow.test.ts` — kein
+  `SET_CAPITAL:ON_COOLDOWN` und keine abgelehnte Paarung (Macht, Befehl, Fehlercode, Einzelheiten) öfter
+  als dreimal, in beiden Läufen.
+- **Fertig wenn:** `PublicView.self.capitalMovedAtTick` die Sperre trägt, `capitalCommands` sie mit
+  `CAPITAL_MOVE_COOLDOWN_DAYS` aus dem Kern beachtet und die Änderung **neutral** ist: Sicht ist kein Zustand
+  — Golden-Master ohne `UPDATE_GOLDEN` unverändert, der Endzustand ohne Protokoll und KI-Gedächtnis bitgleich
+  (eine abgelehnte `SET_CAPITAL` änderte nichts), Turnier zeilengleich. Nur der `self`-Block von
+  `publicView.ts` ist berührt (dieselbe Datei trägt `retreating` aus M40). Befund: Nebenbefund c zu
+  T-M41-08 — 298-mal im Turnier-Nachbau, 72-mal auf der Weltkarte nach der Reparatur zu H1.
+
+> **Zwei Befunde am Abnahmeskript (2026-09-14).** Gefunden beim Abnahmelauf vom 2026-09-13, von der
+> unabhängigen Verifikation desselben Tages als M-1 und M-2 bestätigt und erst danach mit einer
+> Aufgabe versehen — vorher hatten sie nur eine Übergabe als Heimat. Kein Spielverhalten.
+
+### T-M41-18 · Ein späteres Abnahmekriterium beschreibt sich selbst, und die Dauer wird abgerundet
+- **Ziel:** die AK-9-Zeile in `docs/reports/acceptance.md` trug die Beschreibung von AK-8, und die
+  Konsole druckte bei 298 Sekunden „5 min 58 s".
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-17
+- **Dateien:** `scripts/acceptance-criteria.mjs`, `scripts/acceptance.mjs`, `docs/plan/PROBLEME.md`,
+  `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `test/requirements.test.ts` — keine zwei Kriterien außerhalb der V1 teilen eine
+  Beschreibung; AK-9 nennt die Partie zu zweit und nicht die Verpackung; der Quelltext von
+  `acceptance.mjs` trägt den festen Satz nicht mehr; `durationText(298)` ist „4 min 58 s", samt der
+  Ränder 0, 59 und 60 Sekunden.
+- **Fertig wenn:** die Beschreibung als Feld `description` beim Kriterium steht (`describeCriterion`
+  mit Rückfall auf die Kennung, damit kein `undefined` in den Bericht rutscht) und `durationText`
+  mit `Math.floor` rechnet. **Gegenprobe gemessen (2026-09-14):** mit dem alten festen Text und
+  `Math.round` fallen **6 der 8** neuen Tests; die beiden übrigen binden die Voraussetzung (es gibt
+  zwei spätere Kriterien) und den Rückfallwert. Der eingecheckte `acceptance.md` trägt den alten
+  Satz, bis der nächste `pnpm acceptance` ihn neu schreibt — er gilt ohnehin nur für den Stand,
+  gegen den er gemessen wurde.

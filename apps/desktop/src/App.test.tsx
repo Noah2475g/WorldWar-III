@@ -2,13 +2,41 @@
 import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryStorage, type MapData } from '@worldwar/core'
+import { advanceTicks } from '@worldwar/ai'
+import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
+import type * as FastForwardModule from './game/fastForward.ts'
+
+/**
+ * Die Haeppchengroesse des Vorspulens, im Test verkleinerbar (T-M41-13).
+ *
+ * Ein Vorspulen um einen Tag sind 24 Ticks und passt heute genau in ein Haeppchen: der Lauf
+ * endet synchron im Klick. Jeder Lauf ueber mehr als ein Haeppchen nimmt aber denselben Weg —
+ * zwischen zwei Haeppchen kommt die Ereignisschleife dran, und dort kann der Spieler klicken.
+ * Mit `haeppchen.ticks` rechnet derselbe Weg in kleineren Stuecken; ohne Wert reicht die Huelle
+ * alles unveraendert durch.
+ */
+const haeppchen = vi.hoisted(() => ({ ticks: 0 }))
+
+vi.mock('./game/fastForward.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof FastForwardModule>()
+  return {
+    ...original,
+    fastForwardChunk: (...args: Parameters<typeof original.fastForwardChunk>) => {
+      const [state, request, ...rest] = args
+      return original.fastForwardChunk(
+        state,
+        haeppchen.ticks > 0 ? { ...request, chunkTicks: haeppchen.ticks } : request,
+        ...rest,
+      )
+    },
+  }
+})
 
 /**
  * The assembled game (T-M10-03 … T-M10-12).
@@ -718,6 +746,125 @@ describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
   })
 })
 
+describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () => {
+  /**
+   * `clock.test.ts` prueft die reine Funktion. Hier laeuft die Schleife, die der Spieler
+   * ausfuehrt: `requestAnimationFrame` als Warteschlange, `performance.now` als gestellte
+   * Uhr, und jedes Bild ruft alle wartenden Rueckrufe mit derselben Zeit — wie ein
+   * Browser. Gezaehlt wird an der Kopfleiste, nicht an einer Variable.
+   */
+  let wartend: FrameRequestCallback[] = []
+  let jetzt = 0
+
+  const gestellteUhr = () => {
+    wartend = []
+    jetzt = 1000
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
+      wartend.push(rueckruf)
+      return wartend.length
+    })
+    vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+  }
+
+  const bilder = (anzahl: number, dtMs: number) => {
+    for (let bild = 0; bild < anzahl; bild++) {
+      jetzt += dtMs
+      const faellig = wartend
+      wartend = []
+      act(() => {
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      })
+    }
+  }
+
+  const tempo = (stufe: string) =>
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: stufe }))
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('laeuft bei Tempo 100 und 60 Bildern in einer Sekunde 100 Spielstunden', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+    expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
+
+    bilder(60, 1000 / 60)
+
+    // 100 Stunden nach Tag 1, 00:00 Uhr.
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
+  })
+
+  it('laeuft bei Tempo 50 und 30 Bildern in einer Sekunde 50 Spielstunden', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('50')
+
+    bilder(30, 1000 / 30)
+
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 3 · 02:00/)
+  })
+
+  /**
+   * Zwei Bilder in EINEM JS-Zug (T-M41-17).
+   *
+   * `bilder()` oben legt jedes Bild in ein eigenes `act()`; React kommt also zwischen zwei
+   * Bildern dran und spielt den Zustand ein. Genau deshalb konnten die beiden Zusagen
+   * darueber gruen sein, waehrend am Dev-Server ein Drittel der Ticks verschwand: dort
+   * kommt das naechste Bild oft VOR dem Commit, und beide Bilder rechnen aus demselben
+   * Stand. Gemessen am 2026-09-14 (Sichtpruefung, Punkt 1): 127 Bilder der Spielschleife,
+   * `clockStep` verlangte 635 Ticks, angekommen sind 325 — 65 Commits zu je genau 5.
+   *
+   * Hier wird dieser Zug nachgestellt: beide Bilder laufen in einem `act()`, React sieht
+   * dazwischen nichts. Rechnet das zweite Bild noch einmal aus dem Stand des ersten,
+   * ueberschreibt es dessen Ergebnis, statt es fortzusetzen.
+   */
+  const bilderImSelbenZug = (anzahl: number, dtMs: number) => {
+    act(() => {
+      for (let bild = 0; bild < anzahl; bild++) {
+        jetzt += dtMs
+        const faellig = wartend
+        wartend = []
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      }
+    })
+  }
+
+  it('addiert zwei Bilder desselben JS-Zugs auf, statt das erste zu verwerfen', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+    expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
+
+    // Zwei Bilder zu je 100 ms. `clockCap(100)` deckelt jedes auf 5 Ticks, zusammen 10.
+    bilderImSelbenZug(2, 100)
+
+    // Zehn Stunden nach Tag 1, 00:00 Uhr. Mit der Wertform von `setState` blieben es fuenf.
+    expect(
+      screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent,
+      'Das zweite Bild hat die Ticks des ersten ueberschrieben statt fortgesetzt',
+    ).toMatch(/Tag 1 · 10:00/)
+  })
+
+  /**
+   * Dasselbe ueber eine ganze Sekunde: dreissig Bilder, und React kommt kein einziges Mal
+   * dazwischen. Der Einzelfall darueber zeigt den Mechanismus, dieser die Zusage —
+   * Tempo 100 heisst hundert Spielstunden je Sekunde, unabhaengig davon, wann React
+   * einspielt. Ohne die Reparatur kamen hier fuenf Ticks an statt hundert.
+   */
+  it('laeuft bei Tempo 100 auch dann 100 Spielstunden, wenn React erst am Ende einspielt', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+
+    bilderImSelbenZug(30, 1000 / 30)
+
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
+  })
+})
+
 /**
  * Sound and the guided start, wired to the running game (T-M13-02).
  *
@@ -1314,6 +1461,165 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 })
 
 /**
+ * Ankuendigung und Freischaltung bleiben sichtbar (T-M41-12, Befund N8 der Durchsicht M41).
+ *
+ * Gemessen wird ueber einen Tagessprung, nicht ueber Ticks: eine Partie steht an Tag 5 um
+ * 14:00, der Spieler spult einen Tag vor — und landet an Tag 6 um 14:00, dem Tag, an dem der
+ * Hafen freikommt. Bis T-M41-12 stand die Freischaltung nur in den ersten 12 Stunden eines
+ * Tages; der Sprung ging darueber hinweg, und der Spieler erfuhr es nie.
+ */
+describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
+  const meldungen = () => screen.queryByRole('region', { name: 'Meldungen' })?.textContent ?? ''
+  const uhr = () => document.querySelector('.clock__time')?.textContent ?? ''
+
+  const ladeTag5Um14 = async () => {
+    const start = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const state = advanceTicks(start, 4 * 24 + 14, { map: world, rules: TEST_RULES }).state
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Tagesmitte'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(uhr()).toMatch(/Tag 5 · 14:00/))
+  }
+
+  it('zeigt die Freischaltung des neuen Tages nach einem Tagessprung durch Vorspulen', async () => {
+    await ladeTag5Um14()
+    expect(meldungen()).not.toContain('Hafen')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Ein Spieltag weiter, dieselbe Uhrzeit — 14:00 liegt hinter den ersten 12 Stunden.
+    expect(uhr()).toMatch(/Tag 6 · 14:00/)
+    expect(meldungen()).toContain('Neu ab heute: Hafen')
+  }, 30_000)
+
+  it('laesst sich wegklicken und bleibt dann weg', async () => {
+    await ladeTag5Um14()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(meldungen()).toContain('Neu ab heute: Hafen')
+
+    const region = screen.getByRole('region', { name: 'Meldungen' })
+    fireEvent.click(within(region).getByRole('button', { name: /^Ausblenden: Neu ab heute: Hafen/ }))
+
+    expect(meldungen()).not.toContain('Hafen')
+  }, 30_000)
+})
+
+/**
+ * Tempo waehrend des Vorspulens verliert keine Befehle (T-M41-13, Befund N7 der Durchsicht M41).
+ *
+ * Laeuft das Vorspulen ueber mehrere Haeppchen und der Spieler drueckt Tempo, laeuft die Uhr
+ * daneben: sie nimmt die gesammelten Befehle (`takePending`), wendet sie auf ihren Zustand an —
+ * und das naechste Haeppchen ueberschreibt diesen Zustand mit seinem eigenen. Gezaehlt wird am
+ * Protokoll, nicht an einer Variable.
+ */
+describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => {
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+  const abbrechen = () => screen.queryByRole('button', { name: 'Abbrechen' })
+  let wartend: FrameRequestCallback[] = []
+  let jetzt = 0
+
+  const gestellteUhr = () => {
+    wartend = []
+    jetzt = 1000
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) => {
+      wartend.push(rueckruf)
+      return wartend.length
+    })
+    vi.spyOn(performance, 'now').mockImplementation(() => jetzt)
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+  }
+
+  const bilder = (anzahl: number, dtMs: number) => {
+    for (let bild = 0; bild < anzahl; bild++) {
+      jetzt += dtMs
+      const faellig = wartend
+      wartend = []
+      act(() => {
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      })
+    }
+  }
+
+  const haeppchenAbwarten = () => {
+    for (let runde = 0; runde < 50 && abbrechen(); runde++) {
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+    }
+    expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
+  }
+
+  afterEach(() => {
+    haeppchen.ticks = 0
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  /** Kaserne gesammelt, Vorspulen in Haeppchen zu 4 Ticks gestartet, Krieg waehrend des Laufs erklaert. */
+  const lageWaehrendDesLaufs = () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    const capital = world.startPositions[0]!.capital
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kaserne bauen' }))
+
+    haeppchen.ticks = 4
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    // Nicht leer gemessen: der Lauf geht ueber mehrere Haeppchen und steht noch — und der vorher
+    // gesammelte Befehl gehoert seinem ersten Tick.
+    expect(abbrechen(), 'der Lauf endete im ersten Haeppchen - der Test misst nichts').not.toBeNull()
+    expect(log()).toContain('Bau von Kaserne begonnen')
+
+    fireEvent.keyDown(window, { key: 'd' })
+    const panel = screen.getByRole('region', { name: 'Diplomatie' })
+    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+  }
+
+  const beideAngewandt = () => {
+    // Die Uhr bekommt ein paar Bilder, dann rechnet das naechste Haeppchen weiter.
+    bilder(4, 100)
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    // Abgebrochen statt abgewartet: das Ziel "ein Tag" zaehlt der Kern je Haeppchen, in
+    // Haeppchen zu 4 Ticks liefe der Lauf bis zur Obergrenze von 30 Tagen (Befund, PROBLEME.md).
+    fireEvent.click(abbrechen()!)
+    haeppchenAbwarten()
+    // Was dann noch aussteht, wendet der naechste Lauf an — ausstehend ist nicht verloren.
+    haeppchen.ticks = 0
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(log(), 'die Kriegserklaerung aus dem Lauf ist verloren').toMatch(/erklären .* den Krieg/)
+  }
+
+  it('misst den Stand: ein Vorspulen um einen Tag endet heute im ersten Haeppchen, synchron im Klick', () => {
+    startGame({ storage: new MemoryStorage() })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Deshalb ist der Verlust ueber die Oberflaeche heute nicht herstellbar (PROBLEME.md).
+    expect(abbrechen()).toBeNull()
+    expect(screen.getByRole('status').textContent).toMatch(/Angehalten nach/)
+  })
+
+  it('verliert keinen Befehl, wenn waehrend des Laufs eine Tempostufe geklickt wird', () => {
+    lageWaehrendDesLaufs()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '100' }))
+    beideAngewandt()
+  }, 30_000)
+
+  it('verliert keinen Befehl, wenn waehrend des Laufs Leertaste oder Plus gedrueckt wird', () => {
+    lageWaehrendDesLaufs()
+    fireEvent.keyDown(window, { key: ' ' })
+    fireEvent.keyDown(window, { key: '+' })
+    beideAngewandt()
+  }, 30_000)
+})
+
+/**
  * Das Vorspulen sagt, warum es anhaelt (T-M12-10, R-TIME-03/AK1, Playtest-Frage 19).
  *
  * Die Anforderung sagt "stoppen UND melden". Gestoppt wurde seit M15 richtig, der Grund
@@ -1419,4 +1725,277 @@ describe('T-M31-03 Der Fuss: Neu-Marke und Depesche', () => {
     fireEvent.click(depesche)
     expect(screen.getByRole('dialog', { name: 'Depesche' })).toBeTruthy()
   })
+})
+
+/**
+ * Das Vorspulziel wird nicht je Haeppchen gezaehlt (T-M41-15, Nebenbefund 1 aus T-M41-13).
+ *
+ * Ein Vorspulen um einen Tag sind 24 Ticks und passt heute genau in ein Haeppchen. Rechnet derselbe
+ * Weg in kleineren Haeppchen, begann der Kern die Zaehlung in jedem neu: jedes Haeppchen endete am
+ * Deckel, die Schleife rechnete weiter — bis zur Obergrenze von 30 Spieltagen.
+ */
+describe('T-M41-15 Das Vorspulziel wird nicht je Haeppchen gezaehlt', () => {
+  const abbrechen = () => screen.queryByRole('button', { name: 'Abbrechen' })
+  const uhr = () => document.querySelector('.clock__time')?.textContent ?? ''
+
+  afterEach(() => {
+    haeppchen.ticks = 0
+    vi.useRealTimers()
+  })
+
+  it('haelt ein Vorspulen um einen Tag in Haeppchen zu 4 Ticks nach genau einem Tag am Ziel', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    startGame({ storage: new MemoryStorage() })
+    expect(uhr()).toMatch(/Tag 1 · 00:00/)
+
+    haeppchen.ticks = 4
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    expect(abbrechen(), 'der Lauf endete im ersten Haeppchen - der Test misst nichts').not.toBeNull()
+
+    // 30 Spieltage in Haeppchen zu 4 Ticks sind 180 Haeppchen: genug Runden, um auch den Fehler zu Ende zu sehen.
+    for (let runde = 0; runde < 200 && abbrechen(); runde++) {
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+    }
+
+    expect(abbrechen(), 'das Vorspulen endet nicht').toBeNull()
+    expect(uhr()).toMatch(/Tag 2 · 00:00/)
+    expect(screen.getByRole('status').textContent).toMatch(/ein Spieltag ist vorbei/)
+  }, 120_000)
+})
+
+/**
+ * F spult mit eingeschalteter Debug-Ansicht mit Mitschrift (T-M41-16, Nebenbefund 2 aus T-M41-13).
+ *
+ * Der Kuerzel-Effekt ruft `fastForwardRun`, nannte es aber nicht in seinen Abhaengigkeiten. Er
+ * benutzt dann die Fassung aus dem Render, in dem er zuletzt neu gebunden wurde — und
+ * `fastForwardRun` haengt an der Debug-Ansicht, weil nur mit ihr mitgeschrieben wird.
+ */
+describe('T-M41-16 F spult mit eingeschalteter Debug-Ansicht mit Mitschrift', () => {
+  it('fuellt die Kommandoliste, wenn die Debug-Ansicht waehrend der Partie eingeschaltet und dann F gedrueckt wird', () => {
+    globalThis.localStorage?.removeItem('worldwar.settings')
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Einstellungen' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Debug-Ansicht' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+
+    const zeilen = () => screen.getByRole('region', { name: 'Debug' }).querySelectorAll('.debug-list li').length
+    expect(zeilen(), 'vor dem Vorspulen steht schon etwas - der Vergleich misst nichts').toBe(0)
+
+    fireEvent.keyDown(window, { key: 'f' })
+
+    expect(zeilen(), 'F hat ohne Mitschrift vorgespult').toBeGreaterThan(0)
+  })
+})
+
+/**
+ * Anhalten haelt fest (T-M40-11, Befund H2 der Durchsicht von M40, R-UNIT-09/AK6).
+ *
+ * Der Adjutant schickte eine Verteidigung los, der Spieler klickte „Anhalten" — und im naechsten Tick
+ * marschierte sie wieder (Beleg S2). Gemessen am Bildschirm aus einer geladenen Partie: eine Armee
+ * marschiert, der Spieler haelt sie an, ein Tag vergeht.
+ */
+describe('T-M40-11 Anhalten stellt eine marschierende Verteidigung auf Garnison', () => {
+  const ladeMarsch = async (stance: 'defensive' | 'aggressive') => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const mensch = state.playerOrder[0]!
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance })
+    const ziel = state.provinces[capital]!.neighbors.find((id) => planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1)!
+    const route = planRoute(state, armee, ziel, world, TEST_RULES)!
+    armee.path = route.path
+    armee.departureTick = state.tick
+    armee.arrivalTick = route.arrivalTick
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Marsch'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+  }
+
+  const armeePanel = () => screen.getByRole('region', { name: 'Armee' })
+  const gedrueckt = () =>
+    within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
+      .getAllByRole('button')
+      .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+      .map((knopf) => knopf.textContent)
+
+  it('haelt eine Verteidigung an und stellt sie auf Garnison', async () => {
+    await ladeMarsch('defensive')
+    expect(gedrueckt()).toEqual(['Verteidigung'])
+    const anhalten = within(armeePanel()).getByRole('button', { name: 'Anhalten' })
+    expect(anhalten.getAttribute('title')).toMatch(/Garnison/)
+
+    fireEvent.click(anhalten)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(gedrueckt()).toEqual(['Garnison'])
+    expect(within(armeePanel()).getByRole('button', { name: 'Anhalten' }).hasAttribute('disabled'), 'die Armee marschiert noch').toBe(true)
+  }, 30_000)
+
+  it('laesst eine Armee auf Angriff beim Anhalten auf Angriff', async () => {
+    await ladeMarsch('aggressive')
+    fireEvent.click(within(armeePanel()).getByRole('button', { name: 'Anhalten' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(gedrueckt()).toEqual(['Angriff'])
+    expect(within(armeePanel()).getByRole('button', { name: 'Anhalten' }).hasAttribute('disabled'), 'die Armee marschiert noch').toBe(true)
+  }, 30_000)
+})
+
+/**
+ * Eine leise Zeile, wenn eine Armee von selbst nachrueckt (T-M40-13, Befund M3 der Durchsicht von M40).
+ *
+ * Die Automatik liess Armeen marschieren, und der Spieler erfuhr davon nichts — er sah eine Armee
+ * unterwegs, die er nie geschickt hatte. Die Zeile entsteht aus den Befehlen der Automatik
+ * (`commandsForTick`), nicht aus einem Ereignis des Kerns, und bleibt leise: keine Alarmfarbe, keine
+ * Meldung in der Leiste (M36). Gemessen am Bildschirm aus einer geladenen Partie.
+ */
+describe('T-M40-13 Eine leise Zeile, wenn eine Armee von selbst nachrueckt', () => {
+  const inf = (hpTotal: number) => [{ unitKey: 'infantry', hpTotal }]
+
+  /** Die Hauptstadt mit einer Verteidigung (und auf Wunsch einer Garnison), die Nachbarprovinz umkaempft. */
+  const ladeLage = async (mitGarnison: boolean) => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    // Mitten in der Partie: die Automatik ruht nach Marsch und Rueckzug fuenf Spieltage (T-M40-09).
+    state.tick = 200
+    const mensch = state.playerOrder[0]!
+    const feind = state.playerOrder[1]!
+    state.diplomacy.relations[[mensch, feind].sort().join('|')]!.state = 'war'
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: inf(6_000), stance: 'defensive' })
+    const ziel = state.provinces[capital]!.neighbors.find(
+      (id) => state.provinces[id]?.owner === mensch && planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1,
+    )
+    expect(ziel, 'die Hauptstadt hat keine eigene Nachbarprovinz - die Lage misst nichts').toBeDefined()
+    if (mitGarnison) placeArmy(state, { owner: mensch, at: capital, units: inf(6_000), stance: 'garrison' })
+    placeArmy(state, { owner: mensch, at: ziel!, units: inf(30_000), stance: 'garrison' })
+    placeArmy(state, { owner: feind, at: ziel!, units: inf(30_000) })
+
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Nachruecken'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    return { armee, ziel: ziel!, zielName: world.provinces.find((province) => province.id === ziel)!.name }
+  }
+
+  const log = () => screen.getByRole('region', { name: 'Ereignisse' })
+  const meldungen = () => screen.queryByRole('region', { name: 'Meldungen' })?.textContent ?? ''
+
+  it('schreibt nach dem Vorspulen, welche Armee wohin nachrueckt — leise, mit Sprung auf die Provinz', async () => {
+    const { armee, ziel, zielName } = await ladeLage(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    const zeile = within(log()).getByRole('button', { name: `${armee.name} rückt von selbst nach ${zielName} nach.` })
+    expect(zeile.closest('li')?.className, 'die Zeile ist laut').not.toMatch(/alert/)
+    expect(meldungen(), 'die Meldungsleiste nennt den Marsch').not.toMatch(/rückt von selbst/)
+
+    fireEvent.click(zeile)
+    expect((screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement).value).toBe(ziel)
+  }, 30_000)
+
+  it('schreibt nichts, wenn die Automatik nichts befiehlt', async () => {
+    // Allein in der Hauptstadt rueckt die Verteidigung nie aus (D30.4).
+    await ladeLage(false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(log().textContent).not.toMatch(/rückt von selbst/)
+  }, 30_000)
+})
+
+/**
+ * Ein eigener Marschbefehl haelt die Armee fest (T-M40-14, Befund H-A der Durchsicht der Nacharbeit,
+ * R-UNIT-09/AK7).
+ *
+ * Die Ruhe der Automatik zaehlt ab dem Abmarsch. Nach einem langen Marsch schickte sie die Armee, die
+ * der Spieler eben verlegt hatte, wenige Ticks nach der Ankunft weiter (Szenario R1). Seitdem stellt
+ * „Marsch befehlen" eine Armee auf Verteidigung zugleich auf Garnison, wie das Anhalten. Gemessen am
+ * Bildschirm aus einer geladenen Partie: eine stehende Armee, Ziel waehlen, befehlen, ein Tag vergeht.
+ */
+describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garnison', () => {
+  const ladeStehend = async (stance: 'defensive' | 'aggressive' | 'garrison') => {
+    const state = neueGameState({ ...DEFAULT_NEW_GAME, opponents: 2 }, world, TEST_RULES)
+    const mensch = state.playerOrder[0]!
+    const capital = state.players[mensch]!.capitalProvinceId!
+    const armee = placeArmy(state, { owner: mensch, at: capital, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance })
+    const ziel = state.provinces[capital]!.neighbors.find(
+      (id) => state.provinces[id]?.owner === mensch && planRoute(state, armee, id, world, TEST_RULES)?.path.length === 1,
+    )
+    expect(ziel, 'die Hauptstadt hat keine eigene Nachbarprovinz - die Lage misst nichts').toBeDefined()
+    const storage = new MemoryStorage()
+    await storage.write(manualSlotName(0), serialise(state, 'Verlegen'))
+    render(<App map={world} rules={TEST_RULES} maps={maps} storage={storage} skipTutorial />)
+    fireEvent.click(screen.getByRole('button', { name: 'Spielstände' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Laden' }))[0]!)
+    await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Provinz' })).not.toBeNull())
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: capital } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Auswählen' })[0]!)
+    return { ziel: ziel! }
+  }
+
+  const armeePanel = () => screen.getByRole('region', { name: 'Armee' })
+  const gedrueckt = () =>
+    within(within(armeePanel()).getByRole('group', { name: 'Haltung' }))
+      .getAllByRole('button')
+      .filter((knopf) => knopf.getAttribute('aria-pressed') === 'true')
+      .map((knopf) => knopf.textContent)
+  const befehle = (ziel: string) => {
+    fireEvent.click(within(armeePanel()).getByRole('button', { name: 'Marschieren' }))
+    fireEvent.change(within(armeePanel()).getByRole('combobox', { name: 'Ziel' }), { target: { value: ziel } })
+    return within(armeePanel()).getByRole('button', { name: 'Marsch befehlen' })
+  }
+  const protokoll = () => screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+
+  it('schickt eine Verteidigung los und stellt sie zugleich auf Garnison', async () => {
+    const { ziel } = await ladeStehend('defensive')
+    expect(gedrueckt()).toEqual(['Verteidigung'])
+    const knopf = befehle(ziel)
+    expect(knopf.getAttribute('title')).toMatch(/Garnison/)
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Garnison'])
+  }, 30_000)
+
+  it('laesst eine Armee auf Angriff beim Marschbefehl auf Angriff', async () => {
+    const { ziel } = await ladeStehend('aggressive')
+    const knopf = befehle(ziel)
+    expect(knopf.getAttribute('title') ?? '').not.toMatch(/Garnison/)
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Angriff'])
+  }, 30_000)
+
+  it('stellt eine eben auf Verteidigung geklickte Garnison mit dem Marsch zugleich auf Garnison (T-M40-19, Befund N-5)', async () => {
+    // Die Uhr steht: der Klick auf „Verteidigung" wartet in der Sammlung, der Zustand sagt noch Garnison. Bis
+    // T-M40-19 fragte der Folgebefehl nur den Zustand, und der naechste Tick wandte [Verteidigung, Marsch] an —
+    // die Armee marschierte auf Verteidigung, und Szenario R1 war wieder offen.
+    const { ziel } = await ladeStehend('garrison')
+    expect(gedrueckt()).toEqual(['Garnison'])
+    const haltung = within(armeePanel()).getByRole('group', { name: 'Haltung' })
+    fireEvent.click(within(haltung).getAllByRole('button').find((knopf) => knopf.textContent === 'Verteidigung')!)
+    const knopf = befehle(ziel)
+    const titel = knopf.getAttribute('title') ?? ''
+
+    fireEvent.click(knopf)
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    expect(protokoll(), 'der Marsch wurde nicht angewandt').toMatch(/marschiert nach/)
+    expect(gedrueckt()).toEqual(['Garnison'])
+    expect(titel).toMatch(/Garnison/)
+  }, 30_000)
 })

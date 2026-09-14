@@ -440,3 +440,37 @@ describe('R-BAT-05 Das Gefecht meldet Staerken und Umstaende (T-M27-01)', () => 
     expect(report.attackBlocked).toEqual([])
   })
 })
+
+/**
+ * Die Garnison (T-M40-01, D30.1, R-UNIT-09/AK3).
+ *
+ * Die vierte Haltung ist die Abwahl der Automatik: sie bleibt stehen, was auch geschieht.
+ * Im Kampf darf sie deshalb nichts anderes sein als die Verteidigung — sonst waere die
+ * Abwahl eine zweite Entscheidung ueber die Kampfkraft, die niemand treffen wollte.
+ * Verglichen wird ueber sechs Ticks die Staerke beider Seiten; die Gegenprobe mit
+ * `aggressive` zeigt, dass der Vergleich die Haltung ueberhaupt sieht.
+ */
+describe('R-UNIT-09/AK3 Die Garnison kaempft wie die Verteidigung', () => {
+  const verlauf = (stance: 'aggressive' | 'defensive' | 'garrison'): number[][] => {
+    let lage = createInitialState(CONFIG, ctx)
+    lage.diplomacy.relations['p1|p2']!.state = 'war'
+    lage.provinces['n2']!.buildings.fortress = 1
+    placeArmy(lage, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 30_000 }], stance })
+    placeArmy(lage, { owner: 'p2', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 20_000 }] })
+
+    const staerken: number[][] = []
+    for (let i = 0; i < 6; i++) {
+      lage = step(lage, [], ctx).state
+      staerken.push([totalHp(lage, 'p1'), totalHp(lage, 'p2')])
+    }
+    return staerken
+  }
+
+  it('verliert und schlaegt Tick fuer Tick genau wie eine stehende Verteidigung', () => {
+    expect(verlauf('garrison')).toEqual(verlauf('defensive'))
+  })
+
+  it('unterscheidet sich vom Angriff — sonst saehe der Vergleich die Haltung nicht', () => {
+    expect(verlauf('aggressive')).not.toEqual(verlauf('defensive'))
+  })
+})

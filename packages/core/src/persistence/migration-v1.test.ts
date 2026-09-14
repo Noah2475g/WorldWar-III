@@ -5,7 +5,7 @@ import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { createInitialState, type GameConfig } from '../state/create'
 import { HASH_OMIT_KEYS, SCHEMA_VERSION } from '../state/types'
-import { ADDED_IN_VERSION_2, highestMigration, migrate, type SaveEnvelope } from './migrate'
+import { ADDED_IN_VERSION_2, ADDED_IN_VERSION_3, highestMigration, migrate, type SaveEnvelope } from './migrate'
 import { SaveFormatError, deserialise, serialise } from './save'
 import { InvalidStateError, validateState } from './validate'
 
@@ -23,6 +23,9 @@ import { InvalidStateError, validateState } from './validate'
  *
  * Deshalb steht diese Aufgabe **vor** T-M15-05 und T-M15-07: die Migration entsteht mit
  * dem ersten neuen Zustandsfeld, nicht danach.
+ *
+ * Seit T-M35-03 (2026-09-13) laeuft ein Stand der V1 ueber **zwei** Schritte; der zweite
+ * hat seinen eigenen eingefrorenen Stand und seine eigenen Tests in `migration-v2.test.ts`.
  */
 
 const V1 = JSON.parse(
@@ -79,15 +82,20 @@ describe('R-GAME-07/AK1 Ein Stand der V1 laeuft weiter', () => {
     // dagegen genau pruefbar, und zwar schaerfer als ein Hashvergleich: der Unterschied
     // zwischen altem und neuem Zustand darf ausschliesslich aus den neu angelegten
     // Feldern bestehen.
+    //
+    // Seit T-M35-03 fuehrt `migrate` einen V1-Stand ueber zwei Schritte bis zur aktuellen
+    // Stufe; abgezogen werden deshalb die Felder **beider** Schritte. Die Zusage bleibt
+    // dieselbe, nur die Kette ist laenger.
     const before = fresh().state as unknown as Record<string, unknown>
     const after = migrate(fresh()).state as unknown as Record<string, unknown>
+    const added: readonly string[] = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3]
 
     const strip = (value: unknown): unknown => {
       if (Array.isArray(value)) return value.map(strip)
       if (value === null || typeof value !== 'object') return value
       const out: Record<string, unknown> = {}
       for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
-        if ((ADDED_IN_VERSION_2 as readonly string[]).includes(key)) continue
+        if (added.includes(key)) continue
         out[key] = strip(entry)
       }
       return out
@@ -184,6 +192,18 @@ describe('R-GAME-07 validateState prueft, was ein Zustand sein muss', () => {
   })
 })
 
+/**
+ * Welcher Meilenstein welche Stufe des Speicherformats gebracht hat.
+ *
+ * Die Regel „ein Schritt je Meilenstein" (DECISIONS.md, 2026-09-06) als Daten: eine neue
+ * Stufe ohne Eintrag laesst den Waechter fallen, ebenso zwei Stufen fuer denselben
+ * Meilenstein. M17 nimmt Stufe 4 (D29.10).
+ */
+const STAGE_MILESTONES: Record<number, string> = {
+  2: 'M15',
+  3: 'M35',
+}
+
 describe('R-GAME-07 Der Formatwaechter', () => {
   it('haelt SCHEMA_VERSION und MIGRATIONS zusammen', () => {
     // Wer ein Zustandsfeld hinzufuegt, ohne die Version zu erhoehen und einen Schritt
@@ -191,13 +211,20 @@ describe('R-GAME-07 Der Formatwaechter', () => {
     expect(SCHEMA_VERSION).toBe(highestMigration() + 1)
   })
 
-  it('kennt genau einen Schritt fuer den ganzen Meilenstein', () => {
-    // Entscheidung vom 2026-09-06 (DECISIONS.md): T-M15-05 und T-M15-07 fuellen die
-    // Felder mit Verhalten und erhoehen die Version NICHT. Drei Schritte fuer einen
-    // Meilenstein hiessen drei eingefrorene Staende und einen Waechter, der sich mit
-    // sich selbst streitet.
-    expect(highestMigration()).toBe(1)
-    expect(SCHEMA_VERSION).toBe(2)
+  it('kennt genau einen Schritt je Meilenstein', () => {
+    // Bis zum 2026-09-13 hielt dieser Test `highestMigration() === 1` und
+    // `SCHEMA_VERSION === 2` als Literale — richtig, solange M15 der einzige Meilenstein
+    // mit einem Schritt war. M35 bringt Stufe 3 (D31.5), und mit den Literalen haette der
+    // Waechter jede weitere Stufe verboten statt nur eine zweite fuer denselben
+    // Meilenstein. Die Regel dahinter bleibt: T-M15-05 und T-M15-07 fuellten die Felder
+    // von M15 mit Verhalten und erhoehten die Version NICHT; dasselbe gilt fuer T-M35-04
+    // bis T-M35-06. Geprueft wird sie jetzt als Liste Stufe -> Meilenstein.
+    const stages = Object.keys(STAGE_MILESTONES).map(Number)
+    const expected = Array.from({ length: highestMigration() }, (_, index) => index + 2)
+
+    expect(stages, 'jede Stufe braucht ihren Meilenstein, und keine darf fehlen').toEqual(expected)
+    expect(stages[stages.length - 1]).toBe(SCHEMA_VERSION)
+    expect(new Set(Object.values(STAGE_MILESTONES)).size, 'zwei Stufen fuer einen Meilenstein').toBe(stages.length)
   })
 
   it('friert die Schluesselliste eines frischen Zustands ein', () => {
@@ -211,6 +238,7 @@ describe('R-GAME-07 Der Formatwaechter', () => {
         'battles',
         'diplomacy',
         'eventLog',
+        'goals',
         'mapId',
         'market',
         'nextIds',

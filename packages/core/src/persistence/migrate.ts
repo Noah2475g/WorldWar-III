@@ -93,8 +93,42 @@ const toVersion2: Migration = (envelope) => {
  */
 export const ADDED_IN_VERSION_2 = ['schemaVersion', 'holdFire', 'bombardTarget', 'grievances', 'concerns'] as const
 
+/**
+ * Schritt 2 → 3: die Zwischenziele von M35, alle offen (T-M35-03, R-GAME-08/AK5, D31.5).
+ *
+ * `goals` bekommt für jede Macht in `playerOrder` vier `null` — „noch nicht erreicht". Neutral
+ * wie der Schritt davor: `checkVictory` liest das Feld nicht. Ein alter Stand, der eine Marke
+ * schon überschritten hat, trägt beim ersten Tageswechsel nach dem Laden **diesen** Tag ein.
+ * Der Tag stimmt dann nicht, das Ziel schon — die Alternative wäre, Tage zu erfinden.
+ *
+ * Die vier Schlüssel stehen hier als Literal und nicht als `GOAL_KEYS`: ein Schritt beschreibt,
+ * was Stufe 3 ist, und darf sich nicht mitändern, wenn später ein Ziel dazukommt — das wäre
+ * eine eigene Stufe.
+ */
+const toVersion3: Migration = (envelope) => {
+  const state = envelope.state as unknown as Record<string, unknown>
+
+  const goals: Record<string, Record<string, null>> = {}
+  const order = state['playerOrder']
+  if (Array.isArray(order)) {
+    for (const id of order) {
+      if (typeof id === 'string') {
+        goals[id] = { provinces: null, pointShareFirst: null, populationShare: null, pointShareSecond: null }
+      }
+    }
+  }
+  state['goals'] = goals
+  state['schemaVersion'] = 3
+
+  return { ...envelope, schemaVersion: 3, state: state as unknown as GameState }
+}
+
+/** Die Felder, die Schritt 2 → 3 anlegt — dieselbe Pruefung wie `ADDED_IN_VERSION_2`. */
+export const ADDED_IN_VERSION_3 = ['schemaVersion', 'goals'] as const
+
 const MIGRATIONS: Record<number, Migration> = {
   1: toVersion2,
+  2: toVersion3,
 }
 
 /** Die hoechste Stufe, fuer die ein Schritt eingetragen ist. */

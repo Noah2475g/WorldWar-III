@@ -661,14 +661,15 @@ const ARMY_ACTION_ICONS: Record<string, IconName> = {
   holdFire: 'battle',
 }
 
-const STANCES = ['aggressive', 'defensive', 'retreat'] as const
+const STANCES = ['aggressive', 'defensive', 'retreat', 'garrison'] as const
 
 export function ArmyPanel(props: ArmyPanelProps) {
   const army = props.army
   if (!army) return null
   const targeting = props.targeting ?? null
 
-  // Die Haltung als Dreiergruppe, die uebrigen Befehle zweispaltig (D27.6).
+  // Die Haltung als Gruppe — seit T-M40-05 vier Knoepfe, zwei mal zwei —, die uebrigen
+  // Befehle zweispaltig (D27.6, D30.7).
   const stanceActions = STANCES.map((value) => props.actions.find((action) => action.id === `stance-${value}`)).filter(
     (action): action is Action => action !== undefined,
   )

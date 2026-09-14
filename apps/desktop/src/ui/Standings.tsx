@@ -1,4 +1,4 @@
-import type { DiplomaticState, PublicView } from '@worldwar/core'
+import type { DiplomaticState, GoalView, PublicView } from '@worldwar/core'
 import type { TimelineEntry } from '../game/saves.ts'
 import { isPluralNation } from '../i18n/grammar.ts'
 import { plural, t } from '../i18n/text.ts'
@@ -115,6 +115,59 @@ export function scoreSeries(rows: readonly StandingsRow[], timeline: readonly Ti
   }))
 }
 
+/** Promille als Prozent mit höchstens einer Nachkommastelle: 400 → „40", 123 → „12,3". */
+function permilleAsPercent(permille: number): string {
+  return (permille / 10).toLocaleString('de-DE', { maximumFractionDigits: 1 })
+}
+
+/** Der Satz eines Ziels: die Marke, in Provinzen oder als Anteil. */
+function goalSentence(row: GoalView): string {
+  if (row.goal === 'provinces') return t('goals.rows.provinces', { mark: row.mark })
+  return t(`goals.rows.${row.goal}`, { percent: permilleAsPercent(row.mark) })
+}
+
+/** Rechts: der Tag bei einem erreichten Ziel, sonst der Abstand zur Marke. */
+function goalState(row: GoalView): string {
+  if (row.reachedOnDay !== null) return t('goals.reached', { day: row.reachedOnDay })
+  const gap = row.mark - row.value
+  // Über der Marke, aber noch nicht eingetragen: der Tag entsteht erst am Tageswechsel
+  // (D31.3). „Noch 0 Prozentpunkte" wäre falsch, ein erfundener Tag auch.
+  if (gap <= 0) return t('goals.dueNextDay')
+  if (row.goal === 'provinces') return plural(gap, 'goals.missingProvincesOne', 'goals.missingProvincesMany')
+  return plural(gap / 10, 'goals.missingShareOne', 'goals.missingShareMany', { points: permilleAsPercent(gap) })
+}
+
+/**
+ * Die eigenen Zwischenziele unter der Tabelle (T-M35-05, R-GAME-08/AK3, D31.6).
+ *
+ * Die Rangliste ist der Ort, an dem der Spieler ohnehin fragt, wie er steht. Vier Zeilen:
+ * Zeichen, Satz, bei offenem Ziel der Abstand, bei erreichtem der Tag. Die Quelle ist
+ * `self.goals` — die Sicht kennt nur die eigenen. Ohne Ziele (eine Sicht ohne Regeln) steht
+ * hier nichts, auch keine Überschrift über einem leeren Kasten.
+ */
+export function GoalList({ goals }: { goals: readonly GoalView[] | undefined }) {
+  if (!goals || goals.length === 0) return null
+  return (
+    <>
+      <h3 className="goals__title">{t('goals.title')}</h3>
+      <ul className="goals" aria-label={t('goals.title')}>
+        {goals.map((row) => {
+          const reached = row.reachedOnDay !== null
+          return (
+            <li key={row.goal} className={reached ? 'goal goal--reached' : 'goal'}>
+              <span className="goal__mark" aria-hidden="true">
+                {reached ? t('goals.markReached') : t('goals.markOpen')}
+              </span>
+              <span className="goal__text">{goalSentence(row)}</span>
+              <span className="goal__state">{goalState(row)}</span>
+            </li>
+          )
+        })}
+      </ul>
+    </>
+  )
+}
+
 export function StandingsPanel({
   view,
   nameOf,
@@ -189,6 +242,7 @@ export function StandingsPanel({
           ))}
         </tbody>
       </table>
+      <GoalList goals={view?.self.goals} />
     </section>
   )
 }

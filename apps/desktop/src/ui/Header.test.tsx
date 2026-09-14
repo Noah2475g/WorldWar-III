@@ -81,6 +81,46 @@ const renderHeader = (
     />,
   )
 
+/**
+ * Tempo waehrend des Vorspulens (T-M41-13, Befund N7 der Durchsicht M41).
+ *
+ * Laeuft das Vorspulen ueber mehrere Haeppchen, liefe eine eingestellte Uhr daneben: ihre
+ * Ticks und die Befehle, die sie dabei aus der Sammlung nimmt, ueberschreibt das naechste
+ * Haeppchen. Die Stufen ueber 0 sind deshalb gesperrt und sagen warum; die Pause bleibt, und
+ * der Vorspulknopf ist schon seit T-M28-10 der Abbrechen-Knopf.
+ */
+describe('T-M41-13 Tempo waehrend des Vorspulens', () => {
+  const stufen = () =>
+    within(screen.getByRole('group', { name: 'Geschwindigkeit' }))
+      .getAllByRole('button')
+      .filter((button) => /^\d+$/.test(button.textContent ?? ''))
+
+  it('sperrt die Stufen ueber 0, nennt den Grund und laesst die Pause bedienbar', () => {
+    const onSpeed = vi.fn()
+    renderHeader(view(100, [100], 900), { speed: 0, fastForwarding: true, onSpeed })
+
+    expect(stufen().length, 'keine Tempostufe gefunden - der Test misst nichts').toBeGreaterThan(0)
+    for (const stufe of stufen()) {
+      expect(stufe.hasAttribute('disabled'), `Stufe ${stufe.textContent}`).toBe(true)
+      expect(stufe.getAttribute('title')).toBe('Während des Vorspulens gesperrt — erst abbrechen oder abwarten')
+      fireEvent.click(stufe)
+    }
+    expect(onSpeed).not.toHaveBeenCalled()
+
+    const pause = within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' })
+    expect(pause.hasAttribute('disabled')).toBe(false)
+  })
+
+  it('laesst die Stufen ohne Vorspulen frei', () => {
+    renderHeader(view(100, [100], 900), { speed: 0, fastForwarding: false })
+
+    for (const stufe of stufen()) {
+      expect(stufe.hasAttribute('disabled'), `Stufe ${stufe.textContent}`).toBe(false)
+      expect(stufe.getAttribute('title')).toBe(`${stufe.textContent} Stunden je Sekunde`)
+    }
+  })
+})
+
 describe('R-UI-13 Der Weg zum Sieg', () => {
   it('rechnet den eigenen Anteil an allen Punkten', () => {
     // 300 von 1000 Punkten sind 30 %, das Ziel 900 Promille sind 90 %.

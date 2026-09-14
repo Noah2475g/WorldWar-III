@@ -126,6 +126,38 @@ describe('R-AI-07 Die KI merkt sich ihre Plaene', () => {
     const later = decide({ ...contextFor(), memory: { ...first.memory, lastStrategicTick: 0 } })
     expect(later.memory.lastStrategicTick).toBe(0) // no new strategic pass at tick 0
   })
+
+  it('vergisst eine Armee, die es nicht mehr gibt (T-M41-05)', () => {
+    // Befund: `assignments` wurde geschrieben, kopiert und nie gelesen, und es wuchs ohne
+    // Grenze — an Spieltag 471 fuehrte Russland 1235 Eintraege bei 217 lebenden Armeen.
+    // Zwei Provinzen, nicht eine: stuenden beide in o3, legte die KI sie im selben Zug zusammen,
+    // und die aufgegangene bekaeme seit T-M41-08 gar keinen Eintrag mehr.
+    const armee = { owner: 'p2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] }
+    const bleibt = placeArmy(state, { ...armee, at: 'o3' })
+    const faellt = placeArmy(state, { ...armee, at: 'o2' })
+    const vorher = decide(contextFor())
+    expect(Object.keys(vorher.memory.assignments).sort()).toEqual([bleibt.id, faellt.id].sort())
+
+    delete state.armies[faellt.id]
+    state.armyOrder = state.armyOrder.filter((id) => id !== faellt.id)
+    state.tick += 24
+    const nachher = decide({ ...contextFor(), memory: vorher.memory })
+
+    expect(Object.keys(nachher.memory.assignments)).toEqual([bleibt.id])
+  })
+
+  it('fuehrt ohne eigene Armee keinen Eintrag weiter (T-M41-05)', () => {
+    // Der fruehe Ausgang in militaryCommands: ohne Armee gab es nichts zu entscheiden, und
+    // deshalb auch nichts zu kuerzen.
+    for (const id of [...state.armyOrder]) {
+      if (state.armies[id]!.owner !== 'p2') continue
+      delete state.armies[id]
+      state.armyOrder = state.armyOrder.filter((other) => other !== id)
+    }
+    const memory = { ...emptyMemory(600), assignments: { a999: 'attack:o1' } }
+
+    expect(decide({ ...contextFor(), memory }).memory.assignments).toEqual({})
+  })
 })
 
 describe('R-AI-04 Rechenlast wird verteilt, nicht gemessen', () => {
@@ -330,6 +362,65 @@ describe('R-AI-01 Die KI verlegt ihre Hauptstadt', () => {
     expect(capitalCommands(contextFor('p2'), [])).toEqual([])
   })
 
+  /** Keine Hauptstadt, jede eigene Provinz eine Stadt, zuletzt verlegt vor `vorTagen` Spieltagen. */
+  const ohneHauptstadtVerlegtVor = (vorTagen: number) => {
+    const ticksPerDay = TEST_RULES.constants.ticksPerDay
+    state.tick = 40 * ticksPerDay
+    state.players['p2']!.capitalProvinceId = null
+    state.players['p2']!.capitalMovedAtTick = state.tick - vorTagen * ticksPerDay
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'city'
+    }
+  }
+  const phaseCtx = () => ({ map, rules: TEST_RULES, commands: [], events: [] })
+
+  it('befiehlt waehrend der Sperre des Verlegens keine neue Hauptstadt (T-M41-11)', () => {
+    // Befund der Untersuchung zu T-M41-08: der Kern lehnt SET_CAPITAL 30 Spieltage nach dem letzten
+    // Verlegen mit ON_COOLDOWN ab, aber die Sicht fuehrte die Sperre nicht — die KI befahl jeden
+    // Tag neu: 298-mal in einem Turnierlauf, nach der Reparatur zu H1 72-mal auf der Weltkarte.
+    ohneHauptstadtVerlegtVor(1)
+    const stadt = state.provinceOrder.find((id) => state.provinces[id]!.owner === 'p2')!
+    // Die Lage ist die, die der Test braucht: der Kern wuerde den Befehl wirklich ablehnen.
+    expect(canApply(state, { type: 'SET_CAPITAL', playerId: 'p2', provinceId: stadt }, phaseCtx())).toMatchObject({
+      ok: false,
+      code: 'ON_COOLDOWN',
+    })
+
+    const explanations: Explanation[] = []
+    expect(capitalCommands(contextFor('p2'), explanations)).toEqual([])
+    // R-AI-05: auch das Nichtstun ist begruendet.
+    expect(explanations.some((entry) => /Sperre/.test(entry.reason))).toBe(true)
+  })
+
+  it('verlegt nach Ablauf der Sperre wieder (T-M41-11)', () => {
+    // Die Gegenrichtung: ein Filter, der nie mehr verlegt, bestuende den Test oben auch.
+    ohneHauptstadtVerlegtVor(30)
+    const commands = capitalCommands(contextFor('p2'), [])
+
+    expect(commands).toHaveLength(1)
+    expect(canApply(state, commands[0]!, phaseCtx())).toEqual({ ok: true })
+  })
+
+  it('verlegt nicht in eine Stadt, die sie nur noch erinnert (Durchsicht N2)', () => {
+    // Befund der Durchsicht zu Block N2: `capitalCommands` nahm erinnerte Provinzen (`stale`) als
+    // eigene — wie `economyCommands` vor T-M41-09. Sind alle sichtbaren Staedte verloren und fuehrt
+    // die Sicht eine erinnerte mit dem eigenen Besitzer von damals, befiehlt die KI dorthin; der
+    // Kern lehnt mit NOT_OWNER ab, jeden Denkschritt neu, und die Sperre des Verlegens greift nicht,
+    // weil eine Ablehnung `capitalMovedAtTick` nicht setzt.
+    state.players['p2']!.capitalProvinceId = null
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner === 'p2') province.kind = 'rural'
+    }
+    const context = contextFor('p2')
+    const vorlage = context.view.provinces.find((province) => province.owner === 'p2')!
+    const erinnert = { ...vorlage, id: 'erinnert', kind: 'city' as const, stale: true }
+    const view = { ...context.view, provinces: [erinnert, ...context.view.provinces] }
+
+    expect(capitalCommands({ ...context, view }, [])).toEqual([])
+  })
+
   it('waehlt bei gleicher Lage dieselbe Stadt', () => {
     state.players['p2']!.capitalProvinceId = null
     for (const id of state.provinceOrder) {
@@ -377,6 +468,58 @@ describe('R-AI-01 Die KI legt Verbaende zusammen', () => {
     for (const command of consolidateCommands(contextFor('p2'), [])) {
       expect(canApply(state, command, phaseCtx)).toEqual({ ok: true })
     }
+  })
+})
+
+describe('R-AI-01 Die KI befiehlt keine Armee, die sie im selben Zug zusammenlegt (T-M41-08)', () => {
+  // Befund der Untersuchung zu T-M41-08: auf der Weltkarte waren in 200 Spieltagen 961 von
+  // 1177 abgelehnten KI-Befehlen MOVE_ARMY und SET_STANCE an Armeen, die dieselbe Macht im
+  // selben Tick unmittelbar vorher per MERGE_ARMIES aufgeloest hatte. Operativ- und
+  // Taktikstufe feuern praktisch immer zusammen und lasen dieselbe Sicht; der Kern legt
+  // zusammen, bevor er marschieren laesst, und behaelt die kleinste Kennung (`sort()`).
+  const lage = () => {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    const ids = [1, 2, 3, 4].map(
+      () => placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 2000 }] }).id,
+    )
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 1000 }] })
+    const [bleibt, ...aufgegangen] = [...ids].sort()
+    return { ids, bleibt: bleibt!, aufgegangen }
+  }
+
+  it('legt alle vier zusammen und nennt danach nur die Armee, die bleibt', () => {
+    const { ids, bleibt, aufgegangen } = lage()
+    const decision = decide({ ...contextFor('p2'), explain: true })
+
+    const merges = decision.commands.filter((command) => command.type === 'MERGE_ARMIES')
+    expect(merges).toHaveLength(1)
+    expect(merges[0]!.type === 'MERGE_ARMIES' && [...merges[0]!.armyIds].sort()).toEqual([...ids].sort())
+
+    const genannt = decision.commands.filter((command) => 'armyId' in command && aufgegangen.includes(command.armyId))
+    expect(genannt.map((command) => `${command.type} ${'armyId' in command ? command.armyId : ''}`)).toEqual([])
+    // Die Gegenrichtung: ein Filter, der alles verwirft, bestuende die Zeile oben auch.
+    expect(decision.commands.some((command) => command.type === 'MOVE_ARMY' && command.armyId === bleibt)).toBe(true)
+  })
+
+  it('fuehrt die aufgegangenen Armeen weder im Gedaechtnis noch in den Begruendungen', () => {
+    const { aufgegangen } = lage()
+    const decision = decide({ ...contextFor('p2'), explain: true })
+
+    expect(Object.keys(decision.memory.assignments).filter((id) => aufgegangen.includes(id))).toEqual([])
+    // R-AI-05: eine Begruendung fuer eine Armee, die es nach diesem Tick nicht mehr gibt, erklaert nichts.
+    const nennt = (text: string) => aufgegangen.some((id) => new RegExp(`\\b${id}\\b`).test(text))
+    expect(decision.explanations.filter((entry) => nennt(entry.action)).map((entry) => entry.action)).toEqual([])
+  })
+
+  it('bekommt vom Kern keine Ablehnung ARMY_NOT_FOUND', () => {
+    lage()
+    const decision = decide(contextFor('p2'))
+    const result = runTicks(state, 1, ctx, () => decision.commands)
+
+    const abgelehnt = result.events.filter((event) => event.type === 'COMMAND_REJECTED')
+    expect(abgelehnt.map((event) => event.type === 'COMMAND_REJECTED' && `${event.command}:${event.code}`)).toEqual([])
+    // Und das Zusammenlegen fand statt — sonst waere die leere Liste oben kein Beleg.
+    expect(result.state.armyOrder.filter((id) => result.state.armies[id]!.owner === 'p2')).toHaveLength(1)
   })
 })
 

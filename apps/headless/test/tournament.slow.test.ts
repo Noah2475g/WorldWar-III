@@ -2,6 +2,8 @@ import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { GAUGES, measurementLine } from '../../../scripts/acceptance-criteria.mjs'
+import { measurementStamp } from '../../../scripts/freshness.mjs'
 import { playTournament, type TournamentResult } from '../src/tournament'
 
 /**
@@ -11,6 +13,17 @@ import { playTournament, type TournamentResult } from '../src/tournament'
  * in the normal suite would make the whole TDD loop unusable, and the next step after
  * that is someone starting to skip tests.
  */
+const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+const TURNIER = GAUGES.find((gauge) => gauge.name === 'Turnier')
+if (!TURNIER) throw new Error('kein Messgeraet Turnier in GAUGES')
+/**
+ * Der Stand, auf dem gemessen wird (Nacharbeit zu 8c8c8f6, Muster `messstand` im Haltungs-Messlauf): HEAD und die
+ * uncommitteten Dateien unter den Quellen des Turniers. Das Turnier ist deterministisch, und ein zeilengleicher Bericht
+ * laesst sich nicht neu committen. Der Frische-Waechter liest deshalb diese Zeile statt des letzten Commits der Datei.
+ * Beim Laden genommen: vitest laedt die Module beim Start, und was danach im Arbeitsbaum geschieht, misst der Lauf nicht.
+ */
+const MESSSTAND = measurementStamp(ROOT, TURNIER.sources)
+
 const map = smallWorld()
 const rules = TEST_RULES
 
@@ -20,6 +33,28 @@ const run = (difficulties: ['hard', 'easy'] | ['hard', 'normal'], startAtWar = t
 const zeile = (name: string, result: TournamentResult): string =>
   `| ${name} | ${result.winsA} | ${result.winsB} | ${result.draws} | ${(result.winRateA * 100).toFixed(0)} % |` +
   ` ${result.warDeclarations.hard} | ${result.peaceAgreements.hard} |`
+
+const STUFEN = [
+  ['easy', 'leicht'],
+  ['normal', 'normal'],
+  ['hard', 'schwer'],
+] as const
+
+/** Was jede Stufe selbst getan hat, summiert über mehrere Turniere (T-M41-08). */
+const jeStufe = (results: readonly TournamentResult[]): TournamentResult['byDifficulty'] => {
+  const summe = {
+    easy: { warDeclarations: 0, automaticBombardments: 0 },
+    normal: { warDeclarations: 0, automaticBombardments: 0 },
+    hard: { warDeclarations: 0, automaticBombardments: 0 },
+  }
+  for (const result of results) {
+    for (const [stufe] of STUFEN) {
+      summe[stufe].warDeclarations += result.byDifficulty[stufe].warDeclarations
+      summe[stufe].automaticBombardments += result.byDifficulty[stufe].automaticBombardments
+    }
+  }
+  return summe
+}
 
 describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
   it('schwer schlaegt leicht — aber nicht in jeder Partie', () => {
@@ -66,6 +101,19 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
     expect(result.peaceAgreements.hard, 'kein einziger Frieden in 50 Partien').toBeGreaterThan(0)
   })
 
+  it('laesst schwer und normal selbst Kriege erklaeren (T-M15-08, nach dem Handelnden)', () => {
+    // T-M15-08 versprach neun Zahlen je Stufe: Beschuss, Kriegserklaerung aus dem Verhaeltnis,
+    // Handel ueber der Regelmarge. Nachgeprueft in T-M41-08 (DECISIONS.md, 2026-09-13): in einer
+    // Partie zu zweit kommt jede Erklaerung aus dem Verhaeltnis — einen Buendnisfall gibt es
+    // nicht —, und sie traegt fuer "schwer" und "normal". "Leicht" tritt nur im Krieg an und
+    // kann gar nicht erklaeren; Beschuss gibt es in 40 Tagen auf der Testkarte auf keiner Stufe;
+    // eine Handelsmarge gibt es nicht. Das steht mit Zahl im Bericht, nicht hier.
+    const result = run(['hard', 'normal'], false)
+
+    expect(result.byDifficulty.hard.warDeclarations, 'schwer erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
+    expect(result.byDifficulty.normal.warDeclarations, 'normal erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
+  })
+
   it('schreibt den Bericht', () => {
     const gegenLeicht = run(['hard', 'easy'])
     const gegenNormal = run(['hard', 'normal'], false)
@@ -81,11 +129,24 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
         `Erzeugt von \`pnpm test:slow\` am ${new Date().toISOString().slice(0, 10)}.`,
         'Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.',
         '',
+        measurementLine(MESSSTAND),
+        '',
         '| Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |',
         '|---|---|---|---|---|---|---|',
         zeile('schwer gegen leicht, im Krieg', gegenLeicht),
         zeile('schwer gegen normal, im Frieden', gegenNormal),
         zeile('schwer gegen normal, im Krieg', imKrieg),
+        '',
+        'Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt',
+        '(T-M15-08 versprach „neun Zahlen je Stufe"; nachgeprüft in T-M41-08, `DECISIONS.md`):',
+        '',
+        '| Stufe | Kriegserklärungen | Selbsttätiger Beschuss |',
+        '|---|---|---|',
+        ...STUFEN.map(
+          ([stufe, name]) =>
+            `| ${name} | ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].warDeclarations} |` +
+            ` ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].automaticBombardments} |`,
+        ),
         '',
         'Zusicherungen: Siegquote der höheren Stufe zwischen 70 % und 95 %; „schwer gegen',
         'normal" endet nicht 25:25; mindestens ein Friedensschluss. Der Grundlauf **vor**',

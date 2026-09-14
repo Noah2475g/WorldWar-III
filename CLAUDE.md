@@ -12,16 +12,18 @@ wann zu lesen ist.
 
 ## Zwei Dinge, an denen schon Sitzungen verloren gingen
 
-1. **Die Spitze liegt auf `main`** — seit dem Merge vom 2026-09-11, und die alten
-   `claude/*`-Zweige sind abgeraeumt. Bis dahin galt das Gegenteil, und das hat fuenf
-   Sitzungen in Folge erwischt. Erster Befehl in einem frischen Worktree:
+1. **Auf welchem Zweig die Spitze liegt, sagt `WORKFLOW.md` §0 — und sonst nichts.** Bis
+   zum Merge von PR #7 (M41, M40, M35 und der Schlussblock) liegt sie auf
+   `claude/offene-punkte-abschliessen`, danach wieder auf `main`. Erster Befehl in einem
+   frischen Worktree:
 
    ```bash
    git log --oneline -1 && git status --short
    ```
 
    **Wer merged, richtet `WORKFLOW.md` §0 im selben Zug** — eine Einstiegsdatei, die auf
-   den falschen Zweig zeigt, schadet in beide Richtungen.
+   den falschen Zweig zeigt, hat fuenf Sitzungen in Folge erwischt und schadet in beide
+   Richtungen.
 
 2. **Benchmarks brauchen die Maschine allein.** Alles unter `packages/core/test/perf`
    und `render.bench.slow.test.ts` misst sonst die Auslastung statt den Code. Nie parallel
@@ -52,7 +54,7 @@ wann zu lesen ist.
 ## Befehle, die du brauchst
 
 ```bash
-pnpm verify        # Lint, Typen, Tests, Guards, Abdeckung  (~1 min, gemessen)
-pnpm acceptance    # der ganze Abnahmelauf, enthaelt verify  (~6 min, gemessen)
+pnpm verify        # Lint, Typen, Tests, Guards, Abdeckung  (69-73 s, gemessen 2026-09-14)
+pnpm acceptance    # der ganze Abnahmelauf, enthaelt verify  (4 min 58 s, gemessen 2026-09-13)
 pnpm dev           # das Spiel im Browser
 ```

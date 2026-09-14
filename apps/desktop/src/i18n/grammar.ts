@@ -31,6 +31,16 @@ export function accusativePronoun(kind: 'buildings' | 'units', key: string): str
   return de.grammar.pronoun[genusOf(kind, key)]
 }
 
+/** „eine", „einen" oder „ein" — der unbestimmte Artikel im Akkusativ (T-M41-03). */
+export function indefiniteArticle(kind: 'buildings' | 'units', key: string): string {
+  return de.grammar.indefinite[genusOf(kind, key)]
+}
+
+/** „keine", „keinen" oder „keines" — die allein stehende Verneinung im Akkusativ (T-M41-03). */
+export function noneOf(kind: 'buildings' | 'units', key: string): string {
+  return de.grammar.none[genusOf(kind, key)]
+}
+
 /** Ist dieser Machtname grammatisch Mehrzahl („Vereinigte Staaten erklären …")? */
 export function isPluralNation(name: string): boolean {
   return (de.grammar.pluralNations as readonly string[]).includes(name)

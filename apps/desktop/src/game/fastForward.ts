@@ -1,4 +1,4 @@
-import { runAi, storeMemories } from '@worldwar/ai'
+import { commandsForTick, storeMemories, type Explanation } from '@worldwar/ai'
 import {
   fastForward,
   type Command,
@@ -49,6 +49,32 @@ export interface FastForwardRequest {
    * Der Aufrufer reicht sie nur dem ersten Häppchen eines Laufs.
    */
   playerCommands?: readonly Command[]
+  /**
+   * Wie viele Ticks dieser Lauf in früheren Häppchen schon gerechnet hat (T-M41-15).
+   *
+   * Ein Zählziel — `ticks`, `days` — gilt für den ganzen Lauf. Der Kern zählt es ab dem Beginn
+   * seines Aufrufs, und jedes Häppchen ist ein neuer Aufruf: ohne diesen Stand trat ein Ziel über
+   * mehr als ein Häppchen nie ein, und der Lauf hielt erst an der Obergrenze von 30 Spieltagen.
+   */
+  ticksRunBefore?: number
+}
+
+/**
+ * Das Ziel für dieses Häppchen (T-M41-15): ein Zählziel auf den Rest des Laufs umgerechnet, jedes
+ * andere unverändert — ein Ereignisziel tritt ein, wann immer es eintritt.
+ */
+function targetForChunk(request: FastForwardRequest, ticksPerDay: number): FastForwardTarget {
+  const before = request.ticksRunBefore ?? 0
+  const { target } = request
+  if (target.kind === 'ticks') return { kind: 'ticks', ticks: Math.max(1, target.ticks - before) }
+  if (target.kind === 'days') return { kind: 'ticks', ticks: Math.max(1, target.days * ticksPerDay - before) }
+  return target
+}
+
+/** Ein Häppchen: das Ergebnis des Kerns und die Befehle der Automatik darin (T-M40-13). */
+export interface FastForwardChunkResult extends FastForwardResult {
+  /** Die Marschbefehle, die die Haltung einer menschlichen Armee von selbst gab, mit ihrem Tick. */
+  adjutant: { tick: number; command: Command }[]
 }
 
 /** Wie viele Ticks ein Häppchen rechnet, bevor die Ereignisschleife wieder drankommt. */
@@ -74,36 +100,43 @@ export function fastForwardChunk(
    * ist der Weg, auf dem die meisten Spielstunden vergehen. Die Begruendungen werden nur
    * geholt, wenn jemand zusieht: sie kosten Zeit und aendern die Befehle nicht.
    */
-  trace?: (entry: { tick: number; commands: readonly Command[]; explanations: ReturnType<typeof runAi>['explanations'] }) => void,
-): FastForwardResult {
+  trace?: (entry: { tick: number; commands: readonly Command[]; explanations: Record<PlayerId, Explanation[]> }) => void,
+): FastForwardChunkResult {
+  // Was die Automatik in diesem Häppchen befohlen hat (T-M40-13) — die Oberfläche schreibt daraus
+  // eine leise Zeile, auch beim Vorspulen. Aus `commandsForTick`, nicht aus einem Ereignis des Kerns.
+  const adjutant: FastForwardChunkResult['adjutant'] = []
   // Das Gedächtnis, das zu den Befehlen dieses Ticks gehört. Es wird *einmal* gerechnet
-  // und nach dem Tick abgelegt — ein zweiter `runAi`-Aufruf im Nachlauf wäre nicht nur
-  // doppelte Arbeit, sondern falsch: er entschiede auf dem neuen Zustand und legte damit
-  // Absichten ab, die die KI nie gefasst hat.
-  let pending: ReturnType<typeof runAi>['memories'] | null = null
+  // und nach dem Tick abgelegt — ein zweiter Aufruf im Nachlauf wäre nicht nur doppelte
+  // Arbeit, sondern falsch: er entschiede auf dem neuen Zustand und legte damit Absichten
+  // ab, die die KI nie gefasst hat.
+  let pending: ReturnType<typeof commandsForTick>['memories'] | null = null
 
   // Nur der erste Tick bekommt die Spielerbefehle — dieselbe Regel wie in der Schleife
-  // des Kerns (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
+  // (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
   let firstTick = true
 
-  return fastForward(state, request.target, ctx, {
+  const result = fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
-    // Die KI entscheidet aus der Lage — deshalb bekommt `commandSource` seit T-M15-06 den
-    // Zustand und nicht nur die Tickzahl. Mit einer Tickzahl allein konnte die KI hier
-    // gar nicht aufgerufen werden, und *das* ist der Grund, warum die Oberfläche sich eine
-    // eigene Schleife gebaut hat.
+    // Die Befehle eines Ticks kommen aus DERSELBEN Funktion wie in `advanceTicks` (T-M40-08,
+    // Befund K1 der Durchsicht M40). Bis dahin fragte diese Stelle nur `runAi`: der Adjutant
+    // lief beim Vorspulen nie, und dieselbe Lage ergab über die Uhr und über das Vorspulen zwei
+    // verschiedene Partien — ausgerechnet auf dem Weg, auf dem die meisten Spielstunden vergehen.
+    // Den Zustand statt der Tickzahl bekommt `commandSource` seit T-M15-06, weil KI und Adjutant
+    // aus der Lage entscheiden.
     commandSource: (current: GameState): readonly Command[] => {
-      const { commands, memories, explanations } = runAi(current, ctx, trace ? { explain: true } : {})
-      pending = memories
-      trace?.({ tick: current.tick, commands, explanations })
-      const player = firstTick ? (request.playerCommands ?? []) : []
+      const given = firstTick ? (request.playerCommands ?? []) : []
       firstTick = false
-      return [...player, ...commands]
+      const tick = commandsForTick(current, ctx, { given, explain: trace !== undefined })
+      pending = tick.memories
+      for (const command of tick.adjutant) adjutant.push({ tick: current.tick, command })
+      trace?.({ tick: current.tick, commands: tick.ai, explanations: tick.explanations })
+      return tick.commands
     },
     afterTick: (next: GameState): void => {
       if (pending) storeMemories(next, pending)
       pending = null
     },
   })
+  return { ...result, adjutant }
 }

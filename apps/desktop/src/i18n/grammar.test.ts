@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { de } from './de.ts'
-import { accusativePronoun, genusOf, isPluralNation } from './grammar.ts'
+import { accusativePronoun, genusOf, indefiniteArticle, isPluralNation, noneOf } from './grammar.ts'
 
 /**
  * Die Beugungstabellen bleiben vollstaendig (T-M23-02, R-UI-07, Befund V2-11).
@@ -31,6 +31,19 @@ describe('R-UI-07 Genus- und Numerus-Tabelle', () => {
     expect(accusativePronoun('buildings', 'barracks')).toBe('sie')
     expect(accusativePronoun('buildings', 'harbour')).toBe('ihn')
     expect(accusativePronoun('units', 'fighter')).toBe('es')
+  })
+
+  it('beugt Artikel und Verneinung nach dem Genus (T-M41-03)', () => {
+    // "Dafür braucht es einen Hafen — Sie haben keinen." / "… eine Kaserne — Sie haben keine."
+    // Das Nominativpronomen am Satzanfang ist seit der Nacharbeit (Durchsicht N6) weg: das
+    // "Sie" der Sache war vom "Sie" des Spielers nicht zu unterscheiden.
+    for (const tabelle of [de.grammar.indefinite, de.grammar.none]) {
+      expect(Object.keys(tabelle).sort()).toEqual(['f', 'm', 'n'])
+    }
+    expect(indefiniteArticle('buildings', 'harbour')).toBe('einen')
+    expect(indefiniteArticle('buildings', 'barracks')).toBe('eine')
+    expect(noneOf('buildings', 'harbour')).toBe('keinen')
+    expect(noneOf('buildings', 'shipyard')).toBe('keine')
   })
 
   it('kennt die Mehrzahl-Maechte der Weltkarte', () => {

@@ -1,27 +1,27 @@
 {
-  "totalSeconds": 448,
-  "measuredAt": "2026-09-12T17:31:53.089Z",
-  "commit": "d82779d",
+  "totalSeconds": 305,
+  "measuredAt": "2026-09-14T02:57:03.713Z",
+  "commit": "3fff35c",
   "steps": [
     {
       "id": "AK-2/3/4",
       "description": "pnpm verify (Lint, Typen, Tests inkl. Determinismus/Speichern/Kampf, Guards, Abdeckung)",
-      "seconds": 96
+      "seconds": 86
     },
     {
       "id": "AK-1",
       "description": "Vollständige Partie (pnpm sim:fullgame)",
-      "seconds": 161
+      "seconds": 170
     },
     {
       "id": "AK-6",
       "description": "Langlauf 1000 Spieltage (pnpm sim:long)",
-      "seconds": 322
+      "seconds": 194
     },
     {
       "id": "AK-6",
       "description": "Zeitbudgets seriell auf ruhiger Maschine (Tick, Weltkarte, Zeichnen)",
-      "seconds": 25
+      "seconds": 20
     },
     {
       "id": "AK-2",
@@ -31,7 +31,7 @@
     {
       "id": "AK-5",
       "description": "Guards für Monetarisierung und Netzwerk",
-      "seconds": 4
+      "seconds": 3
     }
   ]
 }

@@ -40,4 +40,22 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(result.winRateA).toBeGreaterThanOrEqual(0)
     expect(result.winRateA).toBeLessThanOrEqual(1)
   })
+
+  it('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08)', () => {
+    // T-M15-08 versprach "neun Zahlen je Stufe". `warDeclarations` und `automaticBombardments`
+    // zaehlen aber die ganze Partie fuer jede Stufe, die antritt — der Beschuss von "schwer" in
+    // einer Partie gegen "leicht" stand damit auch bei "leicht". Wer je Stufe zusichern will,
+    // muss wissen, wer erklaert und wer geschossen hat.
+    const result = playTournament({ map, rules, difficulties: ['hard', 'normal'], matches: 2, days: 40, startAtWar: false })
+    const handelnd = result.byDifficulty
+
+    expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations, 'nichts gemessen').toBeGreaterThan(0)
+    // Jede Erklaerung gehoert genau einer Stufe; "schwer" tritt in jeder Partie an, also ist die
+    // Partiesumme bei "schwer" die Summe beider Handelnden.
+    expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations).toBe(result.warDeclarations.hard)
+    expect(handelnd.hard.automaticBombardments + handelnd.normal.automaticBombardments).toBe(
+      result.automaticBombardments.hard,
+    )
+    expect(handelnd.easy).toEqual({ warDeclarations: 0, automaticBombardments: 0 })
+  })
 })
