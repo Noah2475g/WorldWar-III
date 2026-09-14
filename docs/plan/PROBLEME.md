@@ -3317,8 +3317,20 @@ dort etwa bei jedem zweiten Bild und im ausgelieferten Bau praktisch nie.
    (`setState((s) => advance(s, …))`) oder ein Ref, das der Schritt selbst fortschreibt, wäre die
    Reparatur — sie gehört in eine eigene Aufgabe mit eigenem Rücknahmekriterium.
 
-**Status:** offen, ohne Aufgabe. Für Messungen gilt ab jetzt: **die Uhr wird am gebauten Bündel gemessen,
-nicht am Dev-Server.**
+**Behoben am 2026-09-14 (T-M41-17).** `commitState(next)` schreibt den Spiegel `stateRef.current` **und**
+den Zustand; `step`, das Vorspul-Häppchen, Laden, neue Partie und das Leeren gehen darüber. Die Updaterform
+ist bewusst nicht gewählt — dieses Haus hat die Rechnung zweimal absichtlich aus dem Updater geholt
+(T-M22-05 und der Befund vom 2026-09-08 im Vorspulen), und an derselben Rechnung hängen `noteTrace`,
+`noteMarches` und die eingesammelten Befehle. Eigener Ausgangswert desselben Tages, gleiches Verfahren
+(Brave über CDP, Fenster vorn, Weltkarte, Vereinigte Staaten, Startzahl 20260914, Tempo 100, je zehn
+Sekunden, frische Partie je Lauf): **Dev-Server 61,7 / 62,6 / 57,9 Ticks/s → 99,6 / 99,6 / 99,7**;
+**gebautes Bündel über fünf Läufe 93,0–98,4 (Minimum 93,0, Median 95,8) → 99,8–100,0 (Minimum 99,8,
+Median 99,9)**. Der Regressionstest steht in `App.test.tsx` („addiert zwei Bilder desselben JS-Zugs auf")
+und ist ohne die Reparatur rot: Tag 1 · 05:00 statt Tag 1 · 10:00.
+
+**Status:** behoben (T-M41-17). **Die Lehre bleibt: die Uhr wird am gebauten Bündel gemessen, nicht am
+Dev-Server** — der Dev-Bau hat dieselbe Schwäche nur früher sichtbar gemacht, und das Bündel misst, was
+ausgeliefert wird.
 
 ---
 

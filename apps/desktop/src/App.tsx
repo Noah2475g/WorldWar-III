@@ -215,6 +215,35 @@ export function App(props: AppProps) {
   stateRef.current = state
 
   /**
+   * Einen gerechneten Stand zurueckschreiben — Spiegel UND Zustand (T-M41-17).
+   *
+   * Bis zum 2026-09-14 schrieb `step` nur `setState(result.state)`. `stateRef.current`
+   * wurde ausschliesslich im Render nachgezogen, also erst nach dem naechsten Commit von
+   * React. Kam das naechste Bild vorher — im Entwicklungsbau der Regelfall, weil ein
+   * Commit dort teuer ist und `StrictMode` doppelt rendert —, rechnete es noch einmal aus
+   * demselben Stand und ueberschrieb das Ergebnis des vorigen, statt es fortzusetzen.
+   * Gemessen am Dev-Server (Sichtpruefung vom 2026-09-14, Punkt 1): 127 Bilder,
+   * `clockStep` verlangte 635 Ticks, angekommen sind 325; 65 Commits, jeder genau 5 Ticks
+   * — die Kappe eines einzigen Bildes. Dieselbe Partie im gebauten Buendel verlor nichts.
+   *
+   * Der Updater `setState((s) => advance(s, …))` waere die andere Reparatur und ist hier
+   * die falsche: dieses Haus hat die Rechnung zweimal ABSICHTLICH aus dem Updater geholt
+   * (T-M22-05 und der Befund vom 2026-09-08 im Vorspulen). Ein Updater muss pur sein,
+   * StrictMode ruft ihn doppelt, und an derselben Rechnung haengen `noteTrace`,
+   * `noteMarches` und die eingesammelten Befehle. Der Spiegel, den der Schritt selbst
+   * fortschreibt, ist dagegen genau das Muster, das die Huelle schon zweimal fuehrt:
+   * `pendingRef` neben `pendingCommands`, und das Vorspulen, das seinen Stand von
+   * Haeppchen zu Haeppchen von Hand weiterreicht.
+   *
+   * Die Zuweisung im Render bleibt: sie ist der Abgleich mit dem, was React wirklich
+   * haelt, und schreibt denselben Wert noch einmal.
+   */
+  const commitState = useCallback((next: GameState | null) => {
+    stateRef.current = next
+    setState(next)
+  }, [])
+
+  /**
    * Die Karte der laufenden Partie (T-M12-08).
    *
    * Vorher gab es sie nicht: alles las die feste `props.map`, waehrend der Dialog
@@ -696,7 +725,9 @@ export function App(props: AppProps) {
       if (!debugOn) {
         const result = advanceStep(current, ticks, { map: activeMap, rules: props.rules }, commands)
         noteMarches(result.adjutant)
-        setState(result.state)
+        // Ueber `commitState`, nicht `setState`: das naechste Bild kann kommen, bevor React
+        // eingespielt hat, und muss auf DIESEM Stand weiterrechnen (T-M41-17).
+        commitState(result.state)
         return
       }
       const result = advanceWithTrace(current, ticks, { map: activeMap, rules: props.rules }, commands)
@@ -706,9 +737,9 @@ export function App(props: AppProps) {
         explanations: result.explanations,
       })
       noteMarches(result.adjutant)
-      setState(result.state)
+      commitState(result.state)
     },
-    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, now, commitState],
   )
 
   /**
@@ -776,7 +807,10 @@ export function App(props: AppProps) {
         ticksRun += result.ticksRun
         // Was die Automatik in diesem Häppchen befahl, ins Protokoll (T-M40-13).
         noteMarches(result.adjutant)
-        setState(result.state)
+        // Der Spiegel zieht mit (T-M41-17). Das naechste Haeppchen bekommt seinen Stand
+        // ohnehin von Hand; aber ein Vorspulen, das mitten im Lauf endet, darf `stateRef`
+        // nicht auf dem Stand vor dem letzten Haeppchen zuruecklassen.
+        commitState(result.state)
 
         // `limit` innerhalb eines Haeppchens heisst nur "Haeppchen zu Ende", nicht
         // "Ziel unerreichbar" — weitergerechnet wird, bis die Gesamtobergrenze steht.
@@ -792,7 +826,7 @@ export function App(props: AppProps) {
       const start = stateRef.current
       if (start) chunk(start)
     },
-    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending],
+    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
   )
 
   // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
@@ -1081,7 +1115,7 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
-          setState(result.state)
+          commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
           setDialog(null)
@@ -1093,7 +1127,7 @@ export function App(props: AppProps) {
         setSlots(await listSlots(storage, ticksPerDay))
       })
     },
-    [storage, ticksPerDay, mapById, now],
+    [storage, ticksPerDay, mapById, now, commitState],
   )
 
   /**
@@ -1117,7 +1151,7 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
-    setState(fresh)
+    commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
     // and the chosen interval never applies.
@@ -1135,7 +1169,7 @@ export function App(props: AppProps) {
       })
     }
     setDialog(null)
-  }, [options, mapById, props.rules, now])
+  }, [options, mapById, props.rules, now, commitState])
 
   /**
    * Der Startdialog, EINMAL beschrieben: vor der ersten Partie steht er hinter dem
@@ -1785,7 +1819,7 @@ export function App(props: AppProps) {
             // Der Weg zurueck zum Startdialog (T-M14-10, Befund 37; berichtigt T-M12-04
             // nach dem Playtest vom 2026-09-06).
             //
-            // `setState(null)` ist der Kern der Sache, nicht Aufraeumen: den
+            // `commitState(null)` ist der Kern der Sache, nicht Aufraeumen: den
             // NewGameDialog zeichnet genau EINE Stelle, und die liegt hinter dem
             // Fruehausstieg `if (!state || !view || !ctx)` weiter oben. Der Hauptbaum
             // kennt nur 'settings', 'saves' und 'keys'. Ohne diese Zeile war
@@ -1796,7 +1830,7 @@ export function App(props: AppProps) {
             // Die Flagge muss zurueck auf false, sonst meldet die ZWEITE Partie ihr
             // eigenes Ende nie: sie wird sonst nirgends zurueckgesetzt.
             setVictoryAcknowledged(false)
-            setState(null)
+            commitState(null)
             setDialog('new')
           }}
         />

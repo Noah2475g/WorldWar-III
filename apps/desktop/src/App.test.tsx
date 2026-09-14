@@ -746,7 +746,7 @@ describe('R-TIME-02 Eine stehende Uhr nennt sich Pausiert', () => {
   })
 })
 
-describe('T-M41-04 Die Uhrschleife im Spiel verliert keine Ticks', () => {
+describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () => {
   /**
    * `clock.test.ts` prueft die reine Funktion. Hier laeuft die Schleife, die der Spieler
    * ausfuehrt: `requestAnimationFrame` als Warteschlange, `performance.now` als gestellte
@@ -805,6 +805,63 @@ describe('T-M41-04 Die Uhrschleife im Spiel verliert keine Ticks', () => {
     bilder(30, 1000 / 30)
 
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 3 · 02:00/)
+  })
+
+  /**
+   * Zwei Bilder in EINEM JS-Zug (T-M41-17).
+   *
+   * `bilder()` oben legt jedes Bild in ein eigenes `act()`; React kommt also zwischen zwei
+   * Bildern dran und spielt den Zustand ein. Genau deshalb konnten die beiden Zusagen
+   * darueber gruen sein, waehrend am Dev-Server ein Drittel der Ticks verschwand: dort
+   * kommt das naechste Bild oft VOR dem Commit, und beide Bilder rechnen aus demselben
+   * Stand. Gemessen am 2026-09-14 (Sichtpruefung, Punkt 1): 127 Bilder der Spielschleife,
+   * `clockStep` verlangte 635 Ticks, angekommen sind 325 — 65 Commits zu je genau 5.
+   *
+   * Hier wird dieser Zug nachgestellt: beide Bilder laufen in einem `act()`, React sieht
+   * dazwischen nichts. Rechnet das zweite Bild noch einmal aus dem Stand des ersten,
+   * ueberschreibt es dessen Ergebnis, statt es fortzusetzen.
+   */
+  const bilderImSelbenZug = (anzahl: number, dtMs: number) => {
+    act(() => {
+      for (let bild = 0; bild < anzahl; bild++) {
+        jetzt += dtMs
+        const faellig = wartend
+        wartend = []
+        for (const rueckruf of faellig) rueckruf(jetzt)
+      }
+    })
+  }
+
+  it('addiert zwei Bilder desselben JS-Zugs auf, statt das erste zu verwerfen', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+    expect(screen.getByText(/Tag 1 · 00:00/)).toBeTruthy()
+
+    // Zwei Bilder zu je 100 ms. `clockCap(100)` deckelt jedes auf 5 Ticks, zusammen 10.
+    bilderImSelbenZug(2, 100)
+
+    // Zehn Stunden nach Tag 1, 00:00 Uhr. Mit der Wertform von `setState` blieben es fuenf.
+    expect(
+      screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent,
+      'Das zweite Bild hat die Ticks des ersten ueberschrieben statt fortgesetzt',
+    ).toMatch(/Tag 1 · 10:00/)
+  })
+
+  /**
+   * Dasselbe ueber eine ganze Sekunde: dreissig Bilder, und React kommt kein einziges Mal
+   * dazwischen. Der Einzelfall darueber zeigt den Mechanismus, dieser die Zusage —
+   * Tempo 100 heisst hundert Spielstunden je Sekunde, unabhaengig davon, wann React
+   * einspielt. Ohne die Reparatur kamen hier fuenf Ticks an statt hundert.
+   */
+  it('laeuft bei Tempo 100 auch dann 100 Spielstunden, wenn React erst am Ende einspielt', () => {
+    gestellteUhr()
+    startGame({ storage: new MemoryStorage() })
+    tempo('100')
+
+    bilderImSelbenZug(30, 1000 / 30)
+
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
   })
 })
 

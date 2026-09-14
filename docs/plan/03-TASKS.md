@@ -6042,6 +6042,26 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   aus T-M41-13, gelesen und nicht gemessen — vor dem Bau geprüft, ob er über die Oberfläche
   herstellbar ist (`step` steht in denselben Abhängigkeiten und hängt an denselben Werten); ist
   der Test ohne Reparatur grün, steht das mit Grund in `PROBLEME.md`.
+### T-M41-17 · Die Uhr schreibt ihren Stand zurück, bevor das nächste Bild rechnet
+- **Ziel:** Tempo 100 sind hundert Spielstunden je Sekunde — auch dann, wenn React zwischen zwei
+  Bildern nicht dazwischenkommt.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M41-04, T-M41-16
+- **Dateien:** `apps/desktop/src/App.tsx`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** `App.test.tsx` — zwei Bilder in **einem** `act()`, also in einem JS-Zug, müssen
+  sich aufaddieren: zwei Bilder zu 100 ms bei Tempo 100 ergeben 10 Ticks, dreißig Bilder in einem Zug
+  ergeben 100. Ohne die Reparatur rot mit „Tag 1 · 05:00" statt „Tag 1 · 10:00" — genau ein Bild
+  überlebt.
+- **Fertig wenn:** `commitState(next)` den Spiegel `stateRef.current` **und** den Zustand schreibt und
+  `step`, das Vorspul-Häppchen, Laden, neue Partie und das Leeren darüber gehen. Befund 1 der
+  Sichtprüfung vom 2026-09-14: `step` rechnete aus `stateRef.current`, schrieb mit der Wertform
+  zurück, und ein Bild vor dem Commit rechnete noch einmal aus demselben Stand. Die Updaterform ist
+  bewusst **nicht** gewählt — dieses Haus hat die Rechnung zweimal absichtlich aus dem Updater geholt
+  (T-M22-05 und der Befund vom 2026-09-08 im Vorspulen). **Rücknahmekriterium**, vorher
+  festgeschrieben: Dev-Server ≥ 95 Ticks/s, gebautes Bündel nicht schlechter als der eigene
+  Ausgangswert desselben Tages, Golden-Master und `pnpm verify` unverändert grün, und ein
+  Regressionstest, der ohne die Reparatur fällt. R-TIME-02 steht nur hier im Text (`name_level`).
+
 > **Nacharbeit nach der Durchsicht, Block N2 (2026-09-13): das Verhalten der KI.** Aus der Durchsicht
 > (H1, H2) und der Untersuchung der abgelehnten KI-Befehle. Jede Aufgabe verändert oder vermisst, was
 > die KI tut, und ist einzeln gemessen; die Reparatur zu H1 ist Nacharbeit zu T-M41-01 und steht dort.
