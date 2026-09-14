@@ -1,6 +1,7 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   REFUSED_CLOSE_CODE,
@@ -8,8 +9,6 @@ import {
   Rooms,
   SEATS,
   ROOM_FULL,
-  SEAT_TAKEN,
-  WRONG_SECRET,
   type Connection,
 } from '../src/room.ts'
 import {
@@ -22,7 +21,17 @@ import {
   roomIdOf,
   type PartyServer,
 } from '../src/server.ts'
+import {
+  DEFAULT_PORT,
+  hostLines,
+  isTailscaleAddress,
+  localAddresses,
+  parseArgs,
+} from '../src/index.ts'
 import { httpGet, maskedFrame, openClient, until } from './wsclient.ts'
+
+/** Die Wurzel des Repos — fuer die zwei Zusicherungen, die Quelltext lesen. */
+const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 
 /**
  * Der Hostdienst (T-M38-07, R-MP-11, D28.10).
@@ -215,22 +224,22 @@ const RAEUME = [
   { id: 'platzwahl', secret: 'geheim-platzwahl' },
 ]
 
+/** Ein Ordner mit einer index.html - so wenig Buendel, wie ein Dienst braucht. */
+const dienstWurzel = mkdtempSync(join(tmpdir(), 'worldwar-dist-'))
+writeFileSync(join(dienstWurzel, 'index.html'), '<!doctype html><title>WorldWar</title>')
+writeFileSync(join(dienstWurzel, 'world.json'), JSON.stringify({ id: 'world', provinces: [{ id: 'de-1' }] }))
+
 describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
   let dienst: PartyServer
   let port = 0
-  let wurzel = ''
 
   beforeAll(async () => {
-    wurzel = mkdtempSync(join(tmpdir(), 'worldwar-dist-'))
-    writeFileSync(join(wurzel, 'index.html'), '<!doctype html><title>WorldWar</title>')
-    writeFileSync(join(wurzel, 'world.json'), JSON.stringify({ id: 'world', provinces: [{ id: 'de-1' }] }))
-    dienst = createPartyServer({ root: wurzel, host: '127.0.0.1', rooms: RAEUME })
+    dienst = createPartyServer({ root: dienstWurzel, host: '127.0.0.1', rooms: RAEUME })
     port = await dienst.listen()
   }, SERVER_TIMEOUT)
 
   afterAll(async () => {
     await dienst.close()
-    rmSync(wurzel, { recursive: true, force: true })
   })
 
   it('liefert index.html und die Kartendatei aus', async () => {
@@ -310,5 +319,134 @@ describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
 
   it('nimmt keine Verbindung ohne Raum an', async () => {
     await expect(openClient(port, '/irgendwo')).rejects.toThrow(/Kein Handschlag/)
+  }, SERVER_TIMEOUT)
+})
+
+/**
+ * Ein Startbefehl fuer den Host (T-M39-04, R-MP-11, D28.10).
+ *
+ * `pnpm mp:host` baut das Buendel, startet den Dienst und druckt den Link. Was hier
+ * geprueft wird, sind die Teile, die eine Aussage tragen: die Befehlszeile, die Adressen
+ * und die zwei Links. Der Bau selbst wird NICHT hier gefahren - `vite build` gehoert nicht
+ * in eine Pruefkette, die nach jedem Commit laeuft; dass er die Flagge setzt, steht als
+ * Zusicherung am Quelltext.
+ */
+describe('R-MP-11 Ein Befehl, keine Anleitung mit sieben Schritten', () => {
+  it('liest die Befehlszeile und weist Unbekanntes ab, statt es zu raten', () => {
+    expect(parseArgs([])).toMatchObject({ port: DEFAULT_PORT, build: true })
+    expect(parseArgs(['--no-build'])).toMatchObject({ build: false })
+    expect(parseArgs(['--port', '8080'])).toMatchObject({ port: 8080 })
+    // Die alte Form aus M38 bleibt: `node index.ts 7749` steht in Kommentaren.
+    expect(parseArgs(['7749'])).toMatchObject({ port: 7749 })
+    // Wer `--pport` tippt, soll es erfahren, statt eine Partie auf einem Port zu
+    // eroeffnen, den niemand kennt.
+    expect(parseArgs(['--pport', '1'])).toEqual({ error: 'Unbekannte Angabe: --pport' })
+    expect(parseArgs(['--port', 'abc'])).toMatchObject({ error: expect.stringContaining('Kein Port') })
+    expect(parseArgs(['--port', '99999'])).toMatchObject({ error: expect.stringContaining('Kein Port') })
+  })
+
+  it('setzt die Bauflagge im Prozess und nicht im Skripteintrag', () => {
+    // `VAR=1 pnpm ...` ist eine Schreibweise der POSIX-Schale; `pnpm run` startet auf
+    // Windows cmd.exe, und dort ist dieselbe Zeile ein Fehler. Gebunden wird der
+    // Quelltext, weil ein echter Bau hier Sekunden kostete.
+    const quelle = readFileSync(join(ROOT, 'apps/party/src/index.ts'), 'utf8')
+    expect(quelle).toContain("WORLDWAR_MULTIPLAYER: '1'")
+
+    const skripte = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>
+    }
+    expect(skripte.scripts['mp:host']).toBe('node apps/party/src/index.ts')
+    expect(skripte.scripts['mp:host'], 'eine Zuweisung, die cmd.exe nicht kennt').not.toContain('=')
+  })
+
+  it('druckt zwei Links aus einem Raum — den eigenen und den fuer den Gast', () => {
+    const zeilen = hostLines({ id: 'raum1', secret: 'geheim' }, 7749, [
+      { name: 'Tailscale', address: '100.101.102.103', tailscale: true },
+    ]).join('\n')
+
+    expect(zeilen).toContain('http://100.101.102.103:7749/#/gastgeben?raum=raum1&s=geheim')
+    expect(zeilen).toContain('http://100.101.102.103:7749/#/beitreten?raum=raum1&s=geheim')
+    expect(zeilen).toContain('7749')
+  })
+
+  it('startet nach einem sauberen Ende wieder auf demselben Port', async () => {
+    // FALLE aus M12: einen langen Lauf abzubrechen beendet ihn nicht. Gemessen wird am
+    // Ergebnis - ein zweites `listen` auf demselben Port gelingt nur, wenn das erste den
+    // Sockel wirklich losgelassen hat.
+    const eins = createPartyServer({ root: dienstWurzel, host: '127.0.0.1' })
+    const port = await eins.listen()
+    await eins.close()
+
+    const zwei = createPartyServer({ root: dienstWurzel, host: '127.0.0.1', port })
+    expect(await zwei.listen()).toBe(port)
+    await zwei.close()
+  }, SERVER_TIMEOUT)
+})
+
+/**
+ * Die letzte Meile ueber Tailscale (T-M39-05, R-MP-10, D28.10).
+ *
+ * **Was hier gemessen wird, und was ausdruecklich nicht.** Geprueft ist, dass der Dienst
+ * auf ALLEN Schnittstellen horcht und von einer Adresse dieses Rechners erreichbar ist,
+ * die nicht die Rueckschleife ist - genau der Fehler, der erst am Abend auffiele. Und
+ * geprueft ist, dass der Dienst eine Tailscale-Adresse als solche erkennt.
+ *
+ * NICHT geprueft ist, dass ein Gast in einem anderen Netz ankommt: dazu braucht es ein
+ * angemeldetes Tailnet und einen zweiten Menschen. Gemessen am 2026-09-14 auf dieser
+ * Maschine: Tailscale 1.102.2 ist installiert, aber nicht angemeldet - `tailscale ip -4`
+ * meldet "no current Tailscale IPs; state: NoState", und die Tailscale-Schnittstelle
+ * traegt 169.254.83.107 statt einer Adresse aus 100.64.0.0/10. Der Rest ist AK-9 und
+ * steht als ausdruecklicher Schritt in docs/ANLEITUNG.md.
+ */
+describe('R-MP-10 Die letzte Meile: der Dienst horcht nicht nur auf localhost', () => {
+  it('erkennt eine Tailscale-Adresse an ihrem Bereich, und sonst keine', () => {
+    // 100.64.0.0/10 ist der Bereich aus RFC 6598, den Tailscale fuer das Tailnet benutzt.
+    for (const ja of ['100.64.0.1', '100.101.102.103', '100.127.255.254']) {
+      expect(isTailscaleAddress(ja), ja).toBe(true)
+    }
+    for (const nein of ['100.63.255.255', '100.128.0.1', '192.168.178.93', '127.0.0.1', 'keine']) {
+      expect(isTailscaleAddress(nein), nein).toBe(false)
+    }
+    // Der gemessene Fall dieser Maschine: Tailscale installiert, nicht angemeldet - die
+    // Schnittstelle traegt eine APIPA-Adresse und keine aus dem Tailnet.
+    expect(isTailscaleAddress('169.254.83.107')).toBe(false)
+  })
+
+  it('laesst die Rueckschleife weg und stellt das Tailnet nach vorn', () => {
+    const adressen = localAddresses({
+      'Wi-Fi': [{ family: 'IPv4', address: '192.168.178.93', internal: false }],
+      Loopback: [{ family: 'IPv4', address: '127.0.0.1', internal: true }],
+      Tailscale: [{ family: 'IPv4', address: '100.101.102.103', internal: false }],
+    } as never)
+
+    expect(adressen.map((a) => a.address)).toEqual(['100.101.102.103', '192.168.178.93'])
+    expect(adressen[0]!.tailscale).toBe(true)
+  })
+
+  it('sagt es, wenn es kein Tailnet gibt, statt einen Link ins Leere zu drucken', () => {
+    const zeilen = hostLines({ id: 'r', secret: 'g' }, 7749, [
+      { name: 'Wi-Fi', address: '192.168.178.93', tailscale: false },
+    ]).join('\n')
+
+    expect(zeilen).toContain('100.64.0.0/10')
+    expect(zeilen, 'der Hinweis fehlt, dass das kein Fehler ist').toContain('keine Stoerung')
+    expect(zeilen).toContain('nur im lokalen Netz')
+  })
+
+  it('ist von einer Adresse erreichbar, die nicht die Rueckschleife ist', async () => {
+    // Die eigentliche Zusage, und sie wird am laufenden Dienst gemessen: ohne sie ist der
+    // Dienst im Tailnet unerreichbar. Voreinstellung ist 0.0.0.0 - kein `host` gesetzt.
+    const aussen = localAddresses().find((entry) => !entry.address.startsWith('169.254.'))
+    expect(aussen, 'diese Maschine hat keine Adresse ausser der Rueckschleife').toBeTruthy()
+
+    const dienst = createPartyServer({ root: dienstWurzel })
+    const port = await dienst.listen()
+    try {
+      const antwort = await httpGet(port, '/', aussen!.address)
+      expect(antwort.status, `nicht erreichbar ueber ${aussen!.address}`).toBe(200)
+      expect(antwort.body).toContain('WorldWar')
+    } finally {
+      await dienst.close()
+    }
   }, SERVER_TIMEOUT)
 })
