@@ -264,7 +264,7 @@ export function NewGameDialog({
           <ul>
             <li>{t('newGame.invitationMap', { map: invitation.mapName })}</li>
             <li>
-              {t('newGame.invitationNations', { host: invitation.hostNation, guest: invitation.guestNation })}
+              {t('newGame.invitationNations', { host: invitation.hostNation, other: invitation.guestNation })}
             </li>
             <li>{t('newGame.invitationAi', { count: invitation.aiOpponents })}</li>
             <li>{t('newGame.invitationSpeed', { speed: invitation.fixedSpeed })}</li>

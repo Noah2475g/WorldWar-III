@@ -557,7 +557,7 @@ export const de = {
       'Die Rate steht für die ganze Partie fest und lässt sich danach nicht mehr ändern. Vorspulen gibt es zu zweit nicht.',
     invitation: 'Die Einladung nennt:',
     invitationMap: 'Karte: {{map}}',
-    invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{guest}}',
+    invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{other}}',
     invitationAi: 'Computergegner: {{count}}',
     invitationSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
     // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf

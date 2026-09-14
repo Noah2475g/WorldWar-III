@@ -5035,7 +5035,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MP-03 · **Entwurf:** D28.9
 - **Abhängigkeiten:** keine
 - **Dateien:** `packages/netplay/package.json`, `packages/netplay/src/index.ts`,
-  `packages/netplay/src/protocol.ts`, `packages/netplay/src/transport.ts`
+  `packages/netplay/src/protocol.ts`, `packages/netplay/src/transport.ts`, dazu die
+  Auflösungspfade in `tsconfig.base.json`, `vitest.config.ts`, `vitest.slow.config.ts`,
+  `apps/desktop/vite.config.ts` und `apps/desktop/package.json`
 - **Tests zuerst:** jede Art wird aus JSON gelesen und wieder geschrieben, ohne sich zu
   verändern; eine unbekannte Art und eine fremde Fassung werden abgelehnt, nicht geraten
   (`protocol.test.ts`).

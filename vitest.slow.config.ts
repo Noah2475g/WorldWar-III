@@ -10,6 +10,7 @@ export default defineConfig({
       '@worldwar/shared': r('./packages/shared/src/index.ts'),
       '@worldwar/core': r('./packages/core/src/index.ts'),
       '@worldwar/ai': r('./packages/ai/src/index.ts'),
+      '@worldwar/netplay': r('./packages/netplay/src/index.ts'),
       '@worldwar/testkit': r('./packages/testkit/src/index.ts'),
       '@worldwar/mapgen': r('./packages/mapgen/src/index.ts'),
     },

@@ -8,6 +8,7 @@
     "@tauri-apps/api": "^2.11.1",
     "@worldwar/ai": "workspace:*",
     "@worldwar/core": "workspace:*",
+    "@worldwar/netplay": "workspace:*",
     "@worldwar/shared": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

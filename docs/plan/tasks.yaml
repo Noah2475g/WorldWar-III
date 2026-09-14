@@ -2636,11 +2636,11 @@ tasks:
   - id: T-M37-05
     milestone: M37
     title: Das Protokoll - die Nachrichtenarten als Daten
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-03]
     design: [D-28]
-    files: [packages/netplay/package.json, packages/netplay/src/index.ts, packages/netplay/src/protocol.ts, packages/netplay/src/transport.ts, pnpm-workspace.yaml]
+    files: [packages/netplay/package.json, packages/netplay/src/index.ts, packages/netplay/src/protocol.ts, packages/netplay/src/transport.ts, pnpm-workspace.yaml, tsconfig.base.json, vitest.config.ts, vitest.slow.config.ts, apps/desktop/vite.config.ts, apps/desktop/package.json]
     tests: [packages/netplay/src/protocol.test.ts]
     dod: "D28.9 und MEHRSPIELER.md Abschnitt 3.2. Sieben Arten - hallo, willkommen, probe, befehle, pause, zustand, ende - reines JSON, jede mit ihrer Fassung. Test zuerst: jede Art wird aus JSON gelesen und wieder geschrieben, ohne sich zu veraendern; eine unbekannte Art und eine fremde Fassung werden abgelehnt, nicht geraten. ENTSCHEIDEND: in packages/netplay kommt kein fetch, kein WebSocket und kein node:http vor - das ist der Grund, warum alles Weitere ohne Leitung pruefbar ist. Vorlage fuer package.json: apps/headless/package.json."
   - id: T-M37-06
