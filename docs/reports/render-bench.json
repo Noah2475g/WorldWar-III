@@ -51,9 +51,9 @@
     "task": "T-M26-01",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.",
     "measuredAt": "2026-09-14",
-    "p95Ms": 3.15,
-    "medianMs": 2.07,
-    "maxMs": 4.89,
+    "p95Ms": 2.43,
+    "medianMs": 2.06,
+    "maxMs": 6.22,
     "frameBudgetMs": 16.7
   },
   "stacks": {
@@ -62,9 +62,9 @@
     "measuredAt": "2026-09-14",
     "armies": 300,
     "buildings": 945,
-    "p95Ms": 3.74,
-    "medianMs": 2.38,
-    "maxMs": 7.37,
+    "p95Ms": 3.73,
+    "medianMs": 2.49,
+    "maxMs": 7.44,
     "frameBudgetMs": 16.7
   },
   "battles": {
@@ -73,9 +73,9 @@
     "measuresNot": "NICHT die Zeichenarbeit der Gefechte (zwei Boegen und bis zu fuenf Einschlagzeichen je Gefecht) - die liegt an einem echten 2D-Kontext in MapCanvas und ist unter Node nicht messbar.",
     "measuredAt": "2026-09-14",
     "battles": 60,
-    "p95Ms": 2.67,
-    "medianMs": 1.99,
-    "maxMs": 6.67,
+    "p95Ms": 2.53,
+    "medianMs": 2.02,
+    "maxMs": 6.8,
     "frameBudgetMs": 16.7
   }
 }
