@@ -2686,7 +2686,7 @@ tasks:
   - id: T-M37-10
     milestone: M37
     title: Die Pause auf Antrag und Zustimmung
-    status: todo
+    status: done
     deps: [T-M37-06]
     requirements: [R-MP-05]
     design: [D-28]

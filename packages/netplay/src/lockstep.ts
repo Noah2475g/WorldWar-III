@@ -1,7 +1,17 @@
 import { advanceTicks } from '@worldwar/ai'
 import { HASH_OMIT_KEYS, type Command, type GameEvent, type GameState, type MapData, type PlayerId, type Rules } from '@worldwar/core'
 import { canonicalText, hashValue } from '@worldwar/shared'
-import { envelope, type CommandsMessage, type EndMessage } from './protocol'
+import {
+  NO_PAUSE,
+  applyPause,
+  isPausedAt,
+  pauseAnswer,
+  pauseRequest,
+  pauseResume,
+  pollPause,
+  type PauseState,
+} from './pause'
+import { envelope, type CommandsMessage, type EndMessage, type PauseMessage } from './protocol'
 
 /**
  * Der Gleichschritt (T-M37-06, T-M37-07, R-MP-03, D28.5, MEHRSPIELER.md §2).
@@ -34,6 +44,8 @@ export type LockstepStatus =
   | 'ready'
   /** Es fehlt mindestens eine Liste. Die Uhr steht, und nichts geht verloren. */
   | 'waiting'
+  /** Beide haben einer Pause zugestimmt; die Uhr steht ab einem verabredeten Tick. */
+  | 'paused'
   /** Die Prüfsummen weichen ab. Die Partie hält an, statt zwei Welten weiterzuspielen. */
   | 'desynced'
   /** Die Partie ist entschieden; der Kern rechnet nicht weiter. */
@@ -174,6 +186,7 @@ export class Lockstep {
   protected readonly inbox = new Map<number, Map<PlayerId, CommandsMessage>>()
   protected finished = false
   protected divergence: DesyncReport | null = null
+  protected pauseState: PauseState = NO_PAUSE
 
   constructor(options: LockstepOptions) {
     this.seat = options.seat
@@ -202,7 +215,57 @@ export class Lockstep {
     // „bereit" noch „wartend" — sie ist vorbei, bis jemand hinsieht.
     if (this.divergence) return 'desynced'
     if (this.finished) return 'finished'
+    // Die verabredete Pause steht vor dem Warten: „warte auf Mitspieler" waere falsch,
+    // wenn beide sich gerade darauf geeinigt haben, nicht weiterzuspielen.
+    if (isPausedAt(this.pauseState, this.tick)) return 'paused'
     return this.waitingFor().length === 0 ? 'ready' : 'waiting'
+  }
+
+  /** Der Stand des Pausenvertrags — Antrag, Halt, angekündigtes Fortsetzen (T-M37-10). */
+  get pause(): PauseState {
+    return this.pauseState
+  }
+
+  /**
+   * Eine Pause beantragen (R-MP-05/AK1).
+   *
+   * Der Antrag hält **nichts** an: er geht hinaus und wird sichtbar, und die Partie läuft
+   * weiter, bis der andere zustimmt. Die Nachricht gilt ab `tick + delay` — dieselbe
+   * Verzögerung wie ein Befehl, damit sie rechtzeitig ankommt.
+   */
+  requestPause(at: number): PauseMessage {
+    const message = pauseRequest(this.tick, this.delayTicks)
+    this.pauseState = applyPause(this.pauseState, message, { by: this.seat, at })
+    return message
+  }
+
+  /** Zustimmen oder ablehnen. Die Antwort trägt den Tick des Antrags weiter (AK2). */
+  answerPause(accept: boolean, at: number): PauseMessage {
+    const message = pauseAnswer(this.pauseState, accept ? 'ja' : 'nein')
+    this.pauseState = applyPause(this.pauseState, message, { by: this.seat, at })
+    return message
+  }
+
+  /** Fortsetzen — einseitig, mit drei Sekunden Vorlauf. Die Asymmetrie ist Absicht (D28.7). */
+  resume(at: number): PauseMessage {
+    const message = pauseResume(this.pauseState)
+    this.pauseState = applyPause(this.pauseState, message, { by: this.seat, at })
+    return message
+  }
+
+  /** Eine Pausennachricht der Gegenseite anwenden — dieselbe Funktion wie für die eigene. */
+  receivePause(from: PlayerId, message: PauseMessage, at: number): void {
+    this.pauseState = applyPause(this.pauseState, message, { by: from, at })
+  }
+
+  /**
+   * Die Wanduhr weiterdrehen: ein Antrag verfällt nach dreißig Sekunden, ein
+   * angekündigtes Fortsetzen wird nach drei fällig. Der einzige Ort, an dem echte Zeit in
+   * dieser Maschine vorkommt — und auch hier wird sie hereingereicht, nicht gelesen.
+   */
+  pollClock(at: number): PauseState {
+    this.pauseState = pollPause(this.pauseState, at)
+    return this.pauseState
   }
 
   /** Der Befund, wenn die Welten sich getrennt haben — sonst `null` (T-M37-09). */

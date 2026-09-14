@@ -8,5 +8,6 @@
  */
 export * from './protocol'
 export * from './transport'
+export * from './pause'
 export * from './lockstep'
 export * from './loopback'
