@@ -60,6 +60,42 @@ export interface HeaderProps {
   alarm?: { provinceId: string; provinceName: string; intruder: string } | null
   /** Klick auf den Chip: zur Provinz springen und den Alarm quittieren. */
   onAlarm?: (provinceId: string) => void
+  /**
+   * Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK3, C-11, D28.4).
+   *
+   * `null` oder fehlend heißt Einzelspieler — dann bleibt alles, wie es war. Steht eine
+   * Zahl darin, zeigt die Kopfleiste sie **als Text** statt der Tempogruppe, und das
+   * Vorspulen entfällt: ein Regler, den einer von beiden bewegt, hieße nur, dass der
+   * andere ihn nicht bewegt hat.
+   */
+  fixedSpeed?: number | null
+  /**
+   * Die Uhr wartet auf die Liste der Gegenseite (T-M37-11, R-MP-03/AK1).
+   *
+   * Erst nach zwei Sekunden Stille — dieselbe Frist wie bei `stalled`, und aus demselben
+   * Grund: zwischen zwei Ticks fehlt die Liste immer kurz, und eine Zeile, die bei jedem
+   * Tick aufblitzt, ist Flackern und keine Auskunft.
+   */
+  waitingForPeer?: boolean
+  /** Der Pausenknopf einer Partie zu zweit — er beantragt, er hält nicht an (D28.7). */
+  onPauseRequest?: () => void
+  /** Steht die Partie? Dann heißt der Knopf „Fortsetzen" und darf einseitig gedrückt werden. */
+  paused?: boolean
+  onResume?: () => void
+  /**
+   * Die Gegenseite fehlt seit über zehn Sekunden (T-M38-09, R-MP-07/AK2, D28.8).
+   *
+   * Der Unterschied zu `waitingForPeer` ist keine längere Wartezeit, sondern eine andere
+   * Sorte Auskunft: bis zehn Sekunden hakt es und der Gleichschritt wartet ohnehin;
+   * darüber ist es eine Lage, über die der Spieler entscheiden muss. Deshalb zwei
+   * Knöpfe — **eine stehende Uhr ohne Erklärung ist ein Absturz, mit Erklärung ein
+   * Hinweis.**
+   */
+  peerLost?: boolean
+  /** Weiter warten: der Hinweis verschwindet, die Uhr wartet unverändert. */
+  onKeepWaiting?: () => void
+  /** Die Partie beenden. Was danach kommt, entscheidet die Hülle (T-M38-10). */
+  onEndGame?: () => void
 }
 
 /**
@@ -163,12 +199,72 @@ export function Header(props: HeaderProps) {
           )}
 
           {/*
+            Zu zweit steht die Rate als Text (T-M37-04, R-MP-02/AK3): sie wurde beim
+            Anlegen gewaehlt und aendert sich nicht mehr, und ein Regler ohne Wirkung ist
+            schlimmer als keiner. Das Vorspulen faellt mit weg — es ist ein Lauf ohne
+            Mitspieler, und der Mitspieler ist der Punkt.
+          */}
+          {props.fixedSpeed != null && (
+            <span className="clock__fixed" aria-label={t('header.speed')}>
+              <Icon name="clock" size={11} />
+              {t('header.fixedSpeed', { speed: props.fixedSpeed })}
+            </span>
+          )}
+
+          {/* Die ehrliche Uhr des Gleichschritts (T-M37-11): sie sagt, worauf sie wartet,
+              statt ein Tempo zu zeigen, das nicht laeuft. */}
+          {props.waitingForPeer && (
+            <span className="clock__stalled" role="status">
+              {t('header.waitingForPeer')}
+            </span>
+          )}
+
+          {/* Der Pausenknopf wird zum Pausenantrag (D28.7, MEHRSPIELER.md §3.8) — und
+              beim Fortsetzen wieder zum Knopf, den einer allein druecken darf. */}
+          {props.paused && props.onResume ? (
+            <button type="button" className="button" onClick={props.onResume}>
+              {t('netplay.resumeButton')}
+            </button>
+          ) : (
+            props.onPauseRequest && (
+              <button type="button" className="button" onClick={props.onPauseRequest}>
+                {t('netplay.pauseRequestButton')}
+              </button>
+            )
+          )}
+
+          {/*
+            Es ist nicht mehr ein Haken, sondern weg (T-M38-09, R-MP-07/AK2).
+
+            `role="alert"` und nicht `status`: nach zehn Sekunden ist das keine
+            Randbemerkung mehr, sondern eine Lage, in der jemand etwas entscheiden soll.
+            Die Zeile „warte auf Mitspieler" daneben bleibt stehen — sie sagt, WORAUF
+            gewartet wird, und dieser Hinweis sagt, was man dagegen tun kann.
+          */}
+          {props.peerLost && (
+            <span className="clock__lost" role="alert">
+              {t('netplay.peerLost')}
+              {props.onKeepWaiting && (
+                <button type="button" className="button button--small" onClick={props.onKeepWaiting}>
+                  {t('netplay.keepWaiting')}
+                </button>
+              )}
+              {props.onEndGame && (
+                <button type="button" className="button button--small" onClick={props.onEndGame}>
+                  {t('netplay.endGame')}
+                </button>
+              )}
+            </span>
+          )}
+
+          {/*
             Genau ein Knopf ist gedrueckt: die Pause oder die laufende Stufe (D27.6).
             Seit T-M28-10 stimmt das auch dann, wenn die Geschwindigkeit ZWISCHEN zwei
             Rasten liegt — das passiert, sobald die eingestellte Hoechstgeschwindigkeit
             sie kappt. Vorher war dann gar keiner gedrueckt, der Klick sah folgenlos aus,
             und ein Screenreader meldete keine aktive Stufe.
           */}
+          {props.fixedSpeed == null && (
           <div className="speeds" role="group" aria-label={t('header.speed')}>
             {SPEED_STOPS.map((stop) => (
               <button
@@ -211,6 +307,7 @@ export function Header(props: HeaderProps) {
               </button>
             )}
           </div>
+          )}
 
           {!props.fastForwarding && props.fastForwardNotice !== null && (
             <span className="header__notice" role="status">

@@ -5,15 +5,15 @@ Ein privater, nicht-kommerzieller Nachbau von **Supremacy: World War 3** als
 Original: **frei regelbare Spielgeschwindigkeit** (kein Warten über Tage) und
 **keinerlei Monetarisierung** (kein Gold, keine Kaufvorteile, keine Werbung, kein Konto).
 
-Status (2026-09-14): **abgenommen, und der Mehrspieler ist geplant.** `pnpm acceptance` lief
-am 2026-09-13 auf freier Maschine **12 von 12, Exit 0, 4 min 58 s**; das Spiel wird mit der
+Status (2026-09-14): **abgenommen, und man kann es zu zweit spielen.** `pnpm acceptance` lief
+am 2026-09-14 auf freier Maschine **12 von 12, Exit 0, 5 min 7 s**; das Spiel wird mit der
 Startzahl 1914 an Spieltag **975** entschieden (mit 2015 und 1815 je an Tag 583). Von
-**312 Aufgaben sind 264 gebaut**. Offen sind **dreißig geplante und freigegebene** aus
-M37–M39 — eine Partie zu zweit, der Mitspieler tritt über einen Link bei
-([`docs/plan/MEHRSPIELER.md`](docs/plan/MEHRSPIELER.md)); keine davon ist gebaut. Dazu
-**fünfzehn** aus M17 („Tiefe zwischen den Kriegen", als Ganzes geplant — gebaut wird es auf
-Noahs Ansage) und **drei zurückgenommene** Aufgaben, jede mit Begründung im Plan: T-M10-02,
-T-M40-04 und T-M41-10.
+**312 Aufgaben sind 293 gebaut**, darunter der **Mehrspieler M37–M39 mit 29 von 30**
+([`docs/plan/MEHRSPIELER.md`](docs/plan/MEHRSPIELER.md)). Offen sind **fünfzehn** aus M17
+(„Tiefe zwischen den Kriegen", als Ganzes geplant — gebaut wird es auf Noahs Ansage),
+**eine** — die Abnahme des Mehrspielers, die zwei Menschen in zwei Netzen braucht — und
+**drei zurückgenommene** Aufgaben, jede mit Begründung im Plan: T-M10-02, T-M40-04 und
+T-M41-10.
 
 Der letzte Bauabschnitt sind **M41, M40 und M35** (2026-09-13): die KI baut ihre Fabriken
 wirklich aus, die Uhr hält ihr Tempo, Armeen haben vier Haltungen mit Erklärtext — eine
@@ -96,8 +96,12 @@ Lücken begründet geschätzt und über automatisierte Testpartien abgestimmt.
   dazu „Vorspulen bis Ereignis“.
 - **Vorgehen:** strikt testgetrieben; Kern ≥ 90 % Testabdeckung, Determinismus per Golden-Master
   abgesichert.
-- **Mehrspieler:** nicht in V1, aber architektonisch vorbereitet (deterministischer Kern,
-  kommandobasiert). **Geplant und freigegeben, noch nicht gebaut:** M37–M39, eine Partie zu
-  zweit im Gleichschritt — der Host ist der Server, der Gast tritt über einen Link und
-  Tailscale bei, das ausgelieferte Programm bleibt netzfrei, und der Kern wird nicht
-  angefasst. Die Abnahme AK-9 braucht Noah und einen zweiten Menschen in einem anderen Netz.
+- **Mehrspieler:** nicht in V1, aber seit dem 2026-09-14 **gebaut** (M37–M39, 29 von 30
+  Aufgaben). Eine Partie zu zweit im Gleichschritt: beide Rechner rechnen alles selbst und
+  tauschen nur Befehle — rund zweihundert Byte je Sekunde —, jede Nachricht trägt die
+  Prüfsumme des letzten Ticks, und bei Abweichung hält die Partie an, statt zwei Welten
+  weiterzuspielen. Der Host ist der Server, der Gast tritt über einen Link und Tailscale
+  bei, **das ausgelieferte Programm bleibt netzfrei** (`connect-src 'none'`, am Erzeugnis
+  gemessen), und der Kern wurde nicht angefasst. Die Abnahme AK-9 braucht Noah und einen
+  zweiten Menschen in einem anderen Netz — Anleitung in
+  [`docs/reports/mehrspieler-anleitung.md`](docs/reports/mehrspieler-anleitung.md).

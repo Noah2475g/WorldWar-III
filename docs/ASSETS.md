@@ -135,6 +135,43 @@ stehen hier trotzdem, damit niemand sie für zugekaufte Grafik hält.
 | `docs/reports/sichtpruefung-2026-09-14/p5-rueckt-nach.png` | dito | die leise Zeile „rückt von selbst nach" |
 | `docs/reports/sichtpruefung-2026-09-14/p6-zwischenziele.png` | dito | die Zwischenziele zum Sieg |
 | `docs/reports/sichtpruefung-2026-09-14/p7-gefecht-nah.png` | dito | ein Gefecht in der Nahansicht |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/1-gast-beitrittsbildschirm.png` | Bildschirmfoto des eigenen Spiels (Brave über CDP, Sichtprüfung Mehrspieler 2026-09-14) | der Beitrittsbildschirm beim Gast, mit allen sechs Angaben |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/1a-host-anlegedialog.png` | dito | der Anlegedialog beim Gastgeber, Partieart und feste Geschwindigkeit |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/1d-host-lobby-gast-da.png` | dito | die Lobby, sobald der Gast wartet |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/2a-lobby-gast-ohne-namen.png` | dito | der Beitrittsknopf ist ohne Namen gesperrt |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/2b-lobby-kopiert.png` | dito | der Kopier-Knopf markiert das Feld, statt in die Zwischenablage zu schreiben |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/2d-lobby-gast-bereit.png` | dito | der Gast ist bereit, der Gastgeber hat noch nicht gestartet |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3a-host-partie-laeuft.png` | dito | die laufende Partie beim Gastgeber |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3b-gast-partie-laeuft.png` | dito | dieselbe Partie beim Gast |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3c-host-debug.png` | dito | Tick und Pruefsumme des Gastgebers |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3d-gast-debug.png` | dito | Tick und Pruefsumme des Gastes, derselbe Wert |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3e-host-lauf.png` | dito | der Gastgeber nach 245 gemeinsamen Ticks |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3f-gast-lauf.png` | dito | der Gast nach denselben 245 Ticks |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3i-host-kriegserklaerung-des-gastes.png` | dito | die Kriegserklaerung des Gastes, gesehen beim Gastgeber |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3j-gast-kriegserklaerung.png` | dito | dieselbe Kriegserklaerung beim Gast |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3k-gast-befiehlt-im-stillstand.png` | dito | ein Befehl des Gastes bei stehender Uhr |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/3l-host-sieht-den-befehl-des-gastes.png` | dito | derselbe Befehl, angekommen beim Gastgeber |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/4a-gast-pausenantrag.png` | dito | der Gast stellt den Pausenantrag |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/4b-host-antrag-gestellt.png` | dito | der Antrag, wie ihn der Gastgeber sieht |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/4c-host-pausiert.png` | dito | der Gastgeber nach der Zustimmung |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/4d-gast-pausiert.png` | dito | der Gast am selben Tick |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/5a-kopfleiste-zu-zweit.png` | dito | die Kopfleiste im Mehrspieler, ohne Tempoknoepfe |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/5b-hinweis-plus.png` | dito | der Hinweis auf die Plus-Taste |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/5c-hinweis-vorspulen.png` | dito | der Hinweis auf das Vorspulen |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/5d-leertaste.png` | dito | die Leertaste beim Gastgeber |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/5e-leertaste-beim-gast.png` | dito | dieselbe Taste beim Gast |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/6a-host-wartet-auf-mitspieler.png` | dito | "Warte auf Mitspieler" nach 4,6 Sekunden |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/6b-host-mitspieler-ist-weg.png` | dito | der Hinweis mit zwei Knoepfen nach 12,8 Sekunden |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/6c-gast-waehrend-des-abbruchs.png` | dito | der Gast waehrend des Abbruchs |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/6d-host-nach-der-rueckkehr.png` | dito | der Gastgeber nach der Rueckkehr, 28 Ticks ohne Abweichung |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/6e-gast-nach-der-rueckkehr.png` | dito | der Gast nach der Rueckkehr |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp2-a-host-sieht-niemanden.png` | dito | Befund MP-2: der Gastgeber sieht niemanden |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp2-b-gast-wartet-vergebens.png` | dito | Befund MP-2: der Gast wartet vergebens |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp2-c-gast-nach-neuladen.png` | dito | Befund MP-2: erst das Neuladen loeste es |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp2-d-repariert-host.png` | dito | MP-2 repariert, Gastgeber |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp2-e-repariert-gast.png` | dito | MP-2 repariert, Gast |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp3-a-gast-platz-besetzt.png` | dito | Befund MP-3: die Abweisung wurde endlos wiederholt |
+| `docs/reports/sichtpruefung-mehrspieler-2026-09-14/mp3-c-repariert-abweisung.png` | dito | MP-3 repariert: die Abweisung nennt ihren Grund und hoert auf |
 
 Die drei Zeichnungen sind SVG und damit Text: sie lassen sich versionieren und vergleichen, was
 ein Bildschirmfoto nicht kann. Die Farben stammen aus `apps/desktop/src/ui/tokens.ts`. Die neun

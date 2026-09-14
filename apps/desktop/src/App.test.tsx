@@ -6,9 +6,11 @@ import { advanceTicks } from '@worldwar/ai'
 import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
+import { colorForPlayer } from './map/modes.ts'
+import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import type * as FastForwardModule from './game/fastForward.ts'
 
@@ -1998,4 +2000,399 @@ describe('T-M40-14 Ein eigener Marschbefehl stellt eine Verteidigung auf Garniso
     expect(gedrueckt()).toEqual(['Garnison'])
     expect(titel).toMatch(/Garnison/)
   }, 30_000)
+})
+
+/**
+ * Die Oberflaeche kennt ihren Spieler (T-M37-01, R-MP-01, D28.3).
+ *
+ * Bis zum 2026-09-14 stand an neunzehn Stellen in `App.tsx` das Literal fuer die erste
+ * Macht — in der Sicht, im Protokoll, bei den Farben, bei der Frage, welche Provinz mir
+ * gehoert. Der Gast einer Partie zu zweit saehe damit die Welt seines Gegners, mit dessen
+ * Rohstoffen und dessen Armeen. Geprueft wird deshalb dieselbe Oberflaeche am
+ * DEMSELBEN Zustand, einmal fuer den ersten und einmal fuer den zweiten Platz: die
+ * Startzahl steht fest, also erzeugen beide Laeufe Zug um Zug dieselbe Partie.
+ */
+describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betreibt', () => {
+  const stand = () =>
+    neueGameState({ ...DEFAULT_NEW_GAME, nation: world.startPositions[0]!.nation }, world, TEST_RULES)
+
+  /** Die Kennungen in der Gruppe „Eigene Provinzen" des Waehlers. */
+  const eigeneProvinzen = (): string[] => {
+    const select = screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement
+    const gruppe = [...select.querySelectorAll('optgroup')].find((g) => g.label === 'Eigene Provinzen')
+    return [...(gruppe?.querySelectorAll('option') ?? [])].map((option) => option.value).sort()
+  }
+
+  const rohstoffe = () => screen.getByRole('list', { name: 'Rohstoffe' }).textContent ?? ''
+
+  /** Die Fuellung, die der Kartenschluessel „eigen" nennt. */
+  const eigeneFarbe = (): string =>
+    ([...document.querySelectorAll('.legend__item')].find((item) => item.textContent?.includes('eigen'))
+      ?.querySelector('.legend__swatch') as HTMLElement | null)?.style.background ?? ''
+
+  const besitzLaut = (playerId: string): string[] => {
+    const s = stand()
+    return s.provinceOrder.filter((id) => s.provinces[id]?.owner === playerId).sort()
+  }
+
+  it('zeigt jedem Platz seine eigenen Provinzen und seine eigenen Rohstoffe', () => {
+    startGame()
+    const ersterBesitz = eigeneProvinzen()
+    const ersteLeiste = rohstoffe()
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    const zweiterBesitz = eigeneProvinzen()
+
+    // Nicht bloss „anders", sondern genau das, was dem zweiten Platz im Zustand gehoert.
+    expect(zweiterBesitz).toEqual(besitzLaut('p2'))
+    expect(ersterBesitz).toEqual(besitzLaut('p1'))
+    expect(zweiterBesitz).not.toEqual(ersterBesitz)
+    expect(rohstoffe()).not.toEqual(ersteLeiste)
+  })
+
+  it('faerbt den Kartenschluessel mit der Farbe des betriebenen Spielers', () => {
+    startGame()
+    const erste = eigeneFarbe()
+    expect(erste, 'der Schluessel nennt keine eigene Farbe — der Test misst nichts').not.toBe('')
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    const zweite = eigeneFarbe()
+
+    expect(zweite).not.toBe(erste)
+    // Die Farbe kommt aus derselben Tabelle wie die Fuellung der Karte. Der Umweg ueber
+    // ein Probe-Element ist noetig, weil jsdom jeden Farbwert als rgb() zurueckgibt.
+    const probe = document.createElement('span')
+    probe.style.background = colorForPlayer('p2')
+    expect(zweite).toBe(probe.style.background)
+  })
+
+  it('erlaubt Befehle nur in den Provinzen des betriebenen Spielers', () => {
+    const hauptstadtVonP2 = stand().players['p2']!.capitalProvinceId!
+
+    startGame()
+    // Fuer den ersten Platz ist das fremdes Gebiet: die Provinz steht hoechstens unter
+    // „Aufgeklaerte Provinzen", und Ausheben gibt es dort nicht.
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: hauptstadtVonP2 } })
+    expect(screen.queryByRole('region', { name: 'Ausheben' })).toBeNull()
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: hauptstadtVonP2 } })
+
+    expect(eigeneProvinzen()).toContain(hauptstadtVonP2)
+    expect(screen.queryByRole('region', { name: 'Ausheben' })).not.toBeNull()
+  })
+
+  it('liest das Protokoll mit den Augen des betriebenen Spielers', () => {
+    startGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+    const erstesProtokoll = screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? ''
+    expect(erstesProtokoll.length, 'das Protokoll ist leer — der Test misst nichts').toBeGreaterThan(20)
+    cleanup()
+
+    startGame({ viewerId: 'p2' })
+    fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+
+    // Derselbe Spieltag, dieselbe Partie, ein anderer Leser: der Tagesbericht traegt die
+    // Bilanzen der eigenen Macht, und die beiden Maechte wirtschaften verschieden.
+    expect(screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? '').not.toEqual(erstesProtokoll)
+  }, 30_000)
+})
+
+/**
+ * Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2 und AK3, C-11, D28.4).
+ *
+ * Ein gruener Einzeltest sagt nichts ueber das Spiel: keyboard.test.ts prueft die reine
+ * Aufloesung einer Taste, Header.test.tsx die Kopfleiste fuer sich. Hier wird eine
+ * Mehrspielerpartie wirklich angelegt und danach gedrueckt — das ist der Weg, den ein
+ * Spieler nimmt.
+ */
+describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspulen aus', () => {
+  const startZuZweit = (rate = '25') => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: rate } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+  }
+
+  it('zeigt die feste Rate statt der Tempogruppe und bietet kein Vorspulen an', () => {
+    startZuZweit('25')
+
+    expect(screen.getByText(/25 Stunden je Sekunde \(fest\)/)).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Vorspulen' })).toBeNull()
+  })
+
+  it('nennt bei Plus, Minus, Leertaste und F den Grund, statt stumm zu bleiben', () => {
+    startZuZweit()
+
+    fireEvent.keyDown(window, { key: '+' })
+    expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'f' })
+    expect(screen.getByText(/Vorspulen gibt es zu zweit nicht/)).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: ' ' })
+    expect(screen.getByText(/beantragt und angenommen/)).toBeTruthy()
+  })
+
+  it('laesst den Einzelspieler unveraendert — die Gegenprobe am selben Bildschirm', () => {
+    startGame()
+
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
+    expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})
+
+/**
+ * Der Gleichschritt treibt die Uhr der Oberflaeche (T-M37-11, R-MP-03/04/05, D28.4).
+ *
+ * `useNetplay.test.ts` prueft den Haken an zwei nackten Simulationen. Hier haengt die
+ * ganze Anwendung daran: der Spieler sieht die Kopfleiste, den Dialog und die Meldung,
+ * und die Uhr tut, was der Mitspieler zulaesst — oder eben nichts.
+ *
+ * **FALLE aus M22:** jsdom haengt `requestAnimationFrame` an `setInterval`. Ohne den Stub
+ * triebe `advanceTimersByTime` die Bildschleife des Einzelspielers mit, und der Test
+ * maesse die falsche Uhr.
+ */
+describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mitspielers', () => {
+  let uhr = 0
+  const jetzt = () => uhr
+  const warte = (ms: number) => {
+    act(() => {
+      uhr += ms
+      vi.advanceTimersByTime(ms)
+    })
+  }
+
+  beforeEach(() => {
+    uhr = 0
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', () => 0)
+    vi.stubGlobal('cancelAnimationFrame', () => undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  const optionen = {
+    ...DEFAULT_NEW_GAME,
+    nation: world.startPositions[0]!.nation,
+    mode: 'multiplayer' as const,
+    opponents: 3,
+    fixedSpeed: 25,
+  }
+
+  /** Die Anwendung auf dem Platz p1, der Mitspieler p2 als zweite Maschine daneben. */
+  const zuZweit = (opts: { peerLaeuft?: boolean } = {}) => {
+    const start = neueGameState(optionen, world, TEST_RULES)
+    const ctx = { map: world, rules: TEST_RULES }
+    const leitung = createLoopback()
+    const meine = createLockstep({ seat: 'p1', seats: ['p1', 'p2'], state: start, ctx })
+    const peer = createLockstep({ seat: 'p2', seats: ['p1', 'p2'], state: neueGameState(optionen, world, TEST_RULES), ctx })
+    leitung.b.onMessage((message) => {
+      if (message.kind === 'befehle') peer.receive('p1', message)
+      else if (message.kind === 'pause') peer.receivePause('p1', message, uhr)
+    })
+
+    render(
+      <App
+        map={world}
+        rules={TEST_RULES}
+        maps={maps}
+        skipTutorial
+        now={jetzt}
+        netplay={{ lockstep: meine, transport: leitung.a, seat: 'p1', peer: 'p2' }}
+      />,
+    )
+    fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: '25' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    // Der Mitspieler als zweite Maschine — derselbe Takt, den der Haken fuehrt.
+    let abgeschickt: number | null = null
+    if (opts.peerLaeuft !== false) {
+      const schlag = () => {
+        if (peer.status === 'desynced' || peer.status === 'finished') return
+        if (abgeschickt !== peer.tick) {
+          abgeschickt = peer.tick
+          leitung.b.send(peer.emit())
+        }
+        if (peer.canStep() && peer.step().ran) {
+          abgeschickt = peer.tick
+          leitung.b.send(peer.emit())
+        }
+      }
+      setInterval(schlag, 20)
+    }
+    return { meine, peer, leitung }
+  }
+
+  it('laesst die Uhr stehen und sagt nach zwei Sekunden, worauf sie wartet', () => {
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(4000)
+
+    expect(meine.tick, 'die Uhr lief ohne den Mitspieler').toBe(0)
+    expect(screen.getByText('Warte auf Mitspieler …')).toBeTruthy()
+    // Und nicht auch noch „Pausiert": zwei Meldungen nebeneinander waeren eine zu viel.
+    expect(screen.queryByText('Pausiert')).toBeNull()
+  })
+
+  it('laeuft, sobald der Mitspieler mitmacht', () => {
+    const { meine, peer } = zuZweit()
+
+    warte(1000)
+
+    expect(meine.tick, 'kein einziger Tick gelaufen').toBeGreaterThan(10)
+    expect(Math.abs(meine.tick - peer.tick)).toBeLessThanOrEqual(1)
+    expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
+  })
+
+  it('zeigt den Pausenantrag des Mitspielers als Dialog mit zwei Knoepfen', () => {
+    const { leitung, peer } = zuZweit()
+    warte(400)
+
+    act(() => {
+      leitung.b.send(peer.requestPause(uhr))
+    })
+    warte(100)
+
+    const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit' })
+    expect(within(dialog).getByRole('button', { name: 'Pause zulassen' })).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Weiterspielen' })).toBeTruthy()
+  })
+
+  it('zeigt ein Auseinanderlaufen als Meldung, die nicht wegklickbar ist', () => {
+    const { meine } = zuZweit()
+    warte(400)
+    const bisher = meine.tick
+    expect(bisher).toBeGreaterThan(3)
+
+    // Eine Seite wird kuenstlich verfaelscht.
+    act(() => {
+      meine.state.players['p1']!.resources.food += 1000
+    })
+    warte(500)
+
+    const meldung = screen.getByRole('alertdialog', { name: 'Die beiden Spiele laufen auseinander' })
+    expect(meldung.textContent).toMatch(new RegExp(`ab Spielstunde ${bisher}`, 'i'))
+    // Kein Kreuz, kein Escape — eine Meldung, die man wegklicken kann, waere eine
+    // Einladung, weiterzuspielen (R-MP-04/AK1, D28.6).
+    expect(within(meldung).queryByRole('button', { name: 'Schließen' })).toBeNull()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByRole('alertdialog', { name: 'Die beiden Spiele laufen auseinander' })).toBeTruthy()
+
+    // Und die Uhr steht wirklich still.
+    warte(3000)
+    expect(meine.tick).toBe(bisher)
+  })
+
+  it('sagt nach zehn Sekunden, dass der Mitspieler fort ist — mit zwei Knoepfen', () => {
+    // R-MP-07/AK2 an der ganzen Anwendung. `Header.test.tsx` zeigt, dass die Kopfleiste
+    // den Hinweis zeichnen KANN; hier steht, dass ein Spieler ihn wirklich zu sehen
+    // bekommt, wenn sein Mitspieler verschwindet.
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(9000)
+    expect(screen.queryByRole('alert'), 'der Hinweis kam vor den zehn Sekunden').toBeNull()
+    expect(screen.getByText('Warte auf Mitspieler …'), 'die erste Stufe fehlt').toBeTruthy()
+
+    warte(2000)
+    const hinweis = screen.getByRole('alert')
+
+    expect(hinweis.textContent).toMatch(/zehn Sekunden/)
+    expect(within(hinweis).getByRole('button', { name: 'Weiter warten' })).toBeTruthy()
+    expect(within(hinweis).getByRole('button', { name: 'Partie beenden' })).toBeTruthy()
+    expect(meine.tick, 'die Uhr lief ohne den Mitspieler').toBe(0)
+  })
+
+  it('nimmt „Weiter warten" hin, ohne die Uhr anzuruehren', () => {
+    zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Weiter warten' }))
+    warte(500)
+
+    expect(screen.queryByRole('alert'), 'der Hinweis blieb trotz Weiterwartens stehen').toBeNull()
+    // Die erste Stufe bleibt: die Uhr wartet ja wirklich, und das darf sie sagen.
+    expect(screen.getByText('Warte auf Mitspieler …')).toBeTruthy()
+  })
+
+  it('fragt beim Beenden nach, statt es sofort zu tun', () => {
+    // „Beenden" ist die Entscheidung, die man nicht aus Versehen trifft, waehrend man
+    // auf jemanden wartet.
+    const { leitung } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit beenden?' })
+    expect(within(dialog).getByRole('button', { name: 'Doch weiterspielen' })).toBeTruthy()
+    expect(leitung.a.closed, 'die Verbindung war schon zu, bevor jemand zugestimmt hat').toBe(false)
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Beenden' }))
+    warte(100)
+
+    expect(leitung.a.closed).toBe(true)
+    expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
+  })
+
+  it('macht aus dem Mitspieler auf Klick einen Computergegner und gibt die Zeit frei', () => {
+    // R-MP-08/AK1 an der ganzen Anwendung. Vorher: feste Rate als Text, kein Vorspulen,
+    // keine Tempogruppe. Nachher: alles wieder da, und der Platz p2 ist eine KI.
+    const { meine, leitung } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' }), 'die Tempogruppe war zu zweit sichtbar').toBeNull()
+    expect(meine.state.players['p2']!.kind).toBe('human')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Allein weiterspielen' }))
+    warte(200)
+
+    // Der abwesende Spieler ist jetzt ein Computergegner — im Stand, den die Huelle haelt.
+    expect(screen.queryByRole('dialog', { name: 'Partie zu zweit beenden?' })).toBeNull()
+    expect(leitung.a.closed, 'die Verbindung blieb nach der Uebernahme offen').toBe(true)
+
+    // Und die Zeit gehoert wieder dem Spieler: Tempogruppe, Vorspulen, kein fester Text.
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
+    expect(screen.queryByText(/\(fest\)/)).toBeNull()
+    expect(screen.queryByRole('alert'), 'der Hinweis stand nach der Uebernahme noch da').toBeNull()
+  })
+
+  it('laeuft nach der Uebernahme ohne Verbindung weiter', () => {
+    // Die Partie ist danach eine Einzelspielerpartie mit allem, was dazugehoert - und das
+    // geht nur, weil es derselbe Zustand ist (D28.2).
+    const { meine } = zuZweit({ peerLaeuft: false })
+    warte(11_000)
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Allein weiterspielen' }))
+    warte(200)
+
+    const vorher = meine.tick
+    // Die Uhr des Einzelspielers haengt an rAF, und rAF ist in diesem Test gestubbt -
+    // gemessen wird deshalb, dass die Zeit wieder BEDIENBAR ist und die Sperre weg.
+    fireEvent.click(screen.getByTitle('25 Stunden je Sekunde'))
+    warte(100)
+
+    expect(screen.queryByText('Warte auf Mitspieler …')).toBeNull()
+    expect(meine.tick, 'der Gleichschritt rechnete nach der Uebernahme weiter').toBe(vorher)
+  })
+
+  it('uebernimmt nichts von selbst, auch nach Minuten nicht', () => {
+    // R-MP-08/AK2 an der ganzen Anwendung.
+    const { meine } = zuZweit({ peerLaeuft: false })
+
+    warte(300_000)
+
+    expect(meine.state.players['p2']!.kind).toBe('human')
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
+    expect(screen.getByRole('alert')).toBeTruthy()
+  })
 })

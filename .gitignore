@@ -1,5 +1,9 @@
 node_modules/
 dist/
+# Der Bau MIT Mehrspielereinstieg (T-M39-04): dieselbe Quelle, die Bauflagge gesetzt.
+# Er ist die Gegenprobe zu "kein WebSocket im ausgelieferten Buendel" und wird wie jeder
+# andere Bau nicht eingecheckt - die MESSUNG steht in docs/reports/packaging-netfree.json.
+dist-mp/
 coverage/
 *.tsbuildinfo
 .DS_Store

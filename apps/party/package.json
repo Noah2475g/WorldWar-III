@@ -1,0 +1,8 @@
+{
+  "name": "@worldwar/party",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "description": "Hostdienst fuer eine Partie zu zweit: liefert das gebaute Buendel aus und reicht Nachrichten weiter. Keine Abhaengigkeit, kein Konto, kein Endpunkt im Internet."
+}

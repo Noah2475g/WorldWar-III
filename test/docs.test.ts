@@ -374,3 +374,106 @@ describe('R-UI-05 Die Anleitung widerspricht den Regeln nicht', () => {
     ).toBe(erstattung === 500)
   })
 })
+
+/**
+ * Die Anleitung erklaert die Einladung (T-M39-07, R-UI-05, D28.10).
+ *
+ * Das Spiel erklaert die Geschwindigkeitsregelung ausfuehrlich, weil es dafuer existiert.
+ * Die Einladung braucht denselben Rang: sie ist der einzige Teil, bei dem ein zweiter
+ * Mensch etwas tun muss, und was hier nicht steht, erfaehrt er nirgends.
+ *
+ * Gebunden sind **drei Dinge, die sonst niemand erfaehrt** — und sie sind die drei, bei
+ * denen eine Enttaeuschung hinterher teurer waere als ein Satz vorher.
+ */
+describe('R-UI-05 Die Anleitung erklaert die Einladung', () => {
+  const abschnitt = guide.slice(guide.indexOf('## Eine Partie zu zweit'))
+
+  it('findet den Abschnitt ueberhaupt und nimmt ihn ernst', () => {
+    // Sonst pruefen die Zusicherungen darunter eine leere Zeichenkette und sind gruen,
+    // ohne etwas gesehen zu haben — dieselbe Falle wie beim Bauabbruch weiter oben.
+    expect(guide, 'Kein Abschnitt "Eine Partie zu zweit" in der Anleitung').toContain(
+      '## Eine Partie zu zweit',
+    )
+    expect(abschnitt.length, 'der Abschnitt ist kuerzer als der zur Geschwindigkeit').toBeGreaterThan(600)
+  })
+
+  it('sagt, dass Tempo und Vorspulen wegfallen', () => {
+    expect(abschnitt).toMatch(/Tempo und Vorspulen fallen weg/)
+    expect(abschnitt).toContain('Vorspulziele')
+  })
+
+  it('sagt, dass eine Pause beantragt und angenommen wird', () => {
+    expect(abschnitt).toMatch(/beantragt und angenommen/)
+    expect(abschnitt, 'die dreissig Sekunden fehlen').toMatch(/dreißig Sekunden/)
+    expect(abschnitt, 'das einseitige Fortsetzen fehlt').toMatch(/Fortsetzen darf jeder allein/)
+  })
+
+  it('sagt, dass jeder den vollen Zustand hat — es gibt keinen Schummelschutz', () => {
+    // D28.2, und es ist die einzige Einschraenkung, die der Gast VORHER wissen muss.
+    expect(abschnitt).toMatch(/kein(en)? Schummelschutz/)
+    expect(abschnitt).toMatch(/vollen Spielstand im Speicher/)
+  })
+
+  it('beschreibt beide Seiten der letzten Meile — und nennt Tailscale beim Namen', () => {
+    // T-M39-05: was Noah einmal tut (Geraet freigeben, Einladung verschicken) und was der
+    // Gast einmal tut (installieren, annehmen).
+    expect(abschnitt).toContain('Tailscale')
+    expect(abschnitt, 'die Einladung an den Gast fehlt').toMatch(/Invite external users|einladen/)
+    expect(abschnitt, 'der Bereich, an dem man eine Tailnet-Adresse erkennt, fehlt').toContain(
+      '100.64.0.0/10',
+    )
+    expect(abschnitt, 'der Befehl zum Pruefen fehlt').toContain('tailscale ip -4')
+  })
+
+  it('sagt, dass der Link ohne Tailscale nicht funktioniert — und dass das der Zweck ist', () => {
+    expect(abschnitt).toMatch(/kein öffentlicher Endpunkt|Kein öffentlicher Endpunkt/)
+    expect(abschnitt).toMatch(/kein Fehler des Spiels|keine Störung/)
+  })
+
+  it('nennt den einen Befehl, mit dem es losgeht', () => {
+    expect(abschnitt).toContain('pnpm mp:host')
+    expect(abschnitt, 'der Port fehlt').toContain('7749')
+  })
+
+  it('erklaert die drei Stufen eines Abrisses und das Fortsetzen ueber mehrere Abende', () => {
+    expect(abschnitt).toMatch(/Warte auf\s+Mitspieler/)
+    expect(abschnitt).toMatch(/zum Computergegner/)
+    expect(abschnitt).toMatch(/einzige\*{0,2} Stelle, an der ein\s+Spielstand über die Leitung geht/)
+  })
+})
+
+/**
+ * Der Abnahmebogen fuehrt AK-9 — und zwar OHNE eine neue nummerierte Frage (T-M39-07).
+ *
+ * Der Bogen oben ist die Abnahme der **V1**; sie ist abgeschlossen. Eine neue nummerierte
+ * Frage darin machte sie ueber Nacht wieder unvollstaendig, denn `playtestStatus` zaehlt
+ * jede unbeantwortete Frage als offen — und AK-7 stuende wieder auf ⏳. Genau die
+ * Fehlerklasse, die der Nachtrag 2.15 einmal hatte: eine spaeter zugefuegte Zeile macht
+ * ein abgenommenes Kriterium unerfuellbar.
+ */
+describe('R-UI-05 Der Playtest-Bogen fuehrt AK-9, ohne die V1-Abnahme anzufassen', () => {
+  it('beschreibt den Durchgang zu zweit mit allen sechs Punkten', () => {
+    const abschnitt = playtest.slice(playtest.indexOf('## Eine Partie zu zweit'))
+    expect(abschnitt.length, 'Kein Abschnitt zur Partie zu zweit im Bogen').toBeGreaterThan(400)
+    expect(abschnitt).toContain('AK-9')
+    for (const punkt of [
+      'Einladung kam an',
+      'nichts installieren',
+      'dreißig zusammenhängende Spieltage',
+      'beantragte und angenommene Pause',
+      'Verbindungsabbruch',
+      'Zustandsprüfsumme',
+    ]) {
+      expect(abschnitt, `Der Punkt "${punkt}" fehlt`).toContain(punkt)
+    }
+  })
+
+  it('fuegt dem Bogen keine nummerierte Frage hinzu', () => {
+    // Gemessen und nicht beabsichtigt: die Fragen des Bogens und die Zeilen des
+    // Antwortbogens muessen deckungsgleich bleiben, sonst faellt AK-7 zurueck auf offen.
+    const fragen = parseQuestions(playtest).map((frage) => frage.nr)
+    const antworten = [...parseAnswers(answerSheet).keys()]
+    expect(fragen).toEqual(antworten)
+    expect(playtestStatus(playtest, answerSheet).unanswered).toEqual([])
+  })
+})

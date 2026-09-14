@@ -4,6 +4,8 @@ import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { parseRules } from '@worldwar/core'
 import type { MapData } from '@worldwar/core'
 import { App } from './App.tsx'
+import { parseNetLink, type NetLink } from './net/link.ts'
+import type { Transport } from '@worldwar/netplay'
 import './ui/app.css'
 
 import worldMap from '../../../data/maps/world.json' with { type: 'json' }
@@ -45,15 +47,59 @@ const maps = [
   { id: 'testworld', name: 'Kleine Welt', data: testMap as unknown as MapData },
 ]
 
+/**
+ * Der Einstieg in eine Partie zu zweit (T-M39-02, T-M39-04, R-MP-09/AK3, D28.9).
+ *
+ * Zwei Dinge stehen hier, und beide sind Absicht:
+ *
+ * **Der Link wird gelesen, bevor irgendetwas gezeichnet wird.** `parseNetLink` ist rein
+ * und kennt keine Leitung; steht im Fragment keine Einladung, gibt es `null` zurück, und
+ * das Spiel startet im Einzelspieler wie immer.
+ *
+ * **Die Leitung kommt über einen dynamischen Import hinter der Bauflagge.** `__MULTIPLAYER__`
+ * ist im gewöhnlichen Bau ein literales `false`; Rollup schneidet diesen Zweig samt des
+ * `import()` heraus, und im ausgelieferten Tauri-Bündel steht kein `WebSocket` — gemessen
+ * am Erzeugnis (T-M38-05, `docs/reports/packaging-netfree.json`), nicht behauptet.
+ * `pnpm mp:host` setzt die Flagge und baut dasselbe Bündel **mit** Einstieg; das ist der
+ * Bau, den der Hostdienst ausliefert und den beide Seiten der Partie bekommen
+ * (R-MP-11/AK2).
+ *
+ * Die Zusage, die unabhängig davon trägt, bleibt `connect-src 'none'` im kompilierten
+ * Programm: sie verbietet die Verbindung, **gleich wer sie versucht**.
+ */
 const root = document.getElementById('root')
-if (root) {
+const link = parseNetLink(globalThis.location?.hash ?? '')
+
+function zeichnen(party?: { link: NetLink; connect: (url: string) => Transport }): void {
+  if (!root) return
   createRoot(root).render(
     <StrictMode>
       {/* Ohne diese Grenze ergibt jeder Renderfehler eine weisse Flaeche ohne Hinweis
           (T-M14-10, Befund N6). */}
       <ErrorBoundary>
-        <App map={worldMap as unknown as MapData} rules={rules} maps={maps} />
+        <App
+          map={worldMap as unknown as MapData}
+          rules={rules}
+          maps={maps}
+          {...(party ? { party } : {})}
+        />
       </ErrorBoundary>
     </StrictMode>,
   )
+}
+
+if (__MULTIPLAYER__ && link) {
+  // Erst laden, dann zeichnen — sonst gaebe es zwei Bilder hintereinander, und das erste
+  // waere ein leerer Anlegedialog vor dem Beitrittsbildschirm.
+  void import('./net/websocketTransport.ts')
+    .then(({ createWebSocketTransport }) => {
+      zeichnen({ link, connect: (url) => createWebSocketTransport({ url }) })
+    })
+    .catch(() => {
+      // Ein Buendel ohne Mehrspielerteil ist kein Fehler, sondern der Regelfall des
+      // ausgelieferten Programms: dann laeuft das Spiel im Einzelspieler weiter.
+      zeichnen()
+    })
+} else {
+  zeichnen()
 }

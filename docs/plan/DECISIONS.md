@@ -2784,3 +2784,367 @@ hat eine Aufgabe in `tasks.yaml` — das ist Absicht: ein Plan, der Fragen als A
 nie fertig.
 
 ---
+
+---
+
+## 2026-09-14 · T-M37-01 · Der Platz kommt aus dem Zustand, nicht aus einer Kennung
+
+**Entscheidung:** `defaultViewer(state)` liefert die erste **menschliche** Macht aus
+`state.playerOrder`; `UiState.viewerId` ist `null`, solange niemand ausdrücklich einen Platz
+gesetzt hat, und `App` nimmt ihn optional als Eigenschaft entgegen (`props.viewerId`).
+
+**Begründung:** D28.3 verlangt „ein `viewerId` aus dem Partiezustand". Die naheliegende Fassung —
+ein Vorgabewert `'p1'` in der Hülle — wäre dasselbe Literal an einer neuen Stelle und hätte den
+Wächter aus T-M37-02 sofort ausgelöst. `playerOrder` ist ein ausdrückliches Feld des Zustands und
+keine Schlüsselreihenfolge (`state/types.ts`, Regel 3), also ist die Antwort auf beiden Rechnern
+dieselbe. `null` heißt dabei nicht „niemand", sondern „die erste menschliche Macht dieses Standes".
+
+**Auswirkung:** Der Einzelspieler verhält sich unverändert. Der Gast einer Partie zu zweit bekommt
+seinen Platz über `props.viewerId` (M39: aus dem Link) oder über die Aktion `setViewer` (M38: aus
+der `willkommen`-Nachricht). `legendFor` nimmt seither die Farbe des Zusehenden als Erstes.
+
+---
+
+## 2026-09-14 · T-M37-03 · Eine Mehrspielerpartie beginnt vorerst lokal
+
+**Entscheidung:** Der Anlegedialog bietet die Partieart und die feste Rate schon jetzt an. Ohne
+Hostdienst (M38) beginnt eine so angelegte Partie **lokal**: zwei menschliche Mächte am selben
+Bildschirm, wie der Hot-Seat, den der Kern seit M5 kann. Der Dialog sagt das ausdrücklich
+(`newGame.multiplayerPending`).
+
+**Begründung:** Die Alternative wäre, die Wahl bis M38 zu verstecken. Dann hätte T-M37-04 („zu
+zweit sind Tempo, Tasten und Vorspulen aus") keinen Weg, auf dem ein Mensch ihn auslöst, und die
+Zusage wäre nur im Test belegt — genau die Art Zusage, die im Browser tot ist und im Test grün
+(Lehre vom 2026-09-14, `MEMORY`: „Zusage grün im Test, tot im Browser"). Ein Hinweis, der sagt, was
+noch fehlt, ist ehrlicher als ein Schalter, den es nicht gibt.
+
+**Auswirkung:** Wer heute „zu zweit" wählt, bekommt eine Partie mit zwei menschlichen Mächten,
+fester Rate, ohne Tempoknöpfe und ohne Vorspulen. M38 setzt die Verbindung dahinter; die Naht ist
+`App`s Eigenschaft `netplay` und sonst nichts.
+
+---
+
+## 2026-09-14 · T-M37-10 · Der Zustimmende legt den Tick der Pause fest, nicht der Antragsteller
+
+**Entscheidung:** Die `ja`-Nachricht trägt `abTick = max(beantragter Tick, eigener Tick + 2)` —
+gerechnet vom **Zustimmenden**, nicht vom Antragsteller.
+
+**Begründung:** D28.7 sagt „beide halten ab Tick T+2 an", mit T aus dem Antrag. Beim Anschließen
+(T-M37-11) riss genau das: zwischen Antrag und Zustimmung vergeht Bedenkzeit, und in der Zeit läuft
+die Partie weiter. Gemessen im Haken-Test — der Antragsteller stand bei Tick 13, der verabredete
+Halt lag bei 12. Die schnellere Seite hätte rückwärts anhalten müssen, und R-MP-05/AK2 („beide
+Uhren beim **demselben** Tick") wäre gerissen. Der Zustimmende ist der Spätere von beiden: der
+Gleichschritt hält die zwei Uhren höchstens einen Tick auseinander, und `+ 2` deckt diesen Tick und
+den Weg der Nachricht ab.
+
+**Auswirkung:** `pauseAnswer(state, art, { tick, delayTicks })`. Ein Test in `pause.test.ts` hält
+den Fall fest („verschiebt den Halt, wenn die Zustimmung später kommt als der Antrag galt"): sechs
+Ticks Bedenkzeit, und beide stehen danach bei demselben, neu gerechneten Tick.
+
+---
+
+## 2026-09-14 · T-M37-11 · Wer ein Auseinanderlaufen merkt, sagt es — mit beiden Prüfsummen
+
+**Entscheidung:** `EndMessage` bekommt ein optionales Feld `hashes: Record<PlayerId, string>`. Wer
+ein Auseinanderlaufen zuerst bemerkt, schickt genau **eine** `ende`-Nachricht mit beiden
+Prüfsummen, je Platz benannt; `Lockstep.receiveEnd` baut daraus denselben Befund auf der Gegenseite.
+
+**Begründung:** R-MP-04/AK1 verlangt, dass die Partie anhält **und beiden Spielern sagt**, ab
+welchem Tick sie auseinanderlaufen. Wer es zuerst merkt, hört auf zu rechnen und damit auch auf zu
+senden — die Gegenseite blieb bei „warte auf Mitspieler" stehen und erfuhr nie, was geschehen ist.
+Das fiel erst im Haken-Test auf, nicht in der Maschine: dort verfälscht der Test **beide** Seiten
+symmetrisch, im Anschluss an die Oberfläche nur eine. Benannt nach Platz und nicht als
+„eigene/fremde", weil dieselbe Nachricht auf beiden Rechnern gelesen wird und sich die Bedeutung von
+„eigen" dabei umdreht.
+
+**Auswirkung:** Eine Ergänzung am Protokoll, keine Änderung: das Feld ist optional, und eine
+Nachricht ohne es wird weiter angenommen (der Empfänger nimmt dann seine eigene Prüfsumme und lässt
+die fremde leer). Der Haken schickt sie genau einmal je Partie.
+
+---
+
+## 2026-09-14 · T-M37-11 · Das Schleifendoppel puffert, was vor dem ersten Hörer ankommt
+
+**Entscheidung:** `createLoopback()` legt Nachrichten beiseite, solange kein Hörer angemeldet ist,
+und liefert sie dem ersten Hörer nach — in der Reihenfolge, in der sie ankamen.
+
+**Begründung:** Ohne den Puffer ging die **erste** Nachricht verloren, sobald eine Seite eher
+sendete als die andere ihren Hörer anmeldete. Genau das passiert, wenn zwei React-Komponenten
+nacheinander eingehängt werden. Im Gleichschritt ist eine verlorene Nachricht kein Schluckauf,
+sondern ein Stillstand: die Gegenseite wartet auf eine Liste für Tick 0, die nie wieder kommt, und
+die Partie steht nach genau einem Tick. Eine echte Leitung puffert genauso; ein Doppel, das es nicht
+tut, wäre freundlicher zur Umsetzung und härter zur Wirklichkeit.
+
+**Auswirkung:** Der Fehler kostete eine halbe Stunde Suche und wäre in M38 an einer echten Leitung
+nicht mehr reproduzierbar gewesen. Die Vertragstestreihe aus T-M38-01 muss dieselbe Zusage vom
+WebSocket-Transport verlangen.
+
+---
+
+## 2026-09-14 · T-M38-01 · Die Vertragsreihe liegt in `netplay` und geht nicht aus `index.ts` hinaus
+
+**Entscheidung:** `transportContract(name, factory)` steht in
+`packages/netplay/src/transportContract.ts` und wird **nicht** aus
+`packages/netplay/src/index.ts` re-exportiert. Wer sie braucht, nennt sie beim Pfad; die
+Browserseite tut das über einen relativen Import.
+
+**Begründung:** Die Reihe importiert `vitest`. Stünde sie im Sammelexport, zöge jedes
+`import … from '@worldwar/netplay'` der Anwendung den Testläufer in das ausgelieferte
+Bündel — also auch in das Tauri-Programm, dessen Netzfreiheit T-M38-05 am Erzeugnis misst.
+
+**Verworfen:** sie in `packages/testkit` zu legen, neben `storagePortContract` (das wäre
+das naheliegende Muster). Testkit müsste dafür von `netplay` abhängen, und `netplay` hängt
+als Testabhängigkeit schon an `testkit` — `pnpm install` meldete prompt einen
+Arbeitsbereichs-Zyklus, den es vorher nicht gab. Ein Zyklus für einen Import, der zur
+Laufzeit gar nicht stattfindet, ist ein schlechter Tausch.
+
+**Auswirkung:** Ein relativer Import in `websocketTransport.test.ts`
+(`../../../../packages/netplay/src/transportContract`), so wie `test/guards/text-keys.test.ts`
+seit M21 `de.ts` holt. Keine Änderung an `vitest.config.ts`, keine an einer `package.json`.
+
+---
+
+## 2026-09-14 · T-M38-04 · Die Verbotsliste sticht die Ausnahmeliste
+
+**Entscheidung:** Der Netz-Wächter führt zwei Listen: `NETWORK_ALLOWED` (`apps/party/`,
+`apps/desktop/src/net/`) und `NETWORK_NEVER` (`packages/core/`, `packages/ai/`,
+`packages/shared/`, `packages/netplay/`). Steht ein Treffer in einem Verzeichnis der
+zweiten Liste, wird er gemeldet — **auch wenn dasselbe Verzeichnis in der ersten steht**.
+
+**Begründung:** R-MP-09/AK2 verlangt, dass in den vier Paketen „auch der erlaubte Fall
+verboten" ist. Mit nur einer Ausnahmeliste wäre das ein Satz ohne Wirkung: die Pakete
+stehen ohnehin nicht darauf, und die Zusicherung prüfte nichts. Mit der Vorrangregel gibt
+es eine Gegenprobe, die wirklich beißt — sie reicht `packages/netplay/` als *erlaubt*
+herein, und der Treffer wird trotzdem gemeldet. Gemessen: ohne die Vorrangregel fallen
+genau diese zwei Zusicherungen.
+
+**Auswirkung:** Wer eines der vier Pakete eines Tages oben einträgt, hat den Wächter nicht
+überzeugt, sondern nur zweimal geschrieben.
+
+---
+
+## 2026-09-14 · T-M38-05 · Die zweite Seite der Verpackungsprüfung kommt aus dem kompilierten Programm
+
+**Entscheidung:** `scripts/measure-netfree.mjs` liest die Inhaltsrichtlinie aus
+`worldwar.exe` und schreibt sie nach `docs/reports/packaging-netfree.json`; der Wächter
+hält den **gemessenen** Text gegen die **heutige** Konfiguration. Sind sie ungleich, ist
+der Lauf rot, bis neu gebaut und neu gemessen ist.
+
+**Begründung:** Der bestehende Block prüft `tauri.conf.json` gegen
+`capabilities/local-only.json` — zwei JSON-Dateien derselben Hand. Er ist für das, was er
+prüft, richtig und wäre grün geblieben, wenn nie ein Bau gelaufen wäre (Befunde 17, 20,
+21). Die Gleichheit zweier Texte, von denen einer aus einem Compiler kommt, ist eine
+andere Aussage — und zugleich die Frischeprüfung, ohne dass jemand `git` befragen muss.
+
+**Verworfen:** die Berechtigungen im Erzeugnis zu suchen. Gemessen: sie stehen dort nicht
+als Text (`local-only` 0×, `allow-open` 0×, `dialog:` 0×, während `dialog` 13× vorkommt);
+Tauri backt die Zugriffsliste in eine eigene Darstellung. Eine Zusicherung darauf wäre eine
+Prüfung über dem Nichts. Ebenfalls verworfen: eine Suche nach `http:` in der Binärdatei —
+sie findet `build.devUrl` und wäre ein Fehlalarm mit Ansage. Beides steht im Wächter, statt
+verschwiegen zu werden.
+
+---
+
+## 2026-09-14 · T-M38-08 · „Wer wartet, wiederholt" — statt einen Abriss zu erkennen
+
+**Entscheidung:** Die Hülle schickt unbestätigte Befehlslisten noch einmal, solange die Uhr
+wartet (höchstens einmal je Sekunde, `RESEND_AFTER_MS`). Sie fragt den Transport **nicht**,
+ob es einen Abriss gab.
+
+**Begründung:** Drei Gründe, und der dritte ist der wichtigste. (1) Ein Schleifendoppel
+kann die Frage gar nicht beantworten, und der Haken soll gegen beide Umsetzungen gleich
+laufen. (2) Ein „reconnected"-Ereignis wäre eine zweite Wahrheit neben dem, was die
+Gegenseite tatsächlich hat — und die erste, die davon abweicht, merkt niemand. (3) Die
+Regel deckt mehr ab als der Abriss: eine einzelne verlorene Nachricht, eine langsame
+Gegenseite und den Fall, in dem die Verbindung genau **zwischen Senden und Ankommen**
+starb. Erneut zu senden kostet nichts, weil `put()` je Tick und Platz genau eine Nachricht
+ablegt; eine eigene Zusicherung hält das fest.
+
+**Auswirkung:** Der Transport braucht keine Rückmeldung über Wiederverbindungen, und
+`Lockstep.pending()` darf blind wiederholt werden. Gemessen: fünf Sekunden ohne Leitung,
+danach fängt sich die Partie **ohne Anstoß**, und ein Befehl aus der Lücke wirkt auf beiden
+Seiten.
+
+---
+
+## 2026-09-14 · T-M38-09 / T-M38-10 · Der zweite Knopf fragt nach, und die Übernahme ist ein Klick
+
+**Entscheidung:** Der Hinweis „Ihr Mitspieler ist fort" hat genau zwei Knöpfe — *Weiter
+warten* und *Partie beenden*. „Beenden" öffnet einen Dialog mit drei Antworten: allein
+weiterspielen (der abwesende Spieler wird zum Computergegner), beenden, doch weiterspielen.
+
+**Begründung:** R-MP-07/AK2 verlangt „die Wahl zwischen Warten und Beenden" — genau zwei
+Knöpfe in der Kopfleiste, und dabei bleibt es. Die Übernahme (R-MP-08) ist keine dritte
+Wahl auf derselben Ebene, sondern die Antwort auf die Frage „und was jetzt?": sie gehört
+hinter den Klick, nicht neben ihn. Und sie geschieht **nie von selbst** — ein Spiel, das
+nach einer Weile allein entscheidet, wem die Armeen gehören, ist kein Spiel zu zweit mehr.
+
+**Auswirkung:** „Weiter warten" gilt bis zum nächsten Tick, nicht für immer: kommt die
+Gegenseite zurück und steht die Uhr danach wieder, ist das eine neue Lage und verdient eine
+neue Meldung. Ein „Weiter warten", das für immer gälte, wäre ein Schalter zum Abschalten
+der einzigen Auskunft.
+
+---
+
+## 2026-09-14 · T-M38-10 · Die Übernahme setzt ein Feld und erfindet keine Schwierigkeit
+
+**Entscheidung:** `takeOverSeat(state, absent)` setzt `players[absent].kind = 'ai'` und
+lässt alles andere stehen — insbesondere `difficulty` (bei einem Menschen `null`) und
+`state.ai` (bei einem Menschen leer).
+
+**Begründung:** Ein Mensch hat keine Schwierigkeitsstufe, und `runAi` liest dann `normal`.
+Eine zu erfinden hieße, die Partie beim Übernehmen heimlich zu verändern — der
+verbleibende Spieler bekäme einen anderen Gegner, als bis eben am Tisch saß. Das Gedächtnis
+legt der Läufer sich beim ersten Denken selbst an (`emptyMemory`); gemessen über 240 Ticks:
+`state.ai['p2']` ist vorher `undefined` und danach da.
+
+**Auswirkung:** Kein Kern angefasst — „menschlich" ist seit M5 nur ein Attribut
+(`hotseat.test.ts`). Und die übernommene Partie geht durch denselben Spielstand wie jede
+andere: `saveTo`/`loadFrom` über einen `MemoryStorage`, danach dieselbe Prüfsumme und
+derselbe nächste Tick. Das ist der greifbarste Gewinn des Gleichschritts (D28.2).
+
+---
+
+## 2026-09-14 · T-M39-02 · `willkommen` kommt vor dem benannten `hallo`
+
+**Entscheidung:** Die Anmeldung (`hallo` **ohne** Namen) kommt beim Verbinden, die
+Bedingungen (`willkommen`) als Antwort darauf, und der Name in einem **zweiten** `hallo`,
+wenn der Gast beitritt. Danach `probe` in beide Richtungen.
+
+**Warum nicht anders.** `MEHRSPIELER.md` §3.2 führt `hallo` als erste Art auf — das bleibt
+so, denn die Anmeldung trägt die Protokollfassung, und ohne sie beginnt nichts
+(R-MP-06/AK1). §3.7 verlangt aber: „der Beitrittsbildschirm zeigt, worauf man sich
+einlässt, bevor irgendetwas passiert. **Dann** Name eintragen und beitreten." Die
+Bedingungen kennt nur der Host. Also muss `willkommen` vor dem Namen liegen, und der Name
+braucht eine zweite Nachricht.
+
+**Die verworfene Alternative:** die Einladung im Hostdienst ablegen, damit der Gast sie per
+HTTP holt, bevor er die Leitung baut. Das kostet zwei Dinge, die beide zu teuer sind: der
+Dienst wäre nicht mehr Briefträger, sondern hielte Partiedaten — die dritte Meinung darüber,
+was gerade gilt, die D28.2 ausschließt; und das Geheimnis müsste für die Abfrage in eine
+Anfragezeile, obwohl es genau deshalb hinter dem Rautezeichen steht (D28.10).
+
+**Auswirkung:** keine achte Nachrichtenart. Und eine Auskunft mehr, die es sonst nicht
+gäbe: zwischen den beiden `hallo` sieht der Gastgeber einen Gast **ohne Namen** — „jemand
+hat den Link geöffnet und trägt gerade seinen Namen ein". Ohne sie klebt er den Link ein
+zweites Mal in den Chat. Befund M39-1.
+
+---
+
+## 2026-09-14 · T-M39-04 · Die Bauflagge statt der gestrichenen Zusicherung
+
+**Entscheidung:** Der Mehrspielereinstieg hängt in `main.tsx` an einem **dynamischen**
+Import hinter `__MULTIPLAYER__`; die Flagge ist im gewöhnlichen Bau ein literales `false`,
+und `pnpm mp:host` setzt sie. Die Zusicherung „kein `WebSocket` im ausgelieferten Bündel"
+bleibt — sie ist jetzt eine Aussage über die **Flagge** statt über eine Unterlassung.
+
+**Warum überhaupt eine Entscheidung nötig war.** Befund M38-5 hat es vorhergesagt: bis M38
+war die Zusicherung wahr, weil kein Pfad von `main.tsx` zum Transport führte. T-M39-02 baut
+diesen Pfad. Die drei Wege waren: (a) die Zusicherung streichen, (b) sie durch eine
+Zusicherung am **Verhalten** ersetzen (der Aufruf im Tauri-Bau scheitert an
+`connect-src 'none'`), (c) eine **Bauflagge**, die den Einstieg herausschneidet.
+
+(a) fällt aus — M38-5 verbietet es ausdrücklich, und mit Recht: eine Zusage, die beim ersten
+Widerspruch weicht, ist keine. (b) wäre am stärksten, verlangt aber, das gebaute Programm zu
+starten und eine fehlgeschlagene Verbindung zu messen — jedes Mal, in jedem `pnpm verify`.
+(c) ist billig, deterministisch und **an der Sache**: Noahs dritte Festlegung lautet nicht
+„die Verbindung scheitert", sondern „das ausgelieferte Programm bleibt netzfrei". Ein
+Programm, das den Einstieg gar nicht enthält, erfüllt das strenger als eines, in dem er
+scheitert.
+
+**Gemessen, und die zweite Zeile ist die eigentliche Aussage:** ohne Flagge 2 Dateien und
+**0** Treffer, mit Flagge 3 Dateien (ein eigener Brocken `websocketTransport-*.js`) und 1
+Treffer; das neu gebaute `worldwar.exe` (6 789 632 B) trägt `WebSocket` **0×** und
+`connect-src 'none'` 1×. Ohne die zweite Messung wäre die erste kein Beleg für die Flagge,
+sondern ein Zufall.
+
+**Der Preis, gemessen:** ein zweiter Bauordner muss an sechs Stellen bekannt gemacht werden
+(`.gitignore`, `eslint.config.js`, `tsconfig.json`, beide vitest-Konfigurationen,
+`test/guards/scan.ts`). Zwei davon sind erst aufgefallen, als `pnpm verify` rot wurde —
+einmal mit Hunderten Lint-Fehlern aus erzeugtem Code, einmal mit dem Netz-Wächter, der das
+**gebündelte** `new WebSocket` als Verstoß meldete. Beides steht als Befund M39-5.
+
+---
+
+## 2026-09-14 · T-M39-01 · Der Platz kommt aus der Rolle, nicht aus der Ankunft
+
+**Entscheidung:** Der Link trägt die Rolle im Weg hinter dem Rautezeichen — `#/gastgeben`
+für den Gastgeber, `#/beitreten` für den Gast —, und die Verbindung verlangt danach einen
+**bestimmten** Platz (`p1` bzw. `p2`). Der Raum weist ab, wenn er besetzt ist, statt den
+anderen zu vergeben.
+
+**Begründung:** Bis M38 bekam der erste Ankommende `p1`. Der Platz ist aber die Kennung, mit
+der die Oberfläche alles betrachtet (`viewerId`, T-M37-01), und er steht in `playerOrder`,
+nach der beide Seiten die Befehle sortieren (T-M37-07). Nach Ankunftsreihenfolge zu vergeben
+hieße: wer schneller klickt, spielt die Nation des Gastgebers. Das fällt nicht als Fehler
+auf, sondern als „komisches Spiel".
+
+**Auswirkung:** `seatsOfRole` gibt **beide** Kennungen zurück, den eigenen Platz und den des
+anderen. Eine zweite Rechnung („wenn ich `p1` bin, ist der andere `p2`") wäre genau die
+Annahme, die T-M37-01 aus der Oberfläche entfernt hat; deshalb steht sie an **einer** Stelle,
+und der Wächter `no-hardcoded-player` führt genau diese eine als begründete Ausnahme.
+
+---
+
+## 2026-09-14 · T-M39-01 · Eine Abweisung schließt mit 4001 und nicht mit 1000
+
+**Entscheidung:** Wer wegen eines falschen Geheimnisses, einer unbekannten Raumkennung, eines
+vollen Raumes oder eines besetzten Platzes abgewiesen wird, bekommt einen Schließrahmen mit
+Code **4001** (privater Bereich von RFC 6455) statt `1000`.
+
+**Begründung:** Der Transport im Browser baut eine abgerissene Leitung mit wachsendem Abstand
+wieder auf — 250, 500, 1000, 2000, 4000, 8000 ms (T-M38-06). Bei einer **Abweisung** wären
+das sechsmal dieselbe verschlossene Tür und sechzehn Sekunden, in denen der Gast nicht
+erfährt, was los ist. Ein Code über 4000 heißt: das ist kein Netzfehler, sondern eine
+Antwort.
+
+**Was dabei geändert wurde:** `Connection.close` nimmt einen Code; der Test aus M38, der für
+einen vollen Raum `1000` erwartete, erwartet jetzt `4001` — mit einem Satz daneben, warum.
+
+---
+
+## 2026-09-14 · T-M39-01 · Die Einladung überlebt den leeren Raum
+
+**Entscheidung:** `Rooms` trennt **Einladung** (Kennung und Geheimnis) von **Raum** (wer
+gerade sitzt). Der Raum verschwindet weiterhin, sobald niemand mehr darin sitzt; die
+Einladung bleibt, solange der Dienst läuft.
+
+**Begründung:** T-M38-07 hat „ein leerer Raum verschwindet" gebaut, und das bleibt richtig —
+§6 schließt Zustand über die Partie hinaus aus. Aber der Link zeigt auf die **Kennung**.
+Verlören beide Seiten für zehn Sekunden die Verbindung, wäre der Link tot, und der Abend mit
+ihm. Was die Einladung hält, ist eine Adresse und ein Geheimnis; beides stirbt mit dem
+Prozess.
+
+---
+
+## 2026-09-14 · T-M39-06 · Die Probe nennt ihren Startstand, statt immer zu übertragen
+
+**Entscheidung:** `ProbeMessage` trägt zusätzlich `fromHash` — die Prüfsumme des Standes, von
+dem die Probe losgerechnet hat.
+
+**Die Alternative war „bei einer Wiederaufnahme immer übertragen".** Sie ist sicher und
+falsch: dann ginge bei *jeder* fortgesetzten Partie ein Viertelmegabyte über die Leitung
+(gemessen 263 KB nach dreißig Spieltagen), und „übertragen werden Befehle, nie Zustände"
+(D28.2) hätte eine stille Ausnahme. Mit dem Startabdruck sind die beiden Fälle exakt
+trennbar: gleicher Start und anderes Ergebnis heißt **Abbruch** (ein Rechenfehler), anderer
+Start heißt **übertragen** (verschiedene Stände).
+
+**Auswirkung:** ein Feld mehr im Protokoll, und eine Zusicherung mehr, die es verlangt —
+eine `probe` ohne `fromHash` wird verworfen. Befund M39-3.
+
+---
+
+## 2026-09-14 · T-M39-07 · Der Playtest-Bogen bekommt Prosa, keine nummerierte Frage
+
+**Entscheidung:** Der Abschnitt zu AK-9 in `docs/PLAYTEST.md` trägt **keine** nummerierte
+Frage.
+
+**Begründung:** `playtestStatus` zählt jede unbeantwortete Frage als offen. Eine neue Zeile
+hätte `docs/reports/playtest-v1.md` unvollständig gemacht und **AK-7 wieder auf „⏳"**
+gesetzt — ein abgenommenes V1-Kriterium, zurückgeworfen durch eine Dokumentationsaufgabe
+eines Meilensteins, der ausdrücklich hinter der V1 liegt. Das ist die Fehlerklasse des
+Nachtrags 2.15.
+
+**Auswirkung:** AK-9 hat seinen eigenen Ort (Abschnitt 3.2) und seinen eigenen Bericht
+(`docs/reports/mehrspieler.md`); der Bogen beschreibt den Durchgang in Prosa und sagt im
+ersten Satz, warum er keine Frage daraus macht. Zwei Tests halten beides fest. Befund M39-4.

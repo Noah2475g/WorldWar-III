@@ -37,7 +37,7 @@ import {
 } from './game/actions.ts'
 import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
-import { INITIAL_UI, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
+import { INITIAL_UI, defaultViewer, loadSettings, saveSettings, uiReducer, type Settings } from './state/uiState.ts'
 import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
@@ -65,7 +65,9 @@ import {
 } from './ui/Panels.tsx'
 import {
   DebugPanel,
+  JoinDialog,
   KeyboardHelp,
+  LobbyDialog,
   MenuDialog,
   NewGameDialog,
   SavesDialog,
@@ -73,8 +75,22 @@ import {
   fontScaleStyle,
   type DebugInfo,
 } from './ui/Dialogs.tsx'
-import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
+import {
+  DEFAULT_NEW_GAME,
+  aiBonusPercent,
+  fixedSpeedOf,
+  invitationOf,
+  startGame,
+  toConfig,
+  DEFAULT_MULTIPLAYER_SPEED,
+  type GameMode,
+  type NewGameOptions,
+} from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
+import type { Transport } from '@worldwar/netplay'
+import { guestLinkOf, type NetLink } from './net/link.ts'
+import { configOfState, useParty, type PartyView } from './net/party.ts'
+import { takeOverSeat, useNetplay, type NetplaySession } from './net/useNetplay.ts'
 import {
   adjutantMarchEntries,
   dayExpenses,
@@ -107,6 +123,7 @@ import {
 import {
   autosaveDue,
   latestSlot,
+  resumeStateFor,
   listSlots,
   loadFrom,
   loadTimeline,
@@ -149,8 +166,34 @@ export interface AppProps {
   audio?: () => AudioContext | null
   /** Starts with the guided introduction off — for tests and for a returning player. */
   skipTutorial?: boolean
+  /**
+   * Wer an diesem Bildschirm spielt (T-M37-01, R-MP-01, D28.3).
+   *
+   * Ohne Angabe die erste menschliche Macht des Standes — im Einzelspieler also der
+   * Spieler, wie bisher. Im Spiel zu zweit bekommt der Gast hier seinen Platz; ohne
+   * diesen Wert sähe er die Welt seines Gegners, mit dessen Rohstoffen und dessen Armeen.
+   */
+  viewerId?: string
   /** The wall clock, for the real-time half of the autosave rule. Injectable for tests. */
   now?: () => number
+  /**
+   * Die laufende Partie zu zweit (T-M37-11, D28.4).
+   *
+   * Ohne Angabe läuft alles wie bisher: die Uhr hängt an `requestAnimationFrame`, das
+   * Tempo am Regler. Mit einer Sitzung treibt der **Gleichschritt** die Uhr — ein Tick
+   * läuft, wenn beide Befehlslisten da sind, und sonst nicht. Den Transport dahinter baut
+   * M38; die Naht liegt hier, damit sie schon jetzt gemessen werden kann.
+   */
+  netplay?: NetplaySession
+  /**
+   * Die Einladung aus dem Fragment und die Leitung dahinter (T-M39-02, T-M39-03).
+   *
+   * Ohne Angabe gibt es keinen Beitritt: das Spiel startet im Einzelspieler, und der
+   * Anlegedialog ist der erste Bildschirm. `main.tsx` liest den Link und reicht die
+   * Leitung herein — sie ist im ausgelieferten Tauri-Bau gar nicht erst im Buendel
+   * (Bauflagge `WORLDWAR_MULTIPLAYER`, T-M39-04).
+   */
+  party?: { link: NetLink; connect: (url: string) => Transport; origin?: string }
 }
 
 interface PendingTarget {
@@ -198,6 +241,9 @@ export function App(props: AppProps) {
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI, (start) => ({
     ...start,
     settings: loadSettings(),
+    // Der Platz kommt von aussen oder bleibt offen (T-M37-01): offen heisst „die erste
+    // menschliche Macht dieses Standes", nicht „niemand".
+    viewerId: props.viewerId ?? null,
   }))
 
   // Und zurueckgeschrieben wird, sobald sich etwas aendert.
@@ -207,6 +253,10 @@ export function App(props: AppProps) {
   const [options, setOptions] = useState<NewGameOptions>({
     ...DEFAULT_NEW_GAME,
     nation: props.map.startPositions[0]?.nation ?? '',
+    // Wer ueber `#/gastgeben` kommt, will eine Partie zu zweit — die Partieart als
+    // Vorgabe zu lassen hiesse, ihn einen Schalter suchen zu lassen, den er gerade
+    // beantwortet hat (T-M39-03).
+    ...(props.party?.link.role === 'host' ? { mode: 'multiplayer' as const } : {}),
   })
   const [state, setState] = useState<GameState | null>(null)
   // Synchron gepflegter Spiegel fuer Ablaeufe ausserhalb des Renderzyklus (Vorspulen):
@@ -261,6 +311,75 @@ export function App(props: AppProps) {
 
   /** Die im Dialog gewaehlte Karte — sie fuellt die Maechteliste, bevor die Partie laeuft. */
   const selectedMap = mapById(options.mapId)
+
+  /**
+   * Die laufende Partie, so weit die Hülle sie kennt (T-M37-03, R-MP-02, C-11, D28.4).
+   *
+   * Partieart und feste Rate stehen **hier** und nicht im `GameState`: der Zustand ist die
+   * Welt, nicht die Betrachtung der Welt. C-11 hat die Geschwindigkeit am 2026-09-04 aus
+   * dem Kern verbannt, R-ARCH-04/AK2 hält das grün — läge sie im Zustand, wanderte sie in
+   * jeden Spielstand und in jede Prüfsumme, und zwei Spieler mit demselben Stand bekämen
+   * verschiedene Hashes, weil einer schneller zusieht.
+   *
+   * Getrennt von `options`: das Formular darf sich ändern, die laufende Partie nicht.
+   */
+  const [party, setParty] = useState<{ mode: GameMode; fixedSpeed: number | null }>({
+    mode: 'single',
+    fixedSpeed: null,
+  })
+  const multiplayer = party.mode === 'multiplayer'
+  /**
+   * Laeuft eine Partie zu zweit ueber den Gleichschritt (T-M37-11)?
+   *
+   * Frueh und aus den Eigenschaften gelesen, nicht aus dem Haken: die ehrliche Uhr und
+   * die Bildschleife weiter unten muessen es wissen, und beide stehen vor ihm.
+   */
+  /**
+   * Die Partie zu zweit ist vorbei — abgebrochen oder übernommen (T-M38-10, R-MP-08).
+   *
+   * Eine Eigenschaft lässt sich nicht zurücknehmen, ein Zustand schon. Ab hier läuft alles
+   * wieder wie im Einzelspieler: die Bildschleife, das Tempo, das Vorspulen — und der
+   * Gleichschritt bekommt `session: null`, hört auf zu senden und lässt die Uhr los.
+   */
+  const [netplayOver, setNetplayOver] = useState(false)
+
+  /**
+   * Vom Link zur laufenden Partie (T-M39-02, T-M39-03).
+   *
+   * Der Haken baut die Leitung, fuehrt den Handschlag und uebergibt danach an
+   * `useNetplay`. Ohne Link im Fragment ruht er vollstaendig — `phase: 'idle'`.
+   */
+  /**
+   * Der eigene gespeicherte Stand — die Haelfte des Vergleichs beim Fortsetzen
+   * (T-M39-06, R-MP-13/AK1).
+   *
+   * Nur geladen, wenn ueberhaupt ein Link im Fragment steht; im Einzelspieler gibt es
+   * nichts zu vergleichen. `null` heisst „ich habe keinen" und ist keine Stoerung: dann
+   * rechnet diese Seite vom Anfang, der Unterschied faellt im Handschlag auf, und der
+   * Stand des Gastgebers wird uebertragen.
+   */
+  const [partySaved, setPartySaved] = useState<GameState | null>(null)
+
+  const netParty: PartyView = useParty({
+    link: props.party?.link ?? null,
+    connect: props.party?.connect ?? null,
+    origin: props.party?.origin ?? globalThis.location?.origin ?? '',
+    mapById: (id) => mapById(id),
+    rules: props.rules,
+    savedState: partySaved,
+  })
+
+  const netplaySession = netplayOver ? null : (props.netplay ?? netParty.session)
+  const netplayActive = netplaySession != null
+  /**
+   * Die Partie ist verabredet, aber noch nicht freigegeben (T-M39-03).
+   *
+   * Zwischen „der Gastgeber hat angelegt" und „beide rechnen" darf die Uhr **nicht**
+   * laufen: der Host haette sonst schon Ticks hinter sich, wenn der Gast beitritt, und der
+   * Handschlag verglichen zwei Startzustaende, von denen einer keiner mehr ist.
+   */
+  const partyPending = netParty.active && netParty.phase !== 'playing' && netParty.phase !== 'idle'
+
   const [speed, setSpeed] = useState(0)
   /**
    * Der laufende Vorspulvorgang (T-M15-06). `reason` traegt den Grund des Halts in
@@ -273,7 +392,9 @@ export function App(props: AppProps) {
     /** Das Ereignis, das den Lauf beendet hat — R-TIME-03/AK1 sagt "stoppen UND melden". */
     trigger: GameEvent | null
   }>({ running: false, ticksRun: 0, reason: null, trigger: null })
-  const [dialog, setDialog] = useState<'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | null>('new')
+  const [dialog, setDialog] = useState<
+    'new' | 'menu' | 'saves' | 'settings' | 'keys' | 'report' | 'netplayEnd' | null
+  >('new')
   /** Bis zu welchem Tick der Spieler das Protokoll zuletzt gesehen hat — die Neu-Marke (T-M31-03). */
   const [seenTick, setSeenTick] = useState(-1)
   /** Bis zu welchem Tick Einmarsch-Alarme quittiert sind (T-M28-06). */
@@ -360,8 +481,20 @@ export function App(props: AppProps) {
   const chosen = useMemo(() => (props.storage ? null : createStorage()), [props.storage])
   const storage = props.storage ?? chosen!.storage
 
+  /**
+   * Wer am Bildschirm sitzt (T-M37-01, R-MP-01, D28.3).
+   *
+   * Der eine Wert, der die neunzehn festen p1 dieser Datei abgeloest hat. Ohne ausdrueckliche
+   * Wahl die erste menschliche Macht des Standes — im Einzelspieler dasselbe wie frueher,
+   * im Spiel zu zweit fuer den Gast das Gegenteil von falsch.
+   */
+  const viewerId = useMemo(() => (state ? (ui.viewerId ?? defaultViewer(state)) : null), [state, ui.viewerId])
+
   // Mit Regeln, damit die Sicht die Tagesbilanz mitbringt (R-ECON-06).
-  const view = useMemo(() => (state ? publicView(state, 'p1', props.rules) : null), [state, props.rules])
+  const view = useMemo(
+    () => (state && viewerId ? publicView(state, viewerId, props.rules) : null),
+    [state, viewerId, props.rules],
+  )
 
   /**
    * Sound for what happened since the last look (T-M13-02, R-UI-04).
@@ -371,8 +504,8 @@ export function App(props: AppProps) {
    * one. Above ten game hours a second `play` stays silent by itself.
    */
   useEffect(() => {
-    if (!state) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Eine neue Partie faengt mit einem leeren Protokoll an, und ein geladener Stand
     // kann kuerzer sein als der laufende. Ohne diese Zeile bleibt der Merker stehen und
     // die naechste Partie ist stumm, bis sie den alten Stand ueberholt hat (T-M21-02).
@@ -383,9 +516,9 @@ export function App(props: AppProps) {
 
     // Nur die eigenen Gefechte klingen (T-M28-08): oeffentliche Ereignisse sind lesbar,
     // aber nicht deshalb meine Sache.
-    const cue = cueForOwnEvents(fresh, 'p1')
+    const cue = cueForOwnEvents(fresh, viewerId)
     if (cue) play(cue, { enabled: ui.settings.sound, speed }, props.audio)
-  }, [state, ui.settings.sound, speed, props.audio])
+  }, [state, viewerId, ui.settings.sound, speed, props.audio])
 
   /**
    * Die Körper der Tagesberichte, je Ereignis-Tick (T-M24-01, D24.4, Befund V2-06).
@@ -413,8 +546,8 @@ export function App(props: AppProps) {
   const [timeline, setTimeline] = useState<readonly TimelineEntry[]>([])
 
   useEffect(() => {
-    if (!state || !view) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !view || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Dieselbe Rücksetzung wie beim Ton: eine neue Partie beginnt mit leerem Protokoll.
     if (own.length < reportedUpTo.current) {
       reportedUpTo.current = 0
@@ -448,7 +581,7 @@ export function App(props: AppProps) {
       }
       return next
     })
-  }, [state, view, ticksPerDay, props.rules])
+  }, [state, view, viewerId, ticksPerDay, props.rules])
 
   /** A step of the guided start ends because the player did the thing it asked for. */
   const tutor = useCallback((action: TutorialTrigger) => {
@@ -476,8 +609,8 @@ export function App(props: AppProps) {
    * Fuehrung und kein Zaehlwerk.
    */
   useEffect(() => {
-    if (!state) return
-    const own = eventsFor(state.eventLog, 'p1')
+    if (!state || !viewerId) return
+    const own = eventsFor(state.eventLog, viewerId)
     // Dieselbe Ruecksetzung wie beim Ton: sonst wuerde die Fuehrung in einer zweiten
     // Partie genau die Schritte ueberspringen, fuer die sie gebaut ist.
     if (own.length < tutoredUpTo.current) tutoredUpTo.current = 0
@@ -490,7 +623,7 @@ export function App(props: AppProps) {
     if (next !== tutorial) setTutorial(next)
     // `tutorial` steht in den Abhaengigkeiten: hat ein Ereignis einen Schritt beendet,
     // laeuft dieser Effekt erneut und bietet den Rest des Stroms dem naechsten Schritt an.
-  }, [state, tutorial])
+  }, [state, viewerId, tutorial])
 
   // Eine entschiedene Partie laeuft nicht weiter: die Uhr haelt an, sobald ein Sieger
   // feststeht (R-UI-13). Das Fenster darf man schliessen, die Uhr bleibt stehen.
@@ -540,8 +673,11 @@ export function App(props: AppProps) {
 
   /** Everything the order descriptions need, in one place. */
   const ctx: ActionContext | null = useMemo(
-    () => (state ? { state, map: activeMap, rules: props.rules, playerId: 'p1', ticksPerDay, pending: pendingOrders } : null),
-    [state, activeMap, props.rules, ticksPerDay, pendingOrders],
+    () =>
+      state && viewerId
+        ? { state, map: activeMap, rules: props.rules, playerId: viewerId, ticksPerDay, pending: pendingOrders }
+        : null,
+    [state, viewerId, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
@@ -562,12 +698,15 @@ export function App(props: AppProps) {
           // Der Beziehungsmodus (T-M26-03): aus dem gemerkten Eigentuemer und der
           // EIGENEN Beziehungslage — auch ein veralteter Eigentuemer traegt die
           // heutige Beziehung, denn die kennt man von sich selbst.
-          relation: seen === undefined ? undefined : relationKindFor(seen.owner, 'p1', view?.relations ?? {}),
+          relation:
+            seen === undefined || !viewerId
+              ? undefined
+              : relationKindFor(seen.owner, viewerId, view?.relations ?? {}),
           polygons: province.polygons,
           bounds: boundsOf(province.polygons),
         }
       }),
-    [activeMap.provinces, view, strengths],
+    [activeMap.provinces, view, viewerId, strengths],
   )
 
   const centres = useMemo(
@@ -627,14 +766,14 @@ export function App(props: AppProps) {
           provinceId: army.provinceId,
           owner: army.owner,
           strength: army.strength,
-          own: army.owner === 'p1',
+          own: army.owner === viewerId,
           ...(icon ? { icon } : {}),
           ...(summary ? { count: summary.count, condition: summary.condition } : {}),
           ...(relation ? { relation } : {}),
           ...(march ? { march } : {}),
         }
       }),
-    [view, props.rules],
+    [view, viewerId, props.rules],
   )
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
@@ -749,7 +888,10 @@ export function App(props: AppProps) {
    */
   const hasGame = state !== null
   useEffect(() => {
-    if (speed === 0 || !hasGame) {
+    // Zu zweit sagt der Gleichschritt, warum die Uhr steht (T-M37-11): „warte auf
+    // Mitspieler" ist die genauere Auskunft als „Pausiert", und zwei Meldungen
+    // nebeneinander waeren eine zu viel.
+    if (speed === 0 || !hasGame || netplayActive || partyPending) {
       setStalled(false)
       return
     }
@@ -758,7 +900,7 @@ export function App(props: AppProps) {
       setStalled(now() - lastTickAt.current > STALL_AFTER_MS)
     }, STALL_CHECK_MS)
     return () => clearInterval(id)
-  }, [speed, hasGame, now])
+  }, [speed, hasGame, netplayActive, partyPending, now])
 
   /**
    * Vorspulen bis zum naechsten Ereignis (T-M15-06, R-TIME-02/AK2, R-TIME-03).
@@ -771,7 +913,8 @@ export function App(props: AppProps) {
   const abortFastForward = useRef(false)
   const fastForwardRun = useCallback(
     (target: FastForwardTarget) => {
-      const viewerId = 'p1'
+      // Bis zum 2026-09-14 stand hier ein fest verdrahteter Platz samt einer toten
+      // Pruefung darunter (T-M37-01). Jetzt kommt er von oben, und die Pruefung lebt.
       if (!viewerId) return
       abortFastForward.current = false
       setSpeed(0)
@@ -826,7 +969,7 @@ export function App(props: AppProps) {
       const start = stateRef.current
       if (start) chunk(start)
     },
-    [activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
+    [viewerId, activeMap, props.rules, debugOn, noteTrace, noteMarches, takePending, commitState],
   )
 
   // The clock (design D5, T-M41-04). `clockStep` caps what a single frame may credit, so
@@ -840,10 +983,43 @@ export function App(props: AppProps) {
   // hours per second and speed 50 at 30 frames ran 30. It now depends only on the speed
   // and on whether a game runs, and reaches the current `step` through a ref.
   // `hasGame` is the same flag the stall display above uses.
+  /**
+   * Der Gleichschritt treibt die Uhr, sobald eine Partie zu zweit läuft (T-M37-11, D28.4).
+   *
+   * Im Einzelspieler ist `session` null, der Haken tut nichts, und die Schleife darunter
+   * bleibt Zeile für Zeile, wie sie war.
+   */
+  /**
+   * Der Hinweis „Ihr Mitspieler ist fort" wurde weggeklickt (T-M38-09, R-MP-07/AK2).
+   *
+   * Nur bis zum nächsten Tick: kommt die Gegenseite zurück und steht die Uhr danach
+   * wieder, ist das eine neue Lage und verdient eine neue Meldung. Ein „Weiter warten",
+   * das für immer gilt, wäre ein Schalter zum Abschalten der einzigen Auskunft.
+   */
+  const [peerLostDismissed, setPeerLostDismissed] = useState(false)
+
+  const netplay = useNetplay({
+    session: netplaySession,
+    speed: party.fixedSpeed ?? 0,
+    now,
+    onTick: (next, applied) => {
+      commitState(next)
+      setPeerLostDismissed(false)
+      // Die Quittung am Knopf endet, wenn der Befehl wirklich gewirkt hat (T-M22-05) —
+      // nicht schon beim naechsten Tick: zu zweit liegen zwei Ticks dazwischen.
+      if (applied.length > 0) {
+        pendingRef.current = pendingRef.current.filter((entry) => !applied.includes(entry.command))
+        setPendingCommands(pendingRef.current)
+      }
+    },
+  })
+
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
-    if (speed === 0 || !hasGame) return
+    // Zu zweit gibt es keine zweite Uhr daneben (T-M37-11): der Gleichschritt gibt den
+    // Takt, und ein rAF-Lauf darueber rechnete Ticks, die niemand freigegeben hat.
+    if (speed === 0 || !hasGame || netplay.active || partyPending) return
     let running = true
     let last = performance.now()
     let owed = 0
@@ -861,7 +1037,7 @@ export function App(props: AppProps) {
     return () => {
       running = false
     }
-  }, [speed, hasGame])
+  }, [speed, hasGame, netplay.active, partyPending])
 
   /**
    * Einen Befehl abschicken (T-M22-05, Befund V2-08).
@@ -886,11 +1062,15 @@ export function App(props: AppProps) {
         dispatch({ type: 'notice', text: describeRejection(result, command, ctx) })
         return false
       }
+      // Zu zweit geht der Befehl in den Gleichschritt und gilt fuer tick + 2 (T-M37-11).
+      // Die Quittung am Knopf funktioniert unveraendert — sie endet, wenn der Befehl
+      // wirklich gewirkt hat, statt nach dem naechsten Tick.
+      if (netplay.active) netplay.give(command)
       pendingRef.current = [...pendingRef.current, { actionId: actionId ?? '', command }]
       setPendingCommands(pendingRef.current)
       return true
     },
-    [state, ctx, activeMap, props.rules],
+    [state, ctx, activeMap, props.rules, netplay],
   )
 
   /** Welche Knoepfe gerade eine Quittung tragen (T-M22-05): ihr Befehl steht noch aus. */
@@ -970,6 +1150,8 @@ export function App(props: AppProps) {
         dialogOpen: dialog !== null,
         // Waehrend eines Laufs keine Uhr und kein zweiter Lauf (T-M41-13).
         fastForwarding: fastForwardState.running,
+        // Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2).
+        multiplayer,
       })
       if (!shortcut) return
       event.preventDefault()
@@ -1030,6 +1212,26 @@ export function App(props: AppProps) {
         case 'centreCapital':
           if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
+        case 'multiplayerLocked':
+          // Die Leertaste wird zum Pausenantrag, sobald wirklich ein Mitspieler da ist
+          // (T-M37-11, D28.7). Ohne Sitzung bleibt es beim Hinweis.
+          if (shortcut.control === 'pause' && netplay.active) {
+            netplay.requestPause()
+            break
+          }
+          // Die Taste tut nichts — aber sie verschwindet nicht stillschweigend
+          // (T-M37-04, R-MP-02/AK2). Wer drueckt, bekommt den Grund zu lesen.
+          dispatch({
+            type: 'notice',
+            kind: 'info',
+            text:
+              shortcut.control === 'fastForward'
+                ? t('header.fastForwardLockedMultiplayer')
+                : shortcut.control === 'pause'
+                  ? t('header.pauseNeedsConsent')
+                  : t('header.speedLockedMultiplayer'),
+          })
+          break
         case 'pan':
           dispatch({
             type: 'setView',
@@ -1061,6 +1263,8 @@ export function App(props: AppProps) {
     targeting,
     tutor,
     fastForwardState.running,
+    multiplayer,
+    netplay,
     // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
     // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
     fastForwardRun,
@@ -1115,6 +1319,18 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
+          // Ein geladener Stand ist eine Einzelspielerpartie — es sei denn, dieser
+          // Bildschirm ist ein Gastgeber (T-M39-06, R-MP-13). Dann wird der Stand
+          // ANGEBOTEN: der Gast vergleicht ihn mit seinem eigenen, und nur bei einer
+          // Abweichung geht er ueber die Leitung (D28.11).
+          const alsGastgeber = netParty.active && netParty.role === 'host'
+          if (alsGastgeber) {
+            netParty.offer(configOfState(result.state), DEFAULT_MULTIPLAYER_SPEED, result.state)
+            setParty({ mode: 'multiplayer', fixedSpeed: DEFAULT_MULTIPLAYER_SPEED })
+          } else {
+            setParty({ mode: 'single', fixedSpeed: null })
+          }
+          setSpeed(0)
           commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1127,7 +1343,7 @@ export function App(props: AppProps) {
         setSlots(await listSlots(storage, ticksPerDay))
       })
     },
-    [storage, ticksPerDay, mapById, now, commitState],
+    [storage, ticksPerDay, mapById, now, commitState, netParty],
   )
 
   /**
@@ -1140,6 +1356,19 @@ export function App(props: AppProps) {
     const chosenMap = mapById(options.mapId)
     const fresh = startGame(options, chosenMap, props.rules)
     setActiveMap(chosenMap)
+    // Partieart und feste Rate wandern aus dem Formular in die laufende Partie
+    // (T-M37-03): ab hier ist die Rate im Mehrspieler unveraenderlich, und die Uhr
+    // startet mit ihr, statt bei null zu stehen.
+    const feste = fixedSpeedOf(options)
+    setParty({ mode: options.mode, fixedSpeed: feste })
+    // Zu zweit ueber einen Link legt der Gastgeber die Partie nur AN; laufen tut sie
+    // erst, wenn er startet und der Handschlag durch ist (T-M39-03, R-MP-12/AK2). Bis
+    // dahin bleibt die Uhr bei null, sonst haette er schon Ticks hinter sich, wenn der
+    // Gast beitritt - und der Handschlag verglicht zwei Startzustaende, von denen einer
+    // keiner mehr ist.
+    const alsGastgeber = netParty.active && netParty.role === 'host'
+    setSpeed(alsGastgeber ? 0 : (feste ?? 0))
+    if (alsGastgeber) netParty.offer(toConfig(options, chosenMap), feste ?? DEFAULT_MULTIPLAYER_SPEED)
     // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
     pendingRef.current = []
     setPendingCommands([])
@@ -1160,7 +1389,10 @@ export function App(props: AppProps) {
     // the world — the first thing they look for is where they are.
     // Die Mitten kommen aus der gewaehlten Karte: der Merker `centres` haelt
     // auf diesem Durchlauf noch die alten und faende die neue Hauptstadt nicht.
-    const capital = fresh.players.p1?.capitalProvinceId
+    // Die eigene Hauptstadt — ueber `defaultViewer` und nicht ueber `players.p1`
+    // (T-M37-01): im Spiel zu zweit wuerde der Gast sonst auf den Gegner blicken.
+    const host = defaultViewer(fresh)
+    const capital = host ? fresh.players[host]?.capitalProvinceId : undefined
     const centre = capital ? chosenMap.provinces.find((province) => province.id === capital)?.center : undefined
     if (centre) {
       dispatch({
@@ -1169,7 +1401,99 @@ export function App(props: AppProps) {
       })
     }
     setDialog(null)
-  }, [options, mapById, props.rules, now, commitState])
+  }, [options, mapById, props.rules, now, commitState, netParty])
+
+  // Den eigenen gespeicherten Stand einmal holen, sobald ein Link im Fragment steht
+  // (T-M39-06). `ticksPerDay` und `storage` stehen weiter oben; geladen wird der juengste.
+  useEffect(() => {
+    if (!props.party) return
+    let aktiv = true
+    void resumeStateFor(storage, ticksPerDay).then((stand) => {
+      if (aktiv) setPartySaved(stand)
+    })
+    return () => {
+      aktiv = false
+    }
+  }, [props.party, storage, ticksPerDay])
+
+  /**
+   * Der Handschlag ist durch: beide Seiten legen mit demselben Stand los (T-M39-02/03).
+   *
+   * **Der Zustand geht nicht über die Leitung** (D28.2) — beide rechnen ihn aus derselben
+   * Partiedefinition, und dass dabei bitgleich dasselbe herauskommt, hat die Probe gerade
+   * gemessen. Was der Gastgeber hier bekommt, ist wertgleich mit dem, was `startNewGame`
+   * ihm schon gegeben hat; der Gast bekommt seinen ersten Stand überhaupt.
+   *
+   * Einmal und nicht bei jedem Bild: `startedRef` merkt sich den Stand, mit dem es losging.
+   */
+  const startedRef = useRef<GameState | null>(null)
+  useEffect(() => {
+    const beginn = netParty.start
+    if (!beginn || startedRef.current === beginn.state) return
+    startedRef.current = beginn.state
+
+    const karte = mapById(beginn.mapId)
+    setActiveMap(karte)
+    // Wer ich bin, kommt vom Platz im Raum und nicht von der Annahme p1 (T-M37-01):
+    // der Gast saehe sonst die Welt seines Gegners.
+    dispatch({ type: 'setViewer', id: beginn.seat })
+    setParty({ mode: 'multiplayer', fixedSpeed: beginn.fixedSpeed })
+    setSpeed(beginn.fixedSpeed)
+    pendingRef.current = []
+    setPendingCommands([])
+    setTimeline([])
+    setAlarmSeenTick(-1)
+    setSeenTick(-1)
+    setDismissedAlerts(new Map())
+    setAdjutantMarches([])
+    commitState(beginn.state)
+    setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
+    setDialog(null)
+
+    // Und der Blick auf die eigene Hauptstadt, wie beim Anlegen: das Erste, was ein
+    // Spieler sucht, ist, wo er ist.
+    const hauptstadt = beginn.state.players[beginn.seat]?.capitalProvinceId
+    const mitte = hauptstadt ? karte.provinces.find((province) => province.id === hauptstadt)?.center : undefined
+    if (mitte) {
+      dispatch({
+        type: 'setView',
+        view: centreOn(mitte, { x: 0, y: 0, scale: 1.6 }, { width: karte.width, height: karte.height, ...VIEWPORT }),
+      })
+    }
+  }, [netParty.start, mapById, now, commitState])
+
+  /**
+   * Der Beitritt und die Lobby (T-M39-02, T-M39-03, R-MP-12).
+   *
+   * Der Beitrittsbildschirm ist ein **zweiter Einstieg** in die Anwendung und kein
+   * Sonderfall des ersten: der Gast hat keinen Spielstand, er hat einen Link. Der
+   * Gastgeber sieht daneben, wer wartet, und startet — beides hört auf, sobald die Partie
+   * läuft (`phase === 'playing'`).
+   */
+  const partyDialog =
+    netParty.active && netParty.phase !== 'playing' && netParty.phase !== 'idle' ? (
+      netParty.role === 'guest' ? (
+        <JoinDialog
+          terms={netParty.terms}
+          mapName={netParty.terms ? mapById(netParty.terms.mapId).name : ''}
+          phase={netParty.phase}
+          reason={netParty.reason}
+          joined={netParty.guestName !== null}
+          onJoin={(name) => netParty.join(name)}
+          onLeave={netParty.leave}
+        />
+      ) : netParty.offered || netParty.phase === 'refused' ? (
+        <LobbyDialog
+          guestLink={guestLinkOf(globalThis.location?.href ?? '')}
+          guestName={netParty.guestName}
+          offered={netParty.offered}
+          phase={netParty.phase}
+          reason={netParty.reason}
+          onBegin={netParty.begin}
+          onLeave={netParty.leave}
+        />
+      ) : null
+    ) : null
 
   /**
    * Der Startdialog, EINMAL beschrieben: vor der ersten Partie steht er hinter dem
@@ -1197,6 +1521,9 @@ export function App(props: AppProps) {
           setOptions(next)
         }}
         onStart={startNewGame}
+        // Was ein Gast vor dem Beitritt saehe — samt der festen Rate (T-M37-03,
+        // R-MP-02/AK1). Im Einzelspieler null: dort gibt es niemanden einzuladen.
+        invitation={invitationOf(options, selectedMap)}
         // Schliessen darf es: der leere Zustand traegt den Weg zurueck (T-M12-07),
         // und aus der laufenden Partie geht es einfach dorthin zurueck.
         onClose={() => setDialog(null)}
@@ -1220,12 +1547,12 @@ export function App(props: AppProps) {
    * frischen Aufträge der Sicht.
    */
   const expenses = useMemo(() => {
-    if (!state || !view) return {}
-    const own = eventsFor(state.eventLog, 'p1').filter(
+    if (!state || !view || !viewerId) return {}
+    const own = eventsFor(state.eventLog, viewerId).filter(
       (event) => event.tick > view.tick - ticksPerDay && event.tick <= view.tick,
     )
     return dayExpenses(view, props.rules, own)
-  }, [state, view, ticksPerDay, props.rules])
+  }, [state, view, viewerId, ticksPerDay, props.rules])
 
   /**
    * Der Kursverlauf des Marktes (T-M32-02): aus den eigenen `TRADE_EXECUTED` im
@@ -1233,9 +1560,9 @@ export function App(props: AppProps) {
    * Reihe reicht so weit zurück wie er, und das ist für eine Richtung genug.
    */
   const prices = useMemo(() => {
-    if (!state) return {}
-    return priceSeries(eventsFor(state.eventLog, 'p1'), ticksPerDay)
-  }, [state, ticksPerDay])
+    if (!state || !viewerId) return {}
+    return priceSeries(eventsFor(state.eventLog, viewerId), ticksPerDay)
+  }, [state, viewerId, ticksPerDay])
 
   /**
    * Der offene Einmarsch-Alarm (T-M28-06, R-TIME-06): der jüngste `ARMY_INTRUDED`,
@@ -1245,15 +1572,15 @@ export function App(props: AppProps) {
    * die Oberfläche sagt dazu, **wo** — Chip im Kopf, Zinnober-Ring auf der Karte.
    */
   const alarm = useMemo(() => {
-    if (!state) return null
-    const offen = openIntrusion(eventsFor(state.eventLog, 'p1'), alarmSeenTick, state.tick)
+    if (!state || !viewerId) return null
+    const offen = openIntrusion(eventsFor(state.eventLog, viewerId), alarmSeenTick, state.tick)
     if (!offen) return null
     return {
       provinceId: offen.provinceId,
       provinceName: activeMap.provinces.find((p) => p.id === offen.provinceId)?.name ?? offen.provinceId,
       intruder: state.players[offen.intruderId]?.nation ?? offen.intruderId,
     }
-  }, [state, alarmSeenTick, activeMap.provinces])
+  }, [state, viewerId, alarmSeenTick, activeMap.provinces])
 
   /** Player ids never reach the screen: the player knows nations, not "p2". */
   const nameOf = useCallback(
@@ -1299,12 +1626,12 @@ export function App(props: AppProps) {
    * in a line is swapped for the name it stands for (R-UI-07).
    */
   const events: EventEntry[] = useMemo(() => {
-    if (!state) return []
+    if (!state || !viewerId) return []
     const naming = {
       player: nameOf,
       army: (id: string) => state.armies[id]?.name ?? id,
       ticksPerDay,
-      viewer: 'p1',
+      viewer: viewerId,
     }
     // **Erst deuten, dann zuschneiden** (T-M15-09). Bis zum 2026-09-06 stand hier
     // `.slice(-40)` *vor* allem anderen: das Protokoll wurde auf die letzten vierzig
@@ -1314,7 +1641,7 @@ export function App(props: AppProps) {
     //
     // Gekürzt wird deshalb auf eine Menge, in der jede Rubrik noch etwas zu zeigen hat:
     // die letzten vierzig Zeilen **und** die letzten vierzig Weltereignisse.
-    const alle = eventsFor(state.eventLog, 'p1')
+    const alle = eventsFor(state.eventLog, viewerId)
     const jüngste = new Set(alle.slice(-LOG_LINES))
     for (const event of worldEventsIn(alle).slice(-LOG_LINES)) jüngste.add(event)
 
@@ -1340,7 +1667,7 @@ export function App(props: AppProps) {
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
-  }, [state, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
+  }, [state, viewerId, activeMap, nameOf, ticksPerDay, dayBodies, adjutantMarches])
 
   /**
    * Der Zustands-Hash der Debug-Ansicht (T-M12-10).
@@ -1371,19 +1698,19 @@ export function App(props: AppProps) {
     if (reason === 'aborted') return t('header.stoppedAborted', { time })
     if (reason === 'limit') return t('header.stoppedLimit', { time })
     if (reason === 'target') return t('header.stoppedTarget', { time })
-    if (!trigger || !state) return t('header.stoppedAlertPlain', { time })
+    if (!trigger || !state || !viewerId) return t('header.stoppedAlertPlain', { time })
     const beschrieben = describeEvent(trigger, 0, activeMap, {
       player: nameOf,
       army: (id: string) => state.armies[id]?.name ?? id,
       ticksPerDay,
-      viewer: 'p1',
+      viewer: viewerId,
     })
     return t('header.stoppedAlert', { time, event: beschrieben.text })
-  }, [fastForwardState, ticksPerDay, state, activeMap, nameOf])
+  }, [fastForwardState, ticksPerDay, state, viewerId, activeMap, nameOf])
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== 'p1') return []
+    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
     return [
       { id: 'build', title: t('actions.buildGroup'), actions: buildActions(ctx, selected.id).map((spec) => toAction(spec)) },
       {
@@ -1415,7 +1742,7 @@ export function App(props: AppProps) {
   const naechsteFreischaltung = useMemo(() => (ctx ? nextUnlock(ctx) : null), [ctx])
 
   const provinceActions: Action[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== 'p1') return []
+    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
     return [toAction(capitalAction(ctx, selected.id))]
   }, [ctx, selected, toAction])
 
@@ -1509,7 +1836,7 @@ export function App(props: AppProps) {
     }
   }, [ctx, targeting, state, ui.selectedArmy, activeMap.provinces, nameOfProvince, toAction, send, ticksPerDay])
 
-  if (!state || !view || !ctx) {
+  if (!state || !view || !ctx || !viewerId) {
     return (
       <div className="app app--empty" style={fontScaleStyle(ui.settings)}>
         <p>{t('app.loading')}</p>
@@ -1519,7 +1846,7 @@ export function App(props: AppProps) {
           endgueltig, und nur Neuladen half. Beide Knoepfe sind auch der Grund, warum das
           Kreuz des Startdialogs jetzt schliessen darf.
         */}
-        {dialog === null && (
+        {!netParty.active && dialog === null && (
           <p className="app__empty-actions">
             <button type="button" className="button button--primary" onClick={() => setDialog('new')}>
               {t('newGame.title')}
@@ -1545,13 +1872,13 @@ export function App(props: AppProps) {
             }}
           />
         )}
-        {newGameDialog}
+        {partyDialog ?? newGameDialog}
       </div>
     )
   }
 
-  const ownProvinces = view.provinces.filter((p) => p.owner === 'p1').map((p) => ({ id: p.id, name: p.name }))
-  const knownProvinces = view.provinces.filter((p) => p.owner !== 'p1').map((p) => ({ id: p.id, name: p.name }))
+  const ownProvinces = view.provinces.filter((p) => p.owner === viewerId).map((p) => ({ id: p.id, name: p.name }))
+  const knownProvinces = view.provinces.filter((p) => p.owner !== viewerId).map((p) => ({ id: p.id, name: p.name }))
 
   return (
     <div className="app" style={fontScaleStyle(ui.settings)}>
@@ -1563,6 +1890,21 @@ export function App(props: AppProps) {
         fastForwarding={fastForwardState.running}
         fastForwardNotice={fastForwardNotice}
         mode={ui.mode}
+        // Zu zweit zeigt die Kopfleiste die feste Rate als Text statt einer Tempogruppe
+        // (T-M37-04, R-MP-02/AK3); im Einzelspieler bleibt alles, wie es war.
+        fixedSpeed={party.fixedSpeed}
+        // Die ehrliche Uhr des Gleichschritts und der Pausenvertrag (T-M37-11).
+        waitingForPeer={netplay.waiting}
+        peerLost={netplay.lost && !peerLostDismissed}
+        paused={netplay.status === 'paused'}
+        {...(netplay.active
+          ? {
+              onPauseRequest: netplay.requestPause,
+              onResume: netplay.resume,
+              onKeepWaiting: () => setPeerLostDismissed(true),
+              onEndGame: () => setDialog('netplayEnd'),
+            }
+          : {})}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
           setSpeed(Math.min(value, ui.settings.maxSpeed))
@@ -1623,7 +1965,7 @@ export function App(props: AppProps) {
             labelFor={nameOfProvince}
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
-          <Legend mode={ui.mode} />
+          <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
         </div>
 
@@ -1732,6 +2074,7 @@ export function App(props: AppProps) {
 
       {/* Das Menue: Neue Partie / Spielstaende / Einstellungen — auch aus der
           laufenden Partie (T-M22-04, Befund V2-05). */}
+      {partyDialog}
       {dialog === 'menu' && (
         <MenuDialog
           onNewGame={() => setDialog('new')}
@@ -1806,6 +2149,108 @@ export function App(props: AppProps) {
             </Dialog>
           )
         })()}
+
+      {/* Der Pausenantrag des Mitspielers (T-M37-11, R-MP-05/AK1, D28.7): zwei Knoepfe,
+          und bis einer gedrueckt ist, laeuft die Partie weiter. Ein Antrag, den man
+          selbst gestellt hat, bekommt keinen Dialog — er wartet auf die andere Seite. */}
+      {netplay.pause.request && netplay.pause.request.by !== viewerId && (
+        <Dialog title={t('netplay.title')} onClose={() => netplay.answerPause(false)}>
+          <p>{t('netplay.pauseAsked', { player: nameOf(netplay.pause.request.by) })}</p>
+          <p className="dialog__actions">
+            <button type="button" className="button button--primary" onClick={() => netplay.answerPause(true)}>
+              {t('netplay.pauseAccept')}
+            </button>
+            <button type="button" className="button" onClick={() => netplay.answerPause(false)}>
+              {t('netplay.pauseDecline')}
+            </button>
+          </p>
+        </Dialog>
+      )}
+
+      {/*
+        Die Partie zu zweit beenden (T-M38-09, R-MP-07/AK2, D28.8 Stufe 2).
+
+        Der zweite Knopf des Hinweises fuehrt hierher. Bewusst ein eigener Schritt und
+        kein sofortiges Ende: „beenden" ist die Entscheidung, die man nicht aus Versehen
+        trifft, waehrend man auf jemanden wartet.
+      */}
+      {dialog === 'netplayEnd' && (
+        <Dialog title={t('netplay.endTitle')} onClose={() => setDialog(null)}>
+          <p>{t('netplay.endBody')}</p>
+          {/*
+            Der Ausweg (T-M38-10, R-MP-08/AK1, D28.8 Stufe 3): kein Abend geht verloren,
+            weil jemand ins Bett gegangen ist. Die Partie laeuft als Einzelspielerpartie
+            weiter, der abwesende Mitspieler als Computergegner — und das geht nur, weil
+            der Zustand derselbe ist (D28.2). Es ist ein bewusster Klick und geschieht nie
+            von selbst (AK2).
+          */}
+          <p>{t('netplay.takeOverBody')}</p>
+          <p className="dialog__actions">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                const session = props.netplay
+                const stand = stateRef.current
+                if (session && stand) commitState(takeOverSeat(stand, session.peer))
+                session?.transport.close('Der Mitspieler wurde uebernommen.')
+                // Ab hier ist es eine Einzelspielerpartie, mit allem, was dazugehoert:
+                // Tempo, Vorspulen, Tastenkuerzel (R-MP-08/AK1).
+                setNetplayOver(true)
+                setParty({ mode: 'single', fixedSpeed: null })
+                setPeerLostDismissed(true)
+                setDialog(null)
+              }}
+            >
+              {t('netplay.takeOver')}
+            </button>
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                props.netplay?.transport.close('Die Partie wurde beendet.')
+                setNetplayOver(true)
+                setDialog('new')
+                commitState(null)
+              }}
+            >
+              {t('netplay.endLeave')}
+            </button>
+            <button type="button" className="button" onClick={() => setDialog(null)}>
+              {t('netplay.endStay')}
+            </button>
+          </p>
+        </Dialog>
+      )}
+
+      {/*
+        Das Auseinanderlaufen (T-M37-11, R-MP-04/AK1, D28.6).
+
+        **Kein Dialog, kein Kreuz, kein Escape.** Zwei Welten, die sich trennen, sind
+        schlimmer als ein Abbruch; eine Meldung, die man wegklicken kann, waere eine
+        Einladung, genau das zu tun und weiterzuspielen. Der einzige Knopf sichert den
+        Stand, damit der Fehler untersuchbar bleibt (R-MP-04/AK2).
+      */}
+      {netplay.desync && (
+        <div className="dialog-backdrop dialog-backdrop--locked">
+          <div className="dialog" role="alertdialog" aria-label={t('netplay.desyncTitle')}>
+            <header className="dialog__head">
+              <h2>{t('netplay.desyncTitle')}</h2>
+            </header>
+            <div className="dialog__body">
+              <p>{t('netplay.desync', { tick: netplay.desync.tick })}</p>
+              <p className="muted">
+                {t('netplay.desyncHashes', { own: netplay.desync.own, other: netplay.desync.other })}
+              </p>
+              <p className="dialog__actions">
+                <button type="button" className="button" onClick={() => setDialog('saves')}>
+                  {t('netplay.desyncSave')}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}
