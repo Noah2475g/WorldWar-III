@@ -2776,7 +2776,7 @@ tasks:
   - id: T-M38-08
     milestone: M38
     title: Pufferung und Wiederaufnahme nach Abbruch
-    status: todo
+    status: done
     deps: [T-M38-07]
     requirements: [R-MP-07]
     design: [D-28]

@@ -5291,7 +5291,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Fertig wenn:** gepuffert wird ab dem letzten **bestätigten** Tick und nicht ab dem
   letzten gesendeten. Der Unterschied fällt erst auf, wenn die Trennung genau zwischen
   Senden und Ankommen liegt — also im Betrieb und nicht im Test, wenn man ihn nicht
-  ausdrücklich schreibt.
+  ausdrücklich schreibt. Er ist ausdrücklich geschrieben (`resume.test.ts`, dritte
+  Zusicherung), und die Gegenprobe misst ihn: bestätigt man einen Tick zu weit, fallen
+  **drei von fünf** Zusicherungen. Bestätigt wird **ohne eigene Nachrichtenart** — wer für
+  Tick T sendet, hat T−1 gerechnet und brauchte dafür alle Listen bis T−1; eine Quittung
+  wäre eine zweite Wahrheit daneben. In der Hülle gilt die einfachere Regel **„wer wartet,
+  wiederholt"** (`RESEND_AFTER_MS`, höchstens eine Wiederholung je Sekunde): der Haken
+  fragt den Transport nicht nach einem Abriss — bei einem Schleifendoppel könnte er es
+  nicht wissen, und bei einer Leitung wäre die Antwort eine zweite Wahrheit neben dem, was
+  die Gegenseite wirklich hat.
 
 ### T-M38-09 · Die Anzeige sagt, wenn es am anderen hängt
 - **Ziel:** eine stehende Uhr ohne Erklärung ist ein Absturz. Mit Erklärung ist sie ein

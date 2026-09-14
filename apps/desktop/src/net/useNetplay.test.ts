@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInitialState, type Command, type GameConfig, type GameState } from '@worldwar/core'
 import { createLockstep, createLoopback, stateHash, type Lockstep, type Transport } from '@worldwar/netplay'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
-import { WAIT_NOTICE_AFTER_MS, useNetplay, type NetplayView } from './useNetplay.ts'
+import { RESEND_AFTER_MS, WAIT_NOTICE_AFTER_MS, useNetplay, type NetplayView } from './useNetplay.ts'
 
 /**
  * Der Gleichschritt treibt die Uhr der Oberfläche (T-M37-11, R-MP-03/04/05, D28.4).
@@ -289,5 +289,127 @@ describe('R-MP-04/AK1 Ein Auseinanderlaufen erreicht die Oberflaeche und haelt a
     // Und es bleibt dabei: kein weiterer Tick, egal wie lange man wartet.
     warte(5000)
     expect(a.lockstep.tick).toBe(bisher)
+  })
+})
+
+describe('R-MP-07/AK1 Die Huelle liefert nach, was nicht bestaetigt ist', () => {
+  /**
+   * Zwei Haken an einer Leitung, die sich durchtrennen lässt.
+   *
+   * Ein Abriss ist hier nicht „geschlossen", sondern das, was ein Abriss **tut**:
+   * Nachrichten verschwinden, ohne dass jemand es merkt. Der Haken erfährt vom Abriss
+   * nichts — und genau deshalb ist die Regel „wer wartet, wiederholt" und nicht „wer neu
+   * verbindet, holt nach".
+   */
+  function durchtrennbar(speed = 50) {
+    const leitung = createLoopback()
+    let offen = true
+    const verloren = { a: 0, b: 0 }
+
+    const huelle = (seite: 'a' | 'b', echt: Transport): Transport => ({
+      get closed() {
+        return echt.closed
+      },
+      send: (message) => {
+        if (!offen) {
+          verloren[seite] += 1
+          return
+        }
+        echt.send(message)
+      },
+      onMessage: (listener) => echt.onMessage(listener),
+      onClose: (listener) => echt.onClose(listener),
+      close: (reason) => echt.close(reason),
+    })
+
+    const machen = (seat: string, peer: string, transport: Transport): Seite => {
+      const lockstep = createLockstep({ seat, seats: ['p1', 'p2'], state: frisch(), ctx, delayTicks: 2 })
+      const seite: Seite = { lockstep, sicht: { value: null }, getickt: { staende: [], befehle: [], hashes: [] } }
+      render(
+        createElement(Traeger, {
+          session: { lockstep, transport, seat, peer },
+          speed,
+          sicht: seite.sicht,
+          getickt: seite.getickt,
+        }),
+      )
+      return seite
+    }
+
+    return {
+      a: machen('p1', 'p2', huelle('a', leitung.a)),
+      b: machen('p2', 'p1', huelle('b', leitung.b)),
+      verloren,
+      trennen: () => {
+        offen = false
+      },
+      verbinden: () => {
+        offen = true
+      },
+    }
+  }
+
+  it('holt die Partie nach einem Abriss von selbst ein', () => {
+    const p = durchtrennbar()
+    warte(400)
+    expect(p.a.lockstep.tick).toBeGreaterThan(5)
+
+    // Was schon angekommen war, wird noch verrechnet — ein Abriss macht die letzten
+    // Nachrichten nicht ungeschehen. Danach steht die Uhr, und zwar wirklich.
+    p.trennen()
+    warte(1000)
+    const vorAbriss = p.a.lockstep.tick
+    warte(4000)
+
+    expect(p.a.lockstep.tick, 'die Uhr lief ohne Gegenseite weiter').toBe(vorAbriss)
+    expect(p.a.sicht.value?.waiting).toBe(true)
+    expect(p.verloren.a).toBeGreaterThan(0)
+
+    // Und die Rueckkehr braucht KEINEN Anstoss: der Takt wiederholt von selbst, was
+    // nicht bestaetigt ist.
+    p.verbinden()
+    warte(RESEND_AFTER_MS + 400)
+
+    expect(p.a.lockstep.tick, 'die Partie ist nach der Rueckkehr nicht weitergelaufen').toBeGreaterThan(
+      vorAbriss,
+    )
+    expect(p.b.lockstep.tick).toBe(p.a.lockstep.tick)
+    expect(stateHash(p.a.lockstep.state)).toBe(stateHash(p.b.lockstep.state))
+  })
+
+  it('verliert dabei keinen Befehl, der waehrend des Abrisses gegeben wurde', () => {
+    // Der Befehl gilt fuer tick + 2 und faellt damit mitten in die Luecke. Er muss nach
+    // der Rueckkehr wirken - sonst waere die Wiederaufnahme eine Bequemlichkeit und keine
+    // Zusage.
+    const p = durchtrennbar()
+    warte(400)
+
+    p.trennen()
+    const armee = p.a.lockstep.state.armyOrder.find((id) => p.a.lockstep.state.armies[id]?.owner === 'p1')!
+    act(() => p.a.sicht.value?.give({ type: 'SET_STANCE', playerId: 'p1', armyId: armee, stance: 'defensive' }))
+    warte(3000)
+
+    expect(p.a.getickt.befehle, 'der Befehl hat waehrend des Abrisses gewirkt').toHaveLength(0)
+
+    p.verbinden()
+    warte(RESEND_AFTER_MS + 600)
+
+    expect(p.a.getickt.befehle.map((c) => c.type)).toContain('SET_STANCE')
+    expect(p.b.getickt.befehle.map((c) => c.type)).toContain('SET_STANCE')
+    expect(stateHash(p.a.lockstep.state)).toBe(stateHash(p.b.lockstep.state))
+  })
+
+  it('wiederholt nicht bei jedem Schlag, sondern hoechstens jede Sekunde', () => {
+    // Wiederholen ist gefahrlos, aber nicht umsonst: bei Tempo 50 waeren das sonst
+    // fuenfzig Nachrichten je Sekunde fuer nichts.
+    const p = durchtrennbar()
+    warte(400)
+    p.trennen()
+    warte(4000)
+
+    // Gezaehlt werden die verlorenen Sendungen einer Seite: je Schlag eine eigene
+    // Nachricht plus hoechstens eine Wiederholung je Sekunde - und nicht je Schlag.
+    const schlaege = 4000 / 20
+    expect(p.verloren.a).toBeLessThan(schlaege)
   })
 })

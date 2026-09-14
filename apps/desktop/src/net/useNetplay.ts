@@ -65,6 +65,20 @@ export interface NetplayView {
 /** Nach so viel Stille sagt die Kopfleiste, worauf sie wartet (wie STALL_AFTER_MS in App). */
 export const WAIT_NOTICE_AFTER_MS = 2000
 
+/**
+ * So oft werden unbestätigte Listen noch einmal geschickt, solange die Uhr wartet
+ * (T-M38-08, R-MP-07/AK1, D28.8).
+ *
+ * **Wiederholen statt Wiederverbinden erkennen.** Der Haken fragt den Transport nicht, ob
+ * es einen Abriss gab — er könnte es bei einem Schleifendoppel gar nicht wissen, und bei
+ * einer echten Leitung wäre die Antwort eine zweite Wahrheit neben dem, was die Gegenseite
+ * tatsächlich hat. Stattdessen gilt die einfachere Regel: **wer wartet, wiederholt.** Das
+ * deckt den Abriss ab, die verlorene Einzelnachricht und den Fall, in dem die Verbindung
+ * genau zwischen Senden und Ankommen starb — und es kostet nichts, weil erneutes Senden
+ * gefahrlos ist (`Lockstep.pending`, dieselbe Liste je Tick und Platz).
+ */
+export const RESEND_AFTER_MS = 1000
+
 /** Wie oft der Takt nachsieht, wenn keine Rate gesetzt ist. */
 const DEFAULT_BEAT_MS = 100
 
@@ -129,6 +143,8 @@ export function useNetplay(options: NetplayOptions): NetplayView {
   const emittedFor = useRef<number | null>(null)
   /** Wann zuletzt wirklich gerechnet wurde — für „warte auf Mitspieler". */
   const lastTickAt = useRef(0)
+  /** Wann zuletzt nachgeliefert wurde (T-M38-08) — nicht bei jedem Schlag. */
+  const lastResendAt = useRef(0)
 
   const send = useCallback(
     (message: NetMessage) => {
@@ -162,6 +178,7 @@ export function useNetplay(options: NetplayOptions): NetplayView {
     const { lockstep } = session
     emittedFor.current = null
     lastTickAt.current = nowRef.current()
+    lastResendAt.current = nowRef.current()
 
     const schicken = (): void => {
       if (emittedFor.current === lockstep.tick) return
@@ -191,6 +208,17 @@ export function useNetplay(options: NetplayOptions): NetplayView {
 
       if (lockstep.status !== 'desynced' && lockstep.status !== 'finished') {
         schicken()
+        // Wer wartet, wiederholt (T-M38-08). Nach einem Abriss ist die Rueckkehr damit ein
+        // Nachliefern und kein Neuanfang - und der Fall, in dem die Leitung genau zwischen
+        // Senden und Ankommen starb, heilt von selbst.
+        if (
+          lockstep.status === 'waiting' &&
+          jetzt - lastTickAt.current > RESEND_AFTER_MS &&
+          jetzt - lastResendAt.current >= RESEND_AFTER_MS
+        ) {
+          lastResendAt.current = jetzt
+          for (const message of lockstep.pending()) send(message)
+        }
         if (lockstep.canStep()) {
           const ergebnis = lockstep.step()
           if (!ergebnis.ran) ansagen()

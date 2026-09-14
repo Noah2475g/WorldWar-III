@@ -184,6 +184,29 @@ export class Lockstep {
   protected readonly outbox = new Map<number, Command[]>()
   /** Was für einen Tick schon eingetroffen ist, je Platz. */
   protected readonly inbox = new Map<number, Map<PlayerId, CommandsMessage>>()
+  /**
+   * Was hinausging und noch nicht **bestätigt** ist (T-M38-08, R-MP-07/AK1, D28.8).
+   *
+   * WLAN, Standby, ein versehentlich geschlossener Deckel — nichts davon darf eine Partie
+   * kosten. Nach der Rückkehr wird nachgeliefert, und zwar aus diesem Fach.
+   */
+  protected readonly sent = new Map<number, CommandsMessage>()
+  /**
+   * Der höchste Tick, dessen eigene Liste die Gegenseite nachweislich hat.
+   *
+   * **Bestätigt, nicht gesendet** — und der Unterschied ist die ganze Aufgabe. Wer ab dem
+   * letzten *gesendeten* Tick puffert, hält für zugestellt, was er gerade erst in die
+   * Leitung gegeben hat. Fällt die Verbindung **zwischen Senden und Ankommen**, fehlt der
+   * Gegenseite genau diese eine Liste, sie wartet für immer auf sie, und beide stehen.
+   * Im Test fällt das nie auf, wenn man den Fall nicht ausdrücklich schreibt; im Betrieb
+   * ist er der Normalfall, denn eine Verbindung reißt nicht in den Pausen zwischen den
+   * Nachrichten.
+   *
+   * Bestätigt wird **ohne eigene Nachrichtenart**: wer für Tick T sendet, hat T−1 gerechnet
+   * — und dafür brauchte er alle Listen bis T−1. Eine Quittung wäre eine zweite Wahrheit
+   * neben dieser.
+   */
+  protected acknowledged = -1
   protected finished = false
   protected divergence: DesyncReport | null = null
   protected pauseState: PauseState = NO_PAUSE
@@ -348,12 +371,49 @@ export class Lockstep {
     }
     // Die eigene Nachricht zählt mit: der Tick läuft, wenn ALLE Plätze geliefert haben.
     this.put(this.seat, message)
+    // Und sie bleibt liegen, bis die Gegenseite sie nachweislich hat (T-M38-08).
+    if (tick > this.acknowledged) this.sent.set(tick, message)
     return message
   }
 
   /** Eine Nachricht der Gegenseite einsortieren. */
   receive(from: PlayerId, message: CommandsMessage): void {
     this.put(from, message)
+    this.acknowledge(message.tick)
+  }
+
+  /**
+   * Was die Gegenseite mit ihrer Nachricht für `peerTick` mit bestätigt (T-M38-08).
+   *
+   * Sie hat `peerTick − 1` gerechnet, sonst könnte sie für `peerTick` nicht sprechen — und
+   * dafür brauchte sie jede eigene Liste bis `peerTick − 1`. Alles darunter darf aus dem
+   * Fach.
+   */
+  protected acknowledge(peerTick: number): void {
+    const bis = peerTick - 1
+    if (bis <= this.acknowledged) return
+    this.acknowledged = bis
+    for (const tick of [...this.sent.keys()]) {
+      if (tick <= bis) this.sent.delete(tick)
+    }
+  }
+
+  /** Bis zu welchem Tick die Gegenseite nachweislich beliefert ist. `-1` heißt: gar nicht. */
+  get confirmedThrough(): number {
+    return this.acknowledged
+  }
+
+  /**
+   * Was nach einer Rückkehr nachzuliefern ist — in der Reihenfolge der Ticks.
+   *
+   * Erneut zu senden ist gefahrlos: `put` legt je Tick und Platz genau eine Nachricht ab,
+   * eine zweite überschreibt die erste mit demselben Inhalt. Deshalb darf diese Liste auch
+   * hinausgehen, wenn es gar keinen Abriss gab, sondern nur eine langsame Gegenseite —
+   * und genau das macht die Wiederaufnahme unabhängig davon, ob der Transport einen
+   * Abriss überhaupt bemerkt hat.
+   */
+  pending(): CommandsMessage[] {
+    return [...this.sent.values()].sort((a, b) => a.tick - b.tick)
   }
 
   protected put(from: PlayerId, message: CommandsMessage): void {
