@@ -78,6 +78,16 @@ export interface ProbeMessage extends Envelope {
   kind: 'probe'
   ticks: number
   hash: string
+  /**
+   * Die Prüfsumme des Standes, **von dem** die Probe losgerechnet hat (T-M39-06, R-MP-13).
+   *
+   * Ohne diese Zahl ist eine abweichende Probe mehrdeutig: zwei Seiten, die von
+   * verschiedenen gespeicherten Ständen losrechnen, bekommen zwangsläufig verschiedene
+   * Ergebnisse, ohne dass irgendetwas kaputt wäre. Mit ihr sind die beiden Fälle
+   * unterscheidbar — gleicher Start und verschiedenes Ergebnis heißt „die Rechner rechnen
+   * verschieden" (Abbruch), verschiedener Start heißt „verschiedene Stände" (übertragen).
+   */
+  fromHash: string
 }
 
 /**
@@ -212,6 +222,8 @@ export function parseMessage(raw: unknown): ParseResult {
 
     case 'probe':
       if (!isTick(raw['ticks']) || !isString(raw['hash'])) return fail('probe braucht Tickzahl und Pruefsumme.')
+      // Ohne den Startabdruck waere eine abweichende Probe mehrdeutig (T-M39-06).
+      if (!isString(raw['fromHash'])) return fail('probe braucht die Pruefsumme des Startstandes.')
       return { ok: true, message: raw as unknown as ProbeMessage }
 
     case 'befehle':

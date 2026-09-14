@@ -5467,16 +5467,29 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Ziel:** eine Partie über mehrere Abende. Sonst ist jeder Abbruch endgültig.
 - **Anforderungen:** R-MP-13 · **Entwurf:** D28.11
 - **Abhängigkeiten:** T-M39-03, T-M38-10
-- **Dateien:** `packages/netplay/src/handshake.ts`, `apps/desktop/src/game/saves.ts`,
-  `apps/desktop/src/net/useNetplay.ts`
+- **Dateien:** `packages/netplay/src/handshake.ts`, `packages/netplay/src/protocol.ts`,
+  `apps/desktop/src/game/saves.ts`, `apps/desktop/src/net/party.ts`,
+  `apps/desktop/src/App.tsx` *(der Plan nannte hier `net/useNetplay.ts` — der Vergleich
+  gehört in den Handschlag und nicht in die laufende Uhr)*
 - **Tests zuerst:** stimmen die Stände beider Seiten überein, geht es weiter; stimmen sie
   nicht, überträgt der Host seinen und beide prüfen erneut (`R-MP-13/AK1`); die
   fortgesetzte Partie führt dieselbe Prüfsumme wie der gespeicherte Stand
-  (`R-MP-13/AK2`).
+  (`R-MP-13/AK2`). Gemessen auf der **Weltkarte** über dreißig Spieltage, nicht auf der
+  Testkarte. **Gegenprobe gefahren:** nimmt man die Übertragung heraus, fällt genau die
+  Zusicherung, die sie zählt.
 - **Fertig wenn:** die Übertragung des Standes die einzige Stelle bleibt, an der ein
-  Zustand über die Leitung geht. Gemessen sind das 249 KB nach dreißig Spieltagen; wächst
-  eine lange Partie deutlich darüber hinaus, gehört die Zahl in den Bericht und nicht in
-  eine Schätzung.
+  Zustand über die Leitung geht. **Gemessen am 2026-09-14:** die `zustand`-Nachricht ist
+  **92 KB** am Anfang und **263 KB** nach dreißig Spieltagen — der Bauplan nannte 93,6 KB
+  und 249 KB (gemessen 2026-09-12, ohne Umschlag). Der Unterschied sind 5,6 %, also keine
+  andere Größenordnung; die Zahl steht trotzdem hier und nicht als Schätzung.
+  **Die eine Entwurfsänderung, ohne die es nicht geht:** die Probennachricht trägt seit
+  hier auch den Stand, **von dem** sie losgerechnet hat (`fromHash`). Ohne ihn ist eine
+  abweichende Probe mehrdeutig — zwei Seiten mit verschiedenen gespeicherten Ständen
+  bekommen zwangsläufig verschiedene Ergebnisse, ohne dass etwas kaputt wäre. Mit ihm sind
+  die beiden Fälle exakt trennbar: gleicher Start und anderes Ergebnis heißt **Abbruch**,
+  anderer Start heißt **übertragen**. Die sichere Alternative wäre „immer übertragen"
+  gewesen — dann ginge bei *jeder* Partie ein Viertelmegabyte über die Leitung, und
+  „übertragen werden Befehle, nie Zustände" (D28.2) hätte eine stille Ausnahme.
 
 ### T-M39-07 · Die Anleitung erklärt die Einladung
 - **Ziel:** das Spiel erklärt heute die Geschwindigkeitsregelung ausführlich, weil es

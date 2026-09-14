@@ -142,7 +142,9 @@ describe('R-MP-06 Der WebSocket-Transport, ueber den Vertrag hinaus', () => {
 
     enden.a.onmessage?.({ data: 'kein JSON' })
     enden.a.onmessage?.({ data: JSON.stringify({ kind: 'schummeln', version: 1 }) })
-    enden.a.onmessage?.({ data: JSON.stringify({ ...envelope('probe'), ticks: 24, hash: 'gut' }) })
+    enden.a.onmessage?.({
+      data: JSON.stringify({ ...envelope('probe'), ticks: 24, hash: 'gut', fromHash: 'start' }),
+    })
     drain(queue)
 
     expect(gemeldet).toHaveLength(2)

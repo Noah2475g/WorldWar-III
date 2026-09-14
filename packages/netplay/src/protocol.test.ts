@@ -53,7 +53,7 @@ const beispiele: Record<(typeof MESSAGE_KINDS)[number], NetMessage> = {
     probeTicks: 24,
     fixedSpeed: 10,
   },
-  probe: { ...envelope('probe'), ticks: 24, hash: '0123456789abcdef' },
+  probe: { ...envelope('probe'), ticks: 24, hash: '0123456789abcdef', fromHash: 'fedcba9876543210' },
   befehle: { ...envelope('befehle'), tick: 12, commands: [befehl], hash: '0123456789abcdef' },
   pause: { ...envelope('pause'), art: 'antrag', abTick: 14 },
   zustand: { ...envelope('zustand'), state },
@@ -114,6 +114,9 @@ describe('R-MP-03 Das Protokoll: sieben Arten, reines JSON, jede mit ihrer Fassu
       { ...beispiele.willkommen, fixedSpeed: -5 },
       { ...beispiele.willkommen, fixedSpeed: 'schnell' },
       { ...beispiele.probe, hash: 5 },
+      // Ohne Startabdruck waere eine abweichende Probe mehrdeutig (T-M39-06, R-MP-13).
+      { ...beispiele.probe, fromHash: undefined },
+      { ...beispiele.probe, fromHash: 7 },
       { ...beispiele.befehle, tick: 1.5 },
       { ...beispiele.befehle, commands: [{ type: 'MOVE_ARMY' }] },
       { ...beispiele.befehle, commands: 'keine Liste' },

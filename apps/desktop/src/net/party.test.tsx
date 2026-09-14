@@ -2,13 +2,15 @@
 import { readFileSync } from 'node:fs'
 import { createElement, useEffect } from 'react'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { advanceTicks } from '@worldwar/ai'
+import { createInitialState } from '@worldwar/core'
 import { createLoopback, stateHash, type Transport } from '@worldwar/netplay'
 import { TEST_RULES } from '@worldwar/testkit'
-import type { GameConfig, MapData } from '@worldwar/core'
+import type { GameConfig, GameState, MapData } from '@worldwar/core'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App.tsx'
 import { DEFAULT_NEW_GAME, toConfig } from '../game/newGame.ts'
-import { humanSeats, termsOf, useParty, type PartyView } from './party.ts'
+import { configOfState, humanSeats, termsOf, useParty, type PartyView } from './party.ts'
 import { parseNetLink } from './link.ts'
 
 /**
@@ -53,10 +55,13 @@ function Traeger({
   role,
   transport,
   sicht,
+  savedState,
 }: {
   role: 'host' | 'guest'
   transport: Transport
   sicht: { value: PartyView | null }
+  /** Der eigene gespeicherte Stand — beim Gast die Haelfte des Vergleichs (T-M39-06). */
+  savedState?: GameState | null
 }) {
   const view = useParty({
     link: { role, room: 'raum1', secret: 'geheim' },
@@ -64,6 +69,7 @@ function Traeger({
     origin: 'http://host:7749',
     mapById,
     rules: TEST_RULES,
+    savedState: savedState ?? null,
   })
   useEffect(() => {
     sicht.value = view
@@ -349,5 +355,98 @@ describe('R-MP-12/AK1 Die Bedingungen kommen aus der Partiedefinition, nicht aus
     expect(terms.victory).toBe('conquest')
     expect(terms.fixedSpeed).toBe(5)
     expect(terms.aiOpponents).toBe(config.players.filter((p) => p.kind === 'ai').length)
+  })
+})
+
+/**
+ * Speichern und Fortsetzen zu zweit, in der Huelle (T-M39-06, R-MP-13, D28.11).
+ *
+ * Der Mechanismus selbst — Vergleich, Uebertragung, erneute Pruefung — steht in
+ * `packages/netplay/test/resume-save.test.ts` und ist dort auf der Weltkarte ueber
+ * dreissig Spieltage gemessen. **Hier geht es um die Verdrahtung:** dass ein Gastgeber
+ * einen geladenen Stand wirklich anbieten kann und dass ein Gast mit einem anderen Stand
+ * danach beim Stand des Gastgebers landet. Ohne diesen Lauf waere das Fortsetzen gebaut
+ * und nicht erreichbar — die Fehlerklasse, fuer die es den Erreichbarkeits-Waechter gibt.
+ */
+describe('R-MP-13/AK1 Ein geladener Stand wird angeboten, nicht heimlich verschickt', () => {
+  /**
+   * Zwei Haken an einer Leitung, und ein Schnueffler, der zaehlt, was der Gastgeber
+   * schickt.
+   *
+   * Der Schnueffler wird NACH den Haken angemeldet: das Schleifendoppel reicht seinen
+   * Puffer dem ersten Hoerer weiter, und wer sich vordraengt, nimmt dem Gast seine
+   * Willkommensnachricht weg.
+   */
+  const paar = (gastStand: GameState | null = null) => {
+    const leitung = createLoopback()
+    const gastgeber = { value: null as PartyView | null }
+    const gast = { value: null as PartyView | null }
+    render(createElement(Traeger, { role: 'host', transport: leitung.a, sicht: gastgeber }))
+    render(
+      createElement(Traeger, { role: 'guest', transport: leitung.b, sicht: gast, savedState: gastStand }),
+    )
+    const vomGastgeber: string[] = []
+    leitung.b.onMessage((message) => vomGastgeber.push(message.kind))
+    return { gastgeber, gast, leitung, vomGastgeber }
+  }
+
+  /** Ein Stand, der ein paar Spielstunden alt ist — die Testkarte, damit es schnell geht. */
+  const gespielt = (ticks: number) => {
+    const config = toConfig(partieOptionen, testworld)
+    return advanceTicks(createInitialState(config, { map: testworld, rules: TEST_RULES }), ticks, {
+      map: testworld,
+      rules: TEST_RULES,
+    }, {}).state
+  }
+
+  it('laesst beide weiterspielen, wenn die Staende gleich sind — ohne Uebertragung', () => {
+    // Der Normalfall eines zweiten Abends: beide haben denselben Stand gesichert. Dann
+    // geht KEIN Zustand ueber die Leitung, und genau das wird gezaehlt.
+    const stand = gespielt(48)
+    const { gastgeber, gast, vomGastgeber } = paar(gespielt(48))
+
+    act(() => gastgeber.value!.offer(configOfState(stand), 25, stand))
+    act(() => gast.value!.join('Jonas'))
+    act(() => gastgeber.value!.begin())
+
+    expect(gastgeber.value?.phase).toBe('playing')
+    expect(gast.value?.phase, 'der Gast ist nicht mitgekommen').toBe('playing')
+    expect(vomGastgeber, 'ein Zustand ging ueber die Leitung, obwohl beide denselben hatten').not.toContain(
+      'zustand',
+    )
+    expect(vomGastgeber, 'der Handschlag hat gar nicht stattgefunden').toContain('probe')
+    expect(stateHash(gast.value!.start!.state)).toBe(stateHash(stand))
+  })
+
+  it('uebertraegt den Stand des Gastgebers, wenn der Gast einen anderen hat', () => {
+    const standDesHosts = gespielt(48)
+    const { gastgeber, gast, vomGastgeber } = paar(gespielt(24))
+
+    act(() => gastgeber.value!.offer(configOfState(standDesHosts), 25, standDesHosts))
+    act(() => gast.value!.join('Jonas'))
+    act(() => gastgeber.value!.begin())
+
+    // Der Gast hatte einen aelteren Stand (Tick 24) und landet trotzdem bei dem des
+    // Gastgebers - ueber genau eine `zustand`-Nachricht.
+    expect(vomGastgeber.filter((kind) => kind === 'zustand')).toHaveLength(1)
+    expect(gast.value?.phase).toBe('playing')
+    expect(gast.value?.start?.state.tick, 'der Gast spielt bei Tick 0 weiter').toBe(48)
+    expect(stateHash(gast.value!.start!.state)).toBe(stateHash(standDesHosts))
+    expect(stateHash(gastgeber.value!.start!.state)).toBe(stateHash(standDesHosts))
+  })
+
+  it('liest die Partiedefinition aus dem Stand, statt eine zweite Wahrheit anzulegen', () => {
+    const stand = gespielt(48)
+    const config = configOfState(stand)
+
+    expect(config.mapId).toBe(stand.mapId)
+    expect(config.seed).toBe(stand.seed)
+    expect(config.players.map((p) => p.nation)).toEqual(stand.playerOrder.map((id) => stand.players[id]!.nation))
+    expect(config.players.map((p) => p.kind)).toEqual(stand.playerOrder.map((id) => stand.players[id]!.kind))
+    expect(config.victory.condition).toBe(stand.victory.condition)
+    // Und sie erzeugt NICHT denselben Zustand wieder: der Anfang ist nicht der 48. Tick.
+    const neu = createInitialState(config, { map: testworld, rules: TEST_RULES })
+    expect(neu.tick).toBe(0)
+    expect(stateHash(neu)).not.toBe(stateHash(stand))
   })
 })

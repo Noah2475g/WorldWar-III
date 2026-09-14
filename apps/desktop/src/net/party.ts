@@ -2,17 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createInitialState, type GameConfig, type GameState, type MapData, type PlayerId, type Rules } from '@worldwar/core'
 import {
   PROBE_TICKS,
+  acceptState,
   compareFingerprints,
-  compareProbe,
   createLockstep,
   envelope,
   fingerprintOf,
   fingerprintOfWelcome,
   hello,
   probeMessage,
-  runProbe,
+  resumeDecision,
+  runProbeFrom,
+  stateMessage,
   welcome,
   type NetMessage,
+  type ProbeMessage,
   type ProbeOutcome,
   type Transport,
   type WelcomeMessage,
@@ -120,8 +123,14 @@ export interface PartyView {
   session: NetplaySession | null
   /** Der Stand, mit dem die Hülle loslegt — einmal gesetzt, wenn `playing` beginnt. */
   start: PartyStart | null
-  /** Der Gastgeber legt die Partie an (T-M39-03). */
-  offer: (config: GameConfig, fixedSpeed: number) => void
+  /**
+   * Der Gastgeber legt die Partie an (T-M39-03) — oder setzt eine gespeicherte fort.
+   *
+   * `resume` ist der geladene Stand; ohne ihn beginnt die Partie beim Anfang. Er ist die
+   * einzige Stelle, an der ein Zustand über die Leitung geht (D28.11), und auch das nur,
+   * wenn der Gast einen anderen hat.
+   */
+  offer: (config: GameConfig, fixedSpeed: number, resume?: GameState | null) => void
   /** Der Gast nennt seinen Namen und tritt bei (T-M39-02). */
   join: (name: string) => void
   /** Der Gastgeber startet — erst das löst den Handschlag aus (R-MP-12/AK2). */
@@ -144,6 +153,15 @@ export interface PartyOptions {
   origin: string
   mapById: (id: string) => MapData
   rules: Rules
+  /**
+   * Der eigene gespeicherte Stand, falls es einen gibt (T-M39-06, R-MP-13/AK1).
+   *
+   * Beim Gast ist das die Hälfte des Vergleichs: stimmt er mit dem des Gastgebers
+   * überein, geht es weiter, und **nichts** geht über die Leitung. `null` heißt „ich habe
+   * keinen" — dann rechnet der Gast vom frischen Startzustand, und der Unterschied fällt
+   * dem Gastgeber auf, wie jeder andere auch.
+   */
+  savedState?: GameState | null
 }
 
 /** Was der Gast aus der Partiedefinition des Hosts liest (R-MP-12/AK1). */
@@ -158,6 +176,43 @@ export function termsOf(message: WelcomeMessage): PartyTerms {
     aiOpponents: spieler.filter((player) => player.kind === 'ai').length,
     victory: message.config.victory.condition === 'conquest' ? 'conquest' : 'points',
     fixedSpeed: message.fixedSpeed,
+  }
+}
+
+/**
+ * Die Partiedefinition eines gespeicherten Standes (T-M39-06, R-MP-13, D28.11).
+ *
+ * Zum Fortsetzen braucht der Gast beides: die **Bedingungen** (Karte, Nationen, Rate —
+ * sie stehen in `willkommen` und damit in einer `GameConfig`) und den **Stand** selbst.
+ * Ein geladener Spielstand trägt keine Partiedefinition mit sich; er trägt aber alles,
+ * woraus sie besteht. Die Felder werden deshalb hier zurückgelesen, statt den Zustand um
+ * eine zweite Wahrheit zu erweitern — der Kern wird nicht angefasst (D28.1).
+ *
+ * **Sie erzeugt nicht denselben Zustand wieder.** Wer `createInitialState` damit aufruft,
+ * bekommt den Anfang der Partie und nicht ihren dreißigsten Tag; der Stand selbst geht als
+ * `zustand` über die Leitung. Diese Definition ist für die **Anzeige** und für den
+ * Handschlag da.
+ */
+export function configOfState(state: GameState): GameConfig {
+  return {
+    seed: state.seed,
+    mapId: state.mapId,
+    rulesId: state.rulesId,
+    players: state.playerOrder.map((id) => {
+      const player = state.players[id]!
+      return {
+        name: player.name,
+        kind: player.kind,
+        nation: player.nation,
+        color: player.color,
+        ...(player.difficulty ? { difficulty: player.difficulty } : {}),
+      }
+    }),
+    victory: {
+      condition: state.victory.condition,
+      pointsShareToWin: state.victory.pointsShareToWin,
+      dayLimit: state.victory.dayLimit,
+    },
   }
 }
 
@@ -192,9 +247,13 @@ export function useParty(options: PartyOptions): PartyView {
 
   const transportRef = useRef<Transport | null>(null)
   /** Was der Gastgeber anzubieten hat — erst gesetzt, wenn er die Partie angelegt hat. */
-  const offerRef = useRef<{ config: GameConfig; fixedSpeed: number } | null>(null)
+  const offerRef = useRef<{ config: GameConfig; fixedSpeed: number; resume: GameState | null } | null>(null)
   /** Beim Gast: die Willkommensnachricht, aus der Zustand und Bedingungen entstehen. */
   const welcomeRef = useRef<WelcomeMessage | null>(null)
+  /** Die Probe der Gegenseite — beim Gast der Startabdruck, gegen den ein `zustand` prüft. */
+  const otherProbeRef = useRef<ProbeMessage | null>(null)
+  const savedRef = useRef<GameState | null>(options.savedState ?? null)
+  savedRef.current = options.savedState ?? null
   /** Die eigene Probe — erst nach ihr darf verglichen werden. */
   const probeRef = useRef<ProbeOutcome | null>(null)
   /** Sitzt die Gegenseite im Raum? Beim Host: hat schon jemand `hallo` gesagt? */
@@ -243,10 +302,9 @@ export function useParty(options: PartyOptions): PartyView {
    * sie davor und nicht daneben.
    */
   const beginnen = useCallback(
-    (config: GameConfig, fixedSpeed: number): void => {
+    (config: GameConfig, fixedSpeed: number, state: GameState): void => {
       const map = mapByIdRef.current(config.mapId)
       const ctx = { map, rules: rulesRef.current }
-      const state = createInitialState(config, ctx)
       const lockstep = createLockstep({ seat, seats: humanSeats(state), state, ctx })
       const leitung = transportRef.current
       if (!leitung) return
@@ -295,12 +353,25 @@ export function useParty(options: PartyOptions): PartyView {
           const eigene = probeRef.current
           const angebot = offerRef.current
           if (!eigene || !angebot) return
-          const vergleich = compareProbe(eigene, message)
-          if (!vergleich.ok) {
-            abbrechen(vergleich.reason, true)
+          const eigenerStand =
+            angebot.resume ??
+            createInitialState(angebot.config, {
+              map: mapByIdRef.current(angebot.config.mapId),
+              rules: rulesRef.current,
+            })
+          const entscheid = resumeDecision(eigene, message)
+          if (entscheid.kind === 'abort') {
+            // Derselbe Stand, zwei Ergebnisse: das ist ein Rechenfehler und kein Fall
+            // fuer eine Uebertragung (R-MP-13/AK1, T-M39-06).
+            abbrechen(entscheid.reason, true)
             return
           }
-          beginnen(angebot.config, angebot.fixedSpeed)
+          if (entscheid.kind === 'transfer') {
+            // Die EINZIGE Stelle, an der ein Zustand ueber die Leitung geht (D28.11).
+            // Gemessen: 92 KB am Anfang, 263 KB nach dreissig Spieltagen.
+            send(stateMessage(eigenerStand))
+          }
+          beginnen(angebot.config, angebot.fixedSpeed, eigenerStand)
         } else if (message.kind === 'ende') {
           // Der Gast ist gegangen. Der Platz im Raum wird ohnehin frei (T-M38-07); hier
           // wird der Bildschirm wieder ehrlich, statt einen Namen stehen zu lassen.
@@ -326,17 +397,41 @@ export function useParty(options: PartyOptions): PartyView {
         // vorher gibt es keine Partiedefinition, gegen die er sie halten koennte.
         const willkommen = welcomeRef.current
         if (!willkommen) return
+        otherProbeRef.current = message
         setSnapshot((alt) => ({ ...alt, phase: 'checking' }))
         const map = mapByIdRef.current(willkommen.config.mapId)
-        const eigene = runProbe(willkommen.config, { map, rules: rulesRef.current }, message.ticks)
+        const ctx = { map, rules: rulesRef.current }
+        // Der eigene Ausgangspunkt: der gespeicherte Stand, wenn er zu DIESER Karte
+        // gehoert, sonst der frische Anfang. Ein Stand einer anderen Karte waere kein
+        // aelterer Stand derselben Partie, sondern eine andere Partie.
+        const eigenerStand =
+          savedRef.current && savedRef.current.mapId === willkommen.config.mapId
+            ? savedRef.current
+            : createInitialState(willkommen.config, ctx)
+        const eigene = runProbeFrom(eigenerStand, ctx, message.ticks)
         probeRef.current = eigene
-        const vergleich = compareProbe(eigene, message)
-        if (!vergleich.ok) {
-          abbrechen(vergleich.reason, true)
+        send(probeMessage(eigene))
+
+        const entscheid = resumeDecision(eigene, message)
+        if (entscheid.kind === 'abort') {
+          abbrechen(entscheid.reason, true)
           return
         }
-        send(probeMessage(eigene))
-        beginnen(willkommen.config, willkommen.fixedSpeed)
+        // Bei `transfer` wird NICHT begonnen: der Stand des Gastgebers ist unterwegs, und
+        // mit dem eigenen loszurechnen hiesse, zwei Welten nebeneinander zu fuehren.
+        if (entscheid.kind === 'continue') beginnen(willkommen.config, willkommen.fixedSpeed, eigenerStand)
+      } else if (message.kind === 'zustand') {
+        // Der uebertragene Stand (T-M39-06, R-MP-13/AK2). Geprueft wird gegen das, was der
+        // Gastgeber ANGEKUENDIGT hat, nicht gegen das, was ankam.
+        const willkommen = welcomeRef.current
+        const angekuendigt = otherProbeRef.current?.fromHash
+        if (!willkommen || !angekuendigt) return
+        const genommen = acceptState(message, angekuendigt)
+        if (!genommen.ok) {
+          abbrechen(genommen.reason, true)
+          return
+        }
+        beginnen(willkommen.config, willkommen.fixedSpeed, genommen.state)
       } else if (message.kind === 'ende') {
         setSnapshot((alt) =>
           alt.phase === 'playing'
@@ -364,8 +459,8 @@ export function useParty(options: PartyOptions): PartyView {
   }, [linkRole, hatLeitung, room, secret, origin, peer, send, abbrechen, beginnen])
 
   const offer = useCallback(
-    (config: GameConfig, fixedSpeed: number) => {
-      offerRef.current = { config, fixedSpeed }
+    (config: GameConfig, fixedSpeed: number, resume: GameState | null = null) => {
+      offerRef.current = { config, fixedSpeed, resume }
       setSnapshot((alt) => ({ ...alt, offered: true, terms: null }))
       // Wartet schon jemand, bekommt er die Bedingungen sofort; sonst beim `hallo`.
       if (peerRef.current) {
@@ -401,8 +496,12 @@ export function useParty(options: PartyOptions): PartyView {
     const angebot = offerRef.current
     if (!angebot) return
     setSnapshot((alt) => ({ ...alt, phase: 'checking' }))
-    const map = mapByIdRef.current(angebot.config.mapId)
-    const eigene = runProbe(angebot.config, { map, rules: rulesRef.current }, PROBE_TICKS)
+    const ctx = { map: mapByIdRef.current(angebot.config.mapId), rules: rulesRef.current }
+    // Der Ausgangspunkt ist der geladene Stand, wenn es einen gibt - sonst der Anfang.
+    // Die Probe rechnet von DORT los und nennt ihn; ohne diesen Abdruck haelte die
+    // Gegenseite einen anderen Stand fuer einen Rechenfehler (T-M39-06, R-MP-13).
+    const start = angebot.resume ?? createInitialState(angebot.config, ctx)
+    const eigene = runProbeFrom(start, ctx, PROBE_TICKS)
     probeRef.current = eigene
     send(probeMessage(eigene))
   }, [send])

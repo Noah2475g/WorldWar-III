@@ -130,7 +130,7 @@ describe('R-MP-06 Die Nachrichten des Handschlags', () => {
 
 describe('R-MP-06/AK3 Unbekanntes wird verworfen und gemeldet, nie geraten', () => {
   it('nimmt an, was das Protokoll kennt', () => {
-    const message = { ...envelope('probe'), ticks: 24, hash: 'abc' }
+    const message = { ...envelope('probe'), ticks: 24, hash: 'abc', fromHash: 'start' }
     const result = accept(message)
 
     expect(result.ok).toBe(true)

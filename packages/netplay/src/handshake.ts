@@ -1,5 +1,12 @@
 import { advanceTicks } from '@worldwar/ai'
-import { createInitialState, type GameConfig, type MapData, type PlayerId, type Rules } from '@worldwar/core'
+import {
+  createInitialState,
+  type GameConfig,
+  type GameState,
+  type MapData,
+  type PlayerId,
+  type Rules,
+} from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 import { stateHash } from './lockstep'
 import {
@@ -9,6 +16,7 @@ import {
   type HelloMessage,
   type NetMessage,
   type ProbeMessage,
+  type StateMessage,
   type WelcomeMessage,
 } from './protocol'
 
@@ -188,6 +196,15 @@ export const PROBE_TICKS = 24
 export interface ProbeOutcome {
   ticks: number
   hash: string
+  /**
+   * Die Prüfsumme des Standes, **von dem** gerechnet wurde (T-M39-06).
+   *
+   * Bei einer frischen Partie ist das der Startzustand aus der Partiedefinition, bei einer
+   * Wiederaufnahme der gespeicherte Stand. Sie macht eine abweichende Probe eindeutig:
+   * gleicher Start heißt „die Rechner rechnen verschieden", verschiedener Start heißt
+   * „verschiedene Stände" (D28.11).
+   */
+  from: string
   /** Wie lange sie gedauert hat. Für die Messung, nicht für den Vergleich. */
   ms: number
 }
@@ -206,15 +223,32 @@ export function runProbe(
   ticks: number = PROBE_TICKS,
   now: () => number = () => Date.now(),
 ): ProbeOutcome {
+  return runProbeFrom(createInitialState(config, ctx), ctx, ticks, now)
+}
+
+/**
+ * Dieselbe Probe, aber von einem **gegebenen** Stand aus (T-M39-06, R-MP-13).
+ *
+ * Für die Wiederaufnahme: dort ist der Ausgangspunkt kein frisch erzeugter Zustand,
+ * sondern ein gespeicherter. Dieselbe Rechnung, ein anderer Anfang — und der Anfang steht
+ * als `from` in der Nachricht, damit ein Unterschied nicht für einen Rechenfehler gehalten
+ * wird.
+ */
+export function runProbeFrom(
+  state: GameState,
+  ctx: { map: MapData; rules: Rules },
+  ticks: number = PROBE_TICKS,
+  now: () => number = () => Date.now(),
+): ProbeOutcome {
   const begonnen = now()
-  const start = createInitialState(config, ctx)
-  const result = advanceTicks(start, ticks, ctx, { scripted: () => [] })
-  return { ticks: result.ticks, hash: stateHash(result.state), ms: now() - begonnen }
+  const from = stateHash(state)
+  const result = advanceTicks(state, ticks, ctx, { scripted: () => [] })
+  return { ticks: result.ticks, hash: stateHash(result.state), from, ms: now() - begonnen }
 }
 
 /** Das Ergebnis als Nachricht. */
 export function probeMessage(outcome: ProbeOutcome): ProbeMessage {
-  return { ...envelope('probe'), ticks: outcome.ticks, hash: outcome.hash }
+  return { ...envelope('probe'), ticks: outcome.ticks, hash: outcome.hash, fromHash: outcome.from }
 }
 
 /**
@@ -263,4 +297,119 @@ export function handshakeComplete(
   const abdruck = compareFingerprints(own, fingerprintOfWelcome(welcome))
   if (!abdruck.ok) return abdruck
   return compareProbe(ownProbe, otherProbe)
+}
+
+/**
+ * Speichern und Fortsetzen zu zweit (T-M39-06, R-MP-13, D28.11).
+ *
+ * Beide speichern lokal weiter, wie im Einzelspieler. Zum Fortsetzen eröffnet der Host
+ * einen neuen Raum, und der Handschlag vergleicht die Stände: sind sie gleich, geht es
+ * weiter; sind sie ungleich — der Gast hat einen älteren Stand oder gar keinen —, überträgt
+ * der Host seinen, und **beide prüfen erneut**.
+ *
+ * ## Warum die Probe dafür einen Startabdruck bekommt
+ *
+ * Bis hierher trug `probe` zwei Zahlen: wie viele Ticks gerechnet wurden und was dabei
+ * herauskam. Weichen zwei Prüfsummen ab, war der Schluss eindeutig — die Rechner rechnen
+ * verschieden, und die Partie beginnt nicht. **Beim Fortsetzen ist derselbe Befund
+ * mehrdeutig:** zwei Seiten, die von *verschiedenen Ständen* losrechnen, bekommen
+ * zwangsläufig verschiedene Prüfsummen, ohne dass irgendetwas kaputt wäre.
+ *
+ * Die Probe nennt deshalb seit T-M39-06 auch den Stand, **von dem** sie losgerechnet hat.
+ * Damit sind die beiden Fälle unterscheidbar, und zwar genau:
+ *
+ * | Startabdruck | Probenprüfsumme | Schluss |
+ * |---|---|---|
+ * | gleich | gleich | weiter — beide rechnen dasselbe aus demselben Stand |
+ * | gleich | verschieden | **Abbruch**: dieselbe Ausgangslage, zwei Ergebnisse |
+ * | verschieden | — | **Übertragen**: verschiedene Stände, kein Rechenfehler |
+ *
+ * Ohne diese Zeile müsste der Host raten, und die sichere Richtung wäre „immer
+ * übertragen" — dann ginge bei *jeder* Partie ein Viertelmegabyte über die Leitung, und
+ * die Zusage „übertragen werden Befehle, nie Zustände" (D28.2) hätte eine stille Ausnahme.
+ */
+
+/** Was eine Seite über den Stand sagt, mit dem sie anfangen will. */
+export interface SavedGame {
+  /** Die Spielstunde des Standes — zur Anzeige, nicht zum Vergleich. */
+  tick: number
+  /** Die Prüfsumme des Standes. **Das** ist der Vergleich. */
+  hash: string
+}
+
+export function savedGameOf(state: GameState): SavedGame {
+  return { tick: state.tick, hash: stateHash(state) }
+}
+
+/** Was aus zwei Startabdrücken folgt (R-MP-13/AK1). */
+export type ResumeDecision =
+  /** Beide haben denselben Stand — es geht weiter, und nichts geht über die Leitung. */
+  | { kind: 'continue' }
+  /** Verschiedene Stände: der Host überträgt seinen, und beide prüfen erneut. */
+  | { kind: 'transfer'; reason: string }
+  /** Derselbe Stand, zwei Ergebnisse. Das ist kein Fall für eine Übertragung. */
+  | { kind: 'abort'; reason: string }
+
+/**
+ * Der Vergleich, aus der Sicht des Hosts.
+ *
+ * Die Reihenfolge der Prüfungen ist gewählt: **zuerst der Startabdruck.** Stimmen die
+ * Stände nicht überein, sagt die Probenprüfsumme nichts — sie *muss* dann abweichen. Wer
+ * andersherum prüfte, meldete bei jeder Wiederaufnahme „die Rechner rechnen verschieden"
+ * und schickte den Nächsten auf die Suche nach einem Fehler im Kern, den es nicht gibt.
+ */
+export function resumeDecision(own: ProbeOutcome, other: ProbeMessage): ResumeDecision {
+  if (other.fromHash !== own.from) {
+    return {
+      kind: 'transfer',
+      reason:
+        `Die beiden Seiten beginnen bei verschiedenen Staenden: ${own.from} gegen ${other.fromHash}. ` +
+        'Der Stand des Gastgebers wird uebertragen, und danach wird erneut geprueft.',
+    }
+  }
+  if (own.ticks !== other.ticks || own.hash !== other.hash) {
+    return {
+      kind: 'abort',
+      reason:
+        `Aus demselben Stand ${own.from} kommen nach ${own.ticks} Probeticks zwei Ergebnisse: ` +
+        `${own.hash} gegen ${other.hash}. Die Partie beginnt nicht.`,
+    }
+  }
+  return { kind: 'continue' }
+}
+
+/**
+ * Der Spielstand als Nachricht — **die einzige Stelle, an der ein Zustand über die Leitung
+ * geht** (D28.11).
+ *
+ * Gemessen am 2026-09-12 (Bauplan §1): 93,6 KB am Anfang, 249 KB nach dreißig Spieltagen.
+ * Der Wert ist kein Schätzwert und wird in `resume-save.test.ts` nachgemessen — wächst
+ * eine lange Partie deutlich darüber hinaus, gehört die Zahl in den Bericht.
+ */
+export function stateMessage(state: GameState): StateMessage {
+  return { ...envelope('zustand'), state }
+}
+
+/**
+ * Einen übertragenen Stand annehmen — oder ihn verwerfen und sagen, warum.
+ *
+ * **Geprüft wird gegen das, was der Host angekündigt hat**, nicht gegen das, was ankam.
+ * Ein Stand, der unterwegs verstümmelt wurde, hätte sonst auf beiden Seiten dieselbe
+ * falsche Prüfsumme: die eigene Rechnung über das eigene Ergebnis ist keine Prüfung.
+ * `announced` ist der Startabdruck aus der Probennachricht des Hosts.
+ */
+export function acceptState(
+  message: StateMessage,
+  announced: string,
+): { ok: true; state: GameState } | { ok: false; reason: string } {
+  const gerechnet = stateHash(message.state)
+  if (gerechnet !== announced) {
+    return {
+      ok: false,
+      reason:
+        `Der uebertragene Stand passt nicht zu dem, was angekuendigt war: ${gerechnet} statt ${announced}. ` +
+        'Er wird verworfen — ein halb angekommener Spielstand ist schlimmer als keiner.',
+    }
+  }
+  return { ok: true, state: message.state }
 }

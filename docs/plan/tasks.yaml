@@ -2856,12 +2856,12 @@ tasks:
   - id: T-M39-06
     milestone: M39
     title: Speichern und Fortsetzen zu zweit
-    status: todo
+    status: done
     deps: [T-M38-10, T-M39-03]
     requirements: [R-MP-13]
     design: [D-28]
-    files: [packages/netplay/src/handshake.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/net/useNetplay.ts]
-    tests: [packages/netplay/test/resume-save.test.ts]
+    files: [packages/netplay/src/handshake.ts, packages/netplay/src/protocol.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/net/party.ts, apps/desktop/src/App.tsx]
+    tests: [packages/netplay/test/resume-save.test.ts, apps/desktop/src/net/party.test.tsx]
     dod: "D28.11. Eine Partie ueber mehrere Abende; sonst ist jeder Abbruch endgueltig. Test zuerst: stimmen die Staende beider Seiten ueberein, geht es weiter; stimmen sie nicht, uebertraegt der Host seinen und beide pruefen erneut (R-MP-13/AK1); die fortgesetzte Partie fuehrt dieselbe Pruefsumme wie der gespeicherte Stand (R-MP-13/AK2). Die Uebertragung des Standes bleibt die EINZIGE Stelle, an der ein Zustand ueber die Leitung geht - gemessen 249 KB nach dreissig Spieltagen; waechst eine lange Partie deutlich darueber hinaus, gehoert die Zahl in den Bericht und nicht in eine Schaetzung."
   - id: T-M39-07
     milestone: M39

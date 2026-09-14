@@ -89,7 +89,7 @@ import {
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import type { Transport } from '@worldwar/netplay'
 import { guestLinkOf, type NetLink } from './net/link.ts'
-import { useParty, type PartyView } from './net/party.ts'
+import { configOfState, useParty, type PartyView } from './net/party.ts'
 import { takeOverSeat, useNetplay, type NetplaySession } from './net/useNetplay.ts'
 import {
   adjutantMarchEntries,
@@ -123,6 +123,7 @@ import {
 import {
   autosaveDue,
   latestSlot,
+  resumeStateFor,
   listSlots,
   loadFrom,
   loadTimeline,
@@ -348,12 +349,24 @@ export function App(props: AppProps) {
    * Der Haken baut die Leitung, fuehrt den Handschlag und uebergibt danach an
    * `useNetplay`. Ohne Link im Fragment ruht er vollstaendig — `phase: 'idle'`.
    */
+  /**
+   * Der eigene gespeicherte Stand — die Haelfte des Vergleichs beim Fortsetzen
+   * (T-M39-06, R-MP-13/AK1).
+   *
+   * Nur geladen, wenn ueberhaupt ein Link im Fragment steht; im Einzelspieler gibt es
+   * nichts zu vergleichen. `null` heisst „ich habe keinen" und ist keine Stoerung: dann
+   * rechnet diese Seite vom Anfang, der Unterschied faellt im Handschlag auf, und der
+   * Stand des Gastgebers wird uebertragen.
+   */
+  const [partySaved, setPartySaved] = useState<GameState | null>(null)
+
   const netParty: PartyView = useParty({
     link: props.party?.link ?? null,
     connect: props.party?.connect ?? null,
     origin: props.party?.origin ?? globalThis.location?.origin ?? '',
     mapById: (id) => mapById(id),
     rules: props.rules,
+    savedState: partySaved,
   })
 
   const netplaySession = netplayOver ? null : (props.netplay ?? netParty.session)
@@ -1306,10 +1319,17 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
-          // Ein geladener Stand ist eine Einzelspielerpartie (T-M37-03): eine
-          // Mehrspielerpartie fortzusetzen heisst, einen Raum zu eroeffnen und den
-          // Handschlag zu fahren — das baut T-M39-06, nicht der Laden-Knopf.
-          setParty({ mode: 'single', fixedSpeed: null })
+          // Ein geladener Stand ist eine Einzelspielerpartie — es sei denn, dieser
+          // Bildschirm ist ein Gastgeber (T-M39-06, R-MP-13). Dann wird der Stand
+          // ANGEBOTEN: der Gast vergleicht ihn mit seinem eigenen, und nur bei einer
+          // Abweichung geht er ueber die Leitung (D28.11).
+          const alsGastgeber = netParty.active && netParty.role === 'host'
+          if (alsGastgeber) {
+            netParty.offer(configOfState(result.state), DEFAULT_MULTIPLAYER_SPEED, result.state)
+            setParty({ mode: 'multiplayer', fixedSpeed: DEFAULT_MULTIPLAYER_SPEED })
+          } else {
+            setParty({ mode: 'single', fixedSpeed: null })
+          }
           setSpeed(0)
           commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
@@ -1323,7 +1343,7 @@ export function App(props: AppProps) {
         setSlots(await listSlots(storage, ticksPerDay))
       })
     },
-    [storage, ticksPerDay, mapById, now, commitState],
+    [storage, ticksPerDay, mapById, now, commitState, netParty],
   )
 
   /**
@@ -1382,6 +1402,19 @@ export function App(props: AppProps) {
     }
     setDialog(null)
   }, [options, mapById, props.rules, now, commitState, netParty])
+
+  // Den eigenen gespeicherten Stand einmal holen, sobald ein Link im Fragment steht
+  // (T-M39-06). `ticksPerDay` und `storage` stehen weiter oben; geladen wird der juengste.
+  useEffect(() => {
+    if (!props.party) return
+    let aktiv = true
+    void resumeStateFor(storage, ticksPerDay).then((stand) => {
+      if (aktiv) setPartySaved(stand)
+    })
+    return () => {
+      aktiv = false
+    }
+  }, [props.party, storage, ticksPerDay])
 
   /**
    * Der Handschlag ist durch: beide Seiten legen mit demselben Stand los (T-M39-02/03).
