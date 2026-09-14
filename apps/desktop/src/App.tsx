@@ -73,7 +73,15 @@ import {
   fontScaleStyle,
   type DebugInfo,
 } from './ui/Dialogs.tsx'
-import { DEFAULT_NEW_GAME, aiBonusPercent, startGame, type NewGameOptions } from './game/newGame.ts'
+import {
+  DEFAULT_NEW_GAME,
+  aiBonusPercent,
+  fixedSpeedOf,
+  invitationOf,
+  startGame,
+  type GameMode,
+  type NewGameOptions,
+} from './game/newGame.ts'
 import { PAN_STEP, ZOOM_STEP, isTypingTarget, resolveKey } from './keyboard.ts'
 import {
   adjutantMarchEntries,
@@ -272,6 +280,24 @@ export function App(props: AppProps) {
 
   /** Die im Dialog gewaehlte Karte — sie fuellt die Maechteliste, bevor die Partie laeuft. */
   const selectedMap = mapById(options.mapId)
+
+  /**
+   * Die laufende Partie, so weit die Hülle sie kennt (T-M37-03, R-MP-02, C-11, D28.4).
+   *
+   * Partieart und feste Rate stehen **hier** und nicht im `GameState`: der Zustand ist die
+   * Welt, nicht die Betrachtung der Welt. C-11 hat die Geschwindigkeit am 2026-09-04 aus
+   * dem Kern verbannt, R-ARCH-04/AK2 hält das grün — läge sie im Zustand, wanderte sie in
+   * jeden Spielstand und in jede Prüfsumme, und zwei Spieler mit demselben Stand bekämen
+   * verschiedene Hashes, weil einer schneller zusieht.
+   *
+   * Getrennt von `options`: das Formular darf sich ändern, die laufende Partie nicht.
+   */
+  const [party, setParty] = useState<{ mode: GameMode; fixedSpeed: number | null }>({
+    mode: 'single',
+    fixedSpeed: null,
+  })
+  const multiplayer = party.mode === 'multiplayer'
+
   const [speed, setSpeed] = useState(0)
   /**
    * Der laufende Vorspulvorgang (T-M15-06). `reason` traegt den Grund des Halts in
@@ -1000,6 +1026,8 @@ export function App(props: AppProps) {
         dialogOpen: dialog !== null,
         // Waehrend eines Laufs keine Uhr und kein zweiter Lauf (T-M41-13).
         fastForwarding: fastForwardState.running,
+        // Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2).
+        multiplayer,
       })
       if (!shortcut) return
       event.preventDefault()
@@ -1060,6 +1088,20 @@ export function App(props: AppProps) {
         case 'centreCapital':
           if (view?.self.capitalProvinceId) jumpTo(view.self.capitalProvinceId)
           break
+        case 'multiplayerLocked':
+          // Die Taste tut nichts — aber sie verschwindet nicht stillschweigend
+          // (T-M37-04, R-MP-02/AK2). Wer drueckt, bekommt den Grund zu lesen.
+          dispatch({
+            type: 'notice',
+            kind: 'info',
+            text:
+              shortcut.control === 'fastForward'
+                ? t('header.fastForwardLockedMultiplayer')
+                : shortcut.control === 'pause'
+                  ? t('header.pauseNeedsConsent')
+                  : t('header.speedLockedMultiplayer'),
+          })
+          break
         case 'pan':
           dispatch({
             type: 'setView',
@@ -1091,6 +1133,7 @@ export function App(props: AppProps) {
     targeting,
     tutor,
     fastForwardState.running,
+    multiplayer,
     // Der Effekt ruft `fastForwardRun` (Taste F). Ohne diese Zeile hinge die Mitschrift der
     // Debug-Ansicht daran, dass zufaellig eine andere Abhaengigkeit den Effekt neu bindet (T-M41-16).
     fastForwardRun,
@@ -1145,6 +1188,11 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
+          // Ein geladener Stand ist eine Einzelspielerpartie (T-M37-03): eine
+          // Mehrspielerpartie fortzusetzen heisst, einen Raum zu eroeffnen und den
+          // Handschlag zu fahren — das baut T-M39-06, nicht der Laden-Knopf.
+          setParty({ mode: 'single', fixedSpeed: null })
+          setSpeed(0)
           commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1170,6 +1218,12 @@ export function App(props: AppProps) {
     const chosenMap = mapById(options.mapId)
     const fresh = startGame(options, chosenMap, props.rules)
     setActiveMap(chosenMap)
+    // Partieart und feste Rate wandern aus dem Formular in die laufende Partie
+    // (T-M37-03): ab hier ist die Rate im Mehrspieler unveraenderlich, und die Uhr
+    // startet mit ihr, statt bei null zu stehen.
+    const feste = fixedSpeedOf(options)
+    setParty({ mode: options.mode, fixedSpeed: feste })
+    setSpeed(feste ?? 0)
     // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
     pendingRef.current = []
     setPendingCommands([])
@@ -1230,6 +1284,9 @@ export function App(props: AppProps) {
           setOptions(next)
         }}
         onStart={startNewGame}
+        // Was ein Gast vor dem Beitritt saehe — samt der festen Rate (T-M37-03,
+        // R-MP-02/AK1). Im Einzelspieler null: dort gibt es niemanden einzuladen.
+        invitation={invitationOf(options, selectedMap)}
         // Schliessen darf es: der leere Zustand traegt den Weg zurueck (T-M12-07),
         // und aus der laufenden Partie geht es einfach dorthin zurueck.
         onClose={() => setDialog(null)}
@@ -1596,6 +1653,9 @@ export function App(props: AppProps) {
         fastForwarding={fastForwardState.running}
         fastForwardNotice={fastForwardNotice}
         mode={ui.mode}
+        // Zu zweit zeigt die Kopfleiste die feste Rate als Text statt einer Tempogruppe
+        // (T-M37-04, R-MP-02/AK3); im Einzelspieler bleibt alles, wie es war.
+        fixedSpeed={party.fixedSpeed}
         onSpeed={(value) => {
           if (value > 0) tutor('setSpeed')
           setSpeed(Math.min(value, ui.settings.maxSpeed))

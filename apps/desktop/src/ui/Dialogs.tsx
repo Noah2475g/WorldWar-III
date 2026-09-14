@@ -2,7 +2,13 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { RESOURCE_KEYS } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
-import type { Difficulty, NewGameOptions } from '../game/newGame.ts'
+import {
+  MULTIPLAYER_SPEEDS,
+  type Difficulty,
+  type GameMode,
+  type Invitation,
+  type NewGameOptions,
+} from '../game/newGame.ts'
 // Die Fassung aus package.json — nicht als zweite Wahrheit in der Sprachdatei (T-M22-04).
 import { version as APP_VERSION } from '../../../../package.json'
 
@@ -99,6 +105,7 @@ export function NewGameDialog({
   onSaves,
   resume,
   onResume,
+  invitation,
 }: {
   options: NewGameOptions
   nations: readonly string[]
@@ -107,6 +114,14 @@ export function NewGameDialog({
   onChange: (options: NewGameOptions) => void
   onStart: () => void
   onClose: () => void
+  /**
+   * Was ein Gast vor dem Beitritt sähe (T-M37-03, R-MP-02/AK1, D28.10).
+   *
+   * `null` im Einzelspieler — dann gibt es nichts einzuladen. Der Dialog rechnet sie
+   * nicht selbst aus: die Einladung entsteht aus der Partiedefinition, und die kennt
+   * die Hülle, nicht das Formular.
+   */
+  invitation?: Invitation | null
   /**
    * Der Weg zu den Spielstaenden (T-M12-07). Wer wiederkommt, will laden und nicht neu
    * anfangen — und vor der ersten Partie steht dieser Dialog davor. Ohne den Griff waere
@@ -134,6 +149,36 @@ export function NewGameDialog({
         <button type="button" className="button button--primary" onClick={onResume}>
           {t('newGame.resume', { day: resume.day })}
         </button>
+      )}
+
+      {/* Die Partieart steht vor allem anderen (T-M37-03, R-MP-02): sie entscheidet, ob
+          die Rate darunter überhaupt eine Frage ist. */}
+      <label className="field">
+        <span>{t('newGame.mode')}</span>
+        <select
+          value={options.mode}
+          onChange={(e) => onChange({ ...options, mode: e.target.value as GameMode })}
+        >
+          <option value="single">{t('newGame.modeSingle')}</option>
+          <option value="multiplayer">{t('newGame.modeMultiplayer')}</option>
+        </select>
+      </label>
+
+      {options.mode === 'multiplayer' && (
+        <label className="field">
+          <span>{t('newGame.fixedSpeed')}</span>
+          <select
+            value={options.fixedSpeed}
+            onChange={(e) => onChange({ ...options, fixedSpeed: Number(e.target.value) })}
+          >
+            {MULTIPLAYER_SPEEDS.map((stop) => (
+              <option key={stop} value={stop}>
+                {t('header.speedStop', { stop })}
+              </option>
+            ))}
+          </select>
+          <small>{t('newGame.fixedSpeedHint')}</small>
+        </label>
       )}
 
       <label className="field">
@@ -210,6 +255,23 @@ export function NewGameDialog({
       <p className="notice notice--info">
         {aiBonus === 0 ? t('newGame.aiBonusNone') : t('newGame.aiBonus', { percent: aiBonus })}
       </p>
+
+      {/* Worauf ein Gast sich einließe (R-MP-02/AK1, R-MP-12): Karte, beide Nationen,
+          die Zahl der Computergegner und die feste Rate — vor dem Beitritt, nicht danach. */}
+      {options.mode === 'multiplayer' && invitation && (
+        <section className="notice notice--info" aria-label={t('newGame.invitation')}>
+          <p>{t('newGame.invitation')}</p>
+          <ul>
+            <li>{t('newGame.invitationMap', { map: invitation.mapName })}</li>
+            <li>
+              {t('newGame.invitationNations', { host: invitation.hostNation, guest: invitation.guestNation })}
+            </li>
+            <li>{t('newGame.invitationAi', { count: invitation.aiOpponents })}</li>
+            <li>{t('newGame.invitationSpeed', { speed: invitation.fixedSpeed })}</li>
+          </ul>
+          <small>{t('newGame.multiplayerPending')}</small>
+        </section>
+      )}
 
       <p className="dialog__actions">
         <button type="button" className="button button--primary" onClick={onStart}>

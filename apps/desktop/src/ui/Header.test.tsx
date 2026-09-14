@@ -58,6 +58,7 @@ const renderHeader = (
     alarm?: { provinceId: string; provinceName: string; intruder: string } | null
     onAlarm?: () => void
     fastForwarding?: boolean
+    fixedSpeed?: number | null
   } = {},
 ) =>
   render(
@@ -78,6 +79,7 @@ const renderHeader = (
       onPanel={noop}
       alarm={extra.alarm ?? null}
       onAlarm={extra.onAlarm ?? noop}
+      fixedSpeed={extra.fixedSpeed ?? null}
     />,
   )
 
@@ -641,5 +643,42 @@ describe('T-M36-06 Der Ton der knappen Zelle kommt auch wirklich an', () => {
 
       expect(window.getComputedStyle(pfeil).color).toBe('var(--ink-soft)')
     })
+  })
+})
+
+/**
+ * Die feste Rate in der Kopfleiste (T-M37-04, R-MP-02/AK3, C-11, D28.4).
+ *
+ * Zu zweit wurde die Geschwindigkeit beim Anlegen gewaehlt und aendert sich danach nie.
+ * Die Tempogruppe zeigt sie deshalb als Text, nicht als Regler — und das Vorspulen faellt
+ * weg, weil es ein Lauf ohne Mitspieler waere.
+ */
+describe('R-MP-02/AK3 Die Kopfleiste zeigt die feste Rate als Text', () => {
+  it('ersetzt die Tempogruppe durch die Rate', () => {
+    renderHeader(view(100, [100], 900), { fixedSpeed: 25 })
+
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
+    expect(screen.getByText(/25 Stunden je Sekunde \(fest\)/)).toBeTruthy()
+  })
+
+  it('bietet zu zweit kein Vorspulen an', () => {
+    renderHeader(view(100, [100], 900), { fixedSpeed: 10 })
+
+    expect(screen.queryByRole('button', { name: 'Vorspulen' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Abbrechen' })).toBeNull()
+  })
+
+  it('laesst die Tempogruppe im Einzelspieler unangetastet — die Gegenprobe', () => {
+    // Ohne diese Zeile belegte der Block nur, dass eine Flagge etwas ausblendet.
+    renderHeader(view(100, [100], 900), { fixedSpeed: null })
+
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
+    expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+
+  it('zeigt die Uhrzeit weiterhin — die feste Rate ersetzt das Tempo, nicht die Zeit', () => {
+    renderHeader(view(100, [100], 900), { fixedSpeed: 5 })
+    expect(screen.getByRole('list', { name: 'Rohstoffe' })).toBeTruthy()
   })
 })

@@ -2099,3 +2099,49 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
     expect(screen.getByRole('region', { name: 'Ereignisse' }).textContent ?? '').not.toEqual(erstesProtokoll)
   }, 30_000)
 })
+
+/**
+ * Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2 und AK3, C-11, D28.4).
+ *
+ * Ein gruener Einzeltest sagt nichts ueber das Spiel: keyboard.test.ts prueft die reine
+ * Aufloesung einer Taste, Header.test.tsx die Kopfleiste fuer sich. Hier wird eine
+ * Mehrspielerpartie wirklich angelegt und danach gedrueckt — das ist der Weg, den ein
+ * Spieler nimmt.
+ */
+describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspulen aus', () => {
+  const startZuZweit = (rate = '25') => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: rate } })
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+  }
+
+  it('zeigt die feste Rate statt der Tempogruppe und bietet kein Vorspulen an', () => {
+    startZuZweit('25')
+
+    expect(screen.getByText(/25 Stunden je Sekunde \(fest\)/)).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Vorspulen' })).toBeNull()
+  })
+
+  it('nennt bei Plus, Minus, Leertaste und F den Grund, statt stumm zu bleiben', () => {
+    startZuZweit()
+
+    fireEvent.keyDown(window, { key: '+' })
+    expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'f' })
+    expect(screen.getByText(/Vorspulen gibt es zu zweit nicht/)).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: ' ' })
+    expect(screen.getByText(/beantragt und angenommen/)).toBeTruthy()
+  })
+
+  it('laesst den Einzelspieler unveraendert — die Gegenprobe am selben Bildschirm', () => {
+    startGame()
+
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
+    expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})

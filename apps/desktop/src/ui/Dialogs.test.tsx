@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DebugPanel, NewGameDialog, localizeDebugText } from './Dialogs.tsx'
-import { DEFAULT_NEW_GAME } from '../game/newGame.ts'
+import {
+  DEFAULT_NEW_GAME,
+  MULTIPLAYER_SPEEDS,
+  type Invitation,
+  type NewGameOptions,
+} from '../game/newGame.ts'
 
 /**
  * Die Siegbedingung erklaert sich (R-GAME-02/AK1, Playtest-Frage 4a, 2026-09-06).
@@ -159,5 +164,91 @@ describe('R-UI-07 Die Debug-Ansicht spricht Namen', () => {
     expect(panel.textContent).toContain('Eisen')
     expect(panel.textContent).not.toContain('p2')
     expect(panel.textContent).not.toContain('money')
+  })
+})
+
+/**
+ * Die Partieart und die feste Geschwindigkeit im Anlegedialog (T-M37-03, R-MP-02/AK1, D28.4).
+ *
+ * Die Rate wird einmal gewaehlt und steht danach fest. Der Dialog muss deshalb zweierlei
+ * koennen: die Wahl ueberhaupt anbieten — und zwar nur unter den Rasten ohne die Null —
+ * und zeigen, was ein Gast vor dem Beitritt davon zu sehen bekaeme.
+ */
+describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
+  const zeigeMit = (options: Partial<NewGameOptions>, invitation: Invitation | null = null) => {
+    const onChange = vi.fn()
+    render(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, ...options }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        aiBonus={0}
+        onChange={onChange}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+        invitation={invitation}
+      />,
+    )
+    return onChange
+  }
+
+  it('fragt nach der Partieart und bietet die Rate erst zu zweit an', () => {
+    zeigeMit({ mode: 'single' })
+    expect(screen.getByRole('combobox', { name: 'Partieart' })).toBeTruthy()
+    // Im Einzelspieler gibt es nichts festzulegen: das Tempo ist ein Regler wie bisher.
+    expect(screen.queryByRole('combobox', { name: /Feste Geschwindigkeit/ })).toBeNull()
+    cleanup()
+
+    zeigeMit({ mode: 'multiplayer' })
+    expect(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ })).toBeTruthy()
+  })
+
+  it('bietet genau die Rasten ohne die Null an', () => {
+    zeigeMit({ mode: 'multiplayer' })
+    const select = screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }) as HTMLSelectElement
+    const werte = [...select.querySelectorAll('option')].map((option) => Number(option.value))
+
+    expect(werte).toEqual([...MULTIPLAYER_SPEEDS])
+    expect(werte).not.toContain(0)
+  })
+
+  it('reicht die gewaehlte Rate nach oben durch', () => {
+    const onChange = zeigeMit({ mode: 'multiplayer', fixedSpeed: 10 })
+    fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: '25' } })
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fixedSpeed: 25 }))
+  })
+
+  it('zeigt die Einladung mit der festen Rate darin', () => {
+    const einladung: Invitation = {
+      mapName: 'Welt',
+      hostNation: 'Vereinigte Staaten',
+      guestNation: 'Kanada',
+      aiOpponents: 5,
+      victory: 'points',
+      fixedSpeed: 25,
+    }
+    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung)
+    const kasten = screen.getByRole('region', { name: 'Die Einladung nennt:' })
+
+    expect(kasten.textContent).toContain('Welt')
+    expect(kasten.textContent).toContain('Kanada')
+    expect(kasten.textContent).toContain('5')
+    expect(kasten.textContent).toMatch(/25 Spielstunden je Sekunde/)
+  })
+
+  it('zeigt im Einzelspieler keine Einladung, auch wenn eine gereicht wird', () => {
+    // Eine Einzelspielerpartie laedt niemanden ein; ein Kasten daneben waere ein Versprechen.
+    const einladung: Invitation = {
+      mapName: 'Welt',
+      hostNation: 'Vereinigte Staaten',
+      guestNation: 'Kanada',
+      aiOpponents: 5,
+      victory: 'points',
+      fixedSpeed: 25,
+    }
+    zeigeMit({ mode: 'single' }, einladung)
+
+    expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
   })
 })

@@ -38,6 +38,15 @@ export const de = {
     speedLockedFastForward: 'Während des Vorspulens gesperrt — erst abbrechen oder abwarten',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
+    // Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK2 und AK3, C-11).
+    // Ein Regler, der nichts tut, ist schlimmer als keiner — wer trotzdem drückt,
+    // bekommt den Grund zu lesen.
+    fixedSpeed: '{{speed}} Stunden je Sekunde (fest)',
+    speedLockedMultiplayer:
+      'Zu zweit steht die Geschwindigkeit fest — sie wurde beim Anlegen der Partie gewählt.',
+    fastForwardLockedMultiplayer:
+      'Vorspulen gibt es zu zweit nicht: Ihr Mitspieler säße vor einem Spiel, das ohne ihn weiterläuft.',
+    pauseNeedsConsent: 'Zu zweit wird eine Pause beantragt und angenommen — niemand hält die Partie allein an.',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
     // M15 mit und gab ihn zurueck; die Oberflaeche hat ihn weggeworfen, und der Spieler
     // sah die Uhr stehenbleiben, ohne zu erfahren warum.
@@ -536,6 +545,24 @@ export const de = {
     start: 'Partie beginnen',
     aiBonus: 'KI-Bonus: {{percent}} %',
     aiBonusNone: 'Die KI spielt ohne Bonus — sie sieht dieselbe Karte wie Sie.',
+    // Die Partieart und die feste Geschwindigkeit (T-M37-03, R-MP-02, C-11). Zu zweit
+    // wird die Rate einmal gewählt und danach nie wieder: im Gleichschritt gibt ohnehin
+    // der Langsamere das Tempo vor, und ein Regler, den einer von beiden bewegt, hieße
+    // nur, dass der andere ihn nicht bewegt hat.
+    mode: 'Partieart',
+    modeSingle: 'Allein gegen den Rechner',
+    modeMultiplayer: 'Zu zweit über einen Link',
+    fixedSpeed: 'Feste Geschwindigkeit',
+    fixedSpeedHint:
+      'Die Rate steht für die ganze Partie fest und lässt sich danach nicht mehr ändern. Vorspulen gibt es zu zweit nicht.',
+    invitation: 'Die Einladung nennt:',
+    invitationMap: 'Karte: {{map}}',
+    invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{guest}}',
+    invitationAi: 'Computergegner: {{count}}',
+    invitationSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
+    // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf
+    // einen Knopf warten, den es noch nicht gibt.
+    multiplayerPending: 'Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.',
   },
 
   saves: {

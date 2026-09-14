@@ -60,6 +60,15 @@ export interface HeaderProps {
   alarm?: { provinceId: string; provinceName: string; intruder: string } | null
   /** Klick auf den Chip: zur Provinz springen und den Alarm quittieren. */
   onAlarm?: (provinceId: string) => void
+  /**
+   * Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK3, C-11, D28.4).
+   *
+   * `null` oder fehlend heißt Einzelspieler — dann bleibt alles, wie es war. Steht eine
+   * Zahl darin, zeigt die Kopfleiste sie **als Text** statt der Tempogruppe, und das
+   * Vorspulen entfällt: ein Regler, den einer von beiden bewegt, hieße nur, dass der
+   * andere ihn nicht bewegt hat.
+   */
+  fixedSpeed?: number | null
 }
 
 /**
@@ -163,12 +172,26 @@ export function Header(props: HeaderProps) {
           )}
 
           {/*
+            Zu zweit steht die Rate als Text (T-M37-04, R-MP-02/AK3): sie wurde beim
+            Anlegen gewaehlt und aendert sich nicht mehr, und ein Regler ohne Wirkung ist
+            schlimmer als keiner. Das Vorspulen faellt mit weg — es ist ein Lauf ohne
+            Mitspieler, und der Mitspieler ist der Punkt.
+          */}
+          {props.fixedSpeed != null && (
+            <span className="clock__fixed" aria-label={t('header.speed')}>
+              <Icon name="clock" size={11} />
+              {t('header.fixedSpeed', { speed: props.fixedSpeed })}
+            </span>
+          )}
+
+          {/*
             Genau ein Knopf ist gedrueckt: die Pause oder die laufende Stufe (D27.6).
             Seit T-M28-10 stimmt das auch dann, wenn die Geschwindigkeit ZWISCHEN zwei
             Rasten liegt — das passiert, sobald die eingestellte Hoechstgeschwindigkeit
             sie kappt. Vorher war dann gar keiner gedrueckt, der Klick sah folgenlos aus,
             und ein Screenreader meldete keine aktive Stufe.
           */}
+          {props.fixedSpeed == null && (
           <div className="speeds" role="group" aria-label={t('header.speed')}>
             {SPEED_STOPS.map((stop) => (
               <button
@@ -211,6 +234,7 @@ export function Header(props: HeaderProps) {
               </button>
             )}
           </div>
+          )}
 
           {!props.fastForwarding && props.fastForwardNotice !== null && (
             <span className="header__notice" role="status">

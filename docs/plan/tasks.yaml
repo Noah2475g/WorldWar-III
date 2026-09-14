@@ -2616,22 +2616,22 @@ tasks:
   - id: T-M37-03
     milestone: M37
     title: Die Partieart und die feste Geschwindigkeit im Anlegedialog
-    status: todo
+    status: done
     deps: [T-M37-01]
     requirements: [R-MP-02]
     design: [D-28]
-    files: [apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
+    files: [apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx]
     tests: [apps/desktop/src/game/newGame.test.ts, apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "C-11 einloesen, D28.4. Eine Mehrspielerpartie waehlt ihre Rate einmal, beim Anlegen, und nie wieder. Test zuerst: die Partie traegt genau eine Rate aus SPEED_STOPS ohne die Null, und diese Rate ist Teil dessen, was ein Gast vor dem Beitritt sieht (R-MP-02/AK1). WICHTIG: die Partieart und die Rate gehoeren in den Zustand der HUELLE, nicht in den GameState - R-ARCH-04/AK2 verlangt woertlich, dass der Zustand keine Tempogroesse kennt, und ein Waechter haelt das seit M5 gruen."
   - id: T-M37-04
     milestone: M37
     title: Im Mehrspieler sind Tempo, Tasten und Vorspulen aus
-    status: todo
+    status: done
     deps: [T-M37-03]
     requirements: [R-MP-02]
     design: [D-28]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/keyboard.test.ts, apps/desktop/src/ui/Header.test.tsx]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/keyboard.test.ts, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "D28.4. Ein Regler, der nichts tut, ist schlimmer als keiner; wer drueckt, bekommt den Grund zu lesen. Test zuerst: Plus, Minus und Leertaste aendern in einer Mehrspielerpartie das Tempo nicht und setzen stattdessen einen Hinweis, die Vorspulziele sind nicht ausloesbar (R-MP-02/AK2), und die Kopfleiste zeigt die feste Rate als Text statt einer Tempogruppe (R-MP-02/AK3). Fertig wenn im Einzelspieler alles unveraendert ist - belegt durch die bestehenden Tests, die gruen bleiben muessen, ohne angefasst zu werden."
   - id: T-M37-05
     milestone: M37

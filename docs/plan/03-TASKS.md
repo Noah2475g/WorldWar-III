@@ -5006,7 +5006,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MP-02 · **Entwurf:** D28.4
 - **Abhängigkeiten:** T-M37-01
 - **Dateien:** `apps/desktop/src/game/newGame.ts`, `apps/desktop/src/ui/Dialogs.tsx`,
-  `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/App.tsx`
 - **Tests zuerst:** eine Mehrspielerpartie trägt genau eine Rate aus `SPEED_STOPS` ohne
   die Null, und diese Rate ist Teil dessen, was ein Gast vor dem Beitritt zu sehen
   bekommt (`R-MP-02/AK1`, `newGame.test.ts`).
@@ -5020,7 +5020,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Anforderungen:** R-MP-02 · **Entwurf:** D28.4
 - **Abhängigkeiten:** T-M37-03
 - **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/keyboard.ts`,
-  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/app.css`
 - **Tests zuerst:** Plus, Minus und Leertaste ändern in einer Mehrspielerpartie das Tempo
   nicht und setzen stattdessen einen Hinweis; die Vorspulziele sind nicht auslösbar
   (`R-MP-02/AK2`, `keyboard.test.ts`). Die Kopfleiste zeigt die feste Rate als Text statt

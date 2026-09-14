@@ -1052,6 +1052,16 @@ body {
   font-weight: 600;
 }
 
+/* Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK3): Text an der Stelle,
+   an der im Einzelspieler die Tempogruppe sitzt — ruhig, nicht anklickbar. */
+.clock__fixed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .action {
   display: flex;
   flex-direction: column;

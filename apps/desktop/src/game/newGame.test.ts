@@ -4,7 +4,17 @@ import { hashValue } from '@worldwar/shared'
 import { HASH_OMIT_KEYS, type MapData } from '@worldwar/core'
 import { TEST_RULES } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_NEW_GAME, aiBonusPercent, maxOpponents, startGame, toConfig } from './newGame.ts'
+import {
+  DEFAULT_NEW_GAME,
+  MULTIPLAYER_SPEEDS,
+  aiBonusPercent,
+  fixedSpeedOf,
+  invitationOf,
+  maxOpponents,
+  startGame,
+  toConfig,
+} from './newGame.ts'
+import { SPEED_STOPS } from './speed.ts'
 
 /**
  * Starting a game (T-M10-07a, R-GAME-01/R-AI-02).
@@ -155,5 +165,109 @@ describe('R-GAME-01 Die Gegner sind Nachbarn, keine Listenanfaenge', () => {
     const einmal = toConfig(DEFAULT_NEW_GAME, world).players.map((p) => p.nation)
     const nochmal = toConfig(DEFAULT_NEW_GAME, world).players.map((p) => p.nation)
     expect(einmal).toEqual(nochmal)
+  })
+})
+
+/**
+ * Die feste Geschwindigkeit einer Partie zu zweit (T-M37-03, R-MP-02, C-11, D28.4).
+ *
+ * Beim Anlegen gewaehlt, danach nie wieder: im Gleichschritt gibt ohnehin der Langsamere
+ * das Tempo vor. Die Rate gehoert in die Huelle und nicht in den Zustand — das ist keine
+ * Geschmacksfrage, sondern R-ARCH-04/AK2: laege sie im Zustand, wanderte sie in jeden
+ * Spielstand und in jede Pruefsumme, und zwei Spieler bekaemen verschiedene Hashes, weil
+ * einer schneller zusieht.
+ */
+describe('R-MP-02/AK1 Eine Mehrspielerpartie traegt genau eine Rate, und der Gast sieht sie', () => {
+  const zuZweit = { ...options, mode: 'multiplayer' as const, opponents: 3 }
+
+  it('waehlt die Rate aus den Rasten ohne die Null', () => {
+    expect(MULTIPLAYER_SPEEDS).toEqual(SPEED_STOPS.filter((stop) => stop > 0))
+    expect(MULTIPLAYER_SPEEDS).not.toContain(0)
+    for (const stop of MULTIPLAYER_SPEEDS) {
+      expect(fixedSpeedOf({ ...zuZweit, fixedSpeed: stop })).toBe(stop)
+    }
+  })
+
+  it('faellt bei einer Zwischenrate auf die naechstniedrige Raste, statt eine zu erfinden', () => {
+    // Ein alter Link oder ein von Hand geschriebener Wert darf keine Rate erzeugen, die
+    // die Kopfleiste nicht als gedrueckte Stufe zeigen kann (T-M28-10).
+    expect(fixedSpeedOf({ ...zuZweit, fixedSpeed: 30 })).toBe(25)
+    expect(fixedSpeedOf({ ...zuZweit, fixedSpeed: 0 })).toBe(1)
+    expect(fixedSpeedOf({ ...zuZweit, fixedSpeed: -5 })).toBe(1)
+    expect(fixedSpeedOf({ ...zuZweit, fixedSpeed: 1000 })).toBe(100)
+  })
+
+  it('kennt im Einzelspieler keine feste Rate und keine Einladung', () => {
+    expect(fixedSpeedOf({ ...options, mode: 'single' })).toBeNull()
+    expect(invitationOf({ ...options, mode: 'single' }, map)).toBeNull()
+  })
+
+  it('nennt die Rate in der Einladung, zusammen mit dem, worauf der Gast sich einlaesst', () => {
+    const einladung = invitationOf({ ...zuZweit, fixedSpeed: 25 }, map)
+
+    expect(einladung).not.toBeNull()
+    expect(einladung!.fixedSpeed).toBe(25)
+    expect(einladung!.mapName).toBe(map.name)
+    expect(einladung!.hostNation).toBe('Deutschland')
+    expect(einladung!.guestNation).not.toBe('Deutschland')
+    // Drei Gegner, davon einer der Mitspieler: bleiben zwei Computergegner.
+    expect(einladung!.aiOpponents).toBe(2)
+    expect(einladung!.victory).toBe(zuZweit.victory)
+  })
+
+  it('macht aus dem ersten Gegner einen Menschen — und nur aus ihm', () => {
+    const config = toConfig(zuZweit, map)
+
+    expect(config.players.map((p) => p.kind)).toEqual(['human', 'human', 'ai', 'ai'])
+    // Eine Schwierigkeitsstufe beschreibt einen Computergegner; der Mitspieler traegt keine.
+    expect(config.players[1]!.difficulty).toBeUndefined()
+    expect(config.players[2]!.difficulty).toBe(zuZweit.difficulty)
+  })
+
+  it('laesst eine Partie zu zweit nicht ohne zweite Macht anlegen', () => {
+    // Ohne Gegner gaebe es niemanden, der der Mitspieler sein koennte — und
+    // createInitialState verlangt ohnehin zwei Maechte.
+    const config = toConfig({ ...zuZweit, opponents: 0 }, map)
+    expect(config.players.length).toBe(2)
+    expect(config.players[1]!.kind).toBe('human')
+  })
+
+  it('bleibt im Einzelspieler unveraendert', () => {
+    const config = toConfig(options, map)
+    expect(config.players[0]!.kind).toBe('human')
+    expect(config.players.slice(1).every((p) => p.kind === 'ai')).toBe(true)
+  })
+})
+
+/**
+ * R-ARCH-04/AK2, gegengeprueft an der neuen Wahl: die Partieart und ihre Rate duerfen den
+ * Zustand nicht erreichen. Ein Waechter haelt das seit M5 fuer den `GameState`-Typ grün;
+ * dieser Test misst am erzeugten Stand selbst — zwei Partien, die sich nur in der Art
+ * unterscheiden, muessen dieselbe Pruefsumme tragen.
+ */
+describe('R-MP-02/AK1 Die Partieart bleibt in der Huelle', () => {
+  it('ergibt mit und ohne Mehrspieler denselben Zustand, solange die Maechte dieselben sind', () => {
+    const einzel = startGame({ ...options, opponents: 3 }, map, rules)
+    const zuZweit = startGame({ ...options, opponents: 3, mode: 'multiplayer', fixedSpeed: 50 }, map, rules)
+
+    // Der einzige Unterschied ist das Attribut „menschlich" am zweiten Spieler — mehr
+    // darf eine Partieart nicht bewirken.
+    zuZweit.players['p2']!.kind = 'human'
+    einzel.players['p2']!.kind = 'human'
+    // Und die Schwierigkeitsstufe, die einen Computergegner beschreibt.
+    einzel.players['p2']!.difficulty = null
+    // Das Gedaechtnis des Computergegners entfaellt fuer den Mitspieler; sonst ist nichts anders.
+    delete einzel.ai['p2']
+
+    expect(hashValue(zuZweit, { omitKeys: HASH_OMIT_KEYS })).toBe(hashValue(einzel, { omitKeys: HASH_OMIT_KEYS }))
+  })
+
+  it('schreibt weder Rate noch Partieart in den Spielstand', () => {
+    const zustand = startGame({ ...options, mode: 'multiplayer', fixedSpeed: 50 }, map, rules)
+    const text = JSON.stringify(zustand)
+
+    expect(text).not.toMatch(/"fixedSpeed"/)
+    expect(text).not.toMatch(/"mode"/)
+    expect(text).not.toMatch(/"speed"/)
   })
 })
