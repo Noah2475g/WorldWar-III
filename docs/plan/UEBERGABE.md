@@ -82,7 +82,7 @@ Kennzahlen gegen den Stand vom 2026-09-12 (`d82779d`), alles aus den Berichten:
 | Wanduhr der Abnahme | 7 min 28 s | **4 min 58 s** (`totalSeconds` 298) |
 | AK-1 Siegtag (1914) | 471, 1827 Eroberungen, 12 Kriegserklärungen | **975**, 2589, 11 |
 | Abdeckung gesamt | 95,9 % | **96,3 %** |
-| Langlauf gesamt / je Tick | 319 030 ms / 13,293 ms | **198 321 ms / 8,263 ms** |
+| Langlauf gesamt / je Tick | 319 030 ms / 13,293 ms | **198 321 ms / 8,263 ms** (Endstand nach dem Schlussblock: 191 452 ms / 7,977 ms) |
 | Langlauf: Partie entschieden | Tick 19320 | **nicht entschieden** |
 | Weltkarte Median / p99 | 2,665 / 6,064 ms | **2,523 / 6,215 ms** (gefordert 3,5 / 8) |
 | R-AI-04 Anteil KI am Tick | 0,082 | **0,072** (Grenze 0,3) |
@@ -220,7 +220,7 @@ Nur Dokumentation, kein Code. **Jede Zahl aus einem Bericht oder Befehl, nie ges
    | Grundlauf, Anteil des Stärksten | 44,4 % | **36,8 %** | `docs/reports/balance-sweep.md` |
    | Abnahme | 11 von 11, 7 min 28 s | **12 von 12, Exit 0, 4 min 58 s** (298 s) | `acceptance.md`, `acceptance-timing.json` |
    | Abdeckung gesamt | 95,9 % | **96,3 %** (Kern 96,9 %) | `acceptance.md`, `pnpm verify` |
-   | Langlauf je Tick | 13,293 ms | **8,263 ms**; die Partie ist nach 1000 Spieltagen **nicht entschieden** (vorher Tick 19320) | `docs/reports/performance.md` |
+   | Langlauf je Tick | 13,293 ms | **7,977 ms** (die 8,263 ms waren ein Vorlauf); die Partie ist nach 1000 Spieltagen **nicht entschieden** (vorher Tick 19320) | `docs/reports/performance.md` |
    | **AK-8** | seit 2026-09-08 ungemessen („⚠ nennt keinen Stand") | **erfüllt**, gemessen am 2026-09-14 gegen `1c64a6e` am gebauten Programm (03:22:44 gebaut, 03:24:36 gemessen), sieben von sieben Schritten; `worldwar.exe` 6 780 416 B. Gegenprobe am laufenden Programm, weil die Dateigröße unverändert blieb: Weltkarte, Tempo 100, **99,85–99,98 Ticks/s** — die Uhr-Reparatur ist drin | `docs/reports/packaging.md` |
    | Sichtprüfung der sieben Punkte | — | **5 erfüllt**, Punkt 2 **nicht prüfbar** (der Zustand wird nie gezeichnet), Punkt 7 **ohne Urteil** (Noahs Maßstab) | `docs/reports/sichtpruefung-2026-09-14.md` |
    | Aufgaben | 255 / 224 gebaut | **312 / 264 gebaut**, 48 offen | `tasks.yaml`, gezählt |
