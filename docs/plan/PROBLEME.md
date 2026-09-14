@@ -3516,3 +3516,52 @@ Gegenprobe, die wirklich greift. Die Zusage wurde nicht gestrichen, sondern beri
 der Beleg des Meilensteins (zwei Simulationen, 200 Ticks, eine Pruefsumme) steht unberuehrt.
 
 **Status:** geschlossen (2026-09-14). Kein Kern angefasst, keine Anforderung betroffen.
+
+---
+
+## 2026-09-14 · Vor dem Bau von M38 gelesen · Befund M38-1: Falle 11 nennt die Nummern vertauscht
+
+**Befund:** `MEHRSPIELER.md` §4 Falle 11 sagte bis heute: *„Er wird in T-M38-09 umgebaut, bevor
+T-M38-04 den Transport schreibt."* `WORKFLOW.md` §2 sagt dieselbe Sache mit den anderen Nummern:
+*„T-M38-04 kommt vor T-M38-06."* Eine der beiden Dateien musste falsch sein, und eine Falle, die
+falsche Adressen nennt, kostet genau die Sitzung, die sie sparen soll.
+
+**Nachgeprueft an der einzigen Stelle, die nicht Prosa ist** — den Titeln in `tasks.yaml`:
+
+| Aufgabe | Titel | Was sie tut |
+|---|---|---|
+| T-M38-04 | Der Netz-Waechter bekommt seine Grenze | der Waechter |
+| T-M38-06 | Der WebSocket-Transport im Browser | der erste `new WebSocket` |
+| T-M38-09 | Die Anzeige sagt, wenn es am anderen haengt | die Kopfleiste |
+
+Damit ist **`WORKFLOW.md` §2 richtig** und Falle 11 falsch. Zwei weitere Stellen bestaetigen es
+unabhaengig: `tasks.yaml` fuehrt bei T-M38-06 die Abhaengigkeit `T-M38-04`, und der Kopf des
+Abschnitts M38 in `03-TASKS.md` sagt die Regel ohne Nummern („der Netz-Wächter wird umgebaut, bevor
+der erste `new WebSocket` entsteht") — also in derselben Richtung.
+
+**Die Ursache, und sie erklaert mehr als eine Zeile.** Die alten Nummern sind kein Zahlendreher,
+sondern eine **frühere Zählung**: T-M38-04 und T-M38-05 (Wächter und Verpackung) sind beim Planen
+nachträglich nach vorn gezogen worden, und alles dahinter rutschte um zwei. Wer das weiß, findet
+dieselbe alte Zählung sofort ein zweites Mal — im scope-Block von `01-REQUIREMENTS.md`:
+
+| ID | stand dort | richtig |
+|---|---|---|
+| R-MP-07 | T-M38-06 | T-M38-08, T-M38-09 |
+| R-MP-08 | T-M38-08 | T-M38-10 |
+| R-MP-09 | T-M38-09 | T-M38-04, T-M38-05 |
+
+Die drei Zeilen waren maschinell nicht auffindbar: `checkScope` prueft den **Meilenstein** vor dem
+Geviertstrich und die Begruendung dahinter, nicht die Aufgabennummer in der Begruendung. Sie ist
+Fliesstext in einem Feld, das wie Daten aussieht.
+
+**Was geaendert wurde:** Falle 11 nennt jetzt T-M38-04 und T-M38-06 und traegt einen Absatz, der
+die alte Fassung zitiert statt sie zu loeschen; die drei scope-Zeilen sind berichtigt und tragen
+einen Kommentar, der auf diesen Befund zeigt. Keine Anforderung, kein Kriterium und keine Aufgabe
+hat sich dabei geaendert — `plan-consistency` 36/36, `coverage:requirements` `V1 offen: 0`, beides
+vor und nach der Aenderung.
+
+**Die Lehre.** Eine Nummer in Prosa altert, sobald der Plan umgestellt wird, und kein Waechter
+sieht es. Wo eine Falle eine Aufgabe meint, gehoert **ihr Titel** daneben — an einem Titel faellt
+die Verwechslung beim Lesen auf, an einer Nummer nie.
+
+**Status:** behoben (2026-09-14).

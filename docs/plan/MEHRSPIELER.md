@@ -323,8 +323,15 @@ verliert eine Sitzung an einen roten Lauf, der nichts mit seiner Arbeit zu tun h
     **angehängt**, nicht eingeschoben: neue Abschnitte ans Ende, neue Aufgaben ans Ende
     von `tasks.yaml`. Dann bleiben Konflikte auf die Anhängestellen beschränkt.
 11. **Der Netz-Wächter schlägt an, sobald `new WebSocket` im Produktcode steht.** Er
-    wird in T-M38-09 umgebaut, **bevor** T-M38-04 den Transport schreibt. Wer die
+    wird in **T-M38-04** umgebaut, **bevor** **T-M38-06** den Transport schreibt. Wer die
     Reihenfolge umdreht, hat einen roten `pnpm verify` und hält ihn für seinen Fehler.
+
+    *Berichtigt am 2026-09-14 (Befund M38-1).* Bis dahin standen hier die Nummern
+    **vertauscht** — „in T-M38-09 umgebaut, bevor T-M38-04 den Transport schreibt". Die
+    Sache war richtig, die Adressen waren es nicht: nach den Titeln in `tasks.yaml` ist
+    T-M38-04 die Grenze des Wächters, T-M38-06 der WebSocket-Transport und T-M38-09 die
+    Anzeige bei Hängern. `WORKFLOW.md` §2 sagt es seit je richtig. Dieselbe alte Zählung
+    stand im scope-Block von `01-REQUIREMENTS.md`; beides ist berichtigt.
 
 ---
 
