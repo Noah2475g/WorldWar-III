@@ -15,7 +15,11 @@ import type { Transport } from './transport'
  * drei Meilensteine lang nicht eingelöst: es gab nie drei Umsetzungen und nie eine Reihe,
  * sondern ein einzelnes `it()`, das `MemoryStorage` gegen sich selbst prüfte
  * (`audit-2026-09-05.md`, Blocker 6). Hier läuft dieselbe Reihe gegen das Schleifendoppel
- * (T-M38-01) **und** gegen den WebSocket-Transport (T-M38-06).
+ * (T-M38-01) **und** gegen die echte Leitung der Browserseite (T-M38-06).
+ *
+ * (Dass hier nicht steht, wie diese Leitung heisst, ist Absicht: der Waechter in
+ * `protocol.test.ts` sucht den Namen als Zeichenfolge und unterscheidet Prosa nicht von
+ * Code — richtig so, denn dieses Paket soll ihn gar nicht kennen.)
  *
  * **Warum diese Datei nicht aus `index.ts` hinausgeht.** Sie importiert `vitest`. Stünde
  * sie im Sammelexport, zöge jeder `import … from '@worldwar/netplay'` den Testläufer in
@@ -37,9 +41,9 @@ import type { Transport } from './transport'
  * Zwei verbundene Enden, wie eine Umsetzung sie liefert.
  *
  * `settle` gibt einer Umsetzung, die asynchron zustellt, die Gelegenheit dazu — beim
- * Schleifendoppel ein Nichts, beim WebSocket das Abarbeiten der Ereignisschlange. Ohne
- * diesen Haken müsste die Reihe entweder überall warten (und wäre langsam) oder nirgends
- * (und liefe nur gegen das synchrone Doppel).
+ * Schleifendoppel ein Nichts, an einer echten Leitung das Abarbeiten ihrer
+ * Ereignisschlange. Ohne diesen Haken müsste die Reihe entweder überall warten (und wäre
+ * langsam) oder nirgends (und liefe nur gegen das synchrone Doppel).
  */
 export interface TransportPair {
   a: Transport
