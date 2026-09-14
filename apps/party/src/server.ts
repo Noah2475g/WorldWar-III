@@ -3,7 +3,16 @@ import { createServer, type IncomingMessage, type Server } from 'node:http'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { join, normalize, sep } from 'node:path'
 import type { Duplex } from 'node:stream'
-import { ROOM_FULL, Rooms, type Connection, type SeatId } from './room.ts'
+import {
+  REFUSED_CLOSE_CODE,
+  ROOM_FULL,
+  Rooms,
+  SEATS,
+  WRONG_SECRET,
+  type Connection,
+  type Invitation,
+  type SeatId,
+} from './room.ts'
 
 /**
  * Der Hostdienst: Dateiserver und Briefträger (T-M38-07, R-MP-11, D28.10).
@@ -213,6 +222,29 @@ export function roomIdOf(urlPath: string): string | null {
   return treffer?.[1] ?? null
 }
 
+/**
+ * Das Geheimnis aus der Verbindungsadresse: `/raum/<id>?s=<geheimnis>` (T-M39-01).
+ *
+ * **Hier und nicht beim Laden der Seite.** Im Link steht das Geheimnis hinter dem
+ * Rautezeichen und geht deshalb nie an den Dateiserver (D28.10); beim Aufbau der Partie
+ * muss es hinaus, denn irgendwo muss es geprüft werden. Der Dienst schreibt kein
+ * Zugriffsprotokoll — er hat keine Zeile dafür —, und das ist die zweite Hälfte der Zusage.
+ */
+export function secretOf(urlPath: string): string {
+  const frage = urlPath.indexOf('?')
+  if (frage < 0) return ''
+  return new URLSearchParams(urlPath.slice(frage + 1)).get('s') ?? ''
+}
+
+/** Welchen Platz eine Verbindungsadresse verlangt — `null` heisst „den ersten freien". */
+export function seatOf(urlPath: string): SeatId | null {
+  const frage = urlPath.indexOf('?')
+  if (frage < 0) return null
+  const gewuenscht = new URLSearchParams(urlPath.slice(frage + 1)).get('platz') ?? ''
+  return (SEATS as readonly string[]).includes(gewuenscht) ? (gewuenscht as SeatId) : null
+}
+
+
 export interface PartyServerOptions {
   /** Der Ordner mit dem gebauten Bündel — `apps/desktop/dist` im Betrieb. */
   root: string
@@ -223,11 +255,21 @@ export interface PartyServerOptions {
    * erst am Abend auf (T-M39-05 misst es).
    */
   host?: string
+  /**
+   * Welche Räume dieser Dienst eröffnet (T-M39-01).
+   *
+   * Ohne Angabe **genau einer**, mit frischer Kennung und frischem Geheimnis — der Raum,
+   * dessen Link `pnpm mp:host` druckt. Ein Dienst, der jeden erfundenen Raumnamen
+   * annähme, hätte kein Geheimnis, sondern eine Formalität.
+   */
+  rooms?: readonly Invitation[]
 }
 
 export interface PartyServer {
   readonly server: Server
   readonly rooms: Rooms
+  /** Die eröffneten Räume samt Geheimnis — daraus entsteht der Link (T-M39-01). */
+  readonly invitations: readonly Invitation[]
   /** Der Port, auf dem wirklich gehorcht wird. Erst nach `listen` gültig. */
   readonly port: number
   listen(): Promise<number>
@@ -236,6 +278,11 @@ export interface PartyServer {
 
 export function createPartyServer(options: PartyServerOptions): PartyServer {
   const rooms = new Rooms()
+  if (options.rooms && options.rooms.length > 0) {
+    for (const invitation of options.rooms) rooms.open(invitation.id, invitation.secret)
+  } else {
+    rooms.open()
+  }
   const sockets = new Set<Duplex>()
 
   const server = createServer((request, response) => {
@@ -277,15 +324,29 @@ export function createPartyServer(options: PartyServerOptions): PartyServer {
       send: (data) => {
         if (!socket.destroyed) socket.write(encodeFrame(data))
       },
-      close: (reason) => {
+      close: (reason, code) => {
         if (socket.destroyed) return
-        socket.write(encodeCloseFrame(reason))
+        socket.write(encodeCloseFrame(reason, code))
         socket.end()
       },
     }
 
+    // Das Geheimnis wird HIER geprueft und nicht beim Laden der Seite (R-MP-10/AK2,
+    // D28.10): im Link steht es hinter dem Rautezeichen und geht dort nie an den Server.
+    // Eine unbekannte Kennung wird genauso beantwortet wie ein falsches Geheimnis — wer
+    // beide Faelle unterscheidet, verraet, welche Raeume es gibt.
+    if (!rooms.admits(raumId, secretOf(request.url ?? ''))) {
+      socket.write(encodeCloseFrame(WRONG_SECRET, REFUSED_CLOSE_CODE))
+      socket.end()
+      sockets.delete(socket)
+      return
+    }
+
     const raum = rooms.of(raumId)
-    const platz = raum.join(connection, String(request.headers['x-player-name'] ?? ''))
+    const platz = raum.join(connection, {
+      name: String(request.headers['x-player-name'] ?? ''),
+      ...(seatOf(request.url ?? '') ? { seat: seatOf(request.url ?? '')! } : {}),
+    })
     if (!platz.ok) {
       // Der dritte bekommt seinen Grund und dann die Tuer; der Raum bleibt unberuehrt.
       sockets.delete(socket)
@@ -339,6 +400,9 @@ export function createPartyServer(options: PartyServerOptions): PartyServer {
   return {
     server,
     rooms,
+    get invitations(): readonly Invitation[] {
+      return rooms.invitations
+    },
     get port(): number {
       return port
     },
@@ -364,4 +428,4 @@ export function createPartyServer(options: PartyServerOptions): PartyServer {
   }
 }
 
-export { ROOM_FULL }
+export { REFUSED_CLOSE_CODE, ROOM_FULL, WRONG_SECRET }

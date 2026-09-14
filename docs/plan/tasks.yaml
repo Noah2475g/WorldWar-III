@@ -2806,13 +2806,13 @@ tasks:
   - id: T-M39-01
     milestone: M39
     title: Der Raum, der Link und das Geheimnis
-    status: todo
+    status: done
     deps: [T-M38-07]
     requirements: [R-MP-10]
     design: [D-28]
-    files: [apps/party/src/room.ts, apps/desktop/src/net/useNetplay.ts]
+    files: [apps/party/src/room.ts, apps/party/src/server.ts, apps/desktop/src/net/link.ts]
     tests: [apps/party/test/room.test.ts]
-    dod: "D28.10 - eine Einladung ist ein Link, und mehr muss Noah nicht verschicken. Test zuerst: der Link enthaelt Raum und Geheimnis, und das Geheimnis steht im Fragment hinter dem Rautezeichen (R-MP-10/AK1); ein Beitritt ohne oder mit falschem Geheimnis wird abgewiesen (R-MP-10/AK2). Das Geheimnis entsteht im NODE-Dienst: im Browser gaebe es ohne sicheren Kontext keine brauchbare Quelle dafuer, und Math.random ist keine."
+    dod: "D28.10 - eine Einladung ist ein Link, und mehr muss Noah nicht verschicken. Test zuerst: der Link enthaelt Raum und Geheimnis, und das Geheimnis steht im Fragment hinter dem Rautezeichen (R-MP-10/AK1); ein Beitritt ohne oder mit falschem Geheimnis wird abgewiesen (R-MP-10/AK2). Das Geheimnis entsteht im NODE-Dienst: im Browser gaebe es ohne sicheren Kontext keine brauchbare Quelle dafuer, und Math.random ist keine. Gebaut wird der Link EINMAL (inviteLink in room.ts) und im Browser gelesen (parseNetLink in link.ts); ein Rundlauf-Test haelt beide Seiten zusammen. Die Browserseite steht in link.ts und nicht in useNetplay.ts - der Haken treibt die laufende Partie, der Link entscheidet, ob es eine gibt."
   - id: T-M39-02
     milestone: M39
     title: Der Beitrittsbildschirm

@@ -5351,12 +5351,25 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Ziel:** eine Einladung ist ein Link, und mehr muss Noah nicht verschicken.
 - **Anforderungen:** R-MP-10 · **Entwurf:** D28.10
 - **Abhängigkeiten:** T-M38-07
-- **Dateien:** `apps/party/src/room.ts`, `apps/desktop/src/net/useNetplay.ts`
+- **Dateien:** `apps/party/src/room.ts`, `apps/party/src/server.ts`,
+  `apps/desktop/src/net/link.ts` *(der Plan nannte hier `apps/desktop/src/net/useNetplay.ts`
+  — der Haken treibt die laufende Partie, der Link entscheidet, ob es eine gibt)*
 - **Tests zuerst:** der Link enthält Raum und Geheimnis, und das Geheimnis steht im
   Fragment hinter dem Rautezeichen (`R-MP-10/AK1`); ein Beitritt ohne oder mit falschem
-  Geheimnis wird abgewiesen (`R-MP-10/AK2`).
+  Geheimnis wird abgewiesen (`R-MP-10/AK2`) — gemessen am **laufenden Dienst** über einen
+  echten Sockel, nicht nur an einer Funktion.
 - **Fertig wenn:** das Geheimnis im **Node-Dienst** erzeugt wird. Im Browser gäbe es ohne
   sicheren Kontext keine brauchbare Quelle dafür, und `Math.random` ist keine (D28.10).
+  Gemessen: 16 Bytes aus `randomBytes`, als `base64url` 22 Zeichen, tausend Ziehungen ohne
+  eine Wiederholung. Gebaut wird der Link **einmal** (`inviteLink`) und im Browser gelesen
+  (`parseNetLink`); ein Rundlauf-Test hält beide Seiten zusammen, statt beide gegen eine
+  abgeschriebene Beispieladresse zu halten. Drei Dinge, die dabei dazukamen: der Raum
+  vergibt auf Wunsch einen **bestimmten** Platz (`p1` für den Gastgeber, `p2` für den
+  Gast), damit die Nation nicht daran hängt, wer schneller geklickt hat; eine Abweisung
+  schließt mit Code **4001** statt 1000, weil der Transport sonst sechsmal dieselbe
+  verschlossene Tür wieder aufbaut (`RECONNECT_BACKOFF_MS`); und die **Einladung** überlebt
+  den leeren Raum, während der Raum selbst weiterhin verschwindet — ein Link, der tot ist,
+  sobald beide Seiten zehn Sekunden lang die Verbindung verlieren, wäre keiner.
 
 ### T-M39-02 · Der Beitrittsbildschirm
 - **Ziel:** niemand tritt einer Partie bei, deren Bedingungen er nicht kennt. Besonders

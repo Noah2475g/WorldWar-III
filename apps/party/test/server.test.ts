@@ -1,10 +1,17 @@
-import { randomBytes } from 'node:crypto'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { connect, type Socket } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { Room, Rooms, SEATS, ROOM_FULL, type Connection } from '../src/room.ts'
+import {
+  REFUSED_CLOSE_CODE,
+  Room,
+  Rooms,
+  SEATS,
+  ROOM_FULL,
+  SEAT_TAKEN,
+  WRONG_SECRET,
+  type Connection,
+} from '../src/room.ts'
 import {
   FrameReader,
   acceptKey,
@@ -15,6 +22,7 @@ import {
   roomIdOf,
   type PartyServer,
 } from '../src/server.ts'
+import { httpGet, maskedFrame, openClient, until } from './wsclient.ts'
 
 /**
  * Der Hostdienst (T-M38-07, R-MP-11, D28.10).
@@ -30,110 +38,6 @@ import {
  */
 
 const SERVER_TIMEOUT = 15_000
-
-/** Ein Rahmen vom Client zum Server ist **maskiert** — das verlangt RFC 6455. */
-function maskedFrame(text: string): Buffer {
-  const payload = Buffer.from(text, 'utf8')
-  const mask = randomBytes(4)
-  const head: number[] = [0x81]
-  if (payload.length < 126) head.push(0x80 | payload.length)
-  else head.push(0x80 | 126, (payload.length >> 8) & 0xff, payload.length & 0xff)
-  const maskiert = Buffer.from(payload)
-  for (let i = 0; i < maskiert.length; i += 1) maskiert[i] = maskiert[i]! ^ mask[i % 4]!
-  return Buffer.concat([Buffer.from(head), mask, maskiert])
-}
-
-interface Client {
-  socket: Socket
-  received: string[]
-  closedWith: { code?: number; reason: string } | null
-  send(text: string): void
-  end(): void
-}
-
-/** Ein WebSocket-Client in vierzig Zeilen: Handschlag, Rahmen, sonst nichts. */
-function openClient(port: number, path: string): Promise<Client> {
-  return new Promise((resolve, reject) => {
-    const socket = connect(port, '127.0.0.1')
-    const reader = new FrameReader()
-    const received: string[] = []
-    const client: Client = {
-      socket,
-      received,
-      closedWith: null,
-      send: (text) => socket.write(maskedFrame(text)),
-      end: () => socket.destroy(),
-    }
-    let handshake = ''
-    let stehend = false
-
-    socket.on('error', reject)
-    socket.on('connect', () => {
-      const key = randomBytes(16).toString('base64')
-      socket.write(
-        `GET ${path} HTTP/1.1\r\nHost: 127.0.0.1:${port}\r\nUpgrade: websocket\r\n` +
-          `Connection: Upgrade\r\nSec-WebSocket-Key: ${key}\r\nSec-WebSocket-Version: 13\r\n\r\n`,
-      )
-    })
-    socket.on('data', (chunk: Buffer) => {
-      if (!stehend) {
-        handshake += chunk.toString('latin1')
-        const ende = handshake.indexOf('\r\n\r\n')
-        if (ende < 0) return
-        const kopf = handshake.slice(0, ende)
-        if (!kopf.startsWith('HTTP/1.1 101')) {
-          reject(new Error(`Kein Handschlag: ${kopf.split('\r\n')[0]}`))
-          return
-        }
-        stehend = true
-        const rest = Buffer.from(handshake.slice(ende + 4), 'latin1')
-        handshake = ''
-        resolve(client)
-        if (rest.length > 0) chunk = rest
-        else return
-      }
-      for (const frame of reader.push(chunk)) {
-        if (frame.kind === 'text') received.push(frame.data)
-        else if (frame.kind === 'close') {
-          client.closedWith = { reason: frame.data, ...(frame.code === undefined ? {} : { code: frame.code }) }
-        }
-      }
-    })
-  })
-}
-
-/** Eine einfache HTTP-Anfrage ohne Bibliothek — der Dienst soll eine Datei liefern. */
-function httpGet(port: number, path: string): Promise<{ status: number; headers: string; body: string }> {
-  return new Promise((resolve, reject) => {
-    const socket = connect(port, '127.0.0.1')
-    let antwort = ''
-    socket.on('error', reject)
-    socket.on('connect', () => {
-      socket.write(`GET ${path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`)
-    })
-    socket.on('data', (chunk: Buffer) => {
-      antwort += chunk.toString('utf8')
-    })
-    socket.on('close', () => {
-      const ende = antwort.indexOf('\r\n\r\n')
-      const kopf = antwort.slice(0, ende)
-      resolve({
-        status: Number(/^HTTP\/1\.1 (\d+)/.exec(kopf)?.[1] ?? 0),
-        headers: kopf,
-        body: antwort.slice(ende + 4),
-      })
-    })
-  })
-}
-
-/** Warten, bis eine Bedingung eintritt — ohne feste Schlafzeit, die mal zu kurz ist. */
-async function until(bedingung: () => boolean, was: string): Promise<void> {
-  for (let versuch = 0; versuch < 400; versuch += 1) {
-    if (bedingung()) return
-    await new Promise((resolve) => setTimeout(resolve, 10))
-  }
-  throw new Error(`Hat nicht stattgefunden: ${was}`)
-}
 
 describe('R-MP-11 Der Raum nimmt genau zwei Plaetze', () => {
   const stumm = (): Connection & { gesendet: string[]; geschlossen: string[] } => {
@@ -195,11 +99,15 @@ describe('R-MP-11 Der Raum nimmt genau zwei Plaetze', () => {
   it('vergisst einen Raum, sobald niemand mehr darin sitzt', () => {
     // Kein Zustand ueber die Partie hinaus (MEHRSPIELER.md §6).
     const raeume = new Rooms()
+    raeume.open('eins', 'geheim')
     raeume.of('eins').join(stumm())
     expect(raeume.count).toBe(1)
     raeume.of('eins').leave('p1')
     raeume.forgetIfEmpty('eins')
     expect(raeume.count).toBe(0)
+    // Die EINLADUNG bleibt: ein Link, der tot ist, sobald beide Seiten fuer zehn Sekunden
+    // die Verbindung verlieren, waere keiner (T-M39-01).
+    expect(raeume.admits('eins', 'geheim')).toBe(true)
   })
 })
 
@@ -293,6 +201,20 @@ describe('R-MP-11 Die Auslieferung', () => {
   })
 })
 
+/**
+ * Die Raeume, die dieser Dienst eroeffnet (T-M39-01).
+ *
+ * Feste Kennungen und feste Geheimnisse, damit die Zusicherungen lesbar bleiben. Im
+ * Betrieb erzeugt beides `Rooms.open()` aus `randomBytes` — und ein Dienst, der jeden
+ * erfundenen Raumnamen annaehme, haette kein Geheimnis, sondern eine Formalitaet.
+ */
+const RAEUME = [
+  { id: 'partie', secret: 'geheim-partie' },
+  { id: 'voll', secret: 'geheim-voll' },
+  { id: 'wiederkehr', secret: 'geheim-wiederkehr' },
+  { id: 'platzwahl', secret: 'geheim-platzwahl' },
+]
+
 describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
   let dienst: PartyServer
   let port = 0
@@ -302,7 +224,7 @@ describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
     wurzel = mkdtempSync(join(tmpdir(), 'worldwar-dist-'))
     writeFileSync(join(wurzel, 'index.html'), '<!doctype html><title>WorldWar</title>')
     writeFileSync(join(wurzel, 'world.json'), JSON.stringify({ id: 'world', provinces: [{ id: 'de-1' }] }))
-    dienst = createPartyServer({ root: wurzel, host: '127.0.0.1' })
+    dienst = createPartyServer({ root: wurzel, host: '127.0.0.1', rooms: RAEUME })
     port = await dienst.listen()
   }, SERVER_TIMEOUT)
 
@@ -327,8 +249,8 @@ describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
   })
 
   it('reicht eine Nachricht von A unveraendert an B weiter', async () => {
-    const a = await openClient(port, '/raum/partie')
-    const b = await openClient(port, '/raum/partie')
+    const a = await openClient(port, '/raum/partie?s=geheim-partie')
+    const b = await openClient(port, '/raum/partie?s=geheim-partie')
     await until(() => dienst.rooms.of('partie').full, 'beide Plaetze besetzt')
 
     const roh = '{"kind":"befehle","version":1,"tick":3,"commands":[],"hash":"5ed264a0fea05076"}'
@@ -343,15 +265,20 @@ describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
   }, SERVER_TIMEOUT)
 
   it('weist den dritten Verbindungsversuch ab und sagt, warum', async () => {
-    const a = await openClient(port, '/raum/voll')
-    const b = await openClient(port, '/raum/voll')
+    const a = await openClient(port, '/raum/voll?s=geheim-voll')
+    const b = await openClient(port, '/raum/voll?s=geheim-voll')
     await until(() => dienst.rooms.of('voll').full, 'beide Plaetze besetzt')
 
-    const c = await openClient(port, '/raum/voll')
+    const c = await openClient(port, '/raum/voll?s=geheim-voll')
     await until(() => c.closedWith !== null, 'der dritte bekommt seinen Grund')
 
     expect(c.closedWith?.reason).toBe(ROOM_FULL)
-    expect(c.closedWith?.code, 'ein Schliessrahmen ohne Code ist ein Protokollfehler').toBe(1000)
+    // Seit T-M39-01 ist es ein ABWEISUNGS-Code (4001) und nicht mehr 1000: der Transport
+    // im Browser baut eine abgerissene Leitung sonst sechsmal neu auf und findet sechsmal
+    // denselben vollen Raum (T-M38-06, RECONNECT_BACKOFF_MS).
+    expect(c.closedWith?.code, 'ein Schliessrahmen ohne Code ist ein Protokollfehler').toBe(
+      REFUSED_CLOSE_CODE,
+    )
     expect(dienst.rooms.of('voll').seated).toHaveLength(2)
     a.end()
     b.end()
@@ -365,14 +292,14 @@ describe('R-MP-11/AK1 Der Dienst laeuft wirklich', () => {
     // behaelt den Platz fuer immer besetzt, und der naechste Gast findet einen vollen
     // Raum, in dem niemand sitzt. Genau das wird hier gemessen, und zwar am Ergebnis:
     // der dritte bekommt den Platz des ersten.
-    const a = await openClient(port, '/raum/wiederkehr')
-    const b = await openClient(port, '/raum/wiederkehr')
+    const a = await openClient(port, '/raum/wiederkehr?s=geheim-wiederkehr')
+    const b = await openClient(port, '/raum/wiederkehr?s=geheim-wiederkehr')
     await until(() => dienst.rooms.of('wiederkehr').full, 'beide Plaetze besetzt')
 
     a.end()
     await until(() => dienst.rooms.of('wiederkehr').seated.length === 1, 'der Platz wird frei')
 
-    const c = await openClient(port, '/raum/wiederkehr')
+    const c = await openClient(port, '/raum/wiederkehr?s=geheim-wiederkehr')
     await until(() => dienst.rooms.of('wiederkehr').full, 'der neue Gast sitzt')
 
     expect(c.closedWith, 'der neue Gast wurde abgewiesen — der Platz war nie frei').toBeNull()
