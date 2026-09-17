@@ -3482,4 +3482,691 @@ gemessen — **99,85–99,98 Ticks/s**. Vor der Reparatur lag dieselbe Messung b
 bei 99,77–99,95. Die Reparatur steckt im ausgelieferten Programm. Noahs Spielstaende blieben
 unberuehrt (SHA-256 vor und nach der Gegenprobe gleich). Belege: `docs/reports/packaging.md`.
 
-**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 ist gegen `1c64a6e` gemessen.
+**Status:** behoben (2026-09-14). Kein Kriterium gerissen; AK-8 war gegen `1c64a6e` gemessen — und
+**dieselbe Lehre traf am selben Tag ein zweites Mal zu**: M37, M38 und M39 haben `apps/` erneut
+angefasst, der Wächter stellte AK-8 wieder auf ⚠ („seither 32 Datei(en) am Erzeugnis geändert“),
+und die Antwort war wieder neu bauen (18:40:02, `e82c2bc`) und neu messen (18:40:53, sieben von
+sieben Schritten). Belege: `docs/reports/packaging.md`.
+
+---
+
+## 2026-09-14 · T-M37-07 / T-M37-08 · Befund M37-1: Die Sortierung war seit M1 schon da
+
+**Befund:** `03-TASKS.md` verlangt fuer T-M37-08 eine Gegenprobe in dieser Form — *„der Test
+ohne Befehle **faellt**, wenn man die Sortierung aus T-M37-07 entfernt"*. Sie faellt nicht,
+und sie kann nicht fallen: `packages/core/src/phases/applyCommands.ts` sortiert die Befehle
+eines Ticks **selbst** nach `state.playerOrder`, und zwar seit `75071b2` (M1, 2026-09-03).
+Nimmt man `orderCommands` aus dem Gleichschritt heraus, sortiert der Kern im naechsten
+Atemzug dasselbe Ergebnis — die Zusage aus D28.5 war ueber Machtgrenzen hinweg eingeloest,
+bevor der Mehrspieler geplant wurde.
+
+**Kleinster reproduzierbarer Fall:** dieselbe Lage, zwei Teilungen (`SPLIT_ARMY`) von zwei
+verschiedenen Maechten, einmal als `[p1, p2]` und einmal als `[p2, p1]` an
+`advanceTicks(..., { scripted })` gereicht. Beide Male dieselbe Pruefsumme, obwohl
+`nextIds.army` ein Zaehler ist, den sich alle Maechte teilen. Steht als Test in
+`packages/netplay/test/twoclients.test.ts`.
+
+**Was daraus folgt — und was nicht.** `orderCommands` ist damit nicht ueberfluessig, aber
+seine Zusage zeigt in die **andere Richtung**, und die ist scharf: innerhalb einer Macht
+bleibt die eigene Folge erhalten, und sie darf unter keinen Umstaenden „aufgeraeumt" werden
+(nach Armeekennung, nach Befehlsart). Zwei Teilungen **derselben** Macht in vertauschter
+Folge ergeben zwei verschiedene Welten — das ist gemessen, nicht vermutet, und es ist der
+Fehler, den ein gut gemeinter Aufraeumer einbauen wuerde. Zweitens haengt der Gleichschritt
+so nicht an einer Umsetzungseinzelheit des Kerns: stuende die Sortierung dort eines Tages
+nicht mehr, traegt ihn `orderCommands` weiter.
+
+**Was geaendert wurde:** die Zeile „Fertig wenn" von T-M37-08 nennt den Befund und die
+Gegenprobe, die wirklich greift. Die Zusage wurde nicht gestrichen, sondern berichtigt —
+der Beleg des Meilensteins (zwei Simulationen, 200 Ticks, eine Pruefsumme) steht unberuehrt.
+
+**Status:** geschlossen (2026-09-14). Kein Kern angefasst, keine Anforderung betroffen.
+
+---
+
+## 2026-09-14 · Vor dem Bau von M38 gelesen · Befund M38-1: Falle 11 nennt die Nummern vertauscht
+
+**Befund:** `MEHRSPIELER.md` §4 Falle 11 sagte bis heute: *„Er wird in T-M38-09 umgebaut, bevor
+T-M38-04 den Transport schreibt."* `WORKFLOW.md` §2 sagt dieselbe Sache mit den anderen Nummern:
+*„T-M38-04 kommt vor T-M38-06."* Eine der beiden Dateien musste falsch sein, und eine Falle, die
+falsche Adressen nennt, kostet genau die Sitzung, die sie sparen soll.
+
+**Nachgeprueft an der einzigen Stelle, die nicht Prosa ist** — den Titeln in `tasks.yaml`:
+
+| Aufgabe | Titel | Was sie tut |
+|---|---|---|
+| T-M38-04 | Der Netz-Waechter bekommt seine Grenze | der Waechter |
+| T-M38-06 | Der WebSocket-Transport im Browser | der erste `new WebSocket` |
+| T-M38-09 | Die Anzeige sagt, wenn es am anderen haengt | die Kopfleiste |
+
+Damit ist **`WORKFLOW.md` §2 richtig** und Falle 11 falsch. Zwei weitere Stellen bestaetigen es
+unabhaengig: `tasks.yaml` fuehrt bei T-M38-06 die Abhaengigkeit `T-M38-04`, und der Kopf des
+Abschnitts M38 in `03-TASKS.md` sagt die Regel ohne Nummern („der Netz-Wächter wird umgebaut, bevor
+der erste `new WebSocket` entsteht") — also in derselben Richtung.
+
+**Die Ursache, und sie erklaert mehr als eine Zeile.** Die alten Nummern sind kein Zahlendreher,
+sondern eine **frühere Zählung**: T-M38-04 und T-M38-05 (Wächter und Verpackung) sind beim Planen
+nachträglich nach vorn gezogen worden, und alles dahinter rutschte um zwei. Wer das weiß, findet
+dieselbe alte Zählung sofort ein zweites Mal — im scope-Block von `01-REQUIREMENTS.md`:
+
+| ID | stand dort | richtig |
+|---|---|---|
+| R-MP-07 | T-M38-06 | T-M38-08, T-M38-09 |
+| R-MP-08 | T-M38-08 | T-M38-10 |
+| R-MP-09 | T-M38-09 | T-M38-04, T-M38-05 |
+
+Die drei Zeilen waren maschinell nicht auffindbar: `checkScope` prueft den **Meilenstein** vor dem
+Geviertstrich und die Begruendung dahinter, nicht die Aufgabennummer in der Begruendung. Sie ist
+Fliesstext in einem Feld, das wie Daten aussieht.
+
+**Was geaendert wurde:** Falle 11 nennt jetzt T-M38-04 und T-M38-06 und traegt einen Absatz, der
+die alte Fassung zitiert statt sie zu loeschen; die drei scope-Zeilen sind berichtigt und tragen
+einen Kommentar, der auf diesen Befund zeigt. Keine Anforderung, kein Kriterium und keine Aufgabe
+hat sich dabei geaendert — `plan-consistency` 36/36, `coverage:requirements` `V1 offen: 0`, beides
+vor und nach der Aenderung.
+
+**Die Lehre.** Eine Nummer in Prosa altert, sobald der Plan umgestellt wird, und kein Waechter
+sieht es. Wo eine Falle eine Aufgabe meint, gehoert **ihr Titel** daneben — an einem Titel faellt
+die Verwechslung beim Lesen auf, an einer Nummer nie.
+
+**Status:** behoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-07 · Befund M38-2: Ein hochgestufter Sockel meldet `end`, aber nie `close`
+
+**Befund:** Der Hostdienst gab einen Platz nicht wieder frei, wenn ein Gast seine Verbindung
+einfach wegwarf. Der zweite Gast fand danach einen **vollen Raum, in dem niemand sass** — und die
+Partie liess sich nicht neu beginnen, ohne den Dienst neu zu starten.
+
+**Gemessen** (eigener Probelauf mit `node:http` und `node:net`, ohne den Dienst): ein Sockel, den
+`server.on('upgrade', …)` herausreicht, feuert nach dem Wegwerfen der Gegenseite
+
+```
+end   nach  65 ms
+close nie
+```
+
+Der Grund ist kein Fehler, sondern der Entwurf von Node: nach dem Hochstufen ist die HTTP-Schicht
+nicht mehr zustaendig und reicht den Sockel **halb offen** heraus. Die Leseseite ist zu, die
+Schreibseite bleibt stehen, bis jemand sie schliesst — und genau das tut niemand, wenn der Dienst
+nur auf `close` hoert.
+
+**Was daran gefaehrlich ist:** der Fehler sieht aus wie ein Fehler des Gastes. Der Raum ist voll,
+die Meldung lautet „Dieser Raum ist voll", und sie stimmt sogar — nur ist der Grund ein Sockel, der
+seit zehn Minuten niemandem mehr gehoert.
+
+**Was geaendert wurde:** der Dienst hoert auf `end` **und** `close` **und** `error`, und `abgang`
+schliesst den Sockel selbst (`socket.destroy()`), statt auf ein Ereignis zu warten, das nicht kommt.
+Eine eigene Zusicherung misst es am **Ergebnis** und nicht am Ereignis: ein dritter Gast bekommt den
+Platz des ersten. **Gegenprobe gefahren:** das `end`-Ohr herausgenommen, zwei Zusicherungen fallen.
+
+**Die Lehre.** Wer einen Sockel aus `upgrade` uebernimmt, uebernimmt auch seine Lebensdauer. Und
+allgemeiner: eine Aufraeumfunktion, die an **einem** Ereignis haengt, ist eine Wette darauf, dass
+dieses Ereignis kommt — belegen laesst sie sich nur an der Wirkung, hier am freien Platz.
+
+**Status:** behoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-03 · Befund M38-3: Die Determinismus-Probe sieht keine Gefechtskonstante
+
+**Befund:** Kein Fehler, sondern eine **Grenze der Zusage** — und sie gehoert aufgeschrieben, weil
+die Probe sonst mehr verspricht, als sie halten kann. Gemessen am 2026-09-14 auf der ausgelieferten
+Weltkarte (sechs Maechte, Startzahl 1914): ab wie vielen Probeticks eine geaenderte Regelzahl die
+Pruefsumme verschiebt.
+
+| Geaenderte Konstante | sichtbar ab Tick |
+|---|---|
+| `startMorale` | **0** (schon im Startzustand) |
+| `moraleDriftDivisor` | **24** |
+| `baseTargetMorale` | **24** |
+| `foodSurplusBonus` | **24** |
+| `ownNeighborBonus` | **24** |
+| `regenPermillePerTick` | **48** |
+| `battleRate` | auch nach 48 **nicht** |
+| `minDamage` | auch nach 48 **nicht** |
+
+**Zwei Dinge folgen daraus, und beide stehen jetzt im Test.**
+
+Erstens: **24 ist die kleinste Zahl, die ueberhaupt etwas sieht** ausser dem Startzustand. Vier der
+gemessenen Konstanten haengen an der Tagesrechnung und werden genau bei Tick 24 sichtbar; bei 12 ist
+die Probe fuer alle vier blind. `PROBE_TICKS` ist damit ein Stellknopf, der **nach oben** geht —
+wer ihn zum Sparen nach unten dreht, dreht die Probe ab. Eine eigene Zusicherung haelt das fest
+(12 gleich, 24 verschieden).
+
+Zweitens: die Probe kann **nicht** sagen, dass zwei Maschinen bitgleich rechnen. In den ersten zwei
+Spieltagen findet kein Gefecht statt, also beruehrt der Lauf die Gefechtskonstanten nie. Sie ist ein
+**billiger frueher Widerleger** und kein Beweis — und das ist genau die Rolle, die D28.6 ihr gibt
+(„die Antwort ist mit hoher Wahrscheinlichkeit ja … aber das ist keine Grundlage fuer einen Abend zu
+zweit"). Was danach wirklich alles sieht, ist die Pruefsumme in **jeder** Befehlsnachricht
+(T-M37-09): sie vergleicht den ganzen Zustand nach jedem Tick, Gefechte eingeschlossen.
+
+**Was geaendert wurde:** eine Zusicherung, die den gemessenen **Negativfall** festhaelt
+(`battleRate` und `minDamage` aendern nach 24 Ticks nichts) — damit der naechste Leser nicht
+annimmt, die Probe decke alles ab. Die Zeile „Fertig wenn" von T-M38-03 nennt die Zahlen.
+
+**Status:** geschlossen (2026-09-14). Keine Anforderung betroffen, kein Kern angefasst; die
+Regelaenderungen leben als Patch im Test, `data/rules` ist unberuehrt.
+
+---
+
+## 2026-09-14 · Beim Bau von M38 gefunden · Befund M38-4: `productionFiles()` liest `.test.tsx` mit
+
+**Befund:** `test/guards/scan.ts` sagt ueber `productionFiles()`: *„Product source only — plan
+documents, tests and fixtures are explicitly out of scope."* Der Filter dahinter lautet
+`!f.endsWith('.test.ts')` — und laesst damit **`.test.tsx` durch**. Gemessen am 2026-09-14: von
+**193** Dateien, die `productionFiles()` liefert, sind **21** `.test.tsx`.
+
+Betroffen ist jeder Waechter, der `productionFiles()` benutzt: der Netz-Waechter, die
+Farbliteral-Regel, der Steuerzeichen-Waechter, die Schluesselpruefung und weitere. Sie sind dadurch
+**strenger**, als ihr Kopf behauptet — keiner von ihnen ist heute rot, aber die Beschreibung stimmt
+nicht mit dem Verhalten ueberein, und das ist die Sorte Abweichung, die beim naechsten Mal Zeit
+kostet: wer einen Treffer in einer `.tsx`-Testdatei sieht, sucht ihn zuerst im Produktcode.
+
+**Nicht repariert, und warum.** Die Aenderung waere eine Zeile, aber ihre Reichweite sind zwoelf
+Waechter. Zwei davon zaehlen, was sie gelesen haben, und beide Zahlen wurden nachgemessen, bevor
+diese Entscheidung fiel: die Schluesselpruefung faende 315 statt 317 `t()`-Schluessel (Grenze 50),
+die Schleifenpruefung 160 statt 181 Dateien (Grenze 50) — es waere also nichts gerissen. Trotzdem
+gilt fuer M38 die Regel des Zuschnitts: **dieser Meilenstein weitet keine bestehende Pruefung aus
+und engt keine ein.** Der Befund gehoert nach M18.
+
+**Was es fuer heute heisst:** wer in `apps/desktop` eine `.test.tsx` schreibt, die ein verbotenes
+Muster nennt, braucht dieselbe Notbremse wie der Produktcode — `GUARD-ALLOW` in der Zeile. Genau so
+steht es in `websocketTransport.test.ts`, wo die Regel gegen `crypto.randomUUID` ihre eigene
+Gegenprobe braucht.
+
+**Status:** offen, gemessen, nach M18 verschoben (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M38-06 · Befund M38-5: Der Transport ist gebaut und absichtlich nicht verdrahtet
+
+**Befund:** `apps/desktop/src/net/websocketTransport.ts` ist die einzige Stelle im Spiel, die
+`new WebSocket` sagt — und **kein Pfad von `main.tsx` fuehrt dorthin**. Der Erreichbarkeits-Waechter
+(T-M13-04) hat das sofort gemeldet, und er hat recht: „gebaut, getestet, nie verdrahtet" ist genau
+die Fehlerklasse, fuer die er existiert (Symbole, Ton, Einstiegshilfe — dreimal in diesem Projekt).
+
+**Warum es hier trotzdem richtig ist.** Die Leitung wird vom **Beitrittsbildschirm** gebaut, und der
+ist T-M39-02/T-M39-03. In M38 gibt es keinen Weg, auf dem ein Mensch eine Verbindung anfordert; den
+Transport trotzdem irgendwo anzustoepseln hiesse, M39 vorwegzunehmen. Und die Unerreichbarkeit ist
+in M38 keine Luecke, sondern eine **gemessene Zusage**: `docs/reports/packaging-netfree.json` haelt
+fest, dass im gebauten Buendel (2 Dateien, 1 650 291 Zeichen) **kein `WebSocket`** steht — das ist
+die Haelfte von R-MP-09/AK3, und sie stimmt nur, weil niemand die Datei erreicht.
+
+**Was geaendert wurde:** ein Eintrag in `REACHABILITY_EXCEPTIONS` mit Begruendung, und die
+Begruendung nennt ihr eigenes Ablaufdatum: *„Diese Ausnahme ist eine Zusage auf Zeit und gehoert in
+T-M39-03 wieder heraus."*
+
+**Was in M39 zu tun ist, und es ist eine Warnung:** sobald der Beitrittsbildschirm den Transport
+erreicht, steht er im Tauri-Buendel, und die Zeile „kein WebSocket im Buendel" wird **falsch**. Sie
+darf dann nicht stillschweigend umgeschrieben werden. Die Zusage, die traegt, ist die andere:
+`connect-src 'none'` verbietet die Verbindung, **gleich wer sie versucht** — gemessen woertlich im
+Erzeugnis. Wer M39 baut, ersetzt die Buendelzusicherung durch eine Zusicherung am Verhalten (der
+Aufruf im Tauri-Bau scheitert) oder durch eine Bauflagge, die den Einstieg herausschneidet — aber
+nicht durch Streichen.
+
+**Status:** bewusst offen bis T-M39-03 (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M39-02 · Befund M39-1: Die Reihenfolge im Bauplan widerspricht dem Bauplan
+
+**Befund:** `MEHRSPIELER.md` §3.2 führt `hallo` als **erste** Nachrichtenart auf (Gast zum
+Host: „wer da ist und was er spielen möchte"), §3.7 verlangt für denselben Ablauf: „Der
+Beitrittsbildschirm zeigt, worauf man sich einlässt, **bevor irgendetwas passiert** …
+**Dann** Name eintragen und beitreten." Beides zusammen geht nicht: die Bedingungen kennt
+nur der Host, also muss er sie geschickt haben, bevor der Gast seinen Namen nennt — und
+`willkommen` ist die Antwort auf `hallo`.
+
+**Warum das kein Zahlendreher ist.** Der Widerspruch entsteht erst beim Bauen, weil §3.2
+eine *Liste von Arten* ist und keine Ablaufbeschreibung. Wer sie als Ablauf liest, baut
+einen Beitrittsbildschirm, der nach dem Namen fragt und die Bedingungen danach zeigt — und
+verletzt R-MP-12/AK1 („bevor irgendetwas beginnt"), ohne dass ein Test es sieht: alle sechs
+Angaben stünden ja da.
+
+**Wie es gebaut ist.** `hallo` kommt zweimal, und beide Male trägt es seine Aufgabe:
+
+```
+Gast verbindet          -> hallo (ohne Namen)   die Anmeldung; sie traegt die Fassung
+Host antwortet          -> willkommen           Karte, Nationen, Rate, Siegbedingung
+Gast liest, traegt ein  -> hallo (mit Namen)    jetzt sieht der Host, wer wartet
+Host startet            -> probe                der Determinismus-Handschlag
+Gast antwortet          -> probe                beide vergleichen, dann laeuft es
+```
+
+Damit steht §3.2 weiter: die Anmeldung ist die erste Art, und sie trägt die
+Protokollfassung — verschiedene Fassungen reden nicht miteinander (R-MP-06/AK1). Und §3.7
+steht auch: die Bedingungen kommen vor dem Namen.
+
+**Die verworfene Alternative** war, die Einladung im **Hostdienst** abzulegen, damit der
+Gast sie per HTTP holen kann, bevor er die Leitung baut. Dann wäre der Dienst nicht mehr
+Briefträger, sondern hielte Partiedaten — genau die dritte Meinung darüber, was gerade
+gilt, die D28.2 ausschließt. Und das Geheimnis müsste für die Abfrage an den Server, also
+in eine Anfragezeile; es steht nicht ohne Grund hinter dem Rautezeichen.
+
+**Nebenwirkung, die zur Auskunft wurde:** der Gastgeber sieht zwischen den beiden `hallo`
+einen Gast **ohne Namen**. Das ist keine Lücke, sondern die genauere Auskunft — „jemand hat
+den Link geöffnet und trägt gerade seinen Namen ein" statt „es wartet noch niemand". Ohne
+sie klebt der Gastgeber den Link ein zweites Mal in den Chat.
+
+**Status:** erledigt (2026-09-14). Entscheid in `DECISIONS.md`; der Ablauf steht im Kopf
+von `apps/desktop/src/net/party.ts`.
+
+---
+
+## 2026-09-14 · T-M39-02 · Befund M39-2: Ein Haken an Objekten statt an Feldern kostet den Speicher
+
+**Befund:** `useParty` hing mit seinem Effekt an `link` (einem Objekt) und `connect` (einer
+Funktion). Der naheliegendste Aufrufer gibt beides frisch herein:
+
+```tsx
+useParty({ link: { role, room, secret }, connect: () => transport, … })
+```
+
+Für React ist ein frisches Objekt mit denselben Werten ein anderes. Der Effekt lief also bei
+**jedem Bild** neu, baute jedes Mal eine Leitung, schickte `hallo` und rief `setSnapshot` —
+was das nächste Bild auslöste. **Gemessen:** der Testlauf endete nach **160 Sekunden** mit
+`FATAL ERROR: Ineffective mark-compacts near heap limit — JavaScript heap out of memory`,
+bei 4 GB Halde.
+
+**Warum die Reparatur nicht „der Aufrufer soll es richtig machen" ist.** Ein Haken, der nur
+bei stabilen Eigenschaften funktioniert, ist eine Falle für seinen nächsten Benutzer — und
+die Falle schnappt nicht mit einer Fehlermeldung zu, sondern mit einem toten Prozess. Der
+Effekt hängt jetzt an den **drei Feldern** des Links (`role`, `room`, `secret`) und an der
+Frage, *ob* es eine Leitungsquelle gibt; die Quelle selbst liegt in einem Merker.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M39-06 · Befund M39-3: Eine abweichende Probe war beim Fortsetzen mehrdeutig
+
+**Befund:** Die Determinismus-Probe (T-M38-03) trug zwei Zahlen — wie viele Ticks gerechnet
+wurden und was dabei herauskam. Weichen zwei Prüfsummen ab, war der Schluss eindeutig: die
+Rechner rechnen verschieden, die Partie beginnt nicht. **Beim Fortsetzen ist derselbe
+Befund mehrdeutig:** zwei Seiten, die von *verschiedenen gespeicherten Ständen* losrechnen,
+bekommen zwangsläufig verschiedene Prüfsummen, ohne dass irgendetwas kaputt wäre. R-MP-13
+verlangt dort das Gegenteil einer Abweisung — der Host soll seinen Stand übertragen.
+
+**Die sichere Richtung wäre die falsche gewesen.** Ohne Unterscheidung bliebe nur „bei einer
+Wiederaufnahme immer übertragen". Dann ginge bei *jeder* fortgesetzten Partie ein
+Viertelmegabyte über die Leitung (gemessen: 263 KB nach dreißig Spieltagen), und die Zusage
+„übertragen werden Befehle, nie Zustände" (D28.2) hätte eine stille Ausnahme, die niemand
+mehr prüft.
+
+**Was geändert wurde:** `ProbeMessage` trägt zusätzlich `fromHash` — die Prüfsumme des
+Standes, **von dem** die Probe losgerechnet hat. Damit sind die beiden Fälle exakt trennbar:
+
+| Startabdruck | Probenprüfsumme | Schluss |
+|---|---|---|
+| gleich | gleich | weiter, und nichts geht über die Leitung |
+| gleich | verschieden | **Abbruch** — dieselbe Ausgangslage, zwei Ergebnisse |
+| verschieden | — | **Übertragen** — verschiedene Stände, kein Rechenfehler |
+
+**Was der Wächter dabei nicht kann, und es steht am Code:** zwei *verschiedene* Stände mit
+*demselben* Tick und verschiedenem Inhalt melden „verschiedene Stände" — das ist richtig.
+Zwei Seiten mit demselben Stand und einem echten Rechenunterschied melden „Abbruch" — auch
+richtig. Nicht unterscheidbar bleibt der Fall, in dem beides zugleich zutrifft; er endet in
+einer Übertragung, und der laufende Prüfsummenvergleich je Tick (T-M37-09) fängt ihn im
+ersten Tick danach.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M39-07 · Befund M39-4: Eine neue Playtest-Frage hätte AK-7 zurückgesetzt
+
+**Befund:** T-M39-07 verlangt, dass die Anleitung und `docs/PLAYTEST.md` die Einladung
+erklären. Der naheliegende Weg — eine nummerierte Frage zur Partie zu zweit in den Bogen —
+hätte **AK-7 wieder geöffnet**: `playtestStatus` zählt jede unbeantwortete Frage als offen,
+`docs/reports/playtest-v1.md` hätte eine Zeile mehr gebraucht, und der Abnahmelauf hätte
+für AK-7 wieder „⏳ vollstaendig ausgefuellt … AK-7 verlangt Noahs Abnahme" gemeldet.
+
+**Das ist die Fehlerklasse des Nachtrags 2.15** in neuer Gestalt: eine später zugefügte
+Zeile macht ein abgenommenes Kriterium unerfüllbar. Sie ist hier besonders leicht zu
+übersehen, weil der Bogen *inhaltlich* der richtige Ort wäre.
+
+**Wie es gelöst ist:** der Abschnitt zu AK-9 steht als **Prosa** im Bogen, ohne
+nummerierte Zeile, und sagt in seinem ersten Satz, warum. AK-9 hat seinen eigenen Ort
+(Abschnitt 3.2 der Anforderungen) und seinen eigenen Bericht
+(`docs/reports/mehrspieler.md`). Ein Test hält beides fest: der Abschnitt nennt alle sechs
+Punkte des Durchgangs, **und** die Fragen des Bogens sind deckungsgleich mit den Zeilen des
+Antwortbogens.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · T-M39-04 · Befund M39-5: Befund M38-5 eingelöst — die Zusage hängt jetzt an einer Bauflagge
+
+**Der Vorgänger:** M38-5 hielt fest, dass `apps/desktop/src/net/websocketTransport.ts`
+gebaut und **absichtlich nicht verdrahtet** war, und warnte: „sobald der
+Beitrittsbildschirm den Transport erreicht, steht er im Tauri-Bündel, und die Zusicherung
+„kein `WebSocket` im Bündel" wird falsch. Sie darf dann nicht stillschweigend gestrichen
+werden."
+
+**Was gebaut wurde,** und es ist die zweite der beiden dort genannten Möglichkeiten: eine
+**Bauflagge**, die den Einstieg herausschneidet. `apps/desktop/vite.config.ts` setzt
+`__MULTIPLAYER__` auf ein literales `false`, sofern `WORLDWAR_MULTIPLAYER` nicht `1` ist;
+`main.tsx` hängt den Mehrspielereinstieg an einen **dynamischen** Import hinter dieser
+Flagge, und Rollup schneidet den Zweig samt Import heraus. `pnpm mp:host` setzt die Flagge
+und baut dasselbe Bündel **mit** Einstieg — das ist der Bau, den der Hostdienst ausliefert.
+
+**Gemessen am 2026-09-14 gegen `d5936cd`**, und die zweite Zeile ist die eigentliche Aussage:
+
+| | Dateien | Zeichen | `WebSocket` |
+|---|---|---|---|
+| `dist` (ohne Flagge, das ausgelieferte Bündel) | 2 | 1 667 096 | **0** |
+| `dist-mp` (mit Flagge, derselbe Quelltext) | 3 | 1 669 355 | 1 (`assets/websocketTransport-*.js`) |
+| `worldwar.exe` (6 789 632 B, neu gebaut) | — | — | **0** |
+
+Ohne die zweite Zeile wäre die erste keine Aussage über die Flagge, sondern ein Zufall —
+genau der Unterschied zwischen „gemessen" und „grün geblieben". Die Ausnahme in
+`REACHABILITY_EXCEPTIONS` ist heraus, wie sie es selbst verlangt hatte.
+
+**Ein Nebenbefund mit Kosten, in zwei Läufen gemessen:** ein zweiter Bauordner muss an
+**sechs** Stellen bekannt gemacht werden — `.gitignore`, `eslint.config.js`,
+`tsconfig.json`, beide vitest-Konfigurationen **und** `test/guards/scan.ts`. Beide
+Vergesslichkeiten sind wirklich passiert:
+
+| Lauf | Was fehlte | Was `pnpm verify` meldete |
+|---|---|---|
+| 2026-09-14 16:47 | `eslint.config.js` | Hunderte Lint-Fehler aus erzeugtem Code, Exit 1 |
+| 2026-09-14 16:50 | `test/guards/scan.ts` | **der Netz-Wächter meldet das gebündelte `new WebSocket` als Verstoß**, dazu ein Fremdasset-Treffer; 2 von 163 Dateien rot |
+
+Der zweite ist der lehrreichere: `productionFiles()` überspringt `dist`, `coverage`,
+`target` und `src-tauri` **namentlich** — ein Ordner, der anders heißt, ist für jeden
+Wächter im Haus Produktcode. Der Ordner heißt `dist-mp` und nicht `dist/mp`, weil
+`vite build --outDir dist` den Inhalt von `dist` beim nächsten Lauf leert; die sechs
+Einträge sind der Preis dafür, und sie stehen jetzt mit Begründung da.
+
+**Status:** erledigt (2026-09-14). M38-5 ist damit geschlossen.
+
+---
+
+## 2026-09-14 · T-M39-05 · Befund M39-6: Tailscale ist installiert und nicht angemeldet — AK-9 ist nicht messbar
+
+**Befund:** Die letzte Meile (Noahs zweite Festlegung vom 2026-09-12) lässt sich auf dieser
+Maschine **nicht** bis zum Ende prüfen. Gemessen am 2026-09-14:
+
+```
+tailscale version   1.102.2              (C:\Program Files\Tailscale\tailscale.exe)
+tailscale ip -4     no current Tailscale IPs; state: NoState
+Schnittstelle       Tailscale: 169.254.83.107   (APIPA, kein Tailnet)
+```
+
+Eine angemeldete Tailscale-Schnittstelle trägt eine Adresse aus `100.64.0.0/10` (RFC 6598,
+der dokumentierte Bereich des Anbieters). `169.254.x.x` heißt: der Dienst läuft, aber es
+gibt kein Tailnet.
+
+**Was daraus folgt, und es ist kein Mangel am Bau.** Geprüft und gemessen ist alles, was
+ohne Tailnet messbar ist: der Hostdienst horcht auf **allen** Schnittstellen und ist über
+`192.168.178.93` erreichbar (nicht nur über die Rückschleife); er erkennt eine
+Tailnet-Adresse an ihrem Bereich und stellt sie im Ausdruck nach vorn; und er **sagt es**,
+wenn er keine findet, statt einen Link ins Leere zu drucken. Was fehlt, ist der Gast in
+einem anderen Netz — und das ist AK-9, das einzige Kriterium dieses Plans, das kein Agent
+erfüllen kann.
+
+**Ausdrücklich nicht getan:** Tailscale anmelden, ein Konto anlegen, eine Einladung
+erzeugen. Das sind Noahs Schritte, und sie stehen Schritt für Schritt in
+`docs/ANLEITUNG.md` („Was Sie einmal einrichten") und in `docs/PLAYTEST.md`.
+
+**Status:** offen bis AK-9 (T-M39-09) — und zwar mit Absicht.
+
+---
+
+## 2026-09-14 · T-M39-06 · Befund M39-7: Eine tote Zusicherung im eigenen Test
+
+**Befund:** Die erste Fassung des Wiederaufnahme-Tests in `party.test.tsx` zählte, wie oft
+ein Spielstand über die Leitung geht — und zählte in eine Liste, die **niemand füllte**:
+
+```ts
+const gesendet: string[] = []
+leitung.a.onMessage(() => undefined)     // horcht, schreibt aber nichts
+…
+expect(gesendet).toEqual([])             // gruen, immer
+```
+
+Die Zusicherung war grün, bevor die Sache gebaut war, und wäre grün geblieben, wenn sie je
+kaputtgegangen wäre. Das ist dieselbe Fehlerklasse wie der leere Koordinatenwächter aus M33
+(`/-?d+(.d+)?/g` suchte den Buchstaben `d`) und wie „für jedes X gilt Y", wenn es kein X
+gibt.
+
+**Wie es repariert ist:** ein Schnüffler hängt wirklich an der Leitung und schreibt jede
+Nachrichtenart mit. Er wird **nach** den beiden Haken angemeldet — das Schleifendoppel
+reicht seinen Puffer dem *ersten* Hörer weiter (T-M37-11), und wer sich vordrängt, nimmt dem
+Gast seine Willkommensnachricht weg. **Gegenprobe gefahren:** nimmt man die Übertragung aus
+`party.ts` heraus, fällt die Zusicherung, die sie zählt.
+
+**Die Lehre, die über diesen Fall hinausgeht:** eine Zusicherung auf `[]` oder `0` ist
+verdächtig, solange nicht danebensteht, dass dieselbe Messung in einem anderen Fall **nicht**
+null ist. Hier steht es: bei gleichen Ständen kein `zustand`, bei verschiedenen genau eines.
+
+**Status:** erledigt (2026-09-14).
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-1: `pnpm mp:host` liefert unter Windows auf **jede** Adresse 404
+
+**Befund:** Der Hostdienst startete, druckte beide Links und beantwortete danach jede Anfrage
+mit `404 Nicht gefunden.` — auch `/` und `/index.html`. Beide Browser blieben weiß; die
+Sichtprüfung des Mehrspielers konnte ohne diese Reparatur nicht einmal beginnen.
+
+**Ursache, gemessen:** `apps/party/src/index.ts` setzt die Wurzel als Zeichenkette zusammen —
+`fileURLToPath(...)` liefert unter Windows Rückstriche, der Rest steht mit Schrägstrichen da:
+
+```
+Ausgeliefert wird: C:\Users\noahh\Desktop\Claude-Projekte\WorldWar\apps/desktop/dist
+```
+
+In `resolveStatic` normalisiert `join(root, relativ)` die Trenner, der Vergleich davor nicht:
+
+```
+join(root, 'index.html')  = C:\Users\…\WorldWar\apps\desktop\dist\index.html
+`${root}${sep}`           = C:\Users\…\WorldWar\apps/desktop/dist\
+ziel.startsWith(…)        = false   ->  „zeigt aus dem Ordner hinaus"  ->  null  ->  404
+```
+
+**Kleinster reproduzierbarer Fall:**
+
+```js
+resolveStatic(`${fileURLToPath(new URL('./', import.meta.url))}apps/desktop/dist`, '/')  // null
+resolveStatic(join(ROOT, 'apps', 'desktop', 'dist'), '/')                                // …\index.html
+```
+
+**Warum kein Test das sah:** `apps/party/test/server.test.ts` legt die Wurzel mit
+`mkdtempSync(join(tmpdir(), …))` an — die ist immer normalisiert. Die Zusicherung „löst die
+Wurzel auf index.html auf" war grün und blieb es, während der Dienst im Spiel nichts
+auslieferte. Derselbe Fehlerkopf wie der leere Koordinatenwächter aus M33.
+
+**Wie es repariert ist:** `resolveStatic` löst die Wurzel zuerst auf (`resolve(root)`) und
+vergleicht gegen die aufgelöste Form. Damit trägt auch ein `--root` mit Schrägstrichen. Die
+Ausbruchsprüfung bleibt: `/../geheim` ist weiter `null`. Neuer Fall
+„liefert auch aus, wenn die Wurzel gemischte Trenner traegt"; **Gegenprobe gefahren** —
+ohne die Reparatur fällt er.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-2: Wer seinen Link zuerst öffnet, wartet für immer
+
+**Befund:** Öffnet der **Gast** seinen Link, bevor der Gastgeber seinen geöffnet hat, finden
+die beiden nie zusammen. Gemessen an zwei sichtbaren Fenstern desselben Rechners: Gast um
+`t=0`, Gastgeber um `t=10 s`, Partie angelegt um `t=17 s`.
+
+| Seite | Was auf dem Bildschirm steht — auch nach 30 weiteren Sekunden |
+|---|---|
+| Gastgeber | „Es wartet noch niemand. Der Link ist erst nützlich, wenn er angekommen ist." |
+| Gast | „Der Gastgeber legt die Partie gerade an. Gleich steht hier, worauf Sie sich einlassen." |
+
+Ein Neuladen beim Gast löst es **sofort** — danach steht beim Gastgeber „Jemand hat den Link
+geöffnet und trägt gerade seinen Namen ein."
+
+**Ursache:** Der Hostdienst ist Briefträger und kein Briefkasten — `Room.relay` schickt nur an
+Plätze, die **gerade** besetzt sind, und puffert nichts. Der Gast schickte sein `hallo` genau
+einmal, beim Verbindungsaufbau; saß da noch niemand, war es weg. Der Gastgeber schickte
+überhaupt keine Anmeldung, also fragte auch nie jemand nach.
+
+**Kleinster reproduzierbarer Fall:** Gast-Link öffnen, zehn Sekunden warten, Gastgeber-Link
+öffnen, Partie anlegen. Im Test: zwei Enden, die nur an *besetzte* Plätze zustellen
+(`RaumEnde` in `party.test.tsx`), Gast zuerst gerendert.
+
+**Warum kein Test das sah:** `createLoopback` **puffert**, was ankommt, bevor jemand zuhört
+(T-M37-11, dort mit Absicht eingebaut: „Eine echte Leitung puffert genauso"). Für die eine
+Leitung stimmt das — für den **Raum** dazwischen nicht. Das Doppel war freundlicher als die
+Wirklichkeit, und genau in dieser Lücke saß der Befund.
+
+**Wie es repariert ist:** Beide Seiten melden sich an, nicht nur der Gast; das `hallo` des
+Gastgebers ist die Nachfrage, und der Gast beantwortet sie mit seiner eigenen Anmeldung —
+mit Namen, wenn er schon einen eingetragen hat. Keine neue Nachrichtenart, keine Änderung am
+Dienst. **Gegenprobe gefahren**, im Test und am Bildschirm: nimmt man die Anmeldung des
+Gastgebers heraus, meldet der neue Fall wieder `expected null to be ''`; am reparierten
+Bündel steht der Wartende ohne Neuladen in der Lobby.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-3: Eine Abweisung wird endlos wiederholt und nie gezeigt
+
+**Befund:** Wird eine Verbindung abgewiesen — belegter Platz, voller Raum, falsches
+Geheimnis, unbekannter Raum —, versucht der Browser es ohne Ende weiter, und der Gast erfährt
+den Grund nie. Gemessen gegen einen von außen belegten Platz `p2`:
+
+```
+77 Verbindungsversuche in 20,0 s  = 3,8 je Sekunde
+Schließcode jedes Mal: 4001 „Dieser Platz ist besetzt."
+Auf dem Bildschirm:    „Der Gastgeber legt die Partie gerade an."
+```
+
+**Ursache:** Der Dienst weist **nach** dem 101-Handschlag ab (er muss erst Raum und Geheimnis
+lesen). Der Browser feuert deshalb erst `open` — und `open` setzt im Transport `attempt = 0`
+zurück („die nächste Störung ist eine neue Störung"). Der Wiederaufbau kam damit nie an das
+Ende seiner Abstandsliste.
+
+Der Satz, der gefehlt hat, stand schon im Haus — in `apps/party/src/room.ts` über
+`REFUSED_CLOSE_CODE = 4001`: *„Ein Code über 4000 heisst deshalb: **nicht wiederversuchen**,
+das ist kein Netzfehler, sondern eine Antwort."* Gebaut war er nur auf der Serverseite.
+
+**Kleinster reproduzierbarer Fall:** einen Sockel auf `ws://…/raum/<id>?s=<geheimnis>&platz=p2`
+offen halten und denselben Link im Browser öffnen. Im Test: `sockets[0].close(4001, 'Dieser
+Platz ist besetzt.')` nach einem gelungenen Aufbau.
+
+**Wie es repariert ist:** `websocketTransport.ts` behandelt jeden Schließcode ab **4000** als
+Antwort: kein Wiederversuch, `onClose` mit dem Satz des Dienstes. Damit greift der
+Beitrittsbildschirm, den es längst gibt. Gemessen am reparierten Bündel, dieselbe Lage:
+
+```
+1 Verbindungsversuch statt 77
+„Der Beitritt hat nicht geklappt — Dieser Platz ist besetzt.
+ Bitten Sie den Gastgeber um einen neuen Link."
+```
+
+**Gegenprobe gefahren:** ohne die Reparatur fallen beide neuen Fälle
+(`expected [ 250 ] to deeply equal []`).
+
+**Nebenbefund, nicht repariert:** in der Zeile aus `docs/reports/mehrspieler-anleitung.md` §4
+(„Der Gast sieht ‚Der Beitritt hat nicht geklappt'") stand damit bis heute etwas, das der
+Gast nicht sah. Die Anleitung selbst bleibt richtig — sie beschreibt jetzt den gebauten Stand.
+
+**Status:** erledigt (2026-09-14).
+
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-4: Fünf Spielertexte, die niemand je sieht
+
+**Befund:** In `apps/desktop/src/i18n/de.ts` stehen unter `netplay` fünf Texte, die im ganzen
+Quellbaum **nirgends** gerendert werden:
+
+| Schlüssel | Text | Wann er fehlt |
+|---|---|---|
+| `pauseSent` | „Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden." | nach dem Druck auf *Pause beantragen* |
+| `pauseDeclined` | „Ihr Mitspieler möchte weiterspielen." | wenn der andere ablehnt |
+| `pauseExpired` | „Der Pausenantrag ist verfallen." | nach dreißig Sekunden ohne Antwort |
+| `paused` | „Die Partie steht. Fortsetzen darf jeder allein." | während der Pause |
+| `resuming` | „Die Partie läuft in drei Sekunden weiter." | nach dem Druck auf *Fortsetzen* |
+
+**Gemessen am Bildschirm:** der Gastgeber stellt einen Pausenantrag — seine Kopfleiste ändert
+sich nicht. Der Gast lehnt mit *Weiterspielen* ab — beim Gastgeber ändert sich wieder nichts;
+der einzige Hinweis, der dort stand, war der alte („Vorspulen gibt es zu zweit nicht"). Wer
+den Antrag stellt, sieht also weder, dass er gestellt ist, noch dass er abgelehnt wurde.
+
+**Kleinster reproduzierbarer Fall:**
+
+```bash
+grep -rn "pauseSent\|pauseDeclined\|pauseExpired" apps/desktop/src --include=*.tsx
+# nur de.ts und Tests
+```
+
+**Nicht repariert, und warum:** wo die Sätze hingehören und ob sie überhaupt hingehören, ist
+eine Frage an den Maßstab — die Kopfleiste ist im Mehrspieler schon voll (Uhr, feste Rate,
+„Warte auf Mitspieler …", *Pause beantragen*, der Verlust-Hinweis mit zwei Knöpfen). Ein
+Agent, der hier Text einbaut, entscheidet über das Aussehen.
+
+**Status:** offen — Frage an Noah.
+---
+
+## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-5: Ein Satz aus M37 steht noch im Anlegedialog
+
+**Befund:** Wer eine Partie zu zweit anlegt, liest unter der Einladungsvorschau
+
+> „Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst
+> lokal." (`newGame.multiplayerPending`)
+
+Das war in M37 richtig und ist seit M38/M39 falsch: die Verbindung ist gebaut, und die Partie
+beginnt sehr wohl zu zweit. Gemessen am 2026-09-14 im Anlegedialog des Gastgebers, unmittelbar
+über dem Knopf, der die Partie zu zweit eröffnet.
+
+**Kleinster reproduzierbarer Fall:** `pnpm mp:host`, den eigenen Link öffnen, Partieart steht
+auf „Zu zweit über einen Link" — der Satz steht als `<small>` unter den vier Einladungszeilen.
+
+**Nicht repariert, und warum:** ob dort **nichts** stehen soll oder ein anderer Satz, ist eine
+Frage an den Maßstab — der Kasten trägt sonst nur Angaben, keine Erklärungen. Spielertext ist
+Noahs Entscheidung.
+
+**Status:** offen — Frage an Noah.
+---
+
+## 2026-09-14 · Verpackungslauf AK-8 (`e82c2bc`) · Befund V-1: Der netzfreie Bau bietet eine Partieart an, die er nicht herstellen kann
+
+**Befund:** Der Startdialog des **ausgelieferten Tauri-Programms** trägt seit M37 den Wähler
+„Partieart“, und er bietet dort **beide** Werte an: „Allein gegen den Rechner“ *und* „Zu zweit über
+einen Link“. Dieses Programm kann die zweite Art technisch nicht — `__MULTIPLAYER__` ist beim
+gewöhnlichen Bau ein literales `false` (T-M39-04), der Rollup-Baum schneidet den Transport heraus, und
+`connect-src 'none'` verböte die Verbindung ohnehin. Der Wähler ist von der Bauflagge **nicht** gedeckt:
+sie steht in `main.tsx` und entscheidet über den Beitrittsweg, nicht über die Auswahl in
+`ui/Dialogs.tsx`.
+
+**Gemessen, nicht erschlossen** (exe vom 2026-09-14 18:40 gegen `e82c2bc`, über CDP am sichtbaren
+Fenster, nur lesen und einmal klicken):
+
+| Gemessen | Beobachtung |
+|---|---|
+| Werte des Wählers „Partieart“ | „Allein gegen den Rechner“, „Zu zweit über einen Link“ |
+| nach dem Umstellen auf „Zu zweit“ | Die Einladungsvorschau erscheint: Karte, „Sie spielen Vereinigte Staaten, Ihr Mitspieler Kanada“, „Computergegner: 6“, „Feste Geschwindigkeit: 10 Spielstunden je Sekunde“ |
+| nach „Partie beginnen“ | Die Partie läuft **lokal**, Kopfleiste „10 Stunden je Sekunde (fest)“, das Mitspielerland ist eine KI, **kein Fehler**, kein Verbindungsversuch |
+| `WebSocket` im gebauten Bündel (2 Dateien, 1 668 947 Zeichen) | **0×** |
+| `connect-src 'none'` in `worldwar.exe` | **1×** |
+
+Es entsteht also **kein Netzzugriff** und kein hängender Zustand — der Spieler bekommt eine
+Einzelspielerpartie mit fester Rate und ohne Vorspulen, und der Hinweis darunter sagt es sogar:
+„Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.“
+Genau dieser Satz ist seit M38/M39 falsch — im **Hostbau** ist die Verbindung gebaut (Befund MP-5).
+Im **Tauri-Bau** ist er sachlich noch richtig und trotzdem irreführend: er verspricht einen Ausbau,
+den dieses Programm dem Vorsatz nach nie bekommt.
+
+**Kleinster reproduzierbarer Fall:** `pnpm tauri:build`, `worldwar.exe` starten, im Startdialog die
+Partieart auf „Zu zweit über einen Link“ stellen — es erscheint die Einladungsvorschau samt fester
+Rate, obwohl es in diesem Bau keinen Link gibt und keinen geben soll.
+
+**Nicht repariert, und warum:** Der Verpackungslauf misst, er ändert keinen Produktivcode — und die
+Reparatur ist eine Frage an den Maßstab, keine technische. Drei Wege stehen offen, und welcher
+richtig ist, entscheidet Noah: den Wähler im netzfreien Bau **hinter dieselbe Bauflagge** legen
+(`__MULTIPLAYER__`, dann hat das Programm nur eine Partieart und der Wähler verschwindet), ihn
+stehen lassen und den Hinweis auf das umschreiben, was hier wahr ist („Dieses Programm spielt allein;
+zu zweit geht es über den Hostdienst“), oder ihn bewusst als Vorschau behalten. Der erste Weg ist der
+einzige, nach dem die Zusage „die Tauri-Anwendung kennt keinen Mehrspieler“ **auch an der Oberfläche**
+wahr ist; die Zusage „darf ihn technisch nicht können“ ist schon heute gemessen wahr.
+
+**Status:** offen — Frage an Noah. **AK-8 ist davon nicht betroffen**: die sieben Schritte fahren
+„Allein gegen den Rechner“, so wie ein Spieler das ausgelieferte Programm fährt (`docs/reports/packaging.md`).

@@ -28,6 +28,7 @@
     "tauri:dev": "tauri dev --config apps/desktop/src-tauri/tauri.conf.json",
     "tauri:build": "tauri build --config apps/desktop/src-tauri/tauri.conf.json",
     "desktop:build": "pnpm --filter @worldwar/desktop build",
+  "mp:host": "node apps/party/src/index.ts",
     "acceptance": "node scripts/acceptance.mjs",
     "playtest:sheet": "node scripts/playtest-sheet.mjs"
   },

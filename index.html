@@ -707,7 +707,7 @@ kbd {
 const projectData = {
   name: "WorldWar",
   description: "Ein privater, nicht-kommerzieller Nachbau von Supremacy: World War 3 als Einzelspieler gegen Computergegner — mit frei regelbarer Spielgeschwindigkeit und ohne jede Monetarisierung.",
-  descriptionZusatz: "V1 und der Ausbau bis M41 sind gebaut und abgenommen — zuletzt die Pflege nach M34, die Haltungen und die Zwischenziele zum Sieg. Als Nächstes ist eine Partie zu zweit geplant, bei der der Mitspieler über einen Link beitritt.",
+  descriptionZusatz: "V1 und der Ausbau bis M41 sind gebaut und abgenommen — und seit dem 2026-09-14 kann man eine Partie zu zweit spielen: der Mitspieler tritt über einen Link bei, ohne etwas zu installieren. Von 312 Aufgaben sind 293 gebaut.",
   eyebrow: "Supremacy-Nachbau · TypeScript · React · Tauri",
   version: "0.1.0",
   versionQuelle: "package.json, tauri.conf.json, Cargo.toml",
@@ -727,7 +727,7 @@ const projectData = {
   ],
 
   kennzahlen: [
-    { label: "Tests (schnell)", wert: "2155" },
+    { label: "Tests (schnell)", wert: "2446" },
     { label: "Abdeckung Kern", wert: "96,9 %" },
     { label: "Abnahme", wert: "12 / 12" },
     { label: "Provinzen", wert: "237" },
@@ -934,13 +934,14 @@ const projectData = {
         "Plan: Anforderungen, Entwurf, Aufgaben, Entscheide, Befunde"
       ],
       kennzahlen: [
-        { label: "Tests / Dateien", wert: "2155 / 146" },
+        { label: "Tests / Dateien", wert: "2446 / 163" },
         { label: "Abdeckung gesamt", wert: "96,3 %" },
         { label: "Abnahme", wert: "12 / 12" },
         { label: "Anforderungstor", wert: "V1 offen: 0" }
       ],
       offen: [
-        "Der eingecheckte `docs/reports/acceptance.md` stammt vom 2026-09-13 und gilt nach seiner eigenen Regel nur für den Stand, gegen den er gemessen wurde — der nächste `pnpm acceptance` schreibt ihn neu."
+        "Der eingecheckte `docs/reports/acceptance.md` gilt nach seiner eigenen Regel nur für den Stand, gegen den er gemessen wurde — der nächste `pnpm acceptance` schreibt ihn neu.",
+        "Im Vorlauf vom 2026-09-14 fiel die Abnahme an zwei Stellen mit einer Ursache: 37 neue Bildschirmfotos ohne Eintrag in `docs/ASSETS.md`. Ein grüner Prüflauf gilt für den Stand, auf dem er lief — nicht für den danach."
       ],
       dateien: [
         { pfad: "scripts/verify.mjs", info: "`pnpm verify`" },
@@ -980,18 +981,19 @@ const projectData = {
       id: "mehrspieler",
       titel: "Mehrspieler",
       icon: "🤝",
-      status: "geplant",
+      status: "gebaut",
       pfad: "M37 – M39",
-      kurzeBeschreibung: "Eine Partie zu zweit: der Mitspieler tritt über einen Link bei — im Gleichschritt, ohne den Kern anzufassen.",
-      detailBeschreibung: "Geplant und freigegeben am 2026-09-12, noch nichts gebaut. Der Host ist der Server und liefert das Spiel an den Browser des Gastes aus; die letzte Meile läuft über Tailscale, ohne öffentlichen Endpunkt. Das ausgelieferte Programm bleibt netzfrei. Pausen werden beantragt und angenommen, Tempo und Vorspulen entfallen zu zweit. Das Fundament liegt seit M5: reiner Kern, geseedeter Zufall, Prüfsumme.",
+      kurzeBeschreibung: "Eine Partie zu zweit: der Mitspieler tritt über einen Link bei — im Gleichschritt, ohne den Kern anzufassen. Gebaut am 2026-09-14, 29 von 30 Aufgaben.",
+      detailBeschreibung: "Freigegeben am 2026-09-12, gebaut am 2026-09-14 — 29 von 30 Aufgaben; die dreißigste ist die Abnahme und braucht zwei Menschen. Beide Rechner rechnen die ganze Partie selbst und tauschen nur Befehle, nie Zustände: rund zweihundert Byte je Sekunde. Ein Tick wird erst gerechnet, wenn beide Nachrichten für ihn da sind, und jede trägt die Prüfsumme des letzten — weichen sie ab, hält die Partie an, statt zwei Welten weiterzuspielen. Belegt über 200 Ticks mit Befehlen von beiden Seiten und danach am laufenden Programm in zwei sichtbaren Fenstern: 245 gemeinsame Ticks, null Abweichungen. Der Host ist der Server, die letzte Meile läuft über Tailscale ohne öffentlichen Endpunkt, das ausgelieferte Programm bleibt netzfrei — und der Kern wurde nicht angefasst.",
       module: [
         "M37 · Zwei Menschen, ein Spiel — Gleichschritt-Maschine, Pause auf Antrag (11 Aufgaben, ohne Netzcode)",
         "M38 · Die Verbindung — Handschlag, Determinismus-Probe, WebSocket, Hostdienst, Wiederaufnahme (10 Aufgaben)",
-        "M39 · Die Einladung — Raum und Link, Beitrittsbildschirm, Tailscale, Speichern zu zweit (9 Aufgaben)",
-        "Abnahme AK-9: Noah und ein zweiter Mensch in einem anderen Netz"
+        "M39 · Die Einladung — Raum und Link, Beitrittsbildschirm, Tailscale, Speichern zu zweit (8 von 9 Aufgaben)",
+        "Sichtprüfung am laufenden Programm: fünf Befunde, drei repariert — der schwerste lieferte unter Windows gar nichts aus",
+        "Abnahme AK-9: offen, braucht Noah und einen zweiten Menschen in einem anderen Netz"
       ],
       kennzahlen: [
-        { label: "Aufgaben gebaut", wert: "0 / 30" },
+        { label: "Aufgaben gebaut", wert: "29 / 30" },
         { label: "Anforderungen", wert: "R-MP-01…13" },
         { label: "Entwurf", wert: "D28" }
       ],
@@ -1011,7 +1013,7 @@ const projectData = {
         { befehl: "pnpm install", text: "Abhängigkeiten nach jedem Wechsel des Standes." },
         { befehl: "pnpm dev", text: "Das Spiel im Browser." },
         { befehl: "pnpm verify", text: "Lint, Typen, Tests, Wächter, Abdeckung — gemessen 69 bis 73 Sekunden." },
-        { befehl: "pnpm acceptance", text: "Der ganze Abnahmelauf inklusive verify — gemessen 4 min 58 s auf freier Maschine." },
+        { befehl: "pnpm acceptance", text: "Der ganze Abnahmelauf inklusive verify — gemessen 5 min 7 s auf freier Maschine." },
         { befehl: "pnpm tauri:build", text: "Das Windows-Programm als MSI und NSIS-Setup." }
       ],
       hinweis: { text: "Wer an diesem Projekt arbeitet, liest zuerst genau eine Datei:", pfad: "docs/plan/WORKFLOW.md" }
@@ -1170,7 +1172,7 @@ const roadmapData = [
   { titel: "Feinschliff und Kriegsrat", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M28–M33", beschreibung: "Umbau zum dunklen Kartentisch, abgenommen am 2026-09-11 mit 11 von 11." },
   { titel: "Fortschritt und Rohstoffleiste", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M34, M36", beschreibung: "Die Fortschrittsachse reicht bis Spieltag 80, die Rohstoffleiste ist lesbar. Abnahme am 2026-09-12: 11 von 11, Exit 0, 7 min 28 s." },
   { titel: "Pflege, Haltungen und Zwischenziele", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M35, M40, M41", beschreibung: "Gebaut in der Nacht auf den 2026-09-14, jeder Block mit adversarischer Durchsicht und Nacharbeit: die KI baut ihre Fabriken aus, die Uhr hält ihr Tempo, vier Haltungen mit Erklärtext, vier Zwischenziele in der Rangliste. Abnahme am 2026-09-13: 12 von 12, Exit 0, 4 min 58 s. Zwei Aufgaben wurden nach ihrem Rücknahmekriterium zurückgenommen: T-M41-10 und T-M40-04." },
-  { titel: "Mehrspieler — eine Partie zu zweit", zeitraum: "TBD", status: "geplant", meilensteine: "M37–M39", beschreibung: "Geplant und freigegeben am 2026-09-12, noch nichts gebaut. Bauplan `docs/plan/MEHRSPIELER.md`, Abnahme AK-9." },
+  { titel: "Mehrspieler — eine Partie zu zweit", zeitraum: "Q3 2026", status: "fertig", meilensteine: "M37–M39", beschreibung: "Freigegeben am 2026-09-12, gebaut am 2026-09-14: 29 von 30 Aufgaben. Gleichschritt über 200 Ticks mit Befehlen von beiden Seiten, danach am laufenden Programm in zwei sichtbaren Fenstern nachgeprüft — 245 gemeinsame Ticks, null Abweichungen. Die Sichtprüfung fand fünf Befunde, drei wurden repariert; der schwerste lieferte unter Windows gar keine Seite aus, bei 2442 grünen Tests. Offen bleibt allein die Abnahme AK-9: sie braucht Noah und einen zweiten Menschen in einem anderen Netz." },
   { titel: "Tiefe zwischen den Kriegen", zeitraum: "TBD", status: "geplant", meilensteine: "M17, M18", beschreibung: "Spionage und Handelsangebote; Durchmarschrecht und Provinzhandel sind darin. M17 ist seit dem 2026-09-13 als Ganzes geplant (16 Aufgaben, Entwurf D29) — Noah hat am selben Tag entschieden, dass es in einer späteren Sitzung gebaut wird. M18 ist die Sammelstelle für Gemessenes und Verschobenes." },
   { titel: "WorldWar-Mobil — iPhone-App", zeitraum: "TBD", status: "geplant", beschreibung: "Eigenes Repo: offline, Einzelspieler, als Home-Bildschirm-App über GitHub Pages. Geplant am 2026-09-12 mit 52 Aufgaben, nicht gebaut." }
 ];

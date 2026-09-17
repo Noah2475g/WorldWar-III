@@ -12,8 +12,10 @@ import { Explain } from './Explain.tsx'
  * Sits on the map rather than in the side panel: a key belongs to its map.
  */
 
-export function Legend({ mode }: { mode: MapMode }) {
-  const entries = legendFor(mode)
+export function Legend({ mode, ownColor }: { mode: MapMode; ownColor?: string }) {
+  // Die Farbe der Macht, die zusieht (T-M37-01): der Gast einer Partie zu zweit sieht
+  // seine eigene Fuellung als „eigen", nicht die des Gastgebers.
+  const entries = ownColor ? legendFor(mode, ownColor) : legendFor(mode)
 
   return (
     <div className="legend" aria-label={`Legende: ${MAP_MODE_NAMES[mode]}`}>

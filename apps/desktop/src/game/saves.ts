@@ -107,6 +107,28 @@ export async function latestSlot(storage: StoragePort, ticksPerDay: number): Pro
   return best ? { name: best.name, day: Math.floor(best.tick / ticksPerDay) + 1 } : null
 }
 
+/**
+ * Der Stand, mit dem eine Partie zu zweit fortgesetzt wird (T-M39-06, R-MP-13/AK1).
+ *
+ * Der **jüngste** Stand, und nicht ein ausgewählter: zum Fortsetzen eines gemeinsamen
+ * Abends ist das der einzige, der in Frage kommt — beide haben zuletzt denselben Punkt
+ * gespielt. Ein unlesbarer oder fehlender Stand ist `null` und keine Störung: dann rechnet
+ * diese Seite vom Anfang, der Gastgeber sieht den Unterschied im Handschlag, und sein Stand
+ * wird übertragen (D28.11).
+ *
+ * **Die Entscheidung fällt nicht hier.** Diese Funktion liest, sie vergleicht nicht —
+ * verglichen wird in `resumeDecision`, mit den Prüfsummen beider Seiten.
+ */
+export async function resumeStateFor(
+  storage: StoragePort,
+  ticksPerDay: number,
+): Promise<GameState | null> {
+  const juengster = await latestSlot(storage, ticksPerDay)
+  if (!juengster) return null
+  const geladen = await loadFrom(storage, juengster.name)
+  return geladen.ok ? geladen.state : null
+}
+
 export type LoadOutcome =
   | { ok: true; state: GameState }
   | { ok: false; message: string }

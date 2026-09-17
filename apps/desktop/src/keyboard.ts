@@ -24,6 +24,14 @@ export type Shortcut =
   | { type: 'zoom'; direction: 1 | -1 }
   /** Pos1: die eigene Hauptstadt in die Mitte (T-M30-03). */
   | { type: 'centreCapital' }
+  /**
+   * Eine Zeittaste in einer Partie zu zweit (T-M37-04, R-MP-02/AK2, C-11, D28.4).
+   *
+   * Die Taste wirkt nicht — aber sie verschwindet auch nicht stillschweigend: `control`
+   * sagt, welche Bedienung gemeint war, damit die Oberfläche den Grund nennen kann. Ein
+   * Regler, der nichts tut, ist schlimmer als keiner.
+   */
+  | { type: 'multiplayerLocked'; control: 'speed' | 'fastForward' | 'pause' }
 
 export interface KeyContext {
   speed: number
@@ -37,6 +45,15 @@ export interface KeyContext {
    * ueberschreibt Ticks und gesammelte Befehle. Karte, Panels, Speichern und Escape bleiben.
    */
   fastForwarding: boolean
+  /**
+   * Läuft eine Partie zu zweit (T-M37-04, R-MP-02/AK2, C-11)?
+   *
+   * Dann stehen Tempo, Vorspulen und die einseitige Pause still: die Rate wurde beim
+   * Anlegen gewählt, und im Gleichschritt gibt ohnehin der Langsamere sie vor. Optional,
+   * weil der Einzelspieler die Frage nicht stellt und jeder bestehende Aufrufer sie
+   * deshalb nicht beantworten muss — fehlt sie, ist die Antwort „nein".
+   */
+  multiplayer?: boolean
 }
 
 /** Die Tasten, die Uhr oder Vorspulen bedienen — waehrend eines Laufs gesperrt (T-M41-13). */
@@ -68,6 +85,20 @@ export function resolveKey(
 
   if (context.dialogOpen) return null
   if (context.fastForwarding && CLOCK_KEYS.has(event.key)) return null
+
+  // Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2, C-11): die Rate
+  // steht seit dem Anlegen fest, Vorspulen gibt es nicht, und angehalten wird nur mit
+  // Zustimmung. Die Tasten tun deshalb nichts — und sagen, warum.
+  if (context.multiplayer === true && CLOCK_KEYS.has(event.key)) {
+    // Die Leertaste gehoert weiterhin zuerst dem Knopf, auf dem der Fokus liegt (T-M28-09).
+    if (event.key === ' ') {
+      return isInteractiveTarget(event.target ?? null) ? null : { type: 'multiplayerLocked', control: 'pause' }
+    }
+    return {
+      type: 'multiplayerLocked',
+      control: event.key === 'f' || event.key === 'F' ? 'fastForward' : 'speed',
+    }
+  }
 
   switch (event.key) {
     case ' ':

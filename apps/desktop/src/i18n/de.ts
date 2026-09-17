@@ -38,6 +38,19 @@ export const de = {
     speedLockedFastForward: 'Während des Vorspulens gesperrt — erst abbrechen oder abwarten',
     fastForward: 'Vorspulen',
     fastForwardRunning: 'Spult vor …',
+    // Die feste Rate einer Partie zu zweit (T-M37-04, R-MP-02/AK2 und AK3, C-11).
+    // Ein Regler, der nichts tut, ist schlimmer als keiner — wer trotzdem drückt,
+    // bekommt den Grund zu lesen.
+    fixedSpeed: '{{speed}} Stunden je Sekunde (fest)',
+    speedLockedMultiplayer:
+      'Zu zweit steht die Geschwindigkeit fest — sie wurde beim Anlegen der Partie gewählt.',
+    fastForwardLockedMultiplayer:
+      'Vorspulen gibt es zu zweit nicht: Ihr Mitspieler säße vor einem Spiel, das ohne ihn weiterläuft.',
+    pauseNeedsConsent: 'Zu zweit wird eine Pause beantragt und angenommen — niemand hält die Partie allein an.',
+    // Die ehrliche Uhr des Gleichschritts (T-M37-11, R-MP-03/AK1): der Tick wartet auf
+    // die Liste der Gegenseite. Erst nach zwei Sekunden Stille, sonst flackert die Zeile
+    // bei jedem Tick auf.
+    waitingForPeer: 'Warte auf Mitspieler …',
     // Warum das Vorspulen anhaelt (T-M12-10, R-TIME-03). Der Kern fuehrt den Grund seit
     // M15 mit und gab ihn zurueck; die Oberflaeche hat ihn weggeworfen, und der Spieler
     // sah die Uhr stehenbleiben, ohne zu erfahren warum.
@@ -536,6 +549,105 @@ export const de = {
     start: 'Partie beginnen',
     aiBonus: 'KI-Bonus: {{percent}} %',
     aiBonusNone: 'Die KI spielt ohne Bonus — sie sieht dieselbe Karte wie Sie.',
+    // Die Partieart und die feste Geschwindigkeit (T-M37-03, R-MP-02, C-11). Zu zweit
+    // wird die Rate einmal gewählt und danach nie wieder: im Gleichschritt gibt ohnehin
+    // der Langsamere das Tempo vor, und ein Regler, den einer von beiden bewegt, hieße
+    // nur, dass der andere ihn nicht bewegt hat.
+    mode: 'Partieart',
+    modeSingle: 'Allein gegen den Rechner',
+    modeMultiplayer: 'Zu zweit über einen Link',
+    fixedSpeed: 'Feste Geschwindigkeit',
+    fixedSpeedHint:
+      'Die Rate steht für die ganze Partie fest und lässt sich danach nicht mehr ändern. Vorspulen gibt es zu zweit nicht.',
+    invitation: 'Die Einladung nennt:',
+    invitationMap: 'Karte: {{map}}',
+    invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{other}}',
+    invitationAi: 'Computergegner: {{count}}',
+    invitationSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
+    // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf
+    // einen Knopf warten, den es noch nicht gibt.
+    multiplayerPending: 'Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.',
+  },
+
+  /**
+   * Der Beitritt und die Lobby (T-M39-02, T-M39-03, R-MP-10, R-MP-12, D28.10).
+   *
+   * Niemand tritt einer Partie bei, deren Bedingungen er nicht kennt — besonders nicht
+   * der festen Geschwindigkeit, die er nachher nicht mehr ändern kann. Deshalb steht auf
+   * dem Beitrittsbildschirm alles, bevor der Gast seinen Namen einträgt, und nicht danach.
+   */
+  party: {
+    joinTitle: 'Einladung zu einer Partie zu zweit',
+    hostTitle: 'Partie zu zweit eröffnen',
+    connecting: 'Verbindung zum Gastgeber wird aufgebaut …',
+    waitingForOffer: 'Der Gastgeber legt die Partie gerade an. Gleich steht hier, worauf Sie sich einlassen.',
+    terms: 'Diese Partie:',
+    termsMap: 'Karte: {{map}}',
+    termsNations: 'Sie spielen {{own}}, Ihr Gastgeber {{host}}',
+    termsAi: 'Computergegner: {{count}}',
+    termsVictory: 'Siegbedingung: {{victory}}',
+    termsSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
+    fixedSpeedWarning:
+      'Die Geschwindigkeit steht für die ganze Partie fest, und Vorspulen gibt es zu zweit nicht.',
+    openState:
+      'Beide Rechner rechnen die ganze Partie selbst. Jeder hat damit den vollen Spielstand im Speicher — unter Freunden ist das in Ordnung, einen Schummelschutz gibt es nicht.',
+    nameLabel: 'Ihr Name',
+    namePlaceholder: 'Wie sollen Sie heißen?',
+    joinButton: 'Beitreten',
+    joined: 'Sie sind dabei. Die Partie beginnt, sobald der Gastgeber sie startet.',
+    // Die Lobby des Gastgebers.
+    inviteHint: 'Diesen Link verschicken Sie an Ihren Mitspieler:',
+    copyLink: 'Link kopieren',
+    copied: 'Kopiert.',
+    waitingForGuest: 'Es wartet noch niemand. Der Link ist erst nützlich, wenn er angekommen ist.',
+    guestArrived: 'Jemand hat den Link geöffnet und trägt gerade seinen Namen ein.',
+    guestReady: '{{name}} wartet auf den Start.',
+    setUpFirst: 'Legen Sie zuerst die Partie an — erst dann sieht Ihr Gast, worauf er sich einlässt.',
+    beginButton: 'Partie starten',
+    checking: 'Beide Rechner prüfen, dass sie dasselbe Spiel rechnen …',
+    refusedTitle: 'Der Beitritt hat nicht geklappt',
+    leave: 'Abbrechen',
+    // Was der Gast tut, wenn der Link nicht mehr passt.
+    refusedHint:
+      'Bitten Sie den Gastgeber um einen neuen Link. Ein Link gilt für eine Partie und für einen Rechner.',
+  },
+
+  /**
+   * Die Partie zu zweit (T-M37-10, T-M37-11, R-MP-04, R-MP-05, D28.6, D28.7).
+   *
+   * Zwei Sätze tragen den ganzen Abschnitt: eine Pause wird beantragt und angenommen,
+   * und zwei Welten, die auseinanderlaufen, halten an — denn hinterher kann niemand mehr
+   * sagen, welche die richtige war.
+   */
+  netplay: {
+    title: 'Partie zu zweit',
+    pauseRequestButton: 'Pause beantragen',
+    pauseAsked: '{{player}} möchte pausieren.',
+    pauseAccept: 'Pause zulassen',
+    pauseDecline: 'Weiterspielen',
+    pauseSent: 'Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden.',
+    pauseDeclined: 'Ihr Mitspieler möchte weiterspielen.',
+    pauseExpired: 'Der Pausenantrag ist verfallen.',
+    paused: 'Die Partie steht. Fortsetzen darf jeder allein.',
+    resumeButton: 'Fortsetzen',
+    resuming: 'Die Partie läuft in drei Sekunden weiter.',
+    desyncTitle: 'Die beiden Spiele laufen auseinander',
+    desync:
+      'Ab Spielstunde {{tick}} rechnen die beiden Rechner verschiedene Welten. Die Partie hält an: weiterzuspielen hieße, zwei Spiele nebeneinander zu führen, und hinterher könnte niemand mehr sagen, welches das richtige war.',
+    desyncHashes: 'Eigene Prüfsumme {{own}}, die des Mitspielers {{other}}.',
+    desyncSave: 'Spielstand sichern',
+    peerLost:
+      'Ihr Mitspieler ist seit zehn Sekunden nicht mehr da. Die Partie wartet; es geht nichts verloren.',
+    keepWaiting: 'Weiter warten',
+    endGame: 'Partie beenden',
+    endTitle: 'Partie zu zweit beenden?',
+    endBody:
+      'Die Verbindung wird getrennt und die Partie geschlossen. Ein gespeicherter Stand bleibt erhalten.',
+    endLeave: 'Beenden',
+    endStay: 'Doch weiterspielen',
+    takeOverBody:
+      'Sie können die Partie auch allein weiterspielen. Ihr Mitspieler wird dann zum Computergegner, und Tempo und Vorspulen stehen wieder zur Verfügung.',
+    takeOver: 'Allein weiterspielen',
   },
 
   saves: {

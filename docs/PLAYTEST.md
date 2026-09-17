@@ -174,6 +174,41 @@ nicht mehr im Menü.
 
 ---
 
+## Eine Partie zu zweit (M39 — AK-9, nicht Teil der V1-Abnahme)
+
+> **Dieser Abschnitt trägt bewusst keine nummerierten Fragen.** Der Bogen oben ist die
+> Abnahme der **V1**; sie ist abgeschlossen, und eine neue Frage darin machte sie über
+> Nacht wieder unvollständig. Die Partie zu zweit hat ihr eigenes Kriterium — **AK-9**,
+> `01-REQUIREMENTS.md` Abschnitt 3.2 — und ihren eigenen Bericht,
+> `docs/reports/mehrspieler.md`.
+
+**AK-9 ist das einzige Kriterium dieses Plans, das kein Agent erfüllen kann.** Ein zweiter
+Mensch in einem anderen Netz ist nicht simulierbar; alles andere an M37 bis M39 ist es und
+ist gemessen. Was fehlt, sind Sie und ein Freund.
+
+**Vorbereitung** (einmalig): Tailscale auf beiden Rechnern, Einladung angenommen — die
+Schritte stehen in `docs/ANLEITUNG.md` unter „Eine Partie zu zweit — die Einladung".
+
+**Der Durchgang**, sechs Dinge, und der Bericht hält jedes davon fest:
+
+1. **Die Einladung kam an.** `pnpm mp:host` starten, den Gast-Link verschicken, und der
+   Gast öffnet ihn in einem anderen Netz — nicht in Ihrem WLAN.
+2. **Der Gast musste nichts installieren.** Keine Datei, kein Programm, kein Konto; nur
+   Tailscale, und das war die Vorbereitung.
+3. **Mindestens dreißig zusammenhängende Spieltage.** Am Stück, nicht in zwei Sitzungen.
+4. **Eine beantragte und angenommene Pause.** Einer beantragt, der andere stimmt zu, beide
+   Uhren halten bei derselben Spielstunde.
+5. **Ein absichtlich herbeigeführter Verbindungsabbruch mit Wiederaufnahme.** WLAN aus,
+   zwanzig Sekunden warten, WLAN an — die Partie muss von selbst weiterlaufen, ohne dass
+   ein Befehl verloren geht.
+6. **Am Ende dieselbe Zustandsprüfsumme auf beiden Seiten.** Ablesbar in der Debug-Ansicht
+   (Taste `D`), Zeile „Zustands-Hash".
+
+Läuft eines davon schief, gehört es als Befund in die Tabelle unten — und AK-9 bleibt
+offen, statt halb abgehakt zu werden.
+
+---
+
 ## Befunde
 
 Bitte alles notieren, was auffällt — auch Kleinigkeiten. Was hier steht, wird

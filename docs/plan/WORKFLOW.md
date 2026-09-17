@@ -1,38 +1,41 @@
-# WORKFLOW — der Stand nach M41, M40 und M35, und der Mehrspieler ist geplant
+# WORKFLOW — der Stand nach dem Mehrspieler (M37, M38, M39)
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
-> **Stand: 2026-09-14.** Von **312 Aufgaben sind 264 erledigt** (gezählt in
-> `docs/plan/tasks.yaml`, nicht geschätzt). Die **48 offenen** sind: **dreißig geplante und
-> freigegebene** aus M37–M39 (der Mehrspieler), **fünfzehn** aus M17 (als Ganzes geplant,
-> gebaut wird es auf Noahs Ansage), und **drei zurückgenommene** — T-M10-02, T-M40-04 und
-> T-M41-10, jede mit einem `reopened`-Text, der sagt, wer sie ablöst.
+> **Stand: 2026-09-14, abends.** Von **312 Aufgaben sind 293 erledigt** (gezählt in
+> `docs/plan/tasks.yaml`, nicht geschätzt). Die **19 offenen** sind: **fünfzehn** aus M17
+> (als Ganzes geplant, gebaut wird es auf Noahs Ansage), **eine** — T-M39-09, das ist
+> **AK-9** und braucht Noah *und einen zweiten Menschen in einem anderen Netz* —, und
+> **drei zurückgenommene**: T-M10-02, T-M40-04 und T-M41-10, jede mit einem
+> `reopened`-Text, der sagt, wer sie ablöst. **Es ist keine offene Aufgabe übrig, die ein
+> Agent erledigen könnte.**
 >
-> **Was seit dem 2026-09-12 dazugekommen ist:** in der Nacht vom 13. auf den 14. September
-> sind **M41** (Pflege nach M34, 16 von 17), **M40** (die Haltungen, 18 von 19) und **M35**
-> (Zwischenziele zum Sieg, 6 von 6) gebaut worden, jeder von ihnen mit mindestens einer
-> adversarischen Durchsicht und der Nacharbeit daraus. `pnpm acceptance` lief am
-> 2026-09-13 auf freier Maschine **12 von 12, Exit 0, 4 min 58 s** — zwölf, nicht elf: der
-> dritte Frische-Wächter (Haltungs-Messlauf) ist eine neue Prüfung, die alten elf sind alle
-> da und alle grün. **AK-8 ist seit dem 2026-09-14 gemessen und erfüllt**, am gebauten
-> Programm und nicht im Browser (`docs/reports/packaging.md`).
+> **Was am 2026-09-14 dazugekommen ist: der Mehrspieler, 29 von 30 Aufgaben.** M37 (der
+> Gleichschritt, elf Aufgaben, keine Zeile Netzcode), M38 (die Verbindung, zehn) und M39
+> (die Einladung, acht von neun) sind gebaut — und danach **zum ersten Mal wirklich
+> gesehen**: eine Sichtprüfung an zwei sichtbaren Browserfenstern fand **fünf Befunde**,
+> von denen drei repariert wurden. Der schwerste (MP-1) hätte den Mehrspieler auf Noahs
+> Maschine unbrauchbar gemacht: `pnpm mp:host` antwortete unter Windows auf **jede**
+> Adresse mit 404, bei 2442 grünen Tests
+> (`docs/reports/sichtpruefung-mehrspieler-2026-09-14.md`).
 >
-> **Die Partie ist länger geworden.** Sie entscheidet sich mit Startzahl 1914 an
-> **Spieltag 975** statt an 471 — der Siegtag springt bei jeder KI-Änderung in beide
-> Richtungen, das Tor ist 300–1500. Die Fortschrittsachse endet weiter an Spieltag 80; das
-> sind gegen 975 Tage **8 %** der Partie, nicht die 17 %, die hier bis zum 2026-09-12
-> standen.
+> **Der Kern wurde dabei nicht angefasst** — keine Zeile in `packages/core/src`,
+> `packages/ai/src`, `data/rules` oder `data/maps`. Der Beleg dafür ist keine Behauptung,
+> sondern eine Messung: der Haltungs-Messlauf steht nach dem Mehrspieler bei **101,8 %**
+> Provinz-Tagen und **0** ohne Gefecht verlorenen Provinzen — auf die Nachkommastelle
+> derselbe Wert wie davor.
 >
 > **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
 > Text" M25–M27, der Kriegsrat-Umbau M29–M32, die Bilder M33, die Rohstoffleiste M36, der
-> Fortschritt M34 und der Block M41/M40/M35 sind je Aufgabe in `PROGRESS.md` festgehalten,
-> die Entscheide in `DECISIONS.md`, die Befunde samt Lehren in `PROBLEME.md`. Was davon
-> beim Arbeiten wirklich gebraucht wird, steht verdichtet in §3 und §4 — dort und nicht in
-> diesem Kopf.
+> Fortschritt M34, der Block M41/M40/M35 und der Mehrspieler M37–M39 sind je Aufgabe in
+> `PROGRESS.md` festgehalten, die Entscheide in `DECISIONS.md`, die Befunde samt Lehren in
+> `PROBLEME.md`. Was davon beim Arbeiten wirklich gebraucht wird, steht verdichtet in §3
+> und §4 — dort und nicht in diesem Kopf.
 >
-> **Was gerade auf Noah wartet:** neun offene Fragen, gesammelt in `DECISIONS.md` unter
-> „Offene Fragen an Noah" (2026-09-14). Keine davon hat eine Aufgabe, und das ist Absicht.
+> **Was gerade auf Noah wartet:** neun offene Fragen in `DECISIONS.md` unter „Offene Fragen
+> an Noah" (2026-09-14), dazu **AK-9** (§2) und drei Fragen aus den
+> Prüfungen am laufenden Programm (MP-4, MP-5, V-1). Keine davon hat eine Aufgabe, und das ist Absicht.
 
 ---
 
@@ -42,19 +45,20 @@
 git log --oneline -1 && git status --short
 ```
 
-**Bis zum Merge von PR #7 liegt die Spitze auf dem Zweig
-`claude/offene-punkte-abschliessen`, nicht auf `main`.** Dort liegen M41, M40, M35, der
-Schlussblock und diese Datei; `main` ist über achtzig Commits älter. Wer einen Worktree
-anlegt, zweigt von diesem Zweig ab.
+**Die Spitze liegt auf `main`.** PR #7 (M41, M40, M35 und der Schlussblock) ist am
+2026-09-14 gemerged; der Merge-Commit ist `09c7078`, und der Zweig
+`claude/offene-punkte-abschliessen` ist damit abgegolten. Wer einen Worktree anlegt,
+zweigt von `main` ab.
 
 ```bash
-git switch claude/offene-punkte-abschliessen
+git switch main && git pull --ff-only
 ```
 
-**Wer den PR merged, richtet diesen Abschnitt im selben Commit** — danach gilt wieder „die
-Spitze liegt auf `main`", und dieser Kasten muss weg. Eine Einstiegsdatei, die auf den
-falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge gekostet (§4 Falle 1); sie
-schadet in beide Richtungen gleich viel.
+**Wer als Nächstes merged, richtet diesen Abschnitt im selben Zug.** Eine Einstiegsdatei,
+die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge gekostet
+(§4 Falle 1); sie schadet in beide Richtungen gleich viel. Deshalb steht hier immer genau
+**ein** Zweig und nie eine Bedingung — ein Satz der Form „bis zum Merge …, danach …“ ist
+ab dem Merge falsch und wird trotzdem gelesen.
 
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
@@ -67,26 +71,26 @@ pnpm install
 
 ## 1 · Der Stand in einem Absatz
 
-Das Spiel ist **fertig und abgenommen**. Der alte Plan war am 2026-09-12 abgearbeitet; am
-2026-09-12 kam **M37 bis M39** dazu (der Mehrspieler, dreißig Aufgaben, geplant und
-freigegeben, keine davon gebaut), und am 2026-09-13 kamen **M41, M40, M35 und M17** dazu —
-die ersten drei sind gebaut, M17 ist geplant und wartet auf Noahs Ansage.
+Das Spiel ist **fertig und abgenommen**, und seit dem 2026-09-14 kann man es **zu zweit
+über einen Link spielen**. Der alte Plan war am 2026-09-12 abgearbeitet; am 2026-09-13
+kamen M41, M40 und M35 dazu, am 2026-09-14 der **Mehrspieler M37–M39** — 29 von 30
+Aufgaben gebaut, die dreißigste ist AK-9 und braucht zwei Menschen. **M17 ist als Ganzes
+geplant und wartet auf Noahs Ansage.**
 
-V1 lief am 2026-09-08 mit 7 von 7 durch, der Kriegsrat-Umbau am 2026-09-11 mit 11 von 11,
-der Stand nach M34 am 2026-09-12 mit 11 von 11, und der Stand nach **M41, M40 und M35** am
-2026-09-13 mit **12 von 12, Exit 0, 4 min 58 s** (`docs/reports/acceptance.md`, gemessen
-gegen `02c0bf9`). Das Anforderungstor meldet „V1 offen: 0". **AK-7 ist abgenommen:** Noah
-hat den Playtest per /goal-Auftrag vom 2026-09-07 ausdrücklich an den Agenten delegiert
-(Entscheid in `DECISIONS.md`); beide Berichte liegen vor. **AK-8 ist seit dem 2026-09-14
-erfüllt** — gemessen am gebauten Programm gegen `1c64a6e`, sieben von sieben Schritten.
+`pnpm acceptance` lief am 2026-09-14 auf dem Endstand mit **12 von 12, Exit 0, 5 min 7 s**
+(`docs/reports/acceptance.md`); `pnpm verify` meldet **Exit 0 mit 2446 Tests in 163
+Dateien**, Abdeckung Kern 96,9 %. Das Anforderungstor meldet „V1 offen: 0". **AK-7 ist
+abgenommen** (Noah hat den Playtest per /goal-Auftrag vom 2026-09-07 ausdrücklich
+delegiert, Entscheid in `DECISIONS.md`). **AK-9 ist der fünfte Haltepunkt** und das einzige
+Kriterium dieses Projekts, das kein Agent erfüllen kann.
 
-**Was M41, M40 und M35 geändert haben, in drei Sätzen:** die KI baut ihre Fabriken jetzt
-wirklich aus (61 Provinzen auf Stufe 3 statt keiner einzigen Macht über Stufe 1), und die
-Uhr hält ihr Tempo (99,9 statt 95,8 Ticks/s am gebauten Bündel, am Dev-Server 99,6 statt
-60). Armeen haben vier Haltungen mit Erklärtext, und eine Verteidigung rückt in eine
-bedrohte Nachbarprovinz nach — aber nur, wenn eine zweite eigene Armee stehen bleibt; der
-Angriff marschiert **nie** von selbst. Und die lange Mitte der Partie hat vier
-Zwischenziele, die in der Rangliste stehen.
+**Was der Mehrspieler ändert, in vier Sätzen:** beide Rechner rechnen die ganze Partie
+selbst und tauschen nur **Befehle**, nie Zustände — rund zweihundert Byte je Sekunde. Ein
+Tick wird erst gerechnet, wenn beide Nachrichten für ihn da sind; dadurch gibt der
+Langsamere das Tempo vor. Jede Nachricht trägt die **Prüfsumme** des letzten Ticks, und
+bei Abweichung hält die Partie an, statt zwei Welten weiterzuspielen. **Der Kern wurde
+dafür nicht angefasst** — das Fundament lag seit M5 (reiner `step`, geseedeter Zufall,
+Ganzzahl-Festkomma, `hotseat.test.ts`).
 
 **Wichtig für T-M22-05:** Befehle werden **gesammelt** und im ersten Tick des nächsten
 Laufs angewendet (vorher rechnete jeder Klick bei Pause sofort einen ganzen Tick, samt
@@ -96,38 +100,30 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
 ## 2 · Was als Nächstes dran ist
 
-**Geplant, freigegeben und ungebaut sind der Mehrspieler (Noahs Freigabe vom 2026-09-12)
-und M17 (Delegation per /goal vom 2026-09-13, Bau auf Noahs Ansage).** Was darunter nicht
-„geplant" heißt, ist vorgemerkt.
+**Es gibt keine offene Aufgabe mehr, die ein Agent erledigen kann.** Was hier steht, braucht
+entweder Noah oder seine Ansage.
 
-1. **Neun offene Fragen an Noah** — `DECISIONS.md`, Eintrag „Offene Fragen an Noah"
-   (2026-09-14). Sie sind die einzige Sorte Arbeit, die kein Agent erledigen kann, und
-   mehrere von ihnen bestimmen, was überhaupt als Nächstes gebaut wird: ob die
-   Verteidigungs-Automatik bleibt, ob die tote KI-Artillerie der Voreinstellung ein
-   Balancing-Block wird, ob die längere Partie (Tag 975 statt 471) gewollt ist, und ob das,
-   was von Gefechten im laufenden Spiel zu sehen ist, genügt. **Nichts davon hat eine
-   Aufgabe** — ein Plan, der Fragen als Aufgaben führt, wird nie fertig.
-2. **Eine Partie zu zweit (M37, M38, M39)** — geplant am 2026-09-12, **dreißig Aufgaben**.
-   Noahs Auftrag: ein Mitspieler tritt über einen Link bei, aus einem anderen Netz,
-   kostenlos, ohne öffentliche Webseite. **Lies `docs/plan/MEHRSPIELER.md`, sonst
-   nichts** — dort stehen Befund, Messung, elf Fallen und die Reihenfolge. Der Entwurf
-   ist D28, die Anforderungen sind `R-MP-01` bis `R-MP-13` in Abschnitt 2.17.
+1. **AK-9 — eine Partie zu zweit gegen einen echten Menschen** (T-M39-09, der fünfte
+   Haltepunkt). Sechs Punkte: Einladung per Link, Beitritt ohne Installation, dreißig
+   Spieltage am Stück, eine beantragte und angenommene Pause, ein absichtlicher
+   Verbindungsabbruch mit Wiederaufnahme, und am Ende auf beiden Seiten dieselbe
+   Prüfsumme. **Die Anleitung dafür liegt fertig:**
+   `docs/reports/mehrspieler-anleitung.md` — Schritt für Schritt, mit einem Abschnitt
+   „was geprüft ist und was nicht". Was fehlt, ist ein Tailnet (Tailscale ist auf dieser
+   Maschine installiert, aber **nicht angemeldet**) und ein zweiter Mensch.
 
-   Vier Dinge, die hier gelten und anderswo nicht:
-
-   - **Der Kern wird nicht angefasst**, `data/rules` auch nicht. Golden-Master,
-     Parameterlauf, Turnier und Haltungs-Messlauf bleiben unberührt — fünf Minuten Abnahme
-     statt eines Nachtlaufs. Das ist der Unterschied zu M34, und er ist der Grund für den
-     Zuschnitt.
-   - **Fang mit M37 an, nicht mit dem Netz.** Elf der dreißig Aufgaben kommen ohne eine
-     Zeile Netzcode aus und sind gegen zwei Simulationen im selben Prozess belegbar.
-   - **T-M38-04 kommt vor T-M38-06.** Der Netz-Wächter bekommt seine Grenze, bevor der
-     erste `new WebSocket` entsteht; andersherum ist `pnpm verify` rot, und der Grund ist
-     nicht der, den man vermutet.
-   - **Die Abnahme ist AK-9** (T-M39-09) und braucht Noah **und einen zweiten Menschen**
-     in einem anderen Netz. Das einzige Kriterium dieses Plans, das kein Agent erfüllen
-     kann. Sein Ort steht schon fest: Abschnitt 3.2 der Anforderungen und
-     `scripts/acceptance-criteria.mjs` mit `scope: 'M39'`.
+   **Billiger Zwischenschritt, der AK-9 nicht erfüllt, aber viel findet:** zwei Fenster auf
+   demselben Rechner. Genau das ist am 2026-09-14 gelaufen und hat fünf Befunde ergeben
+   (`docs/reports/sichtpruefung-mehrspieler-2026-09-14.md`).
+2. **Zwölf offene Fragen an Noah** — neun in `DECISIONS.md` unter „Offene Fragen an Noah"
+   (2026-09-14), dazu **MP-4** (fünf `netplay`-Spielertexte werden nirgends gerendert),
+   **MP-5** (ein veralteter M37-Satz im Anlegedialog) und **V-1**: der Wähler „Partieart"
+   bietet **auch im netzfreien Bau** „Zu zweit über einen Link" an, weil die Bauflagge nur
+   `main.tsx` deckt und nicht `ui/Dialogs.tsx`. Gemessen, nicht vermutet: die Partie läuft
+   dann lokal mit fester Rate, ohne Fehler und ohne Verbindungsversuch. Sie sind die
+   einzige Sorte Arbeit, die kein Agent erledigen kann, und mehrere bestimmen, was als
+   Nächstes überhaupt gebaut wird. **Nichts davon hat eine Aufgabe** — ein Plan, der
+   Fragen als Aufgaben führt, wird nie fertig.
 3. **M17 „Tiefe zwischen den Kriegen" — geplant als Ganzes** (2026-09-13, T-M17-01):
    T-M17-02 bis -16, Entwurf D29, dazu R-DIP-08, R-DIP-09, R-AI-09, R-GAME-09. Die beiden
    Vormerkungen aus T-M32-03 sind darin (T-M17-04, T-M17-06). **Noah hat am 2026-09-13
@@ -140,24 +136,25 @@ und M17 (Delegation per /goal vom 2026-09-13, Bau auf Noahs Ansage).** Was darun
    eine einzige Aufgabe, mit Absicht: T-M41-10 (die KI legt Armeen wirklich zusammen; der
    Deckel zählt Stapel statt Einheiten, die echte Reparatur tötete die Artillerie),
    der Handel der KI (zielt auf den teuersten Bauwunsch), die Kohle-Senke, der
-   Vorratsaufbau und die amphibische KI (T-M17-01 hat sie hierher gehängt), und die tote
-   KI-Artillerie der Voreinstellung (R-BAT-08/AK3, offene Frage).
+   Vorratsaufbau, die amphibische KI, die tote KI-Artillerie der Voreinstellung
+   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit).
 6. **T-M40-04, T-M41-10 und T-M10-02** — zurückgenommen, jede mit Begründung in
    `tasks.yaml` (`reopened`) und in `DECISIONS.md`. Sie stehen nur der Vollständigkeit
    halber hier; nichts davon ist Arbeit, die wartet.
-7. **Die Sichtprüfung zu T-M28-08 ist gelaufen** (2026-09-14,
-   `docs/reports/sichtpruefung-2026-09-14.md` §7) und beschreibt **ohne Urteil**, was zu
-   sehen ist — der Maßstab ist Noahs. Was sie gemessen hat: ein Gefecht dauert ein bis
-   drei Spielstunden, das sind bei Tempo 10 eine bis wenige Bildzeiten; im „Vorspulen"
-   zeichnet der Browser gar nicht. **Allgemein bleibt: alles, was nur einen Tick lang
-   sichtbar ist, ist im Vorspulen nicht prüfbar** — und in der Browser-Vorschau läuft die
-   Spieluhr überhaupt nicht.
+7. **Wer am Mehrspieler weiterbaut, liest `docs/plan/MEHRSPIELER.md`** — Befund, Messung,
+   elf Fallen (Falle 11 ist seit Befund M38-1 berichtigt) und die Reihenfolge. Der Entwurf
+   ist D28, die Anforderungen sind `R-MP-01` bis `R-MP-13` in Abschnitt 2.17. Vier Dinge
+   gelten dort und anderswo nicht: der Kern wird nicht angefasst; `packages/netplay`
+   enthält **keinen** Netzcode (auch nicht in Prosa); das ausgelieferte Programm bleibt
+   netzfrei (`connect-src 'none'`, gemessen am Erzeugnis **und** an der Bauflagge
+   `WORLDWAR_MULTIPLAYER=1`); und der Gast hat **keinen sicheren Kontext** — kein
+   `crypto.randomUUID`, kein `crypto.subtle` in der Browserseite.
 
 ---
 
 ## 3 · Was gilt (nicht neu herleiten)
 
-- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 trägt M41, M40, M35 und den Schlussblock und ist offen — **Noah merged, kein Agent**); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Nie mit `--force` pushen.**
+- **Remote seit 2026-09-11** (`origin` = github.com/Noah2475g/WorldWar-III; PR #7 mit M41, M40, M35 und dem Schlussblock ist am 2026-09-14 gemerged, `main` = `09c7078`); weiterhin keine CI — `pnpm verify` ist die Prüfkette. **Noah merged, kein Agent. Nie mit `--force` pushen.**
 - **Der Plan-Wächter ist scharf, und er liest seit dem 2026-09-13 beide Aufgabendateien.**
   `npx vitest run test/plan-consistency.test.ts` prüft in einer Sekunde tasks.yaml ↔
   03-TASKS.md, jeden `files:`/`tests:`-Pfad **und** die Zeilen `Dateien` und `Tests zuerst`
@@ -202,7 +199,7 @@ und M17 (Delegation per /goal vom 2026-09-13, Bau auf Noahs Ansage).** Was darun
   innen eine Stelle mehr Spezifität hat; kein Test konnte das sehen. Für das, was jsdom
   doch binden kann, gibt es den Kaskaden-Wächter (Muster T-M22-02).
 
-## 4 · Zweiundzwanzig Fallen, die schon jemanden gekostet haben
+## 4 · Fünfundzwanzig Fallen, die schon jemanden gekostet haben
 
 1. **Die Einstiegsdatei zeigt auf den falschen Zweig.** Bis zum 2026-09-11 stand hier,
    `main` sei alt und die Spitze liege auf einem `claude/*`-Zweig — das hat fünf Sitzungen
@@ -327,6 +324,28 @@ und M17 (Delegation per /goal vom 2026-09-13, Bau auf Noahs Ansage).** Was darun
    ```
    Ohne `PYTHONIOENCODING=utf-8` scheitert die Ausgabe an cp1252.
 
+23. **Ein grüner Prüflauf gilt für den Stand, auf dem er lief — nicht für den danach.**
+   Am 2026-09-14 meldete eine Sichtprüfung `pnpm verify` Exit 0 und committete danach
+   37 Bildschirmfotos. Der nächste Abnahmelauf fiel an **zwei** Stellen, mit **einer**
+   Ursache: R-ASSET-01 verlangt für jede **eingecheckte** Bilddatei einen Eintrag in
+   `docs/ASSETS.md`, und AK-2/3/4 wie AK-5 fahren beide denselben Wächter. Das verify
+   davor war zu Recht grün — die Bilder waren noch `untracked`. **Wer Dateien committet,
+   die ein Wächter zählt, prüft danach noch einmal.**
+24. **Unter Windows sind gemischte Pfadtrenner eine eigene Fehlerklasse.** Befund MP-1:
+   `pnpm mp:host` antwortete auf **jede** Adresse mit 404, weil die zusammengesetzte
+   Wurzel `C:\...\WorldWar\apps/desktop/dist` hieß: `join()` normalisierte sie zu lauter
+   Rückstrichen, der Vergleich davor nicht — also hielt die Ausbruchsprüfung jeden Pfad
+   für einen Ausbruch. **Kein Test sah es**, weil alle Testfälle ihre Wurzel mit
+   `mkdtempSync(join(...))` anlegen, und die ist immer schon normalisiert. Wer eine
+   Pfadprüfung schreibt, gibt ihr **einen Fall mit Schrägstrichen**.
+25. **Was nur in jsdom geprüft ist, hat niemand gesehen.** Der Mehrspieler war mit 2442
+   grünen Tests gebaut und lieferte auf dieser Maschine keine einzige Seite aus. Zwei
+   sichtbare Fenster auf **einem** Rechner kosten eine Stunde, brauchen weder Tailscale
+   noch einen zweiten Menschen — und fanden fünf Befunde, drei davon in Code, der durch
+   Tests gedeckt war. Das ist dieselbe Lehre wie bei der Uhr (Falle 18), nur teurer:
+   dort war eine Zusage langsam, hier war sie tot.
+
+
 Dazu aus dem Bau von M22: **jsdom rechnet kein Layout** (`scrollWidth`/`clientWidth`
 sind 0 — Layout-Wächter binden Struktur+Kaskade, Entscheid in DECISIONS.md), und
 **jsdoms `requestAnimationFrame` hängt an `setInterval`** — unter `vi.useFakeTimers`
@@ -341,19 +360,21 @@ zwischen zwei Partien.
 
 | | |
 |---|---|
-| Aufgaben | **312, davon 264 erledigt** (gezählt in `tasks.yaml`, 2026-09-14). Offen: **30** geplante und freigegebene aus M37–M39, **15** aus M17 (geplant, Bau auf Noahs Ansage), **3** zurückgenommene — T-M10-02, T-M40-04 (die Verfolgung, abgelöst von T-M40-10), T-M41-10 (am Rücknahmekriterium gerissen). Je Meilenstein: M35 **6/6**, M40 **18/19**, M41 **16/17**, M17 **1/16**, M37–M39 **0/30** |
-| Abnahme | **12 von 12, Exit 0, 5 min 5 s** (`totalSeconds` 305), `docs/reports/acceptance.md`, 2026-09-14 auf freier Maschine gegen `3fff35c`. **AK-8 ist darin ✅**. Die beiden Vorläufe hatten es auf ⚠, jeweils zu Recht: am 2026-09-13 gegen `02c0bf9` (4 min 58 s) war die Verpackung überhaupt nicht gemessen, am 2026-09-14 gegen `03e4200` (4 min 56 s) war die Messung vom Uhr-Commit überholt. Zwölf statt elf, weil eine Prüfung dazukam (dritter Frische-Wächter, Haltungs-Messlauf, T-M40-16/-17) |
-| Tests | **2155 schnell**, **146 Dateien** · Abdeckung Kern **96,9 %**, gesamt **96,3 %** (`pnpm verify` **Exit 0**, Wanduhr 69 und 73 s in zwei Läufen, gemessen am 2026-09-14 auf dem Stand dieses Doku-Commits; davor 2147 vor T-M41-18, 2118 nach M35, 1929 nach M34) |
+| Aufgaben | **312, davon 293 erledigt** (gezählt in `tasks.yaml`, 2026-09-14 abends). Offen: **15** aus M17 (geplant, Bau auf Noahs Ansage), **1** — T-M39-09 alias AK-9, der fünfte Haltepunkt —, **3** zurückgenommene: T-M10-02, T-M40-04 (die Verfolgung, abgelöst von T-M40-10), T-M41-10 (am Rücknahmekriterium gerissen). Je Meilenstein: M35 **6/6**, M40 **18/19**, M41 **16/17**, **M37 11/11**, **M38 10/10**, **M39 8/9**, M17 **1/16**. **Keine offene Aufgabe, die ein Agent erledigen könnte** |
+| Abnahme | **12 von 12, Exit 0, 5 min 7 s** (`totalSeconds` 307), `docs/reports/acceptance.md`, 2026-09-14 abends gegen `e82c2bc`. Der Vorlauf desselben Abends fiel an **zwei** Stellen mit **einer** Ursache: die 37 Bilder der Sichtprüfung hatten keinen Eintrag in `docs/ASSETS.md`, und AK-2/3/4 wie AK-5 fahren beide R-ASSET-01. **AK-8 steht darin auf ⚠** — die Verpackung war seit `1c64a6e` 32 Dateien weiter; die Neumessung steht in `packaging.md` |
+| Tests | **2446 schnell**, **163 Dateien** · Abdeckung Kern **96,9 %**, gesamt **96,3 %** (`pnpm verify` **Exit 0**, gemessen am 2026-09-14 abends; davor 2155/146 vor dem Mehrspieler, 2258/154 nach M37, 2376/160 nach M38, 2442/163 nach M39). Neu: `packages/netplay` **99,0 %**, `apps/desktop/src/net` 100 % |
+| Mehrspieler | **29 von 30 Aufgaben**. Gleichschritt belegt über **200 Ticks** mit 63 und 56 Befehlen von beiden Seiten, nach *jedem* Tick derselbe Hash (`5ed264a0fea05076`). Determinismus-Probe: **24 Ticks**, kalt 26 ms / warm 6–8 ms (Grenze 100). **24 ist die kleinste taugliche Zahl** — vier Regelkonstanten werden genau dort sichtbar, bei 12 ist die Probe für alle vier blind; `battleRate` und `minDamage` sieht sie auch nach 48 Ticks nicht (kein Gefecht in zwei Spieltagen), und das steht als eigene Zusicherung im Test |
+| Sichtprüfung Mehrspieler | **5 Befunde, 3 repariert** (2026-09-14, zwei sichtbare Brave-Fenster über CDP, 37 Bilder). **MP-1:** `pnpm mp:host` antwortete unter Windows auf *jede* Adresse mit 404 — gemischte Pfadtrenner; ohne die Reparatur war gar nichts zu sehen, bei 2442 grünen Tests. **MP-2:** wer seinen Link zuerst öffnete, wartete für immer. **MP-3:** eine Abweisung wurde 77-mal in 20 s wiederholt, ohne den Grund zu nennen. Gemessen: **245 gemeinsame Ticks über 56,8 Spieltage, 0 Abweichungen**, beidseitig `7aae49be9d989df8`; 22,77 gegen 22,78 Ticks/s. **MP-4 und MP-5 sind Spielertexte und damit Fragen an Noah** |
 | AK-1 | Sieg an Spieltag **975**, 2589 Eroberungen, 11 Kriegserklärungen, Sieger China (Startzahl 1914). Dieselbe Voreinstellung mit Startzahl 2015: Tag 583, mit 1815: Tag 583 (`docs/reports/fullgame*.json`). Der Siegtag springt je KI-Änderung in beide Richtungen; das Tor ist 300–1500. Die drei Startzahlen variieren nur den Zufall — Aufstellung, Gegner und Hauptstädte sind identisch |
 | AK-7 | **abgenommen** (Delegation, `DECISIONS.md`) — 62/62 Fragen, 2 Berichte |
-| AK-8 | **erfüllt**, gemessen am 2026-09-14 gegen `1c64a6e` am gebauten Programm: starten, Partie beginnen, Strg+S, speichern, beenden, neu starten, „Weiterspielen (Tag 1)" — sieben von sieben Schritten (`docs/reports/packaging.md`). Die exe wurde dafür ein zweites Mal gebaut, weil die Uhr-Reparatur nach dem ersten Bau kam; dass sie wirklich drin ist, zeigt die Tickrate der exe (**99,85–99,98 Ticks/s** bei Tempo 100), nicht die Dateigröße. Zählt nicht gegen V1 (M16) |
-| AK-9 | ⏸ M39, noch nicht gemessen — braucht Noah und einen zweiten Menschen in einem anderen Netz |
+| AK-8 | **erfüllt**, am 2026-09-14 abends gegen `e82c2bc` am gebauten Programm neu gemessen: starten, Partie beginnen, Strg+S, speichern, beenden, neu starten, „Weiterspielen" — **sieben von sieben**, Exit 0, acht Sekunden (`docs/reports/packaging.md`). Die exe vom Morgen war von M37–M39 überholt, der Frische-Wächter stand zu Recht auf ⚠. Zählt nicht gegen V1 (M16) |
+| AK-9 | ⏸ **der fünfte Haltepunkt** (T-M39-08 hat ihn gesetzt und den Wächter mitgezogen; die Nummer stand bis dahin als *erfundenes Gegenbeispiel* im Test und heißt dort jetzt AK-99). Braucht Noah **und einen zweiten Menschen in einem anderen Netz** — Anleitung Schritt für Schritt in `docs/reports/mehrspieler-anleitung.md`. Zählt nicht gegen V1 |
 | Anforderungstor | `pnpm coverage:requirements` meldet **V1 offen: 0** |
-| Programm | `worldwar.exe` **6 780 416 Bytes** (6,47 MiB), gebaut am **2026-09-14 03:22:44** gegen `1c64a6e`, `pnpm tauri:build` mit Rust `release` in 1 min 51 s; dazu MSI 2 813 952 B und NSIS-Setup 2 140 999 B. Der Bau vom selben Tag um 00:41 war auf das Byte gleich groß — die Uhr-Reparatur kostet kein Byte, deshalb belegt sie die Tickrate und nicht die Größe. Der Sprung gegen die 7 933 952 B vom 2026-09-08 stammt aus T-M28-03 (`tauri-plugin-fs` entfernt) |
-| Uhr | **99,88 Ticks/s im Median** am gebauten Bündel bei Tempo 100 (Minimum 99,77, fünf Läufe), am Dev-Server 99,57 / 99,61 / 99,73. Vorher: Bündel Median 95,76 bei Streuung 5,42, Dev-Server 57,9 bis 62,6 (T-M41-17, gemessen über CDP am sichtbaren Fenster) |
+| Programm | `worldwar.exe` **6 790 144 Bytes** (6,48 MiB), gebaut am **2026-09-14 18:40:02** gegen `e82c2bc`, Rust `release` in 1 min 32 s. Der neue Bau machte den Netzfrei-Wächter rot (er hält die Größe fest) — das ist seine Arbeit: `dist-mp` wurde neu gebaut und `measure-netfree.mjs` erneut gefahren, damit beide Bündel aus demselben Stand stammen. **Keine Aussage änderte sich**: `connect-src 'none'` 1×, WebSocket im Bündel **0×**, mit Bauflagge `WORLDWAR_MULTIPLAYER=1` **1×** |
+| Uhr | **99,82 Ticks/s im Median** am gebauten Programm bei Tempo 100 (Minimum 99,46, **dreizehn** Läufe in zwei Reihen), gegen den Ausgangswert 99,88 / 99,77 vom Morgen. Die 0,39 unter dem Minimum sind **nicht weggeredet**: die zwei langsamen Läufe verlieren 3 bis 5 Ticks, und `clockCap(100)` ist 5 — ein einziges Bild. Entscheidend ist die andere Richtung: **alle dreizehn liegen über dem höchsten Wert, der je vor der Uhr-Reparatur gemessen wurde** (98,40), die Reparatur steckt also in dieser exe. Am Dev-Server 99,57 / 99,61 / 99,73; vorher Bündel-Median 95,76 bei Streuung 5,42 |
 | Langlauf | 1000 Spieltage in **191 452 ms**, **7,977 ms je Tick** inkl. KI (Vorlauf 198 321 ms / 8,263 ms; davor 319 030 ms / 13,293 ms). **Die Partie ist nach 1000 Spieltagen nicht entschieden** — vorher an Tick 19320; das ist eine offene Frage an Noah, kein gerissenes Kriterium (AK-6 misst Zeit) |
 | Zeitbudgets | Weltkarte Median **2,381 ms** / p99 **4,404 ms** (gefordert 3,5 / 8, `worldmap-bench.json`); Zeichnen p95 2,43 ms bei 16,7 ms Bildbudget; Anteil der KI am Tick 0,067 (Grenze 0,3) |
 | Fortschrittsachse | letzte Freischaltung **Spieltag 80** (vorher 16), **32 Minuten** Echtzeit bei Tempo 1 (vorher 6,4). Gegen den Siegtag 975 sind das **8 %** der Partie — die 17 % aus M34 rechneten gegen Tag 471 und gelten nicht mehr |
-| Haltungen | Provinz-Tage mit `defensive` gegen Garnison **101,8 %** (vorher 79,7 %), Verluste ohne Gefecht **0** (vorher 10), 12 Episodenläufe, `docs/reports/stance.json`. Was die Zahl **nicht** sagt: befohlene Deckung kam in **0 von 19** Fällen rechtzeitig an — offene Frage 1 an Noah |
+| Haltungen | Provinz-Tage mit `defensive` gegen Garnison **101,8 %**, Verluste ohne Gefecht **0**, `docs/reports/stance.json` — **nach dem Mehrspieler neu gemessen** (2026-09-14 gegen `b1bb3c8`, 468 s), weil `newGame.ts` zu den Quellen zählt und T-M37-03 sie anfasste. Die Zahl ist auf die Nachkommastelle dieselbe wie davor: dreißig Aufgaben Mehrspieler haben die Einzelspieler-Mechanik nicht verschoben. Kontrolllauf 76 Einmärsche / 4 verloren, erwartet wie gemessen. Was die Zahl **nicht** sagt: befohlene Deckung kam in 0 von 19 Fällen rechtzeitig an — offene Frage 1 an Noah |
 | Balancing | Grundlauf, Anteil des Stärksten **36,8 %** (vorher 44,4 %), `docs/reports/balance-sweep.md`; Turnier schwer gegen normal im Band von R-AI-06 |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; wer glatte Zahlen braucht, misst bei freier Maschine nach |

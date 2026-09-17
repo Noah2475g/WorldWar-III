@@ -36,6 +36,8 @@
       "@worldwar/core/*": ["packages/core/src/*"],
       "@worldwar/ai": ["packages/ai/src/index.ts"],
       "@worldwar/ai/*": ["packages/ai/src/*"],
+      "@worldwar/netplay": ["packages/netplay/src/index.ts"],
+      "@worldwar/netplay/*": ["packages/netplay/src/*"],
       "@worldwar/testkit": ["packages/testkit/src/index.ts"],
       "@worldwar/testkit/*": ["packages/testkit/src/*"],
       "@worldwar/mapgen": ["packages/mapgen/src/index.ts"],

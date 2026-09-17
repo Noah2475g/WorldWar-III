@@ -101,6 +101,9 @@ importers:
       '@worldwar/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@worldwar/netplay':
+        specifier: workspace:*
+        version: link:../../packages/netplay
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -130,6 +133,8 @@ importers:
       '@worldwar/testkit':
         specifier: workspace:*
         version: link:../../packages/testkit
+
+  apps/party: {}
 
   packages/ai:
     dependencies:
@@ -165,6 +170,22 @@ importers:
       '@worldwar/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/netplay:
+    dependencies:
+      '@worldwar/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@worldwar/core':
+        specifier: workspace:*
+        version: link:../core
+      '@worldwar/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@worldwar/testkit':
+        specifier: workspace:*
+        version: link:../testkit
 
   packages/shared: {}
 

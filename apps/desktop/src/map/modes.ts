@@ -180,13 +180,20 @@ export function fillFor(province: ShadedProvince, mode: MapMode): string {
   }
 }
 
-/** What the legend has to say for a mode, so the colours are never a guessing game. */
-export function legendFor(mode: MapMode): { label: string; color: string }[] {
+/**
+ * What the legend has to say for a mode, so the colours are never a guessing game.
+ *
+ * `ownColor` ist die Farbe der Macht, die zusieht (T-M37-01, R-MP-01): bis zum 2026-09-14
+ * holte diese Stelle die Farbe der ersten Macht fest, und im Spiel zu zweit haette der
+ * Schluessel dem Gast die Farbe seines Gegners als „eigen" ausgewiesen. Ohne Angabe die
+ * erste Fuellung der Palette — genau die der ersten Macht, also im Einzelspieler wie bisher.
+ */
+export function legendFor(mode: MapMode, ownColor: string = PLAYER_FILL[0]!): { label: string; color: string }[] {
   switch (mode) {
     case 'political':
       return [
         { label: 'neutral', color: TOKENS.paperSunk },
-        { label: 'eigen', color: colorForPlayer('p1') },
+        { label: 'eigen', color: ownColor },
       ]
     case 'resources':
       return [

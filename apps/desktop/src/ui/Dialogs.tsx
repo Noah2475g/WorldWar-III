@@ -1,8 +1,14 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RESOURCE_KEYS } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
-import type { Difficulty, NewGameOptions } from '../game/newGame.ts'
+import {
+  MULTIPLAYER_SPEEDS,
+  type Difficulty,
+  type GameMode,
+  type Invitation,
+  type NewGameOptions,
+} from '../game/newGame.ts'
 // Die Fassung aus package.json — nicht als zweite Wahrheit in der Sprachdatei (T-M22-04).
 import { version as APP_VERSION } from '../../../../package.json'
 
@@ -99,6 +105,7 @@ export function NewGameDialog({
   onSaves,
   resume,
   onResume,
+  invitation,
 }: {
   options: NewGameOptions
   nations: readonly string[]
@@ -107,6 +114,14 @@ export function NewGameDialog({
   onChange: (options: NewGameOptions) => void
   onStart: () => void
   onClose: () => void
+  /**
+   * Was ein Gast vor dem Beitritt sähe (T-M37-03, R-MP-02/AK1, D28.10).
+   *
+   * `null` im Einzelspieler — dann gibt es nichts einzuladen. Der Dialog rechnet sie
+   * nicht selbst aus: die Einladung entsteht aus der Partiedefinition, und die kennt
+   * die Hülle, nicht das Formular.
+   */
+  invitation?: Invitation | null
   /**
    * Der Weg zu den Spielstaenden (T-M12-07). Wer wiederkommt, will laden und nicht neu
    * anfangen — und vor der ersten Partie steht dieser Dialog davor. Ohne den Griff waere
@@ -134,6 +149,36 @@ export function NewGameDialog({
         <button type="button" className="button button--primary" onClick={onResume}>
           {t('newGame.resume', { day: resume.day })}
         </button>
+      )}
+
+      {/* Die Partieart steht vor allem anderen (T-M37-03, R-MP-02): sie entscheidet, ob
+          die Rate darunter überhaupt eine Frage ist. */}
+      <label className="field">
+        <span>{t('newGame.mode')}</span>
+        <select
+          value={options.mode}
+          onChange={(e) => onChange({ ...options, mode: e.target.value as GameMode })}
+        >
+          <option value="single">{t('newGame.modeSingle')}</option>
+          <option value="multiplayer">{t('newGame.modeMultiplayer')}</option>
+        </select>
+      </label>
+
+      {options.mode === 'multiplayer' && (
+        <label className="field">
+          <span>{t('newGame.fixedSpeed')}</span>
+          <select
+            value={options.fixedSpeed}
+            onChange={(e) => onChange({ ...options, fixedSpeed: Number(e.target.value) })}
+          >
+            {MULTIPLAYER_SPEEDS.map((stop) => (
+              <option key={stop} value={stop}>
+                {t('header.speedStop', { stop })}
+              </option>
+            ))}
+          </select>
+          <small>{t('newGame.fixedSpeedHint')}</small>
+        </label>
       )}
 
       <label className="field">
@@ -211,6 +256,23 @@ export function NewGameDialog({
         {aiBonus === 0 ? t('newGame.aiBonusNone') : t('newGame.aiBonus', { percent: aiBonus })}
       </p>
 
+      {/* Worauf ein Gast sich einließe (R-MP-02/AK1, R-MP-12): Karte, beide Nationen,
+          die Zahl der Computergegner und die feste Rate — vor dem Beitritt, nicht danach. */}
+      {options.mode === 'multiplayer' && invitation && (
+        <section className="notice notice--info" aria-label={t('newGame.invitation')}>
+          <p>{t('newGame.invitation')}</p>
+          <ul>
+            <li>{t('newGame.invitationMap', { map: invitation.mapName })}</li>
+            <li>
+              {t('newGame.invitationNations', { host: invitation.hostNation, other: invitation.guestNation })}
+            </li>
+            <li>{t('newGame.invitationAi', { count: invitation.aiOpponents })}</li>
+            <li>{t('newGame.invitationSpeed', { speed: invitation.fixedSpeed })}</li>
+          </ul>
+          <small>{t('newGame.multiplayerPending')}</small>
+        </section>
+      )}
+
       <p className="dialog__actions">
         <button type="button" className="button button--primary" onClick={onStart}>
           {t('newGame.start')}
@@ -220,6 +282,192 @@ export function NewGameDialog({
             {t('saves.title')}
           </button>
         )}
+      </p>
+    </Dialog>
+  )
+}
+
+/**
+ * Der Beitrittsbildschirm (T-M39-02, R-MP-12/AK1, D28.10, MEHRSPIELER.md §3.7).
+ *
+ * **Zuerst die Bedingungen, dann der Name.** Niemand tritt einer Partie bei, deren
+ * Bedingungen er nicht kennt — und die feste Geschwindigkeit gehört ausdrücklich dazu, denn
+ * sie ist das Einzige, was er hinterher nicht mehr ändern kann (R-MP-02). Deshalb steht das
+ * Namensfeld unter der Liste und nicht darüber, und deshalb ist der Knopf ohne Namen
+ * gesperrt: ein Gast ohne Namen wäre beim Gastgeber ein leerer Platz.
+ *
+ * **Er kommt ohne Spielstand aus.** Der Gast hat keinen — er hat einen Link. Der erste
+ * Bildschirm der Anwendung ist sonst der Anlegedialog; der Beitritt ist ein **zweiter
+ * Einstieg** und kein Sonderfall des ersten.
+ */
+export function JoinDialog({
+  terms,
+  mapName,
+  phase,
+  reason,
+  joined,
+  onJoin,
+  onLeave,
+}: {
+  terms: {
+    ownNation: string
+    hostNation: string
+    aiOpponents: number
+    victory: 'points' | 'conquest'
+    fixedSpeed: number
+  } | null
+  /** Der Name der Karte — die Kennung aus der Partiedefinition sagt einem Menschen nichts. */
+  mapName: string
+  phase: 'lobby' | 'checking' | 'refused'
+  reason: string | null
+  joined: boolean
+  onJoin: (name: string) => void
+  onLeave: () => void
+}) {
+  const [name, setName] = useState('')
+
+  return (
+    <Dialog title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.joinTitle')} onClose={onLeave}>
+      {phase === 'refused' && (
+        <>
+          <p className="notice notice--warn">{reason}</p>
+          <p>{t('party.refusedHint')}</p>
+        </>
+      )}
+
+      {phase !== 'refused' && !terms && <p className="notice notice--info">{t('party.waitingForOffer')}</p>}
+
+      {phase !== 'refused' && terms && (
+        <>
+          <section className="notice notice--info" aria-label={t('party.terms')}>
+            <p>{t('party.terms')}</p>
+            <ul>
+              <li>{t('party.termsMap', { map: mapName })}</li>
+              <li>{t('party.termsNations', { own: terms.ownNation, host: terms.hostNation })}</li>
+              <li>{t('party.termsAi', { count: terms.aiOpponents })}</li>
+              <li>
+                {t('party.termsVictory', {
+                  victory: t(terms.victory === 'points' ? 'newGame.victoryPoints' : 'newGame.victoryConquest'),
+                })}
+              </li>
+              <li>{t('party.termsSpeed', { speed: terms.fixedSpeed })}</li>
+            </ul>
+            <small>{t('party.fixedSpeedWarning')}</small>
+          </section>
+
+          {/* D28.2: jeder hat den vollen Zustand im Speicher. Das steht in der Anleitung
+              UND hier, weil es die einzige Einschraenkung ist, die der Gast vorher wissen
+              muss - hinterher ist sie eine Enttaeuschung. */}
+          <p className="notice notice--info">{t('party.openState')}</p>
+
+          {joined ? (
+            <p className="notice notice--info">{t('party.joined')}</p>
+          ) : (
+            <>
+              <label className="field">
+                <span>{t('party.nameLabel')}</span>
+                <input
+                  type="text"
+                  value={name}
+                  placeholder={t('party.namePlaceholder')}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+              <p className="dialog__actions">
+                <button
+                  type="button"
+                  className="button button--primary"
+                  disabled={name.trim().length === 0}
+                  onClick={() => onJoin(name.trim())}
+                >
+                  {t('party.joinButton')}
+                </button>
+              </p>
+            </>
+          )}
+        </>
+      )}
+
+      {phase === 'checking' && <p className="notice notice--info">{t('party.checking')}</p>}
+    </Dialog>
+  )
+}
+
+/**
+ * Der Gastgeber sieht, wer wartet — und startet (T-M39-03, R-MP-12/AK2, D28.10).
+ *
+ * **Die Partie beginnt, wenn der Host es sagt, nicht wenn eine Verbindung steht.** Eine
+ * Partie, die mit dem Verbindungsaufbau losliefe, begänne, während der Gast noch liest.
+ *
+ * Drei Zustände, und der mittlere ist der, den man leicht vergisst: niemand da, **jemand da
+ * ohne Namen**, jemand da mit Namen. Der Gastgeber soll sehen, dass sein Link angekommen
+ * ist, bevor der andere getippt hat — sonst klickt er den Link ein zweites Mal in den Chat.
+ */
+export function LobbyDialog({
+  guestLink,
+  guestName,
+  offered,
+  phase,
+  reason,
+  onBegin,
+  onLeave,
+}: {
+  guestLink: string
+  /** `null` heißt „niemand da", `''` heißt „da, aber noch ohne Namen". */
+  guestName: string | null
+  offered: boolean
+  phase: 'lobby' | 'checking' | 'refused'
+  reason: string | null
+  onBegin: () => void
+  onLeave: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  return (
+    <Dialog title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.hostTitle')} onClose={onLeave}>
+      {phase === 'refused' && <p className="notice notice--warn">{reason}</p>}
+
+      <p>{t('party.inviteHint')}</p>
+      <p className="field">
+        <input type="text" readOnly value={guestLink} aria-label={t('party.inviteHint')} />
+      </p>
+      <p className="dialog__actions">
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            // Ohne sicheren Kontext gibt es keine Zwischenablage-Schnittstelle (D28.10);
+            // die Auswahl im Feld ist der Weg, der ueber http immer funktioniert.
+            const feld = document.querySelector<HTMLInputElement>('.dialog input[readonly]')
+            feld?.select()
+            setCopied(true)
+          }}
+        >
+          {copied ? t('party.copied') : t('party.copyLink')}
+        </button>
+      </p>
+
+      {!offered && <p className="notice notice--info">{t('party.setUpFirst')}</p>}
+      {guestName === null && <p className="notice notice--info">{t('party.waitingForGuest')}</p>}
+      {guestName === '' && <p className="notice notice--info">{t('party.guestArrived')}</p>}
+      {guestName !== null && guestName !== '' && (
+        <p className="notice notice--info">{t('party.guestReady', { name: guestName })}</p>
+      )}
+
+      {phase === 'checking' && <p className="notice notice--info">{t('party.checking')}</p>}
+
+      <p className="dialog__actions">
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!offered || guestName === null || guestName === '' || phase !== 'lobby'}
+          onClick={onBegin}
+        >
+          {t('party.beginButton')}
+        </button>
+        <button type="button" className="button" onClick={onLeave}>
+          {t('party.leave')}
+        </button>
       </p>
     </Dialog>
   )

@@ -9,6 +9,7 @@ import {
   CRITERIA,
   GAUGES,
   STANCE_SOURCES,
+  criteriaIn,
   criteriaOf,
   describeCriterion,
   durationText,
@@ -343,8 +344,24 @@ describe('R-ARCH-05 Jedes Abnahmekriterium hat einen Ort', () => {
   })
 
   it('findet die Gegenrichtung: eine Liste, die ein unbekanntes Kriterium fuehrt', () => {
-    const { ohneKriterium } = unhomedCriteria(DOC_AK, [...LISTE, { id: 'AK-9', scope: 'V1' }])
-    expect(ohneKriterium).toEqual(['AK-9'])
+    // **AK-99 und nicht AK-9** (T-M39-08). Bis zum 2026-09-14 stand hier `AK-9` als
+    // ERFUNDENES Gegenbeispiel: eine Kennung, die keine Anforderung kennt. Seit dem
+    // Mehrspieler-Plan gibt es AK-9 wirklich — es steht in Abschnitt 3.2 und in `CRITERIA`
+    // mit `scope: 'M39'`. Das Beispiel waere damit irrefuehrend geworden: ein Leser haette
+    // die echte Kennung fuer die erfundene gehalten und umgekehrt. Die Nummer 99 ist mit
+    // Absicht weit weg von allem, was dieser Plan je vergibt.
+    const { ohneKriterium } = unhomedCriteria(DOC_AK, [...LISTE, { id: 'AK-99', scope: 'V1' }])
+    expect(ohneKriterium).toEqual(['AK-99'])
+  })
+
+  it('haelt AK-9 fuer echt und nicht fuer ein Beispiel', () => {
+    // Die Gegenrichtung zum Kommentar darueber, und sie ist der Grund, warum die
+    // Umstellung kein Geschmack ist: AK-9 hat einen Ort (Abschnitt 3.2) und eine Liste
+    // (`CRITERIA`). Wer es als Gegenbeispiel benutzte, behauptete das Gegenteil.
+    const text = readFileSync(new URL('../docs/plan/01-REQUIREMENTS.md', import.meta.url), 'utf8')
+    expect(criteriaIn(text), 'AK-9 steht in keiner Abnahmetabelle').toContain('AK-9')
+    expect(CRITERIA.map((c) => c.id)).toContain('AK-9')
+    expect(unhomedCriteria(text).ohneKriterium).not.toContain('AK-9')
   })
 
   it('nimmt eine blosse Erwaehnung nicht fuer einen Ort', () => {

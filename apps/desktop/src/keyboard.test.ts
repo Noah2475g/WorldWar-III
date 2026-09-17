@@ -189,3 +189,63 @@ describe('T-M28-09 Die Leertaste auf einem Bedienelement', () => {
     expect(resolveKey(auf, context())).toEqual({ type: 'togglePause' })
   })
 })
+
+/**
+ * Zu zweit gehoert die Zeit dem Gleichschritt (T-M37-04, R-MP-02/AK2, C-11, D28.4).
+ *
+ * Die Rate steht seit dem Anlegen fest, Vorspulen gibt es nicht, und angehalten wird nur
+ * mit Zustimmung. Die Tasten tun deshalb nichts — aber sie verschwinden auch nicht
+ * stillschweigend: ein Regler, der nichts tut, ist schlimmer als keiner.
+ */
+describe('R-MP-02/AK2 Tempotasten und Vorspulen sind zu zweit unwirksam', () => {
+  const zuZweit = context({ multiplayer: true })
+  const element = (html: string): HTMLElement => {
+    const host = document.createElement('div')
+    host.innerHTML = html
+    return host.firstElementChild as HTMLElement
+  }
+
+  it('aendert mit Plus und Minus das Tempo nicht und nennt den Grund', () => {
+    for (const key of ['+', '=', '-', '−']) {
+      expect(resolveKey({ key }, zuZweit), JSON.stringify(key)).toEqual({
+        type: 'multiplayerLocked',
+        control: 'speed',
+      })
+    }
+  })
+
+  it('loest mit F kein Vorspulen aus', () => {
+    for (const key of ['f', 'F']) {
+      expect(resolveKey({ key }, zuZweit), key).toEqual({ type: 'multiplayerLocked', control: 'fastForward' })
+    }
+  })
+
+  it('haelt mit der Leertaste nicht einseitig an', () => {
+    const auf = { key: ' ', target: element('<canvas></canvas>') } as unknown as KeyboardEvent
+    expect(resolveKey(auf, zuZweit)).toEqual({ type: 'multiplayerLocked', control: 'pause' })
+  })
+
+  it('laesst die Leertaste weiterhin zuerst dem Knopf, auf dem der Fokus liegt', () => {
+    // T-M28-09: wer tabbt, landet auf Knoepfen, und der Browser loest sie mit Leertaste
+    // aus. Diese Regel gilt zu zweit genauso.
+    const auf = { key: ' ', target: element('<button>Spielstände</button>') } as unknown as KeyboardEvent
+    expect(resolveKey(auf, zuZweit)).toBeNull()
+  })
+
+  it('laesst alles andere unveraendert bedienbar', () => {
+    expect(resolveKey({ key: 'd' }, zuZweit)).toEqual({ type: 'openPanel', panel: 'diplomacy' })
+    expect(resolveKey({ key: 'Escape' }, zuZweit)).toEqual({ type: 'close' })
+    expect(resolveKey({ key: 's', ctrlKey: true }, zuZweit)).toEqual({ type: 'save' })
+    expect(resolveKey({ key: 'm' }, zuZweit)?.type).toBe('cycleMode')
+    expect(resolveKey({ key: 'Home' }, zuZweit)).toEqual({ type: 'centreCapital' })
+    expect(resolveKey({ key: 'PageUp' }, zuZweit)).toEqual({ type: 'zoom', direction: 1 })
+  })
+
+  it('bleibt im Einzelspieler, wie es war — die Gegenprobe', () => {
+    // Ohne diese Zeile belegte der Block nur, dass eine Flagge etwas abschaltet.
+    expect(resolveKey({ key: '+' }, context())).toEqual({ type: 'speed', hoursPerSecond: 25 })
+    expect(resolveKey({ key: 'f' }, context())).toEqual({ type: 'fastForward' })
+    const auf = { key: ' ', target: element('<canvas></canvas>') } as unknown as KeyboardEvent
+    expect(resolveKey(auf, context())).toEqual({ type: 'togglePause' })
+  })
+})

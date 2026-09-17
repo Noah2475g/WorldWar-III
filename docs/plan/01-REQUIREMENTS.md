@@ -483,6 +483,9 @@ scope:
     R-AI-09:    "M17 — die KI nutzt Spione, Angebote und Antraege; Integrationstor (T-M17-15)"
     R-GAME-09:  "M17 — Spielstaende der Stufe 3 laufen weiter (T-M17-03)"
     # Mehrspieler, aufgenommen am 2026-09-12 (Abschnitt 2.17, Bauplan MEHRSPIELER.md).
+    # Die Aufgabennummern von R-MP-07, R-MP-08 und R-MP-09 sind am 2026-09-14 berichtigt
+    # worden (Befund M38-1): sie stammten aus einer Zaehlung vor dem Einschub von
+    # T-M38-04 und T-M38-05 und zeigten je zwei Nummern zu frueh.
     # Alle drei Meilensteine liegen hinter der V1, so wie M16; AK-9 ist ihr eigenes
     # Abnahmekriterium und zaehlt nicht gegen die V1.
     R-MP-01:    "M37 — die Oberflaeche bekommt einen Spieler statt der Annahme p1 (T-M37-01)"
@@ -491,9 +494,9 @@ scope:
     R-MP-04:    "M37 — Auseinanderlaufen wird erkannt und haelt an (T-M37-09)"
     R-MP-05:    "M37 — die Pause auf Antrag und Zustimmung (T-M37-10)"
     R-MP-06:    "M38 — der Handschlag vor dem ersten Zug (T-M38-02)"
-    R-MP-07:    "M38 — Abbruch und Wiederaufnahme (T-M38-06)"
-    R-MP-08:    "M38 — der Ausweg ueber den Computergegner (T-M38-08)"
-    R-MP-09:    "M38 — Netz an genau zwei Stellen, bewacht (T-M38-09)"
+    R-MP-07:    "M38 — Abbruch und Wiederaufnahme (T-M38-08, T-M38-09)"
+    R-MP-08:    "M38 — der Ausweg ueber den Computergegner (T-M38-10)"
+    R-MP-09:    "M38 — Netz an genau zwei Stellen, bewacht (T-M38-04, T-M38-05)"
     R-MP-10:    "M39 — die Einladung ist ein Link (T-M39-01)"
     R-MP-11:    "M39 — der Gast installiert nichts (T-M39-04)"
     R-MP-12:    "M39 — der Beitritt zeigt, worauf man sich einlaesst (T-M39-02)"

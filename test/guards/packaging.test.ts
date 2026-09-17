@@ -16,7 +16,7 @@ import { ROOT } from './scan'
 const TAURI = join(ROOT, 'apps/desktop/src-tauri')
 const config = JSON.parse(readFileSync(join(TAURI, 'tauri.conf.json'), 'utf8')) as {
   app: { security: { csp: string; capabilities: string[] } }
-  build: { frontendDist: string; beforeBuildCommand: string }
+  build: { frontendDist: string; beforeBuildCommand: string; devUrl: string }
   bundle: { active: boolean; targets: string[]; icon: string[] }
 }
 const capability = JSON.parse(readFileSync(join(TAURI, 'capabilities/local-only.json'), 'utf8')) as {
@@ -140,5 +140,200 @@ describe('R-PKG-01 Die Verpackung ist gebaut worden', () => {
     for (const token of ['0xe4, 0xe0, 0xd2', '0xb3, 0x34, 0x1e']) {
       expect(script, 'das Symbol nutzt nicht die Farben der Oberflaeche').toContain(token)
     }
+  })
+})
+
+/**
+ * Das ausgelieferte Programm bleibt netzfrei — geprüft am Erzeugnis (T-M38-05, R-MP-09/AK3).
+ *
+ * Noahs dritte Festlegung vom 2026-09-12: die Tauri-Anwendung kennt keinen Mehrspieler
+ * und **darf ihn technisch nicht können**. Der Mehrspieler ist der Browserbau, gestartet
+ * vom Hostdienst; damit bleibt Ziel Z3 für das Programm wörtlich wahr, das Noah
+ * weitergibt, und R-FREE-04 verschiebt nicht seine Grenze, sondern benennt sie genauer
+ * (D28.9).
+ *
+ * **Warum dieser Block neben dem oberen steht.** Der Block „R-FREE-04 Die Verpackung kann
+ * nicht ins Netz" hält `tauri.conf.json` gegen `capabilities/local-only.json` — zwei
+ * JSON-Dateien derselben Hand. Er ist für das, was er prüft, richtig, aber er prüft die
+ * Absicht gegen sich selbst (Befunde 17, 20, 21). Hier kommt die zweite Seite deshalb aus
+ * dem **kompilierten Programm**: `tauri-build` legt die Inhaltsrichtlinie als Zeichenkette
+ * in die Binärdatei, und `scripts/measure-netfree.mjs` liest sie dort heraus. Die
+ * Gleichheit der beiden Texte ist zugleich die Frischeprüfung: wer die Sperre lockert,
+ * bekommt einen roten Lauf, bis ein neues Programm gebaut und neu gemessen ist.
+ *
+ * **Was dieser Wächter nicht kann, und das steht hier statt nirgends:** die Berechtigungen
+ * sind im Erzeugnis **nicht** als Text zu finden (gemessen am 2026-09-14: `local-only` 0×,
+ * `allow-open` 0×, `dialog:` 0×, während das Wort `dialog` 13× vorkommt). Tauri backt die
+ * Zugriffsliste in eine eigene Darstellung. Die Berechtigungen bleiben deshalb eine
+ * Aussage über die Konfiguration — und eine Suche nach `http:` in der Binärdatei findet
+ * `build.devUrl` und wäre ein Fehlalarm mit Ansage.
+ */
+
+/** Eine Inhaltsrichtlinie in ihre Anweisungen zerlegt. */
+export function directivesOf(csp: string): Map<string, string[]> {
+  const out = new Map<string, string[]>()
+  for (const part of csp.split(';')) {
+    const [name, ...values] = part.trim().split(/\s+/)
+    if (name) out.set(name, values)
+  }
+  return out
+}
+
+/**
+ * Wodurch eine Inhaltsrichtlinie eine Verbindung hinauslässt — leer heißt: durch nichts.
+ *
+ * Gelesen wird `connect-src`, und wenn es fehlt, greift `default-src`: eine Richtlinie
+ * ohne `connect-src` ist nicht strenger, sondern erbt. Genau diese Vererbung ist der Weg,
+ * auf dem eine Sperre lautlos verschwindet — jemand streicht die eine Zeile, und
+ * `default-src 'self'` erlaubt wieder den eigenen Ursprung.
+ */
+export function networkOpenings(csp: string): string[] {
+  const directives = directivesOf(csp)
+  const connect = directives.get('connect-src') ?? directives.get('default-src')
+  if (!connect) return ['weder connect-src noch default-src']
+  return connect.filter((source) => source !== "'none'")
+}
+
+/** Welche Berechtigungen der Liste ins Netz führen. Leer heißt: keine. */
+export function networkPermissions(permissions: readonly string[]): string[] {
+  const prefixes = ['http:', 'websocket:', 'shell:', 'updater:', 'upload:']
+  return permissions.filter((permission) => prefixes.some((prefix) => permission.startsWith(prefix)))
+}
+
+interface NetfreeReport {
+  measuredAt: string
+  measuredAtCommit: string | null
+  csp: string
+  permissions: string[]
+  networkPermissions: string[]
+  binary: {
+    path: string
+    bytes: number
+    builtAt: string
+    cspOccurrences: number
+    connectSrcNone: number
+    devUrlOccurrences: number
+    webSocketOccurrences: number
+  } | null
+  bundle: { files: number; bytes: number; withWebSocket: string[] } | null
+  bundleWithMultiplayer: { files: number; bytes: number; withWebSocket: string[] } | null
+}
+
+const REPORT = join(ROOT, 'docs/reports/packaging-netfree.json')
+const report = (): NetfreeReport => JSON.parse(readFileSync(REPORT, 'utf8')) as NetfreeReport
+
+describe('R-MP-09/AK3 Das ausgelieferte Programm bleibt netzfrei', () => {
+  it('laesst die Inhaltsrichtlinie keine einzige Verbindung hinaus', () => {
+    const openings = networkOpenings(config.app.security.csp)
+    expect(openings, `connect-src laesst hinaus: ${openings.join(', ')}`).toEqual([])
+  })
+
+  it('faellt, sobald jemand die Sperre lockert', () => {
+    // Die Gegenprobe. Ohne sie waere die Zusicherung darueber die Aussage, dass irgendetwas
+    // gelesen wurde — die Fehlerklasse vom 2026-09-05.
+    expect(networkOpenings("default-src 'self'; connect-src 'self' ws://192.168.0.2:7749")).toEqual([
+      "'self'",
+      'ws://192.168.0.2:7749',
+    ])
+    // Die stille Art, die Sperre zu verlieren: connect-src streichen und default-src erben.
+    expect(networkOpenings("default-src 'self'; img-src 'self' data:")).toEqual(["'self'"])
+    expect(networkOpenings("img-src 'self'")).toHaveLength(1)
+  })
+
+  it('bittet um keine Berechtigung, die ins Netz fuehrt', () => {
+    expect(networkPermissions(capability.permissions)).toEqual([])
+    // Und auch hier die Gegenrichtung: die Regel erkennt eine, wenn es eine gaebe.
+    expect(networkPermissions(['core:default', 'http:default', 'dialog:allow-open'])).toEqual([
+      'http:default',
+    ])
+    expect(networkPermissions(['websocket:allow-connect'])).toHaveLength(1)
+  })
+
+  it('traegt dieselbe Richtlinie im gebauten Programm wie in der Konfiguration', () => {
+    // Die eine Zusicherung, die nicht die Absicht gegen sich selbst haelt: links steht
+    // `tauri.conf.json`, rechts die Zeichenkette, die aus `worldwar.exe` gelesen wurde.
+    const gemessen = report()
+
+    expect(gemessen.binary, 'der Bericht kennt kein Erzeugnis — dann lief kein Bau').not.toBeNull()
+    expect(
+      gemessen.csp,
+      'die Richtlinie hat sich seit der Messung geaendert — neu bauen und neu messen',
+    ).toBe(config.app.security.csp)
+    expect(gemessen.binary?.cspOccurrences, 'die Richtlinie steht nicht im Programm').toBe(1)
+    expect(gemessen.binary?.connectSrcNone).toBeGreaterThanOrEqual(1)
+    expect(gemessen.binary?.bytes, 'ein Erzeugnis dieser Groesse ist keines').toBeGreaterThan(1_000_000)
+    expect(gemessen.networkPermissions).toEqual([])
+  })
+
+  it('misst das Erzeugnis noch einmal, wenn es auf dieser Maschine liegt', () => {
+    // Ein Bericht ist ein Zeuge und kein Beweis. Liegt das Programm hier, wird es gelesen
+    // und gegen den Bericht gehalten; liegt es nicht hier, sagt die Zusicherung das.
+    const gemessen = report()
+    const exe = join(ROOT, gemessen.binary?.path ?? 'nichts')
+    if (!existsSync(exe)) {
+      expect(
+        gemessen.binary?.path,
+        'kein Erzeugnis auf dieser Maschine — es bleibt beim Bericht',
+      ).toBeTruthy()
+      return
+    }
+
+    const data = readFileSync(exe)
+    expect(data.length).toBe(gemessen.binary?.bytes)
+    expect(data.includes(Buffer.from(config.app.security.csp, 'utf8'))).toBe(true)
+    expect(data.includes(Buffer.from("connect-src 'self'", 'utf8'))).toBe(false)
+    // Und der Bezeichner selbst: das gebaute Buendel liegt IM Programm, also findet eine
+    // Suche darin auch, was `vite build` mitgenommen hat (T-M39-04).
+    expect(data.includes(Buffer.from('WebSocket', 'utf8')), 'WebSocket im Erzeugnis').toBe(false)
+  })
+
+  it('haelt den Mehrspielereinstieg aus dem gebauten Buendel heraus', () => {
+    // „Nicht erreichbar" heisst hier: was `vite build` zusammenlegt, enthaelt keinen
+    // WebSocket. Gemessen am Buendel und nicht am Quelltext — was der Bau wirklich
+    // mitnimmt, entscheidet der Bau.
+    const gemessen = report()
+
+    expect(gemessen.bundle, 'kein gebautes Buendel im Bericht — pnpm desktop:build lief nie').not.toBeNull()
+    expect(gemessen.bundle?.bytes, 'ein Buendel dieser Groesse ist keines').toBeGreaterThan(500_000)
+    expect(
+      gemessen.bundle?.withWebSocket,
+      `WebSocket im ausgelieferten Buendel: ${gemessen.bundle?.withWebSocket.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('traegt den Einstieg im Erzeugnis auch nicht als Zeichenkette', () => {
+    // Die Zeile darueber prueft den dist-Ordner, diese das Programm. Beide braucht es:
+    // der Ordner sagt, was `vite build` zusammengelegt hat, das Programm sagt, was
+    // wirklich ausgeliefert wird. Zwischen beidem liegt ein zweiter Bau.
+    const gemessen = report()
+    expect(gemessen.binary?.webSocketOccurrences, 'WebSocket im ausgelieferten Programm').toBe(0)
+  })
+
+  /**
+   * Und die Gegenprobe zur Bauflagge (T-M39-04, Befund M38-5).
+   *
+   * **Ohne sie waere die Zusage darueber eine Zusage aus Unterlassung.** Bis M38 stand kein
+   * `WebSocket` im Buendel, weil kein Pfad von `main.tsx` dorthin fuehrte; seit T-M39-02
+   * fuehrt einer hin, und die Zeile blieb trotzdem wahr. Sie ist damit keine Aussage mehr
+   * ueber den Quelltext, sondern ueber die **Bauflagge** — und das laesst sich nur zeigen,
+   * indem derselbe Quelltext einmal MIT Flagge gebaut und gemessen wird.
+   *
+   * Gemessen am 2026-09-14: ohne Flagge 2 Dateien und kein Treffer, mit Flagge 3 Dateien
+   * (ein eigener Brocken `websocketTransport-*.js`) und ein Treffer.
+   */
+  it('nimmt den Einstieg MIT der Bauflagge sehr wohl mit', () => {
+    const gemessen = report()
+
+    expect(
+      gemessen.bundleWithMultiplayer,
+      'kein Bau mit Flagge im Bericht — dann ist „kein WebSocket" eine Zusage ohne Gegenprobe',
+    ).not.toBeNull()
+    expect(
+      gemessen.bundleWithMultiplayer?.withWebSocket.length,
+      'die Flagge aendert nichts — dann haelt nicht sie den Einstieg heraus, sondern ein Zufall',
+    ).toBeGreaterThan(0)
+    // Der Unterschied ist genau ein zusaetzlicher Brocken: der dynamische Import.
+    expect(gemessen.bundleWithMultiplayer!.files).toBeGreaterThan(gemessen.bundle!.files)
+    expect(gemessen.bundleWithMultiplayer!.bytes).toBeGreaterThan(gemessen.bundle!.bytes)
   })
 })

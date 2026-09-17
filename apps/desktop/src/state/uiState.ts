@@ -1,3 +1,4 @@
+import type { GameState, PlayerId } from '@worldwar/core'
 import type { MapMode } from '../map/modes.ts'
 import type { View } from '../map/picking.ts'
 
@@ -42,6 +43,15 @@ export interface UiState {
   notice: { text: string; kind: 'error' | 'info' } | null
   /** Bumped whenever ownership changes, so the map cache knows to rebuild. */
   ownershipVersion: number
+  /**
+   * Wer am Bildschirm sitzt (T-M37-01, R-MP-01, D28.3).
+   *
+   * `null` heißt nicht „niemand", sondern „die erste menschliche Macht dieses Standes" —
+   * `defaultViewer` beantwortet das aus dem Zustand, damit nirgends eine Kennung fest
+   * verdrahtet steht. Im Spiel zu zweit setzt der Gast sie auf seinen eigenen Platz;
+   * ohne diesen Wert sähe er die Welt seines Gegners.
+   */
+  viewerId: PlayerId | null
 }
 
 export const INITIAL_UI: UiState = {
@@ -53,6 +63,20 @@ export const INITIAL_UI: UiState = {
   settings: DEFAULT_SETTINGS,
   notice: null,
   ownershipVersion: 0,
+  viewerId: null,
+}
+
+/**
+ * Die Macht, der die Oberfläche gehört, wenn niemand etwas anderes sagt (T-M37-01).
+ *
+ * Die erste **menschliche** Macht in `playerOrder` — nicht „p1", denn genau diese Annahme
+ * stand bis zum 2026-09-14 an neunzehn Stellen in `App.tsx` und wäre im Spiel zu zweit für
+ * den Gast falsch. `playerOrder` ist ein ausdrückliches Feld des Zustands und keine
+ * Schlüsselreihenfolge (`state/types.ts`, Regel 3), also ist die Antwort auf beiden
+ * Rechnern dieselbe.
+ */
+export function defaultViewer(state: Pick<GameState, 'playerOrder' | 'players'>): PlayerId | null {
+  return state.playerOrder.find((id) => state.players[id]?.kind === 'human') ?? state.playerOrder[0] ?? null
 }
 
 export type UiAction =
@@ -67,6 +91,8 @@ export type UiAction =
   | { type: 'changeSettings'; settings: Partial<Settings> }
   | { type: 'resetSettings' }
   | { type: 'ownershipChanged' }
+  /** Der Platz, auf dem dieser Bildschirm spielt (T-M37-01). */
+  | { type: 'setViewer'; id: PlayerId | null }
 
 export function uiReducer(state: UiState, action: UiAction): UiState {
   switch (action.type) {
@@ -111,6 +137,11 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
 
     case 'ownershipChanged':
       return { ...state, ownershipVersion: state.ownershipVersion + 1 }
+
+    case 'setViewer':
+      // Die Auswahl gehört dem alten Platz: wer den Platz wechselt, hat eine andere
+      // Provinz gewählt und eine andere Armee im Panel stehen.
+      return { ...state, viewerId: action.id, selectedProvince: null, selectedArmy: null, notice: null }
   }
 }
 

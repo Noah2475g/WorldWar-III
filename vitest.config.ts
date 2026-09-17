@@ -13,18 +13,30 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
  */
 export default defineConfig({
   plugins: [react()],
+  /**
+   * Dieselbe Bauflagge wie `apps/desktop/vite.config.ts` (T-M39-04).
+   *
+   * Im Testlauf ist sie **an**: sonst waere der Mehrspielereinstieg in `main.tsx` fuer
+   * jeden Test tot, und eine Flagge, die im Test nie wahr ist, ist eine Verzweigung, die
+   * niemand prueft. Was ausgeliefert wird, entscheidet der Bau und nicht diese Zeile —
+   * gemessen am Erzeugnis (T-M38-05, `docs/reports/packaging-netfree.json`).
+   */
+  define: {
+    __MULTIPLAYER__: JSON.stringify(process.env['WORLDWAR_MULTIPLAYER'] !== '0'),
+  },
   resolve: {
     alias: {
       '@worldwar/shared': r('./packages/shared/src/index.ts'),
       '@worldwar/core': r('./packages/core/src/index.ts'),
       '@worldwar/ai': r('./packages/ai/src/index.ts'),
+      '@worldwar/netplay': r('./packages/netplay/src/index.ts'),
       '@worldwar/testkit': r('./packages/testkit/src/index.ts'),
       '@worldwar/mapgen': r('./packages/mapgen/src/index.ts'),
     },
   },
   test: {
     include: ['{packages,apps,test}/**/*.test.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.slow.test.ts', '**/e2e/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-mp/**', '**/*.slow.test.ts', '**/e2e/**'],
     environment: 'node',
     coverage: {
       provider: 'v8',

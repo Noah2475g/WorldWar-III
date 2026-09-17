@@ -2596,17 +2596,17 @@ tasks:
   - id: T-M37-01
     milestone: M37
     title: Die Oberflaeche bekommt einen Spieler statt der Annahme p1
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-01]
     design: [D-28]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/state/uiState.ts]
-    tests: [apps/desktop/src/App.test.tsx]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/state/uiState.ts, apps/desktop/src/map/modes.ts, apps/desktop/src/ui/Legend.tsx]
+    tests: [apps/desktop/src/App.test.tsx, apps/desktop/src/state/uiState.test.ts]
     dod: "MEHRSPIELER.md und D28.3. App.tsx nennt an achtzehn Stellen das Literal 'p1' - Sicht, Protokoll, Alarme, Vorspulen, Farben, eigene Provinzen. Im Spiel zu zweit ist der Gast p2 und saehe sonst die Welt seines Gegners. Ein viewerId aus dem Zustand der Huelle ersetzt jedes Vorkommen. Test zuerst: dieselbe Oberflaeche einmal als p1 und einmal als p2 am selben Zustand betrieben, und Rohstoffleiste, eigene Provinzen, Protokoll, Alarme, Auswahlfarbe und erlaubte Aktionen unterscheiden sich je passend (R-MP-01/AK1). Vorsicht in fastForwardRun: dort steht heute const viewerId = 'p1' gefolgt von einer toten Pruefung, die nach dem Umbau lebendig wird."
   - id: T-M37-02
     milestone: M37
     title: Der Waechter gegen die Rueckkehr von p1
-    status: todo
+    status: done
     deps: [T-M37-01]
     requirements: [R-MP-01]
     design: [D-28]
@@ -2616,37 +2616,37 @@ tasks:
   - id: T-M37-03
     milestone: M37
     title: Die Partieart und die feste Geschwindigkeit im Anlegedialog
-    status: todo
+    status: done
     deps: [T-M37-01]
     requirements: [R-MP-02]
     design: [D-28]
-    files: [apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
+    files: [apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/App.tsx]
     tests: [apps/desktop/src/game/newGame.test.ts, apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "C-11 einloesen, D28.4. Eine Mehrspielerpartie waehlt ihre Rate einmal, beim Anlegen, und nie wieder. Test zuerst: die Partie traegt genau eine Rate aus SPEED_STOPS ohne die Null, und diese Rate ist Teil dessen, was ein Gast vor dem Beitritt sieht (R-MP-02/AK1). WICHTIG: die Partieart und die Rate gehoeren in den Zustand der HUELLE, nicht in den GameState - R-ARCH-04/AK2 verlangt woertlich, dass der Zustand keine Tempogroesse kennt, und ein Waechter haelt das seit M5 gruen."
   - id: T-M37-04
     milestone: M37
     title: Im Mehrspieler sind Tempo, Tasten und Vorspulen aus
-    status: todo
+    status: done
     deps: [T-M37-03]
     requirements: [R-MP-02]
     design: [D-28]
-    files: [apps/desktop/src/App.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/keyboard.test.ts, apps/desktop/src/ui/Header.test.tsx]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/keyboard.ts, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/keyboard.test.ts, apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "D28.4. Ein Regler, der nichts tut, ist schlimmer als keiner; wer drueckt, bekommt den Grund zu lesen. Test zuerst: Plus, Minus und Leertaste aendern in einer Mehrspielerpartie das Tempo nicht und setzen stattdessen einen Hinweis, die Vorspulziele sind nicht ausloesbar (R-MP-02/AK2), und die Kopfleiste zeigt die feste Rate als Text statt einer Tempogruppe (R-MP-02/AK3). Fertig wenn im Einzelspieler alles unveraendert ist - belegt durch die bestehenden Tests, die gruen bleiben muessen, ohne angefasst zu werden."
   - id: T-M37-05
     milestone: M37
     title: Das Protokoll - die Nachrichtenarten als Daten
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-03]
     design: [D-28]
-    files: [packages/netplay/package.json, packages/netplay/src/index.ts, packages/netplay/src/protocol.ts, packages/netplay/src/transport.ts, pnpm-workspace.yaml]
+    files: [packages/netplay/package.json, packages/netplay/src/index.ts, packages/netplay/src/protocol.ts, packages/netplay/src/transport.ts, pnpm-workspace.yaml, tsconfig.base.json, vitest.config.ts, vitest.slow.config.ts, apps/desktop/vite.config.ts, apps/desktop/package.json]
     tests: [packages/netplay/src/protocol.test.ts]
     dod: "D28.9 und MEHRSPIELER.md Abschnitt 3.2. Sieben Arten - hallo, willkommen, probe, befehle, pause, zustand, ende - reines JSON, jede mit ihrer Fassung. Test zuerst: jede Art wird aus JSON gelesen und wieder geschrieben, ohne sich zu veraendern; eine unbekannte Art und eine fremde Fassung werden abgelehnt, nicht geraten. ENTSCHEIDEND: in packages/netplay kommt kein fetch, kein WebSocket und kein node:http vor - das ist der Grund, warum alles Weitere ohne Leitung pruefbar ist. Vorlage fuer package.json: apps/headless/package.json."
   - id: T-M37-06
     milestone: M37
     title: Die Gleichschritt-Maschine
-    status: todo
+    status: done
     deps: [T-M37-05]
     requirements: [R-MP-03]
     design: [D-28]
@@ -2656,7 +2656,7 @@ tasks:
   - id: T-M37-07
     milestone: M37
     title: Die Befehlsreihenfolge ist ohne Schiedsrichter eindeutig
-    status: todo
+    status: done
     deps: [T-M37-06]
     requirements: [R-MP-03]
     design: [D-28]
@@ -2666,7 +2666,7 @@ tasks:
   - id: T-M37-08
     milestone: M37
     title: Zwei Simulationen, zweihundert Ticks, eine Pruefsumme
-    status: todo
+    status: done
     deps: [T-M37-07]
     requirements: [R-MP-03]
     design: [D-28]
@@ -2676,7 +2676,7 @@ tasks:
   - id: T-M37-09
     milestone: M37
     title: Auseinanderlaufen wird erkannt, gemeldet und haelt an
-    status: todo
+    status: done
     deps: [T-M37-08]
     requirements: [R-MP-04]
     design: [D-28]
@@ -2686,7 +2686,7 @@ tasks:
   - id: T-M37-10
     milestone: M37
     title: Die Pause auf Antrag und Zustimmung
-    status: todo
+    status: done
     deps: [T-M37-06]
     requirements: [R-MP-05]
     design: [D-28]
@@ -2696,27 +2696,27 @@ tasks:
   - id: T-M37-11
     milestone: M37
     title: Der Gleichschritt treibt die Uhr der Oberflaeche
-    status: todo
+    status: done
     deps: [T-M37-04, T-M37-09, T-M37-10]
     requirements: [R-MP-03, R-MP-04, R-MP-05]
     design: [D-28]
-    files: [apps/desktop/src/net/useNetplay.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/net/useNetplay.test.ts]
+    files: [apps/desktop/src/net/useNetplay.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css, packages/netplay/src/lockstep.ts, packages/netplay/src/loopback.ts, packages/netplay/src/protocol.ts]
+    tests: [apps/desktop/src/net/useNetplay.test.ts, apps/desktop/src/App.test.tsx]
     dod: "D28.4 - die Maschine anschliessen. Im Mehrspieler bestimmt nicht mehr requestAnimationFrame, wann ein Tick laeuft, sondern die Freigabe des Gleichschritts. Test zuerst: die Oberflaeche rechnet keinen Tick ohne Freigabe und sagt nach zwei Sekunden warte auf Mitspieler; ein Pausenantrag erscheint als Dialog mit zwei Knoepfen; ein Auseinanderlaufen erscheint als Meldung, die nicht wegklickbar ist. Die Einzelspielerschleife bleibt unveraendert. FALLE aus M22: jsdom haengt requestAnimationFrame an setInterval - unter vi.useFakeTimers muss rAF gestubbt werden, sonst treibt advanceTimersByTime die ganze Spielschleife."
   - id: T-M38-01
     milestone: M38
     title: Die Transportschnittstelle und ihr Schleifendoppel
-    status: todo
+    status: done
     deps: [T-M37-08]
     requirements: []
     design: [D-28]
-    files: [packages/netplay/src/transport.ts, packages/netplay/src/loopback.ts]
+    files: [packages/netplay/src/transport.ts, packages/netplay/src/loopback.ts, packages/netplay/src/transportContract.ts]
     tests: [packages/netplay/src/transport.test.ts]
     dod: "D28.9. Drei Funktionen - senden, empfangen, schliessen. Dahinter steht im Test ein Doppel im selben Prozess und im Spiel eine Leitung; das ist die Naht, an der dieser Meilenstein pruefbar bleibt. Test zuerst: eine VERTRAGSTESTREIHE, die jede Umsetzung erfuellen muss (Zustellung in Reihenfolge, Schliessen meldet sich, Senden nach dem Schliessen wirft) - als wiederverwendbare Funktion, nicht als kopierter Block. Dieselbe Reihe laeuft spaeter gegen den WebSocket-Transport. Muster: StoragePort aus M8, dessen gleiche Zusage erst in M16 eingeloest wurde."
   - id: T-M38-02
     milestone: M38
     title: Der Handschlag - Fassung, Regeln, Karte
-    status: todo
+    status: done
     deps: [T-M38-01]
     requirements: [R-MP-06]
     design: [D-28]
@@ -2726,7 +2726,7 @@ tasks:
   - id: T-M38-03
     milestone: M38
     title: Die Determinismus-Probe vor dem ersten Zug
-    status: todo
+    status: done
     deps: [T-M38-02]
     requirements: [R-MP-06]
     design: [D-28]
@@ -2736,7 +2736,7 @@ tasks:
   - id: T-M38-04
     milestone: M38
     title: Der Netz-Waechter bekommt seine Grenze
-    status: todo
+    status: done
     deps: []
     requirements: [R-MP-09]
     design: [D-28]
@@ -2746,17 +2746,17 @@ tasks:
   - id: T-M38-05
     milestone: M38
     title: Das ausgelieferte Programm bleibt netzfrei, geprueft am Erzeugnis
-    status: todo
+    status: done
     deps: [T-M38-04]
     requirements: [R-MP-09]
     design: [D-28]
-    files: [test/guards/packaging.test.ts]
+    files: [test/guards/packaging.test.ts, scripts/measure-netfree.mjs, docs/reports/packaging-netfree.json]
     tests: [test/guards/packaging.test.ts]
     dod: "Noahs dritte Festlegung vom 2026-09-12, D28.9. Die Tauri-Anwendung kennt keinen Mehrspieler und darf ihn technisch nicht koennen. Test zuerst: die Tauri-Konfiguration fuehrt unveraendert connect-src none, die Berechtigungsliste enthaelt keine Netzberechtigung, und der Mehrspielereinstieg ist im Tauri-Bau nicht erreichbar (R-MP-09/AK3). Der Waechter liest die KONFIGURATION und nicht eine Kopie davon - der alte Verpackungswaechter hielt zwei JSON-Dateien gegeneinander und pruefte damit die Konfiguration gegen sich selbst (Befunde 17, 20, 21)."
   - id: T-M38-06
     milestone: M38
     title: Der WebSocket-Transport im Browser
-    status: todo
+    status: done
     deps: [T-M38-01, T-M38-04]
     requirements: [R-MP-06]
     design: [D-28]
@@ -2766,7 +2766,7 @@ tasks:
   - id: T-M38-07
     milestone: M38
     title: Der Hostdienst - Raum, Brieftraeger, Auslieferung
-    status: todo
+    status: done
     deps: [T-M38-06]
     requirements: [R-MP-11]
     design: [D-28]
@@ -2776,7 +2776,7 @@ tasks:
   - id: T-M38-08
     milestone: M38
     title: Pufferung und Wiederaufnahme nach Abbruch
-    status: todo
+    status: done
     deps: [T-M38-07]
     requirements: [R-MP-07]
     design: [D-28]
@@ -2786,7 +2786,7 @@ tasks:
   - id: T-M38-09
     milestone: M38
     title: Die Anzeige sagt, wenn es am anderen haengt
-    status: todo
+    status: done
     deps: [T-M38-08]
     requirements: [R-MP-07]
     design: [D-28]
@@ -2796,7 +2796,7 @@ tasks:
   - id: T-M38-10
     milestone: M38
     title: Ein Mitspieler, der nicht zurueckkommt, wird zum Computergegner
-    status: todo
+    status: done
     deps: [T-M38-09]
     requirements: [R-MP-08]
     design: [D-28]
@@ -2806,47 +2806,47 @@ tasks:
   - id: T-M39-01
     milestone: M39
     title: Der Raum, der Link und das Geheimnis
-    status: todo
+    status: done
     deps: [T-M38-07]
     requirements: [R-MP-10]
     design: [D-28]
-    files: [apps/party/src/room.ts, apps/desktop/src/net/useNetplay.ts]
+    files: [apps/party/src/room.ts, apps/party/src/server.ts, apps/desktop/src/net/link.ts]
     tests: [apps/party/test/room.test.ts]
-    dod: "D28.10 - eine Einladung ist ein Link, und mehr muss Noah nicht verschicken. Test zuerst: der Link enthaelt Raum und Geheimnis, und das Geheimnis steht im Fragment hinter dem Rautezeichen (R-MP-10/AK1); ein Beitritt ohne oder mit falschem Geheimnis wird abgewiesen (R-MP-10/AK2). Das Geheimnis entsteht im NODE-Dienst: im Browser gaebe es ohne sicheren Kontext keine brauchbare Quelle dafuer, und Math.random ist keine."
+    dod: "D28.10 - eine Einladung ist ein Link, und mehr muss Noah nicht verschicken. Test zuerst: der Link enthaelt Raum und Geheimnis, und das Geheimnis steht im Fragment hinter dem Rautezeichen (R-MP-10/AK1); ein Beitritt ohne oder mit falschem Geheimnis wird abgewiesen (R-MP-10/AK2). Das Geheimnis entsteht im NODE-Dienst: im Browser gaebe es ohne sicheren Kontext keine brauchbare Quelle dafuer, und Math.random ist keine. Gebaut wird der Link EINMAL (inviteLink in room.ts) und im Browser gelesen (parseNetLink in link.ts); ein Rundlauf-Test haelt beide Seiten zusammen. Die Browserseite steht in link.ts und nicht in useNetplay.ts - der Haken treibt die laufende Partie, der Link entscheidet, ob es eine gibt."
   - id: T-M39-02
     milestone: M39
     title: Der Beitrittsbildschirm
-    status: todo
+    status: done
     deps: [T-M39-01]
     requirements: [R-MP-12]
     design: [D-28]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/net/party.ts, apps/desktop/src/main.tsx, packages/netplay/src/protocol.ts]
+    tests: [apps/desktop/src/net/party.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx]
     dod: "D28.10. Niemand tritt einer Partie bei, deren Bedingungen er nicht kennt - besonders nicht der festen Geschwindigkeit, die er nachher nicht aendern kann. Test zuerst: der Bildschirm nennt Karte, eigene Nation, gegnerische Nation, Zahl der Computergegner, Siegbedingung und die feste Rate, bevor irgendetwas beginnt (R-MP-12/AK1). Er kommt ohne Spielstand aus - der Gast hat noch keinen. Der erste Bildschirm der Anwendung ist heute der Anlegedialog; der Beitritt ist ein zweiter Einstieg, kein Sonderfall des ersten."
   - id: T-M39-03
     milestone: M39
     title: Der Host sieht, wer wartet, und startet
-    status: todo
+    status: done
     deps: [T-M39-02]
     requirements: [R-MP-12]
     design: [D-28]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/net/useNetplay.ts, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/net/party.ts, apps/desktop/src/i18n/de.ts, test/guards/reachability.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/net/party.test.tsx]
     dod: "D28.10. Die Partie beginnt, wenn der Host es sagt, nicht wenn eine Verbindung steht. Test zuerst: tritt ein Gast bei, sieht der Host seinen Namen; erst der Start des Hosts loest den Handschlag und den ersten Tick aus (R-MP-12/AK2). Ein Gast, der wieder geht, gibt den Platz frei, und der Host sieht es."
   - id: T-M39-04
     milestone: M39
     title: Ein Startbefehl fuer den Host
-    status: todo
+    status: done
     deps: [T-M39-01]
     requirements: [R-MP-11]
     design: [D-28]
-    files: [package.json, apps/party/src/index.ts]
-    tests: [apps/party/test/server.test.ts]
+    files: [package.json, apps/party/src/index.ts, apps/desktop/vite.config.ts, apps/desktop/src/globals.d.ts, scripts/measure-netfree.mjs]
+    tests: [apps/party/test/server.test.ts, test/guards/packaging.test.ts]
     dod: "D28.10. pnpm mp:host baut das Buendel, startet den Dienst und druckt den Link - ein Befehl, keine Anleitung mit sieben Schritten. Test zuerst: der Dienst liefert das gebaute Buendel aus und der Gast bekommt das vollstaendige Spiel, ohne eine Datei herunterzuladen (R-MP-11/AK1); Gast und Host melden im Handschlag dieselbe Regel- und Kartenpruefsumme, weil beide Seiten aus demselben Bau stammen (R-MP-11/AK2). Der Befehl funktioniert auch beim zweiten Aufruf und laesst beim Beenden keinen Prozess zurueck - FALLE aus M12: einen langen Lauf abzubrechen beendet ihn nicht, danach tasklist pruefen."
   - id: T-M39-05
     milestone: M39
     title: Die letzte Meile ueber Tailscale, geprueft und beschrieben
-    status: todo
+    status: done
     deps: [T-M39-04]
     requirements: [R-MP-10]
     design: [D-28]
@@ -2856,17 +2856,17 @@ tasks:
   - id: T-M39-06
     milestone: M39
     title: Speichern und Fortsetzen zu zweit
-    status: todo
+    status: done
     deps: [T-M38-10, T-M39-03]
     requirements: [R-MP-13]
     design: [D-28]
-    files: [packages/netplay/src/handshake.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/net/useNetplay.ts]
-    tests: [packages/netplay/test/resume-save.test.ts]
+    files: [packages/netplay/src/handshake.ts, packages/netplay/src/protocol.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/net/party.ts, apps/desktop/src/App.tsx]
+    tests: [packages/netplay/test/resume-save.test.ts, apps/desktop/src/net/party.test.tsx]
     dod: "D28.11. Eine Partie ueber mehrere Abende; sonst ist jeder Abbruch endgueltig. Test zuerst: stimmen die Staende beider Seiten ueberein, geht es weiter; stimmen sie nicht, uebertraegt der Host seinen und beide pruefen erneut (R-MP-13/AK1); die fortgesetzte Partie fuehrt dieselbe Pruefsumme wie der gespeicherte Stand (R-MP-13/AK2). Die Uebertragung des Standes bleibt die EINZIGE Stelle, an der ein Zustand ueber die Leitung geht - gemessen 249 KB nach dreissig Spieltagen; waechst eine lange Partie deutlich darueber hinaus, gehoert die Zahl in den Bericht und nicht in eine Schaetzung."
   - id: T-M39-07
     milestone: M39
     title: Die Anleitung erklaert die Einladung
-    status: todo
+    status: done
     deps: [T-M39-05]
     requirements: []
     design: [D-28]
@@ -2876,17 +2876,19 @@ tasks:
   - id: T-M39-08
     milestone: M39
     title: AK-9 bekommt seinen Ort, und der Haltepunkt-Waechter lernt den fuenften
-    status: todo
+    status: done
     deps: [T-M39-07]
     requirements: []
     design: [D-28]
-    files: [scripts/acceptance-criteria.mjs, scripts/acceptance.mjs, test/requirements.test.ts, test/plan-consistency.test.ts, docs/plan/03-TASKS.md]
+    files: [scripts/acceptance-criteria.mjs, test/requirements.test.ts, test/plan-consistency.test.ts, docs/plan/03-TASKS.md, docs/plan/tasks.yaml]
     tests: [test/requirements.test.ts, test/plan-consistency.test.ts]
     dod: "Zwei Waechter ziehen mit, BEVOR der Haltepunkt gesetzt wird; beide sind heute scharf und wuerden sonst rot. Erstens: CRITERIA fuehrt AK-9 mit scope M39 - nicht V1, sonst kettet ein spaeterer Bau die abgeschlossene V1-Abnahme an sich (derselbe Fehler wie beim Nachtrag 2.15), und acceptance.mjs weist es als eigene Zeile ohne Einfluss auf den Exit-Code aus. Zweitens: der Testfall in requirements.test.ts, der AK-9 heute als ERFUNDENES Gegenbeispiel benutzt, wird auf AK-99 umgestellt, sonst prueft er nichts mehr. Drittens: der Haltepunkt-Waechter in plan-consistency.test.ts erwartet fuenf IDs statt vier, und die Uebersichtstabelle am Ende von 03-TASKS.md fuehrt T-M39-09 - ein zweiter Test liest sie. ERST DANACH wird T-M39-09 auf gate true gesetzt."
   - id: T-M39-09
     milestone: M39
     title: Haltepunkt - Noah spielt eine Partie zu zweit
     status: todo
+    gate: true
+    gate_reason: "AK-9: Noah und ein zweiter Mensch in einem ANDEREN Netz spielen eine Partie zu zweit. Das einzige Kriterium dieses Plans, das kein Agent erfuellen kann - ein zweiter Mensch ist nicht simulierbar, und ein zweites Netz auch nicht. Alles davor ist gebaut und gemessen (T-M39-01 bis -08); was Noah zu tun hat, steht Schritt fuer Schritt in docs/ANLEITUNG.md (Abschnitt 'Eine Partie zu zweit - die Einladung') und in docs/PLAYTEST.md. Erfuellt, wenn docs/reports/mehrspieler.md die sechs Punkte festhaelt: Einladung kam an, Gast musste nichts installieren, dreissig zusammenhaengende Spieltage, eine beantragte und angenommene Pause, ein absichtlich herbeigefuehrter Verbindungsabbruch mit Wiederaufnahme, und am Ende dieselbe Zustandspruefsumme auf beiden Seiten."
     deps: [T-M39-08]
     requirements: []
     design: [D-28]
