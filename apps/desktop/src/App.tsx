@@ -79,6 +79,7 @@ import {
   DEFAULT_NEW_GAME,
   aiBonusPercent,
   fixedSpeedOf,
+  gameModesFor,
   invitationOf,
   startGame,
   toConfig,
@@ -1505,6 +1506,11 @@ export function App(props: AppProps) {
         options={options}
         nations={selectedMap.startPositions.map((s) => s.nation)}
         maps={props.maps}
+        // Die Partiearten, die DIESER Bau herstellen kann (T-M39-11, Befund V-1).
+        // Hier — und nur hier — wird die Bauflagge fuer die Oberflaeche gelesen: sie
+        // deckte bis zum 2026-09-18 allein den Beitrittsweg in main.tsx, waehrend der
+        // Waehler daneben in jedem Bau beide Arten anbot.
+        modes={gameModesFor(__MULTIPLAYER__)}
         aiBonus={aiBonusPercent(props.rules, options.difficulty)}
         onChange={(next) => {
           // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt

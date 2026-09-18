@@ -98,6 +98,7 @@ export function NewGameDialog({
   options,
   nations,
   maps,
+  modes,
   aiBonus,
   onChange,
   onStart,
@@ -110,6 +111,16 @@ export function NewGameDialog({
   options: NewGameOptions
   nations: readonly string[]
   maps: readonly { id: string; name: string; data: { provinces: readonly unknown[] } }[]
+  /**
+   * Die Partiearten, die dieser Bau herstellen kann (T-M39-11, Befund V-1).
+   *
+   * Eine Eigenschaft und keine Bauflagge im Rumpf: dieses Formular soll in beiden Bauten
+   * geprüft werden können, und die Flagge steht im Testlauf fest. Enthält die Liste nur
+   * eine Art, verschwindet der Wähler — eine Wahl mit einem Wert ist keine. Und mit ihm
+   * verschwindet alles, was nur zu zweit einen Sinn hat: die feste Rate und die
+   * Einladungsvorschau.
+   */
+  modes: readonly GameMode[]
   aiBonus: number
   onChange: (options: NewGameOptions) => void
   onStart: () => void
@@ -135,6 +146,11 @@ export function NewGameDialog({
   resume?: { day: number } | null
   onResume?: () => void
 }) {
+  // Zu zweit ist nur dann eine Frage, wenn dieser Bau es auch herstellen kann (Befund V-1).
+  // Die zweite Hälfte der Bedingung fängt den Fall ab, in dem eine alte Wahl im Formular
+  // stehen bleibt, während der Bau sie nicht mehr anbietet.
+  const zuZweit = modes.includes('multiplayer') && options.mode === 'multiplayer'
+
   return (
     <Dialog title={t('newGame.title')} onClose={onClose}>
       {/* Start mit Gesicht (T-M22-04, Befund V2-03): Name, Untertitel, Fassung —
@@ -152,19 +168,29 @@ export function NewGameDialog({
       )}
 
       {/* Die Partieart steht vor allem anderen (T-M37-03, R-MP-02): sie entscheidet, ob
-          die Rate darunter überhaupt eine Frage ist. */}
-      <label className="field">
-        <span>{t('newGame.mode')}</span>
-        <select
-          value={options.mode}
-          onChange={(e) => onChange({ ...options, mode: e.target.value as GameMode })}
-        >
-          <option value="single">{t('newGame.modeSingle')}</option>
-          <option value="multiplayer">{t('newGame.modeMultiplayer')}</option>
-        </select>
-      </label>
+          die Rate darunter überhaupt eine Frage ist.
 
-      {options.mode === 'multiplayer' && (
+          Sie erscheint nur, wenn es etwas zu wählen gibt (T-M39-11, Befund V-1): im
+          netzfreien Bau kann das Programm die zweite Art nicht herstellen, und ein Wähler,
+          der eine Partieart anbietet und danach eine andere liefert, ist schlimmer als
+          keiner. */}
+      {modes.length > 1 && (
+        <label className="field">
+          <span>{t('newGame.mode')}</span>
+          <select
+            value={options.mode}
+            onChange={(e) => onChange({ ...options, mode: e.target.value as GameMode })}
+          >
+            {modes.map((mode) => (
+              <option key={mode} value={mode}>
+                {mode === 'single' ? t('newGame.modeSingle') : t('newGame.modeMultiplayer')}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {zuZweit && (
         <label className="field">
           <span>{t('newGame.fixedSpeed')}</span>
           <select
@@ -258,7 +284,7 @@ export function NewGameDialog({
 
       {/* Worauf ein Gast sich einließe (R-MP-02/AK1, R-MP-12): Karte, beide Nationen,
           die Zahl der Computergegner und die feste Rate — vor dem Beitritt, nicht danach. */}
-      {options.mode === 'multiplayer' && invitation && (
+      {zuZweit && invitation && (
         <section className="notice notice--info" aria-label={t('newGame.invitation')}>
           <p>{t('newGame.invitation')}</p>
           <ul>
@@ -269,7 +295,11 @@ export function NewGameDialog({
             <li>{t('newGame.invitationAi', { count: invitation.aiOpponents })}</li>
             <li>{t('newGame.invitationSpeed', { speed: invitation.fixedSpeed })}</li>
           </ul>
-          <small>{t('newGame.multiplayerPending')}</small>
+          {/* Hier stand bis zum 2026-09-18 „Die Verbindung zum Mitspieler kommt mit dem
+              nächsten Ausbau" (T-M39-11, Befund MP-5). Der Satz war in M37 richtig und ist
+              seit M38/M39 falsch: die Verbindung ist gebaut. Ersatzlos, weil der Kasten
+              Angaben trägt und keine Erklärungen — was als Nächstes kommt, sagt die Lobby
+              mit dem Link darin, einen Klick später. */}
         </section>
       )}
 

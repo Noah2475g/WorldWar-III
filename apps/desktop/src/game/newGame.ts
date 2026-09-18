@@ -27,6 +27,25 @@ export type Difficulty = 'easy' | 'normal' | 'hard'
 export type GameMode = 'single' | 'multiplayer'
 
 /**
+ * Welche Partiearten **dieser Bau** herstellen kann (T-M39-11, Befund V-1, R-FREE-04).
+ *
+ * Der Wähler „Partieart" bot seit M37 in *jedem* Bau beide Werte an — auch im
+ * ausgelieferten Tauri-Programm, das die zweite technisch nicht kann: `__MULTIPLAYER__`
+ * ist dort ein literales `false`, der Rollup-Baum schneidet den Transport heraus, und
+ * `connect-src 'none'` verböte die Verbindung ohnehin. Gemessen am 2026-09-14 (Befund V-1)
+ * lief die Wahl dort in eine Einzelspielerpartie mit fester Rate und ohne Vorspulen —
+ * kein Fehler, kein Netzzugriff, aber ein Versprechen, das das Programm nicht hält.
+ *
+ * **Eine reine Funktion mit hereingereichter Flagge**, nicht `__MULTIPLAYER__` im Rumpf:
+ * die Flagge ist eine Ersetzung beim Bauen, im Testlauf steht sie fest, und eine
+ * Verzweigung, deren zweiter Zweig nie läuft, ist ungeprüft. So laufen **beide** Zweige
+ * in jedem Lauf; gelesen wird die Flagge dort, wo der Dialog gehängt wird (`App.tsx`).
+ */
+export function gameModesFor(multiplayerBuild: boolean): readonly GameMode[] {
+  return multiplayerBuild ? ['single', 'multiplayer'] : ['single']
+}
+
+/**
  * Die Rasten, unter denen eine Mehrspielerpartie ihre feste Rate wählt (R-MP-02/AK1).
  *
  * `SPEED_STOPS` ohne die Null: die Null ist die Pause, und eine Partie zu zweit, die mit

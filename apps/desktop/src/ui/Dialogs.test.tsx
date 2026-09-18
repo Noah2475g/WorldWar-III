@@ -6,9 +6,12 @@ import { DebugPanel, LobbyDialog, NewGameDialog, localizeDebugText } from './Dia
 import {
   DEFAULT_NEW_GAME,
   MULTIPLAYER_SPEEDS,
+  gameModesFor,
+  type GameMode,
   type Invitation,
   type NewGameOptions,
 } from '../game/newGame.ts'
+import { hasKey } from '../i18n/text.ts'
 
 /**
  * Die Siegbedingung erklaert sich (R-GAME-02/AK1, Playtest-Frage 4a, 2026-09-06).
@@ -32,6 +35,7 @@ function zeige(victory: 'points' | 'conquest') {
       options={{ ...DEFAULT_NEW_GAME, victory }}
       nations={['Vereinigte Staaten', 'Kanada']}
       maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+      modes={gameModesFor(true)}
       aiBonus={0}
       onChange={onChange}
       onStart={vi.fn()}
@@ -67,6 +71,7 @@ describe('R-UI-05 Der Startdialog traegt ein Gesicht', () => {
         options={DEFAULT_NEW_GAME}
         nations={['Vereinigte Staaten']}
         maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={gameModesFor(true)}
         aiBonus={0}
         resume={{ day: 4 }}
         onResume={onResume}
@@ -175,13 +180,18 @@ describe('R-UI-07 Die Debug-Ansicht spricht Namen', () => {
  * und zeigen, was ein Gast vor dem Beitritt davon zu sehen bekaeme.
  */
 describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
-  const zeigeMit = (options: Partial<NewGameOptions>, invitation: Invitation | null = null) => {
+  const zeigeMit = (
+    options: Partial<NewGameOptions>,
+    invitation: Invitation | null = null,
+    modes: readonly GameMode[] = gameModesFor(true),
+  ) => {
     const onChange = vi.fn()
     render(
       <NewGameDialog
         options={{ ...DEFAULT_NEW_GAME, ...options }}
         nations={['Vereinigte Staaten', 'Kanada']}
         maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={modes}
         aiBonus={0}
         onChange={onChange}
         onStart={vi.fn()}
@@ -250,6 +260,103 @@ describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
     zeigeMit({ mode: 'single' }, einladung)
 
     expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+})
+
+/**
+ * Der Anlegedialog verspricht nur, was DIESER Bau kann (T-M39-11, Befunde V-1 und MP-5).
+ *
+ * **V-1**, gemessen am 2026-09-14 am ausgelieferten Programm: der Waehler „Partieart" bot
+ * dort beide Werte an, obwohl `__MULTIPLAYER__` in diesem Bau ein literales `false` ist —
+ * wer „Zu zweit ueber einen Link" waehlte, bekam eine Einzelspielerpartie mit fester Rate
+ * und ohne Vorspulen. Kein Netzzugriff, kein Fehler, aber ein Versprechen ohne Deckung.
+ *
+ * **MP-5**: unter der Einladungsvorschau stand „Die Verbindung zum Mitspieler kommt mit
+ * dem naechsten Ausbau; die Partie beginnt vorerst lokal." Das war in M37 richtig und ist
+ * seit M38/M39 falsch.
+ *
+ * Geprueft werden **beide Werte der Bauflagge**, und zwar ohne sie zu setzen: sie ist eine
+ * Ersetzung beim Bauen und steht im Testlauf fest. `gameModesFor()` ist die eine Stelle,
+ * die aus ihr eine Liste macht; die Liste reicht `App.tsx` herein, und ein Test kann sie
+ * so in beiden Auspraegungen herstellen.
+ */
+describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau nicht kann', () => {
+  const einladung: Invitation = {
+    mapName: 'Welt',
+    hostNation: 'Vereinigte Staaten',
+    guestNation: 'Kanada',
+    aiOpponents: 5,
+    victory: 'points',
+    fixedSpeed: 25,
+  }
+
+  const zeigeMit = (
+    options: Partial<NewGameOptions>,
+    invitation: Invitation | null,
+    modes: readonly GameMode[],
+  ) => {
+    render(
+      <NewGameDialog
+        options={{ ...DEFAULT_NEW_GAME, ...options }}
+        nations={['Vereinigte Staaten', 'Kanada']}
+        maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
+        modes={modes}
+        aiBonus={0}
+        onChange={vi.fn()}
+        onStart={vi.fn()}
+        onClose={vi.fn()}
+        invitation={invitation}
+      />,
+    )
+  }
+
+  it('macht aus der Bauflagge die Partiearten — beide Werte', () => {
+    expect(gameModesFor(true)).toEqual(['single', 'multiplayer'])
+    expect(gameModesFor(false)).toEqual(['single'])
+  })
+
+  it('zeigt im Hostbau den Waehler mit beiden Arten', () => {
+    zeigeMit({ mode: 'single' }, null, gameModesFor(true))
+    const waehler = screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement
+
+    expect([...waehler.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
+      'Allein gegen den Rechner',
+      'Zu zweit über einen Link',
+    ])
+  })
+
+  it('zeigt im netzfreien Bau gar keinen Waehler — eine Wahl mit einem Wert ist keine', () => {
+    zeigeMit({ mode: 'single' }, einladung, gameModesFor(false))
+
+    expect(screen.queryByRole('combobox', { name: 'Partieart' })).toBeNull()
+    // Und der Satz, der die zweite Art beschreibt, steht auch sonst nirgends im Dialog.
+    expect(screen.queryByText('Zu zweit über einen Link')).toBeNull()
+  })
+
+  it('haelt im netzfreien Bau auch Rate und Einladung heraus, wenn die alte Wahl stehen blieb', () => {
+    // Der Fall, den ein blosses Verstecken des Waehlers offen liesse: `options.mode` traegt
+    // noch 'multiplayer' — aus einem alten Formularstand, einem Spielstand, einem Link.
+    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(false))
+
+    expect(screen.queryByRole('combobox', { name: /Feste Geschwindigkeit/ })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+
+  it('MP-5: die Einladung traegt nur Angaben und kein Versprechen mehr', () => {
+    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(true))
+    const kasten = screen.getByRole('region', { name: 'Die Einladung nennt:' })
+
+    // Die vier Angaben stehen, der Satz aus M37 steht nicht mehr.
+    expect(kasten.querySelectorAll('li')).toHaveLength(4)
+    expect(kasten.textContent).not.toMatch(/nächsten Ausbau/)
+    expect(kasten.textContent).not.toMatch(/vorerst lokal/)
+    expect(kasten.querySelector('small')).toBeNull()
+  })
+
+  it('MP-5: den Schluessel gibt es nicht mehr — kein Waisentext im Katalog', () => {
+    expect(hasKey('newGame.multiplayerPending')).toBe(false)
+    // Die Gegenprobe, damit die Zeile darueber nicht bloss einen Tippfehler bestaetigt.
+    expect(hasKey('newGame.invitationSpeed')).toBe(true)
   })
 })
 
