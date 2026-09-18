@@ -4233,3 +4233,120 @@ Integrationstor ohnehin als eigene Aufgabe. Ob der Bericht einen Wächter nach d
 `measuredAtCommit` bekommt, gehört in die M18-Sammelstelle.
 
 **Status:** offen (Wächter); die falsche Behauptung ist berichtigt.
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-3: der Entwurf sagt, ein Krieg lösche „nur den Durchmarsch" — er löscht seit je auch die Karte
+
+**Befund:** D29.1 beschreibt, was die neuen gerichteten Felder wann ändern, und schließt mit:
+„`acceptAlliance` setzt beide Richtungen beider Felder, `breakAlliance` löscht sie, eine
+wirksame Kriegserklärung löscht **wie heute nur den Durchmarsch**." Das „wie heute" stimmt
+nicht. `phases/diplomacy.ts` löscht, sobald eine Kriegserklärung wirksam wird, **beide**
+Felder — `rightOfWay` *und* `sharedMap`, seit M6 und unverändert.
+
+**Gemessen, nicht erinnert:** die Zeilen standen vor T-M17-03 unmittelbar untereinander
+(`relation.rightOfWay = false` / `relation.sharedMap = false`), und `git log -L` führt sie bis
+auf den ersten Bau der Phase zurück.
+
+**Was daraus folgt — und was hier bewusst NICHT passiert.** T-M17-03 ist der Migrationsschritt:
+er richtet den *Zustand*, nicht das *Verhalten*. Hätte dieser Schritt die Karte im Krieg stehen
+lassen, wäre eine Regeländerung mitten in eine Formatumstellung geraten — und beide
+Golden-Master hätten sich aus **zwei** Gründen zugleich verschoben, von denen keiner mehr vom
+anderen zu trennen gewesen wäre. Der Krieg löscht deshalb weiterhin beide Richtungen beider
+Felder, und im Code steht, warum.
+
+**Die Frage dahinter ist echt und gehört nach T-M17-04:** soll ein Krieg die Kartenfreigabe
+mitnehmen? Dafür spricht, dass niemand dem Feind die eigene Karte lässt; dagegen, dass eine
+*geschenkte* Karte nicht zurückgenommen werden kann — was der andere gesehen hat, weiß er.
+Solange das offen ist, gilt das Verhalten von heute.
+
+**Status:** offen für T-M17-04 (Entscheid), Verhalten unverändert, D29.1 hier berichtigt.
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-4: der Mehrspieler kennt die Formatstufe nicht — und nahm einen fremden Stand an
+
+**Befund:** D29.12 nahm an, M17 sei **vor** M37 gemergt. Es kam umgekehrt. Also nachgesehen,
+was am Mehrspieler an `SCHEMA_VERSION`, am Spielstandsformat, an `rightOfWay`/`sharedMap` oder
+am Zustandshash hängt — `packages/netplay`, `apps/party`, `apps/desktop/src/net`, die Skripte
+und die Mehrspieler-Tests.
+
+**Drei Antworten, alle gemessen:**
+
+1. **Der Handschlag sieht die Stufe nicht.** `fingerprintOf` vergleicht Protokollfassung,
+   Regel- und Kartenprüfsumme (`handshake.ts`) — die Formatstufe steht nicht darin. Zwei Bauten,
+   die sich **nur** im Kern unterscheiden, kommen also durch den Handschlag.
+2. **Die Determinismus-Probe fängt es trotzdem** — das ist ihr Zweck. 24 Ticks aus derselben
+   Partiedefinition ergeben mit Stufe 4 `d4e0ae7104e71c6b` statt `b2f6fef971bbfc1b` (gemessen
+   am 2026-09-18, 53 ms kalt gegen eine Grenze von 100). Die Partie beginnt nicht. Was sie
+   **falsch** macht, ist die Meldung: „aus demselben Stand kommen zwei Ergebnisse" schickt den
+   Nächsten auf die Suche nach einem Fehler im Kern, den es nicht gibt (genau die Falle, die
+   `resumeDecision` für den umgekehrten Fall schon vermeidet).
+3. **Eine Stelle war wirklich kaputt, und die ist repariert.** `acceptState` nahm einen
+   übertragenen Stand allein nach seiner Prüfsumme an (T-M39-06, R-MP-13/AK2). Seit Stufe 4
+   heißt das: ein Stand der Stufe 3 wird angenommen, und `cloneState` liest im **ersten Tick**
+   `state.espionage.spies` — aus der irreführenden Meldung wäre ein Absturz geworden. `acceptState`
+   prüft jetzt **zuerst** die Stufe und nennt beide Zahlen. Der Test dazu fällt ohne die
+   Reparatur (Gegenprobe gefahren).
+
+**Was nicht repariert wurde, und warum:** die Formatstufe in den Handschlag zu nehmen ändert das
+Nachrichtenformat und gehört mit einer Erhöhung von `PROTOCOL_VERSION` zusammen. Dazu kommt, dass
+das Fenster klein ist: **ab T-M17-04 ändert M17 `data/rules`**, und dann meldet schon der
+Handschlag „verschiedene Regeln" mit einem Satz, den man lesen kann. Der Vorschlag gehört in die
+M18-Sammelstelle, nicht in eine Migrationsaufgabe.
+
+**Zwei Zahlen, die dabei abfielen:** die Zustandsnachricht wächst um **1558 Byte** (15 Beziehungen
+auf der Weltkarte, sechs Mächte) — 0,6 %, gegen eine Grenze von 512 000. Und die Prüfsummen, die
+`WORKFLOW.md` §5 und `PROGRESS.md` für den Mehrspieler nennen (`5ed264a0fea05076`,
+`b2f6fef971bbfc1b`, `7aae49be9d989df8`), sind ab Stufe 4 **historische Messwerte ihres Commits**
+und keine Vergleichswerte mehr. Sie werden nicht gelöscht: sie tragen ihr Datum.
+
+**Status:** eine Reparatur eingebaut und belegt; Handschlag-Vorschlag offen (M18).
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-5: ein einziges Byte in `node_modules` legt `pnpm lint` lahm — und damit `pnpm verify`
+
+**Befund:** `pnpm lint` bricht seit dem 2026-09-18, etwa 14:40, mit
+`SyntaxError: Unexpected identifier 'createTextChangeRange'` ab, noch bevor eine einzige Datei
+geprüft ist. Betroffen ist nicht dieses Projekt, sondern eine **Abhängigkeit**:
+`node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/typescript.js`, Zeile 183 694.
+Dort endet `createTextChangeFromStartLength: () => createTextChangeFromStartLength` mit einem
+`$` statt mit einem Komma. **Ein Byte.** Drei Wächter, die ESLint programmatisch fahren
+(`core-purity`, `import-boundaries`, `no-color-literals`, zusammen 10 Zusicherungen), fallen aus
+demselben Grund.
+
+**Belegt, nicht vermutet — der Speicher von pnpm beweist es selbst.** Jede Datei im
+inhaltsadressierten Speicher trägt ihren sha512 als Dateinamen. Die Datei heißt
+`…/files/01/ec6731435398…` — der Inhalt hashed aber auf `3ea65f7568fc2fde…`. Ersetzt man das eine
+Byte wieder durch ein Komma, ergibt sich **exakt** `01ec67314353989306eb143d7b8d1da0…`, also der
+Name, unter dem die Datei abgelegt ist. Die Reparatur ist damit keine Vermutung, sondern durch
+den hinterlegten Hash bewiesen.
+
+**Nicht durch M17 verursacht:** derselbe vollständige Testlauf war um 14:36 mit denselben drei
+Wächtern grün, auf genau diesem Arbeitsbaum; der Ausgangslauf `pnpm verify` vom Morgen ebenso.
+Zwischen beiden hat niemand `node_modules` angefasst. Ein einzelnes gekipptes Byte in einer
+Datei, die seit dem 2026-09-02 unverändert ist, ist ein Zeichen für Platte oder Speicher — das
+gehört in `99_Meta/Health & Risks.md` des Vaults, nicht nur hierher.
+
+**Nicht repariert, und warum:** die Datei liegt **außerhalb** des Projekts
+(`%LOCALAPPDATA%\pnpm\store\v11`) und ist von dort in jeden Arbeitsbaum hart verlinkt; der
+Berechtigungs-Classifier verweigert das Schreiben zu Recht. `pnpm install --force` hilft nicht
+(„Already up to date" — pnpm prüft beim Verlinken keine Inhalte). **Was hilft**, ist ein Befehl
+von Noah:
+
+```bash
+# die eine beschädigte Datei aus dem Speicher werfen, dann neu holen
+Remove-Item -LiteralPath "$env:LOCALAPPDATA\pnpm\store\v11\files\01\ec67314353989306eb143d7b8d1da050f66bbbb5b9830da5d6b88465d2c37821ddf31b36d18e7c81df6d5099bc0f06bf9e6e096e6ce623c993cc883d900ef1" -Force
+Remove-Item -LiteralPath "node_modules\.pnpm\typescript@5.9.3" -Recurse -Force
+pnpm install
+pnpm lint   # muss wieder durchlaufen
+```
+
+**Was das für T-M17-03 heißt:** `pnpm verify` bricht im **ersten** Schritt ab (Lint), also vor
+Typprüfung und Tests. Beide anderen Schritte sind einzeln gefahren und grün
+(`pnpm typecheck` Exit 0; die Testreihe ohne die drei ESLint-Wächter Exit 0). Umgangen wird der
+Wächter nicht: er ist rot, der Grund steht hier, und die Prüfkette gilt erst wieder als gefahren,
+wenn die Datei heil ist.
+
+**Status:** offen — braucht einen Befehl von Noah. Kein Projektfehler.

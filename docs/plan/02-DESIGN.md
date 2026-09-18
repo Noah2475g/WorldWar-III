@@ -2494,6 +2494,20 @@ M35 nimmt Stufe 3 (D31.5); M17 nimmt **Stufe 4**.
 - **Mehrspieler:** `MEHRSPIELER.md` sagt „kein Eingriff in `packages/core` und `data/rules`".
   Verträglich, wenn M17 vollständig vor M37 gemergt ist; die neuen Kommandos sind reines JSON.
 
+  *(Berichtigt am 2026-09-18, T-M17-03: **es kam umgekehrt.** M37 bis M39 sind am 2026-09-14
+  gemergt, M17 beginnt danach — die Voraussetzung dieses Satzes gilt also nicht, und der Satz
+  wird nicht gelöscht, sondern hier beantwortet. Nachgesehen statt angenommen: `packages/netplay`,
+  `apps/party`, `apps/desktop/src/net` und die Skripte kennen die Formatstufe **nicht**. Der
+  Handschlag vergleicht Protokollfassung, Regel- und Kartenprüfsumme; die Determinismus-Probe
+  vergleicht das Ergebnis von 24 Ticks und fängt einen Unterschied deshalb doch — als
+  „Auseinanderlaufen", mit einer Meldung, die auf einen Fehler im Kern zeigt statt auf zwei
+  verschiedene Fände. Gemessen: die Probenprüfsumme ist mit Stufe 4 `d4e0ae7104e71c6b` statt
+  `b2f6fef971bbfc1b`, 53 ms kalt gegen eine Grenze von 100. **Eine Stelle war wirklich kaputt
+  und ist repariert:** `acceptState` nahm einen übertragenen Stand allein nach seiner Prüfsumme
+  an — ein Stand der Stufe 3 hätte im ersten Tick `cloneState` über das fehlende `espionage`
+  stolpern lassen; jetzt wird zuerst die Stufe geprüft. Ab T-M17-04 ändert M17 `data/rules`,
+  und dann meldet schon der Handschlag den Unterschied. Befund M17-4 in `PROBLEME.md`.)*
+
 ## D30. Die Haltung wird ein Auftrag (M40 — R-UNIT-09)
 
 Befund und erste Fassung stehen in `docs/plan/LEVEL-UP-3.md` §5 (T-M28-07, dort noch als

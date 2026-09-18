@@ -3265,6 +3265,25 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   `sharedMap` aus dem Typ nimmt, muss jeden Leser im selben Commit umstellen — hier lesen alle
   über `grantsPassage` und `sharesMap`, und alle Schreiber setzen **vorerst beide Richtungen**
   (verhaltensgleich); die Richtung selbst kommt in T-M17-04.
+- **Erledigt am 2026-09-18:** `SCHEMA_VERSION` 4, `toVersion4`, `ADDED_IN_VERSION_4` und —
+  neu in diesem Projekt — `REMOVED_IN_VERSION_4`: der erste Schritt, der Schlüssel **wegnimmt**.
+  Eine Umbenennung ist kein Hinzufügen; ohne die zweite Liste müsste der Differenztest die
+  Abweichung ungeprüft hinnehmen. Die Migration übernimmt `rightOfWay` und `sharedMap` in
+  **beide** Richtungen und die Frist als `null` — verhaltensgleich, weil ein Spieler sonst ein
+  Recht verlöre, das er sich erspielt hat. **Entschieden:** die Sicht behält ihre Feldnamen
+  `rightOfWay`/`sharedMap` (die Umbenennung ist T-M17-04) — deshalb bleiben `packages/ai` und
+  die Oberfläche in diesem Schritt unberührt, obwohl sie oben unter „Dateien" stehen
+  (`DECISIONS.md`). Gelesen wird trotzdem schon gerichtet, in der Richtung „der andere gewährt
+  mir". **Drei Gegenproben gefahren, jede fällt ohne ihre Reparatur:** ohne `3: toVersion4` in
+  `MIGRATIONS` fallen 14 von 15 Zusicherungen in `migration-v3.test.ts` und beide neuen in
+  `saves.test.ts`; mit vertauschter Richtung in `phases/diplomacy.ts` fällt
+  `movement.test.ts`, mit vertauschter Richtung in `publicView.ts` fällt die Sichtprüfung in
+  `phases/diplomacy.test.ts`. **Golden-Master genau einmal**, und der Beleg dafür ist gemessen:
+  ein Wegwerflauf normalisiert den Zustand um die neuen Felder herum und lief vor und nach der
+  Änderung — 500 Ticks `tiny`, 500 Ticks `walkthrough` und 60 Spieltage Weltkarte ergeben
+  normalisiert **dieselben** Prüfsummen und denselben Ereignisstrom; nur die rohen Prüfsummen
+  wandern, und zwar auf genau die Werte, die jetzt in den Golden-Mastern stehen. Zum
+  Mehrspieler siehe `PROBLEME.md` (M17-4) und `DECISIONS.md`.
 
 ### T-M17-04 · Durchmarsch gerichtet, Antrag, Widerruf, Frist — und die Kartenfreigabe gerichtet
 - **Ziel:** wer gewährt, lässt durch — und darf nicht selbst hindurch.

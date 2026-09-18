@@ -3148,3 +3148,54 @@ Nachtrags 2.15.
 **Auswirkung:** AK-9 hat seinen eigenen Ort (Abschnitt 3.2) und seinen eigenen Bericht
 (`docs/reports/mehrspieler.md`); der Bogen beschreibt den Durchgang in Prosa und sagt im
 ersten Satz, warum er keine Frage daraus macht. Zwei Tests halten beides fest. Befund M39-4.
+
+---
+
+## 2026-09-18 · T-M17-03 · Die Sicht behält ihre Feldnamen, obwohl der Zustand sie verliert
+
+**Entscheidung:** `publicView().relations` heißt auch nach dem Schritt 3 → 4 weiter
+`rightOfWay` und `sharedMap`. Die Umbenennung in `passageGranted`, `passageReceived`,
+`passageEndsAtTick`, `mapShared` und `mapReceived` bleibt, wo der Plan sie hingestellt hat:
+in **T-M17-04**.
+
+**Begründung:** Solange jeder Schreiber beide Richtungen setzt — und das ist die ausdrückliche
+Vorgabe dieses Schritts —, sagt **ein** Feld je Beziehung genau dieselbe Wahrheit wie zwei. Ein
+zweiter Name für dieselbe Aussage wäre keine Verbesserung, sondern ein zweiter Umbau im selben
+Commit: durch `packages/ai/src/relationship.ts`, `packages/ai/src/diplomacy.ts`, `Standings`,
+`Explain`, `icons`, `de.ts` und deren Tests. Genau das hätte den einen Beleg zerstört, für den
+dieser Schritt gebaut ist — *nur die neuen Zustandsfelder verschieben die Golden-Master*. Wer
+zwei Dinge gleichzeitig ändert, kann hinterher nicht mehr sagen, welches davon die Prüfsumme
+bewegt hat. Erst T-M17-04 macht aus einer Wahrheit zwei verschiedene, und **dann** brauchen sie
+zwei Namen.
+
+**Was trotzdem schon gerichtet ist:** gelesen wird über `grantsPassage` und `sharesMap`, und
+zwar in der Richtung „der andere gewährt mir" — `rightOfWay` heißt in der Sicht also schon
+heute *er lässt mich durch*. Zwei Tests fallen, wenn diese Richtung vertauscht wird
+(`movement.test.ts`, `phases/diplomacy.test.ts`); die Gegenproben sind gefahren.
+
+**Auswirkung:** `packages/ai` und die gesamte Oberfläche bleiben in T-M17-03 unberührt, obwohl
+`tasks.yaml` sie unter „Dateien" führt — das steht so in der Erledigungsnotiz. Für die beiden
+Folgebahnen heißt es: **wer die Sicht liest, liest bis T-M17-04 die alten Namen.**
+`viewFieldNamesKept: true`.
+
+---
+
+## 2026-09-18 · T-M17-03 · Der Mehrspieler wird an einer Stelle repariert und an einer anderen nicht
+
+**Entscheidung:** `acceptState` prüft den übertragenen Spielstand **zuerst** auf seine
+Formatstufe. Der Handschlag dagegen bekommt die Formatstufe **nicht**; der Vorschlag wandert in
+die M18-Sammelstelle.
+
+**Begründung:** Die beiden Fälle sind verschieden schwer. Ein übertragener Stand der Stufe 3
+wurde bis heute **angenommen**, wenn seine Prüfsumme zu der angekündigten passte — und
+`cloneState` liest im ersten Tick `state.espionage.spies`. Aus einer Wiederaufnahme wäre ein
+Absturz geworden, und zwar erst nach dem Verbinden. Das ist ein Fehler, den M17 verursacht, also
+gehört er hierher; die Prüfung ist drei Zeilen und ändert das Nachrichtenformat nicht. Die
+Formatstufe in den Handschlag zu nehmen ist dagegen eine Protokolländerung samt Erhöhung von
+`PROTOCOL_VERSION` — und der Nutzen ist klein, weil die Determinismus-Probe den Unterschied
+ohnehin fängt (gemessen: `d4e0ae7104e71c6b` statt `b2f6fef971bbfc1b`) und **ab T-M17-04** schon
+der Handschlag „verschiedene Regeln" meldet, weil M17 `data/rules` anfasst.
+
+**Auswirkung:** eine neue Zusicherung in `packages/netplay/test/resume-save.test.ts`, die ohne
+die Reparatur fällt. Die irreführende Meldung der Probe bleibt für das Fenster zwischen
+T-M17-03 und T-M17-04 bestehen — benannt in Befund M17-4, nicht verschwiegen.
