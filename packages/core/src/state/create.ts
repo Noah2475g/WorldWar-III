@@ -51,6 +51,36 @@ export function relationKey(a: PlayerId, b: PlayerId): string {
 }
 
 /**
+ * Laesst `grantor` die Truppen von `guest` durch sein Gebiet? (M17, D29.1, R-DIP-08)
+ *
+ * **Diese Funktion und `sharesMap` sind die einzigen Leserinnen der gerichteten Felder.**
+ * Der Grund ist nicht Ordnungsliebe: der Schluessel einer Beziehung ist sortiert (`a|b` mit
+ * a < b), die Frage ist es nicht. Wer `relation.aGrantsPassage` an einer beliebigen Stelle
+ * im Spiel liest, muss dort wissen, ob die fragende Macht gerade `a` oder `b` ist — und
+ * genau dieser Fehler war bis Stufe 3 in den Zustand eingebaut: `rightOfWay` galt fuer
+ * beide Richtungen, und wer „gewaehrte", durfte selbst folgenlos ins Land des anderen
+ * (Befund B2, `PROBLEME.md` 2026-09-13).
+ *
+ * Der Tick ist bis T-M17-04 immer `null` und die Frist damit wirkungslos; steht er, gilt das
+ * Recht **bis** dahin (`tick < ends`).
+ */
+export function grantsPassage(state: GameState, grantor: PlayerId, guest: PlayerId): boolean {
+  const relation = state.diplomacy.relations[relationKey(grantor, guest)]
+  if (!relation) return false
+  const granted = grantor < guest ? relation.aGrantsPassage : relation.bGrantsPassage
+  if (!granted) return false
+  const ends = grantor < guest ? relation.aPassageEndsAtTick : relation.bPassageEndsAtTick
+  return ends === null || state.tick < ends
+}
+
+/** Zeigt `owner` seine Karte an `viewer`? (M17, D29.1) — gerichtet wie `grantsPassage`. */
+export function sharesMap(state: GameState, owner: PlayerId, viewer: PlayerId): boolean {
+  const relation = state.diplomacy.relations[relationKey(owner, viewer)]
+  if (!relation) return false
+  return owner < viewer ? relation.aSharesMap : relation.bSharesMap
+}
+
+/**
  * Build the starting state of a match.
  *
  * Everything is derived from (config, map, rules) — same input, same state, always.
@@ -172,8 +202,12 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
         state: 'peace',
         sinceTick: 0,
         warEffectiveAtTick: null,
-        rightOfWay: false,
-        sharedMap: false,
+        aGrantsPassage: false,
+        bGrantsPassage: false,
+        aPassageEndsAtTick: null,
+        bPassageEndsAtTick: null,
+        aSharesMap: false,
+        bSharesMap: false,
       }
     }
   }
@@ -191,7 +225,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     provinceOrder,
     armies: {},
     armyOrder: [],
-    diplomacy: { relations, offers: [], grievances: {} },
+    diplomacy: { relations, offers: [], tradeOffers: [], grievances: {} },
     market: createMarket(rules),
     ai,
     battles: [],
@@ -215,6 +249,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       endedAtTick: null,
     },
     goals,
-    nextIds: { army: 1, battle: 1, order: 1 },
+    espionage: { spies: [], reveals: [] },
+    nextIds: { army: 1, battle: 1, order: 1, spy: 1, offer: 1 },
   }
 }

@@ -5,7 +5,15 @@ import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { createInitialState, type GameConfig } from '../state/create'
 import { HASH_OMIT_KEYS, SCHEMA_VERSION } from '../state/types'
-import { ADDED_IN_VERSION_2, ADDED_IN_VERSION_3, highestMigration, migrate, type SaveEnvelope } from './migrate'
+import {
+  ADDED_IN_VERSION_2,
+  ADDED_IN_VERSION_3,
+  ADDED_IN_VERSION_4,
+  REMOVED_IN_VERSION_4,
+  highestMigration,
+  migrate,
+  type SaveEnvelope,
+} from './migrate'
 import { SaveFormatError, deserialise, serialise } from './save'
 import { InvalidStateError, validateState } from './validate'
 
@@ -83,12 +91,19 @@ describe('R-GAME-07/AK1 Ein Stand der V1 laeuft weiter', () => {
     // zwischen altem und neuem Zustand darf ausschliesslich aus den neu angelegten
     // Feldern bestehen.
     //
-    // Seit T-M35-03 fuehrt `migrate` einen V1-Stand ueber zwei Schritte bis zur aktuellen
-    // Stufe; abgezogen werden deshalb die Felder **beider** Schritte. Die Zusage bleibt
-    // dieselbe, nur die Kette ist laenger.
+    // Seit T-M35-03 fuehrt `migrate` einen V1-Stand ueber mehrere Schritte bis zur
+    // aktuellen Stufe; abgezogen werden deshalb die Felder **aller** Schritte. Die Zusage
+    // bleibt dieselbe, nur die Kette ist laenger. Seit Stufe 4 (T-M17-03) kommen die
+    // **entfernten** Schluessel dazu: der Schritt 3 -> 4 benennt `rightOfWay` und
+    // `sharedMap` in gerichtete Felder um, und eine Umbenennung ist kein Hinzufuegen.
     const before = fresh().state as unknown as Record<string, unknown>
     const after = migrate(fresh()).state as unknown as Record<string, unknown>
-    const added: readonly string[] = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3]
+    const added: readonly string[] = [
+      ...ADDED_IN_VERSION_2,
+      ...ADDED_IN_VERSION_3,
+      ...ADDED_IN_VERSION_4,
+      ...REMOVED_IN_VERSION_4,
+    ]
 
     const strip = (value: unknown): unknown => {
       if (Array.isArray(value)) return value.map(strip)
@@ -197,11 +212,13 @@ describe('R-GAME-07 validateState prueft, was ein Zustand sein muss', () => {
  *
  * Die Regel „ein Schritt je Meilenstein" (DECISIONS.md, 2026-09-06) als Daten: eine neue
  * Stufe ohne Eintrag laesst den Waechter fallen, ebenso zwei Stufen fuer denselben
- * Meilenstein. M17 nimmt Stufe 4 (D29.10).
+ * Meilenstein. Stufe 4 ist seit dem 2026-09-18 vergeben (T-M17-03, D29.10) — die Felder
+ * von M17 kommen in einem Zug, und T-M17-04 bis -14 erhoehen die Stufe nicht.
  */
 const STAGE_MILESTONES: Record<number, string> = {
   2: 'M15',
   3: 'M35',
+  4: 'M17',
 }
 
 describe('R-GAME-07 Der Formatwaechter', () => {
@@ -237,6 +254,7 @@ describe('R-GAME-07 Der Formatwaechter', () => {
         'armyOrder',
         'battles',
         'diplomacy',
+        'espionage',
         'eventLog',
         'goals',
         'mapId',
@@ -262,6 +280,6 @@ describe('R-GAME-07 Der Formatwaechter', () => {
     const state = createInitialState(CONFIG, { map: smallWorld(), rules: TEST_RULES })
 
     expect(state.diplomacy.grievances).toEqual({})
-    expect(Object.keys(state.diplomacy).sort()).toEqual(['grievances', 'offers', 'relations'])
+    expect(Object.keys(state.diplomacy).sort()).toEqual(['grievances', 'offers', 'relations', 'tradeOffers'].sort())
   })
 })

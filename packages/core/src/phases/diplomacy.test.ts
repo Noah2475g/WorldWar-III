@@ -101,7 +101,9 @@ describe('R-DIP-01 Frieden und Buendnisse', () => {
     const allied = step(offered, [diplo('p2', 'p1', 'acceptAlliance')], ctx).state
 
     expect(allied.diplomacy.relations['p1|p2']!.state).toBe('alliance')
-    expect(allied.diplomacy.relations['p1|p2']!.sharedMap).toBe(true)
+    // Beide Richtungen: ein Buendnis ist gegenseitig, und seit Stufe 4 steht das im Zustand.
+    expect(allied.diplomacy.relations['p1|p2']!.aSharesMap).toBe(true)
+    expect(allied.diplomacy.relations['p1|p2']!.bSharesMap).toBe(true)
   })
 
   it('kostet Ansehen, ein Buendnis zu brechen', () => {
@@ -157,7 +159,9 @@ describe('R-DIP-04 Nebel des Krieges', () => {
 
   it('erweitert die Sicht im Buendnis', () => {
     const before = visibleProvinces(state, 'p1').size
-    state.diplomacy.relations['p1|p2']!.sharedMap = true
+    // Gerichtet: p2 (die Haelfte `b` des Schluessels `p1|p2`) zeigt p1 seine Karte. Wer hier
+    // die andere Richtung setzt, sieht nichts — genau das soll der Test unterscheiden koennen.
+    state.diplomacy.relations['p1|p2']!.bSharesMap = true
     expect(visibleProvinces(state, 'p1').size).toBeGreaterThan(before)
   })
 

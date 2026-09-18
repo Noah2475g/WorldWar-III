@@ -45,6 +45,9 @@ const REQUIRED: { key: keyof GameState; kind: 'number' | 'string' | 'array' | 'o
   { key: 'victory', kind: 'object' },
   // Seit Stufe 3 (T-M35-03): der Schritt 2 → 3 legt das Feld an, also muss es da sein.
   { key: 'goals', kind: 'object' },
+  // Seit Stufe 4 (T-M17-03): dasselbe für die Spionage. Ohne das Feld lädt der Stand
+  // fehlerfrei und stürzt in der ersten Spionagephase ab.
+  { key: 'espionage', kind: 'object' },
   { key: 'nextIds', kind: 'object' },
 ]
 
@@ -97,6 +100,7 @@ export function validateState(value: unknown): asserts value is GameState {
   const diplomacy = state['diplomacy'] as Record<string, unknown>
   if (kindOf(diplomacy['relations']) !== 'object') problems.push('diplomacy.relations fehlt')
   if (kindOf(diplomacy['offers']) !== 'array') problems.push('diplomacy.offers fehlt')
+  if (kindOf(diplomacy['tradeOffers']) !== 'array') problems.push('diplomacy.tradeOffers fehlt')
   if (kindOf(diplomacy['grievances']) !== 'object') problems.push('diplomacy.grievances fehlt')
 
   // Die Tagespruefung der Zwischenziele liest den Eintrag jeder Macht (T-M35-03). Fehlt er,

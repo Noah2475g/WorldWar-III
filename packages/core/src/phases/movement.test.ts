@@ -216,7 +216,8 @@ describe('R-UNIT-04 Kein Durchmarsch an Verteidigern vorbei', () => {
 
   it('laesst friedliche Nachbarn passieren', () => {
     // With right of way granted: without it, marching through would itself start a war.
-    state.diplomacy.relations['p1|p2']!.rightOfWay = true
+    // Gerichtet seit Stufe 4: p2 (Haelfte `b` von `p1|p2`) laesst p1 durch, nicht umgekehrt.
+    state.diplomacy.relations['p1|p2']!.bGrantsPassage = true
     state.armies['other'] = makeArmy('other', 'p2', 'm1', [{ unitKey: 'infantry', hpTotal: 10_000 }])
     state.armyOrder = ['a1', 'other']
 
@@ -374,7 +375,7 @@ describe('R-TIME-06 Einmarsch in eigenes Gebiet (T-M28-06)', () => {
   })
 
   it('schweigt im Frieden — auch mit Durchmarschrecht', () => {
-    state.diplomacy.relations['p1|p2']!.rightOfWay = true
+    state.diplomacy.relations['p1|p2']!.bGrantsPassage = true
     const started = step(state, [move('a1', 'm1')], ctx).state
     const { events } = runUntilArrived(started, 'a1')
 

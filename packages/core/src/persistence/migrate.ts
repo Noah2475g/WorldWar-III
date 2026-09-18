@@ -126,9 +126,95 @@ const toVersion3: Migration = (envelope) => {
 /** Die Felder, die Schritt 2 → 3 anlegt — dieselbe Pruefung wie `ADDED_IN_VERSION_2`. */
 export const ADDED_IN_VERSION_3 = ['schemaVersion', 'goals'] as const
 
+/**
+ * Schritt 3 → 4: alle Zustandsfelder von M17 in einem Zug (T-M17-03, R-GAME-09, D29.10).
+ *
+ * **Ein** Schritt fuer den ganzen Meilenstein, wie bei M15 und M35 (DECISIONS.md,
+ * 2026-09-06): Spionage, Handelsangebote und die beiden neuen Zaehler kommen leer, und
+ * Durchmarsch und Kartenfreigabe werden gerichtet.
+ *
+ * **Verhaltensgleich, und das ist die ganze Kunst dieses Schritts.** Bis Stufe 3 galt
+ * `rightOfWay` fuer beide Richtungen; die Migration setzt deshalb `aGrantsPassage` **und**
+ * `bGrantsPassage` auf den alten Wert — ein geladener Stand laesst danach genau die
+ * Truppen durch, die er vorher durchliess. Dasselbe fuer `sharedMap`. Wer nur eine
+ * Richtung uebernaehme, naehme einem Spieler ein Recht weg, das er sich erspielt hat.
+ * Die Frist ist `null`: unbefristet, so wie es bis Stufe 3 keine andere Moeglichkeit gab.
+ *
+ * Nachsichtig gegenueber fehlenden Teilen wie die Schritte davor — die Ablehnung ist
+ * Sache von `validateState`, nicht eines TypeError.
+ */
+const toVersion4: Migration = (envelope) => {
+  const state = envelope.state as unknown as Record<string, unknown>
+
+  const diplomacy = state['diplomacy']
+  if (diplomacy !== null && typeof diplomacy === 'object' && !Array.isArray(diplomacy)) {
+    const record = diplomacy as Record<string, unknown>
+    record['tradeOffers'] = []
+
+    const relations = record['relations']
+    if (relations !== null && typeof relations === 'object' && !Array.isArray(relations)) {
+      const pairs = relations as Record<string, Record<string, unknown>>
+      for (const key of Object.keys(pairs)) {
+        const relation = pairs[key]
+        if (relation === null || typeof relation !== 'object') continue
+        const passage = relation['rightOfWay'] === true
+        const shared = relation['sharedMap'] === true
+        delete relation['rightOfWay']
+        delete relation['sharedMap']
+        relation['aGrantsPassage'] = passage
+        relation['bGrantsPassage'] = passage
+        relation['aPassageEndsAtTick'] = null
+        relation['bPassageEndsAtTick'] = null
+        relation['aSharesMap'] = shared
+        relation['bSharesMap'] = shared
+      }
+    }
+  }
+
+  state['espionage'] = { spies: [], reveals: [] }
+
+  const nextIds = state['nextIds']
+  if (nextIds !== null && typeof nextIds === 'object' && !Array.isArray(nextIds)) {
+    const record = nextIds as Record<string, unknown>
+    record['spy'] = 1
+    record['offer'] = 1
+  }
+
+  state['schemaVersion'] = 4
+
+  return { ...envelope, schemaVersion: 4, state: state as unknown as GameState }
+}
+
+/** Die Felder, die Schritt 3 → 4 anlegt — dieselbe Pruefung wie `ADDED_IN_VERSION_2`. */
+export const ADDED_IN_VERSION_4 = [
+  'schemaVersion',
+  'espionage',
+  'tradeOffers',
+  'spy',
+  'offer',
+  'aGrantsPassage',
+  'bGrantsPassage',
+  'aPassageEndsAtTick',
+  'bPassageEndsAtTick',
+  'aSharesMap',
+  'bSharesMap',
+] as const
+
+/**
+ * Die Schluessel, die Schritt 3 → 4 **entfernt** — die erste Migration dieses Projekts,
+ * die etwas wegnimmt.
+ *
+ * Bis Stufe 3 kam ein Schritt mit `ADDED_IN_...` aus: der Differenztest strich die neuen
+ * Felder auf beiden Seiten und verlangte Gleichheit. Eine Umbenennung ist aber kein
+ * Hinzufuegen — ohne diese Liste haette der Test hier keine Wahl, als die Differenz
+ * ungeprueft hinzunehmen, und genau das soll er nicht.
+ */
+export const REMOVED_IN_VERSION_4 = ['rightOfWay', 'sharedMap'] as const
+
 const MIGRATIONS: Record<number, Migration> = {
   1: toVersion2,
   2: toVersion3,
+  3: toVersion4,
 }
 
 /** Die hoechste Stufe, fuer die ein Schritt eingetragen ist. */

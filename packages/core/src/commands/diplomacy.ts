@@ -1,6 +1,6 @@
 import { emit } from '../events/emit'
 import { relationKey } from '../state/create'
-import type { GameState, PlayerId } from '../state/types'
+import type { GameState, PlayerId, Relation } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type DiplomacyCommand } from './types'
 
@@ -15,6 +15,27 @@ import { fail, ok, type DiplomacyCommand } from './types'
 
 export function findRelation(state: GameState, a: PlayerId, b: PlayerId) {
   return state.diplomacy.relations[relationKey(a, b)]
+}
+
+/**
+ * Durchmarsch in **beiden** Richtungen setzen — vorlaeufig, und mit Ansage (T-M17-03).
+ *
+ * Bis Stufe 3 war das Recht ein symmetrisches Feld; dieser Schritt richtet den *Zustand*,
+ * nicht das *Verhalten*. Wer hier eine Richtung weglaesst, aendert die Partie mitten in
+ * einer Migrationsaufgabe — dann verschoeben sich die Golden-Master aus zwei Gruenden
+ * zugleich, und keiner waere mehr vom anderen zu trennen. Die Richtung ist T-M17-04.
+ */
+function setPassageBothWays(relation: Relation, value: boolean): void {
+  relation.aGrantsPassage = value
+  relation.bGrantsPassage = value
+  relation.aPassageEndsAtTick = null
+  relation.bPassageEndsAtTick = null
+}
+
+/** Kartenfreigabe in beiden Richtungen — aus demselben Grund wie `setPassageBothWays`. */
+function setMapBothWays(relation: Relation, value: boolean): void {
+  relation.aSharesMap = value
+  relation.bSharesMap = value
 }
 
 /** Offers waiting for an answer, so acceptance is a real second step. */
@@ -109,8 +130,8 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
       case 'acceptAlliance': {
         relation.state = 'alliance'
         relation.sinceTick = draft.tick
-        relation.sharedMap = true
-        relation.rightOfWay = true
+        setMapBothWays(relation, true)
+        setPassageBothWays(relation, true)
         draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => offer.kind !== 'alliance' || offer.to !== command.playerId)
         emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
           playerId: command.playerId,
@@ -123,8 +144,8 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
       case 'breakAlliance': {
         relation.state = 'peace'
         relation.sinceTick = draft.tick
-        relation.sharedMap = false
-        relation.rightOfWay = false
+        setMapBothWays(relation, false)
+        setPassageBothWays(relation, false)
         // Breaking a pact costs standing, even without a shot fired.
         draft.players[command.playerId]!.reputation -= ctx.rules.constants.surpriseAttackReputationLoss
         emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
@@ -136,10 +157,10 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         break
       }
       case 'grantRightOfWay':
-        relation.rightOfWay = true
+        setPassageBothWays(relation, true)
         break
       case 'shareMap':
-        relation.sharedMap = true
+        setMapBothWays(relation, true)
         break
     }
   },

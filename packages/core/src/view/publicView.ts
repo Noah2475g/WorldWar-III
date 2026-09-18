@@ -1,8 +1,9 @@
 import { armyHp } from '../state/army'
-import { relationKey } from '../state/create'
+import { grantsPassage, relationKey, sharesMap } from '../state/create'
 import type {
   ArmyId,
   BuildingKey,
+  DiplomaticOffer,
   DiplomaticState,
   GameState,
   PlayerId,
@@ -197,6 +198,17 @@ export interface PublicView {
     score: number
     reputation: Fixed
   }[]
+  /**
+   * Meine Beziehungen. **Die Feldnamen `rightOfWay` und `sharedMap` bleiben in T-M17-03
+   * absichtlich stehen**, obwohl der Zustand seine Felder gerichtet fuehrt: dieser Schritt
+   * ist die Migration, und solange jeder Schreiber beide Richtungen setzt, sagt ein Feld
+   * je Beziehung dieselbe Wahrheit wie zwei. T-M17-04 benennt sie in `passageGranted`,
+   * `passageReceived`, `passageEndsAtTick`, `mapShared` und `mapReceived` um — dann, und
+   * erst dann, gibt es zwei verschiedene Antworten zu zeigen.
+   *
+   * Gelesen wird schon jetzt gerichtet, naemlich in der Richtung „der andere gewaehrt mir":
+   * `rightOfWay` = er laesst mich durch, `sharedMap` = er zeigt mir seine Karte.
+   */
   relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean; sinceTick: Tick }>
   /**
    * Wer mit wem öffentlich Krieg führt (T-M15-05, R-DIP-06/AK2).
@@ -218,7 +230,7 @@ export interface PublicView {
    * Kein Verstoß gegen R-DIP-04: ein Angebot **an mich** ist mein eigenes Wissen. Was
    * andere einander anbieten, steht hier nicht.
    */
-  incomingOffers: { from: PlayerId; kind: 'peace' | 'alliance'; tick: Tick }[]
+  incomingOffers: { from: PlayerId; kind: DiplomaticOffer['kind']; tick: Tick }[]
   provinces: VisibleProvince[]
   armies: VisibleArmy[]
   /**
@@ -244,7 +256,7 @@ export function visibleProvinces(state: GameState, playerId: PlayerId): Set<Prov
   for (const other of state.playerOrder) {
     if (other === playerId) continue
     const relation = state.diplomacy.relations[relationKey(playerId, other)]
-    if (relation?.sharedMap || relation?.state === 'alliance') allies.add(other)
+    if (sharesMap(state, other, playerId) || relation?.state === 'alliance') allies.add(other)
   }
 
   for (const id of state.provinceOrder) {
@@ -378,8 +390,8 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     if (!relation) continue
     relations[other] = {
       state: relation.state,
-      rightOfWay: relation.rightOfWay,
-      sharedMap: relation.sharedMap,
+      rightOfWay: grantsPassage(state, other, playerId),
+      sharedMap: sharesMap(state, other, playerId),
       // Seit wann dieser Zustand gilt. Der Krieg hat ein Anfangsdatum, sonst kann
       // niemand fragen, ob er sich festgefahren hat (R-DIP-06/AK4).
       sinceTick: relation.sinceTick,

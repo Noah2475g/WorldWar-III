@@ -1,4 +1,14 @@
-import { HASH_OMIT_KEYS, MemoryStorage, createInitialState, type GameConfig, type GameState, type PublicView } from '@worldwar/core'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import {
+  HASH_OMIT_KEYS,
+  MemoryStorage,
+  SCHEMA_VERSION,
+  createInitialState,
+  type GameConfig,
+  type GameState,
+  type PublicView,
+} from '@worldwar/core'
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -11,6 +21,7 @@ import {
   loadTimeline,
   manualSlotName,
   recordTimelineDay,
+  resumeStateFor,
   saveTimeline,
   saveTo,
   timelineName,
@@ -86,6 +97,53 @@ describe('R-GAME-03 Speichern und Laden aus der Oberflaeche', () => {
     const result = await loadFrom(storage, 'gibt-es-nicht')
 
     expect(result.ok).toBe(false)
+  })
+})
+
+/**
+ * R-GAME-09/AK1 von der Seite des Spielers aus (T-M17-03).
+ *
+ * Der Kern belegt die Migration an `save-v3.json` (`migration-v3.test.ts`). Was er **nicht**
+ * belegt, ist der Weg, den ein Spieler wirklich geht: seinen Stand aus einem Fach laden und
+ * zu zweit weiterspielen. Genau dort endete die Reise bis zum 2026-09-18 an einer Meldung
+ * statt an einer Partie — `loadFrom` uebersetzt `UnsupportedSaveVersion` in
+ * „aus einer anderen Fassung", und `resumeStateFor` macht daraus ein stilles `null`.
+ *
+ * **Faellt ohne die Migration**, und zwar in beiden Zusicherungen: nimm `3: toVersion4` aus
+ * `MIGRATIONS`, und aus dem geladenen Stand wird die Fassungsmeldung.
+ */
+describe('R-GAME-09/AK1 Ein Stand der Stufe 3 aus einem Fach des Spielers', () => {
+  const V3 = readFileSync(
+    fileURLToPath(new URL('../../../../packages/core/test/golden/save-v3.json', import.meta.url)),
+    'utf8',
+  )
+
+  it('laedt ihn weiter, statt ihn als andere Fassung abzuweisen', async () => {
+    expect(JSON.parse(V3).schemaVersion, 'der eingefrorene Stand ist nicht mehr Stufe 3').toBe(3)
+    await storage.write(manualSlotName(0), V3)
+
+    const result = await loadFrom(storage, manualSlotName(0))
+
+    expect(result.ok, result.ok ? '' : result.message).toBe(true)
+    if (result.ok) {
+      expect(result.state.schemaVersion).toBe(SCHEMA_VERSION)
+      expect(result.state.espionage).toEqual({ spies: [], reveals: [] })
+      // Der gewaehrte Durchmarsch des eingefrorenen Standes ist noch da, in beiden Richtungen.
+      const gewaehrt = Object.values(result.state.diplomacy.relations).filter(
+        (relation) => relation.aGrantsPassage && relation.bGrantsPassage,
+      )
+      expect(gewaehrt.length, 'der uebernommene Durchmarsch fehlt').toBeGreaterThan(0)
+    }
+  })
+
+  it('nimmt ihn auch fuer die Wiederaufnahme zu zweit an (R-MP-13)', async () => {
+    await storage.write(manualSlotName(0), V3)
+
+    const stand = await resumeStateFor(storage, 24)
+
+    expect(stand, 'die Wiederaufnahme sieht einen Stand der Stufe 3 als nicht vorhanden').not.toBeNull()
+    expect(stand!.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(stand!.tick).toBe(JSON.parse(V3).savedAtTick)
   })
 })
 

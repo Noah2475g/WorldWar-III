@@ -1,5 +1,5 @@
 import { emit } from '../events/emit'
-import { relationKey } from '../state/create'
+import { grantsPassage, relationKey } from '../state/create'
 import type { Fixed } from '@worldwar/shared'
 import type { GameState, PlayerId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
@@ -22,7 +22,10 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
 
     const relation = draft.diplomacy.relations[relationKey(army.owner, province.owner)]
     if (!relation || relation.state === 'war') continue
-    if (relation.rightOfWay || relation.state === 'alliance') continue
+    // Gerichtet gelesen seit Stufe 4: der Gast ist die Armee, der Gewaehrende der Besitzer
+    // der Provinz. Solange jeder Schreiber beide Richtungen setzt (T-M17-03), ist das
+    // dieselbe Antwort wie das alte symmetrische `rightOfWay`; T-M17-04 trennt sie.
+    if (grantsPassage(draft, province.owner, army.owner) || relation.state === 'alliance') continue
 
     // No declaration, but boots on foreign soil: war starts immediately and costs
     // standing. Forbidding the move outright would remove the interesting choice.
@@ -57,8 +60,16 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
       relation.state = 'war'
       relation.sinceTick = draft.tick
       relation.warEffectiveAtTick = null
-      relation.rightOfWay = false
-      relation.sharedMap = false
+      // Beide Richtungen, weil Stufe 3 hier ein symmetrisches Feld loeschte: der Krieg
+      // nimmt genau so viel weg wie vorher, nicht mehr und nicht weniger. (D29.1 sagt,
+      // ein Krieg loesche „nur den Durchmarsch" — er loescht seit je auch die Karte;
+      // die Frage gehoert nach T-M17-04, siehe PROBLEME.md M17-3.)
+      relation.aGrantsPassage = false
+      relation.bGrantsPassage = false
+      relation.aPassageEndsAtTick = null
+      relation.bPassageEndsAtTick = null
+      relation.aSharesMap = false
+      relation.bSharesMap = false
 
       const [a, b] = key.split('|') as [PlayerId, PlayerId]
       emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
