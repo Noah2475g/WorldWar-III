@@ -245,3 +245,82 @@ describe('R-MP-05/AK1 Die reine Mechanik, ohne Maschine daneben', () => {
     expect(a.pollClock(999_999)).toEqual(NO_PAUSE)
   })
 })
+
+/**
+ * Wer den Hinweis ausgeloest hat (T-M39-10, Befund MP-4).
+ *
+ * `notice` allein reicht der Oberflaeche nicht: nach einer Ablehnung steht auf BEIDEN
+ * Rechnern `'declined'`, und der Antragsteller soll „Ihr Mitspieler moechte
+ * weiterspielen" lesen, waehrend der Ablehnende gar nichts lesen soll — er weiss es. Der
+ * Antrag, an dem sich das ablesen liesse, ist in genau diesem Augenblick geloescht.
+ *
+ * Geprueft wird an ZWEI Maschinen und nicht an einer: dass die Zuordnung auf beiden
+ * Seiten stimmt, ist der ganze Punkt des Feldes.
+ */
+describe('T-M39-10 Der Hinweis der Pause traegt, wer ihn ausgeloest hat', () => {
+  it('nennt beim Antrag den Antragsteller — auf beiden Rechnern', () => {
+    const { a, b } = paar()
+    const antrag = a.requestPause(0)
+    b.receivePause('p1', antrag, 0)
+
+    expect(a.pause.noticeBy).toBe('p1')
+    expect(b.pause.noticeBy).toBe('p1')
+  })
+
+  it('nennt bei der Ablehnung den Ablehnenden — und der ist auf beiden Seiten derselbe', () => {
+    const { a, b } = paar()
+    const antrag = a.requestPause(0)
+    b.receivePause('p1', antrag, 0)
+    const nein = b.answerPause(false, 10)
+    a.receivePause('p2', nein, 10)
+
+    // Beim Antragsteller ist es der andere, beim Ablehnenden er selbst — genau daran
+    // entscheidet die Oberflaeche, wer den Satz zu sehen bekommt.
+    expect(a.pause.noticeBy).toBe('p2')
+    expect(b.pause.noticeBy).toBe('p2')
+    expect(a.pause.request, 'ohne noticeBy waere hier nichts mehr abzulesen').toBeNull()
+  })
+
+  it('nennt bei der Zustimmung den Zustimmenden', () => {
+    const { a, b } = paar()
+    const antrag = a.requestPause(0)
+    b.receivePause('p1', antrag, 0)
+    const ja = b.answerPause(true, 10)
+    a.receivePause('p2', ja, 10)
+
+    expect(a.pause.noticeBy).toBe('p2')
+    expect(b.pause.noticeBy).toBe('p2')
+  })
+
+  it('nennt beim Verfallen den, der den Antrag gestellt hatte', () => {
+    const { a, b } = paar()
+    const antrag = b.requestPause(0)
+    a.receivePause('p2', antrag, 0)
+
+    a.pollClock(PAUSE_REQUEST_TIMEOUT_MS)
+    b.pollClock(PAUSE_REQUEST_TIMEOUT_MS)
+
+    expect(a.pause.notice).toBe('expired')
+    expect(a.pause.noticeBy).toBe('p2')
+    expect(b.pause.noticeBy).toBe('p2')
+  })
+
+  it('nennt beim Fortsetzen den, der fortgesetzt hat — und danach niemanden', () => {
+    const { a, b } = paar()
+    const antrag = a.requestPause(0)
+    b.receivePause('p1', antrag, 0)
+    const ja = b.answerPause(true, 10)
+    a.receivePause('p2', ja, 10)
+
+    const weiter = a.resume(1_000)
+    b.receivePause('p1', weiter, 1_000)
+    expect(a.pause.notice).toBe('resuming')
+    expect(a.pause.noticeBy).toBe('p1')
+    expect(b.pause.noticeBy).toBe('p1')
+
+    // Die drei Sekunden sind um: die Uhr hat es getan, nicht ein Spieler.
+    a.pollClock(1_000 + RESUME_LEAD_MS)
+    expect(a.pause.notice).toBe('resumed')
+    expect(a.pause.noticeBy).toBeNull()
+  })
+})

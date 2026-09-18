@@ -2395,4 +2395,175 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
     expect(screen.getByRole('alert')).toBeTruthy()
   })
+
+  /**
+   * Die fuenf Saetze des Pausenvertrags, auf dem Bildschirm (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Sie lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am 2026-09-14
+   * am laufenden Programm: der Gastgeber stellt einen Pausenantrag — seine Kopfleiste
+   * aendert sich nicht; der Gast lehnt ab — es aendert sich wieder nichts. Wer den Antrag
+   * stellte, konnte einen gestellten Antrag nicht von einem verschluckten Klick
+   * unterscheiden.
+   *
+   * Geprueft wird an der **ganzen Anwendung** und nicht an der Kopfleiste mit
+   * handgebauten Eigenschaften: die Projektlehre „gruen im Test, tot im Browser" stammt
+   * genau aus dieser Ecke — die Tempo-Sperre war gebaut, geprueft und nie sichtbar. Hier
+   * haengt der Satz am wirklich gerenderten Baum, getrieben von `pause.ts`.
+   *
+   * Und beide Seiten, denn die Saetze sind nicht symmetrisch: „Ihr Mitspieler moechte
+   * weiterspielen" gehoert dem Antragsteller, und der Ablehnende soll ihn NICHT lesen.
+   */
+  describe('R-MP-05 Der Pausenvertrag sagt, was er tut', () => {
+    const GESTELLT = 'Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden.'
+    const ABGELEHNT = 'Ihr Mitspieler möchte weiterspielen.'
+    const VERFALLEN = 'Der Pausenantrag ist verfallen.'
+    const STEHT = 'Die Partie steht. Fortsetzen darf jeder allein.'
+    const WEITER = 'Die Partie läuft in drei Sekunden weiter.'
+
+    /** Antrag stellen und ihn beim Gegenueber ankommen lassen. */
+    const beantragen = () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pause beantragen' }))
+      warte(100)
+    }
+
+    it('zeigt dem Antragsteller, dass sein Antrag steht — und nimmt es mit der Antwort zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      expect(screen.queryByText(GESTELLT), 'der Satz stand schon vor dem Antrag').toBeNull()
+
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      expect(screen.queryByText(GESTELLT), 'der Satz blieb nach der Antwort stehen').toBeNull()
+    })
+
+    it('zeigt den eigenen Antrag nicht auch noch als Dialog — der gehoert dem Gegenueber', () => {
+      zuZweit()
+      warte(400)
+      beantragen()
+
+      // Der Dialog mit „Pause zulassen"/„Weiterspielen" ist die Frage AN den anderen.
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass abgelehnt wurde', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      // In der Meldezeile und nicht in der Kopfleiste: ein Ereignis, kein Zustand — dort
+      // stuende es sonst, bis jemand wieder eine Pause beantragt.
+      const meldung = screen.getByText(ABGELEHNT)
+      expect(meldung.className).toMatch(/notice--info/)
+    })
+
+    it('sagt dem Ablehnenden nichts ueber sich selbst', () => {
+      // Die andere Seite derselben Nachricht: hier hat der Bildschirm gerade selbst
+      // abgelehnt. „Ihr Mitspieler moechte weiterspielen" waere hier schlicht falsch.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit' })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Weiterspielen' }))
+      warte(100)
+
+      expect(screen.queryByText(ABGELEHNT)).toBeNull()
+      expect(screen.queryByText(GESTELLT)).toBeNull()
+      expect(screen.queryByText(STEHT)).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass sein Antrag verfallen ist', () => {
+      zuZweit({ peerLaeuft: false })
+      warte(400)
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+      expect(screen.queryByText(GESTELLT), 'der Antrag stand nach dem Verfallen noch').toBeNull()
+    })
+
+    it('sagt auch dem Gefragten, dass der Antrag verfallen ist — statt den Dialog wortlos wegzunehmen', () => {
+      // R-MP-05/AK3: beide erfahren es. Ohne diesen Satz verschwaende dem Gefragten der
+      // Dialog unter den Haenden, und er wuesste nicht, ob er ihn weggeklickt hat.
+      const { leitung, peer } = zuZweit({ peerLaeuft: false })
+      warte(400)
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+    })
+
+    it('sagt, dass die Partie steht, sobald zugestimmt wurde', () => {
+      const { leitung, peer, meine } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      expect(meine.status, 'die Partie stand gar nicht').toBe('paused')
+      // Neben dem Knopf, der es beendet — und als role="status", damit ein
+      // Vorleseprogramm den Halt mitbekommt und nicht nur der, der hinsieht.
+      const satz = screen.getByText(STEHT)
+      expect(satz.getAttribute('role')).toBe('status')
+      expect(screen.getByRole('button', { name: 'Fortsetzen' })).toBeTruthy()
+    })
+
+    it('kuendigt das Fortsetzen an und nimmt die Ankuendigung nach drei Sekunden zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Fortsetzen' }))
+      warte(100)
+
+      expect(screen.getByText(WEITER)).toBeTruthy()
+      // Waehrend des Vorlaufs steht die Partie noch — trotzdem gilt der genauere Satz.
+      expect(screen.queryByText(STEHT)).toBeNull()
+
+      warte(3000)
+
+      expect(screen.queryByText(WEITER), 'die Ankuendigung blieb stehen').toBeNull()
+      expect(screen.queryByText(STEHT), 'die Partie stand nach dem Vorlauf noch').toBeNull()
+    })
+
+    it('zeigt im Einzelspieler keinen einzigen dieser Saetze', () => {
+      // Der Pausenvertrag ist eine Sache zu zweit. Allein ist die Pause eine Raste.
+      startGame()
+      fireEvent.keyDown(window, { key: ' ' })
+
+      for (const satz of [GESTELLT, ABGELEHNT, VERFALLEN, STEHT, WEITER]) {
+        expect(screen.queryByText(satz), satz).toBeNull()
+      }
+      expect(screen.queryByRole('button', { name: 'Pause beantragen' })).toBeNull()
+    })
+  })
 })

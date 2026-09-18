@@ -49,10 +49,28 @@ export interface PauseState {
   /** Wann sie wieder läuft (Wanduhr); `null` heißt: kein Fortsetzen angekündigt. */
   resumeAt: number | null
   notice: PauseNotice | null
+  /**
+   * **Wessen** Tun den Hinweis ausgelöst hat (T-M39-10, Befund MP-4).
+   *
+   * Ohne dieses Feld ist `notice: 'declined'` auf beiden Rechnern dasselbe — und der Satz
+   * dazu ist es nicht: „Ihr Mitspieler möchte weiterspielen" gehört dem Antragsteller und
+   * wäre bei dem, der eben abgelehnt hat, schlicht falsch. Der Antrag, an dem man das
+   * sonst ablesen könnte, ist in genau diesem Augenblick weg (`request: null`).
+   *
+   * Beim Verfallen trägt es den, der den Antrag gestellt hatte: dort gibt es kein Tun,
+   * nur eine abgelaufene Frist — und beide Seiten erfahren davon (R-MP-05/AK3).
+   */
+  noticeBy: PlayerId | null
 }
 
 /** Eine laufende Partie ohne offenen Antrag. */
-export const NO_PAUSE: PauseState = { request: null, pausedFrom: null, resumeAt: null, notice: null }
+export const NO_PAUSE: PauseState = {
+  request: null,
+  pausedFrom: null,
+  resumeAt: null,
+  notice: null,
+  noticeBy: null,
+}
 
 /** Steht die Partie bei diesem Tick? */
 export function isPausedAt(state: PauseState, tick: number): boolean {
@@ -115,19 +133,27 @@ export function applyPause(
         ...state,
         request: { by: context.by, at: context.at, fromTick: message.abTick },
         notice: 'requested',
+        noticeBy: context.by,
       }
 
     case 'ja':
-      return { ...state, request: null, pausedFrom: message.abTick, resumeAt: null, notice: 'accepted' }
+      return {
+        ...state,
+        request: null,
+        pausedFrom: message.abTick,
+        resumeAt: null,
+        notice: 'accepted',
+        noticeBy: context.by,
+      }
 
     case 'nein':
-      return { ...state, request: null, notice: 'declined' }
+      return { ...state, request: null, notice: 'declined', noticeBy: context.by }
 
     case 'weiter':
       // Drei Sekunden Vorlauf, und beide sehen sie kommen. Dass die Wanduhren der beiden
       // Rechner dabei um Millisekunden auseinanderliegen, macht nichts: der Gleichschritt
       // wartet ohnehin auf den Langsameren.
-      return { ...state, resumeAt: context.at + RESUME_LEAD_MS, notice: 'resuming' }
+      return { ...state, resumeAt: context.at + RESUME_LEAD_MS, notice: 'resuming', noticeBy: context.by }
   }
 }
 
@@ -143,11 +169,12 @@ export function pollPause(state: PauseState, at: number): PauseState {
   if (next.request && at - next.request.at >= PAUSE_REQUEST_TIMEOUT_MS) {
     // Verfallen — und **beide** erfahren es (R-MP-05/AK3): beide Seiten rechnen dieselbe
     // Frist auf demselben Antrag, also fällt er auf beiden Rechnern von selbst.
-    next = { ...next, request: null, notice: 'expired' }
+    next = { ...next, request: null, notice: 'expired', noticeBy: next.request.by }
   }
 
   if (next.resumeAt !== null && at >= next.resumeAt) {
-    next = { ...next, pausedFrom: null, resumeAt: null, notice: 'resumed' }
+    // Die Uhr hat es getan und niemand sonst — deshalb steht hier kein Platz.
+    next = { ...next, pausedFrom: null, resumeAt: null, notice: 'resumed', noticeBy: null }
   }
 
   return next

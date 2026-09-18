@@ -1015,6 +1015,51 @@ export function App(props: AppProps) {
     },
   })
 
+  /**
+   * Die Pause, wie sie der Spieler sieht (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Fuenf Saetze lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am
+   * 2026-09-14 am Bildschirm: wer eine Pause beantragte, sah weder, dass sein Antrag
+   * steht, noch dass er abgelehnt wurde — die Kopfleiste aenderte sich nicht.
+   *
+   * **Zwei Sorten Satz, zwei Orte.** Was STEHT, gehoert neben den Knopf, der es beendet:
+   * "Ihr Pausenantrag ist gestellt", "Die Partie steht", "Die Partie laeuft in drei
+   * Sekunden weiter" — jeder von ihnen faellt mit dem Zustand weg, der ihn traegt, ohne
+   * dass die Huelle sich etwas merken muesste. Was GESCHEHEN ist — abgelehnt, verfallen —
+   * ist ein Ereignis und gehoert in die Meldezeile, in der schon "Zu zweit haelt niemand
+   * allein an" steht (`header.pauseNeedsConsent`). Ein Ereignis in der Kopfleiste bliebe
+   * dort stehen, bis jemand wieder eine Pause beantragt.
+   *
+   * Die Reihenfolge ist nicht beliebig: waehrend der drei Sekunden Vorlauf steht die
+   * Partie noch, und "laeuft gleich weiter" ist die genauere von zwei wahren Auskuenften.
+   */
+  const pauseNotice = useMemo<string | null>(() => {
+    if (!netplay.active) return null
+    if (netplay.pause.resumeAt !== null) return t('netplay.resuming')
+    if (netplay.status === 'paused') return t('netplay.paused')
+    // Nur der eigene Antrag: den fremden traegt der Dialog mit den zwei Knoepfen.
+    if (netplay.pause.request && netplay.pause.request.by === viewerId) return t('netplay.pauseSent')
+    return null
+  }, [netplay.active, netplay.pause, netplay.status, viewerId])
+
+  const pauseKind = netplay.pause.notice
+  const pauseBy = netplay.pause.noticeBy
+  useEffect(() => {
+    if (!netplay.active) return
+    if (pauseKind === 'declined' && pauseBy !== viewerId) {
+      // "Ihr Mitspieler moechte weiterspielen" gehoert dem Antragsteller. Wer eben selbst
+      // abgelehnt hat, weiss es und bekaeme einen Satz ueber sich selbst zu lesen.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseDeclined') })
+    } else if (pauseKind === 'expired') {
+      // Beide erfahren es (R-MP-05/AK3) — auch der Gefragte, dem sonst nur wortlos der
+      // Dialog unter den Haenden verschwaende.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseExpired') })
+    } else if (pauseKind === 'requested') {
+      // Ein neuer Antrag loescht die Antwort auf den alten.
+      dispatch({ type: 'clearNotice' })
+    }
+  }, [netplay.active, pauseKind, pauseBy, viewerId])
+
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
@@ -1903,6 +1948,9 @@ export function App(props: AppProps) {
         waitingForPeer={netplay.waiting}
         peerLost={netplay.lost && !peerLostDismissed}
         paused={netplay.status === 'paused'}
+        // Die fuenf Saetze aus M37 werden sichtbar (T-M39-10, Befund MP-4); drei davon
+        // stehen hier, die zwei Ereignisse in der Meldezeile.
+        pauseNotice={pauseNotice}
         {...(netplay.active
           ? {
               onPauseRequest: netplay.requestPause,

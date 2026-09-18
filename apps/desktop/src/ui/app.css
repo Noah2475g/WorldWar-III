@@ -1091,6 +1091,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Was die Pause gerade tut (T-M39-10, Befund MP-4). Gedämpft und nicht in Warnfarbe:
+   daneben steht der Knopf, mit dem man es beendet — das ist eine Auskunft und keine
+   Lage, über die jemand entscheiden müsste. */
+.clock__pause {
+  color: var(--ink-soft);
+}
+
 .action {
   display: flex;
   flex-direction: column;
