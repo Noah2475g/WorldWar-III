@@ -3230,6 +3230,20 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Fertig wenn:** der Bericht steht und `save-v3.json` eingefroren ist — vor jeder
   M17-Änderung, mit mindestens einer gewährten Durchmarsch-, einer geteilten Karte und einem
   offenen Friedensangebot. Ist die Zahl der Überfälle null, steht das so im Bericht (B6).
+- **Erledigt am 2026-09-18:** gemessen auf `8bda869` (`main` nach PR #8, vor jeder
+  M17-Änderung), zweimal gefahren und zeilengleich (64 s). **13 Überfälle ohne
+  Kriegserklärung** bei 15 Kriegen — 10 mit Ziel im Land des Opfers, **3 auf dem Weg**; nur
+  diese drei kann ein Antrag verhindern, B6 ist damit gemessen und nicht null. **Keine**
+  Durchmarsch- und **keine** Kartenfreigabe, kein Bündnis in 200 Tagen. Drei abgelehnte
+  KI-Befehle, alle `RECRUIT:INSUFFICIENT_RESOURCES`. **Sold-Anker 10153** (5 % von 203078,
+  dem Median des Brutto-Geldertrags je Spieltag über acht lebende Mächte am Ende von Tag 30;
+  Festkomma, 1000 = 1 Geld; zwei weitere Startzahlen: 10159 und 10256). Bestandssummen an
+  Tag 200 im Bericht, Kohle 33,7 Mio. Gegenprobe mit zweitem Werkzeug: das Integrationstor
+  meldet auf demselben Commit dieselbe Prüfsumme `10950ec5abffd9b7`. `save-v3.json` ist
+  eine gespielte Partie (Weltkarte, Startzahl 1917, 30 Tage, Deutschland als Mensch mit fünf
+  Befehlen) und entsteht aus `apps/headless/test/save-v3-freeze.slow.test.ts` **zeichengleich**;
+  das Rezept gilt nur auf Stufe 3 und wird mit T-M17-03 entfernt. Zwei Befunde in
+  `PROBLEME.md` (M17-1, M17-2).
 
 ### T-M17-03 · Zustand und Migration 3 → 4
 - **Ziel:** alle neuen Felder in einem Schritt, damit sich `tiny-500` in M17 genau einmal

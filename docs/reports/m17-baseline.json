@@ -1,0 +1,371 @@
+{
+  "gemessenAm": "2026-09-18",
+  "gemessenAufCommit": "8bda86970f66ed7c512df2f3cfb4e0ad322ccb9a",
+  "aufgabe": "T-M17-02",
+  "partie": {
+    "karte": "world",
+    "startzahl": 1815,
+    "maechte": 8,
+    "stufen": "easy/normal/hard reihum",
+    "spieltage": 200
+  },
+  "soldAnker": {
+    "definition": "economyOverview(...).money.production je lebender Macht am Ende von Spieltag 30 (Bruttoertrag je Spieltag, vor Armeeunterhalt; Festkomma wie alle Bestaende, 1000 = 1 Geld); Median ueber die Maechte, bei gerader Zahl der abgerundete Mittelwert der beiden mittleren; der Sold-Anker ist 5 % davon, abgerundet (D29.7)",
+    "startzahl": 1815,
+    "spieltag": 30,
+    "tick": 720,
+    "lebendeMaechte": 8,
+    "geldertragJeMacht": {
+      "Vereinigte Staaten": 234491,
+      "Russland": 199846,
+      "China": 456650,
+      "Indien": 448873,
+      "Deutschland": 206311,
+      "Frankreich": 168555,
+      "Vereinigtes Königreich": 143671,
+      "Italien": 156929
+    },
+    "geldbilanzJeMacht": {
+      "Vereinigte Staaten": 217211,
+      "Russland": 123526,
+      "China": 340010,
+      "Indien": 386953,
+      "Deutschland": 138631,
+      "Frankreich": 92235,
+      "Vereinigtes Königreich": 136471,
+      "Italien": 102209
+    },
+    "medianGeldertrag": 203078,
+    "medianGeldbilanz": 137551,
+    "soldAnkerFuenfProzent": 10153,
+    "streuung": [
+      {
+        "startzahl": 1914,
+        "spieltag": 30,
+        "tick": 720,
+        "lebendeMaechte": 8,
+        "geldertragJeMacht": {
+          "Vereinigte Staaten": 234491,
+          "Russland": 199846,
+          "China": 457172,
+          "Indien": 448873,
+          "Deutschland": 176938,
+          "Frankreich": 206551,
+          "Vereinigtes Königreich": 143671,
+          "Italien": 160189
+        },
+        "geldbilanzJeMacht": {
+          "Vereinigte Staaten": 217211,
+          "Russland": 123526,
+          "China": 340532,
+          "Indien": 386953,
+          "Deutschland": 110698,
+          "Frankreich": 131671,
+          "Vereinigtes Königreich": 136471,
+          "Italien": 101149
+        },
+        "medianGeldertrag": 203198,
+        "medianGeldbilanz": 134071,
+        "soldAnkerFuenfProzent": 10159
+      },
+      {
+        "startzahl": 2015,
+        "spieltag": 30,
+        "tick": 720,
+        "lebendeMaechte": 8,
+        "geldertragJeMacht": {
+          "Vereinigte Staaten": 234491,
+          "Russland": 199846,
+          "China": 457172,
+          "Indien": 448873,
+          "Deutschland": 210421,
+          "Frankreich": 180236,
+          "Vereinigtes Königreich": 143671,
+          "Italien": 156469
+        },
+        "geldbilanzJeMacht": {
+          "Vereinigte Staaten": 217211,
+          "Russland": 123526,
+          "China": 339092,
+          "Indien": 386953,
+          "Deutschland": 144181,
+          "Frankreich": 111116,
+          "Vereinigtes Königreich": 136471,
+          "Italien": 104629
+        },
+        "medianGeldertrag": 205133,
+        "medianGeldbilanz": 140326,
+        "soldAnkerFuenfProzent": 10256
+      }
+    ]
+  },
+  "spieltage": 200,
+  "maechte": 8,
+  "ereignisse": 29987,
+  "befehle": 16650,
+  "kriegserklaerungen": 15,
+  "ueberfaelleOhneKriegserklaerung": 13,
+  "ueberfaelleJeTaeter": {
+    "Deutschland": 2,
+    "Frankreich": 3,
+    "Russland": 3,
+    "China": 3,
+    "Italien": 1,
+    "Indien": 1
+  },
+  "ueberfaelleJePaar": {
+    "Deutschland -> Italien": 2,
+    "Frankreich -> Italien": 1,
+    "Frankreich -> Deutschland": 2,
+    "Russland -> China": 2,
+    "China -> Indien": 2,
+    "Italien -> Frankreich": 1,
+    "Indien -> Italien": 1,
+    "China -> Russland": 1,
+    "Russland -> Indien": 1
+  },
+  "ueberfaelleJeArt": {
+    "ziel": 10,
+    "durchmarsch": 3
+  },
+  "ueberfaelleMitLaufenderErklaerung": 0,
+  "ueberfaelleEinzeln": [
+    {
+      "tick": 315,
+      "taeter": "Deutschland",
+      "opfer": "Italien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 347,
+      "taeter": "Frankreich",
+      "opfer": "Italien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 408,
+      "taeter": "Frankreich",
+      "opfer": "Deutschland",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 849,
+      "taeter": "Frankreich",
+      "opfer": "Deutschland",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 969,
+      "taeter": "Deutschland",
+      "opfer": "Italien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 1443,
+      "taeter": "Russland",
+      "opfer": "China",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 1543,
+      "taeter": "China",
+      "opfer": "Indien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 2012,
+      "taeter": "Italien",
+      "opfer": "Frankreich",
+      "erklaerungLief": false,
+      "art": "durchmarsch",
+      "zielBesitzer": "Deutschland",
+      "zielImKrieg": true
+    },
+    {
+      "tick": 2301,
+      "taeter": "Indien",
+      "opfer": "Italien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 2822,
+      "taeter": "Russland",
+      "opfer": "China",
+      "erklaerungLief": false,
+      "art": "durchmarsch",
+      "zielBesitzer": "eigenes Land",
+      "zielImKrieg": false
+    },
+    {
+      "tick": 2907,
+      "taeter": "China",
+      "opfer": "Russland",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    },
+    {
+      "tick": 3218,
+      "taeter": "China",
+      "opfer": "Indien",
+      "erklaerungLief": false,
+      "art": "durchmarsch",
+      "zielBesitzer": "eigenes Land",
+      "zielImKrieg": false
+    },
+    {
+      "tick": 3780,
+      "taeter": "Russland",
+      "opfer": "Indien",
+      "erklaerungLief": false,
+      "art": "ziel",
+      "zielBesitzer": null,
+      "zielImKrieg": false
+    }
+  ],
+  "diplomatieBefehleJeAktion": {
+    "offerPeace": 909,
+    "declareWar": 2,
+    "acceptPeace": 7
+  },
+  "durchmarschBefehle": 0,
+  "kartenfreigabeBefehle": 0,
+  "freigabenAmEnde": {
+    "durchmarsch": 0,
+    "karte": 0,
+    "buendnisse": 0
+  },
+  "freigabenHoechstens": {
+    "durchmarsch": 0,
+    "karte": 0,
+    "buendnisse": 0
+  },
+  "offeneAngeboteAmEnde": 7,
+  "handel": 4637,
+  "bestandssummenTag200": {
+    "food": 35232213,
+    "wood": 24123475,
+    "iron": 23355037,
+    "coal": 33682685,
+    "oil": 20990877,
+    "rare": 15620496,
+    "money": 5318046
+  },
+  "bestandssummenTag200NurLebende": {
+    "food": 35232213,
+    "wood": 24123475,
+    "iron": 23355037,
+    "coal": 33682685,
+    "oil": 20990877,
+    "rare": 15620496,
+    "money": 5318046
+  },
+  "bestandJeMacht": {
+    "Vereinigte Staaten": {
+      "food": 10553542,
+      "wood": 3044802,
+      "iron": 2182310,
+      "coal": 10462449,
+      "oil": 10518592,
+      "rare": 3933633,
+      "money": 963217
+    },
+    "Russland": {
+      "food": 1847609,
+      "wood": 1985177,
+      "iron": 1802314,
+      "coal": 1864057,
+      "oil": 167000,
+      "rare": 1538875,
+      "money": 363452
+    },
+    "China": {
+      "food": 4331763,
+      "wood": 1554819,
+      "iron": 1355015,
+      "coal": 4223793,
+      "oil": 3954690,
+      "rare": 2095527,
+      "money": 702525
+    },
+    "Indien": {
+      "food": 4768116,
+      "wood": 3914786,
+      "iron": 4273643,
+      "coal": 4608463,
+      "oil": 4355232,
+      "rare": 2779811,
+      "money": 1043552
+    },
+    "Deutschland": {
+      "food": 1565935,
+      "wood": 1519872,
+      "iron": 1636057,
+      "coal": 1558939,
+      "oil": 167000,
+      "rare": 1099483,
+      "money": 305017
+    },
+    "Frankreich": {
+      "food": 9071233,
+      "wood": 9194325,
+      "iron": 9168625,
+      "coal": 9405384,
+      "oil": 167000,
+      "rare": 2971580,
+      "money": 793878
+    },
+    "Vereinigtes Königreich": {
+      "food": 1598983,
+      "wood": 1520758,
+      "iron": 1461162,
+      "coal": 156543,
+      "oil": 167000,
+      "rare": 67000,
+      "money": 841505
+    },
+    "Italien": {
+      "food": 1495032,
+      "wood": 1388936,
+      "iron": 1475911,
+      "coal": 1403057,
+      "oil": 1494363,
+      "rare": 1134587,
+      "money": 304900
+    }
+  },
+  "ausgeschieden": [],
+  "abgelehnt": 3,
+  "abgelehntJeCode": {
+    "INSUFFICIENT_RESOURCES": 3
+  },
+  "abgelehntJeBefehlUndCode": {
+    "RECRUIT:INSUFFICIENT_RESOURCES": 3
+  },
+  "zustandOhneKi": "10950ec5abffd9b7"
+}

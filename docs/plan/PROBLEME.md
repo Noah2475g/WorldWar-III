@@ -4170,3 +4170,66 @@ wahr ist; die Zusage „darf ihn technisch nicht können“ ist schon heute geme
 
 **Status:** offen — Frage an Noah. **AK-8 ist davon nicht betroffen**: die sieben Schritte fahren
 „Allein gegen den Rechner“, so wie ein Spieler das ausgelieferte Programm fährt (`docs/reports/packaging.md`).
+
+---
+
+## 2026-09-18 · T-M17-02 · Befund M17-1: B6 ist gemessen — dreizehn Überfälle, drei davon auf dem Weg
+
+**Befund:** Befund B6 (2026-09-13) stand auf „nicht gemessen": ein KI-Marsch kann über das Land
+einer friedlichen dritten Macht führen, und das ist ein Überfall. Der Ausgangswert
+(`docs/reports/m17-baseline.json`, `8bda869`, Weltkarte, acht KI, Startzahl 1815, 200 Spieltage)
+zählt **13 Überfälle ohne Kriegserklärung bei 15 Kriegen** — die KI erklärt in 200 Tagen nur
+**zweimal** förmlich den Krieg, alle anderen Kriege beginnen mit Stiefeln auf fremdem Boden.
+
+**Eingeordnet je Tick, nicht geschätzt.** Der Messlauf liest unmittelbar nach dem Tick, in dem der
+Überfall fiel, wohin die Armee wollte, die auf fremdem Boden stand:
+
+| Art | Zahl | Bedeutung |
+|---|---|---|
+| `ziel` | 10 | das Marschziel liegt im Land des Opfers — ein Angriff ohne Erklärung |
+| `durchmarsch` | 3 | das Marschziel gehört jemand anderem — das Opfer lag nur auf dem Weg |
+
+Von den drei Durchmärschen führte **einer** zu einem Kriegsgegner (Italien über Frankreich nach
+Deutschland, Tick 2012) und **zwei zurück ins eigene Land** (Russland über China, Tick 2822; China
+über Indien, Tick 3218). In keinem Fall lief eine Kriegserklärung gegen das Opfer.
+
+**Was daraus folgt.** R-AI-09/AK3 („mit Anträgen nicht mehr Überfälle") hat etwas zu messen, aber
+der Hebel ist klein: ein Antrag auf Durchmarsch (T-M17-10) kann höchstens **3 von 13** verhindern.
+Die zehn anderen sind kein Wegproblem, sondern die Art, wie die KI Krieg beginnt — sie marschiert
+einfach los. Das ist kein Auftrag von M17 und wird hier nur festgehalten, damit T-M17-15 die
+Zahl 13 nicht für den Erfolgsmaßstab des Antrags hält. Dazu: **keine** Durchmarsch- und **keine**
+Kartenfreigabe und kein Bündnis in 200 Tagen (909 Friedensangebote, 7 angenommen) — die
+Felder, die T-M17-03 umbaut, sind in einer reinen KI-Partie heute nie gesetzt.
+
+**Status:** gemessen; offen für T-M17-10 (Antrag) und T-M17-15 (Vergleich gegen 3, nicht gegen 13).
+
+---
+
+## 2026-09-18 · T-M17-02 · Befund M17-2: `ai-integration.json` ist seit fünf Tagen veraltet, und niemand merkt es
+
+**Befund:** Der Messlauf des Ausgangswerts lag als unversionierter Rest eines abgebrochenen
+Agenten im Baum. Sein Kopfkommentar behauptete, die Prüfsumme `zustandOhneKi` müsse dem Wert in
+`docs/reports/ai-integration.json` gleichen — „eine zweite Messung mit einem zweiten Werkzeug,
+ohne einen zweiten Lauf". **Sie gleicht ihm nicht:** der Bericht nennt `e7b0627bff9f7b39`, der
+Messlauf `10950ec5abffd9b7`.
+
+**Nachgesehen statt angenommen.** Der eingecheckte Bericht stammt vom 2026-09-13 (`fcf43cd`).
+Seitdem liegen vierzehn Commits an `packages/core/src`, `packages/ai/src` und `data/rules` auf
+`main` — M35 mit dem Feld `goals`, die Nacharbeiten zu M40, die Marke 350 ‰. Das Integrationstor
+auf `8bda869` neu gefahren (132 s, 21 von 21 grün) meldet **`10950ec5abffd9b7`**, 29 987
+Ereignisse, 16 650 KI-Befehle, 3 Ablehnungen — also genau die Zahlen des Ausgangswerts. Die
+Gleichheit gilt, aber nur **auf demselben Commit gemessen**; gegen den eingecheckten Bericht war
+die Behauptung falsch und wäre beim ersten Nachsehen aufgefallen. Der Kommentar ist berichtigt.
+
+**Der eigentliche Befund dahinter:** `ai-integration.json` steht unter **keinem**
+Frische-Wächter. `GAUGES` deckt den Parameterlauf und das Turnier, `STANCE_SOURCES` den
+Haltungs-Messlauf; das Integrationstor schreibt seinen Bericht bei jedem Lauf neu, aber nichts
+wird rot, wenn er hinter dem Kern zurückbleibt. Wer ihn als Vergleichswert liest, liest den Stand
+vom 2026-09-13.
+
+**Nicht repariert, und warum:** der neu gefahrene Bericht ist zurückgesetzt, nicht eingecheckt —
+T-M17-03 verschiebt die Prüfsumme sofort wieder (neue Zustandsfelder), und T-M17-15 fährt das
+Integrationstor ohnehin als eigene Aufgabe. Ob der Bericht einen Wächter nach dem Muster
+`measuredAtCommit` bekommt, gehört in die M18-Sammelstelle.
+
+**Status:** offen (Wächter); die falsche Behauptung ist berichtigt.
