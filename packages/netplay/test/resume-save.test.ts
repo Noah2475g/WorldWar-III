@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { advanceTicks } from '@worldwar/ai'
-import { createInitialState, parseRules, type GameConfig, type MapData, type Rules } from '@worldwar/core'
+import {
+  SCHEMA_VERSION,
+  createInitialState,
+  parseRules,
+  type GameConfig,
+  type GameState,
+  type MapData,
+  type Rules,
+} from '@worldwar/core'
 import {
   PROBE_TICKS,
   acceptState,
@@ -151,6 +159,24 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
     const falsch = acceptState(angekommen.message, 'etwas-ganz-anderes')
     expect(falsch.ok).toBe(false)
     expect(falsch.ok === false && falsch.reason).toMatch(/verworfen/)
+  })
+
+  it('verwirft einen Stand aus einer anderen Formatstufe — und nennt den Grund (T-M17-03)', () => {
+    // Der Fall aus dem Betrieb: der Gast hat einen aelteren Bau, der Gastgeber uebertraegt
+    // seinen Stand. Bis zum 2026-09-18 haette diese Seite ihn angenommen, wenn die
+    // Pruefsumme passte — und der erste Tick waere an einem Feld gescheitert, das es in der
+    // alten Stufe nicht gibt (`cloneState` liest `espionage`). Geprueft wird deshalb ZUERST
+    // die Stufe, und die Meldung nennt beide Zahlen statt „verstuemmelter Spielstand".
+    const alt = JSON.parse(JSON.stringify(nachDreissig)) as GameState & { schemaVersion: number }
+    alt.schemaVersion = SCHEMA_VERSION - 1
+    const nachricht = parseMessage(JSON.parse(encodeMessage(stateMessage(alt))))
+    expect(nachricht.ok && nachricht.message.kind === 'zustand').toBe(true)
+    if (!nachricht.ok || nachricht.message.kind !== 'zustand') return
+
+    const genommen = acceptState(nachricht.message, stateHash(alt))
+    expect(genommen.ok, 'ein Stand aus einer anderen Stufe wurde angenommen').toBe(false)
+    expect(genommen.ok === false && genommen.reason).toContain(`${SCHEMA_VERSION}`)
+    expect(genommen.ok === false && genommen.reason).toMatch(/Fassungen|Faende|Format/)
   })
 
   it('spielt danach im Gleichschritt weiter, und beide Seiten bleiben gleich', () => {

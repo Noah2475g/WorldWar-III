@@ -1,5 +1,6 @@
 import { advanceTicks } from '@worldwar/ai'
 import {
+  SCHEMA_VERSION,
   createInitialState,
   type GameConfig,
   type GameState,
@@ -402,6 +403,21 @@ export function acceptState(
   message: StateMessage,
   announced: string,
 ): { ok: true; state: GameState } | { ok: false; reason: string } {
+  // **Zuerst die Stufe, dann die Pruefsumme** (T-M17-03). Ein Stand aus einem anderen Bau
+  // hat ohnehin eine andere Pruefsumme — aber die Meldung „passt nicht zu dem, was
+  // angekuendigt war" schickt den Naechsten auf die Suche nach einem verstuemmelten
+  // Spielstand, obwohl in Wahrheit zwei verschiedene Faende des Spiels miteinander reden.
+  // Und der Fall ist nicht theoretisch: ein Stand der Stufe 3 hat kein `espionage`, und
+  // `cloneState` liest es im ersten Tick — aus der falschen Meldung wuerde ein Absturz.
+  const stufe = (message.state as { schemaVersion?: unknown }).schemaVersion
+  if (stufe !== SCHEMA_VERSION) {
+    return {
+      ok: false,
+      reason:
+        `Der uebertragene Stand hat Format ${JSON.stringify(stufe)}, diese Seite spricht ${SCHEMA_VERSION}. ` +
+        'Die beiden Seiten haben verschiedene Faende des Spiels; der Stand wird verworfen.',
+    }
+  }
   const gerechnet = stateHash(message.state)
   if (gerechnet !== announced) {
     return {
