@@ -499,7 +499,8 @@ export const de = {
     truce: 'Waffenstillstand',
     alliance: 'Bündnis',
     rightOfWay: 'Durchmarschrecht',
-    sharedMap: 'Kartenaustausch',
+    // „Austausch" versprach eine Gegenseitigkeit, die es seit T-M17-04 nicht mehr gibt.
+    sharedMap: 'Kartenfreigabe',
     reputation: 'Ansehen',
     noRelations: 'Noch keine Beziehungen.',
     choose: 'Macht wählen',
@@ -923,8 +924,9 @@ export const de = {
       war: 'Offener Krieg: beide Seiten dürfen angreifen und erobern.',
       truce: 'Kampfpause auf Zeit. Vor ihrem Ablauf ist kein neuer Krieg möglich.',
       alliance: 'Gemeinsame Sache: Durchmarsch und Kartenwissen inbegriffen.',
-      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung.',
-      sharedMap: 'Beide sehen, was der andere sieht.',
+      // Seit T-M17-04 gerichtet (R-DIP-08): wer gewährt, darf damit nicht selbst hinein.
+      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung. Umgekehrt gilt es nur, wenn die andere Macht es ebenfalls gewährt.',
+      sharedMap: 'Die andere Macht sieht, was man selbst sieht. Ihre eigene Karte zeigt sie nur, wenn sie sie ebenfalls freigibt.',
     },
   },
 

@@ -1,7 +1,16 @@
-import { RESOURCE_KEYS, type PublicView, type ResourceKey } from '@worldwar/core'
-import { TEST_RULES } from '@worldwar/testkit'
+import {
+  RESOURCE_KEYS,
+  createInitialState,
+  grantsPassage,
+  type Command,
+  type GameConfig,
+  type PublicView,
+  type ResourceKey,
+} from '@worldwar/core'
+import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { diplomacyCommands } from './diplomacy'
+import { advanceTicks } from './loop'
 import { relationship } from './relationship'
 import type { AiContext, Explanation } from './types'
 
@@ -61,7 +70,18 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
     relations: Object.fromEntries(
       powers
         .filter((power) => power.relation)
-        .map((power) => [power.id, { state: power.relation!, rightOfWay: false, sharedMap: false, sinceTick: 0 }]),
+        .map((power) => [
+          power.id,
+          {
+            state: power.relation!,
+            passageGranted: false,
+            passageReceived: false,
+            passageEndsAtTick: { granted: null, received: null },
+            mapShared: false,
+            mapReceived: false,
+            sinceTick: 0,
+          },
+        ]),
     ),
     provinces: [
       {
@@ -346,9 +366,58 @@ describe('R-DIP-06/AK3 Buendnis und Durchmarsch', () => {
 
   it('erwidert gewaehrten Durchmarsch bei gutem Verhaeltnis', () => {
     const view = viewOf(1000, [{ id: 'grosszuegig', score: 1000, relation: 'peace', reputation: 1000 }])
-    view.relations.grosszuegig!.rightOfWay = true
+    view.relations.grosszuegig!.passageReceived = true
 
     expect(actions(view, 'grantRightOfWay')).toEqual(['grosszuegig'])
+  })
+
+  it('erwidert nicht noch einmal, was sie schon gewaehrt hat (Befund B2, erste Haelfte)', () => {
+    // Vorher schickte die KI `grantRightOfWay` jeden Tag, solange das symmetrische Feld stand —
+    // ein Befehl ohne Wirkung, an jedem Spieltag der Partie.
+    const view = viewOf(1000, [{ id: 'grosszuegig', score: 1000, relation: 'peace', reputation: 1000 }])
+    view.relations.grosszuegig!.passageReceived = true
+    view.relations.grosszuegig!.passageGranted = true
+
+    expect(actions(view, 'grantRightOfWay')).toEqual([])
+  })
+
+  it('erwidert nichts, was ihr gar nicht gewaehrt wurde', () => {
+    // Die Richtung zaehlt: dass ich den anderen durchlasse, ist keine Geste von ihm an mich.
+    const view = viewOf(1000, [{ id: 'gast', score: 1000, relation: 'peace', reputation: 1000 }])
+    view.relations.gast!.passageGranted = true
+
+    expect(actions(view, 'grantRightOfWay')).toEqual([])
+  })
+})
+
+/**
+ * Das Verhaeltnis liest die Richtung (T-M17-04, D29.8).
+ *
+ * Bindungen zaehlen, was **der andere** gewaehrt: sein Durchmarsch fuer mich und seine Karte
+ * fuer mich. Was ich ihm gewaehre, ist eine Folge meines Vertrauens und nicht sein Grund — es
+ * mitzuzaehlen hiesse, dass die KI jemanden mehr mag, weil sie ihm selbst etwas gegeben hat.
+ * Verhaltensgleich zu T-M17-03: die Sicht las dort `rightOfWay` schon in der Richtung
+ * „er laesst mich durch".
+ */
+describe('R-DIP-06 Das Verhaeltnis liest Durchmarsch und Karte in ihrer Richtung', () => {
+  const ties = (setup: (relation: PublicView['relations'][string]) => void): number => {
+    const view = viewOf(1000, [{ id: 'x', score: 1000, relation: 'peace', reputation: 500 }])
+    setup(view.relations.x!)
+    return relationship(view, 'x', {}, TEST_RULES).parts.ties
+  }
+
+  it('zaehlt den erhaltenen Durchmarsch und die erhaltene Karte', () => {
+    expect(ties((relation) => (relation.passageReceived = true))).toBe(150)
+    expect(ties((relation) => (relation.mapReceived = true))).toBe(50)
+  })
+
+  it('zaehlt nicht, was sie selbst gewaehrt', () => {
+    expect(
+      ties((relation) => {
+        relation.passageGranted = true
+        relation.mapShared = true
+      }),
+    ).toBe(0)
   })
 })
 
@@ -377,5 +446,56 @@ describe('R-DIP-06/AK4 Ein festgefahrener Krieg endet', () => {
     for (const province of view.provinces) province.occupiedSince = view.tick - TEST_RULES.constants.ticksPerDay
 
     expect(offers(view)).toEqual([])
+  })
+})
+
+/**
+ * Das Erwidern aendert den Zustand, nicht nur die Befehlsliste (T-M17-04, Befund B2, R-DIP-06/AK3).
+ *
+ * Der Test oben „erwidert gewaehrten Durchmarsch" war seit M15 gruen und belegte nichts: er setzte
+ * ein Feld in einer handgebauten Sicht und pruefte den erzeugten Befehl. Im Spiel war das Feld
+ * symmetrisch — wer gewaehrt bekam, hatte damit schon selbst gewaehrt, und der Befehl der KI
+ * aenderte nichts. Hier laeuft deshalb eine echte Partie durch die eine Spielschleife: der
+ * Mensch gewaehrt, die KI denkt, der Kern wendet an — und geprueft wird der **Zustand**.
+ */
+describe('R-DIP-06/AK3 Die KI erwidert einen gewaehrten Durchmarsch im Zustand', () => {
+  const ctx = { map: smallWorld(), rules: TEST_RULES }
+  const CONFIG: GameConfig = {
+    seed: 5,
+    mapId: 'testworld',
+    rulesId: 'default',
+    players: [
+      { name: 'Mensch', kind: 'human', nation: 'Nordland', color: '#0f62bc' },
+      { name: 'KI', kind: 'ai', nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' },
+    ],
+    victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
+  }
+  const grant: Command = { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'grantRightOfWay' }
+  /** Die KI entscheidet Diplomatie einmal je Spieltag; ihr erster Takt faellt in Tick 0, vor die Gewaehrung. */
+  const day = TEST_RULES.constants.ticksPerDay
+
+  it('laesst den Gewaehrenden nach ihrem naechsten Strategietakt selbst durch — und nur dann', () => {
+    // Nach dem ersten Tick steht nur die Gewaehrung des Menschen. Das ist die Haelfte, an der B2
+    // hing: mit dem symmetrischen Feld stand hier schon `true`, und die KI hatte nichts zu tun.
+    const granted = advanceTicks(createInitialState(CONFIG, ctx), 1, ctx, { playerCommands: [grant] })
+    expect(grantsPassage(granted.state, 'p1', 'p2'), 'die Gewaehrung des Menschen fehlt').toBe(true)
+    expect(grantsPassage(granted.state, 'p2', 'p1'), 'die Gegenrichtung stand schon vor der KI').toBe(false)
+
+    // Vier Spieltage: drei Strategietakte der KI nach der Gewaehrung.
+    const later = advanceTicks(granted.state, 4 * day, ctx)
+    expect(grantsPassage(later.state, 'p2', 'p1'), 'die KI hat nicht erwidert').toBe(true)
+    // Genau einmal: danach gewaehrt sie schon, und jeder weitere Befehl waere wirkungslos — bis
+    // T-M17-04 schickte sie ihn an jedem Spieltag.
+    const erwidert = later.applied.filter(
+      ({ command }) => command.type === 'DIPLOMACY' && command.playerId === 'p2' && command.action === 'grantRightOfWay',
+    )
+    expect(erwidert).toHaveLength(1)
+  })
+
+  it('gewaehrt nichts von sich aus, wenn ihr nichts gewaehrt wurde', () => {
+    // Die Gegenprobe: ohne sie waere der Test oben auch gruen, wenn die KI jedem Durchmarsch gaebe.
+    const result = advanceTicks(createInitialState(CONFIG, ctx), 1 + 4 * day, ctx)
+
+    expect(grantsPassage(result.state, 'p2', 'p1')).toBe(false)
   })
 })
