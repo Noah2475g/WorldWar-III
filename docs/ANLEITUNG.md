@@ -324,6 +324,24 @@ Alles ist ohne Maus erreichbar.
 
 ---
 
+## Touch-Bedienung
+
+Auf einem Gerät mit Finger statt Maus schaltet das Spiel von selbst auf Touch-Bedienung
+um. Über die Adresse lässt sich das erzwingen: `?touch=1` schaltet Touch-Bedienung ein,
+`?touch=0` schaltet sie aus.
+
+| Geste | Wirkung |
+|---|---|
+| Tippen | auswählen |
+| Ziehen | Karte verschieben |
+| Zwei Finger | zoomen |
+| Lange drücken | Details |
+
+Im Touch-Betrieb sind alle Bedienelemente mindestens 44x44 Pixel groß, und was sonst nur
+im Tooltip stand — Kosten, Dauer, Sperrgrund — steht sichtbar daneben.
+
+---
+
 ## Die vier Kartenmodi
 
 | Modus | Zeigt |
