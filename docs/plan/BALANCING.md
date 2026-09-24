@@ -371,3 +371,13 @@ mindestens 70 % der Fälle — ein wirkungsloser Schwierigkeitsgrad fällt damit
 > bei **T-M15-05**, wo das Verhältnis die KI steuert und die Stufen erstmals mehr
 > unterscheidet als eine Zahl. Bis dahin gilt: 100 % ist **gemessen, nicht gewollt**, und
 > steht als offener Befund in `PROBLEME.md`.
+
+## Durchmarsch und Angebote (R-DIP-08, D29.7, T-M17-04)
+
+Die ersten beiden Zahlen von M17. Die Handels- und Spionagezahlen aus D29.7 kommen mit ihren
+Aufgaben dazu und werden hier angehängt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `offerLifetimeDays` | 3 | abgeleitet | stand bis T-M17-04 als `3 * ticksPerDay` im Code der Diplomatiephase (Befund B3) und ist unverändert übernommen — eine andere Zahl hätte jedes Friedens- und Bündnisangebot der bisherigen Partien verschoben. Gilt seitdem auch für den Antrag auf Durchmarsch (R-DIP-08/AK5) |
+| `rightOfWayNoticeTicks` | 24 | geschätzt | ein Spieltag: lang genug, dass eine Armee aus dem Grenzsaum wieder hinausmarschieren kann, kurz genug, dass ein Widerruf keine leere Geste ist. Nicht gemessen — in einer reinen KI-Partie gewährt heute niemand Durchmarsch (Befund M17-1), also gibt es nichts zu widerrufen, bis T-M17-10 die KI daran beteiligt. Anlehnung, kein Beleg: der Austritt aus einer Koalition hat im Vorbild einen 24-Stunden-Countdown (Referenz 9.3); im Vorbild ist das ein Tag, hier sind es 24 Ticks |

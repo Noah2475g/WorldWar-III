@@ -518,6 +518,9 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
   // Stellen, und eine davon würde eines Tages vergessen.
   const fremd = !concernsViewer(event, naming.viewer)
   let key = fremd && FOREIGN_TEXTS.has(event.type) ? `${event.type}_FOREIGN` : event.type
+  // Die Kündigung des Durchmarschs ist dieselbe Ereignisart wie die Gewährung (T-M17-04, D29.5),
+  // nur mit `granted: false` — ein eigener Satz am selben Stamm, nach der Konvention der Endungen.
+  if (event.type === 'RIGHT_OF_WAY_CHANGED' && !event.granted) key = `${key}_REVOKED`
 
   const values = valuesFor(event, map, naming)
 

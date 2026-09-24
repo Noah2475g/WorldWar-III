@@ -905,6 +905,8 @@ export function categoryOf(type: string): EventCategory {
   if (/BATTLE|BOMBARD|ARMY|CAPTURED|REVOLTED|CAPITAL/.test(type)) return 'combat'
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
+  // „RIGHT_OF_WAY" enthält kein „WAR" — ohne diese Zeile landete der Durchmarsch (T-M17-04) unter „Sonstiges".
+  if (/RIGHT_OF_WAY/.test(type)) return 'diplomacy'
   return 'other'
 }
 

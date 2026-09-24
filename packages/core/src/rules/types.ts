@@ -235,6 +235,15 @@ export interface RuleConstants {
   goalPopulationSharePermille: number
   /** Anteil an allen Punkten, zweite Marke, in Promille. */
   goalPointShareSecondPermille: number
+
+  // Diplomatie und Handel in M17 (D29.7). Die Spionage haengt ihre Zahlen dahinter an.
+  /**
+   * Wie viele Spieltage ein diplomatisches Angebot oder ein Antrag auf Durchmarsch liegt
+   * (R-DIP-08/AK5, T-M17-04). Bis dahin stand `3` im Code der Phase (Befund B3).
+   */
+  offerLifetimeDays: number
+  /** Kuendigungsfrist des Durchmarschs in Ticks: so lange darf der Gast noch bleiben (R-DIP-08/AK3). */
+  rightOfWayNoticeTicks: number
 }
 
 export interface Rules {

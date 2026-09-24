@@ -256,8 +256,10 @@ export interface Player {
  * durch" und sagt nichts darueber, ob b auch a durchlaesst.
  *
  * **Gelesen wird nie direkt**, sondern durch `grantsPassage(state, grantor, guest)` und
- * `sharesMap(state, owner, viewer)` in `state/create.ts` — die beiden sind die einzigen
- * Stellen, die wissen muessen, welche Haelfte des Schluessels wer ist.
+ * `sharesMap(state, owner, viewer)` in `state/create.ts` — sie und ihre Geschwister dort
+ * (`passageEndsAtTick`, `setPassage`, `expirePassage`, `setMapShared`, T-M17-04) sind die
+ * einzigen Stellen,
+ * die wissen muessen, welche Haelfte des Schluessels wer ist.
  */
 export interface Relation {
   state: DiplomaticState

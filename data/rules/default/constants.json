@@ -72,5 +72,8 @@
   "goalProvinces": 25,
   "goalPointShareFirstPermille": 400,
   "goalPopulationSharePermille": 350,
-  "goalPointShareSecondPermille": 600
+  "goalPointShareSecondPermille": 600,
+  "_diplomacyM17": "M17 Diplomatie und Handel (D29.7, T-M17-04 ff.): Angebotsfrist in Spieltagen, Kuendigungsfrist des Durchmarschs in Ticks. Status in docs/plan/BALANCING.md.",
+  "offerLifetimeDays": 3,
+  "rightOfWayNoticeTicks": 24
 }

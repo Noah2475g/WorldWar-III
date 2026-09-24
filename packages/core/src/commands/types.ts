@@ -118,6 +118,11 @@ export type DiplomacyAction =
   | 'breakAlliance'
   | 'grantRightOfWay'
   | 'shareMap'
+  // Durchmarsch erbitten, annehmen, kuendigen (T-M17-04, R-DIP-08). Die KI gibt sie ab
+  // T-M17-10, die Oberflaeche erreicht sie in T-M17-14.
+  | 'requestRightOfWay'
+  | 'acceptRightOfWay'
+  | 'revokeRightOfWay'
 
 export interface DiplomacyCommand {
   type: 'DIPLOMACY'

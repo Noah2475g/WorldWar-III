@@ -1,9 +1,19 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { runTicks } from '../clock'
 import type { Command } from '../commands/types'
-import { createInitialState, type GameConfig } from '../state/create'
-import type { GameState } from '../state/types'
+import type { GameEvent } from '../events/types'
+import { deserialise } from '../persistence/save'
+import {
+  createInitialState,
+  grantsPassage,
+  passageEndsAtTick,
+  sharesMap,
+  type GameConfig,
+} from '../state/create'
+import type { GameState, MapData } from '../state/types'
 import { step } from '../step'
 import { intelAge } from '../view/intel'
 import { publicView, visibleProvinces } from '../view/publicView'
@@ -274,5 +284,353 @@ describe('R-DIP-06/AK5 Zeit heilt, langsam und in beide Richtungen', () => {
     const b = runTicks(rueckwaerts, TEST_RULES.constants.ticksPerDay, ctx).state
 
     expect(a.diplomacy.grievances).toEqual(b.diplomacy.grievances)
+  })
+})
+
+/**
+ * Durchmarsch und Kartenfreigabe haben eine Richtung (T-M17-04, R-DIP-08, D29.2–D29.6).
+ *
+ * Bis Stufe 3 war beides ein symmetrisches Feld je Paar, und T-M17-03 hat den Zustand
+ * gerichtet, ohne das Verhalten zu aendern: jeder Schreiber setzte beide Richtungen. Hier
+ * wird die Richtung wirksam. Der erste Test ist der Befund B1 selbst — vor dieser Aufgabe
+ * war er rot, weil „ich lasse dich durch" zugleich „ich darf zu dir" hiess.
+ */
+describe('R-DIP-08 Durchmarsch und Kartenfreigabe haben eine Richtung', () => {
+  const infantry = [{ unitKey: 'infantry' as const, hpTotal: 5_000 }]
+  const rejection = (events: readonly GameEvent[]) => events.find((event) => event.type === 'COMMAND_REJECTED')
+  const passageEvent = (events: readonly GameEvent[]) => events.find((event) => event.type === 'RIGHT_OF_WAY_CHANGED')
+
+  describe('AK1 Wer gewaehrt, laesst durch — und darf selbst nicht hinein', () => {
+    it('macht aus dem Einmarsch des Gewaehrenden einen Ueberfall (Befund B1)', () => {
+      // p1 gewaehrt p2. Bis T-M17-04 setzte das auch p2 → p1, und p1 marschierte folgenlos zu p2.
+      const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      expect(grantsPassage(granted, 'p1', 'p2'), 'p1 laesst p2 nicht durch').toBe(true)
+      expect(grantsPassage(granted, 'p2', 'p1'), 'die Gegenrichtung ist mitgesetzt').toBe(false)
+
+      placeArmy(granted, { owner: 'p1', at: 'o3', units: infantry })
+      const result = step(granted, [], ctx)
+
+      expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('war')
+      expect(result.events.find((event) => event.type === 'WAR_DECLARED')).toMatchObject({
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        withoutDeclaration: true,
+      })
+    })
+
+    it('laesst den Gast durch das Gebiet des Gewaehrenden, ohne dass es ein Ueberfall ist', () => {
+      const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      placeArmy(granted, { owner: 'p2', at: 'n3', units: infantry })
+
+      const after = step(granted, [], ctx).state
+      expect(after.diplomacy.relations['p1|p2']!.state).toBe('peace')
+    })
+
+    it('meldet die Gewaehrung beiden — und nur beim ersten Mal', () => {
+      const first = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx)
+      expect(passageEvent(first.events)).toMatchObject({
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        granted: true,
+        effectiveAtTick: 0,
+      })
+      expect([...passageEvent(first.events)!.audience].sort()).toEqual(['p1', 'p2'])
+
+      // Ein zweites „gewaehren" aendert nichts — und erzaehlt deshalb auch nichts.
+      const again = step(first.state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx)
+      expect(passageEvent(again.events)).toBeUndefined()
+      expect(rejection(again.events)).toBeUndefined()
+    })
+  })
+
+  describe('AK2 Der Durchmarsch laesst sich erbitten', () => {
+    it('zeigt den Antrag dem Gefragten und nicht dem Fragenden', () => {
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+
+      expect(publicView(asked, 'p1').incomingOffers).toEqual([{ from: 'p2', kind: 'rightOfWay', tick: 0 }])
+      expect(publicView(asked, 'p2').incomingOffers).toEqual([])
+      // Ein Antrag ist kein Recht.
+      expect(grantsPassage(asked, 'p1', 'p2')).toBe(false)
+    })
+
+    it('gibt mit der Annahme dem Antragsteller das Recht — und nur ihm', () => {
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+      const accepted = step(asked, [diplo('p1', 'p2', 'acceptRightOfWay')], ctx)
+
+      expect(grantsPassage(accepted.state, 'p1', 'p2')).toBe(true)
+      expect(grantsPassage(accepted.state, 'p2', 'p1')).toBe(false)
+      expect(accepted.state.diplomacy.offers).toEqual([])
+      expect(passageEvent(accepted.events)).toMatchObject({ playerId: 'p1', targetPlayerId: 'p2', granted: true })
+    })
+
+    it('nimmt nur den einen Antrag vom Tisch, nicht die der anderen', () => {
+      // Befund B4 in der Art der Durchmarschantraege: `acceptPeace` loescht alle Friedensangebote
+      // an den Annehmenden. Ein Antrag ist eine Bitte eines Einzelnen und wird einzeln beantwortet.
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay'), diplo('p3', 'p1', 'requestRightOfWay')], ctx).state
+      const accepted = step(asked, [diplo('p1', 'p2', 'acceptRightOfWay')], ctx).state
+
+      expect(accepted.diplomacy.offers.map((offer) => `${offer.from}>${offer.to}:${offer.kind}`)).toEqual([
+        'p3>p1:rightOfWay',
+      ])
+    })
+
+    it('lehnt die Annahme ab, wenn kein Antrag vorliegt', () => {
+      const result = step(state, [diplo('p1', 'p2', 'acceptRightOfWay')], ctx)
+
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'kein Angebot' } })
+      expect(grantsPassage(result.state, 'p1', 'p2')).toBe(false)
+    })
+
+    it('lehnt den Antrag im Krieg ab', () => {
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      const result = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx)
+
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'im Krieg' } })
+      expect(result.state.diplomacy.offers).toEqual([])
+    })
+
+    it('lehnt den Antrag ab, solange eine Kriegserklaerung laeuft', () => {
+      const declared = step(state, [diplo('p1', 'p2', 'declareWar')], ctx).state
+      expect(declared.diplomacy.relations['p1|p2']!.state).toBe('peace')
+
+      const result = step(declared, [diplo('p2', 'p1', 'requestRightOfWay')], ctx)
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'Kriegserklärung läuft' } })
+      expect(result.state.diplomacy.offers).toEqual([])
+    })
+
+    it('lehnt den Antrag ab, wenn das Recht schon besteht', () => {
+      const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      const result = step(granted, [diplo('p2', 'p1', 'requestRightOfWay')], ctx)
+
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'bereits gewährt' } })
+    })
+
+    it('laesst einen Antrag, der den Kriegsausbruch ueberlebt hat, nicht mehr annehmen', () => {
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+      asked.diplomacy.relations['p1|p2']!.state = 'war'
+
+      const result = step(asked, [diplo('p1', 'p2', 'acceptRightOfWay')], ctx)
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'im Krieg' } })
+      expect(grantsPassage(result.state, 'p1', 'p2')).toBe(false)
+    })
+
+    it('ersetzt einen wiederholten Antrag, statt ihn zu stapeln', () => {
+      const once = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+      const twice = step(once, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+
+      expect(twice.diplomacy.offers).toEqual([{ from: 'p2', to: 'p1', kind: 'rightOfWay', tick: 1 }])
+    })
+
+    it('raeumt einen Antrag ab, wenn der Gefragte ohnehin gewaehrt', () => {
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+      const granted = step(asked, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+
+      expect(granted.diplomacy.offers).toEqual([])
+    })
+  })
+
+  describe('AK3 Ein Widerruf wirkt nach der Frist', () => {
+    /** p1 gewaehrt p2, und eine Armee von p2 steht in n3 — im Land von p1. */
+    function guestInLand(): GameState {
+      const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      placeArmy(granted, { owner: 'p2', at: 'n3', units: infantry })
+      return granted
+    }
+
+    it('ist vor Fristende kein Ueberfall und danach schon — und beide erfahren es', () => {
+      const revoked = step(guestInLand(), [diplo('p1', 'p2', 'revokeRightOfWay')], ctx)
+      const event = passageEvent(revoked.events)
+      const ends = revoked.state.tick - 1 + TEST_RULES.constants.rightOfWayNoticeTicks
+
+      expect(event).toMatchObject({ playerId: 'p1', targetPlayerId: 'p2', granted: false, effectiveAtTick: ends })
+      expect([...event!.audience].sort()).toEqual(['p1', 'p2'])
+      expect(passageEndsAtTick(revoked.state, 'p1', 'p2')).toBe(ends)
+
+      // Jeder Tick bis zum Fristende: der Gast steht, und niemand ueberfaellt niemanden.
+      let current = revoked.state
+      while (current.tick < ends) {
+        current = step(current, [], ctx).state
+        expect(current.diplomacy.relations['p1|p2']!.state, `Tick ${current.tick}`).toBe('peace')
+      }
+      expect(grantsPassage(current, 'p1', 'p2'), 'das Recht endet nicht mit dem Tick der Frist').toBe(false)
+
+      const after = step(current, [], ctx)
+      expect(after.state.diplomacy.relations['p1|p2']!.state).toBe('war')
+      expect(after.events.find((e) => e.type === 'WAR_DECLARED')).toMatchObject({
+        playerId: 'p2',
+        targetPlayerId: 'p1',
+        withoutDeclaration: true,
+      })
+    })
+
+    it('raeumt eine abgelaufene Frist aus dem Zustand', () => {
+      const revoked = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      const noticed = step(revoked, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+      const later = runTicks(noticed, TEST_RULES.constants.rightOfWayNoticeTicks + 1, ctx).state
+
+      // p1 ist die Haelfte `a` des Schluessels `p1|p2`.
+      expect(later.diplomacy.relations['p1|p2']!.aGrantsPassage).toBe(false)
+      expect(later.diplomacy.relations['p1|p2']!.aPassageEndsAtTick).toBeNull()
+      expect(passageEndsAtTick(later, 'p1', 'p2')).toBeNull()
+    })
+
+    it('nimmt einen Widerruf zurueck, wenn der Gewaehrende vor Fristende erneut gewaehrt', () => {
+      const noticed = step(guestInLand(), [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+      const renewed = step(noticed, [diplo('p1', 'p2', 'grantRightOfWay')], ctx)
+
+      expect(passageEndsAtTick(renewed.state, 'p1', 'p2')).toBeNull()
+      expect(passageEvent(renewed.events)).toMatchObject({ granted: true })
+      const later = runTicks(renewed.state, TEST_RULES.constants.rightOfWayNoticeTicks + 1, ctx).state
+      expect(later.diplomacy.relations['p1|p2']!.state).toBe('peace')
+    })
+
+    it('lehnt den Widerruf eines Rechts ab, das nicht besteht', () => {
+      // Die Gegenrichtung zaehlt nicht: p2 laesst p1 durch, p1 kann das nicht widerrufen.
+      const granted = step(state, [diplo('p2', 'p1', 'grantRightOfWay')], ctx).state
+      const result = step(granted, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx)
+
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'nicht gewährt' } })
+      expect(passageEndsAtTick(result.state, 'p2', 'p1')).toBeNull()
+    })
+
+    it('lehnt einen zweiten Widerruf ab, statt die Frist zu verschieben', () => {
+      const noticed = step(guestInLand(), [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+      const ends = passageEndsAtTick(noticed, 'p1', 'p2')
+      const again = step(noticed, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx)
+
+      expect(rejection(again.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'bereits gekündigt' } })
+      expect(passageEndsAtTick(again.state, 'p1', 'p2')).toBe(ends)
+    })
+
+    it('lehnt den Widerruf im Buendnis ab — das Buendnis laesst ohnehin durch', () => {
+      const offered = step(state, [diplo('p1', 'p2', 'offerAlliance')], ctx).state
+      const allied = step(offered, [diplo('p2', 'p1', 'acceptAlliance')], ctx).state
+      const result = step(allied, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx)
+
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'im Bündnis' } })
+    })
+  })
+
+  describe('AK4 Ein alter Stand behaelt beide Richtungen', () => {
+    const world = JSON.parse(
+      readFileSync(fileURLToPath(new URL('../../../../data/maps/world.json', import.meta.url)), 'utf8'),
+    ) as MapData
+    const worldCtx = { map: world, rules: TEST_RULES }
+    const v3Text = readFileSync(fileURLToPath(new URL('../../test/golden/save-v3.json', import.meta.url)), 'utf8')
+    const v3Relations = (JSON.parse(v3Text) as { state: { diplomacy: { relations: Record<string, Record<string, unknown>> } } })
+      .state.diplomacy.relations
+
+    /** Das erste Paar im eingefrorenen Stand, das eine Bedingung erfuellt — im Frieden, ohne Buendnis. */
+    const pairWhere = (test: (old: Record<string, unknown>) => boolean): [string, string] => {
+      const key = Object.keys(v3Relations).find(
+        (candidate) => v3Relations[candidate]!['state'] === 'peace' && test(v3Relations[candidate]!),
+      )
+      expect(key, 'der eingefrorene Stand traegt das Paar nicht').toBeDefined()
+      return key!.split('|') as [string, string]
+    }
+
+    it('laesst nach dem Laden beide Seiten ohne Ueberfall hinueber', () => {
+      const state = deserialise(v3Text)
+      const [a, b] = pairWhere((old) => old['rightOfWay'] === true)
+      const [c, d] = pairWhere((old) => old['rightOfWay'] === false)
+
+      expect(grantsPassage(state, a, b)).toBe(true)
+      expect(grantsPassage(state, b, a)).toBe(true)
+
+      const provinceOf = (owner: string) => state.provinceOrder.find((id) => state.provinces[id]!.owner === owner)!
+      placeArmy(state, { owner: a, at: provinceOf(b), units: infantry })
+      placeArmy(state, { owner: b, at: provinceOf(a), units: infantry })
+      // Die Gegenprobe im selben Tick: ein Paar ohne altes Recht wird zum Krieg. Ohne sie
+      // koennte der Test auch deshalb gruen sein, weil gar kein Ueberfall erkannt wird.
+      placeArmy(state, { owner: c, at: provinceOf(d), units: infantry })
+
+      const after = step(state, [], worldCtx).state
+      expect(after.diplomacy.relations[`${a}|${b}`]!.state).toBe('peace')
+      expect(after.diplomacy.relations[`${c}|${d}`]!.state).toBe('war')
+    })
+
+    it('behaelt die geteilte Karte in beide Richtungen', () => {
+      const state = deserialise(v3Text)
+      const [a, b] = pairWhere((old) => old['sharedMap'] === true)
+
+      expect(sharesMap(state, a, b)).toBe(true)
+      expect(sharesMap(state, b, a)).toBe(true)
+    })
+  })
+
+  describe('AK5 Ein Antrag ohne Antwort verfaellt', () => {
+    it('verfaellt nach der Regelfrist, keinen Tick frueher', () => {
+      const lifetime = TEST_RULES.constants.offerLifetimeDays * TEST_RULES.constants.ticksPerDay
+      const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
+
+      const justBefore = runTicks(asked, lifetime - 1, ctx).state
+      expect(justBefore.diplomacy.offers).toHaveLength(1)
+      expect(step(justBefore, [], ctx).state.diplomacy.offers).toHaveLength(0)
+    })
+
+    it('nimmt die Frist aus den Regeln und nicht aus dem Code (Befund B3)', () => {
+      // Vorher stand `3 * ticksPerDay` in der Phase. Mit einem Tag laeuft dasselbe Angebot
+      // nach 24 Ticks ab — mit der Zahl im Code laege es dann noch zwei Tage.
+      const rules = { ...TEST_RULES, constants: { ...TEST_RULES.constants, offerLifetimeDays: 1 } }
+      const oneDay = { map, rules }
+      const asked = step(state, [diplo('p1', 'p2', 'offerAlliance')], oneDay).state
+
+      expect(runTicks(asked, TEST_RULES.constants.ticksPerDay, oneDay).state.diplomacy.offers).toEqual([])
+    })
+  })
+
+  describe('AK6 Die Kartenfreigabe hat eine Richtung', () => {
+    it('zeigt B das Gebiet von A — und A nicht das Gebiet von B', () => {
+      const plain = step(state, [], ctx).state
+      const shared = step(state, [diplo('p1', 'p2', 'shareMap')], ctx).state
+
+      expect(visibleProvinces(plain, 'p2').has('n1'), 'n1 war schon vorher sichtbar').toBe(false)
+      expect(visibleProvinces(shared, 'p2').has('n1')).toBe(true)
+      expect([...visibleProvinces(shared, 'p1')].sort()).toEqual([...visibleProvinces(plain, 'p1')].sort())
+      expect(sharesMap(shared, 'p1', 'p2')).toBe(true)
+      expect(sharesMap(shared, 'p2', 'p1')).toBe(false)
+    })
+  })
+
+  /**
+   * Befund M17-3, entschieden in T-M17-04 (kippbar, Fragment A): ein Krieg nimmt die
+   * Kartenfreigabe mit, nicht nur den Durchmarsch — gleich, ob er erklaert wurde oder mit
+   * einem Ueberfall begann. Was der andere bis dahin gesehen hat, behaelt er ohnehin im
+   * Aufklaerungsgedaechtnis (`player.intel`); geloescht wird nur die laufende Sicht. Und die
+   * Befehle selbst verweigern Freigaben im Krieg — ein Zustand, den kein Befehl herstellen darf,
+   * soll auch kein Krieg stehen lassen.
+   */
+  describe('M17-3 Ein Krieg beendet Durchmarsch und Kartenfreigabe in beiden Richtungen', () => {
+    it('beim Wirksamwerden einer Kriegserklaerung', () => {
+      const tied = step(
+        state,
+        [
+          diplo('p1', 'p2', 'grantRightOfWay'),
+          diplo('p1', 'p2', 'shareMap'),
+          diplo('p2', 'p1', 'grantRightOfWay'),
+          diplo('p2', 'p1', 'shareMap'),
+        ],
+        ctx,
+      ).state
+      const declared = step(tied, [diplo('p1', 'p2', 'declareWar')], ctx).state
+      const atWar = runTicks(declared, TEST_RULES.constants.warDeclarationDelayTicks, ctx).state
+
+      expect(atWar.diplomacy.relations['p1|p2']!.state).toBe('war')
+      for (const [x, y] of [['p1', 'p2'], ['p2', 'p1']] as const) {
+        expect(grantsPassage(atWar, x, y), `Durchmarsch ${x} → ${y}`).toBe(false)
+        expect(sharesMap(atWar, x, y), `Karte ${x} → ${y}`).toBe(false)
+      }
+    })
+
+    it('auch beim Ueberfall — sonst lebte das Recht des Angreifers nach dem Frieden wieder auf', () => {
+      // Erst seit dem gerichteten Recht erreichbar: p1 gewaehrt p2 und ueberfaellt p2 trotzdem.
+      const tied = step(state, [diplo('p1', 'p2', 'grantRightOfWay'), diplo('p1', 'p2', 'shareMap')], ctx).state
+      placeArmy(tied, { owner: 'p1', at: 'o3', units: infantry })
+
+      const atWar = step(tied, [], ctx).state
+      expect(atWar.diplomacy.relations['p1|p2']!.state).toBe('war')
+      expect(grantsPassage(atWar, 'p1', 'p2')).toBe(false)
+      expect(sharesMap(atWar, 'p1', 'p2')).toBe(false)
+    })
   })
 })

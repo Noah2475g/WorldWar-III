@@ -308,6 +308,23 @@ export interface GoalReachedEvent extends BaseEvent {
   day: number
 }
 
+/**
+ * Ein Durchmarschrecht beginnt oder wird gekuendigt (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * `playerId` ist der **Gewaehrende**, `targetPlayerId` der **Gast** — gerichtet wie das Recht
+ * selbst. `granted: false` ist die Kuendigung, und `effectiveAtTick` der erste Tick, in dem der
+ * Gast ein Eindringling ist; bei `granted: true` der Tick der Gewaehrung. Beide erfahren es
+ * (`audience` beide), sonst niemand: wer wen durchlaesst, ist Sache der Beteiligten (R-DIP-04).
+ * Kein Alarm — die Frist ist gerade dafuer da, dass Zeit zum Reagieren bleibt.
+ */
+export interface RightOfWayChangedEvent extends BaseEvent {
+  type: 'RIGHT_OF_WAY_CHANGED'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  granted: boolean
+  effectiveAtTick: Tick
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -336,6 +353,7 @@ export type GameEvent =
   | GameEndedEvent
   | DayReportEvent
   | GoalReachedEvent
+  | RightOfWayChangedEvent
 
 export type EventType = GameEvent['type']
 
@@ -368,6 +386,7 @@ export const EVENT_TYPES = [
   'GAME_ENDED',
   'DAY_REPORT',
   'GOAL_REACHED',
+  'RIGHT_OF_WAY_CHANGED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.

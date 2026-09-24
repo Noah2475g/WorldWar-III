@@ -431,6 +431,13 @@ export const de = {
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
     // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
     GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+    // Der Durchmarsch (T-M17-04, R-DIP-08/AK3): `player` gewährt, `target` ist der Gast. Nur die
+    // beiden lesen es. Die Kündigung ist dieselbe Ereignisart mit `granted: false` und trägt die
+    // Endung `_REVOKED`; der Tag ist der erste, an dem eine Armee des Gasts dort ein Überfall ist.
+    RIGHT_OF_WAY_CHANGED: '{{player}} gewährt {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_PLURAL: '{{player}} gewähren {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_REVOKED: '{{player}} kündigt {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    RIGHT_OF_WAY_CHANGED_REVOKED_PLURAL: '{{player}} kündigen {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */

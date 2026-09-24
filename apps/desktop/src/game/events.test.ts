@@ -301,6 +301,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     DAY_REPORT: { day: 3, scores: {} },
     // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
     GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
+    // Eine Kuendigung des Durchmarschs ist eine Frist, kein Verlust (T-M17-04).
+    RIGHT_OF_WAY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', granted: false, effectiveAtTick: 48, audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -923,5 +925,61 @@ describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
       expect(text).not.toMatch(/provinces|pointShare|populationShare|GOAL_REACHED|events\.|\bp1\b|\{\{/)
     }
     expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
+  })
+})
+
+/**
+ * Der Durchmarsch im Protokoll (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * Gewaehrung und Kuendigung sind **eine** Ereignisart mit `granted`; der Satz unterscheidet sie.
+ * Die Kuendigung nennt den Tag, ab dem eine Armee des Gasts dort ein Ueberfall ist — sonst weiss
+ * der Gast nicht, wie viel Zeit er hat, und die Frist waere eine Zahl, die nur der Kern kennt.
+ */
+describe('R-DIP-08/AK3 Gewaehrung und Kuendigung des Durchmarschs werden zu Saetzen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+    viewer: 'p1',
+  }
+  const durchmarsch = (playerId: string, targetPlayerId: string, granted: boolean, effectiveAtTick: number) =>
+    describeEvent(
+      event({
+        type: 'RIGHT_OF_WAY_CHANGED',
+        audience: [playerId, targetPlayerId],
+        concerns: [playerId, targetPlayerId],
+        playerId,
+        targetPlayerId,
+        granted,
+        effectiveAtTick,
+      }),
+      0,
+      map,
+      namen,
+    )
+
+  it('nennt die Gewaehrung mit beiden Namen und ohne Kennung', () => {
+    const entry = durchmarsch('p1', 'p2', true, 120)
+
+    expect(entry.text).toBe('Mexiko gewährt Vereinigte Staaten das Durchmarschrecht.')
+    expect(entry.category).toBe('diplomacy')
+    expect(entry.severity).toBe('info')
+  })
+
+  it('nennt bei der Kuendigung den Tag, ab dem sie wirkt', () => {
+    // Tick 144 ist der erste Tick von Tag 7 — dieselbe Rechnung wie bei der Kriegserklaerung.
+    expect(durchmarsch('p1', 'p2', false, 144).text).toBe(
+      'Mexiko kündigt Vereinigte Staaten das Durchmarschrecht. Wirksam ab Tag 7.',
+    )
+  })
+
+  it('beugt beide Saetze fuer eine Mehrzahl-Macht', () => {
+    expect(durchmarsch('p2', 'p1', true, 120).text).toContain('Vereinigte Staaten gewähren Mexiko')
+    expect(durchmarsch('p2', 'p1', false, 144).text).toContain('Vereinigte Staaten kündigen Mexiko')
+  })
+
+  it('laesst weder Kennung noch Platzhalter noch Wahrheitswert stehen', () => {
+    for (const granted of [true, false]) {
+      expect(durchmarsch('p1', 'p2', granted, 144).text).not.toMatch(/\bp[12]\b|\{\{|events\.|true|false|RIGHT_OF_WAY/)
+    }
   })
 })

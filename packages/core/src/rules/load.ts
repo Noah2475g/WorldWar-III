@@ -85,6 +85,10 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'goalPointShareFirstPermille',
   'goalPopulationSharePermille',
   'goalPointShareSecondPermille',
+  // Diplomatie in M17 (T-M17-04, D29.7). Fehlte eine, waere ein Vergleich mit `NaN` immer
+  // falsch: jedes Angebot verfiele sofort, und ein gekuendigtes Recht endete im selben Tick.
+  'offerLifetimeDays',
+  'rightOfWayNoticeTicks',
 ]
 
 function record(value: unknown): Record<string, unknown> {
@@ -127,6 +131,9 @@ export function parseRules(raw: RawRules, id: string): Rules {
   if (constants.stackFullContribution >= constants.stackZeroContribution) {
     problems.push('stackFullContribution muss kleiner als stackZeroContribution sein')
   }
+  // Ein Angebot, das im Tick seiner Abgabe verfaellt, kann niemand annehmen (T-M17-04).
+  if (constants.offerLifetimeDays <= 0) problems.push('offerLifetimeDays muss positiv sein')
+  if (constants.rightOfWayNoticeTicks < 0) problems.push('rightOfWayNoticeTicks darf nicht negativ sein')
 
   // --- resources -----------------------------------------------------------
   const resourcesRaw = record(record(raw.resources)['resources'])
