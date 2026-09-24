@@ -1,12 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
+import { applyInputMode } from './ui/inputMode.ts'
 import { parseRules } from '@worldwar/core'
 import type { MapData } from '@worldwar/core'
 import { App } from './App.tsx'
 import { parseNetLink, type NetLink } from './net/link.ts'
 import type { Transport } from '@worldwar/netplay'
 import './ui/app.css'
+import './ui/touch.css'
 
 import worldMap from '../../../data/maps/world.json' with { type: 'json' }
 import testMap from '../../../data/maps/testworld.json' with { type: 'json' }
@@ -46,6 +48,9 @@ const maps = [
   { id: 'world', name: 'Welt', data: worldMap as unknown as MapData },
   { id: 'testworld', name: 'Kleine Welt', data: testMap as unknown as MapData },
 ]
+
+// Finger oder Zeiger steht an <html>, bevor das erste Bild entsteht (data-input, touch.css).
+applyInputMode()
 
 /**
  * Der Einstieg in eine Partie zu zweit (T-M39-02, T-M39-04, R-MP-09/AK3, D28.9).

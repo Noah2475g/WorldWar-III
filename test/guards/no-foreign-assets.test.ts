@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { GEO_SOURCES } from '@worldwar/mapgen'
 import { TYPE } from '../../apps/desktop/src/ui/tokens.ts'
 import { ROOT, scan } from './scan.ts'
+import { uiStylesheets } from './stylesheets.ts'
 
 /**
  * No foreign assets (R-ASSET-01, R-ASSET-02).
@@ -211,6 +212,23 @@ describe('R-FREE-04/AK2 Keine Schriftquelle zeigt nach aussen', () => {
       for (const url of face.urls) {
         expect(url, `Schriftquelle von "${face.family}" zeigt nach aussen`).not.toMatch(/^https?:/)
       }
+    }
+  })
+
+  it('haelt jedes Stylesheet unter ui/ lokal, nicht nur app.css', () => {
+    // Seit touch.css (2026-09-24) gibt es mehr als eine .css-Datei; ein Waechter, der nur
+    // app.css liest, saehe eine Schrift oder ein Bild aus dem Netz in der zweiten nie.
+    const sheets = uiStylesheets()
+    expect(sheets.length).toBeGreaterThanOrEqual(2)
+
+    for (const sheet of sheets) {
+      for (const face of fontFaces(sheet.css)) {
+        for (const url of face.urls) {
+          expect(url, `${sheet.file}: Schriftquelle von "${face.family}" zeigt nach aussen`).not.toMatch(/^https?:/)
+        }
+      }
+      expect(sheet.css, `${sheet.file} laedt etwas von aussen`).not.toMatch(/url\(\s*['"]?(https?:)?\/\//i)
+      expect(sheet.css, `${sheet.file} importiert etwas von aussen`).not.toMatch(/@import\s+(url\()?\s*['"]?(https?:)?\/\//i)
     }
   })
 
