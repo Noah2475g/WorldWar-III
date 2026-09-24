@@ -9,9 +9,13 @@ import { ROOT, isTestFile, productionFiles } from './scan'
  * Der Kopf der Funktion sagt seit M1 „Product source only — tests are out of scope", der
  * Filter dahinter lautete `!f.endsWith('.test.ts')`. Eine `.test.tsx` endet nicht auf
  * `.test.ts`: am 2026-09-14 waren 21 von 193 gelieferten Dateien Testdateien, am
- * 2026-09-18 waren es 22 von 205. Zwoelf Waechter lasen damit Dateien, die ihr eigener
- * Kopf ausschliesst — strenger als behauptet, und wer einen Treffer sah, suchte ihn
- * zuerst im Produktcode.
+ * 2026-09-18 waren es 22 von 205. Neun Waechterdateien bekamen damit Dateien geliefert,
+ * die ihr eigener Kopf ausschliesst — sechs rufen `productionFiles()` direkt
+ * (ai-memory-unread, no-control-characters, no-network, persistence-contract,
+ * single-loop, text-keys), drei ueber den Standardparameter von `scan()`
+ * (no-foreign-assets, no-monetization, no-time-pressure). Gezaehlt am 2026-09-24; hier
+ * stand vorher „zwoelf", eine Zahl aus dem Befund und nicht aus einer Zaehlung. Strenger
+ * als behauptet, und wer einen Treffer sah, suchte ihn zuerst im Produktcode.
  *
  * Die zweite Liste kommt mit Absicht aus einem **anderen Werkzeug** (`git ls-files`) und
  * nicht aus demselben Verzeichnislauf: ein Filter, der gegen sich selbst geprueft wird,
