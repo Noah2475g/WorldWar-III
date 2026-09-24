@@ -42,7 +42,7 @@ import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView, toScreen, zoomAt } from './map/picking.ts'
+import { boundsOf, centreOn, clampView, toScreen, zoomAt, type View } from './map/picking.ts'
 import { Tooltip, tooltipFor } from './ui/Tooltip.tsx'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
@@ -1112,6 +1112,27 @@ export function App(props: AppProps) {
     [send, tutor, pendingIds, speed],
   )
 
+  /**
+   * Der gemessene Ausschnitt der Karte (Touch-Bedienung, `onViewportChange`); bis zur
+   * ersten Messung gilt VIEWPORT. Mit festen 960 x 600 lag eine angesprungene Provinz auf
+   * einem Telefon bei (480, 300) — neben der sichtbaren Karte.
+   */
+  const viewportRef = useRef(VIEWPORT)
+  /**
+   * Wohin zuletzt zentriert wurde, und mit welchem Ergebnis. Misst die Karte danach einen
+   * anderen Ausschnitt — beim Anlegen gibt es sie noch gar nicht —, wird dorthin
+   * nachzentriert, solange der Blick noch genau dieser ist, also niemand die Karte bewegt hat.
+   */
+  const centredRef = useRef<{ point: { x: number; y: number }; view: View } | null>(null)
+  const centreView = useCallback(
+    (point: { x: number; y: number }, from: View, map: { width: number; height: number }): View => {
+      const view = centreOn(point, from, { width: map.width, height: map.height, ...viewportRef.current })
+      centredRef.current = { point, view }
+      return view
+    },
+    [],
+  )
+
   const jumpTo = useCallback(
     (provinceId: string) => {
       const centre = centres[provinceId]
@@ -1120,10 +1141,10 @@ export function App(props: AppProps) {
       dispatch({ type: 'selectProvince', id: provinceId })
       dispatch({
         type: 'setView',
-        view: centreOn(centre, ui.view, { width: activeMap.width, height: activeMap.height, ...VIEWPORT }),
+        view: centreView(centre, ui.view, activeMap),
       })
     },
-    [centres, ui.view, activeMap, tutor],
+    [centres, ui.view, activeMap, tutor, centreView],
   )
 
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
@@ -1203,9 +1224,9 @@ export function App(props: AppProps) {
             type: 'setView',
             view: zoomAt(
               ui.view,
-              { x: VIEWPORT.viewportWidth / 2, y: VIEWPORT.viewportHeight / 2 },
+              { x: viewportRef.current.viewportWidth / 2, y: viewportRef.current.viewportHeight / 2 },
               shortcut.direction > 0 ? 1 / ZOOM_STEP : ZOOM_STEP,
-              { width: activeMap.width, height: activeMap.height, ...VIEWPORT },
+              { width: activeMap.width, height: activeMap.height, ...viewportRef.current },
             ),
           })
           break
@@ -1241,7 +1262,7 @@ export function App(props: AppProps) {
                 y: ui.view.y + shortcut.dy * PAN_STEP * ui.view.scale,
                 scale: ui.view.scale,
               },
-              { width: activeMap.width, height: activeMap.height, ...VIEWPORT },
+              { width: activeMap.width, height: activeMap.height, ...viewportRef.current },
             ),
           })
           break
@@ -1397,11 +1418,11 @@ export function App(props: AppProps) {
     if (centre) {
       dispatch({
         type: 'setView',
-        view: centreOn(centre, { x: 0, y: 0, scale: 1.6 }, { width: chosenMap.width, height: chosenMap.height, ...VIEWPORT }),
+        view: centreView(centre, { x: 0, y: 0, scale: 1.6 }, chosenMap),
       })
     }
     setDialog(null)
-  }, [options, mapById, props.rules, now, commitState, netParty])
+  }, [options, mapById, props.rules, now, commitState, netParty, centreView])
 
   // Den eigenen gespeicherten Stand einmal holen, sobald ein Link im Fragment steht
   // (T-M39-06). `ticksPerDay` und `storage` stehen weiter oben; geladen wird der juengste.
@@ -1457,10 +1478,10 @@ export function App(props: AppProps) {
     if (mitte) {
       dispatch({
         type: 'setView',
-        view: centreOn(mitte, { x: 0, y: 0, scale: 1.6 }, { width: karte.width, height: karte.height, ...VIEWPORT }),
+        view: centreView(mitte, { x: 0, y: 0, scale: 1.6 }, karte),
       })
     }
-  }, [netParty.start, mapById, now, commitState])
+  }, [netParty.start, mapById, now, commitState, centreView])
 
   /**
    * Der Beitritt und die Lobby (T-M39-02, T-M39-03, R-MP-12).
@@ -1962,6 +1983,17 @@ export function App(props: AppProps) {
                   },
                 })}
             onViewChange={(next) => dispatch({ type: 'setView', view: next })}
+            // Die gemessene Groesse der Karte (Touch-Bedienung). Steht der Blick noch dort,
+            // wohin zuletzt zentriert wurde, wird im neuen Ausschnitt nachzentriert.
+            onViewportChange={(size) => {
+              const before = viewportRef.current
+              if (before.viewportWidth === size.width && before.viewportHeight === size.height) return
+              viewportRef.current = { ...VIEWPORT, viewportWidth: size.width, viewportHeight: size.height }
+              const centred = centredRef.current
+              if (centred && centred.view === ui.view) {
+                dispatch({ type: 'setView', view: centreView(centred.point, ui.view, activeMap) })
+              }
+            }}
             labelFor={nameOfProvince}
           />
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}

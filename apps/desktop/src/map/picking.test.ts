@@ -17,6 +17,10 @@ import {
   zoomAt,
   type PickableProvince,
   type ViewLimits,
+  MAX_BITMAP_SIDE,
+  MAX_PIXEL_RATIO,
+  bitmapFor,
+  toCanvasPoint,
 } from './picking.ts'
 
 /**
@@ -324,5 +328,82 @@ describe('T-M30-03 Drei Zoomstufen', () => {
     expect(zoomTier(ZOOM_MID_MAX_SCALE + 0.001)).toBe('far')
     expect(zoomTier(0.2)).toBe('near')
     expect(zoomTier(8)).toBe('far')
+  })
+})
+
+/**
+ * Touch-Bedienung: Leinwandpunkte, Bildpunkte und ein kleiner Ausschnitt.
+ *
+ * Die Leinwand rechnet mit mindestens 320 x 240 Punkten (`MapCanvas`), die Huelle kann auf
+ * einem Telefon kleiner sein; der Browser staucht dann das Bild, und ein Tippen am rechten
+ * Rand traf bis zu sechzig Punkte daneben. Und der Sprung auf eine Provinz rechnete mit
+ * einem festen Ausschnitt von 960 x 600 — auf einem Telefon lag das Ziel dann neben der Karte.
+ */
+describe('Touch-Bedienung: vom Client-Pixel zum Leinwandpunkt', () => {
+  it('rechnet die Stauchung der Leinwand heraus', () => {
+    const rect = { left: 10, top: 20, width: 260, height: 200 }
+
+    // Der rechte untere Rand der Huelle ist der rechte untere Rand der Leinwand.
+    expect(toCanvasPoint(270, 220, rect, 320, 240)).toEqual({ x: 320, y: 240 })
+    expect(toCanvasPoint(140, 120, rect, 320, 240)).toEqual({ x: 160, y: 120 })
+  })
+
+  it('ist ohne Stauchung die blosse Verschiebung', () => {
+    expect(toCanvasPoint(110, 70, { left: 10, top: 20, width: 800, height: 500 }, 800, 500)).toEqual({ x: 100, y: 50 })
+  })
+
+  it('faellt ohne gemessene Huelle auf Faktor eins zurueck (jsdom rechnet kein Layout)', () => {
+    expect(toCanvasPoint(100, 100, { left: 0, top: 0, width: 0, height: 0 }, 320, 240)).toEqual({ x: 100, y: 100 })
+  })
+})
+
+describe('Touch-Bedienung: die Bildpunkte der Leinwand folgen der Pixeldichte', () => {
+  it('verdoppelt bei doppelter Dichte und rechnet den Massstab genau aus', () => {
+    expect(bitmapFor({ width: 320, height: 240 }, 2)).toEqual({ width: 640, height: 480, scaleX: 2, scaleY: 2 })
+
+    // Der Emulator (1920 x 1080 bei 280 dpi) hat 1,75: gerundet, und der Massstab deckt
+    // die gerundete Bitmap genau ab statt einer halben Zeile daneben.
+    const emulator = bitmapFor({ width: 1097, height: 617 }, 1.75)
+    expect(emulator.width).toBe(1920)
+    expect(emulator.height).toBe(1080)
+    expect(emulator.scaleX).toBeCloseTo(1920 / 1097, 12)
+  })
+
+  it('deckelt die Dichte und jede Seite', () => {
+    expect(MAX_PIXEL_RATIO).toBe(2)
+    expect(bitmapFor({ width: 400, height: 300 }, 3)).toMatchObject({ width: 800, height: 600 })
+
+    const wide = bitmapFor({ width: 6000, height: 3000 }, 2)
+    expect(wide.width).toBe(MAX_BITMAP_SIDE)
+    expect(wide.height).toBe(6000)
+    expect(wide.scaleX).toBeCloseTo(MAX_BITMAP_SIDE / 6000, 12)
+  })
+
+  it('bleibt bei fehlender oder kleiner Dichte beim alten Stand: ein Bildpunkt je Punkt', () => {
+    for (const ratio of [1, 0.8, 0, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(bitmapFor({ width: 320, height: 240 }, ratio)).toEqual({ width: 320, height: 240, scaleX: 1, scaleY: 1 })
+    }
+  })
+})
+
+describe('Touch-Bedienung: Zentrieren im gemessenen Ausschnitt', () => {
+  const karte = { width: 4000, height: 2400 }
+  const provinz = { x: 1800, y: 1100 }
+
+  it('legt die Provinz in die Mitte eines kleinen Ausschnitts', () => {
+    const klein = { ...karte, viewportWidth: 260, viewportHeight: 200, minScale: 0.2, maxScale: 8 }
+    const view = centreOn(provinz, { x: 0, y: 0, scale: 1.6 }, klein)
+
+    expect(toScreen(provinz, view).x).toBeCloseTo(130, 6)
+    expect(toScreen(provinz, view).y).toBeCloseTo(100, 6)
+  })
+
+  it('mit dem festen Ausschnitt von 960 x 600 laege sie neben einer kleinen Karte', () => {
+    // Der alte Weg — und der Grund, warum App.tsx den gemessenen Ausschnitt braucht.
+    const fest = { ...karte, viewportWidth: 960, viewportHeight: 600, minScale: 0.2, maxScale: 8 }
+    const punkt = toScreen(provinz, centreOn(provinz, { x: 0, y: 0, scale: 1.6 }, fest))
+
+    expect(punkt.x).toBeGreaterThan(260)
+    expect(punkt.y).toBeGreaterThan(200)
   })
 })
