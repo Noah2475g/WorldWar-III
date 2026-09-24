@@ -436,6 +436,11 @@ export const de = {
     // das steht in der Sicht, nicht im Protokoll.
     SPY_REPORT: 'Spion in {{province}}, {{mission}}: {{outcome}}.',
     SPY_LOST: 'Spion in {{province}} ({{mission}}) verloren: der Sold ließ sich nicht zahlen.',
+    // Sabotage und Enttarnung (T-M17-09, R-SPY-04/05, D29.5). Die erlittene Sabotage nennt keinen
+    // Urheber — das Ereignis kennt keinen; ihre Wirkung kommt aus `espionage.sabotage`. Die Enttarnung
+    // nennt beide Mächte: beide Seiten erfahren sie, und derselbe Satz gilt für beide.
+    SABOTAGE_SUFFERED: 'Sabotage in {{province}}: {{effect}}',
+    SPY_DETECTED: 'In {{province}} enttarnt: ein Spion von {{player}} ({{mission}}), entdeckt von {{target}}.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -522,6 +527,12 @@ export const de = {
       success: 'gelungen',
       failure: 'misslungen',
       targetChanged: 'das Ziel passt nicht mehr zum Auftrag',
+    },
+    /** Die Wirkung einer erlittenen Sabotage (T-M17-09) — ohne Urheber. */
+    sabotage: {
+      economic: 'Moral −{{moraleLoss}}, vernichtet: {{destroyed}}.',
+      military: 'laufende Aufträge werden {{hours}} Stunden später fertig.',
+      nothingDestroyed: 'nichts',
     },
   },
 

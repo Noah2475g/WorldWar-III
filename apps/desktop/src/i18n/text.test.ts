@@ -82,6 +82,8 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'GOAL_REACHED',
       // Seit T-M17-08: der Tageslauf der Spionage (R-SPY-02).
       'SPY_REPORT', 'SPY_LOST',
+      // Seit T-M17-09: Sabotage und Gegenspionage (R-SPY-04/05).
+      'SABOTAGE_SUFFERED', 'SPY_DETECTED',
     ] as const
 
     for (const type of types) {

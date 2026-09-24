@@ -1,7 +1,21 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { EVENT_TYPES, type Command, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
+import {
+  createInitialState,
+  EVENT_TYPES,
+  eventsFor,
+  runTicks,
+  type Command,
+  type EventType,
+  type GameConfig,
+  type GameEvent,
+  type MapData,
+  type PublicView,
+  type Rules,
+} from '@worldwar/core'
+import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
+import { t } from '../i18n/text.ts'
 import {
   adjutantMarchEntries,
   battleReport,
@@ -305,6 +319,9 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     // eigenen Auftrag, kein Rueckschlag im Sinn von D24.1.
     SPY_REPORT: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', outcome: 'failure', audience: ['p1'], concerns: ['p1'] },
     SPY_LOST: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] },
+    // Sabotage und Enttarnung (T-M17-09): kein Rueckschlag im Sinn von D24.1 (E8).
+    SABOTAGE_SUFFERED: { playerId: 'p1', provinceId, kind: 'economic', moraleLoss: 10_000, destroyed: { money: 5_000 }, delayTicks: 0, audience: ['p1'], concerns: ['p1'] },
+    SPY_DETECTED: { playerId: 'p2', targetPlayerId: 'p1', provinceId, mission: 'intel', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -974,5 +991,184 @@ describe('R-SPY-02 Bericht und Verlust eines Spions werden zu Saetzen', () => {
     expect(entry.text).toContain('Wirtschaftssabotage')
     expect(entry.text).toMatch(/Sold/)
     expect(entry.text).not.toMatch(ROH)
+  })
+})
+
+/**
+ * Sabotage und Enttarnung im Protokoll (T-M17-09, R-SPY-04/05, D29.5).
+ *
+ * Die erlittene Sabotage nennt ihre Wirkung — Moral, Vernichtetes, Verzögerung — aber, mit Absicht,
+ * keinen Urheber: das Ereignis kennt keinen. Die Enttarnung nennt beide Mächte mit Namen.
+ */
+describe('R-SPY-04/05 Sabotage und Enttarnung werden zu Saetzen (T-M17-09)', () => {
+  const ROH_SAB = /economic|military|destroyed|moraleLoss|delayTicks|SABOTAGE_|SPY_|\bp\d\b|\[|\{\{/
+
+  it('Wirtschaftssabotage: Provinz, Moralverlust und das Vernichtete mit Namen', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        severity: 'alert',
+        playerId: 'p1',
+        provinceId,
+        kind: 'economic',
+        moraleLoss: 10_000,
+        destroyed: { money: 5_000, iron: 2_000 },
+        delayTicks: 0,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain(provinceName)
+    expect(entry.text).toContain('Moral')
+    expect(entry.text).toContain('10')
+    expect(entry.text).toContain(t('resources.money'))
+    expect(entry.text).toContain(t('resources.iron'))
+    expect(entry.text).not.toMatch(ROH_SAB)
+    expect(entry.severity).toBe('alert')
+    expect(entry.provinceId).toBe(provinceId)
+  })
+
+  it('Wirtschaftssabotage ohne Beute sagt es', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId,
+        kind: 'economic',
+        moraleLoss: 10_000,
+        destroyed: {},
+        delayTicks: 0,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain(t('espionage.sabotage.nothingDestroyed'))
+  })
+
+  it('Militaersabotage: die Verzoegerung in Stunden', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId,
+        kind: 'military',
+        moraleLoss: 0,
+        destroyed: {},
+        delayTicks: 12,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain('12 Stunden')
+    expect(entry.text).not.toContain('Moral')
+  })
+
+  it('Enttarnung nennt beide Maechte und den Auftrag', () => {
+    const naming = { viewer: 'p1', player: (id: string) => ({ p1: 'Nordland', p2: 'Ostmark' })[id] ?? id }
+    const makeEvent = () =>
+      event({
+        type: 'SPY_DETECTED',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        provinceId,
+        mission: 'economicSabotage',
+        audience: ['p1', 'p2'],
+        concerns: ['p1', 'p2'],
+      })
+
+    for (const viewer of ['p1', 'p2']) {
+      const entry = describeEvent(makeEvent(), 0, map, { ...naming, viewer })
+      expect(entry.text, viewer).toContain('Nordland')
+      expect(entry.text, viewer).toContain('Ostmark')
+      expect(entry.text, viewer).toContain('Wirtschaftssabotage')
+      expect(entry.text, viewer).not.toMatch(ROH_SAB)
+    }
+  })
+})
+
+/**
+ * Über einen Lauf mit Spionen: der Opfertext von SABOTAGE_SUFFERED nennt nie den Urheber
+ * (R-SPY-04/AK3, T-M17-09) — dieselbe Eigenschaft wie in `event-audience.test.ts`, hier am
+ * gerenderten Satz statt an den rohen Feldern.
+ */
+describe('R-SPY-04/AK3 Der Opfertext nennt keinen Urheber — ueber einen Lauf mit Spionen', () => {
+  it('vierzig Spieltage, drei Maechte, sechs Spione', () => {
+    const testMap = smallWorld()
+    const CONFIG: GameConfig = {
+      seed: 7,
+      mapId: 'testworld',
+      rulesId: 'test',
+      players: [
+        { name: 'Noah', kind: 'human' as const, nation: 'Nordland', color: '#0f62bc' },
+        { name: 'Zwei', kind: 'ai' as const, nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' as const },
+        { name: 'Drei', kind: 'ai' as const, nation: 'Sueden', color: '#2e7d32', difficulty: 'normal' as const },
+      ],
+      victory: { condition: 'points' as const, pointsShareToWin: 600, dayLimit: null },
+    }
+    const worldCtx = { map: testMap, rules: TEST_RULES }
+    let state = createInitialState(CONFIG, worldCtx)
+    state.nextIds.spy = 101
+    state.players['p1']!.resources.money += 5_000_000
+
+    const spy = (owner: string, provinceIdArg: string, mission: string) => {
+      state.espionage.spies.push({
+        id: `s${state.nextIds.spy++}`,
+        owner,
+        provinceId: provinceIdArg,
+        mission: mission as never,
+        recruitedTick: 0,
+        assignedTick: 0,
+        lastRunTick: null,
+        lastOutcome: null,
+      })
+    }
+    spy('p1', 'o1', 'economicSabotage')
+    spy('p1', 'o2', 'militarySabotage')
+    spy('p1', 's2', 'economicSabotage')
+    spy('p1', 's1', 'intel')
+    spy('p3', 's2', 'counter')
+    spy('p3', 's1', 'counter')
+
+    const seen: GameEvent[] = []
+    for (let day = 0; day < 40; day++) {
+      const result = runTicks(state, TEST_RULES.constants.ticksPerDay, worldCtx)
+      state = result.state
+      seen.push(...result.events)
+      if (state.victory.winner !== null) break
+    }
+
+    const naming = { player: (id: string) => state.players[id]?.nation ?? id, ticksPerDay: 24 }
+    const verstoesse: string[] = []
+    let gerenderteSabotagen = 0
+    for (const opfer of ['p2', 'p3']) {
+      for (const [i, e] of eventsFor(seen, opfer).entries()) {
+        if (e.type === 'SPY_DETECTED' && e.targetPlayerId === opfer) continue
+        if (e.type === 'SABOTAGE_SUFFERED') gerenderteSabotagen++
+        const text = describeEvent(e, i, testMap, { ...naming, viewer: opfer }).text
+        if (text.includes('Nordland') || /\bp1\b/.test(text) || /\bs10\d\b/.test(text)) {
+          verstoesse.push(`${e.type}:${text}`)
+        }
+      }
+    }
+    expect(verstoesse).toEqual([])
+    expect(gerenderteSabotagen, 'kein gerenderter SABOTAGE_SUFFERED-Text — leerer Beweis').toBeGreaterThan(0)
+
+    // Gegenkontrolle: die Suche kann Namen sehen.
+    const detectedForP3 = eventsFor(seen, 'p3').find((e) => e.type === 'SPY_DETECTED' && e.targetPlayerId === 'p3')
+    expect(detectedForP3, 'Vorbedingung: p3 hat einen Spion enttarnt').toBeDefined()
+    const detectedText = describeEvent(detectedForP3!, 0, testMap, { ...naming, viewer: 'p3' }).text
+    expect(detectedText).toContain('Nordland')
   })
 })

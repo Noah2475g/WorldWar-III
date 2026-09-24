@@ -259,4 +259,34 @@ describe('D29.4 Spionage verbraucht Zufall nur, wenn es Spione gibt', () => {
   it('und würfelt mit einer anderen Startzahl andere Ausgänge', () => {
     expect(mitSpionen(43).ausgaenge).not.toEqual(mitSpionen(42).ausgaenge)
   })
+
+  /** Sabotage und Gegenspionage in der ersten Stunde: p1 sabotiert s1 und bewacht n1, p3 sabotiert n1 und bewacht s1. */
+  const sabotieren = (tick: number): Command[] =>
+    tick !== 1
+      ? []
+      : ([
+          { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 's1', mission: 'economicSabotage' },
+          { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 'n1', mission: 'counter' },
+          { type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 'n1', mission: 'militarySabotage' },
+          { type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 's1', mission: 'counter' },
+        ] as Command[])
+
+  it('MIT Sabotage und Gegenspionage liefern zwei Laeufe gleicher Startzahl denselben Hash', () => {
+    const a = hashesFrom(step, createInitialState({ ...DREI, seed: 42 }, world), 500, sabotieren)
+    const b = hashesFrom(step, createInitialState({ ...DREI, seed: 42 }, world), 500, sabotieren)
+
+    expect(a.hashes).toEqual(b.hashes)
+
+    const folgeA = a.events
+      .filter((e) => e.type === 'SABOTAGE_SUFFERED' || e.type === 'SPY_DETECTED' || e.type === 'SPY_REPORT')
+      .map((e) => `${e.tick}:${e.type}:${(e as { provinceId: string }).provinceId}`)
+    const folgeB = b.events
+      .filter((e) => e.type === 'SABOTAGE_SUFFERED' || e.type === 'SPY_DETECTED' || e.type === 'SPY_REPORT')
+      .map((e) => `${e.tick}:${e.type}:${(e as { provinceId: string }).provinceId}`)
+    expect(folgeB).toEqual(folgeA)
+
+    const rejected = a.events.filter((e) => e.type === 'COMMAND_REJECTED')
+    expect(rejected, 'Vorbedingung: alle vier Spione angeworben').toEqual([])
+    expect(a.events.filter((e) => e.type === 'SABOTAGE_SUFFERED').length).toBeGreaterThanOrEqual(1)
+  })
 })
