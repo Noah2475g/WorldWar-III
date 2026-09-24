@@ -81,6 +81,22 @@ select,
   width: max-content;
 }
 
+/* ------------------------------------------------ Touch: die Seite steht still */
+
+/* Die Seite selbst rollt nie. Ohne diese Regel reichen die `visually-hidden`-Texte der
+   Seitenleiste (absolut, ohne positionierten Vorfahren) bis weit unter den Bildschirm:
+   gemessen 2571 statt 617 px Dokumenthoehe — ein Wisch am Ende der Leiste schob dann die
+   ganze Oberflaeche samt Kopfleiste nach oben. `clip` statt `hidden`: kein
+   Rollcontainer, den ein focus() heimlich verschieben koennte. Und die eine Spalte darf
+   schmaler werden als ihr Inhalt — sonst macht die einzeilige Kopfleiste die Seite
+   breiter als das Telefon, und der Browser zoomt heraus. */
+:root[data-input='touch'] .app {
+  position: relative;
+  overflow: hidden;
+  overflow: clip;
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* ------------------------------------------------ Touch: 44-px-Ziele */
 
 :root[data-input='touch'] button,
@@ -229,6 +245,10 @@ select,
     flex: none;
   }
 
+  :root[data-input='touch'] .modes {
+    padding: 0;
+  }
+
   :root[data-input='touch'] .resource {
     padding: 2px 6px;
   }
@@ -261,6 +281,11 @@ select,
   }
 
   :root[data-input='touch'] .foot__standings {
+    display: none;
+  }
+
+  /* In 44 px Hoehe passt eine Zeile: die neueste Meldung, nicht die Filterknoepfe davor. */
+  :root[data-input='touch'] .foot .log__filters {
     display: none;
   }
 
@@ -312,5 +337,16 @@ select,
 
   :root[data-input='touch'] .foot .log {
     max-height: 132px;
+  }
+
+  /* Vier Knoepfe zu je 44 px uebereinander waeren 144 px — zwei mal zwei passen. */
+  :root[data-input='touch'] .foot__buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+  }
+
+  :root[data-input='touch'] .foot__pair {
+    display: contents;
   }
 }

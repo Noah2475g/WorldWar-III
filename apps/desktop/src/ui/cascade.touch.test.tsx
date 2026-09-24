@@ -174,6 +174,35 @@ describe('touch.css: im Mausbetrieb bleibt der Schreibtisch, wie er war', () => 
   }
 })
 
+describe('touch.css: die Seite steht im Touch-Betrieb still', () => {
+  beforeEach(() => {
+    document.documentElement.dataset['input'] = 'touch'
+  })
+
+  it('nimmt .app den Rollcontainer ab und laesst die eine Spalte schmaler werden als ihr Inhalt', () => {
+    const { container } = render(<Bedienelemente />)
+    const app = container.querySelector('.app')!
+
+    expect(css(app, 'position')).toBe('relative')
+    // overflow steht zweimal: hidden, dann clip — die zweite Erklaerung gewinnt.
+    expect(css(app, 'overflow')).toBe('clip')
+    expect(css(app, 'grid-template-columns')).toBe('minmax(0, 1fr)')
+  })
+
+  it('laesst .app im Mausbetrieb unangetastet', () => {
+    document.documentElement.dataset['input'] = 'mouse'
+    const { container } = render(<Bedienelemente />)
+    const app = container.querySelector('.app')!
+
+    // app.css setzt weder position noch overflow noch grid-template-columns an .app:
+    // touch.css darf sie im Mausbetrieb nicht setzen (jsdom meldet nicht gesetzte
+    // Eigenschaften als leere Zeichenkette, nicht als deren Anfangswert).
+    expect(css(app, 'position')).toBe('static')
+    expect(css(app, 'overflow')).toBe('')
+    expect(css(app, 'grid-template-columns')).not.toBe('minmax(0, 1fr)')
+  })
+})
+
 describe('touch.css: die Karte gehoert dem Finger, in jeder Eingabeart', () => {
   it('nimmt dem Browser Wischen und Markieren auf der Karte ab', () => {
     render(<Bedienelemente />)
