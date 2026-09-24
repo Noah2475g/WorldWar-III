@@ -53,7 +53,7 @@ Bündel, nicht der Dev-Server (WORKFLOW Falle 18). Der Bau kommt aus dem eigenen
 ```powershell
 Remove-Item Env:WORLDWAR_MULTIPLAYER -ErrorAction SilentlyContinue
 pnpm desktop:build
-pnpm --filter @worldwar/desktop preview --host 127.0.0.1 --port 4190 --strictPort
+pnpm --filter @worldwar/desktop preview --host 127.0.0.1 --port 4192 --strictPort
 ```
 
 `--host 127.0.0.1` ist wichtig, weil `localhost` unter Windows zuerst `::1` fragen kann.
@@ -63,12 +63,12 @@ Spielständen und eigenem Einführungs-Merker.
 
 **Tunnel.** Das Skript richtet beide selbst ein:
 
-- `adb reverse tcp:4190 tcp:4190`: Im Emulator ist `http://localhost:4190/` das Spiel auf
+- `adb reverse tcp:4192 tcp:4192`: Im Emulator ist `http://localhost:4192/` das Spiel auf
   dem PC. Das ist ein sicherer Kontext und derselbe Ursprung, den ein Spieler hätte.
 - `adb forward tcp:9229 localabstract:chrome_devtools_remote`: CDP zu Chrome im Emulator.
   Eine Weiterleitung, die vor dem Lauf schon bestand, lässt das Skript am Ende stehen.
   Seine eigene räumt es ab. Den `reverse` lässt es stehen, damit die Seite im Emulator
-  benutzbar bleibt; wegräumen mit `adb reverse --remove tcp:4190`.
+  benutzbar bleibt; wegräumen mit `adb reverse --remove tcp:4192`.
 
 ## Befehle
 
@@ -77,7 +77,7 @@ Spielständen und eigenem Einführungs-Merker.
 pnpm android:check --adb C:\LDPlayer\LDPlayer9\adb.exe --out C:\temp\ww-check
 
 # Chromium mit Touch-Emulation auf dem PC, zwei Größen nacheinander
-pnpm android:check --target chromium --sizes "640x360@2,1097x617@1.75" --url-port 4190
+pnpm android:check --target chromium --sizes "640x360@2,1097x617@1.75" --url-port 4192
 
 # Hilfe
 node scripts/android-check.mjs --help
@@ -90,7 +90,7 @@ beide Schreibweisen gehen also.
 |---|---|---|
 | `--target android\|chromium` | Ziel | `android` |
 | `--url <adresse>` | volle Seitenadresse, schlägt `--url-port` | `http://localhost:<port>/?touch=1` (Android), `http://127.0.0.1:<port>/?touch=1` (Chromium) |
-| `--url-port <p>` | Port des Spiels | 4190 |
+| `--url-port <p>` | Port des Spiels | 4192 |
 | `--out <ordner>` | Bildschirmfotos und `report.json` | Temp-Ordner `worldwar-android-check\<zeit>` |
 | `--adb`, `--serial`, `--devtools-port` | nur Android | `ADB`/`adb`, einziges Gerät, 9229 |
 | `--browser`, `--debug-port`, `--sizes` | nur Chromium | Brave, sonst Edge; 9223; `640x360@2,1097x617@1.75` |
@@ -175,7 +175,7 @@ lesbar:
   "commit": "1778e03",                        // Stand des Prüfstands, nicht des Spiels
   "target": "chromium", "url": "http://127.0.0.1:4191/?touch=1",
   "browser": "…brave.exe", "browserVersion": "Chrome/153.0.8010.53",   // nur Chromium
-  "serial": "emulator-5554", "adb": { "reverse": 4190, "forward": 9229, "forwardExisted": false },  // nur Android
+  "serial": "emulator-5554", "adb": { "reverse": 4192, "forward": 9229, "forwardExisted": false },  // nur Android
   "settings": { "longPressMs": 700, "pinchTolerancePx": 8, "minTarget": 44 },
   "runs": [{
     "label": "640x360@2",                     // bzw. "android_<serial>"
@@ -278,16 +278,12 @@ das Gerät.
 
 ### Nach den Änderungen der Bahnen A und B
 
-**Wichtig: Port 4190 geht nicht.** Er steht auf der Sperrliste, die Fetch-Spezifikation und
-Chromium teilen (registrierter ManageSieve-Port). Node meldet dafür `fetch failed` mit der
-Ursache `bad port` — noch bevor ein Browser überhaupt versucht, die Seite zu laden; ein Aufruf
-mit `--target chromium --url-port 4190` (die in diesem Dokument oben gezeigte Vorgabe) scheitert
-deshalb IMMER mit Exit-Code 2 ("antwortet nicht"), unabhängig vom Zustand des Spiels. Geprüft
-mit `node -e "fetch('http://127.0.0.1:4190/').catch(e=>console.log(e.cause.message))"` → `bad
-port`; andere Ports (4189, 4191, 4192, 4193, …) sind frei von diesem Problem. Dieser Lauf
-benutzte deshalb **Port 4192** statt der Vorgabe 4190. **Offener Befund** (nicht behoben, siehe
-unten): die Vorgabe `4190` in `scripts/android-check.mjs`, `package.json` und diesem Dokument
-sollte auf einen unbedenklichen Port wechseln, sonst scheitert jeder Lauf mit den Vorgabewerten.
+**Port 4190 geht nicht — deshalb ist die Vorgabe jetzt 4192.** 4190 steht auf der Sperrliste, die
+die Fetch-Spezifikation und Chromium teilen (registrierter ManageSieve-Port): Node meldet `fetch
+failed` mit der Ursache `bad port`, noch bevor ein Browser die Seite lädt, und jeder Lauf endete
+mit Exit-Code 2. Die Vorgabe in `scripts/lib/android-check-lib.mjs`, `scripts/android-check.mjs`
+und diesem Dokument ist auf **4192** gewechselt; ein Test in `test/android-check.test.ts` hält
+alle drei Vorgabeports von der Sperrliste fern.
 
 - Gemessen: 2026-09-25, 00:06 Uhr MESZ (22:06 UTC, aus `report.json`), Prüfstand-Commit
   `c0fbd61` (nach den Fusionen der Bahnen A, B, C auf `claude/mobile-bedienung-android` und

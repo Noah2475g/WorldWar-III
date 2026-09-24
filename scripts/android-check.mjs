@@ -14,7 +14,7 @@
  *
  * Den Server startet der Aufrufer, etwa:
  *   pnpm desktop:build
- *   pnpm --filter @worldwar/desktop preview --host 127.0.0.1 --port 4190 --strictPort
+ *   pnpm --filter @worldwar/desktop preview --host 127.0.0.1 --port 4192 --strictPort
  *
  * Android: `adb reverse` fuer den Spielport, Chrome per Intent auf die Seite,
  * `adb forward tcp:9229 localabstract:chrome_devtools_remote` fuer CDP. Die Erstbegruessung

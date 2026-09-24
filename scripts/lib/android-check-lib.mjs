@@ -41,7 +41,7 @@
  * @typedef {{ label: string, checks: NumberedCheck[], screenshots: string[], error: string | null }} Run
  */
 
-export const DEFAULT_URL_PORT = 4190
+export const DEFAULT_URL_PORT = 4192
 export const DEFAULT_DEVTOOLS_PORT = 9229
 export const DEFAULT_DEBUG_PORT = 9223
 export const DEFAULT_SIZES = '640x360@2,1097x617@1.75'

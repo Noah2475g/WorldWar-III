@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   CHECKS,
+  DEFAULT_DEBUG_PORT,
+  DEFAULT_DEVTOOLS_PORT,
+  DEFAULT_URL_PORT,
   anchorCheck,
   auxObservation,
   candidateGrid,
@@ -48,16 +51,32 @@ const view = (x: number, y: number, scale: number, selected = '') => ({
 })
 
 describe('Android-Pruefstand: Argumente', () => {
-  it('nimmt ohne Angaben das Android-Ziel mit Port 4190 und 9229', () => {
+  // Die Sperrliste der Fetch-Spezifikation ("bad port"), die Chromium und Node teilen: ein
+  // Server auf so einem Port ist fuer den Browser und fuer fetch() unerreichbar.
+  const FETCH_BAD_PORTS = [
+    1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, 77, 79, 87, 95, 101, 102,
+    103, 104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 137, 139, 143, 161, 179, 389, 427, 465,
+    512, 513, 514, 515, 526, 530, 531, 532, 540, 548, 554, 556, 563, 587, 601, 636, 989, 990, 993,
+    995, 1719, 1720, 1723, 2049, 3659, 4045, 4190, 5060, 5061, 6000, 6566, 6665, 6666, 6667, 6668,
+    6669, 6679, 6697, 10080,
+  ]
+
+  it('nimmt als Vorgabe keinen Port, den Browser und fetch() sperren', () => {
+    for (const port of [DEFAULT_URL_PORT, DEFAULT_DEVTOOLS_PORT, DEFAULT_DEBUG_PORT]) {
+      expect(FETCH_BAD_PORTS).not.toContain(port)
+    }
+  })
+
+  it('nimmt ohne Angaben das Android-Ziel mit Port 4192 und 9229', () => {
     const parsed = parseArgs([], {})
     expect(parsed.ok).toBe(true)
     if (!parsed.ok) return
     expect(parsed.options.target).toBe('android')
-    expect(parsed.options.urlPort).toBe(4190)
+    expect(parsed.options.urlPort).toBe(4192)
     expect(parsed.options.devtoolsPort).toBe(9229)
     expect(parsed.options.adb).toBe('adb')
     expect(parsed.options.serial).toBeNull()
-    expect(pageUrl(parsed.options)).toBe('http://localhost:4190/?touch=1')
+    expect(pageUrl(parsed.options)).toBe('http://localhost:4192/?touch=1')
   })
 
   it('liest adb aus der Umgebung und die Schalter in beiden Schreibweisen', () => {
@@ -79,7 +98,7 @@ describe('Android-Pruefstand: Argumente', () => {
     if (!parsed.ok) return
     expect(parsed.options.debugPort).toBe(9223)
     expect(parsed.options.sizes.map((s) => s.label)).toEqual(['640x360@2', '1097x617@1.75'])
-    expect(pageUrl(parsed.options)).toBe('http://127.0.0.1:4190/?touch=1')
+    expect(pageUrl(parsed.options)).toBe('http://127.0.0.1:4192/?touch=1')
   })
 
   it('laesst --url die Adresse vollstaendig bestimmen', () => {
@@ -156,14 +175,14 @@ describe('Android-Pruefstand: adb und CDP-Ziele', () => {
 
   it('findet den Tab mit der eigenen Adresse, nicht irgendeinen', () => {
     const targets = [
-      { type: 'service_worker', url: 'http://localhost:4190/sw.js', webSocketDebuggerUrl: 'ws://sw' },
+      { type: 'service_worker', url: 'http://localhost:4192/sw.js', webSocketDebuggerUrl: 'ws://sw' },
       { type: 'page', url: 'https://www.google.com/', webSocketDebuggerUrl: 'ws://g' },
-      { type: 'page', url: 'http://localhost:4190/#/start', webSocketDebuggerUrl: 'ws://same-origin' },
-      { type: 'page', url: 'http://localhost:4190/?touch=1', webSocketDebuggerUrl: 'ws://exact' },
+      { type: 'page', url: 'http://localhost:4192/#/start', webSocketDebuggerUrl: 'ws://same-origin' },
+      { type: 'page', url: 'http://localhost:4192/?touch=1', webSocketDebuggerUrl: 'ws://exact' },
     ]
-    expect(pickPageTarget(targets, 'http://localhost:4190/?touch=1')?.webSocketDebuggerUrl).toBe('ws://exact')
-    expect(pickPageTarget(targets.slice(0, 3), 'http://localhost:4190/?touch=1')?.webSocketDebuggerUrl).toBe('ws://same-origin')
-    expect(pickPageTarget(targets.slice(0, 2), 'http://localhost:4190/?touch=1')).toBeNull()
+    expect(pickPageTarget(targets, 'http://localhost:4192/?touch=1')?.webSocketDebuggerUrl).toBe('ws://exact')
+    expect(pickPageTarget(targets.slice(0, 3), 'http://localhost:4192/?touch=1')?.webSocketDebuggerUrl).toBe('ws://same-origin')
+    expect(pickPageTarget(targets.slice(0, 2), 'http://localhost:4192/?touch=1')).toBeNull()
   })
 
   it('liest die Chrome-Hauptversion aus der Kennung', () => {
