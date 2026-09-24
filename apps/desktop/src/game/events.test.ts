@@ -1040,6 +1040,34 @@ describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
     })
     expect(new Set(texts).size).toBe(6)
   })
+
+  // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit provincesLapsed schliesst
+  // settleTradeOffers ein Angebot auch dann als 'invalid', wenn eine Provinz nicht mehr
+  // abtretbar ist (der Anbieter liess z. B. eine eigene Armee durch die angebotene Provinz
+  // marschieren) — nicht nur, wenn eine Macht ausgeschieden ist. Der Text darf diesen
+  // zweiten Fall nicht als Ausscheiden ausgeben.
+  it('behauptet bei "invalid" nicht faelschlich, eine Macht sei ausgeschieden', () => {
+    const entry = describeEvent(
+      event({
+        type: 'TRADE_OFFER_CLOSED',
+        audience: ['p1', 'p2'],
+        concerns: ['p1', 'p2'],
+        offerId: 't9',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        reason: 'invalid',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    // Der Satz gilt fuer beide Ursachen (Ausscheiden ODER verfallene Provinz) — er behauptet
+    // keine der beiden als alleinige, sichere Ursache. Die alte Fassung sagte flach
+    // "hinfällig, eine Macht ist ausgeschieden" — das waere hier falsch (Beispiel: eine
+    // eigene Armee marschiert durch die angebotene Provinz, keine Macht ist ausgeschieden).
+    expect(entry.text).not.toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: hinfällig, eine Macht ist ausgeschieden/)
+    expect(entry.text).toMatch(/ausgeschieden.*oder.*abtretbar/)
+  })
 })
 
 /**

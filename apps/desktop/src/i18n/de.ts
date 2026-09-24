@@ -522,7 +522,10 @@ export const de = {
       withdrawn: 'zurückgezogen — das Hinterlegte geht zurück',
       expired: 'ohne Antwort verfallen — das Hinterlegte geht zurück',
       war: 'wegen Krieges verfallen — das Hinterlegte geht zurück',
-      invalid: 'hinfällig, eine Macht ist ausgeschieden — das Hinterlegte geht zurück',
+      // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit T-M17-06 schliesst 'invalid' auch
+      // eine verfallene Provinz ein, nicht nur ein Ausscheiden — der Satz behauptet keine der
+      // beiden Ursachen als sicher.
+      invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar — das Hinterlegte geht zurück',
     },
   },
 

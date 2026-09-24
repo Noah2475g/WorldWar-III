@@ -327,7 +327,9 @@ export interface RightOfWayChangedEvent extends BaseEvent {
 
 /**
  * Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5). `invalid` heisst: eine der beiden
- * Maechte ist ausgeschieden.
+ * Maechte ist ausgeschieden, ODER (seit T-M17-06, Nachtrag Befund M17-D7) eine angebotene oder
+ * verlangte Provinz ist nicht mehr abtretbar (`provincesLapsed`). Der Spielertext in de.ts
+ * (`diplomacy.tradeClosed.invalid`) nennt deshalb beide Ursachen, keine als sicher.
  */
 export type TradeOfferCloseReason = 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'war' | 'invalid'
 
