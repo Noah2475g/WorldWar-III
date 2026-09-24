@@ -1,8 +1,18 @@
 import { emit } from '../events/emit'
 import type { TradeOfferCloseReason } from '../events/types'
+import { atWar } from '../phases/combat'
 import type { PhaseContext } from '../phases/index'
+import { transferProvince } from '../phases/occupation'
 import { relationKey } from '../state/create'
-import { RESOURCE_KEYS, type GameState, type PlayerId, type ResourceKey, type TradeBundle, type TradeOffer } from '../state/types'
+import {
+  RESOURCE_KEYS,
+  type GameState,
+  type PlayerId,
+  type ProvinceId,
+  type ResourceKey,
+  type TradeBundle,
+  type TradeOffer,
+} from '../state/types'
 import { registerCommand } from './registry'
 import {
   fail,
@@ -24,7 +34,8 @@ import {
  *
  * Geschlossen wird an genau zwei Stellen: in den Befehlen selbst (Annahme, Ablehnung, Rueckzug)
  * und in `settleTradeOffers` (Schritt 4 der Diplomatiephase, D29.3: ausgeschiedene Macht, Krieg,
- * abgelaufene Frist). Provinzen im Handel bringt T-M17-06.
+ * abgelaufene Frist). Provinzen wechseln bei der Annahme ueber `transferProvince` (T-M17-06); sie
+ * liegen nicht in Treuhand.
  */
 
 /** Das Angebot mit dieser Kennung, oder `undefined`. Eine Kennung aus dem Netz ist nicht vertrauenswuerdig. */
@@ -72,6 +83,94 @@ function warProblem(state: GameState, a: PlayerId, b: PlayerId): CommandResult |
 }
 
 /**
+ * Wie tief eine Provinzseite geprueft wird (R-DIP-04, T-M17-06).
+ * `full`: alles, was der Abtretende selbst weiss — er ist der Befehlende oder seine Provinz wird
+ *   gleich uebergeben. `public`: nur, was jeder weiss — Existenz und Besitz (Besitzwechsel stehen
+ *   im Weltgeschehen). Hauptstadt und Armeen des ANDEREN verraet ein Angebot nie.
+ */
+type CessionDepth = 'full' | 'public'
+
+/**
+ * Warum `ceder` die Provinz nicht an `receiver` abtreten kann (R-DIP-09/AK1), oder `null`.
+ * Pruefreihenfolge: Existenz, Besitz, Hauptstadt, umkaempft, eigene Armeen (darin oder auf dem
+ * Weg hinein), Armeen einer dritten Macht darin. Die Armeen des Empfaengers stoeren nicht: sie
+ * stehen danach im eigenen Land.
+ */
+function cessionProblem(
+  state: GameState,
+  provinceId: unknown,
+  ceder: PlayerId,
+  receiver: PlayerId,
+  depth: CessionDepth,
+): CommandResult | null {
+  // `Object.hasOwn`: eine Kennung wie 'toString' traefe sonst den Prototyp.
+  if (typeof provinceId !== 'string' || !Object.hasOwn(state.provinces, provinceId)) {
+    return typeof provinceId === 'string' ? fail('PROVINCE_NOT_FOUND', { provinceId }) : fail('PROVINCE_NOT_FOUND')
+  }
+  const province = state.provinces[provinceId]!
+  if (province.owner !== ceder) return fail('INVALID_TARGET', { reason: 'nicht im Besitz', provinceId })
+  if (depth === 'public') return null
+
+  if (state.players[ceder]?.capitalProvinceId === provinceId) return fail('INVALID_TARGET', { reason: 'Hauptstadt', provinceId })
+
+  const armies = state.armyOrder.map((id) => state.armies[id]!)
+  const present = armies.filter((army) => army.locationProvinceId === provinceId)
+  if (present.some((army) => atWar(state, ceder, army.owner))) return fail('INVALID_TARGET', { reason: 'umkämpft', provinceId })
+  // Auch auf dem Weg hinein: sie kaeme im Land des Empfaengers an — ein Ueberfall (dod T-M17-06).
+  if (armies.some((army) => army.owner === ceder && (army.locationProvinceId === provinceId || army.path.includes(provinceId)))) {
+    return fail('INVALID_TARGET', { reason: 'eigene Armeen', provinceId })
+  }
+  // Eine dritte Macht steht nur mit Recht des Abtretenden darin; das Recht geht nicht mit ueber.
+  // Fremde Maersche prueft der Kern NICHT — ihr Ziel kennt der Abtretende nicht (E3, M17-D5).
+  if (present.some((army) => army.owner !== ceder && army.owner !== receiver)) {
+    return fail('INVALID_TARGET', { reason: 'fremde Armeen', provinceId })
+  }
+  return null
+}
+
+/** Eine Seite eines Buendels: erst doppelte Eintraege, dann jede Provinz in Listenreihenfolge. */
+function provincesProblem(
+  state: GameState,
+  provinces: readonly unknown[],
+  ceder: PlayerId,
+  receiver: PlayerId,
+  depth: CessionDepth,
+): CommandResult | null {
+  if (new Set(provinces).size !== provinces.length) return fail('INVALID_TARGET', { reason: 'doppelte Provinz' })
+  for (const provinceId of provinces) {
+    const problem = cessionProblem(state, provinceId, ceder, receiver, depth)
+    if (problem !== null) return problem
+  }
+  return null
+}
+
+/**
+ * Ist ein Angebot mit Provinzen nicht mehr abschliessbar (R-DIP-09/AK1)? Die gebende Seite voll —
+ * ihr Anbieter hat sie auf den Tisch gelegt und haelt sie sauber, oder das Angebot faellt; die
+ * verlangte nur oeffentlich, sonst verriete ein Verfall dem Anbieter Armeen und Hauptstadt des
+ * Ziels (R-DIP-04). Ohne Provinzen: nie — und ohne einen Blick auf die Armeen.
+ */
+function provincesLapsed(state: GameState, offer: TradeOffer): boolean {
+  if (offer.give.provinces.length === 0 && offer.want.provinces.length === 0) return false
+  return (
+    provincesProblem(state, offer.give.provinces, offer.from, offer.to, 'full') !== null ||
+    provincesProblem(state, offer.want.provinces, offer.to, offer.from, 'public') !== null
+  )
+}
+
+/** Die Abtretung selbst (R-DIP-09/AK2): Besitzerwechsel ueber den Helfer der Eroberung — sonst nichts. */
+function cedeProvince(draft: GameState, provinceId: ProvinceId, ceder: PlayerId, receiver: PlayerId, ctx: PhaseContext): void {
+  transferProvince(draft, provinceId, receiver)
+  // Keine Moral, keine Besatzungszeit, keine Verstimmung, kein Preis, kein Alarm.
+  emit(ctx.events, draft.tick, 'PROVINCE_CEDED', {
+    provinceId,
+    previousOwner: ceder,
+    newOwner: receiver,
+    concerns: [ceder, receiver],
+  })
+}
+
+/**
  * Schliesst genau dieses eine Angebot (B4). Ausser bei `accepted` geht die Treuhand an den
  * Anbieter zurueck — auch an einen ausgeschiedenen, damit Bestaende plus Treuhand erhalten bleiben.
  */
@@ -98,6 +197,9 @@ export function closeTradeOffer(draft: GameState, offer: TradeOffer, reason: Tra
  * Angebot, in dieser Rangfolge: eine Macht ausgeschieden (`invalid`) vor Krieg (`war`) vor Frist
  * (`expired`). Deshalb geht die Treuhand bei „Ueberfall und Verfall im selben Tick" genau einmal
  * zurueck, und der Grund ist der Krieg. In Array-Reihenfolge (R-ARCH-01), ohne Zufall.
+ *
+ * Eine Provinz, die nicht mehr abtretbar ist, schliesst als `invalid` — nach dem Krieg, vor der
+ * Frist (T-M17-06).
  */
 export function settleTradeOffers(draft: GameState, ctx: PhaseContext): void {
   if (draft.diplomacy.tradeOffers.length === 0) return
@@ -108,9 +210,11 @@ export function settleTradeOffers(draft: GameState, ctx: PhaseContext): void {
         ? 'invalid'
         : relation?.state === 'war'
           ? 'war'
-          : draft.tick >= offer.expiresAtTick
-            ? 'expired'
-            : null
+          : provincesLapsed(draft, offer)
+            ? 'invalid'
+            : draft.tick >= offer.expiresAtTick
+              ? 'expired'
+              : null
     if (reason !== null) closeTradeOffer(draft, offer, reason, ctx)
   }
 }
@@ -128,17 +232,20 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
     const warIssue = warProblem(state, command.playerId, command.targetPlayerId)
     if (warIssue !== null) return warIssue
 
-    // Diese eine Zeile ersetzt T-M17-06 (Provinzhandel).
-    if (command.give.provinces.length > 0 || command.want.provinces.length > 0) {
-      return fail('INVALID_TARGET', { reason: 'Provinzen erst mit dem Provinzhandel' })
-    }
+    // Provinzen (R-DIP-09/AK1): die gebende Seite voll, die verlangte nur oeffentlich (R-DIP-04).
+    const giveProvinces = provincesProblem(state, command.give.provinces, command.playerId, command.targetPlayerId, 'full')
+    if (giveProvinces !== null) return giveProvinces
+    const wantProvinces = provincesProblem(state, command.want.provinces, command.targetPlayerId, command.playerId, 'public')
+    if (wantProvinces !== null) return wantProvinces
 
     const giveProblem = amountProblem(command.give.resources as Record<string, unknown>)
     if (!giveProblem.ok) return giveProblem
     const wantProblem = amountProblem(command.want.resources as Record<string, unknown>)
     if (!wantProblem.ok) return wantProblem
 
-    if (Object.keys(command.give.resources).length === 0) return fail('INVALID_TARGET', { reason: 'leeres Angebot' })
+    if (Object.keys(command.give.resources).length === 0 && command.give.provinces.length === 0) {
+      return fail('INVALID_TARGET', { reason: 'leeres Angebot' })
+    }
 
     for (const key of Object.keys(command.give.resources)) {
       if (key in command.want.resources) return fail('INVALID_TARGET', { reason: 'gleicher Rohstoff auf beiden Seiten' })
@@ -176,8 +283,8 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
         id: `t${draft.nextIds.offer++}`,
         from: command.playerId,
         to: command.targetPlayerId,
-        give: { resources: give, provinces: [] },
-        want: { resources: copyResources(command.want.resources), provinces: [] },
+        give: { resources: give, provinces: command.give.provinces.slice() },
+        want: { resources: copyResources(command.want.resources), provinces: command.want.provinces.slice() },
         createdTick: draft.tick,
         expiresAtTick: draft.tick + lifetime,
       },
@@ -195,6 +302,15 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
 
     const warIssue = warProblem(state, offer.from, offer.to)
     if (warIssue !== null) return warIssue
+
+    // Beide Seiten erneut und voll (R-DIP-09/AK1): zwischen Angebot und Annahme kann eine Provinz
+    // veralten. Die verlangte ist die eigene des Annehmenden; die gebende scheitert hier nur, wenn
+    // sie seit der letzten Diplomatiephase veraltet ist — dann schliesst diese sie noch im selben
+    // Tick als `invalid`, mit Rueckgabe.
+    const giveProvinces = provincesProblem(state, offer.give.provinces, offer.from, offer.to, 'full')
+    if (giveProvinces !== null) return giveProvinces
+    const wantProvinces = provincesProblem(state, offer.want.provinces, offer.to, offer.from, 'full')
+    if (wantProvinces !== null) return wantProvinces
 
     const player = state.players[command.playerId]!
     for (const key of RESOURCE_KEYS) {
@@ -225,6 +341,9 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
       targetPlayerId: offer.to,
       concerns: [offer.from, offer.to],
     })
+    // Die Provinzen zuletzt (E9): erst die gegebene Seite, dann die verlangte, je in Listenreihenfolge.
+    for (const provinceId of offer.give.provinces) cedeProvince(draft, provinceId, offer.from, offer.to, ctx)
+    for (const provinceId of offer.want.provinces) cedeProvince(draft, provinceId, offer.to, offer.from, ctx)
   },
 })
 

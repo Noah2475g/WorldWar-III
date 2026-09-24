@@ -306,6 +306,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     // Handel (T-M17-05): ein geschlossenes Angebot und ein Tausch sind kein Rueckschlag (D24.1).
     TRADE_OFFER_CLOSED: { offerId: 't1', playerId: 'p1', targetPlayerId: 'p2', reason: 'declined', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
     TRADE_AGREED: { playerId: 'p1', targetPlayerId: 'p2', audience: [], concerns: ['p1', 'p2'] },
+    // Eine Abtretung ist verabredet, nicht erlitten — kein Rueckschlag (T-M17-06, D24.1).
+    PROVINCE_CEDED: { provinceId, previousOwner: 'p1', newOwner: 'p2', audience: [], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -1037,5 +1039,59 @@ describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
       return entry.text
     })
     expect(new Set(texts).size).toBe(6)
+  })
+})
+
+/**
+ * Die Abtretung im Protokoll (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen ohne Preis: die Provinz ist der Satzgegenstand, nicht eine der beiden Maechte —
+ * deshalb weder Fremd- noch Mehrzahlfassung.
+ */
+describe('R-DIP-09/AK2 Die Abtretung steht im Protokoll — ohne Preis', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt Provinz, Vorbesitzer und Neubesitzer, fuer jeden Betrachter gleich', () => {
+    const provinceName = map.provinces.find((p) => p.id === provinceId)!.name
+    for (const viewer of ['p1', 'p2', 'p3']) {
+      const entry = describeEvent(
+        event({
+          type: 'PROVINCE_CEDED',
+          audience: [],
+          concerns: ['p1', 'p2'],
+          provinceId,
+          previousOwner: 'p1',
+          newOwner: 'p2',
+        }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe(`${provinceName} geht durch Vertrag von Mexiko an Vereinigte Staaten über.`)
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d|\{\{|\bp[123]\b|PROVINCE_/)
+      expect(entry.provinceId).toBe(provinceId)
+    }
+  })
+
+  it('ist fuer den Abtretenden kein Rueckschlag', () => {
+    const entry = describeEvent(
+      event({
+        type: 'PROVINCE_CEDED',
+        audience: [],
+        concerns: ['p1', 'p2'],
+        provinceId,
+        previousOwner: 'p1',
+        newOwner: 'p2',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    expect(entry.self ?? false).toBe(false)
   })
 })

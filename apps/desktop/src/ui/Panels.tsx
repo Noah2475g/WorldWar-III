@@ -907,6 +907,8 @@ export function categoryOf(type: string): EventCategory {
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
   // „RIGHT_OF_WAY" enthält kein „WAR" — ohne diese Zeile landete der Durchmarsch (T-M17-04) unter „Sonstiges".
   if (/RIGHT_OF_WAY/.test(type)) return 'diplomacy'
+  // Die Abtretung (T-M17-06) ist ein Vertrag, keine Eroberung — ohne diese Zeile stuende sie unter „Sonstiges".
+  if (/CEDED/.test(type)) return 'diplomacy'
   return 'other'
 }
 

@@ -443,6 +443,9 @@ export const de = {
     // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
     TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
     TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
+    // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
+    // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
+    PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */

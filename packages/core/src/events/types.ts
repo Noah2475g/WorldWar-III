@@ -361,6 +361,21 @@ export interface TradeAgreedEvent extends BaseEvent {
   targetPlayerId: PlayerId
 }
 
+/**
+ * Eine Provinz wechselt durch Vertrag den Besitzer (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` Vorbesitzer und Neubesitzer. **Kein Preis** — was
+ * dafuer gegeben wurde, erfaehrt die Welt nicht; `describeEvent` uebernimmt jedes flache Feld, ein
+ * Mengenfeld hier stuende sofort im Protokoll jedes Unbeteiligten. **Kein Alarm:** eine Abtretung
+ * ist verabredet, nicht erlitten, und haelt niemandes Vorspulen an. Nicht in `ALERT_TYPES`.
+ */
+export interface ProvinceCededEvent extends BaseEvent {
+  type: 'PROVINCE_CEDED'
+  provinceId: ProvinceId
+  previousOwner: PlayerId
+  newOwner: PlayerId
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -392,6 +407,7 @@ export type GameEvent =
   | RightOfWayChangedEvent
   | TradeOfferClosedEvent
   | TradeAgreedEvent
+  | ProvinceCededEvent
 
 export type EventType = GameEvent['type']
 
@@ -427,6 +443,7 @@ export const EVENT_TYPES = [
   'RIGHT_OF_WAY_CHANGED',
   'TRADE_OFFER_CLOSED',
   'TRADE_AGREED',
+  'PROVINCE_CEDED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.

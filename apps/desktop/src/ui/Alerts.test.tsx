@@ -125,6 +125,9 @@ describe('R-GAME-06 Das Protokoll ist filterbar', () => {
     expect(categoryOf('WAR_DECLARED')).toBe('diplomacy')
     expect(categoryOf('DAY_REPORT')).toBe('other')
   })
+
+  it('ordnet die Abtretung der Diplomatie zu — sie ist ein Vertrag, keine Eroberung (T-M17-06)', () =>
+    expect(categoryOf('PROVINCE_CEDED')).toBe('diplomacy'))
 })
 
 /**

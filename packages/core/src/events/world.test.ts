@@ -28,6 +28,8 @@ describe('R-NEWS-04 Die Positivliste ist vollstaendig und gueltig', () => {
         // Seit T-M17-05 (R-DIP-05/AK4, D29.5): dass zwei Maechte handeln, ist oeffentlich —
         // wie viel, nicht. Das Ereignis traegt deshalb kein Mengenfeld.
         'TRADE_AGREED',
+        // Seit T-M17-06 (R-DIP-09/AK2, D29.5): eine Abtretung ist oeffentlich — der Preis nicht.
+        'PROVINCE_CEDED',
       ].sort(),
     )
   })

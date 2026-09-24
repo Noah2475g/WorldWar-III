@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url'
 import { RAW_DEFAULT_RULES, TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import fc from 'fast-check'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { GameEvent } from '../events/types'
+import { alertsIn } from '../events/emit'
+import { isAlertType, type GameEvent } from '../events/types'
 import { isWorldEventType, worldEventsIn } from '../events/world'
 import { diplomacy } from '../phases/diplomacy'
 import type { PhaseContext } from '../phases/index'
@@ -11,7 +12,7 @@ import { parseRules } from '../rules/load'
 import { createInitialState, type GameConfig } from '../state/create'
 import { RESOURCE_KEYS, type GameState, type ResourceKey, type TradeBundle } from '../state/types'
 import { step } from '../step'
-import { runTicks } from '../clock'
+import { firstAlertFor, runTicks } from '../clock'
 import { publicView } from '../view/publicView'
 import './handlers'
 import { applyCommand, canApply } from './registry'
@@ -63,6 +64,59 @@ const offer = (
 const accept = (playerId: string, offerId: string): Command => ({ type: 'ACCEPT_TRADE', playerId, offerId })
 const decline = (playerId: string, offerId: string): Command => ({ type: 'DECLINE_TRADE', playerId, offerId })
 const withdraw = (playerId: string, offerId: string): Command => ({ type: 'WITHDRAW_TRADE', playerId, offerId })
+
+/** Ein Buendel mit Provinzen — `bundle()` oben bleibt fuer den Eigenschaftstest unveraendert. */
+const withProvinces = (
+  from: string,
+  to: string,
+  give: { resources?: Partial<Record<ResourceKey, number>>; provinces?: string[] },
+  want: { resources?: Partial<Record<ResourceKey, number>>; provinces?: string[] } = {},
+): Command => ({
+  type: 'OFFER_TRADE',
+  playerId: from,
+  targetPlayerId: to,
+  give: { resources: give.resources ?? {}, provinces: give.provinces ?? [] },
+  want: { resources: want.resources ?? {}, provinces: want.provinces ?? [] },
+})
+
+const grant = (from: string, to: string): Command => ({ type: 'DIPLOMACY', playerId: from, targetPlayerId: to, action: 'grantRightOfWay' })
+
+/** Stellt `army` auf den Marsch nach `to`; sie kommt im naechsten Bewegungsschritt an. */
+function marchTo(army: { path: string[]; arrivalTick: number | null; departureTick: number | null }, to: string): void {
+  army.path = [to]
+  army.arrivalTick = state.tick + 1
+  army.departureTick = state.tick
+}
+
+/** Ein Auftrag in der Warteschlange einer Provinz, Kennung aus dem Zaehler des Zustands. */
+function queueOrders(provinceId: string, owner: string, completesAtTick: number): void {
+  const p = state.provinces[provinceId]!
+  p.buildQueue.push({
+    id: `o${state.nextIds.order++}`,
+    building: 'barracks',
+    level: (p.buildings.barracks ?? 0) + 1,
+    startedTick: state.tick,
+    completesAtTick,
+    ownerAtStart: owner,
+  })
+  p.recruitQueue.push({
+    id: `o${state.nextIds.order++}`,
+    unitKey: 'infantry',
+    count: 1,
+    startedTick: state.tick,
+    completesAtTick,
+    ownerAtStart: owner,
+  })
+}
+
+/** Ablehnung mit Code und Grund, Zustand unberuehrt. */
+function rejectsWith(command: Command, code: string, reason?: string, provinceId?: string): void {
+  const before = structuredClone(state)
+  const expected = reason === undefined ? { ok: false, code } : { ok: false, code, detail: { reason, ...(provinceId ? { provinceId } : {}) } }
+  expect(canApply(state, command, ctx)).toMatchObject(expected)
+  expect(applyCommand(state, command, ctx).ok).toBe(false)
+  expect(state).toEqual(before)
+}
 
 const money = (id: string) => state.players[id]!.resources.money
 const res = (id: string, key: ResourceKey) => state.players[id]!.resources[key]
@@ -187,11 +241,6 @@ describe('R-DIP-05/AK1 Was ein Angebot nicht darf', () => {
   it('ueber tradeMaxResource', () => rejects(offer('p1', 'p2', { iron: C.tradeMaxResource + 1 }), 'INVALID_TARGET'))
   it('ueber tradeMaxResource in want', () =>
     rejects(offer('p1', 'p2', { money: 1_000 }, { food: C.tradeMaxResource + 1 }), 'INVALID_TARGET'))
-  it('mit Provinzen — das ist der Provinzhandel (T-M17-06)', () => {
-    const command = offer('p1', 'p2', { money: 1_000 }) as Command & { give: TradeBundle }
-    command.give.provinces = ['n1']
-    rejects(command, 'INVALID_TARGET')
-  })
   it('ohne Deckung', () => {
     state.players['p1']!.resources.iron = 999
     rejects(offer('p1', 'p2', { iron: 1_000 }), 'INSUFFICIENT_RESOURCES')
@@ -204,6 +253,420 @@ describe('R-DIP-05/AK1 Was ein Angebot nicht darf', () => {
   })
   it('mit einem Buendel, das kein Objekt ist (ein Befehl aus dem Netz ist nicht vertrauenswuerdig)', () => {
     rejects({ type: 'OFFER_TRADE', playerId: 'p1', targetPlayerId: 'p2', give: null, want: bundle() } as unknown as Command, 'INVALID_TARGET')
+  })
+})
+
+describe('R-DIP-09/AK1 Was eine Provinz im Angebot nicht darf', () => {
+  it('eine Provinz, die dem Anbieter nicht gehoert', () => {
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['o2'] }), 'INVALID_TARGET', 'nicht im Besitz', 'o2')
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['m1'] }), 'INVALID_TARGET', 'nicht im Besitz', 'm1')
+  })
+
+  it('seine Hauptstadt', () => {
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n1'] }), 'INVALID_TARGET', 'Hauptstadt', 'n1')
+  })
+
+  it('eine umkaempfte Provinz', () => {
+    state.diplomacy.relations['p1|p3']!.state = 'war'
+    placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n2'] }), 'INVALID_TARGET', 'umkämpft', 'n2')
+  })
+
+  it('eine Provinz mit eigenen Armeen darin', () => {
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n2'] }), 'INVALID_TARGET', 'eigene Armeen', 'n2')
+  })
+
+  it('eine Provinz, die eine eigene Armee gerade ansteuert', () => {
+    const army = placeArmy(state, { owner: 'p1', at: 'n1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    marchTo(army, 'n2')
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n2'] }), 'INVALID_TARGET', 'eigene Armeen', 'n2')
+  })
+
+  it('eine Provinz mit der Armee einer dritten Macht darin — auch mit Durchmarschrecht', () => {
+    applyCommand(state, grant('p1', 'p3'), ctx)
+    placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n2'] }), 'INVALID_TARGET', 'fremde Armeen', 'n2')
+  })
+
+  it('eine Provinz, die es nicht gibt (ein Befehl aus dem Netz ist nicht vertrauenswuerdig)', () => {
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['xx'] }), 'PROVINCE_NOT_FOUND')
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['toString'] }), 'PROVINCE_NOT_FOUND')
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['__proto__'] }), 'PROVINCE_NOT_FOUND')
+    rejectsWith(withProvinces('p1', 'p2', { provinces: [42 as unknown as string] }), 'PROVINCE_NOT_FOUND')
+  })
+
+  it('dieselbe Provinz zweimal', () => {
+    rejectsWith(withProvinces('p1', 'p2', { provinces: ['n2', 'n2'] }), 'INVALID_TARGET', 'doppelte Provinz')
+  })
+
+  it('verlangt eine Provinz, die dem Ziel nicht gehoert', () => {
+    rejectsWith(
+      withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['n3'] }),
+      'INVALID_TARGET',
+      'nicht im Besitz',
+      'n3',
+    )
+    rejectsWith(
+      withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['m1'] }),
+      'INVALID_TARGET',
+      'nicht im Besitz',
+      'm1',
+    )
+  })
+
+  it('die Armee des Empfaengers darf darin stehen', () => {
+    applyCommand(state, grant('p1', 'p2'), ctx)
+    placeArmy(state, { owner: 'p2', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    expect(state.diplomacy.tradeOffers.find((o) => o.id === id)!.give.provinces).toEqual(['n2'])
+  })
+
+  it('eine Provinz allein ist ein Angebot — ganz leer bleibt leer', () => {
+    place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    rejectsWith(withProvinces('p1', 'p2', {}, { provinces: ['o2'] }), 'INVALID_TARGET', 'leeres Angebot')
+  })
+
+  it('der Befehl bleibt vom Zustand getrennt — auch die Provinzliste', () => {
+    const command = withProvinces('p1', 'p2', { provinces: ['n2'] }, { provinces: ['o2'] }) as Command & {
+      give: TradeBundle
+      want: TradeBundle
+    }
+    expect(applyCommand(state, command, ctx)).toEqual({ ok: true })
+    command.give.provinces.push('n3')
+    command.want.provinces[0] = 'o3'
+    expect(state.diplomacy.tradeOffers[0]!.give.provinces).toEqual(['n2'])
+    expect(state.diplomacy.tradeOffers[0]!.want.provinces).toEqual(['o2'])
+  })
+})
+
+describe('R-DIP-04 Ein Provinzwunsch verraet nichts, was der Anbieter nicht sehen darf', () => {
+  it('eine fremde Armee in der verlangten Provinz haelt das Angebot nicht auf', () => {
+    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    place(withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['o2'] }))
+  })
+
+  it('die Hauptstadt des Ziels auch nicht — erst die Annahme lehnt ab, und das Angebot bleibt', () => {
+    const id = place(withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['o1'] }))
+    expect(canApply(state, accept('p2', id), ctx)).toMatchObject({
+      ok: false,
+      code: 'INVALID_TARGET',
+      detail: { reason: 'Hauptstadt', provinceId: 'o1' },
+    })
+    expect(closed(diplomacyAt(1))).toEqual([])
+    expect(state.diplomacy.tradeOffers.map((o) => o.id)).toEqual([id])
+  })
+
+  it('der Empfaenger raeumt die verlangte Provinz und nimmt danach an', () => {
+    const army = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const id = place(withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['o2'] }))
+    expect(canApply(state, accept('p2', id), ctx)).toMatchObject({
+      ok: false,
+      code: 'INVALID_TARGET',
+      detail: { reason: 'eigene Armeen', provinceId: 'o2' },
+    })
+    expect(closed(diplomacyAt(1))).toEqual([])
+    expect(state.diplomacy.tradeOffers.map((o) => o.id)).toEqual([id])
+
+    delete state.armies[army.id]
+    state.armyOrder = state.armyOrder.filter((a) => a !== army.id)
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+    expect(state.provinces['o2']!.owner).toBe('p1')
+  })
+})
+
+describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, verfaellt mit Rueckgabe', () => {
+  function setupOffer(): { id: string; vorher: number } {
+    const vorher = money('p1')
+    const id = place(withProvinces('p1', 'p2', { resources: { money: 10_000 }, provinces: ['n2'] }, { resources: { iron: 1_000 } }))
+    return { id, vorher }
+  }
+
+  function expectLapsed(id: string, vorher: number, reason: string, ownerAfter: string): void {
+    rejectsWith(accept('p2', id), 'INVALID_TARGET', reason, 'n2')
+    const fired = closed(diplomacyAt(1))
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ reason: 'invalid' })
+    expect(state.diplomacy.tradeOffers).toEqual([])
+    expect(money('p1')).toBe(vorher)
+    expect(state.provinces['n2']!.owner).toBe(ownerAfter)
+  }
+
+  it('die Provinz gehoert dem Anbieter nicht mehr', () => {
+    const { id, vorher } = setupOffer()
+    state.provinces['n2']!.owner = 'p3'
+    expectLapsed(id, vorher, 'nicht im Besitz', 'p3')
+  })
+
+  it('sie ist inzwischen seine Hauptstadt', () => {
+    const { id, vorher } = setupOffer()
+    state.players['p1']!.capitalProvinceId = 'n2'
+    expectLapsed(id, vorher, 'Hauptstadt', 'p1')
+  })
+
+  it('sie ist inzwischen umkaempft', () => {
+    const { id, vorher } = setupOffer()
+    state.diplomacy.relations['p1|p3']!.state = 'war'
+    placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    expectLapsed(id, vorher, 'umkämpft', 'p1')
+  })
+
+  it('eine eigene Armee steht inzwischen darin', () => {
+    const { id, vorher } = setupOffer()
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    expectLapsed(id, vorher, 'eigene Armeen', 'p1')
+  })
+
+  it('Ablehnung und Verfall im selben Tick — durch step()', () => {
+    const { id } = setupOffer()
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+
+    const r = step(state, [accept('p2', id)], { map, rules })
+
+    const rejected = r.events.find((e) => e.type === 'COMMAND_REJECTED')
+    expect(rejected).toMatchObject({
+      command: 'ACCEPT_TRADE',
+      code: 'INVALID_TARGET',
+      detail: { reason: 'eigene Armeen' },
+    })
+    const closedEvents = r.events.filter((e) => e.type === 'TRADE_OFFER_CLOSED')
+    expect(closedEvents).toHaveLength(1)
+    expect(closedEvents[0]).toMatchObject({ reason: 'invalid' })
+    expect(r.state.diplomacy.tradeOffers).toEqual([])
+    expect(r.state.provinces['n2']!.owner).toBe('p1')
+  })
+
+  it('verfaellt auch ohne Annahme, sobald die Provinz nicht mehr abtretbar ist', () => {
+    setupOffer()
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+
+    const fired = closed(diplomacyAt(1))
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ reason: 'invalid' })
+  })
+
+  it('eine Provinz in zwei Angeboten: nach der ersten Annahme verfaellt das zweite', () => {
+    const id1 = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    const id2 = place(withProvinces('p1', 'p3', { provinces: ['n2'] }))
+
+    expect(applyCommand(state, accept('p2', id1), ctx)).toEqual({ ok: true })
+    expect(closed(events)).toContainEqual(expect.objectContaining({ offerId: id1, reason: 'accepted' }))
+    expect(canApply(state, accept('p3', id2), ctx)).toMatchObject({
+      ok: false,
+      code: 'INVALID_TARGET',
+      detail: { reason: 'nicht im Besitz', provinceId: 'n2' },
+    })
+
+    const fired = closed(diplomacyAt(1))
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ offerId: id2, reason: 'invalid' })
+    expect(state.diplomacy.tradeOffers).toEqual([])
+  })
+})
+
+describe('R-DIP-09/AK2 Die Provinz wechselt im selben Tick — ohne Eroberung', () => {
+  it('wechselt den Besitzer mit der Annahme — in beide Richtungen, samt Rohstoffen', () => {
+    const p1 = { money: money('p1'), iron: res('p1', 'iron') }
+    const p2 = { money: money('p2'), iron: res('p2', 'iron') }
+    const id = place(
+      withProvinces(
+        'p1',
+        'p2',
+        { resources: { money: 10_000 }, provinces: ['n2'] },
+        { resources: { iron: 1_000 }, provinces: ['o2'] },
+      ),
+    )
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    expect(state.provinces['n2']!.owner).toBe('p2')
+    expect(state.provinces['o2']!.owner).toBe('p1')
+    expect(money('p1')).toBe(p1.money - 10_000)
+    expect(money('p2')).toBe(p2.money + 10_000)
+    expect(res('p1', 'iron')).toBe(p1.iron + 1_000)
+    expect(res('p2', 'iron')).toBe(p2.iron - 1_000)
+  })
+
+  it('wechselt im Tick der Annahme — durch step()', () => {
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    const r = step(state, [accept('p2', id)], { map, rules })
+
+    expect(r.state.provinces['n2']!.owner).toBe('p2')
+    const ceded = r.events.find((e) => e.type === 'PROVINCE_CEDED')
+    expect(ceded).toMatchObject({ tick: state.tick })
+  })
+
+  it('ohne Verstimmung und ohne Ansehensverlust', () => {
+    const grievancesBefore = structuredClone(state.diplomacy.grievances)
+    const reputationBefore = state.playerOrder.map((id) => state.players[id]!.reputation)
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    expect(state.diplomacy.grievances).toEqual(grievancesBefore)
+    expect(state.playerOrder.map((id2) => state.players[id2]!.reputation)).toEqual(reputationBefore)
+  })
+
+  it('ohne Eroberungsmoral und ohne Besatzungszeit', () => {
+    state.provinces['n2']!.morale = 61_000
+    state.provinces['n2']!.occupiedSince = null
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    expect(state.provinces['n2']!.morale).toBe(61_000)
+    expect(state.provinces['n2']!.occupiedSince).toBeNull()
+  })
+
+  it('laufende Auftraege enden wie bei jeder Eroberung ueber ownerAtStart', () => {
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    queueOrders('n2', 'p1', state.tick + 1)
+
+    const r = step(state, [accept('p2', id)], { map, rules })
+
+    const cancelled = r.events.filter((e) => e.type === 'BUILD_CANCELLED')
+    expect(cancelled).toHaveLength(1)
+    expect(cancelled[0]).toMatchObject({ playerId: 'p1', provinceId: 'n2', reason: 'ownerChanged', audience: ['p1'] })
+    expect(r.events.find((e) => e.type === 'BUILD_COMPLETED')).toBeUndefined()
+    expect(r.events.find((e) => e.type === 'UNIT_RECRUITED')).toBeUndefined()
+    expect(r.state.provinces['n2']!.buildQueue).toEqual([])
+    expect(r.state.provinces['n2']!.recruitQueue).toEqual([])
+    const p1ArmyInN2 = r.state.armyOrder
+      .map((aid) => r.state.armies[aid]!)
+      .some((army) => army.owner === 'p1' && army.locationProvinceId === 'n2')
+    expect(p1ArmyInN2).toBe(false)
+  })
+
+  it('die Aushebung ist schon direkt nach der Annahme fort — derselbe Helfer wie die Eroberung', () => {
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+    queueOrders('n2', 'p1', 1000)
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    expect(state.provinces['n2']!.recruitQueue).toEqual([])
+    expect(state.provinces['n2']!.buildQueue).toHaveLength(1)
+  })
+
+  it('PROVINCE_CEDED nennt keinen Preis, ist Weltgeschehen und kein Alarm', () => {
+    const id = place(
+      withProvinces('p1', 'p2', { resources: { money: 50_000 }, provinces: ['n2'] }, { resources: { iron: 1_000 } }),
+    )
+    const n = events.length
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    const ceded = events.slice(n).filter((e) => e.type === 'PROVINCE_CEDED')
+    expect(ceded).toHaveLength(1)
+    expect(Object.keys(ceded[0]!).sort()).toEqual([
+      'audience',
+      'concerns',
+      'newOwner',
+      'previousOwner',
+      'provinceId',
+      'severity',
+      'tick',
+      'type',
+    ])
+    expect(ceded[0]).toMatchObject({ provinceId: 'n2', previousOwner: 'p1', newOwner: 'p2', audience: [], severity: 'info' })
+    expect([...ceded[0]!.concerns].sort()).toEqual(['p1', 'p2'])
+    expect(isAlertType('PROVINCE_CEDED')).toBe(false)
+    expect(isWorldEventType('PROVINCE_CEDED')).toBe(true)
+    expect(worldEventsIn(events.slice(n))).toContain(ceded[0])
+    expect(alertsIn(events.slice(n))).toEqual([])
+    for (const pid of ['p1', 'p2', 'p3']) {
+      expect(firstAlertFor(events.slice(n), pid)).toBeNull()
+    }
+    expect(events.slice(n).find((e) => e.type === 'PROVINCE_CAPTURED')).toBeUndefined()
+    expect(events.slice(n).find((e) => e.type === 'CAPITAL_LOST')).toBeUndefined()
+  })
+
+  it('Reihenfolge: geschlossen, gehandelt, abgetreten — erst die gegebene, dann die verlangte Provinz', () => {
+    const id = place(
+      withProvinces(
+        'p1',
+        'p2',
+        { resources: { money: 10_000 }, provinces: ['n2'] },
+        { resources: { iron: 1_000 }, provinces: ['o2'] },
+      ),
+    )
+    const n = events.length
+
+    expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
+
+    const newTypes = events.slice(n).map((e) => e.type)
+    expect(newTypes).toEqual(['TRADE_OFFER_CLOSED', 'TRADE_AGREED', 'PROVINCE_CEDED', 'PROVINCE_CEDED'])
+    const cededEvents = events.slice(n).filter((e) => e.type === 'PROVINCE_CEDED') as Array<{ provinceId: string }>
+    expect(cededEvents.map((e) => e.provinceId)).toEqual(['n2', 'o2'])
+  })
+})
+
+describe('R-DIP-09/AK2 Eine abgetretene Provinz fuehrt im Tick danach nie zu einem Ueberfall', () => {
+  // Fremde Armeen AUF DEM MARSCH werden bewusst nicht geprueft — ihr Ziel kennt der
+  // Abtretende nicht (E3, Befund M17-D5).
+  it('ueber alle Aufstellungen um die Provinz: nur saubere werden angenommen, keine endet im Ueberfall', () => {
+    const ceders = ['keine', 'darin', 'unterwegs', 'anderswo'] as const
+    const receivers = ['keine', 'darin', 'unterwegs'] as const
+    const thirds = ['keine', 'darin im Frieden', 'darin im Krieg'] as const
+    let angenommen = 0
+    for (const c of ceders) {
+      for (const r of receivers) {
+        for (const t of thirds) {
+          for (const passage of [false, true]) {
+            state = createInitialState(CONFIG, { map, rules })
+            events = []
+            ctx = { map, rules, commands: [], events }
+            const inf = [{ unitKey: 'infantry', hpTotal: 5_000 }]
+            if (passage) applyCommand(state, grant('p1', 'p2'), ctx)
+            if (c === 'darin') placeArmy(state, { owner: 'p1', at: 'n2', units: inf })
+            if (c === 'unterwegs') marchTo(placeArmy(state, { owner: 'p1', at: 'n1', units: inf }), 'n2')
+            if (c === 'anderswo') placeArmy(state, { owner: 'p1', at: 'n3', units: inf })
+            if (r === 'darin') placeArmy(state, { owner: 'p2', at: 'n2', units: inf })
+            if (r === 'unterwegs') marchTo(placeArmy(state, { owner: 'p2', at: 'm1', units: inf }), 'n2')
+            if (t === 'darin im Frieden') {
+              applyCommand(state, grant('p1', 'p3'), ctx)
+              placeArmy(state, { owner: 'p3', at: 'n2', units: inf })
+            }
+            if (t === 'darin im Krieg') {
+              state.diplomacy.relations['p1|p3']!.state = 'war'
+              placeArmy(state, { owner: 'p3', at: 'n2', units: inf })
+            }
+            const label = `${c} / ${r} / ${t} / Durchmarsch ${passage}`
+            const result = applyCommand(state, withProvinces('p1', 'p2', { provinces: ['n2'] }), ctx)
+            if (!result.ok) {
+              expect(result, label).toMatchObject({ code: 'INVALID_TARGET' })
+              continue
+            }
+            const id = state.diplomacy.tradeOffers.at(-1)!.id
+            const first = step(state, [accept('p2', id)], { map, rules })
+            expect(first.state.provinces['n2']!.owner, label).toBe('p2')
+            const second = step(first.state, [], { map, rules })
+            for (const e of [...first.events, ...second.events]) expect(e.type, label).not.toBe('WAR_DECLARED')
+            expect(second.state.diplomacy.relations['p1|p2']!.state, label).toBe('peace')
+            angenommen += 1
+          }
+        }
+      }
+    }
+    // 2 saubere Lagen des Abtretenden (keine, anderswo) x nur ohne Dritten x 3 x 2
+    expect(angenommen).toBe(12)
+  })
+
+  it('der Empfaenger, der mit Durchmarschrecht darin stand, steht danach im eigenen Land', () => {
+    applyCommand(state, grant('p1', 'p2'), ctx)
+    placeArmy(state, { owner: 'p2', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const id = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
+
+    const first = step(state, [accept('p2', id)], { map, rules })
+    const second = step(first.state, [], { map, rules })
+
+    for (const e of [...first.events, ...second.events]) expect(e.type).not.toBe('WAR_DECLARED')
+    expect(second.state.diplomacy.relations['p1|p2']!.state).toBe('peace')
+    const p2Army = second.state.armyOrder
+      .map((aid) => second.state.armies[aid]!)
+      .find((a) => a.owner === 'p2' && a.locationProvinceId === 'n2')
+    expect(p2Army).toBeDefined()
+    expect(second.state.provinces['n2']!.owner).toBe('p2')
   })
 })
 
