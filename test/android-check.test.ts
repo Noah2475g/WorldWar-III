@@ -102,6 +102,11 @@ describe('Android-Pruefstand: Argumente', () => {
   it('kennt --help', () => {
     expect(parseArgs(['--help'], {})).toMatchObject({ ok: true, options: { help: true } })
   })
+
+  it('ueberliest ein nacktes "--", das pnpm 11 an das Skript durchreicht', () => {
+    // `pnpm android:check -- --target chromium` kommt als ["--", "--target", "chromium"] an.
+    expect(parseArgs(['--', '--target', 'chromium'], {})).toMatchObject({ ok: true, options: { target: 'chromium' } })
+  })
 })
 
 describe('Android-Pruefstand: Groessen', () => {

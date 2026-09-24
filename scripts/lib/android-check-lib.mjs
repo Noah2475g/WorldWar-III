@@ -158,6 +158,8 @@ export function parseArgs(argv, env) {
   try {
     for (let i = 0; i < argv.length; i++) {
       const arg = argv[i] ?? ''
+      // pnpm 11 reicht das Trennzeichen aus `pnpm android:check -- --target …` wörtlich durch.
+      if (arg === '--') continue
       if (arg === '--help' || arg === '-h') {
         options.help = true
         continue
