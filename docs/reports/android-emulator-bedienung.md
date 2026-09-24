@@ -486,3 +486,86 @@ density` **live bestätigt**: 1920x1080, 280 dpi. Anschließend `adb reverse --r
 und `adb forward --remove tcp:9229` (beide bereits durch den Neustart der Instanz entfernt,
 adb meldete „listener not found" — ungefährlich), `ldconsole quit --index 0` (Emulator bleibt
 aus), Vorschau-Server (eigene PID) beendet, Port 4192 frei.
+
+### Telefonformat nach der Korrektur (MapCanvas-Fix und Vollbild-Knopf)
+
+Die zwei offenen FAILs von Lauf B oben (Karten-Canvas, Zwei-Finger-Zoom) sind mit drei
+Commits behoben bzw. eingeordnet: `fix(map): keine Verzerrung mehr unter 320x240 Huelle`
+(`MapCanvas.tsx` rechnet je Achse nur ohne Layout mit dem Mindestmass 320x240, sonst mit der
+echten Huelle), `feat(map): Vollbild-Knopf im Touch-Betrieb` (neuer Knopf neben Zoom/Hauptstadt,
+nur im Touch-Betrieb und nur wenn der Browser es anbietet) und `feat(scripts): Schalter
+--fullscreen fuer android-check.mjs` (tippt den Knopf vor den neun Prüfungen an). Gemessen:
+2026-09-25, 00:52–00:53 Uhr MESZ (22:52–22:53 UTC, aus `report.json`), Stand `e5e37fd` (alle
+drei Commits), `WORLDWAR_MULTIPLAYER` nicht gesetzt, `pnpm desktop:build` (Bündel
+`index-DgLECxJ6.js`), ausgeliefert mit `vite preview --host 127.0.0.1 --port 4192 --strictPort`.
+Gerät: LDPlayer 9.5.37, Instanz 0, Android 9 (API 28), Chrome 124.0.0.0. Befehle:
+
+```powershell
+node scripts/android-check.mjs --target android --adb C:\LDPlayer\LDPlayer9\adb.exe --url-port 4192 --out <a>
+node scripts/android-check.mjs --target android --adb C:\LDPlayer\LDPlayer9\adb.exe --url-port 4192 --fullscreen --out <b>
+node scripts/android-check.mjs --target android --adb C:\LDPlayer\LDPlayer9\adb.exe --url-port 4192 --out <c>
+```
+
+Belege (nicht eingecheckt, keine Bilder in git): je ein `report.json` und 9 Bildschirmfotos im
+Scratchpad der Sitzung unter `phone-a-nofs3\`, `phone-b-fs\`, `tablet-c-nofs\`. Exit-Codes sind
+die echten (per `> datei 2>&1; echo $?` gelesen, nicht durch eine Pipe verschluckt — WORKFLOW
+Falle 2; ein erster Lauf A scheiterte am bekannten CDP-Aussetzer nach einem Neustart der Instanz
+mit `Page.enable: keine Antwort nach 20000 ms`, Aufbaufehler Exit-Code 2, der zweite Versuch ohne
+weiteres Zutun lief durch).
+
+**Lauf A — 1280x720@320, OHNE `--fullscreen` (Ausgangsauflösung für diese Messung).** Sichtbar
+**640x280** CSS-px (Chrome nimmt hier ~80 CSS-px für Tabs/Adresszeile), DPR 2. **Ergebnis:
+Exit-Code 1, 8 von 9 bestanden** — genau der dokumentierte, erwartete Grenzfall: die Karte bleibt
+unter 240 CSS-px Höhe, aber nicht mehr verzerrt.
+
+| Nr | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Umgebung | PASS: 640x280 CSS-px, DPR 2, Chrome 124, pointer:coarse ja, hover:none nein, data-input touch |
+| 2 | Kein Seitenscroll | PASS: 640x280 bei 640x280 sichtbar, 0 px Überstand |
+| 3 | Touch-Ziele | PASS: Startdialog 0/10, Partie 0/35, Provinz gewählt 0/71 unter 44 px |
+| 4 | Karten-Canvas | **FAIL** (nur Größe): CSS 396,8x**166,5** (unter 320x240), Bitmap 794x334, **Verhältnis 2,001 / 2,006 — praktisch gleich auf beiden Achsen** (vorher, ohne den Fix: 2,001 / 2,883) |
+| 5 | Ein-Finger-Ziehen | PASS: Finger −119/−42 px, Ansicht 191/68 (erwartet 190/67), Auswahl blieb "USA-MW" |
+| 6 | Zwei-Finger-Zoom | PASS: Maßstab 1,6 → 0,8889 (×0,556), **Anker-Versatz 0,4 px** (erlaubt 8; vorher, ohne den Fix: 16,4 px) |
+| 7 | Antippen wählt | PASS: "USA-MW" gewählt (vorher leer) |
+| 8 | Langes Drücken | PASS: kein Tooltip vorher, während des Haltens ja, Auswahl unverändert |
+| 9 | Zoomknöpfe | PASS: Hineinzoomen 0,8889→0,7407 (44x44 px); Herauszoomen 0,7407→0,8889 (44x44 px) |
+
+Der verbleibende FAIL ist die dokumentierte Grenze des 320x240-Bodens (siehe oben,
+"Ursache der zwei FAILs bei 1280x720") — jetzt nur noch eine Größenfrage, keine Verzerrung
+mehr, und wie vorgesehen der Fall, für den der Vollbild-Knopf gedacht ist:
+
+**Lauf B — 1280x720@320, MIT `--fullscreen`.** Der Prüfstand tippt den Knopf "Vollbild" vor den
+neun Prüfungen an. Sichtbar **640x360** CSS-px (Chrome-Leisten sind im Vollbildmodus weg), DPR 2.
+**Ergebnis: Exit-Code 0, 9 von 9 bestanden.**
+
+| Nr | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Umgebung | PASS: 640x360 CSS-px, DPR 2, Chrome 124, pointer:coarse ja, hover:none nein, data-input touch |
+| 2 | Kein Seitenscroll | PASS: 640x360 bei 640x360 sichtbar, 0 px Überstand |
+| 3 | Touch-Ziele | PASS: Startdialog 0/10, Partie 0/35, Provinz gewählt 0/71 unter 44 px |
+| 4 | Karten-Canvas | PASS: CSS 396,8x246,5, Bitmap 794x494 (Verhältnis 2,001 / 2,004) |
+| 5 | Ein-Finger-Ziehen | PASS: Finger −119/−62 px, Ansicht 191/100 (erwartet 190/99), Auswahl blieb "USA-MW" |
+| 6 | Zwei-Finger-Zoom | PASS: Maßstab 1,6 → 0,8836 (×0,552), Anker-Versatz 0,3 px |
+| 7 | Antippen wählt | PASS: "USA-MW" gewählt (vorher leer) |
+| 8 | Langes Drücken | PASS: kein Tooltip vorher, während des Haltens ja, Auswahl unverändert |
+| 9 | Zoomknöpfe | PASS: Hineinzoomen 0,8836→0,7363 (44x44 px); Herauszoomen 0,7363→0,8836 (44x44 px) |
+
+**Lauf C — 1920x1080@280, OHNE `--fullscreen` (Rückschritts-Kontrolle für die Tablet-artige
+Auflösung).** Sichtbar 1098x498 CSS-px, DPR 1,75. **Ergebnis: Exit-Code 0, 9 von 9 bestanden** —
+unverändert gegenüber der Messung vor dieser Korrektur oben (dieselben Zahlen: CSS 758,3x258,9,
+Bitmap 1327x453, Verhältnis 1,75/1,75, Anker-Versatz 0,7 px). Kein Rückschritt.
+
+Damit ist die ehrliche Bilanz: 1280x720@320 bleibt ohne Vollbild bei einer Karte unter
+240 CSS-px Höhe (dokumentierter Grenzfall, keine gesenkte Schwelle, keine geänderte Zeile
+Anwendungscode dafür), aber die Verzerrung (Prüfung 4) und der verrutschte Zoom-Anker
+(Prüfung 6) sind behoben — beides war vorher der eigentliche Bedienungsfehler, nicht nur ein
+Messwert unter der Schwelle. Mit einem Fingertipp auf "Vollbild" bestehen auch auf dieser
+Auflösung alle neun Prüfungen, und die Tablet-Auflösung bleibt unangetastet bei 9 von 9.
+
+**Aufräumen nach dieser Messung:** Lauf C lief bereits auf der wiederhergestellten Auflösung
+`1920,1080,280` (für ihn extra neu gestartet); danach `adb reverse --remove-all`,
+`adb forward --remove-all`, mit `adb shell wm size`/`wm density` noch einmal **live bestätigt**
+(1920x1080, 280 dpi), danach `ldconsole quit --index 0` (Emulator aus). Der Vorschau-Server
+lief unter einer eigenen PID; der pnpm-Wrapperprozess endete auf `kill`, der tatsächlich auf
+Port 4192 lauschende `node`-Kindprozess brauchte zusätzlich `taskkill /PID <pid> /F` — danach
+war der Port frei (curl ohne Antwort). `git status --short` war anschließend leer.
