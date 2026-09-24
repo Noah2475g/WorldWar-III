@@ -1050,7 +1050,8 @@ describe('R-SPY-04/05 Sabotage und Enttarnung werden zu Saetzen (T-M17-09)', () 
       { viewer: 'p1' },
     )
 
-    expect(entry.text).toContain(t('espionage.sabotage.nothingDestroyed'))
+    expect(entry.text).toContain('nichts')
+    expect(entry.text).not.toContain('[espionage.sabotage.nothingDestroyed]')
   })
 
   it('Militaersabotage: die Verzoegerung in Stunden', () => {
