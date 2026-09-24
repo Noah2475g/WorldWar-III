@@ -106,6 +106,19 @@ describe('Touch-Gesten: Tippen gegen Ziehen', () => {
     expect(kinds(out)).toEqual(['tap'])
   })
 
+  it('bei GENAU der Schwelle ist es noch ein Tippen, nicht schon ein Ziehen (Grenzwert, fuer Finger und Maus)', () => {
+    const finger = run([input('down', 1, 100, 100), input('move', 1, 100 + TAP_SLOP_TOUCH_PX, 100)])
+    expect(finger.state.kind).toBe('pending')
+    expect(finger.out).toEqual([])
+
+    const mouse = run([
+      input('down', 1, 100, 100, 'mouse'),
+      input('move', 1, 100 + TAP_SLOP_MOUSE_PX, 100, 'mouse'),
+    ])
+    expect(mouse.state.kind).toBe('pending')
+    expect(mouse.out).toEqual([])
+  })
+
   it('ueber der Schwelle zieht der Finger die Karte — vom Aufsetzpunkt aus, nicht vom Schwellenpunkt', () => {
     const { state, out } = run([input('down', 1, 100, 100), input('move', 1, 100 + TAP_SLOP_TOUCH_PX + 20, 90)])
 
@@ -289,6 +302,33 @@ describe('Touch-Gesten: zwei Finger', () => {
     expect(view.y).toBeCloseTo(atLift.y - 10 * atLift.scale, 6)
   })
 
+  it('ein zweiter Finger nach dem Ziehen zieht das Aufziehen vom SCHON gezogenen Ausschnitt weiter, nicht vom Ausgangspunkt der Geste', () => {
+    // ZWEI Bewegungen des ersten Fingers: die erste macht aus "pending" "pan" (eigener
+    // Code-Pfad); erst die ZWEITE laeuft durch den "pan"-Zweig von `move` und haengt vom
+    // dort nachgefuehrten `contact.at` ab — nur mit ihr prueft dieser Test den richtigen Zweig.
+    const panned = run([input('down', 1, 100, 100), input('move', 1, 130, 115), input('move', 1, 160, 130)])
+    expect(panned.state.kind).toBe('pan')
+    const pannedView = lastView(panned.out)!
+    // Die Karte hat sich wirklich schon bewegt — sonst waere der folgende Vergleich hohl.
+    expect(pannedView).not.toEqual(START)
+
+    const withSecond = gestureStep(panned.state, input('down', 2, 300, 130), ctx)
+    expect(withSecond.state.kind).toBe('pinch')
+    expect((withSecond.state as Extract<GestureState, { kind: 'pinch' }>).view).toEqual(pannedView)
+
+    // Und der erste Finger startet die Aufzieh-Rechnung an seiner JETZIGEN Stelle
+    // (160,130, wohin er gezogen wurde), nicht am Aufsetzpunkt der urspruenglichen Geste
+    // (100,100): der Kartenpunkt unter der Fingermitte BEIM ZWEITEN AUFSETZEN (160,130
+    // und 300,130 — Mitte 230,130) liegt nach dem Aufziehen unter der neuen Fingermitte
+    // (160,130 und 340,130 — Mitte 250,130), gerechnet vom schon gezogenen Ausschnitt.
+    const moved = gestureStep(withSecond.state, input('move', 2, 340, 130), ctx)
+    const view = lastView(moved.out)!
+    const before = toMap({ x: 230, y: 130 }, pannedView)
+    const after = toMap({ x: 250, y: 130 }, view)
+    expect(after.x).toBeCloseTo(before.x, 6)
+    expect(after.y).toBeCloseTo(before.y, 6)
+  })
+
   it('ein dritter Finger wird uebergangen', () => {
     const pinched = run([input('down', 1, 400, 300), input('down', 2, 500, 300)])
     const third = gestureStep(pinched.state, input('down', 3, 50, 50), ctx)
@@ -303,6 +343,21 @@ describe('Touch-Gesten: zwei Finger', () => {
     const view = lastView(out)!
     expect(Number.isFinite(view.scale)).toBe(true)
     expect(view.scale).toBeGreaterThanOrEqual((START.scale * MIN_PINCH_DISTANCE_PX) / 500)
+  })
+
+  it('treffen sich die Finger am ZIEL fast auf einem Punkt, bleibt der Massstab endlich (der Mindestabstand gilt auch dort, nicht nur am Start)', () => {
+    const { out } = run([
+      input('down', 1, 400, 300),
+      input('down', 2, 500, 300),
+      input('move', 1, 449, 300),
+      input('move', 2, 450, 300),
+    ])
+
+    const view = lastView(out)!
+    expect(Number.isFinite(view.scale)).toBe(true)
+    // Anfangsabstand 100, Endabstand 1 — geklemmt auf MIN_PINCH_DISTANCE_PX, sonst waere
+    // der Faktor 100/1 statt 100/24 und der Massstab viermal so gross wie erlaubt.
+    expect(view.scale).toBeCloseTo((START.scale * 100) / MIN_PINCH_DISTANCE_PX, 6)
   })
 
   it('der Massstab bleibt in den Grenzen der Karte', () => {

@@ -291,6 +291,26 @@ describe('T-M30-03 Zoomknoepfe und Uebersichtskarte', () => {
     const overviewScale = Math.max(world.width / 132, world.height / 74)
     expect(changes[0]!.x + (320 * changes[0]!.scale) / 2).toBeCloseTo(66 * overviewScale, 0)
   })
+
+  it('zentriert auf den GENAUEN Kartenpunkt eines Klicks abseits der Mitte (Massstab der Uebersicht, nicht 1)', () => {
+    // Ein Klick genau in der Mitte traefe zufaellig denselben Punkt, ob nun mit dem
+    // Massstab der Uebersicht gerechnet wird oder faelschlich mit 1 — die Symmetrie
+    // verdeckte den Fehler. Ein Klick abseits der Mitte deckt ihn auf.
+    const changes: { x: number; y: number; scale: number }[] = []
+    zeichne({ speed: 100, view: { x: 0, y: 0, scale: 2 }, onViewChange: (next) => changes.push(next) })
+
+    const overview = screen.getByRole('button', { name: 'Übersichtskarte' }) as HTMLCanvasElement
+    overview.getBoundingClientRect = () => ({ left: 0, top: 0, width: 132, height: 74 }) as DOMRect
+
+    fireEvent.click(overview, { clientX: 33, clientY: 24 })
+    expect(changes.length).toBe(1)
+
+    const overviewScale = Math.max(world.width / 132, world.height / 74)
+    const expected = { x: 33 * overviewScale, y: 24 * overviewScale }
+    const centred = changes[0]!
+    expect(centred.x + (320 * centred.scale) / 2).toBeCloseTo(expected.x, 0)
+    expect(centred.y + (240 * centred.scale) / 2).toBeCloseTo(expected.y, 0)
+  })
 })
 
 describe('T-M30-04 Der Marschweg zeigt Stand und Rest', () => {
