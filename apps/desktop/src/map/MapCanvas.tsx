@@ -25,15 +25,25 @@ import {
 import {
   boundsOf,
   centreOn,
-  clampView,
   pickProvince,
+  toCanvasPoint,
   toMap,
   toScreen,
   zoomAt,
   zoomTier,
+  type Point,
   type View,
   type ViewLimits,
 } from './picking.ts'
+import {
+  IDLE,
+  LONG_PRESS_MS,
+  TOUCH_TARGET_PX,
+  gestureStep,
+  pointerKind,
+  type GestureInput,
+  type GestureState,
+} from './gestures.ts'
 import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
@@ -232,7 +242,6 @@ export function MapCanvas(props: MapCanvasProps) {
     // sagt nur „eine Runde hat begonnen"; ihren Zeitpunkt stempelt das naechste Bild.
     roundPending.current = true
   }, [props.tick])
-  const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
   /** Die Uebersichtskarte (T-M30-03): die ganze Welt klein, Ausschnitt in Bernstein. */
@@ -269,6 +278,14 @@ export function MapCanvas(props: MapCanvasProps) {
     }),
     [props.width, props.height, size.width, size.height],
   )
+
+  /**
+   * Das Neueste aus Props und Rechnung, fuer Zeitgeber und Bildschleife: ein langes
+   * Druecken endet eine halbe Sekunde nach dem Aufsetzen, und bis dahin hat die Uhr die
+   * Karte laengst neu gezeichnet — sein Rueckruf darf keinen alten Stand lesen.
+   */
+  const latest = useRef({ props, limits, withBounds })
+  latest.current = { props, limits, withBounds }
 
   // The wrapper decides the size; the canvases follow it.
   useEffect(() => {
@@ -713,17 +730,153 @@ export function MapCanvas(props: MapCanvasProps) {
     size,
   ])
 
+  /*
+   * Die Gesten (Touch-Bedienung). `gestures.ts` entscheidet, was ein Zeiger meint; hier
+   * wird nur uebersetzt und ausgefuehrt. Die Auswahl selbst bleibt beim Klick - den
+   * schickt der Browser nach einem Tippen fuer Finger wie fuer Maus, und Tastatur und
+   * Tests kennen nur ihn. Nach einer Geste (Ziehen, Aufziehen, langes Druecken) wird er
+   * geschluckt: vorher endete jedes Ziehen mit der Maus in einer Provinzwahl.
+   */
+  const gestureRef = useRef<GestureState>(IDLE)
+  /** Die liegenden Zeiger und ihre letzte Stelle in Leinwandpunkten. */
+  const pointersRef = useRef(new Map<number, Point>())
+  /** Der naechste Klick gehoert zu einer Geste und waehlt nichts. */
+  const suppressClickRef = useRef(false)
+  /** Womit zuletzt getippt wurde - der Klick in jsdom sagt es nicht. */
+  const tapTypeRef = useRef('')
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Ein langes Druecken hat den Tooltip geoeffnet; die naechste Beruehrung schliesst ihn. */
+  const touchHoverRef = useRef(false)
+  /** Hoechstens ein neuer Ausschnitt je Bild, waehrend gezogen wird. */
+  const frameRef = useRef<number | null>(null)
+  const queuedViewRef = useRef<View | null>(null)
+
+  const clearHoverTimer = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+  }
+  const clearLongPress = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+    longPressTimer.current = null
+  }
+
+  const emitQueuedView = () => {
+    const next = queuedViewRef.current
+    queuedViewRef.current = null
+    if (next) latest.current.props.onViewChange(next)
+  }
+  const queueView = (next: View) => {
+    queuedViewRef.current = next
+    if (frameRef.current !== null) return
+    let id = 0
+    let ran = false
+    id = requestAnimationFrame(() => {
+      ran = true
+      // Ein Bild, dessen Warteschlange das Loslassen schon geleert hat, tut nichts Falsches.
+      if (frameRef.current !== null && frameRef.current !== id) return
+      frameRef.current = null
+      emitQueuedView()
+    })
+    if (!ran) frameRef.current = id
+  }
+  const flushView = () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+    frameRef.current = null
+    emitQueuedView()
+  }
+
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      if (longPressTimer.current) clearTimeout(longPressTimer.current)
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+    },
+    [],
+  )
+
+  const provinceAt = (point: Point): string | null =>
+    pickProvince(point, latest.current.props.view, latest.current.withBounds)
+
+  const applyGesture = (input: GestureInput) => {
+    const { props: current, limits: currentLimits } = latest.current
+    const step = gestureStep(gestureRef.current, input, { view: current.view, limits: currentLimits })
+    gestureRef.current = step.state
+    if (step.state.kind !== 'pending') clearLongPress()
+    for (const out of step.out) {
+      switch (out.type) {
+        case 'view':
+          queueView(out.view)
+          break
+        case 'suppressClick':
+          suppressClickRef.current = true
+          break
+        case 'tap':
+          tapTypeRef.current = out.pointerType
+          break
+        case 'hover': {
+          // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
+          if (!current.onHover) break
+          const here = out.at
+          clearHoverTimer()
+          hoverTimer.current = setTimeout(() => {
+            hoverTimer.current = null
+            latest.current.props.onHover?.(provinceAt(here), here)
+          }, HOVER_DELAY_MS)
+          break
+        }
+        case 'longPress':
+          // Das Zeigen des Fingers: sofort, denn gewartet hat er schon.
+          clearHoverTimer()
+          if (!current.onHover) break
+          current.onHover(provinceAt(out.at), out.at)
+          touchHoverRef.current = true
+          break
+      }
+    }
+    // Ist die Geste vorbei, geht der letzte Ausschnitt sofort raus, nicht erst mit dem naechsten Bild.
+    if (step.state.kind === 'idle') flushView()
+  }
+
+  const canvasPoint = (event: React.MouseEvent<HTMLCanvasElement>): Point =>
+    toCanvasPoint(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect(), size.width, size.height)
+
+  const inputOf = (type: GestureInput['type'], event: React.PointerEvent<HTMLCanvasElement>, point: Point): GestureInput => ({
+    type,
+    pointerId: event.pointerId,
+    pointerType: event.pointerType ?? '',
+    x: point.x,
+    y: point.y,
+    time: event.timeStamp,
+  })
+
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false
+        return
+      }
       const rect = event.currentTarget.getBoundingClientRect()
-      const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const screen = toCanvasPoint(event.clientX, event.clientY, rect, size.width, size.height)
+      // Chrome schickt den Klick als PointerEvent mit Zeigertyp; jsdom nicht - dann gilt das letzte Tippen.
+      const nativeType = (event.nativeEvent as { pointerType?: string }).pointerType
+      const touch = pointerKind(nativeType || tapTypeRef.current) === 'touch'
+      tapTypeRef.current = ''
 
       // Erst die Armee, dann die Provinz (T-M22-06, V2-14): mit derselben
       // Ortsrechnung wie das Zeichnen, damit auch eine marschierende getroffen wird.
+      // Ein Finger bekommt eine Trefferflaeche von TOUCH_TARGET_PX CSS-Pixeln.
       if (props.onSelectArmy) {
-        const armyId = pickArmy(screen, props.armies, props.centres, props.view, {
-          ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-        })
+        const hitBox = touch ? TOUCH_TARGET_PX * (rect.width > 0 ? size.width / rect.width : 1) : undefined
+        const armyId = pickArmy(
+          screen,
+          props.armies,
+          props.centres,
+          props.view,
+          {
+            ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+          },
+          hitBox,
+        )
         if (armyId) {
           props.onSelectArmy(armyId)
           return
@@ -732,57 +885,79 @@ export function MapCanvas(props: MapCanvasProps) {
 
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
-    [props, withBounds],
+    [props, withBounds, size],
   )
 
   const handleWheel = useCallback(
     (event: React.WheelEvent<HTMLCanvasElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
-      const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const screen = toCanvasPoint(event.clientX, event.clientY, rect, size.width, size.height)
       props.onViewChange(zoomAt(props.view, screen, event.deltaY > 0 ? 1.2 : 1 / 1.2, limits))
     },
-    [props, limits],
+    [props, limits, size],
   )
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    dragRef.current = { x: event.clientX, y: event.clientY, view: props.view }
-    event.currentTarget.setPointerCapture(event.pointerId)
+    const kind = pointerKind(event.pointerType ?? '')
+    // Ein erster Zeiger bei laufender Geste heisst: ein Loslassen ging verloren. Neu
+    // anfangen, statt fuer immer auf einen Finger zu warten, der laengst weg ist.
+    if (event.isPrimary && gestureRef.current.kind !== 'idle') {
+      gestureRef.current = IDLE
+      pointersRef.current.clear()
+      clearLongPress()
+    }
+    if (kind === 'touch' && touchHoverRef.current) {
+      touchHoverRef.current = false
+      props.onHover?.(null, null)
+    }
+    clearHoverTimer()
+
+    const point = canvasPoint(event)
+    pointersRef.current.set(event.pointerId, point)
+    // jsdom kennt setPointerCapture nicht, und ein Browser darf ablehnen: die Geste geht auch ohne.
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId)
+    } catch {
+      // Ohne Fang kommen Bewegungen ausserhalb der Karte nicht an - mehr nicht.
+    }
+    applyGesture(inputOf('down', event, point))
+
+    if (gestureRef.current.kind !== 'pending') return
+    // Eine neue Geste mit einem Zeiger: was die letzte schlucken wollte, ist vorbei.
+    suppressClickRef.current = false
+    if (kind !== 'touch') return
+    const { pointerId, pointerType, timeStamp } = event
+    longPressTimer.current = setTimeout(() => {
+      longPressTimer.current = null
+      const here = pointersRef.current.get(pointerId) ?? point
+      applyGesture({ type: 'longPressTimer', pointerId, pointerType, x: here.x, y: here.y, time: timeStamp + LONG_PRESS_MS })
+    }, LONG_PRESS_MS)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const drag = dragRef.current
-    if (!drag) {
-      // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
-      if (props.onHover) {
-        const rect = event.currentTarget.getBoundingClientRect()
-        const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
-        if (hoverTimer.current) clearTimeout(hoverTimer.current)
-        hoverTimer.current = setTimeout(() => {
-          hoverTimer.current = null
-          props.onHover?.(pickProvince(screen, props.view, withBounds), screen)
-        }, HOVER_DELAY_MS)
-      }
-      return
-    }
-    props.onViewChange(
-      clampView(
-        {
-          x: drag.view.x - (event.clientX - drag.x) * drag.view.scale,
-          y: drag.view.y - (event.clientY - drag.y) * drag.view.scale,
-          scale: drag.view.scale,
-        },
-        limits,
-      ),
-    )
+    const point = canvasPoint(event)
+    if (pointersRef.current.has(event.pointerId)) pointersRef.current.set(event.pointerId, point)
+    applyGesture(inputOf('move', event, point))
   }
 
-  const handlePointerUp = () => {
-    dragRef.current = null
+  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = canvasPoint(event)
+    pointersRef.current.delete(event.pointerId)
+    applyGesture(inputOf('up', event, point))
   }
 
-  const handlePointerLeave = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    hoverTimer.current = null
+  // Der Browser hat die Geste an sich genommen, oder der Zeigerfang ging verloren, ohne
+  // dass ein Loslassen kam: zuruecksetzen. Nach einem Loslassen ist der Zeiger schon weg.
+  const handlePointerCancel = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!pointersRef.current.delete(event.pointerId)) return
+    applyGesture(inputOf('cancel', event, canvasPoint(event)))
+  }
+
+  const handlePointerLeave = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    // Auf Touch folgt jedem Loslassen ein pointerleave; es wuerde den Tooltip des langen
+    // Drueckens sofort wieder schliessen. Nur die Maus verlaesst die Karte wirklich.
+    if (pointerKind(event.pointerType ?? '') !== 'mouse') return
+    clearHoverTimer()
     props.onHover?.(null, null)
   }
 
@@ -837,7 +1012,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const handleOverviewClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
-      const point = toMap({ x: event.clientX - rect.left, y: event.clientY - rect.top }, { x: 0, y: 0, scale: overviewScale })
+      const at = toCanvasPoint(event.clientX, event.clientY, rect, OVERVIEW.width, OVERVIEW.height)
+      const point = toMap(at, { x: 0, y: 0, scale: overviewScale })
       props.onViewChange(centreOn(point, props.view, limits))
     },
     [props, limits, overviewScale],
@@ -854,12 +1030,18 @@ export function MapCanvas(props: MapCanvasProps) {
         role="application"
         aria-label={t('a11y.map')}
         tabIndex={0}
+        // Ohne das nimmt der Browser einen ziehenden Finger an sich (Seite scrollen oder
+        // zoomen) und schickt pointercancel - die Karte bewegte sich im Emulator um 11 px.
+        style={{ touchAction: 'none' }}
         onClick={handleClick}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handlePointerCancel}
         onPointerLeave={handlePointerLeave}
+        onContextMenu={(event) => event.preventDefault()}
       />
 
       {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}
