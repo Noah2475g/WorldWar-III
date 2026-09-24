@@ -367,10 +367,37 @@ describe('Touch-Gesten: Abbruch', () => {
     expect(gestureStep(cancelled.state, input('move', 1, 260, 100), ctx).out).toEqual([])
   })
 
-  it('ein Abbruch waehrend zwei Finger liegen, setzt ebenfalls zurueck', () => {
-    const pinched = run([input('down', 1, 400, 300), input('down', 2, 500, 300)])
+  it('bricht der Browser EINEN von zwei Fingern ab, zieht der verbliebene weiter statt alles zu verwerfen (Befund: der andere Finger klebte bis zum Loslassen fest)', () => {
+    const pinched = run([
+      input('down', 1, 400, 300),
+      input('down', 2, 500, 300),
+      input('move', 2, 600, 300),
+    ])
+    const atCancel = lastView(pinched.out)!
 
-    expect(gestureStep(pinched.state, input('cancel', 2, 500, 300), ctx).state).toEqual(IDLE)
+    const cancelled = gestureStep(pinched.state, input('cancel', 2, 600, 300), ctx)
+    // Wie beim Loslassen: der verbliebene Finger zieht weiter, kein voller Rueckfall auf idle.
+    expect(cancelled.state.kind).toBe('pan')
+    expect(cancelled.out).toEqual([])
+
+    const moved = gestureStep(cancelled.state, input('move', 1, 420, 310), ctx)
+    const view = lastView(moved.out)!
+    expect(view.scale).toBeCloseTo(atCancel.scale, 9)
+    expect(view.x).toBeCloseTo(atCancel.x - 20 * atCancel.scale, 6)
+    expect(view.y).toBeCloseTo(atCancel.y - 10 * atCancel.scale, 6)
+
+    // Das Abheben danach endet sauber in idle, nicht in einem hängenden Zustand.
+    const lifted = gestureStep(moved.state, input('up', 1, 420, 310), ctx)
+    expect(lifted.state.kind).toBe('idle')
+    expect(lifted.out).toEqual([])
+  })
+
+  it('bricht der Browser beide Finger ab (derselbe Zeiger zweimal gemeldet), bleibt es beim vollen Rueckfall', () => {
+    const pinched = run([input('down', 1, 400, 300), input('down', 2, 500, 300)])
+    let state = gestureStep(pinched.state, input('cancel', 2, 500, 300), ctx).state
+    state = gestureStep(state, input('cancel', 1, 400, 300), ctx).state
+
+    expect(state).toEqual(IDLE)
   })
 
   it('ein Abbruch fuer einen fremden Zeiger laesst die Geste stehen', () => {

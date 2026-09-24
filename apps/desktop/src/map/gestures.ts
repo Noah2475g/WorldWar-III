@@ -271,10 +271,21 @@ export function gestureStep(state: GestureState, input: GestureInput, context: G
       return move(state, input, context.limits)
     case 'up':
       return up(state, input, context.limits)
-    case 'cancel':
-      // Der Browser hat die Geste an sich genommen (oder den Zeiger verloren): zuruecksetzen,
-      // aber nur, wenn der Zeiger zu dieser Geste gehoert.
+    case 'cancel': {
+      // Der Browser hat die Geste an sich genommen (oder den Zeiger verloren). Betrifft es
+      // ein Aufziehen und nur EINEN der beiden Finger, zieht der verbliebene weiter — wie
+      // beim Loslassen (Befund: sonst blieb die Karte stehen, bis auch er abgehoben wurde).
+      // Fuer jeden anderen Zustand (pending/pan/pressed) bleibt der volle Rueckfall.
+      if (state.kind === 'pinch') {
+        const rest = state.a.id === input.pointerId ? state.b : state.b.id === input.pointerId ? state.a : null
+        if (!rest) return { state, out: [] }
+        return {
+          state: { kind: 'pan', contact: { id: rest.id, start: rest.at, at: rest.at }, view: currentView(state, context.limits)! },
+          out: [],
+        }
+      }
       return contactsOf(state).some((contact) => contact.id === input.pointerId) ? { state: IDLE, out: [] } : { state, out: [] }
+    }
     case 'longPressTimer':
       if (
         state.kind !== 'pending' ||

@@ -246,6 +246,38 @@ describe('Touch-Bedienung: Ziehen waehlt nichts aus', () => {
     expect(calls.views.length).toBe(after)
   })
 
+  it('bricht der Browser EINEN von zwei Fingern ab, zieht der verbliebene weiter — wie beim Loslassen (Befund: die Karte stand sonst still, bis auch er abgehoben wurde)', () => {
+    const { map, calls } = karte()
+
+    fireEvent.pointerDown(map, at(finger(1), 40, 120))
+    fireEvent.pointerDown(map, at(finger(2), 140, 120))
+    fireEvent.pointerMove(map, at(finger(2), 240, 120))
+    nextFrame()
+    const atCancel = calls.views.at(-1)!
+    const countAtCancel = calls.views.length
+
+    fireEvent.pointerCancel(map, at(finger(2), 240, 120))
+    // Der Abbruch selbst rechnet keinen neuen Ausschnitt — er sagt nur, wie es weitergeht.
+    expect(calls.views.length).toBe(countAtCancel)
+
+    fireEvent.pointerMove(map, at(finger(1), 60, 140))
+    nextFrame()
+
+    expect(calls.views.length).toBeGreaterThan(countAtCancel)
+    const view = calls.views.at(-1)!
+    expect(view.scale).toBeCloseTo(atCancel.scale, 9)
+    expect(view.x).toBeCloseTo(atCancel.x - 20 * atCancel.scale, 6)
+    expect(view.y).toBeCloseTo(atCancel.y - 20 * atCancel.scale, 6)
+
+    // Lueftet der verbliebene Finger danach ab, endet die Geste sauber — keine weitere
+    // Bewegung ohne aufliegenden Finger.
+    fireEvent.pointerUp(map, at(finger(1), 60, 140))
+    const afterUp = calls.views.length
+    fireEvent.pointerMove(map, at(finger(1), 300, 200))
+    nextFrame()
+    expect(calls.views.length).toBe(afterUp)
+  })
+
   it('ein neuer erster Finger raeumt eine Geste ab, deren Loslassen verloren ging', () => {
     const { map, calls } = karte()
 
