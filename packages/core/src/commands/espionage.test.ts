@@ -385,6 +385,54 @@ describe('Verborgene Information: kein Befehl verrät fremde Spione', () => {
   })
 })
 
+describe('Befund M17-S2 (Nacharbeit kern): Prototyp-Schlüssel sind keine Provinz', () => {
+  // `state.provinces` und `player.intel` sind einfache Objekte (`Record<ProvinceId, …>`).
+  // `state.provinces['constructor']` liefert ohne Prüfung den Object.prototype-Eintrag zurück
+  // (truthy, kein echter Owner) — derselbe Zugriff wie bei jedem echten Feld. Vier Schlüssel
+  // reichen, um das zu zeigen; die Prüfreihenfolge (D29.2) verlangt PROVINCE_NOT_FOUND als
+  // allererste Ablehnung, noch vor „unbekannt".
+  const PROTO_KEYS = ['constructor', '__proto__', 'toString', 'hasOwnProperty']
+
+  it.each(PROTO_KEYS)('RECRUIT_SPY lehnt %s als Provinz ab (PROVINCE_NOT_FOUND)', (key) => {
+    for (const mission of SPY_MISSIONS) {
+      expect(canApply(state, recruit(key, mission), ctx)).toEqual({
+        ok: false,
+        code: 'PROVINCE_NOT_FOUND',
+        detail: { provinceId: key },
+      })
+    }
+  })
+
+  it.each(PROTO_KEYS)('REASSIGN_SPY lehnt %s als Ziel ab (PROVINCE_NOT_FOUND)', (key) => {
+    given(recruit('s1', 'intel'))
+    expect(canApply(state, reassign('s1', key, 'intel'), ctx)).toEqual({
+      ok: false,
+      code: 'PROVINCE_NOT_FOUND',
+      detail: { provinceId: key },
+    })
+  })
+
+  it.each(PROTO_KEYS)('ein Aufklärungsgedächtnis-Eintrag unter %s macht die Provinz nicht bekannt', (key) => {
+    // Object.prototype selbst trägt keinen Eintrag unter diesen Schlüsseln, aber `intel[key] = …`
+    // legt einen eigenen an — und muss trotzdem PROVINCE_NOT_FOUND bleiben, weil es die Provinz
+    // auf der Karte nicht gibt (Existenz vor Kenntnis, D29.2).
+    state.players['p1']!.intel[key] = { tick: 0, owner: 'p2', strength: 0 }
+    expect(canApply(state, recruit(key, 'intel'), ctx)).toEqual({
+      ok: false,
+      code: 'PROVINCE_NOT_FOUND',
+      detail: { provinceId: key },
+    })
+  })
+
+  it('step() legt bei einem Prototyp-Schlüssel keinen Spion an — kein Absturz beim nächsten Tageswechsel', () => {
+    // Vorher (Befund): canApply gab {ok:true}, step() legte den Spion mit provinceId 'constructor'
+    // an, und der Tageswechsel bei Tick 48 stürzte in capitalPenalty ab (players[undefined]).
+    const { state: nach } = step(state, [recruit('constructor', 'economicSabotage')], stepCtx)
+    expect(nach.espionage.spies).toEqual([])
+    expect(() => step(nach, [], { ...stepCtx })).not.toThrow()
+  })
+})
+
 describe('D29.7 Sold und Anwerbepreis aus dem Anker von T-M17-02', () => {
   const baseline = JSON.parse(
     readFileSync(fileURLToPath(new URL('../../../../docs/reports/m17-baseline.json', import.meta.url)), 'utf8'),

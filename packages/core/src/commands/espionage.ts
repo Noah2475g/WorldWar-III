@@ -47,16 +47,22 @@ export type KnownOwner = { known: false } | { known: true; owner: PlayerId | nul
  * Besitzer. Eine Provinz, die die Sicht nicht führt, ist unbekannt.
  */
 export function knownOwner(state: GameState, playerId: PlayerId, provinceId: ProvinceId): KnownOwner {
-  const province = state.provinces[provinceId]
+  // `state.provinces` und `intel` sind einfache Objekte (Record<ProvinceId, …>) — ein Zugriff mit
+  // `[key]` liefert für 'constructor', '__proto__', 'toString' & Co. den Object.prototype-Eintrag
+  // zurück, nicht `undefined` (Befund M17-S2, Nacharbeit kern). `Object.hasOwn` prüft den
+  // *eigenen* Eintrag, so wie jede echte Provinz auch einer ist.
+  const province = Object.hasOwn(state.provinces, provinceId) ? state.provinces[provinceId] : undefined
   if (province && visibleProvinces(state, playerId).has(provinceId)) return { known: true, owner: province.owner }
-  const remembered = state.players[playerId]?.intel[provinceId]
+  const intel = state.players[playerId]?.intel
+  const remembered = intel && Object.hasOwn(intel, provinceId) ? intel[provinceId] : undefined
   if (remembered) return { known: true, owner: remembered.owner }
   return { known: false }
 }
 
 /** Die Zielprüfung, die Anwerben und Umsetzen teilen: Existenz, Kenntnis, Auftrag, Zielbedingung. */
 function checkTarget(state: GameState, playerId: PlayerId, provinceId: ProvinceId, mission: SpyMission): CommandResult {
-  if (!state.provinces[provinceId]) return fail('PROVINCE_NOT_FOUND', { provinceId })
+  // Dieselbe Prototyp-Falle wie in `knownOwner`: nur ein eigener Eintrag ist eine echte Provinz.
+  if (!Object.hasOwn(state.provinces, provinceId)) return fail('PROVINCE_NOT_FOUND', { provinceId })
 
   const known = knownOwner(state, playerId, provinceId)
   if (!known.known) return fail('INVALID_TARGET', { reason: 'unbekannt' })
