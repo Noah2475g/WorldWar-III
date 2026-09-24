@@ -9,6 +9,7 @@ import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
 import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
+import { parseNetLink } from './net/link.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
@@ -2109,9 +2110,28 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
  * Mehrspielerpartie wirklich angelegt und danach gedrueckt — das ist der Weg, den ein
  * Spieler nimmt.
  */
+/**
+ * Ein Raum, den dieser Bildschirm als Gastgeber fuehrt — wie nach `#/gastgeben` (T-M39-03).
+ *
+ * Die Leitung ist ein Schleifendoppel ohne Gegenueber: fuer die Fragen hier genuegt, dass es
+ * den Raum gibt. Ohne ihn bietet der Hostbau seit der Nacharbeit zu V-1 (2026-09-24) keine
+ * Partie zu zweit mehr an.
+ */
+const gastgeberRaum = () => {
+  const leitung = createLoopback()
+  return {
+    link: parseNetLink('#/gastgeben?raum=raum1&s=geheim')!,
+    connect: () => leitung.a,
+    origin: 'http://host:7749',
+  }
+}
+
 describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspulen aus', () => {
   const startZuZweit = (rate = '25') => {
-    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    // Mit Raum (Nacharbeit zu V-1, 2026-09-24): bis dahin legte dieser Test die Partie zu
+    // zweit OHNE Raum an — genau der Weg, der eine lokale Partie mit fester Rate lieferte.
+    // Angelegt ist sie jetzt wie beim Gastgeber: die Lobby wartet, die Rate steht fest.
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
     fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
     fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: rate } })
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
@@ -2144,6 +2164,55 @@ describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspul
     expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
     expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})
+
+/**
+ * Zu zweit gibt es nur, wo es einen Raum gibt (Befund V-1, Nacharbeit vom 2026-09-24).
+ *
+ * T-M39-11 hat die Partieart an die Bauflagge gehaengt. Das deckt das ausgelieferte
+ * Programm, aber nicht den **Hostbau ohne Raum**: der Hostdienst liefert `/` aus, und wer
+ * dort landet statt auf dem gedruckten `#/gastgeben`-Link, hat keine Leitung. Die Wahl
+ * „Zu zweit ueber einen Link" lief dann in genau das Symptom aus V-1 — eine lokale Partie
+ * mit fester Rate, ohne Vorspulen, ohne Mitspieler, ohne Lobby und ohne Fehler.
+ *
+ * Geprueft an der ganzen Anwendung: in diesem Testlauf ist `__MULTIPLAYER__` wahr, er IST
+ * also der Hostbau. Und zwar an der Wirkung, nicht nur an der Anzeige: eine Wahl, die das
+ * Formular noch traegt, waehrend der Bildschirm sie nicht mehr anbietet, darf beim Start
+ * nicht zuschlagen.
+ */
+describe('R-FREE-04 Zu zweit wird nur angeboten, wo dieser Bildschirm es herstellen kann', () => {
+  it('bietet im Hostbau ohne Raum keine Partie zu zweit an', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+
+    expect(screen.queryByRole('combobox', { name: 'Partieart' })).toBeNull()
+    expect(screen.queryByText('Zu zweit über einen Link')).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+
+  it('bietet sie dem Gastgeber mit Raum an — beide Arten, zu zweit vorgewaehlt', () => {
+    // Die Gegenprobe: wer ueber `#/gastgeben` kommt, verliert nichts (T-M39-03).
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    const waehler = screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement
+
+    expect([...waehler.options].map((option) => option.value)).toEqual(['single', 'multiplayer'])
+    expect(waehler.value).toBe('multiplayer')
+  })
+
+  it('startet allein, wenn der Raum fehlt — auch wenn das Formular noch „zu zweit" traegt', () => {
+    // Der Zustand, den die Anzeige allein nicht abfaengt: `options.mode` steht auf
+    // 'multiplayer' (der Gastgeber-Link hat es vorgewaehlt), und danach gibt es keinen Raum
+    // mehr. Vorher uebernahm `startNewGame` die Wahl ungefiltert: feste Rate, kein Vorspulen.
+    const { rerender } = render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    expect((screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement).value).toBe('multiplayer')
+
+    rerender(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    expect(screen.queryByRole('combobox', { name: 'Partieart' }), 'der Waehler stand ohne Raum').toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    expect(screen.queryByText(/\(fest\)/), 'die Partie begann mit fester Rate').toBeNull()
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
   })
 })
 
@@ -2394,5 +2463,210 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(meine.state.players['p2']!.kind).toBe('human')
     expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
     expect(screen.getByRole('alert')).toBeTruthy()
+  })
+
+  /**
+   * Die fuenf Saetze des Pausenvertrags, auf dem Bildschirm (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Sie lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am 2026-09-14
+   * am laufenden Programm: der Gastgeber stellt einen Pausenantrag — seine Kopfleiste
+   * aendert sich nicht; der Gast lehnt ab — es aendert sich wieder nichts. Wer den Antrag
+   * stellte, konnte einen gestellten Antrag nicht von einem verschluckten Klick
+   * unterscheiden.
+   *
+   * Geprueft wird an der **ganzen Anwendung** und nicht an der Kopfleiste mit
+   * handgebauten Eigenschaften: die Projektlehre „gruen im Test, tot im Browser" stammt
+   * genau aus dieser Ecke — die Tempo-Sperre war gebaut, geprueft und nie sichtbar. Hier
+   * haengt der Satz am wirklich gerenderten Baum, getrieben von `pause.ts`.
+   *
+   * Und beide Seiten, denn die Saetze sind nicht symmetrisch: „Ihr Mitspieler moechte
+   * weiterspielen" gehoert dem Antragsteller, und der Ablehnende soll ihn NICHT lesen.
+   */
+  describe('R-MP-05 Der Pausenvertrag sagt, was er tut', () => {
+    const GESTELLT = 'Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden.'
+    const ABGELEHNT = 'Ihr Mitspieler möchte weiterspielen.'
+    const VERFALLEN = 'Der Pausenantrag ist verfallen.'
+    const STEHT = 'Die Partie steht. Fortsetzen darf jeder allein.'
+    const WEITER = 'Die Partie läuft in drei Sekunden weiter.'
+
+    /** Antrag stellen und ihn beim Gegenueber ankommen lassen. */
+    const beantragen = () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pause beantragen' }))
+      warte(100)
+    }
+
+    it('zeigt dem Antragsteller, dass sein Antrag steht — und nimmt es mit der Antwort zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      expect(screen.queryByText(GESTELLT), 'der Satz stand schon vor dem Antrag').toBeNull()
+
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      expect(screen.queryByText(GESTELLT), 'der Satz blieb nach der Antwort stehen').toBeNull()
+    })
+
+    it('zeigt den eigenen Antrag nicht auch noch als Dialog — der gehoert dem Gegenueber', () => {
+      zuZweit()
+      warte(400)
+      beantragen()
+
+      // Der Dialog mit „Pause zulassen"/„Weiterspielen" ist die Frage AN den anderen.
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass abgelehnt wurde', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      // In der Meldezeile und nicht in der Kopfleiste: ein Ereignis, kein Zustand — dort
+      // stuende es sonst, bis jemand wieder eine Pause beantragt.
+      const meldung = screen.getByText(ABGELEHNT)
+      expect(meldung.className).toMatch(/notice--info/)
+    })
+
+    it('sagt dem Ablehnenden nichts ueber sich selbst', () => {
+      // Die andere Seite derselben Nachricht: hier hat der Bildschirm gerade selbst
+      // abgelehnt. „Ihr Mitspieler moechte weiterspielen" waere hier schlicht falsch.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit' })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Weiterspielen' }))
+      warte(100)
+
+      expect(screen.queryByText(ABGELEHNT)).toBeNull()
+      expect(screen.queryByText(GESTELLT)).toBeNull()
+      expect(screen.queryByText(STEHT)).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass sein Antrag verfallen ist', () => {
+      zuZweit({ peerLaeuft: false })
+      warte(400)
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+      expect(screen.queryByText(GESTELLT), 'der Antrag stand nach dem Verfallen noch').toBeNull()
+    })
+
+    it('sagt auch dem Gefragten, dass der Antrag verfallen ist — statt den Dialog wortlos wegzunehmen', () => {
+      // R-MP-05/AK3: beide erfahren es. Ohne diesen Satz verschwaende dem Gefragten der
+      // Dialog unter den Haenden, und er wuesste nicht, ob er ihn weggeklickt hat.
+      const { leitung, peer } = zuZweit({ peerLaeuft: false })
+      warte(400)
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+    })
+
+    it('sagt, dass die Partie steht, sobald zugestimmt wurde', () => {
+      const { leitung, peer, meine } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      expect(meine.status, 'die Partie stand gar nicht').toBe('paused')
+      // Neben dem Knopf, der es beendet — und als role="status", damit ein
+      // Vorleseprogramm den Halt mitbekommt und nicht nur der, der hinsieht.
+      const satz = screen.getByText(STEHT)
+      expect(satz.getAttribute('role')).toBe('status')
+      expect(screen.getByRole('button', { name: 'Fortsetzen' })).toBeTruthy()
+    })
+
+    it('kuendigt das Fortsetzen an und nimmt die Ankuendigung nach drei Sekunden zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Fortsetzen' }))
+      warte(100)
+
+      expect(screen.getByText(WEITER)).toBeTruthy()
+      // Waehrend des Vorlaufs steht die Partie noch — trotzdem gilt der genauere Satz.
+      expect(screen.queryByText(STEHT)).toBeNull()
+
+      warte(3000)
+
+      expect(screen.queryByText(WEITER), 'die Ankuendigung blieb stehen').toBeNull()
+      expect(screen.queryByText(STEHT), 'die Partie stand nach dem Vorlauf noch').toBeNull()
+    })
+
+    it('laesst eine fremde Meldung stehen, wenn der Mitspieler eine Pause beantragt', () => {
+      // Befund der Durchsicht vom 2026-09-18 (Stufe niedrig): „ein neuer Antrag loescht
+      // die Antwort auf den alten" loeschte beim Gefragten JEDE Meldung — hier den Hinweis
+      // zur festen Rate, der mit der Pause nichts zu tun hat.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      fireEvent.keyDown(window, { key: '+' })
+      expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+      expect(screen.queryByText(/beim Anlegen der Partie gewählt/), 'der Antrag loeschte eine fremde Meldung').not.toBeNull()
+    })
+
+    it('loescht mit dem neuen Antrag die Antwort auf den alten — die Gegenprobe', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+      expect(screen.getByText(ABGELEHNT)).toBeTruthy()
+
+      beantragen()
+
+      expect(screen.queryByText(ABGELEHNT), 'die alte Antwort stand neben dem neuen Antrag').toBeNull()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+    })
+
+    it('zeigt im Einzelspieler keinen einzigen dieser Saetze', () => {
+      // Der Pausenvertrag ist eine Sache zu zweit. Allein ist die Pause eine Raste.
+      startGame()
+      fireEvent.keyDown(window, { key: ' ' })
+
+      for (const satz of [GESTELLT, ABGELEHNT, VERFALLEN, STEHT, WEITER]) {
+        expect(screen.queryByText(satz), satz).toBeNull()
+      }
+      expect(screen.queryByRole('button', { name: 'Pause beantragen' })).toBeNull()
+    })
   })
 })

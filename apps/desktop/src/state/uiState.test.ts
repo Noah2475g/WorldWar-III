@@ -141,6 +141,18 @@ describe('R-UI-05 Meldungen', () => {
     expect(state.notice).toEqual({ text: 'Es fehlt an Rohstoffen: 400 Eisen.', kind: 'error' })
     expect(uiReducer(state, { type: 'clearNotice' }).notice).toBeNull()
   })
+
+  it('raeumt mit onlyIf nur die genannten Saetze weg und laesst fremde stehen', () => {
+    // Die Pausenantwort darf der naechste Antrag loeschen, einen abgelehnten Befehl nicht
+    // (Durchsicht vom 2026-09-18 zu MP-4).
+    const fremd = uiReducer(INITIAL_UI, { type: 'notice', text: 'Es fehlt an Rohstoffen: 400 Eisen.' })
+    const eigen = uiReducer(INITIAL_UI, { type: 'notice', kind: 'info', text: 'Der Pausenantrag ist verfallen.' })
+    const nur = ['Der Pausenantrag ist verfallen.']
+
+    expect(uiReducer(fremd, { type: 'clearNotice', onlyIf: nur }).notice).toEqual(fremd.notice)
+    expect(uiReducer(eigen, { type: 'clearNotice', onlyIf: nur }).notice).toBeNull()
+    expect(uiReducer(INITIAL_UI, { type: 'clearNotice', onlyIf: nur }).notice).toBeNull()
+  })
 })
 
 describe('R-GAME-05 Einstellungen ueberleben den Neustart', () => {

@@ -79,6 +79,7 @@ import {
   DEFAULT_NEW_GAME,
   aiBonusPercent,
   fixedSpeedOf,
+  gameModesFor,
   invitationOf,
   startGame,
   toConfig,
@@ -368,6 +369,20 @@ export function App(props: AppProps) {
     rules: props.rules,
     savedState: partySaved,
   })
+
+  /**
+   * Die Partiearten, die DIESER Bildschirm herstellen kann (T-M39-11, Befund V-1).
+   *
+   * Bis zur Nacharbeit vom 2026-09-24 hing die Liste allein an der Bauflagge. Der Hostbau
+   * ohne Raum bot die zweite Art dann weiter an, und „Partie beginnen" legte eine lokale
+   * Partie mit fester Rate an — ohne Mitspieler, ohne Lobby, ohne Fehler. Zu zweit gibt es
+   * jetzt nur mit einem Raum, den dieser Bildschirm als Gastgeber fuehrt, oder mit einer
+   * hereingereichten Sitzung (die Naht aus T-M37-11). Dieselbe Liste bindet Anzeige UND
+   * Wirkung: der Dialog zeichnet aus ihr, was er anbietet, reicht beim Start die Art weiter,
+   * die er daraus ableitet (`effectiveMode`), und `startNewGame` nimmt genau diese.
+   */
+  const hostsParty = (netParty.active && netParty.role === 'host') || props.netplay != null
+  const gameModes = useMemo(() => gameModesFor(__MULTIPLAYER__, hostsParty), [hostsParty])
 
   const netplaySession = netplayOver ? null : (props.netplay ?? netParty.session)
   const netplayActive = netplaySession != null
@@ -1014,6 +1029,53 @@ export function App(props: AppProps) {
     },
   })
 
+  /**
+   * Die Pause, wie sie der Spieler sieht (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Fuenf Saetze lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am
+   * 2026-09-14 am Bildschirm: wer eine Pause beantragte, sah weder, dass sein Antrag
+   * steht, noch dass er abgelehnt wurde — die Kopfleiste aenderte sich nicht.
+   *
+   * **Zwei Sorten Satz, zwei Orte.** Was STEHT, gehoert neben den Knopf, der es beendet:
+   * "Ihr Pausenantrag ist gestellt", "Die Partie steht", "Die Partie laeuft in drei
+   * Sekunden weiter" — jeder von ihnen faellt mit dem Zustand weg, der ihn traegt, ohne
+   * dass die Huelle sich etwas merken muesste. Was GESCHEHEN ist — abgelehnt, verfallen —
+   * ist ein Ereignis und gehoert in die Meldezeile, in der schon "Zu zweit haelt niemand
+   * allein an" steht (`header.pauseNeedsConsent`). Ein Ereignis in der Kopfleiste bliebe
+   * dort stehen, bis jemand wieder eine Pause beantragt.
+   *
+   * Die Reihenfolge ist nicht beliebig: waehrend der drei Sekunden Vorlauf steht die
+   * Partie noch, und "laeuft gleich weiter" ist die genauere von zwei wahren Auskuenften.
+   */
+  const pauseNotice = useMemo<string | null>(() => {
+    if (!netplay.active) return null
+    if (netplay.pause.resumeAt !== null) return t('netplay.resuming')
+    if (netplay.status === 'paused') return t('netplay.paused')
+    // Nur der eigene Antrag: den fremden traegt der Dialog mit den zwei Knoepfen.
+    if (netplay.pause.request && netplay.pause.request.by === viewerId) return t('netplay.pauseSent')
+    return null
+  }, [netplay.active, netplay.pause, netplay.status, viewerId])
+
+  const pauseKind = netplay.pause.notice
+  const pauseBy = netplay.pause.noticeBy
+  useEffect(() => {
+    if (!netplay.active) return
+    if (pauseKind === 'declined' && pauseBy !== viewerId) {
+      // "Ihr Mitspieler moechte weiterspielen" gehoert dem Antragsteller. Wer eben selbst
+      // abgelehnt hat, weiss es und bekaeme einen Satz ueber sich selbst zu lesen.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseDeclined') })
+    } else if (pauseKind === 'expired') {
+      // Beide erfahren es (R-MP-05/AK3) — auch der Gefragte, dem sonst nur wortlos der
+      // Dialog unter den Haenden verschwaende.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseExpired') })
+    } else if (pauseKind === 'requested') {
+      // Ein neuer Antrag loescht die Antwort auf den alten — und NUR sie. Bis zur
+      // Nacharbeit vom 2026-09-24 wischte er beim Gefragten jede Meldung weg, auch einen
+      // abgelehnten Befehl oder den Hinweis zur festen Rate.
+      dispatch({ type: 'clearNotice', onlyIf: [t('netplay.pauseDeclined'), t('netplay.pauseExpired')] })
+    }
+  }, [netplay.active, pauseKind, pauseBy, viewerId])
+
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
@@ -1351,16 +1413,22 @@ export function App(props: AppProps) {
    * (T-M22-04, Befund V2-05: das Menue kannte vorher nur die Einstellungen, und der
    * Startdialog wurde ausschliesslich hinter dem Fruehausstieg gezeichnet).
    */
-  const startNewGame = useCallback(() => {
+  const startNewGame = useCallback((mode: GameMode) => {
+    // Die Art, die der Dialog angeboten hat, und nicht die, die im Formular steht (Befund
+    // V-1, Nacharbeit vom 2026-09-24). Das Formular kann „zu zweit" tragen, waehrend es
+    // keinen Raum mehr gibt; bis dahin legte dieser Weg dann trotzdem eine Partie zu zweit
+    // an — mit einem menschlichen Platz p2, fester Rate und ohne Vorspulen. Die Art gilt
+    // fuer ALLES darunter: die Partiedefinition, die Rate und das Angebot an den Raum.
+    const wirksam: NewGameOptions = { ...options, mode }
     // Die gewaehlte Karte, nicht die Anfangskarte (T-M12-08).
-    const chosenMap = mapById(options.mapId)
-    const fresh = startGame(options, chosenMap, props.rules)
+    const chosenMap = mapById(wirksam.mapId)
+    const fresh = startGame(wirksam, chosenMap, props.rules)
     setActiveMap(chosenMap)
     // Partieart und feste Rate wandern aus dem Formular in die laufende Partie
     // (T-M37-03): ab hier ist die Rate im Mehrspieler unveraenderlich, und die Uhr
     // startet mit ihr, statt bei null zu stehen.
-    const feste = fixedSpeedOf(options)
-    setParty({ mode: options.mode, fixedSpeed: feste })
+    const feste = fixedSpeedOf(wirksam)
+    setParty({ mode: wirksam.mode, fixedSpeed: feste })
     // Zu zweit ueber einen Link legt der Gastgeber die Partie nur AN; laufen tut sie
     // erst, wenn er startet und der Handschlag durch ist (T-M39-03, R-MP-12/AK2). Bis
     // dahin bleibt die Uhr bei null, sonst haette er schon Ticks hinter sich, wenn der
@@ -1368,7 +1436,7 @@ export function App(props: AppProps) {
     // keiner mehr ist.
     const alsGastgeber = netParty.active && netParty.role === 'host'
     setSpeed(alsGastgeber ? 0 : (feste ?? 0))
-    if (alsGastgeber) netParty.offer(toConfig(options, chosenMap), feste ?? DEFAULT_MULTIPLAYER_SPEED)
+    if (alsGastgeber) netParty.offer(toConfig(wirksam, chosenMap), feste ?? DEFAULT_MULTIPLAYER_SPEED)
     // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
     pendingRef.current = []
     setPendingCommands([])
@@ -1505,6 +1573,9 @@ export function App(props: AppProps) {
         options={options}
         nations={selectedMap.startPositions.map((s) => s.nation)}
         maps={props.maps}
+        // Die Partiearten, die DIESER Bildschirm herstellen kann (T-M39-11, Befund V-1):
+        // Bauflagge UND Raum, siehe `gameModes` oben.
+        modes={gameModes}
         aiBonus={aiBonusPercent(props.rules, options.difficulty)}
         onChange={(next) => {
           // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
@@ -1897,6 +1968,9 @@ export function App(props: AppProps) {
         waitingForPeer={netplay.waiting}
         peerLost={netplay.lost && !peerLostDismissed}
         paused={netplay.status === 'paused'}
+        // Die fuenf Saetze aus M37 werden sichtbar (T-M39-10, Befund MP-4); drei davon
+        // stehen hier, die zwei Ereignisse in der Meldezeile.
+        pauseNotice={pauseNotice}
         {...(netplay.active
           ? {
               onPauseRequest: netplay.requestPause,

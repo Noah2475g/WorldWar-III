@@ -87,7 +87,12 @@ export type UiAction =
   | { type: 'openPanel'; panel: Panel }
   | { type: 'closePanel' }
   | { type: 'notice'; text: string; kind?: 'error' | 'info' }
-  | { type: 'clearNotice' }
+  /**
+   * Die Meldezeile leeren. Mit `onlyIf` nur dann, wenn sie gerade einen dieser Saetze
+   * traegt — ein Anlass, der nur seine eigene alte Meldung meint, soll keine fremde
+   * wegwischen (Befund der Durchsicht vom 2026-09-18 zu MP-4).
+   */
+  | { type: 'clearNotice'; onlyIf?: readonly string[] }
   | { type: 'changeSettings'; settings: Partial<Settings> }
   | { type: 'resetSettings' }
   | { type: 'ownershipChanged' }
@@ -127,6 +132,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, notice: { text: action.text, kind: action.kind ?? 'error' } }
 
     case 'clearNotice':
+      if (action.onlyIf && !(state.notice && action.onlyIf.includes(state.notice.text))) return state
       return { ...state, notice: null }
 
     case 'changeSettings':

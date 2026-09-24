@@ -564,9 +564,11 @@ export const de = {
     invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{other}}',
     invitationAi: 'Computergegner: {{count}}',
     invitationSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
-    // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf
-    // einen Knopf warten, den es noch nicht gibt.
-    multiplayerPending: 'Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.',
+    // Hier stand `multiplayerPending`: „Die Verbindung zum Mitspieler kommt mit dem
+    // nächsten Ausbau; die Partie beginnt vorerst lokal." Richtig in M37, falsch seit
+    // M38/M39 — die Verbindung ist gebaut (T-M39-11, Befund MP-5). Ersatzlos gestrichen:
+    // der Kasten nennt Angaben, keine Erklärungen, und was als Nächstes kommt, steht einen
+    // Klick später in der Lobby.
   },
 
   /**

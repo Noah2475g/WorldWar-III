@@ -5,6 +5,18 @@ import { ESLint } from 'eslint'
 
 export const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 
+/**
+ * Eine Testdatei, an ihrem Namen erkannt (T-M38-11, Befund M38-4).
+ *
+ * Bis zum 2026-09-18 stand hier `!f.endsWith('.test.ts')` — und eine `.test.tsx` endet
+ * nicht auf `.test.ts`. 22 von 205 Dateien, die `productionFiles()` lieferte, waren
+ * Testdateien der Oberflaeche. Beide Endungen in EINEM Ausdruck, damit die naechste
+ * (`.test.mts`, `.test.jsx`) nicht wieder eine eigene Zeile braucht, die jemand vergisst.
+ */
+export function isTestFile(file: string): boolean {
+  return /\.test\.[cm]?[jt]sx?$/.test(file)
+}
+
 /** Product source only — plan documents, tests and fixtures are explicitly out of scope. */
 export function productionFiles(): string[] {
   const roots = [join(ROOT, 'packages'), join(ROOT, 'apps')]
@@ -12,7 +24,7 @@ export function productionFiles(): string[] {
   for (const base of roots) {
     collect(base, out)
   }
-  return out.filter((f) => !f.endsWith('.test.ts'))
+  return out.filter((f) => !isTestFile(f))
 }
 
 function collect(dir: string, out: string[]): void {
