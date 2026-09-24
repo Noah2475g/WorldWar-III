@@ -321,6 +321,13 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     expect(evaluateCanvas([]).pass).toBe(false)
   })
 
+  it('Karten-Canvas: genau 320x240 besteht, 319x240 nicht (Grenzwert des Mindestmasses)', () => {
+    const exact = evaluateCanvas([{ name: 'Basis', cssWidth: 320, cssHeight: 240, bitmapWidth: 320, bitmapHeight: 240 }])
+    expect(exact.pass).toBe(true)
+    const under = evaluateCanvas([{ name: 'Basis', cssWidth: 319, cssHeight: 240, bitmapWidth: 319, bitmapHeight: 240 }])
+    expect(under.pass).toBe(false)
+  })
+
   it('Ziehen: ohne Vertragsattribute ein klares FAIL statt eines Absturzes', () => {
     const missing = { x: null, y: null, scale: null, selected: null }
     const r = evaluateDrag(missing, missing, { dx: -150, dy: -80 })
@@ -352,6 +359,20 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     expect(evaluatePinch(view(1000, 500, 2), view(1000, 500, 2), mid, 8).pass).toBe(false)
     const missing = { x: null, y: null, scale: null, selected: null }
     expect(evaluatePinch(missing, missing, mid, 8).pass).toBe(false)
+  })
+
+  it('Zwei-Finger-Zoom: Anker-Versatz genau an der Toleranz besteht, knapp darueber nicht (Grenzwert)', () => {
+    // mid (0,0) macht die Kartenrechnung einfach: mapBefore/mapAfter sind einfach die
+    // view-x/y selbst, der Fehler also genau der Unterschied in x.
+    const zero = { x: 0, y: 0 }
+    const before = view(0, 0, 2)
+    const atTolerance = evaluatePinch(before, view(8, 0, 1), zero, 8)
+    expect(atTolerance.pass).toBe(true)
+    expect(atTolerance.numbers.anchorErrorPx).toBeCloseTo(8, 6)
+
+    const overTolerance = evaluatePinch(before, view(8.1, 0, 1), zero, 8)
+    expect(overTolerance.pass).toBe(false)
+    expect(overTolerance.detail).toMatch(/verrutscht/)
   })
 
   it('Antippen: eine Provinz ist danach gewaehlt', () => {
