@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
+import { useInputMode } from '../ui/inputMode.ts'
 import {
   MAP_COLORS,
   MARCH_AHEAD_WIDTH,
@@ -1019,6 +1020,38 @@ export function MapCanvas(props: MapCanvasProps) {
     if (centre) props.onViewChange(centreOn(centre, props.view, limits))
   }, [props, limits])
 
+  /**
+   * Vollbild-Knopf (Touch-Bedienung, T-M31 Androidpruefstand): auf einem Telefon im
+   * Querformat frisst die Chrome-Leiste selbst gut 80 CSS-Punkte Hoehe - mehr, als
+   * `touch.css` der Kopf- und Fusszeile noch abknapsen kann. Vollbild gibt sie zurueck.
+   * Nur im Touch-Betrieb gezeigt (die Maus hat Alt+F11 oder F11) und nur, wenn der
+   * Browser es ueberhaupt anbietet (`document.fullscreenEnabled`).
+   */
+  const inputMode = useInputMode()
+  const [isFullscreen, setIsFullscreen] = useState(
+    () => typeof document !== 'undefined' && Boolean(document.fullscreenElement),
+  )
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return
+    const onFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
+  const fullscreenSupported = typeof document !== 'undefined' && document.fullscreenEnabled === true
+  const toggleFullscreen = useCallback(() => {
+    if (typeof document === 'undefined') return
+    try {
+      // Ein zurueckgewiesenes Versprechen (Nutzer hat Vollbild verboten, o.ae.) bleibt
+      // still - kein Absturz und keine Meldung fuer etwas, das der Spieler nicht bat.
+      const action = document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen({ navigationUI: 'hide' })
+      Promise.resolve(action).catch(() => undefined)
+    } catch {
+      // Manche Umgebungen werfen synchron statt ein Versprechen abzulehnen.
+    }
+  }, [])
+
   /*
    * Die Uebersichtskarte (T-M30-03, D27.4): 132 x 74, die Flaechenebene der ganzen Welt
    * verkleinert, darueber der Ausschnitt als Bernstein-Rahmen. Die Flaechen kommen aus
@@ -1118,6 +1151,17 @@ export function MapCanvas(props: MapCanvasProps) {
         >
           ◎
         </button>
+        {fullscreenSupported && inputMode === 'touch' && (
+          <button
+            type="button"
+            className="map-control"
+            aria-label={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
+            title={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
+            onClick={toggleFullscreen}
+          >
+            ⛶
+          </button>
+        )}
       </div>
 
       <canvas

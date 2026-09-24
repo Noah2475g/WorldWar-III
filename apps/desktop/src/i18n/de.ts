@@ -751,6 +751,8 @@ export const de = {
     centreCapital: 'Hauptstadt zentrieren',
     overview: 'Übersichtskarte',
     tooltipHintTouch: 'Tippen: auswählen · Lange drücken: Details',
+    fullscreenEnter: 'Vollbild',
+    fullscreenExit: 'Vollbild beenden',
   },
 
   keys: {
