@@ -88,6 +88,14 @@ export interface VisibleProvince {
   stale: boolean
   /** Tick the information dates from. */
   asOfTick: Tick
+  /**
+   * Bis wann ein eigener Aufklärer diese fremde Provinz offenhält (R-SPY-03/AK1, T-M17-08, D29.6).
+   *
+   * Nur bei einer Aufdeckung der Art `intel`, und nur dann steht bei einer **fremden** Provinz auch
+   * `buildings` — die Gebäude mit Stufe, die der Spieler sonst nie sieht. Moral, Bevölkerung,
+   * Vorkommen und Bauaufträge bleiben verborgen: der Spion sieht, was dasteht, nicht die Bücher.
+   */
+  revealedUntilTick?: Tick
 }
 
 export interface VisibleArmy {
@@ -290,6 +298,13 @@ export function visibleProvinces(state: GameState, playerId: PlayerId): Set<Prov
     for (const neighbour of province?.neighbors ?? []) visible.add(neighbour)
   }
 
+  // Was eigene Spione aufgedeckt haben (R-SPY-03, T-M17-08) — als eigene Menge, und nur die
+  // Provinz selbst: ein Spion sieht in die Stadt, nicht über ihre Grenzen. Ohne Aufdeckung kostet
+  // das nichts: `updateIntel` ruft diese Funktion je Macht und Tick.
+  if (state.espionage.reveals.length > 0) {
+    for (const provinceId of revealedProvinces(state, playerId).keys()) visible.add(provinceId)
+  }
+
   return visible
 }
 
@@ -439,6 +454,24 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     })
   }
 
+  // Aufgedeckt (R-SPY-03/AK1, T-M17-08, D29.6): eine fremde Provinz, in der ein eigener Aufklärer
+  // Erfolg hatte, zeigt ihre Gebäude, und die fremden Armeen darin — bei `intel` wie bei `armies`
+  // — ihre Zusammensetzung statt nur der Stärke. Nachgetragen statt in den Schleifen oben, damit
+  // die Regel an einer Stelle steht und die Sicht ohne Spione Zeichen für Zeichen dieselbe bleibt.
+  const revealed = revealedProvinces(state, playerId)
+  if (revealed.size > 0) {
+    for (const entry of provinces) {
+      const reveal = revealed.get(entry.id)
+      if (!reveal || entry.stale || entry.owner === playerId || reveal.intelUntilTick === null) continue
+      entry.buildings = { ...state.provinces[entry.id]!.buildings }
+      entry.revealedUntilTick = reveal.intelUntilTick
+    }
+    for (const entry of armies) {
+      if (entry.owner === playerId || !revealed.has(entry.provinceId)) continue
+      entry.units = state.armies[entry.id]!.units.map((stack) => ({ ...stack }))
+    }
+  }
+
   return {
     tick: state.tick,
     playerId,
@@ -493,4 +526,31 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     },
     espionage: { spies: ownSpies },
   }
+}
+
+/**
+ * Was die eigenen Spione aufgedeckt haben, je Provinz (R-SPY-03, T-M17-08, D29.6).
+ *
+ * `intelUntilTick` ist gesetzt, wenn eine Aufklärung die Provinz zeigt (mit Gebäuden),
+ * `armiesUntilTick`, wenn eine Militärsabotage ihre Armeen aufgedeckt hat (T-M17-09). Eine
+ * Aufdeckung gilt bis **vor** `untilTick` — der Tageslauf nimmt sie an genau diesem Wechsel weg
+ * (`settleEspionage`, Schritt a), und die Sicht sagt dasselbe, auch über einen Stand, der zwischen
+ * zwei Wechseln geladen wurde.
+ *
+ * Nur die eigenen: was ein anderer aufgedeckt hat, weiß nur er (R-DIP-04). Ein Verbündeter teilt
+ * seine Karte, nicht seine Spione.
+ */
+export function revealedProvinces(
+  state: GameState,
+  playerId: PlayerId,
+): Map<ProvinceId, { intelUntilTick: Tick | null; armiesUntilTick: Tick | null }> {
+  const byProvince = new Map<ProvinceId, { intelUntilTick: Tick | null; armiesUntilTick: Tick | null }>()
+  for (const reveal of state.espionage.reveals) {
+    if (reveal.player !== playerId || reveal.untilTick <= state.tick) continue
+    const entry = byProvince.get(reveal.provinceId) ?? { intelUntilTick: null, armiesUntilTick: null }
+    if (reveal.kind === 'intel') entry.intelUntilTick = Math.max(entry.intelUntilTick ?? 0, reveal.untilTick)
+    else entry.armiesUntilTick = Math.max(entry.armiesUntilTick ?? 0, reveal.untilTick)
+    byProvince.set(reveal.provinceId, entry)
+  }
+  return byProvince
 }

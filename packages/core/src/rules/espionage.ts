@@ -1,5 +1,5 @@
 import type { Fixed } from '@worldwar/shared'
-import type { SpyMission } from '../state/types'
+import type { PlayerId, SpyMission } from '../state/types'
 import type { RuleConstants } from './types'
 
 /**
@@ -28,4 +28,24 @@ export function spySalary(constants: RuleConstants, mission: SpyMission): Fixed 
     case 'counter':
       return constants.spySalaryCounter
   }
+}
+
+/**
+ * Passt der Auftrag zum Ziel? `null` heißt ja, sonst der Grund (R-SPY-01/AK2).
+ *
+ * Aufklärung und Sabotage nur in fremden Provinzen, Gegenspionage nur in eigenen, Sabotage nie in
+ * herrenlosen. Aufklärung in einer herrenlosen Provinz ist erlaubt — dort gibt es nichts zu
+ * zerstören, aber etwas zu sehen.
+ *
+ * **Eine Regel, zwei Leser** (seit T-M17-08 hier statt in `commands/espionage.ts`): das Anwerben
+ * und Umsetzen prüft sie gegen den Besitzer, den der Spieler **kennt**; der Tageslauf gegen den
+ * **wahren** — passt der Auftrag dort nicht mehr, wird nicht gewürfelt (`targetChanged`, D29.3).
+ * Weil beide Stellen dieselbe Funktion rufen, kann ein Spion nie einen Auftrag ausführen, den das
+ * Anwerben am selben Ziel abgelehnt hätte.
+ */
+export function spyTargetProblem(owner: PlayerId | null, playerId: PlayerId, mission: SpyMission): string | null {
+  if (mission === 'counter') return owner === playerId ? null : 'nicht eigene Provinz'
+  if (owner === playerId) return 'eigene Provinz'
+  if (owner === null && mission !== 'intel') return 'herrenlos'
+  return null
 }

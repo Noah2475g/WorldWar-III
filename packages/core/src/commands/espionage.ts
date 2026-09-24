@@ -1,4 +1,4 @@
-import { SPY_MISSIONS } from '../rules/espionage'
+import { SPY_MISSIONS, spyTargetProblem } from '../rules/espionage'
 import type { GameState, PlayerId, ProvinceId, Spy, SpyMission } from '../state/types'
 import { visibleProvinces } from '../view/publicView'
 import { registerCommand } from './registry'
@@ -52,20 +52,6 @@ export function knownOwner(state: GameState, playerId: PlayerId, provinceId: Pro
   const remembered = state.players[playerId]?.intel[provinceId]
   if (remembered) return { known: true, owner: remembered.owner }
   return { known: false }
-}
-
-/**
- * Passt der Auftrag zum Ziel? `null` heißt ja, sonst der Grund (R-SPY-01/AK2).
- *
- * Aufklärung und Sabotage nur in fremden Provinzen, Gegenspionage nur in eigenen, Sabotage nie in
- * herrenlosen. Aufklärung in einer herrenlosen Provinz ist erlaubt — dort gibt es nichts zu
- * zerstören, aber etwas zu sehen.
- */
-export function spyTargetProblem(owner: PlayerId | null, playerId: PlayerId, mission: SpyMission): string | null {
-  if (mission === 'counter') return owner === playerId ? null : 'nicht eigene Provinz'
-  if (owner === playerId) return 'eigene Provinz'
-  if (owner === null && mission !== 'intel') return 'herrenlos'
-  return null
 }
 
 /** Die Zielprüfung, die Anwerben und Umsetzen teilen: Existenz, Kenntnis, Auftrag, Zielbedingung. */

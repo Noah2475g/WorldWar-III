@@ -2,9 +2,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, smallWorld, tinyMap } from '@worldwar/testkit'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { Command } from '../src/commands/types'
+import type { GameEvent } from '../src/events/types'
+import { deserialise } from '../src/persistence/save'
 import { createInitialState, type GameConfig } from '../src/state/create'
-import { HASH_OMIT_KEYS, type GameState } from '../src/state/types'
+import { HASH_OMIT_KEYS, SCHEMA_VERSION, type GameState } from '../src/state/types'
 import { step } from '../src/step'
 
 const CONFIG: GameConfig = {
@@ -154,5 +157,106 @@ describe('R-ARCH-02 Additive Kommandofelder', () => {
     const spaet = replay({ type: 'MOVE_ARMY', playerId: 'p1', armyId: 'a1', targetProvinceId: 'n2', departInTicks: 8 })
 
     expect(spaet).not.toEqual(alt)
+  })
+})
+
+/**
+ * Der Tageslauf der Spionage und der Zufall (T-M17-08, R-SPY-02/AK1, R-ARCH-01, D29.4).
+ *
+ * Zwei Zusagen, zwei Richtungen. **Ohne Spione** verbraucht die Mechanik keinen Zufall und ändert
+ * nichts — belegt nicht an einem Einzelfall, sondern nach jedem von 500 Ticks gegen einen Lauf, in
+ * dem `settleEspionage` gar nicht existiert, und zwar auf einem **migrierten** Stand (Stufe 2 → 4):
+ * genau das, was ein alter Spielstand nach dem Laden erlebt. **Mit Spionen** würfelt sie aus dem
+ * Zufall des Zustands und nur daraus — zwei Läufe gleicher Startzahl sind hashgleich, eine andere
+ * Startzahl gibt andere Ausgänge.
+ */
+describe('D29.4 Spionage verbraucht Zufall nur, wenn es Spione gibt', () => {
+  const world = { map: smallWorld(), rules: TEST_RULES }
+  const saveV2 = readFileSync(fileURLToPath(new URL('./golden/save-v2.json', import.meta.url)), 'utf8')
+
+  function hashesFrom(
+    stepFn: typeof step,
+    start: GameState,
+    ticks: number,
+    commandsAt: (tick: number) => Command[] = () => [],
+  ): { hashes: string[]; events: GameEvent[] } {
+    let current = start
+    const hashes: string[] = []
+    const events: GameEvent[] = []
+    for (let i = 0; i < ticks; i++) {
+      const result = stepFn(current, commandsAt(current.tick), world)
+      current = result.state
+      hashes.push(hashOf(current))
+      events.push(...result.events)
+    }
+    return { hashes, events }
+  }
+
+  it('OHNE Spione ist der Hash nach jedem von 500 Ticks gleich dem Lauf ohne settleEspionage', async () => {
+    const start = deserialise(saveV2)
+    expect(start.schemaVersion, 'der Stand ist migriert').toBe(SCHEMA_VERSION)
+    expect(start.espionage).toEqual({ spies: [], reveals: [] })
+    const mit = hashesFrom(step, start, 500).hashes
+
+    // Derselbe Kern, nur ohne den Tageslauf der Spionage: das Modul wird durch eine leere Hülle
+    // ersetzt, und `step` wird frisch geladen, damit `dailyTick` die Hülle ruft.
+    const leer = vi.fn()
+    vi.resetModules()
+    vi.doMock('../src/phases/espionage', () => ({ settleEspionage: leer }))
+    try {
+      const ohneModul = (await import('../src/step')) as { step: typeof step }
+      const ohne = hashesFrom(ohneModul.step, start, 500).hashes
+
+      // 240 → 740: zwanzig Tageswechsel. Sonst wäre „ohne" nicht ohne, sondern nie gerufen.
+      expect(leer).toHaveBeenCalledTimes(20)
+      expect(ohne).toEqual(mit)
+    } finally {
+      vi.doUnmock('../src/phases/espionage')
+      vi.resetModules()
+    }
+  })
+
+  const DREI: GameConfig = {
+    ...CONFIG,
+    mapId: 'testworld',
+    players: [
+      { name: 'A', kind: 'human', nation: 'Nordland', color: '#0f62bc' },
+      { name: 'B', kind: 'ai', nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' },
+      { name: 'C', kind: 'ai', nation: 'Sueden', color: '#2e7d32', difficulty: 'normal' },
+    ],
+  }
+  /** Vier Aufklärer in der ersten Stunde: p1 nach s1 und m1, p3 nach n1 und m2 — alle sichtbar. */
+  const anwerben = (tick: number): Command[] =>
+    tick !== 1
+      ? []
+      : ([
+          { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 's1', mission: 'intel' },
+          { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 'm1', mission: 'intel' },
+          { type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 'n1', mission: 'intel' },
+          { type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 'm2', mission: 'intel' },
+        ] as Command[])
+
+  const mitSpionen = (seed: number) => {
+    const { hashes, events } = hashesFrom(step, createInitialState({ ...DREI, seed }, world), 500, anwerben)
+    const ausgaenge = events.flatMap((event) =>
+      event.type === 'SPY_REPORT' ? [`${event.tick}:${event.spyId}:${event.outcome}`] : [],
+    )
+    return { hashes, ausgaenge }
+  }
+
+  it('MIT Spionen liefern zwei Läufe gleicher Startzahl nach jedem Tick denselben Hash', () => {
+    const a = mitSpionen(42)
+    const b = mitSpionen(42)
+
+    expect(b.hashes).toEqual(a.hashes)
+    expect(b.ausgaenge).toEqual(a.ausgaenge)
+    // Kein leerer Beweis: vier Spione, neunzehn Wechsel mit Auftrag — und der Zufall entscheidet.
+    expect(a.ausgaenge).toHaveLength(4 * 19)
+    expect(a.ausgaenge.some((entry) => entry.endsWith(':success'))).toBe(true)
+    expect(a.ausgaenge.some((entry) => entry.endsWith(':failure'))).toBe(true)
+  })
+
+  it('und würfelt mit einer anderen Startzahl andere Ausgänge', () => {
+    expect(mitSpionen(43).ausgaenge).not.toEqual(mitSpionen(42).ausgaenge)
   })
 })

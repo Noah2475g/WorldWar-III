@@ -301,6 +301,10 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     DAY_REPORT: { day: 3, scores: {} },
     // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
     GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
+    // Spionage (T-M17-08): ein Bericht und ein Verlust mangels Sold sind Rueckmeldung ueber einen
+    // eigenen Auftrag, kein Rueckschlag im Sinn von D24.1.
+    SPY_REPORT: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', outcome: 'failure', audience: ['p1'], concerns: ['p1'] },
+    SPY_LOST: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */

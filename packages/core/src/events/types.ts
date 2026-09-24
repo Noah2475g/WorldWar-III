@@ -7,6 +7,9 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Spy,
+  SpyId,
+  SpyMission,
   Terrain,
   Tick,
 } from '../state/types'
@@ -308,6 +311,40 @@ export interface GoalReachedEvent extends BaseEvent {
   day: number
 }
 
+/**
+ * Ein Spion hat seinen Auftrag ausgeführt (R-SPY-02, T-M17-08, D29.5).
+ *
+ * `audience: [playerId]` — nur der Besitzer. Wer ausgespäht wird, erfährt es nicht; nur ein
+ * Gegenspion kann einen fremden Spion enttarnen (R-SPY-05). Und das Ereignis trägt **nichts vom
+ * Gesehenen**: was eine Aufklärung zeigt, steht in der Sicht (`publicView`) und im
+ * Aufklärungsgedächtnis, nicht im Protokoll — sonst läge fremder Bestand im Ereignisprotokoll
+ * und damit im Spielstand. Kein Alarm: ein Bericht hält das Vorspulen nicht an.
+ */
+export interface SpyReportEvent extends BaseEvent {
+  type: 'SPY_REPORT'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  /** `targetChanged`: die Provinz hat den Besitzer gewechselt, der Auftrag passt nicht mehr — kein Wurf. */
+  outcome: NonNullable<Spy['lastOutcome']>
+}
+
+/**
+ * Ein Spion ist verloren, weil sein Sold nicht zu zahlen war (R-SPY-02/AK2, T-M17-08, D29.5).
+ *
+ * Nur für den Besitzer. Ziel und Auftrag stehen dabei, weil die Oberfläche keine Kennungen zeigt
+ * (Befund M17-S1) und „Spion s3 verloren" niemandem sagt, welcher es war.
+ */
+export interface SpyLostEvent extends BaseEvent {
+  type: 'SPY_LOST'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  reason: 'unpaid'
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -336,6 +373,8 @@ export type GameEvent =
   | GameEndedEvent
   | DayReportEvent
   | GoalReachedEvent
+  | SpyReportEvent
+  | SpyLostEvent
 
 export type EventType = GameEvent['type']
 
@@ -368,6 +407,8 @@ export const EVENT_TYPES = [
   'GAME_ENDED',
   'DAY_REPORT',
   'GOAL_REACHED',
+  'SPY_REPORT',
+  'SPY_LOST',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.
