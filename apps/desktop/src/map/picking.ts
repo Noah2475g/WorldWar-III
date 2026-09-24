@@ -200,11 +200,12 @@ export function centreOn(point: Point, view: View, limits: ViewLimits): View {
 /**
  * Client-Pixel eines Zeigers zu einem Punkt der Leinwand (Touch-Bedienung).
  *
- * Die Leinwand rechnet mit `bufferW` x `bufferH` Punkten (in `MapCanvas` mindestens
- * 320 x 240), gezeigt wird sie in der Groesse ihrer Huelle. Ist die Huelle kleiner — auf
- * einem Telefon im Querformat ist sie das —, staucht der Browser das Bild, und ein
- * `clientX - rect.left` traf am rechten Rand bis zu sechzig Punkte daneben. Hier wird die
- * Stauchung herausgerechnet. Ohne gemessene Huelle (jsdom: alles null) gilt Faktor eins.
+ * Die Leinwand rechnet mit `bufferW` x `bufferH` Punkten (in `MapCanvas` die echte
+ * Huelle; nur ohne Layout — jsdom, clientWidth/clientHeight 0 — gilt je Achse das
+ * Mindestmass 320 x 240), gezeigt wird sie in der Groesse ihrer Huelle. Weichen beide
+ * dennoch voneinander ab (Layoutverzug zwischen zwei Messungen), staucht der Browser das
+ * Bild, und ein `clientX - rect.left` traefe daneben. Hier wird die Stauchung
+ * herausgerechnet. Ohne gemessene Huelle (jsdom: alles null) gilt Faktor eins.
  */
 export function toCanvasPoint(
   clientX: number,

@@ -405,6 +405,49 @@ describe('Touch-Bedienung: die Karte ist fuer einen Testroboter lesbar', () => {
   })
 })
 
+describe('Touch-Bedienung: keine Verzerrung bei einer Huelle unter 320 x 240', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('rechnet mit der echten, kleineren Huelle statt eine einzelne Achse auf das Mindestmass zu stauchen (Befund 2026-09-25, LDPlayer 1280x720@320: CSS 396,8x166,5, Bitmap 794x480, Verhaeltnis 2,001 zu 2,883)', () => {
+    // Wie Tooltip.touch.test.tsx `vermessen()`: nur der Ausschnitt-Wrapper bekommt eine
+    // Groesse, alles andere bleibt bei 0 (jsdom-Standard).
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('map-wrapper') ? 397 : 0
+    })
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('map-wrapper') ? 166 : 0
+    })
+    const vorher = window.devicePixelRatio
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 2 })
+    try {
+      const { container, calls } = karte()
+      const overlay = container.querySelectorAll('canvas.map-layer')[1] as HTMLCanvasElement
+
+      // Gemeldet wird die echte Huelle, nicht das gestauchte Mindestmass.
+      expect(calls.viewports.at(-1)).toEqual({ width: 397, height: 166 })
+      // Die Bitmap folgt derselben Groesse auf beiden Achsen (394x166 * DPR 2).
+      expect(overlay.width).toBe(794)
+      expect(overlay.height).toBe(332)
+      // Das ist der eigentliche Befund: gleiches Verhaeltnis auf beiden Achsen, nicht
+      // 2,001 zu 2,883 wie mit dem alten Pro-Achse-Mindestmass.
+      expect(overlay.width / 397).toBeCloseTo(overlay.height / 166, 5)
+    } finally {
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: vorher })
+    }
+  })
+
+  it('bleibt beim Mindestmass 320 x 240, solange jsdom kein Layout misst (Gegenprobe fuer die Existenz des Bodens)', () => {
+    const { calls, container } = karte()
+    const overlay = container.querySelectorAll('canvas.map-layer')[1] as HTMLCanvasElement
+
+    expect(calls.viewports.at(-1)).toEqual({ width: 320, height: 240 })
+    expect(overlay.width).toBe(320)
+    expect(overlay.height).toBe(240)
+  })
+})
+
 describe('Touch-Bedienung: scharf bei hoher Pixeldichte', () => {
   it('zeichnet bei Dichte 2 in doppelt so viele Bildpunkte und rechnet weiter in Punkten', () => {
     const vorher = window.devicePixelRatio

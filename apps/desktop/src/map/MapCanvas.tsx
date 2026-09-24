@@ -228,7 +228,10 @@ export interface MapCanvasProps {
   onViewChange: (view: View) => void
   /**
    * Die gemessene Groesse der Karte in Punkten (Touch-Bedienung): dieselbe, mit der
-   * Ausschnitt und Klemme hier rechnen — mindestens 320 x 240, ohne Pixeldichte. Wer
+   * Ausschnitt und Klemme hier rechnen — die echte Huelle, ohne Pixeldichte; nur ohne
+   * Layout (jsdom, clientWidth/clientHeight 0) gilt je Achse das Mindestmass 320 x 240
+   * (Befund 2026-09-25: eine Huelle unter 240 px Hoehe wurde sonst auf 240 hochgerechnet
+   * und die Bitmap dadurch verzerrt — 166,5 echte Punkte zeichneten sich wie 240). Wer
    * ausserhalb zentriert (Sprung auf eine Provinz, Tastatur), rechnet mit ihr statt mit
    * einem festen Ausschnitt. Gemeldet bei jeder Messung, auch der ersten.
    */
@@ -315,8 +318,14 @@ export function MapCanvas(props: MapCanvasProps) {
     const element = wrapperRef.current
     if (!element) return
     const update = () => {
-      const width = Math.max(320, element.clientWidth)
-      const height = Math.max(240, element.clientHeight)
+      // Nur OHNE Layout (jsdom: 0 x 0) gilt je Achse das Mindestmass 320 x 240. Mit einer
+      // echten, kleineren Huelle (Telefon im Querformat) wird NICHT mehr gestaucht: vorher
+      // hob `Math.max(320/240, clientWidth/clientHeight)` eine einzelne zu kurze Achse an
+      // und die Bitmap zeichnete sich mit einem anderen Massstab je Achse — Befund
+      // 2026-09-25 am LDPlayer bei 1280x720@320 (166,5 echte Punkte Hoehe wurden zu 240
+      // gerechnet, Bitmap-Verhaeltnis 2,001 zu 2,883 statt gleich auf beiden Achsen).
+      const width = element.clientWidth > 0 ? element.clientWidth : 320
+      const height = element.clientHeight > 0 ? element.clientHeight : 240
       // Dieselbe Groesse ist kein neuer Zustand: sonst zeichnete jede Messung beide Ebenen neu.
       setSize((old) => (old.width === width && old.height === height ? old : { width, height }))
       setPixelRatio(typeof window === 'undefined' ? 1 : window.devicePixelRatio)
