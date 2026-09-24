@@ -181,13 +181,55 @@ function pageScroll() {
 function pageTargets() {
   const out = []
   const query = 'button, select, input:not([type="hidden"]), summary, [role="button"], a[href]'
+  // Manche Knoepfe bleiben klein und tragen ihre 44 px stattdessen in einem unsichtbaren
+  // ::before/::after (touch.css, z.B. .explain__toggle::after { inset: -11px }). Ein Klick
+  // dort trifft das Element selbst (Pseudo-Elemente sind kein eigenes Hit-Test-Ziel), also
+  // zaehlt die vergroesserte Flaeche mit - sonst meldet diese Pruefung einen Verstoss, den
+  // ein Finger gar nicht hat.
+  const pseudoExtra = (el, box) => {
+    for (const which of ['::after', '::before']) {
+      let cs
+      try {
+        cs = getComputedStyle(el, which)
+      } catch {
+        continue
+      }
+      if (!cs || cs.content === 'none' || cs.content === '' || cs.display === 'none' || cs.visibility === 'hidden') continue
+      if (cs.position !== 'absolute' && cs.position !== 'fixed') continue
+      if (cs.pointerEvents === 'none') continue
+      const num = (v) => (v === 'auto' || v == null ? null : parseFloat(v))
+      const top = num(cs.top)
+      const right = num(cs.right)
+      const bottom = num(cs.bottom)
+      const left = num(cs.left)
+      if ((top === null && bottom === null) || (left === null && right === null)) continue
+      const l = left !== null ? box.left + left : box.left
+      const r = right !== null ? box.right - right : box.right
+      const t = top !== null ? box.top + top : box.top
+      const b = bottom !== null ? box.bottom - bottom : box.bottom
+      const width = r - l
+      const height = b - t
+      if (width > box.width || height > box.height) return { width, height }
+    }
+    return null
+  }
   for (const el of document.querySelectorAll(query)) {
     const style = getComputedStyle(el)
     if (style.visibility === 'hidden' || style.display === 'none') continue
+    // Ein Element, dessen (vererbtes) pointer-events "none" ist, nimmt nie einen Klick oder
+    // Finger an - ueber die Karte legt sich z.B. die Legende so, damit sie selbst keine
+    // Klicks wegnimmt (app.css, Kommentar "nimmt keine Klicks weg"), und ihr "?"-Knopf erbt
+    // das, ohne es zurueckzusetzen. Seine Groesse zu pruefen waere eine Pruefung von etwas,
+    // das ohnehin kein Finger erreicht - dieselbe Begruendung wie bei display:none.
+    if (style.pointerEvents === 'none') continue
     // Ein Haekchen oder Knopf in einem <label> wird ueber das ganze Label getroffen.
     const toggle = el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')
     const label = toggle ? el.closest('label') : null
-    const box = (label ?? el).getBoundingClientRect()
+    const target = label ?? el
+    const box = target.getBoundingClientRect()
+    const extra = pseudoExtra(target, box)
+    const width = extra ? Math.max(box.width, extra.width) : box.width
+    const height = extra ? Math.max(box.height, extra.height) : box.height
     const classes = [...el.classList].slice(0, 2).map((c) => `.${c}`).join('')
     const selector = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${classes}`
     const labelText = el.closest('label')?.querySelector('span')?.textContent ?? ''
@@ -196,7 +238,7 @@ function pageTargets() {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 30)
-    out.push({ selector, text, width: box.width, height: box.height, viaLabel: Boolean(label) })
+    out.push({ selector, text, width, height, viaLabel: Boolean(label) })
   }
   return out
 }
