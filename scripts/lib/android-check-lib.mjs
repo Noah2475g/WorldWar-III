@@ -418,7 +418,7 @@ export function evaluateTargets(elements, min = MIN_TARGET_PX) {
     .sort((a, b) => Math.min(a.width, a.height) - Math.min(b.width, b.height))
   const smallest = violators.length ? Math.min(violators[0]?.width ?? 0, violators[0]?.height ?? 0) : null
   const list = violators
-    .slice(0, 8)
+    .slice(0, 6)
     .map((v) => `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height}`)
     .join(', ')
   return {
@@ -426,8 +426,76 @@ export function evaluateTargets(elements, min = MIN_TARGET_PX) {
     pass: violators.length === 0,
     numbers: { total: visible.length, violators: violators.length, smallest, min },
     violators,
-    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px${list ? `: ${list}${violators.length > 8 ? ', ...' : ''}` : ''}`,
+    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px${list ? `: ${list}${violators.length > 6 ? ', ...' : ''}` : ''}`,
   }
+}
+
+/**
+ * Touch-Ziele in mehreren Zustaenden (Startdialog, Partie, Provinz gewaehlt): die Pruefung
+ * besteht nur, wenn jeder Zustand besteht. Jeder Verstoss traegt den Zustand, in dem er lag.
+ * @param {{ name: string, elements: { selector: string, text: string, width: number, height: number }[] }[]} states
+ * @param {number} [min]
+ */
+export function evaluateTargetStates(states, min = MIN_TARGET_PX) {
+  if (states.length === 0) {
+    return { id: 'touch-targets', pass: false, numbers: { min, states: {} }, violators: [], detail: 'kein Zustand gemessen' }
+  }
+  const per = states.map((state) => ({ name: state.name, ...evaluateTargets(state.elements, min) }))
+  return {
+    id: 'touch-targets',
+    pass: per.every((p) => p.pass),
+    numbers: { min, states: Object.fromEntries(per.map((p) => [p.name, p.numbers])) },
+    violators: per.flatMap((p) => p.violators.map((v) => ({ ...v, state: p.name }))),
+    detail: per.map((p) => `${p.name}: ${p.detail}`).join(' | '),
+  }
+}
+
+/**
+ * Steht diese Weiterleitung schon in `adb forward --list`? Dann gehoert sie jemand anderem,
+ * und der Lauf laesst sie am Ende stehen.
+ * @param {string} listText @param {string} serial @param {number} localPort @param {string} remote
+ */
+export function forwardExists(listText, serial, localPort, remote) {
+  return String(listText)
+    .split(/\r?\n/)
+    .some((line) => {
+      const [s, local, r] = line.trim().split(/\s+/)
+      return s === serial && local === `tcp:${localPort}` && r === remote
+    })
+}
+
+/**
+ * Was sich ohne Vertragsattribute beobachten laesst: eine Pruefsumme eines verkleinerten
+ * Kartenbilds, der Wert der Provinzliste in der Seitenleiste, der Tooltip, der Seitenzoom
+ * und der Rollstand. Sie aendert kein PASS/FAIL, macht aber einen Ausgangswert ohne die
+ * Attribute lesbar ("die Seite zoomt statt der Karte").
+ * Dazu, falls gemessen, die Zeigerereignisse waehrend der Geste: ein `pointercancel` heisst,
+ * dass der Browser die Geste uebernommen hat (Seite rollen oder zoomen statt Karte).
+ * @typedef {{ down: number, move: number, up: number, cancel: number, target: string | null }} PointerCounts
+ * @typedef {{ signature: string | null, pickerValue: string | null, tooltip: boolean, visualScale: number,
+ *   scrollX: number, scrollY: number, pointer?: PointerCounts }} Aux
+ * @param {Aux} before @param {Aux} after
+ */
+export function auxObservation(before, after) {
+  const parts = []
+  if (after.pointer) {
+    const p = after.pointer
+    parts.push(`Zeiger auf ${p.target ?? '?'}: down ${p.down}, move ${p.move}, up ${p.up}, cancel ${p.cancel}`)
+  }
+  if (before.signature !== null && after.signature !== null) {
+    parts.push(`Kartenbild ${before.signature === after.signature ? 'unveraendert' : 'veraendert'}`)
+  }
+  if (before.pickerValue !== null || after.pickerValue !== null) {
+    parts.push(`Provinzliste "${before.pickerValue ?? ''}" -> "${after.pickerValue ?? ''}"`)
+  }
+  parts.push(`Tooltip ${after.tooltip ? 'sichtbar' : 'nicht sichtbar'}`)
+  if (Math.abs(after.visualScale - 1) > 0.01 || Math.abs(before.visualScale - 1) > 0.01) {
+    parts.push(`Seitenzoom ${Math.round(before.visualScale * 100) / 100} -> ${Math.round(after.visualScale * 100) / 100}`)
+  }
+  if (after.scrollX !== before.scrollX || after.scrollY !== before.scrollY) {
+    parts.push(`Seite gerollt ${before.scrollX}/${before.scrollY} -> ${after.scrollX}/${after.scrollY}`)
+  }
+  return parts.join(', ')
 }
 
 /**
@@ -546,7 +614,11 @@ export function evaluateTap(beforeAttrs, afterAttrs) {
 }
 
 /**
- * @param {{ before: boolean, duringHold: boolean, after: boolean }} m Tooltip sichtbar?
+ * Langes Druecken ist das Zeigen ohne Maus: der Tooltip erscheint, und die Auswahl bleibt,
+ * wie sie war. Waehlt das Druecken die Provinz, stammt der Tooltip von der Auswahl - und
+ * waehrend eines Marschbefehls saesse damit das Ziel.
+ * @param {{ before: boolean, duringHold: boolean, after: boolean,
+ *   selectedBefore: string | null, selectedAfter: string | null, selectionSource: string }} m
  * @returns {CheckResult}
  */
 export function evaluateLongPress(m) {
@@ -554,6 +626,9 @@ export function evaluateLongPress(m) {
   const problems = []
   if (m.before) problems.push('Tooltip war schon vorher sichtbar')
   if (!m.after) problems.push('kein .tooltip nach dem Loslassen')
+  if ((m.selectedBefore ?? '') !== (m.selectedAfter ?? '')) {
+    problems.push(`das Druecken waehlte "${m.selectedAfter ?? ''}" (${m.selectionSource}) - der Tooltip kommt von der Auswahl`)
+  }
   return {
     id: 'long-press',
     pass: problems.length === 0,
@@ -563,7 +638,9 @@ export function evaluateLongPress(m) {
 }
 
 /**
- * @param {{ label: string, found: boolean, before: ViewAttrs, after: ViewAttrs, size?: { width: number, height: number } }[]} presses
+ * `hit` sagt, ob der Finger an der Knopfmitte wirklich den Knopf trifft (elementFromPoint);
+ * liegt etwas darueber, landet der Tipp dort - und eine Massstabsaenderung kaeme von woanders.
+ * @param {{ label: string, found: boolean, hit?: boolean, before: ViewAttrs, after: ViewAttrs, size?: { width: number, height: number } }[]} presses
  * @returns {CheckResult}
  */
 export function evaluateZoomButtons(presses) {
@@ -574,6 +651,7 @@ export function evaluateZoomButtons(presses) {
       problems.push(`Knopf "${press.label}" nicht gefunden`)
       continue
     }
+    if (press.hit === false) problems.push(`"${press.label}" verdeckt (der Finger trifft ein anderes Element)`)
     const before = parseViewAttrs(press.before)
     const after = parseViewAttrs(press.after)
     if (!before.ok || !after.ok) {
@@ -588,7 +666,7 @@ export function evaluateZoomButtons(presses) {
   const unique = [...new Set(problems)]
   return {
     id: 'zoom-buttons',
-    pass: unique.length === 0 && rows.length === presses.length,
+    pass: unique.length === 0 && rows.length === presses.length && presses.length > 0,
     numbers: { presses: rows },
     detail: [
       ...rows.map((r) => `${r.label} ${r.scaleBefore} -> ${r.scaleAfter}${r.size ? ` (${round1(r.size.width)}x${round1(r.size.height)} px)` : ''}`),
@@ -598,29 +676,52 @@ export function evaluateZoomButtons(presses) {
 }
 
 /**
- * Ein Tipp-Punkt mitten auf einer Provinz: die Provinzmitte, die der Kartenmitte am
- * naechsten liegt, mit Abstand zum Rand (dort liegen Zoomknoepfe und Uebersichtskarte).
+ * Tipp-Punkte mitten auf Provinzen: jede Provinzmitte im Innern der Karte (mit Abstand zum
+ * Rand, dort liegen Zoomknoepfe und Uebersichtskarte), die naechste zur Kartenmitte zuerst.
+ * Welcher davon nicht verdeckt ist, weiss nur die Seite - sie nimmt den ersten freien.
  * @param {{ id: string, center: Point }[]} provinces
  * @param {View} view
  * @param {{ width: number, height: number }} canvas
  * @param {number} [margin] Anteil des Randes, der gemieden wird
- * @returns {{ id: string, x: number, y: number } | null} in CSS-Pixeln relativ zur Karte
+ * @returns {{ id: string, x: number, y: number }[]} in CSS-Pixeln relativ zur Karte
  */
-export function pickTapPoint(provinces, view, canvas, margin = 0.2) {
-  let best = null
-  let bestDistance = Infinity
+export function rankTapPoints(provinces, view, canvas, margin = 0.2) {
+  const out = []
   for (const province of provinces) {
     const x = (province.center.x - view.x) / view.scale
     const y = (province.center.y - view.y) / view.scale
     if (x < canvas.width * margin || x > canvas.width * (1 - margin)) continue
     if (y < canvas.height * margin || y > canvas.height * (1 - margin)) continue
-    const distance = Math.hypot(x - canvas.width / 2, y - canvas.height / 2)
-    if (distance < bestDistance) {
-      bestDistance = distance
-      best = { id: province.id, x: Math.round(x), y: Math.round(y) }
+    out.push({ id: province.id, x: Math.round(x), y: Math.round(y), distance: Math.hypot(x - canvas.width / 2, y - canvas.height / 2) })
+  }
+  return out.sort((a, b) => a.distance - b.distance).map(({ id, x, y }) => ({ id, x, y }))
+}
+
+/**
+ * Die naechste Provinzmitte zur Kartenmitte, oder null.
+ * @param {{ id: string, center: Point }[]} provinces @param {View} view
+ * @param {{ width: number, height: number }} canvas @param {number} [margin]
+ */
+export function pickTapPoint(provinces, view, canvas, margin = 0.2) {
+  return rankTapPoints(provinces, view, canvas, margin)[0] ?? null
+}
+
+/**
+ * Ohne lesbare Ansicht: ein Raster ueber die Karte (Schrittweite `step` CSS-Pixel, halber
+ * Schritt Abstand zum Rand), die Mitte zuerst, dann nach wachsendem Abstand.
+ * @param {{ width: number, height: number }} canvas @param {number} step
+ * @returns {Point[]} relativ zur Karte
+ */
+export function candidateGrid(canvas, step) {
+  const centre = { x: Math.round(canvas.width / 2), y: Math.round(canvas.height / 2) }
+  const out = [centre]
+  for (let y = step / 2; y < canvas.height; y += step) {
+    for (let x = step / 2; x < canvas.width; x += step) {
+      if (x !== centre.x || y !== centre.y) out.push({ x: Math.round(x), y: Math.round(y) })
     }
   }
-  return best
+  const d = (/** @type {Point} */ p) => Math.hypot(p.x - centre.x, p.y - centre.y)
+  return out.sort((a, b) => d(a) - d(b))
 }
 
 /**

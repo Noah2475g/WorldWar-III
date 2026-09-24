@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   CHECKS,
   anchorCheck,
+  auxObservation,
+  candidateGrid,
   chromeMajor,
   evaluateCanvas,
   evaluateDrag,
@@ -10,11 +12,13 @@ import {
   evaluatePinch,
   evaluateScroll,
   evaluateTap,
+  evaluateTargetStates,
   evaluateTargets,
   evaluateZoomButtons,
   exitCodeFor,
   finalizeChecks,
   formatReport,
+  forwardExists,
   linePath,
   pageUrl,
   parseAdbDevices,
@@ -25,6 +29,7 @@ import {
   pickSerial,
   pickTapPoint,
   pinchPath,
+  rankTapPoints,
 } from '../scripts/lib/android-check-lib.mjs'
 
 /**
@@ -320,10 +325,20 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
   })
 
   it('Langes Druecken: vorher kein Tooltip, nach dem Loslassen einer', () => {
-    expect(evaluateLongPress({ before: false, duringHold: true, after: true }).pass).toBe(true)
-    expect(evaluateLongPress({ before: false, duringHold: true, after: false }).pass).toBe(false)
+    const still = { selectedBefore: '', selectedAfter: '', selectionSource: 'data-selected-province' }
+    expect(evaluateLongPress({ before: false, duringHold: true, after: true, ...still }).pass).toBe(true)
+    expect(evaluateLongPress({ before: false, duringHold: true, after: false, ...still }).pass).toBe(false)
     // War er vorher schon da, beweist er nichts.
-    expect(evaluateLongPress({ before: true, duringHold: true, after: true }).pass).toBe(false)
+    expect(evaluateLongPress({ before: true, duringHold: true, after: true, ...still }).pass).toBe(false)
+  })
+
+  it('Langes Druecken: waehlt es die Provinz, kommt der Tooltip von der Auswahl - FAIL', () => {
+    // Gemessen am Ausgangswert 2026-09-24 (1097x617): das Druecken waehlte "CAN-WEST", und der
+    // Tooltip der AUSWAHL stand da. Ein Zeigen, das waehrend eines Marschbefehls das Ziel setzt,
+    // ist kein Zeigen.
+    const r = evaluateLongPress({ before: false, duringHold: false, after: true, selectedBefore: '', selectedAfter: 'CAN-WEST', selectionSource: 'Provinzliste' })
+    expect(r.pass).toBe(false)
+    expect(r.detail).toMatch(/waehlte "CAN-WEST" \(Provinzliste\)/)
   })
 
   it('Zoomknoepfe: hinein verkleinert den Massstab, heraus vergroessert ihn', () => {
@@ -344,6 +359,59 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     expect(absent.pass).toBe(false)
     expect(absent.detail).toMatch(/Hineinzoomen/)
   })
+
+  it('Zoomknoepfe: ein verdeckter Knopf faellt durch, auch wenn sich der Massstab bewegt', () => {
+    // 640x360 am Ausgangswert: die Uebersichtskarte liegt ueber den Knoepfen; der Finger trifft sie.
+    const covered = evaluateZoomButtons([
+      { label: 'Hineinzoomen', found: true, hit: false, before: view(0, 0, 1.6), after: view(0, 0, 1.3333) },
+      { label: 'Herauszoomen', found: true, hit: true, before: view(0, 0, 1.3333), after: view(0, 0, 1.6) },
+    ])
+    expect(covered.pass).toBe(false)
+    expect(covered.detail).toMatch(/"Hineinzoomen" verdeckt/)
+  })
+})
+
+describe('Android-Pruefstand: Touch-Ziele ueber mehrere Zustaende', () => {
+  it('besteht nur, wenn jeder Zustand besteht, und nennt den Zustand am Verstoss', () => {
+    const r = evaluateTargetStates([
+      { name: 'Startdialog', elements: [{ selector: 'button.ok', text: 'Los', width: 120, height: 48 }] },
+      { name: 'Partie', elements: [{ selector: 'button.speed', text: '1', width: 26, height: 22 }] },
+    ])
+    expect(r.pass).toBe(false)
+    expect(r.violators).toEqual([{ selector: 'button.speed', text: '1', width: 26, height: 22, state: 'Partie' }])
+    expect(r.detail).toMatch(/Startdialog: 0 von 1 .*\| Partie: 1 von 1/)
+    expect(evaluateTargetStates([]).pass).toBe(false)
+  })
+})
+
+describe('Android-Pruefstand: adb forward nur aufraeumen, wenn der Lauf ihn angelegt hat', () => {
+  const list = 'emulator-5554 tcp:9229 localabstract:chrome_devtools_remote\r\nemulator-5554 tcp:9300 tcp:9300\r\n'
+
+  it('erkennt eine schon bestehende Weiterleitung', () => {
+    expect(forwardExists(list, 'emulator-5554', 9229, 'localabstract:chrome_devtools_remote')).toBe(true)
+    expect(forwardExists(list, 'emulator-5556', 9229, 'localabstract:chrome_devtools_remote')).toBe(false)
+    expect(forwardExists(list, 'emulator-5554', 9230, 'localabstract:chrome_devtools_remote')).toBe(false)
+    expect(forwardExists('', 'emulator-5554', 9229, 'localabstract:chrome_devtools_remote')).toBe(false)
+  })
+})
+
+describe('Android-Pruefstand: Hilfsbeobachtung ohne Vertrag', () => {
+  const still = { signature: 'abc', pickerValue: '', tooltip: false, visualScale: 1, scrollX: 0, scrollY: 0 }
+
+  it('sagt, ob sich Kartenbild, Auswahlliste, Seitenzoom und Rollstand geaendert haben', () => {
+    const text = auxObservation(still, { signature: 'def', pickerValue: 'CAN-W', tooltip: true, visualScale: 2.5, scrollX: 0, scrollY: 96 })
+    expect(text).toMatch(/Kartenbild veraendert/)
+    expect(text).toMatch(/Provinzliste "" -> "CAN-W"/)
+    expect(text).toMatch(/Tooltip sichtbar/)
+    expect(text).toMatch(/Seitenzoom 1 -> 2.5/)
+    expect(text).toMatch(/Seite gerollt 0\/0 -> 0\/96/)
+    expect(auxObservation(still, still)).toBe('Kartenbild unveraendert, Provinzliste "" -> "", Tooltip nicht sichtbar')
+  })
+
+  it('zaehlt die Zeigerereignisse der Geste - pointercancel heisst: der Browser hat uebernommen', () => {
+    const after = { ...still, pointer: { down: 1, move: 3, up: 0, cancel: 1, target: 'canvas.map-layer' } }
+    expect(auxObservation(still, after)).toMatch(/Zeiger auf canvas.map-layer: down 1, move 3, up 0, cancel 1/)
+  })
 })
 
 describe('Android-Pruefstand: Tipp-Punkt auf einer Provinz', () => {
@@ -363,6 +431,19 @@ describe('Android-Pruefstand: Tipp-Punkt auf einer Provinz', () => {
   it('meidet den Rand und gibt null, wenn nichts im Innern liegt', () => {
     expect(pickTapPoint([provinces[3]!], { x: 1000, y: 500, scale: 1 }, { width: 600, height: 400 })).toBeNull()
     expect(pickTapPoint([], { x: 0, y: 0, scale: 1 }, { width: 600, height: 400 })).toBeNull()
+  })
+
+  it('reiht alle Kandidaten nach Abstand zur Mitte - die Seite nimmt den ersten unverdeckten', () => {
+    expect(rankTapPoints(provinces, { x: 1000, y: 500, scale: 1 }, { width: 600, height: 400 }).map((p) => p.id)).toEqual(['MITTE', 'NAH'])
+  })
+
+  it('legt ohne Ansicht ein Raster ueber die Karte, die Mitte zuerst', () => {
+    const grid = candidateGrid({ width: 100, height: 60 }, 20)
+    expect(grid[0]).toEqual({ x: 50, y: 30 })
+    // Jeder Punkt liegt innerhalb der Karte, und der Abstand zur Mitte waechst.
+    const distances = grid.map((p) => Math.hypot(p.x - 50, p.y - 30))
+    expect(distances).toEqual([...distances].sort((a, b) => a - b))
+    expect(grid.every((p) => p.x > 0 && p.x < 100 && p.y > 0 && p.y < 60)).toBe(true)
   })
 })
 
