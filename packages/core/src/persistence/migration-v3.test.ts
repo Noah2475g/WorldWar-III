@@ -315,6 +315,8 @@ describe('cloneState teilt keine Referenz mit den neuen Feldern', () => {
     expect(klon.diplomacy.tradeOffers[0]!.give.resources).not.toBe(state.diplomacy.tradeOffers[0]!.give.resources)
     expect(klon.diplomacy.tradeOffers[0]!.give.provinces).not.toBe(state.diplomacy.tradeOffers[0]!.give.provinces)
     expect(klon.diplomacy.tradeOffers[0]!.want.resources).not.toBe(state.diplomacy.tradeOffers[0]!.want.resources)
+    // Bis zum 2026-09-24 fehlte diese Zeile: ein geteiltes `want.provinces` fiel keinem Test auf.
+    expect(klon.diplomacy.tradeOffers[0]!.want.provinces).not.toBe(state.diplomacy.tradeOffers[0]!.want.provinces)
     expect(klon.nextIds).not.toBe(state.nextIds)
   })
 
@@ -329,11 +331,14 @@ describe('cloneState teilt keine Referenz mit den neuen Feldern', () => {
     klon.espionage.reveals[0]!.untilTick = 1
     klon.diplomacy.tradeOffers[0]!.give.resources.iron = 1
     klon.diplomacy.tradeOffers[0]!.give.provinces.push('n2')
+    klon.diplomacy.tradeOffers[0]!.want.resources.food = 1
+    klon.diplomacy.tradeOffers[0]!.want.provinces.push('n3')
     klon.nextIds.spy = 99
 
     expect(hashOf(state)).toBe(vorher)
     expect(state.espionage.spies[0]!.mission).toBe('intel')
     expect(state.diplomacy.tradeOffers[0]!.give.provinces).toEqual(['n1'])
+    expect(state.diplomacy.tradeOffers[0]!.want).toEqual({ resources: { food: 1_000 }, provinces: [] })
     expect(state.nextIds.spy).toBe(1)
   })
 
