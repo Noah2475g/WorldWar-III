@@ -9,6 +9,7 @@ import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
 import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
+import { parseNetLink } from './net/link.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
@@ -2109,9 +2110,28 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
  * Mehrspielerpartie wirklich angelegt und danach gedrueckt — das ist der Weg, den ein
  * Spieler nimmt.
  */
+/**
+ * Ein Raum, den dieser Bildschirm als Gastgeber fuehrt — wie nach `#/gastgeben` (T-M39-03).
+ *
+ * Die Leitung ist ein Schleifendoppel ohne Gegenueber: fuer die Fragen hier genuegt, dass es
+ * den Raum gibt. Ohne ihn bietet der Hostbau seit der Nacharbeit zu V-1 (2026-09-24) keine
+ * Partie zu zweit mehr an.
+ */
+const gastgeberRaum = () => {
+  const leitung = createLoopback()
+  return {
+    link: parseNetLink('#/gastgeben?raum=raum1&s=geheim')!,
+    connect: () => leitung.a,
+    origin: 'http://host:7749',
+  }
+}
+
 describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspulen aus', () => {
   const startZuZweit = (rate = '25') => {
-    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    // Mit Raum (Nacharbeit zu V-1, 2026-09-24): bis dahin legte dieser Test die Partie zu
+    // zweit OHNE Raum an — genau der Weg, der eine lokale Partie mit fester Rate lieferte.
+    // Angelegt ist sie jetzt wie beim Gastgeber: die Lobby wartet, die Rate steht fest.
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
     fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
     fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: rate } })
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
@@ -2144,6 +2164,55 @@ describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspul
     expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
     expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})
+
+/**
+ * Zu zweit gibt es nur, wo es einen Raum gibt (Befund V-1, Nacharbeit vom 2026-09-24).
+ *
+ * T-M39-11 hat die Partieart an die Bauflagge gehaengt. Das deckt das ausgelieferte
+ * Programm, aber nicht den **Hostbau ohne Raum**: der Hostdienst liefert `/` aus, und wer
+ * dort landet statt auf dem gedruckten `#/gastgeben`-Link, hat keine Leitung. Die Wahl
+ * „Zu zweit ueber einen Link" lief dann in genau das Symptom aus V-1 — eine lokale Partie
+ * mit fester Rate, ohne Vorspulen, ohne Mitspieler, ohne Lobby und ohne Fehler.
+ *
+ * Geprueft an der ganzen Anwendung: in diesem Testlauf ist `__MULTIPLAYER__` wahr, er IST
+ * also der Hostbau. Und zwar an der Wirkung, nicht nur an der Anzeige: eine Wahl, die das
+ * Formular noch traegt, waehrend der Bildschirm sie nicht mehr anbietet, darf beim Start
+ * nicht zuschlagen.
+ */
+describe('R-FREE-04 Zu zweit wird nur angeboten, wo dieser Bildschirm es herstellen kann', () => {
+  it('bietet im Hostbau ohne Raum keine Partie zu zweit an', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+
+    expect(screen.queryByRole('combobox', { name: 'Partieart' })).toBeNull()
+    expect(screen.queryByText('Zu zweit über einen Link')).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+
+  it('bietet sie dem Gastgeber mit Raum an — beide Arten, zu zweit vorgewaehlt', () => {
+    // Die Gegenprobe: wer ueber `#/gastgeben` kommt, verliert nichts (T-M39-03).
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    const waehler = screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement
+
+    expect([...waehler.options].map((option) => option.value)).toEqual(['single', 'multiplayer'])
+    expect(waehler.value).toBe('multiplayer')
+  })
+
+  it('startet allein, wenn der Raum fehlt — auch wenn das Formular noch „zu zweit" traegt', () => {
+    // Der Zustand, den die Anzeige allein nicht abfaengt: `options.mode` steht auf
+    // 'multiplayer' (der Gastgeber-Link hat es vorgewaehlt), und danach gibt es keinen Raum
+    // mehr. Vorher uebernahm `startNewGame` die Wahl ungefiltert: feste Rate, kein Vorspulen.
+    const { rerender } = render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    expect((screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement).value).toBe('multiplayer')
+
+    rerender(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    expect(screen.queryByRole('combobox', { name: 'Partieart' }), 'der Waehler stand ohne Raum').toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    expect(screen.queryByText(/\(fest\)/), 'die Partie begann mit fester Rate').toBeNull()
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
   })
 })
 

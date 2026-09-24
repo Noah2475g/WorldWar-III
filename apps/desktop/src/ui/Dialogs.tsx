@@ -4,6 +4,7 @@ import { t } from '../i18n/text.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
 import {
   MULTIPLAYER_SPEEDS,
+  effectiveMode,
   type Difficulty,
   type GameMode,
   type Invitation,
@@ -123,7 +124,12 @@ export function NewGameDialog({
   modes: readonly GameMode[]
   aiBonus: number
   onChange: (options: NewGameOptions) => void
-  onStart: () => void
+  /**
+   * Beginnen — mit der Art, die dieser Dialog angeboten hat (Befund V-1, Nacharbeit vom
+   * 2026-09-24). Nicht `options.mode`: das Formular kann eine Art tragen, die gerade nicht
+   * angeboten wird, und dann darf sie beim Start nicht zuschlagen.
+   */
+  onStart: (mode: GameMode) => void
   onClose: () => void
   /**
    * Was ein Gast vor dem Beitritt sähe (T-M37-03, R-MP-02/AK1, D28.10).
@@ -146,10 +152,12 @@ export function NewGameDialog({
   resume?: { day: number } | null
   onResume?: () => void
 }) {
-  // Zu zweit ist nur dann eine Frage, wenn dieser Bau es auch herstellen kann (Befund V-1).
-  // Die zweite Hälfte der Bedingung fängt den Fall ab, in dem eine alte Wahl im Formular
-  // stehen bleibt, während der Bau sie nicht mehr anbietet.
-  const zuZweit = modes.includes('multiplayer') && options.mode === 'multiplayer'
+  // Zu zweit ist nur dann eine Frage, wenn dieser Bildschirm es auch herstellen kann
+  // (Befund V-1). `effectiveMode` fängt den Fall ab, in dem eine alte Wahl im Formular
+  // stehen bleibt, während sie nicht mehr angeboten wird — für die Anzeige UND für den
+  // Start, damit beide dieselbe Art meinen.
+  const art = effectiveMode(options.mode, modes)
+  const zuZweit = art === 'multiplayer'
 
   return (
     <Dialog title={t('newGame.title')} onClose={onClose}>
@@ -304,7 +312,7 @@ export function NewGameDialog({
       )}
 
       <p className="dialog__actions">
-        <button type="button" className="button button--primary" onClick={onStart}>
+        <button type="button" className="button button--primary" onClick={() => onStart(art)}>
           {t('newGame.start')}
         </button>
         {onSaves && (

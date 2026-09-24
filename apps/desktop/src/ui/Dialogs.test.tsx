@@ -35,7 +35,7 @@ function zeige(victory: 'points' | 'conquest') {
       options={{ ...DEFAULT_NEW_GAME, victory }}
       nations={['Vereinigte Staaten', 'Kanada']}
       maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
-      modes={gameModesFor(true)}
+      modes={gameModesFor(true, true)}
       aiBonus={0}
       onChange={onChange}
       onStart={vi.fn()}
@@ -71,7 +71,7 @@ describe('R-UI-05 Der Startdialog traegt ein Gesicht', () => {
         options={DEFAULT_NEW_GAME}
         nations={['Vereinigte Staaten']}
         maps={[{ id: 'world', name: 'Welt', data: { provinces: new Array(237) } }]}
-        modes={gameModesFor(true)}
+        modes={gameModesFor(true, true)}
         aiBonus={0}
         resume={{ day: 4 }}
         onResume={onResume}
@@ -183,7 +183,7 @@ describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
   const zeigeMit = (
     options: Partial<NewGameOptions>,
     invitation: Invitation | null = null,
-    modes: readonly GameMode[] = gameModesFor(true),
+    modes: readonly GameMode[] = gameModesFor(true, true),
   ) => {
     const onChange = vi.fn()
     render(
@@ -279,6 +279,12 @@ describe('R-MP-02/AK1 Der Anlegedialog waehlt Partieart und feste Rate', () => {
  * Ersetzung beim Bauen und steht im Testlauf fest. `gameModesFor()` ist die eine Stelle,
  * die aus ihr eine Liste macht; die Liste reicht `App.tsx` herein, und ein Test kann sie
  * so in beiden Auspraegungen herstellen.
+ *
+ * **Nacharbeit vom 2026-09-24:** die Flagge allein war der falsche Massstab. Der Hostbau
+ * ohne Raum (der Hostdienst liefert `/` aus, ohne `#/gastgeben`) bot die zweite Art weiter
+ * an und lieferte die erste. `gameModesFor()` nimmt deshalb eine zweite Frage herein: gibt
+ * es einen Raum, den dieser Bildschirm fuehrt? Und der Start reicht die Art weiter, die der
+ * Dialog angeboten hat — nicht die, die zufaellig im Formular stand.
  */
 describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau nicht kann', () => {
   const einladung: Invitation = {
@@ -295,6 +301,7 @@ describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau n
     invitation: Invitation | null,
     modes: readonly GameMode[],
   ) => {
+    const onStart = vi.fn()
     render(
       <NewGameDialog
         options={{ ...DEFAULT_NEW_GAME, ...options }}
@@ -303,20 +310,43 @@ describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau n
         modes={modes}
         aiBonus={0}
         onChange={vi.fn()}
-        onStart={vi.fn()}
+        onStart={onStart}
         onClose={vi.fn()}
         invitation={invitation}
       />,
     )
+    return onStart
   }
 
   it('macht aus der Bauflagge die Partiearten — beide Werte', () => {
-    expect(gameModesFor(true)).toEqual(['single', 'multiplayer'])
-    expect(gameModesFor(false)).toEqual(['single'])
+    expect(gameModesFor(true, true)).toEqual(['single', 'multiplayer'])
+    expect(gameModesFor(false, false)).toEqual(['single'])
   })
 
-  it('zeigt im Hostbau den Waehler mit beiden Arten', () => {
-    zeigeMit({ mode: 'single' }, null, gameModesFor(true))
+  it('bietet zu zweit nur an, wenn es einen Raum gibt — die Flagge allein reicht nicht', () => {
+    // Der Hostbau ohne Raum: `__MULTIPLAYER__` ist wahr, aber es gibt keine Leitung.
+    expect(gameModesFor(true, false)).toEqual(['single'])
+    // Und ein Raum ohne Hostbau kommt nicht vor (main.tsx baut ihn nur hinter der Flagge);
+    // auch dann bleibt es beim Einzelspieler.
+    expect(gameModesFor(false, true)).toEqual(['single'])
+  })
+
+  it('reicht beim Start die Art weiter, die er angeboten hat — nicht die alte Wahl im Formular', () => {
+    const onStart = zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(true, false))
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    expect(onStart).toHaveBeenCalledWith('single')
+  })
+
+  it('reicht zu zweit weiter, wenn es angeboten und gewaehlt ist — die Gegenprobe', () => {
+    const onStart = zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(true, true))
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    expect(onStart).toHaveBeenCalledWith('multiplayer')
+  })
+
+  it('zeigt im Hostbau mit Raum den Waehler mit beiden Arten', () => {
+    zeigeMit({ mode: 'single' }, null, gameModesFor(true, true))
     const waehler = screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement
 
     expect([...waehler.querySelectorAll('option')].map((o) => o.textContent)).toEqual([
@@ -326,7 +356,7 @@ describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau n
   })
 
   it('zeigt im netzfreien Bau gar keinen Waehler — eine Wahl mit einem Wert ist keine', () => {
-    zeigeMit({ mode: 'single' }, einladung, gameModesFor(false))
+    zeigeMit({ mode: 'single' }, einladung, gameModesFor(false, false))
 
     expect(screen.queryByRole('combobox', { name: 'Partieart' })).toBeNull()
     // Und der Satz, der die zweite Art beschreibt, steht auch sonst nirgends im Dialog.
@@ -336,14 +366,14 @@ describe('R-FREE-04 Der Anlegedialog bietet keine Partieart an, die dieser Bau n
   it('haelt im netzfreien Bau auch Rate und Einladung heraus, wenn die alte Wahl stehen blieb', () => {
     // Der Fall, den ein blosses Verstecken des Waehlers offen liesse: `options.mode` traegt
     // noch 'multiplayer' — aus einem alten Formularstand, einem Spielstand, einem Link.
-    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(false))
+    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(false, false))
 
     expect(screen.queryByRole('combobox', { name: /Feste Geschwindigkeit/ })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
   })
 
   it('MP-5: die Einladung traegt nur Angaben und kein Versprechen mehr', () => {
-    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(true))
+    zeigeMit({ mode: 'multiplayer', fixedSpeed: 25 }, einladung, gameModesFor(true, true))
     const kasten = screen.getByRole('region', { name: 'Die Einladung nennt:' })
 
     // Die vier Angaben stehen, der Satz aus M37 steht nicht mehr.

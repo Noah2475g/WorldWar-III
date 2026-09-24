@@ -40,9 +40,30 @@ export type GameMode = 'single' | 'multiplayer'
  * die Flagge ist eine Ersetzung beim Bauen, im Testlauf steht sie fest, und eine
  * Verzweigung, deren zweiter Zweig nie läuft, ist ungeprüft. So laufen **beide** Zweige
  * in jedem Lauf; gelesen wird die Flagge dort, wo der Dialog gehängt wird (`App.tsx`).
+ *
+ * **Die Flagge allein ist der falsche Maßstab** (Nacharbeit vom 2026-09-24). Der Hostbau
+ * ohne Raum — der Hostdienst liefert `/` aus, und wer dort landet statt auf dem gedruckten
+ * `#/gastgeben`-Link, hat keine Leitung — bot die zweite Art weiter an und lieferte genau
+ * das Symptom aus V-1. Zu zweit gibt es deshalb nur, wenn **beides** stimmt: der Bau kann
+ * es, und dieser Bildschirm führt einen Raum (`hostsParty`).
  */
-export function gameModesFor(multiplayerBuild: boolean): readonly GameMode[] {
-  return multiplayerBuild ? ['single', 'multiplayer'] : ['single']
+export function gameModesFor(multiplayerBuild: boolean, hostsParty: boolean): readonly GameMode[] {
+  return multiplayerBuild && hostsParty ? ['single', 'multiplayer'] : ['single']
+}
+
+/**
+ * Was eine Wahl im Formular unter den angebotenen Arten wirklich ergibt (Befund V-1,
+ * Nacharbeit vom 2026-09-24).
+ *
+ * `options.mode` kann eine Art tragen, die gerade nicht angeboten wird — der Gastgeber-Link
+ * hat „zu zweit" vorgewählt, und danach gibt es keinen Raum mehr. Bis zur Nacharbeit
+ * blendete der Dialog dann alles aus, was zu zweit gehört, und `startNewGame` legte
+ * trotzdem eine Partie zu zweit an: die Zusage hing an der Anzeige statt an der Wirkung.
+ * Diese eine Funktion entscheidet beides — was der Dialog zeichnet und was er beim Start
+ * weiterreicht.
+ */
+export function effectiveMode(chosen: GameMode, modes: readonly GameMode[]): GameMode {
+  return modes.includes(chosen) ? chosen : 'single'
 }
 
 /**
