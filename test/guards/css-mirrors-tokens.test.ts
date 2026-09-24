@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { TOKENS } from '../../apps/desktop/src/ui/tokens'
 import { ROOT, fixture } from './scan'
+import { uiStylesheets } from './stylesheets'
 
 /**
  * T-M29-01, R-UI-02: die Farben stehen zweimal — `tokens.ts` fuer Canvas und Tests,
@@ -59,7 +60,10 @@ const ERLAUBT = new Set(['transparent', 'currentcolor', 'inherit', 'none', 'init
  * angesehen. Ausserhalb von `:root` gehoert `var(--token)` hin und sonst nichts.
  */
 export function strayColors(css: string): string[] {
-  const ohneRoot = css.replace(/:root[^{]*\{[^}]*\}/g, '')
+  // Nur der blanke `:root { … }`-Block traegt Farbtoken. Eine Regel wie
+  // `:root[data-input='touch'] .x { … }` beginnt zwar mit `:root`, ist aber eine
+  // gewoehnliche Regel — frueher fiel sie mit weg, und eine Farbe darin blieb unsichtbar.
+  const ohneRoot = css.replace(/:root\s*\{[^}]*\}/g, '')
   const funde: string[] = []
   for (const regel of ohneRoot.matchAll(/([^{}]*)\{([^}]*)\}/g)) {
     const zeilen = regel[1]!.trim().split(/\r?\n/)
@@ -112,6 +116,19 @@ describe('R-UI-02 app.css spiegelt tokens.ts', () => {
 
     expect(mirrorDiff(css, TOKENS)).toEqual([])
   })
+
+  it('haelt ALLE Stylesheets unter ui/ zusammen deckungsgleich — Farbtoken stehen nur in app.css', () => {
+    const sheets = uiStylesheets()
+    // Sonst prueft der Waechter das Nichts: mindestens app.css und touch.css.
+    expect(sheets.map((sheet) => sheet.file)).toEqual(
+      expect.arrayContaining(['apps/desktop/src/ui/app.css', 'apps/desktop/src/ui/touch.css']),
+    )
+
+    expect(mirrorDiff(sheets.map((sheet) => sheet.css).join('\n'), TOKENS)).toEqual([])
+    for (const sheet of sheets.filter((entry) => !entry.file.endsWith('/ui/app.css'))) {
+      expect(rootColorVariables(sheet.css), `${sheet.file} setzt eigene Farbtoken`).toEqual({})
+    }
+  })
 })
 
 /**
@@ -152,5 +169,20 @@ describe('T-M28-15 Der Spiegel-Waechter sieht jede Farbe', () => {
     const css = readFileSync(join(ROOT, 'apps', 'desktop', 'src', 'ui', 'app.css'), 'utf8')
 
     expect(strayColors(css)).toEqual([])
+  })
+
+  it('sieht auch eine Farbe in einer Regel, die mit :root[…] beginnt', () => {
+    const css = ":root { --ground: #0D1117; }\n:root[data-input='touch'] .speed { color: #123456; }"
+
+    expect(strayColors(css)).toEqual(["#123456 in :root[data-input='touch'] .speed"])
+  })
+
+  it('findet in keinem Stylesheet unter ui/ eine Farbe ausserhalb von :root', () => {
+    const sheets = uiStylesheets()
+    expect(sheets.length).toBeGreaterThanOrEqual(2)
+
+    for (const sheet of sheets) {
+      expect(strayColors(sheet.css), sheet.file).toEqual([])
+    }
   })
 })
