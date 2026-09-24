@@ -347,11 +347,141 @@ Knöpfen); informativ mitgemessen:
     funktionieren technisch auch im Maus-Betrieb, weil der Prüfstand sie über
     `Input.dispatchTouchEvent` auslöst; das sagt nichts über echte Maus-Bedienung aus.
 
-### Offen: der Lauf auf dem echten Gerät
+### Chromium-Emulation: notwendig, nicht hinreichend
 
-Alle Zahlen in diesem Abschnitt sind **Chromium-Emulation** (Desktop-Fenster mit
+Alle Zahlen im Abschnitt oben sind **Chromium-Emulation** (Desktop-Fenster mit
 `Emulation.setDeviceMetricsOverride`/`setTouchEmulationEnabled`), kein LDPlayer. Wie unter
 "Grenzen der Chromium-Emulation" oben beschrieben, ist ein PASS hier notwendig, aber nicht
-hinreichend — insbesondere fehlt der Seitenzoom-Befund vom echten Gerät (dort zoomte die
-ganze Seite 1→5 bei Zwei-Finger-Zoom). Der Lauf mit `--target android` gegen LDPlayer folgt in
-einer eigenen Sitzung (die Hauptsitzung nutzt den Emulator gerade).
+hinreichend — insbesondere fehlte dort der Seitenzoom-Befund vom echten Gerät (dort zoomte die
+ganze Seite 1→5 bei Zwei-Finger-Zoom). Der Lauf mit `--target android` gegen LDPlayer folgt
+unten.
+
+### Am echten Emulator (LDPlayer) nach den Änderungen
+
+Gemessen: 2026-09-25, 00:20–00:23 Uhr MESZ (22:20–22:23 UTC, aus `report.json`), Prüfstand- und
+Spielstand `b11a091` (Bahnen A/B/C gemergt), `WORLDWAR_MULTIPLAYER` nicht gesetzt, `pnpm
+desktop:build` (Bündel `index-BVvTxDrX.js`), ausgeliefert mit `vite preview --host 127.0.0.1
+--port 4192 --strictPort`. Gerät: LDPlayer 9.5.37, Instanz 0, Android 9 (API 28), Chrome
+124.0.0.0 (com.android.chrome). Befehl je Lauf:
+
+```powershell
+node scripts/android-check.mjs --target android --adb C:\LDPlayer\LDPlayer9\adb.exe --url-port 4192 --out <ordner>
+```
+
+Belege (nicht eingecheckt, keine Bilder in git): `report.json` und je 9 Bildschirmfotos im
+Scratchpad der Sitzung unter `em-after-tablet\` und `em-after-phone\`, dazu ein `screencap.png`
+je Auflösung.
+
+**Lauf A — 1920x1080 @ 280 dpi (aktuelle/tablet-artige Auflösung).** Sichtbar 1098x498 CSS-px,
+DPR 1,75. **Ergebnis: Exit-Code 0, 9 von 9 bestanden.**
+
+| Nr | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Umgebung | PASS: 1098x498 CSS-px, DPR 1,75, Chrome 124, pointer:coarse ja, hover:none **nein**, data-input touch |
+| 2 | Kein Seitenscroll | PASS: 1098x498 bei 1098x498 sichtbar, 0 px Überstand |
+| 3 | Touch-Ziele | PASS: Startdialog 0/10, Partie 0/39, Provinz gewählt 0/75 unter 44 px |
+| 4 | Karten-Canvas | PASS: CSS 758,3x258,9, Bitmap 1327x453 (Verhältnis 1,75 / 1,75) |
+| 5 | Ein-Finger-Ziehen | PASS: Finger −150/−65 px, Ansicht 240/104 (erwartet 240/104), Auswahl blieb "USA-MW" |
+| 6 | Zwei-Finger-Zoom | PASS: Maßstab 1,6 → 0,8914 (×0,557), Anker-Versatz 0,7 px |
+| 7 | Antippen wählt | PASS: "USA-MW" gewählt (vorher leer) |
+| 8 | Langes Drücken | PASS: kein Tooltip vorher, während des Haltens ja, Auswahl unverändert |
+| 9 | Zoomknöpfe | PASS: Hineinzoomen 0,8914→0,7429 (44,0x44,0 px); Herauszoomen 0,7429→0,8914 (44,0x44,0 px) |
+
+**Lauf B — 1280x720 @ 320 dpi (telefonartige Auflösung, Querformat).** Sichtbar **640x280**
+CSS-px (nicht die vorher angenommenen ~304 — Chrome nimmt hier gut 80 CSS-px für Tabs und
+Adresszeile), DPR 2. **Ergebnis: Exit-Code 1, 7 von 9 bestanden.**
+
+| Nr | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Umgebung | PASS: 640x280 CSS-px, DPR 2, Chrome 124, pointer:coarse ja, hover:none **nein**, data-input touch |
+| 2 | Kein Seitenscroll | PASS: 640x280 bei 640x280 sichtbar, 0 px Überstand |
+| 3 | Touch-Ziele | PASS: Startdialog 0/10, Partie 0/34, Provinz gewählt 0/70 unter 44 px |
+| 4 | Karten-Canvas | **FAIL**: CSS 396,8x**166,5**, Bitmap 794x480 (Verhältnis 2,001 / **2,883**) — unter 320x240 **und** verzerrt |
+| 5 | Ein-Finger-Ziehen | PASS: Finger −119/−42 px, Ansicht 191/97 (erwartet 190/67 → 144 % in Y), Auswahl blieb "USA-SOUTH" |
+| 6 | Zwei-Finger-Zoom | **FAIL**: Maßstab 1,6 → 0,8889 (×0,556), Anker-Versatz **16,4 px** (erlaubt 8) |
+| 7 | Antippen wählt | PASS: "USA-SOUTH" gewählt (vorher leer) |
+| 8 | Langes Drücken | PASS: kein Tooltip vorher, während des Haltens ja, Auswahl unverändert |
+| 9 | Zoomknöpfe | PASS: Hineinzoomen 0,8889→0,7407 (44x44 px); Herauszoomen 0,7407→0,8889 (44x44 px) |
+
+#### Ursache der zwei FAILs bei 1280x720 (kein Rückschritt, ein Grenzfall)
+
+Beide FAILs haben **dieselbe Wurzel** und sind kein neuer Fehler der Bahnen A/B/C, sondern ein
+bereits im Code beschriebener, bewusster Kompromiss, der bei dieser Auflösung erstmals
+greift:
+
+- `MapCanvas.tsx` (`update()`, Zeile ~318) hält die interne Ansichtsgröße nie unter 320x240:
+  `Math.max(320, element.clientWidth)` / `Math.max(240, element.clientHeight)`. Grund steht in
+  `picking.ts` bei `toCanvasPoint` (Kommentar): "Die Leinwand rechnet mit `bufferW` x `bufferH`
+  Punkten (mindestens 320 x 240) ... Ist die Hülle kleiner ..., staucht der Browser das Bild.
+  Hier wird die Stauchung herausgerechnet." Das ist also **so gebaut**, damit Antippen und
+  Ziehen auch auf einer winzigen Karte noch die richtige Provinz treffen — der Preis ist ein
+  optisch gestauchtes Bild, wenn die echte Hülle kleiner als 320x240 CSS-px ist.
+- Bei 1280x720@320 bleiben der Karte real nur **166,5** von 240 CSS-px Höhe (Kopf- und
+  Fußleiste sind laut `touch.css`, `@media (max-height: 480px)`, bereits auf eine Zeile
+  respektive 45 px zusammengestrichen — dort ist kaum noch etwas zu holen, ohne Kopf- oder
+  Fußleiste ganz zu verstecken). Der Stauchfaktor in der Höhe ist 240 / 166,5 = **1,441**.
+- Dieser eine Faktor erklärt beide FAILs und einen Wert, der noch PASS blieb, ohne
+  Zusatzannahme:
+  - Prüfung 4: Bitmap/CSS-Verhältnis 2,883 / 2,001 = 1,441.
+  - Prüfung 6: der Anker einer Zwei-Finger-Geste wird in Y um denselben Faktor verstärkt
+    verschoben abgebildet, deshalb 16,4 statt der erlaubten 8 px.
+  - Prüfung 5 (PASS, aber auffällig): Ansicht folgte dem Finger in Y zu 144 % statt der
+    erwarteten 100 % — exakt der Faktor 1,441. Die Prüfung besteht trotzdem, weil ihre
+    Schwelle nur "mindestens 25 %" verlangt, nicht "höchstens 100 %".
+- Die Chromium-Messung vom 2026-09-24 (Abschnitt oben) zeigte das nicht, weil dort keine der
+  beiden Testgrößen (640x360, 1097x617) unter 240 CSS-px Höhe fiel. Das Gerät hier tut es,
+  weil Chrome im Emulator gut 80 CSS-px für Tabs/Adresszeile nimmt (mehr als die im Vorlauf
+  angenommenen ~120 px bei 1097 Breite, aber bei nur 640 Breite reicht auch das, um unter
+  240 zu fallen).
+
+Eingeordnet: 1280x720 im Querformat ist eine der kürzesten Auflösungen, die ein Telefon
+überhaupt zeigt — ein modernes, schlankeres Gerät (z. B. 19,5:9) hätte im Querformat sogar
+**weniger** Höhe je Breiteneinheit, nicht mehr. Dass die Karte selbst unter dieser Bedingung
+noch trifft, wo man tippt (Prüfungen 5, 7, 8, 9 alle PASS, nur mit sichtbar verstärktem statt
+exaktem Weg), ist genau der Zweck des 320x240-Bodens. Eine echte Behebung der Prüfungen 4/6
+würde entweder die App zwingen, mit einer Karte unter 240 CSS-px Höhe zu rechnen (bricht dann
+möglicherweise die Treffergenauigkeit, die der Boden gerade sichert) oder Kopf-/Fußleiste noch
+enger fassen (`app.css`, außerhalb der erlaubten Dateien für diese Sitzung, und `touch.css` hat
+für diese Zeilen schon das Minimum). Es wurde daher **keine Schwelle abgesenkt und keine
+Zeile Code geändert** — dies ist ein dokumentierter Grenzfall einer extrem kurzen Auflösung,
+kein Rückschritt gegenüber dem Ausgangswert (der bei keiner seiner beiden Größen unter diese
+Grenze fiel).
+
+#### Vorher/Nachher gegen den echten Emulator (Ausgangswert vs. nach den Bahnen A/B/C)
+
+Ausgangswert aus `em-baseline.md` (2026-09-24, ~21:55 Uhr, von Hand mit Hilfsskript, 1920x1080
+@ 280 dpi, Chrome 124.0.6367.82); "Nachher" ist Lauf A oben (derselbe Auflösungs-Typ, jetzt mit
+diesem Prüfstand statt Hilfsskript, Chrome 124.0.0.0):
+
+| Messung | Vorher (Ausgangswert) | Nachher (Lauf A, 1920x1080@280) |
+|---|---|---|
+| Touch-Ziele < 44 px | 40 von 41 | **0 von 39** (Partie), 0/10 Startdialog, 0/75 Provinz gewählt |
+| Seitenhöhe vs. sichtbar | 594 bei 498 sichtbar, **96 px Rollweg** | 498 bei 498 sichtbar, **0 px** |
+| Ein-Finger-Ziehen | Karte folgt ~11 px (**≈ 6 %** von 170x70 px Weg) | Karte folgt zu **100 %** des erwarteten Wegs |
+| Zwei-Finger-Zoom | `visualViewport.scale` 1 → **5**: die ganze **Seite** zoomt | `data-view-scale` 1,6 → 0,89: die **Karte** zoomt, Seite bleibt bei 1, Anker-Versatz 0,7 px |
+| Langes Drücken (900/700 ms) | kein Tooltip | Tooltip erscheint während des Haltens, Auswahl bleibt leer |
+| Bitmap/CSS (Schärfe) | 718x416 CSS-px, Bitmap 718x416 (kein DPR, unscharf bei 1,75) | 758,3x258,9 CSS-px, Bitmap 1327x453 (Verhältnis 1,75/1,75, scharf) |
+
+Damit bestätigt sich am echten Gerät, was die Chromium-Messung vom 2026-09-24 schon zeigte,
+und zusätzlich der einzige Befund, den nur das echte Gerät liefern konnte: Der Seitenzoom
+(„die ganze Seite zoomt, nicht die Karte") ist behoben — `visualViewport.scale` blieb in
+beiden LDPlayer-Läufen bei 1, während `data-view-scale` den Zoom trägt.
+
+#### Randnotiz: Chrome-Tab nach Auflösungswechsel
+
+Nach `ldconsole modify --resolution` und einem Neustart der Instanz fand der erste Lauf bei
+1280x720 keinen Chrome-Tab über CDP (`kein Chrome-Tab mit http://localhost:4192/?touch=1 ueber
+tcp:9229 - ist Chrome eingerichtet ... und im Vordergrund?`, Aufbaufehler, kein PASS/FAIL-Lauf).
+Ein Bildschirmfoto zeigte den Tab tatsächlich schon korrekt auf der Spielseite (Startdialog
+sichtbar) — der zweite Versuch, ohne weiteres Zutun, fand ihn sofort. Vermutlich war die
+CDP-Zielliste unmittelbar nach dem Neustart der App noch nicht bereit. Kein Code- oder
+Prüfstandsfehler; beim nächsten Mal einfach erneut versuchen.
+
+#### Auflösung wiederhergestellt
+
+Nach Lauf B: `ldconsole quit --index 0`, `ldconsole modify --index 0 --resolution
+1920,1080,280`, danach erneut `launch` + Boot abgewartet und mit `adb shell wm size`/`wm
+density` **live bestätigt**: 1920x1080, 280 dpi. Anschließend `adb reverse --remove tcp:4192`
+und `adb forward --remove tcp:9229` (beide bereits durch den Neustart der Instanz entfernt,
+adb meldete „listener not found" — ungefährlich), `ldconsole quit --index 0` (Emulator bleibt
+aus), Vorschau-Server (eigene PID) beendet, Port 4192 frei.
