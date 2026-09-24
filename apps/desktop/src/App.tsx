@@ -1069,8 +1069,10 @@ export function App(props: AppProps) {
       // Dialog unter den Haenden verschwaende.
       dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseExpired') })
     } else if (pauseKind === 'requested') {
-      // Ein neuer Antrag loescht die Antwort auf den alten.
-      dispatch({ type: 'clearNotice' })
+      // Ein neuer Antrag loescht die Antwort auf den alten — und NUR sie. Bis zur
+      // Nacharbeit vom 2026-09-24 wischte er beim Gefragten jede Meldung weg, auch einen
+      // abgelehnten Befehl oder den Hinweis zur festen Rate.
+      dispatch({ type: 'clearNotice', onlyIf: [t('netplay.pauseDeclined'), t('netplay.pauseExpired')] })
     }
   }, [netplay.active, pauseKind, pauseBy, viewerId])
 

@@ -2624,6 +2624,40 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
       expect(screen.queryByText(STEHT), 'die Partie stand nach dem Vorlauf noch').toBeNull()
     })
 
+    it('laesst eine fremde Meldung stehen, wenn der Mitspieler eine Pause beantragt', () => {
+      // Befund der Durchsicht vom 2026-09-18 (Stufe niedrig): „ein neuer Antrag loescht
+      // die Antwort auf den alten" loeschte beim Gefragten JEDE Meldung — hier den Hinweis
+      // zur festen Rate, der mit der Pause nichts zu tun hat.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      fireEvent.keyDown(window, { key: '+' })
+      expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+      expect(screen.queryByText(/beim Anlegen der Partie gewählt/), 'der Antrag loeschte eine fremde Meldung').not.toBeNull()
+    })
+
+    it('loescht mit dem neuen Antrag die Antwort auf den alten — die Gegenprobe', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+      expect(screen.getByText(ABGELEHNT)).toBeTruthy()
+
+      beantragen()
+
+      expect(screen.queryByText(ABGELEHNT), 'die alte Antwort stand neben dem neuen Antrag').toBeNull()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+    })
+
     it('zeigt im Einzelspieler keinen einzigen dieser Saetze', () => {
       // Der Pausenvertrag ist eine Sache zu zweit. Allein ist die Pause eine Raste.
       startGame()
