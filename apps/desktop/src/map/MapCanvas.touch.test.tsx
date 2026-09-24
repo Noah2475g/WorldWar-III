@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MapCanvas, type ArmyMarker } from './MapCanvas.tsx'
 import { LONG_PRESS_MS, TAP_SLOP_TOUCH_PX } from './gestures.ts'
@@ -527,5 +527,99 @@ describe('Touch-Bedienung: scharf bei hoher Pixeldichte', () => {
 
     expect(overlay.width).toBe(320)
     expect(overlay.height).toBe(240)
+  })
+})
+
+/** Ein `matchMedia`-Double fuer `(resolution: …dppx)`: haelt die zuletzt vergebene Abfrage
+ * und ihren Listener fest, und meldet, ob der Listener wieder abgemeldet wurde. */
+function fakeResolutionMedia() {
+  type Registration = { query: string; listener: () => void; removed: boolean }
+  const registrations: Registration[] = []
+  const matchMedia = vi.fn((query: string) => {
+    const entry: Registration = { query, listener: () => undefined, removed: false }
+    registrations.push(entry)
+    return {
+      matches: false,
+      addEventListener: (_type: 'change', listener: () => void) => {
+        entry.listener = listener
+      },
+      removeEventListener: () => {
+        entry.removed = true
+      },
+    } as unknown as MediaQueryList
+  })
+  return {
+    matchMedia: matchMedia as unknown as typeof window.matchMedia,
+    /**
+     * Die zuletzt angelegte `(resolution: …)`-Abfrage. Die Karte fragt nebenbei auch
+     * `(pointer: coarse)`, `(hover: none)` und `(prefers-reduced-motion: reduce)` ab
+     * (Eingabeart, Bewegung) — jede Zeichnung ruft `matchMedia` erneut, darum zaehlt nur
+     * die Auflösungsabfrage, nicht die zuletzt aufgerufene ueberhaupt.
+     */
+    current: () => registrations.filter((r) => r.query.startsWith('(resolution:')).at(-1)!,
+    registrations,
+  }
+}
+
+describe('Touch-Bedienung: eine reine Dichteaenderung ohne Groessenwechsel', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('misst neu, wenn der Bildschirm die Pixeldichte wechselt, obwohl die Huelle stillsteht (Fenster auf einen anderen Monitor verschoben)', () => {
+    const vorherDpr = window.devicePixelRatio
+    const vorherMedia = window.matchMedia
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 1 })
+    const media = fakeResolutionMedia()
+    window.matchMedia = media.matchMedia
+    try {
+      const { container, calls } = karte()
+      const overlay = container.querySelectorAll('canvas.map-layer')[1] as HTMLCanvasElement
+
+      expect(media.current().query).toBe('(resolution: 1dppx)')
+      expect(overlay.width).toBe(320)
+      expect(calls.viewports.length).toBe(1)
+
+      // Der Bildschirm meldet jetzt Dichte 2 — der ResizeObserver ruehrt sich nicht, denn
+      // die Huelle (jsdom: 0x0) hat sich nicht veraendert. Der matchMedia-Wechsel schon.
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 2 })
+      const erste = media.current()
+      act(() => erste.listener())
+
+      expect(overlay.width).toBe(640)
+      expect(calls.viewports.length).toBe(2)
+      // Abgemeldet und bei der neuen Dichte neu angemeldet, statt auf der alten zu bleiben.
+      expect(erste.removed).toBe(true)
+      expect(media.current().query).toBe('(resolution: 2dppx)')
+    } finally {
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: vorherDpr })
+      window.matchMedia = vorherMedia
+    }
+  })
+
+  it('meldet sich beim Aushaengen der Karte wieder ab', () => {
+    const vorherMedia = window.matchMedia
+    const media = fakeResolutionMedia()
+    window.matchMedia = media.matchMedia
+    try {
+      const { unmount } = karte()
+      expect(media.current().removed).toBe(false)
+      unmount()
+      expect(media.current().removed).toBe(true)
+    } finally {
+      window.matchMedia = vorherMedia
+    }
+  })
+
+  it('kommt ohne matchMedia aus (aeltere Umgebung) und meldet trotzdem die Groesse', () => {
+    const vorherMedia = window.matchMedia
+    // @ts-expect-error -- genau diese fehlende API wird hier geprueft.
+    delete window.matchMedia
+    try {
+      const { calls } = karte()
+      expect(calls.viewports.length).toBe(1)
+    } finally {
+      window.matchMedia = vorherMedia
+    }
   })
 })

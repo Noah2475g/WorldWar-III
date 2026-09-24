@@ -335,7 +335,38 @@ export function MapCanvas(props: MapCanvasProps) {
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
-    return () => observer.disconnect()
+
+    // Eine reine Dichteaenderung (das Fenster wandert auf einen Bildschirm mit anderer
+    // Pixeldichte) ruehrt die Huelle nicht — der ResizeObserver oben bleibt still, und die
+    // Bitmap bliebe in der alten Dichte stehen (Befund PR #9). `matchMedia` auf der
+    // JETZIGEN Dichte meldet genau diesen Wechsel; nach jeder Meldung wird auf der neuen
+    // Dichte neu angemeldet, statt fuer immer auf der ersten zu lauschen.
+    let removeDprListener = (): void => {}
+    let stopped = false
+    const subscribeToDpr = (): void => {
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+      const dpr = window.devicePixelRatio || 1
+      const media = window.matchMedia(`(resolution: ${dpr}dppx)`)
+      const onDprChange = (): void => {
+        removeDprListener()
+        update()
+        if (!stopped) subscribeToDpr()
+      }
+      if (typeof media.addEventListener === 'function') media.addEventListener('change', onDprChange)
+      // Safari < 14 kennt nur die aeltere API.
+      else (media as unknown as { addListener?: (l: () => void) => void }).addListener?.(onDprChange)
+      removeDprListener = (): void => {
+        if (typeof media.removeEventListener === 'function') media.removeEventListener('change', onDprChange)
+        else (media as unknown as { removeListener?: (l: () => void) => void }).removeListener?.(onDprChange)
+      }
+    }
+    subscribeToDpr()
+
+    return () => {
+      observer.disconnect()
+      stopped = true
+      removeDprListener()
+    }
   }, [])
 
   // The expensive layer. Its dependencies are exactly the four things that change it.
