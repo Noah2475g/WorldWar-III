@@ -634,6 +634,38 @@ describe('R-DIP-04 Der Tageslauf verrät niemandem etwas, das er nicht wissen da
   })
 })
 
+describe('Befund M17-S3 (Nacharbeit kern): eine ausgeschiedene Macht sabotiert nicht weiter', () => {
+  // `registry.ts` lehnt jeden Befehl einer ausgeschiedenen Macht ab (PLAYER_ELIMINATED) — sie kann
+  // ihre Spione also nicht selbst entlassen. Ohne eine eigene Prüfung hier liefe ihr Saboteur
+  // weiter: Sold vom Geld des Toten, Wirkung beim lebenden Opfer.
+  it('entfernt die Spione eines ausgeschiedenen Besitzers vor dem Sold, ohne Wirkung und ohne Zufallszug', () => {
+    placeSpy(state, { owner: 'p1', provinceId: 'o1', mission: 'economicSabotage' })
+    state.players['p1']!.alive = false
+    const geldVorher = money(state)
+    const rngVorher = cloneRng(state.rng)
+    const moralVorher = state.provinces['o1']!.morale
+
+    const events = settleAt(state, 2 * DAY, SABOTAGE)
+
+    expect(state.espionage.spies).toEqual([])
+    expect(events).toEqual([])
+    expect(money(state), 'kein Sold vom Geld des Toten').toBe(geldVorher)
+    expect(state.provinces['o1']!.morale, 'kein SABOTAGE_SUFFERED beim Opfer').toBe(moralVorher)
+    expect(state.rng, 'kein Zufallszug für eine Macht, die es nicht mehr gibt').toEqual(rngVorher)
+  })
+
+  it('lässt die Spione lebender Mächte unberührt, wenn eine andere ausgeschieden ist', () => {
+    placeSpy(state, { owner: 'p1', provinceId: 'o1', mission: 'economicSabotage' })
+    placeSpy(state, { owner: 'p3', provinceId: 's1', mission: 'intel' })
+    state.players['p1']!.alive = false
+
+    settleAt(state, 2 * DAY, NEVER)
+
+    expect(state.espionage.spies).toHaveLength(1)
+    expect(state.espionage.spies[0]).toMatchObject({ owner: 'p3', provinceId: 's1' })
+  })
+})
+
 describe('R-SPY-04/AK1 Wirtschaftssabotage senkt die Moral und vernichtet Ertrag, nie mehr als da ist', () => {
   beforeEach(() => {
     placeSpy(state, { provinceId: 'o1', mission: 'economicSabotage' })

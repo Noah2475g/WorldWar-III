@@ -39,6 +39,13 @@ export function settleEspionage(draft: GameState, ctx: PhaseContext): void {
   // Erfolg hat, deckt unten neu auf — so bleibt eine Provinz ohne Lücke offen, solange er es hat.
   espionage.reveals = espionage.reveals.filter((reveal) => reveal.untilTick > draft.tick)
 
+  // Eine ausgeschiedene Macht befiehlt nichts mehr (`registry.ts`, PLAYER_ELIMINATED) — auch
+  // nicht das Entlassen ihrer eigenen Spione. Ohne diese Zeile sabotiert und spioniert sie über
+  // den Tod hinaus, bis ihr Geld aufgebraucht ist (Befund M17-S3, Nacharbeit kern): stillschweigend
+  // entfernt, vor dem Sold, ohne Zufallszug und ohne Ereignis — es gibt niemanden mehr, der eines
+  // läse.
+  espionage.spies = espionage.spies.filter((spy) => draft.players[spy.owner]!.alive)
+
   // (b) Sold, in Array-Reihenfolge: reicht das Geld nur für einen Teil, gehen die späteren.
   const paid: Spy[] = []
   for (const spy of espionage.spies) {
