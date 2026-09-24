@@ -343,6 +343,7 @@ describe('Verborgene Information: kein Befehl verrät fremde Spione', () => {
     const { events: tickEvents } = step(state, [recruit('n1', 'economicSabotage')], stepCtx)
     const abgelehnt = tickEvents.filter((event) => event.type === 'COMMAND_REJECTED')
     expect(abgelehnt).toHaveLength(1)
+    expect(abgelehnt[0]).toMatchObject({ command: 'RECRUIT_SPY', code: 'INVALID_TARGET', detail: { reason: 'eigene Provinz' } })
     expect(abgelehnt[0]!.audience).toEqual(['p1'])
   })
 
