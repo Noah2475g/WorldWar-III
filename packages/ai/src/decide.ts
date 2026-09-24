@@ -4,6 +4,7 @@ import { capitalCommands } from './capital'
 import { consolidateCommands } from './consolidate'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
+import { espionageCommands } from './espionage'
 import type { AiContext, AiDecision, Explanation } from './types'
 
 /**
@@ -103,6 +104,9 @@ export function decide(options: DecideOptions): AiDecision {
     commands.push(...capitalCommands(context, explanations))
     commands.push(...diplomacyCommands(context, explanations))
     commands.push(...economyCommands(context, explanations))
+    // Spionage zuletzt: sie rechnet mit dem Geld, das der Bauauftrag dieses Zugs schon bindet, und
+    // zieht Saboteure von Maechten ab, denen die Diplomatie eben Frieden angeboten hat (T-M17-12, D29.8).
+    commands.push(...espionageCommands(context, explanations, commands))
   }
 
   // Operations: raising troops and covering shortages. Every six hours.
