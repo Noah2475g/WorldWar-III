@@ -4262,6 +4262,11 @@ Solange das offen ist, gilt das Verhalten von heute.
 
 **Status:** offen für T-M17-04 (Entscheid), Verhalten unverändert, D29.1 hier berichtigt.
 
+*Nachtrag 2026-09-24: der Vermerk stand bis heute nur hier, nicht im Entwurf. Jetzt tragen D29.1
+und D29.3 Punkt 1 ihn selbst, und `packages/core/src/state/relation-direction.test.ts` hält fest,
+dass eine wirksame Kriegserklärung alle sechs gerichteten Felder zurücksetzt — in beiden Hälften
+des Schlüssels (Befund M17-6).*
+
 ---
 
 ## 2026-09-18 · T-M17-03 · Befund M17-4: der Mehrspieler kennt die Formatstufe nicht — und nahm einen fremden Stand an
@@ -4302,6 +4307,41 @@ auf der Weltkarte, sechs Mächte) — 0,6 %, gegen eine Grenze von 512 000. Und 
 und keine Vergleichswerte mehr. Sie werden nicht gelöscht: sie tragen ihr Datum.
 
 **Status:** eine Reparatur eingebaut und belegt; Handschlag-Vorschlag offen (M18).
+
+**Berichtigt am 2026-09-24 (Nacharbeit zu T-M17-03, adversarische Prüfung, selbst
+nachgestellt):** Punkt 2 stimmt für die App nicht. `compareProbe` und `handshakeComplete`
+haben außerhalb der Tests **keinen Aufrufer** (`git grep`); die App vergleicht in
+`apps/desktop/src/net/party.ts` beim Gastgeber wie beim Gast mit `resumeDecision`, und die
+fragt **zuerst** nach dem Startabdruck. Zwei Formatstufen haben zwangsläufig verschiedene —
+gemessen aus derselben Partiedefinition: `b14b2dad229e92cb` (Stufe 4) gegen
+`68736687aa40819d` (dieselbe Partie in der Form von Stufe 3). Die Entscheidung lautet
+`transfer`, **auch in einer frischen Partie**: der Gastgeber schickt seinen Stand und beginnt.
+Die Meldung „aus demselben Stand kommen zwei Ergebnisse" kann in diesem Fall nie erscheinen.
+Je Richtung:
+
+- **Gastgeber alt, Gast neu:** der Gast verwirft den Stand mit der Formatmeldung — die
+  Reparatur aus Punkt 3 wirkt.
+- **Gastgeber neu, Gast alt:** das alte `acceptState` (`8bda869`) prüft nur die Prüfsumme, und
+  die stimmt (`stateHash` des Standes der Stufe 4 = angekündigter Startabdruck). Beide gehen auf
+  „playing", und die Partie endet **nach dem Start** mit „auseinandergelaufen" — R-MP-06
+  verlangt „vor dem ersten Zug".
+
+Der Kommentar in `resume-save.test.ts` beschrieb den Fall verkehrt herum („der Gast hat einen
+älteren Bau" ist gerade der Fall, den die Prüfung der Stufe **nicht** erreicht) und ist
+berichtigt. Dieselbe falsche Annahme stand in `DECISIONS.md`, D29.12, `PROGRESS.md` und der
+`dod` von T-M17-03 — alle fünf sind datiert berichtigt, nicht gelöscht. Die Begründung, die
+Formatstufe nicht in den Handschlag zu nehmen („Nutzen klein, die Probe fängt es"), stützte sich
+auf genau diese Annahme.
+
+**Repariert am 2026-09-24:** `PROTOCOL_VERSION` 2. Eine neue Formatstufe ist eine neue
+Protokollfassung, und den alten Bau erreicht nur eine Prüfung, die er schon kennt: die Fassung
+im ersten `hallo`. `protocol.test.ts` führt die Paare Stufe → Fassung (3 → 1, 4 → 2) und fällt,
+wenn jemand die Stufe hebt und die Fassung nicht; beide neuen Tests waren vor der Änderung rot.
+Der Handschlag-Vorschlag ist damit erledigt und wandert **nicht** nach M18. Das Nichtwort
+`Faende` in der Abbruchmeldung heißt jetzt „Fassungen des Spiels".
+
+**Status:** erledigt am 2026-09-24 — `acceptState` prüft die Stufe (2026-09-18), die
+Protokollfassung trennt die Bauten (2026-09-24).
 
 ---
 
@@ -4350,3 +4390,80 @@ Wächter nicht: er ist rot, der Grund steht hier, und die Prüfkette gilt erst w
 wenn die Datei heil ist.
 
 **Status:** offen — braucht einen Befehl von Noah. Kein Projektfehler.
+
+**Status am 2026-09-24:** **nicht mehr reproduzierbar.** Die Datei ist heil: ihr sha512 beginnt
+mit `01ec67314353989306eb143d7b8d1da050f66bbb` und ist damit wieder genau ihr Name im Speicher
+von pnpm; Zeile 183 694 endet mit dem Komma. Ihre Änderungszeit steht unverändert auf dem
+2026-09-02 23:02, und sie hat heute 10 harte Links (am 2026-09-18 waren es 7 — dazugekommen
+sind Arbeitsbäume, nicht Ersatzdateien): **die Datei wurde nie ersetzt**, das Rezept mit
+`Remove-Item` ist hinfällig und wurde nicht gefahren. `pnpm verify` lief am 2026-09-24 auf
+`522ebca` mit **Exit 0** (164 Dateien / 2464 Tests) und am Ende der Nacharbeit erneut. Ein Byte,
+das kippt und ohne Schreibzugriff wieder stimmt, lag vermutlich nie auf der Platte, sondern im
+Arbeitsspeicher oder im Seitencache — der Hinweis auf die Hardware bleibt deshalb in
+`99_Meta/Health & Risks.md` des Vaults stehen. Erledigt, ohne Eingriff.
+
+---
+
+## 2026-09-24 · Nacharbeit T-M17-03 · Befund M17-6: Zusagen ohne Test — der eingefrorene Stand lief nie, und die Richtung war nirgends geprüft
+
+**Anlass:** zwei unabhängige adversarische Prüfungen des M17-Fundaments (`522ebca`). Jeder
+Befund ab „mittel" ist vor der Reparatur **selbst nachgestellt**, jeder Test war ohne seine
+Reparatur rot oder fällt unter der Mutation, die er fangen soll.
+
+**1. R-GAME-09/AK1 und AK2 waren behauptet, nicht gerechnet (Schwere hoch).** Der Lauftest im
+Block „R-GAME-09/AK1 Ein Stand der Stufe 3 läuft nach der Migration weiter" deserialisierte
+`copy(V2)` — einen Stand der **Stufe 2** mit zwei Mächten und einer Beziehung ohne Freigaben —
+und rechnete ihn 48 Ticks auf `smallWorld`. `save-v3.json` wurde nirgends auch nur einen Tick
+gerechnet (`git grep save-v3`: zwei Dateien, beide laden nur), `save-v1.json` nach der Kette
+1 → 4 ebenso wenig. Die `dod` von T-M17-03 und `coverage:requirements` zählten R-GAME-09
+trotzdem als belegt. Das Verhalten selbst stimmt — jetzt gemessen statt angenommen:
+`migration-v3.test.ts` rechnet den eingefrorenen Stand 48 Ticks auf `data/maps/world.json` mit
+den Standardregeln, hashgleich nach Speichern und Laden, und nach einer Unterbrechung dasselbe
+wie ohne; AK2 rechnet `save-v1.json` und `save-v2.json`; `apps/headless/test/migrated-save.test.ts`
+rechnet denselben Stand zwei Spieltage **mit KI** (der Kern darf die KI nicht kennen). Ohne
+`3: toVersion4` fallen alle neuen Lauftests.
+
+**2. „Alle Schreiber setzen beide Richtungen" hatte keinen Test (mittel).** Nachgestellt mit
+sechs Mutationen **zugleich** — `setPassageBothWays` ohne die Hälfte `a`, die wirksame
+Kriegserklärung ohne alle sechs Löschzeilen, `breakAlliance` ohne seine zwei Zeilen,
+`acceptAlliance` ohne den Durchmarsch, dazu die beiden aus Punkt 3: **114 Testdateien / 1812
+Tests** in `packages/core`, `packages/ai`, `packages/netplay`, `apps/headless` und
+`apps/desktop` blieben grün. Die Golden-Master sehen es nicht, weil `tiny` und `walkthrough`
+keine Freigaben haben. Genau diese Schreiber baut T-M17-04 um.
+
+**3. Die Richtung der Sicht war nicht belegt (mittel).** `publicView` liest
+`grantsPassage(state, other, playerId)` und `sharesMap(state, other, playerId)` — „der andere
+gewährt mir". Vertauscht blieb alles grün (in der Messung von Punkt 2 enthalten). Die
+Gegenprobe im Bericht von T-M17-03 galt `visibleProvinces`, nicht `relations`; `DECISIONS.md`
+ist datiert berichtigt. Die KI liest genau diese Felder (`packages/ai/src/relationship.ts`,
+`diplomacy.ts`) — dieselbe Fehlerklasse wie Befund B2.
+
+**Repariert für 2 und 3:** `packages/core/src/state/relation-direction.test.ts`, 19 Tests. Jeder
+Schreiber in **beiden Hälften** des Schlüssels mit allen sechs gerichteten Feldern, die Sicht
+und die Überfallerkennung mit einseitig gesetztem Feld, dazu der Fristzweig von
+`grantsPassage` bei Frist − 1 und Frist. Gegenprobe **einzeln**: zwölf Mutationen, jede fällt
+(darunter eine, die die erste Fassung der Datei selbst übersah — `setPassageBothWays` ohne
+`aPassageEndsAtTick = null` fällt erst, seit der Test mit gesetzter Frist beginnt).
+
+**4. Die Vollständigkeitsprüfung war flach (niedrig).** Siehe `DECISIONS.md` 2026-09-24:
+`espionage: {}` bestand und warf im ersten Tick; ein Stand der Stufe 4 mit den alten Schlüsseln
+und gültiger Prüfsumme lud still, jeder Durchmarsch war danach weg. Repariert, beide Ladewege.
+
+**5. Kleinigkeiten, mitgenommen:** der Klontest sah ein geteiltes `want.provinces` nicht
+(jetzt ja; Gegenprobe fällt). Der Kopfkommentar des Ausgangswerts sagt T-M17-16, dass
+`zustandOhneKi` über die Stufen roh nicht vergleichbar ist — nachgemessen: auf `eb27a4c`
+entsteht der Bericht zeilengleich bis auf Datum, Commit und `4d58309111d9669f` statt
+`10950ec5abffd9b7`. D29.1 und D29.3 tragen den Vermerk zu M17-3 jetzt im Entwurf selbst.
+
+**6. Ein roter Zwischencommit (niedrig, nicht rückwirkend geändert).** Auf `a5636c9` fallen
+`determinism.test.ts` und `walkthrough.test.ts`; erst `c6d192e` zieht die Golden-Master nach.
+Die Hashes selbst sind richtig — aber Codeänderung und Erneuerung in zwei Commits stören
+`git bisect`. **Regel für die Bahnen:** eine Änderung, die einen Golden-Master verschiebt, und
+`UPDATE_GOLDEN=1` gehören in **denselben** Commit.
+
+**Die Lehre:** ein Test im Block einer Anforderung ist kein Beleg für sie, wenn er einen anderen
+Stand fährt; und eine Gegenprobe belegt nur die Stelle, die sie trifft. „Alle Schreiber" und
+„die Sicht" waren zwei Sätze über viele Stellen, belegt durch Gegenproben an je einer.
+
+**Status:** erledigt am 2026-09-24. Die Schreiber-Tests halten das Verhalten von T-M17-03 fest
+(beide Richtungen); T-M17-04 stellt sie gezielt auf „nur die eigene Richtung" um.

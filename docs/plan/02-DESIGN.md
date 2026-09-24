@@ -2249,9 +2249,19 @@ export interface TradeOffer {
   `sharesMap(state, other, playerId)` gilt oder ein Bündnis besteht. `acceptAlliance` setzt
   beide Richtungen beider Felder, `breakAlliance` löscht sie, eine wirksame Kriegserklärung
   löscht wie heute nur den Durchmarsch.
+
+  *(Vermerkt am 2026-09-24, Befund M17-3: „wie heute nur den Durchmarsch" stimmt nicht — eine
+  wirksame Kriegserklärung löscht seit M6 **auch die Karte**, und T-M17-03 hat das Verhalten
+  bewusst so gelassen: sie setzt alle sechs gerichteten Felder zurück. Ob der Krieg die
+  Kartenfreigabe mitnimmt, entscheidet T-M17-04. Festgehalten in
+  `packages/core/src/state/relation-direction.test.ts`, in beiden Hälften des Schlüssels.)*
 - `clone.ts`: `espionage.spies` und `reveals` elementweise, `tradeOffers` tief (Bündel samt
   `resources` und `provinces.slice()`). `validate.ts`: `espionage` (Objekt),
-  `diplomacy.tradeOffers` (Array).
+  `diplomacy.tradeOffers` (Array). *(Seit dem 2026-09-24 tiefer, und auf beiden Ladewegen:
+  `espionage.spies`/`reveals` als Listen, `nextIds.spy`/`offer` als Zahlen, die sechs
+  gerichteten Felder je Beziehung, die Bündel jedes Handelsangebots; die alten Schlüssel
+  `rightOfWay`/`sharedMap` werden abgewiesen. `deserialise` prüft auch einen Stand mit
+  gültiger Prüfsumme — Nacharbeit zu T-M17-03, `DECISIONS.md`.)*
 
 ### D29.2 Kommandos
 
@@ -2284,7 +2294,9 @@ Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → O
 - **`applyCommands`:** alle Kommandos; eine Annahme tauscht sofort, im selben Tick. Nur `to`
   darf annehmen; die Reihenfolge ist die von `playerOrder`.
 - **Phase `diplomacy`**, neu geordnet:
-  1. Kriegserklärungen treten in Kraft (setzen beide Durchmarsch-Richtungen zurück);
+  1. Kriegserklärungen treten in Kraft (setzen beide Durchmarsch-Richtungen zurück —
+     *heute auch beide Kartenrichtungen und beide Fristen; vermerkt am 2026-09-24, Befund
+     M17-3, der Entscheid fällt in T-M17-04*);
   2. abgelaufene Kündigungsfristen setzen ihre Richtung auf `false`;
   3. `detectSurpriseAttacks` fragt `grantsPassage(state, province.owner, army.owner)`;
   4. **danach** verfallen Angebote: diplomatische nach `offerLifetimeDays` (heute die Zahl
@@ -2507,6 +2519,19 @@ M35 nimmt Stufe 3 (D31.5); M17 nimmt **Stufe 4**.
   an — ein Stand der Stufe 3 hätte im ersten Tick `cloneState` über das fehlende `espionage`
   stolpern lassen; jetzt wird zuerst die Stufe geprüft. Ab T-M17-04 ändert M17 `data/rules`,
   und dann meldet schon der Handschlag den Unterschied. Befund M17-4 in `PROBLEME.md`.)*
+
+  *(Berichtigt am 2026-09-24, Nacharbeit zu T-M17-03: **die Probe fängt es in der App nicht.**
+  `compareProbe` und `handshakeComplete` haben außerhalb der Tests keinen Aufrufer; die App
+  vergleicht in `apps/desktop/src/net/party.ts` mit `resumeDecision`, und die fragt zuerst nach
+  dem Startabdruck. Zwei Formatstufen haben zwangsläufig verschiedene — die Entscheidung lautet
+  „übertragen", auch in einer frischen Partie, und die Meldung „aus demselben Stand kommen zwei
+  Ergebnisse" kann dabei nie erscheinen. Ein neuer Gast verwirft den alten Stand sauber; ein
+  **alter** Gast prüfte nur die Prüfsumme, nahm den neuen Stand an, und die Partie wäre nach
+  dem Start auseinandergelaufen. Das Wort „Fände" oben ist kein Wort; gemeint waren zwei
+  Fassungen des Spiels. **Repariert:** `PROTOCOL_VERSION` 2 — eine neue Formatstufe ist eine
+  neue Protokollfassung, und alte und neue Bauten weisen einander schon beim ersten `hallo`
+  ab; `protocol.test.ts` führt die Paare Stufe → Fassung und fällt, wenn jemand die Stufe hebt
+  und die Fassung nicht. `DECISIONS.md` 2026-09-24.)*
 
 ## D30. Die Haltung wird ein Auftrag (M40 — R-UNIT-09)
 

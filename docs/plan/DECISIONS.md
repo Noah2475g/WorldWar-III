@@ -3173,6 +3173,12 @@ zwar in der Richtung „der andere gewährt mir" — `rightOfWay` heißt in der 
 heute *er lässt mich durch*. Zwei Tests fallen, wenn diese Richtung vertauscht wird
 (`movement.test.ts`, `phases/diplomacy.test.ts`); die Gegenproben sind gefahren.
 
+*(Berichtigt am 2026-09-24: die beiden Gegenproben galten der Überfallerkennung und
+`visibleProvinces` — nicht `relations` in der Sicht. Wer dort `grantsPassage(state, other, me)`
+oder `sharesMap(state, other, me)` vertauschte, ließ alle 114 Testdateien grün. Seit heute
+hält `packages/core/src/state/relation-direction.test.ts` die Richtung der Sicht mit einseitig
+gesetzten Feldern fest, in beiden Hälften des Schlüssels.)*
+
 **Auswirkung:** `packages/ai` und die gesamte Oberfläche bleiben in T-M17-03 unberührt, obwohl
 `tasks.yaml` sie unter „Dateien" führt — das steht so in der Erledigungsnotiz. Für die beiden
 Folgebahnen heißt es: **wer die Sicht liest, liest bis T-M17-04 die alten Namen.**
@@ -3199,3 +3205,71 @@ der Handschlag „verschiedene Regeln" meldet, weil M17 `data/rules` anfasst.
 **Auswirkung:** eine neue Zusicherung in `packages/netplay/test/resume-save.test.ts`, die ohne
 die Reparatur fällt. Die irreführende Meldung der Probe bleibt für das Fenster zwischen
 T-M17-03 und T-M17-04 bestehen — benannt in Befund M17-4, nicht verschwiegen.
+
+*(Die zweite Hälfte dieses Entscheids ist am 2026-09-24 abgelöst — siehe „Eine neue
+Formatstufe ist eine neue Protokollfassung" unten. Ihre Begründung stützte sich auf eine
+Annahme, die für die App nicht stimmt: die Probe fängt den Unterschied dort nicht.)*
+
+---
+
+## 2026-09-24 · Nacharbeit T-M17-03 · Eine neue Formatstufe ist eine neue Protokollfassung
+
+**Entscheidung:** `PROTOCOL_VERSION` steigt von 1 auf **2**, und zu jeder Formatstufe gehört
+fortan genau eine Protokollfassung. `packages/netplay/src/protocol.test.ts` führt die Paare
+(Stufe 3 → Fassung 1, Stufe 4 → Fassung 2) und fällt, sobald jemand `SCHEMA_VERSION` hebt,
+ohne `PROTOCOL_VERSION` mitzuheben. Das löst die zweite Hälfte des Entscheids vom 2026-09-18
+ab; der Vorschlag „Formatstufe in den Handschlag" wandert damit **nicht** in die
+M18-Sammelstelle — er ist auf diesem Weg erledigt.
+
+**Begründung:** Die Begründung vom 2026-09-18 („die Determinismus-Probe fängt den Unterschied
+ohnehin") ist nachgestellt und falsch. In der App entscheidet `resumeDecision`, und zwar zuerst
+über den Startabdruck; zwei Formatstufen haben zwangsläufig verschiedene (gemessen:
+`b14b2dad229e92cb` gegen `68736687aa40819d` aus derselben Partiedefinition), die Entscheidung
+lautet „übertragen", auch in einer frischen Partie. Je Richtung:
+
+| Gastgeber | Gast | Ablauf bis heute |
+|---|---|---|
+| alt (Stufe 3) | neu (Stufe 4) | der Gast verwirft den übertragenen Stand mit der Formatmeldung — sauber |
+| neu (Stufe 4) | alt (Stufe 3) | das alte `acceptState` prüft **nur die Prüfsumme**, nimmt den Stand an, beide beginnen, die Partie läuft **nach dem Start** auseinander |
+
+Die zweite Zeile verletzt R-MP-06 („vor dem ersten Zug, nicht nach zwei Stunden"). Den alten
+Bau erreicht nur eine Prüfung, die er selbst schon kennt, und das ist genau eine: die
+Protokollfassung im allerersten `hallo`. Der Rest der alten Begründung — „ab T-M17-04 meldet
+schon der Regelabdruck den Unterschied" — hält nur, solange jede künftige Formatstufe zufällig
+mit einer Regeländerung zusammenfällt. Die Nachricht `zustand` trägt einen ganzen Spielstand;
+sein Format **ist** Teil des Protokolls, und ein geändertes Nachrichtenformat ist nach der
+eigenen Regel von `protocol.ts` eine neue Fassung.
+
+**Kosten, gemessen:** eine Zahl in `protocol.ts`, fünf Testnachrichten, die die Fassung als
+Ziffer `1` statt als `PROTOCOL_VERSION` trugen, und keine Änderung am Nachrichtenformat. Der
+Hostdienst (`apps/party`) liest keine Fassung, er reicht nur weiter. Netplay, Mehrspieler der
+App und `apps/party`: 16 Dateien / 206 Tests grün.
+
+**Auswirkung:** Bauten von `main` (Fassung 1, Stufe 3) und von M17 weisen einander in beiden
+Richtungen beim ersten `hallo` ab, mit „Fremde Protokollfassung". Die Zwischenstände dieses
+Zweigs von `a5636c9` bis `166eb5b` sprechen Stufe 4 mit Fassung 1 — sie wurden nie
+ausgeliefert. Die Prüfung der Stufe in `acceptState` bleibt als zweite Linie stehen.
+
+---
+
+## 2026-09-24 · Nacharbeit T-M17-03 · Die Vollständigkeitsprüfung läuft auf beiden Ladewegen
+
+**Entscheidung:** `deserialise` ruft `validateState` auch für einen Stand der aktuellen Stufe
+mit gültiger Prüfsumme, nicht nur für migrierte. `validateState` prüft die Felder der Stufe 4
+so tief, wie der erste Tick sie liest, und weist die alten Schlüssel `rightOfWay`/`sharedMap`
+ab.
+
+**Begründung:** Die Prüfsumme sagt, dass ein Stand **unverändert** ist, nicht dass er
+**vollständig** ist. Die Regel für T-M17-04 bis -14 lautet „Felder ergänzen, ohne die Stufe zu
+heben" — ein Stand von heute, geladen von einem Bau, der ein Feld mehr erwartet, liefe sonst
+über den Hash-Weg ungeprüft durch und stürzte im ersten Tick. Nachgestellt vor der Reparatur:
+ein Stand der Stufe 4 mit `rightOfWay`/`sharedMap` statt der gerichteten Felder und gültiger
+Prüfsumme lud still, und jeder gewährte Durchmarsch war danach weg; `espionage: {}` bestand die
+Prüfung und warf im ersten Tick einen TypeError aus `cloneState`. Die Prüfung kostet eine
+Schleife über die Beziehungen und die Handelsangebote.
+
+**Auswirkung:** Wer in einer Folgeaufgabe ein **Pflichtfeld** anlegt, trägt es auch in
+`validate.ts` ein — sonst prüft der Hash-Weg es nicht, und das ist dieselbe Lücke wie vorher.
+Ein Zwischenstand dieses Zweigs, dem ein später angelegtes Pflichtfeld fehlt, wird dann mit
+einer Meldung abgewiesen, statt im ersten Tick abzustürzen — das ist die gewollte Richtung;
+ausgeliefert wurde keiner.
