@@ -13,6 +13,7 @@ import { createInitialState, type GameConfig } from '../state/create'
 import { HASH_OMIT_KEYS, type GameState, type Spy, type SpyMission } from '../state/types'
 import { step } from '../step'
 import { publicView, visibleProvinces } from '../view/publicView'
+import { dailyTick } from './dailyTick'
 import { settleEspionage } from './espionage'
 import type { PhaseContext } from './index'
 
@@ -489,6 +490,27 @@ describe('R-SPY-03/AK2 Ohne Spion oder nach Misserfolg fällt die Provinz zurüc
     expect(visibleProvinces(state, 'p1').has('o1')).toBe(false)
   })
 
+  it('eine abgelaufene Aufdeckung zeigt nichts, auch wenn sie noch im Zustand steht', () => {
+    // Der Tageslauf nimmt sie am Wechsel weg; die Sicht urteilt trotzdem selbst nach `untilTick`,
+    // damit ein Stand, der zwischen Wechsel und Aufräumen entstand, nicht mehr zeigt als erlaubt.
+    fortifyOstburg(state)
+    state.tick = 3 * DAY
+    state.espionage.reveals.push({ player: 'p1', provinceId: 'o1', kind: 'intel', untilTick: 3 * DAY })
+
+    expect(visibleProvinces(state, 'p1').has('o1')).toBe(false)
+    expect(publicView(state, 'p1').provinces.find((p) => p.id === 'o1')).toBeUndefined()
+  })
+
+  it('zwei Aufklärer am selben Ziel ergeben eine Aufdeckung, nicht zwei', () => {
+    placeSpy(state, { provinceId: 'o1', mission: 'intel' })
+    placeSpy(state, { provinceId: 'o1', mission: 'intel' })
+
+    const events = settleAt(state, 2 * DAY, SURE)
+
+    expect(ofType(events, 'SPY_REPORT').map((e) => e.outcome)).toEqual(['success', 'success'])
+    expect(state.espionage.reveals).toEqual([{ player: 'p1', provinceId: 'o1', kind: 'intel', untilTick: 3 * DAY }])
+  })
+
   it('bleibt ohne Lücke aufgedeckt, solange der Spion jeden Tag Erfolg hat', () => {
     fortifyOstburg(state)
     placeSpy(state, { provinceId: 'o1', mission: 'intel' })
@@ -525,6 +547,24 @@ describe('D29.3 (d) Ein Ziel, das nicht mehr zum Auftrag passt, wird nicht gewü
 
     expect(ofType(events, 'SPY_REPORT').map((e) => [e.spyId, e.outcome])).toEqual([['s1', 'targetChanged']])
     expect(state.rng).toEqual(rng)
+  })
+
+  it('läuft nach der Moral: ein Aufstand desselben Tageswechsels ist für den Spion schon geschehen', () => {
+    // D29.3: `settleMorale` → `settleEspionage`. Mit dieser Aufstandschance ist o2 sicher verloren
+    // (1000 Promille je Punkt unter der Schwelle, gekappt auf 1000 — kein Zug aus dem Zufall).
+    const rules = withConstants({ revoltChancePerPointPermille: 1000 })
+    state.provinces['o2']!.morale = 0
+    placeSpy(state, { provinceId: 'o2', mission: 'economicSabotage' })
+    state.tick = 2 * DAY
+    const events: GameEvent[] = []
+
+    dailyTick(state, { map, rules, commands: [], events })
+
+    expect(ofType(events, 'PROVINCE_REVOLTED').map((e) => e.provinceId)).toEqual(['o2'])
+    // Vorher gelaufen, hätte der Saboteur eine Provinz von p2 gesehen — und kein Ziel verloren.
+    expect(ofType(events, 'SPY_REPORT').map((e) => [e.provinceId, e.outcome])).toEqual([['o2', 'targetChanged']])
+    const typen = events.map((e) => e.type)
+    expect(typen.indexOf('PROVINCE_REVOLTED')).toBeLessThan(typen.indexOf('SPY_REPORT'))
   })
 
   it('Aufklärung in einer herrenlosen Provinz passt weiter — dort wird gewürfelt', () => {
