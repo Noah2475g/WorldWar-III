@@ -431,6 +431,11 @@ export const de = {
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
     // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
     GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+    // Spionage (T-M17-08, R-SPY-02). Nur der Besitzer des Spions liest sie; Auftrag und Ausgang
+    // kommen mit Namen aus dem Block `espionage`. Kein Satz nennt, was der Spion gesehen hat —
+    // das steht in der Sicht, nicht im Protokoll.
+    SPY_REPORT: 'Spion in {{province}}, {{mission}}: {{outcome}}.',
+    SPY_LOST: 'Spion in {{province}} ({{mission}}) verloren: der Sold ließ sich nicht zahlen.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -499,6 +504,25 @@ export const de = {
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
+  },
+
+  /**
+   * Spionage (T-M17-08, R-SPY-02/03) — ein eigener Block neben `diplomacy`, damit die beiden
+   * M17-Bahnen an verschiedene Stellen anbauen. Die Übersicht (R-SPY-06, T-M17-13) liest dieselben
+   * Namen wie das Protokoll.
+   */
+  espionage: {
+    missions: {
+      intel: 'Aufklärung',
+      economicSabotage: 'Wirtschaftssabotage',
+      militarySabotage: 'Militärsabotage',
+      counter: 'Gegenspionage',
+    },
+    outcomes: {
+      success: 'gelungen',
+      failure: 'misslungen',
+      targetChanged: 'das Ziel passt nicht mehr zum Auftrag',
+    },
   },
 
   market: {

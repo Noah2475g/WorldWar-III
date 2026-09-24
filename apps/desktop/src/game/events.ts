@@ -116,6 +116,13 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1
   }
 
+  // Spionage (T-M17-08): Auftrag und Ausgang mit Namen statt Schlüssel — „economicSabotage" und
+  // „targetChanged" sagen niemandem etwas.
+  if (event.type === 'SPY_REPORT' || event.type === 'SPY_LOST') {
+    values.mission = t(`espionage.missions.${String(record.mission)}`)
+  }
+  if (event.type === 'SPY_REPORT') values.outcome = t(`espionage.outcomes.${String(record.outcome)}`)
+
   return values
 }
 

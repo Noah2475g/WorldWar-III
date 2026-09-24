@@ -80,6 +80,8 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'CAPITAL_LOST', 'CAPITAL_MOVED', 'PLAYER_ELIMINATED', 'GAME_ENDED', 'DAY_REPORT',
       // Seit T-M35-04: das Zwischenziel (R-GAME-08/AK2).
       'GOAL_REACHED',
+      // Seit T-M17-08: der Tageslauf der Spionage (R-SPY-02).
+      'SPY_REPORT', 'SPY_LOST',
     ] as const
 
     for (const type of types) {

@@ -929,3 +929,50 @@ describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
     expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
   })
 })
+
+/**
+ * Der Tageslauf der Spionage im Protokoll (T-M17-08, R-SPY-02, D29.5).
+ *
+ * Ein Bericht, der „SPY_REPORT s3 intel targetChanged" sagt, hilft niemandem. Auftrag und Ausgang
+ * stehen mit Namen im Satz, die Provinz ebenso, und keine Kennung — der Spion hat für den
+ * Spieler keine Nummer (Befund M17-S1). Geprüft für jeden Auftrag und jeden Ausgang: ein
+ * fehlender Name zeigte sich als `[espionage.…]` im Text.
+ */
+describe('R-SPY-02 Bericht und Verlust eines Spions werden zu Saetzen', () => {
+  const MISSIONS = ['intel', 'economicSabotage', 'militarySabotage', 'counter'] as const
+  const OUTCOMES = ['success', 'failure', 'targetChanged'] as const
+  const ROH = /intel|Sabotage\b|economic|military|counter|success|failure|targetChanged|unpaid|SPY_|\bs3\b|\bp1\b|\[|\{\{/
+
+  it('nennt Provinz, Auftrag und Ausgang beim Namen — fuer jede Paarung', () => {
+    const texts = new Set<string>()
+    for (const mission of MISSIONS) {
+      for (const outcome of OUTCOMES) {
+        const entry = describeEvent(
+          event({ type: 'SPY_REPORT', playerId: 'p1', spyId: 's3', provinceId, mission, outcome, audience: ['p1'], concerns: ['p1'] }),
+          0,
+          map,
+          { viewer: 'p1' },
+        )
+        expect(entry.text, `${mission}/${outcome}`).toContain(provinceName)
+        expect(entry.text, `${mission}/${outcome}`).not.toMatch(ROH)
+        expect(entry.provinceId).toBe(provinceId)
+        texts.add(entry.text)
+      }
+    }
+    expect(texts.size, 'zwoelf Paarungen, zwoelf Saetze').toBe(MISSIONS.length * OUTCOMES.length)
+  })
+
+  it('sagt beim Verlust, welcher Spion es war und warum', () => {
+    const entry = describeEvent(
+      event({ type: 'SPY_LOST', playerId: 'p1', spyId: 's3', provinceId, mission: 'economicSabotage', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain(provinceName)
+    expect(entry.text).toContain('Wirtschaftssabotage')
+    expect(entry.text).toMatch(/Sold/)
+    expect(entry.text).not.toMatch(ROH)
+  })
+})
