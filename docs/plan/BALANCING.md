@@ -398,4 +398,16 @@ den Test fallen.
 Sabotageschaden und die Dauer einer Aufdeckung (`spySuccessIntelPermille`, `spyRevealDays`,
 `spySuccessSabotagePermille`, `spyDetectionPermille`, `sabotageMoraleLoss`, …) kommen mit dem
 Tageslauf und der Sabotage (T-M17-08, T-M17-09) — eine Zahl steht erst dann in den Regeln, wenn
-eine Zeile Code sie liest.
+eine Zeile Code sie liest. *(Stand 2026-09-24: die ersten beiden stehen seit T-M17-08 im
+Abschnitt darunter.)*
+
+### Tageslauf der Spionage (R-SPY-02, R-SPY-03, D29.3, D29.7, T-M17-08)
+
+Zwei Zahlen, die der Tageslauf liest (`phases/espionage.ts`). Der Sold oben wird an jedem
+Tageswechsel je Spion abgebucht, auch am Tag der Anwerbung — ausgeführt wird erst am Tag danach
+(R-SPY-02/AK3). Keine der beiden verbraucht Zufall, wenn es keine Spione gibt (D29.4).
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spySuccessIntelPermille` | 800 | geschätzt | die Referenz nennt keine Erfolgschance; vier von fünf Tagen heißt: ein Aufklärer, der zehnmal sein Tagesgeld gekostet hat, liefert fast immer, und ein Misserfolg ist selten genug, um ein Ereignis zu sein. Vorschlag aus D29.7, ungemessen — die KI wirbt erst ab T-M17-12 an |
+| `spyRevealDays` | 1 | abgeleitet | aus R-SPY-03: „für den Tag sichtbar", und AK2 verlangt, dass die Provinz nach Misserfolg oder Entlassen **zum nächsten Tageswechsel** wieder hinter den Nebel fällt. Jeder Wert über 1 bräche AK2; `phases/espionage.test.ts` prüft AK2 mit dem Regelwert |

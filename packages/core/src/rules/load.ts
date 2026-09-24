@@ -93,6 +93,10 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'spySalaryMilitarySabotage',
   'spySalaryCounter',
   'maxSpiesPerPlayer',
+  // Tageslauf (T-M17-08). Fehlte die Chance, waere `chance(rng, undefined)` stets falsch — jede
+  // Aufklaerung misslaenge still; fehlte die Dauer, stuende `untilTick` auf NaN.
+  'spySuccessIntelPermille',
+  'spyRevealDays',
 ]
 
 function record(value: unknown): Record<string, unknown> {

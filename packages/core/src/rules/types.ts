@@ -251,6 +251,17 @@ export interface RuleConstants {
   spySalaryCounter: Fixed
   /** Höchstzahl eigener Spione je Macht (R-SPY-01/AK2, `QUEUE_FULL`). */
   maxSpiesPerPlayer: number
+
+  // Tageslauf der Spionage (R-SPY-02/03, D29.3, D29.7, T-M17-08).
+  /** Chance, dass ein Aufklärungsauftrag an einem Tageswechsel gelingt, in Promille. */
+  spySuccessIntelPermille: number
+  /**
+   * Wie viele Tageswechsel eine gelungene Aufklärung die Provinz zeigt. **1** heißt: bis zum
+   * nächsten — genau das verlangt R-SPY-03/AK2 („zum nächsten Tageswechsel wieder hinter den
+   * Nebel"). Ein größerer Wert hielte die Provinz nach einem Misserfolg oder nach dem Entlassen
+   * weiter offen.
+   */
+  spyRevealDays: number
 }
 
 export interface Rules {

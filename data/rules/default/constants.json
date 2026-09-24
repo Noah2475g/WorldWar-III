@@ -79,5 +79,8 @@
   "spySalaryEconomicSabotage": 20306,
   "spySalaryMilitarySabotage": 20306,
   "spySalaryCounter": 5076,
-  "maxSpiesPerPlayer": 5
+  "maxSpiesPerPlayer": 5,
+  "_spionageTageslauf": "Tageslauf der Spionage (R-SPY-02/03, D29.3, D29.7, T-M17-08): Erfolgschance der Aufklaerung je Tag in Promille, und wie viele Tage eine gelungene Aufklaerung die Provinz zeigt.",
+  "spySuccessIntelPermille": 800,
+  "spyRevealDays": 1
 }
