@@ -960,6 +960,39 @@ describe('D29.5 Ein Angebot mit einer ausgeschiedenen Macht ist hinfaellig', () 
       detail: { reason: 'Anbieter ausgeschieden' },
     })
   })
+
+  // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D6): ein geladener Spielstand kann ein Angebot
+  // tragen, dessen `from` keine bekannte Macht mehr ist (`validateState` prueft das heute
+  // nicht — die Felder von `give`/`want`, nicht die Spielerkennungen). `settleTradeOffers`
+  // stufte es zuvor als 'invalid' ein und griff dann in `closeTradeOffer` auf
+  // `draft.players[offer.from]!.resources` zu — ein TypeError, sobald `give.resources` einen
+  // Betrag traegt. Kein Kommando dieser Datei kann das erzeugen (der Befehl `OFFER_TRADE`
+  // prueft `command.playerId` nie direkt, aber jeder ausfuehrende Spieler existiert), nur ein
+  // Spielstand von aussen.
+  it('ein Angebot mit unbekanntem Anbieter stuerzt beim Schliessen nicht ab', () => {
+    state.diplomacy.tradeOffers = [
+      {
+        id: 'tGhost',
+        from: 'ghost',
+        to: 'p2',
+        give: { resources: { money: 5_000 }, provinces: [] },
+        want: { resources: {}, provinces: [] },
+        createdTick: 0,
+        expiresAtTick: 999_999,
+      },
+    ]
+    const vorher = money('p2')
+    let fired: GameEvent[] = []
+    expect(() => {
+      fired = closed(diplomacyAt(1))
+    }).not.toThrow()
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ reason: 'invalid' })
+    expect(state.diplomacy.tradeOffers).toEqual([])
+    // Der Empfaenger ist unberuehrt — und ein unbekannter Geber hat keinen Bestand, dem etwas
+    // zurueckginge.
+    expect(money('p2')).toBe(vorher)
+  })
 })
 
 describe('D29.7 Die Handelszahlen stehen in den Regeln', () => {

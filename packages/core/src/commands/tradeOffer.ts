@@ -173,13 +173,20 @@ function cedeProvince(draft: GameState, provinceId: ProvinceId, ceder: PlayerId,
 /**
  * Schliesst genau dieses eine Angebot (B4). Ausser bei `accepted` geht die Treuhand an den
  * Anbieter zurueck — auch an einen ausgeschiedenen, damit Bestaende plus Treuhand erhalten bleiben.
+ *
+ * `from` kann bei einem geladenen Stand fehlen (Nachtrag Befund M17-D6): `validateState` prueft
+ * heute nur die Form von `give`/`want`, nicht, ob `from`/`to` bekannte Maechte sind. Ohne
+ * Anbieter gibt es keinen Bestand, dem etwas zurueckginge — die Treuhand verfaellt dann
+ * stillschweigend, statt den Tick mit einem TypeError abzubrechen.
  */
 export function closeTradeOffer(draft: GameState, offer: TradeOffer, reason: TradeOfferCloseReason, ctx: PhaseContext): void {
   if (reason !== 'accepted') {
-    const from = draft.players[offer.from]!
-    for (const key of RESOURCE_KEYS) {
-      const amount = offer.give.resources[key]
-      if (amount !== undefined) from.resources[key] += amount
+    const from = draft.players[offer.from]
+    if (from) {
+      for (const key of RESOURCE_KEYS) {
+        const amount = offer.give.resources[key]
+        if (amount !== undefined) from.resources[key] += amount
+      }
     }
   }
   draft.diplomacy.tradeOffers = draft.diplomacy.tradeOffers.filter((entry) => entry.id !== offer.id)
