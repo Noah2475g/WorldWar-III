@@ -85,6 +85,14 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'goalPointShareFirstPermille',
   'goalPopulationSharePermille',
   'goalPointShareSecondPermille',
+  // Spionage (R-SPY-01, T-M17-07). Fehlte der Preis, waere `money < undefined` immer falsch
+  // und jeder Spion umsonst; fehlte die Hoechstzahl, waere `count >= undefined` nie wahr.
+  'spyRecruitCost',
+  'spySalaryIntel',
+  'spySalaryEconomicSabotage',
+  'spySalaryMilitarySabotage',
+  'spySalaryCounter',
+  'maxSpiesPerPlayer',
 ]
 
 function record(value: unknown): Record<string, unknown> {

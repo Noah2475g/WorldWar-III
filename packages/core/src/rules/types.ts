@@ -235,6 +235,22 @@ export interface RuleConstants {
   goalPopulationSharePermille: number
   /** Anteil an allen Punkten, zweite Marke, in Promille. */
   goalPointShareSecondPermille: number
+
+  // Spionage (R-SPY-01, D29.7, T-M17-07). Das Geld ist aus EINEM Anker abgeleitet: dem
+  // Aufklärungssold, gemessen in T-M17-02 als 5 % des Medians des täglichen Geldertrags an
+  // Tag 30. Die übrigen stehen im Verhältnis der Referenz 10.2 dazu.
+  /** Anwerbepreis, einmalig und sofort (R-SPY-01/AK1); zehnmal der Aufklärungssold. */
+  spyRecruitCost: Fixed
+  /** Tagessold der Aufklärung — der Anker. */
+  spySalaryIntel: Fixed
+  /** Tagessold der Wirtschaftssabotage; doppelter Anker. */
+  spySalaryEconomicSabotage: Fixed
+  /** Tagessold der Militärsabotage; doppelter Anker. */
+  spySalaryMilitarySabotage: Fixed
+  /** Tagessold der Gegenspionage; halber Anker, abgerundet. */
+  spySalaryCounter: Fixed
+  /** Höchstzahl eigener Spione je Macht (R-SPY-01/AK2, `QUEUE_FULL`). */
+  maxSpiesPerPlayer: number
 }
 
 export interface Rules {

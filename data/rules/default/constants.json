@@ -72,5 +72,12 @@
   "goalProvinces": 25,
   "goalPointShareFirstPermille": 400,
   "goalPopulationSharePermille": 350,
-  "goalPointShareSecondPermille": 600
+  "goalPointShareSecondPermille": 600,
+  "_spionage": "Spionage (R-SPY-01, D29.7, T-M17-07). Anker: spySalaryIntel = 5 % des Medians des taeglichen Geldertrags an Tag 30 (T-M17-02, docs/reports/m17-baseline.json); die uebrigen Geldwerte im Verhaeltnis der Referenz 10.2.",
+  "spyRecruitCost": 101530,
+  "spySalaryIntel": 10153,
+  "spySalaryEconomicSabotage": 20306,
+  "spySalaryMilitarySabotage": 20306,
+  "spySalaryCounter": 5076,
+  "maxSpiesPerPlayer": 5
 }

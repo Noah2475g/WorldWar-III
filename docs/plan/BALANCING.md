@@ -371,3 +371,31 @@ mindestens 70 % der Fälle — ein wirkungsloser Schwierigkeitsgrad fällt damit
 > bei **T-M15-05**, wo das Verhältnis die KI steuert und die Stufen erstmals mehr
 > unterscheidet als eine Zahl. Bis dahin gilt: 100 % ist **gemessen, nicht gewollt**, und
 > steht als offener Befund in `PROBLEME.md`.
+
+## Spionage (R-SPY-01, D29.7, T-M17-07)
+
+Sechs Zahlen, eine davon gemessen. Das Geld hängt an **einem** Anker: dem Aufklärungssold,
+gemessen in T-M17-02 als **5 % des Medians des Brutto-Geldertrags je Spieltag** über acht
+lebende Mächte am Ende von Tag 30 (Weltkarte, Startzahl 1815, Median **203.078**, 5 %
+abgerundet **10.153**; zwei weitere Startzahlen ergaben 10.159 und 10.256 —
+`docs/reports/m17-baseline.json`, Feld `soldAnker`). Die übrigen Geldwerte stehen im
+**Verhältnis** der Referenz 10.2 dazu (Anwerben 20.000, Aufklärung 2.000, Sabotage 4.000,
+Gegenspionage 1.000 je Tag): das Verhältnis ist belegt, die Skala abgeleitet — deshalb
+steht jede Geldzahl hier als **abgeleitet**. Festkomma wie alle Bestände, 1000 = 1 Geld.
+`espionage.test.ts` hält Anker und Verhältnisse fest: wer eine Zahl allein verschiebt, sieht
+den Test fallen.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spyRecruitCost` | 101.530 | abgeleitet | zehnmal der Aufklärungssold (Referenz 10.2: 20.000 zu 2.000) — rund ein halber Tagesertrag einer mittleren Macht, einmalig und sofort (R-SPY-01/AK1) |
+| `spySalaryIntel` | 10.153 | abgeleitet | der Anker selbst: 5 % des Median-Tagesertrags an Tag 30 (T-M17-02) |
+| `spySalaryEconomicSabotage` | 20.306 | abgeleitet | doppelter Anker (Referenz 10.2: 4.000 zu 2.000) |
+| `spySalaryMilitarySabotage` | 20.306 | abgeleitet | doppelter Anker (Referenz 10.2: 4.000 zu 2.000) |
+| `spySalaryCounter` | 5.076 | abgeleitet | halber Anker (Referenz 10.2: 1.000 zu 2.000), abgerundet wie der Anker selbst (5.076,5) |
+| `maxSpiesPerPlayer` | 5 | geschätzt | die Referenz nennt keine Höchstzahl; fünf Aufträge zu Sabotagesold kosten 101.530 je Tag, also die Hälfte des Median-Tagesertrags — mehr trägt keine mittlere Macht, und die Obergrenze hält die KI (T-M17-12) vom Anhäufen ab |
+
+**Was hier noch fehlt, und wo es herkommt:** die Erfolgs- und Entdeckungschancen, der
+Sabotageschaden und die Dauer einer Aufdeckung (`spySuccessIntelPermille`, `spyRevealDays`,
+`spySuccessSabotagePermille`, `spyDetectionPermille`, `sabotageMoraleLoss`, …) kommen mit dem
+Tageslauf und der Sabotage (T-M17-08, T-M17-09) — eine Zahl steht erst dann in den Regeln, wenn
+eine Zeile Code sie liest.
