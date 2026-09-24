@@ -57,6 +57,17 @@ import { beforeAll, describe, expect, it } from 'vitest'
  *
  * Der Bericht `docs/reports/m17-baseline.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
  * geschrieben (Muster `stance.slow.test.ts`).
+ *
+ * **Fuer T-M17-16: `zustandOhneKi` laesst sich ueber die Stufen hinweg nicht roh vergleichen**
+ * (Nachtrag 2026-09-24). Die Pruefsumme laeuft ueber den ganzen Zustand, und Stufe 4 hat andere
+ * Felder: auf `537eaaa` (Stufe 3) meldet dieser Lauf `10950ec5abffd9b7`, auf `eb27a4c` (Stufe 4,
+ * sonst verhaltensgleich; gemessen 2026-09-24, die Pruefung vom selben Tag mass dieselbe Zahl auf
+ * `522ebca`) `4d58309111d9669f` — bei sonst zeilengleichem Bericht. Wer die Zahlen
+ * daneben legt, vergleicht diese eine Zahl entweder **normalisiert** (die Felder der Stufe 4 auf
+ * die Form von Stufe 3 abgebildet: `rightOfWay` = `aGrantsPassage`, `sharedMap` = `aSharesMap`,
+ * `espionage`, `tradeOffers`, `nextIds.spy`/`offer` gestrichen) oder nimmt sie ausdruecklich
+ * aus dem Vergleich. Alle anderen Zahlen des Berichts lesen den Zustand nicht ueber seine
+ * Pruefsumme und sind vergleichbar.
  */
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
