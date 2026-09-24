@@ -9,6 +9,7 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Spy,
   Stance,
   Terrain,
   Tick,
@@ -246,6 +247,19 @@ export interface PublicView {
    * away the end of the game is.
    */
   victory: { condition: string; winner: PlayerId | null; pointsShareToWin?: number }
+  /**
+   * Die eigenen Spione (R-SPY-01, T-M17-07; die Übersicht R-SPY-06 liest sie in T-M17-13).
+   *
+   * **Nur die eigenen.** Ein fremder Spion in meiner Provinz steht hier nicht — nicht als
+   * Eintrag, nicht als Zahl: dass er da ist, erfahre ich allein über die Gegenspionage
+   * (R-SPY-05). Das Besitzerfeld fehlt deshalb, es wäre immer ich. Die Reihenfolge ist die des
+   * Zustands und damit die Ausführungsreihenfolge im Tageslauf.
+   *
+   * Ein eigenes Feld am Ende der Sicht statt `self.spies` (D29.6): so bauen Diplomatie und
+   * Spionage in M17 an verschiedene Stellen an, und der Zusammenführung bleibt nichts zu
+   * entscheiden.
+   */
+  espionage: { spies: Omit<Spy, 'owner'>[] }
 }
 
 /** Provinces the player can currently observe. */
@@ -410,6 +424,21 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     }
   }
 
+  // Eigene Spione — eigenes Wissen, Kopien statt Verweise in den Zustand (T-M17-07).
+  const ownSpies: PublicView['espionage']['spies'] = []
+  for (const spy of state.espionage.spies) {
+    if (spy.owner !== playerId) continue
+    ownSpies.push({
+      id: spy.id,
+      provinceId: spy.provinceId,
+      mission: spy.mission,
+      recruitedTick: spy.recruitedTick,
+      assignedTick: spy.assignedTick,
+      lastRunTick: spy.lastRunTick,
+      lastOutcome: spy.lastOutcome,
+    })
+  }
+
   return {
     tick: state.tick,
     playerId,
@@ -462,5 +491,6 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       winner: state.victory.winner,
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
+    espionage: { spies: ownSpies },
   }
 }
