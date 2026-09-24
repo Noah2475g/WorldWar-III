@@ -34,6 +34,7 @@
  *   longPressMs: number,
  *   pinchTolerancePx: number,
  *   minTarget: number,
+ *   fullscreen: boolean,
  *   help: boolean,
  * }} Options
  * @typedef {{ id: string, pass: boolean, numbers: Record<string, unknown>, detail: string }} CheckResult
@@ -71,6 +72,8 @@ export const USAGE = `Aufruf: node scripts/android-check.mjs [Schalter]
   --out <ordner>              Bildschirmfotos und report.json (Vorgabe: Temp-Ordner)
   --long-press-ms <ms>        Dauer des langen Drueckens (Vorgabe: ${LONG_PRESS_MS})
   --pinch-tolerance <px>      erlaubter Versatz des Zoom-Ankers (Vorgabe: ${PINCH_TOLERANCE_PX})
+  --fullscreen                vor den Pruefungen den Knopf "Vollbild" antippen und warten,
+                               bis der Browser im Vollbildmodus ist (Vorgabe: aus)
 
   Android:   --adb <pfad> (sonst Umgebung ADB, sonst "adb"), --serial <geraet>,
              --devtools-port <p> (adb forward, Vorgabe: ${DEFAULT_DEVTOOLS_PORT})
@@ -153,6 +156,7 @@ export function parseArgs(argv, env) {
     longPressMs: LONG_PRESS_MS,
     pinchTolerancePx: PINCH_TOLERANCE_PX,
     minTarget: MIN_TARGET_PX,
+    fullscreen: false,
     help: false,
   }
   try {
@@ -162,6 +166,11 @@ export function parseArgs(argv, env) {
       if (arg === '--') continue
       if (arg === '--help' || arg === '-h') {
         options.help = true
+        continue
+      }
+      // Ein Schalter ohne Wert (Befund T-M31, Vollbild-Knopf vor den Pruefungen antippen).
+      if (arg === '--fullscreen') {
+        options.fullscreen = true
         continue
       }
       const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg)

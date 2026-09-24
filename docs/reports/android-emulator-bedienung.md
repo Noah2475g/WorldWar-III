@@ -95,6 +95,7 @@ beide Schreibweisen gehen also.
 | `--adb`, `--serial`, `--devtools-port` | nur Android | `ADB`/`adb`, einziges Gerät, 9229 |
 | `--browser`, `--debug-port`, `--sizes` | nur Chromium | Brave, sonst Edge; 9223; `640x360@2,1097x617@1.75` |
 | `--long-press-ms`, `--pinch-tolerance` | Dauer des langen Drückens, erlaubter Versatz des Zoom-Ankers | 700 ms, 8 px |
+| `--fullscreen` | vor den neun Prüfungen den Knopf „Vollbild" antippen (wie ein Spieler) und bis zu 3 s auf den Vollbildmodus warten; fehlt der Knopf, meldet der Lauf einen klaren Aufbaufehler statt abzustürzen | aus |
 
 Exit-Code: 0 = alle Prüfungen in allen Läufen bestanden; 1 = mindestens ein FAIL;
 2 = Aufbau gescheitert (kein Gerät, kein Browser, Seite antwortet nicht, keine CDP-Verbindung).

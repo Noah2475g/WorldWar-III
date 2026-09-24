@@ -106,6 +106,18 @@ describe('Android-Pruefstand: Argumente', () => {
     expect(parsed.ok && pageUrl(parsed.options)).toBe('http://127.0.0.1:4191/?touch=1')
   })
 
+  it('laesst --fullscreen ohne Wert aus, aus (Vorgabe) fehlt es', () => {
+    const ohne = parseArgs([], {})
+    expect(ohne.ok && ohne.options.fullscreen).toBe(false)
+
+    const mit = parseArgs(['--target', 'chromium', '--fullscreen', '--sizes', '640x360@2'], {})
+    expect(mit.ok).toBe(true)
+    if (!mit.ok) return
+    expect(mit.options.fullscreen).toBe(true)
+    // Kein Wert verschluckt: der naechste Schalter wird trotzdem gelesen.
+    expect(mit.options.sizes.map((s) => s.label)).toEqual(['640x360@2'])
+  })
+
   it('weist Unbekanntes und Kaputtes mit einer Meldung zurueck', () => {
     expect(parseArgs(['--target', 'ios'], {})).toMatchObject({ ok: false })
     expect(parseArgs(['--url-port', '0'], {})).toMatchObject({ ok: false })

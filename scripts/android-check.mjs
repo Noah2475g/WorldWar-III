@@ -65,6 +65,7 @@ const TUTORIAL_KEY = 'worldwar.tutorial.seen'
 const START_BUTTON = 'Partie beginnen'
 const ZOOM_IN = 'Hineinzoomen'
 const ZOOM_OUT = 'Herauszoomen'
+const FULLSCREEN_BUTTON = 'Vollbild'
 const DEVTOOLS_SOCKET = 'localabstract:chrome_devtools_remote'
 /** Nach jeder Geste: Klick-Synthese, React-Durchlauf und ein gezeichneter Frame. */
 const SETTLE_MS = 400
@@ -497,6 +498,22 @@ async function runFlow(cdp, ctx) {
     await scrollTop()
     await evaluate(cdp, call(pagePointerRecorder, true))
     await shot('partie')
+
+    // --fullscreen: wie ein Spieler den Knopf "Vollbild" antippen, BEVOR die neun
+    // Pruefungen laufen (Befund 2026-09-25: am Telefon frisst Chrome selbst ~80 CSS-Punkte
+    // Hoehe, die Vollbild zurueckgibt). Fehlt der Knopf, ist das ein klarer Aufbaufehler
+    // dieses Laufs (derselbe Weg wie ein fehlender Startknopf), kein Absturz.
+    if (ctx.options.fullscreen) {
+      await waitFor(cdp, call(pageButton, 'label', FULLSCREEN_BUTTON), `den Knopf "${FULLSCREEN_BUTTON}" (--fullscreen)`, 5000)
+      const fsButton = await evaluate(cdp, call(pageButton, 'label', FULLSCREEN_BUTTON))
+      extra.fullscreenButton = fsButton
+      await tap(cdp, fsButton)
+      await waitFor(cdp, 'Boolean(document.fullscreenElement)', 'den Vollbildmodus (--fullscreen)', 3000)
+      // Die Groesse aendert sich mit dem Vollbildwechsel; die Karte soll neu gemessen haben.
+      await sleep(SETTLE_MS)
+      await scrollTop()
+      await shot('vollbild')
+    }
   } catch (error) {
     return { label: ctx.label, checks: finalizeChecks(results, error.message), screenshots, error: error.message, extra }
   }
