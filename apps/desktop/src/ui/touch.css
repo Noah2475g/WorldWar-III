@@ -1,0 +1,309 @@
+/*
+ * Finger und kleine Bildschirme (Android-Emulator, 2026-09-24).
+ *
+ * Eine eigene Datei nach app.css, damit der Schreibtisch unberuehrt bleibt: jede Regel
+ * hier ist entweder fuer beide Eingabearten ungefaehrlich, oder sie haengt an
+ * `:root[data-input='touch']` (gesetzt von ui/inputMode.ts, erzwingbar mit ?touch=1).
+ * Die Groessen haengen bewusst NICHT an `(pointer: coarse)`: ein Emulator, der seine Maus
+ * als Hauptzeiger meldet, bekaeme sonst still die kleinen Ziele, und jsdom koennte die
+ * Kaskade nicht pruefen (es wendet nur `all`/`screen` an).
+ *
+ * Farben nur als var(--token) — die Farbwaechter lesen jede .css-Datei unter ui/.
+ */
+
+/* ------------------------------------------------ immer: sichere Grundregeln */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Kein Ziehen-zum-Neuladen: eine Wischgeste am Rand darf die Partie nicht neu starten. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* 100vh ist auf Android die grosse Hoehe — bei sichtbarer Adressleiste liegt der Fuss
+   sonst darunter. dvh ist die sichtbare; aeltere Engines behalten die erste Zeile. */
+.app {
+  height: 100vh;
+  height: 100dvh;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+}
+
+/* Die Karte gehoert der eigenen Gestenlogik: ohne touch-action uebernimmt der Browser
+   das Ziehen und schickt pointercancel; ein langer Druck markiert sonst Text oder oeffnet
+   das Kontextmenue des Systems. */
+.map-layer--overlay {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Kein Doppeltipp-Zoom auf Bedienelementen: ein schneller zweiter Tipp auf "+" ist ein
+   zweites Hineinzoomen der Karte, nicht eine vergroesserte Seite. */
+button,
+summary,
+select,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+/* Der Kosten- und Sperrhinweis unter einem Befehl — nur im Touch-Betrieb gezeichnet
+   (Panels.tsx), weil dort kein title-Tooltip erscheint. */
+.action__hint {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+.slot .action__hint {
+  align-items: center;
+  text-align: center;
+  font-size: 10px;
+}
+
+/* Wer den Grund schon ueber oder unter der Gruppe liest, braucht ihn nicht zehnmal. */
+.group .action__hint-reason {
+  display: none;
+}
+
+/* ------------------------------------------------ Touch: 44-px-Ziele */
+
+:root[data-input='touch'] button,
+:root[data-input='touch'] summary {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+:root[data-input='touch'] .button,
+:root[data-input='touch'] .alarm-chip,
+:root[data-input='touch'] .alert__dismiss {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+:root[data-input='touch'] .speed {
+  min-width: 44px;
+  height: 44px;
+}
+
+:root[data-input='touch'] .mode {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+:root[data-input='touch'] .map-control {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+:root[data-input='touch'] .log__jump,
+:root[data-input='touch'] .alert__jump {
+  min-height: 44px;
+}
+
+:root[data-input='touch'] input:not([type='checkbox']):not([type='radio']),
+:root[data-input='touch'] select {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+/* Ein Schalter wird ueber seine ganze Zeile getroffen: das Label umschliesst ihn. */
+:root[data-input='touch'] .field--switch {
+  min-height: 44px;
+}
+
+:root[data-input='touch'] input[type='checkbox'],
+:root[data-input='touch'] input[type='radio'] {
+  width: 22px;
+  height: 22px;
+}
+
+/* Das Fragezeichen bleibt klein und bekommt ein unsichtbares 44-px-Feld. */
+:root[data-input='touch'] .explain__toggle {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  min-height: 0;
+  font-size: 12px;
+}
+
+:root[data-input='touch'] .explain__toggle::after {
+  content: '';
+  position: absolute;
+  inset: -11px;
+}
+
+/* Abstand, damit das unsichtbare Feld dem Knopf daneben keine Tipps stiehlt. */
+:root[data-input='touch'] .action__head {
+  gap: 12px;
+}
+
+/* Der Ausbau-Knopf sitzt sonst als Plus oben rechts im Feld; mit 44 px wuerde er Bild und
+   Namen verdecken. Im Touch-Betrieb steht er darunter, mit seinem Hinweis. */
+:root[data-input='touch'] .action--compact {
+  position: static;
+  align-items: center;
+}
+
+/* Vier Spalten a 60 px tragen keinen Kostenhinweis; das Raster waechst stattdessen. */
+:root[data-input='touch'] .side .slots {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+/* Rueckmeldung beim Tippen, weil der Systemschimmer oben abgeschaltet ist. */
+:root[data-input='touch'] button:active:not(:disabled) {
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------ Telefon quer (bis 480 px hoch) */
+
+@media (max-height: 480px) {
+  /* Dialoge und Einfuehrung passen in die sichtbare Hoehe — fuer jede Eingabeart. */
+  .dialog-backdrop {
+    padding: var(--sp-md);
+  }
+
+  .dialog {
+    min-width: 0;
+    width: min(520px, calc(100vw - 16px));
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .dialog__head {
+    padding: var(--sp-sm) var(--sp-lg);
+  }
+
+  .dialog__head h2 {
+    font-size: 16px;
+  }
+
+  .tutorial {
+    left: var(--sp-md);
+    bottom: 56px;
+    width: min(260px, 40vw);
+    max-height: calc(100vh - 140px);
+    max-height: calc(100dvh - 140px);
+    overflow-y: auto;
+    padding: var(--sp-md);
+  }
+
+  /* Der Tooltip bleibt auf der Karte; die Kante haelt Tooltip.tsx, die Breite hier. */
+  .tooltip {
+    max-width: min(230px, 60%);
+  }
+
+  /* Kopfleiste: eine Zeile, seitlich wischbar; Titel und Siegbalken stehen in der Lage. */
+  :root[data-input='touch'] .header__top {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: var(--sp-md);
+    padding: 0 var(--sp-md);
+    scrollbar-width: none;
+  }
+
+  :root[data-input='touch'] .header__title,
+  :root[data-input='touch'] .header__top > .meter {
+    display: none;
+  }
+
+  :root[data-input='touch'] .header__top > *,
+  :root[data-input='touch'] .header__panels .button {
+    flex: none;
+  }
+
+  :root[data-input='touch'] .resource {
+    padding: 2px 6px;
+  }
+
+  /* Seitenleiste schmaler, damit die Karte die Breite behaelt. */
+  :root[data-input='touch'] .main {
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 38vw, 320px);
+  }
+
+  :root[data-input='touch'] .side {
+    padding: var(--sp-md);
+    gap: var(--sp-md);
+  }
+
+  /* Tabellen, die breiter sind als die Leiste, rollen in sich statt abgeschnitten. */
+  :root[data-input='touch'] .side .table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* Fuss: eine Zeile — Protokoll links, Knoepfe rechts; die Rangliste steht in der Lage. */
+  :root[data-input='touch'] .foot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    max-height: 45px;
+  }
+
+  :root[data-input='touch'] .foot .log {
+    max-height: 44px;
+    padding: 0 var(--sp-md);
+  }
+
+  :root[data-input='touch'] .foot__standings {
+    display: none;
+  }
+
+  :root[data-input='touch'] .foot__buttons {
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    padding: 0 var(--sp-sm);
+  }
+
+  :root[data-input='touch'] .foot__pair {
+    display: contents;
+  }
+
+  /* Kartenknoepfe in einer Reihe oben rechts; darunter bleibt Platz fuer die
+     Uebersichtskarte. Deren Groesse bleibt: MapCanvas rechnet ihre Tipps in ihren
+     132 x 74 Pixeln. */
+  :root[data-input='touch'] .map-controls {
+    flex-direction: row;
+  }
+
+  :root[data-input='touch'] .map-overview {
+    bottom: var(--sp-md);
+  }
+
+  :root[data-input='touch'] .legend {
+    left: var(--sp-md);
+    right: auto;
+    bottom: var(--sp-md);
+    max-width: calc(100% - 160px);
+  }
+
+  :root[data-input='touch'] .legend__items {
+    flex-wrap: wrap;
+    gap: 2px var(--sp-md);
+  }
+}
+
+/* ------------------------------------------------ kleines Tablet (ab 900 breit, bis 640 hoch) */
+
+@media (min-width: 900px) and (max-height: 640px) {
+  :root[data-input='touch'] .main {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+
+  :root[data-input='touch'] .foot {
+    max-height: 132px;
+  }
+
+  :root[data-input='touch'] .foot .log {
+    max-height: 132px;
+  }
+}

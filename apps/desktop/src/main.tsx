@@ -8,6 +8,7 @@ import { App } from './App.tsx'
 import { parseNetLink, type NetLink } from './net/link.ts'
 import type { Transport } from '@worldwar/netplay'
 import './ui/app.css'
+import './ui/touch.css'
 
 import worldMap from '../../../data/maps/world.json' with { type: 'json' }
 import testMap from '../../../data/maps/testworld.json' with { type: 'json' }
