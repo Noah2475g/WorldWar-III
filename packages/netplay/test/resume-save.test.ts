@@ -162,11 +162,15 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
   })
 
   it('verwirft einen Stand aus einer anderen Formatstufe — und nennt den Grund (T-M17-03)', () => {
-    // Der Fall aus dem Betrieb: der Gast hat einen aelteren Bau, der Gastgeber uebertraegt
-    // seinen Stand. Bis zum 2026-09-18 haette diese Seite ihn angenommen, wenn die
-    // Pruefsumme passte — und der erste Tick waere an einem Feld gescheitert, das es in der
-    // alten Stufe nicht gibt (`cloneState` liest `espionage`). Geprueft wird deshalb ZUERST
-    // die Stufe, und die Meldung nennt beide Zahlen statt „verstuemmelter Spielstand".
+    // Der Fall aus dem Betrieb: der GASTGEBER hat einen aelteren Bau und uebertraegt seinen
+    // Stand der alten Stufe; dieser Gast rechnet mit dem neuen Code. (Bis zum 2026-09-24 stand
+    // hier „der Gast hat einen aelteren Bau" — das ist gerade der Fall, den diese Pruefung
+    // NICHT erreicht: ein alter Gast rechnet mit altem Code. Ihn haelt seit dem 2026-09-24 die
+    // Protokollfassung ab, `protocol.test.ts`, Befund M17-4.) Bis zum 2026-09-18 haette diese
+    // Seite den Stand angenommen, wenn die Pruefsumme passte — und der erste Tick waere an
+    // einem Feld gescheitert, das es in der alten Stufe nicht gibt (`cloneState` liest
+    // `espionage`). Geprueft wird deshalb ZUERST die Stufe, und die Meldung nennt beide Zahlen
+    // statt „verstuemmelter Spielstand".
     const alt = JSON.parse(JSON.stringify(nachDreissig)) as GameState & { schemaVersion: number }
     alt.schemaVersion = SCHEMA_VERSION - 1
     const nachricht = parseMessage(JSON.parse(encodeMessage(stateMessage(alt))))
@@ -176,7 +180,7 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
     const genommen = acceptState(nachricht.message, stateHash(alt))
     expect(genommen.ok, 'ein Stand aus einer anderen Stufe wurde angenommen').toBe(false)
     expect(genommen.ok === false && genommen.reason).toContain(`${SCHEMA_VERSION}`)
-    expect(genommen.ok === false && genommen.reason).toMatch(/Fassungen|Faende|Format/)
+    expect(genommen.ok === false && genommen.reason).toMatch(/Fassungen des Spiels/)
   })
 
   it('spielt danach im Gleichschritt weiter, und beide Seiten bleiben gleich', () => {

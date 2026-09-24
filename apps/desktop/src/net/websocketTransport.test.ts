@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { envelope, type NetMessage } from '@worldwar/netplay'
+import { PROTOCOL_VERSION, envelope, type NetMessage } from '@worldwar/netplay'
 // Relativ und nicht ueber den Paketnamen: `transportContract.ts` importiert `vitest` und
 // steht deshalb bewusst NICHT im Sammelexport von @worldwar/netplay - ueber index.ts zoege
 // jeder App-Import den Testlaeufer in das ausgelieferte Buendel (T-M38-01, T-M38-05).
@@ -142,7 +142,7 @@ describe('R-MP-06 Der WebSocket-Transport, ueber den Vertrag hinaus', () => {
     drain(queue)
 
     enden.a.onmessage?.({ data: 'kein JSON' })
-    enden.a.onmessage?.({ data: JSON.stringify({ kind: 'schummeln', version: 1 }) })
+    enden.a.onmessage?.({ data: JSON.stringify({ kind: 'schummeln', version: PROTOCOL_VERSION }) })
     enden.a.onmessage?.({
       data: JSON.stringify({ ...envelope('probe'), ticks: 24, hash: 'gut', fromHash: 'start' }),
     })

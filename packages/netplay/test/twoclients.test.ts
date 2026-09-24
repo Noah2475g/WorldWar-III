@@ -4,7 +4,7 @@ import { createInitialState, type Command, type GameConfig, type GameState, type
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { createLockstep, orderCommands, stateHash, type Lockstep } from '../src/lockstep'
 import { createLoopback } from '../src/loopback'
-import { parseMessage, type CommandsMessage, type NetMessage } from '../src/protocol'
+import { PROTOCOL_VERSION, parseMessage, type CommandsMessage, type NetMessage } from '../src/protocol'
 
 /**
  * Zwei Simulationen, zweihundert Ticks, eine Prüfsumme (T-M37-08, R-MP-03/AK3, D28.2).
@@ -198,7 +198,7 @@ describe('R-MP-03/AK3 Zwei Simulationen halten ueber zweihundert Ticks dieselbe 
     expect(gruende).toEqual(['Mitspieler weg'])
     expect(leitung.a.closed).toBe(true)
     expect(leitung.b.closed).toBe(true)
-    expect(() => leitung.a.send({ kind: 'ende', version: 1, reason: 'abbruch', tick: 0 })).toThrow(/geschlossen/)
+    expect(() => leitung.a.send({ kind: 'ende', version: PROTOCOL_VERSION, reason: 'abbruch', tick: 0 })).toThrow(/geschlossen/)
     // Zweimal schliessen ist erlaubt und tut beim zweiten Mal nichts.
     expect(() => leitung.b.close()).not.toThrow()
     expect(gruende).toEqual(['Mitspieler weg'])
@@ -208,11 +208,11 @@ describe('R-MP-03/AK3 Zwei Simulationen halten ueber zweihundert Ticks dieselbe 
     const leitung = createLoopback()
     const gesehen: NetMessage[] = []
     const ab = leitung.b.onMessage((message) => gesehen.push(message))
-    const abClose = leitung.b.onClose(() => gesehen.push({ kind: 'ende', version: 1, reason: 'abbruch', tick: 0 }))
+    const abClose = leitung.b.onClose(() => gesehen.push({ kind: 'ende', version: PROTOCOL_VERSION, reason: 'abbruch', tick: 0 }))
 
     ab()
     abClose()
-    leitung.a.send({ kind: 'pause', version: 1, art: 'antrag', abTick: 3 })
+    leitung.a.send({ kind: 'pause', version: PROTOCOL_VERSION, art: 'antrag', abTick: 3 })
     leitung.a.close()
 
     expect(gesehen).toEqual([])
