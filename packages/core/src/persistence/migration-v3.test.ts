@@ -3,9 +3,11 @@ import { fileURLToPath } from 'node:url'
 import { canonicalText, hashValue } from '@worldwar/shared'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
+import { parseRules } from '../rules/load'
+import type { RawRules } from '../rules/types'
 import { grantsPassage, relationKey, sharesMap } from '../state/create'
 import { cloneState } from '../state/clone'
-import { HASH_OMIT_KEYS, SCHEMA_VERSION, type GameState, type Relation } from '../state/types'
+import { HASH_OMIT_KEYS, SCHEMA_VERSION, type GameState, type MapData, type Relation } from '../state/types'
 import { step } from '../step'
 import {
   ADDED_IN_VERSION_2,
@@ -40,6 +42,23 @@ const V1 = load('save-v1.json')
 const V2 = load('save-v2.json')
 const V3 = load('save-v3.json')
 const copy = (envelope: SaveEnvelope): SaveEnvelope => JSON.parse(JSON.stringify(envelope)) as SaveEnvelope
+
+/** Die ausgelieferte Weltkarte und die Standardregeln — damit ist save-v3.json entstanden. */
+const ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
+const data = (path: string): unknown => JSON.parse(readFileSync(`${ROOT}/data/${path}`, 'utf8'))
+const WELT = {
+  map: data('maps/world.json') as MapData,
+  rules: parseRules(
+    {
+      constants: data('rules/default/constants.json'),
+      resources: data('rules/default/resources.json'),
+      buildings: data('rules/default/buildings.json'),
+      units: data('rules/default/units.json'),
+      ai: data('rules/default/ai.json'),
+    } as RawRules,
+    'default',
+  ),
+}
 
 /** Entfernt die genannten Schluessel in jeder Tiefe — was bleibt, darf sich nicht unterscheiden. */
 function strip(value: unknown, keys: readonly string[]): unknown {
@@ -155,17 +174,34 @@ describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter',
     expect(hashOf(again)).toBe(hashOf(migrated))
   })
 
-  it('laeuft danach zwei Spieltage weiter und bleibt ladbar', () => {
-    // Die Weltkarte des eingefrorenen Standes ist hier nicht zur Hand; `smallWorld` reicht
-    // fuer die Frage, die dieser Test stellt: laeuft der migrierte Zustand ueberhaupt durch
-    // die Phasen, ohne an einem fehlenden Feld zu zerbrechen?
-    const ctx = { map: smallWorld(), rules: TEST_RULES }
-    let state = deserialise(JSON.stringify(copy(V2)))
-    for (let i = 0; i < 48; i++) state = step(state, [], ctx).state
+  it('laeuft danach zwei Spieltage auf seiner Weltkarte weiter und bleibt ladbar', () => {
+    // Bis zum 2026-09-24 stand hier `copy(V2)` auf `smallWorld` — ein Stand der Stufe 2 mit
+    // zwei Maechten und einer Beziehung ohne Freigaben. Die Zusage „save-v3.json laeuft nach
+    // der Migration" hatte damit keinen Test, der den Stand auch nur einen Tick rechnete
+    // (Nacharbeit zu T-M17-03). Jetzt laeuft der eingefrorene Stand selbst, auf der Karte und
+    // mit den Regeln, mit denen er entstanden ist: acht Maechte, 237 Provinzen, gewaehrter
+    // Durchmarsch und geteilte Karte ohne Buendnis.
+    let state = deserialise(JSON.stringify(copy(V3)))
+    for (let i = 0; i < 48; i++) state = step(state, [], WELT).state
 
-    expect(state.tick).toBe(V2.savedAtTick + 48)
+    expect(state.tick).toBe(V3.savedAtTick + 48)
     expect(state.espionage).toEqual({ spies: [], reveals: [] })
     expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
+  })
+
+  it('rechnet nach Speichern und Laden dasselbe wie ohne Unterbrechung', () => {
+    // Laufen allein reicht nicht: ein migrierter Stand, der nach dem Laden anders
+    // weiterrechnet als im Speicher, laeuft auch — nur in eine andere Partie.
+    const start = deserialise(JSON.stringify(copy(V3)))
+    let durch = start
+    for (let i = 0; i < 48; i++) durch = step(durch, [], WELT).state
+
+    let geteilt = start
+    for (let i = 0; i < 24; i++) geteilt = step(geteilt, [], WELT).state
+    geteilt = deserialise(serialise(geteilt))
+    for (let i = 0; i < 24; i++) geteilt = step(geteilt, [], WELT).state
+
+    expect(hashOf(geteilt)).toBe(hashOf(durch))
   })
 
   it('weist einen Stand ohne die Felder der Stufe 4 ab, statt ihn halb zu verstehen', () => {
@@ -215,6 +251,24 @@ describe('R-GAME-09/AK2 Ein Stand der Stufe 1 oder 2 laeuft ueber alle Schritte'
     for (const envelope of [V1, V2]) {
       const migrated = deserialise(JSON.stringify(copy(envelope)))
       expect(hashOf(deserialise(serialise(migrated)))).toBe(hashOf(migrated))
+    }
+  })
+
+  it('laeuft danach zwei Spieltage weiter und bleibt ladbar (AK2)', () => {
+    // Beide eingefrorenen Staende stammen von der Testkarte `testworld`. Bis zum 2026-09-24
+    // lief hier nur save-v2.json, und zwar im Block von AK1; save-v1.json wurde nach der
+    // Kette 1 → 4 nie gerechnet.
+    const ctx = { map: smallWorld(), rules: TEST_RULES }
+    for (const [name, envelope] of [
+      ['save-v1.json', V1],
+      ['save-v2.json', V2],
+    ] as const) {
+      let state = deserialise(JSON.stringify(copy(envelope)))
+      for (let i = 0; i < 48; i++) state = step(state, [], ctx).state
+
+      expect(state.tick, name).toBe(envelope.savedAtTick + 48)
+      expect(state.espionage, name).toEqual({ spies: [], reveals: [] })
+      expect(hashOf(deserialise(serialise(state))), name).toBe(hashOf(state))
     }
   })
 })
