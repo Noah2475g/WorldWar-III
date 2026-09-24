@@ -543,6 +543,37 @@ describe('Z6 Jede Spionagehandlung ist begruendet (R-AI-09/AK4)', () => {
     expect(byIndex(vorwaerts, a.kurz)).toEqual(['entlassen:#2'])
     expect(byIndex(rueckwaerts, b.kurz)).toEqual(['entlassen:#2'])
   })
+
+  it('entlaesst bei Gleichstand im DISMISS_RANK den spaetesten im Array, nie nach der Kennung (E4)', () => {
+    // Zwei Gegenspione (gleicher DISMISS_RANK): einer sitzt schon in der Hauptstadt, der andere
+    // anderswo, aber ebenfalls gueltig (eigene, nicht erinnerte Provinz) - Phase 1 behaelt beide,
+    // Phase 2 muss einen entlassen, weil zwei Gegenspionsolde das Budget (150 permille) ueberstiegen.
+    const lauf = (ids: [string, string]) =>
+      lage({
+        krieg: true,
+        spione: [
+          { id: ids[0], provinceId: 'o1', mission: 'counter' },
+          { id: ids[1], provinceId: 'o2', mission: 'counter' },
+        ],
+      })
+    const vorwaerts = lauf(['s101', 's102'])
+    const rueckwaerts = lauf(['s902', 's901'])
+    const budget = espionageBudget(vorwaerts.view, vorwaerts.rules)
+    const salary = spySalary(vorwaerts.rules.constants, 'counter')
+    expect(salary).toBeLessThanOrEqual(budget)
+    expect(2 * salary).toBeGreaterThan(budget)
+
+    const byIndex = (l: ReturnType<typeof lauf>, kurz: string[]) => {
+      const ids = l.state.espionage.spies.map((s) => s.id)
+      return kurz.map((k) => k.replace(/s\d+/g, (m) => `#${ids.indexOf(m)}`))
+    }
+    const a = entscheide(vorwaerts)
+    const b = entscheide(rueckwaerts)
+    // Der zweite Spion im Array (Index 1, o2) geht, unabhaengig davon, ob seine Kennung
+    // alphabetisch vor oder nach der des ersten liegt.
+    expect(byIndex(vorwaerts, a.kurz)).toEqual(['entlassen:#1'])
+    expect(byIndex(rueckwaerts, b.kurz)).toEqual(['entlassen:#1'])
+  })
 })
 
 const SPY_TYPES = new Set(['RECRUIT_SPY', 'REASSIGN_SPY', 'DISMISS_SPY'])
