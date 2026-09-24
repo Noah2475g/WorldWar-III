@@ -318,6 +318,14 @@ export function parseRules(raw: RawRules, id: string): Rules {
       problems.push(`KI-Stufe "${level}": Gewichte summieren sich auf ${sum}, erwartet 1000`)
     }
   }
+  // Die Spionagezahlen der KI (T-M17-12, D29.8). Fehlte eine, waere sie still `undefined`: das
+  // Budget wuerde NaN, und die KI wuerbe nie einen Spion an, ohne dass es jemand merkt.
+  for (const field of ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const) {
+    const value = aiRaw[field]
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+      problems.push(`KI: "${field}" fehlt oder ist ungueltig`)
+    }
+  }
   const ai = aiRaw as unknown as AiRules
 
   if (problems.length > 0) throw new RulesError(problems)

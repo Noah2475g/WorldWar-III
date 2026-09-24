@@ -120,6 +120,21 @@ export interface AiRules {
   resourceWeights: Record<ResourceKey, Fixed>
   buildShareDefault: Fixed
   threatRange: number
+  /**
+   * Hoechstens so viel Tagessold bindet die KI in Spionen, in Promille ihres taeglichen
+   * Geldertrags (D29.7/D29.8, T-M17-12). Gilt fuer den Sold, nicht fuer den Anwerbepreis.
+   */
+  espionageBudgetPermille: Fixed
+  /**
+   * Ab dieser Verstimmung (0..1000) gegen eine lebende Macht setzt die KI auch im Frieden einen
+   * Gegenspion in ihre Hauptstadt (D29.8: „Verstimmung oder erlittene Enttarnung").
+   */
+  espionageCounterGrievance: Fixed
+  /**
+   * So viele Spieltage muss der Geldbestand die Tagesbilanz tragen; sonst entlaesst die KI Spione
+   * und wirbt keine an (D29.8, „drohender Geldmangel").
+   */
+  espionageMoneyHorizonDays: number
 }
 
 export interface RuleConstants {

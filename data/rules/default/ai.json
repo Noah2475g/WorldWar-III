@@ -54,5 +54,8 @@
     "money": 800
   },
   "buildShareDefault": 600,
-  "threatRange": 2
+  "threatRange": 2,
+  "espionageBudgetPermille": 150,
+  "espionageCounterGrievance": 150,
+  "espionageMoneyHorizonDays": 3
 }

@@ -178,3 +178,23 @@ describe('D17 Die Stufenzahlen der KI stehen in der Tabelle', () => {
     expect(falsch, `Tabelle und Regelwerk sagen Verschiedenes:\n${falsch.join('\n')}`).toEqual([])
   })
 })
+
+/**
+ * Die Spionagezahlen der KI stehen in der Tabelle (T-M17-12, D29.7/D29.8).
+ *
+ * Der Block darueber liest nur die Stufenspalten; die obersten Zahlen von ai.json lagen ausserhalb
+ * seines Blickfelds - dieselbe Fehlerklasse wie T-M34-07. Bewusst nur die eigenen Schluessel: die
+ * Diplomatiebahn (T-M17-10/11) haengt ihre eigenen an.
+ */
+describe('D17 Die Spionagezahlen der KI stehen in der Tabelle (T-M17-12)', () => {
+  const ai = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as Record<string, unknown>
+  const SPIONAGE = ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const
+
+  it.each(SPIONAGE)('fuehrt %s mit dem Wert aus ai.json und einem Status', (key) => {
+    const row = doc.split('\n').find((line) => line.startsWith(`| \`${key}\` |`))
+    expect(row, `keine Zeile fuer ${key}`).toBeDefined()
+    const cells = row!.split('|').map((cell) => cell.trim())
+    expect(cells[2]!.replace(/\./g, ''), `${key}: Tabelle und ai.json`).toBe(String(ai[key]))
+    expect(STATUSES.some((status) => row!.includes(status)), `${key} ohne Status`).toBe(true)
+  })
+})

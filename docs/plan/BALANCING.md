@@ -427,3 +427,17 @@ wirkt höchstens eine Sabotage (R-SPY-04/AK4); die Zahlen sind unter dieser Sper
 | `militarySabotageDelayTicks` | 12 | geschätzt | ein halber Tag. Weil höchstens eine Sabotage je Tag wirkt und sie zu 50 % gelingt, baut eine dauerhaft sabotierte Provinz im Mittel mit 24/(24+6) = 80 % ihrer Geschwindigkeit — spürbar, aber kein Stillstand |
 | `spyDetectedReputationLoss` | 100 | geschätzt | die Hälfte eines Überfalls (`surpriseAttackReputationLoss` 200); doppelt (R-SPY-05) bei Sabotage gegen eine Macht, mit der kein Krieg herrscht — dann so schwer wie ein Überfall. Nach 10 bzw. 20 Spieltagen vergessen (`reputationRecoveryPerDay` 10) |
 | `grievanceOnSpyDetected` | 300 | geschätzt | D29.7: zwischen verlorener Provinz (250) und Überfall (400) — ein ertappter Spion ist mehr als ein Frontverlauf, aber kein gebrochenes Versprechen |
+
+### KI: Spionage (R-AI-09, D29.7, D29.8, T-M17-12)
+
+Drei Zahlen in `ai.json` (oberste Ebene), die `packages/ai/src/espionage.ts` liest. Das Budget gilt
+dem **Tagessold**, nicht dem Anwerbepreis; der Anwerbepreis ist an die Rücklage der Wirtschaft
+(`RESERVE_PERMILLE` 200) und an den Geldhorizont gebunden. Einmal je Spieltag, im Strategietakt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `espionageBudgetPermille` | 150 | geschätzt | Vorschlag aus D29.7. Am Median-Tagesertrag 203.078 (T-M17-02) sind das 30.461: Gegenspion und Aufklärer (15.229) passen, Gegenspion, Aufklärer und Saboteur (35.535) erst ab 236.900 Ertrag — eine mittlere Macht schützt sich und klärt auf, nur eine starke sabotiert auch |
+| `espionageCounterGrievance` | 150 | geschätzt | unter jeder einzelnen Kränkung (verlorene Provinz 250, enttarnter Spion 300, Überfall 400), damit schon eine einzige den Gegenspion auslöst — auch die „erlittene Enttarnung" aus D29.8, die als Verstimmung ankommt. Bei 30 ‰ Abklingen je Tag fällt eine Enttarnung nach rund drei Wochen darunter, ein Provinzverlust nach gut zwei |
+| `espionageMoneyHorizonDays` | 3 | geschätzt | so viele Tage muss der Bestand die Tagesbilanz (Steuer minus Armeeunterhalt minus Sold) tragen. Entlassen ist endgültig — der Anwerbepreis ist verloren —, also kein langer Horizont; kürzer als drei Tage ließe der Wirtschaft (Markt alle sechs Stunden) keine Zeit, einen Engpass selbst zu decken |
+
+*Gemessen am 2026-09-25 (T-M17-12):* siehe `$SP/bericht-T-M17-12.md` (Turnier vorher/nachher, progress vorher/nachher, Wegwerflauf-Zahlen).
