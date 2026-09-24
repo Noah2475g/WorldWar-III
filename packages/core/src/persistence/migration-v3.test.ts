@@ -350,3 +350,118 @@ describe('cloneState teilt keine Referenz mit den neuen Feldern', () => {
     expect(original.bPassageEndsAtTick).toBeNull()
   })
 })
+
+/**
+ * Ein Stand der Stufe 4 wird auf die Felder dieser Stufe geprueft — auf BEIDEN Ladewegen
+ * (R-GAME-05, Nacharbeit zu T-M17-03, 2026-09-24).
+ *
+ * Bis hierher pruefte `validateState` `espionage` nur als Objekt und die gerichteten Felder gar
+ * nicht, und `deserialise` rief die Pruefung nur fuer migrierte Staende. Nachgestellt: ein Stand
+ * mit `espionage: {}` wurde angenommen und warf im ersten Tick einen TypeError aus `cloneState`;
+ * ein Stand der Stufe 4 mit den ALTEN Schluesseln `rightOfWay`/`sharedMap` und gueltiger
+ * Pruefsumme lud still — und jeder gewaehrte Durchmarsch war danach weg. Ein Stand, der die
+ * Pruefsumme besteht, ist nur unveraendert, nicht vollstaendig: er kann aus einem Bau stammen,
+ * der ein Feld noch nicht kannte, ohne die Stufe zu heben.
+ */
+describe('R-GAME-05 Ein Stand der Stufe 4 wird auf die Felder dieser Stufe geprueft', () => {
+  const migriert = (): Record<string, unknown> => migrate(copy(V3)).state as unknown as Record<string, unknown>
+  /** Ein Umschlag der aktuellen Stufe mit GUELTIGER Pruefsumme — er laeuft ueber den Hash-Weg. */
+  const mitPruefsumme = (state: Record<string, unknown>): string => serialise(state as unknown as GameState)
+  const erstesPaar = (state: Record<string, unknown>) =>
+    Object.values((state['diplomacy'] as { relations: Record<string, Record<string, unknown>> }).relations)[0]!
+
+  it('nimmt einen vollstaendigen Stand an, auch mit Spion, Aufdeckung und Handelsangebot', () => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+    const [erste, zweite] = state.playerOrder as [string, string]
+    state.espionage.spies.push({
+      id: 's1',
+      owner: erste,
+      provinceId: state.provinceOrder[0]!,
+      mission: 'intel',
+      recruitedTick: 10,
+      assignedTick: 10,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+    state.espionage.reveals.push({ player: erste, provinceId: state.provinceOrder[0]!, kind: 'intel', untilTick: 99 })
+    state.diplomacy.tradeOffers.push({
+      id: 'o1',
+      from: erste,
+      to: zweite,
+      give: { resources: { iron: 5_000 }, provinces: [] },
+      want: { resources: {}, provinces: [] },
+      createdTick: 10,
+      expiresAtTick: 100,
+    })
+
+    expect(() => validateState(state)).not.toThrow()
+    expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
+  })
+
+  it('weist eine Spionage ohne Listen ab (espionage: {})', () => {
+    const state = migriert()
+    state['espionage'] = {}
+    expect(() => validateState(state)).toThrow(/espionage\.spies/)
+
+    const halb = migriert()
+    halb['espionage'] = { spies: [] }
+    expect(() => validateState(halb)).toThrow(/espionage\.reveals/)
+  })
+
+  it('weist fehlende Zaehler fuer Spione und Handelsangebote ab', () => {
+    const state = migriert()
+    delete (state['nextIds'] as Record<string, unknown>)['spy']
+    expect(() => validateState(state)).toThrow(/nextIds\.spy/)
+
+    const ohneAngebot = migriert()
+    ;(ohneAngebot['nextIds'] as Record<string, unknown>)['offer'] = '1'
+    expect(() => validateState(ohneAngebot)).toThrow(/nextIds\.offer/)
+  })
+
+  it('weist eine Beziehung mit den alten Schluesseln statt der gerichteten Felder ab', () => {
+    const state = migriert()
+    const paar = erstesPaar(state)
+    for (const key of ['aGrantsPassage', 'bGrantsPassage', 'aPassageEndsAtTick', 'bPassageEndsAtTick', 'aSharesMap', 'bSharesMap']) {
+      delete paar[key]
+    }
+    paar['rightOfWay'] = true
+    paar['sharedMap'] = true
+    expect(() => validateState(state)).toThrow(/aGrantsPassage/)
+    expect(() => validateState(state)).toThrow(/rightOfWay/)
+  })
+
+  it('weist eine Frist ab, die weder Zahl noch null ist', () => {
+    const state = migriert()
+    erstesPaar(state)['bPassageEndsAtTick'] = undefined
+    expect(() => validateState(state)).toThrow(/bPassageEndsAtTick/)
+  })
+
+  it('weist ein Handelsangebot ohne Buendel ab', () => {
+    const state = deserialise(JSON.stringify(copy(V3))) as unknown as Record<string, unknown>
+    const diplomacy = state['diplomacy'] as { tradeOffers: unknown[] }
+    diplomacy.tradeOffers.push({ id: 'o1', from: 'p1', to: 'p2', want: { resources: {}, provinces: [] }, createdTick: 1, expiresAtTick: 2 })
+    expect(() => validateState(state)).toThrow(/tradeOffers/)
+  })
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — ohne espionage', () => {
+    const state = migriert()
+    delete state['espionage']
+    const text = mitPruefsumme(state)
+    expect(JSON.parse(text).schemaVersion, 'der Umschlag muss den Hash-Weg nehmen').toBe(SCHEMA_VERSION)
+
+    expect(() => deserialise(text)).toThrow(/espionage/)
+  })
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — mit den alten Schluesseln der Stufe 3', () => {
+    const state = migriert()
+    for (const paar of Object.values((state['diplomacy'] as { relations: Record<string, Record<string, unknown>> }).relations)) {
+      paar['rightOfWay'] = paar['aGrantsPassage']
+      paar['sharedMap'] = paar['aSharesMap']
+      for (const key of ['aGrantsPassage', 'bGrantsPassage', 'aPassageEndsAtTick', 'bPassageEndsAtTick', 'aSharesMap', 'bSharesMap']) {
+        delete paar[key]
+      }
+    }
+
+    expect(() => deserialise(mitPruefsumme(state))).toThrow(/rightOfWay/)
+  })
+})
