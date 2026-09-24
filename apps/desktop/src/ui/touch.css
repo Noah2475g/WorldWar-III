@@ -74,6 +74,13 @@ select,
   display: none;
 }
 
+/* Der Tooltip nimmt seine eigene Breite (hoechstens die 230 px aus app.css), nicht den
+   Rest bis zum Kartenrand: sonst misst Tooltip.tsx am rechten Rand einen schmalen, hohen
+   Kasten und klappt ihn nie auf die andere Seite. */
+.tooltip {
+  width: max-content;
+}
+
 /* ------------------------------------------------ Touch: 44-px-Ziele */
 
 :root[data-input='touch'] button,
