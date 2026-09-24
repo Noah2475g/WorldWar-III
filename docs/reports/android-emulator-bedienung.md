@@ -278,5 +278,84 @@ das Gerät.
 
 ### Nach den Änderungen der Bahnen A und B
 
-Hier trägt, wer die Bahnen zusammenführt, den Lauf gegen den gemeinsamen Stand ein, unter
-Chromium und unter `--target android`, mit denselben Größen.
+**Wichtig: Port 4190 geht nicht.** Er steht auf der Sperrliste, die Fetch-Spezifikation und
+Chromium teilen (registrierter ManageSieve-Port). Node meldet dafür `fetch failed` mit der
+Ursache `bad port` — noch bevor ein Browser überhaupt versucht, die Seite zu laden; ein Aufruf
+mit `--target chromium --url-port 4190` (die in diesem Dokument oben gezeigte Vorgabe) scheitert
+deshalb IMMER mit Exit-Code 2 ("antwortet nicht"), unabhängig vom Zustand des Spiels. Geprüft
+mit `node -e "fetch('http://127.0.0.1:4190/').catch(e=>console.log(e.cause.message))"` → `bad
+port`; andere Ports (4189, 4191, 4192, 4193, …) sind frei von diesem Problem. Dieser Lauf
+benutzte deshalb **Port 4192** statt der Vorgabe 4190. **Offener Befund** (nicht behoben, siehe
+unten): die Vorgabe `4190` in `scripts/android-check.mjs`, `package.json` und diesem Dokument
+sollte auf einen unbedenklichen Port wechseln, sonst scheitert jeder Lauf mit den Vorgabewerten.
+
+- Gemessen: 2026-09-25, 00:06 Uhr MESZ (22:06 UTC, aus `report.json`), Prüfstand-Commit
+  `c0fbd61` (nach den Fusionen der Bahnen A, B, C auf `claude/mobile-bedienung-android` und
+  zwei Korrekturen am Prüfstand selbst, siehe unten), mit
+  `node scripts/android-check.mjs --target chromium --url "http://127.0.0.1:4192/?touch=1" --sizes "640x360@2,1097x617@1.75"`.
+- Spiel: `WORLDWAR_MULTIPLAYER` nicht gesetzt, `pnpm desktop:build`, ausgeliefert mit
+  `vite preview --host 127.0.0.1 --port 4192 --strictPort`.
+- Browser: Brave, `Chrome/153.0.8010.53`, sichtbares Fenster, eigenes Profil.
+- Ergebnis: **Exit-Code 0. 9 von 9 bei 640x360@2, 9 von 9 bei 1097x617@1.75.**
+- Belege (nicht eingecheckt, keine Bilder in git): `report.json` und Bildschirmfotos im
+  Scratchpad der Sitzung unter `integrator\integrated-chromium3\`.
+
+| Nr | Prüfung | 640x360 @ DPR 2 | 1097x617 @ DPR 1,75 |
+|---|---|---|---|
+| 1 | Umgebung | PASS: `data-input="touch"`, pointer:coarse ja, hover:none ja, Chrome 153 | PASS: dasselbe |
+| 2 | Kein Seitenscroll | PASS: 640x360, 0 px Überstand | PASS: 1097x617, 0 px |
+| 3 | Touch-Ziele | PASS: Startdialog 0/10, Partie 0/34, Provinz gewählt 0/70 unter 44 px | PASS: Startdialog 0/10, Partie 0/39, Provinz gewählt 0/75 unter 44 px |
+| 4 | Karten-Canvas | PASS: CSS 396,8x246,5, Bitmap 794x494 (Verhältnis 2,001/2,004) | PASS: CSS 757x375,5, Bitmap 1325x658 (Verhältnis 1,75/1,752) |
+| 5 | Ein-Finger-Ziehen | PASS: Finger −119/−62 px, Ansicht 191/100 (erwartet 190/99), Auswahl blieb "USA-MW" | PASS: Finger −150/−94 px, Ansicht 240/151 (erwartet 240/150), Auswahl blieb "USA-MW" |
+| 6 | Zwei-Finger-Zoom | PASS: Maßstab 1,6 → 0,8836 (×0,552), Anker-Versatz 0,3 px | PASS: Maßstab 1,6 → 0,8871 (×0,554), Anker-Versatz 0,4 px |
+| 7 | Antippen wählt | PASS: "USA-MW" gewählt (vorher leer) | PASS: dasselbe |
+| 8 | Langes Drücken | PASS: Tooltip erst beim Halten, Auswahl unverändert | PASS: dasselbe |
+| 9 | Zoomknöpfe | PASS: Hineinzoomen 0,8836→0,7363 (44x44 px), Herauszoomen 0,7363→0,8836 (44x44 px) | PASS: Hineinzoomen 0,8871→0,7393 (44x44 px), Herauszoomen 0,7393→0,8871 (44x44 px) |
+
+Der Weg von 0/9 (640x360) bzw. 2/9 (1097x617) auf 9/9: `data-input` und der ganze Vertrag
+(`data-view-*`, `data-selected-province`) sind gesetzt, die Karte ist über beide Größen
+scharf (Bitmap-Verhältnis 1:1 bzw. 2:1 wie DPR), kein Ziehen wird mehr vom Browser
+übernommen (kein `pointercancel` mehr in den Hilfsbeobachtungen), langes Drücken wählt
+nicht mehr, und jedes Bedienelement erreicht 44 x 44 px — die 26 kleinen "?"-Knöpfe
+(`.explain__toggle`, sichtbar weiter 22x22 px) über eine vergrößerte, unsichtbare
+Trefferfläche (`::after`, `inset: -11px`, touch.css), gemessen mit der Prüfstand-Korrektur
+von Commit `d76a92e` (siehe unten). Ausnahme davon: der Erklär-Knopf "Was ist Besitz?" in
+der Kartenlegende zählt nicht mehr mit, weil er `pointer-events: none` von `.legend` erbt
+und dadurch unabhängig von seiner Größe für keinen Eingabeweg erreichbar ist — ein
+vorbestehender Befund in `app.css` (nicht Teil dieser Bahnen, siehe Risiken).
+
+**Korrekturen am Prüfstand selbst** (Commit `d76a92e`, nach dieser Sitzung nötig, weil die
+erste Messung mit dem fertigen Vertrag noch 8/9 statt 9/9 zeigte): `pageTargets()` maß bis
+dahin nur die Layout-Box des Elements und zählte deshalb 26 `.explain__toggle`-Knöpfe als zu
+klein, obwohl ein Finger sie über die vergrößerte `::after`-Fläche trifft; die Funktion liest
+jetzt `getComputedStyle(el, '::after'|'::before')` und nimmt die größere Fläche. Und: ein
+Element mit (vererbtem) `pointer-events: none` zählt nicht mehr mit, siehe "Was ist Besitz?"
+oben.
+
+### `?touch=0` bei 1280x800@1 (Maus-Betrieb, zum Vergleich)
+
+Zielgrößen-Prüfungen gelten nicht im Maus-Betrieb (dieselbe Seite bleibt bei 24 px hohen
+Knöpfen); informativ mitgemessen:
+
+- Befehl: `node scripts/android-check.mjs --target chromium --url "http://127.0.0.1:4192/?touch=0" --sizes "1280x800@1"`.
+- Ergebnis: Exit-Code 1 (2 von 9), aber genau die zwei erwarteten Prüfungen weichen ab, beide
+  informativ, kein Rückschritt:
+  - Nr 1 Umgebung: FAIL nur weil `data-input="mouse"` statt der vom Prüfstand fest erwarteten
+    `"touch"` ist — beabsichtigt bei `?touch=0`.
+  - Nr 3 Touch-Ziele: FAIL mit denselben 24-28-px-Knöpfen wie vor dieser Arbeit — beabsichtigt,
+    Bahn B lässt den Maus-Betrieb unverändert (Vertrag: "mouse mode renders exactly as before").
+  - Nr 2 Kein Seitenscroll: **PASS**, 1280x800 bei 1280x800 sichtbar, 0 px Überstand.
+  - Nr 4 Karten-Canvas: **PASS**, CSS 900x636,5, Bitmap 900x637 (Verhältnis 1/1,001) — weit über
+    der Mindestgröße 320x240.
+  - Nr 5–9 (Ziehen, Zoom, Antippen, langes Drücken, Zoomknöpfe): alle **PASS** — die Gesten
+    funktionieren technisch auch im Maus-Betrieb, weil der Prüfstand sie über
+    `Input.dispatchTouchEvent` auslöst; das sagt nichts über echte Maus-Bedienung aus.
+
+### Offen: der Lauf auf dem echten Gerät
+
+Alle Zahlen in diesem Abschnitt sind **Chromium-Emulation** (Desktop-Fenster mit
+`Emulation.setDeviceMetricsOverride`/`setTouchEmulationEnabled`), kein LDPlayer. Wie unter
+"Grenzen der Chromium-Emulation" oben beschrieben, ist ein PASS hier notwendig, aber nicht
+hinreichend — insbesondere fehlt der Seitenzoom-Befund vom echten Gerät (dort zoomte die
+ganze Seite 1→5 bei Zwei-Finger-Zoom). Der Lauf mit `--target android` gegen LDPlayer folgt in
+einer eigenen Sitzung (die Hauptsitzung nutzt den Emulator gerade).
