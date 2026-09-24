@@ -14,7 +14,7 @@ const event = (type: EventType, audience: string[] = []): GameEvent =>
   ({ type, tick: 1, severity: 'info', audience, concerns: audience }) as GameEvent
 
 describe('R-NEWS-04 Die Positivliste ist vollstaendig und gueltig', () => {
-  it('nennt genau die acht vereinbarten Arten', () => {
+  it('nennt genau die vereinbarten Arten', () => {
     expect([...WORLD_EVENT_TYPES].sort()).toEqual(
       [
         'BATTLE_RESOLVED',
@@ -25,6 +25,9 @@ describe('R-NEWS-04 Die Positivliste ist vollstaendig und gueltig', () => {
         'PROVINCE_CAPTURED',
         'PROVINCE_REVOLTED',
         'WAR_DECLARED',
+        // Seit T-M17-05 (R-DIP-05/AK4, D29.5): dass zwei Maechte handeln, ist oeffentlich —
+        // wie viel, nicht. Das Ereignis traegt deshalb kein Mengenfeld.
+        'TRADE_AGREED',
       ].sort(),
     )
   })

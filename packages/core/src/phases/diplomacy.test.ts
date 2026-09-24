@@ -634,3 +634,48 @@ describe('R-DIP-08 Durchmarsch und Kartenfreigabe haben eine Richtung', () => {
     })
   })
 })
+
+/**
+ * Der Pflichtfall aus D29.3 (T-M17-05): ein Handelsangebot laeuft in genau dem Tick ab, in dem
+ * seine beiden Maechte durch einen Ueberfall in den Krieg geraten. Beides schliesst das Angebot
+ * mit Rueckgabe — die Treuhand darf trotzdem nur **einmal** zurueckgehen, und der Grund ist der
+ * Krieg (Schritt 3 vor Schritt 4, und der Krieg zaehlt vor der Frist).
+ */
+describe('D29.3 Ueberfall und Verfall eines Handelsangebots im selben Tick', () => {
+  it('schliesst das Angebot genau einmal, mit Grund Krieg, und gibt die Treuhand genau einmal zurueck', () => {
+    const offer: Command = {
+      type: 'OFFER_TRADE',
+      playerId: 'p1',
+      targetPlayerId: 'p2',
+      give: { resources: { money: 50_000 }, provinces: [] },
+      want: { resources: {}, provinces: [] },
+    }
+    const lifetime = TEST_RULES.constants.tradeOfferLifetimeDays * TEST_RULES.constants.ticksPerDay
+
+    // Zwei Partien, die sich nur im Angebot unterscheiden — die zweite ist die Gegenprobe.
+    let mit = step(state, [offer], ctx).state
+    let ohne = step(state, [], ctx).state
+    expect(mit.diplomacy.tradeOffers).toHaveLength(1)
+    expect(mit.diplomacy.tradeOffers[0]!.expiresAtTick).toBe(lifetime)
+    mit = runTicks(mit, lifetime - 1, ctx).state
+    ohne = runTicks(ohne, lifetime - 1, ctx).state
+    expect(mit.tick).toBe(lifetime)
+    expect(mit.diplomacy.tradeOffers, 'einen Tick vor dem Ablauf liegt es noch').toHaveLength(1)
+    expect(mit.players['p1']!.resources.money).toBe(ohne.players['p1']!.resources.money - 50_000)
+
+    // Im Tick des Ablaufs marschiert p1 bei p2 ein.
+    placeArmy(mit, { owner: 'p1', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    placeArmy(ohne, { owner: 'p1', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const result = step(mit, [], ctx)
+    const kontrolle = step(ohne, [], ctx).state
+
+    expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('war')
+    expect(result.state.diplomacy.tradeOffers).toEqual([])
+    const geschlossen = result.events.filter((e) => e.type === 'TRADE_OFFER_CLOSED')
+    expect(geschlossen).toHaveLength(1)
+    expect(geschlossen[0]).toMatchObject({ playerId: 'p1', targetPlayerId: 'p2', reason: 'war' })
+    // Genau einmal zurueck: derselbe Bestand wie in der Partie ohne Angebot.
+    expect(result.state.players['p1']!.resources.money).toBe(kontrolle.players['p1']!.resources.money)
+    expect(result.state.players['p2']!.resources.money).toBe(kontrolle.players['p2']!.resources.money)
+  })
+})

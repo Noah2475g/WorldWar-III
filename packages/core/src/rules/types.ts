@@ -244,6 +244,14 @@ export interface RuleConstants {
   offerLifetimeDays: number
   /** Kuendigungsfrist des Durchmarschs in Ticks: so lange darf der Gast noch bleiben (R-DIP-08/AK3). */
   rightOfWayNoticeTicks: number
+  /** Wie viele Spieltage ein Handelsangebot liegt, bevor es mit Rueckgabe verfaellt (R-DIP-05/AK1, T-M17-05). */
+  tradeOfferLifetimeDays: number
+  /** Hoechstens so viele offene Handelsangebote je Anbieter (D29.2: `QUEUE_FULL`). */
+  maxOpenTradeOffers: number
+  /** Hoechstmenge Geld je Seite eines Handelsangebots, Festkomma (Referenz 9.4). */
+  tradeMaxMoney: Fixed
+  /** Hoechstmenge je anderem Rohstoff und Seite, Festkomma (Referenz 9.4: 30 % der Geldgrenze). */
+  tradeMaxResource: Fixed
 }
 
 export interface Rules {

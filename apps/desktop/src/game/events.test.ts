@@ -303,6 +303,9 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
     // Eine Kuendigung des Durchmarschs ist eine Frist, kein Verlust (T-M17-04).
     RIGHT_OF_WAY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', granted: false, effectiveAtTick: 48, audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    // Handel (T-M17-05): ein geschlossenes Angebot und ein Tausch sind kein Rueckschlag (D24.1).
+    TRADE_OFFER_CLOSED: { offerId: 't1', playerId: 'p1', targetPlayerId: 'p2', reason: 'declined', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    TRADE_AGREED: { playerId: 'p1', targetPlayerId: 'p2', audience: [], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -981,5 +984,58 @@ describe('R-DIP-08/AK3 Gewaehrung und Kuendigung des Durchmarschs werden zu Saet
     for (const granted of [true, false]) {
       expect(durchmarsch('p1', 'p2', granted, 144).text).not.toMatch(/\bp[12]\b|\{\{|events\.|true|false|RIGHT_OF_WAY/)
     }
+  })
+})
+
+/**
+ * Der Handel im Protokoll (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Ein Tausch ist Weltgeschehen und nennt keine Menge; das Schliessen eines Angebots lesen nur
+ * die beiden Beteiligten, und der Grund steht in Worten, nicht als Schluessel.
+ */
+describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt den Tausch mit beiden Namen, fuer Beteiligte wie Unbeteiligte gleich', () => {
+    for (const viewer of ['p1', 'p3']) {
+      const entry = describeEvent(
+        event({ type: 'TRADE_AGREED', audience: [], concerns: ['p1', 'p2'], playerId: 'p1', targetPlayerId: 'p2' }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe('Handel zwischen Mexiko und Vereinigte Staaten.')
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d/)
+    }
+  })
+
+  it('nennt jeden Grund beim Schliessen in Worten', () => {
+    const reasons = ['accepted', 'declined', 'withdrawn', 'expired', 'war', 'invalid'] as const
+    const texts = reasons.map((reason) => {
+      const entry = describeEvent(
+        event({
+          type: 'TRADE_OFFER_CLOSED',
+          audience: ['p1', 'p2'],
+          concerns: ['p1', 'p2'],
+          offerId: 't7',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          reason,
+        }),
+        0,
+        map,
+        { ...namen, viewer: 'p1' },
+      )
+      expect(entry.text).toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: /)
+      expect(entry.text).not.toMatch(/\[|\{\{|t7|accepted|declined|withdrawn|expired|\bwar\b|invalid|TRADE_/)
+      expect(entry.world).toBe(false)
+      return entry.text
+    })
+    expect(new Set(texts).size).toBe(6)
   })
 })

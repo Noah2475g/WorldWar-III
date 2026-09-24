@@ -89,6 +89,12 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   // falsch: jedes Angebot verfiele sofort, und ein gekuendigtes Recht endete im selben Tick.
   'offerLifetimeDays',
   'rightOfWayNoticeTicks',
+  // Handel in M17 (T-M17-05, D29.7). Fehlte eine, verfiele jedes Angebot sofort (NaN) oder jede
+  // Menge laege ueber einer Grenze, die `undefined` ist — also nie.
+  'tradeOfferLifetimeDays',
+  'maxOpenTradeOffers',
+  'tradeMaxMoney',
+  'tradeMaxResource',
 ]
 
 function record(value: unknown): Record<string, unknown> {
@@ -134,6 +140,13 @@ export function parseRules(raw: RawRules, id: string): Rules {
   // Ein Angebot, das im Tick seiner Abgabe verfaellt, kann niemand annehmen (T-M17-04).
   if (constants.offerLifetimeDays <= 0) problems.push('offerLifetimeDays muss positiv sein')
   if (constants.rightOfWayNoticeTicks < 0) problems.push('rightOfWayNoticeTicks darf nicht negativ sein')
+  if (constants.tradeOfferLifetimeDays <= 0) problems.push('tradeOfferLifetimeDays muss positiv sein')
+  if (!Number.isSafeInteger(constants.maxOpenTradeOffers) || constants.maxOpenTradeOffers < 1) {
+    problems.push('maxOpenTradeOffers muss eine ganze Zahl ab 1 sein')
+  }
+  if (constants.tradeMaxMoney <= 0 || constants.tradeMaxResource <= 0) {
+    problems.push('tradeMaxMoney und tradeMaxResource muessen positiv sein')
+  }
 
   // --- resources -----------------------------------------------------------
   const resourcesRaw = record(record(raw.resources)['resources'])

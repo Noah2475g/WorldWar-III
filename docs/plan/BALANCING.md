@@ -381,3 +381,19 @@ Aufgaben dazu und werden hier angehängt.
 |---|---|---|---|
 | `offerLifetimeDays` | 3 | abgeleitet | stand bis T-M17-04 als `3 * ticksPerDay` im Code der Diplomatiephase (Befund B3) und ist unverändert übernommen — eine andere Zahl hätte jedes Friedens- und Bündnisangebot der bisherigen Partien verschoben. Gilt seitdem auch für den Antrag auf Durchmarsch (R-DIP-08/AK5) |
 | `rightOfWayNoticeTicks` | 24 | geschätzt | ein Spieltag: lang genug, dass eine Armee aus dem Grenzsaum wieder hinausmarschieren kann, kurz genug, dass ein Widerruf keine leere Geste ist. Nicht gemessen — in einer reinen KI-Partie gewährt heute niemand Durchmarsch (Befund M17-1), also gibt es nichts zu widerrufen, bis T-M17-10 die KI daran beteiligt. Anlehnung, kein Beleg: der Austritt aus einer Koalition hat im Vorbild einen 24-Stunden-Countdown (Referenz 9.3); im Vorbild ist das ein Tag, hier sind es 24 Ticks |
+
+## Handelsangebote mit Treuhand (R-DIP-05, D29.7, T-M17-05)
+
+Vier Zahlen. Die Höchstmengen stehen im **Verhältnis** der Referenz 9.4 (Geld 100.000, jeder
+andere Rohstoff 30.000); die **Skala** kommt aus demselben Geld-Anker wie der Spionagesold
+(T-M17-02: 10.153 = 5 % des Median-Tagesertrags an Tag 30, `docs/reports/m17-baseline.json`,
+entspricht der Aufklärung der Referenz 10.2 mit 2.000). `tradeOffer.test.ts` hält Anker und
+Verhältnis fest. In einer reinen KI-Partie wirkt keine der vier Zahlen, bis T-M17-11 die KI
+handeln lässt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeOfferLifetimeDays` | 3 | geschätzt | wie `offerLifetimeDays`: drei Spieltage genügen für eine Antwort; die Referenz nennt für Handelsangebote keine Frist |
+| `maxOpenTradeOffers` | 5 | geschätzt | je Anbieter; begrenzt, wie viel Bestand gleichzeitig in Treuhand liegt, und reicht für ein Angebot an jeden Nachbarn einer mittleren Macht |
+| `tradeMaxMoney` | 507.650 | abgeleitet | Referenz 9.4 (100.000) auf der Skala des Ankers: 100.000 × 10.153 / 2.000 — rund zweieinhalb Tageserträge einer mittleren Macht, knapp ein Drittel des Startgelds |
+| `tradeMaxResource` | 152.295 | abgeleitet | 30 % von `tradeMaxMoney` (Referenz 9.4: 30.000 zu 100.000), je Rohstoff und Seite |

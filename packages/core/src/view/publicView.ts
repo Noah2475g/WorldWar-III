@@ -12,6 +12,7 @@ import type {
   Stance,
   Terrain,
   Tick,
+  TradeOffer,
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
@@ -258,6 +259,13 @@ export interface PublicView {
    * away the end of the game is.
    */
   victory: { condition: string; winner: PlayerId | null; pointsShareToWin?: number }
+  /**
+   * Handelsangebote, an denen ich beteiligt bin (R-DIP-05, T-M17-05, D29.6) — nach dem Muster von
+   * `incomingOffers`: an mich (`incoming`) und von mir (`outgoing`), mit beiden Buendeln, als Kopie.
+   * Was andere einander anbieten, steht hier nicht (R-DIP-04). Ein eingehendes Angebot zeigt, was
+   * der Anbieter hinterlegt hat — das ist der Inhalt des Angebots, kein Leck.
+   */
+  tradeOffers: { incoming: TradeOffer[]; outgoing: TradeOffer[] }
 }
 
 /** Provinces the player can currently observe. */
@@ -428,6 +436,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     }
   }
 
+  // Eigene Handelsangebote (T-M17-05, D29.6) — Kopien, nie Verweise in den Zustand.
+  const tradeOffers: PublicView['tradeOffers'] = { incoming: [], outgoing: [] }
+  for (const offer of state.diplomacy.tradeOffers) {
+    if (offer.to === playerId) tradeOffers.incoming.push(copyTradeOffer(offer))
+    else if (offer.from === playerId) tradeOffers.outgoing.push(copyTradeOffer(offer))
+  }
+
   return {
     tick: state.tick,
     playerId,
@@ -480,5 +495,15 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       winner: state.victory.winner,
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
+    tradeOffers,
+  }
+}
+
+/** Ein Handelsangebot als Kopie fuer die Sicht (T-M17-05): wer die Sicht aendert, aendert nicht den Zustand. */
+function copyTradeOffer(offer: TradeOffer): TradeOffer {
+  return {
+    ...offer,
+    give: { resources: { ...offer.give.resources }, provinces: offer.give.provinces.slice() },
+    want: { resources: { ...offer.want.resources }, provinces: offer.want.provinces.slice() },
   }
 }

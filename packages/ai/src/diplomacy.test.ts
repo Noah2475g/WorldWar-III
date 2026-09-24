@@ -113,6 +113,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
     marketPrices: zeroResources(),
     incomingOffers: [],
     victory: { condition: 'points', winner: null },
+    tradeOffers: { incoming: [], outgoing: [] },
   }
 }
 

@@ -325,6 +325,42 @@ export interface RightOfWayChangedEvent extends BaseEvent {
   effectiveAtTick: Tick
 }
 
+/**
+ * Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5). `invalid` heisst: eine der beiden
+ * Maechte ist ausgeschieden.
+ */
+export type TradeOfferCloseReason = 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'war' | 'invalid'
+
+/**
+ * Ein Handelsangebot ist geschlossen (T-M17-05, R-DIP-05, D29.5).
+ *
+ * `playerId` ist der **Anbieter**, `targetPlayerId` der **Empfaenger**. Nur die beiden lesen es
+ * (`audience` beide). Bewusst **ohne** Mengen: was zurueckging, steht im Bestand, und der
+ * Anbieter kennt sein Angebot.
+ */
+export interface TradeOfferClosedEvent extends BaseEvent {
+  type: 'TRADE_OFFER_CLOSED'
+  offerId: string
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  reason: TradeOfferCloseReason
+}
+
+/**
+ * Zwei Maechte haben gehandelt (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` die beiden. **Kein Mengenfeld** — die Welt erfaehrt,
+ * dass gehandelt wird, nicht wie viel. `describeEvent` uebernimmt jedes flache Feld in die
+ * Werte eines Satzes; ein Mengenfeld hier waere also sofort im Protokoll jedes Unbeteiligten.
+ */
+export interface TradeAgreedEvent extends BaseEvent {
+  type: 'TRADE_AGREED'
+  /** Der Anbieter. */
+  playerId: PlayerId
+  /** Der Annehmende. */
+  targetPlayerId: PlayerId
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -354,6 +390,8 @@ export type GameEvent =
   | DayReportEvent
   | GoalReachedEvent
   | RightOfWayChangedEvent
+  | TradeOfferClosedEvent
+  | TradeAgreedEvent
 
 export type EventType = GameEvent['type']
 
@@ -387,6 +425,8 @@ export const EVENT_TYPES = [
   'DAY_REPORT',
   'GOAL_REACHED',
   'RIGHT_OF_WAY_CHANGED',
+  'TRADE_OFFER_CLOSED',
+  'TRADE_AGREED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.

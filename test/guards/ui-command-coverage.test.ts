@@ -56,6 +56,14 @@ function uiCommandSource(): string {
 const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
   SET_CAPITAL:
     'Die Hauptstadtverlegung erreicht die Oberflaeche ueber die Provinzleiste (provinceActions), nicht ueber actions.ts als eigener Befehlstyp.',
+  OFFER_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): der Kern nimmt Handelsangebote mit Treuhand an (T-M17-05, R-DIP-05); das Angebotsformular im Diplomatiepanel kommt mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
+  ACCEPT_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): das Angebot steht schon in publicView().tradeOffers.incoming; Knopf und Meldung kommen mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
+  DECLINE_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Ablehnen kommt mit der Liste eingehender Angebote. T-M17-14 streicht diesen Eintrag.',
+  WITHDRAW_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Zuruecknehmen kommt mit der Liste ausgehender Angebote. T-M17-14 streicht diesen Eintrag.',
 }
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {

@@ -1,4 +1,5 @@
 import { emit } from '../events/emit'
+import { settleTradeOffers } from '../commands/tradeOffer'
 import { expirePassage, grantsPassage, relationKey } from '../state/create'
 import type { Fixed } from '@worldwar/shared'
 import type { GameState, PlayerId, Relation } from '../state/types'
@@ -130,6 +131,11 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
   // eslint-disable-next-line no-restricted-syntax -- days x ticks-per-day, plain integers
   const offerLifetime = ctx.rules.constants.offerLifetimeDays * ctx.rules.constants.ticksPerDay
   draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => draft.tick - offer.tick < offerLifetime)
+
+  // (4) Handelsangebote (T-M17-05, D29.3): ausgeschiedene Macht, Krieg — auch der Ueberfall eben
+  // in Schritt 3 — oder abgelaufene Frist schliessen sie mit Rueckgabe. Ein Durchlauf, ein Grund:
+  // „Ueberfall und Verfall im selben Tick" gibt die Treuhand genau einmal zurueck, als Krieg.
+  settleTradeOffers(draft, ctx)
 
   relax(draft, ctx)
 }

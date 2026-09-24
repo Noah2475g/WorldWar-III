@@ -82,6 +82,8 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'GOAL_REACHED',
       // Seit T-M17-04: der Durchmarsch (R-DIP-08/AK3).
       'RIGHT_OF_WAY_CHANGED',
+      // Seit T-M17-05: Handelsangebote (R-DIP-05).
+      'TRADE_OFFER_CLOSED', 'TRADE_AGREED',
     ] as const
 
     for (const type of types) {

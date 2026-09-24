@@ -33,6 +33,8 @@ export const WORLD_EVENT_TYPES = [
   'PLAYER_ELIMINATED',
   'BATTLE_RESOLVED',
   'GAME_ENDED',
+  // Seit T-M17-05 (R-DIP-05/AK4): dass zwei Maechte handeln, ist oeffentlich — wie viel nicht.
+  'TRADE_AGREED',
 ] as const satisfies readonly EventType[]
 
 export function isWorldEventType(type: EventType): boolean {

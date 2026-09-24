@@ -116,6 +116,9 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1
   }
 
+  // Handelsangebote (T-M17-05): der Grund mit Namen statt Schluessel — „withdrawn" sagt niemandem etwas.
+  if (event.type === 'TRADE_OFFER_CLOSED') values.reason = t(`diplomacy.tradeClosed.${String(record.reason)}`)
+
   return values
 }
 

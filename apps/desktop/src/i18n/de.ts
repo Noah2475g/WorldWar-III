@@ -438,6 +438,11 @@ export const de = {
     RIGHT_OF_WAY_CHANGED_PLURAL: '{{player}} gewähren {{target}} das Durchmarschrecht.',
     RIGHT_OF_WAY_CHANGED_REVOKED: '{{player}} kündigt {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
     RIGHT_OF_WAY_CHANGED_REVOKED_PLURAL: '{{player}} kündigen {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    // Handelsangebote (T-M17-05, R-DIP-05). `player` ist der Anbieter, `target` der Empfänger. Das
+    // Schließen lesen nur die beiden; der Tausch ist Weltgeschehen und nennt keine Menge (AK4). Beide
+    // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
+    TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
+    TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -507,6 +512,15 @@ export const de = {
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
+    // Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5) — der Satz steht in events.TRADE_OFFER_CLOSED.
+    tradeClosed: {
+      accepted: 'angenommen',
+      declined: 'abgelehnt — das Hinterlegte geht zurück',
+      withdrawn: 'zurückgezogen — das Hinterlegte geht zurück',
+      expired: 'ohne Antwort verfallen — das Hinterlegte geht zurück',
+      war: 'wegen Krieges verfallen — das Hinterlegte geht zurück',
+      invalid: 'hinfällig, eine Macht ist ausgeschieden — das Hinterlegte geht zurück',
+    },
   },
 
   market: {
