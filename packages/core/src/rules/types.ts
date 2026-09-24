@@ -262,6 +262,22 @@ export interface RuleConstants {
    * weiter offen.
    */
   spyRevealDays: number
+
+  // Sabotage und Gegenspionage (R-SPY-04/05, D29.3, D29.7, T-M17-09).
+  /** Chance, dass ein Sabotageauftrag an einem Tageswechsel gelingt, in Promille. */
+  spySuccessSabotagePermille: number
+  /** Chance je Tag, Gegenspion und fremdem Spion in derselben Provinz, dass er enttarnt wird, in Promille. */
+  spyDetectionPermille: number
+  /** Moralverlust der Zielprovinz bei gelungener Wirtschaftssabotage (belegt: −10, Referenz 4.6). */
+  sabotageMoraleLoss: Fixed
+  /** Anteil des Tagesertrags der Zielprovinz, den der Eigentümer verliert, in Promille — nie mehr, als er hat. */
+  sabotageYieldDestroyedPermille: number
+  /** Um so viele Ticks (Stunden) wird jeder laufende Bau- und Aushebeauftrag der Provinz später fertig. */
+  militarySabotageDelayTicks: number
+  /** Ansehensverlust des Urhebers, wenn ein Spion enttarnt wird; doppelt bei Sabotage gegen eine Macht ohne Krieg (R-SPY-05). */
+  spyDetectedReputationLoss: Fixed
+  /** Verstimmung des Entdeckers gegen den Urheber (R-DIP-06) — zwischen Provinzverlust und Überfall. */
+  grievanceOnSpyDetected: Fixed
 }
 
 export interface Rules {

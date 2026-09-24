@@ -97,6 +97,15 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   // Aufklaerung misslaenge still; fehlte die Dauer, stuende `untilTick` auf NaN.
   'spySuccessIntelPermille',
   'spyRevealDays',
+  // Sabotage und Gegenspionage (T-M17-09). Fehlte eine Chance, waere `chance(rng, undefined)` stets
+  // falsch — Sabotage und Enttarnung fielen still aus; fehlte ein Schaden, rechnete `-=` mit NaN.
+  'spySuccessSabotagePermille',
+  'spyDetectionPermille',
+  'sabotageMoraleLoss',
+  'sabotageYieldDestroyedPermille',
+  'militarySabotageDelayTicks',
+  'spyDetectedReputationLoss',
+  'grievanceOnSpyDetected',
 ]
 
 function record(value: unknown): Record<string, unknown> {

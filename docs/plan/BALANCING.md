@@ -411,3 +411,19 @@ Tageswechsel je Spion abgebucht, auch am Tag der Anwerbung — ausgeführt wird 
 |---|---|---|---|
 | `spySuccessIntelPermille` | 800 | geschätzt | die Referenz nennt keine Erfolgschance; vier von fünf Tagen heißt: ein Aufklärer, der zehnmal sein Tagesgeld gekostet hat, liefert fast immer, und ein Misserfolg ist selten genug, um ein Ereignis zu sein. Vorschlag aus D29.7, ungemessen — die KI wirbt erst ab T-M17-12 an |
 | `spyRevealDays` | 1 | abgeleitet | aus R-SPY-03: „für den Tag sichtbar", und AK2 verlangt, dass die Provinz nach Misserfolg oder Entlassen **zum nächsten Tageswechsel** wieder hinter den Nebel fällt. Jeder Wert über 1 bräche AK2; `phases/espionage.test.ts` prüft AK2 mit dem Regelwert |
+
+### Sabotage und Gegenspionage (R-SPY-04, R-SPY-05, D29.3, D29.7, T-M17-09)
+
+Sieben Zahlen, die `phases/espionage.ts` liest. Eine ist belegt, die übrigen geschätzt — die KI
+wirbt erst ab T-M17-12 an, bis dahin bewegt keine davon eine gemessene Partie. Je Provinz und Tag
+wirkt höchstens eine Sabotage (R-SPY-04/AK4); die Zahlen sind unter dieser Sperre gewählt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spySuccessSabotagePermille` | 500 | geschätzt | Vorschlag aus D29.7; halb so oft wie die Aufklärung (800), weil Sabotage doppelt kostet und schadet. Gegen eine bewachte Provinz (siehe unten) bringt ein Saboteur im Mittel zwei Treffer, bevor er auffliegt |
+| `spyDetectionPermille` | 250 | geschätzt | Vorschlag aus D29.7, je Tag und fremdem Spion. Ein Saboteur überlebt einen Gegenspion im Mittel vier Tage (1/0,25): Anwerben 101.530 plus vier Tage Sold 81.224 = 182.754, knapp ein Median-Tagesertrag (203.078, T-M17-02) — ein enttarnter Saboteur hat etwa einen Tag Einkommen gekostet |
+| `sabotageMoraleLoss` | 10.000 | belegt | Referenz 4.6 (docs/research/SUPREMACY-MECHANICS.md): Economic Sabotage senkt die Moral um 10, stapelbar — hier höchstens einmal je Provinz und Tag |
+| `sabotageYieldDestroyedPermille` | 500 | geschätzt | Vorschlag aus D29.7: die Hälfte des Tagesertrags der Provinz (`provinceYieldScaled` × Ticks je Tag), gemessen vor dem Moralabzug, je Rohstoff gekappt am Bestand. Die Referenz nennt „Zerstörung von Ressourcen" ohne Zahl |
+| `militarySabotageDelayTicks` | 12 | geschätzt | ein halber Tag. Weil höchstens eine Sabotage je Tag wirkt und sie zu 50 % gelingt, baut eine dauerhaft sabotierte Provinz im Mittel mit 24/(24+6) = 80 % ihrer Geschwindigkeit — spürbar, aber kein Stillstand |
+| `spyDetectedReputationLoss` | 100 | geschätzt | die Hälfte eines Überfalls (`surpriseAttackReputationLoss` 200); doppelt (R-SPY-05) bei Sabotage gegen eine Macht, mit der kein Krieg herrscht — dann so schwer wie ein Überfall. Nach 10 bzw. 20 Spieltagen vergessen (`reputationRecoveryPerDay` 10) |
+| `grievanceOnSpyDetected` | 300 | geschätzt | D29.7: zwischen verlorener Provinz (250) und Überfall (400) — ein ertappter Spion ist mehr als ein Frontverlauf, aber kein gebrochenes Versprechen |

@@ -82,5 +82,13 @@
   "maxSpiesPerPlayer": 5,
   "_spionageTageslauf": "Tageslauf der Spionage (R-SPY-02/03, D29.3, D29.7, T-M17-08): Erfolgschance der Aufklaerung je Tag in Promille, und wie viele Tage eine gelungene Aufklaerung die Provinz zeigt.",
   "spySuccessIntelPermille": 800,
-  "spyRevealDays": 1
+  "spyRevealDays": 1,
+  "_spionageSabotage": "Sabotage und Gegenspionage (R-SPY-04/05, D29.3, D29.5, D29.7, T-M17-09): Erfolgs- und Entdeckungschance je Tag in Promille, Moral- und Ertragsschaden, Verzoegerung in Ticks, Ansehen und Verstimmung bei Enttarnung. Status in docs/plan/BALANCING.md.",
+  "spySuccessSabotagePermille": 500,
+  "spyDetectionPermille": 250,
+  "sabotageMoraleLoss": 10000,
+  "sabotageYieldDestroyedPermille": 500,
+  "militarySabotageDelayTicks": 12,
+  "spyDetectedReputationLoss": 100,
+  "grievanceOnSpyDetected": 300
 }
