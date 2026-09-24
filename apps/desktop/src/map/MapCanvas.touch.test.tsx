@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MapCanvas, type ArmyMarker } from './MapCanvas.tsx'
 import { LONG_PRESS_MS, TAP_SLOP_TOUCH_PX } from './gestures.ts'
-import { markersFor } from './markers.ts'
+import { ARMY_BOX, BUILDING_BOX, markersFor } from './markers.ts'
 import { boundsOf, pickProvince, type View } from './picking.ts'
 import type { RenderProvince } from './render.ts'
 
@@ -38,15 +38,22 @@ const provinces: RenderProvince[] = world.provinces.map((province) => ({
 }))
 const centres = Object.fromEntries(world.provinces.map((province) => [province.id, province.center]))
 
-/** Ein Zeichenkontext, der alles schluckt und `setTransform` mitschreibt. */
-let transforms: number[][] = []
-function silentContext(): CanvasRenderingContext2D {
+/** Ein Zeichenkontext, der alles schluckt und `setTransform` je Leinwand mitschreibt. */
+let transforms: { layer: string; args: number[] }[] = []
+/** Jeder Stempel, der auf eine Ebene kopiert wird: Quellbreite und Zielbreite. */
+let stamps: { source: number; target: number | undefined }[] = []
+function silentContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   return new Proxy(
     {},
     {
       get(_target, key: string) {
         if (key === 'measureText') return (text: string) => ({ width: text.length * 6 })
-        if (key === 'setTransform') return (...args: number[]) => void transforms.push(args)
+        if (key === 'drawImage') {
+          return (image: HTMLCanvasElement, ...args: number[]) => void stamps.push({ source: image.width, target: args[2] })
+        }
+        if (key === 'setTransform') {
+          return (...args: number[]) => void transforms.push({ layer: canvas.className, args })
+        }
         return () => undefined
       },
       set: () => true,
@@ -68,12 +75,15 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   } as never
-  HTMLCanvasElement.prototype.getContext = (() => silentContext()) as never
+  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement) {
+    return silentContext(this)
+  } as never
 })
 
 beforeEach(() => {
   frames = []
   transforms = []
+  stamps = []
   globalThis.requestAnimationFrame = ((fn: FrameRequestCallback) => {
     frames.push(fn)
     return frames.length
@@ -95,10 +105,11 @@ interface Calls {
   selected: (string | null)[]
   armies: string[]
   hovers: ({ id: string | null; at: { x: number; y: number } | null })[]
+  viewports: { width: number; height: number }[]
 }
 
 function karte(extra: Partial<Parameters<typeof MapCanvas>[0]> = {}) {
-  const calls: Calls = { views: [], selected: [], armies: [], hovers: [] }
+  const calls: Calls = { views: [], selected: [], armies: [], hovers: [], viewports: [] }
   const result = render(
     <MapCanvas
       provinces={provinces}
@@ -116,6 +127,7 @@ function karte(extra: Partial<Parameters<typeof MapCanvas>[0]> = {}) {
       onSelectArmy={(id) => calls.armies.push(id)}
       onHover={(id, at) => calls.hovers.push({ id, at })}
       onViewChange={(view) => calls.views.push(view)}
+      onViewportChange={(size) => calls.viewports.push(size)}
       labelFor={(id) => id}
       {...extra}
     />,
@@ -350,10 +362,95 @@ describe('Touch-Bedienung: der Finger gehoert der Karte', () => {
   })
 })
 
-describe('Touch-Bedienung: der Finger gehoert der Karte', () => {
-  it('laesst dem Browser den Finger auf der Karte nicht (touch-action)', () => {
-    const { map } = karte()
+describe('Touch-Bedienung: die Karte ist fuer einen Testroboter lesbar', () => {
+  it('schreibt Ausschnitt und Auswahl an die Huelle', () => {
+    const { container, rerender } = karte({
+      view: { x: 1234.4, y: 567.6, scale: 1.234567 },
+      selectedProvince: land.id,
+    })
+    const wrapper = container.querySelector('div.map-wrapper') as HTMLDivElement
 
-    expect(map.style.touchAction).toBe('none')
+    expect(wrapper.dataset.viewX).toBe('1234')
+    expect(wrapper.dataset.viewY).toBe('568')
+    expect(wrapper.dataset.viewScale).toBe('1.2346')
+    expect(wrapper.dataset.selectedProvince).toBe(land.id)
+
+    rerender(
+      <MapCanvas
+        provinces={provinces}
+        centres={centres}
+        armies={[]}
+        buildings={{}}
+        mode="political"
+        width={world.width}
+        height={world.height}
+        view={START}
+        ownershipVersion={1}
+        selectedProvince={null}
+        speed={100}
+        onSelect={() => undefined}
+        onViewChange={() => undefined}
+        labelFor={(id) => id}
+      />,
+    )
+    expect(wrapper.dataset.selectedProvince).toBe('')
+    expect(wrapper.dataset.viewScale).toBe('1.0000')
+  })
+
+  it('meldet die gemessene Groesse, mit der Ausschnitt und Klemme rechnen', () => {
+    const { calls } = karte()
+
+    // jsdom misst 0 x 0; die Karte rechnet mit ihrem Mindestmass.
+    expect(calls.viewports.at(-1)).toEqual({ width: 320, height: 240 })
+  })
+})
+
+describe('Touch-Bedienung: scharf bei hoher Pixeldichte', () => {
+  it('zeichnet bei Dichte 2 in doppelt so viele Bildpunkte und rechnet weiter in Punkten', () => {
+    const vorher = window.devicePixelRatio
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 2 })
+    try {
+      const { container, calls } = karte()
+      const [shapes, overlay] = Array.from(container.querySelectorAll('canvas.map-layer')) as HTMLCanvasElement[]
+
+      expect(overlay!.width).toBe(640)
+      expect(overlay!.height).toBe(480)
+      expect(shapes!.width).toBe(640)
+      // Gezeichnet wird mit Massstab 2, also weiter in den 320 x 240 Punkten der Karte —
+      // auf beiden Ebenen, sonst fuellte die teure nur ein Viertel ihrer Bitmap.
+      expect(transforms).toContainEqual({ layer: 'map-layer', args: [2, 0, 0, 2, 0, 0] })
+      expect(transforms).toContainEqual({ layer: 'map-layer map-layer--overlay', args: [2, 0, 0, 2, 0, 0] })
+      // Die Uebersicht bleibt, was die Tests seit T-M30-03 festhalten.
+      expect((screen.getByRole('button', { name: 'Übersichtskarte' }) as HTMLCanvasElement).width).toBe(132)
+      // Und gemeldet wird die Groesse in Punkten, nicht in Bildpunkten.
+      expect(calls.viewports.at(-1)).toEqual({ width: 320, height: 240 })
+    } finally {
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: vorher })
+    }
+  })
+
+  it('stempelt Stapel und Gebaeude in der Dichte des Geraets statt sie hochzuziehen', () => {
+    const vorher = window.devicePixelRatio
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 2 })
+    try {
+      const armies: ArmyMarker[] = [{ id: 'a1', provinceId: land.id, owner: 'eigen', strength: 5000, own: true }]
+      karte({ armies, buildings: { [land.id]: { barracks: 1 } } })
+
+      const armyStamp = ARMY_BOX.width + 4
+      const buildingStamp = BUILDING_BOX + 4
+      // Die Quelle hat doppelt so viele Bildpunkte, gezeichnet wird sie in Punkten.
+      expect(stamps).toContainEqual({ source: armyStamp * 2, target: armyStamp })
+      expect(stamps).toContainEqual({ source: buildingStamp * 2, target: buildingStamp })
+    } finally {
+      Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: vorher })
+    }
+  })
+
+  it('bleibt bei Dichte 1 bei einem Bildpunkt je Punkt', () => {
+    const { container } = karte()
+    const overlay = container.querySelectorAll('canvas.map-layer')[1] as HTMLCanvasElement
+
+    expect(overlay.width).toBe(320)
+    expect(overlay.height).toBe(240)
   })
 })

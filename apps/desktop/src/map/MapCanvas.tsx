@@ -23,6 +23,7 @@ import {
   type RenderProvince,
 } from './render.ts'
 import {
+  bitmapFor,
   boundsOf,
   centreOn,
   pickProvince,
@@ -116,17 +117,25 @@ export const HOVER_DELAY_MS = 120
  * (T-M30-01, KRIEGSRAT §6.1). Zahl und Zustandsbalken aendern sich je Armee und werden
  * darueber gezeichnet; Rahmen und Glyphe sind fuer alle gleich und kommen von hier.
  */
-function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, icon: IconName): HTMLCanvasElement | null {
-  const key = `${tone}:${icon}`
+function stackStamp(
+  cache: Map<string, HTMLCanvasElement>,
+  tone: MarkerTone,
+  icon: IconName,
+  ratio = 1,
+): HTMLCanvasElement | null {
+  const key = `${tone}:${icon}:${ratio}`
   const cached = cache.get(key)
   if (cached) return cached
   if (typeof document === 'undefined') return null
 
+  // In der Dichte der Ebene gestempelt (Touch-Bedienung): ein 1:1-Stempel, auf einer
+  // Ebene mit Dichte 1,75 hochgezogen, waere der einzige unscharfe Fleck der Karte.
   const canvas = document.createElement('canvas')
-  canvas.width = ARMY_BOX.width + STAMP_PAD * 2
-  canvas.height = ARMY_BOX.height + STAMP_PAD * 2
+  canvas.width = Math.round((ARMY_BOX.width + STAMP_PAD * 2) * ratio)
+  canvas.height = Math.round((ARMY_BOX.height + STAMP_PAD * 2) * ratio)
   const context = canvas.getContext('2d')
   if (!context) return null
+  context.scale(ratio, ratio)
 
   const rim = TONE_COLORS[tone]
   context.fillStyle = TOKENS.ground
@@ -143,17 +152,18 @@ function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, ico
 }
 
 /** Der Gebaeudestempel je Glyphe (T-M30-02, D27.2): Quadrat 14×14, Rahmen `building`. */
-function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName): HTMLCanvasElement | null {
-  const key = `building:${icon}`
+function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName, ratio = 1): HTMLCanvasElement | null {
+  const key = `building:${icon}:${ratio}`
   const cached = cache.get(key)
   if (cached) return cached
   if (typeof document === 'undefined') return null
 
   const canvas = document.createElement('canvas')
-  canvas.width = BUILDING_BOX + STAMP_PAD * 2
-  canvas.height = BUILDING_BOX + STAMP_PAD * 2
+  canvas.width = Math.round((BUILDING_BOX + STAMP_PAD * 2) * ratio)
+  canvas.height = Math.round((BUILDING_BOX + STAMP_PAD * 2) * ratio)
   const context = canvas.getContext('2d')
   if (!context) return null
+  context.scale(ratio, ratio)
 
   context.fillStyle = TOKENS.ground
   context.fillRect(STAMP_PAD, STAMP_PAD, BUILDING_BOX, BUILDING_BOX)
@@ -216,6 +226,13 @@ export interface MapCanvasProps {
    */
   onHover?: (provinceId: string | null, at: { x: number; y: number } | null) => void
   onViewChange: (view: View) => void
+  /**
+   * Die gemessene Groesse der Karte in Punkten (Touch-Bedienung): dieselbe, mit der
+   * Ausschnitt und Klemme hier rechnen — mindestens 320 x 240, ohne Pixeldichte. Wer
+   * ausserhalb zentriert (Sprung auf eine Provinz, Tastatur), rechnet mit ihr statt mit
+   * einem festen Ausschnitt. Gemeldet bei jeder Messung, auch der ersten.
+   */
+  onViewportChange?: (size: { width: number; height: number }) => void
   labelFor: (provinceId: string) => string
 }
 
@@ -229,6 +246,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 960, height: 600 })
+  /** Die Pixeldichte des Geraets bei der letzten Messung (Touch-Bedienung). */
+  const [pixelRatio, setPixelRatio] = useState(1)
   // Die Bildschirmuhr fuer alles, was sich von selbst bewegt. Sie laeuft nur, solange es
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
@@ -287,15 +306,22 @@ export function MapCanvas(props: MapCanvasProps) {
   const latest = useRef({ props, limits, withBounds })
   latest.current = { props, limits, withBounds }
 
+  // Die Bildpunkte folgen der Pixeldichte (Touch-Bedienung): gezeichnet wird weiter in
+  // Punkten, `setTransform` rechnet sie in Bildpunkte um.
+  const bitmap = useMemo(() => bitmapFor(size, pixelRatio), [size, pixelRatio])
+
   // The wrapper decides the size; the canvases follow it.
   useEffect(() => {
     const element = wrapperRef.current
     if (!element) return
-    const update = () =>
-      setSize({
-        width: Math.max(320, element.clientWidth),
-        height: Math.max(240, element.clientHeight),
-      })
+    const update = () => {
+      const width = Math.max(320, element.clientWidth)
+      const height = Math.max(240, element.clientHeight)
+      // Dieselbe Groesse ist kein neuer Zustand: sonst zeichnete jede Messung beide Ebenen neu.
+      setSize((old) => (old.width === width && old.height === height ? old : { width, height }))
+      setPixelRatio(typeof window === 'undefined' ? 1 : window.devicePixelRatio)
+      latest.current.props.onViewportChange?.({ width, height })
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
@@ -308,6 +334,7 @@ export function MapCanvas(props: MapCanvasProps) {
     const context = canvas?.getContext('2d')
     if (!canvas || !context) return
 
+    context.setTransform(bitmap.scaleX, 0, 0, bitmap.scaleY, 0, 0)
     context.fillStyle = MAP_COLORS.sea
     context.fillRect(0, 0, size.width, size.height)
 
@@ -345,7 +372,7 @@ export function MapCanvas(props: MapCanvasProps) {
       context.fillStyle = MAP_COLORS.label
       context.fillText(label.text, label.x, label.y)
     }
-  }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
+  }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size, bitmap])
 
   // Der Besitzstand des letzten Bildes gegen den jetzigen: was gewechselt hat, blendet
   // als Farbwelle (T-M26-02). Ohne Bewegungserlaubnis wird nichts vorgemerkt — der
@@ -416,7 +443,11 @@ export function MapCanvas(props: MapCanvasProps) {
     const context = canvas?.getContext('2d')
     if (!canvas || !context) return
 
+    context.setTransform(bitmap.scaleX, 0, 0, bitmap.scaleY, 0, 0)
     context.clearRect(0, 0, size.width, size.height)
+    // Die Stempeldichte in Viertelschritten: sonst legte jede Groessenaenderung (die den
+    // Massstab in der vierten Stelle verschiebt) einen neuen Satz Stempel in den Speicher.
+    const stampRatio = Math.round(bitmap.scaleX * 4) / 4
 
     // Die Farbwelle eines Besitzwechsels (T-M26-02, D25.4): die teure Ebene traegt
     // laengst die neue Farbe, hier blendet die Flaeche ~600 ms von der alten hinueber —
@@ -576,9 +607,10 @@ export function MapCanvas(props: MapCanvasProps) {
         // rechts oben. Gestempelt, nicht je Bild gezeichnet.
         const left = marker.x - BUILDING_BOX / 2
         const top = marker.y - BUILDING_BOX / 2
-        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning')
+        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning', stampRatio)
         if (stamp) {
-          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+          const side = BUILDING_BOX + STAMP_PAD * 2
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD, side, side)
         } else {
           context.fillStyle = TOKENS.ground
           context.fillRect(left, top, BUILDING_BOX, BUILDING_BOX)
@@ -609,9 +641,15 @@ export function MapCanvas(props: MapCanvasProps) {
         const rim = TONE_COLORS[tone]
         const left = marker.x - ARMY_BOX.width / 2
         const top = marker.y - ARMY_BOX.height / 2
-        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry')
+        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry', stampRatio)
         if (stamp) {
-          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+          context.drawImage(
+            stamp,
+            left - STAMP_PAD,
+            top - STAMP_PAD,
+            ARMY_BOX.width + STAMP_PAD * 2,
+            ARMY_BOX.height + STAMP_PAD * 2,
+          )
         } else {
           context.fillStyle = TOKENS.ground
           context.fillRect(left, top, ARMY_BOX.width, ARMY_BOX.height)
@@ -728,6 +766,7 @@ export function MapCanvas(props: MapCanvasProps) {
     props.centres,
     withBounds,
     size,
+    bitmap,
   ])
 
   /*
@@ -1020,12 +1059,20 @@ export function MapCanvas(props: MapCanvasProps) {
   )
 
   return (
-    <div ref={wrapperRef} className="map-wrapper">
-      <canvas ref={shapesRef} width={size.width} height={size.height} className="map-layer" aria-hidden="true" />
+    <div
+      ref={wrapperRef}
+      className="map-wrapper"
+      // Fuer einen Testroboter (CDP): Ausschnitt und Auswahl ohne Bilderkennung lesbar.
+      data-view-x={Math.round(props.view.x)}
+      data-view-y={Math.round(props.view.y)}
+      data-view-scale={props.view.scale.toFixed(4)}
+      data-selected-province={props.selectedProvince ?? ''}
+    >
+      <canvas ref={shapesRef} width={bitmap.width} height={bitmap.height} className="map-layer" aria-hidden="true" />
       <canvas
         ref={overlayRef}
-        width={size.width}
-        height={size.height}
+        width={bitmap.width}
+        height={bitmap.height}
         className="map-layer map-layer--overlay"
         role="application"
         aria-label={t('a11y.map')}
