@@ -57,6 +57,7 @@ import {
   pickPageTarget,
   pickSerial,
   pinchPath,
+  pseudoHitBox,
   rankTapPoints,
 } from './lib/android-check-lib.mjs'
 
@@ -129,6 +130,15 @@ async function evaluate(cdp, expression) {
 /** Eine Funktion in der Seite ausfuehren; sie darf nichts aus diesem Modul benutzen. */
 const call = (fn, ...args) => `(${fn.toString()})(${args.map((a) => JSON.stringify(a)).join(', ')})`
 
+/**
+ * Wie `call`, aber mit reinen Hilfsfunktionen aus android-check-lib.mjs im Gepaeck (commit
+ * d76a92e/Befund C7): ihr Quelltext (per `toString`, sie sind benannte `function`-
+ * Erklaerungen und bleiben es beim Uebertragen) steht VOR der Seiten-Funktion im selben
+ * Ausdruck. Dieselbe getestete Rechnung laeuft damit in der Seite - keine zweite,
+ * driftende Abschrift der Geometrie dort.
+ */
+const callWithDeps = (fn, deps, ...args) => `${deps.map((d) => d.toString()).join('\n')}\n${call(fn, ...args)}`
+
 async function waitFor(cdp, expression, what, timeoutMs = 30000) {
   const start = Date.now()
   let last = null
@@ -199,18 +209,11 @@ function pageTargets() {
       if (cs.position !== 'absolute' && cs.position !== 'fixed') continue
       if (cs.pointerEvents === 'none') continue
       const num = (v) => (v === 'auto' || v == null ? null : parseFloat(v))
-      const top = num(cs.top)
-      const right = num(cs.right)
-      const bottom = num(cs.bottom)
-      const left = num(cs.left)
-      if ((top === null && bottom === null) || (left === null && right === null)) continue
-      const l = left !== null ? box.left + left : box.left
-      const r = right !== null ? box.right - right : box.right
-      const t = top !== null ? box.top + top : box.top
-      const b = bottom !== null ? box.bottom - bottom : box.bottom
-      const width = r - l
-      const height = b - t
-      if (width > box.width || height > box.height) return { width, height }
+      // Die reine Geometrie (Box + Versatz -> vergroesserte Flaeche) steht getestet in
+      // android-check-lib.mjs (pseudoHitBox) - hier bleibt nur das Lesen der Stile, das
+      // ohne echtes DOM nicht geht.
+      const extra = pseudoHitBox(box, { top: num(cs.top), right: num(cs.right), bottom: num(cs.bottom), left: num(cs.left) })
+      if (extra) return extra
     }
     return null
   }
@@ -484,7 +487,7 @@ async function runFlow(cdp, ctx) {
     await waitFor(cdp, call(pageButton, 'text', START_BUTTON), `den Knopf "${START_BUTTON}"`, 30000)
     await sleep(300)
     await shot('startdialog')
-    targetStates.push({ name: 'Startdialog', elements: await evaluate(cdp, call(pageTargets)) })
+    targetStates.push({ name: 'Startdialog', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
     const start = await evaluate(cdp, call(pageButton, 'text', START_BUTTON))
     extra.startButton = start
     await tap(cdp, start)
@@ -527,7 +530,7 @@ async function runFlow(cdp, ctx) {
   await check('no-page-scroll', async () => evaluateScroll(await evaluate(cdp, call(pageScroll))))
   await check('map-canvas', async () => evaluateCanvas(await evaluate(cdp, call(pageCanvases))))
   try {
-    targetStates.push({ name: 'Partie', elements: await evaluate(cdp, call(pageTargets)) })
+    targetStates.push({ name: 'Partie', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
   } catch (error) {
     extra.targetsError = error.message
   }
@@ -672,7 +675,7 @@ async function runFlow(cdp, ctx) {
     const now = await state()
     if (now.attrs.selected || now.aux.pickerValue) {
       await shot('provinz')
-      targetStates.push({ name: 'Provinz gewaehlt', elements: await evaluate(cdp, call(pageTargets)) })
+      targetStates.push({ name: 'Provinz gewaehlt', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
     }
     return evaluateTargetStates(targetStates, ctx.options.minTarget)
   })

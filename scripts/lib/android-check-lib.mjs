@@ -416,6 +416,35 @@ export function evaluateScroll(m) {
 }
 
 /**
+ * Die reine Geometrie eines vergroesserten Pseudo-Elements (commit d76a92e): manche
+ * Knoepfe bleiben klein und tragen ihre 44 px stattdessen in einem unsichtbaren
+ * `::before`/`::after` mit negativem `inset` (touch.css, z.B. `.explain__toggle::after
+ * { inset: -11px }`). Ein Klick dort trifft das Element selbst - Pseudo-Elemente sind
+ * kein eigenes Hit-Test-Ziel -, also zaehlt die vergroesserte Flaeche mit.
+ *
+ * `inset` sind schon Zahlen oder `null` (aus `getComputedStyle`, "auto" wird zu `null`) -
+ * das Lesen der Stile bleibt in der Seite (scripts/android-check.mjs, `pageTargets`),
+ * hier steht nur die Rechnung. Eine Seite ohne Rand auf einer ganzen Achse (weder top
+ * noch bottom, oder weder left noch right gesetzt) zaehlt nicht als eigenes Ziel. Ein
+ * POSITIVER Versatz (Polsterung nach innen) schrumpft die Flaeche nie unter die des
+ * Elements - nur eine wirklich groessere Flaeche kommt zurueck.
+ * @param {{ left: number, right: number, top: number, bottom: number, width: number, height: number }} box
+ * @param {{ top: number | null, right: number | null, bottom: number | null, left: number | null }} inset
+ * @returns {{ width: number, height: number } | null}
+ */
+export function pseudoHitBox(box, inset) {
+  if ((inset.top === null && inset.bottom === null) || (inset.left === null && inset.right === null)) return null
+  const l = inset.left !== null ? box.left + inset.left : box.left
+  const r = inset.right !== null ? box.right - inset.right : box.right
+  const t = inset.top !== null ? box.top + inset.top : box.top
+  const b = inset.bottom !== null ? box.bottom - inset.bottom : box.bottom
+  const width = r - l
+  const height = b - t
+  if (width > box.width || height > box.height) return { width, height }
+  return null
+}
+
+/**
  * Jedes sichtbare Bedienelement braucht mindestens `min` x `min` CSS-Pixel. Elemente ohne
  * Flaeche (nicht gezeichnet) zaehlen nicht.
  * @param {{ selector: string, text: string, width: number, height: number, state?: string }[]} elements

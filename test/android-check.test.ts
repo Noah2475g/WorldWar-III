@@ -32,6 +32,7 @@ import {
   pickSerial,
   pickTapPoint,
   pinchPath,
+  pseudoHitBox,
   rankTapPoints,
 } from '../scripts/lib/android-check-lib.mjs'
 
@@ -305,6 +306,16 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     // Der kleinste zuerst: der ist am schwersten zu treffen.
     expect(r.violators.map((v) => v.selector)).toEqual(['button.c', 'button.b'])
     expect(evaluateTargets([{ selector: 'b', text: '', width: 48, height: 48 }]).pass).toBe(true)
+  })
+
+  it('vergroesserte Ziele ueber Pseudo-Elemente (Befund C7, commit d76a92e): -11px auf 22x22 ergibt 44x44', () => {
+    const box = { left: 0, right: 22, top: 0, bottom: 22, width: 22, height: 22 }
+    expect(pseudoHitBox(box, { top: -11, right: -11, bottom: -11, left: -11 })).toEqual({ width: 44, height: 44 })
+    // Kein Pseudo-Element (kein Versatz gesetzt): die Flaeche bleibt, wie sie war.
+    expect(pseudoHitBox(box, { top: null, right: null, bottom: null, left: null })).toBeNull()
+    // Ein positiver Versatz (Polsterung nach innen) schrumpft die Flaeche nie unter die
+    // des Elements - eine kleinere Pseudo-Flaeche zaehlt nicht als eigenes Ziel.
+    expect(pseudoHitBox(box, { top: 5, right: 5, bottom: 5, left: 5 })).toBeNull()
   })
 
   it('Karten-Canvas: Mindestgroesse und gleiches Verhaeltnis auf beiden Achsen', () => {
