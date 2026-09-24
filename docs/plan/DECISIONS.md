@@ -3273,3 +3273,209 @@ Schleife über die Beziehungen und die Handelsangebote.
 Ein Zwischenstand dieses Zweigs, dem ein später angelegtes Pflichtfeld fehlt, wird dann mit
 einer Meldung abgewiesen, statt im ersten Tick abzustürzen — das ist die gewollte Richtung;
 ausgeliefert wurde keiner.
+
+---
+
+## 2026-09-18 · T-M39-10 · Die fünf Sätze der Pause: Zustand in die Kopfleiste, Ereignis in die Meldezeile (Befund MP-4)
+
+**Entscheidung:** Die fünf Spielertexte unter `netplay` werden auf **zwei vorhandene**
+Anzeigeorte verteilt und bekommen kein eigenes Panel.
+
+| Satz | Wo | Wann |
+|---|---|---|
+| `pauseSent` | Kopfleiste, neben dem Pausenknopf | der **eigene** Antrag ist offen |
+| `paused` | Kopfleiste | die Partie steht |
+| `resuming` | Kopfleiste | der Vorlauf von drei Sekunden läuft |
+| `pauseDeclined` | Meldezeile (`ui.notice`, `kind: 'info'`) | der **andere** hat abgelehnt |
+| `pauseExpired` | Meldezeile | die Frist ist um — auf **beiden** Seiten |
+
+**Begründung:** Die Trennung liegt nicht im Geschmack, sondern in der Sorte Auskunft. Ein
+**Zustand** hat ein Ende, das die Maschine kennt: `pauseSent` fällt mit dem Antrag,
+`paused` mit dem Fortsetzen, `resuming` nach drei Sekunden. Solche Sätze dürfen stehen
+bleiben, weil sie von selbst gehen — und sie gehören neben den Knopf, der sie beendet. Ein
+**Ereignis** hat kein Ende: `notice: 'declined'` bleibt in `PauseState` stehen, bis jemand
+die nächste Pause beantragt. In der Kopfleiste stünde „Ihr Mitspieler möchte
+weiterspielen" dann minutenlang neben einer längst weiterlaufenden Partie. Die Meldezeile
+ist für genau das da und trägt schon den Nachbarfall `header.pauseNeedsConsent` („zu zweit
+hält niemand allein an") — derselbe Anlass, dieselbe Zeile.
+
+Die Kopfleiste ist im Mehrspieler voll (Uhr, feste Rate, „Warte auf Mitspieler …",
+*Pause beantragen*, der Verlust-Hinweis mit zwei Knöpfen); PROBLEME.md nennt das als Grund,
+warum MP-4 offen blieb. Die Aufteilung fügt dort **einen** gedämpften Satz hinzu, der nur
+während eines Pausenvorgangs überhaupt existiert, und keinen Knopf.
+
+**Auswirkung:**
+- `packages/netplay/src/pause.ts`: `PauseState` bekommt das Feld `noticeBy` — wer den
+  Hinweis ausgelöst hat. Ohne es ist `'declined'` auf beiden Rechnern dasselbe, und der
+  Ablehnende bekäme einen Satz über sich selbst zu lesen; der Antrag, an dem man es sonst
+  abläse, ist in genau diesem Augenblick gelöscht. Beim Verfallen trägt das Feld den
+  Antragsteller, nach dem Fortsetzen niemanden.
+- `apps/desktop/src/ui/Header.tsx`: neue Eigenschaft `pauseNotice`, gerendert als
+  `role="status"` mit der Klasse `clock__pause` (gedämpft, nicht in Warnfarbe — daneben
+  steht der Knopf, mit dem man es beendet).
+- `apps/desktop/src/App.tsx`: eine `useMemo` für den Zustandssatz, ein `useEffect` für die
+  zwei Ereignisse. Ein **neuer** Antrag löscht die Meldung zum alten — **und nur sie**:
+  `clearNotice` nimmt seit der Nacharbeit vom 2026-09-24 ein `onlyIf` und leert die Zeile
+  nur, wenn sie gerade `pauseDeclined` oder `pauseExpired` trägt
+  (`apps/desktop/src/state/uiState.ts`). Vorher wischte ein fremder Antrag beim Gefragten
+  jede Meldung weg — einen abgelehnten Befehl, den Hinweis zur festen Rate (Durchsicht vom
+  2026-09-18, Stufe niedrig, an der ganzen Anwendung nachgestellt).
+- Neun Fälle in `App.test.tsx` an der ganzen Anwendung, sechs davon fallen ohne die
+  Reparatur; aus der Nacharbeit zwei weitere (die fremde Meldung bleibt stehen; die alte
+  Antwort verschwindet mit dem eigenen neuen Antrag) und einer am Reduzierer
+  (`uiState.test.ts`). Ohne die `onlyIf`-Zeile fallen der erste davon und der am
+  Reduzierer.
+
+**kippbar:** Beides in die Kopfleiste (dann braucht `pauseDeclined`/`pauseExpired` eine
+Frist, nach der es verschwindet — eine Uhr, die es heute nicht gibt) oder beides in die
+Meldezeile (dann verliert „Die Partie steht" seinen Platz neben *Fortsetzen*, und ein
+Klick auf eine Provinz löscht ihn). Die Sätze selbst bleiben unverändert; kippen heißt hier
+nur, die Zuordnung in `App.tsx` umzuhängen.
+
+---
+
+## 2026-09-18 · T-M39-11 · Im netzfreien Bau verschwindet der Wähler „Partieart" (Befund V-1)
+
+**Entscheidung:** Von den drei Wegen, die PROBLEME.md offenließ, wird der **erste**
+gebaut: im netzfreien Bau gibt es die Wahl nicht. `gameModesFor(__MULTIPLAYER__)` liefert
+`['single']` statt `['single', 'multiplayer']`, der Wähler wird zu einer Wahl mit einem
+Wert und verschwindet mitsamt allem, was nur zu zweit einen Sinn hat (feste Rate,
+Einladungsvorschau).
+
+**Begründung:** PROBLEME.md nennt ihn selbst als „den einzigen, nach dem die Zusage ‚die
+Tauri-Anwendung kennt keinen Mehrspieler' **auch an der Oberfläche** wahr ist". Er nimmt
+niemandem etwas weg: gemessen am 2026-09-14 lief die Wahl „Zu zweit über einen Link" in
+diesem Bau ohnehin in eine Einzelspielerpartie — mit fester Rate und ohne Vorspulen, also
+**schlechter** als die Partie, die derselbe Bau sonst liefert.
+
+Der zweite Weg (stehen lassen und sperren, mit ehrlichem Grund) wäre das Muster, das die
+Oberfläche sonst benutzt — `checked()` in `actions.ts`, die gesperrten Tempostufen während
+des Vorspulens. Er scheitert hier am Grund: „zu zweit geht es über den Hostdienst" verweist
+auf etwas, das dieses Programm nicht öffnen kann und wofür es keinen Text und keinen Weg
+gibt. Eine Sperre, deren Begründung ins Leere zeigt, ist schlimmer als eine fehlende Zeile.
+
+**Auswirkung:**
+- `apps/desktop/src/game/newGame.ts`: neue reine Funktion `gameModesFor(multiplayerBuild)`
+  — seit der Nacharbeit vom 2026-09-24 `gameModesFor(multiplayerBuild, hostsParty)`, siehe
+  den Entscheid darunter. Die Bauflagge wird **für die Oberfläche an genau einer Stelle**
+  gelesen — in `App.tsx` (`gameModes`). Damit laufen im Testlauf **beide** Zweige, obwohl
+  die Flagge dort feststeht.
+- `apps/desktop/src/ui/Dialogs.tsx`: `NewGameDialog` bekommt die Pflichteigenschaft
+  `modes`. Absichtlich ohne Vorgabewert: ein Aufrufer, der sie vergisst, soll nicht
+  stillschweigend den Mehrspieler bekommen — genau diese Fehlerklasse war V-1.
+- Die zweite Hälfte der Bedingung (`options.mode === 'multiplayer'` **und** `modes` enthält
+  es) fängt den Fall ab, in dem eine alte Wahl im Formular stehen bleibt — seit dem
+  2026-09-24 als `effectiveMode()`, und zwar für die Anzeige **und** den Start.
+- Hier stand am 2026-09-18 „Der Wähler bleibt im Hostbau unverändert, mit beiden Werten."
+  **Das war falsch** (Durchsicht vom 2026-09-18, Stufe hoch): der Hostbau ohne Raum bot
+  die zweite Art weiter an und lieferte die erste. Im Hostbau steht der Wähler jetzt nur
+  mit Raum — Entscheid vom 2026-09-24 darunter.
+
+**Was im netzfreien Bündel wirklich herausfällt — gemessen, nicht erschlossen**
+(2026-09-24): nur der Schlüssel `newGame.multiplayerPending`. Wähler, Rate und
+Einladungskasten stehen weiter im Bündel und werden zur Laufzeit nicht gezeichnet; die
+Flagge wirkt hier über eine Funktion in einem anderen Modul, nicht als Literal, das Rollup
+falten könnte. Zahlen unter PROBLEME, Befund V-1.
+
+**kippbar:** `gameModesFor` auf `['single', 'multiplayer']` für beide Flaggenwerte stellen —
+dann ist der Stand von M37 wieder da. Oder den zweiten Weg gehen: `modes` um einen
+Sperrgrund erweitern und die zweite Option `disabled` mit `title` zeigen; dazu braucht es
+einen Spielertext, der sagt, **wo** es den anderen Bau gibt.
+
+---
+
+## 2026-09-24 · T-M39-11 · Zu zweit nur mit Raum, und der Start hält sich an die angebotene Art (Befund V-1, Nacharbeit)
+
+**Entscheidung:** „Zu zweit über einen Link" wird nur angeboten, wenn **beides** stimmt:
+der Bau kann es (`__MULTIPLAYER__`), und dieser Bildschirm führt einen Raum als Gastgeber
+(`netParty.active && netParty.role === 'host'`) — oder bekommt eine Sitzung hereingereicht
+(`props.netplay`, die Naht aus T-M37-11, die heute nur Tests benutzen). Sonst gibt es keine
+Wahl. `gameModesFor(multiplayerBuild, hostsParty)` macht daraus die Liste. Und die
+**Wirkung** hängt an derselben Liste: `effectiveMode(options.mode, modes)` entscheidet, was
+der Dialog zeichnet **und** was er beim Start an `onStart(mode)` weiterreicht;
+`startNewGame(mode)` legt Partiedefinition, Rate und Angebot an den Raum mit genau dieser
+Art an und liest `options.mode` nicht mehr.
+
+**Begründung:** Die Durchsicht vom 2026-09-18 hat gezeigt, dass die Bauflagge allein der
+falsche Maßstab war. Der Hostdienst liefert `/` aus; wer dort landet statt auf dem
+gedruckten `#/gastgeben`-Link, hat keine Leitung — und bekam mit der Fassung vom
+2026-09-18 weiter den Wähler mit beiden Arten, die Überschrift „Die Einladung nennt:" und
+nach *Partie beginnen* eine lokale Partie mit fester Rate, ohne Mitspieler, ohne Lobby,
+ohne Fehler: das Symptom aus V-1, im anderen Bau. **Nachgestellt am 2026-09-24** an der
+ganzen Anwendung (in vitest ist `__MULTIPLAYER__` wahr, der Testlauf IST der Hostbau):
+ohne Raum stand der Wähler mit zwei Optionen; die zwei Fälle R-MP-02/AK2 legten genau so
+ihre „Partie zu zweit" an und hielten das Symptom als Zusicherung fest. Die Bedingung
+`hostsParty` ist dieselbe, unter der `startNewGame` die Partie dem Raum anbietet
+(`alsGastgeber`) — Angebot im Dialog und Wirkung beim Start fragen jetzt dasselbe.
+
+`effectiveMode` fängt den Zustand ab, den die Anzeige allein nicht fängt (Durchsicht,
+Stufe mittel): das Formular trägt „zu zweit" (der Gastgeber-Link wählt es vor), und danach
+gibt es keinen Raum mehr. Bis zur Nacharbeit blendete der Dialog dann alles aus, und
+`startNewGame` legte trotzdem eine Partie zu zweit an — mit einem menschlichen Platz p2
+(`toConfig` macht bei `mode: 'multiplayer'` den zweiten Platz menschlich), fester Rate und
+ohne Vorspulen. **Nachgestellt** über ein Neuzeichnen der Anwendung ohne Raum: Start →
+„(fest)" in der Kopfleiste. Heute ist die Lage im ausgelieferten Programm nicht erreichbar
+(`props` ändern sich dort nicht); die Zusicherung soll trotzdem an der Wirkung liegen und
+nicht an der Anzeige — genau die Fehlerklasse, die V-1 war.
+
+Gewählt ist die **kleinste ehrliche** Fassung: nichts Neues auf dem Bildschirm, kein neuer
+Spielertext — der Wähler steht, wo er etwas bewirkt, und fehlt, wo er nichts bewirken kann.
+
+**Auswirkung:**
+- `apps/desktop/src/game/newGame.ts`: `gameModesFor(multiplayerBuild, hostsParty)` (zweiter
+  Parameter neu), `effectiveMode(chosen, modes)` neu.
+- `apps/desktop/src/App.tsx`: `hostsParty` und `gameModes` (einmal, `useMemo`),
+  `startNewGame(mode)` statt `startNewGame()`.
+- `apps/desktop/src/ui/Dialogs.tsx`: `onStart: (mode: GameMode) => void`; der Knopf reicht
+  die Art weiter, die der Dialog angeboten hat.
+- Drei Fälle in `App.test.tsx` (ohne Raum kein Wähler; mit Raum beide Arten, zu zweit
+  vorgewählt; ohne Raum startet eine vorgewählte Partie zu zweit allein), drei in
+  `Dialogs.test.tsx` (die Raum-Achse von `gameModesFor`; `onStart` mit der angebotenen Art;
+  die Gegenprobe zu zweit). Die zwei Fälle R-MP-02/AK2 bekommen einen Raum als Gastgeber;
+  ihre Zusicherungen sind unverändert.
+- **Gegenprobe gefahren, dreimal:** Raumbedingung heraus → 4 Fälle fallen; der Dialog
+  reicht `options.mode` weiter → 2; `App.tsx` nimmt die gereichte Art nicht → 1.
+
+**kippbar:** Für den Hostbau ohne Raum den zweiten Weg aus PROBLEME.md gehen — den Wähler
+stehen lassen und „Zu zweit" `disabled` mit einem Grund zeigen, der dort wahr ist (etwa
+„Eine Partie zu zweit braucht den Gastgeber-Link aus `pnpm mp:host`"). Das wäre freundlicher
+zu jemandem, der den Link vergessen hat, verlangt aber einen neuen Spielertext — Noahs
+Entscheidung, deshalb nicht gebaut. Oder `props.netplay` aus `hostsParty` herausnehmen:
+dann bräuchten auch die Tests, die eine Sitzung hereinreichen und „zu zweit" wählen, einen
+Raum.
+
+---
+
+## 2026-09-18 · T-M39-11 · Der Satz aus M37 im Anlegedialog fällt ersatzlos (Befund MP-5)
+
+**Entscheidung:** `newGame.multiplayerPending` („Die Verbindung zum Mitspieler kommt mit
+dem nächsten Ausbau; die Partie beginnt vorerst lokal.") wird gestrichen — die Zeile im
+Dialog **und** der Schlüssel im Katalog. Kein Ersatzsatz.
+
+**Begründung:** PROBLEME.md stellte die Frage als „nichts oder ein anderer Satz" und nannte
+das Maß gleich mit: *der Kasten trägt sonst nur Angaben, keine Erklärungen.* Vier Zeilen
+Karte, Nationen, Computergegner, Rate — und darunter ein Satz über den Bauzustand des
+Projekts. Er war in M37 richtig und ist seit M38/M39 falsch.
+
+Ein wahrer Ersatzsatz wäre möglich („mit *Partie beginnen* geht die Einladung hinaus"),
+aber er wäre nur im Hostbau mit geöffnetem Hostlink wahr und im Hostbau ohne Link wieder
+falsch — dieselbe Falle eine Nummer kleiner. Was als Nächstes kommt, sagt ohnehin die Lobby
+einen Klick später: `party.inviteHint` mit dem Link darin.
+
+**Nachtrag vom 2026-09-24:** Seit der Nacharbeit zu V-1 steht der Kasten überhaupt nur
+noch mit Raum. Ein Ersatzsatz wäre dort also wahr, und die Überschrift „Die Einladung
+nennt:" behauptet keine Einladung mehr, die es nicht gibt — gestrichen bleibt der Satz
+trotzdem, weil der Kasten Angaben trägt und keine Erklärungen.
+
+**Auswirkung:**
+- `apps/desktop/src/i18n/de.ts`: Schlüssel weg, an seiner Stelle ein Kommentar, der den
+  alten Satz wörtlich festhält (Projektregel: zurückgenommene Zusagen werden begründet,
+  nicht gelöscht).
+- `apps/desktop/src/ui/Dialogs.tsx`: das `<small>` weg, an seiner Stelle derselbe Hinweis
+  als Kommentar.
+- Ein Fall hält fest, dass der Kasten **vier** Listeneinträge und kein `<small>` mehr
+  trägt, ein zweiter, dass `hasKey('newGame.multiplayerPending')` falsch ist.
+
+**kippbar:** Einen wahren Satz einsetzen. Dann gehört er an die Bedingung „der Gastgeber
+hat wirklich einen Raum" gehängt und nicht an `mode === 'multiplayer'` — die gibt es seit
+dem 2026-09-24 (`hostsParty` in `App.tsx`), und der Kasten steht nur noch unter ihr.

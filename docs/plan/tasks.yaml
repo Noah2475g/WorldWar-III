@@ -2803,6 +2803,17 @@ tasks:
     files: [apps/desktop/src/net/useNetplay.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/net/useNetplay.test.ts]
     dod: "D28.8 - kein Abend geht verloren, weil jemand ins Bett gegangen ist. Test zuerst: nach der Uebernahme ist der abwesende Spieler kind ai, die Partie laeuft ohne Verbindung weiter, Tempo und Vorspulen sind wieder benutzbar (R-MP-08/AK1); ohne Klick geschieht nichts davon, auch nach Minuten nicht (R-MP-08/AK2). Die uebernommene Partie laesst sich speichern und wie jede andere fortsetzen - das ist der Beleg, dass es wirklich derselbe Zustand ist, der greifbarste Gewinn des Gleichschritts (D28.2)."
+  - id: T-M38-11
+    milestone: M38
+    title: productionFiles() liest keine .test.tsx mehr
+    status: done
+    deps: [T-M38-05]
+    requirements: []
+    constraints: [C-08]
+    design: []
+    files: [test/guards/scan.ts]
+    tests: [test/guards/scan.test.ts]
+    dod: "Befund M38-4, am 2026-09-14 gemessen und nach M18 verschoben. Der Kopf von productionFiles() sagt seit M1 'Product source only - tests are out of scope', der Filter lautete !f.endsWith('.test.ts') - und eine .test.tsx endet nicht auf .test.ts. Neu: isTestFile() mit beiden Endungen in EINEM Ausdruck. Erst messen: beide Filter ueber denselben Verzeichnislauf, 205 -> 183 Dateien, 22 heraus, alle 22 .test.tsx unter apps/desktop; t()-Schluessel 350 -> 348 (Grenze 50), Schleifenpruefung 192 -> 170 (Grenze 50). Gegenprobe, dass der Filter nicht zu weit schneidet: alle echten .tsx und .ts sind weiterhin dabei, gezaehlt gegen git ls-files und nicht gegen denselben Verzeichnislauf. Schmaler wird es dem Buchstaben nach bei C-08 und bei der Schluesselpruefung; in den 22 Dateien steht kein Steuerzeichen, keine implements StoragePort, kein runAi+runTicks, kein assignments und kein scan()-Treffer - kein Urteil aendert sich. Gegenprobe gefahren: mit dem alten Filter faellt der erste Fall und nennt die 22 Dateien beim Namen. Nachgearbeitet am 2026-09-24: drei weitere Waechter ziehen die Liste ueber den Standardparameter von scan() (no-foreign-assets, no-monetization, no-time-pressure); ueber die 22 Dateien 0 Treffer bei allen vier Mustern, mit ripgrep gegengeprueft. Gezaehlt neun Waechterdateien vor diesem Commit, heute zehn; der Kopf von scan.test.ts nannte zwoelf und ist berichtigt."
   - id: T-M39-01
     milestone: M39
     title: Der Raum, der Link und das Geheimnis
@@ -2895,6 +2906,26 @@ tasks:
     files: [docs/reports/mehrspieler.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
     tests: []
     dod: "AK-9, das einzige Kriterium dieses Plans, das kein Agent erfuellen kann - ein zweiter Mensch in einem anderen Netz ist nicht simulierbar. Der Bericht haelt sechs Dinge fest: dass die Einladung ankam, dass der Gast nichts installieren musste, mindestens dreissig zusammenhaengende Spieltage, eine beantragte und angenommene Pause, ein absichtlich herbeigefuehrter Verbindungsabbruch mit Wiederaufnahme, und am Ende dieselbe Zustandspruefsumme auf beiden Seiten. GATE: diese Aufgabe bekommt gate true erst, wenn T-M39-08 erledigt ist - vorher macht sie den Plan-Waechter rot."
+  - id: T-M39-10
+    milestone: M39
+    title: Die fuenf Saetze des Pausenvertrags werden sichtbar
+    status: done
+    deps: [T-M37-11]
+    requirements: [R-MP-05]
+    design: [D-28]
+    files: [packages/netplay/src/pause.ts, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/state/uiState.ts]
+    tests: [packages/netplay/src/pause.test.ts, apps/desktop/src/App.test.tsx, apps/desktop/src/state/uiState.test.ts]
+    dod: "Befund MP-4. pauseSent, pauseDeclined, pauseExpired, paused und resuming lagen seit M37 im Katalog und wurden nirgends gerendert; wer eine Pause beantragte, sah weder, dass sein Antrag steht, noch dass er abgelehnt wurde. Zwei Sorten Satz, zwei vorhandene Orte, kein neues Panel: Zustaende (pauseSent, paused, resuming) in die Kopfleiste neben den Pausenknopf als role=status, Ereignisse (pauseDeclined, pauseExpired) in die Meldezeile, in der schon header.pauseNeedsConsent steht. Ein Zustand hat ein Ende, das die Maschine kennt; ein Ereignis nicht - notice 'declined' bliebe in der Kopfleiste stehen, bis jemand die naechste Pause beantragt. PauseState bekommt dafuer noticeBy: ohne das Feld ist 'declined' auf beiden Rechnern dasselbe, und der Ablehnende laese einen Satz ueber sich selbst. Tests zuerst, an der GANZEN Anwendung und nicht an der Kopfleiste mit handgebauten Eigenschaften (Lehre 'gruen im Test, tot im Browser'), und auf BEIDEN Seiten: neun Faelle, sechs davon fallen ohne die Reparatur, die drei uebrigen sind die Verneinungen. Die Gestaltungsfrage steht als kippbarer Entscheid in DECISIONS.md. Nachgearbeitet am 2026-09-24: ein fremder Antrag loeschte beim Gefragten jede Meldung; clearNotice nimmt jetzt onlyIf und leert nur pauseDeclined/pauseExpired - zwei Faelle an der Anwendung, einer am Reduzierer, ohne die Zeile fallen zwei. MP-6 und MP-7 aus derselben Durchsicht bleiben begruendet offen."
+  - id: T-M39-11
+    milestone: M39
+    title: Der Anlegedialog verspricht nur, was dieser Bau kann
+    status: done
+    deps: [T-M39-04]
+    requirements: [R-FREE-04, R-MP-02]
+    design: [D-28]
+    files: [apps/desktop/src/game/newGame.ts, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Befunde V-1 und MP-5. V-1: der Waehler 'Partieart' bot seit M37 in jedem Bau beide Werte an, auch im ausgelieferten Programm, in dem __MULTIPLAYER__ ein literales false ist - die Bauflagge deckte allein main.tsx. Gebaut ist der erste der drei Wege aus PROBLEME.md: gameModesFor(__MULTIPLAYER__) liefert im netzfreien Bau ['single'], der Waehler verschwindet mitsamt fester Rate und Einladungsvorschau. MP-5: newGame.multiplayerPending ist ersatzlos gestrichen, samt Schluessel; der alte Wortlaut steht als Kommentar an beiden Stellen. Die Flagge wird fuer die Oberflaeche an genau einer Stelle gelesen (App.tsx); gameModesFor ist eine reine Funktion, und der Dialog bekommt die Liste als PFLICHTeigenschaft - ohne Vorgabewert, denn ein Aufrufer, der sie vergisst, war genau die Fehlerklasse V-1. Damit laufen im Testlauf BEIDE Werte der Bauflagge, obwohl sie dort feststeht. Gegenprobe gefahren: mit dem alten Dialog und dem alten Katalog fallen vier Faelle. AK-8 bleibt unberuehrt; packaging-netfree.json ist erst nach einem neuen Bau samt measure-netfree.mjs wieder frisch. Nachgearbeitet am 2026-09-24 nach der Durchsicht: (hoch) der Hostbau ohne Raum bot die zweite Art weiter an und lieferte die erste - jetzt gameModesFor(__MULTIPLAYER__, hostsParty), zu zweit nur mit einem Raum als Gastgeber; (mittel) startNewGame uebernahm options.mode ungefiltert - jetzt reicht der Dialog ueber effectiveMode die angebotene Art an onStart weiter. Drei Faelle in App.test.tsx, drei in Dialogs.test.tsx, Gegenprobe dreimal gefahren (4, 2, 1). Im netzfreien Buendel faellt gemessen nur der Schluessel newGame.multiplayerPending heraus; Waehler, Rate und Einladung stehen als Code und Katalogtext weiter darin (Laufzeit-Indirektion, WebSocket 0x)."
 
   # M40 "Die Haltung wird ein Auftrag", geplant am 2026-09-13 (D30, R-UNIT-09).
   # Folgebau von T-M28-07 (LEVEL-UP-3.md Abschnitt 5, dort noch als T-M33-0x und D28

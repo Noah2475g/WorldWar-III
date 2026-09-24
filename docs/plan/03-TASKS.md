@@ -5385,6 +5385,28 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   danach da. **Keine Zeile im Kern** — „menschlich" ist seit M5 nur ein Attribut
   (`hotseat.test.ts`).
 
+### T-M38-11 · `productionFiles()` liest keine `.test.tsx` mehr
+- **Ziel:** Der Kopf der Funktion sagt seit M1 „Product source only — tests are out of
+  scope"; der Filter dahinter las 22 von 205 Dateien mit, die er ausschließt.
+- **Anforderungen:** keine · **Rahmen:** C-08 · **Entwurf:** —
+- **Abhängigkeiten:** T-M38-05
+- **Dateien:** `test/guards/scan.ts`
+- **Tests zuerst:** `test/guards/scan.test.ts` — keine Testdatei kommt durch, **und** jede
+  echte `.ts`/`.tsx` bleibt drin. Die Gegenliste kommt aus `git ls-files` und nicht aus
+  demselben Verzeichnislauf: ein Filter, der gegen sich selbst geprüft wird, ist immer
+  vollständig. **Gegenprobe gefahren:** mit dem alten Filter fällt der erste Fall und nennt
+  die 22 Dateien beim Namen.
+- **Fertig wenn:** `isTestFile()` erkennt beide Endungen in **einem** Ausdruck
+  (`/\.test\.[cm]?[jt]sx?$/`), damit die nächste (`.test.mts`, `.test.jsx`) nicht wieder
+  eine eigene Zeile braucht, die jemand vergisst. Erst gemessen, dann geändert: 205 → 183
+  Dateien, 22 heraus, `t()`-Schlüssel 350 → 348 (Grenze 50), Schleifenprüfung 192 → 170
+  (Grenze 50). Wo es dem Buchstaben nach schmaler wird — C-08 und die Schlüsselprüfung —
+  steht nachgemessen daneben, dass sich **kein Urteil** ändert; ebenso für die drei
+  Wächter, die die Liste über den Standardparameter von `scan()` ziehen
+  (`no-foreign-assets`, `no-monetization`, `no-time-pressure`: 0 Treffer in den 22
+  Dateien, nachgemessen am 2026-09-24). Die Zahl der Wächter ist gezählt, nicht
+  übernommen: neun vor dem Commit, zehn danach.
+
 ## Meilenstein M39 — Die Einladung
 
 > Neun Aufgaben, und am Ende steht das einzige Abnahmekriterium dieses Plans, das kein
@@ -5594,6 +5616,68 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Wiederaufnahme, und am Ende dieselbe Zustandsprüfsumme auf beiden Seiten. **Setze diese
   Aufgabe auf `gate: true`, sobald T-M39-08 erledigt ist** — vorher macht sie den
   Plan-Wächter rot.
+
+### T-M39-10 · Die fünf Sätze des Pausenvertrags werden sichtbar
+- **Ziel:** `pauseSent`, `pauseDeclined`, `pauseExpired`, `paused` und `resuming` lagen
+  seit M37 im Katalog und wurden nirgends gerendert (Befund MP-4).
+- **Anforderungen:** R-MP-05 · **Entwurf:** D28.7
+- **Abhängigkeiten:** T-M37-11
+- **Dateien:** `packages/netplay/src/pause.ts`, `apps/desktop/src/App.tsx`,
+  `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`,
+  `apps/desktop/src/state/uiState.ts`
+- **Tests zuerst:** neun Fälle in `App.test.tsx` **an der ganzen Anwendung** — nicht an der
+  Kopfleiste mit handgebauten Eigenschaften; die Lehre „grün im Test, tot im Browser"
+  stammt aus genau dieser Ecke. Jeder der fünf Sätze erscheint in dem Zustand, zu dem er
+  gehört, und verschwindet danach; auf **beiden** Seiten das Richtige; im Einzelspieler
+  keiner. Dazu fünf Fälle in `pause.test.ts` für `noticeBy`, an **zwei** Maschinen.
+  **Gegenprobe gefahren:** ohne `App.tsx` und `Header.tsx` fallen sechs der neun — die drei
+  übrigen sind die Verneinungen, die halten, dass die Anzeige nicht zu weit greift.
+  Nachgearbeitet am 2026-09-24: ein fremder Antrag lässt eine fremde Meldung stehen und
+  löscht nur die alte Pausenantwort — zwei Fälle an der Anwendung, einer in
+  `apps/desktop/src/state/uiState.test.ts`; ohne `onlyIf` fallen zwei.
+- **Fertig wenn:** zwei Sorten Satz an zwei **vorhandenen** Orten liegen, ohne neues Panel:
+  was einen **Zustand** beschreibt, steht in der Kopfleiste neben dem Knopf, der ihn
+  beendet; was ein **Ereignis** ist, in der Meldezeile, in der schon
+  `header.pauseNeedsConsent` steht. Der Grund ist kein Geschmack: ein Zustand hat ein Ende,
+  das die Maschine kennt, ein Ereignis nicht. `PauseState` trägt dafür `noticeBy` — ohne es
+  ist `'declined'` auf beiden Rechnern dasselbe, und der Ablehnende läse einen Satz über
+  sich selbst. Die Gestaltungsfrage steht als **kippbarer** Entscheid in `DECISIONS.md`.
+  Ein neuer Antrag löscht die Antwort auf den alten und **nur** sie.
+
+### T-M39-11 · Der Anlegedialog verspricht nur, was dieser Bau kann
+- **Ziel:** Der Wähler „Partieart" bot beide Werte auch dort an, wo das Programm die zweite
+  Art technisch nicht kann (Befund V-1); darunter stand ein Satz aus M37, der seit M38/M39
+  falsch ist (Befund MP-5).
+- **Anforderungen:** R-FREE-04, R-MP-02 · **Entwurf:** D28.9
+- **Abhängigkeiten:** T-M39-04
+- **Dateien:** `apps/desktop/src/game/newGame.ts`, `apps/desktop/src/ui/Dialogs.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `Dialogs.test.tsx` prüft **beide** Werte der Bauflagge, ohne sie zu
+  setzen — `gameModesFor()` ist eine reine Funktion, und der Dialog bekommt die Liste als
+  Eigenschaft. Im Hostbau **mit Raum** steht der Wähler mit beiden Arten; im netzfreien Bau
+  und im Hostbau ohne Raum steht kein Wähler, keine feste Rate und keine Einladung — auch
+  dann nicht, wenn `options.mode` noch `'multiplayer'` trägt, und `onStart` bekommt dann
+  `'single'`. Der Einladungskasten trägt vier Listeneinträge und kein `<small>`;
+  `hasKey('newGame.multiplayerPending')` ist falsch. `App.test.tsx` prüft dasselbe an der
+  ganzen Anwendung (der Testlauf IST der Hostbau): ohne Raum kein Wähler, mit Raum beide
+  Arten und zu zweit vorgewählt, und eine vorgewählte Partie zu zweit startet ohne Raum
+  allein. **Gegenprobe gefahren:** mit dem alten Dialog und dem alten Katalog fallen vier
+  Fälle; in der Nacharbeit vom 2026-09-24 dreimal (Raumbedingung heraus → 4, Dialog reicht
+  `options.mode` weiter → 2, `App.tsx` nimmt die gereichte Art nicht → 1).
+- **Fertig wenn:** von den drei Wegen, die `PROBLEME.md` offenließ, der **erste** gebaut
+  ist — im netzfreien Bau gibt es die Wahl nicht. Er ist der einzige, nach dem die Zusage
+  „die Tauri-Anwendung kennt keinen Mehrspieler" auch an der Oberfläche wahr ist, und er
+  nimmt nichts weg: die Wahl lief dort ohnehin in eine Einzelspielerpartie mit fester Rate
+  und ohne Vorspulen. Die Flagge wird für die Oberfläche an **genau einer** Stelle gelesen;
+  `modes` ist eine **Pflicht**eigenschaft ohne Vorgabewert, denn ein Aufrufer, der sie
+  vergisst, war genau die Fehlerklasse V-1. **Im Hostbau** gibt es die Wahl nur mit einem
+  Raum, den dieser Bildschirm als Gastgeber führt (`gameModesFor(__MULTIPLAYER__,
+  hostsParty)`, Nacharbeit vom 2026-09-24), und der **Start** hält sich an die angebotene
+  Art (`effectiveMode`, `onStart(mode)`), nicht an `options.mode`. **AK-8 bleibt
+  unberührt**; `packaging-netfree.json` ist erst nach einem neuen Bau samt
+  `measure-netfree.mjs` wieder frisch — gemessen fällt im netzfreien Bündel nur der
+  Schlüssel `newGame.multiplayerPending` heraus, Wähler, Rate und Einladung stehen als Code
+  weiter darin.
 
 
 ## Meilenstein M40 — Die Haltung wird ein Auftrag

@@ -3675,7 +3675,40 @@ Muster nennt, braucht dieselbe Notbremse wie der Produktcode — `GUARD-ALLOW` i
 steht es in `websocketTransport.test.ts`, wo die Regel gegen `crypto.randomUUID` ihre eigene
 Gegenprobe braucht.
 
-**Status:** offen, gemessen, nach M18 verschoben (2026-09-14).
+**Status:** erledigt (2026-09-18, T-M38-11). Der Filter heißt jetzt `isTestFile()` und
+erkennt beide Endungen in **einem** Ausdruck (`/\.test\.[cm]?[jt]sx?$/`), damit die
+nächste nicht wieder eine eigene Zeile braucht. **Unabhängig nachgemessen am 2026-09-18**
+(eigener Verzeichnislauf, beide Filter über denselben Baum):
+`productionFiles()` liefert **205 → 183** Dateien, herausgeschnitten werden **22**, und
+alle 22 sind `.test.tsx` unter `apps/desktop` — keine einzige Produktdatei fällt weg
+(Gegenprobe: alle 23 echten `.tsx` und alle echten `.ts` sind weiterhin dabei). Die zwei
+Zahlen, die der alte Eintrag nannte, sind mitgewachsen und stimmen in der Richtung:
+`t()`-Schlüssel **350 → 348** (Grenze 50), Schleifenprüfung **192 → 170** (Grenze 50). Die
+beiden verlorenen Schlüssel sind `tutorial.steps.dayPassed.text` und
+`tutorial.steps.select.text` — der Produktcode fragt sie zusammengesetzt ab
+(`Tutorial.tsx`), und `tutorial.test.ts` prüft für **jeden** Schritt alle drei Schlüssel;
+es geht also nichts verloren.
+**Was schmaler wird, und zwar dem Buchstaben nach:** der Steuerzeichen-Wächter (C-08) las
+die 22 Dateien bisher mit — zufällig, denn die rund 200 `.test.ts` hat er nie gelesen; und
+die Schlüsselprüfung sieht `t()`-Aufrufe in `.test.tsx` nicht mehr. In den 22 Dateien steht
+heute kein Steuerzeichen, keine `implements StoragePort`, kein `runAi`+`runTicks`, kein
+`assignments` und kein Treffer eines `scan()`-Musters (alles nachgemessen) — **kein Urteil
+ändert sich**. `ai-memory-unread.test.ts` filterte `.test.tsx` schon vorher selbst heraus;
+diese Zeile ist jetzt überflüssig und bleibt als Gürtel neben den Hosenträgern stehen.
+**Gezählt statt übernommen (Nacharbeit vom 2026-09-24):** neun Wächterdateien bekamen die
+Liste vor `c0d20b4` geliefert — **sechs direkt** (`ai-memory-unread`,
+`no-control-characters`, `no-network`, `persistence-contract`, `single-loop`, `text-keys`)
+und **drei über den Standardparameter von `scan()`**, die im Bericht vom 2026-09-18
+fehlten: `no-foreign-assets` (zwei Muster), `no-monetization`, `no-time-pressure`. Über
+genau die 22 herausgeschnittenen Dateien nachgemessen, mit demselben Verzeichnislauf und
+derselben `GUARD-ALLOW`-Ausnahme: Medien **0**, Vorbilder **0**, `CURRENCY_TERMS` **0**,
+`WAIT_OR_PAY` **0**; gegengeprüft mit ripgrep über dieselben 22 Dateien, auch ohne die
+Ausnahme **0**. Mit `scan.test.ts` lesen heute zehn Dateien die Liste. Die „zwölf" im Kopf
+von `scan.test.ts` (aus dem Befundtext oben, nicht gezählt) und die „sieben" im Bericht vom
+2026-09-18 sind berichtigt (`7b2f3df`).
+Neu: `test/guards/scan.test.ts`. Seine Gegenliste kommt aus `git ls-files` und **nicht** aus
+demselben Verzeichnislauf — ein Filter, der gegen sich selbst geprüft wird, ist immer
+vollständig. Er hält auch den alten Filter als Gegenprobe fest.
 
 ---
 
@@ -4103,7 +4136,23 @@ eine Frage an den Maßstab — die Kopfleiste ist im Mehrspieler schon voll (Uhr
 „Warte auf Mitspieler …", *Pause beantragen*, der Verlust-Hinweis mit zwei Knöpfen). Ein
 Agent, der hier Text einbaut, entscheidet über das Aussehen.
 
-**Status:** offen — Frage an Noah.
+**Status:** erledigt (2026-09-18, T-M39-10). Die drei Sätze, die einen **Zustand**
+beschreiben — `pauseSent`, `paused`, `resuming` — stehen in der Kopfleiste neben dem
+Pausenknopf; die zwei **Ereignisse** — `pauseDeclined`, `pauseExpired` — in der
+Meldezeile, in der schon `header.pauseNeedsConsent` steht. Die Gestaltungsfrage, an der
+der Befund hing, ist damit entschieden und in DECISIONS.md als kippbar festgehalten.
+Dafür trägt `PauseState` ein neues Feld `noticeBy`: ohne es ist `'declined'` auf beiden
+Rechnern dasselbe, und der Ablehnende läse einen Satz über sich selbst. Neun Fälle an der
+ganzen Anwendung (`App.test.tsx`), **sechs davon fallen ohne die Reparatur**; die drei
+übrigen sind die Verneinungen — der Ablehnende liest nichts, der eigene Antrag bekommt
+keinen Dialog, im Einzelspieler steht keiner der fünf Sätze.
+**Nachgearbeitet am 2026-09-24** (Durchsicht vom 2026-09-18, Stufe niedrig): ein fremder
+Antrag löschte beim Gefragten jede Meldung, nicht nur die alte Pausenantwort — an der
+ganzen Anwendung nachgestellt („+" gedrückt, der Hinweis zur festen Rate steht, der
+Mitspieler beantragt, der Hinweis ist fort). `clearNotice` nimmt jetzt ein `onlyIf` und
+leert nur `pauseDeclined`/`pauseExpired`; zwei Fälle an der Anwendung, einer am
+Reduzierer, Gegenprobe gefahren. Zwei weitere Befunde derselben Durchsicht bleiben offen:
+MP-6 und MP-7.
 ---
 
 ## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-5: Ein Satz aus M37 steht noch im Anlegedialog
@@ -4124,7 +4173,13 @@ auf „Zu zweit über einen Link" — der Satz steht als `<small>` unter den vie
 Frage an den Maßstab — der Kasten trägt sonst nur Angaben, keine Erklärungen. Spielertext ist
 Noahs Entscheidung.
 
-**Status:** offen — Frage an Noah.
+**Status:** erledigt (2026-09-18, T-M39-11). Der Satz ist ersatzlos gestrichen, samt
+Schlüssel `newGame.multiplayerPending`; der alte Wortlaut steht als Kommentar an beiden
+Stellen. Der Kasten trägt jetzt, was PROBLEME.md als Maß nannte: Angaben, keine
+Erklärungen. Was als Nächstes kommt, sagt die Lobby einen Klick später. Seit der
+Nacharbeit zu V-1 (2026-09-24) steht der Kasten nur noch mit Raum; seine Überschrift „Die
+Einladung nennt:" behauptet damit keine Einladung mehr, die es nicht gibt. Im netzfreien
+Bündel ist der Schlüssel gemessen fort („nächsten Ausbau" 0×, „vorerst lokal" 0×).
 ---
 
 ## 2026-09-14 · Verpackungslauf AK-8 (`e82c2bc`) · Befund V-1: Der netzfreie Bau bietet eine Partieart an, die er nicht herstellen kann
@@ -4168,8 +4223,108 @@ zu zweit geht es über den Hostdienst“), oder ihn bewusst als Vorschau behalte
 einzige, nach dem die Zusage „die Tauri-Anwendung kennt keinen Mehrspieler“ **auch an der Oberfläche**
 wahr ist; die Zusage „darf ihn technisch nicht können“ ist schon heute gemessen wahr.
 
-**Status:** offen — Frage an Noah. **AK-8 ist davon nicht betroffen**: die sieben Schritte fahren
-„Allein gegen den Rechner“, so wie ein Spieler das ausgelieferte Programm fährt (`docs/reports/packaging.md`).
+**Status:** erledigt (2026-09-18, T-M39-11; **nachgearbeitet am 2026-09-24**). Gebaut ist
+der **erste** der drei Wege: im netzfreien Bau gibt es die Wahl nicht. **Im Hostbau gibt es
+sie nur mit Raum** — die Fassung vom 2026-09-18 hing die Liste allein an die Bauflagge, und
+der Hostbau ohne Raum (`/` statt `#/gastgeben`) bot die zweite Art weiter an und lieferte
+die erste: das Symptom dieses Befunds, im anderen Bau (Durchsicht vom 2026-09-18, Stufe
+hoch; am 2026-09-24 an der ganzen Anwendung nachgestellt). Jetzt
+`gameModesFor(__MULTIPLAYER__, hostsParty)` — zu zweit nur, wenn der Bau es kann **und**
+dieser Bildschirm einen Raum als Gastgeber führt. Und die **Wirkung** hängt an derselben
+Liste, nicht nur die Anzeige: `effectiveMode` entscheidet, was der Dialog zeichnet und was
+er an `onStart` weiterreicht; `startNewGame` liest `options.mode` nicht mehr (Stufe mittel,
+nachgestellt: eine vorgewählte Partie zu zweit startete ohne Raum mit fester Rate). Die
+Bauflagge wird für die Oberfläche an genau einer Stelle gelesen (`App.tsx`, `gameModes`);
+geprüft sind **beide** Werte der Flagge und **beide** Lagen des Raums, ohne die Flagge zu
+setzen. Entscheid samt Kippweg in DECISIONS.md. **AK-8 bleibt unberührt**: die sieben
+Schritte fahren „Allein gegen den Rechner", und genau das ist die einzige Partieart des
+ausgelieferten Programms.
+**Was sich im netzfreien Bündel ändert — gemessen, nicht erschlossen** (2026-09-24,
+`vite build` in `apps/desktop` ohne `WORLDWAR_MULTIPLAYER` auf `f47b830`, Ausgabe außerhalb
+des Baums): heraus fällt **allein der Schlüssel** `newGame.multiplayerPending` („nächsten
+Ausbau" 0×, „vorerst lokal" 0×). Wähler, Rate und Einladungskasten **stehen weiter im
+Bündel** und werden nur zur Laufzeit nicht gezeichnet: „Zu zweit über einen Link" 1×,
+„Partieart" 1×, „Die Einladung nennt" 1×, „Feste Geschwindigkeit" 3×, der Aufruf
+`newGame.modeMultiplayer` 1×. Der Grund: die Liste kommt aus einer Funktion in einem
+anderen Modul, `modes.length > 1` kann Rollup nicht falten — und selbst mit der Flagge als
+Literal im Dialog blieben die Texte im Katalog `de.ts`, der als Ganzes gebündelt wird. Es
+ist Laufzeit-Indirektion, keine Baumschneidung; die Fassung vom 2026-09-18 („die zweite
+Option und der Satz aus M37 fallen heraus") war zur Hälfte falsch. `WebSocket` im Bündel:
+**0×** — die Netzfrei-Zusage hält, an dem Zweig hängt kein Netzcode. **Neu zu messen bleibt
+das Erzeugnis**, weil sich der Code geändert hat, nicht weil Inhalt fiele: gemessen
+**2 Dateien, 1 669 812 Zeichen** gegen 1 668 947 in `docs/reports/packaging-netfree.json`
+(gemessen auf `6622ec9`); `bundle.bytes` und `binary.bytes` stimmen erst nach einem neuen
+Bau samt `scripts/measure-netfree.mjs` wieder. Der Wächter ist heute grün — er liest den
+Bericht und, wenn die exe auf der Maschine liegt, sie selbst; beide sind unverändert.
+
+---
+
+## 2026-09-24 · Durchsicht der Bahn C · Befund MP-6: Zwei gleiche Pausenereignisse hintereinander fallen zusammen
+
+**Befund** (Durchsicht vom 2026-09-18, Stufe niedrig; per Codelesen, **nicht nachgestellt**):
+der Effekt in `App.tsx`, der `pauseDeclined`/`pauseExpired` in die Meldezeile schreibt,
+reagiert auf eine **Änderung** von `pause.notice` und `pause.noticeBy` — und die Hülle sieht
+`PauseState` nur einmal je Takt: `setSnapshot` steht allein in `schlag()`
+(`useNetplay.ts`), während `requestPause`, `answerPause`, `resume` und der Empfang den
+Zustand ohne Schnappschuss ändern. Fallen ein `'requested'` und die Antwort darauf in
+dieselbe Taktlücke (40 ms bei 25 Stunden je Sekunde), sieht React nur `'declined'`; beim
+**zweiten** Mal in Folge ändert sich dann weder `notice` noch `noticeBy`, und der
+Antragsteller liest nichts.
+
+**Nicht repariert, und warum:** die saubere Reparatur ist eine monoton wachsende
+Ereignisnummer in `PauseState` (oder ein Schnappschuss nach jeder Pausenänderung in
+`useNetplay`) — ein Eingriff in `packages/netplay` samt Tests an zwei Maschinen, kein
+Minutenwerk. Und die Lage braucht einen Menschen, der binnen eines Takts auf einen Antrag
+antwortet, den sein eigener Bildschirm erst im nächsten Takt zeigt; am Bildschirm ist sie
+nicht beobachtet.
+
+**Status:** offen, niedrig (2026-09-24).
+
+---
+
+## 2026-09-24 · Durchsicht der Bahn C · Befund MP-7: `pollPause` kann das Verfallen im selben Aufruf überschreiben
+
+**Befund** (Durchsicht vom 2026-09-18, Stufe niedrig; per Codelesen, **nicht nachgestellt**):
+`pollPause` (`packages/netplay/src/pause.ts`) prüft nacheinander „Antrag verfallen" und
+„Fortsetzen fällig" auf demselben Zwischenstand. Sind beide im selben Aufruf fällig, setzt
+der zweite Zweig `notice: 'resumed'` und löscht das `'expired'` des ersten — das Verfallen
+wird nie gemeldet. Möglich ist das, weil `applyPause('antrag')` einen Antrag auch während
+einer stehenden Partie oder während der drei Sekunden Vorlauf annimmt.
+
+**Nicht repariert, und warum:** beide Reparaturen sind Entscheidungen über den
+Pausenvertrag (R-MP-05, D28.7), keine Handgriffe — einen Antrag während der Pause
+verwerfen, oder Ereignisse als Liste statt als Einzelwert führen. Das Fenster ist schmal:
+die Frist eines Antrags (30 s) muss im selben Abfrageschritt ablaufen wie der Vorlauf
+(3 s), und der Antrag muss während einer stehenden Partie gestellt worden sein. Die
+Kopfleiste zeigt dort *Fortsetzen* statt *Pause beantragen*; die Leertaste ruft
+`requestPause` allerdings weiterhin, und `useNetplay` reicht ihn ohne eigene Sperre an den
+Gleichschritt weiter (ob `createLockstep` ihn dann annimmt, ist nicht geprüft).
+
+**Status:** offen, niedrig (2026-09-24).
+
+---
+
+## 2026-09-24 · Nacharbeit der Bahn C · Befund MP-8: Der Gastgeber mit Raum wählt „Allein" und bekommt trotzdem die Lobby
+
+**Befund:** `startNewGame` bietet die Partie dem Raum an, sobald dieser Bildschirm Gastgeber
+ist (`alsGastgeber = netParty.active && netParty.role === 'host'`) — **unabhängig von der
+gewählten Art**. Gemessen am 2026-09-24 an der ganzen Anwendung (ein Wegwerf-Test, nicht
+eingecheckt): Gastgeber mit Raum, Partieart auf „Allein gegen den Rechner", *Partie
+beginnen* → es öffnet sich der Dialog „Partie zu zweit eröffnen", die Kopfleiste zeigt
+keine feste Rate, *Vorspulen* ist da. Angeboten wird dabei die Partiedefinition der
+Einzelspielerpartie — `toConfig` macht bei `mode: 'single'` den zweiten Platz zu einem
+Computergegner, auf den der Gast beträte (per Codelesen; was dann geschieht, ist nicht
+gemessen). Das ist V-1 in der Gegenrichtung: angeboten „allein", geliefert eine Lobby. Das
+Verhalten ist älter als diese Bahn; die Nacharbeit zu V-1 hat es nicht verändert, nur
+sichtbar gemacht.
+
+**Nicht repariert, und warum:** die Antwort ist eine Frage an den Maßstab. Entweder startet
+„Allein" auch mit Raum eine Einzelspielerpartie ohne Angebot (dann wartet ein schon
+verbundener Gast weiter auf eine Partie, die nicht kommt), oder der Gastgeber mit Raum
+bekommt gar keine Wahl (wer über `#/gastgeben` kommt, will zu zweit spielen — T-M39-03).
+Beides ist ein Satz Code; welcher, entscheidet Noah.
+
+**Status:** offen — Frage an Noah (2026-09-24).
 
 ---
 
