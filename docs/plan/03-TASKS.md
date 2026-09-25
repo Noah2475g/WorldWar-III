@@ -3302,6 +3302,20 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Annahme und Widerruf mit Frist wirken, die Angebotsfrist aus `constants.json` kommt (B3), die
   Sichtfelder `passageGranted`, `passageReceived`, `passageEndsAtTick`, `mapShared`,
   `mapReceived` heißen und die Golden-Master unverändert sind.
+- **Erledigt am 2026-09-24:** Wer gewährt, lässt durch — und darf nicht selbst hinein: der
+  Befund B1 war der erste Test und zuerst rot. `grantRightOfWay` und `shareMap` setzen nur die
+  eigene Richtung (`setPassage`/`setMapShared` in `state/create.ts`, neben den Leserinnen);
+  Antrag, Annahme und Kündigung mit Frist (`rightOfWayNoticeTicks` **24**) wirken, die
+  Angebotsfrist kommt aus `offerLifetimeDays` (**3**, B3). `RIGHT_OF_WAY_CHANGED` geht an beide
+  Beteiligten und steht im Protokoll als Satz, die Kündigung mit ihrem Tag. Die Sicht heißt
+  `passageGranted`, `passageReceived`, `passageEndsAtTick` (**Paar** `granted`/`received`),
+  `mapShared`, `mapReceived`. **Entschieden (M17-3, kippbar):** ein Krieg nimmt Durchmarsch und
+  Karte in beiden Richtungen mit — auch der Überfall, der die Karte seit M6 stehen ließ. Das
+  KI-Erwidern (B2) ist an einer echten Partie **am Zustand** geprüft und fällt ohne die Regel,
+  mit täglichem Wiederholen und mit dem Kern von vorher. 42 neue Fälle, 17 Gegenproben, jede
+  fällt; Golden-Master unverändert; Turnier zeilengleich, `m17-baseline` bytegleich zu `522ebca`.
+  Nacharbeit (2026-09-25): ein Antrag während laufender Kündigung nannte den irreführenden Grund
+  „bereits gewährt" statt „gekündigt" — repariert (Befund siehe `PROBLEME.md`).
 
 ### T-M17-05 · Handelsangebote mit Treuhand
 - **Ziel:** ein zweiter Handelsweg neben der Börse, der Mengen zwischen zwei Mächten bindet.
@@ -3321,6 +3335,18 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   (B4). **Korrektur am Planungsstand:** die vier neuen Befehlstypen erreicht die Oberfläche erst
   in T-M17-14 — sie stehen bis dahin mit Verweis in `NICHT_FUER_DEN_SPIELER`, sonst ist der
   Wächter dazwischen rot.
+- **Erledigt am 2026-09-25:** Vier Befehle in `commands/tradeOffer.ts` — `OFFER_TRADE` legt die
+  angebotene Menge sofort in Treuhand, `ACCEPT_TRADE` tauscht im selben Tag (und lässt das
+  Angebot bei `INSUFFICIENT_RESOURCES` liegen), `DECLINE_TRADE`/`WITHDRAW_TRADE` geben zurück.
+  Verfall und Krieg schließen in **einem** Durchlauf (`settleTradeOffers`, Schritt 4 der
+  Diplomatiephase, nach den Überfällen), Rangfolge `invalid` vor `war` vor `expired` — deshalb
+  gibt „Überfall und Verfall im selben Tick" die Treuhand genau einmal zurück, als Krieg.
+  `TRADE_AGREED` trägt keine Menge und ist Weltgeschehen; `TRADE_OFFER_CLOSED` lesen nur die
+  Beteiligten. B4 nicht geerbt: jede Schließung trifft genau eine `offerId`. 52 neue Fälle, der
+  Eigenschaftstest (200 zufällige Folgen) hält Bestand-plus-Treuhand-Erhaltung fest und zählt
+  jeden Ausgang, damit er — anders als in der Vorarbeit — nicht leer grün bleibt. 20
+  Gegenproben, 19 fallen; eine (G18, Befund M17-D4) zeigt nur, dass `settleTradeOffers` die
+  Registrierung schon über den Import der Diplomatiephase mitbringt. Golden-Master unverändert.
 
 ### T-M17-06 · Provinzhandel
 - **Ziel:** eine Provinz wechselt den Besitzer, ohne dass jemand sie erobert.
@@ -3328,12 +3354,26 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M17-05
 - **Dateien:** `packages/core/src/commands/tradeOffer.ts`, `packages/core/src/phases/occupation.ts`,
   `packages/core/src/events/types.ts`, `packages/core/src/events/world.ts`,
-  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/Panels.tsx`
 - **Tests zuerst:** R-DIP-09/AK1 (vier Ablehnungen, bei Angebot **und** Annahme, Verfall mit
   Rückgabe), AK2 (Besitzer im selben Tick, Aufträge enden über `ownerAtStart`, keine
   Verstimmung, kein Alarm); nie ein Überfall im Tick danach.
 - **Fertig wenn:** der Besitzerwechsel über einen gemeinsamen Helfer mit der Eroberung läuft und
   `PROVINCE_CEDED` im Weltgeschehen steht.
+- **Erledigt am 2026-09-25:** Ein gemeinsamer Helfer `transferProvince` in `phases/occupation.ts`
+  (Besitzerwechsel, Aushebung leeren) bedient jetzt Eroberung **und** Vertragsabtretung — die
+  Eroberung läuft verhaltensgleich darüber (eigener Commit, Golden-Master unverändert). Eine
+  Provinz im Angebot scheitert an fünf Gründen (`nicht im Besitz`, `Hauptstadt`, `umkämpft`,
+  `eigene Armeen`, `fremde Armeen`), die gebende Seite wird voll, die verlangte nur öffentlich
+  geprüft (R-DIP-04) — ein Angebot verrät nie Hauptstadt oder Armeen der fremden Macht. Verfällt
+  eine Bedingung zwischen Angebot und Annahme, schließt `settleTradeOffers` das Angebot noch im
+  selben Tick als `invalid`, mit Rückgabe. `PROVINCE_CEDED` trägt keinen Preis, ist Weltgeschehen
+  und kein Alarm. 32 neue Fälle plus 1 gelöschter in `tradeOffer.test.ts` (83 gesamt), dazu
+  `occupation.test.ts`: ein Helfer für Eroberung und Abtretung. 24 Gegenproben, alle fallen.
+  Nacharbeit (2026-09-25): ein Handelsangebot mit unbekanntem Anbieter ließ den Verfallslauf
+  abstürzen, jetzt gibt `closeTradeOffer` die Treuhand nur zurück, wenn der Anbieter existiert
+  (Befund M17-D6); der Spielertext eines hinfälligen Angebots nannte fälschlich nur ein
+  Ausscheiden, nennt jetzt beide Ursachen (Befund M17-D7).
 
 ### T-M17-07 · Spione anwerben, ansetzen, entlassen
 - **Ziel:** Spione sind keine Einheiten, sondern Aufträge mit Sold.
@@ -3347,71 +3387,163 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Tests zuerst:** `espionage.test.ts` R-SPY-01/AK1 bis AK3 samt Prüfreihenfolge.
 - **Fertig wenn:** Preis und Sold aus dem Anker von T-M17-02 stehen und die drei Befehlstypen bis
   T-M17-13 mit Verweis in `NICHT_FUER_DEN_SPIELER` stehen.
+- **Erledigt am 2026-09-24:** `RECRUIT_SPY`, `REASSIGN_SPY`, `DISMISS_SPY` in
+  `commands/espionage.ts`. Die Prüfreihenfolge ist Existenz → Kenntnis des Ziels → Auftrag →
+  Zielbedingung → Obergrenze → Kosten, beim Umsetzen zuerst der Spion; jedes Paar ist ein Test.
+  **Zwei Abweichungen vom Entwurf, beide aus demselben Grund — die Ablehnung ist ein Text an den
+  Befehlenden und über `canApply` eine Frage, die jede KI stellen kann:** ein fremder Spion wird
+  abgelehnt wie ein fehlender (`kein Spion` statt `NOT_OWNER`), und die Zielbedingung prüft den
+  Besitzer, den der Spieler **kennt**, nicht den verborgenen (`DECISIONS.md`, beide kippbar).
+  Die Sicht bekommt ein eigenes Feld `PublicView.espionage.spies` am Ende statt `self.spies`
+  (Anbau-Konvention der beiden M17-Bahnen). Sold und Preis aus dem Anker: `spySalaryIntel` **10153**,
+  Anwerben **101530**, Sabotage **20306**, Gegenspionage **5076**, Höchstzahl **5**. Keiner der
+  drei Befehle erzeugt ein Ereignis. 44 Fälle, zwölf Gegenproben, jede fällt; Golden-Master und
+  Turnier unverändert. Neuer Befund M17-S1: die eigene Kennungsfolge verrät die Zahl fremder
+  Anwerbungen dazwischen — offen für M18.
 
 ### T-M17-08 · Sold, Tageslauf und Aufklärung
 - **Ziel:** ein Spion tut einmal am Tag etwas, und nur, wenn er bezahlt ist.
 - **Anforderungen:** R-SPY-02, R-SPY-03 · **Entwurf:** D29.3, D29.4, D29.6
 - **Abhängigkeiten:** T-M17-07
 - **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/phases/dailyTick.ts`,
-  `packages/core/src/view/publicView.ts`, `packages/core/src/view/intel.ts`,
-  `packages/core/src/events/types.ts`, `apps/desktop/src/game/events.ts`,
-  `apps/desktop/src/i18n/de.ts`
+  `packages/core/src/view/publicView.ts`, `packages/core/src/events/types.ts`,
+  `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`,
+  `packages/core/src/commands/espionage.ts`, `packages/core/src/rules/espionage.ts`,
+  `data/rules/default/constants.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`
+  > **Berichtigt am 2026-09-24 (T-M17-08).** Zusätzlich angefasst: `packages/core/src/commands/espionage.ts`
+  > (gibt `spyTargetProblem` an `rules/espionage.ts` ab), `data/rules/default/constants.json`,
+  > `packages/core/src/rules/types.ts`, `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`
+  > — der Tageslauf braucht `spySuccessIntelPermille` und `spyRevealDays`, die T-M17-07 (nur die
+  > sechs Zahlen, die sein eigener Code liest) noch nicht anlegen konnte. `packages/core/src/view/
+  > intel.ts` ist **nicht** angefasst (`updateIntel` läuft über `visibleProvinces`) — in der
+  > ersten Fassung dieser Zeile stillschweigend gestrichen, das Streichen war richtig.
 - **Tests zuerst:** `phases/espionage.test.ts` R-SPY-02/AK1 bis AK3, R-SPY-03/AK1 und AK2; ohne
   Spione ist der Hash nach jedem von 500 Ticks gleich dem Lauf ohne `settleEspionage`; mit
-  Spionen zwei Läufe gleicher Startzahl hashgleich.
+  Spionen zwei Läufe gleicher Startzahl hashgleich. Zusätzlich `packages/core/test/determinism.test.ts`,
+  `apps/desktop/src/game/events.test.ts`, `apps/desktop/src/i18n/text.test.ts`.
 - **Fertig wenn:** `tiny-500` unverändert ist.
+- **Erledigt am 2026-09-24:** `settleEspionage` (`phases/espionage.ts`) läuft in `dailyTick`
+  direkt nach `settleMorale`: abgelaufene Aufdeckungen fallen weg, Sold je Spion (wer nicht
+  zahlen kann verliert ihn vor jeder Ausführung), übrige Aufträge mit `assignedTick` vor
+  Tagesbeginn würfeln — passt das Ziel nicht mehr zum wahren Besitzer, `targetChanged` statt
+  Wurf. Nur `intel` würfelt bisher; Sabotage folgt in T-M17-09. Aufgedeckte Provinzen fließen als
+  eigene Menge (nur die Provinz, nicht ihre Nachbarn) in `visibleProvinces`, `publicView` trägt
+  Gebäude und Armeezusammensetzung nach. `SPY_REPORT`/`SPY_LOST` nur an den Besitzer, ohne
+  Rohschlüssel im Protokoll (`espionage.missions`/`espionage.outcomes` in `de.ts`, angehängt
+  hinter `diplomacy`). Zwei Regelzahlen ergänzt: `spySuccessIntelPermille` **800**,
+  `spyRevealDays` **1**. 36 Testfälle, drei Determinismusfälle (D29.4), 24 Gegenproben, jede
+  fällt mindestens einen Test; Golden-Master und Turnier unverändert. Nacharbeit (2026-09-25,
+  zwei Runden): `Object.hasOwn` statt roher Objektzugriff in `checkTarget`/`knownOwner`
+  (Prototyp-Schlüssel wie `constructor` wurden sonst als gültige Provinz genommen, Befund
+  M17-S2, kritisch); Spione einer ausgeschiedenen Macht werden jetzt vor dem Sold entfernt statt
+  weiter zu sabotieren (Befund M17-S3); `economyOverview` zählt seither auch den Spionagesold
+  zur Verbrauchsübersicht (R-ECON-06).
 
 ### T-M17-09 · Sabotage und Gegenspionage
 - **Ziel:** der Betroffene erfährt, dass etwas geschah — nicht, wer es war.
 - **Anforderungen:** R-SPY-04, R-SPY-05 · **Entwurf:** D29.3, D29.5
 - **Abhängigkeiten:** T-M17-08
 - **Dateien:** `packages/core/src/phases/espionage.ts`, `packages/core/src/events/types.ts`,
-  `data/rules/default/constants.json`, `docs/plan/BALANCING.md`,
+  `data/rules/default/constants.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`,
   `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`
 - **Tests zuerst:** R-SPY-04/AK1 bis AK4 (nie negativer Bestand, eine Sabotage je Provinz und Tag,
   `firstAlertFor` hält das Opfer an und keinen Dritten), R-SPY-05/AK1 und AK2;
   `event-audience.test.ts` mit Spionen: kein Ereignis für das Opfer trägt den Urheber, auch nicht
-  im gerenderten Text.
+  im gerenderten Text. Zusätzlich `packages/core/test/determinism.test.ts`,
+  `apps/desktop/src/game/events.test.ts`, `apps/desktop/src/i18n/text.test.ts`.
 - **Fertig wenn:** `SABOTAGE_SUFFERED` ohne Urheberfeld in `ALERT_TYPES` steht.
+- **Erledigt am 2026-09-25:** `settleEspionage` Schritt (c) `counterIntelligence`: jeder fällige
+  Gegenspion würfelt je fremdem Spion seiner Provinz, ein Enttarnter wird nicht zweimal gewürfelt
+  und führt seinen Auftrag nicht mehr aus; `SPY_DETECTED` an Urheber und Entdecker (ohne
+  Spionkennung), Ansehen des Urhebers sinkt (doppelt bei Sabotage ohne Krieg), Verstimmung des
+  Entdeckers über `addGrievance` (R-DIP-06, Befund B7 erste Hälfte eingelöst). Schritt (d):
+  Sabotage würfelt eine eigene Chance, höchstens eine gelungene Sabotage je Provinz und Tag über
+  beide Arten. Wirtschaftssabotage senkt Moral und vernichtet Ertrag (nie mehr als vorhanden, nie
+  negativ); Militärsabotage verzögert Bau-/Aushebeaufträge und deckt die Armeen auf.
+  `SABOTAGE_SUFFERED` ohne Urheberfeld, in `ALERT_TYPES`, außerhalb des Zinnober-Rückschlagsbalkens
+  (D24.1, Sabotage ist kein Rückschlag in diesem Sinn). 46 neue Testfälle in sechs
+  `describe`-Blöcken, Eigenschaft über einen 40-Tage-Lauf (Kern und gerenderter Text), 32
+  Gegenproben, jede fällt; Golden-Master und Turnier unverändert. Nacharbeit (2026-09-25):
+  `Object.hasOwn` gegen Prototyp-Schlüssel (Befund M17-S2); Spione einer ausgeschiedenen Macht
+  werden vor dem Sold entfernt (Befund M17-S3); Kommentar zu D29.4 präzisiert.
 
 ### T-M17-10 · KI: Durchmarsch und Handelsangebote
 - **Ziel:** ohne die KI ist jeder neue Weg ein Spielervorteil (R-AI-01).
 - **Anforderungen:** R-AI-09, R-DIP-08, R-DIP-05 · **Entwurf:** D29.8
 - **Abhängigkeiten:** T-M17-04, T-M17-05
 - **Dateien:** `packages/ai/src/passage.ts`, `packages/ai/src/trade.ts`, `packages/ai/src/decide.ts`,
-  `packages/ai/src/military.ts`, `data/rules/default/ai.json`, `packages/core/src/rules/types.ts`,
-  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`, `test/balancing.test.ts`
+  `packages/ai/src/military.ts`, `packages/ai/src/economy.ts`, `packages/ai/src/index.ts`,
+  `data/rules/default/ai.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `packages/core/src/view/publicView.ts`,
+  `docs/plan/BALANCING.md`, `test/balancing.test.ts`
 - **Tests zuerst:** `passage.test.ts` (Weg durch eine friedliche Macht → Antrag statt Marsch,
   Antwort nach Schwelle, Widerruf, Rückzug des Gasts), `trade.test.ts` (Annahme und Ablehnung
   begründet, Angebot nur bei Kurswirkung); `test/balancing.test.ts` prüft die neuen Zahlen oben
-  in `ai.json`.
+  in `ai.json`. Zusätzlich `packages/core/src/view/publicView.test.ts`,
+  `apps/headless/test/tournament.test.ts`, `test/guards/ai-memory-unread.test.ts`.
 - **Fertig wenn:** jede Handlung Grund und Alternative nennt (R-AI-09/AK4) und das Turnier im
   Band 0,55 bis 0,95 bleibt.
+- **Gebaut am 2026-09-25, Status zurückgenommen (siehe `tasks.yaml`, Feld `reopened`):** Durchmarsch
+  fragt statt zu marschieren (B6 behoben), Handel antwortet begründet und bietet nur bei spürbarer
+  Kurswirkung an, jede neue Zahl steht in `ai.json`. Das Fertig-wenn selbst ist **nicht** erfüllt:
+  „schwer gegen normal, im Frieden" fällt auf 50 % (Band 0,55–0,95 gerissen). Ursprünglich Befund
+  M17-D9 zugeschrieben (`landNeighbours` kenne keinen direkten Landnachbarn) — das ist in der
+  Nacharbeit ki **widerlegt**: der Landnachbar entsteht sehr wohl, die eigentliche Ursache ist das
+  Fehlen von `borderThreat`/Verstimmung ohne die B6-Überfälle. Siehe `PROBLEME.md` Befund M17-M2
+  (Zusammenführung mit Bahn B) für die endgültige Zerlegung der Ursache.
 
 ### T-M17-11 · KI: Provinzwert und Provinzhandel
 - **Ziel:** was eine fremde Provinz wert ist, ist die eigentliche Arbeit am Provinzhandel.
 - **Anforderungen:** R-DIP-09, R-AI-09 · **Entwurf:** D29.8
 - **Abhängigkeiten:** T-M17-06, T-M17-10
 - **Dateien:** `packages/ai/src/provinceValue.ts`, `packages/ai/src/trade.ts`,
-  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+  `packages/ai/src/decide.ts`, `packages/ai/src/index.ts`, `packages/core/src/index.ts`,
+  `data/rules/default/ai.json`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `docs/plan/BALANCING.md`, `test/balancing.test.ts`,
+  `test/guards/text-keys.test.ts`
 - **Tests zuerst:** `provinceValue.test.ts` R-DIP-09/AK3 (Wert unverändert, wenn nicht
   aufgedeckte fremde Gebäude sich ändern), AK4; nie Hauptstadt, nie eine Provinz mit eigenen
-  Armeen.
+  Armeen. Zusätzlich `packages/ai/src/trade.test.ts`, `apps/headless/test/tournament.slow.test.ts`.
 - **Fertig wenn:** Annehmen und Ablehnen zugesichert sind. **Rückfall:** aktives Kaufen und
   Verkaufen wird gebaut, aber im Integrationstor nur gezählt — der teuerste und unsicherste Teil
   von M17 bekommt keine Zusage, die an einer Zahl hängt, die niemand geschätzt hat.
+- **Erledigt am 2026-09-25.** Der Provinzwert kommt aus Karte und Marktpreisen, die KI nimmt
+  Provinzangebote über dem Aufschlag an und lehnt den Rest begründet ab; aktiver Handel ist
+  gebaut und wird in T-M17-15 gezählt (Befund M17-D12: mit den ausgelieferten Zahlen praktisch
+  nie ausgelöst). Turnier zeilengleich zum Ausgangswert (Band seit T-M17-10 rot, M17-D9, nicht
+  diese Aufgabe). Nacharbeit (2026-09-25): der Kauf-Filter `neighbourMine` war ungetestet, jetzt
+  mit Test und Gegenprobe belegt (Befund M17-D16); die Ablehnung wegen `cessionProblem` nannte
+  den errechneten Wert nicht, jetzt hängt `reason` ihn an (Befund M17-D17); Befund M17-D9 (siehe
+  T-M17-10) als falsch zugeschrieben erkannt und in `PROBLEME.md` berichtigt.
 
 ### T-M17-12 · KI: Spionage
 - **Ziel:** die Spionagepflichten, die R-AI-08 abgegeben hat.
 - **Anforderungen:** R-AI-09 · **Entwurf:** D29.8, D29.12
 - **Abhängigkeiten:** T-M17-09
 - **Dateien:** `packages/ai/src/espionage.ts`, `packages/ai/src/decide.ts`,
-  `data/rules/default/ai.json`, `docs/plan/BALANCING.md`
+  `packages/ai/src/index.ts`, `packages/core/src/index.ts`, `packages/core/src/rules/types.ts`,
+  `packages/core/src/rules/load.ts`, `data/rules/default/ai.json`, `docs/plan/BALANCING.md`,
+  `packages/core/src/view/publicView.ts`
 - **Tests zuerst:** `espionage.test.ts` (KI) — Gegenspion bei Krieg, Sabotage nie gegen eine
   Friedensmacht, Budget nie überschritten, Entlassen bei drohendem Geldmangel, jede Handlung
-  begründet.
+  begründet. Zusätzlich `packages/ai/src/diplomacy.test.ts`, `packages/core/src/view/publicView.test.ts`,
+  `packages/core/src/rules/load.test.ts`, `test/balancing.test.ts`,
+  `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`.
 - **Fertig wenn:** Turnier und `progress.slow.test.ts` nachgefahren sind; kippt das Band, wird
   `grievanceOnSpyDetected` gesenkt, nicht der Wächter.
+- **Gebaut am 2026-09-25, Status zurückgenommen (siehe `tasks.yaml`, Feld `reopened`):**
+  `espionageCommands` prüft Ziele, Budget/Rücklage und wirbt höchstens einen Spion je Tag an,
+  jede Handlung begründet. Das Turnierband riss beim Einbau auf 100 % (Band 0,55–0,95); die
+  Leiter aus D29.12 (`grievanceOnSpyDetected` 300 → 200 → 150) bewegte das Ergebnis auf **keiner**
+  Stufe — Befund M17-S4, die vermutete Verstimmungsspirale ist widerlegt, `grievanceOnSpyDetected`
+  bleibt bei 300. Zwei Nacharbeit-Runden behoben zwei Codebefunde (M17-S8: Gegenspion wurde durch
+  ein eigenes, unbeantwortetes Friedensangebot fälschlich entlassen; M17-S9: bei Hauptstadtverlust
+  wurde er entlassen statt umgesetzt) und maßen zwei Kontrollen (Budget 0 hält das Band ein,
+  Verstimmung 0 ändert nichts) — das Band bleibt bei 0,98 gerissen. Siehe `PROBLEME.md` Befund
+  M17-S4 und M17-M2 (Zusammenführung mit Bahn A: 50 % im Frieden aus der B6-Sperre der
+  Diplomatiebahn, 98 % im Krieg aus dieser Aufgabe).
 
 ### T-M17-13 · Oberfläche Spionage
 - **Ziel:** eine Mechanik ohne Knopf ist für den Spieler nicht vorhanden.

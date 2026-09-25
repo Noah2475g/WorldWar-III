@@ -2263,6 +2263,19 @@ export interface TradeOffer {
   `rightOfWay`/`sharedMap` werden abgewiesen. `deserialise` prüft auch einen Stand mit
   gültiger Prüfsumme — Nacharbeit zu T-M17-03, `DECISIONS.md`.)*
 
+> **Berichtigt am 2026-09-24 (T-M17-04, Befund M17-3).** „Eine wirksame Kriegserklärung löscht
+> wie heute nur den Durchmarsch" stimmte nie: sie löschte seit M6 auch die Karte. Entschieden
+> (kippbar, `DECISIONS.md`): ein Krieg löscht Durchmarsch **und** Karte in beiden Richtungen,
+> samt laufender Kündigungsfrist — und zwar auch dann, wenn er mit einem **Überfall** beginnt
+> (Befund M17-D1). Geschrieben wird eine Richtung über `setPassage`, `expirePassage` und
+> `setMapShared`, gelesen über `grantsPassage`, `sharesMap` und `passageEndsAtTick` — alle in
+> `state/create.ts`. Die Schreiber stehen dort **neben** den Leserinnen (der Schreiber muss
+> dieselbe Schlüsselhälfte kennen wie sie).
+>
+> **Ergänzt am 2026-09-25 (Zusammenführung Bahn A und B).** `validateState` prüft seither auch
+> Spione, Aufdeckungen und Handelsangebote je Element, nicht nur als Array/Objekt (schließt die
+> Befunde M17-S7 und M17-D6, `DECISIONS.md`).
+
 ### D29.2 Kommandos
 
 Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → Obergrenze → Kosten
@@ -2289,6 +2302,40 @@ Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → O
 - `test/guards/ui-command-coverage.test.ts` verlangt jeden neuen Befehlstyp in `actions.ts`
   oder `App.tsx`.
 
+> **Berichtigt am 2026-09-24 (T-M17-07).** Drei Zeilen der Tabelle sind so gebaut, wie sie hier
+> stehen, mit drei Abweichungen (`DECISIONS.md`, alle kippbar): `REASSIGN_SPY` und `DISMISS_SPY`
+> lehnen einen **fremden** Spion nicht mit `NOT_OWNER` ab, sondern wie einen fehlenden mit
+> `INVALID_TARGET{reason:'kein Spion'}` — `NOT_OWNER` machte die lebenden Spione aller anderen
+> abzählbar. Die Zielregeln prüfen den **bekannten** Besitzer (sichtbar oder erinnert), nicht den
+> verborgenen. `REASSIGN_SPY` lehnt zusätzlich `INVALID_TARGET{reason:'unverändert'}` ab. Die
+> gebaute Reihenfolge: Existenz der Provinz → Kenntnis → Auftrag gültig → Zielbedingung →
+> Obergrenze → Kosten; beim Umsetzen und Entlassen zuerst der Spion.
+>
+> **Präzisiert am 2026-09-24 (T-M17-04).** Die drei Zeilen des Durchmarschs sind so gebaut, mit
+> diesen Ergänzungen (`DECISIONS.md`, kippbar): `requestRightOfWay` lehnt mit den Gründen
+> `im Krieg`, `Kriegserklärung läuft` und `bereits gewährt` ab (während einer laufenden
+> Kündigungsfrist mit dem Grund `gekündigt`, Nacharbeit 2026-09-25), ein wiederholter Antrag
+> ersetzt den alten; `acceptRightOfWay` lehnt zusätzlich **im Krieg** ab und nimmt nur
+> **diesen** Antrag vom Tisch (B4 wird nicht geerbt); `revokeRightOfWay` lehnt außer bei
+> `nicht gewährt` auch bei `bereits gekündigt` und `im Bündnis` ab. `grantRightOfWay` während
+> einer Frist nimmt die Kündigung zurück, ein Gewähren ohne Änderung bleibt ohne Ereignis, und
+> Gewähren wie Annahme räumen den Antrag des Gasts ab.
+>
+> **Präzisiert am 2026-09-25 (T-M17-05).** Die Prüfreihenfolge eines Handelsangebots: sich
+> selbst, unbekannte oder ausgeschiedene Zielmacht, Form des Bündels, Krieg oder laufende
+> Erklärung (AK3), Provinzen (bis T-M17-06 mit `INVALID_TARGET 'Provinzen erst mit dem
+> Provinzhandel'` abgelehnt — diese eine Zeile ersetzt T-M17-06), unbekannter Rohstoff, ungültige
+> Menge, leeres `give`, gleicher Rohstoff auf beiden Seiten, Höchstmenge je Rohstoff und Seite,
+> `QUEUE_FULL` ab `maxOpenTradeOffers` je Anbieter, Deckung. Während einer laufenden
+> Kriegserklärung bleibt Ablehnen und Zurückziehen möglich, nur kein **neues** Geschäft.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06).** `OFFER_TRADE`/`ACCEPT_TRADE` prüfen Provinzen über
+> `cessionProblem` mit Tiefe `full` (gebende Seite beim Angebot, beide Seiten bei der Annahme)
+> oder `public` (verlangte Seite beim Angebot: nur Existenz und Besitz). Fünf Ablehnungsgründe:
+> `nicht im Besitz`, `Hauptstadt`, `umkämpft`, `eigene Armeen`, `fremde Armeen`; dazu
+> `PROVINCE_NOT_FOUND` (unbekannte Kennung, `Object.hasOwn` gegen Prototyp-Zugriffe) und
+> `INVALID_TARGET 'doppelte Provinz'`. „Leeres Angebot" prüft jetzt Rohstoffe **und** Provinzen.
+
 ### D29.3 Reihenfolge im Tick
 
 - **`applyCommands`:** alle Kommandos; eine Annahme tauscht sofort, im selben Tick. Nur `to`
@@ -2313,12 +2360,49 @@ Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → O
   gewechselt und passt der Auftrag nicht mehr, kein Wurf (`targetChanged`). „Heute sabotiert"
   ist eine lokale Menge je Durchlauf, **kein Zustand** (R-SPY-04/AK4).
 
+> **Gebaut am 2026-09-24 (T-M17-04)** in dieser Reihenfolge. Schritt 1 und der Überfall in
+> Schritt 3 beenden beide Durchmarsch und Karte (M17-3). Für diplomatische Angebote ist die neue
+> Stellung von Schritt 4 verhaltensgleich; der Pflichttest „Überfall und Verfall im selben Tag"
+> gehört zu den Handelsangeboten (T-M17-05).
+>
+> **Gebaut am 2026-09-25 (T-M17-05)** als Schritt 4, nach den Überfällen: `settleTradeOffers`
+> schließt in einem Durchlauf, Rangfolge ausgeschiedene Macht vor Krieg vor abgelaufener Frist.
+> Damit gibt „Überfall und Verfall im selben Tick" die Treuhand genau einmal zurück, mit Grund
+> Krieg — nicht doppelt und nicht mit dem falschen Grund.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06).** `settleTradeOffers` bekommt einen vierten Grund:
+> Rangfolge jetzt ausgeschiedene Macht vor Krieg vor **nicht mehr abtretbare Provinz** vor
+> abgelaufener Frist — alle als `invalid` bzw. `war`/`expired` wie zuvor.
+>
+> **Gebaut am 2026-09-24 (T-M17-08)** genau wie hier beschrieben: vier Schritte in
+> Array-Reihenfolge, `settleEspionage` direkt nach `settleMorale` in `dailyTick`. Schritt (d)
+> prüft `targetChanged` gegen den **wahren** Besitzer (`spyTargetProblem`, aus
+> `commands/espionage.ts` nach `rules/espionage.ts` gezogen — eine Regel, zwei Leser). Ein
+> eigener Test hält fest, dass ein Aufstand **desselben** Tageswechsels (Moral läuft zuerst) das
+> Ziel eines Saboteurs schon vor dem Wurf verändert hat. Schritt (c) Gegenspionage ist
+> übersprungen (`mission === 'counter'`), kommt mit T-M17-09.
+>
+> **Ergänzt am 2026-09-25 (T-M17-09):** Schritt (c) wie beschrieben gebaut —
+> `counterIntelligence()`, vor Schritt (d). Zwei Entscheide dazu (`DECISIONS.md`, beide kippbar):
+> die AK4-Sperre gilt über beide Sabotagearten und verhindert den **Wurf**, nicht nur die Wirkung
+> (E1); ein Gegenspion ist frühestens am Tag nach dem Ansetzen fällig, meldet nie einen eigenen
+> Bericht außer `targetChanged`, und sein letzter Ausgang unterscheidet „niemand da" nicht von
+> „nicht gefunden" (E4).
+
 ### D29.4 Zufall
 
 Nur `chance(draft.rng, promille)`, und nur, wenn Spione existieren. Ohne Spione wird kein
 Zufall verbraucht — belegt durch einen Lauf mit der Mechanik und ohne Spione, dessen Hash nach
 jedem Tick gleich dem Lauf ohne `settleEspionage` ist (auf migriertem Stand). Dazu ein eigener
 Determinismustest **mit** Spionen: zwei Läufe, gleiche Startzahl, gleicher Hash.
+
+> **Berichtigt am 2026-09-25 (zweite Nacharbeit kern).** Der Code-Kommentar zu `settleEspionage`
+> schrieb die Zusage bisher dem frühen `if (espionage.spies.length === 0 && …) return` selbst zu.
+> Ein adversarischer Prüfer zeigte per Mutation (Zeile entfernt, `determinism.test.ts` blieb
+> gänzlich grün), dass die Zusage tatsächlich daraus folgt, dass **jeder** `chance()`-Aufruf der
+> Datei innerhalb einer Schleife über `espionage.spies` liegt — ein leeres Array erreicht
+> `chance()` also strukturell nie, unabhängig vom frühen `return`; der ist reine
+> Fleißarbeits-Ersparnis.
 
 ### D29.5 Ereignisse
 
@@ -2345,6 +2429,34 @@ Determinismustest **mit** Spionen: zwei Läufe, gleiche Startzahl, gleicher Hash
 - `FOREIGN_TEXTS` (`game/events.ts`) um `PROVINCE_CEDED` und `TRADE_AGREED`, wo ein Satz ein
   „ich" trägt.
 
+> **Präzisiert am 2026-09-24 (T-M17-04).** `RIGHT_OF_WAY_CHANGED` entsteht bei `grantRightOfWay`
+> (nur wenn sich etwas ändert), bei `acceptRightOfWay` (`granted: true`, `effectiveAtTick` = der
+> Tick der Gewährung) und bei `revokeRightOfWay` (`granted: false`, `effectiveAtTick` = der erste
+> Tick, in dem der Gast ein Eindringling ist). **Nicht** beim Ablauf der Frist. Im Protokoll zwei
+> Sätze am selben Stamm, die Kündigung mit der Endung `_REVOKED`; Kategorie Diplomatie.
+>
+> **Präzisiert am 2026-09-25 (T-M17-05).** `TRADE_OFFER_CLOSED {offerId, playerId: from,
+> targetPlayerId: to, reason}` an beide, reason ∈ `accepted/declined/withdrawn/expired/war/
+> invalid`; bei Annahme **vor** `TRADE_AGREED`. Ein Angebot selbst erzeugt **kein** Ereignis —
+> es meldet sich über die Sicht. Beide Sätze sind neutral formuliert, keine Fremdfassung nötig.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06).** `PROVINCE_CEDED {provinceId, previousOwner, newOwner}`
+> — `audience` leer, `concerns` Vorbesitzer und Neubesitzer, `info`, in `WORLD_EVENT_TYPES`,
+> **nicht** in `ALERT_TYPES`. Reihenfolge bei der Annahme: `TRADE_OFFER_CLOSED`, `TRADE_AGREED`,
+> dann `PROVINCE_CEDED` je Provinz (gegebene vor verlangten, Listenreihenfolge). Keine
+> Fremdfassung — der Satz trägt kein „ich".
+>
+> **Ergänzt am 2026-09-25 (T-M17-09):** `SABOTAGE_SUFFERED.kind` ist `'economic' | 'military'`,
+> alle drei Wirkungsfelder (`moraleLoss`, `destroyed`, `delayTicks`) stehen immer, auch wenn eine
+> Art sie nicht braucht (dann auf ihrem Nullwert). `SPY_DETECTED` trägt **keine** Spionkennung
+> (Befund M17-S1, `DECISIONS.md`, kippbar) — kein `SPY_LOST` zusätzlich bei einer Enttarnung.
+> `SABOTAGE_SUFFERED` bleibt außerhalb des Zinnober-Rückschlagsbalkens (D24.1).
+>
+> **Berichtigt am 2026-09-25 (Nacharbeit kern).** D29.5 legt `SPY_LOST` als
+> `{playerId, spyId, reason:'unpaid'}` fest; gebaut ist zusätzlich `provinceId` und `mission`
+> (`SpyLostEvent`) — additiv, kein Leck, beide Felder stehen ohnehin schon im eigenen
+> `espionage.spies`-Array des Empfängers.
+
 ### D29.6 Sicht und Nebel (R-DIP-04)
 
 - `self.spies`: eigenes Wissen. `tradeOffers: { incoming; outgoing }` nach dem Muster von
@@ -2360,6 +2472,36 @@ Determinismustest **mit** Spionen: zwei Läufe, gleiche Startzahl, gleicher Hash
 - Provinzwert für die KI aus `AiContext.map` (`deposits`, `population`, `kind`) — öffentlich,
   weil die Karte eine Datei ist (Befund B5: fremde Provinzen tragen in der Sicht keine
   `deposits`, die KI bewertet sie heute pauschal 400 oder 200).
+
+> **Berichtigt am 2026-09-24 (T-M17-07).** Die eigenen Spione stehen nicht unter `self.spies`,
+> sondern in einem eigenen Feld am Ende der Sicht: `PublicView.espionage.spies` — nur die
+> eigenen, ohne Besitzerfeld, als Kopien (Anbau-Konvention der beiden M17-Bahnen,
+> `DECISIONS.md`, kippbar).
+>
+> **Präzisiert am 2026-09-24 (T-M17-04, kippbar).** `passageEndsAtTick` ist ein Paar
+> `{ granted, received }`: die Frist meiner eigenen Kündigung und die des Rechts, das ich
+> erhalte — der Gast und der Gewährende brauchen je eine. `null` heißt unbefristet oder gar
+> nicht; eine abgelaufene Frist steht nicht mehr darin.
+>
+> **Präzisiert am 2026-09-25 (T-M17-05).** `tradeOffers: { incoming, outgoing }` als eigenes
+> Feld am Ende von `PublicView`, Einträge vom vollen Typ `TradeOffer` (samt `from`/`to`), als
+> Kopie — nach dem Muster von `incomingOffers`.
+>
+> **Gebaut am 2026-09-24 (T-M17-08):** `revealedProvinces()` (neu, `publicView.ts`) liefert
+> `intelUntilTick`/`armiesUntilTick` je Provinz aus `state.espionage.reveals`, nur die eigenen.
+> `visibleProvinces()` nimmt aufgedeckte Provinzen als **eigene Menge** auf, nur die Provinz
+> selbst, nicht ihre Nachbarn. `IntelEntry` bleibt wie entschieden unverändert.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06).** Eine Abtretung setzt `occupiedSince` **nicht** — die
+> Beschreibung „seit wann gehört die Provinz ihrem jetzigen Eigentümer" in `publicView.ts` gilt
+> nur für Eroberung und Aufstand, nicht für eine Vertragsabtretung.
+>
+> **Ergänzt am 2026-09-25 (T-M17-12, Befund M17-S5, E-NA1).** `PublicView` bekommt ein drittes
+> neues Feld `outgoingOffers` (eigene offene **diplomatische** Angebote — Frieden, Bündnis,
+> Durchmarschantrag) — zusätzlich zu `tradeOffers` (Bahn A) und `espionage` (Bahn B, oben), alle
+> drei ans Ende von Interface **und** `return`-Objekt angehängt. `outgoingOffers` deckt auch die
+> frühere Beobachtung „eigener Durchmarsch-Antrag fehlt in der Sicht" ab (Filter auf
+> `kind: 'rightOfWay'`).
 
 ### D29.7 Regelzahlen
 
@@ -2405,6 +2547,38 @@ Stufenspalten und wird erweitert:
 Alle neuen Konstanten in `REQUIRED_CONSTANTS` und `RuleConstants`; `BALANCING.md` bekommt den
 Abschnitt „Spionage und Handel (D29)" im Format des Abschnitts zum Verhältnis.
 
+> **Gesetzt am 2026-09-24 (T-M17-07)** aus dem Anker von T-M17-02 (`soldAnkerFuenfProzent`
+> 10153): `spySalaryIntel` 10153, `spyRecruitCost` 101530, `spySalaryEconomicSabotage` und
+> `spySalaryMilitarySabotage` 20306, `spySalaryCounter` 5076 (½, abgerundet wie der Anker),
+> `maxSpiesPerPlayer` 5. `BALANCING.md` führt sie im Abschnitt „Spionage (R-SPY-01, D29.7,
+> T-M17-07)" — der hier genannte gemeinsame Abschnitt „Spionage und Handel" ist bis zur
+> Zusammenführung zwei Abschnitte, einer je Bahn.
+>
+> **Ergänzt am 2026-09-24 (T-M17-08):** `spySuccessIntelPermille` **800**, `spyRevealDays` **1**
+> (abgeleitet aus R-SPY-03/AK2 — die Provinz fällt „zum nächsten Tageswechsel" zurück, jeder
+> Wert über 1 bräche das).
+>
+> **Gesetzt am 2026-09-25 (T-M17-09)** genau wie vorgeschlagen: `spySuccessSabotagePermille`
+> 500, `spyDetectionPermille` 250, `sabotageMoraleLoss` 10.000 (belegt, Referenz 4.6),
+> `sabotageYieldDestroyedPermille` 500, `militarySabotageDelayTicks` 12,
+> `spyDetectedReputationLoss` 100, `grievanceOnSpyDetected` 300. „Doppelt ohne Krieg" (R-SPY-05)
+> gilt **nur bei Sabotage**.
+>
+> **Präzisiert am 2026-09-25 (T-M17-05, kippbar).** Die Skala der Handelsgrenzen kommt über
+> denselben Geld-Anker wie der Spionagesold (T-M17-02), nicht über den Startvorrat — die Tabelle
+> sagte „Skala am Startvorrat", das hätte beim ganzen Startgeld gelegen und nichts gebunden.
+> `tradeMaxMoney` 507.650, `tradeMaxResource` 152.295 (30 % davon, Referenz 9.4).
+>
+> **Berichtigt am 2026-09-25 (T-M17-10/11, Nacharbeit ki).** Der ausgelieferte Stand von
+> `data/rules/default/ai.json` weicht von dieser Tabelle ab: `tradeImpactPermille` ist **30**,
+> nicht 50 (T-M17-10, Entscheid E14 — im Bauplan schon korrigiert, nie hier nachgezogen). Drei
+> Schlüssel fehlten ganz: `tradeOfferPremiumPermille` **1060** (T-M17-10, Befund M17-D8 — D29.8
+> nennt „× 1,02", der gebaute Code rechnet mit 1060 ‰), `tradeKeepStockPermille` **500**
+> (T-M17-10), `provinceValuePositionPermille` **250** (T-M17-11). Ergänzt (T-M17-12):
+> `espionageBudgetPermille` 150 wie vorgeschlagen; zwei weitere, in dieser Tabelle nicht
+> vorweggenommene Schlüssel: `espionageCounterGrievance` 150 (Schwelle, ab der Verstimmung
+> allein einen Gegenspion auslöst) und `espionageMoneyHorizonDays` 3.
+
 ### D29.8 KI-Verhalten (R-AI-09), im Strategietakt einmal je Spieltag
 
 - **Durchmarsch** (`packages/ai/src/passage.ts`). *Antrag:* führt der Weg eines geplanten
@@ -2432,6 +2606,35 @@ Abschnitt „Spionage und Handel (D29)" im Format des Abschnitts zum Verhältnis
   Kriegsgegner; entlassen bei Kriegsende oder drohendem Geldmangel.
 - **Verhältnis:** `relationship()` liest `passageGranted` und `passageReceived` statt
   `rightOfWay`; enttarnte Spione wirken über die vorhandene Verstimmung.
+
+> **Präzisiert am 2026-09-25 (T-M17-04, kippbar).** `relationship()` zählt nur, was der andere
+> **mir** gewährt: `passageReceived` (+150) und `mapReceived` (+50). `passageGranted` liest die
+> KI im Erwidern (Bedingung „selbst noch nicht gewährt"), nicht im Verhältnis.
+>
+> **Gebaut am 2026-09-25 (T-M17-10), Turnier NICHT gehalten (Befund M17-D9/M17-M2).** Antrag
+> statt Marsch, wenn der Weg eines Angriffs durch eine friedliche Macht ohne Recht führt (B6);
+> Antwort nach Vertrauensschwelle; echtes Erwidern; Widerruf unter der Kriegsschwelle; Gast zieht
+> vor Fristende ab (Grenzfall M17-D10 offen). Handel: Annahme/Ablehnung begründet, Angebot nur
+> bei Kurswirkung über `tradeImpactPermille`. Turnier „schwer gegen normal, im Frieden" hält das
+> Band 0,55–0,95 auf dieser Kartenpaarung **nicht** — siehe `PROBLEME.md` Befund M17-D9/M17-M2 und
+> `tasks.yaml`, Feld `reopened`.
+>
+> **Gebaut am 2026-09-25 (T-M17-11).** Provinzwert aus Karte und Marktpreisen (B5 behoben für
+> den Provinzhandel), Gebäude nur wenn bekannt. Zugesagt ist nur Annehmen/Ablehnen; aktives
+> Kaufen und Verkaufen ist gebaut, aber nur gezählt (T-M17-15, Befund M17-D12: mit den
+> ausgelieferten Zahlen praktisch nie ausgelöst).
+>
+> **Ergänzt am 2026-09-25 (T-M17-12), Turnier NICHT gehalten (Befund M17-S4/M17-M2).** Gebaut
+> mit den Entscheiden E1–E8 (`DECISIONS.md`): Budget auf den Tagessold (E1); Geldertrag aus der
+> Sicht nachgerechnet (E2); Reihenfolgen beim Anwerben/Entlassen (E3+E4); keine Militärsabotage
+> durch die KI (E5); kein Umsetzen bei gültigem Ziel (E6); „erlittene Enttarnung" wirkt nur über
+> die vorhandene Verstimmung (E7); ein Friedensangebot oder dessen Annahme (auch vom Vortag,
+> E-NA1) zählt schon als Frieden — außer für den Gegenspion, der nur ein echtes Kriegsende bindet
+> (E-NA2, Befund M17-S8). Turnier „schwer gegen normal, im Frieden" riss beim Einbau auf 100 %;
+> die Leiter aus `grievanceOnSpyDetected` (300→200→150) bewegt das Ergebnis auf **keiner** Stufe
+> — die vermutete Verstimmungsspirale ist widerlegt (Befund M17-S4). Siehe `tasks.yaml`, Feld
+> `reopened`, bei T-M17-10 und T-M17-12; die Ursache ist bei der Zusammenführung mit Bahn A auf
+> zwei Anteile zerlegt (`PROBLEME.md` Befund M17-M2).
 
 ### D29.9 Oberfläche
 
