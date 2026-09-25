@@ -13,6 +13,7 @@ import { RAW_DEFAULT_RULES, smallWorld, TEST_RULES } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
 import { tradeCommands } from './economy'
+import { explainProvinceWorth, provinceWorth } from './provinceValue'
 import { tradeOfferCommands } from './trade'
 import type { AiContext, Explanation } from './types'
 
@@ -191,6 +192,24 @@ describe('R-DIP-05 Die KI nimmt ein lohnendes Angebot an und lehnt den Rest begr
     expect(reason).toContain('Geschenk')
     const after = step(state, commands, ctx)
     expect(after.events.some((e) => e.type === 'PROVINCE_CEDED')).toBe(true)
+  })
+
+  /**
+   * Nacharbeit ki (T-M17-11), Befund M17-D17: `cessionProblem` setzte `reason` (z. B.
+   * "s1: Hauptstadt") ohne den errechneten Wert — obwohl `provinceTexts` im selben Durchlauf
+   * ohnehin berechnet wird. R-DIP-09/AK3 verlangt "Wert und seinen größten Anteil" fuer jede
+   * Bewertung, nicht nur fuer die Margen-Ablehnung.
+   */
+  it('nennt bei einer gesperrten Provinz (Hauptstadt) trotzdem ihren Wert (R-DIP-09/AK3)', () => {
+    const base = handelsLage()
+    const { state, offerId } = offer(base, { money: 10_000 }, {}, [], ['s1'])
+    const explanations: Explanation[] = []
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
+    expect(commands).toEqual([{ type: 'DECLINE_TRADE', playerId: 'p3', offerId }])
+    const reason = explanations.find((e) => e.action.includes(offerId))?.reason ?? ''
+    expect(reason).toContain('Hauptstadt')
+    const worth = provinceWorth(contextFor(state, 'p3'), 's1')!
+    expect(reason).toContain(explainProvinceWorth(worth))
   })
 
   it('lehnt ab, solange eine Kriegserklaerung laeuft', () => {

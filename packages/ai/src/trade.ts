@@ -104,6 +104,12 @@ export function tradeOfferCommands(
     let provinceTexts = ''
     let E = 0
     let G = 0
+    // Nacharbeit ki (Befund M17-D17): `cessionProblem` setzt `reason` noch VOR `provinceTexts`
+    // — die Ablehnung nannte den errechneten Wert deshalb nicht, obwohl er gleich darunter
+    // ohnehin berechnet wird (R-DIP-09/AK3: "Erklärung SOLL den Wert und seinen größten
+    // Anteil nennen"). `cessionReason` haelt den Sperrgrund fest, `reason` bekommt ihn erst
+    // NACH `provinceTexts` — mit demselben Anhang wie die Margen-Ablehnung darunter.
+    let cessionReason: string | null = null
     if (!reason && hasProvinces) {
       for (const p of offer.give.provinces) {
         if (receivedProvinces.has(p)) {
@@ -115,7 +121,7 @@ export function tradeOfferCommands(
         for (const p of offer.want.provinces) {
           const problem = cessionProblem(context, p, from, pending, cededProvinces)
           if (problem) {
-            reason = `${p}: ${problem}`
+            cessionReason = `${p}: ${problem}`
             break
           }
         }
@@ -132,7 +138,9 @@ export function tradeOfferCommands(
         })
         .join('; ')
 
-      if (!reason && G > 0 && E < G) {
+      if (cessionReason) {
+        reason = `${cessionReason}; ${provinceTexts}`
+      } else if (!reason && G > 0 && E < G) {
         reason = `Gegenwert ${Math.trunc(E / 1_000_000)} unter ${Math.trunc(G / 1_000_000)} (Provinzwert × ${ai.provinceSalePremiumPermille} ‰, Rohstoffe × ${ai.tradeAcceptMarginPermille} ‰); ${provinceTexts}`
       }
     } else if (!reason && given > 0 && received * 1000 < given * ai.tradeAcceptMarginPermille) {
