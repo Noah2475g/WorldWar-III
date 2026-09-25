@@ -1446,12 +1446,16 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
         expect(accept.disabledReason, `${variante.name}: ${verboten}`).not.toContain(verboten)
       }
 
-      // Kontrolle: der Kern selbst lehnt mit dem erwarteten Grund ab — sonst misst der Fall nichts.
+      // Kontrolle: der Kern selbst lehnt ab — und traegt seit N2 (Nacharbeit Durchsicht
+      // 2026-09-25) denselben neutralen Grund `lapsing`, ohne Provinz. Vorher stand hier
+      // 'eigene Armeen'/'fremde Armeen' mit `provinceId`, und nur die Oberflaeche verdeckte es
+      // (E1); jetzt weiss auch `COMMAND_REJECTED` selbst nichts mehr davon.
       const acceptCommand: Command = { type: 'ACCEPT_TRADE', playerId: 'p1', offerId: offer.id }
       const kernErgebnis = canApply(state, acceptCommand, { map, rules, commands: [acceptCommand], events: [] })
       expect(kernErgebnis.ok, variante.name).toBe(false)
       if (!kernErgebnis.ok) {
-        expect(['eigene Armeen', 'fremde Armeen'], variante.name).toContain(kernErgebnis.detail?.reason)
+        expect(kernErgebnis.detail?.reason, variante.name).toBe('lapsing')
+        expect(kernErgebnis.detail?.provinceId, variante.name).toBeUndefined()
       }
     }
   })

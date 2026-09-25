@@ -327,8 +327,15 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
     // veralten. Die verlangte ist die eigene des Annehmenden; die gebende scheitert hier nur, wenn
     // sie seit der letzten Diplomatiephase veraltet ist — dann schliesst diese sie noch im selben
     // Tick als `invalid`, mit Rueckgabe.
+    //
+    // Die gebende Seite gehoert dem ANBIETER, nicht dem Annehmenden (Befund N2, Nacharbeit
+    // Durchsicht 2026-09-25): der genaue Grund — `nicht im Besitz`, `Hauptstadt`, `umkämpft`,
+    // `eigene Armeen` oder `fremde Armeen`, je mit `provinceId` — wuerde dem Annehmenden ueber
+    // `COMMAND_REJECTED` einen Marschbefehl, einen Angriff oder eine fremde Armee des Anbieters
+    // verraten (R-DIP-04). Der Annehmen-Knopf verdeckt das schon (`describeTradeRejection`,
+    // `trade.blocked.lapsing`); der Kern traegt seither denselben neutralen Grund, ohne Provinz.
     const giveProvinces = provincesProblem(state, offer.give.provinces, offer.from, offer.to, 'full')
-    if (giveProvinces !== null) return giveProvinces
+    if (giveProvinces !== null) return fail('INVALID_TARGET', { reason: 'lapsing' })
     const wantProvinces = provincesProblem(state, offer.want.provinces, offer.to, offer.from, 'full')
     if (wantProvinces !== null) return wantProvinces
 

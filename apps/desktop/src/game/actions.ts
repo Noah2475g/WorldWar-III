@@ -824,21 +824,15 @@ function describeTradeRejection(
   const provinceId = typeof detail.provinceId === 'string' ? detail.provinceId : undefined
   const reason = typeof detail.reason === 'string' ? detail.reason : undefined
 
-  // E1: scheitert die Annahme an einer Provinz der GEBENDEN (Anbieter-)Seite, heisst der Grund
-  // immer "das Angebot verfaellt" — ohne Provinz, ohne Ursache. Sonst verraet der Annehmen-Knopf
-  // Armeen, Hauptstadt oder umkaempftes Land des Anbieters (Falle 7, Test A7).
-  if (
-    command.type === 'ACCEPT_TRADE' &&
-    offer &&
-    (result.code === 'INVALID_TARGET' || result.code === 'PROVINCE_NOT_FOUND') &&
-    provinceId !== undefined &&
-    offer.give.provinces.includes(provinceId)
-  ) {
-    return t('trade.blocked.lapsing')
-  }
-
   if (result.code === 'INVALID_TARGET' && reason !== undefined) {
     switch (reason) {
+      // E1/N2 (Nacharbeit Durchsicht 2026-09-25): scheitert die Annahme an einer Provinz der
+      // GEBENDEN (Anbieter-)Seite, traegt schon der Kern nur noch diesen neutralen Grund — ohne
+      // Provinz, ohne Ursache. Bis 2026-09-25 stand hier `eigene Armeen`/`fremde Armeen` mit
+      // `provinceId`, und nur diese Oberflaeche verdeckte es (Falle 7, Test A7); jetzt weiss
+      // auch `COMMAND_REJECTED` selbst nichts mehr davon.
+      case 'lapsing':
+        return t('trade.blocked.lapsing')
       case 'nicht im Besitz':
         return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
       case 'Hauptstadt':

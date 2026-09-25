@@ -383,8 +383,14 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     return { id, vorher }
   }
 
-  function expectLapsed(id: string, vorher: number, reason: string, ownerAfter: string): void {
-    rejectsWith(accept('p2', id), 'INVALID_TARGET', reason, 'n2')
+  // N2 (Nacharbeit Durchsicht 2026-09-25): scheitert die Annahme an der GEBENDEN Seite (dem
+  // Anbieter), traegt die Ablehnung seither nur den neutralen Grund `lapsing` — ohne Provinz und
+  // ohne Ursache. Alles andere verriete dem Annehmenden, WARUM der Anbieter nicht mehr liefern
+  // kann: einen Marschbefehl (`eigene Armeen`), eine fremde Armee in seinem Land
+  // (`fremde Armeen`), einen Angriff (`umkaempft`) oder seine Hauptstadt. Die verlangte Seite
+  // bleibt unveraendert `full`, weil sie die eigene des Annehmenden ist (kein Leck).
+  function expectLapsed(id: string, vorher: number, ownerAfter: string): void {
+    rejectsWith(accept('p2', id), 'INVALID_TARGET', 'lapsing')
     const fired = closed(diplomacyAt(1))
     expect(fired).toHaveLength(1)
     expect(fired[0]).toMatchObject({ reason: 'invalid' })
@@ -396,26 +402,26 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
   it('die Provinz gehoert dem Anbieter nicht mehr', () => {
     const { id, vorher } = setupOffer()
     state.provinces['n2']!.owner = 'p3'
-    expectLapsed(id, vorher, 'nicht im Besitz', 'p3')
+    expectLapsed(id, vorher, 'p3')
   })
 
   it('sie ist inzwischen seine Hauptstadt', () => {
     const { id, vorher } = setupOffer()
     state.players['p1']!.capitalProvinceId = 'n2'
-    expectLapsed(id, vorher, 'Hauptstadt', 'p1')
+    expectLapsed(id, vorher, 'p1')
   })
 
   it('sie ist inzwischen umkaempft', () => {
     const { id, vorher } = setupOffer()
     state.diplomacy.relations['p1|p3']!.state = 'war'
     placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
-    expectLapsed(id, vorher, 'umkämpft', 'p1')
+    expectLapsed(id, vorher, 'p1')
   })
 
   it('eine eigene Armee steht inzwischen darin', () => {
     const { id, vorher } = setupOffer()
     placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
-    expectLapsed(id, vorher, 'eigene Armeen', 'p1')
+    expectLapsed(id, vorher, 'p1')
   })
 
   /**
@@ -433,10 +439,10 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     const { id, vorher } = setupOffer()
     applyCommand(state, grant('p1', 'p3'), ctx)
     placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
-    expectLapsed(id, vorher, 'fremde Armeen', 'p1')
+    expectLapsed(id, vorher, 'p1')
   })
 
-  it('Ablehnung und Verfall im selben Tick — durch step()', () => {
+  it('Ablehnung und Verfall im selben Tick — durch step() — und COMMAND_REJECTED verraet dem Annehmenden weder Grund noch Provinz (N2)', () => {
     const { id } = setupOffer()
     placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
 
@@ -446,8 +452,9 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     expect(rejected).toMatchObject({
       command: 'ACCEPT_TRADE',
       code: 'INVALID_TARGET',
-      detail: { reason: 'eigene Armeen' },
+      detail: { reason: 'lapsing' },
     })
+    expect((rejected as { detail?: { provinceId?: unknown } }).detail?.provinceId).toBeUndefined()
     const closedEvents = r.events.filter((e) => e.type === 'TRADE_OFFER_CLOSED')
     expect(closedEvents).toHaveLength(1)
     expect(closedEvents[0]).toMatchObject({ reason: 'invalid' })
@@ -500,7 +507,7 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     expect(canApply(state, accept('p3', id2), ctx)).toMatchObject({
       ok: false,
       code: 'INVALID_TARGET',
-      detail: { reason: 'nicht im Besitz', provinceId: 'n2' },
+      detail: { reason: 'lapsing' },
     })
 
     const fired = closed(diplomacyAt(1))
