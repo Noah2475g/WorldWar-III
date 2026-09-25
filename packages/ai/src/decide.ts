@@ -4,6 +4,7 @@ import { capitalCommands } from './capital'
 import { consolidateCommands } from './consolidate'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
+import { passageCommands } from './passage'
 import type { AiContext, AiDecision, Explanation } from './types'
 
 /**
@@ -102,6 +103,7 @@ export function decide(options: DecideOptions): AiDecision {
     // mit vollem Betrag, und keine andere Entscheidung wiegt das auf (T-M14-12).
     commands.push(...capitalCommands(context, explanations))
     commands.push(...diplomacyCommands(context, explanations))
+    commands.push(...passageCommands(context, explanations, commands)) // T-M17-10
     commands.push(...economyCommands(context, explanations))
   }
 

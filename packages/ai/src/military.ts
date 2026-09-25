@@ -1,4 +1,5 @@
 import type { Command, ProvinceId } from '@worldwar/core'
+import { firstBlock, guestWithdrawal, ownerOf, predictLandPath, requestPassage } from './passage'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { rateProvinces } from './targeting'
 import type { AiContext, Explanation } from './types'
@@ -60,6 +61,9 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     .filter(([, value]) => value > 300)
     .sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : a[0] < b[0] ? -1 : 1))[0]
 
+  // Antrag statt Marsch, je Macht hoechstens einmal (T-M17-10, E5).
+  const requested = new Set<string>()
+
   for (const army of ownArmies) {
     // An army already on its way keeps going unless its home is burning.
     const busy = (army.path?.length ?? 0) > 0
@@ -78,12 +82,40 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
       continue
     }
 
-    if (busy) continue
+    // Gast nach Kuendigung (T-M17-10, R-DIP-08/AK3): vor Fristende hinaus.
+    const heim = guestWithdrawal(context, army, explanations)
+    if (heim) {
+      commands.push(heim)
+      continue
+    }
+
+    // Sicherung fuer marschierende Armeen (E4): der Kern kennt den echten Weg, die Sicht zeigt ihn.
+    if (busy) {
+      const host = ownerOf(context, army.provinceId)
+      const block = firstBlock(context, army.path ?? [], host !== view.playerId ? host : null)
+      if (block) {
+        commands.push({ type: 'STOP_ARMY', playerId: view.playerId, armyId: army.id })
+        explanations.push({
+          action: `Hält ${army.id} in ${army.provinceId} an`,
+          reason: `Weg führt über ${block.provinceId} (${block.owner}), ${block.reason}`,
+          score: 700,
+          alternative: { action: `weitermarschieren (Überfall auf ${block.owner})`, score: 0 },
+        })
+        requestPassage(context, army, army.path![army.path!.length - 1]!, block, commands, explanations, requested)
+      }
+      continue
+    }
 
     if (pressured && threat.byProvince[army.provinceId] === undefined) {
       // Not at the front: move towards the province under pressure.
       const [target] = pressured
       if (target !== army.provinceId) {
+        const weg = predictLandPath(context, army, target as ProvinceId)
+        const sperre = weg ? firstBlock(context, weg, null) : null
+        if (sperre) {
+          requestPassage(context, army, target as ProvinceId, sperre, commands, explanations, requested)
+          continue
+        }
         commands.push({
           type: 'MOVE_ARMY',
           playerId: view.playerId,
@@ -151,6 +183,13 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
         score: 100,
       })
       memory.assignments[army.id] = 'reserve'
+      continue
+    }
+
+    const wegZumAngriff = predictLandPath(context, army, choice.id)
+    const angriffssperre = wegZumAngriff ? firstBlock(context, wegZumAngriff, null) : null
+    if (angriffssperre) {
+      requestPassage(context, army, choice.id, angriffssperre, commands, explanations, requested)
       continue
     }
 

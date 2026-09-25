@@ -41,17 +41,27 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(result.winRateA).toBeLessThanOrEqual(1)
   })
 
-  it('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08)', () => {
-    // T-M15-08 versprach "neun Zahlen je Stufe". `warDeclarations` und `automaticBombardments`
-    // zaehlen aber die ganze Partie fuer jede Stufe, die antritt — der Beschuss von "schwer" in
-    // einer Partie gegen "leicht" stand damit auch bei "leicht". Wer je Stufe zusichern will,
-    // muss wissen, wer erklaert und wer geschossen hat.
+  // Befund M17-D9 (T-M17-10, gemessen 2026-09-25): B6 ("Antrag statt Marsch") behebt genau die
+  // Ueberfaelle, die dieser Test bis hierhin gemessen hat. Vor T-M17-10 marschierten Armeen
+  // ungeprueft durch fremdes Land, und `detectSurpriseAttacks` meldete das als WAR_DECLARED
+  // (withoutDeclaration) — das war die Quelle der "6 Kriegserklaerungen" bei 40/80/120/200
+  // Tagen (schwer gegen normal, Testwelt, seed der Paarung). Nach T-M17-10: 0 Kriegserklaerungen
+  // bei denselben Tagen, UND 0 bei 300 Tagen ueber 8 verschiedene Seeds (Wegwerflauf, nicht
+  // committet) — die "echte" diplomatische Kriegserklaerung (declareWar aus Verstimmung,
+  // diplomacy.ts, seit vor M17) loest auf dieser kleinen Testwelt in der Paarung "schwer gegen
+  // normal" offenbar so gut wie nie aus. Ob das an der Testwelt liegt (zwei Maechte, kurze
+  // Grenzen) oder an der Schwelle selbst, ist eine eigene Untersuchung (ausserhalb T-M17-10,
+  // vgl. T-M17-15 "Integrationstor") — hier nur festgehalten, nicht behoben (Falle 8: nicht
+  // die Zusicherung "biegen", bis sie wieder passt).
+  it.todo('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08, Befund M17-D9: misst seit T-M17-10 durchgehend 0)')
+
+  it('haelt die Zuordnung nach Stufe konsistent, auch wenn nichts geschieht (Befund M17-D9)', () => {
     const result = playTournament({ map, rules, difficulties: ['hard', 'normal'], matches: 2, days: 40, startAtWar: false })
     const handelnd = result.byDifficulty
 
-    expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations, 'nichts gemessen').toBeGreaterThan(0)
-    // Jede Erklaerung gehoert genau einer Stufe; "schwer" tritt in jeder Partie an, also ist die
-    // Partiesumme bei "schwer" die Summe beider Handelnden.
+    // Ist-Stand seit T-M17-10 (Befund M17-D9): keine Kriegserklaerung, kein Beschuss in dieser
+    // Paarung. Die Summenbildung je Stufe bleibt trotzdem richtig (0 + 0 = 0), das ist der
+    // Kern von T-M41-08 und haelt unabhaengig davon, ob ueberhaupt etwas geschieht.
     expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations).toBe(result.warDeclarations.hard)
     expect(handelnd.hard.automaticBombardments + handelnd.normal.automaticBombardments).toBe(
       result.automaticBombardments.hard,

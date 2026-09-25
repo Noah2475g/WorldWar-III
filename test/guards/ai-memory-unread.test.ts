@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { ROOT, productionFiles } from './scan'
 
 /**
- * Das KI-Gedaechtnis `assignments` wird nirgends gelesen (Nacharbeit T-M41-05, Durchsicht M2).
+ * Das KI-Gedaechtnis `assignments` wird nirgends gelesen (Nacharbeit T-M41-05, Durchsicht M2)
+ * — mit einer einzigen, engen Ausnahme seit T-M17-10 (siehe unten).
  *
  * T-M41-05 kuerzt `AiMemory.assignments` auf die lebenden eigenen Armeen. Ohne Wirkung auf die
  * Partie ist das nur, weil niemand das Feld liest: geschrieben in `military.ts`, kopiert in
@@ -15,6 +16,15 @@ import { ROOT, productionFiles } from './scan'
  * Faellt er, liest jemand das Feld. Dann ist die Kuerzung eine Verhaltensaenderung und braucht
  * ihre eigene Messung (Vollpartie, Turnier), BEVOR der neue Zugriff hier als erlaubt eingetragen
  * wird — nicht umgekehrt.
+ *
+ * **T-M17-10** liest `memory.assignments[army.id]` einmal, in `passage.ts::requestPassage`
+ * (Schritt 4, P6b: ein Antrag wird erst nach Ablauf seiner Frist wiederholt). Das ist kein Fall
+ * der Kuerzungs-Verhaltensaenderung, die dieser Waechter eigentlich sucht: die Kuerzung entfernt
+ * nur Eintraege TOTER Armeen (`alive.has(armyId)`), gelesen wird hier immer der Eintrag der
+ * EIGENEN, gerade lebenden Armee (`army.id` aus `ownArmies`) — die Kuerzung kann diesen Wert
+ * nie veraendern, weil er nie geloescht wird, solange die Armee lebt. Turnier und die volle
+ * Partie in `apps/headless/test` liefen mit dieser Zeile (T-M17-10-Bericht) unauffaellig;
+ * `loop.test.ts` deckt die Kuerzung weiterhin unveraendert ab.
  */
 
 /** Was mit `assignments` geschehen darf, ohne es zu lesen — jede Form mit ihrem heutigen Ort. */
@@ -27,6 +37,10 @@ const ERLAUBT: readonly { form: string; muster: RegExp }[] = [
   {
     form: 'der Filter der Kuerzung (military.ts)',
     muster: /\bObject\.entries\(memory\.assignments\)\.filter\(\(\[armyId\]\)\s*=>\s*alive\.has\(armyId\)\)/g,
+  },
+  {
+    form: 'voriger Auftrag derselben lebenden Armee (passage.ts, T-M17-10, P6b)',
+    muster: /\bconst previous = memory\.assignments\[army\.id\]/g,
   },
 ]
 
@@ -70,6 +84,7 @@ describe('T-M41-05 Nacharbeit: AiMemory.assignments wird nirgends gelesen', () =
       expect.arrayContaining([
         'packages/ai/src/military.ts',
         'packages/ai/src/decide.ts',
+        'packages/ai/src/passage.ts',
         'packages/core/src/state/clone.ts',
         'packages/core/src/state/types.ts',
       ]),
