@@ -24,10 +24,16 @@ import { capitalPenalty, provinceYieldScaled } from './production'
  *      (`targetChanged`); sonst entscheidet `chance()` aus dem Zufall des Zustands. Je Provinz wirkt
  *      höchstens eine Sabotage je Tag (R-SPY-04/AK4) — eine Menge dieses Durchlaufs, kein Zustand.
  *
- * **Ohne Spione wird kein Zufall verbraucht** (D29.4) — und ohne Spione und ohne Aufdeckung
- * nichts angefasst. Das ist keine Sparsamkeit, sondern die Zusage, auf der jeder alte Spielstand
- * und der Golden-Master ruhen: `determinism.test.ts` vergleicht den Hash nach jedem von 500 Ticks
- * mit einem Lauf, in dem es diese Funktion nicht gibt.
+ * **Ohne Spione wird kein Zufall verbraucht** (D29.4). Die Zusage, auf der jeder alte Spielstand
+ * und der Golden-Master ruhen, folgt daraus, dass jeder `chance()`-Aufruf dieser Funktion
+ * ausschließlich innerhalb einer Schleife über `espionage.spies` steht (Schritt c und d) — ein
+ * leeres Array erreicht ihn also strukturell nie, unabhängig vom frühen `return` unten. Der
+ * `return` selbst ist reine Fleißarbeits-Ersparnis (kein Filtern, kein leerer Array-Zuweisungslauf
+ * bei nichts zu tun), keine eigene Determinismus-Garantie — eine Berichtigung dazu (Nacharbeit
+ * kern, 2026-09-25): eine frühere Fassung dieses Kommentars schrieb die Garantie fälschlich der
+ * Zeile selbst zu (Befund eines adversarischen Prüfers, `checkTarget`-Nachbarfund). `determinism.
+ * test.ts` vergleicht den Hash nach jedem von 500 Ticks mit einem Lauf, in dem es diese Funktion
+ * nicht gibt — und hält so das Ergebnis fest, nicht die Ursache.
  */
 export function settleEspionage(draft: GameState, ctx: PhaseContext): void {
   const espionage = draft.espionage
