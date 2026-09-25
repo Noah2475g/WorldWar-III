@@ -165,6 +165,17 @@ describe('R-DIP-03 Die KI antwortet auf Angebote nach nachvollziehbaren Regeln',
     expect(commands.filter((command) => command.type === 'DIPLOMACY' && command.action === 'offerPeace')).toEqual([])
   })
 
+  it('bietet einer ausgeschiedenen Macht keinen Frieden an (R-AI-09/AK2)', () => {
+    const view = viewOf(500, [{ id: 'stark', score: 1000, relation: 'war' }])
+    view.others[0]!.alive = false
+
+    const commands = diplomacyCommands(contextOf(view), [])
+
+    expect(commands.filter((command) => command.type === 'DIPLOMACY' && command.targetPlayerId === 'stark')).toEqual(
+      [],
+    )
+  })
+
   it('eroeffnet keine Front mehr, wenn die Grenze der Stufe erreicht ist', () => {
     const explanations: Explanation[] = []
     // Zwei laufende Kriege, Stufe "normal" erlaubt zwei Fronten — und der schwache
