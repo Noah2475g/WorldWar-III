@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import type { PublicView } from '@worldwar/core'
+import type { GameEvent, PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Alerts, UNREST_MORALE, alertsFor } from './Alerts.tsx'
+import {
+  Alerts,
+  NO_NEWS,
+  UNREST_MORALE,
+  alertsFor,
+  collectEspionageNews,
+  dismissNews,
+  espionageAlerts,
+  isDismissible,
+  type NewsNaming,
+} from './Alerts.tsx'
 import { categoryOf } from './Panels.tsx'
 
 /**
@@ -332,5 +342,267 @@ describe('T-M41-12 Ankuendigung und Freischaltung bleiben sichtbar', () => {
       expect(selektor).not.toContain('alert__dismiss')
       expect(selektor).not.toContain('alert--unlock')
     }
+  })
+})
+
+/**
+ * Spionage meldet sich (R-SPY-06/AK2, T-M17-13, E3/E4).
+ *
+ * `ereignis` baut nur, was `espionageAlerts` tatsaechlich liest — `audience`/`concerns`
+ * stehen dabei, weil `BaseEvent` sie verlangt, auch wenn diese Funktion sie nicht ansieht
+ * (die Rollenpruefung ist ihre eigene, ueber `playerId`/`targetPlayerId`, nicht `eventsFor`).
+ */
+describe('R-SPY-06/AK2 Spionage meldet sich', () => {
+  const ereignis = (over: Partial<GameEvent> & Pick<GameEvent, 'type'>): GameEvent =>
+    ({
+      tick: 0,
+      severity: 'info',
+      audience: ['p1'],
+      concerns: ['p1'],
+      ...over,
+    }) as GameEvent
+
+  const naming: NewsNaming = {
+    province: (id) => ({ A: 'Alpha', B: 'Beta' })[id] ?? id,
+    player: (id) => ({ p1: 'Nordland', p2: 'Ostmark', p3: 'Suedreich' })[id] ?? id,
+  }
+
+  it('meldet eine erlittene Sabotage mit Sprungziel (AK2)', () => {
+    const event = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p1',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+      tick: 48,
+    })
+
+    const alerts = espionageAlerts([event], 'p1', naming)
+
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0]).toMatchObject({
+      id: 'sabotage:A',
+      kind: 'sabotage',
+      provinceId: 'A',
+      icon: 'spyEconomic',
+      text: 'Wirtschaftssabotage in Alpha',
+      tick: 48,
+    })
+
+    const onJump = vi.fn()
+    render(<Alerts alerts={alerts} onJump={onJump} />)
+    fireEvent.click(screen.getByRole('button', { name: /Wirtschaftssabotage in Alpha/ }))
+    expect(onJump).toHaveBeenCalledWith('A')
+  })
+
+  it('nennt keinen Urheber — auch nicht, wenn die Huelle alle Namen kennt (Z8)', () => {
+    const events = [
+      ereignis({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId: 'A',
+        kind: 'economic',
+        moraleLoss: 10000,
+        destroyed: {},
+        delayTicks: 0,
+      }),
+      ereignis({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId: 'B',
+        kind: 'military',
+        moraleLoss: 0,
+        destroyed: {},
+        delayTicks: 12,
+      }),
+    ]
+
+    const alerts = espionageAlerts(events, 'p1', naming)
+
+    expect(alerts.every((alert) => !alert.text.includes('Ostmark') && !alert.text.includes('Suedreich'))).toBe(true)
+    expect(JSON.stringify(alerts)).not.toContain('p2')
+    expect(JSON.stringify(alerts)).not.toContain('p3')
+    const militaer = alerts.find((alert) => alert.id === 'sabotage:B')!
+    expect(militaer.text).toBe('Militärsabotage in Beta')
+    expect(militaer.icon).toBe('spyMilitary')
+  })
+
+  it('meldet fremde Sabotage nicht', () => {
+    const event = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p2',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+    })
+
+    expect(espionageAlerts([event], 'p1', naming)).toEqual([])
+  })
+
+  it('ist laut und wegklickbar', () => {
+    expect(isDismissible({ id: 'sabotage:A', kind: 'sabotage', icon: 'spyEconomic', text: '' })).toBe(true)
+
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--(accent|warn)\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.some((selektor) => selektor.includes('alert--sabotage'))).toBe(true)
+    expect(laut.some((selektor) => selektor.includes('alert--espionage'))).toBe(false)
+  })
+
+  it('steht vor Freischaltung und Ankuendigung', () => {
+    const regeln = { constants: { ticksPerDay: 24 }, buildings: { harbour: { availableFromDay: 6 } }, units: {} }
+    const sabotage = espionageAlerts(
+      [
+        ereignis({
+          type: 'SABOTAGE_SUFFERED',
+          playerId: 'p1',
+          provinceId: 'A',
+          kind: 'economic',
+          moraleLoss: 10000,
+          destroyed: {},
+          delayTicks: 0,
+          tick: 5 * 24 + 14,
+        }),
+      ],
+      'p1',
+      naming,
+    )
+
+    const alerts = alertsFor({ ...view({}), tick: 5 * 24 + 14 } as PublicView, regeln, sabotage)
+
+    expect(alerts.map((alert) => alert.kind).indexOf('sabotage')).toBeLessThan(alerts.map((alert) => alert.kind).indexOf('unlock'))
+  })
+
+  it('zeigt ohne Nachrichten dasselbe wie bisher', () => {
+    const v = view({ battles: ['A'] })
+    expect(alertsFor(v)).toEqual(alertsFor(v, undefined, []))
+  })
+
+  it('meldet dem Entdecker die Enttarnung mit der Macht', () => {
+    const event = ereignis({ type: 'SPY_DETECTED', playerId: 'p2', targetPlayerId: 'p1', provinceId: 'A', mission: 'intel' })
+
+    const alerts = espionageAlerts([event], 'p1', naming)
+
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0]).toMatchObject({
+      kind: 'espionage',
+      text: 'Gegenspionage in Alpha: ein Spion von Ostmark enttarnt',
+      icon: 'spyCounter',
+      provinceId: 'A',
+    })
+  })
+
+  it('meldet dem Urheber den Verlust seines Spions', () => {
+    const event = ereignis({ type: 'SPY_DETECTED', playerId: 'p2', targetPlayerId: 'p1', provinceId: 'A', mission: 'intel' })
+
+    const alerts = espionageAlerts([event], 'p2', naming)
+
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0]).toMatchObject({
+      kind: 'espionage',
+      text: 'Ihr Spion in Alpha ist enttarnt (Aufklärung)',
+      icon: 'spyIntel',
+    })
+  })
+
+  it('meldet unbezahlten Sold und ein unpassendes Ziel, nicht aber Erfolg und Misserfolg (E4)', () => {
+    const lost = ereignis({ type: 'SPY_LOST', playerId: 'p1', spyId: 's1', provinceId: 'A', mission: 'intel', reason: 'unpaid' })
+    const changed = ereignis({
+      type: 'SPY_REPORT',
+      playerId: 'p1',
+      spyId: 's1',
+      provinceId: 'A',
+      mission: 'intel',
+      outcome: 'targetChanged',
+    })
+    const success = ereignis({ type: 'SPY_REPORT', playerId: 'p1', spyId: 's1', provinceId: 'A', mission: 'intel', outcome: 'success' })
+    const failure = ereignis({ type: 'SPY_REPORT', playerId: 'p1', spyId: 's1', provinceId: 'A', mission: 'intel', outcome: 'failure' })
+
+    expect(espionageAlerts([lost], 'p1', naming)).toHaveLength(1)
+    expect(espionageAlerts([changed], 'p1', naming)).toHaveLength(1)
+    expect(espionageAlerts([success], 'p1', naming)).toEqual([])
+    expect(espionageAlerts([failure], 'p1', naming)).toEqual([])
+  })
+
+  it('sammelt neue Meldungen und nimmt jede nur einmal auf (E3)', () => {
+    const e48 = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p1',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+      tick: 48,
+    })
+
+    const a = collectEspionageNews(NO_NEWS, [e48], 50, 'p1', naming)
+    expect(a.alerts.size).toBe(1)
+    expect(a.upTo).toBe(48)
+
+    const b = collectEspionageNews(a, [e48], 51, 'p1', naming)
+    expect(b).toBe(a)
+  })
+
+  it('behaelt eine Meldung, wenn ihr Ereignis aus dem Ring faellt, und vergisst eine weggeklickte', () => {
+    const e48 = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p1',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+      tick: 48,
+    })
+    const a = collectEspionageNews(NO_NEWS, [e48], 50, 'p1', naming)
+
+    const c = collectEspionageNews(a, [], 900, 'p1', naming)
+    expect(c.alerts.has('sabotage:A')).toBe(true)
+
+    const d = dismissNews(c, 'sabotage:A')
+    expect(d.alerts.has('sabotage:A')).toBe(false)
+
+    const e = collectEspionageNews(d, [e48], 901, 'p1', naming)
+    expect(e.alerts.has('sabotage:A')).toBe(false)
+  })
+
+  it('beginnt nach einem frueheren Stand und bei neuem Betrachter von vorn', () => {
+    const e48 = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p1',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+      tick: 48,
+    })
+    const a = collectEspionageNews(NO_NEWS, [e48], 50, 'p1', naming)
+
+    const frueherStand = collectEspionageNews(a, [], 10, 'p1', naming)
+    expect(frueherStand.alerts.size).toBe(0)
+    expect(frueherStand.upTo).toBe(-1)
+
+    const neuerBetrachter = collectEspionageNews(a, [], 10, 'p2', naming)
+    expect(neuerBetrachter.alerts.size).toBe(0)
+
+    // Eine juengere Sabotage derselben Provinz ersetzt die aeltere: Anzahl bleibt 1, der Tick steigt.
+    const juenger = ereignis({
+      type: 'SABOTAGE_SUFFERED',
+      playerId: 'p1',
+      provinceId: 'A',
+      kind: 'economic',
+      moraleLoss: 10000,
+      destroyed: {},
+      delayTicks: 0,
+      tick: 72,
+    })
+    const ersetzt = collectEspionageNews(NO_NEWS, [e48, juenger], 80, 'p1', naming)
+    expect(ersetzt.alerts.size).toBe(1)
+    expect(ersetzt.alerts.get('sabotage:A')!.tick).toBe(72)
   })
 })

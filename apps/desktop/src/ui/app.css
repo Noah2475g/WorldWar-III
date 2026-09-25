@@ -2149,7 +2149,8 @@ body {
 }
 
 .alert--battle,
-.alert--capital {
+.alert--capital,
+.alert--sabotage {
   border-left-color: var(--accent);
   color: var(--accent);
 }

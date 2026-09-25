@@ -115,7 +115,7 @@ import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
-import { Alerts, alertsFor } from './ui/Alerts.tsx'
+import { Alerts, alertsFor, collectEspionageNews, dismissNews, NO_NEWS, type NewsState } from './ui/Alerts.tsx'
 import { cueForOwnEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -450,6 +450,12 @@ export function App(props: AppProps) {
    * die Nummer, die die Oberflaeche zeigen darf.
    */
   const [movingSpy, setMovingSpy] = useState<string | null>(null)
+  /**
+   * Spionage-Meldungen, gesammelt bis zum Wegklicken (E3, R-SPY-06/AK2, T-M17-13):
+   * SABOTAGE_SUFFERED laut, SPY_DETECTED/SPY_LOST/targetChanged leise. Der Ereignisring
+   * haelt nur 500 Eintraege fuer alle Maechte — eine Meldung ueberlebt trotzdem.
+   */
+  const [news, setNews] = useState<NewsState>(NO_NEWS)
   const [victoryAcknowledged, setVictoryAcknowledged] = useState(false)
   const [tutorial, setTutorial] = useState<TutorialState>(() =>
     props.skipTutorial ? TUTORIAL_OFF : initialTutorial(readTutorialSeen()),
@@ -815,7 +821,8 @@ export function App(props: AppProps) {
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
-    const aus = alertsFor(view, props.rules).filter((alert) => {
+    const spionageNews = [...news.alerts.values()].sort((a, b) => b.tick - a.tick)
+    const aus = alertsFor(view, props.rules, spionageNews).filter((alert) => {
       const weggeklickt = dismissedAlerts.get(alert.id)
       if (weggeklickt === undefined || !view) return true
       // Nur am selben Spieltag und nicht vor dem Klick (T-M41-12).
@@ -828,7 +835,7 @@ export function App(props: AppProps) {
       aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
     }
     return aus
-  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay])
+  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay, news])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -1411,8 +1418,9 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
-    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
-    setMovingSpy(null)
+          // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
+          setMovingSpy(null)
+          setNews(NO_NEWS)
           // Ein geladener Stand ist eine Einzelspielerpartie — es sei denn, dieser
           // Bildschirm ist ein Gastgeber (T-M39-06, R-MP-13). Dann wird der Stand
           // ANGEBOTEN: der Gast vergleicht ihn mit seinem eigenen, und nur bei einer
@@ -1480,8 +1488,9 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
-    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
+    // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
+    setNews(NO_NEWS)
     commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1548,8 +1557,9 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
-    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
+    // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
+    setNews(NO_NEWS)
     commitState(beginn.state)
     setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
     setDialog(null)
@@ -1697,6 +1707,24 @@ export function App(props: AppProps) {
     },
     [state],
   )
+
+  /**
+   * Spionage-Meldungen sammeln (R-SPY-06/AK2, E3, T-M17-13).
+   *
+   * Muss NACH `nameOf` stehen — der Effekt braucht `nameOfProvince` und `nameOf` fuer die
+   * Namen in den Saetzen. Anders als der Ton (F10) liest er den EIGENEN Ausschnitt seit
+   * `news.upTo`, nicht seit der letzten Laenge: der Ring haelt nur 500 Ereignisse fuer
+   * alle Maechte, und `own.slice(soundedUpTo)` verstummte, sobald er voll ist.
+   */
+  useEffect(() => {
+    if (!state || !viewerId) return
+    setNews((old) =>
+      collectEspionageNews(old, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
+        province: nameOfProvince,
+        player: nameOf,
+      }),
+    )
+  }, [state, viewerId, nameOfProvince, nameOf])
 
   /**
    * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —
@@ -2162,7 +2190,11 @@ export function App(props: AppProps) {
           <Alerts
             alerts={alerts}
             onJump={jumpTo}
-            onDismiss={(id) => setDismissedAlerts((old) => new Map(old).set(id, view.tick))}
+            onDismiss={(id) =>
+              news.alerts.has(id)
+                ? setNews((old) => dismissNews(old, id))
+                : setDismissedAlerts((old) => new Map(old).set(id, view.tick))
+            }
           />
           {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
