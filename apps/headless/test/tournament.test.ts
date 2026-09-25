@@ -53,27 +53,29 @@ describe('R-AI-06 KI gegen KI', () => {
   // diplomacy.ts, seit vor M17) loest auf dieser kleinen Testwelt in der Paarung "schwer gegen
   // normal" offenbar so gut wie nie aus.
   //
-  // Berichtigt (Nacharbeit ki, 2026-09-25): NICHT die fehlende Landnachbarschaft — der Test
-  // "haelt genau den Ausgangsbefund fest" unten misst, dass m1 (Nachbar von n2, Nordlands
-  // eigener Provinz) nach der Partie durchgehend Ostmark gehoert; `landNeighbours()` ist zu
-  // dem Zeitpunkt also nicht leer. Die eigentliche Ursache ist das Verhaeltnis selbst: ohne
-  // B6-Ueberfaelle entstehen keine Verstimmungen, und `relationship()` bleibt ueber der
-  // Kriegsschwelle (siehe `PROBLEME.md`, Befund M17-D9, berichtigt). Eine eigene Untersuchung
-  // bleibt trotzdem noetig (ausserhalb T-M17-10, vgl. T-M17-15 "Integrationstor") — hier nur
-  // festgehalten, nicht behoben (Falle 8: nicht die Zusicherung "biegen", bis sie wieder passt).
-  it.todo('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08, Befund M17-D9: misst seit T-M17-10 durchgehend 0)')
+  // Berichtigt (Nacharbeit ki, 2026-09-25), erneut berichtigt (Nacharbeit Turnier M17, Option C,
+  // 2026-09-25, bis dahin): NICHT die fehlende Landnachbarschaft — m1 (Nachbar von n2, Nordlands
+  // eigener Provinz) fiel Ostmark unterwegs zu, und `landNeighbours()` war zu dem Zeitpunkt also
+  // nicht leer. Die eigentliche Ursache war das Verhaeltnis selbst: ohne B6-Ueberfaelle entstanden
+  // keine Verstimmungen, und `relationship()` blieb ueber der Kriegsschwelle. Mit Option C erklaert
+  // Nordland an genau diesem veralteten Ziel jetzt foermlich den Krieg (`staleTargetDeclarations`,
+  // Test unten) — die "0 Kriegserklaerungen" von M17-D9 sind damit ueberholt.
+  it('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08)', () => {
+    const result = playTournament({ map, rules, difficulties: ['hard', 'normal'], matches: 2, days: 40, startAtWar: false })
+    const handelnd = result.byDifficulty
+
+    expect(handelnd.hard.warDeclarations).toBeGreaterThan(0)
+    expect(handelnd.normal.warDeclarations).toBeGreaterThan(0)
+    expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations).toBe(result.warDeclarations.hard)
+  })
 
   /**
-   * Nacharbeit ki (T-M17-10/11), Befund M17-D9 berichtigt: `landNeighbours()` haelt nicht
-   * "immer leer", wie die vorige Fassung des Kommentars oben behauptete. m1 grenzt an n2
-   * (Nordlands eigene Provinz, Kante `n2-m1` in `testworld.json`) — sobald Ostmark m1 haelt,
-   * sind Nordland und Ostmark direkte Landnachbarn. Acht Partien, Frieden-Start, 40 Spieltage:
-   * m1 UND m2 gehoeren am Ende durchgehend Ostmark, und trotzdem bleiben Kriegserklaerungen
-   * und Verstimmungen bei null. Die Ursache liegt also im Verhaeltnis (keine Ueberfaelle →
-   * keine Verstimmung → `relationship()` bleibt ueber der Kriegsschwelle), nicht in der
-   * Kartentopologie.
+   * Nacharbeit Turnier M17, Option C (2026-09-25, loest M17-D9 ab): m1 faellt Ostmark unterwegs
+   * zu (wie vor Option C), aber die Armee stolpert nicht mehr hinein — sie erklaert Ostmark
+   * foermlich den Krieg und haelt an, bis die Erklaerung wirkt (`staleTargetDeclarations`,
+   * `packages/ai/src/passage.ts`, Noahs Entscheid zu Befund M17-T5).
    */
-  it('haelt genau den Ausgangsbefund fest: m1 wird Landnachbar, aber ohne Verstimmung bleibt es beim Frieden (Befund M17-D9, berichtigt)', () => {
+  it('erklaert foermlich, statt zu stolpern, sobald m1 Ostmark zufaellt (Option C, loest M17-D9 ab)', () => {
     for (let seed = 1; seed <= 3; seed++) {
       const config: GameConfig = {
         seed,
@@ -88,20 +90,22 @@ describe('R-AI-06 KI gegen KI', () => {
       const state = createInitialState(config, { map, rules })
       const run = advanceTicks(state, 40 * rules.constants.ticksPerDay, { map, rules })
 
-      // m1 grenzt an n2 (Nordland) — sobald m1 Ostmark gehoert, sind beide Landnachbarn.
-      expect(run.state.provinces.m1!.owner, `seed ${seed}`).toBe('p2')
-      expect(run.state.diplomacy.grievances.p1 ?? {}, `seed ${seed}`).toEqual({})
-      expect(run.events.filter((e) => e.type === 'WAR_DECLARED')).toEqual([])
+      const wars = run.events.filter((e) => e.type === 'WAR_DECLARED')
+      expect(wars.length, `seed ${seed}`).toBeGreaterThan(0)
+      for (const war of wars) {
+        expect(war.withoutDeclaration, `seed ${seed}: ${JSON.stringify(war)}`).toBe(false)
+      }
+      expect(wars[0], `seed ${seed}`).toMatchObject({ playerId: 'p1', targetPlayerId: 'p2' })
     }
   })
 
-  it('haelt die Zuordnung nach Stufe konsistent, auch wenn nichts geschieht (Befund M17-D9)', () => {
+  // Ist-Stand vor Option C (bis 2026-09-25, Befund M17-D9): keine Kriegserklaerung, kein Beschuss
+  // in dieser Paarung. Seit Option C erklaert Nordland foermlich (Test oben); die Summenbildung
+  // je Stufe bleibt trotzdem richtig, das ist der Kern von T-M41-08.
+  it('haelt die Zuordnung nach Stufe konsistent, auch wenn etwas geschieht (Befund M17-D9)', () => {
     const result = playTournament({ map, rules, difficulties: ['hard', 'normal'], matches: 2, days: 40, startAtWar: false })
     const handelnd = result.byDifficulty
 
-    // Ist-Stand seit T-M17-10 (Befund M17-D9): keine Kriegserklaerung, kein Beschuss in dieser
-    // Paarung. Die Summenbildung je Stufe bleibt trotzdem richtig (0 + 0 = 0), das ist der
-    // Kern von T-M41-08 und haelt unabhaengig davon, ob ueberhaupt etwas geschieht.
     expect(handelnd.hard.warDeclarations + handelnd.normal.warDeclarations).toBe(result.warDeclarations.hard)
     expect(handelnd.hard.automaticBombardments + handelnd.normal.automaticBombardments).toBe(
       result.automaticBombardments.hard,

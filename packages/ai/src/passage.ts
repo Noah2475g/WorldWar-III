@@ -221,6 +221,65 @@ export function requestPassage(
   })
 }
 
+/**
+ * Veraltetes Angriffsziel -> foermliche Kriegserklaerung (Nacharbeit Turnier M17, Noahs Entscheid
+ * zu Befund M17-T5, D29.8 Erweiterung vom 2026-09-25).
+ *
+ * `rateProvinces` waehlt nur herrenlose oder feindliche Provinzen (targeting.ts). Gehoert das Ziel
+ * eines laufenden Marschs inzwischen einer Macht im Frieden, ist der Befehl veraltet: vor M17
+ * stolperte die Armee hinein (Ueberfall, Befund M17-T1), seit T-M17-10 haelt E4 sie an. Jetzt
+ * erklaert die KI dieser Macht foermlich den Krieg und haelt an, bis die Erklaerung wirkt.
+ * Vorlauf vor der Armeeschleife, damit jeder Antrag desselben Zugs die Erklaerung sieht.
+ */
+export function staleTargetDeclarations(
+  context: AiContext,
+  explanations: Explanation[],
+  pending: readonly Command[],
+): Command[] {
+  const { view } = context
+  const me = view.playerId
+  const commands: Command[] = []
+  const declared = warDeclaredThisTurn(context, pending)
+
+  // Ausgeschiedene Kriegsgegner zaehlen mit — dieselbe Zaehlung wie activeWars in
+  // diplomacy.ts Abschnitt 2; nicht "verbessern".
+  let fronts =
+    Object.values(view.relations).filter(
+      (relation) => relation.state === 'war' || relation.warEffectiveAtTick !== undefined,
+    ).length + declared.size
+
+  for (const army of view.armies) {
+    if (army.owner !== me) continue
+    const path = army.path ?? []
+    if (path.length === 0) continue
+
+    const target = path[path.length - 1]!
+    const owner = ownerOf(context, target)
+    if (owner === null || owner === me) continue
+
+    const host = ownerOf(context, army.provinceId)
+    const block = firstBlock(context, path, host !== me ? host : null)
+    if (!block || block.owner !== owner) continue
+
+    const relation = view.relations[owner]
+    if (!relation || relation.state !== 'peace' || relation.warEffectiveAtTick !== undefined) continue
+    if (declared.has(owner)) continue
+    if (fronts >= context.difficulty.maxFronts) continue
+
+    commands.push({ type: 'DIPLOMACY', playerId: me, targetPlayerId: owner, action: 'declareWar' })
+    declared.add(owner)
+    fronts += 1
+    explanations.push({
+      action: `Erklärt ${owner} den Krieg`,
+      reason: `Angriffsziel ${target} gehört inzwischen ${owner} (Frieden, kein Durchmarschrecht) — förmlich statt Überfall`,
+      score: 700,
+      alternative: { action: `Angriff auf ${target} aufgeben`, score: 200 },
+    })
+  }
+
+  return commands
+}
+
 /** Gast nach Kündigung (E11): Heimmarsch oder null. Schreibt Erklärung und assignment. */
 export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanations: Explanation[]): Command | null {
   const { view, memory, map } = context

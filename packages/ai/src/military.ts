@@ -1,5 +1,5 @@
 import type { Command, ProvinceId } from '@worldwar/core'
-import { firstBlock, guestWithdrawal, ownerOf, predictLandPath, requestPassage } from './passage'
+import { firstBlock, guestWithdrawal, ownerOf, predictLandPath, requestPassage, staleTargetDeclarations } from './passage'
 import { compareForces, threatMap, worthAttacking } from './threat'
 import { rateProvinces } from './targeting'
 import type { AiContext, Explanation } from './types'
@@ -61,6 +61,12 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     .filter(([, value]) => value > 300)
     .sort((a, b) => (b[1] !== a[1] ? b[1] - a[1] : a[0] < b[0] ? -1 : 1))[0]
 
+  // Veraltetes Ziel -> Kriegserklaerung, VOR jedem Antrag dieses Zugs (Nacharbeit Turnier M17).
+  commands.push(...staleTargetDeclarations(context, explanations, pending))
+  // Was dieser Zug schon beschlossen hat: fruehere Stufen UND die eigenen Befehle der Taktik. Ohne die
+  // eigenen sah requestPassage eine Erklaerung desselben Zugs nicht (6 INVALID_TARGET, Plan C §2).
+  const decided = (): readonly Command[] => [...pending, ...commands]
+
   // Antrag statt Marsch, je Macht hoechstens einmal (T-M17-10, E5).
   const requested = new Set<string>()
 
@@ -101,7 +107,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
           score: 700,
           alternative: { action: `weitermarschieren (Überfall auf ${block.owner})`, score: 0 },
         })
-        requestPassage(context, army, army.path![army.path!.length - 1]!, block, commands, explanations, requested, pending)
+        requestPassage(context, army, army.path![army.path!.length - 1]!, block, commands, explanations, requested, decided())
       }
       continue
     }
@@ -113,7 +119,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
         const weg = predictLandPath(context, army, target as ProvinceId)
         const sperre = weg ? firstBlock(context, weg, null) : null
         if (sperre) {
-          requestPassage(context, army, target as ProvinceId, sperre, commands, explanations, requested, pending)
+          requestPassage(context, army, target as ProvinceId, sperre, commands, explanations, requested, decided())
           continue
         }
         commands.push({
@@ -189,7 +195,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     const wegZumAngriff = predictLandPath(context, army, choice.id)
     const angriffssperre = wegZumAngriff ? firstBlock(context, wegZumAngriff, null) : null
     if (angriffssperre) {
-      requestPassage(context, army, choice.id, angriffssperre, commands, explanations, requested, pending)
+      requestPassage(context, army, choice.id, angriffssperre, commands, explanations, requested, decided())
       continue
     }
 
