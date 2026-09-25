@@ -30,8 +30,12 @@ Erzeugt von `scripts/acceptance.mjs` am 2026-09-25 gegen `b8d36e6`.
 ### MESSGERAET
 
 ```
-undefined
+seit dem Messcommit b1bb3c8 aus docs/reports/stance.json liegt auf HEAD mindestens ein Commit an den Quellen des Messlaufs (de8d246) - die Automatik ist ungemessen — bitte WORLDWAR_WRITE_REPORT=1 pnpm vitest run --config vitest.slow.config.ts apps/headless/test/stance.slow.test.ts auf sauberem Arbeitsbaum laufen lassen und docs/reports/stance.json einchecken
 ```
+
+*(Nacharbeit T-M17-16: dieser Abschnitt zeigte vorher `undefined` — `scripts/acceptance.mjs`
+las `r.output` statt des tatsächlich gesetzten Felds `r.detail`; das Skript ist berichtigt,
+der Text oben von Hand aus `stanceFreshness()` nachgetragen.)*
 
 ## Vermerke (von Hand, nicht vom Skript; gelten fuer `b8d36e6`)
 
@@ -60,10 +64,16 @@ oben). Drei Vermerke, verlangt von der dod zu T-M17-16:
 4. **Zusaetzlich zu diesem Lauf (T-M17-16):** die MESSGERAET-Pruefung „Haltungs-Messlauf"
    ist zu Recht rot — `docs/reports/stance.json` steht absichtlich auf dem alten Stand
    (`b1bb3c8`), weil der neu gemessene Nachher-Stand an der festen Kontrollzahl reisst
-   (**Befund M17-F1**, `PROBLEME.md`: 76 Einmaersche/4 verlorene Provinzen fielen auf 0/0,
-   waehrend Provinz-Tage und Verluste-ohne-Gefecht weiterhin halten oder besser sind). Ein
-   roter Messstand wird nicht eingecheckt, damit `allFreshness` keinen gruenen Anschein
-   erweckt, der nicht stimmt — dieser Abnahmelauf bleibt deshalb bei **11 von 12** stehen,
-   bis Noah entschieden hat, ob die Kontrollzahl bewusst neu kalibriert wird oder ob 0
-   Einmaersche selbst ein Befund ueber die KI ist.
+   (**Befund M17-F1**, `PROBLEME.md`: 76 Einmaersche/4 verlorene Provinzen fielen auf 0/0).
+   Provinz-Tage und Verluste-ohne-Gefecht bleiben zwar ueber ihrer Schwelle, aber bei 0
+   Einmaerschen wird die Verteidigungsautomatik in diesem Lauf gar nicht ausgeloest — das ist
+   **ungeprueft**, nicht „gehalten". Ein roter Messstand wird nicht eingecheckt, damit
+   `allFreshness` keinen gruenen Anschein erweckt, der nicht stimmt — dieser Abnahmelauf
+   bleibt deshalb bei **11 von 12** stehen, bis Noah entschieden hat, ob die Kontrollzahl
+   bewusst neu kalibriert wird oder ob 0 Einmaersche selbst ein Befund ueber die KI ist.
+5. **Nachgetragen in der Nacharbeit zu T-M17-16:** dieser Lauf misst `claude/m17-tiefe-
+   zwischen-den-kriegen` ohne die 45 Commits, um die `origin/main` (`30c0b3f`, PR #9-#11)
+   inzwischen vor diesem Zweig liegt (Basis `8bda869`). Alle Zahlen oben gelten nur fuer
+   diesen Stand; vor dem Pull Request muss `origin/main` gemergt und dieser Lauf auf dem
+   Merge-Stand wiederholt werden (`WORKFLOW.md` §2 Punkt 1, Blocker 3).
 
