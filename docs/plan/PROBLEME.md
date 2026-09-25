@@ -4794,6 +4794,16 @@ Ursache (Test A7, Kontrolle über `canApply`). **Offen im Kern:** `COMMAND_REJEC
 `canApply` tragen den Grund weiterhin mit `provinceId` — erreichbar für KI und Skript, nicht für
 den Spieler über die Oberfläche. Kandidat M18.
 
+**Statusnachtrag 2026-09-25 (Durchsicht des Zusammenspiels, Befund N2/M17-G2): die AKTIVE
+Hälfte ist jetzt auch im Kern geschlossen.** `ACCEPT_TRADE` gibt bei einem Fehler der gebenden
+Seite seither nur noch `INVALID_TARGET{reason:'lapsing'}` zurück, ohne `provinceId` und ohne
+den genauen Grund — `COMMAND_REJECTED.detail` und `canApply` verraten nichts mehr (Test in
+`tradeOffer.test.ts`, Gegenprobe gefahren). **Offen bleibt nur die PASSIVE Hälfte:**
+`settleTradeOffers` prüft die gebende Seite weiterhin mit Tiefe `full` in jeder Diplomatiephase,
+und `TRADE_OFFER_CLOSED{reason:'invalid'}` korreliert zeitlich mit dem, was der Anbieter gerade
+tut, auch ohne dass `ACCEPT_TRADE` je aufgerufen wird. Bleibt Kandidat M18 — dieselbe
+Design-Frage (zweite, redaktionsärmere Rückmeldung oder neue `CommandResult`-Form) wie oben.
+
 ---
 
 ## 2026-09-25 · Nacharbeit „kern" · Beobachtung: `outgoingOffers` fehlte für den eigenen Durchmarsch-Antrag — erledigt durch die Spionagebahn
@@ -5027,7 +5037,15 @@ Vertauschung aus dem Zähler ableiten. Bis dahin: die Oberfläche (T-M17-13) zei
 Kennungen, sondern eine eigene Nummerierung, und die KI (T-M17-12) liest aus Kennungen nichts
 ab — bestätigt (`text-keys.test.ts` prüft `\bs\d+\b` gegen jede KI-Begründung).
 
-**Status:** gemessen, offen für M18.
+**Nachtrag (2026-09-25, Durchsicht des Zusammenspiels, Befund N1):** dieselbe Bauart, derselbe
+Bruch bei Handelsangeboten — `tradeOffers` bekommen ihre Kennung ebenfalls aus **einem** Zähler
+für alle Mächte (`t${nextIds.offer++}`), und `PublicView.tradeOffers` führt sie offen. Gemessen
+(Wegwerftest H2): p2 bietet p1 etwas an, dann p2 an p3, p3 an p2, wieder p2 an p1 —
+`publicView(p1).tradeOffers.incoming` zeigt `['t1','t4']`, und p1 weiß damit, dass zwei
+Angebote zwischen Dritten liefen. Gehört in dieselbe M18-Vormerkung wie dieser Befund (ein
+Zähler je Macht oder eine abgeleitete Kennung für beide Listen zugleich).
+
+**Status:** gemessen, offen für M18 — Spione (dieser Befund) und Handelsangebote (N1) zusammen.
 
 ---
 
@@ -5729,3 +5747,93 @@ Diplomatiepanel mit Escape" — öffnet mit `d`, prüft die `region`, schließt 
 
 **Status:** kein Fehler im Kern/in der Oberfläche gefunden; die Sichtprüfung dürfte den
 Fuß-Knopf statt der Panel-Region gemessen haben. Test bleibt als Regressionswächter stehen.
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G1 (kritisch, behoben): fremde Handelsangebote ließen sich über NOT_OWNER abzählen
+
+**Befund:** `ACCEPT_TRADE`, `DECLINE_TRADE` und `WITHDRAW_TRADE` gaben bei einem **fremden**
+Angebot (die handelnde Macht ist weder `from` noch `to`) `NOT_OWNER{offerId}` zurück, bei einem
+**fehlenden** dagegen `INVALID_TARGET{reason:'kein Angebot'}`. Über `canApply` ließ sich so
+durchprobieren, welche Kennungen zwischen Dritten offen sind (R-DIP-04) — genau die Lücke, die
+T-M17-07 für Spione bereits geschlossen hat (`ownSpy`).
+
+**Gemessen** (Wegwerftest H1, Testwelt): p1 bietet p2 etwas an. `canApply(p3, ACCEPT_TRADE t1)`
+ergab `NOT_OWNER`, `canApply(p3, ACCEPT_TRADE t999)` ergab `INVALID_TARGET`. Bei allen drei
+Befehlen gleich.
+
+**Reparatur:** `partyTradeOffer()` (`commands/tradeOffer.ts`) behandelt ein Angebot, an dem die
+Macht nicht beteiligt ist, jetzt wie ein fehlendes. Ist die Macht Partei, aber auf der falschen
+Seite, bleibt `NOT_OWNER` — sie kennt ihr eigenes Angebot. `02-DESIGN.md` D29.2 berichtigt.
+
+**Test:** `tradeOffer.test.ts`, neue Fälle vergleichen `canApply`/`applyCommand` für ein
+fremdes gegen ein fehlendes Angebot (alle drei Befehle) und prüfen, dass eine Partei auf der
+falschen Seite weiterhin `NOT_OWNER` erhält. Rot ohne die Reparatur, grün mit ihr, Gegenprobe
+gefahren (Reparatur entfernt, Test fällt).
+
+**Status:** behoben (Commit `897307e`).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G3 (niedrig, aber Datenschaden — behoben): validateState war für M17 nicht tief genug
+
+**Befund:** Wegwerftest `zz-durchsicht-validate` (migrierter `save-v3` mit gültiger
+Prüfsumme): ein `null`-Eintrag in `diplomacy.offers` lud und stürzte in `publicView.ts` beim
+Lesen von `offer.to` ab; `offers` mit `from`/`to` einer unbekannten Macht oder unbekanntem
+`kind` luden unbeanstandet; zwei `tradeOffers` mit derselben Kennung luden, und
+`WITHDRAW_TRADE t1` schloss **beide** — 2000 Treuhand verschwanden spurlos; `nextIds.offer`/
+`nextIds.spy` wurden nie gegen vorhandene Kennungen geprüft; `relation.state`,
+`sinceTick`, `warEffectiveAtTick` und das Beziehungspaar selbst wurden gar nicht geprüft.
+Zusätzlich rief `acceptState` (`packages/netplay/src/handshake.ts`) `validateState` nie auf —
+derselbe Bruch wie bei `deserialise` vor der Nacharbeit zu T-M17-03 (DECISIONS.md 2026-09-24).
+
+**Reparatur:** `validateState` prüft jetzt `diplomacy.offers` je Element, eindeutige Kennungen
+in `tradeOffers`/`spies`, `nextIds.offer`/`nextIds.spy` über jeder vergebenen Kennung, und
+`relation.state`/`sinceTick`/`warEffectiveAtTick`/das Beziehungspaar. `acceptState` ruft
+`validateState` nach der Prüfsummenprüfung auf, `PROTOCOL_VERSION` unverändert.
+
+**Test:** `migration-v3.test.ts` (15 neue Fälle je ein verfälschtes Feld), `resume-save.test.ts`
+(ein prüfsummengleicher, aber unvollständiger übertragener Stand wird verworfen). Rot ohne
+die Reparatur, grün mit ihr, Gegenprobe gefahren.
+
+**Status:** behoben (Commits `de8d246`, `590044a`).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G4, offen: breakAlliance sperrt den Durchmarsch ohne Räumfrist
+
+**Befund:** `commands/diplomacy.ts` `breakAlliance` ruft `setPassageBothWays(relation, false)`
+ohne jede Frist auf; `phases/diplomacy.ts` `detectSurpriseAttacks` liest das noch im selben
+Tick. Gemessen (Wegwerftest H3, Testwelt): p1 und p2 sind verbündet, eine Armee von p2 steht
+in einer Provinz von p1, p1 befiehlt `breakAlliance` — im selben Tick folgt
+`WAR_DECLARED{playerId:'p2', targetPlayerId:'p1', withoutDeclaration:true}`, das Ansehen von p2
+fällt von 1000 auf 810. Dieselbe Fallklasse wie M17-T6 (Frieden im selben Tick) und M17-D5.
+
+**Warum nicht repariert:** Entscheid Noah (2026-09-25, siehe DECISIONS.md): geht zusammen mit
+M17-T6 an M18 — dieselbe Räumfrist soll dort für beide Fälle gelten, statt die Mechanik
+zweimal getrennt zu ändern.
+
+**Status:** offen, geht an M18 (zusammen mit M17-T6).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel, offen: der Determinismus-Vergleich (Wiederholungslauf) im m17-integration-Bericht ist nur ad-hoc geprüft
+
+**Befund:** `tasks.yaml` T-M17-15 nennt als offenen Punkt „Determinismus über diese Kombination
+nicht separat gegen einen Wiederholungslauf geprüft". Diese Durchsicht hat die Lücke geschlossen
+— aber nur ad hoc: das Szenario aus Wegwerftest `zz-durchsicht-save` wurde zweimal von Grund auf
+gebaut (Startzahl 1914), Stand und alle 200 Hashes stimmten überein. Der Beleg lag nur in
+diesem Sitzungsprotokoll, nicht im Repo — ein künftiger Lauf von `m17-integration.slow.test.ts`
+prüft diese Wiederholung nicht automatisch nach.
+
+**Nebenbefund (aufgeklärt, kein Schaden):** eine frühere Durchsicht hatte behauptet,
+`ai-integration.json` trage die Prüfsumme `10950ec5abffd9b7` und Gegenprobe G9 sei deshalb
+„nicht direkt vergleichbar". Nachgemessen: `10950ec5abffd9b7` ist der Ausgangswert aus
+`m17-baseline.json`, nicht der heutige Wert; `m17-integration.json` und `ai-integration.json`
+tragen für `zustandOhneKi` beide `c2382182c9139e60` — G9 hält wörtlich. Der Fehler stand nur
+in einem früheren, nicht eingecheckten Bericht.
+
+**Vorschlag:** eine eigene Wiederholungslauf-Prüfung fest in `m17-integration.slow.test.ts`
+(oder ein Geschwistertest) verankern, statt sie jede Durchsicht neu von Hand nachzustellen.
+
+**Status:** offen, geht an M18.

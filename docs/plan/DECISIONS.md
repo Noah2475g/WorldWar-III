@@ -5034,3 +5034,101 @@ Tabelle strukturell unter der Breite, ohne Information zu verlieren (Kurzform + 
 
 **Kippbar:** ein eigener `overflow-x: auto`-Wrapper um die Tabelle statt der Spalteneinsparung;
 die Kurzform-Wörter selbst (kippbar auf Icons statt Wörter).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel (M17-G1) · Ein fremdes Handelsangebot ist wie ein fehlendes
+
+**Entscheidung:** `ACCEPT_TRADE`, `DECLINE_TRADE` und `WITHDRAW_TRADE` lehnen ein Angebot, bei
+dem die handelnde Macht weder `from` noch `to` ist, mit `INVALID_TARGET{reason:'kein Angebot'}`
+ab — genau wie ein fehlendes. Ist die Macht Partei, aber auf der falschen Seite (`from`
+versucht `ACCEPT_TRADE`, `to` versucht `WITHDRAW_TRADE` usw.), bleibt `NOT_OWNER{offerId}`: sie
+kennt ihr eigenes Angebot.
+
+**Begründung:** Über `canApply` liess sich sonst durchprobieren, welche Kennungen zwischen
+Dritten offen sind (R-DIP-04) — `NOT_OWNER` sagt „diese Kennung gibt es, sie gehört jemand
+anderem", ein fehlendes sagt nichts. Genau diese Lücke hat T-M17-07 für Spione bereits
+geschlossen (`ownSpy`, `DECISIONS.md` „Ein fremder Spion wird abgelehnt wie einer, den es nicht
+gibt"); bei Handelsangeboten blieb sie offen, obwohl `02-DESIGN.md` D29.2 seit demselben Datum
+den Spionage-Fall schon korrekt beschreibt.
+
+**Auswirkung:** `packages/core/src/commands/tradeOffer.ts` (`partyTradeOffer`), Tests in
+`tradeOffer.test.ts`; `02-DESIGN.md` D29.2 berichtigt.
+
+**Kippbar:** nein — dieselbe Regel wie bei Spionen, aus demselben Grund.
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel (N2) · Annahme-Ablehnung verrät keinen Marschbefehl mehr
+
+**Entscheidung:** Scheitert `ACCEPT_TRADE` an der GEBENDEN (Anbieter-)Seite des Angebots — sie
+ist zwischen Angebot und Annahme ungültig geworden —, trägt die Ablehnung nur noch den
+neutralen Grund `INVALID_TARGET{reason:'lapsing'}`, ohne `provinceId` und ohne den genauen
+Grund (`eigene Armeen`, `fremde Armeen`, `umkämpft`, `Hauptstadt`, `nicht im Besitz`). Die
+VERLANGTE Seite (die eigene des Annehmenden) bleibt unverändert genau.
+
+**Begründung:** Der genaue Grund stand im `COMMAND_REJECTED`-Ereignis und im `eventLog` des
+Annehmenden — er hätte einen Marschbefehl, einen Angriff oder eine fremde Armee des Anbieters
+verraten (R-DIP-04). Der Annehmen-Knopf verdeckte das schon vorher beim Vorschau-Text (E1,
+Test A7), aber nur dort; der Kern selbst kannte den neutralen Grund nicht. `trade.blocked.lapsing`
+gab es als Text schon; `describeTradeRejection` bildet `reason:'lapsing'` jetzt direkt darauf
+ab, und die alte Heuristik über `offer.give.provinces.includes(provinceId)` entfällt.
+
+**Auswirkung:** `packages/core/src/commands/tradeOffer.ts`, `apps/desktop/src/game/actions.ts`
+(`describeTradeRejection`), Tests in `tradeOffer.test.ts` und `actions.test.ts` (A7).
+
+**Kippbar:** nein.
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel (N3) · validateState prüft Anträge, Kennungen und Beziehungen tief — auch beim Netzempfang
+
+**Entscheidung:** `validateState` prüft zusätzlich: jeden Eintrag in `diplomacy.offers` (kein
+`null`, `from`/`to` bekannte Mächte, `kind` aus `peace`/`alliance`/`rightOfWay`, `tick` sichere
+Ganzzahl); eindeutige Kennungen in `diplomacy.tradeOffers` und `espionage.spies`; `nextIds.offer`
+und `nextIds.spy` über jeder vergebenen Kennung; und je Beziehung `state` aus der Liste,
+`sinceTick`/`warEffectiveAtTick`/die gerichteten Fristfelder als sichere Ganzzahl (statt nur
+`number`), und dass das Beziehungspaar aus zwei bekannten Mächten besteht. Zusätzlich ruft
+`acceptState` (`packages/netplay/src/handshake.ts`) `validateState` jetzt ebenfalls auf, nach
+der Prüfsummenprüfung, ohne `PROTOCOL_VERSION` zu ändern.
+
+**Begründung:** Nachgestellt (Wegwerftest `zz-durchsicht-validate`, migrierter `save-v3` mit
+gültiger Prüfsumme): ein `null`-Eintrag in `diplomacy.offers` lud und stürzte in `publicView.ts`
+beim Lesen von `offer.to` ab; zwei `tradeOffers` mit derselben Kennung luden, und
+`WITHDRAW_TRADE` schloss beide — 2000 Treuhand verschwanden spurlos. Für `acceptState` gilt
+dasselbe Argument wie in der Entscheidung vom 2026-09-24 „Die Vollständigkeitsprüfung läuft auf
+beiden Ladewegen": die Prüfsumme sagt, dass ein Stand unverändert ist, nicht dass er
+vollständig ist — ein Host mit einem älteren Bau, der ein Feld noch nicht kennt, hat trotzdem
+eine in sich stimmige Prüfsumme, und ohne diese Prüfung stürzte sein Stand beim Gast im ersten
+Tick ab, weit weg von der eigentlichen Ursache. Der Host bleibt vertrauenswürdig (D28) — die
+Prüfung fängt einen älteren/inkonsistenten Bau ab, keinen böswilligen Gegner.
+
+**Auswirkung:** `packages/core/src/persistence/validate.ts`, Tests in `migration-v3.test.ts`;
+`packages/netplay/src/handshake.ts` (`acceptState`), Test in `resume-save.test.ts`. Die
+Testfixtur `gueltig()` in `migration-v3.test.ts` bucht `nextIds.spy`/`nextIds.offer` jetzt so,
+wie ein echter Befehl es hielte (Kennung vergeben ⇒ Zähler steht danach höher) — vorher war sie
+selbst inkonsistent, ohne dass eine Prüfung das bemerkt hätte.
+
+**Kippbar:** die Tiefe der Prüfung (z. B. ob das Beziehungspaar sortiert sein muss, `a < b`) —
+nicht die Grundrichtung.
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel (M3) · breakAlliance ohne Räumfrist geht mit M17-T6 an M18
+
+**Entscheidung:** Der Befund, dass `breakAlliance` den Durchmarsch beider Richtungen sofort
+sperrt (`setPassageBothWays(relation, false)`, ohne Frist) und `detectSurpriseAttacks` das noch
+im selben Tick liest — eine Armee des verbündeten Gasts wird augenblicklich zum Überfaller —,
+wird **nicht** in dieser Nacharbeit repariert, sondern geht zusammen mit M17-T6 an M18.
+
+**Begründung:** Noah hat am 2026-09-25 entschieden, dass die Räumfrist nach Friedensschluss
+(M17-T6, ebenfalls an M18 verschoben) auch für `breakAlliance` gelten soll — beide sind dieselbe
+Fallklasse (ein diplomatischer Schritt macht im selben Tick aus einem Gast einen Überfaller) und
+gehören in eine gemeinsame Reparatur mit einer Frist, nicht in zwei getrennte. Eine isolierte
+Reparatur nur für `breakAlliance` liefe der bereits getroffenen M18-Entscheidung zu M17-T6
+zuwider und risse möglicherweise dieselbe Mechanik zweimal um.
+
+**Auswirkung:** `docs/plan/PROBLEME.md` (M17-G-Eintrag mit Status M18); `docs/plan/03-TASKS.md`
+Abschnitt „Meilenstein M18" führt beide zusammen.
+
+**Kippbar:** durch Noah, jederzeit.
