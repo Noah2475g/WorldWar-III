@@ -4414,3 +4414,519 @@ T-M17-15 und keine Vorbedingung für den Abschluss der beiden vorgelagerten Aufg
 
 **Kippbar:** durch einen ausdrücklichen neuen Entscheid Noahs, der die Bedingung nachträglich
 verschärft.
+
+---
+
+## 2026-09-25 · T-M17-13 · Umsetzen über einen Umsetz-Modus statt eigener Knöpfe (E1)
+
+**Entscheidung:** Ein App-lokaler Zustand `movingSpy` markiert einen Spion als „wird umgesetzt";
+dieselbe Provinzleisten-Gruppe zeigt dann in der Zielprovinz `REASSIGN_SPY`-Knöpfe statt der
+Anwerbe-Knöpfe. Escape oder ein Klick beendet den Modus.
+
+**Begründung:** Fünf Spione × drei mögliche Aufträge als Dauerknöpfe an jeder Provinz wären eine
+Wand aus Knöpfen. Ein Modus zeigt immer nur die Gruppe der aktuell gewählten Zielprovinz.
+
+**Auswirkung:** Das Umsetzen braucht zwei Klicks (Spion wählen, Ziel wählen) statt eines Knopfs
+je Spion und Zielprovinz.
+
+**Kippbar:** ein eigenes Panel für Umsetzen statt des Modus.
+
+---
+
+## 2026-09-25 · T-M17-13 · Nummer statt Kennung (E2, Befund M17-S1)
+
+**Entscheidung:** Jeder eigene Spion erscheint nur als „Spion N" nach seiner Position in
+`view.espionage.spies`; Knopf-`id`s sind ebenfalls positionsbasiert, nie die interne Kennung.
+
+**Begründung:** Befund M17-S1 — eine Spionkennung im DOM oder Text wäre ein Informationsleck, das
+kein Anforderungstext verlangt.
+
+**Auswirkung:** Nummern rücken nach einem Entlassen nach (Spion 3 kann nach dem Entlassen von
+Spion 2 zu Spion 2 werden).
+
+**Kippbar:** eine dauerhafte, aber verschleierte Kennung statt der Position.
+
+---
+
+## 2026-09-25 · T-M17-13 · Meldungen werden aus Ereignissen in der Hülle gesammelt, nicht abgeleitet (E3, Abweichung von D29.9)
+
+**Entscheidung:** `collectEspionageNews` sammelt Spionage-Meldungen selbst aus dem Ereignisstrom
+und liefert dieselbe Referenz zurück, wenn sich nichts geändert hat — eine bewusste Abweichung
+vom in D29.9 beschriebenen Muster `openIntrusion` (Ableitung aus dem Zustand).
+
+**Begründung:** Der Ereignisring hält nur 500 Einträge für alle Mächte; eine abgeleitete Meldung
+verschwände bei hohem Tempo ungesehen, sobald der Ring sie verdrängt hat, bevor der Spieler sie
+gesehen hat.
+
+**Auswirkung:** `news` ist App-lokaler Zustand und gilt nur innerhalb einer laufenden Sitzung —
+Präzisierung durch die Nacharbeit: eine noch nicht quittierte Sabotage, die aus dem Ring
+gefallen ist, geht beim Laden verloren; eine schon weggeklickte, die noch im Ring steht, kann
+nach dem Laden erneut erscheinen.
+
+**Kippbar:** mit einem dauerhaften Zustandsfeld im Kern (der Spielstand würde größer).
+
+---
+
+## 2026-09-25 · T-M17-13 · Welche Ereignisse zu Meldungen werden (E4)
+
+**Entscheidung:** `SABOTAGE_SUFFERED` wird laut gemeldet; `SPY_DETECTED` (beide Seiten) und
+`SPY_LOST` leise; von `SPY_REPORT` nur `targetChanged`. Täglicher Erfolg oder Misserfolg der
+eigenen Spionage wird bewusst **nicht** gemeldet, nur im Protokoll und in der Übersicht geführt.
+
+**Begründung:** Ein täglicher Erfolgs-/Misserfolgs-Lärm wäre keine Meldung wert; Zielwechsel
+dagegen betrifft eine Spielerentscheidung (neu zuweisen).
+
+**Auswirkung:** Präzisierung durch die Nacharbeit — R-SPY-06 spricht wörtlich von „Ergebnisse …
+erscheinen als Meldung", diese Entscheidung erfüllt das nur eingeschränkt (nicht für tägliche
+Erfolge/Misserfolge). Siehe 01-REQUIREMENTS-Vermerk unten.
+
+**Kippbar:** einzelne Ereignisklassen ergänzen oder streichen.
+
+---
+
+## 2026-09-25 · T-M17-13 · Gegenspion-`failure` heißt „keine Enttarnung" (E5)
+
+**Entscheidung:** Die Übersicht zeigt `lastOutcome: 'failure'` bei einem Gegenspion als „keine
+Enttarnung", nicht als „misslungen" — übernimmt T-M17-09 E4.
+
+**Begründung:** „Misslungen" würde suggerieren, dass ein fremder Spion da war und nur der Wurf
+danebenging; der Kern unterscheidet das bewusst nicht (R-SPY-05/AK2).
+
+**Auswirkung:** Der Spieler kann aus dem Text einer Provinz mit Gegenspion nicht ablesen, ob dort
+je ein fremder Spion war.
+
+**Kippbar:** ein eigener dritter Ausgangswert im Kern (`null` bei „niemand da").
+
+---
+
+## 2026-09-25 · T-M17-13 · Sabotage bleibt außerhalb SELF (E6)
+
+**Entscheidung:** `SABOTAGE_SUFFERED` bleibt aus der `SELF`-Kategorie ausgenommen — der
+Zinnoberbalken bleibt das alleinige Signal für „euch betreffend", wie DECISIONS T-M17-09 E8.
+
+**Begründung:** Konsistenz mit der bestehenden Entscheidung aus T-M17-09.
+
+**Auswirkung:** keine, reine Fortschreibung einer bestehenden Regel.
+
+**Kippbar:** siehe T-M17-09 E8.
+
+---
+
+## 2026-09-25 · T-M17-13 · Das Symbol `trade` wird hier gezeichnet (E7)
+
+**Entscheidung:** Das Zeichen `trade` (`SPY_MISSION_ICONS`-Nachbarschaft in `icons.tsx`) entsteht
+in T-M17-13, obwohl D29.9 nur fünf Symbole für diese Aufgabe nennt — T-M17-14 benutzt es weiter.
+
+**Begründung:** Die Spionage-Symbolik und die Handelssymbolik liegen in derselben Datei; das
+Symbol vorzuziehen vermeidet eine doppelte Definition.
+
+**Auswirkung:** T-M17-14 legt `icons.tsx` nicht mehr an (siehe T-M17-14 E11, entfällt).
+
+**Kippbar:** nur wenn T-M17-14 es lieber selbst zeichnet.
+
+---
+
+## 2026-09-25 · T-M17-13 · Knopf „Spionage" im Fuß (E8)
+
+**Entscheidung:** Ein neuer Knopf im Fuß (`Foot.tsx`, `Foot.test.tsx`) öffnet die
+Spionageübersicht zusätzlich zur Taste `s`/`S`.
+
+**Begründung:** T-M12-07 — nur eine Tastatur-Erreichbarkeit ist keine vollständige Funktion.
+
+**Auswirkung:** zwei neue Dateien außerhalb der ursprünglichen Aufgabenliste (siehe E13).
+
+**Kippbar:** den Knopf woanders platzieren.
+
+---
+
+## 2026-09-25 · T-M17-13 · `NICHT_FUER_DEN_SPIELER` bekommt die Gegenrichtung (E9, Befund W1)
+
+**Entscheidung:** `NICHT_FUER_DEN_SPIELER` bekommt einen Wächter, der auch veraltete Ausnahmen
+prüft (W1, wie `DIPLOMATIE_NOCH_OHNE_KNOPF`); der veraltete Eintrag `SET_CAPITAL` fällt mit weg.
+
+**Begründung:** Eine Ausnahmeliste, die nie schrumpft, verdeckt irgendwann Befehle, die längst
+einen Knopf haben.
+
+**Auswirkung:** `SET_CAPITAL` ist ab jetzt kein Sonderfall mehr in der Ausnahmeliste.
+
+**Kippbar:** nicht sinnvoll — W1 ist ein Wächter, kein Verhalten.
+
+---
+
+## 2026-09-25 · T-M17-13 · Rubrik im Protokoll (E10)
+
+**Entscheidung:** `SABOTAGE_SUFFERED`/`SPY_DETECTED` stehen im Protokoll unter „Kämpfe";
+`SPY_REPORT`/`SPY_LOST` bleiben unter „Sonstiges".
+
+**Begründung:** Sabotage und Enttarnung sind aus Spielersicht Konfliktereignisse, tägliche
+Spionageberichte sind es nicht.
+
+**Auswirkung:** keine eigene Rubrik „Spionage" im Protokoll.
+
+**Kippbar:** eigene Rubrik „Spionage" einführen.
+
+---
+
+## 2026-09-25 · T-M17-13 · `PublicView.espionage` bleibt, wo es ist (E11)
+
+**Entscheidung:** `PublicView.espionage` wird nicht nach `self` gezogen — die in T-M17-07
+vermerkte Kippoption bleibt bewusst ungenutzt.
+
+**Begründung:** Ein Umzug nach `self` würde `packages/ai` mitziehen (dort wird `espionage`
+ebenfalls gelesen) — außerhalb des Umfangs dieser Aufgabe.
+
+**Auswirkung:** keine, Bestandsstruktur bleibt unverändert.
+
+**Kippbar:** als eigene, größere Aufgabe mit `packages/ai`.
+
+---
+
+## 2026-09-25 · T-M17-13 · Eigene-Provinz-Frage aus dem Zustand ist kein Leck (E12)
+
+**Entscheidung:** `spyActions` liest `state.provinces[id].owner === ctx.playerId` direkt aus dem
+Zustand, nicht über eine geschwärzte Sicht.
+
+**Begründung:** Eigene Provinzen sind dem Spieler immer sichtbar — „eigen" ist nie verborgene
+Information. Alle anderen Fälle (fremde/herrenlose Provinz) urteilt weiterhin `canApply` über
+`knownOwner`.
+
+**Auswirkung:** keine — die Unterscheidung eigen/fremd verrät nichts, was der Spieler nicht
+ohnehin sieht.
+
+**Kippbar:** nicht sinnvoll — es gibt hier kein verborgenes Bit.
+
+---
+
+## 2026-09-25 · T-M17-13 · Neue Dateien außerhalb der ursprünglichen Aufgabenliste (E13)
+
+**Entscheidung:** `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/ui/Foot.tsx`,
+`apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/ui/app.css` sowie fünf Testdateien wurden
+zusätzlich zur ursprünglichen `tasks.yaml`-Dateiliste geändert oder neu angelegt.
+
+**Begründung:** `rejections.ts` bündelt die Sperrgrund-Übersetzung (`SPY_REASON_KEYS`) getrennt
+von `actions.ts`; `Foot.tsx` trägt E8; `Dialogs.tsx`/`app.css` wurden für die Umsetz-Quittung und
+die neuen Übersichtsklassen (`.spy-list`, `.spy`, `.spy__head`, `.spy__target`) mitgeändert.
+
+**Auswirkung:** `tasks.yaml`/`03-TASKS.md` wurden beim Einpflegen um diese Dateien ergänzt.
+
+**Kippbar:** nicht sinnvoll — reine Buchführung über bereits geänderte Dateien.
+
+---
+
+## 2026-09-25 · T-M17-13 · Umbenennung `espionage.overview.salaryValue` → `salaryAmount` (Sachzwang, nicht kippbar)
+
+**Entscheidung:** Der Textschlüssel `espionage.overview.salaryValue` wurde während des Baus in
+`salaryAmount` umbenannt — nicht Teil des Bauplans.
+
+**Begründung:** Der Ersatzschrift-Wächter (`test/guards/text-keys.test.ts`) liest
+Zeichenketten-Literale aus `actions.ts` als zusammengesetzte Wörter, nachdem er Punkte entfernt
+hat: `'espionage.overview.salaryValue'` wurde zu `espionageoverviewsalaryValue`, darin steckt
+`lValue` — ein falscher Alarm auf „ue" (dasselbe Muster wie die bestehende Ausnahme
+`provinceValue` in `AUSNAHMEN`).
+
+**Auswirkung:** Statt einer weiteren Ausnahme im Wächter wurde der Schlüssel umbenannt — kein
+Verhaltensunterschied für den Spieler.
+
+**Kippbar:** nicht sinnvoll ohne den Wächter zu ändern — Sachzwang.
+
+---
+
+## 2026-09-25 · T-M17-14 · Info-Leck bei `ACCEPT_TRADE` — die Oberfläche verstärkt es nicht (E1)
+
+**Entscheidung:** Scheitert die Annahme eines Handelsangebots an einer Provinz aus
+`offer.give.provinces` (eigene Armee samt Weg, fremde Armee, Hauptstadt, umkämpft — geprüft von
+`canApply` „full" auf der gebenden Seite), heißt der angezeigte Grund immer einheitlich
+`trade.blocked.lapsing`, nie Provinz oder konkrete Ursache.
+
+**Begründung:** Ungefiltert würde der Annehmen-Knopf verraten, *wo* der Anbieter gerade
+marschiert — ein Informationsleck über eine fremde Macht. Getestet mit dem Kern selbst als
+Kontrolle (Test A7).
+
+**Auswirkung:** Präzisiert in der Nacharbeit (2026-09-25): `settleTradeOffers` läuft in jedem
+Tick nach Bewegung, Kampf und Besetzung — ein geladener Stand enthält deshalb praktisch nie ein
+Angebot, dessen gebende Seite im selben Tick `full` scheitert; der Knopf-Kanal ist über
+`ACCEPT_TRADE` also fast nie erreichbar, die Schwärzung ist Verteidigung in der Tiefe für den
+passiven Kanal `TRADE_OFFER_CLOSED{invalid}`. Offen bleibt der Kernweg
+(`COMMAND_REJECTED.detail`/`canApply`) für KI/Skript — Kernkandidat M18 (siehe PROBLEME.md).
+
+**Kippbar:** eine Kernänderung, die den Grund selbst schwärzt.
+
+---
+
+## 2026-09-25 · T-M17-14 · „Das Hinterlegte geht zurück" fällt aus dem Protokollsatz (E2)
+
+**Entscheidung:** Der Protokollsatz zu `TRADE_AGREED`/`TRADE_OFFER_CLOSED` behauptet keine
+Rückgabe mehr. Die Regel steht jetzt in `explain.trade` und als Notiz `trade.escrow` an der
+eigenen ausgehenden Zeile, nur wenn `give.resources` tatsächlich nicht leer ist.
+
+**Begründung:** Das Ereignis trägt keine Mengen (R-DIP-05/AK4) und weiß nicht, ob überhaupt etwas
+hinterlegt war — der alte Satz hätte eine Rückgabe behauptet, die nie stattfand.
+
+**Auswirkung:** `explain.trade`/`trade.escrow` zählen die Rückgabefälle ohne den Fall „hinfällig"
+(`closeTradeOffer` gibt auch bei `invalid` zurück) — Text-Befund, siehe ANLEITUNG-Berichtigung
+unten.
+
+**Kippbar:** eine Kernänderung, die dem Ereignis ein Bit „hatte Treuhand" mitgibt.
+
+---
+
+## 2026-09-25 · T-M17-14 · Nur die Meldungen bekommen ein Sprungziel (E3)
+
+**Entscheidung:** `Alerts`' `onJump` nimmt seit dieser Aufgabe ein `JumpTarget` (Provinz oder
+Diplomatie mit gewählter Macht); `Foot`/`EventLog` behalten `onJump(provinceId)` unverändert.
+
+**Begründung:** Korrektur am Planungsstand — nur der Sprungtest in `Alerts.test.tsx` zieht mit,
+`Foot.test.tsx` (T-M31) bleibt unverändert; bestätigt durch den vollen Testlauf.
+
+**Auswirkung:** Die Schnittstellenänderung ist auf `Alerts.tsx` begrenzt, nicht global.
+
+**Kippbar:** `Foot`/`EventLog` später auf dasselbe `JumpTarget` heben.
+
+---
+
+## 2026-09-25 · T-M17-14 · Gemeldet werden alle eingehenden Angebote (E4)
+
+**Entscheidung:** Jedes eingehende Angebot — Handel und die drei diplomatischen Antragsarten
+(Frieden, Bündnis, Durchmarsch) — löst eine leise Meldung (M36) mit Sprung in die Diplomatie aus,
+nicht wegklickbar erzwungen.
+
+**Begründung:** R-DIP-07/AK1 verlangt, dass ein Angebot den Spieler in Worten erreicht, ohne eine
+Kennung zu nennen.
+
+**Auswirkung:** keine Filterung nach Angebotsart.
+
+**Kippbar:** ein Filter auf `kind === 'rightOfWay'` oder ähnliches.
+
+---
+
+## 2026-09-25 · T-M17-14 · `TRADE_OFFER_CLOSED`/`TRADE_AGREED` gehören zur Diplomatie (E5)
+
+**Entscheidung:** `TRADE_OFFER_CLOSED`/`TRADE_AGREED` stehen im Protokoll unter „Verträge"
+(Diplomatie), `TRADE_EXECUTED` (Markttausch) bleibt bei „Wirtschaft" — eine Zeile vor der
+Wirtschaftszeile in `categoryOf`.
+
+**Begründung:** Ein ausgehandeltes Angebot ist ein diplomatischer Akt, der automatische
+Marktausgleich ist Wirtschaft.
+
+**Auswirkung:** keine Verhaltensänderung, nur Protokoll-Einordnung.
+
+**Kippbar:** eigene Rubrik „Handel".
+
+---
+
+## 2026-09-25 · T-M17-14 · Zwei Gruppen je Macht: Verträge und Durchmarsch/Karte (E6)
+
+**Entscheidung:** Das Diplomatiepanel teilt die Handlungen je Macht in zwei Gruppen — „Verträge"
+(sechs: `declareWar` bis `breakAlliance`) und „Durchmarsch und Karte" (fünf, neu über
+`passageActions`: grant/request/accept/revokeRightOfWay, shareMap). `acceptRightOfWay` steht in
+der Gruppe **und** als eigener Knopf am eingehenden Antrag, mit verschiedenen Kennungen und
+verschiedenen Quittungen (Test A8).
+
+**Begründung:** Fünf zusätzliche Handlungen in einer bestehenden Sechsergruppe wären unübersichtlich.
+
+**Auswirkung:** die Durchmarsch-/Kartenrechte des Kerns (seit T-M17-04 fertig) haben erstmals
+einen Knopf.
+
+**Kippbar:** andere Gruppierung, z. B. nach Richtung statt nach Art.
+
+---
+
+## 2026-09-25 · T-M17-14 · Eigene Sperrtexte für Handel (E7)
+
+**Entscheidung:** `describeTradeRejection` übersetzt die Kerngründe eines abgelehnten
+Handelsbefehls eigens für Handel, statt die allgemeine `describeRejection` zu benutzen.
+`QUEUE_FULL` heißt dort „Sie haben schon 5 offene Angebote" statt „Alle Bauplätze belegt".
+
+**Begründung:** `describeRejection` sagt für `QUEUE_FULL` „Alle Bauplätze" — für Handel schlicht
+falsch — und nennt Provinzen nicht beim Namen (Gegenprobe G11 zeigt den Unterschied konkret).
+
+**Auswirkung:** zwei parallele Sperrtext-Übersetzungen im Code (Spionage/`rejections.ts` und
+Handel/`describeTradeRejection`), bewusst getrennt.
+
+**Kippbar:** beide Übersetzungen zusammenführen, sobald ihre Texte sich decken.
+
+---
+
+## 2026-09-25 · T-M17-14 · E8 entfällt — keine Arbeit nötig
+
+**Entscheidung:** Keine Änderung an `NICHT_FUER_DEN_SPIELER` bezüglich `SET_CAPITAL` nötig.
+
+**Begründung:** `SET_CAPITAL` stand zu Baubeginn von T-M17-14 bereits **nicht** mehr in
+`NICHT_FUER_DEN_SPIELER` — vermutlich bereits von T-M17-13 (E9/W1) bereinigt. Der im Bauplan
+angenommene Befund war zum Planungszeitpunkt zutreffend, zum Bauzeitpunkt nicht mehr.
+
+**Auswirkung:** keine.
+
+**Kippbar:** nicht — es gibt nichts umzukehren.
+
+---
+
+## 2026-09-25 · T-M17-14 · Der Partner des Diplomatiepanels steht in `uiState` (E9)
+
+**Entscheidung:** `uiState` führt `diplomacyPartner`/`focusDiplomacy` — das Diplomatiepanel wird
+von außen gesteuert, statt seine Auswahl lokal zu halten.
+
+**Begründung:** Nur so öffnet eine Meldung „Diplomatie mit X" auch tatsächlich die richtige Macht.
+
+**Auswirkung:** eine Meldung kann das Panel gezielt auf eine Macht lenken.
+
+**Kippbar:** den Partner stattdessen als Prop durchreichen.
+
+---
+
+## 2026-09-25 · T-M17-14 · Kein fremder Bestand, nirgends (E10)
+
+**Entscheidung:** Das Angebotsformular zeigt ausschließlich den eigenen Bestand, nie den des
+Partners.
+
+**Begründung:** Test A9 zeigt identischen Formulartext für einen Partner mit `money: 0` und einen
+mit `money: 10^12` — kein Rückschluss auf fremde Wirtschaftsstärke möglich.
+
+**Auswirkung:** der Spieler kann aus dem Formular nichts über den Bestand des Partners ablesen.
+
+**Kippbar:** nicht ohne die verborgene Information selbst preiszugeben.
+
+---
+
+## 2026-09-25 · T-M17-14 · E11 entfällt — Symbol bereits da
+
+**Entscheidung:** Kein eigenes Anlegen des Symbols `trade` in `icons.tsx` nötig.
+
+**Begründung:** T-M17-13 hat `trade` bereits angelegt (`M4 8h14 M15 5l3 3-3 3 M20 16H6 M9 13l-3
+3 3 3`), siehe T-M17-13 E7.
+
+**Auswirkung:** `icons.tsx` steht nicht in der Dateiliste von T-M17-14.
+
+**Kippbar:** nicht — nichts gebaut, nichts umzukehren.
+
+---
+
+## 2026-09-25 · T-M17-14 · Ablauftage statt Restzeit (E12)
+
+**Entscheidung:** Fristen erscheinen als „Verfällt an Tag N" über `gameTime(expiresAtTick,
+tpd).day` — dieselbe Rechnung wie bei `RIGHT_OF_WAY_CHANGED`.
+
+**Begründung:** Konsistenz mit der bestehenden Durchmarsch-Fristanzeige; ein absoluter Tag ist
+robuster gegen Tempowechsel als eine Restzeit-Angabe.
+
+**Auswirkung:** keine, Fortschreibung eines bestehenden Musters.
+
+**Kippbar:** auf Restzeit umstellen.
+
+---
+
+## 2026-09-25 · T-M17-14 · Umbenennung `explain.diplomacy.trade` → `explain.trade` (Sachzwang, nicht kippbar)
+
+**Entscheidung:** Der Erklärungsschlüssel für die Treuhandregel steht unter `explain.trade`,
+nicht unter `explain.diplomacy.trade`.
+
+**Begründung:** `icons.test.tsx` zählt `Object.keys(de.explain.diplomacy)` und verlangt genau
+sechs Einträge (je ein Beziehungszustand mit `RELATION_ICONS`-Zeichen); ein siebter (`trade`,
+kein Beziehungszustand) ließ den Wächter zu Recht fallen.
+
+**Auswirkung:** keine funktionale Änderung, nur der Schlüsselpfad.
+
+**Kippbar:** nicht sinnvoll ohne den Wächter zu ändern — Sachzwang.
+
+---
+
+## 2026-09-25 · T-M17-14 · Umbenennung `trade.value`/`trade.valueProvinces` → `trade.worth`/`trade.worthProvinces` (Sachzwang, nicht kippbar)
+
+**Entscheidung:** Die Vorschau-Schlüssel für den Marktwert im Angebotsformular heißen
+`trade.worth`/`trade.worthProvinces`.
+
+**Begründung:** Der Ersatzschrift-Wächter (`text-keys.test.ts`) liest Zeichenketten-Literale aus
+`actions.ts` ohne Satzzeichen: `'trade.value'` wurde zu `tradevalue`, darin steckt „lue" nach
+einem Konsonanten — dieselbe Fehlalarmklasse wie die bestehende Ausnahme `provinceValue` und wie
+T-M17-13s `salaryValue`.
+
+**Auswirkung:** keine funktionale Änderung, nur der Schlüsselpfad.
+
+**Kippbar:** nicht sinnvoll ohne den Wächter zu ändern — Sachzwang.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Kappung statt Prüfung vor der Vorschau (kritisch 1, Befund M17-U1)
+
+**Entscheidung:** `safeExchangeAmount()` (`actions.ts`) deckelt `giveAmount` so, dass `giveAmount *
+Kurs` unterhalb `Number.MAX_SAFE_INTEGER` bleibt, bevor `exchangeAmount()` (Kern) für die Vorschau
+rechnet. Der an `canApply` gehende Befehl selbst bleibt ungekürzt.
+
+**Begründung:** `exchangeAmount()` warf `FixedOverflowError` schon bei 3,5 Mrd. Einheiten Seltene
+Erden im bloßen Formularentwurf, unabhängig davon, ob `canApply` den Befehl je gesehen hat — die
+Vorschau (`TradeOfferForm`, `MarketPanel`) lief jedem Rendern voraus und stürzte ab. Eine Vorschau
+braucht den wahren Wert eines unsinnig großen Entwurfs nicht, nur die echte Prüfung muss ihn
+ablehnen; eine Grenze wird dabei nicht angehoben, nur eine bestehende technische Grenze
+durchgesetzt, bevor sie überfährt.
+
+**Auswirkung:** Test A10 hält die Reparatur fest. Kernkandidat offen (nicht Teil dieser
+Nacharbeit): `exchangeAmount()` selbst kappt nicht, jeder künftige Aufrufer außerhalb von
+`actions.ts` kann denselben Absturz erzeugen — siehe PROBLEME.md M17-U1.
+
+**Kippbar:** eine Kernänderung, die `exchangeAmount` selbst kappen oder sättigen lässt.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Positionsbasierte Handelskennungen (kritisch 2)
+
+**Entscheidung:** Handelsknöpfe tragen positionsbasierte Kennungen
+(`trade-in-${index}-accept/-decline`, `trade-out-${index}-withdraw`, `offer-in-${index}-accept`)
+statt des globalen Angebotszählers `offer.id` oder einer Spielerkennung.
+
+**Begründung:** Dieselbe wie T-M17-13 E2 (Befund M17-S1) — der Angebotszähler ist ein globaler
+Zähler über alle Mächte, eine Spielerkennung im DOM (`id`/`aria-describedby` über `ActionRow`)
+verrät die eigene Rolle bzw. Reihenfolge im Spiel.
+
+**Auswirkung:** neuer Test in `actions.test.ts`.
+
+**Kippbar:** eine andere stabile, aber verschleierte Kennung.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Ziel in der Knopf-Kennung statt nur in der Aktionsart (mittel)
+
+**Entscheidung:** Die Quittung „befohlen" (`pendingIds`, `App.tsx`, T-M22-05) hing an der reinen
+Knopf-Kennung, nicht am Ziel. Vier Kennungsschemata wurden um ihr Ziel ergänzt:
+`trade-offer-${partner}`, `diplomacy-${action}-${target}`, `spy-recruit-${provinceId}-${mission}`,
+`spy-move-${provinceId}-${mission}`.
+
+**Begründung:** `pendingIds` vergleicht nur Zeichenketten, nie den Befehl selbst — bei stehender
+Uhr sperrte ein Angebot an eine Macht das gleiche Formular auch für jede andere Macht oder
+Provinz, obwohl dort kein Befehl anstand.
+
+**Auswirkung:** neuer App-Test (Krieg an p2 sperrt p3 nicht).
+
+**Kippbar:** `pendingCommands` selbst nach Zielspieler/-provinz filtern lassen, statt das Ziel in
+die Kennung zu kodieren.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · `trade.unknownProvince` als Rückfall statt der rohen Kennung (mittel)
+
+**Entscheidung:** Neuer Schlüssel `trade.unknownProvince` in `de.ts`; `nameOfOwn`/`nameOfPartner`
+(`Panels.tsx`, `TradeOfferForm`) fallen darauf zurück statt auf `?? id`.
+
+**Begründung:** Eine gewählte Provinz im Angebotsformular, die während der Wahl den Besitzer
+wechselt, zeigte zuvor ihre rohe Kennung im Text — derselbe Grundsatz wie beim bestehenden
+`trade.unknownPower`: nie eine rohe Kennung im sichtbaren Text.
+
+**Auswirkung:** neuer Panels-Test.
+
+**Kippbar:** die Provinz stattdessen aus einer vollständigen (nicht auf den aktuellen Besitz
+gefilterten) Namensliste auflösen, sobald `TradeFormSpec` das hergibt.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · `spy-caught` mit Urheber in der Kennung (niedrig)
+
+**Entscheidung:** Die interne Kennung für Enttarnungs-Meldungen lautet
+`spy-caught:${provinceId}:${playerId}` statt nur `${provinceId}`.
+
+**Begründung:** R-SPY-05/AK1 verlangt beide Nennungen bei zwei Enttarnungen derselben Provinz im
+selben Tick durch zwei verschiedene Mächte; die Spielerkennung erscheint dabei nur als React-`key`,
+nie im DOM (dieselbe Regel wie überall sonst in dieser Aufgabe).
+
+**Auswirkung:** ein zweiter `spy-caught`-Fund in derselben Provinz überschreibt den ersten nicht
+mehr in der internen `Map`.
+
+**Kippbar:** stattdessen eine Liste statt eines `Map`-Werts je Provinz führen.

@@ -3576,12 +3576,15 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Dateien:** `apps/desktop/src/game/actions.ts`, `apps/desktop/src/ui/Panels.tsx`,
   `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/keyboard.ts`,
   `apps/desktop/src/state/uiState.ts`, `apps/desktop/src/ui/icons.tsx`,
-  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+  `apps/desktop/src/i18n/de.ts`, `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`,
+  `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/ui/Foot.tsx`
 - **Tests zuerst:** `actions.test.ts` R-SPY-06/AK1, `keyboard.test.ts` (`s` öffnet die Übersicht,
   Strg+S speichert weiter), `Alerts.test.tsx` R-SPY-06/AK2, Symbole mit `test/path-bounds.ts`,
-  `text.test.ts`.
+  `text.test.ts`, `Panels.test.tsx` (Übersicht U1–U7, C1), `App.test.tsx` (P1–P4),
+  `Foot.test.tsx`, `a11y.test.tsx`, `uiState.test.ts` (U0).
 - **Fertig wenn:** die Spionagebefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind und der
-  Wächter grün ist. Nicht gleichzeitig mit T-M17-14 an `Alerts.tsx` — nacheinander committen.
+  Wächter grün ist. Nicht gleichzeitig mit T-M17-14 an `Alerts.tsx` — nacheinander committen. —
+  erledigt am 2026-09-25, Zweig `claude/m17-u-oberflaeche`, Spitze `d9a9425`.
 
 ### T-M17-14 · Oberfläche Handel und Durchmarsch
 - **Ziel:** ein Angebot, das niemand bemerkt, wird nie angenommen.
@@ -3589,11 +3592,13 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M17-04, T-M17-05, T-M17-06
 - **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`,
   `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/i18n/de.ts`,
-  `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`
+  `docs/ANLEITUNG.md`, `test/guards/ui-command-coverage.test.ts`, `apps/desktop/src/ui/app.css`
 - **Tests zuerst:** `Panels.test.tsx` R-DIP-07/AK1 (Meldung → Diplomatie, beide Seiten in Worten,
   keine Kennung); Vorschau gleich `exchangeAmount`; Antrag, Annahme und Widerruf erreichbar.
+  `test/guards/unlocks-explained.test.ts`.
 - **Fertig wenn:** `onJump` ein Panelziel kennt (die Tests aus T-M31 und T-M36 ziehen mit) und die
-  Handelsbefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind.
+  Handelsbefehle aus `NICHT_FUER_DEN_SPIELER` verschwunden sind. — erledigt am 2026-09-25, Zweig
+  `claude/m17-u-oberflaeche`, Spitze `b8036e0`.
 
 ### T-M17-15 · Das Integrationstor
 - **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel.

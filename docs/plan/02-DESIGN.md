@@ -2669,6 +2669,39 @@ gehören zu R-DIP-08, das Angebotsformular mit Provinzen zu R-DIP-09.
   `test/path-bounds.ts`. **Texte** mit echten Umlauten; `docs/ANLEITUNG.md` erklärt Spionage,
   Angebote und Durchmarsch. Spieler-ID aus dem Kontext, nicht `p1`.
 
+**Gebaut am 2026-09-25 (T-M17-13)** mit drei Abweichungen vom hier beschriebenen Entwurf:
+Meldungen gesammelt statt abgeleitet nach dem Muster `openIntrusion` (E3); Umsetzen über
+einen Modus statt eigener Knöpfe je Spion (E1); Knopf im Fuß zusätzlich zur Taste `s`/`S`
+(E8). Das Symbol `trade` wurde hier gezeichnet (E7). Kein Befund am Text von D29.9 selbst.
+
+**Gebaut am 2026-09-25 (T-M17-14)** mit zwei Abweichungen vom hier beschriebenen Entwurf:
+die Treuhandregel-Erklärung steht unter `explain.trade`, nicht unter
+`explain.diplomacy.trade` (icons.test.tsx zählt die sechs Beziehungszustände unter
+`explain.diplomacy` und ließe einen siebten Eintrag ohne Zeichen zu Recht fallen); die
+Vorschau-Schlüssel heißen `trade.worth`/`trade.worthProvinces` statt `trade.value`/
+`trade.valueProvinces` (Ersatzschrift-Wächter, gleiches Muster wie T-M17-13s
+salaryValue-Umbenennung). Kein Befund am Text von D29.9 selbst.
+
+**Präzisiert am 2026-09-25 (Nacharbeit T-M17-13, E4):** Ergebnisse eigener Aufklärung/
+Sabotage (Erfolg oder Misserfolg) werden bewusst NICHT gemeldet, nur ein verfehltes Ziel
+(SPY_REPORT/targetChanged) — sie stehen im Protokoll und in der Spionageübersicht. Der
+Anforderungssatz in R-SPY-06 („Ergebnisse … erscheinen als Meldung") gilt damit nur
+eingeschränkt; siehe 01-REQUIREMENTS-Vermerk unten.
+
+**Präzisiert am 2026-09-25 (Nacharbeit T-M17-13, E3):** „bleibt bis zum Wegklicken" gilt nur
+innerhalb einer laufenden Sitzung. `news` ist App-lokaler Zustand, wird bei jedem Laden und
+jeder neuen Partie auf leer gesetzt und aus dem Ereignisring (500 Einträge für alle Mächte)
+neu gesammelt — eine noch nicht quittierte Sabotage, die aus dem Ring gefallen ist, geht beim
+Laden verloren; eine schon weggeklickte, die noch im Ring steht, kann nach dem Laden erneut
+erscheinen.
+
+**Präzisiert am 2026-09-25 (Nacharbeit T-M17-14, E1):** „einen Tick später" war ungenau.
+`settleTradeOffers` läuft in jedem Tick nach Bewegung, Kampf und Besetzung — ein geladener
+Stand enthält deshalb nie ein Angebot, dessen gebende Seite im selben Tick `full` scheitert.
+Richtig: „im selben Tick, und über den Annehmen-Knopf praktisch nie erreichbar" — die
+Schwärzung `trade.blocked.lapsing` ist Verteidigung in der Tiefe für den passiven Kanal
+(`TRADE_OFFER_CLOSED{invalid}`, Kernkandidat M18).
+
 ### D29.10 Migration 3 → 4 und `SCHEMA_VERSION` 4
 
 M35 nimmt Stufe 3 (D31.5); M17 nimmt **Stufe 4**.

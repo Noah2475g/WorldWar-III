@@ -768,6 +768,8 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
     eines Spions je Auftrag anbieten — gesperrt mit Grund, wenn das Geld fehlt.
   - AK2: WENN eine Sabotage erlitten wurde, DANN SOLL eine Meldung mit Sprungziel erscheinen.
 
+  *(Präzisiert am 2026-09-25, Nacharbeit T-M17-13, E4: der Satz „Ergebnisse ... erscheinen als Meldung“ gilt eingeschränkt — gebaut werden nur Enttarnung und erlittene Sabotage als Meldung (AK1, AK2); der tägliche Erfolg oder Misserfolg der eigenen Spionage wird bewusst NICHT gemeldet, nur ein verfehltes Ziel, und steht stattdessen im Protokoll und in der Spionageübersicht. Siehe DECISIONS.md, T-M17-13 E4, und 02-DESIGN.md D29.9.)*
+
 #### Handel und Verhältnis zwischen Mächten (`R-DIP`, Fortsetzung)
 
 - **R-DIP-05 — Handelsangebote zwischen Mächten.** Nach Referenz 9.4 und 3.7: Eine Macht

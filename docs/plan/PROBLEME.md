@@ -4780,6 +4780,12 @@ Design-Entscheidung, keine Zweizeiler-Reparatur.
 **Status:** offen. Kandidat für T-M17-14 (Oberfläche Handel), wo die Sperrtexte ohnehin
 entstehen.
 
+**Statusnachtrag 2026-09-25 (T-M17-14, E1):** Oberfläche geschlossen — der Annehmen-Knopf nennt
+für die gebende Seite nur noch „das Angebot verfällt" (`trade.blocked.lapsing`), nie Provinz oder
+Ursache (Test A7, Kontrolle über `canApply`). **Offen im Kern:** `COMMAND_REJECTED.detail` und
+`canApply` tragen den Grund weiterhin mit `provinceId` — erreichbar für KI und Skript, nicht für
+den Spieler über die Oberfläche. Kandidat M18.
+
 ---
 
 ## 2026-09-25 · Nacharbeit „kern" · Beobachtung: `outgoingOffers` fehlte für den eigenen Durchmarsch-Antrag — erledigt durch die Spionagebahn
@@ -5475,3 +5481,65 @@ ein, die auch die Artillerie sichert; es gibt keine Gegenprobe ohne C3 dafür.
 **Status:** offen, für das Integrationstor T-M17-15 — Ursache der fehlenden Artillerie und des
 fehlenden Beschusses dort zerlegen (Gegenprobe ohne C3 und ohne C4), Frieden in 90 Tagen prüfen;
 nicht in der Nacharbeit Turnier behoben.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U1 (kritisch, in der Oberfläche behoben): Marktvorschau bricht bei Mengen über der Höchstmenge
+
+**Befund:** `exchangeAmount()` (`packages/core/src/rules/market.ts`) warf `FixedOverflowError`
+schon bei 3,5 Mrd. Einheiten Seltene Erden im bloßen Formularentwurf — unabhängig davon, ob
+`canApply` den Befehl je gesehen hat. Die Vorschau (`Panels.tsx` `TradeOfferForm`, `MarketPanel`)
+rief `exchangeAmount()` bei **jedem** Rendern auf und stürzte dementsprechend ab, reproduziert am
+2026-09-25 vor der Reparatur.
+
+**Reparatur (in dieser Nacharbeit, `apps/desktop`):** neue Funktion `safeExchangeAmount()`
+(`actions.ts`) kappt `giveAmount` vor der Rechnung, so dass `giveAmount * Kurs` unterhalb
+`Number.MAX_SAFE_INTEGER` bleibt; der an `canApply` gehende Befehl bleibt ungekürzt für die echte
+Prüfung. Test A10. Siehe DECISIONS.md, Eintrag „Kappung statt Prüfung vor der Vorschau".
+
+**Offen im Kern (Kandidat, nicht Teil dieser Nacharbeit):** `exchangeAmount()` selbst kappt oder
+sättigt nicht — jeder künftige Aufrufer außerhalb von `apps/desktop/src/game/actions.ts` kann
+denselben Absturz erzeugen. Kandidat für eine eigene Aufgabe: `exchangeAmount()` wirft nie,
+sondern sättigt intern, oder `MIN_TRADE_AMOUNT` bekommt ein Pendant nach oben.
+
+**Status:** Oberfläche repariert und mit Gegenprobe belegt; Kernverhalten offen, vorgemerkt für
+M18.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U2 (niedrig, nicht selbst behoben): `nameOf` in `App.tsx` hat keinen Rückfall auf leeren Text bei unbekannter Kennung
+
+**Befund:** Ein adversarischer Prüfer meldete, dass `offerListActions` bei einer unbekannten
+Macht `t('trade.unknownPower')` zurückgibt, dieser Pfad aber nie erreichbar sei, weil `nationOf`
+laut Befund „nie" auf eine rohe Kennung zurückfällt. Nachgestellt (2026-09-25): zutreffend —
+`naming.nameOf` **und** `App.tsx`s eigenes `nameOf` haben tatsächlich **keinen** Rückfall auf
+einen leeren Text bei einer unbekannten Kennung; sie geben die Kennung selbst zurück.
+`t('trade.unknownPower')` in `offerListActions` ist damit eine tote Kaskade — der Zweig, der sie
+auslösen würde, wird von `nameOf` selbst nie erreicht.
+
+**Warum nicht repariert:** Die sichtbar erreichbare Hälfte des ursprünglichen Befunds — die
+Provinz-Chip-Seite in `TradeOfferForm` — wurde in dieser Nacharbeit behoben (`trade.unknownProvince`,
+siehe DECISIONS.md und Befund darüber). Die `nameOf`-Hälfte selbst zu ändern (Rückfall auf
+`view.others`/leeren Text) betrifft mehrere Aufrufer außerhalb von T-M17-13/T-M17-14 — außerhalb
+des Umfangs dieser Nacharbeit.
+
+**Status:** bestätigt, nicht repariert, zurückgestellt als eigener, kleiner Befund für eine
+künftige Aufgabe.
+
+---
+
+## 2026-09-25 · T-M17-13 · Befund M17-S13 (niedrig, unbestätigt): der Ton verstummt vermutlich, sobald der Ereignisring voll ist
+
+**Fundort:** `apps/desktop/src/App.tsx`, Ton-Effekt (Kommentar „own.slice(soundedUpTo)").
+
+**Beobachtung (aus dem Bauplan zu T-M17-13, dort als F10 geführt, nicht selbst nachgemessen):**
+der Ton-Effekt zählt seinen Fortschritt über die **Länge** von `eventsFor(state.eventLog,
+viewerId)`. Der Ereignisring ist auf 500 Einträge für alle Mächte gedeckelt; ist er einmal voll,
+wächst diese Länge kaum noch, und `own.slice(soundedUpTo)` liefert fast nichts mehr — der Ton
+könnte nach Sättigung des Rings verstummen. Die Spionage-Meldungen dieser Aufgabe zählen bewusst
+nach Tick (`upTo`), nicht nach Länge, um genau das zu vermeiden (siehe DECISIONS.md, T-M17-13 E3).
+
+**Status:** unbestätigt, nicht selbst nachgemessen — weder in T-M17-13 noch in dieser Nacharbeit
+behoben (außerhalb ihres Auftrags). Empfehlung: eigener Befund mit Messung (wie lange bis der
+Ring voll ist, ob der Ton dann wirklich verstummt), Reparatur nach demselben Muster wie
+`collectEspionageNews` (nach Tick statt nach Länge).
