@@ -376,12 +376,22 @@ describe('R-AI-09/AK3 Ein Gegenlauf braucht einen Hebel in der einen Schleife', 
     angreifer.arrivalTick = route.arrivalTick
 
     const lauf = advanceTicks(state, 150, ctx, { withhold: (c) => c.type === 'MOVE_ARMY' })
-    const fuerDenMenschen = lauf.applied.filter((entry) => entry.command.playerId === mensch)
-    expect(fuerDenMenschen.length, 'der Adjutant hat in diesem Lauf nichts befohlen - der Fall misst nichts').toBeGreaterThan(0)
+    // Befund (Nacharbeit T-M17-15, 2026-09-25): die alte Fassung verlangte nur irgendeinen
+    // applied-Befehl des Menschen, nicht ausdruecklich ein MOVE_ARMY des Adjutanten, und nicht,
+    // dass der Hebel bei der KI ueberhaupt etwas zurueckhielt - beides galt schon durch die
+    // Bauart von `loop.ts:157`, der Fall haette also auch bei einer leeren Schleife gruen sein
+    // koennen. Jetzt ausdruecklich beides.
+    const moveDesMenschen = lauf.applied.filter((entry) => entry.command.playerId === mensch && entry.command.type === 'MOVE_ARMY')
+    expect(moveDesMenschen.length, 'der Adjutant hat in diesem Lauf kein MOVE_ARMY befohlen - der Fall misst nichts').toBeGreaterThan(0)
     // Der Adjutant selbst zaehlt zu applied, nicht zu withheld.
     for (const entry of lauf.adjutant) expect(lauf.withheld).not.toContainEqual(entry)
-    // Aber: jeder zurueckgehaltene Befehl ist wirklich einer der KI (nicht des Menschen).
-    for (const entry of lauf.withheld) expect(entry.command.playerId).not.toBe(mensch)
+    // Aber: jeder zurueckgehaltene Befehl ist wirklich einer der KI (nicht des Menschen) -
+    // und der Hebel hat tatsaechlich etwas zurueckgehalten, nicht nur eine leere Schleife.
+    expect(lauf.withheld.length, 'der Hebel hat nichts zurueckgehalten - der Fall misst die KI-Seite nicht').toBeGreaterThan(0)
+    for (const entry of lauf.withheld) {
+      expect(entry.command.playerId).not.toBe(mensch)
+      expect(entry.command.type).toBe('MOVE_ARMY')
+    }
   })
 })
 
