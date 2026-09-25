@@ -49,6 +49,8 @@ import {
   finalizeChecks,
   formatReport,
   forwardExists,
+  isCovered,
+  isOffscreen,
   linePath,
   pageUrl,
   parseAdbDevices,
@@ -217,6 +219,23 @@ function pageTargets() {
     }
     return null
   }
+  // Ist `el` (oder ein Vorfahre bis zum Wurzelelement) von seinem eigenen Overflow
+  // abgeschnitten? Jeder Vorfahre mit overflow-x/-y != visible liefert sein sichtbares
+  // Rechteck; ausserhalb DAVON ist ein Ziel nicht antippbar, ohne vorher zu rollen (Befund 2,
+  // Review 2026-09-25: der Startdialog, .dialog { overflow-y: auto }, schnitt so Knoepfe ab).
+  const clippingAncestorRects = (el) => {
+    const rects = []
+    let node = el.parentElement
+    while (node && node !== document.documentElement) {
+      const cs = getComputedStyle(node)
+      if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') {
+        const r = node.getBoundingClientRect()
+        rects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom })
+      }
+      node = node.parentElement
+    }
+    return rects
+  }
   for (const el of document.querySelectorAll(query)) {
     const style = getComputedStyle(el)
     if (style.visibility === 'hidden' || style.display === 'none') continue
@@ -247,16 +266,25 @@ function pageTargets() {
     // 1098x498@1.75)? elementFromPoint an der Mitte der echten Box, nicht der um ein
     // Pseudo-Element vergroesserten - ein Finger trifft dort ohnehin nur die echte Flaeche.
     // Dasselbe Muster wie pageButton()/pageFirstOnMap() weiter unten: Treffer zaehlt, wenn
-    // das oberste Element das Ziel selbst oder eines seiner Nachfahren ist.
+    // das oberste Element das Ziel selbst oder eines seiner Nachfahren ist. Liegt die Mitte
+    // stattdessen ausserhalb des Fensters oder von einem rollenden Vorfahren abgeschnitten,
+    // ist das KEIN "covered" (ein Finger erreicht es durch Rollen), sondern "offscreen" -
+    // informativ, kein Verstoss (Befund 2, Review 2026-09-25). Die reine Entscheidung steht
+    // getestet in android-check-lib.mjs (isOffscreen/isCovered); hier nur das Lesen des DOM.
     let covered = false
     let coveredBy = null
+    let offscreen = false
     if (box.width > 0 && box.height > 0) {
-      const at = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
-      const hit = Boolean(at && (at === target || target.contains(at)))
-      covered = !hit
+      const point = { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+      const viewport = { width: window.innerWidth, height: window.innerHeight }
+      offscreen = isOffscreen(point, viewport, clippingAncestorRects(target))
+      const at = offscreen ? null : document.elementFromPoint(point.x, point.y)
+      const hasHit = Boolean(at)
+      const hitIsTargetOrDescendant = Boolean(at && (at === target || target.contains(at)))
+      covered = isCovered(offscreen, hasHit, hitIsTargetOrDescendant)
       if (covered && at) coveredBy = `${at.tagName.toLowerCase()}${[...at.classList].slice(0, 2).map((c) => `.${c}`).join('')}`
     }
-    out.push({ selector, text, width, height, viaLabel: Boolean(label), covered, coveredBy })
+    out.push({ selector, text, width, height, viaLabel: Boolean(label), covered, coveredBy, offscreen })
   }
   return out
 }
@@ -390,6 +418,24 @@ function pageButton(by, value) {
   return { x, y, width: r.width, height: r.height, hit: Boolean(hit && (hit === b || b.contains(hit))), disabled: b.disabled }
 }
 
+/**
+ * Ist ein Knopf da - fuer `waitFor` als Bereitschafts-Abfrage, die NICHT rollt (Befund 1,
+ * Review 2026-09-25): `waitFor` ruft ihren Ausdruck alle 300 ms neu auf, bis er etwas
+ * Wahres liefert. Nahm sie dafuer `pageButton` (das per `scrollIntoView` rollt), verschob
+ * jeder Abfrage-Durchlauf den Startdialog (.dialog, overflow-y: auto) weiter - lange bevor
+ * die "Startdialog"-Momentaufnahme (`pageTargets`) lief, stand er schon um ~509 px gerollt,
+ * und Schliessen-Knopf/Auswahlfelder galten faelschlich als "verdeckt". Das Rollen bleibt
+ * `pageButton` vorbehalten, das nur unmittelbar vor dem Antippen aufgerufen wird.
+ */
+function pageButtonReady(by, value) {
+  const buttons = [...document.querySelectorAll('button')]
+  const b =
+    by === 'text'
+      ? buttons.find((x) => x.offsetParent !== null && (x.textContent ?? '').trim() === value)
+      : buttons.find((x) => x.getAttribute('aria-label') === value)
+  return Boolean(b)
+}
+
 // ---------------------------------------------------------------------------------------
 // Touch
 // ---------------------------------------------------------------------------------------
@@ -498,10 +544,10 @@ async function runFlow(cdp, ctx) {
   // --- Vorbereitung: Seite laden, Einfuehrung als gesehen markieren, Partie per Finger ---
   try {
     await navigateAndSeed(cdp, ctx.url)
-    await waitFor(cdp, call(pageButton, 'text', START_BUTTON), `den Knopf "${START_BUTTON}"`, 30000)
+    await waitFor(cdp, call(pageButtonReady, 'text', START_BUTTON), `den Knopf "${START_BUTTON}"`, 30000)
     await sleep(300)
     await shot('startdialog')
-    targetStates.push({ name: 'Startdialog', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
+    targetStates.push({ name: 'Startdialog', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox, isOffscreen, isCovered])) })
     const start = await evaluate(cdp, call(pageButton, 'text', START_BUTTON))
     extra.startButton = start
     await tap(cdp, start)
@@ -521,7 +567,7 @@ async function runFlow(cdp, ctx) {
     // Hoehe, die Vollbild zurueckgibt). Fehlt der Knopf, ist das ein klarer Aufbaufehler
     // dieses Laufs (derselbe Weg wie ein fehlender Startknopf), kein Absturz.
     if (ctx.options.fullscreen) {
-      await waitFor(cdp, call(pageButton, 'label', FULLSCREEN_BUTTON), `den Knopf "${FULLSCREEN_BUTTON}" (--fullscreen)`, 5000)
+      await waitFor(cdp, call(pageButtonReady, 'label', FULLSCREEN_BUTTON), `den Knopf "${FULLSCREEN_BUTTON}" (--fullscreen)`, 5000)
       const fsButton = await evaluate(cdp, call(pageButton, 'label', FULLSCREEN_BUTTON))
       extra.fullscreenButton = fsButton
       await tap(cdp, fsButton)
@@ -544,7 +590,7 @@ async function runFlow(cdp, ctx) {
   await check('no-page-scroll', async () => evaluateScroll(await evaluate(cdp, call(pageScroll))))
   await check('map-canvas', async () => evaluateCanvas(await evaluate(cdp, call(pageCanvases))))
   try {
-    targetStates.push({ name: 'Partie', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
+    targetStates.push({ name: 'Partie', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox, isOffscreen, isCovered])) })
   } catch (error) {
     extra.targetsError = error.message
   }
@@ -689,7 +735,7 @@ async function runFlow(cdp, ctx) {
     const now = await state()
     if (now.attrs.selected || now.aux.pickerValue) {
       await shot('provinz')
-      targetStates.push({ name: 'Provinz gewaehlt', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox])) })
+      targetStates.push({ name: 'Provinz gewaehlt', elements: await evaluate(cdp, callWithDeps(pageTargets, [pseudoHitBox, isOffscreen, isCovered])) })
     }
     return evaluateTargetStates(targetStates, ctx.options.minTarget)
   })
