@@ -613,6 +613,53 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Angebote im Diplomatiepanel (T-M17-14, R-DIP-07): eine Zeile je Angebot, mit
+   Trennlinie wie die Tabellenzeilen daneben — keine eigene Farbe (R-UI-02). */
+.offers {
+  list-style: none;
+  margin: 0 0 var(--sp-md);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.offer {
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--paper-sunk);
+}
+
+.offer__text {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Die Kriege der Welt (T-M17-14, R-DIP-06/AK2): eine schlichte Liste, kein Balken. */
+.wars ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Das Angebotsformular (T-M17-14, R-DIP-07, R-DIP-09): die Mengenfelder bleiben schmal,
+   damit die Tabelle in der Seitenleiste nicht seitwaerts kriecht (T-M22-02). */
+.trade-form__table input[type='number'] {
+  width: 6ch;
+}
+
+.trade-form__chosen {
+  list-style: none;
+  margin: 0 0 var(--sp-sm);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+}
+
 .actions {
   display: flex;
   gap: var(--sp-sm);
