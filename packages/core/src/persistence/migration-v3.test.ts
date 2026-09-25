@@ -470,3 +470,119 @@ describe('R-GAME-05 Ein Stand der Stufe 4 wird auf die Felder dieser Stufe gepru
     expect(() => deserialise(mitPruefsumme(state))).toThrow(/rightOfWay/)
   })
 })
+
+/**
+ * Spione, Aufdeckungen und Handelsangebote werden **je Element** geprueft (Zusammenfuehrung von
+ * Diplomatie- und Spionagebahn, 2026-09-25; Befunde M17-S7 und M17-D6).
+ *
+ * Bis hierher sah `checkVersion4` in `espionage.spies`/`.reveals` nur Listen und in einem
+ * Handelsangebot nur, dass `give`/`want` Rohstoffe und Provinzen tragen. Seit beide Bahnen
+ * zusammen sind, liest der Tageslauf je Spion `players[spy.owner]!` und `provinces[spy.provinceId]!`
+ * ungeprueft (`phases/espionage.ts`), und das Schliessen eines Angebots bucht die Treuhand auf
+ * `players[offer.from]`. Ein geladener Stand mit einem Spion einer unbekannten Macht bestand die
+ * Pruefung und warf beim ersten Tageswechsel einen TypeError — dieselbe Fehlerklasse, die die
+ * Nacharbeit zu T-M17-03 fuer die Buendel schon geschlossen hat. Jede Zeile unten ist **eine**
+ * Verfaelschung eines sonst gueltigen Standes; der gueltige Stand selbst muss durchgehen, sonst
+ * bewiese das Abweisen nichts.
+ */
+describe('R-GAME-05 Spione, Aufdeckungen und Handelsangebote werden je Element geprueft', () => {
+  type Roh = Record<string, unknown>
+  const gueltig = (): Roh => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+    const [erste, zweite] = state.playerOrder as [string, string]
+    const provinz = state.provinceOrder[0]!
+    state.espionage.spies.push({
+      id: 's1',
+      owner: erste,
+      provinceId: provinz,
+      mission: 'economicSabotage',
+      recruitedTick: 10,
+      assignedTick: 12,
+      lastRunTick: 24,
+      lastOutcome: 'success',
+    })
+    state.espionage.reveals.push({ player: erste, provinceId: provinz, kind: 'armies', untilTick: 99 })
+    state.diplomacy.tradeOffers.push({
+      id: 'o1',
+      from: erste,
+      to: zweite,
+      give: { resources: { money: 5_000 }, provinces: [provinz] },
+      want: { resources: { iron: 2_000 }, provinces: [] },
+      createdTick: 10,
+      expiresAtTick: 100,
+    })
+    return state as unknown as Roh
+  }
+  const spion = (state: Roh): Roh => (state['espionage'] as { spies: Roh[] }).spies[0]!
+  const aufdeckung = (state: Roh): Roh => (state['espionage'] as { reveals: Roh[] }).reveals[0]!
+  const angebot = (state: Roh): Roh => (state['diplomacy'] as { tradeOffers: Roh[] }).tradeOffers[0]!
+  const buendel = (state: Roh, seite: 'give' | 'want'): { resources: Roh; provinces: unknown[] } =>
+    angebot(state)[seite] as { resources: Roh; provinces: unknown[] }
+
+  it('nimmt den gueltigen Stand an — auf beiden Ladewegen', () => {
+    const state = gueltig()
+    expect(() => validateState(state)).not.toThrow()
+    expect(() => deserialise(serialise(state as unknown as GameState))).not.toThrow()
+  })
+
+  const FAELLE: { name: string; verfaelsche: (state: Roh) => void; meldung: RegExp }[] = [
+    { name: 'ein Spion, der kein Objekt ist', verfaelsche: (s) => ((s['espionage'] as { spies: unknown[] }).spies[0] = 's1'), meldung: /espionage\.spies\[0\] ist kein Objekt/ },
+    { name: 'ein Spion ohne Kennung', verfaelsche: (s) => delete spion(s)['id'], meldung: /espionage\.spies\[0\]\.id/ },
+    { name: 'ein Spion einer unbekannten Macht', verfaelsche: (s) => (spion(s)['owner'] = 'p99'), meldung: /espionage\.spies\[0\]\.owner/ },
+    { name: 'ein Spion mit einem Namen aus Object.prototype als Besitzer', verfaelsche: (s) => (spion(s)['owner'] = 'constructor'), meldung: /espionage\.spies\[0\]\.owner/ },
+    { name: 'ein Spion in einer unbekannten Provinz', verfaelsche: (s) => (spion(s)['provinceId'] = 'NIRGENDS'), meldung: /espionage\.spies\[0\]\.provinceId/ },
+    { name: 'ein Spion mit unbekanntem Auftrag', verfaelsche: (s) => (spion(s)['mission'] = 'bribery'), meldung: /espionage\.spies\[0\]\.mission/ },
+    { name: 'ein Spion ohne Anwerbetick', verfaelsche: (s) => delete spion(s)['recruitedTick'], meldung: /espionage\.spies\[0\]\.recruitedTick/ },
+    { name: 'ein Spion mit Text als Ansetztick', verfaelsche: (s) => (spion(s)['assignedTick'] = '12'), meldung: /espionage\.spies\[0\]\.assignedTick/ },
+    { name: 'ein Spion ohne letzten Lauf (weder Zahl noch null)', verfaelsche: (s) => delete spion(s)['lastRunTick'], meldung: /espionage\.spies\[0\]\.lastRunTick/ },
+    { name: 'ein Spion mit unbekanntem Ausgang', verfaelsche: (s) => (spion(s)['lastOutcome'] = 'caught'), meldung: /espionage\.spies\[0\]\.lastOutcome/ },
+    { name: 'eine Aufdeckung, die kein Objekt ist', verfaelsche: (s) => ((s['espionage'] as { reveals: unknown[] }).reveals[0] = null), meldung: /espionage\.reveals\[0\] ist kein Objekt/ },
+    { name: 'eine Aufdeckung fuer eine unbekannte Macht', verfaelsche: (s) => (aufdeckung(s)['player'] = 'p99'), meldung: /espionage\.reveals\[0\]\.player/ },
+    { name: 'eine Aufdeckung einer unbekannten Provinz', verfaelsche: (s) => (aufdeckung(s)['provinceId'] = 'NIRGENDS'), meldung: /espionage\.reveals\[0\]\.provinceId/ },
+    { name: 'eine Aufdeckung unbekannter Art', verfaelsche: (s) => (aufdeckung(s)['kind'] = 'buildings'), meldung: /espionage\.reveals\[0\]\.kind/ },
+    { name: 'eine Aufdeckung ohne Frist', verfaelsche: (s) => (aufdeckung(s)['untilTick'] = null), meldung: /espionage\.reveals\[0\]\.untilTick/ },
+    { name: 'ein Angebot ohne Kennung', verfaelsche: (s) => (angebot(s)['id'] = 7), meldung: /diplomacy\.tradeOffers\[0\]\.id/ },
+    { name: 'ein Angebot einer unbekannten Macht (M17-D6)', verfaelsche: (s) => (angebot(s)['from'] = 'p99'), meldung: /diplomacy\.tradeOffers\[0\]\.from/ },
+    { name: 'ein Angebot an eine unbekannte Macht', verfaelsche: (s) => (angebot(s)['to'] = 'hasOwnProperty'), meldung: /diplomacy\.tradeOffers\[0\]\.to/ },
+    { name: 'ein Angebot an sich selbst', verfaelsche: (s) => (angebot(s)['to'] = angebot(s)['from']), meldung: /diplomacy\.tradeOffers\[0\]\.to/ },
+    { name: 'ein unbekannter Rohstoff im Buendel', verfaelsche: (s) => (buendel(s, 'give').resources['gold'] = 1_000), meldung: /diplomacy\.tradeOffers\[0\]\.give\.resources\.gold/ },
+    { name: 'ein Betrag, der keine ganze Zahl ist', verfaelsche: (s) => (buendel(s, 'give').resources['money'] = 2.5), meldung: /diplomacy\.tradeOffers\[0\]\.give\.resources\.money/ },
+    { name: 'ein Betrag von null', verfaelsche: (s) => (buendel(s, 'want').resources['iron'] = 0), meldung: /diplomacy\.tradeOffers\[0\]\.want\.resources\.iron/ },
+    { name: 'ein negativer Betrag', verfaelsche: (s) => (buendel(s, 'want').resources['iron'] = -2_000), meldung: /diplomacy\.tradeOffers\[0\]\.want\.resources\.iron/ },
+    { name: 'eine unbekannte Provinz im Buendel', verfaelsche: (s) => (buendel(s, 'give').provinces[0] = 'NIRGENDS'), meldung: /diplomacy\.tradeOffers\[0\]\.give\.provinces/ },
+    { name: 'eine Provinz, die kein Text ist', verfaelsche: (s) => buendel(s, 'want').provinces.push(3), meldung: /diplomacy\.tradeOffers\[0\]\.want\.provinces/ },
+    { name: 'ein Angebot ohne Verfallstick', verfaelsche: (s) => delete angebot(s)['expiresAtTick'], meldung: /diplomacy\.tradeOffers\[0\]\.expiresAtTick/ },
+  ]
+
+  for (const { name, verfaelsche, meldung } of FAELLE) {
+    it(`weist ab: ${name}`, () => {
+      const state = gueltig()
+      verfaelsche(state)
+      expect(() => validateState(state)).toThrow(meldung)
+    })
+  }
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — Spion einer unbekannten Macht', () => {
+    const state = gueltig()
+    spion(state)['owner'] = 'p99'
+    const text = serialise(state as unknown as GameState)
+    expect(JSON.parse(text).schemaVersion, 'der Umschlag muss den Hash-Weg nehmen').toBe(SCHEMA_VERSION)
+
+    expect(() => deserialise(text)).toThrow(/espionage\.spies\[0\]\.owner/)
+  })
+
+  // Der zweite Ladeweg braucht keinen eigenen Fall: ein migrierter Stand kann keine Elemente
+  // mitbringen, weil der Schritt 3 → 4 beide Listen und die Angebote leer anlegt — auch wenn der
+  // alte Stand dort schon etwas trug. Das haelt dieser Fall fest; aendert sich die Migration,
+  // braucht der migrierte Weg einen Fall wie der mit Pruefsumme oben.
+  it('ein migrierter Stand bringt keine Spione und keine Handelsangebote mit', () => {
+    const envelope = copy(V3)
+    const alt = envelope.state as unknown as { diplomacy: Record<string, unknown>; espionage?: unknown }
+    alt.diplomacy['tradeOffers'] = [{ id: 'o1', from: 'p99', to: 'p1' }]
+    alt.espionage = { spies: [{ id: 's1', owner: 'p99' }], reveals: [{ player: 'p99' }] }
+
+    const state = deserialise(JSON.stringify(envelope))
+    expect(state.diplomacy.tradeOffers).toEqual([])
+    expect(state.espionage).toEqual({ spies: [], reveals: [] })
+  })
+})

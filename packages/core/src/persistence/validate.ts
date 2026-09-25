@@ -1,4 +1,5 @@
-import type { GameState } from '../state/types'
+import { SPY_MISSIONS } from '../rules/espionage'
+import { RESOURCE_KEYS, type GameState, type ResourceKey, type Reveal, type Spy, type SpyMission } from '../state/types'
 
 /**
  * Was ein geladener Zustand mindestens sein muss (T-M15-04, R-GAME-07, Befund 55).
@@ -47,8 +48,8 @@ const REQUIRED: { key: keyof GameState; kind: 'number' | 'string' | 'array' | 'o
   { key: 'goals', kind: 'object' },
   // Seit Stufe 4 (T-M17-03): dasselbe für die Spionage. Ohne das Feld lädt der Stand
   // fehlerfrei und stürzt im ersten Tick ab — `cloneState` liest `espionage.spies` und
-  // `espionage.reveals` (berichtigt am 2026-09-24: eine Spionagephase gibt es noch nicht).
-  // Die beiden Listen prüft `validateState` weiter unten.
+  // `espionage.reveals`, und seit T-M17-08 liest der Tageslauf (`phases/espionage.ts`) jeden
+  // Spion samt Besitzer und Provinz. Beide Listen prüft `checkVersion4` je Element.
   { key: 'espionage', kind: 'object' },
   { key: 'nextIds', kind: 'object' },
 ]
@@ -168,20 +169,90 @@ function checkVersion4(state: Record<string, unknown>, diplomacy: Record<string,
     }
   }
 
+  const players = state['players'] as Record<string, unknown>
+  const provinces = state['provinces'] as Record<string, unknown>
+  /** Ein **eigener** Eintrag — `'constructor'` ist sonst in jedem Objekt "da" (Befund M17-S2). */
+  const known = (record: Record<string, unknown>, id: unknown): boolean => typeof id === 'string' && Object.hasOwn(record, id)
+
   if (kindOf(diplomacy['tradeOffers']) === 'array') {
     ;(diplomacy['tradeOffers'] as unknown[]).forEach((offer, index) => {
+      const at = `diplomacy.tradeOffers[${index}]`
       if (kindOf(offer) !== 'object') {
-        problems.push(`diplomacy.tradeOffers[${index}] ist kein Objekt`)
+        problems.push(`${at} ist kein Objekt`)
         return
       }
+      const fields = offer as Record<string, unknown>
+      if (typeof fields['id'] !== 'string') problems.push(`${at}.id ist kein Text`)
+      // Das Schliessen bucht die Treuhand auf `players[from]` (Befund M17-D6).
+      if (!known(players, fields['from'])) problems.push(`${at}.from nennt keine Macht dieses Spiels`)
+      if (!known(players, fields['to'])) problems.push(`${at}.to nennt keine Macht dieses Spiels`)
+      else if (fields['to'] === fields['from']) problems.push(`${at}.to ist der Anbieter selbst`)
+      for (const key of ['createdTick', 'expiresAtTick']) {
+        if (typeof fields[key] !== 'number') problems.push(`${at}.${key} ist ${kindOf(fields[key])} statt number`)
+      }
       for (const side of ['give', 'want']) {
-        const bundle = (offer as Record<string, unknown>)[side]
+        const bundle = fields[side]
         const ok =
           kindOf(bundle) === 'object' &&
           kindOf((bundle as Record<string, unknown>)['resources']) === 'object' &&
           kindOf((bundle as Record<string, unknown>)['provinces']) === 'array'
-        if (!ok) problems.push(`diplomacy.tradeOffers[${index}].${side} fehlt oder hat keine Rohstoffe und Provinzen`)
+        if (!ok) {
+          problems.push(`${at}.${side} fehlt oder hat keine Rohstoffe und Provinzen`)
+          continue
+        }
+        // So, wie `OFFER_TRADE` sie annimmt: bekannte Rohstoffe, ganze Betraege ueber null.
+        const { resources, provinces: cessions } = bundle as { resources: Record<string, unknown>; provinces: unknown[] }
+        for (const [key, amount] of Object.entries(resources)) {
+          if (!RESOURCE_KEYS.includes(key as ResourceKey)) problems.push(`${at}.${side}.resources.${key} ist kein Rohstoff`)
+          else if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount <= 0) {
+            problems.push(`${at}.${side}.resources.${key} ist keine ganze Zahl ueber null`)
+          }
+        }
+        cessions.forEach((id, i) => {
+          if (!known(provinces, id)) problems.push(`${at}.${side}.provinces[${i}] nennt keine Provinz dieser Karte`)
+        })
       }
     })
   }
+
+  // Je Spion und je Aufdeckung, so tief, wie der Tageslauf sie liest (Befund M17-S7):
+  // `settleEspionage` greift ungeprueft auf `players[spy.owner]` und `provinces[spy.provinceId]`.
+  if (kindOf(espionage['spies']) === 'array') {
+    ;(espionage['spies'] as unknown[]).forEach((spy, index) => {
+      const at = `espionage.spies[${index}]`
+      if (kindOf(spy) !== 'object') {
+        problems.push(`${at} ist kein Objekt`)
+        return
+      }
+      const fields = spy as Record<string, unknown>
+      if (typeof fields['id'] !== 'string') problems.push(`${at}.id ist kein Text`)
+      if (!known(players, fields['owner'])) problems.push(`${at}.owner nennt keine Macht dieses Spiels`)
+      if (!known(provinces, fields['provinceId'])) problems.push(`${at}.provinceId nennt keine Provinz dieser Karte`)
+      if (!SPY_MISSIONS.includes(fields['mission'] as SpyMission)) problems.push(`${at}.mission ist kein Auftrag`)
+      for (const key of ['recruitedTick', 'assignedTick']) {
+        if (typeof fields[key] !== 'number') problems.push(`${at}.${key} ist ${kindOf(fields[key])} statt number`)
+      }
+      if (!['number', 'null'].includes(kindOf(fields['lastRunTick']))) {
+        problems.push(`${at}.lastRunTick ist ${kindOf(fields['lastRunTick'])} statt number oder null`)
+      }
+      if (!SPY_OUTCOMES.includes(fields['lastOutcome'] as Spy['lastOutcome'])) problems.push(`${at}.lastOutcome ist kein Ausgang`)
+    })
+  }
+  if (kindOf(espionage['reveals']) === 'array') {
+    ;(espionage['reveals'] as unknown[]).forEach((reveal, index) => {
+      const at = `espionage.reveals[${index}]`
+      if (kindOf(reveal) !== 'object') {
+        problems.push(`${at} ist kein Objekt`)
+        return
+      }
+      const fields = reveal as Record<string, unknown>
+      if (!known(players, fields['player'])) problems.push(`${at}.player nennt keine Macht dieses Spiels`)
+      if (!known(provinces, fields['provinceId'])) problems.push(`${at}.provinceId nennt keine Provinz dieser Karte`)
+      if (!REVEAL_KINDS.includes(fields['kind'] as Reveal['kind'])) problems.push(`${at}.kind ist keine Aufdeckungsart`)
+      if (typeof fields['untilTick'] !== 'number') problems.push(`${at}.untilTick ist ${kindOf(fields['untilTick'])} statt number`)
+    })
+  }
 }
+
+const SPY_OUTCOMES: readonly Spy['lastOutcome'][] = ['success', 'failure', 'targetChanged', null]
+const REVEAL_KINDS: readonly Reveal['kind'][] = ['intel', 'armies']
