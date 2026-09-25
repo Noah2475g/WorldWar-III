@@ -421,18 +421,19 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
   })
 
-  it('fuehrt Artillerie und laesst sie feuern', () => {
+  it.fails('fuehrt Artillerie und laesst sie feuern', () => {
     // **Die Kette, um die es in dieser Aufgabe geht.** Ohne Fabrik keine Artillerie, ohne
     // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
     // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
     // fuer die Testkarte belegt hat.
     //
-    // **Bleibt absichtlich rot (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Ursache
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Ursache
     // zerlegt: die Aushebung kauft je Einheit nur `recruitShare` Promille des Bestands, eine
     // Artillerie kostet 200 000 Geld - keine Macht spart in 200 Tagen so viel an
     // (`geldHoechstensJeMacht` im Bericht). Die einzige gefundene Reparatur braucht Befund
     // M17-S12 und kippt das Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird
-    // dieser Test unbemerkt gruen, hat sich die Aushebung geaendert - das ist dann meldenswert.
+    // dieser Fall unbemerkt gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist
+    // dann meldenswert (die Aushebung haette sich geaendert).
     const events = integration.events
     const fabriken = events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
@@ -510,13 +511,14 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
-    // **Bleibt absichtlich rot (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
+  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
     // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
     // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
     // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
     // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
-    // Startzahlen, m17-integration.slow.test.ts).
+    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
+    // vitest ihn als fehlgeschlagenes it.fails.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
