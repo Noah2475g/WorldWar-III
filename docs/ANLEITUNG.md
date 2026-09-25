@@ -286,6 +286,19 @@ Frieden anbieten oder annehmen, Bündnis, Durchmarsch, Kartenaustausch.
 **Markt** (H): Rohstoff abgeben, Menge, Rohstoff erhalten — der Gegenwert steht da,
 bevor Sie handeln. Der Kurs gilt für alle Mächte gleich und für den ganzen Tick.
 
+**Spionage** (S oder Knopf im Fuß): Anwerben läuft über die Provinzleiste — in einer
+fremden oder herrenlosen Provinz Aufklärung, Wirtschafts- oder Militärsabotage, in
+einer eigenen nur Gegenspionage. Preis und Tagessold stehen im Tooltip; höchstens fünf
+Spione gleichzeitig. Ein Spion arbeitet frühestens ab dem Tag nach dem Ansetzen, einmal
+täglich, und kostet jeden Tag seinen Sold, solange er lebt. In der Spionageübersicht
+(Taste S) sehen Sie jeden eigenen Spion mit Auftrag, Ziel und letztem Ergebnis:
+**Umsetzen** öffnet einen Modus — wählen Sie die Zielprovinz auf der Karte oder in der
+Liste, Escape bricht ab —, **Entlassen** nimmt ihn ohne Erstattung aus dem Dienst.
+Sabotage gelingt höchstens einmal je Provinz und Tag. Wer sabotiert wird, erfährt
+**dass**, aber nicht **wer** — nur ein eigener Gegenspion deckt einen fremden Spion auf,
+und dann erfahren es beide Seiten. „Keine Enttarnung" heißt: entweder war niemand da,
+oder die Suche blieb erfolglos — das Spiel sagt Ihnen nicht, welches der beiden es war.
+
 ---
 
 ## Die Wirtschaftsübersicht
@@ -318,6 +331,7 @@ Alles ist ohne Maus erreichbar.
 | Pfeiltasten | Karte verschieben |
 | D | Diplomatie |
 | H | Markt (Handel) |
+| S | Spionageübersicht |
 | Strg+S / Strg+L | Speichern / Laden |
 | Escape | Dialog, Panel oder Zielwahl schließen |
 | F1 | diese Übersicht im Spiel |
@@ -372,7 +386,7 @@ Vieles, wofür man sonst rechnen müsste, steht als Anzeige da:
 | Provinzpanel | **Moral** als Balken mit Pfeil — der Pfeil zeigt, wohin sie läuft, nicht nur wo sie steht |
 | Provinzpanel | jedes laufende Bauvorhaben und jede Aushebung als Balken mit Restzeit |
 | Armeepanel | der Marsch als Balken mit der Ankunftszeit |
-| Seitenleiste | **Meldungen**: Kampf im eigenen Land, verlorene Hauptstadt, Rohstoffmangel, Aufstandsgefahr. Ein Klick führt die Karte hin. |
+| Seitenleiste | **Meldungen**: Kampf im eigenen Land, verlorene Hauptstadt, Rohstoffmangel, Aufstandsgefahr, **Sabotage** (rot, bleibt bis zum Wegklicken), Enttarnungen und verlorene Spione (leise). Ein Klick führt die Karte hin. |
 
 ## Die Lage der Mächte (Taste `L`)
 
