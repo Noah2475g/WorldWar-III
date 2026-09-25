@@ -221,8 +221,9 @@ describe('touch.css: die Karte gehoert dem Finger, in jeder Eingabeart', () => {
  * Uebersichtskarte statt den Knopf, weil die viersaeulige 44-px-Kartenknopf-Spalte oben
  * rechts (182 px hoch) und die 132x74-Uebersichtskarte unten rechts bei dieser Hoehe in
  * denselben senkrechten Streifen fallen. Gebunden ist hier nur die Kaskade ausserhalb
- * eines @media-Blocks (touch.css zieht die Uebersichtskarte im Touch-Betrieb generell auf
- * die linke Seite); die Messung im echten Fenster deckt scripts/android-check.mjs ab.
+ * eines @media-Blocks (touch.css stellt die Kartenknoepfe im Touch-Betrieb bei jeder Hoehe
+ * als Reihe); die Messung im echten Fenster deckt scripts/android-check.mjs ab. Die
+ * Uebersichtskarte bleibt rechts: links deckte sie die Einfuehrung zu (gemessen an d55e5b3).
  */
 function Kartenknoepfe() {
   return (
@@ -246,29 +247,31 @@ function Kartenknoepfe() {
   )
 }
 
-describe('touch.css: Kartenknoepfe und Uebersichtskarte liegen nie in derselben Ecke', () => {
-  it('zieht die Uebersichtskarte im Touch-Betrieb nach links, weg von der rechten Kartenknopf-Spalte', () => {
+describe('touch.css: Kartenknoepfe und Uebersichtskarte liegen nie im selben Streifen', () => {
+  it('stellt die Kartenknoepfe im Touch-Betrieb als Reihe, die Uebersichtskarte bleibt rechts', () => {
     document.documentElement.dataset['input'] = 'touch'
     const { container } = render(<Kartenknoepfe />)
     const overview = screen.getByRole('button', { name: 'Übersichtskarte' })
+    const controls = container.querySelector('.map-controls')!
 
-    expect(css(overview, 'right')).toBe('auto')
-    // jsdom loest var(...) in der Kaskade nicht zu px auf (wie das bestehende Muster
-    // dieser Datei fuer var-basierte Werte) - der Rohwert genuegt, um die Regel zu binden.
-    expect(css(overview, 'left')).toBe('var(--sp-lg)')
-    // Die Kartenknoepfe selbst bleiben, wo sie waren.
-    expect(css(container.querySelector('.map-controls')!, 'right')).toBe('var(--sp-md)')
+    expect(css(controls, 'flex-direction')).toBe('row')
+    // Die Kartenknoepfe bleiben oben rechts ...
+    expect(css(controls, 'right')).toBe('var(--sp-md)')
+    // ... und die Uebersichtskarte unten rechts - nicht links, dort liegt die Einfuehrung.
+    // jsdom loest var(...) in der Kaskade nicht zu px auf; der Rohwert bindet die Regel.
+    expect(css(overview, 'right')).toBe('var(--sp-lg)')
+    expect(css(overview, 'left')).toBe('auto')
   })
 
-  it('laesst die Uebersichtskarte im Mausbetrieb an ihrem alten Platz rechts', () => {
+  it('laesst im Mausbetrieb die Spalte und die Uebersichtskarte, wie sie waren', () => {
     document.documentElement.dataset['input'] = 'mouse'
-    render(<Kartenknoepfe />)
+    const { container } = render(<Kartenknoepfe />)
     const overview = screen.getByRole('button', { name: 'Übersichtskarte' })
 
+    expect(css(container.querySelector('.map-controls')!, 'flex-direction')).toBe('column')
     expect(css(overview, 'right')).toBe('var(--sp-lg)')
     // app.css setzt kein "left" an .map-overview; jsdom meldet fuer absolut positionierte
-    // Elemente ohne eigene "left"-Regel deren Startwert "auto" (anders als bei den nicht
-    // positionsbezogenen Eigenschaften weiter oben in dieser Datei).
+    // Elemente ohne eigene "left"-Regel deren Startwert "auto".
     expect(css(overview, 'left')).toBe('auto')
   })
 })

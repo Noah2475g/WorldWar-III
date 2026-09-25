@@ -188,21 +188,17 @@ select,
   opacity: 0.75;
 }
 
-/* Die Kartenknoepfe (oben rechts, senkrechte Spalte, bis zu vier Stueck a 44 px + 2 px
-   Luecke = 182 px hoch) und die Uebersichtskarte (unten rechts, 132x74, app.css) liegen
-   im Touch-Betrieb je nach Fensterhoehe im selben senkrechten Streifen: map-wrapper ist
-   bei 1098x498@1.75 und 1097x617@1.75 niedriger, als die Spalte hoch ist, und die
-   Uebersichtskarte wandert dann unter die Knoepfe - elementFromPoint auf "Hauptstadt
-   zentrieren"/"Vollbild" trifft die Uebersichtskarte, nicht den Knopf (gemessen
-   2026-09-25). Die Uebersichtskarte zieht deshalb im Touch-Betrieb auf die
-   GEGENUEBERLIEGENDE Ecke unten links um: die beiden Gruppen koennen sich dann bei
-   keiner Fensterhoehe mehr ueberdecken, ohne dass die Kartenknoepfe ihren Platz oder
-   ihre Reihenfolge aendern. Das kleine Telefon quer (<=480 px, unten) hatte die alte
-   rechte Lage schon gemessen ueberdeckungsfrei und bekommt sie darum ausdruecklich
-   zurueck. */
-:root[data-input='touch'] .map-overview {
-  right: auto;
-  left: var(--sp-lg);
+/* Die Kartenknoepfe stehen im Touch-Betrieb bei JEDER Fensterhoehe als Reihe oben rechts
+   (vier Stueck a 44 px + 2 px Luecke = 182 px breit, 44 px hoch). Als Spalte waren sie
+   182 px hoch und reichten bei 1098x498@1.75 (LDPlayer 1920x1080 mit Adresszeile) bis
+   unter die Uebersichtskarte (unten rechts, 132x74, app.css): elementFromPoint auf
+   "Hauptstadt zentrieren"/"Vollbild" traf die Uebersichtskarte (gemessen 2026-09-25).
+   Frueher galt die Reihe nur bis 480 px Hoehe - 498 px lagen knapp darueber.
+   Die Uebersichtskarte bleibt dabei unten rechts: unten links liegt die Einfuehrung
+   (.tutorial, app.css), und die deckte sie dort zu (gemessen 2026-09-25 an d55e5b3,
+   1098x498 und 1097x617 mit sichtbarer Einfuehrung). */
+:root[data-input='touch'] .map-controls {
+  flex-direction: row;
 }
 
 /* ------------------------------------------------ Telefon quer (bis 480 px hoch) */
@@ -317,19 +313,10 @@ select,
     display: contents;
   }
 
-  /* Kartenknoepfe in einer Reihe oben rechts; darunter bleibt Platz fuer die
-     Uebersichtskarte. Deren Groesse bleibt: MapCanvas rechnet ihre Tipps in ihren
+  /* Die Kartenknoepfe stehen schon als Reihe oben (s.o.); die Uebersichtskarte rueckt
+     naeher an den Rand. Ihre Groesse bleibt: MapCanvas rechnet ihre Tipps in ihren
      132 x 74 Pixeln. */
-  :root[data-input='touch'] .map-controls {
-    flex-direction: row;
-  }
-
-  /* Bei so wenig Hoehe stehen die Kartenknoepfe als Reihe oben (s.o.) statt als Spalte:
-     die Ueberdeckung von oben tritt hier nicht auf. Die Uebersichtskarte bleibt darum
-     an ihrem gemessenen Platz rechts, statt zur Legende (unten links, s.u.) zu wandern. */
   :root[data-input='touch'] .map-overview {
-    right: var(--sp-lg);
-    left: auto;
     bottom: var(--sp-md);
   }
 
