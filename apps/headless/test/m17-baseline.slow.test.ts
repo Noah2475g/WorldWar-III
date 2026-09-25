@@ -58,6 +58,14 @@ import { beforeAll, describe, expect, it } from 'vitest'
  * Der Bericht `docs/reports/m17-baseline.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
  * geschrieben (Muster `stance.slow.test.ts`).
  *
+ * **Der Nachher-Stand zu T-M17-16.** `docs/reports/m17-baseline.json` ist der Ausgangswert von
+ * T-M17-02 und wird von `m17-integration.slow.test.ts` (Zeile 372) als Vergleichsgrundlage fuer
+ * R-AI-09/AK3 gelesen — er bleibt byte-gleich. Mit `WORLDWAR_M17_NACHHER=1` schreibt dieser Lauf
+ * stattdessen `docs/reports/m17-final.json` (`aufgabe: 'T-M17-16'`), dazu `SABOTAGE_SUFFERED` je
+ * 100 Spieltage je Opfer (die dod verlangt das aufgeschluesselt; `m17-integration.json` zaehlt nur
+ * die Summe). `docs/reports/m17-baseline.json` gehoert zu keiner Quellenliste (`GAUGES`,
+ * `STANCE_SOURCES`), dieser Lauf macht also nichts unfrisch.
+ *
  * **Fuer T-M17-16: `zustandOhneKi` laesst sich ueber die Stufen hinweg nicht roh vergleichen**
  * (Nachtrag 2026-09-24). Die Pruefsumme laeuft ueber den ganzen Zustand, und Stufe 4 hat andere
  * Felder: auf `537eaaa` (Stufe 3) meldet dieser Lauf `10950ec5abffd9b7`, auf `eb27a4c` (Stufe 4,
@@ -89,7 +97,11 @@ const ANCHOR_DAY = 30
 const SEED = 1815
 /** Nur fuer die Streuung des Ankers — 30 Spieltage, sonst dieselbe Aufstellung. */
 const SPREAD_SEEDS = [1914, 2015]
-const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+/** Schreibt den Nachher-Stand nach `m17-final.json` statt den Ausgangswert nach `m17-baseline.json`. */
+const NACHHER = process.env['WORLDWAR_M17_NACHHER'] === '1'
+// NACHHER schreibt immer (nur nach m17-final.json, m17-baseline.json bleibt unberuehrt) — sonst wie
+// stance.slow.test.ts nur mit WORLDWAR_WRITE_REPORT=1.
+const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1' || NACHHER
 
 /** Gibt die Ereignisschleife frei — ein langer synchroner Lauf toetet sonst den Worker (WORKFLOW §4). */
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
@@ -289,10 +301,17 @@ const zaehle = <T>(items: readonly T[], key: (item: T) => string): Record<string
 
 type Rejected = Extract<GameEvent, { type: 'COMMAND_REJECTED' }>
 type WarDeclared = Extract<GameEvent, { type: 'WAR_DECLARED' }>
+type SabotageSuffered = Extract<GameEvent, { type: 'SABOTAGE_SUFFERED' }>
 
 function kennzahlen(lauf: Lauf) {
   const { events, final, ki, befehle } = lauf
   const nation = (id: string): string => final.players[id]!.nation
+
+  const sabotage = events.filter((event): event is SabotageSuffered => event.type === 'SABOTAGE_SUFFERED' && ki.has(event.playerId))
+  const sabotageJeOpfer = zaehle(sabotage, (event) => nation(event.playerId))
+  const sabotageJeOpferJe100Tage = Object.fromEntries(
+    Object.entries(sabotageJeOpfer).map(([macht, anzahl]) => [macht, (anzahl * 100) / lauf.tage]),
+  )
 
   const kriege = events.filter((event): event is WarDeclared => event.type === 'WAR_DECLARED')
   const ueberfaelle = kriege.filter((event) => event.withoutDeclaration)
@@ -341,6 +360,11 @@ function kennzahlen(lauf: Lauf) {
     abgelehnt: abgelehnt.length,
     abgelehntJeCode: zaehle(abgelehnt, (event) => event.code),
     abgelehntJeBefehlUndCode: zaehle(abgelehnt, (event) => `${event.command}:${event.code}`),
+    // T-M17-16: SABOTAGE_SUFFERED gab es zu T-M17-02 noch nicht (Regel ab T-M17-09) — im
+    // Ausgangswert also immer leer; im Nachher-Stand die Zaehlung je Opfer und normiert je 100 Tage.
+    sabotageSuffered: sabotage.length,
+    sabotageJeOpfer,
+    sabotageJeOpferJe100Tage,
     /** Dieselbe Pruefsumme wie `zustandOhneKi` im Integrationstor — muss bei gleichem Stand gleich sein. */
     zustandOhneKi: hashValue({ ...final, ai: null }, { omitKeys: ['eventLog'] }),
   }
@@ -398,7 +422,7 @@ describe('T-M17-02 Der Ausgangswert von M17', () => {
     const zahlen = {
       gemessenAm: new Date().toISOString().slice(0, 10),
       gemessenAufCommit: git(['rev-parse', 'HEAD']),
-      aufgabe: 'T-M17-02',
+      aufgabe: NACHHER ? 'T-M17-16' : 'T-M17-02',
       partie: { karte: map.id, startzahl: SEED, maechte: 8, stufen: 'easy/normal/hard reihum', spieltage: DAYS },
       soldAnker: {
         definition:
@@ -412,7 +436,8 @@ describe('T-M17-02 Der Ausgangswert von M17', () => {
     if (SCHREIBEN) {
       const dir = `${ROOT}docs/reports/`
       mkdirSync(dir, { recursive: true })
-      writeFileSync(`${dir}m17-baseline.json`, JSON.stringify(zahlen, null, 2) + '\n')
+      const datei = NACHHER ? 'm17-final.json' : 'm17-baseline.json'
+      writeFileSync(`${dir}${datei}`, JSON.stringify(zahlen, null, 2) + '\n')
     }
 
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
