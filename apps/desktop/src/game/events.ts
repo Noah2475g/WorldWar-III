@@ -121,7 +121,31 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
   // Die Abtretung (T-M17-06): der Vorbesitzer mit Namen — `previousOwner` ist eine Kennung.
   if (event.type === 'PROVINCE_CEDED') values.previous = playerName(record.previousOwner)
 
+  // Spionage (T-M17-08): Auftrag und Ausgang mit Namen statt Schlüssel — „economicSabotage" und
+  // „targetChanged" sagen niemandem etwas.
+  if (event.type === 'SPY_REPORT' || event.type === 'SPY_LOST') {
+    values.mission = t(`espionage.missions.${String(record.mission)}`)
+  }
+  if (event.type === 'SPY_REPORT') values.outcome = t(`espionage.outcomes.${String(record.outcome)}`)
+
+  // Sabotage und Enttarnung (T-M17-09): der Auftrag mit Namen, die Wirkung als eigener Satzteil. Der
+  // Opfersatz bekommt nichts, was das Ereignis nicht trägt — und es trägt keinen Urheber (D29.5).
+  if (event.type === 'SPY_DETECTED') values.mission = t(`espionage.missions.${String(record.mission)}`)
+  if (event.type === 'SABOTAGE_SUFFERED') values.effect = sabotageEffect(event)
+
   return values
+}
+
+/** Die Wirkung einer erlittenen Sabotage in Worten (T-M17-09) — Mengen formatiert, Rohstoffe mit Namen. */
+function sabotageEffect(event: Extract<GameEvent, { type: 'SABOTAGE_SUFFERED' }>): string {
+  if (event.kind === 'military') return t('espionage.sabotage.military', { hours: event.delayTicks })
+  const parts = Object.entries(event.destroyed)
+    .filter(([, value]) => typeof value === 'number' && value > 0)
+    .map(([key, value]) => `${amount(value!)} ${t(`resources.${key}`)}`)
+  return t('espionage.sabotage.economic', {
+    moraleLoss: amount(event.moraleLoss),
+    destroyed: parts.length > 0 ? parts.join(', ') : t('espionage.sabotage.nothingDestroyed'),
+  })
 }
 
 /**

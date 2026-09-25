@@ -1,6 +1,7 @@
 import { ONE, type Fixed } from '@worldwar/shared'
 import { armyUpkeep } from '../state/army'
 import { capitalPenalty, provinceYieldScaled } from '../phases/production'
+import { spySalary } from '../rules/espionage'
 import type { Rules } from '../rules/types'
 import { RESOURCE_KEYS, type GameState, type PlayerId, type ResourceKey } from '../state/types'
 
@@ -102,13 +103,29 @@ export function economyOverview(state: GameState, playerId: PlayerId, rules: Rul
     }
   }
 
+  // Der Tagessold aller eigenen Spione (R-ECON-06, T-M17-13, D29.7) — abgebucht im
+  // Tageslauf (`phases/espionage.ts`), keine Einmalzahlung wie ein Bau- oder
+  // Aushebungsauftrag, sondern eine laufende Rate wie der Armeeunterhalt. Anders als
+  // dieser steht er schon als Tagesbetrag da (`spySalary`), nicht als Tickbetrag: er
+  // geht deshalb nicht in `consumption` (das unten mit `ticksPerDay` hochgerechnet
+  // wird), sondern direkt in `eaten`. Ohne diese Summe zeigte die Uebersicht eine
+  // Bilanz, die den Sold nicht kennt — der Spieler sah eine positive Zahl und verlor
+  // trotzdem Spione mit `SPY_LOST` (Befund einer Nacharbeit-Pruefung, T-M17-13).
+  let spySalaryPerDay: Fixed = 0
+  if (player?.alive) {
+    for (const spy of state.espionage.spies) {
+      if (spy.owner !== playerId) continue
+      spySalaryPerDay += spySalary(rules.constants, spy.mission)
+    }
+  }
+
   const overview = {} as EconomyOverview
   for (const resource of RESOURCE_KEYS) {
     // Production is scaled twice over (deposit x factor), consumption only once.
     // eslint-disable-next-line no-restricted-syntax -- per-tick fixed-point yield x hours per day, then down one scale
     const perDay = Math.round(((production[resource] ?? 0) * ticksPerDay) / ONE)
     // eslint-disable-next-line no-restricted-syntax -- per-tick upkeep x hours per day, plain integers
-    const eaten = (consumption[resource] ?? 0) * ticksPerDay
+    const eaten = (consumption[resource] ?? 0) * ticksPerDay + (resource === 'money' ? spySalaryPerDay : 0)
 
     overview[resource] = {
       stock: player?.resources[resource] ?? 0,

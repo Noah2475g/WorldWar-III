@@ -50,13 +50,24 @@ describe('R-GAME-09/AK1 Der eingefrorene Stand der Stufe 3 spielt mit KI weiter'
     expect(JSON.parse(FROZEN).schemaVersion, 'der eingefrorene Stand ist nicht mehr Stufe 3').toBe(3)
     const start = deserialise(FROZEN)
     expect(start.schemaVersion).toBe(SCHEMA_VERSION)
+    // Die Migration legt die Spionage leer an — ein Stand der Stufe 3 kannte keine Spione.
+    expect(start.espionage).toEqual({ spies: [], reveals: [] })
 
     const lauf = advanceTicks(start, TICKS, ctx)
 
     expect(lauf.state.tick).toBe(start.tick + TICKS)
     // Sonst haette die KI nichts gelesen, und der Test belegte nur den Kern ein zweites Mal.
     expect(lauf.applied.length, 'die KI hat in zwei Spieltagen keinen Befehl gegeben').toBeGreaterThan(0)
-    expect(lauf.state.espionage).toEqual({ spies: [], reveals: [] })
+    // Seit T-M17-12 wirbt die KI Spione an, auch im migrierten Stand (Zusammenfuehrung der
+    // Spionagebahn, 2026-09-25: bis dahin stand hier "bleibt leer"). Jeder Spion ist also nach
+    // dem Start entstanden und haengt an einer lebenden Macht und einer echten Provinz — dieselbe
+    // Pruefung, die `validateState` beim Laden je Element fuehrt (Befund M17-S7).
+    const fehler = lauf.state.espionage.spies.flatMap((spy) => [
+      ...(spy.recruitedTick >= start.tick ? [] : [`${spy.id}: vor dem Start angeworben`]),
+      ...(lauf.state.players[spy.owner]?.alive ? [] : [`${spy.id}: Besitzer ${spy.owner} lebt nicht`]),
+      ...(Object.hasOwn(lauf.state.provinces, spy.provinceId) ? [] : [`${spy.id}: Provinz ${spy.provinceId} fehlt`]),
+    ])
+    expect(fehler).toEqual([])
     expect(hashOf(deserialise(serialise(lauf.state)))).toBe(hashOf(lauf.state))
   })
 

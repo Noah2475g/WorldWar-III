@@ -7,6 +7,8 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  SpyId,
+  SpyMission,
   Stance,
   TradeBundle,
 } from '../state/types'
@@ -174,6 +176,35 @@ export interface WithdrawTradeCommand {
   offerId: string
 }
 
+/**
+ * Einen Spion anwerben und sofort ansetzen (R-SPY-01, T-M17-07, D29.2).
+ *
+ * Spione sind keine Einheiten, sondern Auftraege mit Sold: es gibt keinen Spion ohne Ziel und
+ * Auftrag, also wird beides beim Anwerben genannt.
+ */
+export interface RecruitSpyCommand {
+  type: 'RECRUIT_SPY'
+  playerId: PlayerId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
+/** Ziel und Auftrag eines eigenen Spions aendern — kostenlos, er faengt am Tag danach an. */
+export interface ReassignSpyCommand {
+  type: 'REASSIGN_SPY'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
+/** Einen eigenen Spion entlassen. Nichts wird erstattet. */
+export interface DismissSpyCommand {
+  type: 'DISMISS_SPY'
+  playerId: PlayerId
+  spyId: SpyId
+}
+
 export type Command =
   | BuildCommand
   | CancelBuildCommand
@@ -192,6 +223,9 @@ export type Command =
   | AcceptTradeCommand
   | DeclineTradeCommand
   | WithdrawTradeCommand
+  | RecruitSpyCommand
+  | ReassignSpyCommand
+  | DismissSpyCommand
 
 export type CommandType = Command['type']
 

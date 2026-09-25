@@ -7,6 +7,9 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Spy,
+  SpyId,
+  SpyMission,
   Terrain,
   Tick,
 } from '../state/types'
@@ -378,6 +381,80 @@ export interface ProvinceCededEvent extends BaseEvent {
   newOwner: PlayerId
 }
 
+/**
+ * Ein Spion hat seinen Auftrag ausgeführt (R-SPY-02, T-M17-08, D29.5).
+ *
+ * `audience: [playerId]` — nur der Besitzer. Wer ausgespäht wird, erfährt es nicht; nur ein
+ * Gegenspion kann einen fremden Spion enttarnen (R-SPY-05). Und das Ereignis trägt **nichts vom
+ * Gesehenen**: was eine Aufklärung zeigt, steht in der Sicht (`publicView`) und im
+ * Aufklärungsgedächtnis, nicht im Protokoll — sonst läge fremder Bestand im Ereignisprotokoll
+ * und damit im Spielstand. Kein Alarm: ein Bericht hält das Vorspulen nicht an.
+ */
+export interface SpyReportEvent extends BaseEvent {
+  type: 'SPY_REPORT'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  /** `targetChanged`: die Provinz hat den Besitzer gewechselt, der Auftrag passt nicht mehr — kein Wurf. */
+  outcome: NonNullable<Spy['lastOutcome']>
+}
+
+/**
+ * Ein Spion ist verloren, weil sein Sold nicht zu zahlen war (R-SPY-02/AK2, T-M17-08, D29.5).
+ *
+ * Nur für den Besitzer. Ziel und Auftrag stehen dabei, weil die Oberfläche keine Kennungen zeigt
+ * (Befund M17-S1) und „Spion s3 verloren" niemandem sagt, welcher es war.
+ */
+export interface SpyLostEvent extends BaseEvent {
+  type: 'SPY_LOST'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  reason: 'unpaid'
+}
+
+/**
+ * Eine Provinz wurde sabotiert (R-SPY-04/AK3, T-M17-09, D29.5).
+ *
+ * **Ohne Urheber — mit Absicht, und nicht nur in der Anzeige.** `describeEvent` übernimmt jedes flache
+ * Feld in die Textwerte (`valuesFor`); ein Feld mit dem Angreifer stünde damit im Protokoll des Opfers,
+ * sobald ein Satz es nennt. Das Ereignis kennt deshalb nur, was das Opfer ohnehin sieht: die eigene
+ * Provinz und was sie verloren hat. Nur das Opfer liest es, und es ist ein **Alarm** — sein Vorspulen hält
+ * an (R-TIME-03), das eines Dritten nicht. Alle drei Wirkungsfelder stehen immer: die Wirtschaftssabotage
+ * hat `delayTicks` 0, die Militärsabotage `moraleLoss` 0 und `destroyed` leer.
+ */
+export interface SabotageSufferedEvent extends BaseEvent {
+  type: 'SABOTAGE_SUFFERED'
+  /** Das Opfer: der Besitzer der Provinz. */
+  playerId: PlayerId
+  provinceId: ProvinceId
+  kind: 'economic' | 'military'
+  /** Tatsächlich abgezogene Moral — bei niedriger Moral weniger als der Regelwert. */
+  moraleLoss: Fixed
+  /** Je Rohstoff, was vernichtet wurde; nur Einträge über null. */
+  destroyed: Partial<Record<ResourceKey, Fixed>>
+  /** Um so viele Ticks wird jeder laufende Auftrag der Provinz später fertig. */
+  delayTicks: number
+}
+
+/**
+ * Ein Gegenspion hat einen fremden Spion enttarnt (R-SPY-05/AK1, T-M17-09, D29.5).
+ *
+ * Beide erfahren es, mit Nennung der Macht: `playerId` ist der **Urheber** (dem der Spion gehörte),
+ * `targetPlayerId` der **Entdecker**. **Keine Spionkennung:** der Entdecker läse sonst eine fremde
+ * Kennung und könnte aus der fortlaufenden Folge fremde Anwerbungen zählen (Befund M17-S1). Kein Alarm.
+ * Der Spion ist damit verloren; ein eigenes `SPY_LOST` gibt es dafür nicht.
+ */
+export interface SpyDetectedEvent extends BaseEvent {
+  type: 'SPY_DETECTED'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -410,6 +487,10 @@ export type GameEvent =
   | TradeOfferClosedEvent
   | TradeAgreedEvent
   | ProvinceCededEvent
+  | SpyReportEvent
+  | SpyLostEvent
+  | SabotageSufferedEvent
+  | SpyDetectedEvent
 
 export type EventType = GameEvent['type']
 
@@ -446,6 +527,10 @@ export const EVENT_TYPES = [
   'TRADE_OFFER_CLOSED',
   'TRADE_AGREED',
   'PROVINCE_CEDED',
+  'SPY_REPORT',
+  'SPY_LOST',
+  'SABOTAGE_SUFFERED',
+  'SPY_DETECTED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.
@@ -467,6 +552,8 @@ export const ALERT_TYPES = [
   'CAPITAL_LOST',
   'PLAYER_ELIMINATED',
   'GAME_ENDED',
+  // Erlittene Sabotage (T-M17-09, R-SPY-04/AK3): nur das Opfer liest sie, also hält sie nur dessen Vorspulen an.
+  'SABOTAGE_SUFFERED',
 ] as const satisfies readonly EventType[]
 
 export function isAlertType(type: EventType): boolean {

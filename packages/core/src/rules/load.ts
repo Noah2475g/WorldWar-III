@@ -95,6 +95,27 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'maxOpenTradeOffers',
   'tradeMaxMoney',
   'tradeMaxResource',
+  // Spionage (R-SPY-01, T-M17-07). Fehlte der Preis, waere `money < undefined` immer falsch
+  // und jeder Spion umsonst; fehlte die Hoechstzahl, waere `count >= undefined` nie wahr.
+  'spyRecruitCost',
+  'spySalaryIntel',
+  'spySalaryEconomicSabotage',
+  'spySalaryMilitarySabotage',
+  'spySalaryCounter',
+  'maxSpiesPerPlayer',
+  // Tageslauf (T-M17-08). Fehlte die Chance, waere `chance(rng, undefined)` stets falsch — jede
+  // Aufklaerung misslaenge still; fehlte die Dauer, stuende `untilTick` auf NaN.
+  'spySuccessIntelPermille',
+  'spyRevealDays',
+  // Sabotage und Gegenspionage (T-M17-09). Fehlte eine Chance, waere `chance(rng, undefined)` stets
+  // falsch — Sabotage und Enttarnung fielen still aus; fehlte ein Schaden, rechnete `-=` mit NaN.
+  'spySuccessSabotagePermille',
+  'spyDetectionPermille',
+  'sabotageMoraleLoss',
+  'sabotageYieldDestroyedPermille',
+  'militarySabotageDelayTicks',
+  'spyDetectedReputationLoss',
+  'grievanceOnSpyDetected',
 ]
 
 function record(value: unknown): Record<string, unknown> {
@@ -338,6 +359,14 @@ export function parseRules(raw: RawRules, id: string): Rules {
   const lage = Number(aiRaw['provinceValuePositionPermille'])
   if (!(lage >= 0 && lage <= 1000)) problems.push('KI: provinceValuePositionPermille liegt zwischen 0 und 1000')
 
+  // Die Spionagezahlen der KI (T-M17-12, D29.8). Fehlte eine, waere sie still `undefined`: das
+  // Budget wuerde NaN, und die KI wuerbe nie einen Spion an, ohne dass es jemand merkt.
+  for (const field of ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const) {
+    const value = aiRaw[field]
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+      problems.push(`KI: "${field}" fehlt oder ist ungueltig`)
+    }
+  }
   const ai = aiRaw as unknown as AiRules
 
   if (problems.length > 0) throw new RulesError(problems)

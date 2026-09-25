@@ -64,6 +64,12 @@ const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
     'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Ablehnen kommt mit der Liste eingehender Angebote. T-M17-14 streicht diesen Eintrag.',
   WITHDRAW_TRADE:
     'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Zuruecknehmen kommt mit der Liste ausgehender Angebote. T-M17-14 streicht diesen Eintrag.',
+  RECRUIT_SPY:
+    'Bis T-M17-13 (Oberflaeche Spionage): der Kern kann anwerben (T-M17-07), die Provinzleiste bietet es erst mit dem Tageslauf und der Sabotage an. T-M17-13 streicht diesen Eintrag.',
+  REASSIGN_SPY:
+    'Bis T-M17-13 (Oberflaeche Spionage): Umsetzen kommt mit der Spionageuebersicht (Taste S, R-SPY-06). T-M17-13 streicht diesen Eintrag.',
+  DISMISS_SPY:
+    'Bis T-M17-13 (Oberflaeche Spionage): Entlassen kommt mit der Spionageuebersicht (Taste S, R-SPY-06). T-M17-13 streicht diesen Eintrag.',
 }
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {

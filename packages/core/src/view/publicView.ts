@@ -9,6 +9,7 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Spy,
   Stance,
   Terrain,
   Tick,
@@ -88,6 +89,14 @@ export interface VisibleProvince {
   stale: boolean
   /** Tick the information dates from. */
   asOfTick: Tick
+  /**
+   * Bis wann ein eigener Aufklärer diese fremde Provinz offenhält (R-SPY-03/AK1, T-M17-08, D29.6).
+   *
+   * Nur bei einer Aufdeckung der Art `intel`, und nur dann steht bei einer **fremden** Provinz auch
+   * `buildings` — die Gebäude mit Stufe, die der Spieler sonst nie sieht. Moral, Bevölkerung,
+   * Vorkommen und Bauaufträge bleiben verborgen: der Spion sieht, was dasteht, nicht die Bücher.
+   */
+  revealedUntilTick?: Tick
 }
 
 export interface VisibleArmy {
@@ -271,6 +280,36 @@ export interface PublicView {
    * der Anbieter hinterlegt hat — das ist der Inhalt des Angebots, kein Leck.
    */
   tradeOffers: { incoming: TradeOffer[]; outgoing: TradeOffer[] }
+  /**
+   * Die eigenen Spione (R-SPY-01, T-M17-07; die Übersicht R-SPY-06 liest sie in T-M17-13).
+   *
+   * **Nur die eigenen.** Ein fremder Spion in meiner Provinz steht hier nicht — nicht als
+   * Eintrag, nicht als Zahl: dass er da ist, erfahre ich allein über die Gegenspionage
+   * (R-SPY-05). Das Besitzerfeld fehlt deshalb, es wäre immer ich. Die Reihenfolge ist die des
+   * Zustands und damit die Ausführungsreihenfolge im Tageslauf.
+   *
+   * Ein eigenes Feld am Ende der Sicht statt `self.spies` (D29.6): so bauen Diplomatie und
+   * Spionage in M17 an verschiedene Stellen an, und der Zusammenführung bleibt nichts zu
+   * entscheiden.
+   */
+  espionage: { spies: Omit<Spy, 'owner'>[] }
+  /**
+   * Angebote, die ich selbst gestellt habe und die noch auf eine Antwort warten (T-M17-12,
+   * Befund M17-S5, R-SPY-05). Bereinigt sich von selbst: `phases/diplomacy.ts` wirft ein
+   * Angebot nach `offerLifetime` (3 Tage) aus `state.diplomacy.offers`, ein abgelaufenes steht
+   * hier also nie.
+   *
+   * Kein Verstoß gegen R-DIP-04: ein Angebot **von mir** ist mein eigenes Wissen, genau wie
+   * `incomingOffers` ein Angebot **an mich** ist. Was andere einander anbieten, steht hier
+   * weiterhin nicht.
+   *
+   * Ohne dieses Feld konnte die Spionage der KI ein eigenes, noch offenes Friedensangebot vom
+   * Vortag nicht sehen: `earlier` (`espionageCommands`) fuehrt nur die Befehle desselben Zugs,
+   * ein Angebot von gestern steht dort nicht mehr. Nimmt der Gegner es an, waehrend ein
+   * Saboteur noch auf ihm sitzt, verstoesst der naechste Sabotageversuch gegen „Sabotage NIE
+   * gegen eine Macht im Frieden" (D29.8) — ohne dass die KI etwas falsch entschieden haette.
+   */
+  outgoingOffers: { to: PlayerId; kind: DiplomaticOffer['kind']; tick: Tick }[]
 }
 
 /** Provinces the player can currently observe. */
@@ -299,6 +338,13 @@ export function visibleProvinces(state: GameState, playerId: PlayerId): Set<Prov
     visible.add(army.locationProvinceId)
     const province = state.provinces[army.locationProvinceId]
     for (const neighbour of province?.neighbors ?? []) visible.add(neighbour)
+  }
+
+  // Was eigene Spione aufgedeckt haben (R-SPY-03, T-M17-08) — als eigene Menge, und nur die
+  // Provinz selbst: ein Spion sieht in die Stadt, nicht über ihre Grenzen. Ohne Aufdeckung kostet
+  // das nichts: `updateIntel` ruft diese Funktion je Macht und Tick.
+  if (state.espionage.reveals.length > 0) {
+    for (const provinceId of revealedProvinces(state, playerId).keys()) visible.add(provinceId)
   }
 
   return visible
@@ -408,6 +454,11 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     .filter((offer) => offer.to === playerId)
     .map((offer) => ({ from: offer.from, kind: offer.kind, tick: offer.tick }))
 
+  // Angebote von mir — eigenes Wissen wie `incomingOffers`, nur die Richtung gedreht (T-M17-12).
+  const outgoingOffers = state.diplomacy.offers
+    .filter((offer) => offer.from === playerId)
+    .map((offer) => ({ to: offer.to, kind: offer.kind, tick: offer.tick }))
+
   const relations: PublicView['relations'] = {}
   for (const other of state.playerOrder) {
     if (other === playerId) continue
@@ -447,6 +498,39 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
   for (const offer of state.diplomacy.tradeOffers) {
     if (offer.to === playerId) tradeOffers.incoming.push(copyTradeOffer(offer))
     else if (offer.from === playerId) tradeOffers.outgoing.push(copyTradeOffer(offer))
+  }
+
+  // Eigene Spione — eigenes Wissen, Kopien statt Verweise in den Zustand (T-M17-07).
+  const ownSpies: PublicView['espionage']['spies'] = []
+  for (const spy of state.espionage.spies) {
+    if (spy.owner !== playerId) continue
+    ownSpies.push({
+      id: spy.id,
+      provinceId: spy.provinceId,
+      mission: spy.mission,
+      recruitedTick: spy.recruitedTick,
+      assignedTick: spy.assignedTick,
+      lastRunTick: spy.lastRunTick,
+      lastOutcome: spy.lastOutcome,
+    })
+  }
+
+  // Aufgedeckt (R-SPY-03/AK1, T-M17-08, D29.6): eine fremde Provinz, in der ein eigener Aufklärer
+  // Erfolg hatte, zeigt ihre Gebäude, und die fremden Armeen darin — bei `intel` wie bei `armies`
+  // — ihre Zusammensetzung statt nur der Stärke. Nachgetragen statt in den Schleifen oben, damit
+  // die Regel an einer Stelle steht und die Sicht ohne Spione Zeichen für Zeichen dieselbe bleibt.
+  const revealed = revealedProvinces(state, playerId)
+  if (revealed.size > 0) {
+    for (const entry of provinces) {
+      const reveal = revealed.get(entry.id)
+      if (!reveal || entry.stale || entry.owner === playerId || reveal.intelUntilTick === null) continue
+      entry.buildings = { ...state.provinces[entry.id]!.buildings }
+      entry.revealedUntilTick = reveal.intelUntilTick
+    }
+    for (const entry of armies) {
+      if (entry.owner === playerId || !revealed.has(entry.provinceId)) continue
+      entry.units = state.armies[entry.id]!.units.map((stack) => ({ ...stack }))
+    }
   }
 
   return {
@@ -502,6 +586,8 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
     tradeOffers,
+    espionage: { spies: ownSpies },
+    outgoingOffers,
   }
 }
 
@@ -512,4 +598,31 @@ function copyTradeOffer(offer: TradeOffer): TradeOffer {
     give: { resources: { ...offer.give.resources }, provinces: offer.give.provinces.slice() },
     want: { resources: { ...offer.want.resources }, provinces: offer.want.provinces.slice() },
   }
+}
+
+/**
+ * Was die eigenen Spione aufgedeckt haben, je Provinz (R-SPY-03, T-M17-08, D29.6).
+ *
+ * `intelUntilTick` ist gesetzt, wenn eine Aufklärung die Provinz zeigt (mit Gebäuden),
+ * `armiesUntilTick`, wenn eine Militärsabotage ihre Armeen aufgedeckt hat (T-M17-09). Eine
+ * Aufdeckung gilt bis **vor** `untilTick` — der Tageslauf nimmt sie an genau diesem Wechsel weg
+ * (`settleEspionage`, Schritt a), und die Sicht sagt dasselbe, auch über einen Stand, der zwischen
+ * zwei Wechseln geladen wurde.
+ *
+ * Nur die eigenen: was ein anderer aufgedeckt hat, weiß nur er (R-DIP-04). Ein Verbündeter teilt
+ * seine Karte, nicht seine Spione.
+ */
+export function revealedProvinces(
+  state: GameState,
+  playerId: PlayerId,
+): Map<ProvinceId, { intelUntilTick: Tick | null; armiesUntilTick: Tick | null }> {
+  const byProvince = new Map<ProvinceId, { intelUntilTick: Tick | null; armiesUntilTick: Tick | null }>()
+  for (const reveal of state.espionage.reveals) {
+    if (reveal.player !== playerId || reveal.untilTick <= state.tick) continue
+    const entry = byProvince.get(reveal.provinceId) ?? { intelUntilTick: null, armiesUntilTick: null }
+    if (reveal.kind === 'intel') entry.intelUntilTick = Math.max(entry.intelUntilTick ?? 0, reveal.untilTick)
+    else entry.armiesUntilTick = Math.max(entry.armiesUntilTick ?? 0, reveal.untilTick)
+    byProvince.set(reveal.provinceId, entry)
+  }
+  return byProvince
 }

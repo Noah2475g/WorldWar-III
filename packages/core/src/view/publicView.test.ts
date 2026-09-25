@@ -169,6 +169,22 @@ describe('R-DIP-04 Die neuen Felder halten den Nebel ein', () => {
 
     expect(publicView(state, 'p1', TEST_RULES).battles).toEqual([])
   })
+
+  it('zeigt incomingOffers/outgoingOffers nur der beteiligten Seite (T-M17-12, Befund M17-S11)', () => {
+    // Bisher unbewacht: ein Filter, der alle Angebote durchliesse statt nur die eigenen,
+    // waere gruen geblieben — die einzige bestehende Zusicherung (espionage.test.ts) baut ihren
+    // Zustand mit nur einem einzigen Angebot, dem eigenen, und haette einen zu weiten Filter
+    // nicht bemerkt.
+    state.diplomacy.offers.push({ from: 'p1', to: 'p2', kind: 'peace', tick: state.tick })
+
+    const mine = publicView(state, 'p1', TEST_RULES)
+    const theirs = publicView(state, 'p2', TEST_RULES)
+
+    expect(mine.outgoingOffers).toEqual([{ to: 'p2', kind: 'peace', tick: state.tick }])
+    expect(mine.incomingOffers).toEqual([])
+    expect(theirs.incomingOffers).toEqual([{ from: 'p1', kind: 'peace', tick: state.tick }])
+    expect(theirs.outgoingOffers).toEqual([])
+  })
 })
 
 describe('R-UI-09 Ohne Regeln bleibt die Sicht schlank', () => {

@@ -7,6 +7,7 @@ import { militaryCommands } from './military'
 import { passageCommands } from './passage'
 import { provinceOfferCommands } from './provinceValue'
 import { tradeOfferCommands } from './trade'
+import { espionageCommands } from './espionage'
 import type { AiContext, AiDecision, Explanation } from './types'
 
 /**
@@ -109,6 +110,9 @@ export function decide(options: DecideOptions): AiDecision {
     commands.push(...economyCommands(context, explanations))
     commands.push(...tradeOfferCommands(context, explanations, commands)) // T-M17-10
     commands.push(...provinceOfferCommands(context, explanations, commands)) // T-M17-11
+    // Spionage zuletzt: sie rechnet mit dem Geld, das der Bauauftrag dieses Zugs schon bindet, und
+    // zieht Saboteure von Maechten ab, denen die Diplomatie eben Frieden angeboten hat (T-M17-12, D29.8).
+    commands.push(...espionageCommands(context, explanations, commands))
   }
 
   // Operations: raising troops and covering shortages. Every six hours.

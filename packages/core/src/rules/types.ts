@@ -134,6 +134,21 @@ export interface AiRules {
   provinceSalePremiumPermille: Fixed
   /** Lage: je Landnachbar des Halters (höchstens drei) ein Drittel dieses Anteils am Ertragswert. */
   provinceValuePositionPermille: Fixed
+  /**
+   * Hoechstens so viel Tagessold bindet die KI in Spionen, in Promille ihres taeglichen
+   * Geldertrags (D29.7/D29.8, T-M17-12). Gilt fuer den Sold, nicht fuer den Anwerbepreis.
+   */
+  espionageBudgetPermille: Fixed
+  /**
+   * Ab dieser Verstimmung (0..1000) gegen eine lebende Macht setzt die KI auch im Frieden einen
+   * Gegenspion in ihre Hauptstadt (D29.8: „Verstimmung oder erlittene Enttarnung").
+   */
+  espionageCounterGrievance: Fixed
+  /**
+   * So viele Spieltage muss der Geldbestand die Tagesbilanz tragen; sonst entlaesst die KI Spione
+   * und wirbt keine an (D29.8, „drohender Geldmangel").
+   */
+  espionageMoneyHorizonDays: number
 }
 
 export interface RuleConstants {
@@ -266,6 +281,49 @@ export interface RuleConstants {
   tradeMaxMoney: Fixed
   /** Hoechstmenge je anderem Rohstoff und Seite, Festkomma (Referenz 9.4: 30 % der Geldgrenze). */
   tradeMaxResource: Fixed
+
+  // Spionage (R-SPY-01, D29.7, T-M17-07). Das Geld ist aus EINEM Anker abgeleitet: dem
+  // Aufklärungssold, gemessen in T-M17-02 als 5 % des Medians des täglichen Geldertrags an
+  // Tag 30. Die übrigen stehen im Verhältnis der Referenz 10.2 dazu.
+  /** Anwerbepreis, einmalig und sofort (R-SPY-01/AK1); zehnmal der Aufklärungssold. */
+  spyRecruitCost: Fixed
+  /** Tagessold der Aufklärung — der Anker. */
+  spySalaryIntel: Fixed
+  /** Tagessold der Wirtschaftssabotage; doppelter Anker. */
+  spySalaryEconomicSabotage: Fixed
+  /** Tagessold der Militärsabotage; doppelter Anker. */
+  spySalaryMilitarySabotage: Fixed
+  /** Tagessold der Gegenspionage; halber Anker, abgerundet. */
+  spySalaryCounter: Fixed
+  /** Höchstzahl eigener Spione je Macht (R-SPY-01/AK2, `QUEUE_FULL`). */
+  maxSpiesPerPlayer: number
+
+  // Tageslauf der Spionage (R-SPY-02/03, D29.3, D29.7, T-M17-08).
+  /** Chance, dass ein Aufklärungsauftrag an einem Tageswechsel gelingt, in Promille. */
+  spySuccessIntelPermille: number
+  /**
+   * Wie viele Tageswechsel eine gelungene Aufklärung die Provinz zeigt. **1** heißt: bis zum
+   * nächsten — genau das verlangt R-SPY-03/AK2 („zum nächsten Tageswechsel wieder hinter den
+   * Nebel"). Ein größerer Wert hielte die Provinz nach einem Misserfolg oder nach dem Entlassen
+   * weiter offen.
+   */
+  spyRevealDays: number
+
+  // Sabotage und Gegenspionage (R-SPY-04/05, D29.3, D29.7, T-M17-09).
+  /** Chance, dass ein Sabotageauftrag an einem Tageswechsel gelingt, in Promille. */
+  spySuccessSabotagePermille: number
+  /** Chance je Tag, Gegenspion und fremdem Spion in derselben Provinz, dass er enttarnt wird, in Promille. */
+  spyDetectionPermille: number
+  /** Moralverlust der Zielprovinz bei gelungener Wirtschaftssabotage (belegt: −10, Referenz 4.6). */
+  sabotageMoraleLoss: Fixed
+  /** Anteil des Tagesertrags der Zielprovinz, den der Eigentümer verliert, in Promille — nie mehr, als er hat. */
+  sabotageYieldDestroyedPermille: number
+  /** Um so viele Ticks (Stunden) wird jeder laufende Bau- und Aushebeauftrag der Provinz später fertig. */
+  militarySabotageDelayTicks: number
+  /** Ansehensverlust des Urhebers, wenn ein Spion enttarnt wird; doppelt bei Sabotage gegen eine Macht ohne Krieg (R-SPY-05). */
+  spyDetectedReputationLoss: Fixed
+  /** Verstimmung des Entdeckers gegen den Urheber (R-DIP-06) — zwischen Provinzverlust und Überfall. */
+  grievanceOnSpyDetected: Fixed
 }
 
 export interface Rules {

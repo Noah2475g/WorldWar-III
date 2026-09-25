@@ -63,5 +63,8 @@
   "_provinceM17": "Provinzhandel der KI (D29.7, D29.8, T-M17-11): Horizont in Spieltagen, Aufschlag beim Abtreten und Lage in Promille. Status in docs/plan/BALANCING.md.",
   "provinceValueHorizonDays": 60,
   "provinceSalePremiumPermille": 1300,
-  "provinceValuePositionPermille": 250
+  "provinceValuePositionPermille": 250,
+  "espionageBudgetPermille": 150,
+  "espionageCounterGrievance": 150,
+  "espionageMoneyHorizonDays": 3
 }

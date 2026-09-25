@@ -446,6 +446,16 @@ export const de = {
     // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
     // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
     PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
+    // Spionage (T-M17-08, R-SPY-02). Nur der Besitzer des Spions liest sie; Auftrag und Ausgang
+    // kommen mit Namen aus dem Block `espionage`. Kein Satz nennt, was der Spion gesehen hat —
+    // das steht in der Sicht, nicht im Protokoll.
+    SPY_REPORT: 'Spion in {{province}}, {{mission}}: {{outcome}}.',
+    SPY_LOST: 'Spion in {{province}} ({{mission}}) verloren: der Sold ließ sich nicht zahlen.',
+    // Sabotage und Enttarnung (T-M17-09, R-SPY-04/05, D29.5). Die erlittene Sabotage nennt keinen
+    // Urheber — das Ereignis kennt keinen; ihre Wirkung kommt aus `espionage.sabotage`. Die Enttarnung
+    // nennt beide Mächte: beide Seiten erfahren sie, und derselbe Satz gilt für beide.
+    SABOTAGE_SUFFERED: 'Sabotage in {{province}}: {{effect}}',
+    SPY_DETECTED: 'In {{province}} enttarnt: ein Spion von {{player}} ({{mission}}), entdeckt von {{target}}.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -526,6 +536,31 @@ export const de = {
       // eine verfallene Provinz ein, nicht nur ein Ausscheiden — der Satz behauptet keine der
       // beiden Ursachen als sicher.
       invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar — das Hinterlegte geht zurück',
+    },
+  },
+
+  /**
+   * Spionage (T-M17-08, R-SPY-02/03) — ein eigener Block neben `diplomacy`, damit die beiden
+   * M17-Bahnen an verschiedene Stellen anbauen. Die Übersicht (R-SPY-06, T-M17-13) liest dieselben
+   * Namen wie das Protokoll.
+   */
+  espionage: {
+    missions: {
+      intel: 'Aufklärung',
+      economicSabotage: 'Wirtschaftssabotage',
+      militarySabotage: 'Militärsabotage',
+      counter: 'Gegenspionage',
+    },
+    outcomes: {
+      success: 'gelungen',
+      failure: 'misslungen',
+      targetChanged: 'das Ziel passt nicht mehr zum Auftrag',
+    },
+    /** Die Wirkung einer erlittenen Sabotage (T-M17-09) — ohne Urheber. */
+    sabotage: {
+      economic: 'Moral −{{moraleLoss}}, vernichtet: {{destroyed}}.',
+      military: 'laufende Aufträge werden {{hours}} Stunden später fertig.',
+      nothingDestroyed: 'nichts',
     },
   },
 
