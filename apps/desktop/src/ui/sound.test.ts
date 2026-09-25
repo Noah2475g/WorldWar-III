@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CUE_SPEED_LIMIT, animationMs, cueFor, cueForEvents, cueForOwnEvents, play, shouldPlay } from './sound.ts'
+import {
+  CUE_SPEED_LIMIT,
+  animationMs,
+  cueFor,
+  cueForEvents,
+  cueForOwnEvents,
+  play,
+  resumeOnGesture,
+  shouldPlay,
+} from './sound.ts'
 
 /**
  * Sound and motion (T-M11-02, R-UI-04).
@@ -119,5 +128,85 @@ describe('T-M28-08 Nur was mich angeht, klingt', () => {
 
   it('waehlt weiterhin den dringlichsten unter den eigenen', () => {
     expect(cueForOwnEvents([eigen, { type: 'WAR_DECLARED', concerns: ['p1'] }], 'p1')).toBe('war')
+  })
+})
+
+/**
+ * Android spielt erst nach der ersten Beruehrung (Android-Emulator, 2026-09-24).
+ *
+ * Chrome startet einen AudioContext, der vor jeder Nutzergeste entsteht, im Zustand
+ * `suspended` — und er bleibt stumm, bis jemand `resume()` ruft, und zwar in einer Geste.
+ * Ohne das hoert ein Spieler auf dem Telefon nie einen Ton, obwohl der Ton an ist.
+ */
+describe('Ton nach der ersten Beruehrung (Autoplay-Regel)', () => {
+  /** Ein AudioContext-Double: nur Zustand und resume, mehr braucht die Regel nicht. */
+  function fakeAudio(state: 'suspended' | 'running', resumeWorks = true) {
+    const audio = {
+      state: state as string,
+      resume: vi.fn(() => {
+        if (!resumeWorks) return Promise.reject(new Error('nicht erlaubt'))
+        audio.state = 'running'
+        return Promise.resolve()
+      }),
+    }
+    return audio
+  }
+
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+  it('weckt einen schlafenden Ton beim ersten Tippen und haengt sich danach ab', async () => {
+    const audio = fakeAudio('suspended')
+    const target = new EventTarget()
+    resumeOnGesture(audio, target)
+
+    expect(audio.resume).not.toHaveBeenCalled()
+    target.dispatchEvent(new Event('pointerdown'))
+    expect(audio.resume).toHaveBeenCalledTimes(1)
+
+    await flush()
+    target.dispatchEvent(new Event('pointerdown'))
+    target.dispatchEvent(new Event('keydown'))
+    expect(audio.resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('weckt ihn auch mit der Tastatur', () => {
+    const audio = fakeAudio('suspended')
+    const target = new EventTarget()
+    resumeOnGesture(audio, target)
+
+    target.dispatchEvent(new Event('keydown'))
+    expect(audio.resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('versucht es bei der naechsten Geste wieder, wenn das Wecken scheitert', async () => {
+    const audio = fakeAudio('suspended', false)
+    const target = new EventTarget()
+    resumeOnGesture(audio, target)
+
+    target.dispatchEvent(new Event('pointerdown'))
+    await flush()
+    target.dispatchEvent(new Event('pointerdown'))
+    expect(audio.resume).toHaveBeenCalledTimes(2)
+  })
+
+  it('laesst einen laufenden Ton in Ruhe und kommt ohne Ereignisziel aus', () => {
+    const audio = fakeAudio('running')
+    const target = new EventTarget()
+    resumeOnGesture(audio, target)
+    target.dispatchEvent(new Event('pointerdown'))
+    expect(audio.resume).not.toHaveBeenCalled()
+
+    // In node ist globalThis kein EventTarget: nichts anhaengen, nicht scheitern.
+    expect(() => resumeOnGesture(fakeAudio('suspended'), undefined)()).not.toThrow()
+  })
+
+  it('haengt sich beim Aufraeumen ab', () => {
+    const audio = fakeAudio('suspended')
+    const target = new EventTarget()
+    const dispose = resumeOnGesture(audio, target)
+
+    dispose()
+    target.dispatchEvent(new Event('pointerdown'))
+    expect(audio.resume).not.toHaveBeenCalled()
   })
 })

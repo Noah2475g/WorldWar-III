@@ -24,6 +24,7 @@ import { NationName } from './Nation.tsx'
 import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
+import { useInputMode } from './inputMode.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
 // waeren zwei Aussagen ueber denselben Vorrat.
@@ -142,11 +143,31 @@ export interface ActionGroupSpec {
  */
 export function buttonTitle(action: Pick<Action, 'disabledReason' | 'hint'>): string | undefined {
   const reason = action.disabledReason
-  const parts = (action.hint ?? '')
-    .split(' · ')
-    .filter((part) => part !== '' && !(reason ?? '').includes(part))
+  const parts = hintParts(action)
 
   return [reason, ...parts].filter(Boolean).join(' · ') || undefined
+}
+
+/** Die Glieder des Hinweises, ohne die, die der Grund schon sagt (siehe `buttonTitle`). */
+function hintParts(action: Pick<Action, 'disabledReason' | 'hint'>): string[] {
+  const reason = action.disabledReason
+  return (action.hint ?? '').split(' · ').filter((part) => part !== '' && !(reason ?? '').includes(part))
+}
+
+/**
+ * Was im Touch-Betrieb sichtbar unter dem Knopf steht (Android-Emulator, 2026-09-24).
+ *
+ * Dieselben Angaben wie im Titel — ein Finger schwebt nie, also sieht er den Titel nie.
+ * Der Grund kommt nur dazu, wenn der Knopf ihn nicht schon selbst zeigt (`showReason`);
+ * in einer Gruppe steht er dann ueber oder unter ihr, und touch.css blendet ihn dort aus.
+ */
+export function touchHint(
+  action: Pick<Action, 'disabledReason' | 'hint'>,
+  reasonShown: boolean,
+): { reason: string | null; cost: string | null } | null {
+  const reason = reasonShown ? null : action.disabledReason
+  const cost = hintParts(action).join(' · ') || null
+  return reason || cost ? { reason, cost } : null
 }
 
 function ActionButton({
@@ -172,6 +193,7 @@ function ActionButton({
   pressed?: boolean
 }) {
   const reasonId = `${action.id}-reason`
+  const touchInfo = useInputMode() === 'touch' ? touchHint(action, showReason) : null
   return (
     <div className={compact ? 'action action--compact' : 'action'}>
       {/* Knopf und Fragezeichen in einer Zeile: untereinander ergaeben die
@@ -201,6 +223,14 @@ function ActionButton({
         </button>
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
+      {/* Nur im Touch-Betrieb: was sonst allein im Titel steht (2026-09-24). Fuers Ohr
+          sagen Titel und Beschreibung es schon — deshalb aria-hidden, nicht doppelt. */}
+      {touchInfo && (
+        <small className="action__hint" aria-hidden="true">
+          {touchInfo.reason && <span className="action__hint-reason">{touchInfo.reason}</span>}
+          {touchInfo.cost && <span>{touchInfo.cost}</span>}
+        </small>
+      )}
       {/* Die Quittung am ausloesenden Element (T-M22-05): abgeschickt, wirkt im
           naechsten Tick — bei stehender Uhr sagt der Satz das Weiterlaufen dazu. */}
       {action.pendingNotice && (

@@ -198,6 +198,62 @@ export function centreOn(point: Point, view: View, limits: ViewLimits): View {
 }
 
 /**
+ * Client-Pixel eines Zeigers zu einem Punkt der Leinwand (Touch-Bedienung).
+ *
+ * Die Leinwand rechnet mit `bufferW` x `bufferH` Punkten (in `MapCanvas` die echte
+ * Huelle; nur ohne Layout — jsdom, clientWidth/clientHeight 0 — gilt je Achse das
+ * Mindestmass 320 x 240), gezeigt wird sie in der Groesse ihrer Huelle. Weichen beide
+ * dennoch voneinander ab (Layoutverzug zwischen zwei Messungen), staucht der Browser das
+ * Bild, und ein `clientX - rect.left` traefe daneben. Hier wird die Stauchung
+ * herausgerechnet. Ohne gemessene Huelle (jsdom: alles null) gilt Faktor eins.
+ */
+export function toCanvasPoint(
+  clientX: number,
+  clientY: number,
+  rect: { left: number; top: number; width: number; height: number },
+  bufferW: number,
+  bufferH: number,
+): Point {
+  const factorX = rect.width > 0 ? bufferW / rect.width : 1
+  const factorY = rect.height > 0 ? bufferH / rect.height : 1
+  return { x: (clientX - rect.left) * factorX, y: (clientY - rect.top) * factorY }
+}
+
+/** Mehr als doppelte Dichte sieht niemand, kostet aber das Vierfache an Fuellrate. */
+export const MAX_PIXEL_RATIO = 2
+/** Die groesste Kante, die jeder Browser einer Leinwand noch zugesteht. */
+export const MAX_BITMAP_SIDE = 8192
+
+export interface Bitmap {
+  width: number
+  height: number
+  /** Bildpunkte je Leinwandpunkt — das, was `setTransform` bekommt, damit gezeichnet wird wie bisher. */
+  scaleX: number
+  scaleY: number
+}
+
+/**
+ * Die Bildpunkte einer Leinwand von `size` Punkten bei `devicePixelRatio` (Touch-Bedienung).
+ *
+ * Ohne das zeichnet die Karte auf einem Geraet mit Dichte 1,75 ein Bild mit einem
+ * Bildpunkt je CSS-Pixel, und der Browser vergroessert es unscharf. Gezeichnet wird
+ * weiter in Punkten: der Massstab je Achse geht an `setTransform` und ist aus der
+ * gerundeten Bitmap zurueckgerechnet, damit sie ganz bedeckt ist. Unter 1 wird nicht
+ * gegangen — das ist der Stand vor dieser Aenderung, auch fuer einen verkleinerten Browser.
+ */
+export function bitmapFor(size: { width: number; height: number }, devicePixelRatio: number): Bitmap {
+  const ratio = Number.isFinite(devicePixelRatio) ? Math.min(MAX_PIXEL_RATIO, Math.max(1, devicePixelRatio)) : 1
+  const width = Math.max(1, Math.min(MAX_BITMAP_SIDE, Math.round(size.width * ratio)))
+  const height = Math.max(1, Math.min(MAX_BITMAP_SIDE, Math.round(size.height * ratio)))
+  return {
+    width,
+    height,
+    scaleX: size.width > 0 ? width / size.width : ratio,
+    scaleY: size.height > 0 ? height / size.height : ratio,
+  }
+}
+
+/**
  * The layers of the map, in drawing order (design D11).
  *
  * Written down as data rather than as the order of statements in a render function,
