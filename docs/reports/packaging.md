@@ -1,4 +1,139 @@
-# AK-8 — der Spielstand überlebt den Programmneustart
+# Verpackung als Programm — Stand nach M17
+
+Gemessen am **2026-09-25** gegen `6a91e52`, am gebauten Programm und nicht im Browser.
+Der Bericht gilt für genau diesen Stand.
+
+> **Kurzfassung:** exe neu gebaut (sauberer Quellstand — jede uncommittete Datei unter
+> `apps/`, `packages/`, `data/` war 0 Zeilen vor dem Bau), Netzfreiheit erneut gemessen und **hält**
+> wörtlich, die Uhr bei Tempo 100 liegt nahe am eigenen, am selben Tag gemessenen
+> Ausgangswert, und eine CDP-Gegenprobe zeigt Spionage- und Handelsoberfläche wirklich im
+> laufenden Programm. **AK-8 selbst — der volle Speichern/Neustart/Weiterspielen-Rundlauf —
+> wurde in diesem Lauf NICHT durchgeführt**, weil sich Noahs `saves`-Ordner beim Ansehen als
+> unklar herausstellte (Abschnitt „AK-8" unten). Das ist eine echte Lücke, keine
+> Auslassung: AK-8 zählt nicht gegen V1, aber M17 ist ohne diesen Rundlauf nicht in jeder
+> Hinsicht als Programm gesehen.
+
+## Das Erzeugnis
+
+| | |
+|---|---|
+| `worldwar.exe` | **6 812 160 Bytes** (6,50 MiB), geschrieben am **2026-09-25** (`19:00` Ortszeit) |
+| Bau | `pnpm tauri:build`, Exit 0; `vite build` in 48,44 s, danach Rust `release` |
+| Quelle | `b9b3915` — beim Bau **keine uncommittete Datei unter `apps/`, `packages/`, `data/`** (`git status --porcelain` darauf gefiltert: 0 Zeilen) |
+| Gegenüber `e82c2bc` (2026-09-14, 6 790 144 B) | **+22 016 Bytes** — passt zur Größe von M17 (Spionage, Handelsangebote, gerichteter Durchmarsch/Kartenfreigabe, neue Oberfläche) |
+
+Wie am 2026-09-14 festgehalten: **die Dateigröße allein belegt nicht, dass der neue Code
+drinsteckt** — dafür steht die Gegenprobe unten.
+
+## Netzfreiheit (T-M38-05, R-MP-09/AK3)
+
+`node scripts/measure-netfree.mjs`, beide Bündel aus demselben Commit (`b9b3915`):
+
+| Kennzahl | Soll | Gemessen |
+|---|---|---|
+| `connect-src 'none'` in der exe | 1× | **1×** |
+| Inhaltsrichtlinie wörtlich in der exe | 1× | **1×** |
+| `WebSocket` in der exe | 0× | **0×** |
+| `WebSocket` im ausgelieferten Bündel (`dist`, ohne Bauflagge) | 0× | **0×** |
+| `WebSocket` im Bündel MIT `WORLDWAR_MULTIPLAYER=1` (`dist-mp`, die Gegenprobe) | genau 1 Datei | **1 Datei** (`websocketTransport-TJkkYkH5.js`) |
+| Netzberechtigungen in `capabilities/local-only.json` | `[]` | **`[]`** |
+| `test/guards/packaging.test.ts` | grün | **18/18 grün** |
+
+Die Gegenprobe mit Bauflagge ist der Beleg, dass die 0 eine Aussage über die Bauflagge ist
+und nicht aus Unterlassen besteht — ohne Flagge fehlt der WebSocket-Transport ganz, mit ihr
+steht er in genau einer Datei.
+
+## Gegenprobe: steckt M17 wirklich in dieser exe?
+
+Wie am 14.09.: Dateigröße und Bauzeit belegen nichts, also wurde **das laufende Programm**
+befragt. Über CDP (`--remote-debugging-port`) eine neue Partie begonnen und die Taste **D**
+(Diplomatie) gedrückt — dieselbe Taste, mit der ein Spieler das Panel öffnet
+(`apps/desktop/src/i18n/de.ts`, `shortcuts.diplomacy: 'D — Diplomatie'`). Der Bildschirmtext
+danach enthält wörtlich:
+
+- **„Diplomatie"** — der Panel-Titel, mit Ansehen, Beziehung und Durchmarsch-Spalte je Macht
+- **„Spionage"** — als eigener Reiter neben Depesche/Diplomatie/Markt/Rangliste (T-M17-08/09)
+
+Beides gab es vor M17 nicht. Das ist derselbe Nachweisweg wie bei der Uhr (Falle 25: was nur
+in jsdom geprüft ist, hat niemand gesehen) — hier am **gebauten Programm**, nicht im Test.
+
+## Die Uhr bei Tempo 100 (Falle 18)
+
+Verfahren wie am 2026-09-14: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`,
+über CDP „Partie beginnen" geklickt (Voreinstellung: Weltkarte, 8 KI-Mächte), **Tempo 100**
+gedrückt, **10,02 s Echtzeit** gemessen: Tag/Stunde der Kopfleiste (auf Ticks umgerechnet,
+`ticksPerDay` 24) und `performance.now()` **aus demselben `Runtime.evaluate`-Aufruf**, damit
+kein CDP-Rundlauf-Versatz zwischen Uhr und Zeitstempel liegt. Jeder Lauf mit frisch
+gestartetem Programm. Das Messskript liegt im Scratchpad
+(`uhr-cdp.mjs`, Muster `docs/plan/schlussblock/ak8-cdp.mjs`), nicht eingecheckt.
+
+**Am selben Tag** zuerst die alte exe (`worldwar-e82c2bc.exe`, gesichert vor dem Bau), dann
+die neue:
+
+| Stand | Läufe | Minimum | Median | Höchstwert |
+|---|---|---|---|---|
+| exe vom 2026-09-14 (`e82c2bc`) — **der Ausgangswert** | 5 | **99,78** | **99,89** | 99,93 |
+| exe vom 2026-09-25 (`b9b3915`) — **M17-Endstand** | 13 | **99,68** | **99,77** | 99,91 |
+
+**Bewertung nach Falle 18** (Minimum gegen Minimum, Median gegen Median, gegen den eigenen
+Ausgangswert vom selben Tag): das Minimum liegt 0,10 unter dem Ausgangswert, der Median 0,12
+darunter. Beide Abstände sind **kleiner als die eigene Streuung des Ausgangswerts**
+(99,78–99,93, Spanne 0,15 über 5 Läufen) — nach demselben Maßstab, den `packaging.md` am
+14.09. selbst für den Median anlegte („der Median liegt innerhalb der eigenen Streuung des
+Ausgangswerts — das ist kein Befund"). Beide Stichproben liegen außerdem eng beieinander
+(0,68–0,93 Punkte Spanne je Stichprobe) und weit über dem historischen Tiefstwert vor der
+Uhr-Reparatur aus T-M41-17 (98,40, siehe „Geschichte" unten). **Eingeordnet als
+Normalstreuung, nicht als Rückschritt** — die Zahlen stehen hier vollständig, damit Noah es
+selbst nachvollziehen kann, statt es nur behauptet zu bekommen.
+
+## AK-8: in diesem Lauf NICHT durchgeführt — Noahs `saves`-Ordner ist unklar
+
+Vorbedingung des Skripts (`docs/plan/schlussblock/ak8-cdp.mjs`) ist ein leerer oder
+umbenannter `%APPDATA%\de.noahhaumersen.worldwar\saves`-Ordner. Beim Ansehen (18:36 Uhr)
+enthielt er sechs Dateien (Noahs echter Spielstand: `autosave-0/1.json.json` je mit
+`zeitreihe`-Begleitdatei, `stand-1.json`). Beim geplanten Umbenennen (nur umbenennen, nichts
+löschen) stellte sich eine **unklare Lage** heraus, die eine Beschädigung von Noahs echten
+Ständen nicht ausschließen lässt, ohne dass er sie selbst ansieht:
+
+- Es gab bereits einen Ordner `saves.geparkt-2026-09-25` (Erstellzeit **2026-09-08**, 03:24
+  Uhr) — ein Relikt einer früheren Sitzung, die denselben Namen benutzt haben muss, aber nie
+  zurückbenannt hat.
+- Nach dem Umbenennen enthielt dieser Zielordner nur **zwei** der ursprünglich sechs Dateien
+  (`stand-1.json`, `zeitreihe.stand-1.json`); **gleichzeitig** existierte wieder ein neuer
+  `saves`-Ordner mit den vier übrigen Dateien (Erstellzeit 2026-09-14, 18:48 Uhr — acht
+  Minuten nach dem AK-8-Bau jenes Tages; zuletzt geschrieben am 21.09.).
+- Drei weitere Alt-Ordner aus früheren Sitzungen liegen im selben Verzeichnis, ebenfalls nie
+  aufgeräumt: `saves.geparkt-2026-09-08`, `saves.messung-2026-09-14`,
+  `saves.messung-2026-09-14b`.
+- Kein `worldwar.exe`-Prozess lief währenddessen (`Get-Process` leer) — eine aktive
+  Schreibquelle, die das erklären würde, wurde nicht gefunden.
+
+**Nichts wurde gelöscht** — jede Datei ist nachweisbar vorhanden, nur auf zwei Ordner
+verteilt statt einem, und es wurde nicht weiter daran herumprobiert, um die Lage nicht zu
+verschlimmern. Die vollständige Ordnerliste mit Zeitstempeln steht im Protokoll dieser
+Aufgabe. **Empfehlung an Noah:** von Hand nachsehen, was in `saves` und den Alt-Ordnern
+steht, und entscheiden, was der gültige Stand ist — danach kann AK-8 nachgeholt werden.
+
+Als **Ersatz**, nicht als Gleichwertiges, stehen oben die CDP-Gegenprobe (Diplomatie/Spionage
+im laufenden Programm) und die Uhr — beide belegen, dass M17 im Programm steckt und dass es
+läuft, aber **nicht**, dass ein Spielstand der Stufe 4 (mit Spionage- und Handelsfeldern)
+einen Programmneustart übersteht. Das bleibt offen.
+
+## Grenzen dieser Messung
+
+- Ein Rechner (Windows 11), aus dem gebauten Ordner — nicht aus einer Installation über
+  MSI/Setup.
+- Die Uhr-Läufe fuhren ohne Bildschirmfoto (anders als AK-8); die Zahlen stammen aus
+  `Runtime.evaluate`, nicht aus einem Foto.
+- AK-8 selbst ist **nicht** belegt (siehe oben) — nur die Netzfreiheit, die Größe und die
+  Gegenprobe.
+- Gemessen ist die **Einzelspieler**-Seite. AK-9 bleibt unberührt.
+
+---
+
+# Geschichte
+
+## Die Messung vom 2026-09-14, 18:40 (gegen `e82c2bc`) - vor T-M17-16
 
 Gemessen am **2026-09-14** gegen `e82c2bc`, am gebauten Programm und nicht im Browser.
 Der Bericht gilt für genau diesen Stand.
@@ -201,9 +336,6 @@ ausgelieferte Programm fährt.
   gespielt von zwei Menschen in zwei Netzen — ist ein eigenes Kriterium mit eigenem
   Bericht (`docs/reports/mehrspieler.md`) und hier nicht berührt.
 
----
-
-# Geschichte
 
 ## Die Messung vom 2026-09-14, 03:24 (gegen `1c64a6e`) — von M37–M39 überholt
 
