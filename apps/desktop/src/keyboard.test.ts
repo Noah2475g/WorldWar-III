@@ -150,6 +150,32 @@ describe('R-UI-06 Diplomatie und Markt per Taste', () => {
   })
 })
 
+describe('R-SPY-06 Die Spionageuebersicht auf S', () => {
+  it('oeffnet mit s und S die Spionageuebersicht', () => {
+    expect(resolveKey({ key: 's' }, context())).toEqual({ type: 'openPanel', panel: 'espionage' })
+    expect(resolveKey({ key: 'S' }, context())).toEqual({ type: 'openPanel', panel: 'espionage' })
+  })
+
+  it('speichert mit Strg+S und Cmd+S weiter', () => {
+    expect(resolveKey({ key: 's', ctrlKey: true }, context())).toEqual({ type: 'save' })
+    expect(resolveKey({ key: 'S', ctrlKey: true }, context())).toEqual({ type: 'save' })
+    expect(resolveKey({ key: 's', metaKey: true }, context())).toEqual({ type: 'save' })
+  })
+
+  it('laesst s im Textfeld und im Dialog in Ruhe, bedient es beim Vorspulen und zu zweit', () => {
+    expect(resolveKey({ key: 's' }, context({ typing: true }))).toBeNull()
+    expect(resolveKey({ key: 's' }, context({ dialogOpen: true }))).toBeNull()
+    expect(resolveKey({ key: 's' }, context({ fastForwarding: true }))).toEqual({
+      type: 'openPanel',
+      panel: 'espionage',
+    })
+    expect(resolveKey({ key: 's' }, context({ multiplayer: true }))).toEqual({
+      type: 'openPanel',
+      panel: 'espionage',
+    })
+  })
+})
+
 /**
  * T-M28-09 · Die Leertaste gehört dem Knopf, auf dem der Fokus liegt.
  *

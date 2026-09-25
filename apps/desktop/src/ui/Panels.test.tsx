@@ -3,24 +3,30 @@ import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
   ActionGroup,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
+  EspionagePanel,
   EventLog,
   MarketPanel,
   ProvincePanel,
   TERRAIN_DEFENCE_PERMILLE,
+  TradeOfferForm,
   buildingItems,
   buttonTitle,
+  categoryOf,
   depositItems,
   type Action,
   type ActionGroupSpec,
   type EventEntry,
+  type OfferRow,
+  type SpyRowView,
   type Targeting,
+  type TradeFormSpec,
 } from './Panels.tsx'
 import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
 import { ART, ART_FOR_ICON, BUILDING_ART, UNIT_ART } from './art.tsx'
@@ -41,6 +47,61 @@ afterEach(cleanup)
 
 /** Eine Spielerfarbe, wie sie aus der Sicht kaeme — nicht als Literal im Quelltext. */
 const FARBE = TOKENS.accent
+
+interface RelationTeil {
+  state?: string
+  passageGranted?: boolean
+  passageReceived?: boolean
+  passageEndsAtTick?: { granted: number | null; received: number | null }
+  mapShared?: boolean
+  mapReceived?: boolean
+  sinceTick?: number
+}
+
+/**
+ * Eine vollstaendige Teilsicht fuer das Diplomatiepanel (T-M17-14): `publicWars`,
+ * `incomingOffers`, `outgoingOffers`, `tradeOffers`, alle sechs Richtungsfelder je Beziehung —
+ * das Panel liest sie ohne `?.` (Falle 7), also braucht jeder Fall die volle Form.
+ */
+function diplomacyView(teil: {
+  reputation?: number
+  others?: { id: string; nation: string; color?: string; alive?: boolean; reputation?: number }[]
+  relations?: Record<string, RelationTeil>
+  publicWars?: { a: string; b: string }[]
+  incomingOffers?: { from: string; kind: 'peace' | 'alliance' | 'rightOfWay'; tick: number }[]
+  outgoingOffers?: { to: string; kind: 'peace' | 'alliance' | 'rightOfWay'; tick: number }[]
+  tradeOffers?: { incoming: unknown[]; outgoing: unknown[] }
+  provinces?: { id: string; name: string; owner: string | null }[]
+} = {}): PublicView {
+  const others = (teil.others ?? []).map((other) => ({ color: FARBE, alive: true, reputation: 1000, ...other }))
+  const relations = Object.fromEntries(
+    others.map((other) => [
+      other.id,
+      {
+        state: 'peace',
+        passageGranted: false,
+        passageReceived: false,
+        passageEndsAtTick: { granted: null, received: null },
+        mapShared: false,
+        mapReceived: false,
+        sinceTick: 0,
+        ...(teil.relations?.[other.id] ?? {}),
+      },
+    ]),
+  )
+  return {
+    playerId: 'p1',
+    tick: 100,
+    self: { reputation: teil.reputation ?? 1000 },
+    others,
+    relations,
+    publicWars: teil.publicWars ?? [],
+    incomingOffers: teil.incomingOffers ?? [],
+    outgoingOffers: teil.outgoingOffers ?? [],
+    tradeOffers: teil.tradeOffers ?? { incoming: [], outgoing: [] },
+    provinces: teil.provinces ?? [],
+  } as unknown as PublicView
+}
 
 const province: VisibleProvince = {
   id: 'USA-MW',
@@ -689,18 +750,232 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende stehen als Zeichen auf dem Bild
   })
 
   it('zeichnet das Beziehungssymbol neben den Beziehungsnamen', () => {
-    const view = {
-      // Die Farbe steht als Datum in der Sicht; ein Literal hier waere ein Farbwert im
-      // Quelltext und faellt zu Recht durch die Lint-Regel (R-UI-02).
-      others: [{ id: 'p2', nation: 'Ostmark', color: FARBE }],
+    // Seit T-M17-14 braucht das Panel die volle Teilsicht (Falle 7) — `diplomacyView` baut
+    // sie, die Zusicherungen bleiben, wie sie waren.
+    const view = diplomacyView({
+      others: [{ id: 'p2', nation: 'Ostmark' }],
       relations: { p2: { state: 'war' } },
-    } as unknown as PublicView
+    })
 
     const { container } = render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
     const cell = container.querySelector('td.state, td.state--war, td.state.state--war')
 
     expect(cell?.textContent, 'der Name muss neben dem Zeichen stehen bleiben').toContain('Krieg')
     expect(cell?.querySelector('svg'), 'kein Beziehungssymbol in der Diplomatie').toBeTruthy()
+  })
+})
+
+describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
+  it('zeigt das Ansehen jeder Macht als Balken', () => {
+    const view = diplomacyView({
+      others: [
+        { id: 'p2', nation: 'Ostmark', reputation: 1000 },
+        { id: 'p3', nation: 'Westreich', reputation: 500 },
+      ],
+    })
+    const nameOf = (id: string) => (id === 'p2' ? 'Ostmark' : 'Westreich')
+
+    render(<DiplomacyPanel view={view} nameOf={nameOf} reputationMax={1000} />)
+
+    const meters = screen.getAllByRole('meter', { name: /^Ansehen von / })
+    expect(meters).toHaveLength(2)
+    expect(meters[0]!.getAttribute('aria-valuenow')).toBe('1000')
+    expect(meters[1]!.getAttribute('aria-valuenow')).toBe('500')
+    expect(meters[0]!.textContent).toContain('100 %')
+    expect(meters[1]!.textContent).toContain('50 %')
+    expect(screen.getByRole('meter', { name: 'Ihr Ansehen' })).toBeTruthy()
+  })
+
+  it('zeigt ein negatives Ansehen am Boden der Spur, mit dem wahren Prozentsatz im Text', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark', reputation: -200 }] })
+
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} reputationMax={1000} />)
+
+    const meter = screen.getByRole('meter', { name: 'Ansehen von Ostmark' })
+    expect(meter.getAttribute('aria-valuenow')).toBe('0')
+    expect(meter.textContent).toMatch(/-20 %/)
+  })
+
+  it('nennt, wer mit wem im Krieg liegt — mit Namen', () => {
+    const nameOf = (id: string) => (id === 'p2' ? 'Ostmark' : id === 'p3' ? 'Westreich' : id)
+    const view = diplomacyView({
+      others: [
+        { id: 'p2', nation: 'Ostmark' },
+        { id: 'p3', nation: 'Westreich' },
+      ],
+      publicWars: [{ a: 'p2', b: 'p3' }],
+    })
+
+    render(<DiplomacyPanel view={view} nameOf={nameOf} />)
+    const region = screen.getByRole('region', { name: 'Kriege' })
+    expect(region.textContent).toContain('Ostmark gegen Westreich')
+    expect(region.textContent).not.toContain('p2')
+    expect(region.textContent).not.toContain('p3')
+  })
+
+  it('sagt, dass niemand Krieg fuehrt, wenn publicWars leer ist', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} />)
+    expect(screen.getByRole('region', { name: 'Kriege' }).textContent).toContain('Derzeit führt niemand Krieg.')
+  })
+
+  it('listet eingehende und ausgehende Angebote mit ihren Knoepfen', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    const onRun = vi.fn()
+    const action = (label: string, id: string): Action => ({ id, label, disabledReason: null, onRun })
+    const offers = {
+      incoming: [
+        {
+          id: 't1',
+          text: 'Ostmark bietet 5 Eisen und verlangt 10 Geld.',
+          actions: [action('Angebot annehmen', 'trade-accept-t1'), action('Angebot ablehnen', 'trade-decline-t1')],
+        },
+      ] as OfferRow[],
+      outgoing: [
+        {
+          id: 't2',
+          text: 'Sie bieten Ostmark 5 Eisen und verlangen 10 Geld.',
+          actions: [action('Angebot zurückziehen', 'trade-withdraw-t2')],
+        },
+      ] as OfferRow[],
+    }
+
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={offers} />)
+
+    const incoming = screen.getByRole('region', { name: 'Eingehende Angebote' })
+    expect(incoming.textContent).toContain('Ostmark bietet 5 Eisen und verlangt 10 Geld.')
+    expect(within(incoming).getByRole('button', { name: 'Angebot annehmen' })).toBeTruthy()
+    expect(within(incoming).getByRole('button', { name: 'Angebot ablehnen' })).toBeTruthy()
+    const outgoing = screen.getByRole('region', { name: 'Ausgehende Angebote' })
+    expect(within(outgoing).getByRole('button', { name: 'Angebot zurückziehen' })).toBeTruthy()
+
+    fireEvent.click(within(incoming).getByRole('button', { name: 'Angebot annehmen' }))
+    expect(onRun).toHaveBeenCalledTimes(1)
+  })
+
+  it('zeigt keine Regionen fuer Angebote, wenn es keine gibt', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} offers={{ incoming: [], outgoing: [] }} />)
+
+    expect(screen.queryByRole('region', { name: 'Eingehende Angebote' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Ausgehende Angebote' })).toBeNull()
+  })
+
+  it('R-DIP-08/AK3 nennt den Durchmarsch in beide Richtungen, mit Fristende', () => {
+    const view = diplomacyView({
+      others: [{ id: 'p2', nation: 'Ostmark' }],
+      relations: {
+        p2: { passageGranted: true, passageEndsAtTick: { granted: 48, received: null }, passageReceived: true },
+      },
+    })
+
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} ticksPerDay={24} />)
+    const row = document.querySelector('tbody tr')!
+    expect(row.textContent).toContain('Sie gewähren bis Tag 3')
+    expect(row.textContent).toContain('Sie erhalten')
+  })
+
+  it('nennt "keiner", wenn kein Durchmarsch besteht', () => {
+    const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} ticksPerDay={24} />)
+    const row = document.querySelector('tbody tr')!
+    expect(row.textContent).toContain('keiner')
+  })
+
+  it('das Angebotsformular rechnet in ganzen Einheiten und fragt evaluate', () => {
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+    const evaluate = vi.fn(() => ({ text: 'Vorschau', action }))
+    const spec: TradeFormSpec = {
+      resources: ['iron', 'money'],
+      stock: { iron: 12000 },
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [],
+      provincesOf: () => [],
+      evaluate,
+    }
+
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.change(screen.getByLabelText('Eisen geben'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Geld verlangen'), { target: { value: '10' } })
+
+    expect(evaluate).toHaveBeenLastCalledWith('p2', {
+      give: { resources: { iron: 5000 }, provinces: [] },
+      want: { resources: { money: 10000 }, provinces: [] },
+    })
+    expect(screen.getByText('Vorschau')).toBeTruthy()
+  })
+
+  it('R-DIP-09 legt Provinzen auf beide Seiten und nimmt sie wieder weg', () => {
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+    const evaluate = vi.fn(() => ({ text: '', action }))
+    const spec: TradeFormSpec = {
+      resources: [],
+      stock: {},
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [{ id: 'n1', name: 'Nordtal' }],
+      provincesOf: () => [{ id: 's1', name: 'Südhang' }],
+      evaluate,
+    }
+
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.change(screen.getByLabelText('Provinz abgeben'), { target: { value: 'n1' } })
+    fireEvent.change(screen.getByLabelText('Provinz verlangen'), { target: { value: 's1' } })
+
+    expect(evaluate).toHaveBeenLastCalledWith('p2', {
+      give: { resources: {}, provinces: ['n1'] },
+      want: { resources: {}, provinces: ['s1'] },
+    })
+    expect(screen.getByRole('button', { name: 'Nordtal entfernen' })).toBeTruthy()
+    // Eine Provinz laesst sich nicht zweimal waehlen: die Option verschwindet.
+    expect(screen.queryByRole('option', { name: 'Nordtal' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nordtal entfernen' }))
+    expect(evaluate).toHaveBeenLastCalledWith('p2', {
+      give: { resources: {}, provinces: [] },
+      want: { resources: {}, provinces: ['s1'] },
+    })
+  })
+
+  it('zeigt "unbekannte Provinz" statt der rohen Kennung, wenn eine gewaehlte Provinz waehrend der Wahl den Besitzer wechselt (Befund Nacharbeit, niedrig)', () => {
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+    const evaluate = vi.fn(() => ({ text: '', action }))
+    const spec: TradeFormSpec = {
+      resources: [],
+      stock: {},
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [{ id: 'n1', name: 'Nordtal' }],
+      provincesOf: () => [],
+      evaluate,
+    }
+
+    const { rerender } = render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.change(screen.getByLabelText('Provinz abgeben'), { target: { value: 'n1' } })
+    expect(screen.getByRole('button', { name: 'Nordtal entfernen' })).toBeTruthy()
+
+    // Eroberung waehrend der Wahl: die Provinz faellt aus `ownProvinces`, der Entwurf
+    // (lokaler useState) behaelt ihre Kennung aber weiter.
+    const erobert: TradeFormSpec = { ...spec, ownProvinces: [] }
+    rerender(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={erobert} />)
+
+    expect(screen.queryByRole('button', { name: 'Nordtal entfernen' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'unbekannte Provinz entfernen' })).toBeTruthy()
+    expect(screen.queryByText('n1')).toBeNull()
+  })
+
+  it('zeigt nur den eigenen Bestand', () => {
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+    const spec: TradeFormSpec = {
+      resources: ['iron'],
+      stock: { iron: 12000 },
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [],
+      provincesOf: () => [],
+      evaluate: () => ({ text: '', action }),
+    }
+
+    render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    expect(screen.getAllByText('Bestand 12')).toHaveLength(1)
   })
 })
 
@@ -786,6 +1061,18 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
       const { container } = render(
         <aside className="side">
           <EconomyPanel view={economy(200_000)} />
+          {/* T-M17-13: zwei Spionagezeilen mit langem Provinznamen in derselben Leiste —
+              die echte Pruefung ist S5 im Browser, jsdom rechnet kein Layout. */}
+          <EspionagePanel
+            rows={[
+              spyRow(1, { provinceName: 'Sozialistische Foederative Sowjetrepublik Transkaukasien' }),
+              spyRow(2, { mission: 'Wirtschaftssabotage', provinceName: 'Beta' }),
+            ]}
+            summary="2 von 5 Spionen · Sold 30 Geld je Tag"
+            moving={null}
+            onCancelMove={vi.fn()}
+            onJump={vi.fn()}
+          />
         </aside>,
       )
       const side = container.querySelector('.side') as HTMLElement
@@ -796,6 +1083,131 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
     } finally {
       style.remove()
     }
+  })
+})
+
+/** Eine Zeile der Spionageuebersicht, fuer die Panel-Tests von Hand gebaut (T-M17-13). */
+function spyRow(number: number, over: Partial<SpyRowView> = {}): SpyRowView {
+  return {
+    key: `spy-${number}`,
+    title: `Spion ${number}`,
+    mission: 'Aufklärung',
+    icon: 'spyIntel',
+    explainKey: 'explain.espionage.intel',
+    provinceId: 'FRA-PAR',
+    provinceName: 'Paris',
+    salary: '10 Geld je Tag',
+    result: 'gelungen (Tag 2)',
+    move: {
+      id: `spy-${number}-move`,
+      label: 'Umsetzen',
+      aria: `Spion ${number} umsetzen`,
+      disabledReason: null,
+      onRun: vi.fn(),
+    },
+    dismiss: {
+      id: `spy-${number}-dismiss`,
+      label: 'Entlassen',
+      aria: `Spion ${number} entlassen`,
+      disabledReason: null,
+      onRun: vi.fn(),
+    },
+    ...over,
+  }
+}
+
+describe('R-SPY-06 Die Spionageuebersicht', () => {
+  it('zeigt je Spion Nummer, Auftrag mit Zeichen und Erklaerung, Ziel, Sold und Ergebnis', () => {
+    const { container } = render(
+      <EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />,
+    )
+
+    const region = screen.getByRole('region', { name: 'Spionageübersicht' })
+    expect(region.textContent).toContain('Spion 1')
+    expect(region.textContent).toContain('Aufklärung')
+    expect(region.textContent).toContain('Paris')
+    expect(region.textContent).toContain('10 Geld je Tag')
+    expect(region.textContent).toContain('gelungen (Tag 2)')
+    expect(container.querySelectorAll('li.spy svg')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Was ist Aufklärung?' })).toBeTruthy()
+  })
+
+  it('springt ueber das Ziel zur Provinz', () => {
+    const onJump = vi.fn()
+    render(<EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={onJump} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zu Paris springen' }))
+    expect(onJump).toHaveBeenCalledWith('FRA-PAR')
+  })
+
+  it('setzt um und entlaesst ueber die Knoepfe der Zeile', () => {
+    const row = spyRow(1)
+    render(<EspionagePanel rows={[row]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+    expect(row.move.onRun).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 entlassen' }))
+    expect(row.dismiss.onRun).toHaveBeenCalled()
+  })
+
+  it('zeigt keine Kennung (Befund M17-S1)', () => {
+    const { container } = render(
+      <EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />,
+    )
+
+    expect(container.textContent ?? '').not.toMatch(/\bs\d+\b/)
+    expect([...container.querySelectorAll('[id]')].some((el) => /\bs\d+\b/.test(el.id))).toBe(false)
+  })
+
+  it('sagt ohne Spione, wo man sie anwirbt', () => {
+    render(<EspionagePanel rows={[]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />)
+
+    expect(
+      screen.getByText(
+        'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('zeigt den Umsetz-Modus mit Abbruch', () => {
+    const onCancelMove = vi.fn()
+    render(
+      <EspionagePanel
+        rows={[spyRow(2)]}
+        summary={null}
+        moving="Spion 2 umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste."
+        onCancelMove={onCancelMove}
+        onJump={vi.fn()}
+      />,
+    )
+
+    const status = screen.getByRole('status')
+    expect(status.textContent).toBe('Spion 2 umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste.')
+    fireEvent.click(screen.getByRole('button', { name: 'Umsetzen abbrechen' }))
+    expect(onCancelMove).toHaveBeenCalled()
+  })
+
+  it('zeigt die Zusammenfassung', () => {
+    const { container } = render(
+      <EspionagePanel
+        rows={[spyRow(1)]}
+        summary="2 von 5 Spionen · Sold 30 Geld je Tag"
+        moving={null}
+        onCancelMove={vi.fn()}
+        onJump={vi.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.panel__sub')?.textContent).toBe('2 von 5 Spionen · Sold 30 Geld je Tag')
+  })
+})
+
+describe('R-GAME-06 Spionage im Protokoll', () => {
+  it('sortiert Sabotage und Enttarnung unter Kaempfe, Bericht und Verlust unter Sonstiges', () => {
+    expect(categoryOf('SABOTAGE_SUFFERED')).toBe('combat')
+    expect(categoryOf('SPY_DETECTED')).toBe('combat')
+    expect(categoryOf('SPY_REPORT')).toBe('other')
+    expect(categoryOf('SPY_LOST')).toBe('other')
   })
 })
 
@@ -1885,5 +2297,29 @@ describe('R-UI-09 Die Zeile ist so leise wie ihr Satz', () => {
     } finally {
       style.remove()
     }
+  })
+})
+
+describe('R-SPY-03 Die aufgeklaerte Provinz sagt, bis wann', () => {
+  it('zeigt den Aufklaerungssatz mit Tag, wenn revealedUntilTick steht', () => {
+    render(
+      <ProvincePanel
+        province={{ ...province, owner: 'p2', buildings: { barracks: 1 }, revealedUntilTick: 48 }}
+        ownerName="Ostmark"
+        actions={[]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    expect(screen.getByText('Aufgeklärt: Gebäude sichtbar bis Tag 2')).toBeTruthy()
+  })
+
+  it('zeigt ohne das Feld keinen Aufklaerungssatz', () => {
+    render(
+      <ProvincePanel province={{ ...province, owner: 'p2' }} ownerName="Ostmark" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+
+    expect(screen.queryByText(/Aufgeklärt:/)).toBeNull()
   })
 })

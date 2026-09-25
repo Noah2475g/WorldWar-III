@@ -1063,6 +1063,32 @@ describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
     expect(new Set(texts).size).toBe(6)
   })
 
+  it('behauptet bei keinem Grund eine Rueckgabe (T-M17-14, E2)', () => {
+    // Das Ereignis traegt keine Mengen (R-DIP-05/AK4) und weiss also nicht, ob ueberhaupt
+    // etwas hinterlegt war — die Rueckgaberegel steht seit T-M17-14 in explain.diplomacy.trade
+    // und als Notiz an der eigenen ausgehenden Zeile, nicht mehr im Protokollsatz.
+    const reasons = ['accepted', 'declined', 'withdrawn', 'expired', 'war', 'invalid'] as const
+    for (const reason of reasons) {
+      const entry = describeEvent(
+        event({
+          type: 'TRADE_OFFER_CLOSED',
+          audience: ['p1', 'p2'],
+          concerns: ['p1', 'p2'],
+          offerId: 't7',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          reason,
+        }),
+        0,
+        map,
+        { ...namen, viewer: 'p1' },
+      )
+      expect(entry.text, reason).not.toContain('Hinterlegte')
+      // "zurückgezogen" enthaelt "zurück" — nicht auf das nackte Wort pruefen (Falle der Aufgabe).
+      expect(entry.text, reason).not.toContain('geht zurück')
+    }
+  })
+
   // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit provincesLapsed schliesst
   // settleTradeOffers ein Angebot auch dann als 'invalid', wenn eine Provinz nicht mehr
   // abtretbar ist (der Anbieter liess z. B. eine eigene Armee durch die angebotene Provinz

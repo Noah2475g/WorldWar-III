@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
-import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
+import { MemoryStorage, planRoute, step, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
@@ -606,6 +606,115 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByRole('region', { name: 'Armee' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Ziel' })).toBeNull()
+  })
+})
+
+/**
+ * Spionage von der Provinzleiste bis zur Uebersicht (R-SPY-06, D29.9, T-M17-13).
+ *
+ * Jeder Fall ist eigenstaendig (nicht Fortsetzung des vorigen wie im Bauplan skizziert):
+ * vitest raeumt zwischen zwei `it`-Blaecken auf, ein gemeinsamer Spielzustand ueber
+ * zwei Faelle hinweg waere zerbrechlich. AK2 (die erlittene Sabotage) ist hier nicht
+ * billig herzustellen — sie ist in `Alerts.test.tsx` gedeckt und am laufenden Spiel in S3.
+ */
+describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
+  const selectProvince = (id: string) => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: id } })
+  }
+  const fastForward = (days: number) => {
+    for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+  }
+  const foreignOptions = (): HTMLOptionElement[] => {
+    const select = screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement
+    const gruppe = [...select.querySelectorAll('optgroup')].find((g) => g.label === 'Aufgeklärte Provinzen')
+    return gruppe ? [...gruppe.querySelectorAll('option')] : []
+  }
+  const ownerOf = (name: string): string => {
+    const panel = screen.getByRole('region', { name })
+    return within(panel).getByText('Eigentümer').nextElementSibling?.textContent ?? ''
+  }
+  /** Eine bekannte fremde Provinz mit Eigentuemer — Sabotage braucht einen, Aufklaerung nicht. */
+  const pickOwnedForeign = (exclude: readonly string[] = []): { id: string; name: string } => {
+    const options = foreignOptions().filter((o) => !exclude.includes(o.value))
+    expect(options.length, 'keine bekannte fremde Provinz zum Testen').toBeGreaterThan(0)
+    for (const option of options) {
+      selectProvince(option.value)
+      if (ownerOf(option.text) !== 'neutral') return { id: option.value, name: option.text }
+    }
+    selectProvince(options[0]!.value)
+    return { id: options[0]!.value, name: options[0]!.text }
+  }
+
+  it('wirbt aus der Provinzleiste einer fremden Provinz an (AK1)', () => {
+    startGame()
+    pickOwnedForeign()
+    const gruppe = screen.getByRole('region', { name: 'Spionage' })
+
+    expect(within(gruppe).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
+
+    fireEvent.click(within(gruppe).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    expect(within(gruppe).getByRole('status').textContent).toMatch(/wirkt/)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    const uebersicht = screen.getByRole('region', { name: 'Spionageübersicht' })
+    expect(uebersicht.textContent).toContain('Spion 1')
+    expect(uebersicht.textContent).toContain('Aufklärung')
+    expect(document.body.textContent ?? '').not.toMatch(/\bs\d+\b/)
+  })
+
+  it('setzt um und entlaesst (R-SPY-06)', () => {
+    startGame()
+    const ziel1 = pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+
+    pickOwnedForeign([ziel1.id])
+    const move = within(screen.getByRole('region', { name: 'Spionage — Spion 1 umsetzen' })).getByRole('button', {
+      name: 'Spion 1 hierher umsetzen: Wirtschaftssabotage',
+    })
+    fireEvent.click(move)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' }).textContent).toContain('Wirtschaftssabotage')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 entlassen' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(
+      screen.getByRole('region', { name: 'Spionageübersicht' }).textContent,
+    ).toContain(
+      'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+    )
+  })
+
+  it('oeffnet mit s die Uebersicht und laesst Strg+S bei den Spielstaenden', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    expect(screen.getByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
+  })
+
+  it('bricht den Umsetz-Modus mit Escape ab', () => {
+    startGame()
+    pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+    // Der Umsetz-Modus quittiert, auch waehrend die Uebersicht (nicht die Provinzleiste) offen ist.
+    expect(screen.getAllByText(/^Spion 1 umsetzen: /).length).toBeGreaterThan(0)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    pickOwnedForeign()
+    expect(within(screen.getByRole('region', { name: 'Spionage' })).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
   })
 })
 
@@ -1460,6 +1569,180 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
     expect(meldungen.textContent).toContain('fertig')
+  })
+
+  /**
+   * Der echte Ladeweg (T-M17-14, R-DIP-07/AK1): ein gruener Einzeltest von `alertsFor`
+   * oder `offerListActions` misst nicht, ob die Meldung auf dem Bildschirm ankommt und der
+   * Klick tatsaechlich in die richtige Macht der Diplomatie fuehrt.
+   */
+  describe('R-DIP-07/AK1 Die Meldung fuehrt zur Diplomatie, und dort steht das Angebot in Worten', () => {
+    it('springt von der Meldung in die Diplomatie und zeigt das Angebot in Worten', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAngebot = step(
+        state,
+        [
+          {
+            type: 'OFFER_TRADE',
+            playerId: p2,
+            targetPlayerId: p1,
+            give: { resources: { iron: 5000 }, provinces: [] },
+            want: { resources: { money: 10000 }, provinces: [] },
+          },
+        ],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAngebot.players[p2]!.nation
+
+      const meldungen = await zeige(nachAngebot)
+      expect(meldungen.textContent).toContain(`Handelsangebot von ${nation}`)
+
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`Handelsangebot von ${nation}`) }))
+
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const eingehend = within(diplomatie).getByRole('region', { name: 'Eingehende Angebote' })
+      expect(eingehend.textContent).toContain(`${nation} bietet 5 Eisen und verlangt 10 Geld.`)
+      // Keine Kennung im Text der Region (R-DIP-07/AK1).
+      expect(eingehend.textContent).not.toMatch(/\bp\d\b|\bt\d+\b/)
+
+      fireEvent.click(within(eingehend).getByRole('button', { name: 'Angebot annehmen' }))
+      expect(within(eingehend).getByText(/befohlen/)).toBeTruthy()
+    })
+  })
+
+  /**
+   * Antrag, Annahme und Kuendigung des Durchmarschs sind ueber die Diplomatie erreichbar
+   * (T-M17-14, R-DIP-08/AK2).
+   */
+  describe('R-DIP-08/AK2 Antrag, Annahme und Kuendigung sind erreichbar', () => {
+    it('Antrag steht als Meldung, und die Knoepfe stehen nach der Wahl der Macht', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAntrag = step(
+        state,
+        [{ type: 'DIPLOMACY', playerId: p2, targetPlayerId: p1, action: 'requestRightOfWay' }],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAntrag.players[p2]!.nation
+
+      const meldungen = await zeige(nachAntrag)
+      expect(meldungen.textContent).toContain(`${nation} bittet um Durchmarsch`)
+
+      // Taste D (oder der Kopfleisten-Knopf) statt Klick auf die Meldung — die Macht wird
+      // erst danach von Hand gewaehlt (03-TASKS T-M17-14, Sichtpruefung S2).
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const zeile = within(diplomatie)
+        .getAllByRole('row')
+        .find((row) => row.textContent?.includes(nation))!
+      fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+
+      // "Durchmarsch-Antrag annehmen" steht zweimal (Gruppe UND Liste, E6) — die Gruppe
+      // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen.
+      const gruppe = screen.getByRole('region', { name: 'Durchmarsch und Karte' })
+      const beantragen = within(gruppe).getByRole('button', { name: 'Durchmarsch beantragen' })
+      const annehmen = within(gruppe).getByRole('button', { name: 'Durchmarsch-Antrag annehmen' })
+      const kuendigen = within(gruppe).getByRole('button', { name: 'Durchmarsch kündigen' })
+      expect((beantragen as HTMLButtonElement).disabled).toBe(false)
+      expect((annehmen as HTMLButtonElement).disabled).toBe(false)
+      expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
+    })
+  })
+
+  /**
+   * R-SPY-06/AK2 war nur in Alerts.test.tsx belegt (`espionageAlerts` als Einzeltest) — nicht
+   * die Verdrahtung in App.tsx (Befund Nacharbeit T-M17-13/14, hoch): der Sammeleffekt
+   * (`collectEspionageNews` ab `state.eventLog`), das Wegklicken ueber `onDismiss` und der
+   * Sprung auf die Provinz. "Ein gruener Einzeltest sagt nichts ueber das Spiel" — dieselbe
+   * Hausregel wie oben bei R-DIP-07/AK1.
+   */
+  describe('R-SPY-06/AK2 Eine erlittene Sabotage erreicht den Bildschirm', () => {
+    it('meldet die Sabotage ohne Urheber, springt auf die Provinz und bleibt nach dem Wegklicken weg', async () => {
+      const { state: frisch, p1, heimat } = partie()
+      // Ein paar Ticks vor, sonst faellt das Ereignis auf denselben Tick, an dem der
+      // erste Bildschirmaufbau `news.upTo` schon setzt (`collectEspionageNews` liest nur
+      // `event.tick > upTo`, strikt) — kein Befund, nur eine Randbedingung des Aufbaus.
+      const state = advanceTicks(frisch, 5, { map: world, rules: TEST_RULES }).state
+      const geschaedigt: typeof state = {
+        ...state,
+        eventLog: [
+          ...state.eventLog,
+          {
+            type: 'SABOTAGE_SUFFERED',
+            tick: state.tick,
+            severity: 'alert',
+            audience: [p1],
+            concerns: [p1],
+            playerId: p1,
+            provinceId: heimat,
+            kind: 'economic',
+            moraleLoss: 10_000,
+            destroyed: { iron: 5_000 },
+            delayTicks: 0,
+          } as never,
+        ],
+      }
+      const provinzName = state.provinces[heimat]!.name
+
+      const meldungen = await zeige(geschaedigt)
+      // `collectEspionageNews` sammelt in einem eigenen Effekt (App.tsx, nach `nameOf`),
+      // also nicht schon im ersten Render, in dem `zeige()` die Region findet.
+      const knopf = await within(meldungen).findByRole('button', { name: new RegExp(`^Wirtschaftssabotage in ${provinzName}`) })
+      expect(meldungen.textContent).toContain(provinzName)
+      // F2/F3: kein Urheber, keine Spielerkennung (Ereignis kennt gar keine).
+      expect(meldungen.textContent).not.toMatch(/\bp\d\b/)
+
+      fireEvent.click(knopf)
+
+      const provinzPanel = await screen.findByRole('region', { name: provinzName })
+      expect(provinzPanel).toBeTruthy()
+
+      fireEvent.click(within(meldungen).getByRole('button', { name: new RegExp(`^Ausblenden: Wirtschaftssabotage in ${provinzName}`) }))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+
+      // Gegenprobe fuer "bleibt weg": ein Tag vorspulen ohne neues Sabotage-Ereignis darf
+      // die weggeklickte Meldung nicht zurueckbringen.
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+      await waitFor(() => expect(document.querySelector('.clock__time')?.textContent).toMatch(/Tag/))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+    })
+  })
+
+  /**
+   * Befund Nacharbeit T-M17-13/14 (mittel): die Quittung "befohlen" (T-M22-05) haengt an der
+   * Knopf-Kennung (`pendingIds`, App.tsx), nicht am Befehl. Trug die Kennung kein Ziel
+   * (`diplomacy-${action}`, `trade-offer`, `spy-recruit-${mission}`), sperrte sie bei
+   * stehender Uhr auch das gleichnamige Formular fuer eine ANDERE Macht bzw. Provinz.
+   */
+  describe('Die Quittung "befohlen" gilt je Ziel, nicht je Knopf-Kennung', () => {
+    it('sperrt "Krieg erklaeren" nach einer Erklaerung an p2 nicht auch fuer p3', async () => {
+      const { state, p2 } = partie()
+      const p3 = state.playerOrder[2]!
+      const meldungen = await zeige(state)
+      expect(meldungen).toBeTruthy() // nur zum Laden — die eigentliche Pruefung ist die Diplomatie
+
+      const nationOf = (id: string) => state.players[id]!.nation
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const wähle = (nation: string) => {
+        const zeile = within(diplomatie)
+          .getAllByRole('row')
+          .find((row) => row.textContent?.includes(nation))!
+        fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+      }
+
+      wähle(nationOf(p2))
+      const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
+      fireEvent.click(within(gruppeP2).getByRole('button', { name: 'Krieg erklären' }))
+      expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
+
+      // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
+      // "Krieg erklären" darf NICHT "befohlen" sagen — ihr wurde nichts befohlen.
+      wähle(nationOf(p3))
+      const gruppeP3 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p3)}` })
+      const krieg = within(gruppeP3).getByRole('button', { name: 'Krieg erklären' })
+      expect((krieg as HTMLButtonElement).disabled).toBe(false)
+      expect(within(gruppeP3).queryByText(/befohlen/)).toBeNull()
+    })
   })
 })
 

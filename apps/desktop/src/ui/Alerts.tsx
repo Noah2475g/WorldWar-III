@@ -1,7 +1,15 @@
-import type { PublicView } from '@worldwar/core'
+import type { GameEvent, PublicView } from '@worldwar/core'
 import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
-import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
+import {
+  BUILDING_ICONS,
+  Icon,
+  RELATION_ICONS,
+  RESOURCE_ICONS,
+  SPY_MISSION_ICONS,
+  UNIT_ICONS,
+  type IconName,
+} from './icons.tsx'
 
 /**
  * What needs looking at, right now (T-M13-13, R-UI-14).
@@ -14,6 +22,13 @@ import { BUILDING_ICONS, Icon, RESOURCE_ICONS, UNIT_ICONS, type IconName } from 
  * Derived from the view rather than from the log, and that is what keeps it quiet: a
  * battle produces one entry for as long as it lasts, not one per tick. The identity of
  * an alert is its cause, so the same cause is the same alert.
+ *
+ * **Eine Ausnahme (T-M17-13, R-SPY-06/AK2, E3):** Spionage-Meldungen sind Zustaende,
+ * keine Ereignisse — sagt der Absatz oben, und der Kern kennt tatsaechlich keinen
+ * Zustand "erlittene Sabotage". `espionageAlerts`/`collectEspionageNews` lesen deshalb
+ * `state.eventLog` und behalten, was sie fanden, bis der Spieler es wegklickt: der Ring
+ * haelt nur 500 Ereignisse fuer alle Maechte zusammen, und eine Sabotage, die bei hohem
+ * Tempo nach wenigen Spieltagen aus ihm faellt, waere sonst ungesehen verschwunden.
  */
 
 export type AlertKind =
@@ -25,6 +40,12 @@ export type AlertKind =
   | 'completion'
   | 'unlock'
   | 'upcoming'
+  /** Erlittene Sabotage — laut (R-SPY-06/AK2, T-M17-13). */
+  | 'sabotage'
+  /** Enttarnung, Verlust, verfehltes Ziel — leise (T-M17-13). */
+  | 'espionage'
+  /** Ein eingehendes Angebot — Handel oder Antrag, leise (T-M17-14, R-DIP-07/AK1, E4). */
+  | 'offer'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -33,7 +54,16 @@ export interface Alert {
   icon: IconName
   text: string
   provinceId?: string
+  /** Sprung in die Diplomatie statt auf die Karte, mit der Macht des Angebots (T-M17-14, E3). */
+  diplomacyWith?: string
 }
+
+/**
+ * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte oder in die Diplomatie, zu einer
+ * bestimmten Macht. `Foot`/`EventLog` kennen weiterhin nur Provinzen (Korrektur am Planungsstand:
+ * ihre Eintraege tragen keine Macht, nur `Alerts` bekommt dieses Sprungziel).
+ */
+export type JumpTarget = { kind: 'province'; provinceId: string } | { kind: 'diplomacy'; playerId: string | null }
 
 /** Below this morale a province is at risk of revolt (D6: Aufstandsrisiko ab 33). */
 export const UNREST_MORALE = 33_000
@@ -185,7 +215,34 @@ export interface UnlockRules {
   units: Record<string, { availableFromDay: number } & Prerequisites>
 }
 
-export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[] {
+/**
+ * Ein eingehendes Angebot meldet sich (T-M17-14, R-DIP-07/AK1, E4): Handel UND die drei
+ * diplomatischen Arten (Frieden, Buendnis, Durchmarsch-Antrag). Leise (M36), nicht wegklickbar
+ * (sie enden mit Antwort oder Verfall) — kein Filter auf `kind === 'rightOfWay'` (kippbar, E4).
+ */
+function offerAlerts(view: PublicView): Alert[] {
+  const nationOf = (id: string): string => view.others.find((other) => other.id === id)?.nation ?? t('trade.unknownPower')
+
+  const trade: Alert[] = view.tradeOffers.incoming.map((offer) => ({
+    id: `offer:trade:${offer.id}`,
+    kind: 'offer',
+    icon: 'trade',
+    text: t('alerts.tradeOffer', { nation: nationOf(offer.from) }),
+    diplomacyWith: offer.from,
+  }))
+
+  const diplomatic: Alert[] = view.incomingOffers.map((offer) => ({
+    id: `offer:${offer.kind}:${offer.from}`,
+    kind: 'offer',
+    icon: RELATION_ICONS[offer.kind],
+    text: t(`alerts.offer.${offer.kind}`, { nation: nationOf(offer.from) }),
+    diplomacyWith: offer.from,
+  }))
+
+  return [...trade, ...diplomatic]
+}
+
+export function alertsFor(view: PublicView | null, rules?: UnlockRules, news: readonly Alert[] = []): Alert[] {
   if (!view) return []
   const alerts: Alert[] = []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
@@ -299,6 +356,15 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[]
   // Freischaltung und Ankuendigung zuletzt (T-M41-12). Seit sie den ganzen Spieltag stehen,
   // muessen sie hinter dem stehen, was gerade Aufmerksamkeit braucht — das war der Grund, aus
   // dem T-M21-04 sie nur am Tagesanfang zeigte (`unlocks-explained.test.ts`).
+  // Spionage-Meldungen (M5, T-M17-13): nach den Fertigstellungen, vor Freischaltung und
+  // Ankuendigung — die stehen den ganzen Spieltag und muessen hinter dem stehen, was
+  // gerade Aufmerksamkeit braucht (T-M41-12).
+  alerts.push(...news)
+
+  // Angebote (T-M17-14, E4): nach den Nachrichten, vor Freischaltung und Ankuendigung — aus
+  // demselben Grund wie die Spionage-Meldungen daneben.
+  alerts.push(...offerAlerts(view))
+
   if (rules) alerts.push(...unlockAlerts(view, rules), ...upcomingAlerts(view, rules))
 
   return alerts
@@ -310,7 +376,156 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules): Alert[]
  * gefallene Hauptstadt endet mit ihrer Lage, nicht mit einem Klick.
  */
 export function isDismissible(alert: Alert): boolean {
-  return alert.kind === 'unlock' || alert.kind === 'upcoming'
+  return alert.kind === 'unlock' || alert.kind === 'upcoming' || alert.kind === 'sabotage' || alert.kind === 'espionage'
+}
+
+/**
+ * Eine Meldung aus einem Ereignis — mit dem Tick, damit die juengere die aeltere ersetzt
+ * (R-SPY-06/AK2, T-M17-13).
+ */
+export interface NewsAlert extends Alert {
+  tick: number
+}
+
+export interface NewsNaming {
+  province: (id: string) => string
+  player: (id: string) => string
+}
+
+export interface NewsState {
+  viewer: string | null
+  upTo: number
+  alerts: ReadonlyMap<string, NewsAlert>
+}
+
+export const NO_NEWS: NewsState = { viewer: null, upTo: -1, alerts: new Map() }
+
+/**
+ * Spionage-Ereignisse als Meldung (E3, E4, T-M17-13).
+ *
+ * Laut: `SABOTAGE_SUFFERED`, nur fuers Opfer. Leise: `SPY_DETECTED` fuer beide Seiten,
+ * `SPY_LOST`, und `SPY_REPORT` nur mit `outcome: 'targetChanged'` — Erfolg und Misserfolg
+ * bleiben Protokoll und Uebersicht, sonst meldeten fuenf Spione fuenf Zeilen am Tag.
+ * Keine Spionkennung geht hinein (F3), und `SABOTAGE_SUFFERED` nennt keinen Urheber (F2) —
+ * das Ereignis selbst hat keinen.
+ */
+export function espionageAlerts(events: readonly GameEvent[], viewerId: string, naming: NewsNaming): NewsAlert[] {
+  const alerts: NewsAlert[] = []
+  for (const event of events) {
+    if (event.type === 'SABOTAGE_SUFFERED') {
+      if (event.playerId !== viewerId) continue
+      const province = naming.province(event.provinceId)
+      alerts.push({
+        id: `sabotage:${event.provinceId}`,
+        kind: 'sabotage',
+        icon: event.kind === 'economic' ? 'spyEconomic' : 'spyMilitary',
+        text: t(event.kind === 'economic' ? 'alerts.sabotageEconomic' : 'alerts.sabotageMilitary', { province }),
+        provinceId: event.provinceId,
+        tick: event.tick,
+      })
+    } else if (event.type === 'SPY_DETECTED') {
+      const province = naming.province(event.provinceId)
+      if (event.targetPlayerId === viewerId) {
+        alerts.push({
+          // Die Kennung braucht den Urheber (Befund Nacharbeit T-M17-13/14, niedrig): sonst
+          // ersetzt eine zweite, gleich alte oder juengere Enttarnung in derselben Provinz
+          // die erste in `collectEspionageNews` (App.tsx), und eine der beiden Maechte
+          // verschwindet aus der Meldung, obwohl R-SPY-05/AK1 beide Nennungen verlangt.
+          id: `spy-caught:${event.provinceId}:${event.playerId}`,
+          kind: 'espionage',
+          icon: 'spyCounter',
+          text: t('alerts.spyCaught', { province, player: naming.player(event.playerId) }),
+          provinceId: event.provinceId,
+          tick: event.tick,
+        })
+      } else if (event.playerId === viewerId) {
+        alerts.push({
+          id: `spy-exposed:${event.provinceId}:${event.mission}`,
+          kind: 'espionage',
+          icon: SPY_MISSION_ICONS[event.mission],
+          text: t('alerts.spyExposed', { province, mission: t(`espionage.missions.${event.mission}`) }),
+          provinceId: event.provinceId,
+          tick: event.tick,
+        })
+      }
+    } else if (event.type === 'SPY_LOST') {
+      if (event.playerId !== viewerId) continue
+      alerts.push({
+        id: `spy-unpaid:${event.provinceId}:${event.mission}`,
+        kind: 'espionage',
+        icon: 'money',
+        text: t('alerts.spyUnpaid', { province: naming.province(event.provinceId) }),
+        provinceId: event.provinceId,
+        tick: event.tick,
+      })
+    } else if (event.type === 'SPY_REPORT') {
+      if (event.playerId !== viewerId || event.outcome !== 'targetChanged') continue
+      alerts.push({
+        id: `spy-target:${event.provinceId}:${event.mission}`,
+        kind: 'espionage',
+        icon: SPY_MISSION_ICONS[event.mission],
+        text: t('alerts.spyTargetChanged', { province: naming.province(event.provinceId) }),
+        provinceId: event.provinceId,
+        tick: event.tick,
+      })
+    }
+  }
+  return alerts
+}
+
+/**
+ * Neue Spionage-Meldungen einsammeln, bis der Spieler sie wegklickt (E3, T-M17-13).
+ *
+ * Zaehlt nach Tick (`upTo`), nicht nach Laenge — der Ring ist auf 500 Ereignisse fuer
+ * alle Maechte gedeckelt, `state.eventLog` kann also kuerzer werden, ohne dass eine
+ * behaltene Meldung ihr Ereignis "verliert". Liefert dasselbe Objekt zurueck (Identitaet),
+ * wenn sich nichts geaendert hat — React zeichnet dann nicht neu.
+ */
+export function collectEspionageNews(
+  old: NewsState,
+  events: readonly GameEvent[],
+  tick: number,
+  viewerId: string,
+  naming: NewsNaming,
+): NewsState {
+  // Neuer Betrachter oder ein Stand vor dem zuletzt gesehenen Tick (Laden, neue Partie):
+  // von vorn, wie ein frischer Merker.
+  const reset = old.viewer !== viewerId || tick < old.upTo
+  const base: NewsState = reset ? { viewer: viewerId, upTo: -1, alerts: new Map() } : old
+
+  const fresh = events.filter((event) => event.tick > base.upTo)
+  let upTo = base.upTo
+  for (const event of fresh) if (event.tick > upTo) upTo = event.tick
+  const neu = espionageAlerts(fresh, viewerId, naming)
+
+  if (neu.length === 0) {
+    if (!reset && upTo === old.upTo) return old
+    return { viewer: viewerId, upTo, alerts: base.alerts }
+  }
+
+  const alerts = new Map(base.alerts)
+  for (const alert of neu) {
+    const bisherig = alerts.get(alert.id)
+    // Dieselbe Provinz kann mehrfach sabotiert werden — die juengere gewinnt, an
+    // derselben Stelle (M12: Anzahl bleibt eins).
+    if (!bisherig || alert.tick >= bisherig.tick) alerts.set(alert.id, alert)
+  }
+  return { viewer: viewerId, upTo, alerts }
+}
+
+/** Eine Meldung wegklicken — quittiert, bis ein neues Ereignis sie ersetzt. */
+export function dismissNews(old: NewsState, id: string): NewsState {
+  if (!old.alerts.has(id)) return old
+  const alerts = new Map(old.alerts)
+  alerts.delete(id)
+  return { ...old, alerts }
+}
+
+/** Das Sprungziel einer Meldung (T-M17-14, E3): Provinz vor Diplomatie, sonst kein Ziel. */
+function targetOf(alert: Alert): JumpTarget | null {
+  if (alert.provinceId) return { kind: 'province', provinceId: alert.provinceId }
+  if (alert.diplomacyWith) return { kind: 'diplomacy', playerId: alert.diplomacyWith }
+  return null
 }
 
 export function Alerts({
@@ -319,7 +534,7 @@ export function Alerts({
   onDismiss,
 }: {
   alerts: readonly Alert[]
-  onJump: (provinceId: string) => void
+  onJump: (target: JumpTarget) => void
   /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
   onDismiss?: (id: string) => void
 }) {
@@ -328,30 +543,33 @@ export function Alerts({
   return (
     <section className="alerts" aria-label={t('alerts.title')}>
       <ul>
-        {alerts.map((alert) => (
-          <li key={alert.id} className={`alert alert--${alert.kind}`}>
-            <Icon name={alert.icon} size={14} />
-            {alert.provinceId ? (
-              <button type="button" className="alert__jump" onClick={() => onJump(alert.provinceId!)}>
-                {alert.text}
-              </button>
-            ) : (
-              <span>{alert.text}</span>
-            )}
-            {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
-            {onDismiss && isDismissible(alert) && (
-              <button
-                type="button"
-                className="alert__dismiss"
-                aria-label={t('alerts.dismiss', { text: alert.text })}
-                title={t('alerts.dismissTitle')}
-                onClick={() => onDismiss(alert.id)}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            )}
-          </li>
-        ))}
+        {alerts.map((alert) => {
+          const target = targetOf(alert)
+          return (
+            <li key={alert.id} className={`alert alert--${alert.kind}`}>
+              <Icon name={alert.icon} size={14} />
+              {target ? (
+                <button type="button" className="alert__jump" onClick={() => onJump(target)}>
+                  {alert.text}
+                </button>
+              ) : (
+                <span>{alert.text}</span>
+              )}
+              {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
+              {onDismiss && isDismissible(alert) && (
+                <button
+                  type="button"
+                  className="alert__dismiss"
+                  aria-label={t('alerts.dismiss', { text: alert.text })}
+                  title={t('alerts.dismissTitle')}
+                  onClick={() => onDismiss(alert.id)}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

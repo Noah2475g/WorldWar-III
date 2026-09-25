@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { RESOURCE_KEYS } from '@worldwar/core'
+import { RESOURCE_KEYS, SPY_MISSIONS } from '@worldwar/core'
 import { de } from './de.ts'
 import { allKeys, hasKey, num, placeholdersOf, t } from './text.ts'
 
@@ -163,6 +163,35 @@ describe('R-UI-07 Auch Regeldaten und Ablehnungen haben deutsche Namen', () => {
     }
     for (const code of Object.keys(de.rejections)) {
       expect(hasKey(`errors.${code}`), `rejections.${code} gehoert zu keinem Fehler`).toBe(true)
+    }
+  })
+})
+
+/** Alle Blattwerte eines Textblocks — fuer T3, die keine Kennung sehen darf. */
+function leaves(node: unknown): string[] {
+  if (typeof node === 'string') return [node]
+  if (node && typeof node === 'object') return Object.values(node).flatMap(leaves)
+  return []
+}
+
+describe('R-SPY-06 Spionage spricht deutsch', () => {
+  it('benennt und erklaert jeden Auftrag', () => {
+    for (const mission of SPY_MISSIONS) {
+      expect(hasKey(`espionage.missions.${mission}`), mission).toBe(true)
+      expect(hasKey(`explain.espionage.${mission}`), mission).toBe(true)
+    }
+  })
+
+  it('hat beide Ausgaenge des Gegenspions', () => {
+    expect(hasKey('espionage.counterOutcomes.success')).toBe(true)
+    expect(hasKey('espionage.counterOutcomes.failure')).toBe(true)
+    expect(t('espionage.counterOutcomes.failure')).toBe('keine Enttarnung')
+  })
+
+  it('nennt in keinem Spionagetext eine Kennung oder einen Platzhalter ohne Wert', () => {
+    for (const text of [...leaves(de.espionage), ...leaves(de.alerts)]) {
+      expect(text, text).not.toMatch(/\bs\d+\b/)
+      expect(text, text).not.toMatch(/\bp\d\b/)
     }
   })
 })

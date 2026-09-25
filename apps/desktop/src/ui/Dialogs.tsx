@@ -762,6 +762,7 @@ export function KeyboardHelp({ onClose }: { onClose: () => void }) {
     'mapMode',
     'diplomacy',
     'market',
+    'espionage',
     'escape',
     'help',
   ] as const

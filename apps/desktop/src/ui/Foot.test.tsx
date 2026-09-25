@@ -59,7 +59,7 @@ describe('T-M31-03 Der Fuss', () => {
     for (const r of [rows, [row('a', 900, true), ...rows.slice(1)]]) expect(footRows(r).some((x) => x.own)).toBe(true)
   })
 
-  it('rendert Protokoll, Rangliste (eigene in eigener Klasse) und drei Knoepfe mit Neu-Marke', () => {
+  it('rendert Protokoll, Rangliste (eigene in eigener Klasse) und vier Knoepfe mit Neu-Marke', () => {
     const onPanel = vi.fn()
     const onDispatch = vi.fn()
     const entries = [entry('a', 10), entry('r', 24, { body: ['Tagesbericht'] }), entry('b', 30)]
@@ -90,6 +90,9 @@ describe('T-M31-03 Der Fuss', () => {
     expect(onDispatch).toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Diplomatie' }))
     expect(onPanel).toHaveBeenCalledWith('diplomacy')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spionage' }))
+    expect(onPanel).toHaveBeenCalledWith('espionage')
   })
 
   it('sperrt die Depesche, solange es keinen Tagesbericht gibt', () => {

@@ -11,7 +11,7 @@
  * font setting without a second asset.
  */
 
-import type { BuildingKey, DiplomaticState, Terrain } from '@worldwar/core'
+import type { BuildingKey, DiplomaticState, SpyMission, Terrain } from '@worldwar/core'
 
 export type IconName =
   | 'infantry'
@@ -58,6 +58,11 @@ export type IconName =
   | 'clock'
   | 'pause'
   | 'fastForward'
+  | 'spyIntel'
+  | 'spyEconomic'
+  | 'spyMilitary'
+  | 'spyCounter'
+  | 'trade'
 
 export interface IconProps {
   name: IconName
@@ -170,6 +175,16 @@ const PATHS: Record<IconName, string> = {
   clock: 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17 M12 7v5l3.5 2',
   pause: 'M8 5v14 M16 5v14',
   fastForward: 'M4 6l8 6-8 6z M12 6l8 6-8 6z',
+  // Lupe — Aufklärung: hinsehen, nicht eingreifen.
+  spyIntel: 'M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13 M15.3 15.3L20.5 20.5',
+  // Münze mit Riss — Wirtschaftssabotage.
+  spyEconomic: 'M12 3.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 1 0 0-17 M13.5 6.5l-3 5h3l-3 6',
+  // Bombe mit Lunte — Militärsabotage.
+  spyMilitary: 'M10 9a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11 M13.9 10.6L17 7.5 M18.5 3.5v2.5 M21 6h-2.5',
+  // Schild mit Haken — Gegenspionage.
+  spyCounter: 'M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5c-4.3-1.5-7.5-5-7.5-9.5V6z M9 12l2 2 4-4',
+  // Zwei gegenläufige Pfeile — Handel zwischen Mächten (T-M17-14 benutzt es, E7).
+  trade: 'M4 8h14 M15 5l3 3-3 3 M20 16H6 M9 13l-3 3 3 3',
 }
 
 export function Icon({ name, size = 16, title }: IconProps) {
@@ -283,4 +298,12 @@ export const TERRAIN_ICONS: Record<Terrain, IconName> = {
   mountain: 'mountain',
   desert: 'desert',
   urban: 'urban',
+}
+
+/** Ein Zeichen je Spionageauftrag (R-SPY-06, R-UI-10). Der Typ haelt die Tabelle am Kern. */
+export const SPY_MISSION_ICONS: Record<SpyMission, IconName> = {
+  intel: 'spyIntel',
+  economicSabotage: 'spyEconomic',
+  militarySabotage: 'spyMilitary',
+  counter: 'spyCounter',
 }

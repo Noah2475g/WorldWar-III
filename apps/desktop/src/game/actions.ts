@@ -12,19 +12,29 @@ import {
   nextBuildLevel,
   recruitDuration,
   recruitStartCondition,
+  spySalary,
+  SPY_MISSIONS,
+  RESOURCE_KEYS,
   type Army,
   type Command,
+  type CommandResult,
   type DiplomacyAction,
+  type DiplomaticOffer,
   type GameState,
   type MapData,
+  type MarketState,
+  type PublicView,
   type ResourceKey,
   type Rules,
+  type SpyMission,
   type Stance,
+  type TradeBundle,
+  type TradeOffer,
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
+import { amount, arrival, costs, duration, gameTime, missing, unfix } from '../ui/format.ts'
 import { BUILDING_ART, UNIT_ART, type ArtName } from '../ui/art.tsx'
-import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
+import { BUILDING_ICONS, SPY_MISSION_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 import { dominantIcon } from '../map/markers.ts'
 
@@ -523,21 +533,210 @@ export function planArrival(
   return { arrivalTick, text: arrival(ctx.state.tick, arrivalTick, ctx.ticksPerDay) }
 }
 
-const DIPLOMACY: readonly { action: DiplomacyAction; label: string }[] = [
+/**
+ * Die Vertragsaktionen (T-M17-14, E6): Kriegserklärung, Frieden, Bündnis — sechs Knöpfe. Durchmarsch
+ * und Kartenfreigabe stehen seit T-M17-14 in einer eigenen Gruppe (`passageActions`), weil sie mit
+ * dem Antrag, seiner Annahme und der Kündigung zusammengehören und nicht mit dem Vertragswerk.
+ */
+const TREATIES: readonly { action: DiplomacyAction; label: string }[] = [
   { action: 'declareWar', label: 'actions.declareWar' },
   { action: 'offerPeace', label: 'actions.offerPeace' },
   { action: 'acceptPeace', label: 'actions.acceptPeace' },
   { action: 'offerAlliance', label: 'actions.offerAlliance' },
   { action: 'acceptAlliance', label: 'actions.acceptAlliance' },
   { action: 'breakAlliance', label: 'actions.breakAlliance' },
-  { action: 'grantRightOfWay', label: 'actions.grantRightOfWay' },
-  { action: 'shareMap', label: 'actions.shareMap' },
 ]
 
 export function diplomacyActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
-  return DIPLOMACY.map(({ action, label }) =>
-    checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
+  return TREATIES.map(({ action, label }) =>
+    checked(
+      ctx,
+      { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action },
+      // Das Ziel gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel): sonst steht
+      // bei stehender Uhr "befohlen" auch bei einer anderen Macht, der nichts befohlen wurde
+      // — `pendingIds` (App.tsx) kennt nur die Zeichenkette, nicht den Befehl dahinter.
+      `diplomacy-${action}-${targetPlayerId}`,
+      t(label),
+    ),
   )
+}
+
+/**
+ * Durchmarsch und Karte (T-M17-14, E6, R-DIP-08): gewähren, beantragen, annehmen, kündigen, dazu
+ * die Kartenfreigabe — fünf Knöpfe in dieser Reihenfolge (Test A1).
+ */
+const PASSAGE: readonly { action: DiplomacyAction; label: string }[] = [
+  { action: 'grantRightOfWay', label: 'actions.grantRightOfWay' },
+  { action: 'requestRightOfWay', label: 'actions.requestRightOfWay' },
+  { action: 'acceptRightOfWay', label: 'actions.acceptRightOfWay' },
+  { action: 'revokeRightOfWay', label: 'actions.revokeRightOfWay' },
+  { action: 'shareMap', label: 'actions.shareMap' },
+]
+
+export function passageActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
+  return PASSAGE.map(({ action, label }) =>
+    checked(
+      ctx,
+      { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action },
+      `diplomacy-${action}-${targetPlayerId}`,
+      t(label),
+    ),
+  )
+}
+
+/** Der Umsetz-Modus (E1): welcher eigene Spion gerade ein neues Ziel sucht. Die Kennung wird nie angezeigt. */
+export interface SpyMove {
+  spyId: string
+  number: number
+}
+
+/** Was ein Auftrag bewirkt, mit den Zahlen der Regeln (T-M12-10) — fuer den Tooltip. */
+function missionEffect(ctx: ActionContext, mission: SpyMission): string {
+  const c = ctx.rules.constants
+  switch (mission) {
+    case 'intel':
+      return t('espionage.chance', { percent: c.spySuccessIntelPermille / 10 })
+    case 'economicSabotage':
+      return `${t('espionage.chance', { percent: c.spySuccessSabotagePermille / 10 })} · ${t('espionage.economicEffect', { morale: c.sabotageMoraleLoss / 1000, share: c.sabotageYieldDestroyedPermille / 10 })}`
+    case 'militarySabotage':
+      return `${t('espionage.chance', { percent: c.spySuccessSabotagePermille / 10 })} · ${t('espionage.militaryEffect', { time: duration(c.militarySabotageDelayTicks, ctx.ticksPerDay) })}`
+    case 'counter':
+      return t('espionage.detection', { percent: c.spyDetectionPermille / 10 })
+  }
+}
+
+/**
+ * Die Gruppe „Spionage" der Provinzleiste (R-SPY-06/AK1, D29.9).
+ *
+ * Fremde oder herrenlose Provinz: Aufklaerung und die zwei Sabotagen; eigene: Gegenspionage. Ob
+ * „eigen", liest der Zustand — eigene Provinzen sind immer sichtbar, das verraet nichts (E12);
+ * alles Uebrige urteilt canApply ueber den BEKANNTEN Besitzer (knownOwner im Kern).
+ *
+ * Im Umsetz-Modus dieselben Auftraege als REASSIGN_SPY des gewaehlten Spions (E1).
+ */
+export function spyActions(ctx: ActionContext, provinceId: string, moving: SpyMove | null = null): ActionSpec[] {
+  const own = ctx.state.provinces[provinceId]?.owner === ctx.playerId
+  return SPY_MISSIONS.filter((mission) => (mission === 'counter') === own).map((mission) => {
+    const label = t(`espionage.missions.${mission}`)
+    const salary = costs({ money: spySalary(ctx.rules.constants, mission) })
+    const icon = SPY_MISSION_ICONS[mission]
+    const explainKey = `explain.espionage.${mission}`
+    if (moving) {
+      const spec = checked(
+        ctx,
+        { type: 'REASSIGN_SPY', playerId: ctx.playerId, spyId: moving.spyId, provinceId, mission },
+        // Die Provinz gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel), sonst
+        // sperrt "befohlen" nach dem Umsetzen in eine Provinz dieselbe Auftragsart auch in
+        // jeder anderen Provinz, obwohl dort noch nichts befohlen wurde.
+        `spy-move-${provinceId}-${mission}`,
+        label,
+        `${t('espionage.moveHint', { salary })} · ${missionEffect(ctx, mission)}`,
+        icon,
+        explainKey,
+      )
+      return { ...spec, aria: t('espionage.moveAria', { number: moving.number, mission: label }) }
+    }
+    const spec = checked(
+      ctx,
+      { type: 'RECRUIT_SPY', playerId: ctx.playerId, provinceId, mission },
+      `spy-recruit-${provinceId}-${mission}`,
+      label,
+      `${t('espionage.recruitHint', { cost: costs({ money: ctx.rules.constants.spyRecruitCost }), salary })} · ${missionEffect(ctx, mission)}`,
+      icon,
+      explainKey,
+    )
+    return { ...spec, aria: t('espionage.recruitAria', { mission: label }) }
+  })
+}
+
+export interface SpyOverview {
+  /** Nur fuer die Befehle der Huelle — NIE anzeigen, nie in eine id (Befund M17-S1, E2). */
+  spyId: string
+  number: number
+  mission: SpyMission
+  missionLabel: string
+  icon: IconName
+  explainKey: string
+  provinceId: string
+  provinceName: string
+  salary: string // „10 Geld je Tag"
+  result: string
+  move: ActionSpec // ohne Befehl: die Huelle schaltet den Umsetz-Modus
+  dismiss: ActionSpec // DISMISS_SPY, geprueft
+}
+
+/** Das letzte Ergebnis in Worten (R-SPY-06); der Gegenspion sagt „keine Enttarnung" (E5). */
+function spyResult(ctx: ActionContext, spy: PublicView['espionage']['spies'][number]): string {
+  if (spy.lastRunTick === null || spy.lastOutcome === null || spy.assignedTick > spy.lastRunTick) {
+    return t('espionage.overview.pending')
+  }
+  const outcome =
+    spy.mission === 'counter' && spy.lastOutcome !== 'targetChanged'
+      ? t(`espionage.counterOutcomes.${spy.lastOutcome}`)
+      : t(`espionage.outcomes.${spy.lastOutcome}`)
+  return t('espionage.overview.outcomeDay', { outcome, day: Math.floor(spy.lastRunTick / ctx.ticksPerDay) + 1 })
+}
+
+/** Die Spionageuebersicht (R-SPY-06, D29.9). Liest NUR die eigene Sicht — `view.espionage.spies`. */
+export function spyOverviewActions(ctx: ActionContext, spies: PublicView['espionage']['spies']): SpyOverview[] {
+  return spies.map((spy, index) => {
+    const number = index + 1
+    const missionLabel = t(`espionage.missions.${spy.mission}`)
+    const dismiss = checked(
+      ctx,
+      { type: 'DISMISS_SPY', playerId: ctx.playerId, spyId: spy.id },
+      `spy-${number}-dismiss`,
+      t('espionage.overview.dismiss'),
+      t('espionage.overview.dismissHint'),
+    )
+    return {
+      spyId: spy.id,
+      number,
+      mission: spy.mission,
+      missionLabel,
+      icon: SPY_MISSION_ICONS[spy.mission],
+      explainKey: `explain.espionage.${spy.mission}`,
+      provinceId: spy.provinceId,
+      provinceName: ctx.map.provinces.find((p) => p.id === spy.provinceId)?.name ?? spy.provinceId,
+      salary: t('espionage.overview.salaryAmount', {
+        amount: costs({ money: spySalary(ctx.rules.constants, spy.mission) }),
+      }),
+      result: spyResult(ctx, spy),
+      move: {
+        id: `spy-${number}-move`,
+        label: t('espionage.overview.move'),
+        aria: t('espionage.overview.moveAria', { number }),
+        disabledReason: null,
+      },
+      dismiss: { ...dismiss, aria: t('espionage.overview.dismissAria', { number }) },
+    }
+  })
+}
+
+/** „2 von 5 Spionen · Sold 30 Geld je Tag". */
+export function spySummary(ctx: ActionContext, spies: PublicView['espionage']['spies']): string {
+  const total = spies.reduce((sum, spy) => sum + spySalary(ctx.rules.constants, spy.mission), 0)
+  return t('espionage.overview.summary', {
+    count: spies.length,
+    max: ctx.rules.constants.maxSpiesPerPlayer,
+    salary: costs({ money: total }),
+  })
+}
+
+/**
+ * Deckt `giveAmount` so, dass `giveAmount * Kurs` innerhalb von Number.MAX_SAFE_INTEGER
+ * bleibt, BEVOR exchangeAmount() (packages/core) rechnet — sonst wirft divFixed() dort einen
+ * FixedOverflowError (Befund kritisch 1, Nacharbeit T-M17-13/14: ein Zahlfeld ohne `max` im
+ * neuen Angebotsformular, derselbe Weg schon laenger im Marktpanel). Eine Vorschau braucht den
+ * wahren Wert eines unsinnig grossen Entwurfs nicht, nur `canApply()`/`tradeChecked()` muss ihn
+ * am Ende ablehnen — deshalb kappt NUR diese Funktion, nie der Befehl selbst (Falle 7: eine
+ * Grenze anheben waere ein Fehler, hier wird keine angehoben, nur eine bestehende technische
+ * durchgesetzt, bevor sie ueberfahren wird).
+ */
+function safeExchangeAmount(market: MarketState, give: ResourceKey, giveAmount: number, want: ResourceKey): number {
+  const givePrice = market.prices[give]
+  const capped = givePrice > 0 ? Math.min(giveAmount, Math.floor(Number.MAX_SAFE_INTEGER / givePrice)) : giveAmount
+  return exchangeAmount(market, give, capped, want)
 }
 
 /** What a trade would return at the tick's price, and the order to make it. */
@@ -547,13 +746,295 @@ export function tradePreview(
   giveAmount: number,
   want: ResourceKey,
 ): { wantAmount: number; text: string; action: ActionSpec } {
-  const wantAmount = give === want ? 0 : exchangeAmount(ctx.state.market, give, giveAmount, want)
+  const wantAmount = give === want ? 0 : safeExchangeAmount(ctx.state.market, give, giveAmount, want)
   const action = checked(ctx, { type: 'TRADE', playerId: ctx.playerId, give, giveAmount, want }, 'trade', t('market.trade'))
   const text =
     wantAmount > 0
       ? t('market.preview', { amount: amount(wantAmount), resource: t(`resources.${want}`) })
       : t('market.previewNone')
   return { wantAmount, text, action }
+}
+
+/**
+ * Handelsangebote als Knöpfe (T-M17-14, R-DIP-07, R-DIP-09). `checked()`/`describeRejection`
+ * genügen hier nicht: `QUEUE_FULL` läse bei einem Handelsangebot „Alle Bauplätze belegt" (E7,
+ * `rejections.ts:59`, `errors.QUEUE_FULL`), und Provinznamen kennt `describeRejection` gar nicht.
+ * Eine eigene Prüfkette bildet die Gründe des Kerns (`packages/core/src/commands/tradeOffer.ts`)
+ * auf Sätze aus `de.ts` ab — mit einer Schwärzung für die Annahme (E1, Falle 7).
+ */
+
+/** Was ein Bündel zum Kurs des Ticks in Geld wert ist (R-DIP-07). Provinzen haben keinen Kurs. */
+export function tradeValue(market: MarketState, resources: TradeBundle['resources']): number {
+  return RESOURCE_KEYS.reduce((sum, key) => {
+    const value = resources[key]
+    return value ? sum + safeExchangeAmount(market, key, value, 'money') : sum
+  }, 0)
+}
+
+/** "5 Eisen, 2 Kohle, Provinz Nordtal" — oder "nichts" (R-DIP-09). */
+export function bundleText(bundle: TradeBundle, nameOfProvince: (id: string) => string): string {
+  const parts: string[] = []
+  for (const key of RESOURCE_KEYS) {
+    const value = bundle.resources[key]
+    if (value) parts.push(`${amount(value)} ${t(`resources.${key}`)}`)
+  }
+  for (const provinceId of bundle.provinces) {
+    parts.push(t('trade.province', { name: nameOfProvince(provinceId) }))
+  }
+  return parts.length > 0 ? parts.join(', ') : t('trade.nothing')
+}
+
+export interface TradeDraft {
+  give: TradeBundle
+  want: TradeBundle
+}
+
+export interface OfferNaming {
+  nameOf: (playerId: string) => string
+  nameOfProvince: (id: string) => string
+}
+
+/** Handelsbefehle brauchen eine eigene Zuordnung Grund → Satz (E7), nicht `describeRejection`. */
+function tradeChecked(
+  ctx: ActionContext,
+  command: Command,
+  id: string,
+  label: string,
+  nameOfProvince: (id: string) => string,
+  offer?: TradeOffer,
+): ActionSpec {
+  const result = canApply(ctx.state, command, { map: ctx.map, rules: ctx.rules, commands: [command], events: [] })
+  return {
+    id,
+    label,
+    disabledReason: result.ok ? null : describeTradeRejection(result, command, ctx, nameOfProvince, offer),
+    command,
+  }
+}
+
+/** Die Gründe des Kerns (`tradeOffer.ts`) als Sätze mit Provinznamen — Tabelle in Bauplan §4.1. */
+function describeTradeRejection(
+  result: Extract<CommandResult, { ok: false }>,
+  command: Command,
+  ctx: ActionContext,
+  nameOfProvince: (id: string) => string,
+  offer?: TradeOffer,
+): string {
+  const detail = result.detail ?? {}
+  const provinceId = typeof detail.provinceId === 'string' ? detail.provinceId : undefined
+  const reason = typeof detail.reason === 'string' ? detail.reason : undefined
+
+  // E1: scheitert die Annahme an einer Provinz der GEBENDEN (Anbieter-)Seite, heisst der Grund
+  // immer "das Angebot verfaellt" — ohne Provinz, ohne Ursache. Sonst verraet der Annehmen-Knopf
+  // Armeen, Hauptstadt oder umkaempftes Land des Anbieters (Falle 7, Test A7).
+  if (
+    command.type === 'ACCEPT_TRADE' &&
+    offer &&
+    (result.code === 'INVALID_TARGET' || result.code === 'PROVINCE_NOT_FOUND') &&
+    provinceId !== undefined &&
+    offer.give.provinces.includes(provinceId)
+  ) {
+    return t('trade.blocked.lapsing')
+  }
+
+  if (result.code === 'INVALID_TARGET' && reason !== undefined) {
+    switch (reason) {
+      case 'nicht im Besitz':
+        return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
+      case 'Hauptstadt':
+        return t('trade.blocked.capital', { province: nameOfProvince(provinceId ?? '') })
+      case 'umkämpft':
+        return t('trade.blocked.contested', { province: nameOfProvince(provinceId ?? '') })
+      case 'eigene Armeen':
+        return t('trade.blocked.ownArmies', { province: nameOfProvince(provinceId ?? '') })
+      case 'fremde Armeen':
+        return t('trade.blocked.foreignArmies', { province: nameOfProvince(provinceId ?? '') })
+      case 'doppelte Provinz':
+        return t('trade.blocked.duplicate')
+      case 'leeres Angebot':
+        return t('trade.blocked.empty')
+      case 'gleicher Rohstoff auf beiden Seiten':
+        return t('trade.blocked.sameResource')
+      case 'über der Höchstmenge': {
+        const resource = typeof detail.resource === 'string' ? detail.resource : undefined
+        const max = resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
+        return t('trade.blocked.limit', { max: amount(max), resource: resource ? t(`resources.${resource}`) : '' })
+      }
+      case 'ungültige Menge':
+      case 'unbekannter Rohstoff':
+      case 'ungültiges Angebot':
+        return t('trade.blocked.invalidAmount')
+      case 'im Krieg':
+        return t('trade.blocked.war')
+      case 'Kriegserklärung läuft':
+        return t('trade.blocked.declaration')
+      case 'Anbieter ausgeschieden':
+        return t('trade.blocked.gone')
+      default:
+        break
+    }
+  }
+
+  if (result.code === 'PLAYER_ELIMINATED') return t('trade.blocked.gone')
+
+  if (result.code === 'QUEUE_FULL') return t('trade.blocked.queueFull', { max: Number(detail.max) })
+
+  if (result.code === 'INSUFFICIENT_RESOURCES') {
+    const player = ctx.state.players[ctx.playerId]
+    const available = (player?.resources ?? {}) as Partial<Record<string, number>>
+    const needed: Partial<Record<string, number>> =
+      command.type === 'OFFER_TRADE' ? command.give.resources : (offer?.want.resources ?? {})
+    const short = missing(needed, available)
+    const resourceKey = typeof detail.resource === 'string' ? detail.resource : 'money'
+    return t('errors.INSUFFICIENT_RESOURCES', { missing: short || t(`resources.${resourceKey}`) })
+  }
+
+  return describeRejection(result, command, ctx)
+}
+
+/** Das Angebotsformular je Macht (R-DIP-07, R-DIP-09): Vorschau und der Knopf, der es abschickt. */
+export function tradeOfferAction(
+  ctx: ActionContext,
+  targetPlayerId: string,
+  draft: TradeDraft,
+  nameOfProvince: (id: string) => string,
+): { giveValue: number; wantValue: number; text: string; action: ActionSpec } {
+  const command: Command = { type: 'OFFER_TRADE', playerId: ctx.playerId, targetPlayerId, give: draft.give, want: draft.want }
+  // NIE ctx.state.players[targetPlayerId].resources lesen (E10, Test A9): die Vorschau rechnet nur
+  // mit dem Kurs (oeffentlich) und dem eigenen Entwurf, nie mit dem Bestand des Partners.
+  const giveValue = tradeValue(ctx.state.market, draft.give.resources)
+  const wantValue = tradeValue(ctx.state.market, draft.want.resources)
+  // Das Ziel gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel): sonst sperrt
+  // "befohlen" nach einem Angebot an eine Macht bei stehender Uhr auch das Formular fuer
+  // jede andere Macht.
+  const action = tradeChecked(ctx, command, `trade-offer-${targetPlayerId}`, t('trade.send'), nameOfProvince)
+  const hasProvinces = draft.give.provinces.length > 0 || draft.want.provinces.length > 0
+  const text =
+    t('trade.worth', { give: amount(giveValue), want: amount(wantValue) }) +
+    (hasProvinces ? ` ${t('trade.worthProvinces')}` : '')
+  return { giveValue, wantValue, text, action }
+}
+
+export interface OfferRowSpec {
+  id: string
+  text: string
+  note?: string
+  actions: ActionSpec[]
+}
+
+const ACCEPT_FOR: Record<DiplomaticOffer['kind'], DiplomacyAction> = {
+  peace: 'acceptPeace',
+  alliance: 'acceptAlliance',
+  rightOfWay: 'acceptRightOfWay',
+}
+
+const REQUEST_LABEL: Record<DiplomaticOffer['kind'], string> = {
+  peace: 'actions.acceptPeace',
+  alliance: 'actions.acceptAlliance',
+  rightOfWay: 'actions.acceptRightOfWay',
+}
+
+/**
+ * Eingehende und ausgehende Angebote — Handel UND die drei diplomatischen Arten (R-DIP-07,
+ * R-DIP-08, D29.9). Ausschliesslich aus `view` gelesen (Angebote, Namen); `ctx.state` dient nur
+ * `canApply` (R-DIP-04, Falle 1).
+ */
+export function offerListActions(
+  ctx: ActionContext,
+  view: PublicView,
+  naming: OfferNaming,
+): { incoming: OfferRowSpec[]; outgoing: OfferRowSpec[] } {
+  const nationOf = (id: string): string => naming.nameOf(id) || t('trade.unknownPower')
+
+  const incoming: OfferRowSpec[] = [
+    ...view.tradeOffers.incoming.map((offer, index): OfferRowSpec => {
+      const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
+      // Marktwert aus Sicht des EMPFAENGERS: er gibt `want` her, bekommt `give`.
+      const note =
+        t('trade.worth', {
+          give: amount(tradeValue(ctx.state.market, offer.want.resources)),
+          want: amount(tradeValue(ctx.state.market, offer.give.resources)),
+        }) + ` ${t('trade.expires', { day })}`
+      return {
+        id: offer.id,
+        text: t('trade.incoming', {
+          nation: nationOf(offer.from),
+          give: bundleText(offer.give, naming.nameOfProvince),
+          want: bundleText(offer.want, naming.nameOfProvince),
+        }),
+        note,
+        actions: [
+          tradeChecked(
+            ctx,
+            { type: 'ACCEPT_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            // Positionsbasiert (Befund M17-S1, E2): `offer.id` ist ein GLOBALER Zaehler ueber
+            // alle Maechte (`t7`); im DOM (ActionRow, Panels.tsx:174 `${action.id}-reason`)
+            // wuerde er verraten, wie viele Angebote insgesamt liefen — auch fremde.
+            `trade-in-${index}-accept`,
+            t('trade.accept'),
+            naming.nameOfProvince,
+            offer,
+          ),
+          tradeChecked(
+            ctx,
+            { type: 'DECLINE_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            `trade-in-${index}-decline`,
+            t('trade.decline'),
+            naming.nameOfProvince,
+          ),
+        ],
+      }
+    }),
+    ...view.incomingOffers.map(
+      (offer, index): OfferRowSpec => ({
+        id: `offer-${offer.kind}-${offer.from}`,
+        text: t(`diplomacy.request.${offer.kind}`, { nation: nationOf(offer.from) }),
+        actions: [
+          checked(
+            ctx,
+            { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId: offer.from, action: ACCEPT_FOR[offer.kind] },
+            // Positionsbasiert: `offer.from` (`p2`) traegt sonst eine Spielerkennung ins DOM.
+            `offer-in-${index}-accept`,
+            t(REQUEST_LABEL[offer.kind]),
+          ),
+        ],
+      }),
+    ),
+  ]
+
+  const outgoing: OfferRowSpec[] = [
+    ...view.tradeOffers.outgoing.map((offer, index): OfferRowSpec => {
+      const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
+      const hasEscrow = Object.keys(offer.give.resources).length > 0
+      return {
+        id: offer.id,
+        text: t('trade.outgoing', {
+          nation: nationOf(offer.to),
+          give: bundleText(offer.give, naming.nameOfProvince),
+          want: bundleText(offer.want, naming.nameOfProvince),
+        }),
+        note: `${t('trade.expires', { day })}${hasEscrow ? ` ${t('trade.escrow')}` : ''}`,
+        actions: [
+          tradeChecked(
+            ctx,
+            { type: 'WITHDRAW_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            `trade-out-${index}-withdraw`,
+            t('trade.withdraw'),
+            naming.nameOfProvince,
+          ),
+        ],
+      }
+    }),
+    ...view.outgoingOffers.map(
+      (offer): OfferRowSpec => ({
+        id: `offer-${offer.kind}-${offer.to}`,
+        text: t(`diplomacy.ownRequest.${offer.kind}`, { nation: nationOf(offer.to) }),
+        actions: [],
+      }),
+    ),
+  ]
+
+  return { incoming, outgoing }
 }
 
 /** "3 × Infanterie" — the composition of an own army, in whole units. */

@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { createInitialState, parseRules, type Army, type GameState, type MapData } from '@worldwar/core'
+import { createInitialState, parseRules, publicView, step, type Army, type GameState, type MapData } from '@worldwar/core'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Dialog } from './Dialogs.tsx'
 import { ActionRow, type Action } from './Panels.tsx'
@@ -12,8 +12,13 @@ import {
   cancelActions,
   capitalAction,
   diplomacyActions,
+  offerListActions,
+  passageActions,
   recruitActions,
+  spyActions,
+  spyOverviewActions,
   targetAction,
+  tradeOfferAction,
   tradePreview,
   type ActionContext,
   type ActionSpec,
@@ -184,7 +189,7 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
 
   /** Die Verben des Hauses — ein Befehl, dessen Name keines traegt, ist ein Substantiv. */
   const VERB =
-    /\b(bauen|ausheben|abbrechen|verlegen|erklären|anbieten|annehmen|aufkündigen|gewähren|teilen|zusammenlegen|marschieren|anhalten|beschießen|halten|freigeben|einnehmen|befehlen|handeln)\b/i
+    /\b(bauen|ausheben|abbrechen|verlegen|erklären|anbieten|annehmen|aufkündigen|gewähren|teilen|zusammenlegen|marschieren|anhalten|beschießen|halten|freigeben|einnehmen|befehlen|handeln|anwerben|umsetzen|entlassen|beantragen|ablehnen|zurückziehen|kündigen)\b/i
 
   function alleAktionen(): { ctx: ActionContext; specs: ActionSpec[] } {
     const state = createInitialState(
@@ -220,7 +225,51 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
       { id: 'b1', building: 'barracks', startedTick: 0, completesAtTick: 24 },
     ] as never
 
+    // Eine fremde Provinz bekannt machen (Aufklaerungsgedaechtnis) und einen eigenen
+    // Spion anlegen, damit Spionage- und Uebersichtsknoepfe in der Liste stehen (T-M17-13).
+    state.players.p1!.intel[neighbour] = { tick: 0, owner: state.provinces[neighbour]!.owner, strength: 0 }
+    state.espionage.spies.push({
+      id: 's1',
+      owner: 'p1',
+      provinceId: capital,
+      mission: 'counter',
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+
     const ctx: ActionContext = { state, map: world, rules, playerId: 'p1', ticksPerDay: rules.constants.ticksPerDay }
+    const andere = state.playerOrder[1]!
+    const nameOfProvince = (id: string) => world.provinces.find((p) => p.id === id)?.name ?? id
+
+    // Eine Lage mit einem ein- und einem ausgehenden Handelsangebot, ueber den Kern (T-M17-14):
+    // die Aktionen aus `offerListActions` gehoeren zur Liste, nicht nur zu Formular und Durchmarsch.
+    const mitAngeboten = step(
+      state,
+      [
+        {
+          type: 'OFFER_TRADE',
+          playerId: andere,
+          targetPlayerId: 'p1',
+          give: { resources: { iron: 1000 }, provinces: [] },
+          want: { resources: { money: 1000 }, provinces: [] },
+        },
+        {
+          type: 'OFFER_TRADE',
+          playerId: 'p1',
+          targetPlayerId: andere,
+          give: { resources: { wood: 1000 }, provinces: [] },
+          want: { resources: { money: 1000 }, provinces: [] },
+        },
+      ],
+      { map: world, rules },
+    ).state
+    const angebotCtx: ActionContext = { ...ctx, state: mitAngeboten }
+    const view = publicView(mitAngeboten, 'p1', rules)
+    const naming = { nameOf: (id: string) => mitAngeboten.players[id]!.nation, nameOfProvince }
+    const offerRows = offerListActions(angebotCtx, view, naming)
+
     const specs = [
       ...buildActions(ctx, capital),
       ...recruitActions(ctx, capital),
@@ -229,8 +278,21 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
       ...armyActions(ctx, 'a1'),
       targetAction(ctx, 'a1', 'move', neighbour),
       targetAction(ctx, 'a1', 'bombard', neighbour),
-      ...diplomacyActions(ctx, state.playerOrder[1]!),
+      ...diplomacyActions(ctx, andere),
+      ...passageActions(ctx, andere),
       tradePreview(ctx, 'wood', 1000, 'iron').action,
+      tradeOfferAction(
+        ctx,
+        andere,
+        { give: { resources: { iron: 1000 }, provinces: [] }, want: { resources: { money: 1000 }, provinces: [] } },
+        nameOfProvince,
+      ).action,
+      ...offerRows.incoming.flatMap((row) => row.actions),
+      ...offerRows.outgoing.flatMap((row) => row.actions),
+      ...spyActions(ctx, neighbour),
+      ...spyActions(ctx, capital),
+      ...spyActions(ctx, neighbour, { spyId: 's1', number: 1 }),
+      ...spyOverviewActions(ctx, state.espionage.spies).flatMap((row) => [row.move, row.dismiss]),
     ]
     return { ctx, specs }
   }
