@@ -3485,14 +3485,26 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   `apps/headless/test/tournament.test.ts`, `test/guards/ai-memory-unread.test.ts`.
 - **Fertig wenn:** jede Handlung Grund und Alternative nennt (R-AI-09/AK4) und das Turnier im
   Band 0,55 bis 0,95 bleibt.
-- **Gebaut am 2026-09-25, Status zurückgenommen (siehe `tasks.yaml`, Feld `reopened`):** Durchmarsch
-  fragt statt zu marschieren (B6 behoben), Handel antwortet begründet und bietet nur bei spürbarer
-  Kurswirkung an, jede neue Zahl steht in `ai.json`. Das Fertig-wenn selbst ist **nicht** erfüllt:
-  „schwer gegen normal, im Frieden" fällt auf 50 % (Band 0,55–0,95 gerissen). Ursprünglich Befund
-  M17-D9 zugeschrieben (`landNeighbours` kenne keinen direkten Landnachbarn) — das ist in der
-  Nacharbeit ki **widerlegt**: der Landnachbar entsteht sehr wohl, die eigentliche Ursache ist das
-  Fehlen von `borderThreat`/Verstimmung ohne die B6-Überfälle. Siehe `PROBLEME.md` Befund M17-M2
-  (Zusammenführung mit Bahn B) für die endgültige Zerlegung der Ursache.
+- **Gebaut am 2026-09-25.** Durchmarsch fragt statt zu marschieren (B6 behoben), Handel antwortet
+  begründet und bietet nur bei spürbarer Kurswirkung an, jede neue Zahl steht in `ai.json`. Das
+  Fertig-wenn selbst war zunächst **nicht** erfüllt: „schwer gegen normal, im Frieden" fiel auf
+  50 % (Band 0,55–0,95 gerissen). Ursprünglich Befund M17-D9 zugeschrieben (`landNeighbours` kenne
+  keinen direkten Landnachbarn) — das ist in der Nacharbeit ki **widerlegt**: der Landnachbar
+  entsteht sehr wohl, die eigentliche Ursache ist das Fehlen von `borderThreat`/Verstimmung ohne
+  die B6-Überfälle. Siehe `PROBLEME.md` Befund M17-M2 (Zusammenführung mit Bahn B) für die
+  endgültige Zerlegung der Ursache.
+- **Nacharbeit Turnier (2026-09-25), Status abgeschlossen.** Ursache endgültig zerlegt (Befund
+  M17-T1, `PROBLEME.md`): die Wegsicherung marschierender Armeen (`military.ts`, E4) hält auch am
+  Zielfeld an, dessen Besitzer unterwegs einer friedlichen Macht zugefallen ist — vor M17 waren
+  genau diese veralteten Befehle **alle** Kriege der Turnierpaarung „im Frieden" (145
+  `WAR_DECLARED`, 0 förmlich). Noahs Entscheid zu Befund M17-T5 (`DECISIONS.md`, 2026-09-25):
+  Option C — die KI erklärt der Macht am veralteten Ziel förmlich den Krieg, statt hineinzustolpern
+  (`staleTargetDeclarations`, Commits `f69dffb`, `e0712f5`, `21859f8`, `1179075`) — und Option D —
+  das Turnier wird neu aufgestellt, damit es streut (T-M17-15, Commits `36121fb`, `d904c3c`,
+  `97c385c`). Beide Bedingungen für den Abschluss sind erfüllt: Turnier „schwer gegen normal, im
+  Frieden" hält bei **0,760** (110 verschiedene Ausgänge), zwei Läufe zeilengleich. **Status auf
+  `done` gesetzt, `reopened` aufgelöst.** Die weiterführende Empfindlichkeitsmessung (je
+  Sitzordnung und Startzahl, Obergrenze 0,95) gehört T-M17-15, nicht dieser Aufgabe.
 
 ### T-M17-11 · KI: Provinzwert und Provinzhandel
 - **Ziel:** was eine fremde Provinz wert ist, ist die eigentliche Arbeit am Provinzhandel.
@@ -3533,17 +3545,29 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`.
 - **Fertig wenn:** Turnier und `progress.slow.test.ts` nachgefahren sind; kippt das Band, wird
   `grievanceOnSpyDetected` gesenkt, nicht der Wächter.
-- **Gebaut am 2026-09-25, Status zurückgenommen (siehe `tasks.yaml`, Feld `reopened`):**
-  `espionageCommands` prüft Ziele, Budget/Rücklage und wirbt höchstens einen Spion je Tag an,
-  jede Handlung begründet. Das Turnierband riss beim Einbau auf 100 % (Band 0,55–0,95); die
-  Leiter aus D29.12 (`grievanceOnSpyDetected` 300 → 200 → 150) bewegte das Ergebnis auf **keiner**
-  Stufe — Befund M17-S4, die vermutete Verstimmungsspirale ist widerlegt, `grievanceOnSpyDetected`
-  bleibt bei 300. Zwei Nacharbeit-Runden behoben zwei Codebefunde (M17-S8: Gegenspion wurde durch
-  ein eigenes, unbeantwortetes Friedensangebot fälschlich entlassen; M17-S9: bei Hauptstadtverlust
-  wurde er entlassen statt umgesetzt) und maßen zwei Kontrollen (Budget 0 hält das Band ein,
-  Verstimmung 0 ändert nichts) — das Band bleibt bei 0,98 gerissen. Siehe `PROBLEME.md` Befund
-  M17-S4 und M17-M2 (Zusammenführung mit Bahn A: 50 % im Frieden aus der B6-Sperre der
-  Diplomatiebahn, 98 % im Krieg aus dieser Aufgabe).
+- **Gebaut am 2026-09-25.** `espionageCommands` prüft Ziele, Budget/Rücklage und wirbt höchstens
+  einen Spion je Tag an, jede Handlung begründet. Das Turnierband riss beim Einbau auf 100 % (Band
+  0,55–0,95); die Leiter aus D29.12 (`grievanceOnSpyDetected` 300 → 200 → 150) bewegte das Ergebnis
+  auf **keiner** Stufe — Befund M17-S4, die vermutete Verstimmungsspirale ist widerlegt,
+  `grievanceOnSpyDetected` bleibt bei 300. Zwei Nacharbeit-Runden behoben zwei Codebefunde (M17-S8:
+  Gegenspion wurde durch ein eigenes, unbeantwortetes Friedensangebot fälschlich entlassen; M17-S9:
+  bei Hauptstadtverlust wurde er entlassen statt umgesetzt) und maßen zwei Kontrollen (Budget 0
+  hält das Band ein, Verstimmung 0 ändert nichts) — das Band blieb in der **alten** Turnieraufstellung
+  bei 0,98 gerissen. Siehe `PROBLEME.md` Befund M17-S4 und M17-M2 (Zusammenführung mit Bahn A: 50 %
+  im Frieden aus der B6-Sperre der Diplomatiebahn, 98 % im Krieg aus dieser Aufgabe).
+- **Nacharbeit Turnier (2026-09-25), Status abgeschlossen.** Die KI-Spionage ist zerlegt (Befund
+  M17-T3, `PROBLEME.md`): Sabotage wird auf der Testwelt nie angeworben, Aufklärung und halbes
+  Budget bleiben ohne Wirkung, der Gegenspion allein verschiebt die Quote über seinen Geldabfluss
+  — kein Fehler, keine Zahl geändert; die 98/100 % aus der alten Aufstellung sind eine Eigenschaft
+  des Messgeräts (Befund M17-T4), nicht der Spionage. In der neu aufgestellten Turnierpaarung
+  (Option D, drei Mächte reihum) bewegt die Spionage die **gemittelte** Quote von 0,58 auf 0,76,
+  beides im Band — je Sitzordnung reicht die Spanne aber von 0,29 bis 0,90 (aus) und 0,60 bis 0,92
+  (an), ähnlich empfindlich wie das alte Messgerät; die Mittelung über drei Sitzordnungen trägt das
+  Band, nicht die Spionage selbst (Einzelheiten gehören T-M17-15). Noahs Entscheid zu Befund M17-T5
+  knüpfte den Abschluss an Option C (Commits `f69dffb`, `e0712f5`, `21859f8`, `1179075`) und das
+  neu aufgestellte Turnier im Band (Option D, Commits `36121fb`, `d904c3c`, `97c385c`) — beide
+  Bedingungen sind erfüllt, das Band hält bei **0,760** (110 Ausgänge), zwei Läufe zeilengleich.
+  **Status auf `done` gesetzt, `reopened` aufgelöst.**
 
 ### T-M17-13 · Oberfläche Spionage
 - **Ziel:** eine Mechanik ohne Knopf ist für den Spieler nicht vorhanden.
@@ -3575,13 +3599,37 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel.
 - **Anforderungen:** R-AI-09 · **Entwurf:** D29.8
 - **Abhängigkeiten:** T-M17-10, T-M17-11, T-M17-12, T-M17-13, T-M17-14
-- **Dateien:** `docs/reports/m17-integration.json`
+- **Dateien:** `docs/reports/m17-integration.json`, `apps/headless/src/tournament.ts`,
+  `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/tournament.test.ts`,
+  `scripts/acceptance-criteria.mjs`
 - **Tests zuerst:** neu `apps/headless/test/m17-integration.slow.test.ts` nach dem Muster von
   `ai-integration.slow.test.ts` — 200 Spieltage, acht KI, Weltkarte, alles aus dem Ereignisstrom:
-  R-AI-09/AK1 bis AK4.
+  R-AI-09/AK1 bis AK4. Zusätzlich `apps/headless/test/tournament.slow.test.ts`,
+  `apps/headless/test/tournament.test.ts`.
 - **Fertig wenn:** die Zahlen samt Nullen im Bericht stehen. `PROVINCE_CEDED` wird gezählt, nicht
   zugesichert — bleibt es in drei Startzahlen null, führt `PROBLEME.md` die Verkaufsregel als zu
   streng.
+- **Teil des Tors seit Noahs Entscheid zu M17-T5 (2026-09-25, Option D):** das Turnier ist neu
+  aufgestellt, damit es streut — Testwelt, drei Mächte reihum (Nordland/Ostmark/Sueden in drei
+  Sitzordnungen), der Dritte als Füller auf „normal", 25 Startzahlen je Aufstellung, Stufen je Paar
+  getauscht, 150 Partien je Paarung, 40 Spieltage, jedes Turnier einmal gerechnet (rund 35 s).
+  Zugesichert unverändert: schwer gegen leicht mindestens 0,70; schwer gegen normal im Frieden im
+  Band 0,55 bis 0,95 und nicht jedes Paar unentschieden; mindestens ein Frieden; schwer und normal
+  erklären selbst Krieg. Neu zugesichert: beide Stufen erklären förmlich (nicht nur durch Überfall,
+  Befund M17-T1); mindestens 50 verschiedene Ausgänge und keine Nation über 600 ‰ der Partien
+  (Befund M17-T4). Überfälle stehen als Zahl im Bericht (Befund M17-T6), nicht als Zusicherung.
+  Gemessen mit Option C: 0,847 / 0,760 / 0,633, 110 Ausgänge.
+- **Offene Prüfpunkte für das Integrationstor (Nacharbeit Turnier, 2026-09-25):** Befund M17-T7 —
+  `ai-integration.slow.test.ts` ist auf dem M17-Stand 2 von 21 rot (Artillerie/Beschuss: 0
+  ausgehoben statt 18, 0 Beschuss; Frieden in 90 Tagen: 0 statt mindestens einer), vor der Abnahme
+  zu klären. Empfindlichkeit des Turniers je Sitzordnung: Spionage aus 0,29–0,90, an 0,60–0,92
+  (Startzahlen 1000/5000/7000). Je Startzahl (1000/5000/7000/9000, Paarung schwer gegen normal im
+  Frieden): 0,7267–0,82. Die Obergrenze 0,95 hält nur, weil Ostmark in zwei von drei Sitzordnungen
+  schwach ist (Ostmark/Sueden/Nordland 0,60–0,70, Sueden/Nordland/Ostmark 0,86–0,92) — „normal"
+  gewinnt in keinem der vier Startzahl-Blöcke mehr als 1 von 75 Paaren. Frische-Wächter: `GAUGES`
+  „Turnier" in `scripts/acceptance-criteria.mjs` (`sources`) deckt `apps/headless/src` und
+  `apps/headless/test` nicht, obwohl die Turnierlogik seit Option D dort liegt — vor der Abnahme zu
+  ergänzen (und `test/requirements.test.ts` mitzuziehen, das die Liste wörtlich nennt).
 
 ### T-M17-16 · Abschlussmessung, der eine Parameterlauf, Abnahme
 - **Ziel:** alle Regeländerungen der Delegation einmal und zusammen vermessen.

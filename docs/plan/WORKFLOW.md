@@ -225,7 +225,7 @@ entweder Noah oder seine Ansage.
    NICHT je Abnahme; sie stecken in `pnpm test:slow` und hinter dem Frische-Wächter:
    ändern sich `data/rules/**`, wird die Abnahme rot, bis `pnpm balance:sweep` bzw. das
    Turnier neu gelaufen **und eingecheckt** sind. Das Turnier folgt seit dem 2026-09-13
-   auch `packages/ai/src` und `packages/core/src` (13 Sekunden), der Parameterlauf bewusst
+   auch `packages/ai/src` und `packages/core/src` (rund 32 Sekunden, gemessen 2026-09-25), der Parameterlauf bewusst
    nicht (eine Stunde; Code decken Turnier und `progress.slow` ab). Seit T-M40-16 gilt dasselbe für den
    Haltungs-Messlauf (`apps/headless/test/stance.slow.test.ts`, gut elf Minuten): ändert sich
    `packages/ai/src` oder `packages/core/src`, bleibt die Abnahme rot, bis der Lauf mit
@@ -236,7 +236,8 @@ entweder Noah oder seine Ansage.
    `GAUGES` und `STANCE_SOURCES` (`scripts/acceptance-criteria.mjs`); der Haltungs-Messlauf
    braucht dafür einen **an diesen Quellen sauberen Arbeitsbaum**. Am echten Stand, ohne Abnahme:
    `node --input-type=module -e "const m = await import('./scripts/freshness.mjs'); console.log(m.allFreshness('.'))"`.
-6. **Der Parameterlauf dauert rund eine Stunde**, das Turnier 13 Sekunden. Wer nur
+6. **Der Parameterlauf dauert rund eine Stunde**, das Turnier rund 32 Sekunden (gemessen
+   2026-09-25). Wer nur
    wissen will, ob eine Regeländerung die Partie verschoben hat, nimmt
    `apps/headless/test/progress.slow.test.ts` (2,5 min): er fährt **denselben Grundlauf**
    wie der Parameterlauf und reproduziert dessen Ausgangswert auf die vierte Stelle. Der

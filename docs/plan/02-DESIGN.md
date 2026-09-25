@@ -2588,6 +2588,18 @@ Abschnitt „Spionage und Handel (D29)" im Format des Abschnitts zum Verhältnis
   Verbündeten im Krieg ist; sonst nichts. *Erwidern* (echt, behebt B2): Durchmarsch erhalten,
   selbst nicht gewährt, Verhältnis gut → gewähren. *Widerruf:* Verhältnis unter der
   Kriegsschwelle. *Gast nach Widerruf:* eigene Armeen vor Fristende zurückziehen.
+  *Veraltetes Ziel* (Erweiterung vom 2026-09-25, Noahs Entscheid zu Befund M17-T5): ist das Ziel
+  eines laufenden Angriffsmarschs unterwegs einer Macht zugefallen, mit der Frieden herrscht (kein
+  Waffenstillstand, keine laufende Erklärung, kein Durchmarschrecht), und ist die Frontengrenze
+  `maxFronts` nicht erreicht, **erklärt die KI dieser Macht förmlich den Krieg** und hält die
+  Armee an, bis die Erklärung wirkt — einmal je Macht und Zug, bestimmt vor jedem Antrag desselben
+  Zugs, damit kein Antrag an eine Macht geht, der im selben Zug erklärt wird. Ohne Stärkeprüfung:
+  die hat der Angriffsbefehl gestellt. Ist die Grenze erreicht oder herrscht Waffenstillstand, gilt
+  der Antrag wie oben. Vorher stolperte die Armee in solches Land (Befund M17-T1: vor M17 jeder
+  Krieg der Turnierpaarung „im Frieden"), seit T-M17-10 blieb sie stehen und der Krieg aus (Befund
+  M17-T2). Sperrt vor dem Ziel das Land einer dritten, am Angriff unbeteiligten Macht, erklärt die
+  KI **nicht** dieser dritten Macht, sondern beantragt bei ihr Durchmarsch wie bisher (E4/E5) — die
+  förmliche Erklärung gilt nur der Macht, die das Ziel tatsächlich hält.
 - **Handel** (`packages/ai/src/trade.ts`). *Annahme:* Wert des Erhaltenen ≥ Wert des Gegebenen
   × Marge zu `view.marketPrices` und Verhältnis nicht unter der Kriegsschwelle; sonst
   ablehnen; beides begründet. *Angebot:* würde die Beschaffung für das nächste Bauvorhaben

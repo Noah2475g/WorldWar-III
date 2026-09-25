@@ -4334,3 +4334,83 @@ und A (so lassen — KI-Partien ohne Krieg).
 
 **Folge für die Aufgaben:** T-M17-10 und T-M17-12 bleiben `todo` (reopened), bis C gebaut und das
 neu aufgestellte Turnier im Band ist.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Option C: Erklärung im Vorlauf der Taktik, ohne Stärkeprüfung, B4 im Kern
+
+**Entscheidung:** (1) Die förmliche Erklärung am veralteten Ziel entsteht in einem Vorlauf der
+Taktikstufe (`staleTargetDeclarations`, vor der Armeeschleife), nicht in der Schleife, und
+`requestPassage` prüft gegen frühere Stufen **und** die eigenen Befehle der Taktik. (2) Keine
+Stärkeprüfung — die hat der Angriffsbefehl gestellt (`worthAttacking`). (3) Nur im Frieden, nicht
+über `maxFronts`, einmal je Macht und Zug; sonst bleibt E4 (anhalten, beantragen). (4) Befund B4
+wird im Kern behoben (`dropOffer` statt „alle Angebote an mich"), nicht in der KI umgangen.
+
+**Begründung:** (1) In der Schleife beantragte eine später stehende Armee Durchmarsch bei der
+Macht, der eine früher stehende eben erklärt hatte — gemessen 6 `INVALID_TARGET` in 200 Tagen.
+(2) Gemessen als Variante mit `standing >= 800`: gleiches Turnier, Weltkarte 7 statt 11 Kriege —
+der Angriff fiele dann doch stillschweigend weg, was Noahs Entscheid ausschließt. (3) Den
+Waffenstillstand lehnt der Kern mit `ON_COOLDOWN` ab; die Frontenzählung ist dieselbe wie
+`diplomacy.ts` Abschnitt 2. (4) Ein Mensch, der zwei Friedensangebote hat, verlor beim ersten
+Annehmen das zweite — das ist ein Kernfehler, kein KI-Problem; die KI-Umgehung („höchstens eine
+Annahme je Zug") hätte ihn für den Spieler gelassen.
+
+**Kippbar:** (2) durch die Stärkeprüfung aus `diplomacy.ts` Abschnitt 4 (eine Zeile, Zahlen oben).
+
+Umgesetzt (Commits `f69dffb`, `e0712f5`, `21859f8`, `1179075`). Weltkarte 200 Tage: 11 Kriege
+(vorher 1), 1 Überfall (Befund M17-T6), 0 `INVALID_TARGET`. Zwei Runden adversarischer Prüfung
+(2026-09-25) bestätigten die Reparatur; eine Gegenprobe im Bericht war falsch protokolliert
+(G-C4b: tatsächlich 5 Tests rot, nicht 1 — der Code selbst war richtig gebaut), berichtigt in
+`bericht-turnier-C.md`. Zwei ergänzende Testfälle (`G-C4f`, `G-C4g`, Commit `345544e`) decken
+seither auch die Frontenzählung über mehrere Armeen und die Drittmacht-Sperre ab.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Option D: drei Mächte reihum, Füller „normal", 150 Partien, 40 Tage
+
+**Entscheidung:** Das Turnier spielt auf der Testwelt mit allen drei Mächten, in drei Sitzordnungen
+reihum; die zwei Streiter sind p1/p2, der Dritte ist Füller auf „normal" und zählt weder in der
+Wertung noch nach Handelndem. 25 Startzahlen je Aufstellung (dieselben je Aufstellung), Stufen je
+Paar getauscht, 150 Partien je Paarung, 40 Spieltage. Jedes Turnier wird einmal gerechnet und von
+allen Tests geteilt. Neu zugesichert: ≥ 50 verschiedene Ausgänge, keine Nation über 600 ‰ der
+Partien, förmliche Erklärung beider Stufen.
+
+**Begründung:** Vorabmessung in `PROBLEME.md` M17-T4 (acht Varianten). Nur der Dritte am Tisch
+bringt Streuung; mehr Paare, mehr Tage oder andere Paarungen auf zwei Mächten nicht. Der Füller
+„normal" ist die einzige Stufe ohne eigene Schlagseite (leicht → 0,97, schwer → 0,73). Die
+Weltkarte wäre für einen Lauf, der jeder KI-/Kernänderung folgt, zu teuer. Die Grenzen 50 und
+600 ‰ liegen zwischen altem (5–32 Ausgänge, 980 ‰) und neuem Gerät (110, 447 ‰) und hängen nicht
+an der Stärke der Stufen.
+
+**Kippbar:** Füllerstufe (eine Konstante im Test), Zahl der Startzahlen (Laufzeit linear).
+
+Umgesetzt (Commits `36121fb`, `d904c3c`, `97c385c`). Gemessen: schwer–leicht 0,847, schwer–normal
+im Frieden **0,760** (Band hält), im Krieg 0,633; 110 verschiedene Ausgänge.
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 4/5, „hoch"):** Der Satz „sie ist nicht mehr
+empfindlich wie das alte Gerät" gilt nur als **Mittelwertaussage über drei Sitzordnungen** — je
+Sitzordnung ist die Streuung so groß wie beim alten Gerät (Spionage aus 0,29–0,90, an 0,60–0,92,
+Sprünge bis 0,44 gegen 0,34 vorher). Nur die Mittelung trägt das Band. Ebenso hält die Obergrenze
+0,95 vor allem, weil Ostmark in zwei von drei Sitzordnungen schwach ist — „normal" gewinnt in
+keinem der vier gemessenen Startzahl-Blöcke (1000/5000/7000/9000) mehr als 1 von 75 Paaren. Beide
+Zahlen sind Messwerte für T-M17-15, keine Änderung an Band oder Aufstellung.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · T-M17-10 und T-M17-12 auf done, statt an T-M17-15 zu hängen
+
+**Entscheidung:** T-M17-10 und T-M17-12 werden nach Noahs Wortlaut vom 2026-09-25 („danach done")
+jetzt auf `status: done` gesetzt und ihr `reopened`-Feld aufgelöst — beide Bedingungen (Option C
+gebaut, neu aufgestelltes Turnier im Band) sind erfüllt. Der in `fragmente-turnier-D.md`
+vorgeschlagene Weg, `reopened` stattdessen bis zur Abnahme von T-M17-15 stehen zu lassen, wird
+**nicht** übernommen.
+
+**Begründung:** T-M17-15 hängt selbst von T-M17-10 und T-M17-12 ab (`tasks.yaml`,
+`T-M17-15.deps`) — „reopened bis T-M17-15 abgenommen ist" wäre zirkulär, sobald die Abnahme
+`status: done` bei den Abhängigkeiten voraussetzt. Noahs eigener Wortlaut nennt nur die zwei
+Bedingungen, die jetzt beide erfüllt sind; das weiterführende Messen (Empfindlichkeit je
+Sitzordnung und Startzahl, Obergrenze 0,95, Befund M17-T7) ist eine eigene Zusicherung von
+T-M17-15 und keine Vorbedingung für den Abschluss der beiden vorgelagerten Aufgaben.
+
+**Kippbar:** durch einen ausdrücklichen neuen Entscheid Noahs, der die Bedingung nachträglich
+verschärft.

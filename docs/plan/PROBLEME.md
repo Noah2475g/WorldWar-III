@@ -5264,3 +5264,214 @@ nicht ab — heute folgenlos, weil die Spionage als letzte plant; wer die Reihen
 Strategietakt ändert, muss es nachziehen (siehe `DECISIONS.md`). Die übrigen offenen Befunde
 beider Bahnen (M17-D9, M17-D10, M17-D12, M17-D13, M17-S1, M17-S4, M17-S12 u. a.) sind vom Merge
 nicht berührt und stehen oben.
+
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T1: Die Kriege der Turnierpaarung „im Frieden" waren Überfälle aus veralteten Befehlen — kein einziger förmlich
+
+**Befund:** Die Zerlegung der Zusammenführung (Befund M17-M2) hat die Wegprüfung aus T-M17-10 als
+Ursache des 50-%-Ergebnisses gefunden. Die Hypothese „die Prüfung verbietet auch den Marsch ins
+Land des eigentlichen Angriffsziels und geht damit über D29.8 hinaus" ist **widerlegt**: ein
+Angriffsziel ist immer herrenlos oder feindlich (`targeting.ts:107-110`). Je Tick eingeordnet
+(Wegwerfsonde, 25 Paare, 40 Tage): auf `3a97e10` hält die Sicherung marschierender Armeen
+(`military.ts:95`, Entscheid E4) 375-mal an, **jedes Mal** am Zielfeld selbst, dessen Besitzer
+sich unterwegs geändert hat; die Prüfung neuer Angriffsbefehle (`military.ts:190`) sperrt 993-mal
+echten Durchgang durch Gegnerland und bewegt das Ergebnis nicht (aus: weiter 50 %). Nur die
+Sicherung aus: 98 %. Auf dem Stand vor M17 (Prüfung und KI-Spionage aus, zeichengleich `522ebca`,
+70 %) standen 145 `WAR_DECLARED` im Ereignisstrom, davon **0** förmlich; 144 der 146 Armeen auf
+fremdem Boden hatten `attack:<Ziel>` als Auftrag und ein Ziel, das beim Befehl herrenlos oder
+feindlich war und unterwegs dem Gegner zufiel (meist `m1`/`m2`) oder in einen Waffenstillstand
+geriet; 2 standen nur auf dem Weg. **Damit ist auch die Zusage aus T-M41-08 falsch**, in einer
+Partie zu zweit komme „jede Erklärung aus dem Verhältnis" (`tournament.slow.test.ts`, Test
+„laesst schwer und normal selbst Kriege erklaeren"): sie kam aus Überfällen, die das Turnier als
+`WAR_DECLARED` des Täters zählt.
+
+**Einordnung:** kein Fehler der Wegprüfung. D29.8 prüft „den Weg eines geplanten Angriffs", das
+Ziel gehört zum Weg, und E4 hat den ganzen Restpfad ausdrücklich entschieden. Das Band war auf
+Kriegen gemessen, die niemand beschlossen hat. `recruitShare` 280 wurde in genau diesem Band
+gewählt (`BALANCING.md`, Nachtrag M17-T1).
+
+**Status:** gemessen; Reparatur über Noahs Entscheid zu Befund M17-T5 (Option C, siehe unten).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T2: Auf der Weltkarte erklärt die KI in 200 Tagen noch einen Krieg — vorher waren es 15
+
+**Befund:** `m17-baseline.slow.test.ts` (Weltkarte, acht KI, Startzahl 1815, 200 Spieltage) auf
+`3a97e10` gegen den eingecheckten Ausgangswert (`8bda869`): Kriegserklärungen **15 → 1**,
+Überfälle ohne Erklärung **13 → 0**, `declareWar` 2 → 1, `offerPeace` 909 → 176, `acceptPeace`
+7 → 0, Durchmarsch 0 → 14 Freigaben am Ende (7 Anträge, 7 angenommen, 7 erwidert), abgelehnte
+KI-Befehle 3 → 2 (alle `RECRUIT:INSUFFICIENT_RESOURCES`), Ereignisse 29 987 → 22 482.
+R-AI-09/AK3 hält (0 ≤ 13). Aber die Lesart aus Befund M17-1 — die zehn Überfälle der Art `ziel`
+seien „die Art, wie die KI Krieg beginnt — sie marschiert einfach los" — trifft nicht zu: die KI
+wählt nie eine Provinz einer friedlichen Macht als Ziel (`targeting.ts:110`); ein Überfall der Art
+`ziel` ist ein Befehl, dessen Ziel unterwegs den Besitzer oder den Zustand gewechselt hat. Die
+KI-Partie vor M17 bekam ihre Kriege damit zu 13 von 15 aus diesem Versehen. Übrig bleibt das
+förmliche Tor (`diplomacy.ts` Abschnitt 4): Verhältnis = Ansehen (Ausgangswert 1000) − Verstimmung
++ Bindungen − Feindschaft − Grenztruppen (höchstens 300, `relationship.ts:142-144`); ohne
+Verstimmung und bei ungetrübtem Ansehen bleibt es bei mindestens 700, über `warThreshold` 600
+(„schwer") und 450 („normal"), und die Übermacht-Verlockung (`diplomacy.ts`, `(ratio − 1000) / 4`,
+höchstens 450) öffnet es erst ab einem Punkteverhältnis von rund 1,4 („schwer", volle
+Grenzbedrohung) bzw. 2,0 („normal").
+
+**Status:** gemessen, **offen für T-M17-15/16** — das Integrationstor misst dieselbe Partie; die
+Frage, ob eine KI-Partie ohne Kriege gewollt ist, ist eine Spielfrage für Noah (M17-T5, mit Option
+C entschieden — die Weltkarte mit C: 11 Kriege statt 1, siehe Befund M17-T5).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T3: Die KI-Spionage ist zerlegt — kein Teil trägt, kein Fehler
+
+**Befund:** zu Befund M17-S4. Zerlegt per Wegwerfschalter in der einzigen Aufstellung, in der die
+Paarung „im Frieden" überhaupt Kriege hat (Sicherung duldet das Zielland): alles an 98 %, KI-Spionage
+aus 64 %; Sabotage aus 98 % (wird auf der Testwelt nie angeworben, 0 von 50 Partien); Aufklärung
+aus 98 %; Budget halbiert 98 % (dann nur noch Gegenspione); Gegenspion aus 100 %; nur „schwer"
+spioniert 100 %, nur „normal" 96 %. Bei halbem Budget gibt es keinen fremden Spion, der
+Gegenspion würfelt nicht (`phases/espionage.ts`, Schritt c) — er kostet nur Anwerbepreis 101 530
+und Sold 5 076 je Tag. Die Stufen unterscheiden sich in der Spionage nicht (drei Zahlen oberster
+Ebene in `ai.json`, keine je Stufe). Keine Sabotage ohne Obergrenze, keine Information, die
+„schwer" sieht und „normal" nicht. `grievanceOnSpyDetected` 300/200/150 (Bahn B) konnte deshalb
+nichts bewegen.
+
+**Status:** gemessen, **kein Fehler, keine Zahl geändert** (`BALANCING.md`, KI: Spionage). M17-S4
+ist damit beantwortet: die Spionage macht „schwer" nicht übermächtig, sie verschiebt ein
+empfindliches Messgerät (M17-T4). In der neu aufgestellten Turnieraufstellung (Option D) bewegt
+die Spionage die gemittelte Quote von 0,58 auf 0,76 (beides im Band), je Sitzordnung aber zwischen
+0,29 und 0,92 — Einzelheiten unter Befund M17-T4.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T4: Das Turnier maß auf der Testwelt wenige Verläufe — behoben durch Option D
+
+**Befund:** Die Startzahl bewegt auf `smallWorld` wenig. Verschiedene Ausgänge (Sieger und
+Endpunkte) in den 50 Partien der Paarung „im Frieden": auf `3a97e10` **5** — und in allen 50
+gewinnt die zweite Nation (Ostmark), gleich welche Stufe sie spielt; also 25 Paare unentschieden,
+50 %. Mit geduldetem Zielland 13, zusätzlich ohne Spionage 29, Stand vor M17 29. Gegenspione
+allein — Anwerbepreis 101 530, Sold 5 076 je Tag, ohne fremden Spion kein Wurf — kippen die Quote
+von 64 % auf 98 %. Das Band 0,55–0,95 gilt nur für diese Paarung (`tournament.slow.test.ts`, Test
+„schwer schlaegt normal, und zwar messbar"); „im Krieg" hat keine Obergrenze und stand schon vor
+M17 bei 100 %.
+
+**Umgesetzt (Option D, Commits `36121fb`, `d904c3c`, `97c385c`):** Vorabmessung mit acht Varianten
+— nur ein Dritter am Tisch bringt Streuung. Aufstellung: Testwelt, drei Mächte reihum
+(Nordland/Ostmark/Sueden in drei Sitzordnungen), Dritter als Füller „normal" (die einzige Stufe
+ohne eigene Schlagseite), 150 Partien je Paarung, 40 Spieltage, jedes Turnier einmal gerechnet
+(rund 32 Sekunden, gemessen 2026-09-25, zwei Läufe allein: 31,4 s / 31,6 s). Ergebnis: **110**
+verschiedene Ausgänge in 150 Partien statt 5, höchstens 67 Siege einer Nation (447 ‰ statt
+980 ‰), Quote schwer–normal im Frieden **0,760** (Band hält), schwer–leicht 0,847, schwer–normal
+im Krieg 0,633. Neu zugesichert: mindestens 50 Ausgänge, keine Nation über 600 ‰, beide Stufen
+erklären förmlich. Band, Grenzen, Karte und KI-Zahlen unverändert.
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 6 „mittel"):** die neue Aufstellung trägt
+das Band **aus eigener Kraft**, nicht Option C — Gegenmessung ohne Option C, gleiche Aufstellung:
+**0,75** (43:5:27, 83 Ausgänge, 23 Überfälle, 124 Frieden). Option C liefert die förmlichen
+Erklärungen (286 → 680) und mehr Friedensschlüsse (124 → 478), nicht die Quote selbst.
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 5 „hoch"):** die Obergrenze 0,95 hält nur,
+weil Ostmark in zwei von drei Sitzordnungen schwach ist. Je Startzahl-Block (150 Partien,
+1000/5000/7000/9000): 0,7600 / 0,8200 / 0,7267 / 0,7267 — die Spanne reicht bis 0,82, nicht nur
+0,71–0,76 wie die Vorabmessung (nur Startzahlen 1000–3000) nahelegte. „normal" gewinnt in keinem
+der vier Blöcke mehr als 1 von 75 Paaren; die Quote unter 0,95 kommt praktisch allein aus
+Unentschieden, in denen der Füller entscheidet. Je Aufstellung: Nordland/Ostmark/Sueden 0,72–0,84,
+Ostmark/Sueden/Nordland 0,60–0,70, Sueden/Nordland/Ostmark 0,86–0,92 (ausgeglichen).
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 9 „mittel"):** der Frische-Wächter folgt der
+neuen Turnierlogik nicht. `scripts/acceptance-criteria.mjs`, `GAUGES` Eintrag „Turnier",
+`sources`: `data/rules`, `data/maps/testworld.json`, `packages/ai/src`, `packages/core/src` —
+enthält **nicht** `apps/headless/src` oder `apps/headless/test`, obwohl die Messung (Aufstellung,
+Siegerwahl, 150 Partien, 40 Tage) seit Option D genau dort steht. Offen für T-M17-15/16.
+
+**Status:** behoben als Teil von T-M17-15.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T5: Kein ehrlicher Eingriff hielt das Band — die Optionen, Noahs Entscheid und die Umsetzung
+
+**Befund:** gemessen auf `3a97e10`, Turnier je 50 Partien (schwer–leicht Krieg / schwer–normal
+Frieden / schwer–normal Krieg; Kriegserklärungen der Stufe nach Handelndem normal / schwer),
+Weltkarte 200 Tage (Kriege / Überfälle / Durchmarschfreigaben am Ende / abgelehnte KI-Befehle):
+
+| Option | Turnier | nach Handelndem | Tests rot | Weltkarte |
+|---|---|---|---|---|
+| A: heute (`3a97e10`) | 100 / **50** / 98 % | 0 / 0 | 3 von 5 | 1 / 0 / 14 / 2 |
+| B: Sicherung duldet das Zielland („Transit nur durch Dritte") | 100 / **98** / 96 % | 54 / 50 (alles Überfälle) | 1 (Obergrenze) | 11 / 7 / 2 / 4 |
+| C: veraltetes Ziel → förmliche Kriegserklärung statt Anhalten (Wegwerfbau) | 100 / **52** / 98 % | 35 / 70 (förmlich) | 1 (Untergrenze) | 10 / 0 / 8 / 9, davon **7 `DIPLOMACY:INVALID_TARGET`** |
+| D: Band auf eine Paarung/Karte mit Streuung verlegen | — | — | — | Planarbeit |
+
+B holt den Fehler B6 zurück und reißt das Band trotzdem. C ist eine Erweiterung über D29.8 hinaus
+(die KI beansprucht eine Provinz, die ihr weggeschnappt wurde), erfüllt R-DIP-06 (61
+Friedensschlüsse) und T-M15-08 förmlich, reißt das Band nach unten und müsste für R-AI-09/AK2 die
+sieben Ablehnungen beheben. `progress.slow.test.ts` (6 Mächte, 120 Tage, 12 Startzahlen) grün für
+beide: B Anteil des Stärksten 0,4607, Eroberungen 289,8, Überlebende 5,0; C 0,3724 / 244,8 / 5,42;
+heute (Zusammenführung, gleicher Commit) 0,3544 / 249,9 / 5,5; vor M17 (2026-09-13) 0,3684 /
+310,1 / 5,42.
+
+**Entscheidung (Noah, 2026-09-25, `DECISIONS.md`):** Option C **und** Option D, gebaut in dieser
+Reihenfolge; B und „so lassen" (A) abgelehnt.
+
+**Umgesetzt (Option C, Commits `f69dffb`, `e0712f5`, `21859f8`, `1179075`):** Weltkarte 200 Tage:
+**11 Kriege**, davon **10 förmlich erklärt**; **0** `INVALID_TARGET`, 1 Ablehnung insgesamt. Die
+sieben `DIPLOMACY:INVALID_TARGET` des Wegwerfbaus hatten zwei Ursachen: sechsmal beantragte eine
+zweite Armee im selben Zug Durchmarsch bei der Macht, der die Taktik eben erklärt hatte
+(`requestPassage` sah nur Befehle früherer Stufen), einmal schlug die zweite von zwei
+Friedensannahmen fehl, weil `acceptPeace` alle Angebote an den Annehmenden löschte (Befund B4).
+Beide behoben; B4 ist damit für Frieden und Bündnis erledigt. Nebenbei behoben: Friedensangebote
+an ausgeschiedene Mächte (9× `PLAYER_ELIMINATED`) und eine Aushebung unter der Moralgrenze (1×
+`RECRUIT:INVALID_TARGET`).
+
+**Umgesetzt (Option D, Commits `36121fb`, `d904c3c`, `97c385c`):** siehe Befund M17-T4. Mit beiden
+Optionen zusammen: Turnier schwer–leicht 0,847, schwer–normal im Frieden **0,760** (Band hält),
+im Krieg 0,633; 110 verschiedene Ausgänge; zwei Läufe zeilengleich.
+
+**Status:** umgesetzt. T-M17-10 und T-M17-12 auf `status: done` (siehe `tasks.yaml`,
+`DECISIONS.md`).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T6: Ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall — offene Frage an Noah
+
+**Befund:** Der eine verbleibende Überfall der Weltkarte (Tick 1590, Italien → Frankreich, nach
+Option C) ist keiner aus Versehen: am Tickbeginn herrschte Krieg, Frankreich nahm im selben Tick
+Italiens Friedensangebot an, und Italiens Armee rückte im selben Tick in ihr Angriffsziel ein.
+`detectSurpriseAttacks` (`packages/core/src/phases/diplomacy.ts`) wertet jede Armee auf fremdem
+Boden ohne Krieg als Überfall — auch die, die bei Friedensschluss schon dort stand oder im selben
+Tick ankam. Im neu aufgestellten Turnier (Option D) sind das **54 von 74** Überfällen der Paarung
+„im Frieden" (Beziehung am Tickbeginn `war`), weitere 18 fallen in den ersten
+Waffenstillstandstagen — macht 72, nicht 74 (Differenz von 2 nicht nachgemessen, Zeitbudget der
+Nacharbeit-Prüfung). In der endgültigen Turnieraufstellung (150 Partien) liegt die Zahl bei **74
+von 150** Partien der Paarung „im Frieden". Gemessen und verworfen: „wer Frieden anbietet, hält
+seine Armeen an" (Turnier 50/50 %, kein Friedensschluss im Krieg mehr gemessen — keine Lösung).
+
+**Einordnung:** Option C **verdreifacht** die Überfallzahl im Turnier (23 → 74 in derselben
+Aufstellung, ohne/mit C, gleiche Startzahlen) — der Anstieg kommt aus mehr Kriegen, die C erst
+ermöglicht (förmliche statt ausbleibender Erklärungen), und damit aus mehr Friedensschlüssen, bei
+denen noch Armeen im Feindesland stehen. M17-T6 ist eine **Folge** von Option C, kein von C
+unabhängiger Befund.
+
+**Offene Frage an Noah:** ein Überfall auf der Weltkarte entsteht, weil ein Frieden im selben Tick
+angenommen wird, in dem die Armee ankommt; eine Räumfrist nach Friedensschluss (wie die
+Kündigungsfrist beim Durchmarsch) wäre die Reparatur — Entscheid, ob M17 oder M18.
+
+**Status:** offen, Entscheid Noah. R-AI-09/AK3 hält (1 ≤ 13 auf der Weltkarte).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T7: Der KI-Integrationslauf ist auf dem M17-Stand rot
+
+**Befund:** `apps/headless/test/ai-integration.slow.test.ts` auf `4a793fd` (vor Option C): **3 von
+21 rot** — „fuehrt Artillerie und laesst sie feuern" (18 Artillerie, 0 selbsttätiger Beschuss),
+„laesst keine KI-Macht ohne Hauptstadt enden" und „schliesst mindestens einen Frieden zwischen
+zwei KI-Maechten" (90 Tage: 1 Krieg, 0 Frieden). Mit Option C (`1179075`): **2 von 21 rot** —
+Artillerie (0 ausgehoben, 2 819 Infanterie, 0 Beschuss) und Frieden in 90 Tagen (5 Kriege, 0
+Frieden); die Hauptstadt hält jetzt. Im 200-Tage-Lauf mit C: 11 Kriege, 3 Frieden zwischen KI, 92
+Fabriken. Die Läufe gehören nicht zu `pnpm verify` und liefen seit M17 offenbar nicht.
+
+**Einordnung (Nacharbeit-Prüfung 2026-09-25, Befund 10 „mittel"):** der Artillerie-Rückgang
+(18 → 0) ist ein **Rückschritt durch Option C**, keine bloße Fortsetzung des Vorbefunds — C3 (die
+Moralgrenze der Aushebung in `economy.ts`, `recruitCommands`) greift in dieselbe Provinzschleife
+ein, die auch die Artillerie sichert; es gibt keine Gegenprobe ohne C3 dafür.
+
+**Status:** offen, für das Integrationstor T-M17-15 — Ursache der fehlenden Artillerie und des
+fehlenden Beschusses dort zerlegen (Gegenprobe ohne C3 und ohne C4), Frieden in 90 Tagen prüfen;
+nicht in der Nacharbeit Turnier behoben.
