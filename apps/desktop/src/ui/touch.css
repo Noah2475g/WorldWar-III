@@ -201,6 +201,46 @@ select,
   flex-direction: row;
 }
 
+/* Die Einfuehrung (.tutorial, app.css: unten links an .app, bottom 170px) verdeckte im
+   Touch-Betrieb Bedienelemente, weil ihr Abstand an der ganzen App haengt statt an der
+   Karte: bei 1098x498@1.75 ragte sie in die Moduszeile ("Besitz", "Rohstoffe", "Moral"),
+   bei 640x360@2 lag ihr Kopf ueber "Hineinzoomen" (gemessen 2026-09-25, android-check
+   --tutorial). Im Touch-Betrieb sitzt sie darum im Rasterbereich von <main> (Zeile 2 von
+   .app - ein absolut positioniertes Rasterkind mit grid-row nimmt den Rasterbereich als
+   Bezugsrahmen, .app ist oben positioniert) und kann Kopf und Fuss nicht mehr erreichen.
+   BEIDE Linien stehen da: "grid-row: 2" hiesse "2 / auto", und "auto" meint bei absolut
+   positionierten Kindern den Rand des ganzen Rasters - der Rahmen reichte dann bis unter
+   den Fuss (gemessen: die Einfuehrung lag ueber "alles", "Kaempfe", "Aufbau", "Vertraege").
+   Ihre Breite endet links vor der Uebersichtskarte (unten rechts, 132 px, rechts --sp-lg):
+   Kartenbreite = 100% - --touch-side. Legende und Kartenflaeche darf sie verdecken -
+   beide nehmen keinen Finger an (.legend: pointer-events none). */
+:root[data-input='touch'] {
+  /* = app.css .main (1fr 380px); die Bloecke unten setzen ihre eigene Breite. */
+  --touch-side: 380px;
+}
+
+:root[data-input='touch'] .tutorial {
+  grid-row: 2 / 3;
+  grid-column: 1 / 2;
+  left: var(--sp-md);
+  bottom: var(--sp-md);
+  width: min(260px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)));
+  max-height: calc(100% - 2 * var(--sp-md));
+  overflow-y: auto;
+}
+
+/* Schmale Karte: Kartenknopf-Reihe (182 px, oben rechts) und Einfuehrung (bis 260 px,
+   links) passen nicht mehr nebeneinander, sobald die Karte schmaler ist als
+   260 + 182 + 3 x 8 = 466 px. Das ist bei --touch-side 380 unter 846 px Breite der Fall
+   und im Telefon-Block (38vw) unter 751 px. Dann bleibt die Einfuehrung unter der Reihe
+   (sp-md + 44 px + sp-md Luecke) und rollt in sich. Breiter lohnt sich die Reserve nicht:
+   bei 1098x498 passt die Einfuehrung sonst ungerollt in die Kartenhoehe. */
+@media (max-width: 860px) {
+  :root[data-input='touch'] .tutorial {
+    max-height: calc(100% - 44px - 4 * var(--sp-md));
+  }
+}
+
 /* ------------------------------------------------ Telefon quer (bis 480 px hoch) */
 
 @media (max-height: 480px) {
@@ -267,8 +307,12 @@ select,
   }
 
   /* Seitenleiste schmaler, damit die Karte die Breite behaelt. */
+  :root[data-input='touch'] {
+    --touch-side: clamp(240px, 38vw, 320px);
+  }
+
   :root[data-input='touch'] .main {
-    grid-template-columns: minmax(0, 1fr) clamp(240px, 38vw, 320px);
+    grid-template-columns: minmax(0, 1fr) var(--touch-side);
   }
 
   :root[data-input='touch'] .side {
@@ -336,8 +380,12 @@ select,
 /* ------------------------------------------------ kleines Tablet (ab 900 breit, bis 640 hoch) */
 
 @media (min-width: 900px) and (max-height: 640px) {
+  :root[data-input='touch'] {
+    --touch-side: 340px;
+  }
+
   :root[data-input='touch'] .main {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) var(--touch-side);
   }
 
   :root[data-input='touch'] .foot {

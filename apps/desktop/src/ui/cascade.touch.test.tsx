@@ -275,3 +275,43 @@ describe('touch.css: Kartenknoepfe und Uebersichtskarte liegen nie im selben Str
     expect(css(overview, 'left')).toBe('auto')
   })
 })
+
+/**
+ * Die Einfuehrung verdeckt im Touch-Betrieb keine Bedienelemente (gemessen 2026-09-25 mit
+ * android-check --tutorial: vorher lag sie bei 1098x498@1.75 ueber "Besitz", "Rohstoffe",
+ * "Moral" und bei 640x360@2 ueber "Hineinzoomen"). Gebunden ist die Kaskade: sie sitzt im
+ * Rasterbereich von <main> - mit BEIDEN Linien, denn "2 / auto" reichte bei einem absolut
+ * positionierten Kind bis unter den Fuss. Die Geometrie misst scripts/android-check.mjs.
+ */
+function Einfuehrung() {
+  return (
+    <div className="app">
+      <aside className="tutorial" aria-label="Einführung" />
+    </div>
+  )
+}
+
+describe('touch.css: die Einfuehrung bleibt zwischen Kopf und Fuss', () => {
+  it('bindet sie im Touch-Betrieb an Zeile 2 von .app, unten links', () => {
+    document.documentElement.dataset['input'] = 'touch'
+    render(<Einfuehrung />)
+    const tutorial = screen.getByRole('complementary', { name: 'Einführung' })
+
+    // jsdom fuehrt die Kurzschreibweise, ohne sie in -start/-end zu zerlegen.
+    expect(css(tutorial, 'grid-row')).toBe('2 / 3')
+    expect(css(tutorial, 'grid-column')).toBe('1 / 2')
+    expect(css(tutorial, 'bottom')).toBe('var(--sp-md)')
+    expect(css(tutorial, 'left')).toBe('var(--sp-md)')
+    expect(css(tutorial, 'overflow-y')).toBe('auto')
+  })
+
+  it('laesst sie im Mausbetrieb, wo sie war', () => {
+    document.documentElement.dataset['input'] = 'mouse'
+    render(<Einfuehrung />)
+    const tutorial = screen.getByRole('complementary', { name: 'Einführung' })
+
+    expect(css(tutorial, 'bottom')).toBe('170px')
+    expect(css(tutorial, 'left')).toBe('var(--sp-lg)')
+    expect(css(tutorial, 'grid-row')).toBe('')
+  })
+})
