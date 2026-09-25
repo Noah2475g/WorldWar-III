@@ -406,6 +406,195 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
   })
 })
 
+describe('D29.8 Erweiterung: veraltetes Ziel -> foermliche Kriegserklaerung (Nacharbeit Turnier M17)', () => {
+  /** p1 (hard) marschiert von n2 nach m1; m1 ist unterwegs p3 zugefallen, mit p3 herrscht Frieden. */
+  function veraltetesZiel(): { state: GameState; armyId: string } {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.provinces.m1!.owner = 'p3'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['m1']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+    return { state, armyId: army.id }
+  }
+
+  it('erklaert foermlich den Krieg, wenn das Angriffsziel unterwegs einer friedlichen Macht zufiel', () => {
+    const { state, armyId } = veraltetesZiel()
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    const declarations = commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')
+    expect(declarations).toEqual([{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p3', action: 'declareWar' }])
+
+    const stops = commands.filter((c) => c.type === 'STOP_ARMY')
+    expect(stops).toEqual([{ type: 'STOP_ARMY', playerId: 'p1', armyId }])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')).toBe(false)
+    expect(commands.some((c) => c.type === 'MOVE_ARMY')).toBe(false)
+  })
+
+  it('nennt Grund und Alternative der Erklaerung', () => {
+    const { state } = veraltetesZiel()
+    const explanations: Explanation[] = []
+    decideMilitary(contextFor(state, 'p1'), explanations)
+
+    const explanation = explanations.find((e) => e.action === 'Erklärt p3 den Krieg')
+    expect(explanation).toBeDefined()
+    expect(explanation!.reason).toContain('m1')
+    expect(explanation!.reason).toContain('p3')
+    expect(explanation!.alternative?.action).toContain('m1')
+  })
+
+  it('die Befehle bestehen den Kern, und die Erklaerung ist foermlich', () => {
+    const { state } = veraltetesZiel()
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+    const result = step(state, commands, ctx)
+
+    expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toBeUndefined()
+    expect(result.state.diplomacy.relations['p1|p3']!.warEffectiveAtTick).toBe(
+      state.tick + TEST_RULES.constants.warDeclarationDelayTicks,
+    )
+    const declared = result.events.find(
+      (e) => e.type === 'WAR_DECLARED' && e.playerId === 'p1' && e.targetPlayerId === 'p3',
+    )
+    expect(declared).toMatchObject({ withoutDeclaration: false })
+  })
+
+  it('kein Ueberfall bis zum Inkrafttreten, in der laufenden Partie', () => {
+    const { state } = veraltetesZiel()
+    const result = advanceTicks(state, 2 * ticksPerDay, ctx)
+
+    expect(
+      result.events.find(
+        (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.targetPlayerId === 'p3',
+      ),
+    ).toBeUndefined()
+    expect(
+      result.events.find(
+        (e) => e.type === 'WAR_DECLARED' && e.playerId === 'p1' && e.targetPlayerId === 'p3' && e.withoutDeclaration === false,
+      ),
+    ).toBeDefined()
+    expect(
+      result.events.find((e) => e.type === 'COMMAND_REJECTED' && e.code === 'INVALID_TARGET'),
+    ).toBeUndefined()
+  })
+
+  it('erklaert nicht im Waffenstillstand', () => {
+    const { state, armyId } = veraltetesZiel()
+    state.diplomacy.relations['p1|p3']!.state = 'truce'
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toBe(false)
+    expect(commands.filter((c) => c.type === 'STOP_ARMY')).toEqual([{ type: 'STOP_ARMY', playerId: 'p1', armyId }])
+  })
+
+  it('erklaert nicht, solange schon eine Erklaerung laeuft', () => {
+    const { state, armyId } = veraltetesZiel()
+    state.diplomacy.relations['p1|p3']!.warEffectiveAtTick = state.tick + 12
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY')).toBe(false)
+    expect(commands.filter((c) => c.type === 'STOP_ARMY')).toEqual([{ type: 'STOP_ARMY', playerId: 'p1', armyId }])
+  })
+
+  it('erklaert nicht doppelt, wenn die Strategiestufe schon erklaert hat', () => {
+    const { state } = veraltetesZiel()
+    const pending: Command[] = [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p3', action: 'declareWar' }]
+    const commands = decideMilitary(contextFor(state, 'p1'), [], pending)
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toBe(false)
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')).toBe(false)
+  })
+
+  it('erklaert hoechstens einmal je Macht, auch fuer zwei Armeen', () => {
+    const { state } = veraltetesZiel()
+    state.provinces.m2!.owner = 'p3'
+    const zweite = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    zweite.path = ['m1', 'm2']
+    zweite.departureTick = state.tick
+    zweite.arrivalTick = state.tick + 5
+
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toHaveLength(1)
+    expect(commands.filter((c) => c.type === 'STOP_ARMY')).toHaveLength(2)
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')).toBe(false)
+  })
+
+  it('haelt die Frontengrenze ein', () => {
+    const { state, armyId } = veraltetesZiel()
+    const context = { ...contextFor(state, 'p1'), difficulty: { ...TEST_RULES.ai.difficulties.hard, maxFronts: 1 } }
+    const commands = decideMilitary(context, [])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toBe(false)
+    expect(commands.filter((c) => c.type === 'STOP_ARMY')).toEqual([{ type: 'STOP_ARMY', playerId: 'p1', armyId }])
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')).toBe(true)
+  })
+
+  it('beantragt im selben Zug keinen Durchmarsch bei der Macht, der eben erklaert wurde (Ursache der INVALID_TARGET)', () => {
+    const state = wegDurchSueden()
+    const armeeA = Object.keys(state.armies)[0]!
+    state.armies[armeeA]!.path = ['m1', 'o1']
+    state.armies[armeeA]!.departureTick = state.tick
+    state.armies[armeeA]!.arrivalTick = state.tick + 5
+
+    // B nach A platziert: A steht in view.armies zuerst — genau die Reihenfolge, in der
+    // der Wegwerfbau scheiterte.
+    state.provinces.m2!.owner = 'p3'
+    const armeeB = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    armeeB.path = ['m1', 'm2']
+    armeeB.departureTick = state.tick
+    armeeB.arrivalTick = state.tick + 5
+
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toEqual([
+      { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p3', action: 'declareWar' },
+    ])
+    expect(commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')).toHaveLength(0)
+
+    const result = step(state, commands, ctx)
+    expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toBeUndefined()
+  })
+
+  it('erklaert nicht der Macht am Ziel, wenn eine dritte, unbeteiligte Macht den Weg zuerst sperrt (Gegenprobe G-C4f)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p3'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['m1', 'm2']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toBe(false)
+    const requests = commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')
+    expect(requests).toHaveLength(1)
+    expect(requests[0]).toMatchObject({ targetPlayerId: 'p2' })
+    allAccepted(state, commands)
+  })
+
+  it('haelt die Frontengrenze auch ueber mehrere Armeen im selben Zug ein (Gegenprobe G-C4g)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p3'
+    const armyA = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    armyA.path = ['m1']
+    armyA.departureTick = state.tick
+    armyA.arrivalTick = state.tick + 5
+    const armyB = placeArmy(state, { owner: 'p1', at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    armyB.path = ['m2']
+    armyB.departureTick = state.tick
+    armyB.arrivalTick = state.tick + 5
+    const context = { ...contextFor(state, 'p1'), difficulty: { ...TEST_RULES.ai.difficulties.hard, maxFronts: 1 } }
+
+    const commands = decideMilitary(context, [])
+
+    expect(commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toHaveLength(1)
+  })
+})
+
 describe('R-AI-09/AK4 Jede Durchmarsch-Handlung nennt Grund und Alternative', () => {
   it('jede gesammelte Erklaerung hat Grund und Alternative', () => {
     const cases: Explanation[] = []

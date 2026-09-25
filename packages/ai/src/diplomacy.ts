@@ -102,6 +102,9 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
   // 1. Answer standing offers first.
   for (const [other, relation] of Object.entries(context.view.relations)) {
     if (relation.state !== 'war') continue
+    // Eine ausgeschiedene Macht bleibt in `relations` im Krieg stehen; Angebot und Annahme
+    // lehnt der Kern mit PLAYER_ELIMINATED ab (Nacharbeit Turnier M17, C2).
+    if (context.view.others.find((entry) => entry.id === other)?.alive === false) continue
 
     const ratio = standing(context, other)
     const feindselig = towards(other).value < context.difficulty.warThreshold

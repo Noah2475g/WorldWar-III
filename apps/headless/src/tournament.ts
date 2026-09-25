@@ -32,6 +32,14 @@ export interface MatchOptions {
    * bereits, ist die Zahl der Kriegserklaerungen null und sagt nichts.
    */
   startAtWar?: boolean
+  /**
+   * Nationen in Sitzordnung (Plan D, Befund M17-T4). Die ersten zwei sind die Streiter
+   * p1/p2 (gewertet), jede weitere Nation ist ein Fueller. Vorgabe: die ersten zwei
+   * `startPositions` der Karte — heutiges Verhalten, bitgleich.
+   */
+  nations?: string[]
+  /** Schwierigkeit des oder der Fueller. Vorgabe `'normal'` (Plan D). */
+  fillerDifficulty?: Difficulty
 }
 
 export interface MatchResult {
@@ -65,38 +73,65 @@ export interface MatchResult {
    * von "schwer" in einer Partie gegen "leicht" auch bei "leicht".
    */
   byPlayer: Record<PlayerId, ActorCounts>
+  /**
+   * `WAR_DECLARED` mit `withoutDeclaration` ueber **alle** Maechte der Partie (Bericht,
+   * keine Zusicherung, Plan D / Befund M17-T6).
+   */
+  surpriseAttacks: number
 }
 
 /** Was eine Macht selbst getan hat (T-M41-08). */
 export interface ActorCounts {
   warDeclarations: number
   automaticBombardments: number
+  /**
+   * Wie viele der `warDeclarations` foermlich waren, also **nicht** `withoutDeclaration`
+   * (Plan D, Befund M17-T1/T5, Noahs Entscheid Option C).
+   */
+  formalWarDeclarations: number
 }
 
 export function playMatch(options: MatchOptions): MatchResult {
   const days = options.days ?? 60
-  const nations = options.map.startPositions.slice(0, 2)
+  const nationNames = options.nations ?? options.map.startPositions.slice(0, 2).map((entry) => entry.nation)
+  const byName = new Map(options.map.startPositions.map((entry) => [entry.nation, entry]))
+
+  const players: GameConfig['players'] = nationNames.map((nation, index) => {
+    const position = byName.get(nation)
+    if (!position) throw new Error(`playMatch: unbekannte Nation "${nation}"`)
+    if (index === 0) {
+      return {
+        name: `KI-${options.difficulties[0]}`,
+        kind: 'ai' as const,
+        nation: position.nation,
+        color: '#0f62bc',
+        difficulty: options.difficulties[0],
+      }
+    }
+    if (index === 1) {
+      return {
+        name: `KI-${options.difficulties[1]}`,
+        kind: 'ai' as const,
+        nation: position.nation,
+        color: '#b03a2e',
+        difficulty: options.difficulties[1],
+      }
+    }
+    // Fueller (Plan D): sitzt mit am Tisch, wird aber nicht gewertet (byPlayer, byDifficulty).
+    return {
+      name: `KI-fueller-${index}`,
+      kind: 'ai' as const,
+      nation: position.nation,
+      color: '#777777',
+      difficulty: options.fillerDifficulty ?? 'normal',
+    }
+  })
 
   const config: GameConfig = {
     seed: options.seed,
     mapId: options.map.id,
     rulesId: options.rules.id,
-    players: [
-      {
-        name: `KI-${options.difficulties[0]}`,
-        kind: 'ai',
-        nation: nations[0]!.nation,
-        color: '#0f62bc',
-        difficulty: options.difficulties[0],
-      },
-      {
-        name: `KI-${options.difficulties[1]}`,
-        kind: 'ai',
-        nation: nations[1]!.nation,
-        color: '#b03a2e',
-        difficulty: options.difficulties[1],
-      },
-    ],
+    players,
     victory: { condition: 'points', pointsShareToWin: 750, dayLimit: days },
   }
 
@@ -125,24 +160,36 @@ export function playMatch(options: MatchOptions): MatchResult {
     (event) => event.type === 'BOMBARDMENT' && event.automatic,
   ).length
 
+  // byPlayer bleibt nur p1 und p2 — der Fueller zaehlt nirgends nach Handelndem, sonst
+  // stuende seine Stufe "normal" in der Zahl des Streiters "normal" (Plan D).
   const byPlayer: Record<PlayerId, ActorCounts> = {
-    p1: { warDeclarations: 0, automaticBombardments: 0 },
-    p2: { warDeclarations: 0, automaticBombardments: 0 },
+    p1: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
+    p2: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
   }
   for (const event of run.events) {
-    if (event.type === 'WAR_DECLARED' && byPlayer[event.playerId]) byPlayer[event.playerId]!.warDeclarations += 1
+    if (event.type === 'WAR_DECLARED' && byPlayer[event.playerId]) {
+      byPlayer[event.playerId]!.warDeclarations += 1
+      if (!event.withoutDeclaration) byPlayer[event.playerId]!.formalWarDeclarations += 1
+    }
     if (event.type === 'BOMBARDMENT' && event.automatic && byPlayer[event.playerId]) {
       byPlayer[event.playerId]!.automaticBombardments += 1
     }
   }
+  const surpriseAttacks = run.events.filter(
+    (event) => event.type === 'WAR_DECLARED' && event.withoutDeclaration,
+  ).length
 
   const scores = { p1: scoreOf(state, 'p1', options.rules), p2: scoreOf(state, 'p2', options.rules) }
-  if (state.victory.winner !== null) {
-    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements, automaticBombardments, byPlayer }
+  // Sieger: p1/p2 wie heute; gewinnt der Fueller, entscheiden die Punkte der Streiter
+  // (Plan D §1). `reason` ist 'victory', sobald ueberhaupt ein Sieger feststeht — auch
+  // beim Fueller —, sonst 'timeLimit'.
+  if (state.victory.winner === 'p1' || state.victory.winner === 'p2') {
+    return { winner: state.victory.winner, scores, ticks: state.tick, reason: 'victory', warDeclarations, peaceAgreements, automaticBombardments, byPlayer, surpriseAttacks }
   }
 
   const winner = scores.p1 === scores.p2 ? null : scores.p1 > scores.p2 ? 'p1' : 'p2'
-  return { winner, scores, ticks: state.tick, reason: 'timeLimit', warDeclarations, peaceAgreements, automaticBombardments, byPlayer }
+  const reason = state.victory.winner !== null ? 'victory' : 'timeLimit'
+  return { winner, scores, ticks: state.tick, reason, warDeclarations, peaceAgreements, automaticBombardments, byPlayer, surpriseAttacks }
 }
 
 export interface TournamentResult {
@@ -184,6 +231,17 @@ export interface TournamentResult {
    * nur, was die Stufe selbst getan hat.
    */
   byDifficulty: Record<Difficulty, ActorCounts>
+  /**
+   * Verschiedene Ausgaenge (Plan D, Befund M17-T4): Menge der Schluessel
+   * `${setup.join('/')}|${hin|rueck}|${winner}|${scores.p1}|${scores.p2}` ueber alle
+   * gespielten Partien. Ein Turnier, in dem immer dieselbe Nation mit denselben Punkten
+   * gewinnt, hat wenige Ausgaenge, egal wie hoch die Quote ist.
+   */
+  outcomes: number
+  /** Partiensiege je Nation, nur Partien mit Sieger (Plan D, Befund M17-T4). */
+  winsByNation: Record<string, number>
+  /** Summe `surpriseAttacks` aller Partien (Bericht, Plan D / Befund M17-T6). */
+  surpriseAttacks: number
 }
 
 /**
@@ -209,6 +267,13 @@ export function playTournament(options: {
   days?: number
   firstSeed?: number
   startAtWar?: boolean
+  /**
+   * Aufstellungen in Sitzordnung, jede eine Liste von Nationen (Plan D, Befund M17-T4).
+   * Vorgabe: eine Aufstellung mit den heutigen Nationen (bitgleich zum alten Verhalten).
+   * Die Paare teilen sich **gleichmaessig** auf die Aufstellungen auf — `pairs % setups.length`
+   * muss 0 sein, sonst wird geworfen.
+   */
+  setups?: string[][]
 }): TournamentResult {
   let winsA = 0
   let winsB = 0
@@ -217,59 +282,88 @@ export function playTournament(options: {
   const peaces = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   const shells = { easy: 0, normal: 0, hard: 0 } as Record<Difficulty, number>
   const acted: Record<Difficulty, ActorCounts> = {
-    easy: { warDeclarations: 0, automaticBombardments: 0 },
-    normal: { warDeclarations: 0, automaticBombardments: 0 },
-    hard: { warDeclarations: 0, automaticBombardments: 0 },
+    easy: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
+    normal: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
+    hard: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
   }
   const credit = (difficulty: Difficulty, counts: ActorCounts | undefined): void => {
     if (!counts) return
     acted[difficulty].warDeclarations += counts.warDeclarations
     acted[difficulty].automaticBombardments += counts.automaticBombardments
+    acted[difficulty].formalWarDeclarations += counts.formalWarDeclarations
   }
   let matchWinsA = 0
   let matchWinsB = 0
+  const outcomeKeys = new Set<string>()
+  const winsByNation: Record<string, number> = {}
+  let surpriseAttacks = 0
 
   // Paare, nicht Partien: `matches` bleibt die Zahl der gespielten Partien, gewertet
   // werden die `matches / 2` Paare.
   const pairs = Math.max(1, Math.floor(options.matches / 2))
 
-  for (let pair = 0; pair < pairs; pair++) {
-    const seed = (options.firstSeed ?? 1000) + pair
-    const spiele = ([first, second]: [Difficulty, Difficulty]) =>
-      playMatch({
-        map: options.map,
-        rules: options.rules,
-        seed,
-        difficulties: [first, second],
-        ...(options.days !== undefined ? { days: options.days } : {}),
-        ...(options.startAtWar !== undefined ? { startAtWar: options.startAtWar } : {}),
-      })
+  const setups = options.setups ?? [options.map.startPositions.slice(0, 2).map((entry) => entry.nation)]
+  if (pairs % setups.length !== 0) {
+    throw new Error(`playTournament: ${pairs} Paare lassen sich nicht auf ${setups.length} Aufstellungen teilen`)
+  }
+  const pairsPerSetup = pairs / setups.length
 
-    const hin = spiele(options.difficulties)
-    const rueck = spiele([options.difficulties[1], options.difficulties[0]])
+  for (const setup of setups) {
+    for (let local = 0; local < pairsPerSetup; local++) {
+      const seed = (options.firstSeed ?? 1000) + local
+      const spiele = ([first, second]: [Difficulty, Difficulty]) =>
+        playMatch({
+          map: options.map,
+          rules: options.rules,
+          seed,
+          difficulties: [first, second],
+          nations: setup,
+          ...(options.days !== undefined ? { days: options.days } : {}),
+          ...(options.startAtWar !== undefined ? { startAtWar: options.startAtWar } : {}),
+        })
 
-    // Je Stufe, nicht je Partie: die Seiten werden getauscht, also waere eine Summe ueber
-    // "p1" eine Summe ueber zwei verschiedene Stufen.
-    for (const difficulty of new Set(options.difficulties)) {
-      wars[difficulty] += hin.warDeclarations + rueck.warDeclarations
-      peaces[difficulty] += hin.peaceAgreements + rueck.peaceAgreements
-      shells[difficulty] += hin.automaticBombardments + rueck.automaticBombardments
+      const hin = spiele(options.difficulties)
+      const rueck = spiele([options.difficulties[1], options.difficulties[0]])
+
+      // Je Stufe, nicht je Partie: die Seiten werden getauscht, also waere eine Summe ueber
+      // "p1" eine Summe ueber zwei verschiedene Stufen.
+      for (const difficulty of new Set(options.difficulties)) {
+        wars[difficulty] += hin.warDeclarations + rueck.warDeclarations
+        peaces[difficulty] += hin.peaceAgreements + rueck.peaceAgreements
+        shells[difficulty] += hin.automaticBombardments + rueck.automaticBombardments
+      }
+      // Nach dem Handelnden: hin spielt die erste Stufe p1, rueck spielt sie p2.
+      credit(options.difficulties[0], hin.byPlayer['p1'])
+      credit(options.difficulties[1], hin.byPlayer['p2'])
+      credit(options.difficulties[1], rueck.byPlayer['p1'])
+      credit(options.difficulties[0], rueck.byPlayer['p2'])
+
+      surpriseAttacks += hin.surpriseAttacks + rueck.surpriseAttacks
+
+      // Nation von p1/p2 aendert sich zwischen hin und rueck nicht — nur die Stufe, die
+      // sie spielt, wird getauscht.
+      const nationOf: Record<'p1' | 'p2', string | undefined> = { p1: setup[0], p2: setup[1] }
+      for (const [zug, art] of [
+        [hin, 'hin'],
+        [rueck, 'rueck'],
+      ] as const) {
+        outcomeKeys.add(`${setup.join('/')}|${art}|${zug.winner}|${zug.scores.p1}|${zug.scores.p2}`)
+        if (zug.winner === 'p1' || zug.winner === 'p2') {
+          const nation = nationOf[zug.winner]
+          if (nation) winsByNation[nation] = (winsByNation[nation] ?? 0) + 1
+        }
+      }
+
+      // A spielt hin als p1, rueck als p2.
+      const punkteA = (hin.winner === 'p1' ? 1 : 0) + (rueck.winner === 'p2' ? 1 : 0)
+      const punkteB = (hin.winner === 'p2' ? 1 : 0) + (rueck.winner === 'p1' ? 1 : 0)
+      matchWinsA += punkteA
+      matchWinsB += punkteB
+
+      if (punkteA > punkteB) winsA += 1
+      else if (punkteB > punkteA) winsB += 1
+      else draws += 1
     }
-    // Nach dem Handelnden: hin spielt die erste Stufe p1, rueck spielt sie p2.
-    credit(options.difficulties[0], hin.byPlayer['p1'])
-    credit(options.difficulties[1], hin.byPlayer['p2'])
-    credit(options.difficulties[1], rueck.byPlayer['p1'])
-    credit(options.difficulties[0], rueck.byPlayer['p2'])
-
-    // A spielt hin als p1, rueck als p2.
-    const punkteA = (hin.winner === 'p1' ? 1 : 0) + (rueck.winner === 'p2' ? 1 : 0)
-    const punkteB = (hin.winner === 'p2' ? 1 : 0) + (rueck.winner === 'p1' ? 1 : 0)
-    matchWinsA += punkteA
-    matchWinsB += punkteB
-
-    if (punkteA > punkteB) winsA += 1
-    else if (punkteB > punkteA) winsB += 1
-    else draws += 1
   }
 
   return {
@@ -283,5 +377,8 @@ export function playTournament(options: {
     peaceAgreements: peaces,
     automaticBombardments: shells,
     byDifficulty: acted,
+    outcomes: outcomeKeys.size,
+    winsByNation,
+    surpriseAttacks,
   }
 }

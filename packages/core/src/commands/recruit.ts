@@ -1,6 +1,6 @@
 import { currentDay } from '../rules/availability'
 import { canAfford, payCost } from '../rules/build'
-import { recruitDuration } from '../rules/recruit'
+import { RECRUIT_MIN_MORALE, recruitDuration } from '../rules/recruit'
 import type { GameState, ResourceKey } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type RecruitCommand } from './types'
@@ -43,7 +43,7 @@ registerCommand<RecruitCommand>('RECRUIT', {
     }
 
     // Below this morale a province will not raise new formations at all (D6.8).
-    if (province.morale < 25_000) {
+    if (province.morale < RECRUIT_MIN_MORALE) {
       return fail('INVALID_TARGET', { reason: 'Moral zu niedrig', morale: province.morale })
     }
 
