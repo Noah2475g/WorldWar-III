@@ -44,6 +44,19 @@ function findTradeOffer(state: GameState, offerId: unknown): TradeOffer | undefi
   return state.diplomacy.tradeOffers.find((offer) => offer.id === offerId)
 }
 
+/**
+ * Ein Angebot, an dem `playerId` beteiligt ist (`from` oder `to`) — sonst wie ein fehlendes
+ * (Befund M17-G1, Nacharbeit Durchsicht 2026-09-25). `NOT_OWNER` hiesse „diese Kennung gibt es,
+ * sie gehoert jemand anderem" und machte offene Angebote zwischen Dritten ueber `canApply`
+ * durchprobierbar — dasselbe Muster wie `ownSpy` in `espionage.ts`. Eine Partei auf der falschen
+ * Seite (z. B. `from` versucht `ACCEPT_TRADE`) faellt weiterhin auf `NOT_OWNER`: sie kennt ihr
+ * eigenes Angebot.
+ */
+function partyTradeOffer(state: GameState, playerId: PlayerId, offerId: unknown): TradeOffer | undefined {
+  const offer = findTradeOffer(state, offerId)
+  return offer && (offer.from === playerId || offer.to === playerId) ? offer : undefined
+}
+
 /** Form eines Buendels: Objekt mit Objekt `resources` und Array `provinces` (D28: Befehle kommen von einer zweiten Maschine). */
 function isBundle(value: unknown): value is TradeBundle {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -302,7 +315,7 @@ registerCommand<OfferTradeCommand>('OFFER_TRADE', {
 
 registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
   check: (state, command) => {
-    const offer = findTradeOffer(state, command.offerId)
+    const offer = partyTradeOffer(state, command.playerId, command.offerId)
     if (!offer) return fail('INVALID_TARGET', { reason: 'kein Angebot' })
     if (offer.to !== command.playerId) return fail('NOT_OWNER', { offerId: offer.id })
     if (!state.players[offer.from]?.alive) return fail('INVALID_TARGET', { reason: 'Anbieter ausgeschieden' })
@@ -356,7 +369,7 @@ registerCommand<AcceptTradeCommand>('ACCEPT_TRADE', {
 
 registerCommand<DeclineTradeCommand>('DECLINE_TRADE', {
   check: (state, command) => {
-    const offer = findTradeOffer(state, command.offerId)
+    const offer = partyTradeOffer(state, command.playerId, command.offerId)
     if (!offer) return fail('INVALID_TARGET', { reason: 'kein Angebot' })
     if (offer.to !== command.playerId) return fail('NOT_OWNER', { offerId: offer.id })
     return ok
@@ -368,7 +381,7 @@ registerCommand<DeclineTradeCommand>('DECLINE_TRADE', {
 
 registerCommand<WithdrawTradeCommand>('WITHDRAW_TRADE', {
   check: (state, command) => {
-    const offer = findTradeOffer(state, command.offerId)
+    const offer = partyTradeOffer(state, command.playerId, command.offerId)
     if (!offer) return fail('INVALID_TARGET', { reason: 'kein Angebot' })
     if (offer.from !== command.playerId) return fail('NOT_OWNER', { offerId: offer.id })
     return ok

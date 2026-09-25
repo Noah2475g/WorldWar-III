@@ -759,10 +759,10 @@ describe('R-DIP-05/AK2 Annahme tauscht im selben Tick', () => {
     expect(applyCommand(state, accept('p2', id), ctx)).toEqual({ ok: true })
   })
 
-  it('nimmt nur der Empfaenger an', () => {
+  it('nimmt nur der Empfaenger an — der Anbieter kennt sein eigenes Angebot per NOT_OWNER, ein Dritter kennt es gar nicht (M17-G1)', () => {
     const id = place(offer('p1', 'p2', { money: 1_000 }))
-    expect(canApply(state, accept('p3', id), ctx)).toMatchObject({ ok: false, code: 'NOT_OWNER' })
     expect(canApply(state, accept('p1', id), ctx)).toMatchObject({ ok: false, code: 'NOT_OWNER' })
+    expect(canApply(state, accept('p3', id), ctx)).toMatchObject({ ok: false, code: 'INVALID_TARGET', detail: { reason: 'kein Angebot' } })
   })
 
   it('kennt kein Angebot, das es nicht gibt', () => {
@@ -786,6 +786,37 @@ describe('R-DIP-05/AK2 Annahme tauscht im selben Tick', () => {
     expect(r.events.filter((e) => e.type === 'TRADE_AGREED')).toHaveLength(1)
     expect(r.events.filter((e) => e.type === 'TRADE_OFFER_CLOSED' && (e as { reason: string }).reason === 'expired')).toEqual([])
     expect(r.state.diplomacy.tradeOffers).toEqual([])
+  })
+})
+
+describe('M17-G1 (Nacharbeit Durchsicht 2026-09-25): ein fremdes Angebot laesst sich nicht abzaehlen', () => {
+  // Vorbild: espionage.ts ownSpy — NOT_OWNER hiesse „diese Kennung gibt es, sie gehoert jemand
+  // anderem" und machte offene Angebote zwischen Dritten ueber canApply durchprobierbar
+  // (R-DIP-04). Eine Partei auf der falschen Seite kennt ihr eigenes Angebot weiterhin
+  // (NOT_OWNER bleibt); nur wer weder `from` noch `to` ist, sieht dasselbe wie bei einer
+  // Kennung, die es nicht gibt.
+  it('ACCEPT_TRADE, DECLINE_TRADE, WITHDRAW_TRADE: ein fremdes Angebot ergibt dasselbe wie ein fehlendes', () => {
+    const id = place(offer('p1', 'p2', { money: 1_000 }))
+    const fremdesUndFehlendes: [Command, Command][] = [
+      [accept('p3', id), accept('p3', 'x1')],
+      [decline('p3', id), decline('p3', 'x1')],
+      [withdraw('p3', id), withdraw('p3', 'x1')],
+    ]
+    for (const [fremd, fehlend] of fremdesUndFehlendes) {
+      expect(canApply(state, fremd, ctx)).toEqual(canApply(state, fehlend, ctx))
+      expect(canApply(state, fremd, ctx)).toMatchObject({ ok: false, code: 'INVALID_TARGET', detail: { reason: 'kein Angebot' } })
+
+      const before = structuredClone(state)
+      expect(applyCommand(state, fremd, ctx)).toEqual(applyCommand(state, fehlend, ctx))
+      expect(state).toEqual(before)
+    }
+  })
+
+  it('eine Partei auf der falschen Seite kennt ihr eigenes Angebot weiterhin per NOT_OWNER', () => {
+    const id = place(offer('p1', 'p2', { money: 1_000 }))
+    expect(canApply(state, accept('p1', id), ctx)).toMatchObject({ ok: false, code: 'NOT_OWNER', detail: { offerId: id } })
+    expect(canApply(state, decline('p1', id), ctx)).toMatchObject({ ok: false, code: 'NOT_OWNER', detail: { offerId: id } })
+    expect(canApply(state, withdraw('p2', id), ctx)).toMatchObject({ ok: false, code: 'NOT_OWNER', detail: { offerId: id } })
   })
 })
 

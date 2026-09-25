@@ -2292,8 +2292,8 @@ Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → O
 | `DIPLOMACY` `revokeRightOfWay` | `PassageEndsAtTick = tick + rightOfWayNoticeTicks` | `INVALID_TARGET`, wenn nicht gewährt |
 | `DIPLOMACY` `shareMap` | bleibt | setzt **nur** die eigene Richtung |
 | `OFFER_TRADE` | `targetPlayerId, give, want` | `INVALID_TARGET` bei sich selbst, Krieg oder `warEffectiveAtTick !== null` (R-DIP-05/AK3), leerem `give`, nicht ganzzahligen Mengen, über `tradeMax*`, fremder, Hauptstadt- oder umkämpfter Provinz, eigenen Armeen in einer abgetretenen Provinz, `want.provinces` nicht im Besitz des Ziels; `QUEUE_FULL` bei `maxOpenTradeOffers`; `INSUFFICIENT_RESOURCES` |
-| `ACCEPT_TRADE` | `offerId` (nur `to`) | `INVALID_TARGET`; Provinzprüfung beider Seiten erneut; `INSUFFICIENT_RESOURCES` → **das Angebot bleibt** (R-DIP-05/AK2) |
-| `DECLINE_TRADE`, `WITHDRAW_TRADE` | `offerId` | `INVALID_TARGET`, `NOT_OWNER`; Rückgabe der Treuhand |
+| `ACCEPT_TRADE` | `offerId` (nur `to`) | `INVALID_TARGET{reason:'kein Angebot'}` bei fehlendem **und** fremdem Angebot; `NOT_OWNER` nur, wenn die Partei die falsche Seite ist; Provinzprüfung beider Seiten erneut; `INSUFFICIENT_RESOURCES` → **das Angebot bleibt** (R-DIP-05/AK2) |
+| `DECLINE_TRADE`, `WITHDRAW_TRADE` | `offerId` | `INVALID_TARGET{reason:'kein Angebot'}` bei fehlendem **und** fremdem Angebot; `NOT_OWNER` nur, wenn die Partei die falsche Seite ist; Rückgabe der Treuhand |
 
 - `handlers.ts` registriert `commands/espionage.ts` und `commands/tradeOffer.ts`.
 - **Befund B4:** `acceptPeace` und `acceptAlliance` löschen **alle** Angebote ihrer Art an den
@@ -2335,6 +2335,16 @@ Prüfreihenfolge in jedem `check`: Existenz → Eigentum → Zielbedingung → O
 > `nicht im Besitz`, `Hauptstadt`, `umkämpft`, `eigene Armeen`, `fremde Armeen`; dazu
 > `PROVINCE_NOT_FOUND` (unbekannte Kennung, `Object.hasOwn` gegen Prototyp-Zugriffe) und
 > `INVALID_TARGET 'doppelte Provinz'`. „Leeres Angebot" prüft jetzt Rohstoffe **und** Provinzen.
+>
+> **Berichtigt am 2026-09-25 (Befund M17-G1, Durchsicht des Zusammenspiels).** `ACCEPT_TRADE`,
+> `DECLINE_TRADE` und `WITHDRAW_TRADE` lehnten ein **fremdes** Angebot (weder `from` noch `to`)
+> bislang mit `NOT_OWNER{offerId}` ab — anders als ein fehlendes (`INVALID_TARGET{reason:'kein
+> Angebot'}`). Über `canApply` liess sich so, genau wie bei `NOT_OWNER` fuer Spione vor T-M17-07,
+> durchprobieren, welche Kennungen zwischen Dritten offen sind (R-DIP-04). Seither: ein fremdes
+> Angebot ergibt dasselbe wie ein fehlendes; nur eine Partei auf der **falschen Seite** (z. B.
+> `from` versucht `ACCEPT_TRADE`) faellt weiterhin auf `NOT_OWNER` — sie kennt ihr eigenes
+> Angebot. `partyTradeOffer()` in `commands/tradeOffer.ts` traegt die Prüfung, nach dem Vorbild
+> von `ownSpy()`.
 
 ### D29.3 Reihenfolge im Tick
 
