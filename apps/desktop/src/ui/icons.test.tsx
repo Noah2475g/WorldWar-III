@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs'
+import { SPY_MISSIONS } from '@worldwar/core'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { outsideBox } from '../../../../test/path-bounds.ts'
@@ -11,6 +12,7 @@ import {
   Icon,
   RELATION_ICONS,
   RESOURCE_ICONS,
+  SPY_MISSION_ICONS,
   TERRAIN_ICONS,
   UNIT_ICONS,
 } from './icons.tsx'
@@ -293,6 +295,37 @@ describe('R-UI-10/R-UI-11 Beziehung und Gelaende haben ein Zeichen', () => {
 
     for (const [key, icon] of [...Object.entries(TERRAIN_ICONS), ...Object.entries(RELATION_ICONS)]) {
       expect(belegt.has(icon), `"${key}" teilt sich "${icon}" mit ${belegt.get(icon)}`).toBe(false)
+    }
+  })
+})
+
+describe('R-UI-10 Spionage und Handel haben Zeichen', () => {
+  it('hat fuer jeden Auftrag des Kerns ein Zeichen', () => {
+    for (const mission of SPY_MISSIONS) {
+      expect(ICON_NAMES, `${mission} ohne Symbol`).toContain(SPY_MISSION_ICONS[mission])
+    }
+    expect(Object.keys(SPY_MISSION_ICONS).sort()).toEqual([...SPY_MISSIONS].sort())
+  })
+
+  it('bleibt mit den fuenf neuen Zeichen im Feld', () => {
+    // Der allgemeine Fall oben (path-bounds ueber alle ICON_NAMES) deckt es auch —
+    // dieser Fall nennt sie einzeln, damit ein Umbenennen sofort auffaellt.
+    for (const name of ['spyIntel', 'spyEconomic', 'spyMilitary', 'spyCounter', 'trade'] as const) {
+      expect(outsideBox(ICON_PATHS[name], 24, 24), `${name} ragt aus dem Feld`).toEqual([])
+    }
+  })
+
+  it('gibt keinem neuen Zeichen den Pfad eines vorhandenen', () => {
+    const neu = ['spyIntel', 'spyEconomic', 'spyMilitary', 'spyCounter', 'trade'] as const
+    const alle = Object.entries(ICON_PATHS)
+    for (let i = 0; i < neu.length; i++) {
+      for (let j = i + 1; j < neu.length; j++) {
+        expect(ICON_PATHS[neu[i]!], `${neu[i]} = ${neu[j]}`).not.toBe(ICON_PATHS[neu[j]!])
+      }
+      for (const [key, path] of alle) {
+        if ((neu as readonly string[]).includes(key)) continue
+        expect(path, `${neu[i]} teilt sich den Pfad mit ${key}`).not.toBe(ICON_PATHS[neu[i]!])
+      }
     }
   })
 })
