@@ -213,7 +213,12 @@ select,
    den Fuss (gemessen: die Einfuehrung lag ueber "alles", "Kaempfe", "Aufbau", "Vertraege").
    Ihre Breite endet links vor der Uebersichtskarte (unten rechts, 132 px, rechts --sp-lg):
    Kartenbreite = 100% - --touch-side. Legende und Kartenflaeche darf sie verdecken -
-   beide nehmen keinen Finger an (.legend: pointer-events none). */
+   beide nehmen keinen Finger an (.legend: pointer-events none). Die Untergrenze 160 px
+   greift genau dann, wenn die Karte schmaler als 320 px ist (Breite = Karte - 160) - ein
+   Layout, das android-check Pruefung 4 ohnehin verwirft (Telefon hochkant: Karte 10 px,
+   gemessen 390x844@3); ohne sie wuerde die Einfuehrung dort stillschweigend 0 px breit.
+   Zeile 2 setzt voraus, dass .app ihre drei Zeilen hat - .app--empty (eine Zeile)
+   rendert keine Einfuehrung (App.tsx). */
 :root[data-input='touch'] {
   /* = app.css .main (1fr 380px); die Bloecke unten setzen ihre eigene Breite. */
   --touch-side: 380px;
@@ -224,7 +229,7 @@ select,
   grid-column: 1 / 2;
   left: var(--sp-md);
   bottom: var(--sp-md);
-  width: min(260px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)));
+  width: clamp(160px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)), 260px);
   max-height: calc(100% - 2 * var(--sp-md));
   overflow-y: auto;
 }
@@ -264,6 +269,8 @@ select,
     font-size: 16px;
   }
 
+  /* Im Touch-Betrieb gilt davon nur noch das padding - Lage und Masse setzt die Regel
+     fuer :root[data-input='touch'] .tutorial weiter oben (hoehere Spezifitaet). */
   .tutorial {
     left: var(--sp-md);
     bottom: 56px;
