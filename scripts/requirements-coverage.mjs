@@ -200,9 +200,11 @@ export function analyse(requirementsText, sources, milestones = new Set(), optio
   }
 }
 
-function collectTestFiles(dir, out = []) {
+export function collectTestFiles(dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', 'dist', 'coverage'].includes(entry.name)) continue
+    // Dot folders are never part of this checkout's tests: `.claude/worktrees` holds other
+    // branches (4022 of 4209 files on 2026-09-25), `.git` holds objects.
+    if (entry.name.startsWith('.') || ['node_modules', 'dist', 'coverage'].includes(entry.name)) continue
     const full = join(dir, entry.name)
     if (entry.isDirectory()) collectTestFiles(full, out)
     else if (entry.name.endsWith('.test.ts') || entry.name.endsWith('.test.tsx')) out.push(full)

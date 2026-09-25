@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { analyse, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
+import { analyse, collectTestFiles, parseRequirements, parseTests } from '../scripts/requirements-coverage.mjs'
 import {
   CRITERIA,
   GAUGES,
@@ -211,6 +211,26 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
     expect(analyse(doc, [GOOD_TEST], MEILENSTEINE).scopeErrors).toContainEqual(
       expect.stringContaining('R-DEMO-99'),
     )
+  })
+
+  // Befund 2026-09-25: der Lauf begann an der Wurzel und stieg in `.claude/worktrees`
+  // hinab - 4022 von 4209 gelesenen Testdateien stammten aus fremden Arbeitsbaeumen.
+  // Eine Anforderung galt damit als belegt, wenn irgendein Worktree einen Test dafuer
+  // hatte, und der Skriptaufruf unten riss unter Last seine Frist.
+  it('liest keine Testdateien aus Punktordnern wie .claude/worktrees und .git', () => {
+    const root = mkdtempSync(join(tmpdir(), 'req-walk-'))
+    try {
+      for (const dir of ['packages/core/src', '.claude/worktrees/m17-x/packages/core/src', '.git/x']) {
+        mkdirSync(join(root, dir), { recursive: true })
+      }
+      writeFileSync(join(root, 'packages/core/src/a.test.ts'), '')
+      writeFileSync(join(root, '.claude/worktrees/m17-x/packages/core/src/b.test.ts'), '')
+      writeFileSync(join(root, '.git/x/c.test.ts'), '')
+      const found = collectTestFiles(root).map((path: string) => path.slice(root.length + 1).replace(/\\/g, '/'))
+      expect(found).toEqual(['packages/core/src/a.test.ts'])
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('laeuft als Skript und meldet den Stand mit Exit-Code', () => {

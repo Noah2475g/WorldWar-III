@@ -271,6 +271,10 @@ entweder Noah oder seine Ansage.
 11. **`pnpm verify` im HAUPTCHECKOUT liest die Worktrees mit.** Seit dem 2026-09-11 steht
    `.claude/**` in den `ignores` von `eslint.config.js`. **Ein Prüflauf ist nur dort
    belegt, wo er gelaufen ist.**
+   *(2026-09-25: dieselbe Falle im Anforderungstor — `scripts/requirements-coverage.mjs` stieg
+   von der Wurzel in 22 Worktrees hinab, 4022 von 4209 gelesenen Testdateien waren fremd, und
+   R-ARCH-05 riss unter Last seine 5-s-Frist. Seitdem überspringt der Lauf jeden Punktordner.
+   Wer einen neuen Verzeichnislauf ab der Wurzel schreibt, überspringt `.claude` und `.git`.)*
 12. **Ein Ausgangswert, den es schon gibt, wird nicht neu gemessen.** Am 2026-09-12 lief
    ein Parameterlauf 37 Minuten, bevor auffiel, dass er nichts Neues messen konnte: die
    Regeln hatten sich seit dem letzten eingecheckten Bericht nicht geändert. Zwei Befehle
