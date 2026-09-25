@@ -864,6 +864,16 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     Gegenwert den Wert der Provinz um den Regelaufschlag übersteigt und das Verhältnis nicht
     schlecht ist, sonst ablehnen.
 
+> **Präzisiert am 2026-09-25 (T-M17-06), AK1.** Die vier genannten Gründe gelten der
+> **gebenden** Seite; dazu kommen „fremde Armeen" und „eigene Armeen auf dem Weg hinein"
+> (`DECISIONS.md`). Der Verfall eines Angebots, das nicht mehr abschließbar ist, geschieht in
+> der Diplomatiephase desselben Ticks (Rangfolge ausgeschieden vor Krieg vor Provinz vor
+> Frist). Die verlangte Seite wird beim Angebot nur öffentlich geprüft, nicht voll.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06), AK2.** „Nie ein Überfall im Tick danach" gilt für alle
+> Armeen, die in der Provinz **stehen**, und für die eigenen Armeen **auf dem Weg** hinein —
+> nicht für fremde Märsche, deren Ziel dem Abtretenden verborgen bleibt (Befund M17-D5).
+
 #### Weltgeschehen statt Zeitung (`R-NEWS`)
 
 > **R-NEWS-01, R-NEWS-02 und R-NEWS-03 sind am 2026-09-06 gestrichen** — ersatzlos, mit
