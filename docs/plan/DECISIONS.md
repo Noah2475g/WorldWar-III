@@ -5132,3 +5132,69 @@ zuwider und risse möglicherweise dieselbe Mechanik zweimal um.
 Abschnitt „Meilenstein M18" führt beide zusammen.
 
 **Kippbar:** durch Noah, jederzeit.
+
+---
+
+## 2026-09-25 · T-M17-16 · Der Nachher-Stand geht nach `m17-final.json`, nicht nach `m17-baseline.json`
+
+**Entscheidung:** `docs/reports/m17-baseline.json` bleibt der Ausgangswert von T-M17-02 und wird
+NICHT überschrieben. `apps/headless/test/m17-baseline.slow.test.ts` schreibt mit
+`WORLDWAR_M17_NACHHER=1` den Nachher-Stand stattdessen nach `docs/reports/m17-final.json`
+(`aufgabe: 'T-M17-16'`), zusätzlich mit `SABOTAGE_SUFFERED` je Opfer und je 100 Spieltage.
+
+**Begründung:** `m17-integration.slow.test.ts` liest `m17-baseline.json` als Vergleichsgrundlage
+für R-AI-09/AK3 (`aufgabe: 'T-M17-02'` steht im Test fest verdrahtet). Ein Überschreiben würde
+den Vorher-Wert mit dem Nachher-Wert ersetzen und die Vergleichsgrundlage zerstören. Die
+Alternative (Lauf ohne Schreiben, Zahlen von Hand aus einer Scratchpad-Kopie holen) wäre eine von
+Hand umgeschriebene Messdatei — keine Messung.
+
+**Auswirkung:** `docs/plan/tasks.yaml`/`03-TASKS.md`, `files` bei T-M17-16 nennt `m17-final.json`
+statt `m17-baseline.json`. `m17-baseline.json` gehört zu keiner Quellenliste (`GAUGES`,
+`STANCE_SOURCES`), der neue Test macht also nichts unfrisch.
+
+**Kippbar:** jederzeit — eine spätere Aufgabe könnte einen eigenen, dauerhaften Ort für
+Nachher-Stände verschiedener Meilensteine einführen, statt je Aufgabe eine eigene Datei.
+
+---
+
+## 2026-09-25 · T-M17-16 · `acceptance.md` bekommt einen Vermerk-Anhang von Hand statt eines Skript-Umbaus
+
+**Entscheidung:** die drei von der dod verlangten Vermerke (R-AI-08/AK3 weiterhin nicht erfüllt,
+die R-AI-09/AK3-Neufassung, Befund M17-I1) stehen als Abschnitt „Vermerke (von Hand, nicht vom
+Skript; gelten für `<commit>`)" am Ende von `docs/reports/acceptance.md`, nach jedem
+`pnpm acceptance`-Lauf von Hand angehängt. `scripts/acceptance.mjs` bleibt unverändert und
+überschreibt die Datei bei jedem Lauf vollständig.
+
+**Begründung:** der Bericht gilt ohnehin nur für seinen Commit (T-M16-01a, Kopfzeile der Datei);
+ein Anhang, der beim nächsten Lauf verschwindet, ist also kein Verlust, sondern folgt derselben
+Regel wie der Rest der Datei. Die Alternative — `acceptance.mjs` liest einen Vermerk-Block aus
+einer eigenen Datei und fügt ihn ein — ist mehr Aufwand für denselben Nutzen und wurde nicht
+gebaut.
+
+**Auswirkung:** jeder künftige `pnpm acceptance`-Lauf wirft den Anhang weg; wer die drei Vermerke
+dauerhaft braucht, liest `01-REQUIREMENTS.md` (R-AI-08/AK3, R-AI-09/AK3) und `PROBLEME.md`
+(Befund M17-I1) direkt.
+
+**Kippbar:** durch Noah — die Alternative (Skript liest einen Vermerk-Block) bleibt eine offene
+Option, falls der Anhang oft genug neu geschrieben werden muss, dass es sich lohnt.
+
+---
+
+## 2026-09-25 · T-M17-16 · `WORKFLOW.md` §0 nennt den Arbeitszweig, nicht `main`, bis Noah merged
+
+**Entscheidung:** §0 nennt `claude/m17-tiefe-zwischen-den-kriegen` als die Spitze, solange T-M17-16
+offen ist und kein Pull Request nach `main` gestellt wurde — genau ein Zweig, keine Bedingung
+(Falle 1). Ein Pull Request wird in dieser Aufgabe **nicht** gestellt, weil T-M17-16 selbst nicht
+abgeschlossen ist (zwei offene Blocker, siehe `PROGRESS.md`).
+
+**Begründung:** `main` zeigt weiterhin auf den Stand vor M17 — wer dort einen Worktree anlegt,
+sieht M17 nicht. Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt schon
+fünf Sitzungen gekostet (Falle 1, `WORKFLOW.md` §4).
+
+**Auswirkung:** Wer als Nächstes an M17 weiterarbeitet (z. B. um die zwei Blocker zu klären),
+zweigt von `claude/m17-tiefe-zwischen-den-kriegen` ab, nicht von `main`. Nach Noahs Entscheid zu
+den zwei Blockern und einem fertiggestellten T-M17-16 stellt der Ausführende einen Pull Request;
+**erst nach Noahs Merge** richtet der Merger §0 auf `main`.
+
+**Kippbar:** durch Noah, jederzeit — insbesondere falls er die zwei Blocker selbst löst, ohne
+dass ein Agent erst T-M17-16 fertigstellt.

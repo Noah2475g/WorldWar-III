@@ -553,3 +553,33 @@ verschiebt die Paarung also nicht durch einen Teil, der Information oder Schaden
 über den Geldabfluss eines Gegenspions — in einem Turnier, dessen 50 Partien nur 5 bis 29
 verschiedene Ausgänge haben. Das ist kein Fehler der Spionage und kein Grund, eine ihrer Zahlen zu
 ändern; es ist die Empfindlichkeit des Messgeräts (M17-T4).
+
+## Der Parameterlauf nach M17 (T-M17-16, 2026-09-25, gegen `b9b3915`)
+
+Der **eine** Parameterlauf der Delegation nach M17s letzter Regeländerung (`pnpm balance:sweep`,
+6 Mächte, 120 Spieltage, 12 Startzahlen je Variante, 6568 s):
+
+| Kennzahl | vor M17 (`5cdc611`) | nach M17 (`b9b3915`) |
+|---|---|---|
+| Anteil des Stärksten (Grundlauf) | 36,8 % | **38,4 %** |
+| Überlebende Mächte | 5,4 von 6 | 5,7 von 6 |
+| Eroberte Provinzen | 310 | 241 |
+| Endbestände gesamt | 45.357 | 46.721 |
+| Rauschgrenze der Zielgröße | 0,056 | **0,056** (unverändert) |
+| Tragende Konstanten | 0 von 14 | **0 von 14** (unverändert) |
+
+Die Bewegung am Anteil des Stärksten (1,6 Prozentpunkte) liegt **unter** der doppelten
+Rauschgrenze (0,112) — kein Ausschlag, den man einer Konstante zuschreiben könnte; M17 hat den
+Kern angefasst (Spionage, Handel, gerichteter Durchmarsch/Kartenfreigabe), das ändert die
+Partie, ohne eine einzelne Zahl tragend zu machen. Der höchste Einzelausschlag ist jetzt
+`baseTargetMorale` (7,5 %, vorher `battleRate` mit 8,6 %) — beide weit unter der 15-%-Schwelle.
+**Keine Konstante wurde als Reaktion auf diesen Lauf verändert.**
+
+**Kohle-Senke und Vorratsaufbau** (aus der ursprünglichen dod dieser Aufgabe genannt) sind mit
+diesem Lauf **nicht** neu untersucht — beide bleiben, wie schon in `WORKFLOW.md` §2 Punkt 5
+festgehalten, Kandidaten für M18. Der Parameterlauf oben deckt nur die 14 in `sweep.slow.test.ts`
+geführten Konstanten, keine der beiden Fragen direkt.
+
+**Turnierband:** unverändert im vorigen Abschnitt beschrieben (Befund M17-I1 — das gemessene Band
+0,760 gilt auf dem Stand **mit** dem `RECRUIT_SPY`-Buchungsfehler aus Befund M17-S12; eine
+Reparatur kippt es auf 0,460, geht mit M17-T7 an M18).
