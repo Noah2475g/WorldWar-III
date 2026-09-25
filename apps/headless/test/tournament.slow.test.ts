@@ -118,8 +118,16 @@ describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
 
     expect(result.draws, 'jedes Paar unentschieden — die Stufe entscheidet nichts').toBeLessThan(result.matches / 2)
     expect(result.winRateA, 'schwer ist gegen normal nicht besser als der Zufall').toBeGreaterThan(0.55)
-    // Und hier greift die Obergrenze: zwischen benachbarten Stufen darf keine Mauer stehen.
-    expect(result.winRateA, 'zwischen normal und schwer steht eine Mauer').toBeLessThanOrEqual(0.95)
+    // Und hier greift die Obergrenze — mit einer Einschraenkung (Nacharbeit T-M17-15, Befund
+    // "Turnier: die Obergrenze 0,95 zaehlt nur Unentschieden", 2026-09-25): `winsB` ist in
+    // dieser Paarung durchgehend 0 (gemessen 10:0:15 am 2026-09-13, 39:0:36 am 2026-09-25) —
+    // "normal" verliert nie eine einzelne Partie, es zieht nur nach. Die Obergrenze begrenzt
+    // damit den Anteil der Unentschieden, nicht eine Niederlagenquote von "normal". Das Band
+    // traegt sich zudem teilweise ueber den Buchungsfehler M17-I1 (RECRUIT_SPY wird nicht
+    // vorgebucht): mit korrekter Buchung faellt winRateA auf 0,460 und winsB wird positiv
+    // (Befund M17-I1, PROBLEME.md). Entscheid Noah (2026-09-25): M17-I1 geht mit M17-T7 an
+    // M18, die Turnierfrage wird dort neu entschieden.
+    expect(result.winRateA, 'zwischen normal und schwer steht eine Mauer aus Unentschieden').toBeLessThanOrEqual(0.95)
   })
 
   it('schwer ist in keiner Sitzordnung schlechter als normal (T-M17-15, Befund M17-T4)', () => {
