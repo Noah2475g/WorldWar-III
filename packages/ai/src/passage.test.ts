@@ -354,10 +354,10 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
   // (rightOfWayNoticeTicks) nur 24: die Armee ist bei Fristende noch in m1 unterwegs, und
   // der Kern meldet einen Ueberfall ohne Erklaerung — beim Bau gefunden, nicht die Frist und
   // nicht diese Zusicherung geaendert (Bauplan-Vorgabe). Siehe Bericht "Offene Punkte" und
-  // PROBLEME.md M17-D5. Der zweite Teil der Zusage (die Armee kommt bei p1 an) haelt.
-  it.todo('in der laufenden Partie: kein Ueberfall nach Ablauf der Frist (Befund M17-D5, offen)')
+  // PROBLEME.md M17-D10. Der zweite Teil der Zusage (die Armee kommt bei p1 an) haelt.
+  it.todo('in der laufenden Partie: kein Ueberfall nach Ablauf der Frist (Befund M17-D10, offen)')
 
-  it('reagiert sofort auf die Kuendigung, auch wenn der Heimweg laenger ist als die Frist (Befund M17-D5)', () => {
+  it('reagiert sofort auf die Kuendigung, auch wenn der Heimweg laenger ist als die Frist (Befund M17-D10)', () => {
     const state = dreiMaechte()
     state.provinces.m1!.owner = 'p2'
     setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
@@ -371,7 +371,7 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     )
     expect(homeward, JSON.stringify(result.applied)).toBeDefined()
     expect(homeward!.tick).toBeLessThanOrEqual(2)
-    // Der Ueberfall ohne Erklaerung tritt trotzdem ein (Befund M17-D5): der Heimweg braucht
+    // Der Ueberfall ohne Erklaerung tritt trotzdem ein (Befund M17-D10): der Heimweg braucht
     // laenger als die Frist. Diese Zusicherung haelt den Ist-Stand fest, nicht die Zusage.
     const surprise = result.events.find(
       (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.playerId === 'p1' && e.targetPlayerId === 'p2',
