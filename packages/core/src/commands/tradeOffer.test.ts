@@ -446,6 +446,33 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     expect(fired[0]).toMatchObject({ reason: 'invalid' })
   })
 
+  it('die VERLANGTE Provinz verfaellt ebenso unabhaengig von einer Annahme — nicht nur die gegebene (Nacharbeit kern, Pruefer-Befund 1)', () => {
+    // p1 verlangt o2 von p2; p2 verliert die Provinz an p3 (z.B. Eroberung), OHNE je ACCEPT_TRADE
+    // aufzurufen. settleTradeOffers muss das allein erkennen — provincesLapsed prueft die want-Seite
+    // zwar schon (Zeile 157), aber vor dieser Nacharbeit belegte kein Test diesen Zweig unabhaengig.
+    const id = place(withProvinces('p1', 'p2', { resources: { money: 1_000 } }, { provinces: ['o2'] }))
+    state.provinces['o2']!.owner = 'p3'
+
+    const fired = closed(diplomacyAt(1))
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ offerId: id, reason: 'invalid' })
+    expect(state.diplomacy.tradeOffers).toEqual([])
+  })
+
+  it('Krieg zwischen den Angebotsparteien selbst schliesst vor einer gleichzeitig ungueltigen Provinz — reason bleibt war (Nacharbeit kern, Pruefer-Befund 2)', () => {
+    // Bisher kombinierte nur ein Test 'invalid' mit Krieg, und der Krieg lief zwischen dem Ceder
+    // und einem DRITTEN (p1 vs p3, siehe 'sie ist inzwischen umkaempft' oben) — nicht zwischen den
+    // beiden Angebotsparteien p1/p2 selbst, deren relation.state die Rangfolge in settleTradeOffers
+    // eigentlich traegt (Kommentar 'ausgeschieden vor Krieg vor Frist').
+    const { id } = setupOffer()
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+
+    const fired = closed(diplomacyAt(1))
+    expect(fired).toHaveLength(1)
+    expect(fired[0]).toMatchObject({ offerId: id, reason: 'war' })
+  })
+
   it('eine Provinz in zwei Angeboten: nach der ersten Annahme verfaellt das zweite', () => {
     const id1 = place(withProvinces('p1', 'p2', { provinces: ['n2'] }))
     const id2 = place(withProvinces('p1', 'p3', { provinces: ['n2'] }))
