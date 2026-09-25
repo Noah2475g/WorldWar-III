@@ -1,13 +1,23 @@
 # Verpackung als Programm — Stand nach M17
 
-Gemessen am **2026-09-25** gegen `6a91e52`, am gebauten Programm und nicht im Browser.
-Der Bericht gilt für genau diesen Stand.
+Gebaut und Netzfreiheit gemessen am **2026-09-25** auf `b9b3915`; AK-8 selbst wurde in
+diesem Lauf **nicht** gemessen (siehe Abschnitt „AK-8" unten). Am gebauten Programm und
+nicht im Browser. Der Bericht gilt für genau diesen Stand — mit dieser einen Ausnahme, die
+er nicht verschweigt: die Kopfzeile nennt absichtlich **keinen** Stempel im Format
+„Gemessen am, gegen Commit" für AK-8, damit `scripts/acceptance-criteria.mjs`
+(`measurementOf`) AK-8 nicht fälschlich als „erfüllt, seither nur Dokumente" grün meldet,
+solange die Zeile unten in „AK-8: in diesem Lauf NICHT durchgeführt" steht. Der maßgebliche
+Stempel für AK-8 bleibt der aus der „Geschichte" unten (`e82c2bc`, 2026-09-14) — er ist
+inzwischen zu Recht `ueberholt` (viele Erzeugnis-Dateien haben sich seither geändert), also
+meldet das Skript AK-8 als ⚠, nicht als ✅. (Befund in der Nacharbeit zu T-M17-16: der
+vorherige Stempel dieser Zeile zeigte fälschlich auf `6a91e52` und hätte den nächsten
+Abnahmelauf AK-8 grün melden lassen, obwohl AK-8 nicht durchgeführt wurde.)
 
 > **Kurzfassung:** exe neu gebaut (sauberer Quellstand — jede uncommittete Datei unter
 > `apps/`, `packages/`, `data/` war 0 Zeilen vor dem Bau), Netzfreiheit erneut gemessen und **hält**
 > wörtlich, die Uhr bei Tempo 100 liegt nahe am eigenen, am selben Tag gemessenen
-> Ausgangswert, und eine CDP-Gegenprobe zeigt Spionage- und Handelsoberfläche wirklich im
-> laufenden Programm. **AK-8 selbst — der volle Speichern/Neustart/Weiterspielen-Rundlauf —
+> Ausgangswert, und eine CDP-Gegenprobe zeigt Diplomatie- und Spionageoberfläche wirklich im
+> laufenden Programm (Handel wurde in dieser Gegenprobe nicht gesondert festgehalten). **AK-8 selbst — der volle Speichern/Neustart/Weiterspielen-Rundlauf —
 > wurde in diesem Lauf NICHT durchgeführt**, weil sich Noahs `saves`-Ordner beim Ansehen als
 > unklar herausstellte (Abschnitt „AK-8" unten). Das ist eine echte Lücke, keine
 > Auslassung: AK-8 zählt nicht gegen V1, aber M17 ist ohne diesen Rundlauf nicht in jeder
@@ -78,13 +88,19 @@ die neue:
 **Bewertung nach Falle 18** (Minimum gegen Minimum, Median gegen Median, gegen den eigenen
 Ausgangswert vom selben Tag): das Minimum liegt 0,10 unter dem Ausgangswert, der Median 0,12
 darunter. Beide Abstände sind **kleiner als die eigene Streuung des Ausgangswerts**
-(99,78–99,93, Spanne 0,15 über 5 Läufen) — nach demselben Maßstab, den `packaging.md` am
+(99,78–99,93, Spanne **0,15** über 5 Läufen) — nach demselben Maßstab, den `packaging.md` am
 14.09. selbst für den Median anlegte („der Median liegt innerhalb der eigenen Streuung des
-Ausgangswerts — das ist kein Befund"). Beide Stichproben liegen außerdem eng beieinander
-(0,68–0,93 Punkte Spanne je Stichprobe) und weit über dem historischen Tiefstwert vor der
-Uhr-Reparatur aus T-M41-17 (98,40, siehe „Geschichte" unten). **Eingeordnet als
-Normalstreuung, nicht als Rückschritt** — die Zahlen stehen hier vollständig, damit Noah es
-selbst nachvollziehen kann, statt es nur behauptet zu bekommen.
+Ausgangswerts — das ist kein Befund"). **Ehrlich benannt (Nacharbeit T-M17-16, vorherige
+Fassung nannte hier fälschlich 0,68–0,93):** die Spanne des M17-Endstands selbst ist mit
+**0,23** (99,68–99,91 über 13 Läufen) größer als die Spanne des Ausgangswerts (0,15), auf die
+sich die Einordnung stützt — Min und Median liegen beide unter dem Ausgangswert, nicht nur
+gestreut um ihn herum. Das ist damit ein **Grenzfall**, kein eindeutig unauffälliger Befund:
+beide Abstände bleiben zwar innerhalb der Ausgangsstreuung und weit über dem historischen
+Tiefstwert vor der Uhr-Reparatur aus T-M41-17 (98,40, siehe „Geschichte" unten), aber die
+größere Streuung des Endstands selbst ist eine offene Beobachtung, nicht restlos erklärt.
+**Eingeordnet als Grenzfall innerhalb der Ausgangsstreuung, nicht als eindeutiger
+Rückschritt** — die Zahlen stehen hier vollständig, damit Noah es selbst nachvollziehen kann,
+statt es nur behauptet zu bekommen.
 
 ## AK-8: in diesem Lauf NICHT durchgeführt — Noahs `saves`-Ordner ist unklar
 
@@ -102,17 +118,22 @@ Ständen nicht ausschließen lässt, ohne dass er sie selbst ansieht:
   (`stand-1.json`, `zeitreihe.stand-1.json`); **gleichzeitig** existierte wieder ein neuer
   `saves`-Ordner mit den vier übrigen Dateien (Erstellzeit 2026-09-14, 18:48 Uhr — acht
   Minuten nach dem AK-8-Bau jenes Tages; zuletzt geschrieben am 21.09.).
-- Drei weitere Alt-Ordner aus früheren Sitzungen liegen im selben Verzeichnis, ebenfalls nie
-  aufgeräumt: `saves.geparkt-2026-09-08`, `saves.messung-2026-09-14`,
-  `saves.messung-2026-09-14b`.
+- **Vier** weitere Alt-Ordner aus früheren Sitzungen liegen im selben Verzeichnis, ebenfalls
+  nie aufgeräumt, jeder mit einer eigenen `stand-1.json`-Kopie: `saves.geparkt-2026-09-08`,
+  `saves.messung-2026-09-14`, `saves.messung-2026-09-14b`, `saves.messung-2026-09-14c`.
+  Für diese vier wurden beim Ansehen keine Zeitstempel festgehalten (anders als für
+  `saves.geparkt-2026-09-25` und den neu entstandenen `saves`-Ordner oben) — absichtlich
+  nicht nachgeholt, um nicht ein weiteres Mal in Noahs `saves`-Verzeichnis einzugreifen.
 - Kein `worldwar.exe`-Prozess lief währenddessen (`Get-Process` leer) — eine aktive
   Schreibquelle, die das erklären würde, wurde nicht gefunden.
 
 **Nichts wurde gelöscht** — jede Datei ist nachweisbar vorhanden, nur auf zwei Ordner
 verteilt statt einem, und es wurde nicht weiter daran herumprobiert, um die Lage nicht zu
-verschlimmern. Die vollständige Ordnerliste mit Zeitstempeln steht im Protokoll dieser
-Aufgabe. **Empfehlung an Noah:** von Hand nachsehen, was in `saves` und den Alt-Ordnern
-steht, und entscheiden, was der gültige Stand ist — danach kann AK-8 nachgeholt werden.
+verschlimmern. Diese Liste hier **ist** die vollständige Ordnerliste (Nacharbeit T-M17-16:
+zuvor fehlte `saves.messung-2026-09-14c`, und die Kurzfassung verwies stattdessen fälschlich
+auf ein Protokoll im Scratchpad, das nicht eingecheckt ist). **Empfehlung an Noah:** von Hand
+nachsehen, was in `saves` und den Alt-Ordnern steht, und entscheiden, was der gültige Stand
+ist — danach kann AK-8 nachgeholt werden.
 
 Als **Ersatz**, nicht als Gleichwertiges, stehen oben die CDP-Gegenprobe (Diplomatie/Spionage
 im laufenden Programm) und die Uhr — beide belegen, dass M17 im Programm steckt und dass es
