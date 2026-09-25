@@ -183,7 +183,8 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         relation.state = 'truce'
         relation.sinceTick = draft.tick
         relation.warEffectiveAtTick = null
-        draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => offer.kind !== 'peace' || offer.to !== command.playerId)
+        // Befund B4: nur das angenommene Angebot, nicht alle an mich.
+        dropOffer(draft, command.targetPlayerId, command.playerId, 'peace')
         emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
           playerId: command.playerId,
           targetPlayerId: command.targetPlayerId,
@@ -197,7 +198,8 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         relation.sinceTick = draft.tick
         setMapBothWays(relation, true)
         setPassageBothWays(relation, true)
-        draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => offer.kind !== 'alliance' || offer.to !== command.playerId)
+        // Befund B4: nur das angenommene Angebot, nicht alle an mich.
+        dropOffer(draft, command.targetPlayerId, command.playerId, 'alliance')
         emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
           playerId: command.playerId,
           targetPlayerId: command.targetPlayerId,

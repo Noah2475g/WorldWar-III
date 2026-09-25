@@ -439,6 +439,57 @@ describe('R-DIP-08 Durchmarsch und Kartenfreigabe haben eine Richtung', () => {
     })
   })
 
+  describe('Befund B4 Annahme nimmt nur das eine Angebot vom Tisch', () => {
+    it('acceptPeace laesst das Friedensangebot eines Dritten liegen', () => {
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      state.diplomacy.relations['p1|p3']!.state = 'war'
+      const offered = step(
+        state,
+        [diplo('p2', 'p1', 'offerPeace'), diplo('p3', 'p1', 'offerPeace')],
+        ctx,
+      ).state
+      const accepted = step(offered, [diplo('p1', 'p2', 'acceptPeace')], ctx).state
+
+      expect(accepted.diplomacy.offers.map((offer) => `${offer.from}>${offer.to}:${offer.kind}`)).toEqual([
+        'p3>p1:peace',
+      ])
+      expect(accepted.diplomacy.relations['p1|p2']!.state).toBe('truce')
+      expect(accepted.diplomacy.relations['p1|p3']!.state).toBe('war')
+    })
+
+    it('zwei Friedensschluesse im selben Zug werden beide angenommen', () => {
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      state.diplomacy.relations['p1|p3']!.state = 'war'
+      const offered = step(
+        state,
+        [diplo('p2', 'p1', 'offerPeace'), diplo('p3', 'p1', 'offerPeace')],
+        ctx,
+      ).state
+      const result = step(offered, [diplo('p1', 'p2', 'acceptPeace'), diplo('p1', 'p3', 'acceptPeace')], ctx)
+
+      expect(rejection(result.events)).toBeUndefined()
+      expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('truce')
+      expect(result.state.diplomacy.relations['p1|p3']!.state).toBe('truce')
+      expect(result.state.diplomacy.offers).toEqual([])
+    })
+
+    it('acceptAlliance laesst das Buendnisangebot eines Dritten liegen', () => {
+      const offered = step(
+        state,
+        [diplo('p2', 'p1', 'offerAlliance'), diplo('p3', 'p1', 'offerAlliance')],
+        ctx,
+      ).state
+      const accepted = step(offered, [diplo('p1', 'p2', 'acceptAlliance')], ctx).state
+
+      expect(accepted.diplomacy.offers.map((offer) => `${offer.from}>${offer.to}:${offer.kind}`)).toEqual([
+        'p3>p1:alliance',
+      ])
+
+      const result = step(accepted, [diplo('p1', 'p3', 'acceptAlliance')], ctx)
+      expect(rejection(result.events)).toBeUndefined()
+    })
+  })
+
   describe('AK3 Ein Widerruf wirkt nach der Frist', () => {
     /** p1 gewaehrt p2, und eine Armee von p2 steht in n3 — im Land von p1. */
     function guestInLand(): GameState {
