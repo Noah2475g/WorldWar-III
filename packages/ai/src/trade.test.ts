@@ -178,15 +178,19 @@ describe('R-DIP-05 Die KI nimmt ein lohnendes Angebot an und lehnt den Rest begr
     expect(commands).toEqual([{ type: 'DECLINE_TRADE', playerId: 'p3', offerId }])
   })
 
-  it('lehnt Provinzen ab, bis sie sie bewerten kann', () => {
+  // Bis T-M17-11 lehnte die KI jedes Provinzangebot ab; der Fall hielt diesen Platzhalter
+  // fest und ist mit ihm gegangen.
+  it('nimmt eine geschenkte Provinz an (loest den Platzhalter aus T-M17-10 ab)', () => {
     const base = handelsLage()
     base.provinces.o2!.owner = 'p2'
     const { state, offerId } = offer(base, {}, {}, ['o2'])
     const explanations: Explanation[] = []
     const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, [])
-    expect(commands).toEqual([{ type: 'DECLINE_TRADE', playerId: 'p3', offerId }])
+    expect(commands).toEqual([{ type: 'ACCEPT_TRADE', playerId: 'p3', offerId }])
     const reason = explanations.find((e) => e.action.includes(offerId))?.reason ?? ''
-    expect(reason).toContain('T-M17-11')
+    expect(reason).toContain('Geschenk')
+    const after = step(state, commands, ctx)
+    expect(after.events.some((e) => e.type === 'PROVINCE_CEDED')).toBe(true)
   })
 
   it('lehnt ab, solange eine Kriegserklaerung laeuft', () => {
@@ -379,5 +383,42 @@ describe('R-AI-01/AK1 Die Handelsbefehle bestehen die regulaere Pruefung', () =>
 
     const e = bedarfsLage()
     allAccepted(e, tradeOfferCommands(contextFor(e, 'p3'), [], []))
+  })
+})
+
+describe('R-DIP-05 Kein Geschaeft im Zug einer eigenen Kriegserklaerung (Befund M17-D11)', () => {
+  it('lehnt ab statt anzunehmen', () => {
+    const base = handelsLage()
+    const { state, offerId } = offer(base, { food: 100_000 }, { wood: 90_000 })
+    const pending: Command[] = [{ type: 'DIPLOMACY', playerId: 'p3', targetPlayerId: 'p2', action: 'declareWar' }]
+    const explanations: Explanation[] = []
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), explanations, pending)
+    expect(commands).toEqual([{ type: 'DECLINE_TRADE', playerId: 'p3', offerId }])
+    const reason = explanations.find((e) => e.action.includes(offerId))?.reason ?? ''
+    expect(reason).toContain('Kriegserklärung in diesem Zug')
+    const r = step(state, [...pending, ...commands], ctx)
+    expect(r.events.find((e) => e.type === 'COMMAND_REJECTED')).toBeUndefined()
+  })
+
+  it('bietet dem Ziel nichts an', () => {
+    const state = bedarfsLage()
+    const pending: Command[] = [{ type: 'DIPLOMACY', playerId: 'p3', targetPlayerId: 'p1', action: 'declareWar' }]
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), [], pending)
+    const offered = commands.find((c) => c.type === 'OFFER_TRADE')
+    expect(offered).toMatchObject({ type: 'OFFER_TRADE', targetPlayerId: 'p2' })
+    const r = step(state, [...pending, ...commands], ctx)
+    expect(r.events.find((e) => e.type === 'COMMAND_REJECTED')).toBeUndefined()
+  })
+
+  it('ohne die Erklaerung unveraendert', () => {
+    const base = handelsLage()
+    const { state, offerId } = offer(base, { food: 100_000 }, { wood: 90_000 })
+    const commands = tradeOfferCommands(contextFor(state, 'p3'), [], [])
+    expect(commands).toEqual([{ type: 'ACCEPT_TRADE', playerId: 'p3', offerId }])
+
+    const bedarf = bedarfsLage()
+    const bedarfCommands = tradeOfferCommands(contextFor(bedarf, 'p3'), [], [])
+    const offered = bedarfCommands.find((c) => c.type === 'OFFER_TRADE')
+    expect(offered).toMatchObject({ type: 'OFFER_TRADE', targetPlayerId: 'p1' })
   })
 })

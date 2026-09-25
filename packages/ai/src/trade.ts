@@ -35,6 +35,18 @@ function bundleValue(resources: Partial<Record<ResourceKey, number>>, prices: Re
   return total
 }
 
+/** Die Maechte, denen ich in diesem Zug den Krieg erklaere (Befund M17-D11): der Kern setzt `warEffectiveAtTick` sofort. */
+export function warDeclaredThisTurn(context: AiContext, pending: readonly Command[]): Set<PlayerId> {
+  const me = context.view.playerId
+  const out = new Set<PlayerId>()
+  for (const command of pending) {
+    if (command.type === 'DIPLOMACY' && command.playerId === me && command.action === 'declareWar') {
+      out.add(command.targetPlayerId)
+    }
+  }
+  return out
+}
+
 export function tradeOfferCommands(
   context: AiContext,
   explanations: Explanation[],
@@ -66,6 +78,7 @@ export function tradeOfferCommands(
 
   // Antworten — view.tradeOffers.incoming, nach der Nummer im Angebot sortiert.
   const incoming = [...view.tradeOffers.incoming].sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)))
+  const declaring = warDeclaredThisTurn(context, pending)
 
   for (const offer of incoming) {
     const from = offer.from
@@ -76,7 +89,9 @@ export function tradeOfferCommands(
     const ratio = given > 0 ? Math.trunc((received * 1000) / given) : 0
 
     let reason: string | null = null
-    if (offer.give.provinces.length > 0 || offer.want.provinces.length > 0) {
+    if (declaring.has(from)) {
+      reason = 'Kriegserklärung in diesem Zug'
+    } else if (offer.give.provinces.length > 0 || offer.want.provinces.length > 0) {
       reason = 'Provinzen bewertet die KI erst mit dem Provinzhandel (T-M17-11)'
     } else if (relation?.warEffectiveAtTick !== undefined) {
       reason = 'Kriegserklärung läuft'
@@ -176,7 +191,7 @@ export function tradeOfferCommands(
   for (const other of view.others) {
     if (!other.alive) continue
     const relation = view.relations[other.id]
-    if (!relation || relation.state === 'war' || relation.warEffectiveAtTick !== undefined) continue
+    if (!relation || relation.state === 'war' || relation.warEffectiveAtTick !== undefined || declaring.has(other.id)) continue
     const wert = relationship(view, other.id, grievances, rules)
     if (wert.value < difficulty.warThreshold) continue
     if (partner === null || wert.value > partnerValue || (wert.value === partnerValue && other.id < partner)) {
