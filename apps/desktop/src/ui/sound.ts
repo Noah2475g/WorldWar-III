@@ -55,8 +55,57 @@ let context: AudioContext | null = null
 
 const defaultFactory: AudioFactory = () => {
   if (typeof globalThis.AudioContext !== 'function') return null
-  context ??= new globalThis.AudioContext()
+  if (!context) {
+    context = new globalThis.AudioContext()
+    resumeOnGesture(context)
+  }
   return context
+}
+
+/** Was die Weckregel von einem AudioContext braucht. */
+interface Resumable {
+  readonly state: string
+  resume: () => Promise<void>
+}
+
+type GestureTarget = Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
+
+/** Die Gesten, die ein Browser als Nutzeraktivierung zaehlt und die jede Eingabeart hat. */
+export const UNLOCK_EVENTS = ['pointerdown', 'keydown'] as const
+
+/**
+ * Weckt einen schlafenden Ton bei der ersten Beruehrung (Android-Emulator, 2026-09-24).
+ *
+ * Chrome auf Android startet einen AudioContext, der vor jeder Nutzergeste entsteht, im
+ * Zustand `suspended` — und er bleibt stumm, bis `resume()` in einer Geste laeuft. Genau
+ * das geschieht hier: bei jedem `pointerdown`/`keydown`, solange er schlaeft; sobald er
+ * laeuft, haengt sich die Regel ab. Scheitert das Wecken, versucht es die naechste Geste.
+ *
+ * Gibt eine Aufraeumfunktion zurueck. Ohne Ereignisziel (node) haengt sie nichts an.
+ */
+export function resumeOnGesture(
+  audio: Resumable,
+  target: GestureTarget | undefined = globalThis as unknown as GestureTarget,
+): () => void {
+  if (audio.state !== 'suspended' || typeof target?.addEventListener !== 'function') return () => undefined
+
+  const remove = (): void => {
+    for (const type of UNLOCK_EVENTS) target.removeEventListener(type, unlock, { capture: true })
+  }
+  function unlock(): void {
+    if (audio.state !== 'suspended') {
+      remove()
+      return
+    }
+    void audio.resume().then(
+      () => {
+        if (audio.state !== 'suspended') remove()
+      },
+      () => undefined,
+    )
+  }
+  for (const type of UNLOCK_EVENTS) target.addEventListener(type, unlock, { capture: true, passive: true })
+  return remove
 }
 
 /**

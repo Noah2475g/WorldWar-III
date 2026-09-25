@@ -30,7 +30,8 @@
     "desktop:build": "pnpm --filter @worldwar/desktop build",
   "mp:host": "node apps/party/src/index.ts",
     "acceptance": "node scripts/acceptance.mjs",
-    "playtest:sheet": "node scripts/playtest-sheet.mjs"
+    "playtest:sheet": "node scripts/playtest-sheet.mjs",
+    "android:check": "node scripts/android-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

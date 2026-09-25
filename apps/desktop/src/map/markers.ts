@@ -216,6 +216,9 @@ export const ARMY_HIT_BOX = 24
  * getroffen wird, was man sieht, und nicht die Provinzmitte, die eine marschierende
  * Armee laengst verlassen hat. Nur eigene Armeen: eine fremde traegt keine Befehle,
  * und ihr Kasten soll den Klick auf die Provinz darunter nicht schlucken.
+ *
+ * `hitBox` ist die Kante der Trefferflaeche; ein Finger bekommt mehr als die Maus
+ * (Touch-Bedienung, `TOUCH_TARGET_PX` in `gestures.ts`).
  */
 export function pickArmy(
   screen: Point,
@@ -223,10 +226,11 @@ export function pickArmy(
   centres: Readonly<Record<string, Point>>,
   view: View,
   extras: MarkerExtras = {},
+  hitBox: number = ARMY_HIT_BOX,
 ): string | null {
   // Nie kleiner als der gezeichnete Stapel (T-M30-01): quer greift dessen halbe Breite.
-  const reachX = Math.max(ARMY_HIT_BOX, ARMY_BOX.width) / 2
-  const reachY = Math.max(ARMY_HIT_BOX, ARMY_BOX.height) / 2
+  const reachX = Math.max(hitBox, ARMY_BOX.width) / 2
+  const reachY = Math.max(hitBox, ARMY_BOX.height) / 2
   let bestId: string | null = null
   let bestDistance = Infinity
 

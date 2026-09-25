@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
 import { TOKENS, TYPE } from '../ui/tokens.ts'
+import { useInputMode } from '../ui/inputMode.ts'
 import {
   MAP_COLORS,
   MARCH_AHEAD_WIDTH,
@@ -23,17 +24,28 @@ import {
   type RenderProvince,
 } from './render.ts'
 import {
+  bitmapFor,
   boundsOf,
   centreOn,
-  clampView,
   pickProvince,
+  toCanvasPoint,
   toMap,
   toScreen,
   zoomAt,
   zoomTier,
+  type Point,
   type View,
   type ViewLimits,
 } from './picking.ts'
+import {
+  IDLE,
+  LONG_PRESS_MS,
+  TOUCH_TARGET_PX,
+  gestureStep,
+  pointerKind,
+  type GestureInput,
+  type GestureState,
+} from './gestures.ts'
 import { ZOOM_STEP } from '../keyboard.ts'
 import {
   ARMY_BOX,
@@ -106,17 +118,25 @@ export const HOVER_DELAY_MS = 120
  * (T-M30-01, KRIEGSRAT §6.1). Zahl und Zustandsbalken aendern sich je Armee und werden
  * darueber gezeichnet; Rahmen und Glyphe sind fuer alle gleich und kommen von hier.
  */
-function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, icon: IconName): HTMLCanvasElement | null {
-  const key = `${tone}:${icon}`
+function stackStamp(
+  cache: Map<string, HTMLCanvasElement>,
+  tone: MarkerTone,
+  icon: IconName,
+  ratio = 1,
+): HTMLCanvasElement | null {
+  const key = `${tone}:${icon}:${ratio}`
   const cached = cache.get(key)
   if (cached) return cached
   if (typeof document === 'undefined') return null
 
+  // In der Dichte der Ebene gestempelt (Touch-Bedienung): ein 1:1-Stempel, auf einer
+  // Ebene mit Dichte 1,75 hochgezogen, waere der einzige unscharfe Fleck der Karte.
   const canvas = document.createElement('canvas')
-  canvas.width = ARMY_BOX.width + STAMP_PAD * 2
-  canvas.height = ARMY_BOX.height + STAMP_PAD * 2
+  canvas.width = Math.round((ARMY_BOX.width + STAMP_PAD * 2) * ratio)
+  canvas.height = Math.round((ARMY_BOX.height + STAMP_PAD * 2) * ratio)
   const context = canvas.getContext('2d')
   if (!context) return null
+  context.scale(ratio, ratio)
 
   const rim = TONE_COLORS[tone]
   context.fillStyle = TOKENS.ground
@@ -133,17 +153,18 @@ function stackStamp(cache: Map<string, HTMLCanvasElement>, tone: MarkerTone, ico
 }
 
 /** Der Gebaeudestempel je Glyphe (T-M30-02, D27.2): Quadrat 14×14, Rahmen `building`. */
-function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName): HTMLCanvasElement | null {
-  const key = `building:${icon}`
+function buildingStamp(cache: Map<string, HTMLCanvasElement>, icon: IconName, ratio = 1): HTMLCanvasElement | null {
+  const key = `building:${icon}:${ratio}`
   const cached = cache.get(key)
   if (cached) return cached
   if (typeof document === 'undefined') return null
 
   const canvas = document.createElement('canvas')
-  canvas.width = BUILDING_BOX + STAMP_PAD * 2
-  canvas.height = BUILDING_BOX + STAMP_PAD * 2
+  canvas.width = Math.round((BUILDING_BOX + STAMP_PAD * 2) * ratio)
+  canvas.height = Math.round((BUILDING_BOX + STAMP_PAD * 2) * ratio)
   const context = canvas.getContext('2d')
   if (!context) return null
+  context.scale(ratio, ratio)
 
   context.fillStyle = TOKENS.ground
   context.fillRect(STAMP_PAD, STAMP_PAD, BUILDING_BOX, BUILDING_BOX)
@@ -206,6 +227,16 @@ export interface MapCanvasProps {
    */
   onHover?: (provinceId: string | null, at: { x: number; y: number } | null) => void
   onViewChange: (view: View) => void
+  /**
+   * Die gemessene Groesse der Karte in Punkten (Touch-Bedienung): dieselbe, mit der
+   * Ausschnitt und Klemme hier rechnen — die echte Huelle, ohne Pixeldichte; nur ohne
+   * Layout (jsdom, clientWidth/clientHeight 0) gilt je Achse das Mindestmass 320 x 240
+   * (Befund 2026-09-25: eine Huelle unter 240 px Hoehe wurde sonst auf 240 hochgerechnet
+   * und die Bitmap dadurch verzerrt — 166,5 echte Punkte zeichneten sich wie 240). Wer
+   * ausserhalb zentriert (Sprung auf eine Provinz, Tastatur), rechnet mit ihr statt mit
+   * einem festen Ausschnitt. Gemeldet bei jeder Messung, auch der ersten.
+   */
+  onViewportChange?: (size: { width: number; height: number }) => void
   labelFor: (provinceId: string) => string
 }
 
@@ -219,6 +250,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 960, height: 600 })
+  /** Die Pixeldichte des Geraets bei der letzten Messung (Touch-Bedienung). */
+  const [pixelRatio, setPixelRatio] = useState(1)
   // Die Bildschirmuhr fuer alles, was sich von selbst bewegt. Sie laeuft nur, solange es
   // einen Anlass gibt — eine Animationsschleife ohne Grund ist ein Ventilator.
   const [clock, setClock] = useState(0)
@@ -232,7 +265,6 @@ export function MapCanvas(props: MapCanvasProps) {
     // sagt nur „eine Runde hat begonnen"; ihren Zeitpunkt stempelt das naechste Bild.
     roundPending.current = true
   }, [props.tick])
-  const dragRef = useRef<{ x: number; y: number; view: View } | null>(null)
   /** Die gestempelten Stapel je (Ton, Glyphe) — einmal gezeichnet, je Bild kopiert (T-M30-01). */
   const stampsRef = useRef(new Map<string, HTMLCanvasElement>())
   /** Die Uebersichtskarte (T-M30-03): die ganze Welt klein, Ausschnitt in Bernstein. */
@@ -270,19 +302,71 @@ export function MapCanvas(props: MapCanvasProps) {
     [props.width, props.height, size.width, size.height],
   )
 
+  /**
+   * Das Neueste aus Props und Rechnung, fuer Zeitgeber und Bildschleife: ein langes
+   * Druecken endet eine halbe Sekunde nach dem Aufsetzen, und bis dahin hat die Uhr die
+   * Karte laengst neu gezeichnet — sein Rueckruf darf keinen alten Stand lesen.
+   */
+  const latest = useRef({ props, limits, withBounds })
+  latest.current = { props, limits, withBounds }
+
+  // Die Bildpunkte folgen der Pixeldichte (Touch-Bedienung): gezeichnet wird weiter in
+  // Punkten, `setTransform` rechnet sie in Bildpunkte um.
+  const bitmap = useMemo(() => bitmapFor(size, pixelRatio), [size, pixelRatio])
+
   // The wrapper decides the size; the canvases follow it.
   useEffect(() => {
     const element = wrapperRef.current
     if (!element) return
-    const update = () =>
-      setSize({
-        width: Math.max(320, element.clientWidth),
-        height: Math.max(240, element.clientHeight),
-      })
+    const update = () => {
+      // Nur OHNE Layout (jsdom: 0 x 0) gilt je Achse das Mindestmass 320 x 240. Mit einer
+      // echten, kleineren Huelle (Telefon im Querformat) wird NICHT mehr gestaucht: vorher
+      // hob `Math.max(320/240, clientWidth/clientHeight)` eine einzelne zu kurze Achse an
+      // und die Bitmap zeichnete sich mit einem anderen Massstab je Achse — Befund
+      // 2026-09-25 am LDPlayer bei 1280x720@320 (166,5 echte Punkte Hoehe wurden zu 240
+      // gerechnet, Bitmap-Verhaeltnis 2,001 zu 2,883 statt gleich auf beiden Achsen).
+      const width = element.clientWidth > 0 ? element.clientWidth : 320
+      const height = element.clientHeight > 0 ? element.clientHeight : 240
+      // Dieselbe Groesse ist kein neuer Zustand: sonst zeichnete jede Messung beide Ebenen neu.
+      setSize((old) => (old.width === width && old.height === height ? old : { width, height }))
+      setPixelRatio(typeof window === 'undefined' ? 1 : window.devicePixelRatio)
+      latest.current.props.onViewportChange?.({ width, height })
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
-    return () => observer.disconnect()
+
+    // Eine reine Dichteaenderung (das Fenster wandert auf einen Bildschirm mit anderer
+    // Pixeldichte) ruehrt die Huelle nicht — der ResizeObserver oben bleibt still, und die
+    // Bitmap bliebe in der alten Dichte stehen (Befund PR #9). `matchMedia` auf der
+    // JETZIGEN Dichte meldet genau diesen Wechsel; nach jeder Meldung wird auf der neuen
+    // Dichte neu angemeldet, statt fuer immer auf der ersten zu lauschen.
+    let removeDprListener = (): void => {}
+    let stopped = false
+    const subscribeToDpr = (): void => {
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+      const dpr = window.devicePixelRatio || 1
+      const media = window.matchMedia(`(resolution: ${dpr}dppx)`)
+      const onDprChange = (): void => {
+        removeDprListener()
+        update()
+        if (!stopped) subscribeToDpr()
+      }
+      if (typeof media.addEventListener === 'function') media.addEventListener('change', onDprChange)
+      // Safari < 14 kennt nur die aeltere API.
+      else (media as unknown as { addListener?: (l: () => void) => void }).addListener?.(onDprChange)
+      removeDprListener = (): void => {
+        if (typeof media.removeEventListener === 'function') media.removeEventListener('change', onDprChange)
+        else (media as unknown as { removeListener?: (l: () => void) => void }).removeListener?.(onDprChange)
+      }
+    }
+    subscribeToDpr()
+
+    return () => {
+      observer.disconnect()
+      stopped = true
+      removeDprListener()
+    }
   }, [])
 
   // The expensive layer. Its dependencies are exactly the four things that change it.
@@ -291,6 +375,7 @@ export function MapCanvas(props: MapCanvasProps) {
     const context = canvas?.getContext('2d')
     if (!canvas || !context) return
 
+    context.setTransform(bitmap.scaleX, 0, 0, bitmap.scaleY, 0, 0)
     context.fillStyle = MAP_COLORS.sea
     context.fillRect(0, 0, size.width, size.height)
 
@@ -328,7 +413,7 @@ export function MapCanvas(props: MapCanvasProps) {
       context.fillStyle = MAP_COLORS.label
       context.fillText(label.text, label.x, label.y)
     }
-  }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size])
+  }, [withBounds, props.view, props.mode, props.ownershipVersion, props.centres, props.labelFor, size, bitmap])
 
   // Der Besitzstand des letzten Bildes gegen den jetzigen: was gewechselt hat, blendet
   // als Farbwelle (T-M26-02). Ohne Bewegungserlaubnis wird nichts vorgemerkt — der
@@ -399,7 +484,11 @@ export function MapCanvas(props: MapCanvasProps) {
     const context = canvas?.getContext('2d')
     if (!canvas || !context) return
 
+    context.setTransform(bitmap.scaleX, 0, 0, bitmap.scaleY, 0, 0)
     context.clearRect(0, 0, size.width, size.height)
+    // Die Stempeldichte in Viertelschritten: sonst legte jede Groessenaenderung (die den
+    // Massstab in der vierten Stelle verschiebt) einen neuen Satz Stempel in den Speicher.
+    const stampRatio = Math.round(bitmap.scaleX * 4) / 4
 
     // Die Farbwelle eines Besitzwechsels (T-M26-02, D25.4): die teure Ebene traegt
     // laengst die neue Farbe, hier blendet die Flaeche ~600 ms von der alten hinueber —
@@ -559,9 +648,10 @@ export function MapCanvas(props: MapCanvasProps) {
         // rechts oben. Gestempelt, nicht je Bild gezeichnet.
         const left = marker.x - BUILDING_BOX / 2
         const top = marker.y - BUILDING_BOX / 2
-        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning')
+        const stamp = buildingStamp(stampsRef.current, marker.icon ?? 'warning', stampRatio)
         if (stamp) {
-          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+          const side = BUILDING_BOX + STAMP_PAD * 2
+          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD, side, side)
         } else {
           context.fillStyle = TOKENS.ground
           context.fillRect(left, top, BUILDING_BOX, BUILDING_BOX)
@@ -592,9 +682,15 @@ export function MapCanvas(props: MapCanvasProps) {
         const rim = TONE_COLORS[tone]
         const left = marker.x - ARMY_BOX.width / 2
         const top = marker.y - ARMY_BOX.height / 2
-        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry')
+        const stamp = stackStamp(stampsRef.current, tone, marker.icon ?? 'infantry', stampRatio)
         if (stamp) {
-          context.drawImage(stamp, left - STAMP_PAD, top - STAMP_PAD)
+          context.drawImage(
+            stamp,
+            left - STAMP_PAD,
+            top - STAMP_PAD,
+            ARMY_BOX.width + STAMP_PAD * 2,
+            ARMY_BOX.height + STAMP_PAD * 2,
+          )
         } else {
           context.fillStyle = TOKENS.ground
           context.fillRect(left, top, ARMY_BOX.width, ARMY_BOX.height)
@@ -711,19 +807,156 @@ export function MapCanvas(props: MapCanvasProps) {
     props.centres,
     withBounds,
     size,
+    bitmap,
   ])
+
+  /*
+   * Die Gesten (Touch-Bedienung). `gestures.ts` entscheidet, was ein Zeiger meint; hier
+   * wird nur uebersetzt und ausgefuehrt. Die Auswahl selbst bleibt beim Klick - den
+   * schickt der Browser nach einem Tippen fuer Finger wie fuer Maus, und Tastatur und
+   * Tests kennen nur ihn. Nach einer Geste (Ziehen, Aufziehen, langes Druecken) wird er
+   * geschluckt: vorher endete jedes Ziehen mit der Maus in einer Provinzwahl.
+   */
+  const gestureRef = useRef<GestureState>(IDLE)
+  /** Die liegenden Zeiger und ihre letzte Stelle in Leinwandpunkten. */
+  const pointersRef = useRef(new Map<number, Point>())
+  /** Der naechste Klick gehoert zu einer Geste und waehlt nichts. */
+  const suppressClickRef = useRef(false)
+  /** Womit zuletzt getippt wurde - der Klick in jsdom sagt es nicht. */
+  const tapTypeRef = useRef('')
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Ein langes Druecken hat den Tooltip geoeffnet; die naechste Beruehrung schliesst ihn. */
+  const touchHoverRef = useRef(false)
+  /** Hoechstens ein neuer Ausschnitt je Bild, waehrend gezogen wird. */
+  const frameRef = useRef<number | null>(null)
+  const queuedViewRef = useRef<View | null>(null)
+
+  const clearHoverTimer = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    hoverTimer.current = null
+  }
+  const clearLongPress = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current)
+    longPressTimer.current = null
+  }
+
+  const emitQueuedView = () => {
+    const next = queuedViewRef.current
+    queuedViewRef.current = null
+    if (next) latest.current.props.onViewChange(next)
+  }
+  const queueView = (next: View) => {
+    queuedViewRef.current = next
+    if (frameRef.current !== null) return
+    let id = 0
+    let ran = false
+    id = requestAnimationFrame(() => {
+      ran = true
+      // Ein Bild, dessen Warteschlange das Loslassen schon geleert hat, tut nichts Falsches.
+      if (frameRef.current !== null && frameRef.current !== id) return
+      frameRef.current = null
+      emitQueuedView()
+    })
+    if (!ran) frameRef.current = id
+  }
+  const flushView = () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+    frameRef.current = null
+    emitQueuedView()
+  }
+
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      if (longPressTimer.current) clearTimeout(longPressTimer.current)
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
+    },
+    [],
+  )
+
+  const provinceAt = (point: Point): string | null =>
+    pickProvince(point, latest.current.props.view, latest.current.withBounds)
+
+  const applyGesture = (input: GestureInput) => {
+    const { props: current, limits: currentLimits } = latest.current
+    const step = gestureStep(gestureRef.current, input, { view: current.view, limits: currentLimits })
+    gestureRef.current = step.state
+    if (step.state.kind !== 'pending') clearLongPress()
+    for (const out of step.out) {
+      switch (out.type) {
+        case 'view':
+          queueView(out.view)
+          break
+        case 'suppressClick':
+          suppressClickRef.current = true
+          break
+        case 'tap':
+          tapTypeRef.current = out.pointerType
+          break
+        case 'hover': {
+          // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
+          if (!current.onHover) break
+          const here = out.at
+          clearHoverTimer()
+          hoverTimer.current = setTimeout(() => {
+            hoverTimer.current = null
+            latest.current.props.onHover?.(provinceAt(here), here)
+          }, HOVER_DELAY_MS)
+          break
+        }
+        case 'longPress':
+          // Das Zeigen des Fingers: sofort, denn gewartet hat er schon.
+          clearHoverTimer()
+          if (!current.onHover) break
+          current.onHover(provinceAt(out.at), out.at)
+          touchHoverRef.current = true
+          break
+      }
+    }
+    // Ist die Geste vorbei, geht der letzte Ausschnitt sofort raus, nicht erst mit dem naechsten Bild.
+    if (step.state.kind === 'idle') flushView()
+  }
+
+  const canvasPoint = (event: React.MouseEvent<HTMLCanvasElement>): Point =>
+    toCanvasPoint(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect(), size.width, size.height)
+
+  const inputOf = (type: GestureInput['type'], event: React.PointerEvent<HTMLCanvasElement>, point: Point): GestureInput => ({
+    type,
+    pointerId: event.pointerId,
+    pointerType: event.pointerType ?? '',
+    x: point.x,
+    y: point.y,
+    time: event.timeStamp,
+  })
 
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false
+        return
+      }
       const rect = event.currentTarget.getBoundingClientRect()
-      const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const screen = toCanvasPoint(event.clientX, event.clientY, rect, size.width, size.height)
+      // Chrome schickt den Klick als PointerEvent mit Zeigertyp; jsdom nicht - dann gilt das letzte Tippen.
+      const nativeType = (event.nativeEvent as { pointerType?: string }).pointerType
+      const touch = pointerKind(nativeType || tapTypeRef.current) === 'touch'
+      tapTypeRef.current = ''
 
       // Erst die Armee, dann die Provinz (T-M22-06, V2-14): mit derselben
       // Ortsrechnung wie das Zeichnen, damit auch eine marschierende getroffen wird.
+      // Ein Finger bekommt eine Trefferflaeche von TOUCH_TARGET_PX CSS-Pixeln.
       if (props.onSelectArmy) {
-        const armyId = pickArmy(screen, props.armies, props.centres, props.view, {
-          ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
-        })
+        const hitBox = touch ? TOUCH_TARGET_PX * (rect.width > 0 ? size.width / rect.width : 1) : undefined
+        const armyId = pickArmy(
+          screen,
+          props.armies,
+          props.centres,
+          props.view,
+          {
+            ...(motionAllowed(props.speed ?? 0) && props.tick !== undefined ? { tick: props.tick } : {}),
+          },
+          hitBox,
+        )
         if (armyId) {
           props.onSelectArmy(armyId)
           return
@@ -732,57 +965,79 @@ export function MapCanvas(props: MapCanvasProps) {
 
       props.onSelect(pickProvince(screen, props.view, withBounds))
     },
-    [props, withBounds],
+    [props, withBounds, size],
   )
 
   const handleWheel = useCallback(
     (event: React.WheelEvent<HTMLCanvasElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
-      const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const screen = toCanvasPoint(event.clientX, event.clientY, rect, size.width, size.height)
       props.onViewChange(zoomAt(props.view, screen, event.deltaY > 0 ? 1.2 : 1 / 1.2, limits))
     },
-    [props, limits],
+    [props, limits, size],
   )
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    dragRef.current = { x: event.clientX, y: event.clientY, view: props.view }
-    event.currentTarget.setPointerCapture(event.pointerId)
+    const kind = pointerKind(event.pointerType ?? '')
+    // Ein erster Zeiger bei laufender Geste heisst: ein Loslassen ging verloren. Neu
+    // anfangen, statt fuer immer auf einen Finger zu warten, der laengst weg ist.
+    if (event.isPrimary && gestureRef.current.kind !== 'idle') {
+      gestureRef.current = IDLE
+      pointersRef.current.clear()
+      clearLongPress()
+    }
+    if (kind === 'touch' && touchHoverRef.current) {
+      touchHoverRef.current = false
+      props.onHover?.(null, null)
+    }
+    clearHoverTimer()
+
+    const point = canvasPoint(event)
+    pointersRef.current.set(event.pointerId, point)
+    // jsdom kennt setPointerCapture nicht, und ein Browser darf ablehnen: die Geste geht auch ohne.
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId)
+    } catch {
+      // Ohne Fang kommen Bewegungen ausserhalb der Karte nicht an - mehr nicht.
+    }
+    applyGesture(inputOf('down', event, point))
+
+    if (gestureRef.current.kind !== 'pending') return
+    // Eine neue Geste mit einem Zeiger: was die letzte schlucken wollte, ist vorbei.
+    suppressClickRef.current = false
+    if (kind !== 'touch') return
+    const { pointerId, pointerType, timeStamp } = event
+    longPressTimer.current = setTimeout(() => {
+      longPressTimer.current = null
+      const here = pointersRef.current.get(pointerId) ?? point
+      applyGesture({ type: 'longPressTimer', pointerId, pointerType, x: here.x, y: here.y, time: timeStamp + LONG_PRESS_MS })
+    }, LONG_PRESS_MS)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const drag = dragRef.current
-    if (!drag) {
-      // Zeigen ohne Ziehen: entprellt melden, worauf der Zeiger ruht (T-M31-01).
-      if (props.onHover) {
-        const rect = event.currentTarget.getBoundingClientRect()
-        const screen = { x: event.clientX - rect.left, y: event.clientY - rect.top }
-        if (hoverTimer.current) clearTimeout(hoverTimer.current)
-        hoverTimer.current = setTimeout(() => {
-          hoverTimer.current = null
-          props.onHover?.(pickProvince(screen, props.view, withBounds), screen)
-        }, HOVER_DELAY_MS)
-      }
-      return
-    }
-    props.onViewChange(
-      clampView(
-        {
-          x: drag.view.x - (event.clientX - drag.x) * drag.view.scale,
-          y: drag.view.y - (event.clientY - drag.y) * drag.view.scale,
-          scale: drag.view.scale,
-        },
-        limits,
-      ),
-    )
+    const point = canvasPoint(event)
+    if (pointersRef.current.has(event.pointerId)) pointersRef.current.set(event.pointerId, point)
+    applyGesture(inputOf('move', event, point))
   }
 
-  const handlePointerUp = () => {
-    dragRef.current = null
+  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = canvasPoint(event)
+    pointersRef.current.delete(event.pointerId)
+    applyGesture(inputOf('up', event, point))
   }
 
-  const handlePointerLeave = () => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current)
-    hoverTimer.current = null
+  // Der Browser hat die Geste an sich genommen, oder der Zeigerfang ging verloren, ohne
+  // dass ein Loslassen kam: zuruecksetzen. Nach einem Loslassen ist der Zeiger schon weg.
+  const handlePointerCancel = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!pointersRef.current.delete(event.pointerId)) return
+    applyGesture(inputOf('cancel', event, canvasPoint(event)))
+  }
+
+  const handlePointerLeave = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    // Auf Touch folgt jedem Loslassen ein pointerleave; es wuerde den Tooltip des langen
+    // Drueckens sofort wieder schliessen. Nur die Maus verlaesst die Karte wirklich.
+    if (pointerKind(event.pointerType ?? '') !== 'mouse') return
+    clearHoverTimer()
     props.onHover?.(null, null)
   }
 
@@ -795,6 +1050,38 @@ export function MapCanvas(props: MapCanvasProps) {
     const centre = props.capitalProvinceId ? props.centres[props.capitalProvinceId] : undefined
     if (centre) props.onViewChange(centreOn(centre, props.view, limits))
   }, [props, limits])
+
+  /**
+   * Vollbild-Knopf (Touch-Bedienung, T-M31 Androidpruefstand): auf einem Telefon im
+   * Querformat frisst die Chrome-Leiste selbst gut 80 CSS-Punkte Hoehe - mehr, als
+   * `touch.css` der Kopf- und Fusszeile noch abknapsen kann. Vollbild gibt sie zurueck.
+   * Nur im Touch-Betrieb gezeigt (die Maus hat Alt+F11 oder F11) und nur, wenn der
+   * Browser es ueberhaupt anbietet (`document.fullscreenEnabled`).
+   */
+  const inputMode = useInputMode()
+  const [isFullscreen, setIsFullscreen] = useState(
+    () => typeof document !== 'undefined' && Boolean(document.fullscreenElement),
+  )
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return
+    const onFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
+  const fullscreenSupported = typeof document !== 'undefined' && document.fullscreenEnabled === true
+  const toggleFullscreen = useCallback(() => {
+    if (typeof document === 'undefined') return
+    try {
+      // Ein zurueckgewiesenes Versprechen (Nutzer hat Vollbild verboten, o.ae.) bleibt
+      // still - kein Absturz und keine Meldung fuer etwas, das der Spieler nicht bat.
+      const action = document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen({ navigationUI: 'hide' })
+      Promise.resolve(action).catch(() => undefined)
+    } catch {
+      // Manche Umgebungen werfen synchron statt ein Versprechen abzulehnen.
+    }
+  }, [])
 
   /*
    * Die Uebersichtskarte (T-M30-03, D27.4): 132 x 74, die Flaechenebene der ganzen Welt
@@ -837,29 +1124,44 @@ export function MapCanvas(props: MapCanvasProps) {
   const handleOverviewClick = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = event.currentTarget.getBoundingClientRect()
-      const point = toMap({ x: event.clientX - rect.left, y: event.clientY - rect.top }, { x: 0, y: 0, scale: overviewScale })
+      const at = toCanvasPoint(event.clientX, event.clientY, rect, OVERVIEW.width, OVERVIEW.height)
+      const point = toMap(at, { x: 0, y: 0, scale: overviewScale })
       props.onViewChange(centreOn(point, props.view, limits))
     },
     [props, limits, overviewScale],
   )
 
   return (
-    <div ref={wrapperRef} className="map-wrapper">
-      <canvas ref={shapesRef} width={size.width} height={size.height} className="map-layer" aria-hidden="true" />
+    <div
+      ref={wrapperRef}
+      className="map-wrapper"
+      // Fuer einen Testroboter (CDP): Ausschnitt und Auswahl ohne Bilderkennung lesbar.
+      data-view-x={Math.round(props.view.x)}
+      data-view-y={Math.round(props.view.y)}
+      data-view-scale={props.view.scale.toFixed(4)}
+      data-selected-province={props.selectedProvince ?? ''}
+    >
+      <canvas ref={shapesRef} width={bitmap.width} height={bitmap.height} className="map-layer" aria-hidden="true" />
       <canvas
         ref={overlayRef}
-        width={size.width}
-        height={size.height}
+        width={bitmap.width}
+        height={bitmap.height}
         className="map-layer map-layer--overlay"
         role="application"
         aria-label={t('a11y.map')}
         tabIndex={0}
+        // Ohne das nimmt der Browser einen ziehenden Finger an sich (Seite scrollen oder
+        // zoomen) und schickt pointercancel - die Karte bewegte sich im Emulator um 11 px.
+        style={{ touchAction: 'none' }}
         onClick={handleClick}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handlePointerCancel}
         onPointerLeave={handlePointerLeave}
+        onContextMenu={(event) => event.preventDefault()}
       />
 
       {/* Zoom und Heimweg als Knoepfe (T-M30-03, R-UI-15): oben rechts, benannt. */}
@@ -880,6 +1182,17 @@ export function MapCanvas(props: MapCanvasProps) {
         >
           ◎
         </button>
+        {fullscreenSupported && inputMode === 'touch' && (
+          <button
+            type="button"
+            className="map-control"
+            aria-label={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
+            title={isFullscreen ? t('map.fullscreenExit') : t('map.fullscreenEnter')}
+            onClick={toggleFullscreen}
+          >
+            ⛶
+          </button>
+        )}
       </div>
 
       <canvas

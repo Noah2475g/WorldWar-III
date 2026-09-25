@@ -498,3 +498,42 @@ describe('T-M28-14 Eine Farbe je Macht, auch in der groessten Partie', () => {
     expect(colorForPlayer('p7')).not.toBe(colorForPlayer('p8'))
   })
 })
+
+/**
+ * Touch-Bedienung: der Finger bekommt eine groessere Trefferflaeche.
+ *
+ * 24 Punkte reichen fuer eine Maus; ein Finger deckt mehr als das zu, und ein Tippen
+ * knapp neben dem Stapel waehlte die Provinz darunter. `MapCanvas` gibt fuer Finger und
+ * Stift eine groessere Flaeche mit — die Maus behaelt die alte.
+ */
+describe('Touch-Bedienung: Trefferflaeche fuer den Finger', () => {
+  it('trifft mit groesserer Flaeche, was die Maus-Flaeche verfehlt', () => {
+    const armies = [army('a1', 'alpha')]
+    const daneben = [
+      { x: 100 + 20, y: 100 },
+      { x: 100, y: 100 + 20 },
+    ]
+
+    for (const punkt of daneben) {
+      expect(pickArmy(punkt, armies, centres, view)).toBeNull()
+      expect(pickArmy(punkt, armies, centres, view, {}, 44)).toBe('a1')
+    }
+    // Die groessere Flaeche endet auch irgendwo.
+    expect(pickArmy({ x: 100 + 23, y: 100 }, armies, centres, view, {}, 44)).toBeNull()
+  })
+
+  it('wird nie kleiner als der gezeichnete Stapel, auch wenn jemand weniger verlangt', () => {
+    const armies = [army('a1', 'alpha')]
+
+    expect(pickArmy({ x: 100 + ARMY_BOX.width / 2, y: 100 }, armies, centres, view, {}, 2)).toBe('a1')
+    expect(pickArmy({ x: 100, y: 100 + ARMY_BOX.height / 2 }, armies, centres, view, {}, 2)).toBe('a1')
+  })
+
+  it('bleibt ohne Angabe bei ARMY_HIT_BOX', () => {
+    const armies = [army('a1', 'alpha')]
+    const kante = { x: 100, y: 100 + ARMY_HIT_BOX / 2 }
+
+    expect(pickArmy(kante, armies, centres, view)).toBe(pickArmy(kante, armies, centres, view, {}, ARMY_HIT_BOX))
+    expect(pickArmy(kante, armies, centres, view)).toBe('a1')
+  })
+})
