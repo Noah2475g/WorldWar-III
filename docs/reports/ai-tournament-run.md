@@ -5,7 +5,7 @@ Je 150 Partien je Paarung, 40 Spieltage; drei Mächte reihum (Nordland/Ostmark/S
 der Dritte als Füller auf „normal"; Startzahlen 1000–1024 je Aufstellung, Stufen je
 Paar getauscht.
 
-Gemessen auf: 181db1c8de846a10f02e38e7e3c50c613d450903 (Quellen sauber)
+Gemessen auf: 27766f10ff5b527acf9011632ebc649d25496bbe (Quellen sauber)
 
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) | Überfälle | verschiedene Ausgänge | Siege je Nation |
 |---|---|---|---|---|---|---|---|---|---|
