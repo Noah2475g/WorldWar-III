@@ -22,6 +22,8 @@ import {
   finalizeChecks,
   formatReport,
   forwardExists,
+  isCovered,
+  isOffscreen,
   linePath,
   pageUrl,
   parseAdbDevices,
@@ -308,6 +310,52 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     expect(evaluateTargets([{ selector: 'b', text: '', width: 48, height: 48 }]).pass).toBe(true)
   })
 
+  it('Touch-Ziele: gross genug reicht nicht, wenn etwas anderes die Mitte verdeckt (T-TOUCH-KARTENKNOEPFE)', () => {
+    // Gemessen 2026-09-25: 44x44 "Hauptstadt zentrieren" lag hinter der Uebersichtskarte -
+    // elementFromPoint an der Knopfmitte traf canvas.map-overview, nicht den Knopf.
+    const r = evaluateTargets([
+      { selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44, covered: true, coveredBy: 'canvas.map-overview' },
+      { selector: 'button.map-control', text: 'Hineinzoomen', width: 44, height: 44, covered: false },
+    ])
+    expect(r.pass).toBe(false)
+    expect(r.numbers).toMatchObject({ total: 2, violators: 1, covered: 1 })
+    expect(r.violators.map((v) => v.selector)).toEqual(['button.map-control'])
+    expect(r.detail).toMatch(/verdeckt von canvas\.map-overview/)
+    // Gegenprobe: ohne "covered" (oder covered:false) besteht dasselbe 44x44-Ziel.
+    expect(
+      evaluateTargets([{ selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44, covered: false }]).pass,
+    ).toBe(true)
+    expect(evaluateTargets([{ selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44 }]).pass).toBe(true)
+  })
+
+  it('Touch-Ziele: ausserhalb des Sichtbereichs ist kein Verstoss, nur informativ - die Groesse zaehlt trotzdem (Befund 2, Review 2026-09-25)', () => {
+    // Gross genug, aber offscreen (z.B. Startdialog vor dem Rollen abgeschnitten): kein
+    // Verstoss, taucht aber getrennt in numbers.offscreen / der offscreen-Liste auf.
+    const r = evaluateTargets([
+      { selector: 'button.close', text: 'Schliessen', width: 44, height: 44, covered: false, offscreen: true },
+      { selector: 'button.ok', text: 'Los', width: 120, height: 48, covered: false, offscreen: false },
+    ])
+    expect(r.pass).toBe(true)
+    expect(r.numbers).toMatchObject({ total: 2, violators: 0, offscreen: 1 })
+    expect(r.violators).toEqual([])
+    expect(r.offscreen.map((v) => v.selector)).toEqual(['button.close'])
+    expect(r.detail).toMatch(/ausserhalb des Sichtbereichs, informativ, kein Verstoss/)
+    expect(r.detail).toMatch(/button\.close "Schliessen" 44x44/)
+    // Gegenprobe: dasselbe Ziel NICHT offscreen und dafuer covered ist sehr wohl ein Verstoss.
+    const covered = evaluateTargets([{ selector: 'button.close', text: 'Schliessen', width: 44, height: 44, covered: true, coveredBy: 'div.dialog', offscreen: false }])
+    expect(covered.pass).toBe(false)
+    expect(covered.numbers).toMatchObject({ violators: 1, offscreen: 0 })
+    // Ein offscreen-Ziel, das zugleich zu klein ist, bleibt ein Verstoss - die Groesse
+    // haengt nicht vom Rollstand ab.
+    const tooSmallOffscreen = evaluateTargets([{ selector: 'button.tiny', text: '?', width: 20, height: 20, covered: false, offscreen: true }])
+    expect(tooSmallOffscreen.pass).toBe(false)
+    expect(tooSmallOffscreen.numbers).toMatchObject({ violators: 1, offscreen: 1 })
+    expect(tooSmallOffscreen.detail).toMatch(/zu klein/)
+    // Ein Eintrag ohne offscreen-Feld (aeltere Aufrufer) bleibt, wie er war: covered zaehlt normal.
+    const noField = evaluateTargets([{ selector: 'button.x', text: 'X', width: 44, height: 44, covered: true, coveredBy: 'div.y' }])
+    expect(noField.pass).toBe(false)
+  })
+
   it('vergroesserte Ziele ueber Pseudo-Elemente (Befund C7, commit d76a92e): -11px auf 22x22 ergibt 44x44', () => {
     const box = { left: 0, right: 22, top: 0, bottom: 22, width: 22, height: 22 }
     expect(pseudoHitBox(box, { top: -11, right: -11, bottom: -11, left: -11 })).toEqual({ width: 44, height: 44 })
@@ -449,6 +497,71 @@ describe('Android-Pruefstand: Touch-Ziele ueber mehrere Zustaende', () => {
     expect(r.violators).toEqual([{ selector: 'button.speed', text: '1', width: 26, height: 22, state: 'Partie' }])
     expect(r.detail).toMatch(/Startdialog: 0 von 1 .*\| Partie: 1 von 1/)
     expect(evaluateTargetStates([]).pass).toBe(false)
+  })
+
+  it('sammelt offscreen-Ziele je Zustand getrennt von den Verstoessen ein', () => {
+    const r = evaluateTargetStates([
+      {
+        name: 'Startdialog',
+        elements: [
+          { selector: 'button.close', text: 'Schliessen', width: 44, height: 44, covered: false, offscreen: true },
+          { selector: 'button.ok', text: 'Los', width: 120, height: 48, covered: false, offscreen: false },
+        ],
+      },
+    ])
+    // Ein offscreen-Ziel ist kein Verstoss - der Zustand besteht trotzdem.
+    expect(r.pass).toBe(true)
+    expect(r.offscreen).toEqual([{ selector: 'button.close', text: 'Schliessen', width: 44, height: 44, covered: false, offscreen: true, state: 'Startdialog' }])
+    expect(r.numbers).toMatchObject({ states: { Startdialog: { offscreen: 1 } } })
+  })
+})
+
+describe('Android-Pruefstand: verdeckt vs. ausserhalb des Sichtbereichs (Befund 2, Review 2026-09-25)', () => {
+  const viewport = { width: 640, height: 360 }
+
+  it('isOffscreen: ein Punkt im Fenster ohne Overflow-Vorfahren ist sichtbar', () => {
+    expect(isOffscreen({ x: 100, y: 100 }, viewport, [])).toBe(false)
+  })
+
+  it('isOffscreen: ausserhalb des Fensters (jede der vier Seiten) ist offscreen - Gegenprobe knapp innerhalb', () => {
+    expect(isOffscreen({ x: -1, y: 100 }, viewport, [])).toBe(true)
+    expect(isOffscreen({ x: 640, y: 100 }, viewport, [])).toBe(true) // Rand ist schon ausserhalb (halboffenes Intervall)
+    expect(isOffscreen({ x: 100, y: -1 }, viewport, [])).toBe(true)
+    expect(isOffscreen({ x: 100, y: 360 }, viewport, [])).toBe(true)
+    // Gegenprobe: 0 und width-1/height-1 liegen noch drin.
+    expect(isOffscreen({ x: 0, y: 0 }, viewport, [])).toBe(false)
+    expect(isOffscreen({ x: 639, y: 359 }, viewport, [])).toBe(false)
+  })
+
+  it('isOffscreen: von einem rollenden Vorfahren abgeschnitten (Startdialog-Befund) ist offscreen - Gegenprobe innerhalb des Rechtecks', () => {
+    // Startdialog (.dialog, overflow-y: auto) um 509px gerollt: der Knopf steht jetzt bei
+    // y=600, seine Box ragt unter das sichtbare Rechteck des Dialogs (bis y=400).
+    const dialogRect = { left: 50, top: 50, right: 590, bottom: 400 }
+    expect(isOffscreen({ x: 300, y: 600 }, viewport, [dialogRect])).toBe(true)
+    // Gegenprobe: derselbe Punkt, aber innerhalb des Dialogrechtecks (nicht gerollt).
+    expect(isOffscreen({ x: 300, y: 200 }, viewport, [dialogRect])).toBe(false)
+    // Mehrere verschachtelte Overflow-Vorfahren: schon EIN abschneidendes Rechteck reicht.
+    const inner = { left: 100, top: 100, right: 200, bottom: 200 }
+    expect(isOffscreen({ x: 150, y: 250 }, viewport, [dialogRect, inner])).toBe(true)
+    expect(isOffscreen({ x: 150, y: 150 }, viewport, [dialogRect, inner])).toBe(false)
+  })
+
+  it('isCovered: ein echtes fremdes Element an einer sichtbaren Stelle ist ein Verstoss', () => {
+    expect(isCovered(false, true, false)).toBe(true)
+  })
+
+  it('isCovered: Gegenprobe - das Ziel selbst, sein Nachfahre oder sein umschliessendes Label zaehlt nicht als verdeckt', () => {
+    // hitIsTargetOrDescendant deckt beides ab: `at === target` (auch wenn target schon das
+    // umschliessende <label> ist, siehe pageTargets) und `target.contains(at)`.
+    expect(isCovered(false, true, true)).toBe(false)
+  })
+
+  it('isCovered: Gegenprobe - offscreen ist nie "covered", auch wenn elementFromPoint (vor dem Rollen bewertet) etwas Fremdes traefe', () => {
+    expect(isCovered(true, true, false)).toBe(false)
+  })
+
+  it('isCovered: Gegenprobe - kein Treffer (elementFromPoint lieferte nichts) ist nie "covered"', () => {
+    expect(isCovered(false, false, false)).toBe(false)
   })
 })
 

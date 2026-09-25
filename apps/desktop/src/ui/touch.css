@@ -188,6 +188,23 @@ select,
   opacity: 0.75;
 }
 
+/* Die Kartenknoepfe (oben rechts, senkrechte Spalte, bis zu vier Stueck a 44 px + 2 px
+   Luecke = 182 px hoch) und die Uebersichtskarte (unten rechts, 132x74, app.css) liegen
+   im Touch-Betrieb je nach Fensterhoehe im selben senkrechten Streifen: map-wrapper ist
+   bei 1098x498@1.75 und 1097x617@1.75 niedriger, als die Spalte hoch ist, und die
+   Uebersichtskarte wandert dann unter die Knoepfe - elementFromPoint auf "Hauptstadt
+   zentrieren"/"Vollbild" trifft die Uebersichtskarte, nicht den Knopf (gemessen
+   2026-09-25). Die Uebersichtskarte zieht deshalb im Touch-Betrieb auf die
+   GEGENUEBERLIEGENDE Ecke unten links um: die beiden Gruppen koennen sich dann bei
+   keiner Fensterhoehe mehr ueberdecken, ohne dass die Kartenknoepfe ihren Platz oder
+   ihre Reihenfolge aendern. Das kleine Telefon quer (<=480 px, unten) hatte die alte
+   rechte Lage schon gemessen ueberdeckungsfrei und bekommt sie darum ausdruecklich
+   zurueck. */
+:root[data-input='touch'] .map-overview {
+  right: auto;
+  left: var(--sp-lg);
+}
+
 /* ------------------------------------------------ Telefon quer (bis 480 px hoch) */
 
 @media (max-height: 480px) {
@@ -307,7 +324,12 @@ select,
     flex-direction: row;
   }
 
+  /* Bei so wenig Hoehe stehen die Kartenknoepfe als Reihe oben (s.o.) statt als Spalte:
+     die Ueberdeckung von oben tritt hier nicht auf. Die Uebersichtskarte bleibt darum
+     an ihrem gemessenen Platz rechts, statt zur Legende (unten links, s.u.) zu wandern. */
   :root[data-input='touch'] .map-overview {
+    right: var(--sp-lg);
+    left: auto;
     bottom: var(--sp-md);
   }
 

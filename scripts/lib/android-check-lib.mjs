@@ -445,40 +445,99 @@ export function pseudoHitBox(box, inset) {
 }
 
 /**
- * Jedes sichtbare Bedienelement braucht mindestens `min` x `min` CSS-Pixel. Elemente ohne
- * Flaeche (nicht gezeichnet) zaehlen nicht.
- * @param {{ selector: string, text: string, width: number, height: number, state?: string }[]} elements
+ * Liegt eine Zielmitte ausserhalb dessen, was ein Finger OHNE zu rollen erreicht? Entweder
+ * ausserhalb des Fensters, oder abgeschnitten von einem Vorfahren mit eigenem Overflow (z.B.
+ * `.dialog { overflow-y: auto }`) - dann ist das Ziel `offscreen` (durch Rollen erreichbar),
+ * kein Verstoss, anders als `covered` (siehe `isCovered`). Befund 2 (Review 2026-09-25):
+ * vorher zaehlte `document.elementFromPoint` an einer verdeckten Stelle als "covered",
+ * obwohl der Punkt bloss ausserhalb des Sichtbereichs lag.
+ * @param {Point} point Boxmitte in CSS-Pixeln relativ zum Fenster
+ * @param {{ width: number, height: number }} viewport `window.innerWidth/innerHeight`
+ * @param {{ left: number, top: number, right: number, bottom: number }[]} clipRects
+ *   die sichtbaren Rechtecke jedes Overflow-Vorfahren (Reihenfolge egal)
+ * @returns {boolean}
+ */
+export function isOffscreen(point, viewport, clipRects) {
+  if (point.x < 0 || point.y < 0 || point.x >= viewport.width || point.y >= viewport.height) return true
+  return clipRects.some((r) => point.x < r.left || point.x >= r.right || point.y < r.top || point.y >= r.bottom)
+}
+
+/**
+ * Ist ein Ziel wirklich von einem ANDEREN Element verdeckt - nicht bloss ausserhalb des
+ * Sichtbereichs (das ist `offscreen`, kein Verstoss)? Nur dann, wenn die Mitte im
+ * sichtbaren Bereich liegt, `document.elementFromPoint` dort ueberhaupt etwas traf, UND
+ * das Getroffene weder das Ziel selbst noch einer seiner Nachfahren (oder das umschliessende
+ * `<label>`, das schon als Ziel selbst zaehlt - siehe `pageTargets` in android-check.mjs) ist.
+ * `hitIsTargetOrDescendant` kommt aus der Seite (`at === target || target.contains(at)`),
+ * weil das nur mit echtem DOM geht - hier bleibt nur die Entscheidung.
+ * @param {boolean} offscreen
+ * @param {boolean} hasHit ob elementFromPoint ueberhaupt ein Element lieferte (nicht null)
+ * @param {boolean} hitIsTargetOrDescendant
+ * @returns {boolean}
+ */
+export function isCovered(offscreen, hasHit, hitIsTargetOrDescendant) {
+  if (offscreen || !hasHit) return false
+  return !hitIsTargetOrDescendant
+}
+
+/**
+ * Jedes sichtbare Bedienelement braucht mindestens `min` x `min` CSS-Pixel UND seine Mitte
+ * muss wirklich ihm gehoeren: `covered` (aus `isCovered`, gemessen in scripts/android-check.mjs)
+ * ist true, wenn dort ein anderes Element liegt, das das Ziel weder selbst ist noch enthaelt -
+ * ein Finger trifft dann nie den Knopf, egal wie gross er ist (Befund T-TOUCH-KARTENKNOEPFE,
+ * 2026-09-25: die Uebersichtskarte lag ueber "Hauptstadt zentrieren"/"Vollbild"). Ein `offscreen`
+ * Ziel (ausserhalb des Fensters oder von einem rollenden Vorfahren abgeschnitten) ist dagegen KEIN
+ * Verstoss - es ist durch Rollen erreichbar (Befund 2, Review 2026-09-25) - seine Groesse zaehlt
+ * trotzdem, denn Layout-Masse haengen nicht vom Rollstand ab. Elemente ohne Flaeche (nicht
+ * gezeichnet) zaehlen nicht.
+ * @param {{ selector: string, text: string, width: number, height: number, state?: string, covered?: boolean, coveredBy?: string | null, offscreen?: boolean }[]} elements
  * @param {number} [min]
  */
 export function evaluateTargets(elements, min = MIN_TARGET_PX) {
   const visible = elements.filter((e) => e.width > 0 && e.height > 0)
   const violators = visible
-    .filter((e) => e.width < min || e.height < min)
+    .filter((e) => e.width < min || e.height < min || (e.covered === true && e.offscreen !== true))
     .map((e) => ({ ...e, width: round1(e.width), height: round1(e.height) }))
     .sort((a, b) => Math.min(a.width, a.height) - Math.min(b.width, b.height))
+  const offscreenList = visible
+    .filter((e) => e.offscreen === true)
+    .map((e) => ({ ...e, width: round1(e.width), height: round1(e.height) }))
   const smallest = violators.length ? Math.min(violators[0]?.width ?? 0, violators[0]?.height ?? 0) : null
+  const coveredCount = violators.filter((v) => v.covered === true).length
   const list = violators
     .slice(0, 6)
-    .map((v) => `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height}`)
+    .map((v) => {
+      const reasons = []
+      if (v.width < min || v.height < min) reasons.push('zu klein')
+      if (v.covered) reasons.push(`verdeckt von ${v.coveredBy ?? '?'}`)
+      return `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height} (${reasons.join(', ')})`
+    })
     .join(', ')
+  const offscreenNote = offscreenList.length
+    ? ` (${offscreenList.length} ausserhalb des Sichtbereichs, informativ, kein Verstoss: ${offscreenList
+        .slice(0, 6)
+        .map((v) => `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height}`)
+        .join(', ')}${offscreenList.length > 6 ? ', ...' : ''})`
+    : ''
   return {
     id: 'touch-targets',
     pass: violators.length === 0,
-    numbers: { total: visible.length, violators: violators.length, smallest, min },
+    numbers: { total: visible.length, violators: violators.length, smallest, covered: coveredCount, offscreen: offscreenList.length, min },
     violators,
-    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px${list ? `: ${list}${violators.length > 6 ? ', ...' : ''}` : ''}`,
+    offscreen: offscreenList,
+    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px oder verdeckt${list ? `: ${list}${violators.length > 6 ? ', ...' : ''}` : ''}${offscreenNote}`,
   }
 }
 
 /**
  * Touch-Ziele in mehreren Zustaenden (Startdialog, Partie, Provinz gewaehlt): die Pruefung
  * besteht nur, wenn jeder Zustand besteht. Jeder Verstoss traegt den Zustand, in dem er lag.
- * @param {{ name: string, elements: { selector: string, text: string, width: number, height: number }[] }[]} states
+ * @param {{ name: string, elements: { selector: string, text: string, width: number, height: number, covered?: boolean, coveredBy?: string | null, offscreen?: boolean }[] }[]} states
  * @param {number} [min]
  */
 export function evaluateTargetStates(states, min = MIN_TARGET_PX) {
   if (states.length === 0) {
-    return { id: 'touch-targets', pass: false, numbers: { min, states: {} }, violators: [], detail: 'kein Zustand gemessen' }
+    return { id: 'touch-targets', pass: false, numbers: { min, states: {} }, violators: [], offscreen: [], detail: 'kein Zustand gemessen' }
   }
   const per = states.map((state) => ({ name: state.name, ...evaluateTargets(state.elements, min) }))
   return {
@@ -486,6 +545,7 @@ export function evaluateTargetStates(states, min = MIN_TARGET_PX) {
     pass: per.every((p) => p.pass),
     numbers: { min, states: Object.fromEntries(per.map((p) => [p.name, p.numbers])) },
     violators: per.flatMap((p) => p.violators.map((v) => ({ ...v, state: p.name }))),
+    offscreen: per.flatMap((p) => p.offscreen.map((v) => ({ ...v, state: p.name }))),
     detail: per.map((p) => `${p.name}: ${p.detail}`).join(' | '),
   }
 }
