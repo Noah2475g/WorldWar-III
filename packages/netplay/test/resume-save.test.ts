@@ -183,6 +183,23 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
     expect(genommen.ok === false && genommen.reason).toMatch(/Fassungen des Spiels/)
   })
 
+  it('verwirft einen Stand mit gueltiger Pruefsumme, der aber unvollstaendig ist (N3, Nacharbeit Durchsicht 2026-09-25)', () => {
+    // Derselbe Fall wie bei `deserialise` (DECISIONS.md 2026-09-24): die Pruefsumme sagt nur,
+    // dass der Stand unveraendert ist, nicht dass er vollstaendig ist. Ein Host mit einem
+    // aelteren Bau, der `espionage` noch nicht kennt, haette dieselbe Formatstufe und eine
+    // in sich stimmige Pruefsumme — bis zu dieser Reparatur waere sein Stand hier durchgelaufen
+    // und beim Gast im ersten Tick an `cloneState` abgestuerzt.
+    const uebertragen = parseMessage(JSON.parse(encodeMessage(stateMessage(nachDreissig))))
+    expect(uebertragen.ok && uebertragen.message.kind === 'zustand').toBe(true)
+    if (!uebertragen.ok || uebertragen.message.kind !== 'zustand') return
+    ;(uebertragen.message.state as unknown as { espionage: unknown }).espionage = {}
+    const passendeSumme = stateHash(uebertragen.message.state)
+
+    const genommen = acceptState(uebertragen.message, passendeSumme)
+    expect(genommen.ok, 'ein unvollstaendiger, aber pruefsummengleicher Stand wurde angenommen').toBe(false)
+    expect(genommen.ok === false && genommen.reason).toMatch(/espionage/)
+  })
+
   it('spielt danach im Gleichschritt weiter, und beide Seiten bleiben gleich', () => {
     // Der Beleg, der zaehlt: nicht dass ein Feld stimmt, sondern dass die fortgesetzte
     // Partie zu zweit wirklich laeuft. Der Gast hatte einen aelteren Stand, bekommt den
