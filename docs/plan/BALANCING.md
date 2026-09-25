@@ -229,6 +229,9 @@ Restpfad prüft, gibt es diese Kriege nicht mehr, und die Paarung endet 25-mal u
 `recruitShare` ist damit nicht falsch, aber das Band, in dem 280 gewählt wurde, ist auf diesem
 Stand nicht mehr messbar.
 
+Seit 2026-09-25 misst das Turnier drei Mächte reihum (Plan D): mit `recruitShare` 280 **0,76**,
+das Band hält wieder; Vorabmessung und Streuung in PROBLEME.md M17-T4.
+
 ## Zwischenziele (R-GAME-08, T-M35-02)
 
 Vier Marken, alle **abgeleitet** — nicht aus dem Vorbild, das keine Zwischenziele kennt, sondern
