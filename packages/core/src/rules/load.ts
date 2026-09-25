@@ -328,6 +328,16 @@ export function parseRules(raw: RawRules, id: string): Rules {
   const keep = Number(aiRaw['tradeKeepStockPermille'])
   if (!(keep >= 0 && keep <= 1000)) problems.push('KI: tradeKeepStockPermille liegt zwischen 0 und 1000')
 
+  // Provinzhandel der KI (T-M17-11, D29.7). Wie beim Handel: ein fehlender Wert waere still NaN.
+  for (const field of ['provinceValueHorizonDays', 'provinceSalePremiumPermille', 'provinceValuePositionPermille'] as const) {
+    if (typeof aiRaw[field] !== 'number') problems.push(`KI: "${field}" fehlt`)
+  }
+  const horizon = Number(aiRaw['provinceValueHorizonDays'])
+  if (!(Number.isSafeInteger(horizon) && horizon > 0)) problems.push('KI: provinceValueHorizonDays muss eine positive ganze Zahl sein')
+  if (Number(aiRaw['provinceSalePremiumPermille']) < 1000) problems.push('KI: provinceSalePremiumPermille unter 1000 hiesse, Land unter Wert abzugeben')
+  const lage = Number(aiRaw['provinceValuePositionPermille'])
+  if (!(lage >= 0 && lage <= 1000)) problems.push('KI: provinceValuePositionPermille liegt zwischen 0 und 1000')
+
   const ai = aiRaw as unknown as AiRules
 
   if (problems.length > 0) throw new RulesError(problems)

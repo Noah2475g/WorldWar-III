@@ -222,3 +222,11 @@ describe('D17 Die obersten Zahlen der KI stehen in der Tabelle', () => {
     expect(ai.tradeKeepStockPermille).toBeGreaterThanOrEqual(groessterAnteil + 100)
   })
 })
+
+describe('D29.7 Der Provinzaufschlag liegt ueber der Annahmemarge (T-M17-11)', () => {
+  it('provinceSalePremiumPermille > tradeAcceptMarginPermille', () => {
+    const aiRaw = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as Record<string, unknown>
+    const ai = aiRaw as { provinceSalePremiumPermille: number; tradeAcceptMarginPermille: number }
+    expect(ai.provinceSalePremiumPermille).toBeGreaterThan(ai.tradeAcceptMarginPermille)
+  })
+})

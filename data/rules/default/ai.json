@@ -59,5 +59,9 @@
   "tradeAcceptMarginPermille": 1050,
   "tradeImpactPermille": 30,
   "tradeOfferPremiumPermille": 1060,
-  "tradeKeepStockPermille": 500
+  "tradeKeepStockPermille": 500,
+  "_provinceM17": "Provinzhandel der KI (D29.7, D29.8, T-M17-11): Horizont in Spieltagen, Aufschlag beim Abtreten und Lage in Promille. Status in docs/plan/BALANCING.md.",
+  "provinceValueHorizonDays": 60,
+  "provinceSalePremiumPermille": 1300,
+  "provinceValuePositionPermille": 250
 }

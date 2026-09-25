@@ -128,6 +128,12 @@ export interface AiRules {
   tradeOfferPremiumPermille: Fixed
   /** Dieser Anteil jedes Bestands (‰) ist für Handelsangebote tabu, gegeben wie angenommen (E16). */
   tradeKeepStockPermille: Fixed
+  /** So viele Spieltage Ertrag ist eine Provinz der KI wert (D29.7, D29.8, T-M17-11). */
+  provinceValueHorizonDays: number
+  /** Die KI tritt eine eigene Provinz erst ab Provinzwert × diese Zahl / 1000 ab (R-DIP-09/AK4). */
+  provinceSalePremiumPermille: Fixed
+  /** Lage: je Landnachbar des Halters (höchstens drei) ein Drittel dieses Anteils am Ertragswert. */
+  provinceValuePositionPermille: Fixed
 }
 
 export interface RuleConstants {

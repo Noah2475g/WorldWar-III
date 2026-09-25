@@ -412,3 +412,17 @@ Stufenspalten, und `buildShareDefault` und `threatRange` standen nirgends.
 | `tradeKeepStockPermille` | 500 | abgeleitet | Handel (gegeben oder angenommen) greift nie unter die Hälfte eines Bestands: im selben Tag rekrutiert die KI bis `recruitShare` (höchstens 280 ‰) und tauscht an der Börse ein Zehntel (100 ‰) — 380 ‰ müssen bleiben, aufgerundet auf die Hälfte |
 | `buildShareDefault` | 600 | geschätzt | seit T-M3-01 (`64041c8`): Anteil des Einkommens für Bau statt Aushebung im Startgedächtnis; nie gemessen |
 | `threatRange` | 2 | geschätzt | seit T-M3-01 (`64041c8`): Reichweite der Bedrohungskarte in Provinzen; nie gemessen |
+
+## Provinzhandel der KI (R-DIP-09, D29.7, D29.8, T-M17-11)
+
+Der Provinzwert ist Ertrag aus der Karte (Vorkommen zu Marktpreis × `resourceWeights`, Steuer aus
+der Bevölkerung zum Geldkurs) über den Horizont, dazu bekannte Gebäude (Mehrertrag und Baukosten)
+und die Lage. Gemessen am 2026-09-25 (Weltkarte, Startpreise): Median 9,6 Mio. Geld; ein Angebot
+trägt höchstens 1,88 Mio. — bei 60 Tagen verkauft die KI 2 von 237 Provinzen, kauft aber 225
+(Befund M17-D12).
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `provinceValueHorizonDays` | 60 | geschätzt | D29.7; die Messung oben zeigt, dass der Wert mit den Handelsobergrenzen den Verkauf durch die KI praktisch ausschließt — bewusst nicht angepasst, Entscheid bei T-M17-16 (M17-D12) |
+| `provinceSalePremiumPermille` | 1300 | geschätzt | D29.7: Land gibt die KI erst mit 30 % Aufschlag ab; der Wächter hält Aufschlag > Handelsmarge fest |
+| `provinceValuePositionPermille` | 250 | geschätzt | neu in T-M17-11 („plus Lage", D29.8): drei eigene Landnachbarn heben den Ertragswert um ein Viertel; eine Enklave bekommt nichts |
