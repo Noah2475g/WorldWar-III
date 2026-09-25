@@ -5224,3 +5224,24 @@ Commits — in `WORKFLOW.md`, `PROGRESS.md` und `03-TASKS.md` vermerkt. Vor dem 
 
 **Kippbar:** durch Noah — falls er den Merge selbst vorzieht oder anders anordnet (z. B. T-M17-16
 zuerst ganz abschließen und erst danach mergen).
+
+---
+
+## 2026-09-26 · Noahs Entscheide zu den Blockern von T-M17-16
+
+**Befund M17-F1 (Haltungs-Messlauf blind, 0 statt 76 Einmärsche):** Weder die Kontrolle wird
+neu geeicht noch die Messung an M18 gegeben. **Erst wird die Ursache geklärt** — warum greift in
+diesem Lauf niemand den Menschen an? —, **dann der Messaufbau so angepasst, dass wieder Angriffe
+kommen**, nach dem Muster von Option D beim Turnier (M17-T5): die Aufstellung ändert sich, die
+Grenzen bleiben.
+
+**AK-8:** Der Lauf darf `%APPDATA%\de.noahhaumersen.worldwar\saves` unter einem neuen, eindeutigen
+Namen parken, vor und nach dem Lauf per SHA-256 vergleichen und danach zurückbenennen; gelöscht
+wird nichts. Die vier alten AK-8-Testordner (`saves.messung-2026-09-14`, `-14b`, `-14c`,
+`saves.geparkt-2026-09-25`, je nur eine `stand-1.json` von rund 96 KB) sind auf Noahs Wort in den
+**Papierkorb** verschoben (wiederherstellbar); `saves` und `saves.geparkt-2026-09-08` sind unberührt.
+
+**Dritter Blocker (origin/main 45 Commits voraus):** erledigt — `origin/main` (PR #9–#11,
+Touch-Bedienung) ist konfliktfrei in den M17-Zweig gemerged (`65feab8`), `pnpm verify` dort Exit 0
+mit 186 Testdateien. Die Messkette des Programms (Bau, Netzfreiheit, AK-8, Uhr, Abnahme) wird auf
+diesem Stand wiederholt.
