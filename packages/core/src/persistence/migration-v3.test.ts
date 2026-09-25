@@ -398,6 +398,9 @@ describe('R-GAME-05 Ein Stand der Stufe 4 wird auf die Felder dieser Stufe gepru
       createdTick: 10,
       expiresAtTick: 100,
     })
+    // Wie ein echter Befehl es haelt: eine Kennung s1 vergeben heisst, der Zaehler steht
+    // danach auf 2 (N3, Nacharbeit Durchsicht 2026-09-25).
+    state.nextIds.spy = 2
 
     expect(() => validateState(state)).not.toThrow()
     expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
@@ -503,7 +506,7 @@ describe('R-GAME-05 Spione, Aufdeckungen und Handelsangebote werden je Element g
     })
     state.espionage.reveals.push({ player: erste, provinceId: provinz, kind: 'armies', untilTick: 99 })
     state.diplomacy.tradeOffers.push({
-      id: 'o1',
+      id: 't1',
       from: erste,
       to: zweite,
       give: { resources: { money: 5_000 }, provinces: [provinz] },
@@ -511,11 +514,18 @@ describe('R-GAME-05 Spione, Aufdeckungen und Handelsangebote werden je Element g
       createdTick: 10,
       expiresAtTick: 100,
     })
+    state.diplomacy.offers.push({ from: zweite, to: erste, kind: 'alliance', tick: 5 })
+    // Wie ein echter Befehl es haelt (T-M17-02/-07): eine Kennung s1/t1 vergeben heisst,
+    // der Zaehler steht danach auf 2 — sonst vergibt der naechste Befehl sie erneut (N3).
+    state.nextIds.spy = 2
+    state.nextIds.offer = 2
     return state as unknown as Roh
   }
   const spion = (state: Roh): Roh => (state['espionage'] as { spies: Roh[] }).spies[0]!
   const aufdeckung = (state: Roh): Roh => (state['espionage'] as { reveals: Roh[] }).reveals[0]!
   const angebot = (state: Roh): Roh => (state['diplomacy'] as { tradeOffers: Roh[] }).tradeOffers[0]!
+  const antrag = (state: Roh): Roh => (state['diplomacy'] as { offers: Roh[] }).offers[0]!
+  const beziehung = (state: Roh): Roh => Object.values((state['diplomacy'] as { relations: Record<string, Roh> }).relations)[0]!
   const buendel = (state: Roh, seite: 'give' | 'want'): { resources: Roh; provinces: unknown[] } =>
     angebot(state)[seite] as { resources: Roh; provinces: unknown[] }
 
@@ -552,6 +562,51 @@ describe('R-GAME-05 Spione, Aufdeckungen und Handelsangebote werden je Element g
     { name: 'eine unbekannte Provinz im Buendel', verfaelsche: (s) => (buendel(s, 'give').provinces[0] = 'NIRGENDS'), meldung: /diplomacy\.tradeOffers\[0\]\.give\.provinces/ },
     { name: 'eine Provinz, die kein Text ist', verfaelsche: (s) => buendel(s, 'want').provinces.push(3), meldung: /diplomacy\.tradeOffers\[0\]\.want\.provinces/ },
     { name: 'ein Angebot ohne Verfallstick', verfaelsche: (s) => delete angebot(s)['expiresAtTick'], meldung: /diplomacy\.tradeOffers\[0\]\.expiresAtTick/ },
+
+    // N3 (Nacharbeit Durchsicht 2026-09-25): validateState war nicht tief genug fuer diplomacy.offers
+    // (Antraege auf Frieden/Buendnis/Durchmarsch), doppelte Kennungen und die Beziehungen selbst.
+    { name: 'ein Antrag, der kein Objekt ist (publicView.ts liest offer.to ungeprueft)', verfaelsche: (s) => ((s['diplomacy'] as { offers: unknown[] }).offers[0] = null), meldung: /diplomacy\.offers\[0\] ist kein Objekt/ },
+    { name: 'ein Antrag einer unbekannten Macht', verfaelsche: (s) => (antrag(s)['from'] = 'p99'), meldung: /diplomacy\.offers\[0\]\.from/ },
+    { name: 'ein Antrag an eine unbekannte Macht', verfaelsche: (s) => (antrag(s)['to'] = 'p99'), meldung: /diplomacy\.offers\[0\]\.to/ },
+    { name: 'ein Antrag unbekannter Art', verfaelsche: (s) => (antrag(s)['kind'] = 'bogus'), meldung: /diplomacy\.offers\[0\]\.kind/ },
+    { name: 'ein Antrag mit einem Tick, der keine sichere Ganzzahl ist', verfaelsche: (s) => (antrag(s)['tick'] = 1.5), meldung: /diplomacy\.offers\[0\]\.tick/ },
+
+    {
+      name: 'zwei Handelsangebote mit derselben Kennung (Treuhand-Verlust bei WITHDRAW_TRADE)',
+      verfaelsche: (s) => (s['diplomacy'] as { tradeOffers: Roh[] }).tradeOffers.push({ ...angebot(s) }),
+      meldung: /diplomacy\.tradeOffers\[1\]\.id "t1" ist doppelt vergeben/,
+    },
+    {
+      name: 'zwei Spione mit derselben Kennung',
+      verfaelsche: (s) => (s['espionage'] as { spies: Roh[] }).spies.push({ ...spion(s) }),
+      meldung: /espionage\.spies\[1\]\.id "s1" ist doppelt vergeben/,
+    },
+    {
+      name: 'nextIds.offer liegt nicht ueber der vergebenen Kennung t1',
+      verfaelsche: (s) => ((s['nextIds'] as Roh)['offer'] = 1),
+      meldung: /nextIds\.offer liegt nicht über/,
+    },
+    {
+      name: 'nextIds.spy liegt nicht ueber der vergebenen Kennung s1',
+      verfaelsche: (s) => ((s['nextIds'] as Roh)['spy'] = 1),
+      meldung: /nextIds\.spy liegt nicht über/,
+    },
+
+    { name: 'eine Beziehung mit unbekanntem Zustand', verfaelsche: (s) => (beziehung(s)['state'] = 'bogus'), meldung: /\.state ist kein Beziehungszustand/ },
+    { name: 'eine Beziehung ohne sinceTick', verfaelsche: (s) => delete beziehung(s)['sinceTick'], meldung: /\.sinceTick ist keine sichere Ganzzahl/ },
+    { name: 'eine Beziehung mit einem Bruch als sinceTick', verfaelsche: (s) => (beziehung(s)['sinceTick'] = 1.5), meldung: /\.sinceTick ist keine sichere Ganzzahl/ },
+    { name: 'eine Beziehung mit einem Bruch als warEffectiveAtTick', verfaelsche: (s) => (beziehung(s)['warEffectiveAtTick'] = 1.5), meldung: /\.warEffectiveAtTick ist weder sichere Ganzzahl noch null/ },
+    { name: 'eine Beziehung mit einem Bruch als aPassageEndsAtTick', verfaelsche: (s) => (beziehung(s)['aPassageEndsAtTick'] = 1.5), meldung: /\.aPassageEndsAtTick ist keine sichere Ganzzahl/ },
+    {
+      name: 'eine Beziehung mit einer unbekannten Macht im Paar',
+      verfaelsche: (s) => {
+        const relations = (s['diplomacy'] as { relations: Record<string, Roh> }).relations
+        const [pair, wert] = Object.entries(relations)[0]!
+        delete relations[pair]
+        relations['p1|p99'] = wert
+      },
+      meldung: /diplomacy\.relations\["p1\|p99"\] nennt kein bekanntes Beziehungspaar/,
+    },
   ]
 
   for (const { name, verfaelsche, meldung } of FAELLE) {
