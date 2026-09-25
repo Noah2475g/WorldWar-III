@@ -110,6 +110,89 @@ describe('R-AI-06 KI gegen KI', () => {
     expect(handelnd.hard.automaticBombardments + handelnd.normal.automaticBombardments).toBe(
       result.automaticBombardments.hard,
     )
-    expect(handelnd.easy).toEqual({ warDeclarations: 0, automaticBombardments: 0 })
+    expect(handelnd.easy).toEqual({ warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 })
+  })
+})
+
+/**
+ * Nacharbeit Turnier M17, Option D (Befund M17-T4, Noahs Entscheid zu M17-T5): das Turnier
+ * spielt auf der Testwelt mit allen drei Maechten in drei Sitzordnungen reihum, der Dritte als
+ * Fueller. Diese schnellen Faelle pruefen nur die neuen Optionen selbst; die Streuung (§1 des
+ * Bauplans) misst `tournament.slow.test.ts`.
+ */
+describe('R-AI-06 Drei Maechte reihum (Plan D)', () => {
+  it('spielt mit drei Maechten und wertet nur die beiden Streiter (Plan D)', () => {
+    const result = playMatch({
+      map,
+      rules,
+      seed: 7,
+      difficulties: ['hard', 'normal'],
+      days: 10,
+      nations: ['Nordland', 'Ostmark', 'Sueden'],
+    })
+
+    expect(Object.keys(result.byPlayer).sort()).toEqual(['p1', 'p2'])
+    expect(Object.keys(result.scores).sort()).toEqual(['p1', 'p2'])
+    expect(result.surpriseAttacks).toBeGreaterThanOrEqual(0)
+  })
+
+  it('verteilt die Paare auf die Aufstellungen (Plan D)', () => {
+    const result = playTournament({
+      map,
+      rules,
+      difficulties: ['hard', 'normal'],
+      matches: 6,
+      days: 10,
+      startAtWar: false,
+      setups: [
+        ['Nordland', 'Ostmark', 'Sueden'],
+        ['Ostmark', 'Sueden', 'Nordland'],
+        ['Sueden', 'Nordland', 'Ostmark'],
+      ],
+    })
+
+    expect(result.matches).toBe(6)
+    expect(result.winsA + result.winsB + result.draws).toBe(3)
+    expect(Object.values(result.winsByNation).reduce((sum, n) => sum + n, 0)).toBeLessThanOrEqual(6)
+    expect(result.outcomes).toBeGreaterThanOrEqual(1)
+    expect(result.outcomes).toBeLessThanOrEqual(6)
+  })
+
+  it('verlangt, dass die Paare sich auf die Aufstellungen teilen lassen', () => {
+    expect(() =>
+      playTournament({
+        map,
+        rules,
+        difficulties: ['hard', 'normal'],
+        matches: 4,
+        days: 10,
+        startAtWar: false,
+        setups: [
+          ['Nordland', 'Ostmark', 'Sueden'],
+          ['Ostmark', 'Sueden', 'Nordland'],
+          ['Sueden', 'Nordland', 'Ostmark'],
+        ],
+      }),
+    ).toThrow()
+  })
+
+  it('lehnt eine unbekannte Nation ab', () => {
+    expect(() =>
+      playMatch({ map, rules, seed: 1, difficulties: ['hard', 'normal'], days: 10, nations: ['Nordland', 'Atlantis'] }),
+    ).toThrow()
+  })
+
+  it('bleibt ohne Aufstellung bitgleich (Plan D)', () => {
+    const ohne = playTournament({ map, rules, difficulties: ['hard', 'easy'], matches: 4, days: 20 })
+    const mitEinerAufstellung = playTournament({
+      map,
+      rules,
+      difficulties: ['hard', 'easy'],
+      matches: 4,
+      days: 20,
+      setups: [['Nordland', 'Ostmark']],
+    })
+
+    expect(mitEinerAufstellung).toEqual(ohne)
   })
 })
