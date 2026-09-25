@@ -216,8 +216,9 @@ export const STANCE_SOURCES = [
  * (`sweep.slow.test.ts`), das Turnier `data/maps/testworld.json` (ueber `smallWorld` aus `packages/testkit`).
  * Den Code (`packages/ai/src`, `packages/core/src`, `apps/headless/src`) spielen beide.
  *
- * - **Turnier** folgt ausserdem KI und Kern: ein Neulauf kostet 13 Sekunden, und das Turnier ist der billige
- *   Beleg, dass eine Codeaenderung die KI-Staerke nicht verschiebt.
+ * - **Turnier** folgt ausserdem KI und Kern: ein Neulauf kostet rund 35 Sekunden (drei Maechte, 150 Partien
+ *   je Paarung, gemessen 2026-09-25), und das Turnier ist der billige Beleg, dass eine Codeaenderung die
+ *   KI-Staerke nicht verschiebt.
  * - **Parameterlauf** bleibt bewusst bei Regeln und Karte: er dauert rund eine Stunde und misst die
  *   Empfindlichkeit der Regelzahlen. Den Einfluss von Code decken das Turnier und `progress.slow` ab.
  *
