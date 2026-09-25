@@ -1647,6 +1647,103 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
     })
   })
+
+  /**
+   * R-SPY-06/AK2 war nur in Alerts.test.tsx belegt (`espionageAlerts` als Einzeltest) — nicht
+   * die Verdrahtung in App.tsx (Befund Nacharbeit T-M17-13/14, hoch): der Sammeleffekt
+   * (`collectEspionageNews` ab `state.eventLog`), das Wegklicken ueber `onDismiss` und der
+   * Sprung auf die Provinz. "Ein gruener Einzeltest sagt nichts ueber das Spiel" — dieselbe
+   * Hausregel wie oben bei R-DIP-07/AK1.
+   */
+  describe('R-SPY-06/AK2 Eine erlittene Sabotage erreicht den Bildschirm', () => {
+    it('meldet die Sabotage ohne Urheber, springt auf die Provinz und bleibt nach dem Wegklicken weg', async () => {
+      const { state: frisch, p1, heimat } = partie()
+      // Ein paar Ticks vor, sonst faellt das Ereignis auf denselben Tick, an dem der
+      // erste Bildschirmaufbau `news.upTo` schon setzt (`collectEspionageNews` liest nur
+      // `event.tick > upTo`, strikt) — kein Befund, nur eine Randbedingung des Aufbaus.
+      const state = advanceTicks(frisch, 5, { map: world, rules: TEST_RULES }).state
+      const geschaedigt: typeof state = {
+        ...state,
+        eventLog: [
+          ...state.eventLog,
+          {
+            type: 'SABOTAGE_SUFFERED',
+            tick: state.tick,
+            severity: 'alert',
+            audience: [p1],
+            concerns: [p1],
+            playerId: p1,
+            provinceId: heimat,
+            kind: 'economic',
+            moraleLoss: 10_000,
+            destroyed: { iron: 5_000 },
+            delayTicks: 0,
+          } as never,
+        ],
+      }
+      const provinzName = state.provinces[heimat]!.name
+
+      const meldungen = await zeige(geschaedigt)
+      // `collectEspionageNews` sammelt in einem eigenen Effekt (App.tsx, nach `nameOf`),
+      // also nicht schon im ersten Render, in dem `zeige()` die Region findet.
+      const knopf = await within(meldungen).findByRole('button', { name: new RegExp(`^Wirtschaftssabotage in ${provinzName}`) })
+      expect(meldungen.textContent).toContain(provinzName)
+      // F2/F3: kein Urheber, keine Spielerkennung (Ereignis kennt gar keine).
+      expect(meldungen.textContent).not.toMatch(/\bp\d\b/)
+
+      fireEvent.click(knopf)
+
+      const provinzPanel = await screen.findByRole('region', { name: provinzName })
+      expect(provinzPanel).toBeTruthy()
+
+      fireEvent.click(within(meldungen).getByRole('button', { name: new RegExp(`^Ausblenden: Wirtschaftssabotage in ${provinzName}`) }))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+
+      // Gegenprobe fuer "bleibt weg": ein Tag vorspulen ohne neues Sabotage-Ereignis darf
+      // die weggeklickte Meldung nicht zurueckbringen.
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+      await waitFor(() => expect(document.querySelector('.clock__time')?.textContent).toMatch(/Tag/))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+    })
+  })
+
+  /**
+   * Befund Nacharbeit T-M17-13/14 (mittel): die Quittung "befohlen" (T-M22-05) haengt an der
+   * Knopf-Kennung (`pendingIds`, App.tsx), nicht am Befehl. Trug die Kennung kein Ziel
+   * (`diplomacy-${action}`, `trade-offer`, `spy-recruit-${mission}`), sperrte sie bei
+   * stehender Uhr auch das gleichnamige Formular fuer eine ANDERE Macht bzw. Provinz.
+   */
+  describe('Die Quittung "befohlen" gilt je Ziel, nicht je Knopf-Kennung', () => {
+    it('sperrt "Krieg erklaeren" nach einer Erklaerung an p2 nicht auch fuer p3', async () => {
+      const { state, p2 } = partie()
+      const p3 = state.playerOrder[2]!
+      const meldungen = await zeige(state)
+      expect(meldungen).toBeTruthy() // nur zum Laden — die eigentliche Pruefung ist die Diplomatie
+
+      const nationOf = (id: string) => state.players[id]!.nation
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const wähle = (nation: string) => {
+        const zeile = within(diplomatie)
+          .getAllByRole('row')
+          .find((row) => row.textContent?.includes(nation))!
+        fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+      }
+
+      wähle(nationOf(p2))
+      const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
+      fireEvent.click(within(gruppeP2).getByRole('button', { name: 'Krieg erklären' }))
+      expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
+
+      // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
+      // "Krieg erklären" darf NICHT "befohlen" sagen — ihr wurde nichts befohlen.
+      wähle(nationOf(p3))
+      const gruppeP3 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p3)}` })
+      const krieg = within(gruppeP3).getByRole('button', { name: 'Krieg erklären' })
+      expect((krieg as HTMLButtonElement).disabled).toBe(false)
+      expect(within(gruppeP3).queryByText(/befohlen/)).toBeNull()
+    })
+  })
 })
 
 /**
