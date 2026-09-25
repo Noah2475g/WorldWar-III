@@ -143,17 +143,11 @@ entweder Noah oder seine Ansage.
    Deckel zählt Stapel statt Einheiten, die echte Reparatur tötete die Artillerie),
    der Handel der KI (zielt auf den teuersten Bauwunsch), die Kohle-Senke, der
    Vorratsaufbau, die amphibische KI, die tote KI-Artillerie der Voreinstellung
-   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit). Dazu,
-   entschieden von Noah am 2026-09-25 (T-M17-15, `DECISIONS.md`):
-   - **Befund M17-T7** — wer Geld für eine Artillerie hätte („normal"/„schwer"), baut keine
-     Fabrik; wer Fabriken baut („leicht"), erreicht nie die eigene, höhere Geldschwelle
-     (berichtigt in der Nacharbeit 2026-09-25, siehe `PROBLEME.md`; `ai-integration.slow.test.ts`
-     läuft 21/21 grün, zwei Fälle als `it.fails`, siehe §0).
-   - **Befund M17-S12** — `recruitCommands` bucht `RECRUIT_SPY` desselben Takts nicht vor; geht
-     mit M17-T7, weil seine Reparatur das Turnierband kippt (0,760 → 0,460, Befund M17-I1) —
-     die Turnierfrage wird dort neu entschieden.
-   - **Befund M17-T6** — eine Räumfrist nach Friedensschluss (analog der Kündigungsfrist beim
-     Durchmarsch), damit ein Frieden im selben Tick keinen Überfall mehr erzeugt.
+   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit). Die
+   M17-Befunde, die Noah an M18 verschoben hat (T-M17-15 und die Durchsicht des
+   Zusammenspiels, 2026-09-25), stehen **vollständig und nur noch** in `03-TASKS.md`,
+   Abschnitt „Meilenstein M18 — Später" — hier keine Aufzählung mehr, damit es nicht zwei
+   Stellen gibt, die auseinanderlaufen können.
 6. **T-M40-04, T-M41-10 und T-M10-02** — zurückgenommen, jede mit Begründung in
    `tasks.yaml` (`reopened`) und in `DECISIONS.md`. Sie stehen nur der Vollständigkeit
    halber hier; nichts davon ist Arbeit, die wartet.

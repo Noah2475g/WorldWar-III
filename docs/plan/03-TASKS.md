@@ -3719,6 +3719,50 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall — Kandidat: eine
 > Räumfrist nach Friedensschluss, analog der Kündigungsfrist beim Durchmarsch (`PROBLEME.md`,
 > `DECISIONS.md`).
+>
+> **Vorgemerkt am 2026-09-25 (Nacharbeit Durchsicht Zusammenspiel) — vollständige M18-Liste.**
+> `WORKFLOW.md` §2 Punkt 5 verweist nur noch hierher; alle Einträge mit Status „M18" oder
+> „Kandidat M18" aus `PROBLEME.md`, an einer Stelle:
+>
+> - **M17-T6** (Frieden im selben Tick macht aus einem Angriff einen Überfall) und **M17-T7**
+>   (KI hebt praktisch keine Artillerie aus) und **M17-S12** (`RECRUIT_SPY` desselben Takts nicht
+>   vorgebucht, Turnierband kippt) — oben bereits einzeln geführt, hier nur zur Vollständigkeit.
+> - **M17-D10:** ein Heimmarsch nach gekündigtem Durchmarschrecht kann länger dauern als die
+>   Kündigungsfrist (`rightOfWayNoticeTicks`) — 0 gemessene Überfälle im Integrationstor, aber
+>   ungeprüft für längere Wege. Zwei Richtungen offen: Pfad-Ende gegen Fristende prüfen, oder die
+>   Frist aus der Marschzeit ableiten.
+> - **M17-S1** samt der gleichen Lücke bei Angebotskennungen: Spione **und** Handelsangebote
+>   bekommen ihre Kennung aus je einem Zähler für alle Mächte — die Lücke zwischen zwei eigenen
+>   Kennungen verrät, wie viele fremde dazwischen entstanden sind. Ein Zähler je Macht (oder eine
+>   abgeleitete Kennung) für `nextIds.spy` **und** `nextIds.offer` zugleich.
+> - **`predictLandPath` ignoriert Seewege:** eine seefähige Armee marschiert bei `military.ts`
+>   ungeprüft, bis der nächste Taktiktakt die Sicherung nachzieht — 0 gemessene Überfälle der Art
+>   `durchmarsch`, aber ungeprüfter Marsch bis zu einem Vierteltag bei „leicht". Braucht eine
+>   Sichtnachbildung von `canUseSea`.
+> - **Die Kaufsuche der KI ist O(P²) je Aufruf** (`provinceOfferCommands`): `relationship()` und
+>   `mapLandNeighbours` linear je sichtbarer Provinz, dazu zwei `provinceWorth`-Aufrufe je
+>   Nachbar. Bislang folgenlos (die KI kauft ohnehin praktisch nie, M17-D12) — ein Provinz-Index
+>   und ein Relationship-Cache je Aufruf wären die Reparatur.
+> - **Das Kernverhalten von M17-U1:** `exchangeAmount()` (`packages/core/src/rules/market.ts`)
+>   wirft `FixedOverflowError` bei sehr großen Mengen, statt zu sättigen oder zu kappen — die
+>   Oberfläche kappt seit der Nacharbeit T-M17-13/14 vor dem Aufruf (`safeExchangeAmount()`),
+>   aber jeder künftige Aufrufer außerhalb von `apps/desktop` kann denselben Absturz erzeugen.
+> - **„Abtretung verrät Weg" (passive Hälfte):** `settleTradeOffers` prüft die gebende Seite
+>   eines Handelsangebots mit Tiefe `full` in jeder Diplomatiephase; ein
+>   `TRADE_OFFER_CLOSED{reason:'invalid'}` korreliert zeitlich mit dem, was der Anbieter gerade
+>   tut, auch ohne dass `ACCEPT_TRADE` je versucht wird. Die aktive Hälfte (`COMMAND_REJECTED`
+>   bei `ACCEPT_TRADE`) ist mit Befund M17-G2/N2 der Durchsicht des Zusammenspiels bereits
+>   geschlossen; offen bleibt eine zweite, redaktionsärmere Rückmeldung oder eine neue
+>   `CommandResult`-Form für `settleTradeOffers`.
+> - **`breakAlliance` ohne Räumfrist** (Befund M17-G4): ein Bündnisbruch sperrt beide
+>   Durchmarschrichtungen sofort, ohne die Kündigungsfrist aus M17-T6/R-DIP-08 — ein Gast mit
+>   eigenen Truppen im Land wird im selben Tick zum Überfaller. Geht mit M17-T6 in dieselbe
+>   Räumfrist-Reparatur (Entscheid Noah, `DECISIONS.md`).
+> - **Der Determinismus-Vergleich (Wiederholungslauf) im m17-integration-Bericht** ist nur ad hoc
+>   geprüft: `tasks.yaml` T-M17-15 nennt ihn als offenen Punkt, die Durchsicht des Zusammenspiels
+>   hat ihn einmal von Hand nachgestellt (zweimal von Grund auf gebaut, 200 Hashes gleich), aber
+>   kein Lauf im Repo prüft das automatisch nach. Kandidat: eine feste Wiederholungslauf-Prüfung
+>   in `m17-integration.slow.test.ts` oder einem Geschwistertest.
 
 ---
 
