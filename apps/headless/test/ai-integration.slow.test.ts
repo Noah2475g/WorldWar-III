@@ -88,6 +88,12 @@ interface Messung {
   hauptstadtStrecke: Record<string, number>
   /** Armeeobjekte einer Macht in derselben Provinz, am Ende jedes Spieltags. */
   armeeobjekte: { hoechstens: number; tageUeberDrei: number; stehendHoechstens: number; stehendTageUeberDrei: number }
+  /**
+   * Hoechster Geldbestand einer KI-Macht an einem Tagesende (T-M17-15, Befund M17-T7): zeigt die
+   * Schwelle der Aushebung — eine Artillerie kostet 200 000 Geld, und wenn keine Macht je so viel
+   * anspart, hebt die KI praktisch nur Infanterie aus. Zahl, keine Zusicherung.
+   */
+  geldHoechstensJeMacht: Record<string, number>
 }
 
 /**
@@ -110,6 +116,8 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     hauptstadtStrecke[nation(id)] = 0
   }
   const armeeobjekte = { hoechstens: 0, tageUeberDrei: 0, stehendHoechstens: 0, stehendTageUeberDrei: 0 }
+  const geldHoechstensJeMacht: Record<string, number> = {}
+  for (const id of ki) geldHoechstensJeMacht[nation(id)] = 0
   let gelaufen = 0
   let zwischenstand: Messung | undefined
 
@@ -127,6 +135,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
         (provinceId) => state.provinces[provinceId]!.owner === id && state.provinces[provinceId]!.kind === 'city',
       )
       const name = nation(id)
+      geldHoechstensJeMacht[name] = Math.max(geldHoechstensJeMacht[name]!, player.resources.money)
       if (haeltStadt && player.capitalProvinceId === null) {
         hauptstadtTage[name] = hauptstadtTage[name]! + 1
         laufend[name] = (laufend[name] ?? 0) + 1
@@ -162,6 +171,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
         hauptstadtTage: { ...hauptstadtTage },
         hauptstadtStrecke: { ...hauptstadtStrecke },
         armeeobjekte: { ...armeeobjekte },
+        geldHoechstensJeMacht: { ...geldHoechstensJeMacht },
       }
     }
 
@@ -169,7 +179,17 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     await breathe()
   }
 
-  const ende = { tage: gelaufen, events, final: current, ki, kiBefehle, hauptstadtTage, hauptstadtStrecke, armeeobjekte }
+  const ende = {
+    tage: gelaufen,
+    events,
+    final: current,
+    ki,
+    kiBefehle,
+    hauptstadtTage,
+    hauptstadtStrecke,
+    armeeobjekte,
+    geldHoechstensJeMacht,
+  }
   return zwischenstand ? { ende, stichtag: zwischenstand } : { ende }
 }
 
@@ -227,6 +247,18 @@ function kennzahlen(m: Messung) {
     kriegserklaerungen: typ('WAR_DECLARED').length,
     friedensschluesse: truce.length,
     friedenZwischenKi: truce.filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId)).length,
+    /**
+     * Spieltag des ersten Friedens zwischen zwei KI-Maechten, sonst null (T-M17-15, Befund
+     * M17-T7) - macht die Streuung "Frieden in 90 Tagen" lesbar, ohne eine Zusicherung zu
+     * aendern.
+     */
+    ersterFriedenZwischenKiTag:
+      truce
+        .filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId))
+        .map((event) => Math.floor(event.tick / rules.constants.ticksPerDay) + 1)
+        .sort((a, b) => a - b)[0] ?? null,
+    /** Hoechster Geldbestand je Macht an einem Tagesende (T-M17-15, Befund M17-T7). */
+    geldHoechstensJeMacht: m.geldHoechstensJeMacht,
     handel: handel.length,
     handelJeMacht: Object.fromEntries(
       [...ki].map((id) => [nation(id), handel.filter((event) => event.playerId === id).length]),
@@ -394,6 +426,13 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
     // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
     // fuer die Testkarte belegt hat.
+    //
+    // **Bleibt absichtlich rot (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Ursache
+    // zerlegt: die Aushebung kauft je Einheit nur `recruitShare` Promille des Bestands, eine
+    // Artillerie kostet 200 000 Geld - keine Macht spart in 200 Tagen so viel an
+    // (`geldHoechstensJeMacht` im Bericht). Die einzige gefundene Reparatur braucht Befund
+    // M17-S12 und kippt das Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird
+    // dieser Test unbemerkt gruen, hat sich die Aushebung geaendert - das ist dann meldenswert.
     const events = integration.events
     const fabriken = events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
@@ -472,6 +511,12 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
   })
 
   it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **Bleibt absichtlich rot (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
+    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
+    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
+    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
+    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
+    // Startzahlen, m17-integration.slow.test.ts).
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
