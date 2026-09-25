@@ -12,19 +12,23 @@ import {
   nextBuildLevel,
   recruitDuration,
   recruitStartCondition,
+  spySalary,
+  SPY_MISSIONS,
   type Army,
   type Command,
   type DiplomacyAction,
   type GameState,
   type MapData,
+  type PublicView,
   type ResourceKey,
   type Rules,
+  type SpyMission,
   type Stance,
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
 import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
 import { BUILDING_ART, UNIT_ART, type ArtName } from '../ui/art.tsx'
-import { BUILDING_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
+import { BUILDING_ICONS, SPY_MISSION_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
 import { dominantIcon } from '../map/markers.ts'
 
@@ -538,6 +542,142 @@ export function diplomacyActions(ctx: ActionContext, targetPlayerId: string): Ac
   return DIPLOMACY.map(({ action, label }) =>
     checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
   )
+}
+
+/** Der Umsetz-Modus (E1): welcher eigene Spion gerade ein neues Ziel sucht. Die Kennung wird nie angezeigt. */
+export interface SpyMove {
+  spyId: string
+  number: number
+}
+
+/** Was ein Auftrag bewirkt, mit den Zahlen der Regeln (T-M12-10) — fuer den Tooltip. */
+function missionEffect(ctx: ActionContext, mission: SpyMission): string {
+  const c = ctx.rules.constants
+  switch (mission) {
+    case 'intel':
+      return t('espionage.chance', { percent: c.spySuccessIntelPermille / 10 })
+    case 'economicSabotage':
+      return `${t('espionage.chance', { percent: c.spySuccessSabotagePermille / 10 })} · ${t('espionage.economicEffect', { morale: c.sabotageMoraleLoss / 1000, share: c.sabotageYieldDestroyedPermille / 10 })}`
+    case 'militarySabotage':
+      return `${t('espionage.chance', { percent: c.spySuccessSabotagePermille / 10 })} · ${t('espionage.militaryEffect', { time: duration(c.militarySabotageDelayTicks, ctx.ticksPerDay) })}`
+    case 'counter':
+      return t('espionage.detection', { percent: c.spyDetectionPermille / 10 })
+  }
+}
+
+/**
+ * Die Gruppe „Spionage" der Provinzleiste (R-SPY-06/AK1, D29.9).
+ *
+ * Fremde oder herrenlose Provinz: Aufklaerung und die zwei Sabotagen; eigene: Gegenspionage. Ob
+ * „eigen", liest der Zustand — eigene Provinzen sind immer sichtbar, das verraet nichts (E12);
+ * alles Uebrige urteilt canApply ueber den BEKANNTEN Besitzer (knownOwner im Kern).
+ *
+ * Im Umsetz-Modus dieselben Auftraege als REASSIGN_SPY des gewaehlten Spions (E1).
+ */
+export function spyActions(ctx: ActionContext, provinceId: string, moving: SpyMove | null = null): ActionSpec[] {
+  const own = ctx.state.provinces[provinceId]?.owner === ctx.playerId
+  return SPY_MISSIONS.filter((mission) => (mission === 'counter') === own).map((mission) => {
+    const label = t(`espionage.missions.${mission}`)
+    const salary = costs({ money: spySalary(ctx.rules.constants, mission) })
+    const icon = SPY_MISSION_ICONS[mission]
+    const explainKey = `explain.espionage.${mission}`
+    if (moving) {
+      const spec = checked(
+        ctx,
+        { type: 'REASSIGN_SPY', playerId: ctx.playerId, spyId: moving.spyId, provinceId, mission },
+        `spy-move-${mission}`,
+        label,
+        `${t('espionage.moveHint', { salary })} · ${missionEffect(ctx, mission)}`,
+        icon,
+        explainKey,
+      )
+      return { ...spec, aria: t('espionage.moveAria', { number: moving.number, mission: label }) }
+    }
+    const spec = checked(
+      ctx,
+      { type: 'RECRUIT_SPY', playerId: ctx.playerId, provinceId, mission },
+      `spy-recruit-${mission}`,
+      label,
+      `${t('espionage.recruitHint', { cost: costs({ money: ctx.rules.constants.spyRecruitCost }), salary })} · ${missionEffect(ctx, mission)}`,
+      icon,
+      explainKey,
+    )
+    return { ...spec, aria: t('espionage.recruitAria', { mission: label }) }
+  })
+}
+
+export interface SpyOverview {
+  /** Nur fuer die Befehle der Huelle — NIE anzeigen, nie in eine id (Befund M17-S1, E2). */
+  spyId: string
+  number: number
+  mission: SpyMission
+  missionLabel: string
+  icon: IconName
+  explainKey: string
+  provinceId: string
+  provinceName: string
+  salary: string // „10 Geld je Tag"
+  result: string
+  move: ActionSpec // ohne Befehl: die Huelle schaltet den Umsetz-Modus
+  dismiss: ActionSpec // DISMISS_SPY, geprueft
+}
+
+/** Das letzte Ergebnis in Worten (R-SPY-06); der Gegenspion sagt „keine Enttarnung" (E5). */
+function spyResult(ctx: ActionContext, spy: PublicView['espionage']['spies'][number]): string {
+  if (spy.lastRunTick === null || spy.lastOutcome === null || spy.assignedTick > spy.lastRunTick) {
+    return t('espionage.overview.pending')
+  }
+  const outcome =
+    spy.mission === 'counter' && spy.lastOutcome !== 'targetChanged'
+      ? t(`espionage.counterOutcomes.${spy.lastOutcome}`)
+      : t(`espionage.outcomes.${spy.lastOutcome}`)
+  return t('espionage.overview.outcomeDay', { outcome, day: Math.floor(spy.lastRunTick / ctx.ticksPerDay) + 1 })
+}
+
+/** Die Spionageuebersicht (R-SPY-06, D29.9). Liest NUR die eigene Sicht — `view.espionage.spies`. */
+export function spyOverviewActions(ctx: ActionContext, spies: PublicView['espionage']['spies']): SpyOverview[] {
+  return spies.map((spy, index) => {
+    const number = index + 1
+    const missionLabel = t(`espionage.missions.${spy.mission}`)
+    const dismiss = checked(
+      ctx,
+      { type: 'DISMISS_SPY', playerId: ctx.playerId, spyId: spy.id },
+      `spy-${number}-dismiss`,
+      t('espionage.overview.dismiss'),
+      t('espionage.overview.dismissHint'),
+    )
+    return {
+      spyId: spy.id,
+      number,
+      mission: spy.mission,
+      missionLabel,
+      icon: SPY_MISSION_ICONS[spy.mission],
+      explainKey: `explain.espionage.${spy.mission}`,
+      provinceId: spy.provinceId,
+      provinceName: ctx.map.provinces.find((p) => p.id === spy.provinceId)?.name ?? spy.provinceId,
+      salary: t('espionage.overview.salaryAmount', {
+        amount: costs({ money: spySalary(ctx.rules.constants, spy.mission) }),
+      }),
+      result: spyResult(ctx, spy),
+      move: {
+        id: `spy-${number}-move`,
+        label: t('espionage.overview.move'),
+        aria: t('espionage.overview.moveAria', { number }),
+        disabledReason: null,
+      },
+      dismiss: { ...dismiss, aria: t('espionage.overview.dismissAria', { number }) },
+    }
+  })
+}
+
+/** „2 von 5 Spionen · Sold 30 Geld je Tag". */
+export function spySummary(ctx: ActionContext, spies: PublicView['espionage']['spies']): string {
+  const total = spies.reduce((sum, spy) => sum + spySalary(ctx.rules.constants, spy.mission), 0)
+  return t('espionage.overview.summary', {
+    count: spies.length,
+    max: ctx.rules.constants.maxSpiesPerPlayer,
+    salary: costs({ money: total }),
+  })
 }
 
 /** What a trade would return at the tick's price, and the order to make it. */

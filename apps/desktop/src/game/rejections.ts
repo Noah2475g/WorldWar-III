@@ -38,10 +38,28 @@ function costOf(command: Command | null, rules: Rules): Partial<Record<string, n
     }
     case 'TRADE':
       return { [command.give]: command.giveAmount }
+    case 'RECRUIT_SPY':
+      return { money: rules.constants.spyRecruitCost }
     default:
       return {}
   }
 }
+
+/**
+ * Die Zielgruende des Kerns fuer Spionagebefehle (commands/espionage.ts, rules/espionage.ts) →
+ * Satz (R-SPY-06, T-M17-13).
+ */
+export const SPY_REASON_KEYS: Record<string, string> = {
+  unbekannt: 'espionage.reasons.unknown',
+  'unbekannter Auftrag': 'espionage.reasons.unknownMission',
+  'eigene Provinz': 'espionage.reasons.ownProvince',
+  'nicht eigene Provinz': 'espionage.reasons.notOwnProvince',
+  herrenlos: 'espionage.reasons.unowned',
+  unverändert: 'espionage.reasons.unchanged',
+  'kein Spion': 'espionage.reasons.noSpy',
+}
+
+const SPY_COMMANDS = new Set(['RECRUIT_SPY', 'REASSIGN_SPY', 'DISMISS_SPY'])
 
 export function describeRejection(rejection: Rejection, command: Command | null, ctx: RejectionContext): string {
   const detail = rejection.detail ?? {}
@@ -61,6 +79,15 @@ export function describeRejection(rejection: Rejection, command: Command | null,
   }
   if (typeof detail.unitKey === 'string') values.unit = t(`units.${detail.unitKey}`)
   if (typeof detail.resource === 'string') values.resource = t(`resources.${detail.resource}`)
+
+  // Spionagebefehle sprechen eigene Saetze: "Alle Bauplaetze belegt" waere bei fuenf
+  // Spionen falsch, und der Zielgrund des Kerns (`herrenlos`, `kein Spion`, …) ist ein
+  // Wort ohne Satz, bis eine Tabelle es uebersetzt (R-SPY-06, T-M17-13).
+  if (command && SPY_COMMANDS.has(command.type)) {
+    if (rejection.code === 'QUEUE_FULL') return t('espionage.limitReached', { max: Number(detail.max) })
+    const key = typeof detail.reason === 'string' ? SPY_REASON_KEYS[detail.reason] : undefined
+    if (rejection.code === 'INVALID_TARGET' && key) return t(key)
+  }
 
   switch (rejection.code) {
     case 'INSUFFICIENT_RESOURCES': {

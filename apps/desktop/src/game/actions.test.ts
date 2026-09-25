@@ -1,5 +1,17 @@
 import { readFileSync } from 'node:fs'
-import { createInitialState, parseRules, type Army, type Command, type GameState, type MapData } from '@worldwar/core'
+import {
+  createInitialState,
+  parseRules,
+  publicView,
+  SPY_MISSIONS,
+  type Army,
+  type Command,
+  type GameState,
+  type MapData,
+  type PlayerId,
+  type Spy,
+  type SpyMission,
+} from '@worldwar/core'
 import { describe, expect, it } from 'vitest'
 import {
   armyActions,
@@ -11,14 +23,18 @@ import {
   cancelActions,
   nextUnlock,
   recruitActions,
+  spyActions,
+  spyOverviewActions,
+  spySummary,
   targetAction,
   tradePreview,
   unitLines,
   type ActionContext,
 } from './actions.ts'
+import { hasKey } from '../i18n/text.ts'
 import { UNIT_ART } from '../ui/art.tsx'
-import { UNIT_ICONS } from '../ui/icons.tsx'
-import { describeRejection } from './rejections.ts'
+import { SPY_MISSION_ICONS, UNIT_ICONS } from '../ui/icons.tsx'
+import { describeRejection, SPY_REASON_KEYS } from './rejections.ts'
 import { DEFAULT_NEW_GAME, toConfig } from './newGame.ts'
 
 /**
@@ -697,5 +713,332 @@ describe('R-UNIT-02 Die Ablehnung nennt die verlangte Gebaeudestufe', () => {
 
     expect(satz.disabledReason, 'ohne Kaserne muss die Infanterie gesperrt sein').toMatch(/Kaserne/)
     expect(satz.disabledReason).not.toMatch(/Stufe/)
+  })
+})
+
+/**
+ * Die Spionage in der Provinzleiste (R-SPY-06/AK1, D29.9, T-M17-13).
+ *
+ * `known` macht eine Provinz fuer den Spieler bekannt (sichtbar oder erinnert), ohne die
+ * Sicht selbst zu bauen — genau das, was `knownOwner` im Kern liest.
+ */
+describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
+  function known(ctx: ActionContext, owner: PlayerId | null): string {
+    const gefunden = Object.values(ctx.state.provinces).find((p) => p.owner === owner)
+    let id: string
+    if (gefunden) {
+      id = gefunden.id
+    } else {
+      // Herrenlos, und die Karte hat keine: eine fremde Provinz wird eine.
+      const fremd = Object.values(ctx.state.provinces).find((p) => p.owner === ctx.state.playerOrder[1])!
+      fremd.owner = null
+      id = fremd.id
+    }
+    ctx.state.players[ctx.playerId]!.intel[id] = { tick: 0, owner, strength: 0 }
+    return id
+  }
+
+  function money(ctx: ActionContext, n: number): void {
+    ctx.state.players[ctx.playerId]!.resources.money = n
+  }
+
+  let spyCounter = 0
+  function spy(ctx: ActionContext, over: Partial<Spy> & { provinceId: string; mission: SpyMission }): Spy {
+    const entry: Spy = {
+      id: `s${spyCounter++}`,
+      owner: ctx.playerId,
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+      ...over,
+    }
+    ctx.state.espionage.spies.push(entry)
+    return entry
+  }
+
+  it('bietet in einer fremden Provinz je Auftrag einen Anwerbe-Knopf (AK1)', () => {
+    const { ctx } = fresh()
+    const id = known(ctx, ctx.state.playerOrder[1]!)
+
+    const specs = spyActions(ctx, id)
+
+    expect(specs.map((s) => s.id)).toEqual([
+      'spy-recruit-intel',
+      'spy-recruit-economicSabotage',
+      'spy-recruit-militarySabotage',
+    ])
+    for (const spec of specs) {
+      expect(spec.disabledReason, spec.id).toBeNull()
+      expect(spec.command?.type).toBe('RECRUIT_SPY')
+      expect((spec.command as { playerId: string }).playerId).toBe(ctx.playerId)
+    }
+    expect(specs.map((s) => (s.command as { mission: string }).mission)).toEqual([...SPY_MISSIONS].filter((m) => m !== 'counter'))
+  })
+
+  it('bietet in der eigenen Provinz nur die Gegenspionage (R-SPY-06)', () => {
+    const { ctx, capital } = fresh()
+
+    const specs = spyActions(ctx, capital)
+
+    expect(specs.map((s) => s.id)).toEqual(['spy-recruit-counter'])
+    expect(specs[0]!.disabledReason).toBeNull()
+  })
+
+  it('sperrt jeden Anwerbe-Knopf mit dem fehlenden Betrag, wenn das Geld fehlt (AK1)', () => {
+    const { ctx } = fresh()
+    const id = known(ctx, ctx.state.playerOrder[1]!)
+    money(ctx, 0)
+
+    for (const spec of spyActions(ctx, id)) {
+      expect(spec.disabledReason, spec.id).toBe('Es fehlt an Rohstoffen: 102 Geld.')
+    }
+  })
+
+  it('nennt Anwerbepreis, Tagessold und Wirkung im Tooltip', () => {
+    const { ctx, capital } = fresh()
+    const id = known(ctx, ctx.state.playerOrder[1]!)
+
+    const specs = spyActions(ctx, id)
+    const intel = specs.find((s) => s.id === 'spy-recruit-intel')!
+    const economic = specs.find((s) => s.id === 'spy-recruit-economicSabotage')!
+
+    expect(intel.hint).toContain('102 Geld')
+    expect(intel.hint).toContain('10 Geld je Tag')
+    expect(intel.hint).toContain('80 %')
+    expect(economic.hint).toContain('Moral −10')
+    expect(economic.hint).toContain('50 %')
+
+    const counter = spyActions(ctx, capital)[0]!
+    expect(counter.hint).toContain('25 %')
+  })
+
+  it('sperrt Sabotage in einer herrenlosen Provinz mit Grund, laesst Aufklaerung zu', () => {
+    const { ctx } = fresh()
+    const id = known(ctx, null)
+
+    const specs = spyActions(ctx, id)
+    expect(specs.find((s) => s.id === 'spy-recruit-intel')!.disabledReason).toBeNull()
+    expect(specs.find((s) => s.id === 'spy-recruit-economicSabotage')!.disabledReason).toBe(
+      'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
+    )
+    expect(specs.find((s) => s.id === 'spy-recruit-militarySabotage')!.disabledReason).toBe(
+      'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
+    )
+  })
+
+  it('gibt jedem Auftrag Symbol, Erklaerung und einen Namen mit Verb (R-UI-10/11)', () => {
+    const { ctx, capital } = fresh()
+    const id = known(ctx, ctx.state.playerOrder[1]!)
+
+    for (const spec of [...spyActions(ctx, id), ...spyActions(ctx, capital)]) {
+      const mission = (spec.command as { mission: SpyMission }).mission
+      expect(spec.icon, spec.id).toBe(SPY_MISSION_ICONS[mission])
+      expect(hasKey(spec.explainKey!), spec.explainKey).toBe(true)
+      expect(spec.aria, spec.id).toMatch(/anwerben$/)
+    }
+  })
+
+  it('nennt die Hoechstzahl statt der Bauplaetze', () => {
+    const { ctx } = fresh()
+    const id = known(ctx, ctx.state.playerOrder[1]!)
+    for (let i = 0; i < rules.constants.maxSpiesPerPlayer; i++) {
+      spy(ctx, { provinceId: id, mission: 'intel' })
+    }
+
+    for (const spec of spyActions(ctx, id)) {
+      expect(spec.disabledReason, spec.id).toBe('Höchstzahl erreicht: 5 Spione.')
+    }
+  })
+
+  it('nennt fuer eine unbekannte Provinz, dass nichts bekannt ist', () => {
+    const { ctx } = fresh()
+    const view = publicView(ctx.state, ctx.playerId, rules)
+    const sichtbar = new Set(view.provinces.map((p) => p.id))
+    const unbekannt = Object.values(ctx.state.provinces).find(
+      (p) => p.owner !== null && p.owner !== ctx.playerId && !sichtbar.has(p.id),
+    )!
+    expect(sichtbar.has(unbekannt.id), 'die gewaehlte Provinz muss unbekannt sein').toBe(false)
+
+    const spec = spyActions(ctx, unbekannt.id).find((s) => s.id === 'spy-recruit-intel')!
+    expect(spec.disabledReason).toBe('Von dieser Provinz wissen Sie nichts — erst sehen oder aufklären.')
+  })
+
+  it('setzt im Umsetz-Modus denselben Spion um statt anzuwerben (R-SPY-06)', () => {
+    const { ctx, capital } = fresh()
+    const eigen = spy(ctx, { provinceId: capital, mission: 'intel' })
+    const zielY = known(ctx, ctx.state.playerOrder[1]!)
+
+    const specs = spyActions(ctx, zielY, { spyId: eigen.id, number: 1 })
+
+    expect(specs.every((s) => s.id.startsWith('spy-move-'))).toBe(true)
+    for (const spec of specs) {
+      expect(spec.command?.type).toBe('REASSIGN_SPY')
+      expect((spec.command as { spyId: string }).spyId).toBe(eigen.id)
+      expect(spec.hint).toContain('kostenlos')
+    }
+    const intelSpec = specs.find((s) => (s.command as { mission: string }).mission === 'intel')!
+    expect(intelSpec.aria).toBe('Spion 1 hierher umsetzen: Aufklärung')
+  })
+
+  it('lehnt Umsetzen ohne Aenderung mit Grund ab', () => {
+    const { ctx } = fresh()
+    const zielY = known(ctx, ctx.state.playerOrder[1]!)
+    const eigen = spy(ctx, { provinceId: zielY, mission: 'intel' })
+
+    const specs = spyActions(ctx, zielY, { spyId: eigen.id, number: 1 })
+
+    expect(specs.find((s) => (s.command as { mission: string }).mission === 'intel')!.disabledReason).toBe(
+      'Der Spion hat diesen Auftrag schon an diesem Ort.',
+    )
+    expect(specs.find((s) => (s.command as { mission: string }).mission === 'economicSabotage')!.disabledReason).toBeNull()
+    expect(specs.find((s) => (s.command as { mission: string }).mission === 'militarySabotage')!.disabledReason).toBeNull()
+  })
+
+  it('setzt einen Gegenspion nur in eigene Provinzen um', () => {
+    const { ctx, capital } = fresh()
+    const eigen = spy(ctx, { provinceId: capital, mission: 'counter' })
+
+    const specs = spyActions(ctx, capital, { spyId: eigen.id, number: 1 })
+
+    expect(specs.map((s) => s.id)).toEqual(['spy-move-counter'])
+  })
+})
+
+describe('R-SPY-06 Die Spionageuebersicht', () => {
+  let spyCounter = 900
+  function spy(ctx: ActionContext, over: Partial<Spy> & { provinceId: string; mission: SpyMission }): Spy {
+    const entry: Spy = {
+      id: `s${spyCounter++}`,
+      owner: ctx.playerId,
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+      ...over,
+    }
+    ctx.state.espionage.spies.push(entry)
+    return entry
+  }
+
+  it('listet jeden eigenen Spion mit Nummer, Auftrag, Ziel, Tagessold und Ergebnis', () => {
+    const { ctx, neighbour } = fresh()
+    spy(ctx, { provinceId: neighbour, mission: 'intel', lastRunTick: 24, lastOutcome: 'success' })
+    spy(ctx, { provinceId: neighbour, mission: 'economicSabotage', lastRunTick: null })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    const rows = spyOverviewActions(ctx, spies)
+
+    expect(rows[0]!.number).toBe(1)
+    expect(rows[0]!.missionLabel).toBe('Aufklärung')
+    expect(rows[0]!.provinceName).toBe(map.provinces.find((p) => p.id === neighbour)!.name)
+    expect(rows[0]!.salary).toBe('10 Geld je Tag')
+    expect(rows[0]!.result).toBe('gelungen (Tag 2)')
+    expect(rows[1]!.result).toBe('noch kein Einsatz — der erste folgt am Tag nach dem Ansetzen')
+  })
+
+  it('zeigt nur die eigenen Spione — ein fremder in der eigenen Provinz steht nirgends (Z8)', () => {
+    const { ctx, capital, neighbour } = fresh()
+    spy(ctx, { provinceId: neighbour, mission: 'intel' })
+    ctx.state.espionage.spies.push({
+      id: 's-fremd',
+      owner: ctx.state.playerOrder[1]!,
+      provinceId: capital,
+      mission: 'counter',
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    const rows = spyOverviewActions(ctx, spies)
+
+    expect(rows.length).toBe(1)
+    expect(rows.some((r) => r.provinceId === capital)).toBe(false)
+  })
+
+  it('sagt beim Gegenspion keine Enttarnung statt misslungen (T-M17-09 E4)', () => {
+    const { ctx, capital } = fresh()
+    spy(ctx, { provinceId: capital, mission: 'counter', lastRunTick: 24, lastOutcome: 'failure' })
+    spy(ctx, { provinceId: capital, mission: 'counter', lastRunTick: 24, lastOutcome: 'success' })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    const rows = spyOverviewActions(ctx, spies)
+
+    expect(rows[0]!.result).toBe('keine Enttarnung (Tag 2)')
+    expect(rows[1]!.result).toBe('fremden Spion enttarnt (Tag 2)')
+    expect(rows.some((r) => r.result.includes('misslungen'))).toBe(false)
+  })
+
+  it('zeigt keine Spionkennung, nur Nummern (Befund M17-S1)', () => {
+    const { ctx, capital, neighbour } = fresh()
+    spyCounter = 7
+    spy(ctx, { provinceId: neighbour, mission: 'intel', lastRunTick: 24, lastOutcome: 'success' })
+    spyCounter = 12
+    spy(ctx, { provinceId: capital, mission: 'counter', lastRunTick: null })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    const rows = spyOverviewActions(ctx, spies)
+    const sichtbar = rows.map(({ spyId: _spyId, ...rest }) => ({
+      ...rest,
+      move: rest.move.id,
+      dismiss: rest.dismiss.id,
+    }))
+
+    expect(JSON.stringify(sichtbar)).not.toMatch(/\bs\d+\b/)
+    expect(rows[0]!.dismiss.id).toBe('spy-1-dismiss')
+  })
+
+  it('entlaesst ueber DISMISS_SPY, geprueft, mit Verb', () => {
+    const { ctx, neighbour } = fresh()
+    spy(ctx, { provinceId: neighbour, mission: 'intel' })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    const row = spyOverviewActions(ctx, spies)[0]!
+
+    expect(row.dismiss.command).toEqual({ type: 'DISMISS_SPY', playerId: ctx.playerId, spyId: row.spyId })
+    expect(row.dismiss.disabledReason).toBeNull()
+    expect(row.dismiss.aria).toBe('Spion 1 entlassen')
+    expect(row.move.command).toBeUndefined()
+    expect(row.move.aria).toBe('Spion 1 umsetzen')
+  })
+
+  it('fasst Zahl und Tagessold zusammen', () => {
+    const { ctx, neighbour } = fresh()
+    spy(ctx, { provinceId: neighbour, mission: 'intel', lastRunTick: 24, lastOutcome: 'success' })
+    spy(ctx, { provinceId: neighbour, mission: 'economicSabotage', lastRunTick: null })
+
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    expect(spySummary(ctx, spies)).toBe('2 von 5 Spionen · Sold 30 Geld je Tag')
+  })
+})
+
+describe('R-UI-07 Spionage-Ablehnungen in Worten', () => {
+  it('hat fuer jeden Zielgrund des Kerns einen Satz', () => {
+    const ROOT_DIR = process.cwd()
+    const commandsText = readFileSync(`${ROOT_DIR}/packages/core/src/commands/espionage.ts`, 'utf8')
+    const rulesText = readFileSync(`${ROOT_DIR}/packages/core/src/rules/espionage.ts`, 'utf8')
+
+    const found = new Set<string>()
+    for (const match of commandsText.matchAll(/reason:\s*'([^']+)'/g)) found.add(match[1]!)
+    for (const match of rulesText.matchAll(/return .*'([^']+)'$/gm)) found.add(match[1]!)
+
+    expect(found.size, 'zu wenige Zielgruende gefunden — liest die Probe noch die Dateien?').toBeGreaterThanOrEqual(6)
+    for (const reason of found) {
+      const key = SPY_REASON_KEYS[reason]
+      expect(key, `Grund "${reason}" ohne Eintrag in SPY_REASON_KEYS`).toBeTruthy()
+      expect(hasKey(key!), `${reason} -> ${key}`).toBe(true)
+    }
+  })
+
+  it('uebersetzt einen Zielgrund nur bei Spionagebefehlen', () => {
+    const { ctx } = fresh()
+    const text = describeRejection(
+      { code: 'INVALID_TARGET', detail: { reason: 'herrenlos' } },
+      { type: 'MOVE_ARMY' } as Command,
+      ctx,
+    )
+    expect(text).toBe('Dieses Ziel ist für den Befehl nicht zulässig. (herrenlos)')
   })
 })

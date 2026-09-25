@@ -403,6 +403,12 @@ export function ProvincePanel(props: ProvincePanelProps) {
         </p>
       )}
 
+      {province.revealedUntilTick !== undefined && (
+        <p className="notice notice--info">
+          {t('province.revealedUntil', { day: Math.floor((province.revealedUntilTick - 1) / props.ticksPerDay) + 1 })}
+        </p>
+      )}
+
       <dl className="facts">
         <dt>{t('province.owner')}</dt>
         <dd>
@@ -902,6 +908,9 @@ export const EVENT_FILTERS: readonly EventFilterKey[] = ['all', 'combat', 'econo
  * blinks, and there was no way to ask for just the fighting.
  */
 export function categoryOf(type: string): EventCategory {
+  // Sabotage und Enttarnung sind feindliche Handlung, nicht Aufbau (E10, R-GAME-06, T-M17-13);
+  // SPY_REPORT und SPY_LOST bleiben ohne eigene Zeile unter „Sonstiges".
+  if (/SABOTAGE|SPY_DETECTED/.test(type)) return 'combat'
   if (/BATTLE|BOMBARD|ARMY|CAPTURED|REVOLTED|CAPITAL/.test(type)) return 'combat'
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
@@ -1213,6 +1222,87 @@ export function DiplomacyPanel({
           <h3 className="group__title">{t('diplomacy.with', { nation: nameOf(chosenAlive.id) })}</h3>
           <ActionRow actions={actionsFor(chosenAlive.id)} />
         </section>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Die Spionageuebersicht (R-SPY-06, D29.9, T-M17-13).
+ *
+ * Liest ausschliesslich, was `spyOverviewActions` aus `view.espionage.spies` gebaut hat —
+ * nie eine Kennung (Befund M17-S1), nur die Nummer. Der Umsetz-Modus (E1) zeigt seinen
+ * Satz mit einem Abbrechen-Knopf; ohne Spione sagt die Leerzeile, wo man welche anwirbt.
+ */
+export interface SpyRowView {
+  key: string
+  title: string
+  mission: string
+  icon: IconName
+  explainKey: string
+  provinceId: string
+  provinceName: string
+  salary: string
+  result: string
+  move: Action
+  dismiss: Action
+}
+
+export interface EspionagePanelProps {
+  rows: readonly SpyRowView[]
+  summary: string | null
+  /** Der Satz des Umsetz-Modus, oder null (E1). */
+  moving: string | null
+  onCancelMove: () => void
+  onJump: (provinceId: string) => void
+}
+
+export function EspionagePanel({ rows, summary, moving, onCancelMove, onJump }: EspionagePanelProps) {
+  return (
+    <section className="panel" aria-label={t('espionage.overview.title')}>
+      <h2>{t('espionage.overview.title')}</h2>
+      {summary && <p className="panel__sub">{summary}</p>}
+      {moving && (
+        <>
+          <p className="notice notice--info" role="status">
+            {moving}
+          </p>
+          <button type="button" className="button" onClick={onCancelMove}>
+            {t('espionage.cancelMove')}
+          </button>
+        </>
+      )}
+      {rows.length === 0 ? (
+        <p>{t('espionage.overview.empty')}</p>
+      ) : (
+        <ul className="spy-list">
+          {rows.map((row) => (
+            <li key={row.key} className="spy">
+              <p className="spy__head">
+                <strong>{row.title}</strong> · <Icon name={row.icon} size={13} /> {row.mission}
+                <Explain textKey={row.explainKey} subject={row.mission} />
+              </p>
+              <dl className="facts">
+                <dt>{t('espionage.overview.target')}</dt>
+                <dd>
+                  <button
+                    type="button"
+                    className="spy__target"
+                    aria-label={t('espionage.overview.jumpAria', { province: row.provinceName })}
+                    onClick={() => onJump(row.provinceId)}
+                  >
+                    {row.provinceName}
+                  </button>
+                </dd>
+                <dt>{t('espionage.overview.salary')}</dt>
+                <dd>{row.salary}</dd>
+                <dt>{t('espionage.overview.last')}</dt>
+                <dd>{row.result}</dd>
+              </dl>
+              <ActionRow actions={[row.move, row.dismiss]} />
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )

@@ -76,6 +76,12 @@ describe('R-UI-03 Auswahl', () => {
   })
 })
 
+describe('R-SPY-06 Die Spionageuebersicht', () => {
+  it('oeffnet das Spionagepanel', () => {
+    expect(uiReducer(INITIAL_UI, { type: 'openPanel', panel: 'espionage' }).panel).toBe('espionage')
+  })
+})
+
 describe('R-UI-03 Kartenmodus und Ausschnitt', () => {
   it('merkt sich den Modus', () => {
     expect(uiReducer(INITIAL_UI, { type: 'setMode', mode: 'morale' }).mode).toBe('morale')

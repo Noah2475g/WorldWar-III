@@ -610,6 +610,115 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
 })
 
 /**
+ * Spionage von der Provinzleiste bis zur Uebersicht (R-SPY-06, D29.9, T-M17-13).
+ *
+ * Jeder Fall ist eigenstaendig (nicht Fortsetzung des vorigen wie im Bauplan skizziert):
+ * vitest raeumt zwischen zwei `it`-Blaecken auf, ein gemeinsamer Spielzustand ueber
+ * zwei Faelle hinweg waere zerbrechlich. AK2 (die erlittene Sabotage) ist hier nicht
+ * billig herzustellen — sie ist in `Alerts.test.tsx` gedeckt und am laufenden Spiel in S3.
+ */
+describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
+  const selectProvince = (id: string) => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: id } })
+  }
+  const fastForward = (days: number) => {
+    for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+  }
+  const foreignOptions = (): HTMLOptionElement[] => {
+    const select = screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement
+    const gruppe = [...select.querySelectorAll('optgroup')].find((g) => g.label === 'Aufgeklärte Provinzen')
+    return gruppe ? [...gruppe.querySelectorAll('option')] : []
+  }
+  const ownerOf = (name: string): string => {
+    const panel = screen.getByRole('region', { name })
+    return within(panel).getByText('Eigentümer').nextElementSibling?.textContent ?? ''
+  }
+  /** Eine bekannte fremde Provinz mit Eigentuemer — Sabotage braucht einen, Aufklaerung nicht. */
+  const pickOwnedForeign = (exclude: readonly string[] = []): { id: string; name: string } => {
+    const options = foreignOptions().filter((o) => !exclude.includes(o.value))
+    expect(options.length, 'keine bekannte fremde Provinz zum Testen').toBeGreaterThan(0)
+    for (const option of options) {
+      selectProvince(option.value)
+      if (ownerOf(option.text) !== 'neutral') return { id: option.value, name: option.text }
+    }
+    selectProvince(options[0]!.value)
+    return { id: options[0]!.value, name: options[0]!.text }
+  }
+
+  it('wirbt aus der Provinzleiste einer fremden Provinz an (AK1)', () => {
+    startGame()
+    pickOwnedForeign()
+    const gruppe = screen.getByRole('region', { name: 'Spionage' })
+
+    expect(within(gruppe).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
+
+    fireEvent.click(within(gruppe).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    expect(within(gruppe).getByRole('status').textContent).toMatch(/wirkt/)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    const uebersicht = screen.getByRole('region', { name: 'Spionageübersicht' })
+    expect(uebersicht.textContent).toContain('Spion 1')
+    expect(uebersicht.textContent).toContain('Aufklärung')
+    expect(document.body.textContent ?? '').not.toMatch(/\bs\d+\b/)
+  })
+
+  it('setzt um und entlaesst (R-SPY-06)', () => {
+    startGame()
+    const ziel1 = pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+
+    pickOwnedForeign([ziel1.id])
+    const move = within(screen.getByRole('region', { name: 'Spionage — Spion 1 umsetzen' })).getByRole('button', {
+      name: 'Spion 1 hierher umsetzen: Wirtschaftssabotage',
+    })
+    fireEvent.click(move)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' }).textContent).toContain('Wirtschaftssabotage')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 entlassen' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(
+      screen.getByRole('region', { name: 'Spionageübersicht' }).textContent,
+    ).toContain(
+      'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+    )
+  })
+
+  it('oeffnet mit s die Uebersicht und laesst Strg+S bei den Spielstaenden', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    expect(screen.getByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
+  })
+
+  it('bricht den Umsetz-Modus mit Escape ab', () => {
+    startGame()
+    pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+    // Der Umsetz-Modus quittiert, auch waehrend die Uebersicht (nicht die Provinzleiste) offen ist.
+    expect(screen.getAllByText(/^Spion 1 umsetzen: /).length).toBeGreaterThan(0)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    pickOwnedForeign()
+    expect(within(screen.getByRole('region', { name: 'Spionage' })).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
+  })
+})
+
+/**
  * Jeder Befehl quittiert; eine stehende Uhr sagt es (T-M22-05, R-UI-05, R-TIME-02,
  * Befunde V2-08/V2-09).
  *

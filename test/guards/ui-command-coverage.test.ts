@@ -54,8 +54,6 @@ function uiCommandSource(): string {
  * hier und nicht in einer Liste von Namen.
  */
 const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
-  SET_CAPITAL:
-    'Die Hauptstadtverlegung erreicht die Oberflaeche ueber die Provinzleiste (provinceActions), nicht ueber actions.ts als eigener Befehlstyp.',
   OFFER_TRADE:
     'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): der Kern nimmt Handelsangebote mit Treuhand an (T-M17-05, R-DIP-05); das Angebotsformular im Diplomatiepanel kommt mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
   ACCEPT_TRADE:
@@ -64,12 +62,6 @@ const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
     'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Ablehnen kommt mit der Liste eingehender Angebote. T-M17-14 streicht diesen Eintrag.',
   WITHDRAW_TRADE:
     'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Zuruecknehmen kommt mit der Liste ausgehender Angebote. T-M17-14 streicht diesen Eintrag.',
-  RECRUIT_SPY:
-    'Bis T-M17-13 (Oberflaeche Spionage): der Kern kann anwerben (T-M17-07), die Provinzleiste bietet es erst mit dem Tageslauf und der Sabotage an. T-M17-13 streicht diesen Eintrag.',
-  REASSIGN_SPY:
-    'Bis T-M17-13 (Oberflaeche Spionage): Umsetzen kommt mit der Spionageuebersicht (Taste S, R-SPY-06). T-M17-13 streicht diesen Eintrag.',
-  DISMISS_SPY:
-    'Bis T-M17-13 (Oberflaeche Spionage): Entlassen kommt mit der Spionageuebersicht (Taste S, R-SPY-06). T-M17-13 streicht diesen Eintrag.',
 }
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
@@ -106,6 +98,21 @@ describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () =>
       ungenutzt,
       `Diese Aktionslisten baut niemand in die Oberflaeche ein:\n${ungenutzt.join('\n')}`,
     ).toEqual([])
+  })
+
+  it('kennt keine veraltete Ausnahme — ein Befehl mit Knopf braucht keine (T-M17-13)', () => {
+    // Dasselbe Muster wie bei DIPLOMATIE_NOCH_OHNE_KNOPF (unten): eine Ausnahme, die
+    // niemand mehr braucht, ist so falsch wie eine fehlende — sie behauptet eine Luecke,
+    // die es nicht mehr gibt. RECRUIT_SPY, REASSIGN_SPY, DISMISS_SPY und SET_CAPITAL
+    // waren hier drei Aufgaben lang berechtigt und sind es seit T-M17-13 nicht mehr.
+    const core = coreCommands()
+    const source = uiCommandSource()
+    const erreicht = (type: string) => new RegExp(`['"\`]${type}['"\`]`).test(source)
+
+    const veraltet = Object.keys(NICHT_FUER_DEN_SPIELER).filter(
+      (type) => !core.includes(type) || erreicht(type),
+    )
+    expect(veraltet, `Veraltete Ausnahmen: ${veraltet.join(', ')}`).toEqual([])
   })
 
   it('bietet jede Haltung an, nicht nur zwei von drei', () => {

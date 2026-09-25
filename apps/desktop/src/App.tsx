@@ -29,11 +29,15 @@ import {
   planArrival,
   nextUnlock,
   recruitActions,
+  spyActions,
+  spyOverviewActions,
+  spySummary,
   targetAction,
   tradePreview,
   unitCounts,
   type ActionContext,
   type ActionSpec,
+  type SpyMove,
 } from './game/actions.ts'
 import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
@@ -54,6 +58,7 @@ import {
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
+  EspionagePanel,
   MarketPanel,
   ProvincePanel,
   ProvincePicker,
@@ -61,6 +66,7 @@ import {
   type ActionGroupSpec,
   type DayReportDelta,
   type EventEntry,
+  type SpyRowView,
   type Targeting,
 } from './ui/Panels.tsx'
 import {
@@ -438,6 +444,12 @@ export function App(props: AppProps) {
   const [resume, setResume] = useState<LatestSave | null>(null)
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [targeting, setTargeting] = useState<PendingTarget | null>(null)
+  /**
+   * Der Umsetz-Modus (E1, R-SPY-06, T-M17-13): welcher eigene Spion gerade ein neues Ziel
+   * sucht. Nur die Kennung — nie angezeigt (Befund M17-S1); `moving` unten macht daraus
+   * die Nummer, die die Oberflaeche zeigen darf.
+   */
+  const [movingSpy, setMovingSpy] = useState<string | null>(null)
   const [victoryAcknowledged, setVictoryAcknowledged] = useState(false)
   const [tutorial, setTutorial] = useState<TutorialState>(() =>
     props.skipTutorial ? TUTORIAL_OFF : initialTutorial(readTutorialSeen()),
@@ -694,6 +706,16 @@ export function App(props: AppProps) {
         : null,
     [state, viewerId, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
+
+  /**
+   * Der Umsetz-Modus gueltig gehalten (E1, T-M17-13): eine Kennung allein reicht der
+   * Oberflaeche nicht — sie braucht die Nummer, die die Uebersicht zeigt, und der Modus
+   * muss enden, sobald der Spion verschwindet (entlassen, Partiewechsel).
+   */
+  const moving: SpyMove | null = useMemo(() => {
+    const index = view?.espionage.spies.findIndex((s) => s.id === movingSpy) ?? -1
+    return movingSpy && index >= 0 ? { spyId: movingSpy, number: index + 1 } : null
+  }, [view, movingSpy])
 
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
   const strengths = useMemo(() => strengthByProvince(view?.armies ?? []), [view])
@@ -1161,6 +1183,9 @@ export function App(props: AppProps) {
         if (spec.targetKind && armyId) {
           // The army panel itself says "choose a target" — one notice, not two.
           setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
+          // Zwei Zielwahlen zugleich waeren zweideutig: ein Klick auf die Karte gehoerte
+          // dann sowohl dem Marsch als auch dem Umsetz-Modus (T-M17-13).
+          setMovingSpy(null)
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
           // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
@@ -1257,6 +1282,10 @@ export function App(props: AppProps) {
           else if (targeting) {
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
+          } else if (movingSpy) {
+            // Der Umsetz-Modus (E1, T-M17-13): Escape bricht ihn ab, ohne das Panel zu schliessen.
+            setMovingSpy(null)
+            dispatch({ type: 'clearNotice' })
           } else dispatch({ type: 'closePanel' })
           break
         case 'zoom':
@@ -1323,6 +1352,7 @@ export function App(props: AppProps) {
     activeMap,
     state,
     targeting,
+    movingSpy,
     tutor,
     fastForwardState.running,
     multiplayer,
@@ -1381,6 +1411,8 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
+    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
+    setMovingSpy(null)
           // Ein geladener Stand ist eine Einzelspielerpartie — es sei denn, dieser
           // Bildschirm ist ein Gastgeber (T-M39-06, R-MP-13). Dann wird der Stand
           // ANGEBOTEN: der Gast vergleicht ihn mit seinem eigenen, und nur bei einer
@@ -1448,6 +1480,8 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
+    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
+    setMovingSpy(null)
     commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1514,6 +1548,8 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
+    // Der Umsetz-Modus gehoert zur alten Partie (T-M17-13).
+    setMovingSpy(null)
     commitState(beginn.state)
     setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
     setDialog(null)
@@ -1781,7 +1817,47 @@ export function App(props: AppProps) {
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
+    if (!ctx || !selected) return []
+
+    // Die Gruppe „Spionage" (R-SPY-06/AK1, D29.9): fremde oder herrenlose Provinz bietet
+    // Anwerben, eigene nur Gegenspionage — `spyActions` entscheidet das selbst. Im
+    // Umsetz-Modus (E1) tragen dieselben Knoepfe REASSIGN_SPY; ein Klick beendet den
+    // Modus und quittiert mit einer Notiz, weil die Knoepfe selbst mit dem Modus wechseln.
+    const spionage: ActionGroupSpec = {
+      id: 'espionage',
+      title: moving ? t('espionage.groupMoving', { number: moving.number }) : t('espionage.group'),
+      actions: [
+        ...spyActions(ctx, selected.id, moving).map((spec) => {
+          const action = toAction(spec)
+          if (spec.command?.type !== 'REASSIGN_SPY') return action
+          return {
+            ...action,
+            onRun: () => {
+              action.onRun()
+              setMovingSpy(null)
+              dispatch({
+                type: 'notice',
+                kind: 'info',
+                text: t('espionage.moveOrdered', { number: moving!.number, province: selected.name, mission: spec.label }),
+              })
+            },
+          }
+        }),
+        ...(moving
+          ? [
+              {
+                id: 'spy-move-cancel',
+                label: t('espionage.cancelMove'),
+                disabledReason: null,
+                onRun: () => setMovingSpy(null),
+              },
+            ]
+          : []),
+      ],
+    }
+
+    if (selected.owner !== ctx.playerId) return [spionage]
+
     return [
       { id: 'build', title: t('actions.buildGroup'), actions: buildActions(ctx, selected.id).map((spec) => toAction(spec)) },
       {
@@ -1800,8 +1876,37 @@ export function App(props: AppProps) {
             },
           ]
         : []),
+      spionage,
     ]
-  }, [ctx, selected, toAction])
+  }, [ctx, selected, toAction, moving])
+
+  /**
+   * Die Zeilen der Spionageuebersicht (R-SPY-06, T-M17-13). Liest nur `view.espionage.spies`
+   * — die eigene Sicht, nie den Zustand direkt (F1).
+   */
+  const spyRows: SpyRowView[] = useMemo(() => {
+    if (!ctx || !view) return []
+    return spyOverviewActions(ctx, view.espionage.spies).map((row) => ({
+      key: `spy-${row.number}`,
+      title: t('espionage.overview.spy', { number: row.number }),
+      mission: row.missionLabel,
+      icon: row.icon,
+      explainKey: row.explainKey,
+      provinceId: row.provinceId,
+      provinceName: row.provinceName,
+      salary: row.salary,
+      result: row.result,
+      move: {
+        ...toAction(row.move),
+        onRun: () => {
+          setTargeting(null)
+          setMovingSpy(row.spyId)
+          dispatch({ type: 'notice', kind: 'info', text: t('espionage.overview.moving', { number: row.number }) })
+        },
+      },
+      dismiss: toAction(row.dismiss),
+    }))
+  }, [ctx, view, toAction])
 
   /**
    * Die naechste Freischaltung fuer den Kopf der Aushebeliste (T-M34-08, D34.5).
@@ -2099,6 +2204,15 @@ export function App(props: AppProps) {
               actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
             />
           )}
+          {ui.panel === 'espionage' && (
+            <EspionagePanel
+              rows={spyRows}
+              summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
+              moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
+              onCancelMove={() => setMovingSpy(null)}
+              onJump={jumpTo}
+            />
+          )}
           {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
           {ui.panel === 'market' && (
             <MarketPanel
@@ -2121,7 +2235,7 @@ export function App(props: AppProps) {
         </aside>
       </main>
 
-      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, drei Knoepfe. */}
+      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, vier Knoepfe. */}
       <Foot
         entries={events}
         ticksPerDay={ticksPerDay}

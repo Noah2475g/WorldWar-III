@@ -575,6 +575,44 @@ body {
   margin: var(--sp-sm) 0;
 }
 
+/* Die Spionageuebersicht (R-SPY-06): eine Karte je Spion statt einer Tabelle — sechs
+   Spalten schoeben die Leiste seitwaerts (T-M22-02). */
+.spy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.spy {
+  min-width: 0;
+  padding: var(--sp-xs) var(--sp-sm);
+  border-left: 3px solid var(--line);
+  background: var(--paper-sunk);
+}
+
+.spy__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: 0;
+}
+
+.spy__target {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  overflow-wrap: anywhere;
+}
+
 .actions {
   display: flex;
   gap: var(--sp-sm);

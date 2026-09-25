@@ -225,6 +225,7 @@ export const de = {
     noBuildings: 'Keine Gebäude',
     unknown: 'Nicht aufgeklärt',
     lastSeen: 'Stand von Tag {{day}}',
+    revealedUntil: 'Aufgeklärt: Gebäude sichtbar bis Tag {{day}}',
     pick: 'Provinz',
     pickNone: '— keine —',
     pickOwn: 'Eigene Provinzen',
@@ -562,6 +563,48 @@ export const de = {
       military: 'laufende Aufträge werden {{hours}} Stunden später fertig.',
       nothingDestroyed: 'nichts',
     },
+    group: 'Spionage',
+    groupMoving: 'Spionage — Spion {{number}} umsetzen',
+    recruitAria: 'Spion für {{mission}} anwerben',
+    recruitHint: 'Anwerben {{cost}} · Sold {{salary}} je Tag',
+    moveAria: 'Spion {{number}} hierher umsetzen: {{mission}}',
+    moveHint: 'kostenlos · Sold {{salary}} je Tag · erster Einsatz am Tag danach',
+    cancelMove: 'Umsetzen abbrechen',
+    moveOrdered: 'Spion {{number}} wird nach {{province}} umgesetzt: {{mission}}.',
+    chance: 'Erfolg {{percent}} % je Tag',
+    detection: 'Entdeckung {{percent}} % je Tag und fremdem Spion',
+    economicEffect: 'Moral −{{morale}} · {{share}} % des Tagesertrags',
+    militaryEffect: 'laufende Aufträge {{time}} später',
+    limitReached: 'Höchstzahl erreicht: {{max}} Spione.',
+    reasons: {
+      unknown: 'Von dieser Provinz wissen Sie nichts — erst sehen oder aufklären.',
+      unknownMission: 'Diesen Auftrag kennt das Spiel nicht.',
+      ownProvince: 'In einer eigenen Provinz geht nur Gegenspionage.',
+      notOwnProvince: 'Gegenspionage geht nur in einer eigenen Provinz.',
+      unowned: 'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
+      unchanged: 'Der Spion hat diesen Auftrag schon an diesem Ort.',
+      noSpy: 'Diesen Spion gibt es nicht mehr.',
+    },
+    counterOutcomes: { success: 'fremden Spion enttarnt', failure: 'keine Enttarnung' },
+    overview: {
+      title: 'Spionageübersicht',
+      summary: '{{count}} von {{max}} Spionen · Sold {{salary}} je Tag',
+      empty: 'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+      spy: 'Spion {{number}}',
+      target: 'Ziel',
+      jumpAria: 'Zu {{province}} springen',
+      salary: 'Sold',
+      salaryAmount: '{{amount}} je Tag',
+      last: 'Zuletzt',
+      pending: 'noch kein Einsatz — der erste folgt am Tag nach dem Ansetzen',
+      outcomeDay: '{{outcome}} (Tag {{day}})',
+      move: 'Umsetzen',
+      moveAria: 'Spion {{number}} umsetzen',
+      dismiss: 'Entlassen',
+      dismissAria: 'Spion {{number}} entlassen',
+      dismissHint: 'Nichts wird erstattet.',
+      moving: 'Spion {{number}} umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste.',
+    },
   },
 
   market: {
@@ -808,6 +851,7 @@ export const de = {
     dispatch: 'Depesche',
     unread: '{{count}} neu',
     none: 'Noch keine Depesche.',
+    espionage: 'Spionage',
   },
 
   map: {
@@ -834,6 +878,7 @@ export const de = {
     zoomIn: 'Bild↑ — hineinzoomen',
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
+    espionage: 'S — Spionageübersicht',
   },
 
   tutorial: {
@@ -985,6 +1030,12 @@ export const de = {
       rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung. Umgekehrt gilt es nur, wenn die andere Macht es ebenfalls gewährt.',
       sharedMap: 'Die andere Macht sieht, was man selbst sieht. Ihre eigene Karte zeigt sie nur, wenn sie sie ebenfalls freigibt.',
     },
+    espionage: {
+      intel: 'Öffnet die Provinz für einen Tag: Gebäude mit Stufe und die Zusammensetzung der Armeen dort. Gelingt nicht jeden Tag.',
+      economicSabotage: 'Senkt bei Erfolg die Moral der Provinz und vernichtet einen Teil ihres Tagesertrags beim Eigentümer. Höchstens eine Sabotage je Provinz und Tag.',
+      militarySabotage: 'Verzögert bei Erfolg jeden laufenden Bau- und Aushebeauftrag der Provinz und deckt die Armeen dort auf.',
+      counter: 'Sucht in dieser eigenen Provinz täglich nach fremden Spionen. Ohne Gegenspionage bleibt eine Sabotage unentdeckt — und wer sie war, erfahren Sie nur so.',
+    },
   },
 
   alerts: {
@@ -1025,6 +1076,12 @@ export const de = {
     combat: 'Kämpfe',
     economy: 'Aufbau',
     diplomacy: 'Verträge',
+    sabotageEconomic: 'Wirtschaftssabotage in {{province}}',
+    sabotageMilitary: 'Militärsabotage in {{province}}',
+    spyCaught: 'Gegenspionage in {{province}}: ein Spion von {{player}} enttarnt',
+    spyExposed: 'Ihr Spion in {{province}} ist enttarnt ({{mission}})',
+    spyUnpaid: 'Spion in {{province}} verloren: der Sold ließ sich nicht zahlen',
+    spyTargetChanged: 'Spion in {{province}}: das Ziel passt nicht mehr zum Auftrag',
   },
 
   error: {

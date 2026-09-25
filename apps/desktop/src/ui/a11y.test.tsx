@@ -13,6 +13,8 @@ import {
   capitalAction,
   diplomacyActions,
   recruitActions,
+  spyActions,
+  spyOverviewActions,
   targetAction,
   tradePreview,
   type ActionContext,
@@ -184,7 +186,7 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
 
   /** Die Verben des Hauses — ein Befehl, dessen Name keines traegt, ist ein Substantiv. */
   const VERB =
-    /\b(bauen|ausheben|abbrechen|verlegen|erklären|anbieten|annehmen|aufkündigen|gewähren|teilen|zusammenlegen|marschieren|anhalten|beschießen|halten|freigeben|einnehmen|befehlen|handeln)\b/i
+    /\b(bauen|ausheben|abbrechen|verlegen|erklären|anbieten|annehmen|aufkündigen|gewähren|teilen|zusammenlegen|marschieren|anhalten|beschießen|halten|freigeben|einnehmen|befehlen|handeln|anwerben|umsetzen|entlassen)\b/i
 
   function alleAktionen(): { ctx: ActionContext; specs: ActionSpec[] } {
     const state = createInitialState(
@@ -220,6 +222,20 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
       { id: 'b1', building: 'barracks', startedTick: 0, completesAtTick: 24 },
     ] as never
 
+    // Eine fremde Provinz bekannt machen (Aufklaerungsgedaechtnis) und einen eigenen
+    // Spion anlegen, damit Spionage- und Uebersichtsknoepfe in der Liste stehen (T-M17-13).
+    state.players.p1!.intel[neighbour] = { tick: 0, owner: state.provinces[neighbour]!.owner, strength: 0 }
+    state.espionage.spies.push({
+      id: 's1',
+      owner: 'p1',
+      provinceId: capital,
+      mission: 'counter',
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+
     const ctx: ActionContext = { state, map: world, rules, playerId: 'p1', ticksPerDay: rules.constants.ticksPerDay }
     const specs = [
       ...buildActions(ctx, capital),
@@ -231,6 +247,10 @@ describe('R-UI-06 Jeder Befehlsknopf traegt ein Verb', () => {
       targetAction(ctx, 'a1', 'bombard', neighbour),
       ...diplomacyActions(ctx, state.playerOrder[1]!),
       tradePreview(ctx, 'wood', 1000, 'iron').action,
+      ...spyActions(ctx, neighbour),
+      ...spyActions(ctx, capital),
+      ...spyActions(ctx, neighbour, { spyId: 's1', number: 1 }),
+      ...spyOverviewActions(ctx, state.espionage.spies).flatMap((row) => [row.move, row.dismiss]),
     ]
     return { ctx, specs }
   }

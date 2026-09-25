@@ -3,23 +3,26 @@ import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TOKENS } from './tokens.ts'
 import {
   ActionGroup,
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
+  EspionagePanel,
   EventLog,
   MarketPanel,
   ProvincePanel,
   TERRAIN_DEFENCE_PERMILLE,
   buildingItems,
   buttonTitle,
+  categoryOf,
   depositItems,
   type Action,
   type ActionGroupSpec,
   type EventEntry,
+  type SpyRowView,
   type Targeting,
 } from './Panels.tsx'
 import { BUILDING_ICONS, BUILDING_ORDER, ICON_PATHS, RESOURCE_ICONS, UNIT_ICONS } from './icons.tsx'
@@ -786,6 +789,18 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
       const { container } = render(
         <aside className="side">
           <EconomyPanel view={economy(200_000)} />
+          {/* T-M17-13: zwei Spionagezeilen mit langem Provinznamen in derselben Leiste —
+              die echte Pruefung ist S5 im Browser, jsdom rechnet kein Layout. */}
+          <EspionagePanel
+            rows={[
+              spyRow(1, { provinceName: 'Sozialistische Foederative Sowjetrepublik Transkaukasien' }),
+              spyRow(2, { mission: 'Wirtschaftssabotage', provinceName: 'Beta' }),
+            ]}
+            summary="2 von 5 Spionen · Sold 30 Geld je Tag"
+            moving={null}
+            onCancelMove={vi.fn()}
+            onJump={vi.fn()}
+          />
         </aside>,
       )
       const side = container.querySelector('.side') as HTMLElement
@@ -796,6 +811,131 @@ describe('T-M22-02 Die Seitenleiste kriecht nicht seitwaerts', () => {
     } finally {
       style.remove()
     }
+  })
+})
+
+/** Eine Zeile der Spionageuebersicht, fuer die Panel-Tests von Hand gebaut (T-M17-13). */
+function spyRow(number: number, over: Partial<SpyRowView> = {}): SpyRowView {
+  return {
+    key: `spy-${number}`,
+    title: `Spion ${number}`,
+    mission: 'Aufklärung',
+    icon: 'spyIntel',
+    explainKey: 'explain.espionage.intel',
+    provinceId: 'FRA-PAR',
+    provinceName: 'Paris',
+    salary: '10 Geld je Tag',
+    result: 'gelungen (Tag 2)',
+    move: {
+      id: `spy-${number}-move`,
+      label: 'Umsetzen',
+      aria: `Spion ${number} umsetzen`,
+      disabledReason: null,
+      onRun: vi.fn(),
+    },
+    dismiss: {
+      id: `spy-${number}-dismiss`,
+      label: 'Entlassen',
+      aria: `Spion ${number} entlassen`,
+      disabledReason: null,
+      onRun: vi.fn(),
+    },
+    ...over,
+  }
+}
+
+describe('R-SPY-06 Die Spionageuebersicht', () => {
+  it('zeigt je Spion Nummer, Auftrag mit Zeichen und Erklaerung, Ziel, Sold und Ergebnis', () => {
+    const { container } = render(
+      <EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />,
+    )
+
+    const region = screen.getByRole('region', { name: 'Spionageübersicht' })
+    expect(region.textContent).toContain('Spion 1')
+    expect(region.textContent).toContain('Aufklärung')
+    expect(region.textContent).toContain('Paris')
+    expect(region.textContent).toContain('10 Geld je Tag')
+    expect(region.textContent).toContain('gelungen (Tag 2)')
+    expect(container.querySelectorAll('li.spy svg')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Was ist Aufklärung?' })).toBeTruthy()
+  })
+
+  it('springt ueber das Ziel zur Provinz', () => {
+    const onJump = vi.fn()
+    render(<EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={onJump} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zu Paris springen' }))
+    expect(onJump).toHaveBeenCalledWith('FRA-PAR')
+  })
+
+  it('setzt um und entlaesst ueber die Knoepfe der Zeile', () => {
+    const row = spyRow(1)
+    render(<EspionagePanel rows={[row]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+    expect(row.move.onRun).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 entlassen' }))
+    expect(row.dismiss.onRun).toHaveBeenCalled()
+  })
+
+  it('zeigt keine Kennung (Befund M17-S1)', () => {
+    const { container } = render(
+      <EspionagePanel rows={[spyRow(1)]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />,
+    )
+
+    expect(container.textContent ?? '').not.toMatch(/\bs\d+\b/)
+    expect([...container.querySelectorAll('[id]')].some((el) => /\bs\d+\b/.test(el.id))).toBe(false)
+  })
+
+  it('sagt ohne Spione, wo man sie anwirbt', () => {
+    render(<EspionagePanel rows={[]} summary={null} moving={null} onCancelMove={vi.fn()} onJump={vi.fn()} />)
+
+    expect(
+      screen.getByText(
+        'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('zeigt den Umsetz-Modus mit Abbruch', () => {
+    const onCancelMove = vi.fn()
+    render(
+      <EspionagePanel
+        rows={[spyRow(2)]}
+        summary={null}
+        moving="Spion 2 umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste."
+        onCancelMove={onCancelMove}
+        onJump={vi.fn()}
+      />,
+    )
+
+    const status = screen.getByRole('status')
+    expect(status.textContent).toBe('Spion 2 umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste.')
+    fireEvent.click(screen.getByRole('button', { name: 'Umsetzen abbrechen' }))
+    expect(onCancelMove).toHaveBeenCalled()
+  })
+
+  it('zeigt die Zusammenfassung', () => {
+    const { container } = render(
+      <EspionagePanel
+        rows={[spyRow(1)]}
+        summary="2 von 5 Spionen · Sold 30 Geld je Tag"
+        moving={null}
+        onCancelMove={vi.fn()}
+        onJump={vi.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.panel__sub')?.textContent).toBe('2 von 5 Spionen · Sold 30 Geld je Tag')
+  })
+})
+
+describe('R-GAME-06 Spionage im Protokoll', () => {
+  it('sortiert Sabotage und Enttarnung unter Kaempfe, Bericht und Verlust unter Sonstiges', () => {
+    expect(categoryOf('SABOTAGE_SUFFERED')).toBe('combat')
+    expect(categoryOf('SPY_DETECTED')).toBe('combat')
+    expect(categoryOf('SPY_REPORT')).toBe('other')
+    expect(categoryOf('SPY_LOST')).toBe('other')
   })
 })
 
@@ -1885,5 +2025,29 @@ describe('R-UI-09 Die Zeile ist so leise wie ihr Satz', () => {
     } finally {
       style.remove()
     }
+  })
+})
+
+describe('R-SPY-03 Die aufgeklaerte Provinz sagt, bis wann', () => {
+  it('zeigt den Aufklaerungssatz mit Tag, wenn revealedUntilTick steht', () => {
+    render(
+      <ProvincePanel
+        province={{ ...province, owner: 'p2', buildings: { barracks: 1 }, revealedUntilTick: 48 }}
+        ownerName="Ostmark"
+        actions={[]}
+        ticksPerDay={24}
+        currentTick={0}
+      />,
+    )
+
+    expect(screen.getByText('Aufgeklärt: Gebäude sichtbar bis Tag 2')).toBeTruthy()
+  })
+
+  it('zeigt ohne das Feld keinen Aufklaerungssatz', () => {
+    render(
+      <ProvincePanel province={{ ...province, owner: 'p2' }} ownerName="Ostmark" actions={[]} ticksPerDay={24} currentTick={0} />,
+    )
+
+    expect(screen.queryByText(/Aufgeklärt:/)).toBeNull()
   })
 })
