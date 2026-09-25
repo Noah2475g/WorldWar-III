@@ -4306,3 +4306,31 @@ nach dem Start angeworben, gehört einer lebenden Macht und steht in einer echte
 Bahn B (T-M17-07 bis -12). Beide Wächter bleiben: der allgemeine aus T-M17-10 (jede oberste Zahl
 von `ai.json` mit Zeile und Wert) und der Spionage-Wächter aus T-M17-12, der für die drei
 Spionagezahlen zusätzlich einen Status verlangt; sein Kommentar nennt jetzt den allgemeinen.
+
+---
+
+## 2026-09-25 · Noahs Entscheid zu Befund M17-T5 · Die KI erklärt förmlich den Krieg, und das Turnier wird in M17 neu aufgestellt
+
+**Befund (Nacharbeit Turnier, `bericht-turnier-m17.md`, Worktree `m17-t`):** Vor M17 war **jeder**
+Krieg der Turnierpaarung „im Frieden" ein Überfall aus Versehen — eine Armee lief auf ein Ziel,
+das unterwegs einer anderen Macht zufiel (145 `WAR_DECLARED`, 0 förmlich). Die Wegprüfung der
+KI (E4 aus T-M17-10, `military.ts`) hält genau diese Märsche an. Folge: Turnier 100 / **50** / 98 %
+(Band R-AI-06 gerissen), und auf der Weltkarte in 200 Tagen **1 Krieg statt 15**, 0 Überfälle statt 13.
+Die Spionage ist kein Fehler: ein Gegenspion allein bewegt die Kriegspaarung von 64 auf 98 %, und
+das Turnier kennt in 50 Partien nur 5 verschiedene Ausgänge — dieselbe Nation gewinnt alle 50.
+
+**Entscheidung (Noah, 2026-09-25), zwei Teile:**
+1. **Option C:** ist das Ziel eines geplanten Angriffs veraltet (es gehört inzwischen einer Macht,
+   mit der Frieden herrscht), **erklärt die KI förmlich den Krieg**, statt hineinzustolpern oder den
+   Angriff stillschweigend fallen zu lassen. Erweiterung von D29.8 um diesen Satz. Im Wegwerfbau
+   gemessen: Weltkarte 10 Kriege, **0 Überfälle** (R-AI-09/AK3 hält), progress.slow grün; offen sind
+   7 `DIPLOMACY:INVALID_TARGET`, die vor dem Abschluss verschwinden müssen (R-AI-09/AK2).
+2. **Option D, in M17:** das Turnier wird als Teil des Integrationstors T-M17-15 so aufgestellt,
+   dass es wieder streut (mehr Mächte, Startplätze, Tage). **Das Band 0,55–0,95 bleibt**; geändert
+   wird die Aufstellung, nicht die Grenze.
+
+**Abgelehnt:** B (laufende Märsche ins Zielland dulden — bringt 7 Überfälle und damit B6 zurück)
+und A (so lassen — KI-Partien ohne Krieg).
+
+**Folge für die Aufgaben:** T-M17-10 und T-M17-12 bleiben `todo` (reopened), bis C gebaut und das
+neu aufgestellte Turnier im Band ist.
