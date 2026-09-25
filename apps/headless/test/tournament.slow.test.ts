@@ -122,6 +122,25 @@ describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
     expect(result.winRateA, 'zwischen normal und schwer steht eine Mauer').toBeLessThanOrEqual(0.95)
   })
 
+  it('schwer ist in keiner Sitzordnung schlechter als normal (T-M17-15, Befund M17-T4)', () => {
+    // Die Summe (0,55-0,95) allein liess "Spionage aus" durch (0,58), obwohl "schwer" dort in
+    // einer Sitzordnung 9 von 25 Paaren verlor (1:9) — die Summe verwaesserte die Lücke ueber
+    // zwei gute Sitzordnungen. Diese Zusicherung je Sitzordnung schliesst genau diese Lücke,
+    // ohne ein Band je Sitzordnung zu setzen (25 Paare streuen zu stark dafuer, §8 E4).
+    // Gemessen 2026-09-25 (Block 1000, Tor-Turnier): 12:0 / 6:0 / 21:0.
+    const result = run(['hard', 'normal'], false)
+
+    for (const setup of AUFSTELLUNGEN) {
+      const schluessel = setup.join('/')
+      const eintrag = result.bySetup[schluessel]
+      expect(eintrag, schluessel).toBeDefined()
+      expect(
+        eintrag!.winsA,
+        `${schluessel}: schwer ${eintrag!.winsA}:${eintrag!.winsB} gegen normal, ${eintrag!.draws} unentschieden`,
+      ).toBeGreaterThanOrEqual(eintrag!.winsB)
+    }
+  })
+
   it('das Messgeraet streut: viele Ausgaenge, keine Nation gewinnt alles (Befund M17-T4)', () => {
     // Gemessen (Plan D, Vorabmessung mit Option C): 110 verschiedene Ausgänge, höchstens 447 ‰
     // fuer eine Nation. Die alte Aufstellung (zwei Mächte) hatte 5 bzw. 32 Ausgänge und 980 ‰
@@ -214,11 +233,25 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
             ` ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].automaticBombardments} |`,
         ),
         '',
+        'Schwer gegen normal, im Frieden, je Sitzordnung (T-M17-15, Befund M17-T4):',
+        '',
+        '| Sitzordnung | A | B | U | Siegquote A |',
+        '|---|---|---|---|---|',
+        ...AUFSTELLUNGEN.map((setup) => {
+          const schluessel = setup.join('/')
+          const eintrag = gegenNormal.bySetup[schluessel]!
+          return `| ${schluessel} | ${eintrag.winsA} | ${eintrag.winsB} | ${eintrag.draws} | ${(eintrag.winRateA * 100).toFixed(0)} % |`
+        }),
+        '',
+        'Die Streuung der Summe über vier Startzahl-Blöcke (0,7267–0,82) steht in `BALANCING.md`,',
+        'nicht in diesem Lauf gerechnet.',
+        '',
         'Zusicherungen: Siegquote der höheren Stufe zwischen 70 % und 95 %; „schwer gegen',
         'normal" endet nicht mit lauter Unentschieden; mindestens ein Friedensschluss;',
         'mindestens 50 verschiedene Ausgänge und keine Nation über 60 % der Partien (Paarung',
-        '„im Frieden"); beide Stufen erklären förmlich. Der Grundlauf **vor** der',
-        'Verhältnisregel steht in `ai-tournament.md`.',
+        '„im Frieden"); beide Stufen erklären förmlich; schwer ist in keiner Sitzordnung',
+        'schlechter als normal (T-M17-15). Der Grundlauf **vor** der Verhältnisregel steht in',
+        '`ai-tournament.md`.',
         '',
       ].join('\n'),
     )

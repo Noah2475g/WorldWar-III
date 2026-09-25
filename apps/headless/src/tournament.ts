@@ -242,6 +242,8 @@ export interface TournamentResult {
   winsByNation: Record<string, number>
   /** Summe `surpriseAttacks` aller Partien (Bericht, Plan D / Befund M17-T6). */
   surpriseAttacks: number
+  /** Je Sitzordnung (Schluessel `setup.join('/')`), Paarwertung wie oben (T-M17-15, Befund M17-T4). */
+  bySetup: Record<string, { winsA: number; winsB: number; draws: number; winRateA: number }>
 }
 
 /**
@@ -297,6 +299,7 @@ export function playTournament(options: {
   const outcomeKeys = new Set<string>()
   const winsByNation: Record<string, number> = {}
   let surpriseAttacks = 0
+  const bySetup: Record<string, { winsA: number; winsB: number; draws: number; winRateA: number }> = {}
 
   // Paare, nicht Partien: `matches` bleibt die Zahl der gespielten Partien, gewertet
   // werden die `matches / 2` Paare.
@@ -309,6 +312,9 @@ export function playTournament(options: {
   const pairsPerSetup = pairs / setups.length
 
   for (const setup of setups) {
+    let setupWinsA = 0
+    let setupWinsB = 0
+    let setupDraws = 0
     for (let local = 0; local < pairsPerSetup; local++) {
       const seed = (options.firstSeed ?? 1000) + local
       const spiele = ([first, second]: [Difficulty, Difficulty]) =>
@@ -360,9 +366,22 @@ export function playTournament(options: {
       matchWinsA += punkteA
       matchWinsB += punkteB
 
-      if (punkteA > punkteB) winsA += 1
-      else if (punkteB > punkteA) winsB += 1
-      else draws += 1
+      if (punkteA > punkteB) {
+        winsA += 1
+        setupWinsA += 1
+      } else if (punkteB > punkteA) {
+        winsB += 1
+        setupWinsB += 1
+      } else {
+        draws += 1
+        setupDraws += 1
+      }
+    }
+    bySetup[setup.join('/')] = {
+      winsA: setupWinsA,
+      winsB: setupWinsB,
+      draws: setupDraws,
+      winRateA: (setupWinsA + setupDraws / 2) / pairsPerSetup,
     }
   }
 
@@ -372,6 +391,7 @@ export function playTournament(options: {
     winsB,
     draws,
     winRateA: (winsA + draws / 2) / pairs,
+    bySetup,
     matchWinRateA: matchWinsA + matchWinsB === 0 ? 0 : matchWinsA / (matchWinsA + matchWinsB),
     warDeclarations: wars,
     peaceAgreements: peaces,
