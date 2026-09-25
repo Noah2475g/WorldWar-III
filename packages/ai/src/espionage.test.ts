@@ -196,6 +196,22 @@ describe('Z1 Gegenspion bei Krieg oder Verstimmung (D29.8, R-AI-09)', () => {
   it('eine einzige Enttarnung loest den Gegenspion aus', () => {
     expect(TEST_RULES.constants.grievanceOnSpyDetected).toBeGreaterThanOrEqual(TEST_RULES.ai.espionageCounterGrievance)
   })
+
+  it('ein besiegter Kriegsgegner zaehlt nicht mehr als Kriegsgegner (Befund M17-S6)', () => {
+    // Ohne den `alive.has(id)`-Filter im Kriegsgegner-Satz haelt die KI den Gegenspion mit der
+    // Begruendung "Krieg mit p1" auch dann, wenn p1 laengst besiegt ist und `relations` das
+    // (noch) nicht nachtraegt — relevant fuer lange Laeufe (T-M17-15), in denen Maechte sterben.
+    const l = lage({
+      krieg: true,
+      spione: [{ provinceId: 'o1', mission: 'counter' }],
+      mutate: (s) => {
+        s.players[FEIND]!.alive = false
+      },
+    })
+    const { kurz, explanations } = entscheide(l)
+    expect(kurz).toEqual(['entlassen:s101'])
+    expect(explanations.some((e) => e.reason.includes('vorbei'))).toBe(true)
+  })
 })
 
 describe('Z2 Aufklaerung auf den Kriegsgegner', () => {
@@ -336,6 +352,27 @@ describe('Z3 Sabotage nie gegen eine Macht im Frieden', () => {
     expect(kurz.some((k) => k.startsWith('anwerben:'))).toBe(false)
   })
 
+  it('ein noch offenes eigenes Friedensangebot vom Vortag sperrt Sabotage ebenso wie eines von heute (Befund M17-S5)', () => {
+    // Gegenprobe: `earlier` ist heute leer — ohne `view.outgoingOffers` (Befund M17-S5) waere
+    // das Angebot fuer die Spionage unsichtbar, und der Saboteur bliebe stehen, bis der Gegner
+    // annimmt und die Beziehung schon auf 'truce' steht (dann zu spaet fuer D29.8/R-SPY-05).
+    const l = lage({
+      krieg: true,
+      budgetPermille: 1000,
+      spione: [
+        { provinceId: 'o1', mission: 'counter' },
+        { provinceId: 's2', mission: 'economicSabotage' },
+      ],
+      mutate: (s) => {
+        s.diplomacy.offers.push({ from: ME, to: FEIND, kind: 'peace', tick: s.tick - 20 })
+      },
+    })
+    expect(l.view.outgoingOffers).toEqual([{ to: FEIND, kind: 'peace', tick: l.state.tick - 20 }])
+    const { kurz } = entscheide(l)
+    expect(kurz.sort()).toEqual(['entlassen:s101', 'entlassen:s102'].sort())
+    expect(kurz.some((k) => k.startsWith('anwerben:'))).toBe(false)
+  })
+
   it('sabotiert keine nur erinnerte Provinz', () => {
     const l = lage({
       krieg: true,
@@ -415,6 +452,28 @@ describe('Z4 Das Budget espionageBudgetPermille wird nie ueberschritten', () => 
     const { kurz } = entscheide(l)
     expect(kurz).toEqual(['anwerben:counter@o1'])
   })
+
+  it('entlaesst NICHT, wenn der Sold genau gleich dem Budget ist (Grenzwert, Befund M17-S6)', () => {
+    // Grenzwert der Entlass-Schleife (`salaries <= budget`): am Gleichstand darf keine der drei
+    // Zusagen anschlagen — "das Budget wird nie ueberschritten" heisst nicht "das Budget wird nie
+    // erreicht". `766` ‰ ist gezielt so gewaehlt, dass der Sold von Gegenspion + zwei
+    // Wirtschaftssaboteuren das Budget ohne Rundungsrest genau trifft (siehe Kommentar unten).
+    const l = lage({
+      krieg: true,
+      budgetPermille: 766,
+      spione: [
+        { provinceId: 'o1', mission: 'counter' },
+        { provinceId: 's2', mission: 'economicSabotage' },
+        { provinceId: 'i2', mission: 'economicSabotage' },
+      ],
+    })
+    const C = l.rules.constants
+    const salaries = spySalary(C, 'counter') + 2 * spySalary(C, 'economicSabotage')
+    // Sanity: kein Rundungsrest, sonst waere das kein Test des Gleichstands.
+    expect(espionageBudget(l.view, l.rules)).toBe(salaries)
+    const { kurz } = entscheide(l)
+    expect(kurz.some((k) => k.startsWith('entlassen:'))).toBe(false)
+  })
 })
 
 describe('Z5 Entlassen bei drohendem Geldmangel', () => {
@@ -489,6 +548,18 @@ describe('Z5 Entlassen bei drohendem Geldmangel', () => {
     const { kurz, explanations } = entscheide(l)
     expect(kurz).toEqual([])
     expect(explanations.some((e) => e.reason.includes('Rücklage'))).toBe(true)
+  })
+
+  it('wirbt an, wenn der Anwerbepreis die Ruecklage genau erreicht, nicht anbricht (Grenzwert, Befund M17-S6)', () => {
+    // Grenzwert der Anwerbe-Pruefung (`money - cost < reserve`): am Gleichstand
+    // (`money - cost === reserve`) ist die Ruecklage noch unversehrt, das Anwerben darf nicht
+    // verweigert werden. `126912` ist gezielt so gewaehlt (siehe Kommentar unten).
+    const geld = 126_912
+    const RESERVE_PERMILLE = 200
+    expect(geld - C.spyRecruitCost).toBe(Math.trunc((geld * RESERVE_PERMILLE) / 1000))
+    const l = lage({ krieg: true, geld })
+    const { kurz } = entscheide(l)
+    expect(kurz).toEqual(['anwerben:counter@o1'])
   })
 
   it('wirbt nicht an, wenn der neue Sold den Bestand im Horizont aufzehrte', () => {

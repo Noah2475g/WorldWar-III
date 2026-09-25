@@ -94,6 +94,7 @@ function viewOf(ownScore: number, powers: Power[]): PublicView {
     incomingOffers: [],
     victory: { condition: 'points', winner: null },
     espionage: { spies: [] },
+    outgoingOffers: [],
   }
 }
 

@@ -137,13 +137,27 @@ function bestTarget(context: AiContext, enemies: ReadonlySet<PlayerId>, visibleO
   return candidates[0]!
 }
 
-/** Maechte, denen ich in diesem Zug schon Frieden angeboten oder ihn angenommen habe (Entscheid E8). */
-function peaceBound(earlier: readonly Command[], me: PlayerId): Set<PlayerId> {
+/**
+ * Maechte, denen ich in diesem Zug schon Frieden angeboten oder ihn angenommen habe (Entscheid
+ * E8), UND Maechte, denen ich an einem frueheren Tag Frieden angeboten habe und die noch nicht
+ * geantwortet haben (Befund M17-S5, `view.outgoingOffers`).
+ *
+ * Ohne den zweiten Teil sah `espionageCommands` nur den heutigen Zug: ein Angebot von gestern,
+ * das der Gegner heute annimmt, waere fuer die Spionage unsichtbar geblieben, bis morgen wieder
+ * entschieden wird — und ein Saboteur haette in der Zwischenzeit gegen eine Macht gearbeitet, die
+ * (aus meiner eigenen Sicht heraus) laengst auf Frieden zusteuert. `view.outgoingOffers` traegt
+ * sich selbst ab (`phases/diplomacy.ts` wirft es nach `offerLifetime`), ein abgelehntes oder
+ * abgelaufenes Angebot bindet hier also nichts mehr.
+ */
+function peaceBound(earlier: readonly Command[], view: PublicView, me: PlayerId): Set<PlayerId> {
   const bound = new Set<PlayerId>()
   for (const c of earlier) {
     if (c.type === 'DIPLOMACY' && c.playerId === me && (c.action === 'acceptPeace' || c.action === 'offerPeace')) {
       bound.add(c.targetPlayerId)
     }
+  }
+  for (const offer of view.outgoingOffers) {
+    if (offer.kind === 'peace') bound.add(offer.to)
   }
   return bound
 }
@@ -210,7 +224,7 @@ export function espionageCommands(
   const me = view.playerId
   const known = new Map(view.provinces.map((p) => [p.id, p] as const))
   const alive = new Set(view.others.filter((o) => o.alive).map((o) => o.id))
-  const peace = peaceBound(earlier, me)
+  const peace = peaceBound(earlier, view, me)
   const enemies = new Set(
     Object.keys(view.relations)
       .sort()

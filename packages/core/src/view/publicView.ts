@@ -268,6 +268,23 @@ export interface PublicView {
    * entscheiden.
    */
   espionage: { spies: Omit<Spy, 'owner'>[] }
+  /**
+   * Angebote, die ich selbst gestellt habe und die noch auf eine Antwort warten (T-M17-12,
+   * Befund M17-S5, R-SPY-05). Bereinigt sich von selbst: `phases/diplomacy.ts` wirft ein
+   * Angebot nach `offerLifetime` (3 Tage) aus `state.diplomacy.offers`, ein abgelaufenes steht
+   * hier also nie.
+   *
+   * Kein Verstoß gegen R-DIP-04: ein Angebot **von mir** ist mein eigenes Wissen, genau wie
+   * `incomingOffers` ein Angebot **an mich** ist. Was andere einander anbieten, steht hier
+   * weiterhin nicht.
+   *
+   * Ohne dieses Feld konnte die Spionage der KI ein eigenes, noch offenes Friedensangebot vom
+   * Vortag nicht sehen: `earlier` (`espionageCommands`) fuehrt nur die Befehle desselben Zugs,
+   * ein Angebot von gestern steht dort nicht mehr. Nimmt der Gegner es an, waehrend ein
+   * Saboteur noch auf ihm sitzt, verstoesst der naechste Sabotageversuch gegen „Sabotage NIE
+   * gegen eine Macht im Frieden" (D29.8) — ohne dass die KI etwas falsch entschieden haette.
+   */
+  outgoingOffers: { to: PlayerId; kind: DiplomaticOffer['kind']; tick: Tick }[]
 }
 
 /** Provinces the player can currently observe. */
@@ -412,6 +429,11 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     .filter((offer) => offer.to === playerId)
     .map((offer) => ({ from: offer.from, kind: offer.kind, tick: offer.tick }))
 
+  // Angebote von mir — eigenes Wissen wie `incomingOffers`, nur die Richtung gedreht (T-M17-12).
+  const outgoingOffers = state.diplomacy.offers
+    .filter((offer) => offer.from === playerId)
+    .map((offer) => ({ to: offer.to, kind: offer.kind, tick: offer.tick }))
+
   const relations: PublicView['relations'] = {}
   for (const other of state.playerOrder) {
     if (other === playerId) continue
@@ -525,6 +547,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
     espionage: { spies: ownSpies },
+    outgoingOffers,
   }
 }
 
