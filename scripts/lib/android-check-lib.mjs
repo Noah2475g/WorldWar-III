@@ -445,28 +445,33 @@ export function pseudoHitBox(box, inset) {
 }
 
 /**
- * Jedes sichtbare Bedienelement braucht mindestens `min` x `min` CSS-Pixel. Elemente ohne
- * Flaeche (nicht gezeichnet) zaehlen nicht.
- * @param {{ selector: string, text: string, width: number, height: number, state?: string }[]} elements
+ * Jedes sichtbare Bedienelement braucht mindestens `min` x `min` CSS-Pixel UND seine Mitte
+ * muss wirklich ihm gehoeren: `covered` (aus `document.elementFromPoint` an der Boxmitte,
+ * gemessen in scripts/android-check.mjs) ist true, wenn dort ein anderes Element liegt, das
+ * das Ziel weder selbst ist noch enthaelt - ein Finger trifft dann nie den Knopf, egal wie
+ * gross er ist (Befund T-TOUCH-KARTENKNOEPFE, 2026-09-25: die Uebersichtskarte lag ueber
+ * "Hauptstadt zentrieren"/"Vollbild"). Elemente ohne Flaeche (nicht gezeichnet) zaehlen nicht.
+ * @param {{ selector: string, text: string, width: number, height: number, state?: string, covered?: boolean, coveredBy?: string | null }[]} elements
  * @param {number} [min]
  */
 export function evaluateTargets(elements, min = MIN_TARGET_PX) {
   const visible = elements.filter((e) => e.width > 0 && e.height > 0)
   const violators = visible
-    .filter((e) => e.width < min || e.height < min)
+    .filter((e) => e.width < min || e.height < min || e.covered === true)
     .map((e) => ({ ...e, width: round1(e.width), height: round1(e.height) }))
     .sort((a, b) => Math.min(a.width, a.height) - Math.min(b.width, b.height))
   const smallest = violators.length ? Math.min(violators[0]?.width ?? 0, violators[0]?.height ?? 0) : null
+  const coveredCount = violators.filter((v) => v.covered === true).length
   const list = violators
     .slice(0, 6)
-    .map((v) => `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height}`)
+    .map((v) => `${v.selector}${v.text ? ` "${v.text}"` : ''} ${v.width}x${v.height}${v.covered ? ` (verdeckt von ${v.coveredBy ?? '?'})` : ''}`)
     .join(', ')
   return {
     id: 'touch-targets',
     pass: violators.length === 0,
-    numbers: { total: visible.length, violators: violators.length, smallest, min },
+    numbers: { total: visible.length, violators: violators.length, smallest, covered: coveredCount, min },
     violators,
-    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px${list ? `: ${list}${violators.length > 6 ? ', ...' : ''}` : ''}`,
+    detail: `${violators.length} von ${visible.length} unter ${min}x${min} px oder verdeckt${list ? `: ${list}${violators.length > 6 ? ', ...' : ''}` : ''}`,
   }
 }
 

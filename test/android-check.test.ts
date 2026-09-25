@@ -308,6 +308,24 @@ describe('Android-Pruefstand: Bewertung der Messungen', () => {
     expect(evaluateTargets([{ selector: 'b', text: '', width: 48, height: 48 }]).pass).toBe(true)
   })
 
+  it('Touch-Ziele: gross genug reicht nicht, wenn etwas anderes die Mitte verdeckt (T-TOUCH-KARTENKNOEPFE)', () => {
+    // Gemessen 2026-09-25: 44x44 "Hauptstadt zentrieren" lag hinter der Uebersichtskarte -
+    // elementFromPoint an der Knopfmitte traf canvas.map-overview, nicht den Knopf.
+    const r = evaluateTargets([
+      { selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44, covered: true, coveredBy: 'canvas.map-overview' },
+      { selector: 'button.map-control', text: 'Hineinzoomen', width: 44, height: 44, covered: false },
+    ])
+    expect(r.pass).toBe(false)
+    expect(r.numbers).toMatchObject({ total: 2, violators: 1, covered: 1 })
+    expect(r.violators.map((v) => v.selector)).toEqual(['button.map-control'])
+    expect(r.detail).toMatch(/verdeckt von canvas\.map-overview/)
+    // Gegenprobe: ohne "covered" (oder covered:false) besteht dasselbe 44x44-Ziel.
+    expect(
+      evaluateTargets([{ selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44, covered: false }]).pass,
+    ).toBe(true)
+    expect(evaluateTargets([{ selector: 'button.map-control', text: 'Hauptstadt zentrieren', width: 44, height: 44 }]).pass).toBe(true)
+  })
+
   it('vergroesserte Ziele ueber Pseudo-Elemente (Befund C7, commit d76a92e): -11px auf 22x22 ergibt 44x44', () => {
     const box = { left: 0, right: 22, top: 0, bottom: 22, width: 22, height: 22 }
     expect(pseudoHitBox(box, { top: -11, right: -11, bottom: -11, left: -11 })).toEqual({ width: 44, height: 44 })

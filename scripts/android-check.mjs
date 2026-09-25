@@ -242,7 +242,21 @@ function pageTargets() {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 30)
-    out.push({ selector, text, width, height, viaLabel: Boolean(label) })
+    // Deckt etwas anderes die Mitte des Ziels ab (Befund T-TOUCH-KARTENKNOEPFE,
+    // 2026-09-25: die Uebersichtskarte lag ueber "Hauptstadt zentrieren"/"Vollbild" bei
+    // 1098x498@1.75)? elementFromPoint an der Mitte der echten Box, nicht der um ein
+    // Pseudo-Element vergroesserten - ein Finger trifft dort ohnehin nur die echte Flaeche.
+    // Dasselbe Muster wie pageButton()/pageFirstOnMap() weiter unten: Treffer zaehlt, wenn
+    // das oberste Element das Ziel selbst oder eines seiner Nachfahren ist.
+    let covered = false
+    let coveredBy = null
+    if (box.width > 0 && box.height > 0) {
+      const at = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      const hit = Boolean(at && (at === target || target.contains(at)))
+      covered = !hit
+      if (covered && at) coveredBy = `${at.tagName.toLowerCase()}${[...at.classList].slice(0, 2).map((c) => `.${c}`).join('')}`
+    }
+    out.push({ selector, text, width, height, viaLabel: Boolean(label), covered, coveredBy })
   }
   return out
 }
