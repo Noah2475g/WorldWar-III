@@ -5841,7 +5841,7 @@ in einem früheren, nicht eingecheckten Bericht.
 
 ---
 
-## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — der Automatik-Teil (AK5) haelt, der Kontrollteil nicht
+## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — bei 0 Einmaerschen ist die Verteidigungsautomatik in diesem Lauf ungeprueft, nicht bestaetigt „haltend"
 
 **Befund:** Der Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`,
 `WORLDWAR_M17_NACHHER` unbeteiligt) auf dem M17-Endstand (`b9b3915`, vormals gemessen auf
@@ -5849,9 +5849,15 @@ in einem früheren, nicht eingecheckten Bericht.
 `ARMY_INTRUDED`-Ereignisse und 0 verlorene Provinzen**, wo der Bericht vom 2026-09-14 auf
 `b1bb3c8` **76 Einmaersche und 4 verlorene Provinzen** maß — derselbe Wert, den die Zusicherung
 seit T-M40-02 fest erwartet (`KONTROLLE = { intrusions: 76, provincesLost: 4 }`,
-`stance.slow.test.ts` Zeile 116). Alle anderen AK5-Zahlen sind unveraendert **gut**: Provinz-Tage
-100 % (vorher 101,8 %, beides ueber der 98-%-Schwelle), Verluste ohne Gefecht weiterhin 0/0,
-`fensterOk: true`. Nur die Kontrollzahl reisst — Exit 1, 2 von 15 Tests rot
+`stance.slow.test.ts` Zeile 116). Provinz-Tage 100 % (vorher 101,8 %, beides ueber der
+98-%-Schwelle) und Verluste ohne Gefecht weiterhin 0/0 sind zwar unveraendert **ueber ihrer
+Schwelle** — aber bei 0 Einmaerschen wird die Verteidigungsautomatik selbst (D30.4: eine
+Armee auf `defensive` rueckt einer bedrohten Nachbarprovinz nach) **in diesem Lauf gar nicht
+ausgeloest**. `provinceDays.garrison` und `.defensive` sind deshalb jetzt **exakt gleich**
+(4800/4800, s. u.) — ohne einen einzigen Einmarsch gibt es fuer die beiden Haltungen nichts
+zu unterscheiden. „AK5 haelt" ist fuer diesen Lauf also die falsche Formel: die Zahlen sind
+nicht bestaetigt gut, sie sind **ungeprueft**, weil die Bedrohung, an der sich die Automatik
+zeigen wuerde, in dieser Partie ausblieb. `fensterOk: true`. Exit 1, 2 von 15 Tests rot
 (`ak5.erfuellt: false`, `verletzt: ["Kontrolle: Garnison A 1914 0 Einmaersche / 0 verloren
 statt 76 / 4"]`).
 
