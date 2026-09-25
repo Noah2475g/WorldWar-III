@@ -1,4 +1,11 @@
-import { buildingCostForLevel, createInitialState, publicView, type Command, type GameConfig } from '@worldwar/core'
+import {
+  RECRUIT_MIN_MORALE,
+  buildingCostForLevel,
+  createInitialState,
+  publicView,
+  type Command,
+  type GameConfig,
+} from '@worldwar/core'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
@@ -129,6 +136,30 @@ describe('R-AI-08/AK3 Die KI handelt, bevor der Mangel da ist', () => {
     if (recruit?.type === 'RECRUIT') {
       expect(recruit.unitKey, 'ohne Öl darf kein Panzer gewählt werden').not.toBe('tank')
     }
+  })
+
+  it('hebt nicht aus, wo die Moral unter der Aushebungsgrenze liegt (R-AI-09/AK2)', () => {
+    const context = richContext(30 * TEST_RULES.constants.ticksPerDay)
+    context.view.provinces = context.view.provinces.map((province) =>
+      province.owner === 'p2' ? { ...province, morale: RECRUIT_MIN_MORALE - 1 } : province,
+    )
+
+    expect(recruitCommands(context, []).some((command) => command.type === 'RECRUIT'), 'keine Aushebung unter der Moralgrenze').toBe(
+      false,
+    )
+
+    const eineProvinz = context.view.provinces.find((province) => province.owner === 'p2')!
+    const angehoben = context.view.provinces.map((province) =>
+      province.id === eineProvinz.id ? { ...province, morale: RECRUIT_MIN_MORALE } : province,
+    )
+    const angehobenerContext = { ...context, view: { ...context.view, provinces: angehoben } }
+
+    expect(
+      recruitCommands(angehobenerContext, []).some(
+        (command) => command.type === 'RECRUIT' && command.provinceId === eineProvinz.id,
+      ),
+      'genau ab der Grenze darf diese Provinz wieder aufnehmen',
+    ).toBe(true)
   })
 })
 

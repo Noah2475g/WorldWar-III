@@ -1,4 +1,4 @@
-import { buildingCostForLevel } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import type { AiContext, Explanation } from './types'
@@ -301,6 +301,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     // Ohne Artillerie ist `armyRange` jeder KI-Armee 0, und die Feuerautomatik aus
     // T-M15-07 waere gebaut, gruen getestet und wirkungslos gewesen.
     if (Object.values(province.buildings ?? {}).every((level) => (level ?? 0) === 0)) continue
+    // Unter der Moralgrenze hebt der Kern ohnehin nichts aus (D6.8) — sonst wirft die KI
+    // RECRUIT ins Blaue (R-AI-09/AK2, Nacharbeit Turnier M17, C3).
+    if ((province.morale ?? 0) < RECRUIT_MIN_MORALE) continue
 
     /**
      * **Die dringlichste Einheit, die auch bezahlbar ist** (T-M15-08).

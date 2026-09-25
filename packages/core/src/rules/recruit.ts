@@ -9,6 +9,9 @@ import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shar
  * soldiers, not just slow ones.
  */
 
+/** Unter dieser Moral hebt eine Provinz nichts aus (D6.8). */
+export const RECRUIT_MIN_MORALE = 25_000
+
 /** 0 morale -> 20 % speed, 100 morale -> 100 % speed. */
 export function recruitSpeedFactor(morale: Fixed): Fixed {
   const share = quotFixed(morale, 100_000)
