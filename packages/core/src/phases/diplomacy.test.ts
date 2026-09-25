@@ -405,6 +405,16 @@ describe('R-DIP-08 Durchmarsch und Kartenfreigabe haben eine Richtung', () => {
       expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'bereits gewährt' } })
     })
 
+    it('nennt den echten Grund, wenn schon eine Kuendigung laeuft, statt irrefuehrend bereits gewährt (Nacharbeit kern)', () => {
+      const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+      const revoked = step(granted, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+      const result = step(revoked, [diplo('p2', 'p1', 'requestRightOfWay')], ctx)
+
+      // Waehrend der Frist ist grantsPassage(p1, p2) noch true — der Antrag traf frueher trotzdem
+      // 'bereits gewährt', obwohl revokeRightOfWay denselben Zustand als 'bereits gekündigt' kennt.
+      expect(rejection(result.events)).toMatchObject({ code: 'INVALID_TARGET', detail: { reason: 'gekündigt' } })
+    })
+
     it('laesst einen Antrag, der den Kriegsausbruch ueberlebt hat, nicht mehr annehmen', () => {
       const asked = step(state, [diplo('p2', 'p1', 'requestRightOfWay')], ctx).state
       asked.diplomacy.relations['p1|p2']!.state = 'war'

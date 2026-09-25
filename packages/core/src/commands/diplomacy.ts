@@ -96,6 +96,12 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         if (relation.state === 'war') return fail('INVALID_TARGET', { reason: 'im Krieg' })
         if (relation.warEffectiveAtTick !== null) return fail('INVALID_TARGET', { reason: 'Kriegserklärung läuft' })
         if (grantsPassage(state, command.targetPlayerId, command.playerId)) {
+          // Waehrend einer laufenden Kuendigung ist das Recht noch da, aber schon auf dem Weg
+          // hinaus (Nacharbeit kern, Pruefer-Befund: 'bereits gewährt' war hier irrefuehrend —
+          // revokeRightOfWay nennt denselben Zustand richtig 'bereits gekündigt').
+          if (passageEndsAtTick(state, command.targetPlayerId, command.playerId) !== null) {
+            return fail('INVALID_TARGET', { reason: 'gekündigt' })
+          }
           return fail('INVALID_TARGET', { reason: 'bereits gewährt' })
         }
         return ok
