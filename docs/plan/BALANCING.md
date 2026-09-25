@@ -219,6 +219,16 @@ gleichermaßen. Gemessen wurden fünf Werte über zwei Fenster; das Band 0,55 bi
 im Bereich **260 bis 320** eingehalten, 280 liegt in seiner Mitte. Der Lauf mit 280 steht
 bei **0,70**. Die Zahlen und der Grund stehen in `docs/reports/progress-baseline.md` §6.
 
+*Nachtrag 2026-09-25 (Nacharbeit Turnier M17, Befund M17-T1):* Die Kriege, auf denen diese 0,70
+beruhen, waren **keine Kriegserklärungen aus dem Verhältnis**, sondern Überfälle: auf dem Stand vor
+M17 (Wegprüfung und KI-Spionage aus, zeichengleich `522ebca`) 145 `WAR_DECLARED` in der Paarung „im
+Frieden“, davon **0** förmlich — 144 der 146 Armeen auf fremdem Boden hatten ein Angriffsziel, das
+beim Befehl herrenlos oder feindlich war und unterwegs dem Gegner zufiel oder in einen
+Waffenstillstand geriet; 2 standen nur auf dem Weg. Seit die Wegprüfung aus T-M17-10 den ganzen
+Restpfad prüft, gibt es diese Kriege nicht mehr, und die Paarung endet 25-mal unentschieden.
+`recruitShare` ist damit nicht falsch, aber das Band, in dem 280 gewählt wurde, ist auf diesem
+Stand nicht mehr messbar.
+
 ## Zwischenziele (R-GAME-08, T-M35-02)
 
 Vier Marken, alle **abgeleitet** — nicht aus dem Vorbild, das keine Zwischenziele kennt, sondern
@@ -503,3 +513,16 @@ außerhalb des Repos und für spätere Leser nicht erreichbar — die Kennzahlen
 schwer/normal im Frieden vorher 70 % (`ef8d27b`), nachher 100 % (`a821e7f`, Band 0,55–0,95 gerissen,
 R-AI-06); `progress.slow.test.ts` an allen vier Ständen (vorher, `grievanceOnSpyDetected`
 300/200/150) grün.
+
+*Zerlegt am 2026-09-25 (Nacharbeit Turnier M17, Befund M17-T3) — keine Zahl geändert.* Gemessen auf
+`3a97e10` mit Wegwerfschaltern, und zwar in der Aufstellung, in der es überhaupt Kriege gibt
+(Wegprüfung duldet das Zielland, sonst endet die Paarung „im Frieden“ ohne Krieg): alle drei
+Spionagezahlen wie hier 98 %, ohne KI-Spionage 64 %. **Sabotage** wird auf der Testwelt nie
+angeworben (0 von 50 Partien), **Aufklärung** aus: 98 % mit derselben Zahl an Überfällen und
+Waffenstillständen, **Budget halbiert**: ebenso — dann wirbt keine Seite einen Aufklärer an, übrig
+bleibt der Gegenspion in der eigenen Hauptstadt, der ohne fremden Spion nicht würfelt und nur Geld
+kostet. **Gegenspion aus**: 100 %. Nur „schwer“ spioniert: 100 %, nur „normal“: 96 %. Die Spionage
+verschiebt die Paarung also nicht durch einen Teil, der Information oder Schaden liefert, sondern
+über den Geldabfluss eines Gegenspions — in einem Turnier, dessen 50 Partien nur 5 bis 29
+verschiedene Ausgänge haben. Das ist kein Fehler der Spionage und kein Grund, eine ihrer Zahlen zu
+ändern; es ist die Empfindlichkeit des Messgeräts (M17-T4).
