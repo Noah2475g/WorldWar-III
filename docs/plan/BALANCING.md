@@ -232,6 +232,19 @@ Stand nicht mehr messbar.
 Seit 2026-09-25 misst das Turnier drei Mächte reihum (Plan D): mit `recruitShare` 280 **0,76**,
 das Band hält wieder; Vorabmessung und Streuung in PROBLEME.md M17-T4.
 
+**Nachtrag 2026-09-25 (T-M17-15): Empfindlichkeit je Sitzordnung und Startzahl-Block.** Vier
+Startzahl-Blöcke (1000/5000/7000/9000), Summe über drei Sitzordnungen (75 Paare je Block):
+0,7267–0,82, Abstand zu beiden Bandgrenzen (0,55/0,95) ≥ 0,17. Je Sitzordnung streut es deutlich
+mehr (0,58–0,92 über alle Blöcke und Sitzordnungen) — 25 Paare haben einen Standardfehler um 0,1,
+ein Band je Sitzordnung wäre dort Rauschen. Neu zugesichert wird deshalb nur `winsA >= winsB` je
+Sitzordnung (gemessen 12:0 / 6:0 / 21:0 im Tor-Block), nicht ein Band. Die Obergrenze 0,95 hält nur,
+weil „normal" so gut wie nie einen schlechten Sitz überwindet (0–1 von 75 Paaren je Block) — ein
+Unentschieden heißt „jede Stufe gewinnt auf ihrem guten Sitz" (`matchWinRateA` = `winRateA` in
+jeder Zelle), keine Mauer nach der Definition in `tournament.ts`. Gegenläufe im Tor-Block: KI-
+Spionage aus 21:9:45 → 0,58 (Summe **im** Band, aber 1:9 in einer Sitzordnung — genau die Lücke,
+die die neue Zusicherung schließt); Befund M17-S12 behoben → 8:14:53 → **0,46** (Band gerissen,
+siehe Befund M17-I1 in `PROBLEME.md`).
+
 ## Zwischenziele (R-GAME-08, T-M35-02)
 
 Vier Marken, alle **abgeleitet** — nicht aus dem Vorbild, das keine Zwischenziele kennt, sondern
@@ -342,6 +355,17 @@ greift, beantwortet der Playtest"; sie greift zu kurz, und T-M34-03 hat sie gest
 
 **Was weiterhin fehlt:** eine Zahl für „wie lange dauert eine Partie". Sie gehört nicht in
 diese Tabelle, sondern in `docs/reports/progress-baseline.md`, wo sie gemessen wird.
+
+**KI-Aushebung, die Geldschwelle einer Artillerie (Befund 2026-09-25, T-M17-15).** Die Aushebung
+kauft je Einheit nur `recruitShare` Promille des Bestands (`economy.ts`, `recruitCommands`); eine
+Artillerie kostet 200 000 Geld. Daraus folgt die Schwelle, ab der eine Macht sich das überhaupt
+leisten kann: „leicht" (`recruitShare` 80) bräuchte **2,5 Mio.** Geld auf dem Konto, „normal"
+(200) **1 Mio.**, „schwer" (280) **714 000**. Am Ende eines 200-Tage-Laufs auf der Weltkarte hat
+keine Macht so viel angespart (höchstens rund 1,17–2,1 Mio. bei „leicht"/„schwer", je nach Partie
+— siehe `geldHoechstensJeMacht` in `ai-integration.json`) — die KI hebt praktisch nur Infanterie
+aus, obwohl `TARGET_MIX` 50/30/20 will (Befund M17-T7). Keine Zahl geändert: die einzige gefundene
+Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über der Rücklage sie trägt) braucht
+zugleich Befund M17-S12 und kippt das Turnierband; Entscheid Noah (2026-09-25): an M18.
 
 ## Was der Parameterlauf ergeben hat
 

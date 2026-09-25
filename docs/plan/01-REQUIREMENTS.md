@@ -923,6 +923,11 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
   - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie Fabriken bauen, Artillerie
     ausheben und selbsttätigen Beschuss erzeugen — sonst ist die Feuerautomatik aus
     R-BAT-08 für die KI tot, gleich wie viele Einzeltests grün sind.
+    > **Auf dem M17-Stand nicht erfüllt (T-M17-15, 2026-09-25).** AK3: 0 Artillerie, 0
+    > Beschuss im 200-Tage-Lauf (Befund M17-T7 — die Aushebung kauft je Einheit nur
+    > `recruitShare` Promille des Bestands, keine Macht spart genug Geld für eine Artillerie
+    > an). Die Reparatur braucht zugleich Befund M17-S12 und kippt das Turnierband; Entscheid
+    > Noah (2026-09-25): beide gehen an M18.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum
