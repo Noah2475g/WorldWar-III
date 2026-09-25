@@ -1,3 +1,5 @@
+import { advanceTicks } from '@worldwar/ai'
+import { createInitialState, type GameConfig } from '@worldwar/core'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { playMatch, playTournament } from '../src/tournament'
@@ -49,11 +51,49 @@ describe('R-AI-06 KI gegen KI', () => {
   // bei denselben Tagen, UND 0 bei 300 Tagen ueber 8 verschiedene Seeds (Wegwerflauf, nicht
   // committet) — die "echte" diplomatische Kriegserklaerung (declareWar aus Verstimmung,
   // diplomacy.ts, seit vor M17) loest auf dieser kleinen Testwelt in der Paarung "schwer gegen
-  // normal" offenbar so gut wie nie aus. Ob das an der Testwelt liegt (zwei Maechte, kurze
-  // Grenzen) oder an der Schwelle selbst, ist eine eigene Untersuchung (ausserhalb T-M17-10,
-  // vgl. T-M17-15 "Integrationstor") — hier nur festgehalten, nicht behoben (Falle 8: nicht
-  // die Zusicherung "biegen", bis sie wieder passt).
+  // normal" offenbar so gut wie nie aus.
+  //
+  // Berichtigt (Nacharbeit ki, 2026-09-25): NICHT die fehlende Landnachbarschaft — der Test
+  // "haelt genau den Ausgangsbefund fest" unten misst, dass m1 (Nachbar von n2, Nordlands
+  // eigener Provinz) nach der Partie durchgehend Ostmark gehoert; `landNeighbours()` ist zu
+  // dem Zeitpunkt also nicht leer. Die eigentliche Ursache ist das Verhaeltnis selbst: ohne
+  // B6-Ueberfaelle entstehen keine Verstimmungen, und `relationship()` bleibt ueber der
+  // Kriegsschwelle (siehe `PROBLEME.md`, Befund M17-D9, berichtigt). Eine eigene Untersuchung
+  // bleibt trotzdem noetig (ausserhalb T-M17-10, vgl. T-M17-15 "Integrationstor") — hier nur
+  // festgehalten, nicht behoben (Falle 8: nicht die Zusicherung "biegen", bis sie wieder passt).
   it.todo('zaehlt Kriegserklaerung und Beschuss je Stufe nach dem Handelnden (T-M41-08, Befund M17-D9: misst seit T-M17-10 durchgehend 0)')
+
+  /**
+   * Nacharbeit ki (T-M17-10/11), Befund M17-D9 berichtigt: `landNeighbours()` haelt nicht
+   * "immer leer", wie die vorige Fassung des Kommentars oben behauptete. m1 grenzt an n2
+   * (Nordlands eigene Provinz, Kante `n2-m1` in `testworld.json`) — sobald Ostmark m1 haelt,
+   * sind Nordland und Ostmark direkte Landnachbarn. Acht Partien, Frieden-Start, 40 Spieltage:
+   * m1 UND m2 gehoeren am Ende durchgehend Ostmark, und trotzdem bleiben Kriegserklaerungen
+   * und Verstimmungen bei null. Die Ursache liegt also im Verhaeltnis (keine Ueberfaelle →
+   * keine Verstimmung → `relationship()` bleibt ueber der Kriegsschwelle), nicht in der
+   * Kartentopologie.
+   */
+  it('haelt genau den Ausgangsbefund fest: m1 wird Landnachbar, aber ohne Verstimmung bleibt es beim Frieden (Befund M17-D9, berichtigt)', () => {
+    for (let seed = 1; seed <= 3; seed++) {
+      const config: GameConfig = {
+        seed,
+        mapId: map.id,
+        rulesId: rules.id,
+        players: [
+          { name: 'A', kind: 'ai', nation: 'Nordland', color: '#111', difficulty: 'hard' },
+          { name: 'B', kind: 'ai', nation: 'Ostmark', color: '#222', difficulty: 'normal' },
+        ],
+        victory: { condition: 'points', pointsShareToWin: 900, dayLimit: 40 },
+      }
+      const state = createInitialState(config, { map, rules })
+      const run = advanceTicks(state, 40 * rules.constants.ticksPerDay, { map, rules })
+
+      // m1 grenzt an n2 (Nordland) — sobald m1 Ostmark gehoert, sind beide Landnachbarn.
+      expect(run.state.provinces.m1!.owner, `seed ${seed}`).toBe('p2')
+      expect(run.state.diplomacy.grievances.p1 ?? {}, `seed ${seed}`).toEqual({})
+      expect(run.events.filter((e) => e.type === 'WAR_DECLARED')).toEqual([])
+    }
+  })
 
   it('haelt die Zuordnung nach Stufe konsistent, auch wenn nichts geschieht (Befund M17-D9)', () => {
     const result = playTournament({ map, rules, difficulties: ['hard', 'normal'], matches: 2, days: 40, startAtWar: false })
