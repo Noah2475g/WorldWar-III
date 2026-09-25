@@ -678,6 +678,7 @@ export const de = {
     province: 'Provinz {{name}}',
     nothing: 'nichts',
     unknownPower: 'eine Macht',
+    unknownProvince: 'unbekannte Provinz',
     send: 'Handel anbieten',
     accept: 'Angebot annehmen',
     decline: 'Angebot ablehnen',

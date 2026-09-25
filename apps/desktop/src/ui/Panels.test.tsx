@@ -937,6 +937,32 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
     })
   })
 
+  it('zeigt "unbekannte Provinz" statt der rohen Kennung, wenn eine gewaehlte Provinz waehrend der Wahl den Besitzer wechselt (Befund Nacharbeit, niedrig)', () => {
+    const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
+    const evaluate = vi.fn(() => ({ text: '', action }))
+    const spec: TradeFormSpec = {
+      resources: [],
+      stock: {},
+      limits: { money: 507650, resource: 152295 },
+      ownProvinces: [{ id: 'n1', name: 'Nordtal' }],
+      provincesOf: () => [],
+      evaluate,
+    }
+
+    const { rerender } = render(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={spec} />)
+    fireEvent.change(screen.getByLabelText('Provinz abgeben'), { target: { value: 'n1' } })
+    expect(screen.getByRole('button', { name: 'Nordtal entfernen' })).toBeTruthy()
+
+    // Eroberung waehrend der Wahl: die Provinz faellt aus `ownProvinces`, der Entwurf
+    // (lokaler useState) behaelt ihre Kennung aber weiter.
+    const erobert: TradeFormSpec = { ...spec, ownProvinces: [] }
+    rerender(<TradeOfferForm partner="p2" partnerName="Ostmark" spec={erobert} />)
+
+    expect(screen.queryByRole('button', { name: 'Nordtal entfernen' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'unbekannte Provinz entfernen' })).toBeTruthy()
+    expect(screen.queryByText('n1')).toBeNull()
+  })
+
   it('zeigt nur den eigenen Bestand', () => {
     const action: Action = { id: 'trade-offer', label: 'Handel anbieten', disabledReason: null, onRun: vi.fn() }
     const spec: TradeFormSpec = {

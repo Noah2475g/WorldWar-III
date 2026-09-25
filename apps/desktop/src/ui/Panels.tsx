@@ -1419,8 +1419,12 @@ export function TradeOfferForm({
 
   const availableOwn = spec.ownProvinces.filter((province) => !giveProvinces.includes(province.id))
   const availablePartner = spec.provincesOf(partner).filter((province) => !wantProvinces.includes(province.id))
-  const nameOfOwn = (id: string) => spec.ownProvinces.find((province) => province.id === id)?.name ?? id
-  const nameOfPartner = (id: string) => spec.provincesOf(partner).find((province) => province.id === id)?.name ?? id
+  // Rueckfall auf `t('trade.unknownProvince')`, nie auf die rohe Kennung (Befund Nacharbeit
+  // T-M17-13/14, niedrig): eine gewaehlte Provinz kann waehrend der Wahl den Besitzer
+  // wechseln (Eroberung) und faellt dann aus `ownProvinces`/`provincesOf` heraus.
+  const nameOfOwn = (id: string) => spec.ownProvinces.find((province) => province.id === id)?.name ?? t('trade.unknownProvince')
+  const nameOfPartner = (id: string) =>
+    spec.provincesOf(partner).find((province) => province.id === id)?.name ?? t('trade.unknownProvince')
 
   return (
     <section className="group trade-form" aria-label={t('trade.title', { nation: partnerName })}>
