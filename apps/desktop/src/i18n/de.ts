@@ -526,7 +526,10 @@ export const de = {
     sharedMap: 'Kartenfreigabe',
     reputation: 'Ansehen',
     noRelations: 'Noch keine Beziehungen.',
-    choose: 'Macht wählen',
+    // Die eigene Spalte "Macht wählen" (choose: 'Macht wählen') ist mit Befund 1 der
+    // Sichtpruefung U entfallen (T-M17-14, Nacharbeit): sie sprengte bei 380px
+    // Seitenleistenbreite den Rahmen, der Knopf "Auswählen" lag zu 99,6% ausserhalb. Der
+    // Name der Macht ist seither selbst der Auswahlknopf, keine fuenfte Spalte mehr.
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
@@ -541,6 +544,12 @@ export const de = {
       in: 'Sie erhalten',
       inEnds: 'Sie erhalten bis Tag {{day}}',
       none: 'keiner',
+      // Kurzformen fuer die Zelle (Befund 1 der Sichtpruefung U, T-M17-14): die Tabelle
+      // sprengte bei 380px Seitenleistenbreite den Rahmen. Die volle Fassung (oben) steht
+      // im title/Tooltip der Zelle; hier nur, WAS gilt, ohne den Tag.
+      shortOut: 'gewährt',
+      shortIn: 'erhalten',
+      shortBoth: 'beide',
     },
     treaties: 'Verträge mit {{nation}}',
     passageGroup: 'Durchmarsch und Karte',
