@@ -61,6 +61,7 @@ import {
   pinchPath,
   pseudoHitBox,
   rankTapPoints,
+  tutorialSeedScript,
 } from './lib/android-check-lib.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -466,10 +467,10 @@ function loadProvinces() {
 
 const slug = (text) => text.replace(/[^A-Za-z0-9.-]+/g, '_')
 
-async function navigateAndSeed(cdp, url) {
+async function navigateAndSeed(cdp, url, showTutorial) {
   await cdp.send('Page.navigate', { url })
   await waitFor(cdp, `document.readyState === 'complete' && location.href.startsWith(${JSON.stringify(new URL(url).origin)})`, 'die Seite', 30000)
-  await evaluate(cdp, `localStorage.setItem(${JSON.stringify(TUTORIAL_KEY)}, 'true'); window.__androidCheckStale = true; true`)
+  await evaluate(cdp, `${tutorialSeedScript(TUTORIAL_KEY, showTutorial)} window.__androidCheckStale = true; true`)
   await cdp.send('Page.reload', { ignoreCache: true })
   await waitFor(cdp, `!window.__androidCheckStale && document.readyState === 'complete'`, 'die neu geladene Seite', 30000)
 }
@@ -543,7 +544,7 @@ async function runFlow(cdp, ctx) {
 
   // --- Vorbereitung: Seite laden, Einfuehrung als gesehen markieren, Partie per Finger ---
   try {
-    await navigateAndSeed(cdp, ctx.url)
+    await navigateAndSeed(cdp, ctx.url, ctx.options.tutorial)
     await waitFor(cdp, call(pageButtonReady, 'text', START_BUTTON), `den Knopf "${START_BUTTON}"`, 30000)
     await sleep(300)
     await shot('startdialog')
@@ -963,7 +964,7 @@ async function main() {
     commit: gitCommit(),
     target: options.target,
     url,
-    settings: { longPressMs: options.longPressMs, pinchTolerancePx: options.pinchTolerancePx, minTarget: options.minTarget },
+    settings: { longPressMs: options.longPressMs, pinchTolerancePx: options.pinchTolerancePx, minTarget: options.minTarget, fullscreen: options.fullscreen, tutorial: options.tutorial },
     runs: [],
     setupError: null,
     pass: false,

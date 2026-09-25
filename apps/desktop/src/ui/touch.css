@@ -188,21 +188,62 @@ select,
   opacity: 0.75;
 }
 
-/* Die Kartenknoepfe (oben rechts, senkrechte Spalte, bis zu vier Stueck a 44 px + 2 px
-   Luecke = 182 px hoch) und die Uebersichtskarte (unten rechts, 132x74, app.css) liegen
-   im Touch-Betrieb je nach Fensterhoehe im selben senkrechten Streifen: map-wrapper ist
-   bei 1098x498@1.75 und 1097x617@1.75 niedriger, als die Spalte hoch ist, und die
-   Uebersichtskarte wandert dann unter die Knoepfe - elementFromPoint auf "Hauptstadt
-   zentrieren"/"Vollbild" trifft die Uebersichtskarte, nicht den Knopf (gemessen
-   2026-09-25). Die Uebersichtskarte zieht deshalb im Touch-Betrieb auf die
-   GEGENUEBERLIEGENDE Ecke unten links um: die beiden Gruppen koennen sich dann bei
-   keiner Fensterhoehe mehr ueberdecken, ohne dass die Kartenknoepfe ihren Platz oder
-   ihre Reihenfolge aendern. Das kleine Telefon quer (<=480 px, unten) hatte die alte
-   rechte Lage schon gemessen ueberdeckungsfrei und bekommt sie darum ausdruecklich
-   zurueck. */
-:root[data-input='touch'] .map-overview {
-  right: auto;
-  left: var(--sp-lg);
+/* Die Kartenknoepfe stehen im Touch-Betrieb bei JEDER Fensterhoehe als Reihe oben rechts
+   (vier Stueck a 44 px + 2 px Luecke = 182 px breit, 44 px hoch). Als Spalte waren sie
+   182 px hoch und reichten bei 1098x498@1.75 (LDPlayer 1920x1080 mit Adresszeile) bis
+   unter die Uebersichtskarte (unten rechts, 132x74, app.css): elementFromPoint auf
+   "Hauptstadt zentrieren"/"Vollbild" traf die Uebersichtskarte (gemessen 2026-09-25).
+   Frueher galt die Reihe nur bis 480 px Hoehe - 498 px lagen knapp darueber.
+   Die Uebersichtskarte bleibt dabei unten rechts: unten links liegt die Einfuehrung
+   (.tutorial, app.css), und die deckte sie dort zu (gemessen 2026-09-25 an d55e5b3,
+   1098x498 und 1097x617 mit sichtbarer Einfuehrung). */
+:root[data-input='touch'] .map-controls {
+  flex-direction: row;
+}
+
+/* Die Einfuehrung (.tutorial, app.css: unten links an .app, bottom 170px) verdeckte im
+   Touch-Betrieb Bedienelemente, weil ihr Abstand an der ganzen App haengt statt an der
+   Karte: bei 1098x498@1.75 ragte sie in die Moduszeile ("Besitz", "Rohstoffe", "Moral"),
+   bei 640x360@2 lag ihr Kopf ueber "Hineinzoomen" (gemessen 2026-09-25, android-check
+   --tutorial). Im Touch-Betrieb sitzt sie darum im Rasterbereich von <main> (Zeile 2 von
+   .app - ein absolut positioniertes Rasterkind mit grid-row nimmt den Rasterbereich als
+   Bezugsrahmen, .app ist oben positioniert) und kann Kopf und Fuss nicht mehr erreichen.
+   BEIDE Linien stehen da: "grid-row: 2" hiesse "2 / auto", und "auto" meint bei absolut
+   positionierten Kindern den Rand des ganzen Rasters - der Rahmen reichte dann bis unter
+   den Fuss (gemessen: die Einfuehrung lag ueber "alles", "Kaempfe", "Aufbau", "Vertraege").
+   Ihre Breite endet links vor der Uebersichtskarte (unten rechts, 132 px, rechts --sp-lg):
+   Kartenbreite = 100% - --touch-side. Legende und Kartenflaeche darf sie verdecken -
+   beide nehmen keinen Finger an (.legend: pointer-events none). Die Untergrenze 160 px
+   greift genau dann, wenn die Karte schmaler als 320 px ist (Breite = Karte - 160) - ein
+   Layout, das android-check Pruefung 4 ohnehin verwirft (Telefon hochkant: Karte 10 px,
+   gemessen 390x844@3); ohne sie wuerde die Einfuehrung dort stillschweigend 0 px breit.
+   Zeile 2 setzt voraus, dass .app ihre drei Zeilen hat - .app--empty (eine Zeile)
+   rendert keine Einfuehrung (App.tsx). */
+:root[data-input='touch'] {
+  /* = app.css .main (1fr 380px); die Bloecke unten setzen ihre eigene Breite. */
+  --touch-side: 380px;
+}
+
+:root[data-input='touch'] .tutorial {
+  grid-row: 2 / 3;
+  grid-column: 1 / 2;
+  left: var(--sp-md);
+  bottom: var(--sp-md);
+  width: clamp(160px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)), 260px);
+  max-height: calc(100% - 2 * var(--sp-md));
+  overflow-y: auto;
+}
+
+/* Schmale Karte: Kartenknopf-Reihe (182 px, oben rechts) und Einfuehrung (bis 260 px,
+   links) passen nicht mehr nebeneinander, sobald die Karte schmaler ist als
+   260 + 182 + 3 x 8 = 466 px. Das ist bei --touch-side 380 unter 846 px Breite der Fall
+   und im Telefon-Block (38vw) unter 751 px. Dann bleibt die Einfuehrung unter der Reihe
+   (sp-md + 44 px + sp-md Luecke) und rollt in sich. Breiter lohnt sich die Reserve nicht:
+   bei 1098x498 passt die Einfuehrung sonst ungerollt in die Kartenhoehe. */
+@media (max-width: 860px) {
+  :root[data-input='touch'] .tutorial {
+    max-height: calc(100% - 44px - 4 * var(--sp-md));
+  }
 }
 
 /* ------------------------------------------------ Telefon quer (bis 480 px hoch) */
@@ -228,6 +269,8 @@ select,
     font-size: 16px;
   }
 
+  /* Im Touch-Betrieb gilt davon nur noch das padding - Lage und Masse setzt die Regel
+     fuer :root[data-input='touch'] .tutorial weiter oben (hoehere Spezifitaet). */
   .tutorial {
     left: var(--sp-md);
     bottom: 56px;
@@ -271,8 +314,12 @@ select,
   }
 
   /* Seitenleiste schmaler, damit die Karte die Breite behaelt. */
+  :root[data-input='touch'] {
+    --touch-side: clamp(240px, 38vw, 320px);
+  }
+
   :root[data-input='touch'] .main {
-    grid-template-columns: minmax(0, 1fr) clamp(240px, 38vw, 320px);
+    grid-template-columns: minmax(0, 1fr) var(--touch-side);
   }
 
   :root[data-input='touch'] .side {
@@ -317,19 +364,10 @@ select,
     display: contents;
   }
 
-  /* Kartenknoepfe in einer Reihe oben rechts; darunter bleibt Platz fuer die
-     Uebersichtskarte. Deren Groesse bleibt: MapCanvas rechnet ihre Tipps in ihren
+  /* Die Kartenknoepfe stehen schon als Reihe oben (s.o.); die Uebersichtskarte rueckt
+     naeher an den Rand. Ihre Groesse bleibt: MapCanvas rechnet ihre Tipps in ihren
      132 x 74 Pixeln. */
-  :root[data-input='touch'] .map-controls {
-    flex-direction: row;
-  }
-
-  /* Bei so wenig Hoehe stehen die Kartenknoepfe als Reihe oben (s.o.) statt als Spalte:
-     die Ueberdeckung von oben tritt hier nicht auf. Die Uebersichtskarte bleibt darum
-     an ihrem gemessenen Platz rechts, statt zur Legende (unten links, s.u.) zu wandern. */
   :root[data-input='touch'] .map-overview {
-    right: var(--sp-lg);
-    left: auto;
     bottom: var(--sp-md);
   }
 
@@ -349,8 +387,12 @@ select,
 /* ------------------------------------------------ kleines Tablet (ab 900 breit, bis 640 hoch) */
 
 @media (min-width: 900px) and (max-height: 640px) {
+  :root[data-input='touch'] {
+    --touch-side: 340px;
+  }
+
   :root[data-input='touch'] .main {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) var(--touch-side);
   }
 
   :root[data-input='touch'] .foot {

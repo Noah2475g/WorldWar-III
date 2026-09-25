@@ -35,6 +35,7 @@
  *   pinchTolerancePx: number,
  *   minTarget: number,
  *   fullscreen: boolean,
+ *   tutorial: boolean,
  *   help: boolean,
  * }} Options
  * @typedef {{ id: string, pass: boolean, numbers: Record<string, unknown>, detail: string }} CheckResult
@@ -74,6 +75,8 @@ export const USAGE = `Aufruf: node scripts/android-check.mjs [Schalter]
   --pinch-tolerance <px>      erlaubter Versatz des Zoom-Ankers (Vorgabe: ${PINCH_TOLERANCE_PX})
   --fullscreen                vor den Pruefungen den Knopf "Vollbild" antippen und warten,
                                bis der Browser im Vollbildmodus ist (Vorgabe: aus)
+  --tutorial                  die Einfuehrung sichtbar lassen, statt sie vor dem Lauf
+                               abzuschalten - prueft, dass sie nichts verdeckt (Vorgabe: aus)
 
   Android:   --adb <pfad> (sonst Umgebung ADB, sonst "adb"), --serial <geraet>,
              --devtools-port <p> (adb forward, Vorgabe: ${DEFAULT_DEVTOOLS_PORT})
@@ -157,6 +160,7 @@ export function parseArgs(argv, env) {
     pinchTolerancePx: PINCH_TOLERANCE_PX,
     minTarget: MIN_TARGET_PX,
     fullscreen: false,
+    tutorial: false,
     help: false,
   }
   try {
@@ -168,9 +172,14 @@ export function parseArgs(argv, env) {
         options.help = true
         continue
       }
-      // Ein Schalter ohne Wert (Befund T-M31, Vollbild-Knopf vor den Pruefungen antippen).
+      // Schalter ohne Wert: --fullscreen (Befund T-M31, Vollbild-Knopf vor den Pruefungen
+      // antippen) und --tutorial (Befund 2026-09-25, die Einfuehrung verdeckte Knoepfe).
       if (arg === '--fullscreen') {
         options.fullscreen = true
+        continue
+      }
+      if (arg === '--tutorial') {
+        options.tutorial = true
         continue
       }
       const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg)
@@ -442,6 +451,21 @@ export function pseudoHitBox(box, inset) {
   const height = b - t
   if (width > box.width || height > box.height) return { width, height }
   return null
+}
+
+/**
+ * Der Ausdruck, der vor dem Neuladen in der Seite laeuft und festlegt, ob die Einfuehrung
+ * erscheint. Vorgabe ist "aus" (Schluessel gesetzt): die neun Pruefungen tippen und ziehen
+ * auf der Karte, und ein Hinweis darueber waere eine zweite Variable. Mit --tutorial wird
+ * der Schluessel GELOESCHT, nicht nur nicht gesetzt - sonst bliebe die Einfuehrung aus,
+ * sobald ein frueherer Lauf denselben Browser-Speicher benutzt hat (Android-Chrome behaelt ihn).
+ * @param {string} key
+ * @param {boolean} show
+ * @returns {string}
+ */
+export function tutorialSeedScript(key, show) {
+  const k = JSON.stringify(key)
+  return show ? `localStorage.removeItem(${k});` : `localStorage.setItem(${k}, 'true');`
 }
 
 /**

@@ -221,8 +221,9 @@ describe('touch.css: die Karte gehoert dem Finger, in jeder Eingabeart', () => {
  * Uebersichtskarte statt den Knopf, weil die viersaeulige 44-px-Kartenknopf-Spalte oben
  * rechts (182 px hoch) und die 132x74-Uebersichtskarte unten rechts bei dieser Hoehe in
  * denselben senkrechten Streifen fallen. Gebunden ist hier nur die Kaskade ausserhalb
- * eines @media-Blocks (touch.css zieht die Uebersichtskarte im Touch-Betrieb generell auf
- * die linke Seite); die Messung im echten Fenster deckt scripts/android-check.mjs ab.
+ * eines @media-Blocks (touch.css stellt die Kartenknoepfe im Touch-Betrieb bei jeder Hoehe
+ * als Reihe); die Messung im echten Fenster deckt scripts/android-check.mjs ab. Die
+ * Uebersichtskarte bleibt rechts: links deckte sie die Einfuehrung zu (gemessen an d55e5b3).
  */
 function Kartenknoepfe() {
   return (
@@ -246,29 +247,77 @@ function Kartenknoepfe() {
   )
 }
 
-describe('touch.css: Kartenknoepfe und Uebersichtskarte liegen nie in derselben Ecke', () => {
-  it('zieht die Uebersichtskarte im Touch-Betrieb nach links, weg von der rechten Kartenknopf-Spalte', () => {
+describe('touch.css: Kartenknoepfe und Uebersichtskarte liegen nie im selben Streifen', () => {
+  it('stellt die Kartenknoepfe im Touch-Betrieb als Reihe, die Uebersichtskarte bleibt rechts', () => {
     document.documentElement.dataset['input'] = 'touch'
     const { container } = render(<Kartenknoepfe />)
     const overview = screen.getByRole('button', { name: 'Übersichtskarte' })
+    const controls = container.querySelector('.map-controls')!
 
-    expect(css(overview, 'right')).toBe('auto')
-    // jsdom loest var(...) in der Kaskade nicht zu px auf (wie das bestehende Muster
-    // dieser Datei fuer var-basierte Werte) - der Rohwert genuegt, um die Regel zu binden.
-    expect(css(overview, 'left')).toBe('var(--sp-lg)')
-    // Die Kartenknoepfe selbst bleiben, wo sie waren.
-    expect(css(container.querySelector('.map-controls')!, 'right')).toBe('var(--sp-md)')
+    expect(css(controls, 'flex-direction')).toBe('row')
+    // Die Kartenknoepfe bleiben oben rechts ...
+    expect(css(controls, 'right')).toBe('var(--sp-md)')
+    // ... und die Uebersichtskarte unten rechts - nicht links, dort liegt die Einfuehrung.
+    // jsdom loest var(...) in der Kaskade nicht zu px auf; der Rohwert bindet die Regel.
+    expect(css(overview, 'right')).toBe('var(--sp-lg)')
+    expect(css(overview, 'left')).toBe('auto')
   })
 
-  it('laesst die Uebersichtskarte im Mausbetrieb an ihrem alten Platz rechts', () => {
+  it('laesst im Mausbetrieb die Spalte und die Uebersichtskarte, wie sie waren', () => {
     document.documentElement.dataset['input'] = 'mouse'
-    render(<Kartenknoepfe />)
+    const { container } = render(<Kartenknoepfe />)
     const overview = screen.getByRole('button', { name: 'Übersichtskarte' })
 
+    expect(css(container.querySelector('.map-controls')!, 'flex-direction')).toBe('column')
     expect(css(overview, 'right')).toBe('var(--sp-lg)')
     // app.css setzt kein "left" an .map-overview; jsdom meldet fuer absolut positionierte
-    // Elemente ohne eigene "left"-Regel deren Startwert "auto" (anders als bei den nicht
-    // positionsbezogenen Eigenschaften weiter oben in dieser Datei).
+    // Elemente ohne eigene "left"-Regel deren Startwert "auto".
     expect(css(overview, 'left')).toBe('auto')
+  })
+})
+
+/**
+ * Die Einfuehrung verdeckt im Touch-Betrieb keine Bedienelemente (gemessen 2026-09-25 mit
+ * android-check --tutorial: vorher lag sie bei 1098x498@1.75 ueber "Besitz", "Rohstoffe",
+ * "Moral" und bei 640x360@2 ueber "Hineinzoomen"). Gebunden ist die Kaskade: sie sitzt im
+ * Rasterbereich von <main> - mit BEIDEN Linien, denn "2 / auto" reichte bei einem absolut
+ * positionierten Kind bis unter den Fuss. Die Geometrie misst scripts/android-check.mjs.
+ */
+function Einfuehrung() {
+  return (
+    <div className="app">
+      <aside className="tutorial" aria-label="Einführung" />
+    </div>
+  )
+}
+
+describe('touch.css: die Einfuehrung bleibt zwischen Kopf und Fuss', () => {
+  it('bindet sie im Touch-Betrieb an Zeile 2 von .app, unten links', () => {
+    document.documentElement.dataset['input'] = 'touch'
+    render(<Einfuehrung />)
+    const tutorial = screen.getByRole('complementary', { name: 'Einführung' })
+
+    // jsdom fuehrt die Kurzschreibweise, ohne sie in -start/-end zu zerlegen.
+    expect(css(tutorial, 'grid-row')).toBe('2 / 3')
+    expect(css(tutorial, 'grid-column')).toBe('1 / 2')
+    expect(css(tutorial, 'bottom')).toBe('var(--sp-md)')
+    expect(css(tutorial, 'left')).toBe('var(--sp-md)')
+    expect(css(tutorial, 'overflow-y')).toBe('auto')
+    // Die Breite endet vor der Uebersichtskarte und faellt nie unter 160 px (340a18a: ohne
+    // Untergrenze wurde sie hochkant stillschweigend 0 px breit). jsdom rechnet calc() nicht
+    // aus - gebunden ist die Formel selbst.
+    expect(css(tutorial, 'width').replace(/\s+/g, ' ')).toBe(
+      'clamp(160px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)), 260px)',
+    )
+  })
+
+  it('laesst sie im Mausbetrieb, wo sie war', () => {
+    document.documentElement.dataset['input'] = 'mouse'
+    render(<Einfuehrung />)
+    const tutorial = screen.getByRole('complementary', { name: 'Einführung' })
+
+    expect(css(tutorial, 'bottom')).toBe('170px')
+    expect(css(tutorial, 'left')).toBe('var(--sp-lg)')
+    expect(css(tutorial, 'grid-row')).toBe('')
   })
 })

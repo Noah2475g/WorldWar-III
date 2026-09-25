@@ -36,6 +36,7 @@ import {
   pinchPath,
   pseudoHitBox,
   rankTapPoints,
+  tutorialSeedScript,
 } from '../scripts/lib/android-check-lib.mjs'
 
 /**
@@ -119,6 +120,36 @@ describe('Android-Pruefstand: Argumente', () => {
     expect(mit.options.fullscreen).toBe(true)
     // Kein Wert verschluckt: der naechste Schalter wird trotzdem gelesen.
     expect(mit.options.sizes.map((s) => s.label)).toEqual(['640x360@2'])
+  })
+
+  it('laesst --tutorial ohne Wert die Einfuehrung sichtbar, Vorgabe bleibt aus', () => {
+    // Befund 2026-09-25: die Einfuehrung verdeckte im Touch-Betrieb Modus- und Kartenknoepfe,
+    // und der Pruefstand sah es nie, weil er sie vor jedem Lauf abschaltet.
+    const ohne = parseArgs([], {})
+    expect(ohne.ok && ohne.options.tutorial).toBe(false)
+
+    const mit = parseArgs(['--tutorial', '--fullscreen', '--sizes', '640x360@2'], {})
+    expect(mit.ok).toBe(true)
+    if (!mit.ok) return
+    expect(mit.options.tutorial).toBe(true)
+    expect(mit.options.fullscreen).toBe(true)
+    expect(mit.options.sizes.map((s) => s.label)).toEqual(['640x360@2'])
+  })
+
+  it('Einfuehrung: das Seed-Skript setzt den Schluessel nur, wenn sie aus sein soll', () => {
+    const store = new Map<string, string>([['worldwar.tutorial.seen', 'true']])
+    const localStorage = {
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+    }
+    const run = (script: string) => new Function('localStorage', 'window', script)(localStorage, {})
+
+    run(tutorialSeedScript('worldwar.tutorial.seen', true))
+    // Sichtbar heisst: ein frueherer Lauf darf sie nicht abgeschaltet hinterlassen.
+    expect(store.has('worldwar.tutorial.seen')).toBe(false)
+
+    run(tutorialSeedScript('worldwar.tutorial.seen', false))
+    expect(store.get('worldwar.tutorial.seen')).toBe('true')
   })
 
   it('weist Unbekanntes und Kaputtes mit einer Meldung zurueck', () => {
