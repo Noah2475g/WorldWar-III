@@ -232,6 +232,16 @@ describe('D29.2 Prüfreihenfolge — bei zwei Fehlern gewinnt der frühere', () 
     expect(canApply(state, recruit('o1', 'counter'), ctx)).toEqual(invalid('unbekannt'))
   })
 
+  it('Kenntnis des Ziels vor dem Auftrag — ein Prüfer widerlegte den Kommentar zunächst nicht (2026-09-25)', () => {
+    // 'o1' liegt hinter dem Nebel (unbekannt), 'bribery' ist kein gültiger SPY_MISSIONS-Wert.
+    // Die bisherigen Fälle prüften jedes Paar der Kette einzeln — dieses Paar (unbekannte
+    // Provinz UND ungültiger Auftrag gleichzeitig) blieb ungeprüft, obwohl der Kommentar in
+    // dieser Datei genau diese Zusage macht.
+    vollUndPleite()
+    expect(canApply(state, recruit('o1', 'bribery' as SpyMission), ctx)).toEqual(invalid('unbekannt'))
+    expect(canApply(state, reassign('s1', 'o1', 'bribery' as SpyMission), ctx)).toEqual(invalid('unbekannt'))
+  })
+
   it('Zielbedingung vor Obergrenze und Kosten', () => {
     vollUndPleite()
     expect(canApply(state, recruit('n1', 'militarySabotage'), ctx)).toEqual(invalid('eigene Provinz'))
