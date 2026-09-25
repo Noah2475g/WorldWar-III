@@ -5837,3 +5837,62 @@ in einem früheren, nicht eingecheckten Bericht.
 (oder ein Geschwistertest) verankern, statt sie jede Durchsicht neu von Hand nachzustellen.
 
 **Status:** offen, geht an M18.
+
+
+---
+
+## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — der Automatik-Teil (AK5) haelt, der Kontrollteil nicht
+
+**Befund:** Der Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`,
+`WORLDWAR_M17_NACHHER` unbeteiligt) auf dem M17-Endstand (`b9b3915`, vormals gemessen auf
+`b1bb3c8`) zeigt bei "Garnison A 1914" (dem festen Vergleichslauf fuer `KONTROLLE`) **0
+`ARMY_INTRUDED`-Ereignisse und 0 verlorene Provinzen**, wo der Bericht vom 2026-09-14 auf
+`b1bb3c8` **76 Einmaersche und 4 verlorene Provinzen** maß — derselbe Wert, den die Zusicherung
+seit T-M40-02 fest erwartet (`KONTROLLE = { intrusions: 76, provincesLost: 4 }`,
+`stance.slow.test.ts` Zeile 116). Alle anderen AK5-Zahlen sind unveraendert **gut**: Provinz-Tage
+100 % (vorher 101,8 %, beides ueber der 98-%-Schwelle), Verluste ohne Gefecht weiterhin 0/0,
+`fensterOk: true`. Nur die Kontrollzahl reisst — Exit 1, 2 von 15 Tests rot
+(`ak5.erfuellt: false`, `verletzt: ["Kontrolle: Garnison A 1914 0 Einmaersche / 0 verloren
+statt 76 / 4"]`).
+
+**Nicht erzwungen:** `KONTROLLE` in `stance.slow.test.ts` bleibt unveraendert bei 76/4 — das ist
+genau die Falle, vor der der Plan (`plan-T-M17-16.md` Abschnitt 3) warnt: "Verschiebt sich die
+Kontrolle, hat sich etwas ausser der Automatik bewegt; nicht die Erwartung nachziehen." Der
+gemessene, rote Bericht liegt im Scratchpad
+(`stance-rot-b9b3915.json`, `s2-stance-fail.log`), NICHT eingecheckt — `docs/reports/stance.json`
+bleibt auf dem Stand von `b1bb3c8` (`git checkout --`), damit kein roter Stand als gueltig
+gilt.
+
+**Was `ARMY_INTRUDED` misst** (`packages/core/src/phases/movement.ts` Zeile 94–103): das
+Ereignis feuert, wenn eine fremde Armee in eine Provinz des Menschen einruecken, **und** die
+beiden Maechte zu diesem Zeitpunkt im Krieg stehen (`atWar`) — unabhaengig davon, ob der Krieg
+erklaert war oder ein Ueberfall (R-AI-09/AK3) war. 76 auf 0 heisst: ueber die gesamte
+Garnison-A-1914-Partie hinweg betrat **keine** feindliche Armee je eine Provinz des Menschen,
+waehrend Krieg herrschte.
+
+**Vermutung, ausdruecklich als Vermutung (nicht nachgemessen — 60 Commits an `STANCE_SOURCES`
+liegen zwischen den beiden Messungen, eine Bisektion wuerde 60 × ~35 Min. kosten):** die
+Ueberfall-ohne-Kriegserklaerung-Zahl aus `m17-baseline.json` (T-M17-02) vs. `m17-final.json`
+(T-M17-16, derselbe Lauf) fiel im selben Zeitraum von 13 auf 1 (siehe PROGRESS.md-Zeile
+T-M17-16) — R-DIP-08/T-M17-10 (Antrag auf Durchmarsch) und die uebrige M17-Diplomatie duerften
+die KI insgesamt zurueckhaltender gemacht haben, fremdes Land zu betreten. Das waere dann eine
+**gewollte** Nebenwirkung von M17 und keine Regression — aber das ist eine Vermutung, kein
+Beleg, und die feste `KONTROLLE`-Zusicherung in `stance.slow.test.ts` passt nicht mehr zu einem
+Spiel, das absichtlich weniger unerklaerte Grenzuebertritte hat.
+
+**Zusaetzliche Beobachtung:** `provinceDays.garrison` und `.defensive` sind jetzt **exakt
+gleich** (4800/4800), vorher unterschiedlich (3146/3089) — moeglicher Hinweis auf eine
+strukturelle Aenderung an der Episodenzaehlung selbst (mehr als nur AI-Verhalten), nicht
+nachverfolgt.
+
+**Auswirkung:** `docs/reports/stance.json` bleibt auf `b1bb3c8` stehen, damit unfrisch
+(`allFreshness` bleibt fuer den Haltungs-Messlauf rot); T-M17-16 kann diesen Teil der dod nicht
+erfuellen, ohne Noahs Entscheid, ob `KONTROLLE` neu vermessen und der Erwartungswert bewusst
+auf den neuen Stand gezogen wird (das waere **keine** Grenzverschiebung "damit eine Zahl
+passt", sondern eine bewusste Neu-Kalibrierung einer Testfixtur an gewollt geaendertes
+KI-Verhalten) — oder ob die 0 Einmaersche stattdessen ein echter Befund ueber die KI ist
+(zu wenig Aggression, zu wenig Krieg insgesamt), der reparaturbeduerftig waere.
+
+**Status:** offen, Noah entscheidet. Kandidat fuer M18 oder eine gezielte Nachmessung
+(z. B. Kriegszahl/Ueberfallzahl in genau diesem Fixture-Lauf separat zaehlen, um die Vermutung
+oben zu pruefen, ohne 60 Commits zu bisektieren).
