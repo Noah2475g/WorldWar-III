@@ -319,7 +319,8 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     // eigenen Auftrag, kein Rueckschlag im Sinn von D24.1.
     SPY_REPORT: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', outcome: 'failure', audience: ['p1'], concerns: ['p1'] },
     SPY_LOST: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] },
-    // Sabotage und Enttarnung (T-M17-09): kein Rueckschlag im Sinn von D24.1 (E8).
+    // Sabotage und Enttarnung (T-M17-09): kein Rueckschlag im Sinn von D24.1 — DECISIONS.md
+    // "SABOTAGE_SUFFERED ist kein Rueckschlag" (Nacharbeit kern, 2026-09-25).
     SABOTAGE_SUFFERED: { playerId: 'p1', provinceId, kind: 'economic', moraleLoss: 10_000, destroyed: { money: 5_000 }, delayTicks: 0, audience: ['p1'], concerns: ['p1'] },
     SPY_DETECTED: { playerId: 'p2', targetPlayerId: 'p1', provinceId, mission: 'intel', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
   }
