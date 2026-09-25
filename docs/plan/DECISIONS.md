@@ -4989,13 +4989,18 @@ Prüfbefund 9) und hätte einen veralteten Turnierbericht als frisch gemeldet.
 **Entscheidung (Noah, 2026-09-25):** Drei offene Befunde der Turnier-Nacharbeit werden **nicht**
 in T-M17-15/M17 repariert, sondern an M18 verschoben:
 
-1. **Befund M17-T7** (KI-Integrationslauf 2 von 21 rot: 0 Artillerie/0 Beschuss, kein Frieden in
-   90 Tagen). Ursache ist gemessen und zerlegt (§ PROBLEME.md M17-T7): C4 verschiebt nur, wer Geld
-   hat, die eigentliche Ursache ist das Aushebungsbudget (`recruitShare` trägt keine Artillerie-
-   Einheit). Die einzige gefundene Reparatur braucht zugleich M17-S12 und ändert das Spiel spürbar
-   (295 Artillerie, 5004 Beschüsse in der Voreinstellung statt 0) — das ist eine Spielfrage, keine
-   Nacharbeit-Frage. `ai-integration.slow.test.ts` bleibt bewusst **2 von 21 rot**, mit datiertem
-   Kommentar; keine Schranke gesenkt, kein Fall gelöscht.
+1. **Befund M17-T7** (KI-Integrationslauf: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen).
+   Ursache ist gemessen und zerlegt (§ PROBLEME.md M17-T7), **berichtigt in der Nacharbeit
+   2026-09-25**: C4 verschiebt nur, wer Geld hat, ändert aber nichts am Fabrikbau. Die
+   eigentliche Ursache ist nicht „keine Macht spart genug an" (das widerspricht
+   `geldHoechstensJeMacht` im eingecheckten Bericht — „normal"/„schwer" liegen durchweg ÜBER
+   ihrer eigenen Schwelle), sondern: „normal"/„schwer" bauen **null** Fabriken,
+   „leicht" baut welche, erreicht aber nie die eigene, höhere Geldschwelle — und Artillerie
+   braucht laut `units.json` eine Fabrik. Die einzige gefundene Reparatur braucht zugleich
+   M17-S12 und ändert das Spiel spürbar (295 Artillerie, 5004 Beschüsse in der Voreinstellung
+   statt 0) — das ist eine Spielfrage, keine Nacharbeit-Frage. `ai-integration.slow.test.ts`
+   läuft bewusst **21 von 21 grün** (zwei Fälle als `it.fails`, mit datiertem Kommentar); keine
+   Schranke gesenkt, kein Fall gelöscht.
 2. **Befund M17-S12** (`recruitCommands` bucht `RECRUIT_SPY` desselben Takts nicht vor) geht mit
    M17-T7, weil seine Reparatur das Turnierband kippt (0,760 → 0,460, Befund M17-I1) — die
    Turnierfrage wird zusammen mit M17-T7 in M18 neu entschieden.

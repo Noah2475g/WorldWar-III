@@ -5530,19 +5530,27 @@ nicht in der Nacharbeit Turnier behoben.
 Ziel), nicht C3 (die Moralgrenze der Aushebung) — ohne C4 hebt die KI 18 Artillerie aus (Indien),
 ohne C3 bleibt es bei 0. Die eigentliche Ursache liegt schon vor M17: die Aushebung kauft je
 Einheit nur `recruitShare` Promille des Bestands (`economy.ts:326-335`); eine Artillerie kostet
-200 000 Geld, „leicht" bräuchte 2,5 Mio., „normal" 1 Mio., „schwer" 714 000 Geld auf dem Konto —
-am Ende von Tag 200 hat keine Macht so viel, die KI hebt praktisch nur Infanterie aus. C4
-verschiebt nur, wer wie viel Geld hat (11 statt 1 Krieg), und niemand überschreitet mehr die
-Schwelle. Die einzige gefundene Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über der
-Rücklage sie trägt) braucht zugleich Befund M17-S12 — und S12 kippt das Turnierband von 0,760 auf
-0,460 und macht `progress.slow.test.ts` rot (Fabrik-Zusicherung). Frieden in 90 Tagen: der erste
-Frieden fällt je nach Variante auf Tag 44, 100, 118, 122, 175 oder nie — eine Zusage über einen
-chaotischen Zeitpunkt an einer Startzahl, kein Mechanismus-Fehler gefunden (R-DIP-06/AK4 hält:
-3/3/3 Frieden zwischen KI in 200 Tagen, alle drei Startzahlen).
+200 000 Geld, „leicht" bräuchte 2,5 Mio., „normal" 1 Mio., „schwer" 714 000 Geld auf dem Konto.
+
+**Berichtigt (Nacharbeit T-M17-15, 2026-09-25):** die Zeile „am Ende von Tag 200 hat keine Macht
+so viel" war **falsch** — `geldHoechstensJeMacht` im eingecheckten `ai-integration.json` zeigt das
+Gegenteil: „normal" (1,35–1,43 Mio.) und „schwer" (1,52–1,59 Mio.) überschreiten ihre eigene
+Schwelle durchweg, nur „leicht" bleibt unter der höheren 2,5-Mio.-Schwelle (höchstens 2,14 Mio.).
+Die tatsächliche Engstelle steht in `fabrikenBegonnenJeMacht`: „normal" und „schwer" bauen in 200
+Tagen **null** Fabriken, „leicht" baut welche (40/51/1 Baubeginne) — und Artillerie braucht laut
+`units.json` eine Fabrik. C4 verschiebt nur, wer wie viel Geld hat (11 statt 1 Krieg), ändert aber
+nichts am Fabrikbau. Wer Geld hat, baut keine Fabrik; wer Fabriken baut, kann sich die Artillerie
+nicht leisten. Die einzige gefundene Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über
+der Rücklage sie trägt) braucht zugleich Befund M17-S12 — und S12 kippt das Turnierband von 0,760
+auf 0,460 und macht `progress.slow.test.ts` rot (Fabrik-Zusicherung). Frieden in 90 Tagen: der
+erste Frieden fällt je nach Variante auf Tag 44, 100, 118, 122, 175 oder nie — eine Zusage über
+einen chaotischen Zeitpunkt an einer Startzahl, kein Mechanismus-Fehler gefunden (R-DIP-06/AK4
+hält: 3/3/3 Frieden zwischen KI in 200 Tagen, alle drei Startzahlen).
 
 **Entscheid Noah (2026-09-25):** nicht repariert — geht an **M18**, zusammen mit Befund M17-S12.
-`ai-integration.slow.test.ts` bleibt **2 von 21 rot** (Artillerie/Beschuss, Frieden in 90 Tagen),
-mit datiertem Kommentar im Test. Siehe `DECISIONS.md` und Befund M17-I1.
+`ai-integration.slow.test.ts` läuft **21 von 21 grün**, zwei Fälle (Artillerie/Beschuss, Frieden in
+90 Tagen) stehen als `it.fails` mit datiertem Kommentar im Test — fallen sie unbemerkt grün, meldet
+vitest das als fehlgeschlagenes `it.fails`. Siehe `DECISIONS.md` und Befund M17-I1.
 
 ---
 
