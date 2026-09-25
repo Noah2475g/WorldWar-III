@@ -279,9 +279,28 @@ hat *und* was es beide Seiten gekostet hat — Verluste getrennt nach Angreifer 
 Verteidiger. Filtern Sie das Protokoll auf **Kämpfe**, wenn Sie eine Schlachtreihe
 nachlesen wollen.
 
-**Diplomatie** (D oder Knopf in der Kopfleiste): Verhältnis zu jeder Macht; eine Macht
-auswählen, dann Krieg erklären (wirkt nach Vorlaufzeit — das Protokoll nennt den Tag),
-Frieden anbieten oder annehmen, Bündnis, Durchmarsch, Kartenaustausch.
+**Diplomatie** (D oder Knopf in der Kopfleiste): Ihr eigenes Ansehen und das jeder anderen
+Macht stehen als Balken oben im Panel — hoch ist gut, niedrig kostet Vertrauen. Darunter
+die Kriege der Welt, auch die, an denen Sie nicht beteiligt sind. Eine Macht auswählen,
+dann in der Gruppe **Verträge**: Krieg erklären (wirkt nach Vorlaufzeit — das Protokoll
+nennt den Tag), Frieden anbieten oder annehmen, Bündnis anbieten, annehmen oder aufkündigen.
+
+**Durchmarsch und Karte**: eine eigene Gruppe neben den Verträgen. Durchmarsch ist
+**gerichtet** — wer ihn gewährt, darf damit nicht selbst ins fremde Land. Gewähren wirkt
+sofort; kündigen setzt eine Frist (die Spalte „Durchmarsch" nennt dann „endet an Tag N"
+statt eines zweiten Knopfs). Wer selbst durchmarschieren will, **beantragt** es — die
+andere Macht sieht den Antrag als Meldung und nimmt ihn im Diplomatiepanel an. Die
+Kartenfreigabe zeigt der anderen Macht, was Sie selbst sehen; Ihre eigene Karte sieht sie
+nur, wenn sie ebenfalls freigibt.
+
+**Handelsangebote**: im Diplomatiepanel, je Macht ein eigenes Formular. Rohstoffe und
+Provinzen lassen sich auf **beide** Seiten legen; die Vorschau zeigt den Marktwert beider
+Seiten zum Kurs des Ticks, bevor Sie anbieten. Was Sie geben, liegt ab sofort in Treuhand
+und kommt zurück, wenn das Angebot ohne Tausch endet — abgelehnt, zurückgezogen, nach drei
+Tagen verfallen oder durch Krieg. Provinzen wechseln erst beim Tausch den Besitzer. Ein
+eingehendes Angebot meldet sich mit einer eigenen, leisen Meldung; ein Klick führt in die
+Diplomatie mit der anbietenden Macht, wo Sie annehmen, ablehnen oder — bei einem eigenen
+Angebot — zurückziehen. Die Welt erfährt nur **dass** gehandelt wurde, nie **wie viel**.
 
 **Markt** (H): Rohstoff abgeben, Menge, Rohstoff erhalten — der Gegenwert steht da,
 bevor Sie handeln. Der Kurs gilt für alle Mächte gleich und für den ganzen Tick.
