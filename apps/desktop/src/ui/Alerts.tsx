@@ -427,7 +427,11 @@ export function espionageAlerts(events: readonly GameEvent[], viewerId: string, 
       const province = naming.province(event.provinceId)
       if (event.targetPlayerId === viewerId) {
         alerts.push({
-          id: `spy-caught:${event.provinceId}`,
+          // Die Kennung braucht den Urheber (Befund Nacharbeit T-M17-13/14, niedrig): sonst
+          // ersetzt eine zweite, gleich alte oder juengere Enttarnung in derselben Provinz
+          // die erste in `collectEspionageNews` (App.tsx), und eine der beiden Maechte
+          // verschwindet aus der Meldung, obwohl R-SPY-05/AK1 beide Nennungen verlangt.
+          id: `spy-caught:${event.provinceId}:${event.playerId}`,
           kind: 'espionage',
           icon: 'spyCounter',
           text: t('alerts.spyCaught', { province, player: naming.player(event.playerId) }),

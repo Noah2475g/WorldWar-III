@@ -597,6 +597,19 @@ describe('R-SPY-06/AK2 Spionage meldet sich', () => {
     })
   })
 
+  it('verschluckt keine zweite Macht — zwei Enttarnungen in derselben Provinz im selben Tick bleiben beide (Befund Nacharbeit, niedrig)', () => {
+    const vonP2 = ereignis({ type: 'SPY_DETECTED', playerId: 'p2', targetPlayerId: 'p1', provinceId: 'A', mission: 'intel', tick: 48 })
+    const vonP3 = ereignis({ type: 'SPY_DETECTED', playerId: 'p3', targetPlayerId: 'p1', provinceId: 'A', mission: 'counter', tick: 48 })
+
+    const alerts = espionageAlerts([vonP2, vonP3], 'p1', naming)
+
+    expect(alerts).toHaveLength(2)
+    const news = collectEspionageNews(NO_NEWS, [vonP2, vonP3], 48, 'p1', naming)
+    // `collectEspionageNews` (App.tsx) ersetzt bei gleicher id die aeltere Meldung durch die
+    // juengere — bei derselben id fuer beide Maechte wuerde eine der beiden verschwinden.
+    expect(news.alerts.size).toBe(2)
+  })
+
   it('meldet dem Urheber den Verlust seines Spions', () => {
     const event = ereignis({ type: 'SPY_DETECTED', playerId: 'p2', targetPlayerId: 'p1', provinceId: 'A', mission: 'intel' })
 
