@@ -3706,6 +3706,19 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > gerissen — das Artillerie-Tor fiel auf null. Vor einem neuen Anlauf: `TARGET_MIX` in
 > `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
 > verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
+>
+> **Vorgemerkt am 2026-09-25 (T-M17-15, Noahs Entscheid, ergänzt in der Nacharbeit desselben
+> Tages):** drei Befunde der Turnier-Nacharbeit gehen an M18, bisher nur in `WORKFLOW.md` §2.5
+> und `DECISIONS.md` geführt, hier zur Vollständigkeit nachgetragen (Muster T-M41-10). **Befund
+> M17-T7:** „normal"/„schwer" bauen in 200 Tagen keine Fabrik, „leicht" baut welche, erreicht
+> aber nie die eigene Geldschwelle — die KI hebt praktisch keine Artillerie aus, die
+> Feuerautomatik aus R-BAT-08 bleibt für sie tot. Kandidat: eine Fabrikeinheit kaufen, sobald der
+> Bestand über der Rücklage sie trägt. **Befund M17-S12:** `recruitCommands` bucht `RECRUIT_SPY`
+> desselben Takts nicht vor — die Reparatur kippt das Turnierband „schwer gegen normal" von 0,760
+> auf 0,460 (Befund M17-I1), die Turnierfrage muss dort neu entschieden werden. **Befund M17-T6:**
+> ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall — Kandidat: eine
+> Räumfrist nach Friedensschluss, analog der Kündigungsfrist beim Durchmarsch (`PROBLEME.md`,
+> `DECISIONS.md`).
 
 ---
 
