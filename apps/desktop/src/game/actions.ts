@@ -549,7 +549,15 @@ const TREATIES: readonly { action: DiplomacyAction; label: string }[] = [
 
 export function diplomacyActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
   return TREATIES.map(({ action, label }) =>
-    checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
+    checked(
+      ctx,
+      { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action },
+      // Das Ziel gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel): sonst steht
+      // bei stehender Uhr "befohlen" auch bei einer anderen Macht, der nichts befohlen wurde
+      // — `pendingIds` (App.tsx) kennt nur die Zeichenkette, nicht den Befehl dahinter.
+      `diplomacy-${action}-${targetPlayerId}`,
+      t(label),
+    ),
   )
 }
 
@@ -567,7 +575,12 @@ const PASSAGE: readonly { action: DiplomacyAction; label: string }[] = [
 
 export function passageActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
   return PASSAGE.map(({ action, label }) =>
-    checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
+    checked(
+      ctx,
+      { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action },
+      `diplomacy-${action}-${targetPlayerId}`,
+      t(label),
+    ),
   )
 }
 
@@ -612,7 +625,10 @@ export function spyActions(ctx: ActionContext, provinceId: string, moving: SpyMo
       const spec = checked(
         ctx,
         { type: 'REASSIGN_SPY', playerId: ctx.playerId, spyId: moving.spyId, provinceId, mission },
-        `spy-move-${mission}`,
+        // Die Provinz gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel), sonst
+        // sperrt "befohlen" nach dem Umsetzen in eine Provinz dieselbe Auftragsart auch in
+        // jeder anderen Provinz, obwohl dort noch nichts befohlen wurde.
+        `spy-move-${provinceId}-${mission}`,
         label,
         `${t('espionage.moveHint', { salary })} · ${missionEffect(ctx, mission)}`,
         icon,
@@ -623,7 +639,7 @@ export function spyActions(ctx: ActionContext, provinceId: string, moving: SpyMo
     const spec = checked(
       ctx,
       { type: 'RECRUIT_SPY', playerId: ctx.playerId, provinceId, mission },
-      `spy-recruit-${mission}`,
+      `spy-recruit-${provinceId}-${mission}`,
       label,
       `${t('espionage.recruitHint', { cost: costs({ money: ctx.rules.constants.spyRecruitCost }), salary })} · ${missionEffect(ctx, mission)}`,
       icon,
@@ -707,6 +723,22 @@ export function spySummary(ctx: ActionContext, spies: PublicView['espionage']['s
   })
 }
 
+/**
+ * Deckt `giveAmount` so, dass `giveAmount * Kurs` innerhalb von Number.MAX_SAFE_INTEGER
+ * bleibt, BEVOR exchangeAmount() (packages/core) rechnet — sonst wirft divFixed() dort einen
+ * FixedOverflowError (Befund kritisch 1, Nacharbeit T-M17-13/14: ein Zahlfeld ohne `max` im
+ * neuen Angebotsformular, derselbe Weg schon laenger im Marktpanel). Eine Vorschau braucht den
+ * wahren Wert eines unsinnig grossen Entwurfs nicht, nur `canApply()`/`tradeChecked()` muss ihn
+ * am Ende ablehnen — deshalb kappt NUR diese Funktion, nie der Befehl selbst (Falle 7: eine
+ * Grenze anheben waere ein Fehler, hier wird keine angehoben, nur eine bestehende technische
+ * durchgesetzt, bevor sie ueberfahren wird).
+ */
+function safeExchangeAmount(market: MarketState, give: ResourceKey, giveAmount: number, want: ResourceKey): number {
+  const givePrice = market.prices[give]
+  const capped = givePrice > 0 ? Math.min(giveAmount, Math.floor(Number.MAX_SAFE_INTEGER / givePrice)) : giveAmount
+  return exchangeAmount(market, give, capped, want)
+}
+
 /** What a trade would return at the tick's price, and the order to make it. */
 export function tradePreview(
   ctx: ActionContext,
@@ -714,7 +746,7 @@ export function tradePreview(
   giveAmount: number,
   want: ResourceKey,
 ): { wantAmount: number; text: string; action: ActionSpec } {
-  const wantAmount = give === want ? 0 : exchangeAmount(ctx.state.market, give, giveAmount, want)
+  const wantAmount = give === want ? 0 : safeExchangeAmount(ctx.state.market, give, giveAmount, want)
   const action = checked(ctx, { type: 'TRADE', playerId: ctx.playerId, give, giveAmount, want }, 'trade', t('market.trade'))
   const text =
     wantAmount > 0
@@ -735,7 +767,7 @@ export function tradePreview(
 export function tradeValue(market: MarketState, resources: TradeBundle['resources']): number {
   return RESOURCE_KEYS.reduce((sum, key) => {
     const value = resources[key]
-    return value ? sum + exchangeAmount(market, key, value, 'money') : sum
+    return value ? sum + safeExchangeAmount(market, key, value, 'money') : sum
   }, 0)
 }
 
@@ -872,7 +904,10 @@ export function tradeOfferAction(
   // mit dem Kurs (oeffentlich) und dem eigenen Entwurf, nie mit dem Bestand des Partners.
   const giveValue = tradeValue(ctx.state.market, draft.give.resources)
   const wantValue = tradeValue(ctx.state.market, draft.want.resources)
-  const action = tradeChecked(ctx, command, 'trade-offer', t('trade.send'), nameOfProvince)
+  // Das Ziel gehoert in die Kennung (Befund Nacharbeit T-M17-13/14, mittel): sonst sperrt
+  // "befohlen" nach einem Angebot an eine Macht bei stehender Uhr auch das Formular fuer
+  // jede andere Macht.
+  const action = tradeChecked(ctx, command, `trade-offer-${targetPlayerId}`, t('trade.send'), nameOfProvince)
   const hasProvinces = draft.give.provinces.length > 0 || draft.want.provinces.length > 0
   const text =
     t('trade.worth', { give: amount(giveValue), want: amount(wantValue) }) +
@@ -912,7 +947,7 @@ export function offerListActions(
   const nationOf = (id: string): string => naming.nameOf(id) || t('trade.unknownPower')
 
   const incoming: OfferRowSpec[] = [
-    ...view.tradeOffers.incoming.map((offer): OfferRowSpec => {
+    ...view.tradeOffers.incoming.map((offer, index): OfferRowSpec => {
       const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
       // Marktwert aus Sicht des EMPFAENGERS: er gibt `want` her, bekommt `give`.
       const note =
@@ -932,7 +967,10 @@ export function offerListActions(
           tradeChecked(
             ctx,
             { type: 'ACCEPT_TRADE', playerId: ctx.playerId, offerId: offer.id },
-            `trade-accept-${offer.id}`,
+            // Positionsbasiert (Befund M17-S1, E2): `offer.id` ist ein GLOBALER Zaehler ueber
+            // alle Maechte (`t7`); im DOM (ActionRow, Panels.tsx:174 `${action.id}-reason`)
+            // wuerde er verraten, wie viele Angebote insgesamt liefen — auch fremde.
+            `trade-in-${index}-accept`,
             t('trade.accept'),
             naming.nameOfProvince,
             offer,
@@ -940,7 +978,7 @@ export function offerListActions(
           tradeChecked(
             ctx,
             { type: 'DECLINE_TRADE', playerId: ctx.playerId, offerId: offer.id },
-            `trade-decline-${offer.id}`,
+            `trade-in-${index}-decline`,
             t('trade.decline'),
             naming.nameOfProvince,
           ),
@@ -948,14 +986,15 @@ export function offerListActions(
       }
     }),
     ...view.incomingOffers.map(
-      (offer): OfferRowSpec => ({
+      (offer, index): OfferRowSpec => ({
         id: `offer-${offer.kind}-${offer.from}`,
         text: t(`diplomacy.request.${offer.kind}`, { nation: nationOf(offer.from) }),
         actions: [
           checked(
             ctx,
             { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId: offer.from, action: ACCEPT_FOR[offer.kind] },
-            `offer-accept-${offer.kind}-${offer.from}`,
+            // Positionsbasiert: `offer.from` (`p2`) traegt sonst eine Spielerkennung ins DOM.
+            `offer-in-${index}-accept`,
             t(REQUEST_LABEL[offer.kind]),
           ),
         ],
@@ -964,7 +1003,7 @@ export function offerListActions(
   ]
 
   const outgoing: OfferRowSpec[] = [
-    ...view.tradeOffers.outgoing.map((offer): OfferRowSpec => {
+    ...view.tradeOffers.outgoing.map((offer, index): OfferRowSpec => {
       const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
       const hasEscrow = Object.keys(offer.give.resources).length > 0
       return {
@@ -979,7 +1018,7 @@ export function offerListActions(
           tradeChecked(
             ctx,
             { type: 'WITHDRAW_TRADE', playerId: ctx.playerId, offerId: offer.id },
-            `trade-withdraw-${offer.id}`,
+            `trade-out-${index}-withdraw`,
             t('trade.withdraw'),
             naming.nameOfProvince,
           ),

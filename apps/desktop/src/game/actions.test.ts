@@ -405,9 +405,9 @@ describe('R-DIP-01 Diplomatie und R-ECON-05 Markt', () => {
     const { ctx } = fresh()
     const byId = Object.fromEntries(diplomacyActions(ctx, 'p2').map((a) => [a.id, a]))
 
-    expect(byId['diplomacy-declareWar']!.disabledReason).toBeNull()
-    expect(byId['diplomacy-offerPeace']!.disabledReason).toContain('nur im Krieg')
-    expect(byId['diplomacy-acceptPeace']!.disabledReason).toContain('kein Angebot')
+    expect(byId['diplomacy-declareWar-p2']!.disabledReason).toBeNull()
+    expect(byId['diplomacy-offerPeace-p2']!.disabledReason).toContain('nur im Krieg')
+    expect(byId['diplomacy-acceptPeace-p2']!.disabledReason).toContain('kein Angebot')
     for (const action of Object.values(byId)) {
       if (action.disabledReason) expect(action.disabledReason).not.toMatch(RAW_KEY)
     }
@@ -774,9 +774,9 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
     const specs = spyActions(ctx, id)
 
     expect(specs.map((s) => s.id)).toEqual([
-      'spy-recruit-intel',
-      'spy-recruit-economicSabotage',
-      'spy-recruit-militarySabotage',
+      `spy-recruit-${id}-intel`,
+      `spy-recruit-${id}-economicSabotage`,
+      `spy-recruit-${id}-militarySabotage`,
     ])
     for (const spec of specs) {
       expect(spec.disabledReason, spec.id).toBeNull()
@@ -791,7 +791,7 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
 
     const specs = spyActions(ctx, capital)
 
-    expect(specs.map((s) => s.id)).toEqual(['spy-recruit-counter'])
+    expect(specs.map((s) => s.id)).toEqual([`spy-recruit-${capital}-counter`])
     expect(specs[0]!.disabledReason).toBeNull()
   })
 
@@ -810,8 +810,8 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
     const id = known(ctx, ctx.state.playerOrder[1]!)
 
     const specs = spyActions(ctx, id)
-    const intel = specs.find((s) => s.id === 'spy-recruit-intel')!
-    const economic = specs.find((s) => s.id === 'spy-recruit-economicSabotage')!
+    const intel = specs.find((s) => s.id === `spy-recruit-${id}-intel`)!
+    const economic = specs.find((s) => s.id === `spy-recruit-${id}-economicSabotage`)!
 
     expect(intel.hint).toContain('102 Geld')
     expect(intel.hint).toContain('10 Geld je Tag')
@@ -828,11 +828,11 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
     const id = known(ctx, null)
 
     const specs = spyActions(ctx, id)
-    expect(specs.find((s) => s.id === 'spy-recruit-intel')!.disabledReason).toBeNull()
-    expect(specs.find((s) => s.id === 'spy-recruit-economicSabotage')!.disabledReason).toBe(
+    expect(specs.find((s) => s.id === `spy-recruit-${id}-intel`)!.disabledReason).toBeNull()
+    expect(specs.find((s) => s.id === `spy-recruit-${id}-economicSabotage`)!.disabledReason).toBe(
       'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
     )
-    expect(specs.find((s) => s.id === 'spy-recruit-militarySabotage')!.disabledReason).toBe(
+    expect(specs.find((s) => s.id === `spy-recruit-${id}-militarySabotage`)!.disabledReason).toBe(
       'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
     )
   })
@@ -870,7 +870,7 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
     )!
     expect(sichtbar.has(unbekannt.id), 'die gewaehlte Provinz muss unbekannt sein').toBe(false)
 
-    const spec = spyActions(ctx, unbekannt.id).find((s) => s.id === 'spy-recruit-intel')!
+    const spec = spyActions(ctx, unbekannt.id).find((s) => s.id === `spy-recruit-${unbekannt.id}-intel`)!
     expect(spec.disabledReason).toBe('Von dieser Provinz wissen Sie nichts — erst sehen oder aufklären.')
   })
 
@@ -911,7 +911,7 @@ describe('R-SPY-06/AK1 Spionage in der Provinzleiste', () => {
 
     const specs = spyActions(ctx, capital, { spyId: eigen.id, number: 1 })
 
-    expect(specs.map((s) => s.id)).toEqual(['spy-move-counter'])
+    expect(specs.map((s) => s.id)).toEqual([`spy-move-${capital}-counter`])
   })
 })
 
@@ -1014,6 +1014,20 @@ describe('R-SPY-06 Die Spionageuebersicht', () => {
     expect(row.move.aria).toBe('Spion 1 umsetzen')
   })
 
+  it('prueft DISMISS_SPY wirklich ueber canApply — ein veralteter Spion sperrt den Knopf (Befund Nacharbeit, niedrig)', () => {
+    const { ctx, neighbour } = fresh()
+    const eigen = spy(ctx, { provinceId: neighbour, mission: 'intel' })
+    // Der Spion ist schon nicht mehr im Bestand (z. B. gerade in diesem Tick entlassen oder
+    // aufgerieben) — `publicView` liest ihn also noch, aber `canApply` kennt ihn nicht mehr.
+    const veraltet = { ...ctx, state: { ...ctx.state, espionage: { ...ctx.state.espionage, spies: [] } } }
+    const spies = publicView(ctx.state, ctx.playerId, rules).espionage.spies
+    expect(spies.find((s) => s.id === eigen.id)).toBeDefined()
+
+    const row = spyOverviewActions(veraltet, spies)[0]!
+
+    expect(row.dismiss.disabledReason).not.toBeNull()
+  })
+
   it('fasst Zahl und Tagessold zusammen', () => {
     const { ctx, neighbour } = fresh()
     spy(ctx, { provinceId: neighbour, mission: 'intel', lastRunTick: 24, lastOutcome: 'success' })
@@ -1074,12 +1088,12 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
   it('bietet genau die sechs Vertragsaktionen', () => {
     const { ctx } = fresh()
     expect(diplomacyActions(ctx, 'p2').map((a) => a.id)).toEqual([
-      'diplomacy-declareWar',
-      'diplomacy-offerPeace',
-      'diplomacy-acceptPeace',
-      'diplomacy-offerAlliance',
-      'diplomacy-acceptAlliance',
-      'diplomacy-breakAlliance',
+      'diplomacy-declareWar-p2',
+      'diplomacy-offerPeace-p2',
+      'diplomacy-acceptPeace-p2',
+      'diplomacy-offerAlliance-p2',
+      'diplomacy-acceptAlliance-p2',
+      'diplomacy-breakAlliance-p2',
     ])
   })
 
@@ -1088,35 +1102,35 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
       const { ctx } = fresh()
 
       expect(passageActions(ctx, 'p2').map((a) => a.id)).toEqual([
-        'diplomacy-grantRightOfWay',
-        'diplomacy-requestRightOfWay',
-        'diplomacy-acceptRightOfWay',
-        'diplomacy-revokeRightOfWay',
-        'diplomacy-shareMap',
+        'diplomacy-grantRightOfWay-p2',
+        'diplomacy-requestRightOfWay-p2',
+        'diplomacy-acceptRightOfWay-p2',
+        'diplomacy-revokeRightOfWay-p2',
+        'diplomacy-shareMap-p2',
       ])
       const byId = (list: ReturnType<typeof passageActions>) => Object.fromEntries(list.map((a) => [a.id, a]))
 
       let row = byId(passageActions(ctx, 'p2'))
-      expect(row['diplomacy-requestRightOfWay']!.disabledReason).toBeNull()
-      expect(row['diplomacy-acceptRightOfWay']!.disabledReason).toContain('kein Angebot')
-      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toContain('nicht gewährt')
+      expect(row['diplomacy-requestRightOfWay-p2']!.disabledReason).toBeNull()
+      expect(row['diplomacy-acceptRightOfWay-p2']!.disabledReason).toContain('kein Angebot')
+      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toContain('nicht gewährt')
       for (const spec of Object.values(row)) if (spec.disabledReason) expect(spec.disabledReason).not.toMatch(RAW_KEY)
 
       // p1 gewaehrt p2 den Durchmarsch.
       const gewaehrt = applied(ctx, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'grantRightOfWay' }])
       row = byId(passageActions(gewaehrt, 'p2'))
-      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toBeNull()
+      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toBeNull()
 
       // p1 kuendigt wieder.
       const gekuendigt = applied(gewaehrt, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'revokeRightOfWay' }])
       row = byId(passageActions(gekuendigt, 'p2'))
-      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toContain('bereits gekündigt')
+      expect(row['diplomacy-revokeRightOfWay-p2']!.disabledReason).toContain('bereits gekündigt')
 
       // Getrennt: p2 beantragt bei p1 — p1 sieht "annehmen" frei.
       const p2ctx: ActionContext = { ...ctx, playerId: 'p2' }
       const beantragt = applied(p2ctx, [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'requestRightOfWay' }])
       const p1row = byId(passageActions({ ...beantragt, playerId: 'p1' }, 'p2'))
-      expect(p1row['diplomacy-acceptRightOfWay']!.disabledReason).toBeNull()
+      expect(p1row['diplomacy-acceptRightOfWay-p2']!.disabledReason).toBeNull()
     })
   })
 
@@ -1292,12 +1306,46 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
       expect(row.text).toBe(t('trade.incoming', { nation, give: '5 Eisen', want: '10 Geld' }))
       expect(row.text).not.toMatch(/\bp\d\b|\bt\d+\b/)
 
-      const accept = row.actions.find((a) => a.id.startsWith('trade-accept-'))!
-      const decline = row.actions.find((a) => a.id.startsWith('trade-decline-'))!
+      const accept = row.actions.find((a) => a.id.endsWith('-accept'))!
+      const decline = row.actions.find((a) => a.id.endsWith('-decline'))!
       expect(accept.disabledReason).toBeNull()
       expect(decline.disabledReason).toBeNull()
       expect(row.note).toBeDefined()
       expect(row.note).toContain('Geld')
+    })
+
+    it('kritisch: keine Aktionskennung traegt den globalen Angebotszaehler oder eine Spielerkennung ins DOM', () => {
+      const { ctx } = fresh()
+      const nachAngebot = applied(ctx, [
+        {
+          type: 'OFFER_TRADE',
+          playerId: 'p2',
+          targetPlayerId: 'p1',
+          give: { resources: { iron: 5000 }, provinces: [] },
+          want: { resources: { money: 10000 }, provinces: [] },
+        },
+        {
+          type: 'OFFER_TRADE',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          give: { resources: { coal: 2000 }, provinces: [] },
+          want: { resources: {}, provinces: [] },
+        },
+        { type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'requestRightOfWay' },
+      ])
+      const p1ctx: ActionContext = { ...nachAngebot, playerId: 'p1' }
+      const view = publicView(nachAngebot.state, 'p1', rules)
+      const rows = offerListActions(p1ctx, view, naming(nachAngebot.state))
+
+      const alleIds = [...rows.incoming, ...rows.outgoing].flatMap((row) => row.actions.map((a) => a.id))
+      // ActionRow baut aus jeder id ein DOM-`id`/`aria-describedby` (`${action.id}-reason`,
+      // Panels.tsx:174) — der globale Angebotszaehler (`t1`, `t2`, ...) und Spielerkennungen
+      // (`p1`, `p2`, ...) duerfen dort so wenig stehen wie die Spionkennung (Befund M17-S1, E2).
+      expect(alleIds.length).toBeGreaterThan(0)
+      for (const id of alleIds) {
+        expect(id).not.toMatch(/\bt\d+\b/)
+        expect(id).not.toMatch(/\bp\d+\b/)
+      }
     })
   })
 
@@ -1316,7 +1364,12 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
     const rows1 = offerListActions(afterOffer, view1, naming(afterOffer.state))
     expect(rows1.outgoing).toHaveLength(1)
     const row1 = rows1.outgoing[0]!
-    const withdraw1 = row1.actions.find((a) => a.id.startsWith('trade-withdraw-'))!
+    const partnerNation = afterOffer.state.players.p2!.nation
+    expect(row1.text).toBe(
+      t('trade.outgoing', { nation: partnerNation, give: '5 Eisen', want: t('trade.nothing') }),
+    )
+    expect(row1.text).not.toMatch(/\bp\d\b|\bt\d+\b/)
+    const withdraw1 = row1.actions.find((a) => a.id.startsWith('trade-out-'))!
     expect(withdraw1.disabledReason).toBeNull()
     expect(row1.note).toContain(t('trade.escrow'))
     expect(row1.note).toMatch(/Verfällt an Tag \d/)
@@ -1385,7 +1438,7 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
       const view = publicView(state, 'p1', rules)
       const rows = offerListActions(p1ctx, view, naming(state))
       const row = rows.incoming.find((r) => r.id === offer.id)!
-      const accept = row.actions.find((a) => a.id.startsWith('trade-accept-'))!
+      const accept = row.actions.find((a) => a.id.endsWith('-accept'))!
 
       expect(accept.disabledReason, variante.name).toBe(t('trade.blocked.lapsing'))
       const provinceName = nameOfProvince(X)
@@ -1412,7 +1465,7 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
     const p1rows = offerListActions({ ...nachAntrag, playerId: 'p1' }, p1view, naming(nachAntrag.state))
     const eingehend = p1rows.incoming.find((row) => row.id.includes('rightOfWay'))!
     expect(eingehend.text).toBe(t('diplomacy.request.rightOfWay', { nation: nachAntrag.state.players.p2!.nation }))
-    expect(eingehend.actions.some((a) => a.id === 'offer-accept-rightOfWay-p2' && a.disabledReason === null)).toBe(true)
+    expect(eingehend.actions.some((a) => a.id === 'offer-in-0-accept' && a.disabledReason === null)).toBe(true)
 
     // getrennt: p1 beantragt bei p2 — ausgehend, aus Sicht von p1, ohne Aktion.
     const eigenerAntrag = applied(ctx, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'requestRightOfWay' }])
@@ -1438,5 +1491,21 @@ describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
 
     expect(rArm.text).toBe(rReich.text)
     expect(rArm.action.disabledReason).toBe(rReich.action.disabledReason)
+  })
+
+  it('A10 kritisch: eine riesige Menge im Entwurf laesst die Vorschau nicht abstuerzen (FixedOverflowError)', () => {
+    const { ctx } = fresh()
+    // 3,5 Mrd. Einheiten Seltene Erden, als Fixed (*1000) — ueber der Sicherheitsgrenze von
+    // giveAmount * Kurs in exchangeAmount(), lange bevor canApply() die Hoechstmenge ablehnt.
+    const riesig = 3_500_000_000 * 1000
+    const draft: TradeDraft = { give: { resources: { rare: riesig }, provinces: [] }, want: { resources: {}, provinces: [] } }
+    expect(() => tradeOfferAction(ctx, 'p2', draft, nameOfProvince)).not.toThrow()
+
+    const rueckwaerts: TradeDraft = { give: { resources: {}, provinces: [] }, want: { resources: { rare: riesig }, provinces: [] } }
+    expect(() => tradeOfferAction(ctx, 'p2', rueckwaerts, nameOfProvince)).not.toThrow()
+
+    // Derselbe Weg im Marktpanel (Panels.tsx MarketPanel -> tradePreview): dieselbe Menge, ohne
+    // dass p1 sie besitzt — die Vorschau rechnet vor jeder Bestandspruefung.
+    expect(() => tradePreview(ctx, 'rare', riesig, 'money')).not.toThrow()
   })
 })
