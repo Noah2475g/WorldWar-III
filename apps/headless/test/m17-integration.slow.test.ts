@@ -146,10 +146,38 @@ function einordnen(
   }
 }
 
-/** Befehle, deren AK4-Erklaerung (Grund und Alternative) gezaehlt wird (§3.5). */
-const AK4_TYPES = new Set(['RECRUIT_SPY', 'OFFER_TRADE', 'ACCEPT_TRADE', 'DECLINE_TRADE'])
-const istAk4Befehl = (command: Command): boolean =>
-  AK4_TYPES.has(command.type) || (command.type === 'DIPLOMACY' && command.action === 'requestRightOfWay')
+/**
+ * Befehle, deren AK4-Erklaerung (Grund und Alternative) gezaehlt wird (§3.5), samt dem
+ * Wortanfang, an dem der zugehoerige `action`-Text im Erklaerungsarray erkennbar ist
+ * (Nacharbeit T-M17-15, Befund "R-AI-09/AK4 zaehlt Erklaerungen aus falscher Quelle",
+ * 2026-09-25): vorher zaehlte `gedeckt` JEDE Erklaerung der Macht in diesem Tick, auch
+ * die von military.ts/economy.ts/provinceValue.ts/trade.ts fuer ganz andere Befehle —
+ * ein Rueckfall in espionage.ts oder trade.ts waere unbemerkt geblieben. Die Wortanfaenge
+ * kommen woertlich aus dem jeweiligen Aufruf von `commands.push` gleich davor
+ * (`espionage.ts` "Spionage: wirbt", `trade.ts` "Bietet"/"Nimmt Angebot"/"Lehnt Angebot",
+ * `passage.ts` "Beantragt Durchmarsch").
+ */
+const AK4_PREFIX: Record<string, string> = {
+  RECRUIT_SPY: 'Spionage: wirbt',
+  OFFER_TRADE: 'Bietet',
+  ACCEPT_TRADE: 'Nimmt Angebot',
+  DECLINE_TRADE: 'Lehnt Angebot',
+  requestRightOfWay: 'Beantragt Durchmarsch',
+}
+/** Der AK4-Schluessel eines Befehls, oder `null`, wenn er nicht zu AK4 zaehlt. */
+const ak4Key = (command: Command): string | null => {
+  if (command.type === 'DIPLOMACY') return command.action === 'requestRightOfWay' ? 'requestRightOfWay' : null
+  return command.type in AK4_PREFIX ? command.type : null
+}
+
+/**
+ * AK2-Befehlstypen: alle neuen KI-Kommandos von M17, nicht nur die drei aus der urspruenglichen
+ * dod (Nacharbeit T-M17-15, Befund "AK2 enger als der Anforderungstext", 2026-09-25). `DIPLOMACY`
+ * deckt dabei jede Aktion ab — `COMMAND_REJECTED` traegt keine Aktion, nur `command.type`
+ * (`applyCommands.ts`), eine Ablehnung von `requestRightOfWay`/`acceptRightOfWay`/
+ * `grantRightOfWay`/`revokeRightOfWay` ist darueber also nicht einzeln zu unterscheiden.
+ */
+const AK2_COMMANDS = ['RECRUIT_SPY', 'OFFER_TRADE', 'ACCEPT_TRADE', 'DECLINE_TRADE', 'REASSIGN_SPY', 'DISMISS_SPY', 'DIPLOMACY']
 
 interface Lauf {
   startzahl: number
@@ -161,8 +189,12 @@ interface Lauf {
   kiBefehle: Command[]
   withheld: { tick: number; command: Command }[]
   ueberfaelle: Ueberfall[]
-  /** Je (Tick|Macht): wie viele AK4-Befehle, wie viele davon durch eine Erklaerung mit reason+alternative gedeckt. */
-  ak4Buckets: { tick: number; playerId: string; befehle: number; gedeckt: number }[]
+  /**
+   * Je (Tick|Macht|AK4-Art): wie viele Befehle dieser Art, wie viele davon durch eine
+   * Erklaerung MIT PASSENDEM WORTANFANG (nicht irgendeine Erklaerung der Macht) und mit
+   * reason+alternative gedeckt.
+   */
+  ak4Buckets: { tick: number; playerId: string; art: string; befehle: number; gedeckt: number }[]
 }
 
 async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): Promise<Lauf> {
@@ -190,19 +222,27 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
       events.push(...chunk.events)
       withheld.push(...chunk.withheld)
 
-      // AK4: nur die KI-Befehle DIESES Ticks (tick.ai vor der Anwendung), nach Macht gruppiert.
+      // AK4: nur die KI-Befehle DIESES Ticks (tick.ai vor der Anwendung), nach Macht UND Art
+      // gruppiert — eine Erklaerung deckt nur Befehle ihrer eigenen Art (Befund oben).
       const kiDiesesTicks = chunk.applied.filter((entry) => ki.has(entry.command.playerId))
       for (const { command } of kiDiesesTicks) kiBefehle.push(command)
-      const jeMacht = new Map<string, number>()
+      const jeMachtUndArt = new Map<string, number>()
       for (const { command } of kiDiesesTicks) {
-        if (!istAk4Befehl(command)) continue
-        jeMacht.set(command.playerId, (jeMacht.get(command.playerId) ?? 0) + 1)
+        const art = ak4Key(command)
+        if (art === null) continue
+        const schluessel = `${command.playerId}|${art}`
+        jeMachtUndArt.set(schluessel, (jeMachtUndArt.get(schluessel) ?? 0) + 1)
       }
-      if (jeMacht.size > 0) {
-        for (const [playerId, befehle] of jeMacht) {
+      if (jeMachtUndArt.size > 0) {
+        for (const [schluessel, befehle] of jeMachtUndArt) {
+          const [playerId, art] = schluessel.split('|') as [string, string]
           const erklaerungen = chunk.explanations[playerId] ?? []
-          const gedeckt = Math.min(befehle, erklaerungen.filter((e) => e.reason !== '' && e.alternative !== undefined).length)
-          ak4Buckets.push({ tick: before.tick, playerId, befehle, gedeckt })
+          const prefix = AK4_PREFIX[art]!
+          const gedeckt = Math.min(
+            befehle,
+            erklaerungen.filter((e) => e.action.startsWith(prefix) && e.reason !== '' && e.alternative !== undefined).length,
+          )
+          ak4Buckets.push({ tick: before.tick, playerId, art, befehle, gedeckt })
         }
       }
 
@@ -266,7 +306,7 @@ function kennzahlen(lauf: Lauf) {
   const ak4Gedeckt = lauf.ak4Buckets.reduce((sum, entry) => sum + entry.gedeckt, 0)
   const ak4Luecken = lauf.ak4Buckets
     .filter((entry) => entry.gedeckt < entry.befehle)
-    .map((entry) => `${entry.tick}|${nation(entry.playerId)}: ${entry.befehle} Befehle, ${entry.gedeckt} gedeckt`)
+    .map((entry) => `${entry.tick}|${nation(entry.playerId)}|${entry.art}: ${entry.befehle} Befehle, ${entry.gedeckt} gedeckt`)
 
   return {
     spieltage: lauf.tage,
@@ -303,9 +343,7 @@ function kennzahlen(lauf: Lauf) {
     geldmangelKi: geldmangel.length,
     ablehnungen: zaehle(abgelehnt, (event) => `${event.command}:${event.code}`),
     ablehnungenAk2: abgelehnt.filter(
-      (event) =>
-        ['RECRUIT_SPY', 'OFFER_TRADE', 'ACCEPT_TRADE'].includes(event.command) &&
-        ['INVALID_TARGET', 'QUEUE_FULL'].includes(event.code),
+      (event) => AK2_COMMANDS.includes(event.command) && ['INVALID_TARGET', 'QUEUE_FULL'].includes(event.code),
     ).length,
     ak4: { befehle: ak4Befehle, gedeckt: ak4Gedeckt, luecken: ak4Luecken },
     zurueckgehalten: lauf.withheld.length,
@@ -401,17 +439,45 @@ describe('R-AI-09/AK1 Die KI nutzt Spione, Handel und Durchmarsch — 200 Tage, 
       expect(gewaehrt.length, `${startzahl}: kein Durchmarsch zwischen KI`).toBeGreaterThanOrEqual(1)
     }
   })
+
+  /**
+   * Zwei unabhaengige KI-Mechanismen fuehren zum selben `RIGHT_OF_WAY_CHANGED
+   * granted:true` (Nacharbeit T-M17-15, Befund "AK1-Zusicherung zum Durchmarsch
+   * unterscheidet nicht zwischen zwei unabhaengigen KI-Mechanismen", 2026-09-25): die
+   * **Erwiderung** eines bereits erhaltenen Durchmarschs (`diplomacy.ts`, R-DIP-06/AK3,
+   * T-M17-04 — "eine Geste, die nie beantwortet wird, ist keine Diplomatie, sondern eine
+   * Einbahnstraße") und die **Annahme** eines eingehenden Antrags (`passage.ts`,
+   * `requestRightOfWay`/`acceptRightOfWay`). Die Zusicherung oben allein sah einen
+   * Rueckfall der Erwiderung nicht: mit `diplomacy.ts`s Erwiderungsschleife abgeschaltet
+   * blieb sie ueber alle drei Startzahlen und 200 Spieltage gruen, weil die Annahme allein
+   * die Schranke `>= 1` erfuellte (Gegenprobe der Pruefung: 11/12 statt 12/12 — genau diese
+   * Aufspaltung wird dabei rot, sonst keine). Beide Wege deshalb einzeln, ueber die
+   * tatsaechlich angewandten Befehle (nicht das gemeinsame Ereignis).
+   */
+  it('erwidert UND nimmt Durchmarsch an — zwei getrennte KI-Mechanismen, nicht nur einer', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const erwidert = lauf.kiBefehle.filter(
+        (c) => c.type === 'DIPLOMACY' && c.action === 'grantRightOfWay' && lauf.ki.has(c.targetPlayerId),
+      )
+      const angenommen = lauf.kiBefehle.filter(
+        (c) => c.type === 'DIPLOMACY' && c.action === 'acceptRightOfWay' && lauf.ki.has(c.targetPlayerId),
+      )
+      expect(erwidert.length, `${startzahl}: keine KI erwidert einen erhaltenen Durchmarsch (diplomacy.ts)`).toBeGreaterThanOrEqual(1)
+      expect(angenommen.length, `${startzahl}: keine KI nimmt einen Durchmarsch-Antrag an (passage.ts)`).toBeGreaterThanOrEqual(1)
+    }
+  })
 })
 
 describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
-  it('lehnt kein RECRUIT_SPY, OFFER_TRADE oder ACCEPT_TRADE mit INVALID_TARGET oder QUEUE_FULL ab', () => {
+  it('lehnt keinen M17-Befehl der KI (Spionage, Handel, Diplomatie) mit INVALID_TARGET oder QUEUE_FULL ab', () => {
     for (const startzahl of STARTZAHLEN) {
       const lauf = mit(startzahl)
       const treffer = lauf.events.filter(
         (event): event is Rejected =>
           event.type === 'COMMAND_REJECTED' &&
           lauf.ki.has(event.playerId) &&
-          ['RECRUIT_SPY', 'OFFER_TRADE', 'ACCEPT_TRADE'].includes(event.command) &&
+          AK2_COMMANDS.includes(event.command) &&
           ['INVALID_TARGET', 'QUEUE_FULL'].includes(event.code),
       )
       expect(treffer.length, `${startzahl}: ${JSON.stringify(treffer.slice(0, 3))}`).toBe(0)
@@ -445,6 +511,28 @@ describe('R-AI-09/AK3 Antraege machen aus Maerschen keine Ueberfaelle', () => {
     expect(summeMit, `mit ${summeMit} > ohne ${summeOhne}`).toBeLessThanOrEqual(summeOhne)
   })
 
+  /**
+   * Die woertliche Fassung von R-AI-09/AK3 ("Ueberfaelle ohne Kriegserklaerung mit Antraegen
+   * nicht groesser") gilt nur fuer die oben gepruefte, engere Teilmenge — die Nacharbeit
+   * berichtigt die Fassung in 01-REQUIREMENTS.md dafuer (2026-09-25). Diese Zusicherung
+   * schliesst die Luecke: jeder Ueberfall AUSSERHALB der bewegbaren Menge (kein Marschziel im
+   * fremden Land, keine Kuendigung davor) ist einer, den ein Antrag ohnehin nicht verhindern
+   * koennte — und der Test verlangt, dass er dann auf einen Friedensschluss im selben Tick
+   * oder Waffenstillstand zurueckgeht (Befund M17-T6), nicht auf einen unbeachteten Antrag.
+   */
+  it('jeder Ueberfall ausserhalb der bewegbaren Menge geht auf einen Friedensschluss zurueck (M17-T6)', () => {
+    for (const startzahl of STARTZAHLEN) {
+      for (const lauf of [mit(startzahl), ohne(startzahl)]) {
+        const ausserhalb = lauf.ueberfaelle.filter((entry) => entry.art !== 'durchmarsch' && !entry.nachKuendigung)
+        for (const entry of ausserhalb) {
+          expect(entry.friedensschluss, `${startzahl} ${lauf.mitAntraegen ? 'mit' : 'ohne'} Tick ${entry.tick}: ${JSON.stringify(entry)}`).toBe(
+            true,
+          )
+        }
+      }
+    }
+  })
+
   it('stellt die Gesamtzahlen mit und ohne Antraege nebeneinander', () => {
     for (const startzahl of STARTZAHLEN) {
       for (const lauf of [mit(startzahl), ohne(startzahl)]) {
@@ -467,7 +555,7 @@ describe('R-AI-09/AK4 Jede Handlung zwischen den Kriegen nennt Grund und Alterna
       for (const eintrag of lauf.ak4Buckets) {
         expect(
           eintrag.gedeckt,
-          `${startzahl} Tick ${eintrag.tick} ${lauf.final.players[eintrag.playerId]!.nation}: ${eintrag.befehle} Befehle, nur ${eintrag.gedeckt} gedeckt`,
+          `${startzahl} Tick ${eintrag.tick} ${lauf.final.players[eintrag.playerId]!.nation} ${eintrag.art}: ${eintrag.befehle} Befehle, nur ${eintrag.gedeckt} gedeckt`,
         ).toBeGreaterThanOrEqual(eintrag.befehle)
       }
     }
