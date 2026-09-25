@@ -420,3 +420,22 @@ describe('R-DIP-08 Die Sicht nennt Durchmarsch und Karte mit ihrer Richtung', ()
     }
   })
 })
+
+describe('R-DIP-04 Die laufende Kriegserklaerung steht nur in der Sicht der Beteiligten', () => {
+  it('fehlt ohne Erklaerung', () => {
+    const view = publicView(state, 'p1')
+    expect(view.relations['p2']).not.toHaveProperty('warEffectiveAtTick')
+  })
+
+  it('nennt beiden Seiten denselben Tick, bis er eintritt, und verschwindet danach', () => {
+    const command: Command = { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'declareWar' }
+    const erwartet = state.tick + TEST_RULES.constants.warDeclarationDelayTicks
+    const { state: erklaert } = step(state, [command], ctx)
+    expect(publicView(erklaert, 'p1').relations['p2']!.warEffectiveAtTick).toBe(erwartet)
+    expect(publicView(erklaert, 'p2').relations['p1']!.warEffectiveAtTick).toBe(erwartet)
+
+    const { state: wirksam } = runTicks(erklaert, TEST_RULES.constants.warDeclarationDelayTicks, ctx)
+    expect(publicView(wirksam, 'p1').relations['p2']).not.toHaveProperty('warEffectiveAtTick')
+    expect(publicView(wirksam, 'p2').relations['p1']).not.toHaveProperty('warEffectiveAtTick')
+  })
+})

@@ -317,6 +317,17 @@ export function parseRules(raw: RawRules, id: string): Rules {
       problems.push(`KI-Stufe "${level}": Gewichte summieren sich auf ${sum}, erwartet 1000`)
     }
   }
+  // Handelszahlen der KI (T-M17-10, D29.7). Ein fehlender Wert waere still `undefined`, und jede
+  // Rechnung damit ergaebe NaN — die KI naehme dann nie etwas an und boete nie etwas an.
+  for (const field of ['tradeAcceptMarginPermille', 'tradeImpactPermille', 'tradeOfferPremiumPermille', 'tradeKeepStockPermille'] as const) {
+    if (typeof aiRaw[field] !== 'number') problems.push(`KI: "${field}" fehlt`)
+  }
+  if (Number(aiRaw['tradeAcceptMarginPermille']) < 1000) problems.push('KI: tradeAcceptMarginPermille unter 1000 hiesse, Verlust anzunehmen')
+  if (Number(aiRaw['tradeOfferPremiumPermille']) < 1000) problems.push('KI: tradeOfferPremiumPermille unter 1000 hiesse, unter Wert anzubieten')
+  if (Number(aiRaw['tradeImpactPermille']) <= 0) problems.push('KI: tradeImpactPermille muss positiv sein')
+  const keep = Number(aiRaw['tradeKeepStockPermille'])
+  if (!(keep >= 0 && keep <= 1000)) problems.push('KI: tradeKeepStockPermille liegt zwischen 0 und 1000')
+
   const ai = aiRaw as unknown as AiRules
 
   if (problems.length > 0) throw new RulesError(problems)

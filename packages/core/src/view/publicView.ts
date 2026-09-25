@@ -221,6 +221,11 @@ export interface PublicView {
       mapShared: boolean
       mapReceived: boolean
       sinceTick: Tick
+      /**
+       * Laufende Kriegserklaerung zwischen mir und dir: ab diesem Tick Krieg (T-M17-10). Nur
+       * solange eine laeuft. Beide kennen sie — `WAR_DECLARED` geht an beide (R-DIP-04).
+       */
+      warEffectiveAtTick?: Tick
     }
   >
   /**
@@ -421,6 +426,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       // Seit wann dieser Zustand gilt. Der Krieg hat ein Anfangsdatum, sonst kann
       // niemand fragen, ob er sich festgefahren hat (R-DIP-06/AK4).
       sinceTick: relation.sinceTick,
+      ...(relation.warEffectiveAtTick !== null ? { warEffectiveAtTick: relation.warEffectiveAtTick } : {}),
     }
   }
 

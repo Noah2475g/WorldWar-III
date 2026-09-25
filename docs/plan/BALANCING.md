@@ -397,3 +397,18 @@ handeln lässt.
 | `maxOpenTradeOffers` | 5 | geschätzt | je Anbieter; begrenzt, wie viel Bestand gleichzeitig in Treuhand liegt, und reicht für ein Angebot an jeden Nachbarn einer mittleren Macht |
 | `tradeMaxMoney` | 507.650 | abgeleitet | Referenz 9.4 (100.000) auf der Skala des Ankers: 100.000 × 10.153 / 2.000 — rund zweieinhalb Tageserträge einer mittleren Macht, knapp ein Drittel des Startgelds |
 | `tradeMaxResource` | 152.295 | abgeleitet | 30 % von `tradeMaxMoney` (Referenz 9.4: 30.000 zu 100.000), je Rohstoff und Seite |
+
+## Handelsangebote und Durchmarsch der KI (R-AI-09, D29.7, D29.8, T-M17-10)
+
+Die Zahlen oberster Ebene in `ai.json`. Der Wächter in `test/balancing.test.ts` verlangt seit
+T-M17-10 für **jede** davon eine Zeile mit demselben Wert — bis dahin prüfte er nur die
+Stufenspalten, und `buildShareDefault` und `threatRange` standen nirgends.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeAcceptMarginPermille` | 1050 | geschätzt | D29.7: angenommen wird erst ab 5 % Gewinn zu Börsenkursen — ein Angebot zum Marktwert wäre für die KI gleichwertig mit der Börse und nähme ihr die Ware |
+| `tradeImpactPermille` | 30 | abgeleitet | Messung 2026-09-25 (Weltkarte, Startzahl 1815, 200 Spieltage, KI vor T-M17-10): Kurswirkung der Fehlmenge ≥ 50 ‰ (Vorschlag D29.7) an 1,4 % der Bedarfstage und nur bei einer Macht ab Tag 163; ≥ 30 ‰ an 14 %. 30 ‰ entspricht dem 90-%-Quantil der Fehlmenge (679.516 → 34 ‰): angeboten wird für die großen Vorhaben, nicht für jedes |
+| `tradeOfferPremiumPermille` | 1060 | abgeleitet | D29.8 nannte „× 1,02", aber die Annahmemarge ist 1,05 — keine KI nähme das Angebot einer anderen je an. Marge + 10 ‰; der Wächter hält Aufschlag > Marge fest |
+| `tradeKeepStockPermille` | 500 | abgeleitet | Handel (gegeben oder angenommen) greift nie unter die Hälfte eines Bestands: im selben Tag rekrutiert die KI bis `recruitShare` (höchstens 280 ‰) und tauscht an der Börse ein Zehntel (100 ‰) — 380 ‰ müssen bleiben, aufgerundet auf die Hälfte |
+| `buildShareDefault` | 600 | geschätzt | seit T-M3-01 (`64041c8`): Anteil des Einkommens für Bau statt Aushebung im Startgedächtnis; nie gemessen |
+| `threatRange` | 2 | geschätzt | seit T-M3-01 (`64041c8`): Reichweite der Bedrohungskarte in Provinzen; nie gemessen |

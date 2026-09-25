@@ -120,6 +120,14 @@ export interface AiRules {
   resourceWeights: Record<ResourceKey, Fixed>
   buildShareDefault: Fixed
   threatRange: number
+  /** Annahme eines Handelsangebots ab erhaltenem Wert × 1000 ≥ gegebenem Wert × dieser Zahl (T-M17-10, D29.8). */
+  tradeAcceptMarginPermille: Fixed
+  /** Ein eigenes Angebot nur, wenn der Kauf der Fehlmenge an der Börse den Kurs um mehr als so viel ‰ bewegte. */
+  tradeImpactPermille: Fixed
+  /** Ein eigenes Angebot gibt Marktwert × diese Zahl / 1000 — muss über der Annahmemarge liegen (E15). */
+  tradeOfferPremiumPermille: Fixed
+  /** Dieser Anteil jedes Bestands (‰) ist für Handelsangebote tabu, gegeben wie angenommen (E16). */
+  tradeKeepStockPermille: Fixed
 }
 
 export interface RuleConstants {
