@@ -96,6 +96,7 @@ const AUSNAHMEN: readonly RegExp[] = [
   /queue/i, // Fremdwort
   /(aktu|eventu|manu|individu|punktu)ell/i, // lateinisch -uell
   /statue/i, // Statu-e
+  /provinceValue/i, // Modulpfad './provinceValue' (T-M17-11): englisch "value", kein Zwielaut
 ]
 
 /** Die Woerter eines Textes, die nach der Regel Ersatzschrift tragen. */

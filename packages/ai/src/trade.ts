@@ -1,13 +1,14 @@
 import { mulChain, quotFixed } from '@worldwar/shared'
 import {
-  buildingCostForLevel,
   MARKET_REFERENCE_VOLUME,
   RESOURCE_KEYS,
   type Command,
   type PlayerId,
+  type ProvinceId,
   type ResourceKey,
 } from '@worldwar/core'
 import { nextBuildingShortfall } from './economy'
+import { cessionProblem, explainProvinceWorth, ledgerAfter, provinceWorth, warDeclaredThisTurn } from './provinceValue'
 import { explainRelationship, relationship } from './relationship'
 import type { AiContext, Explanation } from './types'
 
@@ -35,18 +36,6 @@ function bundleValue(resources: Partial<Record<ResourceKey, number>>, prices: Re
   return total
 }
 
-/** Die Maechte, denen ich in diesem Zug den Krieg erklaere (Befund M17-D11): der Kern setzt `warEffectiveAtTick` sofort. */
-export function warDeclaredThisTurn(context: AiContext, pending: readonly Command[]): Set<PlayerId> {
-  const me = context.view.playerId
-  const out = new Set<PlayerId>()
-  for (const command of pending) {
-    if (command.type === 'DIPLOMACY' && command.playerId === me && command.action === 'declareWar') {
-      out.add(command.targetPlayerId)
-    }
-  }
-  return out
-}
-
 export function tradeOfferCommands(
   context: AiContext,
   explanations: Explanation[],
@@ -58,20 +47,10 @@ export function tradeOfferCommands(
   const grievances = view.self.grievances
   const commands: Command[] = []
 
-  // Buchführung je Aufruf: der Sichtbestand, gemindert um eigene BUILD-Befehle desselben
-  // Zugs (E16) — sonst rechnete die KI mit Geld, das eine Baustelle im selben Tick ausgibt.
-  const ledger: Record<ResourceKey, number> = { ...view.self.resources }
-  for (const command of pending) {
-    if (command.type !== 'BUILD' || command.playerId !== me) continue
-    const province = view.provinces.find((entry) => entry.id === command.provinceId)
-    const level = province?.buildings?.[command.building] ?? 0
-    const rule = rules.buildings[command.building]
-    const cost = buildingCostForLevel(rule, level + 1, rules.constants)
-    for (const [key, amount] of Object.entries(cost)) {
-      if (!amount) continue
-      ledger[key as ResourceKey] -= amount
-    }
-  }
+  // Buchführung je Aufruf: der Sichtbestand, gemindert um eigene Befehle desselben Zugs
+  // (E16 aus T-M17-10, erweitert um Handelsbefehle in T-M17-11) — sonst rechnete die KI
+  // mit Geld, das eine Baustelle oder ein eigenes Angebot im selben Tick ausgibt.
+  const ledger: Record<ResourceKey, number> = ledgerAfter(context, pending)
 
   const keep = (key: ResourceKey): number => Math.trunc((view.self.resources[key] * ai.tradeKeepStockPermille) / 1000)
   const spendable = (key: ResourceKey): number => ledger[key] - keep(key)
@@ -79,6 +58,10 @@ export function tradeOfferCommands(
   // Antworten — view.tradeOffers.incoming, nach der Nummer im Angebot sortiert.
   const incoming = [...view.tradeOffers.incoming].sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)))
   const declaring = warDeclaredThisTurn(context, pending)
+  // Provinzen, die diese Antwortrunde schon verplant hat (A8): eine zweite Annahme derselben
+  // Provinz oder ein zweites Geschenk derselben Provinz scheitert an diesen Mengen.
+  const cededProvinces = new Set<ProvinceId>()
+  const receivedProvinces = new Set<ProvinceId>()
 
   for (const offer of incoming) {
     const from = offer.from
@@ -88,11 +71,11 @@ export function tradeOfferCommands(
     const received = bundleValue(offer.give.resources, view.marketPrices)
     const ratio = given > 0 ? Math.trunc((received * 1000) / given) : 0
 
+    const hasProvinces = offer.give.provinces.length > 0 || offer.want.provinces.length > 0
+
     let reason: string | null = null
     if (declaring.has(from)) {
       reason = 'Kriegserklärung in diesem Zug'
-    } else if (offer.give.provinces.length > 0 || offer.want.provinces.length > 0) {
-      reason = 'Provinzen bewertet die KI erst mit dem Provinzhandel (T-M17-11)'
     } else if (relation?.warEffectiveAtTick !== undefined) {
       reason = 'Kriegserklärung läuft'
     } else if (wert.value < difficulty.warThreshold) {
@@ -113,9 +96,47 @@ export function tradeOfferCommands(
           }
         }
       }
-      if (!reason && given > 0 && received * 1000 < given * ai.tradeAcceptMarginPermille) {
-        reason = `Gegenwert ${ratio} ‰ unter der Marge ${ai.tradeAcceptMarginPermille} ‰`
+    }
+
+    // Provinzen (R-DIP-09/AK4, T-M17-11): eigener Wert statt Marktwert, Aufschlag statt
+    // Annahmemarge, dazu die Prüfung des Kerns aus der Sicht (nie Hauptstadt, nie eigene
+    // Armeen, ...). Ohne Provinzen bleibt die Marge Z. 95–97 unten unveraendert.
+    let provinceTexts = ''
+    let E = 0
+    let G = 0
+    if (!reason && hasProvinces) {
+      for (const p of offer.give.provinces) {
+        if (receivedProvinces.has(p)) {
+          reason = `${p} in diesem Zug schon erhalten`
+          break
+        }
       }
+      if (!reason) {
+        for (const p of offer.want.provinces) {
+          const problem = cessionProblem(context, p, from, pending, cededProvinces)
+          if (problem) {
+            reason = `${p}: ${problem}`
+            break
+          }
+        }
+      }
+
+      const givenProvincesValue = offer.want.provinces.reduce((sum, p) => sum + (provinceWorth(context, p)?.total ?? 0), 0)
+      const receivedProvincesValue = offer.give.provinces.reduce((sum, p) => sum + (provinceWorth(context, p)?.total ?? 0), 0)
+      E = (received + receivedProvincesValue) * 1000
+      G = given * ai.tradeAcceptMarginPermille + givenProvincesValue * ai.provinceSalePremiumPermille
+      provinceTexts = [...offer.want.provinces, ...offer.give.provinces]
+        .map((p) => {
+          const worth = provinceWorth(context, p)
+          return worth ? explainProvinceWorth(worth) : `${p} unbekannt`
+        })
+        .join('; ')
+
+      if (!reason && G > 0 && E < G) {
+        reason = `Gegenwert ${Math.trunc(E / 1_000_000)} unter ${Math.trunc(G / 1_000_000)} (Provinzwert × ${ai.provinceSalePremiumPermille} ‰, Rohstoffe × ${ai.tradeAcceptMarginPermille} ‰); ${provinceTexts}`
+      }
+    } else if (!reason && given > 0 && received * 1000 < given * ai.tradeAcceptMarginPermille) {
+      reason = `Gegenwert ${ratio} ‰ unter der Marge ${ai.tradeAcceptMarginPermille} ‰`
     }
 
     if (reason) {
@@ -133,10 +154,17 @@ export function tradeOfferCommands(
     for (const [key, amount] of Object.entries(offer.want.resources)) {
       if (amount) ledger[key as ResourceKey] -= amount
     }
+    if (hasProvinces) {
+      for (const p of offer.want.provinces) cededProvinces.add(p)
+      for (const p of offer.give.provinces) receivedProvinces.add(p)
+    }
     explanations.push({
       action: `Nimmt Angebot ${offer.id} von ${from} an`,
-      reason:
-        given === 0
+      reason: hasProvinces
+        ? G === 0
+          ? `Geschenk, ${provinceTexts}, ${explainRelationship(wert)}`
+          : `Gegenwert ${Math.trunc(E / 1_000_000)} erreicht ${Math.trunc(G / 1_000_000)}; ${provinceTexts}, ${explainRelationship(wert)}`
+        : given === 0
           ? `Geschenk, ${explainRelationship(wert)}`
           : `Gegenwert ${ratio} ‰ erreicht die Marge ${ai.tradeAcceptMarginPermille} ‰, ${explainRelationship(wert)}`,
       score: 600,

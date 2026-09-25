@@ -5,6 +5,7 @@ import { consolidateCommands } from './consolidate'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
 import { passageCommands } from './passage'
+import { provinceOfferCommands } from './provinceValue'
 import { tradeOfferCommands } from './trade'
 import type { AiContext, AiDecision, Explanation } from './types'
 
@@ -107,6 +108,7 @@ export function decide(options: DecideOptions): AiDecision {
     commands.push(...passageCommands(context, explanations, commands)) // T-M17-10
     commands.push(...economyCommands(context, explanations))
     commands.push(...tradeOfferCommands(context, explanations, commands)) // T-M17-10
+    commands.push(...provinceOfferCommands(context, explanations, commands)) // T-M17-11
   }
 
   // Operations: raising troops and covering shortages. Every six hours.
