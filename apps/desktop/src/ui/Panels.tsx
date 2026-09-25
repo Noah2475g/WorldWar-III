@@ -4,11 +4,11 @@ import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } f
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
 import type { BattleReportData, PricePoint } from '../game/events.ts'
 import type { TimelineEntry } from '../game/saves.ts'
-import type { NextUnlock } from '../game/actions.ts'
+import type { NextUnlock, TradeDraft } from '../game/actions.ts'
 import { t } from '../i18n/text.ts'
 import { DeltaBar } from './charts/DeltaBar.tsx'
 import { Sparkline } from './charts/Sparkline.tsx'
-import { amount, arrival, costs, duration, percent, population, price, rate, remaining, unfix } from './format.ts'
+import { amount, arrival, costs, duration, gameTime, percent, population, price, rate, remaining, unfix } from './format.ts'
 import { IconRow, type IconItem } from './IconRow.tsx'
 import {
   BUILDING_ICONS,
@@ -912,6 +912,9 @@ export function categoryOf(type: string): EventCategory {
   // SPY_REPORT und SPY_LOST bleiben ohne eigene Zeile unter „Sonstiges".
   if (/SABOTAGE|SPY_DETECTED/.test(type)) return 'combat'
   if (/BATTLE|BOMBARD|ARMY|CAPTURED|REVOLTED|CAPITAL/.test(type)) return 'combat'
+  // Ein geschlossenes oder angenommenes Handelsangebot ist ein Vertrag, kein Aufbau (T-M17-14, E5)
+  // — vor der Wirtschaftszeile, sonst faengt `/TRADE/` unten schon TRADE_OFFER_CLOSED.
+  if (/TRADE_OFFER_CLOSED|TRADE_AGREED/.test(type)) return 'diplomacy'
   if (/BUILD|RECRUIT|RESOURCE|STORAGE|TRADE/.test(type)) return 'economy'
   if (/WAR|DIPLOMACY|ELIMINATED|GAME_ENDED/.test(type)) return 'diplomacy'
   // „RIGHT_OF_WAY" enthält kein „WAR" — ohne diese Zeile landete der Durchmarsch (T-M17-04) unter „Sonstiges".
@@ -1154,17 +1157,114 @@ export function EventLog({
  * (R-DIP-01, T-M10-06). Eight orders per power is a wall; eight for one chosen power
  * is a decision.
  */
+/** Einen Wert zwischen zwei Grenzen halten — der Balken darf nie ueber seine Spur hinaus. */
+function clamp(value: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, value))
+}
+
+/**
+ * Die Durchmarschzelle: was ich gewaehre, was ich erhalte, mit Fristende (T-M17-14, R-DIP-08/AK3).
+ * `passage.outEnds`/`inEnds` nennen den Tag, an dem eine laufende Kuendigung greift — der
+ * Gewaehrende sieht so "endet an Tag X" statt eines zweiten Knopfs (03-TASKS T-M17-14).
+ */
+function passageText(
+  relation:
+    | {
+        passageGranted: boolean
+        passageReceived: boolean
+        passageEndsAtTick: { granted: number | null; received: number | null }
+      }
+    | undefined,
+  ticksPerDay: number,
+): string {
+  const parts: string[] = []
+  if (relation?.passageGranted) {
+    parts.push(
+      relation.passageEndsAtTick.granted !== null
+        ? t('diplomacy.passage.outEnds', { day: gameTime(relation.passageEndsAtTick.granted, ticksPerDay).day })
+        : t('diplomacy.passage.out'),
+    )
+  }
+  if (relation?.passageReceived) {
+    parts.push(
+      relation.passageEndsAtTick.received !== null
+        ? t('diplomacy.passage.inEnds', { day: gameTime(relation.passageEndsAtTick.received, ticksPerDay).day })
+        : t('diplomacy.passage.in'),
+    )
+  }
+  return parts.length > 0 ? parts.join(' · ') : t('diplomacy.passage.none')
+}
+
+/** Eine Zeile eines Angebots — Handel oder ein diplomatischer Antrag (T-M17-14, R-DIP-07). */
+export interface OfferRow {
+  id: string
+  text: string
+  note?: string
+  actions: readonly Action[]
+}
+
+/** Was das Angebotsformular braucht (T-M17-14, R-DIP-07, R-DIP-09) — nie den Bestand des Partners (E10). */
+export interface TradeFormSpec {
+  resources: readonly ResourceKey[]
+  /** NUR der eigene Bestand (R-DIP-04, E10). */
+  stock: Partial<Record<ResourceKey, number>>
+  limits: { money: number; resource: number }
+  ownProvinces: readonly { id: string; name: string }[]
+  provincesOf: (playerId: string) => readonly { id: string; name: string }[]
+  evaluate: (partner: string, draft: TradeDraft) => { text: string; action: Action }
+}
+
+function OfferList({ title, rows }: { title: string; rows: readonly OfferRow[] }) {
+  if (rows.length === 0) return null
+  return (
+    <section className="group offers" aria-label={title}>
+      <h3 className="group__title">{title}</h3>
+      <ul className="offers">
+        {rows.map((row) => (
+          <li key={row.id} className="offer">
+            <p className="offer__text">{row.text}</p>
+            {row.note && <p className="panel__sub">{row.note}</p>}
+            <ActionRow actions={row.actions} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/**
+ * Die Diplomatie (T-M17-14, D29.9): Ansehen als Balken, wer mit wem im Krieg liegt, Vertraege und
+ * Durchmarsch als zwei Gruppen je Macht, eingehende und ausgehende Angebote, das Angebotsformular.
+ * Gesteuert (E9): welche Macht gewaehlt ist, steht in `uiState`, nicht in einem lokalen `useState`
+ * — nur so kann eine Meldung "Diplomatie mit X" die richtige Macht oeffnen.
+ */
 export function DiplomacyPanel({
   view,
   nameOf,
+  reputationMax,
+  ticksPerDay,
+  chosen,
+  onChoose,
   actionsFor,
+  passageFor,
+  offers,
+  tradeForm,
 }: {
   view: PublicView | null
   nameOf: (id: string) => string
+  /** Der Massstab des Ansehensbalkens (`reputationBaseline`); ohne ihn kein Balken. */
+  reputationMax?: number
+  /** Fuer die Durchmarschzelle; ohne ihn keine Spalte. */
+  ticksPerDay?: number
+  chosen?: string | null
+  onChoose?: (playerId: string) => void
+  /** Verträge — sechs Aktionen. */
   actionsFor?: (playerId: string) => readonly Action[]
+  /** Durchmarsch und Karte — fünf Aktionen. */
+  passageFor?: (playerId: string) => readonly Action[]
+  offers?: { incoming: readonly OfferRow[]; outgoing: readonly OfferRow[] }
+  tradeForm?: TradeFormSpec
 }) {
-  const [chosen, setChosen] = useState<string | null>(null)
-
   if (!view || view.others.length === 0) {
     return (
       <section className="panel" aria-label={t('diplomacy.title')}>
@@ -1174,16 +1274,31 @@ export function DiplomacyPanel({
   }
 
   const chosenAlive = view.others.find((other) => other.id === chosen)
+  const canChoose = Boolean(actionsFor || passageFor || tradeForm)
 
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
       <h2>{t('diplomacy.title')}</h2>
+      {reputationMax !== undefined && (
+        <Meter
+          label={t('diplomacy.ownReputation')}
+          value={clamp(view.self.reputation, 0, reputationMax)}
+          max={reputationMax}
+          text={percent((view.self.reputation * 100) / reputationMax)}
+          tone={toneForShare(clamp(view.self.reputation, 0, reputationMax) / reputationMax)}
+        />
+      )}
+      {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
+      {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} />}
+      {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} />}
       <table className="table">
         <thead>
           <tr>
             <th>{t('newGame.nation')}</th>
             <th>{t('diplomacy.title')}</th>
-            {actionsFor && <th>{t('diplomacy.choose')}</th>}
+            {reputationMax !== undefined && <th>{t('diplomacy.reputation')}</th>}
+            {ticksPerDay !== undefined && <th>{t('diplomacy.passageColumn')}</th>}
+            {canChoose && <th>{t('diplomacy.choose')}</th>}
           </tr>
         </thead>
         <tbody>
@@ -1205,9 +1320,22 @@ export function DiplomacyPanel({
                     subject={t(`diplomacy.${relation?.state ?? 'peace'}`)}
                   />
                 </td>
-                {actionsFor && (
+                {reputationMax !== undefined && (
                   <td>
-                    <button type="button" className="button" onClick={() => setChosen(other.id)}>
+                    <Meter
+                      label={t('diplomacy.reputationOf', { nation: nameOf(other.id) })}
+                      labelHidden
+                      value={clamp(other.reputation, 0, reputationMax)}
+                      max={reputationMax}
+                      text={percent((other.reputation * 100) / reputationMax)}
+                      tone={toneForShare(clamp(other.reputation, 0, reputationMax) / reputationMax)}
+                    />
+                  </td>
+                )}
+                {ticksPerDay !== undefined && <td>{passageText(relation, ticksPerDay)}</td>}
+                {canChoose && (
+                  <td>
+                    <button type="button" className="button" onClick={() => onChoose?.(other.id)}>
                       {t('army.select')}
                     </button>
                   </td>
@@ -1217,12 +1345,205 @@ export function DiplomacyPanel({
           })}
         </tbody>
       </table>
-      {actionsFor && chosenAlive && (
-        <section className="group" aria-label={t('diplomacy.with', { nation: nameOf(chosenAlive.id) })}>
-          <h3 className="group__title">{t('diplomacy.with', { nation: nameOf(chosenAlive.id) })}</h3>
-          <ActionRow actions={actionsFor(chosenAlive.id)} />
-        </section>
+      <section className="group wars" aria-label={t('diplomacy.wars')}>
+        <h3 className="group__title">{t('diplomacy.wars')}</h3>
+        {view.publicWars.length === 0 ? (
+          <p>{t('diplomacy.noWars')}</p>
+        ) : (
+          <ul>
+            {view.publicWars.map((war) => (
+              <li key={`${war.a}-${war.b}`}>{t('diplomacy.warPair', { a: nameOf(war.a), b: nameOf(war.b) })}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+      {chosenAlive && (
+        <>
+          {actionsFor && (
+            <ActionGroup
+              group={{
+                id: 'treaties',
+                title: t('diplomacy.treaties', { nation: nameOf(chosenAlive.id) }),
+                actions: actionsFor(chosenAlive.id),
+              }}
+            />
+          )}
+          {passageFor && (
+            <ActionGroup
+              group={{ id: 'passage', title: t('diplomacy.passageGroup'), actions: passageFor(chosenAlive.id) }}
+            />
+          )}
+          {tradeForm && (
+            <TradeOfferForm key={chosenAlive.id} partner={chosenAlive.id} partnerName={nameOf(chosenAlive.id)} spec={tradeForm} />
+          )}
+        </>
       )}
+    </section>
+  )
+}
+
+/**
+ * Das Angebotsformular (T-M17-14, R-DIP-07, R-DIP-09): Rohstoffe in ganzen Einheiten auf beiden
+ * Seiten, Provinzen auf beiden Seiten, Vorschau ueber `spec.evaluate`. Zustand lebt hier, nicht in
+ * `uiState` — ein Entwurf ist fluechtig und gehoert nicht in die Sicherung.
+ */
+export function TradeOfferForm({
+  partner,
+  partnerName,
+  spec,
+}: {
+  partner: string
+  partnerName: string
+  spec: TradeFormSpec
+}) {
+  const [giveUnits, setGiveUnits] = useState<Partial<Record<ResourceKey, number>>>({})
+  const [wantUnits, setWantUnits] = useState<Partial<Record<ResourceKey, number>>>({})
+  const [giveProvinces, setGiveProvinces] = useState<readonly string[]>([])
+  const [wantProvinces, setWantProvinces] = useState<readonly string[]>([])
+
+  /** Ganze Einheiten × 1000 (Festkomma); Nullen und leere Felder bleiben aus dem Entwurf draussen. */
+  const resourcesOf = (units: Partial<Record<ResourceKey, number>>): Partial<Record<ResourceKey, number>> => {
+    const out: Partial<Record<ResourceKey, number>> = {}
+    for (const key of spec.resources) {
+      const rounded = Math.round(units[key] ?? 0)
+      if (rounded > 0) out[key] = rounded * 1000
+    }
+    return out
+  }
+
+  const draft: TradeDraft = {
+    give: { resources: resourcesOf(giveUnits), provinces: [...giveProvinces] },
+    want: { resources: resourcesOf(wantUnits), provinces: [...wantProvinces] },
+  }
+  const result = spec.evaluate(partner, draft)
+
+  const availableOwn = spec.ownProvinces.filter((province) => !giveProvinces.includes(province.id))
+  const availablePartner = spec.provincesOf(partner).filter((province) => !wantProvinces.includes(province.id))
+  const nameOfOwn = (id: string) => spec.ownProvinces.find((province) => province.id === id)?.name ?? id
+  const nameOfPartner = (id: string) => spec.provincesOf(partner).find((province) => province.id === id)?.name ?? id
+
+  return (
+    <section className="group trade-form" aria-label={t('trade.title', { nation: partnerName })}>
+      <h3 className="group__title">
+        {t('trade.title', { nation: partnerName })}
+        <Explain textKey="explain.trade" subject={t('trade.titleShort')} />
+      </h3>
+      <table className="table trade-form__table">
+        <thead>
+          <tr>
+            <th>{t('trade.resource')}</th>
+            <th>{t('trade.give')}</th>
+            <th>{t('trade.want')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {spec.resources.map((key) => (
+            <tr key={key}>
+              <td>
+                <Icon name={RESOURCE_ICONS[key] ?? 'money'} size={13} /> {t(`resources.${key}`)}
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  id={`trade-give-${key}`}
+                  aria-label={t('trade.giveAmount', { resource: t(`resources.${key}`) })}
+                  value={giveUnits[key] ?? ''}
+                  onChange={(event) =>
+                    setGiveUnits((old) => ({ ...old, [key]: Number(event.target.value) }))
+                  }
+                />
+                {/* Der Bestand nur in der Geben-Spalte (T-M17-14, Test P7): der Partnerbestand ist der
+                    Oberflaeche unbekannt (E10). */}
+                <p className="panel__sub">{t('trade.stock', { amount: amount(spec.stock[key] ?? 0) })}</p>
+              </td>
+              <td>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  id={`trade-want-${key}`}
+                  aria-label={t('trade.wantAmount', { resource: t(`resources.${key}`) })}
+                  value={wantUnits[key] ?? ''}
+                  onChange={(event) =>
+                    setWantUnits((old) => ({ ...old, [key]: Number(event.target.value) }))
+                  }
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <label>
+        <span>{t('trade.giveProvince')}</span>
+        <select
+          value=""
+          onChange={(event) => {
+            const id = event.target.value
+            if (id) setGiveProvinces((old) => [...old, id])
+          }}
+        >
+          <option value="">{t('trade.pickProvince')}</option>
+          {availableOwn.map((province) => (
+            <option key={province.id} value={province.id}>
+              {province.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {giveProvinces.length > 0 && (
+        <ul className="trade-form__chosen">
+          {giveProvinces.map((id) => (
+            <li key={id}>
+              <button
+                type="button"
+                aria-label={t('trade.removeProvince', { province: nameOfOwn(id) })}
+                onClick={() => setGiveProvinces((old) => old.filter((entry) => entry !== id))}
+              >
+                {nameOfOwn(id)} <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <label>
+        <span>{t('trade.wantProvince')}</span>
+        <select
+          value=""
+          onChange={(event) => {
+            const id = event.target.value
+            if (id) setWantProvinces((old) => [...old, id])
+          }}
+        >
+          <option value="">{t('trade.pickProvince')}</option>
+          {availablePartner.map((province) => (
+            <option key={province.id} value={province.id}>
+              {province.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {wantProvinces.length > 0 && (
+        <ul className="trade-form__chosen">
+          {wantProvinces.map((id) => (
+            <li key={id}>
+              <button
+                type="button"
+                aria-label={t('trade.removeProvince', { province: nameOfPartner(id) })}
+                onClick={() => setWantProvinces((old) => old.filter((entry) => entry !== id))}
+              >
+                {nameOfPartner(id)} <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="facts__inline">{result.text}</p>
+      <p className="panel__sub">
+        {t('trade.limits', { money: amount(spec.limits.money), resource: amount(spec.limits.resource) })}
+      </p>
+      <ActionRow actions={[result.action]} />
     </section>
   )
 }

@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs'
 import {
+  canApply,
   createInitialState,
+  exchangeAmount,
   parseRules,
   publicView,
+  relationKey,
+  step,
   SPY_MISSIONS,
   type Army,
   type Command,
@@ -18,7 +22,9 @@ import {
   buildActions,
   capitalAction,
   diplomacyActions,
+  offerListActions,
   ownArmiesIn,
+  passageActions,
   planArrival,
   cancelActions,
   nextUnlock,
@@ -27,11 +33,14 @@ import {
   spyOverviewActions,
   spySummary,
   targetAction,
+  tradeOfferAction,
   tradePreview,
   unitLines,
   type ActionContext,
+  type TradeDraft,
 } from './actions.ts'
-import { hasKey } from '../i18n/text.ts'
+import { hasKey, t } from '../i18n/text.ts'
+import { amount } from '../ui/format.ts'
 import { UNIT_ART } from '../ui/art.tsx'
 import { SPY_MISSION_ICONS, UNIT_ICONS } from '../ui/icons.tsx'
 import { describeRejection, SPY_REASON_KEYS } from './rejections.ts'
@@ -74,14 +83,15 @@ function fresh(): { ctx: ActionContext; capital: string; neighbour: string } {
 
 const RAW_KEY = /\b(barracks|harbour|infantry|wood|iron|p\d)\b|\{\{/
 
-function withArmy(state: GameState, where: string, hp = 3000): Army {
+function withArmy(state: GameState, where: string, hp = 3000, owner = 'p1', path: string[] = []): Army {
+  const id = `a${state.armyOrder.length + 1}`
   const army: Army = {
-    id: 'a1',
-    owner: 'p1',
-    name: 'Armee 1',
+    id,
+    owner,
+    name: `Armee ${state.armyOrder.length + 1}`,
     locationProvinceId: where,
     units: [{ unitKey: 'infantry', hpTotal: hp }],
-    path: [],
+    path,
     arrivalTick: null,
     departureTick: null,
     deployDelayUntil: 0,
@@ -1040,5 +1050,393 @@ describe('R-UI-07 Spionage-Ablehnungen in Worten', () => {
       ctx,
     )
     expect(text).toBe('Dieses Ziel ist für den Befehl nicht zulässig. (herrenlos)')
+  })
+})
+
+/**
+ * Handel und Durchmarsch als Knoepfe (T-M17-14, R-DIP-07, R-DIP-08, R-DIP-09, D29.9).
+ *
+ * Angebote und Antraege entstehen durch den Kern (`step`), nie durch ein Literal im Test —
+ * sonst prueften diese Faelle nur, dass die Oberflaeche einer erfundenen Lage vertraut.
+ */
+describe('R-DIP-07 Handel und Durchmarsch als Knoepfe (T-M17-14)', () => {
+  const nameOfProvince = (id: string) => map.provinces.find((p) => p.id === id)!.name
+  const naming = (state: GameState) => ({
+    nameOf: (id: string) => state.players[id]!.nation,
+    nameOfProvince,
+  })
+
+  function applied(ctx: ActionContext, commands: Command[]): ActionContext {
+    const result = step(ctx.state, commands, { map, rules })
+    return { ...ctx, state: result.state }
+  }
+
+  it('bietet genau die sechs Vertragsaktionen', () => {
+    const { ctx } = fresh()
+    expect(diplomacyActions(ctx, 'p2').map((a) => a.id)).toEqual([
+      'diplomacy-declareWar',
+      'diplomacy-offerPeace',
+      'diplomacy-acceptPeace',
+      'diplomacy-offerAlliance',
+      'diplomacy-acceptAlliance',
+      'diplomacy-breakAlliance',
+    ])
+  })
+
+  describe('R-DIP-08/AK2 Antrag, Annahme und Kuendigung des Durchmarschs', () => {
+    it('bietet Antrag, Annahme und Kuendigung des Durchmarschs an — mit Grund, wo es nicht geht', () => {
+      const { ctx } = fresh()
+
+      expect(passageActions(ctx, 'p2').map((a) => a.id)).toEqual([
+        'diplomacy-grantRightOfWay',
+        'diplomacy-requestRightOfWay',
+        'diplomacy-acceptRightOfWay',
+        'diplomacy-revokeRightOfWay',
+        'diplomacy-shareMap',
+      ])
+      const byId = (list: ReturnType<typeof passageActions>) => Object.fromEntries(list.map((a) => [a.id, a]))
+
+      let row = byId(passageActions(ctx, 'p2'))
+      expect(row['diplomacy-requestRightOfWay']!.disabledReason).toBeNull()
+      expect(row['diplomacy-acceptRightOfWay']!.disabledReason).toContain('kein Angebot')
+      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toContain('nicht gewährt')
+      for (const spec of Object.values(row)) if (spec.disabledReason) expect(spec.disabledReason).not.toMatch(RAW_KEY)
+
+      // p1 gewaehrt p2 den Durchmarsch.
+      const gewaehrt = applied(ctx, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'grantRightOfWay' }])
+      row = byId(passageActions(gewaehrt, 'p2'))
+      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toBeNull()
+
+      // p1 kuendigt wieder.
+      const gekuendigt = applied(gewaehrt, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'revokeRightOfWay' }])
+      row = byId(passageActions(gekuendigt, 'p2'))
+      expect(row['diplomacy-revokeRightOfWay']!.disabledReason).toContain('bereits gekündigt')
+
+      // Getrennt: p2 beantragt bei p1 — p1 sieht "annehmen" frei.
+      const p2ctx: ActionContext = { ...ctx, playerId: 'p2' }
+      const beantragt = applied(p2ctx, [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'requestRightOfWay' }])
+      const p1row = byId(passageActions({ ...beantragt, playerId: 'p1' }, 'p2'))
+      expect(p1row['diplomacy-acceptRightOfWay']!.disabledReason).toBeNull()
+    })
+  })
+
+  it('A2 Vorschau gleich exchangeAmount — beide Seiten zum Kurs des Ticks', () => {
+    const { ctx } = fresh()
+    const draft: TradeDraft = {
+      give: { resources: { iron: 5000, money: 2000 }, provinces: [] },
+      want: { resources: { oil: 3000 }, provinces: [] },
+    }
+    const r1 = tradeOfferAction(ctx, 'p2', draft, nameOfProvince)
+    const erwartetGive =
+      exchangeAmount(ctx.state.market, 'iron', 5000, 'money') + exchangeAmount(ctx.state.market, 'money', 2000, 'money')
+    const erwartetWant = exchangeAmount(ctx.state.market, 'oil', 3000, 'money')
+    expect(r1.giveValue).toBe(erwartetGive)
+    expect(r1.wantValue).toBe(erwartetWant)
+    expect(r1.text).toBe(t('trade.worth', { give: amount(r1.giveValue), want: amount(r1.wantValue) }))
+
+    // Der Kurs des Ticks aendert sich (Klon) — die Vorschau folgt ihm.
+    const teurerMarkt = { ...ctx.state.market, prices: { ...ctx.state.market.prices, iron: ctx.state.market.prices.iron * 2 } }
+    const teurerState: GameState = { ...ctx.state, market: teurerMarkt }
+    const r2 = tradeOfferAction({ ...ctx, state: teurerState }, 'p2', draft, nameOfProvince)
+    expect(r2.giveValue).not.toBe(r1.giveValue)
+    expect(r2.giveValue).toBe(
+      exchangeAmount(teurerMarkt, 'iron', 5000, 'money') + exchangeAmount(teurerMarkt, 'money', 2000, 'money'),
+    )
+  })
+
+  it('A2b nennt den Satz "keinen Marktpreis", wenn eine Provinz im Angebot steht', () => {
+    const { ctx, capital } = fresh()
+    const draft: TradeDraft = { give: { resources: {}, provinces: [capital] }, want: { resources: { money: 1000 }, provinces: [] } }
+    const r = tradeOfferAction(ctx, 'p2', draft, nameOfProvince)
+    expect(r.text).toContain(t('trade.worthProvinces'))
+  })
+
+  it('A3 sperrt ein Angebot mit einem Grund in Worten', () => {
+    const { ctx } = fresh()
+
+    // leeres Angebot
+    let r = tradeOfferAction(ctx, 'p2', { give: { resources: {}, provinces: [] }, want: { resources: {}, provinces: [] } }, nameOfProvince)
+    expect(r.action.disabledReason).toBe(t('trade.blocked.empty'))
+
+    // derselbe Rohstoff auf beiden Seiten
+    r = tradeOfferAction(
+      ctx,
+      'p2',
+      { give: { resources: { iron: 1000 }, provinces: [] }, want: { resources: { iron: 500 }, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(r.action.disabledReason).toBe(t('trade.blocked.sameResource'))
+
+    // ueber der Hoechstmenge
+    const zuViel = rules.constants.tradeMaxMoney + 1000
+    r = tradeOfferAction(
+      ctx,
+      'p2',
+      { give: { resources: { money: zuViel }, provinces: [] }, want: { resources: { iron: 1000 }, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(r.action.disabledReason).toBe(
+      t('trade.blocked.limit', { max: amount(rules.constants.tradeMaxMoney), resource: t('resources.money') }),
+    )
+
+    // fuenf offene Angebote, dann das sechste
+    let voll = ctx.state
+    for (let i = 0; i < rules.constants.maxOpenTradeOffers; i++) {
+      voll = step(
+        voll,
+        [
+          {
+            type: 'OFFER_TRADE',
+            playerId: 'p1',
+            targetPlayerId: 'p2',
+            give: { resources: { wood: 1000 }, provinces: [] },
+            want: { resources: { money: 1000 }, provinces: [] },
+          },
+        ],
+        { map, rules },
+      ).state
+    }
+    r = tradeOfferAction(
+      { ...ctx, state: voll },
+      'p2',
+      { give: { resources: { coal: 1000 }, provinces: [] }, want: { resources: { money: 1000 }, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(r.action.disabledReason).toBe(t('trade.blocked.queueFull', { max: rules.constants.maxOpenTradeOffers }))
+
+    // im Krieg
+    const key = relationKey('p1', 'p2')
+    const kriegsState: GameState = {
+      ...ctx.state,
+      diplomacy: {
+        ...ctx.state.diplomacy,
+        relations: { ...ctx.state.diplomacy.relations, [key]: { ...ctx.state.diplomacy.relations[key]!, state: 'war' } },
+      },
+    }
+    r = tradeOfferAction(
+      { ...ctx, state: kriegsState },
+      'p2',
+      { give: { resources: { iron: 1000 }, provinces: [] }, want: { resources: { money: 1000 }, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(r.action.disabledReason).toBe(t('trade.blocked.war'))
+
+    // Rohstoffe fehlen im eigenen Bestand — Seltene Erden (Startbestand knapper als Eisen)
+    // sind unterhalb der Hoechstmenge schon nicht mehr im Bestand.
+    r = tradeOfferAction(
+      ctx,
+      'p2',
+      { give: { resources: { rare: rules.constants.tradeMaxResource }, provinces: [] }, want: { resources: { money: 1000 }, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(r.action.disabledReason).toContain('Es fehlt an Rohstoffen')
+    expect(r.action.disabledReason).toContain('Seltene Erden')
+
+    // Keiner der Gruende nennt "Bauplaetze" (E7) oder passt auf den Rohschluessel-Fund.
+    for (const grund of [
+      t('trade.blocked.empty'),
+      t('trade.blocked.sameResource'),
+      t('trade.blocked.limit', { max: amount(rules.constants.tradeMaxMoney), resource: t('resources.money') }),
+      t('trade.blocked.queueFull', { max: rules.constants.maxOpenTradeOffers }),
+      t('trade.blocked.war'),
+    ]) {
+      expect(grund).not.toContain('Bauplätze')
+      expect(grund).not.toMatch(RAW_KEY)
+    }
+  })
+
+  it('A4 R-DIP-09 nennt die Provinz beim Namen, wenn sie das Angebot sperrt', () => {
+    const { ctx, capital } = fresh()
+    const capitalName = nameOfProvince(capital)
+
+    const kapitalAbgeben = tradeOfferAction(
+      ctx,
+      'p2',
+      { give: { resources: {}, provinces: [capital] }, want: { resources: {}, provinces: [] } },
+      nameOfProvince,
+    )
+    expect(kapitalAbgeben.action.disabledReason).toContain(capitalName)
+    expect(kapitalAbgeben.action.disabledReason).toContain('Hauptstadt')
+    expect(kapitalAbgeben.action.disabledReason).not.toMatch(RAW_KEY)
+
+    const fremdeVerlangen = tradeOfferAction(
+      ctx,
+      'p2',
+      { give: { resources: {}, provinces: [] }, want: { resources: {}, provinces: [capital] } },
+      nameOfProvince,
+    )
+    expect(fremdeVerlangen.action.disabledReason).toContain(capitalName)
+    expect(fremdeVerlangen.action.disabledReason).toContain('gehört nicht')
+    expect(fremdeVerlangen.action.disabledReason).not.toMatch(RAW_KEY)
+  })
+
+  describe('R-DIP-07/AK1 Ein eingehendes Angebot steht in Worten', () => {
+    it('nennt beide Seiten in Worten, ohne Kennung', () => {
+      const { ctx } = fresh()
+      const afterOffer = applied(ctx, [
+        {
+          type: 'OFFER_TRADE',
+          playerId: 'p2',
+          targetPlayerId: 'p1',
+          give: { resources: { iron: 5000 }, provinces: [] },
+          want: { resources: { money: 10000 }, provinces: [] },
+        },
+      ])
+      const p1ctx: ActionContext = { ...afterOffer, playerId: 'p1' }
+      const view = publicView(afterOffer.state, 'p1', rules)
+      const rows = offerListActions(p1ctx, view, naming(afterOffer.state))
+
+      expect(rows.incoming).toHaveLength(1)
+      const row = rows.incoming[0]!
+      const nation = afterOffer.state.players.p2!.nation
+      expect(row.text).toBe(t('trade.incoming', { nation, give: '5 Eisen', want: '10 Geld' }))
+      expect(row.text).not.toMatch(/\bp\d\b|\bt\d+\b/)
+
+      const accept = row.actions.find((a) => a.id.startsWith('trade-accept-'))!
+      const decline = row.actions.find((a) => a.id.startsWith('trade-decline-'))!
+      expect(accept.disabledReason).toBeNull()
+      expect(decline.disabledReason).toBeNull()
+      expect(row.note).toBeDefined()
+      expect(row.note).toContain('Geld')
+    })
+  })
+
+  it('A6 ausgehend: Zurueckziehen, und "hinterlegt" nur, wenn etwas hinterlegt ist', () => {
+    const { ctx, capital } = fresh()
+    const afterOffer = applied(ctx, [
+      {
+        type: 'OFFER_TRADE',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        give: { resources: { iron: 5000 }, provinces: [] },
+        want: { resources: {}, provinces: [] },
+      },
+    ])
+    const view1 = publicView(afterOffer.state, 'p1', rules)
+    const rows1 = offerListActions(afterOffer, view1, naming(afterOffer.state))
+    expect(rows1.outgoing).toHaveLength(1)
+    const row1 = rows1.outgoing[0]!
+    const withdraw1 = row1.actions.find((a) => a.id.startsWith('trade-withdraw-'))!
+    expect(withdraw1.disabledReason).toBeNull()
+    expect(row1.note).toContain(t('trade.escrow'))
+    expect(row1.note).toMatch(/Verfällt an Tag \d/)
+
+    // Zweites Angebot p1 -> p2, nur mit einer eigenen Provinz — kein Rohstoff hinterlegt.
+    const eigeneProvinz = Object.values(afterOffer.state.provinces).find((p) => p.owner === 'p1' && p.id !== capital)?.id
+    expect(eigeneProvinz, 'p1 braucht fuer diesen Fall eine zweite eigene Provinz').toBeDefined()
+    const afterOffer2 = applied(afterOffer, [
+      {
+        type: 'OFFER_TRADE',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        give: { resources: {}, provinces: [eigeneProvinz!] },
+        want: { resources: {}, provinces: [] },
+      },
+    ])
+    const view2 = publicView(afterOffer2.state, 'p1', rules)
+    const rows2 = offerListActions(afterOffer2, view2, naming(afterOffer2.state))
+    expect(rows2.outgoing).toHaveLength(2)
+    const zweiteZeile = rows2.outgoing[1]!
+    expect(zweiteZeile.note ?? '').not.toContain(t('trade.escrow'))
+  })
+
+  it('A7 R-DIP-04 die Annahme verraet keine fremde Armee und keinen fremden Weg', () => {
+    const { ctx, capital, neighbour } = fresh()
+    // X: eine Nicht-Hauptstadt-Provinz, p2 zugeschrieben (herrenlos gemacht, am Klon), bevor
+    // das Angebot entsteht. Y ist ein Nachbar von X, fuer den Weg-Fall (b).
+    const X = neighbour
+    const Y = map.edgesByProvince[X]!
+      .map((i) => map.edges[i]!)
+      .filter((e) => e.kind === 'land')
+      .map((e) => (e.a === X ? e.b : e.a))
+      .find((id) => id !== X && id !== capital)!
+    expect(Y, 'X braucht einen zweiten Nachbarn fuer den Weg-Fall').toBeDefined()
+
+    const basis: GameState = { ...ctx.state, provinces: { ...ctx.state.provinces, [X]: { ...ctx.state.provinces[X]!, owner: 'p2' } } }
+    const offerCtx: ActionContext = { ...ctx, state: basis, playerId: 'p2' }
+    const afterOffer = applied(offerCtx, [
+      {
+        type: 'OFFER_TRADE',
+        playerId: 'p2',
+        targetPlayerId: 'p1',
+        give: { resources: {}, provinces: [X] },
+        want: { resources: {}, provinces: [] },
+      },
+    ])
+    const offer = afterOffer.state.diplomacy.tradeOffers[0]!
+    expect(offer.give.provinces).toEqual([X])
+
+    /** Ein flacher Klon, der nur `armies`/`armyOrder` neu anlegt — genug fuer `withArmy`. */
+    const mitArmee = (state: GameState, at: string, owner: string, path: string[] = []): GameState => {
+      const clone: GameState = { ...state, armies: { ...state.armies }, armyOrder: [...state.armyOrder] }
+      withArmy(clone, at, 3000, owner, path)
+      return clone
+    }
+
+    const varianten: { name: string; bauen: (state: GameState) => GameState }[] = [
+      { name: '(a) eigene Armee des Anbieters in X', bauen: (state) => mitArmee(state, X, 'p2') },
+      { name: '(b) Armee des Anbieters auf dem Weg nach X', bauen: (state) => mitArmee(state, Y, 'p2', [X]) },
+      { name: '(c) Armee einer dritten Macht (Frieden mit p2) in X', bauen: (state) => mitArmee(state, X, 'p3') },
+    ]
+
+    for (const variante of varianten) {
+      const state = variante.bauen(afterOffer.state)
+      const p1ctx: ActionContext = { ...ctx, state, playerId: 'p1' }
+      const view = publicView(state, 'p1', rules)
+      const rows = offerListActions(p1ctx, view, naming(state))
+      const row = rows.incoming.find((r) => r.id === offer.id)!
+      const accept = row.actions.find((a) => a.id.startsWith('trade-accept-'))!
+
+      expect(accept.disabledReason, variante.name).toBe(t('trade.blocked.lapsing'))
+      const provinceName = nameOfProvince(X)
+      for (const verboten of [provinceName, 'Armee', 'Truppen', 'Hauptstadt', 'umkämpft', 'gekämpft']) {
+        expect(accept.disabledReason, `${variante.name}: ${verboten}`).not.toContain(verboten)
+      }
+
+      // Kontrolle: der Kern selbst lehnt mit dem erwarteten Grund ab — sonst misst der Fall nichts.
+      const acceptCommand: Command = { type: 'ACCEPT_TRADE', playerId: 'p1', offerId: offer.id }
+      const kernErgebnis = canApply(state, acceptCommand, { map, rules, commands: [acceptCommand], events: [] })
+      expect(kernErgebnis.ok, variante.name).toBe(false)
+      if (!kernErgebnis.ok) {
+        expect(['eigene Armeen', 'fremde Armeen'], variante.name).toContain(kernErgebnis.detail?.reason)
+      }
+    }
+  })
+
+  it('A8 der Durchmarsch-Antrag steht in beiden Listen', () => {
+    const { ctx } = fresh()
+    const p2ctx: ActionContext = { ...ctx, playerId: 'p2' }
+    const nachAntrag = applied(p2ctx, [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'requestRightOfWay' }])
+
+    const p1view = publicView(nachAntrag.state, 'p1', rules)
+    const p1rows = offerListActions({ ...nachAntrag, playerId: 'p1' }, p1view, naming(nachAntrag.state))
+    const eingehend = p1rows.incoming.find((row) => row.id.includes('rightOfWay'))!
+    expect(eingehend.text).toBe(t('diplomacy.request.rightOfWay', { nation: nachAntrag.state.players.p2!.nation }))
+    expect(eingehend.actions.some((a) => a.id === 'offer-accept-rightOfWay-p2' && a.disabledReason === null)).toBe(true)
+
+    // getrennt: p1 beantragt bei p2 — ausgehend, aus Sicht von p1, ohne Aktion.
+    const eigenerAntrag = applied(ctx, [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'requestRightOfWay' }])
+    const p1view2 = publicView(eigenerAntrag.state, 'p1', rules)
+    const p1rows2 = offerListActions({ ...eigenerAntrag, playerId: 'p1' }, p1view2, naming(eigenerAntrag.state))
+    const ausgehend = p1rows2.outgoing.find((row) => row.id.includes('rightOfWay'))!
+    expect(ausgehend.text).toBe(t('diplomacy.ownRequest.rightOfWay', { nation: eigenerAntrag.state.players.p2!.nation }))
+    expect(ausgehend.actions).toEqual([])
+  })
+
+  it('A9 R-DIP-04 das Formular liest keinen fremden Bestand', () => {
+    const { ctx } = fresh()
+    const draft: TradeDraft = { give: { resources: { iron: 5000 }, provinces: [] }, want: { resources: { money: 10000 }, provinces: [] } }
+
+    const arm: GameState = { ...ctx.state, players: { ...ctx.state.players, p2: { ...ctx.state.players.p2!, resources: { ...ctx.state.players.p2!.resources, money: 0 } } } }
+    const reich: GameState = {
+      ...ctx.state,
+      players: { ...ctx.state.players, p2: { ...ctx.state.players.p2!, resources: { ...ctx.state.players.p2!.resources, money: 10 ** 12 } } },
+    }
+
+    const rArm = tradeOfferAction({ ...ctx, state: arm }, 'p2', draft, nameOfProvince)
+    const rReich = tradeOfferAction({ ...ctx, state: reich }, 'p2', draft, nameOfProvince)
+
+    expect(rArm.text).toBe(rReich.text)
+    expect(rArm.action.disabledReason).toBe(rReich.action.disabledReason)
   })
 })

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
-import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
+import { MemoryStorage, planRoute, step, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
@@ -1569,6 +1569,83 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
     expect(meldungen.textContent).toContain('fertig')
+  })
+
+  /**
+   * Der echte Ladeweg (T-M17-14, R-DIP-07/AK1): ein gruener Einzeltest von `alertsFor`
+   * oder `offerListActions` misst nicht, ob die Meldung auf dem Bildschirm ankommt und der
+   * Klick tatsaechlich in die richtige Macht der Diplomatie fuehrt.
+   */
+  describe('R-DIP-07/AK1 Die Meldung fuehrt zur Diplomatie, und dort steht das Angebot in Worten', () => {
+    it('springt von der Meldung in die Diplomatie und zeigt das Angebot in Worten', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAngebot = step(
+        state,
+        [
+          {
+            type: 'OFFER_TRADE',
+            playerId: p2,
+            targetPlayerId: p1,
+            give: { resources: { iron: 5000 }, provinces: [] },
+            want: { resources: { money: 10000 }, provinces: [] },
+          },
+        ],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAngebot.players[p2]!.nation
+
+      const meldungen = await zeige(nachAngebot)
+      expect(meldungen.textContent).toContain(`Handelsangebot von ${nation}`)
+
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`Handelsangebot von ${nation}`) }))
+
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const eingehend = within(diplomatie).getByRole('region', { name: 'Eingehende Angebote' })
+      expect(eingehend.textContent).toContain(`${nation} bietet 5 Eisen und verlangt 10 Geld.`)
+      // Keine Kennung im Text der Region (R-DIP-07/AK1).
+      expect(eingehend.textContent).not.toMatch(/\bp\d\b|\bt\d+\b/)
+
+      fireEvent.click(within(eingehend).getByRole('button', { name: 'Angebot annehmen' }))
+      expect(within(eingehend).getByText(/befohlen/)).toBeTruthy()
+    })
+  })
+
+  /**
+   * Antrag, Annahme und Kuendigung des Durchmarschs sind ueber die Diplomatie erreichbar
+   * (T-M17-14, R-DIP-08/AK2).
+   */
+  describe('R-DIP-08/AK2 Antrag, Annahme und Kuendigung sind erreichbar', () => {
+    it('Antrag steht als Meldung, und die Knoepfe stehen nach der Wahl der Macht', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAntrag = step(
+        state,
+        [{ type: 'DIPLOMACY', playerId: p2, targetPlayerId: p1, action: 'requestRightOfWay' }],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAntrag.players[p2]!.nation
+
+      const meldungen = await zeige(nachAntrag)
+      expect(meldungen.textContent).toContain(`${nation} bittet um Durchmarsch`)
+
+      // Taste D (oder der Kopfleisten-Knopf) statt Klick auf die Meldung — die Macht wird
+      // erst danach von Hand gewaehlt (03-TASKS T-M17-14, Sichtpruefung S2).
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const zeile = within(diplomatie)
+        .getAllByRole('row')
+        .find((row) => row.textContent?.includes(nation))!
+      fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+
+      // "Durchmarsch-Antrag annehmen" steht zweimal (Gruppe UND Liste, E6) — die Gruppe
+      // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen.
+      const gruppe = screen.getByRole('region', { name: 'Durchmarsch und Karte' })
+      const beantragen = within(gruppe).getByRole('button', { name: 'Durchmarsch beantragen' })
+      const annehmen = within(gruppe).getByRole('button', { name: 'Durchmarsch-Antrag annehmen' })
+      const kuendigen = within(gruppe).getByRole('button', { name: 'Durchmarsch kündigen' })
+      expect((beantragen as HTMLButtonElement).disabled).toBe(false)
+      expect((annehmen as HTMLButtonElement).disabled).toBe(false)
+      expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
+    })
   })
 })
 

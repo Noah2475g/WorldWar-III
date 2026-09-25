@@ -357,6 +357,10 @@ export const de = {
     grantRightOfWay: 'Durchmarsch gewähren',
     shareMap: 'Karte teilen',
     reasonDetail: '{{text}} ({{reason}})',
+    // Der Antrag, seine Annahme und die Kündigung (T-M17-14, R-DIP-08/AK2, AK3).
+    requestRightOfWay: 'Durchmarsch beantragen',
+    acceptRightOfWay: 'Durchmarsch-Antrag annehmen',
+    revokeRightOfWay: 'Durchmarsch kündigen',
   },
 
   /**
@@ -526,17 +530,49 @@ export const de = {
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
+    // Das Diplomatiepanel (T-M17-14, D29.9): Ansehen als Balken, Durchmarsch in beiden Richtungen,
+    // Kriege der Welt, Vertraege und Durchmarsch als zwei Gruppen, Angebote.
+    ownReputation: 'Ihr Ansehen',
+    reputationOf: 'Ansehen von {{nation}}',
+    passageColumn: 'Durchmarsch',
+    passage: {
+      out: 'Sie gewähren',
+      outEnds: 'Sie gewähren bis Tag {{day}}',
+      in: 'Sie erhalten',
+      inEnds: 'Sie erhalten bis Tag {{day}}',
+      none: 'keiner',
+    },
+    treaties: 'Verträge mit {{nation}}',
+    passageGroup: 'Durchmarsch und Karte',
+    wars: 'Kriege',
+    warPair: '{{a}} gegen {{b}}',
+    noWars: 'Derzeit führt niemand Krieg.',
+    incoming: 'Eingehende Angebote',
+    outgoing: 'Ausgehende Angebote',
+    request: {
+      peace: '{{nation}} bietet Frieden an.',
+      alliance: '{{nation}} bietet ein Bündnis an.',
+      rightOfWay: '{{nation}} bittet um Durchmarsch durch Ihr Gebiet.',
+    },
+    ownRequest: {
+      peace: 'Ihr Friedensangebot an {{nation}} wartet auf Antwort.',
+      alliance: 'Ihr Bündnisangebot an {{nation}} wartet auf Antwort.',
+      rightOfWay: 'Ihr Antrag auf Durchmarsch bei {{nation}} wartet auf Antwort.',
+    },
     // Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5) — der Satz steht in events.TRADE_OFFER_CLOSED.
+    // Ohne "das Hinterlegte geht zurueck" (T-M17-14, E2): das Ereignis traegt keine Mengen (R-DIP-05/AK4)
+    // und weiss also nicht, ob ueberhaupt etwas hinterlegt war. Die Rueckgaberegel steht stattdessen in
+    // explain.diplomacy.trade und als Notiz trade.escrow an der eigenen ausgehenden Zeile.
     tradeClosed: {
       accepted: 'angenommen',
-      declined: 'abgelehnt — das Hinterlegte geht zurück',
-      withdrawn: 'zurückgezogen — das Hinterlegte geht zurück',
-      expired: 'ohne Antwort verfallen — das Hinterlegte geht zurück',
-      war: 'wegen Krieges verfallen — das Hinterlegte geht zurück',
+      declined: 'abgelehnt',
+      withdrawn: 'zurückgezogen',
+      expired: 'ohne Antwort verfallen',
+      war: 'wegen Krieges verfallen',
       // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit T-M17-06 schliesst 'invalid' auch
       // eine verfallene Provinz ein, nicht nur ein Ausscheiden — der Satz behauptet keine der
       // beiden Ursachen als sicher.
-      invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar — das Hinterlegte geht zurück',
+      invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar',
     },
   },
 
@@ -619,6 +655,62 @@ export const de = {
     // Der Kursverlauf je Rohstoff (T-M32-02): Geld je Einheit, je Spieltag gemittelt.
     trend: 'Kursverlauf',
     hint: 'Der Kurs gilt für den ganzen Spielstunden-Tick und für alle Mächte gleich; Nachfrage bewegt ihn danach.',
+  },
+
+  /**
+   * Handelsangebote im Diplomatiepanel (T-M17-14, R-DIP-07, R-DIP-09) — anders als `market`, das
+   * am festen Kurs handelt: ein Angebot geht an EINE Macht, mit Treuhand, Frist und der Möglichkeit,
+   * Provinzen auf beide Seiten zu legen.
+   */
+  trade: {
+    title: 'Handelsangebot an {{nation}}',
+    titleShort: 'Handelsangebot',
+    resource: 'Rohstoff',
+    give: 'Sie geben',
+    want: 'Sie verlangen',
+    stock: 'Bestand {{amount}}',
+    giveAmount: '{{resource}} geben',
+    wantAmount: '{{resource}} verlangen',
+    giveProvince: 'Provinz abgeben',
+    wantProvince: 'Provinz verlangen',
+    pickProvince: 'Provinz wählen …',
+    removeProvince: '{{province}} entfernen',
+    province: 'Provinz {{name}}',
+    nothing: 'nichts',
+    unknownPower: 'eine Macht',
+    send: 'Handel anbieten',
+    accept: 'Angebot annehmen',
+    decline: 'Angebot ablehnen',
+    withdraw: 'Angebot zurückziehen',
+    incoming: '{{nation}} bietet {{give}} und verlangt {{want}}.',
+    outgoing: 'Sie bieten {{nation}} {{give}} und verlangen {{want}}.',
+    expires: 'Verfällt an Tag {{day}}.',
+    escrow: 'Hinterlegt — kommt zurück, wenn das Angebot ohne Tausch endet.',
+    // "worth" statt "value" im Schluessel (T-M17-14, Waechter Ersatzschrift): "trade.value" als
+    // Zeichenkette in actions.ts fiel dem Waechter gegen Ersatzschrift zum Opfer — "value" ohne
+    // Punkt liest sich fuer ihn wie "val" + Ersatzschrift-"ue".
+    worth: 'Marktwert: Sie geben ≈ {{give}} Geld, Sie erhalten ≈ {{want}} Geld.',
+    worthProvinces: 'Provinzen haben keinen Marktpreis und sind darin nicht enthalten.',
+    limits: 'Höchstens {{money}} Geld und {{resource}} je Rohstoff und Seite.',
+    // Die Sperrgründe des Kerns als Satz (T-M17-14, E7) — eigene Tabelle statt `errors.*`, weil
+    // `errors.QUEUE_FULL` „Alle Bauplätze" sagt und keiner der Kerngründe Provinznamen kennt.
+    blocked: {
+      lapsing: 'Der Anbieter kann nicht mehr liefern, was er anbietet — das Angebot verfällt.',
+      notOwned: '{{province}} gehört nicht der Macht, die sie abtreten soll.',
+      capital: '{{province}} ist eine Hauptstadt und lässt sich nicht abtreten.',
+      contested: 'In {{province}} wird gekämpft.',
+      ownArmies: 'Eigene Truppen stehen in {{province}} oder marschieren hinein.',
+      foreignArmies: 'Truppen einer dritten Macht stehen in {{province}}.',
+      duplicate: 'Eine Provinz steht doppelt im Angebot.',
+      empty: 'Legen Sie etwas auf Ihre Seite des Angebots.',
+      sameResource: 'Derselbe Rohstoff steht auf beiden Seiten.',
+      limit: 'Höchstens {{max}} {{resource}} je Angebot.',
+      invalidAmount: 'Nur ganze, positive Mengen.',
+      war: 'Im Krieg wird nicht gehandelt.',
+      declaration: 'Eine Kriegserklärung läuft — kein neuer Handel.',
+      gone: 'Diese Macht ist ausgeschieden.',
+      queueFull: 'Sie haben schon {{max}} offene Angebote — ziehen Sie eines zurück.',
+    },
   },
 
   mapModes: {
@@ -1030,6 +1122,15 @@ export const de = {
       rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung. Umgekehrt gilt es nur, wenn die andere Macht es ebenfalls gewährt.',
       sharedMap: 'Die andere Macht sieht, was man selbst sieht. Ihre eigene Karte zeigt sie nur, wenn sie sie ebenfalls freigibt.',
     },
+    // Das Handelsangebot (T-M17-14, R-DIP-07) steht NICHT unter `diplomacy` (Abweichung vom
+    // Bauplan §4.6, Befund beim Bau): `icons.test.tsx` zaehlt `explain.diplomacy` als die
+    // Liste der Beziehungszustaende (sechs, je mit RELATION_ICONS-Zeichen) — ein siebter
+    // Schluessel ohne Zeichen liesse den Waechter zu Recht fallen. Die Treuhandregel steht hier,
+    // weil der Protokollsatz sie seit E2 nicht mehr behauptet.
+    trade:
+      'Ein Angebot an eine Macht: Was Sie geben, liegt ab sofort in Treuhand und kommt zurück, wenn das ' +
+      'Angebot ohne Tausch endet — abgelehnt, zurückgezogen, verfallen oder durch Krieg. Provinzen ' +
+      'wechseln erst beim Tausch den Besitzer. Die Welt erfährt, dass Sie handeln, nicht wie viel.',
     espionage: {
       intel: 'Öffnet die Provinz für einen Tag: Gebäude mit Stufe und die Zusammensetzung der Armeen dort. Gelingt nicht jeden Tag.',
       economicSabotage: 'Senkt bei Erfolg die Moral der Provinz und vernichtet einen Teil ihres Tagesertrags beim Eigentümer. Höchstens eine Sabotage je Provinz und Tag.',
@@ -1082,6 +1183,14 @@ export const de = {
     spyExposed: 'Ihr Spion in {{province}} ist enttarnt ({{mission}})',
     spyUnpaid: 'Spion in {{province}} verloren: der Sold ließ sich nicht zahlen',
     spyTargetChanged: 'Spion in {{province}}: das Ziel passt nicht mehr zum Auftrag',
+    // Eingehende Angebote (T-M17-14, R-DIP-07/AK1, E4): leise wie die Ankündigung (M36), Sprung
+    // in die Diplomatie statt auf die Karte.
+    tradeOffer: 'Handelsangebot von {{nation}}',
+    offer: {
+      peace: '{{nation}} bietet Frieden an',
+      alliance: '{{nation}} bietet ein Bündnis an',
+      rightOfWay: '{{nation}} bittet um Durchmarsch',
+    },
   },
 
   error: {

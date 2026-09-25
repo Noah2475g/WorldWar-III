@@ -1,7 +1,15 @@
 import type { GameEvent, PublicView } from '@worldwar/core'
 import { accusativePronoun, indefiniteArticle, noneOf } from '../i18n/grammar.ts'
 import { t } from '../i18n/text.ts'
-import { BUILDING_ICONS, Icon, RESOURCE_ICONS, SPY_MISSION_ICONS, UNIT_ICONS, type IconName } from './icons.tsx'
+import {
+  BUILDING_ICONS,
+  Icon,
+  RELATION_ICONS,
+  RESOURCE_ICONS,
+  SPY_MISSION_ICONS,
+  UNIT_ICONS,
+  type IconName,
+} from './icons.tsx'
 
 /**
  * What needs looking at, right now (T-M13-13, R-UI-14).
@@ -36,6 +44,8 @@ export type AlertKind =
   | 'sabotage'
   /** Enttarnung, Verlust, verfehltes Ziel — leise (T-M17-13). */
   | 'espionage'
+  /** Ein eingehendes Angebot — Handel oder Antrag, leise (T-M17-14, R-DIP-07/AK1, E4). */
+  | 'offer'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -44,7 +54,16 @@ export interface Alert {
   icon: IconName
   text: string
   provinceId?: string
+  /** Sprung in die Diplomatie statt auf die Karte, mit der Macht des Angebots (T-M17-14, E3). */
+  diplomacyWith?: string
 }
+
+/**
+ * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte oder in die Diplomatie, zu einer
+ * bestimmten Macht. `Foot`/`EventLog` kennen weiterhin nur Provinzen (Korrektur am Planungsstand:
+ * ihre Eintraege tragen keine Macht, nur `Alerts` bekommt dieses Sprungziel).
+ */
+export type JumpTarget = { kind: 'province'; provinceId: string } | { kind: 'diplomacy'; playerId: string | null }
 
 /** Below this morale a province is at risk of revolt (D6: Aufstandsrisiko ab 33). */
 export const UNREST_MORALE = 33_000
@@ -196,6 +215,33 @@ export interface UnlockRules {
   units: Record<string, { availableFromDay: number } & Prerequisites>
 }
 
+/**
+ * Ein eingehendes Angebot meldet sich (T-M17-14, R-DIP-07/AK1, E4): Handel UND die drei
+ * diplomatischen Arten (Frieden, Buendnis, Durchmarsch-Antrag). Leise (M36), nicht wegklickbar
+ * (sie enden mit Antwort oder Verfall) — kein Filter auf `kind === 'rightOfWay'` (kippbar, E4).
+ */
+function offerAlerts(view: PublicView): Alert[] {
+  const nationOf = (id: string): string => view.others.find((other) => other.id === id)?.nation ?? t('trade.unknownPower')
+
+  const trade: Alert[] = view.tradeOffers.incoming.map((offer) => ({
+    id: `offer:trade:${offer.id}`,
+    kind: 'offer',
+    icon: 'trade',
+    text: t('alerts.tradeOffer', { nation: nationOf(offer.from) }),
+    diplomacyWith: offer.from,
+  }))
+
+  const diplomatic: Alert[] = view.incomingOffers.map((offer) => ({
+    id: `offer:${offer.kind}:${offer.from}`,
+    kind: 'offer',
+    icon: RELATION_ICONS[offer.kind],
+    text: t(`alerts.offer.${offer.kind}`, { nation: nationOf(offer.from) }),
+    diplomacyWith: offer.from,
+  }))
+
+  return [...trade, ...diplomatic]
+}
+
 export function alertsFor(view: PublicView | null, rules?: UnlockRules, news: readonly Alert[] = []): Alert[] {
   if (!view) return []
   const alerts: Alert[] = []
@@ -314,6 +360,10 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules, news: re
   // Ankuendigung — die stehen den ganzen Spieltag und muessen hinter dem stehen, was
   // gerade Aufmerksamkeit braucht (T-M41-12).
   alerts.push(...news)
+
+  // Angebote (T-M17-14, E4): nach den Nachrichten, vor Freischaltung und Ankuendigung — aus
+  // demselben Grund wie die Spionage-Meldungen daneben.
+  alerts.push(...offerAlerts(view))
 
   if (rules) alerts.push(...unlockAlerts(view, rules), ...upcomingAlerts(view, rules))
 
@@ -467,13 +517,20 @@ export function dismissNews(old: NewsState, id: string): NewsState {
   return { ...old, alerts }
 }
 
+/** Das Sprungziel einer Meldung (T-M17-14, E3): Provinz vor Diplomatie, sonst kein Ziel. */
+function targetOf(alert: Alert): JumpTarget | null {
+  if (alert.provinceId) return { kind: 'province', provinceId: alert.provinceId }
+  if (alert.diplomacyWith) return { kind: 'diplomacy', playerId: alert.diplomacyWith }
+  return null
+}
+
 export function Alerts({
   alerts,
   onJump,
   onDismiss,
 }: {
   alerts: readonly Alert[]
-  onJump: (provinceId: string) => void
+  onJump: (target: JumpTarget) => void
   /** Eine Ankuendigung oder Freischaltung bis zum Ende ihres Spieltags ausblenden. */
   onDismiss?: (id: string) => void
 }) {
@@ -482,30 +539,33 @@ export function Alerts({
   return (
     <section className="alerts" aria-label={t('alerts.title')}>
       <ul>
-        {alerts.map((alert) => (
-          <li key={alert.id} className={`alert alert--${alert.kind}`}>
-            <Icon name={alert.icon} size={14} />
-            {alert.provinceId ? (
-              <button type="button" className="alert__jump" onClick={() => onJump(alert.provinceId!)}>
-                {alert.text}
-              </button>
-            ) : (
-              <span>{alert.text}</span>
-            )}
-            {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
-            {onDismiss && isDismissible(alert) && (
-              <button
-                type="button"
-                className="alert__dismiss"
-                aria-label={t('alerts.dismiss', { text: alert.text })}
-                title={t('alerts.dismissTitle')}
-                onClick={() => onDismiss(alert.id)}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            )}
-          </li>
-        ))}
+        {alerts.map((alert) => {
+          const target = targetOf(alert)
+          return (
+            <li key={alert.id} className={`alert alert--${alert.kind}`}>
+              <Icon name={alert.icon} size={14} />
+              {target ? (
+                <button type="button" className="alert__jump" onClick={() => onJump(target)}>
+                  {alert.text}
+                </button>
+              ) : (
+                <span>{alert.text}</span>
+              )}
+              {/* Leise wie die Meldung (M36): keine Farbe, kein Sprung, kein Ton. */}
+              {onDismiss && isDismissible(alert) && (
+                <button
+                  type="button"
+                  className="alert__dismiss"
+                  aria-label={t('alerts.dismiss', { text: alert.text })}
+                  title={t('alerts.dismissTitle')}
+                  onClick={() => onDismiss(alert.id)}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              )}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

@@ -263,3 +263,26 @@ describe('R-MP-01/AK1 Der Platz kommt aus dem Zustand, nicht aus einer Annahme',
     expect(uiReducer(INITIAL_UI, { type: 'setViewer', id: null }).viewerId).toBeNull()
   })
 })
+
+describe('R-DIP-07/AK1 Der Sprung aus einer Meldung waehlt die Macht der Diplomatie (T-M17-14, E9)', () => {
+  it('focusDiplomacy oeffnet die Diplomatie mit der Macht des Angebots', () => {
+    const state = uiReducer(INITIAL_UI, { type: 'focusDiplomacy', playerId: 'p2' })
+
+    expect(state.panel).toBe('diplomacy')
+    expect(state.diplomacyPartner).toBe('p2')
+
+    // Ein Sprung ohne bekannte Macht (playerId: null) loescht eine vorher gewaehlte nicht.
+    const zuvor = after(INITIAL_UI, { type: 'focusDiplomacy', playerId: 'p3' })
+    const danach = uiReducer(zuvor, { type: 'focusDiplomacy', playerId: null })
+    expect(danach.panel).toBe('diplomacy')
+    expect(danach.diplomacyPartner).toBe('p3')
+  })
+
+  it('chooseDiplomacyPartner waehlt, ohne das Panel zu wechseln', () => {
+    const zuvor: UiState = { ...INITIAL_UI, panel: 'province' }
+    const state = uiReducer(zuvor, { type: 'chooseDiplomacyPartner', playerId: 'p2' })
+
+    expect(state.diplomacyPartner).toBe('p2')
+    expect(state.panel).toBe('province')
+  })
+})

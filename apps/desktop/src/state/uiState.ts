@@ -62,6 +62,15 @@ export interface UiState {
    * ohne diesen Wert sähe er die Welt seines Gegners.
    */
   viewerId: PlayerId | null
+  /**
+   * Die im Diplomatiepanel gewählte Macht (T-M17-14, E9).
+   *
+   * Bis dahin lebte die Wahl in einem lokalen `useState` des Panels — eine Meldung konnte das
+   * Panel dann nicht mit der richtigen Macht öffnen. Gesteuert über `chooseDiplomacyPartner`
+   * (nur die Wahl) und `focusDiplomacy` (Panel öffnen und wählen, für den Sprung aus einer
+   * Meldung).
+   */
+  diplomacyPartner: PlayerId | null
 }
 
 export const INITIAL_UI: UiState = {
@@ -74,6 +83,7 @@ export const INITIAL_UI: UiState = {
   notice: null,
   ownershipVersion: 0,
   viewerId: null,
+  diplomacyPartner: null,
 }
 
 /**
@@ -108,6 +118,14 @@ export type UiAction =
   | { type: 'ownershipChanged' }
   /** Der Platz, auf dem dieser Bildschirm spielt (T-M37-01). */
   | { type: 'setViewer'; id: PlayerId | null }
+  /** Die Macht im Diplomatiepanel waehlen, ohne das Panel zu wechseln (T-M17-14, E9). */
+  | { type: 'chooseDiplomacyPartner'; playerId: PlayerId }
+  /**
+   * Die Diplomatie oeffnen und eine Macht waehlen — der Sprung aus einer Meldung (T-M17-14, E3,
+   * E9). Mit `playerId: null` (Sprung ohne bekannte Macht) bleibt ein vorher gewaehlter Partner
+   * stehen, statt die Wahl zu loeschen.
+   */
+  | { type: 'focusDiplomacy'; playerId: PlayerId | null }
 
 export function uiReducer(state: UiState, action: UiAction): UiState {
   switch (action.type) {
@@ -158,6 +176,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       // Die Auswahl gehört dem alten Platz: wer den Platz wechselt, hat eine andere
       // Provinz gewählt und eine andere Armee im Panel stehen.
       return { ...state, viewerId: action.id, selectedProvince: null, selectedArmy: null, notice: null }
+
+    case 'chooseDiplomacyPartner':
+      return { ...state, diplomacyPartner: action.playerId }
+
+    case 'focusDiplomacy':
+      return {
+        ...state,
+        panel: 'diplomacy',
+        diplomacyPartner: action.playerId ?? state.diplomacyPartner,
+      }
   }
 }
 

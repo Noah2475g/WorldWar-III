@@ -14,19 +14,25 @@ import {
   recruitStartCondition,
   spySalary,
   SPY_MISSIONS,
+  RESOURCE_KEYS,
   type Army,
   type Command,
+  type CommandResult,
   type DiplomacyAction,
+  type DiplomaticOffer,
   type GameState,
   type MapData,
+  type MarketState,
   type PublicView,
   type ResourceKey,
   type Rules,
   type SpyMission,
   type Stance,
+  type TradeBundle,
+  type TradeOffer,
 } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
-import { amount, arrival, costs, duration, unfix } from '../ui/format.ts'
+import { amount, arrival, costs, duration, gameTime, missing, unfix } from '../ui/format.ts'
 import { BUILDING_ART, UNIT_ART, type ArtName } from '../ui/art.tsx'
 import { BUILDING_ICONS, SPY_MISSION_ICONS, UNIT_ICONS, type IconName } from '../ui/icons.tsx'
 import { describeRejection } from './rejections.ts'
@@ -527,19 +533,40 @@ export function planArrival(
   return { arrivalTick, text: arrival(ctx.state.tick, arrivalTick, ctx.ticksPerDay) }
 }
 
-const DIPLOMACY: readonly { action: DiplomacyAction; label: string }[] = [
+/**
+ * Die Vertragsaktionen (T-M17-14, E6): Kriegserklärung, Frieden, Bündnis — sechs Knöpfe. Durchmarsch
+ * und Kartenfreigabe stehen seit T-M17-14 in einer eigenen Gruppe (`passageActions`), weil sie mit
+ * dem Antrag, seiner Annahme und der Kündigung zusammengehören und nicht mit dem Vertragswerk.
+ */
+const TREATIES: readonly { action: DiplomacyAction; label: string }[] = [
   { action: 'declareWar', label: 'actions.declareWar' },
   { action: 'offerPeace', label: 'actions.offerPeace' },
   { action: 'acceptPeace', label: 'actions.acceptPeace' },
   { action: 'offerAlliance', label: 'actions.offerAlliance' },
   { action: 'acceptAlliance', label: 'actions.acceptAlliance' },
   { action: 'breakAlliance', label: 'actions.breakAlliance' },
-  { action: 'grantRightOfWay', label: 'actions.grantRightOfWay' },
-  { action: 'shareMap', label: 'actions.shareMap' },
 ]
 
 export function diplomacyActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
-  return DIPLOMACY.map(({ action, label }) =>
+  return TREATIES.map(({ action, label }) =>
+    checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
+  )
+}
+
+/**
+ * Durchmarsch und Karte (T-M17-14, E6, R-DIP-08): gewähren, beantragen, annehmen, kündigen, dazu
+ * die Kartenfreigabe — fünf Knöpfe in dieser Reihenfolge (Test A1).
+ */
+const PASSAGE: readonly { action: DiplomacyAction; label: string }[] = [
+  { action: 'grantRightOfWay', label: 'actions.grantRightOfWay' },
+  { action: 'requestRightOfWay', label: 'actions.requestRightOfWay' },
+  { action: 'acceptRightOfWay', label: 'actions.acceptRightOfWay' },
+  { action: 'revokeRightOfWay', label: 'actions.revokeRightOfWay' },
+  { action: 'shareMap', label: 'actions.shareMap' },
+]
+
+export function passageActions(ctx: ActionContext, targetPlayerId: string): ActionSpec[] {
+  return PASSAGE.map(({ action, label }) =>
     checked(ctx, { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId, action }, `diplomacy-${action}`, t(label)),
   )
 }
@@ -694,6 +721,281 @@ export function tradePreview(
       ? t('market.preview', { amount: amount(wantAmount), resource: t(`resources.${want}`) })
       : t('market.previewNone')
   return { wantAmount, text, action }
+}
+
+/**
+ * Handelsangebote als Knöpfe (T-M17-14, R-DIP-07, R-DIP-09). `checked()`/`describeRejection`
+ * genügen hier nicht: `QUEUE_FULL` läse bei einem Handelsangebot „Alle Bauplätze belegt" (E7,
+ * `rejections.ts:59`, `errors.QUEUE_FULL`), und Provinznamen kennt `describeRejection` gar nicht.
+ * Eine eigene Prüfkette bildet die Gründe des Kerns (`packages/core/src/commands/tradeOffer.ts`)
+ * auf Sätze aus `de.ts` ab — mit einer Schwärzung für die Annahme (E1, Falle 7).
+ */
+
+/** Was ein Bündel zum Kurs des Ticks in Geld wert ist (R-DIP-07). Provinzen haben keinen Kurs. */
+export function tradeValue(market: MarketState, resources: TradeBundle['resources']): number {
+  return RESOURCE_KEYS.reduce((sum, key) => {
+    const value = resources[key]
+    return value ? sum + exchangeAmount(market, key, value, 'money') : sum
+  }, 0)
+}
+
+/** "5 Eisen, 2 Kohle, Provinz Nordtal" — oder "nichts" (R-DIP-09). */
+export function bundleText(bundle: TradeBundle, nameOfProvince: (id: string) => string): string {
+  const parts: string[] = []
+  for (const key of RESOURCE_KEYS) {
+    const value = bundle.resources[key]
+    if (value) parts.push(`${amount(value)} ${t(`resources.${key}`)}`)
+  }
+  for (const provinceId of bundle.provinces) {
+    parts.push(t('trade.province', { name: nameOfProvince(provinceId) }))
+  }
+  return parts.length > 0 ? parts.join(', ') : t('trade.nothing')
+}
+
+export interface TradeDraft {
+  give: TradeBundle
+  want: TradeBundle
+}
+
+export interface OfferNaming {
+  nameOf: (playerId: string) => string
+  nameOfProvince: (id: string) => string
+}
+
+/** Handelsbefehle brauchen eine eigene Zuordnung Grund → Satz (E7), nicht `describeRejection`. */
+function tradeChecked(
+  ctx: ActionContext,
+  command: Command,
+  id: string,
+  label: string,
+  nameOfProvince: (id: string) => string,
+  offer?: TradeOffer,
+): ActionSpec {
+  const result = canApply(ctx.state, command, { map: ctx.map, rules: ctx.rules, commands: [command], events: [] })
+  return {
+    id,
+    label,
+    disabledReason: result.ok ? null : describeTradeRejection(result, command, ctx, nameOfProvince, offer),
+    command,
+  }
+}
+
+/** Die Gründe des Kerns (`tradeOffer.ts`) als Sätze mit Provinznamen — Tabelle in Bauplan §4.1. */
+function describeTradeRejection(
+  result: Extract<CommandResult, { ok: false }>,
+  command: Command,
+  ctx: ActionContext,
+  nameOfProvince: (id: string) => string,
+  offer?: TradeOffer,
+): string {
+  const detail = result.detail ?? {}
+  const provinceId = typeof detail.provinceId === 'string' ? detail.provinceId : undefined
+  const reason = typeof detail.reason === 'string' ? detail.reason : undefined
+
+  // E1: scheitert die Annahme an einer Provinz der GEBENDEN (Anbieter-)Seite, heisst der Grund
+  // immer "das Angebot verfaellt" — ohne Provinz, ohne Ursache. Sonst verraet der Annehmen-Knopf
+  // Armeen, Hauptstadt oder umkaempftes Land des Anbieters (Falle 7, Test A7).
+  if (
+    command.type === 'ACCEPT_TRADE' &&
+    offer &&
+    (result.code === 'INVALID_TARGET' || result.code === 'PROVINCE_NOT_FOUND') &&
+    provinceId !== undefined &&
+    offer.give.provinces.includes(provinceId)
+  ) {
+    return t('trade.blocked.lapsing')
+  }
+
+  if (result.code === 'INVALID_TARGET' && reason !== undefined) {
+    switch (reason) {
+      case 'nicht im Besitz':
+        return t('trade.blocked.notOwned', { province: nameOfProvince(provinceId ?? '') })
+      case 'Hauptstadt':
+        return t('trade.blocked.capital', { province: nameOfProvince(provinceId ?? '') })
+      case 'umkämpft':
+        return t('trade.blocked.contested', { province: nameOfProvince(provinceId ?? '') })
+      case 'eigene Armeen':
+        return t('trade.blocked.ownArmies', { province: nameOfProvince(provinceId ?? '') })
+      case 'fremde Armeen':
+        return t('trade.blocked.foreignArmies', { province: nameOfProvince(provinceId ?? '') })
+      case 'doppelte Provinz':
+        return t('trade.blocked.duplicate')
+      case 'leeres Angebot':
+        return t('trade.blocked.empty')
+      case 'gleicher Rohstoff auf beiden Seiten':
+        return t('trade.blocked.sameResource')
+      case 'über der Höchstmenge': {
+        const resource = typeof detail.resource === 'string' ? detail.resource : undefined
+        const max = resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
+        return t('trade.blocked.limit', { max: amount(max), resource: resource ? t(`resources.${resource}`) : '' })
+      }
+      case 'ungültige Menge':
+      case 'unbekannter Rohstoff':
+      case 'ungültiges Angebot':
+        return t('trade.blocked.invalidAmount')
+      case 'im Krieg':
+        return t('trade.blocked.war')
+      case 'Kriegserklärung läuft':
+        return t('trade.blocked.declaration')
+      case 'Anbieter ausgeschieden':
+        return t('trade.blocked.gone')
+      default:
+        break
+    }
+  }
+
+  if (result.code === 'PLAYER_ELIMINATED') return t('trade.blocked.gone')
+
+  if (result.code === 'QUEUE_FULL') return t('trade.blocked.queueFull', { max: Number(detail.max) })
+
+  if (result.code === 'INSUFFICIENT_RESOURCES') {
+    const player = ctx.state.players[ctx.playerId]
+    const available = (player?.resources ?? {}) as Partial<Record<string, number>>
+    const needed: Partial<Record<string, number>> =
+      command.type === 'OFFER_TRADE' ? command.give.resources : (offer?.want.resources ?? {})
+    const short = missing(needed, available)
+    const resourceKey = typeof detail.resource === 'string' ? detail.resource : 'money'
+    return t('errors.INSUFFICIENT_RESOURCES', { missing: short || t(`resources.${resourceKey}`) })
+  }
+
+  return describeRejection(result, command, ctx)
+}
+
+/** Das Angebotsformular je Macht (R-DIP-07, R-DIP-09): Vorschau und der Knopf, der es abschickt. */
+export function tradeOfferAction(
+  ctx: ActionContext,
+  targetPlayerId: string,
+  draft: TradeDraft,
+  nameOfProvince: (id: string) => string,
+): { giveValue: number; wantValue: number; text: string; action: ActionSpec } {
+  const command: Command = { type: 'OFFER_TRADE', playerId: ctx.playerId, targetPlayerId, give: draft.give, want: draft.want }
+  // NIE ctx.state.players[targetPlayerId].resources lesen (E10, Test A9): die Vorschau rechnet nur
+  // mit dem Kurs (oeffentlich) und dem eigenen Entwurf, nie mit dem Bestand des Partners.
+  const giveValue = tradeValue(ctx.state.market, draft.give.resources)
+  const wantValue = tradeValue(ctx.state.market, draft.want.resources)
+  const action = tradeChecked(ctx, command, 'trade-offer', t('trade.send'), nameOfProvince)
+  const hasProvinces = draft.give.provinces.length > 0 || draft.want.provinces.length > 0
+  const text =
+    t('trade.worth', { give: amount(giveValue), want: amount(wantValue) }) +
+    (hasProvinces ? ` ${t('trade.worthProvinces')}` : '')
+  return { giveValue, wantValue, text, action }
+}
+
+export interface OfferRowSpec {
+  id: string
+  text: string
+  note?: string
+  actions: ActionSpec[]
+}
+
+const ACCEPT_FOR: Record<DiplomaticOffer['kind'], DiplomacyAction> = {
+  peace: 'acceptPeace',
+  alliance: 'acceptAlliance',
+  rightOfWay: 'acceptRightOfWay',
+}
+
+const REQUEST_LABEL: Record<DiplomaticOffer['kind'], string> = {
+  peace: 'actions.acceptPeace',
+  alliance: 'actions.acceptAlliance',
+  rightOfWay: 'actions.acceptRightOfWay',
+}
+
+/**
+ * Eingehende und ausgehende Angebote — Handel UND die drei diplomatischen Arten (R-DIP-07,
+ * R-DIP-08, D29.9). Ausschliesslich aus `view` gelesen (Angebote, Namen); `ctx.state` dient nur
+ * `canApply` (R-DIP-04, Falle 1).
+ */
+export function offerListActions(
+  ctx: ActionContext,
+  view: PublicView,
+  naming: OfferNaming,
+): { incoming: OfferRowSpec[]; outgoing: OfferRowSpec[] } {
+  const nationOf = (id: string): string => naming.nameOf(id) || t('trade.unknownPower')
+
+  const incoming: OfferRowSpec[] = [
+    ...view.tradeOffers.incoming.map((offer): OfferRowSpec => {
+      const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
+      // Marktwert aus Sicht des EMPFAENGERS: er gibt `want` her, bekommt `give`.
+      const note =
+        t('trade.worth', {
+          give: amount(tradeValue(ctx.state.market, offer.want.resources)),
+          want: amount(tradeValue(ctx.state.market, offer.give.resources)),
+        }) + ` ${t('trade.expires', { day })}`
+      return {
+        id: offer.id,
+        text: t('trade.incoming', {
+          nation: nationOf(offer.from),
+          give: bundleText(offer.give, naming.nameOfProvince),
+          want: bundleText(offer.want, naming.nameOfProvince),
+        }),
+        note,
+        actions: [
+          tradeChecked(
+            ctx,
+            { type: 'ACCEPT_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            `trade-accept-${offer.id}`,
+            t('trade.accept'),
+            naming.nameOfProvince,
+            offer,
+          ),
+          tradeChecked(
+            ctx,
+            { type: 'DECLINE_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            `trade-decline-${offer.id}`,
+            t('trade.decline'),
+            naming.nameOfProvince,
+          ),
+        ],
+      }
+    }),
+    ...view.incomingOffers.map(
+      (offer): OfferRowSpec => ({
+        id: `offer-${offer.kind}-${offer.from}`,
+        text: t(`diplomacy.request.${offer.kind}`, { nation: nationOf(offer.from) }),
+        actions: [
+          checked(
+            ctx,
+            { type: 'DIPLOMACY', playerId: ctx.playerId, targetPlayerId: offer.from, action: ACCEPT_FOR[offer.kind] },
+            `offer-accept-${offer.kind}-${offer.from}`,
+            t(REQUEST_LABEL[offer.kind]),
+          ),
+        ],
+      }),
+    ),
+  ]
+
+  const outgoing: OfferRowSpec[] = [
+    ...view.tradeOffers.outgoing.map((offer): OfferRowSpec => {
+      const day = gameTime(offer.expiresAtTick, ctx.ticksPerDay).day
+      const hasEscrow = Object.keys(offer.give.resources).length > 0
+      return {
+        id: offer.id,
+        text: t('trade.outgoing', {
+          nation: nationOf(offer.to),
+          give: bundleText(offer.give, naming.nameOfProvince),
+          want: bundleText(offer.want, naming.nameOfProvince),
+        }),
+        note: `${t('trade.expires', { day })}${hasEscrow ? ` ${t('trade.escrow')}` : ''}`,
+        actions: [
+          tradeChecked(
+            ctx,
+            { type: 'WITHDRAW_TRADE', playerId: ctx.playerId, offerId: offer.id },
+            `trade-withdraw-${offer.id}`,
+            t('trade.withdraw'),
+            naming.nameOfProvince,
+          ),
+        ],
+      }
+    }),
+    ...view.outgoingOffers.map(
+      (offer): OfferRowSpec => ({
+        id: `offer-${offer.kind}-${offer.to}`,
+        text: t(`diplomacy.ownRequest.${offer.kind}`, { nation: nationOf(offer.to) }),
+        actions: [],
+      }),
+    ),
+  ]
+
+  return { incoming, outgoing }
 }
 
 /** "3 × Infanterie" — the composition of an own army, in whole units. */

@@ -32,6 +32,10 @@ const view = (options: {
   shortages?: string[]
   provinces?: { id: string; name: string; owner: string; morale?: number }[]
   capital?: string | null
+  others?: { id: string; nation: string }[]
+  incomingOffers?: { from: string; kind: 'peace' | 'alliance' | 'rightOfWay'; tick: number }[]
+  tradeIncoming?: { id: string; from: string; to: string }[]
+  tradeOutgoing?: { id: string; to: string }[]
 }): PublicView =>
   ({
     tick: 100,
@@ -42,7 +46,7 @@ const view = (options: {
       capitalProvinceId: options.capital === undefined ? 'A' : options.capital,
       score: 10,
     },
-    others: [],
+    others: options.others ?? [],
     relations: {},
     provinces: (options.provinces ?? [{ id: 'A', name: 'Alpha', owner: 'p1' }]).map((province) => ({
       ...province,
@@ -53,6 +57,27 @@ const view = (options: {
     battles: (options.battles ?? []).map((provinceId) => ({ provinceId, startedTick: 90 })),
     marketPrices: {},
     victory: { condition: 'points', winner: null },
+    // Angebote (T-M17-14, R-DIP-07/AK1): der Fixtur-Standard bleibt leer, damit alle
+    // bestehenden Faelle unveraendert bleiben — offerAlerts liest sie ohne `?.` (Falle 7).
+    incomingOffers: options.incomingOffers ?? [],
+    outgoingOffers: [],
+    tradeOffers: {
+      incoming: (options.tradeIncoming ?? []).map((offer) => ({
+        ...offer,
+        give: { resources: { iron: 5000 }, provinces: [] },
+        want: { resources: { money: 10000 }, provinces: [] },
+        createdTick: 90,
+        expiresAtTick: 90 + 72,
+      })),
+      outgoing: (options.tradeOutgoing ?? []).map((offer) => ({
+        ...offer,
+        from: 'p1',
+        give: { resources: { iron: 5000 }, provinces: [] },
+        want: { resources: { money: 10000 }, provinces: [] },
+        createdTick: 90,
+        expiresAtTick: 90 + 72,
+      })),
+    },
   }) as unknown as PublicView
 
 describe('R-UI-14 Meldungen entstehen aus der Lage', () => {
@@ -116,7 +141,8 @@ describe('R-UI-14 Meldungen entstehen aus der Lage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Alpha/ }))
 
-    expect(onJump).toHaveBeenCalledWith('A')
+    // Seit T-M17-14 (E3) traegt der Sprung ein Panelziel, nicht mehr nur die Provinz-Id.
+    expect(onJump).toHaveBeenCalledWith({ kind: 'province', provinceId: 'A' })
   })
 
   it('zeigt nichts, wenn nichts anliegt', () => {
@@ -138,6 +164,82 @@ describe('R-GAME-06 Das Protokoll ist filterbar', () => {
 
   it('ordnet die Abtretung der Diplomatie zu — sie ist ein Vertrag, keine Eroberung (T-M17-06)', () =>
     expect(categoryOf('PROVINCE_CEDED')).toBe('diplomacy'))
+
+  it('ordnet ein geschlossenes oder angenommenes Handelsangebot den Vertraegen zu, den Markttausch der Wirtschaft (T-M17-14, E5)', () => {
+    expect(categoryOf('TRADE_OFFER_CLOSED')).toBe('diplomacy')
+    expect(categoryOf('TRADE_AGREED')).toBe('diplomacy')
+    expect(categoryOf('TRADE_EXECUTED')).toBe('economy')
+  })
+})
+
+/**
+ * Ein eingehendes Angebot meldet sich (T-M17-14, R-DIP-07/AK1, E4).
+ */
+describe('R-DIP-07/AK1 Ein eingehendes Angebot meldet sich', () => {
+  it('meldet ein Handelsangebot mit Namen und Sprung in die Diplomatie', () => {
+    const alerts = alertsFor(
+      view({ others: [{ id: 'p2', nation: 'Ostmark' }], tradeIncoming: [{ id: 't3', from: 'p2', to: 'p1' }] }),
+    )
+
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0]).toMatchObject({
+      kind: 'offer',
+      id: 'offer:trade:t3',
+      text: 'Handelsangebot von Ostmark',
+      diplomacyWith: 'p2',
+    })
+    expect(alerts[0]!.provinceId).toBeUndefined()
+    expect(alerts[0]!.text).not.toMatch(/\bp\d\b|\bt\d+\b/)
+  })
+
+  it('meldet Antrag, Friedens- und Buendnisangebot', () => {
+    const naming = { others: [{ id: 'p2', nation: 'Ostmark' }] }
+    const first = alertsFor(
+      view({ ...naming, incomingOffers: [{ from: 'p2', kind: 'rightOfWay', tick: 90 }] }),
+    )
+    expect(first.map((alert) => alert.text)).toEqual(['Ostmark bittet um Durchmarsch'])
+    expect(first[0]!.id).toBe('offer:rightOfWay:p2')
+
+    const second = alertsFor(view({ ...naming, incomingOffers: [{ from: 'p2', kind: 'peace', tick: 90 }] }))
+    expect(second.map((alert) => alert.text)).toEqual(['Ostmark bietet Frieden an'])
+
+    const third = alertsFor(view({ ...naming, incomingOffers: [{ from: 'p2', kind: 'alliance', tick: 90 }] }))
+    expect(third.map((alert) => alert.text)).toEqual(['Ostmark bietet ein Bündnis an'])
+
+    // Stabil ueber zwei Aufrufe — dieselbe Lage, dieselbe Kennung.
+    const again = alertsFor(view({ ...naming, incomingOffers: [{ from: 'p2', kind: 'rightOfWay', tick: 90 }] }))
+    expect(again[0]!.id).toBe(first[0]!.id)
+  })
+
+  it('schweigt bei eigenen Angeboten', () => {
+    const alerts = alertsFor(view({ others: [{ id: 'p2', nation: 'Ostmark' }], tradeOutgoing: [{ id: 't4', to: 'p2' }] }))
+
+    expect(alerts.filter((alert) => alert.kind === 'offer')).toEqual([])
+  })
+
+  it('der Klick fuehrt in die Diplomatie, nicht auf die Karte', () => {
+    const spy = vi.fn()
+    const sicht = view({ others: [{ id: 'p2', nation: 'Ostmark' }], tradeIncoming: [{ id: 't3', from: 'p2', to: 'p1' }] })
+    render(<Alerts alerts={alertsFor(sicht)} onJump={spy} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Handelsangebot von Ostmark/ }))
+
+    expect(spy).toHaveBeenCalledWith({ kind: 'diplomacy', playerId: 'p2' })
+  })
+
+  it('ist leise wie die Ankuendigung (M36): keine Alarm- oder Warnfarbe', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--(accent|warn)\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.length, 'keine Alarmregel gefunden - der Waechter misst nichts').toBeGreaterThan(0)
+    for (const selektor of laut) expect(selektor).not.toContain('alert--offer')
+  })
+
+  it('ist nicht wegklickbar — sie endet mit Antwort oder Verfall', () => {
+    const sicht = view({ others: [{ id: 'p2', nation: 'Ostmark' }], tradeIncoming: [{ id: 't3', from: 'p2', to: 'p1' }] })
+    const [angebot] = alertsFor(sicht)
+
+    expect(isDismissible(angebot!)).toBe(false)
+  })
 })
 
 /**
@@ -394,7 +496,7 @@ describe('R-SPY-06/AK2 Spionage meldet sich', () => {
     const onJump = vi.fn()
     render(<Alerts alerts={alerts} onJump={onJump} />)
     fireEvent.click(screen.getByRole('button', { name: /Wirtschaftssabotage in Alpha/ }))
-    expect(onJump).toHaveBeenCalledWith('A')
+    expect(onJump).toHaveBeenCalledWith({ kind: 'province', provinceId: 'A' })
   })
 
   it('nennt keinen Urheber — auch nicht, wenn die Huelle alle Namen kennt (Z8)', () => {

@@ -53,16 +53,10 @@ function uiCommandSource(): string {
  * Eine Ausnahme ohne Begründung ist eine Lücke mit Erlaubnis; deshalb steht der Grund
  * hier und nicht in einer Liste von Namen.
  */
-const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
-  OFFER_TRADE:
-    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): der Kern nimmt Handelsangebote mit Treuhand an (T-M17-05, R-DIP-05); das Angebotsformular im Diplomatiepanel kommt mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
-  ACCEPT_TRADE:
-    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): das Angebot steht schon in publicView().tradeOffers.incoming; Knopf und Meldung kommen mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
-  DECLINE_TRADE:
-    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Ablehnen kommt mit der Liste eingehender Angebote. T-M17-14 streicht diesen Eintrag.',
-  WITHDRAW_TRADE:
-    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Zuruecknehmen kommt mit der Liste ausgehender Angebote. T-M17-14 streicht diesen Eintrag.',
-}
+// T-M17-14 hat die vier Handelsbefehle erreichbar gemacht (Angebotsformular, Annehmen/Ablehnen/
+// Zuruecknehmen im Diplomatiepanel) — die Ausnahmen sind gestrichen. Der Kommentar bleibt stehen,
+// damit eine spaetere Luecke hier wieder einen Grund bekommt statt eines blossen Namens.
+const NICHT_FUER_DEN_SPIELER: Record<string, string> = {}
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
   it('findet ueberhaupt Kommandotypen', () => {
@@ -163,11 +157,6 @@ describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () =>
  * der Aufgabe, die sie bringt (T-M17-04). Dieselbe Regel wie `NICHT_FUER_DEN_SPIELER`: eine
  * Ausnahme ohne Grund ist eine Luecke mit Erlaubnis.
  */
-const DIPLOMATIE_NOCH_OHNE_KNOPF: Record<string, string> = {
-  requestRightOfWay:
-    'Antrag auf Durchmarsch (R-DIP-08/AK2). Der Knopf kommt mit T-M17-14 ins Diplomatiepanel; bis dahin beantragt nur ein Skript, ab T-M17-10 die KI.',
-  acceptRightOfWay:
-    'Annahme eines Antrags (R-DIP-08/AK2). Der Antrag steht schon in incomingOffers; Knopf und Meldung kommen mit T-M17-14.',
-  revokeRightOfWay:
-    'Kuendigung mit Frist (R-DIP-08/AK3). Der Knopf kommt mit T-M17-14; das Ereignis RIGHT_OF_WAY_CHANGED steht schon im Protokoll.',
-}
+// T-M17-14 hat die drei Durchmarsch-Aktionen erreichbar gemacht (`passageActions`) — die
+// Ausnahmen sind gestrichen, der Kommentar bleibt fuer eine spaetere Luecke stehen.
+const DIPLOMATIE_NOCH_OHNE_KNOPF: Record<string, string> = {}

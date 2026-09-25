@@ -25,7 +25,9 @@ import {
   cancelActions,
   capitalAction,
   diplomacyActions,
+  offerListActions,
   ownArmiesIn,
+  passageActions,
   planArrival,
   nextUnlock,
   recruitActions,
@@ -33,6 +35,7 @@ import {
   spyOverviewActions,
   spySummary,
   targetAction,
+  tradeOfferAction,
   tradePreview,
   unitCounts,
   type ActionContext,
@@ -115,7 +118,15 @@ import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
-import { Alerts, alertsFor, collectEspionageNews, dismissNews, NO_NEWS, type NewsState } from './ui/Alerts.tsx'
+import {
+  Alerts,
+  alertsFor,
+  collectEspionageNews,
+  dismissNews,
+  NO_NEWS,
+  type JumpTarget,
+  type NewsState,
+} from './ui/Alerts.tsx'
 import { cueForOwnEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -1220,6 +1231,19 @@ export function App(props: AppProps) {
     [centres, ui.view, activeMap, tutor],
   )
 
+  /**
+   * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte wie bisher, oder in die Diplomatie
+   * mit der Macht des Angebots. `Foot`/die Kopfleiste behalten `jumpTo` — ihre Eintraege tragen
+   * nur Provinzen.
+   */
+  const jumpToTarget = useCallback(
+    (target: JumpTarget) => {
+      if (target.kind === 'province') jumpTo(target.provinceId)
+      else dispatch({ type: 'focusDiplomacy', playerId: target.playerId })
+    },
+    [jumpTo],
+  )
+
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
   const selectOnMap = useCallback(
     (id: string | null) => {
@@ -1709,6 +1733,21 @@ export function App(props: AppProps) {
   )
 
   /**
+   * Eingehende und ausgehende Angebote, schon zu Knoepfen (T-M17-14, R-DIP-07, R-DIP-08).
+   *
+   * Vor der Rendersperre (Regel der Hooks): `ctx`/`view` koennen hier noch `null` sein, deshalb
+   * die Pruefung innen statt eines fruehen Ausstiegs.
+   */
+  const offerRows = useMemo(() => {
+    if (!ctx || !view) return { incoming: [], outgoing: [] }
+    const rows = offerListActions(ctx, view, { nameOf, nameOfProvince })
+    return {
+      incoming: rows.incoming.map((row) => ({ ...row, actions: row.actions.map((spec) => toAction(spec)) })),
+      outgoing: rows.outgoing.map((row) => ({ ...row, actions: row.actions.map((spec) => toAction(spec)) })),
+    }
+  }, [ctx, view, nameOf, nameOfProvince, toAction])
+
+  /**
    * Spionage-Meldungen sammeln (R-SPY-06/AK2, E3, T-M17-13).
    *
    * Muss NACH `nameOf` stehen — der Effekt braucht `nameOfProvince` und `nameOf` fuer die
@@ -2084,6 +2123,20 @@ export function App(props: AppProps) {
   const ownProvinces = view.provinces.filter((p) => p.owner === viewerId).map((p) => ({ id: p.id, name: p.name }))
   const knownProvinces = view.provinces.filter((p) => p.owner !== viewerId).map((p) => ({ id: p.id, name: p.name }))
 
+  /**
+   * Die eigenen Provinzen fuer das Angebotsformular, alphabetisch (T-M17-14, R-DIP-09).
+   *
+   * `provincesOf` liest nur `view.provinces` (R-DIP-04): eine fremde Macht zeigt so viele
+   * Provinzen, wie die eigene Sicht kennt — verfallenes Wissen (`stale`) eingeschlossen, denn
+   * der Kern prueft bei der Annahme ohnehin nur oeffentlich (R-DIP-09/AK1).
+   */
+  const tradeOwnProvinces = [...ownProvinces].sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  const provincesOf = (playerId: string) =>
+    view.provinces
+      .filter((p) => p.owner === playerId)
+      .map((p) => ({ id: p.id, name: p.name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+
   return (
     <div className="app" style={fontScaleStyle(ui.settings)}>
       <Header
@@ -2189,7 +2242,7 @@ export function App(props: AppProps) {
           />
           <Alerts
             alerts={alerts}
-            onJump={jumpTo}
+            onJump={jumpToTarget}
             onDismiss={(id) =>
               news.alerts.has(id)
                 ? setNews((old) => dismissNews(old, id))
@@ -2233,7 +2286,24 @@ export function App(props: AppProps) {
             <DiplomacyPanel
               view={view}
               nameOf={nameOf}
+              reputationMax={props.rules.constants.reputationBaseline}
+              ticksPerDay={ticksPerDay}
+              chosen={ui.diplomacyPartner}
+              onChoose={(id) => dispatch({ type: 'chooseDiplomacyPartner', playerId: id })}
               actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
+              passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
+              offers={offerRows}
+              tradeForm={{
+                resources: RESOURCE_KEYS,
+                stock: view.self.resources,
+                limits: { money: props.rules.constants.tradeMaxMoney, resource: props.rules.constants.tradeMaxResource },
+                ownProvinces: tradeOwnProvinces,
+                provincesOf,
+                evaluate: (partner, draft) => {
+                  const result = tradeOfferAction(ctx, partner, draft, nameOfProvince)
+                  return { text: result.text, action: toAction(result.action) }
+                },
+              }}
             />
           )}
           {ui.panel === 'espionage' && (
