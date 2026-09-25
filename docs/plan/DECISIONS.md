@@ -5185,16 +5185,42 @@ Option, falls der Anhang oft genug neu geschrieben werden muss, dass es sich loh
 **Entscheidung:** §0 nennt `claude/m17-tiefe-zwischen-den-kriegen` als die Spitze, solange T-M17-16
 offen ist und kein Pull Request nach `main` gestellt wurde — genau ein Zweig, keine Bedingung
 (Falle 1). Ein Pull Request wird in dieser Aufgabe **nicht** gestellt, weil T-M17-16 selbst nicht
-abgeschlossen ist (zwei offene Blocker, siehe `PROGRESS.md`).
+abgeschlossen ist (drei offene Blocker, siehe `PROGRESS.md`).
 
 **Begründung:** `main` zeigt weiterhin auf den Stand vor M17 — wer dort einen Worktree anlegt,
 sieht M17 nicht. Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt schon
 fünf Sitzungen gekostet (Falle 1, `WORKFLOW.md` §4).
 
-**Auswirkung:** Wer als Nächstes an M17 weiterarbeitet (z. B. um die zwei Blocker zu klären),
+**Auswirkung:** Wer als Nächstes an M17 weiterarbeitet (z. B. um die drei Blocker zu klären),
 zweigt von `claude/m17-tiefe-zwischen-den-kriegen` ab, nicht von `main`. Nach Noahs Entscheid zu
-den zwei Blockern und einem fertiggestellten T-M17-16 stellt der Ausführende einen Pull Request;
+den drei Blockern und einem fertiggestellten T-M17-16 stellt der Ausführende einen Pull Request;
 **erst nach Noahs Merge** richtet der Merger §0 auf `main`.
 
-**Kippbar:** durch Noah, jederzeit — insbesondere falls er die zwei Blocker selbst löst, ohne
+**Kippbar:** durch Noah, jederzeit — insbesondere falls er die drei Blocker selbst löst, ohne
 dass ein Agent erst T-M17-16 fertigstellt.
+
+---
+
+## 2026-09-25 abends · Nacharbeit T-M17-16 · `origin/main` ist 45 Commits voraus — nicht selbst gemergt
+
+**Entscheidung:** die Nacharbeit zu T-M17-16 hat entdeckt, dass `origin/main` (`30c0b3f`, PR
+#9–#11, Touch-Bedienung) seit vor Beginn von T-M17-16 bereits 45 Commits vor
+`claude/m17-tiefe-zwischen-den-kriegen` (Basis `8bda869`) liegt, mit Überschneidungen in
+`apps/desktop/src/App.tsx`, `i18n/de.ts`, `ui/Panels.tsx` und `docs/ANLEITUNG.md`. Der Merge wird
+in dieser Nacharbeit **nicht selbst durchgeführt** — als neuer, dritter Blocker in
+`WORKFLOW.md` §2 Punkt 1 dokumentiert, statt eigenmächtig gemergt.
+
+**Begründung:** ein Merge mit Konfliktauflösung in `App.tsx`/`de.ts`/`Panels.tsx` ist eine
+inhaltliche Entscheidung über fremden Code (die Touch-Bedienung einer anderen Sitzung), die ein
+Agent nicht ungefragt trifft — dieselbe Regel wie „ein Tor, das reißt, wird nicht erzwungen,
+sondern gemessen, verstanden und Noah vorgelegt". Zudem würde ein Merge jede Messung dieser
+Aufgabe (exe-Bau, Netzfreiheit, Uhr, Benchmarks, `pnpm acceptance`) entwerten, ohne dass die
+Nacharbeit budgetiert war, sie alle auf dem neuen Stand zu wiederholen.
+
+**Auswirkung:** alle Zahlen aus T-M17-16 gelten ausdrücklich nur für den Stand ohne die 45
+Commits — in `WORKFLOW.md`, `PROGRESS.md` und `03-TASKS.md` vermerkt. Vor dem Pull Request nach
+`main` muss `origin/main` zuerst gemergt und die gesamte Kette (Bau, Netzfreiheit, AK-8,
+`pnpm acceptance`) auf dem Merge-Stand wiederholt werden.
+
+**Kippbar:** durch Noah — falls er den Merge selbst vorzieht oder anders anordnet (z. B. T-M17-16
+zuerst ganz abschließen und erst danach mergen).
