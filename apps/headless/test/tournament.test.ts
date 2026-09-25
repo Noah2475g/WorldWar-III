@@ -158,6 +158,46 @@ describe('R-AI-06 Drei Maechte reihum (Plan D)', () => {
     expect(result.outcomes).toBeLessThanOrEqual(6)
   })
 
+  it('S1 - bySetup je Sitzordnung, und die Teile addieren sich zur Summe (T-M17-15)', () => {
+    const DREI = [
+      ['Nordland', 'Ostmark', 'Sueden'],
+      ['Ostmark', 'Sueden', 'Nordland'],
+      ['Sueden', 'Nordland', 'Ostmark'],
+    ]
+    const result = playTournament({
+      map,
+      rules,
+      difficulties: ['hard', 'normal'],
+      matches: 6,
+      days: 10,
+      startAtWar: false,
+      setups: DREI,
+    })
+
+    expect(Object.keys(result.bySetup)).toEqual(['Nordland/Ostmark/Sueden', 'Ostmark/Sueden/Nordland', 'Sueden/Nordland/Ostmark'])
+
+    let summeWinsA = 0
+    let summeWinsB = 0
+    let summeDraws = 0
+    for (const [schluessel, eintrag] of Object.entries(result.bySetup)) {
+      expect(eintrag.winsA + eintrag.winsB + eintrag.draws, `${schluessel}: ein Paar je Sitzordnung`).toBe(1)
+      expect(eintrag.winRateA, schluessel).toBe((eintrag.winsA + eintrag.draws / 2) / 1)
+      summeWinsA += eintrag.winsA
+      summeWinsB += eintrag.winsB
+      summeDraws += eintrag.draws
+    }
+    expect(summeWinsA).toBe(result.winsA)
+    expect(summeWinsB).toBe(result.winsB)
+    expect(summeDraws).toBe(result.draws)
+  })
+
+  it('S2 - ohne Aufstellung ein Eintrag in bySetup, gleich den Summenfeldern (T-M17-15)', () => {
+    const result = playTournament({ map, rules, difficulties: ['hard', 'easy'], matches: 4, days: 20 })
+    expect(Object.keys(result.bySetup)).toEqual(['Nordland/Ostmark'])
+    const eintrag = result.bySetup['Nordland/Ostmark']!
+    expect(eintrag).toEqual({ winsA: result.winsA, winsB: result.winsB, draws: result.draws, winRateA: result.winRateA })
+  })
+
   it('verlangt, dass die Paare sich auf die Aufstellungen teilen lassen', () => {
     expect(() =>
       playTournament({

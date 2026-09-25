@@ -88,6 +88,12 @@ interface Messung {
   hauptstadtStrecke: Record<string, number>
   /** Armeeobjekte einer Macht in derselben Provinz, am Ende jedes Spieltags. */
   armeeobjekte: { hoechstens: number; tageUeberDrei: number; stehendHoechstens: number; stehendTageUeberDrei: number }
+  /**
+   * Hoechster Geldbestand einer KI-Macht an einem Tagesende (T-M17-15, Befund M17-T7): zeigt die
+   * Schwelle der Aushebung — eine Artillerie kostet 200 000 Geld, und wenn keine Macht je so viel
+   * anspart, hebt die KI praktisch nur Infanterie aus. Zahl, keine Zusicherung.
+   */
+  geldHoechstensJeMacht: Record<string, number>
 }
 
 /**
@@ -110,6 +116,8 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     hauptstadtStrecke[nation(id)] = 0
   }
   const armeeobjekte = { hoechstens: 0, tageUeberDrei: 0, stehendHoechstens: 0, stehendTageUeberDrei: 0 }
+  const geldHoechstensJeMacht: Record<string, number> = {}
+  for (const id of ki) geldHoechstensJeMacht[nation(id)] = 0
   let gelaufen = 0
   let zwischenstand: Messung | undefined
 
@@ -127,6 +135,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
         (provinceId) => state.provinces[provinceId]!.owner === id && state.provinces[provinceId]!.kind === 'city',
       )
       const name = nation(id)
+      geldHoechstensJeMacht[name] = Math.max(geldHoechstensJeMacht[name]!, player.resources.money)
       if (haeltStadt && player.capitalProvinceId === null) {
         hauptstadtTage[name] = hauptstadtTage[name]! + 1
         laufend[name] = (laufend[name] ?? 0) + 1
@@ -162,6 +171,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
         hauptstadtTage: { ...hauptstadtTage },
         hauptstadtStrecke: { ...hauptstadtStrecke },
         armeeobjekte: { ...armeeobjekte },
+        geldHoechstensJeMacht: { ...geldHoechstensJeMacht },
       }
     }
 
@@ -169,7 +179,17 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     await breathe()
   }
 
-  const ende = { tage: gelaufen, events, final: current, ki, kiBefehle, hauptstadtTage, hauptstadtStrecke, armeeobjekte }
+  const ende = {
+    tage: gelaufen,
+    events,
+    final: current,
+    ki,
+    kiBefehle,
+    hauptstadtTage,
+    hauptstadtStrecke,
+    armeeobjekte,
+    geldHoechstensJeMacht,
+  }
   return zwischenstand ? { ende, stichtag: zwischenstand } : { ende }
 }
 
@@ -227,6 +247,18 @@ function kennzahlen(m: Messung) {
     kriegserklaerungen: typ('WAR_DECLARED').length,
     friedensschluesse: truce.length,
     friedenZwischenKi: truce.filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId)).length,
+    /**
+     * Spieltag des ersten Friedens zwischen zwei KI-Maechten, sonst null (T-M17-15, Befund
+     * M17-T7) - macht die Streuung "Frieden in 90 Tagen" lesbar, ohne eine Zusicherung zu
+     * aendern.
+     */
+    ersterFriedenZwischenKiTag:
+      truce
+        .filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId))
+        .map((event) => Math.floor(event.tick / rules.constants.ticksPerDay) + 1)
+        .sort((a, b) => a - b)[0] ?? null,
+    /** Hoechster Geldbestand je Macht an einem Tagesende (T-M17-15, Befund M17-T7). */
+    geldHoechstensJeMacht: m.geldHoechstensJeMacht,
     handel: handel.length,
     handelJeMacht: Object.fromEntries(
       [...ki].map((id) => [nation(id), handel.filter((event) => event.playerId === id).length]),
@@ -389,17 +421,38 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
   })
 
-  it('fuehrt Artillerie und laesst sie feuern', () => {
+  // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` deckte bisher DREI Zusicherungen in
+  // einem Koerper ab (Fabriken, Artillerie, Beschuss) - `it.fails` verlangt nur, dass der
+  // Koerper IRGENDWO wirft, gleich wo. Faellt die heute noch geltende Fabrik-Zusicherung
+  // (92 Fabriken, `fabrikenBegonnenJeMacht` im Bericht) auf 0 zurueck, wirft weiterhin die
+  // Artillerie-Zeile zuerst, und `it.fails` bliebe unveraendert gruen - ein echter Rueckfall
+  // beim Fabrikbau waere unsichtbar. Die noch geltende Zusicherung steht deshalb jetzt in
+  // einem normalen `it()`, nur Artillerie und Beschuss (Befund M17-T7, weiterhin offen)
+  // bleiben unter `it.fails`.
+  it('baut Fabriken (noch geltende Haelfte von R-BAT-08/AK3)', () => {
+    const fabriken = integration.events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
+    expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
+  })
+
+  it.fails('laesst die Artillerie feuern', () => {
     // **Die Kette, um die es in dieser Aufgabe geht.** Ohne Fabrik keine Artillerie, ohne
     // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
     // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
     // fuer die Testkarte belegt hat.
+    //
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18, Ursache
+    // berichtigt in der Nacharbeit 2026-09-25).** "Normal" und "schwer" ueberschreiten ihre
+    // eigene Geldschwelle fuer eine Artillerie durchweg (1,35-1,59 Mio. gegen 1 Mio./714 000),
+    // bauen aber **null** Fabriken; "leicht" baut Fabriken, erreicht aber nie die eigene,
+    // hoehere Schwelle (2,5 Mio.) - nicht "keine Macht spart genug an", wie hier bis zu dieser
+    // Nacharbeit stand. Die einzige gefundene Reparatur braucht Befund M17-S12 und kippt das
+    // Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird dieser Fall unbemerkt
+    // gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist dann meldenswert (die
+    // Aushebung haette sich geaendert).
     const events = integration.events
-    const fabriken = events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
     const beschuss = events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic)
 
-    expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
     expect(artillerie.length, 'keine Artillerie — die Feuerautomatik hat nichts zu tun').toBeGreaterThan(0)
     expect(beschuss.length, 'kein selbsttaetiger Beschuss').toBeGreaterThan(0)
   })
@@ -471,7 +524,14 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
+    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
+    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
+    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
+    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
+    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
+    // vitest ihn als fehlgeschlagenes it.fails.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })

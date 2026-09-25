@@ -4358,6 +4358,10 @@ Felder, die T-M17-03 umbaut, sind in einer reinen KI-Partie heute nie gesetzt.
 
 **Status:** gemessen; offen für T-M17-10 (Antrag) und T-M17-15 (Vergleich gegen 3, nicht gegen 13).
 
+**Schlusszeile (2026-09-25, T-M17-15):** AK3 gemessen — Weltkarte, 200 Tage, drei Startzahlen
+(1815/1914/2015): Überfälle 1/2/0 (≤ 13), Art `durchmarsch` 0/0/0 (≤ 3). Hält in allen drei.
+Geschlossen.
+
 ---
 
 ## 2026-09-18 · T-M17-02 · Befund M17-2: `ai-integration.json` ist seit fünf Tagen veraltet, und niemand merkt es
@@ -4721,6 +4725,10 @@ T-M17-15 (Überfälle unmittelbar nach `PROVINCE_CEDED` zählen). Verwandte, ung
 dieselbe Lage entsteht schon heute bei einem sofort wirksamen Bündnisbruch, wenn Armeen im Land
 des anderen stehen — nicht geprüft, nur notiert.
 
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — Merkmal `nachAbtretung` im Integrationstor: 0
+Abtretungen in allen sechs Läufen (drei Startzahlen, mit/ohne Anträge), also 0 Überfälle danach.
+Bleibt entschieden hingenommen.
+
 **Gemessen:** Raster über 72 Aufstellungen (`tradeOffer.test.ts`, R-DIP-09/AK2); die Grenze der
 dod-Zusage gilt für Armeen, die in der Provinz **stehen**, und für die eigenen **auf dem Weg** —
 nicht für fremde Märsche.
@@ -4837,6 +4845,10 @@ Zeitachse der Grenzbildung untersuchen. Bei der Zusammenführung mit Bahn B (Bef
 zwei Ursachen zerlegt: die B6-Sperre selbst hält 50 % im Frieden, die KI-Spionage (T-M17-12)
 zieht das Band im Krieg auf 98 %.
 
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch die Turnier-Nacharbeit (Befund M17-T1,
+M17-T3, M17-T4/Option D) — das Turnier misst seither drei Mächte reihum und hält bei 0,760.
+Keine weitere Arbeit hier.
+
 ---
 
 ## 2026-09-25 · T-M17-10 · Befund M17-D10: ein Heimmarsch nach gekündigtem Durchmarschrecht kann länger dauern als die Kündigungsfrist
@@ -4855,6 +4867,10 @@ T-M17-15/16): (a) eine Armee, deren Pfad beim Fristende schon aus dem Land des G
 hinausführt, gilt in `detectSurpriseAttacks` nicht als Überfall; (b) die Frist wird aus der
 längsten Landkante oder der Marschzeit abgeleitet statt geschätzt — nicht einfach angehoben,
 ohne zu messen.
+
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — Merkmal `nachKuendigung` im Integrationstor
+(Weltkarte, 200 Tage, drei Startzahlen): 1 Kündigung (1815), **0** Überfälle danach in allen
+sechs Läufen (mit/ohne Anträge). Entscheid Noah (2026-09-25): geht an M18.
 
 *(Anmerkung: dieser Befund trug in einer Zwischenfassung dieselbe Nummer wie Befund M17-D5
 — siehe dort. Umnummeriert von der Nacharbeit „kern", Runde 2, auf `M17-D10`, die nächste freie
@@ -4883,6 +4899,10 @@ verkauft praktisch keine Provinz, kauft aber sehr viele einem Menschen ab.
 **Status:** offen für T-M17-16 (Kandidaten 5–10 Tage Horizont). Nicht in T-M17-11 geändert. Die
 Formel selbst ist am laufenden Code nachvollzogen (W1–W9 reproduzieren die vorgerechneten
 Zahlen exakt), die Weltkarten-Messung selbst wurde nicht wiederholt.
+
+**Nachtrag (2026-09-25, T-M17-15):** bestätigt am Integrationstor — 0 Abtretungen, 0
+Provinzangebote der KI in drei Startzahlen (1815/1914/2015, 200 Tage). Die Verkaufsregel ist mit
+den ausgelieferten Zahlen zu streng (dod T-M17-15).
 
 ---
 
@@ -4959,6 +4979,9 @@ ungeprüfter Marsch.
 **Status:** offen, nicht in Minuten zu beheben (braucht eine Sichtnachbildung von `canUseSea`).
 Kandidat für T-M17-15 oder eine eigene Aufgabe.
 
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — 0 Überfälle der Art `durchmarsch` in allen sechs
+Läufen des Integrationstors (heutiger Code). Kein gemessener Schaden; geht an M18.
+
 ---
 
 ## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Beobachtung, offen: die Kaufsuche der KI ist O(P²) je Aufruf
@@ -4970,6 +4993,10 @@ KI ohnehin praktisch nie (siehe M17-D12), also aktuell folgenlos.
 
 **Status:** offen, Kandidat T-M17-15. Ein Provinz-Index (Map) und ein Relationship-Cache je
 Aufruf wären die Reparatur.
+
+**Nachtrag (2026-09-25, T-M17-15):** weiterhin folgenlos gemessen — die KI bietet in keinem der
+sechs Läufe des Integrationstors eine Provinz an (`offerTradeMitProvinz` 0 in allen drei
+Startzahlen). Messbar nur mit einem Benchmark auf freier Maschine; geht an M18.
 
 ---
 
@@ -5178,7 +5205,10 @@ Operativblock — aber `recruitCommands` bekommt kein `earlier` und liest
 Ressource einen eigenen, gestaffelten Budgetrahmen in einer Schleife; ein sauberer Fix bräuchte
 eine eigene, ressourcenweise „schon gebucht"-Karte.
 
-**Status:** durch Code-Lesen bestätigt, ungemessen, offen für T-M17-15.
+**Status:** gemessen (T-M17-15): die richtige Buchung (`ledgerAfter` mit `RECRUIT_SPY`, in
+`recruitCommands`) entfernt 1–2 Ablehnungen je 200 Tage, kippt aber das Turnierband 0,760 →
+0,460 und `progress.slow.test.ts` (Fabrik-Zusicherung). Nicht repariert. Entscheid Noah
+(2026-09-25): geht mit Befund M17-T7 an M18 (siehe Befund M17-I1).
 
 ---
 
@@ -5246,6 +5276,9 @@ geändert; die Entscheidung liegt beim Orchestrator bzw. T-M17-15/16 — siehe `
 Unentschieden), „mindestens ein Frieden, wo vorher keiner" (0 Kriegserklärungen), „schwer und
 normal erklären selbst Kriege" (0).
 
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch Befund M17-T1/M17-T3/M17-T4 (Option D) —
+das Turnier ist neu aufgestellt (drei Mächte reihum) und hält bei 0,760. Keine weitere Arbeit hier.
+
 ---
 
 ## 2026-09-25 · Zusammenführung Bahn A und B in M17 · Befund M17-M3: die KI-Spionage verplante das Geld des Handels desselben Zugs ein zweites Mal (behoben)
@@ -5300,6 +5333,9 @@ gewählt (`BALANCING.md`, Nachtrag M17-T1).
 
 **Status:** gemessen; Reparatur über Noahs Entscheid zu Befund M17-T5 (Option C, siehe unten).
 
+**Schlusszeile (2026-09-25, T-M17-15):** gemessen am Integrationstor — 11/11/9 Kriege in den drei
+Startzahlen 1815/1914/2015 (200 Tage, Option C), im erwarteten Rahmen. Geschlossen.
+
 ---
 
 ## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T2: Auf der Weltkarte erklärt die KI in 200 Tagen noch einen Krieg — vorher waren es 15
@@ -5324,6 +5360,9 @@ Grenzbedrohung) bzw. 2,0 („normal").
 **Status:** gemessen, **offen für T-M17-15/16** — das Integrationstor misst dieselbe Partie; die
 Frage, ob eine KI-Partie ohne Kriege gewollt ist, ist eine Spielfrage für Noah (M17-T5, mit Option
 C entschieden — die Weltkarte mit C: 11 Kriege statt 1, siehe Befund M17-T5).
+
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch Befund M17-T1/M17-T4 (Option D, Turnier
+neu aufgestellt, misst seither drei Mächte reihum und streut). Keine weitere Arbeit hier.
 
 ---
 
@@ -5388,7 +5427,10 @@ neuen Turnierlogik nicht. `scripts/acceptance-criteria.mjs`, `GAUGES` Eintrag �
 enthält **nicht** `apps/headless/src` oder `apps/headless/test`, obwohl die Messung (Aufstellung,
 Siegerwahl, 150 Partien, 40 Tage) seit Option D genau dort steht. Offen für T-M17-15/16.
 
-**Status:** behoben als Teil von T-M17-15.
+**Status:** behoben als Teil von T-M17-15, jetzt mit der Zusicherung je Sitzordnung: `winsA >=
+winsB` für „schwer gegen normal" in jeder der drei Sitzordnungen (gemessen 12:0 / 6:0 / 21:0) —
+genau die Zusicherung, die „Spionage aus" (Summe 0,58, aber 1:9 in einer Sitzordnung) gefangen
+hätte. Das Band bleibt auf der Summe (0,760).
 
 ---
 
@@ -5459,7 +5501,9 @@ unabhängiger Befund.
 angenommen wird, in dem die Armee ankommt; eine Räumfrist nach Friedensschluss (wie die
 Kündigungsfrist beim Durchmarsch) wäre die Reparatur — Entscheid, ob M17 oder M18.
 
-**Status:** offen, Entscheid Noah. R-AI-09/AK3 hält (1 ≤ 13 auf der Weltkarte).
+**Status:** entschieden (Noah, 2026-09-25): geht an **M18** — keine Räumfrist in M17. Das
+Integrationstor (T-M17-15) zählt das Merkmal `friedensschluss` dauerhaft (gemessen 1/2/0 in den
+drei Startzahlen). R-AI-09/AK3 hält (1 ≤ 13 auf der Weltkarte).
 
 ---
 
@@ -5481,6 +5525,49 @@ ein, die auch die Artillerie sichert; es gibt keine Gegenprobe ohne C3 dafür.
 **Status:** offen, für das Integrationstor T-M17-15 — Ursache der fehlenden Artillerie und des
 fehlenden Beschusses dort zerlegen (Gegenprobe ohne C3 und ohne C4), Frieden in 90 Tagen prüfen;
 nicht in der Nacharbeit Turnier behoben.
+
+**Zerlegt (T-M17-15, 2026-09-25):** Ursache ist **C4** (die förmliche Erklärung am veralteten
+Ziel), nicht C3 (die Moralgrenze der Aushebung) — ohne C4 hebt die KI 18 Artillerie aus (Indien),
+ohne C3 bleibt es bei 0. Die eigentliche Ursache liegt schon vor M17: die Aushebung kauft je
+Einheit nur `recruitShare` Promille des Bestands (`economy.ts:326-335`); eine Artillerie kostet
+200 000 Geld, „leicht" bräuchte 2,5 Mio., „normal" 1 Mio., „schwer" 714 000 Geld auf dem Konto.
+
+**Berichtigt (Nacharbeit T-M17-15, 2026-09-25):** die Zeile „am Ende von Tag 200 hat keine Macht
+so viel" war **falsch** — `geldHoechstensJeMacht` im eingecheckten `ai-integration.json` zeigt das
+Gegenteil: „normal" (1,35–1,43 Mio.) und „schwer" (1,52–1,59 Mio.) überschreiten ihre eigene
+Schwelle durchweg, nur „leicht" bleibt unter der höheren 2,5-Mio.-Schwelle (höchstens 2,14 Mio.).
+Die tatsächliche Engstelle steht in `fabrikenBegonnenJeMacht`: „normal" und „schwer" bauen in 200
+Tagen **null** Fabriken, „leicht" baut welche (40/51/1 Baubeginne) — und Artillerie braucht laut
+`units.json` eine Fabrik. C4 verschiebt nur, wer wie viel Geld hat (11 statt 1 Krieg), ändert aber
+nichts am Fabrikbau. Wer Geld hat, baut keine Fabrik; wer Fabriken baut, kann sich die Artillerie
+nicht leisten. Die einzige gefundene Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über
+der Rücklage sie trägt) braucht zugleich Befund M17-S12 — und S12 kippt das Turnierband von 0,760
+auf 0,460 und macht `progress.slow.test.ts` rot (Fabrik-Zusicherung). Frieden in 90 Tagen: der
+erste Frieden fällt je nach Variante auf Tag 44, 100, 118, 122, 175 oder nie — eine Zusage über
+einen chaotischen Zeitpunkt an einer Startzahl, kein Mechanismus-Fehler gefunden (R-DIP-06/AK4
+hält: 3/3/3 Frieden zwischen KI in 200 Tagen, alle drei Startzahlen).
+
+**Entscheid Noah (2026-09-25):** nicht repariert — geht an **M18**, zusammen mit Befund M17-S12.
+`ai-integration.slow.test.ts` läuft **21 von 21 grün**, zwei Fälle (Artillerie/Beschuss, Frieden in
+90 Tagen) stehen als `it.fails` mit datiertem Kommentar im Test — fallen sie unbemerkt grün, meldet
+vitest das als fehlgeschlagenes `it.fails`. Siehe `DECISIONS.md` und Befund M17-I1.
+
+---
+
+## 2026-09-25 · T-M17-15 · Befund M17-I1: Das Turnierband hängt zum Teil an einem Buchungsfehler
+
+**Befund:** Die richtige Buchung von `RECRUIT_SPY` in `recruitCommands` (Befund M17-S12) entfernt
+1–2 Ablehnungen je 200-Tage-Lauf, kippt aber das Turnierband „schwer gegen normal, im Frieden" von
+**0,760** auf **0,460** — „normal" gewinnt dann 12 von 25 Paaren in der Sitzordnung
+Ostmark/Sueden/Nordland (je Sitzordnung 8:1:16 / 0:12:13 / 0:1:24, Startzahl-Block 1000).
+
+**Einordnung:** „schwer" rekrutiert am Spionagetag aus Geld, das der Spion desselben Takts schon
+ausgegeben hat (die Buchung bucht `RECRUIT_SPY` nicht vor) — wird das richtig gebucht, verliert
+„schwer" einen Teil seines Vorsprungs. Das Turnierband trägt sich also **zum Teil** über einen
+Buchungsfehler, nicht nur über `recruitShare`.
+
+**Status:** offen, Entscheid Noah (2026-09-25): geht mit Befund M17-T7 an M18 — Turnierfrage dort
+neu entscheiden (Buchung reparieren und das Band neu denken, oder den Fehler stehen lassen).
 
 ---
 

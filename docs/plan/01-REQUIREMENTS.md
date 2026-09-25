@@ -923,6 +923,17 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
   - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie Fabriken bauen, Artillerie
     ausheben und selbsttätigen Beschuss erzeugen — sonst ist die Feuerautomatik aus
     R-BAT-08 für die KI tot, gleich wie viele Einzeltests grün sind.
+    > **Auf dem M17-Stand nicht erfüllt (T-M17-15, 2026-09-25, berichtigt in der Nacharbeit
+    > 2026-09-25).** AK3: 0 Artillerie, 0 Beschuss im 200-Tage-Lauf (Befund M17-T7). Die
+    > ursprüngliche Ursache — „keine Macht spart genug Geld für eine Artillerie an" — war
+    > **falsch beschrieben**: `geldHoechstensJeMacht` in `ai-integration.json` zeigt, dass
+    > „normal" und „schwer" ihre eigene Schwelle (1 Mio. bzw. 714 000) durchweg überschreiten
+    > (gemessen 1,35–1,59 Mio.); nur „leicht" bleibt unter ihrer Schwelle von 2,5 Mio. Die
+    > tatsächliche Ursache steht in `fabrikenBegonnenJeMacht`: „normal" und „schwer" bauen
+    > **null** Fabriken, „leicht" baut welche (40/51/1), hat aber nie genug Geld — Artillerie
+    > braucht laut `units.json` eine Fabrik. Wer Geld hat, baut keine Fabrik; wer Fabriken
+    > baut, kann sie nicht bezahlen. Die Reparatur braucht zugleich Befund M17-S12 und kippt
+    > das Turnierband; Entscheid Noah (2026-09-25): beide gehen an M18.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum
@@ -947,6 +958,21 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     `QUEUE_FULL` abgelehnt worden sein, und keine KI SOLL Geldmangel erleiden.
   - AK3: WENN derselbe Lauf mit und ohne Durchmarsch-Anträge gefahren wird, DANN SOLL die Zahl
     der Überfälle ohne Kriegserklärung mit Anträgen nicht größer sein.
+    > **Wörtlich nicht erfüllt, Fassung berichtigt (Nacharbeit T-M17-15, 2026-09-25).**
+    > Gemessen (`m17-integration.json`, drei Startzahlen): Überfälle gesamt mit/ohne 1/0,
+    > 2/1, 0/0 — Summe **3 > 1**, also wörtlich rot: die Gesamtzahl aller Überfälle ist MIT
+    > Anträgen größer als OHNE. Der Test sichert stattdessen eine **engere, selbst gewählte
+    > Teilmenge** zu — nur die Überfälle, die ein Antrag überhaupt bewegen kann (`art ===
+    > 'durchmarsch'` oder `nachKuendigung`, aus DECISIONS.md 2026-09-25) — und die hält (0 ≤
+    > 0). Ohne den Hebel (`withhold`) gibt es aber ohnehin kaum Anträge zu kündigen und keinen
+    > Durchmarsch zu erhalten, weil `requestPassage` an der Vertrauensschwelle weiterhin
+    > anhält (`passage.ts`): die bewegbare Menge auf der Ohne-Seite ist damit strukturell nahe
+    > 0, was den Vergleich erleichtert. **Neue Fassung:** „DANN SOLL die Zahl der Überfälle,
+    > die ein Antrag auf Durchmarsch verhindern könnte (Marschziel im fremden Land oder nach
+    > einer eigenen Kündigung), mit Anträgen nicht größer sein als ohne.“ Der Test sichert
+    > seit dieser Nacharbeit zusätzlich zu, dass jeder verbleibende Überfall außerhalb dieser
+    > Teilmenge `friedensschluss: true` trägt (Befund M17-T6) — siehe
+    > `m17-integration.slow.test.ts`.
   - AK4: WENN die KI einen Spion anwirbt, ein Angebot macht, annimmt, ablehnt oder Durchmarsch
     beantragt, DANN SOLL ihre Erklärung Grund und Alternative nennen.
 - **R-GAME-09 — Spielstände der Stufe 3 laufen weiter** *(aufgenommen am 2026-09-13 mit

@@ -3604,13 +3604,17 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Ziel:** ein grüner Einzeltest sagt nichts über das Spiel.
 - **Anforderungen:** R-AI-09 · **Entwurf:** D29.8
 - **Abhängigkeiten:** T-M17-10, T-M17-11, T-M17-12, T-M17-13, T-M17-14
-- **Dateien:** `docs/reports/m17-integration.json`, `apps/headless/src/tournament.ts`,
-  `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/tournament.test.ts`,
-  `scripts/acceptance-criteria.mjs`
+- **Dateien:** `docs/reports/m17-integration.json`, `docs/reports/ai-integration.json`,
+  `apps/headless/src/tournament.ts`, `apps/headless/test/tournament.slow.test.ts`,
+  `apps/headless/test/tournament.test.ts`, `apps/headless/test/ai-integration.slow.test.ts`,
+  `packages/ai/src/loop.ts`, `scripts/acceptance-criteria.mjs`, `test/requirements.test.ts`,
+  `docs/plan/01-REQUIREMENTS.md`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`
 - **Tests zuerst:** neu `apps/headless/test/m17-integration.slow.test.ts` nach dem Muster von
   `ai-integration.slow.test.ts` — 200 Spieltage, acht KI, Weltkarte, alles aus dem Ereignisstrom:
   R-AI-09/AK1 bis AK4. Zusätzlich `apps/headless/test/tournament.slow.test.ts`,
-  `apps/headless/test/tournament.test.ts`.
+  `apps/headless/test/tournament.test.ts`, `packages/ai/src/loop.test.ts`, `test/requirements.test.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`.
 - **Fertig wenn:** die Zahlen samt Nullen im Bericht stehen. `PROVINCE_CEDED` wird gezählt, nicht
   zugesichert — bleibt es in drei Startzahlen null, führt `PROBLEME.md` die Verkaufsregel als zu
   streng.
@@ -3635,6 +3639,32 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   „Turnier" in `scripts/acceptance-criteria.mjs` (`sources`) deckt `apps/headless/src` und
   `apps/headless/test` nicht, obwohl die Turnierlogik seit Option D dort liegt — vor der Abnahme zu
   ergänzen (und `test/requirements.test.ts` mitzuziehen, das die Liste wörtlich nennt).
+- **Erledigt am 2026-09-25.** `m17-integration.slow.test.ts`: Weltkarte, acht KI, 200 Spieltage,
+  Startzahlen 1815/1914/2015, je mit und ohne Durchmarsch-Anträge (`advanceTicks` mit `withhold`,
+  nur KI-Befehle, ohne Option bitgleich zum alten Weg), tickweise mit `explain`; alles aus dem
+  Ereignisstrom, samt Prüfung, dass überhaupt gemessen wurde (auch dass der Gegenlauf wirklich
+  zurückhielt). R-AI-09/AK1 hält in allen drei Startzahlen: `SPY_REPORT` je Stufe 198/246/563
+  (1815), davon in jeder Stufe mindestens ein Erfolg; `TRADE_AGREED` 3/2/14; Durchmarsch KI–KI
+  9/8/11. AK2: 0 Ablehnungen `RECRUIT_SPY`/`OFFER_TRADE`/`ACCEPT_TRADE` mit `INVALID_TARGET` oder
+  `QUEUE_FULL`, 0 Geldmangel. AK3: Überfälle 1815 **1** ≤ 13 (`m17-baseline.json`), Art
+  `durchmarsch` **0** ≤ 3 (Befund M17-1); `durchmarsch` oder nach Kündigung mit ≤ ohne, summiert
+  über drei Startzahlen: **0 ≤ 0**; Gesamtzahlen mit/ohne 1/0, 2/1, 0/0 — jeder Überfall „mit" ist
+  ein Friedensschluss im selben Tick oder im Waffenstillstand (Befund M17-T6). AK4: 188 von 188
+  Befehlen (1815) mit Grund und Alternative gedeckt. `PROVINCE_CEDED` und Provinzangebote 0 in
+  allen drei Startzahlen — Verkaufsregel als zu streng in `PROBLEME.md` (Befund M17-D12). Turnier:
+  `bySetup` je Sitzordnung, neu zugesichert „schwer in keiner Sitzordnung schlechter als normal"
+  (gemessen 12:0 / 6:0 / 21:0), Band auf der Summe unverändert **0,760**. Frische-Wächter: `GAUGES`
+  „Turnier" folgt jetzt dateigenau `apps/headless/src/tournament.ts`,
+  `apps/headless/test/tournament.slow.test.ts`, `packages/shared`, `packages/testkit` (nicht dem
+  Ordner `apps/headless/test`). Befund M17-T7 zerlegt: Ursache ist Option C4 über das
+  Aushebungsbudget, nicht C3; die einzige gefundene Reparatur braucht zugleich Befund M17-S12 und
+  kippt das Turnier (0,760 → 0,460) sowie `progress.slow.test.ts` — **nicht gebaut**.
+  `ai-integration.slow.test.ts` trägt die zwei betroffenen Fälle seither als `it.fails`, mit
+  datiertem Kommentar. Befund M17-T7 und M17-S12 sind gemessen und nicht repariert — beide reißen,
+  repariert, das Turnierband oder `progress.slow`; Entscheid Noah (2026-09-25): beide gehen an M18,
+  zusammen mit Befund M17-T6 (Räumfrist nach Friedensschluss). `ai-integration.json` und
+  `m17-integration.json` eingecheckt, gemessen auf dem Commit dieser Aufgabe. Golden-Master
+  unverändert.
 
 ### T-M17-16 · Abschlussmessung, der eine Parameterlauf, Abnahme
 - **Ziel:** alle Regeländerungen der Delegation einmal und zusammen vermessen.
@@ -3642,8 +3672,8 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M17-15
 - **Dateien:** `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
   `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`,
-  `docs/reports/m17-baseline.json`, `docs/reports/acceptance.md`, `docs/plan/PROGRESS.md`,
-  `docs/plan/WORKFLOW.md`
+  `docs/reports/m17-baseline.json`, `docs/reports/acceptance.md`, `docs/reports/stance.json`,
+  `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`
 - **Tests zuerst:** keine neuen; `sweep.slow.test.ts`, `tournament.slow.test.ts`,
   `progress.slow.test.ts` und die Vollpartie laufen am Endstand.
 - **Fertig wenn:** der **eine** `pnpm balance:sweep` und das Turnier eingecheckt sind, der
@@ -3654,6 +3684,13 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   das Entfernen der Zeile in `WORKFLOW.md` §0 trägt der Schlussblock nach M35. Diese Aufgabe
   bleibt die Abschlussmessung des späteren M17-Baus, mit eigenem Parameterlauf nach dessen
   letzter Regeländerung.)*
+  **Voraussetzung seit T-M17-15 (2026-09-25):** Noahs Entscheid zu Befund M17-T7 und M17-S12
+  ist getroffen — beide gehen an M18, zusammen mit M17-T6 (Räumfrist nach Friedensschluss);
+  T-M17-16 baut auf dem M17-Stand ohne diese drei Reparaturen. Zusätzlich fällig: der
+  Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`) ist seit `345544e` und
+  seit T-M17-15 (Änderung an `packages/ai/src`) nicht frisch — `docs/reports/stance.json` neu
+  schreiben und einchecken. Vergleichswert Vollpartie auf dem M17-Stand vor T-M17-16: Siegtag
+  675 (eingecheckt 975).
 
 ## Meilenstein M18 — Später
 
@@ -3669,6 +3706,19 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > gerissen — das Artillerie-Tor fiel auf null. Vor einem neuen Anlauf: `TARGET_MIX` in
 > `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
 > verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
+>
+> **Vorgemerkt am 2026-09-25 (T-M17-15, Noahs Entscheid, ergänzt in der Nacharbeit desselben
+> Tages):** drei Befunde der Turnier-Nacharbeit gehen an M18, bisher nur in `WORKFLOW.md` §2.5
+> und `DECISIONS.md` geführt, hier zur Vollständigkeit nachgetragen (Muster T-M41-10). **Befund
+> M17-T7:** „normal"/„schwer" bauen in 200 Tagen keine Fabrik, „leicht" baut welche, erreicht
+> aber nie die eigene Geldschwelle — die KI hebt praktisch keine Artillerie aus, die
+> Feuerautomatik aus R-BAT-08 bleibt für sie tot. Kandidat: eine Fabrikeinheit kaufen, sobald der
+> Bestand über der Rücklage sie trägt. **Befund M17-S12:** `recruitCommands` bucht `RECRUIT_SPY`
+> desselben Takts nicht vor — die Reparatur kippt das Turnierband „schwer gegen normal" von 0,760
+> auf 0,460 (Befund M17-I1), die Turnierfrage muss dort neu entschieden werden. **Befund M17-T6:**
+> ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall — Kandidat: eine
+> Räumfrist nach Friedensschluss, analog der Kündigungsfrist beim Durchmarsch (`PROBLEME.md`,
+> `DECISIONS.md`).
 
 ---
 

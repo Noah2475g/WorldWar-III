@@ -88,6 +88,19 @@ const SKIPPED_TEST = {
   path: 'demo/skipped.test.ts',
   text: `describe.skip('R-DEMO-02 zweite', () => { it('x', () => { expect(1).toBe(1) }) })`,
 }
+/** Nur `it.fails` — kein Beleg (Nacharbeit T-M17-15, 2026-09-25). */
+const FAILS_ONLY_TEST = {
+  path: 'demo/fails.test.ts',
+  text: `describe('R-DEMO-02 zweite', () => { it.fails('x', () => { expect(1).toBe(2) }) })`,
+}
+/** `it.fails` NEBEN einem echten Test — bleibt regulaer belegt. */
+const FAILS_PLUS_REAL_TEST = {
+  path: 'demo/fails-plus-real.test.ts',
+  text: `describe('R-DEMO-02 zweite', () => {
+    it('x', () => { expect(1).toBe(1) })
+    it.fails('y', () => { expect(1).toBe(2) })
+  })`,
+}
 
 describe('R-ARCH-05 Anforderungs-Abgleich', () => {
   it('liest alle Anforderungs-IDs und den scope-Block', () => {
@@ -122,6 +135,21 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
   it('zaehlt einen uebersprungenen Testblock nicht als Beleg', () => {
     const result = analyse(DOC, [GOOD_TEST, SKIPPED_TEST])
     expect(result.missing).toContain('R-DEMO-02')
+  })
+
+  it('zaehlt einen Block aus nur it.fails nicht als Beleg, sondern als eigene Kategorie', () => {
+    // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` verlangt nur, dass der Testkoerper
+    // wirft - er belegt keine Anforderung, wenn er der einzige Testfall des Blocks ist.
+    const result = analyse(DOC, [GOOD_TEST, FAILS_ONLY_TEST])
+    expect(result.missing).toContain('R-DEMO-02')
+    expect(result.knownFailingOnly).toContain('R-DEMO-02')
+    expect(result.hollowOnly).not.toContain('R-DEMO-02')
+  })
+
+  it('zaehlt einen Block mit it.fails NEBEN einem echten Test weiterhin regulaer', () => {
+    const result = analyse(DOC, [GOOD_TEST, FAILS_PLUS_REAL_TEST])
+    expect(result.missing).not.toContain('R-DEMO-02')
+    expect(result.knownFailingOnly).not.toContain('R-DEMO-02')
   })
 
   it('findet im echten Anforderungsdokument alle IDs', () => {
@@ -533,11 +561,24 @@ describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
   it('beobachtet je Messgeraet die Quellen, die es nachweislich liest - und jede davon gibt es', () => {
     // Parameterlauf: `sweep.slow.test.ts` liest data/rules und data/maps/world.json. Turnier: TEST_RULES und
     // smallWorld aus packages/testkit, die data/rules und data/maps/testworld.json importieren (T-M40-17).
-    // Das Turnier sieht seit dem Entscheid vom 2026-09-13 auch KI und Kern, der Parameterlauf bewusst nicht.
+    // Das Turnier sieht seit dem Entscheid vom 2026-09-13 auch KI und Kern, der Parameterlauf bewusst nicht -
+    // und seit T-M17-15 die Turnierlogik in `apps/headless`, `packages/testkit` und `packages/shared`.
     const ROOT = fileURLToPath(new URL('..', import.meta.url))
     expect(GAUGES.map((gauge: { name: string; sources: string[] }) => [gauge.name, gauge.sources])).toEqual([
       ['Parameterlauf', ['data/rules', 'data/maps/world.json']],
-      ['Turnier', ['data/rules', 'data/maps/testworld.json', 'packages/ai/src', 'packages/core/src']],
+      [
+        'Turnier',
+        [
+          'data/rules',
+          'data/maps/testworld.json',
+          'packages/ai/src',
+          'packages/core/src',
+          'packages/shared',
+          'packages/testkit',
+          'apps/headless/src/tournament.ts',
+          'apps/headless/test/tournament.slow.test.ts',
+        ],
+      ],
     ])
     for (const gauge of GAUGES as { report: string; sources: string[] }[]) {
       for (const path of [gauge.report, ...gauge.sources]) expect(existsSync(join(ROOT, path)), path).toBe(true)
@@ -848,6 +889,157 @@ describe('T-M40-17 Frische nach Abstammung: der Turnier-Waechter sieht KI und Ke
     expect(nachKi.fresh, nachKi.reason).toBe(true)
     const nachKern = gaugeFreshness(repo, parameterlauf)
     expect(nachKern.fresh, nachKern.reason).toBe(true)
+  })
+})
+
+/**
+ * T-M17-15: der Turnier-Waechter sieht die Turnierlogik in apps/headless, dateigenau.
+ *
+ * Bis T-M17-15 sah GAUGES[Turnier] nur packages/ai/src und packages/core/src - eine Aenderung an
+ * apps/headless/src/tournament.ts (die Paarwertung selbst) oder an packages/testkit/packages/shared
+ * (die das Turnier importiert) liess den Waechter "frisch" melden, obwohl die Turnierlogik sich
+ * geaendert hatte (Befund M17-T4, Pruefbefund 9). Die neuen Quellen sind dateigenau
+ * (apps/headless/src/tournament.ts, apps/headless/test/tournament.slow.test.ts), nicht als Ordner
+ * apps/headless/test - sonst wuerde jeder neue Messlauf-Test (wie m17-integration.slow.test.ts) das
+ * Turnier veralten lassen (Falle 10, G3).
+ */
+describe('T-M17-15 Der Turnier-Waechter sieht die Turnierlogik in apps/headless, dateigenau', () => {
+  type Gauge = { name: string; report: string; sources: string[]; command: string }
+  const messgeraet = (name: string): Gauge => {
+    const gauge = (GAUGES as Gauge[]).find((eintrag) => eintrag.name === name)
+    if (!gauge) throw new Error(`kein Messgeraet ${name} in GAUGES`)
+    return gauge
+  }
+  let repo = ''
+  let berichtCommit = ''
+  let f1Commit = ''
+  let f2Commit = ''
+  let f3Commit = ''
+  let f4Commit = ''
+  let f5Commit = ''
+
+  beforeAll(() => {
+    repo = mkdtempSync(join(tmpdir(), 'worldwar-turnierquellen-'))
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')))
+    const git = (...args: string[]): string =>
+      execFileSync(
+        'git',
+        ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', '-c', 'core.autocrlf=false', ...args],
+        { cwd: repo, encoding: 'utf8', env },
+      ).trim()
+    const schreibe = (pfad: string, inhalt: string) => {
+      mkdirSync(dirname(join(repo, pfad)), { recursive: true })
+      writeFileSync(join(repo, pfad), inhalt)
+    }
+
+    git('init', '-q', '-b', 'main')
+    schreibe('packages/ai/src/a.ts', 'v1\n')
+    schreibe('packages/core/src/b.ts', 'v1\n')
+    schreibe('packages/shared/src/c.ts', 'v1\n')
+    schreibe('packages/testkit/src/maps.ts', 'v1\n')
+    schreibe('apps/headless/src/tournament.ts', 'v1\n')
+    schreibe('apps/headless/test/tournament.slow.test.ts', 'v1\n')
+    schreibe('apps/headless/test/andere.slow.test.ts', 'v1\n')
+    schreibe('data/rules/default/constants.json', '{"v":1}\n')
+    schreibe('data/maps/testworld.json', '{}\n')
+    schreibe('data/maps/world.json', '{}\n')
+    schreibe('docs/reports/balance-sweep.md', 'gemessen auf der Basis\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'basis mit allen Turnierquellen')
+    const basis = git('rev-parse', 'HEAD')
+
+    schreibe('docs/reports/ai-tournament-run.md', `# KI-Turnier\n\n${measurementLine({ measuredAtCommit: basis, measuredDirty: [] })}\n`)
+    git('add', '-A')
+    git('commit', '-q', '-m', 'Turnier auf der Basis')
+    berichtCommit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', '-b', 'f1', berichtCommit)
+    schreibe('apps/headless/src/tournament.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'nur tournament.ts geaendert')
+    f1Commit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', '-b', 'f2', berichtCommit)
+    schreibe('apps/headless/test/tournament.slow.test.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'nur tournament.slow.test.ts geaendert')
+    f2Commit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', '-b', 'f3', berichtCommit)
+    schreibe('packages/testkit/src/maps.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'nur testkit geaendert')
+    f3Commit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', '-b', 'f4', berichtCommit)
+    schreibe('packages/shared/src/c.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'nur shared geaendert')
+    f4Commit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', '-b', 'f5', berichtCommit)
+    schreibe('apps/headless/test/andere.slow.test.ts', 'v2\n')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'nur ein anderer Messlauf-Test geaendert')
+    f5Commit = git('rev-parse', 'HEAD')
+
+    git('checkout', '-q', 'main')
+  }, 60_000)
+
+  afterAll(() => {
+    if (repo) rmSync(repo, { recursive: true, force: true, maxRetries: 3 })
+  })
+
+  it('F1 - ein Commit nur an apps/headless/src/tournament.ts macht das Turnier nicht frisch', () => {
+    const turnier = messgeraet('Turnier')
+    const status = gaugeFreshness(repo, turnier, f1Commit)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('apps/headless/src/tournament.ts')
+    expect(status.reason).toContain(f1Commit.slice(0, 7))
+  })
+
+  it('F2 - ein Commit nur an apps/headless/test/tournament.slow.test.ts macht das Turnier nicht frisch', () => {
+    const turnier = messgeraet('Turnier')
+    const status = gaugeFreshness(repo, turnier, f2Commit)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('apps/headless/test/tournament.slow.test.ts')
+  })
+
+  it('F3 - ein Commit nur an packages/testkit macht das Turnier nicht frisch', () => {
+    const turnier = messgeraet('Turnier')
+    const status = gaugeFreshness(repo, turnier, f3Commit)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('packages/testkit')
+  })
+
+  it('F4 - ein Commit nur an packages/shared macht das Turnier nicht frisch', () => {
+    const turnier = messgeraet('Turnier')
+    const status = gaugeFreshness(repo, turnier, f4Commit)
+    expect(status.fresh, status.reason).toBe(false)
+    expect(status.reason).toContain('packages/shared')
+  })
+
+  it('F5 - ein Commit an einem ANDEREN Messlauf-Test in apps/headless/test laesst das Turnier frisch - dateigenau, nicht der Ordner', () => {
+    const turnier = messgeraet('Turnier')
+    const status = gaugeFreshness(repo, turnier, f5Commit)
+    expect(status.fresh, status.reason).toBe(true)
+  })
+
+  it('F6 - der Parameterlauf bleibt in F1-F5 frisch (bewusster Unterschied)', () => {
+    const parameterlauf = messgeraet('Parameterlauf')
+    for (const ref of [f1Commit, f2Commit, f3Commit, f4Commit, f5Commit]) {
+      const status = gaugeFreshness(repo, parameterlauf, ref)
+      expect(status.fresh, `${ref.slice(0, 7)}: ${status.reason}`).toBe(true)
+    }
+  })
+
+  it('F7 - measurementStamp nennt eine ungesicherte Aenderung an tournament.ts in measuredDirty', () => {
+    // Auf dem berichtCommit, im Arbeitsbaum: dieselbe Datei ungesichert geaendert.
+    execFileSync('git', ['-c', 'core.autocrlf=false', 'checkout', '-q', berichtCommit], { cwd: repo })
+    writeFileSync(join(repo, 'apps/headless/src/tournament.ts'), 'ungesichert\n')
+    const stamp = measurementStamp(repo, messgeraet('Turnier').sources)
+    expect(stamp.measuredDirty).toEqual(['apps/headless/src/tournament.ts'])
+    execFileSync('git', ['-c', 'core.autocrlf=false', 'checkout', '-q', '--', 'apps/headless/src/tournament.ts'], { cwd: repo })
   })
 })
 

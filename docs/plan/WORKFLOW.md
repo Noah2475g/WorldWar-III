@@ -60,6 +60,12 @@ die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge ge
 **ein** Zweig und nie eine Bedingung — ein Satz der Form „bis zum Merge …, danach …“ ist
 ab dem Merge falsch und wird trotzdem gelesen.
 
+**`ai-integration.slow.test.ts` ist 21 von 21 grün — zwei der Fälle stehen absichtlich als
+`it.fails`** (Befund M17-T7: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen). Ursache ist
+zerlegt (`PROBLEME.md`), Entscheid Noah (2026-09-25): geht an M18, siehe §2 Punkt 5. Berichtigt
+in der Nacharbeit 2026-09-25: hier stand zuvor „2 von 21 rot" — das war seit dem `it.fails`-Umbau
+(T-M17-15, Commit `c931c54`) nicht mehr zutreffend, die Datei läuft grün durch.
+
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
 
@@ -137,7 +143,17 @@ entweder Noah oder seine Ansage.
    Deckel zählt Stapel statt Einheiten, die echte Reparatur tötete die Artillerie),
    der Handel der KI (zielt auf den teuersten Bauwunsch), die Kohle-Senke, der
    Vorratsaufbau, die amphibische KI, die tote KI-Artillerie der Voreinstellung
-   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit).
+   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit). Dazu,
+   entschieden von Noah am 2026-09-25 (T-M17-15, `DECISIONS.md`):
+   - **Befund M17-T7** — wer Geld für eine Artillerie hätte („normal"/„schwer"), baut keine
+     Fabrik; wer Fabriken baut („leicht"), erreicht nie die eigene, höhere Geldschwelle
+     (berichtigt in der Nacharbeit 2026-09-25, siehe `PROBLEME.md`; `ai-integration.slow.test.ts`
+     läuft 21/21 grün, zwei Fälle als `it.fails`, siehe §0).
+   - **Befund M17-S12** — `recruitCommands` bucht `RECRUIT_SPY` desselben Takts nicht vor; geht
+     mit M17-T7, weil seine Reparatur das Turnierband kippt (0,760 → 0,460, Befund M17-I1) —
+     die Turnierfrage wird dort neu entschieden.
+   - **Befund M17-T6** — eine Räumfrist nach Friedensschluss (analog der Kündigungsfrist beim
+     Durchmarsch), damit ein Frieden im selben Tick keinen Überfall mehr erzeugt.
 6. **T-M40-04, T-M41-10 und T-M10-02** — zurückgenommen, jede mit Begründung in
    `tasks.yaml` (`reopened`) und in `DECISIONS.md`. Sie stehen nur der Vollständigkeit
    halber hier; nichts davon ist Arbeit, die wartet.
@@ -225,7 +241,11 @@ entweder Noah oder seine Ansage.
    NICHT je Abnahme; sie stecken in `pnpm test:slow` und hinter dem Frische-Wächter:
    ändern sich `data/rules/**`, wird die Abnahme rot, bis `pnpm balance:sweep` bzw. das
    Turnier neu gelaufen **und eingecheckt** sind. Das Turnier folgt seit dem 2026-09-13
-   auch `packages/ai/src` und `packages/core/src` (rund 32 Sekunden, gemessen 2026-09-25), der Parameterlauf bewusst
+   auch `packages/ai/src` und `packages/core/src`, und seit T-M17-15 zusätzlich **dateigenau**
+   `apps/headless/src/tournament.ts`, `apps/headless/test/tournament.slow.test.ts`,
+   `packages/shared` und `packages/testkit` (nicht `apps/headless/test` als Ordner, sonst würde
+   ein weiterer Messlauf-Test dort das Turnier mit veralten lassen — Befund M17-T4,
+   Prüfbefund 9) (rund 32 Sekunden, gemessen 2026-09-25), der Parameterlauf bewusst
    nicht (eine Stunde; Code decken Turnier und `progress.slow` ab). Seit T-M40-16 gilt dasselbe für den
    Haltungs-Messlauf (`apps/headless/test/stance.slow.test.ts`, gut elf Minuten): ändert sich
    `packages/ai/src` oder `packages/core/src`, bleibt die Abnahme rot, bis der Lauf mit

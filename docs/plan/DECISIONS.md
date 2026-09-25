@@ -4930,3 +4930,90 @@ nie im DOM (dieselbe Regel wie überall sonst in dieser Aufgabe).
 mehr in der internen `Map`.
 
 **Kippbar:** stattdessen eine Liste statt eines `Map`-Werts je Provinz führen.
+
+---
+
+## 2026-09-25 · T-M17-15 · R-AI-09/AK3 wird an dem gemessen, was ein Antrag bewegen kann
+
+**Entscheidung:** Wörtlich gelesen („derselbe Lauf mit und ohne Anträge, mit nicht größer als
+ohne") ist AK3 auf der Weltkarte gemessen **1/0, 2/1, 0/0** (Startzahlen 1815/1914/2015) — ein Tor,
+das daran hängt, misst die Verzweigung zweier chaotischer Partien: jeder der drei Überfälle „mit"
+ist ein Friedensschluss-Überfall (Befund M17-T6, Beziehung am Tickbeginn `war` oder `truce` im
+selben Tick), den ein Durchmarsch-Antrag nicht auslösen kann. Zugesichert wird deshalb zweifach:
+(a) die dod-Fassung — Überfälle 1815 ≤ Ausgangswert T-M17-02 (13) **und** Art `durchmarsch` ≤ 3
+(Befund M17-1); (b) die Anforderungsfassung für das, was ein Antrag wirklich bewegen kann: Art
+`durchmarsch` **oder** Merkmal `nachKuendigung`, mit ≤ ohne, **summiert über die drei
+Startzahlen** (gemessen 0 ≤ 0). Die Gesamtzahlen mit/ohne stehen mit allen Merkmalen im Bericht,
+zugesichert ist dort nur, dass jeder Überfall eingeordnet ist.
+
+**Begründung:** Die Merkmale (`art`, `nachKuendigung`, `nachAbtretung`, `friedensschluss`) stammen
+aus den Befunden M17-1, M17-D5 und M17-D10 — vor dieser Messung definiert, nicht nachträglich
+gewählt, um eine bequeme Zahl zu erzwingen.
+
+**Auswirkung:** `apps/headless/test/m17-integration.slow.test.ts`, Block „R-AI-09/AK3".
+
+**Kippbar:** je Startzahl statt als Summe zusichern (hielte ebenfalls, 0/0 je Startzahl).
+
+---
+
+## 2026-09-25 · T-M17-15 · Das Turnier sichert je Sitzordnung „schwer nicht schlechter als normal" zu; der Wächter folgt der Turnierlogik dateigenau
+
+**Entscheidung:** Das Band 0,55–0,95 bleibt auf der **Summe** der 75 Paare (Noahs Entscheid zu
+Befund M17-T5, Option D) — vier Startzahl-Blöcke messen 0,7267–0,82, Abstand zu beiden Grenzen
+≥ 0,17. **Neu zugesichert:** `winsA >= winsB` **je Sitzordnung** für „schwer gegen normal, im
+Frieden" (gemessen heute 12:0 / 6:0 / 21:0). Ein **Band** je Sitzordnung wird nicht zugesichert —
+25 Paare haben einen Standardfehler um 0,1, das wäre Rauschen. Die Obergrenze 0,95 bleibt; ihre
+Bedeutung (ein Unentschieden heißt „jede Stufe gewinnt auf ihrem guten Sitz", „normal" überwindet
+aber so gut wie nie einen schlechten) steht als Zahl in `BALANCING.md`, nicht als Zusicherung.
+
+Dazu: `GAUGES` „Turnier" (`scripts/acceptance-criteria.mjs`) bekommt `apps/headless/src/tournament.ts`,
+`apps/headless/test/tournament.slow.test.ts`, `packages/shared`, `packages/testkit` **dateigenau**
+in `sources` — nicht `apps/headless/test` als Ordner, sonst veraltet ein weiterer Messlauf-Test in
+diesem Ordner (wie `m17-integration.slow.test.ts`) das Turnier mit.
+
+**Begründung:** Die neue Zusicherung hätte „Spionage aus" (Summe 0,58, im Band) gefangen — dort
+verliert „schwer" in einer Sitzordnung 1:9 —, während die Summe allein das durchließ. Die
+Turnierlogik liegt seit Option D in `apps/headless/src` und `apps/headless/test`, nicht mehr nur
+in `packages/ai/src`/`packages/core/src` — der alte Wächter sah das nicht (Befund M17-T4,
+Prüfbefund 9) und hätte einen veralteten Turnierbericht als frisch gemeldet.
+
+**Auswirkung:** `apps/headless/src/tournament.ts` (`bySetup`), `apps/headless/test/tournament.slow.test.ts`,
+`apps/headless/test/tournament.test.ts`, `scripts/acceptance-criteria.mjs`, `test/requirements.test.ts`.
+
+**Kippbar:** die Quellenliste des Wächters (dateigenau vs. gröber).
+
+---
+
+## 2026-09-25 · T-M17-15 · Befund M17-T7 und M17-S12 gehen an M18, Befund M17-T6 ebenso — Noahs Entscheid
+
+**Entscheidung (Noah, 2026-09-25):** Drei offene Befunde der Turnier-Nacharbeit werden **nicht**
+in T-M17-15/M17 repariert, sondern an M18 verschoben:
+
+1. **Befund M17-T7** (KI-Integrationslauf: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen).
+   Ursache ist gemessen und zerlegt (§ PROBLEME.md M17-T7), **berichtigt in der Nacharbeit
+   2026-09-25**: C4 verschiebt nur, wer Geld hat, ändert aber nichts am Fabrikbau. Die
+   eigentliche Ursache ist nicht „keine Macht spart genug an" (das widerspricht
+   `geldHoechstensJeMacht` im eingecheckten Bericht — „normal"/„schwer" liegen durchweg ÜBER
+   ihrer eigenen Schwelle), sondern: „normal"/„schwer" bauen **null** Fabriken,
+   „leicht" baut welche, erreicht aber nie die eigene, höhere Geldschwelle — und Artillerie
+   braucht laut `units.json` eine Fabrik. Die einzige gefundene Reparatur braucht zugleich
+   M17-S12 und ändert das Spiel spürbar (295 Artillerie, 5004 Beschüsse in der Voreinstellung
+   statt 0) — das ist eine Spielfrage, keine Nacharbeit-Frage. `ai-integration.slow.test.ts`
+   läuft bewusst **21 von 21 grün** (zwei Fälle als `it.fails`, mit datiertem Kommentar); keine
+   Schranke gesenkt, kein Fall gelöscht.
+2. **Befund M17-S12** (`recruitCommands` bucht `RECRUIT_SPY` desselben Takts nicht vor) geht mit
+   M17-T7, weil seine Reparatur das Turnierband kippt (0,760 → 0,460, Befund M17-I1) — die
+   Turnierfrage wird zusammen mit M17-T7 in M18 neu entschieden.
+3. **Befund M17-T6** (ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall)
+   geht ebenfalls an M18 — keine Räumfrist nach Friedensschluss in M17. Das Integrationstor zählt
+   das Merkmal `friedensschluss` dauerhaft (gemessen 1/2/0), ohne es zuzusichern.
+
+**Begründung:** Alle drei sind gemessen, nicht vermutet (§ PROBLEME.md, Befunde M17-T7, M17-S12,
+M17-I1, M17-T6). Jede Reparatur würde entweder das Turnierband oder `progress.slow.test.ts`
+reißen, oder eine Spielentscheidung treffen, die Noah bereits einmal (M17-T5, Option C) selbst
+getroffen hat — nicht die Nacharbeit.
+
+**Auswirkung:** `docs/plan/WORKFLOW.md` §2 Punkt 5 (M18-Sammelstelle) führt alle drei; `docs/plan/PROBLEME.md`
+trägt die Status-Zeilen; `01-REQUIREMENTS.md` bekommt einen Hinweis unter R-AI-08/AK3.
+
+**Kippbar:** durch Noah, jederzeit — die Messung ändert sich dadurch nicht.

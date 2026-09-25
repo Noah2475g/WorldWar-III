@@ -96,9 +96,18 @@ export function checkScope(later, knownIds, milestones) {
  * Which requirement IDs are backed by a describe block that actually asserts something?
  * `sources` is a list of { path, text }.
  */
+/** Jeder Aufruf, der einen Testfall eroeffnet, mit seinem Modifikator (`.skip`, `.fails`, keiner). */
+const TEST_CALL_PATTERN = /\b(?:it|test)(\.\w+)?\s*\(/g
+
 export function parseTests(sources) {
   const covered = new Map()
   const hollow = new Map()
+  // Ein Block, dessen EINZIGE Testfaelle `it.fails`/`test.fails` sind (Nacharbeit T-M17-15,
+  // Befund "it.fails verschluckt die noch gueltige Fabrik-Zusicherung", 2026-09-25): `expect(`
+  // steht dort genauso wie in einem echten Test, aber ein Rueckfall des geprueften Verhaltens
+  // wuerde den Fall nur GRUEN halten (er soll ja werfen) - kein Beleg fuer die Anforderung.
+  // Ein Block mit MINDESTENS EINEM echten `it`/`test` daneben bleibt normal `covered`.
+  const knownFailing = new Map()
 
   for (const { path, text } of sources) {
     const matches = [...text.matchAll(DESCRIBE_PATTERN)]
@@ -107,7 +116,9 @@ export function parseTests(sources) {
       const block = text.slice(match.index, matches[index + 1]?.index ?? text.length)
       const skipped = /describe\.skip|it\.skip|test\.skip/.test(block)
       const asserts = /expect\s*\(/.test(block)
-      const target = asserts && !skipped ? covered : hollow
+      const calls = [...block.matchAll(TEST_CALL_PATTERN)].map((m) => m[1] ?? '')
+      const onlyKnownFailing = calls.length > 0 && calls.every((modifier) => modifier === '.fails')
+      const target = !asserts || skipped ? hollow : onlyKnownFailing ? knownFailing : covered
 
       // `describe('R-DIP-06/AK1 …')` belegt beides: das Kriterium und — auf der alten,
       // groberen Ebene — die Anforderung selbst. Sonst müsste jede Datei ihre ID zweimal
@@ -116,14 +127,14 @@ export function parseTests(sources) {
       for (const id of both) target.set(id, [...(target.get(id) ?? []), path])
     }
   }
-  return { covered, hollow }
+  return { covered, hollow, knownFailing }
 }
 
 /** The full comparison. Pure: no file access, so it can be tested directly. */
 export function analyse(requirementsText, sources, milestones = new Set(), options = {}) {
   const { ids, criteria, v2Only, later, partial, testOnly, nameLevel } =
     parseRequirements(requirementsText)
-  const { covered, hollow } = parseTests(sources)
+  const { covered, hollow, knownFailing } = parseTests(sources)
 
   const known = new Set(ids)
   const scopeErrors = checkScope(later, known, milestones)
@@ -163,6 +174,10 @@ export function analyse(requirementsText, sources, milestones = new Set(), optio
   // IDs (R-DEMO-*), und die als Luecke zu melden waere eine Falschmeldung ueber genau
   // das Werkzeug, das die Meldung erzeugt.
   const hollowOnly = [...hollow.keys()].filter((id) => known.has(id) && !covered.has(id))
+  // Bekannt rot, eigene Kategorie (siehe `parseTests`): steht weder in `hollowOnly` (das ist
+  // "ohne jede Zusicherung") noch in `covered` — `missing` weist die ID trotzdem als offen
+  // aus, aber der Bericht soll den Unterschied zu "gar kein Test" nennen koennen.
+  const knownFailingOnly = [...knownFailing.keys()].filter((id) => known.has(id) && !covered.has(id))
 
   return {
     ids,
@@ -171,6 +186,7 @@ export function analyse(requirementsText, sources, milestones = new Set(), optio
     missing,
     missingCriteria,
     hollowOnly,
+    knownFailingOnly,
     v2Only,
     later,
     progress,
@@ -180,6 +196,7 @@ export function analyse(requirementsText, sources, milestones = new Set(), optio
     nameLevel,
     covered,
     hollow,
+    knownFailing,
   }
 }
 
@@ -219,6 +236,11 @@ function main() {
   if (result.hollowOnly.length > 0) {
     console.log(`\nNur benannt, aber ohne Zusicherung oder uebersprungen:`)
     for (const id of result.hollowOnly) console.log(`  ${id}  (${result.hollow.get(id).join(', ')})`)
+  }
+
+  if (result.knownFailingOnly.length > 0) {
+    console.log(`\nNur bekannt rot (it.fails/test.fails, kein Beleg):`)
+    for (const id of result.knownFailingOnly) console.log(`  ${id}  (${result.knownFailing.get(id).join(', ')})`)
   }
 
   console.log(
