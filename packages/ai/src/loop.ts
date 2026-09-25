@@ -89,6 +89,11 @@ export interface AdvanceResult {
   /** How many ticks actually ran; fewer than asked when the game was decided. */
   ticks: number
   /**
+   * AI commands `withhold` kept out of the tick (T-M17-15, R-AI-09/AK3) — the lever a
+   * counter-run pulls, with the tick it belonged to. Empty when `withhold` was not given.
+   */
+  withheld: { tick: number; command: Command }[]
+  /**
    * Warum die KI tat, was sie tat — nur wenn danach gefragt wurde (R-AI-05).
    *
    * Die Begruendungen entstanden seit M7 in `decide`, `runAi` reichte sie weiter, und
@@ -116,6 +121,13 @@ export interface AdvanceOptions {
    * Sie duerfen die Partie nicht aendern — die Befehle sind mit und ohne dieselben.
    */
   explain?: boolean
+  /**
+   * KI-Befehle, die der Kern nicht bekommt (T-M17-15, R-AI-09/AK3). Ein Messhebel fuer Gegenlaeufe
+   * („derselbe Lauf ohne Durchmarsch-Antraege") in DER einen Schleife — eine zweite Schleife im Test
+   * spielte eine andere Partie (T-M14-04). Nie im Spiel gesetzt. Betrifft nur die Befehle der KI; das
+   * Gedaechtnis der KI wird trotzdem gespeichert, sie haelt den Befehl also fuer gegeben.
+   */
+  withhold?: (command: Command) => boolean
 }
 
 export function advanceTicks(
@@ -130,6 +142,7 @@ export function advanceTicks(
   const events: GameEvent[] = []
   const applied: { tick: number; command: Command }[] = []
   const adjutant: { tick: number; command: Command }[] = []
+  const withheld: { tick: number; command: Command }[] = []
   let explanations: Record<PlayerId, Explanation[]> = {}
   let ran = 0
 
@@ -141,10 +154,18 @@ export function advanceTicks(
     const tick = commandsForTick(current, ctx, { given, explain: opts.explain === true })
     if (opts.explain) explanations = tick.explanations
 
-    for (const command of tick.commands) applied.push({ tick: current.tick, command })
+    const ai = opts.withhold ? tick.ai.filter((command) => !opts.withhold!(command)) : tick.ai
+    if (opts.withhold) {
+      for (const command of tick.ai) {
+        if (opts.withhold(command)) withheld.push({ tick: current.tick, command })
+      }
+    }
+    const commands = opts.withhold ? [...given, ...tick.adjutant, ...ai] : tick.commands
+
+    for (const command of commands) applied.push({ tick: current.tick, command })
     for (const command of tick.adjutant) adjutant.push({ tick: current.tick, command })
 
-    const result = runTicks(current, 1, ctx, () => tick.commands)
+    const result = runTicks(current, 1, ctx, () => commands)
     current = result.state
     events.push(...result.events)
     ran += 1
@@ -152,5 +173,5 @@ export function advanceTicks(
     storeMemories(current, tick.memories)
   }
 
-  return { state: current, events, applied, adjutant, ticks: ran, explanations }
+  return { state: current, events, applied, adjutant, withheld, ticks: ran, explanations }
 }
