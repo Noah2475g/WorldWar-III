@@ -148,6 +148,14 @@ function bestTarget(context: AiContext, enemies: ReadonlySet<PlayerId>, visibleO
  * (aus meiner eigenen Sicht heraus) laengst auf Frieden zusteuert. `view.outgoingOffers` traegt
  * sich selbst ab (`phases/diplomacy.ts` wirft es nach `offerLifetime`), ein abgelehntes oder
  * abgelaufenes Angebot bindet hier also nichts mehr.
+ *
+ * **Gilt nur fuer Aufklaerung und Sabotage, nicht fuer den Gegenspion** (Befund M17-S8,
+ * Nacharbeit): D29.8 entlaesst den Gegenspion „bei Kriegsende", nicht bei einem eigenen,
+ * noch unbeantworteten Friedensangebot — ein Angebot ist ein Antrag, kein Ende, und solange
+ * `view.relations[x].state === 'war'` bleibt, kann die Gegenseite weiterhin spionieren. Der
+ * Aufrufer haelt deshalb den echten Kriegszustand (`warEnemies`) getrennt von der durch
+ * `peaceBound` bereits verminderten Menge (`enemies`) und liest ausschliesslich `warEnemies`
+ * fuer `counterReason`.
  */
 function peaceBound(earlier: readonly Command[], view: PublicView, me: PlayerId): Set<PlayerId> {
   const bound = new Set<PlayerId>()
@@ -160,6 +168,19 @@ function peaceBound(earlier: readonly Command[], view: PublicView, me: PlayerId)
     if (offer.kind === 'peace') bound.add(offer.to)
   }
   return bound
+}
+
+/**
+ * Die Hauptstadt dieses Strategietakts (Befund M17-S9): `capitalCommands` laeuft in `decide.ts`
+ * vor der Spionage und setzt bei Hauptstadtverlust noch im selben Zug ein `SET_CAPITAL` — die
+ * Sicht selbst (`view.self.capitalProvinceId`) traegt das erst am naechsten Tag nach, weil der
+ * Befehl hier nur gelesen, nie angewandt wird (wie `moneyCommittedBy`/`peaceBound`).
+ */
+function capitalIdFrom(earlier: readonly Command[], view: PublicView, me: PlayerId): ProvinceId | null {
+  for (const c of earlier) {
+    if (c.type === 'SET_CAPITAL' && c.playerId === me) return c.provinceId
+  }
+  return view.self.capitalProvinceId
 }
 
 /** Was der Bauauftrag desselben Zugs schon an Geld bindet (Falle 5). */
@@ -225,11 +246,15 @@ export function espionageCommands(
   const known = new Map(view.provinces.map((p) => [p.id, p] as const))
   const alive = new Set(view.others.filter((o) => o.alive).map((o) => o.id))
   const peace = peaceBound(earlier, view, me)
-  const enemies = new Set(
+  const warEnemies = new Set(
     Object.keys(view.relations)
       .sort()
-      .filter((id) => view.relations[id]!.state === 'war' && alive.has(id) && !peace.has(id)),
+      .filter((id) => view.relations[id]!.state === 'war' && alive.has(id)),
   )
+  // Aufklaerung und Sabotage duerfen eine Macht nicht mehr als Ziel fuehren, der ich (oder deren
+  // Angebot ich) schon Frieden angeboten habe — der Gegenspion liest stattdessen `warEnemies`
+  // (Befund M17-S8, siehe `peaceBound`).
+  const enemies = new Set([...warEnemies].filter((id) => !peace.has(id)))
   let grudge: { against: PlayerId; value: Fixed } | null = null
   for (const id of Object.keys(view.self.grievances).sort()) {
     const value = view.self.grievances[id]!
@@ -237,19 +262,27 @@ export function espionageCommands(
   }
   const threshold = rules.ai.espionageCounterGrievance
   const counterReason =
-    enemies.size > 0
-      ? `Krieg mit ${[...enemies].join(', ')}`
+    warEnemies.size > 0
+      ? `Krieg mit ${[...warEnemies].join(', ')}`
       : grudge && grudge.value >= threshold
         ? `Verstimmung ${grudge.value} gegen ${grudge.against}, Schwelle ${threshold}`
         : null
-  const capital = view.self.capitalProvinceId === null ? undefined : known.get(view.self.capitalProvinceId)
+  // Die Hauptstadt dieses Zugs: liest `earlier` fuer ein SET_CAPITAL desselben Strategietakts
+  // (`capitalCommands` laeuft davor in `decide.ts`) — sonst entliesse ein Hauptstadtverlust den
+  // Gegenspion, statt ihn in dieselbe neue Hauptstadt umzusetzen (Befund M17-S9, Nacharbeit).
+  const capitalId = capitalIdFrom(earlier, view, me)
+  const capital = capitalId === null ? undefined : known.get(capitalId)
   const home = capital && capital.owner === me && !capital.stale ? capital : null
   const intelTarget = bestTarget(context, enemies, false)
   const sabotageTarget = bestTarget(context, enemies, true)
 
   const income = dailyMoneyIncome(view, rules)
   const upkeep = dailyArmyMoneyUpkeep(view, rules)
-  const budget = Math.trunc((income * rules.ai.espionageBudgetPermille) / 1000)
+  // Dieselbe Formel wie `espionageBudget()` (Befund M17-S10, Nacharbeit): vorher stand die
+  // Berechnung hier ein zweites Mal, ohne dass ein Test eine Abweichung zwischen beiden
+  // Stellen haette erzwingen koennen (die Z4-Grenzwerttests leiten ihre Werte ueber
+  // `espionageBudget()` her und vergleichen sie mit diesem Aufruf).
+  const budget = espionageBudget(view, rules)
   const horizon = rules.ai.espionageMoneyHorizonDays
   const money = view.self.resources.money - moneyCommittedBy(earlier, context, known)
   const reserve = Math.trunc((view.self.resources.money * RESERVE_PERMILLE) / 1000)

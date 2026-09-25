@@ -212,6 +212,49 @@ describe('Z1 Gegenspion bei Krieg oder Verstimmung (D29.8, R-AI-09)', () => {
     expect(kurz).toEqual(['entlassen:s101'])
     expect(explanations.some((e) => e.reason.includes('vorbei'))).toBe(true)
   })
+
+  it('setzt den Gegenspion bei Hauptstadtverlust noch im selben Zug in die neue Hauptstadt um, statt ihn zu entlassen (Befund M17-S9)', () => {
+    // Die alte Hauptstadt (o1) ist gerade gefallen (`capitalProvinceId` schon null, wie
+    // `occupation.ts` es beim Verlust setzt), s1 ist die einzige verbliebene eigene Stadt.
+    // `capitalCommands` liefe in `decide.ts` davor und gaebe genau das SET_CAPITAL unten aus
+    // (hier direkt als `earlier` gereicht, wie `entscheide()` es fuer jeden Vorschritt tut).
+    // Ohne die Nacharbeit (`capitalIdFrom`) sieht `espionageCommands` die neue Hauptstadt nicht
+    // (die Sicht traegt sie erst naechsten Tag nach) und entlaesst den Gegenspion, statt ihn
+    // umzusetzen — am naechsten Tag wirbt die KI dann fuer den vollen Preis neu an.
+    const l = lage({
+      krieg: true,
+      budgetPermille: 1000,
+      spione: [{ provinceId: 'o1', mission: 'counter' }],
+      mutate: (s) => {
+        s.players[ME]!.capitalProvinceId = null
+        s.provinces['o1']!.owner = FEIND
+        s.provinces['s1']!.owner = ME
+      },
+    })
+    const earlier: Command[] = [{ type: 'SET_CAPITAL', playerId: ME, provinceId: 's1' }]
+    const { kurz } = entscheide(l, earlier)
+    // Kein zweites Entlassen/Anwerben fuer den Gegenspion (er hat schon ein Ziel); der
+    // Aufklaerer daneben wirbt unabhaengig davon an, weil vorher keiner da war.
+    expect(kurz).toEqual(['umsetzen:s101->counter@s1', 'anwerben:intel@n1'])
+  })
+
+  it('wirbt fuer eine fremdbesetzte Hauptstadt keinen Gegenspion an (Befund M17-S3-Analog)', () => {
+    // `capitalProvinceId` traegt noch die alte Hauptstadt, aber ihr Besitzer hat gewechselt —
+    // der reachable Zweig von `home` (`capital.owner === me`, Befund eines adversarischen
+    // Pruefers: bisher unbelegt). Der zweite Zweig (`!capital.stale` bei weiterhin eigenem
+    // Besitz) ist unter der aktuellen Invariante nicht erreichbar: `capitalCommands.ts`
+    // begruendet, dass eine eigene Provinz nie `stale` ist (sonst waere sie nicht mehr eigen).
+    const l = lage({
+      krieg: true,
+      budgetPermille: 1000,
+      mutate: (s) => {
+        s.provinces['o1']!.owner = FEIND
+      },
+    })
+    const { commands, kurz } = entscheide(l)
+    expect(commands.some((c) => c.type === 'RECRUIT_SPY' && c.mission === 'counter')).toBe(false)
+    expect(kurz).toEqual(['anwerben:intel@n1'])
+  })
 })
 
 describe('Z2 Aufklaerung auf den Kriegsgegner', () => {
@@ -322,7 +365,10 @@ describe('Z3 Sabotage nie gegen eine Macht im Frieden', () => {
     expect(kurz).toEqual(['entlassen:s102'])
   })
 
-  it('nimmt die Sabotage im selben Zug zurueck, in dem sie Frieden annimmt', () => {
+  it('nimmt die Sabotage im selben Zug zurueck, in dem sie Frieden annimmt, haelt aber den Gegenspion (Befund M17-S8)', () => {
+    // Der Gegenspion bleibt: `relations[FEIND].state` ist in diesem Zug noch 'war' — ein
+    // eigenes Friedensangebot oder dessen Annahme ist ein Antrag, kein Kriegsende (D29.8), und
+    // die Gegenseite kann bis dahin weiterhin gegen mich spionieren.
     const l = lage({
       krieg: true,
       budgetPermille: 1000,
@@ -333,11 +379,11 @@ describe('Z3 Sabotage nie gegen eine Macht im Frieden', () => {
     })
     const earlier: Command[] = [{ type: 'DIPLOMACY', playerId: ME, targetPlayerId: FEIND, action: 'acceptPeace' }]
     const { kurz } = entscheide(l, earlier)
-    expect(kurz.sort()).toEqual(['entlassen:s101', 'entlassen:s102'].sort())
+    expect(kurz).toEqual(['entlassen:s102'])
     expect(kurz.some((k) => k.startsWith('anwerben:'))).toBe(false)
   })
 
-  it('und ebenso, wenn sie Frieden anbietet', () => {
+  it('und ebenso, wenn sie Frieden anbietet — der Gegenspion bleibt (Befund M17-S8)', () => {
     const l = lage({
       krieg: true,
       budgetPermille: 1000,
@@ -348,14 +394,16 @@ describe('Z3 Sabotage nie gegen eine Macht im Frieden', () => {
     })
     const earlier: Command[] = [{ type: 'DIPLOMACY', playerId: ME, targetPlayerId: FEIND, action: 'offerPeace' }]
     const { kurz } = entscheide(l, earlier)
-    expect(kurz.sort()).toEqual(['entlassen:s101', 'entlassen:s102'].sort())
+    expect(kurz).toEqual(['entlassen:s102'])
     expect(kurz.some((k) => k.startsWith('anwerben:'))).toBe(false)
   })
 
-  it('ein noch offenes eigenes Friedensangebot vom Vortag sperrt Sabotage ebenso wie eines von heute (Befund M17-S5)', () => {
+  it('ein noch offenes eigenes Friedensangebot vom Vortag sperrt Sabotage ebenso wie eines von heute, laesst den Gegenspion aber im Krieg (Befund M17-S5/M17-S8)', () => {
     // Gegenprobe: `earlier` ist heute leer — ohne `view.outgoingOffers` (Befund M17-S5) waere
     // das Angebot fuer die Spionage unsichtbar, und der Saboteur bliebe stehen, bis der Gegner
     // annimmt und die Beziehung schon auf 'truce' steht (dann zu spaet fuer D29.8/R-SPY-05).
+    // Der Gegenspion ist davon unberuehrt (Befund M17-S8): `relations[FEIND].state` bleibt
+    // 'war', bis der Gegner tatsaechlich annimmt.
     const l = lage({
       krieg: true,
       budgetPermille: 1000,
@@ -369,8 +417,23 @@ describe('Z3 Sabotage nie gegen eine Macht im Frieden', () => {
     })
     expect(l.view.outgoingOffers).toEqual([{ to: FEIND, kind: 'peace', tick: l.state.tick - 20 }])
     const { kurz } = entscheide(l)
-    expect(kurz.sort()).toEqual(['entlassen:s101', 'entlassen:s102'].sort())
+    expect(kurz).toEqual(['entlassen:s102'])
     expect(kurz.some((k) => k.startsWith('anwerben:'))).toBe(false)
+  })
+
+  it('entlaesst den Gegenspion doch, sobald der Krieg wirklich vorbei ist (Befund M17-S8, Gegenprobe)', () => {
+    // Ohne eigenes Friedensangebot, aber echtes Kriegsende (`krieg` nicht gesetzt): der
+    // Gegenspion geht, wie schon in Z1 „entlaesst den Gegenspion, wenn Krieg und Verstimmung
+    // vorbei sind" — hier zusaetzlich mit einem (irrelevanten) Saboteur daneben, der ebenfalls
+    // kein Ziel mehr hat.
+    const l = lage({
+      spione: [
+        { provinceId: 'o1', mission: 'counter' },
+        { provinceId: 's2', mission: 'economicSabotage' },
+      ],
+    })
+    const { kurz } = entscheide(l)
+    expect(kurz.sort()).toEqual(['entlassen:s101', 'entlassen:s102'].sort())
   })
 
   it('sabotiert keine nur erinnerte Provinz', () => {
