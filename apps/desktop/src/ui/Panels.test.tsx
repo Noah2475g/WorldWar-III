@@ -862,7 +862,15 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
     expect(screen.queryByRole('region', { name: 'Ausgehende Angebote' })).toBeNull()
   })
 
-  it('R-DIP-08/AK3 nennt den Durchmarsch in beide Richtungen, mit Fristende', () => {
+  /**
+   * Befund 1 der Sichtpruefung U (T-M17-14, hoch): bei 380px Seitenleistenbreite war die
+   * Tabelle 465px breit ("Macht wählen"-Spalte 1233.7-1314.9px, Seitenrand bei 1234) — der
+   * Knopf "Auswählen" lag zu 99,6% ausserhalb von `aside.side` (`overflow-x: hidden`, kein
+   * eigener Scroll-Wrapper). Die Zelle traegt seither nur noch die Kurzform, die volle
+   * Fassung steht im `title` (Tooltip) — der Tabellentext bleibt kurz genug, ohne eine
+   * Information zu verlieren.
+   */
+  it('R-DIP-08/AK3 nennt den Durchmarsch in beide Richtungen als Kurzform, mit der vollen Fassung im Tooltip', () => {
     const view = diplomacyView({
       others: [{ id: 'p2', nation: 'Ostmark' }],
       relations: {
@@ -871,16 +879,61 @@ describe('R-DIP-07 Das Diplomatiepanel (T-M17-14)', () => {
     })
 
     render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} ticksPerDay={24} />)
-    const row = document.querySelector('tbody tr')!
-    expect(row.textContent).toContain('Sie gewähren bis Tag 3')
-    expect(row.textContent).toContain('Sie erhalten')
+    const cell = document.querySelector('tbody tr td:nth-child(3)')!
+    expect(cell.textContent).toBe('beide')
+    const title = cell.getAttribute('title')
+    expect(title).toContain('Sie gewähren bis Tag 3')
+    expect(title).toContain('Sie erhalten')
   })
 
-  it('nennt "keiner", wenn kein Durchmarsch besteht', () => {
+  it('nennt "gewaehrt"/"erhalten" einzeln als Kurzform, mit der vollen Fassung im Tooltip', () => {
+    const view = diplomacyView({
+      others: [{ id: 'p2', nation: 'Ostmark' }],
+      relations: { p2: { passageGranted: true, passageEndsAtTick: { granted: null, received: null } } },
+    })
+
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} ticksPerDay={24} />)
+    const cell = document.querySelector('tbody tr td:nth-child(3)')!
+    expect(cell.textContent).toBe('gewährt')
+    expect(cell.getAttribute('title')).toBe('Sie gewähren')
+  })
+
+  it('nennt "keiner", wenn kein Durchmarsch besteht — ohne eigenen Tooltip', () => {
     const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
     render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} ticksPerDay={24} />)
-    const row = document.querySelector('tbody tr')!
-    expect(row.textContent).toContain('keiner')
+    const cell = document.querySelector('tbody tr td:nth-child(3)')!
+    expect(cell.textContent).toContain('keiner')
+    expect(cell.hasAttribute('title')).toBe(false)
+  })
+
+  /**
+   * Befund 1, Teil 2: die Spalte "Macht wählen" entfaellt, der Name der Macht wird selbst
+   * der Auswahlknopf — per Tab erreichbar, mit `aria-pressed` fuer die gewaehlte Macht.
+   * Hoechstens vier Spalten (Macht, Diplomatie, Ansehen, Durchmarsch): der Ausweichweg ueber
+   * eine fuenfte Spalte, die am Rand abgeschnitten wird, kommt nicht wieder.
+   */
+  it('Befund 1 der Sichtpruefung U: der Name der Macht ist der Auswahlknopf, hoechstens vier Spalten', () => {
+    const view = diplomacyView({
+      others: [
+        { id: 'p2', nation: 'Ostmark' },
+        { id: 'p3', nation: 'Westreich' },
+      ],
+    })
+    const nameOf = (id: string) => (id === 'p2' ? 'Ostmark' : 'Westreich')
+    const onChoose = vi.fn()
+
+    render(<DiplomacyPanel view={view} nameOf={nameOf} reputationMax={1000} ticksPerDay={24} chosen="p3" onChoose={onChoose} />)
+
+    expect(screen.queryByRole('columnheader', { name: 'Macht wählen' })).toBeNull()
+    expect(screen.getAllByRole('columnheader').length).toBeLessThanOrEqual(4)
+
+    const ostmark = screen.getByRole('button', { name: 'Ostmark' })
+    const westreich = screen.getByRole('button', { name: 'Westreich' })
+    expect(ostmark.getAttribute('aria-pressed')).toBe('false')
+    expect(westreich.getAttribute('aria-pressed')).toBe('true')
+
+    fireEvent.click(ostmark)
+    expect(onChoose).toHaveBeenCalledWith('p2')
   })
 
   it('das Angebotsformular rechnet in ganzen Einheiten und fragt evaluate', () => {

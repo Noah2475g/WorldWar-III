@@ -1166,6 +1166,9 @@ function clamp(value: number, lo: number, hi: number): number {
  * Die Durchmarschzelle: was ich gewaehre, was ich erhalte, mit Fristende (T-M17-14, R-DIP-08/AK3).
  * `passage.outEnds`/`inEnds` nennen den Tag, an dem eine laufende Kuendigung greift — der
  * Gewaehrende sieht so "endet an Tag X" statt eines zweiten Knopfs (03-TASKS T-M17-14).
+ *
+ * Die volle Fassung (diese Funktion) steht seit der Nacharbeit zu Befund 1 der Sichtpruefung
+ * U nur noch im `title`/Tooltip der Zelle — `passageShort` traegt die sichtbare Kurzform.
  */
 function passageText(
   relation:
@@ -1193,6 +1196,29 @@ function passageText(
     )
   }
   return parts.length > 0 ? parts.join(' · ') : t('diplomacy.passage.none')
+}
+
+/**
+ * Die Kurzform derselben Auskunft (Befund 1 der Sichtpruefung U, T-M17-14, Nacharbeit): bei
+ * 380px Seitenleistenbreite war die Tabelle 465px breit, der Knopf "Auswählen" lag zu 99,6%
+ * ausserhalb. `text` steht in der Zelle, `title` traegt bei Bedarf die volle Fassung
+ * (`passageText`) als Tooltip — ohne title, wenn es nichts zu vertiefen gibt ("keiner").
+ */
+function passageShort(
+  relation:
+    | {
+        passageGranted: boolean
+        passageReceived: boolean
+        passageEndsAtTick: { granted: number | null; received: number | null }
+      }
+    | undefined,
+  ticksPerDay: number,
+): { text: string; title?: string } {
+  const granted = relation?.passageGranted ?? false
+  const received = relation?.passageReceived ?? false
+  if (!granted && !received) return { text: t('diplomacy.passage.none') }
+  const text = granted && received ? t('diplomacy.passage.shortBoth') : granted ? t('diplomacy.passage.shortOut') : t('diplomacy.passage.shortIn')
+  return { text, title: passageText(relation, ticksPerDay) }
 }
 
 /** Eine Zeile eines Angebots — Handel oder ein diplomatischer Antrag (T-M17-14, R-DIP-07). */
@@ -1274,7 +1300,9 @@ export function DiplomacyPanel({
   }
 
   const chosenAlive = view.others.find((other) => other.id === chosen)
-  const canChoose = Boolean(actionsFor || passageFor || tradeForm)
+  // Der Name der Macht ist der Auswahlknopf (Befund 1 der Sichtpruefung U, Nacharbeit):
+  // massgeblich ist `onChoose` selbst, nicht mehr die Gruppen, die danach erscheinen.
+  const canChoose = Boolean(onChoose)
 
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
@@ -1291,23 +1319,41 @@ export function DiplomacyPanel({
       {/* Eingehende zuerst (T-M17-14): so landet der Sprung aus einer Meldung darauf. */}
       {offers && <OfferList title={t('diplomacy.incoming')} rows={offers.incoming} />}
       {offers && <OfferList title={t('diplomacy.outgoing')} rows={offers.outgoing} />}
-      <table className="table">
+      {/*
+        Befund 1 der Sichtpruefung U (T-M17-14, Nacharbeit, hoch): eine fuenfte Spalte
+        "Macht wählen" sprengte bei 380px Seitenleistenbreite den Rahmen (465px Tabelle
+        gegen 364px sichtbar, `aside.side` mit `overflow-x: hidden`) — der Knopf "Auswählen"
+        lag zu 99,6% ausserhalb, mit der Maus unerreichbar. Hoechstens vier Spalten: der
+        Name der Macht ist seither selbst der Auswahlknopf (Panels.test.tsx zaehlt sie nach).
+      */}
+      <table className="table diplomacy-table">
         <thead>
           <tr>
             <th>{t('newGame.nation')}</th>
             <th>{t('diplomacy.title')}</th>
             {reputationMax !== undefined && <th>{t('diplomacy.reputation')}</th>}
             {ticksPerDay !== undefined && <th>{t('diplomacy.passageColumn')}</th>}
-            {canChoose && <th>{t('diplomacy.choose')}</th>}
           </tr>
         </thead>
         <tbody>
           {view.others.map((other) => {
             const relation = view.relations[other.id]
+            const passage = ticksPerDay !== undefined ? passageShort(relation, ticksPerDay) : null
             return (
               <tr key={other.id} className={other.id === chosen ? 'is-selected' : undefined}>
                 <td>
-                  <NationName color={other.color}>{nameOf(other.id)}</NationName>
+                  {canChoose ? (
+                    <button
+                      type="button"
+                      className="nation-select"
+                      aria-pressed={other.id === chosen}
+                      onClick={() => onChoose?.(other.id)}
+                    >
+                      <NationName color={other.color}>{nameOf(other.id)}</NationName>
+                    </button>
+                  ) : (
+                    <NationName color={other.color}>{nameOf(other.id)}</NationName>
+                  )}
                 </td>
                 <td className={relation?.state === 'war' ? 'state state--war' : 'state'}>
                   {/* R-UI-10 nennt den Beziehungszustand — bis T-M20-01 stand er als
@@ -1332,13 +1378,8 @@ export function DiplomacyPanel({
                     />
                   </td>
                 )}
-                {ticksPerDay !== undefined && <td>{passageText(relation, ticksPerDay)}</td>}
-                {canChoose && (
-                  <td>
-                    <button type="button" className="button" onClick={() => onChoose?.(other.id)}>
-                      {t('army.select')}
-                    </button>
-                  </td>
+                {passage && (
+                  <td title={passage.title}>{passage.text}</td>
                 )}
               </tr>
             )

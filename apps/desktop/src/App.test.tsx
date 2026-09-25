@@ -86,6 +86,17 @@ const startGame = (extra: Partial<Parameters<typeof App>[0]> = {}) => {
   fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
 }
 
+/**
+ * Die erste Macht der Diplomatietabelle waehlen (Befund 1 der Sichtpruefung U, T-M17-14,
+ * Nacharbeit): ihr Name ist seither selbst der Auswahlknopf, keine eigene Spalte mehr. In
+ * jeder Zeile steht er vor dem Erklaerungsknopf ("Was ist Frieden?") — deshalb der erste
+ * Knopf der ersten Datenzeile (rows[0] ist der Kopf).
+ */
+const waehleErsteMacht = (panel: HTMLElement) => {
+  const zeile = within(panel).getAllByRole('row')[1]!
+  fireEvent.click(within(zeile).getAllByRole('button')[0]!)
+}
+
 describe('R-UI-03 Die Partie startet', () => {
   it('zeigt vor dem Start den Dialog', () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} />)
@@ -329,7 +340,7 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
       // Rubriksymbol traegt. Ein Tick danach, damit der Befehl sicher angewendet ist.
       fireEvent.keyDown(window, { key: 'd' })
       const panel = screen.getByRole('region', { name: 'Diplomatie' })
-      fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+      waehleErsteMacht(panel)
       fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
@@ -568,7 +579,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     startGame()
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
@@ -734,7 +745,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     startGame({ storage: new MemoryStorage() })
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
 
     // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
@@ -754,7 +765,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     startGame({ storage: new MemoryStorage() })
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
     fireEvent.click(war)
 
@@ -1634,7 +1645,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       const zeile = within(diplomatie)
         .getAllByRole('row')
         .find((row) => row.textContent?.includes(nation))!
-      fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+      fireEvent.click(within(zeile).getAllByRole('button')[0]!)
 
       // "Durchmarsch-Antrag annehmen" steht zweimal (Gruppe UND Liste, E6) — die Gruppe
       // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen.
@@ -1645,6 +1656,24 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       expect((beantragen as HTMLButtonElement).disabled).toBe(false)
       expect((annehmen as HTMLButtonElement).disabled).toBe(false)
       expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
+    })
+  })
+
+  /**
+   * Befund 2 der Sichtpruefung U (T-M17-14): Spionage- und Marktpanel schliessen mit
+   * Escape, die Diplomatie tat es nicht — die einzige Ausnahme unter den drei Panels, ohne
+   * dass ein Dialog, eine Zielwahl oder ein Umsetz-Modus im Weg steht (App.tsx, Fall
+   * 'close'). Dieselbe Taste, dieselbe Erwartung (R-UI-05).
+   */
+  describe('Befund 2 der Sichtpruefung U: Escape schliesst die Diplomatie wie jedes andere Panel', () => {
+    it('schliesst das Diplomatiepanel mit Escape', () => {
+      startGame()
+      fireEvent.keyDown(window, { key: 'd' })
+      expect(screen.getByRole('region', { name: 'Diplomatie' })).toBeTruthy()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+
+      expect(screen.queryByRole('region', { name: 'Diplomatie' })).toBeNull()
     })
   })
 
@@ -1727,7 +1756,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
         const zeile = within(diplomatie)
           .getAllByRole('row')
           .find((row) => row.textContent?.includes(nation))!
-        fireEvent.click(within(zeile).getByRole('button', { name: 'Auswählen' }))
+        fireEvent.click(within(zeile).getAllByRole('button')[0]!)
       }
 
       wähle(nationOf(p2))
@@ -1861,7 +1890,7 @@ describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => 
 
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
   }
 

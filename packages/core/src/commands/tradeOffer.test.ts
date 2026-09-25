@@ -418,6 +418,24 @@ describe('R-DIP-09/AK1 Die Annahme prueft erneut — was erst dort scheitert, ve
     expectLapsed(id, vorher, 'eigene Armeen', 'p1')
   })
 
+  /**
+   * Offene Frage S9 der Sichtpruefung U (T-M17-14): eine Armee einer DRITTEN Macht steht in der
+   * angebotenen Provinz, dann folgt ACCEPT_TRADE. Anders als bei "eine eigene Armee steht
+   * inzwischen darin" oben stand hierfuer noch kein Test — nur der Fall beim Anlegen des
+   * Angebots ('eine Provinz mit der Armee einer dritten Macht darin', oben) und der Fall bei
+   * ANNAHME mit der EIGENEN Armee des Empfaengers (`R-DIP-04`, 'der Empfaenger raeumt ...').
+   * Der Kern prueft das schon (`cessionProblem`, Grund 'fremde Armeen', R-DIP-09/AK1-Praezisierung
+   * "gilt fuer alle Armeen, die in der Provinz stehen"; DECISIONS.md M17-D5 nimmt nur fremde
+   * MAERSCHE aus, nicht stehende fremde Armeen) — dieser Test belegt es nur zusaetzlich, mit
+   * Durchmarschrecht, damit das Recht die Sperre nicht aufweicht (wie beim Angebot selbst).
+   */
+  it('eine fremde (dritte) Armee steht inzwischen darin — auch mit Durchmarschrecht (Sichtpruefung U, offene Frage S9)', () => {
+    const { id, vorher } = setupOffer()
+    applyCommand(state, grant('p1', 'p3'), ctx)
+    placeArmy(state, { owner: 'p3', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    expectLapsed(id, vorher, 'fremde Armeen', 'p1')
+  })
+
   it('Ablehnung und Verfall im selben Tick — durch step()', () => {
     const { id } = setupOffer()
     placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })

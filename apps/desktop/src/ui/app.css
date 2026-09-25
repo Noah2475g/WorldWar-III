@@ -1029,6 +1029,25 @@ body {
   border-bottom: 1px solid var(--paper-sunk);
 }
 
+/*
+  Der Name der Macht als Auswahlknopf (Befund 1 der Sichtpruefung U, T-M17-14, Nacharbeit):
+  die eigene "Macht wählen"-Spalte sprengte bei 380px Seitenleistenbreite den Rahmen. Der
+  Knopf sieht aus wie Text, wie `.log__jump` — nur der Fokusring und die gewaehlte Zeile
+  (`.is-selected`) zeigen, dass hier etwas passiert.
+*/
+.diplomacy-table .nation-select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.diplomacy-table tbody tr.is-selected {
+  font-weight: 600;
+}
+
 /* Zahlenkolonnen: rechtsbuendig und dicktengleich, damit die Spalten untereinander
    lesbar sind statt zu zappeln (Wirtschaftsuebersicht, R-ECON-06). */
 .table--numbers td + td,
