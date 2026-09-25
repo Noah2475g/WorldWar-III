@@ -441,3 +441,10 @@ dem **Tagessold**, nicht dem Anwerbepreis; der Anwerbepreis ist an die Rücklage
 | `espionageMoneyHorizonDays` | 3 | geschätzt | so viele Tage muss der Bestand die Tagesbilanz (Steuer minus Armeeunterhalt minus Sold) tragen. Entlassen ist endgültig — der Anwerbepreis ist verloren —, also kein langer Horizont; kürzer als drei Tage ließe der Wirtschaft (Markt alle sechs Stunden) keine Zeit, einen Engpass selbst zu decken |
 
 *Gemessen am 2026-09-25 (T-M17-12):* siehe `$SP/bericht-T-M17-12.md` (Turnier vorher/nachher, progress vorher/nachher, Wegwerflauf-Zahlen).
+
+*Berichtigt am 2026-09-25 (Nacharbeit T-M17-12, Befund M17-S6):* `$SP` ist ein Sitzungsverzeichnis
+außerhalb des Repos und für spätere Leser nicht erreichbar — die Kennzahlen stehen dauerhaft in
+`docs/plan/PROGRESS.md` (Zeile T-M17-12) und `docs/plan/PROBLEME.md` (Befund M17-S4): Turnier
+schwer/normal im Frieden vorher 70 % (`ef8d27b`), nachher 100 % (`a821e7f`, Band 0,55–0,95 gerissen,
+R-AI-06); `progress.slow.test.ts` an allen vier Ständen (vorher, `grievanceOnSpyDetected`
+300/200/150) grün.
