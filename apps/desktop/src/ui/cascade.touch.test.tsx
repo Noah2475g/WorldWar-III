@@ -303,6 +303,12 @@ describe('touch.css: die Einfuehrung bleibt zwischen Kopf und Fuss', () => {
     expect(css(tutorial, 'bottom')).toBe('var(--sp-md)')
     expect(css(tutorial, 'left')).toBe('var(--sp-md)')
     expect(css(tutorial, 'overflow-y')).toBe('auto')
+    // Die Breite endet vor der Uebersichtskarte und faellt nie unter 160 px (340a18a: ohne
+    // Untergrenze wurde sie hochkant stillschweigend 0 px breit). jsdom rechnet calc() nicht
+    // aus - gebunden ist die Formel selbst.
+    expect(css(tutorial, 'width').replace(/\s+/g, ' ')).toBe(
+      'clamp(160px, calc(100% - var(--touch-side) - 132px - var(--sp-lg) - 2 * var(--sp-md)), 260px)',
+    )
   })
 
   it('laesst sie im Mausbetrieb, wo sie war', () => {
