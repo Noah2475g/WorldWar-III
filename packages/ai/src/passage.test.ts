@@ -556,6 +556,43 @@ describe('D29.8 Erweiterung: veraltetes Ziel -> foermliche Kriegserklaerung (Nac
     const result = step(state, commands, ctx)
     expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toBeUndefined()
   })
+
+  it('erklaert nicht der Macht am Ziel, wenn eine dritte, unbeteiligte Macht den Weg zuerst sperrt (Gegenprobe G-C4f)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p3'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['m1', 'm2']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+
+    const commands = decideMilitary(contextFor(state, 'p1'), [])
+
+    expect(commands.some((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toBe(false)
+    const requests = commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'requestRightOfWay')
+    expect(requests).toHaveLength(1)
+    expect(requests[0]).toMatchObject({ targetPlayerId: 'p2' })
+    allAccepted(state, commands)
+  })
+
+  it('haelt die Frontengrenze auch ueber mehrere Armeen im selben Zug ein (Gegenprobe G-C4g)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p3'
+    const armyA = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    armyA.path = ['m1']
+    armyA.departureTick = state.tick
+    armyA.arrivalTick = state.tick + 5
+    const armyB = placeArmy(state, { owner: 'p1', at: 'n3', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    armyB.path = ['m2']
+    armyB.departureTick = state.tick
+    armyB.arrivalTick = state.tick + 5
+    const context = { ...contextFor(state, 'p1'), difficulty: { ...TEST_RULES.ai.difficulties.hard, maxFronts: 1 } }
+
+    const commands = decideMilitary(context, [])
+
+    expect(commands.filter((c) => c.type === 'DIPLOMACY' && c.action === 'declareWar')).toHaveLength(1)
+  })
 })
 
 describe('R-AI-09/AK4 Jede Durchmarsch-Handlung nennt Grund und Alternative', () => {
