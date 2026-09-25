@@ -594,6 +594,31 @@ describe('R-DIP-09 Aktiver Provinzhandel wird gebaut, aber nur gezaehlt (T-M17-1
     allAccepted(state, commands)
   })
 
+  /**
+   * Nacharbeit ki (T-M17-11), Befund M17-D16: `neighbourMine` (provinceValue.ts:404-405) war
+   * ungetestet — ein Mutationslauf im isolierten Worktree (HEAD 1d0dd76) entfernte den Filter,
+   * und `provinceValue.test.ts` blieb trotzdem 46/46 gruen. Ohne den Filter bewuerbe sich die
+   * KI um eine beliebige, nicht angrenzende Partnerprovinz.
+   */
+  it('kauft nicht ueber eine Provinz ohne eigenen Landnachbarn', () => {
+    const state = angebotsTag(dreiMaechte())
+    state.players.p3!.shortages = []
+    // o2 ist die einzige p2-Provinz mit einem Landnachbarn von p3 (s2, Kante s2-o2). Ohne sie
+    // bleiben von p2 nur o1 (Hauptstadt, ohnehin gesperrt) und o3 — und o3 grenzt an m1, o1, o2,
+    // keine davon gehoert p3 (s1, s2). o3 ist ausserhalb der Grenzsicht von p3 (nicht Nachbar
+    // von s1/s2) und braucht deshalb eine eigene Armee in m1 (Nachbar von o1 UND o3, Kanten
+    // m1-o1, m1-o3), damit o3 ueberhaupt *aktuell sichtbar* (nicht nur erinnert/`stale`) in
+    // `view.provinces` steht — die Kaufliste ueberspringt `stale`-Eintraege.
+    state.provinces.o2!.owner = null
+    placeArmy(state, { owner: 'p3', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const view = publicView(state, 'p3')
+    const o3Entry = view.provinces.find((p) => p.id === 'o3')
+    expect(o3Entry?.stale).not.toBe(true)
+    expect(o3Entry?.owner).toBe('p2')
+    const commands = provinceOfferCommands(contextFor(state, 'p3', KAUF), [], [])
+    expect(commands).toEqual([])
+  })
+
   it('kauft mit den ausgelieferten Zahlen nie (E8)', () => {
     const stateTest = angebotsTag(dreiMaechte())
     stateTest.players.p3!.shortages = []
