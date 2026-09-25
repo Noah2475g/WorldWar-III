@@ -183,15 +183,29 @@ function capitalIdFrom(earlier: readonly Command[], view: PublicView, me: Player
   return view.self.capitalProvinceId
 }
 
-/** Was der Bauauftrag desselben Zugs schon an Geld bindet (Falle 5). */
+/**
+ * Was eigene Befehle desselben Zugs schon an Geld binden (Falle 5): der Bauauftrag, und seit der
+ * Zusammenfuehrung mit der Diplomatiebahn (2026-09-25) auch der Handel, der im Strategietakt vor
+ * der Spionage laeuft — ein Angebot legt `give` sofort in Treuhand, eine Annahme zahlt `want`
+ * sofort. Dieselben drei Befehle zieht `ledgerAfter` (`provinceValue.ts`) fuer den Handel ab;
+ * `RECRUIT_SPY` braucht dort keinen Abzug, weil die Spionage als letzte plant.
+ */
 function moneyCommittedBy(earlier: readonly Command[], context: AiContext, known: Map<ProvinceId, ViewProvince>): Fixed {
+  const me = context.view.playerId
   let sum = 0
   for (const c of earlier) {
-    if (c.type !== 'BUILD' || c.playerId !== context.view.playerId) continue
-    const rule = context.rules.buildings[c.building]
-    if (!rule) continue
-    const level = (known.get(c.provinceId)?.buildings?.[c.building] ?? 0) + 1
-    sum += buildingCostForLevel(rule, level, context.rules.constants).money ?? 0
+    if (c.playerId !== me) continue
+    if (c.type === 'BUILD') {
+      const rule = context.rules.buildings[c.building]
+      if (!rule) continue
+      const level = (known.get(c.provinceId)?.buildings?.[c.building] ?? 0) + 1
+      sum += buildingCostForLevel(rule, level, context.rules.constants).money ?? 0
+    } else if (c.type === 'OFFER_TRADE') {
+      sum += c.give.resources.money ?? 0
+    } else if (c.type === 'ACCEPT_TRADE') {
+      const offer = context.view.tradeOffers.incoming.find((o) => o.id === c.offerId)
+      sum += offer?.want.resources.money ?? 0
+    }
   }
   return sum
 }

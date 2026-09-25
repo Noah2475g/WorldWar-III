@@ -874,4 +874,49 @@ describe('Z9 Die Spionage laeuft im Strategietakt von decide', () => {
     expect(mit.kurz).toEqual([])
     expect(mit.explanations.some((e) => e.reason.includes('Rücklage'))).toBe(true)
   })
+
+  // Zusammenfuehrung mit der Diplomatiebahn (2026-09-25): `tradeOfferCommands` und
+  // `provinceOfferCommands` laufen im Strategietakt VOR der Spionage (decide.ts). Ein eigenes
+  // Angebot legt `give.resources` sofort in Treuhand, eine Annahme zahlt `want.resources` sofort
+  // — beides Geld, das die Spionage desselben Zugs nicht mehr hat.
+  it('ein Handelsangebot desselben Zugs mindert das Geld der Spionage (Treuhand)', () => {
+    const l = lage({ krieg: true, geld: 300_000 })
+    expect(entscheide(l).kurz).toEqual(['anwerben:counter@o1'])
+
+    const earlier: Command[] = [
+      {
+        type: 'OFFER_TRADE',
+        playerId: ME,
+        targetPlayerId: NACHBAR,
+        give: { resources: { money: 250_000 }, provinces: [] },
+        want: { resources: { iron: 1_000 }, provinces: [] },
+      },
+    ]
+    const mit = entscheide(l, earlier)
+    expect(mit.kurz).toEqual([])
+    expect(mit.explanations.some((e) => e.reason.includes('Rücklage'))).toBe(true)
+  })
+
+  it('eine Annahme desselben Zugs mindert das Geld der Spionage (verlangter Preis)', () => {
+    const l = lage({
+      krieg: true,
+      geld: 300_000,
+      mutate: (s) => {
+        s.diplomacy.tradeOffers.push({
+          id: 't1',
+          from: NACHBAR,
+          to: ME,
+          give: { resources: { iron: 1_000 }, provinces: [] },
+          want: { resources: { money: 250_000 }, provinces: [] },
+          createdTick: s.tick,
+          expiresAtTick: s.tick + 72,
+        })
+      },
+    })
+    expect(entscheide(l).kurz).toEqual(['anwerben:counter@o1'])
+
+    const mit = entscheide(l, [{ type: 'ACCEPT_TRADE', playerId: ME, offerId: 't1' }])
+    expect(mit.kurz).toEqual([])
+    expect(mit.explanations.some((e) => e.reason.includes('Rücklage'))).toBe(true)
+  })
 })
