@@ -3699,33 +3699,44 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   T-M17-16 baut auf dem M17-Stand ohne diese drei Reparaturen. Zusätzlich fällig: der
   Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`) ist seit `345544e` und
   seit T-M17-15 (Änderung an `packages/ai/src`) nicht frisch — `docs/reports/stance.json` neu
-  schreiben und einchecken. Vergleichswert Vollpartie auf dem M17-Stand vor T-M17-16
-  (berichtigt 2026-09-25, gemessen statt übernommen): Startzahl 1914 **975** (gültig bis
-  `8bda869`, kein Kernwechsel dazwischen), 1815 **583**, 2015 **583** (beide im Worktree auf
-  `8bda869` gemessen, byte-gleich zur alten `02dc094`-Messung bis auf den Zeitstempel) — „675"
-  war eine unbelegte Notiz ohne Quelle im Repo.
+  schreiben und einchecken. Vergleichswert Vollpartie auf dem Stand **vor M17** (`8bda869`,
+  main nach PR #8 — nicht „M17-Stand", M17 ist auf diesem Zweig erst danach gebaut worden;
+  berichtigt in der Nacharbeit zu T-M17-16, vorherige Fassung nannte hier irrtümlich „M17-Stand
+  vor T-M17-16"), gemessen statt übernommen: Startzahl 1914 **975** (gültig bis `8bda869`,
+  kein Kernwechsel dazwischen), 1815 **583**, 2015 **583** (beide im Worktree auf `8bda869`
+  gemessen, byte-gleich zur alten `02dc094`-Messung bis auf den Zeitstempel) — „675" war eine
+  unbelegte Notiz ohne Quelle im Repo.
 
-  **Ausgeführt am 2026-09-25 (`b9b3915` als Messstand), NICHT abgeschlossen — zwei offene
+  **Ausgeführt am 2026-09-25 (`b9b3915` als Messstand), NICHT abgeschlossen — drei offene
   Blocker.** Alles gemessen und eingecheckt bis auf `docs/reports/stance.json`: Parameterlauf
   (16/16, Anteil des Stärksten 36,8 % → 38,4 %, unter der doppelten Rauschgrenze, tragende
   Konstanten weiterhin 0/14), Turnier und `m17-integration` zeilengleich zu den Vorläufen,
   `ai-integration` deterministisch bestätigt (byte-gleich, `zustandOhneKi` deckt sich mit
   `m17-final.json`), Vollpartien 1914 675 / 1815 395 / 2015 630 (alle im Band 300–1500,
   Sieger durchweg p6), Netzfreiheit hält wörtlich, Uhr bei Tempo 100 innerhalb der eigenen
-  Streuung des Ausgangswerts, `pnpm acceptance` 11 von 12, `pnpm verify` grün.
+  Streuung des Ausgangswerts, `pnpm acceptance` 11 von 12, `pnpm verify` grün — alles nur für
+  den Stand ohne die 45 Commits von `origin/main` (Punkt 3 unten).
   1. **Befund M17-F1** (`PROBLEME.md`): der Haltungs-Messlauf reißt an der festen
-     Kontrollzahl — 76 Einmärsche/4 verlorene Provinzen fielen auf **0/0**, obwohl Provinz-Tage
-     (100 %) und Verluste ohne Gefecht (0) halten oder besser sind. `stance.json` bleibt
-     deshalb auf dem alten Stand (`b1bb3c8`) stehen und damit unfrisch. Noah entscheidet, ob
-     `KONTROLLE` bewusst neu kalibriert wird oder ob 0 Einmärsche selbst ein Befund über die
-     KI ist.
+     Kontrollzahl — 76 Einmärsche/4 verlorene Provinzen fielen auf **0/0**. Provinz-Tage
+     (100 %) und Verluste ohne Gefecht (0) bleiben über ihrer Schwelle, aber bei 0
+     Einmärschen wird die Verteidigungsautomatik in diesem Lauf gar nicht ausgelöst — das ist
+     **ungeprüft**, nicht „gehalten". `stance.json` bleibt deshalb auf dem alten Stand
+     (`b1bb3c8`) stehen und damit unfrisch. Noah entscheidet, ob `KONTROLLE` bewusst neu
+     kalibriert wird oder ob 0 Einmärsche selbst ein Befund über die KI ist.
   2. **AK-8** (der volle Speichern/Neustart/Weiterspielen-Rundlauf) wurde **nicht**
      durchgeführt: Noahs `saves`-Ordner zeigte beim Ansehen eine unklare Lage über mehrere
      nie aufgeräumte Alt-Ordner aus früheren Sitzungen — Einzelheiten in `packaging.md`.
      Nichts gelöscht. Ersatzweise per CDP bestätigt, dass Diplomatie- und Spionage-Oberfläche
      im gebauten Programm stecken.
+  3. **Neu, aus der Nacharbeit zu T-M17-16:** `origin/main` liegt 45 Commits vor diesem Zweig
+     (PR #9–#11, u. a. Touch-Bedienung; Basis `8bda869`, `origin/main` = `30c0b3f`). Alle
+     Zahlen oben gelten nur für den Stand ohne diese Commits. Vor dem Pull Request muss
+     `origin/main` in `claude/m17-tiefe-zwischen-den-kriegen` gemergt, die Konflikte
+     (`App.tsx`, `de.ts`, `Panels.tsx`) gelöst und die gesamte Kette (Bau, Netzfreiheit, AK-8,
+     `pnpm acceptance`) auf dem Merge-Stand wiederholt werden — siehe `WORKFLOW.md` §2
+     Punkt 1.
 
-  M17 bleibt bei **15 von 16** Aufgaben, bis Noah zu beiden Punkten entschieden hat.
+  M17 bleibt bei **15 von 16** Aufgaben, bis Noah zu allen drei Punkten entschieden hat.
 
 ## Meilenstein M18 — Später
 
@@ -3743,7 +3754,7 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
 >
 > **Vorgemerkt am 2026-09-25 (T-M17-15, Noahs Entscheid, ergänzt in der Nacharbeit desselben
-> Tages):** drei Befunde der Turnier-Nacharbeit gehen an M18, bisher nur in `WORKFLOW.md` §2.5
+> Tages):** drei Befunde der Turnier-Nacharbeit gehen an M18, bisher nur in `WORKFLOW.md` §2.6
 > und `DECISIONS.md` geführt, hier zur Vollständigkeit nachgetragen (Muster T-M41-10). **Befund
 > M17-T7:** „normal"/„schwer" bauen in 200 Tagen keine Fabrik, „leicht" baut welche, erreicht
 > aber nie die eigene Geldschwelle — die KI hebt praktisch keine Artillerie aus, die
@@ -3756,8 +3767,11 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > `DECISIONS.md`).
 >
 > **Vorgemerkt am 2026-09-25 (Nacharbeit Durchsicht Zusammenspiel) — vollständige M18-Liste.**
-> `WORKFLOW.md` §2 Punkt 5 verweist nur noch hierher; alle Einträge mit Status „M18" oder
-> „Kandidat M18" aus `PROBLEME.md`, an einer Stelle:
+> `WORKFLOW.md` §2 Punkt 6 verweist nur noch hierher; alle Einträge mit Status „M18" oder
+> „Kandidat M18" aus `PROBLEME.md`, an einer Stelle. **Befund M17-F1 steht absichtlich nicht
+> hier** (Nacharbeit T-M17-16): sein Status in `PROBLEME.md` ist „offen, Noah entscheidet" —
+> ein aktiver Blocker von T-M17-16 selbst (`WORKFLOW.md` §2 Punkt 1), noch kein an M18
+> verschobener Befund. Er wandert erst hierher, falls Noah ihn ausdrücklich verschiebt.
 >
 > - **M17-T6** (Frieden im selben Tick macht aus einem Angriff einen Überfall) und **M17-T7**
 >   (KI hebt praktisch keine Artillerie aus) und **M17-S12** (`RECRUIT_SPY` desselben Takts nicht
