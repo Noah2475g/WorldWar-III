@@ -127,7 +127,7 @@ export function decide(options: DecideOptions): AiDecision {
   const interval = Math.max(1, options.difficulty.tacticalInterval)
   if (memory.lastTacticalTick === undefined || tick - memory.lastTacticalTick >= interval) {
     memory.lastTacticalTick = tick
-    commands.push(...militaryCommands(withoutAbsorbed(context, absorbed), explanations))
+    commands.push(...militaryCommands(withoutAbsorbed(context, absorbed), explanations, commands))
   }
 
   return {

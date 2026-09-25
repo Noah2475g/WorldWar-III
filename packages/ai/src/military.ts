@@ -37,7 +37,7 @@ function hasTargetInRange(context: AiContext, army: { provinceId: string }): boo
   })
 }
 
-export function militaryCommands(context: AiContext, explanations: Explanation[]): Command[] {
+export function militaryCommands(context: AiContext, explanations: Explanation[], pending: readonly Command[] = []): Command[] {
   const { view, memory } = context
   const commands: Command[] = []
   const threat = threatMap(view, context.rules.ai.threatRange)
@@ -101,7 +101,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
           score: 700,
           alternative: { action: `weitermarschieren (Überfall auf ${block.owner})`, score: 0 },
         })
-        requestPassage(context, army, army.path![army.path!.length - 1]!, block, commands, explanations, requested)
+        requestPassage(context, army, army.path![army.path!.length - 1]!, block, commands, explanations, requested, pending)
       }
       continue
     }
@@ -113,7 +113,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
         const weg = predictLandPath(context, army, target as ProvinceId)
         const sperre = weg ? firstBlock(context, weg, null) : null
         if (sperre) {
-          requestPassage(context, army, target as ProvinceId, sperre, commands, explanations, requested)
+          requestPassage(context, army, target as ProvinceId, sperre, commands, explanations, requested, pending)
           continue
         }
         commands.push({
@@ -189,7 +189,7 @@ export function militaryCommands(context: AiContext, explanations: Explanation[]
     const wegZumAngriff = predictLandPath(context, army, choice.id)
     const angriffssperre = wegZumAngriff ? firstBlock(context, wegZumAngriff, null) : null
     if (angriffssperre) {
-      requestPassage(context, army, choice.id, angriffssperre, commands, explanations, requested)
+      requestPassage(context, army, choice.id, angriffssperre, commands, explanations, requested, pending)
       continue
     }
 

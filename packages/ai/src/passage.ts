@@ -12,6 +12,7 @@ import {
   type VisibleProvince,
 } from '@worldwar/core'
 import { explainRelationship, relationship } from './relationship'
+import { warDeclaredThisTurn } from './provinceValue'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -134,6 +135,16 @@ export function firstBlock(
 /**
  * Antrag statt Marsch (E1, E5, E6). Schreibt Befehl, Erklärung und `memory.assignments`.
  * `requested` dedupliziert je Aufruf von `militaryCommands`.
+ *
+ * `pending` sind die Befehle, die derselbe `decide()`-Aufruf schon in fruehere Stufen
+ * gelegt hat (R-AI-09/AK2, Nacharbeit ki, Befund M17-D14). `view.relations[owner]` ist eine
+ * Momentaufnahme vom Zugbeginn — eine eigene `declareWar` derselben Strategiestufe steht
+ * darin noch nicht, sie ist ja selbst nur ein Befehl in `pending`. Ohne diese Pruefung
+ * beantragte die Taktikstufe im selben Zug einen Durchmarsch bei genau der Macht, der die
+ * Strategiestufe eben den Krieg erklaert hat — der Kern lehnt den Antrag dann mit
+ * `INVALID_TARGET`/'Kriegserklärung läuft' ab (`commands/diplomacy.ts`), weil `declareWar`
+ * zuerst angewendet wird und `relation.warEffectiveAtTick` schon gesetzt ist, wenn der
+ * zweite Befehl desselben Zugs geprueft wird.
  */
 export function requestPassage(
   context: AiContext,
@@ -143,6 +154,7 @@ export function requestPassage(
   commands: Command[],
   explanations: Explanation[],
   requested: Set<PlayerId>,
+  pending: readonly Command[] = [],
 ): void {
   const { view, memory, rules } = context
   const me = view.playerId
@@ -152,16 +164,20 @@ export function requestPassage(
   const alternative = { action: `durch ${block.provinceId} marschieren (Überfall auf ${owner})`, score: 0 }
 
   const relation = view.relations[owner]
+  const declaringThisTurn = warDeclaredThisTurn(context, pending).has(owner)
   const cannotRequest =
     !relation ||
     (relation.state !== 'peace' && relation.state !== 'truce') ||
     relation.warEffectiveAtTick !== undefined ||
-    relation.passageReceived
+    relation.passageReceived ||
+    declaringThisTurn
 
   if (cannotRequest) {
     explanations.push({
       action: `Marsch von ${army.id} nach ${target} unterbleibt`,
-      reason: `Weg über ${block.provinceId} (${owner}), ${block.reason}`,
+      reason: declaringThisTurn
+        ? `Weg über ${block.provinceId} (${owner}), Kriegserklärung läuft`
+        : `Weg über ${block.provinceId} (${owner}), ${block.reason}`,
       score: 400,
       alternative,
     })

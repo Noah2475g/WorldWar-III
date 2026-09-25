@@ -151,6 +151,32 @@ describe('R-DIP-08/AK2 Antrag statt Marsch (Befund B6)', () => {
     expect(decision.filter((c) => c.type === 'DIPLOMACY')).toHaveLength(0)
   })
 
+  /**
+   * Nacharbeit ki (T-M17-10/11), Befund M17-D14: eine eigene `declareWar` DERSELBEN
+   * Strategiestufe steht in `view.relations[owner]` noch nicht — sie ist ja selbst nur ein
+   * Befehl in `pending`, nicht angewendeter Zustand. Ohne die Pruefung in `requestPassage`
+   * legte die Taktikstufe hier ein zweites `DIPLOMACY`-Kommando (`requestRightOfWay p3`),
+   * und der Kern lehnte es beim Anwenden mit `INVALID_TARGET`/'Kriegserklärung läuft' ab
+   * (`commands/diplomacy.ts`), weil `declareWar` im selben `step()`-Aufruf zuerst greift.
+   */
+  it('beantragt nicht, wenn im selben Zug eine Kriegserklaerung gegen denselben Empfaenger ansteht (M17-D14)', () => {
+    const context = contextFor(state, 'p1')
+    const explanations: Explanation[] = []
+    const pending: Command[] = [{ type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p3', action: 'declareWar' }]
+    const decision = decideMilitary(context, explanations, pending)
+    expect(decision.filter((c) => c.type === 'MOVE_ARMY')).toHaveLength(0)
+    expect(decision.filter((c) => c.type === 'DIPLOMACY')).toHaveLength(0)
+    const fund = explanations.find((e) => e.reason.includes('Kriegserklärung läuft'))
+    expect(fund).toBeDefined()
+
+    // Gegenprobe auf den Kern: genau die Befehlsfolge, die ein echter Strategietakt liefert
+    // (declareWar zuerst, danach die Taktikstufe) — allAccepted haette den echten Fehler
+    // gezeigt: die zweite Ablehnung entstand erst beim Anwenden, nicht bei canApply allein.
+    const result = step(state, [...pending, ...decision], ctx)
+    const rejected = result.events.filter((e) => e.type === 'COMMAND_REJECTED')
+    expect(rejected).toEqual([])
+  })
+
   it('wiederholt den Antrag erst nach Ablauf seiner Frist', () => {
     let context = contextFor(state, 'p1')
     let explanations: Explanation[] = []
@@ -430,6 +456,24 @@ describe('R-AI-09/AK4 Jede Durchmarsch-Handlung nennt Grund und Alternative', ()
     for (const explanation of cases) {
       expect(explanation.reason.length, JSON.stringify(explanation)).toBeGreaterThan(0)
     }
+
+    // Nacharbeit ki (Befund M17-D15): der Titel nennt "Grund UND Alternative" (R-AI-09/AK4:
+    // "... oder Durchmarsch beantragt, DANN SOLL ihre Erklärung Grund und Alternative
+    // nennen"), die einzige Zusicherung oben prueft aber nur den Grund. `alternative` ist
+    // optional im Typ (`types.ts`), AK4 verlangt es fuer jede Durchmarsch-Handlung.
+    //
+    // Nur auf die Durchmarsch-Erklaerungen selbst eingeschraenkt (Text nennt "Durchmarsch",
+    // "Marsch von", "Heimweg" oder "Land von"): `s15` liefert nebenbei auch eine
+    // Angriffs-Erklaerung ("Greift m2 mit a1 an") aus einem voellig anderen Zweig von
+    // `militaryCommands" — AK4 zaehlt Angriffe nicht auf, und ohne zweites Angriffsziel hat
+    // eine Angriffs-Erklaerung nie eine Alternative (military.ts, `targets[1] ? ... : {}`).
+    // Eine ungefilterte Pruefung waere hier ein Fehlalarm ausserhalb des Anforderungstexts.
+    const isPassageExplanation = (e: Explanation) => /Durchmarsch|Marsch von|Heimweg|Land von/.test(e.action)
+    const passageCases = cases.filter(isPassageExplanation)
+    expect(passageCases.length).toBeGreaterThan(0)
+    for (const explanation of passageCases) {
+      expect(explanation.alternative?.action.length ?? 0, JSON.stringify(explanation)).toBeGreaterThan(0)
+    }
   })
 })
 
@@ -502,6 +546,6 @@ describe('Grundlagen', () => {
 // -- Helfer ------------------------------------------------------------------------------------
 
 /** Ruft die Taktik direkt (P2 usw. pruefen militaryCommands, nicht den ganzen Strategietakt). */
-function decideMilitary(context: AiContext, explanations: Explanation[]): Command[] {
-  return militaryCommands(context, explanations)
+function decideMilitary(context: AiContext, explanations: Explanation[], pending: readonly Command[] = []): Command[] {
+  return militaryCommands(context, explanations, pending)
 }
