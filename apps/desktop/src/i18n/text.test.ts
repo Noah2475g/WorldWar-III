@@ -80,6 +80,12 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'CAPITAL_LOST', 'CAPITAL_MOVED', 'PLAYER_ELIMINATED', 'GAME_ENDED', 'DAY_REPORT',
       // Seit T-M35-04: das Zwischenziel (R-GAME-08/AK2).
       'GOAL_REACHED',
+      // Seit T-M17-04: der Durchmarsch (R-DIP-08/AK3).
+      'RIGHT_OF_WAY_CHANGED',
+      // Seit T-M17-05: Handelsangebote (R-DIP-05).
+      'TRADE_OFFER_CLOSED', 'TRADE_AGREED',
+      // Seit T-M17-06: die Abtretung (R-DIP-09/AK2).
+      'PROVINCE_CEDED',
     ] as const
 
     for (const type of types) {
@@ -93,8 +99,10 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
     // es nicht gibt, faellt weiterhin auf.
     // `_PLURAL` ist die Numerus-Fassung (T-M23-02): gewaehlt, wenn der Satzgegenstand
     // eine Mehrzahl-Macht ist. Beide Endungen haengen am selben Stamm.
+    // `_REVOKED` ist die Kuendigung des Durchmarschs (T-M17-04): dieselbe Art mit
+    // `granted: false`, gewaehlt in `describeEvent`. Sie steht vor den beiden anderen.
     for (const key of Object.keys(de.events)) {
-      const stamm = key.replace(/(_FOREIGN)?(_PLURAL)?$/, '')
+      const stamm = key.replace(/(_REVOKED)?(_FOREIGN)?(_PLURAL)?$/, '')
       expect(types as readonly string[], `events.${key} gehoert zu keinem Ereignis`).toContain(stamm)
     }
   })

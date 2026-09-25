@@ -1,7 +1,8 @@
 import { emit } from '../events/emit'
-import { grantsPassage, relationKey } from '../state/create'
+import { settleTradeOffers } from '../commands/tradeOffer'
+import { expirePassage, grantsPassage, relationKey } from '../state/create'
 import type { Fixed } from '@worldwar/shared'
-import type { GameState, PlayerId } from '../state/types'
+import type { GameState, PlayerId, Relation } from '../state/types'
 import type { Phase, PhaseContext } from './index'
 
 /**
@@ -11,6 +12,30 @@ import type { Phase, PhaseContext } from './index'
  * declaration is recorded as what it is. The delay is what makes a declaration a
  * decision rather than a formality.
  */
+
+/**
+ * Ein Krieg beendet Durchmarsch **und** Kartenfreigabe, in beiden Richtungen (Befund M17-3).
+ *
+ * Entschieden in T-M17-04, kippbar (Fragment A zu `DECISIONS.md`). D29.1 sagte, ein Krieg
+ * loesche „wie heute nur den Durchmarsch" — er loeschte seit M6 auch die Karte, und dabei
+ * bleibt es: was der andere bis hierher gesehen hat, behaelt er ohnehin im
+ * Aufklaerungsgedaechtnis (`player.intel`); geloescht wird nur die **laufende** Sicht. Und
+ * `grantRightOfWay`/`shareMap` verweigern jede Freigabe im Krieg — ein Zustand, den kein
+ * Befehl herstellen darf, soll auch kein Krieg stehen lassen.
+ *
+ * Gilt fuer die wirksame Erklaerung **und** fuer den Ueberfall. Den zweiten Fall gab es vor
+ * dem gerichteten Recht nicht: wer ueberfallen konnte, hatte nie ein Recht zu verlieren.
+ * Jetzt kann A dem B gewaehren und B trotzdem ueberfallen — und ohne diese Zeile lebte As
+ * Gewaehrung nach dem naechsten Frieden still wieder auf.
+ */
+function endTies(relation: Relation): void {
+  relation.aGrantsPassage = false
+  relation.bGrantsPassage = false
+  relation.aPassageEndsAtTick = null
+  relation.bPassageEndsAtTick = null
+  relation.aSharesMap = false
+  relation.bSharesMap = false
+}
 
 /** An army standing in someone's territory while not at war is an act of aggression. */
 function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
@@ -22,9 +47,8 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
 
     const relation = draft.diplomacy.relations[relationKey(army.owner, province.owner)]
     if (!relation || relation.state === 'war') continue
-    // Gerichtet gelesen seit Stufe 4: der Gast ist die Armee, der Gewaehrende der Besitzer
-    // der Provinz. Solange jeder Schreiber beide Richtungen setzt (T-M17-03), ist das
-    // dieselbe Antwort wie das alte symmetrische `rightOfWay`; T-M17-04 trennt sie.
+    // Gerichtet (T-M17-04, R-DIP-08/AK1): der Gast ist die Armee, der Gewaehrende der
+    // Besitzer der Provinz. Wer gewaehrt, darf damit **nicht** selbst hinein (Befund B1).
     if (grantsPassage(draft, province.owner, army.owner) || relation.state === 'alliance') continue
 
     // No declaration, but boots on foreign soil: war starts immediately and costs
@@ -32,6 +56,7 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
     relation.state = 'war'
     relation.sinceTick = draft.tick
     relation.warEffectiveAtTick = null
+    endTies(relation)
     draft.players[army.owner]!.reputation -= ctx.rules.constants.surpriseAttackReputationLoss
     // Der Ueberfall macht das **Opfer** boese, nicht den Taeter — deshalb ist das
     // Verstimmungs-Record gerichtet und kein gemeinsamer Schluessel wie `relations`.
@@ -53,25 +78,25 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
   }
 }
 
+/**
+ * Die Reihenfolge im Tick (D29.3, T-M17-04): (1) Kriegserklaerungen treten in Kraft,
+ * (2) abgelaufene Kuendigungsfristen raeumen ihre Richtung ab, (3) Ueberfaelle werden erkannt,
+ * (4) **danach** verfallen Angebote. Bis T-M17-04 verfielen die Angebote vor den Ueberfaellen;
+ * fuer diplomatische Angebote ist das gleichgueltig (keine der beiden Stufen liest, was die
+ * andere schreibt), fuer die Handelsangebote aus T-M17-05 nicht — dort ist „Ueberfall und
+ * Verfall im selben Tick" der Pflichtfall.
+ */
 export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
   for (const [key, relation] of Object.entries(draft.diplomacy.relations)) {
-    // Declarations coming into force.
+    const [a, b] = key.split('|') as [PlayerId, PlayerId]
+
+    // (1) Declarations coming into force.
     if (relation.warEffectiveAtTick !== null && draft.tick >= relation.warEffectiveAtTick) {
       relation.state = 'war'
       relation.sinceTick = draft.tick
       relation.warEffectiveAtTick = null
-      // Beide Richtungen, weil Stufe 3 hier ein symmetrisches Feld loeschte: der Krieg
-      // nimmt genau so viel weg wie vorher, nicht mehr und nicht weniger. (D29.1 sagt,
-      // ein Krieg loesche „nur den Durchmarsch" — er loescht seit je auch die Karte;
-      // die Frage gehoert nach T-M17-04, siehe PROBLEME.md M17-3.)
-      relation.aGrantsPassage = false
-      relation.bGrantsPassage = false
-      relation.aPassageEndsAtTick = null
-      relation.bPassageEndsAtTick = null
-      relation.aSharesMap = false
-      relation.bSharesMap = false
+      endTies(relation)
 
-      const [a, b] = key.split('|') as [PlayerId, PlayerId]
       emit(ctx.events, draft.tick, 'DIPLOMACY_CHANGED', {
         playerId: a,
         targetPlayerId: b,
@@ -79,6 +104,13 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
         audience: [a, b],
       })
     }
+
+    // (2) Eine abgelaufene Kuendigung raeumt ihre Richtung ab (R-DIP-08/AK3). `grantsPassage`
+    // antwortet ab dem Tick der Frist ohnehin „nein"; aufgeraeumt wird trotzdem, damit der
+    // Zustand kein Recht fuehrt, das nicht mehr gilt, und ein neues `grantRightOfWay` wieder
+    // unbefristet beginnt.
+    expirePassage(relation, a, b, draft.tick)
+    expirePassage(relation, b, a, draft.tick)
 
     // Truces expire back into plain peace.
     if (relation.state === 'truce') {
@@ -91,12 +123,20 @@ export const diplomacy: Phase = (draft: GameState, ctx: PhaseContext) => {
     }
   }
 
-  // Offers do not stay on the table forever.
+  // (3)
+  detectSurpriseAttacks(draft, ctx)
+
+  // (4) Offers do not stay on the table forever — and how long they stay is a rule, not a
+  // number in the code (Befund B3, `offerLifetimeDays`).
   // eslint-disable-next-line no-restricted-syntax -- days x ticks-per-day, plain integers
-  const offerLifetime = 3 * ctx.rules.constants.ticksPerDay
+  const offerLifetime = ctx.rules.constants.offerLifetimeDays * ctx.rules.constants.ticksPerDay
   draft.diplomacy.offers = draft.diplomacy.offers.filter((offer) => draft.tick - offer.tick < offerLifetime)
 
-  detectSurpriseAttacks(draft, ctx)
+  // (4) Handelsangebote (T-M17-05, D29.3): ausgeschiedene Macht, Krieg — auch der Ueberfall eben
+  // in Schritt 3 — oder abgelaufene Frist schliessen sie mit Rueckgabe. Ein Durchlauf, ein Grund:
+  // „Ueberfall und Verfall im selben Tick" gibt die Treuhand genau einmal zurueck, als Krieg.
+  settleTradeOffers(draft, ctx)
+
   relax(draft, ctx)
 }
 

@@ -308,6 +308,76 @@ export interface GoalReachedEvent extends BaseEvent {
   day: number
 }
 
+/**
+ * Ein Durchmarschrecht beginnt oder wird gekuendigt (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * `playerId` ist der **Gewaehrende**, `targetPlayerId` der **Gast** — gerichtet wie das Recht
+ * selbst. `granted: false` ist die Kuendigung, und `effectiveAtTick` der erste Tick, in dem der
+ * Gast ein Eindringling ist; bei `granted: true` der Tick der Gewaehrung. Beide erfahren es
+ * (`audience` beide), sonst niemand: wer wen durchlaesst, ist Sache der Beteiligten (R-DIP-04).
+ * Kein Alarm — die Frist ist gerade dafuer da, dass Zeit zum Reagieren bleibt.
+ */
+export interface RightOfWayChangedEvent extends BaseEvent {
+  type: 'RIGHT_OF_WAY_CHANGED'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  granted: boolean
+  effectiveAtTick: Tick
+}
+
+/**
+ * Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5). `invalid` heisst: eine der beiden
+ * Maechte ist ausgeschieden, ODER (seit T-M17-06, Nachtrag Befund M17-D7) eine angebotene oder
+ * verlangte Provinz ist nicht mehr abtretbar (`provincesLapsed`). Der Spielertext in de.ts
+ * (`diplomacy.tradeClosed.invalid`) nennt deshalb beide Ursachen, keine als sicher.
+ */
+export type TradeOfferCloseReason = 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'war' | 'invalid'
+
+/**
+ * Ein Handelsangebot ist geschlossen (T-M17-05, R-DIP-05, D29.5).
+ *
+ * `playerId` ist der **Anbieter**, `targetPlayerId` der **Empfaenger**. Nur die beiden lesen es
+ * (`audience` beide). Bewusst **ohne** Mengen: was zurueckging, steht im Bestand, und der
+ * Anbieter kennt sein Angebot.
+ */
+export interface TradeOfferClosedEvent extends BaseEvent {
+  type: 'TRADE_OFFER_CLOSED'
+  offerId: string
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  reason: TradeOfferCloseReason
+}
+
+/**
+ * Zwei Maechte haben gehandelt (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` die beiden. **Kein Mengenfeld** — die Welt erfaehrt,
+ * dass gehandelt wird, nicht wie viel. `describeEvent` uebernimmt jedes flache Feld in die
+ * Werte eines Satzes; ein Mengenfeld hier waere also sofort im Protokoll jedes Unbeteiligten.
+ */
+export interface TradeAgreedEvent extends BaseEvent {
+  type: 'TRADE_AGREED'
+  /** Der Anbieter. */
+  playerId: PlayerId
+  /** Der Annehmende. */
+  targetPlayerId: PlayerId
+}
+
+/**
+ * Eine Provinz wechselt durch Vertrag den Besitzer (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` Vorbesitzer und Neubesitzer. **Kein Preis** — was
+ * dafuer gegeben wurde, erfaehrt die Welt nicht; `describeEvent` uebernimmt jedes flache Feld, ein
+ * Mengenfeld hier stuende sofort im Protokoll jedes Unbeteiligten. **Kein Alarm:** eine Abtretung
+ * ist verabredet, nicht erlitten, und haelt niemandes Vorspulen an. Nicht in `ALERT_TYPES`.
+ */
+export interface ProvinceCededEvent extends BaseEvent {
+  type: 'PROVINCE_CEDED'
+  provinceId: ProvinceId
+  previousOwner: PlayerId
+  newOwner: PlayerId
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -336,6 +406,10 @@ export type GameEvent =
   | GameEndedEvent
   | DayReportEvent
   | GoalReachedEvent
+  | RightOfWayChangedEvent
+  | TradeOfferClosedEvent
+  | TradeAgreedEvent
+  | ProvinceCededEvent
 
 export type EventType = GameEvent['type']
 
@@ -368,6 +442,10 @@ export const EVENT_TYPES = [
   'GAME_ENDED',
   'DAY_REPORT',
   'GOAL_REACHED',
+  'RIGHT_OF_WAY_CHANGED',
+  'TRADE_OFFER_CLOSED',
+  'TRADE_AGREED',
+  'PROVINCE_CEDED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.

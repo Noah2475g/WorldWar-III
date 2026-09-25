@@ -116,6 +116,11 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1
   }
 
+  // Handelsangebote (T-M17-05): der Grund mit Namen statt Schluessel — „withdrawn" sagt niemandem etwas.
+  if (event.type === 'TRADE_OFFER_CLOSED') values.reason = t(`diplomacy.tradeClosed.${String(record.reason)}`)
+  // Die Abtretung (T-M17-06): der Vorbesitzer mit Namen — `previousOwner` ist eine Kennung.
+  if (event.type === 'PROVINCE_CEDED') values.previous = playerName(record.previousOwner)
+
   return values
 }
 
@@ -518,6 +523,9 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
   // Stellen, und eine davon würde eines Tages vergessen.
   const fremd = !concernsViewer(event, naming.viewer)
   let key = fremd && FOREIGN_TEXTS.has(event.type) ? `${event.type}_FOREIGN` : event.type
+  // Die Kündigung des Durchmarschs ist dieselbe Ereignisart wie die Gewährung (T-M17-04, D29.5),
+  // nur mit `granted: false` — ein eigener Satz am selben Stamm, nach der Konvention der Endungen.
+  if (event.type === 'RIGHT_OF_WAY_CHANGED' && !event.granted) key = `${key}_REVOKED`
 
   const values = valuesFor(event, map, naming)
 

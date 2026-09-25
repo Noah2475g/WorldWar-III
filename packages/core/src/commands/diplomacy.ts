@@ -1,6 +1,6 @@
 import { emit } from '../events/emit'
-import { relationKey } from '../state/create'
-import type { GameState, PlayerId, Relation } from '../state/types'
+import { grantsPassage, passageEndsAtTick, relationKey, setMapShared, setPassage } from '../state/create'
+import type { DiplomaticOffer, GameState, PlayerId, Relation } from '../state/types'
 import { registerCommand } from './registry'
 import { fail, ok, type DiplomacyCommand } from './types'
 
@@ -18,12 +18,12 @@ export function findRelation(state: GameState, a: PlayerId, b: PlayerId) {
 }
 
 /**
- * Durchmarsch in **beiden** Richtungen setzen — vorlaeufig, und mit Ansage (T-M17-03).
+ * Durchmarsch in **beiden** Richtungen setzen — nur noch fuer das Buendnis und seinen Bruch.
  *
- * Bis Stufe 3 war das Recht ein symmetrisches Feld; dieser Schritt richtet den *Zustand*,
- * nicht das *Verhalten*. Wer hier eine Richtung weglaesst, aendert die Partie mitten in
- * einer Migrationsaufgabe — dann verschoeben sich die Golden-Master aus zwei Gruenden
- * zugleich, und keiner waere mehr vom anderen zu trennen. Die Richtung ist T-M17-04.
+ * Ein Buendnis ist gegenseitig (D29.1): `acceptAlliance` setzt beide Richtungen beider Felder,
+ * `breakAlliance` loescht sie. Alles andere setzt seit T-M17-04 genau **eine** Richtung
+ * (`setPassage` in `state/create.ts`) — bis dahin tat es auch `grantRightOfWay`, und wer
+ * gewaehrte, durfte damit selbst folgenlos ins Land des anderen (Befund B1).
  */
 function setPassageBothWays(relation: Relation, value: boolean): void {
   relation.aGrantsPassage = value
@@ -39,9 +39,16 @@ function setMapBothWays(relation: Relation, value: boolean): void {
 }
 
 /** Offers waiting for an answer, so acceptance is a real second step. */
-export function pendingOffer(state: GameState, from: PlayerId, to: PlayerId, kind: 'peace' | 'alliance') {
+export function pendingOffer(state: GameState, from: PlayerId, to: PlayerId, kind: DiplomaticOffer['kind']) {
   return state.diplomacy.offers.find(
     (offer) => offer.from === from && offer.to === to && offer.kind === kind,
+  )
+}
+
+/** Nimmt **ein** Angebot vom Tisch — das von `from` an `to` dieser Art, sonst keines (B4). */
+function dropOffer(state: GameState, from: PlayerId, to: PlayerId, kind: DiplomaticOffer['kind']): void {
+  state.diplomacy.offers = state.diplomacy.offers.filter(
+    (offer) => !(offer.from === from && offer.to === to && offer.kind === kind),
   )
 }
 
@@ -84,12 +91,69 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
       case 'shareMap':
         if (relation.state === 'war') return fail('INVALID_TARGET', { reason: 'im Krieg' })
         return ok
+      // Der Antrag (R-DIP-08/AK2): ich bitte das Ziel, **mich** durch **sein** Land zu lassen.
+      case 'requestRightOfWay':
+        if (relation.state === 'war') return fail('INVALID_TARGET', { reason: 'im Krieg' })
+        if (relation.warEffectiveAtTick !== null) return fail('INVALID_TARGET', { reason: 'Kriegserklärung läuft' })
+        if (grantsPassage(state, command.targetPlayerId, command.playerId)) {
+          // Waehrend einer laufenden Kuendigung ist das Recht noch da, aber schon auf dem Weg
+          // hinaus (Nacharbeit kern, Pruefer-Befund: 'bereits gewährt' war hier irrefuehrend —
+          // revokeRightOfWay nennt denselben Zustand richtig 'bereits gekündigt').
+          if (passageEndsAtTick(state, command.targetPlayerId, command.playerId) !== null) {
+            return fail('INVALID_TARGET', { reason: 'gekündigt' })
+          }
+          return fail('INVALID_TARGET', { reason: 'bereits gewährt' })
+        }
+        return ok
+      // Die Annahme: das Ziel hat mich gebeten, ich lasse es durch.
+      case 'acceptRightOfWay':
+        if (!pendingOffer(state, command.targetPlayerId, command.playerId, 'rightOfWay')) {
+          return fail('INVALID_TARGET', { reason: 'kein Angebot' })
+        }
+        // Ein Antrag, der den Kriegsausbruch ueberlebt hat, ist erledigt: im Krieg verweigert
+        // schon `grantRightOfWay` jede Freigabe, und die Annahme ist nichts anderes.
+        if (relation.state === 'war') return fail('INVALID_TARGET', { reason: 'im Krieg' })
+        return ok
+      // Die Kuendigung (R-DIP-08/AK3): nur, was ich gewaehrt habe, und nur einmal.
+      case 'revokeRightOfWay':
+        if (!grantsPassage(state, command.playerId, command.targetPlayerId)) {
+          return fail('INVALID_TARGET', { reason: 'nicht gewährt' })
+        }
+        // Ein zweiter Widerruf wuerde die Frist nur verschieben — und damit dem Gast mehr Zeit
+        // geben, als der erste versprochen hat.
+        if (passageEndsAtTick(state, command.playerId, command.targetPlayerId) !== null) {
+          return fail('INVALID_TARGET', { reason: 'bereits gekündigt' })
+        }
+        // Im Buendnis laesst das Buendnis selbst durch (`detectSurpriseAttacks`); ein Widerruf
+        // aenderte dort nichts ausser der Anzeige — und die waere dann falsch.
+        if (relation.state === 'alliance') return fail('INVALID_TARGET', { reason: 'im Bündnis' })
+        return ok
     }
   },
 
   apply: (draft, command, ctx) => {
     const relation = findRelation(draft, command.playerId, command.targetPlayerId)!
     const both = [command.playerId, command.targetPlayerId]
+
+    /** Das Recht `playerId → targetPlayerId` beginnt (wieder) unbefristet. */
+    const grantPassage = (): void => {
+      // Wer um das gebeten hat, was er gerade bekommt, muss nicht weiter warten.
+      dropOffer(draft, command.targetPlayerId, command.playerId, 'rightOfWay')
+      const unbefristet =
+        grantsPassage(draft, command.playerId, command.targetPlayerId) &&
+        passageEndsAtTick(draft, command.playerId, command.targetPlayerId) === null
+      // Nichts geaendert, nichts zu erzaehlen: die alte KI schickte `grantRightOfWay` jeden
+      // Tag (Befund B2), und alte Kommandologs tun es weiter.
+      if (unbefristet) return
+      setPassage(relation, command.playerId, command.targetPlayerId, true, null)
+      emit(ctx.events, draft.tick, 'RIGHT_OF_WAY_CHANGED', {
+        playerId: command.playerId,
+        targetPlayerId: command.targetPlayerId,
+        granted: true,
+        effectiveAtTick: draft.tick,
+        audience: both,
+      })
+    }
 
     switch (command.action) {
       case 'declareWar': {
@@ -104,12 +168,13 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         break
       }
       case 'offerPeace':
-      case 'offerAlliance': {
-        const kind = command.action === 'offerPeace' ? 'peace' : 'alliance'
+      case 'offerAlliance':
+      case 'requestRightOfWay': {
+        const kind = command.action === 'offerPeace' ? 'peace' : command.action === 'offerAlliance' ? 'alliance' : 'rightOfWay'
+        // Ein wiederholtes Angebot ersetzt das alte und beginnt seine Frist neu.
+        dropOffer(draft, command.playerId, command.targetPlayerId, kind)
         draft.diplomacy.offers = [
-          ...draft.diplomacy.offers.filter(
-            (offer) => !(offer.from === command.playerId && offer.to === command.targetPlayerId && offer.kind === kind),
-          ),
+          ...draft.diplomacy.offers,
           { from: command.playerId, to: command.targetPlayerId, kind, tick: draft.tick },
         ]
         break
@@ -156,12 +221,27 @@ registerCommand<DiplomacyCommand>('DIPLOMACY', {
         })
         break
       }
+      // Beide setzen seit T-M17-04 nur die **eigene** Richtung (R-DIP-08/AK1). Ein
+      // `grantRightOfWay` waehrend einer Kuendigung nimmt sie zurueck.
       case 'grantRightOfWay':
-        setPassageBothWays(relation, true)
+      case 'acceptRightOfWay':
+        grantPassage()
         break
       case 'shareMap':
-        setMapBothWays(relation, true)
+        setMapShared(relation, command.playerId, command.targetPlayerId, true)
         break
+      case 'revokeRightOfWay': {
+        const ends = draft.tick + ctx.rules.constants.rightOfWayNoticeTicks
+        setPassage(relation, command.playerId, command.targetPlayerId, true, ends)
+        emit(ctx.events, draft.tick, 'RIGHT_OF_WAY_CHANGED', {
+          playerId: command.playerId,
+          targetPlayerId: command.targetPlayerId,
+          granted: false,
+          effectiveAtTick: ends,
+          audience: both,
+        })
+        break
+      }
     }
   },
 })

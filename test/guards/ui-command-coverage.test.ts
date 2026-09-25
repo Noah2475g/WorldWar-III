@@ -56,6 +56,14 @@ function uiCommandSource(): string {
 const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
   SET_CAPITAL:
     'Die Hauptstadtverlegung erreicht die Oberflaeche ueber die Provinzleiste (provinceActions), nicht ueber actions.ts als eigener Befehlstyp.',
+  OFFER_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): der Kern nimmt Handelsangebote mit Treuhand an (T-M17-05, R-DIP-05); das Angebotsformular im Diplomatiepanel kommt mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
+  ACCEPT_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): das Angebot steht schon in publicView().tradeOffers.incoming; Knopf und Meldung kommen mit T-M17-14. T-M17-14 streicht diesen Eintrag.',
+  DECLINE_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Ablehnen kommt mit der Liste eingehender Angebote. T-M17-14 streicht diesen Eintrag.',
+  WITHDRAW_TRADE:
+    'Bis T-M17-14 (Oberflaeche Handel, R-DIP-07): Zuruecknehmen kommt mit der Liste ausgehender Angebote. T-M17-14 streicht diesen Eintrag.',
 }
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
@@ -109,4 +117,44 @@ describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () =>
 
     expect(fehlend, `Haltungen ohne Knopf: ${fehlend.join(', ')}`).toEqual([])
   })
+
+  it('bietet jede diplomatische Aktion an — oder nennt die Aufgabe, die sie bringt (T-M17-04)', () => {
+    // Derselbe Fall wie bei den Haltungen, eine Ebene tiefer: `DIPLOMACY` ist EIN Kommandotyp
+    // und kommt in actions.ts vor, also war der Test oben fuer jede neue Aktion darin gruen.
+    // T-M17-04 brachte drei (Antrag, Annahme, Kuendigung des Durchmarschs), und keine davon
+    // hatte einen Knopf — der Waechter haette es nie gesehen.
+    const aktionen = readFileSync(join(ROOT, 'packages/core/src/commands/types.ts'), 'utf8')
+      .match(/export type DiplomacyAction =([\s\S]*?)\n\n/)?.[1]
+      ?.match(/'(\w+)'/g)
+      ?.map((entry) => entry.replaceAll("'", ''))
+
+    expect(aktionen, 'DiplomacyAction nicht gefunden').toBeTruthy()
+    expect(aktionen!.length, 'zu wenige Aktionen gefunden — liest der Waechter noch den Typ?').toBeGreaterThanOrEqual(11)
+    const source = uiCommandSource()
+    const erreicht = (aktion: string) => new RegExp(`['"\`]${aktion}['"\`]`).test(source)
+
+    const fehlend = aktionen!.filter((aktion) => !DIPLOMATIE_NOCH_OHNE_KNOPF[aktion] && !erreicht(aktion))
+    expect(fehlend, `Diplomatische Aktionen ohne Knopf: ${fehlend.join(', ')}`).toEqual([])
+
+    // Und umgekehrt: eine Ausnahme fuer eine Aktion, die es nicht gibt oder die schon einen Knopf
+    // hat, ist veraltet. So muss T-M17-14 die Zeile streichen, wenn es die Knoepfe baut.
+    const veraltet = Object.keys(DIPLOMATIE_NOCH_OHNE_KNOPF).filter(
+      (aktion) => !aktionen!.includes(aktion) || erreicht(aktion),
+    )
+    expect(veraltet, `Veraltete Ausnahmen: ${veraltet.join(', ')}`).toEqual([])
+  })
 })
+
+/**
+ * Diplomatische Aktionen, die der Kern schon kann und die Oberflaeche noch nicht anbietet — mit
+ * der Aufgabe, die sie bringt (T-M17-04). Dieselbe Regel wie `NICHT_FUER_DEN_SPIELER`: eine
+ * Ausnahme ohne Grund ist eine Luecke mit Erlaubnis.
+ */
+const DIPLOMATIE_NOCH_OHNE_KNOPF: Record<string, string> = {
+  requestRightOfWay:
+    'Antrag auf Durchmarsch (R-DIP-08/AK2). Der Knopf kommt mit T-M17-14 ins Diplomatiepanel; bis dahin beantragt nur ein Skript, ab T-M17-10 die KI.',
+  acceptRightOfWay:
+    'Annahme eines Antrags (R-DIP-08/AK2). Der Antrag steht schon in incomingOffers; Knopf und Meldung kommen mit T-M17-14.',
+  revokeRightOfWay:
+    'Kuendigung mit Frist (R-DIP-08/AK3). Der Knopf kommt mit T-M17-14; das Ereignis RIGHT_OF_WAY_CHANGED steht schon im Protokoll.',
+}

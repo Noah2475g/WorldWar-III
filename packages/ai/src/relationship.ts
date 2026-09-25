@@ -23,7 +23,7 @@ export interface RelationshipParts {
   reputation: number
   /** Meine Verstimmung gegen sie, 0..1000, negativ gewichtet. */
   grievance: number
-  /** Bündnis, gewährter Durchmarsch, geteilte Karte. */
+  /** Bündnis, mir gewährter Durchmarsch, mir gezeigte Karte (seit T-M17-04 gerichtet). */
   ties: number
   /** Krieg gegen einen meiner Verbündeten, negativ gewichtet. */
   hostility: number
@@ -103,10 +103,15 @@ export function relationship(
 
   // Bündnis wiegt schwerer als Durchmarsch, Durchmarsch schwerer als geteilte Karte:
   // die Reihenfolge dessen, was jemand aufs Spiel setzt, wenn er es gewährt.
+  //
+  // Gezählt wird, was **der andere mir** gewährt (T-M17-04, D29.8) — nicht, was ich ihm gewähre.
+  // Das ist eine Folge meines Vertrauens, kein Grund dafür; mitgezählt, mochte die KI jemanden
+  // mehr, weil sie ihm selbst etwas gegeben hat. Verhaltensgleich zu T-M17-03: die Sicht las
+  // `rightOfWay` und `sharedMap` dort schon in der Richtung „er gewährt mir".
   let ties = 0
   if (relation?.state === 'alliance') ties += 300
-  if (relation?.rightOfWay) ties += 150
-  if (relation?.sharedMap) ties += 50
+  if (relation?.passageReceived) ties += 150
+  if (relation?.mapReceived) ties += 50
 
   // Krieg gegen einen meiner Verbündeten. Das ist der Bündnisfall aus AK2, hier als
   // Verhältniswert — die Kriegserklärung selbst entsteht in diplomacy.ts.

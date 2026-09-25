@@ -1,5 +1,5 @@
 import { armyHp } from '../state/army'
-import { grantsPassage, relationKey, sharesMap } from '../state/create'
+import { grantsPassage, passageEndsAtTick, relationKey, sharesMap } from '../state/create'
 import type {
   ArmyId,
   BuildingKey,
@@ -12,6 +12,7 @@ import type {
   Stance,
   Terrain,
   Tick,
+  TradeOffer,
 } from '../state/types'
 import type { Fixed } from '@worldwar/shared'
 import type { Rules } from '../rules/types'
@@ -199,17 +200,34 @@ export interface PublicView {
     reputation: Fixed
   }[]
   /**
-   * Meine Beziehungen. **Die Feldnamen `rightOfWay` und `sharedMap` bleiben in T-M17-03
-   * absichtlich stehen**, obwohl der Zustand seine Felder gerichtet fuehrt: dieser Schritt
-   * ist die Migration, und solange jeder Schreiber beide Richtungen setzt, sagt ein Feld
-   * je Beziehung dieselbe Wahrheit wie zwei. T-M17-04 benennt sie in `passageGranted`,
-   * `passageReceived`, `passageEndsAtTick`, `mapShared` und `mapReceived` um — dann, und
-   * erst dann, gibt es zwei verschiedene Antworten zu zeigen.
+   * Meine Beziehungen — Durchmarsch und Karte **mit Richtung**, immer von mir aus gesehen
+   * (T-M17-04, R-DIP-08, D29.6). Bis dahin hiessen die Felder `rightOfWay` und `sharedMap`; ein
+   * Feld je Beziehung reichte, solange jeder Schreiber beide Richtungen setzte (T-M17-03).
    *
-   * Gelesen wird schon jetzt gerichtet, naemlich in der Richtung „der andere gewaehrt mir":
-   * `rightOfWay` = er laesst mich durch, `sharedMap` = er zeigt mir seine Karte.
+   * - `passageGranted`: ich lasse dich durch. `passageReceived`: du laesst mich durch.
+   * - `passageEndsAtTick`: die Kuendigungsfrist beider Richtungen, `null` = unbefristet oder
+   *   gar nicht. `received` ist die des Gasts (bis dahin muss er hinaus), `granted` die des
+   *   Gewaehrenden (er hat schon gekuendigt). Beide kennen beide — das Ereignis
+   *   `RIGHT_OF_WAY_CHANGED` geht an beide, also verraet die Sicht nichts Neues.
+   * - `mapShared`: ich zeige dir meine Karte. `mapReceived`: du zeigst mir deine.
    */
-  relations: Record<PlayerId, { state: DiplomaticState; rightOfWay: boolean; sharedMap: boolean; sinceTick: Tick }>
+  relations: Record<
+    PlayerId,
+    {
+      state: DiplomaticState
+      passageGranted: boolean
+      passageReceived: boolean
+      passageEndsAtTick: { granted: Tick | null; received: Tick | null }
+      mapShared: boolean
+      mapReceived: boolean
+      sinceTick: Tick
+      /**
+       * Laufende Kriegserklaerung zwischen mir und dir: ab diesem Tick Krieg (T-M17-10). Nur
+       * solange eine laeuft. Beide kennen sie — `WAR_DECLARED` geht an beide (R-DIP-04).
+       */
+      warEffectiveAtTick?: Tick
+    }
+  >
   /**
    * Wer mit wem öffentlich Krieg führt (T-M15-05, R-DIP-06/AK2).
    *
@@ -246,6 +264,13 @@ export interface PublicView {
    * away the end of the game is.
    */
   victory: { condition: string; winner: PlayerId | null; pointsShareToWin?: number }
+  /**
+   * Handelsangebote, an denen ich beteiligt bin (R-DIP-05, T-M17-05, D29.6) — nach dem Muster von
+   * `incomingOffers`: an mich (`incoming`) und von mir (`outgoing`), mit beiden Buendeln, als Kopie.
+   * Was andere einander anbieten, steht hier nicht (R-DIP-04). Ein eingehendes Angebot zeigt, was
+   * der Anbieter hinterlegt hat — das ist der Inhalt des Angebots, kein Leck.
+   */
+  tradeOffers: { incoming: TradeOffer[]; outgoing: TradeOffer[] }
 }
 
 /** Provinces the player can currently observe. */
@@ -390,11 +415,18 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
     if (!relation) continue
     relations[other] = {
       state: relation.state,
-      rightOfWay: grantsPassage(state, other, playerId),
-      sharedMap: sharesMap(state, other, playerId),
+      passageGranted: grantsPassage(state, playerId, other),
+      passageReceived: grantsPassage(state, other, playerId),
+      passageEndsAtTick: {
+        granted: passageEndsAtTick(state, playerId, other),
+        received: passageEndsAtTick(state, other, playerId),
+      },
+      mapShared: sharesMap(state, playerId, other),
+      mapReceived: sharesMap(state, other, playerId),
       // Seit wann dieser Zustand gilt. Der Krieg hat ein Anfangsdatum, sonst kann
       // niemand fragen, ob er sich festgefahren hat (R-DIP-06/AK4).
       sinceTick: relation.sinceTick,
+      ...(relation.warEffectiveAtTick !== null ? { warEffectiveAtTick: relation.warEffectiveAtTick } : {}),
     }
   }
 
@@ -408,6 +440,13 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       const b = state.playerOrder[j]!
       if (state.diplomacy.relations[relationKey(a, b)]?.state === 'war') publicWars.push({ a, b })
     }
+  }
+
+  // Eigene Handelsangebote (T-M17-05, D29.6) — Kopien, nie Verweise in den Zustand.
+  const tradeOffers: PublicView['tradeOffers'] = { incoming: [], outgoing: [] }
+  for (const offer of state.diplomacy.tradeOffers) {
+    if (offer.to === playerId) tradeOffers.incoming.push(copyTradeOffer(offer))
+    else if (offer.from === playerId) tradeOffers.outgoing.push(copyTradeOffer(offer))
   }
 
   return {
@@ -462,5 +501,15 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
       winner: state.victory.winner,
       ...(rules ? { pointsShareToWin: state.victory.pointsShareToWin } : {}),
     },
+    tradeOffers,
+  }
+}
+
+/** Ein Handelsangebot als Kopie fuer die Sicht (T-M17-05): wer die Sicht aendert, aendert nicht den Zustand. */
+function copyTradeOffer(offer: TradeOffer): TradeOffer {
+  return {
+    ...offer,
+    give: { resources: { ...offer.give.resources }, provinces: offer.give.provinces.slice() },
+    want: { resources: { ...offer.want.resources }, provinces: offer.want.provinces.slice() },
   }
 }

@@ -120,6 +120,20 @@ export interface AiRules {
   resourceWeights: Record<ResourceKey, Fixed>
   buildShareDefault: Fixed
   threatRange: number
+  /** Annahme eines Handelsangebots ab erhaltenem Wert × 1000 ≥ gegebenem Wert × dieser Zahl (T-M17-10, D29.8). */
+  tradeAcceptMarginPermille: Fixed
+  /** Ein eigenes Angebot nur, wenn der Kauf der Fehlmenge an der Börse den Kurs um mehr als so viel ‰ bewegte. */
+  tradeImpactPermille: Fixed
+  /** Ein eigenes Angebot gibt Marktwert × diese Zahl / 1000 — muss über der Annahmemarge liegen (E15). */
+  tradeOfferPremiumPermille: Fixed
+  /** Dieser Anteil jedes Bestands (‰) ist für Handelsangebote tabu, gegeben wie angenommen (E16). */
+  tradeKeepStockPermille: Fixed
+  /** So viele Spieltage Ertrag ist eine Provinz der KI wert (D29.7, D29.8, T-M17-11). */
+  provinceValueHorizonDays: number
+  /** Die KI tritt eine eigene Provinz erst ab Provinzwert × diese Zahl / 1000 ab (R-DIP-09/AK4). */
+  provinceSalePremiumPermille: Fixed
+  /** Lage: je Landnachbar des Halters (höchstens drei) ein Drittel dieses Anteils am Ertragswert. */
+  provinceValuePositionPermille: Fixed
 }
 
 export interface RuleConstants {
@@ -235,6 +249,23 @@ export interface RuleConstants {
   goalPopulationSharePermille: number
   /** Anteil an allen Punkten, zweite Marke, in Promille. */
   goalPointShareSecondPermille: number
+
+  // Diplomatie und Handel in M17 (D29.7). Die Spionage haengt ihre Zahlen dahinter an.
+  /**
+   * Wie viele Spieltage ein diplomatisches Angebot oder ein Antrag auf Durchmarsch liegt
+   * (R-DIP-08/AK5, T-M17-04). Bis dahin stand `3` im Code der Phase (Befund B3).
+   */
+  offerLifetimeDays: number
+  /** Kuendigungsfrist des Durchmarschs in Ticks: so lange darf der Gast noch bleiben (R-DIP-08/AK3). */
+  rightOfWayNoticeTicks: number
+  /** Wie viele Spieltage ein Handelsangebot liegt, bevor es mit Rueckgabe verfaellt (R-DIP-05/AK1, T-M17-05). */
+  tradeOfferLifetimeDays: number
+  /** Hoechstens so viele offene Handelsangebote je Anbieter (D29.2: `QUEUE_FULL`). */
+  maxOpenTradeOffers: number
+  /** Hoechstmenge Geld je Seite eines Handelsangebots, Festkomma (Referenz 9.4). */
+  tradeMaxMoney: Fixed
+  /** Hoechstmenge je anderem Rohstoff und Seite, Festkomma (Referenz 9.4: 30 % der Geldgrenze). */
+  tradeMaxResource: Fixed
 }
 
 export interface Rules {

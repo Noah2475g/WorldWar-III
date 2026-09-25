@@ -431,6 +431,21 @@ export const de = {
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
     // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
     GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+    // Der Durchmarsch (T-M17-04, R-DIP-08/AK3): `player` gewährt, `target` ist der Gast. Nur die
+    // beiden lesen es. Die Kündigung ist dieselbe Ereignisart mit `granted: false` und trägt die
+    // Endung `_REVOKED`; der Tag ist der erste, an dem eine Armee des Gasts dort ein Überfall ist.
+    RIGHT_OF_WAY_CHANGED: '{{player}} gewährt {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_PLURAL: '{{player}} gewähren {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_REVOKED: '{{player}} kündigt {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    RIGHT_OF_WAY_CHANGED_REVOKED_PLURAL: '{{player}} kündigen {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    // Handelsangebote (T-M17-05, R-DIP-05). `player` ist der Anbieter, `target` der Empfänger. Das
+    // Schließen lesen nur die beiden; der Tausch ist Weltgeschehen und nennt keine Menge (AK4). Beide
+    // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
+    TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
+    TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
+    // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
+    // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
+    PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -492,13 +507,26 @@ export const de = {
     truce: 'Waffenstillstand',
     alliance: 'Bündnis',
     rightOfWay: 'Durchmarschrecht',
-    sharedMap: 'Kartenaustausch',
+    // „Austausch" versprach eine Gegenseitigkeit, die es seit T-M17-04 nicht mehr gibt.
+    sharedMap: 'Kartenfreigabe',
     reputation: 'Ansehen',
     noRelations: 'Noch keine Beziehungen.',
     choose: 'Macht wählen',
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
+    // Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5) — der Satz steht in events.TRADE_OFFER_CLOSED.
+    tradeClosed: {
+      accepted: 'angenommen',
+      declined: 'abgelehnt — das Hinterlegte geht zurück',
+      withdrawn: 'zurückgezogen — das Hinterlegte geht zurück',
+      expired: 'ohne Antwort verfallen — das Hinterlegte geht zurück',
+      war: 'wegen Krieges verfallen — das Hinterlegte geht zurück',
+      // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit T-M17-06 schliesst 'invalid' auch
+      // eine verfallene Provinz ein, nicht nur ein Ausscheiden — der Satz behauptet keine der
+      // beiden Ursachen als sicher.
+      invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar — das Hinterlegte geht zurück',
+    },
   },
 
   market: {
@@ -918,8 +946,9 @@ export const de = {
       war: 'Offener Krieg: beide Seiten dürfen angreifen und erobern.',
       truce: 'Kampfpause auf Zeit. Vor ihrem Ablauf ist kein neuer Krieg möglich.',
       alliance: 'Gemeinsame Sache: Durchmarsch und Kartenwissen inbegriffen.',
-      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung.',
-      sharedMap: 'Beide sehen, was der andere sieht.',
+      // Seit T-M17-04 gerichtet (R-DIP-08): wer gewährt, darf damit nicht selbst hinein.
+      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung. Umgekehrt gilt es nur, wenn die andere Macht es ebenfalls gewährt.',
+      sharedMap: 'Die andere Macht sieht, was man selbst sieht. Ihre eigene Karte zeigt sie nur, wenn sie sie ebenfalls freigibt.',
     },
   },
 

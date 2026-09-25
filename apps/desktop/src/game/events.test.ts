@@ -301,6 +301,13 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     DAY_REPORT: { day: 3, scores: {} },
     // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
     GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
+    // Eine Kuendigung des Durchmarschs ist eine Frist, kein Verlust (T-M17-04).
+    RIGHT_OF_WAY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', granted: false, effectiveAtTick: 48, audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    // Handel (T-M17-05): ein geschlossenes Angebot und ein Tausch sind kein Rueckschlag (D24.1).
+    TRADE_OFFER_CLOSED: { offerId: 't1', playerId: 'p1', targetPlayerId: 'p2', reason: 'declined', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    TRADE_AGREED: { playerId: 'p1', targetPlayerId: 'p2', audience: [], concerns: ['p1', 'p2'] },
+    // Eine Abtretung ist verabredet, nicht erlitten — kein Rueckschlag (T-M17-06, D24.1).
+    PROVINCE_CEDED: { provinceId, previousOwner: 'p1', newOwner: 'p2', audience: [], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -923,5 +930,196 @@ describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
       expect(text).not.toMatch(/provinces|pointShare|populationShare|GOAL_REACHED|events\.|\bp1\b|\{\{/)
     }
     expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
+  })
+})
+
+/**
+ * Der Durchmarsch im Protokoll (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * Gewaehrung und Kuendigung sind **eine** Ereignisart mit `granted`; der Satz unterscheidet sie.
+ * Die Kuendigung nennt den Tag, ab dem eine Armee des Gasts dort ein Ueberfall ist — sonst weiss
+ * der Gast nicht, wie viel Zeit er hat, und die Frist waere eine Zahl, die nur der Kern kennt.
+ */
+describe('R-DIP-08/AK3 Gewaehrung und Kuendigung des Durchmarschs werden zu Saetzen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+    viewer: 'p1',
+  }
+  const durchmarsch = (playerId: string, targetPlayerId: string, granted: boolean, effectiveAtTick: number) =>
+    describeEvent(
+      event({
+        type: 'RIGHT_OF_WAY_CHANGED',
+        audience: [playerId, targetPlayerId],
+        concerns: [playerId, targetPlayerId],
+        playerId,
+        targetPlayerId,
+        granted,
+        effectiveAtTick,
+      }),
+      0,
+      map,
+      namen,
+    )
+
+  it('nennt die Gewaehrung mit beiden Namen und ohne Kennung', () => {
+    const entry = durchmarsch('p1', 'p2', true, 120)
+
+    expect(entry.text).toBe('Mexiko gewährt Vereinigte Staaten das Durchmarschrecht.')
+    expect(entry.category).toBe('diplomacy')
+    expect(entry.severity).toBe('info')
+  })
+
+  it('nennt bei der Kuendigung den Tag, ab dem sie wirkt', () => {
+    // Tick 144 ist der erste Tick von Tag 7 — dieselbe Rechnung wie bei der Kriegserklaerung.
+    expect(durchmarsch('p1', 'p2', false, 144).text).toBe(
+      'Mexiko kündigt Vereinigte Staaten das Durchmarschrecht. Wirksam ab Tag 7.',
+    )
+  })
+
+  it('beugt beide Saetze fuer eine Mehrzahl-Macht', () => {
+    expect(durchmarsch('p2', 'p1', true, 120).text).toContain('Vereinigte Staaten gewähren Mexiko')
+    expect(durchmarsch('p2', 'p1', false, 144).text).toContain('Vereinigte Staaten kündigen Mexiko')
+  })
+
+  it('laesst weder Kennung noch Platzhalter noch Wahrheitswert stehen', () => {
+    for (const granted of [true, false]) {
+      expect(durchmarsch('p1', 'p2', granted, 144).text).not.toMatch(/\bp[12]\b|\{\{|events\.|true|false|RIGHT_OF_WAY/)
+    }
+  })
+})
+
+/**
+ * Der Handel im Protokoll (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Ein Tausch ist Weltgeschehen und nennt keine Menge; das Schliessen eines Angebots lesen nur
+ * die beiden Beteiligten, und der Grund steht in Worten, nicht als Schluessel.
+ */
+describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt den Tausch mit beiden Namen, fuer Beteiligte wie Unbeteiligte gleich', () => {
+    for (const viewer of ['p1', 'p3']) {
+      const entry = describeEvent(
+        event({ type: 'TRADE_AGREED', audience: [], concerns: ['p1', 'p2'], playerId: 'p1', targetPlayerId: 'p2' }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe('Handel zwischen Mexiko und Vereinigte Staaten.')
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d/)
+    }
+  })
+
+  it('nennt jeden Grund beim Schliessen in Worten', () => {
+    const reasons = ['accepted', 'declined', 'withdrawn', 'expired', 'war', 'invalid'] as const
+    const texts = reasons.map((reason) => {
+      const entry = describeEvent(
+        event({
+          type: 'TRADE_OFFER_CLOSED',
+          audience: ['p1', 'p2'],
+          concerns: ['p1', 'p2'],
+          offerId: 't7',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          reason,
+        }),
+        0,
+        map,
+        { ...namen, viewer: 'p1' },
+      )
+      expect(entry.text).toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: /)
+      expect(entry.text).not.toMatch(/\[|\{\{|t7|accepted|declined|withdrawn|expired|\bwar\b|invalid|TRADE_/)
+      expect(entry.world).toBe(false)
+      return entry.text
+    })
+    expect(new Set(texts).size).toBe(6)
+  })
+
+  // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit provincesLapsed schliesst
+  // settleTradeOffers ein Angebot auch dann als 'invalid', wenn eine Provinz nicht mehr
+  // abtretbar ist (der Anbieter liess z. B. eine eigene Armee durch die angebotene Provinz
+  // marschieren) — nicht nur, wenn eine Macht ausgeschieden ist. Der Text darf diesen
+  // zweiten Fall nicht als Ausscheiden ausgeben.
+  it('behauptet bei "invalid" nicht faelschlich, eine Macht sei ausgeschieden', () => {
+    const entry = describeEvent(
+      event({
+        type: 'TRADE_OFFER_CLOSED',
+        audience: ['p1', 'p2'],
+        concerns: ['p1', 'p2'],
+        offerId: 't9',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        reason: 'invalid',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    // Der Satz gilt fuer beide Ursachen (Ausscheiden ODER verfallene Provinz) — er behauptet
+    // keine der beiden als alleinige, sichere Ursache. Die alte Fassung sagte flach
+    // "hinfällig, eine Macht ist ausgeschieden" — das waere hier falsch (Beispiel: eine
+    // eigene Armee marschiert durch die angebotene Provinz, keine Macht ist ausgeschieden).
+    expect(entry.text).not.toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: hinfällig, eine Macht ist ausgeschieden/)
+    expect(entry.text).toMatch(/ausgeschieden.*oder.*abtretbar/)
+  })
+})
+
+/**
+ * Die Abtretung im Protokoll (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen ohne Preis: die Provinz ist der Satzgegenstand, nicht eine der beiden Maechte —
+ * deshalb weder Fremd- noch Mehrzahlfassung.
+ */
+describe('R-DIP-09/AK2 Die Abtretung steht im Protokoll — ohne Preis', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt Provinz, Vorbesitzer und Neubesitzer, fuer jeden Betrachter gleich', () => {
+    const provinceName = map.provinces.find((p) => p.id === provinceId)!.name
+    for (const viewer of ['p1', 'p2', 'p3']) {
+      const entry = describeEvent(
+        event({
+          type: 'PROVINCE_CEDED',
+          audience: [],
+          concerns: ['p1', 'p2'],
+          provinceId,
+          previousOwner: 'p1',
+          newOwner: 'p2',
+        }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe(`${provinceName} geht durch Vertrag von Mexiko an Vereinigte Staaten über.`)
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d|\{\{|\bp[123]\b|PROVINCE_/)
+      expect(entry.provinceId).toBe(provinceId)
+    }
+  })
+
+  it('ist fuer den Abtretenden kein Rueckschlag', () => {
+    const entry = describeEvent(
+      event({
+        type: 'PROVINCE_CEDED',
+        audience: [],
+        concerns: ['p1', 'p2'],
+        provinceId,
+        previousOwner: 'p1',
+        newOwner: 'p2',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    expect(entry.self ?? false).toBe(false)
   })
 })

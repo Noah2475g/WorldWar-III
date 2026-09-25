@@ -371,3 +371,58 @@ mindestens 70 % der Fälle — ein wirkungsloser Schwierigkeitsgrad fällt damit
 > bei **T-M15-05**, wo das Verhältnis die KI steuert und die Stufen erstmals mehr
 > unterscheidet als eine Zahl. Bis dahin gilt: 100 % ist **gemessen, nicht gewollt**, und
 > steht als offener Befund in `PROBLEME.md`.
+
+## Durchmarsch und Angebote (R-DIP-08, D29.7, T-M17-04)
+
+Die ersten beiden Zahlen von M17. Die Handels- und Spionagezahlen aus D29.7 kommen mit ihren
+Aufgaben dazu und werden hier angehängt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `offerLifetimeDays` | 3 | abgeleitet | stand bis T-M17-04 als `3 * ticksPerDay` im Code der Diplomatiephase (Befund B3) und ist unverändert übernommen — eine andere Zahl hätte jedes Friedens- und Bündnisangebot der bisherigen Partien verschoben. Gilt seitdem auch für den Antrag auf Durchmarsch (R-DIP-08/AK5) |
+| `rightOfWayNoticeTicks` | 24 | geschätzt | ein Spieltag: lang genug, dass eine Armee aus dem Grenzsaum wieder hinausmarschieren kann, kurz genug, dass ein Widerruf keine leere Geste ist. Nicht gemessen — in einer reinen KI-Partie gewährt heute niemand Durchmarsch (Befund M17-1), also gibt es nichts zu widerrufen, bis T-M17-10 die KI daran beteiligt. Anlehnung, kein Beleg: der Austritt aus einer Koalition hat im Vorbild einen 24-Stunden-Countdown (Referenz 9.3); im Vorbild ist das ein Tag, hier sind es 24 Ticks |
+
+## Handelsangebote mit Treuhand (R-DIP-05, D29.7, T-M17-05)
+
+Vier Zahlen. Die Höchstmengen stehen im **Verhältnis** der Referenz 9.4 (Geld 100.000, jeder
+andere Rohstoff 30.000); die **Skala** kommt aus demselben Geld-Anker wie der Spionagesold
+(T-M17-02: 10.153 = 5 % des Median-Tagesertrags an Tag 30, `docs/reports/m17-baseline.json`,
+entspricht der Aufklärung der Referenz 10.2 mit 2.000). `tradeOffer.test.ts` hält Anker und
+Verhältnis fest. In einer reinen KI-Partie wirkt keine der vier Zahlen, bis T-M17-11 die KI
+handeln lässt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeOfferLifetimeDays` | 3 | geschätzt | wie `offerLifetimeDays`: drei Spieltage genügen für eine Antwort; die Referenz nennt für Handelsangebote keine Frist |
+| `maxOpenTradeOffers` | 5 | geschätzt | je Anbieter; begrenzt, wie viel Bestand gleichzeitig in Treuhand liegt, und reicht für ein Angebot an jeden Nachbarn einer mittleren Macht |
+| `tradeMaxMoney` | 507.650 | abgeleitet | Referenz 9.4 (100.000) auf der Skala des Ankers: 100.000 × 10.153 / 2.000 — rund zweieinhalb Tageserträge einer mittleren Macht, knapp ein Drittel des Startgelds |
+| `tradeMaxResource` | 152.295 | abgeleitet | 30 % von `tradeMaxMoney` (Referenz 9.4: 30.000 zu 100.000), je Rohstoff und Seite |
+
+## Handelsangebote und Durchmarsch der KI (R-AI-09, D29.7, D29.8, T-M17-10)
+
+Die Zahlen oberster Ebene in `ai.json`. Der Wächter in `test/balancing.test.ts` verlangt seit
+T-M17-10 für **jede** davon eine Zeile mit demselben Wert — bis dahin prüfte er nur die
+Stufenspalten, und `buildShareDefault` und `threatRange` standen nirgends.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeAcceptMarginPermille` | 1050 | geschätzt | D29.7: angenommen wird erst ab 5 % Gewinn zu Börsenkursen — ein Angebot zum Marktwert wäre für die KI gleichwertig mit der Börse und nähme ihr die Ware |
+| `tradeImpactPermille` | 30 | abgeleitet | Messung 2026-09-25 (Weltkarte, Startzahl 1815, 200 Spieltage, KI vor T-M17-10): Kurswirkung der Fehlmenge ≥ 50 ‰ (Vorschlag D29.7) an 1,4 % der Bedarfstage und nur bei einer Macht ab Tag 163; ≥ 30 ‰ an 14 %. 30 ‰ entspricht dem 90-%-Quantil der Fehlmenge (679.516 → 34 ‰): angeboten wird für die großen Vorhaben, nicht für jedes |
+| `tradeOfferPremiumPermille` | 1060 | abgeleitet | D29.8 nannte „× 1,02", aber die Annahmemarge ist 1,05 — keine KI nähme das Angebot einer anderen je an. Marge + 10 ‰; der Wächter hält Aufschlag > Marge fest |
+| `tradeKeepStockPermille` | 500 | abgeleitet | Handel (gegeben oder angenommen) greift nie unter die Hälfte eines Bestands: im selben Tag rekrutiert die KI bis `recruitShare` (höchstens 280 ‰) und tauscht an der Börse ein Zehntel (100 ‰) — 380 ‰ müssen bleiben, aufgerundet auf die Hälfte |
+| `buildShareDefault` | 600 | geschätzt | seit T-M3-01 (`64041c8`): Anteil des Einkommens für Bau statt Aushebung im Startgedächtnis; nie gemessen |
+| `threatRange` | 2 | geschätzt | seit T-M3-01 (`64041c8`): Reichweite der Bedrohungskarte in Provinzen; nie gemessen |
+
+## Provinzhandel der KI (R-DIP-09, D29.7, D29.8, T-M17-11)
+
+Der Provinzwert ist Ertrag aus der Karte (Vorkommen zu Marktpreis × `resourceWeights`, Steuer aus
+der Bevölkerung zum Geldkurs) über den Horizont, dazu bekannte Gebäude (Mehrertrag und Baukosten)
+und die Lage. Gemessen am 2026-09-25 (Weltkarte, Startpreise): Median 9,6 Mio. Geld; ein Angebot
+trägt höchstens 1,88 Mio. — bei 60 Tagen verkauft die KI 2 von 237 Provinzen, kauft aber 225
+(Befund M17-D12).
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `provinceValueHorizonDays` | 60 | geschätzt | D29.7; die Messung oben zeigt, dass der Wert mit den Handelsobergrenzen den Verkauf durch die KI praktisch ausschließt — bewusst nicht angepasst, Entscheid bei T-M17-16 (M17-D12) |
+| `provinceSalePremiumPermille` | 1300 | geschätzt | D29.7: Land gibt die KI erst mit 30 % Aufschlag ab; der Wächter hält Aufschlag > Handelsmarge fest |
+| `provinceValuePositionPermille` | 250 | geschätzt | neu in T-M17-11 („plus Lage", D29.8): drei eigene Landnachbarn heben den Ertragswert um ein Viertel; eine Enklave bekommt nichts |

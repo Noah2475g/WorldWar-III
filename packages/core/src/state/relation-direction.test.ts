@@ -23,15 +23,19 @@ import type { GameState, PlayerId, Relation } from './types'
  *  3. der Fristzweig von `grantsPassage` (`tick < ends`) — heute unerreichbar, weil jeder
  *     Schreiber `null` setzt, aber die Grundlage der Kuendigung in T-M17-04 (D29.2).
  *
- * **Fuer T-M17-04:** die Schreiber-Tests unten halten das Verhalten von T-M17-03 fest — jeder
- * Schreiber setzt **beide** Richtungen. Die Diplomatiebahn stellt sie gezielt auf „nur die
- * eigene Richtung" um; dafuer pruefen sie jede Aussage in **beiden Haelften** des Schluessels
- * (Gewaehrer < Gast und Gewaehrer > Gast). Die Lese-Tests (Sicht, Ueberfall, Frist) gelten
- * unveraendert weiter; nur die Feldnamen der Sicht (`rightOfWay`, `sharedMap`) benennt
- * T-M17-04 um.
+ * **Seit T-M17-04** (Zusammenfuehrung der Diplomatiebahn, 2026-09-25) setzen `grantRightOfWay`
+ * und `shareMap` nur noch die **eigene** Richtung `handelnd → anderer` (`setPassage`,
+ * `setMapShared`); `acceptAlliance`, `breakAlliance` und der Kriegsausbruch schreiben weiter
+ * beide, weil Buendnis und Krieg gegenseitig sind (D29.1). Jede Aussage laeuft in **beiden
+ * Haelften** des Schluessels (Handelnder < anderer und Handelnder > anderer) und haelt alle
+ * sechs Felder fest — ein Schreiber, der wieder beide Richtungen setzt oder die falsche Haelfte
+ * trifft, faellt in mindestens einer Haelfte. Die Sicht liest seit T-M17-04 vier gerichtete
+ * Felder (`passageGranted`/`passageReceived`, `mapShared`/`mapReceived`, D29.6) statt
+ * `rightOfWay`/`sharedMap`; die Tests pruefen je Freigabe beide Blickrichtungen.
  *
- * Absichtlich **ohne** Anforderungskennung im Titel: R-DIP-08 verlangt den gerichteten
- * Durchmarsch, und ein Test, der „beide Richtungen" festhaelt, darf ihn nicht als belegt zaehlen.
+ * Weiterhin **ohne** Anforderungskennung im Titel: R-DIP-08 belegen die Tests der
+ * Diplomatiebahn (`commands/diplomacy`, `phases/diplomacy`); diese Datei bewacht nur die
+ * Schluesselhaelften.
  */
 
 const map = smallWorld()
@@ -83,27 +87,56 @@ const HAELFTEN = [
   { name: 'Handelnder ist b (p2 > p1)', handelnd: 'p2', anderer: 'p1' },
 ] as const
 
-describe('T-M17-03 Jeder Schreiber setzt beide Richtungen (bis T-M17-04)', () => {
-  for (const { name, handelnd, anderer } of HAELFTEN) {
-    it(`grantRightOfWay — ${name}, und eine laufende Frist faellt weg`, () => {
-      // Mit gesetzter Frist: auf einer frischen Beziehung stuende dort schon `null`, und eine
-      // fehlende Zeile `…PassageEndsAtTick = null` fiele nicht auf.
-      const state = frisch()
-      beziehung(state).aPassageEndsAtTick = 10_000
-      beziehung(state).bPassageEndsAtTick = 10_000
-      const nachher = step(state, [diplo(handelnd, anderer, 'grantRightOfWay')], ctx).state
+/** Die Haelfte des Schluessels, die die Richtung `von → zu` traegt: `a`, wenn `von` < `zu`. */
+const haelfte = (von: PlayerId, zu: PlayerId): 'a' | 'b' => (von < zu ? 'a' : 'b')
 
-      expect(richtungen(beziehung(nachher))).toEqual({
-        ...ALLES_AUS,
+describe('T-M17-04 Durchmarsch und Karte setzen nur die eigene Richtung, Buendnis und Krieg beide', () => {
+  for (const { name, handelnd, anderer } of HAELFTEN) {
+    it(`grantRightOfWay — ${name}: nur handelnd → anderer, die eigene Frist faellt weg, die fremde bleibt`, () => {
+      // Beide Richtungen laufen vorher in einer Kuendigung: auf einer frischen Beziehung stuende
+      // schon `null`, und eine fehlende Zeile `…PassageEndsAtTick = null` fiele nicht auf. Die
+      // Gegenrichtung gehoert dem anderen — sie darf weder ihre Frist verlieren noch sich
+      // unbefristet oeffnen.
+      const state = frisch()
+      Object.assign(beziehung(state), {
         aGrantsPassage: true,
         bGrantsPassage: true,
+        aPassageEndsAtTick: 10_000,
+        bPassageEndsAtTick: 10_000,
+      })
+      const nachher = step(state, [diplo(handelnd, anderer, 'grantRightOfWay')], ctx).state
+
+      const eigen = haelfte(handelnd, anderer)
+      const fremd = haelfte(anderer, handelnd)
+      expect(richtungen(beziehung(nachher))).toEqual({
+        ...ALLES_AUS,
+        [`${eigen}GrantsPassage`]: true,
+        [`${eigen}PassageEndsAtTick`]: null,
+        [`${fremd}GrantsPassage`]: true,
+        [`${fremd}PassageEndsAtTick`]: 10_000,
       })
     })
 
-    it(`shareMap — ${name}`, () => {
+    it(`grantRightOfWay — ${name}: auf frischer Beziehung oeffnet sich nur handelnd → anderer`, () => {
+      const nachher = step(frisch(), [diplo(handelnd, anderer, 'grantRightOfWay')], ctx).state
+
+      expect(richtungen(beziehung(nachher))).toEqual({
+        ...ALLES_AUS,
+        [`${haelfte(handelnd, anderer)}GrantsPassage`]: true,
+      })
+      expect(grantsPassage(nachher, handelnd, anderer)).toBe(true)
+      expect(grantsPassage(nachher, anderer, handelnd), 'wer gewaehrt, darf nicht selbst hinein').toBe(false)
+    })
+
+    it(`shareMap — ${name}: nur handelnd zeigt anderer seine Karte`, () => {
       const nachher = step(frisch(), [diplo(handelnd, anderer, 'shareMap')], ctx).state
 
-      expect(richtungen(beziehung(nachher))).toEqual({ ...ALLES_AUS, aSharesMap: true, bSharesMap: true })
+      expect(richtungen(beziehung(nachher))).toEqual({
+        ...ALLES_AUS,
+        [`${haelfte(handelnd, anderer)}SharesMap`]: true,
+      })
+      expect(sharesMap(nachher, handelnd, anderer)).toBe(true)
+      expect(sharesMap(nachher, anderer, handelnd)).toBe(false)
     })
 
     it(`acceptAlliance — ${name} nimmt an`, () => {
@@ -153,38 +186,46 @@ describe('T-M17-03 Jeder Schreiber setzt beide Richtungen (bis T-M17-04)', () =>
   }
 })
 
-describe('T-M17-03 Die Sicht liest gerichtet: der andere gewaehrt mir', () => {
-  it('Durchmarsch in der Haelfte b (p2 laesst p1 durch): nur p1 sieht das Recht', () => {
+describe('T-M17-04 Die Sicht liest gerichtet: passageGranted/-Received, mapShared/-Received', () => {
+  it('Durchmarsch in der Haelfte b (p2 laesst p1 durch): p1 empfaengt, p2 gewaehrt', () => {
     const state = frisch()
     beziehung(state).bGrantsPassage = true
 
-    expect(publicView(state, 'p1').relations['p2']!.rightOfWay).toBe(true)
-    expect(publicView(state, 'p2').relations['p1']!.rightOfWay).toBe(false)
+    expect(publicView(state, 'p1').relations['p2']!.passageReceived).toBe(true)
+    expect(publicView(state, 'p1').relations['p2']!.passageGranted).toBe(false)
+    expect(publicView(state, 'p2').relations['p1']!.passageGranted).toBe(true)
+    expect(publicView(state, 'p2').relations['p1']!.passageReceived).toBe(false)
   })
 
-  it('Durchmarsch in der Haelfte a (p1 laesst p2 durch): nur p2 sieht das Recht', () => {
+  it('Durchmarsch in der Haelfte a (p1 laesst p2 durch): p2 empfaengt, p1 gewaehrt', () => {
     const state = frisch()
     beziehung(state).aGrantsPassage = true
 
-    expect(publicView(state, 'p2').relations['p1']!.rightOfWay).toBe(true)
-    expect(publicView(state, 'p1').relations['p2']!.rightOfWay).toBe(false)
+    expect(publicView(state, 'p2').relations['p1']!.passageReceived).toBe(true)
+    expect(publicView(state, 'p2').relations['p1']!.passageGranted).toBe(false)
+    expect(publicView(state, 'p1').relations['p2']!.passageGranted).toBe(true)
+    expect(publicView(state, 'p1').relations['p2']!.passageReceived).toBe(false)
   })
 
-  it('Karte in der Haelfte b (p2 zeigt p1 seine Karte): nur p1 sieht die Freigabe', () => {
+  it('Karte in der Haelfte b (p2 zeigt p1 seine Karte): p1 empfaengt, p2 teilt', () => {
     const state = frisch()
     beziehung(state).bSharesMap = true
 
-    expect(publicView(state, 'p1').relations['p2']!.sharedMap).toBe(true)
-    expect(publicView(state, 'p2').relations['p1']!.sharedMap).toBe(false)
+    expect(publicView(state, 'p1').relations['p2']!.mapReceived).toBe(true)
+    expect(publicView(state, 'p1').relations['p2']!.mapShared).toBe(false)
+    expect(publicView(state, 'p2').relations['p1']!.mapShared).toBe(true)
+    expect(publicView(state, 'p2').relations['p1']!.mapReceived).toBe(false)
   })
 
-  it('Karte in der Haelfte a (p1 zeigt p2 seine Karte): nur p2 sieht die Freigabe — und die Provinzen', () => {
+  it('Karte in der Haelfte a (p1 zeigt p2 seine Karte): p2 empfaengt, p1 teilt — und nur p2 sieht mehr Provinzen', () => {
     const state = frisch()
     const vorher = { p1: visibleProvinces(state, 'p1').size, p2: visibleProvinces(state, 'p2').size }
     beziehung(state).aSharesMap = true
 
-    expect(publicView(state, 'p2').relations['p1']!.sharedMap).toBe(true)
-    expect(publicView(state, 'p1').relations['p2']!.sharedMap).toBe(false)
+    expect(publicView(state, 'p2').relations['p1']!.mapReceived).toBe(true)
+    expect(publicView(state, 'p2').relations['p1']!.mapShared).toBe(false)
+    expect(publicView(state, 'p1').relations['p2']!.mapShared).toBe(true)
+    expect(publicView(state, 'p1').relations['p2']!.mapReceived).toBe(false)
     // Die Gegenrichtung zu `phases/diplomacy.test.ts` „erweitert die Sicht im Buendnis", die
     // nur die Haelfte b faehrt.
     expect(visibleProvinces(state, 'p2').size).toBeGreaterThan(vorher.p2)
