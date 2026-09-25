@@ -5630,3 +5630,102 @@ nach Tick (`upTo`), nicht nach Länge, um genau das zu vermeiden (siehe DECISION
 behoben (außerhalb ihres Auftrags). Empfehlung: eigener Befund mit Messung (wie lange bis der
 Ring voll ist, ob der Ton dann wirklich verstummt), Reparatur nach demselben Muster wie
 `collectEspionageNews` (nach Tick statt nach Länge).
+
+---
+
+## 2026-09-25 · Nacharbeit Sichtbefunde V (T-M17-14) · Befund M17-V1 (hoch, behoben): Diplomatietabelle sprengt `aside.side`, „Auswählen" mit der Maus unerreichbar
+
+**Befund (Sichtprüfung U, Befund 1):** `aside.side` ist fest 380px breit mit `overflow-x:
+hidden` und keinem inneren Scroll-Wrapper. Die Diplomatietabelle (`DiplomacyPanel`,
+`Panels.tsx`) hatte fünf Spalten (Macht, Diplomatie, Ansehen, Durchmarsch, „Macht wählen") und
+war dadurch 465px breit gegen 364px sichtbar — bei 1024px und 1280px Fensterbreite identisch,
+der Überlauf hängt nicht von der Fensterbreite ab. Der Knopf „Auswählen" lag zu 99,6% außerhalb
+(`left 1233.7 / right 1314.9`, Seitenrand bei 1234), die Kopfzelle „Macht wählen" vollständig.
+Ein Spieler konnte die Macht, mit der er Verträge/Durchmarsch/Handel bedienen will, **mit der
+Maus nicht auswählen** — das Kernwerkzeug von R-DIP-07/D29.9.
+
+**Reparatur (`apps/desktop`):** Die Spalte „Macht wählen" entfällt ersatzlos (höchstens vier
+Spalten: Macht, Diplomatie, Ansehen, Durchmarsch). Der Name der Macht (`Panels.tsx`,
+`DiplomacyPanel`) ist jetzt selbst ein `<button className="nation-select">` — per Tab
+erreichbar, `aria-pressed` für die gewählte Macht, `canChoose` richtet sich jetzt nach
+`onChoose` statt nach den Aktionsgruppen. Die Durchmarsch-Zelle trägt eine neue Kurzform
+(`passageShort()`: „gewährt" / „erhalten" / „beide" / „keiner") als sichtbaren Text, die volle
+Fassung (`passageText()`, unverändert) steht im `title`/Tooltip. Neue Schlüssel
+`diplomacy.passage.shortOut/shortIn/shortBoth` in `de.ts` (mit echten Umlauten), der Schlüssel
+`diplomacy.choose` ist verwaist (Kommentar an Ort und Stelle, nicht gelöscht — der
+Ersatzschrift-Wächter/text-keys-Test entscheidet, ob ein verwaister Schlüssel bleiben darf).
+Neues CSS `.diplomacy-table .nation-select` (Knopf sieht wie Text aus, eigener Fokusring) und
+`.diplomacy-table tbody tr.is-selected` (fett statt Knopf-Rahmen als Auswahlzeichen).
+
+**Test:** `Panels.test.tsx` — keine Spalte „Macht wählen" mehr; der Name ist ein `button` und
+wählt die Macht aus (`aria-pressed`, Klick ruft `onChoose` mit der richtigen Kennung); Kurzform
+in der Zelle, volle Fassung im `title`; höchstens vier `columnheader`. `App.test.tsx`: die
+bestehenden Tests klickten noch auf den alten Knopf „Auswählen" der Tabelle (fünf direkte
+Stellen plus der lokale `wähle`-Helfer in einem Test mit zwei Aufrufen) — umgestellt auf den
+ersten `button` der jeweiligen Tabellenzeile (neuer Helfer `waehleErsteMacht`), sonst
+unverändert; alle 266 Fälle in `App.test.tsx` + `Panels.test.tsx` grün.
+
+**Browsermessung (PFLICHT laut Auftrag, Port 5186, `pnpm -C apps/desktop dev` per `vite
+--port 5186 --strictPort`, Quelle per `fetch` bestätigt — `Panels.tsx` enthält
+`nation-select`/`diplomacy-table`, echte Welt, 7 Gegner):
+
+| Fensterbreite | `aside.side` scrollWidth/clientWidth | `table.diplomacy-table` scrollWidth/clientWidth | Auswahlknopf vollständig innerhalb |
+|---|---|---|---|
+| 1024px | 374 / 364 | 362 / 362 | ja (`left 647 / right 701.8`, `asideRight 1009`) |
+| 1280px | 374 / 364 | 362 / 362 | ja (`left 903 / right 957.8`, `asideRight 1265`) |
+
+Die Tabelle selbst überläuft jetzt an keiner der beiden Breiten mehr (`scrollWidth ===
+clientWidth`); die verbleibenden 10px bei `aside.side` sind kein Tabellenüberlauf (die Tabelle
+liegt vollständig darin) und kein neuer Befund — vermutlich Scrollbar-Reserve eines
+Geschwisterelements, nicht weiter verfolgt. Ein echter Mausklick (`computer.left_click` auf
+Koordinaten, kein `.click()` per Skript) auf den Namen „Kanada" hat die Macht ausgewählt und
+das Formular „Verträge mit Kanada"/„Handelsangebot an Kanada?" geöffnet; Screenshot bei 1280px
+zeigt die vierspaltige Tabelle ohne Überlauf, Kanada fett als gewählte Zeile (im Sitzungsprotokoll
+inline angesehen, keine Datei — der Auftrag verlangte kein Ablagepfad für das Bild).
+
+**Status:** behoben, mit Gegenprobe (266 grüne Fälle) und Browsermessung belegt.
+
+---
+
+## 2026-09-25 · Nacharbeit Sichtbefunde V (T-M17-14) · Befund M17-V2 (mittel, NICHT bestätigt — Testlage des Prüfers): Escape schließt das Diplomatiepanel angeblich nicht
+
+**Befund laut Sichtprüfung U:** „Nach echtem Mausklick auf eine neutrale Kartenstelle … und
+Escape blieb der Text 'Diplomatie' im DOM … im Vergleich schließen Taste `s`
+(Spionageübersicht) und der Markt-Knopf ihr Panel zuverlässig mit Escape."
+
+**Nachprüfung:** `App.tsx`, `keyboard.ts` und `uiState.ts` sind zwischen dem geprüften Stand
+(`4df6680`) und dem aktuellen HEAD (`5994f1b`) **byte-identisch** (`git diff 4df6680 HEAD --
+apps/desktop/src/App.tsx apps/desktop/src/keyboard.ts apps/desktop/src/state/uiState.ts`,
+leerer Diff) — dieselbe Escape-Behandlung, die geprüft wurde. `resolveKey()` gibt `Escape`
+unconditional als `{ type: 'close' }` zurück (vor jeder `typing`/`dialogOpen`-Prüfung); der
+`close`-Fall in `App.tsx` dispatcht ohne Ausnahme für ein bestimmtes Panel `closePanel`
+(`uiState.ts`: `panel: null`), sobald kein Dialog/keine Zielwahl/kein Umsetz-Modus im Weg
+steht — Diplomatie ist darin **nicht** besonders behandelt, wird also wie jedes andere Panel
+geschlossen.
+
+Drei Gegenproben im echten Browser (Port 5186, sichtbares Fenster, echte Maus- und
+Tastaturereignisse über den `computer`-Automat, nicht `.click()`/`.dispatchEvent()` per Skript):
+1. Diplomatie über Taste D öffnen, sofort Escape → Panel schließt (`get_page_text` danach ohne
+   Region „Diplomatie", nur noch der immer sichtbare Fuß-Knopf gleichen Namens).
+2. Wie oben, plus eine Macht auswählen (echter Mausklick auf den neuen Namens-Knopf, Befund
+   M17-V1), ein Eingabefeld des Handelsformulars fokussieren, auf eine neutrale Kartenstelle
+   klicken, dann Escape → schließt ebenso.
+3. `jsdom`-Test (`App.test.tsx`, neu, siehe unten) mit `screen.getByRole('region', { name:
+   'Diplomatie' })` — schließt ohne jede Änderung an `App.tsx`/`keyboard.ts` grün.
+
+**Vermutete Ursache des Fehlbefunds:** Der Fuß-Knopf „Diplomatie" (öffnet das Panel) steht
+unabhängig vom Panel-Zustand **immer** im DOM — ein Sitzungsprotokoll bestätigt: unmittelbar
+nach einem bestätigten Escape-Schließen liefert eine Suche nach dem Text „Diplomatie" genau
+einen Treffer, den `button "Diplomatie"` im Fuß, keine `region`. Ein Prüfskript, das nur auf
+den bloßen Text „Diplomatie" im `body`-Text prüft (statt auf die ARIA-`region`), würde nach
+Escape fälschlich „Diplomatie noch da" melden — unabhängig davon, ob das Panel offen oder
+geschlossen ist. Das erklärt zwanglos, warum Spionage- und Markt-Panel im selben Lauf als
+„schließt zuverlässig" durchgingen: für sie gibt es (Stand `5994f1b`) keinen gleichnamigen,
+immer sichtbaren Fuß-Knopf, der den Text übriglässt.
+
+**Test (Regressionswächter, kein Fehler behoben):** `App.test.tsx`, neuer Fall „schließt das
+Diplomatiepanel mit Escape" — öffnet mit `d`, prüft die `region`, schließt mit `Escape`, prüft
+`queryByRole('region', …)` ist `null`. Grün ohne jede Produktivcode-Änderung.
+
+**Status:** kein Fehler im Kern/in der Oberfläche gefunden; die Sichtprüfung dürfte den
+Fuß-Knopf statt der Panel-Region gemessen haben. Test bleibt als Regressionswächter stehen.

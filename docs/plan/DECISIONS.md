@@ -5017,3 +5017,20 @@ getroffen hat — nicht die Nacharbeit.
 trägt die Status-Zeilen; `01-REQUIREMENTS.md` bekommt einen Hinweis unter R-AI-08/AK3.
 
 **Kippbar:** durch Noah, jederzeit — die Messung ändert sich dadurch nicht.
+
+---
+
+## 2026-09-25 · Nacharbeit Sichtbefunde V (T-M17-14) · Diplomatietabelle: Name der Macht statt eigener Spalte
+
+**Entscheidung:** Die Spalte „Macht wählen" der Diplomatietabelle entfällt; der Name der Macht
+selbst wird zum Auswahl-`button`. Die Durchmarsch-Zelle bekommt eine Kurzform im sichtbaren
+Text, die volle Fassung wandert in den `title`.
+
+**Begründung:** `aside.side` ist mit fester Breite und `overflow-x: hidden` gebaut (kein
+Wrapper mit eigenem Scroll); eine fünfte Spalte sprengt sie bei jeder Desktop-Breite (Befund
+M17-V1). Ein eigener horizontaler Scroll-Wrapper hätte das Problem für künftige Spalten nur
+verschoben; die Kombination aus „eine Spalte weniger" und „kürzerer Zellentext" hält die
+Tabelle strukturell unter der Breite, ohne Information zu verlieren (Kurzform + Tooltip).
+
+**Kippbar:** ein eigener `overflow-x: auto`-Wrapper um die Tabelle statt der Spalteneinsparung;
+die Kurzform-Wörter selbst (kippbar auf Icons statt Wörter).
