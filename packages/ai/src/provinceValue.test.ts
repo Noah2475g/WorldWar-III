@@ -223,6 +223,29 @@ describe('R-DIP-09/AK3 Der Provinzwert kommt aus Karte, Marktpreisen und eigenem
     })
   })
 
+  // Nach der Zusammenfuehrung mit der Spionagebahn (2026-09-25, Merge-Hinweis T-M17-11): eine
+  // aufgeklaerte fremde Provinz zeigt ihre Gebaeude in der Sicht (`revealedUntilTick`), und der
+  // Provinzwert zaehlt sie — ohne eigene Zeile in `provinceWorth`, die nur `seen.buildings` liest.
+  it('zaehlt die Gebaeude einer aufgeklaerten fremden Provinz, nach Ablauf der Aufdeckung nicht mehr', () => {
+    const state = dreiMaechte()
+    state.provinces.o2!.buildings = { factory: 1 }
+    const ohne = provinceWorth(contextFor(state, 'p3'), 'o2')!
+    expect(ohne.buildingsKnown).toBe(false)
+    expect(ohne.buildings).toBe(0)
+
+    state.espionage.reveals.push({ player: 'p3', provinceId: 'o2', kind: 'intel', untilTick: state.tick + 24 })
+    const aufgeklaert = provinceWorth(contextFor(state, 'p3'), 'o2')!
+    expect(contextFor(state, 'p3').view.provinces.find((p) => p.id === 'o2')?.revealedUntilTick).toBe(state.tick + 24)
+    expect(aufgeklaert.buildingsKnown).toBe(true)
+    expect(aufgeklaert.buildings).toBeGreaterThan(0)
+    expect(aufgeklaert.total - aufgeklaert.buildings).toBe(ohne.total)
+
+    state.tick += 24
+    const abgelaufen = provinceWorth(contextFor(state, 'p3'), 'o2')!
+    expect(abgelaufen.buildingsKnown).toBe(false)
+    expect(abgelaufen.buildings).toBe(0)
+  })
+
   it('folgt den Marktpreisen', () => {
     const state = dreiMaechte()
     state.market.prices.oil = 3600

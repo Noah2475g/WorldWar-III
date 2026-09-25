@@ -110,7 +110,7 @@ export function decide(options: DecideOptions): AiDecision {
     commands.push(...economyCommands(context, explanations))
     commands.push(...tradeOfferCommands(context, explanations, commands)) // T-M17-10
     commands.push(...provinceOfferCommands(context, explanations, commands)) // T-M17-11
-    // Spionage zuletzt: sie rechnet mit dem Geld, das der Bauauftrag dieses Zugs schon bindet, und
+    // Spionage zuletzt: sie rechnet mit dem Geld, das Bauauftrag und Handel dieses Zugs schon binden, und
     // zieht Saboteure von Maechten ab, denen die Diplomatie eben Frieden angeboten hat (T-M17-12, D29.8).
     commands.push(...espionageCommands(context, explanations, commands))
   }
