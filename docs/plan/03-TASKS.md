@@ -3672,10 +3672,20 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Abhängigkeiten:** T-M17-15
 - **Dateien:** `docs/plan/BALANCING.md`, `docs/reports/balance-sweep.md`,
   `docs/reports/ai-tournament-run.md`, `docs/reports/progress-measured.json`,
-  `docs/reports/m17-baseline.json`, `docs/reports/acceptance.md`, `docs/reports/stance.json`,
-  `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`
+  `docs/reports/m17-final.json`, `docs/reports/acceptance.md`,
+  `docs/reports/acceptance-timing.json`, `docs/reports/stance.json`,
+  `docs/reports/packaging.md`, `docs/reports/packaging-netfree.json`,
+  `docs/reports/ai-integration.json`, `docs/reports/m17-integration.json`,
+  `docs/reports/fullgame.json`, `docs/reports/fullgame-1815.json`,
+  `docs/reports/fullgame-2015.json`, `apps/headless/test/m17-baseline.slow.test.ts`,
+  `docs/plan/PROBLEME.md`, `docs/plan/DECISIONS.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`, `docs/plan/03-TASKS.md`
+  *(berichtigt 2026-09-25: `m17-baseline.json` bleibt der Ausgangswert von T-M17-02 und wird
+  NICHT ueberschrieben — der Nachher-Stand geht nach `m17-final.json`, Option A aus dem Plan.)*
 - **Tests zuerst:** keine neuen; `sweep.slow.test.ts`, `tournament.slow.test.ts`,
-  `progress.slow.test.ts` und die Vollpartie laufen am Endstand.
+  `progress.slow.test.ts`, die Vollpartie, `m17-integration.slow.test.ts`,
+  `ai-integration.slow.test.ts`, `stance.slow.test.ts` und `m17-baseline.slow.test.ts`
+  (`WORLDWAR_M17_NACHHER=1`) laufen am Endstand.
 - **Fertig wenn:** der **eine** `pnpm balance:sweep` und das Turnier eingecheckt sind, der
   Frische-Wächter wieder grün ist und die Zeile über die absichtlich rote Abnahme aus
   `WORKFLOW.md` §0 verschwindet; Vergleich gegen T-M17-02 (Siegtag, Siegverteilung, Band,
@@ -3689,8 +3699,33 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   T-M17-16 baut auf dem M17-Stand ohne diese drei Reparaturen. Zusätzlich fällig: der
   Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`) ist seit `345544e` und
   seit T-M17-15 (Änderung an `packages/ai/src`) nicht frisch — `docs/reports/stance.json` neu
-  schreiben und einchecken. Vergleichswert Vollpartie auf dem M17-Stand vor T-M17-16: Siegtag
-  675 (eingecheckt 975).
+  schreiben und einchecken. Vergleichswert Vollpartie auf dem M17-Stand vor T-M17-16
+  (berichtigt 2026-09-25, gemessen statt übernommen): Startzahl 1914 **975** (gültig bis
+  `8bda869`, kein Kernwechsel dazwischen), 1815 **583**, 2015 **583** (beide im Worktree auf
+  `8bda869` gemessen, byte-gleich zur alten `02dc094`-Messung bis auf den Zeitstempel) — „675"
+  war eine unbelegte Notiz ohne Quelle im Repo.
+
+  **Ausgeführt am 2026-09-25 (`b9b3915` als Messstand), NICHT abgeschlossen — zwei offene
+  Blocker.** Alles gemessen und eingecheckt bis auf `docs/reports/stance.json`: Parameterlauf
+  (16/16, Anteil des Stärksten 36,8 % → 38,4 %, unter der doppelten Rauschgrenze, tragende
+  Konstanten weiterhin 0/14), Turnier und `m17-integration` zeilengleich zu den Vorläufen,
+  `ai-integration` deterministisch bestätigt (byte-gleich, `zustandOhneKi` deckt sich mit
+  `m17-final.json`), Vollpartien 1914 675 / 1815 395 / 2015 630 (alle im Band 300–1500,
+  Sieger durchweg p6), Netzfreiheit hält wörtlich, Uhr bei Tempo 100 innerhalb der eigenen
+  Streuung des Ausgangswerts, `pnpm acceptance` 11 von 12, `pnpm verify` grün.
+  1. **Befund M17-F1** (`PROBLEME.md`): der Haltungs-Messlauf reißt an der festen
+     Kontrollzahl — 76 Einmärsche/4 verlorene Provinzen fielen auf **0/0**, obwohl Provinz-Tage
+     (100 %) und Verluste ohne Gefecht (0) halten oder besser sind. `stance.json` bleibt
+     deshalb auf dem alten Stand (`b1bb3c8`) stehen und damit unfrisch. Noah entscheidet, ob
+     `KONTROLLE` bewusst neu kalibriert wird oder ob 0 Einmärsche selbst ein Befund über die
+     KI ist.
+  2. **AK-8** (der volle Speichern/Neustart/Weiterspielen-Rundlauf) wurde **nicht**
+     durchgeführt: Noahs `saves`-Ordner zeigte beim Ansehen eine unklare Lage über mehrere
+     nie aufgeräumte Alt-Ordner aus früheren Sitzungen — Einzelheiten in `packaging.md`.
+     Nichts gelöscht. Ersatzweise per CDP bestätigt, dass Diplomatie- und Spionage-Oberfläche
+     im gebauten Programm stecken.
+
+  M17 bleibt bei **15 von 16** Aufgaben, bis Noah zu beiden Punkten entschieden hat.
 
 ## Meilenstein M18 — Später
 
