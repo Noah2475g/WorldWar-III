@@ -60,10 +60,11 @@ die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge ge
 **ein** Zweig und nie eine Bedingung — ein Satz der Form „bis zum Merge …, danach …“ ist
 ab dem Merge falsch und wird trotzdem gelesen.
 
-**`ai-integration.slow.test.ts` ist auf dem M17-Stand absichtlich 2 von 21 rot** (Befund
-M17-T7: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen), bis Noah entschieden hat — ein
-Zustand, keine Bedingung. Ursache ist zerlegt (`PROBLEME.md`), Entscheid Noah (2026-09-25): geht
-an M18, siehe §2 Punkt 5.
+**`ai-integration.slow.test.ts` ist 21 von 21 grün — zwei der Fälle stehen absichtlich als
+`it.fails`** (Befund M17-T7: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen). Ursache ist
+zerlegt (`PROBLEME.md`), Entscheid Noah (2026-09-25): geht an M18, siehe §2 Punkt 5. Berichtigt
+in der Nacharbeit 2026-09-25: hier stand zuvor „2 von 21 rot" — das war seit dem `it.fails`-Umbau
+(T-M17-15, Commit `c931c54`) nicht mehr zutreffend, die Datei läuft grün durch.
 
 Zeigt `git status` mehr als einen leeren Arbeitsbaum, gehört das geklärt, bevor
 irgendetwas gebaut wird. Nach einem Wechsel des Standes:
@@ -144,8 +145,10 @@ entweder Noah oder seine Ansage.
    Vorratsaufbau, die amphibische KI, die tote KI-Artillerie der Voreinstellung
    (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit). Dazu,
    entschieden von Noah am 2026-09-25 (T-M17-15, `DECISIONS.md`):
-   - **Befund M17-T7** — das Aushebungsbudget trägt keine Artillerie-Einheit
-     (`ai-integration.slow.test.ts` bleibt bewusst 2 von 21 rot, siehe §0).
+   - **Befund M17-T7** — wer Geld für eine Artillerie hätte („normal"/„schwer"), baut keine
+     Fabrik; wer Fabriken baut („leicht"), erreicht nie die eigene, höhere Geldschwelle
+     (berichtigt in der Nacharbeit 2026-09-25, siehe `PROBLEME.md`; `ai-integration.slow.test.ts`
+     läuft 21/21 grün, zwei Fälle als `it.fails`, siehe §0).
    - **Befund M17-S12** — `recruitCommands` bucht `RECRUIT_SPY` desselben Takts nicht vor; geht
      mit M17-T7, weil seine Reparatur das Turnierband kippt (0,760 → 0,460, Befund M17-I1) —
      die Turnierfrage wird dort neu entschieden.
