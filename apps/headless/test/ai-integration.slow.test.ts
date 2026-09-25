@@ -421,25 +421,38 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
   })
 
-  it.fails('fuehrt Artillerie und laesst sie feuern', () => {
+  // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` deckte bisher DREI Zusicherungen in
+  // einem Koerper ab (Fabriken, Artillerie, Beschuss) - `it.fails` verlangt nur, dass der
+  // Koerper IRGENDWO wirft, gleich wo. Faellt die heute noch geltende Fabrik-Zusicherung
+  // (92 Fabriken, `fabrikenBegonnenJeMacht` im Bericht) auf 0 zurueck, wirft weiterhin die
+  // Artillerie-Zeile zuerst, und `it.fails` bliebe unveraendert gruen - ein echter Rueckfall
+  // beim Fabrikbau waere unsichtbar. Die noch geltende Zusicherung steht deshalb jetzt in
+  // einem normalen `it()`, nur Artillerie und Beschuss (Befund M17-T7, weiterhin offen)
+  // bleiben unter `it.fails`.
+  it('baut Fabriken (noch geltende Haelfte von R-BAT-08/AK3)', () => {
+    const fabriken = integration.events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
+    expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
+  })
+
+  it.fails('laesst die Artillerie feuern', () => {
     // **Die Kette, um die es in dieser Aufgabe geht.** Ohne Fabrik keine Artillerie, ohne
     // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
     // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
     // fuer die Testkarte belegt hat.
     //
-    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Ursache
-    // zerlegt: die Aushebung kauft je Einheit nur `recruitShare` Promille des Bestands, eine
-    // Artillerie kostet 200 000 Geld - keine Macht spart in 200 Tagen so viel an
-    // (`geldHoechstensJeMacht` im Bericht). Die einzige gefundene Reparatur braucht Befund
-    // M17-S12 und kippt das Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird
-    // dieser Fall unbemerkt gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist
-    // dann meldenswert (die Aushebung haette sich geaendert).
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18, Ursache
+    // berichtigt in der Nacharbeit 2026-09-25).** "Normal" und "schwer" ueberschreiten ihre
+    // eigene Geldschwelle fuer eine Artillerie durchweg (1,35-1,59 Mio. gegen 1 Mio./714 000),
+    // bauen aber **null** Fabriken; "leicht" baut Fabriken, erreicht aber nie die eigene,
+    // hoehere Schwelle (2,5 Mio.) - nicht "keine Macht spart genug an", wie hier bis zu dieser
+    // Nacharbeit stand. Die einzige gefundene Reparatur braucht Befund M17-S12 und kippt das
+    // Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird dieser Fall unbemerkt
+    // gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist dann meldenswert (die
+    // Aushebung haette sich geaendert).
     const events = integration.events
-    const fabriken = events.filter((event) => event.type === 'BUILD_STARTED' && event.building === 'factory')
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
     const beschuss = events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic)
 
-    expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
     expect(artillerie.length, 'keine Artillerie — die Feuerautomatik hat nichts zu tun').toBeGreaterThan(0)
     expect(beschuss.length, 'kein selbsttaetiger Beschuss').toBeGreaterThan(0)
   })

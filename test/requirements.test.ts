@@ -88,6 +88,19 @@ const SKIPPED_TEST = {
   path: 'demo/skipped.test.ts',
   text: `describe.skip('R-DEMO-02 zweite', () => { it('x', () => { expect(1).toBe(1) }) })`,
 }
+/** Nur `it.fails` — kein Beleg (Nacharbeit T-M17-15, 2026-09-25). */
+const FAILS_ONLY_TEST = {
+  path: 'demo/fails.test.ts',
+  text: `describe('R-DEMO-02 zweite', () => { it.fails('x', () => { expect(1).toBe(2) }) })`,
+}
+/** `it.fails` NEBEN einem echten Test — bleibt regulaer belegt. */
+const FAILS_PLUS_REAL_TEST = {
+  path: 'demo/fails-plus-real.test.ts',
+  text: `describe('R-DEMO-02 zweite', () => {
+    it('x', () => { expect(1).toBe(1) })
+    it.fails('y', () => { expect(1).toBe(2) })
+  })`,
+}
 
 describe('R-ARCH-05 Anforderungs-Abgleich', () => {
   it('liest alle Anforderungs-IDs und den scope-Block', () => {
@@ -122,6 +135,21 @@ describe('R-ARCH-05 Anforderungs-Abgleich', () => {
   it('zaehlt einen uebersprungenen Testblock nicht als Beleg', () => {
     const result = analyse(DOC, [GOOD_TEST, SKIPPED_TEST])
     expect(result.missing).toContain('R-DEMO-02')
+  })
+
+  it('zaehlt einen Block aus nur it.fails nicht als Beleg, sondern als eigene Kategorie', () => {
+    // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` verlangt nur, dass der Testkoerper
+    // wirft - er belegt keine Anforderung, wenn er der einzige Testfall des Blocks ist.
+    const result = analyse(DOC, [GOOD_TEST, FAILS_ONLY_TEST])
+    expect(result.missing).toContain('R-DEMO-02')
+    expect(result.knownFailingOnly).toContain('R-DEMO-02')
+    expect(result.hollowOnly).not.toContain('R-DEMO-02')
+  })
+
+  it('zaehlt einen Block mit it.fails NEBEN einem echten Test weiterhin regulaer', () => {
+    const result = analyse(DOC, [GOOD_TEST, FAILS_PLUS_REAL_TEST])
+    expect(result.missing).not.toContain('R-DEMO-02')
+    expect(result.knownFailingOnly).not.toContain('R-DEMO-02')
   })
 
   it('findet im echten Anforderungsdokument alle IDs', () => {
