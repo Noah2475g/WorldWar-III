@@ -5394,3 +5394,24 @@ auf den neuen Stand gebracht — M17 zählt jetzt 16 von 16, macht `315` Aufgabe
 
 **Kippbar:** durch Noah — insbesondere die Entscheidung, wann der Pull Request gestellt wird,
 und ob er selbst noch Änderungen sehen will, bevor gemergt wird.
+
+---
+
+## 2026-09-26 · Noah bestätigt den Kriegsplan des Haltungs-Messlaufs (M17-F1) — die offene Frage ist beantwortet
+
+**Entscheidung (Noah, 2026-09-26):** Es gilt der eingecheckte Aufbau — **Frankreich und Polen
+erklären dem Menschen am Spieltag 20 förmlich den Krieg**. Die offene Frage aus dem M17-F1-Eintrag
+oben ist damit beantwortet; der Aufbau steht ab hier als Noahs Entscheid, nicht als Wahl des
+ausführenden Agenten.
+
+**Festgehalten, damit es nicht verloren geht:** Noah hat in Kenntnis aller Zahlen entschieden. Die
+Wahl fiel nach der Messung der drei Kandidaten; Tag 0 misst **90,5 %** und risse AK5 (nach D30.9
+die Rücknahme der Automatik), „nur Frankreich" misst 115,9 %, Tag 20 mit beiden Nachbarn **102,8 %**.
+Die wörtliche Nachbildung des Angriffs vor M17 (Frankreich Tag 20, Polen Tag 35, in 1815 nur
+Frankreich) ist **nicht gemessen** — angeboten und nicht gewählt. Für den Aufbau spricht, dass er
+auf dem Stand vor M17 (`8bda869`) mit 102,9 % dasselbe misst, also nicht auf das Tor hin gebaut
+ist, und dass ein Lauf ohne Einmarsch seit M17-F1 selbst als Verletzung zählt.
+
+**Kippbar:** Wer die Defensiv-Automatik härter prüfen will, stellt `KRIEGSPLAN.tag` in
+`apps/headless/test/stance.slow.test.ts` auf 0 — und weiß vorher, dass AK5 dann reißt. Das wäre
+eine Aufgabe für M18, keine Stellschraube.
