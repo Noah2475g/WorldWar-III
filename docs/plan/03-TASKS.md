@@ -3691,7 +3691,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 - **Fertig wenn:** der **eine** `pnpm balance:sweep` und das Turnier eingecheckt sind, der
   Frische-Wächter wieder grün ist und die Zeile über die absichtlich rote Abnahme aus
   `WORKFLOW.md` §0 verschwindet; Vergleich gegen T-M17-02 (Siegtag, Siegverteilung, Band,
-  Bestandssummen je Rohstoff); `pnpm acceptance` auf freier Maschine 11 von 11.
+  Bestandssummen je Rohstoff); `pnpm acceptance` auf freier Maschine 11 von 11 (berichtigt:
+  die Abnahme zählt inzwischen **12** Prüfungen, Falle 16 — erreicht als **12 von 12**, siehe
+  „Abgeschlossen" unten).
   *(Umgerichtet am 2026-09-13: M17 ist abgetrennt; den einen Parameterlauf der Delegation und
   das Entfernen der Zeile in `WORKFLOW.md` §0 trägt der Schlussblock nach M35. Diese Aufgabe
   bleibt die Abschlussmessung des späteren M17-Baus, mit eigenem Parameterlauf nach dessen
@@ -3746,9 +3748,42 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
      `pnpm acceptance`) auf dem Merge-Stand wiederholt werden — siehe `WORKFLOW.md` §2
      Punkt 1.
 
-  M17 bleibt bei **15 von 16** Aufgaben. **Blocker 1 (M17-F1) ist erledigt** (siehe oben);
-  Blocker 2 (AK-8) und 3 (`origin/main`) siehe Noahs Entscheide vom 2026-09-26 am Ende von
-  `DECISIONS.md` und `WORKFLOW.md` §2 Punkt 1.
+  **ABGESCHLOSSEN am 2026-09-26 (HEAD `9a7678f`) — alle drei Blocker erledigt, M17 jetzt
+  16 von 16.** Die Messkette wurde auf dem Merge-Stand (`origin/main` in `65feab8`, M17-F1-Fix
+  in `1d893e4`) wiederholt, soweit ihre Quellen sich seit den zuletzt eingecheckten Berichten
+  geändert hatten (Falle 12 geprüft: Parameterlauf und Turnier blieben frisch — die
+  Touch-Bedienung ändert `data/rules`, `packages/core/src`, `packages/ai/src` nicht):
+  - **Haltungs-Messlauf neu geschrieben** (`docs/reports/stance.json`, `7a6aa47`, 18/18 Tests,
+    568 s): `ak5.erfuellt: true`, `kontrolle` trifft **41/4** exakt, `angegriffen.ok: true`
+    (kleinste Einmarschzahl 13 über zwölf Läufe), `fensterOk: true`, `verletzt: []`,
+    Provinz-Tage-Anteil **102,8 %**.
+  - **exe neu gebaut** gegen `7a6aa47` (**6 816 768 B**, +4 608 gegen `b9b3915` — die
+    Touch-Bedienung). Netzfreiheit hält wörtlich (`connect-src 'none'` 1×, WebSocket
+    exe/Bündel 0×, mit Bauflagge genau 1 Datei).
+  - **AK-8 vollständig durchgeführt** (Noahs Freigabe 2026-09-26, `DECISIONS.md`): `saves` →
+    `saves.geparkt-2026-09-26` (Name gegengeprüft, existierte nicht), SHA-256 der vier echten
+    Spielstanddateien **vorher/nachher identisch**, **7 von 7** (Speichern, Beenden, Neustart,
+    Laden, Weiterspielen), Ergebnisordner → `saves.messung-2026-09-26`. `stand-1.json`
+    (99 799 B, Stufe 4) trägt `state.espionage` und `state.diplomacy.tradeOffers` — stärkerer
+    Beleg als die reine Bildschirmtext-Gegenprobe der Vorläufe, dass M17 im Speicherformat der
+    exe steckt.
+  - **Uhr bei Tempo 100:** Ausgangswert (`b9b3915`, 5 Läufe) Minimum 99,60 / Median 99,90;
+    Endstand (`7a6aa47`, 13 Läufe) Minimum 99,41 / Median 99,82 — Abstand (0,19/0,08) unter
+    der eigenen Streuung des Ausgangswerts (0,33), als Normalstreuung eingeordnet.
+  - **`pnpm acceptance` auf freier Maschine: 12 von 12** (402 s, Commit `00feba3`) — erstmals
+    seit dem `origin/main`-Merge hält die MESSGERAET-Prüfung „Haltungs-Messlauf", und AK-8
+    zeigt ✅. AK-1 Sieg an Tag **675** (1755 Eroberungen, 20 Kriegserklärungen, Sieger p6) —
+    zeilengleich zum Vorlauf. Zeitbudgets: Weltkarte 2,496/7,187 ms (Grenze 3,5/8), KI-Anteil
+    0,121 (Grenze 0,3). Abdeckung gesamt 97,0 %.
+  - **`pnpm verify`: Exit 0** — 186 Dateien, 3377 Tests (3376 grün, 1 `todo`), Abdeckung Kern
+    97,4 %, gesamt 96,96 %. `test/plan-consistency.test.ts` 36/36,
+    `pnpm coverage:requirements` V1 offen 0 / M17 12 von 12, `allFreshness` alle drei grün.
+  - `docs/reports/acceptance.md` trägt die Vermerke zu R-AI-08/AK3 (weiterhin nicht erfüllt),
+    R-AI-09/AK3 (Neufassung hält) und Befund M17-I1 (M17-T7/S12 bleiben an M18), dazu zwei
+    erledigte Vermerke (M17-F1, `origin/main`-Merge).
+
+  M17 steht bei **16 von 16** Aufgaben. Kein Pull Request in dieser Aufgabe gestellt — Pushen
+  und PR-Anlage nur auf Noahs ausdrückliches Wort (`WORKFLOW.md` §0).
 
 ## Meilenstein M18 — Später
 

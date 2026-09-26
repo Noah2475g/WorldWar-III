@@ -5322,3 +5322,41 @@ der eingecheckte Lauf kommt im nächsten Schritt auf dem sauberen Endstand nach 
 
 **Kippbar:** Tag und Angreifer stehen als je eine Konstante (`KRIEGSPLAN.tag`,
 `landnachbarn`) — jede Änderung ist eine neue Kontrolle und braucht Noah, genau wie bei Block N2.
+
+---
+
+## 2026-09-26 · T-M17-16 · Abschluss: alle drei Blocker erledigt, Messkette auf dem Merge-Stand wiederholt
+
+**Entscheidung:** T-M17-16 ist fertig. Die Messkette (Haltungs-Messlauf, exe-Bau, Netzfreiheit,
+AK-8, Uhr, `pnpm acceptance`, `pnpm verify`) wurde auf dem vollständigen Stand wiederholt —
+nach dem konfliktfreien Merge von `origin/main` (`65feab8`) und dem M17-F1-Fix (`1d893e4`),
+beides bereits von Noah am 2026-09-26 entschieden (siehe die beiden Einträge oben). Nur
+Parameterlauf und Turnier wurden **nicht** neu gefahren: die Touch-Bedienung aus `origin/main`
+ändert `data/rules`, `packages/core/src` und `packages/ai/src` nicht, also blieben ihre
+zuletzt eingecheckten Berichte (`b8d36e6`, `527425c`) nach der Frische-Definition
+(`scripts/freshness.mjs`) gültig — nachgeprüft, nicht angenommen.
+
+**Ergebnis, mit Zahlen:**
+- Haltungs-Messlauf (`docs/reports/stance.json`, `7a6aa47`): `ak5.erfuellt: true`, Kontrolle
+  41/4 trifft exakt, `angegriffen.ok: true`, `verletzt: []`.
+- exe (`7a6aa47`, 6 816 768 B) und Netzfreiheit halten wörtlich.
+- AK-8 vollständig: 7 von 7, Noahs Spielstände per SHA-256 vor/nach identisch, Stufe-4-Stand
+  übersteht einen echten Neustart.
+- Uhr bei Tempo 100 innerhalb der eigenen Streuung des Ausgangswerts.
+- `pnpm acceptance`: **12 von 12**, Exit 0, 402 s (`00feba3`).
+- `pnpm verify`: Exit 0, 186 Dateien, 3376/3377 Tests grün (1 `todo`), Abdeckung Kern 97,4 %,
+  gesamt 96,96 %.
+
+**Begründung, warum kein Pull Request in dieser Aufgabe:** die Aufgabe war, T-M17-16
+abzuschließen — nicht, den Merge nach `main` vorzunehmen. `WORKFLOW.md` §0 verlangt
+ausdrücklich Noahs Wort vor jedem Push und jeder PR-Anlage (Entscheid 2026-09-25). Der
+nächste Schritt ist ein Pull Request von `claude/m17-tiefe-zwischen-den-kriegen` nach `main`;
+er wird vorbereitet (Text im Scratchpad des ausführenden Agenten), aber nicht gestellt, ohne
+dass Noah das ausdrücklich sagt.
+
+**Auswirkung:** `docs/plan/tasks.yaml` und `03-TASKS.md` führen T-M17-16 auf `status: done`;
+`PROGRESS.md` trägt die abschließende Zeile; `WORKFLOW.md` (Kopf, §0, §1, §2 Punkt 1, §5) ist
+auf den neuen Stand gebracht — M17 zählt jetzt 16 von 16, macht `315` Aufgaben `311` erledigt.
+
+**Kippbar:** durch Noah — insbesondere die Entscheidung, wann der Pull Request gestellt wird,
+und ob er selbst noch Änderungen sehen will, bevor gemergt wird.
