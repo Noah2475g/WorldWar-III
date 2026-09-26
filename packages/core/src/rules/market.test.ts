@@ -1,6 +1,10 @@
+import { divFixed } from '@worldwar/shared'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { MAX_TRADE_AMOUNT } from '../commands/trade'
+import { canApply } from '../commands/registry'
 import type { Command } from '../commands/types'
+import type { PhaseContext } from '../phases/index'
 import { createInitialState, type GameConfig } from '../state/create'
 import type { GameState } from '../state/types'
 import { step } from '../step'
@@ -149,5 +153,109 @@ describe('R-ECON-05 Preisbildung', () => {
     market.tickDemand.coal = 1_000_000
     settleMarket(market, TEST_RULES, false)
     expect(market.tickDemand.coal).toBe(0)
+  })
+})
+
+describe('M17-U1 Die Marktrechnung wirft nie (T-M43-03)', () => {
+  const RIESIG = 3_500_000_000_000
+  const GESAETTIGT = 9_007_199_254_739
+
+  it('saettigt eine riesige Menge auf den Wert der groessten rechenbaren Menge', () => {
+    const market = createMarket(TEST_RULES)
+    expect(exchangeAmount(market, 'rare', RIESIG, 'money')).toBe(GESAETTIGT)
+  })
+
+  it('ist flach oberhalb der Kante: jede zu grosse Menge saettigt auf denselben Wert', () => {
+    const market = createMarket(TEST_RULES)
+    const cap = Math.floor(Number.MAX_SAFE_INTEGER / 2600)
+    for (const x of [cap, cap + 1, RIESIG, Number.MAX_SAFE_INTEGER, 1e16, Number.POSITIVE_INFINITY]) {
+      expect(exchangeAmount(market, 'rare', x, 'money')).toBe(GESAETTIGT)
+    }
+  })
+
+  it('saettigt auch in der Gegenrichtung', () => {
+    const market = createMarket(TEST_RULES)
+    expect(exchangeAmount(market, 'money', 1e16, 'rare')).toBe(3_464_307_405_669)
+  })
+
+  it('saettigt mit Vorzeichen bei negativen Mengen', () => {
+    const market = createMarket(TEST_RULES)
+    expect(exchangeAmount(market, 'rare', -RIESIG, 'money')).toBe(-GESAETTIGT)
+    expect(exchangeAmount(market, 'rare', Number.NEGATIVE_INFINITY, 'money')).toBe(-GESAETTIGT)
+  })
+
+  it('liefert fuer Unsinn 0, ohne zu werfen, und bleibt bei gebrochenen Treffern bitgleich', () => {
+    const market = createMarket(TEST_RULES)
+    expect(() => exchangeAmount(market, 'rare', Number.NaN, 'money')).not.toThrow()
+    expect(exchangeAmount(market, 'rare', Number.NaN, 'money')).toBe(0)
+    expect(exchangeAmount(market, 'rare', 1.0001, 'money')).toBe(0)
+    // Heute schon ganzzahlig (1.5 * 2600 = 3900), bleibt so (AK2).
+    expect(exchangeAmount(market, 'rare', 1.5, 'money')).toBe(4)
+  })
+
+  it('liefert fuer jeden Kurs im Regelwerk eine sichere Ganzzahl', () => {
+    const market = createMarket(TEST_RULES)
+    const { marketMinPrice, marketMaxPrice } = TEST_RULES.constants
+    const givePrices = [marketMinPrice, 1000, 2600, marketMaxPrice]
+    const wantPrices = [marketMinPrice, 1000, marketMaxPrice]
+    for (const gp of givePrices) {
+      for (const wp of wantPrices) {
+        market.prices.rare = gp
+        market.prices.money = wp
+        for (const x of [RIESIG, -RIESIG, 1e16]) {
+          expect(Number.isSafeInteger(exchangeAmount(market, 'rare', x, 'money'))).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('bleibt unterhalb der Kante zeilengleich zur alten Formel', () => {
+    const market = createMarket(TEST_RULES)
+    const cap = Math.floor(Number.MAX_SAFE_INTEGER / 2600)
+    expect(exchangeAmount(market, 'rare', cap, 'money')).toBe(divFixed(cap * 2600, 1000))
+    expect(exchangeAmount(market, 'rare', cap - 1, 'money')).toBe(9_007_199_254_737)
+  })
+
+  it('lehnt eine riesige Handelsmenge ab, bevor gerechnet wird', () => {
+    state.players['p1']!.resources.rare = RIESIG
+    const result = step(state, [trade('p1', 'rare', RIESIG, 'money')], ctx)
+    expect(result.events.find((e) => e.type === 'COMMAND_REJECTED')).toMatchObject({
+      code: 'INVALID_TARGET',
+      detail: { giveAmount: RIESIG, reason: 'Menge zu groß' },
+    })
+    expect(result.events.find((e) => e.type === 'TRADE_EXECUTED')).toBeUndefined()
+  })
+
+  it('lehnt dieselbe Menge auch ueber canApply ab', () => {
+    const pctx: PhaseContext = { map, rules: TEST_RULES, commands: [], events: [] }
+    expect(canApply(state, trade('p1', 'rare', RIESIG, 'money'), pctx)).toEqual({
+      ok: false,
+      code: 'INVALID_TARGET',
+      detail: { giveAmount: RIESIG, reason: 'Menge zu groß' },
+    })
+  })
+
+  it('laesst genau MAX_TRADE_AMOUNT durch, auch bei Extremkursen', () => {
+    state.players['p1']!.resources.rare = MAX_TRADE_AMOUNT + 1
+    state.market.prices.rare = TEST_RULES.constants.marketMaxPrice
+    state.market.prices.money = TEST_RULES.constants.marketMinPrice
+
+    const ok = step(state, [trade('p1', 'rare', MAX_TRADE_AMOUNT, 'money')], ctx)
+    expect(ok.events.find((e) => e.type === 'TRADE_EXECUTED')).toMatchObject({
+      wantAmount: 250_000_000_000,
+    })
+    expect(() => ok).not.toThrow()
+
+    const tooBig = step(state, [trade('p1', 'rare', MAX_TRADE_AMOUNT + 1, 'money')], ctx)
+    expect(tooBig.events.find((e) => e.type === 'COMMAND_REJECTED')).toMatchObject({
+      code: 'INVALID_TARGET',
+      detail: { reason: 'Menge zu groß' },
+    })
+  })
+
+  it('haelt die Invarianten gegen die ausgelieferten Regeln', () => {
+    const { marketMinPrice, marketMaxPrice } = TEST_RULES.constants
+    expect(MAX_TRADE_AMOUNT * marketMaxPrice <= Number.MAX_SAFE_INTEGER).toBe(true)
+    expect((MAX_TRADE_AMOUNT * marketMaxPrice) / marketMinPrice * 1000 <= Number.MAX_SAFE_INTEGER).toBe(true)
   })
 })
