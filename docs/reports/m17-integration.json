@@ -1,6 +1,6 @@
 {
-  "gemessenAm": "2026-09-25",
-  "measuredAtCommit": "b9b39154a170ef05ff89ddd2a38a98a9c600ea7d",
+  "gemessenAm": "2026-09-26",
+  "measuredAtCommit": "c3bf936652773a0e0f12bc7117a3804fb1677f6e",
   "measuredDirty": [],
   "aufgabe": "T-M17-15",
   "partie": {
@@ -928,5 +928,1305 @@
   "ak3": {
     "summeBewegbarMit": 0,
     "summeBewegbarOhne": 0
+  },
+  "m42": {
+    "stufe": "0",
+    "aufgabe": "T-M42-01",
+    "laeufe": {
+      "1815": {
+        "tagesenden": 200,
+        "jeMacht": {
+          "p1": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 40,
+            "fabrikenFertig": 12,
+            "tageFabrikBezahlbar": 91,
+            "tageStadtOhneFabrik": 156,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1494172,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 122,
+            "tagesbilanzGeldBeiLetzterAushebung": 517425,
+            "befohlen": {
+              "infantry": 206
+            },
+            "ausgehoben": {
+              "infantry": 205
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 120,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 36,
+            "tageUeberDeckel": 78,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p2": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1429897,
+            "spioneAngeworben": 10,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 160,
+            "tagesbilanzGeldBeiLetzterAushebung": -15015,
+            "befohlen": {
+              "infantry": 341
+            },
+            "ausgehoben": {
+              "infantry": 341
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 14,
+            "provinzenVerloren": 14,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 16,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p3": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1590096,
+            "spioneAngeworben": 18,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 199,
+            "tagesbilanzGeldBeiLetzterAushebung": 229299,
+            "befohlen": {
+              "infantry": 610
+            },
+            "ausgehoben": {
+              "infantry": 605
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 3,
+            "ueberfaelle": 0,
+            "eroberungen": 32,
+            "provinzenVerloren": 7,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 5,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p4": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 51,
+            "fabrikenFertig": 36,
+            "tageFabrikBezahlbar": 125,
+            "tageStadtOhneFabrik": 168,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 2138491,
+            "spioneAngeworben": 11,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 178,
+            "tagesbilanzGeldBeiLetzterAushebung": 679499,
+            "befohlen": {
+              "infantry": 410
+            },
+            "ausgehoben": {
+              "infantry": 409
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 106,
+            "provinzenVerloren": 10,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 55,
+            "tageUeberDeckel": 4,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p5": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 103,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1378280,
+            "spioneAngeworben": 7,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 85,
+            "tagesbilanzGeldBeiLetzterAushebung": 30935,
+            "befohlen": {
+              "infantry": 125
+            },
+            "ausgehoben": {
+              "infantry": 124
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 2,
+            "ueberfaelle": 0,
+            "eroberungen": 84,
+            "provinzenVerloren": 23,
+            "ausgeschieden": true,
+            "groessterStehenderVerband": 4,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p6": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1518832,
+            "spioneAngeworben": 38,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 198,
+            "tagesbilanzGeldBeiLetzterAushebung": 225934,
+            "befohlen": {
+              "infantry": 700
+            },
+            "ausgehoben": {
+              "infantry": 698
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 3,
+            "ueberfaelle": 0,
+            "eroberungen": 246,
+            "provinzenVerloren": 17,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 29,
+            "tageUeberDeckel": 2,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p7": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 1,
+            "fabrikenFertig": 1,
+            "tageFabrikBezahlbar": 50,
+            "tageStadtOhneFabrik": 29,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1515235,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 92,
+            "tagesbilanzGeldBeiLetzterAushebung": -52824,
+            "befohlen": {
+              "infantry": 138
+            },
+            "ausgehoben": {
+              "infantry": 138
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 1,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 132,
+            "tageUeberDeckel": 147,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p8": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 197,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1350608,
+            "spioneAngeworben": 9,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 163,
+            "tagesbilanzGeldBeiLetzterAushebung": 21193,
+            "befohlen": {
+              "infantry": 300
+            },
+            "ausgehoben": {
+              "infantry": 299
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 1,
+            "eroberungen": 166,
+            "provinzenVerloren": 45,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 7,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          }
+        },
+        "jeStufe": {
+          "easy": {
+            "maechte": 3,
+            "fabrikenBegonnen": 92,
+            "fabrikenFertig": 49,
+            "tageFabrikBezahlbar": 266,
+            "tageStadtOhneFabrik": 353,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 11,
+            "aushebungsTage": 392,
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 227,
+            "provinzenVerloren": 10,
+            "tageUeberDeckel": 229,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 2138491,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 132,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 754
+            },
+            "ausgehoben": {
+              "infantry": 752
+            }
+          },
+          "normal": {
+            "maechte": 3,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 500,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 26,
+            "aushebungsTage": 408,
+            "beschuss": 0,
+            "kriegeErklaert": 4,
+            "ueberfaelle": 1,
+            "eroberungen": 264,
+            "provinzenVerloren": 82,
+            "tageUeberDeckel": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1429897,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 16,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 766
+            },
+            "ausgehoben": {
+              "infantry": 764
+            }
+          },
+          "hard": {
+            "maechte": 2,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 400,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 56,
+            "aushebungsTage": 397,
+            "beschuss": 0,
+            "kriegeErklaert": 6,
+            "ueberfaelle": 0,
+            "eroberungen": 278,
+            "provinzenVerloren": 24,
+            "tageUeberDeckel": 2,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1590096,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 29,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 1310
+            },
+            "ausgehoben": {
+              "infantry": 1303
+            }
+          }
+        },
+        "truppen": {
+          "befohlen": {
+            "infantry": 2830
+          },
+          "ausgehoben": {
+            "infantry": 2819
+          },
+          "beschuss": 0,
+          "artillerieAnteil": {
+            "artillerie": 0,
+            "landeinheiten": 2819,
+            "prozent": 0
+          }
+        },
+        "krieg": {
+          "kriege": 11,
+          "ohneErklaerung": 1,
+          "frieden": 3,
+          "friedenZwischenKi": 3,
+          "eroberungen": 769
+        },
+        "heer": {
+          "groessterStehenderVerband": 132,
+          "tageUeberDeckel": 147,
+          "tageMitPaar": 71,
+          "provinzenMitPaarHoechstens": 4,
+          "paareHoechstens": 92,
+          "paareUeberZweiTagesenden": 0,
+          "tageMitPaarUeberZweiTagesenden": 0,
+          "orteMitPaarUeberZweiTagesenden": 14,
+          "alteZusage7": {
+            "stehendHoechstens": 14,
+            "stehendTageUeberDrei": 10
+          },
+          "batterienHoechstens": 0
+        },
+        "fehler": {
+          "marschbefehle": 5930,
+          "noPath": 0,
+          "noPathAnteilProzent": 0,
+          "ablehnungen": {
+            "RECRUIT:INSUFFICIENT_RESOURCES": 1
+          }
+        },
+        "ueberfaelleMerkmale": {
+          "gesamt": 1,
+          "friedensschluss": 1,
+          "nachKuendigung": 0,
+          "nachAbtretung": 0,
+          "durchmarsch": 0
+        }
+      },
+      "1914": {
+        "tagesenden": 200,
+        "jeMacht": {
+          "p1": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 35,
+            "fabrikenFertig": 13,
+            "tageFabrikBezahlbar": 101,
+            "tageStadtOhneFabrik": 188,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1670115,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 122,
+            "tagesbilanzGeldBeiLetzterAushebung": 531534,
+            "befohlen": {
+              "infantry": 204
+            },
+            "ausgehoben": {
+              "infantry": 203
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 125,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 58,
+            "tageUeberDeckel": 49,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p2": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 179,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1429897,
+            "spioneAngeworben": 2,
+            "spioneHoechstens": 1,
+            "soldHoechstensJeTag": 5076,
+            "aushebungsTage": 185,
+            "tagesbilanzGeldBeiLetzterAushebung": 162053,
+            "befohlen": {
+              "infantry": 370
+            },
+            "ausgehoben": {
+              "infantry": 365
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 63,
+            "provinzenVerloren": 23,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 14,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p3": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1590096,
+            "spioneAngeworben": 9,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 199,
+            "tagesbilanzGeldBeiLetzterAushebung": 135206,
+            "befohlen": {
+              "infantry": 673
+            },
+            "ausgehoben": {
+              "infantry": 669
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 3,
+            "ueberfaelle": 1,
+            "eroberungen": 27,
+            "provinzenVerloren": 4,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 7,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p4": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 27,
+            "fabrikenFertig": 21,
+            "tageFabrikBezahlbar": 106,
+            "tageStadtOhneFabrik": 124,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 2138491,
+            "spioneAngeworben": 10,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 169,
+            "tagesbilanzGeldBeiLetzterAushebung": 132526,
+            "befohlen": {
+              "infantry": 358
+            },
+            "ausgehoben": {
+              "infantry": 356
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 59,
+            "provinzenVerloren": 23,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 93,
+            "tageUeberDeckel": 1,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p5": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1378280,
+            "spioneAngeworben": 14,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 198,
+            "tagesbilanzGeldBeiLetzterAushebung": 49780,
+            "befohlen": {
+              "infantry": 414
+            },
+            "ausgehoben": {
+              "infantry": 412
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 2,
+            "ueberfaelle": 1,
+            "eroberungen": 112,
+            "provinzenVerloren": 52,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 10,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p6": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1518832,
+            "spioneAngeworben": 22,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 198,
+            "tagesbilanzGeldBeiLetzterAushebung": 329771,
+            "befohlen": {
+              "infantry": 690
+            },
+            "ausgehoben": {
+              "infantry": 687
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 3,
+            "ueberfaelle": 0,
+            "eroberungen": 194,
+            "provinzenVerloren": 34,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 23,
+            "tageUeberDeckel": 3,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p7": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 1,
+            "fabrikenFertig": 1,
+            "tageFabrikBezahlbar": 55,
+            "tageStadtOhneFabrik": 29,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1515235,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 88,
+            "tagesbilanzGeldBeiLetzterAushebung": -45624,
+            "befohlen": {
+              "infantry": 133
+            },
+            "ausgehoben": {
+              "infantry": 133
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 1,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 127,
+            "tageUeberDeckel": 147,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p8": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1350608,
+            "spioneAngeworben": 20,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 187,
+            "tagesbilanzGeldBeiLetzterAushebung": 214839,
+            "befohlen": {
+              "infantry": 370
+            },
+            "ausgehoben": {
+              "infantry": 366
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 118,
+            "provinzenVerloren": 52,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 10,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          }
+        },
+        "jeStufe": {
+          "easy": {
+            "maechte": 3,
+            "fabrikenBegonnen": 63,
+            "fabrikenFertig": 35,
+            "tageFabrikBezahlbar": 262,
+            "tageStadtOhneFabrik": 341,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 10,
+            "aushebungsTage": 379,
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 185,
+            "provinzenVerloren": 23,
+            "tageUeberDeckel": 197,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 2138491,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 127,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 695
+            },
+            "ausgehoben": {
+              "infantry": 692
+            }
+          },
+          "normal": {
+            "maechte": 3,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 579,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 36,
+            "aushebungsTage": 570,
+            "beschuss": 0,
+            "kriegeErklaert": 4,
+            "ueberfaelle": 1,
+            "eroberungen": 293,
+            "provinzenVerloren": 127,
+            "tageUeberDeckel": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1429897,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 14,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 1154
+            },
+            "ausgehoben": {
+              "infantry": 1143
+            }
+          },
+          "hard": {
+            "maechte": 2,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 400,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 31,
+            "aushebungsTage": 397,
+            "beschuss": 0,
+            "kriegeErklaert": 6,
+            "ueberfaelle": 1,
+            "eroberungen": 221,
+            "provinzenVerloren": 38,
+            "tageUeberDeckel": 3,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1590096,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 23,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 1363
+            },
+            "ausgehoben": {
+              "infantry": 1356
+            }
+          }
+        },
+        "truppen": {
+          "befohlen": {
+            "infantry": 3212
+          },
+          "ausgehoben": {
+            "infantry": 3191
+          },
+          "beschuss": 0,
+          "artillerieAnteil": {
+            "artillerie": 0,
+            "landeinheiten": 3191,
+            "prozent": 0
+          }
+        },
+        "krieg": {
+          "kriege": 11,
+          "ohneErklaerung": 2,
+          "frieden": 3,
+          "friedenZwischenKi": 3,
+          "eroberungen": 699
+        },
+        "heer": {
+          "groessterStehenderVerband": 127,
+          "tageUeberDeckel": 147,
+          "tageMitPaar": 79,
+          "provinzenMitPaarHoechstens": 4,
+          "paareHoechstens": 565,
+          "paareUeberZweiTagesenden": 0,
+          "tageMitPaarUeberZweiTagesenden": 0,
+          "orteMitPaarUeberZweiTagesenden": 35,
+          "alteZusage7": {
+            "stehendHoechstens": 34,
+            "stehendTageUeberDrei": 19
+          },
+          "batterienHoechstens": 0
+        },
+        "fehler": {
+          "marschbefehle": 6670,
+          "noPath": 0,
+          "noPathAnteilProzent": 0,
+          "ablehnungen": {
+            "RECRUIT:INSUFFICIENT_RESOURCES": 1
+          }
+        },
+        "ueberfaelleMerkmale": {
+          "gesamt": 2,
+          "friedensschluss": 2,
+          "nachKuendigung": 0,
+          "nachAbtretung": 0,
+          "durchmarsch": 0
+        }
+      },
+      "2015": {
+        "tagesenden": 200,
+        "jeMacht": {
+          "p1": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 32,
+            "fabrikenFertig": 14,
+            "tageFabrikBezahlbar": 108,
+            "tageStadtOhneFabrik": 158,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1965790,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 126,
+            "tagesbilanzGeldBeiLetzterAushebung": 488666,
+            "befohlen": {
+              "infantry": 228
+            },
+            "ausgehoben": {
+              "infantry": 228
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 113,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 26,
+            "tageUeberDeckel": 68,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p2": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1429897,
+            "spioneAngeworben": 1,
+            "spioneHoechstens": 1,
+            "soldHoechstensJeTag": 5076,
+            "aushebungsTage": 162,
+            "tagesbilanzGeldBeiLetzterAushebung": -644,
+            "befohlen": {
+              "infantry": 349
+            },
+            "ausgehoben": {
+              "infantry": 349
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 39,
+            "provinzenVerloren": 15,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 16,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p3": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1590096,
+            "spioneAngeworben": 3,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 199,
+            "tagesbilanzGeldBeiLetzterAushebung": 215202,
+            "befohlen": {
+              "infantry": 561
+            },
+            "ausgehoben": {
+              "infantry": 554
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 27,
+            "provinzenVerloren": 8,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 15,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p4": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 31,
+            "fabrikenFertig": 29,
+            "tageFabrikBezahlbar": 123,
+            "tageStadtOhneFabrik": 119,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 2138491,
+            "spioneAngeworben": 3,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 176,
+            "tagesbilanzGeldBeiLetzterAushebung": 550756,
+            "befohlen": {
+              "infantry": 381
+            },
+            "ausgehoben": {
+              "infantry": 379
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 50,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 81,
+            "tageUeberDeckel": 1,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p5": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 97,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1378280,
+            "spioneAngeworben": 8,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 167,
+            "tagesbilanzGeldBeiLetzterAushebung": 22210,
+            "befohlen": {
+              "infantry": 240
+            },
+            "ausgehoben": {
+              "infantry": 226
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 4,
+            "ueberfaelle": 0,
+            "eroberungen": 137,
+            "provinzenVerloren": 36,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 13,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p6": {
+            "stufe": "hard",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1518832,
+            "spioneAngeworben": 15,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 198,
+            "tagesbilanzGeldBeiLetzterAushebung": 48966,
+            "befohlen": {
+              "infantry": 608
+            },
+            "ausgehoben": {
+              "infantry": 590
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 3,
+            "ueberfaelle": 0,
+            "eroberungen": 235,
+            "provinzenVerloren": 42,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 48,
+            "tageUeberDeckel": 8,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p7": {
+            "stufe": "easy",
+            "fabrikenBegonnen": 1,
+            "fabrikenFertig": 1,
+            "tageFabrikBezahlbar": 58,
+            "tageStadtOhneFabrik": 29,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1515235,
+            "spioneAngeworben": 0,
+            "spioneHoechstens": 0,
+            "soldHoechstensJeTag": 0,
+            "aushebungsTage": 89,
+            "tagesbilanzGeldBeiLetzterAushebung": -54264,
+            "befohlen": {
+              "infantry": 139
+            },
+            "ausgehoben": {
+              "infantry": 139
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 1,
+            "provinzenVerloren": 0,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 133,
+            "tageUeberDeckel": 147,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          },
+          "p8": {
+            "stufe": "normal",
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 200,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "geldHoechststand": 1350608,
+            "spioneAngeworben": 7,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "aushebungsTage": 193,
+            "tagesbilanzGeldBeiLetzterAushebung": 435862,
+            "befohlen": {
+              "infantry": 411
+            },
+            "ausgehoben": {
+              "infantry": 410
+            },
+            "beschuss": 0,
+            "kriegeErklaert": 0,
+            "ueberfaelle": 0,
+            "eroberungen": 123,
+            "provinzenVerloren": 26,
+            "ausgeschieden": false,
+            "groessterStehenderVerband": 16,
+            "tageUeberDeckel": 0,
+            "batterienHoechstens": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0
+          }
+        },
+        "jeStufe": {
+          "easy": {
+            "maechte": 3,
+            "fabrikenBegonnen": 64,
+            "fabrikenFertig": 44,
+            "tageFabrikBezahlbar": 289,
+            "tageStadtOhneFabrik": 306,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 3,
+            "aushebungsTage": 391,
+            "beschuss": 0,
+            "kriegeErklaert": 1,
+            "ueberfaelle": 0,
+            "eroberungen": 164,
+            "provinzenVerloren": 0,
+            "tageUeberDeckel": 216,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 2138491,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 133,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 748
+            },
+            "ausgehoben": {
+              "infantry": 746
+            }
+          },
+          "normal": {
+            "maechte": 3,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 497,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 16,
+            "aushebungsTage": 522,
+            "beschuss": 0,
+            "kriegeErklaert": 4,
+            "ueberfaelle": 0,
+            "eroberungen": 299,
+            "provinzenVerloren": 77,
+            "tageUeberDeckel": 0,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1429897,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 16,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 1000
+            },
+            "ausgehoben": {
+              "infantry": 985
+            }
+          },
+          "hard": {
+            "maechte": 2,
+            "fabrikenBegonnen": 0,
+            "fabrikenFertig": 0,
+            "tageFabrikBezahlbar": 0,
+            "tageStadtOhneFabrik": 400,
+            "geldmangelTage": 0,
+            "geldmangelTageDurchAushebung": 0,
+            "oelmangelTage": 0,
+            "oelmangelTageDurchAushebung": 0,
+            "spioneAngeworben": 18,
+            "aushebungsTage": 397,
+            "beschuss": 0,
+            "kriegeErklaert": 4,
+            "ueberfaelle": 0,
+            "eroberungen": 262,
+            "provinzenVerloren": 50,
+            "tageUeberDeckel": 8,
+            "verpassteGelegenheiten": 0,
+            "verpassteGelegenheitenNurGeld": 0,
+            "geldHoechststand": 1590096,
+            "spioneHoechstens": 3,
+            "soldHoechstensJeTag": 35535,
+            "groessterStehenderVerband": 48,
+            "batterienHoechstens": 0,
+            "befohlen": {
+              "infantry": 1169
+            },
+            "ausgehoben": {
+              "infantry": 1144
+            }
+          }
+        },
+        "truppen": {
+          "befohlen": {
+            "infantry": 2917
+          },
+          "ausgehoben": {
+            "infantry": 2875
+          },
+          "beschuss": 0,
+          "artillerieAnteil": {
+            "artillerie": 0,
+            "landeinheiten": 2875,
+            "prozent": 0
+          }
+        },
+        "krieg": {
+          "kriege": 9,
+          "ohneErklaerung": 0,
+          "frieden": 3,
+          "friedenZwischenKi": 3,
+          "eroberungen": 725
+        },
+        "heer": {
+          "groessterStehenderVerband": 133,
+          "tageUeberDeckel": 153,
+          "tageMitPaar": 85,
+          "provinzenMitPaarHoechstens": 7,
+          "paareHoechstens": 435,
+          "paareUeberZweiTagesenden": 1,
+          "tageMitPaarUeberZweiTagesenden": 1,
+          "orteMitPaarUeberZweiTagesenden": 34,
+          "alteZusage7": {
+            "stehendHoechstens": 30,
+            "stehendTageUeberDrei": 17
+          },
+          "batterienHoechstens": 0
+        },
+        "fehler": {
+          "marschbefehle": 6264,
+          "noPath": 0,
+          "noPathAnteilProzent": 0,
+          "ablehnungen": {
+            "RECRUIT:INSUFFICIENT_RESOURCES": 2
+          }
+        },
+        "ueberfaelleMerkmale": {
+          "gesamt": 0,
+          "friedensschluss": 0,
+          "nachKuendigung": 0,
+          "nachAbtretung": 0,
+          "durchmarsch": 0
+        }
+      }
+    },
+    "summe": {
+      "artillerieAusgehoben": 0,
+      "beschuss": 0,
+      "fabrikenBegonnen": 219,
+      "geldmangelTage": 0,
+      "geldmangelTageDurchAushebung": 0,
+      "oelmangelTage": 0,
+      "verpassteGelegenheiten": 0,
+      "paareUeberZweiTagesenden": 1,
+      "ueberfaelleFriedensschlussOderKuendigung": 3,
+      "maechteMitArtillerieJeLauf": {
+        "1815": 0,
+        "1914": 0,
+        "2015": 0
+      }
+    }
   }
 }
