@@ -5611,6 +5611,36 @@ sondern sättigt intern, oder `MIN_TRADE_AMOUNT` bekommt ein Pendant nach oben.
 M18.
 
 ---
+**Nachtrag 2026-09-26 (T-M43-03, `d55edd5`): im Kern geschlossen.** `exchangeAmount()` sättigt jetzt
+selbst auf den Wert der größten rechenbaren Menge — derselbe Wert, den `safeExchangeAmount()` der
+Oberfläche liefert — und wirft für keine Zahl mehr; `TRADE` lehnt Mengen über `MAX_TRADE_AMOUNT`
+(10 000 000 000) mit `INVALID_TARGET` („Menge zu groß") ab, bevor gerechnet wird. Gemessen vorher:
+3,5 Mrd. Seltene warfen in `exchangeAmount`, `canApply` **und** `step`. Über `TRADE` war das im Spiel
+nie erreichbar (Güter am Tickende auf 1 000 000 000 gedeckelt, Seltene auf 500 000 000; Geld
+ungedeckelt, gemessen ≤ 1,5 Mio.) — erreichbar war es nur über die Vorschau, und die war seit
+T-M17-13/14 gekappt. Turnier und `progress.slow` zeilengleich.
+
+**Status:** erledigt (Oberfläche T-M17-13/14, Kern T-M43-03).
+
+## 2026-09-26 · T-M43-03 · Befund M43-03-a (niedrig, nicht gebaut): Tagesnachfrage und Angebotsabwicklung ohne Obergrenze
+
+**Befund:** `settleMarket()` (`packages/core/src/rules/market.ts`) teilt die Tagesnachfrage mit
+`quotFixed(demand, MARKET_REFERENCE_VOLUME)`; das wirft ab |Nachfrage| > 9 007 199 254 740
+(Sonde am 2026-09-26: 9 000 000 000 000 rechnet, 9 100 000 000 000 wirft). Ebenso addiert die
+Abwicklung von Handelsangeboten (`commands/tradeOffer.ts`, Rückgabe und Annahme) Mengen ohne
+Prüfung auf sichere Ganzzahlen.
+
+**Warum nicht gebaut:** unerreichbar. Ein `TRADE` gibt höchstens `MAX_TRADE_AMOUNT`; ein einzelner
+Höchsttausch bei Extremkursen erzeugt ≤ 250 000 000 000 Nachfrage, 36 davon je Rohstoff und Tick
+wären nötig, und jeder braucht den Bestand dafür (Güter ≤ 1 000 000 000 am Tickende). Angebote sind
+auf den Bestand des Gebers begrenzt (`tradeOffer.ts` Z. 72, 285–286). Kandidat, falls je eine
+Befehlsquelle ohne Bestandsprüfung dazukommt: `settleMarket` sättigt die Nachfrage wie
+`exchangeAmount` den Wert.
+
+**Status:** offen, niedrig, bewusst nicht gebaut (Entscheid E10 im Bauplan T-M43-03).
+
+---
+
 
 ## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U2 (niedrig, nicht selbst behoben): `nameOf` in `App.tsx` hat keinen Rückfall auf leeren Text bei unbekannter Kennung
 

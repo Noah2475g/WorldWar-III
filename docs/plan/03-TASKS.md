@@ -7097,6 +7097,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Bestandstabelle; der neue Name in `longrun.slow.test.ts` deckt, was der Test wirklich prüft.
 - **Fertig wenn:** `performance.md` bekommt eine Tabelle Rohstoff/Start/Ende/Verhältnis; der Test
   läuft in der Abnahme von T-M42-12. Aufwand 1 h.
+- **Stand (Nacharbeit 2026-09-26, Merge `0ddd8bb`):** gebaut und gemergt (Bau `f31dc94`,
+  Nacharbeit `7faa0ed`); Status bleibt `todo` in `tasks.yaml`, weil `pnpm verify` auf ruhiger
+  Maschine noch aussteht (Noah spielte, 90-100 % Last) — `done` erst danach.
 
 ### T-M42-12 · Abschlussmessung, Abnahme, Übergabe
 - **Ziel:** eine Messung, die für den Endstand von M42 und M43 gilt.
@@ -7185,12 +7188,20 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (Befund M17-U1). Jederzeit baubar, keine Antwort auf eine der acht Fragen nötig.
 - **Anforderungen:** keine
 - **Abhängigkeiten:** keine
-- **Dateien:** `packages/core/src/rules/market.ts`, `packages/core/src/commands`
+- **Dateien:** `packages/core/src/rules/market.ts`, `packages/core/src/commands/trade.ts`,
+  `apps/desktop/src/game/actions.ts`, `docs/reports/ai-tournament-run.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/tasks.yaml`
 - **Tests zuerst:** `packages/core/src/rules/market.test.ts` — 3,5 Mrd. Seltene Erden → kein
   Wurf; alle bisherigen Marktfälle bleiben zeilengleich.
 - **Fertig wenn:** der Börsenbefehl lehnt übergroße Mengen mit einem bestehenden Code ab.
   **Rücknahme:** Turnier und `progress.slow` müssen zeilengleich bleiben (billigster
   Verwandter). Aufwand 1 h.
+- **Stand (Nacharbeit 2026-09-26, Merge `608d746`):** gebaut und gemergt (Bau `d55edd5`,
+  Turniermessung `06a1629`); Status bleibt `todo` in `tasks.yaml`, weil `pnpm verify` auf
+  ruhiger Maschine noch aussteht (Noah spielte, 90-100 % Last) — `done` erst danach.
+  `tradeOffer.test.ts` reißt allein bei 8,1 s gegen die 5000-ms-Frist, unabhängig von
+  `market.ts`/`trade.ts` (bestätigt, siehe `DECISIONS.md`).
 
 ### T-M43-04 · Der Wiederholungslauf wird Zusicherung
 - **Ziel:** ein Geschwisterfall in `m17-integration.slow.test.ts`: Startzahl 1914 zweimal von

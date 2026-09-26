@@ -5460,3 +5460,50 @@ und -09 als Abloesung.
 **Kippbar:** jede der acht Antworten einzeln, in `m18-plan-v2.md` §17 mit Alternativen
 hinterlegt. Reisst ein Ruecknahmekriterium beim Bau (Plan §9.3), geht die betroffene Frage
 mit Zahlen an Noah zurueck, wie im Plan je Aufgabe vermerkt.
+
+---
+
+## 2026-09-26 · T-M43-03 · Die Marktrechnung sättigt, der Börsenbefehl hat eine Obergrenze (Befund M17-U1, Kern)
+
+**Entscheidung:** `exchangeAmount()` wirft nie mehr. Ist `giveAmount × Kurs` eine sichere Ganzzahl,
+rechnet es wie bisher; sonst sättigt es auf den Wert der größten rechenbaren Menge
+(`MAX_SAFE − MAX_SAFE mod Kurs`, mit Vorzeichen) — genau den Wert der Oberflächen-Kappung
+`safeExchangeAmount()`. `NaN` und ein nicht ganzzahliges Produkt ergeben 0. `TRADE` lehnt
+`giveAmount > MAX_TRADE_AMOUNT` (10 000 000 000, Code-Konstante neben `MIN_TRADE_AMOUNT`) vor der
+Bestandsprüfung mit `INVALID_TARGET`, Grund „Menge zu groß", ab.
+
+**Begründung:** Die Menge ist Eingabe (Formularfeld, Netzbefehl), kein Rechenfehler im Sinn von D-02;
+ein Wurf hielte die Simulation auf jedem Rechner zugleich an. Die Obergrenze ist zehnmal die größte
+Lagergrenze, so dass kein gespeichertes Gut sie erreicht, und klein genug, dass ein gültiger Tausch nie
+sättigt und ein Höchsttausch bei Extremkursen noch in die Nachfragerechnung von `settleMarket` passt
+(beides als Invariante in `market.test.ts`). Keine Regelzahl, weil eine Regelzahl einen Parameterlauf
+auslöst — sie ist eine technische Grenze wie das Minimum.
+
+**Auswirkung:** Eine D-02-Ausnahme an genau einer Stelle. Turnier und `progress.slow` zeilengleich.
+Eine absurde Menge im Marktfeld meldet jetzt „unzulässiges Ziel (Menge zu groß)" statt eines Mangels.
+`safeExchangeAmount()` bleibt als zweite Sicherung. Löst den Punkt „Kippbar" im Eintrag
+„Kappung statt Prüfung vor der Vorschau" (2026-09-25) ein. Nicht gebaut: Befund M43-03-a.
+
+**Kippbar:** Wert von `MAX_TRADE_AMOUNT`; Sättigung statt 0; die Oberflächen-Kappung entfernen.
+
+**Nacharbeit 2026-09-26:** `status` in `tasks.yaml` bleibt `todo` (nicht `done`) bis `pnpm verify`
+auf ruhiger Maschine Exit 0 liefert — der Bau- und der Nacharbeitslauf fanden das Turnier und
+`tradeOffer.test.ts` unter 90-100 % Fremdlast rot (Timeouts), reproduziert als lastbedingt und ohne
+Zusammenhang mit `market.ts`/`trade.ts`.
+
+---
+
+## 2026-09-26 · T-M42-11 · E-1: `performance.md` nicht beim Bau eingecheckt
+
+Variante (b) gewählt: `docs/reports/performance.md` wird von T-M42-11 nicht eingecheckt: die
+Tabelle existiert als Code (`formatStockSection`) und als Zahlen in Prosa (`PROBLEME.md` Befund 58,
+`PROGRESS.md` T-M42-11-Zeile); die Abschlussmessung am Ende von Etappe 1 (T-M42-12, `m18-plan-v2.md`
+§7/§9) schreibt die Datei. Grund: der Messlauf auf `2d48c00` (`pnpm sim:long`, 361 s) stand unter
+91-100 % Fremdlast durch einen zweiten parallelen Bau-Agenten; die Zeitzeilen sind damit nicht mit
+dem Ausgangswert (249 s) vergleichbar, die Tabelle selbst ist lastunabhängig. Variante (a) — ein
+von Noah freigegebenes ruhiges Fenster von rund 8 Minuten — bleibt jederzeit offen und ersetzt dann
+diesen Eintrag durch den eingecheckten Stand samt Commit.
+
+**Nacharbeit 2026-09-26 (Merge):** `status` in `tasks.yaml` auf `todo` zurückgesetzt (stand nach dem
+Bau-Zweig auf `done`) — der Bau selbst ist fertig und gemergt, aber `pnpm verify` steht auf ruhiger
+Maschine noch aus (dieselbe Fremdlast wie oben); `done` erst nach diesem Lauf.
