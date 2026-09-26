@@ -7089,10 +7089,13 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Antwort auf eine der acht Fragen nötig.
 - **Anforderungen:** keine
 - **Abhängigkeiten:** keine
-- **Dateien:** `apps/headless/test/progress.slow.test.ts`, `docs/plan/BALANCING.md`
-- **Tests zuerst:** `apps/headless/test/progress.slow.test.ts` — der neue Name deckt, was der
-  Test wirklich prüft.
-- **Fertig wenn:** `BALANCING.md` bekommt eine Tabelle Rohstoff/Start/Ende/Verhältnis; der Test
+- **Dateien:** `apps/headless/test/longrun.slow.test.ts`, `apps/headless/src/stocks.ts`,
+  `docs/reports/performance.md`, `docs/plan/PROBLEME.md` (berichtigt gegenueber der
+  Uebertragung, die hier irrtuemlich `progress.slow.test.ts`/`BALANCING.md` nannte — Text von
+  T-M42-12; der Bauplan meint eindeutig den Langlauf, siehe Titel und Befund 58)
+- **Tests zuerst:** `apps/headless/test/stocks.test.ts` — elf schnelle Faelle fuer die reine
+  Bestandstabelle; der neue Name in `longrun.slow.test.ts` deckt, was der Test wirklich prüft.
+- **Fertig wenn:** `performance.md` bekommt eine Tabelle Rohstoff/Start/Ende/Verhältnis; der Test
   läuft in der Abnahme von T-M42-12. Aufwand 1 h.
 
 ### T-M42-12 · Abschlussmessung, Abnahme, Übergabe
