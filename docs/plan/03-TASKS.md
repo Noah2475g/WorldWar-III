@@ -7101,8 +7101,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M42-10, T-M43-02, T-M43-04
 - **Dateien:** `docs/reports/balance-sweep.md`, `docs/reports/ai-tournament-run.md`,
   `docs/reports/progress-measured.json`, `docs/reports/acceptance.md`,
-  `docs/reports/stance.json`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`,
-  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`
+  `docs/reports/stance.json`, `docs/reports/ai-bench.json`,
+  `docs/reports/ai-reachability.md` (Nachtrag), Quellkommentare in `packages/ai/src/economy.ts`
+  und `packages/ai/src/targeting.ts` („amphibische KI: M18" bleibt wahr), `docs/plan/BALANCING.md`,
+  `docs/plan/DECISIONS.md`, `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`,
+  `docs/plan/WORKFLOW.md`
 - **Tests zuerst:** `apps/headless/test/sweep.slow.test.ts`,
   `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`,
   `apps/headless/test/ai-integration.slow.test.ts`, `apps/headless/test/m17-integration.slow.test.ts`,
@@ -7134,7 +7137,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M42-03
 - **Dateien:** `packages/core/src/phases/index.ts`, `packages/core/src/step.ts`,
   `packages/core/src/phases/movement.ts`, `packages/core/src/phases/diplomacy.ts`,
-  `packages/ai/src/passage.ts`, `apps/headless/test/m17-integration.slow.test.ts`
+  `packages/core/src/rules/` (kürzester Heimweg, neu — gemeinsame Funktion für Kern und KI,
+  D34.3), `packages/ai/src/passage.ts`, `apps/headless/test/m17-integration.slow.test.ts`
 - **Tests zuerst:** `packages/core/src/phases/diplomacy.test.ts` — M17-T6 wörtlich (Frieden im
   Ankunftstick kein `WAR_DECLARED`, 24 Ticks später steht sie noch → Überfall, auf dem
   kürzesten Weg heim → kein Überfall bis zur Ankunft); M17-G4 (Bündnisbruch mit Gast im Land →
