@@ -28,7 +28,8 @@ export function createMarket(rules: Rules): MarketState {
  * What a player gets for what they give.
  *
  * Both sides are valued at the frozen price of the tick, so the outcome does not
- * depend on who traded first (design D3, rule 3).
+ * depend on who traded first (design D3, rule 3). Never throws: an oversized amount
+ * saturates (see saturatedValue), T-M43-03.
  */
 export function exchangeAmount(
   market: MarketState,
@@ -41,7 +42,24 @@ export function exchangeAmount(
   if (wantPrice <= 0) return 0
   // eslint-disable-next-line no-restricted-syntax -- value in price units before dividing by the target price
   const value = giveAmount * givePrice
-  return divFixed(value, wantPrice)
+  if (Number.isSafeInteger(value)) return divFixed(value, wantPrice)
+  return divFixed(saturatedValue(value, givePrice), wantPrice)
+}
+
+/**
+ * What `giveAmount x givePrice` is worth once it no longer fits a safe integer (M17-U1, T-M43-03).
+ *
+ * The amount is input — a form field, a network command — so an oversized one is not a
+ * programming error in the sense of D-02, and the exchange must not stop the simulation on
+ * every machine at once. It saturates at the value of the largest amount that still computes:
+ * MAX_SAFE_INTEGER rounded down to a multiple of the price, i.e. floor(MAX_SAFE / price) x price,
+ * the same number the interface's preview cap produces. A value that is not a whole number at
+ * all (NaN, a fractional amount) has no counter-value.
+ */
+function saturatedValue(value: number, givePrice: Fixed): number {
+  if (Number.isNaN(value) || Math.abs(value) <= Number.MAX_SAFE_INTEGER || givePrice === 0) return 0
+  const bound = Number.MAX_SAFE_INTEGER - (Number.MAX_SAFE_INTEGER % Math.abs(givePrice))
+  return value < 0 ? -bound : bound
 }
 
 /** Records this tick's net demand; prices move once, in bookkeeping. */

@@ -8,6 +8,16 @@ import { fail, ok, type TradeCommand } from './types'
 export const MIN_TRADE_AMOUNT = 1000
 
 /**
+ * Largest amount one TRADE may give (T-M43-03, M17-U1). Ten times the largest storage limit
+ * (1 000 000 000, data/rules/default/resources.json), so no stored good ever reaches it; money
+ * is uncapped but measured below 1 500 000 in 200 days. Chosen so that a legal trade never
+ * saturates exchangeAmount (x marketMaxPrice) and one trade at extreme prices still fits the
+ * demand arithmetic of settleMarket (x marketMaxPrice / marketMinPrice x 1000); market.test.ts
+ * holds both against the shipped rules. Not a rule number: a technical bound, like the minimum.
+ */
+export const MAX_TRADE_AMOUNT = 10_000_000_000
+
+/**
  * Trading on the exchange (R-ECON-05, T-M3-06).
  *
  * The price is the same for everyone and is frozen for the duration of the tick, so
@@ -19,6 +29,9 @@ registerCommand<TradeCommand>('TRADE', {
     if (command.give === command.want) return fail('INVALID_TARGET', { reason: 'gleiche Ressource' })
     if (!Number.isSafeInteger(command.giveAmount) || command.giveAmount < MIN_TRADE_AMOUNT) {
       return fail('INVALID_TARGET', { giveAmount: command.giveAmount })
+    }
+    if (command.giveAmount > MAX_TRADE_AMOUNT) {
+      return fail('INVALID_TARGET', { giveAmount: command.giveAmount, reason: 'Menge zu groß' })
     }
 
     const player = state.players[command.playerId]!
