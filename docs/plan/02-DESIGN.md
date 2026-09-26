@@ -2990,6 +2990,16 @@ und 1815, je mit einer und mit zwei Armeen je Provinz, Garnison gegen Verteidigu
 führt den Abschnitt `episoden` und wird nur mit `WORLDWAR_WRITE_REPORT=1` geschrieben (Befund N3).
 Die Zusicherungen dazu kommen mit der neuen D30.4 in T-M40-10.)*
 
+*(Korrektur 2026-09-26, M17-F1: der Messlauf setzte voraus, dass die KI den passiven Menschen
+angreift. Das tat sie bis M17 nur aus Versehen (Durchmarsch-Überfälle Tag 20/35, siehe D30.9); seit
+T-M17-10 gar nicht mehr — die Wegprüfung hält solche Märsche an und beantragt Durchmarsch, den der
+passive Mensch nie beantwortet, und der Lauf wurde blind (0 statt 76 Einmärsche). Kein Fehler am
+Spiel: ein passiver Mensch mit voller Garnison ist nach `diplomacy.ts` §4 nie Kriegsziel. Seit
+2026-09-26 erklären die Landnachbarn des Menschen ihm am Spieltag 20 förmlich den Krieg
+(`KRIEGSPLAN` in `stance.slow.test.ts`), über den normalen Befehlsweg — danach entscheidet die KI
+alles selbst. Aufstellung A ist für Garnison und Verteidigung zeichengleich (D30.4 rückt mit einer
+Armee je Provinz nie aus), das trägt zu AK5 nur den Nenner bei.)*
+
 ### D30.7 Die Oberfläche
 
 Die Haltungsgruppe im Armeepanel (`STANCES` in `Panels.tsx`, Hinweise in `actions.ts`) führt
@@ -3091,7 +3101,9 @@ keinem Paar gehen mit Verteidigung mehr Provinzen ohne Gefecht verloren als mit 
 Befehl wird abgelehnt, keiner löst einen Krieg ohne Erklärung aus. **Die Schwelle 98 % wurde nach der
 Messung des Entwurfs festgelegt** — N lag in einem Einzellauf (1815 B) drei Prozent unter der
 Garnison, deshalb gilt sie für die Summe; eine Schwelle von 100 % kippte die Regel an einer schwachen
-Startzahl. Fällt eine Zusicherung, wird die Regel **zurückgenommen, nicht nachgeschärft**:
+Startzahl. **Gemessen unter Überfällen vor M17** (siehe Korrektur unten, Befund M17-F1) — seit
+2026-09-26 unter einem Kriegsplan, der dieselbe Bedrohung nachbildet. Fällt eine Zusicherung, wird
+die Regel **zurückgenommen, nicht nachgeschärft**:
 `adjutantCommands` gibt für `defensive` nichts mehr zurück, die Verteidigung kämpft wie die Garnison, und
 die Hinweise sagen das. Dasselbe Kriterium hätte die Deckung aus M40 (79,7 %, 10) und c1 (92 %, 9) rot
 gemeldet.
@@ -3101,6 +3113,13 @@ gemeldet.
 hält, die Regel bleibt. Die Kontrolle des Messlaufs, die Garnison A 1914, steht seitdem auf 76
 Einmärschen und 4 verlorenen Provinzen statt auf 52 und 4. N2 hat die Gegner verändert; Karte, Regeln und
 Aufstellung sind unverändert. `PROBLEME.md`, 2026-09-13.)*
+
+*(Korrektur 2026-09-26, M17-F1: die 76 Einmärsche oben kamen bis M17 aus zwei Durchmarsch-Überfällen
+je Partie (Frankreich Tag 20, Polen Tag 35) — die KI erklärte dem passiven Menschen nie förmlich den
+Krieg. Seit T-M17-10 hält die Wegprüfung diese Überfälle an, der Lauf ohne Kriegsplan wurde blind
+(0/0). Seit 2026-09-26 erklären die Landnachbarn stattdessen am Spieltag 20 förmlich den Krieg
+(Aufstellung geändert, Grenzen unangetastet — dasselbe Muster wie bei Block N2); die Kontrolle steht
+seitdem auf 41 Einmärschen und 4 verlorenen Provinzen. `PROBLEME.md`, `DECISIONS.md`, 2026-09-26.)*
 
 **Nicht gebaut.** Ausdrückliche Aufträge („halte Provinz X mit N Armeen, fülle nach", Sammelbefehl)
 und die Rückeroberung — beides eine neue Entscheidung, als offene Frage an Noah in `DECISIONS.md`

@@ -450,6 +450,13 @@ export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor,
       reason: `der eingecheckte Lauf in ${STANCE_REPORT} trifft die Kontrolle nicht oder nennt sie nicht (episoden.nachher.ak5.kontrolle.ok) - etwas anderes als die Automatik hat sich verschoben`,
     }
   }
+  // Befund M17-F1: ohne Kriegsplan war der Lauf blind (0 Einmaersche) und trug trotzdem erfuellt: true.
+  if (report.ak5?.angegriffen?.ok !== true) {
+    return {
+      fresh: false,
+      reason: `der eingecheckte Lauf ist blind oder nennt es nicht (episoden.nachher.ak5.angegriffen, Befund M17-F1)`,
+    }
+  }
   if (report.ak5?.fensterOk !== true) {
     return {
       fresh: false,

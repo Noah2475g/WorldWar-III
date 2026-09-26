@@ -625,7 +625,12 @@ describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16, T-M40
   const bericht = (felder: Record<string, unknown> = {}) => ({
     measuredAtCommit: MESSCOMMIT,
     measuredDirty: [] as string[],
-    ak5: { erfuellt: true, kontrolle: { erwartet: { intrusions: 76, provincesLost: 4 }, gemessen: { intrusions: 76, provincesLost: 4 }, ok: true }, fensterOk: true },
+    ak5: {
+      erfuellt: true,
+      kontrolle: { erwartet: { intrusions: 41, provincesLost: 4 }, gemessen: { intrusions: 41, provincesLost: 4 }, ok: true },
+      fensterOk: true,
+      angegriffen: { minIntrusions: 13, kriegsplanOk: true, ok: true },
+    },
     ...felder,
   })
   const frisch = { report: bericht(), sourcesDirty: false, measuredAtIsAncestor: true, commitsSinceMeasurement: [] as string[] }
@@ -711,6 +716,20 @@ describe('R-UNIT-09/AK5 Frische-Waechter des Haltungs-Messlaufs (T-M40-16, T-M40
     expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneFenster }) }).fresh).toBe(false)
   })
 
+  it('meldet unfrisch, wenn der Lauf blind war (Befund M17-F1)', () => {
+    const blind = stanceReportStatus({
+      ...frisch,
+      report: bericht({ ak5: { ...bericht().ak5, angegriffen: { minIntrusions: 0, kriegsplanOk: true, ok: false } } }),
+    })
+    expect(blind.fresh).toBe(false)
+    expect(blind.reason).toContain('M17-F1')
+
+    // Der heutige stance.json (b1bb3c8) hat das Feld noch nicht - auch das ist unfrisch, keine Verschlechterung.
+    const ohneAngegriffen: Partial<ReturnType<typeof bericht>['ak5']> = { ...bericht().ak5 }
+    delete ohneAngegriffen.angegriffen
+    expect(stanceReportStatus({ ...frisch, report: bericht({ ak5: ohneAngegriffen }) }).fresh).toBe(false)
+  })
+
   it('beobachtet jede Quelle, von der der Messlauf abhaengt - und jede davon gibt es (Befund N-1)', () => {
     const ROOT = fileURLToPath(new URL('..', import.meta.url))
     expect(STANCE_SOURCES).toEqual([
@@ -757,7 +776,7 @@ describe('T-M40-17 Frische nach Abstammung: der Merge eines aelteren Seitencommi
           nachher: {
             measuredAtCommit: commit,
             measuredDirty: [],
-            ak5: { erfuellt: true, kontrolle: { erwartet: {}, gemessen: {}, ok: true }, fensterOk: true },
+            ak5: { erfuellt: true, kontrolle: { erwartet: {}, gemessen: {}, ok: true }, fensterOk: true, angegriffen: { minIntrusions: 13, kriegsplanOk: true, ok: true } },
           },
         },
       })

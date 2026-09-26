@@ -1221,13 +1221,16 @@ Armeen weiter selbst (R-AI-01).
     dieselben Befehle erzeugen wie ohne Unterbrechung, und über das Vorspulen dieselben wie über
     die Uhr; sie SOLL nur aus der Sicht des Besitzers entscheiden (R-DIP-04) und für Armeen von
     KI-Mächten keinen Befehl erzeugen.
-  - AK5: WENN derselbe Messlauf über 200 Spieltage mit Haltung Garnison und mit Haltung
-    Verteidigung über die Startzahlen 1914, 2015 und 1815 und je zwei Aufstellungen gefahren
-    wird, DANN SOLL die Summe der Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
-    erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen ohne Gefecht verloren gehen
-    als mit Garnison, und kein Befehl der Automatik SOLL abgelehnt worden sein oder einen Krieg
-    ohne Erklärung ausgelöst haben — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht,
-    wird die Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
+  - AK5: WENN derselbe Messlauf über 200 Spieltage gefahren wird, in dem die Landnachbarn des
+    Menschen ihm am Spieltag 20 förmlich den Krieg erklären (Befund M17-F1: ohne diese Erklärung
+    greift die KI einen passiven Menschen mit voller Garnison nie an, und der Messlauf misst
+    nichts), mit Haltung Garnison und mit Haltung Verteidigung über die Startzahlen 1914, 2015 und
+    1815 und je zwei Aufstellungen, DANN SOLL die Summe der Provinz-Tage mit Verteidigung
+    mindestens 98 % der Garnison erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen
+    ohne Gefecht verloren gehen als mit Garnison, kein Befehl der Automatik SOLL abgelehnt worden
+    sein oder einen Krieg ohne Erklärung ausgelöst haben, und jeder Lauf SOLL mindestens einen
+    Einmarsch zählen — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht, wird die
+    Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
   - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
     und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt; WENN er
     eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.
