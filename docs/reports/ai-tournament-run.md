@@ -1,11 +1,11 @@
 # KI-Turnier — letzter Lauf
 
-Erzeugt von `pnpm test:slow` am 2026-09-25.
+Erzeugt von `pnpm test:slow` am 2026-09-26.
 Je 150 Partien je Paarung, 40 Spieltage; drei Mächte reihum (Nordland/Ostmark/Sueden),
 der Dritte als Füller auf „normal"; Startzahlen 1000–1024 je Aufstellung, Stufen je
 Paar getauscht.
 
-Gemessen auf: 527425c887a17c0451f223814498e31a4d63aa88 (Quellen sauber)
+Gemessen auf: d55edd571c46db65e00bec898b99a1a5bd81afe8 (Quellen sauber)
 
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) | Überfälle | verschiedene Ausgänge | Siege je Nation |
 |---|---|---|---|---|---|---|---|---|---|
