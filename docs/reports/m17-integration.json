@@ -1,6 +1,6 @@
 {
   "gemessenAm": "2026-09-26",
-  "measuredAtCommit": "c3bf936652773a0e0f12bc7117a3804fb1677f6e",
+  "measuredAtCommit": "f4ac360aeb2be496cdfa1f6b8067ae0aafcffc25",
   "measuredDirty": [],
   "aufgabe": "T-M17-15",
   "partie": {
@@ -938,6 +938,7 @@
         "jeMacht": {
           "p1": {
             "stufe": "easy",
+            "nation": "Vereinigte Staaten",
             "fabrikenBegonnen": 40,
             "fabrikenFertig": 12,
             "tageFabrikBezahlbar": 91,
@@ -972,6 +973,7 @@
           },
           "p2": {
             "stufe": "normal",
+            "nation": "Russland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1006,6 +1008,7 @@
           },
           "p3": {
             "stufe": "hard",
+            "nation": "China",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1040,6 +1043,7 @@
           },
           "p4": {
             "stufe": "easy",
+            "nation": "Indien",
             "fabrikenBegonnen": 51,
             "fabrikenFertig": 36,
             "tageFabrikBezahlbar": 125,
@@ -1074,6 +1078,7 @@
           },
           "p5": {
             "stufe": "normal",
+            "nation": "Deutschland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1108,6 +1113,7 @@
           },
           "p6": {
             "stufe": "hard",
+            "nation": "Frankreich",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1142,6 +1148,7 @@
           },
           "p7": {
             "stufe": "easy",
+            "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 1,
             "fabrikenFertig": 1,
             "tageFabrikBezahlbar": 50,
@@ -1176,6 +1183,7 @@
           },
           "p8": {
             "stufe": "normal",
+            "nation": "Italien",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1364,6 +1372,7 @@
         "jeMacht": {
           "p1": {
             "stufe": "easy",
+            "nation": "Vereinigte Staaten",
             "fabrikenBegonnen": 35,
             "fabrikenFertig": 13,
             "tageFabrikBezahlbar": 101,
@@ -1398,6 +1407,7 @@
           },
           "p2": {
             "stufe": "normal",
+            "nation": "Russland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1432,6 +1442,7 @@
           },
           "p3": {
             "stufe": "hard",
+            "nation": "China",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1466,6 +1477,7 @@
           },
           "p4": {
             "stufe": "easy",
+            "nation": "Indien",
             "fabrikenBegonnen": 27,
             "fabrikenFertig": 21,
             "tageFabrikBezahlbar": 106,
@@ -1500,6 +1512,7 @@
           },
           "p5": {
             "stufe": "normal",
+            "nation": "Deutschland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1534,6 +1547,7 @@
           },
           "p6": {
             "stufe": "hard",
+            "nation": "Frankreich",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1568,6 +1582,7 @@
           },
           "p7": {
             "stufe": "easy",
+            "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 1,
             "fabrikenFertig": 1,
             "tageFabrikBezahlbar": 55,
@@ -1602,6 +1617,7 @@
           },
           "p8": {
             "stufe": "normal",
+            "nation": "Italien",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1790,6 +1806,7 @@
         "jeMacht": {
           "p1": {
             "stufe": "easy",
+            "nation": "Vereinigte Staaten",
             "fabrikenBegonnen": 32,
             "fabrikenFertig": 14,
             "tageFabrikBezahlbar": 108,
@@ -1824,6 +1841,7 @@
           },
           "p2": {
             "stufe": "normal",
+            "nation": "Russland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1858,6 +1876,7 @@
           },
           "p3": {
             "stufe": "hard",
+            "nation": "China",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1892,6 +1911,7 @@
           },
           "p4": {
             "stufe": "easy",
+            "nation": "Indien",
             "fabrikenBegonnen": 31,
             "fabrikenFertig": 29,
             "tageFabrikBezahlbar": 123,
@@ -1926,6 +1946,7 @@
           },
           "p5": {
             "stufe": "normal",
+            "nation": "Deutschland",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1960,6 +1981,7 @@
           },
           "p6": {
             "stufe": "hard",
+            "nation": "Frankreich",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
@@ -1994,6 +2016,7 @@
           },
           "p7": {
             "stufe": "easy",
+            "nation": "Vereinigtes Königreich",
             "fabrikenBegonnen": 1,
             "fabrikenFertig": 1,
             "tageFabrikBezahlbar": 58,
@@ -2028,6 +2051,7 @@
           },
           "p8": {
             "stufe": "normal",
+            "nation": "Italien",
             "fabrikenBegonnen": 0,
             "fabrikenFertig": 0,
             "tageFabrikBezahlbar": 0,
