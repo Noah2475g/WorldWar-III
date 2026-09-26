@@ -505,6 +505,13 @@ scope:
     # liegen hinter der abgenommenen V1; M41 bringt keine eigene Anforderung.
     R-GAME-08:  "M35 — Zwischenziele als Rueckmeldung, keine Siegbedingung (T-M35-03)"
     R-UNIT-09:  "M40 — die Haltung wird ein Auftrag (T-M40-03)"
+    # Aus der Sammelstelle M18 geholt am 2026-09-26 (Plan m18-plan-v2): Geld, Heer und
+    # Ruestung der KI (M42) und die Raeumfrist (M43). Wirtschaftssenke, amphibische KI und
+    # Kennungsfolgen bleiben in M18.
+    R-AI-10:    "M42 — das Heer der KI in Einheiten und Rollen; Zusage 7 aus T-M14-12 neu gefasst (T-M42-09)"
+    R-AI-11:    "M42 — die KI rechnet mit dem Geld, das sie hat (T-M42-03, T-M42-04)"
+    R-AI-12:    "M42 — die KI baut Fabriken und fuehrt Artillerie (T-M42-06, T-M42-07)"
+    R-DIP-10:   "M43 — Raeumfrist nach Frieden, Buendnisbruch und Kuendigung (T-M43-01)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -1242,6 +1249,95 @@ Armeen weiter selbst (R-AI-01).
     *(Ergänzt am 2026-09-13, T-M40-14, Befund H-A der Durchsicht der Nacharbeit: der Zustand kennt
     keinen Ankunftstick; nach einem Marsch, der die fünf Tage aufbrauchte, schickte die Automatik die
     eben verlegte Armee weiter.)*
+
+### 2.19 Geld, Heer und Räumfrist (M42, M43, aufgenommen 2026-09-26)
+
+Drei Befunde aus M17 (`M17-T7` KI-Artillerie, `M17-S12` `RECRUIT_SPY`-Buchung, `M17-T6`
+Räumfrist nach Friedensschluss) sind an M18 gegangen (T-M17-15, Noahs Entscheid vom
+2026-09-25). Der Plan `m18-plan-v2.md` holt sie mit Noahs Antworten vom 2026-09-26
+(`DECISIONS.md`) in zwei echte Meilensteine: **M42 „Das Heer der KI"** und **M43 „Frieden
+mit Räumfrist"**. Entwurf: `02-DESIGN.md` D32 (M42) und D34 (M43).
+
+- **R-AI-10 — Das Heer der KI wird in Einheiten und Rollen geführt.** Die KI nutzt dieselben Kommandos
+wie der Mensch (R-AI-01).
+- **AK1:** WENN zwei eigene Armeen zusammengelegt werden, DANN SOLL sich die Rangfolge der als
+  Nächstes auszuhebenden Einheit dadurch nicht ändern. Der Rückstand zur Zielmischung wird in
+  Einheiten gemessen, nicht in Stapeln.
+- **AK2:** WENN die KI zusammenlegt, DANN SOLL eine Armee, deren Einheiten sämtlich Reichweite haben,
+  nur mit ebensolchen zusammengelegt werden.
+- **AK3** *(Wortlaut nach Noahs Antwort auf Frage 4, „wie empfohlen"):* WENN am Ende zweier
+  aufeinanderfolgender Spieltage dieselben zwei stehenden Armeen einer KI-Macht in derselben Provinz
+  stehen, dieselbe Rolle und denselben Einschiffungszustand haben und zusammen höchstens
+  `stackFullContribution` Einheiten zählen, DANN ist das ein Fehler. Über 200 Spieltage SOLL es in
+  allen Läufen des Messwerkzeugs null solcher Paare geben. *(Löst „höchstens drei stehende
+  Armeeobjekte je Provinz" aus T-M14-12 ab. Beide Fassungen sind ab 61 stehenden Einheiten nicht
+  zugleich erfüllbar; die alte Zahl bleibt Berichtszahl.)*
+- **AK4:** WENN die KI zusammenlegt, DANN SOLL kein entstehender Verband mehr als
+  `stackFullContribution` Einheiten zählen. Das ist der Kampfdeckel je Armee aus `rules/combat.ts`.
+- **AK5:** WENN acht KI-Mächte 200 Spieltage mit den Startzahlen 1815, 1914 und 2015 spielen, DANN
+  SOLLEN ausgehobene Artillerie und selbsttätiger Beschuss (Summe) durch keine Aufgabe nach
+  T-M42-07 unter die Hälfte der vorigen Messstufe fallen.
+
+- **R-AI-11 — Die KI rechnet mit dem Geld, das sie hat.**
+- **AK1:** WENN die KI im selben Zug einen Spion anwirbt, baut, an der Börse Geld gibt oder ein
+  Handelsangebot macht oder annimmt, DANN SOLL ihre Aushebung desselben Zugs mit dem Bestand
+  rechnen, der danach bleibt. Das behebt Befund M17-S12; betroffen sind die Befehle `RECRUIT_SPY`,
+  `BUILD`, `TRADE` (gebende Seite), `OFFER_TRADE` und `ACCEPT_TRADE`.
+- **AK2:** WENN die KI eine Aushebung erwägt, DANN SOLL sie sie nur befehlen, wenn ihre
+  **Tagesbilanz danach** (geschätzter Geldertrag − Unterhalt aller Armeen einschließlich der neuen −
+  gebundener Spionagesold) nicht negativ ist. Den Kaufpreis zahlt der Bestand, samt Rücklage. Sonst
+  hebt sie weniger oder nichts aus und begründet es (R-AI-05).
+- **AK3** *(Fassung nach Noahs Antwort auf Frage 8, „wie empfohlen"):* WENN KI-Mächte die
+  ausgelieferte Voreinstellung und die Weltkarte mit drei Startzahlen je 200 Spieltage spielen, DANN
+  SOLL kein Geldmangeltag einer KI-Macht **auf eine eigene Aushebung zurückgehen**. Messbar heißt das:
+  an keinem Mangeltag war die Tagesbilanz nach der letzten eigenen Aushebung negativ. Die Summe aller
+  Mangeltage bleibt Berichtszahl und braucht je Stufe einen erklärenden Satz. Gemessen am 2026-09-26:
+  Kanada 44 Tage, alle selbst verschuldet.
+
+- **R-AI-12 — Die KI baut Fabriken und führt Artillerie.**
+- **AK1:** WENN eine KI-Macht eine sichtbare eigene Stadt besitzt, aber noch keine Fabrik hat und
+  keine im Bau ist, und die Fabrik freigeschaltet ist, DANN SOLL sie die Kosten der ersten Fabrik
+  samt Rücklage zurückhalten. Andere Bauten außer der Kaserne unterbleiben dann, und ausgehoben wird
+  nur aus dem Bestand über diesem Vorbehalt.
+- **AK2:** WENN acht KI-Mächte 200 Spieltage mit drei Startzahlen spielen, DANN SOLL jede Stufe
+  (leicht, normal, schwer) in jeder Startzahl mindestens eine Fabrik beginnen. In der Voreinstellung
+  SOLL mindestens die Hälfte der Mächte mit Stadt eine Fabrik beginnen. Gemessen am 2026-09-26 sind
+  es 2 von 6; Kanada hat keine Stadt und zählt nicht mit.
+- **AK3** *(Band nach Noahs Antwort auf Frage 1, „wie empfohlen", Mischung 60/30/10):* WENN
+  dieselben Läufe gespielt werden, DANN SOLL in jedem Lauf selbsttätiger Beschuss vorkommen, und der
+  Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (gemessen
+  24–28 %). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
+- **AK4:** WENN die KI eine Einheit mit Ölunterhalt erwägt, DANN SOLL sie sie nur ausheben, wenn die
+  Öl-Tagesbilanz danach nicht negativ ist, also geschätzte Förderung − Ölunterhalt aller Armeen
+  einschließlich der neuen ≥ 0.
+- **AK5:** WENN diese Anforderung gebaut ist, DANN SOLLEN alle Zusicherungen des Turniers (R-AI-06,
+  `tournament.slow.test.ts`) grün sein. Die Aufrüstung darf die Stufen nicht einebnen.
+
+- **R-DIP-10 — Die Räumfrist** *(M17-T6, M17-G4, M17-D10; Noahs Entscheid vom 2026-09-25, dass es eine
+gemeinsame Räumfrist für Frieden und Bündnisbruch gibt; die Form nach Noahs Antwort auf Frage 3,
+„wie empfohlen")*
+- **AK1:** WENN zwei Mächte Frieden schließen (Krieg → Waffenstillstand) oder ein Bündnis gebrochen
+  wird, DANN SOLL für `rightOfWayNoticeTicks` Ticks keine Armee einer der beiden, die **im Land der
+  anderen steht**, als Überfall gelten.
+- **AK2:** WENN eine Armee ohne Krieg, Bündnis oder Durchmarschrecht im Land einer anderen Macht
+  steht und auf dem **kürzesten Heimweg** ist, DANN SOLL sie kein Überfall sein, solange sie
+  marschiert, auch nach Ablauf einer Frist. Kürzester Heimweg heißt: der Weg endet im eigenen Land,
+  betritt nach dem Verlassen das Land der Gastmacht nicht wieder, und die Zahl seiner Felder im Land
+  der Gastmacht ist nicht größer als der kürzeste Abstand zum nächsten eigenen Feld über Felder der
+  Gastmacht und eigene Felder.
+- **AK3:** WENN eine Armee ohne Recht die Grenze in das Land einer Macht überschreitet, mit der kein
+  Krieg herrscht, DANN SOLL das ein Überfall sein, auch innerhalb der Frist aus AK1 und auch mit einem
+  Weg ins eigene Land. Ausgenommen ist nur der Tick des Friedensschlusses selbst (M17-T6). Das gilt
+  ebenso beim Übergang vom Waffenstillstand in den Frieden und bei Spielbeginn.
+- **AK4:** WENN eine KI-Armee bei Beginn einer solchen Frist im Land der anderen Macht steht oder
+  dorthin unterwegs ist, DANN SOLL die KI sie auf dem kürzesten Heimweg heimschicken. Über drei
+  Startzahlen × 200 Spieltage SOLL es null Überfälle mit den Merkmalen `friedensschluss` oder
+  `nachKuendigung` geben (gemessen am 2026-09-26: 1/2/0).
+- **AK5:** WENN ein menschlicher Spieler bei Beginn einer solchen Frist Armeen im Land der anderen
+  Macht hat, DANN SOLL die Oberfläche das mit Provinz und letztem Tick melden, und die Meldung SOLL
+  zur Armee springen.
+- **AK6:** WENN diese Anforderung gebaut ist, DANN SOLL `SCHEMA_VERSION` 4 bleiben und kein
+  Golden-Master sich bewegen.
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

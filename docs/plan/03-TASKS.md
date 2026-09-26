@@ -3861,6 +3861,14 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 >   hat ihn einmal von Hand nachgestellt (zweimal von Grund auf gebaut, 200 Hashes gleich), aber
 >   kein Lauf im Repo prüft das automatisch nach. Kandidat: eine feste Wiederholungslauf-Prüfung
 >   in `m17-integration.slow.test.ts` oder einem Geschwistertest.
+>
+> **Vorgemerkt am 2026-09-26 (`m18-plan-v2.md`) — drei Befunde haben jetzt einen echten
+> Meilenstein statt „M18".** **M17-T6** (Friede im selben Tick wird zum Überfall), **M17-T7**
+> (KI hebt praktisch keine Artillerie aus) und **M17-S12** (`RECRUIT_SPY` desselben Takts nicht
+> vorgebucht) sind mit Noahs Antworten vom 2026-09-26 (`DECISIONS.md`) in die Meilensteine
+> **M42 „Das Heer der KI"** und **M43 „Frieden mit Räumfrist"** geholt (Abschnitt weiter unten).
+> Sie stehen hier zur Vollständigkeit weiter, weil diese Liste nichts löscht — der Bau läuft
+> unter M42/M43, nicht hier. M18 bleibt für den Rest dieser Liste die Sammelstelle.
 
 ---
 
@@ -6833,6 +6841,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Voreinstellung). `consolidate.ts`, Tests und Berichte stehen wieder auf dem Stand nach T-M41-09; die
   Aufgabe steht auf `todo`, Zusage 7 ist mit der Messung nach M18 verschoben. `DECISIONS.md` und
   `PROBLEME.md`, 2026-09-13, T-M41-10.)*
+  *(**Abgelöst am 2026-09-26** (`m18-plan-v2.md`, Noahs Entscheid): **T-M42-05** (Einheiten statt
+  Stapel zählen), **T-M42-08** (Zusammenlegen nach Rolle, strenger Deckel) und **T-M42-09**
+  (Zusammenlegen überall, Zusage 7 neu gefasst als R-AI-10/AK3 — keine zwei stehenden Verbände
+  derselben Rolle am selben Ort mit zusammen höchstens `stackFullContribution` Einheiten) nehmen
+  diese Aufgabe auf. T-M41-10 bleibt auf `todo`, ohne eigenen weiteren Bau.)*
 
 ### T-M41-11 · Die Sicht nennt die Sperre beim Verlegen der Hauptstadt
 - **Ziel:** eine Sperre, die die KI nicht sieht, befiehlt sie jeden Tag neu — und jede Ablehnung
@@ -6877,3 +6890,307 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   zwei spätere Kriterien) und den Rückfallwert. Der eingecheckte `acceptance.md` trägt den alten
   Satz, bis der nächste `pnpm acceptance` ihn neu schreibt — er gilt ohnehin nur für den Stand,
   gegen den er gemessen wurde.
+
+## Meilenstein M42 — Das Heer der KI
+
+> **Herkunft.** `m18-plan-v2.md`, übertragen am 2026-09-26 (Übertragungs-Checkliste Plan
+> Abschnitt 15). Drei Befunde aus M17 (`M17-T7` KI-Artillerie, `M17-S12` `RECRUIT_SPY`-Buchung)
+> gehen hier aus der Sammelstelle M18 in einen echten Meilenstein; das dritte (`M17-T6`
+> Räumfrist) steht in M43. Noah hat alle acht Fragen des Plans (Abschnitt 17) am 2026-09-26
+> **wie empfohlen** beantwortet — Entscheid in `DECISIONS.md`. Integrationszweig
+> `claude/m42-m43-heer-und-raeumfrist`, von `main` abgezweigt; Aufgaben-Worktrees darunter,
+> Rücklauf in Stufenreihenfolge (Plan Abschnitt 5: U → R → F → S in Etappe 1, danach Etappe 2).
+> Etappe 1 endet mit einem Pull Request und Noahs Playtest; Etappe 2 folgt erst nach seiner
+> Bestätigung. Entwurf: `02-DESIGN.md` D32.
+
+### T-M42-01 · Messwerkzeug und Ausgangswert
+- **Ziel:** erst messen, dann ändern — einmal für Geld, Heer, Rüstung und Räumfrist, in drei
+  Startzahlen und der Voreinstellung. Veraltete Berichte und Doku werden richtiggestellt.
+- **Anforderungen:** R-AI-10, R-AI-11, R-AI-12, R-DIP-10
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/headless/test/m42-zaehlung.ts` (neu), `apps/headless/test/m42-zaehlung.test.ts`
+  (neu), `apps/headless/test/m17-integration.slow.test.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`, `docs/reports/m17-integration.json`,
+  `docs/reports/ai-integration.json`, `docs/plan/WORKFLOW.md`, `docs/plan/PROBLEME.md`
+- **Tests zuerst:** `apps/headless/test/m42-zaehlung.test.ts` — `zusammenlegbarePaare` (gleiche
+  Rolle, gleiches `embarked`, Summe ≤ 20, keines über 20), `istBatterie` entspricht der Bedingung
+  in `military.ts`, `artillerieAnteil` aus `UNIT_RECRUITED`, `mangelDurchAushebung`
+  (R-AI-11/AK3: Tagesbilanz nach der letzten Aushebung vor dem Mangeltag).
+- **Fertig wenn:** ein gemeinsames Zählmodul (kein dritter Simulator, Kritik M-3) wird von
+  `m17-integration.slow.test.ts` (Weltkarte, drei Startzahlen) und
+  `ai-integration.slow.test.ts` (Voreinstellung, 200 Tage) gelesen und schreibt beiden
+  Berichten einen Abschnitt `m42`: Fabriken (begonnen/fertig), Tage mit bezahlbarer Fabrik,
+  Geld- und Ölmangeltage (gesamt und durch Aushebung), Artillerie/Infanterie in Einheiten,
+  Beschuss, Kriege/Überfälle mit Merkmal/Frieden/Eroberungen, größter stehender Verband, Tage
+  über dem Deckel, zusammenlegbare Paare, Batterien, `NO_PATH` und Ablehnungen je Befehl ×
+  Fehlercode. Gegenprobe: ohne die neuen Zähler bleiben die bestehenden Zusicherungen
+  zeilengleich. `WORKFLOW.md` §2.6 (Befund M38-4, längst erledigt) und die B4-Statuszeile in
+  `PROBLEME.md` (nur per Python, CR-Bytes vorher/nachher gezählt, Falle 22) werden berichtigt.
+  Aufwand 3,5 h, Rechenzeit rund 10 min.
+
+### T-M42-02 · Der Haltungs-Messlauf hält eine gesunde KI-Änderung aus
+- **Ziel:** AK5 (98 % Provinz-Tage) soll gegen Rauschen robuster werden — nicht gegen eine
+  systematische Verschiebung, dafür gibt es die Rückverfolgung in T-M42-12. Nur bei Noahs
+  Antwort auf Frage 5 = ja (wie empfohlen).
+- **Anforderungen:** R-UNIT-09
+- **Abhängigkeiten:** T-M42-01
+- **Dateien:** `apps/headless/test/stance.slow.test.ts`, `scripts/acceptance-criteria.mjs`,
+  `test/requirements.test.ts`, `docs/plan/01-REQUIREMENTS.md`, `docs/plan/02-DESIGN.md`,
+  `docs/reports/stance.json`
+- **Tests zuerst:** `apps/headless/test/stance.slow.test.ts` mit sechs statt drei Startzahlen.
+- **Fertig wenn:** Kriegsplan (Tag 20, Frankreich/Polen) und Grenzen bleiben unverändert, die
+  Kriterien halten (Abstand zur 98-%-Schwelle ≥ zwei Einzelverluste, rund 340 Provinz-Tage;
+  kleinste Einmarschzahl ≥ 1 je Lauf; Laufzeit ≤ 25 min), die Kontrolle wird neu gemessen und
+  gesetzt, und die „40 Proben je Startzahl" aus dem M17-F1-Eintrag werden neu abgetastet statt
+  übernommen. **Rücknahme:** hält der Aufbau die Kriterien nicht, bleibt er wie heute, Befund
+  in `PROBLEME.md`. Aufwand 2 h, Rechenzeit rund 40 min.
+
+### T-M42-03 · Die KI hebt nur aus, was ihre Tagesbilanz trägt
+- **Ziel:** R-AI-08/AK2 auch in der ausgelieferten Partie erfüllen (Kanada 44 Tage
+  Geldmangel).
+- **Anforderungen:** R-AI-11
+- **Abhängigkeiten:** T-M42-01
+- **Dateien:** `packages/ai/src/finance.ts` (neu), `packages/ai/src/espionage.ts`,
+  `packages/ai/src/economy.ts`, `apps/headless/test/ai-integration.slow.test.ts`
+- **Tests zuerst:** `packages/ai/src/finance.test.ts` — Gleichhaltung gegen `economyOverview`,
+  umgezogen aus `espionage.test.ts`. `packages/ai/src/economy.test.ts` — Ertrag 10 000/Tag,
+  Unterhalt 9 000, eine Infanterie kostet 1 440/Tag → kein `RECRUIT`; Ertrag 20 000, Unterhalt
+  9 000 → höchstens 7 Einheiten; **großer Bestand bei schon negativer Tagesbilanz → kein
+  `RECRUIT`** (der Testfall der ersten Fassung, „Bestand deckt drei Tage → mehr", hätte den
+  Fehler festgeschrieben); die Begründung ist vorhanden.
+  `apps/headless/test/ai-integration.slow.test.ts` — neue Zusicherung R-AI-11/AK3 in der
+  Fassung aus Noahs Antwort auf Frage 8.
+- **Fertig wenn:** `finance.ts` zieht `dailyMoneyIncome`/`dailyArmyMoneyUpkeep` verhaltensgleich
+  aus `espionage.ts`; `recruitCommands` prüft nach der Wahl von Art und Stückzahl die
+  Tagesbilanz (Ertrag − Unterhalt − Sold − neue Einheiten ≥ 0), `n` sinkt bis die Bedingung
+  gilt, sonst nächste Provinz oder keine Aushebung, begründet. Wirkung: Kanada 44 → 0
+  Geldmangeltage, Turnier und `progress.slow` zeilengleich bzw. grün. Rücknahmekriterien
+  K1–K9 (Plan §9.3). Aufwand 3 h, Rechenzeit rund 12 min.
+
+### T-M42-06 · Erst die Fabrik
+- **Ziel:** R-AI-12/AK1, AK2 — in Etappe 1 vorgezogen (Kritik K-2: die Buchungsreparatur vor
+  der Fabrik reißt `progress.slow`).
+- **Anforderungen:** R-AI-12
+- **Abhängigkeiten:** T-M43-01
+- **Dateien:** `packages/ai/src/economy.ts`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — Stadt ohne Fabrik, Fabrik
+  freigeschaltet, Bestand darunter → kein Bau von Eisenbahn, Festung oder Hafen, eine Kaserne
+  ja; ausgehoben wird nur über dem Vorbehalt; Fabrik vorhanden oder „im Bau" (Ersatzmerkmal) →
+  Vorbehalt aus; vor der Freischaltung oder ohne Stadt → aus.
+- **Fertig wenn:** `factoryReserve(context)` hält die Kosten der ersten Fabrik samt Rücklage
+  zurück, solange eine sichtbare eigene Stadt ohne Fabrik und ohne Fabrik „im Bau" besteht
+  (Ersatzmerkmal: `buildQueueLength > 0` und schon eine Kaserne — die Sicht der KI trägt keine
+  `buildQueue`). Wirkung: in jeder Startzahl beginnt jede Stufe mindestens eine Fabrik, in der
+  Voreinstellung mindestens 3 von 6 Mächten mit Stadt; `progress.slow` bleibt grün.
+  Rücknahmekriterien K1–K9. Aufwand 2,5 h, Rechenzeit rund 12 min.
+
+### T-M42-04 · Spionage und Börse werden gebucht, „schwer" wird neu abgestimmt
+- **Ziel:** Befunde M17-S12 und M17-I1 beheben, ohne dass die Stufen ununterscheidbar werden.
+- **Anforderungen:** R-AI-11, R-AI-06
+- **Abhängigkeiten:** T-M42-06
+- **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/decide.ts`,
+  `packages/ai/src/provinceValue.ts`, `data/rules/default/ai.json` (nur wenn ein Kandidat
+  hält), `docs/plan/BALANCING.md`, `apps/headless/test/tournament.slow.test.ts`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — `RECRUIT_SPY` im selben Zug senkt die
+  Stückzahl, ebenso `BUILD` und `TRADE`, ohne `pending` bleibt alles unverändert.
+  `packages/ai/src/provinceValue.test.ts` — `ledgerAfter` zieht `spyRecruitCost` und
+  `TRADE.giveAmount` ab.
+- **Fertig wenn:** `recruitCommands(context, explanations, pending = [])` bucht `RECRUIT_SPY`
+  und `TRADE` (gebende Seite) im selben Zug vor. Messung: zuerst die Buchungsreparatur allein
+  als Zwischenstufe (erwartet ≈ 0,45), dann die Kandidaten für `hard.recruitShare` (320, 350,
+  400 — Noahs Antwort auf Frage 2, wie empfohlen) gleichzeitig gemessen; gewählt wird der
+  kleinste Kandidat, bei dem **alle** Zusicherungen von `tournament.slow.test.ts` **und**
+  `progress.slow` grün sind. **Rücknahme:** hält keiner, stoppt die Aufgabe; die
+  Buchungsreparatur wird **nicht** allein eingecheckt (macht das Turnier rot), die Zahlen
+  gehen an Noah. Aufwand 3 h, Rechenzeit rund 25 min.
+
+### T-M42-05 · Die Truppenmischung zählt Einheiten
+- **Ziel:** R-AI-10/AK1.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-04
+- **Dateien:** `packages/ai/src/economy.ts`
+- **Tests zuerst:** drei Infanteriearmeen zu je fünf plus eine Batterie zu eins → Rangfolge vor
+  und nach dem Verschmelzen gleich (heute rot); 15 000 HP Infanterie = 15 Einheiten; der
+  übergebene Bestand entspricht dem selbst gebildeten.
+- **Fertig wenn:** `rankedUnitsFor` zählt `unitCount(stack, rules)` statt 1 je Stapel; `owned`
+  und `total` werden einmal je `recruitCommands` gebildet und optional übergeben. Gemessen erst
+  zusammen mit T-M42-07 auf Stufe AB (Kritik H-5: die Zählung ändert die Rangfolge erst, wenn
+  zwei Arten im Bestand sind). Aufwand 1,5 h.
+
+### T-M42-07 · Artillerie, die die KI tragen kann
+- **Ziel:** R-AI-12/AK3, AK4, R-AI-10/AK5.
+- **Anforderungen:** R-AI-12, R-AI-10
+- **Abhängigkeiten:** T-M42-05
+- **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/finance.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`, `docs/plan/01-REQUIREMENTS.md`
+- **Tests zuerst:** Rangliste mit unbezahlbarem Panzer vorn, Artillerie an zweiter Stelle, der
+  Bestand trägt eine → `RECRUIT artillery 1`; Infanterie vorn → keine Untergrenze; Öl-Wächter —
+  die Öl-Tagesbilanz trägt den Unterhalt nicht → keine Einheit mit Öl; der Förderungs-Zwilling
+  entspricht `economyOverview`.
+- **Fertig wenn:** die Kandidatenschleife von `recruitCommands` setzt eine Untergrenze
+  (`möglich = 1`), wenn `möglich < 1`, die Einheit eine Fabrik braucht, vor ihr in der Rangliste
+  nur der unbezahlbare Panzer stand, und der Bestand nach Vorbehalt und Rücklage die Kosten
+  trägt. `TARGET_MIX` auf 60/30/10 (Noahs Antwort auf Frage 1, wie empfohlen), Zielband
+  15–30 % Artillerie (gemessen 24–28 %); Öl-Wächter über `dailyOilYield`/`dailyArmyUpkeep`.
+  `ai-integration.slow.test.ts`: das `it.fails` „lässt die Artillerie feuern" wird im selben
+  Commit zu `it()`; `01-REQUIREMENTS.md` löst den Vermerk unter R-AI-08/AK3 auf. Messung: Stufe
+  AB auf diesem Commit, dazu der **Gegenlauf „B ohne A"** (T-M42-05 zurückgedreht) nach der
+  Entscheidungsregel aus Plan §5 — reißt AB und hält „B ohne A", ist T-M42-05 die Ursache und
+  der Heer-Teil (T-M42-08/-09) endet; reißen beide, wird T-M42-05 zurückgenommen. Aufwand
+  3,5 h, Rechenzeit rund 25 min mit Gegenlauf.
+
+### T-M42-08 · Zusammenlegen nach Rolle und unter dem Deckel
+- **Ziel:** R-AI-10/AK2, AK4.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-07
+- **Dateien:** `packages/ai/src/army-role.ts` (neu), `packages/ai/src/consolidate.ts`,
+  `packages/ai/src/military.ts`, `apps/headless/test/m42-zaehlung.ts`
+- **Tests zuerst:** `army-role.test.ts` — leer, Infanterie, Artillerie, gemischt, unbekannt.
+  `decide.test.ts` — zwei Infanterie + Batterie → Merge über die zwei Infanterie; zwei
+  Batterien → Merge; drei zu je 15 → kein Merge; 15/10/5 → [a, c]; `a9`/`a10` nach `sort()`;
+  bestehende `militaryCommands`-Tests bleiben unverändert.
+- **Fertig wenn:** `army-role.ts` bietet `isBattery` und `armyRole` (`battery` | `line`);
+  `military.ts` liest `isBattery` verhaltensgleich; `consolidate.ts` arbeitet First-Fit je
+  Provinz und Rolle (Kennungen mit `sort()` wie im Kern und `absorbedBy`, Einheiten über
+  `unitCount`, eine Gruppe nur solange die Summe ≤ `stackFullContribution` bleibt, gleiches
+  `embarked` und leerer `path`, weiterhin eine Provinz je Denkschritt). `military.ts` wird auch
+  von T-M43-01 (Heimweg) angefasst — nacheinander mergen. Aufwand 3 h, Rechenzeit rund 12 min.
+
+### T-M42-09 · Zusammenlegen in allen Provinzen: Zusage 7 in haltbarer Fassung
+- **Ziel:** R-AI-10/AK3, nach Noahs Antwort auf Frage 4 (wie empfohlen).
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-08
+- **Dateien:** `packages/ai/src/consolidate.ts`, `apps/headless/test/ai-integration.slow.test.ts`,
+  `docs/plan/tasks.yaml`, `docs/plan/03-TASKS.md`
+- **Tests zuerst:** zwei Provinzen mit je drei Armeen zu fünf → zwei `MERGE_ARMIES` im selben
+  Denkschritt; nach einem Denkschritt kein freies Paar ≤ 20 mehr; **Gegenlauf vorgeführt:**
+  dieselbe Zusicherung fällt auf Stufe C1 (T-M42-08 allein).
+- **Fertig wenn:** keine zwei stehenden Verbände derselben Rolle am selben Ort mit zusammen
+  höchstens `stackFullContribution` (20) Einheiten (löst die alte Fassung „höchstens drei
+  stehende Armeeobjekte" aus T-M14-12 ab). Der `break` nach der ersten Provinz in
+  `consolidate.ts` fällt weg; `absorbedBy` sammelt über alle `MERGE_ARMIES`. `tasks.yaml` trägt
+  den `reopened`-Text von T-M41-10 mit dieser Aufgabe als Ablösung (schon eingetragen); der
+  M18-Absatz „Vorgemerkt am 2026-09-13" in `03-TASKS.md` zeigt auf M42 (schon eingetragen).
+  Aufwand 1,5 h, Rechenzeit rund 15 min.
+
+### T-M42-10 · (bedingt) Die Aushebung fragt die Provinz, die bezahlen kann
+- **Ziel:** Befund D (die Aushebung fragt die vielseitigste statt der bezahlenden Provinz).
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M42-09
+- **Dateien:** keine (bedingt — siehe Fertig wenn)
+- **Tests zuerst:** keine, solange die Bedingung nicht erfüllt ist.
+- **Fertig wenn:** **Bedingung:** mindestens 5 verpasste Gelegenheiten über drei Startzahlen auf
+  Stufe C2 (nach T-M42-09). Darunter wird die Aufgabe `done` mit „Befund D widerlegt, gemessen
+  N", ohne Codeänderung. Erst bei erfüllter Bedingung wird die Aushebung umgebaut. Aufwand 0,3 h
+  (widerlegt) oder 2,5 h (gebaut).
+
+### T-M42-11 · Der Langlauf sagt, was er prüft
+- **Ziel:** der Testname wird ehrlich (Befund 58), keine neue Schranke. Jederzeit baubar, keine
+  Antwort auf eine der acht Fragen nötig.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** keine
+- **Dateien:** `apps/headless/test/progress.slow.test.ts`, `docs/plan/BALANCING.md`
+- **Tests zuerst:** `apps/headless/test/progress.slow.test.ts` — der neue Name deckt, was der
+  Test wirklich prüft.
+- **Fertig wenn:** `BALANCING.md` bekommt eine Tabelle Rohstoff/Start/Ende/Verhältnis; der Test
+  läuft in der Abnahme von T-M42-12. Aufwand 1 h.
+
+### T-M42-12 · Abschlussmessung, Abnahme, Übergabe
+- **Ziel:** eine Messung, die für den Endstand von M42 und M43 gilt.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M42-10, T-M43-02, T-M43-04
+- **Dateien:** `docs/reports/balance-sweep.md`, `docs/reports/ai-tournament-run.md`,
+  `docs/reports/progress-measured.json`, `docs/reports/acceptance.md`,
+  `docs/reports/stance.json`, `docs/plan/BALANCING.md`, `docs/plan/DECISIONS.md`,
+  `docs/plan/PROBLEME.md`, `docs/plan/PROGRESS.md`, `docs/plan/WORKFLOW.md`
+- **Tests zuerst:** `apps/headless/test/sweep.slow.test.ts`,
+  `apps/headless/test/tournament.slow.test.ts`, `apps/headless/test/progress.slow.test.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`, `apps/headless/test/m17-integration.slow.test.ts`,
+  `apps/headless/test/stance.slow.test.ts`.
+- **Fertig wenn:** Stufe „Ende" nach Plan §9.2; genau ein Parameterlauf, wenn eine Regeldatei
+  sich geändert hat (Noahs Antwort auf Frage 2 = a); Haltungs-Messlauf zweimal (erst ohne
+  Schreiben — weicht die Kontrolle ab, wird sie mit Begründung neu gesetzt —, dann mit
+  `WORLDWAR_WRITE_REPORT=1` auf sauberem Baum); reißt AK5, wird die verursachende
+  M42/M43-Aufgabe gesucht (jüngste Stufe zuerst) und **diese** zurückgenommen, nicht die
+  Automatik; zuletzt `pnpm acceptance` auf ruhiger Maschine, 12 von 12 (AK-8 darf auf ⚠
+  stehen). „Frieden in 90 Tagen" (Noahs Antwort auf Frage 7, wie empfohlen): ist das `it.fails`
+  jetzt grün, wird es zu `it()`; sonst gilt die Neufassung „in 200 Tagen mindestens ein Frieden
+  zwischen KI-Mächten, in jeder der drei Startzahlen". Aufwand 3 h, Rechenzeit rund 1,5 h ohne
+  und rund 3 h mit Parameterlauf.
+
+## Meilenstein M43 — Frieden mit Räumfrist
+
+> **Herkunft.** `m18-plan-v2.md`, übertragen am 2026-09-26, siehe M42 oben. Löst Befund
+> **M17-T6** (ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall) und
+> **M17-G4** (`breakAlliance` ohne Räumfrist) nach Noahs Entscheid vom 2026-09-25 (es gibt eine
+> gemeinsame Räumfrist) und seiner Antwort auf Frage 3 vom 2026-09-26 (wie empfohlen: 24 Ticks
+> für Stehende, kürzester Heimweg immer frei, jeder Einmarsch ohne Recht bleibt ein Überfall).
+> Entwurf: `02-DESIGN.md` D34.
+
+### T-M43-01 · Räumfrist im Kern und Heimweg der KI
+- **Ziel:** aus Frieden, Bündnisbruch und Kündigung wird kein Überfall im selben Tick.
+  Heimmärsche dürfen so lange dauern, wie sie dauern, aber nur auf dem kürzesten Weg.
+- **Anforderungen:** R-DIP-10
+- **Abhängigkeiten:** T-M42-03
+- **Dateien:** `packages/core/src/phases/index.ts`, `packages/core/src/step.ts`,
+  `packages/core/src/phases/movement.ts`, `packages/core/src/phases/diplomacy.ts`,
+  `packages/ai/src/passage.ts`, `apps/headless/test/m17-integration.slow.test.ts`
+- **Tests zuerst:** `packages/core/src/phases/diplomacy.test.ts` — M17-T6 wörtlich (Frieden im
+  Ankunftstick kein `WAR_DECLARED`, 24 Ticks später steht sie noch → Überfall, auf dem
+  kürzesten Weg heim → kein Überfall bis zur Ankunft); M17-G4 (Bündnisbruch mit Gast im Land →
+  24 Ticks kein Überfall); M17-D10 (Kündigung, Heimweg über eine lange Kante → kein Überfall);
+  ein Umweg durch das Gastland, obwohl eines reicht → Überfall; Grenze im Fenster überschritten,
+  danach Heimweg → Überfall; Waffenstillstand läuft zu Frieden aus, Einmarsch im Tick danach →
+  Überfall, ebenso Tick 1 der Partie; ein Weg, der hinaus- und wieder hineinführt → Überfall;
+  Krieg und Bündnis unverändert. `packages/ai/src/passage.test.ts` — Gast im Land einer
+  `truce`-Macht → `MOVE_ARMY` auf dem kürzesten Heimweg; Armee auf dem Weg tiefer hinein →
+  umgelenkt; Bündnis → nichts.
+- **Fertig wenn:** `PhaseContext` bekommt ein optionales flüchtiges Feld `crossedBorder`;
+  `detectSurpriseAttacks` überspringt Stehende innerhalb von `rightOfWayNoticeTicks` und
+  Armeen auf dem kürzesten Heimweg; `guestWithdrawal` schickt KI-Gäste auf demselben kürzesten
+  Heimweg heim, als gemeinsame Funktion im Kern. `m17-integration` sichert zu:
+  `friedensschluss` + `nachKuendigung` = 0 über drei Startzahlen (heute 1/2/0). Der
+  Golden-Master bleibt ohne `UPDATE_GOLDEN` unverändert. **Ausnahmen, vorab festgelegt:** reißt
+  das Turnier, geht die Frage mit Zahlen an Noah statt Rücknahme (die Regel ist seine Antwort
+  auf Frage 3); reißt K4 nur am Geldmangel, wird die Ursache tagweise zerlegt (Fassung aus
+  Frage 8). Aufwand 6 h, Rechenzeit rund 12 min.
+
+### T-M43-02 · Die Oberfläche meldet die Räumfrist
+- **Ziel:** ein Mensch erfährt, dass er losmarschieren muss, bevor er Überfaller wird.
+- **Anforderungen:** R-DIP-10
+- **Abhängigkeiten:** T-M43-01
+- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`,
+  `apps/desktop/src/ui/Panels.tsx`, `docs/plan/DECISIONS.md`
+- **Tests zuerst:** `apps/desktop/src/game/events.test.ts` — Frieden mit eigener Armee im Land
+  der Gegenseite → eine Meldung mit Provinz und Tick, Sprungziel ist die Armee; ohne Armee
+  keine Meldung, bei fremdem Frieden keine Meldung. `apps/desktop/src/i18n/text.test.ts` — der
+  Umlaut-Wächter ist grün.
+- **Fertig wenn:** die Meldung „Räumfrist: <Armee> steht in <Provinz> (<Macht>).
+  Losmarschieren bis Tag <n> — wer auf dem kürzesten Weg heimwärts marschiert, gilt nicht als
+  Überfall." erscheint, ebenso bei einer empfangenen Kündigung eines Durchmarschrechts.
+  **Sichtprüfung am laufenden Spiel** (Dev-Server des Worktrees, eigener Port): Krieg
+  erklären, einmarschieren, Frieden annehmen lassen, die Meldung sehen, heimschicken, kein
+  Überfall — ein Bild kommt in den Bericht. Der Wortlaut steht in `DECISIONS.md` und ist durch
+  Noah kippbar. Aufwand 3 h.
+
+### T-M43-03 · Die Marktrechnung stürzt nicht mehr ab
+- **Ziel:** `exchangeAmount` (`rules/market.ts`) sättigt, statt `FixedOverflowError` zu werfen
+  (Befund M17-U1). Jederzeit baubar, keine Antwort auf eine der acht Fragen nötig.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** keine
+- **Dateien:** `packages/core/src/rules/market.ts`, `packages/core/src/commands`
+- **Tests zuerst:** `packages/core/src/rules/market.test.ts` — 3,5 Mrd. Seltene Erden → kein
+  Wurf; alle bisherigen Marktfälle bleiben zeilengleich.
+- **Fertig wenn:** der Börsenbefehl lehnt übergroße Mengen mit einem bestehenden Code ab.
+  **Rücknahme:** Turnier und `progress.slow` müssen zeilengleich bleiben (billigster
+  Verwandter). Aufwand 1 h.
+
+### T-M43-04 · Der Wiederholungslauf wird Zusicherung
+- **Ziel:** ein Geschwisterfall in `m17-integration.slow.test.ts`: Startzahl 1914 zweimal von
+  Grund auf gespielt, 200 Tageshashes gleich (bisher nur einmal von Hand nachgestellt).
+  Determinismus ist die Grundlage des Mehrspielers.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M43-01
+- **Dateien:** `apps/headless/test/m17-integration.slow.test.ts`
+- **Tests zuerst:** derselbe Wiederholungslauf, automatisiert statt von Hand.
+- **Fertig wenn:** die Zusicherung im Testlauf steht. Aufwand 1 h, dazu +2 min je Lauf.

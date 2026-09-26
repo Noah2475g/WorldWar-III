@@ -3247,3 +3247,201 @@ der Abstand zur Marke, bei erreichtem der Spieltag. Kein neues Panel, kein leere
   früher — hingenommen.
 - **R-GAME-02 bleibt unberührt**, und wer Zwischenziele später zu Siegbedingungen machen will,
   ändert die Anforderung begründet, wie T-M34-02 es mit R-TECH-01 tat.
+
+## D32. Geld, Heer und Rüstung der KI (M42 — R-AI-10, R-AI-11, R-AI-12)
+
+*(D33 wird übersprungen: die Nummer ist bereits vergeben — „Entwurf D33 Schattenriss" in
+`EINHEITSBILDER.md` und D33-a bis D33-c in `DECISIONS.md`. Nicht zu verwechseln mit den
+Unterpunkten „D34.1–D34.5" in `FORTSCHRITT.md`, die zu einem älteren, dort lokal
+nummerierten Entwurf gehören — siehe die Abgrenzung bei D34 unten.)*
+
+### D32.1 Zustand
+
+Es gibt keinen neuen Zustand:
+- `SCHEMA_VERSION` bleibt 4, `AiMemory` bleibt unverändert, und `buildShare` bleibt ungelesen.
+- In `packages/core/src` ändert sich keine Zeile.
+- Einzige mögliche Regeländerung: `ai.json` `difficulties.hard.recruitShare` (nach Noahs Antwort
+  auf Frage 2, „wie empfohlen").
+
+### D32.2 Ein gemeinsames Finanzmodul
+
+- `dailyMoneyIncome` und `dailyArmyMoneyUpkeep` ziehen verhaltensgleich aus `espionage.ts` nach
+  `packages/ai/src/finance.ts`. `espionage.ts` importiert sie von dort, und der Gleichhaltetest
+  „Finanzen aus der Sicht" wandert mit.
+- Dazu kommt `dailySpySalary(view, rules)` aus der Formel von `espionage.ts`.
+- In T-M42-07 folgen `dailyOilYield` und `dailyArmyUpkeep(view, rules, resource)` als Zwilling der
+  Förderformel, im selben Test gegen `economyOverview` gleich gehalten.
+- Der Umzug löst nebenbei den Kreisimport `espionage.ts` ↔ `economy.ts`, der sonst entstünde.
+
+### D32.3 Buchung (Befund M17-S12)
+
+- Die Signatur wird `recruitCommands(context, explanations, pending = [])`; `decide.ts` reicht
+  `commands` durch.
+- Der Bestand ist `ledgerAfter(context, pending)`. `ledgerAfter` zieht zusätzlich ab:
+  - `RECRUIT_SPY` mit `rules.constants.spyRecruitCost`,
+  - `TRADE` mit `giveAmount` des gegebenen Rohstoffs; der Erlös wird nicht angerechnet, das ist
+    vorsichtig.
+- Die Reihenfolge im Tick bleibt: Strategie → Operativ → Taktik.
+
+### D32.4 Unterhalt (Stufe U)
+
+Die Prüfung steht in `recruitCommands`, nach der Wahl von Art und Stückzahl:
+- Bedingung: `bilanz(n) = ertrag − unterhalt − sold − n · regel.upkeep.money · ticksPerDay ≥ 0`.
+- `n` sinkt, bis die Bedingung gilt. Bei `n < 1` fragt die KI die nächste Provinz; findet sich
+  keine, hebt sie in diesem Denkschritt nicht aus. Die Begründung lautet „Tagesbilanz trägt keine
+  weitere Einheit".
+- Es gibt keine neue Regelzahl, und `espionageMoneyHorizonDays` bleibt allein der Spionage.
+- Gemessen (Sonde 2026-09-26): Kanada 44 → 0 Geldmangeltage, Turnier zeilengleich,
+  `progress.slow` grün. Die verworfene erste Fassung (Projektion über drei Tage statt
+  Tagesbilanz) war wirkungslos — Kanadas Bestand deckt die Projektion, ohne das dauerhafte
+  Defizit zu verhindern.
+
+### D32.5 Stufen (nach Noahs Antwort auf Frage 2, „wie empfohlen")
+
+- Kandidaten für `hard.recruitShare`: 320, 350 und 400. Die Sonde maß mit der Buchungsreparatur
+  0,687 / 0,567 / 0,673; 320 ist zusätzlich nachgemessen.
+- **Wahlregel, vor der Messung festgelegt:** gemessen wird jeder Kandidat mit dem vollen Turnier auf
+  dem Stand nach Fabrik und Buchung. Gewählt wird der kleinste, bei dem **alle** Zusicherungen von
+  `tournament.slow.test.ts` grün sind **und** `progress.slow` grün ist.
+- Hält keiner, stoppt die Aufgabe und geht mit den Zahlen an Noah. Keine Grenze bewegt sich.
+- `BALANCING.md` bekommt die Zeile mit Status „gemessen" und der Kandidatentabelle.
+
+### D32.6 Mischung in Einheiten
+
+- `rankedUnitsFor` zählt `unitCount(stack, rules)` statt 1 je Stapel. Heute steht das
+  `+1` in `economy.ts:226–227`.
+- `owned` und `total` werden einmal je `recruitCommands` gebildet und optional übergeben.
+
+### D32.7 Erst die Fabrik
+
+`factoryReserve(context): Partial<Record<ResourceKey, Fixed>> | null`
+- **Aktiv**, wenn alle vier Bedingungen gelten:
+  - die Fabrik ist am Tag freigeschaltet,
+  - die Macht besitzt eine sichtbare eigene Stadt,
+  - in keiner sichtbaren eigenen Provinz steht eine Fabrik (Stufe ≥ 1),
+  - keine Fabrik ist „im Bau".
+- **„Im Bau"** heißt: eine eigene Stadt ohne Fabrik hat `buildQueueLength > 0` **und** schon eine
+  Kaserne. Die Sicht der KI trägt nur `buildQueueLength`, nicht `buildQueue`, weil `runner.ts:48`
+  `publicView` ohne Regeln baut (`publicView.ts:386–389`, D18.2). Die Kaserne schließt aus, dass die
+  Warteschlange nur die erste Kaserne enthält. Dass eine Kasernen-Stufe 2 als Fabrik gelesen würde,
+  hält ein Test als bekannte Unschärfe fest. Die Sicht zu erweitern wurde verworfen — die Kosten in
+  jedem Tick gegen R-AI-04 wären zu hoch.
+- **Wert** je Rohstoff der Fabrikkosten: `ceil(kosten · 1000 / (1000 − RESERVE_PERMILLE))`.
+- **Wirkung:** Solange der Vorbehalt aktiv ist, überspringt `economyCommands` jeden Kandidaten außer
+  `barracks` und `factory`, und `recruitCommands` rechnet sein Budget aus
+  `max(0, bestand − vorbehalt)`.
+- Der Vorbehalt gilt nur bis zur **ersten** Fabrik.
+
+### D32.8 Artillerie (nach Noahs Antwort auf Frage 1, „wie empfohlen", Mischung 60/30/10)
+
+- In der Kandidatenschleife von `recruitCommands` gilt eine Untergrenze. Treffen alle vier
+  Bedingungen zu, wird `moeglich = 1` gesetzt:
+  - `moeglich < 1`,
+  - die Einheit braucht eine Fabrik,
+  - vor ihr stand in der Rangliste nur der unbezahlbare Panzer,
+  - der Bestand nach Vorbehalt **und** Rücklage (`RESERVE_PERMILLE`) trägt die Kosten.
+- Die Menge regelt `TARGET_MIX`, eine Konstante in `economy.ts` und keine Regelzahl: 60/30/10
+  (Infanterie/Panzer/Artillerie), gemessen 24–28 % Artillerie.
+  - Das Gleichgewicht liegt ohne Panzer bei ≈ (1 − s_inf + s_art)/2 plus 2–4 Punkte. Ein Test hält
+    fest, dass der Panzeranteil nicht umverteilt wird.
+- Öl-Wächter (R-AI-12/AK4): Einheiten mit `upkeep.oil > 0` gibt es nur, wenn die Öl-Tagesbilanz
+  danach nicht negativ ist.
+
+### D32.9 Rolle und strenger Deckel
+
+- `army-role.ts` bietet `isBattery` und `armyRole` (`battery` | `line`); `military.ts` liest
+  `isBattery` verhaltensgleich.
+- `consolidate.ts` arbeitet First-Fit je Provinz und Rolle:
+  - Kennungen mit `sort()` wie im Kern und `absorbedBy`,
+  - Einheiten über `unitCount`,
+  - eine Gruppe nur, solange die Summe ≤ `stackFullContribution` bleibt,
+  - gleiches `embarked` und leerer `path`,
+  - weiterhin eine Provinz je Denkschritt.
+
+### D32.10 Überall
+
+Der `break` nach der ersten Provinz fällt weg; `absorbedBy` sammelt schon über alle
+`MERGE_ARMIES`.
+
+### D32.11 Befund D, bedingt
+
+Nur bei ≥ 5 verpassten Gelegenheiten über drei Startzahlen auf Stufe C2 (siehe T-M42-10).
+
+### D32.12 Golden-Master
+
+Er bleibt ohne `UPDATE_GOLDEN` unverändert, weil kein Golden-Lauf die KI fährt.
+
+### D32.13 Was man am Bildschirm sieht
+
+- „Normal" und „schwer" bauen Fabriken.
+- KI-Batterien stehen hinter der Front und feuern.
+- Stehende Verbände sind höchstens 20 Einheiten groß, dafür gibt es mehr davon.
+- Kanada geht nicht mehr pleite.
+- „Schwer" hebt früh etwas mehr aus.
+- Mächte ohne Ölprovinz führen weniger Artillerie; das macht der Öl-Wächter.
+
+## D34. Die Räumfrist (M43 — R-DIP-10)
+
+*(Nicht zu verwechseln mit den Unterpunkten „D34.1–D34.5" in `FORTSCHRITT.md`, die zu einem älteren,
+dort lokal nummerierten Entwurf gehören — diese Nummer D34 ist neu vergeben und gehört allein zu
+diesem Abschnitt.)*
+
+### D34.1 Die Regel in drei Sätzen
+
+1. Wer nach Frieden oder Bündnisbruch im Land des anderen **steht**, hat einen Spieltag Zeit
+   loszumarschieren.
+2. Wer auf dem **kürzesten** Heimweg ist, ist nie ein Überfaller, egal wie lang der Weg ist.
+3. Wer ohne Recht eine Grenze in fremdes Land **überschreitet**, ist ein Überfaller, auch in der
+   Frist. Ausgenommen ist nur der Tick des Friedensschlusses.
+
+*(Nach Noahs Antwort auf Frage 3, „wie empfohlen": 24 Ticks für Stehende, der kürzeste Heimweg
+ist frei, jeder Einmarsch ohne Recht bleibt ein Überfall.)*
+
+### D34.2 Der Kern, ohne Zustandsfeld
+
+- `PhaseContext` bekommt ein **optionales** flüchtiges Feld `crossedBorder?: Set<ArmyId>`. Es wird
+  je Tick neu angelegt und steht nie im Zustand. Optional ist es, weil 26 Dateien `PhaseContext`
+  nennen und rund 28 Testobjekte es wörtlich bauen.
+- `movement` trägt eine Armee ein, wenn der Besitzer der Provinz vor und nach dem Schritt verschieden
+  ist.
+- `detectSurpriseAttacks` überspringt eine Armee in zwei Fällen:
+  - **(a)** Sie steht nicht in `crossedBorder` (oder `tick === relation.sinceTick`), es gilt
+    `relation.state ∈ {truce, peace}` und `tick < relation.sinceTick + rightOfWayNoticeTicks`.
+  - **(b)** Sie steht nicht in `crossedBorder`, und ihr `path` ist ein kürzester Heimweg nach
+    R-DIP-10/AK2. Die Breitensuche läuft nur für Armeen in fremdem Land ohne Krieg und ohne Recht;
+    das sind wenige.
+- Weil (a) nur Stehende schützt, ist das Neusetzen von `sinceTick` beim Übergang Waffenstillstand →
+  Frieden (`phases/diplomacy.ts:121`) und bei Spielbeginn (`create.ts`, `sinceTick: 0`) harmlos: ein
+  Einmarsch bleibt dort ein Überfall.
+- Es gibt keine neue Regelzahl, also keinen Parameterlauf. `SCHEMA_VERSION` bleibt 4.
+- Mehrspieler: Der Gast lädt den Bau des Hosts (R-MP-11); gemischte Fassungen gibt es nicht.
+
+### D34.3 KI
+
+`guestWithdrawal` (`passage.ts`) greift künftig nicht mehr nur bei gekündigtem Recht.
+- Es gilt bei jeder Gastgeber-Beziehung `truce`/`peace` ohne unbefristetes Recht; Bündnisse sind
+  ausgenommen.
+- Es erfasst stehende Armeen und Armeen, deren Weg im Land des Gastgebers endet.
+- Der Heimweg ist derselbe kürzeste Heimweg wie im Kern, als gemeinsame Funktion im Kern
+  (`rules/`), damit KI und Kern dieselbe Antwort geben.
+
+### D34.4 Oberfläche
+
+- Es gibt keine neue Kernereignisart. Die Hülle sieht `DIPLOMACY_CHANGED` (→ `truce`, bzw. `peace`
+  aus einem Bündnis) und eigene Armeen im Land der Gegenseite in der Sicht.
+- Daraus erzeugt sie eine Meldung mit Sprungziel: „Räumfrist: <Armee> steht in <Provinz> (<Macht>).
+  Losmarschieren bis Tag <n> — wer auf dem kürzesten Weg heimwärts marschiert, gilt nicht als
+  Überfall."
+- Dieselbe Meldung erscheint bei einer empfangenen Kündigung eines Durchmarschrechts, falls es sie
+  dort noch nicht gibt.
+- Die Texte stehen in `de.ts` mit Umlauten. Der Wortlaut wird in `DECISIONS.md` festgehalten und ist
+  durch Noah kippbar.
+
+### D34.5 Risiken
+
+- Das Turnier verschiebt sich; die Sonde maß 0,633, noch im Band.
+- Eine Armee, die im Tick des Friedensschlusses die Grenze überschreitet, ist geschützt, solange sie
+  danach den kürzesten Heimweg nimmt. Tut sie das nicht, ist sie nach der Frist ein Überfaller.
+- Die Haltungs-Automatik ist nicht betroffen, weil der passive Mensch keinen Frieden schließt.
+- `breakAlliance` erzeugt weiterhin keine Verstimmung (Befund B7, zweite Hälfte). Das ist nicht Teil
+  dieses Plans, siehe M18-Abschnitt in `03-TASKS.md`.

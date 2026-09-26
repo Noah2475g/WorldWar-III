@@ -1,4 +1,4 @@
-# WORKFLOW — M17 fertig und auf main (PR #12, 2026-09-26); als Nächstes M18
+# WORKFLOW — M42/M43 geplant (2026-09-26); Bau auf `claude/m42-m43-heer-und-raeumfrist`
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
@@ -29,10 +29,20 @@
 > `RECRUIT_SPY`-Buchung, M17-T6 Räumfrist nach Friedensschluss) gehen mit Noahs Entscheid an
 > M18.
 >
-> **Was jetzt auf Noah wartet:** die **Planung von M18** (Noahs Auftrag vom 2026-09-26, M17 ist
-> seit PR #12 auf `main`). Daneben **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5 (Spielertexte, §2 Punkt 3) und die älteren offenen
-> Fragen in `DECISIONS.md` unter „Offene Fragen an Noah" (2026-09-14). Keine davon hat eine
-> Aufgabe, und das ist Absicht.
+> **Was am 2026-09-26 dazukam: M42 „Das Heer der KI" und M43 „Frieden mit Räumfrist" sind
+> geplant und in die Plandateien übertragen** (`m18-plan-v2.md`, Übertragungs-Checkliste §15).
+> Noah hat alle acht Fragen (§17 des Plans) **wie empfohlen** beantwortet — Entscheid in
+> `DECISIONS.md`, 2026-09-26. 16 neue Aufgaben (T-M42-01…12, T-M43-01…04) stehen auf `todo`
+> im Zweig `claude/m42-m43-heer-und-raeumfrist`, drei davon ohne jede Abhängigkeit schon im
+> Bau (T-M42-01, T-M42-11, T-M43-03, je eigener Worktree unter `.claude/worktrees/p-m42-01`
+> u. Ä.). Etappe 1 endet mit einem Pull Request und Noahs Playtest (§12 des Plans); Etappe 2
+> folgt erst nach seiner Bestätigung.
+>
+> **Was jetzt auf Noah wartet:** nichts Blockierendes für den Bau von Etappe 1 — die acht
+> Fragen sind beantwortet. Weiterhin offen: **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5
+> (Spielertexte, §2 Punkt 3) und die älteren offenen Fragen in `DECISIONS.md` unter „Offene
+> Fragen an Noah" (2026-09-14). M18 bleibt die Sammelstelle für alles, was nicht M42/M43
+> wurde (§10 des Plans).
 >
 > **Wo die Vorgeschichte steht:** die Bauabschnitte V1, LEVEL-UP M22–M24, „Grafik statt
 > Text" M25–M27, der Kriegsrat-Umbau M29–M32, die Bilder M33, die Rohstoffleiste M36, der
@@ -49,22 +59,23 @@
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `main`.** PR #12 (M17 „Tiefe zwischen den Kriegen", 16 von 16, Abnahme
-12 von 12) ist am 2026-09-26 auf Noahs ausdrückliches Wort gemerged; er enthielt `origin/main`
-mit PR #9–#11 (Touch-Bedienung). Der Zweig `claude/m17-tiefe-zwischen-den-kriegen` ist damit
-abgegolten. Wer einen Worktree anlegt, zweigt von `main` ab.
+**Die Spitze des Baus liegt auf `claude/m42-m43-heer-und-raeumfrist`**, angelegt am
+2026-09-26 von `main` = `2bcadad` (PR #12, M17 gemerged) für die Übertragung des Plans
+`m18-plan-v2.md`. `main` selbst steht weiterhin auf `2bcadad`. Aufgaben-Worktrees zweigen
+von `claude/m42-m43-heer-und-raeumfrist` ab, nicht von `main`, solange dieser Abschnitt das
+sagt.
 
 ```bash
-git switch main && git pull --ff-only
+git switch claude/m42-m43-heer-und-raeumfrist && git pull --ff-only
 ```
 
-**Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und den Merge-Commit.** Eine
-Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge
-gekostet (§4 Falle 1); sie schadet in beide Richtungen gleich viel. Deshalb steht hier immer
-genau **ein** Zweig und nie eine Bedingung — ein Satz der Form „bis zum Merge …, danach …“
-ist ab dem Merge falsch und wird trotzdem gelesen. **Nach dem Merge als erster Zug:**
-`allFreshness` auf `main` neu prüfen (ein Merge kann die Abstammung ändern) und `git log
---oneline -1` gegenprüfen.
+**Wer merged (Noah, kein Agent — §5), richtet diesen Abschnitt im selben Zug auf `main` und
+den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
+fünf Sitzungen in Folge gekostet (§4 Falle 1); sie schadet in beide Richtungen gleich viel.
+Deshalb steht hier immer genau **ein** Zweig und nie eine Bedingung — ein Satz der Form „bis
+zum Merge …, danach …“ ist ab dem Merge falsch und wird trotzdem gelesen. **Nach dem Merge
+als erster Zug:** `allFreshness` auf `main` neu prüfen (ein Merge kann die Abstammung ändern)
+und `git log --oneline -1` gegenprüfen.
 
 **`ai-integration.slow.test.ts` ist 22 von 22 grün — zwei der Fälle stehen absichtlich als
 `it.fails`** (Befund M17-T7: 0 Artillerie/0 Beschuss, kein Frieden in 90 Tagen; die Zahl 22

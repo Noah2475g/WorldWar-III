@@ -5415,3 +5415,48 @@ ist, und dass ein Lauf ohne Einmarsch seit M17-F1 selbst als Verletzung zählt.
 **Kippbar:** Wer die Defensiv-Automatik härter prüfen will, stellt `KRIEGSPLAN.tag` in
 `apps/headless/test/stance.slow.test.ts` auf 0 — und weiß vorher, dass AK5 dann reißt. Das wäre
 eine Aufgabe für M18, keine Stellschraube.
+
+---
+
+## 2026-09-26 · Uebertragung m18-plan-v2 · Noah beantwortet alle acht Fragen wie empfohlen
+
+**Entscheidung (Noah, 2026-09-26):** Noah hat den ueberarbeiteten Plan `m18-plan-v2.md`
+(Kritik `m18-plan-v2-kritik.md` eingearbeitet, Endstand siehe Plan §16) mit „alles wie
+empfohlen" beantwortet. Die acht Fragen aus Plan §17, mit der gewaehlten Option:
+
+1. **Artillerie-Menge:** (b) Mischung 60/30/10 — gemessen 24-28 % Artillerie (500-650),
+   Zielband 15-30 % (R-AI-12/AK3, T-M42-07).
+2. **„Schwer" neu abstimmen:** (a) ueber `hard.recruitShare` neu abstimmen, mit einem
+   Parameterlauf am Ende (D32.5, T-M42-04, T-M42-12).
+3. **Form der Raeumfrist:** (a) 24 Ticks fuer stehende Armeen, der kuerzeste Heimweg ist
+   immer frei, jeder Einmarsch ohne Recht bleibt ein Ueberfall, auch in der Frist. Kein
+   neues Zustandsfeld, kein Parameterlauf, `SCHEMA_VERSION` bleibt 4 (D34.1-D34.2,
+   R-DIP-10, T-M43-01).
+4. **Zusage 7 neu fassen:** (a) keine zwei stehenden Verbaende derselben Rolle am selben
+   Ort, die zusammen hoechstens `stackFullContribution` (20) Einheiten zaehlen
+   (R-AI-10/AK3, T-M42-09).
+5. **Haltungs-Messlauf robuster:** (a) ja, sechs statt drei Startzahlen; Kriegsplan
+   (Tag 20, Frankreich/Polen) und Grenzen bleiben unveraendert (T-M42-02).
+6. **Umfang:** (a) Etappe 1 bauen (rund 27 Agentenstunden), dann Pull Request und Noahs
+   Playtest; Etappe 2 wird danach bestaetigt oder umgeplant (Plan §12).
+7. **„Frieden in 90 Tagen":** (a) falls nach M42 noch rot, wird die Zusage neu gefasst als
+   „in 200 Spieltagen mindestens ein Frieden zwischen KI-Maechten, in jeder der drei
+   Startzahlen" (T-M42-12).
+8. **Tor „kein Geldmangel":** (a) „kein Geldmangeltag einer KI-Macht geht auf eine eigene
+   Aushebung zurueck" als Tor; die Gesamtzahl der Mangeltage bleibt Berichtszahl mit
+   Erklaerungspflicht. Aendert auch den Wortlaut von R-AI-09/AK2 aus M17 (R-AI-11/AK3,
+   T-M42-03, T-M43-01).
+
+**Auswirkung:** Der Plan ist gemaess seiner Uebertragungs-Checkliste (§15) in die
+Plandateien uebertragen: `tasks.yaml` und `03-TASKS.md` fuehren die Meilensteine **M42
+„Das Heer der KI"** und **M43 „Frieden mit Raeumfrist"** mit 16 Aufgaben (T-M42-01 bis -12,
+T-M43-01 bis -04), alle auf `status: todo`; `01-REQUIREMENTS.md` fuehrt R-AI-10, R-AI-11,
+R-AI-12 und R-DIP-10 im `later`-Fach und als neuen Abschnitt 2.19; `02-DESIGN.md` fuehrt
+D32 (M42) und D34 (M43) hinter D31 (D33 bleibt uebersprungen, siehe Plan §1). Der
+Integrationszweig `claude/m42-m43-heer-und-raeumfrist` ist von `main` (`2bcadad`) abgezweigt,
+`WORKFLOW.md` §0 zeigt auf ihn. T-M41-10 (Zusage 7, zurueckgenommen) nennt T-M42-05, -08
+und -09 als Abloesung.
+
+**Kippbar:** jede der acht Antworten einzeln, in `m18-plan-v2.md` §17 mit Alternativen
+hinterlegt. Reisst ein Ruecknahmekriterium beim Bau (Plan §9.3), geht die betroffene Frage
+mit Zahlen an Noah zurueck, wie im Plan je Aufgabe vermerkt.
