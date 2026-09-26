@@ -2,8 +2,11 @@ import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { revoltChance, targetMoraleFor } from './morale'
 import { planRoute } from './movement'
+import { occupation, transferProvince } from './occupation'
+import type { PhaseContext } from './index'
 import { scoreOf } from '../rules/victory'
 import { createInitialState, type GameConfig } from '../state/create'
+import type { GameEvent } from '../events/types'
 import type { GameState } from '../state/types'
 import { runTicks } from '../clock'
 import { step } from '../step'
@@ -268,5 +271,75 @@ describe('T-M21-06 Frieden hindert am Behalten, nicht am Betreten', () => {
     placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
 
     expect(step(state, [], ctx).state.provinces['m1']!.owner).toBe('p1')
+  })
+})
+
+describe('T-M17-06 Ein Helfer fuer jeden Besitzerwechsel', () => {
+  it('transferProvince setzt den Besitzer, leert die Aushebung und sonst nichts', () => {
+    const province = state.provinces['m1']!
+    province.owner = 'p2'
+    province.morale = 61_000
+    province.occupiedSince = null
+    province.buildQueue.push({
+      id: `o${state.nextIds.order++}`,
+      building: 'barracks',
+      level: 1,
+      startedTick: state.tick,
+      completesAtTick: 1000,
+      ownerAtStart: 'p2',
+    })
+    province.recruitQueue.push({
+      id: `o${state.nextIds.order++}`,
+      unitKey: 'infantry',
+      count: 1,
+      startedTick: state.tick,
+      completesAtTick: 1000,
+      ownerAtStart: 'p2',
+    })
+    const grievancesBefore = structuredClone(state.diplomacy.grievances)
+
+    const previousOwner = transferProvince(state, 'm1', 'p1')
+
+    expect(previousOwner).toBe('p2')
+    expect(province.owner).toBe('p1')
+    expect(province.recruitQueue).toEqual([])
+    expect(province.buildQueue).toHaveLength(1)
+    expect(province.morale).toBe(61_000)
+    expect(province.occupiedSince).toBeNull()
+    expect(state.diplomacy.grievances).toEqual(grievancesBefore)
+  })
+
+  it('die Eroberung laeuft ueber denselben Helfer: Aushebung sofort fort, Bau endet in der Bauphase', () => {
+    const province = state.provinces['m1']!
+    province.owner = 'p2'
+    province.buildQueue.push({
+      id: `o${state.nextIds.order++}`,
+      building: 'barracks',
+      level: 1,
+      startedTick: state.tick,
+      completesAtTick: 1000,
+      ownerAtStart: 'p2',
+    })
+    province.recruitQueue.push({
+      id: `o${state.nextIds.order++}`,
+      unitKey: 'infantry',
+      count: 1,
+      startedTick: state.tick,
+      completesAtTick: 1000,
+      ownerAtStart: 'p2',
+    })
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+
+    const events: GameEvent[] = []
+    const occCtx: PhaseContext = { map, rules: TEST_RULES, commands: [], events }
+    occupation(state, occCtx)
+
+    expect(province.owner).toBe('p1')
+    expect(province.recruitQueue).toEqual([])
+    expect(province.buildQueue).toHaveLength(1)
+
+    const result = step(state, [], ctx)
+    const cancelled = result.events.find((e) => e.type === 'BUILD_CANCELLED')
+    expect(cancelled).toMatchObject({ playerId: 'p2', reason: 'ownerChanged' })
   })
 })

@@ -4,7 +4,7 @@ import { createElement, useEffect } from 'react'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
 import { createInitialState } from '@worldwar/core'
-import { createLoopback, stateHash, type NetMessage, type Transport } from '@worldwar/netplay'
+import { PROTOCOL_VERSION, createLoopback, stateHash, type NetMessage, type Transport } from '@worldwar/netplay'
 import { TEST_RULES } from '@worldwar/testkit'
 import type { GameConfig, GameState, MapData } from '@worldwar/core'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -256,7 +256,7 @@ describe('R-MP-12/AK2 Vom Link zur Partie: fuenf Nachrichten, dann rechnet es', 
     act(() => {
       leitung.a.send({
         kind: 'willkommen',
-        version: 1,
+        version: PROTOCOL_VERSION,
         config: toConfig(partieOptionen, testworld) as GameConfig,
         seat: 'p2',
         rulesHash: 'fremde-regeln-0000',
@@ -433,7 +433,7 @@ describe('R-MP-12/AK1 Die Bedingungen kommen aus der Partiedefinition, nicht aus
     const config = toConfig({ ...partieOptionen, victory: 'conquest' }, testworld)
     const terms = termsOf({
       kind: 'willkommen',
-      version: 1,
+      version: PROTOCOL_VERSION,
       config,
       seat: 'p2',
       rulesHash: 'a',

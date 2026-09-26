@@ -116,7 +116,36 @@ function valuesFor(event: GameEvent, map: MapData, naming: EventNaming): Record<
     values.day = Math.floor(record.effectiveAtTick / (naming.ticksPerDay ?? 24)) + 1
   }
 
+  // Handelsangebote (T-M17-05): der Grund mit Namen statt Schluessel — „withdrawn" sagt niemandem etwas.
+  if (event.type === 'TRADE_OFFER_CLOSED') values.reason = t(`diplomacy.tradeClosed.${String(record.reason)}`)
+  // Die Abtretung (T-M17-06): der Vorbesitzer mit Namen — `previousOwner` ist eine Kennung.
+  if (event.type === 'PROVINCE_CEDED') values.previous = playerName(record.previousOwner)
+
+  // Spionage (T-M17-08): Auftrag und Ausgang mit Namen statt Schlüssel — „economicSabotage" und
+  // „targetChanged" sagen niemandem etwas.
+  if (event.type === 'SPY_REPORT' || event.type === 'SPY_LOST') {
+    values.mission = t(`espionage.missions.${String(record.mission)}`)
+  }
+  if (event.type === 'SPY_REPORT') values.outcome = t(`espionage.outcomes.${String(record.outcome)}`)
+
+  // Sabotage und Enttarnung (T-M17-09): der Auftrag mit Namen, die Wirkung als eigener Satzteil. Der
+  // Opfersatz bekommt nichts, was das Ereignis nicht trägt — und es trägt keinen Urheber (D29.5).
+  if (event.type === 'SPY_DETECTED') values.mission = t(`espionage.missions.${String(record.mission)}`)
+  if (event.type === 'SABOTAGE_SUFFERED') values.effect = sabotageEffect(event)
+
   return values
+}
+
+/** Die Wirkung einer erlittenen Sabotage in Worten (T-M17-09) — Mengen formatiert, Rohstoffe mit Namen. */
+function sabotageEffect(event: Extract<GameEvent, { type: 'SABOTAGE_SUFFERED' }>): string {
+  if (event.kind === 'military') return t('espionage.sabotage.military', { hours: event.delayTicks })
+  const parts = Object.entries(event.destroyed)
+    .filter(([, value]) => typeof value === 'number' && value > 0)
+    .map(([key, value]) => `${amount(value!)} ${t(`resources.${key}`)}`)
+  return t('espionage.sabotage.economic', {
+    moraleLoss: amount(event.moraleLoss),
+    destroyed: parts.length > 0 ? parts.join(', ') : t('espionage.sabotage.nothingDestroyed'),
+  })
 }
 
 /**
@@ -518,6 +547,9 @@ export function describeEvent(event: GameEvent, index: number, map: MapData, nam
   // Stellen, und eine davon würde eines Tages vergessen.
   const fremd = !concernsViewer(event, naming.viewer)
   let key = fremd && FOREIGN_TEXTS.has(event.type) ? `${event.type}_FOREIGN` : event.type
+  // Die Kündigung des Durchmarschs ist dieselbe Ereignisart wie die Gewährung (T-M17-04, D29.5),
+  // nur mit `granted: false` — ein eigener Satz am selben Stamm, nach der Konvention der Endungen.
+  if (event.type === 'RIGHT_OF_WAY_CHANGED' && !event.granted) key = `${key}_REVOKED`
 
   const values = valuesFor(event, map, naming)
 

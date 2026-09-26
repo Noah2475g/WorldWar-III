@@ -319,6 +319,83 @@ describe('R-UNIT-09/AK4 Der Adjutant in der Spielschleife', () => {
 })
 
 /**
+ * T-M17-15, R-AI-09/AK3: ein Gegenlauf braucht einen Hebel in der einen Schleife.
+ *
+ * Die Sonde des Plans hat eine eigene Schleife benutzt und ueber `zustandOhneKi` belegt, dass sie
+ * dieselbe Partie spielt — aber eine zweite Schleife im Repo ist genau der Fehler von T-M14-04.
+ * `withhold` haelt darum KI-Befehle in DER einen Schleife zurueck, ohne Option bitgleich (W1).
+ */
+describe('R-AI-09/AK3 Ein Gegenlauf braucht einen Hebel in der einen Schleife', () => {
+  const TICKS = 72
+
+  it('W1 - ohne Wirkung bitgleich', () => {
+    const mitNoop = advanceTicks(stateWith(3), TICKS, ctx, { withhold: () => false })
+    const ohne = advanceTicks(stateWith(3), TICKS, ctx)
+    expect(stateHash(mitNoop.state)).toBe(stateHash(ohne.state))
+    expect(mitNoop.events).toEqual(ohne.events)
+    expect(mitNoop.applied).toEqual(ohne.applied)
+    expect(mitNoop.withheld).toEqual([])
+  })
+
+  it('W2 - haelt zurueck, was es soll', () => {
+    // Vorbedingung: ohne withhold gibt es ueberhaupt RECRUIT-Befehle in applied, sonst misst
+    // der Fall nichts (die drei Maechte stehen im Krieg, siehe stateWith).
+    const ohneHebel = advanceTicks(stateWith(3), TICKS, ctx)
+    const rekrutiertOhne = ohneHebel.applied.filter((entry) => entry.command.type === 'RECRUIT')
+    expect(rekrutiertOhne.length, 'der Lauf rekrutiert ohnehin nicht - der Fall misst nichts').toBeGreaterThan(0)
+
+    const mitHebel = advanceTicks(stateWith(3), TICKS, ctx, { withhold: (c) => c.type === 'RECRUIT' })
+    const rekrutiertMit = mitHebel.applied.filter((entry) => entry.command.type === 'RECRUIT')
+    expect(rekrutiertMit).toEqual([])
+    expect(mitHebel.events.filter((e) => e.type === 'UNIT_RECRUITED')).toEqual([])
+    expect(mitHebel.withheld.length).toBeGreaterThan(0)
+    for (const entry of mitHebel.withheld) expect(entry.command.type).toBe('RECRUIT')
+  })
+
+  it('W3 - trifft nur KI-Befehle, nicht den Menschen oder den Adjutanten', () => {
+    // Ein Mensch mit einer Lage, in der der Adjutant selbst einen MOVE_ARMY-Befehl erzeugt
+    // (Muster oben, R-UNIT-09/AK4, `lageMitMensch`): withhold zielt auf denselben Befehlstyp
+    // wie beim Menschen, trifft aber nur die KI - der Hebel misst die KI, nicht den Spieler.
+    const state = stateWith(3)
+    state.tick = 200
+    const mensch = state.playerOrder[0]!
+    state.players[mensch]!.kind = 'human'
+    for (const id of state.provinceOrder) {
+      if (state.provinces[id]!.owner !== mensch) continue
+      placeArmy(state, { owner: mensch, at: id, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'defensive' })
+      placeArmy(state, { owner: mensch, at: id, units: [{ unitKey: 'infantry', hpTotal: 6_000 }], stance: 'garrison' })
+    }
+    const angreifer = placeArmy(state, {
+      owner: state.playerOrder[1]!,
+      at: 'm1',
+      units: [{ unitKey: 'infantry', hpTotal: 30_000 }],
+    })
+    const route = planRoute(state, angreifer, 'n2', map, TEST_RULES)!
+    angreifer.path = route.path
+    angreifer.departureTick = state.tick
+    angreifer.arrivalTick = route.arrivalTick
+
+    const lauf = advanceTicks(state, 150, ctx, { withhold: (c) => c.type === 'MOVE_ARMY' })
+    // Befund (Nacharbeit T-M17-15, 2026-09-25): die alte Fassung verlangte nur irgendeinen
+    // applied-Befehl des Menschen, nicht ausdruecklich ein MOVE_ARMY des Adjutanten, und nicht,
+    // dass der Hebel bei der KI ueberhaupt etwas zurueckhielt - beides galt schon durch die
+    // Bauart von `loop.ts:157`, der Fall haette also auch bei einer leeren Schleife gruen sein
+    // koennen. Jetzt ausdruecklich beides.
+    const moveDesMenschen = lauf.applied.filter((entry) => entry.command.playerId === mensch && entry.command.type === 'MOVE_ARMY')
+    expect(moveDesMenschen.length, 'der Adjutant hat in diesem Lauf kein MOVE_ARMY befohlen - der Fall misst nichts').toBeGreaterThan(0)
+    // Der Adjutant selbst zaehlt zu applied, nicht zu withheld.
+    for (const entry of lauf.adjutant) expect(lauf.withheld).not.toContainEqual(entry)
+    // Aber: jeder zurueckgehaltene Befehl ist wirklich einer der KI (nicht des Menschen) -
+    // und der Hebel hat tatsaechlich etwas zurueckgehalten, nicht nur eine leere Schleife.
+    expect(lauf.withheld.length, 'der Hebel hat nichts zurueckgehalten - der Fall misst die KI-Seite nicht').toBeGreaterThan(0)
+    for (const entry of lauf.withheld) {
+      expect(entry.command.playerId).not.toBe(mensch)
+      expect(entry.command.type).toBe('MOVE_ARMY')
+    }
+  })
+})
+
+/**
  * Nach Marsch und Rueckzug ruht die Automatik (T-M40-09, Befund H1 der Durchsicht von M40).
  *
  * Eine Armee, die sich aus einem Gefecht zurueckzieht, zahlt dafuer Staerke — und stand danach auf

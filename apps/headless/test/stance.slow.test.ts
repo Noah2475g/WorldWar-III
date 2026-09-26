@@ -66,6 +66,18 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * geschrieben (Befund N3: vorher schrieb jeder Lauf ihn neu, mit neuem Zeitstempel). Ohne die
  * Variable liest und schreibt der Test nichts. Seit T-M40-17 nennt er den Commit, auf dem gemessen
  * wurde, und die uncommitteten Dateien (`messstand`); der Frische-Waechter der Abnahme liest beides.
+ *
+ * **Kriegsplan (Befund M17-F1, 2026-09-26).** Vor M17 kam jeder Krieg gegen den passiven Menschen aus
+ * einem Durchmarsch-Ueberfall — franzoesische und polnische Armeen liefen auf dem Weg zu einem dritten
+ * Ziel durch Deutschland (Tag 20 bzw. 35). Seit T-M17-10 haelt die Wegpruefung (E4) diese Maersche an
+ * und beantragt Durchmarsch; der Mensch antwortet nie, also marschiert niemand durch, niemand
+ * ueberfaellt, niemand erklaert — der Lauf wurde blind (0 statt 76 Einmaersche). Kein Fehler am Spiel
+ * (ein passiver Mensch mit voller Garnison ist nach `diplomacy.ts` §4 nie Kriegsziel), sondern eine
+ * Luecke im Messaufbau. Seit M17-F1 erklaeren die Landnachbarn des Menschen ihm am Spieltag 20 foermlich
+ * den Krieg (`KRIEGSPLAN`, `kriegserklaerungen`) — ueber den normalen Befehlsweg (`scripted`), danach
+ * entscheidet die KI alles selbst. Die Grenzen (98 %, Paar-Regel, 0 Ablehnungen) bleiben unangetastet;
+ * neu ist nur, dass Blindheit (0 Einmaersche) und ein nicht gegriffener Kriegsplan selbst als Verletzung
+ * zaehlen (siehe `ak5`, Feld `angegriffen`).
  */
 
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
@@ -101,20 +113,37 @@ const PENDULUM_DAYS = 5
 /** AK5: Provinz-Tage mit Verteidigung mindestens so viele Prozent der Garnison (D30.9). */
 const PROVINCE_DAYS_PERCENT = 98
 /**
- * Die Kontrolle: die Garnison A 1914 auf dem heutigen KI-Stand. Eine Garnison handelt nie von selbst;
- * ihr Lauf aendert sich nur, wenn sich Gegner, Karte, Regeln oder Aufstellung aendern. Trifft sie die
- * Kontrolle nicht, hat sich etwas anderes verschoben als die Automatik.
+ * Die Kontrolle: die Garnison A 1914 auf dem heutigen KI-Stand, MIT Kriegsplan (siehe `KRIEGSPLAN`).
+ * Eine Garnison handelt nie von selbst; ihr Lauf aendert sich nur, wenn sich Gegner, Karte, Regeln oder
+ * Aufstellung aendern. Trifft sie die Kontrolle nicht, hat sich etwas anderes verschoben als die
+ * Automatik.
  *
  * **Die Geschichte.** Von T-M40-02 bis T-M40-12 war die Kontrolle der Lauf vorher: 52 Einmaersche,
  * 4 verloren (steht weiter in `episoden.vorher`). Block N2 der M41-Nacharbeit hat das Verhalten der
  * KI geaendert. Ausserhalb von `packages/ai` hat der Merge `c3ff8be` nur ein Feld der Sicht
  * (`PublicView.self.capitalMovedAtTick`) und dessen Export hinzugefuegt, und dieses Feld liest nur die
  * KI. Karte, Regeln, `newGame`, `testkit` und die Aufstellung sind unberuehrt. Nach dem Merge ergab
- * derselbe Lauf 76 Einmaersche und 4 verlorene Provinzen. Die Kontrolle steht deshalb auf dem neuen
- * Wert; abgeschwaecht ist die Zusicherung nicht.
+ * derselbe Lauf 76 Einmaersche und 4 verlorene Provinzen; bis M17 kamen alle Kriege gegen den passiven
+ * Menschen aus Durchmarsch-Ueberfaellen (siehe Kopfkommentar).
+ *
+ * Seit T-M17-10 haelt die Wegpruefung diese Ueberfaelle an — der Lauf ohne Kriegsplan wurde blind
+ * (0 Einmaersche, Befund M17-F1). Seit M17-F1 (2026-09-26) erklaeren die Landnachbarn dem Menschen am
+ * Spieltag 20 foermlich den Krieg (Aufstellung geaendert, Grenzen unangetastet — dasselbe Muster wie bei
+ * Block N2): die Garnison A 1914 ergibt damit 41 Einmaersche, 4 verlorene Provinzen.
  */
-const KONTROLLE = { intrusions: 76, provincesLost: 4 }
+const KONTROLLE = { intrusions: 41, provincesLost: 4 }
 const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'
+const KONTROLLE_BIS_F1 =
+  'vor M17-F1 (Aufbau ohne Kriegsplan, bis b1bb3c8): 76 Einmaersche, 4 verloren; auf 5e53298 ohne Kriegsplan 0/0 (blind)'
+/**
+ * Der Kriegsplan (Befund M17-F1): die Landnachbarn des Menschen erklaeren ihm am Spieltag `tag`
+ * foermlich den Krieg — nach dem Muster, wie es vor M17 aus Versehen geschah (Frankreich Tag 20,
+ * Polen Tag 35). Tag 20 ist gewaehlt, weil dort schon vor M17 der erste Ueberfall lag (siehe
+ * Kopfkommentar); die Wahl steht in DECISIONS.md.
+ */
+const KRIEGSPLAN = { tag: 20 }
+/** Anzahl der Landnachbarn, die am Kriegsplan-Tag foermlich erklaeren muessen, sonst hat er nicht gegriffen. */
+const KRIEGSPLAN_NACHBARN = 2
 /**
  * Welcher Abschnitt von `episoden` geschrieben wird. `vorher` hat T-M40-07 mit dem Adjutanten aus M40
  * geschrieben und bleibt stehen; seit T-M40-12 misst der Lauf die Regel aus D30.4.
@@ -253,6 +282,8 @@ interface EpisodenZahl {
   rejectedCommands: number
   /** `WAR_DECLARED` ohne Erklaerung, ausgeloest vom Menschen. */
   undeclaredWarsByHuman: number
+  /** `WAR_DECLARED` foermlich (`withoutDeclaration: false`) gegen den Menschen — der Kriegsplan (M17-F1). */
+  declaredAgainstHuman: number
 }
 
 /** Die Zaehlung je Episode — aus nichts als den Frames und dem Besitz am Ende. */
@@ -319,6 +350,7 @@ function werteAus(
   let lostWithoutBattle = 0
   let rejectedCommands = 0
   let undeclaredWarsByHuman = 0
+  let declaredAgainstHuman = 0
   const bewegungen: Extract<GameEvent, { type: 'ARMY_DEPARTED' } | { type: 'ARMY_ARRIVED' }>[] = []
   frames.forEach((frame, index) => {
     for (const event of frame.events) {
@@ -329,6 +361,8 @@ function werteAus(
         rejectedCommands += 1
       } else if (event.type === 'WAR_DECLARED' && event.playerId === human && event.withoutDeclaration) {
         undeclaredWarsByHuman += 1
+      } else if (event.type === 'WAR_DECLARED' && event.targetPlayerId === human && !event.withoutDeclaration) {
+        declaredAgainstHuman += 1
       } else if ((event.type === 'ARMY_DEPARTED' || event.type === 'ARMY_ARRIVED') && event.playerId === human) {
         bewegungen.push(event)
       }
@@ -374,6 +408,7 @@ function werteAus(
     pendulums,
     rejectedCommands,
     undeclaredWarsByHuman,
+    declaredAgainstHuman,
   }
 }
 
@@ -488,6 +523,7 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
       pendulums: 1,
       rejectedCommands: 1,
       undeclaredWarsByHuman: 1,
+      declaredAgainstHuman: 0,
     })
   })
 
@@ -586,6 +622,7 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
             adjutantOrders: 0,
             pendulums: 0,
             undeclaredWarsByHuman: 0,
+            declaredAgainstHuman: KRIEGSPLAN_NACHBARN,
             provincesAtEnd: 4,
             armiesAtEnd: 4,
             daysRun: DAYS,
@@ -625,6 +662,43 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
     expect(ergebnis.erfuellt).toBe(false)
     expect(ergebnis.verletzt.join(' ')).toContain('Kartenfenster')
   })
+
+  it('ist nicht erfuellt und angegriffen.ok ist false, wenn ein Lauf blind war (Befund M17-F1)', () => {
+    const ergebnis = ak5(zwoelf((lauf) => ({ ...lauf, intrusions: 0, provinceDays: 800 })), WINDOW_TICKS_T_M40_02)
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.angegriffen).toEqual({ minIntrusions: 0, kriegsplanOk: true, ok: false })
+    expect(ergebnis.verletzt.join(' ')).toContain('blind')
+  })
+
+  it('ist nicht erfuellt, wenn der Kriegsplan bei einem einzigen Lauf nicht gegriffen hat', () => {
+    const ergebnis = ak5(
+      zwoelf((lauf) => (lauf.seed === 2015 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, declaredAgainstHuman: 1 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.angegriffen).toEqual({ minIntrusions: KONTROLLE.intrusions, kriegsplanOk: false, ok: false })
+    expect(ergebnis.verletzt.join(' ')).toContain('Kriegsplan nicht gegriffen')
+  })
+})
+
+describe('Einheitsfall M17-F1: der Kriegsplan erklaert am Spieltag 20, sonst nichts', () => {
+  it('liefert an den Nachbartagen nichts und am Kriegsplan-Tag je Landnachbar eine foermliche Kriegserklaerung', () => {
+    const { state, human } = aufstellen(1914, 'A', 'garrison')
+    const scripted = kriegserklaerungen(state, human)
+    const zielTick = KRIEGSPLAN.tag * rules.constants.ticksPerDay
+    expect(zielTick).toBe(480)
+
+    expect(scripted(zielTick - 1)).toEqual([])
+    expect(scripted(zielTick + 1)).toEqual([])
+
+    const befehle = scripted(zielTick)
+    expect(befehle).toHaveLength(KRIEGSPLAN_NACHBARN)
+    for (const befehl of befehle) {
+      expect(befehl).toMatchObject({ type: 'DIPLOMACY', targetPlayerId: human, action: 'declareWar' })
+    }
+    const nationen = befehle.map((befehl) => state.players[(befehl as { playerId: PlayerId }).playerId]!.nation).sort()
+    expect(nationen).toEqual(['Frankreich', 'Polen'])
+  })
 })
 
 /** Deutschland mit `SETUPS[aufbau]` Armeen in jeder eigenen Provinz. */
@@ -642,6 +716,34 @@ function aufstellen(seed: number, aufbau: Aufbau, stance: Stance): { state: Game
     }
   }
   return { state, human }
+}
+
+/** Die Landnachbarn des Menschen im Startzustand: Besitzer der ueber eine Landgrenze angrenzenden Provinzen, sortiert. */
+function landnachbarn(state: GameState, human: PlayerId): PlayerId[] {
+  const nachbarn = new Set<PlayerId>()
+  for (const from of state.provinceOrder) {
+    if (state.provinces[from]!.owner !== human) continue
+    for (const to of state.provinces[from]!.neighbors) {
+      const besitzer = state.provinces[to]?.owner
+      if (!besitzer || besitzer === human) continue
+      const edge = edgeBetween(map.edges, map.edgesByProvince[from], from, to)
+      if (!edge || edge.kind !== 'land') continue
+      nachbarn.add(besitzer)
+    }
+  }
+  return [...nachbarn].sort()
+}
+
+/**
+ * Der Kriegsplan (Befund M17-F1): am Tick `KRIEGSPLAN.tag * ticksPerDay` erklaert jeder Landnachbar des
+ * Menschen aus dem Startzustand foermlich den Krieg — ueber den normalen Befehlsweg (`scripted`), danach
+ * entscheidet die KI alles selbst. Vor und nach diesem Tick liefert die Funktion nichts.
+ */
+function kriegserklaerungen(start: GameState, human: PlayerId): (tick: number) => Command[] {
+  const nachbarn = landnachbarn(start, human)
+  const zielTick = KRIEGSPLAN.tag * rules.constants.ticksPerDay
+  return (tick: number) =>
+    tick === zielTick ? nachbarn.map((playerId): Command => ({ type: 'DIPLOMACY', playerId, targetPlayerId: human, action: 'declareWar' })) : []
 }
 
 /** Das Kartenfenster: ein Tick Verzug plus die laengste Marschzeit ueber eine eigene Binnengrenze. */
@@ -694,6 +796,7 @@ async function miss(seed: number, aufbau: Aufbau, stance: Stance, windowTicks: n
   const aufgestellt = aufstellen(seed, aufbau, stance)
   const { human } = aufgestellt
   const ticksPerDay = rules.constants.ticksPerDay
+  const scripted = kriegserklaerungen(aufgestellt.state, human)
   const frames: Frame[] = []
   const jeBesessen = new Set<string>()
   let current = aufgestellt.state
@@ -703,7 +806,7 @@ async function miss(seed: number, aufbau: Aufbau, stance: Stance, windowTicks: n
     const owned = current.provinceOrder.filter((id) => current.provinces[id]!.owner === human)
     for (const id of owned) jeBesessen.add(id)
 
-    const schritt = advanceTicks(current, 1, { map, rules })
+    const schritt = advanceTicks(current, 1, { map, rules }, { scripted })
     frames.push({
       tick: current.tick,
       owned,
@@ -772,6 +875,15 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number) {
     if (lauf.undeclaredWarsByHuman > 0) {
       verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.undeclaredWarsByHuman} Kriege ohne Erklaerung`)
     }
+    // Befund M17-F1: ohne Angriff war der Lauf blind (0 Einmaersche), obwohl AK5 sonst hielt.
+    if (lauf.intrusions === 0) {
+      verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: blind, 0 Einmaersche (Befund M17-F1)`)
+    }
+    if (lauf.declaredAgainstHuman !== KRIEGSPLAN_NACHBARN) {
+      verletzt.push(
+        `${lauf.seed} ${lauf.setup} ${lauf.stance}: Kriegsplan nicht gegriffen (${lauf.declaredAgainstHuman} statt ${KRIEGSPLAN_NACHBARN} foermliche Kriegserklaerungen)`,
+      )
+    }
   }
   const garnison = finde(laeufe, 1914, 'A', 'garrison')
   const gemessen = { intrusions: garnison.intrusions, provincesLost: garnison.provincesLost }
@@ -787,11 +899,16 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number) {
   }
   const fensterOk = windowTicks === WINDOW_TICKS_T_M40_02
   if (!fensterOk) verletzt.push(`Kartenfenster ${windowTicks} Ticks statt ${WINDOW_TICKS_T_M40_02}`)
+  // Befund M17-F1: die Blindheit soll auffallen, auch wenn jemand die einzelnen Verletzungen oben uebersieht.
+  const minIntrusions = Math.min(...laeufe.map((lauf) => lauf.intrusions))
+  const kriegsplanOk = laeufe.every((lauf) => lauf.declaredAgainstHuman === KRIEGSPLAN_NACHBARN)
+  const angegriffen = { minIntrusions, kriegsplanOk, ok: minIntrusions > 0 && kriegsplanOk }
   return {
     provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
     lostWithoutBattle: { garrison: summe('garrison', 'lostWithoutBattle'), defensive: summe('defensive', 'lostWithoutBattle') },
     kontrolle,
     fensterOk,
+    angegriffen,
     erfuellt: verletzt.length === 0,
     verletzt,
   }
@@ -802,7 +919,8 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
   const bericht = JSON.parse(readFileSync(REPORT, 'utf8')) as Record<string, unknown> & { episoden?: Record<string, unknown> }
   const episoden = {
     ...(bericht.episoden ?? {}),
-    tasks: 'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17)',
+    tasks:
+      'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), M17-F1 (Kriegsplan); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17)',
     seeds: [...SEEDS],
     days: DAYS,
     setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },
@@ -814,7 +932,8 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       lostWithoutBattle: 'PROVINCE_CAPTURED aus dem Besitz des Menschen ohne BATTLE_RESOLVED in dieser Provinz im selben Tick',
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
+      kriegsplan: `Befund M17-F1: die Landnachbarn des Menschen erklaeren ihm am Spieltag ${KRIEGSPLAN.tag} foermlich den Krieg (ueber den normalen Befehlsweg, scripted), danach entscheidet die KI alles selbst. Ohne Kriegsplan war der Lauf blind (0 Einmaersche); ${KONTROLLE_BIS_F1}`,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche und Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen, Befund M17-F1); Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,

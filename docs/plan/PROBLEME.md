@@ -2075,7 +2075,7 @@ Aufgabe oder einen Meilenstein.
   einzigen Verbraucher sind dieser Bau und die Börse. Die Zeile im Eintrag vom 2026-09-06 („bleibt
   nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
 
-**Status: offen**, je mit Aufgabe; B7 zweite Hälfte ohne Meilenstein.
+**Status:** B1 bis B3 erledigt (2026-09-24, T-M17-04) — Durchmarsch und Karte sind gerichtet, wer gewährt, darf nicht selbst hinein, die Angebotsfrist steht in `constants.json`, das Erwidern ist am Zustand geprüft. B4 für Handelsangebote erledigt (2026-09-25, T-M17-05); für Frieden und Bündnis (`acceptPeace`/`acceptAlliance`) weiterhin offen, ohne Meilenstein. B5 für den Provinzhandel behoben (2026-09-25, T-M17-11) — `targeting.ts` bewertet fremde Provinzen weiter pauschal. B6 für KI-Märsche erledigt (2026-09-25, T-M17-10, Antrag statt Marsch); die volle Messung über eine echte Partie mit vielen Mächten bleibt T-M17-15 vorbehalten. B7 erste Hälfte (enttarnte Spione) eingelöst (2026-09-25, T-M17-09); zweite Hälfte (gebrochene Bündnisse) weiterhin offen, ohne Meilenstein. B8 weiterhin offen, für M18 mit dem Vorratsaufbau.
 
 ---
 
@@ -3675,7 +3675,40 @@ Muster nennt, braucht dieselbe Notbremse wie der Produktcode — `GUARD-ALLOW` i
 steht es in `websocketTransport.test.ts`, wo die Regel gegen `crypto.randomUUID` ihre eigene
 Gegenprobe braucht.
 
-**Status:** offen, gemessen, nach M18 verschoben (2026-09-14).
+**Status:** erledigt (2026-09-18, T-M38-11). Der Filter heißt jetzt `isTestFile()` und
+erkennt beide Endungen in **einem** Ausdruck (`/\.test\.[cm]?[jt]sx?$/`), damit die
+nächste nicht wieder eine eigene Zeile braucht. **Unabhängig nachgemessen am 2026-09-18**
+(eigener Verzeichnislauf, beide Filter über denselben Baum):
+`productionFiles()` liefert **205 → 183** Dateien, herausgeschnitten werden **22**, und
+alle 22 sind `.test.tsx` unter `apps/desktop` — keine einzige Produktdatei fällt weg
+(Gegenprobe: alle 23 echten `.tsx` und alle echten `.ts` sind weiterhin dabei). Die zwei
+Zahlen, die der alte Eintrag nannte, sind mitgewachsen und stimmen in der Richtung:
+`t()`-Schlüssel **350 → 348** (Grenze 50), Schleifenprüfung **192 → 170** (Grenze 50). Die
+beiden verlorenen Schlüssel sind `tutorial.steps.dayPassed.text` und
+`tutorial.steps.select.text` — der Produktcode fragt sie zusammengesetzt ab
+(`Tutorial.tsx`), und `tutorial.test.ts` prüft für **jeden** Schritt alle drei Schlüssel;
+es geht also nichts verloren.
+**Was schmaler wird, und zwar dem Buchstaben nach:** der Steuerzeichen-Wächter (C-08) las
+die 22 Dateien bisher mit — zufällig, denn die rund 200 `.test.ts` hat er nie gelesen; und
+die Schlüsselprüfung sieht `t()`-Aufrufe in `.test.tsx` nicht mehr. In den 22 Dateien steht
+heute kein Steuerzeichen, keine `implements StoragePort`, kein `runAi`+`runTicks`, kein
+`assignments` und kein Treffer eines `scan()`-Musters (alles nachgemessen) — **kein Urteil
+ändert sich**. `ai-memory-unread.test.ts` filterte `.test.tsx` schon vorher selbst heraus;
+diese Zeile ist jetzt überflüssig und bleibt als Gürtel neben den Hosenträgern stehen.
+**Gezählt statt übernommen (Nacharbeit vom 2026-09-24):** neun Wächterdateien bekamen die
+Liste vor `c0d20b4` geliefert — **sechs direkt** (`ai-memory-unread`,
+`no-control-characters`, `no-network`, `persistence-contract`, `single-loop`, `text-keys`)
+und **drei über den Standardparameter von `scan()`**, die im Bericht vom 2026-09-18
+fehlten: `no-foreign-assets` (zwei Muster), `no-monetization`, `no-time-pressure`. Über
+genau die 22 herausgeschnittenen Dateien nachgemessen, mit demselben Verzeichnislauf und
+derselben `GUARD-ALLOW`-Ausnahme: Medien **0**, Vorbilder **0**, `CURRENCY_TERMS` **0**,
+`WAIT_OR_PAY` **0**; gegengeprüft mit ripgrep über dieselben 22 Dateien, auch ohne die
+Ausnahme **0**. Mit `scan.test.ts` lesen heute zehn Dateien die Liste. Die „zwölf" im Kopf
+von `scan.test.ts` (aus dem Befundtext oben, nicht gezählt) und die „sieben" im Bericht vom
+2026-09-18 sind berichtigt (`7b2f3df`).
+Neu: `test/guards/scan.test.ts`. Seine Gegenliste kommt aus `git ls-files` und **nicht** aus
+demselben Verzeichnislauf — ein Filter, der gegen sich selbst geprüft wird, ist immer
+vollständig. Er hält auch den alten Filter als Gegenprobe fest.
 
 ---
 
@@ -4103,7 +4136,23 @@ eine Frage an den Maßstab — die Kopfleiste ist im Mehrspieler schon voll (Uhr
 „Warte auf Mitspieler …", *Pause beantragen*, der Verlust-Hinweis mit zwei Knöpfen). Ein
 Agent, der hier Text einbaut, entscheidet über das Aussehen.
 
-**Status:** offen — Frage an Noah.
+**Status:** erledigt (2026-09-18, T-M39-10). Die drei Sätze, die einen **Zustand**
+beschreiben — `pauseSent`, `paused`, `resuming` — stehen in der Kopfleiste neben dem
+Pausenknopf; die zwei **Ereignisse** — `pauseDeclined`, `pauseExpired` — in der
+Meldezeile, in der schon `header.pauseNeedsConsent` steht. Die Gestaltungsfrage, an der
+der Befund hing, ist damit entschieden und in DECISIONS.md als kippbar festgehalten.
+Dafür trägt `PauseState` ein neues Feld `noticeBy`: ohne es ist `'declined'` auf beiden
+Rechnern dasselbe, und der Ablehnende läse einen Satz über sich selbst. Neun Fälle an der
+ganzen Anwendung (`App.test.tsx`), **sechs davon fallen ohne die Reparatur**; die drei
+übrigen sind die Verneinungen — der Ablehnende liest nichts, der eigene Antrag bekommt
+keinen Dialog, im Einzelspieler steht keiner der fünf Sätze.
+**Nachgearbeitet am 2026-09-24** (Durchsicht vom 2026-09-18, Stufe niedrig): ein fremder
+Antrag löschte beim Gefragten jede Meldung, nicht nur die alte Pausenantwort — an der
+ganzen Anwendung nachgestellt („+" gedrückt, der Hinweis zur festen Rate steht, der
+Mitspieler beantragt, der Hinweis ist fort). `clearNotice` nimmt jetzt ein `onlyIf` und
+leert nur `pauseDeclined`/`pauseExpired`; zwei Fälle an der Anwendung, einer am
+Reduzierer, Gegenprobe gefahren. Zwei weitere Befunde derselben Durchsicht bleiben offen:
+MP-6 und MP-7.
 ---
 
 ## 2026-09-14 · Sichtprüfung Mehrspieler · Befund MP-5: Ein Satz aus M37 steht noch im Anlegedialog
@@ -4124,7 +4173,13 @@ auf „Zu zweit über einen Link" — der Satz steht als `<small>` unter den vie
 Frage an den Maßstab — der Kasten trägt sonst nur Angaben, keine Erklärungen. Spielertext ist
 Noahs Entscheidung.
 
-**Status:** offen — Frage an Noah.
+**Status:** erledigt (2026-09-18, T-M39-11). Der Satz ist ersatzlos gestrichen, samt
+Schlüssel `newGame.multiplayerPending`; der alte Wortlaut steht als Kommentar an beiden
+Stellen. Der Kasten trägt jetzt, was PROBLEME.md als Maß nannte: Angaben, keine
+Erklärungen. Was als Nächstes kommt, sagt die Lobby einen Klick später. Seit der
+Nacharbeit zu V-1 (2026-09-24) steht der Kasten nur noch mit Raum; seine Überschrift „Die
+Einladung nennt:" behauptet damit keine Einladung mehr, die es nicht gibt. Im netzfreien
+Bündel ist der Schlüssel gemessen fort („nächsten Ausbau" 0×, „vorerst lokal" 0×).
 ---
 
 ## 2026-09-14 · Verpackungslauf AK-8 (`e82c2bc`) · Befund V-1: Der netzfreie Bau bietet eine Partieart an, die er nicht herstellen kann
@@ -4168,5 +4223,1734 @@ zu zweit geht es über den Hostdienst“), oder ihn bewusst als Vorschau behalte
 einzige, nach dem die Zusage „die Tauri-Anwendung kennt keinen Mehrspieler“ **auch an der Oberfläche**
 wahr ist; die Zusage „darf ihn technisch nicht können“ ist schon heute gemessen wahr.
 
-**Status:** offen — Frage an Noah. **AK-8 ist davon nicht betroffen**: die sieben Schritte fahren
-„Allein gegen den Rechner“, so wie ein Spieler das ausgelieferte Programm fährt (`docs/reports/packaging.md`).
+**Status:** erledigt (2026-09-18, T-M39-11; **nachgearbeitet am 2026-09-24**). Gebaut ist
+der **erste** der drei Wege: im netzfreien Bau gibt es die Wahl nicht. **Im Hostbau gibt es
+sie nur mit Raum** — die Fassung vom 2026-09-18 hing die Liste allein an die Bauflagge, und
+der Hostbau ohne Raum (`/` statt `#/gastgeben`) bot die zweite Art weiter an und lieferte
+die erste: das Symptom dieses Befunds, im anderen Bau (Durchsicht vom 2026-09-18, Stufe
+hoch; am 2026-09-24 an der ganzen Anwendung nachgestellt). Jetzt
+`gameModesFor(__MULTIPLAYER__, hostsParty)` — zu zweit nur, wenn der Bau es kann **und**
+dieser Bildschirm einen Raum als Gastgeber führt. Und die **Wirkung** hängt an derselben
+Liste, nicht nur die Anzeige: `effectiveMode` entscheidet, was der Dialog zeichnet und was
+er an `onStart` weiterreicht; `startNewGame` liest `options.mode` nicht mehr (Stufe mittel,
+nachgestellt: eine vorgewählte Partie zu zweit startete ohne Raum mit fester Rate). Die
+Bauflagge wird für die Oberfläche an genau einer Stelle gelesen (`App.tsx`, `gameModes`);
+geprüft sind **beide** Werte der Flagge und **beide** Lagen des Raums, ohne die Flagge zu
+setzen. Entscheid samt Kippweg in DECISIONS.md. **AK-8 bleibt unberührt**: die sieben
+Schritte fahren „Allein gegen den Rechner", und genau das ist die einzige Partieart des
+ausgelieferten Programms.
+**Was sich im netzfreien Bündel ändert — gemessen, nicht erschlossen** (2026-09-24,
+`vite build` in `apps/desktop` ohne `WORLDWAR_MULTIPLAYER` auf `f47b830`, Ausgabe außerhalb
+des Baums): heraus fällt **allein der Schlüssel** `newGame.multiplayerPending` („nächsten
+Ausbau" 0×, „vorerst lokal" 0×). Wähler, Rate und Einladungskasten **stehen weiter im
+Bündel** und werden nur zur Laufzeit nicht gezeichnet: „Zu zweit über einen Link" 1×,
+„Partieart" 1×, „Die Einladung nennt" 1×, „Feste Geschwindigkeit" 3×, der Aufruf
+`newGame.modeMultiplayer` 1×. Der Grund: die Liste kommt aus einer Funktion in einem
+anderen Modul, `modes.length > 1` kann Rollup nicht falten — und selbst mit der Flagge als
+Literal im Dialog blieben die Texte im Katalog `de.ts`, der als Ganzes gebündelt wird. Es
+ist Laufzeit-Indirektion, keine Baumschneidung; die Fassung vom 2026-09-18 („die zweite
+Option und der Satz aus M37 fallen heraus") war zur Hälfte falsch. `WebSocket` im Bündel:
+**0×** — die Netzfrei-Zusage hält, an dem Zweig hängt kein Netzcode. **Neu zu messen bleibt
+das Erzeugnis**, weil sich der Code geändert hat, nicht weil Inhalt fiele: gemessen
+**2 Dateien, 1 669 812 Zeichen** gegen 1 668 947 in `docs/reports/packaging-netfree.json`
+(gemessen auf `6622ec9`); `bundle.bytes` und `binary.bytes` stimmen erst nach einem neuen
+Bau samt `scripts/measure-netfree.mjs` wieder. Der Wächter ist heute grün — er liest den
+Bericht und, wenn die exe auf der Maschine liegt, sie selbst; beide sind unverändert.
+
+---
+
+## 2026-09-24 · Durchsicht der Bahn C · Befund MP-6: Zwei gleiche Pausenereignisse hintereinander fallen zusammen
+
+**Befund** (Durchsicht vom 2026-09-18, Stufe niedrig; per Codelesen, **nicht nachgestellt**):
+der Effekt in `App.tsx`, der `pauseDeclined`/`pauseExpired` in die Meldezeile schreibt,
+reagiert auf eine **Änderung** von `pause.notice` und `pause.noticeBy` — und die Hülle sieht
+`PauseState` nur einmal je Takt: `setSnapshot` steht allein in `schlag()`
+(`useNetplay.ts`), während `requestPause`, `answerPause`, `resume` und der Empfang den
+Zustand ohne Schnappschuss ändern. Fallen ein `'requested'` und die Antwort darauf in
+dieselbe Taktlücke (40 ms bei 25 Stunden je Sekunde), sieht React nur `'declined'`; beim
+**zweiten** Mal in Folge ändert sich dann weder `notice` noch `noticeBy`, und der
+Antragsteller liest nichts.
+
+**Nicht repariert, und warum:** die saubere Reparatur ist eine monoton wachsende
+Ereignisnummer in `PauseState` (oder ein Schnappschuss nach jeder Pausenänderung in
+`useNetplay`) — ein Eingriff in `packages/netplay` samt Tests an zwei Maschinen, kein
+Minutenwerk. Und die Lage braucht einen Menschen, der binnen eines Takts auf einen Antrag
+antwortet, den sein eigener Bildschirm erst im nächsten Takt zeigt; am Bildschirm ist sie
+nicht beobachtet.
+
+**Status:** offen, niedrig (2026-09-24).
+
+---
+
+## 2026-09-24 · Durchsicht der Bahn C · Befund MP-7: `pollPause` kann das Verfallen im selben Aufruf überschreiben
+
+**Befund** (Durchsicht vom 2026-09-18, Stufe niedrig; per Codelesen, **nicht nachgestellt**):
+`pollPause` (`packages/netplay/src/pause.ts`) prüft nacheinander „Antrag verfallen" und
+„Fortsetzen fällig" auf demselben Zwischenstand. Sind beide im selben Aufruf fällig, setzt
+der zweite Zweig `notice: 'resumed'` und löscht das `'expired'` des ersten — das Verfallen
+wird nie gemeldet. Möglich ist das, weil `applyPause('antrag')` einen Antrag auch während
+einer stehenden Partie oder während der drei Sekunden Vorlauf annimmt.
+
+**Nicht repariert, und warum:** beide Reparaturen sind Entscheidungen über den
+Pausenvertrag (R-MP-05, D28.7), keine Handgriffe — einen Antrag während der Pause
+verwerfen, oder Ereignisse als Liste statt als Einzelwert führen. Das Fenster ist schmal:
+die Frist eines Antrags (30 s) muss im selben Abfrageschritt ablaufen wie der Vorlauf
+(3 s), und der Antrag muss während einer stehenden Partie gestellt worden sein. Die
+Kopfleiste zeigt dort *Fortsetzen* statt *Pause beantragen*; die Leertaste ruft
+`requestPause` allerdings weiterhin, und `useNetplay` reicht ihn ohne eigene Sperre an den
+Gleichschritt weiter (ob `createLockstep` ihn dann annimmt, ist nicht geprüft).
+
+**Status:** offen, niedrig (2026-09-24).
+
+---
+
+## 2026-09-24 · Nacharbeit der Bahn C · Befund MP-8: Der Gastgeber mit Raum wählt „Allein" und bekommt trotzdem die Lobby
+
+**Befund:** `startNewGame` bietet die Partie dem Raum an, sobald dieser Bildschirm Gastgeber
+ist (`alsGastgeber = netParty.active && netParty.role === 'host'`) — **unabhängig von der
+gewählten Art**. Gemessen am 2026-09-24 an der ganzen Anwendung (ein Wegwerf-Test, nicht
+eingecheckt): Gastgeber mit Raum, Partieart auf „Allein gegen den Rechner", *Partie
+beginnen* → es öffnet sich der Dialog „Partie zu zweit eröffnen", die Kopfleiste zeigt
+keine feste Rate, *Vorspulen* ist da. Angeboten wird dabei die Partiedefinition der
+Einzelspielerpartie — `toConfig` macht bei `mode: 'single'` den zweiten Platz zu einem
+Computergegner, auf den der Gast beträte (per Codelesen; was dann geschieht, ist nicht
+gemessen). Das ist V-1 in der Gegenrichtung: angeboten „allein", geliefert eine Lobby. Das
+Verhalten ist älter als diese Bahn; die Nacharbeit zu V-1 hat es nicht verändert, nur
+sichtbar gemacht.
+
+**Nicht repariert, und warum:** die Antwort ist eine Frage an den Maßstab. Entweder startet
+„Allein" auch mit Raum eine Einzelspielerpartie ohne Angebot (dann wartet ein schon
+verbundener Gast weiter auf eine Partie, die nicht kommt), oder der Gastgeber mit Raum
+bekommt gar keine Wahl (wer über `#/gastgeben` kommt, will zu zweit spielen — T-M39-03).
+Beides ist ein Satz Code; welcher, entscheidet Noah.
+
+**Status:** offen — Frage an Noah (2026-09-24).
+
+---
+
+## 2026-09-18 · T-M17-02 · Befund M17-1: B6 ist gemessen — dreizehn Überfälle, drei davon auf dem Weg
+
+**Befund:** Befund B6 (2026-09-13) stand auf „nicht gemessen": ein KI-Marsch kann über das Land
+einer friedlichen dritten Macht führen, und das ist ein Überfall. Der Ausgangswert
+(`docs/reports/m17-baseline.json`, `8bda869`, Weltkarte, acht KI, Startzahl 1815, 200 Spieltage)
+zählt **13 Überfälle ohne Kriegserklärung bei 15 Kriegen** — die KI erklärt in 200 Tagen nur
+**zweimal** förmlich den Krieg, alle anderen Kriege beginnen mit Stiefeln auf fremdem Boden.
+
+**Eingeordnet je Tick, nicht geschätzt.** Der Messlauf liest unmittelbar nach dem Tick, in dem der
+Überfall fiel, wohin die Armee wollte, die auf fremdem Boden stand:
+
+| Art | Zahl | Bedeutung |
+|---|---|---|
+| `ziel` | 10 | das Marschziel liegt im Land des Opfers — ein Angriff ohne Erklärung |
+| `durchmarsch` | 3 | das Marschziel gehört jemand anderem — das Opfer lag nur auf dem Weg |
+
+Von den drei Durchmärschen führte **einer** zu einem Kriegsgegner (Italien über Frankreich nach
+Deutschland, Tick 2012) und **zwei zurück ins eigene Land** (Russland über China, Tick 2822; China
+über Indien, Tick 3218). In keinem Fall lief eine Kriegserklärung gegen das Opfer.
+
+**Was daraus folgt.** R-AI-09/AK3 („mit Anträgen nicht mehr Überfälle") hat etwas zu messen, aber
+der Hebel ist klein: ein Antrag auf Durchmarsch (T-M17-10) kann höchstens **3 von 13** verhindern.
+Die zehn anderen sind kein Wegproblem, sondern die Art, wie die KI Krieg beginnt — sie marschiert
+einfach los. Das ist kein Auftrag von M17 und wird hier nur festgehalten, damit T-M17-15 die
+Zahl 13 nicht für den Erfolgsmaßstab des Antrags hält. Dazu: **keine** Durchmarsch- und **keine**
+Kartenfreigabe und kein Bündnis in 200 Tagen (909 Friedensangebote, 7 angenommen) — die
+Felder, die T-M17-03 umbaut, sind in einer reinen KI-Partie heute nie gesetzt.
+
+**Status:** gemessen; offen für T-M17-10 (Antrag) und T-M17-15 (Vergleich gegen 3, nicht gegen 13).
+
+**Schlusszeile (2026-09-25, T-M17-15):** AK3 gemessen — Weltkarte, 200 Tage, drei Startzahlen
+(1815/1914/2015): Überfälle 1/2/0 (≤ 13), Art `durchmarsch` 0/0/0 (≤ 3). Hält in allen drei.
+Geschlossen.
+
+---
+
+## 2026-09-18 · T-M17-02 · Befund M17-2: `ai-integration.json` ist seit fünf Tagen veraltet, und niemand merkt es
+
+**Befund:** Der Messlauf des Ausgangswerts lag als unversionierter Rest eines abgebrochenen
+Agenten im Baum. Sein Kopfkommentar behauptete, die Prüfsumme `zustandOhneKi` müsse dem Wert in
+`docs/reports/ai-integration.json` gleichen — „eine zweite Messung mit einem zweiten Werkzeug,
+ohne einen zweiten Lauf". **Sie gleicht ihm nicht:** der Bericht nennt `e7b0627bff9f7b39`, der
+Messlauf `10950ec5abffd9b7`.
+
+**Nachgesehen statt angenommen.** Der eingecheckte Bericht stammt vom 2026-09-13 (`fcf43cd`).
+Seitdem liegen vierzehn Commits an `packages/core/src`, `packages/ai/src` und `data/rules` auf
+`main` — M35 mit dem Feld `goals`, die Nacharbeiten zu M40, die Marke 350 ‰. Das Integrationstor
+auf `8bda869` neu gefahren (132 s, 21 von 21 grün) meldet **`10950ec5abffd9b7`**, 29 987
+Ereignisse, 16 650 KI-Befehle, 3 Ablehnungen — also genau die Zahlen des Ausgangswerts. Die
+Gleichheit gilt, aber nur **auf demselben Commit gemessen**; gegen den eingecheckten Bericht war
+die Behauptung falsch und wäre beim ersten Nachsehen aufgefallen. Der Kommentar ist berichtigt.
+
+**Der eigentliche Befund dahinter:** `ai-integration.json` steht unter **keinem**
+Frische-Wächter. `GAUGES` deckt den Parameterlauf und das Turnier, `STANCE_SOURCES` den
+Haltungs-Messlauf; das Integrationstor schreibt seinen Bericht bei jedem Lauf neu, aber nichts
+wird rot, wenn er hinter dem Kern zurückbleibt. Wer ihn als Vergleichswert liest, liest den Stand
+vom 2026-09-13.
+
+**Nicht repariert, und warum:** der neu gefahrene Bericht ist zurückgesetzt, nicht eingecheckt —
+T-M17-03 verschiebt die Prüfsumme sofort wieder (neue Zustandsfelder), und T-M17-15 fährt das
+Integrationstor ohnehin als eigene Aufgabe. Ob der Bericht einen Wächter nach dem Muster
+`measuredAtCommit` bekommt, gehört in die M18-Sammelstelle.
+
+**Status:** offen (Wächter); die falsche Behauptung ist berichtigt.
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-3: der Entwurf sagt, ein Krieg lösche „nur den Durchmarsch" — er löscht seit je auch die Karte
+
+**Befund:** D29.1 beschreibt, was die neuen gerichteten Felder wann ändern, und schließt mit:
+„`acceptAlliance` setzt beide Richtungen beider Felder, `breakAlliance` löscht sie, eine
+wirksame Kriegserklärung löscht **wie heute nur den Durchmarsch**." Das „wie heute" stimmt
+nicht. `phases/diplomacy.ts` löscht, sobald eine Kriegserklärung wirksam wird, **beide**
+Felder — `rightOfWay` *und* `sharedMap`, seit M6 und unverändert.
+
+**Gemessen, nicht erinnert:** die Zeilen standen vor T-M17-03 unmittelbar untereinander
+(`relation.rightOfWay = false` / `relation.sharedMap = false`), und `git log -L` führt sie bis
+auf den ersten Bau der Phase zurück.
+
+**Was daraus folgt — und was hier bewusst NICHT passiert.** T-M17-03 ist der Migrationsschritt:
+er richtet den *Zustand*, nicht das *Verhalten*. Hätte dieser Schritt die Karte im Krieg stehen
+lassen, wäre eine Regeländerung mitten in eine Formatumstellung geraten — und beide
+Golden-Master hätten sich aus **zwei** Gründen zugleich verschoben, von denen keiner mehr vom
+anderen zu trennen gewesen wäre. Der Krieg löscht deshalb weiterhin beide Richtungen beider
+Felder, und im Code steht, warum.
+
+**Die Frage dahinter ist echt und gehört nach T-M17-04:** soll ein Krieg die Kartenfreigabe
+mitnehmen? Dafür spricht, dass niemand dem Feind die eigene Karte lässt; dagegen, dass eine
+*geschenkte* Karte nicht zurückgenommen werden kann — was der andere gesehen hat, weiß er.
+Solange das offen ist, gilt das Verhalten von heute.
+
+**Status:** entschieden (2026-09-24, T-M17-04): ein Krieg nimmt die Kartenfreigabe mit, in beiden Richtungen — was der andere gesehen hat, behält er im Aufklärungsgedächtnis, gelöscht wird nur die laufende Sicht. Dasselbe gilt jetzt für den Überfall, der die Karte seit M6 stehen ließ (Befund M17-D1). Kippbar in `DECISIONS.md`; D29.1 ist datiert berichtigt.
+
+*Nachtrag 2026-09-24: der Vermerk stand bis heute nur hier, nicht im Entwurf. Jetzt tragen D29.1
+und D29.3 Punkt 1 ihn selbst, und `packages/core/src/state/relation-direction.test.ts` hält fest,
+dass eine wirksame Kriegserklärung alle sechs gerichteten Felder zurücksetzt — in beiden Hälften
+des Schlüssels (Befund M17-6).*
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-4: der Mehrspieler kennt die Formatstufe nicht — und nahm einen fremden Stand an
+
+**Befund:** D29.12 nahm an, M17 sei **vor** M37 gemergt. Es kam umgekehrt. Also nachgesehen,
+was am Mehrspieler an `SCHEMA_VERSION`, am Spielstandsformat, an `rightOfWay`/`sharedMap` oder
+am Zustandshash hängt — `packages/netplay`, `apps/party`, `apps/desktop/src/net`, die Skripte
+und die Mehrspieler-Tests.
+
+**Drei Antworten, alle gemessen:**
+
+1. **Der Handschlag sieht die Stufe nicht.** `fingerprintOf` vergleicht Protokollfassung,
+   Regel- und Kartenprüfsumme (`handshake.ts`) — die Formatstufe steht nicht darin. Zwei Bauten,
+   die sich **nur** im Kern unterscheiden, kommen also durch den Handschlag.
+2. **Die Determinismus-Probe fängt es trotzdem** — das ist ihr Zweck. 24 Ticks aus derselben
+   Partiedefinition ergeben mit Stufe 4 `d4e0ae7104e71c6b` statt `b2f6fef971bbfc1b` (gemessen
+   am 2026-09-18, 53 ms kalt gegen eine Grenze von 100). Die Partie beginnt nicht. Was sie
+   **falsch** macht, ist die Meldung: „aus demselben Stand kommen zwei Ergebnisse" schickt den
+   Nächsten auf die Suche nach einem Fehler im Kern, den es nicht gibt (genau die Falle, die
+   `resumeDecision` für den umgekehrten Fall schon vermeidet).
+3. **Eine Stelle war wirklich kaputt, und die ist repariert.** `acceptState` nahm einen
+   übertragenen Stand allein nach seiner Prüfsumme an (T-M39-06, R-MP-13/AK2). Seit Stufe 4
+   heißt das: ein Stand der Stufe 3 wird angenommen, und `cloneState` liest im **ersten Tick**
+   `state.espionage.spies` — aus der irreführenden Meldung wäre ein Absturz geworden. `acceptState`
+   prüft jetzt **zuerst** die Stufe und nennt beide Zahlen. Der Test dazu fällt ohne die
+   Reparatur (Gegenprobe gefahren).
+
+**Was nicht repariert wurde, und warum:** die Formatstufe in den Handschlag zu nehmen ändert das
+Nachrichtenformat und gehört mit einer Erhöhung von `PROTOCOL_VERSION` zusammen. Dazu kommt, dass
+das Fenster klein ist: **ab T-M17-04 ändert M17 `data/rules`**, und dann meldet schon der
+Handschlag „verschiedene Regeln" mit einem Satz, den man lesen kann. Der Vorschlag gehört in die
+M18-Sammelstelle, nicht in eine Migrationsaufgabe.
+
+**Zwei Zahlen, die dabei abfielen:** die Zustandsnachricht wächst um **1558 Byte** (15 Beziehungen
+auf der Weltkarte, sechs Mächte) — 0,6 %, gegen eine Grenze von 512 000. Und die Prüfsummen, die
+`WORKFLOW.md` §5 und `PROGRESS.md` für den Mehrspieler nennen (`5ed264a0fea05076`,
+`b2f6fef971bbfc1b`, `7aae49be9d989df8`), sind ab Stufe 4 **historische Messwerte ihres Commits**
+und keine Vergleichswerte mehr. Sie werden nicht gelöscht: sie tragen ihr Datum.
+
+**Status:** eine Reparatur eingebaut und belegt; Handschlag-Vorschlag offen (M18).
+
+**Berichtigt am 2026-09-24 (Nacharbeit zu T-M17-03, adversarische Prüfung, selbst
+nachgestellt):** Punkt 2 stimmt für die App nicht. `compareProbe` und `handshakeComplete`
+haben außerhalb der Tests **keinen Aufrufer** (`git grep`); die App vergleicht in
+`apps/desktop/src/net/party.ts` beim Gastgeber wie beim Gast mit `resumeDecision`, und die
+fragt **zuerst** nach dem Startabdruck. Zwei Formatstufen haben zwangsläufig verschiedene —
+gemessen aus derselben Partiedefinition: `b14b2dad229e92cb` (Stufe 4) gegen
+`68736687aa40819d` (dieselbe Partie in der Form von Stufe 3). Die Entscheidung lautet
+`transfer`, **auch in einer frischen Partie**: der Gastgeber schickt seinen Stand und beginnt.
+Die Meldung „aus demselben Stand kommen zwei Ergebnisse" kann in diesem Fall nie erscheinen.
+Je Richtung:
+
+- **Gastgeber alt, Gast neu:** der Gast verwirft den Stand mit der Formatmeldung — die
+  Reparatur aus Punkt 3 wirkt.
+- **Gastgeber neu, Gast alt:** das alte `acceptState` (`8bda869`) prüft nur die Prüfsumme, und
+  die stimmt (`stateHash` des Standes der Stufe 4 = angekündigter Startabdruck). Beide gehen auf
+  „playing", und die Partie endet **nach dem Start** mit „auseinandergelaufen" — R-MP-06
+  verlangt „vor dem ersten Zug".
+
+Der Kommentar in `resume-save.test.ts` beschrieb den Fall verkehrt herum („der Gast hat einen
+älteren Bau" ist gerade der Fall, den die Prüfung der Stufe **nicht** erreicht) und ist
+berichtigt. Dieselbe falsche Annahme stand in `DECISIONS.md`, D29.12, `PROGRESS.md` und der
+`dod` von T-M17-03 — alle fünf sind datiert berichtigt, nicht gelöscht. Die Begründung, die
+Formatstufe nicht in den Handschlag zu nehmen („Nutzen klein, die Probe fängt es"), stützte sich
+auf genau diese Annahme.
+
+**Repariert am 2026-09-24:** `PROTOCOL_VERSION` 2. Eine neue Formatstufe ist eine neue
+Protokollfassung, und den alten Bau erreicht nur eine Prüfung, die er schon kennt: die Fassung
+im ersten `hallo`. `protocol.test.ts` führt die Paare Stufe → Fassung (3 → 1, 4 → 2) und fällt,
+wenn jemand die Stufe hebt und die Fassung nicht; beide neuen Tests waren vor der Änderung rot.
+Der Handschlag-Vorschlag ist damit erledigt und wandert **nicht** nach M18. Das Nichtwort
+`Faende` in der Abbruchmeldung heißt jetzt „Fassungen des Spiels".
+
+**Status:** erledigt am 2026-09-24 — `acceptState` prüft die Stufe (2026-09-18), die
+Protokollfassung trennt die Bauten (2026-09-24).
+
+**Nachtrag 2026-09-25 (T-M17-04), gemessen:** die Regelprüfsumme des Handschlags (`fingerprintOf(...).rulesHash` über die ausgelieferten Regeln) trennt seit T-M17-04 zwei Bauten vor und nach dieser Aufgabe schon am Handschlag mit „Verschiedene Regelwerke“ — das Fenster, in dem die Probe den falschen Grund nannte, ist damit zu; der Handschlag-Vorschlag bleibt für M18. Keine feste Zusage: `data/rules/default/constants.json` hat sich seither mehrfach weiterbewegt (T-M17-05, T-M17-07 ff.), jede Regelprüfsumme gilt nur für ihren eigenen Commit.
+
+---
+
+## 2026-09-18 · T-M17-03 · Befund M17-5: ein einziges Byte in `node_modules` legt `pnpm lint` lahm — und damit `pnpm verify`
+
+**Befund:** `pnpm lint` bricht seit dem 2026-09-18, etwa 14:40, mit
+`SyntaxError: Unexpected identifier 'createTextChangeRange'` ab, noch bevor eine einzige Datei
+geprüft ist. Betroffen ist nicht dieses Projekt, sondern eine **Abhängigkeit**:
+`node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/typescript.js`, Zeile 183 694.
+Dort endet `createTextChangeFromStartLength: () => createTextChangeFromStartLength` mit einem
+`$` statt mit einem Komma. **Ein Byte.** Drei Wächter, die ESLint programmatisch fahren
+(`core-purity`, `import-boundaries`, `no-color-literals`, zusammen 10 Zusicherungen), fallen aus
+demselben Grund.
+
+**Belegt, nicht vermutet — der Speicher von pnpm beweist es selbst.** Jede Datei im
+inhaltsadressierten Speicher trägt ihren sha512 als Dateinamen. Die Datei heißt
+`…/files/01/ec6731435398…` — der Inhalt hashed aber auf `3ea65f7568fc2fde…`. Ersetzt man das eine
+Byte wieder durch ein Komma, ergibt sich **exakt** `01ec67314353989306eb143d7b8d1da0…`, also der
+Name, unter dem die Datei abgelegt ist. Die Reparatur ist damit keine Vermutung, sondern durch
+den hinterlegten Hash bewiesen.
+
+**Nicht durch M17 verursacht:** derselbe vollständige Testlauf war um 14:36 mit denselben drei
+Wächtern grün, auf genau diesem Arbeitsbaum; der Ausgangslauf `pnpm verify` vom Morgen ebenso.
+Zwischen beiden hat niemand `node_modules` angefasst. Ein einzelnes gekipptes Byte in einer
+Datei, die seit dem 2026-09-02 unverändert ist, ist ein Zeichen für Platte oder Speicher — das
+gehört in `99_Meta/Health & Risks.md` des Vaults, nicht nur hierher.
+
+**Nicht repariert, und warum:** die Datei liegt **außerhalb** des Projekts
+(`%LOCALAPPDATA%\pnpm\store\v11`) und ist von dort in jeden Arbeitsbaum hart verlinkt; der
+Berechtigungs-Classifier verweigert das Schreiben zu Recht. `pnpm install --force` hilft nicht
+(„Already up to date" — pnpm prüft beim Verlinken keine Inhalte). **Was hilft**, ist ein Befehl
+von Noah:
+
+```bash
+# die eine beschädigte Datei aus dem Speicher werfen, dann neu holen
+Remove-Item -LiteralPath "$env:LOCALAPPDATA\pnpm\store\v11\files\01\ec67314353989306eb143d7b8d1da050f66bbbb5b9830da5d6b88465d2c37821ddf31b36d18e7c81df6d5099bc0f06bf9e6e096e6ce623c993cc883d900ef1" -Force
+Remove-Item -LiteralPath "node_modules\.pnpm\typescript@5.9.3" -Recurse -Force
+pnpm install
+pnpm lint   # muss wieder durchlaufen
+```
+
+**Was das für T-M17-03 heißt:** `pnpm verify` bricht im **ersten** Schritt ab (Lint), also vor
+Typprüfung und Tests. Beide anderen Schritte sind einzeln gefahren und grün
+(`pnpm typecheck` Exit 0; die Testreihe ohne die drei ESLint-Wächter Exit 0). Umgangen wird der
+Wächter nicht: er ist rot, der Grund steht hier, und die Prüfkette gilt erst wieder als gefahren,
+wenn die Datei heil ist.
+
+**Status:** offen — braucht einen Befehl von Noah. Kein Projektfehler.
+
+**Status am 2026-09-24:** **nicht mehr reproduzierbar.** Die Datei ist heil: ihr sha512 beginnt
+mit `01ec67314353989306eb143d7b8d1da050f66bbb` und ist damit wieder genau ihr Name im Speicher
+von pnpm; Zeile 183 694 endet mit dem Komma. Ihre Änderungszeit steht unverändert auf dem
+2026-09-02 23:02, und sie hat heute 10 harte Links (am 2026-09-18 waren es 7 — dazugekommen
+sind Arbeitsbäume, nicht Ersatzdateien): **die Datei wurde nie ersetzt**, das Rezept mit
+`Remove-Item` ist hinfällig und wurde nicht gefahren. `pnpm verify` lief am 2026-09-24 auf
+`522ebca` mit **Exit 0** (164 Dateien / 2464 Tests) und am Ende der Nacharbeit erneut. Ein Byte,
+das kippt und ohne Schreibzugriff wieder stimmt, lag vermutlich nie auf der Platte, sondern im
+Arbeitsspeicher oder im Seitencache — der Hinweis auf die Hardware bleibt deshalb in
+`99_Meta/Health & Risks.md` des Vaults stehen. Erledigt, ohne Eingriff.
+
+---
+
+## 2026-09-24 · Nacharbeit T-M17-03 · Befund M17-6: Zusagen ohne Test — der eingefrorene Stand lief nie, und die Richtung war nirgends geprüft
+
+**Anlass:** zwei unabhängige adversarische Prüfungen des M17-Fundaments (`522ebca`). Jeder
+Befund ab „mittel" ist vor der Reparatur **selbst nachgestellt**, jeder Test war ohne seine
+Reparatur rot oder fällt unter der Mutation, die er fangen soll.
+
+**1. R-GAME-09/AK1 und AK2 waren behauptet, nicht gerechnet (Schwere hoch).** Der Lauftest im
+Block „R-GAME-09/AK1 Ein Stand der Stufe 3 läuft nach der Migration weiter" deserialisierte
+`copy(V2)` — einen Stand der **Stufe 2** mit zwei Mächten und einer Beziehung ohne Freigaben —
+und rechnete ihn 48 Ticks auf `smallWorld`. `save-v3.json` wurde nirgends auch nur einen Tick
+gerechnet (`git grep save-v3`: zwei Dateien, beide laden nur), `save-v1.json` nach der Kette
+1 → 4 ebenso wenig. Die `dod` von T-M17-03 und `coverage:requirements` zählten R-GAME-09
+trotzdem als belegt. Das Verhalten selbst stimmt — jetzt gemessen statt angenommen:
+`migration-v3.test.ts` rechnet den eingefrorenen Stand 48 Ticks auf `data/maps/world.json` mit
+den Standardregeln, hashgleich nach Speichern und Laden, und nach einer Unterbrechung dasselbe
+wie ohne; AK2 rechnet `save-v1.json` und `save-v2.json`; `apps/headless/test/migrated-save.test.ts`
+rechnet denselben Stand zwei Spieltage **mit KI** (der Kern darf die KI nicht kennen). Ohne
+`3: toVersion4` fallen alle neuen Lauftests.
+
+**2. „Alle Schreiber setzen beide Richtungen" hatte keinen Test (mittel).** Nachgestellt mit
+sechs Mutationen **zugleich** — `setPassageBothWays` ohne die Hälfte `a`, die wirksame
+Kriegserklärung ohne alle sechs Löschzeilen, `breakAlliance` ohne seine zwei Zeilen,
+`acceptAlliance` ohne den Durchmarsch, dazu die beiden aus Punkt 3: **114 Testdateien / 1812
+Tests** in `packages/core`, `packages/ai`, `packages/netplay`, `apps/headless` und
+`apps/desktop` blieben grün. Die Golden-Master sehen es nicht, weil `tiny` und `walkthrough`
+keine Freigaben haben. Genau diese Schreiber baut T-M17-04 um.
+
+**3. Die Richtung der Sicht war nicht belegt (mittel).** `publicView` liest
+`grantsPassage(state, other, playerId)` und `sharesMap(state, other, playerId)` — „der andere
+gewährt mir". Vertauscht blieb alles grün (in der Messung von Punkt 2 enthalten). Die
+Gegenprobe im Bericht von T-M17-03 galt `visibleProvinces`, nicht `relations`; `DECISIONS.md`
+ist datiert berichtigt. Die KI liest genau diese Felder (`packages/ai/src/relationship.ts`,
+`diplomacy.ts`) — dieselbe Fehlerklasse wie Befund B2.
+
+**Repariert für 2 und 3:** `packages/core/src/state/relation-direction.test.ts`, 19 Tests. Jeder
+Schreiber in **beiden Hälften** des Schlüssels mit allen sechs gerichteten Feldern, die Sicht
+und die Überfallerkennung mit einseitig gesetztem Feld, dazu der Fristzweig von
+`grantsPassage` bei Frist − 1 und Frist. Gegenprobe **einzeln**: zwölf Mutationen, jede fällt
+(darunter eine, die die erste Fassung der Datei selbst übersah — `setPassageBothWays` ohne
+`aPassageEndsAtTick = null` fällt erst, seit der Test mit gesetzter Frist beginnt).
+
+**4. Die Vollständigkeitsprüfung war flach (niedrig).** Siehe `DECISIONS.md` 2026-09-24:
+`espionage: {}` bestand und warf im ersten Tick; ein Stand der Stufe 4 mit den alten Schlüsseln
+und gültiger Prüfsumme lud still, jeder Durchmarsch war danach weg. Repariert, beide Ladewege.
+
+**5. Kleinigkeiten, mitgenommen:** der Klontest sah ein geteiltes `want.provinces` nicht
+(jetzt ja; Gegenprobe fällt). Der Kopfkommentar des Ausgangswerts sagt T-M17-16, dass
+`zustandOhneKi` über die Stufen roh nicht vergleichbar ist — nachgemessen: auf `eb27a4c`
+entsteht der Bericht zeilengleich bis auf Datum, Commit und `4d58309111d9669f` statt
+`10950ec5abffd9b7`. D29.1 und D29.3 tragen den Vermerk zu M17-3 jetzt im Entwurf selbst.
+
+**6. Ein roter Zwischencommit (niedrig, nicht rückwirkend geändert).** Auf `a5636c9` fallen
+`determinism.test.ts` und `walkthrough.test.ts`; erst `c6d192e` zieht die Golden-Master nach.
+Die Hashes selbst sind richtig — aber Codeänderung und Erneuerung in zwei Commits stören
+`git bisect`. **Regel für die Bahnen:** eine Änderung, die einen Golden-Master verschiebt, und
+`UPDATE_GOLDEN=1` gehören in **denselben** Commit.
+
+**Die Lehre:** ein Test im Block einer Anforderung ist kein Beleg für sie, wenn er einen anderen
+Stand fährt; und eine Gegenprobe belegt nur die Stelle, die sie trifft. „Alle Schreiber" und
+„die Sicht" waren zwei Sätze über viele Stellen, belegt durch Gegenproben an je einer.
+
+**Status:** erledigt am 2026-09-24. Die Schreiber-Tests halten das Verhalten von T-M17-03 fest
+(beide Richtungen); T-M17-04 stellt sie gezielt auf „nur die eigene Richtung" um.
+
+---
+
+## 2026-09-24 · T-M17-04 · Befund M17-D1: ein Überfall ließ die geteilte Karte im Krieg stehen — seit M6
+
+**Befund:** Eine **wirksame Kriegserklärung** löschte Durchmarsch und Karte; ein **Überfall**
+(`detectSurpriseAttacks`) setzte nur den Zustand auf Krieg und ließ beide Felder stehen. Mit dem
+symmetrischen Feld bis Stufe 3 traf das den Durchmarsch nie — wer ihn hatte, konnte nicht
+überfallen —, wohl aber die **Karte**: zwei Mächte, die ihre Karten teilten, sahen einander nach
+einem Überfall den ganzen Krieg lang, obwohl `shareMap` im Krieg jede Freigabe verweigert. Mit
+dem gerichteten Recht wäre es auch für den Durchmarsch erreichbar geworden: A gewährt B und
+überfällt B, und As Gewährung lebte nach dem nächsten Frieden still wieder auf.
+
+**Nachgesehen, nicht erinnert:** in `951d3e8` (M6, 2026-09-03), wo `detectSurpriseAttacks`
+entstand, und in jeder späteren Fassung der Datei stehen `rightOfWay = false` und
+`sharedMap = false` nur im Zweig der wirksamen Erklärung, nie im Überfall.
+
+**Gemessen:** in keiner reinen KI-Partie tritt der Fall auf — die KI teilt nie eine Karte
+(`m17-baseline`: `freigabenHoechstens` Durchmarsch 0, Karte 0, Bündnisse 0 über 200 Spieltage),
+deshalb bewegen sich weder Golden-Master noch Turnier. Getroffen hat es nur Spieler, die eine
+Karte freigegeben hatten.
+
+**Status:** erledigt (2026-09-24, T-M17-04), zusammen mit dem Entscheid zu M17-3: `endTies()`
+an beiden Stellen, an denen ein Krieg beginnt; ein Test fällt ohne die Zeile.
+
+---
+
+## 2026-09-24 · T-M17-04 · Befund M17-D2: der Erreichbarkeitswächter sah die Aktionen in `DIPLOMACY` nicht
+
+**Befund:** `test/guards/ui-command-coverage.test.ts` prüft jeden **Kommandotyp** des Kerns und
+jede **Haltung** gegen die Befehlsquellen der Oberfläche. `DIPLOMACY` ist *ein* Typ und steht in
+`actions.ts` — also wäre jede neue diplomatische Aktion ohne Knopf grün geblieben. T-M17-04
+brachte drei, keine hat einen Knopf (die Oberfläche ist T-M17-14).
+
+**Gemessen:** mit leerer Ausnahmeliste meldet der erweiterte Wächter genau
+`requestRightOfWay, acceptRightOfWay, revokeRightOfWay`; bekommt eine davon einen Knopf, während
+ihre Ausnahme stehen bleibt, meldet er sie als veraltet.
+
+**Status:** erledigt (2026-09-24, T-M17-04); die drei Ausnahmen stehen in
+`DIPLOMATIE_NOCH_OHNE_KNOPF` (einer eigenen Ausnahmeliste desselben Wächters, nicht
+`NICHT_FUER_DEN_SPIELER`) und verweisen auf T-M17-14.
+
+---
+
+## 2026-09-24 · T-M17-04 · Befund M17-D3: zwei Spielertexte versprachen eine Gegenseitigkeit, die es nicht mehr gibt
+
+**Befund:** `diplomacy.sharedMap` hieß „Kartenaustausch", und `explain.diplomacy.sharedMap`
+sagte „Beide sehen, was der andere sieht". Seit T-M17-04 ist die Freigabe gerichtet, und beide
+Sätze sind falsch. `explain.diplomacy.rightOfWay` war richtig, sagte aber nicht, dass das Recht
+nur in eine Richtung gilt — genau das, was B1 so lange verdeckt hat.
+
+**Status:** in `de.ts` berichtigt (2026-09-24, T-M17-04): „Kartenfreigabe", die Erklärung der
+Karte nennt die Richtung, die des Durchmarschs bekommt den Satz über die Gegenrichtung. **Offen
+für T-M17-14:** `docs/ANLEITUNG.md` Zeile 284 zählt die Diplomatie noch als „… Bündnis,
+Durchmarsch, Kartenaustausch" auf — die Anleitung schreibt T-M17-14 ohnehin neu (D29.9).
+
+---
+
+## 2026-09-25 · T-M17-05 · Befund M17-D4: eine Gegenprobe kann die Registrierung nicht isolieren, weil die Diplomatiephase sie über einen anderen Weg mitbringt
+
+**Befund:** Eine Gegenprobe sollte `import './tradeOffer'` in `commands/handlers.ts`
+auskommentieren und damit alle Handelsbefehle mit `UNKNOWN_COMMAND` scheitern lassen —
+insbesondere sollte der Eigenschaftstest dann wieder leer grün werden. Er bleibt aber grün:
+`tradeOffer.test.ts` importiert `phases/diplomacy.ts` direkt (für `diplomacyAt`), und diese
+importiert `settleTradeOffers` aus `commands/tradeOffer.ts` — der Import allein löst die
+`registerCommand(...)`-Aufrufe am Modulanfang aus, unabhängig vom Import in `handlers.ts`.
+
+**Gemessen:** mit auskommentiertem Import in `handlers.ts` bleiben alle 52 Fälle in
+`tradeOffer.test.ts` grün (statt wie erwartet fast alle rot).
+
+**Einordnung:** kein Verhaltensfehler — `registerCommand` ist dieselbe Funktion über jeden
+Importweg, und in der echten Anwendung importiert so gut wie jeder Einstiegspunkt auch die
+Diplomatiephase. Der eigentliche Beleg gegen „leer grün" bleibt die Zählung der Ausgänge im
+Eigenschaftstest, die unabhängig von diesem Importpfad funktioniert und in der Vorarbeit
+tatsächlich versagt hatte.
+
+**Status:** offen, ohne Meilenstein — eine Beobachtung für künftige Bauplan-Gegenproben, kein
+Bau-Defekt.
+
+---
+
+## 2026-09-25 · T-M17-06 · Befund M17-D5: eine abgetretene Provinz kann eine fremde Armee auf dem Marsch zum Überfall machen
+
+**Befund:** Eine dritte Macht, die mit Durchmarschrecht des Abtretenden auf die angebotene
+Provinz zumarschiert, kommt nach der Abtretung im Land des Empfängers an —
+`detectSurpriseAttacks` (`phases/diplomacy.ts`) macht daraus Krieg mit Ansehensverlust für die
+marschierende Macht, die zum Zeitpunkt ihres Marschbefehls nichts falsch gemacht hat.
+
+**Warum nicht geprüft:** Das Ziel eines fremden Marsches ist verborgene Information (R-DIP-04);
+`cessionProblem` liest fremde `army.path`-Felder nicht — die Sicht (`publicView.ts`) zeigt fremde
+Wege ohnehin nicht, und ein Kern-Check würde dem Abtretenden verraten, was er nicht wissen darf.
+
+**Status:** entschieden hingenommen (`DECISIONS.md`, kippbar). Kandidat für die Messung in
+T-M17-15 (Überfälle unmittelbar nach `PROVINCE_CEDED` zählen). Verwandte, ungeprüfte Beobachtung:
+dieselbe Lage entsteht schon heute bei einem sofort wirksamen Bündnisbruch, wenn Armeen im Land
+des anderen stehen — nicht geprüft, nur notiert.
+
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — Merkmal `nachAbtretung` im Integrationstor: 0
+Abtretungen in allen sechs Läufen (drei Startzahlen, mit/ohne Anträge), also 0 Überfälle danach.
+Bleibt entschieden hingenommen.
+
+**Gemessen:** Raster über 72 Aufstellungen (`tradeOffer.test.ts`, R-DIP-09/AK2); die Grenze der
+dod-Zusage gilt für Armeen, die in der Provinz **stehen**, und für die eigenen **auf dem Weg** —
+nicht für fremde Märsche.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" (T-M17-04/05/06) · Befund M17-D6: ein Handelsangebot mit unbekanntem Anbieter ließ den ersten Verfallslauf abstürzen
+
+**Befund:** `settleTradeOffers` stuft ein Angebot mit einem `offer.from`, das keine bekannte
+Macht ist, als `invalid` ein. `closeTradeOffer` griff dann unbedingt auf
+`draft.players[offer.from]!.resources` zu — ein `TypeError`, sobald `offer.give.resources` einen
+Betrag trug, und der Tick brach ab. Kein Befehl dieser Bahn kann das erzeugen; erreichbar ist es
+nur über einen geladenen Spielstand — `validateState` prüfte `give`/`want` bisher nur als Objekt,
+nicht `from`/`to` als bekannte Spielerkennungen.
+
+**Gemessen:** vor der Reparatur `TypeError: Cannot read properties of undefined (reading
+'resources')`, danach schließt das Angebot als `invalid`, ohne den Bestand des Empfängers zu
+berühren.
+
+**Status:** erledigt (2026-09-25, Nacharbeit „kern"). `closeTradeOffer` gibt die Treuhand nur
+noch zurück, wenn der Anbieter existiert. Zusätzlich geschlossen bei der Zusammenführung
+(2026-09-25): `validateState` prüft `give`/`want` seither je Element, siehe unten Befund M17-M3-
+Nachbareintrag „`validateState` prüft Spione, Aufdeckungen und Handelsangebote je Element".
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" (T-M17-04/05/06) · Befund M17-D7: der Spielertext zu einem hinfälligen Handelsangebot behauptete fälschlich ein Ausscheiden
+
+**Befund:** Seit T-M17-06 schließt `settleTradeOffers` ein Angebot auch dann mit dem Grund
+`invalid`, wenn eine Provinz nicht mehr abtretbar ist (`provincesLapsed`) — der Spielertext
+(`diplomacy.tradeClosed.invalid`) sagte dafür unverändert „hinfällig, eine Macht ist
+ausgeschieden".
+
+**Status:** erledigt (2026-09-25, Nacharbeit „kern"). `de.ts` nennt jetzt beide möglichen
+Ursachen. **Offen, nicht repariert (Sekundärbefund):** der Zusatz „— das Hinterlegte geht
+zurück" steht bei allen fünf Verfallsgründen fest im Text, auch wenn ein Angebot nur Provinzen
+trug — eine Reparatur bräuchte ein neues Feld am Ereignis und eine Entscheidung gegen die
+bewusste Zusage „ohne Mengen" (D29.5). Kandidat für T-M17-14.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" · Beobachtung: eine Provinzabtretung kann den verborgenen Weg des Anbieters verraten, aktiv und passiv
+
+**Befund:** `ACCEPT_TRADE.check` prüft die gebende Seite mit Tiefe `full` (auch
+`army.path.includes(provinceId)`). Liegt im selben Befehlsschub ein `MOVE_ARMY` des Anbieters vor
+dem `ACCEPT_TRADE`, bekommt der Annehmende `COMMAND_REJECTED` mit `{reason: 'eigene Armeen'}` —
+das verrät ihm, dass der Anbieter dort etwas bewegt, ohne dass die Sicht das je zeigen würde.
+Derselbe Leak entsteht **passiv**, ohne dass `ACCEPT_TRADE` je versucht wird: `settleTradeOffers`
+prüft die gebende Seite mit Tiefe `full` in **jeder** Diplomatiephase, und ein
+`TRADE_OFFER_CLOSED{reason:'invalid'}` ohne öffentliche Ursache verrät dasselbe, nur einen Tick
+später.
+
+**Warum nicht repariert:** Eine saubere Lösung braucht entweder eine zweite, redaktionsärmere
+Rückmeldung für genau diesen Prüfschritt oder eine neue `CommandResult`-Form — beides eine
+Design-Entscheidung, keine Zweizeiler-Reparatur.
+
+**Status:** offen. Kandidat für T-M17-14 (Oberfläche Handel), wo die Sperrtexte ohnehin
+entstehen.
+
+**Statusnachtrag 2026-09-25 (T-M17-14, E1):** Oberfläche geschlossen — der Annehmen-Knopf nennt
+für die gebende Seite nur noch „das Angebot verfällt" (`trade.blocked.lapsing`), nie Provinz oder
+Ursache (Test A7, Kontrolle über `canApply`). **Offen im Kern:** `COMMAND_REJECTED.detail` und
+`canApply` tragen den Grund weiterhin mit `provinceId` — erreichbar für KI und Skript, nicht für
+den Spieler über die Oberfläche. Kandidat M18.
+
+**Statusnachtrag 2026-09-25 (Durchsicht des Zusammenspiels, Befund N2/M17-G2): die AKTIVE
+Hälfte ist jetzt auch im Kern geschlossen.** `ACCEPT_TRADE` gibt bei einem Fehler der gebenden
+Seite seither nur noch `INVALID_TARGET{reason:'lapsing'}` zurück, ohne `provinceId` und ohne
+den genauen Grund — `COMMAND_REJECTED.detail` und `canApply` verraten nichts mehr (Test in
+`tradeOffer.test.ts`, Gegenprobe gefahren). **Offen bleibt nur die PASSIVE Hälfte:**
+`settleTradeOffers` prüft die gebende Seite weiterhin mit Tiefe `full` in jeder Diplomatiephase,
+und `TRADE_OFFER_CLOSED{reason:'invalid'}` korreliert zeitlich mit dem, was der Anbieter gerade
+tut, auch ohne dass `ACCEPT_TRADE` je aufgerufen wird. Bleibt Kandidat M18 — dieselbe
+Design-Frage (zweite, redaktionsärmere Rückmeldung oder neue `CommandResult`-Form) wie oben.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" · Beobachtung: `outgoingOffers` fehlte für den eigenen Durchmarsch-Antrag — erledigt durch die Spionagebahn
+
+**Befund:** `publicView()` führte nur `incomingOffers`. Ein eigener `requestRightOfWay` stand in
+keiner Sicht des Antragstellers.
+
+**Status:** erledigt durch die Spionagebahn (Befund M17-S5, T-M17-12): `outgoingOffers` deckt
+auch einen eigenen `requestRightOfWay`-Antrag ab (`kind: 'rightOfWay'`); T-M17-10/14 brauchen
+dafür kein eigenes Feld.
+
+---
+
+## 2026-09-25 · T-M17-10 · Befund M17-D8: der Handelsaufschlag der KI weicht vom Entwurfstext ab
+
+**Befund:** D29.8 nennt für den Handelsaufschlag „× 1,02"; der S1-Schnitt (vor T-M17-10)
+implementierte `tradeOfferPremiumPermille: 1060` (× 1,06).
+
+**Status:** entschieden, gebaut wie entschieden (`DECISIONS.md`); der Entwurfstext D29.8 ist
+datiert berichtigt auf `tradeOfferPremiumPermille` ‰ (1060).
+
+---
+
+## 2026-09-25 · T-M17-10 · Befund M17-D9: das Turnierband „schwer gegen normal, im Frieden" fällt von 70 % auf 50 %
+
+**Befund (ursprünglich, 2026-09-25):** 0 von 25 Paaren entschieden, 0 Kriegserklärungen über 50
+Partien à 40 Spieltage. Als Ursache **angenommen**:
+`packages/ai/src/diplomacy.ts::landNeighbours` verlange eine direkte Landkante zwischen eigenen
+und fremden Provinzen; Nordland (n1–n3) und Ostmark (o1–o3) — die ersten beiden Startpositionen
+der Testwelt — grenzten nicht direkt aneinander (dazwischen liegen die herrenlosen m1/m2). Die
+bisherige 70-%-Quote komme vollständig aus B6 (ungeprüftes Marschieren löste `WAR_DECLARED` ohne
+Erklärung aus). Bauplan-Stellschraube `tradeImpactPermille` 30→50 versucht, keine Wirkung.
+
+**Berichtigt (Nacharbeit ki, 2026-09-25): diese Ursache ist WIDERLEGT.** `m1` grenzt tatsächlich
+an `n2` (Nordlands eigene Provinz, Kante `n2-m1` in `testworld.json`). Eigene Messung (3 Seeds,
+Frieden-Start, 40 Spieltage, jetzt als Test in `apps/headless/test/tournament.test.ts`
+festgehalten): `m1` **und** `m2` gehören am Ende in allen drei (und in einem weiteren
+Wegwerflauf über 8 Seeds) Partien durchgehend Ostmark — `landNeighbours(p1)` enthält `p2` damit
+ab dem Moment, in dem Ostmark `m1` erobert, und das geschieht in jeder gemessenen Partie.
+Trotzdem bleiben `warDeclarations` und `grievances` bei null. Die tatsächliche Ursache:
+`relationship()` braucht `borderThreat` (Truppen an der Grenze) oder `grievance` (Verstimmung
+durch Überfälle, B6), um unter die Kriegsschwelle zu fallen; ohne B6-Überfälle (seit T-M17-10
+behoben) entstehen keine Verstimmungen, und ob genug Truppen genug lange an einer frisch
+eroberten Grenze stehen, ist auf der kleinen Testwelt binnen 40 Tagen offenbar nicht der Fall.
+
+**Status:** offen. Zugewiesen an T-M17-15/16 mit der **richtigen** Stoßrichtung: nicht
+`landNeighbours` erweitern (das ändert nichts, wie gemessen), sondern `borderThreat`/die
+Zeitachse der Grenzbildung untersuchen. Bei der Zusammenführung mit Bahn B (Befund M17-M2) auf
+zwei Ursachen zerlegt: die B6-Sperre selbst hält 50 % im Frieden, die KI-Spionage (T-M17-12)
+zieht das Band im Krieg auf 98 %.
+
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch die Turnier-Nacharbeit (Befund M17-T1,
+M17-T3, M17-T4/Option D) — das Turnier misst seither drei Mächte reihum und hält bei 0,760.
+Keine weitere Arbeit hier.
+
+---
+
+## 2026-09-25 · T-M17-10 · Befund M17-D10: ein Heimmarsch nach gekündigtem Durchmarschrecht kann länger dauern als die Kündigungsfrist
+
+**Befund:** Gemessen an m1→n2 (160.000 km, Infanterie, kein Eisenbahn-/Gebietsbonus): der
+Heimweg dauert rund 27 Ticks, `rightOfWayNoticeTicks` beträgt nur 24. Die KI reagiert sofort
+(zieht in die nächste eigene Provinz, sobald das Recht gekündigt ist), der Kern meldet trotzdem
+einen Überfall ohne Erklärung.
+
+**Hinweis (Nacharbeit „kern", Runde 2):** obwohl `rightOfWayNoticeTicks` und
+`detectSurpriseAttacks` beide in T-M17-04 entstehen, wurde der Befund erst in T-M17-10 sichtbar —
+ein Mensch reagiert selten binnen eines Ticks, die KI tut es. Er gehört inhaltlich zu T-M17-04.
+
+**Status:** offen. Zwei Richtungen zur Wahl, nicht entschieden (kippbar, Messung erst
+T-M17-15/16): (a) eine Armee, deren Pfad beim Fristende schon aus dem Land des Gewährenden
+hinausführt, gilt in `detectSurpriseAttacks` nicht als Überfall; (b) die Frist wird aus der
+längsten Landkante oder der Marschzeit abgeleitet statt geschätzt — nicht einfach angehoben,
+ohne zu messen.
+
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — Merkmal `nachKuendigung` im Integrationstor
+(Weltkarte, 200 Tage, drei Startzahlen): 1 Kündigung (1815), **0** Überfälle danach in allen
+sechs Läufen (mit/ohne Anträge). Entscheid Noah (2026-09-25): geht an M18.
+
+*(Anmerkung: dieser Befund trug in einer Zwischenfassung dieselbe Nummer wie Befund M17-D5
+— siehe dort. Umnummeriert von der Nacharbeit „kern", Runde 2, auf `M17-D10`, die nächste freie
+Nummer.)*
+
+---
+
+## 2026-09-25 · T-M17-10 · Befund M17-D11: die KI handelte und kriegte im selben Zug
+
+**Befund:** Die KI nahm ein Handelsangebot an oder bot an, im selben Zug, in dem sie derselben
+Macht den Krieg erklärte (`declareWar` setzt `warEffectiveAtTick` sofort, der Handel prüfte nur
+die Sicht vom Zugbeginn).
+
+**Status:** erledigt (T-M17-11, Commit `b091e8b`, vor der Zusammenführung bereits im S1-Schnitt
+gemessen): `warDeclaredThisTurn` sperrt Antwort und Partnerwahl für die Ziele eigener
+Kriegserklärungen dieses Zugs zuerst.
+
+---
+
+## 2026-09-25 · T-M17-11 · Befund M17-D12: Provinzwert und Handelsobergrenzen passen nicht zusammen
+
+**Befund:** Bei 60 Tagen Horizont ist eine mittlere Provinz im zweistelligen Millionenbereich
+wert (Bauplan-Messung: Median 9,6 Mio. Geld), ein Angebot trägt höchstens 1,88 Mio. — die KI
+verkauft praktisch keine Provinz, kauft aber sehr viele einem Menschen ab.
+
+**Status:** offen für T-M17-16 (Kandidaten 5–10 Tage Horizont). Nicht in T-M17-11 geändert. Die
+Formel selbst ist am laufenden Code nachvollzogen (W1–W9 reproduzieren die vorgerechneten
+Zahlen exakt), die Weltkarten-Messung selbst wurde nicht wiederholt.
+
+**Nachtrag (2026-09-25, T-M17-15):** bestätigt am Integrationstor — 0 Abtretungen, 0
+Provinzangebote der KI in drei Startzahlen (1815/1914/2015, 200 Tage). Die Verkaufsregel ist mit
+den ausgelieferten Zahlen zu streng (dod T-M17-15).
+
+---
+
+## 2026-09-25 · T-M17-11 · Befund M17-D13: die Gegenprobe zur Annahmegrenze (inklusiv/exklusiv) unterscheidet mit den gewählten Testzahlen nicht
+
+**Befund:** `ask = Math.ceil((wert × 1300) / 1_000_000)` rundet grundsätzlich auf, und der
+Vergleich läuft in gröberen Einheiten (Vielfache von 1.000.000) als die Provinzwert-Formel
+(Vielfache von 1) — die Annahmegrenze `E` landet dadurch nie exakt auf `G`, sondern immer echt
+darüber. Ob `<` oder `<=` geprüft wird, ist mit den Zahlen dieser Testwelt beobachtungsgleich.
+
+**Status:** offen, kein Fehler — nur eine Lücke in der Probe. Wer die Grenze künftig als eigenen
+Test führen will, braucht eine Aufstellung, in der `E` und `G` exakt zusammenfallen (z. B. eine
+reine Geldprovinz ohne Rohstoffanteile). Ein zweiter, unabhängiger adversarischer Prüfer
+bestätigte dieselbe Diagnose, ohne eine neue Testaufstellung zu schließen.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Befund M17-D14: ein Durchmarschantrag im selben Zug wie die eigene Kriegserklärung
+
+**Befund:** `requestPassage` prüfte `view.relations[owner]` — eine Momentaufnahme vom
+Zugbeginn — und kannte eine eigene `declareWar` **derselben** Strategiestufe nicht: `p1`
+beantragte im selben `decide()`-Aufruf einen Durchmarsch bei genau der Macht, der
+`diplomacyCommands` eben den Krieg erklärt hatte — der Kern lehnte den zweiten Befehl beim
+Anwenden mit `INVALID_TARGET`/`Kriegserklärung läuft` ab.
+
+**Status:** erledigt (Nacharbeit ki, 2026-09-25). `requestPassage` bekommt `pending` und prüft
+`warDeclaredThisTurn(context, pending)` (wiederverwendet aus `provinceValue.ts`, dieselbe
+Präzedenz wie bei M17-D11). Test rot ohne die Prüfung, grün mit ihr, Gegenprobe gefahren.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Befund M17-D15: der AK4-Test für Durchmarsch prüfte `alternative` nicht
+
+**Befund:** Der Testtitel und R-AI-09/AK4 verlangen sowohl `reason` als auch `alternative` in
+jeder Begründung — der Test prüfte nur `explanation.reason`.
+
+**Status:** erledigt (Nacharbeit ki, 2026-09-25). Reiner Testlücken-Befund: alle zehn
+Durchmarsch-Erklärungen in `passage.ts` hatten `alternative` bereits gesetzt (Gegenprobe: Feld
+aus der Erfolgs-Erklärung entfernt → Test wird rot; wieder eingesetzt → grün) — kein
+Produktcode geändert außer der Testzeile selbst.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Befund M17-D16: `neighbourMine` im Kauf-Zweig der KI war ungetestet
+
+**Befund:** `neighbourMine` (`provinceValue.ts`, Kauf-Zweig von `provinceOfferCommands`) war
+ungetestet — ein Mutationslauf (Filter entfernt) blieb bei 46/46 Fällen grün.
+
+**Status:** erledigt (Nacharbeit ki, 2026-09-25). Test ergänzt: Ostmarks einziger Landnachbar von
+Süden neutral gesetzt, eine eigene Armee ohne echten Landnachbarn positioniert — mit dem Filter
+bleibt `commands` leer, ohne ihn (Gegenprobe) kauft die KI eine Provinz ohne Landnachbarn.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Befund M17-D17: die Ablehnung wegen `cessionProblem` nannte den errechneten Wert nicht
+
+**Befund:** Die Ablehnung einer Provinzabtretung wegen `cessionProblem` (z. B. „s1: Hauptstadt")
+nannte nie den errechneten Wert, obwohl `provinceTexts` im selben Durchlauf direkt danach
+ohnehin berechnet wird — R-DIP-09/AK3 verlangt „Wert und größten Anteil" für jede Bewertung.
+
+**Status:** erledigt (Nacharbeit ki, 2026-09-25). `reason` wird bei einem Sperrgrund erst nach
+`provinceTexts` zusammengesetzt (`${cessionReason}; ${provinceTexts}`). Test rot ohne die
+Änderung, grün mit ihr, Gegenprobe gefahren.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Beobachtung, offen: `predictLandPath` ignoriert Seewege
+
+**Befund:** Bei einem `null`-Weg oder einer seefähigen Armee marschiert `military.ts` ungeprüft,
+obwohl der Kern auch Seewege plant (`canUseSea`). Aufgefangen wird das erst beim nächsten
+Taktiktakt durch die Sicherung für marschierende Armeen — bei „leicht" bis zu ein Vierteltag
+ungeprüfter Marsch.
+
+**Status:** offen, nicht in Minuten zu beheben (braucht eine Sichtnachbildung von `canUseSea`).
+Kandidat für T-M17-15 oder eine eigene Aufgabe.
+
+**Nachtrag (2026-09-25, T-M17-15):** gemessen — 0 Überfälle der Art `durchmarsch` in allen sechs
+Läufen des Integrationstors (heutiger Code). Kein gemessener Schaden; geht an M18.
+
+---
+
+## 2026-09-25 · Nacharbeit ki (T-M17-10/11) · Beobachtung, offen: die Kaufsuche der KI ist O(P²) je Aufruf
+
+**Befund:** `provinceOfferCommands` rechnet für jede sichtbare Provinz `relationship()` neu und
+`mapLandNeighbours(...)` mit linearer Suche, dazu zwei `provinceWorth`-Aufrufe je Nachbar. Nur
+jeden dritten Spieltag (Spitzenlast, keine Dauerlast) — mit den ausgelieferten Zahlen kauft die
+KI ohnehin praktisch nie (siehe M17-D12), also aktuell folgenlos.
+
+**Status:** offen, Kandidat T-M17-15. Ein Provinz-Index (Map) und ein Relationship-Cache je
+Aufruf wären die Reparatur.
+
+**Nachtrag (2026-09-25, T-M17-15):** weiterhin folgenlos gemessen — die KI bietet in keinem der
+sechs Läufe des Integrationstors eine Provinz an (`offerTradeMitProvinz` 0 in allen drei
+Startzahlen). Messbar nur mit einem Benchmark auf freier Maschine; geht an M18.
+
+---
+
+## 2026-09-24 · T-M17-07 · Befund M17-S1: die eigene Kennungsfolge verrät, wie viele Spione andere angeworben haben
+
+**Befund:** Spione bekommen ihre Kennung aus **einem** Zähler für alle Mächte
+(`s${nextIds.spy++}`). Die eigenen Kennungen stehen in der Sicht
+(`PublicView.espionage.spies[].id`) — die **Lücke** zwischen zwei eigenen Kennungen ist die
+Zahl der Anwerbungen aller anderen dazwischen.
+
+**Gemessen** (Wegwerflauf, Testwelt, drei Mächte, nicht committet): p1 wirbt an, p3 wirbt
+zweimal an, p1 wirbt wieder an — p1 sieht in seiner Sicht `s1,s4` und weiß damit, dass fremde
+Mächte in der Zwischenzeit **zwei** Spione angeworben haben.
+
+**Einordnung:** klein. Dieselbe Bauart haben Armeen (`a${n}`) und Aufträge (`o${n}`) seit M3/M4.
+Die schärfere Form — die **lebenden** fremden Spione abzählen, indem man fremde Kennungen
+durchprobiert — ist in T-M17-07 geschlossen (ein fremder Spion wird abgelehnt wie ein
+fehlender). `SPY_DETECTED` trägt seit T-M17-09 ebenfalls keine Spionkennung, um diese Lücke
+nicht zu verschärfen — **schließt sie aber nicht**.
+
+**Warum nicht repariert:** ein Zähler je Macht ist eine Zustandsänderung (`nextIds.spy` würde
+ein Record), also eine neue Formatstufe — in M17 ausgeschlossen. Ein Umweg ohne
+Zustandsänderung (Kennung aus Besitzer, Tick und laufender Nummer) vergäbe nach einem Entlassen
+im selben Tick eine Kennung doppelt.
+
+**Vorschlag:** M18-Sammelstelle — `nextIds.spy` je Macht, oder die Kennung durch eine
+Vertauschung aus dem Zähler ableiten. Bis dahin: die Oberfläche (T-M17-13) zeigt keine
+Kennungen, sondern eine eigene Nummerierung, und die KI (T-M17-12) liest aus Kennungen nichts
+ab — bestätigt (`text-keys.test.ts` prüft `\bs\d+\b` gegen jede KI-Begründung).
+
+**Nachtrag (2026-09-25, Durchsicht des Zusammenspiels, Befund N1):** dieselbe Bauart, derselbe
+Bruch bei Handelsangeboten — `tradeOffers` bekommen ihre Kennung ebenfalls aus **einem** Zähler
+für alle Mächte (`t${nextIds.offer++}`), und `PublicView.tradeOffers` führt sie offen. Gemessen
+(Wegwerftest H2): p2 bietet p1 etwas an, dann p2 an p3, p3 an p2, wieder p2 an p1 —
+`publicView(p1).tradeOffers.incoming` zeigt `['t1','t4']`, und p1 weiß damit, dass zwei
+Angebote zwischen Dritten liefen. Gehört in dieselbe M18-Vormerkung wie dieser Befund (ein
+Zähler je Macht oder eine abgeleitete Kennung für beide Listen zugleich).
+
+**Status:** gemessen, offen für M18 — Spione (dieser Befund) und Handelsangebote (N1) zusammen.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" (T-M17-07/08/09) · Befund M17-S2 (kritisch, behoben): Prototyp-Schlüssel als Provinz akzeptiert
+
+**Befund:** `state.provinces[provinceId]` und `state.players[playerId]?.intel[provinceId]` sind
+Zugriffe auf ein einfaches Objekt ohne `Object.hasOwn`-Prüfung. Mit `provinceId: 'constructor'`
+(ebenso `'__proto__'`, `'toString'`, `'hasOwnProperty'`) liefert das den
+Object.prototype-Eintrag zurück — truthy, `owner: undefined`.
+
+**Gemessen (vor der Reparatur):** `canApply` für `RECRUIT_SPY {provinceId:'constructor', …}`
+ergab `{ok:true}` bei allen vier Schlüsseln und allen vier Aufträgen. `step()` legte den Spion im
+Zustand an, ohne `COMMAND_REJECTED`. Ein anschließender Tageswechsel stürzte in
+`capitalPenalty` mit `TypeError` ab — jeder Ladeversuch des Standes wiederholte den Absturz.
+
+**Reparatur:** `Object.hasOwn(state.provinces, provinceId)` in `checkTarget`, ebenso für
+`intel` in `knownOwner` (`commands/espionage.ts`). Test zuerst (13 Fälle: alle vier Schlüssel ×
+alle Aufträge × RECRUIT/REASSIGN, dazu ein `step()`-Fall), rot bestätigt ohne die Reparatur,
+grün danach. Commit `4286842`.
+
+**Status:** behoben.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern" (T-M17-07/08/09) · Befund M17-S3 (mittel, behoben): ausgeschiedene Macht sabotiert weiter
+
+**Befund:** `settleEspionage` prüfte `players[spy.owner].alive` nicht. `registry.ts` lehnt jeden
+Befehl einer ausgeschiedenen Macht ab (`PLAYER_ELIMINATED`), sie kann ihre Spione also nicht
+mehr entlassen.
+
+**Gemessen (vor der Reparatur):** `p1.alive = false`, ein Wirtschaftssaboteur von p1 auf einer
+fremden Provinz — `settleEspionage` zog weiter Sold vom Geld des Toten ab, würfelte die
+Sabotage, senkte die Moral des Opfers und verbrauchte Zufall.
+
+**Reparatur:** die Spione nicht lebender Besitzer werden in `settleEspionage` vor Schritt (b)
+entfernt — kein Sold, kein Zufallszug, kein Ereignis. Test zuerst, Gegenprobe gefahren, Commit
+`ef8d27b`.
+
+**Status:** behoben.
+
+---
+
+## 2026-09-25 · Nacharbeit „kern", zweite Runde (T-M17-07/08/09) · Befund (mittel, behoben): Spionagesold fehlte in der Wirtschaftsübersicht (R-ECON-06)
+
+**Befund:** `economyOverview` (`view/economy.ts`) summierte `armyUpkeep` als `consumption`, nie
+`spySalary`. `phases/espionage.ts` bucht den Sold direkt vom Bestand ab — eine laufende Rate wie
+der Armeeunterhalt.
+
+**Gemessen:** ein Spieler mit einem Aufklärer (Sold 10153) zeigte `consumption`/`balance`
+unverändert gegenüber demselben Zustand ohne den Spion — die Bilanz war um genau den Sold zu
+hoch.
+
+**Reparatur:** die Summe von `spySalary(...)` über alle eigenen Spione geht direkt in `eaten`
+(nicht in `consumption`, das mit `ticksPerDay` hochgerechnet wird — der Sold steht schon als
+Tagesbetrag da). Nur für `money`, nur für eigene Spione.
+
+**Status:** behoben.
+
+---
+
+## 2026-09-25 · T-M17-12 · Befund M17-S4 (offen): Turnierband kippt unabhängig von `grievanceOnSpyDetected`
+
+**Befund:** Mit der KI-Spionage riss das Turnierband „schwer gegen normal, im Frieden"
+(R-AI-06, Zusicherung 0,55–0,95) von **70 %** (ohne Spionage) auf **100 %** (mit Spionage,
+`grievanceOnSpyDetected` 300). D29.12 nennt als vermutete Ursache eine „Verstimmungsspirale".
+
+**Gemessen (Leiter D29.12, je Stufe Turnier und `progress.slow.test.ts` neu gefahren):** bei
+300, 200 und 150 (Boden der Leiter) ergeben sich **exakt dieselben** Turnierzahlen, auf die
+Partie genau (100 %, 25-0-0, 78 Kriegserklärungen, 28 Friedensschlüsse). Eine Zahl, die das
+Ergebnis nicht messbar verändert, ist nicht die Ursache — die vermutete Verstimmungsspirale
+erklärt den Rückgang in diesem Turnieraufbau nicht.
+
+**Naheliegendste Alternativerklärung (nicht weiter verfolgt):** „schwer" hat im Turnier die
+größere Wirtschaft und damit ein höheres `espionageBudget`; Gegenspion und Aufklärer sind für
+sie darum früher und zuverlässiger finanzierbar als für „normal" — ein allgemeiner Vorteil aus
+der Existenz der Spionage, nicht aus einer bestimmten Verstimmungszahl.
+
+**Zweite, unabhängig gemessene Teilursache (Nacharbeit T-M17-12, durch Code-Lesen bestätigt):**
+Anwerben (`bound() + salary > budget`) und Entlassen (`salaries <= budget`) vergleichen denselben
+`budget`-Wert **ohne Abstand** in beide Richtungen — ein Spion, der genau noch ins Budget passt,
+fällt am nächsten Tag bei einem winzigen Ertragsrückgang sofort wieder heraus (Anwerbepreis
+verloren). Dieselbe Symmetrie ohne Hysterese gilt für `espionageCounterGrievance` beim
+Gegenspion. Erklärt vermutlich einen Teil des Turnierrisses, nicht zwingend den ganzen.
+
+**Zweite Nacharbeit ki (2026-09-25), zwei weitere Kontrollmessungen:**
+`espionageBudgetPermille` auf 0 hält das Band ein (deckt sich mit 0,70); `grievanceOnSpyDetected`
+auf 0 ändert nichts (weiterhin 1,00) — die Verstimmung ist also ein zweites Mal ausgeschlossen.
+Nach dem Fix zu Befund M17-S8 (Gegenspion hält im Krieg länger durch) bewegt sich die Zahl auf
+**0,98** — näher an der Schranke, aber weiterhin gerissen; der Fix selbst ist also keine
+Ursache, höchstens ein kleiner Faktor.
+
+**Entscheidung:** `grievanceOnSpyDetected` bleibt bei **300**. Die Leiter zu senken, ohne dass es
+das Turnierergebnis bewegt, wäre „eine Grenze anheben, bis eine Zahl passt" — nur in die andere
+Richtung, ebenso ein Fehler. Eine Hysterese zwischen Anwerben und Entlassen wäre eine neue Regel
+mit einem neuen, zu schätzenden Toleranzwert — eine Entscheidung für Noah, keine, die eine
+Nacharbeit ungefragt einbaut.
+
+**Status:** weiterhin offen, durch zwei Nacharbeit-Runden präzisiert, nicht geschlossen. Bei der
+Zusammenführung mit Bahn A (Befund M17-M2) auf zwei Ursachen zerlegt: die B6-Sperre der
+Diplomatiebahn hält das Frieden-Band bei 50 %, diese Aufgabe zieht das Kriegs-Band auf 98 %.
+Kandidat für T-M17-15 oder eine eigene, von Noah beauftragte Untersuchung.
+
+*(Anmerkung: eine frühere Fassung dieses Befunds behauptete anhand eines Weltkarten-Wegwerflaufs
+„weniger Kriege mit Spionage" — falsch, die eigenen Zahlen zeigten **mehr** (20 gegen 15
+Kriegserklärungen, 11 gegen 7 Waffenstillstände). Der Wegwerflauf ist ohnehin kein Gegenbeleg zur
+Budget-Vermutung, da acht gleichrangige Mächte nicht mit dem 2-Spieler-Turnier vergleichbar sind
+— hier als Beleg ersatzlos gestrichen, nicht berichtigt.)*
+
+---
+
+## 2026-09-25 · T-M17-12, Nacharbeit ki · Befund M17-S5: `publicView.ts` fehlte ein drittes Feld für eigene diplomatische Angebote — erledigt
+
+**Befund:** Der bestehende Merge-Hinweis zwischen den Bahnen nannte nur zwei neue Felder in
+`publicView.ts` (`tradeOffers`, `espionage`); ein drittes, `outgoingOffers` (eigene offene
+Angebote jeder Art — Frieden, Bündnis, Durchmarschantrag), war unvollständig dokumentiert.
+
+**Status:** erledigt. `outgoingOffers` ist gebaut (T-M17-12, Entscheid E-NA1) und deckt auch die
+frühere Beobachtung „eigener Durchmarsch-Antrag fehlt in der Sicht" ab.
+
+---
+
+## 2026-09-25 · Nacharbeit kern, zweite Runde (T-M17-07/08/09) · Befund M17-S7 (behoben bei der Zusammenführung): `validateState` prüfte Spionagefelder nur als Array
+
+**Befund:** `persistence/validate.ts` (Hauptzweig) prüfte `espionage.spies`/`.reveals` nur als
+Array, nicht je Element (anders als `diplomacy.tradeOffers` seit dessen Nacharbeit).
+`phases/espionage.ts` liest seit T-M17-08/09 `players[spy.owner]!.resources` und
+`provinces[spy.provinceId]!` ungeprüft. Ein geladener Stand mit einem defekten Spion bestand die
+Prüfung und stürzte beim ersten Tageswechsel ab.
+
+**Status:** erledigt bei der Zusammenführung der Bahnen (2026-09-25, Commit `b793a0f`) —
+`validateState` prüft Spione, Aufdeckungen und Handelsangebote seither je Element (siehe den
+Eintrag „Zusammenführung Bahn A und B").
+
+---
+
+## 2026-09-25 · Zweite Nacharbeit ki (T-M17-12) · Befund M17-S8 (hoch, behoben): der Gegenspion wurde durch ein eigenes, unbeantwortetes Friedensangebot fälschlich entlassen
+
+**Befund:** `peaceBound()` nahm seit der ersten Nacharbeit ki jede Macht mit einem offenen
+**eigenen** Friedensangebot aus der Kriegsgegner-Menge heraus — auch für den Gegenspion. Ein
+Angebot ist ein Antrag, kein Kriegsende: `relations[x].state` blieb `'war'`, die Gegenseite
+konnte weiter spionieren, die KI entließ ihren Gegenspion trotzdem mit der falschen Begründung
+„Krieg und Verstimmung vorbei".
+
+**Gemessen (Prüfer, Codeursache selbst bestätigt):** 41 von 41 solcher Entlassungen fielen in
+einen tatsächlich laufenden Krieg.
+
+**Status:** behoben. Ein getrennter `warEnemies`-Satz (echter Beziehungsstatus) trägt
+`counterReason`; die um `peaceBound` verminderte Menge (`enemies`) bleibt für
+Aufklärung/Sabotage bestehen. Drei bestehende Tests korrigiert, eine vierte, neue Gegenprobe
+hält echtes Kriegsende als weiterhin entlassenden Fall fest.
+
+---
+
+## 2026-09-25 · Zweite Nacharbeit ki (T-M17-12) · Befund M17-S9 (mittel, behoben): bei Hauptstadtverlust wurde der Gegenspion entlassen statt umgesetzt
+
+**Befund:** `home` las nur `view.self.capitalProvinceId` — das `SET_CAPITAL` desselben
+Strategietakts (`capitalCommands` läuft in `decide.ts` davor) trug die Sicht erst am nächsten
+Tag nach. Der Gegenspion wurde entlassen statt in die neue Hauptstadt umgesetzt, am nächsten Tag
+für den vollen Anwerbepreis neu angeworben.
+
+**Status:** behoben. `capitalIdFrom()` liest `earlier` für ein `SET_CAPITAL`, wie
+`moneyCommittedBy` es für `BUILD` schon tut.
+
+---
+
+## 2026-09-25 · Zweite Nacharbeit ki (T-M17-12) · Befund M17-S12 (niedrig, offen für T-M17-15): `recruitCommands` bucht kein `RECRUIT_SPY` desselben Takts vor
+
+**Befund:** `decide.ts` führt `espionageCommands` im Strategieblock aus (`RECRUIT_SPY` zieht
+`spyRecruitCost` vom Konto ab), `recruitCommands` (`packages/ai/src/economy.ts`) erst danach im
+Operativblock — aber `recruitCommands` bekommt kein `earlier` und liest
+`context.view.self.resources[key]` direkt, ohne das schon geplante `RECRUIT_SPY` abzuziehen.
+
+**Warum nicht repariert:** `moneyCommittedBy` und `capitalIdFrom` lösen dasselbe Muster für
+`BUILD` bzw. `SET_CAPITAL` mit einem einzigen Geldbetrag — `recruitCommands` rechnet dagegen je
+Ressource einen eigenen, gestaffelten Budgetrahmen in einer Schleife; ein sauberer Fix bräuchte
+eine eigene, ressourcenweise „schon gebucht"-Karte.
+
+**Status:** gemessen (T-M17-15): die richtige Buchung (`ledgerAfter` mit `RECRUIT_SPY`, in
+`recruitCommands`) entfernt 1–2 Ablehnungen je 200 Tage, kippt aber das Turnierband 0,760 →
+0,460 und `progress.slow.test.ts` (Fabrik-Zusicherung). Nicht repariert. Entscheid Noah
+(2026-09-25): geht mit Befund M17-T7 an M18 (siehe Befund M17-I1).
+
+---
+
+## 2026-09-25 · T-M17-09 · Befund B7 (2026-09-13), erste Hälfte eingelöst
+
+**Nachtrag zu B7:** die erste Hälfte (enttarnte Spione tragen keine diplomatische Folge) ist mit
+T-M17-09 eingelöst — `SPY_DETECTED` trägt eine Verstimmung des Entdeckers gegen den Urheber
+(`grievanceOnSpyDetected` 300, über das vorhandene `addGrievance`) und einen Ansehensverlust
+(`spyDetectedReputationLoss` 100, doppelt bei Sabotage ohne Krieg). Die **zweite** Hälfte
+(gebrochene Bündnisse) bleibt weiter offen, ohne zugewiesenen Meilenstein.
+
+**Beobachtung, kein Befund:** Dritte sehen das öffentliche Ansehen des Urhebers sinken, wenn
+sein Spion enttarnt wird — R-SPY-05 verlangt den Verlust ausdrücklich, und Ansehen ist seit M6
+ein öffentliches Feld (derselbe Mechanismus wie beim Überfall), ohne dass Dritte erfahren, wen
+genau er ausspioniert hat.
+
+---
+
+## 2026-09-25 · Zusammenführung Bahn A und B in M17 · Befund M17-M1: liegengebliebene Arbeitskopien im Hauptordner brachen `pnpm typecheck` (behoben)
+
+**Befund:** Im Wurzelordner des Hauptordners lagen zwei nicht versionierte Dateien,
+`espionage.orig.ts` und `pv.orig.ts` — dem Inhalt nach Originalkopien von
+`packages/ai/src/espionage.ts` und `packages/core/src/view/publicView.ts`, zeitlich passend zu
+den Nacharbeiten der Bahnen. `pnpm typecheck` erfasst sie mit, und `pv.orig.ts` warf Fehler
+(TS2307 für die relativen Importe, dazu eine Reihe TS7006) — Exit 2. Der Arbeitsbaum galt dem
+Auftrag als „sauber", weil `git status` sie nur als `??` führt.
+
+**Reparatur:** nicht gelöscht, sondern in den Scratchpad verschoben; danach `pnpm typecheck`
+Exit 0.
+
+**Lehre:** Arbeitskopien gehören in den Scratchpad, nie in den Repo-Wurzelordner — und
+„Arbeitsbaum sauber" heißt `git status --short` **leer**, nicht „keine geänderten Dateien".
+
+**Status:** behoben.
+
+---
+
+## 2026-09-25 · Zusammenführung Bahn A und B in M17 · Befund M17-M2: Turnierband R-AI-06 am gemeinsamen Stand gerissen, Ursache sauber zerlegt
+
+**Befund:** Turnier (`tournament.slow.test.ts`, je 50 Partien, 40 Spieltage) am gemeinsamen
+Stand und in vier Wegwerf-Kontrollen (nichts davon committet):
+
+| Stand | schwer–leicht (Krieg) | schwer–normal (Frieden) | schwer–normal (Krieg) | Kriegserklärungen normal/schwer |
+|---|---|---|---|---|
+| gemeinsam | 25:0:0 = 100 % | 0:0:25 = **50 %**, 0 Kriege, 0 Frieden | 24:0:1 = 98 %, 0 Kriege, 47 Frieden | 0 / 0 |
+| KI-Spionage aus (`espionageBudgetPermille` 0) | 100 % | 50 %, 0 / 0 | 98 %, 0 Kriege, 27 Frieden | 0 / 0 |
+| KI-Handel/Durchmarsch aus (Einhängepunkte in `decide.ts` auskommentiert) | 100 % | 50 %, 0 / 0 | 98 %, 0 Kriege, 47 Frieden | 0 / 0 |
+| Wegprüfung B6 aus (`firstBlock` in `passage.ts` gibt immer `null`) | 100 % | 24:0:1 = **98 %**, 77 Kriege, 27 Frieden | 22:0:3 = 94 %, 72 / 72 | 88 / 61 |
+| Wegprüfung B6 aus **und** KI-Spionage aus | 100 % | 10:0:15 = **70 %**, 145 / 96 | 100 %, 34 / 34 | 109 / 70 |
+
+Die letzte Zeile ist **zeichengleich** mit dem Stand vor beiden Bahnen. Damit ist der Ausschlag
+vollständig zwei Ursachen zugeordnet, und sie wirken gegeneinander: (1) Bahn A (T-M17-10) lässt
+eine Armee nicht mehr ungeprüft durch fremdes Land marschieren (B6, Wegprüfung in der
+**Taktik**, `military.ts`) — ohne Überfälle keine Verstimmung, ohne Verstimmung kein Krieg, das
+Friedens-Duell endet 25-mal unentschieden (50 %, Befund M17-D9 in der berichtigten Fassung
+bestätigt); (2) Bahn B (T-M17-12) gibt „schwer" mit Spionage einen Vorsprung, der im Krieg wirkt
+— mit B6-Kriegen steigt die Quote auf 98 % (wie Bahn B allein, Befund M17-S4). Handel,
+Provinzhandel und der **strategische** Durchmarsch-Einhängepunkt bewegen das Turnier nicht.
+**Hinweis zur Kontrolle 2:** der Einhängepunkt in `decide.ts` schaltet die B6-Wegprüfung nicht
+ab — sie sitzt in `militaryCommands`.
+
+**Status:** offen. Band 0,55–0,95 am gemeinsamen Stand: **50 %, unter dem Band.** Keine KI-Zahl
+geändert; die Entscheidung liegt beim Orchestrator bzw. T-M17-15/16 — siehe `tasks.yaml`, Feld
+`reopened`, bei T-M17-10 und T-M17-12. Die drei roten Fälle im Lauf: „schwer schlägt normal" (25
+Unentschieden), „mindestens ein Frieden, wo vorher keiner" (0 Kriegserklärungen), „schwer und
+normal erklären selbst Kriege" (0).
+
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch Befund M17-T1/M17-T3/M17-T4 (Option D) —
+das Turnier ist neu aufgestellt (drei Mächte reihum) und hält bei 0,760. Keine weitere Arbeit hier.
+
+---
+
+## 2026-09-25 · Zusammenführung Bahn A und B in M17 · Befund M17-M3: die KI-Spionage verplante das Geld des Handels desselben Zugs ein zweites Mal (behoben)
+
+**Befund (Merge-Hinweis beider Bahnen: A Prüfer-Befund 9 der Nacharbeit ki; B Ergänzung
+`ACCEPT_TRADE`):** Am gemeinsamen Stand durch Test gezeigt: bei 300.000 Geld und einem
+`OFFER_TRADE` mit 250.000 Geld Treuhand im selben Strategietakt warb die KI trotzdem einen
+Gegenspion (101.530) an — die Rücklage war damit angebrochen, im echten Ablauf wäre
+`RECRUIT_SPY` an `INSUFFICIENT_RESOURCES` gescheitert oder hätte die Rücklage unterschritten
+(R-AI-09/AK2). Dasselbe mit `ACCEPT_TRADE` eines Angebots, das 250.000 Geld verlangt.
+
+**Reparatur:** `moneyCommittedBy` (`packages/ai/src/espionage.ts`) zieht neben `BUILD` jetzt
+`OFFER_TRADE` und `ACCEPT_TRADE` ab (siehe `DECISIONS.md`). Beide Fälle rot vor der Änderung,
+grün danach; Golden-Master und Turnier unberührt. Commit `41a3410`.
+
+**Status:** behoben.
+
+---
+
+**Offen, nur festgehalten (Zusammenführung, 2026-09-25):** `ledgerAfter` zieht `RECRUIT_SPY`
+nicht ab — heute folgenlos, weil die Spionage als letzte plant; wer die Reihenfolge im
+Strategietakt ändert, muss es nachziehen (siehe `DECISIONS.md`). Die übrigen offenen Befunde
+beider Bahnen (M17-D9, M17-D10, M17-D12, M17-D13, M17-S1, M17-S4, M17-S12 u. a.) sind vom Merge
+nicht berührt und stehen oben.
+
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T1: Die Kriege der Turnierpaarung „im Frieden" waren Überfälle aus veralteten Befehlen — kein einziger förmlich
+
+**Befund:** Die Zerlegung der Zusammenführung (Befund M17-M2) hat die Wegprüfung aus T-M17-10 als
+Ursache des 50-%-Ergebnisses gefunden. Die Hypothese „die Prüfung verbietet auch den Marsch ins
+Land des eigentlichen Angriffsziels und geht damit über D29.8 hinaus" ist **widerlegt**: ein
+Angriffsziel ist immer herrenlos oder feindlich (`targeting.ts:107-110`). Je Tick eingeordnet
+(Wegwerfsonde, 25 Paare, 40 Tage): auf `3a97e10` hält die Sicherung marschierender Armeen
+(`military.ts:95`, Entscheid E4) 375-mal an, **jedes Mal** am Zielfeld selbst, dessen Besitzer
+sich unterwegs geändert hat; die Prüfung neuer Angriffsbefehle (`military.ts:190`) sperrt 993-mal
+echten Durchgang durch Gegnerland und bewegt das Ergebnis nicht (aus: weiter 50 %). Nur die
+Sicherung aus: 98 %. Auf dem Stand vor M17 (Prüfung und KI-Spionage aus, zeichengleich `522ebca`,
+70 %) standen 145 `WAR_DECLARED` im Ereignisstrom, davon **0** förmlich; 144 der 146 Armeen auf
+fremdem Boden hatten `attack:<Ziel>` als Auftrag und ein Ziel, das beim Befehl herrenlos oder
+feindlich war und unterwegs dem Gegner zufiel (meist `m1`/`m2`) oder in einen Waffenstillstand
+geriet; 2 standen nur auf dem Weg. **Damit ist auch die Zusage aus T-M41-08 falsch**, in einer
+Partie zu zweit komme „jede Erklärung aus dem Verhältnis" (`tournament.slow.test.ts`, Test
+„laesst schwer und normal selbst Kriege erklaeren"): sie kam aus Überfällen, die das Turnier als
+`WAR_DECLARED` des Täters zählt.
+
+**Einordnung:** kein Fehler der Wegprüfung. D29.8 prüft „den Weg eines geplanten Angriffs", das
+Ziel gehört zum Weg, und E4 hat den ganzen Restpfad ausdrücklich entschieden. Das Band war auf
+Kriegen gemessen, die niemand beschlossen hat. `recruitShare` 280 wurde in genau diesem Band
+gewählt (`BALANCING.md`, Nachtrag M17-T1).
+
+**Status:** gemessen; Reparatur über Noahs Entscheid zu Befund M17-T5 (Option C, siehe unten).
+
+**Schlusszeile (2026-09-25, T-M17-15):** gemessen am Integrationstor — 11/11/9 Kriege in den drei
+Startzahlen 1815/1914/2015 (200 Tage, Option C), im erwarteten Rahmen. Geschlossen.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T2: Auf der Weltkarte erklärt die KI in 200 Tagen noch einen Krieg — vorher waren es 15
+
+**Befund:** `m17-baseline.slow.test.ts` (Weltkarte, acht KI, Startzahl 1815, 200 Spieltage) auf
+`3a97e10` gegen den eingecheckten Ausgangswert (`8bda869`): Kriegserklärungen **15 → 1**,
+Überfälle ohne Erklärung **13 → 0**, `declareWar` 2 → 1, `offerPeace` 909 → 176, `acceptPeace`
+7 → 0, Durchmarsch 0 → 14 Freigaben am Ende (7 Anträge, 7 angenommen, 7 erwidert), abgelehnte
+KI-Befehle 3 → 2 (alle `RECRUIT:INSUFFICIENT_RESOURCES`), Ereignisse 29 987 → 22 482.
+R-AI-09/AK3 hält (0 ≤ 13). Aber die Lesart aus Befund M17-1 — die zehn Überfälle der Art `ziel`
+seien „die Art, wie die KI Krieg beginnt — sie marschiert einfach los" — trifft nicht zu: die KI
+wählt nie eine Provinz einer friedlichen Macht als Ziel (`targeting.ts:110`); ein Überfall der Art
+`ziel` ist ein Befehl, dessen Ziel unterwegs den Besitzer oder den Zustand gewechselt hat. Die
+KI-Partie vor M17 bekam ihre Kriege damit zu 13 von 15 aus diesem Versehen. Übrig bleibt das
+förmliche Tor (`diplomacy.ts` Abschnitt 4): Verhältnis = Ansehen (Ausgangswert 1000) − Verstimmung
++ Bindungen − Feindschaft − Grenztruppen (höchstens 300, `relationship.ts:142-144`); ohne
+Verstimmung und bei ungetrübtem Ansehen bleibt es bei mindestens 700, über `warThreshold` 600
+(„schwer") und 450 („normal"), und die Übermacht-Verlockung (`diplomacy.ts`, `(ratio − 1000) / 4`,
+höchstens 450) öffnet es erst ab einem Punkteverhältnis von rund 1,4 („schwer", volle
+Grenzbedrohung) bzw. 2,0 („normal").
+
+**Status:** gemessen, **offen für T-M17-15/16** — das Integrationstor misst dieselbe Partie; die
+Frage, ob eine KI-Partie ohne Kriege gewollt ist, ist eine Spielfrage für Noah (M17-T5, mit Option
+C entschieden — die Weltkarte mit C: 11 Kriege statt 1, siehe Befund M17-T5).
+
+**Schlusszeile (2026-09-25, T-M17-15):** abgelöst durch Befund M17-T1/M17-T4 (Option D, Turnier
+neu aufgestellt, misst seither drei Mächte reihum und streut). Keine weitere Arbeit hier.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T3: Die KI-Spionage ist zerlegt — kein Teil trägt, kein Fehler
+
+**Befund:** zu Befund M17-S4. Zerlegt per Wegwerfschalter in der einzigen Aufstellung, in der die
+Paarung „im Frieden" überhaupt Kriege hat (Sicherung duldet das Zielland): alles an 98 %, KI-Spionage
+aus 64 %; Sabotage aus 98 % (wird auf der Testwelt nie angeworben, 0 von 50 Partien); Aufklärung
+aus 98 %; Budget halbiert 98 % (dann nur noch Gegenspione); Gegenspion aus 100 %; nur „schwer"
+spioniert 100 %, nur „normal" 96 %. Bei halbem Budget gibt es keinen fremden Spion, der
+Gegenspion würfelt nicht (`phases/espionage.ts`, Schritt c) — er kostet nur Anwerbepreis 101 530
+und Sold 5 076 je Tag. Die Stufen unterscheiden sich in der Spionage nicht (drei Zahlen oberster
+Ebene in `ai.json`, keine je Stufe). Keine Sabotage ohne Obergrenze, keine Information, die
+„schwer" sieht und „normal" nicht. `grievanceOnSpyDetected` 300/200/150 (Bahn B) konnte deshalb
+nichts bewegen.
+
+**Status:** gemessen, **kein Fehler, keine Zahl geändert** (`BALANCING.md`, KI: Spionage). M17-S4
+ist damit beantwortet: die Spionage macht „schwer" nicht übermächtig, sie verschiebt ein
+empfindliches Messgerät (M17-T4). In der neu aufgestellten Turnieraufstellung (Option D) bewegt
+die Spionage die gemittelte Quote von 0,58 auf 0,76 (beides im Band), je Sitzordnung aber zwischen
+0,29 und 0,92 — Einzelheiten unter Befund M17-T4.
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T4: Das Turnier maß auf der Testwelt wenige Verläufe — behoben durch Option D
+
+**Befund:** Die Startzahl bewegt auf `smallWorld` wenig. Verschiedene Ausgänge (Sieger und
+Endpunkte) in den 50 Partien der Paarung „im Frieden": auf `3a97e10` **5** — und in allen 50
+gewinnt die zweite Nation (Ostmark), gleich welche Stufe sie spielt; also 25 Paare unentschieden,
+50 %. Mit geduldetem Zielland 13, zusätzlich ohne Spionage 29, Stand vor M17 29. Gegenspione
+allein — Anwerbepreis 101 530, Sold 5 076 je Tag, ohne fremden Spion kein Wurf — kippen die Quote
+von 64 % auf 98 %. Das Band 0,55–0,95 gilt nur für diese Paarung (`tournament.slow.test.ts`, Test
+„schwer schlaegt normal, und zwar messbar"); „im Krieg" hat keine Obergrenze und stand schon vor
+M17 bei 100 %.
+
+**Umgesetzt (Option D, Commits `36121fb`, `d904c3c`, `97c385c`):** Vorabmessung mit acht Varianten
+— nur ein Dritter am Tisch bringt Streuung. Aufstellung: Testwelt, drei Mächte reihum
+(Nordland/Ostmark/Sueden in drei Sitzordnungen), Dritter als Füller „normal" (die einzige Stufe
+ohne eigene Schlagseite), 150 Partien je Paarung, 40 Spieltage, jedes Turnier einmal gerechnet
+(rund 32 Sekunden, gemessen 2026-09-25, zwei Läufe allein: 31,4 s / 31,6 s). Ergebnis: **110**
+verschiedene Ausgänge in 150 Partien statt 5, höchstens 67 Siege einer Nation (447 ‰ statt
+980 ‰), Quote schwer–normal im Frieden **0,760** (Band hält), schwer–leicht 0,847, schwer–normal
+im Krieg 0,633. Neu zugesichert: mindestens 50 Ausgänge, keine Nation über 600 ‰, beide Stufen
+erklären förmlich. Band, Grenzen, Karte und KI-Zahlen unverändert.
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 6 „mittel"):** die neue Aufstellung trägt
+das Band **aus eigener Kraft**, nicht Option C — Gegenmessung ohne Option C, gleiche Aufstellung:
+**0,75** (43:5:27, 83 Ausgänge, 23 Überfälle, 124 Frieden). Option C liefert die förmlichen
+Erklärungen (286 → 680) und mehr Friedensschlüsse (124 → 478), nicht die Quote selbst.
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 5 „hoch"):** die Obergrenze 0,95 hält nur,
+weil Ostmark in zwei von drei Sitzordnungen schwach ist. Je Startzahl-Block (150 Partien,
+1000/5000/7000/9000): 0,7600 / 0,8200 / 0,7267 / 0,7267 — die Spanne reicht bis 0,82, nicht nur
+0,71–0,76 wie die Vorabmessung (nur Startzahlen 1000–3000) nahelegte. „normal" gewinnt in keinem
+der vier Blöcke mehr als 1 von 75 Paaren; die Quote unter 0,95 kommt praktisch allein aus
+Unentschieden, in denen der Füller entscheidet. Je Aufstellung: Nordland/Ostmark/Sueden 0,72–0,84,
+Ostmark/Sueden/Nordland 0,60–0,70, Sueden/Nordland/Ostmark 0,86–0,92 (ausgeglichen).
+
+**Berichtigung 2026-09-25 (Nacharbeit-Prüfung, Befund 9 „mittel"):** der Frische-Wächter folgt der
+neuen Turnierlogik nicht. `scripts/acceptance-criteria.mjs`, `GAUGES` Eintrag „Turnier",
+`sources`: `data/rules`, `data/maps/testworld.json`, `packages/ai/src`, `packages/core/src` —
+enthält **nicht** `apps/headless/src` oder `apps/headless/test`, obwohl die Messung (Aufstellung,
+Siegerwahl, 150 Partien, 40 Tage) seit Option D genau dort steht. Offen für T-M17-15/16.
+
+**Status:** behoben als Teil von T-M17-15, jetzt mit der Zusicherung je Sitzordnung: `winsA >=
+winsB` für „schwer gegen normal" in jeder der drei Sitzordnungen (gemessen 12:0 / 6:0 / 21:0) —
+genau die Zusicherung, die „Spionage aus" (Summe 0,58, aber 1:9 in einer Sitzordnung) gefangen
+hätte. Das Band bleibt auf der Summe (0,760).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T5: Kein ehrlicher Eingriff hielt das Band — die Optionen, Noahs Entscheid und die Umsetzung
+
+**Befund:** gemessen auf `3a97e10`, Turnier je 50 Partien (schwer–leicht Krieg / schwer–normal
+Frieden / schwer–normal Krieg; Kriegserklärungen der Stufe nach Handelndem normal / schwer),
+Weltkarte 200 Tage (Kriege / Überfälle / Durchmarschfreigaben am Ende / abgelehnte KI-Befehle):
+
+| Option | Turnier | nach Handelndem | Tests rot | Weltkarte |
+|---|---|---|---|---|
+| A: heute (`3a97e10`) | 100 / **50** / 98 % | 0 / 0 | 3 von 5 | 1 / 0 / 14 / 2 |
+| B: Sicherung duldet das Zielland („Transit nur durch Dritte") | 100 / **98** / 96 % | 54 / 50 (alles Überfälle) | 1 (Obergrenze) | 11 / 7 / 2 / 4 |
+| C: veraltetes Ziel → förmliche Kriegserklärung statt Anhalten (Wegwerfbau) | 100 / **52** / 98 % | 35 / 70 (förmlich) | 1 (Untergrenze) | 10 / 0 / 8 / 9, davon **7 `DIPLOMACY:INVALID_TARGET`** |
+| D: Band auf eine Paarung/Karte mit Streuung verlegen | — | — | — | Planarbeit |
+
+B holt den Fehler B6 zurück und reißt das Band trotzdem. C ist eine Erweiterung über D29.8 hinaus
+(die KI beansprucht eine Provinz, die ihr weggeschnappt wurde), erfüllt R-DIP-06 (61
+Friedensschlüsse) und T-M15-08 förmlich, reißt das Band nach unten und müsste für R-AI-09/AK2 die
+sieben Ablehnungen beheben. `progress.slow.test.ts` (6 Mächte, 120 Tage, 12 Startzahlen) grün für
+beide: B Anteil des Stärksten 0,4607, Eroberungen 289,8, Überlebende 5,0; C 0,3724 / 244,8 / 5,42;
+heute (Zusammenführung, gleicher Commit) 0,3544 / 249,9 / 5,5; vor M17 (2026-09-13) 0,3684 /
+310,1 / 5,42.
+
+**Entscheidung (Noah, 2026-09-25, `DECISIONS.md`):** Option C **und** Option D, gebaut in dieser
+Reihenfolge; B und „so lassen" (A) abgelehnt.
+
+**Umgesetzt (Option C, Commits `f69dffb`, `e0712f5`, `21859f8`, `1179075`):** Weltkarte 200 Tage:
+**11 Kriege**, davon **10 förmlich erklärt**; **0** `INVALID_TARGET`, 1 Ablehnung insgesamt. Die
+sieben `DIPLOMACY:INVALID_TARGET` des Wegwerfbaus hatten zwei Ursachen: sechsmal beantragte eine
+zweite Armee im selben Zug Durchmarsch bei der Macht, der die Taktik eben erklärt hatte
+(`requestPassage` sah nur Befehle früherer Stufen), einmal schlug die zweite von zwei
+Friedensannahmen fehl, weil `acceptPeace` alle Angebote an den Annehmenden löschte (Befund B4).
+Beide behoben; B4 ist damit für Frieden und Bündnis erledigt. Nebenbei behoben: Friedensangebote
+an ausgeschiedene Mächte (9× `PLAYER_ELIMINATED`) und eine Aushebung unter der Moralgrenze (1×
+`RECRUIT:INVALID_TARGET`).
+
+**Umgesetzt (Option D, Commits `36121fb`, `d904c3c`, `97c385c`):** siehe Befund M17-T4. Mit beiden
+Optionen zusammen: Turnier schwer–leicht 0,847, schwer–normal im Frieden **0,760** (Band hält),
+im Krieg 0,633; 110 verschiedene Ausgänge; zwei Läufe zeilengleich.
+
+**Status:** umgesetzt. T-M17-10 und T-M17-12 auf `status: done` (siehe `tasks.yaml`,
+`DECISIONS.md`).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T6: Ein Friedensschluss im selben Tick macht aus einem Angriff einen Überfall — offene Frage an Noah
+
+**Befund:** Der eine verbleibende Überfall der Weltkarte (Tick 1590, Italien → Frankreich, nach
+Option C) ist keiner aus Versehen: am Tickbeginn herrschte Krieg, Frankreich nahm im selben Tick
+Italiens Friedensangebot an, und Italiens Armee rückte im selben Tick in ihr Angriffsziel ein.
+`detectSurpriseAttacks` (`packages/core/src/phases/diplomacy.ts`) wertet jede Armee auf fremdem
+Boden ohne Krieg als Überfall — auch die, die bei Friedensschluss schon dort stand oder im selben
+Tick ankam. Im neu aufgestellten Turnier (Option D) sind das **54 von 74** Überfällen der Paarung
+„im Frieden" (Beziehung am Tickbeginn `war`), weitere 18 fallen in den ersten
+Waffenstillstandstagen — macht 72, nicht 74 (Differenz von 2 nicht nachgemessen, Zeitbudget der
+Nacharbeit-Prüfung). In der endgültigen Turnieraufstellung (150 Partien) liegt die Zahl bei **74
+von 150** Partien der Paarung „im Frieden". Gemessen und verworfen: „wer Frieden anbietet, hält
+seine Armeen an" (Turnier 50/50 %, kein Friedensschluss im Krieg mehr gemessen — keine Lösung).
+
+**Einordnung:** Option C **verdreifacht** die Überfallzahl im Turnier (23 → 74 in derselben
+Aufstellung, ohne/mit C, gleiche Startzahlen) — der Anstieg kommt aus mehr Kriegen, die C erst
+ermöglicht (förmliche statt ausbleibender Erklärungen), und damit aus mehr Friedensschlüssen, bei
+denen noch Armeen im Feindesland stehen. M17-T6 ist eine **Folge** von Option C, kein von C
+unabhängiger Befund.
+
+**Offene Frage an Noah:** ein Überfall auf der Weltkarte entsteht, weil ein Frieden im selben Tick
+angenommen wird, in dem die Armee ankommt; eine Räumfrist nach Friedensschluss (wie die
+Kündigungsfrist beim Durchmarsch) wäre die Reparatur — Entscheid, ob M17 oder M18.
+
+**Status:** entschieden (Noah, 2026-09-25): geht an **M18** — keine Räumfrist in M17. Das
+Integrationstor (T-M17-15) zählt das Merkmal `friedensschluss` dauerhaft (gemessen 1/2/0 in den
+drei Startzahlen). R-AI-09/AK3 hält (1 ≤ 13 auf der Weltkarte).
+
+---
+
+## 2026-09-25 · Nacharbeit Turnier M17 · Befund M17-T7: Der KI-Integrationslauf ist auf dem M17-Stand rot
+
+**Befund:** `apps/headless/test/ai-integration.slow.test.ts` auf `4a793fd` (vor Option C): **3 von
+21 rot** — „fuehrt Artillerie und laesst sie feuern" (18 Artillerie, 0 selbsttätiger Beschuss),
+„laesst keine KI-Macht ohne Hauptstadt enden" und „schliesst mindestens einen Frieden zwischen
+zwei KI-Maechten" (90 Tage: 1 Krieg, 0 Frieden). Mit Option C (`1179075`): **2 von 21 rot** —
+Artillerie (0 ausgehoben, 2 819 Infanterie, 0 Beschuss) und Frieden in 90 Tagen (5 Kriege, 0
+Frieden); die Hauptstadt hält jetzt. Im 200-Tage-Lauf mit C: 11 Kriege, 3 Frieden zwischen KI, 92
+Fabriken. Die Läufe gehören nicht zu `pnpm verify` und liefen seit M17 offenbar nicht.
+
+**Einordnung (Nacharbeit-Prüfung 2026-09-25, Befund 10 „mittel"):** der Artillerie-Rückgang
+(18 → 0) ist ein **Rückschritt durch Option C**, keine bloße Fortsetzung des Vorbefunds — C3 (die
+Moralgrenze der Aushebung in `economy.ts`, `recruitCommands`) greift in dieselbe Provinzschleife
+ein, die auch die Artillerie sichert; es gibt keine Gegenprobe ohne C3 dafür.
+
+**Status:** offen, für das Integrationstor T-M17-15 — Ursache der fehlenden Artillerie und des
+fehlenden Beschusses dort zerlegen (Gegenprobe ohne C3 und ohne C4), Frieden in 90 Tagen prüfen;
+nicht in der Nacharbeit Turnier behoben.
+
+**Zerlegt (T-M17-15, 2026-09-25):** Ursache ist **C4** (die förmliche Erklärung am veralteten
+Ziel), nicht C3 (die Moralgrenze der Aushebung) — ohne C4 hebt die KI 18 Artillerie aus (Indien),
+ohne C3 bleibt es bei 0. Die eigentliche Ursache liegt schon vor M17: die Aushebung kauft je
+Einheit nur `recruitShare` Promille des Bestands (`economy.ts:326-335`); eine Artillerie kostet
+200 000 Geld, „leicht" bräuchte 2,5 Mio., „normal" 1 Mio., „schwer" 714 000 Geld auf dem Konto.
+
+**Berichtigt (Nacharbeit T-M17-15, 2026-09-25):** die Zeile „am Ende von Tag 200 hat keine Macht
+so viel" war **falsch** — `geldHoechstensJeMacht` im eingecheckten `ai-integration.json` zeigt das
+Gegenteil: „normal" (1,35–1,43 Mio.) und „schwer" (1,52–1,59 Mio.) überschreiten ihre eigene
+Schwelle durchweg, nur „leicht" bleibt unter der höheren 2,5-Mio.-Schwelle (höchstens 2,14 Mio.).
+Die tatsächliche Engstelle steht in `fabrikenBegonnenJeMacht`: „normal" und „schwer" bauen in 200
+Tagen **null** Fabriken, „leicht" baut welche (40/51/1 Baubeginne) — und Artillerie braucht laut
+`units.json` eine Fabrik. C4 verschiebt nur, wer wie viel Geld hat (11 statt 1 Krieg), ändert aber
+nichts am Fabrikbau. Wer Geld hat, baut keine Fabrik; wer Fabriken baut, kann sich die Artillerie
+nicht leisten. Die einzige gefundene Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über
+der Rücklage sie trägt) braucht zugleich Befund M17-S12 — und S12 kippt das Turnierband von 0,760
+auf 0,460 und macht `progress.slow.test.ts` rot (Fabrik-Zusicherung). Frieden in 90 Tagen: der
+erste Frieden fällt je nach Variante auf Tag 44, 100, 118, 122, 175 oder nie — eine Zusage über
+einen chaotischen Zeitpunkt an einer Startzahl, kein Mechanismus-Fehler gefunden (R-DIP-06/AK4
+hält: 3/3/3 Frieden zwischen KI in 200 Tagen, alle drei Startzahlen).
+
+**Entscheid Noah (2026-09-25):** nicht repariert — geht an **M18**, zusammen mit Befund M17-S12.
+`ai-integration.slow.test.ts` läuft **21 von 21 grün**, zwei Fälle (Artillerie/Beschuss, Frieden in
+90 Tagen) stehen als `it.fails` mit datiertem Kommentar im Test — fallen sie unbemerkt grün, meldet
+vitest das als fehlgeschlagenes `it.fails`. Siehe `DECISIONS.md` und Befund M17-I1.
+
+---
+
+## 2026-09-25 · T-M17-15 · Befund M17-I1: Das Turnierband hängt zum Teil an einem Buchungsfehler
+
+**Befund:** Die richtige Buchung von `RECRUIT_SPY` in `recruitCommands` (Befund M17-S12) entfernt
+1–2 Ablehnungen je 200-Tage-Lauf, kippt aber das Turnierband „schwer gegen normal, im Frieden" von
+**0,760** auf **0,460** — „normal" gewinnt dann 12 von 25 Paaren in der Sitzordnung
+Ostmark/Sueden/Nordland (je Sitzordnung 8:1:16 / 0:12:13 / 0:1:24, Startzahl-Block 1000).
+
+**Einordnung:** „schwer" rekrutiert am Spionagetag aus Geld, das der Spion desselben Takts schon
+ausgegeben hat (die Buchung bucht `RECRUIT_SPY` nicht vor) — wird das richtig gebucht, verliert
+„schwer" einen Teil seines Vorsprungs. Das Turnierband trägt sich also **zum Teil** über einen
+Buchungsfehler, nicht nur über `recruitShare`.
+
+**Status:** offen, Entscheid Noah (2026-09-25): geht mit Befund M17-T7 an M18 — Turnierfrage dort
+neu entscheiden (Buchung reparieren und das Band neu denken, oder den Fehler stehen lassen).
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U1 (kritisch, in der Oberfläche behoben): Marktvorschau bricht bei Mengen über der Höchstmenge
+
+**Befund:** `exchangeAmount()` (`packages/core/src/rules/market.ts`) warf `FixedOverflowError`
+schon bei 3,5 Mrd. Einheiten Seltene Erden im bloßen Formularentwurf — unabhängig davon, ob
+`canApply` den Befehl je gesehen hat. Die Vorschau (`Panels.tsx` `TradeOfferForm`, `MarketPanel`)
+rief `exchangeAmount()` bei **jedem** Rendern auf und stürzte dementsprechend ab, reproduziert am
+2026-09-25 vor der Reparatur.
+
+**Reparatur (in dieser Nacharbeit, `apps/desktop`):** neue Funktion `safeExchangeAmount()`
+(`actions.ts`) kappt `giveAmount` vor der Rechnung, so dass `giveAmount * Kurs` unterhalb
+`Number.MAX_SAFE_INTEGER` bleibt; der an `canApply` gehende Befehl bleibt ungekürzt für die echte
+Prüfung. Test A10. Siehe DECISIONS.md, Eintrag „Kappung statt Prüfung vor der Vorschau".
+
+**Offen im Kern (Kandidat, nicht Teil dieser Nacharbeit):** `exchangeAmount()` selbst kappt oder
+sättigt nicht — jeder künftige Aufrufer außerhalb von `apps/desktop/src/game/actions.ts` kann
+denselben Absturz erzeugen. Kandidat für eine eigene Aufgabe: `exchangeAmount()` wirft nie,
+sondern sättigt intern, oder `MIN_TRADE_AMOUNT` bekommt ein Pendant nach oben.
+
+**Status:** Oberfläche repariert und mit Gegenprobe belegt; Kernverhalten offen, vorgemerkt für
+M18.
+
+---
+
+## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U2 (niedrig, nicht selbst behoben): `nameOf` in `App.tsx` hat keinen Rückfall auf leeren Text bei unbekannter Kennung
+
+**Befund:** Ein adversarischer Prüfer meldete, dass `offerListActions` bei einer unbekannten
+Macht `t('trade.unknownPower')` zurückgibt, dieser Pfad aber nie erreichbar sei, weil `nationOf`
+laut Befund „nie" auf eine rohe Kennung zurückfällt. Nachgestellt (2026-09-25): zutreffend —
+`naming.nameOf` **und** `App.tsx`s eigenes `nameOf` haben tatsächlich **keinen** Rückfall auf
+einen leeren Text bei einer unbekannten Kennung; sie geben die Kennung selbst zurück.
+`t('trade.unknownPower')` in `offerListActions` ist damit eine tote Kaskade — der Zweig, der sie
+auslösen würde, wird von `nameOf` selbst nie erreicht.
+
+**Warum nicht repariert:** Die sichtbar erreichbare Hälfte des ursprünglichen Befunds — die
+Provinz-Chip-Seite in `TradeOfferForm` — wurde in dieser Nacharbeit behoben (`trade.unknownProvince`,
+siehe DECISIONS.md und Befund darüber). Die `nameOf`-Hälfte selbst zu ändern (Rückfall auf
+`view.others`/leeren Text) betrifft mehrere Aufrufer außerhalb von T-M17-13/T-M17-14 — außerhalb
+des Umfangs dieser Nacharbeit.
+
+**Status:** bestätigt, nicht repariert, zurückgestellt als eigener, kleiner Befund für eine
+künftige Aufgabe.
+
+---
+
+## 2026-09-25 · T-M17-13 · Befund M17-S13 (niedrig, unbestätigt): der Ton verstummt vermutlich, sobald der Ereignisring voll ist
+
+**Fundort:** `apps/desktop/src/App.tsx`, Ton-Effekt (Kommentar „own.slice(soundedUpTo)").
+
+**Beobachtung (aus dem Bauplan zu T-M17-13, dort als F10 geführt, nicht selbst nachgemessen):**
+der Ton-Effekt zählt seinen Fortschritt über die **Länge** von `eventsFor(state.eventLog,
+viewerId)`. Der Ereignisring ist auf 500 Einträge für alle Mächte gedeckelt; ist er einmal voll,
+wächst diese Länge kaum noch, und `own.slice(soundedUpTo)` liefert fast nichts mehr — der Ton
+könnte nach Sättigung des Rings verstummen. Die Spionage-Meldungen dieser Aufgabe zählen bewusst
+nach Tick (`upTo`), nicht nach Länge, um genau das zu vermeiden (siehe DECISIONS.md, T-M17-13 E3).
+
+**Status:** unbestätigt, nicht selbst nachgemessen — weder in T-M17-13 noch in dieser Nacharbeit
+behoben (außerhalb ihres Auftrags). Empfehlung: eigener Befund mit Messung (wie lange bis der
+Ring voll ist, ob der Ton dann wirklich verstummt), Reparatur nach demselben Muster wie
+`collectEspionageNews` (nach Tick statt nach Länge).
+
+---
+
+## 2026-09-25 · Nacharbeit Sichtbefunde V (T-M17-14) · Befund M17-V1 (hoch, behoben): Diplomatietabelle sprengt `aside.side`, „Auswählen" mit der Maus unerreichbar
+
+**Befund (Sichtprüfung U, Befund 1):** `aside.side` ist fest 380px breit mit `overflow-x:
+hidden` und keinem inneren Scroll-Wrapper. Die Diplomatietabelle (`DiplomacyPanel`,
+`Panels.tsx`) hatte fünf Spalten (Macht, Diplomatie, Ansehen, Durchmarsch, „Macht wählen") und
+war dadurch 465px breit gegen 364px sichtbar — bei 1024px und 1280px Fensterbreite identisch,
+der Überlauf hängt nicht von der Fensterbreite ab. Der Knopf „Auswählen" lag zu 99,6% außerhalb
+(`left 1233.7 / right 1314.9`, Seitenrand bei 1234), die Kopfzelle „Macht wählen" vollständig.
+Ein Spieler konnte die Macht, mit der er Verträge/Durchmarsch/Handel bedienen will, **mit der
+Maus nicht auswählen** — das Kernwerkzeug von R-DIP-07/D29.9.
+
+**Reparatur (`apps/desktop`):** Die Spalte „Macht wählen" entfällt ersatzlos (höchstens vier
+Spalten: Macht, Diplomatie, Ansehen, Durchmarsch). Der Name der Macht (`Panels.tsx`,
+`DiplomacyPanel`) ist jetzt selbst ein `<button className="nation-select">` — per Tab
+erreichbar, `aria-pressed` für die gewählte Macht, `canChoose` richtet sich jetzt nach
+`onChoose` statt nach den Aktionsgruppen. Die Durchmarsch-Zelle trägt eine neue Kurzform
+(`passageShort()`: „gewährt" / „erhalten" / „beide" / „keiner") als sichtbaren Text, die volle
+Fassung (`passageText()`, unverändert) steht im `title`/Tooltip. Neue Schlüssel
+`diplomacy.passage.shortOut/shortIn/shortBoth` in `de.ts` (mit echten Umlauten), der Schlüssel
+`diplomacy.choose` ist verwaist (Kommentar an Ort und Stelle, nicht gelöscht — der
+Ersatzschrift-Wächter/text-keys-Test entscheidet, ob ein verwaister Schlüssel bleiben darf).
+Neues CSS `.diplomacy-table .nation-select` (Knopf sieht wie Text aus, eigener Fokusring) und
+`.diplomacy-table tbody tr.is-selected` (fett statt Knopf-Rahmen als Auswahlzeichen).
+
+**Test:** `Panels.test.tsx` — keine Spalte „Macht wählen" mehr; der Name ist ein `button` und
+wählt die Macht aus (`aria-pressed`, Klick ruft `onChoose` mit der richtigen Kennung); Kurzform
+in der Zelle, volle Fassung im `title`; höchstens vier `columnheader`. `App.test.tsx`: die
+bestehenden Tests klickten noch auf den alten Knopf „Auswählen" der Tabelle (fünf direkte
+Stellen plus der lokale `wähle`-Helfer in einem Test mit zwei Aufrufen) — umgestellt auf den
+ersten `button` der jeweiligen Tabellenzeile (neuer Helfer `waehleErsteMacht`), sonst
+unverändert; alle 266 Fälle in `App.test.tsx` + `Panels.test.tsx` grün.
+
+**Browsermessung (PFLICHT laut Auftrag, Port 5186, `pnpm -C apps/desktop dev` per `vite
+--port 5186 --strictPort`, Quelle per `fetch` bestätigt — `Panels.tsx` enthält
+`nation-select`/`diplomacy-table`, echte Welt, 7 Gegner):
+
+| Fensterbreite | `aside.side` scrollWidth/clientWidth | `table.diplomacy-table` scrollWidth/clientWidth | Auswahlknopf vollständig innerhalb |
+|---|---|---|---|
+| 1024px | 374 / 364 | 362 / 362 | ja (`left 647 / right 701.8`, `asideRight 1009`) |
+| 1280px | 374 / 364 | 362 / 362 | ja (`left 903 / right 957.8`, `asideRight 1265`) |
+
+Die Tabelle selbst überläuft jetzt an keiner der beiden Breiten mehr (`scrollWidth ===
+clientWidth`); die verbleibenden 10px bei `aside.side` sind kein Tabellenüberlauf (die Tabelle
+liegt vollständig darin) und kein neuer Befund — vermutlich Scrollbar-Reserve eines
+Geschwisterelements, nicht weiter verfolgt. Ein echter Mausklick (`computer.left_click` auf
+Koordinaten, kein `.click()` per Skript) auf den Namen „Kanada" hat die Macht ausgewählt und
+das Formular „Verträge mit Kanada"/„Handelsangebot an Kanada?" geöffnet; Screenshot bei 1280px
+zeigt die vierspaltige Tabelle ohne Überlauf, Kanada fett als gewählte Zeile (im Sitzungsprotokoll
+inline angesehen, keine Datei — der Auftrag verlangte kein Ablagepfad für das Bild).
+
+**Status:** behoben, mit Gegenprobe (266 grüne Fälle) und Browsermessung belegt.
+
+---
+
+## 2026-09-25 · Nacharbeit Sichtbefunde V (T-M17-14) · Befund M17-V2 (mittel, NICHT bestätigt — Testlage des Prüfers): Escape schließt das Diplomatiepanel angeblich nicht
+
+**Befund laut Sichtprüfung U:** „Nach echtem Mausklick auf eine neutrale Kartenstelle … und
+Escape blieb der Text 'Diplomatie' im DOM … im Vergleich schließen Taste `s`
+(Spionageübersicht) und der Markt-Knopf ihr Panel zuverlässig mit Escape."
+
+**Nachprüfung:** `App.tsx`, `keyboard.ts` und `uiState.ts` sind zwischen dem geprüften Stand
+(`4df6680`) und dem aktuellen HEAD (`5994f1b`) **byte-identisch** (`git diff 4df6680 HEAD --
+apps/desktop/src/App.tsx apps/desktop/src/keyboard.ts apps/desktop/src/state/uiState.ts`,
+leerer Diff) — dieselbe Escape-Behandlung, die geprüft wurde. `resolveKey()` gibt `Escape`
+unconditional als `{ type: 'close' }` zurück (vor jeder `typing`/`dialogOpen`-Prüfung); der
+`close`-Fall in `App.tsx` dispatcht ohne Ausnahme für ein bestimmtes Panel `closePanel`
+(`uiState.ts`: `panel: null`), sobald kein Dialog/keine Zielwahl/kein Umsetz-Modus im Weg
+steht — Diplomatie ist darin **nicht** besonders behandelt, wird also wie jedes andere Panel
+geschlossen.
+
+Drei Gegenproben im echten Browser (Port 5186, sichtbares Fenster, echte Maus- und
+Tastaturereignisse über den `computer`-Automat, nicht `.click()`/`.dispatchEvent()` per Skript):
+1. Diplomatie über Taste D öffnen, sofort Escape → Panel schließt (`get_page_text` danach ohne
+   Region „Diplomatie", nur noch der immer sichtbare Fuß-Knopf gleichen Namens).
+2. Wie oben, plus eine Macht auswählen (echter Mausklick auf den neuen Namens-Knopf, Befund
+   M17-V1), ein Eingabefeld des Handelsformulars fokussieren, auf eine neutrale Kartenstelle
+   klicken, dann Escape → schließt ebenso.
+3. `jsdom`-Test (`App.test.tsx`, neu, siehe unten) mit `screen.getByRole('region', { name:
+   'Diplomatie' })` — schließt ohne jede Änderung an `App.tsx`/`keyboard.ts` grün.
+
+**Vermutete Ursache des Fehlbefunds:** Der Fuß-Knopf „Diplomatie" (öffnet das Panel) steht
+unabhängig vom Panel-Zustand **immer** im DOM — ein Sitzungsprotokoll bestätigt: unmittelbar
+nach einem bestätigten Escape-Schließen liefert eine Suche nach dem Text „Diplomatie" genau
+einen Treffer, den `button "Diplomatie"` im Fuß, keine `region`. Ein Prüfskript, das nur auf
+den bloßen Text „Diplomatie" im `body`-Text prüft (statt auf die ARIA-`region`), würde nach
+Escape fälschlich „Diplomatie noch da" melden — unabhängig davon, ob das Panel offen oder
+geschlossen ist. Das erklärt zwanglos, warum Spionage- und Markt-Panel im selben Lauf als
+„schließt zuverlässig" durchgingen: für sie gibt es (Stand `5994f1b`) keinen gleichnamigen,
+immer sichtbaren Fuß-Knopf, der den Text übriglässt.
+
+**Test (Regressionswächter, kein Fehler behoben):** `App.test.tsx`, neuer Fall „schließt das
+Diplomatiepanel mit Escape" — öffnet mit `d`, prüft die `region`, schließt mit `Escape`, prüft
+`queryByRole('region', …)` ist `null`. Grün ohne jede Produktivcode-Änderung.
+
+**Status:** kein Fehler im Kern/in der Oberfläche gefunden; die Sichtprüfung dürfte den
+Fuß-Knopf statt der Panel-Region gemessen haben. Test bleibt als Regressionswächter stehen.
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G1 (kritisch, behoben): fremde Handelsangebote ließen sich über NOT_OWNER abzählen
+
+**Befund:** `ACCEPT_TRADE`, `DECLINE_TRADE` und `WITHDRAW_TRADE` gaben bei einem **fremden**
+Angebot (die handelnde Macht ist weder `from` noch `to`) `NOT_OWNER{offerId}` zurück, bei einem
+**fehlenden** dagegen `INVALID_TARGET{reason:'kein Angebot'}`. Über `canApply` ließ sich so
+durchprobieren, welche Kennungen zwischen Dritten offen sind (R-DIP-04) — genau die Lücke, die
+T-M17-07 für Spione bereits geschlossen hat (`ownSpy`).
+
+**Gemessen** (Wegwerftest H1, Testwelt): p1 bietet p2 etwas an. `canApply(p3, ACCEPT_TRADE t1)`
+ergab `NOT_OWNER`, `canApply(p3, ACCEPT_TRADE t999)` ergab `INVALID_TARGET`. Bei allen drei
+Befehlen gleich.
+
+**Reparatur:** `partyTradeOffer()` (`commands/tradeOffer.ts`) behandelt ein Angebot, an dem die
+Macht nicht beteiligt ist, jetzt wie ein fehlendes. Ist die Macht Partei, aber auf der falschen
+Seite, bleibt `NOT_OWNER` — sie kennt ihr eigenes Angebot. `02-DESIGN.md` D29.2 berichtigt.
+
+**Test:** `tradeOffer.test.ts`, neue Fälle vergleichen `canApply`/`applyCommand` für ein
+fremdes gegen ein fehlendes Angebot (alle drei Befehle) und prüfen, dass eine Partei auf der
+falschen Seite weiterhin `NOT_OWNER` erhält. Rot ohne die Reparatur, grün mit ihr, Gegenprobe
+gefahren (Reparatur entfernt, Test fällt).
+
+**Status:** behoben (Commit `897307e`).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G3 (niedrig, aber Datenschaden — behoben): validateState war für M17 nicht tief genug
+
+**Befund:** Wegwerftest `zz-durchsicht-validate` (migrierter `save-v3` mit gültiger
+Prüfsumme): ein `null`-Eintrag in `diplomacy.offers` lud und stürzte in `publicView.ts` beim
+Lesen von `offer.to` ab; `offers` mit `from`/`to` einer unbekannten Macht oder unbekanntem
+`kind` luden unbeanstandet; zwei `tradeOffers` mit derselben Kennung luden, und
+`WITHDRAW_TRADE t1` schloss **beide** — 2000 Treuhand verschwanden spurlos; `nextIds.offer`/
+`nextIds.spy` wurden nie gegen vorhandene Kennungen geprüft; `relation.state`,
+`sinceTick`, `warEffectiveAtTick` und das Beziehungspaar selbst wurden gar nicht geprüft.
+Zusätzlich rief `acceptState` (`packages/netplay/src/handshake.ts`) `validateState` nie auf —
+derselbe Bruch wie bei `deserialise` vor der Nacharbeit zu T-M17-03 (DECISIONS.md 2026-09-24).
+
+**Reparatur:** `validateState` prüft jetzt `diplomacy.offers` je Element, eindeutige Kennungen
+in `tradeOffers`/`spies`, `nextIds.offer`/`nextIds.spy` über jeder vergebenen Kennung, und
+`relation.state`/`sinceTick`/`warEffectiveAtTick`/das Beziehungspaar. `acceptState` ruft
+`validateState` nach der Prüfsummenprüfung auf, `PROTOCOL_VERSION` unverändert.
+
+**Test:** `migration-v3.test.ts` (15 neue Fälle je ein verfälschtes Feld), `resume-save.test.ts`
+(ein prüfsummengleicher, aber unvollständiger übertragener Stand wird verworfen). Rot ohne
+die Reparatur, grün mit ihr, Gegenprobe gefahren.
+
+**Status:** behoben (Commits `de8d246`, `590044a`).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel · Befund M17-G4, offen: breakAlliance sperrt den Durchmarsch ohne Räumfrist
+
+**Befund:** `commands/diplomacy.ts` `breakAlliance` ruft `setPassageBothWays(relation, false)`
+ohne jede Frist auf; `phases/diplomacy.ts` `detectSurpriseAttacks` liest das noch im selben
+Tick. Gemessen (Wegwerftest H3, Testwelt): p1 und p2 sind verbündet, eine Armee von p2 steht
+in einer Provinz von p1, p1 befiehlt `breakAlliance` — im selben Tick folgt
+`WAR_DECLARED{playerId:'p2', targetPlayerId:'p1', withoutDeclaration:true}`, das Ansehen von p2
+fällt von 1000 auf 810. Dieselbe Fallklasse wie M17-T6 (Frieden im selben Tick) und M17-D5.
+
+**Warum nicht repariert:** Entscheid Noah (2026-09-25, siehe DECISIONS.md): geht zusammen mit
+M17-T6 an M18 — dieselbe Räumfrist soll dort für beide Fälle gelten, statt die Mechanik
+zweimal getrennt zu ändern.
+
+**Status:** offen, geht an M18 (zusammen mit M17-T6).
+
+---
+
+## 2026-09-25 · Nacharbeit Durchsicht Zusammenspiel, offen: der Determinismus-Vergleich (Wiederholungslauf) im m17-integration-Bericht ist nur ad-hoc geprüft
+
+**Befund:** `tasks.yaml` T-M17-15 nennt als offenen Punkt „Determinismus über diese Kombination
+nicht separat gegen einen Wiederholungslauf geprüft". Diese Durchsicht hat die Lücke geschlossen
+— aber nur ad hoc: das Szenario aus Wegwerftest `zz-durchsicht-save` wurde zweimal von Grund auf
+gebaut (Startzahl 1914), Stand und alle 200 Hashes stimmten überein. Der Beleg lag nur in
+diesem Sitzungsprotokoll, nicht im Repo — ein künftiger Lauf von `m17-integration.slow.test.ts`
+prüft diese Wiederholung nicht automatisch nach.
+
+**Nebenbefund (aufgeklärt, kein Schaden):** eine frühere Durchsicht hatte behauptet,
+`ai-integration.json` trage die Prüfsumme `10950ec5abffd9b7` und Gegenprobe G9 sei deshalb
+„nicht direkt vergleichbar". Nachgemessen: `10950ec5abffd9b7` ist der Ausgangswert aus
+`m17-baseline.json`, nicht der heutige Wert; `m17-integration.json` und `ai-integration.json`
+tragen für `zustandOhneKi` beide `c2382182c9139e60` — G9 hält wörtlich. Der Fehler stand nur
+in einem früheren, nicht eingecheckten Bericht.
+
+**Vorschlag:** eine eigene Wiederholungslauf-Prüfung fest in `m17-integration.slow.test.ts`
+(oder ein Geschwistertest) verankern, statt sie jede Durchsicht neu von Hand nachzustellen.
+
+**Status:** offen, geht an M18.
+
+
+---
+
+## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — geloest 2026-09-26 durch einen Kriegsplan im Messaufbau, Kontrolle jetzt 41/4
+
+**Befund:** Der Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`,
+`WORLDWAR_M17_NACHHER` unbeteiligt) auf dem M17-Endstand (`b9b3915`, vormals gemessen auf
+`b1bb3c8`) zeigt bei "Garnison A 1914" (dem festen Vergleichslauf fuer `KONTROLLE`) **0
+`ARMY_INTRUDED`-Ereignisse und 0 verlorene Provinzen**, wo der Bericht vom 2026-09-14 auf
+`b1bb3c8` **76 Einmaersche und 4 verlorene Provinzen** maß — derselbe Wert, den die Zusicherung
+seit T-M40-02 fest erwartet (`KONTROLLE = { intrusions: 76, provincesLost: 4 }`,
+`stance.slow.test.ts` Zeile 116). Provinz-Tage 100 % (vorher 101,8 %, beides ueber der
+98-%-Schwelle) und Verluste ohne Gefecht weiterhin 0/0 sind zwar unveraendert **ueber ihrer
+Schwelle** — aber bei 0 Einmaerschen wird die Verteidigungsautomatik selbst (D30.4: eine
+Armee auf `defensive` rueckt einer bedrohten Nachbarprovinz nach) **in diesem Lauf gar nicht
+ausgeloest**. `provinceDays.garrison` und `.defensive` sind deshalb jetzt **exakt gleich**
+(4800/4800, s. u.) — ohne einen einzigen Einmarsch gibt es fuer die beiden Haltungen nichts
+zu unterscheiden. „AK5 haelt" ist fuer diesen Lauf also die falsche Formel: die Zahlen sind
+nicht bestaetigt gut, sie sind **ungeprueft**, weil die Bedrohung, an der sich die Automatik
+zeigen wuerde, in dieser Partie ausblieb. `fensterOk: true`. Exit 1, 2 von 15 Tests rot
+(`ak5.erfuellt: false`, `verletzt: ["Kontrolle: Garnison A 1914 0 Einmaersche / 0 verloren
+statt 76 / 4"]`).
+
+**Nicht erzwungen:** `KONTROLLE` in `stance.slow.test.ts` bleibt unveraendert bei 76/4 — das ist
+genau die Falle, vor der der Plan (`plan-T-M17-16.md` Abschnitt 3) warnt: "Verschiebt sich die
+Kontrolle, hat sich etwas ausser der Automatik bewegt; nicht die Erwartung nachziehen." Der
+gemessene, rote Bericht liegt im Scratchpad
+(`stance-rot-b9b3915.json`, `s2-stance-fail.log`), NICHT eingecheckt — `docs/reports/stance.json`
+bleibt auf dem Stand von `b1bb3c8` (`git checkout --`), damit kein roter Stand als gueltig
+gilt.
+
+**Was `ARMY_INTRUDED` misst** (`packages/core/src/phases/movement.ts` Zeile 94–103): das
+Ereignis feuert, wenn eine fremde Armee in eine Provinz des Menschen einruecken, **und** die
+beiden Maechte zu diesem Zeitpunkt im Krieg stehen (`atWar`) — unabhaengig davon, ob der Krieg
+erklaert war oder ein Ueberfall (R-AI-09/AK3) war. 76 auf 0 heisst: ueber die gesamte
+Garnison-A-1914-Partie hinweg betrat **keine** feindliche Armee je eine Provinz des Menschen,
+waehrend Krieg herrschte.
+
+**Vermutung, ausdruecklich als Vermutung (nicht nachgemessen — 60 Commits an `STANCE_SOURCES`
+liegen zwischen den beiden Messungen, eine Bisektion wuerde 60 × ~35 Min. kosten):** die
+Ueberfall-ohne-Kriegserklaerung-Zahl aus `m17-baseline.json` (T-M17-02) vs. `m17-final.json`
+(T-M17-16, derselbe Lauf) fiel im selben Zeitraum von 13 auf 1 (siehe PROGRESS.md-Zeile
+T-M17-16) — R-DIP-08/T-M17-10 (Antrag auf Durchmarsch) und die uebrige M17-Diplomatie duerften
+die KI insgesamt zurueckhaltender gemacht haben, fremdes Land zu betreten. Das waere dann eine
+**gewollte** Nebenwirkung von M17 und keine Regression — aber das ist eine Vermutung, kein
+Beleg, und die feste `KONTROLLE`-Zusicherung in `stance.slow.test.ts` passt nicht mehr zu einem
+Spiel, das absichtlich weniger unerklaerte Grenzuebertritte hat.
+
+**Zusaetzliche Beobachtung:** `provinceDays.garrison` und `.defensive` sind jetzt **exakt
+gleich** (4800/4800), vorher unterschiedlich (3146/3089) — moeglicher Hinweis auf eine
+strukturelle Aenderung an der Episodenzaehlung selbst (mehr als nur AI-Verhalten), nicht
+nachverfolgt.
+
+**Auswirkung:** `docs/reports/stance.json` bleibt auf `b1bb3c8` stehen, damit unfrisch
+(`allFreshness` bleibt fuer den Haltungs-Messlauf rot); T-M17-16 kann diesen Teil der dod nicht
+erfuellen, ohne Noahs Entscheid, ob `KONTROLLE` neu vermessen und der Erwartungswert bewusst
+auf den neuen Stand gezogen wird (das waere **keine** Grenzverschiebung "damit eine Zahl
+passt", sondern eine bewusste Neu-Kalibrierung einer Testfixtur an gewollt geaendertes
+KI-Verhalten) — oder ob die 0 Einmaersche stattdessen ein echter Befund ueber die KI ist
+(zu wenig Aggression, zu wenig Krieg insgesamt), der reparaturbeduerftig waere.
+
+**Ursache geklaert (2026-09-26).** Vor M17 kam **jeder** Krieg gegen den passiven Menschen aus
+einem Durchmarsch-Ueberfall: franzoesische und polnische Armeen liefen auf dem Weg zu einem
+dritten Ziel durch Deutschland (Tick 496/Tag 20 Frankreich in NLD/BEL mit Weg
+`DEU-SW -> DEU-NW -> DNK` bzw. `DEU-SW -> DEU-SE -> CZE -> SVK -> HUN`; Tick 856/Tag 35 Polen in
+`DEU-SE` mit Weg nach `CHE`, in allen drei Startzahlen gleich fuer Frankreich, 1914/2015 auch fuer
+Polen). Seit T-M17-10 haelt `military.ts` (E4, Zeilen 97-111) genau solche Maersche an und ruft
+`requestPassage`; der Mensch des Messlaufs beantwortet nie, die Armee wartet, der Antrag laeuft ab
+und wird erneuert (58/32/17 Antraege in 200 Tagen). Kein Marsch hatte je ein deutsches Ziel -
+`staleTargetDeclarations` (Option C, M17-T5) greift hier nicht.
+
+Eine foermliche Kriegserklaerung aus dem Verhaeltnis (`diplomacy.ts` §4) gab es gegen diesen
+Menschen **weder vor noch nach M17**: das Verhaeltnis liegt bei 700-1000 (Ansehen 1000, er bricht
+nie ein Wort; Verstimmung 0, er tut niemandem etwas), 173-179 Punkte (1815: 73) unter der Schwelle
+in jeder von 40 Proben je Startzahl. Ein passiver Mensch mit voller Garnison ist fuer die KI nach
+ihrer eigenen Regel **kein Kriegsgrund** - vor M17 so wenig wie nach M17. **Gewolltes
+M17-Verhalten, kein Fehler:** R-AI-09/AK3 (0 Ueberfaelle) und R-DIP-08 (Durchmarsch wird
+beantragt) verlangen genau das, was den Messlauf blind gemacht hat.
+
+**Geloest durch einen Kriegsplan im Messaufbau** (Muster von Option D, M17-T5): beide
+Landnachbarn (Frankreich, Polen) erklaeren dem Menschen am Spieltag 20 foermlich den Krieg, ueber
+den normalen Befehlsweg (`scripted` in `advanceTicks`) - danach entscheidet die KI alles selbst.
+Gemessen (zwoelf Laeufe je Kandidat, `5e53298`): Tag 20 haelt AK5 mit 102,8 % Provinz-Tage-Anteil
+und einer kleinsten Einmarschzahl von 13 je Lauf; Tag 0 reisst AK5 (90,5 %, unter der 98-%-Schwelle);
+"nur Frankreich" haelt (115,9 %), deckt aber nur die halbe vor-M17-Bedrohung ab. Tag 20 gewaehlt,
+weil er die naechste Nachbildung der echten vor-M17-Bedrohung ist, keinen Lauf blind laesst und
+unabhaengig von `diplomacy.ts` §4 bleibt (eine spaetere KI-Aenderung zeigt sich in der Kontrolle,
+nicht in erneuter Blindheit) - nicht, weil er das beste Ergebnis lieferte - die drei Kriterien standen vor der Messung fest,
+die Wahl selbst fiel aber erst, nachdem alle drei AK5-Ergebnisse bekannt waren (berichtigt in der
+Nacharbeit 2026-09-26; siehe DECISIONS.md fuer die volle Fassung und die offene Frage an Noah). **Offen gelegt:** AK5 ist aufbauempfindlich (90,5/102,8/
+115,9 % je nach Kriegsplan-Tag, aus vier Provinzen mit ~170 Provinz-Tagen je Einzelverlust) - ein
+Befund fuer M18, nicht hier repariert.
+
+Die alte Vermutung oben (13 -> 1 Ueberfaelle ohne Erklaerung, "M17 macht die KI zurueckhaltender")
+war **teils richtig**: Ueberfaelle ja (76 -> 0, jetzt mit Kriegsplan 41), aber nicht aus
+Zurueckhaltung - aus der Wegpruefung beim Durchmarsch, nicht aus der Kriegslust der KI. Die
+Beobachtung "`provinceDays.garrison` und `.defensive` exakt gleich (4800/4800)" ist damit erklaert
+(§ oben): ohne jeden Angriff behaelt jeder der zwoelf Laeufe seine vier Provinzen 200 Tage lang
+(6 Paare x 800), keine Aenderung an der Zaehlung selbst.
+
+`KONTROLLE` in `stance.slow.test.ts` steht seit 2026-09-26 auf `{ intrusions: 41, provincesLost: 4 }`
+(Garnison A 1914 mit Kriegsplan) - keine Grenzverschiebung "damit eine Zahl passt", sondern dieselbe
+Neu-Kalibrierung wie bei Block N2 (52 -> 76): die Aufstellung hat sich geaendert (ein Kriegsplan kam
+dazu), die Grenzen (98 %, Paar-Regel, 0/0) bleiben. `docs/reports/stance.json` wird mit dem neuen
+Kriegsplan-Lauf neu geschrieben.
+
+**Status:** geloest. Siehe `DECISIONS.md` (2026-09-26, M17-F1) fuer die volle Abwaegung,
+`02-DESIGN.md` D30.6/D30.9 fuer die Korrektur am Entwurf.
+
+**Nachtrag Nacharbeit 2026-09-26 (Befund eines adversarischen Pruefers):** die Gegenprobe G1 aus
+dem urspruenglichen Bauplan (ein voller Zwoelf-Laeufe-Durchgang mit KRIEGSPLAN.tag = 999, der rot
+sein muss, "blind" in allen zwoelf Laeufen) wurde nicht gefahren. Belegt ist die Blindheits-
+Erkennung nur durch Einheitsfaelle mit synthetischen Laeufen (`stance.slow.test.ts`, Zeile 666 ff.,
+13 passed/5 skipped nachgefahren) - die Logik selbst ist gedeckt, ein echter Zwoelf-Laeufe-Beleg
+fuer G1 fehlt. Nicht hier nachgefahren (rund 9,5 Minuten auf freier Maschine, wie der Haltungs-
+Messlauf selbst) - vermerkt statt geschaetzt.

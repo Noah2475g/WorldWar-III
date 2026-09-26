@@ -1,6 +1,7 @@
 import { emit } from '../events/emit'
 import { settleGoals } from '../rules/goals'
 import { checkVictory, scoreOf } from '../rules/victory'
+import { settleEspionage } from './espionage'
 import { settleMorale } from './morale'
 import type { GameState, PlayerId } from '../state/types'
 import type { Phase, PhaseContext } from './index'
@@ -14,6 +15,9 @@ import type { Phase, PhaseContext } from './index'
  */
 export const dailyTick: Phase = (draft: GameState, ctx: PhaseContext) => {
   settleMorale(draft, ctx)
+  // Spionage nach der Moral (D29.3): Sold, Aufklärung, Sabotage — eine Sabotage soll nicht vom
+  // Moraldrift desselben Tages zur Hälfte zurückgenommen werden (T-M17-08, T-M17-09).
+  settleEspionage(draft, ctx)
 
   const scores: Record<PlayerId, number> = {}
   for (const playerId of draft.playerOrder) {

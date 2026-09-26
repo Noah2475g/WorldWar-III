@@ -225,6 +225,7 @@ export const de = {
     noBuildings: 'Keine Gebäude',
     unknown: 'Nicht aufgeklärt',
     lastSeen: 'Stand von Tag {{day}}',
+    revealedUntil: 'Aufgeklärt: Gebäude sichtbar bis Tag {{day}}',
     pick: 'Provinz',
     pickNone: '— keine —',
     pickOwn: 'Eigene Provinzen',
@@ -356,6 +357,10 @@ export const de = {
     grantRightOfWay: 'Durchmarsch gewähren',
     shareMap: 'Karte teilen',
     reasonDetail: '{{text}} ({{reason}})',
+    // Der Antrag, seine Annahme und die Kündigung (T-M17-14, R-DIP-08/AK2, AK3).
+    requestRightOfWay: 'Durchmarsch beantragen',
+    acceptRightOfWay: 'Durchmarsch-Antrag annehmen',
+    revokeRightOfWay: 'Durchmarsch kündigen',
   },
 
   /**
@@ -431,6 +436,31 @@ export const de = {
     DAY_REPORT: 'Tagesbericht für Tag {{day}}.',
     // Das Zwischenziel (T-M35-04, R-GAME-08/AK2). Nur die eigene Macht sieht es.
     GOAL_REACHED: 'Zwischenziel erreicht: {{goal}}.',
+    // Der Durchmarsch (T-M17-04, R-DIP-08/AK3): `player` gewährt, `target` ist der Gast. Nur die
+    // beiden lesen es. Die Kündigung ist dieselbe Ereignisart mit `granted: false` und trägt die
+    // Endung `_REVOKED`; der Tag ist der erste, an dem eine Armee des Gasts dort ein Überfall ist.
+    RIGHT_OF_WAY_CHANGED: '{{player}} gewährt {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_PLURAL: '{{player}} gewähren {{target}} das Durchmarschrecht.',
+    RIGHT_OF_WAY_CHANGED_REVOKED: '{{player}} kündigt {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    RIGHT_OF_WAY_CHANGED_REVOKED_PLURAL: '{{player}} kündigen {{target}} das Durchmarschrecht. Wirksam ab Tag {{day}}.',
+    // Handelsangebote (T-M17-05, R-DIP-05). `player` ist der Anbieter, `target` der Empfänger. Das
+    // Schließen lesen nur die beiden; der Tausch ist Weltgeschehen und nennt keine Menge (AK4). Beide
+    // Sätze beugen kein Verb nach der Macht — deshalb keine Mehrzahl- und keine Fremdfassung.
+    TRADE_OFFER_CLOSED: 'Handelsangebot von {{player}} an {{target}}: {{reason}}.',
+    TRADE_AGREED: 'Handel zwischen {{player}} und {{target}}.',
+    // Die Abtretung (T-M17-06, R-DIP-09/AK2): Weltgeschehen ohne Preis. Satzgegenstand ist die Provinz —
+    // deshalb weder Mehrzahl- noch Fremdfassung, und kein „ich".
+    PROVINCE_CEDED: '{{province}} geht durch Vertrag von {{previous}} an {{player}} über.',
+    // Spionage (T-M17-08, R-SPY-02). Nur der Besitzer des Spions liest sie; Auftrag und Ausgang
+    // kommen mit Namen aus dem Block `espionage`. Kein Satz nennt, was der Spion gesehen hat —
+    // das steht in der Sicht, nicht im Protokoll.
+    SPY_REPORT: 'Spion in {{province}}, {{mission}}: {{outcome}}.',
+    SPY_LOST: 'Spion in {{province}} ({{mission}}) verloren: der Sold ließ sich nicht zahlen.',
+    // Sabotage und Enttarnung (T-M17-09, R-SPY-04/05, D29.5). Die erlittene Sabotage nennt keinen
+    // Urheber — das Ereignis kennt keinen; ihre Wirkung kommt aus `espionage.sabotage`. Die Enttarnung
+    // nennt beide Mächte: beide Seiten erfahren sie, und derselbe Satz gilt für beide.
+    SABOTAGE_SUFFERED: 'Sabotage in {{province}}: {{effect}}',
+    SPY_DETECTED: 'In {{province}} enttarnt: ein Spion von {{player}} ({{mission}}), entdeckt von {{target}}.',
   } as const,
 
   /** Die vier Zwischenziele (T-M35-04, R-GAME-08, D31.2) — Namen ohne Zahl, die Marke steht in den Regeln. */
@@ -492,13 +522,134 @@ export const de = {
     truce: 'Waffenstillstand',
     alliance: 'Bündnis',
     rightOfWay: 'Durchmarschrecht',
-    sharedMap: 'Kartenaustausch',
+    // „Austausch" versprach eine Gegenseitigkeit, die es seit T-M17-04 nicht mehr gibt.
+    sharedMap: 'Kartenfreigabe',
     reputation: 'Ansehen',
     noRelations: 'Noch keine Beziehungen.',
-    choose: 'Macht wählen',
+    // Die eigene Spalte "Macht wählen" (choose: 'Macht wählen') ist mit Befund 1 der
+    // Sichtpruefung U entfallen (T-M17-14, Nacharbeit): sie sprengte bei 380px
+    // Seitenleistenbreite den Rahmen, der Knopf "Auswählen" lag zu 99,6% ausserhalb. Der
+    // Name der Macht ist seither selbst der Auswahlknopf, keine fuenfte Spalte mehr.
     with: 'Verhältnis zu {{nation}}',
     truceBlocks: 'Das geht erst, wenn der Waffenstillstand abgelaufen ist.',
     offerPending: 'Angebot liegt vor',
+    // Das Diplomatiepanel (T-M17-14, D29.9): Ansehen als Balken, Durchmarsch in beiden Richtungen,
+    // Kriege der Welt, Vertraege und Durchmarsch als zwei Gruppen, Angebote.
+    ownReputation: 'Ihr Ansehen',
+    reputationOf: 'Ansehen von {{nation}}',
+    passageColumn: 'Durchmarsch',
+    passage: {
+      out: 'Sie gewähren',
+      outEnds: 'Sie gewähren bis Tag {{day}}',
+      in: 'Sie erhalten',
+      inEnds: 'Sie erhalten bis Tag {{day}}',
+      none: 'keiner',
+      // Kurzformen fuer die Zelle (Befund 1 der Sichtpruefung U, T-M17-14): die Tabelle
+      // sprengte bei 380px Seitenleistenbreite den Rahmen. Die volle Fassung (oben) steht
+      // im title/Tooltip der Zelle; hier nur, WAS gilt, ohne den Tag.
+      shortOut: 'gewährt',
+      shortIn: 'erhalten',
+      shortBoth: 'beide',
+    },
+    treaties: 'Verträge mit {{nation}}',
+    passageGroup: 'Durchmarsch und Karte',
+    wars: 'Kriege',
+    warPair: '{{a}} gegen {{b}}',
+    noWars: 'Derzeit führt niemand Krieg.',
+    incoming: 'Eingehende Angebote',
+    outgoing: 'Ausgehende Angebote',
+    request: {
+      peace: '{{nation}} bietet Frieden an.',
+      alliance: '{{nation}} bietet ein Bündnis an.',
+      rightOfWay: '{{nation}} bittet um Durchmarsch durch Ihr Gebiet.',
+    },
+    ownRequest: {
+      peace: 'Ihr Friedensangebot an {{nation}} wartet auf Antwort.',
+      alliance: 'Ihr Bündnisangebot an {{nation}} wartet auf Antwort.',
+      rightOfWay: 'Ihr Antrag auf Durchmarsch bei {{nation}} wartet auf Antwort.',
+    },
+    // Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5) — der Satz steht in events.TRADE_OFFER_CLOSED.
+    // Ohne "das Hinterlegte geht zurueck" (T-M17-14, E2): das Ereignis traegt keine Mengen (R-DIP-05/AK4)
+    // und weiss also nicht, ob ueberhaupt etwas hinterlegt war. Die Rueckgaberegel steht stattdessen in
+    // explain.diplomacy.trade und als Notiz trade.escrow an der eigenen ausgehenden Zeile.
+    tradeClosed: {
+      accepted: 'angenommen',
+      declined: 'abgelehnt',
+      withdrawn: 'zurückgezogen',
+      expired: 'ohne Antwort verfallen',
+      war: 'wegen Krieges verfallen',
+      // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit T-M17-06 schliesst 'invalid' auch
+      // eine verfallene Provinz ein, nicht nur ein Ausscheiden — der Satz behauptet keine der
+      // beiden Ursachen als sicher.
+      invalid: 'hinfällig geworden — eine Macht ist ausgeschieden oder eine Provinz nicht mehr abtretbar',
+    },
+  },
+
+  /**
+   * Spionage (T-M17-08, R-SPY-02/03) — ein eigener Block neben `diplomacy`, damit die beiden
+   * M17-Bahnen an verschiedene Stellen anbauen. Die Übersicht (R-SPY-06, T-M17-13) liest dieselben
+   * Namen wie das Protokoll.
+   */
+  espionage: {
+    missions: {
+      intel: 'Aufklärung',
+      economicSabotage: 'Wirtschaftssabotage',
+      militarySabotage: 'Militärsabotage',
+      counter: 'Gegenspionage',
+    },
+    outcomes: {
+      success: 'gelungen',
+      failure: 'misslungen',
+      targetChanged: 'das Ziel passt nicht mehr zum Auftrag',
+    },
+    /** Die Wirkung einer erlittenen Sabotage (T-M17-09) — ohne Urheber. */
+    sabotage: {
+      economic: 'Moral −{{moraleLoss}}, vernichtet: {{destroyed}}.',
+      military: 'laufende Aufträge werden {{hours}} Stunden später fertig.',
+      nothingDestroyed: 'nichts',
+    },
+    group: 'Spionage',
+    groupMoving: 'Spionage — Spion {{number}} umsetzen',
+    recruitAria: 'Spion für {{mission}} anwerben',
+    recruitHint: 'Anwerben {{cost}} · Sold {{salary}} je Tag',
+    moveAria: 'Spion {{number}} hierher umsetzen: {{mission}}',
+    moveHint: 'kostenlos · Sold {{salary}} je Tag · erster Einsatz am Tag danach',
+    cancelMove: 'Umsetzen abbrechen',
+    moveOrdered: 'Spion {{number}} wird nach {{province}} umgesetzt: {{mission}}.',
+    chance: 'Erfolg {{percent}} % je Tag',
+    detection: 'Entdeckung {{percent}} % je Tag und fremdem Spion',
+    economicEffect: 'Moral −{{morale}} · {{share}} % des Tagesertrags',
+    militaryEffect: 'laufende Aufträge {{time}} später',
+    limitReached: 'Höchstzahl erreicht: {{max}} Spione.',
+    reasons: {
+      unknown: 'Von dieser Provinz wissen Sie nichts — erst sehen oder aufklären.',
+      unknownMission: 'Diesen Auftrag kennt das Spiel nicht.',
+      ownProvince: 'In einer eigenen Provinz geht nur Gegenspionage.',
+      notOwnProvince: 'Gegenspionage geht nur in einer eigenen Provinz.',
+      unowned: 'Sabotage braucht einen Eigentümer — diese Provinz ist herrenlos.',
+      unchanged: 'Der Spion hat diesen Auftrag schon an diesem Ort.',
+      noSpy: 'Diesen Spion gibt es nicht mehr.',
+    },
+    counterOutcomes: { success: 'fremden Spion enttarnt', failure: 'keine Enttarnung' },
+    overview: {
+      title: 'Spionageübersicht',
+      summary: '{{count}} von {{max}} Spionen · Sold {{salary}} je Tag',
+      empty: 'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+      spy: 'Spion {{number}}',
+      target: 'Ziel',
+      jumpAria: 'Zu {{province}} springen',
+      salary: 'Sold',
+      salaryAmount: '{{amount}} je Tag',
+      last: 'Zuletzt',
+      pending: 'noch kein Einsatz — der erste folgt am Tag nach dem Ansetzen',
+      outcomeDay: '{{outcome}} (Tag {{day}})',
+      move: 'Umsetzen',
+      moveAria: 'Spion {{number}} umsetzen',
+      dismiss: 'Entlassen',
+      dismissAria: 'Spion {{number}} entlassen',
+      dismissHint: 'Nichts wird erstattet.',
+      moving: 'Spion {{number}} umsetzen: wählen Sie die Zielprovinz auf der Karte oder in der Liste.',
+    },
   },
 
   market: {
@@ -513,6 +664,63 @@ export const de = {
     // Der Kursverlauf je Rohstoff (T-M32-02): Geld je Einheit, je Spieltag gemittelt.
     trend: 'Kursverlauf',
     hint: 'Der Kurs gilt für den ganzen Spielstunden-Tick und für alle Mächte gleich; Nachfrage bewegt ihn danach.',
+  },
+
+  /**
+   * Handelsangebote im Diplomatiepanel (T-M17-14, R-DIP-07, R-DIP-09) — anders als `market`, das
+   * am festen Kurs handelt: ein Angebot geht an EINE Macht, mit Treuhand, Frist und der Möglichkeit,
+   * Provinzen auf beide Seiten zu legen.
+   */
+  trade: {
+    title: 'Handelsangebot an {{nation}}',
+    titleShort: 'Handelsangebot',
+    resource: 'Rohstoff',
+    give: 'Sie geben',
+    want: 'Sie verlangen',
+    stock: 'Bestand {{amount}}',
+    giveAmount: '{{resource}} geben',
+    wantAmount: '{{resource}} verlangen',
+    giveProvince: 'Provinz abgeben',
+    wantProvince: 'Provinz verlangen',
+    pickProvince: 'Provinz wählen …',
+    removeProvince: '{{province}} entfernen',
+    province: 'Provinz {{name}}',
+    nothing: 'nichts',
+    unknownPower: 'eine Macht',
+    unknownProvince: 'unbekannte Provinz',
+    send: 'Handel anbieten',
+    accept: 'Angebot annehmen',
+    decline: 'Angebot ablehnen',
+    withdraw: 'Angebot zurückziehen',
+    incoming: '{{nation}} bietet {{give}} und verlangt {{want}}.',
+    outgoing: 'Sie bieten {{nation}} {{give}} und verlangen {{want}}.',
+    expires: 'Verfällt an Tag {{day}}.',
+    escrow: 'Hinterlegt — kommt zurück, wenn das Angebot ohne Tausch endet.',
+    // "worth" statt "value" im Schluessel (T-M17-14, Waechter Ersatzschrift): "trade.value" als
+    // Zeichenkette in actions.ts fiel dem Waechter gegen Ersatzschrift zum Opfer — "value" ohne
+    // Punkt liest sich fuer ihn wie "val" + Ersatzschrift-"ue".
+    worth: 'Marktwert: Sie geben ≈ {{give}} Geld, Sie erhalten ≈ {{want}} Geld.',
+    worthProvinces: 'Provinzen haben keinen Marktpreis und sind darin nicht enthalten.',
+    limits: 'Höchstens {{money}} Geld und {{resource}} je Rohstoff und Seite.',
+    // Die Sperrgründe des Kerns als Satz (T-M17-14, E7) — eigene Tabelle statt `errors.*`, weil
+    // `errors.QUEUE_FULL` „Alle Bauplätze" sagt und keiner der Kerngründe Provinznamen kennt.
+    blocked: {
+      lapsing: 'Der Anbieter kann nicht mehr liefern, was er anbietet — das Angebot verfällt.',
+      notOwned: '{{province}} gehört nicht der Macht, die sie abtreten soll.',
+      capital: '{{province}} ist eine Hauptstadt und lässt sich nicht abtreten.',
+      contested: 'In {{province}} wird gekämpft.',
+      ownArmies: 'Eigene Truppen stehen in {{province}} oder marschieren hinein.',
+      foreignArmies: 'Truppen einer dritten Macht stehen in {{province}}.',
+      duplicate: 'Eine Provinz steht doppelt im Angebot.',
+      empty: 'Legen Sie etwas auf Ihre Seite des Angebots.',
+      sameResource: 'Derselbe Rohstoff steht auf beiden Seiten.',
+      limit: 'Höchstens {{max}} {{resource}} je Angebot.',
+      invalidAmount: 'Nur ganze, positive Mengen.',
+      war: 'Im Krieg wird nicht gehandelt.',
+      declaration: 'Eine Kriegserklärung läuft — kein neuer Handel.',
+      gone: 'Diese Macht ist ausgeschieden.',
+      queueFull: 'Sie haben schon {{max}} offene Angebote — ziehen Sie eines zurück.',
+    },
   },
 
   mapModes: {
@@ -564,9 +772,11 @@ export const de = {
     invitationNations: 'Sie spielen {{host}}, Ihr Mitspieler {{other}}',
     invitationAi: 'Computergegner: {{count}}',
     invitationSpeed: 'Feste Geschwindigkeit: {{speed}} Spielstunden je Sekunde',
-    // Der Hostdienst kommt erst mit M38; wer die Partieart jetzt wählt, soll nicht auf
-    // einen Knopf warten, den es noch nicht gibt.
-    multiplayerPending: 'Die Verbindung zum Mitspieler kommt mit dem nächsten Ausbau; die Partie beginnt vorerst lokal.',
+    // Hier stand `multiplayerPending`: „Die Verbindung zum Mitspieler kommt mit dem
+    // nächsten Ausbau; die Partie beginnt vorerst lokal." Richtig in M37, falsch seit
+    // M38/M39 — die Verbindung ist gebaut (T-M39-11, Befund MP-5). Ersatzlos gestrichen:
+    // der Kasten nennt Angaben, keine Erklärungen, und was als Nächstes kommt, steht einen
+    // Klick später in der Lobby.
   },
 
   /**
@@ -743,6 +953,7 @@ export const de = {
     dispatch: 'Depesche',
     unread: '{{count}} neu',
     none: 'Noch keine Depesche.',
+    espionage: 'Spionage',
   },
 
   map: {
@@ -772,6 +983,7 @@ export const de = {
     zoomIn: 'Bild↑ — hineinzoomen',
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
+    espionage: 'S — Spionageübersicht',
   },
 
   tutorial: {
@@ -919,8 +1131,24 @@ export const de = {
       war: 'Offener Krieg: beide Seiten dürfen angreifen und erobern.',
       truce: 'Kampfpause auf Zeit. Vor ihrem Ablauf ist kein neuer Krieg möglich.',
       alliance: 'Gemeinsame Sache: Durchmarsch und Kartenwissen inbegriffen.',
-      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung.',
-      sharedMap: 'Beide sehen, was der andere sieht.',
+      // Seit T-M17-04 gerichtet (R-DIP-08): wer gewährt, darf damit nicht selbst hinein.
+      rightOfWay: 'Erlaubt fremden Truppen den Marsch durch das eigene Gebiet — ohne Kriegserklärung. Umgekehrt gilt es nur, wenn die andere Macht es ebenfalls gewährt.',
+      sharedMap: 'Die andere Macht sieht, was man selbst sieht. Ihre eigene Karte zeigt sie nur, wenn sie sie ebenfalls freigibt.',
+    },
+    // Das Handelsangebot (T-M17-14, R-DIP-07) steht NICHT unter `diplomacy` (Abweichung vom
+    // Bauplan §4.6, Befund beim Bau): `icons.test.tsx` zaehlt `explain.diplomacy` als die
+    // Liste der Beziehungszustaende (sechs, je mit RELATION_ICONS-Zeichen) — ein siebter
+    // Schluessel ohne Zeichen liesse den Waechter zu Recht fallen. Die Treuhandregel steht hier,
+    // weil der Protokollsatz sie seit E2 nicht mehr behauptet.
+    trade:
+      'Ein Angebot an eine Macht: Was Sie geben, liegt ab sofort in Treuhand und kommt zurück, wenn das ' +
+      'Angebot ohne Tausch endet — abgelehnt, zurückgezogen, verfallen oder durch Krieg. Provinzen ' +
+      'wechseln erst beim Tausch den Besitzer. Die Welt erfährt, dass Sie handeln, nicht wie viel.',
+    espionage: {
+      intel: 'Öffnet die Provinz für einen Tag: Gebäude mit Stufe und die Zusammensetzung der Armeen dort. Gelingt nicht jeden Tag.',
+      economicSabotage: 'Senkt bei Erfolg die Moral der Provinz und vernichtet einen Teil ihres Tagesertrags beim Eigentümer. Höchstens eine Sabotage je Provinz und Tag.',
+      militarySabotage: 'Verzögert bei Erfolg jeden laufenden Bau- und Aushebeauftrag der Provinz und deckt die Armeen dort auf.',
+      counter: 'Sucht in dieser eigenen Provinz täglich nach fremden Spionen. Ohne Gegenspionage bleibt eine Sabotage unentdeckt — und wer sie war, erfahren Sie nur so.',
     },
   },
 
@@ -962,6 +1190,20 @@ export const de = {
     combat: 'Kämpfe',
     economy: 'Aufbau',
     diplomacy: 'Verträge',
+    sabotageEconomic: 'Wirtschaftssabotage in {{province}}',
+    sabotageMilitary: 'Militärsabotage in {{province}}',
+    spyCaught: 'Gegenspionage in {{province}}: ein Spion von {{player}} enttarnt',
+    spyExposed: 'Ihr Spion in {{province}} ist enttarnt ({{mission}})',
+    spyUnpaid: 'Spion in {{province}} verloren: der Sold ließ sich nicht zahlen',
+    spyTargetChanged: 'Spion in {{province}}: das Ziel passt nicht mehr zum Auftrag',
+    // Eingehende Angebote (T-M17-14, R-DIP-07/AK1, E4): leise wie die Ankündigung (M36), Sprung
+    // in die Diplomatie statt auf die Karte.
+    tradeOffer: 'Handelsangebot von {{nation}}',
+    offer: {
+      peace: '{{nation}} bietet Frieden an',
+      alliance: '{{nation}} bietet ein Bündnis an',
+      rightOfWay: '{{nation}} bittet um Durchmarsch',
+    },
   },
 
   error: {

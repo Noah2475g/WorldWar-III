@@ -1,6 +1,12 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { runTicks } from '../clock'
+import type { Command } from '../commands/types'
+import { deserialise } from '../persistence/save'
 import { createInitialState, type GameConfig } from '../state/create'
+import { step } from '../step'
 import { publicView } from './publicView'
 import type { GameState } from '../state/types'
 
@@ -163,6 +169,22 @@ describe('R-DIP-04 Die neuen Felder halten den Nebel ein', () => {
 
     expect(publicView(state, 'p1', TEST_RULES).battles).toEqual([])
   })
+
+  it('zeigt incomingOffers/outgoingOffers nur der beteiligten Seite (T-M17-12, Befund M17-S11)', () => {
+    // Bisher unbewacht: ein Filter, der alle Angebote durchliesse statt nur die eigenen,
+    // waere gruen geblieben — die einzige bestehende Zusicherung (espionage.test.ts) baut ihren
+    // Zustand mit nur einem einzigen Angebot, dem eigenen, und haette einen zu weiten Filter
+    // nicht bemerkt.
+    state.diplomacy.offers.push({ from: 'p1', to: 'p2', kind: 'peace', tick: state.tick })
+
+    const mine = publicView(state, 'p1', TEST_RULES)
+    const theirs = publicView(state, 'p2', TEST_RULES)
+
+    expect(mine.outgoingOffers).toEqual([{ to: 'p2', kind: 'peace', tick: state.tick }])
+    expect(mine.incomingOffers).toEqual([])
+    expect(theirs.incomingOffers).toEqual([{ from: 'p1', kind: 'peace', tick: state.tick }])
+    expect(theirs.outgoingOffers).toEqual([])
+  })
 })
 
 describe('R-UI-09 Ohne Regeln bleibt die Sicht schlank', () => {
@@ -324,5 +346,112 @@ describe('R-GAME-08/AK3 Die Sicht fuehrt nur die eigenen Ziele', () => {
 
   it('rechnet ohne Regeln keine Ziele', () => {
     expect(goalsIn(publicView(state, 'p1'))).toBeUndefined()
+  })
+})
+
+/**
+ * Die Sicht nennt Durchmarsch und Kartenfreigabe mit ihrer Richtung (T-M17-04, R-DIP-08, D29.6).
+ *
+ * Bis T-M17-04 hiessen die Felder `rightOfWay` und `sharedMap` — ein Feld je Beziehung, und das
+ * reichte, solange jeder Schreiber beide Richtungen setzte (T-M17-03). Jetzt gibt es zwei
+ * Antworten, und die Sicht nennt beide, immer aus meiner Richtung: `passageGranted` = ich lasse
+ * dich durch, `passageReceived` = du laesst mich durch; ebenso `mapShared` und `mapReceived`.
+ * `passageEndsAtTick` traegt die Kuendigungsfrist beider Richtungen — der Gast braucht seine, um
+ * rechtzeitig abzuziehen, der Gewaehrende seine, um zu sehen, dass er schon gekuendigt hat.
+ */
+describe('R-DIP-08 Die Sicht nennt Durchmarsch und Karte mit ihrer Richtung', () => {
+  const diplo = (playerId: string, targetPlayerId: string, action: string): Command =>
+    ({ type: 'DIPLOMACY', playerId, targetPlayerId, action }) as Command
+
+  it('trennt, was ich gewaehre, von dem, was ich erhalte', () => {
+    const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay'), diplo('p2', 'p1', 'shareMap')], ctx).state
+
+    expect(publicView(granted, 'p1').relations['p2']).toMatchObject({
+      passageGranted: true,
+      passageReceived: false,
+      mapShared: false,
+      mapReceived: true,
+    })
+    expect(publicView(granted, 'p2').relations['p1']).toMatchObject({
+      passageGranted: false,
+      passageReceived: true,
+      mapShared: true,
+      mapReceived: false,
+    })
+  })
+
+  it('nennt die Kuendigungsfrist beiden Seiten, jeder in seiner Richtung', () => {
+    const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+    expect(publicView(granted, 'p1').relations['p2']!.passageEndsAtTick).toEqual({ granted: null, received: null })
+
+    const revoked = step(granted, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+    const ends = granted.tick + TEST_RULES.constants.rightOfWayNoticeTicks
+
+    expect(publicView(revoked, 'p1').relations['p2']!.passageEndsAtTick).toEqual({ granted: ends, received: null })
+    expect(publicView(revoked, 'p2').relations['p1']!.passageEndsAtTick).toEqual({ granted: null, received: ends })
+    // Bis zum Fristende gilt das Recht, und die Sicht sagt es.
+    expect(publicView(revoked, 'p2').relations['p1']!.passageReceived).toBe(true)
+  })
+
+  it('zeigt eine abgelaufene Frist nicht mehr', () => {
+    const granted = step(state, [diplo('p1', 'p2', 'grantRightOfWay')], ctx).state
+    const revoked = step(granted, [diplo('p1', 'p2', 'revokeRightOfWay')], ctx).state
+    const later = runTicks(revoked, TEST_RULES.constants.rightOfWayNoticeTicks, ctx).state
+
+    expect(publicView(later, 'p2').relations['p1']).toMatchObject({
+      passageReceived: false,
+      passageEndsAtTick: { granted: null, received: null },
+    })
+  })
+
+  it('fuehrt die alten Namen nicht mehr', () => {
+    // Ein Leser, der noch `rightOfWay` fragt, bekaeme `undefined` — also „nein" — und saehe
+    // keinen Fehler. Der Typ faengt es beim Bau, dieser Test im Lauf.
+    const relation = publicView(state, 'p1').relations['p2'] as unknown as Record<string, unknown>
+
+    expect('rightOfWay' in relation).toBe(false)
+    expect('sharedMap' in relation).toBe(false)
+  })
+
+  it('zeigt nach dem Laden eines alten Standes beide Richtungen (R-DIP-08/AK4 und AK6)', () => {
+    const v3Text = readFileSync(fileURLToPath(new URL('../../test/golden/save-v3.json', import.meta.url)), 'utf8')
+    const old = (JSON.parse(v3Text) as { state: { diplomacy: { relations: Record<string, Record<string, unknown>> } } })
+      .state.diplomacy.relations
+    const loaded = deserialise(v3Text)
+
+    const passage = Object.keys(old).find((key) => old[key]!['rightOfWay'] === true && old[key]!['state'] !== 'alliance')!
+    const map = Object.keys(old).find((key) => old[key]!['sharedMap'] === true && old[key]!['state'] !== 'alliance')!
+    for (const [key, felder] of [
+      [passage, ['passageGranted', 'passageReceived']],
+      [map, ['mapShared', 'mapReceived']],
+    ] as const) {
+      const [a, b] = key.split('|') as [string, string]
+      for (const [me, other] of [
+        [a, b],
+        [b, a],
+      ] as const) {
+        const relation = publicView(loaded, me).relations[other] as unknown as Record<string, unknown>
+        for (const feld of felder) expect(relation[feld], `${me} → ${other}: ${feld}`).toBe(true)
+      }
+    }
+  })
+})
+
+describe('R-DIP-04 Die laufende Kriegserklaerung steht nur in der Sicht der Beteiligten', () => {
+  it('fehlt ohne Erklaerung', () => {
+    const view = publicView(state, 'p1')
+    expect(view.relations['p2']).not.toHaveProperty('warEffectiveAtTick')
+  })
+
+  it('nennt beiden Seiten denselben Tick, bis er eintritt, und verschwindet danach', () => {
+    const command: Command = { type: 'DIPLOMACY', playerId: 'p1', targetPlayerId: 'p2', action: 'declareWar' }
+    const erwartet = state.tick + TEST_RULES.constants.warDeclarationDelayTicks
+    const { state: erklaert } = step(state, [command], ctx)
+    expect(publicView(erklaert, 'p1').relations['p2']!.warEffectiveAtTick).toBe(erwartet)
+    expect(publicView(erklaert, 'p2').relations['p1']!.warEffectiveAtTick).toBe(erwartet)
+
+    const { state: wirksam } = runTicks(erklaert, TEST_RULES.constants.warDeclarationDelayTicks, ctx)
+    expect(publicView(wirksam, 'p1').relations['p2']).not.toHaveProperty('warEffectiveAtTick')
+    expect(publicView(wirksam, 'p2').relations['p1']).not.toHaveProperty('warEffectiveAtTick')
   })
 })

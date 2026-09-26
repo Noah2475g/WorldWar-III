@@ -7,7 +7,10 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  SpyId,
+  SpyMission,
   Stance,
+  TradeBundle,
 } from '../state/types'
 
 /**
@@ -118,6 +121,11 @@ export type DiplomacyAction =
   | 'breakAlliance'
   | 'grantRightOfWay'
   | 'shareMap'
+  // Durchmarsch erbitten, annehmen, kuendigen (T-M17-04, R-DIP-08). Die KI gibt sie ab
+  // T-M17-10, die Oberflaeche erreicht sie in T-M17-14.
+  | 'requestRightOfWay'
+  | 'acceptRightOfWay'
+  | 'revokeRightOfWay'
 
 export interface DiplomacyCommand {
   type: 'DIPLOMACY'
@@ -130,6 +138,71 @@ export interface SetCapitalCommand {
   type: 'SET_CAPITAL'
   playerId: PlayerId
   provinceId: ProvinceId
+}
+
+/**
+ * Handelsangebote mit Treuhand (T-M17-05, R-DIP-05, D29.2).
+ *
+ * `give.resources` wandert beim Angebot aus dem Bestand in die Treuhand; `want` wird erst bei
+ * der Annahme gezahlt. `provinces` gehoert dem Provinzhandel (T-M17-06) und muss bis dahin leer
+ * sein. Die Oberflaeche erreicht die vier Befehle in T-M17-14.
+ */
+export interface OfferTradeCommand {
+  type: 'OFFER_TRADE'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  give: TradeBundle
+  want: TradeBundle
+}
+
+/** Nur der Empfaenger (`to`) nimmt an; beide Seiten tauschen im selben Tick. */
+export interface AcceptTradeCommand {
+  type: 'ACCEPT_TRADE'
+  playerId: PlayerId
+  offerId: string
+}
+
+/** Nur der Empfaenger lehnt ab; die Treuhand geht an den Anbieter zurueck. */
+export interface DeclineTradeCommand {
+  type: 'DECLINE_TRADE'
+  playerId: PlayerId
+  offerId: string
+}
+
+/** Nur der Anbieter zieht zurueck; die Treuhand geht an ihn zurueck. */
+export interface WithdrawTradeCommand {
+  type: 'WITHDRAW_TRADE'
+  playerId: PlayerId
+  offerId: string
+}
+
+/**
+ * Einen Spion anwerben und sofort ansetzen (R-SPY-01, T-M17-07, D29.2).
+ *
+ * Spione sind keine Einheiten, sondern Auftraege mit Sold: es gibt keinen Spion ohne Ziel und
+ * Auftrag, also wird beides beim Anwerben genannt.
+ */
+export interface RecruitSpyCommand {
+  type: 'RECRUIT_SPY'
+  playerId: PlayerId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
+/** Ziel und Auftrag eines eigenen Spions aendern — kostenlos, er faengt am Tag danach an. */
+export interface ReassignSpyCommand {
+  type: 'REASSIGN_SPY'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
+/** Einen eigenen Spion entlassen. Nichts wird erstattet. */
+export interface DismissSpyCommand {
+  type: 'DISMISS_SPY'
+  playerId: PlayerId
+  spyId: SpyId
 }
 
 export type Command =
@@ -146,6 +219,13 @@ export type Command =
   | TradeCommand
   | DiplomacyCommand
   | SetCapitalCommand
+  | OfferTradeCommand
+  | AcceptTradeCommand
+  | DeclineTradeCommand
+  | WithdrawTradeCommand
+  | RecruitSpyCommand
+  | ReassignSpyCommand
+  | DismissSpyCommand
 
 export type CommandType = Command['type']
 

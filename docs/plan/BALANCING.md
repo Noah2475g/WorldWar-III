@@ -219,6 +219,32 @@ gleichermaßen. Gemessen wurden fünf Werte über zwei Fenster; das Band 0,55 bi
 im Bereich **260 bis 320** eingehalten, 280 liegt in seiner Mitte. Der Lauf mit 280 steht
 bei **0,70**. Die Zahlen und der Grund stehen in `docs/reports/progress-baseline.md` §6.
 
+*Nachtrag 2026-09-25 (Nacharbeit Turnier M17, Befund M17-T1):* Die Kriege, auf denen diese 0,70
+beruhen, waren **keine Kriegserklärungen aus dem Verhältnis**, sondern Überfälle: auf dem Stand vor
+M17 (Wegprüfung und KI-Spionage aus, zeichengleich `522ebca`) 145 `WAR_DECLARED` in der Paarung „im
+Frieden“, davon **0** förmlich — 144 der 146 Armeen auf fremdem Boden hatten ein Angriffsziel, das
+beim Befehl herrenlos oder feindlich war und unterwegs dem Gegner zufiel oder in einen
+Waffenstillstand geriet; 2 standen nur auf dem Weg. Seit die Wegprüfung aus T-M17-10 den ganzen
+Restpfad prüft, gibt es diese Kriege nicht mehr, und die Paarung endet 25-mal unentschieden.
+`recruitShare` ist damit nicht falsch, aber das Band, in dem 280 gewählt wurde, ist auf diesem
+Stand nicht mehr messbar.
+
+Seit 2026-09-25 misst das Turnier drei Mächte reihum (Plan D): mit `recruitShare` 280 **0,76**,
+das Band hält wieder; Vorabmessung und Streuung in PROBLEME.md M17-T4.
+
+**Nachtrag 2026-09-25 (T-M17-15): Empfindlichkeit je Sitzordnung und Startzahl-Block.** Vier
+Startzahl-Blöcke (1000/5000/7000/9000), Summe über drei Sitzordnungen (75 Paare je Block):
+0,7267–0,82, Abstand zu beiden Bandgrenzen (0,55/0,95) ≥ 0,17. Je Sitzordnung streut es deutlich
+mehr (0,58–0,92 über alle Blöcke und Sitzordnungen) — 25 Paare haben einen Standardfehler um 0,1,
+ein Band je Sitzordnung wäre dort Rauschen. Neu zugesichert wird deshalb nur `winsA >= winsB` je
+Sitzordnung (gemessen 12:0 / 6:0 / 21:0 im Tor-Block), nicht ein Band. Die Obergrenze 0,95 hält nur,
+weil „normal" so gut wie nie einen schlechten Sitz überwindet (0–1 von 75 Paaren je Block) — ein
+Unentschieden heißt „jede Stufe gewinnt auf ihrem guten Sitz" (`matchWinRateA` = `winRateA` in
+jeder Zelle), keine Mauer nach der Definition in `tournament.ts`. Gegenläufe im Tor-Block: KI-
+Spionage aus 21:9:45 → 0,58 (Summe **im** Band, aber 1:9 in einer Sitzordnung — genau die Lücke,
+die die neue Zusicherung schließt); Befund M17-S12 behoben → 8:14:53 → **0,46** (Band gerissen,
+siehe Befund M17-I1 in `PROBLEME.md`).
+
 ## Zwischenziele (R-GAME-08, T-M35-02)
 
 Vier Marken, alle **abgeleitet** — nicht aus dem Vorbild, das keine Zwischenziele kennt, sondern
@@ -330,6 +356,17 @@ greift, beantwortet der Playtest"; sie greift zu kurz, und T-M34-03 hat sie gest
 **Was weiterhin fehlt:** eine Zahl für „wie lange dauert eine Partie". Sie gehört nicht in
 diese Tabelle, sondern in `docs/reports/progress-baseline.md`, wo sie gemessen wird.
 
+**KI-Aushebung, die Geldschwelle einer Artillerie (Befund 2026-09-25, T-M17-15).** Die Aushebung
+kauft je Einheit nur `recruitShare` Promille des Bestands (`economy.ts`, `recruitCommands`); eine
+Artillerie kostet 200 000 Geld. Daraus folgt die Schwelle, ab der eine Macht sich das überhaupt
+leisten kann: „leicht" (`recruitShare` 80) bräuchte **2,5 Mio.** Geld auf dem Konto, „normal"
+(200) **1 Mio.**, „schwer" (280) **714 000**. Am Ende eines 200-Tage-Laufs auf der Weltkarte hat
+keine Macht so viel angespart (höchstens rund 1,17–2,1 Mio. bei „leicht"/„schwer", je nach Partie
+— siehe `geldHoechstensJeMacht` in `ai-integration.json`) — die KI hebt praktisch nur Infanterie
+aus, obwohl `TARGET_MIX` 50/30/20 will (Befund M17-T7). Keine Zahl geändert: die einzige gefundene
+Reparatur (eine Fabrikeinheit kaufen, sobald der Bestand über der Rücklage sie trägt) braucht
+zugleich Befund M17-S12 und kippt das Turnierband; Entscheid Noah (2026-09-25): an M18.
+
 ## Was der Parameterlauf ergeben hat
 
 Gemessen am 2026-09-03 auf der Weltkarte **nach** der Korrektur ihrer Wirtschaftsskala
@@ -371,3 +408,188 @@ mindestens 70 % der Fälle — ein wirkungsloser Schwierigkeitsgrad fällt damit
 > bei **T-M15-05**, wo das Verhältnis die KI steuert und die Stufen erstmals mehr
 > unterscheidet als eine Zahl. Bis dahin gilt: 100 % ist **gemessen, nicht gewollt**, und
 > steht als offener Befund in `PROBLEME.md`.
+
+## Durchmarsch und Angebote (R-DIP-08, D29.7, T-M17-04)
+
+Die ersten beiden Zahlen von M17. Die Handels- und Spionagezahlen aus D29.7 kommen mit ihren
+Aufgaben dazu und werden hier angehängt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `offerLifetimeDays` | 3 | abgeleitet | stand bis T-M17-04 als `3 * ticksPerDay` im Code der Diplomatiephase (Befund B3) und ist unverändert übernommen — eine andere Zahl hätte jedes Friedens- und Bündnisangebot der bisherigen Partien verschoben. Gilt seitdem auch für den Antrag auf Durchmarsch (R-DIP-08/AK5) |
+| `rightOfWayNoticeTicks` | 24 | geschätzt | ein Spieltag: lang genug, dass eine Armee aus dem Grenzsaum wieder hinausmarschieren kann, kurz genug, dass ein Widerruf keine leere Geste ist. Nicht gemessen — in einer reinen KI-Partie gewährt heute niemand Durchmarsch (Befund M17-1), also gibt es nichts zu widerrufen, bis T-M17-10 die KI daran beteiligt. Anlehnung, kein Beleg: der Austritt aus einer Koalition hat im Vorbild einen 24-Stunden-Countdown (Referenz 9.3); im Vorbild ist das ein Tag, hier sind es 24 Ticks |
+
+**Nachtrag (Befund M17-F1, 2026-09-26).** Der Haltungs-Messlauf (`stance.slow.test.ts`) lebte vor
+M17 von zwei Durchmarsch-Überfällen je Partie — Frankreich am Spieltag 20 über `DEU-SW`, Polen am
+Spieltag 35 über `DEU-SE`, beide auf dem Weg zu einem dritten Ziel, keiner mit deutschem
+Angriffsziel. Seit T-M17-10 beantragt die KI stattdessen Durchmarsch (`requestPassage`): 58/32/17
+Anträge über 200 Spieltage bei den Startzahlen 1914/2015/1815 gegen einen passiven Menschen, der
+nie antwortet. Ein passiver Mensch mit voller Garnison ist nach dem Verhältnis (`diplomacy.ts` §4)
+nie Kriegsziel — Abstand zur Kriegsschwelle mindestens 73 Punkte über 40 Proben je Startzahl. Keine
+Konstante ändert sich dadurch; der Messaufbau bekam stattdessen einen Kriegsplan (siehe
+`DECISIONS.md`, 2026-09-26).
+
+## Handelsangebote mit Treuhand (R-DIP-05, D29.7, T-M17-05)
+
+Vier Zahlen. Die Höchstmengen stehen im **Verhältnis** der Referenz 9.4 (Geld 100.000, jeder
+andere Rohstoff 30.000); die **Skala** kommt aus demselben Geld-Anker wie der Spionagesold
+(T-M17-02: 10.153 = 5 % des Median-Tagesertrags an Tag 30, `docs/reports/m17-baseline.json`,
+entspricht der Aufklärung der Referenz 10.2 mit 2.000). `tradeOffer.test.ts` hält Anker und
+Verhältnis fest. In einer reinen KI-Partie wirkt keine der vier Zahlen, bis T-M17-11 die KI
+handeln lässt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeOfferLifetimeDays` | 3 | geschätzt | wie `offerLifetimeDays`: drei Spieltage genügen für eine Antwort; die Referenz nennt für Handelsangebote keine Frist |
+| `maxOpenTradeOffers` | 5 | geschätzt | je Anbieter; begrenzt, wie viel Bestand gleichzeitig in Treuhand liegt, und reicht für ein Angebot an jeden Nachbarn einer mittleren Macht |
+| `tradeMaxMoney` | 507.650 | abgeleitet | Referenz 9.4 (100.000) auf der Skala des Ankers: 100.000 × 10.153 / 2.000 — rund zweieinhalb Tageserträge einer mittleren Macht, knapp ein Drittel des Startgelds |
+| `tradeMaxResource` | 152.295 | abgeleitet | 30 % von `tradeMaxMoney` (Referenz 9.4: 30.000 zu 100.000), je Rohstoff und Seite |
+
+## Handelsangebote und Durchmarsch der KI (R-AI-09, D29.7, D29.8, T-M17-10)
+
+Die Zahlen oberster Ebene in `ai.json`. Der Wächter in `test/balancing.test.ts` verlangt seit
+T-M17-10 für **jede** davon eine Zeile mit demselben Wert — bis dahin prüfte er nur die
+Stufenspalten, und `buildShareDefault` und `threatRange` standen nirgends.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `tradeAcceptMarginPermille` | 1050 | geschätzt | D29.7: angenommen wird erst ab 5 % Gewinn zu Börsenkursen — ein Angebot zum Marktwert wäre für die KI gleichwertig mit der Börse und nähme ihr die Ware |
+| `tradeImpactPermille` | 30 | abgeleitet | Messung 2026-09-25 (Weltkarte, Startzahl 1815, 200 Spieltage, KI vor T-M17-10): Kurswirkung der Fehlmenge ≥ 50 ‰ (Vorschlag D29.7) an 1,4 % der Bedarfstage und nur bei einer Macht ab Tag 163; ≥ 30 ‰ an 14 %. 30 ‰ entspricht dem 90-%-Quantil der Fehlmenge (679.516 → 34 ‰): angeboten wird für die großen Vorhaben, nicht für jedes |
+| `tradeOfferPremiumPermille` | 1060 | abgeleitet | D29.8 nannte „× 1,02", aber die Annahmemarge ist 1,05 — keine KI nähme das Angebot einer anderen je an. Marge + 10 ‰; der Wächter hält Aufschlag > Marge fest |
+| `tradeKeepStockPermille` | 500 | abgeleitet | Handel (gegeben oder angenommen) greift nie unter die Hälfte eines Bestands: im selben Tag rekrutiert die KI bis `recruitShare` (höchstens 280 ‰) und tauscht an der Börse ein Zehntel (100 ‰) — 380 ‰ müssen bleiben, aufgerundet auf die Hälfte |
+| `buildShareDefault` | 600 | geschätzt | seit T-M3-01 (`64041c8`): Anteil des Einkommens für Bau statt Aushebung im Startgedächtnis; nie gemessen |
+| `threatRange` | 2 | geschätzt | seit T-M3-01 (`64041c8`): Reichweite der Bedrohungskarte in Provinzen; nie gemessen |
+
+## Provinzhandel der KI (R-DIP-09, D29.7, D29.8, T-M17-11)
+
+Der Provinzwert ist Ertrag aus der Karte (Vorkommen zu Marktpreis × `resourceWeights`, Steuer aus
+der Bevölkerung zum Geldkurs) über den Horizont, dazu bekannte Gebäude (Mehrertrag und Baukosten)
+und die Lage. Gemessen am 2026-09-25 (Weltkarte, Startpreise): Median 9,6 Mio. Geld; ein Angebot
+trägt höchstens 1,88 Mio. — bei 60 Tagen verkauft die KI 2 von 237 Provinzen, kauft aber 225
+(Befund M17-D12).
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `provinceValueHorizonDays` | 60 | geschätzt | D29.7; die Messung oben zeigt, dass der Wert mit den Handelsobergrenzen den Verkauf durch die KI praktisch ausschließt — bewusst nicht angepasst, Entscheid bei T-M17-16 (M17-D12) |
+| `provinceSalePremiumPermille` | 1300 | geschätzt | D29.7: Land gibt die KI erst mit 30 % Aufschlag ab; der Wächter hält Aufschlag > Handelsmarge fest |
+| `provinceValuePositionPermille` | 250 | geschätzt | neu in T-M17-11 („plus Lage", D29.8): drei eigene Landnachbarn heben den Ertragswert um ein Viertel; eine Enklave bekommt nichts |
+
+## Spionage (R-SPY-01, D29.7, T-M17-07)
+
+Sechs Zahlen, eine davon gemessen. Das Geld hängt an **einem** Anker: dem Aufklärungssold,
+gemessen in T-M17-02 als **5 % des Medians des Brutto-Geldertrags je Spieltag** über acht
+lebende Mächte am Ende von Tag 30 (Weltkarte, Startzahl 1815, Median **203.078**, 5 %
+abgerundet **10.153**; zwei weitere Startzahlen ergaben 10.159 und 10.256 —
+`docs/reports/m17-baseline.json`, Feld `soldAnker`). Die übrigen Geldwerte stehen im
+**Verhältnis** der Referenz 10.2 dazu (Anwerben 20.000, Aufklärung 2.000, Sabotage 4.000,
+Gegenspionage 1.000 je Tag): das Verhältnis ist belegt, die Skala abgeleitet — deshalb
+steht jede Geldzahl hier als **abgeleitet**. Festkomma wie alle Bestände, 1000 = 1 Geld.
+`espionage.test.ts` hält Anker und Verhältnisse fest: wer eine Zahl allein verschiebt, sieht
+den Test fallen.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spyRecruitCost` | 101.530 | abgeleitet | zehnmal der Aufklärungssold (Referenz 10.2: 20.000 zu 2.000) — rund ein halber Tagesertrag einer mittleren Macht, einmalig und sofort (R-SPY-01/AK1) |
+| `spySalaryIntel` | 10.153 | abgeleitet | der Anker selbst: 5 % des Median-Tagesertrags an Tag 30 (T-M17-02) |
+| `spySalaryEconomicSabotage` | 20.306 | abgeleitet | doppelter Anker (Referenz 10.2: 4.000 zu 2.000) |
+| `spySalaryMilitarySabotage` | 20.306 | abgeleitet | doppelter Anker (Referenz 10.2: 4.000 zu 2.000) |
+| `spySalaryCounter` | 5.076 | abgeleitet | halber Anker (Referenz 10.2: 1.000 zu 2.000), abgerundet wie der Anker selbst (5.076,5) |
+| `maxSpiesPerPlayer` | 5 | geschätzt | die Referenz nennt keine Höchstzahl; fünf Aufträge zu Sabotagesold kosten 101.530 je Tag, also die Hälfte des Median-Tagesertrags — mehr trägt keine mittlere Macht, und die Obergrenze hält die KI (T-M17-12) vom Anhäufen ab |
+
+**Was hier noch fehlt, und wo es herkommt:** die Erfolgs- und Entdeckungschancen, der
+Sabotageschaden und die Dauer einer Aufdeckung (`spySuccessIntelPermille`, `spyRevealDays`,
+`spySuccessSabotagePermille`, `spyDetectionPermille`, `sabotageMoraleLoss`, …) kommen mit dem
+Tageslauf und der Sabotage (T-M17-08, T-M17-09) — eine Zahl steht erst dann in den Regeln, wenn
+eine Zeile Code sie liest. *(Stand 2026-09-24: die ersten beiden stehen seit T-M17-08 im
+Abschnitt darunter.)*
+
+### Tageslauf der Spionage (R-SPY-02, R-SPY-03, D29.3, D29.7, T-M17-08)
+
+Zwei Zahlen, die der Tageslauf liest (`phases/espionage.ts`). Der Sold oben wird an jedem
+Tageswechsel je Spion abgebucht, auch am Tag der Anwerbung — ausgeführt wird erst am Tag danach
+(R-SPY-02/AK3). Keine der beiden verbraucht Zufall, wenn es keine Spione gibt (D29.4).
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spySuccessIntelPermille` | 800 | geschätzt | die Referenz nennt keine Erfolgschance; vier von fünf Tagen heißt: ein Aufklärer, der zehnmal sein Tagesgeld gekostet hat, liefert fast immer, und ein Misserfolg ist selten genug, um ein Ereignis zu sein. Vorschlag aus D29.7, ungemessen — die KI wirbt erst ab T-M17-12 an |
+| `spyRevealDays` | 1 | abgeleitet | aus R-SPY-03: „für den Tag sichtbar", und AK2 verlangt, dass die Provinz nach Misserfolg oder Entlassen **zum nächsten Tageswechsel** wieder hinter den Nebel fällt. Jeder Wert über 1 bräche AK2; `phases/espionage.test.ts` prüft AK2 mit dem Regelwert |
+
+### Sabotage und Gegenspionage (R-SPY-04, R-SPY-05, D29.3, D29.7, T-M17-09)
+
+Sieben Zahlen, die `phases/espionage.ts` liest. Eine ist belegt, die übrigen geschätzt — die KI
+wirbt erst ab T-M17-12 an, bis dahin bewegt keine davon eine gemessene Partie. Je Provinz und Tag
+wirkt höchstens eine Sabotage (R-SPY-04/AK4); die Zahlen sind unter dieser Sperre gewählt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `spySuccessSabotagePermille` | 500 | geschätzt | Vorschlag aus D29.7; halb so oft wie die Aufklärung (800), weil Sabotage doppelt kostet und schadet. Gegen eine bewachte Provinz (siehe unten) bringt ein Saboteur im Mittel zwei Treffer, bevor er auffliegt |
+| `spyDetectionPermille` | 250 | geschätzt | Vorschlag aus D29.7, je Tag und fremdem Spion. Ein Saboteur überlebt einen Gegenspion im Mittel vier Tage (1/0,25): Anwerben 101.530 plus vier Tage Sold 81.224 = 182.754, knapp ein Median-Tagesertrag (203.078, T-M17-02) — ein enttarnter Saboteur hat etwa einen Tag Einkommen gekostet |
+| `sabotageMoraleLoss` | 10.000 | belegt | Referenz 4.6 (docs/research/SUPREMACY-MECHANICS.md): Economic Sabotage senkt die Moral um 10, stapelbar — hier höchstens einmal je Provinz und Tag |
+| `sabotageYieldDestroyedPermille` | 500 | geschätzt | Vorschlag aus D29.7: die Hälfte des Tagesertrags der Provinz (`provinceYieldScaled` × Ticks je Tag), gemessen vor dem Moralabzug, je Rohstoff gekappt am Bestand. Die Referenz nennt „Zerstörung von Ressourcen" ohne Zahl |
+| `militarySabotageDelayTicks` | 12 | geschätzt | ein halber Tag. Weil höchstens eine Sabotage je Tag wirkt und sie zu 50 % gelingt, baut eine dauerhaft sabotierte Provinz im Mittel mit 24/(24+6) = 80 % ihrer Geschwindigkeit — spürbar, aber kein Stillstand |
+| `spyDetectedReputationLoss` | 100 | geschätzt | die Hälfte eines Überfalls (`surpriseAttackReputationLoss` 200); doppelt (R-SPY-05) bei Sabotage gegen eine Macht, mit der kein Krieg herrscht — dann so schwer wie ein Überfall. Nach 10 bzw. 20 Spieltagen vergessen (`reputationRecoveryPerDay` 10) |
+| `grievanceOnSpyDetected` | 300 | geschätzt | D29.7: zwischen verlorener Provinz (250) und Überfall (400) — ein ertappter Spion ist mehr als ein Frontverlauf, aber kein gebrochenes Versprechen |
+
+### KI: Spionage (R-AI-09, D29.7, D29.8, T-M17-12)
+
+Drei Zahlen in `ai.json` (oberste Ebene), die `packages/ai/src/espionage.ts` liest. Das Budget gilt
+dem **Tagessold**, nicht dem Anwerbepreis; der Anwerbepreis ist an die Rücklage der Wirtschaft
+(`RESERVE_PERMILLE` 200) und an den Geldhorizont gebunden. Einmal je Spieltag, im Strategietakt.
+
+| Konstante | Wert | Status | Begründung |
+|---|---|---|---|
+| `espionageBudgetPermille` | 150 | geschätzt | Vorschlag aus D29.7. Am Median-Tagesertrag 203.078 (T-M17-02) sind das 30.461: Gegenspion und Aufklärer (15.229) passen, Gegenspion, Aufklärer und Saboteur (35.535) erst ab 236.900 Ertrag — eine mittlere Macht schützt sich und klärt auf, nur eine starke sabotiert auch |
+| `espionageCounterGrievance` | 150 | geschätzt | unter jeder einzelnen Kränkung (verlorene Provinz 250, enttarnter Spion 300, Überfall 400), damit schon eine einzige den Gegenspion auslöst — auch die „erlittene Enttarnung" aus D29.8, die als Verstimmung ankommt. Bei 30 ‰ Abklingen je Tag fällt eine Enttarnung nach rund drei Wochen darunter, ein Provinzverlust nach gut zwei |
+| `espionageMoneyHorizonDays` | 3 | geschätzt | so viele Tage muss der Bestand die Tagesbilanz (Steuer minus Armeeunterhalt minus Sold) tragen. Entlassen ist endgültig — der Anwerbepreis ist verloren —, also kein langer Horizont; kürzer als drei Tage ließe der Wirtschaft (Markt alle sechs Stunden) keine Zeit, einen Engpass selbst zu decken |
+
+*Gemessen am 2026-09-25 (T-M17-12):* siehe `$SP/bericht-T-M17-12.md` (Turnier vorher/nachher, progress vorher/nachher, Wegwerflauf-Zahlen).
+
+*Berichtigt am 2026-09-25 (Nacharbeit T-M17-12, Befund M17-S6):* `$SP` ist ein Sitzungsverzeichnis
+außerhalb des Repos und für spätere Leser nicht erreichbar — die Kennzahlen stehen dauerhaft in
+`docs/plan/PROGRESS.md` (Zeile T-M17-12) und `docs/plan/PROBLEME.md` (Befund M17-S4): Turnier
+schwer/normal im Frieden vorher 70 % (`ef8d27b`), nachher 100 % (`a821e7f`, Band 0,55–0,95 gerissen,
+R-AI-06); `progress.slow.test.ts` an allen vier Ständen (vorher, `grievanceOnSpyDetected`
+300/200/150) grün.
+
+*Zerlegt am 2026-09-25 (Nacharbeit Turnier M17, Befund M17-T3) — keine Zahl geändert.* Gemessen auf
+`3a97e10` mit Wegwerfschaltern, und zwar in der Aufstellung, in der es überhaupt Kriege gibt
+(Wegprüfung duldet das Zielland, sonst endet die Paarung „im Frieden“ ohne Krieg): alle drei
+Spionagezahlen wie hier 98 %, ohne KI-Spionage 64 %. **Sabotage** wird auf der Testwelt nie
+angeworben (0 von 50 Partien), **Aufklärung** aus: 98 % mit derselben Zahl an Überfällen und
+Waffenstillständen, **Budget halbiert**: ebenso — dann wirbt keine Seite einen Aufklärer an, übrig
+bleibt der Gegenspion in der eigenen Hauptstadt, der ohne fremden Spion nicht würfelt und nur Geld
+kostet. **Gegenspion aus**: 100 %. Nur „schwer“ spioniert: 100 %, nur „normal“: 96 %. Die Spionage
+verschiebt die Paarung also nicht durch einen Teil, der Information oder Schaden liefert, sondern
+über den Geldabfluss eines Gegenspions — in einem Turnier, dessen 50 Partien nur 5 bis 29
+verschiedene Ausgänge haben. Das ist kein Fehler der Spionage und kein Grund, eine ihrer Zahlen zu
+ändern; es ist die Empfindlichkeit des Messgeräts (M17-T4).
+
+## Der Parameterlauf nach M17 (T-M17-16, 2026-09-25, gegen `b9b3915`)
+
+Der **eine** Parameterlauf der Delegation nach M17s letzter Regeländerung (`pnpm balance:sweep`,
+6 Mächte, 120 Spieltage, 12 Startzahlen je Variante, 6568 s):
+
+| Kennzahl | vor M17 (`5cdc611`) | nach M17 (`b9b3915`) |
+|---|---|---|
+| Anteil des Stärksten (Grundlauf) | 36,8 % | **38,4 %** |
+| Überlebende Mächte | 5,4 von 6 | 5,7 von 6 |
+| Eroberte Provinzen | 310 | 241 |
+| Endbestände gesamt | 45.357 | 46.721 |
+| Rauschgrenze der Zielgröße | 0,056 | **0,056** (unverändert) |
+| Tragende Konstanten | 0 von 14 | **0 von 14** (unverändert) |
+
+Die Bewegung am Anteil des Stärksten (1,6 Prozentpunkte) liegt **unter** der doppelten
+Rauschgrenze (0,112) — kein Ausschlag, den man einer Konstante zuschreiben könnte; M17 hat den
+Kern angefasst (Spionage, Handel, gerichteter Durchmarsch/Kartenfreigabe), das ändert die
+Partie, ohne eine einzelne Zahl tragend zu machen. Der höchste Einzelausschlag ist jetzt
+`baseTargetMorale` (7,5 %, vorher `battleRate` mit 8,6 %) — beide weit unter der 15-%-Schwelle.
+**Keine Konstante wurde als Reaktion auf diesen Lauf verändert.**
+
+**Kohle-Senke und Vorratsaufbau** (aus der ursprünglichen dod dieser Aufgabe genannt) sind mit
+diesem Lauf **nicht** neu untersucht — beide bleiben, wie schon in `WORKFLOW.md` §2 Punkt 5
+festgehalten, Kandidaten für M18. Der Parameterlauf oben deckt nur die 14 in `sweep.slow.test.ts`
+geführten Konstanten, keine der beiden Fragen direkt.
+
+**Turnierband:** unverändert im vorigen Abschnitt beschrieben (Befund M17-I1 — das gemessene Band
+0,760 gilt auf dem Stand **mit** dem `RECRUIT_SPY`-Buchungsfehler aus Befund M17-S12; eine
+Reparatur kippt es auf 0,460, geht mit M17-T7 an M18).

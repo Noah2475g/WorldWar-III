@@ -43,7 +43,7 @@ const view = (options: {
       alive: other.alive ?? true,
       score: other.score,
     })),
-    relations: { p2: { state: 'war', rightOfWay: false, sharedMap: false } },
+    relations: { p2: { state: 'war', passageGranted: false, passageReceived: false, mapShared: false, mapReceived: false } },
     provinces: (options.provinces ?? []).map((province, index) => ({ id: `x${index}`, owner: province.owner })),
     armies: options.armies ?? [],
     marketPrices: {},

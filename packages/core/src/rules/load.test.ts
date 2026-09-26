@@ -211,3 +211,30 @@ describe('R-GAME-08/AK4 Der Lader verlangt die vier Marken der Zwischenziele', (
     expect(GOAL_CONSTANTS.map((key) => constants[key])).toEqual([25, 400, 350, 600])
   })
 })
+
+/** Die Spionagezahlen der KI (T-M17-12, D29.8): fehlt eine, waere das Budget NaN und die KI wuerbe nie an. */
+describe('R-AI-09 Der Lader verlangt die Spionagezahlen der KI', () => {
+  const KEYS = ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const
+  it.each(KEYS)('lehnt ein Regelwerk ohne "%s" ab', (key) => {
+    const problems = problemsOf(
+      withBreak((raw) => {
+        delete (raw.ai as Record<string, unknown>)[key]
+      }),
+    )
+    expect(problems.join('\n')).toContain(`"${key}"`)
+  })
+  it('lehnt einen negativen Wert ab', () => {
+    const problems = problemsOf(
+      withBreak((raw) => {
+        ;(raw.ai as Record<string, unknown>)['espionageBudgetPermille'] = -1
+      }),
+    )
+    expect(problems.join('\n')).toContain('"espionageBudgetPermille"')
+  })
+  it('traegt die Werte 150, 150 und 3 (BALANCING.md, T-M17-12)', () => {
+    const { ai } = defaultRules()
+    expect([ai.espionageBudgetPermille, ai.espionageCounterGrievance, ai.espionageMoneyHorizonDays]).toEqual([
+      150, 150, 3,
+    ])
+  })
+})

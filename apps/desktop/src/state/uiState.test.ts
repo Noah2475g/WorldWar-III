@@ -76,6 +76,12 @@ describe('R-UI-03 Auswahl', () => {
   })
 })
 
+describe('R-SPY-06 Die Spionageuebersicht', () => {
+  it('oeffnet das Spionagepanel', () => {
+    expect(uiReducer(INITIAL_UI, { type: 'openPanel', panel: 'espionage' }).panel).toBe('espionage')
+  })
+})
+
 describe('R-UI-03 Kartenmodus und Ausschnitt', () => {
   it('merkt sich den Modus', () => {
     expect(uiReducer(INITIAL_UI, { type: 'setMode', mode: 'morale' }).mode).toBe('morale')
@@ -140,6 +146,18 @@ describe('R-UI-05 Meldungen', () => {
 
     expect(state.notice).toEqual({ text: 'Es fehlt an Rohstoffen: 400 Eisen.', kind: 'error' })
     expect(uiReducer(state, { type: 'clearNotice' }).notice).toBeNull()
+  })
+
+  it('raeumt mit onlyIf nur die genannten Saetze weg und laesst fremde stehen', () => {
+    // Die Pausenantwort darf der naechste Antrag loeschen, einen abgelehnten Befehl nicht
+    // (Durchsicht vom 2026-09-18 zu MP-4).
+    const fremd = uiReducer(INITIAL_UI, { type: 'notice', text: 'Es fehlt an Rohstoffen: 400 Eisen.' })
+    const eigen = uiReducer(INITIAL_UI, { type: 'notice', kind: 'info', text: 'Der Pausenantrag ist verfallen.' })
+    const nur = ['Der Pausenantrag ist verfallen.']
+
+    expect(uiReducer(fremd, { type: 'clearNotice', onlyIf: nur }).notice).toEqual(fremd.notice)
+    expect(uiReducer(eigen, { type: 'clearNotice', onlyIf: nur }).notice).toBeNull()
+    expect(uiReducer(INITIAL_UI, { type: 'clearNotice', onlyIf: nur }).notice).toBeNull()
   })
 })
 
@@ -243,5 +261,28 @@ describe('R-MP-01/AK1 Der Platz kommt aus dem Zustand, nicht aus einer Annahme',
   it('beginnt ohne Platz — und das heisst nicht niemand', () => {
     expect(INITIAL_UI.viewerId).toBeNull()
     expect(uiReducer(INITIAL_UI, { type: 'setViewer', id: null }).viewerId).toBeNull()
+  })
+})
+
+describe('R-DIP-07/AK1 Der Sprung aus einer Meldung waehlt die Macht der Diplomatie (T-M17-14, E9)', () => {
+  it('focusDiplomacy oeffnet die Diplomatie mit der Macht des Angebots', () => {
+    const state = uiReducer(INITIAL_UI, { type: 'focusDiplomacy', playerId: 'p2' })
+
+    expect(state.panel).toBe('diplomacy')
+    expect(state.diplomacyPartner).toBe('p2')
+
+    // Ein Sprung ohne bekannte Macht (playerId: null) loescht eine vorher gewaehlte nicht.
+    const zuvor = after(INITIAL_UI, { type: 'focusDiplomacy', playerId: 'p3' })
+    const danach = uiReducer(zuvor, { type: 'focusDiplomacy', playerId: null })
+    expect(danach.panel).toBe('diplomacy')
+    expect(danach.diplomacyPartner).toBe('p3')
+  })
+
+  it('chooseDiplomacyPartner waehlt, ohne das Panel zu wechseln', () => {
+    const zuvor: UiState = { ...INITIAL_UI, panel: 'province' }
+    const state = uiReducer(zuvor, { type: 'chooseDiplomacyPartner', playerId: 'p2' })
+
+    expect(state.diplomacyPartner).toBe('p2')
+    expect(state.panel).toBe('province')
   })
 })

@@ -178,3 +178,77 @@ describe('D17 Die Stufenzahlen der KI stehen in der Tabelle', () => {
     expect(falsch, `Tabelle und Regelwerk sagen Verschiedenes:\n${falsch.join('\n')}`).toEqual([])
   })
 })
+
+/**
+ * Der Waechter, den der Befund oben (2026-09-06) auf die Fehlerklasse ausdehnt: nicht nur
+ * die Stufenspalten, **jede** Zahl oberster Ebene in `ai.json` braucht eine Zeile mit
+ * demselben Wert (T-M17-10, E19).
+ */
+describe('D17 Die obersten Zahlen der KI stehen in der Tabelle', () => {
+  const aiRaw = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as Record<string, unknown>
+
+  const topLevelNumbers = Object.entries(aiRaw).filter(
+    ([key, value]) => !key.startsWith('_') && typeof value === 'number',
+  ) as [string, number][]
+
+  const zeileFuer = (key: string): string | undefined => doc.split('\n').find((line) => line.startsWith(`| \`${key}\` |`))
+
+  it('fuehrt jede oberste Zahl mit einer Zeile', () => {
+    expect(topLevelNumbers.length).toBeGreaterThan(0)
+    const fehlend = topLevelNumbers.filter(([key]) => !zeileFuer(key)).map(([key]) => key)
+    expect(fehlend, `ohne Zeile in BALANCING.md: ${fehlend.join(', ')}`).toEqual([])
+  })
+
+  it('nennt denselben Wert wie das Regelwerk', () => {
+    const falsch: string[] = []
+    for (const [key, wert] of topLevelNumbers) {
+      const zeile = zeileFuer(key)
+      if (!zeile) continue
+      const zellen = zeile.split('|').map((cell) => cell.trim())
+      const inTabelle = (zellen[2] ?? '').replace(/\./g, '')
+      if (inTabelle !== String(wert)) falsch.push(`${key}: Tabelle ${inTabelle}, Regelwerk ${wert}`)
+    }
+    expect(falsch, `Tabelle und Regelwerk sagen Verschiedenes:\n${falsch.join('\n')}`).toEqual([])
+  })
+
+  it('bietet niemals unter der Annahmemarge an (E15)', () => {
+    const ai = aiRaw as { tradeOfferPremiumPermille: number; tradeAcceptMarginPermille: number }
+    expect(ai.tradeOfferPremiumPermille).toBeGreaterThan(ai.tradeAcceptMarginPermille)
+  })
+
+  it('haelt beim Handel immer mehr zurueck, als Rekrutierung und Boerse im selben Zug brauchen (E16)', () => {
+    const ai = aiRaw as { tradeKeepStockPermille: number; difficulties: Record<string, { recruitShare: number }> }
+    const groessterAnteil = Math.max(...Object.values(ai.difficulties).map((d) => d.recruitShare))
+    expect(ai.tradeKeepStockPermille).toBeGreaterThanOrEqual(groessterAnteil + 100)
+  })
+})
+
+describe('D29.7 Der Provinzaufschlag liegt ueber der Annahmemarge (T-M17-11)', () => {
+  it('provinceSalePremiumPermille > tradeAcceptMarginPermille', () => {
+    const aiRaw = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as Record<string, unknown>
+    const ai = aiRaw as { provinceSalePremiumPermille: number; tradeAcceptMarginPermille: number }
+    expect(ai.provinceSalePremiumPermille).toBeGreaterThan(ai.tradeAcceptMarginPermille)
+  })
+})
+
+/**
+ * Die Spionagezahlen der KI stehen in der Tabelle (T-M17-12, D29.7/D29.8).
+ *
+ * Entstanden auf der Spionagebahn, als der Waechter fuer die Stufenspalten die obersten Zahlen von
+ * ai.json noch nicht sah - dieselbe Fehlerklasse wie T-M34-07. Seit der Zusammenfuehrung mit der
+ * Diplomatiebahn (2026-09-25) prueft der allgemeine Waechter „Die obersten Zahlen der KI" oben Zeile
+ * und Wert **jeder** obersten Zahl; dieser Block bleibt, weil er fuer die Spionagezahlen zusaetzlich
+ * einen Status verlangt.
+ */
+describe('D17 Die Spionagezahlen der KI stehen in der Tabelle (T-M17-12)', () => {
+  const ai = JSON.parse(readFileSync(join(ROOT, 'data/rules/default/ai.json'), 'utf8')) as Record<string, unknown>
+  const SPIONAGE = ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const
+
+  it.each(SPIONAGE)('fuehrt %s mit dem Wert aus ai.json und einem Status', (key) => {
+    const row = doc.split('\n').find((line) => line.startsWith(`| \`${key}\` |`))
+    expect(row, `keine Zeile fuer ${key}`).toBeDefined()
+    const cells = row!.split('|').map((cell) => cell.trim())
+    expect(cells[2]!.replace(/\./g, ''), `${key}: Tabelle und ai.json`).toBe(String(ai[key]))
+    expect(STATUSES.some((status) => row!.includes(status)), `${key} ohne Status`).toBe(true)
+  })
+})

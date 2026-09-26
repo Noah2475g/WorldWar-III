@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { RESOURCE_KEYS } from '@worldwar/core'
+import { RESOURCE_KEYS, SPY_MISSIONS } from '@worldwar/core'
 import { de } from './de.ts'
 import { allKeys, hasKey, num, placeholdersOf, t } from './text.ts'
 
@@ -80,6 +80,16 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
       'CAPITAL_LOST', 'CAPITAL_MOVED', 'PLAYER_ELIMINATED', 'GAME_ENDED', 'DAY_REPORT',
       // Seit T-M35-04: das Zwischenziel (R-GAME-08/AK2).
       'GOAL_REACHED',
+      // Seit T-M17-04: der Durchmarsch (R-DIP-08/AK3).
+      'RIGHT_OF_WAY_CHANGED',
+      // Seit T-M17-05: Handelsangebote (R-DIP-05).
+      'TRADE_OFFER_CLOSED', 'TRADE_AGREED',
+      // Seit T-M17-06: die Abtretung (R-DIP-09/AK2).
+      'PROVINCE_CEDED',
+      // Seit T-M17-08: der Tageslauf der Spionage (R-SPY-02).
+      'SPY_REPORT', 'SPY_LOST',
+      // Seit T-M17-09: Sabotage und Gegenspionage (R-SPY-04/05).
+      'SABOTAGE_SUFFERED', 'SPY_DETECTED',
     ] as const
 
     for (const type of types) {
@@ -93,8 +103,10 @@ describe('R-UI-07 Der Katalog ist vollstaendig', () => {
     // es nicht gibt, faellt weiterhin auf.
     // `_PLURAL` ist die Numerus-Fassung (T-M23-02): gewaehlt, wenn der Satzgegenstand
     // eine Mehrzahl-Macht ist. Beide Endungen haengen am selben Stamm.
+    // `_REVOKED` ist die Kuendigung des Durchmarschs (T-M17-04): dieselbe Art mit
+    // `granted: false`, gewaehlt in `describeEvent`. Sie steht vor den beiden anderen.
     for (const key of Object.keys(de.events)) {
-      const stamm = key.replace(/(_FOREIGN)?(_PLURAL)?$/, '')
+      const stamm = key.replace(/(_REVOKED)?(_FOREIGN)?(_PLURAL)?$/, '')
       expect(types as readonly string[], `events.${key} gehoert zu keinem Ereignis`).toContain(stamm)
     }
   })
@@ -151,6 +163,35 @@ describe('R-UI-07 Auch Regeldaten und Ablehnungen haben deutsche Namen', () => {
     }
     for (const code of Object.keys(de.rejections)) {
       expect(hasKey(`errors.${code}`), `rejections.${code} gehoert zu keinem Fehler`).toBe(true)
+    }
+  })
+})
+
+/** Alle Blattwerte eines Textblocks — fuer T3, die keine Kennung sehen darf. */
+function leaves(node: unknown): string[] {
+  if (typeof node === 'string') return [node]
+  if (node && typeof node === 'object') return Object.values(node).flatMap(leaves)
+  return []
+}
+
+describe('R-SPY-06 Spionage spricht deutsch', () => {
+  it('benennt und erklaert jeden Auftrag', () => {
+    for (const mission of SPY_MISSIONS) {
+      expect(hasKey(`espionage.missions.${mission}`), mission).toBe(true)
+      expect(hasKey(`explain.espionage.${mission}`), mission).toBe(true)
+    }
+  })
+
+  it('hat beide Ausgaenge des Gegenspions', () => {
+    expect(hasKey('espionage.counterOutcomes.success')).toBe(true)
+    expect(hasKey('espionage.counterOutcomes.failure')).toBe(true)
+    expect(t('espionage.counterOutcomes.failure')).toBe('keine Enttarnung')
+  })
+
+  it('nennt in keinem Spionagetext eine Kennung oder einen Platzhalter ohne Wert', () => {
+    for (const text of [...leaves(de.espionage), ...leaves(de.alerts)]) {
+      expect(text, text).not.toMatch(/\bs\d+\b/)
+      expect(text, text).not.toMatch(/\bp\d\b/)
     }
   })
 })

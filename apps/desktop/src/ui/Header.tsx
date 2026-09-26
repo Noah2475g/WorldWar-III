@@ -83,6 +83,18 @@ export interface HeaderProps {
   paused?: boolean
   onResume?: () => void
   /**
+   * Was die Pause gerade tut, als Satz neben dem Knopf (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Der Pausenvertrag hatte seit M37 fünf Sätze im Katalog und keinen davon auf dem
+   * Bildschirm: wer eine Pause beantragte, sah nicht, dass sein Antrag steht. Hier stehen
+   * die drei, die einen **Zustand** beschreiben — Antrag gestellt, Partie steht, läuft
+   * gleich weiter. Jeder fällt mit dem Zustand weg, der ihn trägt.
+   *
+   * Der Satz wird hereingereicht und nicht hier gerechnet: welcher gilt, hängt am Platz
+   * dieses Bildschirms, und den kennt die Hülle.
+   */
+  pauseNotice?: string | null
+  /**
    * Die Gegenseite fehlt seit über zehn Sekunden (T-M38-09, R-MP-07/AK2, D28.8).
    *
    * Der Unterschied zu `waitingForPeer` ist keine längere Wartezeit, sondern eine andere
@@ -231,6 +243,16 @@ export function Header(props: HeaderProps) {
                 {t('netplay.pauseRequestButton')}
               </button>
             )
+          )}
+
+          {/* Und was die Pause gerade tut (T-M39-10, Befund MP-4) — neben dem Knopf, der
+              sie beendet, und als role="status", damit ein Vorleseprogramm es mitbekommt:
+              ein Antrag, der nur beim Gegenueber sichtbar wird, ist für den, der ihn
+              stellt, nicht von einem verschluckten Klick zu unterscheiden. */}
+          {props.pauseNotice && (
+            <span className="clock__pause" role="status">
+              {props.pauseNotice}
+            </span>
           )}
 
           {/*

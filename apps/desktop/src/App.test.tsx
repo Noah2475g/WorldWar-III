@@ -3,12 +3,13 @@ import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
-import { MemoryStorage, planRoute, type MapData } from '@worldwar/core'
+import { MemoryStorage, planRoute, step, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
 import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
+import { parseNetLink } from './net/link.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
@@ -83,6 +84,17 @@ afterEach(cleanup)
 const startGame = (extra: Partial<Parameters<typeof App>[0]> = {}) => {
   render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial {...extra} />)
   fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+}
+
+/**
+ * Die erste Macht der Diplomatietabelle waehlen (Befund 1 der Sichtpruefung U, T-M17-14,
+ * Nacharbeit): ihr Name ist seither selbst der Auswahlknopf, keine eigene Spalte mehr. In
+ * jeder Zeile steht er vor dem Erklaerungsknopf ("Was ist Frieden?") — deshalb der erste
+ * Knopf der ersten Datenzeile (rows[0] ist der Kopf).
+ */
+const waehleErsteMacht = (panel: HTMLElement) => {
+  const zeile = within(panel).getAllByRole('row')[1]!
+  fireEvent.click(within(zeile).getAllByRole('button')[0]!)
 }
 
 describe('R-UI-03 Die Partie startet', () => {
@@ -328,7 +340,7 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
       // Rubriksymbol traegt. Ein Tick danach, damit der Befehl sicher angewendet ist.
       fireEvent.keyDown(window, { key: 'd' })
       const panel = screen.getByRole('region', { name: 'Diplomatie' })
-      fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+      waehleErsteMacht(panel)
       fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
@@ -567,7 +579,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     startGame()
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
@@ -609,6 +621,115 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
 })
 
 /**
+ * Spionage von der Provinzleiste bis zur Uebersicht (R-SPY-06, D29.9, T-M17-13).
+ *
+ * Jeder Fall ist eigenstaendig (nicht Fortsetzung des vorigen wie im Bauplan skizziert):
+ * vitest raeumt zwischen zwei `it`-Blaecken auf, ein gemeinsamer Spielzustand ueber
+ * zwei Faelle hinweg waere zerbrechlich. AK2 (die erlittene Sabotage) ist hier nicht
+ * billig herzustellen — sie ist in `Alerts.test.tsx` gedeckt und am laufenden Spiel in S3.
+ */
+describe('R-SPY-06 Spionage aus der Oberflaeche', () => {
+  const selectProvince = (id: string) => {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: id } })
+  }
+  const fastForward = (days: number) => {
+    for (let i = 0; i < days; i++) fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+  }
+  const foreignOptions = (): HTMLOptionElement[] => {
+    const select = screen.getByRole('combobox', { name: 'Provinz' }) as HTMLSelectElement
+    const gruppe = [...select.querySelectorAll('optgroup')].find((g) => g.label === 'Aufgeklärte Provinzen')
+    return gruppe ? [...gruppe.querySelectorAll('option')] : []
+  }
+  const ownerOf = (name: string): string => {
+    const panel = screen.getByRole('region', { name })
+    return within(panel).getByText('Eigentümer').nextElementSibling?.textContent ?? ''
+  }
+  /** Eine bekannte fremde Provinz mit Eigentuemer — Sabotage braucht einen, Aufklaerung nicht. */
+  const pickOwnedForeign = (exclude: readonly string[] = []): { id: string; name: string } => {
+    const options = foreignOptions().filter((o) => !exclude.includes(o.value))
+    expect(options.length, 'keine bekannte fremde Provinz zum Testen').toBeGreaterThan(0)
+    for (const option of options) {
+      selectProvince(option.value)
+      if (ownerOf(option.text) !== 'neutral') return { id: option.value, name: option.text }
+    }
+    selectProvince(options[0]!.value)
+    return { id: options[0]!.value, name: options[0]!.text }
+  }
+
+  it('wirbt aus der Provinzleiste einer fremden Provinz an (AK1)', () => {
+    startGame()
+    pickOwnedForeign()
+    const gruppe = screen.getByRole('region', { name: 'Spionage' })
+
+    expect(within(gruppe).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
+
+    fireEvent.click(within(gruppe).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    expect(within(gruppe).getByRole('status').textContent).toMatch(/wirkt/)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    const uebersicht = screen.getByRole('region', { name: 'Spionageübersicht' })
+    expect(uebersicht.textContent).toContain('Spion 1')
+    expect(uebersicht.textContent).toContain('Aufklärung')
+    expect(document.body.textContent ?? '').not.toMatch(/\bs\d+\b/)
+  })
+
+  it('setzt um und entlaesst (R-SPY-06)', () => {
+    startGame()
+    const ziel1 = pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+
+    pickOwnedForeign([ziel1.id])
+    const move = within(screen.getByRole('region', { name: 'Spionage — Spion 1 umsetzen' })).getByRole('button', {
+      name: 'Spion 1 hierher umsetzen: Wirtschaftssabotage',
+    })
+    fireEvent.click(move)
+
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' }).textContent).toContain('Wirtschaftssabotage')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 entlassen' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    expect(
+      screen.getByRole('region', { name: 'Spionageübersicht' }).textContent,
+    ).toContain(
+      'Sie haben keine Spione. Anwerben können Sie in der Provinzleiste: in einer fremden Provinz Aufklärung und Sabotage, in einer eigenen die Gegenspionage.',
+    )
+  })
+
+  it('oeffnet mit s die Uebersicht und laesst Strg+S bei den Spielstaenden', () => {
+    startGame()
+    fireEvent.keyDown(window, { key: 's' })
+    expect(screen.getByRole('region', { name: 'Spionageübersicht' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+    expect(screen.getByRole('dialog', { name: 'Spielstände' })).toBeTruthy()
+  })
+
+  it('bricht den Umsetz-Modus mit Escape ab', () => {
+    startGame()
+    pickOwnedForeign()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Spionage' })).getByRole('button', { name: 'Spion für Aufklärung anwerben' }))
+    fastForward(1)
+    fireEvent.keyDown(window, { key: 's' })
+    fireEvent.click(screen.getByRole('button', { name: 'Spion 1 umsetzen' }))
+    // Der Umsetz-Modus quittiert, auch waehrend die Uebersicht (nicht die Provinzleiste) offen ist.
+    expect(screen.getAllByText(/^Spion 1 umsetzen: /).length).toBeGreaterThan(0)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    pickOwnedForeign()
+    expect(within(screen.getByRole('region', { name: 'Spionage' })).getAllByRole('button', { name: /anwerben$/ })).toHaveLength(3)
+  })
+})
+
+/**
  * Jeder Befehl quittiert; eine stehende Uhr sagt es (T-M22-05, R-UI-05, R-TIME-02,
  * Befunde V2-08/V2-09).
  *
@@ -624,7 +745,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     startGame({ storage: new MemoryStorage() })
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
 
     // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
@@ -644,7 +765,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     startGame({ storage: new MemoryStorage() })
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
     fireEvent.click(war)
 
@@ -1460,6 +1581,198 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
     // R-UI-14 nennt vier Quellen; diese fehlte in alertsFor vollstaendig.
     expect(meldungen.textContent).toContain('fertig')
   })
+
+  /**
+   * Der echte Ladeweg (T-M17-14, R-DIP-07/AK1): ein gruener Einzeltest von `alertsFor`
+   * oder `offerListActions` misst nicht, ob die Meldung auf dem Bildschirm ankommt und der
+   * Klick tatsaechlich in die richtige Macht der Diplomatie fuehrt.
+   */
+  describe('R-DIP-07/AK1 Die Meldung fuehrt zur Diplomatie, und dort steht das Angebot in Worten', () => {
+    it('springt von der Meldung in die Diplomatie und zeigt das Angebot in Worten', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAngebot = step(
+        state,
+        [
+          {
+            type: 'OFFER_TRADE',
+            playerId: p2,
+            targetPlayerId: p1,
+            give: { resources: { iron: 5000 }, provinces: [] },
+            want: { resources: { money: 10000 }, provinces: [] },
+          },
+        ],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAngebot.players[p2]!.nation
+
+      const meldungen = await zeige(nachAngebot)
+      expect(meldungen.textContent).toContain(`Handelsangebot von ${nation}`)
+
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`Handelsangebot von ${nation}`) }))
+
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const eingehend = within(diplomatie).getByRole('region', { name: 'Eingehende Angebote' })
+      expect(eingehend.textContent).toContain(`${nation} bietet 5 Eisen und verlangt 10 Geld.`)
+      // Keine Kennung im Text der Region (R-DIP-07/AK1).
+      expect(eingehend.textContent).not.toMatch(/\bp\d\b|\bt\d+\b/)
+
+      fireEvent.click(within(eingehend).getByRole('button', { name: 'Angebot annehmen' }))
+      expect(within(eingehend).getByText(/befohlen/)).toBeTruthy()
+    })
+  })
+
+  /**
+   * Antrag, Annahme und Kuendigung des Durchmarschs sind ueber die Diplomatie erreichbar
+   * (T-M17-14, R-DIP-08/AK2).
+   */
+  describe('R-DIP-08/AK2 Antrag, Annahme und Kuendigung sind erreichbar', () => {
+    it('Antrag steht als Meldung, und die Knoepfe stehen nach der Wahl der Macht', async () => {
+      const { state, p1, p2 } = partie()
+      const nachAntrag = step(
+        state,
+        [{ type: 'DIPLOMACY', playerId: p2, targetPlayerId: p1, action: 'requestRightOfWay' }],
+        { map: world, rules: TEST_RULES },
+      ).state
+      const nation = nachAntrag.players[p2]!.nation
+
+      const meldungen = await zeige(nachAntrag)
+      expect(meldungen.textContent).toContain(`${nation} bittet um Durchmarsch`)
+
+      // Taste D (oder der Kopfleisten-Knopf) statt Klick auf die Meldung — die Macht wird
+      // erst danach von Hand gewaehlt (03-TASKS T-M17-14, Sichtpruefung S2).
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const zeile = within(diplomatie)
+        .getAllByRole('row')
+        .find((row) => row.textContent?.includes(nation))!
+      fireEvent.click(within(zeile).getAllByRole('button')[0]!)
+
+      // "Durchmarsch-Antrag annehmen" steht zweimal (Gruppe UND Liste, E6) — die Gruppe
+      // "Durchmarsch und Karte" hat verlaessliche eigene Kennungen.
+      const gruppe = screen.getByRole('region', { name: 'Durchmarsch und Karte' })
+      const beantragen = within(gruppe).getByRole('button', { name: 'Durchmarsch beantragen' })
+      const annehmen = within(gruppe).getByRole('button', { name: 'Durchmarsch-Antrag annehmen' })
+      const kuendigen = within(gruppe).getByRole('button', { name: 'Durchmarsch kündigen' })
+      expect((beantragen as HTMLButtonElement).disabled).toBe(false)
+      expect((annehmen as HTMLButtonElement).disabled).toBe(false)
+      expect((kuendigen as HTMLButtonElement).disabled).toBe(true)
+    })
+  })
+
+  /**
+   * Befund 2 der Sichtpruefung U (T-M17-14): Spionage- und Marktpanel schliessen mit
+   * Escape, die Diplomatie tat es nicht — die einzige Ausnahme unter den drei Panels, ohne
+   * dass ein Dialog, eine Zielwahl oder ein Umsetz-Modus im Weg steht (App.tsx, Fall
+   * 'close'). Dieselbe Taste, dieselbe Erwartung (R-UI-05).
+   */
+  describe('Befund 2 der Sichtpruefung U: Escape schliesst die Diplomatie wie jedes andere Panel', () => {
+    it('schliesst das Diplomatiepanel mit Escape', () => {
+      startGame()
+      fireEvent.keyDown(window, { key: 'd' })
+      expect(screen.getByRole('region', { name: 'Diplomatie' })).toBeTruthy()
+
+      fireEvent.keyDown(window, { key: 'Escape' })
+
+      expect(screen.queryByRole('region', { name: 'Diplomatie' })).toBeNull()
+    })
+  })
+
+  /**
+   * R-SPY-06/AK2 war nur in Alerts.test.tsx belegt (`espionageAlerts` als Einzeltest) — nicht
+   * die Verdrahtung in App.tsx (Befund Nacharbeit T-M17-13/14, hoch): der Sammeleffekt
+   * (`collectEspionageNews` ab `state.eventLog`), das Wegklicken ueber `onDismiss` und der
+   * Sprung auf die Provinz. "Ein gruener Einzeltest sagt nichts ueber das Spiel" — dieselbe
+   * Hausregel wie oben bei R-DIP-07/AK1.
+   */
+  describe('R-SPY-06/AK2 Eine erlittene Sabotage erreicht den Bildschirm', () => {
+    it('meldet die Sabotage ohne Urheber, springt auf die Provinz und bleibt nach dem Wegklicken weg', async () => {
+      const { state: frisch, p1, heimat } = partie()
+      // Ein paar Ticks vor, sonst faellt das Ereignis auf denselben Tick, an dem der
+      // erste Bildschirmaufbau `news.upTo` schon setzt (`collectEspionageNews` liest nur
+      // `event.tick > upTo`, strikt) — kein Befund, nur eine Randbedingung des Aufbaus.
+      const state = advanceTicks(frisch, 5, { map: world, rules: TEST_RULES }).state
+      const geschaedigt: typeof state = {
+        ...state,
+        eventLog: [
+          ...state.eventLog,
+          {
+            type: 'SABOTAGE_SUFFERED',
+            tick: state.tick,
+            severity: 'alert',
+            audience: [p1],
+            concerns: [p1],
+            playerId: p1,
+            provinceId: heimat,
+            kind: 'economic',
+            moraleLoss: 10_000,
+            destroyed: { iron: 5_000 },
+            delayTicks: 0,
+          } as never,
+        ],
+      }
+      const provinzName = state.provinces[heimat]!.name
+
+      const meldungen = await zeige(geschaedigt)
+      // `collectEspionageNews` sammelt in einem eigenen Effekt (App.tsx, nach `nameOf`),
+      // also nicht schon im ersten Render, in dem `zeige()` die Region findet.
+      const knopf = await within(meldungen).findByRole('button', { name: new RegExp(`^Wirtschaftssabotage in ${provinzName}`) })
+      expect(meldungen.textContent).toContain(provinzName)
+      // F2/F3: kein Urheber, keine Spielerkennung (Ereignis kennt gar keine).
+      expect(meldungen.textContent).not.toMatch(/\bp\d\b/)
+
+      fireEvent.click(knopf)
+
+      const provinzPanel = await screen.findByRole('region', { name: provinzName })
+      expect(provinzPanel).toBeTruthy()
+
+      fireEvent.click(within(meldungen).getByRole('button', { name: new RegExp(`^Ausblenden: Wirtschaftssabotage in ${provinzName}`) }))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+
+      // Gegenprobe fuer "bleibt weg": ein Tag vorspulen ohne neues Sabotage-Ereignis darf
+      // die weggeklickte Meldung nicht zurueckbringen.
+      fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
+      await waitFor(() => expect(document.querySelector('.clock__time')?.textContent).toMatch(/Tag/))
+      expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+    })
+  })
+
+  /**
+   * Befund Nacharbeit T-M17-13/14 (mittel): die Quittung "befohlen" (T-M22-05) haengt an der
+   * Knopf-Kennung (`pendingIds`, App.tsx), nicht am Befehl. Trug die Kennung kein Ziel
+   * (`diplomacy-${action}`, `trade-offer`, `spy-recruit-${mission}`), sperrte sie bei
+   * stehender Uhr auch das gleichnamige Formular fuer eine ANDERE Macht bzw. Provinz.
+   */
+  describe('Die Quittung "befohlen" gilt je Ziel, nicht je Knopf-Kennung', () => {
+    it('sperrt "Krieg erklaeren" nach einer Erklaerung an p2 nicht auch fuer p3', async () => {
+      const { state, p2 } = partie()
+      const p3 = state.playerOrder[2]!
+      const meldungen = await zeige(state)
+      expect(meldungen).toBeTruthy() // nur zum Laden — die eigentliche Pruefung ist die Diplomatie
+
+      const nationOf = (id: string) => state.players[id]!.nation
+      fireEvent.keyDown(window, { key: 'd' })
+      const diplomatie = await screen.findByRole('region', { name: 'Diplomatie' })
+      const wähle = (nation: string) => {
+        const zeile = within(diplomatie)
+          .getAllByRole('row')
+          .find((row) => row.textContent?.includes(nation))!
+        fireEvent.click(within(zeile).getAllByRole('button')[0]!)
+      }
+
+      wähle(nationOf(p2))
+      const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
+      fireEvent.click(within(gruppeP2).getByRole('button', { name: 'Krieg erklären' }))
+      expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
+
+      // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
+      // "Krieg erklären" darf NICHT "befohlen" sagen — ihr wurde nichts befohlen.
+      wähle(nationOf(p3))
+      const gruppeP3 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p3)}` })
+      const krieg = within(gruppeP3).getByRole('button', { name: 'Krieg erklären' })
+      expect((krieg as HTMLButtonElement).disabled).toBe(false)
+      expect(within(gruppeP3).queryByText(/befohlen/)).toBeNull()
+    })
+  })
 })
 
 /**
@@ -1577,7 +1890,7 @@ describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => 
 
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
-    fireEvent.click(within(panel).getAllByRole('button', { name: 'Auswählen' })[0]!)
+    waehleErsteMacht(panel)
     fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
   }
 
@@ -2109,9 +2422,28 @@ describe('R-MP-01/AK1 Die Oberflaeche bezieht sich auf den Spieler, der sie betr
  * Mehrspielerpartie wirklich angelegt und danach gedrueckt — das ist der Weg, den ein
  * Spieler nimmt.
  */
+/**
+ * Ein Raum, den dieser Bildschirm als Gastgeber fuehrt — wie nach `#/gastgeben` (T-M39-03).
+ *
+ * Die Leitung ist ein Schleifendoppel ohne Gegenueber: fuer die Fragen hier genuegt, dass es
+ * den Raum gibt. Ohne ihn bietet der Hostbau seit der Nacharbeit zu V-1 (2026-09-24) keine
+ * Partie zu zweit mehr an.
+ */
+const gastgeberRaum = () => {
+  const leitung = createLoopback()
+  return {
+    link: parseNetLink('#/gastgeben?raum=raum1&s=geheim')!,
+    connect: () => leitung.a,
+    origin: 'http://host:7749',
+  }
+}
+
 describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspulen aus', () => {
   const startZuZweit = (rate = '25') => {
-    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    // Mit Raum (Nacharbeit zu V-1, 2026-09-24): bis dahin legte dieser Test die Partie zu
+    // zweit OHNE Raum an — genau der Weg, der eine lokale Partie mit fester Rate lieferte.
+    // Angelegt ist sie jetzt wie beim Gastgeber: die Lobby wartet, die Rate steht fest.
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
     fireEvent.change(screen.getByRole('combobox', { name: 'Partieart' }), { target: { value: 'multiplayer' } })
     fireEvent.change(screen.getByRole('combobox', { name: /Feste Geschwindigkeit/ }), { target: { value: rate } })
     fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
@@ -2144,6 +2476,55 @@ describe('R-MP-02/AK2 In einer angelegten Partie zu zweit sind Tempo und Vorspul
     expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
     expect(screen.queryByText(/\(fest\)/)).toBeNull()
+  })
+})
+
+/**
+ * Zu zweit gibt es nur, wo es einen Raum gibt (Befund V-1, Nacharbeit vom 2026-09-24).
+ *
+ * T-M39-11 hat die Partieart an die Bauflagge gehaengt. Das deckt das ausgelieferte
+ * Programm, aber nicht den **Hostbau ohne Raum**: der Hostdienst liefert `/` aus, und wer
+ * dort landet statt auf dem gedruckten `#/gastgeben`-Link, hat keine Leitung. Die Wahl
+ * „Zu zweit ueber einen Link" lief dann in genau das Symptom aus V-1 — eine lokale Partie
+ * mit fester Rate, ohne Vorspulen, ohne Mitspieler, ohne Lobby und ohne Fehler.
+ *
+ * Geprueft an der ganzen Anwendung: in diesem Testlauf ist `__MULTIPLAYER__` wahr, er IST
+ * also der Hostbau. Und zwar an der Wirkung, nicht nur an der Anzeige: eine Wahl, die das
+ * Formular noch traegt, waehrend der Bildschirm sie nicht mehr anbietet, darf beim Start
+ * nicht zuschlagen.
+ */
+describe('R-FREE-04 Zu zweit wird nur angeboten, wo dieser Bildschirm es herstellen kann', () => {
+  it('bietet im Hostbau ohne Raum keine Partie zu zweit an', () => {
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+
+    expect(screen.queryByRole('combobox', { name: 'Partieart' })).toBeNull()
+    expect(screen.queryByText('Zu zweit über einen Link')).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Die Einladung nennt:' })).toBeNull()
+  })
+
+  it('bietet sie dem Gastgeber mit Raum an — beide Arten, zu zweit vorgewaehlt', () => {
+    // Die Gegenprobe: wer ueber `#/gastgeben` kommt, verliert nichts (T-M39-03).
+    render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    const waehler = screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement
+
+    expect([...waehler.options].map((option) => option.value)).toEqual(['single', 'multiplayer'])
+    expect(waehler.value).toBe('multiplayer')
+  })
+
+  it('startet allein, wenn der Raum fehlt — auch wenn das Formular noch „zu zweit" traegt', () => {
+    // Der Zustand, den die Anzeige allein nicht abfaengt: `options.mode` steht auf
+    // 'multiplayer' (der Gastgeber-Link hat es vorgewaehlt), und danach gibt es keinen Raum
+    // mehr. Vorher uebernahm `startNewGame` die Wahl ungefiltert: feste Rate, kein Vorspulen.
+    const { rerender } = render(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial party={gastgeberRaum()} />)
+    expect((screen.getByRole('combobox', { name: 'Partieart' }) as HTMLSelectElement).value).toBe('multiplayer')
+
+    rerender(<App map={world} rules={TEST_RULES} maps={maps} skipTutorial />)
+    expect(screen.queryByRole('combobox', { name: 'Partieart' }), 'der Waehler stand ohne Raum').toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Partie beginnen' }))
+
+    expect(screen.queryByText(/\(fest\)/), 'die Partie begann mit fester Rate').toBeNull()
+    expect(screen.getByRole('group', { name: 'Geschwindigkeit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Vorspulen' })).toBeTruthy()
   })
 })
 
@@ -2394,5 +2775,210 @@ describe('R-MP-03/AK1 Die Oberflaeche rechnet keinen Tick ohne Freigabe des Mits
     expect(meine.state.players['p2']!.kind).toBe('human')
     expect(screen.queryByRole('group', { name: 'Geschwindigkeit' })).toBeNull()
     expect(screen.getByRole('alert')).toBeTruthy()
+  })
+
+  /**
+   * Die fuenf Saetze des Pausenvertrags, auf dem Bildschirm (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Sie lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am 2026-09-14
+   * am laufenden Programm: der Gastgeber stellt einen Pausenantrag — seine Kopfleiste
+   * aendert sich nicht; der Gast lehnt ab — es aendert sich wieder nichts. Wer den Antrag
+   * stellte, konnte einen gestellten Antrag nicht von einem verschluckten Klick
+   * unterscheiden.
+   *
+   * Geprueft wird an der **ganzen Anwendung** und nicht an der Kopfleiste mit
+   * handgebauten Eigenschaften: die Projektlehre „gruen im Test, tot im Browser" stammt
+   * genau aus dieser Ecke — die Tempo-Sperre war gebaut, geprueft und nie sichtbar. Hier
+   * haengt der Satz am wirklich gerenderten Baum, getrieben von `pause.ts`.
+   *
+   * Und beide Seiten, denn die Saetze sind nicht symmetrisch: „Ihr Mitspieler moechte
+   * weiterspielen" gehoert dem Antragsteller, und der Ablehnende soll ihn NICHT lesen.
+   */
+  describe('R-MP-05 Der Pausenvertrag sagt, was er tut', () => {
+    const GESTELLT = 'Ihr Pausenantrag ist gestellt. Ohne Antwort verfällt er nach dreißig Sekunden.'
+    const ABGELEHNT = 'Ihr Mitspieler möchte weiterspielen.'
+    const VERFALLEN = 'Der Pausenantrag ist verfallen.'
+    const STEHT = 'Die Partie steht. Fortsetzen darf jeder allein.'
+    const WEITER = 'Die Partie läuft in drei Sekunden weiter.'
+
+    /** Antrag stellen und ihn beim Gegenueber ankommen lassen. */
+    const beantragen = () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pause beantragen' }))
+      warte(100)
+    }
+
+    it('zeigt dem Antragsteller, dass sein Antrag steht — und nimmt es mit der Antwort zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      expect(screen.queryByText(GESTELLT), 'der Satz stand schon vor dem Antrag').toBeNull()
+
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      expect(screen.queryByText(GESTELLT), 'der Satz blieb nach der Antwort stehen').toBeNull()
+    })
+
+    it('zeigt den eigenen Antrag nicht auch noch als Dialog — der gehoert dem Gegenueber', () => {
+      zuZweit()
+      warte(400)
+      beantragen()
+
+      // Der Dialog mit „Pause zulassen"/„Weiterspielen" ist die Frage AN den anderen.
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass abgelehnt wurde', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+
+      // In der Meldezeile und nicht in der Kopfleiste: ein Ereignis, kein Zustand — dort
+      // stuende es sonst, bis jemand wieder eine Pause beantragt.
+      const meldung = screen.getByText(ABGELEHNT)
+      expect(meldung.className).toMatch(/notice--info/)
+    })
+
+    it('sagt dem Ablehnenden nichts ueber sich selbst', () => {
+      // Die andere Seite derselben Nachricht: hier hat der Bildschirm gerade selbst
+      // abgelehnt. „Ihr Mitspieler moechte weiterspielen" waere hier schlicht falsch.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      const dialog = screen.getByRole('dialog', { name: 'Partie zu zweit' })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Weiterspielen' }))
+      warte(100)
+
+      expect(screen.queryByText(ABGELEHNT)).toBeNull()
+      expect(screen.queryByText(GESTELLT)).toBeNull()
+      expect(screen.queryByText(STEHT)).toBeNull()
+    })
+
+    it('sagt dem Antragsteller, dass sein Antrag verfallen ist', () => {
+      zuZweit({ peerLaeuft: false })
+      warte(400)
+      beantragen()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+      expect(screen.queryByText(GESTELLT), 'der Antrag stand nach dem Verfallen noch').toBeNull()
+    })
+
+    it('sagt auch dem Gefragten, dass der Antrag verfallen ist — statt den Dialog wortlos wegzunehmen', () => {
+      // R-MP-05/AK3: beide erfahren es. Ohne diesen Satz verschwaende dem Gefragten der
+      // Dialog unter den Haenden, und er wuesste nicht, ob er ihn weggeklickt hat.
+      const { leitung, peer } = zuZweit({ peerLaeuft: false })
+      warte(400)
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+
+      warte(30_000)
+
+      expect(screen.queryByRole('dialog', { name: 'Partie zu zweit' })).toBeNull()
+      expect(screen.getByText(VERFALLEN)).toBeTruthy()
+    })
+
+    it('sagt, dass die Partie steht, sobald zugestimmt wurde', () => {
+      const { leitung, peer, meine } = zuZweit()
+      warte(400)
+      beantragen()
+
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      expect(meine.status, 'die Partie stand gar nicht').toBe('paused')
+      // Neben dem Knopf, der es beendet — und als role="status", damit ein
+      // Vorleseprogramm den Halt mitbekommt und nicht nur der, der hinsieht.
+      const satz = screen.getByText(STEHT)
+      expect(satz.getAttribute('role')).toBe('status')
+      expect(screen.getByRole('button', { name: 'Fortsetzen' })).toBeTruthy()
+    })
+
+    it('kuendigt das Fortsetzen an und nimmt die Ankuendigung nach drei Sekunden zurueck', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(true, uhr))
+      })
+      warte(1500)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Fortsetzen' }))
+      warte(100)
+
+      expect(screen.getByText(WEITER)).toBeTruthy()
+      // Waehrend des Vorlaufs steht die Partie noch — trotzdem gilt der genauere Satz.
+      expect(screen.queryByText(STEHT)).toBeNull()
+
+      warte(3000)
+
+      expect(screen.queryByText(WEITER), 'die Ankuendigung blieb stehen').toBeNull()
+      expect(screen.queryByText(STEHT), 'die Partie stand nach dem Vorlauf noch').toBeNull()
+    })
+
+    it('laesst eine fremde Meldung stehen, wenn der Mitspieler eine Pause beantragt', () => {
+      // Befund der Durchsicht vom 2026-09-18 (Stufe niedrig): „ein neuer Antrag loescht
+      // die Antwort auf den alten" loeschte beim Gefragten JEDE Meldung — hier den Hinweis
+      // zur festen Rate, der mit der Pause nichts zu tun hat.
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      fireEvent.keyDown(window, { key: '+' })
+      expect(screen.getByText(/beim Anlegen der Partie gewählt/)).toBeTruthy()
+
+      act(() => {
+        leitung.b.send(peer.requestPause(uhr))
+      })
+      warte(100)
+
+      expect(screen.getByRole('dialog', { name: 'Partie zu zweit' })).toBeTruthy()
+      expect(screen.queryByText(/beim Anlegen der Partie gewählt/), 'der Antrag loeschte eine fremde Meldung').not.toBeNull()
+    })
+
+    it('loescht mit dem neuen Antrag die Antwort auf den alten — die Gegenprobe', () => {
+      const { leitung, peer } = zuZweit()
+      warte(400)
+      beantragen()
+      act(() => {
+        leitung.b.send(peer.answerPause(false, uhr))
+      })
+      warte(100)
+      expect(screen.getByText(ABGELEHNT)).toBeTruthy()
+
+      beantragen()
+
+      expect(screen.queryByText(ABGELEHNT), 'die alte Antwort stand neben dem neuen Antrag').toBeNull()
+      expect(screen.getByText(GESTELLT)).toBeTruthy()
+    })
+
+    it('zeigt im Einzelspieler keinen einzigen dieser Saetze', () => {
+      // Der Pausenvertrag ist eine Sache zu zweit. Allein ist die Pause eine Raste.
+      startGame()
+      fireEvent.keyDown(window, { key: ' ' })
+
+      for (const satz of [GESTELLT, ABGELEHNT, VERFALLEN, STEHT, WEITER]) {
+        expect(screen.queryByText(satz), satz).toBeNull()
+      }
+      expect(screen.queryByRole('button', { name: 'Pause beantragen' })).toBeNull()
+    })
   })
 })

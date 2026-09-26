@@ -33,6 +33,10 @@ export const WORLD_EVENT_TYPES = [
   'PLAYER_ELIMINATED',
   'BATTLE_RESOLVED',
   'GAME_ENDED',
+  // Seit T-M17-05 (R-DIP-05/AK4): dass zwei Maechte handeln, ist oeffentlich — wie viel nicht.
+  'TRADE_AGREED',
+  // Seit T-M17-06 (R-DIP-09/AK2): wer wem eine Provinz abtritt, ist oeffentlich — der Preis nicht.
+  'PROVINCE_CEDED',
 ] as const satisfies readonly EventType[]
 
 export function isWorldEventType(type: EventType): boolean {

@@ -1,0 +1,643 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { canonicalText, hashValue } from '@worldwar/shared'
+import { TEST_RULES, smallWorld } from '@worldwar/testkit'
+import { describe, expect, it } from 'vitest'
+import { parseRules } from '../rules/load'
+import type { RawRules } from '../rules/types'
+import { grantsPassage, relationKey, sharesMap } from '../state/create'
+import { cloneState } from '../state/clone'
+import { HASH_OMIT_KEYS, SCHEMA_VERSION, type GameState, type MapData, type Relation } from '../state/types'
+import { step } from '../step'
+import {
+  ADDED_IN_VERSION_2,
+  ADDED_IN_VERSION_3,
+  ADDED_IN_VERSION_4,
+  REMOVED_IN_VERSION_4,
+  migrate,
+  type SaveEnvelope,
+} from './migrate'
+import { deserialise, serialise } from './save'
+import { validateState } from './validate'
+
+/**
+ * Der Schritt 3 → 4 (T-M17-03, R-GAME-09, D29.10).
+ *
+ * Gefahren an einem **eingefrorenen echten Stand der Stufe 3**
+ * (`packages/core/test/golden/save-v3.json`, T-M17-02): 30 Spieltage Weltkarte, gespielt und
+ * nicht geschrieben, mit gewährtem Durchmarsch, geteilter Karte, einem Bündnis und offenen
+ * Friedensangeboten. Ein Stand ohne diese Felder hätte beim Schritt nichts zu verlieren —
+ * und der Test wäre grün, ohne etwas zu belegen.
+ *
+ * **Dieser Schritt ist der erste, der etwas wegnimmt.** Bis hierher legte jede Migration
+ * Felder an, und der Differenztest strich sie auf beiden Seiten. `rightOfWay` → `aGrantsPassage`
+ * und `bGrantsPassage` ist eine **Umbenennung mit Richtung**: sie muss als solche geprüft
+ * werden, sonst wäre der Unterschied „irgendwie anders" statt „genau diese Schlüssel".
+ */
+
+const load = (name: string): SaveEnvelope =>
+  JSON.parse(readFileSync(fileURLToPath(new URL(`../../test/golden/${name}`, import.meta.url)), 'utf8')) as SaveEnvelope
+
+const V1 = load('save-v1.json')
+const V2 = load('save-v2.json')
+const V3 = load('save-v3.json')
+const copy = (envelope: SaveEnvelope): SaveEnvelope => JSON.parse(JSON.stringify(envelope)) as SaveEnvelope
+
+/** Die ausgelieferte Weltkarte und die Standardregeln — damit ist save-v3.json entstanden. */
+const ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
+const data = (path: string): unknown => JSON.parse(readFileSync(`${ROOT}/data/${path}`, 'utf8'))
+const WELT = {
+  map: data('maps/world.json') as MapData,
+  rules: parseRules(
+    {
+      constants: data('rules/default/constants.json'),
+      resources: data('rules/default/resources.json'),
+      buildings: data('rules/default/buildings.json'),
+      units: data('rules/default/units.json'),
+      ai: data('rules/default/ai.json'),
+    } as RawRules,
+    'default',
+  ),
+}
+
+/** Entfernt die genannten Schluessel in jeder Tiefe — was bleibt, darf sich nicht unterscheiden. */
+function strip(value: unknown, keys: readonly string[]): unknown {
+  if (Array.isArray(value)) return value.map((entry) => strip(entry, keys))
+  if (value === null || typeof value !== 'object') return value
+  const out: Record<string, unknown> = {}
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (keys.includes(key)) continue
+    out[key] = strip(entry, keys)
+  }
+  return out
+}
+
+const hashOf = (state: GameState) => hashValue(state, { omitKeys: HASH_OMIT_KEYS })
+/** Die Beziehungen des eingefrorenen Standes, noch mit den Feldern der Stufe 3. */
+const altRelationen = V3.state.diplomacy.relations as unknown as Record<string, Record<string, unknown>>
+
+describe('R-GAME-09/AK1 Ein Stand der Stufe 3 laeuft nach der Migration weiter', () => {
+  it('ist ein echter Stand der Stufe 3, der die Felder dieser Stufe wirklich traegt', () => {
+    // Ohne diese Vorbedingung pruefte der Schritt einen Stand, an dem es nichts zu verlieren
+    // gibt — dieselbe Falle wie bei `migration-v2.test.ts`, nur teurer: hier geht es um eine
+    // Umbenennung, und ein Stand ohne gesetztes Recht koennte sie nicht von "loeschen"
+    // unterscheiden.
+    expect(V3.schemaVersion).toBe(3)
+    expect(V3.state.schemaVersion).toBe(3)
+    expect('espionage' in V3.state, 'der eingefrorene Stand stammt von nach dem Schritt').toBe(false)
+
+    const werte = Object.values(altRelationen)
+    expect(werte.length).toBeGreaterThan(0)
+    expect(
+      werte.some((relation) => relation['rightOfWay'] === true && relation['state'] !== 'alliance'),
+      'kein gewaehrter Durchmarsch ausserhalb eines Buendnisses',
+    ).toBe(true)
+    expect(
+      werte.some((relation) => relation['sharedMap'] === true && relation['state'] !== 'alliance'),
+      'keine geteilte Karte ausserhalb eines Buendnisses',
+    ).toBe(true)
+    expect(werte.some((relation) => relation['state'] === 'alliance'), 'kein Buendnis').toBe(true)
+    expect(werte.some((relation) => relation['rightOfWay'] === false), 'alle Beziehungen gewaehren — dann traegt "false" nichts').toBe(true)
+    expect(V3.state.diplomacy.offers.length, 'kein offenes Angebot').toBeGreaterThan(0)
+  })
+
+  it('laedt ihn auf die aktuelle Stufe, mit leerer Spionage und leeren Handelsangeboten', () => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+
+    expect(state.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(SCHEMA_VERSION).toBe(4)
+    expect(state.espionage).toEqual({ spies: [], reveals: [] })
+    expect(state.diplomacy.tradeOffers).toEqual([])
+    expect(state.nextIds.spy).toBe(1)
+    expect(state.nextIds.offer).toBe(1)
+    // Die Zaehler, die es schon gab, bleiben stehen — eine Migration erfindet keine Kennungen.
+    expect(state.nextIds.army).toBe((V3.state.nextIds as unknown as Record<string, number>)['army'])
+  })
+
+  it('uebernimmt Durchmarsch und Karte in BEIDE Richtungen — verhaltensgleich', () => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+
+    let gewaehrt = 0
+    let geteilt = 0
+    for (const [key, relation] of Object.entries(state.diplomacy.relations)) {
+      const alt = altRelationen[key]!
+      const passage = alt['rightOfWay'] === true
+      const karte = alt['sharedMap'] === true
+      if (passage) gewaehrt++
+      if (karte) geteilt++
+
+      expect(relation.aGrantsPassage, key).toBe(passage)
+      expect(relation.bGrantsPassage, key).toBe(passage)
+      expect(relation.aSharesMap, key).toBe(karte)
+      expect(relation.bSharesMap, key).toBe(karte)
+      // Unbefristet: bis Stufe 3 gab es keine andere Moeglichkeit, und eine erfundene Frist
+      // nimmt einem Spieler ein Recht weg, das er sich erspielt hat.
+      expect(relation.aPassageEndsAtTick, key).toBeNull()
+      expect(relation.bPassageEndsAtTick, key).toBeNull()
+
+      const [a, b] = key.split('|') as [string, string]
+      expect(grantsPassage(state, a, b), key).toBe(passage)
+      expect(grantsPassage(state, b, a), key).toBe(passage)
+      expect(sharesMap(state, a, b), key).toBe(karte)
+      expect(sharesMap(state, b, a), key).toBe(karte)
+    }
+
+    // Ueber einer leeren Menge waere jede Zusicherung oben wahr.
+    expect(gewaehrt, 'kein uebernommener Durchmarsch').toBeGreaterThan(0)
+    expect(geteilt, 'keine uebernommene Karte').toBeGreaterThan(0)
+  })
+
+  it('aendert nichts ausser den neuen und den entfernten Schluesseln', () => {
+    const after = migrate(copy(V3)).state
+    const beide = [...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+
+    expect(canonicalText(strip(after, beide))).toBe(canonicalText(strip(V3.state, beide)))
+    expect(REMOVED_IN_VERSION_4).toEqual(['rightOfWay', 'sharedMap'])
+  })
+
+  it('nimmt rightOfWay und sharedMap wirklich aus dem Zustand', () => {
+    // Die Gegenprobe zum Test davor: der streicht beide Listen: waeren die alten Schluessel
+    // noch da, faende er es nicht. Ein migrierter Stand, der beides traegt, waere doppelt
+    // gefuehrt — und die naechste Aufgabe wuesste nicht, welches Feld gilt.
+    const text = JSON.stringify(migrate(copy(V3)).state)
+
+    expect(text).not.toContain('"rightOfWay"')
+    expect(text).not.toContain('"sharedMap"')
+    expect(text).toContain('"aGrantsPassage"')
+    expect(text).toContain('"bSharesMap"')
+  })
+
+  it('ist nach Speichern und Laden hashgleich (AK1)', () => {
+    const migrated = deserialise(JSON.stringify(copy(V3)))
+    const again = deserialise(serialise(migrated))
+
+    expect(hashOf(again)).toBe(hashOf(migrated))
+  })
+
+  it('laeuft danach zwei Spieltage auf seiner Weltkarte weiter und bleibt ladbar', () => {
+    // Bis zum 2026-09-24 stand hier `copy(V2)` auf `smallWorld` — ein Stand der Stufe 2 mit
+    // zwei Maechten und einer Beziehung ohne Freigaben. Die Zusage „save-v3.json laeuft nach
+    // der Migration" hatte damit keinen Test, der den Stand auch nur einen Tick rechnete
+    // (Nacharbeit zu T-M17-03). Jetzt laeuft der eingefrorene Stand selbst, auf der Karte und
+    // mit den Regeln, mit denen er entstanden ist: acht Maechte, 237 Provinzen, gewaehrter
+    // Durchmarsch und geteilte Karte ohne Buendnis.
+    let state = deserialise(JSON.stringify(copy(V3)))
+    for (let i = 0; i < 48; i++) state = step(state, [], WELT).state
+
+    expect(state.tick).toBe(V3.savedAtTick + 48)
+    expect(state.espionage).toEqual({ spies: [], reveals: [] })
+    expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
+  })
+
+  it('rechnet nach Speichern und Laden dasselbe wie ohne Unterbrechung', () => {
+    // Laufen allein reicht nicht: ein migrierter Stand, der nach dem Laden anders
+    // weiterrechnet als im Speicher, laeuft auch — nur in eine andere Partie.
+    const start = deserialise(JSON.stringify(copy(V3)))
+    let durch = start
+    for (let i = 0; i < 48; i++) durch = step(durch, [], WELT).state
+
+    let geteilt = start
+    for (let i = 0; i < 24; i++) geteilt = step(geteilt, [], WELT).state
+    geteilt = deserialise(serialise(geteilt))
+    for (let i = 0; i < 24; i++) geteilt = step(geteilt, [], WELT).state
+
+    expect(hashOf(geteilt)).toBe(hashOf(durch))
+  })
+
+  it('weist einen Stand ohne die Felder der Stufe 4 ab, statt ihn halb zu verstehen', () => {
+    const ohneSpionage = migrate(copy(V3)).state as unknown as Record<string, unknown>
+    delete ohneSpionage['espionage']
+    expect(() => validateState(ohneSpionage)).toThrow(/espionage/)
+
+    const ohneHandel = migrate(copy(V3)).state as unknown as Record<string, unknown>
+    delete (ohneHandel['diplomacy'] as Record<string, unknown>)['tradeOffers']
+    expect(() => validateState(ohneHandel)).toThrow(/tradeOffers/)
+  })
+})
+
+describe('R-GAME-09/AK2 Ein Stand der Stufe 1 oder 2 laeuft ueber alle Schritte', () => {
+  it('fuehrt save-v1.json und save-v2.json auf die aktuelle Stufe', () => {
+    for (const [name, envelope] of [
+      ['save-v1.json', V1],
+      ['save-v2.json', V2],
+    ] as const) {
+      const state = deserialise(JSON.stringify(copy(envelope)))
+
+      expect(state.schemaVersion, name).toBe(SCHEMA_VERSION)
+      expect(state.espionage, name).toEqual({ spies: [], reveals: [] })
+      expect(state.diplomacy.tradeOffers, name).toEqual([])
+      for (const relation of Object.values(state.diplomacy.relations)) {
+        expect(relation.aGrantsPassage, name).toBe(relation.bGrantsPassage)
+        expect(relation.aSharesMap, name).toBe(relation.bSharesMap)
+      }
+    }
+  })
+
+  it('liefert in einem Zug dasselbe wie Schritt fuer Schritt', () => {
+    const direct = migrate(copy(V1))
+    const stepwise = migrate(migrate(migrate(copy(V1), undefined, 2), undefined, 3), undefined, 4)
+
+    expect(canonicalText(stepwise)).toBe(canonicalText(direct))
+  })
+
+  it('aendert nichts ausser den Feldern aller drei Schritte', () => {
+    const after = migrate(copy(V1)).state
+    const alle = [...ADDED_IN_VERSION_2, ...ADDED_IN_VERSION_3, ...ADDED_IN_VERSION_4, ...REMOVED_IN_VERSION_4]
+
+    expect(canonicalText(strip(after, alle))).toBe(canonicalText(strip(V1.state, alle)))
+  })
+
+  it('ist nach Speichern und Laden hashgleich (AK2)', () => {
+    for (const envelope of [V1, V2]) {
+      const migrated = deserialise(JSON.stringify(copy(envelope)))
+      expect(hashOf(deserialise(serialise(migrated)))).toBe(hashOf(migrated))
+    }
+  })
+
+  it('laeuft danach zwei Spieltage weiter und bleibt ladbar (AK2)', () => {
+    // Beide eingefrorenen Staende stammen von der Testkarte `testworld`. Bis zum 2026-09-24
+    // lief hier nur save-v2.json, und zwar im Block von AK1; save-v1.json wurde nach der
+    // Kette 1 → 4 nie gerechnet.
+    const ctx = { map: smallWorld(), rules: TEST_RULES }
+    for (const [name, envelope] of [
+      ['save-v1.json', V1],
+      ['save-v2.json', V2],
+    ] as const) {
+      let state = deserialise(JSON.stringify(copy(envelope)))
+      for (let i = 0; i < 48; i++) state = step(state, [], ctx).state
+
+      expect(state.tick, name).toBe(envelope.savedAtTick + 48)
+      expect(state.espionage, name).toEqual({ spies: [], reveals: [] })
+      expect(hashOf(deserialise(serialise(state))), name).toBe(hashOf(state))
+    }
+  })
+})
+
+describe('cloneState teilt keine Referenz mit den neuen Feldern', () => {
+  const spion = {
+    id: 's1',
+    owner: 'p1',
+    provinceId: 'n1',
+    mission: 'intel' as const,
+    recruitedTick: 10,
+    assignedTick: 10,
+    lastRunTick: null,
+    lastOutcome: null,
+  }
+  const angebot = {
+    id: 'o1',
+    from: 'p1',
+    to: 'p2',
+    give: { resources: { iron: 5_000 }, provinces: ['n1'] },
+    want: { resources: { food: 1_000 }, provinces: [] },
+    createdTick: 10,
+    expiresAtTick: 100,
+  }
+
+  const gefuellt = (): GameState => {
+    const state = deserialise(JSON.stringify(copy(V2)))
+    const ersteMacht = state.playerOrder[0]!
+    const zweiteMacht = state.playerOrder[1]!
+    state.espionage.spies.push({ ...spion, owner: ersteMacht, provinceId: state.provinceOrder[0]! })
+    state.espionage.reveals.push({ player: ersteMacht, provinceId: state.provinceOrder[0]!, kind: 'intel', untilTick: 99 })
+    state.diplomacy.tradeOffers.push({ ...angebot, from: ersteMacht, to: zweiteMacht })
+    return state
+  }
+
+  it('kopiert Spione, Aufdeckungen und Handelsangebote elementweise', () => {
+    const state = gefuellt()
+    const klon = cloneState(state)
+
+    expect(klon.espionage.spies[0]).not.toBe(state.espionage.spies[0])
+    expect(klon.espionage.reveals[0]).not.toBe(state.espionage.reveals[0])
+    expect(klon.diplomacy.tradeOffers[0]).not.toBe(state.diplomacy.tradeOffers[0])
+    // Zwei Ebenen tiefer, und genau hier waere ein Spread stillschweigend falsch.
+    expect(klon.diplomacy.tradeOffers[0]!.give.resources).not.toBe(state.diplomacy.tradeOffers[0]!.give.resources)
+    expect(klon.diplomacy.tradeOffers[0]!.give.provinces).not.toBe(state.diplomacy.tradeOffers[0]!.give.provinces)
+    expect(klon.diplomacy.tradeOffers[0]!.want.resources).not.toBe(state.diplomacy.tradeOffers[0]!.want.resources)
+    // Bis zum 2026-09-24 fehlte diese Zeile: ein geteiltes `want.provinces` fiel keinem Test auf.
+    expect(klon.diplomacy.tradeOffers[0]!.want.provinces).not.toBe(state.diplomacy.tradeOffers[0]!.want.provinces)
+    expect(klon.nextIds).not.toBe(state.nextIds)
+  })
+
+  it('laesst den Ausgangszustand unveraendert, wenn der Klon sich aendert', () => {
+    // Die Frage hinter allen `not.toBe`: aendert sich der "vorherige" Zustand mit? Genau das
+    // ist der Determinismusfehler, den `clone.ts` in seinem Kopf beschreibt.
+    const state = gefuellt()
+    const vorher = hashOf(state)
+    const klon = cloneState(state)
+
+    klon.espionage.spies[0]!.mission = 'counter'
+    klon.espionage.reveals[0]!.untilTick = 1
+    klon.diplomacy.tradeOffers[0]!.give.resources.iron = 1
+    klon.diplomacy.tradeOffers[0]!.give.provinces.push('n2')
+    klon.diplomacy.tradeOffers[0]!.want.resources.food = 1
+    klon.diplomacy.tradeOffers[0]!.want.provinces.push('n3')
+    klon.nextIds.spy = 99
+
+    expect(hashOf(state)).toBe(vorher)
+    expect(state.espionage.spies[0]!.mission).toBe('intel')
+    expect(state.diplomacy.tradeOffers[0]!.give.provinces).toEqual(['n1'])
+    expect(state.diplomacy.tradeOffers[0]!.want).toEqual({ resources: { food: 1_000 }, provinces: [] })
+    expect(state.nextIds.spy).toBe(1)
+  })
+
+  it('kopiert auch die gerichteten Beziehungsfelder, ohne sie zu teilen', () => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+    const schluessel = relationKey(state.playerOrder[0]!, state.playerOrder[1]!)
+    const klon = cloneState(state)
+
+    klon.diplomacy.relations[schluessel]!.aGrantsPassage = true
+    klon.diplomacy.relations[schluessel]!.bPassageEndsAtTick = 500
+
+    const original: Relation = state.diplomacy.relations[schluessel]!
+    expect(original.aGrantsPassage).toBe(altRelationen[schluessel]!['rightOfWay'] === true)
+    expect(original.bPassageEndsAtTick).toBeNull()
+  })
+})
+
+/**
+ * Ein Stand der Stufe 4 wird auf die Felder dieser Stufe geprueft — auf BEIDEN Ladewegen
+ * (R-GAME-05, Nacharbeit zu T-M17-03, 2026-09-24).
+ *
+ * Bis hierher pruefte `validateState` `espionage` nur als Objekt und die gerichteten Felder gar
+ * nicht, und `deserialise` rief die Pruefung nur fuer migrierte Staende. Nachgestellt: ein Stand
+ * mit `espionage: {}` wurde angenommen und warf im ersten Tick einen TypeError aus `cloneState`;
+ * ein Stand der Stufe 4 mit den ALTEN Schluesseln `rightOfWay`/`sharedMap` und gueltiger
+ * Pruefsumme lud still — und jeder gewaehrte Durchmarsch war danach weg. Ein Stand, der die
+ * Pruefsumme besteht, ist nur unveraendert, nicht vollstaendig: er kann aus einem Bau stammen,
+ * der ein Feld noch nicht kannte, ohne die Stufe zu heben.
+ */
+describe('R-GAME-05 Ein Stand der Stufe 4 wird auf die Felder dieser Stufe geprueft', () => {
+  const migriert = (): Record<string, unknown> => migrate(copy(V3)).state as unknown as Record<string, unknown>
+  /** Ein Umschlag der aktuellen Stufe mit GUELTIGER Pruefsumme — er laeuft ueber den Hash-Weg. */
+  const mitPruefsumme = (state: Record<string, unknown>): string => serialise(state as unknown as GameState)
+  const erstesPaar = (state: Record<string, unknown>) =>
+    Object.values((state['diplomacy'] as { relations: Record<string, Record<string, unknown>> }).relations)[0]!
+
+  it('nimmt einen vollstaendigen Stand an, auch mit Spion, Aufdeckung und Handelsangebot', () => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+    const [erste, zweite] = state.playerOrder as [string, string]
+    state.espionage.spies.push({
+      id: 's1',
+      owner: erste,
+      provinceId: state.provinceOrder[0]!,
+      mission: 'intel',
+      recruitedTick: 10,
+      assignedTick: 10,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+    state.espionage.reveals.push({ player: erste, provinceId: state.provinceOrder[0]!, kind: 'intel', untilTick: 99 })
+    state.diplomacy.tradeOffers.push({
+      id: 'o1',
+      from: erste,
+      to: zweite,
+      give: { resources: { iron: 5_000 }, provinces: [] },
+      want: { resources: {}, provinces: [] },
+      createdTick: 10,
+      expiresAtTick: 100,
+    })
+    // Wie ein echter Befehl es haelt: eine Kennung s1 vergeben heisst, der Zaehler steht
+    // danach auf 2 (N3, Nacharbeit Durchsicht 2026-09-25).
+    state.nextIds.spy = 2
+
+    expect(() => validateState(state)).not.toThrow()
+    expect(hashOf(deserialise(serialise(state)))).toBe(hashOf(state))
+  })
+
+  it('weist eine Spionage ohne Listen ab (espionage: {})', () => {
+    const state = migriert()
+    state['espionage'] = {}
+    expect(() => validateState(state)).toThrow(/espionage\.spies/)
+
+    const halb = migriert()
+    halb['espionage'] = { spies: [] }
+    expect(() => validateState(halb)).toThrow(/espionage\.reveals/)
+  })
+
+  it('weist fehlende Zaehler fuer Spione und Handelsangebote ab', () => {
+    const state = migriert()
+    delete (state['nextIds'] as Record<string, unknown>)['spy']
+    expect(() => validateState(state)).toThrow(/nextIds\.spy/)
+
+    const ohneAngebot = migriert()
+    ;(ohneAngebot['nextIds'] as Record<string, unknown>)['offer'] = '1'
+    expect(() => validateState(ohneAngebot)).toThrow(/nextIds\.offer/)
+  })
+
+  it('weist eine Beziehung mit den alten Schluesseln statt der gerichteten Felder ab', () => {
+    const state = migriert()
+    const paar = erstesPaar(state)
+    for (const key of ['aGrantsPassage', 'bGrantsPassage', 'aPassageEndsAtTick', 'bPassageEndsAtTick', 'aSharesMap', 'bSharesMap']) {
+      delete paar[key]
+    }
+    paar['rightOfWay'] = true
+    paar['sharedMap'] = true
+    expect(() => validateState(state)).toThrow(/aGrantsPassage/)
+    expect(() => validateState(state)).toThrow(/rightOfWay/)
+  })
+
+  it('weist eine Frist ab, die weder Zahl noch null ist', () => {
+    const state = migriert()
+    erstesPaar(state)['bPassageEndsAtTick'] = undefined
+    expect(() => validateState(state)).toThrow(/bPassageEndsAtTick/)
+  })
+
+  it('weist ein Handelsangebot ohne Buendel ab', () => {
+    const state = deserialise(JSON.stringify(copy(V3))) as unknown as Record<string, unknown>
+    const diplomacy = state['diplomacy'] as { tradeOffers: unknown[] }
+    diplomacy.tradeOffers.push({ id: 'o1', from: 'p1', to: 'p2', want: { resources: {}, provinces: [] }, createdTick: 1, expiresAtTick: 2 })
+    expect(() => validateState(state)).toThrow(/tradeOffers/)
+  })
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — ohne espionage', () => {
+    const state = migriert()
+    delete state['espionage']
+    const text = mitPruefsumme(state)
+    expect(JSON.parse(text).schemaVersion, 'der Umschlag muss den Hash-Weg nehmen').toBe(SCHEMA_VERSION)
+
+    expect(() => deserialise(text)).toThrow(/espionage/)
+  })
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — mit den alten Schluesseln der Stufe 3', () => {
+    const state = migriert()
+    for (const paar of Object.values((state['diplomacy'] as { relations: Record<string, Record<string, unknown>> }).relations)) {
+      paar['rightOfWay'] = paar['aGrantsPassage']
+      paar['sharedMap'] = paar['aSharesMap']
+      for (const key of ['aGrantsPassage', 'bGrantsPassage', 'aPassageEndsAtTick', 'bPassageEndsAtTick', 'aSharesMap', 'bSharesMap']) {
+        delete paar[key]
+      }
+    }
+
+    expect(() => deserialise(mitPruefsumme(state))).toThrow(/rightOfWay/)
+  })
+})
+
+/**
+ * Spione, Aufdeckungen und Handelsangebote werden **je Element** geprueft (Zusammenfuehrung von
+ * Diplomatie- und Spionagebahn, 2026-09-25; Befunde M17-S7 und M17-D6).
+ *
+ * Bis hierher sah `checkVersion4` in `espionage.spies`/`.reveals` nur Listen und in einem
+ * Handelsangebot nur, dass `give`/`want` Rohstoffe und Provinzen tragen. Seit beide Bahnen
+ * zusammen sind, liest der Tageslauf je Spion `players[spy.owner]!` und `provinces[spy.provinceId]!`
+ * ungeprueft (`phases/espionage.ts`), und das Schliessen eines Angebots bucht die Treuhand auf
+ * `players[offer.from]`. Ein geladener Stand mit einem Spion einer unbekannten Macht bestand die
+ * Pruefung und warf beim ersten Tageswechsel einen TypeError — dieselbe Fehlerklasse, die die
+ * Nacharbeit zu T-M17-03 fuer die Buendel schon geschlossen hat. Jede Zeile unten ist **eine**
+ * Verfaelschung eines sonst gueltigen Standes; der gueltige Stand selbst muss durchgehen, sonst
+ * bewiese das Abweisen nichts.
+ */
+describe('R-GAME-05 Spione, Aufdeckungen und Handelsangebote werden je Element geprueft', () => {
+  type Roh = Record<string, unknown>
+  const gueltig = (): Roh => {
+    const state = deserialise(JSON.stringify(copy(V3)))
+    const [erste, zweite] = state.playerOrder as [string, string]
+    const provinz = state.provinceOrder[0]!
+    state.espionage.spies.push({
+      id: 's1',
+      owner: erste,
+      provinceId: provinz,
+      mission: 'economicSabotage',
+      recruitedTick: 10,
+      assignedTick: 12,
+      lastRunTick: 24,
+      lastOutcome: 'success',
+    })
+    state.espionage.reveals.push({ player: erste, provinceId: provinz, kind: 'armies', untilTick: 99 })
+    state.diplomacy.tradeOffers.push({
+      id: 't1',
+      from: erste,
+      to: zweite,
+      give: { resources: { money: 5_000 }, provinces: [provinz] },
+      want: { resources: { iron: 2_000 }, provinces: [] },
+      createdTick: 10,
+      expiresAtTick: 100,
+    })
+    state.diplomacy.offers.push({ from: zweite, to: erste, kind: 'alliance', tick: 5 })
+    // Wie ein echter Befehl es haelt (T-M17-02/-07): eine Kennung s1/t1 vergeben heisst,
+    // der Zaehler steht danach auf 2 — sonst vergibt der naechste Befehl sie erneut (N3).
+    state.nextIds.spy = 2
+    state.nextIds.offer = 2
+    return state as unknown as Roh
+  }
+  const spion = (state: Roh): Roh => (state['espionage'] as { spies: Roh[] }).spies[0]!
+  const aufdeckung = (state: Roh): Roh => (state['espionage'] as { reveals: Roh[] }).reveals[0]!
+  const angebot = (state: Roh): Roh => (state['diplomacy'] as { tradeOffers: Roh[] }).tradeOffers[0]!
+  const antrag = (state: Roh): Roh => (state['diplomacy'] as { offers: Roh[] }).offers[0]!
+  const beziehung = (state: Roh): Roh => Object.values((state['diplomacy'] as { relations: Record<string, Roh> }).relations)[0]!
+  const buendel = (state: Roh, seite: 'give' | 'want'): { resources: Roh; provinces: unknown[] } =>
+    angebot(state)[seite] as { resources: Roh; provinces: unknown[] }
+
+  it('nimmt den gueltigen Stand an — auf beiden Ladewegen', () => {
+    const state = gueltig()
+    expect(() => validateState(state)).not.toThrow()
+    expect(() => deserialise(serialise(state as unknown as GameState))).not.toThrow()
+  })
+
+  const FAELLE: { name: string; verfaelsche: (state: Roh) => void; meldung: RegExp }[] = [
+    { name: 'ein Spion, der kein Objekt ist', verfaelsche: (s) => ((s['espionage'] as { spies: unknown[] }).spies[0] = 's1'), meldung: /espionage\.spies\[0\] ist kein Objekt/ },
+    { name: 'ein Spion ohne Kennung', verfaelsche: (s) => delete spion(s)['id'], meldung: /espionage\.spies\[0\]\.id/ },
+    { name: 'ein Spion einer unbekannten Macht', verfaelsche: (s) => (spion(s)['owner'] = 'p99'), meldung: /espionage\.spies\[0\]\.owner/ },
+    { name: 'ein Spion mit einem Namen aus Object.prototype als Besitzer', verfaelsche: (s) => (spion(s)['owner'] = 'constructor'), meldung: /espionage\.spies\[0\]\.owner/ },
+    { name: 'ein Spion in einer unbekannten Provinz', verfaelsche: (s) => (spion(s)['provinceId'] = 'NIRGENDS'), meldung: /espionage\.spies\[0\]\.provinceId/ },
+    { name: 'ein Spion mit unbekanntem Auftrag', verfaelsche: (s) => (spion(s)['mission'] = 'bribery'), meldung: /espionage\.spies\[0\]\.mission/ },
+    { name: 'ein Spion ohne Anwerbetick', verfaelsche: (s) => delete spion(s)['recruitedTick'], meldung: /espionage\.spies\[0\]\.recruitedTick/ },
+    { name: 'ein Spion mit Text als Ansetztick', verfaelsche: (s) => (spion(s)['assignedTick'] = '12'), meldung: /espionage\.spies\[0\]\.assignedTick/ },
+    { name: 'ein Spion ohne letzten Lauf (weder Zahl noch null)', verfaelsche: (s) => delete spion(s)['lastRunTick'], meldung: /espionage\.spies\[0\]\.lastRunTick/ },
+    { name: 'ein Spion mit unbekanntem Ausgang', verfaelsche: (s) => (spion(s)['lastOutcome'] = 'caught'), meldung: /espionage\.spies\[0\]\.lastOutcome/ },
+    { name: 'eine Aufdeckung, die kein Objekt ist', verfaelsche: (s) => ((s['espionage'] as { reveals: unknown[] }).reveals[0] = null), meldung: /espionage\.reveals\[0\] ist kein Objekt/ },
+    { name: 'eine Aufdeckung fuer eine unbekannte Macht', verfaelsche: (s) => (aufdeckung(s)['player'] = 'p99'), meldung: /espionage\.reveals\[0\]\.player/ },
+    { name: 'eine Aufdeckung einer unbekannten Provinz', verfaelsche: (s) => (aufdeckung(s)['provinceId'] = 'NIRGENDS'), meldung: /espionage\.reveals\[0\]\.provinceId/ },
+    { name: 'eine Aufdeckung unbekannter Art', verfaelsche: (s) => (aufdeckung(s)['kind'] = 'buildings'), meldung: /espionage\.reveals\[0\]\.kind/ },
+    { name: 'eine Aufdeckung ohne Frist', verfaelsche: (s) => (aufdeckung(s)['untilTick'] = null), meldung: /espionage\.reveals\[0\]\.untilTick/ },
+    { name: 'ein Angebot ohne Kennung', verfaelsche: (s) => (angebot(s)['id'] = 7), meldung: /diplomacy\.tradeOffers\[0\]\.id/ },
+    { name: 'ein Angebot einer unbekannten Macht (M17-D6)', verfaelsche: (s) => (angebot(s)['from'] = 'p99'), meldung: /diplomacy\.tradeOffers\[0\]\.from/ },
+    { name: 'ein Angebot an eine unbekannte Macht', verfaelsche: (s) => (angebot(s)['to'] = 'hasOwnProperty'), meldung: /diplomacy\.tradeOffers\[0\]\.to/ },
+    { name: 'ein Angebot an sich selbst', verfaelsche: (s) => (angebot(s)['to'] = angebot(s)['from']), meldung: /diplomacy\.tradeOffers\[0\]\.to/ },
+    { name: 'ein unbekannter Rohstoff im Buendel', verfaelsche: (s) => (buendel(s, 'give').resources['gold'] = 1_000), meldung: /diplomacy\.tradeOffers\[0\]\.give\.resources\.gold/ },
+    { name: 'ein Betrag, der keine ganze Zahl ist', verfaelsche: (s) => (buendel(s, 'give').resources['money'] = 2.5), meldung: /diplomacy\.tradeOffers\[0\]\.give\.resources\.money/ },
+    { name: 'ein Betrag von null', verfaelsche: (s) => (buendel(s, 'want').resources['iron'] = 0), meldung: /diplomacy\.tradeOffers\[0\]\.want\.resources\.iron/ },
+    { name: 'ein negativer Betrag', verfaelsche: (s) => (buendel(s, 'want').resources['iron'] = -2_000), meldung: /diplomacy\.tradeOffers\[0\]\.want\.resources\.iron/ },
+    { name: 'eine unbekannte Provinz im Buendel', verfaelsche: (s) => (buendel(s, 'give').provinces[0] = 'NIRGENDS'), meldung: /diplomacy\.tradeOffers\[0\]\.give\.provinces/ },
+    { name: 'eine Provinz, die kein Text ist', verfaelsche: (s) => buendel(s, 'want').provinces.push(3), meldung: /diplomacy\.tradeOffers\[0\]\.want\.provinces/ },
+    { name: 'ein Angebot ohne Verfallstick', verfaelsche: (s) => delete angebot(s)['expiresAtTick'], meldung: /diplomacy\.tradeOffers\[0\]\.expiresAtTick/ },
+
+    // N3 (Nacharbeit Durchsicht 2026-09-25): validateState war nicht tief genug fuer diplomacy.offers
+    // (Antraege auf Frieden/Buendnis/Durchmarsch), doppelte Kennungen und die Beziehungen selbst.
+    { name: 'ein Antrag, der kein Objekt ist (publicView.ts liest offer.to ungeprueft)', verfaelsche: (s) => ((s['diplomacy'] as { offers: unknown[] }).offers[0] = null), meldung: /diplomacy\.offers\[0\] ist kein Objekt/ },
+    { name: 'ein Antrag einer unbekannten Macht', verfaelsche: (s) => (antrag(s)['from'] = 'p99'), meldung: /diplomacy\.offers\[0\]\.from/ },
+    { name: 'ein Antrag an eine unbekannte Macht', verfaelsche: (s) => (antrag(s)['to'] = 'p99'), meldung: /diplomacy\.offers\[0\]\.to/ },
+    { name: 'ein Antrag unbekannter Art', verfaelsche: (s) => (antrag(s)['kind'] = 'bogus'), meldung: /diplomacy\.offers\[0\]\.kind/ },
+    { name: 'ein Antrag mit einem Tick, der keine sichere Ganzzahl ist', verfaelsche: (s) => (antrag(s)['tick'] = 1.5), meldung: /diplomacy\.offers\[0\]\.tick/ },
+
+    {
+      name: 'zwei Handelsangebote mit derselben Kennung (Treuhand-Verlust bei WITHDRAW_TRADE)',
+      verfaelsche: (s) => (s['diplomacy'] as { tradeOffers: Roh[] }).tradeOffers.push({ ...angebot(s) }),
+      meldung: /diplomacy\.tradeOffers\[1\]\.id "t1" ist doppelt vergeben/,
+    },
+    {
+      name: 'zwei Spione mit derselben Kennung',
+      verfaelsche: (s) => (s['espionage'] as { spies: Roh[] }).spies.push({ ...spion(s) }),
+      meldung: /espionage\.spies\[1\]\.id "s1" ist doppelt vergeben/,
+    },
+    {
+      name: 'nextIds.offer liegt nicht ueber der vergebenen Kennung t1',
+      verfaelsche: (s) => ((s['nextIds'] as Roh)['offer'] = 1),
+      meldung: /nextIds\.offer liegt nicht über/,
+    },
+    {
+      name: 'nextIds.spy liegt nicht ueber der vergebenen Kennung s1',
+      verfaelsche: (s) => ((s['nextIds'] as Roh)['spy'] = 1),
+      meldung: /nextIds\.spy liegt nicht über/,
+    },
+
+    { name: 'eine Beziehung mit unbekanntem Zustand', verfaelsche: (s) => (beziehung(s)['state'] = 'bogus'), meldung: /\.state ist kein Beziehungszustand/ },
+    { name: 'eine Beziehung ohne sinceTick', verfaelsche: (s) => delete beziehung(s)['sinceTick'], meldung: /\.sinceTick ist keine sichere Ganzzahl/ },
+    { name: 'eine Beziehung mit einem Bruch als sinceTick', verfaelsche: (s) => (beziehung(s)['sinceTick'] = 1.5), meldung: /\.sinceTick ist keine sichere Ganzzahl/ },
+    { name: 'eine Beziehung mit einem Bruch als warEffectiveAtTick', verfaelsche: (s) => (beziehung(s)['warEffectiveAtTick'] = 1.5), meldung: /\.warEffectiveAtTick ist weder sichere Ganzzahl noch null/ },
+    { name: 'eine Beziehung mit einem Bruch als aPassageEndsAtTick', verfaelsche: (s) => (beziehung(s)['aPassageEndsAtTick'] = 1.5), meldung: /\.aPassageEndsAtTick ist keine sichere Ganzzahl/ },
+    {
+      name: 'eine Beziehung mit einer unbekannten Macht im Paar',
+      verfaelsche: (s) => {
+        const relations = (s['diplomacy'] as { relations: Record<string, Roh> }).relations
+        const [pair, wert] = Object.entries(relations)[0]!
+        delete relations[pair]
+        relations['p1|p99'] = wert
+      },
+      meldung: /diplomacy\.relations\["p1\|p99"\] nennt kein bekanntes Beziehungspaar/,
+    },
+  ]
+
+  for (const { name, verfaelsche, meldung } of FAELLE) {
+    it(`weist ab: ${name}`, () => {
+      const state = gueltig()
+      verfaelsche(state)
+      expect(() => validateState(state)).toThrow(meldung)
+    })
+  }
+
+  it('prueft auch einen Stand mit gueltiger Pruefsumme — Spion einer unbekannten Macht', () => {
+    const state = gueltig()
+    spion(state)['owner'] = 'p99'
+    const text = serialise(state as unknown as GameState)
+    expect(JSON.parse(text).schemaVersion, 'der Umschlag muss den Hash-Weg nehmen').toBe(SCHEMA_VERSION)
+
+    expect(() => deserialise(text)).toThrow(/espionage\.spies\[0\]\.owner/)
+  })
+
+  // Der zweite Ladeweg braucht keinen eigenen Fall: ein migrierter Stand kann keine Elemente
+  // mitbringen, weil der Schritt 3 → 4 beide Listen und die Angebote leer anlegt — auch wenn der
+  // alte Stand dort schon etwas trug. Das haelt dieser Fall fest; aendert sich die Migration,
+  // braucht der migrierte Weg einen Fall wie der mit Pruefsumme oben.
+  it('ein migrierter Stand bringt keine Spione und keine Handelsangebote mit', () => {
+    const envelope = copy(V3)
+    const alt = envelope.state as unknown as { diplomacy: Record<string, unknown>; espionage?: unknown }
+    alt.diplomacy['tradeOffers'] = [{ id: 'o1', from: 'p99', to: 'p1' }]
+    alt.espionage = { spies: [{ id: 's1', owner: 'p99' }], reveals: [{ player: 'p99' }] }
+
+    const state = deserialise(JSON.stringify(envelope))
+    expect(state.diplomacy.tradeOffers).toEqual([])
+    expect(state.espionage).toEqual({ spies: [], reveals: [] })
+  })
+})

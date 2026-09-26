@@ -21,8 +21,16 @@ import type { Command, GameConfig, GameState, PlayerId } from '@worldwar/core'
  * Funktionen — bleibt englisch wie im ganzen Haus.
  */
 
-/** Die Fassung, die dieses Paket spricht. Zwei Fassungen reden nicht miteinander. */
-export const PROTOCOL_VERSION = 1
+/**
+ * Die Fassung, die dieses Paket spricht. Zwei Fassungen reden nicht miteinander.
+ *
+ * **2 seit dem 2026-09-24** (Formatstufe 4, M17). Die Nachricht `zustand` traegt einen ganzen
+ * Spielstand; eine neue Formatstufe ist deshalb eine neue Fassung. Ein Bau der Stufe 3 prueft
+ * einen uebertragenen Stand nur auf seine Pruefsumme, haette einen Stand der Stufe 4 angenommen
+ * und waere nach dem Start auseinandergelaufen — erreichbar ist er nur ueber diese Zahl im
+ * ersten `hallo` (Befund M17-4, `protocol.test.ts` fuehrt die Paare).
+ */
+export const PROTOCOL_VERSION = 2
 
 /** Die sieben Arten, in der Reihenfolge, in der eine Partie sie sieht. */
 export const MESSAGE_KINDS = ['hallo', 'willkommen', 'probe', 'befehle', 'pause', 'zustand', 'ende'] as const

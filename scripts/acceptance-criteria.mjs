@@ -214,10 +214,16 @@ export const STANCE_SOURCES = [
  *
  * Bis T-M40-17 sahen beide nur `data/rules`. Der Parameterlauf liest ausserdem `data/maps/world.json`
  * (`sweep.slow.test.ts`), das Turnier `data/maps/testworld.json` (ueber `smallWorld` aus `packages/testkit`).
- * Den Code (`packages/ai/src`, `packages/core/src`, `apps/headless/src`) spielen beide.
+ * Den Code spielen beide; das Turnier folgt ihm (KI, Kern, Festkomma, Testkit, Turnierlogik), der
+ * Parameterlauf bewusst nicht.
  *
- * - **Turnier** folgt ausserdem KI und Kern: ein Neulauf kostet 13 Sekunden, und das Turnier ist der billige
- *   Beleg, dass eine Codeaenderung die KI-Staerke nicht verschiebt.
+ * - **Turnier** folgt ausserdem KI und Kern: ein Neulauf kostet rund 35 Sekunden (drei Maechte, 150 Partien
+ *   je Paarung, gemessen 2026-09-25), und das Turnier ist der billige Beleg, dass eine Codeaenderung die
+ *   KI-Staerke nicht verschiebt. Seit T-M17-15 dateigenau auch die Turnierlogik selbst
+ *   (`apps/headless/src/tournament.ts`, `apps/headless/test/tournament.slow.test.ts`) sowie
+ *   `packages/shared` (Festkomma) und `packages/testkit` (`smallWorld`, `TEST_RULES`) - nachgesehen an
+ *   den Importen von `tournament.slow.test.ts` (Befund M17-T4, Pruefbefund 9). Dateigenau, damit ein
+ *   weiterer Messlauf in `apps/headless/test` das Turnier nicht veralten laesst.
  * - **Parameterlauf** bleibt bewusst bei Regeln und Karte: er dauert rund eine Stunde und misst die
  *   Empfindlichkeit der Regelzahlen. Den Einfluss von Code decken das Turnier und `progress.slow` ab.
  *
@@ -243,7 +249,16 @@ export const GAUGES = [
   {
     name: 'Turnier',
     report: 'docs/reports/ai-tournament-run.md',
-    sources: ['data/rules', 'data/maps/testworld.json', 'packages/ai/src', 'packages/core/src'],
+    sources: [
+      'data/rules',
+      'data/maps/testworld.json',
+      'packages/ai/src',
+      'packages/core/src',
+      'packages/shared',
+      'packages/testkit',
+      'apps/headless/src/tournament.ts',
+      'apps/headless/test/tournament.slow.test.ts',
+    ],
     command: 'pnpm vitest run --config vitest.slow.config.ts apps/headless/test/tournament.slow.test.ts',
     judgedBy: 'measuredAtCommit',
   },
@@ -433,6 +448,13 @@ export function stanceReportStatus({ report, sourcesDirty, measuredAtIsAncestor,
     return {
       fresh: false,
       reason: `der eingecheckte Lauf in ${STANCE_REPORT} trifft die Kontrolle nicht oder nennt sie nicht (episoden.nachher.ak5.kontrolle.ok) - etwas anderes als die Automatik hat sich verschoben`,
+    }
+  }
+  // Befund M17-F1: ohne Kriegsplan war der Lauf blind (0 Einmaersche) und trug trotzdem erfuellt: true.
+  if (report.ak5?.angegriffen?.ok !== true) {
+    return {
+      fresh: false,
+      reason: `der eingecheckte Lauf ist blind oder nennt es nicht (episoden.nachher.ak5.angegriffen, Befund M17-F1)`,
     }
   }
   if (report.ak5?.fensterOk !== true) {

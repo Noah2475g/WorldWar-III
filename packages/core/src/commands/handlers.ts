@@ -5,6 +5,8 @@ import './army' // registers SPLIT_ARMY, MERGE_ARMIES, STOP_ARMY
 import './move' // registers MOVE_ARMY
 import './bombard' // registers BOMBARD
 import './diplomacy' // registers DIPLOMACY
+import './tradeOffer' // registers OFFER_TRADE, ACCEPT_TRADE, DECLINE_TRADE, WITHDRAW_TRADE
+import './espionage' // registers RECRUIT_SPY, REASSIGN_SPY, DISMISS_SPY
 import { emit } from '../events/emit'
 import type { PhaseContext } from '../phases/index'
 import { STANCE_VALUES, type GameState } from '../state/types'

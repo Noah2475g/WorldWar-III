@@ -53,10 +53,10 @@ function uiCommandSource(): string {
  * Eine Ausnahme ohne Begründung ist eine Lücke mit Erlaubnis; deshalb steht der Grund
  * hier und nicht in einer Liste von Namen.
  */
-const NICHT_FUER_DEN_SPIELER: Record<string, string> = {
-  SET_CAPITAL:
-    'Die Hauptstadtverlegung erreicht die Oberflaeche ueber die Provinzleiste (provinceActions), nicht ueber actions.ts als eigener Befehlstyp.',
-}
+// T-M17-14 hat die vier Handelsbefehle erreichbar gemacht (Angebotsformular, Annehmen/Ablehnen/
+// Zuruecknehmen im Diplomatiepanel) — die Ausnahmen sind gestrichen. Der Kommentar bleibt stehen,
+// damit eine spaetere Luecke hier wieder einen Grund bekommt statt eines blossen Namens.
+const NICHT_FUER_DEN_SPIELER: Record<string, string> = {}
 
 describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () => {
   it('findet ueberhaupt Kommandotypen', () => {
@@ -94,6 +94,21 @@ describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () =>
     ).toEqual([])
   })
 
+  it('kennt keine veraltete Ausnahme — ein Befehl mit Knopf braucht keine (T-M17-13)', () => {
+    // Dasselbe Muster wie bei DIPLOMATIE_NOCH_OHNE_KNOPF (unten): eine Ausnahme, die
+    // niemand mehr braucht, ist so falsch wie eine fehlende — sie behauptet eine Luecke,
+    // die es nicht mehr gibt. RECRUIT_SPY, REASSIGN_SPY, DISMISS_SPY und SET_CAPITAL
+    // waren hier drei Aufgaben lang berechtigt und sind es seit T-M17-13 nicht mehr.
+    const core = coreCommands()
+    const source = uiCommandSource()
+    const erreicht = (type: string) => new RegExp(`['"\`]${type}['"\`]`).test(source)
+
+    const veraltet = Object.keys(NICHT_FUER_DEN_SPIELER).filter(
+      (type) => !core.includes(type) || erreicht(type),
+    )
+    expect(veraltet, `Veraltete Ausnahmen: ${veraltet.join(', ')}`).toEqual([])
+  })
+
   it('bietet jede Haltung an, nicht nur zwei von drei', () => {
     // Der Fall, der die Aufzaehlung betrifft: `SET_STANCE` kam in actions.ts vor, aber
     // nur mit 'aggressive' und 'defensive'. Der Rueckzug war der einzige Kampfbefehl,
@@ -109,4 +124,39 @@ describe('R-UI-05 Jeder Befehl des Kerns ist fuer den Spieler erreichbar', () =>
 
     expect(fehlend, `Haltungen ohne Knopf: ${fehlend.join(', ')}`).toEqual([])
   })
+
+  it('bietet jede diplomatische Aktion an — oder nennt die Aufgabe, die sie bringt (T-M17-04)', () => {
+    // Derselbe Fall wie bei den Haltungen, eine Ebene tiefer: `DIPLOMACY` ist EIN Kommandotyp
+    // und kommt in actions.ts vor, also war der Test oben fuer jede neue Aktion darin gruen.
+    // T-M17-04 brachte drei (Antrag, Annahme, Kuendigung des Durchmarschs), und keine davon
+    // hatte einen Knopf — der Waechter haette es nie gesehen.
+    const aktionen = readFileSync(join(ROOT, 'packages/core/src/commands/types.ts'), 'utf8')
+      .match(/export type DiplomacyAction =([\s\S]*?)\n\n/)?.[1]
+      ?.match(/'(\w+)'/g)
+      ?.map((entry) => entry.replaceAll("'", ''))
+
+    expect(aktionen, 'DiplomacyAction nicht gefunden').toBeTruthy()
+    expect(aktionen!.length, 'zu wenige Aktionen gefunden — liest der Waechter noch den Typ?').toBeGreaterThanOrEqual(11)
+    const source = uiCommandSource()
+    const erreicht = (aktion: string) => new RegExp(`['"\`]${aktion}['"\`]`).test(source)
+
+    const fehlend = aktionen!.filter((aktion) => !DIPLOMATIE_NOCH_OHNE_KNOPF[aktion] && !erreicht(aktion))
+    expect(fehlend, `Diplomatische Aktionen ohne Knopf: ${fehlend.join(', ')}`).toEqual([])
+
+    // Und umgekehrt: eine Ausnahme fuer eine Aktion, die es nicht gibt oder die schon einen Knopf
+    // hat, ist veraltet. So muss T-M17-14 die Zeile streichen, wenn es die Knoepfe baut.
+    const veraltet = Object.keys(DIPLOMATIE_NOCH_OHNE_KNOPF).filter(
+      (aktion) => !aktionen!.includes(aktion) || erreicht(aktion),
+    )
+    expect(veraltet, `Veraltete Ausnahmen: ${veraltet.join(', ')}`).toEqual([])
+  })
 })
+
+/**
+ * Diplomatische Aktionen, die der Kern schon kann und die Oberflaeche noch nicht anbietet — mit
+ * der Aufgabe, die sie bringt (T-M17-04). Dieselbe Regel wie `NICHT_FUER_DEN_SPIELER`: eine
+ * Ausnahme ohne Grund ist eine Luecke mit Erlaubnis.
+ */
+// T-M17-14 hat die drei Durchmarsch-Aktionen erreichbar gemacht (`passageActions`) — die
+// Ausnahmen sind gestrichen, der Kommentar bleibt fuer eine spaetere Luecke stehen.
+const DIPLOMATIE_NOCH_OHNE_KNOPF: Record<string, string> = {}

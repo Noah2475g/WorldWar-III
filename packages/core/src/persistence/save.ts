@@ -93,6 +93,17 @@ export function deserialise(text: string): GameState {
         'Der Speicherstand wurde verändert oder ist beschädigt: die Prüfsumme stimmt nicht.',
       )
     }
+    // Seit dem 2026-09-24 auch hier (Nacharbeit zu T-M17-03). Die Prüfsumme sagt nur, dass
+    // der Stand unverändert ist — nicht, dass er vollständig ist. Ein Bau, der ein Feld
+    // anlegt, ohne die Stufe zu heben (die Regel für T-M17-04 bis -14), hinterließe sonst
+    // Stände derselben Stufe, die hier ungeprüft durchgehen und im ersten Tick abstürzen.
+    try {
+      validateState(state)
+    } catch (error) {
+      throw new SaveFormatError(
+        error instanceof InvalidStateError ? error.message : 'Der Speicherstand ist unvollständig.',
+      )
+    }
   } else {
     // Weder migriert noch mit Hash: `serialise` schreibt immer einen. Ein aktueller
     // Stand ohne Hash stammt nicht von diesem Spiel.

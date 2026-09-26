@@ -1,4 +1,4 @@
-import type { Army, GameState, Player, Province } from './types'
+import type { Army, GameState, Player, Province, TradeBundle } from './types'
 
 /**
  * Fast state copy for the tick loop (T-M8-03).
@@ -82,6 +82,17 @@ function clonePlayer(player: Player): Player {
   }
 }
 
+/**
+ * Ein Handelsbuendel, zwei Ebenen tief (M17, D29.1).
+ *
+ * `resources` ist ein Record und `provinces` ein Array — beide wuerden bei einem flachen
+ * Spread zwischen zwei Zustaenden geteilt. Die Treuhand aendert genau diese Mengen, also
+ * waere der Fehler nicht theoretisch.
+ */
+function cloneBundle(bundle: TradeBundle): TradeBundle {
+  return { resources: { ...bundle.resources }, provinces: bundle.provinces.slice() }
+}
+
 export function cloneState(state: GameState): GameState {
   const provinces: Record<string, Province> = {}
   for (const id of state.provinceOrder) provinces[id] = cloneProvince(state.provinces[id]!)
@@ -134,7 +145,17 @@ export function cloneState(state: GameState): GameState {
     provinceOrder: state.provinceOrder.slice(),
     armies,
     armyOrder: state.armyOrder.slice(),
-    diplomacy: { relations, offers: state.diplomacy.offers.map((offer) => ({ ...offer })), grievances },
+    diplomacy: {
+      relations,
+      offers: state.diplomacy.offers.map((offer) => ({ ...offer })),
+      // Jedes Angebot mit beiden Buendeln: ein Spread liesse `give.resources` geteilt.
+      tradeOffers: state.diplomacy.tradeOffers.map((offer) => ({
+        ...offer,
+        give: cloneBundle(offer.give),
+        want: cloneBundle(offer.want),
+      })),
+      grievances,
+    },
     market: {
       prices: { ...state.market.prices },
       tickDemand: { ...state.market.tickDemand },
@@ -147,6 +168,12 @@ export function cloneState(state: GameState): GameState {
     eventLog: state.eventLog.slice(),
     victory: { ...state.victory },
     goals,
+    // Elementweise, nicht `slice()`: die Eintraege selbst werden geaendert (Auftrag umsetzen,
+    // Ausgang eintragen), und geteilte Objekte in zwei Zustaenden sind ein Determinismusfehler.
+    espionage: {
+      spies: state.espionage.spies.map((spy) => ({ ...spy })),
+      reveals: state.espionage.reveals.map((reveal) => ({ ...reveal })),
+    },
     nextIds: { ...state.nextIds },
   }
 }

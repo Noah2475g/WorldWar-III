@@ -1,0 +1,932 @@
+{
+  "gemessenAm": "2026-09-25",
+  "measuredAtCommit": "b9b39154a170ef05ff89ddd2a38a98a9c600ea7d",
+  "measuredDirty": [],
+  "aufgabe": "T-M17-15",
+  "partie": {
+    "karte": "world",
+    "maechte": 8,
+    "stufen": "easy/normal/hard reihum",
+    "spieltage": 200,
+    "startzahlen": [
+      1815,
+      1914,
+      2015
+    ]
+  },
+  "ausgangswert": {
+    "datei": "m17-baseline.json",
+    "gemessenAm": "2026-09-18",
+    "gemessenAufCommit": "8bda86970f66ed7c512df2f3cfb4e0ad322ccb9a",
+    "aufgabe": "T-M17-02",
+    "partie": {
+      "karte": "world",
+      "startzahl": 1815,
+      "maechte": 8,
+      "stufen": "easy/normal/hard reihum",
+      "spieltage": 200
+    },
+    "soldAnker": {
+      "definition": "economyOverview(...).money.production je lebender Macht am Ende von Spieltag 30 (Bruttoertrag je Spieltag, vor Armeeunterhalt; Festkomma wie alle Bestaende, 1000 = 1 Geld); Median ueber die Maechte, bei gerader Zahl der abgerundete Mittelwert der beiden mittleren; der Sold-Anker ist 5 % davon, abgerundet (D29.7)",
+      "startzahl": 1815,
+      "spieltag": 30,
+      "tick": 720,
+      "lebendeMaechte": 8,
+      "geldertragJeMacht": {
+        "Vereinigte Staaten": 234491,
+        "Russland": 199846,
+        "China": 456650,
+        "Indien": 448873,
+        "Deutschland": 206311,
+        "Frankreich": 168555,
+        "Vereinigtes Königreich": 143671,
+        "Italien": 156929
+      },
+      "geldbilanzJeMacht": {
+        "Vereinigte Staaten": 217211,
+        "Russland": 123526,
+        "China": 340010,
+        "Indien": 386953,
+        "Deutschland": 138631,
+        "Frankreich": 92235,
+        "Vereinigtes Königreich": 136471,
+        "Italien": 102209
+      },
+      "medianGeldertrag": 203078,
+      "medianGeldbilanz": 137551,
+      "soldAnkerFuenfProzent": 10153,
+      "streuung": [
+        {
+          "startzahl": 1914,
+          "spieltag": 30,
+          "tick": 720,
+          "lebendeMaechte": 8,
+          "geldertragJeMacht": {
+            "Vereinigte Staaten": 234491,
+            "Russland": 199846,
+            "China": 457172,
+            "Indien": 448873,
+            "Deutschland": 176938,
+            "Frankreich": 206551,
+            "Vereinigtes Königreich": 143671,
+            "Italien": 160189
+          },
+          "geldbilanzJeMacht": {
+            "Vereinigte Staaten": 217211,
+            "Russland": 123526,
+            "China": 340532,
+            "Indien": 386953,
+            "Deutschland": 110698,
+            "Frankreich": 131671,
+            "Vereinigtes Königreich": 136471,
+            "Italien": 101149
+          },
+          "medianGeldertrag": 203198,
+          "medianGeldbilanz": 134071,
+          "soldAnkerFuenfProzent": 10159
+        },
+        {
+          "startzahl": 2015,
+          "spieltag": 30,
+          "tick": 720,
+          "lebendeMaechte": 8,
+          "geldertragJeMacht": {
+            "Vereinigte Staaten": 234491,
+            "Russland": 199846,
+            "China": 457172,
+            "Indien": 448873,
+            "Deutschland": 210421,
+            "Frankreich": 180236,
+            "Vereinigtes Königreich": 143671,
+            "Italien": 156469
+          },
+          "geldbilanzJeMacht": {
+            "Vereinigte Staaten": 217211,
+            "Russland": 123526,
+            "China": 339092,
+            "Indien": 386953,
+            "Deutschland": 144181,
+            "Frankreich": 111116,
+            "Vereinigtes Königreich": 136471,
+            "Italien": 104629
+          },
+          "medianGeldertrag": 205133,
+          "medianGeldbilanz": 140326,
+          "soldAnkerFuenfProzent": 10256
+        }
+      ]
+    },
+    "spieltage": 200,
+    "maechte": 8,
+    "ereignisse": 29987,
+    "befehle": 16650,
+    "kriegserklaerungen": 15,
+    "ueberfaelleOhneKriegserklaerung": 13,
+    "ueberfaelleJeTaeter": {
+      "Deutschland": 2,
+      "Frankreich": 3,
+      "Russland": 3,
+      "China": 3,
+      "Italien": 1,
+      "Indien": 1
+    },
+    "ueberfaelleJePaar": {
+      "Deutschland -> Italien": 2,
+      "Frankreich -> Italien": 1,
+      "Frankreich -> Deutschland": 2,
+      "Russland -> China": 2,
+      "China -> Indien": 2,
+      "Italien -> Frankreich": 1,
+      "Indien -> Italien": 1,
+      "China -> Russland": 1,
+      "Russland -> Indien": 1
+    },
+    "ueberfaelleJeArt": {
+      "ziel": 10,
+      "durchmarsch": 3
+    },
+    "ueberfaelleMitLaufenderErklaerung": 0,
+    "ueberfaelleEinzeln": [
+      {
+        "tick": 315,
+        "taeter": "Deutschland",
+        "opfer": "Italien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 347,
+        "taeter": "Frankreich",
+        "opfer": "Italien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 408,
+        "taeter": "Frankreich",
+        "opfer": "Deutschland",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 849,
+        "taeter": "Frankreich",
+        "opfer": "Deutschland",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 969,
+        "taeter": "Deutschland",
+        "opfer": "Italien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 1443,
+        "taeter": "Russland",
+        "opfer": "China",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 1543,
+        "taeter": "China",
+        "opfer": "Indien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 2012,
+        "taeter": "Italien",
+        "opfer": "Frankreich",
+        "erklaerungLief": false,
+        "art": "durchmarsch",
+        "zielBesitzer": "Deutschland",
+        "zielImKrieg": true
+      },
+      {
+        "tick": 2301,
+        "taeter": "Indien",
+        "opfer": "Italien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 2822,
+        "taeter": "Russland",
+        "opfer": "China",
+        "erklaerungLief": false,
+        "art": "durchmarsch",
+        "zielBesitzer": "eigenes Land",
+        "zielImKrieg": false
+      },
+      {
+        "tick": 2907,
+        "taeter": "China",
+        "opfer": "Russland",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      },
+      {
+        "tick": 3218,
+        "taeter": "China",
+        "opfer": "Indien",
+        "erklaerungLief": false,
+        "art": "durchmarsch",
+        "zielBesitzer": "eigenes Land",
+        "zielImKrieg": false
+      },
+      {
+        "tick": 3780,
+        "taeter": "Russland",
+        "opfer": "Indien",
+        "erklaerungLief": false,
+        "art": "ziel",
+        "zielBesitzer": null,
+        "zielImKrieg": false
+      }
+    ],
+    "diplomatieBefehleJeAktion": {
+      "offerPeace": 909,
+      "declareWar": 2,
+      "acceptPeace": 7
+    },
+    "durchmarschBefehle": 0,
+    "kartenfreigabeBefehle": 0,
+    "freigabenAmEnde": {
+      "durchmarsch": 0,
+      "karte": 0,
+      "buendnisse": 0
+    },
+    "freigabenHoechstens": {
+      "durchmarsch": 0,
+      "karte": 0,
+      "buendnisse": 0
+    },
+    "offeneAngeboteAmEnde": 7,
+    "handel": 4637,
+    "bestandssummenTag200": {
+      "food": 35232213,
+      "wood": 24123475,
+      "iron": 23355037,
+      "coal": 33682685,
+      "oil": 20990877,
+      "rare": 15620496,
+      "money": 5318046
+    },
+    "bestandssummenTag200NurLebende": {
+      "food": 35232213,
+      "wood": 24123475,
+      "iron": 23355037,
+      "coal": 33682685,
+      "oil": 20990877,
+      "rare": 15620496,
+      "money": 5318046
+    },
+    "bestandJeMacht": {
+      "Vereinigte Staaten": {
+        "food": 10553542,
+        "wood": 3044802,
+        "iron": 2182310,
+        "coal": 10462449,
+        "oil": 10518592,
+        "rare": 3933633,
+        "money": 963217
+      },
+      "Russland": {
+        "food": 1847609,
+        "wood": 1985177,
+        "iron": 1802314,
+        "coal": 1864057,
+        "oil": 167000,
+        "rare": 1538875,
+        "money": 363452
+      },
+      "China": {
+        "food": 4331763,
+        "wood": 1554819,
+        "iron": 1355015,
+        "coal": 4223793,
+        "oil": 3954690,
+        "rare": 2095527,
+        "money": 702525
+      },
+      "Indien": {
+        "food": 4768116,
+        "wood": 3914786,
+        "iron": 4273643,
+        "coal": 4608463,
+        "oil": 4355232,
+        "rare": 2779811,
+        "money": 1043552
+      },
+      "Deutschland": {
+        "food": 1565935,
+        "wood": 1519872,
+        "iron": 1636057,
+        "coal": 1558939,
+        "oil": 167000,
+        "rare": 1099483,
+        "money": 305017
+      },
+      "Frankreich": {
+        "food": 9071233,
+        "wood": 9194325,
+        "iron": 9168625,
+        "coal": 9405384,
+        "oil": 167000,
+        "rare": 2971580,
+        "money": 793878
+      },
+      "Vereinigtes Königreich": {
+        "food": 1598983,
+        "wood": 1520758,
+        "iron": 1461162,
+        "coal": 156543,
+        "oil": 167000,
+        "rare": 67000,
+        "money": 841505
+      },
+      "Italien": {
+        "food": 1495032,
+        "wood": 1388936,
+        "iron": 1475911,
+        "coal": 1403057,
+        "oil": 1494363,
+        "rare": 1134587,
+        "money": 304900
+      }
+    },
+    "ausgeschieden": [],
+    "abgelehnt": 3,
+    "abgelehntJeCode": {
+      "INSUFFICIENT_RESOURCES": 3
+    },
+    "abgelehntJeBefehlUndCode": {
+      "RECRUIT:INSUFFICIENT_RESOURCES": 3
+    },
+    "zustandOhneKi": "10950ec5abffd9b7"
+  },
+  "laeufe": {
+    "1815": {
+      "mitAntraegen": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 26066,
+        "kiBefehle": 15839,
+        "spyReportJeStufe": {
+          "hard": 563,
+          "normal": 246,
+          "easy": 198
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 350,
+          "normal:success": 169,
+          "normal:failure": 59,
+          "hard:failure": 190,
+          "normal:targetChanged": 18,
+          "hard:targetChanged": 23,
+          "easy:success": 118,
+          "easy:failure": 50,
+          "easy:targetChanged": 30
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 8,
+          "hard:intel": 35,
+          "normal:intel": 9,
+          "hard:economicSabotage": 19,
+          "normal:economicSabotage": 9,
+          "easy:counter": 1,
+          "easy:intel": 2,
+          "easy:economicSabotage": 8
+        },
+        "spyDetected": 64,
+        "sabotage": 203,
+        "spyLost": 0,
+        "tradeAgreed": 3,
+        "tradeClosedJeGrund": {
+          "declined": 39,
+          "accepted": 3
+        },
+        "offerTrade": 42,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 3,
+        "declineTrade": 39,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 9,
+        "kuendigungen": 1,
+        "diplomatieJeAktion": {
+          "declareWar": 10,
+          "offerPeace": 824,
+          "requestRightOfWay": 11,
+          "acceptRightOfWay": 5,
+          "grantRightOfWay": 4,
+          "acceptPeace": 3,
+          "revokeRightOfWay": 1
+        },
+        "kriege": 11,
+        "foermlich": 10,
+        "ueberfaelle": 1,
+        "ueberfaelleEinzeln": [
+          {
+            "tick": 1590,
+            "taeter": "Italien",
+            "opfer": "Frankreich",
+            "art": "ziel",
+            "friedensschluss": true,
+            "nachKuendigung": false,
+            "nachAbtretung": false,
+            "erklaerungLief": false
+          }
+        ],
+        "ueberfaelleJeArt": {
+          "ziel": 1
+        },
+        "ueberfaelleMitFriedensschluss": 1,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 3,
+        "friedenZwischenKi": 3,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 1
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 188,
+          "gedeckt": 188,
+          "luecken": []
+        },
+        "zurueckgehalten": 0,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [
+          "Deutschland"
+        ],
+        "zustandOhneKi": "c2382182c9139e60"
+      },
+      "ohneAntraege": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 27896,
+        "kiBefehle": 16327,
+        "spyReportJeStufe": {
+          "hard": 585,
+          "normal": 298,
+          "easy": 237
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 350,
+          "normal:success": 201,
+          "normal:failure": 86,
+          "hard:failure": 209,
+          "normal:targetChanged": 11,
+          "hard:targetChanged": 26,
+          "easy:success": 140,
+          "easy:failure": 74,
+          "easy:targetChanged": 23
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 5,
+          "hard:intel": 29,
+          "normal:intel": 4,
+          "hard:economicSabotage": 17,
+          "normal:economicSabotage": 3,
+          "easy:counter": 1,
+          "easy:intel": 1,
+          "easy:economicSabotage": 1
+        },
+        "spyDetected": 42,
+        "sabotage": 223,
+        "spyLost": 0,
+        "tradeAgreed": 12,
+        "tradeClosedJeGrund": {
+          "declined": 37,
+          "accepted": 12
+        },
+        "offerTrade": 49,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 12,
+        "declineTrade": 37,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 0,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 9,
+          "offerPeace": 787,
+          "acceptPeace": 2
+        },
+        "kriege": 9,
+        "foermlich": 9,
+        "ueberfaelle": 0,
+        "ueberfaelleEinzeln": [],
+        "ueberfaelleJeArt": {},
+        "ueberfaelleMitFriedensschluss": 0,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 2,
+        "friedenZwischenKi": 2,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 1
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 161,
+          "gedeckt": 161,
+          "luecken": []
+        },
+        "zurueckgehalten": 31,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [],
+        "zustandOhneKi": "1e1fd70e034494b4"
+      }
+    },
+    "1914": {
+      "mitAntraegen": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 29050,
+        "kiBefehle": 17028,
+        "spyReportJeStufe": {
+          "hard": 600,
+          "normal": 292,
+          "easy": 208
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 343,
+          "normal:failure": 86,
+          "normal:success": 187,
+          "hard:failure": 222,
+          "normal:targetChanged": 19,
+          "hard:targetChanged": 35,
+          "easy:success": 121,
+          "easy:failure": 62,
+          "easy:targetChanged": 25
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 4,
+          "hard:intel": 18,
+          "normal:intel": 17,
+          "normal:economicSabotage": 15,
+          "hard:economicSabotage": 11,
+          "easy:counter": 2,
+          "easy:intel": 5,
+          "easy:economicSabotage": 3
+        },
+        "spyDetected": 41,
+        "sabotage": 199,
+        "spyLost": 0,
+        "tradeAgreed": 2,
+        "tradeClosedJeGrund": {
+          "declined": 30,
+          "accepted": 2
+        },
+        "offerTrade": 32,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 2,
+        "declineTrade": 30,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 8,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 9,
+          "offerPeace": 937,
+          "requestRightOfWay": 5,
+          "acceptRightOfWay": 4,
+          "grantRightOfWay": 4,
+          "acceptPeace": 3
+        },
+        "kriege": 11,
+        "foermlich": 9,
+        "ueberfaelle": 2,
+        "ueberfaelleEinzeln": [
+          {
+            "tick": 1061,
+            "taeter": "Deutschland",
+            "opfer": "Frankreich",
+            "art": "ziel",
+            "friedensschluss": true,
+            "nachKuendigung": false,
+            "nachAbtretung": false,
+            "erklaerungLief": false
+          },
+          {
+            "tick": 2433,
+            "taeter": "China",
+            "opfer": "Russland",
+            "art": "ziel",
+            "friedensschluss": true,
+            "nachKuendigung": false,
+            "nachAbtretung": false,
+            "erklaerungLief": false
+          }
+        ],
+        "ueberfaelleJeArt": {
+          "ziel": 2
+        },
+        "ueberfaelleMitFriedensschluss": 2,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 3,
+        "friedenZwischenKi": 3,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 1
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 146,
+          "gedeckt": 146,
+          "luecken": []
+        },
+        "zurueckgehalten": 0,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [],
+        "zustandOhneKi": "6048da665d11d178"
+      },
+      "ohneAntraege": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 27950,
+        "kiBefehle": 16641,
+        "spyReportJeStufe": {
+          "hard": 567,
+          "normal": 269,
+          "easy": 228
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 343,
+          "normal:failure": 82,
+          "normal:success": 175,
+          "hard:failure": 203,
+          "normal:targetChanged": 12,
+          "easy:success": 133,
+          "easy:failure": 68,
+          "easy:targetChanged": 27,
+          "hard:targetChanged": 21
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 3,
+          "hard:intel": 27,
+          "normal:intel": 4,
+          "normal:economicSabotage": 12,
+          "hard:economicSabotage": 24,
+          "easy:counter": 1,
+          "easy:intel": 2,
+          "easy:economicSabotage": 2
+        },
+        "spyDetected": 53,
+        "sabotage": 210,
+        "spyLost": 0,
+        "tradeAgreed": 3,
+        "tradeClosedJeGrund": {
+          "declined": 36,
+          "accepted": 3
+        },
+        "offerTrade": 39,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 3,
+        "declineTrade": 36,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 0,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 8,
+          "offerPeace": 897,
+          "acceptPeace": 2
+        },
+        "kriege": 9,
+        "foermlich": 8,
+        "ueberfaelle": 1,
+        "ueberfaelleEinzeln": [
+          {
+            "tick": 1061,
+            "taeter": "Deutschland",
+            "opfer": "Frankreich",
+            "art": "ziel",
+            "friedensschluss": true,
+            "nachKuendigung": false,
+            "nachAbtretung": false,
+            "erklaerungLief": false
+          }
+        ],
+        "ueberfaelleJeArt": {
+          "ziel": 1
+        },
+        "ueberfaelleMitFriedensschluss": 1,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 2,
+        "friedenZwischenKi": 2,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 1
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 155,
+          "gedeckt": 155,
+          "luecken": []
+        },
+        "zurueckgehalten": 24,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [
+          "Deutschland"
+        ],
+        "zustandOhneKi": "b938de895f162f87"
+      }
+    },
+    "2015": {
+      "mitAntraegen": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 27384,
+        "kiBefehle": 16240,
+        "spyReportJeStufe": {
+          "hard": 609,
+          "normal": 234,
+          "easy": 226
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 379,
+          "normal:success": 151,
+          "normal:failure": 72,
+          "hard:failure": 203,
+          "normal:targetChanged": 11,
+          "hard:targetChanged": 27,
+          "easy:success": 141,
+          "easy:targetChanged": 23,
+          "easy:failure": 62
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 7,
+          "hard:intel": 9,
+          "normal:intel": 5,
+          "hard:economicSabotage": 7,
+          "normal:economicSabotage": 4,
+          "easy:counter": 1,
+          "easy:intel": 1,
+          "easy:economicSabotage": 1
+        },
+        "spyDetected": 10,
+        "sabotage": 215,
+        "spyLost": 0,
+        "tradeAgreed": 14,
+        "tradeClosedJeGrund": {
+          "declined": 29,
+          "accepted": 14
+        },
+        "offerTrade": 43,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 14,
+        "declineTrade": 29,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 11,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 9,
+          "offerPeace": 690,
+          "requestRightOfWay": 17,
+          "acceptRightOfWay": 6,
+          "grantRightOfWay": 5,
+          "acceptPeace": 3
+        },
+        "kriege": 9,
+        "foermlich": 9,
+        "ueberfaelle": 0,
+        "ueberfaelleEinzeln": [],
+        "ueberfaelleJeArt": {},
+        "ueberfaelleMitFriedensschluss": 0,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 3,
+        "friedenZwischenKi": 3,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 2
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 140,
+          "gedeckt": 140,
+          "luecken": []
+        },
+        "zurueckgehalten": 0,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [],
+        "zustandOhneKi": "3c77db98cf5645ae"
+      },
+      "ohneAntraege": {
+        "spieltage": 200,
+        "maechte": 8,
+        "ereignisse": 26288,
+        "kiBefehle": 15790,
+        "spyReportJeStufe": {
+          "hard": 570,
+          "normal": 303,
+          "easy": 234
+        },
+        "spyReportJeStufeUndAusgang": {
+          "hard:success": 353,
+          "normal:success": 202,
+          "normal:failure": 89,
+          "hard:failure": 173,
+          "normal:targetChanged": 12,
+          "easy:success": 131,
+          "easy:failure": 80,
+          "hard:targetChanged": 44,
+          "easy:targetChanged": 23
+        },
+        "recruitSpyJeStufeUndAuftrag": {
+          "hard:counter": 2,
+          "normal:counter": 5,
+          "hard:intel": 8,
+          "normal:intel": 3,
+          "hard:economicSabotage": 9,
+          "normal:economicSabotage": 4,
+          "easy:counter": 1,
+          "easy:intel": 1,
+          "easy:economicSabotage": 1
+        },
+        "spyDetected": 12,
+        "sabotage": 217,
+        "spyLost": 0,
+        "tradeAgreed": 9,
+        "tradeClosedJeGrund": {
+          "declined": 44,
+          "accepted": 9
+        },
+        "offerTrade": 53,
+        "offerTradeMitProvinz": 0,
+        "acceptTrade": 9,
+        "declineTrade": 44,
+        "provinceCeded": 0,
+        "durchmarschKiKi": 0,
+        "kuendigungen": 0,
+        "diplomatieJeAktion": {
+          "declareWar": 10,
+          "offerPeace": 903,
+          "acceptPeace": 3
+        },
+        "kriege": 10,
+        "foermlich": 10,
+        "ueberfaelle": 0,
+        "ueberfaelleEinzeln": [],
+        "ueberfaelleJeArt": {},
+        "ueberfaelleMitFriedensschluss": 0,
+        "ueberfaelleNachKuendigung": 0,
+        "ueberfaelleNachAbtretung": 0,
+        "frieden": 3,
+        "friedenZwischenKi": 3,
+        "geldmangelKi": 0,
+        "ablehnungen": {
+          "RECRUIT:INSUFFICIENT_RESOURCES": 2
+        },
+        "ablehnungenAk2": 0,
+        "ak4": {
+          "befehle": 140,
+          "gedeckt": 140,
+          "luecken": []
+        },
+        "zurueckgehalten": 54,
+        "artillerie": 0,
+        "beschuss": 0,
+        "ausgeschieden": [],
+        "zustandOhneKi": "d1eb78fcf365e476"
+      }
+    }
+  },
+  "ak3": {
+    "summeBewegbarMit": 0,
+    "summeBewegbarOhne": 0
+  }
+}

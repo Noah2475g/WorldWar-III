@@ -1,5 +1,6 @@
-import { buildingCostForLevel } from '@worldwar/core'
-import type { BuildingKey, Command, ResourceKey } from '@worldwar/core'
+import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
+import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
+import type { Fixed } from '@worldwar/shared'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -300,6 +301,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     // Ohne Artillerie ist `armyRange` jeder KI-Armee 0, und die Feuerautomatik aus
     // T-M15-07 waere gebaut, gruen getestet und wirkungslos gewesen.
     if (Object.values(province.buildings ?? {}).every((level) => (level ?? 0) === 0)) continue
+    // Unter der Moralgrenze hebt der Kern ohnehin nichts aus (D6.8) — sonst wirft die KI
+    // RECRUIT ins Blaue (R-AI-09/AK2, Nacharbeit Turnier M17, C3).
+    if ((province.morale ?? 0) < RECRUIT_MIN_MORALE) continue
 
     /**
      * **Die dringlichste Einheit, die auch bezahlbar ist** (T-M15-08).
@@ -365,7 +369,15 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
  * tauscht, tauscht immer zu spät und nie für etwas, das er *vorhat*. Ein Mensch verkauft
  * Überschuss, um sich die Fabrik leisten zu können — genau das fehlte.
  */
-function missingForNextBuilding(context: AiContext): ResourceKey | null {
+/** Was dem nächsten Bauvorhaben fehlt, mit Menge (T-M17-10) — die Börse braucht den Rohstoff, das Handelsangebot auch die Menge. */
+export interface BuildingShortfall {
+  resource: ResourceKey
+  amount: Fixed
+  building: BuildingKey
+  provinceId: ProvinceId
+}
+
+export function nextBuildingShortfall(context: AiContext): BuildingShortfall | null {
   // Nur sichtbare eigene Provinzen (T-M41-09): sonst tauscht die KI fuer einen Bau, den der Kern ablehnt.
   const own = context.view.provinces.filter(
     (province) => province.owner === context.view.playerId && !province.stale,
@@ -383,10 +395,16 @@ function missingForNextBuilding(context: AiContext): ResourceKey | null {
       const resource = key as ResourceKey
       const stock = context.view.self.resources[resource]
       const reserve = Math.trunc((stock * RESERVE_PERMILLE) / 1000)
-      if (stock - reserve < amount) return resource
+      if (stock - reserve < amount) {
+        return { resource, amount: amount - (stock - reserve), building, provinceId: province.id }
+      }
     }
   }
   return null
+}
+
+function missingForNextBuilding(context: AiContext): ResourceKey | null {
+  return nextBuildingShortfall(context)?.resource ?? null
 }
 
 /** Trades away a surplus to cover a shortage — the AI uses the same market as everyone. */

@@ -575,6 +575,91 @@ body {
   margin: var(--sp-sm) 0;
 }
 
+/* Die Spionageuebersicht (R-SPY-06): eine Karte je Spion statt einer Tabelle — sechs
+   Spalten schoeben die Leiste seitwaerts (T-M22-02). */
+.spy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.spy {
+  min-width: 0;
+  padding: var(--sp-xs) var(--sp-sm);
+  border-left: 3px solid var(--line);
+  background: var(--paper-sunk);
+}
+
+.spy__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: 0;
+}
+
+.spy__target {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  overflow-wrap: anywhere;
+}
+
+/* Angebote im Diplomatiepanel (T-M17-14, R-DIP-07): eine Zeile je Angebot, mit
+   Trennlinie wie die Tabellenzeilen daneben — keine eigene Farbe (R-UI-02). */
+.offers {
+  list-style: none;
+  margin: 0 0 var(--sp-md);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.offer {
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--paper-sunk);
+}
+
+.offer__text {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Die Kriege der Welt (T-M17-14, R-DIP-06/AK2): eine schlichte Liste, kein Balken. */
+.wars ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Das Angebotsformular (T-M17-14, R-DIP-07, R-DIP-09): die Mengenfelder bleiben schmal,
+   damit die Tabelle in der Seitenleiste nicht seitwaerts kriecht (T-M22-02). */
+.trade-form__table input[type='number'] {
+  width: 6ch;
+}
+
+.trade-form__chosen {
+  list-style: none;
+  margin: 0 0 var(--sp-sm);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+}
+
 .actions {
   display: flex;
   gap: var(--sp-sm);
@@ -944,6 +1029,25 @@ body {
   border-bottom: 1px solid var(--paper-sunk);
 }
 
+/*
+  Der Name der Macht als Auswahlknopf (Befund 1 der Sichtpruefung U, T-M17-14, Nacharbeit):
+  die eigene "Macht wählen"-Spalte sprengte bei 380px Seitenleistenbreite den Rahmen. Der
+  Knopf sieht aus wie Text, wie `.log__jump` — nur der Fokusring und die gewaehlte Zeile
+  (`.is-selected`) zeigen, dass hier etwas passiert.
+*/
+.diplomacy-table .nation-select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.diplomacy-table tbody tr.is-selected {
+  font-weight: 600;
+}
+
 /* Zahlenkolonnen: rechtsbuendig und dicktengleich, damit die Spalten untereinander
    lesbar sind statt zu zappeln (Wirtschaftsuebersicht, R-ECON-06). */
 .table--numbers td + td,
@@ -1089,6 +1193,13 @@ body {
   gap: 4px;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
+}
+
+/* Was die Pause gerade tut (T-M39-10, Befund MP-4). Gedämpft und nicht in Warnfarbe:
+   daneben steht der Knopf, mit dem man es beendet — das ist eine Auskunft und keine
+   Lage, über die jemand entscheiden müsste. */
+.clock__pause {
+  color: var(--ink-soft);
 }
 
 .action {
@@ -2104,7 +2215,8 @@ body {
 }
 
 .alert--battle,
-.alert--capital {
+.alert--capital,
+.alert--sabotage {
   border-left-color: var(--accent);
   color: var(--accent);
 }

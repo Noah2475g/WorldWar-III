@@ -7,6 +7,9 @@ import type {
   PlayerId,
   ProvinceId,
   ResourceKey,
+  Spy,
+  SpyId,
+  SpyMission,
   Terrain,
   Tick,
 } from '../state/types'
@@ -308,6 +311,150 @@ export interface GoalReachedEvent extends BaseEvent {
   day: number
 }
 
+/**
+ * Ein Durchmarschrecht beginnt oder wird gekuendigt (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * `playerId` ist der **Gewaehrende**, `targetPlayerId` der **Gast** — gerichtet wie das Recht
+ * selbst. `granted: false` ist die Kuendigung, und `effectiveAtTick` der erste Tick, in dem der
+ * Gast ein Eindringling ist; bei `granted: true` der Tick der Gewaehrung. Beide erfahren es
+ * (`audience` beide), sonst niemand: wer wen durchlaesst, ist Sache der Beteiligten (R-DIP-04).
+ * Kein Alarm — die Frist ist gerade dafuer da, dass Zeit zum Reagieren bleibt.
+ */
+export interface RightOfWayChangedEvent extends BaseEvent {
+  type: 'RIGHT_OF_WAY_CHANGED'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  granted: boolean
+  effectiveAtTick: Tick
+}
+
+/**
+ * Warum ein Handelsangebot vom Tisch ist (T-M17-05, D29.5). `invalid` heisst: eine der beiden
+ * Maechte ist ausgeschieden, ODER (seit T-M17-06, Nachtrag Befund M17-D7) eine angebotene oder
+ * verlangte Provinz ist nicht mehr abtretbar (`provincesLapsed`). Der Spielertext in de.ts
+ * (`diplomacy.tradeClosed.invalid`) nennt deshalb beide Ursachen, keine als sicher.
+ */
+export type TradeOfferCloseReason = 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'war' | 'invalid'
+
+/**
+ * Ein Handelsangebot ist geschlossen (T-M17-05, R-DIP-05, D29.5).
+ *
+ * `playerId` ist der **Anbieter**, `targetPlayerId` der **Empfaenger**. Nur die beiden lesen es
+ * (`audience` beide). Bewusst **ohne** Mengen: was zurueckging, steht im Bestand, und der
+ * Anbieter kennt sein Angebot.
+ */
+export interface TradeOfferClosedEvent extends BaseEvent {
+  type: 'TRADE_OFFER_CLOSED'
+  offerId: string
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  reason: TradeOfferCloseReason
+}
+
+/**
+ * Zwei Maechte haben gehandelt (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` die beiden. **Kein Mengenfeld** — die Welt erfaehrt,
+ * dass gehandelt wird, nicht wie viel. `describeEvent` uebernimmt jedes flache Feld in die
+ * Werte eines Satzes; ein Mengenfeld hier waere also sofort im Protokoll jedes Unbeteiligten.
+ */
+export interface TradeAgreedEvent extends BaseEvent {
+  type: 'TRADE_AGREED'
+  /** Der Anbieter. */
+  playerId: PlayerId
+  /** Der Annehmende. */
+  targetPlayerId: PlayerId
+}
+
+/**
+ * Eine Provinz wechselt durch Vertrag den Besitzer (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen: `audience` leer, `concerns` Vorbesitzer und Neubesitzer. **Kein Preis** — was
+ * dafuer gegeben wurde, erfaehrt die Welt nicht; `describeEvent` uebernimmt jedes flache Feld, ein
+ * Mengenfeld hier stuende sofort im Protokoll jedes Unbeteiligten. **Kein Alarm:** eine Abtretung
+ * ist verabredet, nicht erlitten, und haelt niemandes Vorspulen an. Nicht in `ALERT_TYPES`.
+ */
+export interface ProvinceCededEvent extends BaseEvent {
+  type: 'PROVINCE_CEDED'
+  provinceId: ProvinceId
+  previousOwner: PlayerId
+  newOwner: PlayerId
+}
+
+/**
+ * Ein Spion hat seinen Auftrag ausgeführt (R-SPY-02, T-M17-08, D29.5).
+ *
+ * `audience: [playerId]` — nur der Besitzer. Wer ausgespäht wird, erfährt es nicht; nur ein
+ * Gegenspion kann einen fremden Spion enttarnen (R-SPY-05). Und das Ereignis trägt **nichts vom
+ * Gesehenen**: was eine Aufklärung zeigt, steht in der Sicht (`publicView`) und im
+ * Aufklärungsgedächtnis, nicht im Protokoll — sonst läge fremder Bestand im Ereignisprotokoll
+ * und damit im Spielstand. Kein Alarm: ein Bericht hält das Vorspulen nicht an.
+ */
+export interface SpyReportEvent extends BaseEvent {
+  type: 'SPY_REPORT'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  /** `targetChanged`: die Provinz hat den Besitzer gewechselt, der Auftrag passt nicht mehr — kein Wurf. */
+  outcome: NonNullable<Spy['lastOutcome']>
+}
+
+/**
+ * Ein Spion ist verloren, weil sein Sold nicht zu zahlen war (R-SPY-02/AK2, T-M17-08, D29.5).
+ *
+ * Nur für den Besitzer. Ziel und Auftrag stehen dabei, weil die Oberfläche keine Kennungen zeigt
+ * (Befund M17-S1) und „Spion s3 verloren" niemandem sagt, welcher es war.
+ */
+export interface SpyLostEvent extends BaseEvent {
+  type: 'SPY_LOST'
+  playerId: PlayerId
+  spyId: SpyId
+  provinceId: ProvinceId
+  mission: SpyMission
+  reason: 'unpaid'
+}
+
+/**
+ * Eine Provinz wurde sabotiert (R-SPY-04/AK3, T-M17-09, D29.5).
+ *
+ * **Ohne Urheber — mit Absicht, und nicht nur in der Anzeige.** `describeEvent` übernimmt jedes flache
+ * Feld in die Textwerte (`valuesFor`); ein Feld mit dem Angreifer stünde damit im Protokoll des Opfers,
+ * sobald ein Satz es nennt. Das Ereignis kennt deshalb nur, was das Opfer ohnehin sieht: die eigene
+ * Provinz und was sie verloren hat. Nur das Opfer liest es, und es ist ein **Alarm** — sein Vorspulen hält
+ * an (R-TIME-03), das eines Dritten nicht. Alle drei Wirkungsfelder stehen immer: die Wirtschaftssabotage
+ * hat `delayTicks` 0, die Militärsabotage `moraleLoss` 0 und `destroyed` leer.
+ */
+export interface SabotageSufferedEvent extends BaseEvent {
+  type: 'SABOTAGE_SUFFERED'
+  /** Das Opfer: der Besitzer der Provinz. */
+  playerId: PlayerId
+  provinceId: ProvinceId
+  kind: 'economic' | 'military'
+  /** Tatsächlich abgezogene Moral — bei niedriger Moral weniger als der Regelwert. */
+  moraleLoss: Fixed
+  /** Je Rohstoff, was vernichtet wurde; nur Einträge über null. */
+  destroyed: Partial<Record<ResourceKey, Fixed>>
+  /** Um so viele Ticks wird jeder laufende Auftrag der Provinz später fertig. */
+  delayTicks: number
+}
+
+/**
+ * Ein Gegenspion hat einen fremden Spion enttarnt (R-SPY-05/AK1, T-M17-09, D29.5).
+ *
+ * Beide erfahren es, mit Nennung der Macht: `playerId` ist der **Urheber** (dem der Spion gehörte),
+ * `targetPlayerId` der **Entdecker**. **Keine Spionkennung:** der Entdecker läse sonst eine fremde
+ * Kennung und könnte aus der fortlaufenden Folge fremde Anwerbungen zählen (Befund M17-S1). Kein Alarm.
+ * Der Spion ist damit verloren; ein eigenes `SPY_LOST` gibt es dafür nicht.
+ */
+export interface SpyDetectedEvent extends BaseEvent {
+  type: 'SPY_DETECTED'
+  playerId: PlayerId
+  targetPlayerId: PlayerId
+  provinceId: ProvinceId
+  mission: SpyMission
+}
+
 export type GameEvent =
   | GameStartedEvent
   | CommandRejectedEvent
@@ -336,6 +483,14 @@ export type GameEvent =
   | GameEndedEvent
   | DayReportEvent
   | GoalReachedEvent
+  | RightOfWayChangedEvent
+  | TradeOfferClosedEvent
+  | TradeAgreedEvent
+  | ProvinceCededEvent
+  | SpyReportEvent
+  | SpyLostEvent
+  | SabotageSufferedEvent
+  | SpyDetectedEvent
 
 export type EventType = GameEvent['type']
 
@@ -368,6 +523,14 @@ export const EVENT_TYPES = [
   'GAME_ENDED',
   'DAY_REPORT',
   'GOAL_REACHED',
+  'RIGHT_OF_WAY_CHANGED',
+  'TRADE_OFFER_CLOSED',
+  'TRADE_AGREED',
+  'PROVINCE_CEDED',
+  'SPY_REPORT',
+  'SPY_LOST',
+  'SABOTAGE_SUFFERED',
+  'SPY_DETECTED',
 ] as const satisfies readonly EventType[]
 
 // If the union grows and this list does not, the next line stops compiling.
@@ -389,6 +552,8 @@ export const ALERT_TYPES = [
   'CAPITAL_LOST',
   'PLAYER_ELIMINATED',
   'GAME_ENDED',
+  // Erlittene Sabotage (T-M17-09, R-SPY-04/AK3): nur das Opfer liest sie, also hält sie nur dessen Vorspulen an.
+  'SABOTAGE_SUFFERED',
 ] as const satisfies readonly EventType[]
 
 export function isAlertType(type: EventType): boolean {

@@ -1,8 +1,10 @@
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { fastForward, firstAlertFor, runTicks } from '../../src/clock'
+import { eventsFor } from '../../src/events/emit'
 import { createInitialState, type GameConfig } from '../../src/state/create'
 import type { GameEvent } from '../../src/events/types'
+import type { Spy, SpyMission } from '../../src/state/types'
 
 /**
  * Wer erfährt was (T-M15-01, R-TIME-06).
@@ -147,5 +149,107 @@ describe('R-TIME-06/AK1 Jeder Alarm nennt seine Betroffenen', () => {
       .filter((event) => event.audience.length > 0 && event.concerns.some((id) => !event.audience.includes(id)))
       .map((event) => event.type)
     expect([...new Set(ausserhalb)], 'Betroffene ausserhalb der Leserschaft').toEqual([])
+  })
+})
+
+describe('R-SPY-04/AK3 Wer sabotiert wird, erfaehrt nie, von wem (T-M17-09)', () => {
+  it('ueber vierzig Spieltage mit Saboteuren, einem Aufklaerer und Gegenspionen', () => {
+    let state = fresh()
+    state.nextIds.spy = 101
+    state.players['p1']!.resources.money += 5_000_000
+
+    const spy = (owner: string, provinceId: string, mission: SpyMission): Spy => {
+      const s: Spy = {
+        id: `s${state.nextIds.spy++}`,
+        owner,
+        provinceId,
+        mission,
+        recruitedTick: 0,
+        assignedTick: 0,
+        lastRunTick: null,
+        lastOutcome: null,
+      }
+      state.espionage.spies.push(s)
+      return s
+    }
+
+    spy('p1', 'o1', 'economicSabotage')
+    spy('p1', 'o2', 'militarySabotage')
+    spy('p1', 's2', 'economicSabotage')
+    spy('p1', 's1', 'intel')
+    spy('p3', 's2', 'counter')
+    spy('p3', 's1', 'counter')
+
+    const seen: GameEvent[] = []
+    for (let day = 0; day < 40; day++) {
+      const result = runTicks(state, TEST_RULES.constants.ticksPerDay, ctx)
+      state = result.state
+      seen.push(...result.events)
+      if (state.victory.winner !== null) break
+    }
+
+    // Vorbedingungen — kein leerer Beweis.
+    expect(state.victory.winner, 'die Partie ist zu Ende').toBeNull()
+    expect(
+      seen.some((e) => e.type === 'SABOTAGE_SUFFERED' && e.playerId === 'p2' && e.kind === 'economic'),
+      'keine wirtschaftliche Sabotage gegen p2',
+    ).toBe(true)
+    expect(
+      seen.some((e) => e.type === 'SABOTAGE_SUFFERED' && e.kind === 'military'),
+      'keine militaerische Sabotage',
+    ).toBe(true)
+    expect(
+      seen.some((e) => e.type === 'SPY_DETECTED' && e.targetPlayerId === 'p3'),
+      'p3 hat nie einen Spion enttarnt',
+    ).toBe(true)
+    expect(
+      seen.some(
+        (e) =>
+          (e.type === 'PROVINCE_REVOLTED' || e.type === 'PROVINCE_CAPTURED') &&
+          ((e as { previousOwner?: string }).previousOwner === 'p1' || (e as { newOwner?: string }).newOwner === 'p1'),
+      ),
+      'der Lauf ist nicht ruhig geblieben',
+    ).toBe(false)
+
+    const urheber = new Set(['p1', 's101', 's102', 's103', 's104'])
+    const werte = (x: unknown, out: string[] = []): string[] => {
+      if (x === null || x === undefined) return out
+      if (Array.isArray(x)) {
+        for (const v of x) werte(v, out)
+        return out
+      }
+      if (typeof x === 'object') {
+        for (const v of Object.values(x)) werte(v, out)
+        return out
+      }
+      out.push(String(x))
+      return out
+    }
+
+    const verstoesse: string[] = []
+    for (const opfer of ['p2', 'p3']) {
+      for (const event of eventsFor(seen, opfer)) {
+        if (event.type === 'SPY_DETECTED' && event.targetPlayerId === opfer) continue
+        for (const wert of werte(event)) {
+          if (urheber.has(wert)) verstoesse.push(`${event.type}:${wert}`)
+        }
+      }
+    }
+    expect(verstoesse).toEqual([])
+
+    for (const event of seen) {
+      if (event.type !== 'SABOTAGE_SUFFERED') continue
+      expect(event.severity).toBe('alert')
+      expect(event.audience).toEqual([event.playerId])
+      expect(event.concerns).toEqual([event.playerId])
+      expect(firstAlertFor([event], event.playerId)).toBe(event)
+      for (const other of ['p1', 'p2', 'p3']) {
+        if (other === event.playerId) continue
+        expect(firstAlertFor([event], other)).toBeNull()
+      }
+    }
+
+    // Gegenkontrolle: die Suche kann Namen sehen.
+    expect(seen.some((e) => e.type === 'SPY_DETECTED' && e.targetPlayerId === 'p3' && e.playerId === 'p1')).toBe(true)
   })
 })

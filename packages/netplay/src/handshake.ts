@@ -1,6 +1,9 @@
 import { advanceTicks } from '@worldwar/ai'
 import {
+  InvalidStateError,
+  SCHEMA_VERSION,
   createInitialState,
+  validateState,
   type GameConfig,
   type GameState,
   type MapData,
@@ -402,6 +405,21 @@ export function acceptState(
   message: StateMessage,
   announced: string,
 ): { ok: true; state: GameState } | { ok: false; reason: string } {
+  // **Zuerst die Stufe, dann die Pruefsumme** (T-M17-03). Ein Stand aus einem anderen Bau
+  // hat ohnehin eine andere Pruefsumme — aber die Meldung „passt nicht zu dem, was
+  // angekuendigt war" schickt den Naechsten auf die Suche nach einem verstuemmelten
+  // Spielstand, obwohl in Wahrheit zwei verschiedene Fassungen des Spiels miteinander reden.
+  // Und der Fall ist nicht theoretisch: ein Stand der Stufe 3 hat kein `espionage`, und
+  // `cloneState` liest es im ersten Tick — aus der falschen Meldung wuerde ein Absturz.
+  const stufe = (message.state as { schemaVersion?: unknown }).schemaVersion
+  if (stufe !== SCHEMA_VERSION) {
+    return {
+      ok: false,
+      reason:
+        `Der uebertragene Stand hat Format ${JSON.stringify(stufe)}, diese Seite spricht ${SCHEMA_VERSION}. ` +
+        'Die beiden Seiten haben verschiedene Fassungen des Spiels; der Stand wird verworfen.',
+    }
+  }
   const gerechnet = stateHash(message.state)
   if (gerechnet !== announced) {
     return {
@@ -409,6 +427,21 @@ export function acceptState(
       reason:
         `Der uebertragene Stand passt nicht zu dem, was angekuendigt war: ${gerechnet} statt ${announced}. ` +
         'Er wird verworfen — ein halb angekommener Spielstand ist schlimmer als keiner.',
+    }
+  }
+  // Dieselbe Pruefung wie auf dem lokalen Ladeweg, aus demselben Grund (DECISIONS.md
+  // 2026-09-24 „Die Vollstaendigkeitspruefung laeuft auf beiden Ladewegen", hier nachgezogen
+  // am 2026-09-25, Befund N3): die Pruefsumme sagt nur, dass der Stand UNVERAENDERT ist,
+  // nicht, dass er VOLLSTAENDIG ist. Ein Host mit einem aelteren Bau, der ein Feld noch
+  // nicht kennt, hat trotzdem dieselbe Formatstufe und eine in sich stimmige Pruefsumme —
+  // und ohne diese Zeile liefe sein Stand hier durch und stuerzte beim Gast im ersten Tick
+  // ab, weit weg von der Stelle, die es verursacht hat.
+  try {
+    validateState(message.state)
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error instanceof InvalidStateError ? error.message : 'Der uebertragene Stand ist unvollstaendig.',
     }
   }
   return { ok: true, state: message.state }

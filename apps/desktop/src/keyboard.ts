@@ -17,7 +17,7 @@ export type Shortcut =
   | { type: 'load' }
   | { type: 'cycleMode'; mode: MapMode }
   | { type: 'help' }
-  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' }
+  | { type: 'openPanel'; panel: 'diplomacy' | 'market' | 'standings' | 'espionage' }
   | { type: 'close' }
   | { type: 'pan'; dx: number; dy: number }
   /** Bild-auf/-ab: eine Zoomstufe hinein (1) oder heraus (-1) (T-M30-03). */
@@ -127,6 +127,11 @@ export function resolveKey(
     case 'l':
     case 'L':
       return { type: 'openPanel', panel: 'standings' }
+    // Die Spionageuebersicht (R-SPY-06, D29.9, T-M17-13). Strg+S bleibt Speichern: der
+    // Strg-Zweig oben kommt zuerst, dieser Fall greift nur ohne Strg/Cmd.
+    case 's':
+    case 'S':
+      return { type: 'openPanel', panel: 'espionage' }
     case 'F1':
     case '?':
       return { type: 'help' }

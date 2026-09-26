@@ -30,6 +30,28 @@ function canOccupy(state: GameState, provinceId: ProvinceId, rules: PhaseContext
   return [...owners][0]!
 }
 
+/**
+ * Der Besitzerwechsel selbst — ein Helfer fuer die Eroberung (unten) und die Abtretung durch
+ * Vertrag (`commands/tradeOffer.ts`, T-M17-06, R-DIP-09/AK2).
+ *
+ * Er setzt nur den Besitzer und nimmt die Aushebungen vom Band. Laufende Bauauftraege bleiben
+ * stehen und enden in der Bauphase ueber `ownerAtStart` (`BUILD_CANCELLED` an den alten Besitzer,
+ * ohne Erstattung, R-PROV-01/AK2). Was eine Eroberung ZUSAETZLICH kostet — Eroberungsmoral,
+ * Besatzungszeit, Verstimmung, Hauptstadtverlust und `PROVINCE_CAPTURED` —, bleibt beim Aufrufer:
+ * eine Abtretung hat davon nichts. Der Aufstand (`phases/morale.ts`) nimmt ihn nicht, weil er die
+ * Provinz niemandem gibt und beide Warteschlangen selbst leert.
+ *
+ * Gibt den Vorbesitzer zurueck.
+ */
+export function transferProvince(draft: GameState, provinceId: ProvinceId, newOwner: PlayerId): PlayerId | null {
+  const province = draft.provinces[provinceId]!
+  const previousOwner = province.owner
+  province.owner = newOwner
+  // Orders die with the change of owner; the construction phase reports it.
+  province.recruitQueue = []
+  return previousOwner
+}
+
 export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
   for (const provinceId of draft.provinceOrder) {
     const province = draft.provinces[provinceId]!
@@ -39,12 +61,9 @@ export const occupation: Phase = (draft: GameState, ctx: PhaseContext) => {
     // Neutral ground can be walked into; owned ground needs a war.
     if (province.owner !== null && !atWar(draft, claimant, province.owner)) continue
 
-    const previousOwner = province.owner
-    province.owner = claimant
+    const previousOwner = transferProvince(draft, provinceId, claimant)
     province.morale = ctx.rules.constants.capturedMorale
     province.occupiedSince = draft.tick
-    // Orders die with the change of owner; the construction phase reports it.
-    province.recruitQueue = []
 
     // Eine verlorene Provinz ist der haeufigste Anlass fuer eine Verstimmung — und der
     // Grund, warum ein Krieg sich verhaertet, statt nach dem ersten Gefecht zu enden

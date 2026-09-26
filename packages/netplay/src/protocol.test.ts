@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { createInitialState, type Command, type GameConfig } from '@worldwar/core'
+import { SCHEMA_VERSION, createInitialState, type Command, type GameConfig } from '@worldwar/core'
 import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import {
   END_REASONS,
@@ -189,5 +189,47 @@ describe('R-MP-03 Das Protokollpaket kennt keine Leitung', () => {
       .map((eintrag) => `${eintrag.datei}:${eintrag.zeile} ${eintrag.text.trim()}`)
 
     expect(treffer, `Netzcode in packages/netplay:\n${treffer.join('\n')}`).toEqual([])
+  })
+})
+
+/**
+ * Eine neue Formatstufe ist eine neue Protokollfassung (Nacharbeit zu T-M17-03, Befund M17-4,
+ * 2026-09-24).
+ *
+ * Die Nachricht `zustand` traegt einen ganzen `GameState` — sein Format **ist** Teil des
+ * Protokolls. Bis zum 2026-09-24 hiess es, die Determinismus-Probe fange zwei Bauten
+ * verschiedener Stufe ab. In der App fragt aber `resumeDecision` zuerst nach dem Startabdruck,
+ * und zwei Formatstufen haben zwangslaeufig verschiedene: die Entscheidung lautet
+ * „uebertragen", auch in einer frischen Partie. Ein neuer Gast verwirft den alten Stand dann
+ * sauber (`acceptState` prueft die Stufe) — ein **alter** Gast aber nimmt den neuen an, denn
+ * sein `acceptState` kennt nur die Pruefsumme, und die Partie laeuft nach dem Start
+ * auseinander. Den alten Bau erreicht nur eine Pruefung, die er selbst schon kennt: die
+ * Fassung im allerersten `hallo`.
+ */
+describe('R-MP-06/AK1 Eine neue Formatstufe ist eine neue Protokollfassung', () => {
+  /**
+   * Welche Protokollfassung zu welcher Formatstufe gehoert. Fassung 1 sprachen die Bauten des
+   * Mehrspielers M37–M39 mit Stufe 3 (`main` bei `8bda869`). **Wer `SCHEMA_VERSION` hebt,
+   * hebt `PROTOCOL_VERSION` und traegt das Paar hier ein** — sonst reden zwei Bauten
+   * miteinander, die einander den Spielstand nicht mehr lesen koennen.
+   */
+  const FASSUNG_JE_STUFE: Record<number, number> = { 3: 1, 4: 2 }
+
+  it('fuehrt zu jeder Formatstufe genau eine eigene Protokollfassung', () => {
+    expect(
+      FASSUNG_JE_STUFE[SCHEMA_VERSION],
+      `SCHEMA_VERSION ${SCHEMA_VERSION} ohne eigene PROTOCOL_VERSION — beide heben und das Paar eintragen`,
+    ).toBe(PROTOCOL_VERSION)
+    const fassungen = Object.values(FASSUNG_JE_STUFE)
+    expect(new Set(fassungen).size, 'zwei Formatstufen teilen eine Protokollfassung').toBe(fassungen.length)
+  })
+
+  it('weist das erste hallo eines Baus der Stufe 3 ab, bevor ein Stand die Leitung sieht', () => {
+    const alterBau = { ...beispiele.hallo, version: FASSUNG_JE_STUFE[3] }
+
+    const ergebnis = parseMessage(JSON.parse(JSON.stringify(alterBau)))
+
+    expect(ergebnis.ok, 'ein Bau der Stufe 3 kommt durch den Handschlag').toBe(false)
+    if (!ergebnis.ok) expect(ergebnis.reason).toMatch(/Fassung/)
   })
 })

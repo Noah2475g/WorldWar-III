@@ -305,7 +305,7 @@ const report = [
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
   failed.length > 0
-    ? ['## Fehlgeschlagen', '', ...failed.map((r) => `### ${r.id}\n\n\`\`\`\n${r.output}\n\`\`\`\n`)].join('\n')
+    ? ['## Fehlgeschlagen', '', ...failed.map((r) => `### ${r.id}\n\n\`\`\`\n${r.detail}\n\`\`\`\n`)].join('\n')
     : playtest.ok
       ? 'Alle Abnahmekriterien sind erfüllt, AK-7 eingeschlossen.'
       : 'Alle maschinell prüfbaren Abnahmekriterien sind erfüllt. Offen bleibt AK-7 — der Playtest, für den kein Skript einspringen kann: ob das Spiel Spaß macht, findet nur ein Mensch heraus.',

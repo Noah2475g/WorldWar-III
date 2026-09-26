@@ -25,15 +25,22 @@ import {
   cancelActions,
   capitalAction,
   diplomacyActions,
+  offerListActions,
   ownArmiesIn,
+  passageActions,
   planArrival,
   nextUnlock,
   recruitActions,
+  spyActions,
+  spyOverviewActions,
+  spySummary,
   targetAction,
+  tradeOfferAction,
   tradePreview,
   unitCounts,
   type ActionContext,
   type ActionSpec,
+  type SpyMove,
 } from './game/actions.ts'
 import { describeRejection } from './game/rejections.ts'
 import { t } from './i18n/text.ts'
@@ -54,6 +61,7 @@ import {
   ArmyPanel,
   DiplomacyPanel,
   EconomyPanel,
+  EspionagePanel,
   MarketPanel,
   ProvincePanel,
   ProvincePicker,
@@ -61,6 +69,7 @@ import {
   type ActionGroupSpec,
   type DayReportDelta,
   type EventEntry,
+  type SpyRowView,
   type Targeting,
 } from './ui/Panels.tsx'
 import {
@@ -79,6 +88,7 @@ import {
   DEFAULT_NEW_GAME,
   aiBonusPercent,
   fixedSpeedOf,
+  gameModesFor,
   invitationOf,
   startGame,
   toConfig,
@@ -108,7 +118,15 @@ import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
-import { Alerts, alertsFor } from './ui/Alerts.tsx'
+import {
+  Alerts,
+  alertsFor,
+  collectEspionageNews,
+  dismissNews,
+  NO_NEWS,
+  type JumpTarget,
+  type NewsState,
+} from './ui/Alerts.tsx'
 import { cueForOwnEvents, play } from './ui/sound.ts'
 import {
   TUTORIAL_OFF,
@@ -369,6 +387,20 @@ export function App(props: AppProps) {
     savedState: partySaved,
   })
 
+  /**
+   * Die Partiearten, die DIESER Bildschirm herstellen kann (T-M39-11, Befund V-1).
+   *
+   * Bis zur Nacharbeit vom 2026-09-24 hing die Liste allein an der Bauflagge. Der Hostbau
+   * ohne Raum bot die zweite Art dann weiter an, und „Partie beginnen" legte eine lokale
+   * Partie mit fester Rate an — ohne Mitspieler, ohne Lobby, ohne Fehler. Zu zweit gibt es
+   * jetzt nur mit einem Raum, den dieser Bildschirm als Gastgeber fuehrt, oder mit einer
+   * hereingereichten Sitzung (die Naht aus T-M37-11). Dieselbe Liste bindet Anzeige UND
+   * Wirkung: der Dialog zeichnet aus ihr, was er anbietet, reicht beim Start die Art weiter,
+   * die er daraus ableitet (`effectiveMode`), und `startNewGame` nimmt genau diese.
+   */
+  const hostsParty = (netParty.active && netParty.role === 'host') || props.netplay != null
+  const gameModes = useMemo(() => gameModesFor(__MULTIPLAYER__, hostsParty), [hostsParty])
+
   const netplaySession = netplayOver ? null : (props.netplay ?? netParty.session)
   const netplayActive = netplaySession != null
   /**
@@ -423,6 +455,18 @@ export function App(props: AppProps) {
   const [resume, setResume] = useState<LatestSave | null>(null)
   const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [targeting, setTargeting] = useState<PendingTarget | null>(null)
+  /**
+   * Der Umsetz-Modus (E1, R-SPY-06, T-M17-13): welcher eigene Spion gerade ein neues Ziel
+   * sucht. Nur die Kennung — nie angezeigt (Befund M17-S1); `moving` unten macht daraus
+   * die Nummer, die die Oberflaeche zeigen darf.
+   */
+  const [movingSpy, setMovingSpy] = useState<string | null>(null)
+  /**
+   * Spionage-Meldungen, gesammelt bis zum Wegklicken (E3, R-SPY-06/AK2, T-M17-13):
+   * SABOTAGE_SUFFERED laut, SPY_DETECTED/SPY_LOST/targetChanged leise. Der Ereignisring
+   * haelt nur 500 Eintraege fuer alle Maechte — eine Meldung ueberlebt trotzdem.
+   */
+  const [news, setNews] = useState<NewsState>(NO_NEWS)
   const [victoryAcknowledged, setVictoryAcknowledged] = useState(false)
   const [tutorial, setTutorial] = useState<TutorialState>(() =>
     props.skipTutorial ? TUTORIAL_OFF : initialTutorial(readTutorialSeen()),
@@ -680,6 +724,16 @@ export function App(props: AppProps) {
     [state, viewerId, activeMap, props.rules, ticksPerDay, pendingOrders],
   )
 
+  /**
+   * Der Umsetz-Modus gueltig gehalten (E1, T-M17-13): eine Kennung allein reicht der
+   * Oberflaeche nicht — sie braucht die Nummer, die die Uebersicht zeigt, und der Modus
+   * muss enden, sobald der Spion verschwindet (entlassen, Partiewechsel).
+   */
+  const moving: SpyMove | null = useMemo(() => {
+    const index = view?.espionage.spies.findIndex((s) => s.id === movingSpy) ?? -1
+    return movingSpy && index >= 0 ? { spyId: movingSpy, number: index + 1 } : null
+  }, [view, movingSpy])
+
   /** Sichtbare Truppenstärke je Provinz, für den Kartenmodus (T-M13-10). */
   const strengths = useMemo(() => strengthByProvince(view?.armies ?? []), [view])
 
@@ -778,7 +832,8 @@ export function App(props: AppProps) {
 
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
-    const aus = alertsFor(view, props.rules).filter((alert) => {
+    const spionageNews = [...news.alerts.values()].sort((a, b) => b.tick - a.tick)
+    const aus = alertsFor(view, props.rules, spionageNews).filter((alert) => {
       const weggeklickt = dismissedAlerts.get(alert.id)
       if (weggeklickt === undefined || !view) return true
       // Nur am selben Spieltag und nicht vor dem Klick (T-M41-12).
@@ -791,7 +846,7 @@ export function App(props: AppProps) {
       aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
     }
     return aus
-  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay])
+  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay, news])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -1014,6 +1069,53 @@ export function App(props: AppProps) {
     },
   })
 
+  /**
+   * Die Pause, wie sie der Spieler sieht (T-M39-10, R-MP-05, Befund MP-4).
+   *
+   * Fuenf Saetze lagen seit M37 im Katalog und wurden nirgends gerendert. Gemessen am
+   * 2026-09-14 am Bildschirm: wer eine Pause beantragte, sah weder, dass sein Antrag
+   * steht, noch dass er abgelehnt wurde — die Kopfleiste aenderte sich nicht.
+   *
+   * **Zwei Sorten Satz, zwei Orte.** Was STEHT, gehoert neben den Knopf, der es beendet:
+   * "Ihr Pausenantrag ist gestellt", "Die Partie steht", "Die Partie laeuft in drei
+   * Sekunden weiter" — jeder von ihnen faellt mit dem Zustand weg, der ihn traegt, ohne
+   * dass die Huelle sich etwas merken muesste. Was GESCHEHEN ist — abgelehnt, verfallen —
+   * ist ein Ereignis und gehoert in die Meldezeile, in der schon "Zu zweit haelt niemand
+   * allein an" steht (`header.pauseNeedsConsent`). Ein Ereignis in der Kopfleiste bliebe
+   * dort stehen, bis jemand wieder eine Pause beantragt.
+   *
+   * Die Reihenfolge ist nicht beliebig: waehrend der drei Sekunden Vorlauf steht die
+   * Partie noch, und "laeuft gleich weiter" ist die genauere von zwei wahren Auskuenften.
+   */
+  const pauseNotice = useMemo<string | null>(() => {
+    if (!netplay.active) return null
+    if (netplay.pause.resumeAt !== null) return t('netplay.resuming')
+    if (netplay.status === 'paused') return t('netplay.paused')
+    // Nur der eigene Antrag: den fremden traegt der Dialog mit den zwei Knoepfen.
+    if (netplay.pause.request && netplay.pause.request.by === viewerId) return t('netplay.pauseSent')
+    return null
+  }, [netplay.active, netplay.pause, netplay.status, viewerId])
+
+  const pauseKind = netplay.pause.notice
+  const pauseBy = netplay.pause.noticeBy
+  useEffect(() => {
+    if (!netplay.active) return
+    if (pauseKind === 'declined' && pauseBy !== viewerId) {
+      // "Ihr Mitspieler moechte weiterspielen" gehoert dem Antragsteller. Wer eben selbst
+      // abgelehnt hat, weiss es und bekaeme einen Satz ueber sich selbst zu lesen.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseDeclined') })
+    } else if (pauseKind === 'expired') {
+      // Beide erfahren es (R-MP-05/AK3) — auch der Gefragte, dem sonst nur wortlos der
+      // Dialog unter den Haenden verschwaende.
+      dispatch({ type: 'notice', kind: 'info', text: t('netplay.pauseExpired') })
+    } else if (pauseKind === 'requested') {
+      // Ein neuer Antrag loescht die Antwort auf den alten — und NUR sie. Bis zur
+      // Nacharbeit vom 2026-09-24 wischte er beim Gefragten jede Meldung weg, auch einen
+      // abgelehnten Befehl oder den Hinweis zur festen Rate.
+      dispatch({ type: 'clearNotice', onlyIf: [t('netplay.pauseDeclined'), t('netplay.pauseExpired')] })
+    }
+  }, [netplay.active, pauseKind, pauseBy, viewerId])
+
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
@@ -1099,6 +1201,9 @@ export function App(props: AppProps) {
         if (spec.targetKind && armyId) {
           // The army panel itself says "choose a target" — one notice, not two.
           setTargeting({ armyId, kind: spec.targetKind, target: null, delayDays: 0 })
+          // Zwei Zielwahlen zugleich waeren zweideutig: ein Klick auf die Karte gehoerte
+          // dann sowohl dem Marsch als auch dem Umsetz-Modus (T-M17-13).
+          setMovingSpy(null)
           dispatch({ type: 'clearNotice' })
         } else if (spec.command) {
           // Ein Knopf mit zwei Befehlen (T-M40-11): „Anhalten" einer Verteidigung stellt sie auch auf
@@ -1145,6 +1250,19 @@ export function App(props: AppProps) {
       })
     },
     [centres, ui.view, activeMap, tutor, centreView],
+  )
+
+  /**
+   * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte wie bisher, oder in die Diplomatie
+   * mit der Macht des Angebots. `Foot`/die Kopfleiste behalten `jumpTo` — ihre Eintraege tragen
+   * nur Provinzen.
+   */
+  const jumpToTarget = useCallback(
+    (target: JumpTarget) => {
+      if (target.kind === 'province') jumpTo(target.provinceId)
+      else dispatch({ type: 'focusDiplomacy', playerId: target.playerId })
+    },
+    [jumpTo],
   )
 
   /** A click on the map: a target while an order waits for one, a selection otherwise. */
@@ -1216,6 +1334,10 @@ export function App(props: AppProps) {
           else if (targeting) {
             setTargeting(null)
             dispatch({ type: 'clearNotice' })
+          } else if (movingSpy) {
+            // Der Umsetz-Modus (E1, T-M17-13): Escape bricht ihn ab, ohne das Panel zu schliessen.
+            setMovingSpy(null)
+            dispatch({ type: 'clearNotice' })
           } else dispatch({ type: 'closePanel' })
           break
         case 'zoom':
@@ -1282,6 +1404,7 @@ export function App(props: AppProps) {
     activeMap,
     state,
     targeting,
+    movingSpy,
     tutor,
     fastForwardState.running,
     multiplayer,
@@ -1340,6 +1463,9 @@ export function App(props: AppProps) {
           setDismissedAlerts(new Map())
           // Die Zeilen der Automatik gehoeren zur alten Partie (T-M40-13).
           setAdjutantMarches([])
+          // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
+          setMovingSpy(null)
+          setNews(NO_NEWS)
           // Ein geladener Stand ist eine Einzelspielerpartie — es sei denn, dieser
           // Bildschirm ist ein Gastgeber (T-M39-06, R-MP-13). Dann wird der Stand
           // ANGEBOTEN: der Gast vergleicht ihn mit seinem eigenen, und nur bei einer
@@ -1372,16 +1498,22 @@ export function App(props: AppProps) {
    * (T-M22-04, Befund V2-05: das Menue kannte vorher nur die Einstellungen, und der
    * Startdialog wurde ausschliesslich hinter dem Fruehausstieg gezeichnet).
    */
-  const startNewGame = useCallback(() => {
+  const startNewGame = useCallback((mode: GameMode) => {
+    // Die Art, die der Dialog angeboten hat, und nicht die, die im Formular steht (Befund
+    // V-1, Nacharbeit vom 2026-09-24). Das Formular kann „zu zweit" tragen, waehrend es
+    // keinen Raum mehr gibt; bis dahin legte dieser Weg dann trotzdem eine Partie zu zweit
+    // an — mit einem menschlichen Platz p2, fester Rate und ohne Vorspulen. Die Art gilt
+    // fuer ALLES darunter: die Partiedefinition, die Rate und das Angebot an den Raum.
+    const wirksam: NewGameOptions = { ...options, mode }
     // Die gewaehlte Karte, nicht die Anfangskarte (T-M12-08).
-    const chosenMap = mapById(options.mapId)
-    const fresh = startGame(options, chosenMap, props.rules)
+    const chosenMap = mapById(wirksam.mapId)
+    const fresh = startGame(wirksam, chosenMap, props.rules)
     setActiveMap(chosenMap)
     // Partieart und feste Rate wandern aus dem Formular in die laufende Partie
     // (T-M37-03): ab hier ist die Rate im Mehrspieler unveraenderlich, und die Uhr
     // startet mit ihr, statt bei null zu stehen.
-    const feste = fixedSpeedOf(options)
-    setParty({ mode: options.mode, fixedSpeed: feste })
+    const feste = fixedSpeedOf(wirksam)
+    setParty({ mode: wirksam.mode, fixedSpeed: feste })
     // Zu zweit ueber einen Link legt der Gastgeber die Partie nur AN; laufen tut sie
     // erst, wenn er startet und der Handschlag durch ist (T-M39-03, R-MP-12/AK2). Bis
     // dahin bleibt die Uhr bei null, sonst haette er schon Ticks hinter sich, wenn der
@@ -1389,7 +1521,7 @@ export function App(props: AppProps) {
     // keiner mehr ist.
     const alsGastgeber = netParty.active && netParty.role === 'host'
     setSpeed(alsGastgeber ? 0 : (feste ?? 0))
-    if (alsGastgeber) netParty.offer(toConfig(options, chosenMap), feste ?? DEFAULT_MULTIPLAYER_SPEED)
+    if (alsGastgeber) netParty.offer(toConfig(wirksam, chosenMap), feste ?? DEFAULT_MULTIPLAYER_SPEED)
     // Ausstehende Befehle gehoeren zur alten Partie und verfallen (T-M22-05).
     pendingRef.current = []
     setPendingCommands([])
@@ -1401,6 +1533,9 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
+    // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
+    setMovingSpy(null)
+    setNews(NO_NEWS)
     commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1467,6 +1602,9 @@ export function App(props: AppProps) {
     setSeenTick(-1)
     setDismissedAlerts(new Map())
     setAdjutantMarches([])
+    // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
+    setMovingSpy(null)
+    setNews(NO_NEWS)
     commitState(beginn.state)
     setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
     setDialog(null)
@@ -1526,6 +1664,9 @@ export function App(props: AppProps) {
         options={options}
         nations={selectedMap.startPositions.map((s) => s.nation)}
         maps={props.maps}
+        // Die Partiearten, die DIESER Bildschirm herstellen kann (T-M39-11, Befund V-1):
+        // Bauflagge UND Raum, siehe `gameModes` oben.
+        modes={gameModes}
         aiBonus={aiBonusPercent(props.rules, options.difficulty)}
         onChange={(next) => {
           // Mit der Karte wechseln die Maechte. Bleibt die alte Wahl stehen, zeigt
@@ -1611,6 +1752,39 @@ export function App(props: AppProps) {
     },
     [state],
   )
+
+  /**
+   * Eingehende und ausgehende Angebote, schon zu Knoepfen (T-M17-14, R-DIP-07, R-DIP-08).
+   *
+   * Vor der Rendersperre (Regel der Hooks): `ctx`/`view` koennen hier noch `null` sein, deshalb
+   * die Pruefung innen statt eines fruehen Ausstiegs.
+   */
+  const offerRows = useMemo(() => {
+    if (!ctx || !view) return { incoming: [], outgoing: [] }
+    const rows = offerListActions(ctx, view, { nameOf, nameOfProvince })
+    return {
+      incoming: rows.incoming.map((row) => ({ ...row, actions: row.actions.map((spec) => toAction(spec)) })),
+      outgoing: rows.outgoing.map((row) => ({ ...row, actions: row.actions.map((spec) => toAction(spec)) })),
+    }
+  }, [ctx, view, nameOf, nameOfProvince, toAction])
+
+  /**
+   * Spionage-Meldungen sammeln (R-SPY-06/AK2, E3, T-M17-13).
+   *
+   * Muss NACH `nameOf` stehen — der Effekt braucht `nameOfProvince` und `nameOf` fuer die
+   * Namen in den Saetzen. Anders als der Ton (F10) liest er den EIGENEN Ausschnitt seit
+   * `news.upTo`, nicht seit der letzten Laenge: der Ring haelt nur 500 Ereignisse fuer
+   * alle Maechte, und `own.slice(soundedUpTo)` verstummte, sobald er voll ist.
+   */
+  useEffect(() => {
+    if (!state || !viewerId) return
+    setNews((old) =>
+      collectEspionageNews(old, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
+        province: nameOfProvince,
+        player: nameOf,
+      }),
+    )
+  }, [state, viewerId, nameOfProvince, nameOf])
 
   /**
    * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —
@@ -1731,7 +1905,47 @@ export function App(props: AppProps) {
 
   /** Build, recruit and capital — for an own province; nothing for anyone else's. */
   const provinceGroups: ActionGroupSpec[] = useMemo(() => {
-    if (!ctx || !selected || selected.owner !== ctx.playerId) return []
+    if (!ctx || !selected) return []
+
+    // Die Gruppe „Spionage" (R-SPY-06/AK1, D29.9): fremde oder herrenlose Provinz bietet
+    // Anwerben, eigene nur Gegenspionage — `spyActions` entscheidet das selbst. Im
+    // Umsetz-Modus (E1) tragen dieselben Knoepfe REASSIGN_SPY; ein Klick beendet den
+    // Modus und quittiert mit einer Notiz, weil die Knoepfe selbst mit dem Modus wechseln.
+    const spionage: ActionGroupSpec = {
+      id: 'espionage',
+      title: moving ? t('espionage.groupMoving', { number: moving.number }) : t('espionage.group'),
+      actions: [
+        ...spyActions(ctx, selected.id, moving).map((spec) => {
+          const action = toAction(spec)
+          if (spec.command?.type !== 'REASSIGN_SPY') return action
+          return {
+            ...action,
+            onRun: () => {
+              action.onRun()
+              setMovingSpy(null)
+              dispatch({
+                type: 'notice',
+                kind: 'info',
+                text: t('espionage.moveOrdered', { number: moving!.number, province: selected.name, mission: spec.label }),
+              })
+            },
+          }
+        }),
+        ...(moving
+          ? [
+              {
+                id: 'spy-move-cancel',
+                label: t('espionage.cancelMove'),
+                disabledReason: null,
+                onRun: () => setMovingSpy(null),
+              },
+            ]
+          : []),
+      ],
+    }
+
+    if (selected.owner !== ctx.playerId) return [spionage]
+
     return [
       { id: 'build', title: t('actions.buildGroup'), actions: buildActions(ctx, selected.id).map((spec) => toAction(spec)) },
       {
@@ -1750,8 +1964,37 @@ export function App(props: AppProps) {
             },
           ]
         : []),
+      spionage,
     ]
-  }, [ctx, selected, toAction])
+  }, [ctx, selected, toAction, moving])
+
+  /**
+   * Die Zeilen der Spionageuebersicht (R-SPY-06, T-M17-13). Liest nur `view.espionage.spies`
+   * — die eigene Sicht, nie den Zustand direkt (F1).
+   */
+  const spyRows: SpyRowView[] = useMemo(() => {
+    if (!ctx || !view) return []
+    return spyOverviewActions(ctx, view.espionage.spies).map((row) => ({
+      key: `spy-${row.number}`,
+      title: t('espionage.overview.spy', { number: row.number }),
+      mission: row.missionLabel,
+      icon: row.icon,
+      explainKey: row.explainKey,
+      provinceId: row.provinceId,
+      provinceName: row.provinceName,
+      salary: row.salary,
+      result: row.result,
+      move: {
+        ...toAction(row.move),
+        onRun: () => {
+          setTargeting(null)
+          setMovingSpy(row.spyId)
+          dispatch({ type: 'notice', kind: 'info', text: t('espionage.overview.moving', { number: row.number }) })
+        },
+      },
+      dismiss: toAction(row.dismiss),
+    }))
+  }, [ctx, view, toAction])
 
   /**
    * Die naechste Freischaltung fuer den Kopf der Aushebeliste (T-M34-08, D34.5).
@@ -1901,6 +2144,20 @@ export function App(props: AppProps) {
   const ownProvinces = view.provinces.filter((p) => p.owner === viewerId).map((p) => ({ id: p.id, name: p.name }))
   const knownProvinces = view.provinces.filter((p) => p.owner !== viewerId).map((p) => ({ id: p.id, name: p.name }))
 
+  /**
+   * Die eigenen Provinzen fuer das Angebotsformular, alphabetisch (T-M17-14, R-DIP-09).
+   *
+   * `provincesOf` liest nur `view.provinces` (R-DIP-04): eine fremde Macht zeigt so viele
+   * Provinzen, wie die eigene Sicht kennt — verfallenes Wissen (`stale`) eingeschlossen, denn
+   * der Kern prueft bei der Annahme ohnehin nur oeffentlich (R-DIP-09/AK1).
+   */
+  const tradeOwnProvinces = [...ownProvinces].sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  const provincesOf = (playerId: string) =>
+    view.provinces
+      .filter((p) => p.owner === playerId)
+      .map((p) => ({ id: p.id, name: p.name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+
   return (
     <div className="app" style={fontScaleStyle(ui.settings)}>
       <Header
@@ -1918,6 +2175,9 @@ export function App(props: AppProps) {
         waitingForPeer={netplay.waiting}
         peerLost={netplay.lost && !peerLostDismissed}
         paused={netplay.status === 'paused'}
+        // Die fuenf Saetze aus M37 werden sichtbar (T-M39-10, Befund MP-4); drei davon
+        // stehen hier, die zwei Ereignisse in der Meldezeile.
+        pauseNotice={pauseNotice}
         {...(netplay.active
           ? {
               onPauseRequest: netplay.requestPause,
@@ -2014,8 +2274,12 @@ export function App(props: AppProps) {
           />
           <Alerts
             alerts={alerts}
-            onJump={jumpTo}
-            onDismiss={(id) => setDismissedAlerts((old) => new Map(old).set(id, view.tick))}
+            onJump={jumpToTarget}
+            onDismiss={(id) =>
+              news.alerts.has(id)
+                ? setNews((old) => dismissNews(old, id))
+                : setDismissedAlerts((old) => new Map(old).set(id, view.tick))
+            }
           />
           {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
           {ui.panel === 'province' && (
@@ -2054,7 +2318,33 @@ export function App(props: AppProps) {
             <DiplomacyPanel
               view={view}
               nameOf={nameOf}
+              reputationMax={props.rules.constants.reputationBaseline}
+              ticksPerDay={ticksPerDay}
+              chosen={ui.diplomacyPartner}
+              onChoose={(id) => dispatch({ type: 'chooseDiplomacyPartner', playerId: id })}
               actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
+              passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
+              offers={offerRows}
+              tradeForm={{
+                resources: RESOURCE_KEYS,
+                stock: view.self.resources,
+                limits: { money: props.rules.constants.tradeMaxMoney, resource: props.rules.constants.tradeMaxResource },
+                ownProvinces: tradeOwnProvinces,
+                provincesOf,
+                evaluate: (partner, draft) => {
+                  const result = tradeOfferAction(ctx, partner, draft, nameOfProvince)
+                  return { text: result.text, action: toAction(result.action) }
+                },
+              }}
+            />
+          )}
+          {ui.panel === 'espionage' && (
+            <EspionagePanel
+              rows={spyRows}
+              summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
+              moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
+              onCancelMove={() => setMovingSpy(null)}
+              onJump={jumpTo}
             />
           )}
           {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
@@ -2079,7 +2369,7 @@ export function App(props: AppProps) {
         </aside>
       </main>
 
-      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, drei Knoepfe. */}
+      {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, vier Knoepfe. */}
       <Foot
         entries={events}
         ticksPerDay={ticksPerDay}

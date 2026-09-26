@@ -246,20 +246,93 @@ export interface Player {
   intel: Record<ProvinceId, IntelEntry>
 }
 
+/**
+ * Eine Beziehung zwischen zwei Maechten. Der Schluessel ist `${a}|${b}` mit a < b, und
+ * **`a` und `b` in den Feldnamen meinen genau diese beiden Haelften des Schluessels**.
+ *
+ * Durchmarsch und Kartenfreigabe sind seit Stufe 4 **gerichtet** (M17, D29.1): bis Stufe 3
+ * gab es je ein symmetrisches `rightOfWay`/`sharedMap`, und wer „gewaehrte", durfte damit
+ * selbst folgenlos ins Land des anderen (Befund B2). `aGrantsPassage` heisst „a laesst b
+ * durch" und sagt nichts darueber, ob b auch a durchlaesst.
+ *
+ * **Gelesen wird nie direkt**, sondern durch `grantsPassage(state, grantor, guest)` und
+ * `sharesMap(state, owner, viewer)` in `state/create.ts` — sie und ihre Geschwister dort
+ * (`passageEndsAtTick`, `setPassage`, `expirePassage`, `setMapShared`, T-M17-04) sind die
+ * einzigen Stellen,
+ * die wissen muessen, welche Haelfte des Schluessels wer ist.
+ */
 export interface Relation {
   state: DiplomaticState
   sinceTick: Tick
   /** War declared but not yet in force (R-DIP-02). */
   warEffectiveAtTick: Tick | null
-  rightOfWay: boolean
-  sharedMap: boolean
+  /** a laesst b durch. */
+  aGrantsPassage: boolean
+  /** b laesst a durch. */
+  bGrantsPassage: boolean
+  /** Gekuendigt: ab diesem Tick laesst a b nicht mehr durch. `null` = unbefristet (T-M17-04). */
+  aPassageEndsAtTick: Tick | null
+  /** Gekuendigt: ab diesem Tick laesst b a nicht mehr durch. `null` = unbefristet (T-M17-04). */
+  bPassageEndsAtTick: Tick | null
+  /** a zeigt b seine Karte. */
+  aSharesMap: boolean
+  /** b zeigt a seine Karte. */
+  bSharesMap: boolean
 }
 
 export interface DiplomaticOffer {
   from: PlayerId
   to: PlayerId
-  kind: 'peace' | 'alliance'
+  /** `rightOfWay` ist der **Antrag** auf Durchmarsch (R-DIP-08, T-M17-04), nicht die Gewaehrung. */
+  kind: 'peace' | 'alliance' | 'rightOfWay'
   tick: Tick
+}
+
+/** Eine Kennung fuer einen Spion (M17, D29.1). */
+export type SpyId = string
+
+export type SpyMission = 'intel' | 'economicSabotage' | 'militarySabotage' | 'counter'
+
+export interface Spy {
+  id: SpyId
+  owner: PlayerId
+  provinceId: ProvinceId
+  mission: SpyMission
+  recruitedTick: Tick
+  /** Zuletzt angesetzt; fuehrt fruehestens am Tag danach aus (R-SPY-02/AK3, auch beim Umsetzen). */
+  assignedTick: Tick
+  lastRunTick: Tick | null
+  lastOutcome: 'success' | 'failure' | 'targetChanged' | null
+}
+
+/** Was ein gelungener Auftrag aufdeckt, und wie lange (R-SPY-03). */
+export interface Reveal {
+  player: PlayerId
+  provinceId: ProvinceId
+  kind: 'intel' | 'armies'
+  untilTick: Tick
+}
+
+/** Arrays: die Reihenfolge ist die Ausfuehrungsreihenfolge (R-ARCH-01). */
+export interface EspionageState {
+  spies: Spy[]
+  reveals: Reveal[]
+}
+
+export interface TradeBundle {
+  resources: Partial<Record<ResourceKey, Fixed>>
+  provinces: ProvinceId[]
+}
+
+export interface TradeOffer {
+  id: string
+  from: PlayerId
+  to: PlayerId
+  /** `give.resources` IST die Treuhand: beim Angebot vom Bestand abgezogen (R-DIP-05). */
+  give: TradeBundle
+  want: TradeBundle
+  createdTick: Tick
+  expiresAtTick: Tick
 }
 
 export interface DiplomacyState {
@@ -267,6 +340,11 @@ export interface DiplomacyState {
   relations: Record<string, Relation>
   /** Offers waiting for an answer; accepting is a deliberate second step. */
   offers: DiplomaticOffer[]
+  /**
+   * Handelsangebote mit Treuhand (M17, R-DIP-05, D29.1). Von T-M17-03 leer angelegt,
+   * von T-M17-05 gefuellt — dieselbe Bauart wie `grievances` in M15.
+   */
+  tradeOffers: TradeOffer[]
   /**
    * Wer ist auf wen wie boese (R-DIP-06, T-M15-05).
    *
@@ -359,7 +437,12 @@ export interface GameState {
    * kann beim Speichern und Laden auseinanderlaufen, ohne dass ein Test es merkt.
    */
   goals: Record<PlayerId, Record<GoalKey, number | null>>
-  nextIds: { army: number; battle: number; order: number }
+  /**
+   * Spione und aufgedeckte Provinzen (M17, R-SPY-01…06, D29.1). Von T-M17-03 leer
+   * angelegt, ab T-M17-07 gefuellt.
+   */
+  espionage: EspionageState
+  nextIds: { army: number; battle: number; order: number; spy: number; offer: number }
 }
 
 /** Keys the simulation hash ignores (design D2, "Was der Hash umfasst"). */
@@ -375,6 +458,13 @@ export const HASH_OMIT_KEYS: readonly string[] = ['eventLog']
  * hinzufuegt, ohne beides nachzuziehen, laesst den Testlauf scheitern.
  *
  * **3 seit dem 2026-09-13 (T-M35-03).** Der Schritt 2 → 3 legt `goals` fuer jede Macht mit
- * vier offenen Zwischenzielen an (R-GAME-08/AK5, D31.5). M17 nimmt Stufe 4.
+ * vier offenen Zwischenzielen an (R-GAME-08/AK5, D31.5).
+ *
+ * **4 seit dem 2026-09-18 (T-M17-03).** Der Schritt 3 → 4 bringt alle Zustandsfelder von M17
+ * in **einem** Zug (R-GAME-09, D29.10): `espionage`, `diplomacy.tradeOffers`, `nextIds.spy`
+ * und `nextIds.offer` leer, und er richtet Durchmarsch und Kartenfreigabe — `rightOfWay` und
+ * `sharedMap` entfallen, an ihre Stelle treten `aGrantsPassage`/`bGrantsPassage`,
+ * `aPassageEndsAtTick`/`bPassageEndsAtTick` und `aSharesMap`/`bSharesMap`. T-M17-04 bis -14
+ * fuellen diese Felder mit Verhalten und erhoehen die Stufe **nicht**.
  */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4

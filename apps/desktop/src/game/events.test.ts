@@ -1,7 +1,21 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { EVENT_TYPES, type Command, type EventType, type GameEvent, type MapData, type PublicView, type Rules } from '@worldwar/core'
+import {
+  createInitialState,
+  EVENT_TYPES,
+  eventsFor,
+  runTicks,
+  type Command,
+  type EventType,
+  type GameConfig,
+  type GameEvent,
+  type MapData,
+  type PublicView,
+  type Rules,
+} from '@worldwar/core'
+import { TEST_RULES, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
+import { t } from '../i18n/text.ts'
 import {
   adjutantMarchEntries,
   battleReport,
@@ -301,6 +315,21 @@ describe('R-TIME-06 Eigene Rueckschlaege tragen die eigene Klasse', () => {
     DAY_REPORT: { day: 3, scores: {} },
     // Ein erreichtes Zwischenziel ist Rueckmeldung, kein Rueckschlag (T-M35-04).
     GOAL_REACHED: { playerId: 'p1', goal: 'pointShareFirst', day: 221, audience: ['p1'], concerns: ['p1'] },
+    // Eine Kuendigung des Durchmarschs ist eine Frist, kein Verlust (T-M17-04).
+    RIGHT_OF_WAY_CHANGED: { playerId: 'p2', targetPlayerId: 'p1', granted: false, effectiveAtTick: 48, audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    // Handel (T-M17-05): ein geschlossenes Angebot und ein Tausch sind kein Rueckschlag (D24.1).
+    TRADE_OFFER_CLOSED: { offerId: 't1', playerId: 'p1', targetPlayerId: 'p2', reason: 'declined', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
+    TRADE_AGREED: { playerId: 'p1', targetPlayerId: 'p2', audience: [], concerns: ['p1', 'p2'] },
+    // Eine Abtretung ist verabredet, nicht erlitten — kein Rueckschlag (T-M17-06, D24.1).
+    PROVINCE_CEDED: { provinceId, previousOwner: 'p1', newOwner: 'p2', audience: [], concerns: ['p1', 'p2'] },
+    // Spionage (T-M17-08): ein Bericht und ein Verlust mangels Sold sind Rueckmeldung ueber einen
+    // eigenen Auftrag, kein Rueckschlag im Sinn von D24.1.
+    SPY_REPORT: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', outcome: 'failure', audience: ['p1'], concerns: ['p1'] },
+    SPY_LOST: { playerId: 'p1', spyId: 's1', provinceId, mission: 'intel', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] },
+    // Sabotage und Enttarnung (T-M17-09): kein Rueckschlag im Sinn von D24.1 — DECISIONS.md
+    // "SABOTAGE_SUFFERED ist kein Rueckschlag" (Nacharbeit kern, 2026-09-25).
+    SABOTAGE_SUFFERED: { playerId: 'p1', provinceId, kind: 'economic', moraleLoss: 10_000, destroyed: { money: 5_000 }, delayTicks: 0, audience: ['p1'], concerns: ['p1'] },
+    SPY_DETECTED: { playerId: 'p2', targetPlayerId: 'p1', provinceId, mission: 'intel', audience: ['p1', 'p2'], concerns: ['p1', 'p2'] },
   }
 
   /** Die vier Rueckschlaege aus dem Entwurf (D24.1) — alles andere bleibt ohne Klasse. */
@@ -923,5 +952,449 @@ describe('R-GAME-08/AK2 Ein erreichtes Ziel wird zu einem Satz', () => {
       expect(text).not.toMatch(/provinces|pointShare|populationShare|GOAL_REACHED|events\.|\bp1\b|\{\{/)
     }
     expect(new Set(texts).size, 'vier Ziele, vier Saetze').toBe(GOALS.length)
+  })
+})
+
+/**
+ * Der Durchmarsch im Protokoll (T-M17-04, R-DIP-08/AK3, D29.5).
+ *
+ * Gewaehrung und Kuendigung sind **eine** Ereignisart mit `granted`; der Satz unterscheidet sie.
+ * Die Kuendigung nennt den Tag, ab dem eine Armee des Gasts dort ein Ueberfall ist — sonst weiss
+ * der Gast nicht, wie viel Zeit er hat, und die Frist waere eine Zahl, die nur der Kern kennt.
+ */
+describe('R-DIP-08/AK3 Gewaehrung und Kuendigung des Durchmarschs werden zu Saetzen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+    viewer: 'p1',
+  }
+  const durchmarsch = (playerId: string, targetPlayerId: string, granted: boolean, effectiveAtTick: number) =>
+    describeEvent(
+      event({
+        type: 'RIGHT_OF_WAY_CHANGED',
+        audience: [playerId, targetPlayerId],
+        concerns: [playerId, targetPlayerId],
+        playerId,
+        targetPlayerId,
+        granted,
+        effectiveAtTick,
+      }),
+      0,
+      map,
+      namen,
+    )
+
+  it('nennt die Gewaehrung mit beiden Namen und ohne Kennung', () => {
+    const entry = durchmarsch('p1', 'p2', true, 120)
+
+    expect(entry.text).toBe('Mexiko gewährt Vereinigte Staaten das Durchmarschrecht.')
+    expect(entry.category).toBe('diplomacy')
+    expect(entry.severity).toBe('info')
+  })
+
+  it('nennt bei der Kuendigung den Tag, ab dem sie wirkt', () => {
+    // Tick 144 ist der erste Tick von Tag 7 — dieselbe Rechnung wie bei der Kriegserklaerung.
+    expect(durchmarsch('p1', 'p2', false, 144).text).toBe(
+      'Mexiko kündigt Vereinigte Staaten das Durchmarschrecht. Wirksam ab Tag 7.',
+    )
+  })
+
+  it('beugt beide Saetze fuer eine Mehrzahl-Macht', () => {
+    expect(durchmarsch('p2', 'p1', true, 120).text).toContain('Vereinigte Staaten gewähren Mexiko')
+    expect(durchmarsch('p2', 'p1', false, 144).text).toContain('Vereinigte Staaten kündigen Mexiko')
+  })
+
+  it('laesst weder Kennung noch Platzhalter noch Wahrheitswert stehen', () => {
+    for (const granted of [true, false]) {
+      expect(durchmarsch('p1', 'p2', granted, 144).text).not.toMatch(/\bp[12]\b|\{\{|events\.|true|false|RIGHT_OF_WAY/)
+    }
+  })
+})
+
+/**
+ * Der Handel im Protokoll (T-M17-05, R-DIP-05/AK4, D29.5).
+ *
+ * Ein Tausch ist Weltgeschehen und nennt keine Menge; das Schliessen eines Angebots lesen nur
+ * die beiden Beteiligten, und der Grund steht in Worten, nicht als Schluessel.
+ */
+describe('R-DIP-05/AK4 Der Handel steht im Protokoll — ohne Mengen', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt den Tausch mit beiden Namen, fuer Beteiligte wie Unbeteiligte gleich', () => {
+    for (const viewer of ['p1', 'p3']) {
+      const entry = describeEvent(
+        event({ type: 'TRADE_AGREED', audience: [], concerns: ['p1', 'p2'], playerId: 'p1', targetPlayerId: 'p2' }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe('Handel zwischen Mexiko und Vereinigte Staaten.')
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d/)
+    }
+  })
+
+  it('nennt jeden Grund beim Schliessen in Worten', () => {
+    const reasons = ['accepted', 'declined', 'withdrawn', 'expired', 'war', 'invalid'] as const
+    const texts = reasons.map((reason) => {
+      const entry = describeEvent(
+        event({
+          type: 'TRADE_OFFER_CLOSED',
+          audience: ['p1', 'p2'],
+          concerns: ['p1', 'p2'],
+          offerId: 't7',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          reason,
+        }),
+        0,
+        map,
+        { ...namen, viewer: 'p1' },
+      )
+      expect(entry.text).toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: /)
+      expect(entry.text).not.toMatch(/\[|\{\{|t7|accepted|declined|withdrawn|expired|\bwar\b|invalid|TRADE_/)
+      expect(entry.world).toBe(false)
+      return entry.text
+    })
+    expect(new Set(texts).size).toBe(6)
+  })
+
+  it('behauptet bei keinem Grund eine Rueckgabe (T-M17-14, E2)', () => {
+    // Das Ereignis traegt keine Mengen (R-DIP-05/AK4) und weiss also nicht, ob ueberhaupt
+    // etwas hinterlegt war — die Rueckgaberegel steht seit T-M17-14 in explain.diplomacy.trade
+    // und als Notiz an der eigenen ausgehenden Zeile, nicht mehr im Protokollsatz.
+    const reasons = ['accepted', 'declined', 'withdrawn', 'expired', 'war', 'invalid'] as const
+    for (const reason of reasons) {
+      const entry = describeEvent(
+        event({
+          type: 'TRADE_OFFER_CLOSED',
+          audience: ['p1', 'p2'],
+          concerns: ['p1', 'p2'],
+          offerId: 't7',
+          playerId: 'p1',
+          targetPlayerId: 'p2',
+          reason,
+        }),
+        0,
+        map,
+        { ...namen, viewer: 'p1' },
+      )
+      expect(entry.text, reason).not.toContain('Hinterlegte')
+      // "zurückgezogen" enthaelt "zurück" — nicht auf das nackte Wort pruefen (Falle der Aufgabe).
+      expect(entry.text, reason).not.toContain('geht zurück')
+    }
+  })
+
+  // Nachtrag (T-M17-06 Nacharbeit, Befund M17-D7): seit provincesLapsed schliesst
+  // settleTradeOffers ein Angebot auch dann als 'invalid', wenn eine Provinz nicht mehr
+  // abtretbar ist (der Anbieter liess z. B. eine eigene Armee durch die angebotene Provinz
+  // marschieren) — nicht nur, wenn eine Macht ausgeschieden ist. Der Text darf diesen
+  // zweiten Fall nicht als Ausscheiden ausgeben.
+  it('behauptet bei "invalid" nicht faelschlich, eine Macht sei ausgeschieden', () => {
+    const entry = describeEvent(
+      event({
+        type: 'TRADE_OFFER_CLOSED',
+        audience: ['p1', 'p2'],
+        concerns: ['p1', 'p2'],
+        offerId: 't9',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        reason: 'invalid',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    // Der Satz gilt fuer beide Ursachen (Ausscheiden ODER verfallene Provinz) — er behauptet
+    // keine der beiden als alleinige, sichere Ursache. Die alte Fassung sagte flach
+    // "hinfällig, eine Macht ist ausgeschieden" — das waere hier falsch (Beispiel: eine
+    // eigene Armee marschiert durch die angebotene Provinz, keine Macht ist ausgeschieden).
+    expect(entry.text).not.toMatch(/^Handelsangebot von Mexiko an Vereinigte Staaten: hinfällig, eine Macht ist ausgeschieden/)
+    expect(entry.text).toMatch(/ausgeschieden.*oder.*abtretbar/)
+  })
+})
+
+/**
+ * Die Abtretung im Protokoll (T-M17-06, R-DIP-09/AK2, D29.5).
+ *
+ * Weltgeschehen ohne Preis: die Provinz ist der Satzgegenstand, nicht eine der beiden Maechte —
+ * deshalb weder Fremd- noch Mehrzahlfassung.
+ */
+describe('R-DIP-09/AK2 Die Abtretung steht im Protokoll — ohne Preis', () => {
+  const namen = {
+    player: (id: string) => (id === 'p2' ? 'Vereinigte Staaten' : 'Mexiko'),
+    ticksPerDay: 24,
+  }
+
+  it('nennt Provinz, Vorbesitzer und Neubesitzer, fuer jeden Betrachter gleich', () => {
+    const provinceName = map.provinces.find((p) => p.id === provinceId)!.name
+    for (const viewer of ['p1', 'p2', 'p3']) {
+      const entry = describeEvent(
+        event({
+          type: 'PROVINCE_CEDED',
+          audience: [],
+          concerns: ['p1', 'p2'],
+          provinceId,
+          previousOwner: 'p1',
+          newOwner: 'p2',
+        }),
+        0,
+        map,
+        { ...namen, viewer },
+      )
+      expect(entry.text).toBe(`${provinceName} geht durch Vertrag von Mexiko an Vereinigte Staaten über.`)
+      expect(entry.world).toBe(true)
+      expect(entry.severity).toBe('info')
+      expect(entry.text).not.toMatch(/\d|\{\{|\bp[123]\b|PROVINCE_/)
+      expect(entry.provinceId).toBe(provinceId)
+    }
+  })
+
+  it('ist fuer den Abtretenden kein Rueckschlag', () => {
+    const entry = describeEvent(
+      event({
+        type: 'PROVINCE_CEDED',
+        audience: [],
+        concerns: ['p1', 'p2'],
+        provinceId,
+        previousOwner: 'p1',
+        newOwner: 'p2',
+      }),
+      0,
+      map,
+      { ...namen, viewer: 'p1' },
+    )
+    expect(entry.self ?? false).toBe(false)
+  })
+})
+
+/**
+ * Der Tageslauf der Spionage im Protokoll (T-M17-08, R-SPY-02, D29.5).
+ *
+ * Ein Bericht, der „SPY_REPORT s3 intel targetChanged" sagt, hilft niemandem. Auftrag und Ausgang
+ * stehen mit Namen im Satz, die Provinz ebenso, und keine Kennung — der Spion hat für den
+ * Spieler keine Nummer (Befund M17-S1). Geprüft für jeden Auftrag und jeden Ausgang: ein
+ * fehlender Name zeigte sich als `[espionage.…]` im Text.
+ */
+describe('R-SPY-02 Bericht und Verlust eines Spions werden zu Saetzen', () => {
+  const MISSIONS = ['intel', 'economicSabotage', 'militarySabotage', 'counter'] as const
+  const OUTCOMES = ['success', 'failure', 'targetChanged'] as const
+  const ROH = /intel|Sabotage\b|economic|military|counter|success|failure|targetChanged|unpaid|SPY_|\bs3\b|\bp1\b|\[|\{\{/
+
+  it('nennt Provinz, Auftrag und Ausgang beim Namen — fuer jede Paarung', () => {
+    const texts = new Set<string>()
+    for (const mission of MISSIONS) {
+      for (const outcome of OUTCOMES) {
+        const entry = describeEvent(
+          event({ type: 'SPY_REPORT', playerId: 'p1', spyId: 's3', provinceId, mission, outcome, audience: ['p1'], concerns: ['p1'] }),
+          0,
+          map,
+          { viewer: 'p1' },
+        )
+        expect(entry.text, `${mission}/${outcome}`).toContain(provinceName)
+        expect(entry.text, `${mission}/${outcome}`).not.toMatch(ROH)
+        expect(entry.provinceId).toBe(provinceId)
+        texts.add(entry.text)
+      }
+    }
+    expect(texts.size, 'zwoelf Paarungen, zwoelf Saetze').toBe(MISSIONS.length * OUTCOMES.length)
+  })
+
+  it('sagt beim Verlust, welcher Spion es war und warum', () => {
+    const entry = describeEvent(
+      event({ type: 'SPY_LOST', playerId: 'p1', spyId: 's3', provinceId, mission: 'economicSabotage', reason: 'unpaid', audience: ['p1'], concerns: ['p1'] }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain(provinceName)
+    expect(entry.text).toContain('Wirtschaftssabotage')
+    expect(entry.text).toMatch(/Sold/)
+    expect(entry.text).not.toMatch(ROH)
+  })
+})
+
+/**
+ * Sabotage und Enttarnung im Protokoll (T-M17-09, R-SPY-04/05, D29.5).
+ *
+ * Die erlittene Sabotage nennt ihre Wirkung — Moral, Vernichtetes, Verzögerung — aber, mit Absicht,
+ * keinen Urheber: das Ereignis kennt keinen. Die Enttarnung nennt beide Mächte mit Namen.
+ */
+describe('R-SPY-04/05 Sabotage und Enttarnung werden zu Saetzen (T-M17-09)', () => {
+  const ROH_SAB = /economic|military|destroyed|moraleLoss|delayTicks|SABOTAGE_|SPY_|\bp\d\b|\[|\{\{/
+
+  it('Wirtschaftssabotage: Provinz, Moralverlust und das Vernichtete mit Namen', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        severity: 'alert',
+        playerId: 'p1',
+        provinceId,
+        kind: 'economic',
+        moraleLoss: 10_000,
+        destroyed: { money: 5_000, iron: 2_000 },
+        delayTicks: 0,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain(provinceName)
+    expect(entry.text).toContain('Moral')
+    expect(entry.text).toContain('10')
+    expect(entry.text).toContain(t('resources.money'))
+    expect(entry.text).toContain(t('resources.iron'))
+    expect(entry.text).not.toMatch(ROH_SAB)
+    expect(entry.severity).toBe('alert')
+    expect(entry.provinceId).toBe(provinceId)
+  })
+
+  it('Wirtschaftssabotage ohne Beute sagt es', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId,
+        kind: 'economic',
+        moraleLoss: 10_000,
+        destroyed: {},
+        delayTicks: 0,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain('nichts')
+    expect(entry.text).not.toContain('[espionage.sabotage.nothingDestroyed]')
+  })
+
+  it('Militaersabotage: die Verzoegerung in Stunden', () => {
+    const entry = describeEvent(
+      event({
+        type: 'SABOTAGE_SUFFERED',
+        playerId: 'p1',
+        provinceId,
+        kind: 'military',
+        moraleLoss: 0,
+        destroyed: {},
+        delayTicks: 12,
+        audience: ['p1'],
+        concerns: ['p1'],
+      }),
+      0,
+      map,
+      { viewer: 'p1' },
+    )
+
+    expect(entry.text).toContain('12 Stunden')
+    expect(entry.text).not.toContain('Moral')
+  })
+
+  it('Enttarnung nennt beide Maechte und den Auftrag', () => {
+    const naming = { viewer: 'p1', player: (id: string) => ({ p1: 'Nordland', p2: 'Ostmark' })[id] ?? id }
+    const makeEvent = () =>
+      event({
+        type: 'SPY_DETECTED',
+        playerId: 'p1',
+        targetPlayerId: 'p2',
+        provinceId,
+        mission: 'economicSabotage',
+        audience: ['p1', 'p2'],
+        concerns: ['p1', 'p2'],
+      })
+
+    for (const viewer of ['p1', 'p2']) {
+      const entry = describeEvent(makeEvent(), 0, map, { ...naming, viewer })
+      expect(entry.text, viewer).toContain('Nordland')
+      expect(entry.text, viewer).toContain('Ostmark')
+      expect(entry.text, viewer).toContain('Wirtschaftssabotage')
+      expect(entry.text, viewer).not.toMatch(ROH_SAB)
+    }
+  })
+})
+
+/**
+ * Über einen Lauf mit Spionen: der Opfertext von SABOTAGE_SUFFERED nennt nie den Urheber
+ * (R-SPY-04/AK3, T-M17-09) — dieselbe Eigenschaft wie in `event-audience.test.ts`, hier am
+ * gerenderten Satz statt an den rohen Feldern.
+ */
+describe('R-SPY-04/AK3 Der Opfertext nennt keinen Urheber — ueber einen Lauf mit Spionen', () => {
+  it('vierzig Spieltage, drei Maechte, sechs Spione', () => {
+    const testMap = smallWorld()
+    const CONFIG: GameConfig = {
+      seed: 7,
+      mapId: 'testworld',
+      rulesId: 'test',
+      players: [
+        { name: 'Noah', kind: 'human' as const, nation: 'Nordland', color: '#0f62bc' },
+        { name: 'Zwei', kind: 'ai' as const, nation: 'Ostmark', color: '#b03a2e', difficulty: 'normal' as const },
+        { name: 'Drei', kind: 'ai' as const, nation: 'Sueden', color: '#2e7d32', difficulty: 'normal' as const },
+      ],
+      victory: { condition: 'points' as const, pointsShareToWin: 600, dayLimit: null },
+    }
+    const worldCtx = { map: testMap, rules: TEST_RULES }
+    let state = createInitialState(CONFIG, worldCtx)
+    state.nextIds.spy = 101
+    state.players['p1']!.resources.money += 5_000_000
+
+    const spy = (owner: string, provinceIdArg: string, mission: string) => {
+      state.espionage.spies.push({
+        id: `s${state.nextIds.spy++}`,
+        owner,
+        provinceId: provinceIdArg,
+        mission: mission as never,
+        recruitedTick: 0,
+        assignedTick: 0,
+        lastRunTick: null,
+        lastOutcome: null,
+      })
+    }
+    spy('p1', 'o1', 'economicSabotage')
+    spy('p1', 'o2', 'militarySabotage')
+    spy('p1', 's2', 'economicSabotage')
+    spy('p1', 's1', 'intel')
+    spy('p3', 's2', 'counter')
+    spy('p3', 's1', 'counter')
+
+    const seen: GameEvent[] = []
+    for (let day = 0; day < 40; day++) {
+      const result = runTicks(state, TEST_RULES.constants.ticksPerDay, worldCtx)
+      state = result.state
+      seen.push(...result.events)
+      if (state.victory.winner !== null) break
+    }
+
+    const naming = { player: (id: string) => state.players[id]?.nation ?? id, ticksPerDay: 24 }
+    const verstoesse: string[] = []
+    let gerenderteSabotagen = 0
+    for (const opfer of ['p2', 'p3']) {
+      for (const [i, e] of eventsFor(seen, opfer).entries()) {
+        if (e.type === 'SPY_DETECTED' && e.targetPlayerId === opfer) continue
+        if (e.type === 'SABOTAGE_SUFFERED') gerenderteSabotagen++
+        const text = describeEvent(e, i, testMap, { ...naming, viewer: opfer }).text
+        if (text.includes('Nordland') || /\bp1\b/.test(text) || /\bs10\d\b/.test(text)) {
+          verstoesse.push(`${e.type}:${text}`)
+        }
+      }
+    }
+    expect(verstoesse).toEqual([])
+    expect(gerenderteSabotagen, 'kein gerenderter SABOTAGE_SUFFERED-Text — leerer Beweis').toBeGreaterThan(0)
+
+    // Gegenkontrolle: die Suche kann Namen sehen.
+    const detectedForP3 = eventsFor(seen, 'p3').find((e) => e.type === 'SPY_DETECTED' && e.targetPlayerId === 'p3')
+    expect(detectedForP3, 'Vorbedingung: p3 hat einen Spion enttarnt').toBeDefined()
+    const detectedText = describeEvent(detectedForP3!, 0, testMap, { ...naming, viewer: 'p3' }).text
+    expect(detectedText).toContain('Nordland')
   })
 })

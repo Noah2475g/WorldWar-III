@@ -27,12 +27,41 @@ const MESSSTAND = measurementStamp(ROOT, TURNIER.sources)
 const map = smallWorld()
 const rules = TEST_RULES
 
-const run = (difficulties: ['hard', 'easy'] | ['hard', 'normal'], startAtWar = true): TournamentResult =>
-  playTournament({ map, rules, difficulties, matches: 50, days: 40, startAtWar })
+/** Drei Maechte reihum, der Dritte als Fueller auf "normal" (Befund M17-T4, Noahs Entscheid Option D). */
+const AUFSTELLUNGEN = [
+  ['Nordland', 'Ostmark', 'Sueden'],
+  ['Ostmark', 'Sueden', 'Nordland'],
+  ['Sueden', 'Nordland', 'Ostmark'],
+]
 
-const zeile = (name: string, result: TournamentResult): string =>
-  `| ${name} | ${result.winsA} | ${result.winsB} | ${result.draws} | ${(result.winRateA * 100).toFixed(0)} % |` +
-  ` ${result.warDeclarations.hard} | ${result.peaceAgreements.hard} |`
+/**
+ * Jedes Turnier wird genau einmal gerechnet und von allen Tests geteilt (Plan D, §2): 150
+ * Partien je Paarung, drei Aufstellungen, macht 35 statt 80 Sekunden fuer die ganze Datei.
+ * Die alte Fassung rief `playTournament` je Test einzeln auf und rechnete dieselbe Paarung
+ * mehrfach.
+ */
+const turniere = new Map<string, TournamentResult>()
+const run = (difficulties: ['hard', 'easy'] | ['hard', 'normal'], startAtWar = true): TournamentResult => {
+  const key = `${difficulties.join()}|${startAtWar}`
+  let result = turniere.get(key)
+  if (!result) {
+    result = playTournament({ map, rules, difficulties, matches: 150, days: 40, startAtWar, setups: AUFSTELLUNGEN })
+    turniere.set(key, result)
+  }
+  return result
+}
+
+const zeile = (name: string, result: TournamentResult): string => {
+  const siegeJeNation = Object.keys(result.winsByNation)
+    .sort()
+    .map((nation) => `${nation} ${result.winsByNation[nation]}`)
+    .join(' · ')
+  return (
+    `| ${name} | ${result.winsA} | ${result.winsB} | ${result.draws} | ${(result.winRateA * 100).toFixed(0)} % |` +
+    ` ${result.warDeclarations.hard} | ${result.peaceAgreements.hard} | ${result.surpriseAttacks} | ${result.outcomes} |` +
+    ` ${siegeJeNation} |`
+  )
+}
 
 const STUFEN = [
   ['easy', 'leicht'],
@@ -43,14 +72,15 @@ const STUFEN = [
 /** Was jede Stufe selbst getan hat, summiert über mehrere Turniere (T-M41-08). */
 const jeStufe = (results: readonly TournamentResult[]): TournamentResult['byDifficulty'] => {
   const summe = {
-    easy: { warDeclarations: 0, automaticBombardments: 0 },
-    normal: { warDeclarations: 0, automaticBombardments: 0 },
-    hard: { warDeclarations: 0, automaticBombardments: 0 },
+    easy: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
+    normal: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
+    hard: { warDeclarations: 0, automaticBombardments: 0, formalWarDeclarations: 0 },
   }
   for (const result of results) {
     for (const [stufe] of STUFEN) {
       summe[stufe].warDeclarations += result.byDifficulty[stufe].warDeclarations
       summe[stufe].automaticBombardments += result.byDifficulty[stufe].automaticBombardments
+      summe[stufe].formalWarDeclarations += result.byDifficulty[stufe].formalWarDeclarations
     }
   }
   return summe
@@ -69,6 +99,7 @@ describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
     // Zahl einzuhalten. Die Obergrenze steht dort, wo eine Mauer dem Spieler wirklich
     // schadet: zwischen **benachbarten** Stufen, siehe der Test darunter. Wer auf "leicht"
     // verliert, wechselt zu "normal" und nicht zu "schwer". Begründet in PROBLEME.md.
+    // Bis 2026-09-25 auf zwei Mächten; seitdem drei Mächte reihum (Plan D).
   })
 
   it('schwer schlaegt normal, und zwar messbar', () => {
@@ -80,12 +111,63 @@ describe('R-AI-06 Die Stufen sind unterscheidbar', () => {
     // die Partie im Krieg, bleibt der Wirtschaft keine Zeit, sich auszuwirken: gemessen
     // 0,54 gegen 0,80. Eine Messung, die die eigentliche Stärke der Stufe wegdrückt, ist
     // die falsche Messung.
+    // Bis 2026-09-25 auf zwei Mächten (Nordland/Ostmark, getauscht); seitdem drei Mächte
+    // reihum, der Dritte als Fueller auf "normal" (Plan D, Befund M17-T4 — auf zwei
+    // Mächten hatte diese Paarung nur 5 verschiedene Ausgänge in 50 Partien).
     const result = run(['hard', 'normal'], false)
 
     expect(result.draws, 'jedes Paar unentschieden — die Stufe entscheidet nichts').toBeLessThan(result.matches / 2)
     expect(result.winRateA, 'schwer ist gegen normal nicht besser als der Zufall').toBeGreaterThan(0.55)
-    // Und hier greift die Obergrenze: zwischen benachbarten Stufen darf keine Mauer stehen.
-    expect(result.winRateA, 'zwischen normal und schwer steht eine Mauer').toBeLessThanOrEqual(0.95)
+    // Und hier greift die Obergrenze — mit einer Einschraenkung (Nacharbeit T-M17-15, Befund
+    // "Turnier: die Obergrenze 0,95 zaehlt nur Unentschieden", 2026-09-25): `winsB` ist in
+    // dieser Paarung durchgehend 0 (gemessen 10:0:15 am 2026-09-13, 39:0:36 am 2026-09-25) —
+    // "normal" verliert nie eine einzelne Partie, es zieht nur nach. Die Obergrenze begrenzt
+    // damit den Anteil der Unentschieden, nicht eine Niederlagenquote von "normal". Das Band
+    // traegt sich zudem teilweise ueber den Buchungsfehler M17-I1 (RECRUIT_SPY wird nicht
+    // vorgebucht): mit korrekter Buchung faellt winRateA auf 0,460 und winsB wird positiv
+    // (Befund M17-I1, PROBLEME.md). Entscheid Noah (2026-09-25): M17-I1 geht mit M17-T7 an
+    // M18, die Turnierfrage wird dort neu entschieden.
+    expect(result.winRateA, 'zwischen normal und schwer steht eine Mauer aus Unentschieden').toBeLessThanOrEqual(0.95)
+  })
+
+  it('schwer ist in keiner Sitzordnung schlechter als normal (T-M17-15, Befund M17-T4)', () => {
+    // Die Summe (0,55-0,95) allein liess "Spionage aus" durch (0,58), obwohl "schwer" dort in
+    // einer Sitzordnung 9 von 25 Paaren verlor (1:9) — die Summe verwaesserte die Lücke ueber
+    // zwei gute Sitzordnungen. Diese Zusicherung je Sitzordnung schliesst genau diese Lücke,
+    // ohne ein Band je Sitzordnung zu setzen (25 Paare streuen zu stark dafuer, §8 E4).
+    // Gemessen 2026-09-25 (Block 1000, Tor-Turnier): 12:0 / 6:0 / 21:0.
+    const result = run(['hard', 'normal'], false)
+
+    for (const setup of AUFSTELLUNGEN) {
+      const schluessel = setup.join('/')
+      const eintrag = result.bySetup[schluessel]
+      expect(eintrag, schluessel).toBeDefined()
+      expect(
+        eintrag!.winsA,
+        `${schluessel}: schwer ${eintrag!.winsA}:${eintrag!.winsB} gegen normal, ${eintrag!.draws} unentschieden`,
+      ).toBeGreaterThanOrEqual(eintrag!.winsB)
+    }
+  })
+
+  it('das Messgeraet streut: viele Ausgaenge, keine Nation gewinnt alles (Befund M17-T4)', () => {
+    // Gemessen (Plan D, Vorabmessung mit Option C): 110 verschiedene Ausgänge, höchstens 447 ‰
+    // fuer eine Nation. Die alte Aufstellung (zwei Mächte) hatte 5 bzw. 32 Ausgänge und 980 ‰
+    // fuer eine Nation. 50 ist weniger als die Hälfte des Gemessenen und ein Vielfaches des
+    // alten Wertes, 600 ‰ liegt zwischen beiden — die Grenzen fangen den Rückfall in eine
+    // Aufstellung, die eine Nation gewinnen lässt, und bewegen sich nicht mit der Stärke der
+    // Stufen.
+    const result = run(['hard', 'normal'], false)
+
+    expect(result.outcomes, 'zu wenige verschiedene Ausgaenge — das Messgeraet misst wenige Verlaeufe').toBeGreaterThanOrEqual(50)
+    expect(
+      (Math.max(...Object.values(result.winsByNation)) * 1000) / result.matches,
+      'eine Nation gewinnt fast alles',
+    ).toBeLessThanOrEqual(600)
+    expect(Object.keys(result.winsByNation).sort(), 'nicht alle drei Maechte gewinnen jemals').toEqual([
+      'Nordland',
+      'Ostmark',
+      'Sueden',
+    ])
   })
 })
 
@@ -95,10 +177,11 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
     // Bedingung, unter der eine KI einen laufenden Krieg beendet hätte, solange sie nicht
     // unterlegen war — ein Krieg zwischen zwei gleich starken KI-Mächten lief bis zum
     // Ende der Partie.
+    // Bis 2026-09-25 auf zwei Mächten; seitdem drei Mächte reihum (Plan D).
     const result = run(['hard', 'normal'], false)
 
     expect(result.warDeclarations.hard, 'der Lauf hat nichts gemessen — keine einzige Kriegserklärung').toBeGreaterThan(0)
-    expect(result.peaceAgreements.hard, 'kein einziger Frieden in 50 Partien').toBeGreaterThan(0)
+    expect(result.peaceAgreements.hard, 'kein einziger Frieden in den Partien').toBeGreaterThan(0)
   })
 
   it('laesst schwer und normal selbst Kriege erklaeren (T-M15-08, nach dem Handelnden)', () => {
@@ -108,10 +191,16 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
     // nicht —, und sie traegt fuer "schwer" und "normal". "Leicht" tritt nur im Krieg an und
     // kann gar nicht erklaeren; Beschuss gibt es in 40 Tagen auf der Testkarte auf keiner Stufe;
     // eine Handelsmarge gibt es nicht. Das steht mit Zahl im Bericht, nicht hier.
+    // Berichtigt (Befund M17-T1, Nacharbeit Turnier M17): bis M17 kamen diese Erklaerungen
+    // ausschliesslich aus Ueberfaellen an veralteten Zielen, keine einzige foermlich. Seit
+    // Option C (Noahs Entscheid zu M17-T5) erklaert die KI am veralteten Ziel foermlich, und
+    // das wird hier zusaetzlich zugesichert.
     const result = run(['hard', 'normal'], false)
 
     expect(result.byDifficulty.hard.warDeclarations, 'schwer erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
     expect(result.byDifficulty.normal.warDeclarations, 'normal erklaert im Frieden nie einen Krieg').toBeGreaterThan(0)
+    expect(result.byDifficulty.hard.formalWarDeclarations, 'schwer erklaert nur durch Ueberfall').toBeGreaterThan(0)
+    expect(result.byDifficulty.normal.formalWarDeclarations, 'normal erklaert nur durch Ueberfall').toBeGreaterThan(0)
   })
 
   it('schreibt den Bericht', () => {
@@ -127,12 +216,15 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
         '# KI-Turnier — letzter Lauf',
         '',
         `Erzeugt von \`pnpm test:slow\` am ${new Date().toISOString().slice(0, 10)}.`,
-        'Je 50 Partien, 40 Spieltage, Seiten jede zweite Partie getauscht.',
+        'Je 150 Partien je Paarung, 40 Spieltage; drei Mächte reihum (Nordland/Ostmark/Sueden),',
+        'der Dritte als Füller auf „normal"; Startzahlen 1000–1024 je Aufstellung, Stufen je',
+        'Paar getauscht.',
         '',
         measurementLine(MESSSTAND),
         '',
-        '| Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) |',
-        '|---|---|---|---|---|---|---|',
+        '| Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) |' +
+          ' Friedensschlüsse (schwer) | Überfälle | verschiedene Ausgänge | Siege je Nation |',
+        '|---|---|---|---|---|---|---|---|---|---|',
         zeile('schwer gegen leicht, im Krieg', gegenLeicht),
         zeile('schwer gegen normal, im Frieden', gegenNormal),
         zeile('schwer gegen normal, im Krieg', imKrieg),
@@ -140,21 +232,38 @@ describe('R-DIP-06 Kriege beginnen und enden', () => {
         'Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt',
         '(T-M15-08 versprach „neun Zahlen je Stufe"; nachgeprüft in T-M41-08, `DECISIONS.md`):',
         '',
-        '| Stufe | Kriegserklärungen | Selbsttätiger Beschuss |',
-        '|---|---|---|',
+        '| Stufe | Kriegserklärungen | davon förmlich | Selbsttätiger Beschuss |',
+        '|---|---|---|---|',
         ...STUFEN.map(
           ([stufe, name]) =>
             `| ${name} | ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].warDeclarations} |` +
+            ` ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].formalWarDeclarations} |` +
             ` ${jeStufe([gegenLeicht, gegenNormal, imKrieg])[stufe].automaticBombardments} |`,
         ),
         '',
+        'Schwer gegen normal, im Frieden, je Sitzordnung (T-M17-15, Befund M17-T4):',
+        '',
+        '| Sitzordnung | A | B | U | Siegquote A |',
+        '|---|---|---|---|---|',
+        ...AUFSTELLUNGEN.map((setup) => {
+          const schluessel = setup.join('/')
+          const eintrag = gegenNormal.bySetup[schluessel]!
+          return `| ${schluessel} | ${eintrag.winsA} | ${eintrag.winsB} | ${eintrag.draws} | ${(eintrag.winRateA * 100).toFixed(0)} % |`
+        }),
+        '',
+        'Die Streuung der Summe über vier Startzahl-Blöcke (0,7267–0,82) steht in `BALANCING.md`,',
+        'nicht in diesem Lauf gerechnet.',
+        '',
         'Zusicherungen: Siegquote der höheren Stufe zwischen 70 % und 95 %; „schwer gegen',
-        'normal" endet nicht 25:25; mindestens ein Friedensschluss. Der Grundlauf **vor**',
-        'der Verhältnisregel steht in `ai-tournament.md`.',
+        'normal" endet nicht mit lauter Unentschieden; mindestens ein Friedensschluss;',
+        'mindestens 50 verschiedene Ausgänge und keine Nation über 60 % der Partien (Paarung',
+        '„im Frieden"); beide Stufen erklären förmlich; schwer ist in keiner Sitzordnung',
+        'schlechter als normal (T-M17-15). Der Grundlauf **vor** der Verhältnisregel steht in',
+        '`ai-tournament.md`.',
         '',
       ].join('\n'),
     )
 
-    expect(gegenLeicht.matches).toBe(50)
+    expect(gegenLeicht.matches).toBe(150)
   })
 })

@@ -75,6 +75,12 @@ function viewAtDay(day: number): Parameters<typeof alertsFor>[0] {
     provinces: [],
     battles: [],
     self: { shortages: [] },
+    // T-M17-14: `offerAlerts` liest diese Felder ohne `?.` (Falle 7) — der Fixtur-Standard
+    // bleibt leer, damit dieser Waechter unveraendert bleibt.
+    others: [],
+    incomingOffers: [],
+    outgoingOffers: [],
+    tradeOffers: { incoming: [], outgoing: [] },
   } as never
 }
 

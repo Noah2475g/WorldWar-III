@@ -14,6 +14,8 @@ import {
   type PlayerKind,
   type Province,
   type ProvinceId,
+  type Relation,
+  type Tick,
   type VictoryCondition,
 } from './types'
 import type { Fixed } from '@worldwar/shared'
@@ -48,6 +50,95 @@ export interface RuleContext {
 /** Relation key for a pair of players, order-independent. */
 export function relationKey(a: PlayerId, b: PlayerId): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`
+}
+
+/**
+ * Laesst `grantor` die Truppen von `guest` durch sein Gebiet? (M17, D29.1, R-DIP-08)
+ *
+ * **Diese Funktion, `sharesMap` und `passageEndsAtTick` sind die einzigen Leserinnen der
+ * gerichteten Felder, `setPassage`, `expirePassage` und `setMapShared` die einzigen Schreiber
+ * einer Richtung**
+ * (seit T-M17-04; wer beide Richtungen zugleich setzt oder loescht, muss es nicht wissen).
+ * Der Grund ist nicht Ordnungsliebe: der Schluessel einer Beziehung ist sortiert (`a|b` mit
+ * a < b), die Frage ist es nicht. Wer `relation.aGrantsPassage` an einer beliebigen Stelle
+ * im Spiel liest, muss dort wissen, ob die fragende Macht gerade `a` oder `b` ist — und
+ * genau dieser Fehler war bis Stufe 3 in den Zustand eingebaut: `rightOfWay` galt fuer
+ * beide Richtungen, und wer „gewaehrte", durfte selbst folgenlos ins Land des anderen
+ * (Befund B2, `PROBLEME.md` 2026-09-13).
+ *
+ * Steht eine Kuendigungsfrist (`revokeRightOfWay`, T-M17-04), gilt das Recht **bis** dahin
+ * (`tick < ends`): im Tick der Frist selbst ist der Gast schon ein Eindringling.
+ */
+export function grantsPassage(state: GameState, grantor: PlayerId, guest: PlayerId): boolean {
+  const relation = state.diplomacy.relations[relationKey(grantor, guest)]
+  if (!relation) return false
+  const granted = grantor < guest ? relation.aGrantsPassage : relation.bGrantsPassage
+  if (!granted) return false
+  const ends = grantor < guest ? relation.aPassageEndsAtTick : relation.bPassageEndsAtTick
+  return ends === null || state.tick < ends
+}
+
+/** Zeigt `owner` seine Karte an `viewer`? (M17, D29.1) — gerichtet wie `grantsPassage`. */
+export function sharesMap(state: GameState, owner: PlayerId, viewer: PlayerId): boolean {
+  const relation = state.diplomacy.relations[relationKey(owner, viewer)]
+  if (!relation) return false
+  return owner < viewer ? relation.aSharesMap : relation.bSharesMap
+}
+
+/**
+ * Bis zu welchem Tick laesst `grantor` den `guest` noch durch? `null` heisst: unbefristet —
+ * oder gar nicht; wer das unterscheiden muss, fragt vorher `grantsPassage` (T-M17-04).
+ *
+ * Die dritte Leserin der gerichteten Felder, aus demselben Grund wie die beiden oben: die
+ * Frage ist gerichtet, der Schluessel nicht. Ein abgelaufenes Recht meldet `null`, auch wenn
+ * die Phase es im selben Tick noch nicht aufgeraeumt hat — die Sicht soll keine Frist zeigen,
+ * die schon vorbei ist.
+ */
+export function passageEndsAtTick(state: GameState, grantor: PlayerId, guest: PlayerId): Tick | null {
+  if (!grantsPassage(state, grantor, guest)) return null
+  const relation = state.diplomacy.relations[relationKey(grantor, guest)]!
+  return grantor < guest ? relation.aPassageEndsAtTick : relation.bPassageEndsAtTick
+}
+
+/**
+ * Schreibt die **eine** Richtung `grantor → guest` des Durchmarschs (T-M17-04, R-DIP-08).
+ *
+ * Steht neben den Leserinnen, weil der Schreiber dasselbe wissen muss wie sie — welche Haelfte
+ * des Schluessels wer ist. Bis T-M17-04 setzte jeder Schreiber beide Richtungen und musste es
+ * nicht wissen; jetzt ist genau diese Stelle der Unterschied zwischen „ich lasse dich durch"
+ * und „ich darf zu dir" (Befund B1). `endsAtTick` ist die Kuendigungsfrist, `null` unbefristet.
+ */
+export function setPassage(
+  relation: Relation,
+  grantor: PlayerId,
+  guest: PlayerId,
+  granted: boolean,
+  endsAtTick: Tick | null = null,
+): void {
+  const ends = granted ? endsAtTick : null
+  if (grantor < guest) {
+    relation.aGrantsPassage = granted
+    relation.aPassageEndsAtTick = ends
+  } else {
+    relation.bGrantsPassage = granted
+    relation.bPassageEndsAtTick = ends
+  }
+}
+
+/**
+ * Raeumt die Richtung `grantor → guest` ab, wenn ihre Kuendigungsfrist bis `tick` abgelaufen
+ * ist (T-M17-04, D29.3 Schritt 2). `passageEndsAtTick` kann das nicht beantworten — sie meldet
+ * ein abgelaufenes Recht absichtlich als `null`.
+ */
+export function expirePassage(relation: Relation, grantor: PlayerId, guest: PlayerId, tick: Tick): void {
+  const ends = grantor < guest ? relation.aPassageEndsAtTick : relation.bPassageEndsAtTick
+  if (ends !== null && tick >= ends) setPassage(relation, grantor, guest, false)
+}
+
+/** Schreibt die eine Richtung `owner → viewer` der Kartenfreigabe (T-M17-04, R-DIP-08/AK6). */
+export function setMapShared(relation: Relation, owner: PlayerId, viewer: PlayerId, shared: boolean): void {
+  if (owner < viewer) relation.aSharesMap = shared
+  else relation.bSharesMap = shared
 }
 
 /**
@@ -172,8 +263,12 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
         state: 'peace',
         sinceTick: 0,
         warEffectiveAtTick: null,
-        rightOfWay: false,
-        sharedMap: false,
+        aGrantsPassage: false,
+        bGrantsPassage: false,
+        aPassageEndsAtTick: null,
+        bPassageEndsAtTick: null,
+        aSharesMap: false,
+        bSharesMap: false,
       }
     }
   }
@@ -191,7 +286,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
     provinceOrder,
     armies: {},
     armyOrder: [],
-    diplomacy: { relations, offers: [], grievances: {} },
+    diplomacy: { relations, offers: [], tradeOffers: [], grievances: {} },
     market: createMarket(rules),
     ai,
     battles: [],
@@ -215,6 +310,7 @@ export function createInitialState(config: GameConfig, ctx: RuleContext): GameSt
       endedAtTick: null,
     },
     goals,
-    nextIds: { army: 1, battle: 1, order: 1 },
+    espionage: { spies: [], reveals: [] },
+    nextIds: { army: 1, battle: 1, order: 1, spy: 1, offer: 1 },
   }
 }

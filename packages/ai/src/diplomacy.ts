@@ -102,6 +102,9 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
   // 1. Answer standing offers first.
   for (const [other, relation] of Object.entries(context.view.relations)) {
     if (relation.state !== 'war') continue
+    // Eine ausgeschiedene Macht bleibt in `relations` im Krieg stehen; Angebot und Annahme
+    // lehnt der Kern mit PLAYER_ELIMINATED ab (Nacharbeit Turnier M17, C2).
+    if (context.view.others.find((entry) => entry.id === other)?.alive === false) continue
 
     const ratio = standing(context, other)
     const feindselig = towards(other).value < context.difficulty.warThreshold
@@ -161,9 +164,15 @@ export function diplomacyCommands(context: AiContext, explanations: Explanation[
 
   // 1c. Gewährter Durchmarsch wird erwidert, wenn das Verhältnis stimmt (R-DIP-06/AK3).
   // Eine Geste, die nie beantwortet wird, ist keine Diplomatie, sondern eine Einbahnstraße.
+  //
+  // Erst seit T-M17-04 wirksam (Befund B2): vorher war das Recht ein symmetrisches Feld, und
+  // wer es erhalten hatte, hatte es damit schon gewährt — der Befehl änderte nichts und ging
+  // trotzdem an jedem Spieltag hinaus. Jetzt: erhalten **und** selbst noch nicht gewährt.
+  // Eine eigene Kündigung zählt als „gewährt", bis ihre Frist abläuft; danach würde hier
+  // wieder erwidert — das Widerrufen der KI kommt erst in T-M17-10 und muss das abfangen.
   for (const other of Object.keys(context.view.relations).sort()) {
     const relation = context.view.relations[other]!
-    if (!relation.rightOfWay || relation.state === 'war') continue
+    if (!relation.passageReceived || relation.passageGranted || relation.state === 'war') continue
     const wert = towards(other)
     if (wert.value < context.difficulty.trustThreshold) continue
     commands.push({ type: 'DIPLOMACY', playerId, targetPlayerId: other, action: 'grantRightOfWay' })

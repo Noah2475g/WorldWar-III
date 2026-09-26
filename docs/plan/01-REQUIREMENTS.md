@@ -768,6 +768,8 @@ auf diesem Weg — regulär, mit Zeit und Risiko, für alle gleich (R-FREE-02, K
     eines Spions je Auftrag anbieten — gesperrt mit Grund, wenn das Geld fehlt.
   - AK2: WENN eine Sabotage erlitten wurde, DANN SOLL eine Meldung mit Sprungziel erscheinen.
 
+  *(Präzisiert am 2026-09-25, Nacharbeit T-M17-13, E4: der Satz „Ergebnisse ... erscheinen als Meldung“ gilt eingeschränkt — gebaut werden nur Enttarnung und erlittene Sabotage als Meldung (AK1, AK2); der tägliche Erfolg oder Misserfolg der eigenen Spionage wird bewusst NICHT gemeldet, nur ein verfehltes Ziel, und steht stattdessen im Protokoll und in der Spionageübersicht. Siehe DECISIONS.md, T-M17-13 E4, und 02-DESIGN.md D29.9.)*
+
 #### Handel und Verhältnis zwischen Mächten (`R-DIP`, Fortsetzung)
 
 - **R-DIP-05 — Handelsangebote zwischen Mächten.** Nach Referenz 9.4 und 3.7: Eine Macht
@@ -864,6 +866,16 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     Gegenwert den Wert der Provinz um den Regelaufschlag übersteigt und das Verhältnis nicht
     schlecht ist, sonst ablehnen.
 
+> **Präzisiert am 2026-09-25 (T-M17-06), AK1.** Die vier genannten Gründe gelten der
+> **gebenden** Seite; dazu kommen „fremde Armeen" und „eigene Armeen auf dem Weg hinein"
+> (`DECISIONS.md`). Der Verfall eines Angebots, das nicht mehr abschließbar ist, geschieht in
+> der Diplomatiephase desselben Ticks (Rangfolge ausgeschieden vor Krieg vor Provinz vor
+> Frist). Die verlangte Seite wird beim Angebot nur öffentlich geprüft, nicht voll.
+>
+> **Präzisiert am 2026-09-25 (T-M17-06), AK2.** „Nie ein Überfall im Tick danach" gilt für alle
+> Armeen, die in der Provinz **stehen**, und für die eigenen Armeen **auf dem Weg** hinein —
+> nicht für fremde Märsche, deren Ziel dem Abtretenden verborgen bleibt (Befund M17-D5).
+
 #### Weltgeschehen statt Zeitung (`R-NEWS`)
 
 > **R-NEWS-01, R-NEWS-02 und R-NEWS-03 sind am 2026-09-06 gestrichen** — ersatzlos, mit
@@ -911,6 +923,17 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
   - AK3: WENN die KI über 200 Spieltage spielt, DANN SOLL sie Fabriken bauen, Artillerie
     ausheben und selbsttätigen Beschuss erzeugen — sonst ist die Feuerautomatik aus
     R-BAT-08 für die KI tot, gleich wie viele Einzeltests grün sind.
+    > **Auf dem M17-Stand nicht erfüllt (T-M17-15, 2026-09-25, berichtigt in der Nacharbeit
+    > 2026-09-25).** AK3: 0 Artillerie, 0 Beschuss im 200-Tage-Lauf (Befund M17-T7). Die
+    > ursprüngliche Ursache — „keine Macht spart genug Geld für eine Artillerie an" — war
+    > **falsch beschrieben**: `geldHoechstensJeMacht` in `ai-integration.json` zeigt, dass
+    > „normal" und „schwer" ihre eigene Schwelle (1 Mio. bzw. 714 000) durchweg überschreiten
+    > (gemessen 1,35–1,59 Mio.); nur „leicht" bleibt unter ihrer Schwelle von 2,5 Mio. Die
+    > tatsächliche Ursache steht in `fabrikenBegonnenJeMacht`: „normal" und „schwer" bauen
+    > **null** Fabriken, „leicht" baut welche (40/51/1), hat aber nie genug Geld — Artillerie
+    > braucht laut `units.json` eine Fabrik. Wer Geld hat, baut keine Fabrik; wer Fabriken
+    > baut, kann sie nicht bezahlen. Die Reparatur braucht zugleich Befund M17-S12 und kippt
+    > das Turnierband; Entscheid Noah (2026-09-25): beide gehen an M18.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum
@@ -935,6 +958,21 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     `QUEUE_FULL` abgelehnt worden sein, und keine KI SOLL Geldmangel erleiden.
   - AK3: WENN derselbe Lauf mit und ohne Durchmarsch-Anträge gefahren wird, DANN SOLL die Zahl
     der Überfälle ohne Kriegserklärung mit Anträgen nicht größer sein.
+    > **Wörtlich nicht erfüllt, Fassung berichtigt (Nacharbeit T-M17-15, 2026-09-25).**
+    > Gemessen (`m17-integration.json`, drei Startzahlen): Überfälle gesamt mit/ohne 1/0,
+    > 2/1, 0/0 — Summe **3 > 1**, also wörtlich rot: die Gesamtzahl aller Überfälle ist MIT
+    > Anträgen größer als OHNE. Der Test sichert stattdessen eine **engere, selbst gewählte
+    > Teilmenge** zu — nur die Überfälle, die ein Antrag überhaupt bewegen kann (`art ===
+    > 'durchmarsch'` oder `nachKuendigung`, aus DECISIONS.md 2026-09-25) — und die hält (0 ≤
+    > 0). Ohne den Hebel (`withhold`) gibt es aber ohnehin kaum Anträge zu kündigen und keinen
+    > Durchmarsch zu erhalten, weil `requestPassage` an der Vertrauensschwelle weiterhin
+    > anhält (`passage.ts`): die bewegbare Menge auf der Ohne-Seite ist damit strukturell nahe
+    > 0, was den Vergleich erleichtert. **Neue Fassung:** „DANN SOLL die Zahl der Überfälle,
+    > die ein Antrag auf Durchmarsch verhindern könnte (Marschziel im fremden Land oder nach
+    > einer eigenen Kündigung), mit Anträgen nicht größer sein als ohne.“ Der Test sichert
+    > seit dieser Nacharbeit zusätzlich zu, dass jeder verbleibende Überfall außerhalb dieser
+    > Teilmenge `friedensschluss: true` trägt (Befund M17-T6) — siehe
+    > `m17-integration.slow.test.ts`.
   - AK4: WENN die KI einen Spion anwirbt, ein Angebot macht, annimmt, ablehnt oder Durchmarsch
     beantragt, DANN SOLL ihre Erklärung Grund und Alternative nennen.
 - **R-GAME-09 — Spielstände der Stufe 3 laufen weiter** *(aufgenommen am 2026-09-13 mit
@@ -1183,13 +1221,16 @@ Armeen weiter selbst (R-AI-01).
     dieselben Befehle erzeugen wie ohne Unterbrechung, und über das Vorspulen dieselben wie über
     die Uhr; sie SOLL nur aus der Sicht des Besitzers entscheiden (R-DIP-04) und für Armeen von
     KI-Mächten keinen Befehl erzeugen.
-  - AK5: WENN derselbe Messlauf über 200 Spieltage mit Haltung Garnison und mit Haltung
-    Verteidigung über die Startzahlen 1914, 2015 und 1815 und je zwei Aufstellungen gefahren
-    wird, DANN SOLL die Summe der Provinz-Tage mit Verteidigung mindestens 98 % der Garnison
-    erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen ohne Gefecht verloren gehen
-    als mit Garnison, und kein Befehl der Automatik SOLL abgelehnt worden sein oder einen Krieg
-    ohne Erklärung ausgelöst haben — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht,
-    wird die Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
+  - AK5: WENN derselbe Messlauf über 200 Spieltage gefahren wird, in dem die Landnachbarn des
+    Menschen ihm am Spieltag 20 förmlich den Krieg erklären (Befund M17-F1: ohne diese Erklärung
+    greift die KI einen passiven Menschen mit voller Garnison nie an, und der Messlauf misst
+    nichts), mit Haltung Garnison und mit Haltung Verteidigung über die Startzahlen 1914, 2015 und
+    1815 und je zwei Aufstellungen, DANN SOLL die Summe der Provinz-Tage mit Verteidigung
+    mindestens 98 % der Garnison erreichen, in keinem Paar SOLLEN mit Verteidigung mehr Provinzen
+    ohne Gefecht verloren gehen als mit Garnison, kein Befehl der Automatik SOLL abgelehnt worden
+    sein oder einen Krieg ohne Erklärung ausgelöst haben, und jeder Lauf SOLL mindestens einen
+    Einmarsch zählen — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht, wird die
+    Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
   - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
     und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt; WENN er
     eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.

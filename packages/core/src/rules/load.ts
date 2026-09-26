@@ -85,6 +85,37 @@ const REQUIRED_CONSTANTS: readonly (keyof RuleConstants)[] = [
   'goalPointShareFirstPermille',
   'goalPopulationSharePermille',
   'goalPointShareSecondPermille',
+  // Diplomatie in M17 (T-M17-04, D29.7). Fehlte eine, waere ein Vergleich mit `NaN` immer
+  // falsch: jedes Angebot verfiele sofort, und ein gekuendigtes Recht endete im selben Tick.
+  'offerLifetimeDays',
+  'rightOfWayNoticeTicks',
+  // Handel in M17 (T-M17-05, D29.7). Fehlte eine, verfiele jedes Angebot sofort (NaN) oder jede
+  // Menge laege ueber einer Grenze, die `undefined` ist — also nie.
+  'tradeOfferLifetimeDays',
+  'maxOpenTradeOffers',
+  'tradeMaxMoney',
+  'tradeMaxResource',
+  // Spionage (R-SPY-01, T-M17-07). Fehlte der Preis, waere `money < undefined` immer falsch
+  // und jeder Spion umsonst; fehlte die Hoechstzahl, waere `count >= undefined` nie wahr.
+  'spyRecruitCost',
+  'spySalaryIntel',
+  'spySalaryEconomicSabotage',
+  'spySalaryMilitarySabotage',
+  'spySalaryCounter',
+  'maxSpiesPerPlayer',
+  // Tageslauf (T-M17-08). Fehlte die Chance, waere `chance(rng, undefined)` stets falsch — jede
+  // Aufklaerung misslaenge still; fehlte die Dauer, stuende `untilTick` auf NaN.
+  'spySuccessIntelPermille',
+  'spyRevealDays',
+  // Sabotage und Gegenspionage (T-M17-09). Fehlte eine Chance, waere `chance(rng, undefined)` stets
+  // falsch — Sabotage und Enttarnung fielen still aus; fehlte ein Schaden, rechnete `-=` mit NaN.
+  'spySuccessSabotagePermille',
+  'spyDetectionPermille',
+  'sabotageMoraleLoss',
+  'sabotageYieldDestroyedPermille',
+  'militarySabotageDelayTicks',
+  'spyDetectedReputationLoss',
+  'grievanceOnSpyDetected',
 ]
 
 function record(value: unknown): Record<string, unknown> {
@@ -126,6 +157,16 @@ export function parseRules(raw: RawRules, id: string): Rules {
   if (constants.moraleDriftDivisor <= 0) problems.push('moraleDriftDivisor muss positiv sein')
   if (constants.stackFullContribution >= constants.stackZeroContribution) {
     problems.push('stackFullContribution muss kleiner als stackZeroContribution sein')
+  }
+  // Ein Angebot, das im Tick seiner Abgabe verfaellt, kann niemand annehmen (T-M17-04).
+  if (constants.offerLifetimeDays <= 0) problems.push('offerLifetimeDays muss positiv sein')
+  if (constants.rightOfWayNoticeTicks < 0) problems.push('rightOfWayNoticeTicks darf nicht negativ sein')
+  if (constants.tradeOfferLifetimeDays <= 0) problems.push('tradeOfferLifetimeDays muss positiv sein')
+  if (!Number.isSafeInteger(constants.maxOpenTradeOffers) || constants.maxOpenTradeOffers < 1) {
+    problems.push('maxOpenTradeOffers muss eine ganze Zahl ab 1 sein')
+  }
+  if (constants.tradeMaxMoney <= 0 || constants.tradeMaxResource <= 0) {
+    problems.push('tradeMaxMoney und tradeMaxResource muessen positiv sein')
   }
 
   // --- resources -----------------------------------------------------------
@@ -295,6 +336,35 @@ export function parseRules(raw: RawRules, id: string): Rules {
     if (sum !== 1000) {
       // Normalised weights are what keep the terms comparable at all (design D8).
       problems.push(`KI-Stufe "${level}": Gewichte summieren sich auf ${sum}, erwartet 1000`)
+    }
+  }
+  // Handelszahlen der KI (T-M17-10, D29.7). Ein fehlender Wert waere still `undefined`, und jede
+  // Rechnung damit ergaebe NaN — die KI naehme dann nie etwas an und boete nie etwas an.
+  for (const field of ['tradeAcceptMarginPermille', 'tradeImpactPermille', 'tradeOfferPremiumPermille', 'tradeKeepStockPermille'] as const) {
+    if (typeof aiRaw[field] !== 'number') problems.push(`KI: "${field}" fehlt`)
+  }
+  if (Number(aiRaw['tradeAcceptMarginPermille']) < 1000) problems.push('KI: tradeAcceptMarginPermille unter 1000 hiesse, Verlust anzunehmen')
+  if (Number(aiRaw['tradeOfferPremiumPermille']) < 1000) problems.push('KI: tradeOfferPremiumPermille unter 1000 hiesse, unter Wert anzubieten')
+  if (Number(aiRaw['tradeImpactPermille']) <= 0) problems.push('KI: tradeImpactPermille muss positiv sein')
+  const keep = Number(aiRaw['tradeKeepStockPermille'])
+  if (!(keep >= 0 && keep <= 1000)) problems.push('KI: tradeKeepStockPermille liegt zwischen 0 und 1000')
+
+  // Provinzhandel der KI (T-M17-11, D29.7). Wie beim Handel: ein fehlender Wert waere still NaN.
+  for (const field of ['provinceValueHorizonDays', 'provinceSalePremiumPermille', 'provinceValuePositionPermille'] as const) {
+    if (typeof aiRaw[field] !== 'number') problems.push(`KI: "${field}" fehlt`)
+  }
+  const horizon = Number(aiRaw['provinceValueHorizonDays'])
+  if (!(Number.isSafeInteger(horizon) && horizon > 0)) problems.push('KI: provinceValueHorizonDays muss eine positive ganze Zahl sein')
+  if (Number(aiRaw['provinceSalePremiumPermille']) < 1000) problems.push('KI: provinceSalePremiumPermille unter 1000 hiesse, Land unter Wert abzugeben')
+  const lage = Number(aiRaw['provinceValuePositionPermille'])
+  if (!(lage >= 0 && lage <= 1000)) problems.push('KI: provinceValuePositionPermille liegt zwischen 0 und 1000')
+
+  // Die Spionagezahlen der KI (T-M17-12, D29.8). Fehlte eine, waere sie still `undefined`: das
+  // Budget wuerde NaN, und die KI wuerbe nie einen Spion an, ohne dass es jemand merkt.
+  for (const field of ['espionageBudgetPermille', 'espionageCounterGrievance', 'espionageMoneyHorizonDays'] as const) {
+    const value = aiRaw[field]
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+      problems.push(`KI: "${field}" fehlt oder ist ungueltig`)
     }
   }
   const ai = aiRaw as unknown as AiRules

@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { advanceTicks } from '@worldwar/ai'
-import { createInitialState, parseRules, type GameConfig, type MapData, type Rules } from '@worldwar/core'
+import {
+  SCHEMA_VERSION,
+  createInitialState,
+  parseRules,
+  type GameConfig,
+  type GameState,
+  type MapData,
+  type Rules,
+} from '@worldwar/core'
 import {
   PROBE_TICKS,
   acceptState,
@@ -151,6 +159,45 @@ describe('R-MP-13/AK2 Der uebertragene Stand fuehrt dieselbe Pruefsumme', () => 
     const falsch = acceptState(angekommen.message, 'etwas-ganz-anderes')
     expect(falsch.ok).toBe(false)
     expect(falsch.ok === false && falsch.reason).toMatch(/verworfen/)
+  })
+
+  it('verwirft einen Stand aus einer anderen Formatstufe — und nennt den Grund (T-M17-03)', () => {
+    // Der Fall aus dem Betrieb: der GASTGEBER hat einen aelteren Bau und uebertraegt seinen
+    // Stand der alten Stufe; dieser Gast rechnet mit dem neuen Code. (Bis zum 2026-09-24 stand
+    // hier „der Gast hat einen aelteren Bau" — das ist gerade der Fall, den diese Pruefung
+    // NICHT erreicht: ein alter Gast rechnet mit altem Code. Ihn haelt seit dem 2026-09-24 die
+    // Protokollfassung ab, `protocol.test.ts`, Befund M17-4.) Bis zum 2026-09-18 haette diese
+    // Seite den Stand angenommen, wenn die Pruefsumme passte — und der erste Tick waere an
+    // einem Feld gescheitert, das es in der alten Stufe nicht gibt (`cloneState` liest
+    // `espionage`). Geprueft wird deshalb ZUERST die Stufe, und die Meldung nennt beide Zahlen
+    // statt „verstuemmelter Spielstand".
+    const alt = JSON.parse(JSON.stringify(nachDreissig)) as GameState & { schemaVersion: number }
+    alt.schemaVersion = SCHEMA_VERSION - 1
+    const nachricht = parseMessage(JSON.parse(encodeMessage(stateMessage(alt))))
+    expect(nachricht.ok && nachricht.message.kind === 'zustand').toBe(true)
+    if (!nachricht.ok || nachricht.message.kind !== 'zustand') return
+
+    const genommen = acceptState(nachricht.message, stateHash(alt))
+    expect(genommen.ok, 'ein Stand aus einer anderen Stufe wurde angenommen').toBe(false)
+    expect(genommen.ok === false && genommen.reason).toContain(`${SCHEMA_VERSION}`)
+    expect(genommen.ok === false && genommen.reason).toMatch(/Fassungen des Spiels/)
+  })
+
+  it('verwirft einen Stand mit gueltiger Pruefsumme, der aber unvollstaendig ist (N3, Nacharbeit Durchsicht 2026-09-25)', () => {
+    // Derselbe Fall wie bei `deserialise` (DECISIONS.md 2026-09-24): die Pruefsumme sagt nur,
+    // dass der Stand unveraendert ist, nicht dass er vollstaendig ist. Ein Host mit einem
+    // aelteren Bau, der `espionage` noch nicht kennt, haette dieselbe Formatstufe und eine
+    // in sich stimmige Pruefsumme — bis zu dieser Reparatur waere sein Stand hier durchgelaufen
+    // und beim Gast im ersten Tick an `cloneState` abgestuerzt.
+    const uebertragen = parseMessage(JSON.parse(encodeMessage(stateMessage(nachDreissig))))
+    expect(uebertragen.ok && uebertragen.message.kind === 'zustand').toBe(true)
+    if (!uebertragen.ok || uebertragen.message.kind !== 'zustand') return
+    ;(uebertragen.message.state as unknown as { espionage: unknown }).espionage = {}
+    const passendeSumme = stateHash(uebertragen.message.state)
+
+    const genommen = acceptState(uebertragen.message, passendeSumme)
+    expect(genommen.ok, 'ein unvollstaendiger, aber pruefsummengleicher Stand wurde angenommen').toBe(false)
+    expect(genommen.ok === false && genommen.reason).toMatch(/espionage/)
   })
 
   it('spielt danach im Gleichschritt weiter, und beide Seiten bleiben gleich', () => {

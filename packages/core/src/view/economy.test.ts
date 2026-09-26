@@ -2,6 +2,7 @@ import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createInitialState, type GameConfig } from '../state/create'
 import { runTicks } from '../clock'
+import { spySalary } from '../rules/espionage'
 import { publicView } from './publicView'
 import { economyOverview } from './economy'
 import type { GameState, ResourceKey } from '../state/types'
@@ -97,6 +98,45 @@ describe('R-ECON-06 Bestand, Produktion, Verbrauch und Bilanz je Rohstoff', () =
       expect(flow.balance).toBe(flow.production - flow.consumption)
       expect(flow.balance).toBeLessThan(without[resource].balance)
     }
+  })
+
+  it('rechnet den Sold eigener Spione als Verbrauch (R-ECON-06, Befund einer Nacharbeit-Pruefung)', () => {
+    // Der Sold geht im Tageslauf direkt vom Geld ab (phases/espionage.ts), eine
+    // Einmalzahlung ist er nicht — anders als Bau/Aushebung gehoert er also in
+    // `consumption`/`balance`, so wie der Armeeunterhalt.
+    const without = economyOverview(state, 'p1', TEST_RULES)
+    state.espionage.spies.push({
+      id: 's1',
+      owner: 'p1',
+      provinceId: 'n1',
+      mission: 'intel',
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+    const withSpy = economyOverview(state, 'p1', TEST_RULES)
+
+    const salary = spySalary(TEST_RULES.constants, 'intel')
+    expect(withSpy.money.consumption - without.money.consumption).toBe(salary)
+    expect(withSpy.money.balance).toBe(withSpy.money.production - withSpy.money.consumption)
+  })
+
+  it('zaehlt nur eigene Spione zum Sold, nicht die fremder Maechte', () => {
+    const without = economyOverview(state, 'p1', TEST_RULES)
+    state.espionage.spies.push({
+      id: 's1',
+      owner: 'p2',
+      provinceId: 'n1',
+      mission: 'intel',
+      recruitedTick: 0,
+      assignedTick: 0,
+      lastRunTick: null,
+      lastOutcome: null,
+    })
+    const withForeignSpy = economyOverview(state, 'p1', TEST_RULES)
+
+    expect(withForeignSpy.money.consumption).toBe(without.money.consumption)
   })
 
   it('haelt eine ausgeschiedene Macht bei null, statt zu brechen', () => {

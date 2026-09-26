@@ -12,9 +12,9 @@ wann zu lesen ist.
 
 ## Zwei Dinge, an denen schon Sitzungen verloren gingen
 
-1. **Auf welchem Zweig die Spitze liegt, sagt `WORKFLOW.md` §0 — und sonst nichts.** Seit
-   dem Merge von PR #7 (M41, M40, M35 und der Schlussblock) am 2026-09-14 liegt sie wieder
-   auf `main`. Erster Befehl in einem frischen Worktree:
+1. **Auf welchem Zweig die Spitze liegt, sagt `WORKFLOW.md` §0 — und sonst nichts.** Diese Datei
+   nennt absichtlich keinen Zweig mehr: sie stand zweimal auf dem falschen (zuletzt „wieder auf
+   `main`", während M17 auf einem eigenen Zweig lag). Erster Befehl in einem frischen Worktree:
 
    ```bash
    git log --oneline -1 && git status --short

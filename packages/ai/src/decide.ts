@@ -4,6 +4,10 @@ import { capitalCommands } from './capital'
 import { consolidateCommands } from './consolidate'
 import { economyCommands, recruitCommands, tradeCommands } from './economy'
 import { militaryCommands } from './military'
+import { passageCommands } from './passage'
+import { provinceOfferCommands } from './provinceValue'
+import { tradeOfferCommands } from './trade'
+import { espionageCommands } from './espionage'
 import type { AiContext, AiDecision, Explanation } from './types'
 
 /**
@@ -102,7 +106,13 @@ export function decide(options: DecideOptions): AiDecision {
     // mit vollem Betrag, und keine andere Entscheidung wiegt das auf (T-M14-12).
     commands.push(...capitalCommands(context, explanations))
     commands.push(...diplomacyCommands(context, explanations))
+    commands.push(...passageCommands(context, explanations, commands)) // T-M17-10
     commands.push(...economyCommands(context, explanations))
+    commands.push(...tradeOfferCommands(context, explanations, commands)) // T-M17-10
+    commands.push(...provinceOfferCommands(context, explanations, commands)) // T-M17-11
+    // Spionage zuletzt: sie rechnet mit dem Geld, das Bauauftrag und Handel dieses Zugs schon binden, und
+    // zieht Saboteure von Maechten ab, denen die Diplomatie eben Frieden angeboten hat (T-M17-12, D29.8).
+    commands.push(...espionageCommands(context, explanations, commands))
   }
 
   // Operations: raising troops and covering shortages. Every six hours.
@@ -121,7 +131,7 @@ export function decide(options: DecideOptions): AiDecision {
   const interval = Math.max(1, options.difficulty.tacticalInterval)
   if (memory.lastTacticalTick === undefined || tick - memory.lastTacticalTick >= interval) {
     memory.lastTacticalTick = tick
-    commands.push(...militaryCommands(withoutAbsorbed(context, absorbed), explanations))
+    commands.push(...militaryCommands(withoutAbsorbed(context, absorbed), explanations, commands))
   }
 
   return {
