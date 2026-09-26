@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createInitialState,
   economyOverview,
+  type BuildCompletedEvent,
   type BuildStartedEvent,
   type Command,
   type CommandRejectedEvent,
@@ -342,6 +343,41 @@ describe('T-M42-01 artillerieAnteil', () => {
     const events: GameEvent[] = [recruited(P1, 'rocket_artillery', 1), recruited(P1, 'infantry', 1)]
     expect(artillerieAnteil(events, rules, KI)).toEqual({ artillerie: 1, landeinheiten: 2, prozent: 50 })
   })
+
+  // Nacharbeit T-M42-01 (Befund 10, mittel): bericht().truppen.artillerieAnteil summiert
+  // artillerieCount/landeinheitenCount laufend im Zaehler statt die Funktion artillerieAnteil()
+  // aufzurufen — ein ungetesteter Zwilling. A5 fuettert dieselben Ereignisse einmal durch den
+  // Zaehler und einmal durch die Funktion und verlangt Gleichstand.
+  it('A5: truppen.artillerieAnteil (Zaehler) stimmt mit artillerieAnteil() (Funktion) ueberein', () => {
+    const events: GameEvent[] = [
+      recruited(P1, 'artillery', 3),
+      recruited(P1, 'rocket_artillery', 1),
+      recruited(P1, 'infantry', 7),
+      recruited(P1, 'transport', 2),
+      recruited(P1, 'fighter', 1),
+      recruited('p9', 'artillery', 5), // Nicht-KI, darf in beiden Wegen nicht zaehlen
+    ]
+    const zaehler = m42Zaehler(rules, KI)
+    zaehler.tagesende({ state: baseState(), events, applied: [] })
+    expect(zaehler.bericht().truppen.artillerieAnteil).toEqual(artillerieAnteil(events, rules, KI))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// BE — Beschuss (automatisches BOMBARDMENT)
+// ---------------------------------------------------------------------------
+describe('T-M42-01 Beschuss', () => {
+  // Nacharbeit T-M42-01 (Befund 10, mittel): jeMacht.beschuss und truppen.beschuss liefen bisher
+  // nur durch die 80-s-Integrationslaeufe, nie durch die schnelle Suite.
+  it('BE1: automatisches BOMBARDMENT zaehlt jeMacht.beschuss und truppen.beschuss; ein befohlenes nicht', () => {
+    const automatisch: GameEvent = { ...evBasis, type: 'BOMBARDMENT', playerId: P1, armyId: 'a1', targetProvinceId: 'n2', damage: 100, automatic: true }
+    const befohlen: GameEvent = { ...evBasis, type: 'BOMBARDMENT', playerId: P1, armyId: 'a2', targetProvinceId: 'n2', damage: 100, automatic: false }
+    const zaehler = m42Zaehler(rules, KI)
+    zaehler.tagesende({ state: baseState(), events: [automatisch, befohlen], applied: [] })
+    const bericht = zaehler.bericht()
+    expect(bericht.jeMacht[P1]!.beschuss, 'nur das automatische zaehlt').toBe(1)
+    expect(bericht.truppen.beschuss, 'nur das automatische zaehlt').toBe(1)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -480,6 +516,23 @@ describe('T-M42-01 tagesbilanzNachAushebung', () => {
 // F — fabrikBezahlbar, Zaehler
 // ---------------------------------------------------------------------------
 describe('T-M42-01 fabrikBezahlbar', () => {
+  // Nacharbeit T-M42-01 (Befund 3, mittel): fabrikenBegonnen/fabrikenFertig liefen bisher nur
+  // durch die 80-s-Integrationslaeufe (m17-/ai-integration.slow.test.ts, "zwei Zaehlwege"); ein
+  // Mutationstest (event.building === 'factory'-Filter aus BUILD_STARTED/BUILD_COMPLETED entfernt)
+  // liess die schnelle Suite unveraendert gruen. F0 fuettert beide Ereignisse direkt durch den
+  // Zaehler und prueft die Filterung auch gegen ein anderes Gebaeude.
+  it('F0: BUILD_STARTED/BUILD_COMPLETED factory zaehlen fabrikenBegonnen/fabrikenFertig; ein anderes Gebaeude nicht', () => {
+    const begonnenFactory: BuildStartedEvent = { ...evBasis, type: 'BUILD_STARTED', playerId: P1, provinceId: 'n1', building: 'factory', level: 1, completesAtTick: 100 }
+    const begonnenHafen: BuildStartedEvent = { ...evBasis, type: 'BUILD_STARTED', playerId: P1, provinceId: 'n1', building: 'harbour', level: 1, completesAtTick: 100 }
+    const fertigFactory: BuildCompletedEvent = { ...evBasis, type: 'BUILD_COMPLETED', playerId: P1, provinceId: 'n1', building: 'factory', level: 1 }
+    const fertigHafen: BuildCompletedEvent = { ...evBasis, type: 'BUILD_COMPLETED', playerId: P1, provinceId: 'n1', building: 'harbour', level: 1 }
+    const zaehler = m42Zaehler(rules, KI)
+    zaehler.tagesende({ state: baseState(), events: [begonnenFactory, begonnenHafen, fertigFactory, fertigHafen], applied: [] })
+    const m = zaehler.bericht().jeMacht[P1]!
+    expect(m.fabrikenBegonnen, 'nur die Fabrik zaehlt, nicht der Hafen').toBe(1)
+    expect(m.fabrikenFertig, 'nur die Fabrik zaehlt, nicht der Hafen').toBe(1)
+  })
+
   it('F1: jeder Kostenrohstoff genau an der Reserve-Schwelle -> true; einer darunter -> false', () => {
     // Reserve 200 Promille: Bestand*4/5 = Kosten, also Bestand = Kosten*5/4.
     const cost = rules.buildings.factory.cost
@@ -734,5 +787,17 @@ describe('T-M42-01 Rahmen', () => {
     expect(bericht.tagesenden).toBe(3)
     expect(bericht.jeMacht[P3]!.ausgeschieden).toBe(true)
     expect(bericht.jeMacht[P1]!.ausgeschieden).toBe(false)
+  })
+
+  // Nacharbeit T-M42-01 (Befund 9, mittel): jeMacht ist nach PlayerId geschluesselt, nicht nach
+  // Nation (Bauplan-Kommentar sagte "Schluessel Nation") — beide eingecheckten Berichte trugen
+  // nur p1..p8 ohne die Zuordnung zur Nation. MachtZahlen.nation schliesst die Luecke.
+  it('R5: MachtZahlen.nation traegt die Nation der Macht (jeMacht ist nach PlayerId geschluesselt)', () => {
+    const zaehler = m42Zaehler(rules, KI)
+    zaehler.tagesende(leer(baseState()))
+    const bericht = zaehler.bericht()
+    expect(bericht.jeMacht[P1]!.nation).toBe('Nordland')
+    expect(bericht.jeMacht[P2]!.nation).toBe('Ostmark')
+    expect(bericht.jeMacht[P3]!.nation).toBe('Sueden')
   })
 })

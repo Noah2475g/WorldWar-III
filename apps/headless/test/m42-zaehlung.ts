@@ -193,6 +193,8 @@ export interface TagesEingang {
 
 export interface MachtZahlen {
   stufe: Stufe
+  /** Nation der Macht (Nacharbeit T-M42-01: der Schluessel von jeMacht ist PlayerId, nicht Nation). */
+  nation: string
   fabrikenBegonnen: number
   fabrikenFertig: number
   tageFabrikBezahlbar: number
@@ -222,12 +224,16 @@ export interface MachtZahlen {
   verpassteGelegenheitenNurGeld: number
 }
 
-export type JeStufeEintrag = Omit<MachtZahlen, 'stufe' | 'ausgeschieden' | 'tagesbilanzGeldBeiLetzterAushebung'> & {
+export type JeStufeEintrag = Omit<
+  MachtZahlen,
+  'stufe' | 'nation' | 'ausgeschieden' | 'tagesbilanzGeldBeiLetzterAushebung'
+> & {
   maechte: number
 }
 
 export interface M42Bericht {
   tagesenden: number
+  /** Schluessel PlayerId (state.playerOrder-Reihenfolge), NICHT Nation — die Nation steht je Macht in MachtZahlen.nation (Nacharbeit T-M42-01, Befund: Bauplan-Kommentar sagte "Schluessel Nation"). */
   jeMacht: Record<string, MachtZahlen>
   jeStufe: Partial<Record<Stufe, JeStufeEintrag>>
   truppen: {
@@ -257,9 +263,10 @@ export interface M42Zaehler {
   bericht(): M42Bericht
 }
 
-function leereMachtZahlen(stufe: Stufe): MachtZahlen {
+function leereMachtZahlen(stufe: Stufe, nation: string): MachtZahlen {
   return {
     stufe,
+    nation,
     fabrikenBegonnen: 0,
     fabrikenFertig: 0,
     tageFabrikBezahlbar: 0,
@@ -340,7 +347,7 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
     if (!eintrag) {
       const player = state.players[id]
       const stufe: Stufe = (player?.difficulty ?? 'normal') as Stufe
-      eintrag = leereMachtZahlen(stufe)
+      eintrag = leereMachtZahlen(stufe, player?.nation ?? id)
       jeMacht[id] = eintrag
     }
     return eintrag

@@ -452,6 +452,15 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     }
 
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
+
+    // Nacharbeit T-M42-01 (Befund 2, hoch): AK-4 verlangt den Abschnitt m42 im Bericht, bisher nur
+    // durch "JSON lesen" (manuell) belegt — kein Test pruefte, ob `zahlen.m42` ueberhaupt existiert
+    // oder Inhalt hat. Ein entfernter `m42`-Eintrag im Objektliteral oben waere unbemerkt geblieben.
+    expect(zahlen.m42.aufgabe).toBe('T-M42-01')
+    expect(zahlen.m42.welt1815, 'kein m42-Abschnitt fuer Welt 1815').toBeDefined()
+    expect(zahlen.m42.welt1815!.tagesenden).toBe(DAYS)
+    expect(zahlen.m42.voreinstellung200, 'kein m42-Abschnitt fuer die Voreinstellung').toBeDefined()
+    expect(zahlen.m42.voreinstellung200!.tagesenden).toBe(DAYS)
   })
 
   // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` deckte bisher DREI Zusicherungen in
@@ -664,6 +673,47 @@ describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
         stehendTageUeberDrei: k.armeeobjekteJeProvinz.stehendTageUeberDrei,
       })
     }
+  })
+
+  // Nacharbeit T-M42-01 (Befund 1, hoch): die drei Pruefungen oben haengen nur an `events`
+  // (fabrikenBegonnen, ausgehoben, alteZusage7) — keine davon haengt am `applied`-Parameter, den
+  // `zaehler.tagesende(...)` an derselben Stelle im Tageslauf bekommt wie `kiBefehle` (Zeile ~153).
+  // Ein Mutationstest (`applied: []` an die Zaehlung statt `chunk.applied`) blieb bisher GRUEN und
+  // liess `befohlen`, `aushebungsTage`, `geldmangelTageDurchAushebung` u.a. unbemerkt verstummen.
+  // Diese Probe schliesst die Aushebungs-Anschluss-Kette: `befohlen` unabhaengig aus `kiBefehle`
+  // nachgerechnet (derselbe Tageslauf, eine andere Sammelstelle) und `aushebungsTage` als
+  // Lebenszeichen — beide waeren unter der Mutation 0/leer.
+  it('die Aushebungs-Anschluss-Kette lebt (Befund 1, T-M42-01-Nacharbeit)', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const m42 = messung.m42!
+
+      const befohlenAusKiBefehle: Record<string, number> = {}
+      for (const command of messung.kiBefehle) {
+        if (command.type !== 'RECRUIT') continue
+        befohlenAusKiBefehle[command.unitKey] = (befohlenAusKiBefehle[command.unitKey] ?? 0) + command.count
+      }
+      const befohlenAusM42: Record<string, number> = {}
+      for (const macht of Object.values(m42.jeMacht)) {
+        for (const [unitKey, count] of Object.entries(macht.befohlen)) {
+          befohlenAusM42[unitKey] = (befohlenAusM42[unitKey] ?? 0) + count
+        }
+      }
+      expect(befohlenAusM42, `${name}: Summe jeMacht.befohlen (aus applied) gegen kiBefehle (eigene Sammelstelle)`).toEqual(
+        befohlenAusKiBefehle,
+      )
+
+      const summeAushebungsTage = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.aushebungsTage, 0)
+      expect(summeAushebungsTage, `${name}: aushebungsTage (haengt allein an applied)`).toBeGreaterThan(0)
+    }
+  })
+
+  it('fuehrt jede KI-Macht (Befund 4, T-M42-01-Nacharbeit)', () => {
+    expect(Object.keys(integration.m42!.jeMacht).length, 'Weltkarte 1815').toBe(integration.ki.size)
+    expect(Object.keys(voreinstellungLang.m42!.jeMacht).length, 'Voreinstellung 200').toBe(voreinstellungLang.ki.size)
   })
 
   // Punkt 3 (§3.3): die 22 bestehenden Faelle dieser Datei (beide it.fails eingeschlossen)

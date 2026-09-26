@@ -655,6 +655,34 @@ describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
       expect(Object.keys(lauf.m42!.jeMacht).length, `${startzahl}`).toBe(8)
     }
   })
+
+  // Nacharbeit T-M42-01 (Befund 1, hoch): dieselbe Luecke wie in ai-integration.slow.test.ts — die
+  // drei Pruefungen von "zwei Zaehlwege, eine Zahl" oben haengen nur an `events`, keine an `applied`.
+  // Ein Mutationstest (`applied: []` an die Zaehlung statt `tagApplied`) blieb bisher GRUEN. `kiBefehle`
+  // sammelt (Zeile ~239) aus derselben `chunk.applied`-Quelle wie die Zaehlung (Zeile ~274), aber in
+  // einer eigenen, vom `applied`-Parameter unabhaengigen Sammelstelle — daher die Gegenprobe.
+  it('die Aushebungs-Anschluss-Kette lebt (Befund 1, T-M42-01-Nacharbeit)', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+
+      const befohlenAusKiBefehle: Record<string, number> = {}
+      for (const command of lauf.kiBefehle) {
+        if (command.type !== 'RECRUIT') continue
+        befohlenAusKiBefehle[command.unitKey] = (befohlenAusKiBefehle[command.unitKey] ?? 0) + command.count
+      }
+      const befohlenAusM42: Record<string, number> = {}
+      for (const macht of Object.values(m42.jeMacht)) {
+        for (const [unitKey, count] of Object.entries(macht.befohlen)) {
+          befohlenAusM42[unitKey] = (befohlenAusM42[unitKey] ?? 0) + count
+        }
+      }
+      expect(befohlenAusM42, `${startzahl}: Summe jeMacht.befohlen (aus applied) gegen kiBefehle`).toEqual(befohlenAusKiBefehle)
+
+      const summeAushebungsTage = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.aushebungsTage, 0)
+      expect(summeAushebungsTage, `${startzahl}: aushebungsTage (haengt allein an applied)`).toBeGreaterThan(0)
+    }
+  })
 })
 
 describe('R-AI-09 Der Bericht', () => {
@@ -686,8 +714,17 @@ describe('R-AI-09 Der Bericht', () => {
       const m42 = lauf.m42!
       m42Laeufe[String(startzahl)] = { ...m42, ueberfaelleMerkmale: ueberfaelleMerkmale(lauf) }
 
+      // Befund 11 (T-M42-01-Nacharbeit, niedrig): nach Klasse summieren (E9), nicht nur den
+      // Schluessel 'artillery' — rocket_artillery (Klasse artillery, ab Tag 80) faellt sonst
+      // heraus. Heute folgenlos (TARGET_MIX kennt nur 'artillery'), aendert TARGET_MIX das, saehe
+      // die alte Fassung die Raketenartillerie nicht.
+      const artillerieSchluessel = (ausgehoben: Record<string, number>): number =>
+        Object.entries(ausgehoben).reduce(
+          (sum, [unitKey, count]) => (rules.units[unitKey]?.class === 'artillery' ? sum + count : sum),
+          0,
+        )
       for (const macht of Object.values(m42.jeMacht)) {
-        artillerieAusgehoben += macht.ausgehoben['artillery'] ?? 0
+        artillerieAusgehoben += artillerieSchluessel(macht.ausgehoben)
         fabrikenBegonnen += macht.fabrikenBegonnen
         geldmangelTage += macht.geldmangelTage
         geldmangelTageDurchAushebung += macht.geldmangelTageDurchAushebung
@@ -700,7 +737,7 @@ describe('R-AI-09 Der Bericht', () => {
         (entry) => entry.friedensschluss || entry.nachKuendigung,
       ).length
       maechteMitArtillerieJeLauf[String(startzahl)] = Object.values(m42.jeMacht).filter(
-        (macht) => (macht.ausgehoben['artillery'] ?? 0) > 0,
+        (macht) => artillerieSchluessel(macht.ausgehoben) > 0,
       ).length
     }
 
@@ -739,5 +776,13 @@ describe('R-AI-09 Der Bericht', () => {
 
     expect(zahlen.laeufe['1815']!.mitAntraegen.ereignisse).toBeGreaterThan(1000)
     expect(Object.keys(zahlen.laeufe).sort()).toEqual(['1815', '1914', '2015'])
+
+    // Nacharbeit T-M42-01 (Befund 2, hoch): AK-3 verlangt den Abschnitt m42 im Bericht, bisher nur
+    // durch "JSON lesen" (manuell) belegt.
+    expect(zahlen.m42.aufgabe).toBe('T-M42-01')
+    expect(Object.keys(zahlen.m42.laeufe).sort()).toEqual(['1815', '1914', '2015'])
+    for (const startzahl of STARTZAHLEN) {
+      expect(zahlen.m42.laeufe[String(startzahl)]!.tagesenden, `${startzahl}`).toBe(DAYS)
+    }
   })
 })
