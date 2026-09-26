@@ -3662,12 +3662,12 @@ tasks:
   - id: T-M42-11
     milestone: M42
     title: Der Langlauf sagt, was er prueft
-    status: todo
+    status: done
     deps: []
     requirements: []
-    files: [apps/headless/test/progress.slow.test.ts, docs/plan/BALANCING.md]
-    tests: [apps/headless/test/progress.slow.test.ts]
-    dod: "Ziel: der Testname wird ehrlich (Befund 58), und performance.md/BALANCING.md bekommt eine Tabelle Rohstoff/Start/Ende/Verhaeltnis. Keine neue Schranke. Der Test laeuft in der Abnahme von T-M42-12. Aufwand 1 h. Jederzeit baubar, keine Antwort auf eine der acht Fragen noetig."
+    files: [apps/headless/test/longrun.slow.test.ts, apps/headless/src/stocks.ts, docs/reports/performance.md, docs/plan/PROBLEME.md]
+    tests: [apps/headless/test/stocks.test.ts, apps/headless/test/longrun.slow.test.ts]
+    dod: "Erledigt am 2026-09-26. Befund 58 und Befund aus dem Wirtschaftsplan: longrun.slow.test.ts hiess 'laeuft ... fehlerfrei und ohne unbegrenztes Wachstum durch' und prueft zum Wachstum nur Number.isSafeInteger und >= 0. Der Name sagt jetzt, was geprueft wird (Ereignisprotokoll begrenzt, Bestaende sichere ganze Zahlen und nicht negativ, Moral im Wertebereich); die acht Zusicherungen sind unveraendert (git diff ohne geaenderte expect-Zeile), der Kopfkommentar sagt, was NICHT geprueft wird. Neu: apps/headless/src/stocks.ts (snapshotStocks, tallyStockEvents, stockRows, formatStockSection) mit schnellem Test stocks.test.ts, elf Faelle, jede Reparatur einmal herausgenommen und rot gesehen. performance.md bekommt den Abschnitt 'Bestaende nach 1000 Spieltagen (Befund 58)': Rohstoff, Start, Ende, Verhaeltnis fuer alle sieben Rohstoffe ueber alle acht Maechte, auch wo sich nichts bewegt, dazu groesster Endbestand einer Macht, Lagergrenze, STORAGE_OVERFLOW- und RESOURCE_SHORTAGE-Meldungen. KEINE neue Schranke. Gemessen mit pnpm sim:long auf 2d48c00 (361 s bei 91 Prozent Last): Partie entschieden bei Tick 11280 wie auf 9a7678f; Verhaeltnis food 15.04, wood 14.23, iron 28.63, coal 27.57, oil 36.28, rare 131.15, money 0.11; groesster Einzelbestand Russland rare 897-fach; 0 STORAGE_OVERFLOW in 1000 Tagen; zeilengleich mit der Planungssonde (zweites Werkzeug, Python-Vergleich). performance.md schreibt die naechste pnpm acceptance auf ruhiger Maschine (Abschluss Etappe 1), weil die Zeitzeilen unter Last (91-100 Prozent) nicht vergleichbar sind. PROBLEME.md Befund 58 fortgeschrieben, nicht ersetzt (CR 7 vorher und nachher). Kein Frische-Waechter beruehrt, keine Datei unter packages oder data. Abweichung vom uebertragenen Plan: tasks.yaml/03-TASKS.md nannten hier irrtuemlich progress.slow.test.ts/BALANCING.md (Kollision mit dem Text von T-M42-12) - der Bauplan m18-plan-v2.md meint eindeutig longrun.slow.test.ts/performance.md (Titel 'Der Langlauf', Befund 58 dort verortet); files/tests hier entsprechend berichtigt."
   - id: T-M42-06
     milestone: M42
     title: Erst die Fabrik
