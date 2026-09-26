@@ -1,43 +1,36 @@
-# Verpackung als Programm — Stand nach M17
+# Verpackung als Programm — Stand nach M17 und dem Merge von `origin/main`
 
-Gebaut und Netzfreiheit gemessen am **2026-09-25** auf `b9b3915`; AK-8 selbst wurde in
-diesem Lauf **nicht** gemessen (siehe Abschnitt „AK-8" unten). Am gebauten Programm und
-nicht im Browser. Der Bericht gilt für genau diesen Stand — mit dieser einen Ausnahme, die
-er nicht verschweigt: die Kopfzeile nennt absichtlich **keinen** Stempel im Format
-„Gemessen am, gegen Commit" für AK-8, damit `scripts/acceptance-criteria.mjs`
-(`measurementOf`) AK-8 nicht fälschlich als „erfüllt, seither nur Dokumente" grün meldet,
-solange die Zeile unten in „AK-8: in diesem Lauf NICHT durchgeführt" steht. Der maßgebliche
-Stempel für AK-8 bleibt der aus der „Geschichte" unten (`e82c2bc`, 2026-09-14) — er ist
-inzwischen zu Recht `ueberholt` (viele Erzeugnis-Dateien haben sich seither geändert), also
-meldet das Skript AK-8 als ⚠, nicht als ✅. (Befund in der Nacharbeit zu T-M17-16: der
-vorherige Stempel dieser Zeile zeigte fälschlich auf `6a91e52` und hätte den nächsten
-Abnahmelauf AK-8 grün melden lassen, obwohl AK-8 nicht durchgeführt wurde.)
+Gemessen am **2026-09-26** gegen `7a6aa47` (M17-F1-Fix, nach dem konfliktfreien Merge von
+`origin/main`/Touch-Bedienung in `65feab8`) — **AK-8 vollständig durchgeführt**, anders als
+im vorherigen Lauf. Am gebauten Programm und nicht im Browser. Dieser Lauf schließt Blocker 2
+(AK-8) von T-M17-16 ab — Blocker 3 (`origin/main`) war zum Zeitpunkt dieses Laufs bereits
+erledigt (Noahs Entscheid 2026-09-26, `DECISIONS.md`).
 
-> **Kurzfassung:** exe neu gebaut (sauberer Quellstand — jede uncommittete Datei unter
-> `apps/`, `packages/`, `data/` war 0 Zeilen vor dem Bau), Netzfreiheit erneut gemessen und **hält**
-> wörtlich, die Uhr bei Tempo 100 liegt nahe am eigenen, am selben Tag gemessenen
-> Ausgangswert, und eine CDP-Gegenprobe zeigt Diplomatie- und Spionageoberfläche wirklich im
-> laufenden Programm (Handel wurde in dieser Gegenprobe nicht gesondert festgehalten). **AK-8 selbst — der volle Speichern/Neustart/Weiterspielen-Rundlauf —
-> wurde in diesem Lauf NICHT durchgeführt**, weil sich Noahs `saves`-Ordner beim Ansehen als
-> unklar herausstellte (Abschnitt „AK-8" unten). Das ist eine echte Lücke, keine
-> Auslassung: AK-8 zählt nicht gegen V1, aber M17 ist ohne diesen Rundlauf nicht in jeder
-> Hinsicht als Programm gesehen.
+> **Kurzfassung:** exe neu gebaut (sauberer Quellstand — 0 uncommittete Zeilen unter `apps/`,
+> `packages/`, `data/` vor dem Bau), Netzfreiheit haelt wieder woertlich, die Uhr bei Tempo 100
+> liegt innerhalb der eigenen Streuung des Ausgangswerts vom selben Tag, und **AK-8 ist
+> vollstaendig gelaufen: 7 von 7, Noahs echte Spielstaende per SHA-256 vor/nach identisch**.
+> Die Stufe-4-Rundreise (Speichern, Beenden, Neustart, Laden, Weiterspielen) uebersteht einen
+> echten Programmneustart — der Speicherstand traegt `state.espionage` und
+> `state.diplomacy.tradeOffers` (schemaVersion 4), das ist der eigentliche Beleg, staerker als
+> die reine UI-Gegenprobe der Vorlaeufe.
 
 ## Das Erzeugnis
 
 | | |
 |---|---|
-| `worldwar.exe` | **6 812 160 Bytes** (6,50 MiB), geschrieben am **2026-09-25** (`19:00` Ortszeit) |
-| Bau | `pnpm tauri:build`, Exit 0; `vite build` in 48,44 s, danach Rust `release` |
-| Quelle | `b9b3915` — beim Bau **keine uncommittete Datei unter `apps/`, `packages/`, `data/`** (`git status --porcelain` darauf gefiltert: 0 Zeilen) |
-| Gegenüber `e82c2bc` (2026-09-14, 6 790 144 B) | **+22 016 Bytes** — passt zur Größe von M17 (Spionage, Handelsangebote, gerichteter Durchmarsch/Kartenfreigabe, neue Oberfläche) |
+| `worldwar.exe` | **6 816 768 Bytes** (6,50 MiB), geschrieben am **2026-09-26** (`01:43` UTC) |
+| Bau | `pnpm tauri:build`, Exit 0; `vite build` in 2,46 s, danach Rust `release` in 2 min 30 s |
+| Quelle | `7a6aa47` — beim Bau **keine uncommittete Datei unter `apps/`, `packages/`, `data/`** (`git status --porcelain` darauf gefiltert: 0 Zeilen) |
+| Gegenüber `b9b3915` (2026-09-25, 6 812 160 B, vor dem `origin/main`-Merge) | **+4 608 Bytes** — die Touch-Bedienung aus PR #9–#11 |
+| Gegenüber `e82c2bc` (2026-09-14, 6 790 144 B, vor M17) | **+26 624 Bytes** |
 
-Wie am 2026-09-14 festgehalten: **die Dateigröße allein belegt nicht, dass der neue Code
-drinsteckt** — dafür steht die Gegenprobe unten.
+Wie zuvor festgehalten: **die Dateigröße allein belegt nicht, dass der neue Code drinsteckt**
+— dafür steht AK-8 unten (der Speicherstand selbst ist der Beleg).
 
 ## Netzfreiheit (T-M38-05, R-MP-09/AK3)
 
-`node scripts/measure-netfree.mjs`, beide Bündel aus demselben Commit (`b9b3915`):
+`node scripts/measure-netfree.mjs`, beide Bündel aus demselben Commit (`7a6aa47`):
 
 | Kennzahl | Soll | Gemessen |
 |---|---|---|
@@ -45,100 +38,70 @@ drinsteckt** — dafür steht die Gegenprobe unten.
 | Inhaltsrichtlinie wörtlich in der exe | 1× | **1×** |
 | `WebSocket` in der exe | 0× | **0×** |
 | `WebSocket` im ausgelieferten Bündel (`dist`, ohne Bauflagge) | 0× | **0×** |
-| `WebSocket` im Bündel MIT `WORLDWAR_MULTIPLAYER=1` (`dist-mp`, die Gegenprobe) | genau 1 Datei | **1 Datei** (`websocketTransport-TJkkYkH5.js`) |
+| `WebSocket` im Bündel MIT `WORLDWAR_MULTIPLAYER=1` (`dist-mp`, die Gegenprobe) | genau 1 Datei | **1 Datei** (`websocketTransport-_vntqp57.js`) |
 | Netzberechtigungen in `capabilities/local-only.json` | `[]` | **`[]`** |
 | `test/guards/packaging.test.ts` | grün | **18/18 grün** |
 
 Die Gegenprobe mit Bauflagge ist der Beleg, dass die 0 eine Aussage über die Bauflagge ist
 und nicht aus Unterlassen besteht — ohne Flagge fehlt der WebSocket-Transport ganz, mit ihr
-steht er in genau einer Datei.
+steht er in genau einer Datei. Die Touch-Bedienung aus `origin/main` aendert daran nichts.
 
-## Gegenprobe: steckt M17 wirklich in dieser exe?
+## AK-8: vollständig durchgeführt — 7 von 7, Noahs Stände unangetastet
 
-Wie am 14.09.: Dateigröße und Bauzeit belegen nichts, also wurde **das laufende Programm**
-befragt. Über CDP (`--remote-debugging-port`) eine neue Partie begonnen und die Taste **D**
-(Diplomatie) gedrückt — dieselbe Taste, mit der ein Spieler das Panel öffnet
-(`apps/desktop/src/i18n/de.ts`, `shortcuts.diplomacy: 'D — Diplomatie'`). Der Bildschirmtext
-danach enthält wörtlich:
+Noahs `%APPDATA%\de.noahhaumersen.worldwar`-Verzeichnis stand beim Ansehen **klar**: nur
+`saves` (Noahs echter Spielstand, vier Dateien, zuletzt geschrieben 21.09.) und
+`saves.geparkt-2026-09-08` (unberührtes Relikt einer alten Sitzung) — die vier
+Alt-Testordner aus den vorherigen AK-8-Versuchen (`saves.geparkt-2026-09-25`,
+`saves.messung-2026-09-14`, `-14b`, `-14c`) waren auf Noahs Wort bereits in den Papierkorb
+verschoben (`DECISIONS.md`, 2026-09-26).
 
-- **„Diplomatie"** — der Panel-Titel, mit Ansehen, Beziehung und Durchmarsch-Spalte je Macht
-- **„Spionage"** — als eigener Reiter neben Depesche/Diplomatie/Markt/Rangliste (T-M17-08/09)
+**Ablauf, gemessen:**
+1. SHA-256 der vier Dateien in `saves` **vorher** festgehalten.
+2. `saves` → `saves.geparkt-2026-09-26` umbenannt (Name geprüft: existierte nicht).
+3. `node docs/plan/schlussblock/ak8-cdp.mjs` gegen die neue exe: **7 von 7, `AK-8 ERFÜLLT`**
+   (Start ohne Weiterspielen → Partie beginnen → Strg+S, Stand 1 speichern (**99 799 B**
+   `stand-1.json` + 26 B Zeitreihe, gegenüber 96 954 B mit Stufe 3 am 2026-09-14 — die
+   neuen Felder `espionage`/`tradeOffers` wachsen die Datei) → Beenden → Neustart → Spielstände
+   prüfen → Weiterspielen).
+4. Inhalt geprüft: `stand-1.json` ist `schemaVersion: 4`, `state.espionage` vorhanden,
+   `state.diplomacy.tradeOffers` vorhanden — **das ist der eigentliche Beleg, dass M17 im
+   Speicherformat der exe steckt**, stärker als die reine Bildschirmtext-Gegenprobe der
+   Vorläufe.
+5. Ergebnisordner `saves` (mit `stand-1.json`) → `saves.messung-2026-09-26` verschoben.
+6. `saves.geparkt-2026-09-26` → `saves` zurückbenannt.
+7. SHA-256 der vier Dateien **nachher**: **identisch** zu vorher, byteweise, alle vier Dateien.
 
-Beides gab es vor M17 nicht. Das ist derselbe Nachweisweg wie bei der Uhr (Falle 25: was nur
-in jsdom geprüft ist, hat niemand gesehen) — hier am **gebauten Programm**, nicht im Test.
+**Nichts gelöscht, nichts überschrieben.** Noahs echte Stände (`autosave-0/1.json.json` samt
+Zeitreihe) sind unangetastet — SHA-256 ist der Beleg, nicht nur der Dateiname/die Größe.
 
 ## Die Uhr bei Tempo 100 (Falle 18)
 
-Verfahren wie am 2026-09-14: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`,
-über CDP „Partie beginnen" geklickt (Voreinstellung: Weltkarte, 8 KI-Mächte), **Tempo 100**
-gedrückt, **10,02 s Echtzeit** gemessen: Tag/Stunde der Kopfleiste (auf Ticks umgerechnet,
-`ticksPerDay` 24) und `performance.now()` **aus demselben `Runtime.evaluate`-Aufruf**, damit
-kein CDP-Rundlauf-Versatz zwischen Uhr und Zeitstempel liegt. Jeder Lauf mit frisch
-gestartetem Programm. Das Messskript liegt im Scratchpad
-(`uhr-cdp.mjs`, Muster `docs/plan/schlussblock/ak8-cdp.mjs`), nicht eingecheckt.
+Verfahren wie zuvor: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`, über
+CDP „Partie beginnen" geklickt (Voreinstellung: Weltkarte, 8 KI-Mächte), **Tempo 100** über
+die Taste `+` siebenmal gedrückt (`SPEED_STOPS` `[0,1,2,5,10,25,50,100]`, Start bei 0),
+**10 s Echtzeit** gemessen: Tag/Stunde der Kopfleiste (auf Stunden umgerechnet) und
+`performance.now()` **aus demselben `Runtime.evaluate`-Aufruf**, damit kein
+CDP-Rundlauf-Versatz zwischen Uhr und Zeitstempel liegt. Jeder Lauf mit frisch gestartetem
+Programm. Das Messskript liegt im Scratchpad (`uhr-cdp.mjs`, Muster
+`docs/plan/schlussblock/ak8-cdp.mjs`), nicht eingecheckt.
 
-**Am selben Tag** zuerst die alte exe (`worldwar-e82c2bc.exe`, gesichert vor dem Bau), dann
-die neue:
+**Am selben Tag** zuerst die alte exe (`worldwar-vorher.exe` = `b9b3915`, gesichert vor
+diesem Bau — der M17-Stand **vor** dem `origin/main`-Merge), dann die neue:
 
 | Stand | Läufe | Minimum | Median | Höchstwert |
 |---|---|---|---|---|
-| exe vom 2026-09-14 (`e82c2bc`) — **der Ausgangswert** | 5 | **99,78** | **99,89** | 99,93 |
-| exe vom 2026-09-25 (`b9b3915`) — **M17-Endstand** | 13 | **99,68** | **99,77** | 99,91 |
+| exe vom 2026-09-25 (`b9b3915`, vor dem Merge) — **der Ausgangswert** | 5 | **99,60** | **99,90** | 99,93 |
+| exe vom 2026-09-26 (`7a6aa47`, nach Merge und F1-Fix) — **Endstand** | 13 | **99,41** | **99,82** | 99,95 |
 
 **Bewertung nach Falle 18** (Minimum gegen Minimum, Median gegen Median, gegen den eigenen
-Ausgangswert vom selben Tag): das Minimum liegt 0,10 unter dem Ausgangswert, der Median 0,12
+Ausgangswert vom selben Tag): das Minimum liegt 0,19 unter dem Ausgangswert, der Median 0,08
 darunter. Beide Abstände sind **kleiner als die eigene Streuung des Ausgangswerts**
-(99,78–99,93, Spanne **0,15** über 5 Läufen) — nach demselben Maßstab, den `packaging.md` am
-14.09. selbst für den Median anlegte („der Median liegt innerhalb der eigenen Streuung des
-Ausgangswerts — das ist kein Befund"). **Ehrlich benannt (Nacharbeit T-M17-16, vorherige
-Fassung nannte hier fälschlich 0,68–0,93):** die Spanne des M17-Endstands selbst ist mit
-**0,23** (99,68–99,91 über 13 Läufen) größer als die Spanne des Ausgangswerts (0,15), auf die
-sich die Einordnung stützt — Min und Median liegen beide unter dem Ausgangswert, nicht nur
-gestreut um ihn herum. Das ist damit ein **Grenzfall**, kein eindeutig unauffälliger Befund:
-beide Abstände bleiben zwar innerhalb der Ausgangsstreuung und weit über dem historischen
-Tiefstwert vor der Uhr-Reparatur aus T-M41-17 (98,40, siehe „Geschichte" unten), aber die
-größere Streuung des Endstands selbst ist eine offene Beobachtung, nicht restlos erklärt.
-**Eingeordnet als Grenzfall innerhalb der Ausgangsstreuung, nicht als eindeutiger
-Rückschritt** — die Zahlen stehen hier vollständig, damit Noah es selbst nachvollziehen kann,
-statt es nur behauptet zu bekommen.
-
-## AK-8: in diesem Lauf NICHT durchgeführt — Noahs `saves`-Ordner ist unklar
-
-Vorbedingung des Skripts (`docs/plan/schlussblock/ak8-cdp.mjs`) ist ein leerer oder
-umbenannter `%APPDATA%\de.noahhaumersen.worldwar\saves`-Ordner. Beim Ansehen (18:36 Uhr)
-enthielt er sechs Dateien (Noahs echter Spielstand: `autosave-0/1.json.json` je mit
-`zeitreihe`-Begleitdatei, `stand-1.json`). Beim geplanten Umbenennen (nur umbenennen, nichts
-löschen) stellte sich eine **unklare Lage** heraus, die eine Beschädigung von Noahs echten
-Ständen nicht ausschließen lässt, ohne dass er sie selbst ansieht:
-
-- Es gab bereits einen Ordner `saves.geparkt-2026-09-25` (Erstellzeit **2026-09-08**, 03:24
-  Uhr) — ein Relikt einer früheren Sitzung, die denselben Namen benutzt haben muss, aber nie
-  zurückbenannt hat.
-- Nach dem Umbenennen enthielt dieser Zielordner nur **zwei** der ursprünglich sechs Dateien
-  (`stand-1.json`, `zeitreihe.stand-1.json`); **gleichzeitig** existierte wieder ein neuer
-  `saves`-Ordner mit den vier übrigen Dateien (Erstellzeit 2026-09-14, 18:48 Uhr — acht
-  Minuten nach dem AK-8-Bau jenes Tages; zuletzt geschrieben am 21.09.).
-- **Vier** weitere Alt-Ordner aus früheren Sitzungen liegen im selben Verzeichnis, ebenfalls
-  nie aufgeräumt, jeder mit einer eigenen `stand-1.json`-Kopie: `saves.geparkt-2026-09-08`,
-  `saves.messung-2026-09-14`, `saves.messung-2026-09-14b`, `saves.messung-2026-09-14c`.
-  Für diese vier wurden beim Ansehen keine Zeitstempel festgehalten (anders als für
-  `saves.geparkt-2026-09-25` und den neu entstandenen `saves`-Ordner oben) — absichtlich
-  nicht nachgeholt, um nicht ein weiteres Mal in Noahs `saves`-Verzeichnis einzugreifen.
-- Kein `worldwar.exe`-Prozess lief währenddessen (`Get-Process` leer) — eine aktive
-  Schreibquelle, die das erklären würde, wurde nicht gefunden.
-
-**Nichts wurde gelöscht** — jede Datei ist nachweisbar vorhanden, nur auf zwei Ordner
-verteilt statt einem, und es wurde nicht weiter daran herumprobiert, um die Lage nicht zu
-verschlimmern. Diese Liste hier **ist** die vollständige Ordnerliste (Nacharbeit T-M17-16:
-zuvor fehlte `saves.messung-2026-09-14c`, und die Kurzfassung verwies stattdessen fälschlich
-auf ein Protokoll im Scratchpad, das nicht eingecheckt ist). **Empfehlung an Noah:** von Hand
-nachsehen, was in `saves` und den Alt-Ordnern steht, und entscheiden, was der gültige Stand
-ist — danach kann AK-8 nachgeholt werden.
-
-Als **Ersatz**, nicht als Gleichwertiges, stehen oben die CDP-Gegenprobe (Diplomatie/Spionage
-im laufenden Programm) und die Uhr — beide belegen, dass M17 im Programm steckt und dass es
-läuft, aber **nicht**, dass ein Spielstand der Stufe 4 (mit Spionage- und Handelsfeldern)
-einen Programmneustart übersteht. Das bleibt offen.
+(99,60–99,93, Spanne **0,33** über 5 Läufen) — als Normalstreuung eingeordnet, nicht als
+Rückschritt. Wie bei der vorherigen Messung ist die Spanne des Endstands selbst größer
+(99,41–99,95, Spanne **0,54** über 13 Läufen) — derselbe Grenzfall wie am 2026-09-25, nicht
+neu und nicht schlimmer: die Touch-Bedienung aus `origin/main` fügt keinen erkennbaren
+zusätzlichen Ausschlag hinzu. Weit über dem historischen Tiefstwert vor der Uhr-Reparatur aus
+T-M41-17 (98,40, siehe „Geschichte" unten).
 
 ## Grenzen dieser Messung
 
@@ -146,13 +109,60 @@ einen Programmneustart übersteht. Das bleibt offen.
   MSI/Setup.
 - Die Uhr-Läufe fuhren ohne Bildschirmfoto (anders als AK-8); die Zahlen stammen aus
   `Runtime.evaluate`, nicht aus einem Foto.
-- AK-8 selbst ist **nicht** belegt (siehe oben) — nur die Netzfreiheit, die Größe und die
-  Gegenprobe.
 - Gemessen ist die **Einzelspieler**-Seite. AK-9 bleibt unberührt.
+- Die CDP-Gegenprobe der Vorläufe (Diplomatie-/Spionage-Panel per Tastendruck) wurde in
+  diesem Lauf nicht wiederholt — AK-8 selbst (Speicherstand mit `espionage`/`tradeOffers`)
+  ist der stärkere Beleg und deckt dieselbe Frage ab.
 
 ---
 
 # Geschichte
+
+## Die Messung vom 2026-09-25 (gegen `b9b3915`) — AK-8 nicht durchgeführt, vor dem `origin/main`-Merge
+
+Gebaut und Netzfreiheit gemessen am **2026-09-25** auf `b9b3915`; AK-8 selbst wurde in
+diesem Lauf **nicht** gemessen. Die Kopfzeile nannte absichtlich **keinen** Stempel im
+Format „Gemessen am, gegen Commit" für AK-8, damit `scripts/acceptance-criteria.mjs`
+(`measurementOf`) AK-8 nicht fälschlich als „erfüllt, seither nur Dokumente" grün meldete.
+
+**Das Erzeugnis:** `worldwar.exe` 6 812 160 Bytes, geschrieben 2026-09-25 19:00 Ortszeit,
+Quelle `b9b3915`. Gegenüber `e82c2bc` (2026-09-14, 6 790 144 B): +22 016 Bytes.
+
+**Netzfreiheit:** `connect-src 'none'` 1×, WebSocket exe/Bündel 0×, mit Bauflagge genau 1
+Datei (`websocketTransport-TJkkYkH5.js`), Netzberechtigungen `[]`, Guard 18/18 grün.
+
+**Gegenprobe (Ersatz für AK-8):** über CDP eine neue Partie begonnen und Taste **D**
+gedrückt — Bildschirmtext enthielt „Diplomatie" (Panel-Titel) und „Spionage" (eigener
+Reiter). Beides gab es vor M17 nicht.
+
+**Die Uhr bei Tempo 100:** Ausgangswert (`e82c2bc`, 5 Läufe) Minimum 99,78 / Median 99,89 /
+Höchstwert 99,93. M17-Endstand (`b9b3915`, 13 Läufe) Minimum 99,68 / Median 99,77 /
+Höchstwert 99,91. Abstände (0,10 Minimum / 0,12 Median) kleiner als die Streuung des
+Ausgangswerts (0,15 über 5 Läufen) — als Normalstreuung eingeordnet, mit dem offenen
+Hinweis, dass die Spanne des Endstands selbst (0,23 über 13 Läufen) größer war.
+
+**AK-8: in diesem Lauf NICHT durchgeführt — Noahs `saves`-Ordner war unklar.**
+Vorbedingung des Skripts ist ein leerer oder umbenannter
+`%APPDATA%\de.noahhaumersen.worldwar\saves`-Ordner. Beim Ansehen (18:36 Uhr) enthielt er
+sechs Dateien (Noahs echter Spielstand). Beim geplanten Umbenennen (nur umbenennen, nichts
+löschen) stellte sich eine unklare Lage heraus:
+
+- Es gab bereits einen Ordner `saves.geparkt-2026-09-25` (Erstellzeit 2026-09-08, 03:24
+  Uhr) — ein Relikt einer früheren Sitzung, die denselben Namen benutzt haben muss, aber nie
+  zurückbenannt hat.
+- Nach dem Umbenennen enthielt dieser Zielordner nur zwei der ursprünglich sechs Dateien;
+  gleichzeitig existierte wieder ein neuer `saves`-Ordner mit den vier übrigen Dateien.
+- Vier weitere Alt-Ordner aus früheren Sitzungen lagen im selben Verzeichnis:
+  `saves.geparkt-2026-09-08`, `saves.messung-2026-09-14`, `-14b`, `-14c`.
+- Kein `worldwar.exe`-Prozess lief währenddessen — eine erklärende Schreibquelle wurde
+  nicht gefunden.
+
+Nichts wurde gelöscht. **Empfehlung an Noah:** von Hand nachsehen, was in `saves` und den
+Alt-Ordnern steht. **Aufgelöst am 2026-09-26:** Noah hat die vier Alt-Testordner
+(`saves.geparkt-2026-09-25`, `saves.messung-2026-09-14`, `-14b`, `-14c`) in den Papierkorb
+verschoben und AK-8 mit Park-unter-neuem-Namen/SHA-256-Vergleich freigegeben
+(`DECISIONS.md`, 2026-09-26) — siehe die aktuelle Messung oben, AK-8 vollständig
+durchgeführt.
 
 ## Die Messung vom 2026-09-14, 18:40 (gegen `e82c2bc`) - vor T-M17-16
 
