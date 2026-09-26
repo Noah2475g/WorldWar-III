@@ -68,6 +68,10 @@ describe('Befund 58 Bestandstabelle des Langlaufs (T-M42-11)', () => {
     })
     const rows = stockRows(start, end, res({}), emptyStockEventCounts())
     const food = rows.find((r) => r.resource === 'food')!
+    // Nachtrag (Nacharbeit T-M42-11, Befund hoch): row.start unabhaengig von row.end
+    // pruefen - eine vertauschte oder falsch berechnete Start-Summe darf nicht gruen
+    // bleiben, nur weil end zufaellig stimmt.
+    expect(food.start).toBe(2000)
     expect(food.end).toBe(12000)
   })
 
@@ -196,5 +200,29 @@ describe('Befund 58 Bestandstabelle des Langlaufs (T-M42-11)', () => {
     expect(lines.some((l) => l.includes('Keine Schranke'))).toBe(true)
     const dataLines = lines.filter((l) => l.startsWith('| ') && !l.startsWith('| Rohstoff') && !l.startsWith('|---'))
     expect(dataLines).toHaveLength(7)
+  })
+
+  it('T12 laesst largestStart auf 0 fallen, wenn die groesste Macht im Start-Snapshot fehlt', () => {
+    // Nachtrag (Nacharbeit T-M42-11, Befund niedrig): stockRows() dokumentiert, dass
+    // playerOrder ueber die Partie stabil bleibt - dieser Fall sollte laut Modell nie
+    // vorkommen. Der Fallback in largestStartEntry?.resources[resource] ?? 0 ist trotzdem
+    // erreichbarer Code (start/end sind unabhaengige StockSnapshot-Parameter, keine
+    // Ableitung von playerOrder), darum wird er hier direkt konstruiert statt uebersprungen.
+    const start = snapshotStocks({
+      playerOrder: ['p1'],
+      players: { p1: { nation: 'Land1', resources: res({ food: 500 }) } },
+    })
+    const end = snapshotStocks({
+      playerOrder: ['p1', 'p3'],
+      players: {
+        p1: { nation: 'Land1', resources: res({ food: 600 }) },
+        // p3 taucht nur im End-Snapshot auf - kein Eintrag in startByPlayer.
+        p3: { nation: 'Land3', resources: res({ food: 9999 }) },
+      },
+    })
+    const rows = stockRows(start, end, res({}), emptyStockEventCounts())
+    const food = rows.find((r) => r.resource === 'food')!
+    expect(food.largestNation).toBe('Land3')
+    expect(food.largestStart).toBe(0)
   })
 })
