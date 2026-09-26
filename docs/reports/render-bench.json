@@ -50,32 +50,32 @@
   "nodeRemeasurements": {
     "task": "T-M26-01",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame der ganzen Welt plus 60 Marschpfeile je Bild, 10 Bilder Einlauf, 120 gemessen. Misst den Anteil des Codes, nicht den des Browsers.",
-    "measuredAt": "2026-09-25",
-    "p95Ms": 2.56,
-    "medianMs": 2.02,
-    "maxMs": 5.3,
+    "measuredAt": "2026-09-26",
+    "p95Ms": 2.48,
+    "medianMs": 2.05,
+    "maxMs": 6.03,
     "frameBudgetMs": 16.7
   },
   "stacks": {
     "task": "T-M30-01",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe (scale 1) plus markersFor fuer 300 Stapel mit Zahl und Zustand und bis zu sieben Gebaeude an Ankern in jeder der 237 Provinzen, 10 Bilder Einlauf, 120 gemessen.",
-    "measuredAt": "2026-09-25",
+    "measuredAt": "2026-09-26",
     "armies": 300,
     "buildings": 945,
-    "p95Ms": 4.62,
-    "medianMs": 2.38,
-    "maxMs": 8.01,
+    "p95Ms": 4.38,
+    "medianMs": 2.45,
+    "maxMs": 7.36,
     "frameBudgetMs": 16.7
   },
   "battles": {
     "task": "T-M28-08",
     "how": "Unter Node (render.bench.slow.test.ts): prepareFrame bei mittlerer Stufe plus markersFor mit 60 gleichzeitigen Gefechten und den reinen Funktionen battleIntensity/battleGlow/battleImpacts je Gefecht. 10 Bilder Einlauf, 120 gemessen.",
     "measuresNot": "NICHT die Zeichenarbeit der Gefechte (zwei Boegen und bis zu fuenf Einschlagzeichen je Gefecht) - die liegt an einem echten 2D-Kontext in MapCanvas und ist unter Node nicht messbar.",
-    "measuredAt": "2026-09-25",
+    "measuredAt": "2026-09-26",
     "battles": 60,
-    "p95Ms": 2.72,
-    "medianMs": 2.04,
-    "maxMs": 6.81,
+    "p95Ms": 3.36,
+    "medianMs": 2.09,
+    "maxMs": 7.49,
     "frameBudgetMs": 16.7
   }
 }
