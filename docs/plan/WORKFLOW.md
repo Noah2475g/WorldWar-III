@@ -1,4 +1,4 @@
-# WORKFLOW — M17 fertig gebaut und vermessen, 16 von 16, PR wartet auf Noah
+# WORKFLOW — M17 fertig und auf main (PR #12, 2026-09-26); als Nächstes M18
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
@@ -29,9 +29,8 @@
 > `RECRUIT_SPY`-Buchung, M17-T6 Räumfrist nach Friedensschluss) gehen mit Noahs Entscheid an
 > M18.
 >
-> **Was jetzt auf Noah wartet:** der **Pull Request** von `claude/m17-tiefe-zwischen-den-
-> kriegen` nach `main` — gestellt wird er nur auf Noahs ausdrückliches Wort (§0). Daneben
-> **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5 (Spielertexte, §2 Punkt 3) und die älteren offenen
+> **Was jetzt auf Noah wartet:** die **Planung von M18** (Noahs Auftrag vom 2026-09-26, M17 ist
+> seit PR #12 auf `main`). Daneben **AK-9** (§2 Punkt 2), V-1/MP-4/MP-5 (Spielertexte, §2 Punkt 3) und die älteren offenen
 > Fragen in `DECISIONS.md` unter „Offene Fragen an Noah" (2026-09-14). Keine davon hat eine
 > Aufgabe, und das ist Absicht.
 >
@@ -50,21 +49,14 @@
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `claude/m17-tiefe-zwischen-den-kriegen`, nicht auf `main`.** Lokales `main` zeigt auf `8bda869` (Merge-Commit PR #8, 2026-09-14). `origin/main`
-war mit PR #9–#11 auf `30c0b3f` weitergelaufen (Touch-Bedienung) — **dieser Vorsprung ist
-seit `65feab8` konfliktfrei in diesen Zweig gemergt** (Noahs Entscheid 2026-09-26,
-`DECISIONS.md`); `origin/main` ist seither kein Vorsprung mehr vor diesem Zweig. Wer einen
-Worktree anlegt, zweigt von `claude/m17-tiefe-zwischen-den-kriegen` ab — **nicht** von
-`main`.
+**Die Spitze liegt auf `main`.** PR #12 (M17 „Tiefe zwischen den Kriegen", 16 von 16, Abnahme
+12 von 12) ist am 2026-09-26 auf Noahs ausdrückliches Wort gemerged; er enthielt `origin/main`
+mit PR #9–#11 (Touch-Bedienung). Der Zweig `claude/m17-tiefe-zwischen-den-kriegen` ist damit
+abgegolten. Wer einen Worktree anlegt, zweigt von `main` ab.
 
 ```bash
-git switch claude/m17-tiefe-zwischen-den-kriegen && git pull --ff-only
+git switch main && git pull --ff-only
 ```
-
-**Der Pull Request steht: [#12](https://github.com/Noah2475g/WorldWar-III/pull/12)** — auf
-Noahs Wort am 2026-09-26 gepusht und angelegt, T-M17-16 ist fertig. **Noah merged, kein Agent;
-nie mit `--force`.** Wer den PR merged, richtet diesen Abschnitt im selben Zug auf `main` (§4
-Falle 1).
 
 **Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und den Merge-Commit.** Eine
 Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge
@@ -94,8 +86,7 @@ pnpm install
 Das Spiel ist **fertig und abgenommen**, man kann es seit dem 2026-09-14 **zu zweit über
 einen Link spielen**, und seit dem 2026-09-26 ist **M17 „Tiefe zwischen den Kriegen"**
 fertig gebaut und vermessen: Spionage, Handelsangebote, gerichteter Durchmarsch und
-gerichtete Kartenfreigabe — **16 von 16 Aufgaben**. Ein Pull Request nach `main` ist der
-nächste Schritt, wartet aber auf Noahs ausdrückliches Wort (§0).
+gerichtete Kartenfreigabe — **16 von 16 Aufgaben**, seit PR #12 (2026-09-26) auf `main`.
 
 `pnpm acceptance` lief am 2026-09-26 auf dem Merge- und F1-Fix-Stand (`00feba3`) mit **12
 von 12, Exit 0, 6 min 42 s** (`docs/reports/acceptance.md`) — erstmals seit dem
@@ -131,8 +122,8 @@ KI). Wer an der Befehlskette arbeitet, liest den Entscheid in `DECISIONS.md`.
 
 ## 2 · Was als Nächstes dran ist
 
-**Es gibt keine offene Aufgabe mehr, die ein Agent von sich aus erledigen kann.** Der
-nächste Schritt ist der Pull Request nach `main` — und der wartet auf Noahs Wort (§0).
+**Es gibt keine offene Aufgabe mehr, die ein Agent von sich aus erledigen kann.** M17 ist seit
+PR #12 auf `main`; als Nächstes wird **M18** geplant (Sammelliste in `03-TASKS.md`).
 
 1. **T-M17-16 (Abschlussmessung M17) — abgeschlossen am 2026-09-26, alle drei Blocker
    erledigt.** Messstand `9a7678f`/`00feba3`, volle Zahlen in `PROGRESS.md` (Zeile
