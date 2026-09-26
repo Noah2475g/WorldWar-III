@@ -13,6 +13,7 @@ import {
 import { hashValue } from '@worldwar/shared'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { measurementStamp } from '../../../scripts/freshness.mjs'
+import { m42Zaehler, type M42Bericht } from './m42-zaehlung'
 
 /**
  * T-M17-15, R-AI-09/AK1 bis AK4: dasselbe Integrationstor wie `ai-integration.slow.test.ts`
@@ -51,6 +52,8 @@ const rules = parseRules(
 const DAYS = 200
 const STARTZAHLEN = [1815, 1914, 2015] as const
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+/** Stufe des Zaehlmoduls m42 (T-M42-01, §9.2 des Milestone-Plans); ohne den Schalter unbenannt. */
+const STUFE = process.env['WORLDWAR_STAGE'] ?? 'ohne Angabe'
 /** Quellen des Berichts (T-M17-15, §4.5) — traegt `measuredAtCommit`/`measuredDirty` fuer M18 (Befund M17-2). */
 const QUELLEN = [
   'packages/ai/src',
@@ -59,6 +62,7 @@ const QUELLEN = [
   'data/rules',
   'data/maps/world.json',
   'apps/headless/test/m17-integration.slow.test.ts',
+  'apps/headless/test/m42-zaehlung.ts',
 ]
 
 /** Gibt die Ereignisschleife frei — ein langer synchroner Lauf toetet sonst den Worker (WORKFLOW §4). */
@@ -195,6 +199,8 @@ interface Lauf {
    * reason+alternative gedeckt.
    */
   ak4Buckets: { tick: number; playerId: string; art: string; befehle: number; gedeckt: number }[]
+  /** Abschnitt m42 (T-M42-01): nur fuer die Laeufe MIT Antraegen (§8 E5), tickweise gefuettert. */
+  m42?: M42Bericht
 }
 
 async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): Promise<Lauf> {
@@ -208,6 +214,7 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
   const ak4Buckets: Lauf['ak4Buckets'] = []
   const kuendigungen: { playerId: string; targetPlayerId: string }[] = []
   const abtretungen: { tick: number; newOwner: string }[] = []
+  const zaehler = mitAntraegen ? m42Zaehler(rules, ki) : null
 
   const withhold = mitAntraegen
     ? undefined
@@ -215,11 +222,15 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
 
   let gelaufen = 0
   for (let tag = 0; tag < tage; tag++) {
+    const tagEvents: GameEvent[] = []
+    const tagApplied: { command: Command }[] = []
     for (let stunde = 0; stunde < rules.constants.ticksPerDay; stunde++) {
       const before = current
       const chunk = advanceTicks(current, 1, { map, rules }, { explain: true, ...(withhold ? { withhold } : {}) })
       current = chunk.state
       events.push(...chunk.events)
+      tagEvents.push(...chunk.events)
+      tagApplied.push(...chunk.applied)
       withheld.push(...chunk.withheld)
 
       // AK4: nur die KI-Befehle DIESES Ticks (tick.ai vor der Anwendung), nach Macht UND Art
@@ -260,12 +271,25 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
 
       if (current.victory.winner !== null) break
     }
+    zaehler?.tagesende({ state: current, events: tagEvents, applied: tagApplied })
     gelaufen = tag + 1
     if (current.victory.winner !== null) break
     await breathe()
   }
 
-  return { startzahl, mitAntraegen, tage: gelaufen, events, final: current, ki, kiBefehle, withheld, ueberfaelle, ak4Buckets }
+  return {
+    startzahl,
+    mitAntraegen,
+    tage: gelaufen,
+    events,
+    final: current,
+    ki,
+    kiBefehle,
+    withheld,
+    ueberfaelle,
+    ak4Buckets,
+    ...(zaehler ? { m42: zaehler.bericht() } : {}),
+  }
 }
 
 type Rejected = Extract<GameEvent, { type: 'COMMAND_REJECTED' }>
@@ -351,6 +375,23 @@ function kennzahlen(lauf: Lauf) {
     beschuss: events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic).length,
     ausgeschieden: final.playerOrder.filter((id) => !final.players[id]!.alive).map(nation),
     zustandOhneKi: hashValue({ ...final, ai: null }, { omitKeys: ['eventLog'] }),
+  }
+}
+
+/** Merkmale der Ueberfaelle eines Laufs, fuer den Abschnitt m42 (T-M42-01). */
+function ueberfaelleMerkmale(lauf: Lauf): {
+  gesamt: number
+  friedensschluss: number
+  nachKuendigung: number
+  nachAbtretung: number
+  durchmarsch: number
+} {
+  return {
+    gesamt: lauf.ueberfaelle.length,
+    friedensschluss: lauf.ueberfaelle.filter((entry) => entry.friedensschluss).length,
+    nachKuendigung: lauf.ueberfaelle.filter((entry) => entry.nachKuendigung).length,
+    nachAbtretung: lauf.ueberfaelle.filter((entry) => entry.nachAbtretung).length,
+    durchmarsch: lauf.ueberfaelle.filter((entry) => entry.art === 'durchmarsch').length,
   }
 }
 
@@ -576,6 +617,46 @@ describe('R-DIP-09 Provinzhandel wird gezaehlt, nicht zugesichert (T-M17-11)', (
   })
 })
 
+describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
+  it('zaehlt jeden Spieltag', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      expect(lauf.m42, `${startzahl}: kein m42-Abschnitt`).toBeDefined()
+      expect(lauf.m42!.tagesenden, `${startzahl}`).toBe(lauf.tage)
+    }
+  })
+
+  it('zwei Zaehlwege, eine Zahl', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+
+      const summeUeberfaelle = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.ueberfaelle, 0)
+      expect(summeUeberfaelle, `${startzahl}: Summe jeMacht.ueberfaelle`).toBe(lauf.ueberfaelle.length)
+
+      const kriegeImStrom = lauf.events.filter((event) => event.type === 'WAR_DECLARED').length
+      expect(m42.krieg.kriege, `${startzahl}: krieg.kriege`).toBe(kriegeImStrom)
+
+      const artillerieImStrom = lauf.events
+        .filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
+        .reduce((sum, event) => sum + (event as Extract<GameEvent, { type: 'UNIT_RECRUITED' }>).count, 0)
+      const summeAusgehobenArtillerie = Object.values(m42.jeMacht).reduce((sum, macht) => sum + (macht.ausgehoben['artillery'] ?? 0), 0)
+      expect(summeAusgehobenArtillerie, `${startzahl}: Summe ausgehoben.artillery`).toBe(artillerieImStrom)
+
+      expect(ueberfaelleMerkmale(lauf).friedensschluss, `${startzahl}: ueberfaelleMerkmale.friedensschluss`).toBe(
+        kennzahlen(lauf).ueberfaelleMitFriedensschluss,
+      )
+    }
+  })
+
+  it('fuehrt jede KI-Macht', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      expect(Object.keys(lauf.m42!.jeMacht).length, `${startzahl}`).toBe(8)
+    }
+  })
+})
+
 describe('R-AI-09 Der Bericht', () => {
   it('schreibt m17-integration.json nur auf Verlangen', () => {
     const laeufe: Record<string, { mitAntraegen: ReturnType<typeof kennzahlen>; ohneAntraege: ReturnType<typeof kennzahlen> }> = {}
@@ -589,6 +670,40 @@ describe('R-AI-09 Der Bericht', () => {
       summeBewegbarOhne += ohne(startzahl).ueberfaelle.filter((entry) => entry.art === 'durchmarsch' || entry.nachKuendigung).length
     }
 
+    const m42Laeufe: Record<string, M42Bericht & { ueberfaelleMerkmale: ReturnType<typeof ueberfaelleMerkmale> }> = {}
+    let artillerieAusgehoben = 0
+    let beschuss = 0
+    let fabrikenBegonnen = 0
+    let geldmangelTage = 0
+    let geldmangelTageDurchAushebung = 0
+    let oelmangelTage = 0
+    let verpassteGelegenheiten = 0
+    let paareUeberZweiTagesenden = 0
+    let ueberfaelleFriedensschlussOderKuendigung = 0
+    const maechteMitArtillerieJeLauf: Record<string, number> = {}
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+      m42Laeufe[String(startzahl)] = { ...m42, ueberfaelleMerkmale: ueberfaelleMerkmale(lauf) }
+
+      for (const macht of Object.values(m42.jeMacht)) {
+        artillerieAusgehoben += macht.ausgehoben['artillery'] ?? 0
+        fabrikenBegonnen += macht.fabrikenBegonnen
+        geldmangelTage += macht.geldmangelTage
+        geldmangelTageDurchAushebung += macht.geldmangelTageDurchAushebung
+        oelmangelTage += macht.oelmangelTage
+        verpassteGelegenheiten += macht.verpassteGelegenheiten
+      }
+      beschuss += m42.truppen.beschuss
+      paareUeberZweiTagesenden += m42.heer.paareUeberZweiTagesenden
+      ueberfaelleFriedensschlussOderKuendigung += lauf.ueberfaelle.filter(
+        (entry) => entry.friedensschluss || entry.nachKuendigung,
+      ).length
+      maechteMitArtillerieJeLauf[String(startzahl)] = Object.values(m42.jeMacht).filter(
+        (macht) => (macht.ausgehoben['artillery'] ?? 0) > 0,
+      ).length
+    }
+
     const zahlen = {
       gemessenAm: new Date().toISOString().slice(0, 10),
       ...measurementStamp(ROOT, QUELLEN),
@@ -597,6 +712,23 @@ describe('R-AI-09 Der Bericht', () => {
       ausgangswert: { datei: 'm17-baseline.json', ...baseline },
       laeufe,
       ak3: { summeBewegbarMit, summeBewegbarOhne },
+      m42: {
+        stufe: STUFE,
+        aufgabe: 'T-M42-01',
+        laeufe: m42Laeufe,
+        summe: {
+          artillerieAusgehoben,
+          beschuss,
+          fabrikenBegonnen,
+          geldmangelTage,
+          geldmangelTageDurchAushebung,
+          oelmangelTage,
+          verpassteGelegenheiten,
+          paareUeberZweiTagesenden,
+          ueberfaelleFriedensschlussOderKuendigung,
+          maechteMitArtillerieJeLauf,
+        },
+      },
     }
 
     if (SCHREIBEN) {
