@@ -145,17 +145,18 @@ die drei Blocker in Punkt 1, und auch die brauchen zuerst Noahs Entscheid.
 1. **T-M17-16 (Abschlussmessung M17) — drei Blocker, alle brauchen Noahs Entscheid,
    bevor die Aufgabe (und damit M17) fertig ist.** Ausgeführt am 2026-09-25 gegen
    `b9b3915`, volle Zahlen in `PROGRESS.md` (Zeile „T-M17-16"):
-   - **Befund M17-F1** (`PROBLEME.md`): der Haltungs-Messlauf reißt an einer festen
-     Kontrollzahl — 76 Einmärsche/4 verlorene Provinzen (Garnison A 1914) fielen auf
-     **0/0**. Provinz-Tage (100 %) und Verluste ohne Gefecht (0) bleiben über ihrer
-     Schwelle, aber bei 0 Einmärschen wurde die Verteidigungsautomatik in diesem Lauf gar
-     nicht ausgelöst — das ist **nicht geprüft**, nicht „gehalten". `docs/reports/stance.json`
-     bleibt deshalb bewusst auf dem alten, grünen Stand stehen. **Frage an Noah:** wird
-     `KONTROLLE` in `stance.slow.test.ts` bewusst auf den neuen Stand kalibriert (keine
-     Grenzverschiebung „damit eine Zahl passt", sondern eine Testfixtur an gewollt
-     geändertes KI-Verhalten angepasst), oder ist 0 Einmärsche selbst ein Befund über zu
-     wenig KI-Aggression (Kriegserklärungen gegen den Menschen in diesem Fixture-Lauf
-     nachzählen)?
+   - **Befund M17-F1** (`PROBLEME.md`) — **erledigt am 2026-09-26.** Ursache geklärt: vor M17
+     kamen alle Kriege gegen den passiven Menschen aus Durchmarsch-Überfällen (Frankreich Tag
+     20, Polen Tag 35); seit T-M17-10 hält die Wegprüfung diese Märsche an und beantragt
+     Durchmarsch, den der Mensch nie beantwortet — gewolltes M17-Verhalten (R-AI-09/AK3,
+     R-DIP-08), kein Fehler am Spiel. Behoben durch einen Kriegsplan im Messaufbau
+     (`stance.slow.test.ts`): die Landnachbarn (Frankreich, Polen) erklären dem Menschen am
+     Spieltag 20 förmlich den Krieg, über den normalen Befehlsweg — danach entscheidet die KI
+     alles selbst. `KONTROLLE` steht seither auf **41 Einmärschen / 4 verlorenen Provinzen**
+     (Garnison A 1914) statt 76/4; eine neue Zusicherung (`ak5.angegriffen`, geprüft auch vom
+     Frische-Wächter) macht Blindheit selbst zur Verletzung. Volle Zahlen und Abwägung in
+     `DECISIONS.md` (2026-09-26, M17-F1). `docs/reports/stance.json` wird im nächsten Schritt
+     auf sauberem Baum neu geschrieben.
    - **AK-8** (der volle Speichern/Neustart/Weiterspielen-Rundlauf) wurde **nicht**
      durchgeführt: Noahs `%APPDATA%\de.noahhaumersen.worldwar\saves`-Ordner zeigte beim
      Ansehen eine unklare Lage — ein nie aufgeräumter Alt-Ordner aus einer früheren
@@ -474,6 +475,6 @@ zwischen zwei Partien.
 | Langlauf | 1000 Spieltage in **227 250 ms**, **9,469 ms je Tick** inkl. KI. **Die Partie entschied diesmal schon bei Tick 11280 (Spieltag 470)** — vorher (09-14) nach 1000 Tagen unentschieden. Auffällig, aber kein gerissenes Kriterium (AK-6 misst nur Zeit) |
 | Zeitbudgets | Weltkarte Median **2,551 ms** / p99 **5,881 ms** (gefordert 3,5 / 8, `worldmap-bench.json`); Anteil der KI am Tick **0,114** (Grenze 0,3, vorher **0,074** — berichtigt in der Nacharbeit zu T-M17-16, `ai-bench.json`-Diff gegen `6a91e52`; vorherige Fassung nannte hier fälschlich 0,067, eine ältere Zahl — M17 gibt der KI mehr zu tun, hält aber die Grenze deutlich) |
 | Fortschrittsachse | letzte Freischaltung **Spieltag 80**, **32 Minuten** Echtzeit bei Tempo 1 — unverändert seit dem Mehrspieler. Gegen den neuen Siegtag 675 sind das **12 %** der Partie |
-| Haltungen | **Befund M17-F1:** Provinz-Tage mit `defensive` gegen Garnison **100 %** (vorher 101,8 %, beide über der 98-%-Schwelle), Verluste ohne Gefecht weiterhin **0** — aber die feste Kontrollzahl (76 Einmärsche/4 verlorene Provinzen, Garnison A 1914) fiel auf **0/0**. Bei 0 Einmärschen greift die Verteidigungsautomatik in diesem Lauf **gar nicht** — Provinz-Tage und Verluste-ohne-Gefecht sind dann triviale 100 %/0 über eine unbedrohte Partie, kein Beleg, dass die Automatik hält. `docs/reports/stance.json` bleibt deshalb bewusst auf dem alten, grünen Stand (`b1bb3c8`) — Noah entscheidet (§2 Punkt 1) |
+| Haltungen | **Befund M17-F1, erledigt 2026-09-26:** der Messaufbau bekam einen Kriegsplan — die Landnachbarn (Frankreich, Polen) erklären dem Menschen am Spieltag 20 förmlich den Krieg, über den normalen Befehlsweg. Probelauf auf `5e53298` (ohne `WORLDWAR_WRITE_REPORT`, 568 s): Provinz-Tage mit `defensive` gegen Garnison **102,8 %** (2377/2312, über der 98-%-Schwelle), Verluste ohne Gefecht weiterhin **0**, kleinste Einmarschzahl je Lauf **13**, 0 Ablehnungen, 0 Kriege ohne Erklärung. Die Kontrollzahl (Garnison A 1914) steht seither auf **41 Einmärschen / 4 verlorenen Provinzen** statt 76/4 — dieselbe Neu-Kalibrierung wie bei Block N2. `docs/reports/stance.json` wird im nächsten Schritt auf sauberem Baum neu geschrieben; volle Abwägung in `DECISIONS.md` (2026-09-26, M17-F1) |
 | Balancing | Grundlauf, Anteil des Stärksten **38,4 %** (vorher M17 36,8 %, vor allem 44,4 %), `docs/reports/balance-sweep.md`; tragende Konstanten weiterhin 0 von 14. Turnierband 0,760 gilt auf dem Stand mit dem `RECRUIT_SPY`-Buchungsfehler (Befund M17-I1, an M18) |
 | Benchmark-Vorbehalt | die Zahlen vom 2026-09-08 entstanden unter Fremdlast (2 gebundene Kerne) — Budgets bestanden **trotzdem**; die Zeitbudgets vom 2026-09-25 sind erneut auf freier Maschine gemessen |

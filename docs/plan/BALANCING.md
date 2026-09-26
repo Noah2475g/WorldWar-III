@@ -419,6 +419,16 @@ Aufgaben dazu und werden hier angehängt.
 | `offerLifetimeDays` | 3 | abgeleitet | stand bis T-M17-04 als `3 * ticksPerDay` im Code der Diplomatiephase (Befund B3) und ist unverändert übernommen — eine andere Zahl hätte jedes Friedens- und Bündnisangebot der bisherigen Partien verschoben. Gilt seitdem auch für den Antrag auf Durchmarsch (R-DIP-08/AK5) |
 | `rightOfWayNoticeTicks` | 24 | geschätzt | ein Spieltag: lang genug, dass eine Armee aus dem Grenzsaum wieder hinausmarschieren kann, kurz genug, dass ein Widerruf keine leere Geste ist. Nicht gemessen — in einer reinen KI-Partie gewährt heute niemand Durchmarsch (Befund M17-1), also gibt es nichts zu widerrufen, bis T-M17-10 die KI daran beteiligt. Anlehnung, kein Beleg: der Austritt aus einer Koalition hat im Vorbild einen 24-Stunden-Countdown (Referenz 9.3); im Vorbild ist das ein Tag, hier sind es 24 Ticks |
 
+**Nachtrag (Befund M17-F1, 2026-09-26).** Der Haltungs-Messlauf (`stance.slow.test.ts`) lebte vor
+M17 von zwei Durchmarsch-Überfällen je Partie — Frankreich am Spieltag 20 über `DEU-SW`, Polen am
+Spieltag 35 über `DEU-SE`, beide auf dem Weg zu einem dritten Ziel, keiner mit deutschem
+Angriffsziel. Seit T-M17-10 beantragt die KI stattdessen Durchmarsch (`requestPassage`): 58/32/17
+Anträge über 200 Spieltage bei den Startzahlen 1914/2015/1815 gegen einen passiven Menschen, der
+nie antwortet. Ein passiver Mensch mit voller Garnison ist nach dem Verhältnis (`diplomacy.ts` §4)
+nie Kriegsziel — Abstand zur Kriegsschwelle mindestens 73 Punkte über 40 Proben je Startzahl. Keine
+Konstante ändert sich dadurch; der Messaufbau bekam stattdessen einen Kriegsplan (siehe
+`DECISIONS.md`, 2026-09-26).
+
 ## Handelsangebote mit Treuhand (R-DIP-05, D29.7, T-M17-05)
 
 Vier Zahlen. Die Höchstmengen stehen im **Verhältnis** der Referenz 9.4 (Geld 100.000, jeder

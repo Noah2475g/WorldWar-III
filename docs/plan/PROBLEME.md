@@ -5841,7 +5841,7 @@ in einem früheren, nicht eingecheckten Bericht.
 
 ---
 
-## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — bei 0 Einmaerschen ist die Verteidigungsautomatik in diesem Lauf ungeprueft, nicht bestaetigt „haltend"
+## 2026-09-25 · T-M17-16 · Befund M17-F1: Haltungs-Messlauf, Kontrolle 76/4 auf 0/0 gefallen — geloest 2026-09-26 durch einen Kriegsplan im Messaufbau, Kontrolle jetzt 41/4
 
 **Befund:** Der Haltungs-Messlauf (`stance.slow.test.ts`, `WORLDWAR_WRITE_REPORT=1`,
 `WORLDWAR_M17_NACHHER` unbeteiligt) auf dem M17-Endstand (`b9b3915`, vormals gemessen auf
@@ -5899,6 +5899,49 @@ passt", sondern eine bewusste Neu-Kalibrierung einer Testfixtur an gewollt geaen
 KI-Verhalten) — oder ob die 0 Einmaersche stattdessen ein echter Befund ueber die KI ist
 (zu wenig Aggression, zu wenig Krieg insgesamt), der reparaturbeduerftig waere.
 
-**Status:** offen, Noah entscheidet. Kandidat fuer M18 oder eine gezielte Nachmessung
-(z. B. Kriegszahl/Ueberfallzahl in genau diesem Fixture-Lauf separat zaehlen, um die Vermutung
-oben zu pruefen, ohne 60 Commits zu bisektieren).
+**Ursache geklaert (2026-09-26).** Vor M17 kam **jeder** Krieg gegen den passiven Menschen aus
+einem Durchmarsch-Ueberfall: franzoesische und polnische Armeen liefen auf dem Weg zu einem
+dritten Ziel durch Deutschland (Tick 496/Tag 20 Frankreich in NLD/BEL mit Weg
+`DEU-SW -> DEU-NW -> DNK` bzw. `DEU-SW -> DEU-SE -> CZE -> SVK -> HUN`; Tick 856/Tag 35 Polen in
+`DEU-SE` mit Weg nach `CHE`, in allen drei Startzahlen gleich fuer Frankreich, 1914/2015 auch fuer
+Polen). Seit T-M17-10 haelt `military.ts` (E4, Zeilen 97-111) genau solche Maersche an und ruft
+`requestPassage`; der Mensch des Messlaufs beantwortet nie, die Armee wartet, der Antrag laeuft ab
+und wird erneuert (58/32/17 Antraege in 200 Tagen). Kein Marsch hatte je ein deutsches Ziel -
+`staleTargetDeclarations` (Option C, M17-T5) greift hier nicht.
+
+Eine foermliche Kriegserklaerung aus dem Verhaeltnis (`diplomacy.ts` §4) gab es gegen diesen
+Menschen **weder vor noch nach M17**: das Verhaeltnis liegt bei 700-1000 (Ansehen 1000, er bricht
+nie ein Wort; Verstimmung 0, er tut niemandem etwas), 173-179 Punkte (1815: 73) unter der Schwelle
+in jeder von 40 Proben je Startzahl. Ein passiver Mensch mit voller Garnison ist fuer die KI nach
+ihrer eigenen Regel **kein Kriegsgrund** - vor M17 so wenig wie nach M17. **Gewolltes
+M17-Verhalten, kein Fehler:** R-AI-09/AK3 (0 Ueberfaelle) und R-DIP-08 (Durchmarsch wird
+beantragt) verlangen genau das, was den Messlauf blind gemacht hat.
+
+**Geloest durch einen Kriegsplan im Messaufbau** (Muster von Option D, M17-T5): beide
+Landnachbarn (Frankreich, Polen) erklaeren dem Menschen am Spieltag 20 foermlich den Krieg, ueber
+den normalen Befehlsweg (`scripted` in `advanceTicks`) - danach entscheidet die KI alles selbst.
+Gemessen (zwoelf Laeufe je Kandidat, `5e53298`): Tag 20 haelt AK5 mit 102,8 % Provinz-Tage-Anteil
+und einer kleinsten Einmarschzahl von 13 je Lauf; Tag 0 reisst AK5 (90,5 %, unter der 98-%-Schwelle);
+"nur Frankreich" haelt (115,9 %), deckt aber nur die halbe vor-M17-Bedrohung ab. Tag 20 gewaehlt,
+weil er die naechste Nachbildung der echten vor-M17-Bedrohung ist, keinen Lauf blind laesst und
+unabhaengig von `diplomacy.ts` §4 bleibt (eine spaetere KI-Aenderung zeigt sich in der Kontrolle,
+nicht in erneuter Blindheit) - nicht, weil er das beste Ergebnis lieferte (die Wahl stand vor der
+Wahl des Ergebnisses, siehe DECISIONS.md). **Offen gelegt:** AK5 ist aufbauempfindlich (90,5/102,8/
+115,9 % je nach Kriegsplan-Tag, aus vier Provinzen mit ~170 Provinz-Tagen je Einzelverlust) - ein
+Befund fuer M18, nicht hier repariert.
+
+Die alte Vermutung oben (13 -> 1 Ueberfaelle ohne Erklaerung, "M17 macht die KI zurueckhaltender")
+war **teils richtig**: Ueberfaelle ja (76 -> 0, jetzt mit Kriegsplan 41), aber nicht aus
+Zurueckhaltung - aus der Wegpruefung beim Durchmarsch, nicht aus der Kriegslust der KI. Die
+Beobachtung "`provinceDays.garrison` und `.defensive` exakt gleich (4800/4800)" ist damit erklaert
+(§ oben): ohne jeden Angriff behaelt jeder der zwoelf Laeufe seine vier Provinzen 200 Tage lang
+(6 Paare x 800), keine Aenderung an der Zaehlung selbst.
+
+`KONTROLLE` in `stance.slow.test.ts` steht seit 2026-09-26 auf `{ intrusions: 41, provincesLost: 4 }`
+(Garnison A 1914 mit Kriegsplan) - keine Grenzverschiebung "damit eine Zahl passt", sondern dieselbe
+Neu-Kalibrierung wie bei Block N2 (52 -> 76): die Aufstellung hat sich geaendert (ein Kriegsplan kam
+dazu), die Grenzen (98 %, Paar-Regel, 0/0) bleiben. `docs/reports/stance.json` wird mit dem neuen
+Kriegsplan-Lauf neu geschrieben.
+
+**Status:** geloest. Siehe `DECISIONS.md` (2026-09-26, M17-F1) fuer die volle Abwaegung,
+`02-DESIGN.md` D30.6/D30.9 fuer die Korrektur am Entwurf.

@@ -5245,3 +5245,80 @@ wird nichts. Die vier alten AK-8-Testordner (`saves.messung-2026-09-14`, `-14b`,
 Touch-Bedienung) ist konfliktfrei in den M17-Zweig gemerged (`65feab8`), `pnpm verify` dort Exit 0
 mit 186 Testdateien. Die Messkette des Programms (Bau, Netzfreiheit, AK-8, Uhr, Abnahme) wird auf
 diesem Stand wiederholt.
+
+---
+
+## 2026-09-26 · M17-F1 · Der Haltungs-Messlauf bekommt einen Kriegsplan (Option-D-Muster)
+
+**Befund, mit Zahlen.** Vor M17 kam jeder Krieg gegen den passiven Menschen aus einem
+Durchmarsch-Überfall — französische Armeen liefen am Tick 496 (Tag 20) durch Deutschland
+(`DEU-SW → DEU-NW → DNK` bzw. `DEU-SW → DEU-SE → CZE → SVK → HUN`, in allen drei Startzahlen
+gleich), polnische Armeen am Tick 856 (Tag 35, 1914/2015) durch `DEU-SE` nach `CHE`. Keiner
+dieser Märsche hatte je ein deutsches Ziel. Seit T-M17-10 hält `military.ts` (E4) genau solche
+Märsche an und beantragt Durchmarsch (`requestPassage`); der passive Mensch antwortet nie, der
+Antrag läuft ab und wird erneuert (58/32/17 Anträge über 200 Tage bei 1914/2015/1815). Eine
+förmliche Erklärung aus dem Verhältnis (`diplomacy.ts` §4) gab es gegen diesen Menschen weder vor
+noch nach M17 — er liegt 73 bis 179 Punkte unter der Kriegsschwelle in jeder von 40 Proben je
+Startzahl (Ansehen 1000, Verstimmung 0). **Gewolltes M17-Verhalten, kein Fehler:** R-AI-09/AK3
+(0 Überfälle) und R-DIP-08 (Durchmarsch wird beantragt) verlangen genau das, was den Messlauf
+blind gemacht hat (0 statt 76 Einmärsche, Garnison A 1914).
+
+**Entscheidung.** Der Messaufbau bekommt einen Kriegsplan: die beiden Landnachbarn des Menschen
+(Frankreich, Polen) erklären ihm am Spieltag 20 förmlich den Krieg, über den normalen Befehlsweg
+(`scripted` in `advanceTicks`) — danach entscheidet die KI alles selbst. Die Grenzen bleiben
+unangetastet: 98 % Provinz-Tage-Schwelle, die Paar-Regel (Verteidigung verliert nicht mehr
+Provinzen ohne Gefecht als Garnison), 0 Ablehnungen, 0 Kriege ohne Erklärung. Neu: jeder Lauf
+muss mindestens einen Einmarsch zählen und der Kriegsplan muss gegriffen haben (`ak5.angegriffen`)
+— Blindheit ist jetzt selbst eine Verletzung, nicht mehr ein stiller 0/0-Durchlauf.
+`KONTROLLE` steht seit diesem Commit auf `{ intrusions: 41, provincesLost: 4 }` (Garnison A 1914
+mit Kriegsplan, gemessen auf `5e53298`) statt auf `{ 76, 4 }`.
+
+**Begründung — drei Kriterien, gemessen vor der Wahl (zwölf Läufe je Kandidat):**
+
+| Kandidat | Provinz-Tage def/gar | Anteil | kleinste Einmarschzahl | AK5 |
+|---|---|---|---|---|
+| ohne (bisher) | 4800 / 4800 | 100 % | 0 | blind |
+| beide Nachbarn, Tag 0 | 2217 / 2449 | 90,5 % | 36 | reißt |
+| **beide Nachbarn, Tag 20 (gewählt)** | **2377 / 2312** | **102,8 %** | **13** | **hält** |
+| nur Frankreich, Tag 0 | 2933 / 2531 | 115,9 % | 35 | hält |
+
+1. **Nächste Nachbildung der vor-M17-Bedrohung:** genau diese zwei Nachbarn griffen vor M17 an,
+   der erste am Tag 20. Tag 0 ist eine andere Partie (die KI hat noch nichts ausgehoben), „nur
+   Frankreich" deckt nur die halbe Bedrohung.
+2. **Nicht blind:** jeder der zwölf Läufe hat mindestens 13 Einmärsche.
+3. **Unabhängig von der Kriegslust der KI:** die Erklärung kommt aus dem Aufbau, nicht aus
+   `diplomacy.ts` §4 — eine spätere Änderung an Verhältnis, Schwellen oder Wegprüfung (M18) macht
+   den Messlauf nicht wieder blind, sondern zeigt sich in der Kontrolle.
+
+Die Wahl stand fest, bevor das Ergebnis (hält/reißt) bekannt war — alle drei Kandidaten wurden
+gemessen, dann nach den Kriterien oben entschieden, nicht nach dem grünsten Ergebnis.
+
+**Offen gelegt: AK5 ist aufbauempfindlich.** Dieselbe Automatik misst 90,5 % (Tag 0), 102,8 %
+(Tag 20) und 115,9 % (nur Frankreich) — die Spreizung kommt aus einzelnen Provinzverlusten von
+rund 165–175 Provinz-Tagen bei nur vier Provinzen je Lauf. Unter „Tag 0" risse AK5, und D30.9
+verlangt dann die Rücknahme der Automatik, nicht deren Nachschärfung. Wer die Kriterien anders
+gewichtet (z. B. „härteste Bedrohung" → Tag 0), bekäme einen roten Messlauf. Vorschlag für M18,
+nicht hier gebaut: mehr Startzahlen oder eine größere Macht, um AK5 gegen einzelne
+Provinzverluste robuster zu machen.
+
+**Abgelehnt:**
+- Kontrolle ohne Aufbau neu eichen (0/0 als neuer Sollwert) — das hätte die Zusicherung
+  ausgehöhlt, ohne dass sie noch etwas prüft (Noahs Entscheid vom 2026-09-26: erst Ursache
+  klären, dann Aufbau anpassen, nicht die Kontrolle blind nachziehen).
+- Reparatur am Spiel — es ist kein Fehler (§ Befund oben); R-AI-09/AK3 und R-DIP-08 verlangen
+  das beobachtete Verhalten.
+- Kriegsplan-Tag 0 oder „nur Frankreich" — verworfen nach Kriterium 1 (nächste Nachbildung der
+  echten Bedrohung), nicht weil sie schlechter abschnitten.
+
+**Auswirkung:** `apps/headless/test/stance.slow.test.ts` (`KRIEGSPLAN`, `kriegserklaerungen`,
+`landnachbarn`, `declaredAgainstHuman`, `ak5.angegriffen`), `scripts/acceptance-criteria.mjs`
+(`stanceReportStatus` prüft `ak5.angegriffen.ok`), `test/requirements.test.ts` (Fixturen und ein
+neuer Fall für „unfrisch, wenn blind"), `docs/plan/01-REQUIREMENTS.md` (R-UNIT-09/AK5),
+`docs/plan/02-DESIGN.md` (D30.6, D30.9). `docs/reports/stance.json` wird **nicht** in diesem
+Schritt neu geschrieben — der Messlauf lief hier nur als Probe (ohne
+`WORLDWAR_WRITE_REPORT`, siehe Zahlen oben, alle Zusicherungen grün, 568 s auf freier Maschine);
+der eingecheckte Lauf kommt im nächsten Schritt auf dem sauberen Endstand nach dem Commit dieser
+Änderung (kein Bericht von Hand, siehe Konvention in D30.6).
+
+**Kippbar:** Tag und Angreifer stehen als je eine Konstante (`KRIEGSPLAN.tag`,
+`landnachbarn`) — jede Änderung ist eine neue Kontrolle und braucht Noah, genau wie bei Block N2.

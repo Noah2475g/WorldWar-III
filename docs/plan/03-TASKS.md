@@ -3679,7 +3679,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   `docs/reports/fullgame.json`, `docs/reports/fullgame-1815.json`,
   `docs/reports/fullgame-2015.json`, `apps/headless/test/m17-baseline.slow.test.ts`,
   `docs/plan/PROBLEME.md`, `docs/plan/DECISIONS.md`, `docs/plan/PROGRESS.md`,
-  `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`, `docs/plan/03-TASKS.md`
+  `docs/plan/WORKFLOW.md`, `docs/plan/tasks.yaml`, `docs/plan/03-TASKS.md`,
+  `test/requirements.test.ts`, `scripts/acceptance-criteria.mjs`, `docs/plan/02-DESIGN.md`,
+  `docs/plan/01-REQUIREMENTS.md`
   *(berichtigt 2026-09-25: `m17-baseline.json` bleibt der Ausgangswert von T-M17-02 und wird
   NICHT ueberschrieben — der Nachher-Stand geht nach `m17-final.json`, Option A aus dem Plan.)*
 - **Tests zuerst:** keine neuen; `sweep.slow.test.ts`, `tournament.slow.test.ts`,
@@ -3716,13 +3718,21 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
   Sieger durchweg p6), Netzfreiheit hält wörtlich, Uhr bei Tempo 100 innerhalb der eigenen
   Streuung des Ausgangswerts, `pnpm acceptance` 11 von 12, `pnpm verify` grün — alles nur für
   den Stand ohne die 45 Commits von `origin/main` (Punkt 3 unten).
-  1. **Befund M17-F1** (`PROBLEME.md`): der Haltungs-Messlauf reißt an der festen
-     Kontrollzahl — 76 Einmärsche/4 verlorene Provinzen fielen auf **0/0**. Provinz-Tage
-     (100 %) und Verluste ohne Gefecht (0) bleiben über ihrer Schwelle, aber bei 0
-     Einmärschen wird die Verteidigungsautomatik in diesem Lauf gar nicht ausgelöst — das ist
-     **ungeprüft**, nicht „gehalten". `stance.json` bleibt deshalb auf dem alten Stand
-     (`b1bb3c8`) stehen und damit unfrisch. Noah entscheidet, ob `KONTROLLE` bewusst neu
-     kalibriert wird oder ob 0 Einmärsche selbst ein Befund über die KI ist.
+  1. **Befund M17-F1** (`PROBLEME.md`) — **erledigt am 2026-09-26.** Ursache geklärt: vor M17
+     kamen alle Kriege gegen den passiven Menschen aus Durchmarsch-Überfällen (Frankreich Tag
+     20, Polen Tag 35); seit T-M17-10 hält die Wegprüfung diese Märsche an und beantragt
+     Durchmarsch, den der Mensch nie beantwortet — gewolltes M17-Verhalten (R-AI-09/AK3,
+     R-DIP-08), kein Fehler. Behoben durch einen Kriegsplan im Messaufbau
+     (`stance.slow.test.ts`, `KRIEGSPLAN`/`kriegserklaerungen`): die Landnachbarn erklären dem
+     Menschen am Spieltag 20 förmlich den Krieg, über den normalen Befehlsweg — danach
+     entscheidet die KI alles selbst. `KONTROLLE` steht seither auf **41 Einmärschen / 4
+     verlorenen Provinzen** (Garnison A 1914) statt 76/4; eine neue Zusicherung
+     (`ak5.angegriffen`) macht Blindheit (0 Einmärsche) selbst zur Verletzung, geprüft auch vom
+     Frische-Wächter (`scripts/acceptance-criteria.mjs`). Probelauf ohne
+     `WORLDWAR_WRITE_REPORT` auf `5e53298`: AK5 hält (102,8 % Provinz-Tage-Anteil, kleinste
+     Einmarschzahl 13, 0 Ablehnungen, 0 Kriege ohne Erklärung). `docs/reports/stance.json`
+     wird im nächsten Schritt auf sauberem Baum neu geschrieben. Volle Abwägung in
+     `DECISIONS.md` (2026-09-26, M17-F1).
   2. **AK-8** (der volle Speichern/Neustart/Weiterspielen-Rundlauf) wurde **nicht**
      durchgeführt: Noahs `saves`-Ordner zeigte beim Ansehen eine unklare Lage über mehrere
      nie aufgeräumte Alt-Ordner aus früheren Sitzungen — Einzelheiten in `packaging.md`.
@@ -3736,7 +3746,9 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
      `pnpm acceptance`) auf dem Merge-Stand wiederholt werden — siehe `WORKFLOW.md` §2
      Punkt 1.
 
-  M17 bleibt bei **15 von 16** Aufgaben, bis Noah zu allen drei Punkten entschieden hat.
+  M17 bleibt bei **15 von 16** Aufgaben. **Blocker 1 (M17-F1) ist erledigt** (siehe oben);
+  Blocker 2 (AK-8) und 3 (`origin/main`) siehe Noahs Entscheide vom 2026-09-26 am Ende von
+  `DECISIONS.md` und `WORKFLOW.md` §2 Punkt 1.
 
 ## Meilenstein M18 — Später
 
@@ -3768,10 +3780,12 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 >
 > **Vorgemerkt am 2026-09-25 (Nacharbeit Durchsicht Zusammenspiel) — vollständige M18-Liste.**
 > `WORKFLOW.md` §2 Punkt 6 verweist nur noch hierher; alle Einträge mit Status „M18" oder
-> „Kandidat M18" aus `PROBLEME.md`, an einer Stelle. **Befund M17-F1 steht absichtlich nicht
-> hier** (Nacharbeit T-M17-16): sein Status in `PROBLEME.md` ist „offen, Noah entscheidet" —
-> ein aktiver Blocker von T-M17-16 selbst (`WORKFLOW.md` §2 Punkt 1), noch kein an M18
-> verschobener Befund. Er wandert erst hierher, falls Noah ihn ausdrücklich verschiebt.
+> „Kandidat M18" aus `PROBLEME.md`, an einer Stelle. **Befund M17-F1 steht nicht hier**
+> (Nacharbeit T-M17-16): sein Status in `PROBLEME.md` ist seit 2026-09-26 „gelöst" (Kriegsplan
+> im Messaufbau) — kein an M18 verschobener Befund, sondern ein erledigter Blocker von
+> T-M17-16 selbst. Die dabei offen gelegte Aufbauempfindlichkeit von AK5 (vier Provinzen, große
+> Einzelverluste) ist als Vorschlag für M18 in `DECISIONS.md` (2026-09-26, M17-F1) vermerkt,
+> ohne eigene Aufgabe.
 >
 > - **M17-T6** (Frieden im selben Tick macht aus einem Angriff einen Überfall) und **M17-T7**
 >   (KI hebt praktisch keine Artillerie aus) und **M17-S12** (`RECRUIT_SPY` desselben Takts nicht
