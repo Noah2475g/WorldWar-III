@@ -61,11 +61,10 @@ Worktree anlegt, zweigt von `claude/m17-tiefe-zwischen-den-kriegen` ab — **nic
 git switch claude/m17-tiefe-zwischen-den-kriegen && git pull --ff-only
 ```
 
-**Warum hier noch kein Pull Request steht:** T-M17-16 (die Abschlussmessung) ist seit
-2026-09-26 fertig — alle drei Blocker erledigt (§2 Punkt 1 nennt sie nur noch der
-Vollständigkeit halber). Ein Pull Request nach `main` ist der nächste Schritt, aber
-**gepusht und angelegt wird er nur auf Noahs ausdrückliches Wort**, nie mit `--force`
-(`DECISIONS.md`, 2026-09-25).
+**Der Pull Request steht: [#12](https://github.com/Noah2475g/WorldWar-III/pull/12)** — auf
+Noahs Wort am 2026-09-26 gepusht und angelegt, T-M17-16 ist fertig. **Noah merged, kein Agent;
+nie mit `--force`.** Wer den PR merged, richtet diesen Abschnitt im selben Zug auf `main` (§4
+Falle 1).
 
 **Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und den Merge-Commit.** Eine
 Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt fünf Sitzungen in Folge
