@@ -3102,8 +3102,12 @@ Befehl wird abgelehnt, keiner löst einen Krieg ohne Erklärung aus. **Die Schwe
 Messung des Entwurfs festgelegt** — N lag in einem Einzellauf (1815 B) drei Prozent unter der
 Garnison, deshalb gilt sie für die Summe; eine Schwelle von 100 % kippte die Regel an einer schwachen
 Startzahl. **Gemessen unter Überfällen vor M17** (siehe Korrektur unten, Befund M17-F1) — seit
-2026-09-26 unter einem Kriegsplan, der dieselbe Bedrohung nachbildet. Fällt eine Zusicherung, wird
-die Regel **zurückgenommen, nicht nachgeschärft**:
+2026-09-26 unter einem Kriegsplan, der eine **nahe, aber nicht wörtliche** Nachbildung ist (beide
+Landnachbarn erklären förmlich an Tag 20, statt aus einem Durchmarsch-Überfall zu stolpern, der vor
+M17 an Tag 20/35 lag). Offen gelegt (`DECISIONS.md`, 2026-09-26, M17-F1): dieselbe Regel misst
+90,5 % (Tag 0), 102,8 % (Tag 20, gewählt) und 115,9 % (nur Frankreich) je nach Aufbau — AK5 ist
+aufbauempfindlich, und die 98-%-Schwelle wurde unter der alten, unbeabsichtigten Bedrohung geeicht,
+nicht unter dieser. Fällt eine Zusicherung, wird die Regel **zurückgenommen, nicht nachgeschärft**:
 `adjutantCommands` gibt für `defensive` nichts mehr zurück, die Verteidigung kämpft wie die Garnison, und
 die Hinweise sagen das. Dasselbe Kriterium hätte die Deckung aus M40 (79,7 %, 10) und c1 (92 %, 9) rot
 gemeldet.

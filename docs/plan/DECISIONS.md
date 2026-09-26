@@ -5259,7 +5259,16 @@ Märsche an und beantragt Durchmarsch (`requestPassage`); der passive Mensch ant
 Antrag läuft ab und wird erneuert (58/32/17 Anträge über 200 Tage bei 1914/2015/1815). Eine
 förmliche Erklärung aus dem Verhältnis (`diplomacy.ts` §4) gab es gegen diesen Menschen weder vor
 noch nach M17 — er liegt 73 bis 179 Punkte unter der Kriegsschwelle in jeder von 40 Proben je
-Startzahl (Ansehen 1000, Verstimmung 0). **Gewolltes M17-Verhalten, kein Fehler:** R-AI-09/AK3
+Startzahl (Ansehen 1000, Verstimmung 0).
+*(Vermerk Nacharbeit 2026-09-26: ein adversarischer Prüfer vermutet, diese Zahlen stammten aus
+einer früheren Messung mit weniger Proben (7/7/23 statt 40/40/40) und passten nicht mehr zu „40
+Proben". Git-Historie widerlegt eine nachträgliche Vermischung — beide Aussagen wurden in
+`7a6aa47` gemeinsam neu geschrieben, kein Nachtrag auf altem Text. Ob die Zahlen selbst
+(73–179, 1815: 73) zur genannten Formel passen (`relationship.ts`, `diplomacy.ts` §4 mit der
+Stärke-„Verlockung", Zeile ~254) ist mit dem Zeitbudget dieser Nacharbeit ohne das ursprüngliche
+Messskript (nicht im Repo) nicht sauber nachzurechnen — offen für eine eigene Aufgabe, die die
+40 Proben je Startzahl neu abtastet, statt die Zahl zu schätzen oder zu übernehmen.)*
+**Gewolltes M17-Verhalten, kein Fehler:** R-AI-09/AK3
 (0 Überfälle) und R-DIP-08 (Durchmarsch wird beantragt) verlangen genau das, was den Messlauf
 blind gemacht hat (0 statt 76 Einmärsche, Garnison A 1914).
 
@@ -5290,8 +5299,15 @@ mit Kriegsplan, gemessen auf `5e53298`) statt auf `{ 76, 4 }`.
    `diplomacy.ts` §4 — eine spätere Änderung an Verhältnis, Schwellen oder Wegprüfung (M18) macht
    den Messlauf nicht wieder blind, sondern zeigt sich in der Kontrolle.
 
-Die Wahl stand fest, bevor das Ergebnis (hält/reißt) bekannt war — alle drei Kandidaten wurden
-gemessen, dann nach den Kriterien oben entschieden, nicht nach dem grünsten Ergebnis.
+**Berichtigt (Nacharbeit 2026-09-26, Befund eines adversarischen Prüfers):** hier stand zuvor der
+sich selbst widersprechende Satz „die Wahl stand fest, bevor das Ergebnis bekannt war — alle drei
+Kandidaten wurden gemessen, dann … entschieden". Richtig ist: **die drei Kriterien** standen fest,
+bevor gemessen wurde (das sagt die Überschrift der Begründung oben) — **die Wahl selbst** (welcher
+Kandidat sie erfüllt) fiel erst, nachdem alle drei Kandidaten gemessen und alle drei Ergebnisse
+(hält/reißt) bekannt waren. Das ist etwas anderes als „nach dem grünsten Ergebnis wählen": die
+Kriterien selbst nennen Tag 20 unabhängig vom AK5-Ausgang (Kriterium 1, Nachbildung der echten
+Bedrohung; Kriterium 2, nicht blind) — aber dass die Auswahl unter Kenntnis aller drei AK5-Ergebnisse
+lief, muss offen dastehen, nicht verdeckt werden.
 
 **Offen gelegt: AK5 ist aufbauempfindlich.** Dieselbe Automatik misst 90,5 % (Tag 0), 102,8 %
 (Tag 20) und 115,9 % (nur Frankreich) — die Spreizung kommt aus einzelnen Provinzverlusten von
@@ -5309,6 +5325,20 @@ Provinzverluste robuster zu machen.
   das beobachtete Verhalten.
 - Kriegsplan-Tag 0 oder „nur Frankreich" — verworfen nach Kriterium 1 (nächste Nachbildung der
   echten Bedrohung), nicht weil sie schlechter abschnitten.
+
+**Nicht eindeutig durch Kriterium 1 allein (Nacharbeit 2026-09-26):** die wörtliche Nachbildung der
+vor-M17-Bedrohung wäre Frankreich an Tag 20 **und** Polen an Tag 35 (1815: nur Frankreich, siehe
+Befund oben) — nicht beide Nachbarn gleichzeitig an Tag 20. Diese vierte Variante wurde **nicht**
+gemessen; „Tag 20 für beide" ist eine Vereinfachung, keine wörtliche Nachbildung. Das ändert an der
+Wahl nichts (Kriterium 2 und 3 sprechen weiter dafür, und AK5 hält auch hier), macht aber Kriterium
+1 allein nicht so eindeutig, wie der Text bisher nahelegte.
+
+**Offene Frage an Noah, vor dem Pull Request:** Tag 20 (beide Nachbarn, gewählt) gegen Tag 0 (reißt
+AK5, siehe Tabelle oben) und optional gegen die wörtliche Nachbildung (Frankreich Tag 20, Polen
+Tag 35 — ungemessen) vorlegen. Noahs Entscheid vom 2026-09-26 verlangte nur „Ursache klären, dann
+Aufbau anpassen, dass wieder Angriffe kommen" (siehe Eintrag oben) — er nennt weder Tag noch
+Angreiferzahl. Die konkrete Wahl (Tag 20, beide Landnachbarn) traf der ausführende Agent nach den
+drei Kriterien, nicht Noah selbst.
 
 **Auswirkung:** `apps/headless/test/stance.slow.test.ts` (`KRIEGSPLAN`, `kriegserklaerungen`,
 `landnachbarn`, `declaredAgainstHuman`, `ak5.angegriffen`), `scripts/acceptance-criteria.mjs`
@@ -5329,8 +5359,12 @@ der eingecheckte Lauf kommt im nächsten Schritt auf dem sauberen Endstand nach 
 
 **Entscheidung:** T-M17-16 ist fertig. Die Messkette (Haltungs-Messlauf, exe-Bau, Netzfreiheit,
 AK-8, Uhr, `pnpm acceptance`, `pnpm verify`) wurde auf dem vollständigen Stand wiederholt —
-nach dem konfliktfreien Merge von `origin/main` (`65feab8`) und dem M17-F1-Fix (`1d893e4`),
-beides bereits von Noah am 2026-09-26 entschieden (siehe die beiden Einträge oben). Nur
+nach dem konfliktfreien Merge von `origin/main` (`65feab8`) und dem M17-F1-Fix (`1d893e4`) — den
+Merge selbst und das Vorgehen beim F1-Fix (erst Ursache klären, dann Aufbau anpassen, keine
+Reparatur am Spiel) hat Noah am 2026-09-26 entschieden (siehe die beiden Einträge oben); **die
+konkrete Ausgestaltung des Kriegsplans** (Tag 20, beide Landnachbarn statt Tag 0 oder nur
+Frankreich) hat der ausführende Agent nach den drei Kriterien gewählt, nicht Noah selbst — siehe
+die offene Frage im M17-F1-Eintrag oben. Nur
 Parameterlauf und Turnier wurden **nicht** neu gefahren: die Touch-Bedienung aus `origin/main`
 ändert `data/rules`, `packages/core/src` und `packages/ai/src` nicht, also blieben ihre
 zuletzt eingecheckten Berichte (`b8d36e6`, `527425c`) nach der Frische-Definition

@@ -50,8 +50,7 @@
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `claude/m17-tiefe-zwischen-den-kriegen`, nicht auf `main`, bis Noah
-merged.** Lokales `main` zeigt auf `8bda869` (Merge-Commit PR #8, 2026-09-14). `origin/main`
+**Die Spitze liegt auf `claude/m17-tiefe-zwischen-den-kriegen`, nicht auf `main`.** Lokales `main` zeigt auf `8bda869` (Merge-Commit PR #8, 2026-09-14). `origin/main`
 war mit PR #9–#11 auf `30c0b3f` weitergelaufen (Touch-Bedienung) — **dieser Vorsprung ist
 seit `65feab8` konfliktfrei in diesen Zweig gemergt** (Noahs Entscheid 2026-09-26,
 `DECISIONS.md`); `origin/main` ist seither kein Vorsprung mehr vor diesem Zweig. Wer einen
@@ -165,11 +164,15 @@ nächste Schritt ist der Pull Request nach `main` — und der wartet auf Noahs W
      AK-8, Uhr, `pnpm acceptance`) wurde danach auf dem Merge- und F1-Fix-Stand (`7a6aa47`)
      wiederholt — Ergebnis siehe oben und unten in §5.
 
-   Alles aus T-M17-16 ist gemessen und eingecheckt: Parameterlauf, Turnier, `m17-integration`,
-   `ai-integration`, drei Vollpartien, Netzfreiheit, Uhr, `pnpm acceptance` (**12 von 12**),
-   `pnpm verify` (grün) — auf dem vollständigen Stand mit `origin/main` und dem M17-F1-Fix.
-   Parameterlauf und Turnier mussten nicht neu gefahren werden: ihre Quellen (`data/rules`,
-   `packages/core/src`, `packages/ai/src`) hat die Touch-Bedienung nicht berührt.
+   Auf dem Merge- und F1-Fix-Stand (`7a6aa47`/`9a7678f`/`00feba3`) **neu gemessen und eingecheckt**
+   sind: Haltungs-Messlauf, exe-Bau, Netzfreiheit, AK-8, Uhr, `pnpm acceptance` (**12 von 12**),
+   `pnpm verify` (grün). **Nicht neu gefahren, sondern nach Quellenprüfung weiter gültig** sind
+   Parameterlauf, Turnier, `m17-integration`, `ai-integration` und die drei Vollpartien: ihre
+   Quellen (`data/rules`, `packages/core/src`, `packages/ai/src`, `apps/headless`) hat die
+   Touch-Bedienung aus `origin/main` (Merge `65feab8`) nicht berührt (`git diff --stat
+   65feab8^1 65feab8 -- packages/ data/ apps/headless/` ist leer, nachgeprüft in der Nacharbeit vom
+   2026-09-26) — ihre zuletzt eingecheckten Berichte bleiben gültig, liefen aber selbst nicht auf
+   dem Merge-Commit.
 2. **AK-9 — eine Partie zu zweit gegen einen echten Menschen** (T-M39-09, der fünfte
    Haltepunkt). Sechs Punkte: Einladung per Link, Beitritt ohne Installation, dreißig
    Spieltage am Stück, eine beantragte und angenommene Pause, ein absichtlicher

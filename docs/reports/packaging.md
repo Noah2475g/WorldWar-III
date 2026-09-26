@@ -20,7 +20,7 @@ erledigt (Noahs Entscheid 2026-09-26, `DECISIONS.md`).
 | | |
 |---|---|
 | `worldwar.exe` | **6 816 768 Bytes** (6,50 MiB), geschrieben am **2026-09-26** (`01:43` UTC) |
-| Bau | `pnpm tauri:build`, Exit 0; `vite build` in 2,46 s, danach Rust `release` in 2 min 30 s |
+| Bau | `pnpm tauri:build`, Exit 0; `vite build` in 2,46 s, danach Rust `release` in 2 min 30 s — **unter Last gemessen** (parallel dazu lief der Haltungs-Messlauf 03:40:04–03:49:33, `s2-stance.log`); kein Tor, keine erneute Messung auf freier Maschine nötig |
 | Quelle | `7a6aa47` — beim Bau **keine uncommittete Datei unter `apps/`, `packages/`, `data/`** (`git status --porcelain` darauf gefiltert: 0 Zeilen) |
 | Gegenüber `b9b3915` (2026-09-25, 6 812 160 B, vor dem `origin/main`-Merge) | **+4 608 Bytes** — die Touch-Bedienung aus PR #9–#11 |
 | Gegenüber `e82c2bc` (2026-09-14, 6 790 144 B, vor M17) | **+26 624 Bytes** |

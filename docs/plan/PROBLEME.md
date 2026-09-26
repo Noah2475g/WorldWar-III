@@ -5925,8 +5925,9 @@ und einer kleinsten Einmarschzahl von 13 je Lauf; Tag 0 reisst AK5 (90,5 %, unte
 "nur Frankreich" haelt (115,9 %), deckt aber nur die halbe vor-M17-Bedrohung ab. Tag 20 gewaehlt,
 weil er die naechste Nachbildung der echten vor-M17-Bedrohung ist, keinen Lauf blind laesst und
 unabhaengig von `diplomacy.ts` §4 bleibt (eine spaetere KI-Aenderung zeigt sich in der Kontrolle,
-nicht in erneuter Blindheit) - nicht, weil er das beste Ergebnis lieferte (die Wahl stand vor der
-Wahl des Ergebnisses, siehe DECISIONS.md). **Offen gelegt:** AK5 ist aufbauempfindlich (90,5/102,8/
+nicht in erneuter Blindheit) - nicht, weil er das beste Ergebnis lieferte - die drei Kriterien standen vor der Messung fest,
+die Wahl selbst fiel aber erst, nachdem alle drei AK5-Ergebnisse bekannt waren (berichtigt in der
+Nacharbeit 2026-09-26; siehe DECISIONS.md fuer die volle Fassung und die offene Frage an Noah). **Offen gelegt:** AK5 ist aufbauempfindlich (90,5/102,8/
 115,9 % je nach Kriegsplan-Tag, aus vier Provinzen mit ~170 Provinz-Tagen je Einzelverlust) - ein
 Befund fuer M18, nicht hier repariert.
 
@@ -5945,3 +5946,11 @@ Kriegsplan-Lauf neu geschrieben.
 
 **Status:** geloest. Siehe `DECISIONS.md` (2026-09-26, M17-F1) fuer die volle Abwaegung,
 `02-DESIGN.md` D30.6/D30.9 fuer die Korrektur am Entwurf.
+
+**Nachtrag Nacharbeit 2026-09-26 (Befund eines adversarischen Pruefers):** die Gegenprobe G1 aus
+dem urspruenglichen Bauplan (ein voller Zwoelf-Laeufe-Durchgang mit KRIEGSPLAN.tag = 999, der rot
+sein muss, "blind" in allen zwoelf Laeufen) wurde nicht gefahren. Belegt ist die Blindheits-
+Erkennung nur durch Einheitsfaelle mit synthetischen Laeufen (`stance.slow.test.ts`, Zeile 666 ff.,
+13 passed/5 skipped nachgefahren) - die Logik selbst ist gedeckt, ein echter Zwoelf-Laeufe-Beleg
+fuer G1 fehlt. Nicht hier nachgefahren (rund 9,5 Minuten auf freier Maschine, wie der Haltungs-
+Messlauf selbst) - vermerkt statt geschaetzt.
