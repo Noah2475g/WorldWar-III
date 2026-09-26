@@ -209,8 +209,9 @@ PR #12 auf `main`; als Nächstes wird **M18** geplant (Sammelliste in `03-TASKS.
    eine einzige Aufgabe, mit Absicht: T-M41-10 (die KI legt Armeen wirklich zusammen; der
    Deckel zählt Stapel statt Einheiten, die echte Reparatur tötete die Artillerie),
    der Handel der KI (zielt auf den teuersten Bauwunsch), die Kohle-Senke, der
-   Vorratsaufbau, die amphibische KI, die tote KI-Artillerie der Voreinstellung
-   (R-BAT-08/AK3) und **Befund M38-4** (`productionFiles()` liest 21 `.test.tsx` mit). Die
+   Vorratsaufbau, die amphibische KI, und die tote KI-Artillerie der Voreinstellung
+   (R-BAT-08/AK3). *(Befund M38-4 stand hier bis 2026-09-26 als offen; er ist seit dem
+   2026-09-18 erledigt — T-M38-11, `isTestFile()` in `test/guards/scan.ts`.)* Die
    M17-Befunde, die Noah an M18 verschoben hat (T-M17-15 und die Durchsicht des
    Zusammenspiels, 2026-09-25), stehen **vollständig und nur noch** in `03-TASKS.md`,
    Abschnitt „Meilenstein M18 — Später" — hier keine Aufzählung mehr, damit es nicht zwei

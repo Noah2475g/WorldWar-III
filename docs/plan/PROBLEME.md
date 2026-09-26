@@ -2075,7 +2075,7 @@ Aufgabe oder einen Meilenstein.
   einzigen Verbraucher sind dieser Bau und die Börse. Die Zeile im Eintrag vom 2026-09-06 („bleibt
   nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
 
-**Status:** B1 bis B3 erledigt (2026-09-24, T-M17-04) — Durchmarsch und Karte sind gerichtet, wer gewährt, darf nicht selbst hinein, die Angebotsfrist steht in `constants.json`, das Erwidern ist am Zustand geprüft. B4 für Handelsangebote erledigt (2026-09-25, T-M17-05); für Frieden und Bündnis (`acceptPeace`/`acceptAlliance`) weiterhin offen, ohne Meilenstein. B5 für den Provinzhandel behoben (2026-09-25, T-M17-11) — `targeting.ts` bewertet fremde Provinzen weiter pauschal. B6 für KI-Märsche erledigt (2026-09-25, T-M17-10, Antrag statt Marsch); die volle Messung über eine echte Partie mit vielen Mächten bleibt T-M17-15 vorbehalten. B7 erste Hälfte (enttarnte Spione) eingelöst (2026-09-25, T-M17-09); zweite Hälfte (gebrochene Bündnisse) weiterhin offen, ohne Meilenstein. B8 weiterhin offen, für M18 mit dem Vorratsaufbau.
+**Status:** B1 bis B3 erledigt (2026-09-24, T-M17-04) — Durchmarsch und Karte sind gerichtet, wer gewährt, darf nicht selbst hinein, die Angebotsfrist steht in `constants.json`, das Erwidern ist am Zustand geprüft. B4 für Handelsangebote erledigt (2026-09-25, T-M17-05); für Frieden und Bündnis ebenfalls erledigt (2026-09-25, Nacharbeit Turnier Option C, Punkt 4 — `commands/diplomacy.ts` löscht mit `dropOffer` nur das Angebot des Annehmenden, siehe unten „B4 ist damit für Frieden und Bündnis erledigt“; Statuszeile berichtigt in T-M42-01). B5 für den Provinzhandel behoben (2026-09-25, T-M17-11) — `targeting.ts` bewertet fremde Provinzen weiter pauschal. B6 für KI-Märsche erledigt (2026-09-25, T-M17-10, Antrag statt Marsch); die volle Messung über eine echte Partie mit vielen Mächten bleibt T-M17-15 vorbehalten. B7 erste Hälfte (enttarnte Spione) eingelöst (2026-09-25, T-M17-09); zweite Hälfte (gebrochene Bündnisse) weiterhin offen, ohne Meilenstein. B8 weiterhin offen, für M18 mit dem Vorratsaufbau.
 
 ---
 
@@ -5984,3 +5984,75 @@ Erkennung nur durch Einheitsfaelle mit synthetischen Laeufen (`stance.slow.test.
 13 passed/5 skipped nachgefahren) - die Logik selbst ist gedeckt, ein echter Zwoelf-Laeufe-Beleg
 fuer G1 fehlt. Nicht hier nachgefahren (rund 9,5 Minuten auf freier Maschine, wie der Haltungs-
 Messlauf selbst) - vermerkt statt geschaetzt.
+
+## 2026-09-26 · T-M42-01 · Stufe 0: der Ausgangswert für M42/M43 — und die Zweitagespaare sind nicht überall null
+
+**Gemessen** auf `f4ac360` (`measuredDirty: []`), `m17-integration.json` und `ai-integration.json`,
+Abschnitt `m42`, Stufe `0`. Abtastung am Tagesende, 200 Spieltage, acht KI-Mächte (Voreinstellung:
+sieben). Nachgetragen aus der Nacharbeit (adversarische Prüfung, siehe unten): `jeMacht` ist nach
+`PlayerId` geschlüsselt (`MachtZahlen.nation` trägt seit der Nacharbeit die Nation dazu).
+
+| Zahl | Welt 1815 | Welt 1914 | Welt 2015 | Voreinstellung 200 |
+|---|---|---|---|---|
+| Fabriken begonnen (davon normal/schwer) | 92 (0) | 63 (0) | 64 (0) | 2 (2) |
+| Tage mit bezahlbarer Fabrik, Maximum leicht/normal/schwer | 125/0/0 | 106/0/0 | 123/0/0 | 0/1/0 |
+| Artillerie ausgehoben / Anteil an Landeinheiten / Beschuss | 0 / 0 % / 0 | 0 / 0 % / 0 | 0 / 0 % / 0 | 0 / 0 % / 0 |
+| Infanterie befohlen / ausgehoben | 2830 / 2819 | 3212 / 3191 | 2917 / 2875 | 2800 / 2783 |
+| Kriege / Überfälle / Frieden (zwischen KI) | 11 / 1 / 3 (3) | 11 / 2 / 3 (3) | 9 / 0 / 3 (3) | 9 / 2 / 4 (4) |
+| Überfälle `friedensschluss` / `nachKuendigung` | 1 / 0 | 2 / 0 | 0 / 0 | – (nur m17) |
+| Eroberungen | 769 | 699 | 725 | 382 |
+| Geldmangeltage gesamt / durch Aushebung | 0 / 0 | 0 / 0 | 0 / 0 | Kanada (`p2`) 44 / 44 |
+| Ölmangeltage | 0 | 0 | 0 | 0 |
+| größter stehender Verband / Tage über dem Deckel | 132 / 147 | 127 / 147 | 133 / 153 | 124 / 189 |
+| Tage mit Paar / Paare höchstens | 71 / 92 | 79 / 565 | 85 / 435 | 65 / 465 |
+| **Paare über zwei Tagesenden** / Tage davon / Orte davon | 0 / 0 / 14 | 0 / 0 / 35 | **1 / 1 / 34** | 0 / 0 / 10 |
+| alte Zusage 7 (stehend je Provinz höchstens / Tage über drei) | 14 / 10 | 34 / 19 | 30 / 17 | 31 / 13 |
+| Befund D verpasst (alle Rohstoffe / nur Geld) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| `NO_PATH`-Anteil der Marschbefehle | 0 % (0/5930) | 0 % (0/6670) | 0 % (0/6264) | 0 % (0/6010) |
+| Ablehnungen `RECRUIT:INSUFFICIENT_RESOURCES` | 1 | 1 | 2 | 0 |
+
+Aus den eingecheckten, frischen Berichten (nicht neu gefahren, Falle 12): Turnier schwer–normal im
+Frieden **0,760** (`ai-tournament-run.md`, Commit `527425c`), Vollpartien Siegtag **675/630/395**
+(`fullgame*.json`), Anteil des Stärksten **38,4 %** (`balance-sweep.md`), Haltungs-Messlauf AK5
+**102,8 %** (`stance.json`, Commit `7a6aa47`).
+
+**Was die Zahlen sagen.**
+1. **Kanada** geht in der ausgelieferten Voreinstellung an **44** Tagen pleite, und **jeder** dieser
+   Tage geht auf eine eigene Aushebung bei negativer Tagesbilanz zurück (kleinste Bilanz bei der
+   letzten Aushebung **-92 885**/Tag, 67 Aushebungstage insgesamt). Befund für T-M42-03 (R-AI-11/AK2,
+   AK3).
+2. **Auf der Weltkarte (1815/1914/2015) bauen „normal" und „schwer" keine Fabrik und könnten es an
+   keinem Tag** — `tageFabrikBezahlbar` ist dort **0 von 200** für jede dieser Mächte. In der
+   **Voreinstellung** ist das anders: Russland (normal) und Indien (normal) bauen je eine Fabrik,
+   Indien ist an **1 von 200** Tagen bezahlbar — die einzige Ausnahme unter den vier Läufen.
+   Fabriken auf der Weltkarte kommen nur von „leicht" (USA, Indien, UK in 1815; je nach Startzahl
+   andere Nationen). Befund für T-M42-06.
+3. **Null Artillerie, null Beschuss** in allen vier Läufen (vor M17: 63 / 231). Befund M17-T7 besteht.
+4. **Verbände bis 133 Einheiten** (Deckel 20), an 147–189 Tagen steht ein Verband über dem Deckel.
+5. **Befund D ist am Ausgangswert 0** in allen vier Läufen — erwartet, weil normal/schwer keine
+   Fabrik haben und „leicht" die eigene Schwelle (2,5 Mio. Geld) nie erreicht. Entschieden wird D
+   erst auf Stufe C2 (T-M42-10).
+6. **Paare über zwei Tagesenden sind nicht überall 0 — aber auf den Läufen, auf denen T-M42-09
+   zusichern wird, schon.** T-M42-09 zusichert laut `m18-plan-v2.md` §8 in
+   `ai-integration.slow.test.ts` (Welt 1815, Voreinstellung) — auf beiden ist die Zahl am
+   Ausgangswert **0** (Planungssonde, Bauplan `plan-T-M42-01.md` §2.6, hier bestätigt). **Welt
+   2015 zeigt eine 1** (ein Paar derselben zwei stehenden Armeen überlebt dort ein Tagesende) —
+   diese Zahl steht nur in `m17-integration.json`, das T-M42-09 nicht anfasst. Die Ortsvariante
+   (gleiche Macht, Provinz, Rolle, beliebige Armeen) zählt in jedem der vier Läufe deutlich mehr:
+   14/35/34/10. **Folge für T-M42-09:** `R-AI-10/AK3` wäre auf den eigenen Läufen (1815,
+   Voreinstellung) am Ausgangswert schon erfüllt — der geplante Gegenlauf „dieselbe Zusicherung
+   fällt auf Stufe C1" **kann auf diesen beiden Läufen nicht fallen**, weil die Zahl dort nie über
+   0 war. **Nicht in T-M42-01 entschieden** — geht an Noah und an den Bauplan von T-M42-09: entweder
+   AK3 auf ein einzelnes Tagesende schärfen (dann bleibt ein Gegenlauf möglich) oder stattdessen die
+   Ortsvariante zusichern (dort gibt es in jedem Lauf etwas zu widerlegen). Die Welt-2015-Zahl bleibt
+   als Nebenbefund dokumentiert.
+
+**Gegenproben.** Alte Felder beider Berichte zeilengleich (m17 zu `b9b3915`, ai zum Vorlauf vor
+jeder M42/M43-Änderung); `m42.welt1815` (tageweise) = `m42.laeufe.1815` (tickweise), 0
+Abweichungen; alle Sondenwerte der Planung getroffen; G1–G18 fallen alle (Teil A der Nacharbeit
+verifizierte zusätzlich acht weitere Lücken — Anschluss-Kette an `applied`, Berichtsform, Fabrik-
+Zählung, Artillerieanteil-Zwilling, Nation-Feld — je per Mutationstest rot/grün belegt, siehe
+`tasks.yaml`).
+
+**Nebenbei berichtigt:** B4-Statuszeile oben (Frieden und Bündnis sind seit 2026-09-25 erledigt),
+`WORKFLOW.md` §2 Punkt 6 (Befund M38-4 ist seit 2026-09-18 erledigt).

@@ -5507,3 +5507,46 @@ diesen Eintrag durch den eingecheckten Stand samt Commit.
 **Nacharbeit 2026-09-26 (Merge):** `status` in `tasks.yaml` auf `todo` zurückgesetzt (stand nach dem
 Bau-Zweig auf `done`) — der Bau selbst ist fertig und gemergt, aber `pnpm verify` steht auf ruhiger
 Maschine noch aus (dieselbe Fremdlast wie oben); `done` erst nach diesem Lauf.
+
+---
+
+## 2026-09-26 · T-M42-01 · Wie M42/M43 gemessen wird (kippbar)
+
+Sechzehn Festlegungen für das Zählmodul `apps/headless/test/m42-zaehlung.ts`, getroffen im Bauplan
+`plan-T-M42-01.md` §8, keine davon eine Spielregel:
+- **Mangeltag** = Tagesende mit dem Rohstoff in `shortages` (nicht das Ereignis, das nur den Beginn meldet).
+- **„durch Aushebung"** (R-AI-11/AK3 nach Frage 8 a) = die letzte angenommene Aushebung an oder vor dem
+  Mangeltag hatte eine negative Tagesbilanz; **Tagesbilanz** = `economyOverview`-Bilanz (Ertrag −
+  Armeeunterhalt − Sold) minus Unterhalt der eigenen Aushebungs-Warteschlange. Konservativ: eine alte,
+  knapp negative Aushebung zählt auch bei späterem Provinzverlust.
+- **Paar** (R-AI-10/AK3 nach Frage 4 a) = zwei stehende Armeen gleicher Macht, Provinz, Einschiffung
+  und Rolle mit zusammen höchstens `stackFullContribution` Einheiten; **über zwei Tagesenden** =
+  dieselben zwei Kennungen; die Ortsvariante wird daneben gezählt. **Ausgangswert Stufe 0: 0 auf den
+  Läufen, die T-M42-09 zusichern wird (Welt 1815, Voreinstellung); 1 auf Welt 2015 (nur
+  `m17-integration.json`, nicht Teil von T-M42-09s Läufen) — R-AI-10/AK3 wäre auf den eigenen Läufen
+  schon erfüllt, der Gegenlauf „fällt auf Stufe C1" kann dort nicht fallen (T-M42-01, 2026-09-26; von
+  Noah/T-M42-09 zu entscheiden: AK3 auf ein Tagesende schärfen oder die Ortsvariante zusichern).**
+- **Artillerieanteil** (R-AI-12/AK3) = Klasse `artillery` an den Klassen `infantry`/`armor`/`artillery`,
+  aus `UNIT_RECRUITED`.
+- **Befund D** = Spieltag ≥ 34 mit Aushebung in einer Provinz ohne Fabrik, eigener Fabrikprovinz und
+  jedem Artillerie-Kostenrohstoff über der Stufenschwelle; die Nur-Geld-Fassung steht daneben.
+- `istBatterie` ist ein Zwilling von `military.ts:155-157` mit Wortlaut-Wächter, bis T-M42-08 `army-role.ts` baut.
+- `ai-integration.slow` schreibt nur mit `WORLDWAR_WRITE_REPORT=1` und trägt die Messzeile.
+- Keine neue Zusicherung auf eine Spielzahl; `describe`-Namen ohne R-ID (sonst gälte eine ungebaute
+  Anforderung als belegt).
+- `pnpm verify` einmal je Aufgabe am Ende (Noahs Wunsch vom 2026-09-10, Wartezeit) — in dieser
+  Sitzung und ihrer Nacharbeit wegen Maschinenlast (Noahs Spielsitzung) nicht gefahren, siehe
+  `PROGRESS.md`/openIssues; stattdessen gezielt typecheck, eslint, die betroffenen Testdateien und
+  `test/guards`.
+- Die volle Liste mit Begründung und Alternative: `plan-T-M42-01.md` §8 (E1-E16).
+
+**Nacharbeit (adversarische Prüfung, 2026-09-26):** `MachtZahlen.nation` ergänzt (additiv) — `jeMacht`
+bleibt nach `PlayerId` geschlüsselt (der Interface-Kommentar hatte irrig „Schlüssel Nation" gesagt),
+die Nation steht jetzt zusätzlich je Macht im Feld `nation`. `summe.artillerieAusgehoben` und
+`maechteMitArtillerieJeLauf` in `m17-integration.slow.test.ts` zählen seither nach Klasse
+(`rules.units[...].class === 'artillery'`, wie `artillerieAnteil`), nicht mehr nur nach dem Schlüssel
+`'artillery'` — am Ausgangswert folgenlos (TARGET_MIX kennt nur `'artillery'`), zukunftsfest für
+`rocket_artillery`. Beide Integrationsläufe prüfen jetzt zusätzlich, dass `befohlen` (aus `applied`)
+unabhängig aus der bestehenden `kiBefehle`-Sammelstelle nachgerechnet dieselbe Zahl ergibt, und dass
+der Bericht den Abschnitt `m42` tatsächlich trägt (vorher nur durch Lesen geprüft) — beide Lücken je
+per Mutationstest bestätigt (rot) und wieder geschlossen (grün).

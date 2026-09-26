@@ -6903,7 +6903,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 > Etappe 1 endet mit einem Pull Request und Noahs Playtest; Etappe 2 folgt erst nach seiner
 > Bestätigung. Entwurf: `02-DESIGN.md` D32.
 
-### T-M42-01 · Messwerkzeug und Ausgangswert
+### T-M42-01 · Messwerkzeug und Ausgangswert — **erledigt am 2026-09-26, Nacharbeit 2026-09-26**
 - **Ziel:** erst messen, dann ändern — einmal für Geld, Heer, Rüstung und Räumfrist, in drei
   Startzahlen und der Voreinstellung. Veraltete Berichte und Doku werden richtiggestellt.
 - **Anforderungen:** R-AI-10, R-AI-11, R-AI-12, R-DIP-10
@@ -6915,7 +6915,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Tests zuerst:** `apps/headless/test/m42-zaehlung.test.ts` — `zusammenlegbarePaare` (gleiche
   Rolle, gleiches `embarked`, Summe ≤ 20, keines über 20), `istBatterie` entspricht der Bedingung
   in `military.ts`, `artillerieAnteil` aus `UNIT_RECRUITED`, `mangelDurchAushebung`
-  (R-AI-11/AK3: Tagesbilanz nach der letzten Aushebung vor dem Mangeltag).
+  (R-AI-11/AK3: Tagesbilanz nach der letzten Aushebung vor dem Mangeltag). `m17-/ai-integration.slow.test.ts`
+  bekommen je einen `describe('T-M42-01 …')`-Block ("zwei Zaehlwege, eine Zahl").
 - **Fertig wenn:** ein gemeinsames Zählmodul (kein dritter Simulator, Kritik M-3) wird von
   `m17-integration.slow.test.ts` (Weltkarte, drei Startzahlen) und
   `ai-integration.slow.test.ts` (Voreinstellung, 200 Tage) gelesen und schreibt beiden
@@ -6926,7 +6927,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Fehlercode. Gegenprobe: ohne die neuen Zähler bleiben die bestehenden Zusicherungen
   zeilengleich. `WORKFLOW.md` §2.6 (Befund M38-4, längst erledigt) und die B4-Statuszeile in
   `PROBLEME.md` (nur per Python, CR-Bytes vorher/nachher gezählt, Falle 22) werden berichtigt.
-  Aufwand 3,5 h, Rechenzeit rund 10 min.
+  Aufwand 3,5 h, Rechenzeit rund 10 min. **Ausgangswert Stufe 0 gemessen auf `f4ac360`** (Nacharbeit-
+  Commit), Befund an T-M42-09/Noah in `PROBLEME.md` (Paare über zwei Tagesenden nicht überall 0).
+  **Nacharbeit (adversarische Prüfung, 2026-09-26):** acht Lücken ab mittel bestätigt und per
+  Mutationstest geschlossen — Anschluss-Kette an `applied` (hoch), Berichtsform nur durch Lesen
+  belegt (hoch), Fabrik-Zählung blind an der schnellen Suite, `jeMacht` ohne Nation im Bericht
+  (`MachtZahlen.nation` additiv ergänzt), Artillerieanteil-Zwilling ungetestet, Artillerie-Summe
+  nur nach Schlüssel statt Klasse; siehe `tasks.yaml` (`dod`) und `PROGRESS.md` für die volle Liste.
+  `pnpm verify` steht aus (Maschine unter Last durch Noahs Spielsitzung, beide Sitzungen).
 
 ### T-M42-02 · Der Haltungs-Messlauf hält eine gesunde KI-Änderung aus
 - **Ziel:** AK5 (98 % Provinz-Tage) soll gegen Rauschen robuster werden — nicht gegen eine
