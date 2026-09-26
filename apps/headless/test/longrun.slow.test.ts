@@ -4,13 +4,14 @@ import { describe, expect, it } from 'vitest'
 import { runAi, storeMemories } from '@worldwar/ai'
 import { RESOURCE_KEYS, createInitialState, parseRules, runTicks, type MapData, type Rules } from '@worldwar/core'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
+import { emptyStockEventCounts, formatStockSection, snapshotStocks, stockRows, tallyStockEvents } from '../src/stocks'
 
 /**
  * The long run (R-ARCH-06, acceptance criterion 6). Slow suite only.
  *
  * A thousand game days with everything switched on. What this catches is not a wrong
- * number but a slow rot: an event log that grows without bound, memory that never gets
- * released, a rule that only misbehaves after the four-hundredth day.
+ * number but a slow rot: an event log that grows without bound, a rule that only
+ * misbehaves after the four-hundredth day.
  *
  * Until 2026-09-08 this ran the 12-province test map with THREE players — while AK-6
  * reads, verbatim, "1000 Spieltage, 8 Spieler". The same failure class as R-AI-04
@@ -20,6 +21,16 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * runtime became visible. Now it plays the SHIPPED default setup — the same world,
  * the same eight powers a player gets on first start — and pins those conditions
  * with assertions so they cannot silently shrink again.
+ *
+ * Was er zusichert, und nur das (T-M42-11, Befund 58): das Ereignisprotokoll bleibt ein
+ * Ringpuffer (hoechstens 500 Eintraege), jeder Bestand bleibt eine sichere ganze Zahl und
+ * nicht negativ, jede Moral bleibt zwischen 0 und 100000, und alle Ticks laufen ohne Wurf.
+ * Was er NICHT zusichert: dass Vorraete begrenzt bleiben (sie wachsen um ein Vielfaches,
+ * die Tabelle in performance.md nennt es je Rohstoff), dass Heap oder KI-Gedaechtnis
+ * begrenzt bleiben (niemand misst sie), dass die Partie entschieden wird. Eine Grenze fuer
+ * das Vorratswachstum gibt es mit Absicht nicht: ohne Senke laesst sich keine Sperrklinke
+ * vorfuehren, und auf einem einzigen chaotischen Lauf hielte sie jede unbeteiligte
+ * KI-Aenderung fest.
  */
 const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
 const load = (path: string) => JSON.parse(readFileSync(`${ROOT}/${path}`, 'utf8')) as never
@@ -48,7 +59,7 @@ const ctx = { map, rules }
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
-  it('laeuft in der ausgelieferten Aufstellung fehlerfrei und ohne unbegrenztes Wachstum durch', async () => {
+  it('laeuft in der ausgelieferten Aufstellung fehlerfrei durch - Ereignisprotokoll begrenzt, Bestaende sichere ganze Zahlen und nicht negativ, Moral im Wertebereich', async () => {
     const days = 1000
     const ticks = days * rules.constants.ticksPerDay
 
@@ -63,6 +74,8 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
     expect(map.provinces.length).toBeGreaterThanOrEqual(200)
 
     let state = createInitialState(aiConfig, ctx)
+    const startStocks = snapshotStocks(state)
+    const stockEvents = emptyStockEventCounts()
 
     const started = performance.now()
     let ended = 0
@@ -72,7 +85,9 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
 
     for (let i = 0; i < ticks; i++) {
       const { commands, memories } = runAi(state, ctx)
-      state = runTicks(state, 1, ctx, () => commands).state
+      const step = runTicks(state, 1, ctx, () => commands)
+      state = step.state
+      tallyStockEvents(step.events, stockEvents)
       storeMemories(state, memories)
       if (state.victory.winner !== null && ended === 0) ended = state.tick
       if (i % 240 === 239) {
@@ -116,6 +131,8 @@ describe('Abnahmekriterium 6: Langlauf ueber 1000 Spieltage', () => {
         `- Zeit je Tick inkl. KI: ${(elapsed / ticks).toFixed(3)} ms`,
         `- Ereignisprotokoll am Ende: ${state.eventLog.length} Einträge (Ringpuffer greift)`,
         `- Partie entschieden bei Tick: ${ended || 'nicht entschieden'}`,
+        '',
+        ...formatStockSection(stockRows(startStocks, snapshotStocks(state), rules.storageLimits, stockEvents), days),
         '',
         'Erzeugt von `apps/headless/test/longrun.slow.test.ts`.',
         '',
