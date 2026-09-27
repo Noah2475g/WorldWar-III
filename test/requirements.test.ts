@@ -610,7 +610,7 @@ describe('T-M12-03 Frische-Waechter der Messgeraete', () => {
  * Der Haltungs-Messlauf veraltet nicht still (T-M40-16, Befund M-B; seit T-M40-17 nach Abstammung).
  *
  * `stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik (R-UNIT-09/AK5, D30.9), laeuft aber
- * in keiner Pruefkette: 24 Partien (sechs Startzahlen, T-M42-02) dauern rund 20 Minuten. Die Abnahme faehrt den Lauf deshalb nicht,
+ * in keiner Pruefkette: zwoelf Partien dauern gut elf Minuten. Die Abnahme faehrt den Lauf deshalb nicht,
  * sondern prueft den eingecheckten Bericht:
  *  - er nennt den Commit, auf dem gemessen wurde (`measuredAtCommit`), und der Arbeitsbaum war an den
  *    Quellen sauber (`measuredDirty`) — sonst misst ein Textkommit am Bericht als Messung (Befund N-3);

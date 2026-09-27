@@ -405,7 +405,7 @@ export function gaugeMeasurementStatus({ gauge, report, sourcesDirty, measuredAt
  * Frische des Haltungs-Messlaufs (T-M40-16, Befund M-B; seit T-M40-17 nach Abstammung und Messcommit).
  *
  * `apps/headless/test/stance.slow.test.ts` traegt das Ruecknahmekriterium der Automatik
- * (R-UNIT-09/AK5, D30.9): 24 Partien (sechs Startzahlen seit T-M42-02), rund 20 Minuten, und darum in keiner Pruefkette.
+ * (R-UNIT-09/AK5, D30.9): zwoelf Partien, gut elf Minuten, und darum in keiner Pruefkette.
  *
  * `report` ist `episoden.nachher` des eingecheckten Berichts. Gruen nur, wenn alles zutrifft:
  *  - an den Quellen ist nichts uncommittet;

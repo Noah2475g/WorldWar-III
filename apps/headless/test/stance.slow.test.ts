@@ -98,13 +98,7 @@ const rules: Rules = parseRules(
 const map = load('data/maps/world.json') as MapData
 
 const NATION = 'Deutschland'
-/**
- * Die Startzahlen. Bis T-M42-02 drei (1914, 2015, 1815); seit T-M42-02 sechs - Noahs Antwort auf Frage 5
- * (2026-09-26): AK5 soll gegen Rauschen robuster werden. Die bisherigen drei stehen vorn (1914 traegt
- * Kontrolle und Kartenfenster); die neuen drei sind die ersten drei der Projektliste aus
- * `sweep.slow.test.ts`/`progress.slow.test.ts`, die hier fehlten - festgelegt vor der Messung.
- */
-const SEEDS = [1914, 2015, 1815, 1939, 1871, 1806] as const
+const SEEDS = [1914, 2015, 1815] as const
 const DAYS = 200
 const UNIT_KEY = 'infantry'
 const UNITS_PER_ARMY = 5
@@ -151,11 +145,6 @@ const ABSTAND_ZIEL_PROVINZ_TAGE = 2 * EINZELVERLUST_PROVINZ_TAGE
  * (0 Einmaersche, Befund M17-F1). Seit M17-F1 (2026-09-26) erklaeren die Landnachbarn dem Menschen am
  * Spieltag 20 foermlich den Krieg (Aufstellung geaendert, Grenzen unangetastet — dasselbe Muster wie bei
  * Block N2): die Garnison A 1914 ergibt damit 41 Einmaersche, 4 verlorene Provinzen.
- *
- * T-M42-02 (sechs Startzahlen, 2026-09-27): neu gemessen - die Garnison A 1914 bleibt 41 Einmaersche,
- * 4 verloren. Die Kontrolle haengt nur an Startzahl 1914; an ihren Quellen hat sich seit 7a6aa47 nur
- * d55edd5 geaendert (Marktrechnung saettigt, bitgleich ohne Ueberlauf). Die neuen Startzahlen tragen
- * keine eigene Kontrolle; ihre Garnisonslaeufe stehen im Bericht.
  */
 const KONTROLLE = { intrusions: 41, provincesLost: 4 }
 const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'

@@ -158,7 +158,7 @@ for (const gauge of GAUGES) {
   )
 }
 
-// Der Haltungs-Messlauf (T-M40-16, Befund M-B; T-M40-17): stance.slow faehrt 24 Partien (T-M42-02) und laeuft
+// Der Haltungs-Messlauf (T-M40-16, Befund M-B; T-M40-17): stance.slow faehrt zwoelf Partien und laeuft
 // deshalb nicht je Abnahme. Der eingecheckte Bericht nennt seinen Messcommit; seitdem darf auf HEAD kein
 // Commit an einer Quelle des Laufs liegen (STANCE_SOURCES), gemessen sein muss auf sauberem Arbeitsbaum,
 // und der Lauf muss AK5 erfuellt haben (Ruecknahmekriterium D30.9).
