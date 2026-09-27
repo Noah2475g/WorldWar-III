@@ -554,6 +554,20 @@ describe('R-AI-12/AK1 Erst die Fabrik', () => {
     }
   })
 
+  it('V2b: rundet auf, nicht ab, wenn die Kosten den Teiler nicht glatt teilen (Nacharbeit Etappe 1, Befund niedrig)', () => {
+    // Bei den echten Fabrikkosten (V1/V2) ist amount * 1000 fuer jeden betroffenen
+    // Rohstoff durch den Teiler (800) restlos teilbar - Aufrundung und Abrundung
+    // liefern deshalb zufaellig denselben Wert, und keiner der beiden bestehenden
+    // Faelle unterscheidet sie. Ein Rohstoff, dessen Kosten das NICHT tun, macht
+    // die Rundungsrichtung sichtbar: fuer 1 (Fixed) ergibt Aufrundung 2, Abrundung 1.
+    const context = fabrikLage({})
+    context.rules = {
+      ...context.rules,
+      buildings: { ...context.rules.buildings, factory: { ...context.rules.buildings.factory, cost: { wood: 1 } } },
+    }
+    expect(factoryReserve(context)).toEqual({ wood: 2 })
+  })
+
   it('V3: vor der Freischaltung aus, ab dem Freischaltungstag an', () => {
     expect(factoryReserve(fabrikLage({ tag: fabrikTag - 1 }))).toBeNull()
     expect(factoryReserve(fabrikLage({ tag: fabrikTag }))).not.toBeNull()
