@@ -1077,4 +1077,130 @@ describe('R-DIP-10 Die Räumfrist (M17-T6, M17-G4, M17-D10)', () => {
     expect(current.tick).toBeGreaterThan(sinceTick + notice)
     expect(current.armies[army.id]!.locationProvinceId).toBe('m1')
   })
+
+  describe('R-DIP-10 Rückzug in neutrales Land (Befund M42-03-a, Noahs Entscheid 2026-09-27)', () => {
+    const retreatCooldown = TEST_RULES.constants.retreatCooldownTicks
+
+    it('Z1: kein Ueberfall waehrend der Rueckzugssperre, danach genau in ihrer Frist', () => {
+      imKrieg()
+      const t = state.tick
+      // o2 gehoert p2 (Krieg); ihr einziger nicht feindlicher Nachbar ist s2 (p3, Frieden seit Tick 0).
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(afterRetreat.state.armies[army.id]!.cannotAttackUntil).toBe(t + retreatCooldown)
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      let current = afterRetreat.state
+      while (current.tick < t + retreatCooldown) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      const after = step(current, [], ctx)
+      expect(after.state.tick).toBe(t + retreatCooldown + 1)
+      expect(ueberfall(after.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z2: waehrend der Sperre auf einem Raeumweg hinaus gibt es nie einen Ueberfall', () => {
+      imKrieg()
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      // Im Tick danach: Marsch weiter zum herrenlosen m2 (Nachbar von s2).
+      const current0 = step(afterRetreat.state, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'm2' }], ctx)
+        .state
+
+      let current = current0
+      while (current.armies[army.id]!.locationProvinceId !== 'm2') {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      expect(current.armies[army.id]!.locationProvinceId).toBe('m2')
+    })
+
+    it('Z3: eine sehr kurze Sperre (Beschuss) schuetzt trotzdem genau ihren Tick (Unschaerfe festgehalten)', () => {
+      const army = placeArmy(state, { owner: 'p1', at: 's2', units: infantry })
+      const t = state.tick
+      army.cannotAttackUntil = t + 1
+
+      const same = step(state, [], ctx)
+      expect(ueberfall(same.events, 'p1', 'p3')).toBeUndefined()
+      expect(same.state.tick).toBe(t + 1)
+
+      const next = step(same.state, [], ctx)
+      expect(ueberfall(next.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z4: Wächter — ein Rueckzug ins eigene Land, danach ein Marsch nach s2 in der Sperre bleibt ein Ueberfall im Tick des Betretens', () => {
+      imKrieg()
+      // n2 (p1, eigen) statt s2: der Rueckzug bleibt im eigenen Land, die Sperre laeuft trotzdem.
+      const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx).state
+      expect(afterRetreat.armies[army.id]!.locationProvinceId).toBe('n1')
+      expect(afterRetreat.armies[army.id]!.cannotAttackUntil).toBeGreaterThan(afterRetreat.tick)
+
+      // Ein frischer Marsch nach s2 (p3), noch waehrend die Sperre laeuft — von Hand
+      // gesetzt (wie R1/R6/R9), damit der Grenzuebertritt genau einen Tick spaeter faellt,
+      // unabhaengig von der realen Reisezeit ueber die Karte.
+      const marching = afterRetreat.armies[army.id]!
+      marching.path = ['s2']
+      marching.departureTick = afterRetreat.tick
+      marching.arrivalTick = afterRetreat.tick + 1
+
+      const arrived = step(afterRetreat, [], ctx)
+      expect(arrived.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(arrived.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z5: ein Marsch tiefer in dieselbe Gastmacht bleibt in der Sperre geschuetzt, danach greift die Frist (kein Raeumweg)', () => {
+      imKrieg()
+      const t = state.tick
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx).state
+      expect(afterRetreat.armies[army.id]!.locationProvinceId).toBe('s2')
+
+      // s2 -> s1 bleibt bei p3 (kein Grenzuebertritt) und ist kein Raeumweg (tiefer hinein);
+      // die Reise dauert laenger als die Sperre — die Armee steht bei Fristende noch in s2.
+      const moved = step(afterRetreat, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 's1' }], ctx).state
+      expect(moved.armies[army.id]!.arrivalTick!).toBeGreaterThan(t + retreatCooldown)
+
+      let current = moved
+      while (current.tick < t + retreatCooldown) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      const after = step(current, [], ctx)
+      expect(ueberfall(after.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z6: Wächter — ein Rueckzug in Buendnisland oder Land mit Durchmarschrecht bleibt frei (wie heute)', () => {
+      state.diplomacy.relations['p1|p3']!.state = 'alliance'
+      imKrieg()
+      const t = state.tick
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      // Weit ueber die Sperre hinaus: das Buendnis schuetzt ohnehin, unabhaengig von ihr.
+      let current = afterRetreat.state
+      while (current.tick < t + retreatCooldown + 5) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+    })
+  })
 })
