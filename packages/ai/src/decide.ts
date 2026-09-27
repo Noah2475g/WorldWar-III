@@ -123,7 +123,9 @@ export function decide(options: DecideOptions): AiDecision {
     absorbed = absorbedBy(merges)
     commands.push(...merges)
     commands.push(...tradeCommands(context, explanations))
-    commands.push(...recruitCommands(context, explanations))
+    // T-M42-04 (R-AI-11/AK1): die Aushebung rechnet mit dem, was Bau, Handel, Spionage und Boerse
+    // dieses Zugs schon ausgeben - `commands` enthaelt alles davor, auch aus dem Strategietakt.
+    commands.push(...recruitCommands(context, explanations, commands))
   }
 
   // Tactics: where the armies go. How often depends on the difficulty — reaction

@@ -8,7 +8,7 @@ import {
 } from '@worldwar/core'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
-import { emptyMemory } from './decide'
+import { decide, emptyMemory } from './decide'
 import { economyCommands, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
 import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
@@ -468,5 +468,154 @@ describe('R-AI-11/AK2 Die KI hebt nur aus, was ihre Tagesbilanz traegt', () => {
     expect(begruendung, 'eine Begruendung fuer die Aushebung').toBeDefined()
     expect(begruendung!.reason).toContain('Tagesbilanz')
     expect(begruendung!.reason).toContain('7')
+  })
+})
+
+/**
+ * T-M42-04 (R-AI-11/AK1, D32.3): die Aushebung rechnet mit dem Bestand, der nach den eigenen
+ * Befehlen desselben Zugs bleibt (Befund M17-S12, Kritik M-6).
+ *
+ * `buchungsLage` ist `richContext` an Spieltag 31 mit 3 350 000 Geld: Geld bindet die Infanterie
+ * (Anteil "normal" 200 Promille: trunc(670 000 / 67 000) = 10), Nahrung und Holz (50 Mio.) nicht,
+ * und die Tagesbilanz traegt mehr als 15 (keine Armee, kein Sold). Jede Zahl unten ist aus dieser
+ * Lage gerechnet, nicht geschaetzt.
+ */
+describe('R-AI-11/AK1 Die Aushebung rechnet mit dem Bestand nach den Befehlen desselben Zugs', () => {
+  const GELD = 3_350_000
+  const buchungsLage = () => {
+    const context = richContext(30 * TEST_RULES.constants.ticksPerDay)
+    ;(context.view.self.resources as Record<string, number>).money = GELD
+    return context
+  }
+  const stueck = (commands: Command[]): number | undefined => {
+    const recruit = commands.find((command) => command.type === 'RECRUIT')
+    return recruit?.type === 'RECRUIT' ? recruit.count : undefined
+  }
+  const infanterieBeiGeld = (geld: number) =>
+    Math.min(15, Math.trunc(Math.trunc((geld * TEST_RULES.ai.difficulties.normal.recruitShare) / 1000) / 67_000))
+  const spion: Command = { type: 'RECRUIT_SPY', playerId: 'p2', provinceId: 'n1', mission: 'intel' }
+
+  it('B0: Vorbedingung - ohne Befehle desselben Zugs zehn Infanterie, Geld bindet', () => {
+    const context = buchungsLage()
+    const commands = recruitCommands(context, [])
+    const recruit = commands.find((command) => command.type === 'RECRUIT')
+    expect(recruit?.type === 'RECRUIT' ? recruit.unitKey : undefined).toBe('infantry')
+    expect(stueck(commands)).toBe(10)
+    expect(infanterieBeiGeld(GELD)).toBe(10)
+    expect(Math.trunc(dailyMoneyIncome(context.view, TEST_RULES) / 1440), 'die Tagesbilanz darf nicht binden').toBeGreaterThanOrEqual(15)
+  })
+
+  it('B1: ein RECRUIT_SPY desselben Zugs senkt die Stueckzahl (Befund M17-S12)', () => {
+    const context = buchungsLage()
+    const erwartet = infanterieBeiGeld(GELD - TEST_RULES.constants.spyRecruitCost)
+    expect(erwartet).toBe(9)
+    expect(stueck(recruitCommands(context, [], [spion]))).toBe(erwartet)
+  })
+
+  it('B2: ein BUILD desselben Zugs senkt die Stueckzahl', () => {
+    const context = buchungsLage()
+    const stadt = context.view.provinces.find((p) => p.owner === 'p2' && p.kind === 'city')!
+    const bau: Command = { type: 'BUILD', playerId: 'p2', provinceId: stadt.id, building: 'factory' }
+    const kosten = buildingCostForLevel(TEST_RULES.buildings.factory, (stadt.buildings?.factory ?? 0) + 1, TEST_RULES.constants)
+    expect(kosten.money ?? 0, 'die Fabrik kostet Geld').toBeGreaterThan(0)
+    const erwartet = infanterieBeiGeld(GELD - (kosten.money ?? 0))
+    expect(erwartet).toBeLessThan(10)
+    expect(stueck(recruitCommands(context, [], [bau]))).toBe(erwartet)
+  })
+
+  it('B3: ein TRADE, das Geld gibt, senkt die Stueckzahl (Kritik M-6)', () => {
+    const context = buchungsLage()
+    const tausch: Command = { type: 'TRADE', playerId: 'p2', give: 'money', giveAmount: 1_000_000, want: 'oil' }
+    expect(infanterieBeiGeld(GELD - 1_000_000)).toBe(7)
+    expect(stueck(recruitCommands(context, [], [tausch]))).toBe(7)
+  })
+
+  it('B4: ein TRADE, das Holz gibt, laesst die Stueckzahl (Holz bindet nicht)', () => {
+    const context = buchungsLage()
+    const tausch: Command = { type: 'TRADE', playerId: 'p2', give: 'wood', giveAmount: 1_000_000, want: 'oil' }
+    expect(stueck(recruitCommands(context, [], [tausch]))).toBe(10)
+  })
+
+  it('B5: der Erloes eines TRADE wird nicht angerechnet (D32.3, vorsichtig)', () => {
+    const context = buchungsLage()
+    const tausch: Command = { type: 'TRADE', playerId: 'p2', give: 'wood', giveAmount: 1_000_000, want: 'money' }
+    expect(stueck(recruitCommands(context, [], [tausch]))).toBe(10)
+  })
+
+  it('B6: Befehle einer anderen Macht zaehlen nicht', () => {
+    const context = buchungsLage()
+    const fremd: Command[] = [
+      { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 'n1', mission: 'intel' },
+      { type: 'TRADE', playerId: 'p1', give: 'money', giveAmount: 1_000_000, want: 'oil' },
+    ]
+    expect(stueck(recruitCommands(context, [], fremd))).toBe(10)
+  })
+
+  it('B7: ohne pending bleibt alles unveraendert (zwei Argumente = leere Liste)', () => {
+    const a = buchungsLage()
+    const b = buchungsLage()
+    const ea: Explanation[] = []
+    const eb: Explanation[] = []
+    expect(recruitCommands(a, ea)).toEqual(recruitCommands(b, eb, []))
+    expect(ea).toEqual(eb)
+  })
+
+  it('B8: ein Bestand, der unter null gebucht wird, hebt nichts aus und wirft nicht', () => {
+    const context = buchungsLage()
+    ;(context.view.self.resources as Record<string, number>).money = 50_000
+    expect(() => recruitCommands(context, [], [spion])).not.toThrow()
+    expect(recruitCommands(context, [], [spion]).some((command) => command.type === 'RECRUIT')).toBe(false)
+  })
+
+  it('B9: die Begruendung nennt den gebuchten Bestand', () => {
+    const context = buchungsLage()
+    const explanations: Explanation[] = []
+    recruitCommands(context, explanations, [spion])
+    const begruendung = explanations.find((e) => e.action.includes('infantry'))
+    expect(begruendung?.reason).toContain('dieses Zugs')
+    expect(begruendung?.reason).toContain(String(GELD - TEST_RULES.constants.spyRecruitCost))
+
+    const ohne: Explanation[] = []
+    recruitCommands(buchungsLage(), ohne)
+    expect(ohne.find((e) => e.action.includes('infantry'))?.reason).not.toContain('dieses Zugs')
+  })
+})
+
+/**
+ * T-M42-04: `decide` reicht die Befehle desselben Zugs an die Aushebung durch (D32.3). Lage:
+ * Spieltag 31, Nahrung 6 Mio. (groesster Bestand), Geld 5,5 Mio., Holz 4 Mio., Eisen 1000, sonst
+ * 1 Mio. - der Handel desselben Zugs gibt Nahrung (Angebot an die andere Macht und Boersentausch
+ * fuer das fehlende Eisen), und Nahrung bindet die Infanterie. Gemessen in der Planungssonde:
+ * 15 ohne, 13 mit den Befehlen davor.
+ */
+describe('R-AI-11/AK1 decide reicht die Befehle desselben Zugs an die Aushebung', () => {
+  it('W1: die Aushebung in decide rechnet mit dem Handel davor', () => {
+    const state = createInitialState(CONFIG, ctx)
+    state.tick = 30 * TEST_RULES.constants.ticksPerDay
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner !== 'p2') continue
+      for (const key of Object.keys(TEST_RULES.buildings)) province.buildings = { ...province.buildings, [key]: 1 }
+    }
+    const resources = state.players['p2']!.resources as Record<string, number>
+    for (const key of Object.keys(resources)) resources[key] = 1_000_000
+    resources.food = 6_000_000
+    resources.money = 5_500_000
+    resources.wood = 4_000_000
+    resources.iron = 1_000
+    const optionen = { view: publicView(state, 'p2'), memory: emptyMemory(600), rules: TEST_RULES, map, difficulty: TEST_RULES.ai.difficulties.normal }
+    const context = { ...optionen }
+
+    const { commands } = decide(optionen)
+    const index = commands.findIndex((command) => command.type === 'RECRUIT')
+    expect(index, 'decide hebt in dieser Lage aus').toBeGreaterThan(0)
+    const davor = commands.slice(0, index)
+    expect(davor.some((command) => command.type === 'TRADE'), 'Vorbedingung: ein Boersentausch davor').toBe(true)
+
+    const ohne = recruitCommands(context, [])
+    const mit = recruitCommands(context, [], davor)
+    expect(ohne.find((command) => command.type === 'RECRUIT')?.count, 'Vorbedingung: ohne Buchung 15').toBe(15)
+    expect(mit.find((command) => command.type === 'RECRUIT')?.count).toBe(13)
+    expect(commands[index]).toEqual(mit.find((command) => command.type === 'RECRUIT'))
   })
 })

@@ -222,6 +222,13 @@ export function warDeclaredThisTurn(context: AiContext, pending: readonly Comman
  * Sichtbestand, gemindert um alles, was eigene Befehle desselben Zugs ausgeben (E16 aus
  * T-M17-10, erweitert um eigene Handelsbefehle). Hier statt in `trade.ts` aus demselben
  * Grund wie `warDeclaredThisTurn` (E13).
+ *
+ * Seit T-M42-04 (R-AI-11/AK1, D32.3, Befund M17-S12, Kritik M-6) auch das Anwerben eines Spions
+ * (`spyRecruitCost` - der Kern zieht es sofort ab) und die gebende Seite eines Boersentauschs
+ * (`giveAmount`). Der Erloes des Tauschs wird nicht angerechnet: vorsichtig, den Kurs rechnet erst
+ * der Kern. Fuer die Aufrufer im Strategietakt (`tradeOfferCommands`, `provinceOfferCommands`)
+ * aendert das nichts - vor ihnen steht nie ein RECRUIT_SPY oder TRADE (Reihenfolge in `decide.ts`);
+ * gebraucht wird es von `recruitCommands` im Operativtakt.
  */
 export function ledgerAfter(context: AiContext, pending: readonly Command[]): Record<ResourceKey, number> {
   const { view, rules } = context
@@ -250,6 +257,10 @@ export function ledgerAfter(context: AiContext, pending: readonly Command[]): Re
         if (!amount) continue
         ledger[key as ResourceKey] -= amount
       }
+    } else if (command.type === 'RECRUIT_SPY' && command.playerId === me) {
+      ledger.money -= rules.constants.spyRecruitCost
+    } else if (command.type === 'TRADE' && command.playerId === me) {
+      ledger[command.give] -= command.giveAmount
     }
   }
 

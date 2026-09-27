@@ -570,14 +570,13 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
-    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
-    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
-    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
-    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
-    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
-    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
-    // vitest ihn als fehlgeschlagenes it.fails.
+  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **Seit T-M42-04 it() (Befund M42-04-b, K1: "wird eines frueher gruen, ist das ein Befund").**
+    // Bis dahin it.fails (Befund M17-T7, Entscheid Noah 2026-09-25): der erste Frieden zwischen
+    // KI-Maechten fiel je nach Aushebungs-Variante auf Tag 44, 100, 118, 122, 175 oder nie. Mit der
+    // Buchung von Spion, Bau und Boerse (R-AI-11/AK1) schliessen zwei KI-Maechte der Voreinstellung
+    // an Tag 45 Frieden (Planungssonde; Stufe R: keiner). Eine Zusage an einer einzigen Startzahl
+    // bleibt duenn - die Fassung nach Frage 7 bleibt Aufgabe von T-M42-12.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
