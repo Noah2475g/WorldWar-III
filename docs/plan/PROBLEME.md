@@ -6117,3 +6117,21 @@ Rückzug-Schutzgrund. In der Nacharbeit nachgeholt (Commit `6e666ab`): Kriegsmar
 Rückzug-Satz ergänzt, „kürzester Weg hinaus" um die vier zulässigen Ziele erweitert
 (eigenes/herrenloses Land, Verbündeter, Durchmarschrecht, Kriegsgegner). `test/docs.test.ts`
 und `test/guards` grün. **Status:** geschlossen.
+
+
+---
+
+## 2026-09-27 · Abnahme nach Etappe 1 · AK-5 fiel einmal, der Grund war unsichtbar
+
+**Befund:** Der erste `pnpm acceptance`-Lauf nach Etappe 1 (auf `a4106e3`, freie Maschine, 11 % Last)
+meldete **11 von 12**: AK-5 („Guards für Monetarisierung und Netzwerk“, `pnpm vitest run test/guards`)
+fiel nach 17 s. Der Bericht zeigte als Fehlertext nur `undefined`, weil `scripts/acceptance.mjs` für
+fehlgeschlagene Läufe `r.detail` ausgab, `run()` die Ausgabe aber unter `r.output` ablegt. Danach lief
+dieselbe Prüfung dreimal grün (einzeln, über `execSync` wie in der Abnahme, und im zweiten vollen
+Abnahmelauf in 5 s: **12 von 12, Exit 0**). Die 1-MB-Grenze von `execSync` war es nicht (Ausgabe 4 KB).
+
+**Reparatur:** Der Bericht gibt jetzt `r.detail ?? r.output` aus. Die Ursache des einen Fehlschlags ist
+**nicht geklärt**. Fällt AK-5 noch einmal, steht der Text im Bericht; beim zweiten Mal ist es nach der
+Lehre vom 2026-09-25 ein Befund, keine Last (Laufzeit gegen den Ausgangswert messen).
+
+**Status:** beobachten.
