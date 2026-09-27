@@ -5600,3 +5600,64 @@ Regelfragen; sie werden deshalb von der Orchestrierung freigegeben:
   gewolltes Spiel und kein Messfehler.
 
 **Kippbar:** Noah kann beide jederzeit anders entscheiden; die Rohzahlen stehen im Bericht.
+
+---
+
+## 2026-09-27 · Berichtigung zu Noahs Entscheid vom 2026-09-27, Punkt 1 (Räumfrist)
+
+**Befund einer adversarischen Nacharbeit, bestätigt:** der Eintrag zu Punkt 1 (weiter oben,
+2026-09-27, „Noahs Entscheide nach Etappe 1") gibt die erste Ergänzung enger wieder, als sie
+gebaut wurde und als das Dossier (`entscheidungen-etappe1.md`, Frage 1) sie festhält. Dort
+steht wörtlich: „Ein Marsch, der im Krieg losging und 1 bis 6 Ticks nach dem Frieden ankommt,
+ist kein Überfall" — **ohne Richtungsbeschränkung**. Der Code bestätigt die weite Fassung:
+`diplomacy.ts` (`warMarch`) prüft nur den Abmarsch-Tick gegen `relation.sinceTick`, nie eine
+Richtung. **Richtigstellung:** Punkt 1, erste Ergänzung, heißt „… darf seinen im Krieg
+begonnenen Marsch beenden (**in jede Richtung**, nicht nur hinaus) …" — der Code war von
+Anfang an richtig, nur die Wiedergabe hier war zu eng.
+
+---
+
+## 2026-09-27 · T-M43-02 · Die Räumfrist als Meldung — Wortlaut und Form (kippbar)
+
+**Wortlaut (kippbar durch Noah):** „Räumfrist: {{army}} steht in {{province}} ({{nation}}).
+Losmarschieren bis Tag {{day}}, {{hour}}:00 — ein Marsch auf dem kürzesten Weg hinaus gilt
+nicht als Überfall." Gegenüber D34.4 drei Änderungen: die Uhrzeit (die Frist endet mitten am
+Tag, „bis Tag n" hätte um bis zu 23 Stunden gelogen), „hinaus" statt „heimwärts" (der Kern
+schützt den kürzesten Weg aus dem fremden Land, nicht jeden Heimweg — T-M43-01 E3), „ein
+Marsch … gilt" statt „wer … gilt".
+
+**Form:**
+- **E1:** Die Meldung wird aus dem Zustand der Sicht abgeleitet (`apps/desktop/src/game/
+  clearance.ts`, Spiegel von `detectSurpriseAttacks` (a)/(b)/(c)), nicht aus einem Ereignis;
+  sie steht, solange die Frist läuft und die Armee nicht auf dem Weg hinaus ist.
+- **E3:** Die genannte Zeit ist der letzte Tick, zu dem ein Marschbefehl sicher wirkt — nach
+  Frieden und Bündnisbruch `sinceTick + 24`, bei einer empfangenen Kündigung eine Stunde vor
+  ihrem Ende, bei einem Rückzug in neutrales Land das Ende der Rückzugssperre
+  (`army.cannotAttackUntil`). Gemessen gegen den Kern (K10/K11/K13–K17).
+- **E5:** Ein Marsch tiefer hinein lässt die Meldung stehen — so sieht der Spieler, ob sein Weg zählt.
+- **E6:** Das Vorspulen hält an, wenn eine Räumfrist mit eigener Armee beginnt (nur für die
+  betroffene Armee, nicht für jede laufende Frist).
+- **E7:** laut in Warnfarbe, nicht wegklickbar, nach der Hauptstadt.
+- **E10:** Armeen, die erst auf dem Weg hinein sind, werden nicht gemeldet (Befund M43-02-a).
+
+**Vorschläge an Noah (nicht gebaut):** ein Knopf „auf dem kürzesten Weg hinaus" in der Meldung;
+Räumung durch die Haltungs-Automatik; die Uhr hält bei Beginn einer Räumfrist an (heute nur das
+Vorspulen); eine Playtest-Frage zu R-DIP-10 im Bogen der Etappe.
+
+---
+
+## 2026-09-27 · T-M43-04 · Der Wiederholungslauf — was verglichen wird (kippbar)
+
+- **Selber Prozess, siebte Partie:** der Zwilling läuft nach allen sechs Partien der Datei, mit
+  denselben Karten- und Regelobjekten. Er trifft Zustand, der eine Partie überlebt (Caches in
+  `espionage.ts`, `passage.ts`, `relationship.ts`, Modulzähler). Nicht geprüft: zwei Prozesse,
+  zwei Rechner.
+- **Zwei Folgen je Tag:** die Prüfsumme des Mehrspielers (`HASH_OMIT_KEYS`, samt
+  KI-Gedächtnis) und die Prüfsumme der Ereignisse des Tages. Der Zustandshash lässt das
+  Protokoll aus, die Ereignisse sehen das KI-Gedächtnis nicht, `zustandOhneKi` des Berichts
+  sieht es ebenfalls nicht.
+- **Nur 1914 wird gehasht:** `hashValue` wirft bei `undefined`; die anderen Startzahlen zu
+  hashen wäre ein neues Tor.
+- **Der Bericht** trägt den Abschnitt `wiederholungslauf`; eingecheckt wird er mit der jeweils
+  aktuellen Stufenmessung, zuletzt auf dem vereinten Endstand von Kette und Nebenbahn
+  (Commit `65a1645`).
