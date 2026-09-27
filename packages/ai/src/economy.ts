@@ -1,6 +1,7 @@
 import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
+import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -290,6 +291,20 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     .sort((a, b) => arten(b.province) - arten(a.province) || a.index - b.index)
     .map((entry) => entry.province)
 
+  // R-AI-11/AK2, D32.4: die Tagesbilanz nach der Aushebung bleibt nicht negativ. Einmal je
+  // Aufruf, nicht je Provinz — Ertrag, Unterhalt und Sold haengen an der Macht, nicht am Ort.
+  // Warum die Tagesbilanz und nicht eine Projektion ueber mehrere Tage: eine Projektion liess
+  // sich mit grossem Bestand (Kanada 325 k) leerrechnen, ohne dass die Aushebung je aufhoerte
+  // (Kritik K-1). Ein grosser Bestand hilft hier bewusst nicht: bei schon negativer Tagesbilanz
+  // gibt es keine Aushebung, egal wie voll die Kasse ist (Testfall E3).
+  // Bekannte Unschaerfe: Einheiten in Ausbildung sieht die KI nicht (die Sicht fuehrt keine
+  // Aushebungs-Warteschlange, `runner.ts` baut sie ohne Regeln) — zwei Aushebungen desselben
+  // Tages koennen die Bilanz um hoechstens einen Block ueberziehen (gemessen: 4 von 13
+  // negativen Aushebungstagen ohne Warteschlange, 0 Mangeltage).
+  const bilanz = dailyMoneyLedger(context.view, context.rules)
+  const ticksPerDay = context.rules.constants.ticksPerDay
+  let bilanzSperrte = false
+
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
     // das ist der Grund, warum die KI auf der Weltkarte in 200 Spieltagen **43 Fabriken
@@ -319,6 +334,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     let unitKey: string | null = null
     let unit: (typeof context.rules.units)[string] | undefined
     let affordable = 0
+    let begrenzt = false
 
     for (const kandidat of rankedUnitsFor(context, province)) {
       const regel = context.rules.units[kandidat]
@@ -335,9 +351,19 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
       }
       if (moeglich < 1) continue
 
+      // R-AI-11/AK2, D32.4: die Tagesbilanz nach der Aushebung bleibt nicht negativ.
+      const budgetMoeglich = moeglich
+      const jeEinheit = (regel.upkeep.money ?? 0) * ticksPerDay
+      moeglich = Math.min(moeglich, unitsWithinDailyBalance(bilanz.margin, jeEinheit))
+      if (moeglich < 1) {
+        bilanzSperrte = true
+        continue // naechster Kandidat; nach dem letzten die naechste Provinz (D32.4)
+      }
+
       unitKey = kandidat
       unit = regel
       affordable = moeglich
+      begrenzt = moeglich < budgetMoeglich
       break
     }
 
@@ -346,11 +372,22 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     commands.push({ type: 'RECRUIT', playerId, provinceId: province.id, unitKey, count: affordable })
     explanations.push({
       action: `Rekrutiert ${affordable}x ${unitKey} in ${province.id}`,
-      reason: 'Streitkräfte aufbauen',
+      reason: begrenzt
+        ? `Streitkräfte aufbauen; die Tagesbilanz trägt ${affordable} (Spielraum ${bilanz.margin} je Tag, ${(unit.upkeep.money ?? 0) * ticksPerDay} je Einheit)`
+        : 'Streitkräfte aufbauen',
       score: 500,
       alternative: { action: 'nichts rekrutieren', score: 200 },
     })
     break
+  }
+
+  if (commands.length === 0 && bilanzSperrte) {
+    explanations.push({
+      action: 'Aushebung unterbleibt',
+      reason: `Tagesbilanz trägt keine weitere Einheit: Ertrag ${bilanz.income}, Unterhalt ${bilanz.upkeep}, Sold ${bilanz.salary} je Tag`,
+      score: 0,
+      alternative: { action: 'aus dem Bestand ausheben', score: 0 },
+    })
   }
 
   return commands

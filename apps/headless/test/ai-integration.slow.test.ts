@@ -642,6 +642,27 @@ describe('T-M41-11 Die KI befiehlt keine Hauptstadt waehrend der Sperre', () => 
  * Tagesenden) steht seit T-M42-01 unter `m42.*.heer`; zugesichert wird sie erst in T-M42-09.
  */
 
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): kein Geldmangeltag geht auf eine eigene
+// Aushebung zurueck. Ausgangswert vor T-M42-03 (Stufe 0): Kanada 44 von 44 Geldmangeltagen durch
+// Aushebung in der Voreinstellung 200 — das ist der Rot-Nachweis dieses Blocks (die m17-Fassung
+// unten ist auf Stufe 0 schon grün, siehe dort). Die Gesamtzahl aller Geldmangeltage bleibt
+// Berichtszahl (`m42.*.jeMacht.*.geldmangelTage`), ohne eigenes Tor.
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck', () => {
+  it('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const jeMacht = Object.values(messung.m42!.jeMacht)
+      // Lebenszeichen: eine Zaehlung ueber keine Aushebung waere immer null.
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${name}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${name}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
 describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
   it('zaehlt jeden Spieltag', () => {
     expect(integration.m42!.tagesenden, 'Weltkarte 1815').toBe(DAYS)

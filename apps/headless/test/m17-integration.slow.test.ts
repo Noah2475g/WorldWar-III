@@ -534,6 +534,21 @@ describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
   })
 })
 
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): dasselbe Tor wie in
+// ai-integration.slow.test.ts, hier ueber die Weltkarte und drei Startzahlen. Auf Stufe 0 schon
+// gruen (0/0/0 Geldmangel) — der Rot-Nachweis fuer die Regel steht in ai-integration.slow.test.ts
+// (Voreinstellung, Kanada 44); diese Zusicherung ist ehrlich ohne eigenen Rot-Nachweis (§9 E12).
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeMacht = Object.values(mit(startzahl).m42!.jeMacht)
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${startzahl}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${startzahl}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
 describe('R-AI-09/AK3 Antraege machen aus Maerschen keine Ueberfaelle', () => {
   it('bleibt unter dem Ausgangswert von T-M17-02', () => {
     const lauf = mit(1815)

@@ -6,10 +6,12 @@ import {
   type Command,
   type GameConfig,
 } from '@worldwar/core'
-import { TEST_RULES, smallWorld } from '@worldwar/testkit'
+import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { economyCommands, recruitCommands, tradeCommands } from './economy'
+import { economyCommands, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
+import { dailyMoneyIncome } from './finance'
+import type { Explanation } from './types'
 
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
@@ -316,5 +318,155 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     stufe(context, 'fortress', 2)
 
     expect(bauten(context).map((command) => `${command.building} in ${command.provinceId}`)).toEqual([])
+  })
+})
+
+/**
+ * T-M42-03 (R-AI-11/AK2, D32.4): die Aushebung prueft die Tagesbilanz.
+ *
+ * `bilanzLage` baut Spieltag 31 (Tick 30*24) auf der Testwelt: alle eigenen Provinzen mit jedem
+ * Gebaeude auf Stufe 1 (bei `fabrik: false` danach `factory: 0` — Panzer und Artillerie fallen
+ * dann aus `rankedUnitsFor` heraus, Infanterie bleibt der einzige Kandidat, Artillerie ist an
+ * Tag 31 ohnehin erst ab Tag 34 verfuegbar), 50 Mio. je Rohstoff (die Bilanz soll die Grenze
+ * setzen, nicht die Kaufkraft), optional eine Infanterie-Armee und ein eigener Gegenspion in
+ * `o1`. Der Ertrag wird gemessen, nicht hart geschrieben (§3.3 des Bauplans).
+ */
+describe('R-AI-11/AK2 Die KI hebt nur aus, was ihre Tagesbilanz traegt', () => {
+  function bilanzLage(o: { infanterie: number; fabrik: boolean; spion?: boolean }) {
+    const state = createInitialState(CONFIG, ctx)
+    state.tick = 30 * TEST_RULES.constants.ticksPerDay
+    const eigene = state.provinceOrder.filter((id) => state.provinces[id]!.owner === 'p2')
+    for (const id of eigene) {
+      const province = state.provinces[id]!
+      for (const key of Object.keys(TEST_RULES.buildings)) {
+        province.buildings = { ...province.buildings, [key]: 1 }
+      }
+      if (!o.fabrik) province.buildings = { ...province.buildings, factory: 0 }
+    }
+    const resources = state.players['p2']!.resources as Record<string, number>
+    for (const key of Object.keys(resources)) resources[key] = 50_000_000
+    if (o.infanterie > 0) {
+      placeArmy(state, { owner: 'p2', at: eigene[0]!, units: [{ unitKey: 'infantry', hpTotal: o.infanterie * 1000 }] })
+    }
+    if (o.spion) {
+      state.espionage.spies.push({
+        id: 's901',
+        owner: 'p2',
+        provinceId: 'o1',
+        mission: 'counter',
+        recruitedTick: 0,
+        assignedTick: 0,
+        lastRunTick: null,
+        lastOutcome: null,
+      })
+    }
+    return {
+      view: publicView(state, 'p2'),
+      memory: emptyMemory(600),
+      rules: TEST_RULES,
+      map,
+      difficulty: TEST_RULES.ai.difficulties.normal,
+    }
+  }
+
+  const I = dailyMoneyIncome(bilanzLage({ infanterie: 0, fabrik: false }).view, TEST_RULES)
+  const k = Math.floor(I / 1440)
+
+  it('Vorbedingung: der Ertrag der Lage liegt im erwarteten Bereich (Sonde: 59645, k=41)', () => {
+    expect(I).toBeGreaterThan(0)
+    expect(k).toBeGreaterThan(0)
+  })
+
+  it('E1: die Tagesbilanz traegt keine weitere Einheit — kein RECRUIT, begruendet', () => {
+    const context = bilanzLage({ infanterie: k, fabrik: false })
+    const spielraum = I - k * 1440
+    expect(spielraum, 'Spielraum im erwarteten Bereich [0, 1440)').toBeGreaterThanOrEqual(0)
+    expect(spielraum).toBeLessThan(1440)
+
+    const explanations: Explanation[] = []
+    const commands = recruitCommands(context, explanations)
+
+    expect(commands.some((c) => c.type === 'RECRUIT')).toBe(false)
+    const unterbleibt = explanations.filter((e) => e.action === 'Aushebung unterbleibt')
+    expect(unterbleibt).toHaveLength(1)
+    expect(unterbleibt[0]!.reason).toContain('Tagesbilanz')
+  })
+
+  it('E2: die Tagesbilanz traegt genau sieben', () => {
+    const context = bilanzLage({ infanterie: k - 7, fabrik: false })
+    const spielraum = I - (k - 7) * 1440
+    expect(spielraum, 'Spielraum im erwarteten Bereich [7*1440, 8*1440)').toBeGreaterThanOrEqual(7 * 1440)
+    expect(spielraum).toBeLessThan(8 * 1440)
+
+    const commands = recruitCommands(context, [])
+    const recruit = commands.find((c) => c.type === 'RECRUIT')
+    expect(recruit?.unitKey).toBe('infantry')
+    expect(recruit?.count).toBe(7)
+  })
+
+  it('E3: grosser Bestand bei schon negativer Tagesbilanz — trotzdem kein RECRUIT', () => {
+    const context = bilanzLage({ infanterie: k + 10, fabrik: false })
+    const spielraum = I - (k + 10) * 1440
+    expect(spielraum, 'die Bilanz ist bereits negativ').toBeLessThan(0)
+    expect(context.view.self.resources.money).toBeGreaterThan(spielraum * -1)
+
+    const explanations: Explanation[] = []
+    const commands = recruitCommands(context, explanations)
+
+    expect(commands.some((c) => c.type === 'RECRUIT')).toBe(false)
+    expect(explanations.some((e) => e.reason.includes('Tagesbilanz trägt keine weitere Einheit'))).toBe(true)
+  })
+
+  it('E4: der Sold zaehlt mit — ohne Spion noch eine Einheit, mit Spion keine', () => {
+    const ohne = bilanzLage({ infanterie: k - 1, fabrik: false })
+    const spielraumOhne = I - (k - 1) * 1440
+    expect(spielraumOhne, 'ohne Spion traegt genau eine weitere Einheit [1440, 2880)').toBeGreaterThanOrEqual(1_440)
+    expect(spielraumOhne).toBeLessThan(2_880)
+    const commandsOhne = recruitCommands(ohne, [])
+    expect(commandsOhne.find((c) => c.type === 'RECRUIT')?.count).toBe(1)
+
+    const mit = bilanzLage({ infanterie: k - 1, fabrik: false, spion: true })
+    const spielraumMit = spielraumOhne - 5_076
+    expect(spielraumMit, 'mit dem Sold des Gegenspions wird die Bilanz negativ').toBeLessThan(0)
+    const commandsMit = recruitCommands(mit, [])
+    expect(commandsMit.some((c) => c.type === 'RECRUIT')).toBe(false)
+  })
+
+  it('E5: die Rangfolge faellt auf die tragbare Einheit (Panzer zuerst, aber Infanterie bezahlbar)', () => {
+    const context = bilanzLage({ infanterie: k - 1, fabrik: true })
+    const spielraum = I - (k - 1) * 1440
+    expect(spielraum, 'zwischen einer Infanterie und einem Panzer je Tag').toBeGreaterThanOrEqual(1_440)
+    expect(spielraum).toBeLessThan(2_232)
+
+    const eigeneProvinz = context.view.provinces.find((p) => p.owner === 'p2')!
+    expect(rankedUnitsFor(context, eigeneProvinz)[0], 'ohne Bilanzpruefung waere der Panzer vorn').toBe('tank')
+
+    const commands = recruitCommands(context, [])
+    const recruit = commands.find((c) => c.type === 'RECRUIT')
+    expect(recruit?.unitKey).toBe('infantry')
+    expect(recruit?.count).toBe(1)
+  })
+
+  it('E6: reichlich Bilanz aendert nichts (Haltetest)', () => {
+    const context = bilanzLage({ infanterie: 0, fabrik: false })
+
+    const explanations: Explanation[] = []
+    const commands = recruitCommands(context, explanations)
+    const recruit = commands.find((c) => c.type === 'RECRUIT')
+
+    expect(recruit?.unitKey).toBe('infantry')
+    expect(recruit?.count).toBe(15)
+    expect(explanations.some((e) => e.reason.includes('Tagesbilanz'))).toBe(false)
+  })
+
+  it('E7: die Begrenzung ist begruendet', () => {
+    const context = bilanzLage({ infanterie: k - 7, fabrik: false })
+    const explanations: Explanation[] = []
+    recruitCommands(context, explanations)
+
+    const begruendung = explanations.find((e) => e.action.includes('infantry'))
+    expect(begruendung, 'eine Begruendung fuer die Aushebung').toBeDefined()
+    expect(begruendung!.reason).toContain('Tagesbilanz')
+    expect(begruendung!.reason).toContain('7')
   })
 })
