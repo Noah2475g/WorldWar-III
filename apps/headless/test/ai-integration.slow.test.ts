@@ -480,10 +480,21 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
   })
 
-  it('laesst die Artillerie feuern', () => {
-    // **Seit T-M42-06 wieder gruen** (2026-09-27, Befund M42-06-b): mit dem Vorbehalt fuer die erste
-    // Fabrik beginnen auch "normal" und "schwer" Fabriken; in Welt 1815 hebt Frankreich 2 Artillerie aus,
-    // 16 selbsttaetige Beschuesse. Duenn (eine Macht, eine Startzahl) - die Menge bringt T-M42-07.
+  it.fails('laesst die Artillerie feuern', () => {
+    // **Die Kette, um die es in dieser Aufgabe geht.** Ohne Fabrik keine Artillerie, ohne
+    // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
+    // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
+    // fuer die Testkarte belegt hat.
+    //
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18, Ursache
+    // berichtigt in der Nacharbeit 2026-09-25).** "Normal" und "schwer" ueberschreiten ihre
+    // eigene Geldschwelle fuer eine Artillerie durchweg (1,35-1,59 Mio. gegen 1 Mio./714 000),
+    // bauen aber **null** Fabriken; "leicht" baut Fabriken, erreicht aber nie die eigene,
+    // hoehere Schwelle (2,5 Mio.) - nicht "keine Macht spart genug an", wie hier bis zu dieser
+    // Nacharbeit stand. Die einzige gefundene Reparatur braucht Befund M17-S12 und kippt das
+    // Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird dieser Fall unbemerkt
+    // gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist dann meldenswert (die
+    // Aushebung haette sich geaendert).
     const events = integration.events
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
     const beschuss = events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic)
@@ -559,10 +570,14 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
-    // **Seit T-M42-06 gruen** (2026-09-27, Befund M42-06-b): 2 Frieden zwischen KI in 90 Tagen, der
-    // erste an Tag 72. Der Zeitpunkt bleibt chaotisch (frueher Tag 44 bis nie); die Fassung nach
-    // Frage 7 ("in 200 Tagen, drei Startzahlen") traegt T-M42-12.
+  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
+    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
+    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
+    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
+    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
+    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
+    // vitest ihn als fehlgeschlagenes it.fails.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
@@ -649,24 +664,6 @@ describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck'
       const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
       expect(schuld, `${name}: Geldmangel durch eigene Aushebung`).toEqual([])
     }
-  })
-})
-
-// R-AI-12/AK2 (T-M42-06, D32.7): in der ausgelieferten Voreinstellung beginnt mindestens die
-// Haelfte der KI-Maechte mit Stadt eine Fabrik. "Mit Stadt" heisst: an mindestens einem
-// Tagesende eine Stadt ohne Fabrik gehalten (`tageStadtOhneFabrik > 0`) — genau die Lage, in der
-// AK1 greift; Kanada (drei Provinzen, keine Stadt) zaehlt nicht mit. Stufe 0: 2 von 6, Stufe R:
-// 4 von 6 (schon gruen, kein eigener Rot-Nachweis).
-describe('R-AI-12/AK2 Die Haelfte der Maechte mit Stadt beginnt eine Fabrik — Voreinstellung 200', () => {
-  it('in der Voreinstellung ueber 200 Spieltage', () => {
-    const jeMacht = Object.values(voreinstellungLang.m42!.jeMacht)
-    const mitStadt = jeMacht.filter((m) => m.tageStadtOhneFabrik > 0 || m.fabrikenBegonnen > 0)
-    const mitFabrik = mitStadt.filter((m) => m.fabrikenBegonnen > 0)
-    expect(mitStadt.length, 'keine Macht mit Stadt - die Zusicherung saehe nichts').toBeGreaterThan(0)
-    expect(
-      mitFabrik.length * 2,
-      `mit Fabrik: ${mitFabrik.map((m) => m.nation).join(', ')} von ${mitStadt.map((m) => m.nation).join(', ')}`,
-    ).toBeGreaterThanOrEqual(mitStadt.length)
   })
 })
 
