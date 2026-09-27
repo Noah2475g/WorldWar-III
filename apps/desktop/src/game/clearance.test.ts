@@ -144,6 +144,25 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
     ])
   })
 
+  /**
+   * G9 (Gegenprobe des Bauplans, Testluecke geschlossen): der Kern verlangt fuer den
+   * Raeumweg **kein** `strictExit` (D34.3) — das erste Feld hinter der Gastmacht muss nicht
+   * selbst frei betretbar sein. K7 allein hatte das nie geprueft, weil dort jeder Ausgang
+   * in eigenes oder herrenloses Land fuehrt (`mayStand` waere dort auch mit `strictExit`
+   * wahr). Hier fuehrt der kuerzeste Weg aus `o2` direkt in `s2`, das Land einer DRITTEN
+   * Macht ohne jedes Recht fuer p1 — mit `strictExit: true` waere das kein Raeumweg mehr.
+   */
+  it('K7b Raeumweg ueber eine dritte Macht ohne Recht (o2 -> s2): zaehlt trotzdem (kein strictExit)', () => {
+    const nach1 = neu()
+    nach1.diplomacy.relations['p1|p2']!.state = 'war'
+    nach1.diplomacy.offers = [{ from: 'p2', to: 'p1', kind: 'peace', tick: nach1.tick }] as never
+    const army = placeArmy(nach1, { owner: 'p1', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const acc = step(nach1, [diplo('p1', 'p2', 'acceptPeace')], ctx)
+    const zuS2 = step(acc.state, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 's2' } as Command], ctx)
+    expect(zuS2.state.armies[army.id]!.path).toEqual(['s2'])
+    expect(meldungen(zuS2.state)).toEqual([])
+  })
+
   it('K8 Frist vorbei: Beziehung ist dann Krieg (Ueberfall), keine Meldung mehr', () => {
     const { state: after, since } = friedenMitArmee('o3')
     let cur = after
