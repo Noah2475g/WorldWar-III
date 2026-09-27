@@ -5579,3 +5579,24 @@ beantwortet:
 Dazu, ohne Frage, weil aus Noahs Antwort F8 vom 2026-09-26 folgend: die Nacharbeit hatte die
 Geldzuordnung nach Provinzverlust (E5) zurückgenommen und drei Fälle zu R-AI-11/AK3 auf `it.fails`
 gestellt — das war falsch; F8 nennt Pleite nach Provinzverlust ausdrücklich „ohne eigene Schuld“.
+
+---
+
+## 2026-09-27 · Orchestrierung · Freigabe E-H1 und E-H2 für den Haltungs-Messlauf (folgt aus Noahs AK5-Entscheid)
+
+**Entscheidung (Orchestrierung, nicht Noah — offen gekennzeichnet):** Der Bauplan `plan-e1-abschluss.md`
+hielt den Haltungs-Messlauf vor zwei Messdetails an. Beide sind Folgen von Noahs Entscheid vom
+2026-09-27 (AK5 = Schadenszählung, mindestens ein Einmarsch je Lauf) und keine neuen Spiel- oder
+Regelfragen; sie werden deshalb von der Orchestrierung freigegeben:
+
+- **E-H1 — die Kontrolle wird auf den Stand nach M42/M43 geeicht.** Die Kontrolle (Garnison A,
+  Startzahl 1914) belegt, dass die Messung Angriffe sieht; sie nutzt die Automatik gar nicht. Ihr
+  Wert hängt an der KI der Nachbarn, und die hat sich gewollt geändert (Tagesbilanz, Räumfrist,
+  Fabrik): Sonde 26 Einmärsche / 4 verlorene Provinzen statt 41/4. Der neue Wert wird **auf dem
+  Endstand gemessen und eingetragen**; Bedingung bleibt, dass er Einmärsche **und** Verluste größer
+  null zeigt — sonst ist die Messung blind, und das wäre ein Befund, keine Eichung.
+- **E-H2 — „der Kriegsplan hat gegriffen" zählt nur die Erklärungen der beiden Plan-Nachbarn im
+  Kriegsplan-Tick.** Eine dritte Kriegserklärung, die eine andere KI aus eigenem Antrieb abgibt, ist
+  gewolltes Spiel und kein Messfehler.
+
+**Kippbar:** Noah kann beide jederzeit anders entscheiden; die Rohzahlen stehen im Bericht.
