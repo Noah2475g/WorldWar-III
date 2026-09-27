@@ -2,12 +2,13 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { advanceTicks } from '@worldwar/ai'
+import { advanceTicks, relationship } from '@worldwar/ai'
 import {
   createInitialState,
   edgeBetween,
   edgeTravelTicks,
   parseRules,
+  publicView,
   type Army,
   type Command,
   type GameEvent,
@@ -17,6 +18,7 @@ import {
   type Rules,
   type Stance,
 } from '@worldwar/core'
+import { quotFixed } from '@worldwar/shared'
 import { placeArmy } from '@worldwar/testkit'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
 
@@ -34,10 +36,10 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * im Bericht; zugesichert wird sie nicht mehr.
  *
  * **Was jetzt gemessen wird.** Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber
- * `advanceTicks`, der Mensch spielt Deutschland mit KI-Nachbarn und gibt keinen Befehl. Drei
- * Startzahlen (1914, 2015, 1815) mal zwei Aufstellungen — **A**: eine Armee aus fuenf
+ * `advanceTicks`, der Mensch spielt Deutschland mit KI-Nachbarn und gibt keinen Befehl. Die
+ * Startzahlen aus `SEEDS` mal zwei Aufstellungen — **A**: eine Armee aus fuenf
  * Infanterie je Provinz, **B**: zwei — mal zwei Haltungen: `garrison` (kaempft wie die
- * Verteidigung, handelt nie von selbst) und `defensive` (mit Adjutant). Zwoelf Laeufe.
+ * Verteidigung, handelt nie von selbst) und `defensive` (mit Adjutant). `LAEUFE` Laeufe.
  *
  *  - **Provinz-Tage:** zu Beginn jedes Spieltags die Zahl der Provinzen des Menschen, summiert
  *    (dieselbe Zaehlweise wie im Entwurf, auf der die Schwelle steht). Ein Nenner, der nicht mit
@@ -54,8 +56,8 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * Gezaehlt wird aus dem **Ereignisstrom**, Tick fuer Tick, nie aus `state.eventLog`.
  *
- * **Die Zusicherungen (AK5), festgelegt vor der Messung der gebauten Regel:** ueber alle sechs
- * Paare erreichen die Provinz-Tage mit Verteidigung mindestens 98 Prozent der Garnison; je Paar
+ * **Die Zusicherungen (AK5), festgelegt vor der Messung der gebauten Regel:** ueber alle Paare
+ * erreichen die Provinz-Tage mit Verteidigung mindestens 98 Prozent der Garnison; je Paar
  * gehen mit Verteidigung nicht mehr Provinzen ohne Gefecht verloren als mit Garnison; kein
  * Befehl wird abgelehnt, keiner loest einen Krieg ohne Erklaerung aus; und die Garnison A 1914
  * trifft die Kontrolle (bis Block N2 der Lauf vorher aus T-M40-02, siehe `KONTROLLE`). Die Schwelle
@@ -104,6 +106,8 @@ const UNITS_PER_ARMY = 5
 const SETUPS = { A: 1, B: 2 } as const
 type Aufbau = keyof typeof SETUPS
 const STANCES = ['garrison', 'defensive'] as const
+/** Die Laeufe des Messlaufs: Startzahlen mal Aufstellungen mal Haltungen (T-M42-02; vorher fest "zwoelf"). */
+const LAEUFE = SEEDS.length * Object.keys(SETUPS).length * STANCES.length
 /** Das Fenster, das D30.6 nannte — mitgezaehlt, nicht zugesichert. */
 const PLAN_WINDOW_TICKS = 24
 /** Das Kartenfenster aus T-M40-02; aendert es sich, hat sich die Karte geaendert. */
@@ -112,6 +116,17 @@ const WINDOW_TICKS_T_M40_02 = 114
 const PENDULUM_DAYS = 5
 /** AK5: Provinz-Tage mit Verteidigung mindestens so viele Prozent der Garnison (D30.9). */
 const PROVINCE_DAYS_PERCENT = 98
+/**
+ * Ein Einzelverlust: eine deutsche Provinz, die um Tag 30 faellt, kostet 165 bis 175 Provinz-Tage
+ * (M18-Plan v2 §2 Nr. 8, gemessen auf 7a6aa47). T-M42-02 rechnet mit 170.
+ */
+const EINZELVERLUST_PROVINZ_TAGE = 170
+/**
+ * T-M42-02 (Noahs Antwort auf Frage 5, 2026-09-26): der Aufbau gilt als robust gegen Rauschen, wenn
+ * die Verteidigung mindestens zwei Einzelverluste ueber der 98-%-Schwelle liegt. Berichtszahl und
+ * Uebernahmekriterium des Aufbaus, **kein Teil von AK5** - die Grenze bleibt 98 %.
+ */
+const ABSTAND_ZIEL_PROVINZ_TAGE = 2 * EINZELVERLUST_PROVINZ_TAGE
 /**
  * Die Kontrolle: die Garnison A 1914 auf dem heutigen KI-Stand, MIT Kriegsplan (siehe `KRIEGSPLAN`).
  * Eine Garnison handelt nie von selbst; ihr Lauf aendert sich nur, wenn sich Gegner, Karte, Regeln oder
@@ -598,8 +613,8 @@ describe('Einheitsfall T-M40-17: der Bericht nennt den Stand, auf dem gemessen w
 })
 
 describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (Befund N-2)', () => {
-  /** Zwoelf erfundene Laeufe, die AK5 halten und die Kontrolle treffen; `anpassen` veraendert einzelne. */
-  const zwoelf = (anpassen: (lauf: Lauf) => Lauf = (lauf) => lauf): Lauf[] =>
+  /** Alle Laeufe (LAEUFE), erfunden, die AK5 halten und die Kontrolle treffen; `anpassen` veraendert einzelne. */
+  const alleLaeufe = (anpassen: (lauf: Lauf) => Lauf = (lauf) => lauf): Lauf[] =>
     SEEDS.flatMap((seed) =>
       (Object.keys(SETUPS) as Aufbau[]).flatMap((setup) =>
         STANCES.map((stance) =>
@@ -632,7 +647,7 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
     )
 
   it('ist erfuellt, wenn AK5 haelt, die Garnison A 1914 die Kontrolle trifft und das Kartenfenster steht', () => {
-    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02)
+    const ergebnis = ak5(alleLaeufe(), WINDOW_TICKS_T_M40_02)
     expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: KONTROLLE, ok: true })
     expect(ergebnis.fensterOk).toBe(true)
     expect(ergebnis.verletzt).toEqual([])
@@ -642,13 +657,13 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
   it('ist nicht erfuellt, wenn die Kontrolle faellt - so in Schritt 0 der zweiten Nacharbeit geschehen', () => {
     // Nur die Garnison A 1914 ist die Kontrolle: eine abweichende Verteidigung derselben Startzahl aendert nichts.
     const verteidigungAnders = ak5(
-      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, intrusions: 99 } : lauf)),
+      alleLaeufe((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, intrusions: 99 } : lauf)),
       WINDOW_TICKS_T_M40_02,
     )
     expect(verteidigungAnders.erfuellt).toBe(true)
 
     const ergebnis = ak5(
-      zwoelf((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'garrison' ? { ...lauf, intrusions: 52 } : lauf)),
+      alleLaeufe((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'garrison' ? { ...lauf, intrusions: 52 } : lauf)),
       WINDOW_TICKS_T_M40_02,
     )
     expect(ergebnis.kontrolle).toEqual({ erwartet: KONTROLLE, gemessen: { intrusions: 52, provincesLost: KONTROLLE.provincesLost }, ok: false })
@@ -657,14 +672,14 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
   })
 
   it('ist nicht erfuellt, wenn sich das Kartenfenster verschoben hat', () => {
-    const ergebnis = ak5(zwoelf(), WINDOW_TICKS_T_M40_02 - 1)
+    const ergebnis = ak5(alleLaeufe(), WINDOW_TICKS_T_M40_02 - 1)
     expect(ergebnis.fensterOk).toBe(false)
     expect(ergebnis.erfuellt).toBe(false)
     expect(ergebnis.verletzt.join(' ')).toContain('Kartenfenster')
   })
 
   it('ist nicht erfuellt und angegriffen.ok ist false, wenn ein Lauf blind war (Befund M17-F1)', () => {
-    const ergebnis = ak5(zwoelf((lauf) => ({ ...lauf, intrusions: 0, provinceDays: 800 })), WINDOW_TICKS_T_M40_02)
+    const ergebnis = ak5(alleLaeufe((lauf) => ({ ...lauf, intrusions: 0, provinceDays: 800 })), WINDOW_TICKS_T_M40_02)
     expect(ergebnis.erfuellt).toBe(false)
     expect(ergebnis.angegriffen).toEqual({ minIntrusions: 0, kriegsplanOk: true, ok: false })
     expect(ergebnis.verletzt.join(' ')).toContain('blind')
@@ -672,7 +687,7 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
 
   it('ist nicht erfuellt, wenn der Kriegsplan bei einem einzigen Lauf nicht gegriffen hat', () => {
     const ergebnis = ak5(
-      zwoelf((lauf) => (lauf.seed === 2015 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, declaredAgainstHuman: 1 } : lauf)),
+      alleLaeufe((lauf) => (lauf.seed === 2015 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, declaredAgainstHuman: 1 } : lauf)),
       WINDOW_TICKS_T_M40_02,
     )
     expect(ergebnis.erfuellt).toBe(false)
@@ -698,6 +713,121 @@ describe('Einheitsfall M17-F1: der Kriegsplan erklaert am Spieltag 20, sonst nic
     }
     const nationen = befehle.map((befehl) => state.players[(befehl as { playerId: PlayerId }).playerId]!.nation).sort()
     expect(nationen).toEqual(['Frankreich', 'Polen'])
+  })
+})
+
+describe('Einheitsfall T-M42-02: sechs Startzahlen und der Abstand zur Schwelle', () => {
+  it('fährt sechs Startzahlen, die bisherigen drei zuerst, also 24 Laeufe', () => {
+    expect(SEEDS.slice(0, 3)).toEqual([1914, 2015, 1815])
+    expect(SEEDS).toHaveLength(6)
+    expect(new Set(SEEDS).size).toBe(6)
+    expect(LAEUFE).toBe(24)
+  })
+
+  /**
+   * Zwoelf erfundene Paare (24 Laeufe) fuer die Abstand-Formel - ueber einen festen Satz von sechs
+   * Startzahlen, unabhaengig davon, wie viele Startzahlen die lebende Konstante `SEEDS` in Commit C1
+   * oder C2 gerade hat (T-M42-02, `ak5`s dritter Parameter).
+   */
+  const ABSTAND_SEEDS = [1914, 2015, 1815, 1939, 1871, 1806] as const
+  const zwoelfPaare = (anpassen: (lauf: Lauf) => Lauf = (lauf) => lauf): Lauf[] =>
+    ABSTAND_SEEDS.flatMap((seed) =>
+      (Object.keys(SETUPS) as Aufbau[]).flatMap((setup) =>
+        STANCES.map((stance) =>
+          anpassen({
+            seed,
+            setup,
+            stance,
+            intrusions: KONTROLLE.intrusions,
+            answeredWithin24Ticks: 0,
+            answeredWithinWindow: 0,
+            departedWithin24Ticks: 0,
+            provincesLost: KONTROLLE.provincesLost,
+            rejectedCommands: 0,
+            episodes: 0,
+            coverOrdered: 0,
+            coverArrivedInTime: 0,
+            held: 0,
+            provinceDays: 800,
+            lostWithoutBattle: 0,
+            adjutantOrders: 0,
+            pendulums: 0,
+            undeclaredWarsByHuman: 0,
+            declaredAgainstHuman: KRIEGSPLAN_NACHBARN,
+            provincesAtEnd: 4,
+            armiesAtEnd: 4,
+            daysRun: DAYS,
+          }),
+        ),
+      ),
+    )
+
+  it('meldet den Abstand zur 98-%-Schwelle in Provinz-Tagen und Einzelverlusten', () => {
+    const ergebnis = ak5(zwoelfPaare(), WINDOW_TICKS_T_M40_02, ABSTAND_SEEDS)
+    expect(ergebnis.abstand).toEqual({ provinzTage: 192, einzelverluste: 1.1, ziel: 340, robust: false })
+  })
+
+  it('ein Abstand unter dem Ziel ist kein Tor - erfuellt bleibt wahr', () => {
+    const knapp = ak5(zwoelfPaare(), WINDOW_TICKS_T_M40_02, ABSTAND_SEEDS)
+    expect(knapp.erfuellt).toBe(true)
+    expect(knapp.verletzt).toEqual([])
+    expect(knapp.abstand.robust).toBe(false)
+
+    const robust = ak5(
+      zwoelfPaare((lauf) => (lauf.seed === 1914 && lauf.setup === 'B' && lauf.stance === 'defensive' ? { ...lauf, provinceDays: 1000 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
+    expect(robust.abstand.provinzTage).toBe(392)
+    expect(robust.abstand.robust).toBe(true)
+  })
+
+  it('unter 98 % ist der Abstand negativ und AK5 verletzt', () => {
+    const ergebnis = ak5(
+      zwoelfPaare((lauf) => (lauf.stance === 'defensive' ? { ...lauf, provinceDays: 780 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
+    expect(ergebnis.abstand).toEqual({ provinzTage: -48, einzelverluste: -0.3, ziel: 340, robust: false })
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('unter 98 %')
+  })
+
+  it('kriegsschwellenAbstand gleicht der Begruendung der KI (Zwilling von diplomacy.ts §4)', async () => {
+    const { state, human } = aufstellen(1914, 'A', 'garrison')
+    const nachbarn = landnachbarn(state, human)
+    const ticksPerDay = rules.constants.ticksPerDay
+    const vergleiche = new Map(nachbarn.map((id): [PlayerId, number] => [id, 0]))
+    let staerkeUeber1000 = false
+    let current = state
+    for (let tick = 0; tick < 10 * ticksPerDay; tick++) {
+      if (current.victory.winner !== null) break
+      const schritt = advanceTicks(current, 1, { map, rules }, { explain: true })
+      for (const id of nachbarn) {
+        const begruendung = begruendeterFrieden(schritt.explanations[id], human)
+        if (!begruendung) continue
+        const zwilling = kriegsschwellenAbstand(current, id, human)
+        expect({ wert: zwilling.wert, schwelle: zwilling.schwelle, ratio: zwilling.ratio }, `${id} Tick ${tick}`).toEqual(begruendung)
+        vergleiche.set(id, vergleiche.get(id)! + 1)
+        if (zwilling.ratio > 1000) staerkeUeber1000 = true
+      }
+      current = schritt.state
+      if ((tick + 1) % ticksPerDay === 0) await breathe()
+    }
+    for (const id of nachbarn) {
+      expect(vergleiche.get(id), `${id}: keine Begruendung verglichen`).toBeGreaterThan(0)
+    }
+    expect(staerkeUeber1000, 'kein Vergleich mit Staerkeverhaeltnis > 1000 - die Verlockung ist ungeprueft').toBe(true)
+  }, 30_000)
+
+  it('die Proben liegen alle fuenf Spieltage - 40 je Startzahl', () => {
+    const ticksPerDay = rules.constants.ticksPerDay
+    const ticks = probenTicks(ticksPerDay)
+    expect(ticks).toHaveLength(40)
+    expect(ticks[0]).toBe(0)
+    expect(ticks[ticks.length - 1]).toBe(195 * ticksPerDay)
+    const abstaende = new Set(ticks.slice(1).map((tick, index) => tick - ticks[index]!))
+    expect(abstaende).toEqual(new Set([5 * ticksPerDay]))
   })
 })
 
@@ -744,6 +874,41 @@ function kriegserklaerungen(start: GameState, human: PlayerId): (tick: number) =
   const zielTick = KRIEGSPLAN.tag * rules.constants.ticksPerDay
   return (tick: number) =>
     tick === zielTick ? nachbarn.map((playerId): Command => ({ type: 'DIPLOMACY', playerId, targetPlayerId: human, action: 'declareWar' })) : []
+}
+
+/** WORLDWAR_STANCE_PROBEN=1 faehrt die Probe zum M17-F1-Vermerk (T-M42-02); sonst bleibt sie aus. */
+const PROBEN = process.env['WORLDWAR_STANCE_PROBEN'] === '1'
+/** Eine Probe alle fuenf Spieltage: 200 / 5 = 40 je Startzahl, wie im M17-F1-Vermerk. */
+const PROBEN_ABSTAND_TAGE = 5
+
+/** Die Probenticks: Tag 0, 5, ..., 195, jeweils zu Beginn des Spieltags. */
+function probenTicks(ticksPerDay: number): number[] {
+  return Array.from({ length: DAYS / PROBEN_ABSTAND_TAGE }, (_, index) => index * PROBEN_ABSTAND_TAGE * ticksPerDay)
+}
+
+/**
+ * Wie weit die KI-Macht `ai` in diesem Zustand von einer Kriegserklaerung an `human` entfernt ist -
+ * ein **Zwilling** von `diplomacyCommands` §4 (`packages/ai/src/diplomacy.ts`): Verhaeltnis minus
+ * (warThreshold der Stufe plus Verlockung aus dem Staerkeverhaeltnis). Positiv heisst Frieden.
+ * Ein Export aus packages/ai waere ein Commit an einer Quelle von Turnier und Messlauf; deshalb
+ * hier, und gleichgehalten gegen die Begruendung der KI (Einheitsfall T-M42-02).
+ */
+function kriegsschwellenAbstand(state: GameState, ai: PlayerId, human: PlayerId) {
+  const view = publicView(state, ai)
+  const wert = relationship(view, human, view.self.grievances, rules).value
+  const own = Math.max(1, view.self.score)
+  const theirs = Math.max(1, view.others.find((entry) => entry.id === human)?.score ?? 1)
+  const ratio = quotFixed(own, theirs)
+  const verlockung = Math.max(0, Math.min(450, Math.trunc((ratio - 1000) / 4)))
+  const schwelle = rules.ai.difficulties[state.players[ai]!.difficulty ?? 'normal']!.warThreshold + verlockung
+  return { wert, schwelle, ratio, abstand: wert - schwelle, frieden: view.relations[human]?.state === 'peace' }
+}
+
+/** Die Begruendung der KI fuer den gehaltenen Frieden, zerlegt - `null`, wenn es keine gibt. */
+function begruendeterFrieden(explanations: readonly { action: string; reason: string }[] | undefined, human: PlayerId) {
+  const eintrag = explanations?.find((entry) => entry.action === `Frieden mit ${human} gehalten`)
+  const teile = eintrag && /Verhältnis (-?\d+) .* über der Schwelle (-?\d+), Stärkeverhältnis (-?\d+)/.exec(eintrag.reason)
+  return teile ? { wert: Number(teile[1]), schwelle: Number(teile[2]), ratio: Number(teile[3]) } : null
 }
 
 /** Das Kartenfenster: ein Tick Verzug plus die laengste Marschzeit ueber eine eigene Binnengrenze. */
@@ -846,9 +1011,13 @@ const finde = (laeufe: readonly Lauf[], seed: number, setup: Aufbau, stance: Sta
  * Seit T-M40-18 (Befund N-2) gehoeren die Kontrolle und das Kartenfenster dazu: `counting.ak5` zaehlte die
  * Kontrolle schon immer zu AK5, `erfuellt` aber nicht, und in Schritt 0 der zweiten Nacharbeit trug ein
  * Bericht mit gefallener Kontrolle `erfuellt: true`.
+ *
+ * `seeds` ist seit T-M42-02 ein optionaler dritter Parameter (Standard: die lebende Konstante `SEEDS`):
+ * die Einheitsfaelle T2-T4 pruefen die Abstand-Formel gegen einen festen Satz von sechs Startzahlen,
+ * unabhaengig davon, wie viele Startzahlen `SEEDS` in Commit C1 oder C2 gerade hat.
  */
-function ak5(laeufe: readonly Lauf[], windowTicks: number) {
-  const paare = SEEDS.flatMap((seed) =>
+function ak5(laeufe: readonly Lauf[], windowTicks: number, seeds: readonly number[] = SEEDS) {
+  const paare = seeds.flatMap((seed) =>
     (Object.keys(SETUPS) as Aufbau[]).map((setup) => ({
       seed,
       setup,
@@ -859,6 +1028,14 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number) {
   const summe = (stance: (typeof STANCES)[number], feld: 'provinceDays' | 'lostWithoutBattle') =>
     paare.reduce((total, paar) => total + paar[stance][feld], 0)
   const provinceDays = { garrison: summe('garrison', 'provinceDays'), defensive: summe('defensive', 'provinceDays') }
+  // T-M42-02: Provinz-Tage ueber der 98-%-Schwelle, abgerundet; negativ, wenn AK5 reisst.
+  const abstandProvinzTage = Math.floor((provinceDays.defensive * 100 - provinceDays.garrison * PROVINCE_DAYS_PERCENT) / 100)
+  const abstand = {
+    provinzTage: abstandProvinzTage,
+    einzelverluste: Math.floor((abstandProvinzTage * 10) / EINZELVERLUST_PROVINZ_TAGE) / 10,
+    ziel: ABSTAND_ZIEL_PROVINZ_TAGE,
+    robust: abstandProvinzTage >= ABSTAND_ZIEL_PROVINZ_TAGE,
+  }
   const verletzt: string[] = []
   if (provinceDays.defensive * 100 < provinceDays.garrison * PROVINCE_DAYS_PERCENT) {
     verletzt.push(`Provinz-Tage ${provinceDays.defensive} von ${provinceDays.garrison} (unter ${PROVINCE_DAYS_PERCENT} %)`)
@@ -905,6 +1082,7 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number) {
   const angegriffen = { minIntrusions, kriegsplanOk, ok: minIntrusions > 0 && kriegsplanOk }
   return {
     provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
+    abstand,
     lostWithoutBattle: { garrison: summe('garrison', 'lostWithoutBattle'), defensive: summe('defensive', 'lostWithoutBattle') },
     kontrolle,
     fensterOk,
@@ -920,7 +1098,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
   const episoden = {
     ...(bericht.episoden ?? {}),
     tasks:
-      'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), M17-F1 (Kriegsplan); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17)',
+      'T-M40-07 (vorher, heutiger Adjutant), T-M40-12 (nachher, neue D30.4), M17-F1 (Kriegsplan); auf welchem Stand zuletzt gemessen wurde, sagt nachher.measuredAtCommit (T-M40-17), T-M42-02 (Startzahlen aus SEEDS, Abstand zur Schwelle)',
     seeds: [...SEEDS],
     days: DAYS,
     setups: { A: 'eine Armee aus 5 Infanterie je Provinz', B: 'zwei Armeen aus je 5 Infanterie je Provinz' },
@@ -933,7 +1111,8 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
       kriegsplan: `Befund M17-F1: die Landnachbarn des Menschen erklaeren ihm am Spieltag ${KRIEGSPLAN.tag} foermlich den Krieg (ueber den normalen Befehlsweg, scripted), danach entscheidet die KI alles selbst. Ohne Kriegsplan war der Lauf blind (0 Einmaersche); ${KONTROLLE_BIS_F1}`,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle sechs Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche und Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen, Befund M17-F1); Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
+      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle ${SEEDS.length * Object.keys(SETUPS).length} Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche und Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen, Befund M17-F1); Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
+      abstand: `T-M42-02: Provinz-Tage defensive minus ${PROVINCE_DAYS_PERCENT} % garrison, abgerundet, in Einzelverlusten zu ${EINZELVERLUST_PROVINZ_TAGE}; Ziel >= ${ABSTAND_ZIEL_PROVINZ_TAGE} (zwei Einzelverluste). Berichtszahl und Uebernahmekriterium des Aufbaus, kein Teil von erfuellt`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
@@ -967,12 +1146,12 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
     }, 1_800_000)
   }
 
-  it('hat alle zwoelf Laeufe, und die Garnison A 1914 trifft die Kontrolle', () => {
+  it(`hat alle ${LAEUFE} Laeufe, und die Garnison A 1914 trifft die Kontrolle`, () => {
     // Der Bericht wird vor den Zusicherungen geschrieben: eine gescheiterte Messung ist die, die
     // man am dringendsten lesen will. Nur auf Wunsch (Befund N3).
-    if (SCHREIBEN && laeufe.length === 12) schreibeBericht(laeufe, windowTicks)
+    if (SCHREIBEN && laeufe.length === LAEUFE) schreibeBericht(laeufe, windowTicks)
 
-    expect(laeufe.length, 'nicht alle zwoelf Laeufe gefahren - der Messlauf misst nur als Ganzes').toBe(12)
+    expect(laeufe.length, 'nicht alle Laeufe gefahren - der Messlauf misst nur als Ganzes').toBe(LAEUFE)
     expect(windowTicks, 'das Kartenfenster hat sich seit T-M40-02 verschoben').toBe(WINDOW_TICKS_T_M40_02)
     const garnison = finde(laeufe, 1914, 'A', 'garrison')
     expect(
@@ -988,4 +1167,47 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
     const ergebnis = ak5(laeufe, windowTicks)
     expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
   })
+})
+
+describe.skipIf(!PROBEN)('M17-F1 Nachtrag (T-M42-02): Abstand zur Kriegsschwelle ohne Kriegsplan, 40 Proben je Startzahl', () => {
+  for (const seed of SEEDS) {
+    it(`tastet Startzahl ${seed} ab`, async () => {
+      const { state, human } = aufstellen(seed, 'A', 'garrison')
+      const nachbarn = landnachbarn(state, human)
+      const ticksPerDay = rules.constants.ticksPerDay
+      const probenAn = new Set(probenTicks(ticksPerDay))
+      const proben = new Map(nachbarn.map((id) => [id, [] as Array<ReturnType<typeof kriegsschwellenAbstand> & { tag: number }>]))
+      const vergleiche = new Map(nachbarn.map((id): [PlayerId, number] => [id, 0]))
+      let current = state
+      for (let tick = 0; tick < DAYS * ticksPerDay; tick++) {
+        if (current.victory.winner !== null) break
+        if (probenAn.has(tick)) {
+          for (const id of nachbarn) proben.get(id)!.push({ tag: tick / ticksPerDay, ...kriegsschwellenAbstand(current, id, human) })
+        }
+        const schritt = advanceTicks(current, 1, { map, rules }, { explain: true })
+        for (const id of nachbarn) {
+          const begruendung = begruendeterFrieden(schritt.explanations[id], human)
+          if (!begruendung) continue
+          const { wert, schwelle, ratio } = kriegsschwellenAbstand(current, id, human)
+          expect({ wert, schwelle, ratio }, `${seed} ${id} Tick ${tick}`).toEqual(begruendung)
+          vergleiche.set(id, vergleiche.get(id)! + 1)
+        }
+        current = schritt.state
+        if ((tick + 1) % ticksPerDay === 0) await breathe() // PFLICHT, §8.6
+      }
+      for (const id of nachbarn) {
+        const liste = proben.get(id)!
+        expect(liste, `${seed} ${id}`).toHaveLength(DAYS / PROBEN_ABSTAND_TAGE)
+        expect(vergleiche.get(id), `${seed} ${id}: keine Begruendung verglichen`).toBeGreaterThan(0)
+        const abstaende = liste.map((probe) => probe.abstand)
+        const min = Math.min(...abstaende)
+        const max = Math.max(...abstaende)
+        const minProbe = liste.find((probe) => probe.abstand === min)!
+        const nFrieden = liste.filter((probe) => probe.frieden).length
+        console.log(
+          `${seed} ${state.players[id]!.nation}: 40 Proben, Abstand min ${min} (Tag ${minProbe.tag}, Verhaeltnis ${minProbe.wert}, Schwelle ${minProbe.schwelle}, Staerke ${minProbe.ratio}) max ${max}, Frieden ${nFrieden}/40, Vergleiche ${vergleiche.get(id)}`,
+        )
+      }
+    }, 1_800_000)
+  }
 })
