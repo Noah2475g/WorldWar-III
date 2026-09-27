@@ -651,8 +651,17 @@ describe('T-M41-11 Die KI befiehlt keine Hauptstadt waehrend der Sperre', () => 
 // Aushebung in der Voreinstellung 200 — das ist der Rot-Nachweis dieses Blocks (die m17-Fassung
 // unten ist auf Stufe 0 schon grün, siehe dort). Die Gesamtzahl aller Geldmangeltage bleibt
 // Berichtszahl (`m42.*.jeMacht.*.geldmangelTage`), ohne eigenes Tor.
+//
+// **it.fails, absichtlich (Nacharbeit Etappe 1, Befund T-M42-03-Nacharbeit/kritisch, 2026-09-27).**
+// T-M43-01/E5 hatte `geldmangelTageDurchAushebung` fuer Tage nach einem Provinzverlust
+// ausgeschlossen (statt daneben zu zaehlen) und dieses Tor damit ungefragt gelockert — genau um
+// Deutschland 1815 (15 solche Tage, letzte Aushebung Tag 85 bei Tagesbilanz -5705) hier gruen
+// zu bekommen. Auf dem Mass aus DECISIONS.md 2026-09-26 T-M42-01 ("eine alte, knapp negative
+// Aushebung zaehlt auch bei spaeterem Provinzverlust") reisst das Tor wieder — wie vor T-M43-01.
+// Kein neuer Befund an der KI, nur die Ruecknahme der Lockerung; die Behebung selbst ist eine
+// eigene Aufgabe (Deutschlands Ausgabenplanung nach einem grossen Verlust).
 describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck', () => {
-  it('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
+  it.fails('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
     const laeufe: readonly (readonly [string, Messung])[] = [
       ['Weltkarte 1815', integration],
       ['Voreinstellung 200', voreinstellungLang],

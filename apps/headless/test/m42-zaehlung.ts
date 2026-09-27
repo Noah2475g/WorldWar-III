@@ -26,9 +26,12 @@ import {
  * - **Mangeltag**: Tagesende, an dem `player.shortages` den Rohstoff enthaelt (nicht das
  *   `RESOURCE_SHORTAGE`-Ereignis, das nur den Beginn meldet, `upkeep.ts`).
  * - **„durch Aushebung"**: die letzte angenommene Aushebung dieser Macht an oder vor dem
- *   Mangeltag hatte am Ende ihres Tages eine negative Tagesbilanz — und seit T-M43-01/E5:
- *   die Macht hat seither keine Provinz verloren (`geldmangelTageNachProvinzverlust`
- *   zählt sonst, R-AI-11/AK3 in der Fassung nach Frage 8).
+ *   Mangeltag hatte am Ende ihres Tages eine negative Tagesbilanz (DECISIONS.md 2026-09-26
+ *   T-M42-01, woertlich: „eine alte, knapp negative Aushebung zählt auch bei späterem
+ *   Provinzverlust"). `geldmangelTageNachProvinzverlust` zählt daneben, wie viele dieser Tage
+ *   NACH einem Provinzverlust seit der Aushebung lagen — eine zusätzliche Berichtszahl ohne
+ *   eigenes Tor, kein Ausschluss aus „durch Aushebung" (T-M43-01/E5 hatte das versucht, ohne
+ *   Noahs Antwort auf die zugehörige Frage; zurückgenommen, Befund T-M42-03-Nacharbeit/kritisch).
  * - **Tagesbilanz**: `economyOverview(...).balance` (Ertrag minus Armeeunterhalt minus Spionagesold)
  *   minus Unterhalt der eigenen Aushebungs-Warteschlange (`tagesbilanzNachAushebung`).
  * - **Paar**: zwei stehende Armeen gleicher Macht, Provinz, Einschiffung und Rolle mit zusammen
@@ -204,9 +207,10 @@ export interface MachtZahlen {
   geldmangelTage: number
   geldmangelTageDurchAushebung: number
   /**
-   * Geldmangeltage, deren letzte Aushebung negativ war, aber danach eine Provinz verloren
-   * ging — Befund M42-03-a/E5 (T-M43-01, Frage 8): nicht der Aushebung zugerechnet, weil
-   * der Verlust dazwischenkam (`m42-zaehlung.test.ts` M8/M9).
+   * Geldmangeltage, deren letzte Aushebung negativ war UND danach eine Provinz verloren
+   * ging — zusätzlich zu `geldmangelTageDurchAushebung`, nicht statt (Nacharbeit Etappe 1,
+   * Befund T-M42-03-Nacharbeit/kritisch: E5 hatte hier ausgeschlossen statt addiert, ohne
+   * Noahs Antwort auf die zugehörige Frage; zurückgenommen). Reine Berichtszahl, kein Tor.
    */
   geldmangelTageNachProvinzverlust: number
   oelmangelTage: number
@@ -482,9 +486,14 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
         macht.geldmangelTage += 1
         const letzteAushebung = letzte[id]
         if (letzteAushebung && letzteAushebung.money < 0) {
-          // E5: ein Provinzverlust NACH dieser Aushebung unterbricht die Zuordnung.
-          if (macht.provinzenVerloren === letzteAushebung.verloren) macht.geldmangelTageDurchAushebung += 1
-          else macht.geldmangelTageNachProvinzverlust += 1
+          // DECISIONS.md 2026-09-26 T-M42-01 (woertlich): "eine alte, knapp negative
+          // Aushebung zaehlt auch bei spaeterem Provinzverlust" - E5 (T-M43-01) hatte das
+          // fuer diesen Zaehler durch eine Entweder-oder-Weiche ersetzt, ohne Noahs Antwort
+          // (Befund T-M42-03-Nacharbeit/kritisch); zurueckgenommen. `geldmangelTageDurchAushebung`
+          // bleibt die zugesicherte Zahl (R-AI-11/AK3), `geldmangelTageNachProvinzverlust` eine
+          // zusaetzliche, unabhaengige Berichtszahl ohne eigenes Tor.
+          macht.geldmangelTageDurchAushebung += 1
+          if (macht.provinzenVerloren !== letzteAushebung.verloren) macht.geldmangelTageNachProvinzverlust += 1
         }
       }
       if (player.shortages.includes('oil')) {
