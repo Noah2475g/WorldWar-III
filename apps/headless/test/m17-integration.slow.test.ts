@@ -97,6 +97,12 @@ interface Ueberfall {
   nachKuendigung: boolean
   /** Ein PROVINCE_CEDED an das Opfer lag hoechstens 72 Ticks zurueck (M17-D5). */
   nachAbtretung: boolean
+  /** Ein ARMY_RETREATED des Taeters in eine Provinz des Opfers im selben Tag (T-M43-01, Frage U). */
+  nachRueckzug: boolean
+  /** Die Provinz, in der eine Taeterarmee steht, gehoert dem Opfer seit hoechstens 24 Ticks — der
+   *  Taeter marschierte auf ein Ziel zu, das unterwegs einer friedlichen Macht zufiel (T-M43-01,
+   *  M17-T5-Klasse, §7.4). */
+  zielwechsel: boolean
   erklaerungLief: boolean
 }
 
@@ -138,6 +144,14 @@ function einordnen(
   const nachKuendigung = kuendigungen.some((entry) => entry.playerId === opfer && entry.targetPlayerId === taeter)
   const nachAbtretung = abtretungen.some((entry) => entry.newOwner === opfer && after.tick - entry.tick <= 72)
 
+  const nachRueckzug = events.some(
+    (event) => event.type === 'ARMY_RETREATED' && event.playerId === taeter && before.provinces[event.toProvinceId]?.owner === opfer,
+  )
+  const zielwechsel = armeen.some((army) => {
+    const occupiedSince = after.provinces[army.locationProvinceId]?.occupiedSince
+    return occupiedSince !== null && occupiedSince !== undefined && after.tick - occupiedSince <= 24
+  })
+
   return {
     tick: after.tick,
     taeter: nation(taeter),
@@ -146,6 +160,8 @@ function einordnen(
     friedensschluss,
     nachKuendigung,
     nachAbtretung,
+    nachRueckzug,
+    zielwechsel,
     erklaerungLief: relationOf(before, taeter, opfer)?.warEffectiveAtTick != null,
   }
 }
@@ -362,6 +378,8 @@ function kennzahlen(lauf: Lauf) {
     ueberfaelleMitFriedensschluss: lauf.ueberfaelle.filter((entry) => entry.friedensschluss).length,
     ueberfaelleNachKuendigung: lauf.ueberfaelle.filter((entry) => entry.nachKuendigung).length,
     ueberfaelleNachAbtretung: lauf.ueberfaelle.filter((entry) => entry.nachAbtretung).length,
+    ueberfaelleNachRueckzug: lauf.ueberfaelle.filter((entry) => entry.nachRueckzug).length,
+    ueberfaelleZielwechsel: lauf.ueberfaelle.filter((entry) => entry.zielwechsel).length,
     frieden: truce.length,
     friedenZwischenKi: truce.filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId)).length,
     geldmangelKi: geldmangel.length,
@@ -384,6 +402,8 @@ function ueberfaelleMerkmale(lauf: Lauf): {
   friedensschluss: number
   nachKuendigung: number
   nachAbtretung: number
+  nachRueckzug: number
+  zielwechsel: number
   durchmarsch: number
 } {
   return {
@@ -391,6 +411,8 @@ function ueberfaelleMerkmale(lauf: Lauf): {
     friedensschluss: lauf.ueberfaelle.filter((entry) => entry.friedensschluss).length,
     nachKuendigung: lauf.ueberfaelle.filter((entry) => entry.nachKuendigung).length,
     nachAbtretung: lauf.ueberfaelle.filter((entry) => entry.nachAbtretung).length,
+    nachRueckzug: lauf.ueberfaelle.filter((entry) => entry.nachRueckzug).length,
+    zielwechsel: lauf.ueberfaelle.filter((entry) => entry.zielwechsel).length,
     durchmarsch: lauf.ueberfaelle.filter((entry) => entry.art === 'durchmarsch').length,
   }
 }
@@ -525,11 +547,69 @@ describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
     }
   })
 
-  it('laesst keine KI-Macht Geldmangel erleiden', () => {
+  // Fassung nach Noahs Antwort auf Frage 8 (2026-09-26, T-M43-01): das Tor ist "kein
+  // Geldmangeltag geht auf eine eigene Aushebung zurueck", nicht mehr "kein Geldmangeltag
+  // ueberhaupt" — ein Provinzverlust darf einer Macht Geld nehmen, ohne dass ihre eigene
+  // Aushebung schuld ist (Befund M42-03-a, E5). Zwei Zaehlwege gegeneinander: das
+  // RESOURCE_SHORTAGE-Ereignis (Beginn des Mangels) und m42.geldmangelTage (jeder Mangeltag).
+  it('laesst keine KI-Macht Geldmangel durch eigene Aushebung erleiden (Fassung nach Frage 8)', () => {
     for (const startzahl of STARTZAHLEN) {
       const lauf = mit(startzahl)
+      const jeMacht = Object.values(lauf.m42!.jeMacht)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${startzahl}: Geldmangel durch eigene Aushebung`).toEqual([])
+
       const mangel = lauf.events.filter((event) => event.type === 'RESOURCE_SHORTAGE' && event.resource === 'money' && lauf.ki.has(event.playerId))
-      expect(mangel.length, `${startzahl}: ${JSON.stringify(mangel.slice(0, 3))}`).toBe(0)
+      if (mangel.length > 0) {
+        const geldmangelTageGesamt = jeMacht.reduce((s, m) => s + m.geldmangelTage, 0)
+        expect(geldmangelTageGesamt, `${startzahl}: RESOURCE_SHORTAGE money gemeldet, aber m42 zaehlt keinen Mangeltag`).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): dasselbe Tor wie in
+// ai-integration.slow.test.ts, hier ueber die Weltkarte und drei Startzahlen. Auf Stufe 0 schon
+// gruen (0/0/0 Geldmangel) — der Rot-Nachweis fuer die Regel steht in ai-integration.slow.test.ts
+// (Voreinstellung, Kanada 44); diese Zusicherung ist ehrlich ohne eigenen Rot-Nachweis (§9 E12).
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeMacht = Object.values(mit(startzahl).m42!.jeMacht)
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${startzahl}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${startzahl}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
+// R-DIP-10/AK4 (T-M43-01): die Raeumfrist und der Raeumweg sollen genau die Ueberfaelle
+// wegnehmen, die ein Friedensschluss (M17-T6), ein Buendnisbruch (M17-G4) oder eine
+// abgelaufene Kuendigung (M17-D10) sonst aus einer stehenden oder heimkehrenden Armee
+// machen. Die ohne-Laeufe sind der M17-Gegenlauf mit absichtlich zurueckgehaltenen
+// Antraegen, keine ausgelieferte KI (§1.3 Nr. 7) — ihre Zahl steht im Bericht, nicht im Tor.
+describe('R-DIP-10/AK4 Kein Ueberfall aus Frieden oder Kuendigung — Weltkarte, drei Startzahlen', () => {
+  it('in den mit-Laeufen null, die ohne-Laeufe stehen im Bericht', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const treffer = mit(startzahl).ueberfaelle.filter((entry) => entry.friedensschluss || entry.nachKuendigung)
+      expect(treffer, `${startzahl}: ${JSON.stringify(treffer)}`).toEqual([])
+
+      const ohneTreffer = ohne(startzahl).ueberfaelle.filter((entry) => entry.friedensschluss || entry.nachKuendigung)
+      console.log(`R-DIP-10/AK4 ohne-Lauf ${startzahl}: ${ohneTreffer.length} Ueberfaelle aus Frieden/Kuendigung`)
+    }
+  })
+})
+
+// R-AI-12/AK2 (T-M42-06, D32.7): "Erst die Fabrik". Stufe 0: "normal" und "schwer" begannen in
+// keiner der drei Startzahlen eine Fabrik (nur "leicht": 92/63/64). Gezaehlt `BUILD_STARTED
+// factory` je Stufe aus dem Abschnitt m42 (mit-Laeufe, die ausgelieferte KI).
+describe('R-AI-12/AK2 Jede Stufe beginnt eine Fabrik — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl beginnt jede Stufe mindestens eine Fabrik', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeStufe = mit(startzahl).m42!.jeStufe
+      for (const stufe of ['easy', 'normal', 'hard'] as const) {
+        expect(jeStufe[stufe]?.fabrikenBegonnen ?? 0, `${startzahl} ${stufe}: keine Fabrik begonnen`).toBeGreaterThanOrEqual(1)
+      }
     }
   })
 })
@@ -704,6 +784,7 @@ describe('R-AI-09 Der Bericht', () => {
     let fabrikenBegonnen = 0
     let geldmangelTage = 0
     let geldmangelTageDurchAushebung = 0
+    let geldmangelTageNachProvinzverlust = 0
     let oelmangelTage = 0
     let verpassteGelegenheiten = 0
     let paareUeberZweiTagesenden = 0
@@ -728,6 +809,7 @@ describe('R-AI-09 Der Bericht', () => {
         fabrikenBegonnen += macht.fabrikenBegonnen
         geldmangelTage += macht.geldmangelTage
         geldmangelTageDurchAushebung += macht.geldmangelTageDurchAushebung
+        geldmangelTageNachProvinzverlust += macht.geldmangelTageNachProvinzverlust
         oelmangelTage += macht.oelmangelTage
         verpassteGelegenheiten += macht.verpassteGelegenheiten
       }
@@ -759,6 +841,7 @@ describe('R-AI-09 Der Bericht', () => {
           fabrikenBegonnen,
           geldmangelTage,
           geldmangelTageDurchAushebung,
+          geldmangelTageNachProvinzverlust,
           oelmangelTage,
           verpassteGelegenheiten,
           paareUeberZweiTagesenden,

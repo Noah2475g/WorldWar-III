@@ -1,6 +1,7 @@
 import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
+import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -111,8 +112,58 @@ function nextBuildingFor(
   return buildingCandidatesFor(context, province)[0] ?? null
 }
 
+/**
+ * **Erst die Fabrik** (T-M42-06, R-AI-12/AK1, D32.7).
+ *
+ * Solange die Macht eine sichtbare eigene Stadt, aber noch keine Fabrik hat und keine im Bau ist, haelt
+ * sie die Kosten der ersten Fabrik samt Ruecklage zurueck. Gemessen vor M42: "normal" und "schwer"
+ * begannen auf der Weltkarte in 200 Spieltagen keine einzige Fabrik (0 von 200 Tagen mit bezahlbarer
+ * Fabrik) - jede Aushebung nahm das Geld vorher, und ohne Fabrik gibt es keine Artillerie.
+ *
+ * Nur bis zur **ersten** Fabrik: die Sonde "jede Stadt" kostete Artillerie (m18-plan-v2 §3.2).
+ *
+ * **"Im Bau"** liest die KI aus einem Ersatzmerkmal, weil ihre Sicht nur `buildQueueLength` traegt,
+ * nicht die Schlange selbst (`runner.ts` baut `publicView` ohne Regeln, D18.2): eine eigene Stadt ohne
+ * Fabrik mit `buildQueueLength > 0` **und schon einer Kaserne** - `economyCommands` baut dort nur noch
+ * die Fabrik. Bekannte Unschaerfe: ein Kasernenausbau (nur ein Mensch befiehlt ihn) oder ein vor Tag 28
+ * begonnener Bau in der Schlange liest sich ebenso (Haltetest V8).
+ *
+ * Wert je Rohstoff: aufgerundet `kosten * 1000 / (1000 - RESERVE_PERMILLE)` - der Bestand, bei dem
+ * `canAfford` die Fabrik traegt.
+ */
+export function factoryReserve(context: AiContext): Partial<Record<ResourceKey, Fixed>> | null {
+  const rule = context.rules.buildings.factory
+  if (rule.availableFromDay > dayOf(context)) return null
+  const me = context.view.playerId
+  const eigene = context.view.provinces.filter((province) => province.owner === me && !province.stale)
+  const staedte = eigene.filter((province) => province.kind === 'city')
+  if (staedte.length === 0) return null
+  if (eigene.some((province) => (province.buildings?.factory ?? 0) > 0)) return null
+  if (staedte.some((province) => (province.buildQueueLength ?? 0) > 0 && (province.buildings?.barracks ?? 0) > 0)) {
+    return null
+  }
+
+  const teiler = 1000 - RESERVE_PERMILLE
+  const vorbehalt: Partial<Record<ResourceKey, Fixed>> = {}
+  for (const [key, amount] of Object.entries(buildingCostForLevel(rule, 1, context.rules.constants))) {
+    if (!amount) continue
+    vorbehalt[key as ResourceKey] = Math.trunc((amount * 1000 + teiler - 1) / teiler)
+  }
+  return vorbehalt
+}
+
 export function economyCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const commands: Command[] = []
+
+  // R-AI-12/AK1, D32.7: solange der Vorbehalt steht, nur Kaserne und Fabrik.
+  const vorbehalt = factoryReserve(context)
+  if (vorbehalt) {
+    explanations.push({
+      action: 'Vorbehalt für die erste Fabrik',
+      reason: 'erst die Fabrik: andere Bauten außer der Kaserne warten, ausgehoben wird nur darüber',
+      score: 0,
+    })
+  }
 
   /**
    * **Städte zuerst** (T-M15-08), und das ist keine Kosmetik.
@@ -154,6 +205,7 @@ export function economyCommands(context: AiContext, explanations: Explanation[])
     // Fabrik habe mehr als einen Wunsch; Haltetest in `economy.test.ts`).
     let building: BuildingKey | null = null
     for (const candidate of buildingCandidatesFor(context, province)) {
+      if (vorbehalt && candidate !== 'barracks' && candidate !== 'factory') continue
       const rule = context.rules.buildings[candidate]
       // Der Preis der Stufe, die sie bauen will (T-M34-04). Mit dem Grundpreis zu rechnen
       // hiesse, jeden Ausbau zu befehlen und vom Kern mit INSUFFICIENT_RESOURCES abgelehnt
@@ -290,6 +342,24 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     .sort((a, b) => arten(b.province) - arten(a.province) || a.index - b.index)
     .map((entry) => entry.province)
 
+  // R-AI-11/AK2, D32.4: die Tagesbilanz nach der Aushebung bleibt nicht negativ. Einmal je
+  // Aufruf, nicht je Provinz — Ertrag, Unterhalt und Sold haengen an der Macht, nicht am Ort.
+  // Warum die Tagesbilanz und nicht eine Projektion ueber mehrere Tage: eine Projektion liess
+  // sich mit grossem Bestand (Kanada 325 k) leerrechnen, ohne dass die Aushebung je aufhoerte
+  // (Kritik K-1). Ein grosser Bestand hilft hier bewusst nicht: bei schon negativer Tagesbilanz
+  // gibt es keine Aushebung, egal wie voll die Kasse ist (Testfall E3).
+  // Bekannte Unschaerfe: Einheiten in Ausbildung sieht die KI nicht (die Sicht fuehrt keine
+  // Aushebungs-Warteschlange, `runner.ts` baut sie ohne Regeln) — zwei Aushebungen desselben
+  // Tages koennen die Bilanz um hoechstens einen Block ueberziehen (gemessen: 4 von 13
+  // negativen Aushebungstagen ohne Warteschlange, 0 Mangeltage).
+  const bilanz = dailyMoneyLedger(context.view, context.rules)
+  const ticksPerDay = context.rules.constants.ticksPerDay
+  let bilanzSperrte = false
+
+  // R-AI-12/AK1, D32.7: ausgehoben wird nur aus dem Bestand ueber dem Vorbehalt fuer die erste Fabrik.
+  const vorbehalt = factoryReserve(context)
+  let vorbehaltSperrte = false
+
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
     // das ist der Grund, warum die KI auf der Weltkarte in 200 Spieltagen **43 Fabriken
@@ -319,25 +389,48 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     let unitKey: string | null = null
     let unit: (typeof context.rules.units)[string] | undefined
     let affordable = 0
+    let begrenzt = false
+    let vorbehaltBegrenzt = false
 
     for (const kandidat of rankedUnitsFor(context, province)) {
       const regel = context.rules.units[kandidat]
       if (!regel) continue
 
       // Batch size: what the difficulty's share of the treasury pays for, capped so a
-      // single order never becomes the whole army.
+      // single order never becomes the whole army. R-AI-12/AK1, D32.7: der Vorbehalt fuer
+      // die erste Fabrik zieht vom Bestand ab, bevor der Anteil der Schwierigkeit greift.
       let moeglich = 15
+      let ohneVorbehalt = 15
       for (const [key, amount] of Object.entries(regel.cost)) {
         if (!amount) continue
         const stock = context.view.self.resources[key as ResourceKey]
-        const budget = Math.trunc((stock * context.difficulty.recruitShare) / 1000)
+        const frei = Math.max(0, stock - (vorbehalt?.[key as ResourceKey] ?? 0))
+        const budget = Math.trunc((frei * context.difficulty.recruitShare) / 1000)
         moeglich = Math.min(moeglich, Math.trunc(budget / amount))
+        ohneVorbehalt = Math.min(
+          ohneVorbehalt,
+          Math.trunc(Math.trunc((stock * context.difficulty.recruitShare) / 1000) / amount),
+        )
       }
-      if (moeglich < 1) continue
+      if (moeglich < 1) {
+        if (ohneVorbehalt >= 1) vorbehaltSperrte = true
+        continue
+      }
+
+      // R-AI-11/AK2, D32.4: die Tagesbilanz nach der Aushebung bleibt nicht negativ.
+      const budgetMoeglich = moeglich
+      const jeEinheit = (regel.upkeep.money ?? 0) * ticksPerDay
+      moeglich = Math.min(moeglich, unitsWithinDailyBalance(bilanz.margin, jeEinheit))
+      if (moeglich < 1) {
+        bilanzSperrte = true
+        continue // naechster Kandidat; nach dem letzten die naechste Provinz (D32.4)
+      }
 
       unitKey = kandidat
       unit = regel
       affordable = moeglich
+      begrenzt = moeglich < budgetMoeglich
+      vorbehaltBegrenzt = budgetMoeglich < ohneVorbehalt
       break
     }
 
@@ -346,11 +439,30 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
     commands.push({ type: 'RECRUIT', playerId, provinceId: province.id, unitKey, count: affordable })
     explanations.push({
       action: `Rekrutiert ${affordable}x ${unitKey} in ${province.id}`,
-      reason: 'Streitkräfte aufbauen',
+      reason:
+        (begrenzt
+          ? `Streitkräfte aufbauen; die Tagesbilanz trägt ${affordable} (Spielraum ${bilanz.margin} je Tag, ${(unit.upkeep.money ?? 0) * ticksPerDay} je Einheit)`
+          : 'Streitkräfte aufbauen') + (vorbehaltBegrenzt ? '; Vorbehalt für die erste Fabrik' : ''),
       score: 500,
       alternative: { action: 'nichts rekrutieren', score: 200 },
     })
     break
+  }
+
+  if (commands.length === 0 && bilanzSperrte) {
+    explanations.push({
+      action: 'Aushebung unterbleibt',
+      reason: `Tagesbilanz trägt keine weitere Einheit: Ertrag ${bilanz.income}, Unterhalt ${bilanz.upkeep}, Sold ${bilanz.salary} je Tag`,
+      score: 0,
+      alternative: { action: 'aus dem Bestand ausheben', score: 0 },
+    })
+  } else if (commands.length === 0 && vorbehaltSperrte) {
+    explanations.push({
+      action: 'Aushebung unterbleibt',
+      reason: 'Vorbehalt für die erste Fabrik: der Bestand darüber trägt keine Einheit',
+      score: 0,
+      alternative: { action: 'aus dem Vorbehalt ausheben', score: 0 },
+    })
   }
 
   return commands

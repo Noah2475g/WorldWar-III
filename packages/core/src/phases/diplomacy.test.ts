@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { runTicks } from '../clock'
 import type { Command } from '../commands/types'
 import type { GameEvent } from '../events/types'
+import { diplomacy } from './diplomacy'
 import { deserialise } from '../persistence/save'
 import {
   createInitialState,
   grantsPassage,
   passageEndsAtTick,
+  setPassage,
   sharesMap,
   type GameConfig,
 } from '../state/create'
@@ -738,5 +740,499 @@ describe('D29.3 Ueberfall und Verfall eines Handelsangebots im selben Tick', () 
     // Genau einmal zurueck: derselbe Bestand wie in der Partie ohne Angebot.
     expect(result.state.players['p1']!.resources.money).toBe(kontrolle.players['p1']!.resources.money)
     expect(result.state.players['p2']!.resources.money).toBe(kontrolle.players['p2']!.resources.money)
+  })
+})
+
+describe('R-DIP-10 Die Räumfrist (M17-T6, M17-G4, M17-D10)', () => {
+  const infantry = [{ unitKey: 'infantry' as const, hpTotal: 5_000 }]
+  const notice = TEST_RULES.constants.rightOfWayNoticeTicks
+
+  const ueberfall = (events: readonly GameEvent[], taeter: string, opfer: string) =>
+    events.find(
+      (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.playerId === taeter && e.targetPlayerId === opfer,
+    )
+
+  /** Krieg zwischen p1 und p2, m1 und m2 gehören der Gastmacht p2 (Testwelt-Kürzel §3). */
+  function imKrieg(): void {
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p2'
+  }
+
+  /** Waffenstillstand seit `tick`, dieselbe Gastmacht-Aufteilung wie `imKrieg`. */
+  function waffenstillstandSeit(tick: number): void {
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = tick
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p2'
+  }
+
+  it('R1: kein Ueberfall im Friedens-Tick, danach genau die 24 Ticks Frist (M17-T6)', () => {
+    imKrieg()
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    army.departureTick = state.tick
+    // Ankunft erst im Tick der Annahme selbst (nicht schon davor, sonst nimmt die
+    // Besatzungsphase m1 waehrend des noch laufenden Kriegs — vor dem Frieden).
+    army.arrivalTick = state.tick + 2
+
+    const offered = step(state, [diplo('p1', 'p2', 'offerPeace')], ctx).state
+    const result = step(offered, [diplo('p2', 'p1', 'acceptPeace')], ctx)
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeUndefined()
+    expect(result.state.armies[army.id]!.locationProvinceId).toBe('m1')
+    expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('truce')
+    const sinceTick = result.state.diplomacy.relations['p1|p2']!.sinceTick
+
+    let current = result.state
+    while (current.tick < sinceTick + notice) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R1b: der laengere Heimweg bleibt frei, auch weit ueber das Fristende hinaus', () => {
+    imKrieg()
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 2
+
+    const offered = step(state, [diplo('p1', 'p2', 'offerPeace')], ctx).state
+    const accepted = step(offered, [diplo('p2', 'p1', 'acceptPeace')], ctx).state
+    expect(accepted.armies[army.id]!.locationProvinceId).toBe('m1')
+
+    let current = step(accepted, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'n2' }], ctx).state
+    // Die Kante m1–n2 (160.000 km) braucht mehr als die 24 Ticks Frist — der Beleg dafuer.
+    expect(current.armies[army.id]!.arrivalTick! - current.tick).toBeGreaterThan(notice)
+
+    while (current.armies[army.id]!.locationProvinceId !== 'n2') {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    expect(current.armies[army.id]!.locationProvinceId).toBe('n2')
+  })
+
+  it('R2: nach einem Buendnisbruch gilt dieselbe Frist (M17-G4)', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'alliance'
+    // Ein Schritt Vorlauf: `sinceTick` des Bruchs muss sich vom Spielbeginn (Tick 0)
+    // unterscheiden, sonst griffe hier faelschlich die Spielbeginn-Ausnahme (E4).
+    state = step(state, [], ctx).state
+    placeArmy(state, { owner: 'p1', at: 'o3', units: infantry })
+
+    const result = step(state, [diplo('p2', 'p1', 'breakAlliance')], ctx)
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeUndefined()
+    expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('peace')
+    const sinceTick = result.state.diplomacy.relations['p1|p2']!.sinceTick
+
+    let current = result.state
+    while (current.tick < sinceTick + notice) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R3: der Raeumweg bleibt frei, auch nach Ablauf der Kuendigungsfrist (M17-D10)', () => {
+    state.provinces.m1!.owner = 'p2'
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: infantry })
+
+    const revoked = step(state, [diplo('p2', 'p1', 'revokeRightOfWay')], ctx).state
+    let current = step(revoked, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'n2' }], ctx).state
+    expect(current.armies[army.id]!.arrivalTick! - current.tick).toBeGreaterThan(notice)
+
+    while (current.armies[army.id]!.locationProvinceId !== 'n2') {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    expect(current.armies[army.id]!.locationProvinceId).toBe('n2')
+  })
+
+  it('R3b: bleibt sie stehen, greift nach Fristende die bestehende Kuendigungsregel (Waechter)', () => {
+    state.provinces.m1!.owner = 'p2'
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    placeArmy(state, { owner: 'p1', at: 'm1', units: infantry })
+
+    const revoked = step(state, [diplo('p2', 'p1', 'revokeRightOfWay')], ctx).state
+    const ends = passageEndsAtTick(revoked, 'p2', 'p1')!
+
+    let current = revoked
+    while (current.tick < ends) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R4: ein Umweg durch die Gastmacht ist kein Raeumweg (Waechter)', () => {
+    waffenstillstandSeit(state.tick)
+    const sinceTick = state.tick
+    const army = placeArmy(state, { owner: 'p1', at: 'o1', units: infantry })
+    army.path = ['o2', 'o3', 'm1', 'n2']
+
+    let current = state
+    while (current.tick < sinceTick + notice) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+    void army
+  })
+
+  it('R4b: der kuerzeste Ausgang bleibt frei, auch weit ueber die Frist hinaus', () => {
+    waffenstillstandSeit(state.tick)
+    const sinceTick = state.tick
+    const army = placeArmy(state, { owner: 'p1', at: 'o1', units: infantry })
+    army.path = ['m1', 'n2']
+
+    let current = state
+    while (current.tick < sinceTick + notice + 10) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    void army
+  })
+
+  it('R5: eine frische Grenze im Fenster ist trotzdem ein Ueberfall', () => {
+    waffenstillstandSeit(state.tick)
+    const sinceTick = state.tick
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    const departAt = sinceTick + 2
+    army.path = ['m1']
+    army.departureTick = departAt
+    army.arrivalTick = departAt + 1
+
+    let current = state
+    while (current.tick < departAt) current = step(current, [], ctx).state
+    const result = step(current, [], ctx)
+    expect(result.state.armies[army.id]!.locationProvinceId).toBe('m1')
+    expect(result.state.tick).toBeLessThan(sinceTick + notice)
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R6: ein Marsch, der im Krieg losging, darf nach dem Frieden ankommen (E2)', () => {
+    imKrieg()
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    army.departureTick = 0
+    army.arrivalTick = 6
+
+    let current = step(state, [diplo('p1', 'p2', 'offerPeace')], ctx).state
+    current = step(current, [diplo('p2', 'p1', 'acceptPeace')], ctx).state
+    const sinceTick = current.diplomacy.relations['p1|p2']!.sinceTick
+    expect(sinceTick).toBeLessThan(6)
+
+    while (current.armies[army.id]!.locationProvinceId !== 'm1') {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick} (Ankunft)`).toBeUndefined()
+      current = r.state
+    }
+
+    // Steht sie noch bei sinceTick + 24, ist es doch ein Ueberfall — die Ausnahme deckt
+    // nur den Grenzuebertritt selbst, nicht das Stehenbleiben danach.
+    while (current.tick < sinceTick + notice) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R7: die Kriegsmarsch-Ausnahme gilt nur im Waffenstillstand, nicht nach dem Uebergang zum Frieden', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'peace'
+    state.diplomacy.relations['p1|p2']!.sinceTick = 5
+    state.provinces.m1!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    // Der Marsch begann (im Modell) vor dem Uebergang zum Frieden; die Ankunft (Tick 8,
+    // bewusst ungleich `sinceTick`) faellt erst lange danach.
+    army.departureTick = 1
+    army.arrivalTick = 8
+
+    let current = state
+    let arrival: { state: GameState; events: readonly GameEvent[] } | null = null
+    while (!arrival) {
+      const r = step(current, [], ctx)
+      current = r.state
+      if (current.armies[army.id]!.locationProvinceId === 'm1') arrival = r
+    }
+    expect(ueberfall(arrival.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R7b: ein frischer Marsch nach dem Uebergang ist ein Ueberfall bei Ankunft', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'peace'
+    state.diplomacy.relations['p1|p2']!.sinceTick = 5
+    state.provinces.m1!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    // Abmarsch nach dem Uebergang (Tick 6); die Ankunft (Tick 9) ist bewusst ungleich
+    // `sinceTick`, damit sie nicht zufaellig auf die Ausnahme des Uebergangstags faellt.
+    army.departureTick = 6
+    army.arrivalTick = 9
+
+    let current = state
+    let arrival: { state: GameState; events: readonly GameEvent[] } | null = null
+    while (!arrival) {
+      const r = step(current, [], ctx)
+      current = r.state
+      if (current.armies[army.id]!.locationProvinceId === 'm1') arrival = r
+    }
+    expect(ueberfall(arrival.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R8: Spielbeginn — ein Marsch in fremdes Land ist ein Ueberfall bei Ankunft', () => {
+    state.provinces.m1!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+    army.path = ['m1']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 1
+
+    const result = step(state, [], ctx)
+    expect(result.state.armies[army.id]!.locationProvinceId).toBe('m1')
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R8b: Spielbeginn, gesetzt — sofortiger Ueberfall (haelt die 7 bestehenden Faelle, E4)', () => {
+    placeArmy(state, { owner: 'p1', at: 'o1', units: infantry })
+    const result = step(state, [], ctx)
+    expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('war')
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeDefined()
+  })
+
+  it('R9: hinaus und wieder hinein ist kein Raeumweg — ab der Frist ein Ueberfall', () => {
+    waffenstillstandSeit(state.tick)
+    const sinceTick = state.tick
+    state.provinces.m2!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: infantry })
+    army.path = ['n2', 'n3', 'm2']
+
+    let current = state
+    while (current.tick < sinceTick + notice) {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    const after = step(current, [], ctx)
+    expect(ueberfall(after.events, 'p1', 'p2')).toBeDefined()
+    void army
+  })
+
+  it('R10: im Krieg entsteht keine neue Kriegserklaerung', () => {
+    imKrieg()
+    placeArmy(state, { owner: 'p1', at: 'o1', units: infantry })
+    const result = step(state, [], ctx)
+    expect(result.events.filter((e) => e.type === 'WAR_DECLARED')).toHaveLength(0)
+  })
+
+  it('R11: im Buendnis gibt es keinen Ueberfall', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'alliance'
+    placeArmy(state, { owner: 'p1', at: 'o1', units: infantry })
+    const result = step(state, [], ctx)
+    expect(ueberfall(result.events, 'p1', 'p2')).toBeUndefined()
+    expect(result.state.diplomacy.relations['p1|p2']!.state).toBe('alliance')
+  })
+
+  it('R12: die Phase bricht nicht, wenn crossedBorder fehlt — Frist und Raeumweg gelten trotzdem', () => {
+    waffenstillstandSeit(state.tick)
+    const sinceTick = state.tick
+    placeArmy(state, { owner: 'p1', at: 'm1', units: infantry })
+
+    const events: GameEvent[] = []
+    expect(() => diplomacy(state, { map, rules: TEST_RULES, commands: [], events })).not.toThrow()
+    expect(ueberfall(events, 'p1', 'p2')).toBeUndefined()
+    expect(state.tick).toBe(sinceTick)
+  })
+
+  it('R13: der kuerzeste Weg hinaus bleibt frei, auch ueber ein zweites Gastmacht-Feld (Noahs Entscheid 2026-09-27, Punkt 1/2; Nacharbeit T-M43-01, Befund c.1)', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    const sinceTick = state.tick
+    state.diplomacy.relations['p1|p2']!.sinceTick = sinceTick
+    // o2 (Gastmacht p2) hat als einzigen Nachbarn ausserhalb der Gastmacht s2 (p3, kein
+    // Recht) — der kuerzeste Weg hinaus fuehrt ueber ein zweites Gastmacht-Feld (o1) zum
+    // herrenlosen m1 (H6b/H6c). Die Ankunft faellt bewusst weit hinter das Fristende.
+    const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+    army.path = ['o1', 'm1']
+    army.departureTick = state.tick
+    army.arrivalTick = sinceTick + notice + 5
+
+    let current = state
+    while (current.armies[army.id]!.locationProvinceId !== 'm1') {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    expect(current.tick).toBeGreaterThan(sinceTick + notice)
+    expect(current.armies[army.id]!.locationProvinceId).toBe('m1')
+  })
+
+  describe('R-DIP-10 Rückzug in neutrales Land (Befund M42-03-a, Noahs Entscheid 2026-09-27)', () => {
+    const retreatCooldown = TEST_RULES.constants.retreatCooldownTicks
+
+    it('Z1: kein Ueberfall waehrend der Rueckzugssperre, danach genau in ihrer Frist', () => {
+      imKrieg()
+      const t = state.tick
+      // o2 gehoert p2 (Krieg); ihr einziger nicht feindlicher Nachbar ist s2 (p3, Frieden seit Tick 0).
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(afterRetreat.state.armies[army.id]!.cannotAttackUntil).toBe(t + retreatCooldown)
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      let current = afterRetreat.state
+      while (current.tick < t + retreatCooldown) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      const after = step(current, [], ctx)
+      expect(after.state.tick).toBe(t + retreatCooldown + 1)
+      expect(ueberfall(after.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z2: waehrend der Sperre auf einem Raeumweg hinaus gibt es nie einen Ueberfall', () => {
+      imKrieg()
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      // Im Tick danach: Marsch weiter zum herrenlosen m2 (Nachbar von s2).
+      const current0 = step(afterRetreat.state, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'm2' }], ctx)
+        .state
+
+      let current = current0
+      while (current.armies[army.id]!.locationProvinceId !== 'm2') {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      expect(current.armies[army.id]!.locationProvinceId).toBe('m2')
+    })
+
+    it('Z3: eine sehr kurze Sperre (Beschuss) schuetzt trotzdem genau ihren Tick (Unschaerfe festgehalten)', () => {
+      const army = placeArmy(state, { owner: 'p1', at: 's2', units: infantry })
+      const t = state.tick
+      army.cannotAttackUntil = t + 1
+
+      const same = step(state, [], ctx)
+      expect(ueberfall(same.events, 'p1', 'p3')).toBeUndefined()
+      expect(same.state.tick).toBe(t + 1)
+
+      const next = step(same.state, [], ctx)
+      expect(ueberfall(next.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z4: Wächter — ein Rueckzug ins eigene Land, danach ein Marsch nach s2 in der Sperre bleibt ein Ueberfall im Tick des Betretens', () => {
+      imKrieg()
+      // n2 (p1, eigen) statt s2: der Rueckzug bleibt im eigenen Land, die Sperre laeuft trotzdem.
+      const army = placeArmy(state, { owner: 'p1', at: 'n2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx).state
+      expect(afterRetreat.armies[army.id]!.locationProvinceId).toBe('n1')
+      expect(afterRetreat.armies[army.id]!.cannotAttackUntil).toBeGreaterThan(afterRetreat.tick)
+
+      // Ein frischer Marsch nach s2 (p3), noch waehrend die Sperre laeuft — von Hand
+      // gesetzt (wie R1/R6/R9), damit der Grenzuebertritt genau einen Tick spaeter faellt,
+      // unabhaengig von der realen Reisezeit ueber die Karte.
+      const marching = afterRetreat.armies[army.id]!
+      marching.path = ['s2']
+      marching.departureTick = afterRetreat.tick
+      marching.arrivalTick = afterRetreat.tick + 1
+
+      const arrived = step(afterRetreat, [], ctx)
+      expect(arrived.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(arrived.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z5: ein Marsch tiefer in dieselbe Gastmacht bleibt in der Sperre geschuetzt, danach greift die Frist (kein Raeumweg)', () => {
+      imKrieg()
+      const t = state.tick
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx).state
+      expect(afterRetreat.armies[army.id]!.locationProvinceId).toBe('s2')
+
+      // s2 -> s1 bleibt bei p3 (kein Grenzuebertritt) und ist kein Raeumweg (tiefer hinein);
+      // die Reise dauert laenger als die Sperre — die Armee steht bei Fristende noch in s2.
+      const moved = step(afterRetreat, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 's1' }], ctx).state
+      expect(moved.armies[army.id]!.arrivalTick!).toBeGreaterThan(t + retreatCooldown)
+
+      let current = moved
+      while (current.tick < t + retreatCooldown) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+      const after = step(current, [], ctx)
+      expect(ueberfall(after.events, 'p1', 'p3')).toBeDefined()
+    })
+
+    it('Z7: eine Armee, die jeden Tick feuert, bleibt trotzdem ein Ueberfall im Friedensland der Gastmacht (Befund kritisch, Nacharbeit Etappe 1)', () => {
+      // p1-Artillerie steht in m1 (hier: Gastmacht p3, Friede seit Tick 0) und feuert
+      // jeden Tick automatisch auf p2 (Ziel o1, Krieg, direkter Nachbar von m1) — die
+      // Armee marschiert nie, nimmt also nie einen Raeumweg (b), und hat sich nie
+      // zurueckgezogen (c gilt der Sache nach nicht). Der Beschuss-Cooldown darf die
+      // Ueberfallpruefung trotzdem nicht dauerhaft aussetzen.
+      placeArmy(state, {
+        owner: 'p1',
+        at: 'm1',
+        units: [{ unitKey: 'artillery', hpTotal: 20 * TEST_RULES.units['artillery']!.hpPerUnit }],
+        stance: 'defensive',
+      })
+      state.provinces.m1!.owner = 'p3'
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 100_000 }] })
+
+      let current = state
+      let shots = 0
+      let found: ReturnType<typeof ueberfall>
+      for (let i = 0; i < 30 && !found; i++) {
+        const r = step(current, [], ctx)
+        if (r.events.some((event) => event.type === 'BOMBARDMENT')) shots++
+        found = ueberfall(r.events, 'p1', 'p3')
+        current = r.state
+      }
+      expect(shots, 'die Artillerie muss in diesem Lauf tatsaechlich gefeuert haben').toBeGreaterThan(0)
+      expect(
+        found,
+        'kein Ueberfall auf die Gastmacht p3 in 30 Ticks, obwohl die Armee dort im Frieden steht, nie einen Raeumweg nimmt und sich nie zurueckgezogen hat',
+      ).toBeDefined()
+    })
+
+    it('Z6: Wächter — ein Rueckzug in Buendnisland oder Land mit Durchmarschrecht bleibt frei (wie heute)', () => {
+      state.diplomacy.relations['p1|p3']!.state = 'alliance'
+      imKrieg()
+      const t = state.tick
+      const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+      army.stance = 'retreat'
+      const afterRetreat = step(state, [], ctx)
+      expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+      expect(ueberfall(afterRetreat.events, 'p1', 'p3')).toBeUndefined()
+
+      // Weit ueber die Sperre hinaus: das Buendnis schuetzt ohnehin, unabhaengig von ihr.
+      let current = afterRetreat.state
+      while (current.tick < t + retreatCooldown + 5) {
+        const r = step(current, [], ctx)
+        expect(ueberfall(r.events, 'p1', 'p3'), `Tick ${r.state.tick}`).toBeUndefined()
+        current = r.state
+      }
+    })
   })
 })

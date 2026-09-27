@@ -111,6 +111,8 @@ export interface VisibleArmy {
   arrivalTick?: Tick | null
   /** When the march began — a progress bar needs both ends of the stretch (R-UI-09). */
   departureTick?: Tick | null
+  /** Nur eigene Armeen: bis zu welchem Tick die Rückzugssperre läuft (R-DIP-10, Rückzug in neutrales Land). */
+  cannotAttackUntil?: Tick
   // `retreating` stood here from T-M40-04 to T-M40-10: the running attack cooldown of a visible
   // foreign army, for the pursuit of a retreating enemy. The pursuit is gone (D30.4), and the field
   // was knowledge without a visible source — the core reports a retreat only to the side that
@@ -444,6 +446,7 @@ export function publicView(state: GameState, playerId: PlayerId, rules?: Rules):
             path: [...army.path],
             arrivalTick: army.arrivalTick,
             departureTick: army.departureTick,
+            cannotAttackUntil: army.cannotAttackUntil,
           }
         : {}),
     })

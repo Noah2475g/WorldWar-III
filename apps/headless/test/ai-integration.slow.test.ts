@@ -412,11 +412,15 @@ describe('R-AI-08/AK3 Die KI erzeugt keine Befehle, die der Kern verwirft', () =
     expect(rejected(integration, 'INVALID_TARGET', 'DIPLOMACY').length).toBe(0)
   })
 
-  it('bleibt zahlungsfaehig', () => {
-    // Eine KI, die kein Geld mehr hat, trifft keine Entscheidungen mehr — sie erleidet
-    // nur noch. Das ist die erste Haelfte von AK3.
-    const pleite = integration.events.filter((event) => event.type === 'RESOURCE_SHORTAGE' && event.resource === 'money')
-    expect(pleite.length, `Geldmangel bei ${new Set(pleite.map((e) => e.type === 'RESOURCE_SHORTAGE' && e.playerId)).size} Maechten`).toBe(0)
+  // Fassung nach Noahs Antwort auf Frage 8 (2026-09-26, T-M43-01): eine KI darf durch einen
+  // Provinzverlust in Geldmangel geraten (Befund M42-03-a) — das Tor ist "keine eigene
+  // Aushebung ist schuld", nicht mehr "nie Geldmangel". Die Gesamtzahl bleibt Berichtszahl.
+  it('bleibt zahlungsfaehig, soweit es an ihr liegt (Fassung nach Frage 8)', () => {
+    const jeMacht = Object.values(integration.m42!.jeMacht)
+    const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+    expect(schuld, 'Geldmangel durch eigene Aushebung').toEqual([])
+    const geldmangelTageGesamt = jeMacht.reduce((s, m) => s + m.geldmangelTage, 0)
+    console.log(`Geldmangeltage gesamt (Welt 1815): ${geldmangelTageGesamt}`)
   })
 
   it('befiehlt keine Armee, die sie im selben Zug zusammengelegt hat (T-M41-08)', () => {
@@ -491,6 +495,10 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     // Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird dieser Fall unbemerkt
     // gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist dann meldenswert (die
     // Aushebung haette sich geaendert).
+    //
+    // **T-M42-06 (2026-09-27, zweite Messung): auf dem Stand mit Rueckzugsfrist hebt Welt 1815
+    // keine Artillerie aus — bleibt it.fails bis T-M42-07 (K1). Die erste F-Messung (d088fda,
+    // ohne RZ) war zufaellig gruen.**
     const events = integration.events
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
     const beschuss = events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic)
@@ -566,14 +574,10 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
-    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
-    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
-    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
-    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
-    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
-    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
-    // vitest ihn als fehlgeschlagenes it.fails.
+  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **Seit T-M42-06 gruen** (2026-09-27, Befund M42-06-b): 2 Frieden zwischen KI in 90 Tagen, der
+    // erste an Tag 72. Der Zeitpunkt bleibt chaotisch (frueher Tag 44 bis nie); die Fassung nach
+    // Frage 7 ("in 200 Tagen, drei Startzahlen") traegt T-M42-12.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
@@ -641,6 +645,45 @@ describe('T-M41-11 Die KI befiehlt keine Hauptstadt waehrend der Sperre', () => 
  * Die neu gefasste Zahl (Paare gleicher Rolle, Summe bis stackFullContribution, ueber zwei
  * Tagesenden) steht seit T-M42-01 unter `m42.*.heer`; zugesichert wird sie erst in T-M42-09.
  */
+
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): kein Geldmangeltag geht auf eine eigene
+// Aushebung zurueck. Ausgangswert vor T-M42-03 (Stufe 0): Kanada 44 von 44 Geldmangeltagen durch
+// Aushebung in der Voreinstellung 200 — das ist der Rot-Nachweis dieses Blocks (die m17-Fassung
+// unten ist auf Stufe 0 schon grün, siehe dort). Die Gesamtzahl aller Geldmangeltage bleibt
+// Berichtszahl (`m42.*.jeMacht.*.geldmangelTage`), ohne eigenes Tor.
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck', () => {
+  it('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const jeMacht = Object.values(messung.m42!.jeMacht)
+      // Lebenszeichen: eine Zaehlung ueber keine Aushebung waere immer null.
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${name}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${name}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
+// R-AI-12/AK2 (T-M42-06, D32.7): in der ausgelieferten Voreinstellung beginnt mindestens die
+// Haelfte der KI-Maechte mit Stadt eine Fabrik. "Mit Stadt" heisst: an mindestens einem
+// Tagesende eine Stadt ohne Fabrik gehalten (`tageStadtOhneFabrik > 0`) — genau die Lage, in der
+// AK1 greift; Kanada (drei Provinzen, keine Stadt) zaehlt nicht mit. Stufe 0: 2 von 6, Stufe R:
+// 4 von 6 (schon gruen, kein eigener Rot-Nachweis).
+describe('R-AI-12/AK2 Die Haelfte der Maechte mit Stadt beginnt eine Fabrik — Voreinstellung 200', () => {
+  it('in der Voreinstellung ueber 200 Spieltage', () => {
+    const jeMacht = Object.values(voreinstellungLang.m42!.jeMacht)
+    const mitStadt = jeMacht.filter((m) => m.tageStadtOhneFabrik > 0 || m.fabrikenBegonnen > 0)
+    const mitFabrik = mitStadt.filter((m) => m.fabrikenBegonnen > 0)
+    expect(mitStadt.length, 'keine Macht mit Stadt - die Zusicherung saehe nichts').toBeGreaterThan(0)
+    expect(
+      mitFabrik.length * 2,
+      `mit Fabrik: ${mitFabrik.map((m) => m.nation).join(', ')} von ${mitStadt.map((m) => m.nation).join(', ')}`,
+    ).toBeGreaterThanOrEqual(mitStadt.length)
+  })
+})
 
 describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
   it('zaehlt jeden Spieltag', () => {

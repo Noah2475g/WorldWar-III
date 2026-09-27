@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   canApply,
   createInitialState,
-  economyOverview,
   publicView,
   relationKey,
   runTicks,
@@ -15,7 +14,8 @@ import {
   type SpyMission,
 } from '@worldwar/core'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
-import { espionageCommands, dailyMoneyIncome, dailyArmyMoneyUpkeep, espionageBudget } from './espionage'
+import { espionageCommands, espionageBudget } from './espionage'
+import { dailyMoneyIncome, dailyArmyMoneyUpkeep } from './finance'
 import { decide, emptyMemory } from './decide'
 import { commandsForTick } from './loop'
 import { storeMemories } from './runner'
@@ -796,48 +796,8 @@ function plane(
   return geplant
 }
 
-describe('Finanzen aus der Sicht, Zwilling zu economyOverview', () => {
-  it('der Geldertrag aus der Sicht ist der der Wirtschaftsuebersicht', () => {
-    const l = lage({
-      mutate: (s) => {
-        s.provinces['o2']!.morale = 43_210
-        s.provinces['o3']!.occupiedSince = s.tick - 50
-        s.players[ME]!.capitalLostUntil = s.tick + 100
-      },
-    })
-    for (const p of l.state.playerOrder) {
-      const view = publicView(l.state, p)
-      expect(dailyMoneyIncome(view, l.rules)).toBe(economyOverview(l.state, p, l.rules).money.production)
-    }
-  })
-
-  it('ohne Hauptstadtverlust und ohne Besatzung ebenso', () => {
-    const l = lage()
-    for (const p of l.state.playerOrder) {
-      const view = publicView(l.state, p)
-      expect(dailyMoneyIncome(view, l.rules)).toBe(economyOverview(l.state, p, l.rules).money.production)
-    }
-  })
-
-  it('der Armeeunterhalt aus der Sicht ist der der Uebersicht', () => {
-    const l = lage({
-      mutate: (s) => {
-        placeArmy(s, {
-          owner: ME,
-          at: 'o1',
-          units: [
-            { unitKey: 'infantry', hpTotal: 12_345 },
-            { unitKey: 'tank', hpTotal: 5_201 },
-          ],
-        })
-      },
-    })
-    const view = publicView(l.state, ME)
-    const upkeep = dailyArmyMoneyUpkeep(view, l.rules)
-    expect(upkeep).toBe(economyOverview(l.state, ME, l.rules).money.consumption)
-    expect(upkeep).toBeGreaterThan(0)
-  })
-})
+// Block "Finanzen aus der Sicht, Zwilling zu economyOverview" ist nach finance.test.ts umgezogen
+// (T-M42-03, F1-F3): dailyMoneyIncome/dailyArmyMoneyUpkeep leben seitdem in finance.ts.
 
 describe('Z9 Die Spionage laeuft im Strategietakt von decide', () => {
   it('decide wirbt im Strategietakt an, ausserhalb nicht', () => {

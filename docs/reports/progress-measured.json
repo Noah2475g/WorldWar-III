@@ -1,5 +1,5 @@
 {
-  "gemessenAm": "2026-09-25",
+  "gemessenAm": "2026-09-27",
   "leiter": {
     "letzteFreischaltungTag": 80,
     "echtzeitMinutenTempo1": 32,
@@ -30,21 +30,21 @@
     "maechte": 6,
     "tage": 120,
     "startzahlen": 12,
-    "anteilDesStaerksten": 0.3844,
-    "eroberungen": 241.2,
-    "ueberlebende": 5.67,
-    "endbestaende": 46721
+    "anteilDesStaerksten": 0.3338,
+    "eroberungen": 217.8,
+    "ueberlebende": 5.58,
+    "endbestaende": 54463
   },
   "risiko5": {
     "tage": 200,
     "stufe": 3,
     "hoechsteStufeJeMacht": [
-      0,
-      0,
       1,
-      0,
-      0,
-      0
+      1,
+      1,
+      1,
+      1,
+      1
     ],
     "erreichtAmTagJeMacht": [
       null,

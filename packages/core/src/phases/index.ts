@@ -1,7 +1,7 @@
 import type { Command } from '../commands/types'
 import type { GameEvent } from '../events/types'
 import type { Rules } from '../rules/types'
-import type { GameState, MapData } from '../state/types'
+import type { ArmyId, GameState, MapData, Tick } from '../state/types'
 
 /**
  * A phase is one step of the tick pipeline (design D3). Phases mutate the draft in
@@ -15,6 +15,22 @@ export interface PhaseContext {
   commands: readonly Command[]
   /** Events produced during this tick; appended to the log in bookkeeping. */
   events: GameEvent[]
+  /**
+   * Flüchtig (D34.2): je Armee, die in diesem Tick eine Grenze überschritt, der
+   * Abmarsch-Tick ihres Marschs. Nie im Zustand — kein Feld, kein Parameterlauf.
+   */
+  crossedBorder?: Map<ArmyId, Tick>
+  /**
+   * Flüchtig (Nacharbeit Etappe 1, Befund kritisch): jede Armee, die in diesem Tick
+   * geschossen hat (Hand oder Automatik). `army.cannotAttackUntil` dient zwei Zwecken —
+   * dem Beschuss-Cooldown (bombardment.ts) und der Räumfrist eines Rückzugs
+   * (retreat.ts, R-DIP-10 (c)) — und beide schreiben ins selbe Feld. Ohne diese Menge
+   * verlängert der eigene Schuss die Räumfrist-Ausnahme jeden Tick neu: eine
+   * Fernwaffenarmee, die jeden Tick feuert, wäre dauerhaft vor der Überfallprüfung
+   * geschützt, obwohl sie sich nie zurückgezogen hat (diplomacy.ts liest diese Menge,
+   * nicht nur das Feld). Nie im Zustand — kein Feld, kein Parameterlauf.
+   */
+  bombardedThisTick?: Set<ArmyId>
 }
 
 export type Phase = (draft: GameState, ctx: PhaseContext) => void
