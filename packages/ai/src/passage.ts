@@ -336,6 +336,15 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
     ownerOf: (id) => ownerOf(context, id),
     mayEnter: (owner) => blocksPassage(context, owner) === null,
     useSea: canUseSeaVisible(army, context.rules),
+    // Verteidigung in der Tiefe (Nacharbeit Etappe 1, Befund hoch): an beiden Stellen, die
+    // `way` benutzen (Zeile ~348 und die Breitensuche unten), steht `firstBlock(weg, host)`
+    // bereits als Vorbedingung und prüft über den GANZEN Pfad genau dasselbe Prädikat
+    // (`blocksPassage(owner) === null`) wie `mayStand` es für das erste Feld hinter der
+    // Gastmacht verlangt — das erste Nicht-Gastmacht-Feld im Pfad ist immer Teil dieser
+    // Prüfung. `strictExit` ist an diesen zwei Stellen deshalb z.Zt. unreachable (belegt:
+    // Mutation "Zeile entfernt" bleibt bei 50/50 grünen Tests in passage.test.ts) — bewusst
+    // stehen gelassen, falls ein künftiger Aufrufer hier `way` ohne `firstBlock` nutzt. Der
+    // Mechanismus selbst ist in homePath.test.ts (H6d/H6e) direkt und wirksam getestet.
     strictExit: true,
   }
 
