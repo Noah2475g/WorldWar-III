@@ -58,7 +58,12 @@ function clearingWay(draft: GameState, ctx: PhaseContext, me: PlayerId, useSea: 
   }
 }
 
-/** An army standing in someone's territory while not at war is an act of aggression. */
+/**
+ * An army standing in someone's territory while not at war is an act of aggression —
+ * unless (a) a friendly change of relations gave it a day's notice, (b) it is on the
+ * shortest way out, or (c) it retreated there and its cooldown has not run out yet
+ * (Noahs Entscheid 2026-09-27, Punkt 3; Befund M42-03-a).
+ */
 function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
   for (const armyId of draft.armyOrder) {
     const army = draft.armies[armyId]
@@ -86,6 +91,12 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
     // gesetzte Armee, und sieben bestehende Tests erwarteten dort einen Überfall.
     const changed = relation.state === 'truce' || relation.sinceTick > 0
     if (changed && (!crossed || draft.tick === relation.sinceTick) && draft.tick < relation.sinceTick + notice) continue
+    // (c) Ein Rückzug ist kein Einmarsch aus freien Stücken (Noahs Entscheid vom 2026-09-27, Punkt 3; Befund
+    // M42-03-a): wer nach einer verlorenen Schlacht in das Land einer Macht ausweicht, mit der kein Krieg herrscht,
+    // hat die Frist seiner Rückzugssperre (`retreatCooldownTicks`). Wer in dieser Zeit eine Grenze überschreitet,
+    // bekommt sie nicht (`crossed`). Beschuss setzt die Sperre nur bis zum nächsten Tick (bombardment.ts:139),
+    // das Verschmelzen nimmt das Maximum (commands/army.ts:104) — beides hingenommen.
+    if (!crossed && draft.tick < army.cannotAttackUntil) continue
     // (b) Wer auf dem kürzesten Weg hinaus ist, ist nie ein Überfaller (E3, D34.3).
     if (
       !crossed &&

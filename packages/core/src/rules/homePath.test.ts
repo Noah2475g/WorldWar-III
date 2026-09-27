@@ -93,6 +93,33 @@ describe('R-DIP-10/AK2 Der Räumweg', () => {
     expect(isClearingPath(withPassage, 'o1', ['m1'], ME, HOST)).toBe(true)
   })
 
+  it('H6b: der Rueckfall greift erst, wenn es in der GANZEN Gastmacht keinen legalen Ausgang gibt (Nacharbeit T-M43-01, Befund c.1)', () => {
+    // Armee in o2 (Nachbarn o1, o3 Gastmacht, s2 = p3 ohne Recht); ueber o1/o3 erreicht man m1 (herrenlos).
+    const w = way({})
+    expect(hostFieldsToLeave(w, 'o2', ME, HOST)).toBe(1)
+  })
+
+  it('H6c: isClearingPath ueber den legalen Ausgang in Tiefe 1 ist ein Raeumweg', () => {
+    const w = way({})
+    expect(isClearingPath(w, 'o2', ['o1', 'm1'], ME, HOST)).toBe(true)
+  })
+
+  it('H6d: ohne strictExit ist der Uebertritt zu p3 (Tiefe 0, ohne Recht) trotzdem ein Raeumweg — der Kern wertet ihn als Ueberfall auf p3', () => {
+    const w = way({})
+    expect(isClearingPath(w, 'o2', ['s2'], ME, HOST)).toBe(true)
+  })
+
+  it('H6e: mit strictExit ist derselbe Uebertritt kein Raeumweg', () => {
+    const w = way({}, [], { strictExit: true })
+    expect(isClearingPath(w, 'o2', ['s2'], ME, HOST)).toBe(false)
+  })
+
+  it('H6f: gewaehrt p3 Durchmarsch, ist ihr Feld selbst schon der kuerzeste Ausgang', () => {
+    const w = way({}, ['p3'])
+    expect(hostFieldsToLeave(w, 'o2', ME, HOST)).toBe(0)
+    expect(isClearingPath(w, 'o2', ['o1', 'm1'], ME, HOST)).toBe(false)
+  })
+
   it('H7: eine Seekante ist der kuerzeste Ausgang, aber nur, wenn die Armee sie nutzen darf', () => {
     const bySea = way({ i2: ME })
     expect(hostFieldsToLeave(bySea, 'o1', ME, HOST)).toBe(0)

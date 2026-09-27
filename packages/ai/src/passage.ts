@@ -1,6 +1,7 @@
 import { ONE, divFixed, mulChain } from '@worldwar/shared'
 import {
   findPath,
+  hostFieldsToLeave,
   isClearingPath,
   neighborsOf,
   TERRAIN_FACTORS,
@@ -10,6 +11,7 @@ import {
   type PlayerId,
   type ProvinceId,
   type PublicView,
+  type Rules,
   type VisibleArmy,
   type VisibleProvince,
 } from '@worldwar/core'
@@ -283,6 +285,32 @@ export function staleTargetDeclarations(
 }
 
 /**
+ * Zwilling von `rules/movement.ts:canUseSea` auf der Sicht (T-M43-01, D34.3): dieselbe Antwort
+ * wie der Kern, sonst kann eine seetaugliche Armee (Flotte oder genug Transportraum) einen
+ * kürzeren Räumweg über See haben, den der Kern kennt und die KI nicht — "kürzester Weg" (E3)
+ * müsste dann für beide dasselbe Landbild meinen, tut es aber nicht. `VisibleArmy.units` fehlt
+ * nur bei fremden Armeen (Stärkeschätzung statt Zusammensetzung); der Räumweg gilt immer der
+ * eigenen Armee, die Zusammensetzung ist also bekannt.
+ */
+function canUseSeaVisible(army: VisibleArmy, rules: Rules): boolean {
+  let capacity = 0
+  let landUnits = 0
+  for (const stack of army.units ?? []) {
+    const rule = rules.units[stack.unitKey]
+    if (!rule) continue
+    if (rule.transportCapacity) {
+      // eslint-disable-next-line no-restricted-syntax -- Kapazitaet je Schiff mal Schiffszahl, reine Ganzzahlen
+      capacity += rule.transportCapacity * Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+    if (rule.class !== 'navy' && rule.class !== 'air') {
+      // eslint-disable-next-line no-restricted-syntax -- Trefferpunkte durch Trefferpunkte je Einheit, reine Ganzzahlen
+      landUnits += Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+  }
+  return landUnits === 0 || capacity >= landUnits
+}
+
+/**
  * Gast ohne unbefristetes Recht (R-DIP-10/AK4, D34.3): Heimmarsch auf dem kürzesten Weg
  * hinaus, oder null. Schreibt Erklärung und assignment.
  *
@@ -307,7 +335,7 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
     map,
     ownerOf: (id) => ownerOf(context, id),
     mayEnter: (owner) => blocksPassage(context, owner) === null,
-    useSea: false,
+    useSea: canUseSeaVisible(army, context.rules),
     strictExit: true,
   }
 
@@ -358,19 +386,38 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
     frontier = nextHostFields
   }
 
-  const target = hit ?? fallback
+  // Wie der Kern (H6): ein Weg, der nicht der kürzeste hinaus ist, nur wenn es gar keinen
+  // gibt. `fallback` ist ein Ausgang, den die eigene (auf Landwege beschränkte) Vorhersage
+  // fand, der aber nicht der kürzeste Weg ist, den der Kern anerkennt — marschiert die Armee
+  // dorthin, wertet der Kern sie nach Fristende als Überfall, sobald sie die Gastmacht
+  // erneut betritt. Nur wenn der Kern selbst keinen legalen Ausgang kennt (die Gastmacht
+  // umschließt die Armee ganz), ist der Umweg besser als gar kein Befehl.
+  const legalDepth = hostFieldsToLeave(way, army.provinceId, me, host)
+  const target = hit ?? (legalDepth === null ? fallback : null)
   const cancelled = relation.passageReceived && relation.passageEndsAtTick.received !== null
   const fristReason = cancelled
     ? `Durchmarschrecht bei ${host} endet in Tick ${relation.passageEndsAtTick.received}`
     : `${host} gewährt keinen Durchmarsch`
 
   if (target === null) {
-    explanations.push({
-      action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
-      reason: fristReason,
-      score: 500,
-      alternative: { action: 'bleiben', score: 200 },
-    })
+    if (fallback !== null) {
+      // Ein Weg wurde gefunden, aber die eigene Vorhersage kennt keinen, den der Kern als
+      // kürzesten Ausgang anerkennt (Befund 6) — die Armee bleibt lieber stehen, statt einen
+      // Umweg zu nehmen, der ab Fristende zum Überfall wird.
+      explanations.push({
+        action: `${army.id} bleibt in ${army.provinceId}`,
+        reason: `${fristReason}, kürzester Weg hinaus nicht vorhersagbar`,
+        score: 500,
+        alternative: { action: 'Umweg (ab Fristende ein Überfall)', score: 200 },
+      })
+    } else {
+      explanations.push({
+        action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
+        reason: fristReason,
+        score: 500,
+        alternative: { action: 'bleiben', score: 200 },
+      })
+    }
     return null
   }
 

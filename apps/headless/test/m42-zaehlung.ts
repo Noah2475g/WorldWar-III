@@ -28,7 +28,9 @@ import {
  * - **„durch Aushebung"**: die letzte angenommene Aushebung dieser Macht an oder vor dem
  *   Mangeltag hatte am Ende ihres Tages eine negative Tagesbilanz — und seit T-M43-01/E5:
  *   die Macht hat seither keine Provinz verloren (`geldmangelTageNachProvinzverlust`
- *   zählt sonst, R-AI-11/AK3 in der Fassung nach Frage 8).
+ *   zählt sonst, R-AI-11/AK3 in der Fassung nach Frage 8). Bestätigt durch Noahs Entscheid
+ *   vom 2026-09-27 (Antwort F8: Pleite nach Provinzverlust ist ohne eigene Schuld); die
+ *   widersprechende Messfestlegung in DECISIONS 2026-09-26 T-M42-01 ist berichtigt.
  * - **Tagesbilanz**: `economyOverview(...).balance` (Ertrag minus Armeeunterhalt minus Spionagesold)
  *   minus Unterhalt der eigenen Aushebungs-Warteschlange (`tagesbilanzNachAushebung`).
  * - **Paar**: zwei stehende Armeen gleicher Macht, Provinz, Einschiffung und Rolle mit zusammen
