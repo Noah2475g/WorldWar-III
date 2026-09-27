@@ -9,7 +9,7 @@ import {
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { economyCommands, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
+import { RESERVE_PERMILLE, economyCommands, factoryReserve, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
 import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
 
@@ -470,5 +470,225 @@ describe('R-AI-11/AK2 Die KI hebt nur aus, was ihre Tagesbilanz traegt', () => {
     expect(begruendung, 'eine Begruendung fuer die Aushebung').toBeDefined()
     expect(begruendung!.reason).toContain('Tagesbilanz')
     expect(begruendung!.reason).toContain('7')
+  })
+})
+
+/**
+ * T-M42-06 (R-AI-12/AK1, D32.7): Erst die Fabrik.
+ *
+ * `fabrikLage` baut einen Spieltag auf der Testwelt: Ostmark (p2) haelt die Stadt `o1` und die
+ * Landprovinzen `o2`, `o3`; jede mit Kaserne, keine Fabrik, keine Eisenbahn, keine Festung. Der
+ * Vorrat ist so gesetzt, dass die Fabrik ueber der Ruecklage **nicht** bezahlbar ist, Eisenbahn,
+ * Festung und Kaserne aber schon (`vorrat`, Vorbedingung je Fall). Nahrung ist reichlich — sie
+ * soll die Aushebung nicht begrenzen.
+ */
+describe('R-AI-12/AK1 Erst die Fabrik', () => {
+  const tpd = TEST_RULES.constants.ticksPerDay
+  const fabrikTag = TEST_RULES.buildings.factory.availableFromDay
+  const fabrikKosten = buildingCostForLevel(TEST_RULES.buildings.factory, 1, TEST_RULES.constants) as Record<string, number>
+  /** Genau der Bestand, bei dem canAfford die Fabrik traegt (D32.7): aufgerundet kosten * 1000 / 800. */
+  const erwarteterVorbehalt = Object.fromEntries(
+    Object.entries(fabrikKosten)
+      .filter(([, menge]) => menge > 0)
+      .map(([key, menge]) => [key, Math.ceil((menge * 1000) / (1000 - RESERVE_PERMILLE))]),
+  )
+
+  function fabrikLage(o: {
+    tag?: number
+    vorrat?: number
+    /** Kaserne in `o2` (sonst keine). */
+    kaserneO2?: boolean
+    /** Fabrik in `o1`. */
+    fabrikO1?: number
+    /** Eigene zweite Stadt `m1` mit dieser Fabrikstufe (undefined: m1 bleibt herrenlos). */
+    zweiteStadtFabrik?: number
+  }) {
+    const state = createInitialState(CONFIG, ctx)
+    state.tick = ((o.tag ?? fabrikTag + 3) - 1) * tpd
+    if (o.zweiteStadtFabrik !== undefined) state.provinces['m1']!.owner = 'p2'
+    for (const id of state.provinceOrder) {
+      const province = state.provinces[id]!
+      if (province.owner !== 'p2') continue
+      province.buildings = { barracks: 1 }
+    }
+    state.provinces['o1']!.buildings = { barracks: 1, factory: o.fabrikO1 ?? 0 }
+    if (o.kaserneO2 === false) state.provinces['o2']!.buildings = {}
+    if (o.zweiteStadtFabrik !== undefined) state.provinces['m1']!.buildings = { barracks: 1, factory: o.zweiteStadtFabrik }
+    const resources = state.players['p2']!.resources as Record<string, number>
+    for (const key of Object.keys(resources)) resources[key] = o.vorrat ?? 700_000
+    resources['food'] = 50_000_000
+    return {
+      view: publicView(state, 'p2'),
+      memory: emptyMemory(600),
+      rules: TEST_RULES,
+      map,
+      difficulty: TEST_RULES.ai.difficulties.normal,
+    }
+  }
+  /** Setzt `buildQueueLength` einer Provinz in der Sicht (die Sicht der KI traegt nur die Laenge). */
+  const schlange = (context: ReturnType<typeof fabrikLage>, provinceId: string, laenge: number) => {
+    context.view.provinces = context.view.provinces.map((province) =>
+      province.id === provinceId ? { ...province, buildQueueLength: laenge } : province,
+    )
+  }
+  const bauten = (context: ReturnType<typeof fabrikLage>) =>
+    economyCommands(context, []).filter(
+      (command): command is Extract<Command, { type: 'BUILD' }> => command.type === 'BUILD',
+    )
+  const setzeVorrat = (context: ReturnType<typeof fabrikLage>, werte: Record<string, number>) => {
+    const vorrat = context.view.self.resources as Record<string, number>
+    for (const [key, menge] of Object.entries(werte)) vorrat[key] = menge
+  }
+
+  // --- factoryReserve, die reine Frage -------------------------------------------------------
+
+  it('V1: Stadt ohne Fabrik, Fabrik freigeschaltet -> Vorbehalt = Kosten der ersten Fabrik samt Ruecklage', () => {
+    expect(Object.keys(erwarteterVorbehalt).length, 'die Fabrik kostet nichts - der Test saehe nichts').toBeGreaterThan(0)
+    expect(factoryReserve(fabrikLage({}))).toEqual(erwarteterVorbehalt)
+  })
+
+  it('V2: genau der Vorbehalt traegt die Fabrik ueber der Ruecklage (canAfford-Zwilling)', () => {
+    for (const [key, wert] of Object.entries(erwarteterVorbehalt)) {
+      const frei = wert - Math.trunc((wert * RESERVE_PERMILLE) / 1000)
+      expect(frei, key).toBeGreaterThanOrEqual(fabrikKosten[key]!)
+    }
+  })
+
+  it('V3: vor der Freischaltung aus, ab dem Freischaltungstag an', () => {
+    expect(factoryReserve(fabrikLage({ tag: fabrikTag - 1 }))).toBeNull()
+    expect(factoryReserve(fabrikLage({ tag: fabrikTag }))).not.toBeNull()
+  })
+
+  it('V4: ohne sichtbare eigene Stadt aus (auch nicht mit einer nur erinnerten)', () => {
+    const ohneStadt = fabrikLage({})
+    ohneStadt.view.provinces = ohneStadt.view.provinces.filter((province) => province.id !== 'o1')
+    expect(factoryReserve(ohneStadt)).toBeNull()
+
+    const erinnert = fabrikLage({})
+    erinnert.view.provinces = erinnert.view.provinces.map((province) =>
+      province.id === 'o1' ? { ...province, stale: true } : province,
+    )
+    expect(factoryReserve(erinnert)).toBeNull()
+  })
+
+  it('V5: Fabrik vorhanden -> aus, auch wenn eine zweite Stadt noch keine hat (nur bis zur ersten)', () => {
+    expect(factoryReserve(fabrikLage({ fabrikO1: 1 }))).toBeNull()
+    expect(factoryReserve(fabrikLage({ zweiteStadtFabrik: 1 })), 'm1 mit Fabrik, o1 ohne').toBeNull()
+    expect(factoryReserve(fabrikLage({ zweiteStadtFabrik: 0 })), 'Gegenprobe: zwei Staedte ohne Fabrik').not.toBeNull()
+  })
+
+  it('V6: Fabrik "im Bau" (Stadt ohne Fabrik, mit Kaserne, Schlange > 0) -> aus', () => {
+    const context = fabrikLage({})
+    schlange(context, 'o1', 1)
+    expect(factoryReserve(context)).toBeNull()
+  })
+
+  it('V7: Schlange > 0 in einer Stadt ohne Kaserne ist die erste Kaserne, nicht die Fabrik -> an', () => {
+    const context = fabrikLage({})
+    context.view.provinces = context.view.provinces.map((province) =>
+      province.id === 'o1' ? { ...province, buildings: { factory: 0 }, buildQueueLength: 1 } : province,
+    )
+    expect(factoryReserve(context)).not.toBeNull()
+  })
+
+  it('V8: bekannte Unschaerfe - ein Kasernenausbau in der Schlange liest sich wie die Fabrik (D32.7)', () => {
+    // Die Sicht der KI traegt nur die Laenge der Schlange (runner.ts, D18.2). Eine Stadt mit
+    // Kaserne, ohne Fabrik und mit einem Kasernenausbau in der Schlange ist fuer sie von einer
+    // Stadt mit Fabrik im Bau nicht zu unterscheiden. Die KI selbst baut Kasernen nie aus
+    // (HALTETEST oben); nur ein Mensch koennte das. Wer das Merkmal schaerfer macht, dreht
+    // diesen Test um.
+    const context = fabrikLage({})
+    schlange(context, 'o1', 1) // gemeint: Kaserne Stufe 2
+    expect(factoryReserve(context)).toBeNull()
+  })
+
+  // --- economyCommands: andere Bauten ausser der Kaserne unterbleiben ------------------------
+
+  it('B1: Stadt ohne Fabrik, Bestand darunter -> kein Bau von Eisenbahn, Festung oder Hafen', () => {
+    const context = fabrikLage({})
+    // Die Lage, die der Test braucht: ueber der Ruecklage ist die Fabrik zu teuer, die Eisenbahn nicht.
+    const frei = 700_000 - Math.trunc((700_000 * RESERVE_PERMILLE) / 1000)
+    const eisenbahn = buildingCostForLevel(TEST_RULES.buildings.railway, 1, TEST_RULES.constants)
+    expect(Object.values(fabrikKosten).some((menge) => menge > frei), 'die Fabrik waere bezahlbar').toBe(true)
+    expect(Object.values(eisenbahn).every((menge) => (menge ?? 0) <= frei), 'die Eisenbahn waere zu teuer').toBe(true)
+
+    const gebaut = bauten(context).map((command) => `${command.building} in ${command.provinceId}`)
+    expect(gebaut.filter((b) => /^(railway|fortress|harbour) /.test(b)), 'Bau trotz Vorbehalt').toEqual([])
+    expect(gebaut).toEqual([])
+  })
+
+  it('B2: eine Kaserne ja', () => {
+    const context = fabrikLage({ kaserneO2: false })
+    expect(bauten(context).map((command) => `${command.building} in ${command.provinceId}`)).toEqual(['barracks in o2'])
+  })
+
+  it('B3: die Fabrik selbst, sobald sie bezahlbar ist (Haltetest)', () => {
+    const context = fabrikLage({ vorrat: 50_000_000 })
+    expect(bauten(context).map((command) => `${command.building} in ${command.provinceId}`)).toEqual(['factory in o1'])
+  })
+
+  it('B4: Fabrik im Bau -> die Eisenbahn ist wieder erlaubt (Gegenrichtung)', () => {
+    const context = fabrikLage({})
+    schlange(context, 'o1', 1)
+    const gebaut = bauten(context).map((command) => command.building)
+    expect(gebaut, 'der Vorbehalt geht nie aus').toEqual(['railway'])
+  })
+
+  it('B5: der Vorbehalt ist begruendet (R-AI-05)', () => {
+    const explanations: Explanation[] = []
+    economyCommands(fabrikLage({}), explanations)
+    expect(explanations.some((e) => e.action.includes('erste Fabrik'))).toBe(true)
+  })
+
+  // --- recruitCommands: ausgehoben wird nur ueber dem Vorbehalt -------------------------------
+
+  /** Holz und Geld = Vorbehalt + `ueber`; Nahrung reichlich; alles andere 0. */
+  function aushebungsLage(ueber: number, fabrikO1 = 0) {
+    const context = fabrikLage({ vorrat: 0, fabrikO1 })
+    setzeVorrat(context, {
+      food: 50_000_000,
+      wood: erwarteterVorbehalt['wood']! + ueber,
+      money: erwarteterVorbehalt['money']! + ueber,
+    })
+    return context
+  }
+  const aushebung = (context: ReturnType<typeof fabrikLage>, explanations: Explanation[] = []) =>
+    recruitCommands(context, explanations).find(
+      (command): command is Extract<Command, { type: 'RECRUIT' }> => command.type === 'RECRUIT',
+    )
+
+  it('A1: ausgehoben wird nur aus dem Bestand ueber dem Vorbehalt', () => {
+    // Ueber dem Vorbehalt 1 005 000: 20 % davon = 201 000 Geld -> 3 Infanterien zu 67 000.
+    // Ohne Vorbehalt waeren es 20 % von 1 838 750 = 367 750 -> 5.
+    const context = aushebungsLage(1_005_000)
+    const infanterie = TEST_RULES.units['infantry']!.cost as Record<string, number>
+    const share = TEST_RULES.ai.difficulties.normal.recruitShare
+    const ohne = Math.min(
+      ...Object.entries(infanterie)
+        .filter(([, menge]) => menge > 0)
+        .map(([key, menge]) => Math.trunc(Math.trunc((context.view.self.resources[key as 'money'] * share) / 1000) / menge)),
+    )
+    expect(ohne, 'ohne Vorbehalt mehr als mit - sonst saehe der Test nichts').toBeGreaterThan(3)
+
+    const recruit = aushebung(context)
+    expect(recruit?.unitKey).toBe('infantry')
+    expect(recruit?.count).toBe(3)
+    const explanations: Explanation[] = []
+    aushebung(aushebungsLage(1_005_000), explanations)
+    expect(explanations.find((e) => e.action.includes('infantry'))?.reason).toContain('erste Fabrik')
+  })
+
+  it('A2: reicht der Bestand ueber dem Vorbehalt fuer keine Einheit, keine Aushebung - begruendet', () => {
+    const explanations: Explanation[] = []
+    const recruit = aushebung(aushebungsLage(300_000), explanations)
+    expect(recruit, 'Aushebung aus dem Vorbehalt').toBeUndefined()
+    const unterbleibt = explanations.filter((e) => e.action === 'Aushebung unterbleibt')
+    expect(unterbleibt).toHaveLength(1)
+    expect(unterbleibt[0]!.reason).toContain('erste Fabrik')
+  })
+
+  it('A3: mit Fabrik kein Vorbehalt - derselbe Bestand hebt mehr aus (Haltetest)', () => {
+    const recruit = aushebung(aushebungsLage(1_005_000, 1))
+    expect(recruit?.count, 'mit Fabrik haelt die KI nichts zurueck').toBeGreaterThan(3)
   })
 })
