@@ -374,16 +374,13 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     allAccepted(state, decision)
   })
 
-  // Falle 8 (Bauplan §7.13, P17): geprueft und gemessen (Bericht T-M17-10) — die Armee
-  // reagiert sofort (Umkehr im Tick nach der Kuendigung), aber der gewaehlte Heimweg m1->n2
+  // Befund M17-D10 (Bauplan §7.13, P17), behoben in T-M43-01: die Armee reagierte schon
+  // immer sofort (Umkehr im Tick nach der Kuendigung), aber der gewaehlte Heimweg m1->n2
   // (160.000 km, Infanterie 6.000 km/h, keine Eisenbahn) braucht ~27 Ticks, die Frist
-  // (rightOfWayNoticeTicks) nur 24: die Armee ist bei Fristende noch in m1 unterwegs, und
-  // der Kern meldet einen Ueberfall ohne Erklaerung — beim Bau gefunden, nicht die Frist und
-  // nicht diese Zusicherung geaendert (Bauplan-Vorgabe). Siehe Bericht "Offene Punkte" und
-  // PROBLEME.md M17-D10. Der zweite Teil der Zusage (die Armee kommt bei p1 an) haelt.
-  it.todo('in der laufenden Partie: kein Ueberfall nach Ablauf der Frist (Befund M17-D10, offen)')
-
-  it('reagiert sofort auf die Kuendigung, auch wenn der Heimweg laenger ist als die Frist (Befund M17-D10)', () => {
+  // (rightOfWayNoticeTicks) nur 24 — der Kern meldete einen Ueberfall ohne Erklaerung, obwohl
+  // die Armee auf dem kuerzesten Weg hinaus war. Seit R-DIP-10/AK2 (der Raeumweg, D34.3)
+  // ist genau das kein Ueberfall mehr: derselbe Marsch, egal wie lange die Kante braucht.
+  it('und der Heimmarsch ist nach Fristende kein Ueberfall (Befund M17-D10 behoben)', () => {
     const state = dreiMaechte()
     state.provinces.m1!.owner = 'p2'
     setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
@@ -397,12 +394,29 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     )
     expect(homeward, JSON.stringify(result.applied)).toBeDefined()
     expect(homeward!.tick).toBeLessThanOrEqual(2)
-    // Der Ueberfall ohne Erklaerung tritt trotzdem ein (Befund M17-D10): der Heimweg braucht
-    // laenger als die Frist. Diese Zusicherung haelt den Ist-Stand fest, nicht die Zusage.
+    // Kein Ueberfall mehr: der Heimweg ist der kuerzeste Weg hinaus (R-DIP-10/AK2).
     const surprise = result.events.find(
       (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.playerId === 'p1' && e.targetPlayerId === 'p2',
     )
-    expect(surprise).toBeDefined()
+    expect(surprise).toBeUndefined()
+    expect(result.state.armies[army.id]!.locationProvinceId).toBe('n2')
+  })
+
+  it('in der laufenden Partie: kein Ueberfall zwischen p1 und p2 nach der Kuendigung (Befund M17-D10)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const result = advanceTicks(state, 3 * ticksPerDay, ctx, {
+      playerCommands: [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'revokeRightOfWay' }],
+    })
+    const surprise = result.events.find(
+      (e) =>
+        e.type === 'WAR_DECLARED' &&
+        e.withoutDeclaration === true &&
+        ((e.playerId === 'p1' && e.targetPlayerId === 'p2') || (e.playerId === 'p2' && e.targetPlayerId === 'p1')),
+    )
+    expect(surprise, JSON.stringify(result.events.filter((e) => e.type === 'WAR_DECLARED'))).toBeUndefined()
   })
 })
 

@@ -1,6 +1,9 @@
 import { emit } from '../events/emit'
 import { settleTradeOffers } from '../commands/tradeOffer'
+import { isClearingPath, type ClearingWay } from '../rules/homePath'
+import { canUseSea } from '../rules/movement'
 import { expirePassage, grantsPassage, relationKey } from '../state/create'
+import { atWar } from './combat'
 import type { Fixed } from '@worldwar/shared'
 import type { GameState, PlayerId, Relation } from '../state/types'
 import type { Phase, PhaseContext } from './index'
@@ -37,6 +40,24 @@ function endTies(relation: Relation): void {
   relation.bSharesMap = false
 }
 
+/**
+ * Was die Räumweg-Rechnung braucht, aus der Sicht des Kerns (D34.3): eigene Felder,
+ * herrenlose Felder und jedes Feld, das `me` ohne Überfall betreten dürfte (Krieg,
+ * Bündnis, gewährtes Durchmarschrecht), sind mögliche Zwischenstationen auf dem Weg
+ * hinaus — Felder der Gastmacht selbst nie (das fragt `isClearingPath` gar nicht ab).
+ */
+function clearingWay(draft: GameState, ctx: PhaseContext, me: PlayerId, useSea: boolean): ClearingWay {
+  return {
+    map: ctx.map,
+    ownerOf: (id) => draft.provinces[id]?.owner ?? null,
+    mayEnter: (owner) =>
+      atWar(draft, me, owner) ||
+      draft.diplomacy.relations[relationKey(me, owner)]?.state === 'alliance' ||
+      grantsPassage(draft, owner, me),
+    useSea,
+  }
+}
+
 /** An army standing in someone's territory while not at war is an act of aggression. */
 function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
   for (const armyId of draft.armyOrder) {
@@ -50,6 +71,34 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
     // Gerichtet (T-M17-04, R-DIP-08/AK1): der Gast ist die Armee, der Gewaehrende der
     // Besitzer der Provinz. Wer gewaehrt, darf damit **nicht** selbst hinein (Befund B1).
     if (grantsPassage(draft, province.owner, army.owner) || relation.state === 'alliance') continue
+
+    // Die Räumfrist (R-DIP-10, D34.2). `departed` ist nur gesetzt, wenn die Armee in
+    // diesem Tick eine Grenze überschritten hat (movement.ts).
+    const departed = ctx.crossedBorder?.get(army.id)
+    // E2: ein Marsch, der im Krieg losging, kommt nach dem Friedensschluss an — das ist
+    // kein neuer Einmarsch. Nur im Waffenstillstand: nach dem Übergang zum Frieden (R7)
+    // oder nach einem Bündnisbruch gilt die Ausnahme nicht.
+    const warMarch = departed !== undefined && relation.state === 'truce' && departed < relation.sinceTick
+    const crossed = departed !== undefined && !warMarch
+    const notice = ctx.rules.constants.rightOfWayNoticeTicks
+    // (a) Wer nicht einmarschiert, hat nach Frieden oder Bündnisbruch einen Spieltag.
+    // Frieden seit Spielbeginn ist keine Änderung (E4) — sonst schützte Tick 0 jede
+    // gesetzte Armee, und sieben bestehende Tests erwarteten dort einen Überfall.
+    const changed = relation.state === 'truce' || relation.sinceTick > 0
+    if (changed && (!crossed || draft.tick === relation.sinceTick) && draft.tick < relation.sinceTick + notice) continue
+    // (b) Wer auf dem kürzesten Weg hinaus ist, ist nie ein Überfaller (E3, D34.3).
+    if (
+      !crossed &&
+      army.path.length > 0 &&
+      isClearingPath(
+        clearingWay(draft, ctx, army.owner, canUseSea(army, ctx.rules)),
+        army.locationProvinceId,
+        army.path,
+        army.owner,
+        province.owner,
+      )
+    )
+      continue
 
     // No declaration, but boots on foreign soil: war starts immediately and costs
     // standing. Forbidding the move outright would remove the interesting choice.

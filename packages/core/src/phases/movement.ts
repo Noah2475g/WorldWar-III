@@ -85,6 +85,13 @@ export const movement: Phase = (draft: GameState, ctx: PhaseContext) => {
     const next = army.path[0]!
     const travelled = edgeBetween(map.edges, map.edgesByProvince[from], from, next)
 
+    // Der Grenzübertritt (D34.2): Besitzer vor und nach dem Schritt verschieden. Der
+    // Abmarsch-Tick entscheidet in `diplomacy`, ob der Marsch vor einem Friedensschluss
+    // losging (E2). Kein anderer Ort (Rückzug, Aushebung, Abtretung) trägt hier ein.
+    if (draft.provinces[from]?.owner !== draft.provinces[next]?.owner) {
+      ctx.crossedBorder?.set(army.id, army.departureTick ?? draft.tick)
+    }
+
     army.locationProvinceId = next
     army.path = army.path.slice(1)
 

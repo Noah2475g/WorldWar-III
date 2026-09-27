@@ -1,7 +1,7 @@
 import type { Command } from '../commands/types'
 import type { GameEvent } from '../events/types'
 import type { Rules } from '../rules/types'
-import type { GameState, MapData } from '../state/types'
+import type { ArmyId, GameState, MapData, Tick } from '../state/types'
 
 /**
  * A phase is one step of the tick pipeline (design D3). Phases mutate the draft in
@@ -15,6 +15,11 @@ export interface PhaseContext {
   commands: readonly Command[]
   /** Events produced during this tick; appended to the log in bookkeeping. */
   events: GameEvent[]
+  /**
+   * Flüchtig (D34.2): je Armee, die in diesem Tick eine Grenze überschritt, der
+   * Abmarsch-Tick ihres Marschs. Nie im Zustand — kein Feld, kein Parameterlauf.
+   */
+  crossedBorder?: Map<ArmyId, Tick>
 }
 
 export type Phase = (draft: GameState, ctx: PhaseContext) => void
