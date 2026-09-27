@@ -5550,3 +5550,32 @@ die Nation steht jetzt zusätzlich je Macht im Feld `nation`. `summe.artillerieA
 unabhängig aus der bestehenden `kiBefehle`-Sammelstelle nachgerechnet dieselbe Zahl ergibt, und dass
 der Bericht den Abschnitt `m42` tatsächlich trägt (vorher nur durch Lesen geprüft) — beide Lücken je
 per Mutationstest bestätigt (rot) und wieder geschlossen (grün).
+
+---
+
+## 2026-09-27 · Noahs Entscheide nach Etappe 1 von M42/M43 (Dossier `entscheidungen-etappe1.md`)
+
+Etappe 1 wurde gebaut; drei Stufen rissen ihre vorab festgelegten Rücknahmekriterien und wurden
+regelkonform zurückgenommen, die vorformulierten Fragen U, R, F, S und M42-02-a waren nie bei Noah
+angekommen. Ein Dossier hat sie auf drei Fragen gebündelt. Noah hat alle drei **wie empfohlen**
+beantwortet:
+
+1. **Räumfrist (Fragen U und R):** Noahs Fassung vom 2026-09-26 (F3) wird um vier Punkte ergänzt —
+   (1) eine Armee, die bei Kriegsende marschiert, darf ihren Marsch hinaus beenden; (2) frei ist der
+   **kürzeste Weg hinaus**, nicht unbedingt der Heimweg; (3) auch ein **Rückzug in neutrales Land**
+   bekommt die Frist; (4) dass Brasilien dadurch anders spielt, ist gewollte Folge. Wörtlich ließ
+   F3 noch 6 Überfälle nach Friedensschlüssen übrig, mit den Ergänzungen 0.
+2. **Festungspatt (Fragen F und S):** **„Erst die Fabrik“ (T-M42-06) wird übernommen**; ihr
+   Kriterium K5 wird gefasst als „neun Startzahlen, höchstens ein Patt; ein Patt wird als Befund
+   geführt“. **Die Spionagebuchung (T-M42-04, S12) wartet bis nach der Artillerie** (Etappe 2), weil
+   das Patt aus Festung 2 in allen Städten entsteht und die Artillerie die eigentliche Abhilfe ist;
+   „schwer“ bleibt bis dahin auf dem Buchungsfehler M17-S12.
+3. **Verteidigungs-Automatik (M42-02-a):** **AK5 wird neu gefasst** statt die Automatik nach D30.9
+   zurückzunehmen. Mit sechs Startzahlen nützt sie nicht messbar (drei Paare besser, drei schlechter,
+   14 gegen 13 verlorene Provinzen), schadet aber nicht. Die Provinz-Tage werden **Berichtszahl**;
+   das Tor wird die **Schadenszählung** — keine Provinz ohne Gefecht verloren, keine Ablehnungen,
+   kein Krieg ohne Erklärung, mindestens ein Einmarsch je Lauf.
+
+Dazu, ohne Frage, weil aus Noahs Antwort F8 vom 2026-09-26 folgend: die Nacharbeit hatte die
+Geldzuordnung nach Provinzverlust (E5) zurückgenommen und drei Fälle zu R-AI-11/AK3 auf `it.fails`
+gestellt — das war falsch; F8 nennt Pleite nach Provinzverlust ausdrücklich „ohne eigene Schuld“.
