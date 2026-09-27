@@ -12,6 +12,7 @@ import {
   dismissNews,
   espionageAlerts,
   isDismissible,
+  type Alert,
   type NewsNaming,
 } from './Alerts.tsx'
 import { categoryOf } from './Panels.tsx'
@@ -149,6 +150,59 @@ describe('R-UI-14 Meldungen entstehen aus der Lage', () => {
     const { container } = render(<Alerts alerts={[]} onJump={() => undefined} />)
 
     expect(container.firstChild).toBeNull()
+  })
+})
+
+/**
+ * Die Raeumfrist als Meldung (T-M43-02, R-DIP-10/AK5): laut in Warnfarbe, nicht wegklickbar,
+ * nach der Hauptstadt und vor dem Mangel, Sprungziel die Armee. `alertsFor` selbst berechnet
+ * sie nicht (`game/clearance.ts` tut das aus der Sicht) — hier wird nur der vierte Parameter
+ * geprueft.
+ */
+describe('R-DIP-10/AK5 Die Raeumfrist meldet sich', () => {
+  const raeum: Alert = {
+    id: 'clearance:a1',
+    kind: 'clearance',
+    icon: 'truce',
+    text: 'Räumfrist: Armee 1 steht in Ostfeld (Ostmark). Losmarschieren bis Tag 2, 01:00 — ein Marsch auf dem kürzesten Weg hinaus gilt nicht als Überfall.',
+    provinceId: 'o3',
+    armyId: 'a1',
+  }
+
+  it('A1 steht nach der Hauptstadt und vor dem Mangel', () => {
+    const alerts = alertsFor(
+      view({ capital: 'A', provinces: [{ id: 'A', name: 'Alpha', owner: 'p2' }], shortages: ['food'] }),
+      undefined,
+      [],
+      [raeum],
+    )
+    const order = alerts.map((alert) => alert.kind)
+    expect(order.indexOf('capital')).toBeLessThan(order.indexOf('clearance'))
+    expect(order.indexOf('clearance')).toBeLessThan(order.indexOf('shortage'))
+  })
+
+  it('A2 der Klick springt zur Armee', () => {
+    const onJump = vi.fn()
+    render(<Alerts alerts={alertsFor(view({}), undefined, [], [raeum])} onJump={onJump} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Räumfrist:/ }))
+
+    expect(onJump).toHaveBeenCalledWith({ kind: 'army', armyId: 'a1', provinceId: 'o3' })
+  })
+
+  it('A3 ist nicht wegklickbar', () => {
+    expect(isDismissible(raeum)).toBe(false)
+  })
+
+  it('A4 steht in app.css in einer Regel mit Warnfarbe', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--warn\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.some((selektor) => selektor.includes('alert--clearance'))).toBe(true)
+  })
+
+  it('A5 ohne den vierten Parameter liefert alertsFor keine clearance-Meldung', () => {
+    const alerts = alertsFor(view({}))
+    expect(alerts.some((alert) => alert.kind === 'clearance')).toBe(false)
   })
 })
 

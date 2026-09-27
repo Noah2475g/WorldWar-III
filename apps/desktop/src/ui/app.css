@@ -2222,7 +2222,8 @@ body {
 }
 
 .alert--shortage,
-.alert--unrest {
+.alert--unrest,
+.alert--clearance {
   border-left-color: var(--warn);
   color: var(--warn);
 }
