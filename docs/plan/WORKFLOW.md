@@ -79,6 +79,10 @@ sagt.
 git switch claude/m42-m43-heer-und-raeumfrist && git pull --ff-only
 ```
 
+**Etappe 1 ist fertig und liegt als [PR #13](https://github.com/Noah2475g/WorldWar-III/pull/13)
+bereit** (2026-09-27, `pnpm acceptance` 12 von 12). Noah merged, kein Agent; nach Noahs Entscheid F6
+folgt jetzt sein Playtest, danach Etappe 2 auf diesem Zweig.
+
 **Wer merged (Noah, kein Agent — §5), richtet diesen Abschnitt im selben Zug auf `main` und
 den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
 fünf Sitzungen in Folge gekostet (§4 Falle 1); sie schadet in beide Richtungen gleich viel.
