@@ -314,6 +314,15 @@ interface EpisodenZahl {
   undeclaredWarsByHuman: number
   /** `WAR_DECLARED` foermlich (`withoutDeclaration: false`) gegen den Menschen — der Kriegsplan (M17-F1). */
   declaredAgainstHuman: number
+  /**
+   * E-H2 (Freigabe der Orchestrierung 2026-09-27, folgt aus Noahs AK5-Entscheid): wie
+   * `declaredAgainstHuman`, aber nur die foermlichen Erklaerungen der beiden Plan-Nachbarn
+   * (`landnachbarn(start, human)`) IM Kriegsplan-Tick (`KRIEGSPLAN.tag * ticksPerDay`). Eine
+   * dritte Erklaerung, die eine andere KI aus eigenem Antrieb spaeter abgibt, ist gewolltes
+   * Spiel und zaehlt hier nicht mit — anders als `declaredAgainstHuman`, das jede foermliche
+   * Erklaerung zaehlt und Berichtszahl bleibt.
+   */
+  kriegsplanErklaerungen: number
 }
 
 /** Die Zaehlung je Episode — aus nichts als den Frames und dem Besitz am Ende. */
@@ -322,6 +331,10 @@ function werteAus(
   finalOwned: readonly string[],
   human: PlayerId,
   ticksPerDay: number,
+  /** E-H2: der Kriegsplan-Tick (`KRIEGSPLAN.tag * ticksPerDay`); ohne Angabe zaehlt `kriegsplanErklaerungen` nichts. */
+  kriegsplanTick = -1,
+  /** E-H2: die Plan-Nachbarn (`landnachbarn(start, human)`), deren Erklaerungen im Kriegsplan-Tick zaehlen. */
+  planNachbarn: readonly PlayerId[] = [],
 ): EpisodenZahl {
   const besitz = [...frames.map((frame) => new Set(frame.owned)), new Set(finalOwned)]
   /** Der Besitz zu Beginn des Frames `index`; hinter dem letzten Frame der Besitz am Ende. */
@@ -381,6 +394,7 @@ function werteAus(
   let rejectedCommands = 0
   let undeclaredWarsByHuman = 0
   let declaredAgainstHuman = 0
+  let kriegsplanErklaerungen = 0
   const bewegungen: Extract<GameEvent, { type: 'ARMY_DEPARTED' } | { type: 'ARMY_ARRIVED' }>[] = []
   frames.forEach((frame, index) => {
     for (const event of frame.events) {
@@ -393,6 +407,9 @@ function werteAus(
         undeclaredWarsByHuman += 1
       } else if (event.type === 'WAR_DECLARED' && event.targetPlayerId === human && !event.withoutDeclaration) {
         declaredAgainstHuman += 1
+        // E-H2: nur die Plan-Nachbarn, nur im Kriegsplan-Tick — eine dritte, eigene Entscheidung
+        // einer anderen KI (anderer Tick oder kein Plan-Nachbar) ist gewolltes Spiel, kein Messfehler.
+        if (frame.tick === kriegsplanTick && planNachbarn.includes(event.playerId)) kriegsplanErklaerungen += 1
       } else if ((event.type === 'ARMY_DEPARTED' || event.type === 'ARMY_ARRIVED') && event.playerId === human) {
         bewegungen.push(event)
       }
@@ -439,6 +456,7 @@ function werteAus(
     rejectedCommands,
     undeclaredWarsByHuman,
     declaredAgainstHuman,
+    kriegsplanErklaerungen,
   }
 }
 
@@ -554,6 +572,7 @@ describe('D30.6 Die Zaehlung je umkaempfter Episode (T-M40-07)', () => {
       rejectedCommands: 1,
       undeclaredWarsByHuman: 1,
       declaredAgainstHuman: 0,
+      kriegsplanErklaerungen: 0,
     })
   })
 
@@ -653,6 +672,7 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
             pendulums: 0,
             undeclaredWarsByHuman: 0,
             declaredAgainstHuman: KRIEGSPLAN_NACHBARN,
+            kriegsplanErklaerungen: KRIEGSPLAN_NACHBARN,
             provincesAtEnd: 4,
             armiesAtEnd: 4,
             daysRun: DAYS,
@@ -702,12 +722,66 @@ describe('Einheitsfall T-M40-18: erfuellt enthaelt Kontrolle und Kartenfenster (
 
   it('ist nicht erfuellt, wenn der Kriegsplan bei einem einzigen Lauf nicht gegriffen hat', () => {
     const ergebnis = ak5(
-      alleLaeufe((lauf) => (lauf.seed === 2015 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, declaredAgainstHuman: 1 } : lauf)),
+      alleLaeufe((lauf) =>
+        lauf.seed === 2015 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, kriegsplanErklaerungen: 1 } : lauf,
+      ),
       WINDOW_TICKS_T_M40_02,
     )
     expect(ergebnis.erfuellt).toBe(false)
     expect(ergebnis.angegriffen).toEqual({ minIntrusions: KONTROLLE.intrusions, kriegsplanOk: false, ok: false })
     expect(ergebnis.verletzt.join(' ')).toContain('Kriegsplan nicht gegriffen')
+  })
+
+  it('E-H2: eine dritte foermliche Erklaerung aus eigenem Antrieb einer anderen KI reisst AK5 NICHT (gewolltes Spiel, kein Messfehler)', () => {
+    // declaredAgainstHuman (Berichtszahl) zaehlt drei Erklaerungen - wie z. B. 1815 B/1939 B Garnison
+    // in der Sonde (p5, Tick 1179/1571/2103) -, aber kriegsplanErklaerungen (das Tor, E-H2) bleibt bei
+    // den zwei Plan-Nachbarn im Kriegsplan-Tick: die dritte ist keine Verletzung.
+    const ergebnis = ak5(
+      alleLaeufe((lauf) =>
+        lauf.seed === 1815 && lauf.setup === 'B' && lauf.stance === 'garrison'
+          ? { ...lauf, declaredAgainstHuman: 3, kriegsplanErklaerungen: KRIEGSPLAN_NACHBARN }
+          : lauf,
+      ),
+      WINDOW_TICKS_T_M40_02,
+    )
+    expect(ergebnis.erfuellt).toBe(true)
+    expect(ergebnis.angegriffen).toEqual({ minIntrusions: KONTROLLE.intrusions, kriegsplanOk: true, ok: true })
+    expect(ergebnis.verletzt).toEqual([])
+  })
+})
+
+describe('E-H2: kriegsplanErklaerungen zaehlt nur die Plan-Nachbarn im Kriegsplan-Tick (werteAus)', () => {
+  /** Ein Rahmen ohne Episodenzahlen — nur `tick` und `events` sind fuer diese Zaehlung relevant. */
+  const rahmen = (tick: number, events: GameEvent[]): Frame => ({ tick, owned: [], events, orders: [] })
+  const erklaerung = (tick: number, playerId: string, withoutDeclaration = false) =>
+    ereignis({ type: 'WAR_DECLARED', tick, playerId, targetPlayerId: 'human', effectiveAtTick: tick, withoutDeclaration })
+
+  it('zaehlt die zwei Plan-Nachbarn im Kriegsplan-Tick, keine dritte KI und keinen anderen Tick', () => {
+    const frames = [
+      // Kriegsplan-Tick (10): p2 und p3 sind Plan-Nachbarn, p5 nicht - p5 zaehlt nicht mit.
+      rahmen(10, [erklaerung(10, 'p2'), erklaerung(10, 'p3'), erklaerung(10, 'p5')]),
+      // Spaeter, eigener Antrieb von p5 (Plan-Nachbar waere er hier egal - falscher Tick zaehlt nie mit).
+      rahmen(50, [erklaerung(50, 'p2')]),
+    ]
+    const zahl = werteAus(frames, [], 'human', 4, 10, ['p2', 'p3'])
+    expect(zahl.kriegsplanErklaerungen).toBe(2)
+    expect(zahl.declaredAgainstHuman).toBe(4)
+  })
+
+  it('zaehlt eine Kriegserklaerung ohne Erklaerung (Ueberfall) nie mit, auch nicht im Kriegsplan-Tick von einem Plan-Nachbarn', () => {
+    const frames = [rahmen(10, [erklaerung(10, 'p2', true), erklaerung(10, 'p3')])]
+    const zahl = werteAus(frames, [], 'human', 4, 10, ['p2', 'p3'])
+    expect(zahl.kriegsplanErklaerungen).toBe(1)
+  })
+
+  it('Gegenprobe: ohne die Tick-Schranke wuerde die spaete Erklaerung von p2 mitzaehlen (zeigt, dass der Test die Schranke wirklich prueft)', () => {
+    const frames = [rahmen(10, [erklaerung(10, 'p2'), erklaerung(10, 'p3')]), rahmen(50, [erklaerung(50, 'p2')])]
+    // Ohne Tick-Schranke (kriegsplanTick auf den spaeten Tick gesetzt) zaehlt nur die spaete Erklaerung.
+    const ohneKriegsplanTick = werteAus(frames, [], 'human', 4, 50, ['p2', 'p3'])
+    expect(ohneKriegsplanTick.kriegsplanErklaerungen).toBe(1)
+    // Mit der richtigen Schranke (Kriegsplan-Tick 10) zaehlen beide Plan-Nachbarn, die spaete nicht.
+    const mitKriegsplanTick = werteAus(frames, [], 'human', 4, 10, ['p2', 'p3'])
+    expect(mitKriegsplanTick.kriegsplanErklaerungen).toBe(2)
   })
 })
 
@@ -769,6 +843,7 @@ describe('Einheitsfall T-M42-02: sechs Startzahlen und der Abstand zur Schwelle'
             pendulums: 0,
             undeclaredWarsByHuman: 0,
             declaredAgainstHuman: KRIEGSPLAN_NACHBARN,
+            kriegsplanErklaerungen: KRIEGSPLAN_NACHBARN,
             provincesAtEnd: 4,
             armiesAtEnd: 4,
             daysRun: DAYS,
@@ -1024,6 +1099,9 @@ async function miss(seed: number, aufbau: Aufbau, stance: Stance, windowTicks: n
   const { human } = aufgestellt
   const ticksPerDay = rules.constants.ticksPerDay
   const scripted = kriegserklaerungen(aufgestellt.state, human)
+  // E-H2: dieselben Plan-Nachbarn und derselbe Kriegsplan-Tick, den `scripted` selbst benutzt.
+  const planNachbarn = landnachbarn(aufgestellt.state, human)
+  const kriegsplanTick = KRIEGSPLAN.tag * ticksPerDay
   const frames: Frame[] = []
   const jeBesessen = new Set<string>()
   let current = aufgestellt.state
@@ -1054,7 +1132,7 @@ async function miss(seed: number, aufbau: Aufbau, stance: Stance, windowTicks: n
       human,
       windowTicks,
     ),
-    ...werteAus(frames, finalOwned, human, ticksPerDay),
+    ...werteAus(frames, finalOwned, human, ticksPerDay, kriegsplanTick, planNachbarn),
     provincesAtEnd: finalOwned.length,
     armiesAtEnd: current.armyOrder.filter((id) => current.armies[id]!.owner === human).length,
     daysRun: Math.floor(current.tick / ticksPerDay),
@@ -1125,9 +1203,13 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number, seeds: readonly numbe
     if (lauf.intrusions === 0) {
       verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: blind, 0 Einmaersche (Befund M17-F1)`)
     }
-    if (lauf.declaredAgainstHuman !== KRIEGSPLAN_NACHBARN) {
+    // E-H2 (Freigabe der Orchestrierung 2026-09-27): das Tor ist kriegsplanErklaerungen (nur die
+    // Plan-Nachbarn im Kriegsplan-Tick), nicht mehr declaredAgainstHuman (jede foermliche
+    // Erklaerung, bleibt Berichtszahl) - eine dritte, eigene Entscheidung einer anderen KI ist
+    // gewolltes Spiel, kein Messfehler.
+    if (lauf.kriegsplanErklaerungen !== KRIEGSPLAN_NACHBARN) {
       verletzt.push(
-        `${lauf.seed} ${lauf.setup} ${lauf.stance}: Kriegsplan nicht gegriffen (${lauf.declaredAgainstHuman} statt ${KRIEGSPLAN_NACHBARN} foermliche Kriegserklaerungen)`,
+        `${lauf.seed} ${lauf.setup} ${lauf.stance}: Kriegsplan nicht gegriffen (${lauf.kriegsplanErklaerungen} statt ${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen der Plan-Nachbarn im Kriegsplan-Tick, E-H2)`,
       )
     }
   }
@@ -1147,7 +1229,7 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number, seeds: readonly numbe
   if (!fensterOk) verletzt.push(`Kartenfenster ${windowTicks} Ticks statt ${WINDOW_TICKS_T_M40_02}`)
   // Befund M17-F1: die Blindheit soll auffallen, auch wenn jemand die einzelnen Verletzungen oben uebersieht.
   const minIntrusions = Math.min(...laeufe.map((lauf) => lauf.intrusions))
-  const kriegsplanOk = laeufe.every((lauf) => lauf.declaredAgainstHuman === KRIEGSPLAN_NACHBARN)
+  const kriegsplanOk = laeufe.every((lauf) => lauf.kriegsplanErklaerungen === KRIEGSPLAN_NACHBARN)
   const angegriffen = { minIntrusions, kriegsplanOk, ok: minIntrusions > 0 && kriegsplanOk }
   return {
     provinceDays: { ...provinceDays, percent: Math.round((1000 * provinceDays.defensive) / provinceDays.garrison) / 10 },
@@ -1180,7 +1262,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
       kriegsplan: `Befund M17-F1: die Landnachbarn des Menschen erklaeren ihm am Spieltag ${KRIEGSPLAN.tag} foermlich den Krieg (ueber den normalen Befehlsweg, scripted), danach entscheidet die KI alles selbst. Ohne Kriegsplan war der Lauf blind (0 Einmaersche); ${KONTROLLE_BIS_F1}`,
-      ak5: `Tor (R-UNIT-09/AK5, Noahs Entscheid 2026-09-27): Verteidigung verliert in keinem Lauf eine Provinz ohne Gefecht; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche. Messgueltigkeit: Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen gegen den Menschen, Befund M17-F1; die Praezisierung E-H2 auf "beide Plan-Nachbarn im Kriegsplan-Tick" braucht die Freigabe der Orchestrierung und ist hier nicht gebaut), Kontrolle Garnison A 1914 (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}), Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Provinz-Tage und abstand sind Berichtszahl.`,
+      ak5: `Tor (R-UNIT-09/AK5, Noahs Entscheid 2026-09-27): Verteidigung verliert in keinem Lauf eine Provinz ohne Gefecht; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche. Messgueltigkeit: Kriegsplan gegriffen (E-H2, Freigabe der Orchestrierung 2026-09-27: nur die ${KRIEGSPLAN_NACHBARN} Plan-Nachbarn zaehlen, und nur im Kriegsplan-Tick - eine dritte, eigene Erklaerung einer anderen KI ist gewolltes Spiel, kein Messfehler; declaredAgainstHuman bleibt Berichtszahl fuer jede foermliche Erklaerung), Kontrolle Garnison A 1914 (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}), Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Provinz-Tage und abstand sind Berichtszahl.`,
       abstand: `Berichtszahl; seit 2026-09-27 kein Tor (T-M42-02: Provinz-Tage defensive minus ${PROVINCE_DAYS_PERCENT} % garrison, abgerundet, in Einzelverlusten zu ${EINZELVERLUST_PROVINZ_TAGE}; Ziel >= ${ABSTAND_ZIEL_PROVINZ_TAGE} (zwei Einzelverluste), nur zur Beobachtung des Aufbaus).`,
     },
     [ABSCHNITT]: {
