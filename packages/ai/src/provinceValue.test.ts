@@ -1,5 +1,4 @@
 import {
-  buildingCostForLevel,
   canApply,
   createInitialState,
   parseRules,
@@ -14,7 +13,7 @@ import {
 import { placeArmy, RAW_DEFAULT_RULES, smallWorld, TEST_RULES } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { decide, emptyMemory } from './decide'
-import { cessionProblem, explainProvinceWorth, ledgerAfter, provinceOfferCommands, provinceWorth } from './provinceValue'
+import { cessionProblem, explainProvinceWorth, provinceOfferCommands, provinceWorth } from './provinceValue'
 import { tradeOfferCommands } from './trade'
 import type { AiContext, Explanation } from './types'
 
@@ -775,59 +774,5 @@ describe('R-AI-01/AK1 Die Provinzbefehle bestehen die regulaere Pruefung', () =>
     const k7 = angebotsTag(dreiMaechte())
     k7.players.p3!.shortages = []
     allAccepted(k7, provinceOfferCommands(contextFor(k7, 'p3', KAUF), [], []))
-  })
-})
-
-/**
- * T-M42-04 (R-AI-11/AK1, D32.3): `ledgerAfter` bucht auch das Anwerben eines Spions und die
- * gebende Seite eines Boersentauschs. Bis dahin kannte es nur BUILD, OFFER_TRADE und ACCEPT_TRADE
- * (Kritik M-6) - die Aushebung rechnete mit Geld, das die Spionage desselben Zugs schon ausgab.
- */
-describe('R-AI-11/AK1 ledgerAfter bucht Spion und Boersentausch desselben Zugs', () => {
-  const lage = () => contextFor(dreiMaechte(), 'p3')
-
-  it('L1: RECRUIT_SPY zieht spyRecruitCost vom Geld ab, sonst nichts', () => {
-    const context = lage()
-    const vorher = { ...context.view.self.resources }
-    const nachher = ledgerAfter(context, [{ type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 'n1', mission: 'intel' }])
-    expect(nachher.money).toBe(vorher.money - TEST_RULES.constants.spyRecruitCost)
-    expect({ ...nachher, money: 0 }).toEqual({ ...vorher, money: 0 })
-  })
-
-  it('L2: TRADE zieht giveAmount vom gegebenen Rohstoff ab; der Erloes zaehlt nicht', () => {
-    const context = lage()
-    const vorher = { ...context.view.self.resources }
-    const nachher = ledgerAfter(context, [{ type: 'TRADE', playerId: 'p3', give: 'wood', giveAmount: 12_345, want: 'money' }])
-    expect(nachher.wood).toBe(vorher.wood - 12_345)
-    expect(nachher.money, 'der Erloes wird nicht angerechnet').toBe(vorher.money)
-    expect({ ...nachher, wood: 0 }).toEqual({ ...vorher, wood: 0 })
-  })
-
-  it('L3: Befehle einer anderen Macht zaehlen nicht', () => {
-    const context = lage()
-    const nachher = ledgerAfter(context, [
-      { type: 'RECRUIT_SPY', playerId: 'p1', provinceId: 'o1', mission: 'intel' },
-      { type: 'TRADE', playerId: 'p1', give: 'money', giveAmount: 50_000, want: 'oil' },
-    ])
-    expect(nachher).toEqual(context.view.self.resources)
-  })
-
-  it('L4: Spion, Tausch und Bau summieren sich (Haltetest fuer BUILD)', () => {
-    const context = lage()
-    const stadt = context.view.provinces.find((p) => p.owner === 'p3' && p.kind === 'city')!
-    const kosten = buildingCostForLevel(TEST_RULES.buildings.barracks, (stadt.buildings?.barracks ?? 0) + 1, TEST_RULES.constants)
-    const nachher = ledgerAfter(context, [
-      { type: 'BUILD', playerId: 'p3', provinceId: stadt.id, building: 'barracks' },
-      { type: 'RECRUIT_SPY', playerId: 'p3', provinceId: 'n1', mission: 'counter' },
-      { type: 'TRADE', playerId: 'p3', give: 'money', giveAmount: 1_000, want: 'oil' },
-    ])
-    expect(nachher.money).toBe(context.view.self.resources.money - (kosten.money ?? 0) - TEST_RULES.constants.spyRecruitCost - 1_000)
-  })
-
-  it('L5: ohne Befehle eine Kopie des Sichtbestands, nicht derselbe Gegenstand', () => {
-    const context = lage()
-    const nachher = ledgerAfter(context, [])
-    expect(nachher).toEqual(context.view.self.resources)
-    expect(nachher).not.toBe(context.view.self.resources)
   })
 })

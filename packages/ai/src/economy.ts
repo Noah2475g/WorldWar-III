@@ -2,7 +2,6 @@ import { RECRUIT_MIN_MORALE, buildingCostForLevel } from '@worldwar/core'
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyMoneyLedger, unitsWithinDailyBalance } from './finance'
-import { ledgerAfter } from './provinceValue'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -264,21 +263,9 @@ export function nextUnitFor(context: AiContext, province: { buildings?: Record<s
 }
 
 /** Raises troops where possible, sized to what the treasury can carry. */
-export function recruitCommands(context: AiContext, explanations: Explanation[], pending: readonly Command[] = []): Command[] {
+export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const commands: Command[] = []
   const playerId = context.view.playerId
-
-  // R-AI-11/AK1, D32.3 (T-M42-04, Befund M17-S12, Kritik M-6): gerechnet wird mit dem Bestand, der
-  // nach den eigenen Befehlen desselben Zugs bleibt - Bau, Handelsangebot und -annahme, Anwerben
-  // eines Spions, gebende Seite eines Boersentauschs (`ledgerAfter`). `decide.ts` reicht alle
-  // Befehle davor durch, auch die des Strategietakts im selben Tick. Bis dahin las die Aushebung den
-  // Sichtbestand und gab Geld aus, das Spionage und Bau im selben Tick schon ausgegeben hatten; der
-  // Kern lehnte den Rest mit INSUFFICIENT_RESOURCES ab (Welt 1815: 1 Ablehnung, danach 0), und
-  // "schwer" stand im Turnier zum Teil auf diesem Fehler (Befund M17-I1). Ohne `pending` ist das
-  // der Sichtbestand selbst. Der Sold eines eben angeworbenen Spions zaehlt erst ab morgen in der
-  // Tagesbilanz unten (bekannte Unschaerfe, T-M42-04 E5).
-  const bestand = ledgerAfter(context, pending)
-  const gebucht = bestand.money !== context.view.self.resources.money
 
   /**
    * **Die vielseitigste Provinz zuerst** (T-M15-08).
@@ -358,7 +345,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
       let moeglich = 15
       for (const [key, amount] of Object.entries(regel.cost)) {
         if (!amount) continue
-        const stock = Math.max(0, bestand[key as ResourceKey])
+        const stock = context.view.self.resources[key as ResourceKey]
         const budget = Math.trunc((stock * context.difficulty.recruitShare) / 1000)
         moeglich = Math.min(moeglich, Math.trunc(budget / amount))
       }
@@ -385,11 +372,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
     commands.push({ type: 'RECRUIT', playerId, provinceId: province.id, unitKey, count: affordable })
     explanations.push({
       action: `Rekrutiert ${affordable}x ${unitKey} in ${province.id}`,
-      reason:
-        (begrenzt
-          ? `Streitkräfte aufbauen; die Tagesbilanz trägt ${affordable} (Spielraum ${bilanz.margin} je Tag, ${(unit.upkeep.money ?? 0) * ticksPerDay} je Einheit)`
-          : 'Streitkräfte aufbauen') +
-        (gebucht ? `; gerechnet mit ${bestand.money} Geld nach Bau, Handel und Spionage dieses Zugs` : ''),
+      reason: begrenzt
+        ? `Streitkräfte aufbauen; die Tagesbilanz trägt ${affordable} (Spielraum ${bilanz.margin} je Tag, ${(unit.upkeep.money ?? 0) * ticksPerDay} je Einheit)`
+        : 'Streitkräfte aufbauen',
       score: 500,
       alternative: { action: 'nichts rekrutieren', score: 200 },
     })
