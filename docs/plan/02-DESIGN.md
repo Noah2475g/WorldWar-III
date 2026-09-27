@@ -3345,6 +3345,17 @@ Die Prüfung steht in `recruitCommands`, nach der Wahl von Art und Stückzahl:
   `max(0, bestand − vorbehalt)`.
 - Der Vorbehalt gilt nur bis zur **ersten** Fabrik.
 
+*(Nachtrag 2026-09-27, T-M42-06: übernommen nach Noahs Entscheid vom 2026-09-27 Punkt 2. Auf
+Stufe F gemessen (`d247428`, Kette auf `50b5479`, auf `669b105` nach dem Beschuss-Cooldown-Fix
+erneut, `d9c2e59`, Zahl für Zahl gleich): jede Stufe beginnt in jeder der neun Startzahlen
+mindestens eine Fabrik (Welt 1815 Fabriken 92 insgesamt), Voreinstellung `progress.slow` grün
+(0,3338, `[1,1,1,1,1,1]`), Turnier im Frieden 61 %. **K5 wird für „Erst die Fabrik" in Noahs
+Fassung gefasst:** neun Startzahlen (1914, 2015, 1815, 1939, 1871, 1806, 1683, 1945, 1789),
+höchstens ein Patt nach 1500 Spieltagen; ein Patt selbst wird als Befund geführt, reißt K5
+aber nicht mehr für sich allein — gemessen: 9 von 9 entschieden, 0 Patts. Dieselbe
+Buchungsreparatur für Spion/Börse (T-M42-04) trifft auf ein Festungspatt in Vollpartien mit
+acht KI-Mächten (Befund M42-04-a) und wartet deshalb bis nach der Artillerie (T-M42-07).)*
+
 ### D32.8 Artillerie (nach Noahs Antwort auf Frage 1, „wie empfohlen", Mischung 60/30/10)
 
 - In der Kandidatenschleife von `recruitCommands` gilt eine Untergrenze. Treffen alle vier
@@ -3410,6 +3421,13 @@ diesem Abschnitt.)*
 *(Nach Noahs Antwort auf Frage 3, „wie empfohlen": 24 Ticks für Stehende, der kürzeste Heimweg
 ist frei, jeder Einmarsch ohne Recht bleibt ein Überfall.)*
 
+*(Nachtrag 2026-09-27, T-M43-01, nach Noahs Entscheid vom 2026-09-27 Punkt 1 — vier
+Ergänzungen: (1) ein Marsch, der bei Kriegsende läuft, darf in **jede Richtung** enden, nicht
+nur hinaus; (2) frei ist der **kürzeste Weg hinaus** aus dem fremden Land, nicht zwingend der
+Heimweg — Satz 2 oben gilt seitdem so; (3) auch ein **Rückzug in neutrales Land** bekommt
+dieselbe Frist wie Satz 1; (4) die Brasilien-Nebenwirkung ist gewollt. Volle Begründung und
+Zahlen in `DECISIONS.md`, 2026-09-27.)*
+
 ### D34.2 Der Kern, ohne Zustandsfeld
 
 - `PhaseContext` bekommt ein **optionales** flüchtiges Feld `crossedBorder?: Set<ArmyId>`. Es wird
@@ -3429,6 +3447,19 @@ ist frei, jeder Einmarsch ohne Recht bleibt ein Überfall.)*
 - Es gibt keine neue Regelzahl, also keinen Parameterlauf. `SCHEMA_VERSION` bleibt 4.
 - Mehrspieler: Der Gast lädt den Bau des Hosts (R-MP-11); gemischte Fassungen gibt es nicht.
 
+*(Nachtrag 2026-09-27, T-M43-01 B1: der H6-Rückfall in `homePath.ts` — „kein legaler Ausgang,
+also gilt jeder Ausgang" — griff bisher **je Schicht** statt für die ganze Gastmacht. Lag in
+einer früheren Tiefe ein illegaler Ausgang, gab die Funktion dort zurück, auch wenn eine
+Schicht tiefer ein legaler Ausgang lag; ein legaler Weg durch ein zweites Gastmacht-Feld
+hindurch (k > 0) wurde so fälschlich als „zu tief" gewertet. Behoben mit zwei vollständigen
+Durchläufen (erst nur legale Ausgänge, dann — nur wenn gar keiner existiert — jeder Ausgang);
+kein Gerät bewegt sich davon. Zusätzlich (B3): `detectSurpriseAttacks` bekommt einen neuen
+Grund (c) — ein Rückzug in neutrales Land setzt `army.cannotAttackUntil` und schützt die
+Armee für dieselbe Frist wie Grund (a); getrennt vom Beschuss-Cooldown (`bombardment.ts`)
+durch das flüchtige Feld `ctx.bombardedThisTick`, sonst hätte eine jeden Tick automatisch
+feuernde Fernwaffenarmee dieselbe Ausnahme dauerhaft genossen, ohne sich je zurückgezogen zu
+haben (Nacharbeit-Befund, Commit `6ae61a3`).)*
+
 ### D34.3 KI
 
 `guestWithdrawal` (`passage.ts`) greift künftig nicht mehr nur bei gekündigtem Recht.
@@ -3437,6 +3468,14 @@ ist frei, jeder Einmarsch ohne Recht bleibt ein Überfall.)*
 - Es erfasst stehende Armeen und Armeen, deren Weg im Land des Gastgebers endet.
 - Der Heimweg ist derselbe kürzeste Heimweg wie im Kern, als gemeinsame Funktion im Kern
   (`rules/`), damit KI und Kern dieselbe Antwort geben.
+
+*(Nachtrag 2026-09-27, T-M43-01 B2: `guestWithdrawal`s eigener `fallback` — gesetzt, sobald ein
+Kandidat `firstBlock` besteht, **vor** der Prüfung durch `isClearingPath` — konnte einen Befehl
+liefern, den der Kern als Räumweg verworfen hätte, sooft `hit` aus irgendeinem Grund `null`
+blieb, nicht nur beim echten H6-Fall. Behoben: `target = hit ?? (hostFieldsToLeave(...) === null
+? fallback : null)` — `fallback` gilt jetzt nur noch, wenn wirklich kein legaler Ausgang
+existiert, sonst bleibt die Armee mit demselben `explanations`-Eintrag wie bei `target === null`
+stehen.)*
 
 ### D34.4 Oberfläche
 
@@ -3449,6 +3488,18 @@ ist frei, jeder Einmarsch ohne Recht bleibt ein Überfall.)*
   dort noch nicht gibt.
 - Die Texte stehen in `de.ts` mit Umlauten. Der Wortlaut wird in `DECISIONS.md` festgehalten und ist
   durch Noah kippbar.
+
+*(Berichtigt/gebaut 2026-09-27, T-M43-02: die Meldung entsteht in
+`apps/desktop/src/game/clearance.ts` (`clearanceNotices`) direkt aus dem **Zustand der Sicht**
+— ein Spiegel von `detectSurpriseAttacks` (a)/(b)/(c) —, nicht aus `DIPLOMACY_CHANGED`; sie
+steht, solange die Frist läuft, unabhängig davon, ob das Ereignis noch im Puffer ist. Dritte
+Ursache: eine empfangene Kündigung endet eine Stunde vor ihrem Ende (die Sicht kennt die
+Kündigung im letzten Tick nicht mehr), ein Rückzug in neutrales Land nutzt dieselbe Sperre wie
+im Kern (`army.cannotAttackUntil`, unterschieden von einer Beschuss-Feuerpause durch
+`until - view.tick > 1` statt nur `until > 0`, K18/K19). `VisibleArmy.cannotAttackUntil`
+(optional, nur eigene Armeen, R-DIP-04) trägt seit B4 (`publicView.ts`) diese Sperre in die
+Sicht, ohne sie fremden Armeen zu zeigen — Vorbereitung für `clearanceNotices`. Endgültiger
+Wortlaut mit Uhrzeit statt Tagesgrenze: `DECISIONS.md`, 2026-09-27, T-M43-02.)*
 
 ### D34.5 Risiken
 

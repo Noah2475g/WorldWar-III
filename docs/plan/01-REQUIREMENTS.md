@@ -1238,6 +1238,18 @@ Armeen weiter selbst (R-AI-01).
     sein oder einen Krieg ohne Erklärung ausgelöst haben, und jeder Lauf SOLL mindestens einen
     Einmarsch zählen — gezählt aus dem Ereignisstrom. Hält der Messlauf das nicht, wird die
     Automatik der Verteidigung zurückgenommen, nicht nachgeschärft (D30.9).
+    *(Neu gefasst am 2026-09-27, T-M42-02, nach Noahs Entscheid vom 2026-09-27 Punkt 3: mit
+    sechs statt drei Startzahlen hält die 98-%-Schwelle auf den Provinz-Tagen nicht mehr
+    verlässlich — die B-Paare streuen je Startzahl um etwa −434 bis +244 Provinz-Tage, und die
+    Automatik hilft nicht messbar, schadet aber auch nicht. Die Provinz-Tage werden
+    **Berichtszahl**; das Tor wird die **Schadenszählung**: über sechs Startzahlen (1914, 2015,
+    1815, 1939, 1871, 1806) SOLL keine Provinz ohne Gefecht verloren gehen, kein Befehl der
+    Automatik SOLL abgelehnt worden sein oder einen Krieg ohne Erklärung ausgelöst haben, und
+    jeder Lauf SOLL weiterhin mindestens einen Einmarsch zählen. Gemessen auf dem Endstand
+    (`ca6e511`, sauberer Baum `015ae0e`): `erfuellt: true`, `verletzt: []`; Provinz-Tage 4076/3894
+    = 95,5 % nur noch als Berichtszahl. Die alte 98-%-Fassung bleibt oben unverändert stehen, sie
+    gilt nur nicht mehr als Tor. Kontrollzahl Garnison A 1914: 41/4 → 26/4 (`KONTROLLE_BIS_E1`
+    hält die Geschichte 52 → 41 → 26).)*
   - AK6: WENN der Spieler eine Armee wählt, DANN SOLL die Armeeleiste vier Haltungen anbieten,
     und jede SOLL in ihrem Hinweis sagen, was die Armee in ihr von selbst tut oder lässt; WENN er
     eine Armee mit selbsttätiger Haltung anhält, DANN SOLL sie auf Garnison gestellt werden.
@@ -1329,6 +1341,20 @@ gemeinsame Räumfrist für Frieden und Bündnisbruch gibt; die Form nach Noahs A
   Krieg herrscht, DANN SOLL das ein Überfall sein, auch innerhalb der Frist aus AK1 und auch mit einem
   Weg ins eigene Land. Ausgenommen ist nur der Tick des Friedensschlusses selbst (M17-T6). Das gilt
   ebenso beim Übergang vom Waffenstillstand in den Frieden und bei Spielbeginn.
+  *(Berichtigt am 2026-09-27, T-M43-01, nach Noahs Entscheid vom 2026-09-27 Punkt 1 — vier
+  Ergänzungen zur Fassung aus Frage 3 vom 2026-09-26: (1) eine Armee, die bei Kriegsende
+  marschiert, darf ihren im Krieg begonnenen Marsch **in jede Richtung** beenden, nicht nur
+  hinaus (Berichtigung einer zu engen Wiedergabe in `DECISIONS.md`, siehe dort 2026-09-27); (2)
+  frei ist der **kürzeste Weg hinaus**, nicht zwingend der Heimweg — AK2 oben gilt seitdem für
+  den kürzesten Weg aus dem fremden Land, unabhängig vom Ziel; (3) auch ein **Rückzug in
+  neutrales Land** bekommt dieselbe Frist wie AK1 (neuer Grund (c) in `detectSurpriseAttacks`,
+  `army.cannotAttackUntil`, getrennt vom Beschuss-Cooldown seit `ctx.bombardedThisTick`); (4)
+  dass Brasilien dadurch anders spielt, ist gewollte Folge. Gebaut in `packages/core/src/rules/
+  homePath.ts` (B1: der H6-Rückfall gilt erst, wenn die ganze Gastmacht keinen legalen Ausgang
+  mehr hat, nicht je Schicht) und `packages/ai/src/passage.ts` (B2: `guestWithdrawal`
+  marschiert nur noch auf einem vom Kern anerkannten Räumweg). Wörtlich ließ die Fassung vom
+  2026-09-26 noch 6 Überfälle nach Friedensschlüssen übrig, mit den Ergänzungen 0 — gemessen auf
+  Stufe U+R, `3f6d1671`.)*
 - **AK4:** WENN eine KI-Armee bei Beginn einer solchen Frist im Land der anderen Macht steht oder
   dorthin unterwegs ist, DANN SOLL die KI sie auf dem kürzesten Heimweg heimschicken. Über drei
   Startzahlen × 200 Spieltage SOLL es null Überfälle mit den Merkmalen `friedensschluss` oder
