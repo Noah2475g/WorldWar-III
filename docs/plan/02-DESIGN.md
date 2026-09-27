@@ -3125,6 +3125,19 @@ Krieg. Seit T-M17-10 hält die Wegprüfung diese Überfälle an, der Lauf ohne K
 (Aufstellung geändert, Grenzen unangetastet — dasselbe Muster wie bei Block N2); die Kontrolle steht
 seitdem auf 41 Einmärschen und 4 verlorenen Provinzen. `PROBLEME.md`, `DECISIONS.md`, 2026-09-26.)*
 
+*(Nachtrag 2026-09-27, T-M42-02: sechs statt drei Startzahlen gemessen (1914, 2015, 1815, 1939, 1871,
+1806) — Noahs Antwort auf Frage 5, AK5 sollte gegen Rauschen robuster werden. **AK5 selbst reißt**:
+4168 von 4426 Provinz-Tagen = 94,2 % (Schwelle 98 %), Abstand −170 Provinz-Tage (Ziel +340
+Provinz-Tage = zwei Einzelverluste). Die B-Paare streuen je Startzahl um etwa −434 bis +244
+Provinz-Tage; die bisherigen 102,8 % mit drei Startzahlen waren Rauschen zugunsten der Automatik,
+kein belegter Befund über ihre Wirkung. Kontrolle (Garnison A 1914, 41/4), Paar-Regel, 0
+Ablehnungen und der Kriegsplan halten unverändert; die drei alten Startzahlen kamen Zahl für Zahl
+wie vorher heraus. **Aufbau bleibt bei drei Startzahlen** (Rücknahme nach dieser Zeile: „fällt eine
+Zusicherung, wird die Regel zurückgenommen, nicht nachgeschärft" — hier ist es die Messung selbst,
+die zurückgenommen wird, nicht die Regel; ob die Automatik der Verteidigung nach diesem Absatz
+zurückgenommen wird, ist eine offene Frage an Noah, `PROBLEME.md` M42-02-a). Volle Zahlen und die
+Abwägung in `DECISIONS.md`, 2026-09-27.)*
+
 **Nicht gebaut.** Ausdrückliche Aufträge („halte Provinz X mit N Armeen, fülle nach", Sammelbefehl)
 und die Rückeroberung — beides eine neue Entscheidung, als offene Frage an Noah in `DECISIONS.md`
 (2026-09-13, T-M40-10).
