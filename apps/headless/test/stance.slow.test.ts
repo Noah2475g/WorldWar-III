@@ -160,11 +160,22 @@ const ABSTAND_ZIEL_PROVINZ_TAGE = 2 * EINZELVERLUST_PROVINZ_TAGE
  * 4 verloren. Die Kontrolle haengt nur an Startzahl 1914; an ihren Quellen hat sich seit 7a6aa47 nur
  * d55edd5 geaendert (Marktrechnung saettigt, bitgleich ohne Ueberlauf). Die neuen Startzahlen tragen
  * keine eigene Kontrolle; ihre Garnisonslaeufe stehen im Bericht.
+ *
+ * **Etappe 1 von M42/M43 (E-H1, Freigabe der Orchestrierung 2026-09-27, folgt aus Noahs
+ * AK5-Entscheid):** T-M42-03 (Tagesbilanz), T-M43-01 (Raeumfrist samt Rueckzugsfrist,
+ * einschliesslich der Nacharbeit-Reparatur 6ae61a3) und T-M42-06 (erst die Fabrik) aendern
+ * zusammen die KI der Nachbarn - genau das Ziel von M42. Die Garnison A 1914 benutzt die
+ * Tagesbilanz-Automatik selbst nicht (sie handelt nie von selbst); ihr Lauf aendert sich nur,
+ * weil die KI der angreifenden Nachbarn sich geaendert hat. Neu gemessen auf 669b105 (sauberer
+ * Baum, vor dieser Kontrolle-Aenderung): **26 Einmaersche, 4 verloren** statt 41/4 - die
+ * Bedingung (Einmaersche > 0 UND verlorene Provinzen > 0) haelt, also ist das eine Eichung, kein
+ * Befund. Neu gesetzt auf diesem Stand (Freigabe E-H1, DECISIONS.md 2026-09-27).
  */
-const KONTROLLE = { intrusions: 41, provincesLost: 4 }
+const KONTROLLE = { intrusions: 26, provincesLost: 4 }
 const KONTROLLE_BIS_N2 = 'vor Block N2 (T-M40-02 bis T-M40-12): 52 Einmaersche, 4 verloren'
 const KONTROLLE_BIS_F1 =
   'vor M17-F1 (Aufbau ohne Kriegsplan, bis b1bb3c8): 76 Einmaersche, 4 verloren; auf 5e53298 ohne Kriegsplan 0/0 (blind)'
+const KONTROLLE_BIS_E1 = 'Stufe 0 bis Etappe 1 von M42 (M17-F1 bis T-M42-02): 41 Einmaersche, 4 verloren'
 /**
  * Der Kriegsplan (Befund M17-F1): die Landnachbarn des Menschen erklaeren ihm am Spieltag `tag`
  * foermlich den Krieg — nach dem Muster, wie es vor M17 aus Versehen geschah (Frankreich Tag 20,
@@ -1262,7 +1273,7 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
       kriegsplan: `Befund M17-F1: die Landnachbarn des Menschen erklaeren ihm am Spieltag ${KRIEGSPLAN.tag} foermlich den Krieg (ueber den normalen Befehlsweg, scripted), danach entscheidet die KI alles selbst. Ohne Kriegsplan war der Lauf blind (0 Einmaersche); ${KONTROLLE_BIS_F1}`,
-      ak5: `Tor (R-UNIT-09/AK5, Noahs Entscheid 2026-09-27): Verteidigung verliert in keinem Lauf eine Provinz ohne Gefecht; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche. Messgueltigkeit: Kriegsplan gegriffen (E-H2, Freigabe der Orchestrierung 2026-09-27: nur die ${KRIEGSPLAN_NACHBARN} Plan-Nachbarn zaehlen, und nur im Kriegsplan-Tick - eine dritte, eigene Erklaerung einer anderen KI ist gewolltes Spiel, kein Messfehler; declaredAgainstHuman bleibt Berichtszahl fuer jede foermliche Erklaerung), Kontrolle Garnison A 1914 (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}), Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Provinz-Tage und abstand sind Berichtszahl.`,
+      ak5: `Tor (R-UNIT-09/AK5, Noahs Entscheid 2026-09-27): Verteidigung verliert in keinem Lauf eine Provinz ohne Gefecht; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche. Messgueltigkeit: Kriegsplan gegriffen (E-H2, Freigabe der Orchestrierung 2026-09-27: nur die ${KRIEGSPLAN_NACHBARN} Plan-Nachbarn zaehlen, und nur im Kriegsplan-Tick - eine dritte, eigene Erklaerung einer anderen KI ist gewolltes Spiel, kein Messfehler; declaredAgainstHuman bleibt Berichtszahl fuer jede foermliche Erklaerung), Kontrolle Garnison A 1914 (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_E1}; ${KONTROLLE_BIS_N2}), Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Provinz-Tage und abstand sind Berichtszahl.`,
       abstand: `Berichtszahl; seit 2026-09-27 kein Tor (T-M42-02: Provinz-Tage defensive minus ${PROVINCE_DAYS_PERCENT} % garrison, abgerundet, in Einzelverlusten zu ${EINZELVERLUST_PROVINZ_TAGE}; Ziel >= ${ABSTAND_ZIEL_PROVINZ_TAGE} (zwei Einzelverluste), nur zur Beobachtung des Aufbaus).`,
     },
     [ABSCHNITT]: {
