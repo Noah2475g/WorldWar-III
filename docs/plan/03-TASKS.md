@@ -6935,6 +6935,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   (`MachtZahlen.nation` additiv ergänzt), Artillerieanteil-Zwilling ungetestet, Artillerie-Summe
   nur nach Schlüssel statt Klasse; siehe `tasks.yaml` (`dod`) und `PROGRESS.md` für die volle Liste.
   `pnpm verify` steht aus (Maschine unter Last durch Noahs Spielsitzung, beide Sitzungen).
+- **Erledigt am 2026-09-27:** `pnpm verify` Exit 0 auf `6c7ff2a` bei freier Maschine (188
+  Testdateien, 132 s); Status `done`.
 
 ### T-M42-02 · Der Haltungs-Messlauf hält eine gesunde KI-Änderung aus
 - **Ziel:** AK5 (98 % Provinz-Tage) soll gegen Rauschen robuster werden — nicht gegen eine
@@ -7108,6 +7110,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Stand (Nacharbeit 2026-09-26, Merge `0ddd8bb`):** gebaut und gemergt (Bau `f31dc94`,
   Nacharbeit `7faa0ed`); Status bleibt `todo` in `tasks.yaml`, weil `pnpm verify` auf ruhiger
   Maschine noch aussteht (Noah spielte, 90-100 % Last) — `done` erst danach.
+- **Erledigt am 2026-09-27:** `pnpm verify` Exit 0 auf `6c7ff2a` bei freier Maschine (188
+  Testdateien, 132 s); Status `done`.
 
 ### T-M42-12 · Abschlussmessung, Abnahme, Übergabe
 - **Ziel:** eine Messung, die für den Endstand von M42 und M43 gilt.
@@ -7208,6 +7212,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Stand (Nacharbeit 2026-09-26, Merge `608d746`):** gebaut und gemergt (Bau `d55edd5`,
   Turniermessung `06a1629`); Status bleibt `todo` in `tasks.yaml`, weil `pnpm verify` auf
   ruhiger Maschine noch aussteht (Noah spielte, 90-100 % Last) — `done` erst danach.
+- **Erledigt am 2026-09-27:** `pnpm verify` Exit 0 auf `6c7ff2a` bei freier Maschine (188
+  Testdateien, 132 s); Status `done`.
   `tradeOffer.test.ts` reißt allein bei 8,1 s gegen die 5000-ms-Frist, unabhängig von
   `market.ts`/`trade.ts` (bestätigt, siehe `DECISIONS.md`).
 
