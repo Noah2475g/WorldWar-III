@@ -16,6 +16,7 @@ import { clearanceAlerts, clearanceNotices } from './clearance.ts'
 const map = smallWorld()
 const ctx = { map, rules: TEST_RULES }
 const notice = TEST_RULES.constants.rightOfWayNoticeTicks
+const retreatCooldown = TEST_RULES.constants.retreatCooldownTicks
 
 const CONFIG: GameConfig = {
   seed: 202,
@@ -270,6 +271,97 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
       c = r.state
     }
     expect(bad).toBe(false)
+  })
+
+  it('K13 Rueckzug in neutrales Land: eine Meldung mit cause retreat, Frist = eigene Rueckzugssperre (Ergaenzung 3)', () => {
+    // p1-Armee in s2 (p3, Frieden seit Tick 0 - kein eigener Peace-Kandidat, E4); die
+    // Rueckzugssperre selbst kommt aus der Sicht (B4), nicht aus einer eigenen Diplomatie.
+    const nach1 = neu()
+    const army = placeArmy(nach1, { owner: 'p1', at: 's2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const t = nach1.tick
+    army.cannotAttackUntil = t + retreatCooldown
+    expect(meldungen(nach1)).toEqual([
+      { armyId: army.id, provinceId: 's2', hostId: 'p3', deadlineTick: t + retreatCooldown, cause: 'retreat' },
+    ])
+  })
+
+  it('K14 Zwilling Rueckzug gegen den Kern (Muster K10): der erste Ueberfall faellt genau auf die gemeldete Frist', () => {
+    // Echte Lage aus Z1 (diplomacy.test.ts): Krieg p1-p2, o2 gehoert p2, m1/m2 auch (Gastmacht
+    // erweitert); der einzige nicht feindliche Nachbar von o2 ist s2 (p3).
+    const nach1 = neu()
+    nach1.diplomacy.relations['p1|p2']!.state = 'war'
+    nach1.provinces.m1!.owner = 'p2'
+    nach1.provinces.m2!.owner = 'p2'
+    const army = placeArmy(nach1, { owner: 'p1', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.stance = 'retreat'
+
+    const afterRetreat = step(nach1, [], ctx)
+    expect(afterRetreat.state.armies[army.id]!.locationProvinceId).toBe('s2')
+    const deadlineTick = meldungen(afterRetreat.state)[0]!.deadlineTick
+    expect(deadlineTick).toBe(afterRetreat.state.armies[army.id]!.cannotAttackUntil)
+
+    let cur = afterRetreat.state
+    let firstUeberfallAt = -1
+    while (cur.tick < deadlineTick + 3) {
+      const before = cur.tick
+      const r = step(cur, [], ctx)
+      if (ueberfall(r.events, 'p1', 'p3')) {
+        firstUeberfallAt = before
+        break
+      }
+      cur = r.state
+    }
+    expect(firstUeberfallAt).toBe(deadlineTick)
+  })
+
+  it('K15 Waechter: ein Rueckzug ins eigene Land loest keine Meldung aus', () => {
+    const nach1 = neu()
+    nach1.diplomacy.relations['p1|p2']!.state = 'war'
+    // n2 ist eigenes Land (p1) - der Rueckzug bleibt dort (wie Z4 in diplomacy.test.ts).
+    const army = placeArmy(nach1, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.stance = 'retreat'
+    const afterRetreat = step(nach1, [], ctx).state
+    expect(afterRetreat.provinces[afterRetreat.armies[army.id]!.locationProvinceId]!.owner).toBe('p1')
+    expect(meldungen(afterRetreat)).toEqual([])
+  })
+
+  it('K16 Kriegsmarsch: Ankunft nach dem Frieden meldet erst ab da (kein eigener Code, Ergaenzung 1)', () => {
+    const nach1 = neu()
+    nach1.diplomacy.relations['p1|p2']!.state = 'war'
+    nach1.provinces.m1!.owner = 'p2'
+    const army = placeArmy(nach1, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.path = ['m1']
+    army.departureTick = nach1.tick
+    army.arrivalTick = nach1.tick + 3
+
+    const offered = step(nach1, [diplo('p1', 'p2', 'offerPeace')], ctx).state
+    const accepted = step(offered, [diplo('p2', 'p1', 'acceptPeace')], ctx)
+    expect(ueberfall(accepted.events, 'p1', 'p2')).toBeUndefined()
+    // Noch auf dem Marsch: keine Meldung fuer diese Armee, solange sie nicht angekommen ist.
+    expect(meldungen(accepted.state).find((n) => n.armyId === army.id)).toBeUndefined()
+
+    let cur = accepted.state
+    while (cur.armies[army.id]!.locationProvinceId !== 'm1') {
+      const r = step(cur, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      cur = r.state
+    }
+    const since = cur.diplomacy.relations['p1|p2']!.sinceTick
+    expect(meldungen(cur)).toEqual([
+      { armyId: army.id, provinceId: 'm1', hostId: 'p2', deadlineTick: since + notice, cause: 'peace' },
+    ])
+  })
+
+  it('K17 H6 in der Oberflaeche: Weg ueber die Gastmacht ins herrenlose Land ist ein Raeumweg, keine Meldung', () => {
+    // Waffenstillstand p1-p2; p1-Armee in o2 (p2), Weg o2 -> o1 (p2) -> m1 (herrenlos) ist der
+    // kuerzeste Weg hinaus (Bauplan T-M43-01 §4.1, H6-Reparatur); vor B1 waere hier eine Meldung
+    // stehen geblieben, weil der Rueckfall "jeder Ausgang" faelschlich schon in Tiefe 0 griff.
+    const nach1 = neu()
+    nach1.diplomacy.relations['p1|p2']!.state = 'truce'
+    nach1.diplomacy.relations['p1|p2']!.sinceTick = nach1.tick
+    const army = placeArmy(nach1, { owner: 'p1', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.path = ['o1', 'm1']
+    expect(meldungen(nach1)).toEqual([])
   })
 
   it(

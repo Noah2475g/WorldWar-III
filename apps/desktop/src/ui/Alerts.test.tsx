@@ -204,6 +204,40 @@ describe('R-DIP-10/AK5 Die Raeumfrist meldet sich', () => {
     const alerts = alertsFor(view({}))
     expect(alerts.some((alert) => alert.kind === 'clearance')).toBe(false)
   })
+
+  /** Rueckzug in neutrales Land (Ergaenzung 3, Noahs Entscheid 2026-09-27): dieselbe Meldungsart
+   * ('clearance'), nur ihr Text und Symbol unterscheiden sich - Alerts.tsx selbst kennt keine
+   * eigene Ursache. */
+  const raeumRueckzug: Alert = {
+    id: 'clearance:a2',
+    kind: 'clearance',
+    icon: 'truce',
+    text: 'Rückzug: Armee 2 ist nach Ostfeld (Ostmark) ausgewichen. Losmarschieren bis Tag 2, 01:00 — ein Marsch auf dem kürzesten Weg hinaus gilt nicht als Überfall.',
+    provinceId: 'o3',
+    armyId: 'a2',
+  }
+
+  it('A6 Rueckzugsmeldung hat Warnfarbe und springt zur Armee (wie A1/A2)', () => {
+    const alerts = alertsFor(
+      view({ capital: 'A', provinces: [{ id: 'A', name: 'Alpha', owner: 'p2' }], shortages: ['food'] }),
+      undefined,
+      [],
+      [raeumRueckzug],
+    )
+    const order = alerts.map((alert) => alert.kind)
+    expect(order.indexOf('capital')).toBeLessThan(order.indexOf('clearance'))
+    expect(order.indexOf('clearance')).toBeLessThan(order.indexOf('shortage'))
+    expect(isDismissible(raeumRueckzug)).toBe(false)
+
+    const onJump = vi.fn()
+    render(<Alerts alerts={alertsFor(view({}), undefined, [], [raeumRueckzug])} onJump={onJump} />)
+    fireEvent.click(screen.getByRole('button', { name: /Rückzug:/ }))
+    expect(onJump).toHaveBeenCalledWith({ kind: 'army', armyId: 'a2', provinceId: 'o3' })
+
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    const laut = [...css.matchAll(/([^{}]*)\{[^}]*color:\s*var\(--warn\)[^}]*\}/g)].map((match) => match[1]!)
+    expect(laut.some((selektor) => selektor.includes('alert--clearance'))).toBe(true)
+  })
 })
 
 describe('R-GAME-06 Das Protokoll ist filterbar', () => {

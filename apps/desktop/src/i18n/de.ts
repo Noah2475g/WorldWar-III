@@ -1180,6 +1180,10 @@ export const de = {
     // Räumfrist (T-M43-02, R-DIP-10/AK5, D34.4) — Wortlaut in DECISIONS.md, kippbar.
     clearance:
       'Räumfrist: {{army}} steht in {{province}} ({{nation}}). Losmarschieren bis Tag {{day}}, {{hour}}:00 — ein Marsch auf dem kürzesten Weg hinaus gilt nicht als Überfall.',
+    // Rückzug in neutrales Land (Ergänzung 3, Noahs Entscheid 2026-09-27) — eigener Wortlaut,
+    // die Frist ist die eigene Rückzugssperre, kippbar.
+    clearanceRetreat:
+      'Rückzug: {{army}} ist nach {{province}} ({{nation}}) ausgewichen. Losmarschieren bis Tag {{day}}, {{hour}}:00 — ein Marsch auf dem kürzesten Weg hinaus gilt nicht als Überfall.',
     capitalLost: 'Die Hauptstadt ist verloren',
     completionBuilding: '{{building}} in {{province}} ist fertig',
     completionUnit: '{{unit}} in {{province}} ist ausgehoben',

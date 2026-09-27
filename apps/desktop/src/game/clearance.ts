@@ -9,6 +9,7 @@ import {
   type Rules,
 } from '@worldwar/core'
 import type { Alert, AlertKind } from '../ui/Alerts.tsx'
+import type { IconName } from '../ui/icons.tsx'
 import { gameTime } from '../ui/format.ts'
 import { t } from '../i18n/text.ts'
 
@@ -38,7 +39,7 @@ export interface ClearanceNotice {
   hostId: string
   /** Letzter Sicht-Tick, bis zu dem ein Marschbefehl hinaus sicher wirkt. */
   deadlineTick: number
-  cause: 'peace' | 'revoked'
+  cause: 'peace' | 'revoked' | 'retreat'
 }
 
 /**
@@ -71,14 +72,23 @@ export function clearanceNotices(
     if ((rel.state === 'truce' || rel.sinceTick > 0) && view.tick <= rel.sinceTick + notice) {
       candidates.push({ tick: rel.sinceTick + notice, cause: 'peace' })
     }
+    // (c), gespiegelt: Rückzug in neutrales Land (Noahs Entscheid vom 2026-09-27, Punkt 3;
+    // T-M43-01 C2b) — die Frist ist die eigene Rückzugssperre, die die Sicht seit B4 kennt.
+    // Vor (b): bei Gleichstand mit einer Kündigung soll der Rückzug gewinnen (Reihenfolge
+    // unten in `candidates` bestimmt den Ausgang des Gleichstands, s. `best`).
+    // `until > 0`: der Zustand setzt `cannotAttackUntil` auf 0 als Grundwert (nie
+    // zurückgewichen) — ohne diese Wache läse ein frischer Stand bei Tick 0 (K4, E4) das
+    // als eine ablaufende Sperre und meldete faelschlich einen Rückzug.
+    const until = army.cannotAttackUntil
+    if (until !== undefined && until > 0 && view.tick <= until) candidates.push({ tick: until, cause: 'retreat' })
     if (rel.passageReceived) {
       const ends = rel.passageEndsAtTick.received
       // Unbefristet (kein Ende) ist keine Kündigung — keine Gefahr, Armee überspringen.
       if (ends !== null) candidates.push({ tick: ends - 1, cause: 'revoked' })
     }
     if (candidates.length === 0) continue
-    // Der größte Tick gewinnt (bei Gleichstand Frieden): der Kern schützt, solange
-    // irgendeiner der beiden Schutzgründe noch greift.
+    // Der größte Tick gewinnt; bei Gleichstand die Reihenfolge oben (Frieden vor Rückzug vor
+    // Kündigung, Noahs Entscheid): der Kern schützt, solange irgendeiner der Schutzgründe greift.
     const best = candidates.reduce((a, b) => (b.tick > a.tick ? b : a))
 
     // (b), gespiegelt: der kürzeste Weg hinaus (Kern-Fassung, ohne strictExit).
@@ -121,11 +131,15 @@ export function clearanceAlerts(
   return notices.map((noticeItem) => {
     const { day, hour } = gameTime(noticeItem.deadlineTick, ticksPerDay)
     const kind: AlertKind = 'clearance'
+    // Rückzug (Ergänzung 3, Noahs Entscheid 2026-09-27): kein eigenes Symbol in `icons.tsx` —
+    // wie beim Frieden das Zeichen für Waffenstillstand (`truce`).
+    const icon: IconName = noticeItem.cause === 'revoked' ? 'rightOfWay' : 'truce'
+    const key = noticeItem.cause === 'retreat' ? 'alerts.clearanceRetreat' : 'alerts.clearance'
     return {
       id: `clearance:${noticeItem.armyId}`,
       kind,
-      icon: noticeItem.cause === 'peace' ? 'truce' : 'rightOfWay',
-      text: t('alerts.clearance', {
+      icon,
+      text: t(key, {
         army: naming.army(noticeItem.armyId),
         province: nameOf(noticeItem.provinceId),
         nation: nationOf(noticeItem.hostId),
@@ -142,6 +156,12 @@ export function clearanceAlerts(
  * Löst dieses Ereignis eine Räumfrist für `viewer` aus (T-M43-02)? Nur dafür verwendet,
  * um das Vorspulen anzuhalten (`game/fastForward.ts`) — die Meldung selbst liest keine
  * Ereignisse (E1).
+ *
+ * `ARMY_RETREATED` (Ergänzung 3, Noahs Entscheid 2026-09-27) feuert bei JEDEM Rückzug,
+ * auch ins eigene Land — anders als bei den beiden anderen Ursachen genügt das Ereignis
+ * hier also nicht: der Aufrufer muss zusätzlich prüfen, dass `clearanceNotices(...)`
+ * für GENAU diese Armee (`event.armyId`) eine Meldung liefert, sonst hielte ein Rückzug
+ * ins eigene Land an, sobald irgendeine andere Frist läuft (F5).
  */
 export function isClearanceCause(event: GameEvent, viewer: string): boolean {
   if (event.type === 'DIPLOMACY_CHANGED') {
@@ -152,6 +172,9 @@ export function isClearanceCause(event: GameEvent, viewer: string): boolean {
   }
   if (event.type === 'RIGHT_OF_WAY_CHANGED') {
     return event.granted === false && event.targetPlayerId === viewer
+  }
+  if (event.type === 'ARMY_RETREATED') {
+    return event.playerId === viewer
   }
   return false
 }
