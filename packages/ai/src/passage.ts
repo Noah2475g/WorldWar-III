@@ -1,6 +1,7 @@
 import { ONE, divFixed, mulChain } from '@worldwar/shared'
 import {
   findPath,
+  hostFieldsToLeave,
   isClearingPath,
   neighborsOf,
   TERRAIN_FACTORS,
@@ -385,19 +386,38 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
     frontier = nextHostFields
   }
 
-  const target = hit ?? fallback
+  // Wie der Kern (H6): ein Weg, der nicht der kürzeste hinaus ist, nur wenn es gar keinen
+  // gibt. `fallback` ist ein Ausgang, den die eigene (auf Landwege beschränkte) Vorhersage
+  // fand, der aber nicht der kürzeste Weg ist, den der Kern anerkennt — marschiert die Armee
+  // dorthin, wertet der Kern sie nach Fristende als Überfall, sobald sie die Gastmacht
+  // erneut betritt. Nur wenn der Kern selbst keinen legalen Ausgang kennt (die Gastmacht
+  // umschließt die Armee ganz), ist der Umweg besser als gar kein Befehl.
+  const legalDepth = hostFieldsToLeave(way, army.provinceId, me, host)
+  const target = hit ?? (legalDepth === null ? fallback : null)
   const cancelled = relation.passageReceived && relation.passageEndsAtTick.received !== null
   const fristReason = cancelled
     ? `Durchmarschrecht bei ${host} endet in Tick ${relation.passageEndsAtTick.received}`
     : `${host} gewährt keinen Durchmarsch`
 
   if (target === null) {
-    explanations.push({
-      action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
-      reason: fristReason,
-      score: 500,
-      alternative: { action: 'bleiben', score: 200 },
-    })
+    if (fallback !== null) {
+      // Ein Weg wurde gefunden, aber die eigene Vorhersage kennt keinen, den der Kern als
+      // kürzesten Ausgang anerkennt (Befund 6) — die Armee bleibt lieber stehen, statt einen
+      // Umweg zu nehmen, der ab Fristende zum Überfall wird.
+      explanations.push({
+        action: `${army.id} bleibt in ${army.provinceId}`,
+        reason: `${fristReason}, kürzester Weg hinaus nicht vorhersagbar`,
+        score: 500,
+        alternative: { action: 'Umweg (ab Fristende ein Überfall)', score: 200 },
+      })
+    } else {
+      explanations.push({
+        action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
+        reason: fristReason,
+        score: 500,
+        alternative: { action: 'bleiben', score: 200 },
+      })
+    }
     return null
   }
 

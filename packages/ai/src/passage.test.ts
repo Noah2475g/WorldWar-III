@@ -671,17 +671,85 @@ describe('R-DIP-10/AK4 Die KI räumt auch ohne Kündigung — Friedensschluss un
     }
   }
 
-  it('P9: der Raeumweg kennzeichnet einen Landweg als unbestaetigt, wenn eine seetaugliche Armee einen kuerzeren Seeweg hat (useSea, D34.3)', () => {
+  it('P9: kein Rueckfall auf einen Landweg, den der Kern nicht als Raeumweg anerkennt (Befund 6, Nacharbeit Etappe 1)', () => {
     const { context, armyId } = seetauglicherRueckfall()
     const visible = context.view.armies.find((a) => a.id === armyId)!
     const explanations: Explanation[] = []
     const command = guestWithdrawal(context, visible, explanations)
-    // Der Zielort aendert sich nicht (der Rueckfall greift weiterhin, das ist Befund
-    // T-M43-01/hoch #1 zur hit/fallback-Praezedenz, hier bewusst nicht miterledigt) - aber die
-    // Begruendung muss den Landweg als nicht bestaetigt kuerzest kennzeichnen, sobald die
-    // Armee seetauglich ist und `useSea` das (mit dem Zwilling) auch weiss.
-    expect(command).toMatchObject({ targetProvinceId: 'm' })
-    expect(explanations.some((e) => e.reason.includes('kürzester Weg nicht vorhersagbar'))).toBe(true)
+    // Der Kern kennt `w` (See) als kuerzesten Ausgang (least=0); der vorhergesagte Landweg
+    // ueber `h1` nach `m` durchquert ein Gastfeld (k=1) und ist damit kein Raeumweg mehr -
+    // ein Befehl dorthin waere ab Fristende ein Ueberfall. Die Armee bleibt lieber stehen.
+    expect(command).toBeNull()
+    expect(
+      explanations.some((e) => e.action.includes('bleibt in g') && e.reason.includes('kürzester Weg hinaus nicht vorhersagbar')),
+    ).toBe(true)
+  })
+
+  it('P11: umschliesst die Gastmacht die Armee vollstaendig, findet sie keinen Heimweg (Waechter)', () => {
+    const ring: readonly (readonly [number, number])[] = [[0, 0], [1, 0], [0, 1]]
+    const province = (id: string) => ({
+      id,
+      name: id,
+      kind: 'rural' as const,
+      terrain: 'plains' as const,
+      coastal: false,
+      center: { x: 0, y: 0 },
+      population: 1000,
+      deposits: {},
+      polygons: [ring],
+    })
+    const map = parseMap({
+      id: 'insel',
+      name: 'Umschlossene Testkarte',
+      width: 10,
+      height: 10,
+      provinces: [
+        { ...province('g'), coastal: true },
+        province('h'),
+        { ...province('y'), coastal: true },
+      ],
+      edges: [
+        { a: 'g', b: 'h', kind: 'land' as const, distanceKm: 50_000, crossing: 'none' as const },
+        // Nur eine Seekante verbindet die Gastmacht-Insel mit dem Festland der Armee-Macht
+        // (Kartenvalidierung verlangt Zusammenhang) — die Armee (reine Landeinheiten,
+        // `useSea` falsch) kann sie nicht nutzen: die Insel umschliesst sie vollstaendig.
+        { a: 'g', b: 'y', kind: 'sea' as const, distanceKm: 50_000, crossing: 'none' as const },
+      ],
+      edgesByProvince: { g: [0, 1], h: [0], y: [1] },
+      startPositions: [
+        { nation: 'Land', capital: 'y', provinces: ['y'] },
+        { nation: 'Feind', capital: 'g', provinces: ['g', 'h'] },
+      ],
+    })
+    const config: GameConfig = {
+      seed: 1,
+      mapId: 'insel',
+      rulesId: 'default',
+      players: [
+        { name: 'L', kind: 'ai', nation: 'Land', color: '#111111', difficulty: 'normal' },
+        { name: 'F', kind: 'ai', nation: 'Feind', color: '#222222', difficulty: 'normal' },
+      ],
+      victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
+    }
+    const state = createInitialState(config, { map, rules: TEST_RULES })
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    // Die Armee (p1, Heimat `y`) steht in `g` (Gastmacht p2); `g`s einziger Landnachbar ist
+    // `h`, ebenfalls Gastmacht, und `h` hat keinen weiteren Landnachbarn — nur eine Seekante
+    // fuehrt hinaus, die reine Landeinheiten nicht nutzen koennen. Kein Ausgang erreichbar.
+    const army = placeArmy(state, { owner: 'p1', at: 'g', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context: AiContext = {
+      view: publicView(state, 'p1'),
+      memory: emptyMemory(600),
+      rules: TEST_RULES,
+      map,
+      difficulty: TEST_RULES.ai.difficulties.normal,
+    }
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const explanations: Explanation[] = []
+    const command = guestWithdrawal(context, visible, explanations)
+    expect(command).toBeNull()
+    expect(explanations.some((e) => e.action.includes('findet keinen Heimweg'))).toBe(true)
   })
 
   it('P10: in der laufenden Partie raeumt die KI ohne Ueberfall', () => {
