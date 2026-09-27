@@ -6954,6 +6954,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   gesetzt, und die „40 Proben je Startzahl" aus dem M17-F1-Eintrag werden neu abgetastet statt
   übernommen. **Rücknahme:** hält der Aufbau die Kriterien nicht, bleibt er wie heute, Befund
   in `PROBLEME.md`. Aufwand 2 h, Rechenzeit rund 40 min.
+- **Erledigt am 2026-09-27:** AK5 (R-UNIT-09) nach Noahs Entscheid (Punkt 3) neu gefasst —
+  Provinz-Tage sind Berichtszahl, das Tor ist die Schadenszählung (keine Provinz ohne Gefecht
+  verloren, 0 Ablehnungen, 0 Kriege ohne Erklärung, mindestens ein Einmarsch je Lauf). Sechs
+  Startzahlen bleiben (1914, 2015, 1815, 1939, 1871, 1806). E-H2 (Kriegsplan-Präzisierung,
+  `426f2cb`) und E-H1 (Kontrolle 41/4 → 26/4, `015ae0e`) nach Freigabe der Orchestrierung
+  gebaut. Endmessung (`ca6e511`, sauberer Baum `015ae0e`): `erfuellt: true`, `verletzt: []`;
+  Provinz-Tage 95,5 % (Berichtszahl); Kontrolle 26/4 trifft; Kriegsplan gegriffen in allen 24
+  Läufen; Kartenfenster 114 Ticks. Auf `669b105` (Nacharbeit-Fix) erneut gemessen (`d9c2e59`):
+  zahlengleich. `pnpm verify` Exit 0 (190 Dateien, 3540 Tests).
 
 ### T-M42-03 · Die KI hebt nur aus, was ihre Tagesbilanz trägt
 - **Ziel:** R-AI-08/AK2 auch in der ausgelieferten Partie erfüllen (Kanada 44 Tage
@@ -6976,6 +6985,14 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   gilt, sonst nächste Provinz oder keine Aushebung, begründet. Wirkung: Kanada 44 → 0
   Geldmangeltage, Turnier und `progress.slow` zeilengleich bzw. grün. Rücknahmekriterien
   K1–K9 (Plan §9.3). Aufwand 3 h, Rechenzeit rund 12 min.
+- **Erledigt am 2026-09-27:** Stufe U gemessen auf `ebef5dc` (Beleg, nicht eingecheckt): Kanada
+  44 → 0 Geldmangeltage. K4 (Rückzugs-Überfälle) und K8 (Brasilien) von Noah beantwortet
+  (Räumfrist in T-M43-01, Brasilien gewollte Folge). Tor ist die gemeinsame Messung Stufe U+R
+  (`3f6d1671`, Kette auf `1d7687c`): K1–K9 gehalten, zahlengleich zur Planungssonde. `m17-
+  integration` 20/20, Turnier im Frieden 63 %, `progress.slow` 0,3653, Siegtage 443/423/663;
+  Deutschland Welt 1815: 15 Mangeltage, alle nach Provinzverlust (E5 wieder eingesetzt, Noahs
+  Antwort F8 vom 2026-09-26: Pleite nach Provinzverlust gilt ohne eigene Schuld, `6669b21`).
+  `pnpm verify` Exit 0 auf dem F-Stand (190 Dateien, 3538 Tests).
 
 ### T-M42-06 · Erst die Fabrik
 - **Ziel:** R-AI-12/AK1, AK2 — in Etappe 1 vorgezogen (Kritik K-2: die Buchungsreparatur vor
@@ -6993,14 +7010,22 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `buildQueue`). Wirkung: in jeder Startzahl beginnt jede Stufe mindestens eine Fabrik, in der
   Voreinstellung mindestens 3 von 6 Mächten mit Stadt; `progress.slow` bleibt grün.
   Rücknahmekriterien K1–K9. Aufwand 2,5 h, Rechenzeit rund 12 min.
+- **Erledigt am 2026-09-27:** übernommen nach Noahs Entscheid (Punkt 2); K5 neu gefasst: neun
+  Startzahlen, höchstens ein Patt, ein Patt ist ein Befund (nicht mehr Rücknahmegrund für sich
+  allein). Stufe F gemessen (`d247428`, Kette auf `50b5479`, auf `669b105` erneut gemessen,
+  `d9c2e59`, zahlengleich): `ai-integration` 28/28, `m17-integration` 21/21, 0 Überfälle;
+  Welt 1815 Fabriken 92; Turnier im Frieden 61 %; `progress.slow` 0,3338 [1,1,1,1,1,1];
+  neun Startzahlen 9/9 entschieden, **0 Patts**. Zahlengleich zur Planungssonde `pe1a/f`.
+  `pnpm verify` Exit 0 (190 Dateien, 3540 Tests).
 
 ### T-M42-04 · Spionage und Börse werden gebucht, „schwer" wird neu abgestimmt
 - **Ziel:** Befunde M17-S12 und M17-I1 beheben, ohne dass die Stufen ununterscheidbar werden.
 - **Anforderungen:** R-AI-11, R-AI-06
 - **Abhängigkeiten:** T-M42-06
 - **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/decide.ts`,
-  `packages/ai/src/provinceValue.ts`, `data/rules/default/ai.json` (nur wenn ein Kandidat
-  hält), `docs/plan/BALANCING.md`, `apps/headless/test/tournament.slow.test.ts`
+  `packages/ai/src/provinceValue.ts`, `packages/ai/src/espionage.ts`, `data/rules/default/ai.json`
+  (nur wenn ein Kandidat hält), `docs/plan/BALANCING.md`, `apps/headless/test/tournament.slow.test.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`
 - **Tests zuerst:** `packages/ai/src/economy.test.ts` — `RECRUIT_SPY` im selben Zug senkt die
   Stückzahl, ebenso `BUILD` und `TRADE`, ohne `pending` bleibt alles unverändert.
   `packages/ai/src/provinceValue.test.ts` — `ledgerAfter` zieht `spyRecruitCost` und
@@ -7013,6 +7038,16 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   `progress.slow` grün sind. **Rücknahme:** hält keiner, stoppt die Aufgabe; die
   Buchungsreparatur wird **nicht** allein eingecheckt (macht das Turnier rot), die Zahlen
   gehen an Noah. Aufwand 3 h, Rechenzeit rund 25 min.
+- **Zurückgestellt am 2026-09-27** (Noahs Entscheid Punkt 2): wartet bis nach der Artillerie
+  (T-M42-07), weil das Festungspatt aus Festung 2 in allen Städten entsteht und die Artillerie
+  die eigentliche Abhilfe ist. Gebaut und als Zwischenstufe gemessen (S12, `9f2a134`): die
+  Buchung behebt M17-S12 (0 statt 1 abgelehnte Aushebung Welt 1815); Wahlregel D32.5 wählt
+  `recruitShare` 320 (Turnier 61 %, 7/7). **Zurückgenommen wegen Festungspatt:** K5 riss
+  wörtlich (Vollpartie 1815 nach 1500 Spieltagen unentschieden, sechs weitere Startzahlen
+  5 von 6 entschieden, 1683 im Patt), K4 riss zusätzlich bei 320 (R-AI-09/AK1). Dasselbe Patt
+  wie bei T-M42-06 (Befund M42-06-a) — die Sieglage ist das Empfindliche, nicht die Buchung.
+  `ai.json` nie festgeschrieben, Revert `0e85934`, Turnier neu gemessen `b9ceeff`. Befund
+  M42-04-a in `PROBLEME.md` (offen, hoch).
 
 ### T-M42-05 · Die Truppenmischung zählt Einheiten
 - **Ziel:** R-AI-10/AK1.
@@ -7155,8 +7190,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Abhängigkeiten:** T-M42-03
 - **Dateien:** `packages/core/src/phases/index.ts`, `packages/core/src/step.ts`,
   `packages/core/src/phases/movement.ts`, `packages/core/src/phases/diplomacy.ts`,
-  `packages/core/src/rules/` (kürzester Heimweg, neu — gemeinsame Funktion für Kern und KI,
-  D34.3), `packages/ai/src/passage.ts`, `apps/headless/test/m17-integration.slow.test.ts`
+  `packages/core/src/rules/homePath.ts`, `packages/core/src/rules/homePath.test.ts`
+  (kürzester Heimweg, gemeinsame Funktion für Kern und KI, D34.3),
+  `packages/ai/src/passage.ts`, `packages/core/src/view/publicView.ts`,
+  `apps/headless/test/m17-integration.slow.test.ts`
 - **Tests zuerst:** `packages/core/src/phases/diplomacy.test.ts` — M17-T6 wörtlich (Frieden im
   Ankunftstick kein `WAR_DECLARED`, 24 Ticks später steht sie noch → Überfall, auf dem
   kürzesten Weg heim → kein Überfall bis zur Ankunft); M17-G4 (Bündnisbruch mit Gast im Land →
@@ -7176,13 +7213,31 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   das Turnier, geht die Frage mit Zahlen an Noah statt Rücknahme (die Regel ist seine Antwort
   auf Frage 3); reißt K4 nur am Geldmangel, wird die Ursache tagweise zerlegt (Fassung aus
   Frage 8). Aufwand 6 h, Rechenzeit rund 12 min.
+- **Erledigt am 2026-09-27:** nach Noahs Entscheid (Punkt 1, vier Ergänzungen zur Fassung aus
+  Frage 3: ein Marsch bei Kriegsende darf in jede Richtung enden, frei ist der **kürzeste Weg
+  hinaus** statt zwingend der Heimweg, ein Rückzug in neutrales Land bekommt dieselbe Frist,
+  die Brasilien-Nebenwirkung ist gewollt). Sieben Commits (`plan-e1-abschluss.md`, Teil A1):
+  B1 `b83b568` (H6-Rückfall in `homePath.ts` erst ohne jeden legalen Ausgang für die **ganze**
+  Gastmacht statt je Schicht — die eigentliche Wurzelursache), B2 `b63d396` (`guestWithdrawal`
+  marschiert nur noch auf einem vom Kern anerkannten Räumweg), B3 `6bea77c` (Rückzug in
+  neutrales Land bekommt die Räumfrist, neuer Grund (c); `ctx.bombardedThisTick` trennt den
+  Beschuss-Cooldown von dieser Ausnahme), B4 `1cdc566` (Sicht kennt die eigene
+  Rückzugssperre, Vorbereitung T-M43-02). Stufe U+R gemessen (`3f6d1671`, Kette auf
+  `1d7687c`): `m17-integration` 20/20, Überfälle mit-Läufen 0/0/0; Turnier 63 %; `progress.slow`
+  0,3653; neun Startzahlen 9/9 entschieden. Zahlengleich zur Planungssonde `pe1a/r`. R-DIP-10/AK2
+  in `01-REQUIREMENTS.md` um die vier Ergänzungen berichtigt (Nachtrag 2026-09-27). `pnpm verify`
+  Exit 0 (190 Dateien, 3540 Tests).
 
 ### T-M43-02 · Die Oberfläche meldet die Räumfrist
 - **Ziel:** ein Mensch erfährt, dass er losmarschieren muss, bevor er Überfaller wird.
 - **Anforderungen:** R-DIP-10
 - **Abhängigkeiten:** T-M43-01
-- **Dateien:** `apps/desktop/src/game/events.ts`, `apps/desktop/src/i18n/de.ts`,
-  `apps/desktop/src/ui/Panels.tsx`, `docs/plan/DECISIONS.md`
+- **Dateien:** `apps/desktop/src/game/clearance.ts`, `apps/desktop/src/game/clearance.test.ts`,
+  `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/ui/Alerts.test.tsx`,
+  `apps/desktop/src/App.tsx`, `apps/desktop/src/App.test.tsx`,
+  `apps/desktop/src/game/fastForward.ts`, `apps/desktop/src/game/fastForward.test.ts`,
+  `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/app.css`, `docs/ANLEITUNG.md`,
+  `docs/plan/DECISIONS.md`
 - **Tests zuerst:** `apps/desktop/src/game/events.test.ts` — Frieden mit eigener Armee im Land
   der Gegenseite → eine Meldung mit Provinz und Tick, Sprungziel ist die Armee; ohne Armee
   keine Meldung, bei fremdem Frieden keine Meldung. `apps/desktop/src/i18n/text.test.ts` — der
@@ -7194,6 +7249,24 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   erklären, einmarschieren, Frieden annehmen lassen, die Meldung sehen, heimschicken, kein
   Überfall — ein Bild kommt in den Bericht. Der Wortlaut steht in `DECISIONS.md` und ist durch
   Noah kippbar. Aufwand 3 h.
+- **Stand (2026-09-27):** gebaut auf `claude/m43-nebenbahn` (C1 `b0006a5` `clearance.ts`
+  spiegelt `detectSurpriseAttacks` aus der Sicht — abweichend von der Dateiliste, die Rechnung
+  liegt nicht in `events.ts`/`Panels.tsx`, sondern in eigenen Modulen, DECISIONS 2026-09-27
+  E1/E2 — bis C4 `0eb4924` Anleitung), dazu Nacharbeit (`18337db`/`e18b984`: Frist gegen
+  `clearanceNotices` statt nur gegen den Kern selbst geprüft) und N1 auf dem Kettenstand
+  `1d7687c` (`da8f8cf`/`b5b1c69`: Rückzug in neutrales Land als eigene Ursache `retreat`,
+  Vorspulen hält nur für die betroffene Armee) sowie K18/K19 (`clearance.ts` unterscheidet die
+  Rückzugssperre von einer Beschuss-Feuerpause).
+- **Erledigt am 2026-09-27** (nach dem Merge von Kette und Nebenbahn, Nacharbeit-Commit
+  `6c8d6c7` auf `claude/m43-nebenbahn`): Sichtprüfung V1–V9 vollständig nachgeholt per
+  präpariertem Spielstand (`core.deserialise`/`serialise`, nicht Live-Partie) — Meldung, Frist
+  und Wortlaut exakt, Klick springt zur Armee, Marsch auf dem kürzesten Weg hinaus lässt die
+  Meldung verschwinden, Gegenprobe (stehen bleiben) trifft die Frist auf die Stunde genau (V7
+  optional ausgelassen, V6 Layout mit ehrlichem Vorbehalt zur Panel-Scrollleiste).
+  `docs/ANLEITUNG.md` um Kriegsmarsch-Ausnahme und Rückzug-Schutzgrund ergänzt. Kein
+  Messgerät berührt. `pnpm verify` Exit 0 (191 Testdateien, 3572 Tests, 123,7 s). Offener
+  Befund M43-02-a (niedrig): eine Armee, die erst auf dem Weg ins fremde Land ist, wird nicht
+  gemeldet.
 
 ### T-M43-03 · Die Marktrechnung stürzt nicht mehr ab
 - **Ziel:** `exchangeAmount` (`rules/market.ts`) sättigt, statt `FixedOverflowError` zu werfen
@@ -7226,3 +7299,15 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Dateien:** `apps/headless/test/m17-integration.slow.test.ts`
 - **Tests zuerst:** derselbe Wiederholungslauf, automatisiert statt von Hand.
 - **Fertig wenn:** die Zusicherung im Testlauf steht. Aufwand 1 h, dazu +2 min je Lauf.
+- **Stand (2026-09-27):** gebaut auf `claude/m43-nebenbahn` (`203fb23`) — Startzahl 1914 als
+  siebte, letzte Partie im selben Prozess ein zweites Mal von Grund auf gespielt; verglichen
+  werden 200 Tageshashes des Zustands (Mehrspieler-Prüfsumme samt KI-Gedächtnis) und 200 der
+  Ereignisse je Tag — jede Folge allein übersieht eine Klasse. Gegenproben G1–G5 rot.
+- **Erledigt am 2026-09-27:** auf dem gemergten Kettenstand (Stufe F, `d247428`) neu gemessen
+  und eingecheckt (Nacharbeit-Commit `6c8d6c7`): 24/24 grün, `ersteAbweichungZustand`/
+  `ersteAbweichungEreignisse` −1/−1, `zustandsHashLetzterTag` `666e7edc358ae6ce` — zahlengleich
+  zur Planungssonde. Ein letztes Mal auf dem vereinten Endstand (`claude/m42-m43-heer-und-
+  raeumfrist`, Commit `65a1645`, `WORLDWAR_STAGE=F`) neu gemessen und eingecheckt: 24/24 grün,
+  −1/−1, derselbe Hash; `measuredAtCommit` auf den vereinten Stand aktualisiert,
+  `measuredDirty` leer — der Unterschied zum Kettenbericht betrifft nur den Stempel und den
+  neuen Abschnitt `wiederholungslauf`. Kein Messgerät (`allFreshness`) veraltet.
