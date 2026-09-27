@@ -36,14 +36,16 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * im Bericht; zugesichert wird sie nicht mehr.
  *
  * **Was jetzt gemessen wird.** Weltkarte, ausgelieferte Regeln, 200 Spieltage ueber
- * `advanceTicks`, der Mensch spielt Deutschland mit KI-Nachbarn und gibt keinen Befehl. Die
- * Startzahlen aus `SEEDS` mal zwei Aufstellungen — **A**: eine Armee aus fuenf
- * Infanterie je Provinz, **B**: zwei — mal zwei Haltungen: `garrison` (kaempft wie die
- * Verteidigung, handelt nie von selbst) und `defensive` (mit Adjutant). `LAEUFE` Laeufe.
+ * `advanceTicks`, der Mensch spielt Deutschland mit KI-Nachbarn und gibt keinen Befehl. Sechs
+ * Startzahlen aus `SEEDS` (seit T-M42-02, Noahs Entscheid 2026-09-27 Punkt 3) mal zwei
+ * Aufstellungen — **A**: eine Armee aus fuenf Infanterie je Provinz, **B**: zwei — mal zwei
+ * Haltungen: `garrison` (kaempft wie die Verteidigung, handelt nie von selbst) und `defensive`
+ * (mit Adjutant). `LAEUFE` Laeufe.
  *
- *  - **Provinz-Tage:** zu Beginn jedes Spieltags die Zahl der Provinzen des Menschen, summiert
- *    (dieselbe Zaehlweise wie im Entwurf, auf der die Schwelle steht). Ein Nenner, der nicht mit
- *    dem Widerstand waechst.
+ *  - **Provinz-Tage:** zu Beginn jedes Spieltags die Zahl der Provinzen des Menschen, summiert.
+ *    Seit Noahs Entscheid vom 2026-09-27 nur noch **Berichtszahl** (`abstand`), kein Tor mehr —
+ *    mit sechs Startzahlen nuetzt die Automatik nicht messbar (drei Paare besser, drei
+ *    schlechter), schadet aber nicht; das Tor ist die Schadenszaehlung unten.
  *  - **Episode:** die groesste zusammenhaengende Folge von Ticks mit `BATTLE_RESOLVED` in einer
  *    Provinz, die zu Beginn ihres ersten Ticks dem Menschen gehoerte; sie endet im ersten Tick
  *    ohne Gefecht dort. Je Episode: Deckung befohlen, Deckung vor Gefechtsende angekommen,
@@ -56,13 +58,15 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  *
  * Gezaehlt wird aus dem **Ereignisstrom**, Tick fuer Tick, nie aus `state.eventLog`.
  *
- * **Die Zusicherungen (AK5), festgelegt vor der Messung der gebauten Regel:** ueber alle Paare
- * erreichen die Provinz-Tage mit Verteidigung mindestens 98 Prozent der Garnison; je Paar
- * gehen mit Verteidigung nicht mehr Provinzen ohne Gefecht verloren als mit Garnison; kein
- * Befehl wird abgelehnt, keiner loest einen Krieg ohne Erklaerung aus; und die Garnison A 1914
- * trifft die Kontrolle (bis Block N2 der Lauf vorher aus T-M40-02, siehe `KONTROLLE`). Die Schwelle
- * 98 Prozent stand erst nach der Messung des Entwurfs fest (D30.9) — sie gilt fuer die Summe, weil die Regel des Entwurfs in einem
- * Einzellauf (1815 B) drei Prozent unter der Garnison lag.
+ * **Die Zusicherungen (AK5, neu gefasst nach Noahs Entscheid vom 2026-09-27, Punkt 3):**
+ * das Tor ist die **Schadenszaehlung**, woertlich — keine Provinz ohne Gefecht verloren
+ * (die Verteidigung selbst, in KEINEM Lauf; strenger als die Paar-Regel, die zusaetzlich
+ * bleibt: je Paar nicht mehr Provinzen ohne Gefecht verloren als mit Garnison), kein
+ * abgelehnter Befehl, kein Krieg ohne Erklaerung, mindestens ein Einmarsch je Lauf; dazu
+ * unveraendert die Garnison A 1914 trifft die Kontrolle (siehe `KONTROLLE`) und das
+ * Kartenfenster steht. Die vorige 98-Prozent-Schwelle auf den Provinz-Tagen (D30.9) ist seither
+ * kein Tor mehr — sie stand auf einer Zaehlweise, die mit sechs Startzahlen nicht mehr
+ * trennscharf ist; die Provinz-Tage bleiben Berichtszahl (`abstand`).
  *
  * **Der Bericht** `docs/reports/stance.json` wird nur mit `WORLDWAR_WRITE_REPORT=1`
  * geschrieben (Befund N3: vorher schrieb jeder Lauf ihn neu, mit neuem Zeitstempel). Ohne die
@@ -793,15 +797,62 @@ describe('Einheitsfall T-M42-02: sechs Startzahlen und der Abstand zur Schwelle'
     expect(robust.abstand.robust).toBe(true)
   })
 
-  it('unter 98 % ist der Abstand negativ und AK5 verletzt', () => {
+  it('T4: unter 98 % ist der Abstand negativ, aber seit Noahs Entscheid vom 2026-09-27 kein Tor mehr - erfuellt bleibt wahr', () => {
     const ergebnis = ak5(
       zwoelfPaare((lauf) => (lauf.stance === 'defensive' ? { ...lauf, provinceDays: 780 } : lauf)),
       WINDOW_TICKS_T_M40_02,
       ABSTAND_SEEDS,
     )
     expect(ergebnis.abstand).toEqual({ provinzTage: -48, einzelverluste: -0.3, ziel: 340, robust: false })
+    expect(ergebnis.erfuellt).toBe(true)
+    expect(ergebnis.verletzt).toEqual([])
+  })
+
+  it('T7: ein Verteidigungslauf verliert eine Provinz ohne Gefecht - verletzt, auch wenn die Garnison desselben Paars ebenso viele verliert', () => {
+    const ergebnis = ak5(
+      zwoelfPaare((lauf) =>
+        lauf.seed === 1815 && lauf.setup === 'B' ? { ...lauf, lostWithoutBattle: 1 } : lauf,
+      ),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
     expect(ergebnis.erfuellt).toBe(false)
-    expect(ergebnis.verletzt.join(' ')).toContain('unter 98 %')
+    expect(ergebnis.verletzt.join(' ')).toContain('ohne Gefecht verloren')
+    // Die Paar-Regel allein haette hier nicht gerissen (1 gegen 1) - erst die neue,
+    // strengere Einzelregel auf der Verteidigung selbst.
+    expect(ergebnis.verletzt.some((zeile) => zeile.includes('gegen 1 mit Garnison'))).toBe(false)
+  })
+
+  it('T8: ein Garnisonslauf allein verliert eine Provinz ohne Gefecht - Berichtszahl, kein Riss', () => {
+    const ergebnis = ak5(
+      zwoelfPaare((lauf) => (lauf.seed === 1815 && lauf.setup === 'B' && lauf.stance === 'garrison' ? { ...lauf, lostWithoutBattle: 1 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
+    expect(ergebnis.erfuellt).toBe(true)
+    expect(ergebnis.verletzt).toEqual([])
+  })
+
+  it('T9: ein abgelehnter Befehl verletzt AK5', () => {
+    const ergebnis = ak5(
+      zwoelfPaare((lauf) => (lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, rejectedCommands: 1 } : lauf)),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('abgelehnt')
+  })
+
+  it('T10: ein Krieg ohne Erklaerung, ausgeloest vom Menschen, verletzt AK5', () => {
+    const ergebnis = ak5(
+      zwoelfPaare((lauf) =>
+        lauf.seed === 1914 && lauf.setup === 'A' && lauf.stance === 'defensive' ? { ...lauf, undeclaredWarsByHuman: 1 } : lauf,
+      ),
+      WINDOW_TICKS_T_M40_02,
+      ABSTAND_SEEDS,
+    )
+    expect(ergebnis.erfuellt).toBe(false)
+    expect(ergebnis.verletzt.join(' ')).toContain('Kriege ohne Erklaerung')
   })
 
   it('kriegsschwellenAbstand gleicht der Begruendung der KI (Zwilling von diplomacy.ts §4)', async () => {
@@ -1047,10 +1098,11 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number, seeds: readonly numbe
     ziel: ABSTAND_ZIEL_PROVINZ_TAGE,
     robust: abstandProvinzTage >= ABSTAND_ZIEL_PROVINZ_TAGE,
   }
+  // Noahs Entscheid vom 2026-09-27 (Punkt 3, AK5 neu): Provinz-Tage sind seither
+  // Berichtszahl (oben, `provinceDays`/`abstand`) — kein Tor mehr. Das Tor ist die
+  // Schadenszaehlung unten: keine Provinz ohne Gefecht verloren, keine Ablehnungen,
+  // kein Krieg ohne Erklaerung, mindestens ein Einmarsch je Lauf.
   const verletzt: string[] = []
-  if (provinceDays.defensive * 100 < provinceDays.garrison * PROVINCE_DAYS_PERCENT) {
-    verletzt.push(`Provinz-Tage ${provinceDays.defensive} von ${provinceDays.garrison} (unter ${PROVINCE_DAYS_PERCENT} %)`)
-  }
   for (const paar of paare) {
     if (paar.defensive.lostWithoutBattle > paar.garrison.lostWithoutBattle) {
       verletzt.push(
@@ -1059,6 +1111,12 @@ function ak5(laeufe: readonly Lauf[], windowTicks: number, seeds: readonly numbe
     }
   }
   for (const lauf of laeufe) {
+    // Noahs Wortlaut, strenger als die Paar-Regel oben: die Verteidigung selbst verliert in
+    // KEINEM Lauf eine Provinz ohne Gefecht — ein Garnisonslauf ist nur Berichtszahl (Sonde F:
+    // 1815 B Garnison 1).
+    if (lauf.stance === 'defensive' && lauf.lostWithoutBattle !== 0) {
+      verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.lostWithoutBattle} Provinz(en) ohne Gefecht verloren`)
+    }
     if (lauf.rejectedCommands > 0) verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.rejectedCommands} abgelehnt`)
     if (lauf.undeclaredWarsByHuman > 0) {
       verletzt.push(`${lauf.seed} ${lauf.setup} ${lauf.stance}: ${lauf.undeclaredWarsByHuman} Kriege ohne Erklaerung`)
@@ -1122,8 +1180,8 @@ function schreibeBericht(laeufe: readonly Lauf[], windowTicks: number): void {
       pendulum: `eine Armee kommt von A in B an und bricht binnen ${PENDULUM_DAYS} Spieltagen nach der Ankunft nach A auf (seit T-M40-14; vorher ab dem Abmarsch)`,
       windowTicks,
       kriegsplan: `Befund M17-F1: die Landnachbarn des Menschen erklaeren ihm am Spieltag ${KRIEGSPLAN.tag} foermlich den Krieg (ueber den normalen Befehlsweg, scripted), danach entscheidet die KI alles selbst. Ohne Kriegsplan war der Lauf blind (0 Einmaersche); ${KONTROLLE_BIS_F1}`,
-      ak5: `Provinz-Tage defensive >= ${PROVINCE_DAYS_PERCENT} % garrison ueber alle ${SEEDS.length * Object.keys(SETUPS).length} Paare; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche und Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen, Befund M17-F1); Garnison A 1914 = Kontrolle (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}); Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Seit T-M40-18 stehen Kontrolle und Kartenfenster in nachher.ak5 und zaehlen zu erfuellt`,
-      abstand: `T-M42-02: Provinz-Tage defensive minus ${PROVINCE_DAYS_PERCENT} % garrison, abgerundet, in Einzelverlusten zu ${EINZELVERLUST_PROVINZ_TAGE}; Ziel >= ${ABSTAND_ZIEL_PROVINZ_TAGE} (zwei Einzelverluste). Berichtszahl und Uebernahmekriterium des Aufbaus, kein Teil von erfuellt`,
+      ak5: `Tor (R-UNIT-09/AK5, Noahs Entscheid 2026-09-27): Verteidigung verliert in keinem Lauf eine Provinz ohne Gefecht; je Paar lostWithoutBattle defensive <= garrison; 0 abgelehnt; 0 Kriege ohne Erklaerung; jeder Lauf > 0 Einmaersche. Messgueltigkeit: Kriegsplan gegriffen (${KRIEGSPLAN_NACHBARN} foermliche Erklaerungen gegen den Menschen, Befund M17-F1; die Praezisierung E-H2 auf "beide Plan-Nachbarn im Kriegsplan-Tick" braucht die Freigabe der Orchestrierung und ist hier nicht gebaut), Kontrolle Garnison A 1914 (${KONTROLLE.intrusions} Einmaersche, ${KONTROLLE.provincesLost} verloren; ${KONTROLLE_BIS_N2}), Kartenfenster ${WINDOW_TICKS_T_M40_02} Ticks. Provinz-Tage und abstand sind Berichtszahl.`,
+      abstand: `Berichtszahl; seit 2026-09-27 kein Tor (T-M42-02: Provinz-Tage defensive minus ${PROVINCE_DAYS_PERCENT} % garrison, abgerundet, in Einzelverlusten zu ${EINZELVERLUST_PROVINZ_TAGE}; Ziel >= ${ABSTAND_ZIEL_PROVINZ_TAGE} (zwei Einzelverluste), nur zur Beobachtung des Aufbaus).`,
     },
     [ABSCHNITT]: {
       adjutant: ADJUTANT,
@@ -1173,8 +1231,9 @@ describe('R-UNIT-09/AK5 Der Haltungs-Messlauf je Episode', () => {
 
   // T-M40-07 mass den Adjutanten aus M40: 3301 von 4140 Provinz-Tagen (79,7 %), 10 Verluste ohne
   // Gefecht gegen 0 mit Garnison — das stand hier als it.fails. Seit T-M40-10 gilt die Regel aus D30.4.
-  // Faellt diese Zusicherung, wird die Regel zurueckgenommen, nicht nachgeschaerft (D30.9).
-  it('R-UNIT-09/AK5: Verteidigung haelt mindestens 98 % der Provinz-Tage und entbloesst keine Provinz', () => {
+  // Provinz-Tage sind seit Noahs Entscheid vom 2026-09-27 Berichtszahl (kein Tor mehr); reisst dieses
+  // Tor (die Schadenszaehlung), wird die Automatik nach D30.9 zurueckgenommen, nicht nachgeschaerft.
+  it('R-UNIT-09/AK5: die Verteidigung richtet keinen Schaden an (Schadenszaehlung, Noahs Entscheid 2026-09-27)', () => {
     const ergebnis = ak5(laeufe, windowTicks)
     expect(ergebnis.verletzt, JSON.stringify(ergebnis)).toEqual([])
   })
