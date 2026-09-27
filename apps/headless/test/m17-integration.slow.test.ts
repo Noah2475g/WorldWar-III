@@ -600,6 +600,20 @@ describe('R-DIP-10/AK4 Kein Ueberfall aus Frieden oder Kuendigung — Weltkarte,
   })
 })
 
+// R-AI-12/AK2 (T-M42-06, D32.7): "Erst die Fabrik". Stufe 0: "normal" und "schwer" begannen in
+// keiner der drei Startzahlen eine Fabrik (nur "leicht": 92/63/64). Gezaehlt `BUILD_STARTED
+// factory` je Stufe aus dem Abschnitt m42 (mit-Laeufe, die ausgelieferte KI).
+describe('R-AI-12/AK2 Jede Stufe beginnt eine Fabrik — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl beginnt jede Stufe mindestens eine Fabrik', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeStufe = mit(startzahl).m42!.jeStufe
+      for (const stufe of ['easy', 'normal', 'hard'] as const) {
+        expect(jeStufe[stufe]?.fabrikenBegonnen ?? 0, `${startzahl} ${stufe}: keine Fabrik begonnen`).toBeGreaterThanOrEqual(1)
+      }
+    }
+  })
+})
+
 describe('R-AI-09/AK3 Antraege machen aus Maerschen keine Ueberfaelle', () => {
   it('bleibt unter dem Ausgangswert von T-M17-02', () => {
     const lauf = mit(1815)
