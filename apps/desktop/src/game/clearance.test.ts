@@ -364,6 +364,28 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
     expect(meldungen(nach1)).toEqual([])
   })
 
+  it('K18 Befund Nacharbeit Etappe 1 (mittel): eine feuernde Armee im Friedensland loest keine Rueckzugsmeldung aus', () => {
+    // Beschuss setzt dasselbe Feld wie ein Rueckzug (`army.cannotAttackUntil`,
+    // `bombardment.ts:139`: `draft.tick + 1`), aber nur fuer einen Tick Feuerpause -
+    // kein Rueckzug. Frieden seit Spielbeginn (sinceTick 0, E4): kein Peace-Kandidat.
+    const frisch = createInitialState(CONFIG, ctx)
+    const army = placeArmy(frisch, { owner: 'p1', at: 's2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.cannotAttackUntil = frisch.tick + 1
+    expect(meldungen(frisch)).toEqual([])
+  })
+
+  it('K19 Zwilling: eine echte Rueckzugssperre (24 Ticks) bleibt trotz der K18-Wache eine Meldung', () => {
+    // Gegenprobe zu K18 in derselben Richtung wie K13: die Wache darf die echte
+    // Rueckzugssperre nicht mit wegfiltern, nur die einer Feuerpause.
+    const nach1 = neu()
+    const army = placeArmy(nach1, { owner: 'p1', at: 's2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const t = nach1.tick
+    army.cannotAttackUntil = t + retreatCooldown
+    expect(meldungen(nach1)).toEqual([
+      { armyId: army.id, provinceId: 's2', hostId: 'p3', deadlineTick: t + retreatCooldown, cause: 'retreat' },
+    ])
+  })
+
   it(
     'K12 ganze Partien: 0 fehlend, 0 Verstoesse, mindestens eine Meldung',
     () => {

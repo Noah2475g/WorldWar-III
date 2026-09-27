@@ -79,8 +79,18 @@ export function clearanceNotices(
     // `until > 0`: der Zustand setzt `cannotAttackUntil` auf 0 als Grundwert (nie
     // zurückgewichen) — ohne diese Wache läse ein frischer Stand bei Tick 0 (K4, E4) das
     // als eine ablaufende Sperre und meldete faelschlich einen Rückzug.
+    // `until - view.tick > 1`: dasselbe Feld setzt auch der Beschuss, aber nur fuer eine
+    // Feuerpause von einem Tick (`bombardment.ts:139`, `draft.tick + 1`) — keine
+    // Rueckzugssperre (24 Ticks, `retreatCooldownTicks`). Ohne diese Wache meldete eine
+    // eigene Fernwaffenarmee im Friedensland, die auf ein entferntes Ziel feuert, jeden Tick
+    // faelschlich einen Rueckzug (Nacharbeit Etappe 1, Befund "Rueckzugsmeldung erscheint
+    // auch fuer feuernde Armeen", K18). Eine echte, fast abgelaufene Rueckzugssperre kann
+    // dieselbe Randbedingung (`until - view.tick === 1`) durchlaufen — die Meldung
+    // verschwindet dann bis zu einen Tick frueher als die Sperre selbst, nie spaeter: die
+    // sichere Richtung (keine falsche Meldung wiegt mehr als eine Meldung, die einen Tick zu
+    // frueh endet).
     const until = army.cannotAttackUntil
-    if (until !== undefined && until > 0 && view.tick <= until) candidates.push({ tick: until, cause: 'retreat' })
+    if (until !== undefined && until > 0 && until - view.tick > 1) candidates.push({ tick: until, cause: 'retreat' })
     if (rel.passageReceived) {
       const ends = rel.passageEndsAtTick.received
       // Unbefristet (kein Ende) ist keine Kündigung — keine Gefahr, Armee überspringen.
