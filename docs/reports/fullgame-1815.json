@@ -13,27 +13,27 @@
     "China",
     "Indien"
   ],
-  "decidedOnDay": 663,
-  "winner": "p7",
+  "decidedOnDay": 566,
+  "winner": "p6",
   "condition": "points",
   "warDeclarations": 6,
-  "captures": 1863,
-  "battles": 3931,
+  "captures": 1360,
+  "battles": 3755,
   "factory": {
     "highestLevelPerNation": {
       "Vereinigte Staaten": 0,
       "Kanada": 0,
-      "Mexiko": 3,
-      "Brasilien": 3,
+      "Mexiko": 2,
+      "Brasilien": 1,
       "Argentinien": 3,
       "Russland": 2,
-      "China": 2,
-      "Indien": 0
+      "China": 0,
+      "Indien": 2
     },
-    "provincesAtLevel2OrMore": 67,
-    "provincesAtLevel3": 11,
-    "upgradesStartedToLevel2": 68,
-    "upgradesStartedToLevel3": 11
+    "provincesAtLevel2OrMore": 51,
+    "provincesAtLevel3": 6,
+    "upgradesStartedToLevel2": 62,
+    "upgradesStartedToLevel3": 6
   },
   "cities": {
     "Vereinigte Staaten": {
@@ -51,46 +51,46 @@
       "fabrikOhneEisenbahn": 0
     },
     "Mexiko": {
-      "staedte": 4,
-      "eisenbahn": 4,
-      "festung": 4,
-      "festung2": 4,
-      "fabrikOhneEisenbahn": 0
-    },
-    "Brasilien": {
-      "staedte": 4,
-      "eisenbahn": 4,
-      "festung": 4,
-      "festung2": 4,
-      "fabrikOhneEisenbahn": 0
-    },
-    "Argentinien": {
       "staedte": 3,
       "eisenbahn": 3,
       "festung": 3,
       "festung2": 3,
       "fabrikOhneEisenbahn": 0
     },
-    "Russland": {
-      "staedte": 11,
-      "eisenbahn": 5,
-      "festung": 5,
-      "festung2": 4,
+    "Brasilien": {
+      "staedte": 3,
+      "eisenbahn": 1,
+      "festung": 3,
+      "festung2": 1,
+      "fabrikOhneEisenbahn": 2
+    },
+    "Argentinien": {
+      "staedte": 6,
+      "eisenbahn": 6,
+      "festung": 6,
+      "festung2": 6,
       "fabrikOhneEisenbahn": 0
+    },
+    "Russland": {
+      "staedte": 56,
+      "eisenbahn": 48,
+      "festung": 47,
+      "festung2": 46,
+      "fabrikOhneEisenbahn": 3
     },
     "China": {
-      "staedte": 56,
-      "eisenbahn": 55,
-      "festung": 55,
-      "festung2": 55,
-      "fabrikOhneEisenbahn": 0
-    },
-    "Indien": {
       "staedte": 0,
       "eisenbahn": 0,
       "festung": 0,
       "festung2": 0,
       "fabrikOhneEisenbahn": 0
+    },
+    "Indien": {
+      "staedte": 11,
+      "eisenbahn": 8,
+      "festung": 8,
+      "festung2": 7,
+      "fabrikOhneEisenbahn": 1
     }
   },
   "goals": {
@@ -101,10 +101,10 @@
       "pointShareSecond": 600
     },
     "winner": {
-      "provinces": 168,
-      "pointShareFirst": 394,
-      "populationShare": 462,
-      "pointShareSecond": 553
+      "provinces": 127,
+      "pointShareFirst": 277,
+      "populationShare": 366,
+      "pointShareSecond": 504
     },
     "perNation": {
       "Vereinigte Staaten": {
@@ -138,19 +138,19 @@
         "pointShareSecond": null
       },
       "Russland": {
-        "provinces": 113,
-        "pointShareFirst": 269,
+        "provinces": 127,
+        "pointShareFirst": 277,
+        "populationShare": 366,
+        "pointShareSecond": 504
+      },
+      "China": {
+        "provinces": 175,
+        "pointShareFirst": null,
         "populationShare": null,
         "pointShareSecond": null
       },
-      "China": {
-        "provinces": 168,
-        "pointShareFirst": 394,
-        "populationShare": 462,
-        "pointShareSecond": 553
-      },
       "Indien": {
-        "provinces": null,
+        "provinces": 191,
         "pointShareFirst": null,
         "populationShare": null,
         "pointShareSecond": null
@@ -180,23 +180,23 @@
       "veraltet": 0
     },
     "Russland": {
-      "eintraege": 63,
-      "armeen": 64,
+      "eintraege": 170,
+      "armeen": 170,
       "veraltet": 0
     },
     "China": {
-      "eintraege": 104,
-      "armeen": 104,
-      "veraltet": 0
+      "eintraege": 3,
+      "armeen": 0,
+      "veraltet": 3
     },
     "Indien": {
-      "eintraege": 0,
-      "armeen": 0,
+      "eintraege": 96,
+      "armeen": 96,
       "veraltet": 0
     }
   },
-  "aiMemoryKB": 4,
-  "stateKB": 293,
+  "aiMemoryKB": 7,
+  "stateKB": 328,
   "maxDays": 1500,
-  "measuredAt": "2026-09-27T12:00:54.675Z"
+  "measuredAt": "2026-09-27T12:19:18.878Z"
 }
