@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { advanceTicks } from '@worldwar/ai'
 import {
   createInitialState,
+  HASH_OMIT_KEYS,
   parseRules,
   type Command,
   type GameConfig,
@@ -51,6 +52,8 @@ const rules = parseRules(
 
 const DAYS = 200
 const STARTZAHLEN = [1815, 1914, 2015] as const
+/** T-M43-04: diese Startzahl wird als letzte Partie der Datei ein zweites Mal von Grund auf gespielt. */
+const WIEDERHOLUNG = 1914
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
 /** Stufe des Zaehlmoduls m42 (T-M42-01, §9.2 des Milestone-Plans); ohne den Schalter unbenannt. */
 const STUFE = process.env['WORLDWAR_STAGE'] ?? 'ohne Angabe'
@@ -217,9 +220,21 @@ interface Lauf {
   ak4Buckets: { tick: number; playerId: string; art: string; befehle: number; gedeckt: number }[]
   /** Abschnitt m42 (T-M42-01): nur fuer die Laeufe MIT Antraegen (§8 E5), tickweise gefuettert. */
   m42?: M42Bericht
+  /**
+   * T-M43-04: Pruefsumme des Zustands am Ende jedes Spieltags, wie der Mehrspieler sie vergleicht
+   * (`HASH_OMIT_KEYS`, also samt KI-Gedaechtnis) - nur mit `tageshashes`.
+   */
+  zustandJeTag?: string[]
+  /** T-M43-04: Pruefsumme der Ereignisse jedes Spieltags - das Protokoll steht nicht im Zustandshash. */
+  ereignisseJeTag?: string[]
 }
 
-async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): Promise<Lauf> {
+async function spiele(
+  startzahl: number,
+  mitAntraegen: boolean,
+  tage: number,
+  optionen: { tageshashes?: boolean } = {},
+): Promise<Lauf> {
   let current = createInitialState(integrationConfig(startzahl), { map, rules })
   const ki = new Set(current.playerOrder.filter((id) => current.players[id]!.kind === 'ai'))
 
@@ -231,6 +246,8 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
   const kuendigungen: { playerId: string; targetPlayerId: string }[] = []
   const abtretungen: { tick: number; newOwner: string }[] = []
   const zaehler = mitAntraegen ? m42Zaehler(rules, ki) : null
+  const zustandJeTag: string[] = []
+  const ereignisseJeTag: string[] = []
 
   const withhold = mitAntraegen
     ? undefined
@@ -288,6 +305,10 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
       if (current.victory.winner !== null) break
     }
     zaehler?.tagesende({ state: current, events: tagEvents, applied: tagApplied })
+    if (optionen.tageshashes) {
+      zustandJeTag.push(hashValue(current, { omitKeys: HASH_OMIT_KEYS }))
+      ereignisseJeTag.push(hashValue(tagEvents))
+    }
     gelaufen = tag + 1
     if (current.victory.winner !== null) break
     await breathe()
@@ -305,6 +326,7 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
     ueberfaelle,
     ak4Buckets,
     ...(zaehler ? { m42: zaehler.bericht() } : {}),
+    ...(optionen.tageshashes ? { zustandJeTag, ereignisseJeTag } : {}),
   }
 }
 
@@ -419,18 +441,53 @@ function ueberfaelleMerkmale(lauf: Lauf): {
 
 const laeufeMit = new Map<number, Lauf>()
 const laeufeOhne = new Map<number, Lauf>()
+let wiederholung: Lauf | undefined
 
 beforeAll(async () => {
   for (const startzahl of STARTZAHLEN) {
-    laeufeMit.set(startzahl, await spiele(startzahl, true, DAYS))
+    laeufeMit.set(startzahl, await spiele(startzahl, true, DAYS, { tageshashes: startzahl === WIEDERHOLUNG }))
     await breathe()
     laeufeOhne.set(startzahl, await spiele(startzahl, false, DAYS))
     await breathe()
   }
+  // T-M43-04: als LETZTE Partie, nach allen sechs - was eine Partie in Modulen hinterlaesst
+  // (Caches in espionage.ts, passage.ts, relationship.ts), traefe hier die Wiederholung.
+  wiederholung = await spiele(WIEDERHOLUNG, true, DAYS, { tageshashes: true })
 }, 1_800_000)
 
 const mit = (startzahl: number): Lauf => laeufeMit.get(startzahl)!
 const ohne = (startzahl: number): Lauf => laeufeOhne.get(startzahl)!
+const zweitlauf = (): Lauf => wiederholung!
+
+/** Der erste Tag (Index), an dem zwei Hashfolgen auseinandergehen, oder -1. Ungleiche Laenge zaehlt als Abweichung. */
+function ersteAbweichung(a: readonly string[], b: readonly string[]): number {
+  const n = Math.max(a.length, b.length)
+  for (let i = 0; i < n; i++) if (a[i] !== b[i]) return i
+  return -1
+}
+
+/** Oberste Zustandsfelder, deren Pruefsumme am Ende abweicht - sagt bei Rot, WO (z. B. nur `ai`). */
+function abweichendeFelder(a: GameState, b: GameState): string[] {
+  const x = a as unknown as Record<string, unknown>
+  const y = b as unknown as Record<string, unknown>
+  return [...new Set([...Object.keys(x), ...Object.keys(y)])]
+    .filter((key) => !HASH_OMIT_KEYS.includes(key))
+    .sort()
+    .filter((key) => hashValue(x[key] ?? null) !== hashValue(y[key] ?? null))
+}
+
+/** Das erste Ereignis, in dem zwei Laeufe sich unterscheiden, mit Art und Tick beider Seiten. */
+function erstesAbweichendesEreignis(a: readonly GameEvent[], b: readonly GameEvent[]): string {
+  const n = Math.max(a.length, b.length)
+  for (let i = 0; i < n; i++) {
+    const x = a[i]
+    const y = b[i]
+    if (x === undefined || y === undefined || hashValue(x) !== hashValue(y)) {
+      return `Ereignis ${i}: ${x ? `${x.type}@${x.tick}` : 'fehlt'} gegen ${y ? `${y.type}@${y.tick}` : 'fehlt'}`
+    }
+  }
+  return 'kein Ereignis weicht ab'
+}
 
 const baseline = load('docs/reports/m17-baseline.json') as {
   ueberfaelleOhneKriegserklaerung: number
@@ -765,6 +822,58 @@ describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
   })
 })
 
+/**
+ * T-M43-04: der Wiederholungslauf als Zusicherung. Bisher nur einmal von Hand nachgestellt
+ * (Durchsicht des Zusammenspiels, 2026-09-25, PROBLEME.md). Determinismus ist die Grundlage des
+ * Mehrspielers: beide Rechner spielen dieselbe Partie und vergleichen die Pruefsumme.
+ *
+ * Startzahl 1914, dieselbe Partie ein zweites Mal von Grund auf (`createInitialState`, dieselbe
+ * Karte, dieselben Regeln), als letzte der sieben Partien dieser Datei. Verglichen werden zwei
+ * Folgen zu je 200 Tagen, weil jede allein eine Luecke hat: der Zustandshash des Mehrspielers
+ * laesst das Protokoll aus (`HASH_OMIT_KEYS`), die Ereignisse sehen das KI-Gedaechtnis nicht.
+ * `zustandOhneKi` im Bericht sieht das KI-Gedaechtnis ebenfalls nicht - darum nicht der.
+ *
+ * Was dieser Lauf NICHT prueft: zwei Prozesse oder zwei Rechner (Node-Version, Betriebssystem).
+ */
+describe('T-M43-04 Der Wiederholungslauf - Startzahl 1914 zweimal von Grund auf', () => {
+  it('ist eine zweite, eigene Partie ueber alle Spieltage', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    expect(zweit).not.toBe(erst)
+    expect(zweit.final).not.toBe(erst.final)
+    for (const lauf of [erst, zweit]) {
+      expect(lauf.tage).toBe(DAYS)
+      expect(lauf.zustandJeTag).toHaveLength(DAYS)
+      expect(lauf.ereignisseJeTag).toHaveLength(DAYS)
+    }
+    // Nicht leer gruen: der Tick steht im Zustand, also hat jeder Tag seinen eigenen Hash.
+    expect(new Set(erst.zustandJeTag).size).toBe(DAYS)
+    expect(new Set(erst.ereignisseJeTag).size).toBeGreaterThan(1)
+  })
+
+  it('200 Tageshashes gleich - Zustand samt KI-Gedaechtnis und Ereignisse', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    const tagZustand = ersteAbweichung(erst.zustandJeTag!, zweit.zustandJeTag!)
+    const tagEreignisse = ersteAbweichung(erst.ereignisseJeTag!, zweit.ereignisseJeTag!)
+    const befund =
+      tagZustand === -1 && tagEreignisse === -1
+        ? ''
+        : `Zustand weicht ab Tag-Index ${tagZustand} ab, Ereignisse ab Tag-Index ${tagEreignisse}; ` +
+          `Felder am Ende: ${abweichendeFelder(erst.final, zweit.final).join(', ') || 'keine'}; ` +
+          erstesAbweichendesEreignis(erst.events, zweit.events)
+    expect(tagZustand, befund).toBe(-1)
+    expect(tagEreignisse, befund).toBe(-1)
+  })
+
+  it('zaehlt in beiden Laeufen dieselben Kennzahlen (zweites Werkzeug)', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    expect(kennzahlen(zweit)).toEqual(kennzahlen(erst))
+    expect(zweit.m42).toEqual(erst.m42)
+  })
+})
+
 describe('R-AI-09 Der Bericht', () => {
   it('schreibt m17-integration.json nur auf Verlangen', () => {
     const laeufe: Record<string, { mitAntraegen: ReturnType<typeof kennzahlen>; ohneAntraege: ReturnType<typeof kennzahlen> }> = {}
@@ -831,6 +940,14 @@ describe('R-AI-09 Der Bericht', () => {
       ausgangswert: { datei: 'm17-baseline.json', ...baseline },
       laeufe,
       ak3: { summeBewegbarMit, summeBewegbarOhne },
+      wiederholungslauf: {
+        aufgabe: 'T-M43-04',
+        startzahl: WIEDERHOLUNG,
+        spieltage: zweitlauf().tage,
+        ersteAbweichungZustand: ersteAbweichung(mit(WIEDERHOLUNG).zustandJeTag!, zweitlauf().zustandJeTag!),
+        ersteAbweichungEreignisse: ersteAbweichung(mit(WIEDERHOLUNG).ereignisseJeTag!, zweitlauf().ereignisseJeTag!),
+        zustandsHashLetzterTag: mit(WIEDERHOLUNG).zustandJeTag!.at(-1) ?? null,
+      },
       m42: {
         stufe: STUFE,
         aufgabe: 'T-M42-01',

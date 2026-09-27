@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { advanceTicks } from '@worldwar/ai'
-import { MemoryStorage, planRoute, step, type MapData } from '@worldwar/core'
+import { MemoryStorage, planRoute, relationKey, step, type MapData } from '@worldwar/core'
 import { deserialise, serialise } from '@worldwar/core'
 import { startGame as neueGameState, DEFAULT_NEW_GAME } from './game/newGame.ts'
 import { colorForPlayer } from './map/modes.ts'
@@ -11,6 +11,7 @@ import { createLockstep, createLoopback } from '@worldwar/netplay'
 import { manualSlotName } from './game/saves.ts'
 import { parseNetLink } from './net/link.ts'
 import { placeArmy, TEST_RULES } from '@worldwar/testkit'
+import { t } from './i18n/text.ts'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import type * as FastForwardModule from './game/fastForward.ts'
@@ -1733,6 +1734,58 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
       await waitFor(() => expect(document.querySelector('.clock__time')?.textContent).toMatch(/Tag/))
       expect(meldungen.textContent).not.toContain('Wirtschaftssabotage')
+    })
+  })
+
+  describe('R-DIP-10/AK5 Die Raeumfrist erreicht den Bildschirm und springt zur Armee', () => {
+    /**
+     * Eine eigene Provinz mit einem Nachbarn einer anderen, noch lebenden Macht — die
+     * Gegner sind nach Nachbarschaft gewaehlt (`opponentsNear`), also findet sich fast
+     * immer schon der erste.
+     */
+    const grenzfall = () => {
+      const { state: frisch, p1 } = partie()
+      const state = advanceTicks(frisch, 5, { map: world, rules: TEST_RULES }).state
+      const eigene = state.provinceOrder.filter((id) => state.provinces[id]!.owner === p1)
+      for (const id of eigene) {
+        for (const neighborId of state.provinces[id]!.neighbors) {
+          const nachbar = state.provinces[neighborId]
+          if (nachbar?.owner && nachbar.owner !== p1) {
+            return { state, p1, hostProvinceId: neighborId, hostId: nachbar.owner }
+          }
+        }
+      }
+      throw new Error('keine Nachbarmacht auf der Testkarte gefunden')
+    }
+
+    it('AP1 meldet die Raeumfrist mit Provinz und Macht, Klick waehlt die Armee', async () => {
+      const { state, p1, hostProvinceId, hostId } = grenzfall()
+      const army = placeArmy(state, { owner: p1, at: hostProvinceId, units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+      const key = relationKey(p1, hostId)
+      state.diplomacy.relations[key]!.state = 'truce'
+      state.diplomacy.relations[key]!.sinceTick = state.tick
+
+      const meldungen = await zeige(state)
+      const knopf = await within(meldungen).findByRole('button', { name: /^Räumfrist: / })
+      const provinzName = state.provinces[hostProvinceId]!.name
+      const machtName = state.players[hostId]!.nation
+      expect(knopf.textContent).toContain(provinzName)
+      expect(knopf.textContent).toContain(machtName)
+
+      fireEvent.click(knopf)
+
+      const armeePanel = await screen.findByRole('region', { name: t('army.title') })
+      expect(armeePanel.textContent).toContain(army.name)
+    })
+
+    it('AP2 ohne versetzte Armee steht keine Raeumfrist-Meldung', async () => {
+      const { state, p1, hostId } = grenzfall()
+      const key = relationKey(p1, hostId)
+      state.diplomacy.relations[key]!.state = 'truce'
+      state.diplomacy.relations[key]!.sinceTick = state.tick
+
+      const meldungen = await zeige(state)
+      expect(meldungen.textContent).not.toContain('Räumfrist')
     })
   })
 
