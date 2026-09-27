@@ -176,11 +176,16 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
     expect(alert.text).not.toMatch(/\bp\d\b|\ba\d+\b|\{\{|undefined/)
   })
 
-  it('K10 Zwilling Frieden gegen den Kern: Frist exakt', () => {
+  it('K10 Zwilling Frieden gegen den Kern: die gemeldete Frist ist exakt der letzte sichere Tick', () => {
     const { state: after, army, since } = friedenMitArmee('o3')
+    // Die Frist kommt aus `meldungen()`, nicht aus einer eigenen Rechnung im Test — sonst
+    // prueft der Zwilling nur den Kern und nie clearance.ts selbst (Befund der Gegenprobe G1).
+    const deadlineTick = meldungen(after)[0]!.deadlineTick
+    expect(deadlineTick).toBe(since + notice)
+
     let cur = after
     let firstUeberfallAt = -1
-    while (cur.tick < since + notice + 3) {
+    while (cur.tick < deadlineTick + 3) {
       const before = cur.tick
       const r = step(cur, [], ctx)
       if (ueberfall(r.events, 'p1', 'p2')) {
@@ -189,11 +194,16 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
       }
       cur = r.state
     }
-    expect(firstUeberfallAt).toBe(since + notice)
+    // Anders als bei der Kuendigung (K11) faellt der erste Ueberfall hier GENAU auf die
+    // gemeldete Frist, nicht einen Tick danach: Schutz (a) im Kern gilt nur, solange
+    // `draft.tick < sinceTick + notice` — beim Stehenbleiben ohne Marschbefehl greift ab
+    // `draft.tick === deadlineTick` nur noch Schutz (b) (der Weg), und der ist bei einer
+    // ruhenden Armee nie erfuellt. Marschieren AN diesem Tick ist trotzdem sicher (unten).
+    expect(firstUeberfallAt).toBe(deadlineTick)
 
     // Marschbefehl im letzten sicheren Sicht-Tick: kein Ueberfall ueber 96 Ticks, Armee in n2.
     let atDeadline = after
-    while (atDeadline.tick < since + notice) atDeadline = step(atDeadline, [], ctx).state
+    while (atDeadline.tick < deadlineTick) atDeadline = step(atDeadline, [], ctx).state
     let r = step(atDeadline, [{ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'n2' } as Command], ctx)
     let bad = !!ueberfall(r.events, 'p1', 'p2')
     let c = r.state
@@ -206,12 +216,13 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
     expect(c.armies[army.id]!.locationProvinceId).toBe('n2')
   })
 
-  it('K11 Zwilling Kuendigung gegen den Kern: Ueberfall genau einen Tick nach der Frist', () => {
+  it('K11 Zwilling Kuendigung gegen den Kern: die gemeldete Frist ist exakt der letzte sichere Tick', () => {
     const granted = step(state, [diplo('p2', 'p1', 'grantRightOfWay')], ctx).state
     const army = placeArmy(granted, { owner: 'p1', at: 'o3', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
     const rv = step(granted, [diplo('p2', 'p1', 'revokeRightOfWay')], ctx)
     const ev = rv.events.find((e) => e.type === 'RIGHT_OF_WAY_CHANGED') as { effectiveAtTick: number }
-    const deadlineTick = ev.effectiveAtTick - 1
+    const deadlineTick = meldungen(rv.state)[0]!.deadlineTick
+    expect(deadlineTick).toBe(ev.effectiveAtTick - 1)
 
     let cur = rv.state
     let firstUeberfallAt = -1
@@ -224,6 +235,9 @@ describe('R-DIP-10/AK5 clearanceNotices spiegelt die Kernbedingung aus der Sicht
       }
       cur = r.state
     }
+    // Anders als beim Frieden (K10): `grantsPassage` schuetzt hier blanko, auch stehend,
+    // solange `draft.tick < ends` (ends = deadlineTick + 1) — der erste Ueberfall faellt
+    // deshalb erst EINEN Tick nach der gemeldeten Frist, nicht auf sie selbst.
     expect(firstUeberfallAt).toBe(deadlineTick + 1)
 
     let atDeadline = rv.state
