@@ -293,14 +293,19 @@ andere Macht sieht den Antrag als Meldung und nimmt ihn im Diplomatiepanel an. D
 Kartenfreigabe zeigt der anderen Macht, was Sie selbst sehen; Ihre eigene Karte sieht sie
 nur, wenn sie ebenfalls freigibt.
 
-**Räumfrist**: Endet ein Krieg durch Frieden, bricht ein Bündnis oder wird ein
-gewährtes Durchmarschrecht gekündigt, hat eine Armee, die im Land der anderen Macht steht,
-eine Frist — einen Spieltag bzw. bis zum Fristende der Kündigung — um loszumarschieren. Die
-Meldeleiste nennt sie mit Armee, Provinz, Macht und der genauen Zeit; ein Klick springt zur
-Armee. Ein Marsch auf dem **kürzesten Weg hinaus** gilt nie als Überfall, auch nicht nach
-Fristende; wer tiefer ins fremde Land zieht oder ohne Recht über eine andere Grenze marschiert,
-ist einer. Die Meldung verschwindet, sobald die Armee auf diesem Weg ist, und das Vorspulen
-hält an, sobald eine solche Frist beginnt.
+**Räumfrist**: Endet ein Krieg durch Frieden, bricht ein Bündnis oder wird ein gewährtes
+Durchmarschrecht gekündigt, hat eine Armee, die im Land der anderen Macht steht, eine Frist —
+einen Spieltag bzw. bis zum Fristende der Kündigung — um loszumarschieren. Ein Marsch, der
+noch im Krieg begann und erst nach dem Friedensschluss ankommt, ist kein Überfall; die Armee
+hat am Ziel dieselbe Frist. Weicht eine Armee nach einer verlorenen Schlacht in das Land einer
+Macht aus, mit der kein Krieg herrscht, hat auch sie einen Spieltag ab dem Rückzug. Die
+Meldeleiste nennt jede Frist mit Armee, Provinz, Macht und der genauen Zeit; ein Klick springt
+zur Armee. Ein Marsch auf dem **kürzesten Weg hinaus** — in eigenes oder herrenloses Land, zu
+einem Verbündeten, zu einer Macht, die Ihnen Durchmarsch gewährt, oder zu einer, mit der Sie im
+Krieg stehen — gilt nie als Überfall, auch nicht nach Fristende; wer tiefer ins fremde Land
+zieht oder ohne Recht über eine andere Grenze marschiert, ist einer. Die Meldung verschwindet,
+sobald die Armee auf diesem Weg ist, und das Vorspulen hält an, sobald eine solche Frist
+beginnt.
 
 **Handelsangebote**: im Diplomatiepanel, je Macht ein eigenes Formular. Rohstoffe und
 Provinzen lassen sich auf **beide** Seiten legen; die Vorschau zeigt den Marktwert beider
