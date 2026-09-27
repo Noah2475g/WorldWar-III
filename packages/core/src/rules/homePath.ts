@@ -48,13 +48,34 @@ function mayStand(way: ClearingWay, owner: PlayerId | null, me: PlayerId, host: 
  * von der Einfügereihenfolge eines Sets (R-ARCH-01, H8).
  */
 export function hostFieldsToLeave(way: ClearingWay, from: ProvinceId, me: PlayerId, host: PlayerId): number | null {
+  // Erst der legale Ausgang (Feld, das die Armee ohne Überfall betreten darf) — die ganze
+  // Gastmacht durchsucht, nicht nur die erste Schicht (Rückfall erst ohne jeden legalen
+  // Ausgang, Bauplan T-M43-01 §4.1; Nacharbeit Etappe 1, H6).
+  const legal = exitDepth(way, from, host, (owner) => mayStand(way, owner, me, host))
+  if (legal !== null) return legal
+  // ... Rückfall (H6) nur, wenn es in der GANZEN Gastmacht keinen gibt: dann zählt jeder
+  // Ausgang aus der Gastmacht — sonst hätte eine Armee ohne Recht bei einem Nachbarn nie
+  // einen Räumweg.
+  return exitDepth(way, from, host, () => true)
+}
+
+/**
+ * Die kleinste Zahl von Feldern der Gastmacht `host`, die von `from` aus durchquert werden
+ * muss, um ein Feld zu erreichen, das `accept` gelten lässt (Breitensuche in Schichten, nur
+ * über Felder der Gastmacht). `null`, wenn kein solches Feld erreichbar ist.
+ */
+function exitDepth(
+  way: ClearingWay,
+  from: ProvinceId,
+  host: PlayerId,
+  accept: (owner: PlayerId | null) => boolean,
+): number | null {
   const visited = new Set<ProvinceId>([from])
   let layer: ProvinceId[] = [from]
   let depth = 0
 
   while (true) {
-    const strictExits: ProvinceId[] = []
-    let anyExit = false
+    let found = false
     const nextLayer: ProvinceId[] = []
 
     for (const id of layer) {
@@ -66,15 +87,11 @@ export function hostFieldsToLeave(way: ClearingWay, from: ProvinceId, me: Player
           nextLayer.push(neighbor)
           continue
         }
-        anyExit = true
-        if (mayStand(way, owner, me, host)) strictExits.push(neighbor)
+        if (accept(owner)) found = true
       }
     }
 
-    if (strictExits.length > 0) return depth
-    // Rückfall (H6): findet sich kein legaler Ausgang, zählt jeder Ausgang aus der
-    // Gastmacht — sonst hätte eine Armee ohne Recht bei einem Nachbarn nie einen Räumweg.
-    if (anyExit) return depth
+    if (found) return depth
     if (nextLayer.length === 0) return null
     layer = nextLayer
     depth += 1

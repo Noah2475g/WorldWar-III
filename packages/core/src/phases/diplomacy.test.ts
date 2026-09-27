@@ -1055,4 +1055,26 @@ describe('R-DIP-10 Die Räumfrist (M17-T6, M17-G4, M17-D10)', () => {
     expect(ueberfall(events, 'p1', 'p2')).toBeUndefined()
     expect(state.tick).toBe(sinceTick)
   })
+
+  it('R13: der kuerzeste Weg hinaus bleibt frei, auch ueber ein zweites Gastmacht-Feld (Noahs Entscheid 2026-09-27, Punkt 1/2; Nacharbeit T-M43-01, Befund c.1)', () => {
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    const sinceTick = state.tick
+    state.diplomacy.relations['p1|p2']!.sinceTick = sinceTick
+    // o2 (Gastmacht p2) hat als einzigen Nachbarn ausserhalb der Gastmacht s2 (p3, kein
+    // Recht) — der kuerzeste Weg hinaus fuehrt ueber ein zweites Gastmacht-Feld (o1) zum
+    // herrenlosen m1 (H6b/H6c). Die Ankunft faellt bewusst weit hinter das Fristende.
+    const army = placeArmy(state, { owner: 'p1', at: 'o2', units: infantry })
+    army.path = ['o1', 'm1']
+    army.departureTick = state.tick
+    army.arrivalTick = sinceTick + notice + 5
+
+    let current = state
+    while (current.armies[army.id]!.locationProvinceId !== 'm1') {
+      const r = step(current, [], ctx)
+      expect(ueberfall(r.events, 'p1', 'p2'), `Tick ${r.state.tick}`).toBeUndefined()
+      current = r.state
+    }
+    expect(current.tick).toBeGreaterThan(sinceTick + notice)
+    expect(current.armies[army.id]!.locationProvinceId).toBe('m1')
+  })
 })
