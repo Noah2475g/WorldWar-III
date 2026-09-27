@@ -6056,3 +6056,64 @@ Zählung, Artillerieanteil-Zwilling, Nation-Feld — je per Mutationstest rot/gr
 
 **Nebenbei berichtigt:** B4-Statuszeile oben (Frieden und Bündnis sind seit 2026-09-25 erledigt),
 `WORKFLOW.md` §2 Punkt 6 (Befund M38-4 ist seit 2026-09-18 erledigt).
+
+## 2026-09-27 · Etappe 1 (M42/M43) · Frage U/R/F/S — beantwortet, Fragen M42-02-a/M42-03-a/M42-06-a geschlossen
+
+Die vier bisher getrennt gestellten Fragen (U in T-M42-03, R in T-M43-01, F in T-M42-06, S in
+T-M42-04) und der Befund M42-02-a (AK5 reißt auf sechs Startzahlen) sind durch Noahs Entscheid
+vom 2026-09-27 (`entscheidungen-etappe1.md`, siehe `DECISIONS.md`) beantwortet:
+
+1. **Räumfrist (U/R):** F3 um vier Punkte ergänzt (Marsch bei Kriegsende darf in jede Richtung
+   enden; frei ist der kürzeste Weg hinaus statt zwingend der Heimweg; ein Rückzug in neutrales
+   Land bekommt dieselbe Frist; die Brasilien-Nebenwirkung ist gewollt) — gebaut in T-M43-01
+   (B1–B4), mit T-M42-03 zusammen auf Stufe U+R gemessen (`3f6d1671`). **Geschlossen.**
+2. **Festungspatt (F):** „Erst die Fabrik" (T-M42-06) übernommen, K5 neu gefasst (neun
+   Startzahlen, höchstens ein Patt, ein Patt ist Befund statt Rücknahmegrund). Stufe F 9/9
+   entschieden, 0 Patts. **Geschlossen für T-M42-06** — bleibt akut für T-M42-04, siehe
+   Befund M42-04-a unten (dasselbe Patt bei anderer Reparatur).
+3. **Verteidigungs-Automatik (M42-02-a):** AK5 (R-UNIT-09) neu gefasst — Provinz-Tage sind
+   Berichtszahl, das Tor ist die Schadenszählung. Auf dem Endstand gemessen (`ca6e511`):
+   `erfuellt: true`, `verletzt: []`. **Geschlossen.**
+
+Die Räumweg-Strenge-Zusatzfrage aus der Nacharbeit (`fragmente-e1.md`, „Befund 6/7") ist mit
+B1 (H6-Rückfall in `homePath.ts` erst ohne jeden legalen Ausgang für die ganze Gastmacht, nicht
+je Schicht) und B2 (`guestWithdrawal` nur auf einem vom Kern anerkannten Räumweg) implizit
+mitbeantwortet — beide sind Teil derselben sieben Commits von T-M43-01.
+
+## 2026-09-27 · T-M42-04 · Befund M42-04-a (hoch, offen): dasselbe Festungspatt wie M42-06-a
+
+Mit der Buchung von Spion, Bau und Börse (gemessen auf `9f2a134`, seitdem zurückgestellt)
+bleibt die Vollpartie 1815 nach 1500 Spieltagen unentschieden (Vorstufe: Siegtag 663): Indien,
+China, Argentinien und Mexiko mit allen Städten auf Festung 2 und Eisenbahn; 1652 Eroberungen,
+9 Kriegserklärungen. 1914 und 2015 enden an Tag 1053 und 1184 (vorher 460 und 423). Sechs
+weitere Startzahlen: 5 von 6 entschieden (774/822/871/884/441), 1683 im Patt (2972
+Eroberungen). Systematik, kein Zufall: „normal" hebt ohne die Doppelausgabe weniger aus.
+Zusätzlich reißt m17 bei `recruitShare` 320 R-AI-09/AK1 (1914 easy wirbt ohne `SPY_REPORT`
+keinen Spion an).
+
+Dasselbe Patt hat schon „Erst die Fabrik" (T-M42-06, jetzt übernommen mit K5 neu gefasst)
+gestoppt, bevor Noahs Entscheid K5 dort entschärfte. Zwei unabhängige, für sich richtige
+Reparaturen enden am selben Festungspatt — die Sieglage ist das Empfindliche, nicht die
+jeweilige Reparatur. Nach Noahs Entscheid vom 2026-09-27 (Punkt 2) wartet die Aufgabe jetzt
+bis nach der Artillerie (T-M42-07), weil die Artillerie die eigentliche Abhilfe gegen
+Festung 2 in jeder Stadt sein soll — keine neue Frage an Noah, nur eine Terminfrage.
+
+**Status:** offen, zurückgestellt (`tasks.yaml`, `reopened`-Text T-M42-04).
+
+## 2026-09-27 · T-M43-02 · Befund M43-02-a (niedrig, offen): eine Armee auf dem Weg hinein wird nicht gemeldet
+
+Ist eine eigene Armee bei einem Friedensschluss noch unterwegs **in** das Land der Gegenseite
+(Abmarsch im Krieg), schützt sie der Kern beim Grenzübertritt (Kriegsmarsch-Ausnahme,
+T-M43-01), danach nur, solange die 24 Stunden laufen. Kommt sie später an, ist sie beim
+Ankommen ein Überfaller. Die Meldung (`clearance.ts`, R-DIP-10/AK5) nennt nur Armeen **im**
+Land und erscheint erst mit der Ankunft. Vorschlag: die Meldung auch für Armeen, deren Weg im
+Land der Gegenseite endet („ist unterwegs nach …"). Nicht gebaut (AK5 wörtlich, E10 in
+`DECISIONS.md`).
+
+## 2026-09-27 · T-M43-02 · Befund M43-02-c (niedrig, geschlossen): Anleitung nachgeholt
+
+`docs/ANLEITUNG.md` kannte zunächst weder die Kriegsmarsch-Ausnahme noch den
+Rückzug-Schutzgrund. In der Nacharbeit nachgeholt (Commit `6e666ab`): Kriegsmarsch-Satz und
+Rückzug-Satz ergänzt, „kürzester Weg hinaus" um die vier zulässigen Ziele erweitert
+(eigenes/herrenloses Land, Verbündeter, Durchmarschrecht, Kriegsgegner). `test/docs.test.ts`
+und `test/guards` grün. **Status:** geschlossen.
