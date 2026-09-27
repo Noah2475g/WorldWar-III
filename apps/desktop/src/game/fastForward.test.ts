@@ -4,6 +4,7 @@ import {
   fastForward,
   createInitialState,
   planRoute,
+  publicView,
   step,
   type Command,
   type GameConfig,
@@ -13,6 +14,7 @@ import {
 import { hashValue } from '@worldwar/shared'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
+import { clearanceNotices } from './clearance.ts'
 import { DEFAULT_CHUNK_TICKS, fastForwardChunk } from './fastForward.ts'
 
 /**
@@ -343,5 +345,47 @@ describe('R-DIP-10/AK5 Das Vorspulen haelt an, wenn eine Raeumfrist beginnt', ()
     expect(result.ticksRun).toBe(1)
     expect(result.stoppedBy).toBe('alert')
     expect(result.trigger?.type).toBe('RIGHT_OF_WAY_CHANGED')
+  })
+
+  it('F4 haelt nach dem Rueckzugstick, wenn eine eigene Armee ins neutrale Land ausweicht (Ergaenzung 3)', () => {
+    // Wie Z1/K14: o2 gehoert p2 (Krieg), m1/m2 auch - der einzige nicht feindliche Nachbar
+    // von o2 ist s2 (p3); der Rueckzug faellt im ersten Tick.
+    const state = createInitialState(CONFIG, ctx)
+    state.diplomacy.relations['p1|p2']!.state = 'war'
+    state.provinces.m1!.owner = 'p2'
+    state.provinces.m2!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    army.stance = 'retreat'
+
+    const result = fastForwardChunk(state, { target: { kind: 'days', days: 1 }, alertsFor: 'p1', maxTicks: 720 }, ctx, 720)
+
+    expect(result.ticksRun).toBe(1)
+    expect(result.stoppedBy).toBe('alert')
+    expect(result.trigger?.type).toBe('ARMY_RETREATED')
+    expect(result.state.armies[army.id]!.locationProvinceId).toBe('s2')
+  })
+
+  it('F5 haelt NICHT erneut, wenn eine andere eigene Armee ins eigene Land ausweicht, waehrend eine andere Frist schon laeuft', () => {
+    // Armee A hat schon VOR diesem Aufruf eine laufende Meldung (Waffenstillstand seit
+    // Tick 1, direkt gesetzt - kein DIPLOMACY_CHANGED-Ereignis in diesem Lauf); Armee B
+    // weicht in diesem Lauf ins eigene Land aus. Der Guard darf nur fuer B selbst pruefen,
+    // sonst hielte B's belangloser Rueckzug an, weil A's Meldung zufaellig noch offen ist.
+    const state = createInitialState(CONFIG, ctx)
+    state.tick = 1
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = 1
+    const armyA = placeArmy(state, { owner: 'p1', at: 'o3', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    const armyB = placeArmy(state, { owner: 'p1', at: 'n2', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    armyB.stance = 'retreat'
+
+    // Vorbedingung: A hat schon jetzt eine Meldung (ohne dass dieser Lauf sie ausloest).
+    expect(clearanceNotices(publicView(state, 'p1', TEST_RULES), map, TEST_RULES).some((n) => n.armyId === armyA.id)).toBe(true)
+
+    const result = fastForwardChunk(state, { target: { kind: 'days', days: 1 }, alertsFor: 'p1', maxTicks: 720 }, ctx, 720)
+
+    expect(result.trigger?.type).not.toBe('ARMY_RETREATED')
+    expect(result.stoppedBy).not.toBe('alert')
+    expect(result.state.armies[armyB.id]!.locationProvinceId).not.toBe('n2')
+    expect(result.state.provinces[result.state.armies[armyB.id]!.locationProvinceId]!.owner).toBe('p1')
   })
 })

@@ -121,9 +121,15 @@ export function fastForwardChunk(
   // Die Räumfrist haelt das Vorspulen an (T-M43-02, R-DIP-10/AK5, E6): ein Haeppchen sind
   // 24 Ticks, die ganze Frist (`rightOfWayNoticeTicks`) - ohne Halt saehe niemand die
   // Meldung, und im Vorschaufenster gibt es nur Vorspulen, keine laufende Uhr. `isClearanceCause`
-  // erkennt DIPLOMACY_CHANGED/RIGHT_OF_WAY_CHANGED, aber nur ein Blick auf die Sicht (rein,
-  // wie `publicView`) weiss, ob ueberhaupt eine eigene Armee betroffen ist - beides zusammen
-  // aendert keinen Befehl, nur wo die Ereignisschleife den Faden wieder aufnimmt.
+  // erkennt DIPLOMACY_CHANGED/RIGHT_OF_WAY_CHANGED/ARMY_RETREATED, aber nur ein Blick auf die
+  // Sicht (rein, wie `publicView`) weiss, ob ueberhaupt eine eigene Armee betroffen ist - beides
+  // zusammen aendert keinen Befehl, nur wo die Ereignisschleife den Faden wieder aufnimmt.
+  //
+  // `ARMY_RETREATED` feuert bei jedem Rueckzug, auch ins eigene Land (Ergaenzung 3, Noahs
+  // Entscheid 2026-09-27) - anders als bei den zwei aelteren Ursachen genuegt hier nicht
+  // irgendeine Meldung: der Halt gilt nur, wenn `clearanceNotices` GENAU fuer diese Armee
+  // (`event.armyId`) eine liefert, sonst hielte ein Rueckzug ins eigene Land an, sobald
+  // irgendeine andere Frist laeuft (F5).
   let raeumHalt: GameEvent | null = null
 
   const result = fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
@@ -133,7 +139,12 @@ export function fastForwardChunk(
       (current, events) => {
         const cause = events.find((event) => isClearanceCause(event, request.alertsFor))
         if (!cause) return false
-        if (clearanceNotices(publicView(current, request.alertsFor, ctx.rules), ctx.map, ctx.rules).length === 0) return false
+        const notices = clearanceNotices(publicView(current, request.alertsFor, ctx.rules), ctx.map, ctx.rules)
+        if (cause.type === 'ARMY_RETREATED') {
+          if (!notices.some((notice) => notice.armyId === cause.armyId)) return false
+        } else if (notices.length === 0) {
+          return false
+        }
         raeumHalt = cause
         return true
       },
