@@ -372,9 +372,11 @@ describe('R-AI-11/AK2 Die KI hebt nur aus, was ihre Tagesbilanz traegt', () => {
   const I = dailyMoneyIncome(bilanzLage({ infanterie: 0, fabrik: false }).view, TEST_RULES)
   const k = Math.floor(I / 1440)
 
-  it('Vorbedingung: der Ertrag der Lage liegt im erwarteten Bereich (Sonde: 59645, k=41)', () => {
-    expect(I).toBeGreaterThan(0)
-    expect(k).toBeGreaterThan(0)
+  it('Vorbedingung: der Ertrag der Lage ist deterministisch (Sonde: 59645, k=41)', () => {
+    // Kein Rauschen (Befund T-M42-03/niedrig): dieselbe Lage liefert immer denselben Ertrag,
+    // die Sonde ist der Wert selbst und keine Bandbreite.
+    expect(I).toBe(59645)
+    expect(k).toBe(41)
   })
 
   it('E1: die Tagesbilanz traegt keine weitere Einheit — kein RECRUIT, begruendet', () => {
