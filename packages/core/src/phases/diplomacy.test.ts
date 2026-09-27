@@ -1184,6 +1184,38 @@ describe('R-DIP-10 Die Räumfrist (M17-T6, M17-G4, M17-D10)', () => {
       expect(ueberfall(after.events, 'p1', 'p3')).toBeDefined()
     })
 
+    it('Z7: eine Armee, die jeden Tick feuert, bleibt trotzdem ein Ueberfall im Friedensland der Gastmacht (Befund kritisch, Nacharbeit Etappe 1)', () => {
+      // p1-Artillerie steht in m1 (hier: Gastmacht p3, Friede seit Tick 0) und feuert
+      // jeden Tick automatisch auf p2 (Ziel o1, Krieg, direkter Nachbar von m1) — die
+      // Armee marschiert nie, nimmt also nie einen Raeumweg (b), und hat sich nie
+      // zurueckgezogen (c gilt der Sache nach nicht). Der Beschuss-Cooldown darf die
+      // Ueberfallpruefung trotzdem nicht dauerhaft aussetzen.
+      placeArmy(state, {
+        owner: 'p1',
+        at: 'm1',
+        units: [{ unitKey: 'artillery', hpTotal: 20 * TEST_RULES.units['artillery']!.hpPerUnit }],
+        stance: 'defensive',
+      })
+      state.provinces.m1!.owner = 'p3'
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'infantry', hpTotal: 100_000 }] })
+
+      let current = state
+      let shots = 0
+      let found: ReturnType<typeof ueberfall>
+      for (let i = 0; i < 30 && !found; i++) {
+        const r = step(current, [], ctx)
+        if (r.events.some((event) => event.type === 'BOMBARDMENT')) shots++
+        found = ueberfall(r.events, 'p1', 'p3')
+        current = r.state
+      }
+      expect(shots, 'die Artillerie muss in diesem Lauf tatsaechlich gefeuert haben').toBeGreaterThan(0)
+      expect(
+        found,
+        'kein Ueberfall auf die Gastmacht p3 in 30 Ticks, obwohl die Armee dort im Frieden steht, nie einen Raeumweg nimmt und sich nie zurueckgezogen hat',
+      ).toBeDefined()
+    })
+
     it('Z6: Wächter — ein Rueckzug in Buendnisland oder Land mit Durchmarschrecht bleibt frei (wie heute)', () => {
       state.diplomacy.relations['p1|p3']!.state = 'alliance'
       imKrieg()

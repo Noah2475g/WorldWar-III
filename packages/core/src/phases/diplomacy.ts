@@ -94,9 +94,12 @@ function detectSurpriseAttacks(draft: GameState, ctx: PhaseContext): void {
     // (c) Ein Rückzug ist kein Einmarsch aus freien Stücken (Noahs Entscheid vom 2026-09-27, Punkt 3; Befund
     // M42-03-a): wer nach einer verlorenen Schlacht in das Land einer Macht ausweicht, mit der kein Krieg herrscht,
     // hat die Frist seiner Rückzugssperre (`retreatCooldownTicks`). Wer in dieser Zeit eine Grenze überschreitet,
-    // bekommt sie nicht (`crossed`). Beschuss setzt die Sperre nur bis zum nächsten Tick (bombardment.ts:139),
-    // das Verschmelzen nimmt das Maximum (commands/army.ts:104) — beides hingenommen.
-    if (!crossed && draft.tick < army.cannotAttackUntil) continue
+    // bekommt sie nicht (`crossed`). Das Verschmelzen nimmt das Maximum (commands/army.ts:104) — hingenommen.
+    // `army.cannotAttackUntil` dient auch dem Beschuss-Cooldown (bombardment.ts) — derselbe Schuss, der die
+    // Sperre auf `tick + 1` setzt, darf die Räumfrist-Ausnahme hier nicht mit auslösen, sonst schützt sich eine
+    // jeden Tick feuernde Armee selbst und dauerhaft (Nacharbeit Etappe 1, Befund kritisch): der Schuss dieses
+    // Ticks zählt daher nicht (`ctx.bombardedThisTick`), nur eine echte, noch laufende Rückzugssperre.
+    if (!crossed && draft.tick < army.cannotAttackUntil && !ctx.bombardedThisTick?.has(army.id)) continue
     // (b) Wer auf dem kürzesten Weg hinaus ist, ist nie ein Überfaller (E3, D34.3).
     if (
       !crossed &&

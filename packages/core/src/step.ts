@@ -82,6 +82,7 @@ export function step(
     commands,
     events,
     crossedBorder: new Map<ArmyId, Tick>(),
+    bombardedThisTick: new Set<ArmyId>(),
   }
 
   for (const name of PHASE_ORDER) {

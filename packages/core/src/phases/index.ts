@@ -20,6 +20,17 @@ export interface PhaseContext {
    * Abmarsch-Tick ihres Marschs. Nie im Zustand — kein Feld, kein Parameterlauf.
    */
   crossedBorder?: Map<ArmyId, Tick>
+  /**
+   * Flüchtig (Nacharbeit Etappe 1, Befund kritisch): jede Armee, die in diesem Tick
+   * geschossen hat (Hand oder Automatik). `army.cannotAttackUntil` dient zwei Zwecken —
+   * dem Beschuss-Cooldown (bombardment.ts) und der Räumfrist eines Rückzugs
+   * (retreat.ts, R-DIP-10 (c)) — und beide schreiben ins selbe Feld. Ohne diese Menge
+   * verlängert der eigene Schuss die Räumfrist-Ausnahme jeden Tick neu: eine
+   * Fernwaffenarmee, die jeden Tick feuert, wäre dauerhaft vor der Überfallprüfung
+   * geschützt, obwohl sie sich nie zurückgezogen hat (diplomacy.ts liest diese Menge,
+   * nicht nur das Feld). Nie im Zustand — kein Feld, kein Parameterlauf.
+   */
+  bombardedThisTick?: Set<ArmyId>
 }
 
 export type Phase = (draft: GameState, ctx: PhaseContext) => void
