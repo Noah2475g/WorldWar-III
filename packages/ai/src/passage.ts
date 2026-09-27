@@ -10,6 +10,7 @@ import {
   type PlayerId,
   type ProvinceId,
   type PublicView,
+  type Rules,
   type VisibleArmy,
   type VisibleProvince,
 } from '@worldwar/core'
@@ -283,6 +284,32 @@ export function staleTargetDeclarations(
 }
 
 /**
+ * Zwilling von `rules/movement.ts:canUseSea` auf der Sicht (T-M43-01, D34.3): dieselbe Antwort
+ * wie der Kern, sonst kann eine seetaugliche Armee (Flotte oder genug Transportraum) einen
+ * kürzeren Räumweg über See haben, den der Kern kennt und die KI nicht — "kürzester Weg" (E3)
+ * müsste dann für beide dasselbe Landbild meinen, tut es aber nicht. `VisibleArmy.units` fehlt
+ * nur bei fremden Armeen (Stärkeschätzung statt Zusammensetzung); der Räumweg gilt immer der
+ * eigenen Armee, die Zusammensetzung ist also bekannt.
+ */
+function canUseSeaVisible(army: VisibleArmy, rules: Rules): boolean {
+  let capacity = 0
+  let landUnits = 0
+  for (const stack of army.units ?? []) {
+    const rule = rules.units[stack.unitKey]
+    if (!rule) continue
+    if (rule.transportCapacity) {
+      // eslint-disable-next-line no-restricted-syntax -- Kapazitaet je Schiff mal Schiffszahl, reine Ganzzahlen
+      capacity += rule.transportCapacity * Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+    if (rule.class !== 'navy' && rule.class !== 'air') {
+      // eslint-disable-next-line no-restricted-syntax -- Trefferpunkte durch Trefferpunkte je Einheit, reine Ganzzahlen
+      landUnits += Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+  }
+  return landUnits === 0 || capacity >= landUnits
+}
+
+/**
  * Gast ohne unbefristetes Recht (R-DIP-10/AK4, D34.3): Heimmarsch auf dem kürzesten Weg
  * hinaus, oder null. Schreibt Erklärung und assignment.
  *
@@ -307,7 +334,7 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
     map,
     ownerOf: (id) => ownerOf(context, id),
     mayEnter: (owner) => blocksPassage(context, owner) === null,
-    useSea: false,
+    useSea: canUseSeaVisible(army, context.rules),
     strictExit: true,
   }
 
