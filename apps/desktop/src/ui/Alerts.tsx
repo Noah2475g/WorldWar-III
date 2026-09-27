@@ -46,6 +46,8 @@ export type AlertKind =
   | 'espionage'
   /** Ein eingehendes Angebot — Handel oder Antrag, leise (T-M17-14, R-DIP-07/AK1, E4). */
   | 'offer'
+  /** Räumfrist — laut, Warnfarbe, nicht wegklickbar (T-M43-02, R-DIP-10/AK5). */
+  | 'clearance'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -56,6 +58,8 @@ export interface Alert {
   provinceId?: string
   /** Sprung in die Diplomatie statt auf die Karte, mit der Macht des Angebots (T-M17-14, E3). */
   diplomacyWith?: string
+  /** Sprung zur Armee statt nur auf die Provinz (T-M43-02). */
+  armyId?: string
 }
 
 /**

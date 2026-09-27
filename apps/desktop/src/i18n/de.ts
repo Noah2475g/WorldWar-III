@@ -1177,6 +1177,9 @@ export const de = {
     // Ueberrannt statt umkaempft: eine unverteidigte Provinz wechselt ohne Gefecht den
     // Besitzer, und genau das erschien vorher nirgends (T-M12-09).
     overrun: 'Feindliche Truppen in {{province}}',
+    // Räumfrist (T-M43-02, R-DIP-10/AK5, D34.4) — Wortlaut in DECISIONS.md, kippbar.
+    clearance:
+      'Räumfrist: {{army}} steht in {{province}} ({{nation}}). Losmarschieren bis Tag {{day}}, {{hour}}:00 — ein Marsch auf dem kürzesten Weg hinaus gilt nicht als Überfall.',
     capitalLost: 'Die Hauptstadt ist verloren',
     completionBuilding: '{{building}} in {{province}} ist fertig',
     completionUnit: '{{unit}} in {{province}} ist ausgehoben',
