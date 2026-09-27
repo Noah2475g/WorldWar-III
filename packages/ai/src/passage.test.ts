@@ -388,9 +388,15 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     const result = advanceTicks(state, 2 * ticksPerDay, ctx, {
       playerCommands: [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'revokeRightOfWay' }],
     })
-    // Reaktion im naechsten Zug, sobald die Frist im Zustand steht (nicht erst bei Fristende).
+    // Reaktion, sobald die Frist im Zustand steht (nicht erst bei Fristende) — das Ziel ist
+    // das erste Feld ausserhalb von p2s Land, nicht zwingend n2 (E3: eigene zuerst, aber ein
+    // naeheres herrenloses Feld wie m2 raeumt genauso gueltig, D34.3).
     const homeward = result.applied.find(
-      (a) => a.command.type === 'MOVE_ARMY' && a.command.playerId === 'p1' && a.command.armyId === army.id && a.command.targetProvinceId === 'n2',
+      (a) =>
+        a.command.type === 'MOVE_ARMY' &&
+        a.command.playerId === 'p1' &&
+        a.command.armyId === army.id &&
+        result.state.provinces[a.command.targetProvinceId]?.owner !== 'p2',
     )
     expect(homeward, JSON.stringify(result.applied)).toBeDefined()
     expect(homeward!.tick).toBeLessThanOrEqual(2)
@@ -399,7 +405,7 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
       (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.playerId === 'p1' && e.targetPlayerId === 'p2',
     )
     expect(surprise).toBeUndefined()
-    expect(result.state.armies[army.id]!.locationProvinceId).toBe('n2')
+    expect(result.state.provinces[result.state.armies[army.id]!.locationProvinceId]!.owner).not.toBe('p2')
   })
 
   it('in der laufenden Partie: kein Ueberfall zwischen p1 und p2 nach der Kuendigung (Befund M17-D10)', () => {
@@ -417,6 +423,113 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
         ((e.playerId === 'p1' && e.targetPlayerId === 'p2') || (e.playerId === 'p2' && e.targetPlayerId === 'p1')),
     )
     expect(surprise, JSON.stringify(result.events.filter((e) => e.type === 'WAR_DECLARED'))).toBeUndefined()
+  })
+})
+
+describe('R-DIP-10/AK4 Die KI räumt auch ohne Kündigung — Friedensschluss und Bündnisbruch (T-M43-01)', () => {
+  /** Waffenstillstand mit p2 seit dem aktuellen Tick, m1 gehört p2 (Gastmacht). */
+  function truceMitP2(state: GameState): void {
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.m1!.owner = 'p2'
+  }
+
+  it('P1: raeumt bei Waffenstillstand ohne Recht, auf dem vorhergesagten kuerzesten Weg', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const explanations: Explanation[] = []
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, explanations)
+    expect(command).toMatchObject({ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'n2' })
+    expect(explanations.some((e) => e.action.includes('Zieht') && e.reason.includes('Waffenstillstand'))).toBe(true)
+    allAccepted(state, command ? [command] : [])
+  })
+
+  it('P2: eine Armee, die tiefer ins Land marschiert, wird umgelenkt', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['o3']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).toMatchObject({ type: 'MOVE_ARMY', targetProvinceId: 'n2' })
+  })
+
+  it('P3: im Buendnis raeumt niemand', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'alliance'
+    state.provinces.m1!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P4: mit unbefristetem Recht raeumt niemand', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P5: schon auf dem Raeumweg gibt es keinen neuen Befehl', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['n2']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P6: bei gleicher Tiefe geht ein eigenes Feld vor einem herrenlosen (eigene zuerst)', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.m2!.owner = 'p2'
+    // m1 bleibt herrenlos.
+    const army = placeArmy(state, { owner: 'p1', at: 'm2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).toMatchObject({ targetProvinceId: 'n3' })
+  })
+
+  it('P7: jeder neue Raeumungsbefehl besteht die reguläre Pruefung', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).not.toBeNull()
+    allAccepted(state, command ? [command] : [])
+  })
+
+  it('P10: in der laufenden Partie raeumt die KI ohne Ueberfall', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = 0
+    state.provinces.m1!.owner = 'p2'
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const result = advanceTicks(state, 3 * ticksPerDay, ctx, {})
+    const surprise = result.events.find((e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true)
+    expect(surprise, JSON.stringify(result.events.filter((e) => e.type === 'WAR_DECLARED'))).toBeUndefined()
+    for (const id of Object.keys(result.state.armies)) {
+      const a = result.state.armies[id]!
+      if (a.owner !== 'p1') continue
+      expect(result.state.provinces[a.locationProvinceId]!.owner).not.toBe('p2')
+    }
   })
 })
 
