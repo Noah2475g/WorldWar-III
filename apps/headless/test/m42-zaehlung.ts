@@ -26,7 +26,9 @@ import {
  * - **Mangeltag**: Tagesende, an dem `player.shortages` den Rohstoff enthaelt (nicht das
  *   `RESOURCE_SHORTAGE`-Ereignis, das nur den Beginn meldet, `upkeep.ts`).
  * - **„durch Aushebung"**: die letzte angenommene Aushebung dieser Macht an oder vor dem
- *   Mangeltag hatte am Ende ihres Tages eine negative Tagesbilanz.
+ *   Mangeltag hatte am Ende ihres Tages eine negative Tagesbilanz — und seit T-M43-01/E5:
+ *   die Macht hat seither keine Provinz verloren (`geldmangelTageNachProvinzverlust`
+ *   zählt sonst, R-AI-11/AK3 in der Fassung nach Frage 8).
  * - **Tagesbilanz**: `economyOverview(...).balance` (Ertrag minus Armeeunterhalt minus Spionagesold)
  *   minus Unterhalt der eigenen Aushebungs-Warteschlange (`tagesbilanzNachAushebung`).
  * - **Paar**: zwei stehende Armeen gleicher Macht, Provinz, Einschiffung und Rolle mit zusammen
@@ -201,6 +203,12 @@ export interface MachtZahlen {
   tageStadtOhneFabrik: number
   geldmangelTage: number
   geldmangelTageDurchAushebung: number
+  /**
+   * Geldmangeltage, deren letzte Aushebung negativ war, aber danach eine Provinz verloren
+   * ging — Befund M42-03-a/E5 (T-M43-01, Frage 8): nicht der Aushebung zugerechnet, weil
+   * der Verlust dazwischenkam (`m42-zaehlung.test.ts` M8/M9).
+   */
+  geldmangelTageNachProvinzverlust: number
   oelmangelTage: number
   oelmangelTageDurchAushebung: number
   geldHoechststand: number
@@ -273,6 +281,7 @@ function leereMachtZahlen(stufe: Stufe, nation: string): MachtZahlen {
     tageStadtOhneFabrik: 0,
     geldmangelTage: 0,
     geldmangelTageDurchAushebung: 0,
+    geldmangelTageNachProvinzverlust: 0,
     oelmangelTage: 0,
     oelmangelTageDurchAushebung: 0,
     geldHoechststand: 0,
@@ -310,7 +319,11 @@ function sortiert(rec: Record<string, number>): Record<string, number> {
 export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler {
   let tagesenden = 0
   const jeMacht: Record<string, MachtZahlen> = {}
-  const letzte: Record<string, { money: number; oil: number }> = {}
+  // `verloren`: der Stand von `provinzenVerloren` bei der letzten Aushebung — schon mit
+  // den Verlusten DIESES Tages, weil Schritt 3 (Ereignisschleife) vor Schritt 4 (dieser
+  // Block) läuft. Ein Verlust am Aushebungstag selbst zählt so noch "durch Aushebung"
+  // (M9); nur ein Verlust NACH der letzten Aushebung unterbricht die Zuordnung (E5).
+  const letzte: Record<string, { money: number; oil: number; verloren: number }> = {}
 
   const truppenBefohlen: Record<string, number> = {}
   const truppenAusgehoben: Record<string, number> = {}
@@ -461,13 +474,18 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
         macht.aushebungsTage += 1
         const money = tagesbilanzNachAushebung(state, id, 'money', rules)
         const oil = tagesbilanzNachAushebung(state, id, 'oil', rules)
-        letzte[id] = { money, oil }
+        letzte[id] = { money, oil, verloren: macht.provinzenVerloren }
         macht.tagesbilanzGeldBeiLetzterAushebung = money
       }
 
       if (player.shortages.includes('money')) {
         macht.geldmangelTage += 1
-        if ((letzte[id]?.money ?? 0) < 0) macht.geldmangelTageDurchAushebung += 1
+        const letzteAushebung = letzte[id]
+        if (letzteAushebung && letzteAushebung.money < 0) {
+          // E5: ein Provinzverlust NACH dieser Aushebung unterbricht die Zuordnung.
+          if (macht.provinzenVerloren === letzteAushebung.verloren) macht.geldmangelTageDurchAushebung += 1
+          else macht.geldmangelTageNachProvinzverlust += 1
+        }
       }
       if (player.shortages.includes('oil')) {
         macht.oelmangelTage += 1
@@ -623,6 +641,7 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
       'tageStadtOhneFabrik',
       'geldmangelTage',
       'geldmangelTageDurchAushebung',
+      'geldmangelTageNachProvinzverlust',
       'oelmangelTage',
       'oelmangelTageDurchAushebung',
       'spioneAngeworben',

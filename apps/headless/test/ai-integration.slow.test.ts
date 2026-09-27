@@ -412,11 +412,15 @@ describe('R-AI-08/AK3 Die KI erzeugt keine Befehle, die der Kern verwirft', () =
     expect(rejected(integration, 'INVALID_TARGET', 'DIPLOMACY').length).toBe(0)
   })
 
-  it('bleibt zahlungsfaehig', () => {
-    // Eine KI, die kein Geld mehr hat, trifft keine Entscheidungen mehr — sie erleidet
-    // nur noch. Das ist die erste Haelfte von AK3.
-    const pleite = integration.events.filter((event) => event.type === 'RESOURCE_SHORTAGE' && event.resource === 'money')
-    expect(pleite.length, `Geldmangel bei ${new Set(pleite.map((e) => e.type === 'RESOURCE_SHORTAGE' && e.playerId)).size} Maechten`).toBe(0)
+  // Fassung nach Noahs Antwort auf Frage 8 (2026-09-26, T-M43-01): eine KI darf durch einen
+  // Provinzverlust in Geldmangel geraten (Befund M42-03-a) — das Tor ist "keine eigene
+  // Aushebung ist schuld", nicht mehr "nie Geldmangel". Die Gesamtzahl bleibt Berichtszahl.
+  it('bleibt zahlungsfaehig, soweit es an ihr liegt (Fassung nach Frage 8)', () => {
+    const jeMacht = Object.values(integration.m42!.jeMacht)
+    const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+    expect(schuld, 'Geldmangel durch eigene Aushebung').toEqual([])
+    const geldmangelTageGesamt = jeMacht.reduce((s, m) => s + m.geldmangelTage, 0)
+    console.log(`Geldmangeltage gesamt (Welt 1815): ${geldmangelTageGesamt}`)
   })
 
   it('befiehlt keine Armee, die sie im selben Zug zusammengelegt hat (T-M41-08)', () => {

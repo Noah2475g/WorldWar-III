@@ -482,6 +482,39 @@ describe('T-M42-01 Geld- und Oelmangel', () => {
     zaehler.tagesende(leer(shortageState(P1, ['money'])))
     expect(zaehler.bericht().jeMacht[P1]!.geldmangelTage).toBe(2)
   })
+
+  // M8/M9 des Bauplans (T-M43-01, §3.5, E5): ein Provinzverlust NACH der letzten Aushebung
+  // unterbricht die Zuordnung "durch Aushebung" — Befund M42-03-a.
+  it('M9: Aushebung negativ (Tag1), Provinzverlust danach (Tag2), Mangel (Tag3) -> 1/0/1', () => {
+    const zaehler = m42Zaehler(rules, KI)
+    const tag1 = baseState()
+    placeArmy(tag1, { owner: P1, at: 'n1', units: [armeeStapel('infantry', 50_000_000)] })
+    expect(tagesbilanzNachAushebung(tag1, P1, 'money', rules)).toBeLessThan(0)
+    zaehler.tagesende({ state: tag1, events: [], applied: [recruitCommand(P1)] })
+
+    const verlust: ProvinceCapturedEvent = { ...evBasis, type: 'PROVINCE_CAPTURED', provinceId: 'o1', previousOwner: P1, newOwner: P2 }
+    zaehler.tagesende({ state: baseState(), events: [verlust], applied: [] })
+
+    zaehler.tagesende(leer(shortageState(P1, ['money'])))
+    const m = zaehler.bericht().jeMacht[P1]!
+    expect(m.geldmangelTage).toBe(1)
+    expect(m.geldmangelTageDurchAushebung).toBe(0)
+    expect(m.geldmangelTageNachProvinzverlust).toBe(1)
+  })
+
+  it('M10: wie M9, aber der Verlust faellt auf den Aushebungstag selbst -> 1/1/0', () => {
+    const zaehler = m42Zaehler(rules, KI)
+    const tag1 = baseState()
+    placeArmy(tag1, { owner: P1, at: 'n1', units: [armeeStapel('infantry', 50_000_000)] })
+    const verlust: ProvinceCapturedEvent = { ...evBasis, type: 'PROVINCE_CAPTURED', provinceId: 'o1', previousOwner: P1, newOwner: P2 }
+    zaehler.tagesende({ state: tag1, events: [verlust], applied: [recruitCommand(P1)] })
+
+    zaehler.tagesende(leer(shortageState(P1, ['money'])))
+    const m = zaehler.bericht().jeMacht[P1]!
+    expect(m.geldmangelTage).toBe(1)
+    expect(m.geldmangelTageDurchAushebung).toBe(1)
+    expect(m.geldmangelTageNachProvinzverlust).toBe(0)
+  })
 })
 
 // ---------------------------------------------------------------------------
