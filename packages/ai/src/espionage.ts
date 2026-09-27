@@ -1,8 +1,7 @@
-import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shared'
+import type { Fixed } from '@worldwar/shared'
 import {
   buildingCostForLevel,
   spySalary,
-  unitCount,
   type Command,
   type MapData,
   type PlayerId,
@@ -12,6 +11,7 @@ import {
   type SpyMission,
 } from '@worldwar/core'
 import { RESERVE_PERMILLE } from './economy'
+import { dailyArmyMoneyUpkeep, dailyMoneyIncome } from './finance'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -24,8 +24,9 @@ import type { AiContext, Explanation } from './types'
  *
  * Der Geldertrag wird aus der Sicht nachgerechnet (Entscheid E2): der Runner baut die Sicht ohne
  * Regeln, `self.economy` fehlt also, und `phases/production.ts` gehoert nicht in diese Bahn.
- * `dailyMoneyIncome`/`dailyArmyMoneyUpkeep` sind ein Zwilling der Steuerformel; `espionage.test.ts`
- * haelt sie gegen `economyOverview` gleich (Block "Finanzen aus der Sicht").
+ * `dailyMoneyIncome`/`dailyArmyMoneyUpkeep` sind ein Zwilling der Steuerformel, seit T-M42-03 in
+ * `finance.ts`; `finance.test.ts` haelt sie gegen `economyOverview` gleich (Block "Finanzen aus
+ * der Sicht").
  *
  * Debugtexte nennen Provinznamen, nie Spionkennungen (Entscheid E10, Befund M17-S1): der Wache
  * `text-keys.test.ts` prueft `\bs\d+\b` auf dem gerenderten Text, und eine Kennung wie `s2` waere
@@ -57,46 +58,6 @@ const DISMISS_RANK: Readonly<Record<SpyMission, number>> = {
   militarySabotage: 0,
   intel: 1,
   counter: 2,
-}
-
-/**
- * Zwilling von `phases/production.ts` (nur Geld) — auf der Sicht statt auf dem Zustand, weil der
- * Runner sie ohne Regeln baut. Aendert sich die Steuerformel im Kern, faellt `espionage.test.ts`
- * Block "Finanzen aus der Sicht" (F-a).
- */
-export function dailyMoneyIncome(view: PublicView, rules: Rules): Fixed {
-  if (!view.self.alive) return 0
-  const c = rules.constants
-  const penalty =
-    view.self.capitalLostUntil !== null && view.tick < view.self.capitalLostUntil ? c.capitalLossProductionFactor : ONE
-  const window = c.occupationPenaltyDays * c.ticksPerDay
-  let scaled = 0
-  for (const province of view.provinces) {
-    if (province.owner !== view.playerId || province.stale) continue
-    if (province.population === undefined || province.morale === undefined) continue
-    const taxBase = Math.trunc(province.population / 1000) * c.taxPerThousandPopulationPerTick
-    if (taxBase <= 0) continue
-    const morale =
-      c.productionMoraleFloor + mulChain([ONE - c.productionMoraleFloor, clampFixed(quotFixed(province.morale, 100_000), 0, ONE)])
-    const population = clampFixed(quotFixed(province.population, 300_000), 500, 1500)
-    const elapsed = province.occupiedSince === undefined ? window : view.tick - province.occupiedSince
-    const occupation = elapsed >= window ? ONE : 500 + mulChain([500, quotFixed(elapsed, window)])
-    scaled += taxBase * mulChain([morale, population, occupation, penalty])
-  }
-  return Math.round((scaled * c.ticksPerDay) / ONE)
-}
-
-/** Zwilling von `state/army.ts` `armyUpkeep`, nur Geld, auf der Sicht. */
-export function dailyArmyMoneyUpkeep(view: PublicView, rules: Rules): Fixed {
-  let perTick = 0
-  for (const army of view.armies) {
-    if (army.owner !== view.playerId) continue
-    for (const stack of army.units ?? []) {
-      const money = rules.units[stack.unitKey]?.upkeep.money ?? 0
-      if (money) perTick += money * unitCount(stack, rules)
-    }
-  }
-  return perTick * rules.constants.ticksPerDay
 }
 
 /** Hoechstens so viel Tagessold bindet die KI in Spionen (D29.7/D29.8). Gilt dem Sold, nicht dem Anwerbepreis. */
