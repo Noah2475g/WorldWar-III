@@ -1,6 +1,6 @@
 {
   "gemessenAm": "2026-09-27",
-  "measuredAtCommit": "669b105297763d663b03071d8fec7110ddd51bff",
+  "measuredAtCommit": "8aba750234f3452384e7195b2d02f9ce1ca5858b",
   "measuredDirty": [],
   "aufgabe": "T-M17-15",
   "partie": {
@@ -886,6 +886,14 @@
   "ak3": {
     "summeBewegbarMit": 0,
     "summeBewegbarOhne": 0
+  },
+  "wiederholungslauf": {
+    "aufgabe": "T-M43-04",
+    "startzahl": 1914,
+    "spieltage": 200,
+    "ersteAbweichungZustand": -1,
+    "ersteAbweichungEreignisse": -1,
+    "zustandsHashLetzterTag": "666e7edc358ae6ce"
   },
   "m42": {
     "stufe": "F",
