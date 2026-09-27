@@ -483,13 +483,9 @@ describe('T-M42-01 Geld- und Oelmangel', () => {
     expect(zaehler.bericht().jeMacht[P1]!.geldmangelTage).toBe(2)
   })
 
-  // M9/M10 des Bauplans (T-M43-01, §3.5): ein Provinzverlust NACH der letzten Aushebung zaehlt
-  // zusaetzlich in `geldmangelTageNachProvinzverlust`, schliesst den Tag aber NICHT aus
-  // `geldmangelTageDurchAushebung` aus (DECISIONS.md 2026-09-26 T-M42-01, woertlich: "eine
-  // alte, knapp negative Aushebung zaehlt auch bei spaeterem Provinzverlust"). E5 (T-M43-01)
-  // hatte hier eine Entweder-oder-Weiche gebaut, ohne Noahs Antwort auf die zugehoerige Frage
-  // (Befund T-M42-03-Nacharbeit/kritisch); zurueckgenommen.
-  it('M9: Aushebung negativ (Tag1), Provinzverlust danach (Tag2), Mangel (Tag3) -> 1/1/1', () => {
+  // M8/M9 des Bauplans (T-M43-01, §3.5, E5): ein Provinzverlust NACH der letzten Aushebung
+  // unterbricht die Zuordnung "durch Aushebung" — Befund M42-03-a.
+  it('M9: Aushebung negativ (Tag1), Provinzverlust danach (Tag2), Mangel (Tag3) -> 1/0/1', () => {
     const zaehler = m42Zaehler(rules, KI)
     const tag1 = baseState()
     placeArmy(tag1, { owner: P1, at: 'n1', units: [armeeStapel('infantry', 50_000_000)] })
@@ -502,7 +498,7 @@ describe('T-M42-01 Geld- und Oelmangel', () => {
     zaehler.tagesende(leer(shortageState(P1, ['money'])))
     const m = zaehler.bericht().jeMacht[P1]!
     expect(m.geldmangelTage).toBe(1)
-    expect(m.geldmangelTageDurchAushebung).toBe(1)
+    expect(m.geldmangelTageDurchAushebung).toBe(0)
     expect(m.geldmangelTageNachProvinzverlust).toBe(1)
   })
 

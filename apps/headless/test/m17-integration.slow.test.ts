@@ -552,12 +552,7 @@ describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
   // ueberhaupt" — ein Provinzverlust darf einer Macht Geld nehmen, ohne dass ihre eigene
   // Aushebung schuld ist (Befund M42-03-a, E5). Zwei Zaehlwege gegeneinander: das
   // RESOURCE_SHORTAGE-Ereignis (Beginn des Mangels) und m42.geldmangelTage (jeder Mangeltag).
-  //
-  // **it.fails, absichtlich (Nacharbeit Etappe 1, Befund T-M42-03-Nacharbeit/kritisch,
-  // 2026-09-27).** E5 hatte "durch Aushebung" nach einem Provinzverlust ausgeschlossen statt
-  // daneben gezaehlt, ohne Frage an Noah — zurueckgenommen (siehe ai-integration.slow.test.ts).
-  // Deutschland reisst hier mit demselben Befund (15 Tage, Startzahl 1815).
-  it.fails('laesst keine KI-Macht Geldmangel durch eigene Aushebung erleiden (Fassung nach Frage 8)', () => {
+  it('laesst keine KI-Macht Geldmangel durch eigene Aushebung erleiden (Fassung nach Frage 8)', () => {
     for (const startzahl of STARTZAHLEN) {
       const lauf = mit(startzahl)
       const jeMacht = Object.values(lauf.m42!.jeMacht)
@@ -577,12 +572,8 @@ describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
 // ai-integration.slow.test.ts, hier ueber die Weltkarte und drei Startzahlen. Auf Stufe 0 schon
 // gruen (0/0/0 Geldmangel) — der Rot-Nachweis fuer die Regel steht in ai-integration.slow.test.ts
 // (Voreinstellung, Kanada 44); diese Zusicherung ist ehrlich ohne eigenen Rot-Nachweis (§9 E12).
-//
-// **it.fails, absichtlich (Nacharbeit Etappe 1, Befund T-M42-03-Nacharbeit/kritisch, 2026-09-27).**
-// Nach der Ruecknahme von E5 (m42-zaehlung.ts) reisst Startzahl 1815 hier ebenfalls: Deutschland,
-// 15 Tage. Dieselbe Ursache wie oben, kein neuer Befund an der Weltkarten-KI.
 describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck — Weltkarte, drei Startzahlen', () => {
-  it.fails('in jeder Startzahl', () => {
+  it('in jeder Startzahl', () => {
     for (const startzahl of STARTZAHLEN) {
       const jeMacht = Object.values(mit(startzahl).m42!.jeMacht)
       expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${startzahl}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
