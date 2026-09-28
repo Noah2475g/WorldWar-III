@@ -1,4 +1,4 @@
-# WORKFLOW — Etappe 1 von M42/M43 fertig gebaut und gemessen; Zweig `claude/m42-m43-heer-und-raeumfrist`
+# WORKFLOW — Etappe 1 von M42/M43 auf main (PR #13, 2026-09-28); als Nächstes Noahs Playtest, dann Etappe 2
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
@@ -69,21 +69,17 @@
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze des Baus liegt auf `claude/m42-m43-heer-und-raeumfrist`**, angelegt am
-2026-09-26 von `main` = `2bcadad` (PR #12, M17 gemerged) für die Übertragung des Plans
-`m18-plan-v2.md`. `main` selbst steht weiterhin auf `2bcadad`. Aufgaben-Worktrees zweigen
-von `claude/m42-m43-heer-und-raeumfrist` ab, nicht von `main`, solange dieser Abschnitt das
-sagt.
+**Die Spitze liegt auf `main`.** PR #13 (M42/M43 Etappe 1: Geld der KI, Räumfrist, erst die Fabrik;
+`pnpm acceptance` 12 von 12) ist am 2026-09-28 auf Noahs ausdrückliches Wort gemerged. Etappe 2
+(Artillerie, Heer in Einheiten, Zusammenlegen, Spionagebuchung, Abschlussmessung) folgt nach Noahs
+Playtest (Entscheid F6) auf einem neuen Zweig von `main`. Wer einen Worktree anlegt, zweigt von
+`main` ab.
 
 ```bash
-git switch claude/m42-m43-heer-und-raeumfrist && git pull --ff-only
+git switch main && git pull --ff-only
 ```
 
-**Etappe 1 ist fertig und liegt als [PR #13](https://github.com/Noah2475g/WorldWar-III/pull/13)
-bereit** (2026-09-27, `pnpm acceptance` 12 von 12). Noah merged, kein Agent; nach Noahs Entscheid F6
-folgt jetzt sein Playtest, danach Etappe 2 auf diesem Zweig.
-
-**Wer merged (Noah, kein Agent — §5), richtet diesen Abschnitt im selben Zug auf `main` und
+**Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und
 den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
 fünf Sitzungen in Folge gekostet (§4 Falle 1); sie schadet in beide Richtungen gleich viel.
 Deshalb steht hier immer genau **ein** Zweig und nie eine Bedingung — ein Satz der Form „bis
