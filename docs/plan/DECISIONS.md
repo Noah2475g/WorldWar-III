@@ -5415,3 +5415,249 @@ ist, und dass ein Lauf ohne Einmarsch seit M17-F1 selbst als Verletzung zählt.
 **Kippbar:** Wer die Defensiv-Automatik härter prüfen will, stellt `KRIEGSPLAN.tag` in
 `apps/headless/test/stance.slow.test.ts` auf 0 — und weiß vorher, dass AK5 dann reißt. Das wäre
 eine Aufgabe für M18, keine Stellschraube.
+
+---
+
+## 2026-09-26 · Uebertragung m18-plan-v2 · Noah beantwortet alle acht Fragen wie empfohlen
+
+**Entscheidung (Noah, 2026-09-26):** Noah hat den ueberarbeiteten Plan `m18-plan-v2.md`
+(Kritik `m18-plan-v2-kritik.md` eingearbeitet, Endstand siehe Plan §16) mit „alles wie
+empfohlen" beantwortet. Die acht Fragen aus Plan §17, mit der gewaehlten Option:
+
+1. **Artillerie-Menge:** (b) Mischung 60/30/10 — gemessen 24-28 % Artillerie (500-650),
+   Zielband 15-30 % (R-AI-12/AK3, T-M42-07).
+2. **„Schwer" neu abstimmen:** (a) ueber `hard.recruitShare` neu abstimmen, mit einem
+   Parameterlauf am Ende (D32.5, T-M42-04, T-M42-12).
+3. **Form der Raeumfrist:** (a) 24 Ticks fuer stehende Armeen, der kuerzeste Heimweg ist
+   immer frei, jeder Einmarsch ohne Recht bleibt ein Ueberfall, auch in der Frist. Kein
+   neues Zustandsfeld, kein Parameterlauf, `SCHEMA_VERSION` bleibt 4 (D34.1-D34.2,
+   R-DIP-10, T-M43-01).
+4. **Zusage 7 neu fassen:** (a) keine zwei stehenden Verbaende derselben Rolle am selben
+   Ort, die zusammen hoechstens `stackFullContribution` (20) Einheiten zaehlen
+   (R-AI-10/AK3, T-M42-09).
+5. **Haltungs-Messlauf robuster:** (a) ja, sechs statt drei Startzahlen; Kriegsplan
+   (Tag 20, Frankreich/Polen) und Grenzen bleiben unveraendert (T-M42-02).
+6. **Umfang:** (a) Etappe 1 bauen (rund 27 Agentenstunden), dann Pull Request und Noahs
+   Playtest; Etappe 2 wird danach bestaetigt oder umgeplant (Plan §12).
+7. **„Frieden in 90 Tagen":** (a) falls nach M42 noch rot, wird die Zusage neu gefasst als
+   „in 200 Spieltagen mindestens ein Frieden zwischen KI-Maechten, in jeder der drei
+   Startzahlen" (T-M42-12).
+8. **Tor „kein Geldmangel":** (a) „kein Geldmangeltag einer KI-Macht geht auf eine eigene
+   Aushebung zurueck" als Tor; die Gesamtzahl der Mangeltage bleibt Berichtszahl mit
+   Erklaerungspflicht. Aendert auch den Wortlaut von R-AI-09/AK2 aus M17 (R-AI-11/AK3,
+   T-M42-03, T-M43-01).
+
+**Auswirkung:** Der Plan ist gemaess seiner Uebertragungs-Checkliste (§15) in die
+Plandateien uebertragen: `tasks.yaml` und `03-TASKS.md` fuehren die Meilensteine **M42
+„Das Heer der KI"** und **M43 „Frieden mit Raeumfrist"** mit 16 Aufgaben (T-M42-01 bis -12,
+T-M43-01 bis -04), alle auf `status: todo`; `01-REQUIREMENTS.md` fuehrt R-AI-10, R-AI-11,
+R-AI-12 und R-DIP-10 im `later`-Fach und als neuen Abschnitt 2.19; `02-DESIGN.md` fuehrt
+D32 (M42) und D34 (M43) hinter D31 (D33 bleibt uebersprungen, siehe Plan §1). Der
+Integrationszweig `claude/m42-m43-heer-und-raeumfrist` ist von `main` (`2bcadad`) abgezweigt,
+`WORKFLOW.md` §0 zeigt auf ihn. T-M41-10 (Zusage 7, zurueckgenommen) nennt T-M42-05, -08
+und -09 als Abloesung.
+
+**Kippbar:** jede der acht Antworten einzeln, in `m18-plan-v2.md` §17 mit Alternativen
+hinterlegt. Reisst ein Ruecknahmekriterium beim Bau (Plan §9.3), geht die betroffene Frage
+mit Zahlen an Noah zurueck, wie im Plan je Aufgabe vermerkt.
+
+---
+
+## 2026-09-26 · T-M43-03 · Die Marktrechnung sättigt, der Börsenbefehl hat eine Obergrenze (Befund M17-U1, Kern)
+
+**Entscheidung:** `exchangeAmount()` wirft nie mehr. Ist `giveAmount × Kurs` eine sichere Ganzzahl,
+rechnet es wie bisher; sonst sättigt es auf den Wert der größten rechenbaren Menge
+(`MAX_SAFE − MAX_SAFE mod Kurs`, mit Vorzeichen) — genau den Wert der Oberflächen-Kappung
+`safeExchangeAmount()`. `NaN` und ein nicht ganzzahliges Produkt ergeben 0. `TRADE` lehnt
+`giveAmount > MAX_TRADE_AMOUNT` (10 000 000 000, Code-Konstante neben `MIN_TRADE_AMOUNT`) vor der
+Bestandsprüfung mit `INVALID_TARGET`, Grund „Menge zu groß", ab.
+
+**Begründung:** Die Menge ist Eingabe (Formularfeld, Netzbefehl), kein Rechenfehler im Sinn von D-02;
+ein Wurf hielte die Simulation auf jedem Rechner zugleich an. Die Obergrenze ist zehnmal die größte
+Lagergrenze, so dass kein gespeichertes Gut sie erreicht, und klein genug, dass ein gültiger Tausch nie
+sättigt und ein Höchsttausch bei Extremkursen noch in die Nachfragerechnung von `settleMarket` passt
+(beides als Invariante in `market.test.ts`). Keine Regelzahl, weil eine Regelzahl einen Parameterlauf
+auslöst — sie ist eine technische Grenze wie das Minimum.
+
+**Auswirkung:** Eine D-02-Ausnahme an genau einer Stelle. Turnier und `progress.slow` zeilengleich.
+Eine absurde Menge im Marktfeld meldet jetzt „unzulässiges Ziel (Menge zu groß)" statt eines Mangels.
+`safeExchangeAmount()` bleibt als zweite Sicherung. Löst den Punkt „Kippbar" im Eintrag
+„Kappung statt Prüfung vor der Vorschau" (2026-09-25) ein. Nicht gebaut: Befund M43-03-a.
+
+**Kippbar:** Wert von `MAX_TRADE_AMOUNT`; Sättigung statt 0; die Oberflächen-Kappung entfernen.
+
+**Nacharbeit 2026-09-26:** `status` in `tasks.yaml` bleibt `todo` (nicht `done`) bis `pnpm verify`
+auf ruhiger Maschine Exit 0 liefert — der Bau- und der Nacharbeitslauf fanden das Turnier und
+`tradeOffer.test.ts` unter 90-100 % Fremdlast rot (Timeouts), reproduziert als lastbedingt und ohne
+Zusammenhang mit `market.ts`/`trade.ts`.
+
+---
+
+## 2026-09-26 · T-M42-11 · E-1: `performance.md` nicht beim Bau eingecheckt
+
+Variante (b) gewählt: `docs/reports/performance.md` wird von T-M42-11 nicht eingecheckt: die
+Tabelle existiert als Code (`formatStockSection`) und als Zahlen in Prosa (`PROBLEME.md` Befund 58,
+`PROGRESS.md` T-M42-11-Zeile); die Abschlussmessung am Ende von Etappe 1 (T-M42-12, `m18-plan-v2.md`
+§7/§9) schreibt die Datei. Grund: der Messlauf auf `2d48c00` (`pnpm sim:long`, 361 s) stand unter
+91-100 % Fremdlast durch einen zweiten parallelen Bau-Agenten; die Zeitzeilen sind damit nicht mit
+dem Ausgangswert (249 s) vergleichbar, die Tabelle selbst ist lastunabhängig. Variante (a) — ein
+von Noah freigegebenes ruhiges Fenster von rund 8 Minuten — bleibt jederzeit offen und ersetzt dann
+diesen Eintrag durch den eingecheckten Stand samt Commit.
+
+**Nacharbeit 2026-09-26 (Merge):** `status` in `tasks.yaml` auf `todo` zurückgesetzt (stand nach dem
+Bau-Zweig auf `done`) — der Bau selbst ist fertig und gemergt, aber `pnpm verify` steht auf ruhiger
+Maschine noch aus (dieselbe Fremdlast wie oben); `done` erst nach diesem Lauf.
+
+---
+
+## 2026-09-26 · T-M42-01 · Wie M42/M43 gemessen wird (kippbar)
+
+Sechzehn Festlegungen für das Zählmodul `apps/headless/test/m42-zaehlung.ts`, getroffen im Bauplan
+`plan-T-M42-01.md` §8, keine davon eine Spielregel:
+- **Mangeltag** = Tagesende mit dem Rohstoff in `shortages` (nicht das Ereignis, das nur den Beginn meldet).
+- **„durch Aushebung"** (R-AI-11/AK3 nach Frage 8 a) = die letzte angenommene Aushebung an oder vor dem
+  Mangeltag hatte eine negative Tagesbilanz; **Tagesbilanz** = `economyOverview`-Bilanz (Ertrag −
+  Armeeunterhalt − Sold) minus Unterhalt der eigenen Aushebungs-Warteschlange. Konservativ: eine alte,
+  knapp negative Aushebung zählt auch bei späterem Provinzverlust.
+- **Paar** (R-AI-10/AK3 nach Frage 4 a) = zwei stehende Armeen gleicher Macht, Provinz, Einschiffung
+  und Rolle mit zusammen höchstens `stackFullContribution` Einheiten; **über zwei Tagesenden** =
+  dieselben zwei Kennungen; die Ortsvariante wird daneben gezählt. **Ausgangswert Stufe 0: 0 auf den
+  Läufen, die T-M42-09 zusichern wird (Welt 1815, Voreinstellung); 1 auf Welt 2015 (nur
+  `m17-integration.json`, nicht Teil von T-M42-09s Läufen) — R-AI-10/AK3 wäre auf den eigenen Läufen
+  schon erfüllt, der Gegenlauf „fällt auf Stufe C1" kann dort nicht fallen (T-M42-01, 2026-09-26; von
+  Noah/T-M42-09 zu entscheiden: AK3 auf ein Tagesende schärfen oder die Ortsvariante zusichern).**
+- **Artillerieanteil** (R-AI-12/AK3) = Klasse `artillery` an den Klassen `infantry`/`armor`/`artillery`,
+  aus `UNIT_RECRUITED`.
+- **Befund D** = Spieltag ≥ 34 mit Aushebung in einer Provinz ohne Fabrik, eigener Fabrikprovinz und
+  jedem Artillerie-Kostenrohstoff über der Stufenschwelle; die Nur-Geld-Fassung steht daneben.
+- `istBatterie` ist ein Zwilling von `military.ts:155-157` mit Wortlaut-Wächter, bis T-M42-08 `army-role.ts` baut.
+- `ai-integration.slow` schreibt nur mit `WORLDWAR_WRITE_REPORT=1` und trägt die Messzeile.
+- Keine neue Zusicherung auf eine Spielzahl; `describe`-Namen ohne R-ID (sonst gälte eine ungebaute
+  Anforderung als belegt).
+- `pnpm verify` einmal je Aufgabe am Ende (Noahs Wunsch vom 2026-09-10, Wartezeit) — in dieser
+  Sitzung und ihrer Nacharbeit wegen Maschinenlast (Noahs Spielsitzung) nicht gefahren, siehe
+  `PROGRESS.md`/openIssues; stattdessen gezielt typecheck, eslint, die betroffenen Testdateien und
+  `test/guards`.
+- Die volle Liste mit Begründung und Alternative: `plan-T-M42-01.md` §8 (E1-E16).
+
+**Nacharbeit (adversarische Prüfung, 2026-09-26):** `MachtZahlen.nation` ergänzt (additiv) — `jeMacht`
+bleibt nach `PlayerId` geschlüsselt (der Interface-Kommentar hatte irrig „Schlüssel Nation" gesagt),
+die Nation steht jetzt zusätzlich je Macht im Feld `nation`. `summe.artillerieAusgehoben` und
+`maechteMitArtillerieJeLauf` in `m17-integration.slow.test.ts` zählen seither nach Klasse
+(`rules.units[...].class === 'artillery'`, wie `artillerieAnteil`), nicht mehr nur nach dem Schlüssel
+`'artillery'` — am Ausgangswert folgenlos (TARGET_MIX kennt nur `'artillery'`), zukunftsfest für
+`rocket_artillery`. Beide Integrationsläufe prüfen jetzt zusätzlich, dass `befohlen` (aus `applied`)
+unabhängig aus der bestehenden `kiBefehle`-Sammelstelle nachgerechnet dieselbe Zahl ergibt, und dass
+der Bericht den Abschnitt `m42` tatsächlich trägt (vorher nur durch Lesen geprüft) — beide Lücken je
+per Mutationstest bestätigt (rot) und wieder geschlossen (grün).
+
+---
+
+## 2026-09-27 · Noahs Entscheide nach Etappe 1 von M42/M43 (Dossier `entscheidungen-etappe1.md`)
+
+Etappe 1 wurde gebaut; drei Stufen rissen ihre vorab festgelegten Rücknahmekriterien und wurden
+regelkonform zurückgenommen, die vorformulierten Fragen U, R, F, S und M42-02-a waren nie bei Noah
+angekommen. Ein Dossier hat sie auf drei Fragen gebündelt. Noah hat alle drei **wie empfohlen**
+beantwortet:
+
+1. **Räumfrist (Fragen U und R):** Noahs Fassung vom 2026-09-26 (F3) wird um vier Punkte ergänzt —
+   (1) eine Armee, die bei Kriegsende marschiert, darf ihren Marsch hinaus beenden; (2) frei ist der
+   **kürzeste Weg hinaus**, nicht unbedingt der Heimweg; (3) auch ein **Rückzug in neutrales Land**
+   bekommt die Frist; (4) dass Brasilien dadurch anders spielt, ist gewollte Folge. Wörtlich ließ
+   F3 noch 6 Überfälle nach Friedensschlüssen übrig, mit den Ergänzungen 0.
+2. **Festungspatt (Fragen F und S):** **„Erst die Fabrik“ (T-M42-06) wird übernommen**; ihr
+   Kriterium K5 wird gefasst als „neun Startzahlen, höchstens ein Patt; ein Patt wird als Befund
+   geführt“. **Die Spionagebuchung (T-M42-04, S12) wartet bis nach der Artillerie** (Etappe 2), weil
+   das Patt aus Festung 2 in allen Städten entsteht und die Artillerie die eigentliche Abhilfe ist;
+   „schwer“ bleibt bis dahin auf dem Buchungsfehler M17-S12.
+3. **Verteidigungs-Automatik (M42-02-a):** **AK5 wird neu gefasst** statt die Automatik nach D30.9
+   zurückzunehmen. Mit sechs Startzahlen nützt sie nicht messbar (drei Paare besser, drei schlechter,
+   14 gegen 13 verlorene Provinzen), schadet aber nicht. Die Provinz-Tage werden **Berichtszahl**;
+   das Tor wird die **Schadenszählung** — keine Provinz ohne Gefecht verloren, keine Ablehnungen,
+   kein Krieg ohne Erklärung, mindestens ein Einmarsch je Lauf.
+
+Dazu, ohne Frage, weil aus Noahs Antwort F8 vom 2026-09-26 folgend: die Nacharbeit hatte die
+Geldzuordnung nach Provinzverlust (E5) zurückgenommen und drei Fälle zu R-AI-11/AK3 auf `it.fails`
+gestellt — das war falsch; F8 nennt Pleite nach Provinzverlust ausdrücklich „ohne eigene Schuld“.
+
+---
+
+## 2026-09-27 · Orchestrierung · Freigabe E-H1 und E-H2 für den Haltungs-Messlauf (folgt aus Noahs AK5-Entscheid)
+
+**Entscheidung (Orchestrierung, nicht Noah — offen gekennzeichnet):** Der Bauplan `plan-e1-abschluss.md`
+hielt den Haltungs-Messlauf vor zwei Messdetails an. Beide sind Folgen von Noahs Entscheid vom
+2026-09-27 (AK5 = Schadenszählung, mindestens ein Einmarsch je Lauf) und keine neuen Spiel- oder
+Regelfragen; sie werden deshalb von der Orchestrierung freigegeben:
+
+- **E-H1 — die Kontrolle wird auf den Stand nach M42/M43 geeicht.** Die Kontrolle (Garnison A,
+  Startzahl 1914) belegt, dass die Messung Angriffe sieht; sie nutzt die Automatik gar nicht. Ihr
+  Wert hängt an der KI der Nachbarn, und die hat sich gewollt geändert (Tagesbilanz, Räumfrist,
+  Fabrik): Sonde 26 Einmärsche / 4 verlorene Provinzen statt 41/4. Der neue Wert wird **auf dem
+  Endstand gemessen und eingetragen**; Bedingung bleibt, dass er Einmärsche **und** Verluste größer
+  null zeigt — sonst ist die Messung blind, und das wäre ein Befund, keine Eichung.
+- **E-H2 — „der Kriegsplan hat gegriffen" zählt nur die Erklärungen der beiden Plan-Nachbarn im
+  Kriegsplan-Tick.** Eine dritte Kriegserklärung, die eine andere KI aus eigenem Antrieb abgibt, ist
+  gewolltes Spiel und kein Messfehler.
+
+**Kippbar:** Noah kann beide jederzeit anders entscheiden; die Rohzahlen stehen im Bericht.
+
+---
+
+## 2026-09-27 · Berichtigung zu Noahs Entscheid vom 2026-09-27, Punkt 1 (Räumfrist)
+
+**Befund einer adversarischen Nacharbeit, bestätigt:** der Eintrag zu Punkt 1 (weiter oben,
+2026-09-27, „Noahs Entscheide nach Etappe 1") gibt die erste Ergänzung enger wieder, als sie
+gebaut wurde und als das Dossier (`entscheidungen-etappe1.md`, Frage 1) sie festhält. Dort
+steht wörtlich: „Ein Marsch, der im Krieg losging und 1 bis 6 Ticks nach dem Frieden ankommt,
+ist kein Überfall" — **ohne Richtungsbeschränkung**. Der Code bestätigt die weite Fassung:
+`diplomacy.ts` (`warMarch`) prüft nur den Abmarsch-Tick gegen `relation.sinceTick`, nie eine
+Richtung. **Richtigstellung:** Punkt 1, erste Ergänzung, heißt „… darf seinen im Krieg
+begonnenen Marsch beenden (**in jede Richtung**, nicht nur hinaus) …" — der Code war von
+Anfang an richtig, nur die Wiedergabe hier war zu eng.
+
+---
+
+## 2026-09-27 · T-M43-02 · Die Räumfrist als Meldung — Wortlaut und Form (kippbar)
+
+**Wortlaut (kippbar durch Noah):** „Räumfrist: {{army}} steht in {{province}} ({{nation}}).
+Losmarschieren bis Tag {{day}}, {{hour}}:00 — ein Marsch auf dem kürzesten Weg hinaus gilt
+nicht als Überfall." Gegenüber D34.4 drei Änderungen: die Uhrzeit (die Frist endet mitten am
+Tag, „bis Tag n" hätte um bis zu 23 Stunden gelogen), „hinaus" statt „heimwärts" (der Kern
+schützt den kürzesten Weg aus dem fremden Land, nicht jeden Heimweg — T-M43-01 E3), „ein
+Marsch … gilt" statt „wer … gilt".
+
+**Form:**
+- **E1:** Die Meldung wird aus dem Zustand der Sicht abgeleitet (`apps/desktop/src/game/
+  clearance.ts`, Spiegel von `detectSurpriseAttacks` (a)/(b)/(c)), nicht aus einem Ereignis;
+  sie steht, solange die Frist läuft und die Armee nicht auf dem Weg hinaus ist.
+- **E3:** Die genannte Zeit ist der letzte Tick, zu dem ein Marschbefehl sicher wirkt — nach
+  Frieden und Bündnisbruch `sinceTick + 24`, bei einer empfangenen Kündigung eine Stunde vor
+  ihrem Ende, bei einem Rückzug in neutrales Land das Ende der Rückzugssperre
+  (`army.cannotAttackUntil`). Gemessen gegen den Kern (K10/K11/K13–K17).
+- **E5:** Ein Marsch tiefer hinein lässt die Meldung stehen — so sieht der Spieler, ob sein Weg zählt.
+- **E6:** Das Vorspulen hält an, wenn eine Räumfrist mit eigener Armee beginnt (nur für die
+  betroffene Armee, nicht für jede laufende Frist).
+- **E7:** laut in Warnfarbe, nicht wegklickbar, nach der Hauptstadt.
+- **E10:** Armeen, die erst auf dem Weg hinein sind, werden nicht gemeldet (Befund M43-02-a).
+
+**Vorschläge an Noah (nicht gebaut):** ein Knopf „auf dem kürzesten Weg hinaus" in der Meldung;
+Räumung durch die Haltungs-Automatik; die Uhr hält bei Beginn einer Räumfrist an (heute nur das
+Vorspulen); eine Playtest-Frage zu R-DIP-10 im Bogen der Etappe.
+
+---
+
+## 2026-09-27 · T-M43-04 · Der Wiederholungslauf — was verglichen wird (kippbar)
+
+- **Selber Prozess, siebte Partie:** der Zwilling läuft nach allen sechs Partien der Datei, mit
+  denselben Karten- und Regelobjekten. Er trifft Zustand, der eine Partie überlebt (Caches in
+  `espionage.ts`, `passage.ts`, `relationship.ts`, Modulzähler). Nicht geprüft: zwei Prozesse,
+  zwei Rechner.
+- **Zwei Folgen je Tag:** die Prüfsumme des Mehrspielers (`HASH_OMIT_KEYS`, samt
+  KI-Gedächtnis) und die Prüfsumme der Ereignisse des Tages. Der Zustandshash lässt das
+  Protokoll aus, die Ereignisse sehen das KI-Gedächtnis nicht, `zustandOhneKi` des Berichts
+  sieht es ebenfalls nicht.
+- **Nur 1914 wird gehasht:** `hashValue` wirft bei `undefined`; die anderen Startzahlen zu
+  hashen wäre ein neues Tor.
+- **Der Bericht** trägt den Abschnitt `wiederholungslauf`; eingecheckt wird er mit der jeweils
+  aktuellen Stufenmessung, zuletzt auf dem vereinten Endstand von Kette und Nebenbahn
+  (Commit `65a1645`).

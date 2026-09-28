@@ -2,6 +2,7 @@ import {
   canApply,
   createInitialState,
   grantsPassage,
+  parseMap,
   planRoute,
   publicView,
   setPassage,
@@ -374,16 +375,13 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     allAccepted(state, decision)
   })
 
-  // Falle 8 (Bauplan §7.13, P17): geprueft und gemessen (Bericht T-M17-10) — die Armee
-  // reagiert sofort (Umkehr im Tick nach der Kuendigung), aber der gewaehlte Heimweg m1->n2
+  // Befund M17-D10 (Bauplan §7.13, P17), behoben in T-M43-01: die Armee reagierte schon
+  // immer sofort (Umkehr im Tick nach der Kuendigung), aber der gewaehlte Heimweg m1->n2
   // (160.000 km, Infanterie 6.000 km/h, keine Eisenbahn) braucht ~27 Ticks, die Frist
-  // (rightOfWayNoticeTicks) nur 24: die Armee ist bei Fristende noch in m1 unterwegs, und
-  // der Kern meldet einen Ueberfall ohne Erklaerung — beim Bau gefunden, nicht die Frist und
-  // nicht diese Zusicherung geaendert (Bauplan-Vorgabe). Siehe Bericht "Offene Punkte" und
-  // PROBLEME.md M17-D10. Der zweite Teil der Zusage (die Armee kommt bei p1 an) haelt.
-  it.todo('in der laufenden Partie: kein Ueberfall nach Ablauf der Frist (Befund M17-D10, offen)')
-
-  it('reagiert sofort auf die Kuendigung, auch wenn der Heimweg laenger ist als die Frist (Befund M17-D10)', () => {
+  // (rightOfWayNoticeTicks) nur 24 — der Kern meldete einen Ueberfall ohne Erklaerung, obwohl
+  // die Armee auf dem kuerzesten Weg hinaus war. Seit R-DIP-10/AK2 (der Raeumweg, D34.3)
+  // ist genau das kein Ueberfall mehr: derselbe Marsch, egal wie lange die Kante braucht.
+  it('und der Heimmarsch ist nach Fristende kein Ueberfall (Befund M17-D10 behoben)', () => {
     const state = dreiMaechte()
     state.provinces.m1!.owner = 'p2'
     setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
@@ -391,18 +389,383 @@ describe('R-DIP-08/AK3 Die KI kuendigt unter der Kriegsschwelle, und der Gast ge
     const result = advanceTicks(state, 2 * ticksPerDay, ctx, {
       playerCommands: [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'revokeRightOfWay' }],
     })
-    // Reaktion im naechsten Zug, sobald die Frist im Zustand steht (nicht erst bei Fristende).
+    // Reaktion, sobald die Frist im Zustand steht (nicht erst bei Fristende) — das Ziel ist
+    // das erste Feld ausserhalb von p2s Land, nicht zwingend n2 (E3: eigene zuerst, aber ein
+    // naeheres herrenloses Feld wie m2 raeumt genauso gueltig, D34.3).
     const homeward = result.applied.find(
-      (a) => a.command.type === 'MOVE_ARMY' && a.command.playerId === 'p1' && a.command.armyId === army.id && a.command.targetProvinceId === 'n2',
+      (a) =>
+        a.command.type === 'MOVE_ARMY' &&
+        a.command.playerId === 'p1' &&
+        a.command.armyId === army.id &&
+        result.state.provinces[a.command.targetProvinceId]?.owner !== 'p2',
     )
     expect(homeward, JSON.stringify(result.applied)).toBeDefined()
     expect(homeward!.tick).toBeLessThanOrEqual(2)
-    // Der Ueberfall ohne Erklaerung tritt trotzdem ein (Befund M17-D10): der Heimweg braucht
-    // laenger als die Frist. Diese Zusicherung haelt den Ist-Stand fest, nicht die Zusage.
+    // Kein Ueberfall mehr: der Heimweg ist der kuerzeste Weg hinaus (R-DIP-10/AK2).
     const surprise = result.events.find(
       (e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true && e.playerId === 'p1' && e.targetPlayerId === 'p2',
     )
-    expect(surprise).toBeDefined()
+    expect(surprise).toBeUndefined()
+    expect(result.state.provinces[result.state.armies[army.id]!.locationProvinceId]!.owner).not.toBe('p2')
+  })
+
+  it('in der laufenden Partie: kein Ueberfall zwischen p1 und p2 nach der Kuendigung (Befund M17-D10)', () => {
+    const state = dreiMaechte()
+    state.provinces.m1!.owner = 'p2'
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const result = advanceTicks(state, 3 * ticksPerDay, ctx, {
+      playerCommands: [{ type: 'DIPLOMACY', playerId: 'p2', targetPlayerId: 'p1', action: 'revokeRightOfWay' }],
+    })
+    const surprise = result.events.find(
+      (e) =>
+        e.type === 'WAR_DECLARED' &&
+        e.withoutDeclaration === true &&
+        ((e.playerId === 'p1' && e.targetPlayerId === 'p2') || (e.playerId === 'p2' && e.targetPlayerId === 'p1')),
+    )
+    expect(surprise, JSON.stringify(result.events.filter((e) => e.type === 'WAR_DECLARED'))).toBeUndefined()
+  })
+})
+
+describe('R-DIP-10/AK4 Die KI räumt auch ohne Kündigung — Friedensschluss und Bündnisbruch (T-M43-01)', () => {
+  /** Waffenstillstand mit p2 seit dem aktuellen Tick, m1 gehört p2 (Gastmacht). */
+  function truceMitP2(state: GameState): void {
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.m1!.owner = 'p2'
+  }
+
+  it('P1: raeumt bei Waffenstillstand ohne Recht, auf dem vorhergesagten kuerzesten Weg', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const explanations: Explanation[] = []
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, explanations)
+    expect(command).toMatchObject({ type: 'MOVE_ARMY', playerId: 'p1', armyId: army.id, targetProvinceId: 'n2' })
+    expect(explanations.some((e) => e.action.includes('Zieht') && e.reason.includes('Waffenstillstand'))).toBe(true)
+    allAccepted(state, command ? [command] : [])
+  })
+
+  it('P2: eine Armee, die tiefer ins Land marschiert, wird umgelenkt', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['o3']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).toMatchObject({ type: 'MOVE_ARMY', targetProvinceId: 'n2' })
+  })
+
+  it('P3: im Buendnis raeumt niemand', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'alliance'
+    state.provinces.m1!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P4: mit unbefristetem Recht raeumt niemand', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    setPassage(state.diplomacy.relations['p1|p2']!, 'p2', 'p1', true, null)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P5: schon auf dem Raeumweg gibt es keinen neuen Befehl', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    army.path = ['n2']
+    army.departureTick = state.tick
+    army.arrivalTick = state.tick + 5
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    expect(guestWithdrawal(context, visible, [])).toBeNull()
+  })
+
+  it('P6: bei gleicher Tiefe geht ein eigenes Feld vor einem herrenlosen (eigene zuerst)', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.m2!.owner = 'p2'
+    // m1 bleibt herrenlos.
+    const army = placeArmy(state, { owner: 'p1', at: 'm2', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).toMatchObject({ targetProvinceId: 'n3' })
+  })
+
+  it('P7: jeder neue Raeumungsbefehl besteht die reguläre Pruefung', () => {
+    const state = dreiMaechte()
+    truceMitP2(state)
+    const army = placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context = contextFor(state, 'p1')
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const command = guestWithdrawal(context, visible, [])
+    expect(command).not.toBeNull()
+    allAccepted(state, command ? [command] : [])
+  })
+
+  /**
+   * Eigene, absichtlich verzweigte Testkarte fuer P8/P9: aus der Gastprovinz `g` fuehrt ein
+   * direkter, aber sehr langsamer Weg ueber `h1` zum eigenen Feld `a` (ein Gastfeld
+   * durchquert) und ein viel schnellerer Weg ueber `h2`/`h3` zum selben `a` (zwei Gastfelder
+   * durchquert) - `predictLandPath` sagt den schnelleren voraus. `h1` fuehrt daneben zum
+   * herrenlosen `b` (ein Gastfeld). `hostFieldsToLeave` kennt nur die eine durchquerte
+   * Provinz als Minimum (`least = 1`, erreicht über `h1`); der vorhergesagte Weg zu `a`
+   * durchquert zwei (`k = 2`), `isClearingPath` lehnt `a` deshalb ab, `b` besteht (`k = 1`).
+   */
+  function verzweigteHostzone(): { state: GameState; context: AiContext; armyId: string; map: ReturnType<typeof parseMap> } {
+    const ring: readonly (readonly [number, number])[] = [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+    ]
+    const province = (id: string) => ({
+      id,
+      name: id,
+      kind: 'rural' as const,
+      terrain: 'plains' as const,
+      coastal: false,
+      center: { x: 0, y: 0 },
+      population: 1000,
+      deposits: {},
+      polygons: [ring],
+    })
+    const edge = (a: string, b: string, distanceKm: number) => ({
+      a,
+      b,
+      kind: 'land' as const,
+      distanceKm,
+      crossing: 'none' as const,
+    })
+    const edges = [
+      edge('g', 'h1', 5_000_000), // 0: sehr langsam
+      edge('h1', 'a', 5_000_000), // 1: ebenso, sonst lohnt sich der Umweg ueber `a` nach `h1`
+      edge('g', 'h2', 10_000), // 2
+      edge('h2', 'h3', 10_000), // 3
+      edge('h3', 'a', 10_000), // 4
+      edge('h1', 'b', 10_000), // 5
+      edge('g', 'z', 10_000), // 6: nur fuer den Zusammenhang der Karte
+    ]
+    const map = parseMap({
+      id: 'verzweigt',
+      name: 'Verzweigte Testkarte',
+      width: 10,
+      height: 10,
+      provinces: ['a', 'g', 'h1', 'h2', 'h3', 'b', 'z'].map(province),
+      edges,
+      edgesByProvince: { a: [1, 4], g: [0, 2, 6], h1: [0, 1, 5], h2: [2, 3], h3: [3, 4], b: [5], z: [6] },
+      startPositions: [
+        { nation: 'Land', capital: 'a', provinces: ['a'] },
+        { nation: 'Feind', capital: 'z', provinces: ['z'] },
+      ],
+    })
+    const config: GameConfig = {
+      seed: 1,
+      mapId: 'verzweigt',
+      rulesId: 'default',
+      players: [
+        { name: 'L', kind: 'ai', nation: 'Land', color: '#111111', difficulty: 'normal' },
+        { name: 'F', kind: 'ai', nation: 'Feind', color: '#222222', difficulty: 'normal' },
+      ],
+      victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
+    }
+    const state = createInitialState(config, { map, rules: TEST_RULES })
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.g!.owner = 'p2'
+    state.provinces.h1!.owner = 'p2'
+    state.provinces.h2!.owner = 'p2'
+    state.provinces.h3!.owner = 'p2'
+    const army = placeArmy(state, { owner: 'p1', at: 'g', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    return { state, context: { view: publicView(state, 'p1'), memory: emptyMemory(600), rules: TEST_RULES, map, difficulty: TEST_RULES.ai.difficulties.normal }, armyId: army.id, map }
+  }
+
+  it('P8: der gepruefte kuerzere Ausgang geht vor einem laengeren, ungeprueften (hit vor fallback, Zeile 361)', () => {
+    const { state, context, armyId, map: verzweigtMap } = verzweigteHostzone()
+    const visible = context.view.armies.find((a) => a.id === armyId)!
+    const command = guestWithdrawal(context, visible, [])
+    // `a` (eigenes Feld) waere nach der Sortierung (eigene zuerst, H8) der erste Versuch und
+    // besteht `firstBlock` (kein Drittmacht-Feld auf dem Weg) - genau der Fall, den `fallback`
+    // festhaelt. `isClearingPath` lehnt `a` ab (k=2 > least=1); `b` (k=1) besteht und muss der
+    // Befehl sein. Mit vertauschter Praezedenz (`fallback ?? hit`) waere das Ziel `a`.
+    expect(command).toMatchObject({ type: 'MOVE_ARMY', playerId: 'p1', armyId, targetProvinceId: 'b' })
+    const localPhaseCtx = { map: verzweigtMap, rules: TEST_RULES, commands: [], events: [] }
+    ;(command ? [command] : []).forEach((c) => expect(canApply(state, c, localPhaseCtx), JSON.stringify(c)).toEqual({ ok: true }))
+  })
+
+  /**
+   * Eigene Testkarte fuer P9: `g` (Gastfeld) fuehrt per Land ueber `h1` zu `m` (eigenes Feld,
+   * k=1) und per See direkt zu `w` (herrenlos, k=0). `predictLandPath` sagt nie einen Seeweg
+   * voraus (bleibt bei `canUseSea: false`, siehe Kommentar dort) - `w` scheidet deshalb immer
+   * als Befehlsziel aus, auch mit dem Wortlaut-Zwilling. Der Unterschied zeigt sich trotzdem:
+   * `hostFieldsToLeave` zaehlt `w` als das eigentliche Minimum, sobald `useSea` der Armee
+   * entspricht - `m` (k=1) besteht `isClearingPath` dann nicht mehr, und `guestWithdrawal`
+   * faellt auf den Rueckfall zurueck (`hit === null`), was die Begruendung kennzeichnet
+   * ("kürzester Weg nicht vorhersagbar", Zeile 410). Ohne den Zwilling (Befund T-M43-01/mittel)
+   * bliebe `hit = m` und die Begruendung faelschlich unbedingt.
+   */
+  function seetauglicherRueckfall(): { context: AiContext; armyId: string } {
+    const ring: readonly (readonly [number, number])[] = [[0, 0], [1, 0], [0, 1]]
+    const province = (id: string) => ({
+      id,
+      name: id,
+      kind: 'rural' as const,
+      terrain: 'plains' as const,
+      coastal: true,
+      center: { x: 0, y: 0 },
+      population: 1000,
+      deposits: {},
+      polygons: [ring],
+    })
+    const map = parseMap({
+      id: 'seeweg',
+      name: 'Seeweg-Testkarte',
+      width: 10,
+      height: 10,
+      provinces: ['m', 'g', 'h1', 'w', 'z'].map(province),
+      edges: [
+        { a: 'g', b: 'h1', kind: 'land' as const, distanceKm: 50_000, crossing: 'none' as const },
+        { a: 'h1', b: 'm', kind: 'land' as const, distanceKm: 50_000, crossing: 'none' as const },
+        { a: 'g', b: 'w', kind: 'sea' as const, distanceKm: 50_000, crossing: 'none' as const },
+        { a: 'g', b: 'z', kind: 'land' as const, distanceKm: 50_000, crossing: 'none' as const },
+      ],
+      edgesByProvince: { g: [0, 2, 3], h1: [0, 1], m: [1], w: [2], z: [3] },
+      startPositions: [
+        { nation: 'Land', capital: 'm', provinces: ['m'] },
+        { nation: 'Feind', capital: 'z', provinces: ['z'] },
+      ],
+    })
+    const config: GameConfig = {
+      seed: 1,
+      mapId: 'seeweg',
+      rulesId: 'default',
+      players: [
+        { name: 'L', kind: 'ai', nation: 'Land', color: '#111111', difficulty: 'normal' },
+        { name: 'F', kind: 'ai', nation: 'Feind', color: '#222222', difficulty: 'normal' },
+      ],
+      victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
+    }
+    const state = createInitialState(config, { map, rules: TEST_RULES })
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    state.provinces.g!.owner = 'p2'
+    state.provinces.h1!.owner = 'p2'
+    // Reine Transportarmee: keine Landeinheiten, `canUseSea` ist trivial wahr (Kern und Zwilling).
+    const army = placeArmy(state, { owner: 'p1', at: 'g', units: [{ unitKey: 'transport', hpTotal: 1_800 }] })
+    return {
+      context: { view: publicView(state, 'p1'), memory: emptyMemory(600), rules: TEST_RULES, map, difficulty: TEST_RULES.ai.difficulties.normal },
+      armyId: army.id,
+    }
+  }
+
+  it('P9: kein Rueckfall auf einen Landweg, den der Kern nicht als Raeumweg anerkennt (Befund 6, Nacharbeit Etappe 1)', () => {
+    const { context, armyId } = seetauglicherRueckfall()
+    const visible = context.view.armies.find((a) => a.id === armyId)!
+    const explanations: Explanation[] = []
+    const command = guestWithdrawal(context, visible, explanations)
+    // Der Kern kennt `w` (See) als kuerzesten Ausgang (least=0); der vorhergesagte Landweg
+    // ueber `h1` nach `m` durchquert ein Gastfeld (k=1) und ist damit kein Raeumweg mehr -
+    // ein Befehl dorthin waere ab Fristende ein Ueberfall. Die Armee bleibt lieber stehen.
+    expect(command).toBeNull()
+    expect(
+      explanations.some((e) => e.action.includes('bleibt in g') && e.reason.includes('kürzester Weg hinaus nicht vorhersagbar')),
+    ).toBe(true)
+  })
+
+  it('P11: umschliesst die Gastmacht die Armee vollstaendig, findet sie keinen Heimweg (Waechter)', () => {
+    const ring: readonly (readonly [number, number])[] = [[0, 0], [1, 0], [0, 1]]
+    const province = (id: string) => ({
+      id,
+      name: id,
+      kind: 'rural' as const,
+      terrain: 'plains' as const,
+      coastal: false,
+      center: { x: 0, y: 0 },
+      population: 1000,
+      deposits: {},
+      polygons: [ring],
+    })
+    const map = parseMap({
+      id: 'insel',
+      name: 'Umschlossene Testkarte',
+      width: 10,
+      height: 10,
+      provinces: [
+        { ...province('g'), coastal: true },
+        province('h'),
+        { ...province('y'), coastal: true },
+      ],
+      edges: [
+        { a: 'g', b: 'h', kind: 'land' as const, distanceKm: 50_000, crossing: 'none' as const },
+        // Nur eine Seekante verbindet die Gastmacht-Insel mit dem Festland der Armee-Macht
+        // (Kartenvalidierung verlangt Zusammenhang) — die Armee (reine Landeinheiten,
+        // `useSea` falsch) kann sie nicht nutzen: die Insel umschliesst sie vollstaendig.
+        { a: 'g', b: 'y', kind: 'sea' as const, distanceKm: 50_000, crossing: 'none' as const },
+      ],
+      edgesByProvince: { g: [0, 1], h: [0], y: [1] },
+      startPositions: [
+        { nation: 'Land', capital: 'y', provinces: ['y'] },
+        { nation: 'Feind', capital: 'g', provinces: ['g', 'h'] },
+      ],
+    })
+    const config: GameConfig = {
+      seed: 1,
+      mapId: 'insel',
+      rulesId: 'default',
+      players: [
+        { name: 'L', kind: 'ai', nation: 'Land', color: '#111111', difficulty: 'normal' },
+        { name: 'F', kind: 'ai', nation: 'Feind', color: '#222222', difficulty: 'normal' },
+      ],
+      victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
+    }
+    const state = createInitialState(config, { map, rules: TEST_RULES })
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = state.tick
+    // Die Armee (p1, Heimat `y`) steht in `g` (Gastmacht p2); `g`s einziger Landnachbar ist
+    // `h`, ebenfalls Gastmacht, und `h` hat keinen weiteren Landnachbarn — nur eine Seekante
+    // fuehrt hinaus, die reine Landeinheiten nicht nutzen koennen. Kein Ausgang erreichbar.
+    const army = placeArmy(state, { owner: 'p1', at: 'g', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const context: AiContext = {
+      view: publicView(state, 'p1'),
+      memory: emptyMemory(600),
+      rules: TEST_RULES,
+      map,
+      difficulty: TEST_RULES.ai.difficulties.normal,
+    }
+    const visible = context.view.armies.find((a) => a.id === army.id)!
+    const explanations: Explanation[] = []
+    const command = guestWithdrawal(context, visible, explanations)
+    expect(command).toBeNull()
+    expect(explanations.some((e) => e.action.includes('findet keinen Heimweg'))).toBe(true)
+  })
+
+  it('P10: in der laufenden Partie raeumt die KI ohne Ueberfall', () => {
+    const state = dreiMaechte()
+    state.diplomacy.relations['p1|p2']!.state = 'truce'
+    state.diplomacy.relations['p1|p2']!.sinceTick = 0
+    state.provinces.m1!.owner = 'p2'
+    placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 10_000 }] })
+    const result = advanceTicks(state, 3 * ticksPerDay, ctx, {})
+    const surprise = result.events.find((e) => e.type === 'WAR_DECLARED' && e.withoutDeclaration === true)
+    expect(surprise, JSON.stringify(result.events.filter((e) => e.type === 'WAR_DECLARED'))).toBeUndefined()
+    for (const id of Object.keys(result.state.armies)) {
+      const a = result.state.armies[id]!
+      if (a.owner !== 'p1') continue
+      expect(result.state.provinces[a.locationProvinceId]!.owner).not.toBe('p2')
+    }
   })
 })
 

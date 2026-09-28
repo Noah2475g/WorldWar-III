@@ -725,10 +725,11 @@ export function spySummary(ctx: ActionContext, spies: PublicView['espionage']['s
 
 /**
  * Deckt `giveAmount` so, dass `giveAmount * Kurs` innerhalb von Number.MAX_SAFE_INTEGER
- * bleibt, BEVOR exchangeAmount() (packages/core) rechnet — sonst wirft divFixed() dort einen
- * FixedOverflowError (Befund kritisch 1, Nacharbeit T-M17-13/14: ein Zahlfeld ohne `max` im
- * neuen Angebotsformular, derselbe Weg schon laenger im Marktpanel). Eine Vorschau braucht den
- * wahren Wert eines unsinnig grossen Entwurfs nicht, nur `canApply()`/`tradeChecked()` muss ihn
+ * bleibt, bevor exchangeAmount() (packages/core) rechnet (Befund kritisch 1, Nacharbeit
+ * T-M17-13/14: ein Zahlfeld ohne `max` im neuen Angebotsformular, derselbe Weg schon laenger
+ * im Marktpanel). Seit T-M43-03 saettigt exchangeAmount() selbst auf genau diesen Wert und
+ * wirft nie; die Kappung bleibt als zweite Sicherung stehen und aendert kein Ergebnis. Eine
+ * Vorschau braucht den wahren Wert eines unsinnig grossen Entwurfs nicht, nur `canApply()`/`tradeChecked()` muss ihn
  * am Ende ablehnen — deshalb kappt NUR diese Funktion, nie der Befehl selbst (Falle 7: eine
  * Grenze anheben waere ein Fehler, hier wird keine angehoben, nur eine bestehende technische
  * durchgesetzt, bevor sie ueberfahren wird).

@@ -14,6 +14,8 @@ import {
 import { hashValue } from '@worldwar/shared'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
+import { m42Zaehler, type M42Bericht } from './m42-zaehlung'
+import { measurementStamp } from '../../../scripts/freshness.mjs'
 
 /**
  * Das Integrationstor (T-M15-08, R-AI-08, R-AI-01).
@@ -36,6 +38,11 @@ import { DEFAULT_NEW_GAME, toConfig } from '../../desktop/src/game/newGame'
  * Beide Läufe gehen **tageweise** durch `advanceTicks` — dieselbe Partie wie ein einziger
  * Aufruf (`loop.test.ts` belegt den Gleichstand), aber mit einer Stichprobe je Spieltag für
  * die Hauptstadt und die Armeeobjekte je Provinz.
+ *
+ * **Seit T-M42-01** schreibt der Lauf nur noch mit `WORLDWAR_WRITE_REPORT=1` und trägt
+ * `measuredAtCommit`/`measuredDirty` (derselbe Vertrag wie `m17-integration.slow.test.ts`).
+ * Abschnitt `m42` aus `m42-zaehlung.ts`: dieselbe Zaehlung wie dort, hier tageweise statt
+ * tickweise gefuettert (AK-6 vergleicht beide Fenster an derselben Partie).
  */
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
@@ -55,6 +62,21 @@ const rules = parseRules(
 const DAYS = 200
 /** Die zugesagte Länge aus T-M14-11 und T-M14-12. */
 const PRESET_DAYS = 90
+/** Seit T-M42-01: schreibt nur noch auf Verlangen, wie m17-integration.slow.test.ts. */
+const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+/** Stufe des Zaehlmoduls m42 (T-M42-01, §9.2 des Milestone-Plans); ohne den Schalter unbenannt. */
+const STUFE = process.env['WORLDWAR_STAGE'] ?? 'ohne Angabe'
+/** Quellen des Berichts (T-M42-01) — traegt `measuredAtCommit`/`measuredDirty`. */
+const QUELLEN = [
+  'packages/ai/src',
+  'packages/core/src',
+  'packages/shared',
+  'data/rules',
+  'data/maps/world.json',
+  'apps/desktop/src/game/newGame.ts',
+  'apps/headless/test/ai-integration.slow.test.ts',
+  'apps/headless/test/m42-zaehlung.ts',
+]
 
 /** Gibt die Ereignisschleife frei — ein langer synchroner Lauf tötet sonst den Worker (WORKFLOW §4). */
 const breathe = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
@@ -94,6 +116,8 @@ interface Messung {
    * anspart, hebt die KI praktisch nur Infanterie aus. Zahl, keine Zusicherung.
    */
   geldHoechstensJeMacht: Record<string, number>
+  /** Abschnitt m42 (T-M42-01): fehlt beim Zwischenstand (§8 E5), nur `ende` traegt ihn. */
+  m42?: M42Bericht
 }
 
 /**
@@ -105,6 +129,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
   let current = createInitialState(config, { map, rules })
   const ki = new Set(current.playerOrder.filter((id) => current.players[id]!.kind === 'ai'))
   const nation = (id: string): string => current.players[id]!.nation
+  const zaehler = m42Zaehler(rules, ki)
 
   const events: GameEvent[] = []
   const kiBefehle: Command[] = []
@@ -126,6 +151,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     current = chunk.state
     events.push(...chunk.events)
     for (const { command } of chunk.applied) if (ki.has(command.playerId)) kiBefehle.push(command)
+    zaehler.tagesende({ state: current, events: chunk.events, applied: chunk.applied })
     gelaufen = tag + 1
 
     const state = current
@@ -189,6 +215,7 @@ async function spiele(config: GameConfig, tage: number, stichtag?: number): Prom
     hauptstadtStrecke,
     armeeobjekte,
     geldHoechstensJeMacht,
+    m42: zaehler.bericht(),
   }
   return zwischenstand ? { ende, stichtag: zwischenstand } : { ende }
 }
@@ -385,11 +412,15 @@ describe('R-AI-08/AK3 Die KI erzeugt keine Befehle, die der Kern verwirft', () =
     expect(rejected(integration, 'INVALID_TARGET', 'DIPLOMACY').length).toBe(0)
   })
 
-  it('bleibt zahlungsfaehig', () => {
-    // Eine KI, die kein Geld mehr hat, trifft keine Entscheidungen mehr — sie erleidet
-    // nur noch. Das ist die erste Haelfte von AK3.
-    const pleite = integration.events.filter((event) => event.type === 'RESOURCE_SHORTAGE' && event.resource === 'money')
-    expect(pleite.length, `Geldmangel bei ${new Set(pleite.map((e) => e.type === 'RESOURCE_SHORTAGE' && e.playerId)).size} Maechten`).toBe(0)
+  // Fassung nach Noahs Antwort auf Frage 8 (2026-09-26, T-M43-01): eine KI darf durch einen
+  // Provinzverlust in Geldmangel geraten (Befund M42-03-a) — das Tor ist "keine eigene
+  // Aushebung ist schuld", nicht mehr "nie Geldmangel". Die Gesamtzahl bleibt Berichtszahl.
+  it('bleibt zahlungsfaehig, soweit es an ihr liegt (Fassung nach Frage 8)', () => {
+    const jeMacht = Object.values(integration.m42!.jeMacht)
+    const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+    expect(schuld, 'Geldmangel durch eigene Aushebung').toEqual([])
+    const geldmangelTageGesamt = jeMacht.reduce((s, m) => s + m.geldmangelTage, 0)
+    console.log(`Geldmangeltage gesamt (Welt 1815): ${geldmangelTageGesamt}`)
   })
 
   it('befiehlt keine Armee, die sie im selben Zug zusammengelegt hat (T-M41-08)', () => {
@@ -404,21 +435,36 @@ describe('R-AI-08/AK3 Die KI erzeugt keine Befehle, die der Kern verwirft', () =
 })
 
 describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
-  it('schreibt den Bericht — und laesst die Nullen stehen, wo welche sind', () => {
+  it('schreibt ai-integration.json nur auf Verlangen', () => {
     const zahlen = {
       gemessenAm: new Date().toISOString().slice(0, 10),
+      ...measurementStamp(ROOT, QUELLEN),
       ...kennzahlen(integration),
       voreinstellung90: { startzahl: DEFAULT_NEW_GAME.seed, ...kennzahlen(voreinstellung) },
       // Dieselbe Partie bis Tag 200 (Durchsicht Block N2, H1): ob die Feuerautomatik in der Partie lebt,
       // die ein Spieler bekommt — alle Gegner auf "normal". Keine Zusicherung.
       voreinstellung200: { startzahl: DEFAULT_NEW_GAME.seed, ...kennzahlen(voreinstellungLang) },
+      // Abschnitt m42 (T-M42-01): Welt 1815 tageweise (AK-6 vergleicht mit m17-integration.json,
+      // demselben Lauf tickweise), Voreinstellung 200 Tage. Keine Zusicherung, nur Zahlen.
+      m42: { stufe: STUFE, aufgabe: 'T-M42-01', welt1815: integration.m42, voreinstellung200: voreinstellungLang.m42 },
     }
 
-    const dir = fileURLToPath(new URL('../../../docs/reports/', import.meta.url))
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(`${dir}ai-integration.json`, JSON.stringify(zahlen, null, 2) + '\n')
+    if (SCHREIBEN) {
+      const dir = fileURLToPath(new URL('../../../docs/reports/', import.meta.url))
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(`${dir}ai-integration.json`, JSON.stringify(zahlen, null, 2) + '\n')
+    }
 
     expect(zahlen.ereignisse).toBeGreaterThan(1000)
+
+    // Nacharbeit T-M42-01 (Befund 2, hoch): AK-4 verlangt den Abschnitt m42 im Bericht, bisher nur
+    // durch "JSON lesen" (manuell) belegt — kein Test pruefte, ob `zahlen.m42` ueberhaupt existiert
+    // oder Inhalt hat. Ein entfernter `m42`-Eintrag im Objektliteral oben waere unbemerkt geblieben.
+    expect(zahlen.m42.aufgabe).toBe('T-M42-01')
+    expect(zahlen.m42.welt1815, 'kein m42-Abschnitt fuer Welt 1815').toBeDefined()
+    expect(zahlen.m42.welt1815!.tagesenden).toBe(DAYS)
+    expect(zahlen.m42.voreinstellung200, 'kein m42-Abschnitt fuer die Voreinstellung').toBeDefined()
+    expect(zahlen.m42.voreinstellung200!.tagesenden).toBe(DAYS)
   })
 
   // Befund (Nacharbeit T-M17-15, 2026-09-25): `it.fails` deckte bisher DREI Zusicherungen in
@@ -449,6 +495,10 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     // Turnierband (0,760 -> 0,460) sowie `progress.slow.test.ts`. Wird dieser Fall unbemerkt
     // gruen, meldet vitest ihn als fehlgeschlagenes it.fails - das ist dann meldenswert (die
     // Aushebung haette sich geaendert).
+    //
+    // **T-M42-06 (2026-09-27, zweite Messung): auf dem Stand mit Rueckzugsfrist hebt Welt 1815
+    // keine Artillerie aus — bleibt it.fails bis T-M42-07 (K1). Die erste F-Messung (d088fda,
+    // ohne RZ) war zufaellig gruen.**
     const events = integration.events
     const artillerie = events.filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
     const beschuss = events.filter((event) => event.type === 'BOMBARDMENT' && event.automatic)
@@ -524,14 +574,10 @@ describe('T-M14-11 und T-M14-12 · 90 Tage mit der ausgelieferten Voreinstellung
     expect(zahlen().diplomatieAbgelehnt).toBe(0)
   })
 
-  it.fails('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
-    // **it.fails, absichtlich (Befund M17-T7, Entscheid Noah 2026-09-25, an M18).** Der erste
-    // Frieden zwischen KI-Maechten faellt je nach Aushebungs-Variante auf Tag 44, 100, 118, 122,
-    // 175 oder nie (`ersterFriedenZwischenKiTag` im Bericht) - eine Zusage ueber einen
-    // chaotischen Zeitpunkt an einer einzigen Startzahl. Kein Mechanismus-Fehler gefunden:
-    // R-DIP-06/AK4 haelt auf der Weltkarte (3/3/3 Frieden zwischen KI in 200 Tagen, alle drei
-    // Startzahlen, m17-integration.slow.test.ts). Wird dieser Fall unbemerkt gruen, meldet
-    // vitest ihn als fehlgeschlagenes it.fails.
+  it('schliesst mindestens einen Frieden zwischen zwei KI-Maechten (T-M14-12)', () => {
+    // **Seit T-M42-06 gruen** (2026-09-27, Befund M42-06-b): 2 Frieden zwischen KI in 90 Tagen, der
+    // erste an Tag 72. Der Zeitpunkt bleibt chaotisch (frueher Tag 44 bis nie); die Fassung nach
+    // Frage 7 ("in 200 Tagen, drei Startzahlen") traegt T-M42-12.
     expect(zahlen().friedenZwischenKi).toBeGreaterThanOrEqual(1)
   })
 })
@@ -595,4 +641,124 @@ describe('T-M41-11 Die KI befiehlt keine Hauptstadt waehrend der Sperre', () => 
  * stehende Verbände einzulösen, und ist nach seinem Rücknahmekriterium zurückgenommen: dieser Lauf
  * fiel damit auf null Artillerie und null Beschuss, und die Zusage hielt trotzdem nicht. Die Zusage
  * ist mit der Messung nach M18 verschoben (`DECISIONS.md`, `PROBLEME.md`, 2026-09-13).
+ *
+ * Die neu gefasste Zahl (Paare gleicher Rolle, Summe bis stackFullContribution, ueber zwei
+ * Tagesenden) steht seit T-M42-01 unter `m42.*.heer`; zugesichert wird sie erst in T-M42-09.
  */
+
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): kein Geldmangeltag geht auf eine eigene
+// Aushebung zurueck. Ausgangswert vor T-M42-03 (Stufe 0): Kanada 44 von 44 Geldmangeltagen durch
+// Aushebung in der Voreinstellung 200 — das ist der Rot-Nachweis dieses Blocks (die m17-Fassung
+// unten ist auf Stufe 0 schon grün, siehe dort). Die Gesamtzahl aller Geldmangeltage bleibt
+// Berichtszahl (`m42.*.jeMacht.*.geldmangelTage`), ohne eigenes Tor.
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck', () => {
+  it('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const jeMacht = Object.values(messung.m42!.jeMacht)
+      // Lebenszeichen: eine Zaehlung ueber keine Aushebung waere immer null.
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${name}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${name}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
+// R-AI-12/AK2 (T-M42-06, D32.7): in der ausgelieferten Voreinstellung beginnt mindestens die
+// Haelfte der KI-Maechte mit Stadt eine Fabrik. "Mit Stadt" heisst: an mindestens einem
+// Tagesende eine Stadt ohne Fabrik gehalten (`tageStadtOhneFabrik > 0`) — genau die Lage, in der
+// AK1 greift; Kanada (drei Provinzen, keine Stadt) zaehlt nicht mit. Stufe 0: 2 von 6, Stufe R:
+// 4 von 6 (schon gruen, kein eigener Rot-Nachweis).
+describe('R-AI-12/AK2 Die Haelfte der Maechte mit Stadt beginnt eine Fabrik — Voreinstellung 200', () => {
+  it('in der Voreinstellung ueber 200 Spieltage', () => {
+    const jeMacht = Object.values(voreinstellungLang.m42!.jeMacht)
+    const mitStadt = jeMacht.filter((m) => m.tageStadtOhneFabrik > 0 || m.fabrikenBegonnen > 0)
+    const mitFabrik = mitStadt.filter((m) => m.fabrikenBegonnen > 0)
+    expect(mitStadt.length, 'keine Macht mit Stadt - die Zusicherung saehe nichts').toBeGreaterThan(0)
+    expect(
+      mitFabrik.length * 2,
+      `mit Fabrik: ${mitFabrik.map((m) => m.nation).join(', ')} von ${mitStadt.map((m) => m.nation).join(', ')}`,
+    ).toBeGreaterThanOrEqual(mitStadt.length)
+  })
+})
+
+describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
+  it('zaehlt jeden Spieltag', () => {
+    expect(integration.m42!.tagesenden, 'Weltkarte 1815').toBe(DAYS)
+    expect(voreinstellungLang.m42!.tagesenden, 'Voreinstellung 200').toBe(DAYS)
+  })
+
+  it('zwei Zaehlwege, eine Zahl', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const m42 = messung.m42!
+      const k = kennzahlen(messung)
+
+      const summeFabrikenBegonnen = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.fabrikenBegonnen, 0)
+      expect(summeFabrikenBegonnen, `${name}: Summe jeMacht.fabrikenBegonnen`).toBe(k.fabriken)
+
+      const summeAusgehoben: Record<string, number> = {}
+      for (const macht of Object.values(m42.jeMacht)) {
+        for (const [unitKey, count] of Object.entries(macht.ausgehoben)) {
+          summeAusgehoben[unitKey] = (summeAusgehoben[unitKey] ?? 0) + count
+        }
+      }
+      expect(summeAusgehoben, `${name}: Summe ausgehoben je unitKey`).toEqual(k.rekrutiert)
+
+      expect(m42.heer.alteZusage7, `${name}: alteZusage7`).toEqual({
+        stehendHoechstens: k.armeeobjekteJeProvinz.stehendHoechstens,
+        stehendTageUeberDrei: k.armeeobjekteJeProvinz.stehendTageUeberDrei,
+      })
+    }
+  })
+
+  // Nacharbeit T-M42-01 (Befund 1, hoch): die drei Pruefungen oben haengen nur an `events`
+  // (fabrikenBegonnen, ausgehoben, alteZusage7) — keine davon haengt am `applied`-Parameter, den
+  // `zaehler.tagesende(...)` an derselben Stelle im Tageslauf bekommt wie `kiBefehle` (Zeile ~153).
+  // Ein Mutationstest (`applied: []` an die Zaehlung statt `chunk.applied`) blieb bisher GRUEN und
+  // liess `befohlen`, `aushebungsTage`, `geldmangelTageDurchAushebung` u.a. unbemerkt verstummen.
+  // Diese Probe schliesst die Aushebungs-Anschluss-Kette: `befohlen` unabhaengig aus `kiBefehle`
+  // nachgerechnet (derselbe Tageslauf, eine andere Sammelstelle) und `aushebungsTage` als
+  // Lebenszeichen — beide waeren unter der Mutation 0/leer.
+  it('die Aushebungs-Anschluss-Kette lebt (Befund 1, T-M42-01-Nacharbeit)', () => {
+    const laeufe: readonly (readonly [string, Messung])[] = [
+      ['Weltkarte 1815', integration],
+      ['Voreinstellung 200', voreinstellungLang],
+    ]
+    for (const [name, messung] of laeufe) {
+      const m42 = messung.m42!
+
+      const befohlenAusKiBefehle: Record<string, number> = {}
+      for (const command of messung.kiBefehle) {
+        if (command.type !== 'RECRUIT') continue
+        befohlenAusKiBefehle[command.unitKey] = (befohlenAusKiBefehle[command.unitKey] ?? 0) + command.count
+      }
+      const befohlenAusM42: Record<string, number> = {}
+      for (const macht of Object.values(m42.jeMacht)) {
+        for (const [unitKey, count] of Object.entries(macht.befohlen)) {
+          befohlenAusM42[unitKey] = (befohlenAusM42[unitKey] ?? 0) + count
+        }
+      }
+      expect(befohlenAusM42, `${name}: Summe jeMacht.befohlen (aus applied) gegen kiBefehle (eigene Sammelstelle)`).toEqual(
+        befohlenAusKiBefehle,
+      )
+
+      const summeAushebungsTage = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.aushebungsTage, 0)
+      expect(summeAushebungsTage, `${name}: aushebungsTage (haengt allein an applied)`).toBeGreaterThan(0)
+    }
+  })
+
+  it('fuehrt jede KI-Macht (Befund 4, T-M42-01-Nacharbeit)', () => {
+    expect(Object.keys(integration.m42!.jeMacht).length, 'Weltkarte 1815').toBe(integration.ki.size)
+    expect(Object.keys(voreinstellungLang.m42!.jeMacht).length, 'Voreinstellung 200').toBe(voreinstellungLang.ki.size)
+  })
+
+  // Punkt 3 (§3.3): die 22 bestehenden Faelle dieser Datei (beide it.fails eingeschlossen)
+  // bleiben unveraendert — keine Zeile davon ist Teil von T-M42-01.
+})

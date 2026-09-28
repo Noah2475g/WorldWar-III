@@ -19,6 +19,7 @@ import { advanceStep } from './game/advance.ts'
 import { RESUME_SPEED } from './game/speed.ts'
 import { clockStep } from './game/clock.ts'
 import { fastForwardChunk } from './game/fastForward.ts'
+import { clearanceAlerts, clearanceNotices } from './game/clearance.ts'
 import {
   armyActions,
   buildActions,
@@ -833,7 +834,12 @@ export function App(props: AppProps) {
   /** Was gerade Aufmerksamkeit braucht: Kampf, Mangel, Aufstandsgefahr (R-UI-14). */
   const alerts = useMemo(() => {
     const spionageNews = [...news.alerts.values()].sort((a, b) => b.tick - a.tick)
-    const aus = alertsFor(view, props.rules, spionageNews).filter((alert) => {
+    // Raeumfrist (T-M43-02, R-DIP-10/AK5): aus der Sicht abgeleitet, nicht aus einem Ereignis (E1).
+    const raeumung =
+      view && state
+        ? clearanceAlerts(view, clearanceNotices(view, activeMap, props.rules), { army: (id) => state.armies[id]?.name ?? id }, ticksPerDay)
+        : []
+    const aus = alertsFor(view, props.rules, spionageNews, raeumung).filter((alert) => {
       const weggeklickt = dismissedAlerts.get(alert.id)
       if (weggeklickt === undefined || !view) return true
       // Nur am selben Spieltag und nicht vor dem Klick (T-M41-12).
@@ -846,7 +852,7 @@ export function App(props: AppProps) {
       aus.unshift({ id: 'storage:volatile', kind: 'shortage', icon: 'warning', text: chosen.warning })
     }
     return aus
-  }, [view, chosen, props.rules, dismissedAlerts, ticksPerDay, news])
+  }, [view, state, activeMap, chosen, props.rules, dismissedAlerts, ticksPerDay, news])
 
   /** Wo gerade gekaempft wird — so weit der Spieler es sehen darf (R-DIP-04). */
   const battleProvinces = useMemo(() => (view?.battles ?? []).map((battle) => battle.provinceId), [view])
@@ -1259,7 +1265,12 @@ export function App(props: AppProps) {
    */
   const jumpToTarget = useCallback(
     (target: JumpTarget) => {
-      if (target.kind === 'province') jumpTo(target.provinceId)
+      if (target.kind === 'army') {
+        // Erst die Karte (T-M43-02): `selectProvince` loescht die Armeewahl, also muss sie
+        // danach kommen, sonst waehlt der Sprung nichts.
+        jumpTo(target.provinceId)
+        dispatch({ type: 'selectArmy', id: target.armyId })
+      } else if (target.kind === 'province') jumpTo(target.provinceId)
       else dispatch({ type: 'focusDiplomacy', playerId: target.playerId })
     },
     [jumpTo],

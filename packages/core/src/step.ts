@@ -18,7 +18,7 @@ import { upkeep } from './phases/upkeep'
 import { PHASE_ORDER, type Phase, type PhaseContext, type PhaseName } from './phases/index'
 import type { Rules } from './rules/types'
 import { cloneState } from './state/clone'
-import type { GameState, MapData } from './state/types'
+import type { ArmyId, GameState, MapData, Tick } from './state/types'
 
 export { PHASE_ORDER } from './phases/index'
 export type { PhaseName } from './phases/index'
@@ -81,6 +81,8 @@ export function step(
     rules: ctx.rules,
     commands,
     events,
+    crossedBorder: new Map<ArmyId, Tick>(),
+    bombardedThisTick: new Set<ArmyId>(),
   }
 
   for (const name of PHASE_ORDER) {

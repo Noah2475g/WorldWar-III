@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { advanceTicks } from '@worldwar/ai'
 import {
   createInitialState,
+  HASH_OMIT_KEYS,
   parseRules,
   type Command,
   type GameConfig,
@@ -13,6 +14,7 @@ import {
 import { hashValue } from '@worldwar/shared'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { measurementStamp } from '../../../scripts/freshness.mjs'
+import { m42Zaehler, type M42Bericht } from './m42-zaehlung'
 
 /**
  * T-M17-15, R-AI-09/AK1 bis AK4: dasselbe Integrationstor wie `ai-integration.slow.test.ts`
@@ -50,7 +52,11 @@ const rules = parseRules(
 
 const DAYS = 200
 const STARTZAHLEN = [1815, 1914, 2015] as const
+/** T-M43-04: diese Startzahl wird als letzte Partie der Datei ein zweites Mal von Grund auf gespielt. */
+const WIEDERHOLUNG = 1914
 const SCHREIBEN = process.env['WORLDWAR_WRITE_REPORT'] === '1'
+/** Stufe des Zaehlmoduls m42 (T-M42-01, §9.2 des Milestone-Plans); ohne den Schalter unbenannt. */
+const STUFE = process.env['WORLDWAR_STAGE'] ?? 'ohne Angabe'
 /** Quellen des Berichts (T-M17-15, §4.5) — traegt `measuredAtCommit`/`measuredDirty` fuer M18 (Befund M17-2). */
 const QUELLEN = [
   'packages/ai/src',
@@ -59,6 +65,7 @@ const QUELLEN = [
   'data/rules',
   'data/maps/world.json',
   'apps/headless/test/m17-integration.slow.test.ts',
+  'apps/headless/test/m42-zaehlung.ts',
 ]
 
 /** Gibt die Ereignisschleife frei — ein langer synchroner Lauf toetet sonst den Worker (WORKFLOW §4). */
@@ -93,6 +100,12 @@ interface Ueberfall {
   nachKuendigung: boolean
   /** Ein PROVINCE_CEDED an das Opfer lag hoechstens 72 Ticks zurueck (M17-D5). */
   nachAbtretung: boolean
+  /** Ein ARMY_RETREATED des Taeters in eine Provinz des Opfers im selben Tag (T-M43-01, Frage U). */
+  nachRueckzug: boolean
+  /** Die Provinz, in der eine Taeterarmee steht, gehoert dem Opfer seit hoechstens 24 Ticks — der
+   *  Taeter marschierte auf ein Ziel zu, das unterwegs einer friedlichen Macht zufiel (T-M43-01,
+   *  M17-T5-Klasse, §7.4). */
+  zielwechsel: boolean
   erklaerungLief: boolean
 }
 
@@ -134,6 +147,14 @@ function einordnen(
   const nachKuendigung = kuendigungen.some((entry) => entry.playerId === opfer && entry.targetPlayerId === taeter)
   const nachAbtretung = abtretungen.some((entry) => entry.newOwner === opfer && after.tick - entry.tick <= 72)
 
+  const nachRueckzug = events.some(
+    (event) => event.type === 'ARMY_RETREATED' && event.playerId === taeter && before.provinces[event.toProvinceId]?.owner === opfer,
+  )
+  const zielwechsel = armeen.some((army) => {
+    const occupiedSince = after.provinces[army.locationProvinceId]?.occupiedSince
+    return occupiedSince !== null && occupiedSince !== undefined && after.tick - occupiedSince <= 24
+  })
+
   return {
     tick: after.tick,
     taeter: nation(taeter),
@@ -142,6 +163,8 @@ function einordnen(
     friedensschluss,
     nachKuendigung,
     nachAbtretung,
+    nachRueckzug,
+    zielwechsel,
     erklaerungLief: relationOf(before, taeter, opfer)?.warEffectiveAtTick != null,
   }
 }
@@ -195,9 +218,23 @@ interface Lauf {
    * reason+alternative gedeckt.
    */
   ak4Buckets: { tick: number; playerId: string; art: string; befehle: number; gedeckt: number }[]
+  /** Abschnitt m42 (T-M42-01): nur fuer die Laeufe MIT Antraegen (§8 E5), tickweise gefuettert. */
+  m42?: M42Bericht
+  /**
+   * T-M43-04: Pruefsumme des Zustands am Ende jedes Spieltags, wie der Mehrspieler sie vergleicht
+   * (`HASH_OMIT_KEYS`, also samt KI-Gedaechtnis) - nur mit `tageshashes`.
+   */
+  zustandJeTag?: string[]
+  /** T-M43-04: Pruefsumme der Ereignisse jedes Spieltags - das Protokoll steht nicht im Zustandshash. */
+  ereignisseJeTag?: string[]
 }
 
-async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): Promise<Lauf> {
+async function spiele(
+  startzahl: number,
+  mitAntraegen: boolean,
+  tage: number,
+  optionen: { tageshashes?: boolean } = {},
+): Promise<Lauf> {
   let current = createInitialState(integrationConfig(startzahl), { map, rules })
   const ki = new Set(current.playerOrder.filter((id) => current.players[id]!.kind === 'ai'))
 
@@ -208,6 +245,9 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
   const ak4Buckets: Lauf['ak4Buckets'] = []
   const kuendigungen: { playerId: string; targetPlayerId: string }[] = []
   const abtretungen: { tick: number; newOwner: string }[] = []
+  const zaehler = mitAntraegen ? m42Zaehler(rules, ki) : null
+  const zustandJeTag: string[] = []
+  const ereignisseJeTag: string[] = []
 
   const withhold = mitAntraegen
     ? undefined
@@ -215,11 +255,15 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
 
   let gelaufen = 0
   for (let tag = 0; tag < tage; tag++) {
+    const tagEvents: GameEvent[] = []
+    const tagApplied: { command: Command }[] = []
     for (let stunde = 0; stunde < rules.constants.ticksPerDay; stunde++) {
       const before = current
       const chunk = advanceTicks(current, 1, { map, rules }, { explain: true, ...(withhold ? { withhold } : {}) })
       current = chunk.state
       events.push(...chunk.events)
+      tagEvents.push(...chunk.events)
+      tagApplied.push(...chunk.applied)
       withheld.push(...chunk.withheld)
 
       // AK4: nur die KI-Befehle DIESES Ticks (tick.ai vor der Anwendung), nach Macht UND Art
@@ -260,12 +304,30 @@ async function spiele(startzahl: number, mitAntraegen: boolean, tage: number): P
 
       if (current.victory.winner !== null) break
     }
+    zaehler?.tagesende({ state: current, events: tagEvents, applied: tagApplied })
+    if (optionen.tageshashes) {
+      zustandJeTag.push(hashValue(current, { omitKeys: HASH_OMIT_KEYS }))
+      ereignisseJeTag.push(hashValue(tagEvents))
+    }
     gelaufen = tag + 1
     if (current.victory.winner !== null) break
     await breathe()
   }
 
-  return { startzahl, mitAntraegen, tage: gelaufen, events, final: current, ki, kiBefehle, withheld, ueberfaelle, ak4Buckets }
+  return {
+    startzahl,
+    mitAntraegen,
+    tage: gelaufen,
+    events,
+    final: current,
+    ki,
+    kiBefehle,
+    withheld,
+    ueberfaelle,
+    ak4Buckets,
+    ...(zaehler ? { m42: zaehler.bericht() } : {}),
+    ...(optionen.tageshashes ? { zustandJeTag, ereignisseJeTag } : {}),
+  }
 }
 
 type Rejected = Extract<GameEvent, { type: 'COMMAND_REJECTED' }>
@@ -338,6 +400,8 @@ function kennzahlen(lauf: Lauf) {
     ueberfaelleMitFriedensschluss: lauf.ueberfaelle.filter((entry) => entry.friedensschluss).length,
     ueberfaelleNachKuendigung: lauf.ueberfaelle.filter((entry) => entry.nachKuendigung).length,
     ueberfaelleNachAbtretung: lauf.ueberfaelle.filter((entry) => entry.nachAbtretung).length,
+    ueberfaelleNachRueckzug: lauf.ueberfaelle.filter((entry) => entry.nachRueckzug).length,
+    ueberfaelleZielwechsel: lauf.ueberfaelle.filter((entry) => entry.zielwechsel).length,
     frieden: truce.length,
     friedenZwischenKi: truce.filter((event) => ki.has(event.playerId) && ki.has(event.targetPlayerId)).length,
     geldmangelKi: geldmangel.length,
@@ -354,20 +418,76 @@ function kennzahlen(lauf: Lauf) {
   }
 }
 
+/** Merkmale der Ueberfaelle eines Laufs, fuer den Abschnitt m42 (T-M42-01). */
+function ueberfaelleMerkmale(lauf: Lauf): {
+  gesamt: number
+  friedensschluss: number
+  nachKuendigung: number
+  nachAbtretung: number
+  nachRueckzug: number
+  zielwechsel: number
+  durchmarsch: number
+} {
+  return {
+    gesamt: lauf.ueberfaelle.length,
+    friedensschluss: lauf.ueberfaelle.filter((entry) => entry.friedensschluss).length,
+    nachKuendigung: lauf.ueberfaelle.filter((entry) => entry.nachKuendigung).length,
+    nachAbtretung: lauf.ueberfaelle.filter((entry) => entry.nachAbtretung).length,
+    nachRueckzug: lauf.ueberfaelle.filter((entry) => entry.nachRueckzug).length,
+    zielwechsel: lauf.ueberfaelle.filter((entry) => entry.zielwechsel).length,
+    durchmarsch: lauf.ueberfaelle.filter((entry) => entry.art === 'durchmarsch').length,
+  }
+}
+
 const laeufeMit = new Map<number, Lauf>()
 const laeufeOhne = new Map<number, Lauf>()
+let wiederholung: Lauf | undefined
 
 beforeAll(async () => {
   for (const startzahl of STARTZAHLEN) {
-    laeufeMit.set(startzahl, await spiele(startzahl, true, DAYS))
+    laeufeMit.set(startzahl, await spiele(startzahl, true, DAYS, { tageshashes: startzahl === WIEDERHOLUNG }))
     await breathe()
     laeufeOhne.set(startzahl, await spiele(startzahl, false, DAYS))
     await breathe()
   }
+  // T-M43-04: als LETZTE Partie, nach allen sechs - was eine Partie in Modulen hinterlaesst
+  // (Caches in espionage.ts, passage.ts, relationship.ts), traefe hier die Wiederholung.
+  wiederholung = await spiele(WIEDERHOLUNG, true, DAYS, { tageshashes: true })
 }, 1_800_000)
 
 const mit = (startzahl: number): Lauf => laeufeMit.get(startzahl)!
 const ohne = (startzahl: number): Lauf => laeufeOhne.get(startzahl)!
+const zweitlauf = (): Lauf => wiederholung!
+
+/** Der erste Tag (Index), an dem zwei Hashfolgen auseinandergehen, oder -1. Ungleiche Laenge zaehlt als Abweichung. */
+function ersteAbweichung(a: readonly string[], b: readonly string[]): number {
+  const n = Math.max(a.length, b.length)
+  for (let i = 0; i < n; i++) if (a[i] !== b[i]) return i
+  return -1
+}
+
+/** Oberste Zustandsfelder, deren Pruefsumme am Ende abweicht - sagt bei Rot, WO (z. B. nur `ai`). */
+function abweichendeFelder(a: GameState, b: GameState): string[] {
+  const x = a as unknown as Record<string, unknown>
+  const y = b as unknown as Record<string, unknown>
+  return [...new Set([...Object.keys(x), ...Object.keys(y)])]
+    .filter((key) => !HASH_OMIT_KEYS.includes(key))
+    .sort()
+    .filter((key) => hashValue(x[key] ?? null) !== hashValue(y[key] ?? null))
+}
+
+/** Das erste Ereignis, in dem zwei Laeufe sich unterscheiden, mit Art und Tick beider Seiten. */
+function erstesAbweichendesEreignis(a: readonly GameEvent[], b: readonly GameEvent[]): string {
+  const n = Math.max(a.length, b.length)
+  for (let i = 0; i < n; i++) {
+    const x = a[i]
+    const y = b[i]
+    if (x === undefined || y === undefined || hashValue(x) !== hashValue(y)) {
+      return `Ereignis ${i}: ${x ? `${x.type}@${x.tick}` : 'fehlt'} gegen ${y ? `${y.type}@${y.tick}` : 'fehlt'}`
+    }
+  }
+  return 'kein Ereignis weicht ab'
+}
 
 const baseline = load('docs/reports/m17-baseline.json') as {
   ueberfaelleOhneKriegserklaerung: number
@@ -484,11 +604,69 @@ describe('R-AI-09/AK2 Kein Befehl ins Blaue, kein Geldmangel', () => {
     }
   })
 
-  it('laesst keine KI-Macht Geldmangel erleiden', () => {
+  // Fassung nach Noahs Antwort auf Frage 8 (2026-09-26, T-M43-01): das Tor ist "kein
+  // Geldmangeltag geht auf eine eigene Aushebung zurueck", nicht mehr "kein Geldmangeltag
+  // ueberhaupt" — ein Provinzverlust darf einer Macht Geld nehmen, ohne dass ihre eigene
+  // Aushebung schuld ist (Befund M42-03-a, E5). Zwei Zaehlwege gegeneinander: das
+  // RESOURCE_SHORTAGE-Ereignis (Beginn des Mangels) und m42.geldmangelTage (jeder Mangeltag).
+  it('laesst keine KI-Macht Geldmangel durch eigene Aushebung erleiden (Fassung nach Frage 8)', () => {
     for (const startzahl of STARTZAHLEN) {
       const lauf = mit(startzahl)
+      const jeMacht = Object.values(lauf.m42!.jeMacht)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${startzahl}: Geldmangel durch eigene Aushebung`).toEqual([])
+
       const mangel = lauf.events.filter((event) => event.type === 'RESOURCE_SHORTAGE' && event.resource === 'money' && lauf.ki.has(event.playerId))
-      expect(mangel.length, `${startzahl}: ${JSON.stringify(mangel.slice(0, 3))}`).toBe(0)
+      if (mangel.length > 0) {
+        const geldmangelTageGesamt = jeMacht.reduce((s, m) => s + m.geldmangelTage, 0)
+        expect(geldmangelTageGesamt, `${startzahl}: RESOURCE_SHORTAGE money gemeldet, aber m42 zaehlt keinen Mangeltag`).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
+// Fassung nach Noahs Antwort auf Frage 8 (2026-09-26): dasselbe Tor wie in
+// ai-integration.slow.test.ts, hier ueber die Weltkarte und drei Startzahlen. Auf Stufe 0 schon
+// gruen (0/0/0 Geldmangel) — der Rot-Nachweis fuer die Regel steht in ai-integration.slow.test.ts
+// (Voreinstellung, Kanada 44); diese Zusicherung ist ehrlich ohne eigenen Rot-Nachweis (§9 E12).
+describe('R-AI-11/AK3 Kein Geldmangeltag geht auf eine eigene Aushebung zurueck — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeMacht = Object.values(mit(startzahl).m42!.jeMacht)
+      expect(jeMacht.reduce((s, m) => s + m.aushebungsTage, 0), `${startzahl}: keine Aushebung gezaehlt`).toBeGreaterThan(0)
+      const schuld = jeMacht.filter((m) => m.geldmangelTageDurchAushebung > 0).map((m) => `${m.nation} ${m.geldmangelTageDurchAushebung}`)
+      expect(schuld, `${startzahl}: Geldmangel durch eigene Aushebung`).toEqual([])
+    }
+  })
+})
+
+// R-DIP-10/AK4 (T-M43-01): die Raeumfrist und der Raeumweg sollen genau die Ueberfaelle
+// wegnehmen, die ein Friedensschluss (M17-T6), ein Buendnisbruch (M17-G4) oder eine
+// abgelaufene Kuendigung (M17-D10) sonst aus einer stehenden oder heimkehrenden Armee
+// machen. Die ohne-Laeufe sind der M17-Gegenlauf mit absichtlich zurueckgehaltenen
+// Antraegen, keine ausgelieferte KI (§1.3 Nr. 7) — ihre Zahl steht im Bericht, nicht im Tor.
+describe('R-DIP-10/AK4 Kein Ueberfall aus Frieden oder Kuendigung — Weltkarte, drei Startzahlen', () => {
+  it('in den mit-Laeufen null, die ohne-Laeufe stehen im Bericht', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const treffer = mit(startzahl).ueberfaelle.filter((entry) => entry.friedensschluss || entry.nachKuendigung)
+      expect(treffer, `${startzahl}: ${JSON.stringify(treffer)}`).toEqual([])
+
+      const ohneTreffer = ohne(startzahl).ueberfaelle.filter((entry) => entry.friedensschluss || entry.nachKuendigung)
+      console.log(`R-DIP-10/AK4 ohne-Lauf ${startzahl}: ${ohneTreffer.length} Ueberfaelle aus Frieden/Kuendigung`)
+    }
+  })
+})
+
+// R-AI-12/AK2 (T-M42-06, D32.7): "Erst die Fabrik". Stufe 0: "normal" und "schwer" begannen in
+// keiner der drei Startzahlen eine Fabrik (nur "leicht": 92/63/64). Gezaehlt `BUILD_STARTED
+// factory` je Stufe aus dem Abschnitt m42 (mit-Laeufe, die ausgelieferte KI).
+describe('R-AI-12/AK2 Jede Stufe beginnt eine Fabrik — Weltkarte, drei Startzahlen', () => {
+  it('in jeder Startzahl beginnt jede Stufe mindestens eine Fabrik', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const jeStufe = mit(startzahl).m42!.jeStufe
+      for (const stufe of ['easy', 'normal', 'hard'] as const) {
+        expect(jeStufe[stufe]?.fabrikenBegonnen ?? 0, `${startzahl} ${stufe}: keine Fabrik begonnen`).toBeGreaterThanOrEqual(1)
+      }
     }
   })
 })
@@ -576,6 +754,126 @@ describe('R-DIP-09 Provinzhandel wird gezaehlt, nicht zugesichert (T-M17-11)', (
   })
 })
 
+describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
+  it('zaehlt jeden Spieltag', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      expect(lauf.m42, `${startzahl}: kein m42-Abschnitt`).toBeDefined()
+      expect(lauf.m42!.tagesenden, `${startzahl}`).toBe(lauf.tage)
+    }
+  })
+
+  it('zwei Zaehlwege, eine Zahl', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+
+      const summeUeberfaelle = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.ueberfaelle, 0)
+      expect(summeUeberfaelle, `${startzahl}: Summe jeMacht.ueberfaelle`).toBe(lauf.ueberfaelle.length)
+
+      const kriegeImStrom = lauf.events.filter((event) => event.type === 'WAR_DECLARED').length
+      expect(m42.krieg.kriege, `${startzahl}: krieg.kriege`).toBe(kriegeImStrom)
+
+      const artillerieImStrom = lauf.events
+        .filter((event) => event.type === 'UNIT_RECRUITED' && event.unitKey === 'artillery')
+        .reduce((sum, event) => sum + (event as Extract<GameEvent, { type: 'UNIT_RECRUITED' }>).count, 0)
+      const summeAusgehobenArtillerie = Object.values(m42.jeMacht).reduce((sum, macht) => sum + (macht.ausgehoben['artillery'] ?? 0), 0)
+      expect(summeAusgehobenArtillerie, `${startzahl}: Summe ausgehoben.artillery`).toBe(artillerieImStrom)
+
+      expect(ueberfaelleMerkmale(lauf).friedensschluss, `${startzahl}: ueberfaelleMerkmale.friedensschluss`).toBe(
+        kennzahlen(lauf).ueberfaelleMitFriedensschluss,
+      )
+    }
+  })
+
+  it('fuehrt jede KI-Macht', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      expect(Object.keys(lauf.m42!.jeMacht).length, `${startzahl}`).toBe(8)
+    }
+  })
+
+  // Nacharbeit T-M42-01 (Befund 1, hoch): dieselbe Luecke wie in ai-integration.slow.test.ts — die
+  // drei Pruefungen von "zwei Zaehlwege, eine Zahl" oben haengen nur an `events`, keine an `applied`.
+  // Ein Mutationstest (`applied: []` an die Zaehlung statt `tagApplied`) blieb bisher GRUEN. `kiBefehle`
+  // sammelt (Zeile ~239) aus derselben `chunk.applied`-Quelle wie die Zaehlung (Zeile ~274), aber in
+  // einer eigenen, vom `applied`-Parameter unabhaengigen Sammelstelle — daher die Gegenprobe.
+  it('die Aushebungs-Anschluss-Kette lebt (Befund 1, T-M42-01-Nacharbeit)', () => {
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+
+      const befohlenAusKiBefehle: Record<string, number> = {}
+      for (const command of lauf.kiBefehle) {
+        if (command.type !== 'RECRUIT') continue
+        befohlenAusKiBefehle[command.unitKey] = (befohlenAusKiBefehle[command.unitKey] ?? 0) + command.count
+      }
+      const befohlenAusM42: Record<string, number> = {}
+      for (const macht of Object.values(m42.jeMacht)) {
+        for (const [unitKey, count] of Object.entries(macht.befohlen)) {
+          befohlenAusM42[unitKey] = (befohlenAusM42[unitKey] ?? 0) + count
+        }
+      }
+      expect(befohlenAusM42, `${startzahl}: Summe jeMacht.befohlen (aus applied) gegen kiBefehle`).toEqual(befohlenAusKiBefehle)
+
+      const summeAushebungsTage = Object.values(m42.jeMacht).reduce((sum, macht) => sum + macht.aushebungsTage, 0)
+      expect(summeAushebungsTage, `${startzahl}: aushebungsTage (haengt allein an applied)`).toBeGreaterThan(0)
+    }
+  })
+})
+
+/**
+ * T-M43-04: der Wiederholungslauf als Zusicherung. Bisher nur einmal von Hand nachgestellt
+ * (Durchsicht des Zusammenspiels, 2026-09-25, PROBLEME.md). Determinismus ist die Grundlage des
+ * Mehrspielers: beide Rechner spielen dieselbe Partie und vergleichen die Pruefsumme.
+ *
+ * Startzahl 1914, dieselbe Partie ein zweites Mal von Grund auf (`createInitialState`, dieselbe
+ * Karte, dieselben Regeln), als letzte der sieben Partien dieser Datei. Verglichen werden zwei
+ * Folgen zu je 200 Tagen, weil jede allein eine Luecke hat: der Zustandshash des Mehrspielers
+ * laesst das Protokoll aus (`HASH_OMIT_KEYS`), die Ereignisse sehen das KI-Gedaechtnis nicht.
+ * `zustandOhneKi` im Bericht sieht das KI-Gedaechtnis ebenfalls nicht - darum nicht der.
+ *
+ * Was dieser Lauf NICHT prueft: zwei Prozesse oder zwei Rechner (Node-Version, Betriebssystem).
+ */
+describe('T-M43-04 Der Wiederholungslauf - Startzahl 1914 zweimal von Grund auf', () => {
+  it('ist eine zweite, eigene Partie ueber alle Spieltage', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    expect(zweit).not.toBe(erst)
+    expect(zweit.final).not.toBe(erst.final)
+    for (const lauf of [erst, zweit]) {
+      expect(lauf.tage).toBe(DAYS)
+      expect(lauf.zustandJeTag).toHaveLength(DAYS)
+      expect(lauf.ereignisseJeTag).toHaveLength(DAYS)
+    }
+    // Nicht leer gruen: der Tick steht im Zustand, also hat jeder Tag seinen eigenen Hash.
+    expect(new Set(erst.zustandJeTag).size).toBe(DAYS)
+    expect(new Set(erst.ereignisseJeTag).size).toBeGreaterThan(1)
+  })
+
+  it('200 Tageshashes gleich - Zustand samt KI-Gedaechtnis und Ereignisse', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    const tagZustand = ersteAbweichung(erst.zustandJeTag!, zweit.zustandJeTag!)
+    const tagEreignisse = ersteAbweichung(erst.ereignisseJeTag!, zweit.ereignisseJeTag!)
+    const befund =
+      tagZustand === -1 && tagEreignisse === -1
+        ? ''
+        : `Zustand weicht ab Tag-Index ${tagZustand} ab, Ereignisse ab Tag-Index ${tagEreignisse}; ` +
+          `Felder am Ende: ${abweichendeFelder(erst.final, zweit.final).join(', ') || 'keine'}; ` +
+          erstesAbweichendesEreignis(erst.events, zweit.events)
+    expect(tagZustand, befund).toBe(-1)
+    expect(tagEreignisse, befund).toBe(-1)
+  })
+
+  it('zaehlt in beiden Laeufen dieselben Kennzahlen (zweites Werkzeug)', () => {
+    const erst = mit(WIEDERHOLUNG)
+    const zweit = zweitlauf()
+    expect(kennzahlen(zweit)).toEqual(kennzahlen(erst))
+    expect(zweit.m42).toEqual(erst.m42)
+  })
+})
+
 describe('R-AI-09 Der Bericht', () => {
   it('schreibt m17-integration.json nur auf Verlangen', () => {
     const laeufe: Record<string, { mitAntraegen: ReturnType<typeof kennzahlen>; ohneAntraege: ReturnType<typeof kennzahlen> }> = {}
@@ -589,6 +887,51 @@ describe('R-AI-09 Der Bericht', () => {
       summeBewegbarOhne += ohne(startzahl).ueberfaelle.filter((entry) => entry.art === 'durchmarsch' || entry.nachKuendigung).length
     }
 
+    const m42Laeufe: Record<string, M42Bericht & { ueberfaelleMerkmale: ReturnType<typeof ueberfaelleMerkmale> }> = {}
+    let artillerieAusgehoben = 0
+    let beschuss = 0
+    let fabrikenBegonnen = 0
+    let geldmangelTage = 0
+    let geldmangelTageDurchAushebung = 0
+    let geldmangelTageNachProvinzverlust = 0
+    let oelmangelTage = 0
+    let verpassteGelegenheiten = 0
+    let paareUeberZweiTagesenden = 0
+    let ueberfaelleFriedensschlussOderKuendigung = 0
+    const maechteMitArtillerieJeLauf: Record<string, number> = {}
+    for (const startzahl of STARTZAHLEN) {
+      const lauf = mit(startzahl)
+      const m42 = lauf.m42!
+      m42Laeufe[String(startzahl)] = { ...m42, ueberfaelleMerkmale: ueberfaelleMerkmale(lauf) }
+
+      // Befund 11 (T-M42-01-Nacharbeit, niedrig): nach Klasse summieren (E9), nicht nur den
+      // Schluessel 'artillery' — rocket_artillery (Klasse artillery, ab Tag 80) faellt sonst
+      // heraus. Heute folgenlos (TARGET_MIX kennt nur 'artillery'), aendert TARGET_MIX das, saehe
+      // die alte Fassung die Raketenartillerie nicht.
+      const artillerieSchluessel = (ausgehoben: Record<string, number>): number =>
+        Object.entries(ausgehoben).reduce(
+          (sum, [unitKey, count]) => (rules.units[unitKey]?.class === 'artillery' ? sum + count : sum),
+          0,
+        )
+      for (const macht of Object.values(m42.jeMacht)) {
+        artillerieAusgehoben += artillerieSchluessel(macht.ausgehoben)
+        fabrikenBegonnen += macht.fabrikenBegonnen
+        geldmangelTage += macht.geldmangelTage
+        geldmangelTageDurchAushebung += macht.geldmangelTageDurchAushebung
+        geldmangelTageNachProvinzverlust += macht.geldmangelTageNachProvinzverlust
+        oelmangelTage += macht.oelmangelTage
+        verpassteGelegenheiten += macht.verpassteGelegenheiten
+      }
+      beschuss += m42.truppen.beschuss
+      paareUeberZweiTagesenden += m42.heer.paareUeberZweiTagesenden
+      ueberfaelleFriedensschlussOderKuendigung += lauf.ueberfaelle.filter(
+        (entry) => entry.friedensschluss || entry.nachKuendigung,
+      ).length
+      maechteMitArtillerieJeLauf[String(startzahl)] = Object.values(m42.jeMacht).filter(
+        (macht) => artillerieSchluessel(macht.ausgehoben) > 0,
+      ).length
+    }
+
     const zahlen = {
       gemessenAm: new Date().toISOString().slice(0, 10),
       ...measurementStamp(ROOT, QUELLEN),
@@ -597,6 +940,32 @@ describe('R-AI-09 Der Bericht', () => {
       ausgangswert: { datei: 'm17-baseline.json', ...baseline },
       laeufe,
       ak3: { summeBewegbarMit, summeBewegbarOhne },
+      wiederholungslauf: {
+        aufgabe: 'T-M43-04',
+        startzahl: WIEDERHOLUNG,
+        spieltage: zweitlauf().tage,
+        ersteAbweichungZustand: ersteAbweichung(mit(WIEDERHOLUNG).zustandJeTag!, zweitlauf().zustandJeTag!),
+        ersteAbweichungEreignisse: ersteAbweichung(mit(WIEDERHOLUNG).ereignisseJeTag!, zweitlauf().ereignisseJeTag!),
+        zustandsHashLetzterTag: mit(WIEDERHOLUNG).zustandJeTag!.at(-1) ?? null,
+      },
+      m42: {
+        stufe: STUFE,
+        aufgabe: 'T-M42-01',
+        laeufe: m42Laeufe,
+        summe: {
+          artillerieAusgehoben,
+          beschuss,
+          fabrikenBegonnen,
+          geldmangelTage,
+          geldmangelTageDurchAushebung,
+          geldmangelTageNachProvinzverlust,
+          oelmangelTage,
+          verpassteGelegenheiten,
+          paareUeberZweiTagesenden,
+          ueberfaelleFriedensschlussOderKuendigung,
+          maechteMitArtillerieJeLauf,
+        },
+      },
     }
 
     if (SCHREIBEN) {
@@ -607,5 +976,13 @@ describe('R-AI-09 Der Bericht', () => {
 
     expect(zahlen.laeufe['1815']!.mitAntraegen.ereignisse).toBeGreaterThan(1000)
     expect(Object.keys(zahlen.laeufe).sort()).toEqual(['1815', '1914', '2015'])
+
+    // Nacharbeit T-M42-01 (Befund 2, hoch): AK-3 verlangt den Abschnitt m42 im Bericht, bisher nur
+    // durch "JSON lesen" (manuell) belegt.
+    expect(zahlen.m42.aufgabe).toBe('T-M42-01')
+    expect(Object.keys(zahlen.m42.laeufe).sort()).toEqual(['1815', '1914', '2015'])
+    for (const startzahl of STARTZAHLEN) {
+      expect(zahlen.m42.laeufe[String(startzahl)]!.tagesenden, `${startzahl}`).toBe(DAYS)
+    }
   })
 })

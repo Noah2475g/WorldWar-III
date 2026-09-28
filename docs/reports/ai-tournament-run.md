@@ -1,17 +1,17 @@
 # KI-Turnier — letzter Lauf
 
-Erzeugt von `pnpm test:slow` am 2026-09-25.
+Erzeugt von `pnpm test:slow` am 2026-09-27.
 Je 150 Partien je Paarung, 40 Spieltage; drei Mächte reihum (Nordland/Ostmark/Sueden),
 der Dritte als Füller auf „normal"; Startzahlen 1000–1024 je Aufstellung, Stufen je
 Paar getauscht.
 
-Gemessen auf: 527425c887a17c0451f223814498e31a4d63aa88 (Quellen sauber)
+Gemessen auf: 669b105297763d663b03071d8fec7110ddd51bff (Quellen sauber)
 
 | Paarung | Siege A | Siege B | Unentschieden | Siegquote A | Kriegserklärungen (schwer) | Friedensschlüsse (schwer) | Überfälle | verschiedene Ausgänge | Siege je Nation |
 |---|---|---|---|---|---|---|---|---|---|
-| schwer gegen leicht, im Krieg | 52 | 0 | 23 | 85 % | 255 | 120 | 8 | 59 | Nordland 50 · Ostmark 73 · Sueden 27 |
-| schwer gegen normal, im Frieden | 39 | 0 | 36 | 76 % | 754 | 478 | 74 | 110 | Nordland 67 · Ostmark 18 · Sueden 65 |
-| schwer gegen normal, im Krieg | 20 | 0 | 55 | 63 % | 260 | 243 | 6 | 74 | Nordland 80 · Ostmark 20 · Sueden 50 |
+| schwer gegen leicht, im Krieg | 52 | 0 | 23 | 85 % | 255 | 114 | 0 | 56 | Nordland 50 · Ostmark 73 · Sueden 27 |
+| schwer gegen normal, im Frieden | 17 | 1 | 57 | 61 % | 715 | 443 | 2 | 106 | Nordland 86 · Ostmark 16 · Sueden 48 |
+| schwer gegen normal, im Krieg | 19 | 0 | 56 | 63 % | 260 | 244 | 0 | 71 | Nordland 81 · Ostmark 19 · Sueden 50 |
 
 Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antritt
 (T-M15-08 versprach „neun Zahlen je Stufe"; nachgeprüft in T-M41-08, `DECISIONS.md`):
@@ -19,16 +19,16 @@ Je Stufe nach dem **Handelnden**, über alle drei Paarungen, in denen sie antrit
 | Stufe | Kriegserklärungen | davon förmlich | Selbsttätiger Beschuss |
 |---|---|---|---|
 | leicht | 0 | 0 | 0 |
-| normal | 260 | 234 | 0 |
-| schwer | 554 | 535 | 0 |
+| normal | 267 | 266 | 0 |
+| schwer | 522 | 522 | 0 |
 
 Schwer gegen normal, im Frieden, je Sitzordnung (T-M17-15, Befund M17-T4):
 
 | Sitzordnung | A | B | U | Siegquote A |
 |---|---|---|---|---|
-| Nordland/Ostmark/Sueden | 12 | 0 | 13 | 74 % |
-| Ostmark/Sueden/Nordland | 6 | 0 | 19 | 62 % |
-| Sueden/Nordland/Ostmark | 21 | 0 | 4 | 92 % |
+| Nordland/Ostmark/Sueden | 10 | 0 | 15 | 70 % |
+| Ostmark/Sueden/Nordland | 3 | 1 | 21 | 54 % |
+| Sueden/Nordland/Ostmark | 4 | 0 | 21 | 58 % |
 
 Die Streuung der Summe über vier Startzahl-Blöcke (0,7267–0,82) steht in `BALANCING.md`,
 nicht in diesem Lauf gerechnet.

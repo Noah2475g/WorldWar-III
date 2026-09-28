@@ -1,13 +1,17 @@
 import { ONE, divFixed, mulChain } from '@worldwar/shared'
 import {
   findPath,
+  hostFieldsToLeave,
+  isClearingPath,
   neighborsOf,
   TERRAIN_FACTORS,
+  type ClearingWay,
   type Command,
   type Edge,
   type PlayerId,
   type ProvinceId,
   type PublicView,
+  type Rules,
   type VisibleArmy,
   type VisibleProvince,
 } from '@worldwar/core'
@@ -280,7 +284,41 @@ export function staleTargetDeclarations(
   return commands
 }
 
-/** Gast nach Kündigung (E11): Heimmarsch oder null. Schreibt Erklärung und assignment. */
+/**
+ * Zwilling von `rules/movement.ts:canUseSea` auf der Sicht (T-M43-01, D34.3): dieselbe Antwort
+ * wie der Kern, sonst kann eine seetaugliche Armee (Flotte oder genug Transportraum) einen
+ * kürzeren Räumweg über See haben, den der Kern kennt und die KI nicht — "kürzester Weg" (E3)
+ * müsste dann für beide dasselbe Landbild meinen, tut es aber nicht. `VisibleArmy.units` fehlt
+ * nur bei fremden Armeen (Stärkeschätzung statt Zusammensetzung); der Räumweg gilt immer der
+ * eigenen Armee, die Zusammensetzung ist also bekannt.
+ */
+function canUseSeaVisible(army: VisibleArmy, rules: Rules): boolean {
+  let capacity = 0
+  let landUnits = 0
+  for (const stack of army.units ?? []) {
+    const rule = rules.units[stack.unitKey]
+    if (!rule) continue
+    if (rule.transportCapacity) {
+      // eslint-disable-next-line no-restricted-syntax -- Kapazitaet je Schiff mal Schiffszahl, reine Ganzzahlen
+      capacity += rule.transportCapacity * Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+    if (rule.class !== 'navy' && rule.class !== 'air') {
+      // eslint-disable-next-line no-restricted-syntax -- Trefferpunkte durch Trefferpunkte je Einheit, reine Ganzzahlen
+      landUnits += Math.ceil(stack.hpTotal / rule.hpPerUnit)
+    }
+  }
+  return landUnits === 0 || capacity >= landUnits
+}
+
+/**
+ * Gast ohne unbefristetes Recht (R-DIP-10/AK4, D34.3): Heimmarsch auf dem kürzesten Weg
+ * hinaus, oder null. Schreibt Erklärung und assignment.
+ *
+ * Deckt seit T-M43-01 nicht mehr nur die gekündigte Kante, sondern jede Lage, in der der
+ * Kern eine Räumfrist gibt — Friedensschluss (M17-T6), Bündnisbruch (M17-G4) und eine
+ * abgelaufene Kündigung (M17-D10) laufen durch dieselbe Rechnung wie im Kern
+ * (`homePath.ts`), damit "kürzester Weg" fuer beide dasselbe meint.
+ */
 export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanations: Explanation[]): Command | null {
   const { view, memory, map } = context
   const me = view.playerId
@@ -289,52 +327,116 @@ export function guestWithdrawal(context: AiContext, army: VisibleArmy, explanati
   if (host === null || host === me) return null
 
   const relation = view.relations[host]
-  if (!relation || relation.state === 'war') return null
-  if (!relation.passageReceived || relation.passageEndsAtTick.received === null) return null
+  if (!relation || relation.state === 'war' || relation.state === 'alliance') return null
+  // Unbefristetes Recht: kein Grund zu räumen.
+  if (relation.passageReceived && relation.passageEndsAtTick.received === null) return null
 
+  const way: ClearingWay = {
+    map,
+    ownerOf: (id) => ownerOf(context, id),
+    mayEnter: (owner) => blocksPassage(context, owner) === null,
+    useSea: canUseSeaVisible(army, context.rules),
+    // Verteidigung in der Tiefe (Nacharbeit Etappe 1, Befund hoch): an beiden Stellen, die
+    // `way` benutzen (Zeile ~348 und die Breitensuche unten), steht `firstBlock(weg, host)`
+    // bereits als Vorbedingung und prüft über den GANZEN Pfad genau dasselbe Prädikat
+    // (`blocksPassage(owner) === null`) wie `mayStand` es für das erste Feld hinter der
+    // Gastmacht verlangt — das erste Nicht-Gastmacht-Feld im Pfad ist immer Teil dieser
+    // Prüfung. `strictExit` ist an diesen zwei Stellen deshalb z.Zt. unreachable (belegt:
+    // Mutation "Zeile entfernt" bleibt bei 50/50 grünen Tests in passage.test.ts) — bewusst
+    // stehen gelassen, falls ein künftiger Aufrufer hier `way` ohne `firstBlock` nutzt. Der
+    // Mechanismus selbst ist in homePath.test.ts (H6d/H6e) direkt und wirksam getestet.
+    strictExit: true,
+  }
+
+  // Schon auf dem Räumweg? Weitermarschieren, kein neuer Befehl.
   const path = army.path ?? []
-  if (path.length > 0 && ownerOf(context, path[path.length - 1]!) === me) return null
+  if (path.length > 0 && firstBlock(context, path, host) === null && isClearingPath(way, army.provinceId, path, me, host)) {
+    return null
+  }
 
+  // Breitensuche in Schichten ueber Felder der Gastmacht (wie `hostFieldsToLeave`, aber mit
+  // der Vorhersage der KI statt der Wahrheit des Kerns): je Schicht die Ausgänge sammeln,
+  // eigene zuerst, dann nach Kennung — deterministisch (H8).
   const visited = new Set<ProvinceId>([army.provinceId])
   let frontier: ProvinceId[] = [army.provinceId]
-  let target: ProvinceId | null = null
+  let hit: ProvinceId | null = null
+  let fallback: ProvinceId | null = null
 
-  while (frontier.length > 0 && target === null) {
-    const next: ProvinceId[] = []
+  while (frontier.length > 0 && hit === null) {
+    const exits: ProvinceId[] = []
+    const nextHostFields: ProvinceId[] = []
     for (const current of frontier) {
       for (const neighbour of neighborsOf(map, current, false)) {
         if (visited.has(neighbour)) continue
-        const owner = ownerOf(context, neighbour)
-        if (owner !== me && owner !== host && owner !== null) continue
         visited.add(neighbour)
-        if (owner === me) {
-          const weg = predictLandPath(context, army, neighbour)
-          if (weg && firstBlock(context, weg, host) === null) {
-            target = neighbour
-            break
-          }
+        const owner = ownerOf(context, neighbour)
+        if (owner === host) {
+          nextHostFields.push(neighbour)
+          continue
         }
-        next.push(neighbour)
+        if (blocksPassage(context, owner) === null) exits.push(neighbour)
       }
-      if (target !== null) break
     }
-    frontier = next
+    exits.sort((a, b) => {
+      const aOwn = ownerOf(context, a) === me
+      const bOwn = ownerOf(context, b) === me
+      if (aOwn !== bOwn) return aOwn ? -1 : 1
+      return a < b ? -1 : a > b ? 1 : 0
+    })
+    for (const exit of exits) {
+      const weg = predictLandPath(context, army, exit)
+      if (!weg || firstBlock(context, weg, host) !== null) continue
+      if (fallback === null) fallback = exit
+      if (isClearingPath(way, army.provinceId, weg, me, host)) {
+        hit = exit
+        break
+      }
+    }
+    frontier = nextHostFields
   }
 
+  // Wie der Kern (H6): ein Weg, der nicht der kürzeste hinaus ist, nur wenn es gar keinen
+  // gibt. `fallback` ist ein Ausgang, den die eigene (auf Landwege beschränkte) Vorhersage
+  // fand, der aber nicht der kürzeste Weg ist, den der Kern anerkennt — marschiert die Armee
+  // dorthin, wertet der Kern sie nach Fristende als Überfall, sobald sie die Gastmacht
+  // erneut betritt. Nur wenn der Kern selbst keinen legalen Ausgang kennt (die Gastmacht
+  // umschließt die Armee ganz), ist der Umweg besser als gar kein Befehl.
+  const legalDepth = hostFieldsToLeave(way, army.provinceId, me, host)
+  const target = hit ?? (legalDepth === null ? fallback : null)
+  const cancelled = relation.passageReceived && relation.passageEndsAtTick.received !== null
+  const fristReason = cancelled
+    ? `Durchmarschrecht bei ${host} endet in Tick ${relation.passageEndsAtTick.received}`
+    : `${host} gewährt keinen Durchmarsch`
+
   if (target === null) {
-    explanations.push({
-      action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
-      reason: `Durchmarschrecht bei ${host} endet in Tick ${relation.passageEndsAtTick.received}`,
-      score: 500,
-      alternative: { action: 'bleiben', score: 200 },
-    })
+    if (fallback !== null) {
+      // Ein Weg wurde gefunden, aber die eigene Vorhersage kennt keinen, den der Kern als
+      // kürzesten Ausgang anerkennt (Befund 6) — die Armee bleibt lieber stehen, statt einen
+      // Umweg zu nehmen, der ab Fristende zum Überfall wird.
+      explanations.push({
+        action: `${army.id} bleibt in ${army.provinceId}`,
+        reason: `${fristReason}, kürzester Weg hinaus nicht vorhersagbar`,
+        score: 500,
+        alternative: { action: 'Umweg (ab Fristende ein Überfall)', score: 200 },
+      })
+    } else {
+      explanations.push({
+        action: `${army.id} findet keinen Heimweg aus ${army.provinceId}`,
+        reason: fristReason,
+        score: 500,
+        alternative: { action: 'bleiben', score: 200 },
+      })
+    }
     return null
   }
 
   memory.assignments[army.id] = `leave:${host}`
+  const reason = cancelled
+    ? `Durchmarschrecht endet in Tick ${relation.passageEndsAtTick.received}`
+    : `Räumfrist: ${relation.state === 'truce' ? 'Waffenstillstand' : 'Frieden'} mit ${host} seit Tick ${relation.sinceTick}`
   explanations.push({
     action: `Zieht ${army.id} aus dem Land von ${host} ab`,
-    reason: `Durchmarschrecht endet in Tick ${relation.passageEndsAtTick.received}`,
+    reason: hit === null ? `${reason}, kürzester Weg nicht vorhersagbar` : reason,
     score: 800,
     alternative: { action: 'bleiben (ab Fristende ein Überfall)', score: 0 },
   })

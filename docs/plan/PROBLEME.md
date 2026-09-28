@@ -645,7 +645,7 @@ ist die Zusage, ihn nicht zu vergessen.
 | **Kohle hat nur noch eine Senke** — der Gebäudeunterhalt ist heute zurückgenommen, damit bleibt nur der Armeeunterhalt; 86 von 237 Provinzen fördern Kohle, die niemand braucht | Befund 26, 35 | **M17** — mit der Tiefe zwischen den Kriegen, die dem Frieden Ausgaben gibt. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01: M17 bringt keine Senke — Spionagesold zieht nur Geld, Handel verschiebt Güter. Und „bleibt nur der Armeeunterhalt" war ungenau: keine Einheit verbraucht Kohle, Befund B8 unten. M17 misst die Bestände vorher und nachher, T-M17-02/16.)* |
 | **R-AI-04 ist gemessen verletzt** — die KI hält 43,1 % statt der zugesagten 30 % Rücklage, und der Test ist trotzdem grün, weil er die Schwelle nicht prüft | Befund 46 | **M15**, mit T-M15-08 (Integrationstor) — dort wird die KI ohnehin gemessen |
 | **Hauptstadtverlegung kostet nichts** und löscht die Strafe für den Hauptstadtverlust; wer seine Hauptstadt verliert, verlegt sie sofort und ist die Folgen los | Befund 50 | **M15**, mit T-M15-05 — die KI lernt dort `SET_CAPITAL`, und der Preis gehört zur selben Regel |
-| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01, aus demselben Grund; gemessen wird in T-M17-02 und T-M17-16.)* |
+| **350-facher Vorratsaufbau** über 1000 Spieltage ohne einen einzigen Überlauf; die Lagergrenze liegt rechnerisch 3000 Spieltage entfernt und wirkt nie | Befund 58 | **M17** — dieselbe Ursache wie die Kohlesenke: dem Frieden fehlen Ausgaben. *(Umgehängt nach **M18** am 2026-09-13, T-M17-01, aus demselben Grund; gemessen wird in T-M17-02 und T-M17-16.)* *(Fortgeschrieben am 2026-09-26, T-M42-11, gemessen auf `2d48c00` — 1000 Spieltage der Voreinstellung, Startzahl 31337, acht KI: Ende/Start über alle acht Mächte Nahrung 15,0 · Holz 14,2 · Eisen 28,6 · Kohle 27,6 · Öl 36,3 · Seltene Erden 131,2 · Geld 0,11. Der größte Einzelbestand (Russland, Seltene Erden) steht beim **897-Fachen** seines Startvorrats und bei 12 % der Lagergrenze; **0** `STORAGE_OVERFLOW` in 1000 Spieltagen — der Befund gilt unverändert. Der Langlauf-Test hieß „… ohne unbegrenztes Wachstum" und prüfte nur `isSafeInteger` und `>= 0`; er heißt jetzt, was er prüft, und schreibt diese Tabelle in `performance.md` — eine Schranke bekommt er mit Absicht nicht (ohne Senke keine Sperrklinke). Bleibt bei **M18** (Plan M42/M43 §10).)* |
 | **314 von 374 Regelzahlen ohne Belegstatus** — der Test prüft nur `constants.json`, die übrigen Dateien (Einheiten, Gebäude, Rohstoffe) tragen keinen Status „belegt/geschätzt" | Befund 59 | **M15**, mit T-M14-05s Nachfolge: sobald die Messgeräte stimmen, wird der Status messbar statt behauptet |
 | **Rückzug ist ein Teleport** — eine Armee ohne Gegner springt in einem Tick dorthin, wofür ein Marsch 15 Ticks braucht | Befund 66 | **M15**, mit T-M15-07 — die Feuerleitung fasst dieselbe Haltungslogik an |
 | **Barrierefreiheit jenseits des Kontrasts** — kein Test öffnet einen Dialog und schließt ihn mit Escape, keiner prüft Fokusfang, Tabreihenfolge oder `aria`; belegt ist nur die Tastenzuordnung als reine Funktion | Befund N12 | **M16** — zusammen mit dem Bau, in dem sich Fokus überhaupt beobachten lässt |
@@ -2075,7 +2075,7 @@ Aufgabe oder einen Meilenstein.
   einzigen Verbraucher sind dieser Bau und die Börse. Die Zeile im Eintrag vom 2026-09-06 („bleibt
   nur der Armeeunterhalt") war ungenau und ist dort vermerkt. → M18, mit dem Vorratsaufbau.
 
-**Status:** B1 bis B3 erledigt (2026-09-24, T-M17-04) — Durchmarsch und Karte sind gerichtet, wer gewährt, darf nicht selbst hinein, die Angebotsfrist steht in `constants.json`, das Erwidern ist am Zustand geprüft. B4 für Handelsangebote erledigt (2026-09-25, T-M17-05); für Frieden und Bündnis (`acceptPeace`/`acceptAlliance`) weiterhin offen, ohne Meilenstein. B5 für den Provinzhandel behoben (2026-09-25, T-M17-11) — `targeting.ts` bewertet fremde Provinzen weiter pauschal. B6 für KI-Märsche erledigt (2026-09-25, T-M17-10, Antrag statt Marsch); die volle Messung über eine echte Partie mit vielen Mächten bleibt T-M17-15 vorbehalten. B7 erste Hälfte (enttarnte Spione) eingelöst (2026-09-25, T-M17-09); zweite Hälfte (gebrochene Bündnisse) weiterhin offen, ohne Meilenstein. B8 weiterhin offen, für M18 mit dem Vorratsaufbau.
+**Status:** B1 bis B3 erledigt (2026-09-24, T-M17-04) — Durchmarsch und Karte sind gerichtet, wer gewährt, darf nicht selbst hinein, die Angebotsfrist steht in `constants.json`, das Erwidern ist am Zustand geprüft. B4 für Handelsangebote erledigt (2026-09-25, T-M17-05); für Frieden und Bündnis ebenfalls erledigt (2026-09-25, Nacharbeit Turnier Option C, Punkt 4 — `commands/diplomacy.ts` löscht mit `dropOffer` nur das Angebot des Annehmenden, siehe unten „B4 ist damit für Frieden und Bündnis erledigt“; Statuszeile berichtigt in T-M42-01). B5 für den Provinzhandel behoben (2026-09-25, T-M17-11) — `targeting.ts` bewertet fremde Provinzen weiter pauschal. B6 für KI-Märsche erledigt (2026-09-25, T-M17-10, Antrag statt Marsch); die volle Messung über eine echte Partie mit vielen Mächten bleibt T-M17-15 vorbehalten. B7 erste Hälfte (enttarnte Spione) eingelöst (2026-09-25, T-M17-09); zweite Hälfte (gebrochene Bündnisse) weiterhin offen, ohne Meilenstein. B8 weiterhin offen, für M18 mit dem Vorratsaufbau.
 
 ---
 
@@ -5611,6 +5611,36 @@ sondern sättigt intern, oder `MIN_TRADE_AMOUNT` bekommt ein Pendant nach oben.
 M18.
 
 ---
+**Nachtrag 2026-09-26 (T-M43-03, `d55edd5`): im Kern geschlossen.** `exchangeAmount()` sättigt jetzt
+selbst auf den Wert der größten rechenbaren Menge — derselbe Wert, den `safeExchangeAmount()` der
+Oberfläche liefert — und wirft für keine Zahl mehr; `TRADE` lehnt Mengen über `MAX_TRADE_AMOUNT`
+(10 000 000 000) mit `INVALID_TARGET` („Menge zu groß") ab, bevor gerechnet wird. Gemessen vorher:
+3,5 Mrd. Seltene warfen in `exchangeAmount`, `canApply` **und** `step`. Über `TRADE` war das im Spiel
+nie erreichbar (Güter am Tickende auf 1 000 000 000 gedeckelt, Seltene auf 500 000 000; Geld
+ungedeckelt, gemessen ≤ 1,5 Mio.) — erreichbar war es nur über die Vorschau, und die war seit
+T-M17-13/14 gekappt. Turnier und `progress.slow` zeilengleich.
+
+**Status:** erledigt (Oberfläche T-M17-13/14, Kern T-M43-03).
+
+## 2026-09-26 · T-M43-03 · Befund M43-03-a (niedrig, nicht gebaut): Tagesnachfrage und Angebotsabwicklung ohne Obergrenze
+
+**Befund:** `settleMarket()` (`packages/core/src/rules/market.ts`) teilt die Tagesnachfrage mit
+`quotFixed(demand, MARKET_REFERENCE_VOLUME)`; das wirft ab |Nachfrage| > 9 007 199 254 740
+(Sonde am 2026-09-26: 9 000 000 000 000 rechnet, 9 100 000 000 000 wirft). Ebenso addiert die
+Abwicklung von Handelsangeboten (`commands/tradeOffer.ts`, Rückgabe und Annahme) Mengen ohne
+Prüfung auf sichere Ganzzahlen.
+
+**Warum nicht gebaut:** unerreichbar. Ein `TRADE` gibt höchstens `MAX_TRADE_AMOUNT`; ein einzelner
+Höchsttausch bei Extremkursen erzeugt ≤ 250 000 000 000 Nachfrage, 36 davon je Rohstoff und Tick
+wären nötig, und jeder braucht den Bestand dafür (Güter ≤ 1 000 000 000 am Tickende). Angebote sind
+auf den Bestand des Gebers begrenzt (`tradeOffer.ts` Z. 72, 285–286). Kandidat, falls je eine
+Befehlsquelle ohne Bestandsprüfung dazukommt: `settleMarket` sättigt die Nachfrage wie
+`exchangeAmount` den Wert.
+
+**Status:** offen, niedrig, bewusst nicht gebaut (Entscheid E10 im Bauplan T-M43-03).
+
+---
+
 
 ## 2026-09-25 · Nacharbeit T-M17-13/14 · Befund M17-U2 (niedrig, nicht selbst behoben): `nameOf` in `App.tsx` hat keinen Rückfall auf leeren Text bei unbekannter Kennung
 
@@ -5954,3 +5984,154 @@ Erkennung nur durch Einheitsfaelle mit synthetischen Laeufen (`stance.slow.test.
 13 passed/5 skipped nachgefahren) - die Logik selbst ist gedeckt, ein echter Zwoelf-Laeufe-Beleg
 fuer G1 fehlt. Nicht hier nachgefahren (rund 9,5 Minuten auf freier Maschine, wie der Haltungs-
 Messlauf selbst) - vermerkt statt geschaetzt.
+
+## 2026-09-26 · T-M42-01 · Stufe 0: der Ausgangswert für M42/M43 — und die Zweitagespaare sind nicht überall null
+
+**Gemessen** auf `f4ac360` (`measuredDirty: []`), `m17-integration.json` und `ai-integration.json`,
+Abschnitt `m42`, Stufe `0`. Abtastung am Tagesende, 200 Spieltage, acht KI-Mächte (Voreinstellung:
+sieben). Nachgetragen aus der Nacharbeit (adversarische Prüfung, siehe unten): `jeMacht` ist nach
+`PlayerId` geschlüsselt (`MachtZahlen.nation` trägt seit der Nacharbeit die Nation dazu).
+
+| Zahl | Welt 1815 | Welt 1914 | Welt 2015 | Voreinstellung 200 |
+|---|---|---|---|---|
+| Fabriken begonnen (davon normal/schwer) | 92 (0) | 63 (0) | 64 (0) | 2 (2) |
+| Tage mit bezahlbarer Fabrik, Maximum leicht/normal/schwer | 125/0/0 | 106/0/0 | 123/0/0 | 0/1/0 |
+| Artillerie ausgehoben / Anteil an Landeinheiten / Beschuss | 0 / 0 % / 0 | 0 / 0 % / 0 | 0 / 0 % / 0 | 0 / 0 % / 0 |
+| Infanterie befohlen / ausgehoben | 2830 / 2819 | 3212 / 3191 | 2917 / 2875 | 2800 / 2783 |
+| Kriege / Überfälle / Frieden (zwischen KI) | 11 / 1 / 3 (3) | 11 / 2 / 3 (3) | 9 / 0 / 3 (3) | 9 / 2 / 4 (4) |
+| Überfälle `friedensschluss` / `nachKuendigung` | 1 / 0 | 2 / 0 | 0 / 0 | – (nur m17) |
+| Eroberungen | 769 | 699 | 725 | 382 |
+| Geldmangeltage gesamt / durch Aushebung | 0 / 0 | 0 / 0 | 0 / 0 | Kanada (`p2`) 44 / 44 |
+| Ölmangeltage | 0 | 0 | 0 | 0 |
+| größter stehender Verband / Tage über dem Deckel | 132 / 147 | 127 / 147 | 133 / 153 | 124 / 189 |
+| Tage mit Paar / Paare höchstens | 71 / 92 | 79 / 565 | 85 / 435 | 65 / 465 |
+| **Paare über zwei Tagesenden** / Tage davon / Orte davon | 0 / 0 / 14 | 0 / 0 / 35 | **1 / 1 / 34** | 0 / 0 / 10 |
+| alte Zusage 7 (stehend je Provinz höchstens / Tage über drei) | 14 / 10 | 34 / 19 | 30 / 17 | 31 / 13 |
+| Befund D verpasst (alle Rohstoffe / nur Geld) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| `NO_PATH`-Anteil der Marschbefehle | 0 % (0/5930) | 0 % (0/6670) | 0 % (0/6264) | 0 % (0/6010) |
+| Ablehnungen `RECRUIT:INSUFFICIENT_RESOURCES` | 1 | 1 | 2 | 0 |
+
+Aus den eingecheckten, frischen Berichten (nicht neu gefahren, Falle 12): Turnier schwer–normal im
+Frieden **0,760** (`ai-tournament-run.md`, Commit `527425c`), Vollpartien Siegtag **675/630/395**
+(`fullgame*.json`), Anteil des Stärksten **38,4 %** (`balance-sweep.md`), Haltungs-Messlauf AK5
+**102,8 %** (`stance.json`, Commit `7a6aa47`).
+
+**Was die Zahlen sagen.**
+1. **Kanada** geht in der ausgelieferten Voreinstellung an **44** Tagen pleite, und **jeder** dieser
+   Tage geht auf eine eigene Aushebung bei negativer Tagesbilanz zurück (kleinste Bilanz bei der
+   letzten Aushebung **-92 885**/Tag, 67 Aushebungstage insgesamt). Befund für T-M42-03 (R-AI-11/AK2,
+   AK3).
+2. **Auf der Weltkarte (1815/1914/2015) bauen „normal" und „schwer" keine Fabrik und könnten es an
+   keinem Tag** — `tageFabrikBezahlbar` ist dort **0 von 200** für jede dieser Mächte. In der
+   **Voreinstellung** ist das anders: Russland (normal) und Indien (normal) bauen je eine Fabrik,
+   Indien ist an **1 von 200** Tagen bezahlbar — die einzige Ausnahme unter den vier Läufen.
+   Fabriken auf der Weltkarte kommen nur von „leicht" (USA, Indien, UK in 1815; je nach Startzahl
+   andere Nationen). Befund für T-M42-06.
+3. **Null Artillerie, null Beschuss** in allen vier Läufen (vor M17: 63 / 231). Befund M17-T7 besteht.
+4. **Verbände bis 133 Einheiten** (Deckel 20), an 147–189 Tagen steht ein Verband über dem Deckel.
+5. **Befund D ist am Ausgangswert 0** in allen vier Läufen — erwartet, weil normal/schwer keine
+   Fabrik haben und „leicht" die eigene Schwelle (2,5 Mio. Geld) nie erreicht. Entschieden wird D
+   erst auf Stufe C2 (T-M42-10).
+6. **Paare über zwei Tagesenden sind nicht überall 0 — aber auf den Läufen, auf denen T-M42-09
+   zusichern wird, schon.** T-M42-09 zusichert laut `m18-plan-v2.md` §8 in
+   `ai-integration.slow.test.ts` (Welt 1815, Voreinstellung) — auf beiden ist die Zahl am
+   Ausgangswert **0** (Planungssonde, Bauplan `plan-T-M42-01.md` §2.6, hier bestätigt). **Welt
+   2015 zeigt eine 1** (ein Paar derselben zwei stehenden Armeen überlebt dort ein Tagesende) —
+   diese Zahl steht nur in `m17-integration.json`, das T-M42-09 nicht anfasst. Die Ortsvariante
+   (gleiche Macht, Provinz, Rolle, beliebige Armeen) zählt in jedem der vier Läufe deutlich mehr:
+   14/35/34/10. **Folge für T-M42-09:** `R-AI-10/AK3` wäre auf den eigenen Läufen (1815,
+   Voreinstellung) am Ausgangswert schon erfüllt — der geplante Gegenlauf „dieselbe Zusicherung
+   fällt auf Stufe C1" **kann auf diesen beiden Läufen nicht fallen**, weil die Zahl dort nie über
+   0 war. **Nicht in T-M42-01 entschieden** — geht an Noah und an den Bauplan von T-M42-09: entweder
+   AK3 auf ein einzelnes Tagesende schärfen (dann bleibt ein Gegenlauf möglich) oder stattdessen die
+   Ortsvariante zusichern (dort gibt es in jedem Lauf etwas zu widerlegen). Die Welt-2015-Zahl bleibt
+   als Nebenbefund dokumentiert.
+
+**Gegenproben.** Alte Felder beider Berichte zeilengleich (m17 zu `b9b3915`, ai zum Vorlauf vor
+jeder M42/M43-Änderung); `m42.welt1815` (tageweise) = `m42.laeufe.1815` (tickweise), 0
+Abweichungen; alle Sondenwerte der Planung getroffen; G1–G18 fallen alle (Teil A der Nacharbeit
+verifizierte zusätzlich acht weitere Lücken — Anschluss-Kette an `applied`, Berichtsform, Fabrik-
+Zählung, Artillerieanteil-Zwilling, Nation-Feld — je per Mutationstest rot/grün belegt, siehe
+`tasks.yaml`).
+
+**Nebenbei berichtigt:** B4-Statuszeile oben (Frieden und Bündnis sind seit 2026-09-25 erledigt),
+`WORKFLOW.md` §2 Punkt 6 (Befund M38-4 ist seit 2026-09-18 erledigt).
+
+## 2026-09-27 · Etappe 1 (M42/M43) · Frage U/R/F/S — beantwortet, Fragen M42-02-a/M42-03-a/M42-06-a geschlossen
+
+Die vier bisher getrennt gestellten Fragen (U in T-M42-03, R in T-M43-01, F in T-M42-06, S in
+T-M42-04) und der Befund M42-02-a (AK5 reißt auf sechs Startzahlen) sind durch Noahs Entscheid
+vom 2026-09-27 (`entscheidungen-etappe1.md`, siehe `DECISIONS.md`) beantwortet:
+
+1. **Räumfrist (U/R):** F3 um vier Punkte ergänzt (Marsch bei Kriegsende darf in jede Richtung
+   enden; frei ist der kürzeste Weg hinaus statt zwingend der Heimweg; ein Rückzug in neutrales
+   Land bekommt dieselbe Frist; die Brasilien-Nebenwirkung ist gewollt) — gebaut in T-M43-01
+   (B1–B4), mit T-M42-03 zusammen auf Stufe U+R gemessen (`3f6d1671`). **Geschlossen.**
+2. **Festungspatt (F):** „Erst die Fabrik" (T-M42-06) übernommen, K5 neu gefasst (neun
+   Startzahlen, höchstens ein Patt, ein Patt ist Befund statt Rücknahmegrund). Stufe F 9/9
+   entschieden, 0 Patts. **Geschlossen für T-M42-06** — bleibt akut für T-M42-04, siehe
+   Befund M42-04-a unten (dasselbe Patt bei anderer Reparatur).
+3. **Verteidigungs-Automatik (M42-02-a):** AK5 (R-UNIT-09) neu gefasst — Provinz-Tage sind
+   Berichtszahl, das Tor ist die Schadenszählung. Auf dem Endstand gemessen (`ca6e511`):
+   `erfuellt: true`, `verletzt: []`. **Geschlossen.**
+
+Die Räumweg-Strenge-Zusatzfrage aus der Nacharbeit (`fragmente-e1.md`, „Befund 6/7") ist mit
+B1 (H6-Rückfall in `homePath.ts` erst ohne jeden legalen Ausgang für die ganze Gastmacht, nicht
+je Schicht) und B2 (`guestWithdrawal` nur auf einem vom Kern anerkannten Räumweg) implizit
+mitbeantwortet — beide sind Teil derselben sieben Commits von T-M43-01.
+
+## 2026-09-27 · T-M42-04 · Befund M42-04-a (hoch, offen): dasselbe Festungspatt wie M42-06-a
+
+Mit der Buchung von Spion, Bau und Börse (gemessen auf `9f2a134`, seitdem zurückgestellt)
+bleibt die Vollpartie 1815 nach 1500 Spieltagen unentschieden (Vorstufe: Siegtag 663): Indien,
+China, Argentinien und Mexiko mit allen Städten auf Festung 2 und Eisenbahn; 1652 Eroberungen,
+9 Kriegserklärungen. 1914 und 2015 enden an Tag 1053 und 1184 (vorher 460 und 423). Sechs
+weitere Startzahlen: 5 von 6 entschieden (774/822/871/884/441), 1683 im Patt (2972
+Eroberungen). Systematik, kein Zufall: „normal" hebt ohne die Doppelausgabe weniger aus.
+Zusätzlich reißt m17 bei `recruitShare` 320 R-AI-09/AK1 (1914 easy wirbt ohne `SPY_REPORT`
+keinen Spion an).
+
+Dasselbe Patt hat schon „Erst die Fabrik" (T-M42-06, jetzt übernommen mit K5 neu gefasst)
+gestoppt, bevor Noahs Entscheid K5 dort entschärfte. Zwei unabhängige, für sich richtige
+Reparaturen enden am selben Festungspatt — die Sieglage ist das Empfindliche, nicht die
+jeweilige Reparatur. Nach Noahs Entscheid vom 2026-09-27 (Punkt 2) wartet die Aufgabe jetzt
+bis nach der Artillerie (T-M42-07), weil die Artillerie die eigentliche Abhilfe gegen
+Festung 2 in jeder Stadt sein soll — keine neue Frage an Noah, nur eine Terminfrage.
+
+**Status:** offen, zurückgestellt (`tasks.yaml`, `reopened`-Text T-M42-04).
+
+## 2026-09-27 · T-M43-02 · Befund M43-02-a (niedrig, offen): eine Armee auf dem Weg hinein wird nicht gemeldet
+
+Ist eine eigene Armee bei einem Friedensschluss noch unterwegs **in** das Land der Gegenseite
+(Abmarsch im Krieg), schützt sie der Kern beim Grenzübertritt (Kriegsmarsch-Ausnahme,
+T-M43-01), danach nur, solange die 24 Stunden laufen. Kommt sie später an, ist sie beim
+Ankommen ein Überfaller. Die Meldung (`clearance.ts`, R-DIP-10/AK5) nennt nur Armeen **im**
+Land und erscheint erst mit der Ankunft. Vorschlag: die Meldung auch für Armeen, deren Weg im
+Land der Gegenseite endet („ist unterwegs nach …"). Nicht gebaut (AK5 wörtlich, E10 in
+`DECISIONS.md`).
+
+## 2026-09-27 · T-M43-02 · Befund M43-02-c (niedrig, geschlossen): Anleitung nachgeholt
+
+`docs/ANLEITUNG.md` kannte zunächst weder die Kriegsmarsch-Ausnahme noch den
+Rückzug-Schutzgrund. In der Nacharbeit nachgeholt (Commit `6e666ab`): Kriegsmarsch-Satz und
+Rückzug-Satz ergänzt, „kürzester Weg hinaus" um die vier zulässigen Ziele erweitert
+(eigenes/herrenloses Land, Verbündeter, Durchmarschrecht, Kriegsgegner). `test/docs.test.ts`
+und `test/guards` grün. **Status:** geschlossen.
+
+
+---
+
+## 2026-09-27 · Abnahme nach Etappe 1 · AK-5 fiel einmal, der Grund war unsichtbar
+
+**Befund:** Der erste `pnpm acceptance`-Lauf nach Etappe 1 (auf `a4106e3`, freie Maschine, 11 % Last)
+meldete **11 von 12**: AK-5 („Guards für Monetarisierung und Netzwerk“, `pnpm vitest run test/guards`)
+fiel nach 17 s. Der Bericht zeigte als Fehlertext nur `undefined`, weil `scripts/acceptance.mjs` für
+fehlgeschlagene Läufe `r.detail` ausgab, `run()` die Ausgabe aber unter `r.output` ablegt. Danach lief
+dieselbe Prüfung dreimal grün (einzeln, über `execSync` wie in der Abnahme, und im zweiten vollen
+Abnahmelauf in 5 s: **12 von 12, Exit 0**). Die 1-MB-Grenze von `execSync` war es nicht (Ausgabe 4 KB).
+
+**Reparatur:** Der Bericht gibt jetzt `r.detail ?? r.output` aus. Die Ursache des einen Fehlschlags ist
+**nicht geklärt**. Fällt AK-5 noch einmal, steht der Text im Bericht; beim zweiten Mal ist es nach der
+Lehre vom 2026-09-25 ein Befund, keine Last (Laufzeit gegen den Ausgangswert messen).
+
+**Status:** beobachten.

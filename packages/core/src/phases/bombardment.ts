@@ -137,6 +137,10 @@ export function resolveBombardment(
   }
 
   army.cannotAttackUntil = draft.tick + 1
+  // Nacharbeit Etappe 1 (Befund kritisch): dieser Schuss darf die Raeumfrist-Ausnahme
+  // in diplomacy.ts nicht verlaengern — sonst schuetzt sich eine jeden Tick feuernde
+  // Armee selbst und dauerhaft vor der Ueberfallpruefung (siehe phases/index.ts).
+  ctx.bombardedThisTick?.add(army.id)
 
   // Eine ausgelöschte Armee verschwindet, statt als leere Hülle liegen zu bleiben
   // (T-M14-07, Befund 53): eine Hülle ohne Einheiten hält ihren Besitzer am Leben, und

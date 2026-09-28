@@ -1,14 +1,17 @@
 import { commandsForTick, storeMemories, type Explanation } from '@worldwar/ai'
 import {
   fastForward,
+  publicView,
   type Command,
   type FastForwardResult,
   type FastForwardTarget,
+  type GameEvent,
   type GameState,
   type MapData,
   type PlayerId,
   type Rules,
 } from '@worldwar/core'
+import { clearanceNotices, isClearanceCause } from './clearance.ts'
 
 /**
  * Vorspulen, wie der Spieler es drückt (T-M15-06, R-TIME-02, R-TIME-03, R-TIME-06).
@@ -115,9 +118,37 @@ export function fastForwardChunk(
   // (loop.ts): sie wurden einmal gegeben, nicht stündlich erneut.
   let firstTick = true
 
+  // Die Räumfrist haelt das Vorspulen an (T-M43-02, R-DIP-10/AK5, E6): ein Haeppchen sind
+  // 24 Ticks, die ganze Frist (`rightOfWayNoticeTicks`) - ohne Halt saehe niemand die
+  // Meldung, und im Vorschaufenster gibt es nur Vorspulen, keine laufende Uhr. `isClearanceCause`
+  // erkennt DIPLOMACY_CHANGED/RIGHT_OF_WAY_CHANGED/ARMY_RETREATED, aber nur ein Blick auf die
+  // Sicht (rein, wie `publicView`) weiss, ob ueberhaupt eine eigene Armee betroffen ist - beides
+  // zusammen aendert keinen Befehl, nur wo die Ereignisschleife den Faden wieder aufnimmt.
+  //
+  // `ARMY_RETREATED` feuert bei jedem Rueckzug, auch ins eigene Land (Ergaenzung 3, Noahs
+  // Entscheid 2026-09-27) - anders als bei den zwei aelteren Ursachen genuegt hier nicht
+  // irgendeine Meldung: der Halt gilt nur, wenn `clearanceNotices` GENAU fuer diese Armee
+  // (`event.armyId`) eine liefert, sonst hielte ein Rueckzug ins eigene Land an, sobald
+  // irgendeine andere Frist laeuft (F5).
+  let raeumHalt: GameEvent | null = null
+
   const result = fastForward(state, targetForChunk(request, ctx.rules.constants.ticksPerDay), ctx, {
     alertsFor: request.alertsFor,
     maxTicks: Math.max(1, Math.min(remainingTicks, request.chunkTicks ?? DEFAULT_CHUNK_TICKS)),
+    guards: [
+      (current, events) => {
+        const cause = events.find((event) => isClearanceCause(event, request.alertsFor))
+        if (!cause) return false
+        const notices = clearanceNotices(publicView(current, request.alertsFor, ctx.rules), ctx.map, ctx.rules)
+        if (cause.type === 'ARMY_RETREATED') {
+          if (!notices.some((notice) => notice.armyId === cause.armyId)) return false
+        } else if (notices.length === 0) {
+          return false
+        }
+        raeumHalt = cause
+        return true
+      },
+    ],
     // Die Befehle eines Ticks kommen aus DERSELBEN Funktion wie in `advanceTicks` (T-M40-08,
     // Befund K1 der Durchsicht M40). Bis dahin fragte diese Stelle nur `runAi`: der Adjutant
     // lief beim Vorspulen nie, und dieselbe Lage ergab über die Uhr und über das Vorspulen zwei
@@ -138,5 +169,8 @@ export function fastForwardChunk(
       pending = null
     },
   })
-  return { ...result, adjutant }
+  // `fastForward` liefert bei einem Guard-Halt `trigger: null` (Kern, clock.ts) - hier wird er
+  // durch das auslösende Ereignis ersetzt, damit die Kopfleiste sagt, was geschehen ist
+  // (App.tsx:1888 liest `trigger`); ein Halt durch `firstAlertFor` (Kampf etc.) behält seinen.
+  return { ...result, trigger: result.trigger ?? (result.stoppedBy === 'alert' ? raeumHalt : null), adjutant }
 }

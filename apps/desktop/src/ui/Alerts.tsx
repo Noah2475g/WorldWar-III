@@ -46,6 +46,8 @@ export type AlertKind =
   | 'espionage'
   /** Ein eingehendes Angebot — Handel oder Antrag, leise (T-M17-14, R-DIP-07/AK1, E4). */
   | 'offer'
+  /** Räumfrist — laut, Warnfarbe, nicht wegklickbar (T-M43-02, R-DIP-10/AK5). */
+  | 'clearance'
 
 export interface Alert {
   /** Stable across ticks: the same cause is the same alert. */
@@ -56,6 +58,8 @@ export interface Alert {
   provinceId?: string
   /** Sprung in die Diplomatie statt auf die Karte, mit der Macht des Angebots (T-M17-14, E3). */
   diplomacyWith?: string
+  /** Sprung zur Armee statt nur auf die Provinz (T-M43-02). */
+  armyId?: string
 }
 
 /**
@@ -63,7 +67,11 @@ export interface Alert {
  * bestimmten Macht. `Foot`/`EventLog` kennen weiterhin nur Provinzen (Korrektur am Planungsstand:
  * ihre Eintraege tragen keine Macht, nur `Alerts` bekommt dieses Sprungziel).
  */
-export type JumpTarget = { kind: 'province'; provinceId: string } | { kind: 'diplomacy'; playerId: string | null }
+export type JumpTarget =
+  | { kind: 'province'; provinceId: string }
+  | { kind: 'diplomacy'; playerId: string | null }
+  /** Zur Armee springen (T-M43-02): Karte auf die Provinz, Armee gewaehlt, Armeepanel offen. */
+  | { kind: 'army'; armyId: string; provinceId: string }
 
 /** Below this morale a province is at risk of revolt (D6: Aufstandsrisiko ab 33). */
 export const UNREST_MORALE = 33_000
@@ -242,7 +250,12 @@ function offerAlerts(view: PublicView): Alert[] {
   return [...trade, ...diplomatic]
 }
 
-export function alertsFor(view: PublicView | null, rules?: UnlockRules, news: readonly Alert[] = []): Alert[] {
+export function alertsFor(
+  view: PublicView | null,
+  rules?: UnlockRules,
+  news: readonly Alert[] = [],
+  clearance: readonly Alert[] = [],
+): Alert[] {
   if (!view) return []
   const alerts: Alert[] = []
   const own = new Set(view.provinces.filter((province) => province.owner === view.playerId).map((p) => p.id))
@@ -297,6 +310,11 @@ export function alertsFor(view: PublicView | null, rules?: UnlockRules, news: re
       ...(view.self.capitalProvinceId ? { provinceId: view.self.capitalProvinceId } : {}),
     })
   }
+
+  // Raeumfrist (T-M43-02, R-DIP-10/AK5, E7): laut, direkt nach der Hauptstadt, vor dem Mangel -
+  // knapp und handlungspflichtig, aber kein Kampf. Vom Aufrufer berechnet (`clearanceAlerts`),
+  // nicht hier: diese Funktion liest `relations` nicht (Waechter `unlocks-explained`, §8.6).
+  alerts.push(...clearance)
 
   for (const resource of view.self.shortages) {
     alerts.push({
@@ -523,6 +541,9 @@ export function dismissNews(old: NewsState, id: string): NewsState {
 
 /** Das Sprungziel einer Meldung (T-M17-14, E3): Provinz vor Diplomatie, sonst kein Ziel. */
 function targetOf(alert: Alert): JumpTarget | null {
+  // Zuerst die Armee (T-M43-02): eine Raeumfrist-Meldung traegt beides, aber ihr Sprungziel
+  // ist die Armee, nicht nur ihre Provinz.
+  if (alert.armyId && alert.provinceId) return { kind: 'army', armyId: alert.armyId, provinceId: alert.provinceId }
   if (alert.provinceId) return { kind: 'province', provinceId: alert.provinceId }
   if (alert.diplomacyWith) return { kind: 'diplomacy', playerId: alert.diplomacyWith }
   return null

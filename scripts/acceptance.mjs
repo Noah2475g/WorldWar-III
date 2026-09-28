@@ -158,7 +158,7 @@ for (const gauge of GAUGES) {
   )
 }
 
-// Der Haltungs-Messlauf (T-M40-16, Befund M-B; T-M40-17): stance.slow faehrt zwoelf Partien und laeuft
+// Der Haltungs-Messlauf (T-M40-16, Befund M-B; T-M40-17): stance.slow faehrt 24 Partien (T-M42-02) und laeuft
 // deshalb nicht je Abnahme. Der eingecheckte Bericht nennt seinen Messcommit; seitdem darf auf HEAD kein
 // Commit an einer Quelle des Laufs liegen (STANCE_SOURCES), gemessen sein muss auf sauberem Arbeitsbaum,
 // und der Lauf muss AK5 erfuellt haben (Ruecknahmekriterium D30.9).
@@ -305,7 +305,7 @@ const report = [
   `**${passed} von ${results.length} maschinellen Prüfungen bestanden.**`,
   '',
   failed.length > 0
-    ? ['## Fehlgeschlagen', '', ...failed.map((r) => `### ${r.id}\n\n\`\`\`\n${r.detail}\n\`\`\`\n`)].join('\n')
+    ? ['## Fehlgeschlagen', '', ...failed.map((r) => `### ${r.id}\n\n\`\`\`\n${r.detail ?? r.output ?? '(keine Ausgabe)'}\n\`\`\`\n`)].join('\n')
     : playtest.ok
       ? 'Alle Abnahmekriterien sind erfüllt, AK-7 eingeschlossen.'
       : 'Alle maschinell prüfbaren Abnahmekriterien sind erfüllt. Offen bleibt AK-7 — der Playtest, für den kein Skript einspringen kann: ob das Spiel Spaß macht, findet nur ein Mensch heraus.',

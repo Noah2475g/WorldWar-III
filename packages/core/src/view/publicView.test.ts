@@ -258,6 +258,35 @@ describe('R-UI-09 Die Sicht sagt, seit wann eine Armee marschiert', () => {
   })
 })
 
+describe('R-DIP-10 Die Sicht kennt die eigene Rueckzugssperre (Vorbereitung T-M43-02)', () => {
+  it('V-RZ1: eine eigene Armee traegt den Wert ihrer Rueckzugssperre', () => {
+    const army = placeArmy(state, {
+      owner: 'p1',
+      at: ownProvince('p1'),
+      units: [{ unitKey: 'infantry', hpTotal: 1000 }],
+    })
+    army.cannotAttackUntil = 30
+
+    const seen = publicView(state, 'p1', TEST_RULES).armies.find((a) => a.id === army.id)
+
+    expect(seen?.cannotAttackUntil).toBe(30)
+  })
+
+  it('V-RZ2: eine fremde sichtbare Armee traegt den Schluessel gar nicht (R-DIP-04, Befund M2 der M40-Durchsicht)', () => {
+    const enemy = placeArmy(state, {
+      owner: 'p2',
+      at: ownProvince('p1'),
+      units: [{ unitKey: 'infantry', hpTotal: 1000 }],
+    })
+    enemy.cannotAttackUntil = 30
+
+    const seen = publicView(state, 'p1', TEST_RULES).armies.find((a) => a.id === enemy.id)
+
+    expect(seen, 'Die fremde Armee steht in eigener Provinz und ist sichtbar').toBeTruthy()
+    expect(seen).not.toHaveProperty('cannotAttackUntil')
+  })
+})
+
 describe('R-UI-13 Die Sicht sagt, ob man selbst noch im Spiel ist', () => {
   it('meldet die eigene Niederlage', () => {
     // Befund N4: Der Abschlussdialog haengt an `victory.winner`, und den setzt der Kern
