@@ -9,7 +9,15 @@ import {
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { RESERVE_PERMILLE, economyCommands, factoryReserve, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
+import {
+  RESERVE_PERMILLE,
+  economyCommands,
+  factoryReserve,
+  rankedUnitsFor,
+  recruitCommands,
+  tradeCommands,
+  unitStockOf,
+} from './economy'
 import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
 
@@ -704,5 +712,86 @@ describe('R-AI-12/AK1 Erst die Fabrik', () => {
   it('A3: mit Fabrik kein Vorbehalt - derselbe Bestand hebt mehr aus (Haltetest)', () => {
     const recruit = aushebung(aushebungsLage(1_005_000, 1))
     expect(recruit?.count, 'mit Fabrik haelt die KI nichts zurueck').toBeGreaterThan(3)
+  })
+})
+
+/**
+ * T-M42-05 (R-AI-10/AK1, D32.6): die Truppenmischung zaehlt Einheiten, nicht Stapel.
+ *
+ * Bis hierher zaehlte `rankedUnitsFor` je Stapel eine 1 (`economy.ts`, vormals Zeile 226-227): drei
+ * Infanteriearmeen zu je fuenf und eine Batterie zu eins waren "75 % Infanterie", nach dem
+ * Verschmelzen derselben Truppen "50 %" - das Zusammenlegen aenderte, was die KI als Naechstes
+ * aushebt. In Einheiten sind es vorher und nachher 15 zu 1.
+ */
+describe('R-AI-10/AK1 Die Truppenmischung zaehlt Einheiten (T-M42-05)', () => {
+  const tpd = TEST_RULES.constants.ticksPerDay
+  const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
+
+  function heerLage(armeen: { unitKey: string; einheiten: number }[][]) {
+    const context = richContext(40 * tpd)
+    const eigene = context.view.provinces.find((province) => province.owner === 'p2')!
+    context.view.armies = [
+      ...context.view.armies.filter((army) => army.owner !== 'p2'),
+      ...armeen.map((stapel, index) => ({
+        id: `a${900 + index}`,
+        owner: 'p2',
+        provinceId: eigene.id,
+        units: stapel.map(({ unitKey, einheiten }) => ({ unitKey, hpTotal: einheiten * hp(unitKey) })),
+        strength: 0,
+      })),
+    ]
+    return { context, provinz: eigene }
+  }
+
+  it('M1: drei Infanteriearmeen zu je fuenf plus eine Batterie zu eins - Rangfolge vor und nach dem Verschmelzen gleich', () => {
+    const vorher = heerLage([
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'infantry', einheiten: 5 }],
+      [{ unitKey: 'artillery', einheiten: 1 }],
+    ])
+    const nachher = heerLage([[{ unitKey: 'infantry', einheiten: 15 }], [{ unitKey: 'artillery', einheiten: 1 }]])
+
+    const rangVorher = rankedUnitsFor(vorher.context, vorher.provinz)
+    expect(rangVorher, 'Vorbedingung: alle drei Arten sind in der Provinz baubar').toHaveLength(3)
+    expect(rankedUnitsFor(nachher.context, nachher.provinz)).toEqual(rangVorher)
+  })
+
+  it('M2: 15 000 HP Infanterie sind 15 Einheiten, nicht ein Stapel', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 15 }]])
+    expect(hp('infantry')).toBe(1000)
+    const bestand = unitStockOf(context)
+    expect(bestand.owned.get('infantry')).toBe(15)
+    expect(bestand.total).toBe(15)
+  })
+
+  it('M3: angeschlagene Stapel zaehlen wie im Kern (aufgerundet, unitCount)', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 2 }]])
+    context.view.armies = context.view.armies.map((army) =>
+      army.owner === 'p2' ? { ...army, units: [{ unitKey: 'infantry', hpTotal: 1_001 }] } : army,
+    )
+    expect(unitStockOf(context).owned.get('infantry'), '1001 HP sind zwei angeschlagene Infanteristen').toBe(2)
+  })
+
+  it('M4: fremde Armeen zaehlen nicht mit', () => {
+    const { context } = heerLage([[{ unitKey: 'infantry', einheiten: 3 }]])
+    context.view.armies = [
+      ...context.view.armies,
+      { id: 'a999', owner: 'p1', provinceId: 'n1', units: [{ unitKey: 'artillery', hpTotal: 50 * hp('artillery') }], strength: 0 },
+    ]
+    expect(unitStockOf(context).total).toBe(3)
+  })
+
+  it('M5: der uebergebene Bestand entspricht dem selbst gebildeten', () => {
+    const { context, provinz } = heerLage([
+      [{ unitKey: 'infantry', einheiten: 7 }, { unitKey: 'artillery', einheiten: 2 }],
+      [{ unitKey: 'tank', einheiten: 1 }],
+    ])
+    const bestand = unitStockOf(context)
+    expect(bestand.total).toBe(10)
+    expect(rankedUnitsFor(context, provinz, bestand)).toEqual(rankedUnitsFor(context, provinz))
+    // Und der uebergebene Bestand wird wirklich gelesen, nicht neu gebildet.
+    const nurPanzer = { owned: new Map([['tank', 10]]), total: 10 }
+    expect(rankedUnitsFor(context, provinz, nurPanzer)[0]).toBe('infantry')
   })
 })

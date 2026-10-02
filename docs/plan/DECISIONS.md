@@ -5661,3 +5661,17 @@ Vorspulen); eine Playtest-Frage zu R-DIP-10 im Bogen der Etappe.
 - **Der Bericht** trägt den Abschnitt `wiederholungslauf`; eingecheckt wird er mit der jeweils
   aktuellen Stufenmessung, zuletzt auf dem vereinten Endstand von Kette und Nebenbahn
   (Commit `65a1645`).
+
+---
+
+## 2026-10-02 · Noah · Etappe 2 ohne Playtest-Haltepunkt (F6 ersetzt)
+
+**Entscheidung (Noah, per /goal-Auftrag):** alle offenen geplanten Punkte werden umgesetzt. Der
+Auftrag ersetzt den Playtest-Haltepunkt F6 aus dem Dossier `entscheidungen-etappe1.md` („erst
+nach Noahs Bestätigung beginnt Etappe 2"). Etappe 2 (T-M42-05, T-M42-07, T-M42-04 fortsetzen,
+danach T-M42-08…12) beginnt damit am 2026-10-02 auf dem Zweig
+`claude/game-v2-planned-tasks-tk5rrr` (abgezweigt von `main` = `95441e0`).
+
+**Was unverändert gilt:** jede Aufgabe misst gegen ihre vorab festgelegten Rücknahmekriterien;
+was reißt, wird begründet zurückgenommen und nicht nachgeschärft. Der Playtest selbst entfällt
+nicht, er wandert hinter das Ende von Etappe 2 (T-M42-12) — kein Agent kann ihn erfüllen.
