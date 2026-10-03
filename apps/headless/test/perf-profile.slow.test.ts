@@ -15,9 +15,10 @@ import { deserialise, parseRules, type GameState, type MapData, type Rules } fro
  *    Precise-Coverage des Inspectors (`callCount`), dazu die **Allokationen** der Heap-Stichprobe
  *    (`HeapProfiler.startSampling`, Bytes je Funktion). Beides haengt nicht an der Maschinenlast.
  *    Schreibt `docs/reports/v3/profil-<stand>.json`.
- *  - `WORLDWAR_PROFILE_MODE=plain`: faehrt nur die Ticks, ohne Messung im Prozess - fuer
- *    `--pool=forks --poolOptions.forks.execArgv=--cpu-prof`; `scripts/cpuprofile-top.mjs` wertet das
- *    `.cpuprofile` aus (Anteile, nicht Millisekunden) und haengt `cpuShares` an dieselbe Datei.
+ *  - `WORLDWAR_PROFILE_MODE=cpu`: Probenprofil des Inspectors, geschrieben nach
+ *    `node_modules/.cache/cpu/<stand>.cpuprofile`; `plain` faehrt nur die Ticks (fuer
+ *    `--pool=forks --poolOptions.forks.execArgv=--cpu-prof`, das unter vitest keine Datei schrieb).
+ *    `scripts/cpuprofile-top.mjs` wertet das `.cpuprofile` aus (Anteile, nicht Millisekunden) und haengt `cpuShares` an dieselbe Datei.
  *
  * `WORLDWAR_PROFILE_STANDS=S300` (Komma-Liste) waehlt Staende. Das Spielverhalten wird nicht beruehrt.
  * Hinweis: `planRoute` ist Kern (`core/phases/movement.ts`), nicht KI.
@@ -69,6 +70,20 @@ describe('V3-Profil', () => {
     const state = loadStand(name)
     mkdirSync(`${ROOT}/docs/reports/v3`, { recursive: true })
     const file = `${ROOT}/docs/reports/v3/profil-${name}.json`
+
+    if (MODE === 'cpu') {
+      // Probenprofil im Prozess (Inspector-Profiler): `--cpu-prof` ueber execArgv schrieb unter dem
+      // vitest-Arbeiter keine Datei (Prozessende vor dem Schreiben). Dieselbe Art Datei, selber Auswerter.
+      const dir = `${ROOT}/node_modules/.cache/cpu`
+      mkdirSync(dir, { recursive: true })
+      await post('Profiler.enable')
+      await post('Profiler.setSamplingInterval', { interval: 200 })
+      await post('Profiler.start')
+      advanceTicks(state, TICKS, { map, rules })
+      const { profile } = (await post('Profiler.stop')) as { profile: unknown }
+      writeFileSync(`${dir}/${name}.cpuprofile`, JSON.stringify(profile))
+      return
+    }
 
     if (MODE === 'plain') {
       advanceTicks(state, TICKS, { map, rules })
