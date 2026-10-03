@@ -33,3 +33,5 @@
 „nicht nachprüfbar“ bei R-AI-12/AK3), `03-TASKS.md` (T-M42-08: Abhängigkeit auf T-M42-06 umgestellt, M18-Notiz
 zur Einschiffung), `tasks.yaml` (T-M42-08 `deps`), `DECISIONS.md` (Nachtrag 2026-10-03), `PROBLEME.md`
 (Befund M42-PL-a) — das sind Berichtigungen und Ergänzungen, keine Löschkandidaten.
+
+- 2026-10-03 (Bahn K): `docs/plan/01-REQUIREMENTS.md` R-AI-12/AK4 — abgeschwächter Wortlaut (61d1477, "Vorrats-Horizont") ersetzt durch den alten Wortlaut; der alte Text steht als HTML-Kommentar mit LOESCHVERMERK dort. Grund: T-M42-14 zurückgenommen (H1–H3), kein Wort von Noah (E1).

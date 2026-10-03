@@ -3754,12 +3754,13 @@ tasks:
   - id: T-M42-13
     milestone: M42
     title: Festung nur an der Front, im Hinterland nach den Wirtschaftsbauten
-    status: done
+    status: todo
     deps: [T-M42-06]
     requirements: []
     design: [D-32]
     files: [packages/ai/src/economy.ts]
     tests: [packages/ai/src/economy.test.ts]
+    reopened: "gebaut und gemessen am 2026-10-03 (Festung nur an der Front; K5 und Turnier hielten, neun Vollpartien 9/9), aber abgeschaltet per LOESCHVERMERK in economy.ts (Commit 61d1477): ai-integration R-AI-11/AK3 riss in der Voreinstellung (Indien, ein Geldmangeltag durch eigene Aushebung); ohne T-M42-13 gruen (Probe P13). Status vorlaeufig todo, bis die Messung auf dem Merge-Stand (Bahn K, bericht-k1) bestaetigt, dass die Abschaltung haelt."
     dod: "Review Punkt 10, Befund M42-04-a (Festungspatt). buildingCandidatesFor nahm die Festung fuer jede Provinz bis Stufe 2 in die Wunschliste; jetzt nur in Grenzprovinzen (Landnachbar in fremdem Besitz) und bedrohten Provinzen (threatMap > 0) wie bisher hinter der Eisenbahn, im Hinterland erst, wenn kein Wirtschaftsbau (Fabrik, Eisenbahn, Hafen) mehr fehlt (frontProvinces, je Sicht gecacht). Tests FE1-FE4, FE1/FE3 rot per Mutationsprobe. Ziel K5 (hoechstens ein Patt in neun Startzahlen) und Turnierband. ERLEDIGT am 2026-10-03 (e2fde62): Ausgangswert C2 (bf8af90, neu gefahren und zeilengleich) 9/9 entschieden (712/816/636/529/522/467/610/391/793), Staedte auf Festung 2 in Summe 559, Turnier 84/61/63 Prozent, progress.slow 0,3334. Stufe S10: 8/9 (669/859/501/1139/408/Patt 1806/437/598/473) - ein Patt, nach K5 Befund statt Ruecknahmegrund -, Festung 2 in Summe 502, Turnier 84/61/63 unveraendert, progress.slow 0,3350, m17 27/27. ai-integration auf S10 28/29 (R-AI-11/AK3: Indien 1 Geldmangeltag durch Aushebung in der Voreinstellung); auf dem Endstand gruen (siehe PROGRESS.md)."
   - id: T-M42-14
     milestone: M42
