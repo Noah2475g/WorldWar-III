@@ -123,26 +123,28 @@ describe('T-M42-17 zweite Fassung: an der Front wird nicht geteilt', () => {
   })
 })
 
-describe('T-M42-16 Keine Armee unter Sperre im Merge-Pass (Review Punkt 3)', () => {
-  it('S1: eine Armee mit cannotAttackUntil > tick bleibt aussen vor', () => {
-    const frisch = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
-    const gesperrt = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
-    const dritte = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
-    state.armies[gesperrt.id]!.cannotAttackUntil = state.tick + 10
-
-    const merges = consolidateCommands(contextFor(), []).filter((command) => command.type === 'MERGE_ARMIES')
-    expect(merges.map((command) => (command as Extract<Command, { type: 'MERGE_ARMIES' }>).armyIds)).toEqual([
-      [frisch.id, dritte.id].sort(),
-    ])
-  })
-
-  it('S2: ist die Sperre abgelaufen, geht sie wieder mit', () => {
-    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
-    const alt = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
-    state.armies[alt.id]!.cannotAttackUntil = state.tick
-    expect(consolidateCommands(contextFor(), []).filter((command) => command.type === 'MERGE_ARMIES')).toHaveLength(1)
-  })
-})
+// LOESCHVERMERK (Review): T-M42-16 ist zurueckgenommen (das Turnier riss, `consolidate.ts`); die Faelle S1/S2
+// beschrieben die zurueckgenommene Sperre. Alte Faelle:
+// describe('T-M42-16 Keine Armee unter Sperre im Merge-Pass (Review Punkt 3)', () => {
+//   it('S1: eine Armee mit cannotAttackUntil > tick bleibt aussen vor', () => {
+//     const frisch = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
+//     const gesperrt = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
+//     const dritte = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
+//     state.armies[gesperrt.id]!.cannotAttackUntil = state.tick + 10
+//
+//     const merges = consolidateCommands(contextFor(), []).filter((command) => command.type === 'MERGE_ARMIES')
+//     expect(merges.map((command) => (command as Extract<Command, { type: 'MERGE_ARMIES' }>).armyIds)).toEqual([
+//       [frisch.id, dritte.id].sort(),
+//     ])
+//   })
+//
+//   it('S2: ist die Sperre abgelaufen, geht sie wieder mit', () => {
+//     placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
+//     const alt = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 5 * hp('infantry') }] })
+//     state.armies[alt.id]!.cannotAttackUntil = state.tick
+//     expect(consolidateCommands(contextFor(), []).filter((command) => command.type === 'MERGE_ARMIES')).toHaveLength(1)
+//   })
+// })
 
 describe('T-M42-15 Provinzen nach Codeeinheiten (Review Punkt 1, Determinismus)', () => {
   it('D1: "B..." vor "a..." wie sort() im Kern - localeCompare("en") stellte "a" vor "B"', () => {

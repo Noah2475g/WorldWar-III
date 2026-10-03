@@ -109,10 +109,13 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   for (const army of view.armies) {
     if (army.owner !== playerId) continue
     if ((army.path?.length ?? 0) > 0) continue
-    // T-M42-16 (Review Punkt 3): eine Armee unter Rueckzugs- oder Beschusssperre bleibt aussen vor - der
-    // Kern vererbt beim Zusammenlegen die laengere Sperre (`commands/army.ts`), und ein frischer Verband
-    // duerfte dann ebenso lange nicht angreifen.
-    if ((army.cannotAttackUntil ?? 0) > view.tick) continue
+    // LOESCHVERMERK (Review): T-M42-16 (Review Punkt 3) ist gebaut, gemessen und zurueckgenommen - mit der
+    // Sperre im Merge-Pass riss das Turnier (R-AI-06, Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen
+    // normal, 44 %; auf T-M42-13 84/61/63 % gruen), Messung auf 7b14319. Alte Zeilen:
+    // // T-M42-16 (Review Punkt 3): eine Armee unter Rueckzugs- oder Beschusssperre bleibt aussen vor - der
+    // // Kern vererbt beim Zusammenlegen die laengere Sperre (`commands/army.ts`), und ein frischer Verband
+    // // duerfte dann ebenso lange nicht angreifen.
+    // if ((army.cannotAttackUntil ?? 0) > view.tick) continue
     const stacks = army.units ?? []
     const units = nachTeilen.get(army.id) ?? stacks.reduce((sum, stack) => sum + unitCount(stack, rules), 0)
     if (units === 0) continue
