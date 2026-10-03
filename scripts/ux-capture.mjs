@@ -727,7 +727,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await shot('fehler-ungueltiges-ziel')
   })
   await step('marsch-befehlen', async () => {
-    await page.locator('aside select').nth(1).selectOption({ label: 'Nordostmexiko' }, { timeout: 5000 })
+    // Seit T-M44-11 tragen erreichbare Ziele die Ankunft im Text („Name — Ankunft Tag N“): nach Anfang des Textes waehlen.
+    const zielwahl = page.locator('aside select').nth(1)
+    const zielWert = await zielwahl.evaluate((el) => [...el.options].find((o) => o.text.startsWith('Nordostmexiko'))?.value)
+    await zielwahl.selectOption(zielWert ?? { label: 'Nordostmexiko' }, { timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('marsch-ziel-gewaehlt')
     await btn('Marsch befehlen').click({ timeout: 5000 })

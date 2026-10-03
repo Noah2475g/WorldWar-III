@@ -166,6 +166,21 @@ select,
   inset: -11px;
 }
 
+/* T-M44-17 (R-UX-06/AK3): das Feld ist der Knopf selbst — 44 x 44, der sichtbare Kreis bleibt
+   22 px (`::before`), der negative Rand haelt die Zeilenhoehe. Gemessen wird die Box des Knopfes;
+   das unsichtbare `::after`-Feld darueber zaehlte nicht. */
+:root[data-input='touch'] .explain__toggle {
+  width: 44px;
+  height: 44px;
+  margin: -11px;
+  border: 0;
+  background: none;
+}
+
+:root[data-input='touch'] .explain__toggle::before {
+  inset: 11px;
+}
+
 /* Abstand, damit das unsichtbare Feld dem Knopf daneben keine Tipps stiehlt. */
 :root[data-input='touch'] .action__head {
   gap: 12px;

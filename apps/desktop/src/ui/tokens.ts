@@ -54,6 +54,11 @@ export const TOKENS = {
   building: '#C9B98A',
   /** An allied power: marker rims, the ally line in the power chart. */
   ally: '#6FA8DC',
+  /**
+   * Der Fokusrahmen (T-M44-17, R-UX-06/AK4): ein eigenes Blau statt des Feindrots `accent`, das
+   * Alarm und Kampf gehoert — wer mit Tab durch die Oberflaeche geht, soll keinen Alarm sehen.
+   */
+  focus: '#7FB8FF',
 } as const
 
 export type TokenName = keyof typeof TOKENS

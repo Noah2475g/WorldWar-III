@@ -64,6 +64,7 @@
   --on-player: #e6e1d3;
   --building: #c9b98a;
   --ally: #6fa8dc;
+  --focus: #7fb8ff;
   --font-map: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
   --font-num: 'IBM Plex Mono', ui-monospace, monospace;
@@ -105,8 +106,9 @@ body {
 }
 
 /* A focus ring that is actually visible — the whole point of T-M10-12. */
+/* LOESCHVERMERK (Review): bis T-M44-17 trug der Fokusrahmen `var(--accent)`, das Feindrot. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -2243,6 +2245,41 @@ body {
   border-color: var(--warn);
 }
 
+/* Mindestmass am Schreibtisch (T-M44-17, R-UX-06/AK3): 24 px. Das Fragezeichen BLEIBT ein
+   kleiner Kreis (14 px, `::before`), der Knopf selbst ist 24 x 24 und holt sich den Platz ueber
+   negativen Rand zurueck, damit keine Zeile hoeher wird. */
+.explain__toggle {
+  position: relative;
+  isolation: isolate;
+  width: 24px;
+  height: 24px;
+  margin: -5px -2px -5px -2px;
+  border: 0;
+  background: none;
+}
+
+.explain__toggle::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  z-index: -1;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.explain__toggle[aria-expanded='true']::before {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+
+/* Kopf, Seitenleiste und Dialoge: kein Bedienelement unter 24 px (`:where` = Spezifitaet 0,
+   jede Gestaltung darueber bleibt, die Touch-Regeln mit 44 px gehen vor). */
+:where(.header, .side, .dialog) :where(button, select, summary, input:not([type='checkbox']):not([type='radio'])) {
+  min-height: 24px;
+  min-width: 24px;
+}
+
 .explain__text {
   display: block;
   margin: var(--sp-sm) 0;
@@ -2309,13 +2346,16 @@ body {
 
 /* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer
    prefers-reduced-motion oben im Stylesheet schaltet auch das ab (R-UI-04). */
+/* LOESCHVERMERK (Review): bis T-M44-17 blendete die Meldung auch ueber `opacity` ein
+   (from { opacity: 0; transform: translateX(-4px) } to { opacity: 1; transform: none }). axe
+   misst den Kontrast mitten im Einblenden (gemessen: 3,71:1 und 4,31:1 bei `.alert--unlock` in
+   der Mehrspieler-Lobby, R-UX-06/AK1) — der Befund haengt dann am Zeitpunkt der Messung. Jetzt
+   nur noch die Bewegung; der Text hat von der ersten Sekunde an seine Farbe. */
 @keyframes alert-in {
   from {
-    opacity: 0;
     transform: translateX(-4px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }

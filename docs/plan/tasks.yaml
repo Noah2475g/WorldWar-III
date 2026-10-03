@@ -3952,7 +3952,7 @@ tasks:
   - id: T-M44-17
     milestone: M44
     title: "Touch-Ziele, eigenes Fokus-Token, Kontrast-Stichprobe"
-    status: todo
+    status: done
     deps: [T-M44-03a, T-M44-08]
     requirements: [R-UX-06]
     design: [D-37]
