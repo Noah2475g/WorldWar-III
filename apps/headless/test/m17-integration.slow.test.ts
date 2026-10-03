@@ -874,6 +874,14 @@ describe('T-M43-04 Der Wiederholungslauf - Startzahl 1914 zweimal von Grund auf'
   })
 })
 
+// R-AI-10/AK3 (T-M42-09, D32.10): "in allen Laeufen des Messwerkzeugs null solcher Paare" -
+// auch hier, nicht nur in ai-integration. Stufe F: 28 in Summe (Befund aus T-M42-01).
+describe('R-AI-10/AK3 Kein zusammenlegbares Paar ueber zwei Tagesenden — Weltkarte, drei Startzahlen', () => {
+  it.each(STARTZAHLEN)('Startzahl %i', (startzahl) => {
+    expect(mit(startzahl).m42!.heer.paareUeberZweiTagesenden).toBe(0)
+  })
+})
+
 describe('R-AI-09 Der Bericht', () => {
   it('schreibt m17-integration.json nur auf Verlangen', () => {
     const laeufe: Record<string, { mitAntraegen: ReturnType<typeof kennzahlen>; ohneAntraege: ReturnType<typeof kennzahlen> }> = {}

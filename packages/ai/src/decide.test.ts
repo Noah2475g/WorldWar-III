@@ -667,6 +667,55 @@ describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-
       { id: 'c1', unitKey: 'infantry', einheiten: 3, at: 'o3' },
       { id: 'c2', unitKey: 'infantry', einheiten: 3, at: 'o3' },
     ])
-    expect(gruppen(context)).toEqual([['b1', 'b2']])
+    // LOESCHVERMERK (Review): T-M42-09 hebt "eine Provinz je Denkschritt" auf. Alte Erwartung:
+    // expect(gruppen(context)).toEqual([['b1', 'b2']])
+    expect(gruppen(context)).toEqual([
+      ['b1', 'b2'],
+      ['c1', 'c2'],
+    ])
+  })
+})
+
+/**
+ * T-M42-09 (R-AI-10/AK3, D32.10): Zusammenlegen ueberall. Der `break` nach der ersten Provinz faellt
+ * weg; `absorbedBy` sammelt schon ueber alle `MERGE_ARMIES`. Gegenlauf: Z1 und Z2 fallen auf Stufe
+ * C1 (T-M42-08 allein).
+ */
+describe('R-AI-10/AK3 Zusammenlegen ueberall (T-M42-09)', () => {
+  it('Z1: zwei Provinzen mit je drei Armeen zu fuenf -> zwei MERGE_ARMIES im selben Denkschritt', () => {
+    for (const at of ['o1', 'o2']) {
+      for (let i = 0; i < 3; i++) placeArmy(state, { owner: 'p2', at, units: [{ unitKey: 'infantry', hpTotal: 5000 }] })
+    }
+    const merges = consolidateCommands(contextFor('p2'), []).filter((command) => command.type === 'MERGE_ARMIES')
+    expect(merges).toHaveLength(2)
+  })
+
+  it('Z2: nach einem Denkschritt bleibt kein freies Paar derselben Rolle mit hoechstens 20 Einheiten', () => {
+    const cap = TEST_RULES.constants.stackFullContribution
+    const einheiten = [7, 4, 12, 9, 3, 15, 6]
+    einheiten.forEach((n, i) =>
+      placeArmy(state, { owner: 'p2', at: ['o1', 'o2', 'o3'][i % 3]!, units: [{ unitKey: 'infantry', hpTotal: n * 1000 }] }),
+    )
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'artillery', hpTotal: 1400 }] })
+    placeArmy(state, { owner: 'p2', at: 'o1', units: [{ unitKey: 'artillery', hpTotal: 2800 }] })
+    const commands = consolidateCommands(contextFor('p2'), [])
+    const after = runTicks(state, 1, ctx, () => commands).state
+    expect(after.armyOrder.length).toBeLessThan(state.armyOrder.length)
+
+    const eigene = after.armyOrder.map((id) => after.armies[id]!).filter((army) => army.owner === 'p2' && army.path.length === 0)
+    const units = (army: (typeof eigene)[number]) =>
+      army.units.reduce((sum, stack) => sum + Math.ceil(stack.hpTotal / TEST_RULES.units[stack.unitKey]!.hpPerUnit), 0)
+    const rolle = (army: (typeof eigene)[number]) =>
+      army.units.every((stack) => (TEST_RULES.units[stack.unitKey]?.rangeProvinces ?? 0) > 0) ? 'battery' : 'line'
+    const paare: string[] = []
+    for (let i = 0; i < eigene.length; i++) {
+      for (let j = i + 1; j < eigene.length; j++) {
+        const a = eigene[i]!
+        const b = eigene[j]!
+        if (a.locationProvinceId !== b.locationProvinceId || a.embarked !== b.embarked || rolle(a) !== rolle(b)) continue
+        if (units(a) + units(b) <= cap) paare.push(`${a.id}+${b.id}`)
+      }
+    }
+    expect(paare).toEqual([])
   })
 })
