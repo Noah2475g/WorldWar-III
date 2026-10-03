@@ -6144,6 +6144,26 @@ DoD nimmt T-M42-05 trotzdem zurück, weil sie für einen Riss geschrieben war, d
 Beschuss in jedem Lauf, Anteil ≥ 8 %") und AB übernehmen, oder die Untergrenze größer machen
 (mehr als eine Artillerie), oder bei Stufe F bleiben. T-M42-08/-09 hängen an T-M42-07.
 
+
+*Nachtrag 2026-10-03, Orchestrator-Entscheid Option (b), drei Iterationen:* **Zerlegung** (Probe
+Welt 1815 auf AB, tickweise mit Erklärungen): 2357 Infanterie-Aushebungen mit im Schnitt **1,05**
+Einheiten (die Geld-Tagesbilanz begrenzt, nicht die Untergrenze); 1934 davon in Provinzen mit Fabrik;
+die Begründung „Öl-Tagesbilanz trägt keine Einheit mit Ölunterhalt" 1736-mal. Am Tag 200 fördern
+Russland, Deutschland, Frankreich, Vereinigtes Königreich und Italien **0 Öl** und führen 0
+Artillerie; Vereinigte Staaten, China, Indien stehen bei 25–26 % (Gleichgewicht der Mischung). Die
+Untergrenze, die Kosten und die Fabrikpflicht sind **nicht** die Ursache; die Ablehnungen (China 7×)
+sind eine Nebenwirkung (Bestand desselben Zugs).
+
+| Iteration | Änderung | Anteil 1815/1914/2015 | Sonst |
+|---|---|---|---|
+| I1 | Panzeranteil an die Artillerie, wenn kein Panzer tragbar | 10,0 / 8,7 / 14,2 % | Panzer werden jetzt ausgehoben und abgelehnt (19/17/30) |
+| I2 | Panzer ganz aus der Mischung (60/0/40) | 13,2 / 15,3 / 14,0 % | 15–22 abgelehnte Artillerien |
+| I3 | wie I2, Untergrenze prüft `ledgerAfter` | 12,9 / 14,3 / 14,5 % (`m17`) | 0 Artillerie-Ablehnungen; reißt Hauptstadt (Russland), Frieden in 90 Tagen, R-AI-09/AK1 (2015 easy) |
+
+Ergebnis: Option (c), Stufe F (`c8575b1`, Code in `8bc8756`). R-AI-12/AK3 und AK4 sind auf dieser
+Karte gemeinsam nicht erfüllbar, solange Artillerie Öl verbraucht — Regelfrage an Noah
+(`DECISIONS.md`, 2026-10-03).
+
 **Status:** offen, an Noah.
 
 ## 2026-09-27 · T-M43-02 · Befund M43-02-a (niedrig, offen): eine Armee auf dem Weg hinein wird nicht gemeldet

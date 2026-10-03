@@ -7099,6 +7099,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Wiederholungsgrenze (China 7×) und R-AI-09/AK1. Artillerie und Beschuss gibt es in jedem Lauf,
   0 Ölmangeltage, Turnier 61 %. Revert `82f16bc`, kein Band bewegt; Befund M42-07-a,
   Frage an Noah in `DECISIONS.md` (2026-10-03).
+- **Zweiter Anlauf am 2026-10-03** (Orchestrator-Entscheid Option b): drei Iterationen auf AB,
+  bestes Ergebnis 13,2/15,3/14,0 %; Ursache: fünf von acht Mächten fördern kein Öl
+  (R-AI-12/AK4). Option c, Stufe F (`c8575b1`). Regelfrage an Noah (`DECISIONS.md`).
 
 ### T-M42-08 · Zusammenlegen nach Rolle und unter dem Deckel
 - **Ziel:** R-AI-10/AK2, AK4.

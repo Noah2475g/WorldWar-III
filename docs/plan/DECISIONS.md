@@ -5704,3 +5704,27 @@ zurückgenommen; keine Grenze wurde bewegt.
 
 **Kippbar:** nichts davon ist gebaut; die Commits liegen in der Geschichte des Zweigs
 `claude/game-v2-planned-tasks-tk5rrr`.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar · Befund M42-07-a: Option (b), danach (c)
+
+**Entscheidung (Orchestrator, nicht Noah — offen gekennzeichnet; Noah hat per /goal alle weiteren
+Schritte vorab freigegeben, solange nichts gelöscht wird):** Option (a) entfällt — das Band von
+15 % auf 8 % zu senken hieße, eine Grenze anzuheben, damit die Zahl passt (`CLAUDE.md`). Gewählt
+wird **(b)**: die KI soll das Band 15–30 % wirklich erreichen, höchstens drei Iterationen, sonst
+**(c)** Stufe F. T-M42-05 blieb dabei drin: die Regel „B ohne A" hatte die falsche Aufgabe
+getroffen (ohne T-M42-05 4 von 9 Vollpartien im Patt, mit ihr keine).
+
+**Ergebnis (gemessen, Befund M42-07-a):** Die Zerlegung zeigt die Ursache — auf der Weltkarte
+fördern **fünf von acht Mächten kein Öl**; der Öl-Wächter (R-AI-12/AK4) lässt ihnen keine
+Artillerie, und die drei Ölmächte stehen schon am Gleichgewicht ihrer Mischung. Drei Iterationen
+(Panzeranteil an die Artillerie, Panzer ganz aus der Mischung, Untergrenze mit `ledgerAfter`)
+kamen auf höchstens 12,9–15,3 %, nie auf allen drei Startzahlen über 15 %, und die dritte riss
+zusätzlich Hauptstadt-, Friedens- und Spionage-Zusicherungen. **Also (c): Stufe F**, Code
+zurückgenommen (`c8575b1`), nichts gelöscht.
+
+**Was Noah wissen muss:** R-AI-12/AK3 und AK4 sind auf dieser Karte gemeinsam nicht erfüllbar,
+solange Artillerie Öl verbraucht (`units.json`: 60 je Stunde) und die Mehrheit der Mächte keins
+fördert. Wer das Band will, muss eine der beiden Zusagen ändern (z. B. Artillerie ohne
+Ölunterhalt — eine Regeländerung, nur durch Noah) — das ist keine Frage der KI mehr.
