@@ -1,8 +1,26 @@
-# WORKFLOW — Etappe 2 von M42/M43 auf `claude/game-v2-planned-tasks-tk5rrr` (2026-10-03); Etappe 1 liegt auf main (PR #13)
+# WORKFLOW — Etappe 2 von M42/M43 und M44 „UX V2“ fertig auf `claude/game-v2-planned-tasks-tk5rrr` (PR #15, 2026-10-03); wartet auf Noahs Merge
+<!-- LOESCHVERMERK (Review): Titel vorher: WORKFLOW — Etappe 2 von M42/M43 auf `claude/game-v2-planned-tasks-tk5rrr` (2026-10-03); Etappe 1 liegt auf main (PR #13) -->
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
 > gilt, und was in welcher Reihenfolge zu tun ist.
 >
+> **Stand: 2026-10-03 abends, Endstand des PR-#15-Zweigs `claude/game-v2-planned-tasks-tk5rrr`.**
+> Von **361 Aufgaben sind 352 erledigt** (gezählt in `tasks.yaml`). Offen: T-M39-09 (**AK-9**,
+> braucht Noah und einen zweiten Menschen), T-M42-04 (zurückgestellt, Voraussetzung T-M42-13 nicht
+> gegeben) und sieben zurückgenommene mit `reopened`-Text (T-M10-02, T-M40-04, T-M41-10, T-M42-07,
+> T-M42-13, T-M42-14, T-M42-16). **M44 „UX V2“ ist 24 von 24 fertig.**
+>
+> **Gemessen auf dem Endstand:** `pnpm acceptance` **12 von 12, Exit 0, 594 s** (gegen `3ec9a62`,
+> ruhige Maschine), AK-1 Siegtag **589**; KI-Endstand (Bahn K): Turnier 84/61/63 %, `progress.slow`
+> 0,3350, neun Vollpartien 9/9, Haltungs-Messlauf 35/35, AK5 91,9 %. UX: `ux:check` 17 grün / 0 rot /
+> 2 offen (durch Tests gedeckt), Abgleich: alle Maßnahmen erfüllt; T-M44-20 am Bündel 0 Bilder > 50 ms.
+> Noahs Entscheide E1–E5 in `DECISIONS.md` (2026-10-03). Artillerie verbraucht weiter Öl (E1).
+>
+> **Was jetzt auf Noah wartet:** Merge von PR #15 nach `main` (Noah merged, kein Agent), Freigabe der
+> Liste `docs/plan/LOESCHVERMERKE.md`, **AK-9**, Befund M42-09-a, AK-8 neu messen (49 Dateien am
+> Erzeugnis geändert seit `7a6aa47`).
+>
+<!-- LOESCHVERMERK (Review): Stand-Absatz vom 2026-10-03 morgens (Spitze bf8af90, 331/324), ersetzt durch den Endstand. Wortlaut:
 > **Stand: 2026-10-03, Etappe 2 von M42/M43 abgeschlossen und gemessen** (Zweig
 > `claude/game-v2-planned-tasks-tk5rrr`, Spitze `bf8af90`, noch nicht gemerged). Von **331 Aufgaben
 > sind 324 erledigt** (gezählt in `docs/plan/tasks.yaml` am 2026-10-03, nicht geschätzt). **Sieben stehen
@@ -27,6 +45,7 @@
 > (Öl-Wächter) sind auf der Weltkarte gemeinsam nicht erfüllbar, weil fünf von acht Mächten kein Öl
 > fördern — eine Regelfrage an Noah (`DECISIONS.md`, 2026-10-03).
 >
+-->
 > **Was M17 „Tiefe zwischen den Kriegen" bringt, in drei Sätzen:** die KI wirbt Spione an
 > (Aufklärung, Sabotage, Gegenspionage), macht und beantwortet Handelsangebote, und darf
 > Durchmarsch/Kartenzugriff gezielt gewähren oder verweigern — alles über dieselben
