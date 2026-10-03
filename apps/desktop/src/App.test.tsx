@@ -1500,7 +1500,11 @@ describe('R-UI-05 Das Menue kennt drei Wege — auch aus der laufenden Partie', 
     startGame({ storage: new MemoryStorage() })
 
     fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    // R-UX-04/AK1 (T-M44-09a): aus der laufenden Partie braucht „Neue Partie“ den zweiten Klick
+    // am selben Knopf; nach dem ersten ist noch kein Dialog da.
     fireEvent.click(screen.getByRole('button', { name: 'Neue Partie' }))
+    expect(screen.queryByRole('dialog', { name: 'Neue Partie' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Partie wird verlassen/ }))
 
     expect(screen.getByRole('dialog', { name: 'Neue Partie' })).toBeTruthy()
     // Abbrechen laesst die laufende Partie unberuehrt.

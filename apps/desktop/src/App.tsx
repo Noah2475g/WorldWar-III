@@ -2582,25 +2582,27 @@ export function App(props: AppProps) {
         Stand, damit der Fehler untersuchbar bleibt (R-MP-04/AK2).
       */}
       {netplay.desync && (
-        <div className="dialog-backdrop dialog-backdrop--locked">
-          <div className="dialog" role="alertdialog" aria-label={t('netplay.desyncTitle')}>
-            <header className="dialog__head">
-              <h2>{t('netplay.desyncTitle')}</h2>
-            </header>
-            <div className="dialog__body">
-              <p>{t('netplay.desync', { tick: netplay.desync.tick })}</p>
-              <p className="muted">
-                {t('netplay.desyncHashes', { own: netplay.desync.own, other: netplay.desync.other })}
-              </p>
-              <p className="dialog__actions">
-                <button type="button" className="button" onClick={() => setDialog('saves')}>
-                  {t('netplay.desyncSave')}
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
+        // Dasselbe Gerüst wie jeder Dialog, nur ohne Ausgang (T-M44-08, R-UX-06/AK2): Fokus-Einzug
+        // und Fokusfalle gelten, Kreuz, Escape und Klick daneben gibt es nicht.
+        <Dialog
+          title={t('netplay.desyncTitle')}
+          locked
+          foot={
+            <button type="button" className="button" onClick={() => setDialog('saves')}>
+              {t('netplay.desyncSave')}
+            </button>
+          }
+        >
+          <p>{t('netplay.desync', { tick: netplay.desync.tick })}</p>
+          <p className="muted">
+            {t('netplay.desyncHashes', { own: netplay.desync.own, other: netplay.desync.other })}
+          </p>
+        </Dialog>
       )}
+      {/* LOESCHVERMERK (Review): bis T-M44-08 stand der Vorhang hier von Hand als
+          `<div className="dialog-backdrop dialog-backdrop--locked"><div className="dialog" role="alertdialog"
+          aria-label=...>` mit Kopf, Körper und dem Knopf „Stand sichern“ in `<p className="dialog__actions">` —
+          ohne Fokus-Einzug und ohne Fokusfalle (Befund B-09). Jetzt `Dialog` mit `locked`. */}
 
       {/* Die Partie ist entschieden: einmal sagen, die Uhr anhalten, und den Blick auf
           die Karte freigeben, wenn der Spieler ihn will (R-UI-13). */}
