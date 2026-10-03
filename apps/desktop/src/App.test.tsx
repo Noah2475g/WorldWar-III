@@ -987,6 +987,71 @@ describe('T-M41-04/T-M41-17 Die Uhrschleife im Spiel verliert keine Ticks', () =
 
     expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).toMatch(/Tag 5 · 04:00/)
   })
+
+})
+
+describe('R-UI-15 Escape blendet den Tooltip aus, ohne die Uhr in eine Schleife zu treiben', () => {
+  /**
+   * Befund aus der UX-Aufnahme (T-M44-02), am Dev-Server: Provinz waehlen, "Menü" oeffnen,
+   * Escape, Tempo 100 — nach wenigen Sekunden meldet React "Maximum update depth exceeded"
+   * ueber `console.error`. Escape schliesst dabei auch das Provinzpanel; das ist aber nicht
+   * die Ursache. Entscheidend ist, dass Escape den Tooltip ausblendet: solange er steht,
+   * schiebt seine Messung Commits ohne Update zwischen die Bilder, und die setzen Reacts
+   * Zaehler fuer "Update aus einem Effekt" zurueck. Ohne Tooltip zaehlte jeder Tick, weil
+   * der Effekt der Spionage-Meldungen `setNews` bei jedem Tick aufrief, auch ohne Aenderung.
+   *
+   * Dieser Test laeuft NICHT unter `act()`. `act` leert nach jedem Bild alle Effekte, und
+   * genau dann verwirft React einen Aufruf, der nichts aendert, schon vorab — der Fehler
+   * braucht ein Bild, das zwischen Commit und Effekten ankommt, wie im Browser. Dafuer
+   * laeuft Reacts eigener Scheduler, und `performance.now` schreitet bei jedem Aufruf um
+   * 2 ms fort: der Scheduler gibt dann nach jedem Commit ab (Zeitscheibe 5 ms), und das
+   * naechste Bild kommt vor den Effekten an.
+   */
+  let jetzt = 0
+  const actUmgebung = (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT
+
+  beforeEach(() => {
+    jetzt = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => (jetzt += 2))
+    vi.stubGlobal('requestAnimationFrame', (rueckruf: FrameRequestCallback) =>
+      setTimeout(() => rueckruf(performance.now()), 0),
+    )
+  })
+
+  afterEach(() => {
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT = actUmgebung
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('R-UI-15 Provinz waehlen, Menue, Escape, Tempo 100: keine "Maximum update depth"-Meldung', async () => {
+    const fehler = vi.spyOn(console, 'error').mockImplementation(() => {})
+    startGame({ storage: new MemoryStorage() })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provinz' }), { target: { value: 'USA-MW' } })
+    expect(screen.getByRole('button', { name: 'Kaserne bauen' })).toBeTruthy()
+
+    // Im Browser schliesst EIN Escape im Dialog Dialog und Panel: der Dialog schliesst sich
+    // selbst, React rendert synchron, und der neu gebundene Fenster-Hoerer laeuft fuer
+    // dieselbe Taste noch einmal durch die Kaskade. Unter Testing Library rendert React erst
+    // nach dem Ereignis — dort braucht derselbe Endzustand ein zweites Escape.
+    fireEvent.click(screen.getByRole('button', { name: 'Menü' }))
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    if (screen.queryByRole('button', { name: 'Kaserne bauen' })) fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Kaserne bauen' })).toBeNull()
+
+    ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean | undefined }).IS_REACT_ACT_ENVIRONMENT = false
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: '100' }))
+    // Bis zur Meldung braucht React mehr als 50 Bilder in Folge.
+    const tagAmStart = screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent
+    await new Promise((fertig) => setTimeout(fertig, 4000))
+    // Die Uhr lief wirklich — sonst bewiese das Schweigen der Konsole nichts.
+    expect(screen.getByText(/Tag \d+ · \d{2}:\d{2}/).textContent).not.toBe(tagAmStart)
+    fireEvent.click(within(screen.getByRole('group', { name: 'Geschwindigkeit' })).getByRole('button', { name: 'Pause' }))
+
+    const schleife = fehler.mock.calls.filter((args) => args.some((arg) => String(arg).includes('Maximum update depth')))
+    expect(schleife.length, 'React meldet setState in einem Effekt bei jedem Bild').toBe(0)
+  }, 20_000)
 })
 
 /**
