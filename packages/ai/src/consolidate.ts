@@ -40,8 +40,60 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   const cap = rules.constants.stackFullContribution
   const commands: Command[] = []
 
-  /** Einheiten je Armee nach dem Teilen (T-M42-17); bis dahin leer. */
+  // **Teilen** (T-M42-17, Review Punkt 11, Befund M42-09-a): der Kern legt jede fertige Aushebung in die
+  // Gastarmee der Provinz (`findHostArmy`), so wachsen Garnisonen ueber den Deckel (gemessen 95/95/96
+  // Einheiten auf Stufe C2). Ein stehender Verband ueber `stackFullContribution` gibt per `SPLIT_ARMY`
+  // Teile von hoechstens `cap` Einheiten ab, bis er selbst unter dem Deckel steht. Genommen werden ganze
+  // Einheiten (`hpPerUnit`) aus dem groessten Stapel zuerst, von jedem Stapel hoechstens alle bis auf
+  // eine angeschlagene Resteinheit - der Kern lehnt das Nehmen der ganzen Staerke ab. Die abgegebenen
+  // Teile tragen erst im naechsten Denkschritt eine Kennung; der Rest geht mit seiner neuen Zahl in den
+  // Merge-Pass unten.
   const nachTeilen = new Map<string, number>()
+  for (const army of [...view.armies].sort((a, b) => compareCodeUnits(a.id, b.id))) {
+    if (army.owner !== playerId) continue
+    if ((army.path?.length ?? 0) > 0) continue
+    const stacks = (army.units ?? []).map((stack) => ({
+      unitKey: stack.unitKey,
+      hpTotal: stack.hpTotal,
+      perUnit: rules.units[stack.unitKey]?.hpPerUnit ?? 0,
+    }))
+    const einheiten = () =>
+      stacks.reduce((sum, stack) => sum + unitCount({ unitKey: stack.unitKey, hpTotal: stack.hpTotal }, rules), 0)
+    let units = einheiten()
+    if (units <= cap) continue
+
+    let teile = 0
+    while (units > cap) {
+      let platz = cap
+      const take: { unitKey: string; hpTotal: number }[] = []
+      const reihenfolge = [...stacks].sort(
+        (a, b) =>
+          unitCount({ unitKey: b.unitKey, hpTotal: b.hpTotal }, rules) -
+            unitCount({ unitKey: a.unitKey, hpTotal: a.hpTotal }, rules) || compareCodeUnits(a.unitKey, b.unitKey),
+      )
+      for (const stack of reihenfolge) {
+        if (platz === 0) break
+        if (stack.perUnit <= 0) continue
+        const n = unitCount({ unitKey: stack.unitKey, hpTotal: stack.hpTotal }, rules)
+        const k = Math.min(platz, n - 1)
+        if (k <= 0) continue
+        take.push({ unitKey: stack.unitKey, hpTotal: k * stack.perUnit })
+        stack.hpTotal -= k * stack.perUnit
+        platz -= k
+      }
+      if (take.length === 0) break
+      commands.push({ type: 'SPLIT_ARMY', playerId, armyId: army.id, take } as Command)
+      teile += 1
+      units = einheiten()
+    }
+    if (teile === 0) continue
+    nachTeilen.set(army.id, units)
+    explanations.push({
+      action: `Teilt ${army.id} in ${army.provinceId} in ${teile + 1} Verbände`,
+      reason: `über dem Stapel-Deckel von ${cap} Einheiten trägt jede weitere weniger bei; es bleiben ${units}`,
+      score: 550,
+    })
+  }
 
   // embarked steht nicht im Schluessel: die View fuehrt es nicht, heute tot, weil die KI nie einschifft (amphibische KI: M18).
   /** Eigene stehende Armeen je Provinz und Rolle. */
@@ -109,8 +161,8 @@ function compareCodeUnits(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0
 }
 
-// LOESCHVERMERK (Review): T-M42-15/-16 ersetzen die Fassung von T-M42-09 (Sperre und Codeeinheiten-Sortierung
-// im Merge-Pass). Fassung von T-M42-09:
+// LOESCHVERMERK (Review): T-M42-15/-16/-17 ersetzen die Fassung von T-M42-09 (Teilen davor, Sperre und
+// Codeeinheiten-Sortierung im Merge-Pass). Fassung von T-M42-09:
 // export function consolidateCommands(context: AiContext, explanations: Explanation[]): Command[] {
 //   const { view, rules } = context
 //   const playerId = view.playerId

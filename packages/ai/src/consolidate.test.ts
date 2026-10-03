@@ -1,11 +1,11 @@
-import { createInitialState, publicView, type Command, type GameConfig, type GameState } from '@worldwar/core'
+import { createInitialState, publicView, step, unitCount, type Command, type GameConfig, type GameState } from '@worldwar/core'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { consolidateCommands } from './consolidate'
 import { emptyMemory } from './decide'
 
 /**
- * Review-Punkte 1 und 3 zu `consolidate.ts` (T-M42-15, T-M42-16). Eigene Datei statt
+ * Review-Punkte 1, 3 und 11 zu `consolidate.ts` (T-M42-15, T-M42-16, T-M42-17). Eigene Datei statt
  * `decide.test.ts`, damit die Faelle von T-M42-08/-09 dort unveraendert bleiben.
  */
 
@@ -21,6 +21,7 @@ const CONFIG: GameConfig = {
   ],
   victory: { condition: 'points', pointsShareToWin: 900, dayLimit: null },
 }
+const cap = TEST_RULES.constants.stackFullContribution
 const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
 
 let state: GameState
@@ -39,6 +40,74 @@ const contextFor = () => ({
   rules: TEST_RULES,
   map,
   difficulty: TEST_RULES.ai.difficulties.normal,
+})
+
+const eigeneIn = (s: GameState, at: string) =>
+  s.armyOrder.map((id) => s.armies[id]!).filter((army) => army.owner === 'p2' && army.locationProvinceId === at)
+const einheiten = (army: GameState['armies'][string]) =>
+  army.units.reduce((sum, stack) => sum + unitCount(stack, TEST_RULES), 0)
+const hpSumme = (armies: GameState['armies'][string][]) =>
+  armies.reduce((sum, army) => sum + army.units.reduce((s, stack) => s + stack.hpTotal, 0), 0)
+/** Der Zustand direkt nach der Befehlsphase - spaetere Phasen (Erholung) aendern die Hitpoints. */
+const nachBefehlen = (s: GameState, commands: readonly Command[]): GameState => {
+  let danach: GameState | null = null
+  step(s, commands, ctx, {
+    onPhase: (name, draft) => {
+      if (name === 'applyCommands') danach = structuredClone(draft)
+    },
+  })
+  return danach!
+}
+
+describe('T-M42-17 Teilen ueber dem Deckel (Review Punkt 11, Befund M42-09-a)', () => {
+  it('T1: 95 Einheiten in einer Garnison -> Teile <= 20, die Hitpoints bleiben erhalten', () => {
+    // 95 Infanteristen, der letzte angeschlagen (300 HP fehlen): partielle HP muessen durchgehen.
+    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 95 * hp('infantry') - 300 }] })
+    const vorher = hpSumme(eigeneIn(state, 'o2'))
+
+    const commands = consolidateCommands(contextFor(), [])
+    expect(commands.filter((command) => command.type === 'SPLIT_ARMY')).toHaveLength(4)
+
+    const nachher = nachBefehlen(state, commands)
+    const armeen = eigeneIn(nachher, 'o2')
+    expect(armeen.map(einheiten).sort((a, b) => a - b)).toEqual([15, 20, 20, 20, 20])
+    for (const army of armeen) expect(einheiten(army)).toBeLessThanOrEqual(cap)
+    expect(hpSumme(armeen)).toBe(vorher)
+  })
+
+  it('T2: nach dem Teilen legt der Merge-Pass den Rest mit einem kleinen Verband zusammen', () => {
+    const gross = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 25 * hp('infantry') }] })
+    const klein = placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 4 * hp('infantry') }] })
+
+    const commands = consolidateCommands(contextFor(), [])
+    expect(commands.map((command) => command.type)).toEqual(['SPLIT_ARMY', 'MERGE_ARMIES'])
+    expect((commands[1] as Extract<Command, { type: 'MERGE_ARMIES' }>).armyIds).toEqual([gross.id, klein.id].sort())
+
+    const armeen = eigeneIn(nachBefehlen(state, commands), 'o2')
+    expect(armeen.map(einheiten).sort((a, b) => a - b)).toEqual([9, 20])
+  })
+
+  it('T3: ein gemischter Verband gibt zuerst vom groessten Stapel ab und laesst jedem Stapel einen Rest', () => {
+    placeArmy(state, {
+      owner: 'p2',
+      at: 'o2',
+      units: [
+        { unitKey: 'infantry', hpTotal: 30 * hp('infantry') },
+        { unitKey: 'artillery', hpTotal: 3 * hp('artillery') },
+      ],
+    })
+    const vorher = hpSumme(eigeneIn(state, 'o2'))
+    const armeen = eigeneIn(nachBefehlen(state, consolidateCommands(contextFor(), [])), 'o2')
+    for (const army of armeen) expect(einheiten(army)).toBeLessThanOrEqual(cap)
+    expect(hpSumme(armeen)).toBe(vorher)
+  })
+
+  it('T4: ein Verband unter dem Deckel wird nicht geteilt, ein marschierender auch nicht', () => {
+    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: cap * hp('infantry') }] })
+    const marsch = placeArmy(state, { owner: 'p2', at: 'o3', units: [{ unitKey: 'infantry', hpTotal: 40 * hp('infantry') }] })
+    state.armies[marsch.id]!.path = ['o2']
+    expect(consolidateCommands(contextFor(), []).filter((command) => command.type === 'SPLIT_ARMY')).toEqual([])
+  })
 })
 
 describe('T-M42-16 Keine Armee unter Sperre im Merge-Pass (Review Punkt 3)', () => {
