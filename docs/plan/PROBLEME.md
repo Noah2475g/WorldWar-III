@@ -6100,6 +6100,52 @@ Festung 2 in jeder Stadt sein soll — keine neue Frage an Noah, nur eine Termin
 
 **Status:** offen, zurückgestellt (`tasks.yaml`, `reopened`-Text T-M42-04).
 
+*Nachtrag 2026-10-03 (Etappe 2, zweiter Versuch mit Artillerie):* die Buchung wurde auf der
+Artillerie-Stufe AB wieder eingespielt (`0532029`, Stufe ABS). Sie behebt, was die Untergrenze
+der Artillerie neu aufgerissen hatte (Wiederholungs-Ablehnungen `RECRUIT artillery
+INSUFFICIENT_RESOURCES`, auf AB China 7-mal; R-AI-09/AK1 Handel 1914) — `ai-integration` 28/28.
+Das Patt bleibt aber: mit `recruitShare` 320 (nach D32.5 gewählt; 280 reißt das Turnier in einer
+Sitzordnung, Frieden 57 %) enden **4 von 9 Startzahlen im Patt** (1939, 1683, 1945, 1789; die
+anderen 818/1129/981/773/522), dazu reißen K4 (R-AI-09/AK3: mit Anträgen 1 Überfall, ohne 0) und
+in der schnellen Suite `clearance.test.ts` K12 (keine Räumfrist-Meldung in ganzen Partien). Die
+Artillerie ist mit 9–10 % Anteil zu schwach, um Festung 2 zu brechen. Zurückgenommen
+(`67ec4e0`). **Status:** offen, zurückgestellt — hängt jetzt an Befund M42-07-a.
+
+## 2026-10-03 · T-M42-07 · Befund M42-07-a (hoch, offen): die Untergrenze bringt Artillerie, aber nicht ins Band
+
+**Messung** (Weltkarte, acht KI-Mächte, 200 Spieltage; Ausgangswert Stufe F auf `669b105`:
+Artillerie 0/0/1, Beschuss 0 in allen Läufen; neun Startzahlen 9/9 entschieden):
+
+| Stufe | Artillerieanteil 1815/1914/2015 | Beschuss | Wiederholungsgrenze ≤ 3 | R-AI-09 | Patts (9 Startzahlen) | Turnier Frieden | `progress.slow` |
+|---|---|---|---|---|---|---|---|
+| AB (T-M42-05 + -07, `05e8d3f`) | 9,05 / 8,31 / 9,71 % | > 0 überall (Welt 1815 1703) | **7** (China, Artillerie) | AK1 reißt (1914 kein Handel) | **0** (599/564/818/540/715/686/843/385/475) | 61 % | 0,333 |
+| B ohne A (Gegenlauf, T-M42-05 zurückgedreht) | 9,50 / 12,18 / 8,89 % | > 0 | **5** | hält | **4** (1815, 1939, 1871, 1945; 1914 an Tag 1492) | 61 % | 0,333 |
+| ABS 280 (+ Buchung T-M42-04) | 10,51 / 12,18 / 11,14 % | > 0 | hält | hält | — | **reißt** (Sitzordnung) | — |
+| ABS 320 | 9,53 / 9,43 / 10,11 % | > 0 | hält | AK3 reißt (1 > 0) | **4** | 62 % | 0,382 |
+
+Das Band 15–30 % (R-AI-12/AK3, Noahs Antwort auf Frage 1, „gemessen 24–28 %" laut Plansonde) wird
+auf **keiner** Stufe erreicht. Ursache, soweit belegt: die Untergrenze gibt **eine** Artillerie je
+Aushebung, die Infanterie kommt in Stapeln bis 15; die Rangfolge stellt die Artillerie zwar bis
+25 % Anteil vor die Infanterie (Haltetest X2), aber die Mengen gleichen das nicht aus. Die Plansonde
+(24–28 %) ist in diesem Repository nicht nachvollziehbar (`m18-plan-v2.md` liegt nicht vor).
+Was hält: Artillerie und Beschuss in jedem Lauf (R-AI-08/AK3 und R-BAT-08/AK3 wären wieder erfüllt),
+0 Ölmangeltage (R-AI-12/AK4), Turnier unverändert, und **mit** T-M42-05 kein einziges Patt.
+
+**Entscheidungsregel (DoD T-M42-07):** AB und „B ohne A" reißen beide (Band, Wiederholungsgrenze) →
+T-M42-05 wird zurückgenommen. Da das Band die eigene Zusage von T-M42-07 ist und auf jeder Stufe
+reißt, ist auch T-M42-07 zurückgenommen (`82f16bc`, `5576e47`); kein Band wurde bewegt. Der Code
+steht vollständig in `ca375dc`, `05e8d3f`, `0532029` und ist mit einem Revert der Reverts zurück.
+
+**Beobachtung, die Noah wissen muss:** T-M42-05 ist nicht die Ursache, sondern das Gegenteil —
+ohne die Einheitenzählung enden vier von neun Vollpartien im Patt, mit ihr keine. Die Regel aus der
+DoD nimmt T-M42-05 trotzdem zurück, weil sie für einen Riss geschrieben war, den T-M42-05 verursacht.
+
+**Frage an Noah** (`DECISIONS.md`, 2026-10-03): Band neu fassen (Vorschlag: „Artillerie und
+Beschuss in jedem Lauf, Anteil ≥ 8 %") und AB übernehmen, oder die Untergrenze größer machen
+(mehr als eine Artillerie), oder bei Stufe F bleiben. T-M42-08/-09 hängen an T-M42-07.
+
+**Status:** offen, an Noah.
+
 ## 2026-09-27 · T-M43-02 · Befund M43-02-a (niedrig, offen): eine Armee auf dem Weg hinein wird nicht gemeldet
 
 Ist eine eigene Armee bei einem Friedensschluss noch unterwegs **in** das Land der Gegenseite

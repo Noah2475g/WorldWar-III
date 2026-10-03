@@ -156,6 +156,15 @@ Pull Request und Noahs Playtest.
 
 ## 2 · Was als Nächstes dran ist
 
+**Stand 2026-10-03 (Etappe 2, erster Block, Zweig `claude/game-v2-planned-tasks-tk5rrr`):** Noahs
+/goal-Auftrag vom 2026-10-02 ersetzt den Playtest-Haltepunkt F6 (`DECISIONS.md`). T-M42-05 und
+T-M42-07 sind gebaut, gemessen und **zurückgenommen**, T-M42-04 ist mit Artillerie ein zweites
+Mal gemessen und bleibt **zurückgestellt** — das Artillerie-Band R-AI-12/AK3 (15–30 %) reißt auf
+jeder Stufe (8,3–12,2 %). Befund M42-07-a (`PROBLEME.md`), Frage an Noah (`DECISIONS.md`,
+2026-10-03). **T-M42-08/-09 hängen an dieser Antwort.** Der Code liegt in `ca375dc`, `05e8d3f`,
+`0532029` und ist per Revert der Reverts zurück. Der Zweig ist inhaltlich gleich `main` bis auf
+die Plandokumente.
+
 **Etappe 1 von M42/M43 ist fertig gebaut und gemessen; es fehlt nur noch `pnpm acceptance`
 auf ruhiger Maschine, dann der Pull Request und Noahs Playtest.** Kein Agent kann das
 Playtest-Kriterium (Entscheid F6) selbst erfüllen.

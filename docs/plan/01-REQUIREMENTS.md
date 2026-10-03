@@ -941,6 +941,11 @@ Provinzhandel nach M17) und dem Befund beim Planen (`PROBLEME.md`, B1 und B2). E
     > braucht laut `units.json` eine Fabrik. Wer Geld hat, baut keine Fabrik; wer Fabriken
     > baut, kann sie nicht bezahlen. Die Reparatur braucht zugleich Befund M17-S12 und kippt
     > das Turnierband; Entscheid Noah (2026-09-25): beide gehen an M18.
+    >
+    > **Auf dem M42-Stand (2026-10-03) weiter nicht erfüllt.** Mit der Artillerie-Untergrenze
+    > (T-M42-07, Stufe AB) war AK3 erfüllt (Welt 1815: 246 Artillerie, 1703 selbsttätiger
+    > Beschuss), aber T-M42-07 ist zurückgenommen, weil das Band aus R-AI-12/AK3 riss (Befund
+    > M42-07-a, Frage an Noah). Der Vermerk bleibt, bis T-M42-07 übernommen ist.
 - **R-GAME-07 — Spielstände der V1 laufen weiter.** Die neuen Zustandsfelder von M15 —
   **Betroffenheit am Ereignis, Verstimmungen, Feuerleitung** — kommen mit **einer**
   Migration von Version 1 auf 2. *(Spione, Aufklärung und Zeitung standen hier bis zum

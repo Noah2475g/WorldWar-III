@@ -5661,3 +5661,46 @@ Vorspulen); eine Playtest-Frage zu R-DIP-10 im Bogen der Etappe.
 - **Der Bericht** trägt den Abschnitt `wiederholungslauf`; eingecheckt wird er mit der jeweils
   aktuellen Stufenmessung, zuletzt auf dem vereinten Endstand von Kette und Nebenbahn
   (Commit `65a1645`).
+
+---
+
+## 2026-10-02 · Noah · Etappe 2 ohne Playtest-Haltepunkt (F6 ersetzt)
+
+**Entscheidung (Noah, per /goal-Auftrag):** alle offenen geplanten Punkte werden umgesetzt. Der
+Auftrag ersetzt den Playtest-Haltepunkt F6 aus dem Dossier `entscheidungen-etappe1.md` („erst
+nach Noahs Bestätigung beginnt Etappe 2"). Etappe 2 (T-M42-05, T-M42-07, T-M42-04 fortsetzen,
+danach T-M42-08…12) beginnt damit am 2026-10-02 auf dem Zweig
+`claude/game-v2-planned-tasks-tk5rrr` (abgezweigt von `main` = `95441e0`).
+
+**Was unverändert gilt:** jede Aufgabe misst gegen ihre vorab festgelegten Rücknahmekriterien;
+was reißt, wird begründet zurückgenommen und nicht nachgeschärft. Der Playtest selbst entfällt
+nicht, er wandert hinter das Ende von Etappe 2 (T-M42-12) — kein Agent kann ihn erfüllen.
+
+*Nachtrag 2026-10-03, Ergebnis des ersten Blocks:* T-M42-05 und T-M42-07 sind gebaut, gemessen
+und nach ihren Kriterien zurückgenommen; T-M42-04 ist mit Artillerie ein zweites Mal gemessen und
+bleibt zurückgestellt. Volle Zahlen in `PROBLEME.md`, Befund M42-07-a. Frage unten.
+
+---
+
+## 2026-10-03 · Offene Frage an Noah · Das Artillerie-Band (Befund M42-07-a)
+
+**Lage:** Die Untergrenze aus D32.8 bringt Artillerie und selbsttätigen Beschuss in jeden Lauf
+(Stufe F: 0), hält das Turnier, den Öl-Wächter und — zusammen mit der Einheitenzählung
+(T-M42-05) — neun von neun Vollpartien entschieden. Das Band aus R-AI-12/AK3 (15–30 %) reißt auf
+jeder Stufe: 8,3–12,2 % statt der in der Plansonde gemessenen 24–28 %. Nach der Regel ist alles
+zurückgenommen; keine Grenze wurde bewegt.
+
+**Optionen:**
+- **(a) Empfohlen:** AK3 neu fassen — „in jedem Lauf Artillerie und selbsttätiger Beschuss, Anteil
+  mindestens 8 %" — und Stufe AB (`ca375dc` + `05e8d3f`) wieder einspielen. Folge: die
+  Wiederholungsgrenze reißt auf AB (China 7× abgelehnte Artillerie), bis T-M42-04 bucht; mit der
+  Buchung reißt aber das Patt (4 von 9) — T-M42-04 bliebe zurückgestellt, und die
+  Wiederholungsgrenze müsste für AB anders gelöst werden (z. B. die Untergrenze rechnet selbst mit
+  `ledgerAfter`, ohne `recruitShare` neu abzustimmen).
+- **(b)** Die Untergrenze vergrößern (z. B. so viele Artillerien, wie der Bestand über der
+  Rücklage trägt, höchstens der Rückstand zur Mischung) — neuer Entwurf, neue Messung.
+- **(c)** Bei Stufe F bleiben; R-AI-08/AK3 und R-BAT-08/AK3 bleiben auf dem M42-Stand unerfüllt,
+  T-M42-08/-09 entfallen mangels zweiter Rolle.
+
+**Kippbar:** nichts davon ist gebaut; die Commits liegen in der Geschichte des Zweigs
+`claude/game-v2-planned-tasks-tk5rrr`.

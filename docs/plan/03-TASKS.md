@@ -7021,7 +7021,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 ### T-M42-04 · Spionage und Börse werden gebucht, „schwer" wird neu abgestimmt
 - **Ziel:** Befunde M17-S12 und M17-I1 beheben, ohne dass die Stufen ununterscheidbar werden.
 - **Anforderungen:** R-AI-11, R-AI-06
-- **Abhängigkeiten:** T-M42-06
+- **Abhängigkeiten:** T-M42-07
+  *(Umgestellt am 2026-10-03, vorher die Fabrik-Aufgabe: die Buchung wartet seit Noahs Entscheid vom 2026-09-27 auf die Artillerie.)*
 - **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/decide.ts`,
   `packages/ai/src/provinceValue.ts`, `packages/ai/src/espionage.ts`, `data/rules/default/ai.json`
   (nur wenn ein Kandidat hält), `docs/plan/BALANCING.md`, `apps/headless/test/tournament.slow.test.ts`,
@@ -7048,11 +7049,17 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   wie bei T-M42-06 (Befund M42-06-a) — die Sieglage ist das Empfindliche, nicht die Buchung.
   `ai.json` nie festgeschrieben, Revert `0e85934`, Turnier neu gemessen `b9ceeff`. Befund
   M42-04-a in `PROBLEME.md` (offen, hoch).
+- **Zweiter Versuch am 2026-10-03** (Etappe 2, mit Artillerie, Stufe ABS, `0532029`): die
+  Buchung behebt die Wiederholungs-Ablehnungen der Artillerie-Untergrenze und R-AI-09/AK1;
+  `recruitShare` 280 reißt das Turnier, D32.5 wählt 320 (320/350/400: 62/63/67 %, alle grün).
+  Mit 320 reißen K5 (**4 von 9 Startzahlen im Patt**) und K4 (R-AI-09/AK3, 1 > 0), dazu
+  `clearance.test.ts` K12. Zurückgenommen (`67ec4e0`); wartet auf Befund M42-07-a.
 
 ### T-M42-05 · Die Truppenmischung zählt Einheiten
 - **Ziel:** R-AI-10/AK1.
 - **Anforderungen:** R-AI-10
-- **Abhängigkeiten:** T-M42-04
+- **Abhängigkeiten:** T-M42-06
+  *(Umgestellt am 2026-10-03, vorher die Buchungs-Aufgabe: Kette Fabrik → Einheitenzählung → Artillerie → Buchung.)*
 - **Dateien:** `packages/ai/src/economy.ts`
 - **Tests zuerst:** drei Infanteriearmeen zu je fünf plus eine Batterie zu eins → Rangfolge vor
   und nach dem Verschmelzen gleich (heute rot); 15 000 HP Infanterie = 15 Einheiten; der
@@ -7061,6 +7068,10 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   und `total` werden einmal je `recruitCommands` gebildet und optional übergeben. Gemessen erst
   zusammen mit T-M42-07 auf Stufe AB (Kritik H-5: die Zählung ändert die Rangfolge erst, wenn
   zwei Arten im Bestand sind). Aufwand 1,5 h.
+- **Zurückgenommen am 2026-10-03:** gebaut (`ca375dc`, M1–M5, 5 rot vor dem Bau) und nach der
+  Entscheidungsregel von T-M42-07 zurückgenommen (`5576e47`) — AB und „B ohne A" reißen beide
+  (Band R-AI-12/AK3, Wiederholungsgrenze). Gegen die Regel beobachtet: ohne T-M42-05 enden 4 von
+  9 Vollpartien im Patt, mit T-M42-05 keine. Befund M42-07-a, Frage an Noah.
 
 ### T-M42-07 · Artillerie, die die KI tragen kann
 - **Ziel:** R-AI-12/AK3, AK4, R-AI-10/AK5.
@@ -7083,6 +7094,11 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Entscheidungsregel aus Plan §5 — reißt AB und hält „B ohne A", ist T-M42-05 die Ursache und
   der Heer-Teil (T-M42-08/-09) endet; reißen beide, wird T-M42-05 zurückgenommen. Aufwand
   3,5 h, Rechenzeit rund 25 min mit Gegenlauf.
+- **Zurückgenommen am 2026-10-03:** gebaut (`05e8d3f`) und gemessen; das Band 15–30 % reißt auf
+  jeder Stufe (AB 8,3–9,7 %, B ohne A 8,9–12,2 %, mit Buchung 9,4–12,2 %), dazu auf AB die
+  Wiederholungsgrenze (China 7×) und R-AI-09/AK1. Artillerie und Beschuss gibt es in jedem Lauf,
+  0 Ölmangeltage, Turnier 61 %. Revert `82f16bc`, kein Band bewegt; Befund M42-07-a,
+  Frage an Noah in `DECISIONS.md` (2026-10-03).
 
 ### T-M42-08 · Zusammenlegen nach Rolle und unter dem Deckel
 - **Ziel:** R-AI-10/AK2, AK4.
