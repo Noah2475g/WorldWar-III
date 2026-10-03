@@ -24,6 +24,7 @@ import { NationName } from './Nation.tsx'
 import { ART_FOR_ICON, BUILDING_ART, UnitArt, type ArtName, type ArtTone } from './art.tsx'
 import { UnitMarker } from './UnitMarker.tsx'
 import { Explain } from './Explain.tsx'
+import { ConfirmButton } from './ConfirmButton.tsx'
 import { useInputMode } from './inputMode.ts'
 // Die Richtung einer Bilanz als Klassenzusatz - dieselbe Funktion wie in der
 // Kopfleiste (T-M36-05). Zwei Tabellen, die dieselbe Zahl verschieden einfaerben,
@@ -182,9 +183,12 @@ function ActionButton({
   artWidth = 34,
   artTone = 'ink',
   reasonInGroup = false,
+  confirm,
 }: {
   action: Action
   showReason: boolean
+  /** Der Folgesatz, wenn der Befehl nachfragen soll (T-M44-09b): dann ein `ConfirmButton` statt des einfachen Knopfs. */
+  confirm?: string | undefined
   /** Der Grund steht schon in der Sammelzeile der Gruppe (T-M44-18): auch im Touch-Betrieb nicht noch einmal. */
   reasonInGroup?: boolean
   /** Breite des Schattenrisses, falls die Aktion einen fuehrt (D33.3). */
@@ -206,27 +210,31 @@ function ActionButton({
           Erklaerzeichen eine eigene Reihe einsamer Kreise (in der Sichtpruefung
           zu T-M13-17 gefunden). */}
       <span className="action__head">
-        <button
-          type="button"
-          className={primary ? 'button button--primary' : 'button'}
-          aria-pressed={pressed}
-          disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
-          title={buttonTitle(action)}
-          // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
-          aria-label={compact ? (action.aria ?? action.label) : action.aria}
-          aria-describedby={action.disabledReason ? reasonId : undefined}
-          onClick={action.onRun}
-        >
-          {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
-              Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
-              eine Zumutung (T-M22-06). */}
-          {action.art ? (
-            <UnitArt name={action.art} width={artWidth} tone={artTone} />
-          ) : (
-            action.icon && <Icon name={action.icon} size={13} />
-          )}
-          {compact ? '+' : action.label}
-        </button>
+        {confirm !== undefined && action.disabledReason === null && action.pendingNotice === undefined ? (
+          <ConfirmButton label={action.label} consequence={confirm} onConfirm={action.onRun} />
+        ) : (
+          <button
+            type="button"
+            className={primary ? 'button button--primary' : 'button'}
+            aria-pressed={pressed}
+            disabled={action.disabledReason !== null || action.pendingNotice !== undefined}
+            title={buttonTitle(action)}
+            // Der Name nennt die Handlung, nicht nur die Sache (T-M22-06, V2-13).
+            aria-label={compact ? (action.aria ?? action.label) : action.aria}
+            aria-describedby={action.disabledReason ? reasonId : undefined}
+            onClick={action.onRun}
+          >
+            {/* Das Bild geht vor, wo es eines gibt (T-M33-02); sonst die Glyphe wie bisher.
+                Ohne Namen, denn den traegt der Knopf schon — zweimal vorgelesen waere er
+                eine Zumutung (T-M22-06). */}
+            {action.art ? (
+              <UnitArt name={action.art} width={artWidth} tone={artTone} />
+            ) : (
+              action.icon && <Icon name={action.icon} size={13} />
+            )}
+            {compact ? '+' : action.label}
+          </button>
+        )}
         {action.explainKey && <Explain textKey={action.explainKey} subject={action.label} />}
       </span>
       {/* Nur im Touch-Betrieb: was sonst allein im Titel steht (2026-09-24). Fuers Ohr
@@ -305,8 +313,11 @@ export function ActionGroup({
   group,
   next,
   collectReasons = false,
+  confirms,
 }: {
   group: ActionGroupSpec
+  /** Folgesätze je Aktionskennung: diese Knöpfe fragen vor dem Senden nach (T-M44-09b). */
+  confirms?: Readonly<Record<string, string>>
   next?: NextUnlock | null | undefined
   /**
    * Sperrgründe als **eine** Sammelzeile über den Knöpfen statt als Absatz unter jedem (T-M44-18,
@@ -360,7 +371,7 @@ export function ActionGroup({
       )}
       <div className="actions">
         {group.actions.map((action) => (
-          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} />
+          <ActionButton key={action.id} action={action} showReason={showsReason(action)} reasonInGroup={collectReasons} confirm={confirms?.[action.id]} />
         ))}
       </div>
     </section>
@@ -1520,6 +1531,10 @@ export function DiplomacyPanel({
                 actions: actionsFor(chosenAlive.id),
               }}
               collectReasons
+              confirms={{
+                [`diplomacy-declareWar-${chosenAlive.id}`]: t('diplomacy.declareWarConfirm', { nation: nameOf(chosenAlive.id) }),
+                [`diplomacy-breakAlliance-${chosenAlive.id}`]: t('diplomacy.breakAllianceConfirm', { nation: nameOf(chosenAlive.id) }),
+              }}
             />
           )}
           {passageFor && (

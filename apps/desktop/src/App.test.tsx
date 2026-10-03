@@ -98,6 +98,12 @@ const waehleErsteMacht = (panel: HTMLElement) => {
   fireEvent.click(within(zeile).getAllByRole('button')[0]!)
 }
 
+/** „Krieg erklären“ fragt nach (T-M44-09b): erster Klick nennt die Folge, der zweite sendet den Befehl. */
+function klickeKrieg(scope: { getByRole: (role: string, options?: { name: string | RegExp }) => HTMLElement }): void {
+  fireEvent.click(scope.getByRole('button', { name: 'Krieg erklären' }))
+  fireEvent.click(scope.getByRole('button', { name: /noch einmal klicken/ }))
+}
+
 describe('R-UI-03 Die Partie startet', () => {
   it('zeigt vor dem Start den Dialog', () => {
     render(<App map={world} rules={TEST_RULES} maps={maps} />)
@@ -342,7 +348,7 @@ describe('R-TIME-06 Das Protokoll spricht in ganzen Zeilen', () => {
       fireEvent.keyDown(window, { key: 'd' })
       const panel = screen.getByRole('region', { name: 'Diplomatie' })
       waehleErsteMacht(panel)
-      fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+      klickeKrieg(within(panel))
       fireEvent.click(screen.getByRole('button', { name: 'Vorspulen' }))
 
       const log = screen.getByRole('region', { name: 'Ereignisse' })
@@ -581,7 +587,7 @@ describe('R-UI-05 Befehle aus der Oberflaeche', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
     // Der Befehl wirkt im naechsten Tick (T-M22-05).
     fastForward(1)
 
@@ -747,7 +753,7 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
 
     // Die Quittung steht am Knopf — und bei stehender Uhr nennt sie das Weiterlaufen.
     expect(panel.textContent).toContain('befohlen')
@@ -767,10 +773,9 @@ describe('R-UI-05 Jeder Befehl quittiert sofort sichtbar', () => {
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    const war = within(panel).getByRole('button', { name: 'Krieg erklären' })
-    fireEvent.click(war)
+    klickeKrieg(within(panel))
 
-    expect(war.hasAttribute('disabled')).toBe(true)
+    expect(within(panel).getByRole('button', { name: 'Krieg erklären' }).hasAttribute('disabled')).toBe(true)
   })
 
   /**
@@ -1883,7 +1888,7 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
 
       wähle(nationOf(p2))
       const gruppeP2 = screen.getByRole('region', { name: `Verträge mit ${nationOf(p2)}` })
-      fireEvent.click(within(gruppeP2).getByRole('button', { name: 'Krieg erklären' }))
+      klickeKrieg(within(gruppeP2))
       expect(within(gruppeP2).getByText(/befohlen/)).toBeTruthy()
 
       // Bei stehender Uhr (T-M22-05) zur dritten Macht wechseln: deren eigener Knopf
@@ -2013,7 +2018,7 @@ describe('T-M41-13 Tempo waehrend des Vorspulens verliert keine Befehle', () => 
     fireEvent.keyDown(window, { key: 'd' })
     const panel = screen.getByRole('region', { name: 'Diplomatie' })
     waehleErsteMacht(panel)
-    fireEvent.click(within(panel).getByRole('button', { name: 'Krieg erklären' }))
+    klickeKrieg(within(panel))
   }
 
   const beideAngewandt = () => {

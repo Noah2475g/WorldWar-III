@@ -2494,3 +2494,47 @@ describe('R-SPY-03 Die aufgeklaerte Provinz sagt, bis wann', () => {
     expect(screen.queryByText(/Aufgeklärt:/)).toBeNull()
   })
 })
+
+/**
+ * R-UX-04/AK1 für die Diplomatie (T-M44-09b): Krieg erklären und Bündnis aufkündigen sind nicht
+ * rückgängig zu machen; sie brauchen einen zweiten Klick am selben Knopf, und der Folgesatz nennt die Macht.
+ * Die Befehle selbst bleiben dieselben (`onRun`).
+ */
+describe('R-UX-04/AK1 Krieg und Bündnisbruch fragen nach', () => {
+  const view = diplomacyView({ others: [{ id: 'p2', nation: 'Ostmark' }] })
+  const make = () => {
+    const war = vi.fn()
+    const brk = vi.fn()
+    const peace = vi.fn()
+    const treaties: Action[] = [
+      { id: 'diplomacy-declareWar-p2', label: 'Krieg erklären', disabledReason: null, onRun: war },
+      { id: 'diplomacy-offerPeace-p2', label: 'Frieden anbieten', disabledReason: null, onRun: peace },
+      { id: 'diplomacy-breakAlliance-p2', label: 'Bündnis aufkündigen', disabledReason: null, onRun: brk },
+    ]
+    render(<DiplomacyPanel view={view} nameOf={() => 'Ostmark'} chosen="p2" onChoose={() => undefined} actionsFor={() => treaties} />)
+    return { war, brk, peace }
+  }
+
+  it('sendet „Krieg erklären“ erst nach dem zweiten Klick, und der Folgesatz nennt die Macht (heute rot)', () => {
+    const { war } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Krieg erklären' }))
+    expect(war).not.toHaveBeenCalled()
+    const knopf = screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ })
+    fireEvent.click(knopf)
+    expect(war).toHaveBeenCalledTimes(1)
+  })
+
+  it('fragt auch beim Aufkündigen des Bündnisses nach (heute rot)', () => {
+    const { brk } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Bündnis aufkündigen' }))
+    expect(brk).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Ostmark.*noch einmal klicken/ }))
+    expect(brk).toHaveBeenCalledTimes(1)
+  })
+
+  it('fragt bei Frieden nicht nach: dort geht nichts verloren', () => {
+    const { peace } = make()
+    fireEvent.click(screen.getByRole('button', { name: 'Frieden anbieten' }))
+    expect(peace).toHaveBeenCalledTimes(1)
+  })
+})

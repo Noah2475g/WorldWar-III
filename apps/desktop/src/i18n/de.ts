@@ -524,6 +524,9 @@ export const de = {
 
   diplomacy: {
     title: 'Diplomatie',
+    // Folgesätze der Rückfrage (T-M44-09b, R-UX-04/AK1): die Folge nennen und sagen, dass noch einmal geklickt wird.
+    declareWarConfirm: 'Krieg gegen {{nation}} — lässt sich nicht zurücknehmen, noch einmal klicken.',
+    breakAllianceConfirm: 'Das Bündnis mit {{nation}} endet — noch einmal klicken.',
     peace: 'Frieden',
     war: 'Krieg',
     truce: 'Waffenstillstand',

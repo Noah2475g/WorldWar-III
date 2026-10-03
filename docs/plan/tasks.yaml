@@ -3872,13 +3872,13 @@ tasks:
   - id: T-M44-09b
     milestone: M44
     title: "Rueckfrage bei Krieg und Buendnisbruch"
-    status: todo
+    status: done
     deps: [T-M44-09a]
     requirements: [R-UX-04]
     design: [D-37]
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/ui/Panels.test.tsx]
-    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Diplomatie. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 1,5 h."
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Diplomatie. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 1,5 h. Erledigt am 2026-10-03: Panels.tsx ActionGroup bekommt `confirms` (Folgesatz je Aktionskennung), ActionButton zeigt dafuer den ConfirmButton aus T-M44-09a; DiplomacyPanel setzt ihn fuer `diplomacy-declareWar-<id>` und `diplomacy-breakAlliance-<id>` (Saetze diplomacy.declareWarConfirm/breakAllianceConfirm nennen die Macht). Frieden und Buendnisangebot fragen nicht nach. Gemessen mit pnpm ux:check --only R-UX-04/AK1 (neue Sonde probes.confirm in ux-capture.mjs): 5 Groessen, Krieg erst nach dem zweiten Klick."
   - id: T-M44-10
     milestone: M44
     title: "Protokoll und Fuss: Zeit einzeilig, Gefechte zusammengefasst, Platz 1 zuerst"

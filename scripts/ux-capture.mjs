@@ -723,7 +723,16 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await axe(page, 'diplomacy', data.axe)
     await btn('Mexiko').click({ timeout: 5000 })
     await page.waitForTimeout(300)
+    // R-UX-04/AK1 (T-M44-09b): der erste Klick fragt nur; erst der zweite sendet den Befehl.
     await btn('Krieg erklären').click({ timeout: 5000 })
+    await page.waitForTimeout(300)
+    data.probes.confirm = await page.evaluate(() => {
+      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test(b.textContent ?? ''))
+      const sent = document.querySelectorAll('.action__pending').length > 0
+      return { asksOnFirstClick: asks, warOnFirstClick: sent }
+    })
+    await shot('krieg-fragt-nach')
+    await page.getByRole('button', { name: /noch einmal klicken/ }).click({ timeout: 5000 }).catch(() => {})
     await page.waitForTimeout(300)
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
