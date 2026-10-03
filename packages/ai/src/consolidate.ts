@@ -22,7 +22,7 @@ import type { AiContext, Explanation } from './types'
  */
 /**
  * **Seit T-M42-08 (R-AI-10/AK2, AK4, D32.9): nach Rolle und unter dem Deckel, in Einheiten.**
- * Die alte Fassung (unten als LOESCHVERMERK) zaehlte Stapel statt Einheiten gegen den Deckel und
+ * Die alte Fassung (in git, `3e3f850^`) zaehlte Stapel statt Einheiten gegen den Deckel und
  * legte jede Armee mit jeder zusammen - stehende Verbaende bis 132 Einheiten (Stufe 0), und eine
  * Batterie ging in der Infanterie auf und schoss dann nicht mehr von selbst (`military.ts`).
  *
@@ -161,12 +161,9 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
       }
     }
 
-    // LOESCHVERMERK (Review): T-M42-09 (R-AI-10/AK3, D32.10) hebt "eine Provinz je Denkschritt" auf -
+    // T-M42-09 (R-AI-10/AK3, D32.10) hebt "eine Provinz je Denkschritt" auf -
     // `absorbedBy` in `decide.ts` sammelt ueber alle MERGE_ARMIES, und eine Provinz je Denkschritt liess
-    // auf der Weltkarte Paare ueber zwei Tagesenden stehen (m17-integration Stufe F: 28). Alte Zeilen:
-    // // Eine Provinz je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
-    // // soll sie sehen (T-M42-09 hebt das auf).
-    // if (commands.length > 0) break
+    // auf der Weltkarte Paare ueber zwei Tagesenden stehen (m17-integration Stufe F: 28).
   }
 
   return commands
@@ -233,59 +230,6 @@ function compareCodeUnits(a: string, b: string): number {
 //     // // Eine Provinz je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
 //     // // soll sie sehen (T-M42-09 hebt das auf).
 //     // if (commands.length > 0) break
-//   }
-//
-//   return commands
-// }
-
-// LOESCHVERMERK (Review): T-M42-08 ersetzt die alte Fassung (Stapel statt Einheiten, ohne Rolle,
-// eine Gruppe je Provinz). Alte Fassung:
-// export function consolidateCommands(context: AiContext, explanations: Explanation[]): Command[] {
-//   const { view, rules } = context
-//   const playerId = view.playerId
-//   const cap = rules.constants.stackFullContribution
-//
-//   /** Eigene Armeen je Provinz, die stillstehen. */
-//   const byProvince = new Map<string, { id: string; units: number }[]>()
-//   for (const army of view.armies) {
-//     if (army.owner !== playerId) continue
-//     if ((army.path?.length ?? 0) > 0) continue
-//     const units = (army.units ?? []).length
-//     if (units === 0) continue
-//     byProvince.set(army.provinceId, [
-//       ...(byProvince.get(army.provinceId) ?? []),
-//       { id: army.id, units },
-//     ])
-//   }
-//
-//   const commands: Command[] = []
-//
-//   // Provinzen in fester Reihenfolge, damit dieselbe Lage denselben Befehl ergibt.
-//   for (const provinceId of [...byProvince.keys()].sort((a, b) => a.localeCompare(b, 'en'))) {
-//     const armies = [...byProvince.get(provinceId)!].sort((a, b) => a.id.localeCompare(b.id, 'en'))
-//     if (armies.length < 2) continue
-//
-//     // Nur so viele, wie unter dem Deckel bleiben: ein Verband über zwanzig Einheiten
-//     // gewinnt weniger, als ein zweiter daneben wert wäre.
-//     const chosen: string[] = []
-//     let units = 0
-//     for (const army of armies) {
-//       if (units + army.units > cap && chosen.length >= 2) break
-//       chosen.push(army.id)
-//       units += army.units
-//     }
-//     if (chosen.length < 2) continue
-//
-//     commands.push({ type: 'MERGE_ARMIES', playerId, armyIds: chosen } as Command)
-//     explanations.push({
-//       action: `Legt ${chosen.length} Verbände in ${provinceId} zusammen`,
-//       reason: 'einzeln werden sie einzeln aufgerieben; der Stapel-Deckel belohnt bis zwanzig Einheiten',
-//       score: 550,
-//     })
-//
-//     // Einer je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
-//     // soll sie sehen.
-//     break
 //   }
 //
 //   return commands

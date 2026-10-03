@@ -169,22 +169,6 @@ export function Dialog({
   )
 }
 
-/*
- * LOESCHVERMERK (Review): bis T-M44-08 lag die Tastenbehandlung als `onKeyDown` am Dialog-Element
- * (Escape und Fokusfang nur, wenn der Fokus schon im Dialog stand), und `onClose` war Pflicht.
- * Ersetzt durch den Lauscher auf dem Dokument oben — gleiche Regeln, aber auch für Fokus auf
- * `<body>`, nur für den obersten Dialog, und mit nicht schließbarem Vorhang. Wortlaut davor:
- *
- *   onKeyDown={(event) => {
- *     if (event.key === 'Escape') { onClose(); return }
- *     if (event.key !== 'Tab') return
- *     const felder = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter(
- *       (element) => !element.hasAttribute('disabled'),
- *     )
- *     ...
- *   }}
- */
-
 export function NewGameDialog({
   options,
   nations,
@@ -430,10 +414,6 @@ export function NewGameDialog({
               mit dem Link darin, einen Klick später. */}
         </section>
       )}
-
-      {/* LOESCHVERMERK (Review): bis T-M44-05 standen „Partie beginnen“ und „Spielstände“ hier als
-          `<p className="dialog__actions">` am Ende des rollenden Körpers — bei 1280×800 unter dem
-          Dialogrand. Jetzt in der festen Fußzeile (`foot` oben). */}
     </Dialog>
   )
 }
@@ -673,24 +653,6 @@ export function MenuDialog({
     </Dialog>
   )
 }
-
-/*
- * LOESCHVERMERK (Review): bis T-M44-02b standen die drei Knöpfe von Hand hier, mit je einem Prop
- * (`onNewGame`, `onSaves`, `onSettings`). Ersetzt durch die Liste `MENU_ENTRIES` in
- * `ui/menuEntries.ts` — gleiche Knöpfe, gleiche Reihenfolge, gleiche Klassen. Wortlaut davor:
- *
- *   export function MenuDialog({ onNewGame, onSaves, onSettings, onClose }: {...}) {
- *     return (
- *       <Dialog title={t('menu.title')} onClose={onClose}>
- *         <div className="menu">
- *           <button type="button" className="button button--primary" onClick={onNewGame}>{t('newGame.title')}</button>
- *           <button type="button" className="button" onClick={onSaves}>{t('saves.title')}</button>
- *           <button type="button" className="button" onClick={onSettings}>{t('settings.title')}</button>
- *         </div>
- *       </Dialog>
- *     )
- *   }
- */
 
 export interface SaveSlot {
   name: string

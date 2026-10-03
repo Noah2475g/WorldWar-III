@@ -2529,8 +2529,6 @@ export function App(props: AppProps) {
           onSelect={(entry) => setDialog(entry.target)}
           onClose={() => setDialog(null)}
         />
-        /* LOESCHVERMERK (Review): bis T-M44-02b: onNewGame={() => setDialog('new')} onSaves={() => setDialog('saves')}
-           onSettings={() => setDialog('settings')} — jetzt die Liste `MENU_ENTRIES` (ui/menuEntries.ts). */
       )}
       {newGameDialog}
       {dialog === 'settings' && (

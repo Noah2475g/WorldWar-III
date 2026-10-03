@@ -779,8 +779,6 @@ export const de = {
     // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
     // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
     // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
-    // LOESCHVERMERK (Review): bis Durchsicht B: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.' (feste Zahl;
-    // der Endedialog liest die Schwelle aus der Partie, beide sagen jetzt dasselbe).
     victoryPointsHint: 'Sie gewinnen, sobald Ihnen {{goal}} % aller Siegpunkte gehören.',
     victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehört — 100 % der Siegpunkte.',
     map: 'Karte',
@@ -1007,7 +1005,6 @@ export const de = {
   },
 
   keys: {
-    // LOESCHVERMERK (Review): bis Durchsicht B hiess der Dialog „Tastatur“ (der Menüpunkt „Tastenkürzel“).
     title: 'Tastenkürzel',
     pause: 'Leertaste — Pause',
     speedUp: '+ — schneller',
@@ -1020,7 +1017,6 @@ export const de = {
     market: 'H — Markt (Handel)',
     standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
-    // LOESCHVERMERK (Review): bis Durchsicht B: help: 'F1 — diese Übersicht' (das Fragezeichen löst dasselbe aus).
     help: 'F1 oder ? — diese Übersicht',
     pan: 'Pfeiltasten — Karte verschieben',
     zoomIn: 'Bild↑ — hineinzoomen',

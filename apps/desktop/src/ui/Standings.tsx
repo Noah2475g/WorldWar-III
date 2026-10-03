@@ -261,30 +261,6 @@ export function StandingsPanel({
  * in three figures, and lets the player close it — a game that cannot be looked at
  * after the last move is not an ending, it is a crash with a caption.
  */
-// LOESCHVERMERK (Review): bis T-M44-08/-15 stand der Endedialog als eigenes Geruest ohne Fokusfalle und Escape.
-// Ersetzt durch `Dialog` (Fokus-Einzug, Falle, Escape) und eine sichtbare Ueberschrift mit dem Ausgang. Wortlaut davor:
-//
-//   <div className="dialog-backdrop">
-//     <div className="dialog" role="dialog" aria-modal="true" aria-label={t('standings.victoryTitle')}>
-//       <div className="dialog__head"><h2>{t('standings.victoryTitle')}</h2></div>
-//       <div className="dialog__body">
-//         <p className={own ? 'state' : 'state state--war'}>
-//           {own ? t('standings.won') : eliminated && !winner ? t('standings.eliminated') : (() => {
-//             const nation = winner ? nameOf(winner) : '—'
-//             return t(isPluralNation(nation) ? 'standings.lostPlural' : 'standings.lost', { nation })
-//           })()}
-//         </p>
-//         <p className="facts__inline">
-//           {[t('standings.summaryHead', { day: Math.floor(view.tick / ticksPerDay) + 1 }),
-//             plural(Math.round(view.self.score), 'standings.summaryPointsOne', 'standings.summaryPointsMany'),
-//             plural(provinces, 'standings.summaryProvincesOne', 'standings.summaryProvincesMany')].join(' · ')}
-//         </p>
-//         <div className="actions">
-//           {onNewGame && <button type="button" className="button button--primary" onClick={onNewGame}>{t('standings.newGame')}</button>}
-//           <button type="button" className="button" onClick={onClose}>{t('standings.close')}</button>
-//         </div></div></div></div>
-//
-// Ebenso: die Tabelle der Rangliste trug `<table className="table">` ohne weitere Klasse.
 export function VictoryDialog({
   view,
   nameOf,
