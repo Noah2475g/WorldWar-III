@@ -130,3 +130,43 @@ describe('R-UI-05 Die Fuehrung nennt das Warten beim Namen (T-M21-03)', () => {
     expect(screen.getByText(t('tutorial.steps.select.text'))).toBeTruthy()
   })
 })
+
+/**
+ * Die Einfuehrung weicht dem Zielelement aus (T-M44-14, R-UX-05/AK2).
+ *
+ * jsdom rechnet kein Layout; die Rechtecke werden deshalb gesetzt. Geprueft wird die
+ * Entscheidung: deckt die Einfuehrung das Element, von dem der Schritt spricht, dann
+ * wechselt sie die Kante (`data-dodge`), und CSS setzt das um.
+ */
+describe('R-UX-05/AK2 T-M44-14 Die Einfuehrung deckt ihr Zielelement nicht', () => {
+  const rect = (top: number, bottom: number): DOMRect =>
+    ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top, toJSON: () => ({}) }) as DOMRect
+
+  const mitZiel = (tutorialRect: DOMRect, zielRect: DOMRect) => {
+    const ziel = document.createElement('label')
+    ziel.className = 'picker'
+    ziel.getBoundingClientRect = () => zielRect
+    document.body.appendChild(ziel)
+    const original = HTMLElement.prototype.getBoundingClientRect
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      return (this as HTMLElement).classList.contains('tutorial') ? tutorialRect : original.call(this)
+    }
+    const { container } = render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
+    HTMLElement.prototype.getBoundingClientRect = original
+    ziel.remove()
+    return container.querySelector('.tutorial') as HTMLElement
+  }
+
+  it('wechselt die Kante, wenn sie das Zielelement deckt', () => {
+    expect(mitZiel(rect(500, 600), rect(520, 560)).getAttribute('data-dodge')).toBe('top')
+  })
+
+  it('bleibt, wo sie ist, wenn sie das Zielelement nicht beruehrt', () => {
+    expect(mitZiel(rect(500, 600), rect(10, 50)).getAttribute('data-dodge')).toBeNull()
+  })
+
+  it('bleibt ohne Zielelement unveraendert', () => {
+    render(<Tutorial state={TUTORIAL_START} rules={rules} ticksPerDay={ticksPerDay} onDismiss={() => undefined} />)
+    expect(document.querySelector('.tutorial')!.getAttribute('data-dodge')).toBeNull()
+  })
+})

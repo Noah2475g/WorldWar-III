@@ -224,7 +224,7 @@ des Worktrees.
 | T-M44-01 | Basis | alle | UX-Aufnahme: Messwerkzeug und Vorher-Bilder | R-UX-01, R-UX-06 | — | erledigt |
 | T-M44-02 | P1 | alle (Werkzeug) | Prüfmodus, Mehrspielerlauf und echter Siegstand im Messwerkzeug | R-UX-01, R-UX-06 | 01 | 5 h |
 | T-M44-02b | P1 | alle (Vorbereitung) | Nahtstellen in App.tsx vorbereiten (keine Funktion) | R-UX-02, R-UX-03 | 01 | 1 h |
-| T-M44-03a | P1 | Responsivität | Telefon hochkant: CSS-Stapel und Hinweis qür halten | R-UX-01, R-UX-05 | 02 | 8 h |
+| T-M44-03a | P1 | Responsivität | Telefon hochkant: CSS-Stapel und Hinweis quer halten | R-UX-01, R-UX-05 | 02 | 8 h |
 | T-M44-03b | P2 | Responsivität | Telefon hochkant: Seitenleiste als Blatt mit Rasten | R-UX-01 | 03a | 10 h |
 | T-M44-04 | P1 | Spielfeld/HUD | Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt | R-UX-02 | 02 | 4 h |
 | T-M44-05 | P1 | Navigation/Menüs | Dialoge: Hauptaktion in fester Fußzeile, Spielstandraster passt | R-UX-05, R-UX-01 | 02 | 3 h |
@@ -278,12 +278,12 @@ des Worktrees.
 - *Tests:* `apps/desktop/src/game/names.test.ts` (neu) - Namensauflösung verhaltensgleich zu heute (Gegenprobe); `apps/desktop/src/App.test.tsx` unverändert grün.
 - *Abhängigkeiten:* T-M44-01 · *Aufwand:* 1 h
 
-**T-M44-03a · Telefon hochkant: CSS-Stapel und Hinweis qür halten** — Paket Responsivität, Befund B-01, B-25
+**T-M44-03a · Telefon hochkant: CSS-Stapel und Hinweis quer halten** — Paket Responsivität, Befund B-01, B-25
 - *Problem → Ziel:* Bei 375x667 ist die Karte sichtbar und jede Kernhandlung erreichbar (vorher Kartenanteil 0, Seitenleiste und Fuß füllen das Bild).
 - *Lösung:* Medienabfrage `(max-width: 599px) and (orientation: portrait)`: Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis „quer halten empfohlen" (D37.2).
 - *Dateien:* `apps/desktop/src/ui/touch.css`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/portrait.touch.test.tsx`, `apps/desktop/src/i18n/de.ts`
-- *Abnahme (messbar):* R-UX-01/AK1 (ohne Panel >= 0,45, mit offenem Panel >= 0,30), AK2, AK3 bei 375x667 und 320x568; 667x375 und 1366x768 nicht schlechter als vorher. Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis qür halten empfohlen (0,5 h, R-UX-05/AK2, Orchestrator-Entscheid F1). Sichtprüfung am laufenden Spiel (Kaskade). Aufwand 8 h.
-- *Tests:* `apps/desktop/src/ui/portrait.touch.test.tsx` (neu) - describe(R-UX-01/AK1 ...): die Regel hängt an (max-width: 599px) and (orientation: portrait), nicht an data-input und nicht nur an max-height 480; Kopfleiste nowrap; Hinweis qür halten ist nicht modal; `apps/desktop/src/ui/cascade.touch.test.tsx` grün; Wächter touch-entry, css-mirrors-tokens, no-color-literals, prose-in-code; Browser: `pnpm ux:check --only R-UX-01`.
+- *Abnahme (messbar):* R-UX-01/AK1 (ohne Panel >= 0,45, mit offenem Panel >= 0,30), AK2, AK3 bei 375x667 und 320x568; 667x375 und 1366x768 nicht schlechter als vorher. Kopfleiste einzeilig wischbar, Karte oben, Seitenleiste darunter rollend, kompakter Fuß; nicht blockierender Hinweis quer halten empfohlen (0,5 h, R-UX-05/AK2, Orchestrator-Entscheid F1). Sichtprüfung am laufenden Spiel (Kaskade). Aufwand 8 h.
+- *Tests:* `apps/desktop/src/ui/portrait.touch.test.tsx` (neu) - describe(R-UX-01/AK1 ...): die Regel hängt an (max-width: 599px) and (orientation: portrait), nicht an data-input und nicht nur an max-height 480; Kopfleiste nowrap; Hinweis quer halten ist nicht modal; `apps/desktop/src/ui/cascade.touch.test.tsx` grün; Wächter touch-entry, css-mirrors-tokens, no-color-literals, prose-in-code; Browser: `pnpm ux:check --only R-UX-01`.
 - *Abhängigkeiten:* T-M44-02 · *Aufwand:* 8 h
 
 **T-M44-04 · Kopfleiste einzeilig mit Alarmchip und Siegziel, hidden gilt** — Paket Spielfeld/HUD, Befund B-02, B-25
@@ -377,7 +377,7 @@ des Worktrees.
 - *Abhängigkeiten:* T-M44-02 · *Aufwand:* 4 h
 
 **T-M44-12 · Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurück, Neu-Meldungen kompakt** — Paket Spielfeld/HUD, Befund B-16
-- *Problem → Ziel:* Die Wirtschaftstabelle steht nicht mehr unter jedem Panel; jedes Panel hat einen Kopf mit Zurück; die zwei daürhaften "Neu ab heute"-Meldungen belegen keine zwei Zeilen Panelhöhe.
+- *Problem → Ziel:* Die Wirtschaftstabelle steht nicht mehr unter jedem Panel; jedes Panel hat einen Kopf mit Zurück; die zwei dauerhaften "Neu ab heute"-Meldungen belegen keine zwei Zeilen Panelhöhe.
 - *Lösung:* Wirtschaft als `details` mit gemerktem Zustand; Panelkopf mit Zurück (Armee → Provinz) und Schließen; „Neu ab heute"-Meldungen als eine Sammelzeile.
 - *Dateien:* `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Alerts.tsx`, `apps/desktop/src/ui/app.css`
 - *Abnahme (messbar):* R-UX-02 (Orientierung). Gemessen: Armeepanel 1280x800 zeigt Name und Marschieren ohne Rollen (vorher Kopf außerhalb des Bildes). Aufwand 4 h.
@@ -598,3 +598,11 @@ ist; Teilablehnungen stehen in der Spalte „wie/warum".
 | 16 | Repo-Größe | **übernommen mit Abweichung** | Sitzungsregel „nichts löschen": Vorher-Bilder bleiben vollständig. oxipng/pngquant/sharp waren nicht installiert; per `pip install pyoxipng` (Scratchpad) **verlustfrei** verkleinert, 40 → 33 MB (−18 %). Verlustbehaftete Palette (−69 %) bewusst nicht, weil „verlustfrei" verlangt war. Nachher nur 375×667, 1280×800 und die neuen Größen als Bild, 1920×1080 als Messwert (T-M44-02/-21). |
 | 17 | msedge-Rückfall, Lockfile nur Playwright/axe | **übernommen** | `launchOptions()` in `ux-capture.mjs`: `UX_CHROMIUM` → `/opt/pw-browsers` → unter Windows `channel: 'msedge'`; im Kopf dokumentiert. `pnpm-lock.yaml` vom Stand `ffb95a9` aus neu aufgebaut, nur die zehn rein hinzufügenden Abschnitte übernommen (48 Zeilen statt 227); `pnpm install --frozen-lockfile` Exit 0. Die verschobene Einrückung von `mp:host` in `package.json` ist zurückgestellt. |
 | 18 | `[hidden]` vorher alle Stellen suchen; AK-Reihenfolge | **übernommen** | Heute einzige `hidden`-Stelle in TSX: `Header.tsx` `.header__alarm`; T-M44-04 verlangt die Suche in `app.css`/`touch.css` vor der globalen Regel und die Kaskadenprüfung am laufenden Spiel. R-UX-02: AK4 (Protokoll/Fuß) steht jetzt vor AK5 (Tempo). |
+
+## Anhang · Kontrast-Stichprobe und Ausnahmen (T-M44-17, R-UX-06/AK1 und AK3)
+
+**Stichprobe** (`node scripts/ux-contrast-sample.mjs`, Messung 2026-10-03 bei 1280x800 am Dev-Server): axe meldete in den Zuständen Start, Provinz, Diplomatie und Markt 52 Kontrastknoten als unvollständig (über alle 50 Messzustände 789); davon wurden **24** Knoten verschiedener Zustände und Texte von Hand nachgemessen (Vordergrund aus der berechneten Farbe, Hintergrund vom ersten deckenden Vorfahren, WCAG-Verhältnis selbst gerechnet). Ergebnis: kleinster Wert **5.78:1**, größter 14.49:1, **keiner unter 4,5:1**. Die Knoten sind überwiegend `ink-soft` (Erklärsätze, Sperrgründe, Trendpfeile) auf `paper`/`paper-sunk` und Besitzer-Chips auf `ground`; axe konnte sie nur wegen des Rasters und der Kartenüberlagerung nicht entscheiden.
+
+**Ausnahmen von R-UX-06/AK3** (nicht gezählt, weil kein Bedienelement von Kopf, Seitenleiste oder Dialog): Kartenmarker und Übersichtskarte (Karte), die Zoomknöpfe der Karte (44 px im Touch-Betrieb), der Fuß mit Protokoll. Das Fragezeichen („Was ist …?“) bleibt ein kleiner Kreis, der Knopf selbst ist 24 px (Maus) und 44 px (Touch) groß.
+
+**Gefunden und behoben beim Messen:** die Einblendung von `.alert` über `opacity` ließ axe den Kontrast mitten im Übergang messen (3,71:1 und 4,31:1 bei `.alert--unlock` in der Mehrspieler-Lobby); jetzt nur noch Bewegung. Der Fokusrahmen ist das eigene Token `focus` (`#7FB8FF`) statt Feindrot.

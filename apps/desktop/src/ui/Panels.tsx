@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MAX_DEPART_DELAY_DAYS } from '@worldwar/core'
 import type { PublicView, ResourceKey, Terrain, VisibleArmy, VisibleProvince } from '@worldwar/core'
 // Nur der Typ: zur Laufzeit importiert weiterhin events.ts aus Panels.tsx, nicht umgekehrt.
@@ -153,6 +153,42 @@ export function buttonTitle(action: Pick<Action, 'disabledReason' | 'hint'>): st
 function hintParts(action: Pick<Action, 'disabledReason' | 'hint'>): string[] {
   const reason = action.disabledReason
   return (action.hint ?? '').split(' · ').filter((part) => part !== '' && !(reason ?? '').includes(part))
+}
+
+/**
+ * Der Kopf eines Panels (T-M44-12, R-UX-02): Zurueck (nur wo es einen Weg zurueck gibt),
+ * Titel, Schliessen. Beide Knoepfe sind optionale Rueckrufe; ohne sie steht nur der Titel,
+ * wie vorher. Die Leiste ist eine Zeile, damit der Kopf auch im Hochformat im Bild bleibt.
+ */
+export function PanelHead({
+  title,
+  sub,
+  onBack,
+  onClose,
+}: {
+  title: ReactNode
+  sub?: ReactNode
+  onBack?: (() => void) | undefined
+  onClose?: (() => void) | undefined
+}) {
+  return (
+    <header className="panel__head">
+      <div className="panel__bar">
+        {onBack && (
+          <button type="button" className="panel__back" aria-label={t('panel.back')} title={t('panel.back')} onClick={onBack}>
+            <span aria-hidden="true">‹</span>
+          </button>
+        )}
+        <h2>{title}</h2>
+        {onClose && (
+          <button type="button" className="panel__close" aria-label={t('panel.close')} title={t('panel.close')} onClick={onClose}>
+            <span aria-hidden="true">×</span>
+          </button>
+        )}
+      </div>
+      {sub}
+    </header>
+  )
 }
 
 /**
@@ -421,6 +457,8 @@ export function ProvincePicker({
 }
 
 export interface ProvincePanelProps {
+  /** Schliesst das Panel (T-M44-12). */
+  onClose?: (() => void) | undefined
   province: VisibleProvince | null
   ownerName: string | null
   /** Die Farbe des Besitzers auf der Karte (T-M20-02, R-UI-16). */
@@ -458,26 +496,31 @@ export function ProvincePanel(props: ProvincePanelProps) {
 
   return (
     <section className="panel" aria-label={province.name}>
-      <header className="panel__head">
-        <h2>
-          {/* Der Stern der Hauptstadt als Zeichen vor dem Namen (D27.6). */}
-          {props.isCapital && <Icon name="capital" size={14} title={t('province.capital')} />}
-          {props.isCapital ? ' ' : ''}
-          {province.name}
-        </h2>
-        <p className="panel__sub">
-          {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
-          {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
-              und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
-              (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
-              gibt — die Zahl, die der Angreifer wissen will. */}
-          <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
-          {t(`terrain.${province.terrain}`)}
-          {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
-          <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
-          {province.coastal ? t('province.coastal') : t('province.landlocked')}
-        </p>
-      </header>
+      <PanelHead
+        onClose={props.onClose}
+        title={
+          <>
+            {/* Der Stern der Hauptstadt als Zeichen vor dem Namen (D27.6). */}
+            {props.isCapital && <Icon name="capital" size={14} title={t('province.capital')} />}
+            {props.isCapital ? ' ' : ''}
+            {province.name}
+          </>
+        }
+        sub={
+          <p className="panel__sub">
+            {province.kind === 'city' ? t('province.kindCity') : t('province.kindRural')} ·{' '}
+            {/* Das Zeichen vor dem Wort, nicht statt seiner: R-UI-11 verlangt das Symbol,
+                und der Name bleibt daneben stehen, weil ein Bild allein keine Auskunft ist
+                (T-M20-01). Seit T-M29-03 mit dem Bonus, den das Gelaende dem Verteidiger
+                gibt — die Zahl, die der Angreifer wissen will. */}
+            <Icon name={TERRAIN_ICONS[province.terrain]} size={13} />{' '}
+            {t(`terrain.${province.terrain}`)}
+            {defence > 0 ? ` · ${t('province.defenceBonus', { percent: defence / 10 })}` : ''}
+            <Explain textKey={`explain.terrain.${province.terrain}`} subject={t(`terrain.${province.terrain}`)} /> ·{' '}
+            {province.coastal ? t('province.coastal') : t('province.landlocked')}
+          </p>
+        }
+      />
 
       {province.stale && (
         <p className="notice notice--info">
@@ -727,6 +770,10 @@ function DepartStepper(props: { days: number; onDelay: (days: number) => void })
 }
 
 export interface ArmyPanelProps {
+  /** Zurueck zur Provinz der Armee (T-M44-12). */
+  onBack?: (() => void) | undefined
+  /** Schliesst das Panel (T-M44-12). */
+  onClose?: (() => void) | undefined
   army: VisibleArmy | null
   name?: string | undefined
   /** The stacks of an own army, as symbols with counts (R-UI-10). */
@@ -776,13 +823,17 @@ export function ArmyPanel(props: ArmyPanelProps) {
 
   return (
     <section className="panel" aria-label={t('army.title')}>
-      <header className="panel__head">
-        <h2>{props.name ?? t('army.title')}</h2>
-        <p className="panel__sub">
-          {t('army.power')} {amount(army.strength)}
-          {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
-        </p>
-      </header>
+      <PanelHead
+        title={props.name ?? t('army.title')}
+        onBack={props.onBack}
+        onClose={props.onClose}
+        sub={
+          <p className="panel__sub">
+            {t('army.power')} {amount(army.strength)}
+            {props.condition !== undefined && ` · ${t('army.condition')} ${percent(Math.round(props.condition * 100))}`}
+          </p>
+        }
+      />
 
       {/* Der Zustand als Balken: Trefferpunkte am Vollstand (T-M31-02, R-UI-09). */}
       {props.condition !== undefined && (
@@ -1398,7 +1449,9 @@ export function DiplomacyPanel({
   passageFor,
   offers,
   tradeForm,
+  onClose,
 }: {
+  onClose?: (() => void) | undefined
   view: PublicView | null
   nameOf: (id: string) => string
   /** Der Massstab des Ansehensbalkens (`reputationBaseline`); ohne ihn kein Balken. */
@@ -1429,7 +1482,7 @@ export function DiplomacyPanel({
 
   return (
     <section className="panel" aria-label={t('diplomacy.title')}>
-      <h2>{t('diplomacy.title')}</h2>
+      <PanelHead title={t('diplomacy.title')} onClose={onClose} />
       {reputationMax !== undefined && (
         <Meter
           label={t('diplomacy.ownReputation')}
@@ -1750,12 +1803,13 @@ export interface EspionagePanelProps {
   moving: string | null
   onCancelMove: () => void
   onJump: (provinceId: string) => void
+  onClose?: (() => void) | undefined
 }
 
-export function EspionagePanel({ rows, summary, moving, onCancelMove, onJump }: EspionagePanelProps) {
+export function EspionagePanel({ rows, summary, moving, onCancelMove, onJump, onClose }: EspionagePanelProps) {
   return (
     <section className="panel" aria-label={t('espionage.overview.title')}>
-      <h2>{t('espionage.overview.title')}</h2>
+      <PanelHead title={t('espionage.overview.title')} onClose={onClose} />
       {summary && <p className="panel__sub">{summary}</p>}
       {moving && (
         <>
@@ -1813,7 +1867,9 @@ export function MarketPanel({
   stock,
   preview,
   prices = {},
+  onClose,
 }: {
+  onClose?: (() => void) | undefined
   resources: readonly ResourceKey[]
   stock: Partial<Record<ResourceKey, number>>
   preview: (give: ResourceKey, giveAmount: number, want: ResourceKey) => { text: string; action: Action }
@@ -1836,7 +1892,7 @@ export function MarketPanel({
 
   return (
     <section className="panel" aria-label={t('market.title')}>
-      <h2>{t('market.title')}</h2>
+      <PanelHead title={t('market.title')} onClose={onClose} />
       <div className="market">
         <label htmlFor="market-give">{t('market.give')}</label>
         {/* Das Zeichen des jeweils GEWAEHLTEN Rohstoffs neben der Liste (T-M23-03,
@@ -1913,6 +1969,27 @@ function QuietRate({ value }: { value: number }) {
 }
 
 /**
+ * Ob die Wirtschaft aufgeklappt ist, gemerkt ueber Panelwechsel und Neustart (T-M44-12).
+ * Vorgabe: eingeklappt - die Kopfleiste zeigt Bestand und Richtung, die Tabelle ist die
+ * Vertiefung. Ein verweigerter Speicher darf nichts verhindern.
+ */
+const ECONOMY_OPEN_KEY = 'worldwar.economyOpen'
+function readEconomyOpen(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(ECONOMY_OPEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function writeEconomyOpen(value: boolean): void {
+  try {
+    globalThis.localStorage?.setItem(ECONOMY_OPEN_KEY, value ? '1' : '0')
+  } catch {
+    // ohne Speicher bleibt der Zustand fuer diese Sitzung
+  }
+}
+
+/**
  * The economy overview (R-ECON-06).
  *
  * Four columns per resource: what is in store, what comes in over a game day, what
@@ -1944,6 +2021,12 @@ export function EconomyPanel({
   expenses?: Partial<Record<string, number>>
 }) {
   const economy = view?.self.economy
+  // Der gemerkte Zustand (T-M44-12): einmal gelesen, beim Umschalten geschrieben.
+  const [open, setOpen] = useState(readEconomyOpen)
+  const rememberEconomyOpen = (value: boolean): void => {
+    setOpen(value)
+    writeEconomyOpen(value)
+  }
   if (!economy) return null
 
   const shortages = new Set(view?.self.shortages ?? [])
@@ -1959,7 +2042,14 @@ export function EconomyPanel({
 
   return (
     <section className="panel" aria-label={t('economy.title')}>
-      <h2>{t('economy.title')}</h2>
+      <details
+        className="panel--economy"
+        open={open}
+        onToggle={(event) => rememberEconomyOpen(event.currentTarget.open)}
+      >
+      <summary>
+        <h2>{t('economy.title')}</h2>
+      </summary>
       <table className="table table--numbers">
         <thead>
           <tr>
@@ -2026,6 +2116,7 @@ export function EconomyPanel({
           ))}
         </tbody>
       </table>
+      </details>
     </section>
   )
 }

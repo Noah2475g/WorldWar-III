@@ -537,6 +537,15 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
   await page.waitForTimeout(500)
   data.perf.startGameMs = Date.now() - tStart
   await shot('karte-start-tutorial')
+  // R-UX-05/AK2 (T-M44-14): die Einfuehrung deckt das Element nicht, von dem ihr erster Schritt spricht (Provinzwahl).
+  data.probes.tutorialCover = await page.evaluate(() => {
+    const tut = document.querySelector('.tutorial')
+    const target = document.querySelector('.picker')
+    if (!tut || !target) return { measured: false }
+    const a = tut.getBoundingClientRect()
+    const b = target.getBoundingClientRect()
+    return { measured: true, coversPicker: a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top, directionWords: /\b(rechts|links|oben|unten)\b/i.test(tut.textContent ?? '') }
+  })
   // R-UX-05/AK2: im Hochformat ein nicht blockierender Hinweis „quer halten empfohlen“.
   if (vp.height > vp.width) {
     data.probes.orientationHint = await page.evaluate(() => /quer halten/i.test(document.body.innerText))
@@ -681,6 +690,17 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(300)
     await shot('armee-auswahl')
     data.layout.armyPanel = await layout(page)
+    // T-M44-12: Name und „Marschieren“ stehen im Armeepanel ohne Rollen im Bild (vorher Kopf ausserhalb).
+    data.probes.armyHead = await page.evaluate(() => {
+      const panel = [...document.querySelectorAll('aside.side section.panel')].find((el) => el.querySelector('.panel__head'))
+      const inView = (el) => {
+        if (!el) return false
+        const r = el.getBoundingClientRect()
+        return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
+      }
+      const march = [...document.querySelectorAll('aside.side button')].find((b) => b.textContent?.includes('Marschieren'))
+      return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: document.querySelector('aside.side')?.scrollTop ?? null }
+    })
     await axe(page, 'armyPanel', data.axe)
     data.touch.armyPanel = await touchTargets(page)
   })
@@ -707,7 +727,10 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await shot('fehler-ungueltiges-ziel')
   })
   await step('marsch-befehlen', async () => {
-    await page.locator('aside select').nth(1).selectOption({ label: 'Nordostmexiko' }, { timeout: 5000 })
+    // Seit T-M44-11 tragen erreichbare Ziele die Ankunft im Text („Name — Ankunft Tag N“): nach Anfang des Textes waehlen.
+    const zielwahl = page.locator('aside select').nth(1)
+    const zielWert = await zielwahl.evaluate((el) => [...el.options].find((o) => o.text.startsWith('Nordostmexiko'))?.value)
+    await zielwahl.selectOption(zielWert ?? { label: 'Nordostmexiko' }, { timeout: 5000 })
     await page.waitForTimeout(300)
     await shot('marsch-ziel-gewaehlt')
     await btn('Marsch befehlen').click({ timeout: 5000 })

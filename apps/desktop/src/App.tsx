@@ -57,6 +57,7 @@ import { boundsOf, centreOn, clampView, zoomAt, type View } from './map/picking.
 import { Tooltip } from './ui/Tooltip.tsx'
 import { useMapTooltip } from './ui/useMapTooltip.ts'
 import { Sidebar } from './ui/Sidebar.tsx'
+import { OrientationHint } from './ui/OrientationHint.tsx'
 import { MENU_ENTRIES } from './ui/menuEntries.ts'
 import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
@@ -125,6 +126,7 @@ import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
+import { SheetHandle, type SheetSnap } from './ui/Sheet.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import {
@@ -272,6 +274,12 @@ export function App(props: AppProps) {
     // menschliche Macht dieses Standes", nicht „niemand".
     viewerId: props.viewerId ?? null,
   }))
+
+  // Das Blatt im Hochformat (T-M44-03b): Raste der Seitenleiste; ein Panel oeffnet auf halb.
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('half')
+  useEffect(() => {
+    if (ui.panel) setSheetSnap('half')
+  }, [ui.panel, ui.selectedProvince, ui.selectedArmy])
 
   // Und zurueckgeschrieben wird, sobald sich etwas aendert.
   useEffect(() => {
@@ -1282,6 +1290,18 @@ export function App(props: AppProps) {
     [centres, ui.view, activeMap, tutor, centreView],
   )
 
+  // Auto-Schwenk (T-M44-03b): im Hochformat des Telefons bleibt die gewaehlte Provinz im sichtbaren
+  // Kartenteil — bei jeder neuen Auswahl und jedem Rastenwechsel des Blatts wird auf sie zentriert.
+  useEffect(() => {
+    if (!ui.selectedProvince || typeof window.matchMedia !== 'function') return
+    if (!window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches) return
+    const centre = centres[ui.selectedProvince]
+    if (!centre) return
+    dispatch({ type: 'setView', view: centreView(centre, ui.view, activeMap) })
+    // Der Blick selbst gehoert nicht in die Abhaengigkeiten: wer die Karte danach schiebt, wird
+    // nicht zurueckgeholt, bis er wieder waehlt oder das Blatt umschaltet.
+  }, [ui.selectedProvince, sheetSnap])
+
   /**
    * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte wie bisher, oder in die Diplomatie
    * mit der Macht des Angebots. `Foot`/die Kopfleiste behalten `jumpTo` — ihre Eintraege tragen
@@ -2229,7 +2249,13 @@ export function App(props: AppProps) {
       .sort((a, b) => a.name.localeCompare(b.name, 'de'))
 
   return (
-    <div className="app" style={fontScaleStyle(ui.settings)}>
+    <div
+      className="app"
+      style={fontScaleStyle(ui.settings)}
+      // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
+      data-panel={ui.panel ? 'open' : 'closed'}
+      data-sheet={ui.panel ? sheetSnap : undefined}
+    >
       <Header
         view={view}
         ticksPerDay={ticksPerDay}
@@ -2329,11 +2355,15 @@ export function App(props: AppProps) {
           {/* Der Schluessel gehoert zu seiner Karte, nicht in die Seitenleiste. */}
           <Legend mode={ui.mode} {...(colorOf(viewerId) ? { ownColor: colorOf(viewerId)! } : {})} />
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} selected={tooltipSelected} />}
+          {/* Nur im Hochformat sichtbar (touch.css); ein Hinweis, keine Sperre (T-M44-03a). */}
+          <OrientationHint />
         </div>
 
         {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
+          scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
+          handle={ui.panel ? <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} /> : null}
           picker={
               <ProvincePicker
                 own={ownProvinces}
@@ -2362,6 +2392,7 @@ export function App(props: AppProps) {
             <>
               {ui.panel === 'province' && (
                 <ProvincePanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   province={selected}
                   ownerName={selected?.owner ? nameOf(selected.owner) : null}
                   ownerColor={selected?.owner ? colorOf(selected.owner) : null}
@@ -2381,6 +2412,16 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'army' && (
                 <ArmyPanel
+                  // Zurueck fuehrt zur Provinz der Armee (T-M44-12); die Armee-Auswahl endet damit.
+                  onBack={
+                    selectedArmy
+                      ? () => {
+                          setTargeting(null)
+                          dispatch({ type: 'selectProvince', id: selectedArmy.provinceId })
+                        }
+                      : undefined
+                  }
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   army={selectedArmy}
                   name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
                   units={armyUnitItems}
@@ -2394,6 +2435,7 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'diplomacy' && (
                 <DiplomacyPanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   view={view}
                   nameOf={nameOf}
                   reputationMax={props.rules.constants.reputationBaseline}
@@ -2418,6 +2460,7 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'espionage' && (
                 <EspionagePanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   rows={spyRows}
                   summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
                   moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
@@ -2428,6 +2471,7 @@ export function App(props: AppProps) {
               {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
               {ui.panel === 'market' && (
                 <MarketPanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   resources={RESOURCE_KEYS}
                   stock={view.self.resources}
                   prices={prices}

@@ -78,6 +78,18 @@ export const de = {
     market: 'Markt',
   },
 
+  /** Das Blatt im Hochformat (T-M44-03b): Griff und die drei Rasten. */
+  sheet: {
+    handle: 'Panelhöhe',
+    snap: { peek: 'Streifen', half: 'halb', full: 'voll' },
+  },
+
+  /** Der Kopf jedes Panels (T-M44-12). */
+  panel: {
+    back: 'Zurück',
+    close: 'Schließen',
+  },
+
   economy: {
     title: 'Wirtschaft',
     resource: 'Rohstoff',
@@ -1031,12 +1043,12 @@ export const de = {
     steps: {
       select: {
         title: 'Ihre Provinzen',
-        text: 'Klicken Sie eine Ihrer Provinzen an. Rechts stehen Moral, Bevölkerung und was im Boden liegt.',
+        text: 'Klicken Sie eine Ihrer Provinzen an. Das Provinzpanel zeigt dann Moral, Bevölkerung und was im Boden liegt.',
         why: 'Alles in diesem Spiel — Bau, Aushebung, Moral, Punkte — geschieht in Provinzen. Wer seine kennt, kennt seine Lage.',
       },
       build: {
         title: 'Etwas bauen',
-        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — mit dem Grund daneben.',
+        text: 'Jeder Knopf nennt vorher Kosten und Dauer. Was Sie sich nicht leisten können, ist ausgegraut — der Grund steht dabei.',
         why: 'Gebäude kommen vor Einheiten: erst die Kaserne macht das Ausheben möglich, und dieselbe Kaserne macht jedes weitere schneller.',
       },
       speed: {
@@ -1085,7 +1097,7 @@ export const de = {
       },
       events: {
         title: 'Was geschieht',
-        text: 'Unten stehen die Ereignisse. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
+        text: 'Das Ereignisprotokoll zeigt, was geschieht. Rot heißt hinsehen; ein Klick springt zu der Provinz, um die es geht.',
         why: 'Was Sie hier übersehen, meldet niemand ein zweites Mal — das Protokoll ist das Gedächtnis der Partie.',
       },
       expansion: {
@@ -1191,6 +1203,8 @@ export const de = {
     // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
     unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
     unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
+    // Mehrere Freischaltungen am selben Tag in einer Zeile (T-M44-12).
+    unlockMany: 'Neu ab heute: {{things}}.',
     // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
     // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
     upcoming: 'In zwei Tagen: {{thing}}.',
@@ -1294,6 +1308,15 @@ export const de = {
 
   explainUi: {
     about: 'Was ist {{subject}}?',
+  },
+
+  /**
+   * Der Hinweis im Hochformat (T-M44-03a, R-UX-05/AK2, Orchestrator-Entscheid F1): das Telefon
+   * hochkant ist bedienbar, aber die Karte ist dort ein Streifen. Ein Hinweis, keine Sperre.
+   */
+  orientation: {
+    hint: 'Quer halten empfohlen',
+    dismiss: 'Hinweis ausblenden',
   },
 
   meter: {

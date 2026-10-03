@@ -623,3 +623,19 @@ describe('Touch-Bedienung: eine reine Dichteaenderung ohne Groessenwechsel', () 
     }
   })
 })
+
+/**
+ * Wischen am Blatt loest keine Kartengeste aus (T-M44-03b, PR #9-#11): der Griff liegt in der
+ * Seitenleiste, nicht in der Kartenflaeche, und nimmt dem Browser das Wischen selbst ab.
+ */
+describe('T-M44-03b Das Blatt und die Karte teilen sich keine Geste', () => {
+  it('der Griff steht ausserhalb von .map-area und traegt touch-action: none', async () => {
+    const { readFileSync } = await import('node:fs')
+    const app = readFileSync(`${process.cwd()}/apps/desktop/src/App.tsx`, 'utf8')
+    const mapArea = app.slice(app.indexOf('<div className="map-area">'), app.indexOf('<Sidebar'))
+    expect(mapArea).not.toContain('SheetHandle')
+    expect(readFileSync(`${process.cwd()}/apps/desktop/src/ui/Sidebar.tsx`, 'utf8')).toContain('handle')
+    const touch = readFileSync(`${process.cwd()}/apps/desktop/src/ui/touch.css`, 'utf8')
+    expect(touch).toMatch(/\.sheet__handle[^{]*\{[^}]*touch-action: none;/)
+  })
+})

@@ -59,6 +59,7 @@ function goodRun(tag: string, opts: { width: number; height: number }): Json {
       march: { groups: [{ options: 3, disabled: 0 }, { options: 5, disabled: 5 }], openLongTaskMaxMs: 20 },
       explain: { closedByEscape: true },
       endDialog: { namesCondition: true },
+      tutorialCover: { measured: true, coversPicker: false, directionWords: false },
       ...(opts.height > opts.width && finger ? { orientationHint: true } : {}),
     },
     dialogs: { victory: { present: true, focusLeaves: false, closable: true, closedByEscape: true } },
@@ -96,14 +97,15 @@ describe('R-UX-01/AK1 R-UX-01/AK2 R-UX-01/AK3 ux-thresholds: der Vorher-Stand f�
     expect(r['R-UX-01/AK1']!.value).toContain('0 %')
   })
 
-  it('R-UX-01/AK2: Überlauf in allen acht Größen (Dialog und Spielstandraster überall, Kopf und Rohstoffe bei 375 und 320)', () => {
+  it('R-UX-01/AK2: Überlauf in allen acht Größen (Dialog und Spielstandraster überall, Rohstoffe bei 375 und 320; die Kopfleiste ist seit T-M44-03a als wischbar erklärt)', () => {
     const k = r['R-UX-01/AK2']!
     expect(k.status).toBe('red')
     expect(k.value).toContain('8 von 8')
     const text = k.lines.join('\n')
-    expect(text).toContain('375x667: mapStart: header__top 528>375')
+    expect(text).toContain('375x667: mapStart: resources 478>375')
+    expect(text).not.toContain('header__top')
     expect(text).toContain('1280x800: saves: dialog 604>518')
-    expect(text).toContain('320x568: mapStart: header__top 528>320, mapStart: resources 478>320, mapStart: foot 370>320')
+    expect(text).toContain('320x568: mapStart: resources 478>320, mapStart: foot 370>320')
   })
 
   it('R-UX-01/AK3: Fehlschritte bei 375x667 (9) und 320x568 (10) — sonst keine', () => {
@@ -228,6 +230,8 @@ describe('R-UX-01/AK1 R-UX-02/AK1 ux-thresholds: ein erfundener Sollstand ist gr
       ['R-UX-04/AK2', (m) => (m.viewports['1280x800'].probes.march.openLongTaskMaxMs = LIMITS.openLongTaskMaxMs + 1)],
       ['R-UX-05/AK1', (m) => (m.viewports['1280x800'].notes[0].startButtonInFirstView = false)],
       ['R-UX-05/AK2', (m) => (m.viewports['375x667'].probes.orientationHint = false)],
+      ['R-UX-05/AK2', (m) => (m.viewports['375x667'].probes.tutorialCover.coversPicker = true)],
+      ['R-UX-05/AK2', (m) => (m.viewports['1280x800'].probes.tutorialCover.directionWords = true)],
       ['R-UX-05/AK3', (m) => (m.viewports['1280x800'].probes.explain.closedByEscape = false)],
       ['R-UX-05/AK4', (m) => (m.viewports['1280x800'].notes[2].victoryState.real = false)],
       ['R-UX-05/AK4', (m) => (m.viewports['1280x800'].probes.endDialog.namesCondition = false)],

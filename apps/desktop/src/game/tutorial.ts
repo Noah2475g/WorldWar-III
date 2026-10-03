@@ -83,6 +83,26 @@ export function triggerFor(eventType: string): TutorialTrigger | null {
   return AUSLOESER[eventType] ?? null
 }
 
+/**
+ * Das Element, von dem ein Schritt spricht (T-M44-14, R-UX-05/AK2): eine CSS-Auswahl, oder
+ * `null`, wenn der Schritt von nichts auf dem Bildschirm spricht (oder von der Kopfleiste, die
+ * die Einfuehrung ohnehin nie erreicht). `Tutorial.tsx` wechselt die Kante, sobald sie das
+ * Element decken wuerde. Die Schritttexte nennen deshalb keine Himmelsrichtung: wo die
+ * Seitenleiste liegt, haengt von der Fenstergroesse ab.
+ */
+export const TUTORIAL_TARGETS: Readonly<Record<string, string | null>> = {
+  select: '.picker',
+  build: '.side .panel',
+  speed: null,
+  score: null,
+  dayPassed: null,
+  buildCompleted: '.side .panel',
+  unitRecruited: '.side .panel',
+  fastForward: '.foot__buttons',
+  events: '.foot .log',
+  expansion: null,
+}
+
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   { id: 'select', completesOn: 'selectProvince' },
   { id: 'build', completesOn: 'openBuild' },

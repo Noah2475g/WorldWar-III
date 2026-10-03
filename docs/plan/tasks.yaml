@@ -3792,7 +3792,7 @@ tasks:
   - id: T-M44-03a
     milestone: M44
     title: "Telefon hochkant: CSS-Stapel und Hinweis quer halten"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-01, R-UX-05]
     design: [D-37]
@@ -3802,7 +3802,7 @@ tasks:
   - id: T-M44-03b
     milestone: M44
     title: "Telefon hochkant: Seitenleiste als Blatt mit Rasten"
-    status: todo
+    status: done
     deps: [T-M44-03a]
     requirements: [R-UX-01]
     design: [D-37]
@@ -3902,7 +3902,7 @@ tasks:
   - id: T-M44-12
     milestone: M44
     title: "Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurueck, Neu-Meldungen kompakt"
-    status: todo
+    status: done
     deps: [T-M44-03a]
     requirements: [R-UX-02]
     design: [D-37]
@@ -3922,7 +3922,7 @@ tasks:
   - id: T-M44-14
     milestone: M44
     title: "Einfuehrung ortsunabhaengig und nicht verdeckend"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-05]
     design: [D-37]
@@ -3952,7 +3952,7 @@ tasks:
   - id: T-M44-17
     milestone: M44
     title: "Touch-Ziele, eigenes Fokus-Token, Kontrast-Stichprobe"
-    status: todo
+    status: done
     deps: [T-M44-03a, T-M44-08]
     requirements: [R-UX-06]
     design: [D-37]

@@ -1,5 +1,6 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Rules } from '@worldwar/core'
-import { currentStep, progressLabel, type TutorialState } from '../game/tutorial.ts'
+import { TUTORIAL_TARGETS, currentStep, progressLabel, type TutorialState } from '../game/tutorial.ts'
 import { t } from '../i18n/text.ts'
 import { firstUnitAt } from '../game/opening.ts'
 import { duration } from './format.ts'
@@ -55,14 +56,50 @@ function valuesFor(stepId: string, rules: Rules, ticksPerDay: number): Record<st
   return {}
 }
 
+/**
+ * Deckt die Einfuehrung das Element, von dem der Schritt spricht (T-M44-14, R-UX-05/AK2)?
+ * Dann wechselt sie die Kante: `data-dodge="top"`, und das Stylesheet setzt sie an den oberen
+ * Rand der Flaeche. Gemessen wird nach jedem Zeichnen und bei Groessenaenderung, nicht einmal
+ * beim Einblenden — die Seitenleiste liegt je nach Fenster anderswo. Ausgewichen bleibt sie bis
+ * zum naechsten Schritt.
+ */
+function useDodge(stepId: string | undefined) {
+  const ref = useRef<HTMLElement>(null)
+  const [dodge, setDodge] = useState(false)
+
+  // Ein neuer Schritt beginnt an seinem Platz.
+  useLayoutEffect(() => setDodge(false), [stepId])
+
+  useLayoutEffect(() => {
+    const selector = stepId ? TUTORIAL_TARGETS[stepId] : null
+    const measure = (): void => {
+      const own = ref.current
+      if (!own || !selector) return setDodge(false)
+      const target = [...document.querySelectorAll(selector)].find((el) => !own.contains(el))
+      if (!target) return setDodge(false)
+      const a = own.getBoundingClientRect()
+      const b = target.getBoundingClientRect()
+      // Einmal ausgewichen, bleibt sie oben, bis der Schritt wechselt: wer nach dem Wechsel
+      // wieder deckte, wuerde zurueckspringen und nie zur Ruhe kommen.
+      setDodge((current) => current || (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  })
+
+  return { ref, dodge }
+}
+
 export function Tutorial({ state, rules, ticksPerDay, onDismiss }: TutorialProps) {
   const step = currentStep(state)
+  const { ref, dodge } = useDodge(step?.id)
   if (!step) return null
 
   const values = valuesFor(step.id, rules, ticksPerDay)
 
   return (
-    <aside className="tutorial" aria-label={t('tutorial.title')}>
+    <aside className="tutorial" ref={ref} data-dodge={dodge ? 'top' : undefined} aria-label={t('tutorial.title')}>
       <p className="tutorial__progress">{progressLabel(state)}</p>
       <h3 className="tutorial__title">{t(`tutorial.steps.${step.id}.title`)}</h3>
       <p className="tutorial__text">{t(`tutorial.steps.${step.id}.text`, values)}</p>

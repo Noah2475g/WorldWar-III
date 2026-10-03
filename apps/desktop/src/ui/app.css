@@ -64,6 +64,7 @@
   --on-player: #e6e1d3;
   --building: #c9b98a;
   --ally: #6fa8dc;
+  --focus: #7fb8ff;
   --font-map: 'IBM Plex Sans Condensed', 'IBM Plex Sans', system-ui, sans-serif;
   --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
   --font-num: 'IBM Plex Mono', ui-monospace, monospace;
@@ -105,8 +106,9 @@ body {
 }
 
 /* A focus ring that is actually visible — the whole point of T-M10-12. */
+/* LOESCHVERMERK (Review): bis T-M44-17 trug der Fokusrahmen `var(--accent)`, das Feindrot. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -560,6 +562,44 @@ body {
   font-size: 18px;
   margin: 0;
   font-weight: 600;
+}
+
+.panel__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.panel__bar h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Zurueck und Schliessen (T-M44-12): leise Knoepfe im Kopf, mit der Mindestflaeche, die
+   touch.css im Touch-Betrieb anhebt. */
+.panel__back,
+.panel__close {
+  flex: none;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 var(--sp-sm);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Die Wirtschaft als aufklappbare Zeile (T-M44-12): der Kopf ist die Zusammenfassung. */
+.panel--economy > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.panel--economy > summary h2 {
+  display: inline;
 }
 
 .panel__sub {
@@ -1658,6 +1698,13 @@ body {
   color: var(--ink-soft);
 }
 
+/* Die Einfuehrung weicht dem Element aus, von dem sie spricht (T-M44-14, R-UX-05/AK2):
+   Tutorial.tsx setzt data-dodge, sobald sie es decken wuerde. */
+.tutorial[data-dodge='top'] {
+  top: var(--sp-md);
+  bottom: auto;
+}
+
 /* Ein Knopf mit Symbol: das Zeichen sitzt vor dem Wort, nicht darueber. */
 .button {
   display: inline-flex;
@@ -2198,6 +2245,41 @@ body {
   border-color: var(--warn);
 }
 
+/* Mindestmass am Schreibtisch (T-M44-17, R-UX-06/AK3): 24 px. Das Fragezeichen BLEIBT ein
+   kleiner Kreis (14 px, `::before`), der Knopf selbst ist 24 x 24 und holt sich den Platz ueber
+   negativen Rand zurueck, damit keine Zeile hoeher wird. */
+.explain__toggle {
+  position: relative;
+  isolation: isolate;
+  width: 24px;
+  height: 24px;
+  margin: -5px -2px -5px -2px;
+  border: 0;
+  background: none;
+}
+
+.explain__toggle::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  z-index: -1;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.explain__toggle[aria-expanded='true']::before {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+
+/* Kopf, Seitenleiste und Dialoge: kein Bedienelement unter 24 px (`:where` = Spezifitaet 0,
+   jede Gestaltung darueber bleibt, die Touch-Regeln mit 44 px gehen vor). */
+:where(.header, .side, .dialog) :where(button, select, summary, input:not([type='checkbox']):not([type='radio'])) {
+  min-height: 24px;
+  min-width: 24px;
+}
+
 .explain__text {
   display: block;
   margin: var(--sp-sm) 0;
@@ -2264,13 +2346,16 @@ body {
 
 /* Eine neue Meldung blendet einmal auf und ist dann still. Die Regel fuer
    prefers-reduced-motion oben im Stylesheet schaltet auch das ab (R-UI-04). */
+/* LOESCHVERMERK (Review): bis T-M44-17 blendete die Meldung auch ueber `opacity` ein
+   (from { opacity: 0; transform: translateX(-4px) } to { opacity: 1; transform: none }). axe
+   misst den Kontrast mitten im Einblenden (gemessen: 3,71:1 und 4,31:1 bei `.alert--unlock` in
+   der Mehrspieler-Lobby, R-UX-06/AK1) — der Befund haengt dann am Zeitpunkt der Messung. Jetzt
+   nur noch die Bewegung; der Text hat von der ersten Sekunde an seine Farbe. */
 @keyframes alert-in {
   from {
-    opacity: 0;
     transform: translateX(-4px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -2334,6 +2419,35 @@ body {
   /* Ein Rahmen in der Linienfarbe, damit ein helles Feld auf hellem Grund nicht
      verschwindet — und ein dunkles nicht wie ein Loch aussieht. */
   border: 1px solid var(--line);
+}
+
+/* ================================================================ T-M44-03a: Hochformat (Paket A)
+   Der Hinweis „quer halten empfohlen" (OrientationHint.tsx, R-UX-05/AK2). Ausserhalb des
+   Hochformats gezeichnet wird er nicht; die Regel unter
+   `@media (max-width: 599px) and (orientation: portrait)` in touch.css zeigt ihn und legt ihn
+   auf die Karte. Der Stapel selbst (Spalte, Zeilen, Kopf, Fuss) steht in touch.css, damit die
+   Kaskade app.css -> touch.css ihn nach den Schreibtischregeln auswertet. */
+.orient-hint {
+  display: none;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 0 0 0 var(--sp-md);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.orient-hint button {
+  flex: none;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 /* ================================================================ T-M44-04
