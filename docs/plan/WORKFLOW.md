@@ -1,4 +1,4 @@
-# WORKFLOW — Etappe 2 von M42/M43 und M44 „UX V2“ fertig auf `claude/game-v2-planned-tasks-tk5rrr` (PR #15, 2026-10-03); wartet auf Noahs Merge
+# WORKFLOW — Etappe 2 von M42/M43 und M44 „UX V2“ auf `main` (PR #15 gemerged, 2026-10-03)
 <!-- LOESCHVERMERK (Review): Titel vorher: WORKFLOW — Etappe 2 von M42/M43 auf `claude/game-v2-planned-tasks-tk5rrr` (2026-10-03); Etappe 1 liegt auf main (PR #13) -->
 
 > **Diese Datei ist der Einstieg.** Wenn du hier fertig bist, weißt du, wo du bist, was
@@ -16,7 +16,7 @@
 > 2 offen (durch Tests gedeckt), Abgleich: alle Maßnahmen erfüllt; T-M44-20 am Bündel 0 Bilder > 50 ms.
 > Noahs Entscheide E1–E5 in `DECISIONS.md` (2026-10-03). Artillerie verbraucht weiter Öl (E1).
 >
-> **Was jetzt auf Noah wartet:** Merge von PR #15 nach `main` (Noah merged, kein Agent), Freigabe der
+> **Was jetzt auf Noah wartet:** Freigabe der
 > Liste `docs/plan/LOESCHVERMERKE.md`, **AK-9**, Befund M42-09-a, AK-8 neu messen (49 Dateien am
 > Erzeugnis geändert seit `7a6aa47`).
 >
@@ -122,18 +122,22 @@
 
 ## 0 · Ankommen (ein Befehl, keine Suche)
 
-> **ÜBERGABE 2026-10-03 (zuerst lesen):** Die Cloud-Sitzung wurde mitten in der Arbeit
-> angehalten. Unfertige Stände liegen auf `wip/…`-Zweigen. Wo was liegt und wie es
-> weitergeht, steht in **`docs/plan/UEBERGABE-LOKAL-2026-10-03.md`**.
+> **Die Übergabe vom 2026-10-03 ist abgearbeitet** (`docs/plan/UEBERGABE-LOKAL-2026-10-03.md` bleibt als
+> Vorgeschichte; alle `wip/…`-Stände sind gemessen und in PR #15 gemergt oder dokumentiert zurückgenommen).
+<!-- LOESCHVERMERK (Review): vorher stand hier der Hinweis „ÜBERGABE 2026-10-03 (zuerst lesen)“ auf die
+unfertigen wip/-Zweige der Cloud-Sitzung — erledigt mit PR #15. -->
 
 ```bash
 git log --oneline -1 && git status --short
 ```
 
-**Die Spitze liegt auf `claude/game-v2-planned-tasks-tk5rrr`** (Etappe 2 von M42/M43, abgezweigt von
-`main` = `95441e0`, gepusht, noch nicht gemerged). Noahs /goal-Auftrag vom 2026-10-02 ersetzt den
-Playtest-Haltepunkt F6. Wer einen Worktree anlegt, zweigt von diesem Zweig ab; wer ihn nach `main`
-merged, richtet diesen Absatz im selben Zug auf `main`.
+**Die Spitze liegt auf `main`.** PR #15 (Etappe 2 von M42/M43 und M44 „UX V2“, `pnpm acceptance`
+12 von 12 gegen `3ec9a62`) ist am 2026-10-03 auf Noahs ausdrückliches Wort gemerged. Wer einen Worktree
+anlegt, zweigt von `main` ab.
+
+<!-- LOESCHVERMERK (Review): bis zum Merge von PR #15 stand hier: „Die Spitze liegt auf
+`claude/game-v2-planned-tasks-tk5rrr` (Etappe 2 von M42/M43, abgezweigt von main = 95441e0, gepusht, noch
+nicht gemerged). Noahs /goal-Auftrag vom 2026-10-02 ersetzt den Playtest-Haltepunkt F6.“ -->
 
 <!-- LOESCHVERMERK (Review): bis 2026-10-03 stand hier:
 **Die Spitze liegt auf `main`.** PR #13 (M42/M43 Etappe 1: Geld der KI, Räumfrist, erst die Fabrik;
@@ -144,9 +148,9 @@ Playtest (Entscheid F6) auf einem neuen Zweig von `main`. Wer einen Worktree anl
 -->
 
 ```bash
-git switch claude/game-v2-planned-tasks-tk5rrr && git pull --ff-only
+git switch main && git pull --ff-only
 ```
-<!-- LOESCHVERMERK (Review): vorher `git switch main && git pull --ff-only` -->
+<!-- LOESCHVERMERK (Review): bis zum Merge von PR #15 `git switch claude/game-v2-planned-tasks-tk5rrr && git pull --ff-only` -->
 
 **Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und
 den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
