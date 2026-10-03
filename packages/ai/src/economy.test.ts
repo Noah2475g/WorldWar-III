@@ -9,7 +9,15 @@ import {
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
 import { describe, expect, it } from 'vitest'
 import { emptyMemory } from './decide'
-import { RESERVE_PERMILLE, economyCommands, factoryReserve, rankedUnitsFor, recruitCommands, tradeCommands } from './economy'
+import {
+  RESERVE_PERMILLE,
+  economyCommands,
+  factoryReserve,
+  frontProvinces,
+  rankedUnitsFor,
+  recruitCommands,
+  tradeCommands,
+} from './economy'
 import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
 
@@ -34,9 +42,10 @@ const CONFIG: GameConfig = {
  * Waere die Kasse leer, waeren beide Zusicherungen unten gruen, ohne etwas zu belegen —
  * die KI baute dann ja ohnehin nichts.
  */
-function richContext(tick: number) {
+function richContext(tick: number, prepare?: (state: ReturnType<typeof createInitialState>) => void) {
   const state = createInitialState(CONFIG, ctx)
   state.tick = tick
+  prepare?.(state)
   for (const id of state.provinceOrder) {
     const province = state.provinces[id]!
     if (province.owner !== 'p2') continue
@@ -186,6 +195,11 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
       ;(province.buildings as Record<string, number>)[building] = level
     }
   }
+  /** Gibt eine Provinz der Sicht dem Menschen (p1) - ihre eigenen Nachbarn werden Grenzprovinzen (T-M42-13). */
+  const grenzeBei = (context: ReturnType<typeof richContext>, provinceId: string) => {
+    const provinz = context.view.provinces.find((province) => province.id === provinceId)!
+    ;(provinz as { owner: string | null }).owner = 'p1'
+  }
 
   it('befiehlt in einer Stadt mit Fabrik der Stufe 1 und genug Mitteln den Ausbau', () => {
     const context = richContext(tag31)
@@ -289,6 +303,9 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
       (province) => province.owner !== 'p2' || province.kind !== 'city',
     )
+    // Seit T-M42-13 (Review Punkt 10) gilt die Ausweichliste mit der Festung nur an der Front: Suedberg
+    // (s2, Nachbar von Sandmark o2) gehoert in dieser Lage dem Menschen.
+    grenzeBei(context, 's2')
     stufe(context, 'railway', 0)
     stufe(context, 'fortress', 0)
     ;(context.view.self.resources as Record<string, number>).coal = 0
@@ -305,6 +322,67 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     expect(`${bau?.building} in ${provinz?.kind}`).toBe('fortress in rural')
     expect(provinz?.buildings?.barracks).toBe(1)
     expect(provinz?.buildings?.railway).toBe(0)
+  })
+
+  // --- T-M42-13 (Review Punkt 10, Befund M42-04-a): Festung nur an der Front, sonst zuletzt ------------
+
+  it('FE1: im Hinterland keine Festung, solange die Eisenbahn fehlt (vorher: Festung als Ausweichwunsch)', () => {
+    // Dieselbe Lage wie im Test davor, nur ohne fremden Nachbarn: Ostmark grenzt in der Zwei-Spieler-
+    // Aufstellung an kein fremdes Land, und keine Armee im Krieg steht in Reichweite.
+    const context = richContext(tag31)
+    ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+      (province) => province.owner !== 'p2' || province.kind !== 'city',
+    )
+    stufe(context, 'railway', 0)
+    stufe(context, 'fortress', 0)
+    ;(context.view.self.resources as Record<string, number>).coal = 0
+    expect(frontProvinces(context).size, 'die Lage hat doch eine Front - der Test saehe nichts').toBe(0)
+
+    expect(bauten(context).map((command) => command.building)).not.toContain('fortress')
+  })
+
+  it('FE2: im Hinterland die Festung, sobald kein Wirtschaftsbau mehr fehlt', () => {
+    const context = richContext(tag31)
+    stufe(context, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(context, 'fortress', 0)
+    expect(frontProvinces(context).size).toBe(0)
+
+    expect(bauten(context).map((command) => command.building)).toEqual(['fortress'])
+  })
+
+  it('FE3: im Hinterland erst Hafen, dann Festung (an der Front umgekehrt, wie bisher)', () => {
+    const hinterland = richContext(tag31)
+    stufe(hinterland, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(hinterland, 'fortress', 0)
+    stufe(hinterland, 'harbour', 0)
+    const [bauHinten] = bauten(hinterland)
+    expect(`${bauHinten?.building} in ${bauHinten?.provinceId}`).toBe('harbour in o1')
+
+    const front = richContext(tag31)
+    stufe(front, 'factory', TEST_RULES.buildings.factory.maxLevel)
+    stufe(front, 'fortress', 0)
+    stufe(front, 'harbour', 0)
+    grenzeBei(front, 'm1') // Mittstadt grenzt an Ostburg (o1)
+    expect(frontProvinces(front).has('o1')).toBe(true)
+    const [bauVorn] = bauten(front)
+    expect(`${bauVorn?.building} in ${bauVorn?.provinceId}`).toBe('fortress in o1')
+  })
+
+  it('FE4: eine bedrohte Provinz zaehlt als Front, auch ohne fremden Nachbarn', () => {
+    // Eine Armee des Menschen in Mittstadt (m1, herrenlos), im Krieg mit Ostmark: Ostburg und Ostfeld
+    // grenzen an m1, Sandmark liegt zwei Schritte entfernt (threatRange 2).
+    const context = richContext(tag31, (state) => {
+      state.diplomacy.relations['p1|p2']!.state = 'war'
+      placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    })
+    expect(context.view.armies.some((army) => army.owner === 'p1'), 'die Armee ist nicht sichtbar').toBe(true)
+
+    expect([...frontProvinces(context)].sort()).toEqual(['o1', 'o2', 'o3'])
+
+    const frieden = richContext(tag31, (state) => {
+      placeArmy(state, { owner: 'p1', at: 'm1', units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+    })
+    expect(frontProvinces(frieden).size, 'ohne Krieg keine Bedrohung').toBe(0)
   })
 
   it('HALTETEST: baut Kaserne, Eisenbahn und Hafen nie ueber Stufe 1 aus', () => {
