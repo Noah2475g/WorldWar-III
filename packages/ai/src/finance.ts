@@ -1,5 +1,5 @@
 import { ONE, clampFixed, mulChain, quotFixed, type Fixed } from '@worldwar/shared'
-import { spySalary, unitCount, type PublicView, type ResourceKey, type Rules } from '@worldwar/core'
+import { spySalary, unitCount, type PublicView, type Rules } from '@worldwar/core'
 
 /**
  * Finanzen der KI aus der Sicht (D32.2, T-M42-03).
@@ -37,76 +37,17 @@ export function dailyMoneyIncome(view: PublicView, rules: Rules): Fixed {
   return Math.round((scaled * c.ticksPerDay) / ONE)
 }
 
-/**
- * Zwilling von `state/army.ts` `armyUpkeep` je Rohstoff, auf der Sicht (T-M42-07, D32.2): was alle
- * eigenen Armeen an einem Spieltag verbrauchen. Gleich gehalten gegen `economyOverview`
- * (`finance.test.ts` F11).
- */
-export function dailyArmyUpkeep(view: PublicView, rules: Rules, resource: ResourceKey): Fixed {
+/** Zwilling von `state/army.ts` `armyUpkeep`, nur Geld, auf der Sicht. */
+export function dailyArmyMoneyUpkeep(view: PublicView, rules: Rules): Fixed {
   let perTick = 0
   for (const army of view.armies) {
     if (army.owner !== view.playerId) continue
     for (const stack of army.units ?? []) {
-      const amount = rules.units[stack.unitKey]?.upkeep[resource] ?? 0
-      if (amount) perTick += amount * unitCount(stack, rules)
+      const money = rules.units[stack.unitKey]?.upkeep.money ?? 0
+      if (money) perTick += money * unitCount(stack, rules)
     }
   }
   return perTick * rules.constants.ticksPerDay
-}
-
-// LOESCHVERMERK (Review): T-M42-07 (D32.2) zieht den Rumpf nach `dailyArmyUpkeep(view, rules, 'money')`
-// (verhaltensgleich, F11). Alter Rumpf:
-//   let perTick = 0
-//   for (const army of view.armies) {
-//     if (army.owner !== view.playerId) continue
-//     for (const stack of army.units ?? []) {
-//       const money = rules.units[stack.unitKey]?.upkeep.money ?? 0
-//       if (money) perTick += money * unitCount(stack, rules)
-//     }
-//   }
-//   return perTick * rules.constants.ticksPerDay
-/** Zwilling von `state/army.ts` `armyUpkeep`, nur Geld, auf der Sicht. */
-export function dailyArmyMoneyUpkeep(view: PublicView, rules: Rules): Fixed {
-  return dailyArmyUpkeep(view, rules, 'money')
-}
-
-/**
- * Die Oelfoerderung eines Spieltags (T-M42-07, D32.2, R-AI-12/AK4) - Zwilling der Foerderformel
- * `phases/production.ts` (`provinceYieldScaled` mit `buildingFactor`), auf der Sicht statt auf dem
- * Zustand. Die Gruppierung der Faktoren ist die des Kerns (erst Moral, Bevoelkerung, Besatzung,
- * Hauptstadt; dann der Gebaeudefaktor), weil `mulChain` je Schritt rundet. Aendert sich die Formel
- * im Kern, faellt `finance.test.ts` F9/F10.
- */
-export function dailyOilYield(view: PublicView, rules: Rules): Fixed {
-  return dailyDepositYield(view, rules, 'oil')
-}
-
-function dailyDepositYield(view: PublicView, rules: Rules, resource: Exclude<ResourceKey, 'money'>): Fixed {
-  if (!view.self.alive) return 0
-  const c = rules.constants
-  const penalty =
-    view.self.capitalLostUntil !== null && view.tick < view.self.capitalLostUntil ? c.capitalLossProductionFactor : ONE
-  const window = c.occupationPenaltyDays * c.ticksPerDay
-  let scaled = 0
-  for (const province of view.provinces) {
-    if (province.owner !== view.playerId || province.stale) continue
-    if (province.population === undefined || province.morale === undefined) continue
-    const deposit = province.deposits?.[resource] ?? 0
-    if (!deposit) continue
-    const morale =
-      c.productionMoraleFloor + mulChain([ONE - c.productionMoraleFloor, clampFixed(quotFixed(province.morale, 100_000), 0, ONE)])
-    const population = clampFixed(quotFixed(province.population, 300_000), 500, 1500)
-    const elapsed = province.occupiedSince === undefined ? window : view.tick - province.occupiedSince
-    const occupation = elapsed >= window ? ONE : 500 + mulChain([500, quotFixed(elapsed, window)])
-    let building = ONE
-    for (const [key, level] of Object.entries(province.buildings ?? {})) {
-      if (!level) continue
-      const bonus = rules.buildings[key as keyof typeof rules.buildings]?.effects.productionBonusPermille
-      if (bonus) building += bonus * level
-    }
-    scaled += deposit * mulChain([building, mulChain([morale, population, occupation, penalty])])
-  }
-  return Math.round((scaled * c.ticksPerDay) / ONE)
 }
 
 /** Tagessold aller eigenen Spione — Zwilling zu `economyOverview` (`view/economy.ts:114-120`). */
@@ -139,21 +80,6 @@ export function dailyMoneyLedger(view: PublicView, rules: Rules): DailyMoneyLedg
  * Wie viele Einheiten die Tagesbilanz noch traegt (D32.4): `bilanz(n) = margin - n * perUnitDaily
  * >= 0`. `bilanz(n) = 0` ist zulaessig (>=, nicht >).
  */
-/**
- * Wie viele Einheiten der **Vorrat** ueber einen Horizont traegt (T-M42-14, Review Punkt 9, R-AI-12/AK4 in der
- * Fassung vom 2026-10-03): `stock + (margin - n * perUnitDaily) * horizonDays >= 0`. Anders als
- * `unitsWithinDailyBalance` darf die Tagesbilanz danach negativ sein, solange der Bestand den Horizont
- * ueberdauert - so fuehrt eine Macht ohne eigene Foerderung Einheiten mit Oelunterhalt aus ihrem Vorrat,
- * ohne ihn leerzulaufen. Mit `horizonDays = 0` gaebe es keine Grenze; der Aufrufer nimmt immer >= 1.
- */
-export function unitsWithinStockHorizon(stock: Fixed, margin: Fixed, perUnitDaily: Fixed, horizonDays: number): number {
-  if (perUnitDaily <= 0) return Number.MAX_SAFE_INTEGER
-  const horizon = Math.max(1, Math.trunc(horizonDays))
-  const available = Math.max(0, stock) + margin * horizon
-  if (available < 0) return 0
-  return Math.trunc(available / (perUnitDaily * horizon))
-}
-
 export function unitsWithinDailyBalance(margin: Fixed, perUnitDaily: Fixed): number {
   if (perUnitDaily <= 0) return Number.MAX_SAFE_INTEGER
   if (margin < 0) return 0

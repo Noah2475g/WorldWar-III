@@ -480,15 +480,7 @@ describe('R-AI-08/AK3 Die in M15 gebauten Mittel leben', () => {
     expect(fabriken.length, 'keine einzige Fabrik in 200 Spieltagen').toBeGreaterThan(0)
   })
 
-  // LOESCHVERMERK (Review): T-M42-07 macht aus dem it.fails ein it() (ein gruen gewordenes it.fails
-  // laesst die Suite fallen, tasks.yaml DoD). Alte Zeile:
-  // it.fails('laesst die Artillerie feuern', () => {
-  it('laesst die Artillerie feuern (R-AI-12/AK3, seit T-M42-07 it statt it.fails)', () => {
-    // **Seit T-M42-07 (2026-10-02) ein normales it():** "Erst die Fabrik" (T-M42-06) und die
-    // Untergrenze von einer Artillerie aus dem Bestand ueber der Ruecklage mit der Mischung 60/30/10
-    // (D32.8) bringen Artillerie und Beschuss nach Welt 1815. Faellt es, ist die Feuerautomatik fuer
-    // die KI wieder tot. Der Vermerk unten ist Geschichte.
-    //
+  it.fails('laesst die Artillerie feuern', () => {
     // **Die Kette, um die es in dieser Aufgabe geht.** Ohne Fabrik keine Artillerie, ohne
     // Artillerie ist `armyRange` jeder Armee 0, und die Feuerautomatik aus T-M15-07 waere
     // gebaut, gruen getestet und wirkungslos — der Zustand, den PROBLEME.md am 2026-09-06
@@ -780,5 +772,4 @@ describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
 
   // Punkt 3 (§3.3): die 22 bestehenden Faelle dieser Datei (beide it.fails eingeschlossen)
   // bleiben unveraendert — keine Zeile davon ist Teil von T-M42-01.
-  // (Nachtrag T-M42-07: das letzte it.fails, "laesst die Artillerie feuern", ist seitdem it().)
 })

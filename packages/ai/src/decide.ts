@@ -123,9 +123,7 @@ export function decide(options: DecideOptions): AiDecision {
     absorbed = absorbedBy(merges)
     commands.push(...merges)
     commands.push(...tradeCommands(context, explanations))
-    // LOESCHVERMERK (Review): Befund M42-07-a, dritte Iteration - `commands` wird durchgereicht. Alte Zeile:
-    // commands.push(...recruitCommands(context, explanations))
-    commands.push(...recruitCommands(context, explanations, commands))
+    commands.push(...recruitCommands(context, explanations))
   }
 
   // Tactics: where the armies go. How often depends on the difficulty — reaction
