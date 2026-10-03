@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState, economyOverview, publicView, spySalary, type GameConfig, type GameState, type SpyMission } from '@worldwar/core'
 import { TEST_RULES, placeArmy, smallWorld } from '@worldwar/testkit'
-import { dailyArmyMoneyUpkeep, dailyMoneyIncome, dailyMoneyLedger, dailySpySalary, unitsWithinDailyBalance } from './finance'
+import {
+  dailyArmyMoneyUpkeep,
+  dailyArmyUpkeep,
+  dailyMoneyIncome,
+  dailyMoneyLedger,
+  dailyOilYield,
+  dailySpySalary,
+  unitsWithinDailyBalance,
+} from './finance'
 
 /**
  * T-M42-03 (D32.2, D32.4): Finanzen der KI aus der Sicht.
@@ -186,5 +194,67 @@ describe('F7-F8 unitsWithinDailyBalance, wörtlich aus tasks.yaml und den Grenze
     expect(unitsWithinDailyBalance(-5_000, 1_440)).toBe(0)
     expect(unitsWithinDailyBalance(0, 1_440)).toBe(0)
     expect(unitsWithinDailyBalance(123, 0)).toBe(Number.MAX_SAFE_INTEGER)
+  })
+})
+
+/**
+ * T-M42-07 (D32.2, R-AI-12/AK4): der Foerderungs-Zwilling fuer den Oel-Waechter.
+ *
+ * `dailyOilYield` ist die Foerderformel des Kerns (`provinceYieldScaled`) auf der Sicht, mit
+ * Gebaeudefaktor; `dailyArmyUpkeep(view, rules, resource)` der Unterhalt je Rohstoff. Beide werden
+ * gegen `economyOverview` gleich gehalten - aendert sich die Formel im Kern, faellt dieser Block.
+ */
+describe('F9-F11 dailyOilYield und dailyArmyUpkeep sind die Oel-Zahlen der Wirtschaftsuebersicht', () => {
+  it('F9: Foerderung mit Fabrik, Moral, Besatzung und Hauptstadtverlust', () => {
+    const l = lage({
+      mutate: (s) => {
+        s.provinces['o2']!.buildings = { ...s.provinces['o2']!.buildings, factory: 2 }
+        s.provinces['o2']!.morale = 61_234
+        s.provinces['o2']!.occupiedSince = s.tick - 37
+        s.provinces['o1']!.deposits = { ...s.provinces['o1']!.deposits, oil: 333 }
+        s.players[ME]!.capitalLostUntil = s.tick + 100
+      },
+    })
+    for (const p of l.state.playerOrder) {
+      const view = publicView(l.state, p)
+      expect(dailyOilYield(view, l.rules), p).toBe(economyOverview(l.state, p, l.rules).oil.production)
+    }
+    expect(dailyOilYield(publicView(l.state, ME), l.rules), 'die Lage foerdert Oel').toBeGreaterThan(0)
+  })
+
+  it('F10: ohne Gebaeude, Besatzung und Hauptstadtverlust ebenso; eine Macht ohne Oel foerdert 0', () => {
+    const l = lage()
+    for (const p of l.state.playerOrder) {
+      const view = publicView(l.state, p)
+      expect(dailyOilYield(view, l.rules), p).toBe(economyOverview(l.state, p, l.rules).oil.production)
+    }
+    expect(dailyOilYield(publicView(l.state, 'p1'), l.rules)).toBe(0)
+  })
+
+  it('F11: der Oelunterhalt aller eigenen Armeen ist der Verbrauch der Uebersicht; Geld bleibt der alte Zwilling', () => {
+    const l = lage({
+      mutate: (s) => {
+        placeArmy(s, {
+          owner: ME,
+          at: 'o1',
+          units: [
+            { unitKey: 'infantry', hpTotal: 12_345 },
+            { unitKey: 'tank', hpTotal: 5_201 },
+            { unitKey: 'artillery', hpTotal: 2_801 },
+          ],
+        })
+      },
+    })
+    const view = publicView(l.state, ME)
+    const overview = economyOverview(l.state, ME, l.rules)
+    expect(dailyArmyUpkeep(view, l.rules, 'oil')).toBe(overview.oil.consumption)
+    expect(dailyArmyUpkeep(view, l.rules, 'oil')).toBeGreaterThan(0)
+    expect(dailyArmyUpkeep(view, l.rules, 'iron')).toBe(overview.iron.consumption)
+    expect(dailyArmyUpkeep(view, l.rules, 'money')).toBe(dailyArmyMoneyUpkeep(view, l.rules))
+  })
+
+  it('F12: eine ausgeschiedene Macht foerdert kein Oel, wie economyOverview', () => {
+    const l = lage({ mutate: (s) => (s.players[ME]!.alive = false) })
+    expect(dailyOilYield(publicView(l.state, ME), l.rules)).toBe(economyOverview(l.state, ME, l.rules).oil.production)
   })
 })
