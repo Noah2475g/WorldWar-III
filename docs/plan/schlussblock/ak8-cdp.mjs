@@ -73,7 +73,8 @@ async function evaluate(cdp, expression) {
 
 const buttonTexts = `[...document.querySelectorAll('button')].filter(b => b.offsetParent !== null).map(b => b.textContent.trim())`
 /** Nur der Rumpf des Dialogs — der Kopf trägt das Kreuz „×", das kein Angebot an den Spieler ist. */
-const dialogBodyTexts = `[...(document.querySelector('[role="dialog"] .dialog__body')?.querySelectorAll('button') ?? [])].filter(b => b.offsetParent !== null).map(b => b.textContent.trim())`
+// T-M44-05 legt die Hauptaktion in eine feste Fusszeile: Koerper UND Fuss lesen (Befund AK-8, 2026-10-03).
+const dialogBodyTexts = `[...(document.querySelector('[role="dialog"]')?.querySelectorAll('.dialog__body button, .dialog__foot button') ?? [])].filter(b => b.offsetParent !== null).map(b => b.textContent.trim())`
 const clickByText = (re) => `(() => { const b = [...document.querySelectorAll('button')].find(b => b.offsetParent !== null && ${re}.test(b.textContent.trim())); if (!b || b.disabled) return false; b.click(); return b.textContent.trim() })()`
 /** Die Zeilen des Spielstände-Dialogs, so wie sie dastehen: „Stand 1 — Tag 3", „Laden" gesperrt. */
 const slotRows = `[...document.querySelectorAll('li.slot')].map(li => ({ label: li.querySelector('.slot__label')?.textContent.trim() ?? '', buttons: [...li.querySelectorAll('button')].map(b => ({ text: b.textContent.trim(), disabled: b.disabled })) }))`
