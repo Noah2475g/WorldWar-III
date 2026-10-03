@@ -104,11 +104,18 @@ function buildingCandidatesFor(
   // **Festung nur an der Front, sonst zuletzt** (T-M42-13, Review Punkt 10): in einer Grenzprovinz
   // (ein Landnachbar in fremdem Besitz) oder einer bedrohten Provinz (`threatMap` > 0) wie bisher hinter
   // der Eisenbahn; im Hinterland erst, wenn kein Wirtschaftsbau (Fabrik, Eisenbahn, Hafen) mehr fehlt.
-  const festungErlaubt = available('fortress') && level('fortress') < 2
-  const front = frontProvinces(context).has(province.id)
-  if (festungErlaubt && front) candidates.push('fortress')
+  //
+  // LOESCHVERMERK (Review): T-M42-13 ist gebaut, gemessen und zurueckgenommen - mit der Festung nur an der
+  // Front hielten K5 und das Turnier (neun Vollpartien auf dem Endstand 9/9, Festung 2 in Summe 346 statt
+  // 559), aber `ai-integration` R-AI-11/AK3 riss in der Voreinstellung (Indien, ein Geldmangeltag durch
+  // eigene Aushebung; ohne T-M42-13 gruen, Probe P13). Die Zeilen von T-M42-13:
+  // const festungErlaubt = available('fortress') && level('fortress') < 2
+  // const front = frontProvinces(context).has(province.id)
+  // if (festungErlaubt && front) candidates.push('fortress')
+  // if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
+  // if (festungErlaubt && !front && candidates.length === 0) candidates.push('fortress')
+  if (available('fortress') && level('fortress') < 2) candidates.push('fortress')
   if (available('harbour') && province.coastal && level('harbour') === 0) candidates.push('harbour')
-  if (festungErlaubt && !front && candidates.length === 0) candidates.push('fortress')
   return candidates
 }
 

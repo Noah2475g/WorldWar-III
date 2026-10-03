@@ -327,20 +327,22 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
 
   // --- T-M42-13 (Review Punkt 10, Befund M42-04-a): Festung nur an der Front, sonst zuletzt ------------
 
-  it('FE1: im Hinterland keine Festung, solange die Eisenbahn fehlt (vorher: Festung als Ausweichwunsch)', () => {
-    // Dieselbe Lage wie im Test davor, nur ohne fremden Nachbarn: Ostmark grenzt in der Zwei-Spieler-
-    // Aufstellung an kein fremdes Land, und keine Armee im Krieg steht in Reichweite.
-    const context = richContext(tag31)
-    ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
-      (province) => province.owner !== 'p2' || province.kind !== 'city',
-    )
-    stufe(context, 'railway', 0)
-    stufe(context, 'fortress', 0)
-    ;(context.view.self.resources as Record<string, number>).coal = 0
-    expect(frontProvinces(context).size, 'die Lage hat doch eine Front - der Test saehe nichts').toBe(0)
-
-    expect(bauten(context).map((command) => command.building)).not.toContain('fortress')
-  })
+  // LOESCHVERMERK (Review): T-M42-13 ist zurueckgenommen (`economy.ts`); der Fall beschrieb die Festung nur an
+  // der Front. Alter Fall:
+  // it('FE1: im Hinterland keine Festung, solange die Eisenbahn fehlt (vorher: Festung als Ausweichwunsch)', () => {
+  //   // Dieselbe Lage wie im Test davor, nur ohne fremden Nachbarn: Ostmark grenzt in der Zwei-Spieler-
+  //   // Aufstellung an kein fremdes Land, und keine Armee im Krieg steht in Reichweite.
+  //   const context = richContext(tag31)
+  //   ;(context.view as { provinces: typeof context.view.provinces }).provinces = context.view.provinces.filter(
+  //     (province) => province.owner !== 'p2' || province.kind !== 'city',
+  //   )
+  //   stufe(context, 'railway', 0)
+  //   stufe(context, 'fortress', 0)
+  //   ;(context.view.self.resources as Record<string, number>).coal = 0
+  //   expect(frontProvinces(context).size, 'die Lage hat doch eine Front - der Test saehe nichts').toBe(0)
+  //
+  //   expect(bauten(context).map((command) => command.building)).not.toContain('fortress')
+  // })
 
   it('FE2: im Hinterland die Festung, sobald kein Wirtschaftsbau mehr fehlt', () => {
     const context = richContext(tag31)
@@ -351,23 +353,25 @@ describe('R-PROV-02 Die KI baut die Fabrik ueber Stufe 1 hinaus aus', () => {
     expect(bauten(context).map((command) => command.building)).toEqual(['fortress'])
   })
 
-  it('FE3: im Hinterland erst Hafen, dann Festung (an der Front umgekehrt, wie bisher)', () => {
-    const hinterland = richContext(tag31)
-    stufe(hinterland, 'factory', TEST_RULES.buildings.factory.maxLevel)
-    stufe(hinterland, 'fortress', 0)
-    stufe(hinterland, 'harbour', 0)
-    const [bauHinten] = bauten(hinterland)
-    expect(`${bauHinten?.building} in ${bauHinten?.provinceId}`).toBe('harbour in o1')
-
-    const front = richContext(tag31)
-    stufe(front, 'factory', TEST_RULES.buildings.factory.maxLevel)
-    stufe(front, 'fortress', 0)
-    stufe(front, 'harbour', 0)
-    grenzeBei(front, 'm1') // Mittstadt grenzt an Ostburg (o1)
-    expect(frontProvinces(front).has('o1')).toBe(true)
-    const [bauVorn] = bauten(front)
-    expect(`${bauVorn?.building} in ${bauVorn?.provinceId}`).toBe('fortress in o1')
-  })
+  // LOESCHVERMERK (Review): T-M42-13 ist zurueckgenommen (`economy.ts`); der Fall beschrieb die Festung nur an
+  // der Front. Alter Fall:
+  // it('FE3: im Hinterland erst Hafen, dann Festung (an der Front umgekehrt, wie bisher)', () => {
+  //   const hinterland = richContext(tag31)
+  //   stufe(hinterland, 'factory', TEST_RULES.buildings.factory.maxLevel)
+  //   stufe(hinterland, 'fortress', 0)
+  //   stufe(hinterland, 'harbour', 0)
+  //   const [bauHinten] = bauten(hinterland)
+  //   expect(`${bauHinten?.building} in ${bauHinten?.provinceId}`).toBe('harbour in o1')
+  //
+  //   const front = richContext(tag31)
+  //   stufe(front, 'factory', TEST_RULES.buildings.factory.maxLevel)
+  //   stufe(front, 'fortress', 0)
+  //   stufe(front, 'harbour', 0)
+  //   grenzeBei(front, 'm1') // Mittstadt grenzt an Ostburg (o1)
+  //   expect(frontProvinces(front).has('o1')).toBe(true)
+  //   const [bauVorn] = bauten(front)
+  //   expect(`${bauVorn?.building} in ${bauVorn?.provinceId}`).toBe('fortress in o1')
+  // })
 
   it('FE4: eine bedrohte Provinz zaehlt als Front, auch ohne fremden Nachbarn', () => {
     // Eine Armee des Menschen in Mittstadt (m1, herrenlos), im Krieg mit Ostmark: Ostburg und Ostfeld

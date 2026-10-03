@@ -3800,6 +3800,15 @@ Golden-Master gilt weiterhin als Fehlschlag — die alten Werte stehen in PROBLE
 > `packages/ai/src/economy.ts` zählt Stapel statt Einheiten, und ob der Deckel in Einheiten mit „stehend ≤ 3"
 > verträglich ist, ist offen (`DECISIONS.md`, `PROBLEME.md`).
 >
+> **Vorgemerkt am 2026-10-03 (Review-Punkt 5, T-M42-18, schriftliche Ausnahme in `DECISIONS.md`):**
+> die fertige Aushebung in eine Gastarmee **derselben Rolle** legen (`findHostArmy` in
+> `packages/core/src/phases/recruitment.ts`). Heute landet eine neue Artillerie in der ersten eigenen
+> Armee der Provinz und macht sie zu einer gemischten Armee, die nicht von selbst schießt. Nicht in M42
+> gebaut, weil D32.1 Kernänderungen ausschließt und die Änderung das Verhalten für Menschen und den
+> Gleichschritt des Mehrspielers (Golden-Master) verschiebt. Die Messung steht: `heer.gemischteMitReichweite`
+> in `apps/headless/test/m42-zaehlung.ts`. Vor einem Anlauf: Golden-Master mit Absicht neu, beide
+> Mehrspieler-Seiten auf denselben Stand.
+>
 > **Vorgemerkt am 2026-09-25 (T-M17-15, Noahs Entscheid, ergänzt in der Nacharbeit desselben
 > Tages):** drei Befunde der Turnier-Nacharbeit gehen an M18, bisher nur in `WORKFLOW.md` §2.6
 > und `DECISIONS.md` geführt, hier zur Vollständigkeit nachgetragen (Muster T-M41-10). **Befund
@@ -7065,6 +7074,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   320 gewählt (280 reißt das Turnier); K4 (R-AI-09/AK3 1 > 0), K5 (1914 im Patt), `clearance.test.ts`
   K12 reißen — nie committet, bleibt zurückgestellt. Nebenbefund: die Buchung allein bringt Welt
   1815 Artillerie (das `it.fails` der Artillerie wird grün).
+- **Vierter Versuch am 2026-10-03** (Review, auf `7e41eda`): D32.5 wählt wieder 320 (280 reißt das
+  Turnier; 320/350/400 grün). Mit 320 reißen in `m17` R-DIP-10/AK4 und R-AI-09/AK3, dazu `clearance.test.ts`
+  K12 — nie committet, bleibt zurückgestellt.
 
 ### T-M42-05 · Die Truppenmischung zählt Einheiten
 - **Ziel:** R-AI-10/AK1.
@@ -7083,6 +7095,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   Entscheidungsregel von T-M42-07 zurückgenommen (`5576e47`) — AB und „B ohne A" reißen beide
   (Band R-AI-12/AK3, Wiederholungsgrenze). Gegen die Regel beobachtet: ohne T-M42-05 enden 4 von
   9 Vollpartien im Patt, mit T-M42-05 keine. Befund M42-07-a, Frage an Noah.
+- **Erledigt am 2026-10-03** (`7e41eda`, Review-Punkt 8c): nach der Rücknahme von T-M42-14 allein auf
+  S10 wieder eingespielt und gemessen — **neutral** (ohne zweite Einheitenart bleibt die Rangfolge gleich):
+  neun Vollpartien wie S10, Turnier 84/61/63 %, `progress.slow` 0,3350, `m17` 27/27.
 
 ### T-M42-07 · Artillerie, die die KI tragen kann
 - **Ziel:** R-AI-12/AK3, AK4, R-AI-10/AK5.
@@ -7113,6 +7128,8 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Zweiter Anlauf am 2026-10-03** (Orchestrator-Entscheid Option b): drei Iterationen auf AB,
   bestes Ergebnis 13,2/15,3/14,0 %; Ursache: fünf von acht Mächten fördern kein Öl
   (R-AI-12/AK4). Option c, Stufe F (`c8575b1`). Regelfrage an Noah (`DECISIONS.md`).
+- **Vierter Anlauf am 2026-10-03** (Review-Punkt 9, als T-M42-14): mit Vorrats-Horizont und Ölkauf hält
+  das Band (23,8/23,0/28,4 %), aber 3 von 9 Vollpartien enden im Patt — zurückgenommen (`7bf8f26`).
 
 ### T-M42-08 · Zusammenlegen nach Rolle und unter dem Deckel
 - **Ziel:** R-AI-10/AK2, AK4.
@@ -7216,6 +7233,86 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   jetzt grün, wird es zu `it()`; sonst gilt die Neufassung „in 200 Tagen mindestens ein Frieden
   zwischen KI-Mächten, in jeder der drei Startzahlen". Aufwand 3 h, Rechenzeit rund 1,5 h ohne
   und rund 3 h mit Parameterlauf.
+
+### T-M42-13 · Festung nur an der Front, im Hinterland nach den Wirtschaftsbauten
+- **Ziel:** Befund M42-04-a (Festungspatt) an der Wurzel — Review-Punkt 10.
+- **Anforderungen:** keine
+- **Abhängigkeiten:** T-M42-06
+- **Dateien:** `packages/ai/src/economy.ts`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` — FE1 (Hinterland, Eisenbahn fehlt → keine Festung),
+  FE2 (Hinterland fertig ausgebaut → Festung), FE3 (Hinterland Hafen vor Festung, an der Front umgekehrt),
+  FE4 (eine bedrohte Provinz zählt als Front, ohne Krieg nicht).
+- **Fertig wenn:** die Festung steht nur in Grenzprovinzen (Landnachbar in fremdem Besitz) und bedrohten
+  Provinzen (`threatMap` > 0) in der Wunschliste wie bisher, im Hinterland erst, wenn kein Wirtschaftsbau
+  mehr fehlt. Ausgangswert vorher gemessen (neun Vollpartien, Turnier, `progress.slow`); Ziel K5 (höchstens
+  ein Patt) und das Turnierband.
+- **Erledigt am 2026-10-03** (`e2fde62`): C2 neu gefahren und zeilengleich (9/9, Festung 2 in Summe 559),
+  S10 8/9 — **ein Patt** (1806), nach K5 Befund statt Rücknahmegrund —, Festung 2 in Summe 502, Turnier
+  84/61/63 % unverändert, `progress.slow` 0,3350. Zahlen in `PROGRESS.md`.
+
+### T-M42-14 · Öl-Wächter mit Vorrats-Horizont, Artillerie ins Band
+- **Ziel:** R-AI-12/AK3 (Band 15–30 %) und AK4 gemeinsam — Review-Punkt 9.
+- **Anforderungen:** R-AI-12
+- **Abhängigkeiten:** T-M42-05
+- **Dateien:** `packages/ai/src/economy.ts`, `packages/ai/src/finance.ts`,
+  `apps/headless/test/ai-integration.slow.test.ts`, `apps/headless/test/m17-integration.slow.test.ts`,
+  `docs/plan/01-REQUIREMENTS.md`
+- **Tests zuerst:** `packages/ai/src/economy.test.ts` (O1h–O3h, H2a/H2b),
+  `packages/ai/src/finance.test.ts` (F13), `apps/headless/test/m17-integration.slow.test.ts` (Band).
+- **Fertig wenn:** Stufe AB wieder eingespielt, Untergrenze mit `ledgerAfter`; eine Einheit mit Ölunterhalt
+  nur, wenn Vorrat nach dem Zug + Öl-Tagesbilanz danach × H ≥ 0 (H als KI-Konstante); das Band hält auf
+  allen drei Startzahlen, ohne Wiederholungsgrenze, R-AI-09/AK1, Hauptstadt, Frieden, Turnier und 9/9
+  entschiedene Vollpartien zu reißen. Höchstens drei Iterationen.
+- **Zurückgenommen am 2026-10-03** (`7bf8f26`): H1 (Horizont 30 Tage) 13,49/15,20/14,95 %; H2 (+ Ölkauf)
+  30,86/28,73/33,74 %; H3 (Mischung 60/30/10) **23,79/23,03/28,38 %**, 0 Ölmangeltage, Turnier 84/61/63 %,
+  `ai-integration` 29/29 — aber **3 von 9 Vollpartien im Patt** und R-AI-09/AK3 rot. Keine Grenze bewegt;
+  R-AI-12/AK4 ist auf den Zweck umformuliert (`DECISIONS.md`).
+
+### T-M42-15 · Zusammenlegen sortiert Provinzen nach Codeeinheiten
+- **Ziel:** Determinismus — Review-Punkt 1.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-09
+- **Dateien:** `packages/ai/src/consolidate.ts`
+- **Tests zuerst:** `packages/ai/src/consolidate.test.ts` — D1 („B-prov" vor „a-prov").
+- **Fertig wenn:** die Provinzen werden nach UTF-16-Codeeinheiten sortiert wie `sort()` im Kern, nicht
+  mit `localeCompare('en')`.
+- **Erledigt am 2026-10-03** (`7b14319`).
+
+### T-M42-16 · Keine Armee unter Sperre im Merge-Pass
+- **Ziel:** ein frischer Verband erbt beim Zusammenlegen keine Rückzugs- oder Beschusssperre —
+  Review-Punkt 3.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-09
+- **Dateien:** `packages/ai/src/consolidate.ts`
+- **Tests zuerst:** `packages/ai/src/consolidate.test.ts` — S1/S2 (heute als Vermerk).
+- **Fertig wenn:** Armeen mit `cannotAttackUntil > tick` bleiben aus dem Merge-Pass; an einer Vollpartie
+  gemessen.
+- **Zurückgenommen am 2026-10-03** (`1de3320`): das Turnier riss (R-AI-06, Sitzordnung
+  Ostmark/Sueden/Nordland schwer 1:4 gegen normal, 44 %). Code und Fälle als `LOESCHVERMERK`.
+
+### T-M42-17 · Verbände über dem Deckel teilen
+- **Ziel:** Befund M42-09-a — Review-Punkt 11.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-09
+- **Dateien:** `packages/ai/src/consolidate.ts`, `packages/ai/src/decide.test.ts`
+- **Tests zuerst:** `packages/ai/src/consolidate.test.ts` — T1 (95 Einheiten → 20/20/20/20/15, hp-Summe
+  gleich), T2 (Rest legt sich mit einem kleinen Verband zusammen), T3 (gemischter Verband), T4 (unter dem
+  Deckel und marschierend: kein Teilen); `packages/ai/src/decide.test.ts` K9 umgestellt.
+- **Fertig wenn:** stehende Verbände über `stackFullContribution` geben per `SPLIT_ARMY` Teile von höchstens
+  20 Einheiten ab (partielle hp bleiben beim Rest), danach der Merge-Pass; Turnier und Patt neu gemessen.
+- **Erledigt am 2026-10-03** (`8fcf67d`; die zweite Fassung „nur abseits der Front", `3841236`, beruhte auf
+  einer falschen Zuordnung des Turnierrisses und ist in `9f4b142` zurückgenommen). Zahlen in `PROGRESS.md`.
+
+### T-M42-18 · Gemischte Armeen mit Reichweiteneinheit zählen
+- **Ziel:** Review-Punkt 5, minimal: sichtbar machen, wie oft eine Artillerie in einer Linienarmee aufgeht.
+- **Anforderungen:** R-AI-10
+- **Abhängigkeiten:** T-M42-09
+- **Dateien:** `apps/headless/test/m42-zaehlung.ts`
+- **Tests zuerst:** `apps/headless/test/m42-zaehlung-gemischt.test.ts` — G1.
+- **Fertig wenn:** `heer.gemischteMitReichweite` (Höchstwert, Endstand, Reichweiteneinheiten am Ende) steht
+  in den Berichten und ist auf dem Endstand gemessen. Die Kernänderung `findHostArmy` nach Rolle wird
+  **nicht** gebaut (schriftliche Ausnahme in `DECISIONS.md`, M18-Notiz oben im Abschnitt M18).
+- **Erledigt am 2026-10-03** (`7b14319`).
 
 ## Meilenstein M43 — Frieden mit Räumfrist
 

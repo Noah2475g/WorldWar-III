@@ -1326,9 +1326,18 @@ wie der Mensch (R-AI-01).
   dieselben Läufe gespielt werden, DANN SOLL in jedem Lauf selbsttätiger Beschuss vorkommen, und der
   Anteil der Artillerie an den ausgehobenen Landeinheiten SOLL im Band 15–30 % liegen (*„gemessen
   24–28 %“ ist nicht nachprüfbar: die Plansonde fehlt im Repo; die Zahl stammt aus dem Plan, nicht aus einem eingecheckten Lauf*). Damit sind R-AI-08/AK3 und R-BAT-08/AK3 auf dem M42-Stand wieder erfüllt.
-- **AK4:** WENN die KI eine Einheit mit Ölunterhalt erwägt, DANN SOLL sie sie nur ausheben, wenn die
-  Öl-Tagesbilanz danach nicht negativ ist, also geschätzte Förderung − Ölunterhalt aller Armeen
-  einschließlich der neuen ≥ 0.
+- **AK4** *(Fassung vom 2026-10-03, Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar —
+  `DECISIONS.md`, 2026-10-03, „R-AI-12/AK4 auf den Zweck"):* WENN die KI eine Einheit mit Ölunterhalt
+  erwägt, DANN SOLL sie sie nur ausheben, wenn ihr **Ölbestand dadurch nicht leerläuft**: der Bestand
+  nach den Befehlen desselben Zugs plus die Öl-Tagesbilanz einschließlich der neuen Einheit über einen
+  Vorrats-Horizont von H Spieltagen bleibt ≥ 0 (H ist eine KI-Konstante, keine Spielregel). Gemessen
+  wird der Zweck: kein Ölmangeltag, der auf eine eigene Aushebung zurückgeht.
+  *(Bis 2026-10-03 lautete AK4: „… nur ausheben, wenn die Öl-Tagesbilanz danach nicht negativ ist, also
+  geschätzte Förderung − Ölunterhalt aller Armeen einschließlich der neuen ≥ 0." Diese Fassung ließ den
+  fünf Mächten ohne Ölförderung keine einzige Artillerie und machte AK3 und AK4 auf der Weltkarte
+  gemeinsam unerfüllbar — Befund M42-07-a. Der Wächter mit Horizont ist gebaut und gemessen (T-M42-14,
+  drei Iterationen) und zurückgenommen, weil die Vollpartien rissen; auf dem heutigen Stand hebt die KI
+  keine Einheit mit Ölunterhalt aus, AK4 gilt damit leer.)*
 - **AK5:** WENN diese Anforderung gebaut ist, DANN SOLLEN alle Zusicherungen des Turniers (R-AI-06,
   `tournament.slow.test.ts`) grün sein. Die Aufrüstung darf die Stufen nicht einebnen.
 

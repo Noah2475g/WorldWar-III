@@ -5741,3 +5741,42 @@ ist unabhängig vom Artillerieband — es hängt nicht daran, dass die KI selbst
 Gemessen auf Stufe C2: Paare über zwei Tagesenden 0, ai-integration 30/30, Turnier unverändert. Die
 Aussage „entfallen" in Option (c) ist damit berichtigt, nicht gelöscht; der Orchestrator hat sie ohne
 Rückfrage bei Noah so entschieden und offen gekennzeichnet — kippbar.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, revidierbar · R-AI-12/AK4 auf den Zweck
+
+**Entscheidung:** R-AI-12/AK4 heißt jetzt „der Ölbestand läuft nicht leer" statt „die Öl-Tagesbilanz nach
+der Aushebung ist nicht negativ" (Wortlaut in `01-REQUIREMENTS.md`, die alte Fassung steht dort als
+Vermerk). Gemessen wird der Zweck — kein Ölmangeltag durch eigene Aushebung —, gebaut wird er mit einem
+Vorrats-Horizont: Bestand nach dem Zug + Öl-Tagesbilanz danach × H ≥ 0. H ist eine **KI-Konstante**
+(`OIL_HORIZON_DAYS` in `packages/ai/src/economy.ts`, Stand T-M42-14: 30), **keine Regeldatei** — Mensch und
+KI spielen nach denselben Regeln, nur die KI rechnet vorsichtig.
+
+**Warum:** die alte Fassung ließ den fünf Mächten ohne Ölförderung (Russland, Deutschland, Frankreich,
+Vereinigtes Königreich, Italien) keine einzige Artillerie. Gemessen auf Stufe C2 (Ölprobe, drei
+Startzahlen, 200 Spieltage): diese fünf halten ihren Startvorrat von 167 000 Öl die ganze Partie
+unberührt, die drei Ölmächte häufen bis zu 13 Mio. an. Die Tagesbilanz schützte also einen Vorrat, den
+niemand anfasste — AK3 und AK4 waren gemeinsam unerfüllbar (Befund M42-07-a). Der Zweck der Zusage war
+nie „keine Artillerie ohne Förderung", sondern „kein Heer im Ölmangel".
+
+**Keine Grenze angehoben:** das Band aus AK3 (15–30 %) bleibt, ebenso jede Zusicherung. Der neue Wächter
+ist gebaut und gemessen (T-M42-14, drei Iterationen) und **zurückgenommen**, weil die Vollpartien rissen
+(siehe den folgenden Eintrag); auf dem heutigen Stand hebt die KI keine Einheit mit Ölunterhalt aus, AK4
+gilt leer. **Kippbar:** Noah kann die alte Fassung jederzeit zurückholen — sie steht wörtlich im Vermerk.
+
+---
+
+## 2026-10-03 · Review-Umsetzung KI (T-M42-13 bis T-M42-18) · Ausnahme: `findHostArmy` nach Rolle wird nicht gebaut
+
+**Entscheidung (Orchestrator, schriftliche Ausnahme vom Review-Punkt 5):** die Kernänderung „die fertige
+Aushebung kommt in eine Gastarmee **derselben Rolle**" (`packages/core/src/phases/recruitment.ts`,
+`findHostArmy`) wird in M42 **nicht** gebaut. Gebaut ist nur die Messung: `m42-zaehlung` zählt gemischte
+KI-Armeen mit Reichweiteneinheit (`heer.gemischteMitReichweite`, T-M42-18).
+
+**Warum:** D32.1 schließt Kernänderungen für M42 aus — M42 ist ein Meilenstein der KI. `findHostArmy` ist
+Kernverhalten und gilt für **jeden** Spieler: ein Mensch, der eine Artillerie aushebt, bekäme sie
+plötzlich in einer anderen Armee; und eine Änderung im Kern verschiebt den Golden-Master und den
+Gleichschritt des Mehrspielers (beide Rechner rechnen den Kern; ein alter und ein neuer Stand dürfen
+sich nicht treffen). Gemessen auf dem Endstand ist die Zahl klein (siehe `PROGRESS.md`, T-M42-18) — der
+Schaden rechtfertigt den Eingriff heute nicht. **Vorgemerkt für M18** (`03-TASKS.md`, Abschnitt „M18").
