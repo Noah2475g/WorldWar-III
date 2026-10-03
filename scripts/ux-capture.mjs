@@ -104,6 +104,8 @@ const parseViewports = (list) =>
 
 const CHECK = flag('check')
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+// Vite liefert Dateien ausserhalb des Wurzelordners unter /@fs/<Pfad>; unter Windows heisst der Pfad C:/..., ohne Schraegstrich davor fehlt das Trennzeichen.
+const fsRoot = (path) => { const p = path.split(String.fromCharCode(92)).join('/'); return p.startsWith('/') ? p : `/${p}` }
 /** Die fuenf Groessen der Anforderungen (R-UX-01); 1920x1080 als Messwert, nicht als Bild. */
 const CHECK_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080'
 const DEFAULT_VIEWPORTS = '375x667,667x375,1280x800,1366x768,1920x1080,1024x768,768x1024,320x568'
@@ -721,7 +723,16 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await axe(page, 'diplomacy', data.axe)
     await btn('Mexiko').click({ timeout: 5000 })
     await page.waitForTimeout(300)
+    // R-UX-04/AK1 (T-M44-09b): der erste Klick fragt nur; erst der zweite sendet den Befehl.
     await btn('Krieg erklären').click({ timeout: 5000 })
+    await page.waitForTimeout(300)
+    data.probes.confirm = await page.evaluate(() => {
+      const asks = [...document.querySelectorAll('button')].some((b) => /noch einmal klicken/.test(b.textContent ?? ''))
+      const sent = document.querySelectorAll('.action__pending').length > 0
+      return { asksOnFirstClick: asks, warOnFirstClick: sent }
+    })
+    await shot('krieg-fragt-nach')
+    await page.getByRole('button', { name: /noch einmal klicken/ }).click({ timeout: 5000 }).catch(() => {})
     await page.waitForTimeout(300)
     await shot('krieg-erklaert-ohne-rueckfrage')
   })
@@ -835,7 +846,7 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
       await put('stand-3', JSON.stringify({ schemaVersion: state.schemaVersion, savedAtTick: state.tick, kaputt: true }))
       const brief = (r) => ({ real: r.real, moved: r.moved, share: r.share, goal: r.goal, condition: r.condition })
       return { ok: true, win: brief(win), lose: brief(lose) }
-    }, { origin: new URL(run.url).origin, root: ROOT, grantSource: grantUntilVictory.toString() })
+    }, { origin: new URL(run.url).origin, root: fsRoot(ROOT), grantSource: grantUntilVictory.toString() })
     data.notes.push({ preparedSaves: prepared.ok ? 'ok' : prepared.error })
     if (prepared.ok) {
       data.notes.push({ victoryState: prepared.win })

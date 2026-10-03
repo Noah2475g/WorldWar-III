@@ -3822,7 +3822,7 @@ tasks:
   - id: T-M44-05
     milestone: M44
     title: "Dialoge: Hauptaktion in fester Fusszeile, Spielstandraster passt"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-05, R-UX-01]
     design: [D-37]
@@ -3852,33 +3852,33 @@ tasks:
   - id: T-M44-08
     milestone: M44
     title: "Endedialog und gesperrter Vorhang halten den Fokus, axe ohne Verstoss"
-    status: todo
+    status: done
     deps: [T-M44-05]
     requirements: [R-UX-06]
     design: [D-37]
-    files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts]
-    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts]
+    files: [apps/desktop/src/ui/Standings.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts, apps/desktop/src/ui/useScrollableTab.ts]
+    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/ui/Standings.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/ui/useScrollableTab.test.tsx]
     dod: "Paket Barrierefreiheit, Prioritaet P1. R-UX-06/AK1, AK2. Das Abdunkeln existiert schon (.dialog-backdrop, app.css), es fehlen Fokus-Einzug, Fokusfalle und Escape. Rohstoffleiste tabindex=0 mit Namen, wenn sie rollt. Ein Escape im Dialog schliesst nur den Dialog, nicht das Panel dahinter (Escape-Zweig in Dialog ruft stopPropagation; Befund 2026-10-03 aus T-M44-02, im Browser pruefen). Aufwand 2,5 h."
   - id: T-M44-09a
     milestone: M44
     title: "Bestaetigungsknopf und Rueckfrage in Dialogen"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-04]
     design: [D-37]
-    files: [apps/desktop/src/ui/ConfirmButton.tsx, apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
-    tests: [apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx]
+    files: [apps/desktop/src/ui/ConfirmButton.tsx, apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/menuEntries.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/App.test.tsx]
     dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Dialog-Faelle (Orchestrator-Entscheid F2: kein Dialog, keine Zeitueberschreitung). Aufwand 2,5 h."
   - id: T-M44-09b
     milestone: M44
     title: "Rueckfrage bei Krieg und Buendnisbruch"
-    status: todo
+    status: done
     deps: [T-M44-09a]
     requirements: [R-UX-04]
     design: [D-37]
     files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/i18n/de.ts]
     tests: [apps/desktop/src/ui/Panels.test.tsx]
-    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Diplomatie. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 1,5 h."
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1 fuer die Diplomatie. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 1,5 h. Erledigt am 2026-10-03: Panels.tsx ActionGroup bekommt `confirms` (Folgesatz je Aktionskennung), ActionButton zeigt dafuer den ConfirmButton aus T-M44-09a; DiplomacyPanel setzt ihn fuer `diplomacy-declareWar-<id>` und `diplomacy-breakAlliance-<id>` (Saetze diplomacy.declareWarConfirm/breakAllianceConfirm nennen die Macht). Frieden und Buendnisangebot fragen nicht nach. Gemessen mit pnpm ux:check --only R-UX-04/AK1 (neue Sonde probes.confirm in ux-capture.mjs): 5 Groessen, Krieg erst nach dem zweiten Klick."
   - id: T-M44-10
     milestone: M44
     title: "Protokoll und Fuss: Zeit einzeilig, Gefechte zusammengefasst, Platz 1 zuerst"
@@ -3932,7 +3932,7 @@ tasks:
   - id: T-M44-15
     milestone: M44
     title: "Startdialog mit Kurzhilfe, Endedialog mit Siegbedingung"
-    status: todo
+    status: done
     deps: [T-M44-08]
     requirements: [R-UX-05]
     design: [D-37]
@@ -3942,11 +3942,11 @@ tasks:
   - id: T-M44-16
     milestone: M44
     title: "Einstellungen mit Einheiten, Tastenkuerzel im Menue"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-05]
     design: [D-37]
-    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/menuEntries.ts]
     tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/keyboard.test.ts]
     dod: "Paket Navigation/Menues, Prioritaet P2. R-UX-05 (Erkennen statt Erinnern). Aufwand 2 h."
   - id: T-M44-17

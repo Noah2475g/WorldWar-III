@@ -24,6 +24,10 @@ export const de = {
 
   menu: {
     title: 'Menü',
+    // Der Folgesatz am Knopf „Neue Partie“ (T-M44-09a, R-UX-04/AK1); er nennt auch den zweiten Klick.
+    newGameConfirm: 'Die laufende Partie wird verlassen, Ungespeichertes geht verloren — noch einmal klicken.',
+    // Der Weg zur Tastenübersicht (T-M44-16, R-UX-05).
+    keys: 'Tastenkürzel',
   },
 
   header: {
@@ -520,6 +524,9 @@ export const de = {
 
   diplomacy: {
     title: 'Diplomatie',
+    // Folgesätze der Rückfrage (T-M44-09b, R-UX-04/AK1): die Folge nennen und sagen, dass noch einmal geklickt wird.
+    declareWarConfirm: 'Krieg gegen {{nation}} — lässt sich nicht zurücknehmen, noch einmal klicken.',
+    breakAllianceConfirm: 'Das Bündnis mit {{nation}} endet — noch einmal klicken.',
     peace: 'Frieden',
     war: 'Krieg',
     truce: 'Waffenstillstand',
@@ -743,6 +750,12 @@ export const de = {
     nation: 'Macht',
     seed: 'Startzahl',
     seedHint: 'Dieselbe Startzahl ergibt dieselbe Partie.',
+    // Kurzhilfe je Feld (T-M44-15, R-UX-05/AK4). Die Zahlen stammen aus data/rules/default/ai.json
+    // (planningDepth und maxFronts: leicht 1/1, normal 2/2, schwer 3/3).
+    opponentsHint: 'So viele Mächte führt der Rechner gegen Sie (höchstens {{max}}).',
+    easyHint: 'Der Rechner plant einen Schritt voraus und führt höchstens eine Front.',
+    normalHint: 'Der Rechner plant zwei Schritte voraus und führt bis zu zwei Fronten.',
+    hardHint: 'Der Rechner plant drei Schritte voraus und führt bis zu drei Fronten.',
     difficulty: 'Schwierigkeit',
     easy: 'leicht',
     normal: 'normal',
@@ -754,7 +767,9 @@ export const de = {
     // Die Zahlen stammen aus newGame.ts: Punkte 700 von 1000, Eroberung 1000 von 1000.
     // Sie stehen hier ausgeschrieben, weil eine Wahl, die den Ausgang der Partie
     // bestimmt, nicht unerklaerter dastehen darf als die Startzahl darueber.
-    victoryPointsHint: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.',
+    // LOESCHVERMERK (Review): bis Durchsicht B: 'Sie gewinnen, sobald Ihnen 70 % aller Siegpunkte gehören.' (feste Zahl;
+    // der Endedialog liest die Schwelle aus der Partie, beide sagen jetzt dasselbe).
+    victoryPointsHint: 'Sie gewinnen, sobald Ihnen {{goal}} % aller Siegpunkte gehören.',
     victoryConquestHint: 'Sie gewinnen erst, wenn Ihnen alles gehört — 100 % der Siegpunkte.',
     map: 'Karte',
     start: 'Partie beginnen',
@@ -876,12 +891,17 @@ export const de = {
     corrupt: 'Dieser Spielstand ist beschädigt und wurde nicht geladen.',
     wrongVersion: 'Dieser Spielstand stammt aus einer anderen Fassung des Spiels.',
     confirmOverwrite: 'Diesen Stand überschreiben?',
+    // Der Folgesatz am Knopf „Speichern“ eines belegten Platzes (T-M44-09a, R-UX-04/AK1).
+    overwriteConfirm: '{{slot}} wird überschrieben — noch einmal klicken.',
   },
 
   settings: {
     title: 'Einstellungen',
     autosaveInterval: 'Automatisch speichern alle',
     minutes: '{{count}} Minuten',
+    // Die Einheit hinter dem Feld des Speicherabstands (T-M44-16).
+    minuteUnit: 'Minute',
+    minutesUnit: 'Minuten',
     sound: 'Ton',
     soundOn: 'an',
     soundOff: 'aus',
@@ -892,6 +912,7 @@ export const de = {
     fontLarge: 'groß',
     debug: 'Debug-Ansicht',
     reset: 'Auf Vorgabe zurücksetzen',
+    resetConfirm: 'Alle Einstellungen gehen auf die Vorgabe zurück — noch einmal klicken.',
   },
 
   debug: {
@@ -974,7 +995,8 @@ export const de = {
   },
 
   keys: {
-    title: 'Tastatur',
+    // LOESCHVERMERK (Review): bis Durchsicht B hiess der Dialog „Tastatur“ (der Menüpunkt „Tastenkürzel“).
+    title: 'Tastenkürzel',
     pause: 'Leertaste — Pause',
     speedUp: '+ — schneller',
     speedDown: '− — langsamer',
@@ -986,7 +1008,9 @@ export const de = {
     market: 'H — Markt (Handel)',
     standings: 'L — Lage der Mächte',
     escape: 'Escape — Dialog, Panel oder Zielwahl abbrechen',
-    help: 'F1 — diese Übersicht',
+    // LOESCHVERMERK (Review): bis Durchsicht B: help: 'F1 — diese Übersicht' (das Fragezeichen löst dasselbe aus).
+    help: 'F1 oder ? — diese Übersicht',
+    pan: 'Pfeiltasten — Karte verschieben',
     zoomIn: 'Bild↑ — hineinzoomen',
     zoomOut: 'Bild↓ — herauszoomen',
     home: 'Pos1 — Hauptstadt zentrieren',
@@ -1255,6 +1279,17 @@ export const de = {
     summaryProvincesOne: '1 Provinz',
     summaryProvincesMany: '{{count}} Provinzen',
     close: 'Karte ansehen',
+    // Die sichtbare Überschrift des Endedialogs (T-M44-15, R-UX-05/AK4); sein Name für Hilfsmittel
+    // bleibt `victoryTitle`.
+    headingWon: 'Sieg',
+    headingLost: 'Niederlage',
+    // Die Siegbedingung der Partie, mit dem Anteil, der sie erfüllt (T-M44-15).
+    conditionPointsWon: 'Siegbedingung erfüllt: Ihnen gehören {{share}} % aller Siegpunkte, verlangt waren {{goal}} %.',
+    conditionPointsLost: 'Siegbedingung: {{goal}} % aller Siegpunkte — erreicht von {{nation}}.',
+    conditionPointsOpen: 'Siegbedingung der Partie: {{goal}} % aller Siegpunkte.',
+    conditionConquestWon: 'Siegbedingung erfüllt: Eroberung — Ihnen gehört alles.',
+    conditionConquestLost: 'Siegbedingung: Eroberung — {{nation}} besitzt alles.',
+    conditionConquestOpen: 'Siegbedingung der Partie: Eroberung — wer alles besitzt, gewinnt.',
   },
 
   explainUi: {

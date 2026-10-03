@@ -2528,3 +2528,117 @@ body {
   color: var(--ink-soft);
   margin: 0;
 }
+
+/* ======================================================================================
+   M44 Paket B „Dialoge“ — je Aufgabe ein eigener Block (UX-PLAN §6, Dateikonflikte)
+   ====================================================================================== */
+
+/* ---- T-M44-05 · Dialoge: Kopf und Fußzeile stehen fest, nur der Körper rollt (R-UX-05/AK1) ----
+   Vorher rollte der ganze Dialog (`overflow-y: auto` auf `.dialog`): „Partie beginnen“ lag bei
+   1280×800 auf y = 733, der Dialog endet bei 720. Jetzt drei Streifen — Kopf, Körper, Fußzeile. */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  /* Längenweise statt `overflow: hidden`: die ältere Regel setzt `overflow-y: auto`, und nur die
+     beiden Einzelangaben überstimmen sie sicher (auch in jsdom, das die Kurzform nicht auflöst). */
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.dialog:focus {
+  /* Der Dialog selbst kann den Fokus tragen (tabindex=-1), wenn in ihm nichts zu bedienen ist;
+     sein Rahmen ist dann die Anzeige, ein zweiter Ring wäre doppelt. */
+  outline: none;
+}
+
+.dialog__head {
+  flex-shrink: 0;
+}
+
+.dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.dialog__foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-lg);
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+/* Spielstände als Liste (R-UX-01/AK2): `.slots` ist weiter unten das Bauplatzraster mit vier
+   Spalten (T-M29-03) und gewann gegen die Liste — der Dialog lief 604 > 518 px über. Das
+   Kennzeichen `slots--saves` holt die Liste heraus: eine Zeile je Platz. */
+.slots.slots--saves {
+  display: flex;
+  grid-template-columns: none;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  margin: 0;
+}
+
+.slots--saves .slot {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  min-height: 0;
+  padding: var(--sp-sm) 0;
+  border: 0;
+  border-bottom: 1px solid var(--paper-sunk);
+  background: none;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.slots--saves .slot__label {
+  flex: 1 1 8em;
+  min-width: 0;
+}
+
+.slots--saves .slot__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ---- T-M44-09a · Der Bestätigungsknopf nach dem ersten Klick (R-UX-04/AK1) ----
+   Die Folge steht im Knopf und darf umbrechen; die Warnfarbe ist `warn`, nicht `accent` (Feind
+   und Alarm). Der Rahmen genügt als Hinweis — ohne Farbe allein zu sagen, dass etwas offen ist,
+   trägt der Satz selbst die Bedeutung. */
+.button--confirm {
+  white-space: normal;
+  text-align: left;
+  border-color: var(--warn);
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---- T-M44-15 · Endedialog: die Siegbedingung unter dem Ausgang (R-UX-05/AK4) ---- */
+.victory__condition {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* ---- T-M44-16 · Einstellungen: Einheit hinter dem Feld (R-UX-05) ---- */
+.field__row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+/* ---- T-M44-08 · Alarmchip: Schrift auf `ground` statt `paperSunk` (R-UX-06/AK1) ----
+   Zinnober (`accent`) auf `paperSunk` misst 4,28:1 bei 12 px — axe meldet `color-contrast`.
+   Auf `ground` (der Grund der Kopfleiste, Paar „Alarm in der Kopfleiste“ in tokens.ts) hält die
+   Schrift die 4,5:1. Der Rahmen in `accent` hebt den Chip weiter ab. */
+.alarm-chip {
+  background: var(--ground);
+}

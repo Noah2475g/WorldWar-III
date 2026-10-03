@@ -7454,7 +7454,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Barrierefreiheit · P1
 - **Anforderungen:** R-UX-06
 - **Abhängigkeiten:** T-M44-05
-- **Dateien:** `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/tokens.ts`
+- **Dateien:** `apps/desktop/src/ui/Standings.tsx`, `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/ui/useScrollableTab.ts`, `apps/desktop/src/ui/useScrollableTab.test.tsx`
 - **Tests zuerst:** `apps/desktop/src/ui/a11y.test.tsx` - describe(R-UX-06/AK2 ...): VictoryDialog (ui/Standings.tsx) nutzt Dialog aus Dialogs.tsx mit optionalem onClose: Fokus-Einzug, Fokusfalle, Escape (heute rot); ebenso der Vorhang .dialog-backdrop--locked und Join/Lobby; `apps/desktop/src/ui/Standings.test.tsx`; `apps/desktop/src/ui/tokens.contrast.test.ts` - describe(R-UX-06/AK1 ...): Alarmchip-Schrift auf paperSunk >= 4,5:1; Browser: keyboard.victory ohne Ziel außerhalb, axe 0 Verstöße; Browser: Provinz wählen, „Menü“, ein Escape: Dialog zu, Provinzpanel bleibt offen (jsdom stellt den Doppelschritt nicht nach — Testing Library rendert erst nach dem Ereignis).
 - **Fertig wenn:** R-UX-06/AK1, AK2. Das Abdunkeln existiert schon (.dialog-backdrop, app.css), es fehlen Fokus-Einzug, Fokusfalle und Escape. Rohstoffleiste tabindex=0 mit Namen, wenn sie rollt. Ein Escape im Dialog schließt nur den Dialog, nicht das Panel dahinter. Escape in `Dialog` geht nur eine Stufe zurück: der Escape-Zweig in `onKeyDown` ruft `event.stopPropagation()` (Befund vom 2026-10-03 aus T-M44-02: der Dialog schloss sich selbst, React band den Fenster-Hörer mit `dialog = null` neu, und dieselbe Taste schloss danach auch das Provinzpanel). Aufwand 2,5 h.
 
@@ -7463,7 +7463,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Feedback/Hinweise · P1
 - **Anforderungen:** R-UX-04
 - **Abhängigkeiten:** T-M44-02
-- **Dateien:** `apps/desktop/src/ui/ConfirmButton.tsx`, `apps/desktop/src/ui/ConfirmButton.test.tsx`, `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/ui/ConfirmButton.tsx`, `apps/desktop/src/ui/ConfirmButton.test.tsx`, `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/menuEntries.ts`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.test.tsx`
 - **Tests zuerst:** `apps/desktop/src/ui/ConfirmButton.test.tsx` (neu) - describe(R-UX-04/AK1 ...): erster Klick zeigt den Folgesatz im Knopf und in einer aria-live-Region, zweiter sendet, Escape und Fokusverlust brechen ab, kein Timer (Wächter no-time-pressure); `apps/desktop/src/ui/Dialogs.test.tsx` - Überschreiben und Zurücksetzen fragen nach; Wächter ui-reachability (ConfirmButton.tsx von main.tsx erreichbar), prose-in-code.
 - **Fertig wenn:** R-UX-04/AK1 für die Dialog-Fälle (Orchestrator-Entscheid F2: kein Dialog, keine Zeitüberschreitung). Aufwand 2,5 h.
 
@@ -7535,7 +7535,7 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 - **Paket und Priorität:** Navigation/Menüs · P2
 - **Anforderungen:** R-UX-05
 - **Abhängigkeiten:** T-M44-02
-- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/menuEntries.ts`
 - **Tests zuerst:** `apps/desktop/src/ui/Dialogs.test.tsx` - Menü führt Tastenkürzel; Einstellungen zeigen Einheiten; `apps/desktop/src/keyboard.test.ts` unverändert grün; Wächter text-keys.
 - **Fertig wenn:** R-UX-05 (Erkennen statt Erinnern). Aufwand 2 h.
 

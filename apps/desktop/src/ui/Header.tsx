@@ -4,6 +4,7 @@ import { t } from '../i18n/text.ts'
 import { SHORT_REACH_DAYS, amount, formatTime, rate, reachInDays, reachShort, reachText } from './format.ts'
 import { Icon, RESOURCE_ICONS } from './icons.tsx'
 import { Meter } from './Meter.tsx'
+import { useScrollableTab } from './useScrollableTab.ts'
 import { MAP_MODES, MAP_MODE_NAMES, type MapMode } from '../map/modes.ts'
 
 /**
@@ -190,6 +191,8 @@ export function Header(props: HeaderProps) {
   const resources = props.view?.self.resources
   const shortages = new Set(props.view?.self.shortages ?? [])
   const victory = victoryProgress(props.view)
+  // Rollt die Rohstoffleiste (schmales Fenster), bekommt sie einen Tabstopp (T-M44-08, R-UX-06/AK1).
+  const resourcesScroll = useScrollableTab<HTMLUListElement>()
 
   return (
     <header className="header">
@@ -414,7 +417,7 @@ export function Header(props: HeaderProps) {
         </div>
       </div>
 
-      <ul className="resources" aria-label="Rohstoffe">
+      <ul className="resources" aria-label="Rohstoffe" ref={resourcesScroll.ref} tabIndex={resourcesScroll.tabIndex}>
         {RESOURCE_KEYS.map((key) => {
           const flow = props.view?.self.economy?.[key]
           // Wie lange der Vorrat noch reicht — nur wenn er schrumpft (T-M13-14).

@@ -11,7 +11,7 @@ import { t } from '../i18n/text.ts'
  */
 
 /** Welcher Dialog sich hinter dem Eintrag öffnet — `App.tsx` kennt die Wertemenge von `dialog`. */
-export type MenuTarget = 'new' | 'saves' | 'settings'
+export type MenuTarget = 'new' | 'saves' | 'settings' | 'keys'
 
 export interface MenuEntry {
   readonly id: string
@@ -19,10 +19,18 @@ export interface MenuEntry {
   readonly label: () => string
   readonly target: MenuTarget
   readonly primary?: boolean
+  /**
+   * Der Folgesatz eines Eintrags, der nachfragt (T-M44-09a, R-UX-04/AK1): gesetzt, zeigt der Dialog
+   * einen `ConfirmButton` — der erste Klick nennt die Folge, erst der zweite wählt den Eintrag.
+   */
+  readonly confirm?: () => string
 }
 
 export const MENU_ENTRIES: readonly MenuEntry[] = [
-  { id: 'newGame', label: () => t('newGame.title'), target: 'new', primary: true },
+  // Aus der laufenden Partie eine neue zu beginnen verlässt diese: zweiter Klick (T-M44-09a).
+  { id: 'newGame', label: () => t('newGame.title'), target: 'new', primary: true, confirm: () => t('menu.newGameConfirm') },
   { id: 'saves', label: () => t('saves.title'), target: 'saves' },
   { id: 'settings', label: () => t('settings.title'), target: 'settings' },
+  // Erkennen statt Erinnern (T-M44-16, R-UX-05): die Übersicht der Tasten, nicht nur per F1.
+  { id: 'keys', label: () => t('menu.keys'), target: 'keys' },
 ]

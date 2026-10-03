@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RESOURCE_KEYS } from '@worldwar/core'
 import { t } from '../i18n/text.ts'
+import { ConfirmButton } from './ConfirmButton.tsx'
 import type { MenuEntry } from './menuEntries.ts'
+import { SPEED_STOPS } from '../game/speed.ts'
 import { DEFAULT_SETTINGS, FONT_SCALES, type Settings } from '../state/uiState.ts'
 import {
   MULTIPLAYER_SPEEDS,
@@ -27,74 +29,161 @@ import { version as APP_VERSION } from '../../../../package.json'
 // prettier-ignore
 const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])' // GUARD-ALLOW prose-in-code: ein CSS-Waehler, kein Satz
 
+/**
+ * Die offenen Dialoge, der zuletzt geöffnete oben (T-M44-08). Fokusfalle und Escape hören auf dem
+ * Dokument und gelten nur für den obersten: zwei Dialoge übereinander (der Pausenantrag über
+ * einem Menü, der Speicherdialog über dem gesperrten Vorhang) dürfen sich nicht gegenseitig
+ * den Fokus entreißen oder gemeinsam schließen.
+ */
+const OPEN_DIALOGS: HTMLElement[] = []
+
+/**
+ * Das Gerüst aller Dialoge (T-M10-07a, T-M44-05, T-M44-08).
+ *
+ * Drei Streifen: Kopf und **Fußzeile** (`foot`, die Hauptaktion) stehen fest, nur der Körper
+ * rollt — „Partie beginnen“ lag bei 1280×800 sonst unter dem Dialogrand (R-UX-05/AK1).
+ *
+ * `onClose` ist **optional**: ohne ihn gibt es kein Kreuz und kein Escape, die Falle und der
+ * Fokus-Einzug gelten trotzdem. So entsteht der gesperrte Vorhang des Mehrspielers (`locked`,
+ * R-MP-04/AK1) aus demselben Gerüst und nicht aus einer zweiten, von Hand gebauten Kopie, der
+ * dann der Fokusfang fehlt (R-UX-06/AK2, Befund B-09).
+ */
 export function Dialog({
   title,
+  heading,
   onClose,
   children,
+  foot,
+  locked = false,
+  backdropCloses = true,
 }: {
+  /** Der Name des Dialogs für Hilfsmittel — und, wenn `heading` fehlt, die sichtbare Überschrift. */
   title: string
-  onClose: () => void
+  /** Eine sichtbare Überschrift, die vom Namen abweicht (der Endedialog: „Sieg“ / „Niederlage“). */
+  heading?: string
+  /** Fehlt er, ist der Dialog nicht schließbar: kein Kreuz, kein Escape, kein Klick daneben. */
+  onClose?: (() => void) | undefined
   children: ReactNode
+  /** Die Hauptaktion(en), fest unter dem rollenden Körper. */
+  foot?: ReactNode
+  /** Der dichtere, nicht wegklickbare Vorhang (`alertdialog`). */
+  locked?: boolean
+  /** Ein Klick auf den Hintergrund schließt (Vorgabe); der Endedialog schaltet es ab. */
+  backdropCloses?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const returnTo = useRef<Element | null>(null)
+  // Die jeweils jüngste Funktion, ohne den Lauscher bei jedem Zeichnen neu zu setzen.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
+    const dialog = ref.current
+    if (!dialog) return undefined
     returnTo.current = document.activeElement
-    ref.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
+    OPEN_DIALOGS.push(dialog)
+    // Die Hauptaktion zuerst, wenn der Dialog eine benennt (`data-autofocus`), sonst das erste Ding.
+    const first = dialog.querySelector<HTMLElement>('[data-autofocus]') ?? dialog.querySelector<HTMLElement>(FOCUSABLE)
+    if (first) first.focus()
+    else dialog.focus()
+
+    const onKey = (event: KeyboardEvent) => {
+      if (OPEN_DIALOGS[OPEN_DIALOGS.length - 1] !== dialog || event.defaultPrevented) return
+
+      if (event.key === 'Escape') {
+        // Auch der nicht schließbare Dialog behält die Taste für sich: sonst schlösse die
+        // Seite dahinter ein Panel, während der Vorhang stehen bleibt.
+        event.preventDefault()
+        event.stopPropagation()
+        closeRef.current?.()
+        return
+      }
+
+      // Der Fokusfang (T-M16-07, R-UI-15/AK1; auf das Dokument gehoben in T-M44-08).
+      //
+      // `aria-modal` sagt einem Vorleseprogramm, dass dahinter nichts ist — die
+      // Tabulatortaste hoert nicht darauf. Ohne diese Zeilen tabbt man aus einem
+      // modalen Dialog in die Karte dahinter: sichtbar verdeckt, mit der Tastatur
+      // erreichbar und bedienbar. Das ist der Fehler, den ein Sehender nie bemerkt.
+      //
+      // Er hört auf dem Dokument, nicht auf dem Dialog: nach einem Klick auf eine leere Stelle
+      // steht der Fokus auf `<body>`, der Tastendruck trifft den Dialog nie, und der nächste Tab
+      // landet auf der Kopfleiste dahinter.
+      if (event.key !== 'Tab') return
+      const felder = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (element) => !element.hasAttribute('disabled') && !element.closest('[hidden]'),
+      )
+      if (felder.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const erster = felder[0]!
+      const letzter = felder[felder.length - 1]!
+      const aktiv = document.activeElement
+      const drin = dialog.contains(aktiv)
+      if (event.shiftKey && (aktiv === erster || !drin)) {
+        event.preventDefault()
+        letzter.focus()
+      } else if (!event.shiftKey && (aktiv === letzter || !drin)) {
+        event.preventDefault()
+        erster.focus()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+
     return () => {
+      document.removeEventListener('keydown', onKey)
+      const index = OPEN_DIALOGS.lastIndexOf(dialog)
+      if (index >= 0) OPEN_DIALOGS.splice(index, 1)
       if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
     }
   }, [])
 
   return (
-    <div className="dialog-backdrop" onClick={onClose}>
+    <div
+      className={locked ? 'dialog-backdrop dialog-backdrop--locked' : 'dialog-backdrop'}
+      onClick={backdropCloses && onClose ? onClose : undefined}
+    >
       <div
         ref={ref}
         className="dialog"
-        role="dialog"
+        role={locked ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            onClose()
-            return
-          }
-          // Der Fokusfang (T-M16-07, R-UI-15/AK1).
-          //
-          // `aria-modal` sagt einem Vorleseprogramm, dass dahinter nichts ist — die
-          // Tabulatortaste hoert nicht darauf. Ohne diese Zeilen tabbt man aus einem
-          // modalen Dialog in die Karte dahinter: sichtbar verdeckt, mit der Tastatur
-          // erreichbar und bedienbar. Das ist der Fehler, den ein Sehender nie bemerkt.
-          if (event.key !== 'Tab') return
-          const felder = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter(
-            (element) => !element.hasAttribute('disabled'),
-          )
-          if (felder.length === 0) return
-          const erster = felder[0]!
-          const letzter = felder[felder.length - 1]!
-          const aktiv = document.activeElement
-          if (event.shiftKey && (aktiv === erster || !ref.current?.contains(aktiv))) {
-            event.preventDefault()
-            letzter.focus()
-          } else if (!event.shiftKey && (aktiv === letzter || !ref.current?.contains(aktiv))) {
-            event.preventDefault()
-            erster.focus()
-          }
-        }}
       >
         <header className="dialog__head">
-          <h2>{title}</h2>
-          <button type="button" className="button" onClick={onClose} aria-label="Schließen">
-            ×
-          </button>
+          <h2>{heading ?? title}</h2>
+          {onClose && (
+            <button type="button" className="button" onClick={onClose} aria-label="Schließen">
+              ×
+            </button>
+          )}
         </header>
         <div className="dialog__body">{children}</div>
+        {foot && <footer className="dialog__foot">{foot}</footer>}
       </div>
     </div>
   )
 }
+
+/*
+ * LOESCHVERMERK (Review): bis T-M44-08 lag die Tastenbehandlung als `onKeyDown` am Dialog-Element
+ * (Escape und Fokusfang nur, wenn der Fokus schon im Dialog stand), und `onClose` war Pflicht.
+ * Ersetzt durch den Lauscher auf dem Dokument oben — gleiche Regeln, aber auch für Fokus auf
+ * `<body>`, nur für den obersten Dialog, und mit nicht schließbarem Vorhang. Wortlaut davor:
+ *
+ *   onKeyDown={(event) => {
+ *     if (event.key === 'Escape') { onClose(); return }
+ *     if (event.key !== 'Tab') return
+ *     const felder = [...(ref.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])].filter(
+ *       (element) => !element.hasAttribute('disabled'),
+ *     )
+ *     ...
+ *   }}
+ */
 
 export function NewGameDialog({
   options,
@@ -108,6 +197,7 @@ export function NewGameDialog({
   onSaves,
   resume,
   onResume,
+  pointsGoal = 70,
   invitation,
 }: {
   options: NewGameOptions
@@ -152,6 +242,8 @@ export function NewGameDialog({
    */
   resume?: { day: number } | null
   onResume?: () => void
+  /** Die Siegschwelle des Punktesiegs in Prozent, aus der Konfiguration der Partie (Standard 70, wie `toConfig`). */
+  pointsGoal?: number
 }) {
   // Zu zweit ist nur dann eine Frage, wenn dieser Bildschirm es auch herstellen kann
   // (Befund V-1). `effectiveMode` fängt den Fall ab, in dem eine alte Wahl im Formular
@@ -161,7 +253,27 @@ export function NewGameDialog({
   const zuZweit = art === 'multiplayer'
 
   return (
-    <Dialog title={t('newGame.title')} onClose={onClose}>
+    <Dialog
+      title={t('newGame.title')}
+      onClose={onClose}
+      foot={
+        <>
+          <button
+            type="button"
+            className="button button--primary"
+            data-autofocus={resume && onResume ? undefined : ''}
+            onClick={() => onStart(art)}
+          >
+            {t('newGame.start')}
+          </button>
+          {onSaves && (
+            <button type="button" className="button" onClick={onSaves}>
+              {t('saves.title')}
+            </button>
+          )}
+        </>
+      }
+    >
       {/* Start mit Gesicht (T-M22-04, Befund V2-03): Name, Untertitel, Fassung —
           der erste Eindruck sagte vorher "Formular", nicht "Strategiespiel". */}
       <header className="start">
@@ -171,7 +283,7 @@ export function NewGameDialog({
       </header>
 
       {resume && onResume && (
-        <button type="button" className="button button--primary" onClick={onResume}>
+        <button type="button" className="button button--primary" data-autofocus="" onClick={onResume}>
           {t('newGame.resume', { day: resume.day })}
         </button>
       )}
@@ -238,6 +350,8 @@ export function NewGameDialog({
         </select>
       </label>
 
+      {/* Kurzhilfe je Feld (T-M44-15, R-UX-05/AK4): Gegner, Schwierigkeit und Startzahl erklären
+          sich, wo man sie einstellt — über `aria-describedby` auch für ein Vorleseprogramm. */}
       <label className="field">
         <span>{t('newGame.opponents')}</span>
         <input
@@ -245,20 +359,24 @@ export function NewGameDialog({
           min={1}
           max={Math.max(1, nations.length - 1)}
           value={options.opponents}
+          aria-describedby="newgame-opponents-hint"
           onChange={(e) => onChange({ ...options, opponents: Number(e.target.value) })}
         />
+        <small id="newgame-opponents-hint">{t('newGame.opponentsHint', { max: Math.max(1, nations.length - 1) })}</small>
       </label>
 
       <label className="field">
         <span>{t('newGame.difficulty')}</span>
         <select
           value={options.difficulty}
+          aria-describedby="newgame-difficulty-hint"
           onChange={(e) => onChange({ ...options, difficulty: e.target.value as Difficulty })}
         >
           <option value="easy">{t('newGame.easy')}</option>
           <option value="normal">{t('newGame.normal')}</option>
           <option value="hard">{t('newGame.hard')}</option>
         </select>
+        <small id="newgame-difficulty-hint">{t(`newGame.${options.difficulty}Hint`)}</small>
       </label>
 
       <label className="field">
@@ -266,9 +384,10 @@ export function NewGameDialog({
         <input
           type="number"
           value={options.seed}
+          aria-describedby="newgame-seed-hint"
           onChange={(e) => onChange({ ...options, seed: Number(e.target.value) })}
         />
-        <small>{t('newGame.seedHint')}</small>
+        <small id="newgame-seed-hint">{t('newGame.seedHint')}</small>
       </label>
 
       <label className="field">
@@ -282,7 +401,7 @@ export function NewGameDialog({
         </select>
         <small>
           {options.victory === 'points'
-            ? t('newGame.victoryPointsHint')
+            ? t('newGame.victoryPointsHint', { goal: pointsGoal })
             : t('newGame.victoryConquestHint')}
         </small>
       </label>
@@ -312,16 +431,9 @@ export function NewGameDialog({
         </section>
       )}
 
-      <p className="dialog__actions">
-        <button type="button" className="button button--primary" onClick={() => onStart(art)}>
-          {t('newGame.start')}
-        </button>
-        {onSaves && (
-          <button type="button" className="button" onClick={onSaves}>
-            {t('saves.title')}
-          </button>
-        )}
-      </p>
+      {/* LOESCHVERMERK (Review): bis T-M44-05 standen „Partie beginnen“ und „Spielstände“ hier als
+          `<p className="dialog__actions">` am Ende des rollenden Körpers — bei 1280×800 unter dem
+          Dialogrand. Jetzt in der festen Fußzeile (`foot` oben). */}
     </Dialog>
   )
 }
@@ -366,7 +478,22 @@ export function JoinDialog({
   const [name, setName] = useState('')
 
   return (
-    <Dialog title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.joinTitle')} onClose={onLeave}>
+    <Dialog
+      title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.joinTitle')}
+      onClose={onLeave}
+      foot={
+        phase !== 'refused' && terms && !joined ? (
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={name.trim().length === 0}
+            onClick={() => onJoin(name.trim())}
+          >
+            {t('party.joinButton')}
+          </button>
+        ) : undefined
+      }
+    >
       {phase === 'refused' && (
         <>
           <p className="notice notice--warn">{reason}</p>
@@ -412,16 +539,6 @@ export function JoinDialog({
                   onChange={(e) => setName(e.target.value)}
                 />
               </label>
-              <p className="dialog__actions">
-                <button
-                  type="button"
-                  className="button button--primary"
-                  disabled={name.trim().length === 0}
-                  onClick={() => onJoin(name.trim())}
-                >
-                  {t('party.joinButton')}
-                </button>
-              </p>
             </>
           )}
         </>
@@ -463,7 +580,25 @@ export function LobbyDialog({
   const [copied, setCopied] = useState(false)
 
   return (
-    <Dialog title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.hostTitle')} onClose={onLeave}>
+    <Dialog
+      title={t(phase === 'refused' ? 'party.refusedTitle' : 'party.hostTitle')}
+      onClose={onLeave}
+      foot={
+        <>
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={!offered || guestName === null || guestName === '' || phase !== 'lobby'}
+            onClick={onBegin}
+          >
+            {t('party.beginButton')}
+          </button>
+          <button type="button" className="button" onClick={onLeave}>
+            {t('party.leave')}
+          </button>
+        </>
+      }
+    >
       {phase === 'refused' && <p className="notice notice--warn">{reason}</p>}
 
       <p>{t('party.inviteHint')}</p>
@@ -495,19 +630,6 @@ export function LobbyDialog({
 
       {phase === 'checking' && <p className="notice notice--info">{t('party.checking')}</p>}
 
-      <p className="dialog__actions">
-        <button
-          type="button"
-          className="button button--primary"
-          disabled={!offered || guestName === null || guestName === '' || phase !== 'lobby'}
-          onClick={onBegin}
-        >
-          {t('party.beginButton')}
-        </button>
-        <button type="button" className="button" onClick={onLeave}>
-          {t('party.leave')}
-        </button>
-      </p>
     </Dialog>
   )
 }
@@ -529,16 +651,24 @@ export function MenuDialog({
   return (
     <Dialog title={t('menu.title')} onClose={onClose}>
       <div className="menu">
-        {entries.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            className={entry.primary ? 'button button--primary' : 'button'}
-            onClick={() => onSelect(entry)}
-          >
-            {entry.label()}
-          </button>
-        ))}
+        {entries.map((entry) => {
+          const className = entry.primary ? 'button button--primary' : 'button'
+          // Ein Eintrag mit Folge fragt nach (T-M44-09a, R-UX-04/AK1: aus der laufenden Partie
+          // eine neue beginnen) — am selben Knopf, nicht in einem Dialog darüber.
+          return entry.confirm ? (
+            <ConfirmButton
+              key={entry.id}
+              className={className}
+              label={entry.label()}
+              consequence={entry.confirm()}
+              onConfirm={() => onSelect(entry)}
+            />
+          ) : (
+            <button key={entry.id} type="button" className={className} onClick={() => onSelect(entry)}>
+              {entry.label()}
+            </button>
+          )
+        })}
       </div>
     </Dialog>
   )
@@ -589,19 +719,30 @@ export function SavesDialog({
   return (
     <Dialog title={t('saves.title')} onClose={onClose}>
       {notice && <p className="notice">{notice}</p>}
-      <ul className="slots">
+      {/* `slots--saves`: `.slots` heißt auch das Bauplatzraster (T-M29-03); die Liste trägt ihr
+          eigenes Kennzeichen, damit dessen vier Spalten sie nicht erfassen (T-M44-05). */}
+      <ul className="slots slots--saves">
         {slots.map((slot) => (
-          <li key={slot.name} className="slot">
+          <li key={slot.name} className="slot slot--save">
             <span className="slot__label">
               {slot.label}
               {slot.savedAtDay !== null ? ` — ${t('header.day')} ${slot.savedAtDay}` : ` — ${t('saves.empty')}`}
             </span>
             <span className="slot__actions">
-              {onSave && (
-                <button type="button" className="button" onClick={() => onSave(slot.name)}>
-                  {t('saves.save')}
-                </button>
-              )}
+              {onSave &&
+                // Ein belegter Platz fragt vor dem Überschreiben nach (T-M44-09a, R-UX-04/AK1);
+                // ein leerer nicht — dort geht nichts verloren.
+                (slot.savedAtDay !== null ? (
+                  <ConfirmButton
+                    label={t('saves.save')}
+                    consequence={t('saves.overwriteConfirm', { slot: slot.label })}
+                    onConfirm={() => onSave(slot.name)}
+                  />
+                ) : (
+                  <button type="button" className="button" onClick={() => onSave(slot.name)}>
+                    {t('saves.save')}
+                  </button>
+                ))}
               <button
                 type="button"
                 className="button"
@@ -633,13 +774,17 @@ export function SettingsDialog({
     <Dialog title={t('settings.title')} onClose={onClose}>
       <label className="field">
         <span>{t('settings.autosaveInterval')}</span>
-        <input
-          type="number"
-          min={1}
-          max={60}
-          value={settings.autosaveMinutes}
-          onChange={(e) => onChange({ autosaveMinutes: Number(e.target.value) })}
-        />
+        {/* Mit Einheit (T-M44-16): „alle 5“ ließ offen, wovon. */}
+        <span className="field__row">
+          <input
+            type="number"
+            min={1}
+            max={60}
+            value={settings.autosaveMinutes}
+            onChange={(e) => onChange({ autosaveMinutes: Number(e.target.value) })}
+          />
+          <span>{t(settings.autosaveMinutes === 1 ? 'settings.minuteUnit' : 'settings.minutesUnit')}</span>
+        </span>
       </label>
 
       <label className="field field--switch">
@@ -649,13 +794,16 @@ export function SettingsDialog({
 
       <label className="field">
         <span>{t('settings.maxSpeed')}</span>
-        <input
-          type="number"
-          min={1}
-          max={100}
-          value={settings.maxSpeed}
-          onChange={(e) => onChange({ maxSpeed: Number(e.target.value) })}
-        />
+        {/* Eine Auswahl der Tempostufen statt einer freien Zahl (T-M44-16): nur diese Stufen kennt
+            die Uhr. Ein gespeicherter Wert dazwischen bleibt sichtbar, statt stumm umgeschrieben
+            zu werden. */}
+        <select value={settings.maxSpeed} onChange={(e) => onChange({ maxSpeed: Number(e.target.value) })}>
+          {speedChoices(settings.maxSpeed).map((stop) => (
+            <option key={stop} value={stop}>
+              {t('header.speedStop', { stop })}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="field">
@@ -675,11 +823,20 @@ export function SettingsDialog({
         <span>{t('settings.debug')}</span>
       </label>
 
-      <button type="button" className="button" onClick={onReset} disabled={isDefault(settings)}>
-        {t('settings.reset')}
-      </button>
+      <ConfirmButton
+        label={t('settings.reset')}
+        consequence={t('settings.resetConfirm')}
+        onConfirm={onReset}
+        disabled={isDefault(settings)}
+      />
     </Dialog>
   )
+}
+
+/** Die Tempostufen ohne die Pause, dazu ein gespeicherter Wert, der auf keiner Stufe liegt. */
+function speedChoices(current: number): number[] {
+  const stops = SPEED_STOPS.filter((stop) => stop > 0) as number[]
+  return stops.includes(current) ? stops : [...stops, current].sort((a, b) => a - b)
 }
 
 function isDefault(settings: Settings): boolean {
@@ -782,6 +939,8 @@ export function KeyboardHelp({ onClose }: { onClose: () => void }) {
     'diplomacy',
     'market',
     'espionage',
+    'standings',
+    'pan',
     'escape',
     'help',
   ] as const

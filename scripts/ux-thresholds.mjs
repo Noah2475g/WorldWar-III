@@ -338,8 +338,8 @@ export const CRITERIA = [
     check(m) {
       const runs = allRuns(m).filter((r) => r.section === 'viewports' && r.data.probes?.confirm)
       if (runs.length === 0) return open('Sonde probes.confirm fehlt in den Daten (T-M44-09a)')
-      const bad1 = runs.filter((r) => r.data.probes.confirm.warOnFirstClick === true)
-      return bad1.length === 0 ? ok(`${runs.length} Größen: Krieg erst nach dem zweiten Klick`) : bad(`${bad1.length} Größen: Krieg schon beim ersten Klick`, bad1.map((r) => r.tag))
+      const bad1 = runs.filter((r) => r.data.probes.confirm.warOnFirstClick === true || r.data.probes.confirm.asksOnFirstClick === false)
+      return bad1.length === 0 ? ok(`${runs.length} Größen: Krieg erst nach dem zweiten Klick`) : bad(`${bad1.length} Größen: Krieg schon beim ersten Klick oder keine Rückfrage`, bad1.map((r) => r.tag))
     },
   },
   {

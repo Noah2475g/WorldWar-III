@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { t } from '../i18n/text.ts'
+import { isTypingTarget } from '../keyboard.ts'
 
 /**
  * What a thing is, where the thing is (T-M13-11, R-UI-11).
@@ -28,6 +29,11 @@ export interface ExplainProps {
   subject: string
 }
 
+// LOESCHVERMERK (Review): bis T-M44-13 war die Erklaerung ein Block in der Kachel, ohne Escape und ohne Fokusrueckgabe:
+//   import { useId, useState } from 'react'
+//   <span className="explain">
+//   <span className="explain__text" id={id} role="note">
+// Jetzt ein Popover (`position: absolute`, app.css) mit Escape, Druck ausserhalb und Fokus zurueck aufs Fragezeichen.
 export function Explain({ textKey, subject }: ExplainProps) {
   const [open, setOpen] = useState(false)
   const [alignEnd, setAlignEnd] = useState(false)
@@ -44,8 +50,12 @@ export function Explain({ textKey, subject }: ExplainProps) {
       if (event.key !== 'Escape') return
       // Die Taste ist verbraucht: weder die Hotkeys der Hülle noch ein Dialog darunter sehen sie.
       event.stopPropagation()
+      // Den Fokus zurückgeben, wohin er auch gewandert ist — außer in ein Eingabefeld daneben:
+      // wer dort schreibt, behält den Fokus (Durchsicht B, Befund 4).
+      const active = document.activeElement
+      const owned = !(isTypingTarget(active) && !root.current?.contains(active))
       setOpen(false)
-      toggle.current?.focus()
+      if (owned) toggle.current?.focus()
     }
     const onPress = (event: Event) => {
       if (event.target instanceof Node && root.current?.contains(event.target)) return
