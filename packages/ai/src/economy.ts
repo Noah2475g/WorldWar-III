@@ -511,21 +511,23 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
   const oelTraegt = (jeEinheitTaeglich: number): number =>
     unitsWithinStockHorizon(oelVorrat, oelSpielraum, jeEinheitTaeglich, OIL_HORIZON_DAYS)
 
-  // Befund M42-07-a, zweite Iteration: kann die Macht keinen einzigen Panzer tragen (Anteil der
-  // Schwierigkeit, Oel- oder Geld-Tagesbilanz), geht sein Anteil an die Artillerie. Einmal je Aufruf,
-  // nicht je Provinz - Bestand und Bilanzen haengen an der Macht.
-  const panzer = context.rules.units['tank']
-  const panzerTragbar =
-    panzer !== undefined &&
-    Object.entries(panzer.cost).every(([key, amount]) => {
-      if (!amount) return true
-      const frei = Math.max(0, context.view.self.resources[key as ResourceKey] - (vorbehalt?.[key as ResourceKey] ?? 0))
-      return Math.trunc((frei * context.difficulty.recruitShare) / 1000) >= amount
-    }) &&
-    // LOESCHVERMERK (Review): T-M42-14 - Vorrats-Horizont statt Tagesbilanz. Alte Zeile:
-    // unitsWithinDailyBalance(oelSpielraum, (panzer.upkeep.oil ?? 0) * ticksPerDay) >= 1 &&
-    oelTraegt((panzer.upkeep.oil ?? 0) * ticksPerDay) >= 1 &&
-    unitsWithinDailyBalance(bilanz.margin, (panzer.upkeep.money ?? 0) * ticksPerDay) >= 1
+  // LOESCHVERMERK (Review): T-M42-14, Iteration H3 - ohne Umverteilung des Panzeranteils wird `panzerTragbar`
+  // nicht mehr gebraucht. Alte Zeilen:
+  // // Befund M42-07-a, zweite Iteration: kann die Macht keinen einzigen Panzer tragen (Anteil der
+  // // Schwierigkeit, Oel- oder Geld-Tagesbilanz), geht sein Anteil an die Artillerie. Einmal je Aufruf,
+  // // nicht je Provinz - Bestand und Bilanzen haengen an der Macht.
+  // const panzer = context.rules.units['tank']
+  // const panzerTragbar =
+  //   panzer !== undefined &&
+  //   Object.entries(panzer.cost).every(([key, amount]) => {
+  //     if (!amount) return true
+  //     const frei = Math.max(0, context.view.self.resources[key as ResourceKey] - (vorbehalt?.[key as ResourceKey] ?? 0))
+  //     return Math.trunc((frei * context.difficulty.recruitShare) / 1000) >= amount
+  //   }) &&
+  //   // LOESCHVERMERK (Review): T-M42-14 - Vorrats-Horizont statt Tagesbilanz. Alte Zeile:
+  //   // unitsWithinDailyBalance(oelSpielraum, (panzer.upkeep.oil ?? 0) * ticksPerDay) >= 1 &&
+  //   oelTraegt((panzer.upkeep.oil ?? 0) * ticksPerDay) >= 1 &&
+  //   unitsWithinDailyBalance(bilanz.margin, (panzer.upkeep.money ?? 0) * ticksPerDay) >= 1
 
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
@@ -562,7 +564,11 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
     /** Was vor dem Kandidaten in der Rangliste stand - jeder davon ist gescheitert, sonst staenden wir nicht hier (D32.8). */
     const davor: string[] = []
 
-    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten, true /* zweite Iteration: immer, nicht nur bei !panzerTragbar */)) {
+    // LOESCHVERMERK (Review): T-M42-14, Iteration H3 - der Panzeranteil geht nicht mehr an die Artillerie
+    // (Mischung 60/30/10 wie in D32.8, Gleichgewicht ohne Panzer 25 %). Mit Oelkauf (H2) stand die Mischung
+    // 60/0/40 bei 30,86/28,73/33,74 % Artillerie - ueber dem Band. Alte Zeile:
+    // for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten, true /* zweite Iteration: immer, nicht nur bei !panzerTragbar */)) {
+    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten, false)) {
       const regel = context.rules.units[kandidat]
       if (!regel) {
         davor.push(kandidat)
@@ -596,7 +602,10 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
       // const nurPanzerDavor = davor.length > 0 && davor.every((key) => key === 'tank')
       // Befund M42-07-a, zweite Iteration: hat der Panzer seinen Anteil an die Artillerie abgegeben,
       // darf sie auch ganz vorn stehen - der Panzer steht dann der Sache nach vor ihr.
-      const nurPanzerDavor = davor.every((key) => key === 'tank') && (davor.length > 0 || !panzerTragbar)
+      // LOESCHVERMERK (Review): T-M42-14, Iteration H3 - ohne Umverteilung des Panzeranteils steht der Panzer
+      // wieder selbst in der Rangliste; die Untergrenze gilt wie in D32.8 nur HINTER ihm. Alte Zeile:
+      // const nurPanzerDavor = davor.every((key) => key === 'tank') && (davor.length > 0 || !panzerTragbar)
+      const nurPanzerDavor = davor.length > 0 && davor.every((key) => key === 'tank')
       if (moeglich < 1 && nurPanzerDavor && regel.requiresBuilding === 'factory' && traegtNachRuecklage(nachZug, regel.cost, vorbehalt)) {
         moeglich = 1
         untergrenze = true
