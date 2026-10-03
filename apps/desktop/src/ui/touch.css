@@ -469,6 +469,11 @@ select,
  * `:root[data-input='touch']` (dieselbe Spezifitaet), und ein Fenster, das zugleich unter 600 px
  * breit, hochformatig und unter 481 px hoch ist, soll den Stapel bekommen, nicht die Querregeln.
  */
+/* Das Blatt (T-M44-03b): der Griff der Seitenleiste ist ausserhalb des Hochformats unsichtbar. */
+.sheet__handle {
+  display: none;
+}
+
 @media (max-width: 599px) and (orientation: portrait) {
   :root:root .app {
     --map-h: 45vh;
@@ -482,6 +487,47 @@ select,
   :root:root .app[data-panel="open"] {
     --map-h: 31vh;
     --map-h: 31dvh;
+  }
+
+  /* Die Rasten des Blatts (T-M44-03b): Streifen laesst der Karte viel, voll fast nichts; halb ist
+     die Raste, auf der jedes Panel oeffnet (31 dvh Karte, R-UX-01/AK1 mit Panel >= 0,30). */
+  :root:root .app[data-panel="open"][data-sheet='peek'] {
+    --map-h: 58vh;
+    --map-h: 58dvh;
+  }
+
+  :root:root .app[data-panel="open"][data-sheet='full'] {
+    --map-h: 12vh;
+    --map-h: 12dvh;
+  }
+
+  /* Der Griff klebt am oberen Rand der Seitenleiste, 44 px hoch, und nimmt dem Browser das
+     Wischen ab: ein Wisch am Griff schaltet die Raste, er schiebt weder Seite noch Karte. */
+  :root:root .sheet__handle {
+    display: flex;
+    position: sticky;
+    top: calc(-1 * var(--sp-md));
+    z-index: 2;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-sm);
+    min-height: 44px;
+    margin: calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md)) 0;
+    padding: 0 var(--sp-md);
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 11px;
+    touch-action: none;
+  }
+
+  :root:root .sheet__grip {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--ink-soft);
   }
 
   /* Kopfleiste: eine Zeile, seitlich wischbar; ihre Kinder behalten ihre Breite. */

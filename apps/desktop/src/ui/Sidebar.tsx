@@ -18,6 +18,8 @@ export interface SidebarProps {
    * ein neues Panel soll mit seinem Kopf im Bild stehen, nicht dort, wo das vorige gerollt war.
    */
   scrollKey?: string
+  /** Der Griff des Blatts (T-M44-03b), nur im Hochformat des Telefons sichtbar. */
+  handle?: ReactNode
   /** Die Provinzwahl ganz oben. */
   picker: ReactNode
   /** Die Hinweisliste (Alerts). */
@@ -32,13 +34,14 @@ export interface SidebarProps {
   debug: ReactNode
 }
 
-export function Sidebar({ picker, alerts, notice, panel, economy, debug, scrollKey }: SidebarProps) {
+export function Sidebar({ picker, alerts, notice, panel, economy, debug, scrollKey, handle }: SidebarProps) {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = 0
   }, [scrollKey])
   return (
     <aside className="side" ref={ref}>
+      {handle}
       {picker}
       {alerts}
       {notice}

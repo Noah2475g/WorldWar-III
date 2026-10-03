@@ -126,6 +126,7 @@ import { createStorage } from './storage/createStorage'
 import { UNIT_ICONS } from './ui/icons.tsx'
 import type { IconItem } from './ui/IconRow.tsx'
 import { Tutorial } from './ui/Tutorial.tsx'
+import { SheetHandle, type SheetSnap } from './ui/Sheet.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { StandingsPanel, VictoryDialog } from './ui/Standings.tsx'
 import {
@@ -273,6 +274,12 @@ export function App(props: AppProps) {
     // menschliche Macht dieses Standes", nicht „niemand".
     viewerId: props.viewerId ?? null,
   }))
+
+  // Das Blatt im Hochformat (T-M44-03b): Raste der Seitenleiste; ein Panel oeffnet auf halb.
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('half')
+  useEffect(() => {
+    if (ui.panel) setSheetSnap('half')
+  }, [ui.panel, ui.selectedProvince, ui.selectedArmy])
 
   // Und zurueckgeschrieben wird, sobald sich etwas aendert.
   useEffect(() => {
@@ -1283,6 +1290,18 @@ export function App(props: AppProps) {
     [centres, ui.view, activeMap, tutor, centreView],
   )
 
+  // Auto-Schwenk (T-M44-03b): im Hochformat des Telefons bleibt die gewaehlte Provinz im sichtbaren
+  // Kartenteil — bei jeder neuen Auswahl und jedem Rastenwechsel des Blatts wird auf sie zentriert.
+  useEffect(() => {
+    if (!ui.selectedProvince || typeof window.matchMedia !== 'function') return
+    if (!window.matchMedia('(max-width: 599px) and (orientation: portrait)').matches) return
+    const centre = centres[ui.selectedProvince]
+    if (!centre) return
+    dispatch({ type: 'setView', view: centreView(centre, ui.view, activeMap) })
+    // Der Blick selbst gehoert nicht in die Abhaengigkeiten: wer die Karte danach schiebt, wird
+    // nicht zurueckgeholt, bis er wieder waehlt oder das Blatt umschaltet.
+  }, [ui.selectedProvince, sheetSnap])
+
   /**
    * Wohin eine Meldung springt (T-M17-14, E3): auf die Karte wie bisher, oder in die Diplomatie
    * mit der Macht des Angebots. `Foot`/die Kopfleiste behalten `jumpTo` — ihre Eintraege tragen
@@ -2235,6 +2254,7 @@ export function App(props: AppProps) {
       style={fontScaleStyle(ui.settings)}
       // Ein offenes Panel verkleinert im Hochformat die Karte (T-M44-03a, touch.css `--map-h`).
       data-panel={ui.panel ? 'open' : 'closed'}
+      data-sheet={ui.panel ? sheetSnap : undefined}
     >
       <Header
         view={view}
@@ -2343,6 +2363,7 @@ export function App(props: AppProps) {
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
           scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
+          handle={ui.panel ? <SheetHandle snap={sheetSnap} onSnap={setSheetSnap} onClose={() => dispatch({ type: 'closePanel' })} /> : null}
           picker={
               <ProvincePicker
                 own={ownProvinces}

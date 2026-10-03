@@ -145,6 +145,24 @@ describe('R-UI-03 Die Partie startet', () => {
   })
 })
 
+describe('R-UX-01 T-M44-03b Das Blatt oeffnet auf halb', () => {
+  it('ein gewaehltes Panel traegt data-sheet=half, Griff schaltet auf voll, Escape schliesst', () => {
+    startGame()
+    const app = document.querySelector('.app')!
+    expect(app.getAttribute('data-sheet')).toBeNull()
+    const select = document.querySelector('.picker select') as HTMLSelectElement
+    const own = [...select.querySelectorAll('optgroup')[0]!.querySelectorAll('option')][0]!
+    fireEvent.change(select, { target: { value: own.value } })
+    expect(app.getAttribute('data-sheet')).toBe('half')
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }))
+    expect(app.getAttribute('data-sheet')).toBe('full')
+
+    fireEvent.keyDown(screen.getByRole('button', { name: new RegExp(t('sheet.handle')) }), { key: 'Escape' })
+    expect(app.getAttribute('data-panel')).toBe('closed')
+  })
+})
+
 describe('R-UI-06 Bedienung ohne Maus', () => {
   it('startet und stoppt die Zeit mit der Leertaste', () => {
     startGame()

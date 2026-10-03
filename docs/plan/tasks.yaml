@@ -3802,7 +3802,7 @@ tasks:
   - id: T-M44-03b
     milestone: M44
     title: "Telefon hochkant: Seitenleiste als Blatt mit Rasten"
-    status: todo
+    status: done
     deps: [T-M44-03a]
     requirements: [R-UX-01]
     design: [D-37]

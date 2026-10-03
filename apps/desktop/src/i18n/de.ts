@@ -78,6 +78,12 @@ export const de = {
     market: 'Markt',
   },
 
+  /** Das Blatt im Hochformat (T-M44-03b): Griff und die drei Rasten. */
+  sheet: {
+    handle: 'Panelhöhe',
+    snap: { peek: 'Streifen', half: 'halb', full: 'voll' },
+  },
+
   /** Der Kopf jedes Panels (T-M44-12). */
   panel: {
     back: 'Zurück',
