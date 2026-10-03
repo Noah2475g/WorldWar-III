@@ -1,6 +1,7 @@
 import { unitCount, type Command } from '@worldwar/core'
 import { armyRole } from './army-role'
-import { frontProvinces } from './economy'
+// LOESCHVERMERK (Review): Import der zweiten Fassung von T-M42-17. Alte Zeile:
+// import { frontProvinces } from './economy'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -51,15 +52,19 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   // Merge-Pass unten.
   const nachTeilen = new Map<string, number>()
   //
-  // **Nur abseits der Front** (T-M42-17, zweite Fassung): geteilt an jeder Stelle riss das Turnier (R-AI-06,
-  // Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen normal) - ein grosser Verband an der Front ist
-  // dort gewollt. Geteilt werden die Garnisonen im Hinterland, in denen die Aushebungen auflaufen
-  // (`frontProvinces` aus `economy.ts`: kein fremder Landnachbar, keine Bedrohung).
-  const front = frontProvinces(context)
+  // LOESCHVERMERK (Review): die zweite Fassung von T-M42-17 (3841236) teilte nur abseits der Front, weil das
+  // Turnier auf der ersten Fassung riss. Die Ursache war aber T-M42-16 (Sperre im Merge-Pass, gemessen auf
+  // 7b14319 ohne Teilen: dieselbe Turnierzahl) - zurueckgenommen. Das Teilen gilt wieder ueberall, wie der
+  // Review-Punkt es verlangt. Alte Zeilen:
+  // // **Nur abseits der Front** (T-M42-17, zweite Fassung): geteilt an jeder Stelle riss das Turnier (R-AI-06,
+  // // Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen normal) - ein grosser Verband an der Front ist
+  // // dort gewollt. Geteilt werden die Garnisonen im Hinterland, in denen die Aushebungen auflaufen
+  // // (`frontProvinces` aus `economy.ts`: kein fremder Landnachbar, keine Bedrohung).
+  // const front = frontProvinces(context)
+  // if (front.has(army.provinceId)) continue
   for (const army of [...view.armies].sort((a, b) => compareCodeUnits(a.id, b.id))) {
     if (army.owner !== playerId) continue
     if ((army.path?.length ?? 0) > 0) continue
-    if (front.has(army.provinceId)) continue
     const stacks = (army.units ?? []).map((stack) => ({
       unitKey: stack.unitKey,
       hpTotal: stack.hpTotal,

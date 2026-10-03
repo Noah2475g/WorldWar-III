@@ -110,18 +110,20 @@ describe('T-M42-17 Teilen ueber dem Deckel (Review Punkt 11, Befund M42-09-a)', 
   })
 })
 
-describe('T-M42-17 zweite Fassung: an der Front wird nicht geteilt', () => {
-  it('T5: ein Verband ueber dem Deckel in einer Grenzprovinz bleibt ganz, im Hinterland wird er geteilt', () => {
-    placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 30 * hp('infantry') }] })
-    const hinten = consolidateCommands(contextFor(), []).filter((command) => command.type === 'SPLIT_ARMY')
-    expect(hinten, 'im Hinterland geteilt').toHaveLength(1)
-
-    // Suedberg (s2, Nachbar von Sandmark o2) gehoert dem Menschen: o2 ist Grenzprovinz.
-    state.provinces['s2']!.owner = 'p1'
-    const vorn = consolidateCommands(contextFor(), []).filter((command) => command.type === 'SPLIT_ARMY')
-    expect(vorn).toEqual([])
-  })
-})
+// LOESCHVERMERK (Review): die zweite Fassung von T-M42-17 (nur abseits der Front) ist zurueckgenommen, siehe
+// `consolidate.ts`. Alter Fall T5:
+// describe('T-M42-17 zweite Fassung: an der Front wird nicht geteilt', () => {
+//   it('T5: ein Verband ueber dem Deckel in einer Grenzprovinz bleibt ganz, im Hinterland wird er geteilt', () => {
+//     placeArmy(state, { owner: 'p2', at: 'o2', units: [{ unitKey: 'infantry', hpTotal: 30 * hp('infantry') }] })
+//     const hinten = consolidateCommands(contextFor(), []).filter((command) => command.type === 'SPLIT_ARMY')
+//     expect(hinten, 'im Hinterland geteilt').toHaveLength(1)
+//
+//     // Suedberg (s2, Nachbar von Sandmark o2) gehoert dem Menschen: o2 ist Grenzprovinz.
+//     state.provinces['s2']!.owner = 'p1'
+//     const vorn = consolidateCommands(contextFor(), []).filter((command) => command.type === 'SPLIT_ARMY')
+//     expect(vorn).toEqual([])
+//   })
+// })
 
 // LOESCHVERMERK (Review): T-M42-16 ist zurueckgenommen (das Turnier riss, `consolidate.ts`); die Faelle S1/S2
 // beschrieben die zurueckgenommene Sperre. Alte Faelle:
