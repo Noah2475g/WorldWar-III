@@ -685,6 +685,17 @@ describe('R-AI-12/AK2 Die Haelfte der Maechte mit Stadt beginnt eine Fabrik — 
   })
 })
 
+// R-AI-10/AK3 (T-M42-09, D32.10, Noahs Antwort auf Frage 4): keine zwei stehenden Armeen derselben
+// KI-Macht, Provinz, Rolle und Einschiffung mit zusammen hoechstens stackFullContribution Einheiten
+// am Ende zweier aufeinanderfolgender Spieltage. Stufe F: 0 auf beiden Laeufen dieser Datei (aber 1
+// auf Welt 2015, m17-integration.json, und 28 in Summe dort - Befund an T-M42-09 aus T-M42-01).
+describe('R-AI-10/AK3 Kein zusammenlegbares Paar ueber zwei Tagesenden (T-M42-09)', () => {
+  it('in Welt 1815 und in der Voreinstellung ueber 200 Spieltage', () => {
+    expect(integration.m42!.heer.paareUeberZweiTagesenden, 'Welt 1815').toBe(0)
+    expect(voreinstellungLang.m42!.heer.paareUeberZweiTagesenden, 'Voreinstellung 200').toBe(0)
+  })
+})
+
 describe('T-M42-01 Zaehlung am Tagesende (Abschnitt m42)', () => {
   it('zaehlt jeden Spieltag', () => {
     expect(integration.m42!.tagesenden, 'Weltkarte 1815').toBe(DAYS)

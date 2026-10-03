@@ -32,7 +32,7 @@ import type { AiContext, Explanation } from './types'
  *   ein `MERGE_ARMIES`.
  * - **Einschiffung:** die Sicht fuehrt `embarked` nicht; die KI schifft nie ein (amphibische KI: M18),
  *   ihre Armeen stehen also alle an Land. Marschierende Armeen (`path`) bleiben aussen vor.
- * - Weiterhin **eine Provinz je Denkschritt** (T-M42-09 hebt das auf).
+ * - **Alle Provinzen in einem Denkschritt** (seit T-M42-09, D32.10; bis dahin eine je Denkschritt).
  */
 export function consolidateCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const { view, rules } = context
@@ -82,9 +82,12 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
       }
     }
 
-    // Eine Provinz je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
-    // soll sie sehen (T-M42-09 hebt das auf).
-    if (commands.length > 0) break
+    // LOESCHVERMERK (Review): T-M42-09 (R-AI-10/AK3, D32.10) hebt "eine Provinz je Denkschritt" auf -
+    // `absorbedBy` in `decide.ts` sammelt ueber alle MERGE_ARMIES, und eine Provinz je Denkschritt liess
+    // auf der Weltkarte Paare ueber zwei Tagesenden stehen (m17-integration Stufe F: 28). Alte Zeilen:
+    // // Eine Provinz je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
+    // // soll sie sehen (T-M42-09 hebt das auf).
+    // if (commands.length > 0) break
   }
 
   return commands
