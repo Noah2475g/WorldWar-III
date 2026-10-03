@@ -1,0 +1,531 @@
+{
+  "note": "Erzeugt von apps/headless/test/perf-profile.slow.test.ts. Aufrufzahlen (Precise Coverage) und Heap-Stichprobe; keine Millisekunden. Ticks aus dem Stand, mit KI.",
+  "stand": "S575",
+  "ticksRun": 240,
+  "startTick": 13800,
+  "decided": null,
+  "aiFunctions": [
+    {
+      "fn": "runAi",
+      "file": "packages/ai/src/runner.ts",
+      "calls": 240
+    },
+    {
+      "fn": "consolidateCommands",
+      "file": "packages/ai/src/consolidate.ts",
+      "calls": 240
+    },
+    {
+      "fn": "economyCommands",
+      "file": "packages/ai/src/economy.ts",
+      "calls": 60
+    },
+    {
+      "fn": "recruitCommands",
+      "file": "packages/ai/src/economy.ts",
+      "calls": 240
+    },
+    {
+      "fn": "tradeCommands",
+      "file": "packages/ai/src/economy.ts",
+      "calls": 240
+    },
+    {
+      "fn": "militaryCommands",
+      "file": "packages/ai/src/military.ts",
+      "calls": 240
+    },
+    {
+      "fn": "adjutantCommands",
+      "file": "packages/ai/src/adjutant.ts",
+      "calls": 240
+    }
+  ],
+  "coreFunctions": [
+    {
+      "fn": "planRoute",
+      "file": "packages/core/src/phases/movement.ts",
+      "calls": 358
+    },
+    {
+      "fn": "runTicks",
+      "file": "packages/core/src/clock.ts",
+      "calls": 240
+    },
+    {
+      "fn": "applyCommands",
+      "file": "packages/core/src/phases/applyCommands.ts",
+      "calls": 240
+    }
+  ],
+  "callsPerTick": {
+    "runAi": 1,
+    "consolidateCommands": 1,
+    "economyCommands": 0.25,
+    "recruitCommands": 1,
+    "tradeCommands": 1,
+    "militaryCommands": 1,
+    "adjutantCommands": 1,
+    "planRoute": 1.49,
+    "runTicks": 1,
+    "applyCommands": 1,
+    "frontProvinces": 0
+  },
+  "topCalls": [
+    {
+      "fn": "distances",
+      "file": "packages/ai/src/threat.ts",
+      "calls": 196170
+    },
+    {
+      "fn": "unitCount",
+      "file": "packages/core/src/state/army.ts",
+      "calls": 191755
+    },
+    {
+      "fn": "better",
+      "file": "packages/core/src/map/pathfinding.ts",
+      "calls": 177259
+    },
+    {
+      "fn": "provinceIndex",
+      "file": "packages/ai/src/passage.ts",
+      "calls": 151677
+    },
+    {
+      "fn": "ownerOf",
+      "file": "packages/ai/src/passage.ts",
+      "calls": 151498
+    },
+    {
+      "fn": "buildingFactor",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 99470
+    },
+    {
+      "fn": "cloneArmy",
+      "file": "packages/core/src/state/clone.ts",
+      "calls": 83879
+    },
+    {
+      "fn": "canFire",
+      "file": "packages/core/src/phases/bombardment.ts",
+      "calls": 83873
+    },
+    {
+      "fn": "armyUpkeep",
+      "file": "packages/core/src/state/army.ts",
+      "calls": 83846
+    },
+    {
+      "fn": "blocksPassage",
+      "file": "packages/ai/src/passage.ts",
+      "calls": 74177
+    },
+    {
+      "fn": "armyHp",
+      "file": "packages/core/src/state/army.ts",
+      "calls": 72195
+    },
+    {
+      "fn": "arten",
+      "file": "packages/ai/src/economy.ts",
+      "calls": 63276
+    },
+    {
+      "fn": "cloneProvince",
+      "file": "packages/core/src/state/clone.ts",
+      "calls": 56880
+    },
+    {
+      "fn": "combatantsIn",
+      "file": "packages/core/src/phases/combat.ts",
+      "calls": 56880
+    },
+    {
+      "fn": "canOccupy",
+      "file": "packages/core/src/phases/occupation.ts",
+      "calls": 56880
+    },
+    {
+      "fn": "relationKey",
+      "file": "packages/core/src/state/create.ts",
+      "calls": 46520
+    },
+    {
+      "fn": "moraleFactor",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 46478
+    },
+    {
+      "fn": "populationFactor",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 46478
+    },
+    {
+      "fn": "occupationFactor",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 46478
+    },
+    {
+      "fn": "provinceYieldScaled",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 46478
+    },
+    {
+      "fn": "capitalPenalty",
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 46400
+    },
+    {
+      "fn": "armySpeed",
+      "file": "packages/core/src/rules/movement.ts",
+      "calls": 36586
+    },
+    {
+      "fn": "territoryFactor",
+      "file": "packages/core/src/rules/movement.ts",
+      "calls": 36586
+    },
+    {
+      "fn": "railwayFactor",
+      "file": "packages/core/src/rules/movement.ts",
+      "calls": 36586
+    },
+    {
+      "fn": "edgeTravelTicks",
+      "file": "packages/core/src/rules/movement.ts",
+      "calls": 36586
+    },
+    {
+      "fn": "edgeCost",
+      "file": "packages/core/src/phases/movement.ts",
+      "calls": 35926
+    },
+    {
+      "fn": "atWar",
+      "file": "packages/core/src/phases/combat.ts",
+      "calls": 33385
+    },
+    {
+      "fn": "push",
+      "file": "packages/core/src/map/pathfinding.ts",
+      "calls": 32463
+    },
+    {
+      "fn": "edgesOf",
+      "file": "packages/core/src/map/pathfinding.ts",
+      "calls": 28621
+    },
+    {
+      "fn": "pop",
+      "file": "packages/core/src/map/pathfinding.ts",
+      "calls": 25708
+    }
+  ],
+  "callsPerFile": [
+    {
+      "file": "packages/ai/src/passage.ts",
+      "calls": 424693
+    },
+    {
+      "file": "packages/core/src/state/army.ts",
+      "calls": 350142
+    },
+    {
+      "file": "packages/core/src/phases/production.ts",
+      "calls": 332022
+    },
+    {
+      "file": "packages/core/src/map/pathfinding.ts",
+      "calls": 298234
+    },
+    {
+      "file": "packages/ai/src/threat.ts",
+      "calls": 213571
+    },
+    {
+      "file": "packages/core/src/rules/movement.ts",
+      "calls": 148218
+    },
+    {
+      "file": "packages/core/src/state/clone.ts",
+      "calls": 143625
+    },
+    {
+      "file": "packages/core/src/phases/combat.ts",
+      "calls": 99890
+    },
+    {
+      "file": "packages/core/src/phases/bombardment.ts",
+      "calls": 91755
+    },
+    {
+      "file": "packages/ai/src/economy.ts",
+      "calls": 90658
+    },
+    {
+      "file": "packages/core/src/state/create.ts",
+      "calls": 86958
+    },
+    {
+      "file": "packages/core/src/phases/occupation.ts",
+      "calls": 57145
+    },
+    {
+      "file": "packages/core/src/phases/movement.ts",
+      "calls": 37201
+    },
+    {
+      "file": "packages/core/src/commands/bombard.ts",
+      "calls": 30699
+    },
+    {
+      "file": "packages/ai/src/consolidate.ts",
+      "calls": 24594
+    },
+    {
+      "file": "packages/ai/src/targeting.ts",
+      "calls": 12003
+    },
+    {
+      "file": "packages/ai/src/army-role.ts",
+      "calls": 8152
+    },
+    {
+      "file": "packages/core/src/phases/morale.ts",
+      "calls": 6250
+    },
+    {
+      "file": "packages/core/src/rules/combat.ts",
+      "calls": 3499
+    },
+    {
+      "file": "packages/core/src/view/publicView.ts",
+      "calls": 3043
+    },
+    {
+      "file": "packages/ai/src/finance.ts",
+      "calls": 2474
+    },
+    {
+      "file": "packages/ai/src/provinceValue.ts",
+      "calls": 2428
+    },
+    {
+      "file": "packages/ai/src/decide.ts",
+      "calls": 2160
+    },
+    {
+      "file": "packages/ai/src/relationship.ts",
+      "calls": 1782
+    },
+    {
+      "file": "packages/core/src/commands/registry.ts",
+      "calls": 1488
+    }
+  ],
+  "topAllocations": [
+    {
+      "fn": "emit packages/core/src/events/emit.ts",
+      "sampledBytes": 156496
+    },
+    {
+      "fn": "cloneProvince packages/core/src/state/clone.ts",
+      "sampledBytes": 49384
+    },
+    {
+      "fn": "(anonym) packages/core/src/state/clone.ts",
+      "sampledBytes": 49336
+    },
+    {
+      "fn": "militaryCommands packages/ai/src/military.ts",
+      "sampledBytes": 41128
+    },
+    {
+      "fn": "cloneArmy packages/core/src/state/clone.ts",
+      "sampledBytes": 33136
+    },
+    {
+      "fn": "advanceTicks packages/ai/src/loop.ts",
+      "sampledBytes": 24640
+    },
+    {
+      "fn": "applyCommand packages/core/src/commands/registry.ts",
+      "sampledBytes": 16960
+    },
+    {
+      "fn": "counterIntelligence packages/core/src/phases/espionage.ts",
+      "sampledBytes": 16576
+    },
+    {
+      "fn": "combat packages/core/src/phases/combat.ts",
+      "sampledBytes": 16464
+    },
+    {
+      "fn": "movement packages/core/src/phases/movement.ts",
+      "sampledBytes": 16416
+    },
+    {
+      "fn": "apply packages/core/src/commands/move.ts",
+      "sampledBytes": 16416
+    },
+    {
+      "fn": "apply packages/core/src/commands/trade.ts",
+      "sampledBytes": 16416
+    },
+    {
+      "fn": "clonePlayer packages/core/src/state/clone.ts",
+      "sampledBytes": 12416
+    },
+    {
+      "fn": "updateIntel packages/core/src/view/intel.ts",
+      "sampledBytes": 8256
+    },
+    {
+      "fn": "recruitCommands packages/ai/src/economy.ts",
+      "sampledBytes": 8240
+    },
+    {
+      "fn": "tradeCommands packages/ai/src/economy.ts",
+      "sampledBytes": 8240
+    },
+    {
+      "fn": "tradeOfferCommands packages/ai/src/trade.ts",
+      "sampledBytes": 8240
+    },
+    {
+      "fn": "(anonym) packages/core/src/phases/combat.ts",
+      "sampledBytes": 8208
+    },
+    {
+      "fn": "apply packages/core/src/commands/build.ts",
+      "sampledBytes": 8208
+    },
+    {
+      "fn": "resolveBombardment packages/core/src/phases/bombardment.ts",
+      "sampledBytes": 8208
+    }
+  ],
+  "cpuShares": {
+    "stand": "S575",
+    "samples": 6399,
+    "top15Self": [
+      {
+        "fn": "distances packages/ai/src/threat.ts:6",
+        "share": 0.2425
+      },
+      {
+        "fn": "threatMap packages/ai/src/threat.ts:24",
+        "share": 0.1294
+      },
+      {
+        "fn": "step packages/core/src/step.ts:54",
+        "share": 0.0957
+      },
+      {
+        "fn": "updateIntel packages/core/src/view/intel.ts:7",
+        "share": 0.0597
+      },
+      {
+        "fn": "combat packages/core/src/phases/combat.ts:41",
+        "share": 0.0583
+      },
+      {
+        "fn": "occupation packages/core/src/phases/occupation.ts:29",
+        "share": 0.0459
+      },
+      {
+        "fn": "post node:inspector:115",
+        "share": 0.0383
+      },
+      {
+        "fn": "bookkeeping packages/core/src/phases/bookkeeping.ts:16",
+        "share": 0.0367
+      },
+      {
+        "fn": "rateProvinces packages/ai/src/targeting.ts:63",
+        "share": 0.0251
+      },
+      {
+        "fn": "cloneState packages/core/src/state/clone.ts:69",
+        "share": 0.0158
+      },
+      {
+        "fn": "(garbage collector) (nativ):0",
+        "share": 0.0152
+      },
+      {
+        "fn": "economyScores packages/ai/src/targeting.ts:47",
+        "share": 0.015
+      },
+      {
+        "fn": "visibleProvinces packages/core/src/view/publicView.ts:12",
+        "share": 0.0138
+      },
+      {
+        "fn": "hopDistance packages/ai/src/targeting.ts:27",
+        "share": 0.0134
+      },
+      {
+        "fn": "landReachable packages/ai/src/targeting.ts:8",
+        "share": 0.0129
+      }
+    ],
+    "packageShares": {
+      "ai": 0.4754,
+      "core": 0.4551,
+      "shared": 0.009
+    },
+    "topFiles": [
+      {
+        "file": "packages/ai/src/threat.ts",
+        "share": 0.3765
+      },
+      {
+        "file": "packages/core/src/step.ts",
+        "share": 0.0957
+      },
+      {
+        "file": "packages/ai/src/targeting.ts",
+        "share": 0.0664
+      },
+      {
+        "file": "packages/core/src/phases/combat.ts",
+        "share": 0.0634
+      },
+      {
+        "file": "packages/core/src/view/intel.ts",
+        "share": 0.0597
+      },
+      {
+        "file": "packages/core/src/phases/occupation.ts",
+        "share": 0.0499
+      },
+      {
+        "file": "node:inspector",
+        "share": 0.0383
+      },
+      {
+        "file": "packages/core/src/phases/bookkeeping.ts",
+        "share": 0.0367
+      },
+      {
+        "file": "packages/core/src/state/clone.ts",
+        "share": 0.0299
+      },
+      {
+        "file": "packages/core/src/view/publicView.ts",
+        "share": 0.0248
+      },
+      {
+        "file": "packages/core/src/phases/production.ts",
+        "share": 0.0176
+      },
+      {
+        "file": "(nativ)",
+        "share": 0.0155
+      }
+    ]
+  }
+}

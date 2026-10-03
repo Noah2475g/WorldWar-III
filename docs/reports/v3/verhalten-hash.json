@@ -1,0 +1,23 @@
+{
+  "note": "Erzeugt von apps/headless/test/v3-verhalten.slow.test.ts (Regel 3a der V3).",
+  "stands": {
+    "S100": {
+      "ticks": 720,
+      "hash": "90f716751cc5344f",
+      "endTick": 3120,
+      "winner": null
+    },
+    "S300": {
+      "ticks": 720,
+      "hash": "098e6884b64480a2",
+      "endTick": 7920,
+      "winner": null
+    },
+    "S575": {
+      "ticks": 720,
+      "hash": "3d6a07bd3cd17a07",
+      "endTick": 14136,
+      "winner": "p6"
+    }
+  }
+}
