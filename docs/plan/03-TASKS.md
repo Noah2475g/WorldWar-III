@@ -7217,6 +7217,9 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
 > gemeinsame Räumfrist) und seiner Antwort auf Frage 3 vom 2026-09-26 (wie empfohlen: 24 Ticks
 > für Stehende, kürzester Heimweg immer frei, jeder Einmarsch ohne Recht bleibt ein Überfall).
 > Entwurf: `02-DESIGN.md` D34.
+- **Erledigt am 2026-10-03** auf Stufe C2: kein Parameterlauf (keine Regeldatei geändert),
+  Haltungs-Messlauf zweimal (Kontrolle 26/4 trifft, AK5 erfüllt, `dfaa254`), `pnpm acceptance`
+  **12 von 12** (7 min 49 s).
 
 ### T-M43-01 · Räumfrist im Kern und Heimweg der KI
 - **Ziel:** aus Frieden, Bündnisbruch und Kündigung wird kein Überfall im selben Tick.
