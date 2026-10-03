@@ -527,31 +527,31 @@ T-M44-11 **lesen** Kernfunktionen und -texte (Ablehnungsgründe, `planRoute`), �
 **Benchmarks:** nur T-M44-20 misst Zeit und braucht die Maschine allein (CLAUDE.md); alle anderen
 Aufgaben dürfen parallel zu Simulationen laufen.
 
-## 7 · Vorher/Nachher (wird in T-M44-21 gefüllt)
+## 7 · Vorher/Nachher (gefüllt in T-M44-21, 2026-10-03)
 
 | Kriterium | Schwelle | Vorher (2026-10-03) | Nachher |
 |---|---|---|---|
-| R-UX-01/AK1 Kartenanteil 375×667, ohne / mit Panel | ≥ 0,45 / ≥ 0,30 | 0,000 / 0,000 | |
-| R-UX-01/AK2 überlaufende Bereiche | 0 in allen Größen | 4 (375), 2 (1280), 2 (1920), 3 (667×375), 5 (320) | |
-| R-UX-01/AK3 Fehlschritte | 0 in allen Größen | 9 (375), 10 (320), sonst 0 | |
-| R-UX-02/AK1 Kopf + Rohstoffleiste mit Alarmchip und Siegziel | ≤ 70 px bei 1280 und 1366, auch `--mp` | 107 / 107 px; `--mp` nicht gemessen | |
-| R-UX-02/AK2 sichtbare `hidden`-Elemente | 0 | 1 (Alarmrahmen) | |
-| R-UX-02/AK3 Tooltip über Dialog / nach Mausauswahl stehend | nie | ja / ja | |
-| R-UX-02/AK4 Protokollzeit einzeilig, Gefechte zusammengefasst, Platz 1 | ja | nein / nein (4×) / nein | |
-| R-UX-02/AK5 Tempo 100 am Bündel, 1920: Bilder > 50 ms / längste Aufgabe | ≤ 3 / ≤ 60 ms | 1 / 0 ms (unter Last) | |
-| R-UX-03/AK1 Rohwörter in Sperrgründen | 0 | ≥ 5 im Diplomatiepanel; 34 Gründe ohne Schlüssel | |
-| R-UX-03/AK2 Kennungen in Spielertexten | 0 | „a68" | |
-| R-UX-03/AK3 beschädigter Stand als „andere Fassung" | nie | ja | |
-| R-UX-03/AK4 „feindliches Gebiet" bei kein Weg | nie | ja | |
-| R-UX-04/AK1 Rückfrage (Krieg, Bündnis, Überschreiben, Zurücksetzen, neue Partie) | 5 von 5 | 0 von 5 | |
-| R-UX-04/AK2 unerreichbare Ziele wählbar; Öffnen der Zielwahl | nein; < 50 ms | ja (237 Ziele); nicht gemessen | |
-| R-UX-05/AK1 Hauptaktion Startdialog sichtbar | 8 von 8 Größen | 2 von 8 | |
-| R-UX-05/AK4 Endedialog nennt Bedingung (echter Siegstand) | ja | nein; Stand unecht | |
-| R-UX-06/AK1 axe-Verstöße; Stichprobe „unvollständig" | 0; ≥ 20 Knoten geprüft | 3–6 Zustände je Größe; 0 geprüft | |
-| R-UX-06/AK2 Endedialog, Vorhang, Beitritt/Lobby halten den Fokus | ja | nein (Ende, alle 8 Größen); Rest nicht gemessen | |
-| R-UX-06/AK3 Ziele < 24 px am Schreibtisch (Karte) | 0 (Ausnahmen gelistet) | 30 von 43 | |
-| R-UX-06/AK4 Fokusrahmen-Token | eigenes, ≥ 3:1 | `accent` | |
-| Mehrspieler `--mp`: Beitritt/Lobby/Kopf | aufgenommen | fehlt | |
+| R-UX-01/AK1 Kartenanteil 375×667, ohne / mit Panel | ≥ 0,45 / ≥ 0,30 | 0,000 / 0,000 | 0,45 / 0,31 (Provinz- und Armeepanel) |
+| R-UX-01/AK2 überlaufende Bereiche | 0 in allen Größen | 4 (375), 2 (1280), 2 (1920), 3 (667×375), 5 (320) | 0 (7 Läufe, alle Größen) |
+| R-UX-01/AK3 Fehlschritte | 0 in allen Größen | 9 (375), 10 (320), sonst 0 | 0 in 7 Läufen; 667×375 und 1366×768 nicht schlechter als vorher |
+| R-UX-02/AK1 Kopf + Rohstoffleiste mit Alarmchip und Siegziel | ≤ 70 px bei 1280 und 1366, auch `--mp` | 107 / 107 px; `--mp` nicht gemessen | 67 / 67 px (1920: 67); `--mp` 65 px; Alarmchip im `--mp`-Lauf nie sichtbar, dort nicht belegt |
+| R-UX-02/AK2 sichtbare `hidden`-Elemente | 0 | 1 (Alarmrahmen) | 0 (38 Zustände) |
+| R-UX-02/AK3 Tooltip über Dialog / nach Mausauswahl stehend | nie | ja / ja | nie / nie (5 Größen) |
+| R-UX-02/AK4 Protokollzeit einzeilig, Gefechte zusammengefasst, Platz 1 | ja | nein / nein (4×) / nein | ja / ja / ja (5 Größen) |
+| R-UX-02/AK5 Tempo 100 am Bündel, 1920: Bilder > 50 ms / längste Aufgabe | ≤ 3 / ≤ 60 ms | 1 / 0 ms (unter Last) | 0 / 0 ms, 0 Bilder > 50 ms (Bündel, 1920×1080; ohne `--baseline-bundle` desselben Tages, nur die absolute Schwelle) |
+| R-UX-03/AK1 Rohwörter in Sperrgründen | 0 | ≥ 5 im Diplomatiepanel; 34 Gründe ohne Schlüssel | offen im Browser; Wächter `text-keys` und Komponententests T-M44-06/-18 |
+| R-UX-03/AK2 Kennungen in Spielertexten | 0 | „a68" | offen im Browser; Komponententests |
+| R-UX-03/AK3 beschädigter Stand als „andere Fassung" | nie | ja | offen im Browser; Komponententests |
+| R-UX-03/AK4 „feindliches Gebiet" bei kein Weg | nie | ja | offen im Browser; Komponententests |
+| R-UX-04/AK1 Rückfrage (Krieg, Bündnis, Überschreiben, Zurücksetzen, neue Partie) | 5 von 5 | 0 von 5 | 5 von 5 Größen: Krieg erst nach dem zweiten Klick |
+| R-UX-04/AK2 unerreichbare Ziele wählbar; Öffnen der Zielwahl | nein; < 50 ms | ja (237 Ziele); nicht gemessen | nein; Öffnen ohne lange Aufgabe > 50 ms (5 Größen) |
+| R-UX-05/AK1 Hauptaktion Startdialog sichtbar | 8 von 8 Größen | 2 von 8 | 5 von 5 gemessenen Größen |
+| R-UX-05/AK4 Endedialog nennt Bedingung (echter Siegstand) | ja | nein; Stand unecht | ja; echter Siegstand, Bedingung genannt (5 Größen) |
+| R-UX-06/AK1 axe-Verstöße; Stichprobe „unvollständig" | 0; ≥ 20 Knoten geprüft | 3–6 Zustände je Größe; 0 geprüft | 0 (50 Zustände ohne Verstoß) |
+| R-UX-06/AK2 Endedialog, Vorhang, Beitritt/Lobby halten den Fokus | ja | nein (Ende, alle 8 Größen); Rest nicht gemessen | ja (21 Dialoge ohne Befund) |
+| R-UX-06/AK3 Ziele < 24 px am Schreibtisch (Karte) | 0 (Ausnahmen gelistet) | 30 von 43 | 0 (30 Zustände ohne zu kleine Ziele; Schwelle jetzt 44 px Finger / 24 px sonst) |
+| R-UX-06/AK4 Fokusrahmen-Token | eigenes, ≥ 3:1 | `accent` | offen im Browser; Komponententest `tokens.contrast.test.ts` |
+| Mehrspieler `--mp`: Beitritt/Lobby/Kopf | aufgenommen | fehlt | aufgenommen: 7 Bilder je Größe (375×667, 1280×800), 0 Fehlschritte |
 
 ## 8 · Nicht-Ziele und beantwortete Fragen
 

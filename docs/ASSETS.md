@@ -457,3 +457,176 @@ Kein Fremdinhalt — Bildschirmfotos des eigenen Spiels, erzeugt mit `node scrip
 | `docs/ux/before/x-meldungen-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | meldungen nicht erreichbar, 375x667 |
 | `docs/ux/before/x-tempo-laeuft-nicht-erreichbar-320x568.png` | `scripts/ux-capture.mjs` | tempo läuft nicht erreichbar, 320x568 |
 | `docs/ux/before/x-tempo-laeuft-nicht-erreichbar-375x667.png` | `scripts/ux-capture.mjs` | tempo läuft nicht erreichbar, 375x667 |
+
+### Nachher-Aufnahme (T-M44-21, 2026-10-03)
+
+Erzeugt mit `node scripts/ux-capture.mjs --out docs/ux/after --measure-only 1920x1080` (Bilder in 375x667, 667x375, 1280x800, 1366x768; 1920x1080 nur als Messwert) und `--mp` (Mehrspieler, 375x667 und 1280x800), verlustfrei optimiert (Pillow `optimize=True`, Pixel je Datei auf Gleichheit geprüft; oxipng ist auf dieser Maschine nicht installiert). Kein Fremdinhalt.
+
+| Datei | Erzeugt von | Zeigt |
+|---|---|---|
+| `docs/ux/after/01-start-neue-partie-1280x800.png` | `scripts/ux-capture.mjs` | start neue partie, 1280x800 |
+| `docs/ux/after/01-start-neue-partie-1366x768.png` | `scripts/ux-capture.mjs` | start neue partie, 1366x768 |
+| `docs/ux/after/01-start-neue-partie-1920x1080.png` | `scripts/ux-capture.mjs` | start neue partie, 1920x1080 |
+| `docs/ux/after/01-start-neue-partie-375x667.png` | `scripts/ux-capture.mjs` | start neue partie, 375x667 |
+| `docs/ux/after/01-start-neue-partie-667x375.png` | `scripts/ux-capture.mjs` | start neue partie, 667x375 |
+| `docs/ux/after/02-partie-anlegen-startknopf-1280x800.png` | `scripts/ux-capture.mjs` | partie anlegen startknopf, 1280x800 |
+| `docs/ux/after/02-partie-anlegen-startknopf-1366x768.png` | `scripts/ux-capture.mjs` | partie anlegen startknopf, 1366x768 |
+| `docs/ux/after/02-partie-anlegen-startknopf-1920x1080.png` | `scripts/ux-capture.mjs` | partie anlegen startknopf, 1920x1080 |
+| `docs/ux/after/02-partie-anlegen-startknopf-375x667.png` | `scripts/ux-capture.mjs` | partie anlegen startknopf, 375x667 |
+| `docs/ux/after/02-partie-anlegen-startknopf-667x375.png` | `scripts/ux-capture.mjs` | partie anlegen startknopf, 667x375 |
+| `docs/ux/after/03-spielstaende-leer-1280x800.png` | `scripts/ux-capture.mjs` | spielstaende leer, 1280x800 |
+| `docs/ux/after/03-spielstaende-leer-1366x768.png` | `scripts/ux-capture.mjs` | spielstaende leer, 1366x768 |
+| `docs/ux/after/03-spielstaende-leer-1920x1080.png` | `scripts/ux-capture.mjs` | spielstaende leer, 1920x1080 |
+| `docs/ux/after/03-spielstaende-leer-375x667.png` | `scripts/ux-capture.mjs` | spielstaende leer, 375x667 |
+| `docs/ux/after/03-spielstaende-leer-667x375.png` | `scripts/ux-capture.mjs` | spielstaende leer, 667x375 |
+| `docs/ux/after/04-karte-start-tutorial-1280x800.png` | `scripts/ux-capture.mjs` | karte start tutorial, 1280x800 |
+| `docs/ux/after/04-karte-start-tutorial-1366x768.png` | `scripts/ux-capture.mjs` | karte start tutorial, 1366x768 |
+| `docs/ux/after/04-karte-start-tutorial-1920x1080.png` | `scripts/ux-capture.mjs` | karte start tutorial, 1920x1080 |
+| `docs/ux/after/04-karte-start-tutorial-375x667.png` | `scripts/ux-capture.mjs` | karte start tutorial, 375x667 |
+| `docs/ux/after/04-karte-start-tutorial-667x375.png` | `scripts/ux-capture.mjs` | karte start tutorial, 667x375 |
+| `docs/ux/after/05-kartenansicht-1280x800.png` | `scripts/ux-capture.mjs` | kartenansicht, 1280x800 |
+| `docs/ux/after/05-kartenansicht-1366x768.png` | `scripts/ux-capture.mjs` | kartenansicht, 1366x768 |
+| `docs/ux/after/05-kartenansicht-1920x1080.png` | `scripts/ux-capture.mjs` | kartenansicht, 1920x1080 |
+| `docs/ux/after/05-kartenansicht-375x667.png` | `scripts/ux-capture.mjs` | kartenansicht, 375x667 |
+| `docs/ux/after/05-kartenansicht-667x375.png` | `scripts/ux-capture.mjs` | kartenansicht, 667x375 |
+| `docs/ux/after/06-kopfleiste-hud-1280x800.png` | `scripts/ux-capture.mjs` | kopfleiste hud, 1280x800 |
+| `docs/ux/after/06-kopfleiste-hud-1366x768.png` | `scripts/ux-capture.mjs` | kopfleiste hud, 1366x768 |
+| `docs/ux/after/06-kopfleiste-hud-1920x1080.png` | `scripts/ux-capture.mjs` | kopfleiste hud, 1920x1080 |
+| `docs/ux/after/06-kopfleiste-hud-375x667.png` | `scripts/ux-capture.mjs` | kopfleiste hud, 375x667 |
+| `docs/ux/after/06-kopfleiste-hud-667x375.png` | `scripts/ux-capture.mjs` | kopfleiste hud, 667x375 |
+| `docs/ux/after/07-karte-gezoomt-1280x800.png` | `scripts/ux-capture.mjs` | karte gezoomt, 1280x800 |
+| `docs/ux/after/07-karte-gezoomt-1366x768.png` | `scripts/ux-capture.mjs` | karte gezoomt, 1366x768 |
+| `docs/ux/after/07-karte-gezoomt-1920x1080.png` | `scripts/ux-capture.mjs` | karte gezoomt, 1920x1080 |
+| `docs/ux/after/07-karte-gezoomt-375x667.png` | `scripts/ux-capture.mjs` | karte gezoomt, 375x667 |
+| `docs/ux/after/07-karte-gezoomt-667x375.png` | `scripts/ux-capture.mjs` | karte gezoomt, 667x375 |
+| `docs/ux/after/08-kartenmodus-rohstoffe-1280x800.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe, 1280x800 |
+| `docs/ux/after/08-kartenmodus-rohstoffe-1366x768.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe, 1366x768 |
+| `docs/ux/after/08-kartenmodus-rohstoffe-1920x1080.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe, 1920x1080 |
+| `docs/ux/after/08-kartenmodus-rohstoffe-375x667.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe, 375x667 |
+| `docs/ux/after/08-kartenmodus-rohstoffe-667x375.png` | `scripts/ux-capture.mjs` | kartenmodus rohstoffe, 667x375 |
+| `docs/ux/after/09-provinz-auswahl-1280x800.png` | `scripts/ux-capture.mjs` | provinz auswahl, 1280x800 |
+| `docs/ux/after/09-provinz-auswahl-1366x768.png` | `scripts/ux-capture.mjs` | provinz auswahl, 1366x768 |
+| `docs/ux/after/09-provinz-auswahl-1920x1080.png` | `scripts/ux-capture.mjs` | provinz auswahl, 1920x1080 |
+| `docs/ux/after/09-provinz-auswahl-375x667.png` | `scripts/ux-capture.mjs` | provinz auswahl, 375x667 |
+| `docs/ux/after/09-provinz-auswahl-667x375.png` | `scripts/ux-capture.mjs` | provinz auswahl, 667x375 |
+| `docs/ux/after/10-hinweis-erklaerung-1280x800.png` | `scripts/ux-capture.mjs` | hinweis erklaerung, 1280x800 |
+| `docs/ux/after/10-hinweis-erklaerung-1366x768.png` | `scripts/ux-capture.mjs` | hinweis erklaerung, 1366x768 |
+| `docs/ux/after/10-hinweis-erklaerung-1920x1080.png` | `scripts/ux-capture.mjs` | hinweis erklaerung, 1920x1080 |
+| `docs/ux/after/10-hinweis-erklaerung-375x667.png` | `scripts/ux-capture.mjs` | hinweis erklaerung, 375x667 |
+| `docs/ux/after/10-hinweis-erklaerung-667x375.png` | `scripts/ux-capture.mjs` | hinweis erklaerung, 667x375 |
+| `docs/ux/after/11-rueckmeldung-bau-befohlen-1280x800.png` | `scripts/ux-capture.mjs` | rueckmeldung bau befohlen, 1280x800 |
+| `docs/ux/after/11-rueckmeldung-bau-befohlen-1366x768.png` | `scripts/ux-capture.mjs` | rueckmeldung bau befohlen, 1366x768 |
+| `docs/ux/after/11-rueckmeldung-bau-befohlen-1920x1080.png` | `scripts/ux-capture.mjs` | rueckmeldung bau befohlen, 1920x1080 |
+| `docs/ux/after/11-rueckmeldung-bau-befohlen-375x667.png` | `scripts/ux-capture.mjs` | rueckmeldung bau befohlen, 375x667 |
+| `docs/ux/after/11-rueckmeldung-bau-befohlen-667x375.png` | `scripts/ux-capture.mjs` | rueckmeldung bau befohlen, 667x375 |
+| `docs/ux/after/12-tempo-100-laeuft-1280x800.png` | `scripts/ux-capture.mjs` | tempo 100 laeuft, 1280x800 |
+| `docs/ux/after/12-tempo-100-laeuft-1366x768.png` | `scripts/ux-capture.mjs` | tempo 100 laeuft, 1366x768 |
+| `docs/ux/after/12-tempo-100-laeuft-1920x1080.png` | `scripts/ux-capture.mjs` | tempo 100 laeuft, 1920x1080 |
+| `docs/ux/after/12-tempo-100-laeuft-375x667.png` | `scripts/ux-capture.mjs` | tempo 100 laeuft, 375x667 |
+| `docs/ux/after/12-tempo-100-laeuft-667x375.png` | `scripts/ux-capture.mjs` | tempo 100 laeuft, 667x375 |
+| `docs/ux/after/13-pause-armee-ausgehoben-1280x800.png` | `scripts/ux-capture.mjs` | pause armee ausgehoben, 1280x800 |
+| `docs/ux/after/13-pause-armee-ausgehoben-1366x768.png` | `scripts/ux-capture.mjs` | pause armee ausgehoben, 1366x768 |
+| `docs/ux/after/13-pause-armee-ausgehoben-375x667.png` | `scripts/ux-capture.mjs` | pause armee ausgehoben, 375x667 |
+| `docs/ux/after/13-pause-armee-ausgehoben-667x375.png` | `scripts/ux-capture.mjs` | pause armee ausgehoben, 667x375 |
+| `docs/ux/after/14-armee-auswahl-1280x800.png` | `scripts/ux-capture.mjs` | armee auswahl, 1280x800 |
+| `docs/ux/after/14-armee-auswahl-1366x768.png` | `scripts/ux-capture.mjs` | armee auswahl, 1366x768 |
+| `docs/ux/after/14-armee-auswahl-375x667.png` | `scripts/ux-capture.mjs` | armee auswahl, 375x667 |
+| `docs/ux/after/14-armee-auswahl-667x375.png` | `scripts/ux-capture.mjs` | armee auswahl, 667x375 |
+| `docs/ux/after/15-beschuss-gesperrt-1280x800.png` | `scripts/ux-capture.mjs` | beschuss gesperrt, 1280x800 |
+| `docs/ux/after/15-beschuss-gesperrt-1366x768.png` | `scripts/ux-capture.mjs` | beschuss gesperrt, 1366x768 |
+| `docs/ux/after/15-beschuss-gesperrt-375x667.png` | `scripts/ux-capture.mjs` | beschuss gesperrt, 375x667 |
+| `docs/ux/after/15-beschuss-gesperrt-667x375.png` | `scripts/ux-capture.mjs` | beschuss gesperrt, 667x375 |
+| `docs/ux/after/16-marsch-zielwahl-1280x800.png` | `scripts/ux-capture.mjs` | marsch zielwahl, 1280x800 |
+| `docs/ux/after/16-marsch-zielwahl-1366x768.png` | `scripts/ux-capture.mjs` | marsch zielwahl, 1366x768 |
+| `docs/ux/after/16-marsch-zielwahl-375x667.png` | `scripts/ux-capture.mjs` | marsch zielwahl, 375x667 |
+| `docs/ux/after/16-marsch-zielwahl-667x375.png` | `scripts/ux-capture.mjs` | marsch zielwahl, 667x375 |
+| `docs/ux/after/17-fehler-ungueltiges-ziel-1280x800.png` | `scripts/ux-capture.mjs` | fehler ungueltiges ziel, 1280x800 |
+| `docs/ux/after/17-fehler-ungueltiges-ziel-1366x768.png` | `scripts/ux-capture.mjs` | fehler ungueltiges ziel, 1366x768 |
+| `docs/ux/after/17-fehler-ungueltiges-ziel-375x667.png` | `scripts/ux-capture.mjs` | fehler ungueltiges ziel, 375x667 |
+| `docs/ux/after/17-fehler-ungueltiges-ziel-667x375.png` | `scripts/ux-capture.mjs` | fehler ungueltiges ziel, 667x375 |
+| `docs/ux/after/18-marsch-ziel-gewaehlt-1280x800.png` | `scripts/ux-capture.mjs` | marsch ziel gewaehlt, 1280x800 |
+| `docs/ux/after/18-marsch-ziel-gewaehlt-1366x768.png` | `scripts/ux-capture.mjs` | marsch ziel gewaehlt, 1366x768 |
+| `docs/ux/after/18-marsch-ziel-gewaehlt-375x667.png` | `scripts/ux-capture.mjs` | marsch ziel gewaehlt, 375x667 |
+| `docs/ux/after/18-marsch-ziel-gewaehlt-667x375.png` | `scripts/ux-capture.mjs` | marsch ziel gewaehlt, 667x375 |
+| `docs/ux/after/19-marsch-befohlen-1280x800.png` | `scripts/ux-capture.mjs` | marsch befohlen, 1280x800 |
+| `docs/ux/after/19-marsch-befohlen-1366x768.png` | `scripts/ux-capture.mjs` | marsch befohlen, 1366x768 |
+| `docs/ux/after/19-marsch-befohlen-375x667.png` | `scripts/ux-capture.mjs` | marsch befohlen, 375x667 |
+| `docs/ux/after/19-marsch-befohlen-667x375.png` | `scripts/ux-capture.mjs` | marsch befohlen, 667x375 |
+| `docs/ux/after/20-diplomatie-1280x800.png` | `scripts/ux-capture.mjs` | diplomatie, 1280x800 |
+| `docs/ux/after/20-diplomatie-1366x768.png` | `scripts/ux-capture.mjs` | diplomatie, 1366x768 |
+| `docs/ux/after/20-diplomatie-375x667.png` | `scripts/ux-capture.mjs` | diplomatie, 375x667 |
+| `docs/ux/after/20-diplomatie-667x375.png` | `scripts/ux-capture.mjs` | diplomatie, 667x375 |
+| `docs/ux/after/21-krieg-erklaert-ohne-rueckfrage-1280x800.png` | `scripts/ux-capture.mjs` | krieg erklaert ohne rueckfrage, 1280x800 |
+| `docs/ux/after/21-krieg-erklaert-ohne-rueckfrage-1366x768.png` | `scripts/ux-capture.mjs` | krieg erklaert ohne rueckfrage, 1366x768 |
+| `docs/ux/after/21-krieg-erklaert-ohne-rueckfrage-375x667.png` | `scripts/ux-capture.mjs` | krieg erklaert ohne rueckfrage, 375x667 |
+| `docs/ux/after/21-krieg-erklaert-ohne-rueckfrage-667x375.png` | `scripts/ux-capture.mjs` | krieg erklaert ohne rueckfrage, 667x375 |
+| `docs/ux/after/22-kampf-gefecht-1280x800.png` | `scripts/ux-capture.mjs` | kampf gefecht, 1280x800 |
+| `docs/ux/after/22-kampf-gefecht-1366x768.png` | `scripts/ux-capture.mjs` | kampf gefecht, 1366x768 |
+| `docs/ux/after/22-kampf-gefecht-375x667.png` | `scripts/ux-capture.mjs` | kampf gefecht, 375x667 |
+| `docs/ux/after/22-kampf-gefecht-667x375.png` | `scripts/ux-capture.mjs` | kampf gefecht, 667x375 |
+| `docs/ux/after/23-protokoll-kaempfe-1280x800.png` | `scripts/ux-capture.mjs` | protokoll kaempfe, 1280x800 |
+| `docs/ux/after/23-protokoll-kaempfe-1366x768.png` | `scripts/ux-capture.mjs` | protokoll kaempfe, 1366x768 |
+| `docs/ux/after/23-protokoll-kaempfe-375x667.png` | `scripts/ux-capture.mjs` | protokoll kaempfe, 375x667 |
+| `docs/ux/after/23-protokoll-kaempfe-667x375.png` | `scripts/ux-capture.mjs` | protokoll kaempfe, 667x375 |
+| `docs/ux/after/24-meldungen-depesche-1280x800.png` | `scripts/ux-capture.mjs` | meldungen depesche, 1280x800 |
+| `docs/ux/after/24-meldungen-depesche-1366x768.png` | `scripts/ux-capture.mjs` | meldungen depesche, 1366x768 |
+| `docs/ux/after/24-meldungen-depesche-375x667.png` | `scripts/ux-capture.mjs` | meldungen depesche, 375x667 |
+| `docs/ux/after/24-meldungen-depesche-667x375.png` | `scripts/ux-capture.mjs` | meldungen depesche, 667x375 |
+| `docs/ux/after/25-panel-markt-1280x800.png` | `scripts/ux-capture.mjs` | panel markt, 1280x800 |
+| `docs/ux/after/25-panel-markt-1366x768.png` | `scripts/ux-capture.mjs` | panel markt, 1366x768 |
+| `docs/ux/after/25-panel-markt-375x667.png` | `scripts/ux-capture.mjs` | panel markt, 375x667 |
+| `docs/ux/after/25-panel-markt-667x375.png` | `scripts/ux-capture.mjs` | panel markt, 667x375 |
+| `docs/ux/after/26-panel-spionage-1280x800.png` | `scripts/ux-capture.mjs` | panel spionage, 1280x800 |
+| `docs/ux/after/26-panel-spionage-1366x768.png` | `scripts/ux-capture.mjs` | panel spionage, 1366x768 |
+| `docs/ux/after/26-panel-spionage-375x667.png` | `scripts/ux-capture.mjs` | panel spionage, 375x667 |
+| `docs/ux/after/26-panel-spionage-667x375.png` | `scripts/ux-capture.mjs` | panel spionage, 667x375 |
+| `docs/ux/after/27-panel-rangliste-sieg-1280x800.png` | `scripts/ux-capture.mjs` | panel rangliste sieg, 1280x800 |
+| `docs/ux/after/27-panel-rangliste-sieg-1366x768.png` | `scripts/ux-capture.mjs` | panel rangliste sieg, 1366x768 |
+| `docs/ux/after/27-panel-rangliste-sieg-375x667.png` | `scripts/ux-capture.mjs` | panel rangliste sieg, 375x667 |
+| `docs/ux/after/27-panel-rangliste-sieg-667x375.png` | `scripts/ux-capture.mjs` | panel rangliste sieg, 667x375 |
+| `docs/ux/after/28-kartenmodus-beziehungen-1280x800.png` | `scripts/ux-capture.mjs` | kartenmodus beziehungen, 1280x800 |
+| `docs/ux/after/28-kartenmodus-beziehungen-1366x768.png` | `scripts/ux-capture.mjs` | kartenmodus beziehungen, 1366x768 |
+| `docs/ux/after/28-kartenmodus-beziehungen-375x667.png` | `scripts/ux-capture.mjs` | kartenmodus beziehungen, 375x667 |
+| `docs/ux/after/28-kartenmodus-beziehungen-667x375.png` | `scripts/ux-capture.mjs` | kartenmodus beziehungen, 667x375 |
+| `docs/ux/after/29-menue-1280x800.png` | `scripts/ux-capture.mjs` | menue, 1280x800 |
+| `docs/ux/after/29-menue-1366x768.png` | `scripts/ux-capture.mjs` | menue, 1366x768 |
+| `docs/ux/after/29-menue-375x667.png` | `scripts/ux-capture.mjs` | menue, 375x667 |
+| `docs/ux/after/29-menue-667x375.png` | `scripts/ux-capture.mjs` | menue, 667x375 |
+| `docs/ux/after/30-einstellungen-1280x800.png` | `scripts/ux-capture.mjs` | einstellungen, 1280x800 |
+| `docs/ux/after/30-einstellungen-1366x768.png` | `scripts/ux-capture.mjs` | einstellungen, 1366x768 |
+| `docs/ux/after/30-einstellungen-375x667.png` | `scripts/ux-capture.mjs` | einstellungen, 375x667 |
+| `docs/ux/after/30-einstellungen-667x375.png` | `scripts/ux-capture.mjs` | einstellungen, 667x375 |
+| `docs/ux/after/31-spielstand-gespeichert-1280x800.png` | `scripts/ux-capture.mjs` | spielstand gespeichert, 1280x800 |
+| `docs/ux/after/31-spielstand-gespeichert-1366x768.png` | `scripts/ux-capture.mjs` | spielstand gespeichert, 1366x768 |
+| `docs/ux/after/31-spielstand-gespeichert-375x667.png` | `scripts/ux-capture.mjs` | spielstand gespeichert, 375x667 |
+| `docs/ux/after/31-spielstand-gespeichert-667x375.png` | `scripts/ux-capture.mjs` | spielstand gespeichert, 667x375 |
+| `docs/ux/after/32-fehler-spielstand-beschaedigt-1280x800.png` | `scripts/ux-capture.mjs` | fehler spielstand beschaedigt, 1280x800 |
+| `docs/ux/after/32-fehler-spielstand-beschaedigt-1366x768.png` | `scripts/ux-capture.mjs` | fehler spielstand beschaedigt, 1366x768 |
+| `docs/ux/after/32-fehler-spielstand-beschaedigt-375x667.png` | `scripts/ux-capture.mjs` | fehler spielstand beschaedigt, 375x667 |
+| `docs/ux/after/32-fehler-spielstand-beschaedigt-667x375.png` | `scripts/ux-capture.mjs` | fehler spielstand beschaedigt, 667x375 |
+| `docs/ux/after/33-spielende-sieg-1280x800.png` | `scripts/ux-capture.mjs` | spielende sieg, 1280x800 |
+| `docs/ux/after/33-spielende-sieg-1366x768.png` | `scripts/ux-capture.mjs` | spielende sieg, 1366x768 |
+| `docs/ux/after/33-spielende-sieg-375x667.png` | `scripts/ux-capture.mjs` | spielende sieg, 375x667 |
+| `docs/ux/after/33-spielende-sieg-667x375.png` | `scripts/ux-capture.mjs` | spielende sieg, 667x375 |
+| `docs/ux/after/34-spielende-niederlage-1280x800.png` | `scripts/ux-capture.mjs` | spielende niederlage, 1280x800 |
+| `docs/ux/after/34-spielende-niederlage-1366x768.png` | `scripts/ux-capture.mjs` | spielende niederlage, 1366x768 |
+| `docs/ux/after/34-spielende-niederlage-375x667.png` | `scripts/ux-capture.mjs` | spielende niederlage, 375x667 |
+| `docs/ux/after/34-spielende-niederlage-667x375.png` | `scripts/ux-capture.mjs` | spielende niederlage, 667x375 |
+| `docs/ux/after/mp-gast-bedingungen-1280x800.png` | `scripts/ux-capture.mjs` | mp gast bedingungen, 1280x800 |
+| `docs/ux/after/mp-gast-bedingungen-375x667.png` | `scripts/ux-capture.mjs` | mp gast bedingungen, 375x667 |
+| `docs/ux/after/mp-gast-name-1280x800.png` | `scripts/ux-capture.mjs` | mp gast name, 1280x800 |
+| `docs/ux/after/mp-gast-name-375x667.png` | `scripts/ux-capture.mjs` | mp gast name, 375x667 |
+| `docs/ux/after/mp-gastgeber-anlegen-1280x800.png` | `scripts/ux-capture.mjs` | mp gastgeber anlegen, 1280x800 |
+| `docs/ux/after/mp-gastgeber-anlegen-375x667.png` | `scripts/ux-capture.mjs` | mp gastgeber anlegen, 375x667 |
+| `docs/ux/after/mp-kopfleiste-feste-rate-1280x800.png` | `scripts/ux-capture.mjs` | mp kopfleiste feste rate, 1280x800 |
+| `docs/ux/after/mp-kopfleiste-feste-rate-375x667.png` | `scripts/ux-capture.mjs` | mp kopfleiste feste rate, 375x667 |
+| `docs/ux/after/mp-lobby-gast-da-1280x800.png` | `scripts/ux-capture.mjs` | mp lobby gast da, 1280x800 |
+| `docs/ux/after/mp-lobby-gast-da-375x667.png` | `scripts/ux-capture.mjs` | mp lobby gast da, 375x667 |
+| `docs/ux/after/mp-lobby-gastgeber-1280x800.png` | `scripts/ux-capture.mjs` | mp lobby gastgeber, 1280x800 |
+| `docs/ux/after/mp-lobby-gastgeber-375x667.png` | `scripts/ux-capture.mjs` | mp lobby gastgeber, 375x667 |
+| `docs/ux/after/mp-vorhang-gesperrt-1280x800.png` | `scripts/ux-capture.mjs` | mp vorhang gesperrt, 1280x800 |
+| `docs/ux/after/mp-vorhang-gesperrt-375x667.png` | `scripts/ux-capture.mjs` | mp vorhang gesperrt, 375x667 |
+| `docs/ux/after/x-krieg-fragt-nach-1280x800.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1280x800 |
+| `docs/ux/after/x-krieg-fragt-nach-1366x768.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 1366x768 |
+| `docs/ux/after/x-krieg-fragt-nach-375x667.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 375x667 |
+| `docs/ux/after/x-krieg-fragt-nach-667x375.png` | `scripts/ux-capture.mjs` | krieg fragt nach, 667x375 |
