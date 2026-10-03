@@ -4045,7 +4045,7 @@ tasks:
   - id: T-M44-20
     milestone: M44
     title: "(bedingt) Tempo 100 ohne Ruckler am Buendel"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-02]
     design: [D-37]

@@ -851,3 +851,4 @@ die Prüfkette je Block.
 | T-M42-17 | 2026-10-03 | **Verbände über dem Deckel teilen**, auf `d9fecf3` mit gemessen: `m17-integration` 27/27 (R-AI-10/AK3), `ai-integration` 29/29, Turnier 84/61/63 %, neun Vollpartien 9/9. Status `done`. | grün |
 | T-M42-18 | 2026-10-03 | **Gemischte Armeen mit Reichweiteneinheit zählen** (nur Messzählung, `m42-zaehlung`), Test `m42-zaehlung-gemischt` grün; keine Auswirkung auf die Suiten. Status `done`. | grün |
 | T-M42-04 (Vermerk) | 2026-10-03 | **Nicht gemessen, bleibt zurückgestellt: Voraussetzung T-M42-13 nicht gegeben** (Orchestrator-Entscheid, Bahn K). | zurückgestellt |
+| T-M44-20 | 2026-10-03 | **B-18 am Bündel widerlegt, gemessen 0.** `ux-capture.mjs --check --bundle --only R-UX-02/AK5` auf ruhiger Maschine (Last 8 %), Stand `766df92`, 1920x1080, Tempo 100: 0 lange Aufgaben, 0 Bilder > 50 ms (Grenze <= 3 bzw. keine > 60 ms). Keine Codeänderung. |
