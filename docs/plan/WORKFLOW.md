@@ -16,6 +16,9 @@
 > 2 offen (durch Tests gedeckt), Abgleich: alle Maßnahmen erfüllt; T-M44-20 am Bündel 0 Bilder > 50 ms.
 > Noahs Entscheide E1–E5 in `DECISIONS.md` (2026-10-03). Artillerie verbraucht weiter Öl (E1).
 >
+> **Nächste Version: `docs/plan/PLAN-V3.md`** (Uhr-Abschluss an der exe, dann Leistung M45 und UX V3 M46).
+> Ein Orchestrator braucht nur diese Datei; sie beginnt mit der Uhr-Messung an der exe (Schritt 0).
+>
 > **Was jetzt auf Noah wartet:** Freigabe der
 > Liste `docs/plan/LOESCHVERMERKE.md`, **AK-9**, Befund M42-09-a, AK-8 neu messen (49 Dateien am
 > Erzeugnis geändert seit `7a6aa47`).
