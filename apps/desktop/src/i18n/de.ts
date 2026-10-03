@@ -74,6 +74,12 @@ export const de = {
     market: 'Markt',
   },
 
+  /** Der Kopf jedes Panels (T-M44-12). */
+  panel: {
+    back: 'Zurück',
+    close: 'Schließen',
+  },
+
   economy: {
     title: 'Wirtschaft',
     resource: 'Rohstoff',
@@ -1160,6 +1166,8 @@ export const de = {
     // Kaserne → sie, der Hafen → ihn, das Jagdflugzeug → es.
     unlockBuilding: 'Neu ab heute: {{building}}. Sie können {{pronoun}} jetzt bauen.',
     unlockUnit: 'Neu ab heute: {{unit}}. Sie können {{pronoun}} jetzt ausheben.',
+    // Mehrere Freischaltungen am selben Tag in einer Zeile (T-M44-12).
+    unlockMany: 'Neu ab heute: {{things}}.',
     // Die Ankündigung zwei Spieltage vorher (T-M41-03): was kommt, und was dafür fehlt.
     // Leise wie die Freischaltung — keine Alarmfarbe, kein Sprung auf die Karte.
     upcoming: 'In zwei Tagen: {{thing}}.',

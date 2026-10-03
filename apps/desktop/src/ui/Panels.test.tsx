@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { TEST_RULES } from '@worldwar/testkit'
 import { defenceMultiplier, type Province, type PublicView, type Terrain, type VisibleArmy, type VisibleProvince } from '@worldwar/core'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOKENS } from './tokens.ts'
+import { t } from '../i18n/text.ts'
 import {
   ActionGroup,
   ArmyPanel,
@@ -2374,5 +2375,77 @@ describe('R-SPY-03 Die aufgeklaerte Provinz sagt, bis wann', () => {
     )
 
     expect(screen.queryByText(/Aufgeklärt:/)).toBeNull()
+  })
+})
+
+/**
+ * Die Seitenleiste wird kuerzer (T-M44-12, R-UX-02): die Wirtschaft klappt ein, jedes Panel
+ * hat einen Kopf mit Zurueck und Schliessen. Ein Armeepanel, dessen Kopf unter der
+ * Wirtschaftstabelle des vorigen Panels verschwand, war der Befund (1280x800, vorher Kopf
+ * ausserhalb des Bildes).
+ */
+describe('R-UX-02 T-M44-12 Wirtschaft einklappbar, Panelkopf mit Zurueck', () => {
+  const economy = {
+    self: {
+      shortages: [],
+      economy: { food: { stock: 1_000_000, production: 349, consumption: 0, balance: 349, committed: 0 } },
+    },
+  } as unknown as PublicView
+
+  const store = new Map<string, string>()
+  beforeEach(() => {
+    store.clear()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+    })
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('steht als details mit summary, die Tabelle darin, Vorgabe eingeklappt', () => {
+    const { container } = render(<EconomyPanel view={economy} />)
+    const details = container.querySelector('section.panel > details')
+    expect(details, 'Wirtschaft ist kein details').toBeTruthy()
+    expect(details!.querySelector('summary')).toBeTruthy()
+    expect(details!.querySelector('table')).toBeTruthy()
+    expect((details as HTMLDetailsElement).open).toBe(false)
+    // Die Region mit dem Namen bleibt: App.test sucht sie.
+    expect(container.querySelector('section.panel')!.getAttribute('aria-label')).toBe('Wirtschaft')
+  })
+
+  it('merkt sich den Zustand ueber ein neues Zeichnen', () => {
+    const first = render(<EconomyPanel view={economy} />)
+    const details = first.container.querySelector('details') as HTMLDetailsElement
+    details.open = true
+    fireEvent(details, new Event('toggle'))
+    first.unmount()
+
+    const second = render(<EconomyPanel view={economy} />)
+    expect((second.container.querySelector('details') as HTMLDetailsElement).open).toBe(true)
+  })
+
+  it('der Armeepanel-Kopf hat Zurueck und Schliessen und ruft sie auf', () => {
+    const onBack = vi.fn()
+    const onClose = vi.fn()
+    render(
+      <ArmyPanel
+        army={{ id: 'a1', owner: 'p1', provinceId: 'X', strength: 1000 } as never}
+        name="Erste Armee"
+        actions={[]}
+        ticksPerDay={24}
+        currentTick={0}
+        onBack={onBack}
+        onClose={onClose}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: t('panel.back') }))
+    fireEvent.click(screen.getByRole('button', { name: t('panel.close') }))
+    expect(onBack).toHaveBeenCalledOnce()
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('ohne onBack steht kein Zurueck-Knopf', () => {
+    render(<ArmyPanel army={{ id: 'a1', owner: 'p1', provinceId: 'X', strength: 1000 } as never} actions={[]} ticksPerDay={24} currentTick={0} />)
+    expect(screen.queryByRole('button', { name: t('panel.back') })).toBeNull()
   })
 })

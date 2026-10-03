@@ -669,6 +669,17 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     await page.waitForTimeout(300)
     await shot('armee-auswahl')
     data.layout.armyPanel = await layout(page)
+    // T-M44-12: Name und „Marschieren“ stehen im Armeepanel ohne Rollen im Bild (vorher Kopf ausserhalb).
+    data.probes.armyHead = await page.evaluate(() => {
+      const panel = [...document.querySelectorAll('aside.side section.panel')].find((el) => el.querySelector('.panel__head'))
+      const inView = (el) => {
+        if (!el) return false
+        const r = el.getBoundingClientRect()
+        return r.top >= 0 && r.bottom <= innerHeight && r.height > 0
+      }
+      const march = [...document.querySelectorAll('aside.side button')].find((b) => b.textContent?.includes('Marschieren'))
+      return { nameVisible: inView(panel?.querySelector('h2')), marchVisible: inView(march), sideScrollTop: document.querySelector('aside.side')?.scrollTop ?? null }
+    })
     await axe(page, 'armyPanel', data.axe)
     data.touch.armyPanel = await touchTargets(page)
   })

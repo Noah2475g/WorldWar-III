@@ -545,6 +545,44 @@ body {
   font-weight: 600;
 }
 
+.panel__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.panel__bar h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Zurueck und Schliessen (T-M44-12): leise Knoepfe im Kopf, mit der Mindestflaeche, die
+   touch.css im Touch-Betrieb anhebt. */
+.panel__back,
+.panel__close {
+  flex: none;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 var(--sp-sm);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Die Wirtschaft als aufklappbare Zeile (T-M44-12): der Kopf ist die Zusammenfassung. */
+.panel--economy > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.panel--economy > summary h2 {
+  display: inline;
+}
+
 .panel__sub {
   margin: 2px 0 0;
   font-size: 11px;

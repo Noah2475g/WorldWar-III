@@ -1778,6 +1778,24 @@ describe('R-UI-14 Die Meldungen erreichen den Spieler', () => {
       expect(armeePanel.textContent).toContain(army.name)
     })
 
+    it('T-M44-12 Zurueck im Armeepanel fuehrt zur Provinz der Armee', async () => {
+      const { state, p1, hostProvinceId, hostId } = grenzfall()
+      placeArmy(state, { owner: p1, at: hostProvinceId, units: [{ unitKey: 'infantry', hpTotal: 5_000 }] })
+      const key = relationKey(p1, hostId)
+      state.diplomacy.relations[key]!.state = 'truce'
+      state.diplomacy.relations[key]!.sinceTick = state.tick
+
+      const meldungen = await zeige(state)
+      fireEvent.click(await within(meldungen).findByRole('button', { name: /^Räumfrist: / }))
+      const armeePanel = await screen.findByRole('region', { name: t('army.title') })
+
+      fireEvent.click(within(armeePanel).getByRole('button', { name: t('panel.back') }))
+
+      const provinzPanel = await screen.findByRole('region', { name: state.provinces[hostProvinceId]!.name })
+      expect(provinzPanel).toBeTruthy()
+      expect(screen.queryByRole('region', { name: t('army.title') })).toBeNull()
+    })
+
     it('AP2 ohne versetzte Armee steht keine Raeumfrist-Meldung', async () => {
       const { state, p1, hostId } = grenzfall()
       const key = relationKey(p1, hostId)

@@ -2287,6 +2287,7 @@ export function App(props: AppProps) {
         {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}
         {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
         <Sidebar
+          scrollKey={`${ui.panel}:${ui.selectedProvince}:${ui.selectedArmy}`}
           picker={
               <ProvincePicker
                 own={ownProvinces}
@@ -2315,6 +2316,7 @@ export function App(props: AppProps) {
             <>
               {ui.panel === 'province' && (
                 <ProvincePanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   province={selected}
                   ownerName={selected?.owner ? nameOf(selected.owner) : null}
                   ownerColor={selected?.owner ? colorOf(selected.owner) : null}
@@ -2334,6 +2336,16 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'army' && (
                 <ArmyPanel
+                  // Zurueck fuehrt zur Provinz der Armee (T-M44-12); die Armee-Auswahl endet damit.
+                  onBack={
+                    selectedArmy
+                      ? () => {
+                          setTargeting(null)
+                          dispatch({ type: 'selectProvince', id: selectedArmy.provinceId })
+                        }
+                      : undefined
+                  }
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   army={selectedArmy}
                   name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
                   units={armyUnitItems}
@@ -2347,6 +2359,7 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'diplomacy' && (
                 <DiplomacyPanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   view={view}
                   nameOf={nameOf}
                   reputationMax={props.rules.constants.reputationBaseline}
@@ -2371,6 +2384,7 @@ export function App(props: AppProps) {
               )}
               {ui.panel === 'espionage' && (
                 <EspionagePanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   rows={spyRows}
                   summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
                   moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
@@ -2381,6 +2395,7 @@ export function App(props: AppProps) {
               {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
               {ui.panel === 'market' && (
                 <MarketPanel
+                  onClose={() => dispatch({ type: 'closePanel' })}
                   resources={RESOURCE_KEYS}
                   stock={view.self.resources}
                   prices={prices}
