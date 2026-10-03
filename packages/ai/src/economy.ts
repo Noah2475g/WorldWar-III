@@ -2,6 +2,7 @@ import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/c
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyArmyUpkeep, dailyMoneyLedger, dailyOilYield, unitsWithinDailyBalance } from './finance'
+import { ledgerAfter } from './provinceValue'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -365,13 +366,14 @@ export function nextUnitFor(context: AiContext, province: { buildings?: Record<s
  * Einheit? Die Bedingung der Untergrenze aus D32.8 - derselbe Massstab wie `canAfford` fuer Bauten.
  */
 function traegtNachRuecklage(
-  context: AiContext,
+  bestand: Record<ResourceKey, number>,
   cost: Partial<Record<ResourceKey, number>>,
   vorbehalt: Partial<Record<ResourceKey, Fixed>> | null,
 ): boolean {
   for (const [key, amount] of Object.entries(cost)) {
     if (!amount) continue
-    const stock = context.view.self.resources[key as ResourceKey]
+    // Der Bestand nach den Befehlen desselben Zugs (T-M42-04, `ledgerAfter`), nicht der Sichtbestand.
+    const stock = Math.max(0, bestand[key as ResourceKey])
     const reserve = Math.trunc((stock * RESERVE_PERMILLE) / 1000)
     if (stock - reserve - (vorbehalt?.[key as ResourceKey] ?? 0) < amount) return false
   }
@@ -379,9 +381,23 @@ function traegtNachRuecklage(
 }
 
 /** Raises troops where possible, sized to what the treasury can carry. */
-export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
+// LOESCHVERMERK (Review): T-M42-04 (D32.3) erweitert die Signatur um `pending`. Alte Zeile:
+// export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
+export function recruitCommands(context: AiContext, explanations: Explanation[], pending: readonly Command[] = []): Command[] {
   const commands: Command[] = []
   const playerId = context.view.playerId
+
+  // R-AI-11/AK1, D32.3 (T-M42-04, Befund M17-S12, Kritik M-6): gerechnet wird mit dem Bestand, der
+  // nach den eigenen Befehlen desselben Zugs bleibt - Bau, Handelsangebot und -annahme, Anwerben
+  // eines Spions, gebende Seite eines Boersentauschs (`ledgerAfter`). `decide.ts` reicht alle
+  // Befehle davor durch, auch die des Strategietakts im selben Tick. Bis dahin las die Aushebung den
+  // Sichtbestand und gab Geld aus, das Spionage und Bau im selben Tick schon ausgegeben hatten; der
+  // Kern lehnte den Rest mit INSUFFICIENT_RESOURCES ab. Seit der Untergrenze (T-M42-07), die bis an
+  // die Ruecklage heran aushebt, trifft das vor allem die Artillerie (Stufe AB: China 7-mal
+  // RECRUIT artillery INSUFFICIENT_RESOURCES). Ohne `pending` ist das der Sichtbestand selbst. Der
+  // Sold eines eben angeworbenen Spions zaehlt erst ab morgen in der Tagesbilanz unten.
+  const bestand = ledgerAfter(context, pending)
+  const gebucht = bestand.money !== context.view.self.resources.money
 
   /**
    * **Die vielseitigste Provinz zuerst** (T-M15-08).
@@ -483,7 +499,9 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
       let ohneVorbehalt = 15
       for (const [key, amount] of Object.entries(regel.cost)) {
         if (!amount) continue
-        const stock = context.view.self.resources[key as ResourceKey]
+        // LOESCHVERMERK (Review): T-M42-04 - alte Zeile:
+        // const stock = context.view.self.resources[key as ResourceKey]
+        const stock = Math.max(0, bestand[key as ResourceKey])
         const frei = Math.max(0, stock - (vorbehalt?.[key as ResourceKey] ?? 0))
         const budget = Math.trunc((frei * context.difficulty.recruitShare) / 1000)
         moeglich = Math.min(moeglich, Math.trunc(budget / amount))
@@ -500,7 +518,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
       // Bestand nach Vorbehalt **und** Ruecklage traegt die Kosten. Nicht fuer die Infanterie und
       // nicht hinter ihr: deren Menge regelt weiter der Anteil.
       const nurPanzerDavor = davor.length > 0 && davor.every((key) => key === 'tank')
-      if (moeglich < 1 && nurPanzerDavor && regel.requiresBuilding === 'factory' && traegtNachRuecklage(context, regel.cost, vorbehalt)) {
+      if (moeglich < 1 && nurPanzerDavor && regel.requiresBuilding === 'factory' && traegtNachRuecklage(bestand, regel.cost, vorbehalt)) {
         moeglich = 1
         untergrenze = true
       } else {
@@ -553,7 +571,8 @@ export function recruitCommands(context: AiContext, explanations: Explanation[])
           : 'Streitkräfte aufbauen') +
         (vorbehaltBegrenzt ? '; Vorbehalt für die erste Fabrik' : '') +
         (untergrenze ? '; Untergrenze: eine Einheit aus dem Bestand über der Rücklage' : '') +
-        (oelSperrte ? `; Öl-Tagesbilanz trägt keine Einheit mit Ölunterhalt (Spielraum ${oelSpielraum} je Tag)` : ''),
+        (oelSperrte ? `; Öl-Tagesbilanz trägt keine Einheit mit Ölunterhalt (Spielraum ${oelSpielraum} je Tag)` : '') +
+        (gebucht ? `; gerechnet mit ${bestand.money} Geld nach Bau, Handel und Spionage dieses Zugs` : ''),
       score: 500,
       alternative: { action: 'nichts rekrutieren', score: 200 },
     })

@@ -149,7 +149,11 @@ function capitalIdFrom(earlier: readonly Command[], view: PublicView, me: Player
  * Zusammenfuehrung mit der Diplomatiebahn (2026-09-25) auch der Handel, der im Strategietakt vor
  * der Spionage laeuft — ein Angebot legt `give` sofort in Treuhand, eine Annahme zahlt `want`
  * sofort. Dieselben drei Befehle zieht `ledgerAfter` (`provinceValue.ts`) fuer den Handel ab;
- * `RECRUIT_SPY` braucht dort keinen Abzug, weil die Spionage als letzte plant.
+ * seit T-M42-04 bucht es zusaetzlich `RECRUIT_SPY` und `TRADE` — fuer die Aushebung im
+ * Operativtakt, die nach der Spionage rechnet. Hier braucht `RECRUIT_SPY` keinen Abzug, weil die
+ * Spionage im Strategietakt als letzte plant.
+ * LOESCHVERMERK (Review): T-M42-04 ersetzt den Satz "`RECRUIT_SPY` braucht dort keinen Abzug, weil
+ * die Spionage als letzte plant."
  */
 function moneyCommittedBy(earlier: readonly Command[], context: AiContext, known: Map<ProvinceId, ViewProvince>): Fixed {
   const me = context.view.playerId
