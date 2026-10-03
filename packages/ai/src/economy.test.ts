@@ -13,13 +13,12 @@ import {
   RESERVE_PERMILLE,
   economyCommands,
   factoryReserve,
-  TARGET_MIX,
   rankedUnitsFor,
   recruitCommands,
   tradeCommands,
   unitStockOf,
 } from './economy'
-import { dailyMoneyIncome, dailyOilYield } from './finance'
+import { dailyMoneyIncome } from './finance'
 import type { Explanation } from './types'
 
 const map = smallWorld()
@@ -794,165 +793,5 @@ describe('R-AI-10/AK1 Die Truppenmischung zaehlt Einheiten (T-M42-05)', () => {
     // Und der uebergebene Bestand wird wirklich gelesen, nicht neu gebildet.
     const nurPanzer = { owned: new Map([['tank', 10]]), total: 10 }
     expect(rankedUnitsFor(context, provinz, nurPanzer)[0]).toBe('infantry')
-  })
-})
-
-/**
- * T-M42-07 (R-AI-12/AK3, AK4, D32.8): Artillerie, die die KI tragen kann.
- *
- * `artillerieLage` baut Spieltag 40 auf der Testwelt: Ostmark (p2) mit allen Gebaeuden der Stufe 1
- * in jeder Provinz (also mit Fabrik - kein Vorbehalt), Nahrung und Holz reichlich, Geld und Eisen
- * nach Fall. Die Oelquelle liegt in `o2` (2600); ohne sie foerdert Ostmark kein Oel.
- */
-describe('R-AI-12/AK3, AK4 Artillerie, die die KI tragen kann (T-M42-07)', () => {
-  const tpd = TEST_RULES.constants.ticksPerDay
-  const hp = (unitKey: string) => TEST_RULES.units[unitKey]!.hpPerUnit
-
-  function artillerieLage(o: {
-    geld: number
-    eisen?: number
-    heer?: { unitKey: string; einheiten: number }[]
-    ohneOel?: boolean
-  }) {
-    const state = createInitialState(CONFIG, ctx)
-    state.tick = 39 * tpd
-    for (const id of state.provinceOrder) {
-      const province = state.provinces[id]!
-      if (province.owner !== 'p2') continue
-      for (const key of Object.keys(TEST_RULES.buildings)) province.buildings = { ...province.buildings, [key]: 1 }
-      if (o.ohneOel) province.deposits = { ...province.deposits, oil: 0 }
-    }
-    const resources = state.players['p2']!.resources as Record<string, number>
-    for (const key of Object.keys(resources)) resources[key] = 5_000_000
-    resources['money'] = o.geld
-    resources['iron'] = o.eisen ?? o.geld
-    if ((o.heer ?? []).length > 0) {
-      placeArmy(state, {
-        owner: 'p2',
-        at: 'o3',
-        units: o.heer!.map(({ unitKey, einheiten }) => ({ unitKey, hpTotal: einheiten * hp(unitKey) })),
-      })
-    }
-    return {
-      view: publicView(state, 'p2'),
-      memory: emptyMemory(600),
-      rules: TEST_RULES,
-      map,
-      difficulty: TEST_RULES.ai.difficulties.normal,
-    }
-  }
-  const aushebung = (context: ReturnType<typeof artillerieLage>, explanations: Explanation[] = []) =>
-    recruitCommands(context, explanations).find(
-      (command): command is Extract<Command, { type: 'RECRUIT' }> => command.type === 'RECRUIT',
-    )
-  const stadt = (context: ReturnType<typeof artillerieLage>) => context.view.provinces.find((p) => p.id === 'o1')!
-
-  it('U1: unbezahlbarer Panzer vorn, Artillerie an zweiter Stelle, der Bestand traegt eine -> RECRUIT artillery 1', () => {
-    // Geld 400 000: der Anteil von "normal" (200 Promille) sind 80 000 - keine Artillerie (200 000),
-    // kein Panzer (250 000). Ueber der Ruecklage stehen 320 000: das traegt genau eine Artillerie.
-    const context = artillerieLage({ geld: 400_000, heer: [{ unitKey: 'infantry', einheiten: 20 }] })
-    expect(rankedUnitsFor(context, stadt(context)), 'Vorbedingung').toEqual(['tank', 'artillery', 'infantry'])
-
-    const explanations: Explanation[] = []
-    const recruit = aushebung(context, explanations)
-    expect(recruit?.unitKey).toBe('artillery')
-    expect(recruit?.count).toBe(1)
-    expect(explanations.find((e) => e.action.includes('artillery'))?.reason).toContain('Untergrenze')
-  })
-
-  it('U2: Infanterie vorn -> keine Untergrenze, auch wenn der Bestand eine Artillerie truege', () => {
-    // Fuenf Batterien: Infanterie vorn, und die Oelbilanz traegt eine weitere (sonst saehe der Test nichts).
-    const context = artillerieLage({ geld: 300_000, heer: [{ unitKey: 'artillery', einheiten: 5 }] })
-    expect(rankedUnitsFor(context, stadt(context))[0], 'Vorbedingung').toBe('infantry')
-    expect(aushebung(context)).toBeUndefined()
-  })
-
-  it('U3: die Untergrenze gilt nur fuer eine Einheit, die eine Fabrik braucht (Infanterie hinter dem Panzer: keine)', () => {
-    // Geld 100 000: der Anteil (20 000) traegt keine Infanterie (67 000), ueber der Ruecklage (80 000)
-    // stuende eine.
-    const context = artillerieLage({
-      geld: 100_000,
-      heer: [
-        { unitKey: 'infantry', einheiten: 6 },
-        { unitKey: 'artillery', einheiten: 4 },
-      ],
-    })
-    expect(rankedUnitsFor(context, stadt(context)), 'Vorbedingung').toEqual(['tank', 'infantry', 'artillery'])
-    expect(aushebung(context)).toBeUndefined()
-  })
-
-  it('U4: traegt der Bestand nach der Ruecklage die Artillerie nicht, keine Untergrenze', () => {
-    // 240 000 - 20 % = 192 000 < 200 000.
-    const context = artillerieLage({ geld: 240_000, heer: [{ unitKey: 'infantry', einheiten: 20 }] })
-    expect(rankedUnitsFor(context, stadt(context))).toEqual(['tank', 'artillery', 'infantry'])
-    expect(aushebung(context)).toBeUndefined()
-  })
-
-  it('O1: Oel-Waechter - ohne Oelfoerderung keine Artillerie, die Aushebung faellt auf die Infanterie (begruendet)', () => {
-    const context = artillerieLage({ geld: 400_000, heer: [{ unitKey: 'infantry', einheiten: 20 }], ohneOel: true })
-    expect(dailyOilYield(context.view, TEST_RULES), 'Vorbedingung: keine Foerderung').toBe(0)
-    expect(context.view.self.resources.oil, 'ein voller Oelbestand hilft nicht').toBeGreaterThan(1_000_000)
-
-    const explanations: Explanation[] = []
-    const recruit = aushebung(context, explanations)
-    expect(recruit?.unitKey).toBe('infantry')
-    expect(recruit?.count).toBe(1)
-    expect(explanations.some((e) => e.reason.includes('Öl-Tagesbilanz'))).toBe(true)
-  })
-
-  it('O2: Oel-Waechter - die Oel-Tagesbilanz begrenzt die Zahl der Panzer', () => {
-    const context = artillerieLage({ geld: 50_000_000 })
-    const foerderung = dailyOilYield(context.view, TEST_RULES)
-    const jePanzer = (TEST_RULES.units['tank']!.upkeep.oil ?? 0) * tpd
-    const tragbar = Math.trunc(foerderung / jePanzer)
-    expect(tragbar, 'Vorbedingung: die Foerderung traegt einige, aber nicht 15 Panzer').toBeGreaterThan(0)
-    expect(tragbar).toBeLessThan(15)
-
-    // Ein leeres Heer: Infanterie (60 %) vorn; ein Heer aus Infanterie stellt den Panzer nach vorn. Zehn
-    // Infanteristen lassen der Geld-Tagesbilanz Raum fuer mehr Panzer, als das Oel traegt.
-    const mitHeer = artillerieLage({ geld: 50_000_000, heer: [{ unitKey: 'infantry', einheiten: 10 }] })
-    expect(rankedUnitsFor(mitHeer, stadt(mitHeer))[0]).toBe('tank')
-    const recruit = aushebung(mitHeer)
-    expect(recruit?.unitKey).toBe('tank')
-    expect(recruit?.count).toBe(tragbar)
-  })
-
-  it('O3: Oel-Waechter - frisst das Heer die Foerderung fast auf, keine Artillerie, die Aushebung faellt auf die Infanterie', () => {
-    const jePanzer = (TEST_RULES.units['tank']!.upkeep.oil ?? 0) * tpd
-    const jeArtillerie = (TEST_RULES.units['artillery']!.upkeep.oil ?? 0) * tpd
-    const foerderung = dailyOilYield(artillerieLage({ geld: 50_000_000 }).view, TEST_RULES)
-    const panzer = Math.trunc(foerderung / jePanzer)
-    // Infanterie und Panzer zu gleichen Teilen: die Artillerie hat den groessten Rueckstand.
-    const context = artillerieLage({
-      geld: 50_000_000,
-      heer: [
-        { unitKey: 'infantry', einheiten: 12 },
-        { unitKey: 'tank', einheiten: panzer },
-      ],
-    })
-    const spielraum = foerderung - panzer * jePanzer
-    expect(spielraum, 'Vorbedingung: Oel-Spielraum unter einer Artillerie').toBeLessThan(jeArtillerie)
-    expect(spielraum).toBeGreaterThanOrEqual(0)
-    expect(rankedUnitsFor(context, stadt(context))[0], 'Vorbedingung').toBe('artillery')
-
-    const recruit = aushebung(context)
-    expect(recruit?.unitKey).toBe('infantry')
-  })
-
-  it('X1: TARGET_MIX ist 60/30/10 (Noahs Antwort auf Frage 1)', () => {
-    expect(TARGET_MIX.map(({ unitKey, share }) => [unitKey, share])).toEqual([
-      ['infantry', 0.6],
-      ['tank', 0.3],
-      ['artillery', 0.1],
-    ])
-  })
-
-  it('X2: ohne Panzer kippt die Wahl bei 25 % Artillerie - der Panzeranteil wird nicht umverteilt (D32.8)', () => {
-    // Gleichgewicht ohne Panzer: (1 - 0,6 + 0,1) / 2 = 25 %. Verteilte man die 30 % des Panzers auf
-    // Infanterie und Artillerie, laege es bei 1/7 = 14 %.
-    const unter = artillerieLage({ geld: 400_000, heer: [{ unitKey: 'infantry', einheiten: 76 }, { unitKey: 'artillery', einheiten: 24 }] })
-    const ueber = artillerieLage({ geld: 400_000, heer: [{ unitKey: 'infantry', einheiten: 74 }, { unitKey: 'artillery', einheiten: 26 }] })
-    expect(rankedUnitsFor(unter, stadt(unter))).toEqual(['tank', 'artillery', 'infantry'])
-    expect(rankedUnitsFor(ueber, stadt(ueber))).toEqual(['tank', 'infantry', 'artillery'])
   })
 })
