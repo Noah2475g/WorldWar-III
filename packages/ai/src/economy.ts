@@ -2,7 +2,6 @@ import { RECRUIT_MIN_MORALE, buildingCostForLevel, unitCount } from '@worldwar/c
 import type { BuildingKey, Command, ProvinceId, ResourceKey } from '@worldwar/core'
 import type { Fixed } from '@worldwar/shared'
 import { dailyArmyUpkeep, dailyMoneyLedger, dailyOilYield, unitsWithinDailyBalance } from './finance'
-import { ledgerAfter } from './provinceValue'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -325,25 +324,11 @@ export function rankedUnitsFor(
   context: AiContext,
   province: { buildings?: Record<string, number> },
   stock: UnitStock = unitStockOf(context),
-  /**
-   * T-M42-07, zweite Iteration (Befund M42-07-a): ein Panzer, den die Macht nicht tragen kann, gibt
-   * seinen Anteil an die Artillerie ab. Ohne das liegt das Gleichgewicht einer Macht ohne Panzer bei
-   * (1 - 0,6 + 0,1) / 2 = 25 % Artillerie - und weil fuenf von acht Maechten kein Oel foerdern (der
-   * Oel-Waechter R-AI-12/AK4 laesst ihnen keine Artillerie), blieb der Anteil ueber alle Maechte bei
-   * rund 9 %. Mit dem Panzeranteil bei der Artillerie liegt es bei (1 - 0,6 + 0,4) / 2 = 40 %.
-   */
-  panzerAnteilZurArtillerie = false,
 ): string[] {
   const { owned, total } = stock
-  const panzerAnteil = TARGET_MIX.find(({ unitKey }) => unitKey === 'tank')?.share ?? 0
-  const mix = panzerAnteilZurArtillerie
-    ? TARGET_MIX.filter((entry) => entry.unitKey !== 'tank').map((entry) =>
-        entry.unitKey === 'artillery' ? { ...entry, share: entry.share + panzerAnteil } : entry,
-      )
-    : TARGET_MIX
 
   const day = dayOf(context)
-  const buildable = mix.filter(({ unitKey }) => {
+  const buildable = TARGET_MIX.filter(({ unitKey }) => {
     const rule = context.rules.units[unitKey]
     if (!rule) return false
     // R-TECH-02/AK2: erst der Tag, dann das Gebaeude — beides muss stimmen.
@@ -380,14 +365,13 @@ export function nextUnitFor(context: AiContext, province: { buildings?: Record<s
  * Einheit? Die Bedingung der Untergrenze aus D32.8 - derselbe Massstab wie `canAfford` fuer Bauten.
  */
 function traegtNachRuecklage(
-  bestand: Record<ResourceKey, number>,
+  context: AiContext,
   cost: Partial<Record<ResourceKey, number>>,
   vorbehalt: Partial<Record<ResourceKey, Fixed>> | null,
 ): boolean {
   for (const [key, amount] of Object.entries(cost)) {
     if (!amount) continue
-    // Der Bestand nach den Befehlen desselben Zugs (Befund M42-07-a, dritte Iteration).
-    const stock = Math.max(0, bestand[key as ResourceKey])
+    const stock = context.view.self.resources[key as ResourceKey]
     const reserve = Math.trunc((stock * RESERVE_PERMILLE) / 1000)
     if (stock - reserve - (vorbehalt?.[key as ResourceKey] ?? 0) < amount) return false
   }
@@ -395,15 +379,7 @@ function traegtNachRuecklage(
 }
 
 /** Raises troops where possible, sized to what the treasury can carry. */
-// LOESCHVERMERK (Review): Befund M42-07-a, dritte Iteration - die Signatur bekommt `pending`. Alte Zeile:
-// export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
-export function recruitCommands(context: AiContext, explanations: Explanation[], pending: readonly Command[] = []): Command[] {
-  // Befund M42-07-a, dritte Iteration: die Untergrenze hebt bis an die Ruecklage heran aus und traf
-  // deshalb auf Geld, das Bau, Handel und Spionage desselben Zugs schon ausgegeben hatten (Stufe AB:
-  // 14 abgelehnte Artillerien, China 7-mal). Die Untergrenze prueft deshalb den Bestand nach diesen
-  // Befehlen (`ledgerAfter`). Der Anteil der Schwierigkeit rechnet weiter mit dem Sichtbestand - ihn
-  // umzustellen ist T-M42-04 (mit neuer Abstimmung von `recruitShare`).
-  const nachZug = ledgerAfter(context, pending)
+export function recruitCommands(context: AiContext, explanations: Explanation[]): Command[] {
   const commands: Command[] = []
   const playerId = context.view.playerId
 
@@ -458,20 +434,6 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
   const oelSpielraum = dailyOilYield(context.view, context.rules) - dailyArmyUpkeep(context.view, context.rules, 'oil')
   let oelSperrte = false
 
-  // Befund M42-07-a, zweite Iteration: kann die Macht keinen einzigen Panzer tragen (Anteil der
-  // Schwierigkeit, Oel- oder Geld-Tagesbilanz), geht sein Anteil an die Artillerie. Einmal je Aufruf,
-  // nicht je Provinz - Bestand und Bilanzen haengen an der Macht.
-  const panzer = context.rules.units['tank']
-  const panzerTragbar =
-    panzer !== undefined &&
-    Object.entries(panzer.cost).every(([key, amount]) => {
-      if (!amount) return true
-      const frei = Math.max(0, context.view.self.resources[key as ResourceKey] - (vorbehalt?.[key as ResourceKey] ?? 0))
-      return Math.trunc((frei * context.difficulty.recruitShare) / 1000) >= amount
-    }) &&
-    unitsWithinDailyBalance(oelSpielraum, (panzer.upkeep.oil ?? 0) * ticksPerDay) >= 1 &&
-    unitsWithinDailyBalance(bilanz.margin, (panzer.upkeep.money ?? 0) * ticksPerDay) >= 1
-
   for (const province of nachVielseitigkeit) {
     // **Kein Kasernen-Riegel** (T-M15-08). Hier stand `if (barracks === 0) continue`, und
     // das ist der Grund, warum die KI auf der Weltkarte in 200 Spieltagen **43 Fabriken
@@ -507,7 +469,7 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
     /** Was vor dem Kandidaten in der Rangliste stand - jeder davon ist gescheitert, sonst staenden wir nicht hier (D32.8). */
     const davor: string[] = []
 
-    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten, true /* zweite Iteration: immer, nicht nur bei !panzerTragbar */)) {
+    for (const kandidat of rankedUnitsFor(context, province, bestandInEinheiten)) {
       const regel = context.rules.units[kandidat]
       if (!regel) {
         davor.push(kandidat)
@@ -537,12 +499,8 @@ export function recruitCommands(context: AiContext, explanations: Explanation[],
       // braucht eine Fabrik, vor ihr stand in der Rangliste nur der unbezahlbare Panzer, und der
       // Bestand nach Vorbehalt **und** Ruecklage traegt die Kosten. Nicht fuer die Infanterie und
       // nicht hinter ihr: deren Menge regelt weiter der Anteil.
-      // LOESCHVERMERK (Review): zweite Iteration M42-07-a. Alte Zeile:
-      // const nurPanzerDavor = davor.length > 0 && davor.every((key) => key === 'tank')
-      // Befund M42-07-a, zweite Iteration: hat der Panzer seinen Anteil an die Artillerie abgegeben,
-      // darf sie auch ganz vorn stehen - der Panzer steht dann der Sache nach vor ihr.
-      const nurPanzerDavor = davor.every((key) => key === 'tank') && (davor.length > 0 || !panzerTragbar)
-      if (moeglich < 1 && nurPanzerDavor && regel.requiresBuilding === 'factory' && traegtNachRuecklage(nachZug, regel.cost, vorbehalt)) {
+      const nurPanzerDavor = davor.length > 0 && davor.every((key) => key === 'tank')
+      if (moeglich < 1 && nurPanzerDavor && regel.requiresBuilding === 'factory' && traegtNachRuecklage(context, regel.cost, vorbehalt)) {
         moeglich = 1
         untergrenze = true
       } else {
