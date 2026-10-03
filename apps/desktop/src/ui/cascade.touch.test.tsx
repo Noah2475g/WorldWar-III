@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
@@ -319,5 +319,75 @@ describe('touch.css: die Einfuehrung bleibt zwischen Kopf und Fuss', () => {
     expect(css(tutorial, 'bottom')).toBe('170px')
     expect(css(tutorial, 'left')).toBe('var(--sp-lg)')
     expect(css(tutorial, 'grid-row')).toBe('')
+  })
+})
+
+/**
+ * R-UX-02/AK2 · `hidden` gilt (T-M44-04, Befund B-02).
+ *
+ * Das Attribut `hidden` ist eine Regel des Browsers (`display: none`) mit der niedrigsten
+ * Rangstufe: jede Klasse mit eigenem `display` überstimmt sie. Der Alarmplatz der Kopfleiste
+ * (`.header__alarm { display: inline-flex }`) blieb deshalb als leerer roter Rahmen stehen.
+ * Die globale Regel `[hidden] { display: none !important }` steht OBEN in den Grundregeln von
+ * app.css; gebunden ist hier die Kaskade (jsdom rechnet sie), die Messung im echten Fenster
+ * macht `pnpm ux:check --only R-UX-02/AK2` (Sonde `hiddenDrawn`).
+ *
+ * Ehrlich dazu: jsdoms Standard-Stylesheet legt `[hidden]` ueber die Regeln der Seite, anders als
+ * der Browser — die beiden Berechnungen unten sind deshalb auch VOR der Reparatur gruen und
+ * belegen nur, dass die Regel nichts kaputt macht. Rot war vorher allein der Quelltext-Test
+ * („steht oben in den Grundregeln") und im Browser die Sonde `hiddenDrawn`.
+ */
+describe('R-UX-02/AK2 hidden gewinnt gegen jede Klasse mit eigenem display', () => {
+  const appCss = readFileSync(`${UI}/app.css`, 'utf8')
+
+  it('blendet den Alarmplatz der Kopfleiste aus, solange er hidden traegt (heute rot)', () => {
+    const { container } = render(<div className="header__alarm" hidden />)
+    expect(css(container.querySelector('.header__alarm')!, 'display')).toBe('none')
+  })
+
+  it('zeigt ihn wieder, sobald hidden fehlt — die Gegenprobe', () => {
+    const { container } = render(<div className="header__alarm" />)
+    expect(css(container.querySelector('.header__alarm')!, 'display')).toBe('inline-flex')
+  })
+
+  it('blendet auch ein anderes Element mit eigenem display aus, nicht nur den Alarmplatz', () => {
+    const { container } = render(
+      <>
+        <div className="speeds" hidden />
+        <div className="modes" hidden />
+        <button type="button" className="speed" hidden />
+        <div className="clock" hidden />
+      </>,
+    )
+    for (const element of container.children) expect(css(element, 'display')).toBe('none')
+  })
+
+  it('steht oben in den Grundregeln: mit !important und vor jeder Regel mit eigenem display', () => {
+    const rule = /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/.exec(appCss)
+    expect(rule).not.toBeNull()
+    const firstDisplay = appCss.search(/^\s*display:\s*(?!none)/m)
+    expect(firstDisplay).toBeGreaterThan(0)
+    expect(rule!.index).toBeLessThan(firstDisplay)
+    // Und noch vor der ersten Klassenregel ueberhaupt: ein Platz bei den Grundregeln.
+    expect(rule!.index).toBeLessThan(appCss.indexOf('.visually-hidden'))
+  })
+
+  it('kennt jede Stelle, an der die Oberflaeche hidden setzt (Suche vor der globalen Regel)', () => {
+    // Die Suche aus D37.3: alle Stellen, an denen `hidden` auf eine Klasse mit eigenem display trifft.
+    // Heute gibt es genau eine; kommt eine zweite dazu, steht sie hier mit ihrer Aufgabe — und
+    // die globale Regel deckt sie ohnehin ab.
+    const treffer: string[] = []
+    const walk = (dir: string): void => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = `${dir}/${entry.name}`
+        if (entry.isDirectory()) walk(path)
+        else if (/\.tsx$/.test(entry.name) && !/\.test\./.test(entry.name)) {
+          const source = readFileSync(path, 'utf8')
+          if (/\shidden=\{|\shidden\s*\/>/.test(source)) treffer.push(path.slice(path.indexOf('/src/') + 5))
+        }
+      }
+    }
+    walk(`${process.cwd()}/apps/desktop/src`)
+    expect(treffer).toEqual(['ui/Header.tsx'])
   })
 })

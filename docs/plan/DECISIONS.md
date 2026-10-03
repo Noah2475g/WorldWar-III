@@ -5788,3 +5788,21 @@ Reihenfolge wegen Dateikonflikten steht in den Paketen (UX-PLAN §6). Die Bilder
 werden nur für 375×667, 1280×800 und die neuen Fenstergrößen eingecheckt, 1920×1080 bleibt Messwert
 (Repo-Größe); die Vorher-Bilder bleiben vollständig (Sitzungsregel „nichts löschen") und sind
 verlustfrei optimiert.
+
+## 2026-10-03 · Noahs Entscheide zum Abschluss von Etappe 2 und M44 (lokale Sitzung)
+
+Noah hat im Chat alle Empfehlungen des Abschlussplans bestaetigt:
+
+- **E1 · M42-07-a:** Artillerie verbraucht weiter Oel. T-M42-07 bleibt zurueckgenommen; T-M42-05 nur
+  in der S10-Fassung (`7e41eda`), Status nach Messung. Keine Spielregel-Aenderung; einzige erlaubte
+  Aenderung unter `data/rules` ist `default/ai.json` (`hard.recruitShare`) durch T-M42-04, dann mit
+  Parameterlauf.
+- **E2 ·** Die kippbaren Orchestrator-Entscheide der Cloud-Sitzung (2026-10-02/03: F6-Playtest
+  verschoben, Option (c), UX F1-F3, Playwright als Messwerkzeug) sind bestaetigt.
+- **E3 ·** Ein Pull Request: alles landet in PR #15; Noah merged nach `main`.
+- **E4 ·** PR #14 (`9ee6ec2`) ist in den Hauptzweig gemergt (`77066de`).
+- **E5 ·** Laeufe, die den Rechner allein brauchen (T-M44-20, `pnpm acceptance`), nur nach
+  Ankuendigung mit Dauer und Noahs Wort.
+- **Bewusste Abweichung von UEBERGABE-LOKAL §4:** `pnpm verify` nicht je Paket, sondern an
+  Integrationspunkten (Noahs Regel „verify je Meilenstein“); je Paket gezielte Tests und `ux:check`.
+

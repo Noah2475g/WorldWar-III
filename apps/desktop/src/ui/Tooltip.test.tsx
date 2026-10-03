@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { cleanup, render, screen } from '@testing-library/react'
 import type { PublicView } from '@worldwar/core'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -88,5 +89,33 @@ describe('T-M31-01 Die Provinz erklaert sich im Tooltip', () => {
     expect(tip.textContent).toContain('neutral')
     expect(tip.textContent).toContain('keine')
     expect(tip.textContent).not.toMatch(/Runde/)
+  })
+})
+
+/**
+ * R-UX-02/AK3 · Der Auswahl-Tooltip nennt keine Mausbedienung (T-M44-07, Befund B-06).
+ *
+ * Eine schon gewaehlte Provinz sagt nicht mehr „Klicken: auswaehlen" — das hat sie hinter sich.
+ * Der Kasten ist Auskunft und kein Knopf: man kann ihn nicht markieren (`user-select: none`),
+ * damit ein Ziehen ueber die Karte nicht seinen Text greift.
+ */
+describe('R-UX-02/AK3 Der Tooltip einer gewaehlten Provinz', () => {
+  it('nennt „Klicken: auswaehlen" nur, solange die Provinz noch nicht gewaehlt ist (heute rot)', () => {
+    render(<Tooltip data={tooltipFor('A', view, sources)!} x={0} y={0} />)
+    expect(screen.getByRole('tooltip').textContent).toMatch(/Klicken/)
+
+    cleanup()
+    render(<Tooltip data={tooltipFor('A', view, sources)!} x={0} y={0} selected />)
+    const tip = screen.getByRole('tooltip').textContent ?? ''
+    expect(tip).not.toMatch(/Klick|Maus/)
+    expect(tip).toMatch(/Escape/)
+  })
+
+  it('verbietet das Markieren seines Textes in app.css', () => {
+    const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+    // Alle Regeln fuer `.tooltip`: der Block von T-M44-07 steht am Ende von app.css.
+    const rules = [...css.matchAll(/\n\.tooltip\s*\{([^}]*)\}/g)].map((match) => match[1]!)
+    expect(rules.length).toBeGreaterThan(0)
+    expect(rules.join('\n')).toMatch(/user-select:\s*none/)
   })
 })

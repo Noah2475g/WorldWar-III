@@ -296,7 +296,7 @@ select,
   }
 
   :root[data-input='touch'] .header__title,
-  :root[data-input='touch'] .header__top > .meter {
+  :root[data-input='touch'] .header__top .meter {
     display: none;
   }
 

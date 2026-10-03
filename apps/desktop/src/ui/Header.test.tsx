@@ -783,3 +783,100 @@ describe('R-MP-07/AK2 Nach zehn Sekunden erscheint der Hinweis mit zwei Knoepfen
     expect(screen.getByText('Pausiert')).toBeTruthy()
   })
 })
+
+/**
+ * R-UX-02/AK1 · Die Kopfleiste bleibt einzeilig (T-M44-04, Befund B-02, B-25).
+ *
+ * Aufnahme vom 2026-10-03: 65 px am Start, 105-107 px ab Tag 2 bei 1280x800 (83 bei 1366x768),
+ * weil die obere Zeile umbrach — Titel, Uhr mit Tempogruppe (331 px), Siegbalken (222 px), fuenf
+ * Kartenmodi (382 px), zwei Knoepfe und der Alarmchip passen in 1280 px nicht nebeneinander.
+ * jsdom rechnet kein Layout; gebunden sind hier die Struktur und die Kaskade (Muster
+ * T-M22-02), die Hoehe misst `pnpm ux:check --only R-UX-02/AK1` im echten Fenster — im Zustand mit
+ * Alarmchip und Siegziel, auch mit fester Rate (`header.fixedSpeed`).
+ */
+describe('R-UX-02/AK1 Die Kopfleiste ist einzeilig, mit Siegziel in der Uhrzeile', () => {
+  const css = readFileSync(`${process.cwd()}/apps/desktop/src/ui/app.css`, 'utf8')
+  const alarm = { provinceId: 'USA-MW', provinceName: 'Mittlerer Westen', intruder: 'Russland' }
+
+  /** Der Inhalt eines @media-Blocks aus app.css (klammerbewusst), oder null. */
+  const media = (query: string): string | null => {
+    const start = css.indexOf(`@media ${query}`)
+    if (start < 0) return null
+    let depth = 0
+    for (let i = css.indexOf('{', start); i < css.length; i++) {
+      if (css[i] === '{') depth += 1
+      if (css[i] === '}' && --depth === 0) return css.slice(css.indexOf('{', start) + 1, i)
+    }
+    return null
+  }
+
+  it('setzt das Siegziel in die Uhrzeile neben die Uhr — nicht in eine eigene Zeile (heute rot)', () => {
+    const { container } = renderHeader(view(100, [100], 900))
+    const clock = container.querySelector('.clock')!
+
+    expect(clock.querySelector('.meter')).not.toBeNull()
+    expect(container.querySelector('.resources .meter')).toBeNull()
+    expect(within(clock as HTMLElement).getByText(/von 90 %/)).toBeTruthy()
+  })
+
+  it('haelt das Siegziel auch mit fester Rate in der Uhrzeile (Mehrspieler)', () => {
+    const { container } = renderHeader(view(100, [100], 900), { fixedSpeed: 25, alarm })
+    const clock = container.querySelector('.clock')!
+
+    expect(clock.querySelector('.meter')).not.toBeNull()
+    expect(clock.querySelector('.clock__fixed')).not.toBeNull()
+    expect(container.querySelector('.header__alarm .alarm-chip')).not.toBeNull()
+  })
+
+  it('zeichnet ohne Siegziel keinen Balken und verschiebt nichts', () => {
+    const { container } = renderHeader(view(100, [100]))
+    expect(container.querySelector('.meter')).toBeNull()
+  })
+
+  it('bietet die Kartenmodi zusaetzlich als Auswahl an, mit demselben Namen und demselben Befehl', () => {
+    const onMode = vi.fn()
+    renderHeader(view(100, [100], 900), { onMode })
+    const select = screen.getByRole('combobox', { name: 'Kartenmodus' }) as HTMLSelectElement
+
+    expect(select.value).toBe('political')
+    expect([...select.options].map((o) => o.textContent)).toEqual([
+      'Besitz',
+      'Rohstoffe',
+      'Moral',
+      'Truppenstärke',
+      'Beziehungen',
+    ])
+    fireEvent.change(select, { target: { value: 'morale' } })
+    expect(onMode).toHaveBeenCalledWith('morale')
+  })
+
+  it('stellt die obere Zeile ab 1280 px auf nowrap (die Zeile bricht nicht mehr um)', () => {
+    const wide = media('(min-width: 1280px)')
+    expect(wide, '@media (min-width: 1280px) in app.css').not.toBeNull()
+    expect(wide).toMatch(/\.header__top\s*\{[^}]*flex-wrap:\s*nowrap/)
+  })
+
+  it('nimmt den Titel unter 1500 px aus der Zeile (Kompaktregel)', () => {
+    const compact = media('(max-width: 1499px)')
+    expect(compact, '@media (max-width: 1499px) in app.css').not.toBeNull()
+    expect(compact).toMatch(/\.header__title\s*\{[^}]*display:\s*none/)
+  })
+
+  it('ersetzt unter 1400 px die Modusknoepfe durch die Auswahl — ausser im Touch-Betrieb', () => {
+    const compact = media('(max-width: 1399px)')
+    expect(compact, '@media (max-width: 1399px) in app.css').not.toBeNull()
+    expect(compact).toMatch(/\.modes\s*\{[^}]*display:\s*none/)
+    expect(compact).toMatch(/\.modes-select\s*\{[^}]*display:\s*inline-/)
+    expect(compact).toMatch(/:not\(\[data-input='touch'\]\)/)
+    // Darueber bleibt die Auswahl verborgen (Grundregel ausserhalb jeder Abfrage).
+    expect(css).toMatch(/\n\.modes-select\s*\{[^}]*display:\s*none/)
+  })
+
+  it('fasst die Tempoknoepfe zu einer Gruppe zusammen: ohne Luecke, mit gemeinsamem Rand', () => {
+    // Die spaeteste Regel gewinnt: der Block von T-M44-04 steht am Ende von app.css.
+    const group = [...css.matchAll(/\n\.speeds\s*\{([^}]*)\}/g)].pop()
+    expect(group, 'Regel .speeds').toBeDefined()
+    expect(group![1]).toMatch(/gap:\s*0\b/)
+    expect(css).toMatch(/\.speeds\s+\.speed\s*\+\s*\.speed[^{]*\{[^}]*margin-left:\s*-1px/)
+  })
+})

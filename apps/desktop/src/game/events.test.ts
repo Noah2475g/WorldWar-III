@@ -23,6 +23,7 @@ import {
   dayReportBody,
   dayReportDeltas,
   describeEvent,
+  mergeBattleLines,
   openIntrusion,
   priceSeries,
   provinceOf,
@@ -1396,5 +1397,70 @@ describe('R-SPY-04/AK3 Der Opfertext nennt keinen Urheber — ueber einen Lauf m
     expect(detectedForP3, 'Vorbedingung: p3 hat einen Spion enttarnt').toBeDefined()
     const detectedText = describeEvent(detectedForP3!, 0, testMap, { ...naming, viewer: 'p3' }).text
     expect(detectedText).toContain('Nordland')
+  })
+})
+
+/**
+ * R-UX-02/AK4 · Gleichlautende Gefechtszeilen werden eine Zeile (T-M44-10, Befund B-20).
+ *
+ * Aufnahme vom 2026-10-03: viermal „Gefecht entschieden — niemand behauptet das Feld" in
+ * derselben Provinz zur selben Stunde — vier Zeilen, die dasselbe sagen und das Protokoll
+ * verdraengen. Zusammengefasst wird nur, was Wort fuer Wort gleich ist, in derselben Provinz,
+ * im selben Tick (ein Tick ist eine Spielstunde) und in der Rubrik Kampf; die Zeile nennt die
+ * Anzahl. Der Kern und das Ereignisprotokoll bleiben unveraendert, gemischt wird nur die Anzeige.
+ */
+describe('R-UX-02/AK4 Gleichlautende Gefechtszeilen sind eine Zeile mit Anzahl', () => {
+  const zeile = (id: string, over: Record<string, unknown> = {}) => ({
+    id,
+    tick: 120,
+    text: 'Mittlerer Westen: Gefecht entschieden — niemand behauptet das Feld.',
+    provinceId: 'USA-MW',
+    severity: 'info' as const,
+    category: 'combat' as const,
+    ...over,
+  })
+
+  it('macht aus vier gleichen Zeilen eine mit „4 Mal" (heute vier)', () => {
+    const merged = mergeBattleLines([zeile('a'), zeile('b'), zeile('c'), zeile('d')])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0]!.text).toContain('niemand behauptet das Feld')
+    expect(merged[0]!.text).toContain('4')
+    expect(merged[0]!.id).toBe('a')
+  })
+
+  it('laesst eine einzelne Zeile unveraendert, auch ihren Text', () => {
+    const eine = zeile('a')
+    expect(mergeBattleLines([eine])).toEqual([eine])
+  })
+
+  it('fasst aufeinanderfolgende Stunden desselben Spieltags zusammen, wie sie das Messwerkzeug als Nachbarn zaehlt', () => {
+    const merged = mergeBattleLines([zeile('a', { tick: 119 }), zeile('b', { tick: 118 }), zeile('c', { tick: 117 })])
+    expect(merged).toHaveLength(1)
+    expect(merged[0]!.tick).toBe(119)
+    expect(merged[0]!.text).toContain('3')
+  })
+
+  it('fasst nicht ueber Provinz, Spieltag oder Wortlaut hinweg und nicht ueber eine andere Zeile hinweg zusammen', () => {
+    const merged = mergeBattleLines([
+      zeile('a'),
+      zeile('b', { provinceId: 'USA-NE', text: 'Nordosten: Gefecht entschieden — niemand behauptet das Feld.' }),
+      zeile('c'),
+      zeile('d', { tick: 96 }),
+      zeile('e', { tick: 95 }),
+      zeile('f', { tick: 95, text: 'Mittlerer Westen: Gefecht entschieden — Nordland behauptet das Feld.' }),
+    ])
+    // c und a trennt b; d (Tag 5) und e (Tag 4) trennt der Tageswechsel (96 / 24 = 4, 95 / 24 = 3).
+    expect(merged.map((e) => e.id)).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
+  })
+
+  it('fasst nur die Rubrik Kampf zusammen — zwei gleiche Meldungen anderer Art bleiben zwei', () => {
+    const merged = mergeBattleLines([zeile('a', { category: 'economy' }), zeile('b', { category: 'economy' })])
+    expect(merged).toHaveLength(2)
+  })
+
+  it('behaelt die Reihenfolge: die Sammelzeile steht, wo die erste stand', () => {
+    const merged = mergeBattleLines([zeile('x', { tick: 130, text: 'Anderes.' }), zeile('a'), zeile('b'), zeile('y', { tick: 100, text: 'Spaeter.' })])
+    expect(merged.map((e) => e.id)).toEqual(['x', 'a', 'y'])
   })
 })
