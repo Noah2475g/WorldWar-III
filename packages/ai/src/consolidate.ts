@@ -1,5 +1,7 @@
 import { unitCount, type Command } from '@worldwar/core'
 import { armyRole } from './army-role'
+// LOESCHVERMERK (Review): Import der zweiten Fassung von T-M42-17. Alte Zeile:
+// import { frontProvinces } from './economy'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -38,6 +40,73 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   const { view, rules } = context
   const playerId = view.playerId
   const cap = rules.constants.stackFullContribution
+  const commands: Command[] = []
+
+  // **Teilen** (T-M42-17, Review Punkt 11, Befund M42-09-a): der Kern legt jede fertige Aushebung in die
+  // Gastarmee der Provinz (`findHostArmy`), so wachsen Garnisonen ueber den Deckel (gemessen 95/95/96
+  // Einheiten auf Stufe C2). Ein stehender Verband ueber `stackFullContribution` gibt per `SPLIT_ARMY`
+  // Teile von hoechstens `cap` Einheiten ab, bis er selbst unter dem Deckel steht. Genommen werden ganze
+  // Einheiten (`hpPerUnit`) aus dem groessten Stapel zuerst, von jedem Stapel hoechstens alle bis auf
+  // eine angeschlagene Resteinheit - der Kern lehnt das Nehmen der ganzen Staerke ab. Die abgegebenen
+  // Teile tragen erst im naechsten Denkschritt eine Kennung; der Rest geht mit seiner neuen Zahl in den
+  // Merge-Pass unten.
+  const nachTeilen = new Map<string, number>()
+  //
+  // LOESCHVERMERK (Review): die zweite Fassung von T-M42-17 (3841236) teilte nur abseits der Front, weil das
+  // Turnier auf der ersten Fassung riss. Die Ursache war aber T-M42-16 (Sperre im Merge-Pass, gemessen auf
+  // 7b14319 ohne Teilen: dieselbe Turnierzahl) - zurueckgenommen. Das Teilen gilt wieder ueberall, wie der
+  // Review-Punkt es verlangt. Alte Zeilen:
+  // // **Nur abseits der Front** (T-M42-17, zweite Fassung): geteilt an jeder Stelle riss das Turnier (R-AI-06,
+  // // Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen normal) - ein grosser Verband an der Front ist
+  // // dort gewollt. Geteilt werden die Garnisonen im Hinterland, in denen die Aushebungen auflaufen
+  // // (`frontProvinces` aus `economy.ts`: kein fremder Landnachbar, keine Bedrohung).
+  // const front = frontProvinces(context)
+  // if (front.has(army.provinceId)) continue
+  for (const army of [...view.armies].sort((a, b) => compareCodeUnits(a.id, b.id))) {
+    if (army.owner !== playerId) continue
+    if ((army.path?.length ?? 0) > 0) continue
+    const stacks = (army.units ?? []).map((stack) => ({
+      unitKey: stack.unitKey,
+      hpTotal: stack.hpTotal,
+      perUnit: rules.units[stack.unitKey]?.hpPerUnit ?? 0,
+    }))
+    const einheiten = () =>
+      stacks.reduce((sum, stack) => sum + unitCount({ unitKey: stack.unitKey, hpTotal: stack.hpTotal }, rules), 0)
+    let units = einheiten()
+    if (units <= cap) continue
+
+    let teile = 0
+    while (units > cap) {
+      let platz = cap
+      const take: { unitKey: string; hpTotal: number }[] = []
+      const reihenfolge = [...stacks].sort(
+        (a, b) =>
+          unitCount({ unitKey: b.unitKey, hpTotal: b.hpTotal }, rules) -
+            unitCount({ unitKey: a.unitKey, hpTotal: a.hpTotal }, rules) || compareCodeUnits(a.unitKey, b.unitKey),
+      )
+      for (const stack of reihenfolge) {
+        if (platz === 0) break
+        if (stack.perUnit <= 0) continue
+        const n = unitCount({ unitKey: stack.unitKey, hpTotal: stack.hpTotal }, rules)
+        const k = Math.min(platz, n - 1)
+        if (k <= 0) continue
+        take.push({ unitKey: stack.unitKey, hpTotal: k * stack.perUnit })
+        stack.hpTotal -= k * stack.perUnit
+        platz -= k
+      }
+      if (take.length === 0) break
+      commands.push({ type: 'SPLIT_ARMY', playerId, armyId: army.id, take } as Command)
+      teile += 1
+      units = einheiten()
+    }
+    if (teile === 0) continue
+    nachTeilen.set(army.id, units)
+    explanations.push({
+      action: `Teilt ${army.id} in ${army.provinceId} in ${teile + 1} Verbände`,
+      reason: `über dem Stapel-Deckel von ${cap} Einheiten trägt jede weitere weniger bei; es bleiben ${units}`,
+      score: 550,
+    })
+  }
 
   // embarked steht nicht im Schluessel: die View fuehrt es nicht, heute tot, weil die KI nie einschifft (amphibische KI: M18).
   /** Eigene stehende Armeen je Provinz und Rolle. */
@@ -45,19 +114,28 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   for (const army of view.armies) {
     if (army.owner !== playerId) continue
     if ((army.path?.length ?? 0) > 0) continue
+    // LOESCHVERMERK (Review): T-M42-16 (Review Punkt 3) ist gebaut, gemessen und zurueckgenommen - mit der
+    // Sperre im Merge-Pass riss das Turnier (R-AI-06, Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen
+    // normal, 44 %; auf T-M42-13 84/61/63 % gruen), Messung auf 7b14319. Alte Zeilen:
+    // // T-M42-16 (Review Punkt 3): eine Armee unter Rueckzugs- oder Beschusssperre bleibt aussen vor - der
+    // // Kern vererbt beim Zusammenlegen die laengere Sperre (`commands/army.ts`), und ein frischer Verband
+    // // duerfte dann ebenso lange nicht angreifen.
+    // if ((army.cannotAttackUntil ?? 0) > view.tick) continue
     const stacks = army.units ?? []
-    const units = stacks.reduce((sum, stack) => sum + unitCount(stack, rules), 0)
+    const units = nachTeilen.get(army.id) ?? stacks.reduce((sum, stack) => sum + unitCount(stack, rules), 0)
     if (units === 0) continue
     const key = `${army.provinceId}|${armyRole(stacks, rules)}`
     byPlace.set(key, [...(byPlace.get(key) ?? []), { id: army.id, units }])
   }
 
-  const commands: Command[] = []
-
-  // Provinzen in fester Reihenfolge, damit dieselbe Lage denselben Befehl ergibt.
-  const provinces = [...new Set([...byPlace.keys()].map((key) => key.split('|')[0]!))].sort((a, b) =>
-    a.localeCompare(b, 'en'),
-  )
+  // Provinzen in fester Reihenfolge, damit dieselbe Lage denselben Befehl ergibt - nach Codeeinheiten wie
+  // im Kern (`sort()`), nicht nach `localeCompare` (T-M42-15, Review Punkt 1): dessen Ordnung haengt an der
+  // ICU-Ausstattung der Laufzeit, und zwei Rechner im Mehrspieler muessen dieselbe Reihenfolge rechnen.
+  // LOESCHVERMERK (Review): T-M42-15. Alte Zeilen:
+  // const provinces = [...new Set([...byPlace.keys()].map((key) => key.split('|')[0]!))].sort((a, b) =>
+  //   a.localeCompare(b, 'en'),
+  // )
+  const provinces = [...new Set([...byPlace.keys()].map((key) => key.split('|')[0]!))].sort(compareCodeUnits)
   for (const provinceId of provinces) {
     for (const role of ['line', 'battery'] as const) {
       const byId = new Map((byPlace.get(`${provinceId}|${role}`) ?? []).map((army) => [army.id, army]))
@@ -93,6 +171,72 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
 
   return commands
 }
+
+/** Vergleich nach UTF-16-Codeeinheiten, wie `Array.prototype.sort()` ohne Vergleicher im Kern. */
+function compareCodeUnits(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+// LOESCHVERMERK (Review): T-M42-15/-16/-17 ersetzen die Fassung von T-M42-09 (Teilen davor, Sperre und
+// Codeeinheiten-Sortierung im Merge-Pass). Fassung von T-M42-09:
+// export function consolidateCommands(context: AiContext, explanations: Explanation[]): Command[] {
+//   const { view, rules } = context
+//   const playerId = view.playerId
+//   const cap = rules.constants.stackFullContribution
+//
+//   /** Eigene stehende Armeen je Provinz und Rolle. */
+//   const byPlace = new Map<string, { id: string; units: number }[]>()
+//   for (const army of view.armies) {
+//     if (army.owner !== playerId) continue
+//     if ((army.path?.length ?? 0) > 0) continue
+//     const stacks = army.units ?? []
+//     const units = stacks.reduce((sum, stack) => sum + unitCount(stack, rules), 0)
+//     if (units === 0) continue
+//     const key = `${army.provinceId}|${armyRole(stacks, rules)}`
+//     byPlace.set(key, [...(byPlace.get(key) ?? []), { id: army.id, units }])
+//   }
+//
+//   const commands: Command[] = []
+//
+//   // Provinzen in fester Reihenfolge, damit dieselbe Lage denselben Befehl ergibt.
+//   const provinces = [...new Set([...byPlace.keys()].map((key) => key.split('|')[0]!))].sort((a, b) =>
+//     a.localeCompare(b, 'en'),
+//   )
+//   for (const provinceId of provinces) {
+//     for (const role of ['line', 'battery'] as const) {
+//       const byId = new Map((byPlace.get(`${provinceId}|${role}`) ?? []).map((army) => [army.id, army]))
+//       const groups: { ids: string[]; units: number }[] = []
+//       for (const id of [...byId.keys()].sort()) {
+//         const army = byId.get(id)!
+//         const group = groups.find((entry) => entry.units + army.units <= cap)
+//         if (group) {
+//           group.ids.push(id)
+//           group.units += army.units
+//         } else {
+//           groups.push({ ids: [id], units: army.units })
+//         }
+//       }
+//       for (const group of groups) {
+//         if (group.ids.length < 2) continue
+//         commands.push({ type: 'MERGE_ARMIES', playerId, armyIds: group.ids } as Command)
+//         explanations.push({
+//           action: `Legt ${group.ids.length} Verbände in ${provinceId} zusammen`,
+//           reason: `${role === 'battery' ? 'Batterie zu Batterie' : 'Linie zu Linie'}, zusammen ${group.units} Einheiten - der Stapel-Deckel belohnt bis ${cap}`,
+//           score: 550,
+//         })
+//       }
+//     }
+//
+//     // LOESCHVERMERK (Review): T-M42-09 (R-AI-10/AK3, D32.10) hebt "eine Provinz je Denkschritt" auf -
+//     // `absorbedBy` in `decide.ts` sammelt ueber alle MERGE_ARMIES, und eine Provinz je Denkschritt liess
+//     // auf der Weltkarte Paare ueber zwei Tagesenden stehen (m17-integration Stufe F: 28). Alte Zeilen:
+//     // // Eine Provinz je Runde: das Zusammenlegen ändert die Lage, und die nächste Entscheidung
+//     // // soll sie sehen (T-M42-09 hebt das auf).
+//     // if (commands.length > 0) break
+//   }
+//
+//   return commands
+// }
 
 // LOESCHVERMERK (Review): T-M42-08 ersetzt die alte Fassung (Stapel statt Einheiten, ohne Rolle,
 // eine Gruppe je Provinz). Alte Fassung:

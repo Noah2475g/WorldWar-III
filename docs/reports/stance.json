@@ -530,24 +530,24 @@
     },
     "nachher": {
       "adjutant": "D30.4 seit T-M40-10: Verteidigung rueckt nur nach, wenn in ihrer Provinz eine weitere Armee bleibt; Angriff marschiert nie; eine Etappe in eigenes Land; fuenf Tage Ruhe ab dem Abmarsch; seit T-M40-15 zaehlt ein Rueckzug-Klick im selben Tick als Ausruecken",
-      "measuredAtCommit": "dfaa2540a7f67599f8ceb82e4342bd685a100541",
+      "measuredAtCommit": "12cdb28cbe2e76ced6155b7fb1dbd825dab2e711",
       "measuredDirty": [],
-      "stand": "gemessen auf dfaa254, Arbeitsbaum sauber",
-      "measuredAt": "2026-10-03T04:08:54.687Z",
+      "stand": "gemessen auf 12cdb28, Arbeitsbaum sauber",
+      "measuredAt": "2026-10-03T11:54:49.169Z",
       "ak5": {
         "provinceDays": {
-          "garrison": 4193,
+          "garrison": 4082,
           "defensive": 3751,
-          "percent": 89.5
+          "percent": 91.9
         },
         "abstand": {
-          "provinzTage": -359,
-          "einzelverluste": -2.2,
+          "provinzTage": -250,
+          "einzelverluste": -1.5,
           "ziel": 340,
           "robust": false
         },
         "lostWithoutBattle": {
-          "garrison": 0,
+          "garrison": 1,
           "defensive": 0
         },
         "kontrolle": {
@@ -1025,25 +1025,25 @@
           "seed": 1871,
           "setup": "B",
           "stance": "garrison",
-          "intrusions": 744,
+          "intrusions": 534,
           "answeredWithin24Ticks": 0,
           "answeredWithinWindow": 0,
           "departedWithin24Ticks": 0,
-          "provincesLost": 3,
+          "provincesLost": 4,
           "rejectedCommands": 0,
-          "episodes": 680,
+          "episodes": 476,
           "coverOrdered": 0,
           "coverArrivedInTime": 0,
-          "held": 677,
-          "provinceDays": 602,
-          "lostWithoutBattle": 0,
+          "held": 473,
+          "provinceDays": 491,
+          "lostWithoutBattle": 1,
           "adjutantOrders": 0,
           "pendulums": 0,
           "undeclaredWarsByHuman": 0,
           "declaredAgainstHuman": 2,
           "kriegsplanErklaerungen": 2,
-          "provincesAtEnd": 1,
-          "armiesAtEnd": 2,
+          "provincesAtEnd": 0,
+          "armiesAtEnd": 0,
           "daysRun": 200
         },
         {
@@ -1125,7 +1125,7 @@
           "seed": 1806,
           "setup": "B",
           "stance": "garrison",
-          "intrusions": 945,
+          "intrusions": 944,
           "answeredWithin24Ticks": 0,
           "answeredWithinWindow": 0,
           "departedWithin24Ticks": 0,

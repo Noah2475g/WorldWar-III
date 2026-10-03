@@ -678,14 +678,28 @@ describe('R-AI-10/AK2, AK4 Zusammenlegen nach Rolle und unter dem Deckel (T-M42-
     expect(befehle([armeen[3]!, armeen[6]!, armeen[1]!, armeen[0]!, armeen[5]!, armeen[2]!, armeen[4]!])).toEqual(grundlage)
   })
 
-  it('K9: ein Verband ueber dem Deckel bleibt allein, die uebrigen legen sich zusammen', () => {
+  // LOESCHVERMERK (Review): T-M42-17 (Review Punkt 11) teilt einen Verband ueber dem Deckel, bevor der
+  // Merge-Pass laeuft - der Rest legt sich dann mit den uebrigen zusammen. Alte Fassung von K9:
+  // it('K9: ein Verband ueber dem Deckel bleibt allein, die uebrigen legen sich zusammen', () => {
+  //   const cap = TEST_RULES.constants.stackFullContribution
+  //   const context = lage([
+  //     { id: 'a1', unitKey: 'infantry', einheiten: cap + 5 },
+  //     { id: 'a2', unitKey: 'infantry', einheiten: 3 },
+  //     { id: 'a3', unitKey: 'infantry', einheiten: 4 },
+  //   ])
+  //   expect(gruppen(context)).toEqual([['a2', 'a3']])
+  // })
+  it('K9: ein Verband ueber dem Deckel gibt einen vollen Teil ab, sein Rest legt sich mit den uebrigen zusammen (T-M42-17)', () => {
     const cap = TEST_RULES.constants.stackFullContribution
     const context = lage([
       { id: 'a1', unitKey: 'infantry', einheiten: cap + 5 },
       { id: 'a2', unitKey: 'infantry', einheiten: 3 },
       { id: 'a3', unitKey: 'infantry', einheiten: 4 },
     ])
-    expect(gruppen(context)).toEqual([['a2', 'a3']])
+    const befehle = consolidateCommands(context, [])
+    expect(befehle.map((command) => command.type)).toEqual(['SPLIT_ARMY', 'MERGE_ARMIES'])
+    // Rest 5 + 3 + 4 = 12 <= 20.
+    expect(gruppen(context).filter((ids) => ids.length > 0)).toEqual([['a1', 'a2', 'a3']])
   })
 
   it('K10: hpTotal wird je Stapel aufgerundet wie im Kern (zwei Stapel mit 1400 hp = vier Einheiten)', () => {
