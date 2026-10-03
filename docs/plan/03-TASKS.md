@@ -7357,3 +7357,202 @@ Alles dazwischen ist ohne Rückfrage ausführbar.
   −1/−1, derselbe Hash; `measuredAtCommit` auf den vereinten Stand aktualisiert,
   `measuredDirty` leer — der Unterschied zum Kettenbericht betrifft nur den Stempel und den
   neuen Abschnitt `wiederholungslauf`. Kein Messgerät (`allFreshness`) veraltet.
+
+## Meilenstein M44 — UX V2
+
+> **Herkunft.** UX-Aufnahme vom 2026-10-03: 34 Ansichten in drei Fenstergrößen, gemessen mit
+> `scripts/ux-capture.mjs` (Bilder und Rohdaten in `docs/ux/before/`). Befunde, Prioritäten und
+> die Reihenfolge der sechs Pakete stehen in `docs/plan/UX-PLAN.md`; Anforderungen R-UX-01…06 in
+> `01-REQUIREMENTS.md` 2.20, Entwurf `02-DESIGN.md` D36. **Grenze:** keine Aufgabe ändert
+> `packages/core`, `packages/ai` oder `data/rules`; der Golden-Master bewegt sich nicht.
+> **Browser-Test** jeder Aufgabe ist der Prüfmodus des Messwerkzeugs (T-M44-02) gegen den
+> Dev-Server des Worktrees (eigener Port, WORKFLOW §4 Falle 9) — jsdom rechnet kein Layout.
+
+### T-M44-01 · UX-Aufnahme: Messwerkzeug und Vorher-Bilder
+- **Ziel:** Den Ist-Zustand in drei Fenstergrößen messbar festhalten, damit jede spätere Maßnahme gegen eine Zahl abgenommen wird.
+- **Paket und Priorität:** alle · Basis
+- **Anforderungen:** R-UX-01, R-UX-06
+- **Abhängigkeiten:** —
+- **Dateien:** `scripts/ux-capture.mjs`, `docs/ux/before/messwerte.json`, `docs/plan/UX-PLAN.md`, `package.json`
+- **Tests zuerst:** kein Komponententest (Werkzeug); Browserlauf `node scripts/ux-capture.mjs --out docs/ux/before` gegen `pnpm dev --port 5321`.
+- **Fertig wenn:** Erledigt am 2026-10-03: scripts/ux-capture.mjs (Playwright, vorinstalliertes Chromium, @axe-core/playwright als devDependency) fährt 34 Ansichten in 375x667, 1280x800 und 1920x1080 und schreibt PNGs plus messwerte.json (Ladezeit, lange Aufgaben bei Zoom, Schieben und Tempo 100, axe WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele unter 44/24 px, Flächenanteile, waagerechter Überlauf). Spielende über einen echten Spielstand der Aufnahme, dessen victory.winner gesetzt und mit serialise des Kerns neu versiegelt wird - keine Spiellogik geändert. Befunde und Maßnahmen in docs/plan/UX-PLAN.md.
+
+### T-M44-02 · Prüfmodus des Messwerkzeugs
+- **Ziel:** Jede M44-Aufgabe hat einen Browser-Test, der ihr Abnahmekriterium als Exit-Code meldet.
+- **Paket und Priorität:** alle (Werkzeug) · P1
+- **Anforderungen:** R-UX-01, R-UX-06
+- **Abhängigkeiten:** T-M44-01
+- **Dateien:** `scripts/ux-capture.mjs`, `scripts/ux-thresholds.mjs`, `test/ux-thresholds.test.ts`, `package.json`
+- **Tests zuerst:** `test/ux-thresholds.test.ts` - die Schwellen aus R-UX-01..06 als reine Funktion über ein messwerte.json: der Vorher-Stand fällt an genau den im UX-PLAN genannten Stellen, ein erfundener Sollstand ist grün.
+- **Fertig wenn:** node scripts/ux-capture.mjs --check [--only <Kriterium>] liest die Schwellen aus scripts/ux-thresholds.mjs, gibt je Kriterium grün/rot mit Messwert aus und endet mit Exit 1 bei einem roten. pnpm ux:check als Skript in package.json (nicht in verify: braucht Dev-Server und Browser). Aufwand 3 h.
+
+### T-M44-03 · Telefon hochkant: Karte zuerst, Seitenleiste als Blatt
+- **Ziel:** Bei 375x667 ist die Karte sichtbar und jede Kernhandlung erreichbar (vorher Kartenanteil 0, Seitenleiste und Fuß füllen das Bild).
+- **Paket und Priorität:** Responsivität · P1
+- **Anforderungen:** R-UX-01
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/src/ui/touch.css`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Sheet.tsx`, `apps/desktop/src/ui/Sheet.test.tsx`, `apps/desktop/src/ui/portrait.touch.test.tsx`
+- **Tests zuerst:** `apps/desktop/src/ui/Sheet.test.tsx` (drei Rasten, Escape schließt, Panel öffnet auf halb); `apps/desktop/src/ui/portrait.touch.test.tsx` (Kaskade: unter 600 px gilt die Blatt-Regel, Kopfleiste nowrap); Browser: `pnpm ux:check --only R-UX-01`.
+- **Fertig wenn:** R-UX-01/AK1-AK3 bei 375x667: mapShareOfViewport >= 0,45, pageOverflowX falsch, overflowingRegions leer, Aufnahme ohne Fehlschritt. 1280 und 1920 unverändert (Bildvergleich der Kartenansicht). Sichtprüfung am laufenden Spiel (WORKFLOW Paragraf 3, Kaskade). Aufwand 8 h.
+
+### T-M44-04 · Kopfleiste einzeilig, hidden gilt
+- **Ziel:** Die Kopfleiste bleibt ab 1280 px einzeilig, auch wenn das Siegziel erscheint; kein leerer Alarmrahmen.
+- **Paket und Priorität:** Spielfeld/HUD · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/touch.css`
+- **Tests zuerst:** `apps/desktop/src/ui/cascade.touch.test.tsx` - Kaskadenwächter: `[hidden]` gewinnt gegen `.header__alarm { display: inline-flex }` (heute rot); `apps/desktop/src/ui/Header.test.tsx` - Siegziel steht in der Uhrzeile; Browser: `pnpm ux:check --only R-UX-02`.
+- **Fertig wenn:** R-UX-02/AK1, AK2: Kopfleiste samt Rohstoffleiste <= 70 px bei 1280x800 und 1920x1080 auch ab Tag 2 (vorher 105-107 px bei 1280x800, Kartenanteil fällt dabei von 0,535 auf 0,462), kein sichtbares Element mit hidden. Kaskade am laufenden Spiel geprüft (Falle aus M36). Aufwand 3 h.
+
+### T-M44-05 · Dialoge: Hauptaktion in fester Fußzeile, Spielstandraster passt
+- **Ziel:** "Partie beginnen" ist ohne Rollen sichtbar; das Spielstandraster läuft nicht aus dem Dialog.
+- **Paket und Priorität:** Navigation/Menüs · P1
+- **Anforderungen:** R-UX-05, R-UX-01
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/touch.css`
+- **Tests zuerst:** `apps/desktop/src/ui/Dialogs.test.tsx` - Aktionen stehen in `.dialog__foot` außerhalb des rollenden Körpers; Spielstände in einer Spalte je Platz; Browser: `pnpm ux:check --only R-UX-05/AK1` und `R-UX-01/AK2`.
+- **Fertig wenn:** R-UX-05/AK1 in allen drei Größen (vorher: Knopf bei y=733 unter dem Dialogrand 720 bei 1280x800); R-UX-01/AK2 für .dialog und .slots (vorher Spielstandraster 4. Spalte abgeschnitten). Aufwand 3 h.
+
+### T-M44-06 · Spielersprache: Sperrgründe, Kennungen, beschädigter Stand
+- **Ziel:** Kein Rohwort des Kerns ("kein Angebot", "bereits im Krieg"), keine Kennung ("a68") und keine falsche Ursache ("andere Fassung") in Spielertexten.
+- **Paket und Priorität:** Feedback/Hinweise · P1
+- **Anforderungen:** R-UX-03
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/src/game/rejections.ts`, `apps/desktop/src/game/rejections.test.ts`, `apps/desktop/src/game/saves.ts`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/game/rejections.test.ts` (neu) - jeder INVALID_TARGET-Grund der Hüllen-Befehle hat einen Satz, kein Satz enthält Klammer-Rohwort; `apps/desktop/src/game/saves.test.ts` - "Dem Speicherstand fehlen Version oder Spielstand" ergibt corrupt, nicht wrongVersion (heute rot); `apps/desktop/src/i18n/text.test.ts` - Umlaut-Wächter grün.
+- **Fertig wenn:** R-UX-03/AK1-AK3. Grund-Tabelle wie SPY_REASON_KEYS; Namensauflösung merkt sich den letzten Namen einer Armee (App.tsx, vier Stellen mit "?? id"). Kern unverändert: die Gründe werden gelesen, nicht geändert. Aufwand 4 h.
+
+### T-M44-07 · Kartentooltip verschwindet beim Verlassen und unter Dialogen
+- **Ziel:** Der Tooltip "Mittlerer Westen / Moral / Armeen" liegt nicht mehr über der Depesche und bleibt nicht stehen, wenn der Zeiger geht.
+- **Paket und Priorität:** Feedback/Hinweise · P1
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M44-04
+- **Dateien:** `apps/desktop/src/ui/Tooltip.tsx`, `apps/desktop/src/map/MapCanvas.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/map/MapCanvas.test.tsx` - pointerleave meldet onHover(null); `apps/desktop/src/ui/Tooltip.test.tsx` - bei offenem Dialog kein Tooltip; Browser: Bild 24 (Depesche) ohne Tooltip.
+- **Fertig wenn:** R-UX-02/AK3 in allen drei Größen. Aufwand 2 h.
+
+### T-M44-08 · Endedialog hält den Fokus, axe ohne Verstoß
+- **Ziel:** Tab verlässt den Endedialog nicht mehr (vorher erreichte Tab Menü, Weltkarte und Zoomknöpfe dahinter), und axe meldet keinen Verstoß mehr (vorher Alarmchip 4,27:1 bei 12 px, rollbare Rohstoffleiste ohne Tastaturzugang bei 375 px).
+- **Paket und Priorität:** Barrierefreiheit · P1
+- **Anforderungen:** R-UX-06
+- **Abhängigkeiten:** T-M44-04, T-M44-05
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/ui/Header.tsx`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/tokens.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/a11y.test.tsx` - R-UX-06/AK2: VictoryDialog nutzt das gemeinsame Dialog-Gerüst, Tab vom letzten Knopf springt zum ersten (heute rot); `apps/desktop/src/ui/tokens.contrast.test.ts` - Paar Alarmchip-Schrift auf paperSunk >= 4,5:1 (heute 4,27); Browser: keyboard.victory ohne Ziel außerhalb des Dialogs, axe 0 Verstöße in allen Messzuständen.
+- **Fertig wenn:** R-UX-06/AK1, AK2 für alle modalen Dialoge und Messzustände der Aufnahme (Start, Spielstände, Einstellungen, Depesche, Ende). Rohstoffleiste: tabindex=0 mit Namen, wenn sie rollt. Aufwand 2,5 h.
+
+### T-M44-09 · Rückfrage bei folgenschweren Befehlen
+- **Ziel:** Krieg erklären, Bündnis aufkündigen, belegten Stand überschreiben und neue Partie aus laufender Partie brauchen einen zweiten Schritt.
+- **Paket und Priorität:** Feedback/Hinweise · P1
+- **Anforderungen:** R-UX-04
+- **Abhängigkeiten:** T-M44-08
+- **Dateien:** `apps/desktop/src/ui/ConfirmButton.tsx`, `apps/desktop/src/ui/ConfirmButton.test.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/ConfirmButton.test.tsx` (neu) - erster Klick zeigt Folge-Satz, zweiter sendet, Escape und Fokusverlust brechen ab; `apps/desktop/src/ui/Panels.test.tsx` - "Krieg erklären" sendet erst nach Bestätigung (heute rot); `apps/desktop/src/ui/Dialogs.test.tsx` - Überschreiben eines belegten Platzes fragt nach.
+- **Fertig wenn:** R-UX-04/AK1. Befehle selbst unverändert (dieselben Kommandos an den Kern). Aufwand 4 h.
+
+### T-M44-10 · Protokollzeit einzeilig, Fuß-Rangliste mit Spitze
+- **Ziel:** "22 · 00:00" bricht nicht mehr um; die Fuß-Rangliste zeigt Platz 1 und die eigene Umgebung (vorher Plätze 5-8).
+- **Paket und Priorität:** Spielfeld/HUD · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M44-07
+- **Dateien:** `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/ui/Foot.test.tsx` - Platz 1 steht immer in der Liste; Zeitspalte mit nowrap (Kaskadenwächter); Browser: Bild 22/23 einzeilig.
+- **Fertig wenn:** R-UX-02/AK4. Aufwand 2 h.
+
+### T-M44-11 · Zielwahl: erreichbare Ziele zuerst
+- **Ziel:** Die Liste der Marschziele zeigt erreichbare Ziele mit Ankunftstag zuerst; unerreichbare sind abgetrennt und nicht wählbar (vorher 237 Ziele alphabetisch).
+- **Paket und Priorität:** Spielfeld/HUD · P2
+- **Anforderungen:** R-UX-04
+- **Abhängigkeiten:** T-M44-06
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/game/actions.ts`
+- **Tests zuerst:** `apps/desktop/src/game/actions.test.ts` - Zielliste nach Erreichbarkeit und Ankunft sortiert, Nordwestaustralien von Mittlerer Westen aus disabled; `apps/desktop/src/ui/Panels.test.tsx` - zwei optgroups.
+- **Fertig wenn:** R-UX-04/AK2. Nutzt die vorhandene Wegsuche der Hülle (dieselbe, die "Dorthin führt kein Weg" meldet); keine Kernänderung. Messen: Zeit zum Öffnen der Zielwahl auf der Weltkarte < 50 ms (lange Aufgabe). Aufwand 4 h.
+
+### T-M44-12 · Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurück
+- **Ziel:** Die Wirtschaftstabelle steht nicht mehr unter jedem Panel und schiebt die Befehle nicht aus dem Bild; jedes Panel hat einen Kopf mit Zurück.
+- **Paket und Priorität:** Spielfeld/HUD · P2
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M44-03
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/ui/Panels.test.tsx` - Wirtschaft als details mit gemerktem Zustand; `apps/desktop/src/App.test.tsx` - Zurück führt zur Provinz der Armee.
+- **Fertig wenn:** R-UX-02 (Orientierung). Gemessen: Armeepanel 1280x800 zeigt Marschieren ohne Rollen (vorher Kopf außerhalb des Bildes). Aufwand 4 h.
+
+### T-M44-13 · Erklärung als Popover mit Escape
+- **Ziel:** Ein "?" im Bauplatzraster bricht die Kachel nicht mehr auf und schließt mit Escape.
+- **Paket und Priorität:** Onboarding · P2
+- **Anforderungen:** R-UX-05
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/src/ui/Explain.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/ui/Explain.test.tsx` - Escape schließt, Fokus zurück auf "?" (heute rot); Browser: Bild 10 ohne verschobenes Raster.
+- **Fertig wenn:** R-UX-05/AK3. Aufwand 2 h.
+
+### T-M44-14 · Einführung ortsunabhängig und nicht verdeckend
+- **Ziel:** Die Einführung sagt nicht "rechts", wenn die Seitenleiste unten liegt, und verdeckt bei 375x667 nicht die Provinzwahl.
+- **Paket und Priorität:** Onboarding · P2
+- **Anforderungen:** R-UX-05
+- **Abhängigkeiten:** T-M44-03
+- **Dateien:** `apps/desktop/src/game/tutorial.ts`, `apps/desktop/src/ui/Tutorial.tsx`, `apps/desktop/src/i18n/de.ts`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/game/tutorial.test.ts` - kein Schritttext mit rechts/links/oben/unten; `apps/desktop/src/ui/Tutorial.test.tsx` - Einführung weicht dem Zielelement aus.
+- **Fertig wenn:** R-UX-05/AK2. Aufwand 3 h.
+
+### T-M44-15 · Startdialog mit Kurzhilfe, Endedialog mit Siegbedingung
+- **Ziel:** Gegner, Schwierigkeit und Startzahl erklären sich im Startdialog; der Endedialog nennt Sieg/Niederlage, die Bedingung und Kennzahlen (vorher derselbe Titel für beides, nur eine Zeile).
+- **Paket und Priorität:** Onboarding · P2
+- **Anforderungen:** R-UX-05
+- **Abhängigkeiten:** T-M44-09
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/Dialogs.test.tsx` - Endedialog bei Niederlage hat eigene Überschrift und nennt die Siegbedingung; Startdialog führt für jedes Feld eine Kurzhilfe.
+- **Fertig wenn:** R-UX-05/AK4. Aufwand 3 h.
+
+### T-M44-16 · Einstellungen mit Einheiten, Tastenkürzel im Menü
+- **Ziel:** "Automatisch speichern alle 5" nennt seine Einheit, die Höchstgeschwindigkeit ist eine Auswahl der Tempostufen, und die Tastenkürzel sind aus dem Menü erreichbar (heute nur per Taste).
+- **Paket und Priorität:** Navigation/Menüs · P2
+- **Anforderungen:** R-UX-05
+- **Abhängigkeiten:** T-M44-15
+- **Dateien:** `apps/desktop/src/ui/Dialogs.tsx`, `apps/desktop/src/App.tsx`, `apps/desktop/src/i18n/de.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/Dialogs.test.tsx` - Menü führt "Tastenkürzel"; Einstellungen zeigen Einheiten; `apps/desktop/src/keyboard.test.ts` unverändert grün.
+- **Fertig wenn:** R-UX-05 (Erkennen statt Erinnern). Aufwand 2 h.
+
+### T-M44-17 · Touch-Ziele und eigenes Fokus-Token
+- **Ziel:** Bei 375 px kein Bedienelement unter 44 px, am Schreibtisch keines unter 24 px; der Fokusrahmen ist nicht mehr Feindrot.
+- **Paket und Priorität:** Barrierefreiheit · P2
+- **Anforderungen:** R-UX-06
+- **Abhängigkeiten:** T-M44-03, T-M44-08
+- **Dateien:** `apps/desktop/src/ui/touch.css`, `apps/desktop/src/ui/app.css`, `apps/desktop/src/ui/tokens.ts`, `apps/desktop/src/ui/inputMode.ts`
+- **Tests zuerst:** `apps/desktop/src/ui/tokens.contrast.test.ts` - Token focus >= 3:1 gegen ground und paper, ungleich accent; `apps/desktop/src/ui/ActionButton.touch.test.tsx` - Mindestmaß unter 600 px; Browser: `pnpm ux:check --only R-UX-06/AK3`.
+- **Fertig wenn:** R-UX-06/AK3, AK4. Ausnahmen (Kartenmarker, Übersichtskarte) im UX-PLAN gelistet. Aufwand 3 h.
+
+### T-M44-18 · Sperrgründe gebündelt, Leerzustände als Fließtext
+- **Ziel:** Im Diplomatiepanel steht nicht mehr unter fünf Knöpfen je ein Sperrsatz; "Derzeit führt niemand Krieg." ist kein Überschriftentext.
+- **Paket und Priorität:** Feedback/Hinweise · P3
+- **Anforderungen:** R-UX-03
+- **Abhängigkeiten:** T-M44-11
+- **Dateien:** `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/app.css`
+- **Tests zuerst:** `apps/desktop/src/ui/Panels.test.tsx` - gesperrte Vertragsbefehle zeigen den Grund am Knopf (title/aria-describedby) und eine Sammelzeile, nicht fünf Absätze.
+- **Fertig wenn:** R-UX-03 (Lesbarkeit). Aufwand 3 h.
+
+### T-M44-19 · Favicon und Ladeanzeige
+- **Ziel:** Kein 404 beim Start (favicon.ico), und der leere Zustand vor der ersten Partie zeigt Fortschritt statt nur "Lade".
+- **Paket und Priorität:** Navigation/Menüs · P3
+- **Anforderungen:** R-UX-01
+- **Abhängigkeiten:** T-M44-02
+- **Dateien:** `apps/desktop/index.html`, `apps/desktop/public/favicon.svg`, `docs/ASSETS.md`
+- **Tests zuerst:** `apps/desktop/src/ui/viewport.touch.test.tsx` - index.html führt ein icon; Browser: consoleErrors leer.
+- **Fertig wenn:** R-UX-01 (Konsistenz). Neue Bilddatei in docs/ASSETS.md eintragen (R-ASSET-01, WORKFLOW Falle 23). Aufwand 0,5 h.
+
+### T-M44-20 · Tempo 100 ohne Ruckler in der Hülle
+- **Ziel:** Bei Tempo 100 laufen Karte und Panels flüssig (vorher 4-7 lange Aufgaben in 3 s, längste 107-114 ms, Bild-p95 67-117 ms).
+- **Paket und Priorität:** Spielfeld/HUD · P3
+- **Anforderungen:** R-UX-02
+- **Abhängigkeiten:** T-M44-12
+- **Dateien:** `apps/desktop/src/App.tsx`, `apps/desktop/src/ui/Panels.tsx`, `apps/desktop/src/ui/Foot.tsx`, `apps/desktop/src/map/MapCanvas.tsx`
+- **Tests zuerst:** Erst messen: `node scripts/ux-capture.mjs --out <tmp> --viewports 1920x1080` auf ruhiger Maschine (CLAUDE.md: Benchmarks brauchen die Maschine allein), dann Profil eines Tageswechsels; `apps/desktop/src/map/render.bench.slow.test.ts` bleibt im Budget.
+- **Fertig wenn:** R-UX-02 (gefühlte Leistung): perf.running100.framesOver50Ms <= 3 und longTaskMaxMs <= 60 bei 1920x1080 auf ruhiger Maschine, gemessen gegen einen am selben Tag gemessenen Ausgangswert (WORKFLOW Falle 18). Nur Hülle (Memoisierung der Panels, Protokoll-Liste, Neuzeichnen nur bei Änderung); kein Kern-Tick wird verändert. Ist die Ursache im Kern-step, endet die Aufgabe mit einem Befund statt einer Änderung. Aufwand 4 h.
+
+### T-M44-21 · Nachher-Aufnahme und Abnahme UX V2
+- **Ziel:** Dieselben Bilder und Messwerte nach dem Umbau, Vorher/Nachher-Tabelle im UX-PLAN.
+- **Paket und Priorität:** alle · P1
+- **Anforderungen:** R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06
+- **Abhängigkeiten:** T-M44-03, T-M44-04, T-M44-05, T-M44-06, T-M44-07, T-M44-08, T-M44-09, T-M44-10, T-M44-11, T-M44-12, T-M44-13, T-M44-14, T-M44-15, T-M44-16, T-M44-17, T-M44-18, T-M44-19, T-M44-20
+- **Dateien:** `docs/ux/after/messwerte.json`, `docs/plan/UX-PLAN.md`, `docs/plan/PROGRESS.md`
+- **Tests zuerst:** Browser: `node scripts/ux-capture.mjs --out docs/ux/after` und `pnpm ux:check` - alle Kriterien grün.
+- **Fertig wenn:** Alle R-UX-Kriterien grün in drei Größen; Tabelle vorher/nachher im UX-PLAN Paragraf 7; pnpm verify Exit 0; Golden-Master unverändert; packages/core, packages/ai, data/rules ohne Diff gegen den Stand vor M44. Neue Bilder in docs/ASSETS.md (R-ASSET-01). Aufwand 2 h.

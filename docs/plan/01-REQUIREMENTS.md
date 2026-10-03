@@ -512,6 +512,14 @@ scope:
     R-AI-11:    "M42 — die KI rechnet mit dem Geld, das sie hat (T-M42-03, T-M42-04)"
     R-AI-12:    "M42 — die KI baut Fabriken und fuehrt Artillerie (T-M42-06, T-M42-07)"
     R-DIP-10:   "M43 — Raeumfrist nach Frieden, Buendnisbruch und Kuendigung (T-M43-01)"
+    # UX V2 vom 2026-10-03 (docs/plan/UX-PLAN.md): Bedienbarkeit, Rueckmeldung und Zugang,
+    # gemessen mit scripts/ux-capture.mjs. Keine Regel-, Balancing- oder KI-Aenderung.
+    R-UX-01:    "M44 — drei Fenstergroessen, Telefon hochkant (T-M44-03)"
+    R-UX-02:    "M44 — Kopfleiste und Spielfeld auf einen Blick (T-M44-04, T-M44-07, T-M44-20)"
+    R-UX-03:    "M44 — Spielersprache fuer Ablehnungen und Meldungen (T-M44-06)"
+    R-UX-04:    "M44 — Rueckfrage bei folgenschweren Befehlen, erreichbare Ziele zuerst (T-M44-09, T-M44-11)"
+    R-UX-05:    "M44 — Einstieg und Dialoge erklaeren sich (T-M44-05, T-M44-15)"
+    R-UX-06:    "M44 — WCAG 2.1 AA in der Bedienung (T-M44-08, T-M44-17)"
   v1_partial:                       # nur ein Teil gehört zu V1
     R-GAME-02: "V1 nur Punkte- und Eroberungssieg; das Zeitlimit bleibt im Kern und ist nur über eine Konfiguration erreichbar (M18)"
     R-DIP-01:  "V1 nur die sechs Zustände; ausgehandelte Verträge mit Provinz-, Karten- und Tributterm sind M18"
@@ -1371,6 +1379,76 @@ gemeinsame Räumfrist für Frieden und Bündnisbruch gibt; die Form nach Noahs A
   zur Armee springen.
 - **AK6:** WENN diese Anforderung gebaut ist, DANN SOLL `SCHEMA_VERSION` 4 bleiben und kein
   Golden-Master sich bewegen.
+
+### 2.20 Bedienbarkeit, Rückmeldung und Zugang (M44 „UX V2", aufgenommen 2026-10-03) — `R-UX`
+
+Aus der UX-Aufnahme vom 2026-10-03 (`docs/plan/UX-PLAN.md`, Bilder und Messwerte in
+`docs/ux/before/`, Messwerkzeug `scripts/ux-capture.mjs`). Keine dieser Anforderungen berührt
+Regeln, Balancing oder KI: `packages/core`, `packages/ai` und `data/rules` bleiben unverändert.
+Gemessen wird mit demselben Werkzeug vorher (`docs/ux/before`) und nachher (`docs/ux/after`) in
+den drei Fenstergrößen 375×667, 1280×800 und 1920×1080. Entwurf: `02-DESIGN.md` D36.
+
+- **R-UX-01 — Das Spiel ist in drei Fenstergrößen bedienbar.**
+- **AK1:** WENN das Spiel bei 375×667 (Telefon hochkant) läuft, DANN SOLL die Karte mindestens
+  45 % der sichtbaren Fläche einnehmen (Messwert `layout.mapStart.mapShareOfViewport`).
+- **AK2:** WENN die Aufnahme in 375×667, 1280×800 und 1920×1080 läuft, DANN SOLL weder die Seite
+  noch ein gemessener Bereich (Kopfleiste, Seitenleiste, Fuß, Dialog, Spielstandraster) waagerecht
+  überlaufen (`pageOverflowX` falsch, `overflowingRegions` leer).
+- **AK3:** WENN die Aufnahme in einer der drei Größen läuft, DANN SOLL sie ohne Fehlschritt
+  durchlaufen (`failures` leer) — jede Kernhandlung ist in jeder Größe erreichbar.
+
+- **R-UX-02 — Kopfleiste und Spielfeld zeigen den Stand auf einen Blick.**
+- **AK1:** WENN das Fenster mindestens 1280 px breit ist, DANN SOLL die Kopfleiste samt Siegziel
+  einzeilig bleiben: Kopfleiste und Rohstoffleiste zusammen höchstens 70 px hoch, auch ab Spieltag 2
+  (gemessen vorher: 65 px am Start, 105–107 px ab Tag 2 bei 1280×800).
+- **AK2:** WENN ein Element das Attribut `hidden` trägt, DANN SOLL es nicht gezeichnet werden; die
+  Kaskade darf `hidden` nicht überstimmen (vorher: leerer roter Alarmrahmen in der Kopfleiste).
+- **AK3:** WENN ein Dialog offen ist oder der Zeiger die Karte verlässt, DANN SOLL kein
+  Kartentooltip sichtbar sein.
+- **AK5:** WENN das Spiel auf Tempo 100 läuft, DANN SOLLEN Karte und Panels flüssig bleiben: in drei
+  Sekunden höchstens drei Bilder über 50 ms und keine lange Aufgabe über 60 ms bei 1920×1080, gemessen
+  auf ruhiger Maschine gegen einen am selben Tag gemessenen Ausgangswert (vorher 16 Bilder, 114 ms).
+- **AK4:** WENN das Protokoll eine Zeile zeigt, DANN SOLL ihre Zeitangabe einzeilig stehen, und die
+  Rangliste im Fuß SOLL den Ersten immer zeigen.
+
+- **R-UX-03 — Jede Ablehnung und jede Meldung spricht Spielersprache.**
+- **AK1:** WENN der Kern einen Befehl mit einem Grund (`detail.reason`) ablehnt, DANN SOLL die
+  Oberfläche einen deutschen Satz dazu zeigen und nie das Rohwort des Kerns in Klammern; ein
+  Wächter prüft, dass jeder Grund, den die Hülle zu sehen bekommt, einen Schlüssel in `de.ts` hat.
+- **AK2:** WENN ein Spielertext eine Armee, Provinz oder Macht nennt, DANN SOLL er ihren Namen
+  tragen und nie eine interne Kennung (vorher: „a68 ist vernichtet.").
+- **AK3:** WENN ein Spielstand nicht gelesen werden kann, DANN SOLL die Meldung sagen, dass er
+  beschädigt ist, und nicht, dass er aus einer anderen Fassung stamme.
+
+- **R-UX-04 — Folgenschwere Befehle fragen nach, unmögliche werden gar nicht erst angeboten.**
+- **AK1:** WENN der Spieler Krieg erklärt, ein Bündnis aufkündigt, einen belegten Spielstand
+  überschreibt oder aus einer laufenden Partie eine neue beginnt, DANN SOLL ein zweiter,
+  ausdrücklicher Schritt nötig sein, der die Folge in einem Satz nennt.
+- **AK2:** WENN der Spieler ein Marschziel wählt, DANN SOLLEN erreichbare Ziele mit Ankunftstag
+  zuerst und getrennt von unerreichbaren stehen; ein unerreichbares Ziel ist nicht wählbar
+  (vorher: 237 Ziele alphabetisch, „Dorthin führt kein Weg" erst nach der Wahl).
+
+- **R-UX-05 — Der Einstieg erklärt sich dort, wo der Spieler hinsieht.**
+- **AK1:** WENN ein Dialog mehr Inhalt hat, als in das Fenster passt, DANN SOLL seine Hauptaktion
+  ohne Rollen sichtbar bleiben (vorher: „Partie beginnen" bei 1280×800 unter dem Dialogrand).
+- **AK2:** WENN die Einführung einen Ort nennt, DANN SOLL er in jeder Fenstergröße stimmen (kein
+  „rechts", wenn die Seitenleiste unten liegt), und die Einführung SOLL das Element, von dem sie
+  spricht, nicht verdecken.
+- **AK3:** WENN eine Erklärung („?") offen ist, DANN SOLL Escape sie schließen und das Raster
+  daneben unverändert bleiben.
+- **AK4:** WENN die Partie entschieden ist, DANN SOLL der Endedialog Sieg oder Niederlage, die
+  erfüllte Siegbedingung und den Weg zur Karte und zu einer neuen Partie nennen.
+
+- **R-UX-06 — Die Bedienung erfüllt WCAG 2.1 AA.**
+- **AK1:** WENN axe-core mit den Regelsätzen `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` die
+  Messzustände der Aufnahme prüft, DANN SOLL es keinen Verstoß melden.
+- **AK2:** WENN ein modaler Dialog offen ist (auch der Endedialog), DANN SOLL Tab den Dialog nicht
+  verlassen und Escape ihn schließen, soweit er schließbar ist.
+- **AK3:** WENN das Spiel per Finger bedient wird oder schmaler als 600 px ist, DANN SOLL kein
+  Bedienelement der Kopfleiste, der Seitenleiste und der Dialoge kleiner als 44×44 px sein; am
+  Schreibtisch keines kleiner als 24×24 px (WCAG 2.5.8 als Untergrenze).
+- **AK4:** WENN ein Element den Tastaturfokus hat, DANN SOLL der Rahmen ein eigenes Fokus-Token
+  tragen (nicht die Signalfarbe für Feind und Alarm) und gegen beide Gründe mindestens 3:1 halten.
 
 ## 3. Abnahmekriterien für V1 (Definition of Done der Version)
 

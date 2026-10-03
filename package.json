@@ -28,12 +28,14 @@
     "tauri:dev": "tauri dev --config apps/desktop/src-tauri/tauri.conf.json",
     "tauri:build": "tauri build --config apps/desktop/src-tauri/tauri.conf.json",
     "desktop:build": "pnpm --filter @worldwar/desktop build",
-  "mp:host": "node apps/party/src/index.ts",
+    "mp:host": "node apps/party/src/index.ts",
     "acceptance": "node scripts/acceptance.mjs",
     "playtest:sheet": "node scripts/playtest-sheet.mjs",
-    "android:check": "node scripts/android-check.mjs"
+    "android:check": "node scripts/android-check.mjs",
+    "ux:capture": "node scripts/ux-capture.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.0",
     "@tauri-apps/cli": "^2.11.4",
     "@testing-library/react": "^16.3.3",
@@ -50,6 +52,7 @@
     "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.4.0",
     "jsdom": "^30.0.1",
+    "playwright": "1.56.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "shapefile": "^0.6.6",

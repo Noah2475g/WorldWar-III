@@ -5741,3 +5741,25 @@ ist unabhängig vom Artillerieband — es hängt nicht daran, dass die KI selbst
 Gemessen auf Stufe C2: Paare über zwei Tagesenden 0, ai-integration 30/30, Turnier unverändert. Die
 Aussage „entfallen" in Option (c) ist damit berichtigt, nicht gelöscht; der Orchestrator hat sie ohne
 Rückfrage bei Noah so entschieden und offen gekennzeichnet — kippbar.
+
+---
+
+## 2026-10-03 · UX-Planungs-Agent, kippbar · UX V2: ein Browser-Messwerkzeug, keine E2E-Stufe
+
+**Entscheidung:** `playwright` (1.56.1, passend zum vorinstallierten Chromium) und
+`@axe-core/playwright` stehen als Entwicklungsabhängigkeiten in der Wurzel-`package.json`. Sie
+tragen **ein Messwerkzeug**, `scripts/ux-capture.mjs` (`pnpm ux:capture`), das die zentralen
+Ansichten in drei Fenstergrößen fotografiert und Ladezeit, Ruckler, axe-Verstöße, Tastatur,
+Touch-Ziele und Flächen misst (`docs/ux/before/messwerte.json`, `docs/plan/UX-PLAN.md`).
+
+**Warum das D14 nicht widerruft:** D14 nahm eine **E2E-Teststufe** zurück — eine zweite
+Testlaufzeit mit Browser in der Prüfkette, eigenen Zeitbudgets und eigener Flakiness. Das Werkzeug
+läuft **nicht** in `pnpm verify` und nicht in `pnpm acceptance`; es braucht einen laufenden
+Dev-Server und wird von Hand gefahren, wie der Parameterlauf. Der Prüfmodus aus T-M44-02
+(`pnpm ux:check`) meldet Schwellen als Exit-Code für die Abnahme einer M44-Aufgabe, nicht für
+jeden Commit. Der Wächter `test/withdrawals.test.ts` („der Entwurf kennt keine E2E-Stufe mit
+Playwright") bleibt unverändert und grün: D36 beschreibt das Werkzeug, keine Teststufe. Geändert
+hat sich nur die Tatsache aus D14s Begründung, dass `playwright` in keiner `package.json` steht.
+
+**Kippbar:** Will Noah keinen Browser im Repo, fällt die Abhängigkeit wieder heraus; die Bilder
+und Messwerte der Vorher-Aufnahme bleiben als Beleg, und M44 wird mit Sichtprüfungen abgenommen.

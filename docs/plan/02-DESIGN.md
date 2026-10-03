@@ -3509,3 +3509,57 @@ Wortlaut mit Uhrzeit statt Tagesgrenze: `DECISIONS.md`, 2026-09-27, T-M43-02.)*
 - Die Haltungs-Automatik ist nicht betroffen, weil der passive Mensch keinen Frieden schließt.
 - `breakAlliance` erzeugt weiterhin keine Verstimmung (Befund B7, zweite Hälfte). Das ist nicht Teil
   dieses Plans, siehe M18-Abschnitt in `03-TASKS.md`.
+
+## D36. UX V2 — Bedienbarkeit, Rückmeldung und Zugang (M44 — R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06)
+
+*(Die Nummer D35 ist in `FORTSCHRITT.md` lokal vergeben; dieser Abschnitt heißt deshalb D36.)*
+Plan, Befunde und Messwerte: `docs/plan/UX-PLAN.md`; Bilder `docs/ux/before/`; Werkzeug
+`scripts/ux-capture.mjs`. **Grenze:** nur die Hülle (`apps/desktop`, `index.html`, Skripte, Dokumente).
+`packages/core`, `packages/ai` und `data/rules` bleiben unverändert; der Golden-Master bewegt sich nicht.
+
+### D36.1 Messen statt Meinen (R-UX-01…06)
+
+`scripts/ux-capture.mjs` fährt das laufende Spiel in einem echten Browser (Chromium, ferngesteuert)
+in 375×667, 1280×800 und 1920×1080 durch und schreibt Bilder und `messwerte.json` (Ladezeit, lange
+Aufgaben bei Zoom/Schieben/Tempo 100, axe-core WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele
+unter 44/24 px, Flächenanteile und waagerechter Überlauf). T-M44-02 gibt ihm einen Prüfmodus
+`--check`, der die Schwellen der Abnahmekriterien als Exit-Code meldet; jede M44-Aufgabe nennt ihn als
+Browser-Prüfung neben ihren jsdom-Tests (jsdom rechnet kein Layout, WORKFLOW §4 Falle 25).
+
+**Keine E2E-Stufe (D14 bleibt):** das Werkzeug ist ein Messgerät wie der Parameterlauf, kein Teil von
+`pnpm verify` und keine Teststufe; es braucht einen laufenden Dev-Server und wird von Hand oder in der
+Abnahme einer M44-Aufgabe gefahren. Die Bibliothek ist als Entwicklungsabhängigkeit eingetragen;
+Begründung in `DECISIONS.md`, 2026-10-03 „UX V2: ein Browser-Messwerkzeug, keine E2E-Stufe".
+
+### D36.2 Telefon hochkant (R-UX-01, T-M44-03)
+
+Unter 600 px Breite und im Hochformat: Kopfleiste einzeilig und seitlich wischbar (dieselbe Regel wie
+heute im Querformat, `touch.css` „Telefon quer"), darunter die Karte über die volle Breite, die
+Seitenleiste als Blatt am unteren Rand mit drei Rasten (zu, halb, voll) und der Fuß als Reiterleiste.
+Ein Panel öffnet das Blatt auf „halb", die Karte bleibt darüber sichtbar.
+
+### D36.3 Kopfleiste, Tooltip, Seitenleiste (R-UX-02, T-M44-04, T-M44-07, T-M44-10, T-M44-12)
+
+Eine globale Regel `[hidden] { display: none !important; }` stellt `hidden` über jede Klassenregel.
+Das Siegziel wandert als schmaler Balken in die Zeile der Uhr; Spielstände und Menü rücken als
+Symbolknöpfe mit Namen an das Zeilenende. Der Kartentooltip hängt an `pointerleave` der Karte und an
+`dialog !== null`. Das Protokoll setzt die Zeitspalte auf `white-space: nowrap`; die Fuß-Rangliste zeigt
+Platz 1 und die eigene Umgebung. Die Wirtschaftstabelle unter jedem Panel wird einklappbar.
+
+### D36.4 Spielersprache und Fehlerprävention (R-UX-03, R-UX-04, T-M44-06, T-M44-09, T-M44-11)
+
+`describeRejection` bekommt für `INVALID_TARGET` eine Grund-Tabelle wie `SPY_REASON_KEYS`; ein Grund
+ohne Schlüssel fällt auf einen allgemeinen Satz ohne Rohwort zurück und lässt den Wächter fallen.
+Namensauflösung für Armeen merkt sich den letzten bekannten Namen, statt auf die Kennung
+zurückzufallen. Ein Bestätigungsknopf (`ConfirmButton`, zwei Schritte, Escape bricht ab) trägt Krieg,
+Bündnisbruch, Überschreiben und neue Partie. Die Zielwahl fragt die vorhandene Wegsuche der Hülle
+(dieselbe, die heute „Dorthin führt kein Weg" meldet) für alle Ziele einmal je Öffnen.
+
+### D36.5 Einstieg, Dialoge, Zugang (R-UX-05, R-UX-06, T-M44-05, T-M44-08, T-M44-13…T-M44-17)
+
+Dialoge bekommen eine feste Fußzeile für ihre Aktionen; der Körper rollt. Der Endedialog nutzt das
+gemeinsame Dialog-Gerüst samt Fokusfalle. Die Erklärung „?" wird ein Popover über dem Raster und
+schließt mit Escape. Die Einführung spricht von Bereichen („in der Provinzansicht") statt von
+Richtungen und weicht dem Element aus, auf das sie zeigt. Ein Token `focus` (Bernstein-Ton, ≥ 3:1
+gegen `ground` und `paper`) ersetzt `accent` im Fokusrahmen. Im Finger-Betrieb und unter 600 px
+gelten 44 px als Mindestmaß für Knöpfe, sonst 24 px.

@@ -106,6 +106,9 @@ milestones:
   # Aufgaben in eigenen Worktrees, Ruecklauf in Stufenreihenfolge (Plan Abschnitt 5).
   - { id: M42, title: "Das Heer der KI" }
   - { id: M43, title: "Frieden mit Raeumfrist" }
+  # UX V2 vom 2026-10-03 (docs/plan/UX-PLAN.md): Messung in drei Fenstergroessen, dann
+  # Massnahmen in sechs Paketen. Nur die Huelle; Kern, KI und Regeln bleiben unberuehrt.
+  - { id: M44, title: "UX V2" }
 
 tasks:
   - id: T-M0-01
@@ -3749,3 +3752,217 @@ tasks:
     files: [docs/reports/balance-sweep.md, docs/reports/ai-tournament-run.md, docs/reports/progress-measured.json, docs/reports/acceptance.md, docs/reports/stance.json, docs/reports/ai-bench.json, docs/reports/ai-reachability.md, packages/ai/src/economy.ts, packages/ai/src/targeting.ts, docs/plan/BALANCING.md, docs/plan/DECISIONS.md, docs/plan/PROBLEME.md, docs/plan/PROGRESS.md, docs/plan/WORKFLOW.md]
     tests: [apps/headless/test/sweep.slow.test.ts, apps/headless/test/tournament.slow.test.ts, apps/headless/test/progress.slow.test.ts, apps/headless/test/ai-integration.slow.test.ts, apps/headless/test/m17-integration.slow.test.ts, apps/headless/test/stance.slow.test.ts]
     dod: "Ziel: eine Messung, die fuer den Endstand gilt. Ablauf: Stufe Ende nach Plan Paragraf 9.2; genau ein Parameterlauf, wenn eine Regeldatei sich geaendert hat (Noahs Antwort auf Frage 2 = a); Haltungs-Messlauf zweimal (erst ohne Schreiben, weicht die Kontrolle ab wird sie mit Begruendung neu gesetzt, dann mit WORLDWAR_WRITE_REPORT=1 auf sauberem Baum); reisst AK5, wird die verursachende M42/M43-Aufgabe gesucht (juengste Stufe zuerst) und diese zurueckgenommen, nicht die Automatik; zuletzt pnpm acceptance auf ruhiger Maschine, 12 von 12 (AK-8 darf auf Warnung stehen). 'Frieden in 90 Tagen' (Noahs Antwort auf Frage 7, wie empfohlen): ist das it.fails jetzt gruen, wird es zu it(); sonst gilt die Neufassung 'in 200 Tagen mindestens ein Frieden zwischen KI-Maechten, in jeder der drei Startzahlen'. Aufwand 3 h, Rechenzeit rund 1,5 h ohne und rund 3 h mit Parameterlauf. ERLEDIGT am 2026-10-03 auf dem Endstand Stufe C2 (T-M42-08/-09/-10; T-M42-04/-05/-07 zurueckgenommen bzw. zurueckgestellt): kein Parameterlauf, weil sich keine Regeldatei geaendert hat (Frische-Waechter: seit b8d36e6 kein Commit an data/rules); Haltungs-Messlauf zweimal (ohne Schreiben 35/35, Kontrolle 26/4 trifft, keine Neusetzung noetig; dann mit WORLDWAR_WRITE_REPORT=1 auf sauberem Baum, measuredAtCommit dfaa254, AK5 erfuellt, verletzt leer, Provinz-Tage 89,5 Prozent); Frieden in 90 Tagen ist it() und gruen; Turnier und progress auf b8106df; pnpm acceptance 12 von 12, Exit 0, 7 min 49 s (AK-8 auf Warnung, AK-9 offen). Plansonden aus m18-plan-v2.md (nicht im Repo) durch die Slow-Suites ersetzt."
+  # M44 "UX V2", geplant am 2026-10-03 (docs/plan/UX-PLAN.md): Bedienbarkeit, Rueckmeldung und
+  # Zugang der Huelle. Keine Aufgabe aendert packages/core, packages/ai oder data/rules.
+  # Pakete: Navigation/Menues, Spielfeld/HUD, Feedback/Hinweise, Onboarding, Barrierefreiheit,
+  # Responsivitaet - Reihenfolge und Dateikonflikte in UX-PLAN.md Paragraf 6.
+  - id: T-M44-01
+    milestone: M44
+    title: "UX-Aufnahme: Messwerkzeug und Vorher-Bilder"
+    status: done
+    deps: []
+    requirements: [R-UX-01, R-UX-06]
+    design: [D-36]
+    files: [scripts/ux-capture.mjs, docs/ux/before/messwerte.json, docs/plan/UX-PLAN.md, package.json]
+    tests: []
+    dod: "Paket alle, Prioritaet Basis. Erledigt am 2026-10-03: scripts/ux-capture.mjs (Playwright, vorinstalliertes Chromium, @axe-core/playwright als devDependency) faehrt 34 Ansichten in 375x667, 1280x800 und 1920x1080 und schreibt PNGs plus messwerte.json (Ladezeit, lange Aufgaben bei Zoom, Schieben und Tempo 100, axe WCAG 2.1 AA, Tab-Reihenfolge mit Fokusrahmen, Ziele unter 44/24 px, Flaechenanteile, waagerechter Ueberlauf). Spielende ueber einen echten Spielstand der Aufnahme, dessen victory.winner gesetzt und mit serialise des Kerns neu versiegelt wird - keine Spiellogik geaendert. Befunde und Massnahmen in docs/plan/UX-PLAN.md."
+  - id: T-M44-02
+    milestone: M44
+    title: "Pruefmodus des Messwerkzeugs"
+    status: todo
+    deps: [T-M44-01]
+    requirements: [R-UX-01, R-UX-06]
+    design: [D-36]
+    files: [scripts/ux-capture.mjs, scripts/ux-thresholds.mjs, test/ux-thresholds.test.ts, package.json]
+    tests: [test/ux-thresholds.test.ts]
+    dod: "Paket alle (Werkzeug), Prioritaet P1. node scripts/ux-capture.mjs --check [--only <Kriterium>] liest die Schwellen aus scripts/ux-thresholds.mjs, gibt je Kriterium gruen/rot mit Messwert aus und endet mit Exit 1 bei einem roten. pnpm ux:check als Skript in package.json (nicht in verify: braucht Dev-Server und Browser). Aufwand 3 h."
+  - id: T-M44-03
+    milestone: M44
+    title: "Telefon hochkant: Karte zuerst, Seitenleiste als Blatt"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-01]
+    design: [D-36]
+    files: [apps/desktop/src/ui/touch.css, apps/desktop/src/ui/app.css, apps/desktop/src/App.tsx, apps/desktop/src/ui/Sheet.tsx, apps/desktop/src/ui/Sheet.test.tsx, apps/desktop/src/ui/portrait.touch.test.tsx]
+    tests: [apps/desktop/src/ui/Sheet.test.tsx, apps/desktop/src/ui/portrait.touch.test.tsx]
+    dod: "Paket Responsivitaet, Prioritaet P1. R-UX-01/AK1-AK3 bei 375x667: mapShareOfViewport >= 0,45, pageOverflowX falsch, overflowingRegions leer, Aufnahme ohne Fehlschritt. 1280 und 1920 unveraendert (Bildvergleich der Kartenansicht). Sichtpruefung am laufenden Spiel (WORKFLOW Paragraf 3, Kaskade). Aufwand 8 h."
+  - id: T-M44-04
+    milestone: M44
+    title: "Kopfleiste einzeilig, hidden gilt"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-02]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/touch.css]
+    tests: [apps/desktop/src/ui/Header.test.tsx, apps/desktop/src/ui/cascade.touch.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P1. R-UX-02/AK1, AK2: Kopfleiste samt Rohstoffleiste <= 70 px bei 1280x800 und 1920x1080 auch ab Tag 2 (vorher 105-107 px bei 1280x800, Kartenanteil faellt dabei von 0,535 auf 0,462), kein sichtbares Element mit hidden. Kaskade am laufenden Spiel geprueft (Falle aus M36). Aufwand 3 h."
+  - id: T-M44-05
+    milestone: M44
+    title: "Dialoge: Hauptaktion in fester Fusszeile, Spielstandraster passt"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-05, R-UX-01]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/touch.css]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Paket Navigation/Menues, Prioritaet P1. R-UX-05/AK1 in allen drei Groessen (vorher: Knopf bei y=733 unter dem Dialogrand 720 bei 1280x800); R-UX-01/AK2 fuer .dialog und .slots (vorher Spielstandraster 4. Spalte abgeschnitten). Aufwand 3 h."
+  - id: T-M44-06
+    milestone: M44
+    title: "Spielersprache: Sperrgruende, Kennungen, beschaedigter Stand"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-03]
+    design: [D-36]
+    files: [apps/desktop/src/game/rejections.ts, apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.ts, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/game/rejections.test.ts, apps/desktop/src/game/saves.test.ts, apps/desktop/src/i18n/text.test.ts]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-03/AK1-AK3. Grund-Tabelle wie SPY_REASON_KEYS; Namensaufloesung merkt sich den letzten Namen einer Armee (App.tsx, vier Stellen mit \"?? id\"). Kern unveraendert: die Gruende werden gelesen, nicht geaendert. Aufwand 4 h."
+  - id: T-M44-07
+    milestone: M44
+    title: "Kartentooltip verschwindet beim Verlassen und unter Dialogen"
+    status: todo
+    deps: [T-M44-04]
+    requirements: [R-UX-02]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Tooltip.tsx, apps/desktop/src/map/MapCanvas.tsx, apps/desktop/src/App.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Tooltip.test.tsx, apps/desktop/src/map/MapCanvas.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-02/AK3 in allen drei Groessen. Aufwand 2 h."
+  - id: T-M44-08
+    milestone: M44
+    title: "Endedialog haelt den Fokus, axe ohne Verstoss"
+    status: todo
+    deps: [T-M44-04, T-M44-05]
+    requirements: [R-UX-06]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/ui/Header.tsx, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts]
+    tests: [apps/desktop/src/ui/a11y.test.tsx, apps/desktop/src/ui/tokens.contrast.test.ts]
+    dod: "Paket Barrierefreiheit, Prioritaet P1. R-UX-06/AK1, AK2 fuer alle modalen Dialoge und Messzustaende der Aufnahme (Start, Spielstaende, Einstellungen, Depesche, Ende). Rohstoffleiste: tabindex=0 mit Namen, wenn sie rollt. Aufwand 2,5 h."
+  - id: T-M44-09
+    milestone: M44
+    title: "Rueckfrage bei folgenschweren Befehlen"
+    status: todo
+    deps: [T-M44-08]
+    requirements: [R-UX-04]
+    design: [D-36]
+    files: [apps/desktop/src/ui/ConfirmButton.tsx, apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/ConfirmButton.test.tsx, apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P1. R-UX-04/AK1. Befehle selbst unveraendert (dieselben Kommandos an den Kern). Aufwand 4 h."
+  - id: T-M44-10
+    milestone: M44
+    title: "Protokollzeit einzeilig, Fuss-Rangliste mit Spitze"
+    status: todo
+    deps: [T-M44-07]
+    requirements: [R-UX-02]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Foot.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Foot.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02/AK4. Aufwand 2 h."
+  - id: T-M44-11
+    milestone: M44
+    title: "Zielwahl: erreichbare Ziele zuerst"
+    status: todo
+    deps: [T-M44-06]
+    requirements: [R-UX-04]
+    design: [D-36]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/game/actions.ts]
+    tests: [apps/desktop/src/game/actions.test.ts, apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-04/AK2. Nutzt die vorhandene Wegsuche der Huelle (dieselbe, die \"Dorthin fuehrt kein Weg\" meldet); keine Kernaenderung. Messen: Zeit zum Oeffnen der Zielwahl auf der Weltkarte < 50 ms (lange Aufgabe). Aufwand 4 h."
+  - id: T-M44-12
+    milestone: M44
+    title: "Seitenleiste: Wirtschaft einklappbar, Panelkopf mit Zurueck"
+    status: todo
+    deps: [T-M44-03]
+    requirements: [R-UX-02]
+    design: [D-36]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx, apps/desktop/src/App.test.tsx]
+    dod: "Paket Spielfeld/HUD, Prioritaet P2. R-UX-02 (Orientierung). Gemessen: Armeepanel 1280x800 zeigt Marschieren ohne Rollen (vorher Kopf ausserhalb des Bildes). Aufwand 4 h."
+  - id: T-M44-13
+    milestone: M44
+    title: "Erklaerung als Popover mit Escape"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-05]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Explain.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Explain.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK3. Aufwand 2 h."
+  - id: T-M44-14
+    milestone: M44
+    title: "Einfuehrung ortsunabhaengig und nicht verdeckend"
+    status: todo
+    deps: [T-M44-03]
+    requirements: [R-UX-05]
+    design: [D-36]
+    files: [apps/desktop/src/game/tutorial.ts, apps/desktop/src/ui/Tutorial.tsx, apps/desktop/src/i18n/de.ts, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/game/tutorial.test.ts, apps/desktop/src/ui/Tutorial.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK2. Aufwand 3 h."
+  - id: T-M44-15
+    milestone: M44
+    title: "Startdialog mit Kurzhilfe, Endedialog mit Siegbedingung"
+    status: todo
+    deps: [T-M44-09]
+    requirements: [R-UX-05]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx]
+    dod: "Paket Onboarding, Prioritaet P2. R-UX-05/AK4. Aufwand 3 h."
+  - id: T-M44-16
+    milestone: M44
+    title: "Einstellungen mit Einheiten, Tastenkuerzel im Menue"
+    status: todo
+    deps: [T-M44-15]
+    requirements: [R-UX-05]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Dialogs.tsx, apps/desktop/src/App.tsx, apps/desktop/src/i18n/de.ts]
+    tests: [apps/desktop/src/ui/Dialogs.test.tsx, apps/desktop/src/keyboard.test.ts]
+    dod: "Paket Navigation/Menues, Prioritaet P2. R-UX-05 (Erkennen statt Erinnern). Aufwand 2 h."
+  - id: T-M44-17
+    milestone: M44
+    title: "Touch-Ziele und eigenes Fokus-Token"
+    status: todo
+    deps: [T-M44-03, T-M44-08]
+    requirements: [R-UX-06]
+    design: [D-36]
+    files: [apps/desktop/src/ui/touch.css, apps/desktop/src/ui/app.css, apps/desktop/src/ui/tokens.ts, apps/desktop/src/ui/inputMode.ts]
+    tests: [apps/desktop/src/ui/tokens.contrast.test.ts, apps/desktop/src/ui/ActionButton.touch.test.tsx]
+    dod: "Paket Barrierefreiheit, Prioritaet P2. R-UX-06/AK3, AK4. Ausnahmen (Kartenmarker, Uebersichtskarte) im UX-PLAN gelistet. Aufwand 3 h."
+  - id: T-M44-18
+    milestone: M44
+    title: "Sperrgruende gebuendelt, Leerzustaende als Fliesstext"
+    status: todo
+    deps: [T-M44-11]
+    requirements: [R-UX-03]
+    design: [D-36]
+    files: [apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/app.css]
+    tests: [apps/desktop/src/ui/Panels.test.tsx]
+    dod: "Paket Feedback/Hinweise, Prioritaet P3. R-UX-03 (Lesbarkeit). Aufwand 3 h."
+  - id: T-M44-19
+    milestone: M44
+    title: "Favicon und Ladeanzeige"
+    status: todo
+    deps: [T-M44-02]
+    requirements: [R-UX-01]
+    design: [D-36]
+    files: [apps/desktop/index.html, apps/desktop/public/favicon.svg, docs/ASSETS.md]
+    tests: [apps/desktop/src/ui/viewport.touch.test.tsx]
+    dod: "Paket Navigation/Menues, Prioritaet P3. R-UX-01 (Konsistenz). Neue Bilddatei in docs/ASSETS.md eintragen (R-ASSET-01, WORKFLOW Falle 23). Aufwand 0,5 h."
+  - id: T-M44-20
+    milestone: M44
+    title: "Tempo 100 ohne Ruckler in der Huelle"
+    status: todo
+    deps: [T-M44-12]
+    requirements: [R-UX-02]
+    design: [D-36]
+    files: [apps/desktop/src/App.tsx, apps/desktop/src/ui/Panels.tsx, apps/desktop/src/ui/Foot.tsx, apps/desktop/src/map/MapCanvas.tsx]
+    tests: [apps/desktop/src/map/render.bench.slow.test.ts, scripts/ux-capture.mjs]
+    dod: "Paket Spielfeld/HUD, Prioritaet P3. R-UX-02 (gefuehlte Leistung): perf.running100.framesOver50Ms <= 3 und longTaskMaxMs <= 60 bei 1920x1080 auf ruhiger Maschine, gemessen gegen einen am selben Tag gemessenen Ausgangswert (WORKFLOW Falle 18). Nur Huelle (Memoisierung der Panels, Protokoll-Liste, Neuzeichnen nur bei Aenderung); kein Kern-Tick wird veraendert. Ist die Ursache im Kern-step, endet die Aufgabe mit einem Befund statt einer Aenderung. Aufwand 4 h."
+  - id: T-M44-21
+    milestone: M44
+    title: "Nachher-Aufnahme und Abnahme UX V2"
+    status: todo
+    deps: [T-M44-03, T-M44-04, T-M44-05, T-M44-06, T-M44-07, T-M44-08, T-M44-09, T-M44-10, T-M44-11, T-M44-12, T-M44-13, T-M44-14, T-M44-15, T-M44-16, T-M44-17, T-M44-18, T-M44-19, T-M44-20]
+    requirements: [R-UX-01, R-UX-02, R-UX-03, R-UX-04, R-UX-05, R-UX-06]
+    design: [D-36]
+    files: [docs/ux/after/messwerte.json, docs/plan/UX-PLAN.md, docs/plan/PROGRESS.md]
+    tests: [scripts/ux-capture.mjs]
+    dod: "Paket alle, Prioritaet P1. Alle R-UX-Kriterien gruen in drei Groessen; Tabelle vorher/nachher im UX-PLAN Paragraf 7; pnpm verify Exit 0; Golden-Master unveraendert; packages/core, packages/ai, data/rules ohne Diff gegen den Stand vor M44. Neue Bilder in docs/ASSETS.md (R-ASSET-01). Aufwand 2 h."

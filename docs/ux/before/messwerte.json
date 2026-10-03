@@ -1,0 +1,2569 @@
+{
+  "createdAt": "2026-10-03T07:42:46.067Z",
+  "url": "http://localhost:5321/",
+  "outDir": "/home/user/ww-ux/docs/ux/before",
+  "viewports": {
+    "375x667": {
+      "steps": [
+        "01-start-neue-partie-375x667.png",
+        "02-partie-anlegen-startknopf-375x667.png",
+        "03-spielstaende-leer-375x667.png",
+        "04-karte-start-tutorial-375x667.png",
+        "05-kartenansicht-375x667.png",
+        "06-kopfleiste-hud-375x667.png",
+        "07-karte-gezoomt-375x667.png",
+        "08-kartenmodus-rohstoffe-375x667.png",
+        "09-provinz-auswahl-375x667.png",
+        "10-hinweis-erklaerung-375x667.png",
+        "11-rueckmeldung-bau-befohlen-375x667.png",
+        "x-tempo-laeuft-nicht-erreichbar-375x667.png",
+        "x-ausheben-nicht-erreichbar-375x667.png",
+        "x-armee-auswahl-nicht-erreichbar-375x667.png",
+        "x-beschuss-gesperrt-nicht-erreichbar-375x667.png",
+        "x-marsch-zielwahl-nicht-erreichbar-375x667.png",
+        "x-fehler-ungueltiges-ziel-nicht-erreichbar-375x667.png",
+        "x-marsch-befehlen-nicht-erreichbar-375x667.png",
+        "20-diplomatie-375x667.png",
+        "21-krieg-erklaert-ohne-rueckfrage-375x667.png",
+        "x-kampf-nicht-erreichbar-375x667.png",
+        "x-meldungen-nicht-erreichbar-375x667.png",
+        "25-panel-markt-375x667.png",
+        "26-panel-spionage-375x667.png",
+        "27-panel-rangliste-sieg-375x667.png",
+        "28-kartenmodus-beziehungen-375x667.png",
+        "29-menue-375x667.png",
+        "30-einstellungen-375x667.png",
+        "31-spielstand-gespeichert-375x667.png",
+        "32-fehler-spielstand-beschaedigt-375x667.png",
+        "33-spielende-sieg-375x667.png",
+        "34-spielende-niederlage-375x667.png"
+      ],
+      "failures": [
+        {
+          "step": "tempo-laeuft",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "ausheben",
+          "error": "Error: Infanterie ausheben nicht klickbar"
+        },
+        {
+          "step": "armee-auswahl",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "beschuss-gesperrt",
+          "error": "TimeoutError: locator.evaluate: Timeout 30000ms exceeded."
+        },
+        {
+          "step": "marsch-zielwahl",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "fehler-ungueltiges-ziel",
+          "error": "TimeoutError: locator.selectOption: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "marsch-befehlen",
+          "error": "TimeoutError: locator.selectOption: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "kampf",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        },
+        {
+          "step": "meldungen",
+          "error": "TimeoutError: locator.click: Timeout 5000ms exceeded."
+        }
+      ],
+      "axe": {
+        "startDialog": {
+          "passes": 21,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 36
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        },
+        "provincePanel": {
+          "passes": 32,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 58
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        },
+        "diplomacy": {
+          "passes": 27,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 58
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        },
+        "settings": {
+          "passes": 28,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 64
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        },
+        "saves": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 21
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        },
+        "victory": {
+          "passes": 26,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 21
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access",
+              "samples": [
+                {
+                  "target": ".resources",
+                  "summary": "  Element should have focusable content"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 6,
+          "under44": 0,
+          "under24": 0,
+          "share": 0,
+          "samples": []
+        },
+        "mapStart": {
+          "total": 32,
+          "under44": 4,
+          "under24": 4,
+          "share": 0.125,
+          "samples": [
+            {
+              "label": "Was ist Nahrung?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Material?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Eisen?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Kohle?",
+              "w": 22,
+              "h": 22
+            }
+          ]
+        },
+        "provincePanel": {
+          "total": 29,
+          "under44": 8,
+          "under24": 8,
+          "share": 0.276,
+          "samples": [
+            {
+              "label": "Was ist Gegenspionage?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Nahrung?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Material?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Eisen?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Kohle?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Öl?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Seltene Erden?",
+              "w": 22,
+              "h": 22
+            },
+            {
+              "label": "Was ist Geld?",
+              "w": 22,
+              "h": 22
+            }
+          ]
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 40,
+          "distinct": 40,
+          "withoutIndicator": 0,
+          "offscreen": 8,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100 [ausserhalb]",
+            "button:Vorspulen [ausserhalb]",
+            "button:Besitz",
+            "button:Rohstoffe",
+            "button:Moral",
+            "button:Truppenstärke",
+            "button:Beziehungen",
+            "button:Spielstände",
+            "button:Menü",
+            "ul:Rohstoffe",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen [ausserhalb]",
+            "button:Herauszoomen [ausserhalb]",
+            "button:Hauptstadt zentrieren [ausserhalb]",
+            "button:Vollbild [ausserhalb]",
+            "canvas:Übersichtskarte [ausserhalb]",
+            "button:Was ist Besitz? [ausserhalb]",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "button:Ausblenden: Neu ab heute: Kaserne. Sie k",
+            "button:Ausblenden: Neu ab heute: Infanterie. Si",
+            "button:Was ist Nahrung?",
+            "button:Was ist Material?",
+            "button:Was ist Eisen?",
+            "button:Was ist Kohle?",
+            "button:Was ist Öl?",
+            "button:Was ist Seltene Erden?",
+            "button:Was ist Geld?",
+            "button:alles",
+            "button:Kämpfe",
+            "button:Aufbau",
+            "button:Verträge",
+            "button:Weltgeschehen",
+            "button:Diplomatie"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 5,
+          "order": [
+            "button:Menü",
+            "ul:Rohstoffe",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen [ausserhalb]",
+            "button:Herauszoomen [ausserhalb]",
+            "button:Hauptstadt zentrieren [ausserhalb]",
+            "button:Vollbild [ausserhalb]",
+            "canvas:Übersichtskarte [ausserhalb]"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 22,
+          "domContentLoadedMs": 402,
+          "loadEventMs": 404,
+          "transferKB": 6439,
+          "resources": 174,
+          "first-paint": 408,
+          "startDialogInteractiveMs": 599,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 715,
+        "zoom": {
+          "wallMs": 557,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 50,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.7,
+          "framesOver50Ms": 0
+        },
+        "pan": {
+          "wallMs": 673,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 58,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.7,
+          "framesOver50Ms": 0
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": false
+        },
+        {
+          "headerHeightPx": 240
+        },
+        {
+          "recruitClicks": 0
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryFocusLeavesDialog": true
+        }
+      ],
+      "layout": {
+        "mapStart": {
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 240,
+            "visibleArea": 90000
+          },
+          "map": {
+            "x": 0,
+            "y": 240,
+            "w": 0,
+            "h": 259,
+            "visibleArea": 0
+          },
+          "mapShareOfViewport": 0,
+          "side": {
+            "x": 0,
+            "y": 240,
+            "w": 380,
+            "h": 259,
+            "visibleArea": 97125
+          },
+          "foot": {
+            "x": 0,
+            "y": 499,
+            "w": 375,
+            "h": 168,
+            "visibleArea": 63000
+          },
+          "overflowingRegions": [
+            "header__top 528>375",
+            "resources 478>375"
+          ]
+        },
+        "saves": {
+          "viewport": {
+            "w": 375,
+            "h": 667
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 375,
+            "h": 240,
+            "visibleArea": 90000
+          },
+          "map": {
+            "x": 0,
+            "y": 240,
+            "w": 0,
+            "h": 259,
+            "visibleArea": 0
+          },
+          "mapShareOfViewport": 0,
+          "side": {
+            "x": 0,
+            "y": 240,
+            "w": 380,
+            "h": 259,
+            "visibleArea": 97125
+          },
+          "foot": {
+            "x": 0,
+            "y": 499,
+            "w": 375,
+            "h": 168,
+            "visibleArea": 63000
+          },
+          "overflowingRegions": [
+            "header__top 528>375",
+            "resources 478>375",
+            "dialog 604>518",
+            "slots 592>494"
+          ]
+        }
+      },
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "durationMs": 99011
+    },
+    "1280x800": {
+      "steps": [
+        "01-start-neue-partie-1280x800.png",
+        "02-partie-anlegen-startknopf-1280x800.png",
+        "03-spielstaende-leer-1280x800.png",
+        "04-karte-start-tutorial-1280x800.png",
+        "05-kartenansicht-1280x800.png",
+        "06-kopfleiste-hud-1280x800.png",
+        "07-karte-gezoomt-1280x800.png",
+        "08-kartenmodus-rohstoffe-1280x800.png",
+        "09-provinz-auswahl-1280x800.png",
+        "10-hinweis-erklaerung-1280x800.png",
+        "11-rueckmeldung-bau-befohlen-1280x800.png",
+        "12-tempo-100-laeuft-1280x800.png",
+        "13-pause-armee-ausgehoben-1280x800.png",
+        "14-armee-auswahl-1280x800.png",
+        "15-beschuss-gesperrt-1280x800.png",
+        "16-marsch-zielwahl-1280x800.png",
+        "17-fehler-ungueltiges-ziel-1280x800.png",
+        "18-marsch-ziel-gewaehlt-1280x800.png",
+        "19-marsch-befohlen-1280x800.png",
+        "20-diplomatie-1280x800.png",
+        "21-krieg-erklaert-ohne-rueckfrage-1280x800.png",
+        "22-kampf-gefecht-1280x800.png",
+        "23-protokoll-kaempfe-1280x800.png",
+        "24-meldungen-depesche-1280x800.png",
+        "25-panel-markt-1280x800.png",
+        "26-panel-spionage-1280x800.png",
+        "27-panel-rangliste-sieg-1280x800.png",
+        "28-kartenmodus-beziehungen-1280x800.png",
+        "29-menue-1280x800.png",
+        "30-einstellungen-1280x800.png",
+        "31-spielstand-gespeichert-1280x800.png",
+        "32-fehler-spielstand-beschaedigt-1280x800.png",
+        "33-spielende-sieg-1280x800.png",
+        "34-spielende-niederlage-1280x800.png"
+      ],
+      "failures": [],
+      "axe": {
+        "startDialog": {
+          "passes": 21,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 25,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 10
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "provincePanel": {
+          "passes": 32,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 61
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "armyPanel": {
+          "passes": 33,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 37
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "diplomacy": {
+          "passes": 32,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 49
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "settings": {
+          "passes": 30,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 58
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        },
+        "saves": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 11
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        },
+        "victory": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 10
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 9,
+          "under44": 9,
+          "under24": 0,
+          "share": 1,
+          "samples": [
+            {
+              "label": "Schließen",
+              "w": 29,
+              "h": 28
+            },
+            {
+              "label": "Welt (237)Kleine Welt (12)",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "Vereinigte StaatenRusslandChinaIndienDeutschlandFr",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "w": 335,
+              "h": 30
+            },
+            {
+              "label": "leichtnormalschwer",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "w": 335,
+              "h": 30
+            },
+            {
+              "label": "PunkteEroberung",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "Partie beginnen",
+              "w": 107,
+              "h": 28
+            },
+            {
+              "label": "Spielstände",
+              "w": 86,
+              "h": 28
+            }
+          ]
+        },
+        "mapStart": {
+          "total": 43,
+          "under44": 41,
+          "under24": 30,
+          "share": 0.953,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "w": 190,
+              "h": 23
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne. Sie können sie ",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Infanterie. Sie können s",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Was ist Nahrung?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "Was ist Material?",
+              "w": 14,
+              "h": 14
+            }
+          ]
+        },
+        "provincePanel": {
+          "total": 57,
+          "under44": 55,
+          "under24": 34,
+          "share": 0.965,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "w": 190,
+              "h": 23
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne. Sie können sie ",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Infanterie. Sie können s",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Was ist Ebene?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "Kaserne bauen",
+              "w": 41,
+              "h": 40
+            }
+          ]
+        },
+        "armyPanel": {
+          "total": 53,
+          "under44": 51,
+          "under24": 31,
+          "share": 0.962,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "Haltung Angriff einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Haltung Verteidigung einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Haltung Rückzug einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Haltung Garnison einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Marschieren",
+              "w": 176,
+              "h": 28
+            }
+          ]
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 40,
+          "distinct": 40,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Besitz",
+            "button:Rohstoffe",
+            "button:Moral",
+            "button:Truppenstärke",
+            "button:Beziehungen",
+            "button:Spielstände",
+            "button:Menü",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "canvas:Übersichtskarte",
+            "button:Was ist Besitz?",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "button:Ausblenden: Neu ab heute: Kaserne. Sie k",
+            "button:Ausblenden: Neu ab heute: Infanterie. Si",
+            "button:Was ist Nahrung?",
+            "button:Was ist Material?",
+            "button:Was ist Eisen?",
+            "button:Was ist Kohle?",
+            "button:Was ist Öl?",
+            "button:Was ist Seltene Erden?",
+            "button:Was ist Geld?",
+            "button:alles",
+            "button:Kämpfe",
+            "button:Aufbau",
+            "button:Verträge",
+            "button:Weltgeschehen",
+            "button:Diplomatie",
+            "button:Markt",
+            "button:Spionage"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "button:Menü",
+            "button:Einmarsch in Südstaaten durch Mexiko — a",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "canvas:Übersichtskarte",
+            "button:Was ist Besitz?"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 19,
+          "domContentLoadedMs": 383,
+          "loadEventMs": 386,
+          "transferKB": 6439,
+          "resources": 173,
+          "first-paint": 396,
+          "startDialogInteractiveMs": 639,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 703,
+        "zoom": {
+          "wallMs": 591,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 52,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 0
+        },
+        "pan": {
+          "wallMs": 1185,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 88,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.7,
+          "framesOver50Ms": 0
+        },
+        "running100": {
+          "wallMs": 3001,
+          "longTasks": 4,
+          "longTaskTotalMs": 349,
+          "longTaskMaxMs": 107,
+          "frames": 109,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 66.7,
+          "framesOver50Ms": 10
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": false
+        },
+        {
+          "headerHeightPx": 65
+        },
+        {
+          "recruitClicks": 1
+        },
+        {
+          "marchTargetOptions": 237
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryFocusLeavesDialog": true
+        }
+      ],
+      "layout": {
+        "mapStart": {
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 65,
+            "visibleArea": 82560
+          },
+          "map": {
+            "x": 0,
+            "y": 65,
+            "w": 900,
+            "h": 609,
+            "visibleArea": 547650
+          },
+          "mapShareOfViewport": 0.535,
+          "side": {
+            "x": 900,
+            "y": 65,
+            "w": 380,
+            "h": 609,
+            "visibleArea": 231230
+          },
+          "foot": {
+            "x": 0,
+            "y": 673,
+            "w": 1280,
+            "h": 127,
+            "visibleArea": 162560
+          },
+          "overflowingRegions": []
+        },
+        "running": {
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 105,
+            "visibleArea": 133760
+          },
+          "map": {
+            "x": 0,
+            "y": 105,
+            "w": 900,
+            "h": 528,
+            "visibleArea": 474750
+          },
+          "mapShareOfViewport": 0.464,
+          "side": {
+            "x": 900,
+            "y": 105,
+            "w": 380,
+            "h": 528,
+            "visibleArea": 200450
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1280,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": []
+        },
+        "battle": {
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 107,
+            "visibleArea": 136320
+          },
+          "map": {
+            "x": 0,
+            "y": 107,
+            "w": 900,
+            "h": 526,
+            "visibleArea": 472950
+          },
+          "mapShareOfViewport": 0.462,
+          "side": {
+            "x": 900,
+            "y": 107,
+            "w": 380,
+            "h": 526,
+            "visibleArea": 199690
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1280,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": []
+        },
+        "saves": {
+          "viewport": {
+            "w": 1280,
+            "h": 800
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1280,
+            "h": 107,
+            "visibleArea": 136320
+          },
+          "map": {
+            "x": 0,
+            "y": 107,
+            "w": 900,
+            "h": 526,
+            "visibleArea": 472950
+          },
+          "mapShareOfViewport": 0.462,
+          "side": {
+            "x": 900,
+            "y": 107,
+            "w": 380,
+            "h": 526,
+            "visibleArea": 199690
+          },
+          "foot": {
+            "x": 0,
+            "y": 632,
+            "w": 1280,
+            "h": 168,
+            "visibleArea": 215040
+          },
+          "overflowingRegions": [
+            "dialog 604>518",
+            "slots 592>494"
+          ]
+        }
+      },
+      "consoleErrors": [],
+      "durationMs": 46142
+    },
+    "1920x1080": {
+      "steps": [
+        "01-start-neue-partie-1920x1080.png",
+        "02-partie-anlegen-startknopf-1920x1080.png",
+        "03-spielstaende-leer-1920x1080.png",
+        "04-karte-start-tutorial-1920x1080.png",
+        "05-kartenansicht-1920x1080.png",
+        "06-kopfleiste-hud-1920x1080.png",
+        "07-karte-gezoomt-1920x1080.png",
+        "08-kartenmodus-rohstoffe-1920x1080.png",
+        "09-provinz-auswahl-1920x1080.png",
+        "10-hinweis-erklaerung-1920x1080.png",
+        "11-rueckmeldung-bau-befohlen-1920x1080.png",
+        "12-tempo-100-laeuft-1920x1080.png",
+        "13-pause-armee-ausgehoben-1920x1080.png",
+        "14-armee-auswahl-1920x1080.png",
+        "15-beschuss-gesperrt-1920x1080.png",
+        "16-marsch-zielwahl-1920x1080.png",
+        "17-fehler-ungueltiges-ziel-1920x1080.png",
+        "18-marsch-ziel-gewaehlt-1920x1080.png",
+        "19-marsch-befohlen-1920x1080.png",
+        "20-diplomatie-1920x1080.png",
+        "21-krieg-erklaert-ohne-rueckfrage-1920x1080.png",
+        "22-kampf-gefecht-1920x1080.png",
+        "23-protokoll-kaempfe-1920x1080.png",
+        "24-meldungen-depesche-1920x1080.png",
+        "25-panel-markt-1920x1080.png",
+        "26-panel-spionage-1920x1080.png",
+        "27-panel-rangliste-sieg-1920x1080.png",
+        "28-kartenmodus-beziehungen-1920x1080.png",
+        "29-menue-1920x1080.png",
+        "30-einstellungen-1920x1080.png",
+        "31-spielstand-gespeichert-1920x1080.png",
+        "32-fehler-spielstand-beschaedigt-1920x1080.png",
+        "33-spielende-sieg-1920x1080.png",
+        "34-spielende-niederlage-1920x1080.png"
+      ],
+      "failures": [],
+      "axe": {
+        "startDialog": {
+          "passes": 20,
+          "incomplete": [],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "mapStart": {
+          "passes": 25,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 10
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "provincePanel": {
+          "passes": 32,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 55
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "armyPanel": {
+          "passes": 33,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 27
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "diplomacy": {
+          "passes": 32,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 26
+            }
+          ],
+          "violations": 0,
+          "nodes": 0,
+          "byRule": []
+        },
+        "settings": {
+          "passes": 30,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 31
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        },
+        "saves": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 11
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        },
+        "victory": {
+          "passes": 29,
+          "incomplete": [
+            {
+              "id": "aria-prohibited-attr",
+              "nodes": 1
+            },
+            {
+              "id": "color-contrast",
+              "nodes": 10
+            }
+          ],
+          "violations": 1,
+          "nodes": 1,
+          "byRule": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds",
+              "samples": [
+                {
+                  "target": ".alarm-chip",
+                  "summary": "  Element has insufficient color contrast of 4.27 (foreground color: #e8583f, background color: #1e2632, font size: 9.0pt (12px), font weight: normal). Expected"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "touch": {
+        "startDialog": {
+          "total": 9,
+          "under44": 9,
+          "under24": 0,
+          "share": 1,
+          "samples": [
+            {
+              "label": "Schließen",
+              "w": 29,
+              "h": 28
+            },
+            {
+              "label": "Welt (237)Kleine Welt (12)",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "Vereinigte StaatenRusslandChinaIndienDeutschlandFr",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "w": 335,
+              "h": 30
+            },
+            {
+              "label": "leichtnormalschwer",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "INPUT",
+              "w": 335,
+              "h": 30
+            },
+            {
+              "label": "PunkteEroberung",
+              "w": 335,
+              "h": 29
+            },
+            {
+              "label": "Partie beginnen",
+              "w": 107,
+              "h": 28
+            },
+            {
+              "label": "Spielstände",
+              "w": 86,
+              "h": 28
+            }
+          ]
+        },
+        "mapStart": {
+          "total": 43,
+          "under44": 41,
+          "under24": 30,
+          "share": 0.953,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "w": 190,
+              "h": 23
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne. Sie können sie ",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Infanterie. Sie können s",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Was ist Nahrung?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "Was ist Material?",
+              "w": 14,
+              "h": 14
+            }
+          ]
+        },
+        "provincePanel": {
+          "total": 71,
+          "under44": 69,
+          "under24": 41,
+          "share": 0.972,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "w": 190,
+              "h": 23
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Kaserne. Sie können sie ",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Infanterie. Sie können s",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Was ist Ebene?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "Kaserne bauen",
+              "w": 41,
+              "h": 40
+            }
+          ]
+        },
+        "armyPanel": {
+          "total": 55,
+          "under44": 53,
+          "under24": 33,
+          "share": 0.964,
+          "samples": [
+            {
+              "label": "Pause",
+              "w": 27,
+              "h": 22
+            },
+            {
+              "label": "1",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "2",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "5",
+              "w": 26,
+              "h": 22
+            },
+            {
+              "label": "10",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "25",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "50",
+              "w": 29,
+              "h": 22
+            },
+            {
+              "label": "100",
+              "w": 36,
+              "h": 22
+            },
+            {
+              "label": "Vorspulen",
+              "w": 87,
+              "h": 22
+            },
+            {
+              "label": "Besitz",
+              "w": 52,
+              "h": 22
+            },
+            {
+              "label": "Rohstoffe",
+              "w": 75,
+              "h": 22
+            },
+            {
+              "label": "Moral",
+              "w": 51,
+              "h": 22
+            },
+            {
+              "label": "Truppenstärke",
+              "w": 101,
+              "h": 22
+            },
+            {
+              "label": "Beziehungen",
+              "w": 89,
+              "h": 22
+            },
+            {
+              "label": "Spielstände",
+              "w": 82,
+              "h": 28
+            },
+            {
+              "label": "Menü",
+              "w": 50,
+              "h": 28
+            },
+            {
+              "label": "Hineinzoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Herauszoomen",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Hauptstadt zentrieren",
+              "w": 26,
+              "h": 24
+            },
+            {
+              "label": "Was ist Besitz?",
+              "w": 14,
+              "h": 14
+            },
+            {
+              "label": "— keine —Mittlerer WestenNordosten der USASüdstaat",
+              "w": 190,
+              "h": 23
+            },
+            {
+              "label": "Ausblenden: Neu ab heute: Eisenbahn. Sie können si",
+              "w": 15,
+              "h": 18
+            },
+            {
+              "label": "Haltung Angriff einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Haltung Verteidigung einnehmen",
+              "w": 177,
+              "h": 28
+            },
+            {
+              "label": "Haltung Rückzug einnehmen",
+              "w": 177,
+              "h": 28
+            }
+          ]
+        }
+      },
+      "keyboard": {
+        "startDialog": {
+          "steps": 15,
+          "reached": 15,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung",
+            "button:Partie beginnen",
+            "button:Spielstände",
+            "button:Schließen",
+            "select:Welt (237)Kleine Welt (12)",
+            "select:Vereinigte StaatenRusslandChinaIndienDeu",
+            "input:",
+            "select:leichtnormalschwer",
+            "input:",
+            "select:PunkteEroberung"
+          ]
+        },
+        "mapStart": {
+          "steps": 40,
+          "reached": 40,
+          "distinct": 40,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "button:Pause",
+            "button:1",
+            "button:2",
+            "button:5",
+            "button:10",
+            "button:25",
+            "button:50",
+            "button:100",
+            "button:Vorspulen",
+            "button:Besitz",
+            "button:Rohstoffe",
+            "button:Moral",
+            "button:Truppenstärke",
+            "button:Beziehungen",
+            "button:Spielstände",
+            "button:Menü",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "canvas:Übersichtskarte",
+            "button:Was ist Besitz?",
+            "select:— keine —Mittlerer WestenNordosten der U",
+            "button:Ausblenden: Neu ab heute: Kaserne. Sie k",
+            "button:Ausblenden: Neu ab heute: Infanterie. Si",
+            "button:Was ist Nahrung?",
+            "button:Was ist Material?",
+            "button:Was ist Eisen?",
+            "button:Was ist Kohle?",
+            "button:Was ist Öl?",
+            "button:Was ist Seltene Erden?",
+            "button:Was ist Geld?",
+            "button:alles",
+            "button:Kämpfe",
+            "button:Aufbau",
+            "button:Verträge",
+            "button:Weltgeschehen",
+            "button:Diplomatie",
+            "button:Markt",
+            "button:Spionage"
+          ]
+        },
+        "settings": {
+          "steps": 12,
+          "reached": 12,
+          "distinct": 3,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen",
+            "input:",
+            "input:",
+            "input:",
+            "select:kleinnormalgroß",
+            "input:",
+            "button:Schließen"
+          ]
+        },
+        "victory": {
+          "steps": 8,
+          "reached": 8,
+          "distinct": 8,
+          "withoutIndicator": 0,
+          "offscreen": 0,
+          "order": [
+            "button:Menü",
+            "button:Einmarsch in Südstaaten durch Mexiko — a",
+            "canvas:Weltkarte",
+            "button:Hineinzoomen",
+            "button:Herauszoomen",
+            "button:Hauptstadt zentrieren",
+            "canvas:Übersichtskarte",
+            "button:Was ist Besitz?"
+          ]
+        }
+      },
+      "perf": {
+        "load": {
+          "domInteractiveMs": 52,
+          "domContentLoadedMs": 437,
+          "loadEventMs": 440,
+          "transferKB": 6439,
+          "resources": 173,
+          "first-paint": 444,
+          "first-contentful-paint": 632,
+          "startDialogInteractiveMs": 664,
+          "note": "Dev-Server (vite, unbuendelt) — fuer den Vergleich vorher/nachher, nicht als absolute Zusage."
+        },
+        "startGameMs": 719,
+        "zoom": {
+          "wallMs": 586,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 52,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 0
+        },
+        "pan": {
+          "wallMs": 1309,
+          "longTasks": 0,
+          "longTaskTotalMs": 0,
+          "longTaskMaxMs": 0,
+          "frames": 96,
+          "frameP50Ms": 16.7,
+          "frameP95Ms": 16.8,
+          "framesOver50Ms": 0
+        },
+        "running100": {
+          "wallMs": 3000,
+          "longTasks": 7,
+          "longTaskTotalMs": 589,
+          "longTaskMaxMs": 114,
+          "frames": 76,
+          "frameP50Ms": 33.4,
+          "frameP95Ms": 116.7,
+          "framesOver50Ms": 16
+        }
+      },
+      "notes": [
+        {
+          "startButtonInFirstView": true
+        },
+        {
+          "headerHeightPx": 65
+        },
+        {
+          "recruitClicks": 1
+        },
+        {
+          "marchTargetOptions": 237
+        },
+        {
+          "preparedSaves": "ok"
+        },
+        {
+          "victoryFocusLeavesDialog": true
+        }
+      ],
+      "layout": {
+        "mapStart": {
+          "viewport": {
+            "w": 1920,
+            "h": 1080
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1920,
+            "h": 65,
+            "visibleArea": 123840
+          },
+          "map": {
+            "x": 0,
+            "y": 65,
+            "w": 1540,
+            "h": 889,
+            "visibleArea": 1368290
+          },
+          "mapShareOfViewport": 0.66,
+          "side": {
+            "x": 1540,
+            "y": 65,
+            "w": 380,
+            "h": 889,
+            "visibleArea": 337630
+          },
+          "foot": {
+            "x": 0,
+            "y": 953,
+            "w": 1920,
+            "h": 127,
+            "visibleArea": 243840
+          },
+          "overflowingRegions": []
+        },
+        "running": {
+          "viewport": {
+            "w": 1920,
+            "h": 1080
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1920,
+            "h": 65,
+            "visibleArea": 123840
+          },
+          "map": {
+            "x": 0,
+            "y": 65,
+            "w": 1540,
+            "h": 848,
+            "visibleArea": 1305150
+          },
+          "mapShareOfViewport": 0.629,
+          "side": {
+            "x": 1540,
+            "y": 65,
+            "w": 380,
+            "h": 848,
+            "visibleArea": 322050
+          },
+          "foot": {
+            "x": 0,
+            "y": 912,
+            "w": 1920,
+            "h": 168,
+            "visibleArea": 322560
+          },
+          "overflowingRegions": []
+        },
+        "battle": {
+          "viewport": {
+            "w": 1920,
+            "h": 1080
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1920,
+            "h": 67,
+            "visibleArea": 127680
+          },
+          "map": {
+            "x": 0,
+            "y": 67,
+            "w": 1540,
+            "h": 846,
+            "visibleArea": 1302070
+          },
+          "mapShareOfViewport": 0.628,
+          "side": {
+            "x": 1540,
+            "y": 67,
+            "w": 380,
+            "h": 846,
+            "visibleArea": 321290
+          },
+          "foot": {
+            "x": 0,
+            "y": 912,
+            "w": 1920,
+            "h": 168,
+            "visibleArea": 322560
+          },
+          "overflowingRegions": []
+        },
+        "saves": {
+          "viewport": {
+            "w": 1920,
+            "h": 1080
+          },
+          "pageOverflowX": false,
+          "header": {
+            "x": 0,
+            "y": 0,
+            "w": 1920,
+            "h": 67,
+            "visibleArea": 127680
+          },
+          "map": {
+            "x": 0,
+            "y": 67,
+            "w": 1540,
+            "h": 846,
+            "visibleArea": 1302070
+          },
+          "mapShareOfViewport": 0.628,
+          "side": {
+            "x": 1540,
+            "y": 67,
+            "w": 380,
+            "h": 846,
+            "visibleArea": 321290
+          },
+          "foot": {
+            "x": 0,
+            "y": 912,
+            "w": 1920,
+            "h": 168,
+            "visibleArea": 322560
+          },
+          "overflowingRegions": [
+            "dialog 604>518",
+            "slots 592>494"
+          ]
+        }
+      },
+      "consoleErrors": [],
+      "durationMs": 50182
+    }
+  }
+}
