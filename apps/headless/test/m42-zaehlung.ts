@@ -269,6 +269,13 @@ export interface M42Bericht {
     orteMitPaarUeberZweiTagesenden: number
     alteZusage7: { stehendHoechstens: number; stehendTageUeberDrei: number }
     batterienHoechstens: number
+    /**
+     * Review Punkt 5 (T-M42-18): KI-Armeen mit mindestens einer Reichweiteneinheit **und** mindestens einer
+     * ohne - eine solche Armee ist keine Batterie und schiesst nicht von selbst (`military.ts`). Sie entsteht
+     * vor allem, wenn der Kern eine fertige Artillerie in die Gastarmee der Provinz legt (`findHostArmy`).
+     * Hoechstwert je Tagesende, Stand am letzten Tagesende, und die Reichweiteneinheiten darin am Ende.
+     */
+    gemischteMitReichweite: { hoechstens: number; amEnde: number; reichweiteEinheitenAmEnde: number }
   }
   fehler: { marschbefehle: number; noPath: number; noPathAnteilProzent: number; ablehnungen: Record<string, number> }
 }
@@ -355,6 +362,9 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
   let heerStehendHoechstens = 0
   let heerStehendTageUeberDrei = 0
   let heerBatterienHoechstens = 0
+  let gemischtHoechstens = 0
+  let gemischtAmEnde = 0
+  let gemischtReichweiteAmEnde = 0
 
   let gestern = new Set<string>()
   let gestrigeOrte = new Set<string>()
@@ -565,9 +575,16 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
     const ueberDeckelHeute = new Set<PlayerId>()
     let batterienGesamtHeute = 0
 
+    let gemischtHeute = 0
+    let gemischtReichweiteHeute = 0
     for (const armyId of state.armyOrder) {
       const army = state.armies[armyId]
       if (!army || !ki.has(army.owner)) continue
+      const reichweite = army.units.filter((stack) => (rules.units[stack.unitKey]?.rangeProvinces ?? 0) > 0)
+      if (reichweite.length > 0 && reichweite.length < army.units.length) {
+        gemischtHeute += 1
+        for (const stack of reichweite) gemischtReichweiteHeute += unitCount(stack, rules)
+      }
       if (istBatterie(army, rules)) {
         batterienJeMacht[army.owner] = (batterienJeMacht[army.owner] ?? 0) + 1
         batterienGesamtHeute += 1
@@ -588,6 +605,9 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
       machtVon(owner, state).batterienHoechstens = Math.max(machtVon(owner, state).batterienHoechstens, count)
     }
     heerBatterienHoechstens = Math.max(heerBatterienHoechstens, batterienGesamtHeute)
+    gemischtHoechstens = Math.max(gemischtHoechstens, gemischtHeute)
+    gemischtAmEnde = gemischtHeute
+    gemischtReichweiteAmEnde = gemischtReichweiteHeute
 
     for (const owner of ueberDeckelHeute) {
       machtVon(owner, state).tageUeberDeckel += 1
@@ -713,6 +733,11 @@ export function m42Zaehler(rules: Rules, ki: ReadonlySet<PlayerId>): M42Zaehler 
         orteMitPaarUeberZweiTagesenden: heerOrteMitPaarUeberZweiTagesenden,
         alteZusage7: { stehendHoechstens: heerStehendHoechstens, stehendTageUeberDrei: heerStehendTageUeberDrei },
         batterienHoechstens: heerBatterienHoechstens,
+        gemischteMitReichweite: {
+          hoechstens: gemischtHoechstens,
+          amEnde: gemischtAmEnde,
+          reichweiteEinheitenAmEnde: gemischtReichweiteAmEnde,
+        },
       },
       fehler: {
         marschbefehle: fehlerMarschbefehle,
