@@ -24,12 +24,15 @@ import {
   armyActions,
   buildActions,
   cancelActions,
-  capitalAction,
+  // capitalAction (T-M44-06: App.tsx braucht nur noch `capitalActions`, das in der eigenen Hauptstadt nichts anbietet)
+  capitalActions,
   diplomacyActions,
   offerListActions,
   ownArmiesIn,
   passageActions,
   planArrival,
+  marchTargets,
+  MarchTargetCache,
   nextUnlock,
   recruitActions,
   spyActions,
@@ -50,13 +53,17 @@ import { MapCanvas, type ArmyMarker } from './map/MapCanvas.tsx'
 import { dominantIcon, stackSummary, type BuildingsByProvince } from './map/markers.ts'
 import { anchorsFor } from './map/anchors.ts'
 import { relationKindFor, strengthByProvince } from './map/modes.ts'
-import { boundsOf, centreOn, clampView, toScreen, zoomAt, type View } from './map/picking.ts'
-import { Tooltip, tooltipFor } from './ui/Tooltip.tsx'
+import { boundsOf, centreOn, clampView, zoomAt, type View } from './map/picking.ts'
+import { Tooltip } from './ui/Tooltip.tsx'
+import { useMapTooltip } from './ui/useMapTooltip.ts'
+import { Sidebar } from './ui/Sidebar.tsx'
+import { MENU_ENTRIES } from './ui/menuEntries.ts'
+import { armyNamer, createArmyNameMemory, nationNamer, provinceNamer } from './game/names.ts'
 import { Foot, latestReport } from './ui/Foot.tsx'
 import { standingsRows } from './ui/Standings.tsx'
 import { Dialog } from './ui/Dialogs.tsx'
 import { DeltaBar } from './ui/charts/DeltaBar.tsx'
-import { rate } from './ui/format.ts'
+import { gameTime, rate } from './ui/format.ts'
 import { Header } from './ui/Header.tsx'
 import {
   ArmyPanel,
@@ -284,6 +291,20 @@ export function App(props: AppProps) {
   stateRef.current = state
 
   /**
+   * Der letzte bekannte Name jeder Armee (T-M44-06, R-UX-03/AK2): damit „Achtundsechzigste ist
+   * vernichtet.“ auch dann einen Namen trägt, wenn die Armee schon aus dem Stand ist. Gehört zu einer
+   * Partie — wer eine Partie beginnt oder lädt, leert ihn bewusst (`armyNames.current.reset()`).
+   */
+  const armyNames = useRef(createArmyNameMemory())
+  /** Die Zielliste des Marsches je (Armee, Ort, Spieltag) (T-M44-11, R-UX-04/AK2); gehört ebenfalls zu einer Partie. */
+  const marchCache = useRef(new MarchTargetCache())
+  /** Eine neue Partie oder ein geladener Stand: alles leeren, was Armeekennungen der alten Partie trägt. */
+  const forgetGame = useCallback(() => {
+    armyNames.current.reset()
+    marchCache.current.clear()
+  }, [])
+
+  /**
    * Einen gerechneten Stand zurueckschreiben — Spiegel UND Zustand (T-M41-17).
    *
    * Bis zum 2026-09-14 schrieb `step` nur `setState(result.state)`. `stateRef.current`
@@ -309,8 +330,10 @@ export function App(props: AppProps) {
    */
   const commitState = useCallback((next: GameState | null) => {
     stateRef.current = next
+    // Ohne Partie gibt es keine Armeen, deren Namen man behalten koennte (T-M44-06).
+    if (next === null) forgetGame()
     setState(next)
-  }, [])
+  }, [forgetGame])
 
   /**
    * Die Karte der laufenden Partie (T-M12-08).
@@ -769,10 +792,10 @@ export function App(props: AppProps) {
     [activeMap.provinces],
   )
 
-  const nameOfProvince = useCallback(
-    (id: string): string => activeMap.provinces.find((p) => p.id === id)?.name ?? id,
-    [activeMap.provinces],
-  )
+  // Die Namensauflösung steht in `game/names.ts` (T-M44-02b); der Rückfall ist unverändert die Kennung.
+  const nameOfProvince = useMemo(() => provinceNamer(activeMap.provinces), [activeMap.provinces])
+  // LOESCHVERMERK (Review): bis T-M44-02b stand hier
+  //   useCallback((id: string): string => activeMap.provinces.find((p) => p.id === id)?.name ?? id, [activeMap.provinces])
 
   /** Gebaeude je Provinz, Art → Stufe — nur die eigenen sind bekannt (R-DIP-04). */
   const buildings = useMemo(() => {
@@ -837,7 +860,7 @@ export function App(props: AppProps) {
     // Raeumfrist (T-M43-02, R-DIP-10/AK5): aus der Sicht abgeleitet, nicht aus einem Ereignis (E1).
     const raeumung =
       view && state
-        ? clearanceAlerts(view, clearanceNotices(view, activeMap, props.rules), { army: (id) => state.armies[id]?.name ?? id }, ticksPerDay)
+        ? clearanceAlerts(view, clearanceNotices(view, activeMap, props.rules), { army: armyNamer(state.armies, armyNames.current) }, ticksPerDay)
         : []
     const aus = alertsFor(view, props.rules, spionageNews, raeumung).filter((alert) => {
       const weggeklickt = dismissedAlerts.get(alert.id)
@@ -1335,7 +1358,7 @@ export function App(props: AppProps) {
           break
         case 'close':
           // Der Tooltip geht zuerst (T-M31-01); die Kaskade darunter bleibt, wie sie war.
-          setTooltipHidden(true)
+          hideTooltip()
           // Bis T-M12-07 stand hier eine Ausnahme: vor der ersten Partie lag hinter dem
           // Dialog nichts, zu dem man haette zurueckkehren koennen, also durfte Escape
           // ihn nicht schliessen. Jetzt liegt der Weg zurueck dahinter, und Escape
@@ -1489,6 +1512,7 @@ export function App(props: AppProps) {
             setParty({ mode: 'single', fixedSpeed: null })
           }
           setSpeed(0)
+          forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
           commitState(result.state)
           setAutosave({ lastSavedTick: result.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
           setSaveNotice(t('saves.loaded'))
@@ -1547,6 +1571,7 @@ export function App(props: AppProps) {
     // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
     setNews(NO_NEWS)
+    forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
     commitState(fresh)
     // The autosave clock starts now, not at the epoch — otherwise the
     // real-time half of the rule is satisfied before the first day is played
@@ -1616,6 +1641,7 @@ export function App(props: AppProps) {
     // Der Umsetz-Modus und die Spionage-Meldungen gehoeren zur alten Partie (T-M17-13).
     setMovingSpy(null)
     setNews(NO_NEWS)
+    forgetGame() // neue Partie oder geladener Stand: Namensspeicher bewusst leer (T-M44-06), Zielliste neu (T-M44-11)
     commitState(beginn.state)
     setAutosave({ lastSavedTick: beginn.state.tick, lastSavedRealTime: now(), nextSlot: 0 })
     setDialog(null)
@@ -1750,19 +1776,21 @@ export function App(props: AppProps) {
     if (!offen) return null
     return {
       provinceId: offen.provinceId,
-      provinceName: activeMap.provinces.find((p) => p.id === offen.provinceId)?.name ?? offen.provinceId,
-      intruder: state.players[offen.intruderId]?.nation ?? offen.intruderId,
+      provinceName: provinceNamer(activeMap.provinces)(offen.provinceId),
+      intruder: nationNamer(state.players)(offen.intruderId),
     }
   }, [state, viewerId, alarmSeenTick, activeMap.provinces])
 
   /** Player ids never reach the screen: the player knows nations, not "p2". */
-  const nameOf = useCallback(
-    (playerId: string): string => {
-      if (!state) return playerId
-      return state.players[playerId]?.nation ?? playerId
-    },
+  const nameOf = useMemo(
+    () => (state ? nationNamer(state.players) : (playerId: string): string => playerId),
     [state],
   )
+  // LOESCHVERMERK (Review): bis T-M44-02b stand hier ein useCallback mit demselben Rumpf:
+  //   if (!state) return playerId; return state.players[playerId]?.nation ?? playerId
+  // Ebenso ersetzt, an vier Stellen, `state.armies[id]?.name ?? id` (Räumfrist, Protokoll, Automatik-Märsche,
+  // Schnellvorlauf-Grund) durch `armyNamer(state.armies, armyNames.current)`, und im Alarm die zwei Ausdrücke für
+  // Provinz und Macht durch `provinceNamer` / `nationNamer`.
 
   /**
    * Eingehende und ausgehende Angebote, schon zu Knoepfen (T-M17-14, R-DIP-07, R-DIP-08).
@@ -1787,39 +1815,43 @@ export function App(props: AppProps) {
    * `news.upTo`, nicht seit der letzten Laenge: der Ring haelt nur 500 Ereignisse fuer
    * alle Maechte, und `own.slice(soundedUpTo)` verstummte, sobald er voll ist.
    */
+  //
+  // Gesetzt wird nur, was sich geaendert hat (Befund aus T-M44-02): `setNews(old => …)`
+  // lief bei JEDEM Tick, auch wenn der Updater `old` zurueckgab. Waehrend das Bild der Uhr
+  // schon wartet, kann React so einen Aufruf nicht vorab verwerfen und zaehlt ihn als
+  // Update aus einem Effekt — nach 50 Bildern in Folge meldete es "Maximum update depth
+  // exceeded". Sichtbar wurde das erst, wenn der Tooltip ausgeblendet war (Escape): seine
+  // Messung schob sonst Commits ohne Update dazwischen, die den Zaehler zuruecksetzten.
   useEffect(() => {
     if (!state || !viewerId) return
-    setNews((old) =>
-      collectEspionageNews(old, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
-        province: nameOfProvince,
-        player: nameOf,
-      }),
-    )
-  }, [state, viewerId, nameOfProvince, nameOf])
+    const next = collectEspionageNews(news, eventsFor(state.eventLog, viewerId), state.tick, viewerId, {
+      province: nameOfProvince,
+      player: nameOf,
+    })
+    if (next !== news) setNews(next)
+  }, [state, viewerId, nameOfProvince, nameOf, news])
 
   /**
    * Der Provinz-Tooltip (T-M31-01, D27.6): folgt dem Zeiger, sonst der Auswahl —
    * dieselbe Auskunft fuer Maus und Tastatur. Escape blendet ihn aus, bis sich
-   * Auswahl oder Zeiger aendern.
+   * Auswahl oder Zeiger aendern. Der Zustand steht seit T-M44-02b in `ui/useMapTooltip.ts`.
    */
-  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null)
-  const [tooltipHidden, setTooltipHidden] = useState(false)
-  const tooltipId = hover?.id ?? ui.selectedProvince
-  const tooltip = useMemo(
-    () =>
-      tooltipHidden
-        ? null
-        : tooltipFor(tooltipId, view, { nameOf: nameOfProvince, playerName: nameOf, ticksPerDay }),
-    [tooltipHidden, tooltipId, view, nameOfProvince, nameOf, ticksPerDay],
-  )
-  const tooltipAt = useMemo(() => {
-    if (hover) return { x: hover.x, y: hover.y }
-    const centre = ui.selectedProvince ? centres[ui.selectedProvince] : undefined
-    return centre ? toScreen(centre, ui.view) : null
-  }, [hover, ui.selectedProvince, centres, ui.view])
-  useEffect(() => {
-    setTooltipHidden(false)
-  }, [tooltipId])
+  const { onHover: onMapHover, hide: hideTooltip, tooltip, tooltipAt } = useMapTooltip({
+    selectedProvince: ui.selectedProvince,
+    mapView: ui.view,
+    view,
+    centres,
+    nameOfProvince,
+    nameOf,
+    ticksPerDay,
+  })
+  // LOESCHVERMERK (Review): bis T-M44-02b stand der Zustand hier selbst (gleiche Haken, gleiche Reihenfolge):
+  //   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null)
+  //   const [tooltipHidden, setTooltipHidden] = useState(false)
+  //   const tooltipId = hover?.id ?? ui.selectedProvince
+  //   const tooltip = useMemo(() => tooltipHidden ? null : tooltipFor(tooltipId, view, { nameOf: nameOfProvince, playerName: nameOf, ticksPerDay }), [...])
+  //   const tooltipAt = useMemo(() => { if (hover) return { x: hover.x, y: hover.y }; const centre = ui.selectedProvince ? centres[ui.selectedProvince] : undefined; return centre ? toScreen(centre, ui.view) : null }, [...])
+  //   useEffect(() => { setTooltipHidden(false) }, [tooltipId])
   /** Die Farbe einer Macht — dieselbe, mit der die Karte ihren Besitz fuellt (T-M20-02). */
   const colorOf = useCallback(
     (playerId: string): string | null => state?.players[playerId]?.color ?? null,
@@ -1835,7 +1867,7 @@ export function App(props: AppProps) {
     if (!state || !viewerId) return []
     const naming = {
       player: nameOf,
-      army: (id: string) => state.armies[id]?.name ?? id,
+      army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
     }
@@ -1868,8 +1900,8 @@ export function App(props: AppProps) {
     // Die Märsche der Automatik als leise Zeilen (T-M40-13, Befund M3): Rubrik Kampf, Sprung auf das
     // Ziel, keine Alarmfarbe. Sie stammen aus den Befehlen der Schleife, nicht aus dem Protokoll des Kerns.
     const maersche: EventEntry[] = adjutantMarchEntries(adjutantMarches, {
-      army: (armyId) => state.armies[armyId]?.name ?? armyId,
-      province: (provinceId) => activeMap.provinces.find((province) => province.id === provinceId)?.name ?? provinceId,
+      army: armyNamer(state.armies, armyNames.current),
+      province: provinceNamer(activeMap.provinces),
     })
     // Neueste zuerst wie das Protokoll; `sort` ist stabil, bei gleichem Tick stehen die Ereignisse vorn.
     return [...zeilen, ...maersche.reverse()].sort((a, b) => b.tick - a.tick)
@@ -1907,7 +1939,7 @@ export function App(props: AppProps) {
     if (!trigger || !state || !viewerId) return t('header.stoppedAlertPlain', { time })
     const beschrieben = describeEvent(trigger, 0, activeMap, {
       player: nameOf,
-      army: (id: string) => state.armies[id]?.name ?? id,
+      army: armyNamer(state.armies, armyNames.current),
       ticksPerDay,
       viewer: viewerId,
     })
@@ -2018,7 +2050,9 @@ export function App(props: AppProps) {
 
   const provinceActions: Action[] = useMemo(() => {
     if (!ctx || !selected || selected.owner !== ctx.playerId) return []
-    return [toAction(capitalAction(ctx, selected.id))]
+    // In der eigenen Hauptstadt wird „Hauptstadt verlegen“ nicht angeboten (T-M44-06, R-UX-03/AK1).
+    // LOESCHVERMERK (Review): vorher `return [toAction(capitalAction(ctx, selected.id))]` — dort stand er gesperrt.
+    return capitalActions(ctx, selected.id).map((spec) => toAction(spec))
   }, [ctx, selected, toAction])
 
   const armiesHere = useMemo(() => (ctx && selected ? ownArmiesIn(ctx, selected.id) : []), [ctx, selected])
@@ -2065,11 +2099,18 @@ export function App(props: AppProps) {
     if (!ctx || !targeting || !state || targeting.armyId !== ui.selectedArmy) return null
     const army = state.armies[targeting.armyId]
     if (!army) return null
-    const options = activeMap.provinces
-      .filter((p) => p.id !== army.locationProvinceId)
-      .map((p) => ({ id: p.id, name: p.name }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'de'))
     const delayTicks = targeting.kind === 'move' ? targeting.delayDays * ticksPerDay : 0
+    // Marsch: erreichbare Ziele mit Ankunftstag zuerst, unerreichbare getrennt und gesperrt (T-M44-11,
+    // R-UX-04/AK2). Die Liste kommt aus dem Zwischenspeicher je (Armee, Ort, Spieltag) — gerechnet wird beim Oeffnen.
+    // Beschuss: wie bisher alle Provinzen alphabetisch (er marschiert nicht, es gibt keine Route).
+    // LOESCHVERMERK (Review): vorher stand hier fuer beide Arten die alphabetische Liste aller Provinzen.
+    const lists = targeting.kind === 'move' ? marchTargets(ctx, army.id, nameOfProvince, marchCache.current) : null
+    const options = lists
+      ? lists.reachable.map((p) => ({ id: p.id, name: p.name, arrivalDay: gameTime(p.arrivalTick! + delayTicks, ticksPerDay).day }))
+      : activeMap.provinces
+          .filter((p) => p.id !== army.locationProvinceId)
+          .map((p) => ({ id: p.id, name: p.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'de'))
     const target = targeting.target
       ? {
           id: targeting.target,
@@ -2099,6 +2140,7 @@ export function App(props: AppProps) {
       kind: targeting.kind,
       target,
       options,
+      ...(lists ? { unreachable: lists.unreachable.map((p) => ({ id: p.id, name: p.name })) } : {}),
       confirm,
       onChoose: (id) => setTargeting({ ...targeting, target: id }),
       delayDays: targeting.delayDays,
@@ -2242,7 +2284,7 @@ export function App(props: AppProps) {
             speed={speed}
             tick={state.tick}
             ticksPerDay={ticksPerDay}
-            onHover={(id, at) => setHover(id && at ? { id, x: at.x, y: at.y } : null)}
+            onHover={onMapHover}
             onSelect={selectOnMap}
             // Ein Klick nahe einem eigenen Marker waehlt die Armee (T-M22-06, V2-14) —
             // ausser waehrend der Zielwahl: dort ist jeder Klick eine Ortswahl.
@@ -2272,112 +2314,124 @@ export function App(props: AppProps) {
           {tooltip && tooltipAt && <Tooltip data={tooltip} x={tooltipAt.x} y={tooltipAt.y} />}
         </div>
 
-        <aside className="side">
-          <ProvincePicker
-            own={ownProvinces}
-            others={knownProvinces}
-            value={ui.selectedProvince}
-            onChange={(id) => {
-              setTargeting(null)
-              if (id) tutor('selectProvince')
-              dispatch({ type: 'selectProvince', id })
-            }}
-          />
-          <Alerts
-            alerts={alerts}
-            onJump={jumpToTarget}
-            onDismiss={(id) =>
-              news.alerts.has(id)
-                ? setNews((old) => dismissNews(old, id))
-                : setDismissedAlerts((old) => new Map(old).set(id, view.tick))
-            }
-          />
-          {ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
-          {ui.panel === 'province' && (
-            <ProvincePanel
-              province={selected}
-              ownerName={selected?.owner ? nameOf(selected.owner) : null}
-              ownerColor={selected?.owner ? colorOf(selected.owner) : null}
-              actions={provinceActions}
-              groups={provinceGroups}
-              nextUnlock={naechsteFreischaltung}
-              armies={armiesHere}
-              selectedArmy={ui.selectedArmy}
-              onSelectArmy={(id) => {
-                setTargeting(null)
-                dispatch({ type: 'selectArmy', id })
-              }}
-              isCapital={selected?.id === view.self.capitalProvinceId}
-              ticksPerDay={ticksPerDay}
-              currentTick={state.tick}
-            />
-          )}
-          {ui.panel === 'army' && (
-            <ArmyPanel
-              army={selectedArmy}
-              name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
-              units={armyUnitItems}
-              actions={armyActionList}
-              targeting={armyTargeting}
-              pendingNotice={armyPendingNotice}
-              condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
-              ticksPerDay={ticksPerDay}
-              currentTick={state.tick}
-            />
-          )}
-          {ui.panel === 'diplomacy' && (
-            <DiplomacyPanel
-              view={view}
-              nameOf={nameOf}
-              reputationMax={props.rules.constants.reputationBaseline}
-              ticksPerDay={ticksPerDay}
-              chosen={ui.diplomacyPartner}
-              onChoose={(id) => dispatch({ type: 'chooseDiplomacyPartner', playerId: id })}
-              actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
-              passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
-              offers={offerRows}
-              tradeForm={{
-                resources: RESOURCE_KEYS,
-                stock: view.self.resources,
-                limits: { money: props.rules.constants.tradeMaxMoney, resource: props.rules.constants.tradeMaxResource },
-                ownProvinces: tradeOwnProvinces,
-                provincesOf,
-                evaluate: (partner, draft) => {
-                  const result = tradeOfferAction(ctx, partner, draft, nameOfProvince)
-                  return { text: result.text, action: toAction(result.action) }
-                },
-              }}
-            />
-          )}
-          {ui.panel === 'espionage' && (
-            <EspionagePanel
-              rows={spyRows}
-              summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
-              moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
-              onCancelMove={() => setMovingSpy(null)}
-              onJump={jumpTo}
-            />
-          )}
-          {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
-          {ui.panel === 'market' && (
-            <MarketPanel
-              resources={RESOURCE_KEYS}
-              stock={view.self.resources}
-              prices={prices}
-              preview={(give, giveAmount, want) => {
-                const result = tradePreview(ctx, give, giveAmount, want)
-                return { text: result.text, action: toAction(result.action) }
-              }}
-            />
-          )}
-          <EconomyPanel view={view} timeline={timeline} expenses={expenses} />
-          <DebugPanel
-            enabled={ui.settings.debug}
-            // Auch das Debug spricht Namen (T-M28-04, V2-12): die App kennt sie.
-            nameOf={nameOf}
-            info={{ tick: state.tick, hash: debugHash, aiGoals: trace.goals, commands: trace.commands }}
-          />
-        </aside>
+        {/* Die Hülle und ihre sechs Plätze: `ui/Sidebar.tsx` (T-M44-02b). Inhalt und Reihenfolge wie vorher. */}
+        {/* LOESCHVERMERK (Review): bis T-M44-02b stand hier `<aside className="side">` mit denselben sechs Kindern direkt in dieser Datei. */}
+        <Sidebar
+          picker={
+              <ProvincePicker
+                own={ownProvinces}
+                others={knownProvinces}
+                value={ui.selectedProvince}
+                onChange={(id) => {
+                  setTargeting(null)
+                  if (id) tutor('selectProvince')
+                  dispatch({ type: 'selectProvince', id })
+                }}
+              />
+          }
+          alerts={
+              <Alerts
+                alerts={alerts}
+                onJump={jumpToTarget}
+                onDismiss={(id) =>
+                  news.alerts.has(id)
+                    ? setNews((old) => dismissNews(old, id))
+                    : setDismissedAlerts((old) => new Map(old).set(id, view.tick))
+                }
+              />
+          }
+          notice={ui.notice && <p className={`notice notice--${ui.notice.kind}`}>{ui.notice.text}</p>}
+          panel={
+            <>
+              {ui.panel === 'province' && (
+                <ProvincePanel
+                  province={selected}
+                  ownerName={selected?.owner ? nameOf(selected.owner) : null}
+                  ownerColor={selected?.owner ? colorOf(selected.owner) : null}
+                  actions={provinceActions}
+                  groups={provinceGroups}
+                  nextUnlock={naechsteFreischaltung}
+                  armies={armiesHere}
+                  selectedArmy={ui.selectedArmy}
+                  onSelectArmy={(id) => {
+                    setTargeting(null)
+                    dispatch({ type: 'selectArmy', id })
+                  }}
+                  isCapital={selected?.id === view.self.capitalProvinceId}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              )}
+              {ui.panel === 'army' && (
+                <ArmyPanel
+                  army={selectedArmy}
+                  name={ui.selectedArmy ? state.armies[ui.selectedArmy]?.name : undefined}
+                  units={armyUnitItems}
+                  actions={armyActionList}
+                  targeting={armyTargeting}
+                  pendingNotice={armyPendingNotice}
+                  condition={selectedArmy?.units ? stackSummary(selectedArmy.units, props.rules).condition : undefined}
+                  ticksPerDay={ticksPerDay}
+                  currentTick={state.tick}
+                />
+              )}
+              {ui.panel === 'diplomacy' && (
+                <DiplomacyPanel
+                  view={view}
+                  nameOf={nameOf}
+                  reputationMax={props.rules.constants.reputationBaseline}
+                  ticksPerDay={ticksPerDay}
+                  chosen={ui.diplomacyPartner}
+                  onChoose={(id) => dispatch({ type: 'chooseDiplomacyPartner', playerId: id })}
+                  actionsFor={(playerId) => diplomacyActions(ctx, playerId).map((spec) => toAction(spec))}
+                  passageFor={(playerId) => passageActions(ctx, playerId).map((spec) => toAction(spec))}
+                  offers={offerRows}
+                  tradeForm={{
+                    resources: RESOURCE_KEYS,
+                    stock: view.self.resources,
+                    limits: { money: props.rules.constants.tradeMaxMoney, resource: props.rules.constants.tradeMaxResource },
+                    ownProvinces: tradeOwnProvinces,
+                    provincesOf,
+                    evaluate: (partner, draft) => {
+                      const result = tradeOfferAction(ctx, partner, draft, nameOfProvince)
+                      return { text: result.text, action: toAction(result.action) }
+                    },
+                  }}
+                />
+              )}
+              {ui.panel === 'espionage' && (
+                <EspionagePanel
+                  rows={spyRows}
+                  summary={view.espionage.spies.length > 0 ? (ctx ? spySummary(ctx, view.espionage.spies) : null) : null}
+                  moving={moving ? t('espionage.overview.moving', { number: moving.number }) : null}
+                  onCancelMove={() => setMovingSpy(null)}
+                  onJump={jumpTo}
+                />
+              )}
+              {ui.panel === 'standings' && <StandingsPanel view={view} nameOf={nameOf} timeline={timeline} />}
+              {ui.panel === 'market' && (
+                <MarketPanel
+                  resources={RESOURCE_KEYS}
+                  stock={view.self.resources}
+                  prices={prices}
+                  preview={(give, giveAmount, want) => {
+                    const result = tradePreview(ctx, give, giveAmount, want)
+                    return { text: result.text, action: toAction(result.action) }
+                  }}
+                />
+              )}
+            </>
+          }
+          economy={<EconomyPanel view={view} timeline={timeline} expenses={expenses} />}
+          debug={
+              <DebugPanel
+                enabled={ui.settings.debug}
+                // Auch das Debug spricht Namen (T-M28-04, V2-12): die App kennt sie.
+                nameOf={nameOf}
+                info={{ tick: state.tick, hash: debugHash, aiGoals: trace.goals, commands: trace.commands }}
+              />
+          }
+        />
       </main>
 
       {/* Der Fuss (T-M31-03, D27.6): Protokoll, Rangliste, vier Knoepfe. */}
@@ -2410,11 +2464,12 @@ export function App(props: AppProps) {
       {partyDialog}
       {dialog === 'menu' && (
         <MenuDialog
-          onNewGame={() => setDialog('new')}
-          onSaves={() => setDialog('saves')}
-          onSettings={() => setDialog('settings')}
+          entries={MENU_ENTRIES}
+          onSelect={(entry) => setDialog(entry.target)}
           onClose={() => setDialog(null)}
         />
+        /* LOESCHVERMERK (Review): bis T-M44-02b: onNewGame={() => setDialog('new')} onSaves={() => setDialog('saves')}
+           onSettings={() => setDialog('settings')} — jetzt die Liste `MENU_ENTRIES` (ui/menuEntries.ts). */
       )}
       {newGameDialog}
       {dialog === 'settings' && (
@@ -2525,7 +2580,10 @@ export function App(props: AppProps) {
               onClick={() => {
                 const session = props.netplay
                 const stand = stateRef.current
-                if (session && stand) commitState(takeOverSeat(stand, session.peer))
+                if (session && stand) {
+                  forgetGame()
+                  commitState(takeOverSeat(stand, session.peer))
+                }
                 session?.transport.close('Der Mitspieler wurde uebernommen.')
                 // Ab hier ist es eine Einzelspielerpartie, mit allem, was dazugehoert:
                 // Tempo, Vorspulen, Tastenkuerzel (R-MP-08/AK1).

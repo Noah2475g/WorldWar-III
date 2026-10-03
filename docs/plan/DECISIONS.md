@@ -5780,3 +5780,66 @@ plötzlich in einer anderen Armee; und eine Änderung im Kern verschiebt den Gol
 Gleichschritt des Mehrspielers (beide Rechner rechnen den Kern; ein alter und ein neuer Stand dürfen
 sich nicht treffen). Gemessen auf dem Endstand ist die Zahl klein (siehe `PROGRESS.md`, T-M42-18) — der
 Schaden rechtfertigt den Eingriff heute nicht. **Vorgemerkt für M18** (`03-TASKS.md`, Abschnitt „M18").
+
+## 2026-10-03 · UX-Planungs-Agent, kippbar · UX V2: ein Browser-Messwerkzeug, keine E2E-Stufe
+
+**Entscheidung:** `playwright` (1.56.1, passend zum vorinstallierten Chromium) und
+`@axe-core/playwright` stehen als Entwicklungsabhängigkeiten in der Wurzel-`package.json`. Sie
+tragen **ein Messwerkzeug**, `scripts/ux-capture.mjs` (`pnpm ux:capture`), das die zentralen
+Ansichten in drei Fenstergrößen fotografiert und Ladezeit, Ruckler, axe-Verstöße, Tastatur,
+Touch-Ziele und Flächen misst (`docs/ux/before/messwerte.json`, `docs/plan/UX-PLAN.md`).
+
+**Warum das D14 nicht widerruft:** D14 nahm eine **E2E-Teststufe** zurück — eine zweite
+Testlaufzeit mit Browser in der Prüfkette, eigenen Zeitbudgets und eigener Flakiness. Das Werkzeug
+läuft **nicht** in `pnpm verify` und nicht in `pnpm acceptance`; es braucht einen laufenden
+Dev-Server und wird von Hand gefahren, wie der Parameterlauf. Der Prüfmodus aus T-M44-02
+(`pnpm ux:check`) meldet Schwellen als Exit-Code für die Abnahme einer M44-Aufgabe, nicht für
+jeden Commit. Der Wächter `test/withdrawals.test.ts` („der Entwurf kennt keine E2E-Stufe mit
+Playwright") bleibt unverändert und grün: D36 beschreibt das Werkzeug, keine Teststufe. Geändert
+hat sich nur die Tatsache aus D14s Begründung, dass `playwright` in keiner `package.json` steht.
+
+**Kippbar:** Will Noah keinen Browser im Repo, fällt die Abhängigkeit wieder heraus; die Bilder
+und Messwerte der Vorher-Aufnahme bleiben als Beleg, und M44 wird mit Sichtprüfungen abgenommen.
+
+---
+
+## 2026-10-03 · Orchestrator-Entscheid unter Noahs Vorabfreigabe, kippbar · UX V2: Antworten auf die drei Fragen aus UX-PLAN §8
+
+**F1 — Telefon hochkant:** wird gebaut, **gestuft**. T-M44-03a (CSS-Stapel, Regel nach
+`(max-width: 599px) and (orientation: portrait)`, dazu ein nicht blockierender Hinweis „quer halten
+empfohlen", 0,5 h) erfüllt R-UX-01; T-M44-03b (Blatt mit Rasten, Auto-Schwenk, Gestenprüfung gegen
+`MapCanvas`) steht als optional im Plan, wird aber in Phase 6 umgesetzt.
+
+**F2 — Rückfrage:** zweiter Klick **am selben Knopf**; der Folgesatz steht im Knopf und wird über
+`aria-live` angesagt; kein Dialog, **keine Zeitüberschreitung** (Wächter `no-time-pressure`); Escape
+und Fokusverlust brechen ab. Gilt für Krieg erklären, Bündnis aufkündigen, belegten Spielstand
+überschreiben, Einstellungen auf Vorgabe zurücksetzen und neue Partie aus laufender Partie
+(R-UX-04/AK1, T-M44-09a/-09b).
+
+**F3 — Fuß-Rangliste:** Platz 1 kommt **additiv** als erste Zeile dazu; die eigene Umgebung aus
+T-M31-03 (D27.6) bleibt darunter. `Foot.test.tsx` wird angepasst (T-M44-10).
+
+**Dazu aus dem Review (UX-PLAN §9):** D36 heißt D37 (D36 ist „Ampel" in `ROHSTOFFE.md`); die Zeiten
+werden am gebauten Bündel gemessen (WORKFLOW §4 Falle 18); `deps` in M44 nur fachlich, die
+Reihenfolge wegen Dateikonflikten steht in den Paketen (UX-PLAN §6). Die Bilder der Nachher-Aufnahme
+werden nur für 375×667, 1280×800 und die neuen Fenstergrößen eingecheckt, 1920×1080 bleibt Messwert
+(Repo-Größe); die Vorher-Bilder bleiben vollständig (Sitzungsregel „nichts löschen") und sind
+verlustfrei optimiert.
+
+## 2026-10-03 · Noahs Entscheide zum Abschluss von Etappe 2 und M44 (lokale Sitzung)
+
+Noah hat im Chat alle Empfehlungen des Abschlussplans bestaetigt:
+
+- **E1 · M42-07-a:** Artillerie verbraucht weiter Oel. T-M42-07 bleibt zurueckgenommen; T-M42-05 nur
+  in der S10-Fassung (`7e41eda`), Status nach Messung. Keine Spielregel-Aenderung; einzige erlaubte
+  Aenderung unter `data/rules` ist `default/ai.json` (`hard.recruitShare`) durch T-M42-04, dann mit
+  Parameterlauf.
+- **E2 ·** Die kippbaren Orchestrator-Entscheide der Cloud-Sitzung (2026-10-02/03: F6-Playtest
+  verschoben, Option (c), UX F1-F3, Playwright als Messwerkzeug) sind bestaetigt.
+- **E3 ·** Ein Pull Request: alles landet in PR #15; Noah merged nach `main`.
+- **E4 ·** PR #14 (`9ee6ec2`) ist in den Hauptzweig gemergt (`77066de`).
+- **E5 ·** Laeufe, die den Rechner allein brauchen (T-M44-20, `pnpm acceptance`), nur nach
+  Ankuendigung mit Dauer und Noahs Wort.
+- **Bewusste Abweichung von UEBERGABE-LOKAL §4:** `pnpm verify` nicht je Paket, sondern an
+  Integrationspunkten (Noahs Regel „verify je Meilenstein“); je Paket gezielte Tests und `ux:check`.
+

@@ -16,6 +16,8 @@ export interface RejectionContext {
   rules: Rules
   playerId: string
   ticksPerDay: number
+  /** Provinzname für Sätze, die eine Provinz nennen (Handel); ohne ihn heißt sie „diese Provinz“ (R-UX-03/AK2). */
+  nameOfProvince?: (id: string) => string
 }
 
 export interface Rejection {
@@ -61,6 +63,120 @@ export const SPY_REASON_KEYS: Record<string, string> = {
 
 const SPY_COMMANDS = new Set(['RECRUIT_SPY', 'REASSIGN_SPY', 'DISMISS_SPY'])
 
+/**
+ * Die Ablehnungsgründe des Kerns → Satz, nachgeschlagen nach (Befehlstyp, Grund) (T-M44-06, R-UX-03/AK1).
+ *
+ * Der Kern nennt bei `INVALID_TARGET` (und `ON_COOLDOWN`) einen Freitext-Grund in `detail.reason` —
+ * „kein Angebot“, „bereits im Krieg“ —, den bis hierher die Oberfläche in Klammern hinter den
+ * Allgemeinsatz setzte: „Dieses Ziel ist für den Befehl nicht zulässig. (kein Angebot)“. Hier steht je
+ * (Befehlstyp, Grund) der Schlüssel eines ganzen Satzes in `de.ts` (Abschnitt `refusal`). **Der
+ * Kern-Text wird nur gelesen**, nie geändert; `rejections.test.ts` liest die Gründe aus
+ * `packages/core/src/commands` und fällt, wenn ein neuer ohne Satz dazukommt.
+ *
+ * Gleiche Gründe unter verschiedenen Befehlen dürfen denselben Schlüssel teilen (der Handel); die
+ * Tabelle ist nach Befehlstyp getrennt, damit ein Satz je Befehl möglich bleibt.
+ */
+const DIPLOMACY_REASONS: Record<string, string> = {
+  'sich selbst': 'refusal.DIPLOMACY.self',
+  'bereits im Krieg': 'refusal.DIPLOMACY.alreadyAtWar',
+  Waffenstillstand: 'diplomacy.truceBlocks',
+  'kein Angebot': 'refusal.DIPLOMACY.noOffer',
+  'nicht im Frieden': 'refusal.DIPLOMACY.notAtPeace',
+  'kein Bündnis': 'refusal.DIPLOMACY.noAlliance',
+  'im Krieg': 'refusal.DIPLOMACY.atWar',
+  'Kriegserklärung läuft': 'refusal.DIPLOMACY.declarationRunning',
+  gekündigt: 'refusal.DIPLOMACY.passageEnding',
+  'bereits gewährt': 'refusal.DIPLOMACY.passageAlreadyGranted',
+  'nicht gewährt': 'refusal.DIPLOMACY.passageNotGranted',
+  'bereits gekündigt': 'refusal.DIPLOMACY.passageAlreadyRevoked',
+  'im Bündnis': 'refusal.DIPLOMACY.inAlliance',
+}
+
+/** Die Gründe der Handelsangebote (`commands/tradeOffer.ts`); die Sätze stammen aus `trade.blocked`. */
+const TRADE_OFFER_REASONS: Record<string, string> = {
+  'sich selbst': 'refusal.OFFER_TRADE.self',
+  'kein Angebot': 'refusal.ACCEPT_TRADE.noOffer',
+  'Anbieter ausgeschieden': 'trade.blocked.gone',
+  lapsing: 'trade.blocked.lapsing',
+  'nicht im Besitz': 'trade.blocked.notOwned',
+  Hauptstadt: 'trade.blocked.capital',
+  umkämpft: 'trade.blocked.contested',
+  'eigene Armeen': 'trade.blocked.ownArmies',
+  'fremde Armeen': 'trade.blocked.foreignArmies',
+  'doppelte Provinz': 'trade.blocked.duplicate',
+  'leeres Angebot': 'trade.blocked.empty',
+  'gleicher Rohstoff auf beiden Seiten': 'trade.blocked.sameResource',
+  'über der Höchstmenge': 'trade.blocked.limit',
+  'ungültige Menge': 'trade.blocked.invalidAmount',
+  'unbekannter Rohstoff': 'trade.blocked.invalidAmount',
+  'ungültiges Angebot': 'trade.blocked.invalidAmount',
+  'im Krieg': 'trade.blocked.war',
+  'Kriegserklärung läuft': 'trade.blocked.declaration',
+}
+
+export const REASON_KEYS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  SPLIT_ARMY: {
+    'nichts ausgewählt': 'refusal.SPLIT_ARMY.nothingChosen',
+    'ganze Stärke': 'refusal.SPLIT_ARMY.wholeStrength',
+  },
+  MERGE_ARMIES: {
+    'mindestens zwei Armeen': 'refusal.MERGE_ARMIES.needTwo',
+    'nicht am selben Ort': 'refusal.MERGE_ARMIES.notTogether',
+    'teils eingeschifft': 'refusal.MERGE_ARMIES.partlyEmbarked',
+  },
+  BOMBARD: {
+    eingeschifft: 'refusal.BOMBARD.embarked',
+    'keine Fernwaffe': 'refusal.BOMBARD.noRanged',
+  },
+  BUILD: { 'braucht Küste': 'refusal.BUILD.needsCoast' },
+  SET_STANCE: { 'unbekannte Haltung': 'refusal.SET_STANCE.unknown' },
+  MOVE_ARMY: {
+    'leere Armee': 'refusal.MOVE_ARMY.empty',
+    'bereits dort': 'refusal.MOVE_ARMY.alreadyThere',
+    'kein eigener Flugplatz': 'refusal.MOVE_ARMY.noAirfield',
+  },
+  RECRUIT: { 'Moral zu niedrig': 'refusal.RECRUIT.lowMorale' },
+  TRADE: {
+    'gleiche Ressource': 'refusal.TRADE.sameResource',
+    'Menge zu groß': 'refusal.TRADE.tooMuch',
+    'Gegenwert zu klein': 'refusal.TRADE.tooLittle',
+  },
+  DIPLOMACY: DIPLOMACY_REASONS,
+  OFFER_TRADE: TRADE_OFFER_REASONS,
+  ACCEPT_TRADE: TRADE_OFFER_REASONS,
+  DECLINE_TRADE: { 'kein Angebot': 'refusal.ACCEPT_TRADE.noOffer' },
+  WITHDRAW_TRADE: { 'kein Angebot': 'refusal.ACCEPT_TRADE.noOffer' },
+}
+
+/** Der Schlüssel des Satzes zu (Befehlstyp, Grund) — oder `undefined`, wenn der Kern einen neuen Grund hat. */
+export function reasonKey(commandType: string, reason: string): string | undefined {
+  if (SPY_COMMANDS.has(commandType)) return SPY_REASON_KEYS[reason]
+  return REASON_KEYS[commandType]?.[reason]
+}
+
+/** Der Satz zu einem Kerngrund, mit Namen statt Kennungen; `null`, wenn die Tabelle ihn nicht kennt. */
+function reasonSentence(rejection: Rejection, command: Command | null, ctx: RejectionContext): string | null {
+  const detail = rejection.detail ?? {}
+  if (command === null || typeof detail.reason !== 'string') return null
+  const key = reasonKey(command.type, detail.reason)
+  if (key === undefined) return null
+
+  const values: Record<string, string | number> = {}
+  const targetId = (command as { targetPlayerId?: unknown }).targetPlayerId
+  values.target = (typeof targetId === 'string' ? ctx.state.players[targetId]?.nation : undefined) ?? t('refusal.thatPower')
+  values.province =
+    typeof detail.provinceId === 'string' && ctx.nameOfProvince
+      ? ctx.nameOfProvince(detail.provinceId)
+      : t('refusal.thatProvince')
+  if (typeof detail.building === 'string') values.building = t(`buildings.${detail.building}`)
+  if (typeof detail.resource === 'string') values.resource = t(`resources.${detail.resource}`)
+  if (detail.reason === 'über der Höchstmenge') {
+    const max = detail.resource === 'money' ? ctx.rules.constants.tradeMaxMoney : ctx.rules.constants.tradeMaxResource
+    values.max = amount(max)
+  }
+  return t(key, values)
+}
+
 export function describeRejection(rejection: Rejection, command: Command | null, ctx: RejectionContext): string {
   const detail = rejection.detail ?? {}
   const values: Record<string, string | number> = { ...detail }
@@ -98,15 +214,22 @@ export function describeRejection(rejection: Rejection, command: Command | null,
       break
     }
     case 'ON_COOLDOWN': {
-      if (typeof detail.readyAtTick !== 'number') return t('diplomacy.truceBlocks')
-      values.days = Math.max(1, Math.ceil((detail.readyAtTick - ctx.state.tick) / ctx.ticksPerDay))
+      // Ohne Zeitpunkt ist es der Waffenstillstand (Kriegserklaerung); `until` (Beschuss nach dem
+      // Marsch) ist eine Frist wie `readyAtTick`, kein Waffenstillstand (T-M44-06, falsche Ursache).
+      const readyAt = typeof detail.readyAtTick === 'number' ? detail.readyAtTick : typeof detail.until === 'number' ? detail.until : null
+      if (readyAt === null) return t('diplomacy.truceBlocks')
+      values.days = Math.max(1, Math.ceil((readyAt - ctx.state.tick) / ctx.ticksPerDay))
       break
     }
-    case 'INVALID_TARGET':
-      if (typeof detail.reason === 'string') {
-        return t('actions.reasonDetail', { text: t('errors.INVALID_TARGET'), reason: detail.reason })
-      }
+    case 'INVALID_TARGET': {
+      // T-M44-06 (R-UX-03/AK1): ein Satz je (Befehlstyp, Grund); ein Grund ohne Satz zeigt den
+      // Allgemeinsatz und nie das Rohwort des Kerns in Klammern.
+      // LOESCHVERMERK (Review): vorher `t('actions.reasonDetail', { text: t('errors.INVALID_TARGET'), reason: detail.reason })`
+      // — „Dieses Ziel ist für den Befehl nicht zulässig. (kein Angebot)“.
+      const sentence = reasonSentence(rejection, command, ctx)
+      if (sentence !== null) return sentence
       break
+    }
     default:
       break
   }
