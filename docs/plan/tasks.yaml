@@ -3792,7 +3792,7 @@ tasks:
   - id: T-M44-03a
     milestone: M44
     title: "Telefon hochkant: CSS-Stapel und Hinweis quer halten"
-    status: todo
+    status: done
     deps: [T-M44-02]
     requirements: [R-UX-01, R-UX-05]
     design: [D-37]

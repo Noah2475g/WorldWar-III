@@ -491,6 +491,14 @@ select,
     padding: 2px 6px;
   }
 
+  /* Die Rohstoffleiste bricht um statt zu rollen (R-UX-01/AK2, gemessen 2026-10-03: 452 px
+     Inhalt bei 375 px Breite). Sieben Zahlen sind eine Auskunft, die man nicht erst
+     suchen soll; kein Rollbereich heisst auch: nichts, was per Tab erreichbar sein muss. */
+  :root:root .resources {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
   /* Die Mitte: oben die Karte, darunter die Seitenleiste. */
   :root:root .main {
     grid-template-columns: minmax(0, 1fr);

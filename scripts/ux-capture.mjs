@@ -792,8 +792,8 @@ async function runViewport(browser, vp, run = { url: BASE_URL, perfOnly: PERF_ON
     // B-22: der Sieger bekommt den Besitz, den die Siegbedingung verlangt — `checkVictory` des Kerns
     // muss ihn selbst melden, bevor `victory.winner` gesetzt wird. Nichts davon aendert den Kern.
     const prepared = await page.evaluate(async ({ origin, root, grantSource }) => {
-      const core = await import(/* @vite-ignore */ `${origin}/@fs${root}/packages/core/src/index.ts`)
-      const json = async (name) => (await fetch(`${origin}/@fs${root}/data/rules/default/${name}.json`)).json()
+      const core = await import(/* @vite-ignore */ `${origin}/@fs/${root.replace(/^[/]/, "")}/packages/core/src/index.ts`)
+      const json = async (name) => (await fetch(`${origin}/@fs/${root.replace(/^[/]/, "")}/data/rules/default/${name}.json`)).json()
       const rules = core.parseRules(
         { constants: await json('constants'), resources: await json('resources'), buildings: await json('buildings'), units: await json('units'), ai: await json('ai') },
         'default',
