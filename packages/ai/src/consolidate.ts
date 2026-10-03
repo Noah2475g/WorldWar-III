@@ -1,5 +1,6 @@
 import { unitCount, type Command } from '@worldwar/core'
 import { armyRole } from './army-role'
+import { frontProvinces } from './economy'
 import type { AiContext, Explanation } from './types'
 
 /**
@@ -49,9 +50,16 @@ export function consolidateCommands(context: AiContext, explanations: Explanatio
   // Teile tragen erst im naechsten Denkschritt eine Kennung; der Rest geht mit seiner neuen Zahl in den
   // Merge-Pass unten.
   const nachTeilen = new Map<string, number>()
+  //
+  // **Nur abseits der Front** (T-M42-17, zweite Fassung): geteilt an jeder Stelle riss das Turnier (R-AI-06,
+  // Sitzordnung Ostmark/Sueden/Nordland: schwer 1:4 gegen normal) - ein grosser Verband an der Front ist
+  // dort gewollt. Geteilt werden die Garnisonen im Hinterland, in denen die Aushebungen auflaufen
+  // (`frontProvinces` aus `economy.ts`: kein fremder Landnachbar, keine Bedrohung).
+  const front = frontProvinces(context)
   for (const army of [...view.armies].sort((a, b) => compareCodeUnits(a.id, b.id))) {
     if (army.owner !== playerId) continue
     if ((army.path?.length ?? 0) > 0) continue
+    if (front.has(army.provinceId)) continue
     const stacks = (army.units ?? []).map((stack) => ({
       unitKey: stack.unitKey,
       hpTotal: stack.hpTotal,
