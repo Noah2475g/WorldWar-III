@@ -69,15 +69,23 @@
 git log --oneline -1 && git status --short
 ```
 
+**Die Spitze liegt auf `claude/game-v2-planned-tasks-tk5rrr`** (Etappe 2 von M42/M43, abgezweigt von
+`main` = `95441e0`, gepusht, noch nicht gemerged). Noahs /goal-Auftrag vom 2026-10-02 ersetzt den
+Playtest-Haltepunkt F6. Wer einen Worktree anlegt, zweigt von diesem Zweig ab; wer ihn nach `main`
+merged, richtet diesen Absatz im selben Zug auf `main`.
+
+<!-- LOESCHVERMERK (Review): bis 2026-10-03 stand hier:
 **Die Spitze liegt auf `main`.** PR #13 (M42/M43 Etappe 1: Geld der KI, Räumfrist, erst die Fabrik;
 `pnpm acceptance` 12 von 12) ist am 2026-09-28 auf Noahs ausdrückliches Wort gemerged. Etappe 2
 (Artillerie, Heer in Einheiten, Zusammenlegen, Spionagebuchung, Abschlussmessung) folgt nach Noahs
 Playtest (Entscheid F6) auf einem neuen Zweig von `main`. Wer einen Worktree anlegt, zweigt von
 `main` ab.
+-->
 
 ```bash
-git switch main && git pull --ff-only
+git switch claude/game-v2-planned-tasks-tk5rrr && git pull --ff-only
 ```
+<!-- LOESCHVERMERK (Review): vorher `git switch main && git pull --ff-only` -->
 
 **Wer merged, richtet diesen Abschnitt im selben Zug auf `main` und
 den Merge-Commit.** Eine Einstiegsdatei, die auf den falschen Zweig zeigt, hat dieses Projekt
@@ -156,6 +164,16 @@ Pull Request und Noahs Playtest.
 
 ## 2 · Was als Nächstes dran ist
 
+**Stand 2026-10-03, Etappe 2 abgeschlossen (Zweig `claude/game-v2-planned-tasks-tk5rrr`):** nach dem
+Orchestrator-Entscheid zu Befund M42-07-a (Option b, drei Iterationen, dann c) steht die KI auf
+**Stufe C2**: T-M42-08 (Zusammenlegen nach Rolle, in Einheiten, unter dem Deckel), T-M42-09 (überall)
+und T-M42-10 (Befund D widerlegt, 0) sind `done`; T-M42-05/-07 und T-M42-04 sind gemessen und
+zurückgenommen bzw. zurückgestellt. Kern der offenen Frage an Noah: R-AI-12/AK3 (Artillerie-Band)
+und AK4 (Öl-Wächter) sind auf der Weltkarte gemeinsam nicht erfüllbar, weil fünf von acht Mächten
+kein Öl fördern und Artillerie Öl verbraucht — eine Regelfrage. Abschlussmessung T-M42-12: siehe
+`PROGRESS.md`.
+
+<!-- LOESCHVERMERK (Review): der folgende Absatz ist durch den obigen ueberholt, bleibt fuer die Geschichte. -->
 **Stand 2026-10-03 (Etappe 2, erster Block, Zweig `claude/game-v2-planned-tasks-tk5rrr`):** Noahs
 /goal-Auftrag vom 2026-10-02 ersetzt den Playtest-Haltepunkt F6 (`DECISIONS.md`). T-M42-05 und
 T-M42-07 sind gebaut, gemessen und **zurückgenommen**, T-M42-04 ist mit Artillerie ein zweites
